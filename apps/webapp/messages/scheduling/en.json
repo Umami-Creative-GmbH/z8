@@ -68,6 +68,7 @@
         "failed": "Failed to update shift",
         "overlapDescription": "This shift overlaps with {count} other shift(s)",
         "overlapWarning": "Shift saved with overlap warning",
+        "skillOverrideReasonRequired": "The employee lacks a required skill on this day. Open the shift to give a reason.",
         "updated": "Shift updated"
       }
     },
@@ -118,6 +119,35 @@
       "updated": "Shift updated",
       "updateShift": "Update Shift"
     },
+    "shiftRequests": {
+      "approve": "Approve",
+      "approved": "Request approved",
+      "approveFailed": "Failed to approve the request",
+      "button": "Shift requests",
+      "confirmApprove": "Confirm approval",
+      "confirmReject": "Confirm rejection",
+      "description": "Approve or reject pending pickup and swap requests",
+      "empty": "No pending requests",
+      "loadFailed": "Failed to load requests",
+      "loading": "Loading requests…",
+      "notes": "Notes: {notes}",
+      "overrideReasonHelp": "Recorded with the approval as a skill override.",
+      "pickupSummary": "{requester} wants to pick up this open shift",
+      "reason": "Reason: {reason}",
+      "reject": "Reject",
+      "rejected": "Request rejected",
+      "rejectFailed": "Failed to reject the request",
+      "rejectReason": "Reason for rejecting (optional)",
+      "shiftWhen": "{date}, {start}–{end}",
+      "swapSummary": "{requester} wants to hand this shift to {target}",
+      "swapWithoutTarget": "{requester} wants to hand this shift on, but has not named a colleague",
+      "title": "Shift requests",
+      "type": {
+        "pickup": "Pickup",
+        "swap": "Swap"
+      },
+      "unnamedEmployee": "Unnamed employee"
+    },
     "skills": {
       "certificateOnFile": "Certificate on file",
       "expiredCertifications": "Expired Certifications:",
@@ -125,13 +155,15 @@
       "missingPreferred": "Missing Preferred Skills:",
       "missingPreferredCount": "{count} preferred missing",
       "missingRequired": "Missing Required Skills:",
+      "overrideReason": "Reason for the skill override",
+      "overrideReasonNotice": "You can still assign this shift with a reason. The reason is logged as a skill override.",
+      "overrideReasonRequired": "Give a reason to assign an employee without every required skill.",
       "preferred": "Preferred",
       "preferredSkillsMissing": "Preferred Skills Missing",
       "requirementsNotMet": "Skill Requirements Not Met",
       "unqualified": "Unqualified",
       "validating": "Validating Skills…",
-      "validatingDescription": "Checking employee qualifications",
-      "warningMessage": "You can still assign this shift, but it will be logged as an override."
+      "validatingDescription": "Checking employee qualifications"
     },
     "staffingSuggestions": {
       "empty": "No available employees for this shift",

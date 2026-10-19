@@ -66,6 +66,7 @@
         "noScheduleAssigned": "Nuk është caktuar orar",
         "personnelNumber": "Numri i personelit",
         "personnelNumberDescription": "Numri i caktuar nga organizata juaj për këtë punonjës, i cili përdoret në eksportimet e listëpagesave. Ai duhet të jetë unik, duke përfshirë edhe ish-punonjësit.",
+        "personnelNumberManagedByIdp": "Menaxhohet nga ofruesi juaj i identitetit. Ndryshojeni numrin e personelit atje.",
         "position": "Pozicioni",
         "positionDescription": "Titulli i punës ose roli",
         "positionPlaceholder": "Futni pozicionin",
@@ -160,6 +161,31 @@
       "invitations": {
         "description": "Fto anëtarë dhe shqyrto kërkesat pezull për bashkim",
         "title": "Ftesat"
+      },
+      "kioskBadge": {
+        "active": "Aktiv që nga {date}.",
+        "confirmReplace": "Zëvendëso distinktivin",
+        "confirmReplaceText": "Zëvendësimi krijon një distinktiv të ri. Çdo kopje e distinktivit aktual pushon së funksionuari menjëherë.",
+        "confirmRevoke": "Revoko distinktivin",
+        "confirmRevokeText": "Çdo kopje e këtij distinktivi pushon së funksionuari përgjithmonë. PIN-i i kioskës së punonjësit vazhdon të funksionojë.",
+        "description": "Një kod QR i printuar që punonjësi e skanon në një kioskë në internet në vend që të fusë PIN-in e tij. Ai nuk identifikon kurrë askënd.",
+        "done": "U krye",
+        "download": "Shkarko PDF",
+        "endedByDeparture": "Nuk ka distinktiv aktiv për kioskën. I fundit përfundoi me largimin e punonjësit më {date}. Kopjet e vjetra nuk funksionojnë më kurrë, as pas një ripunësimi.",
+        "heading": "Distinktivi i kioskës",
+        "issue": "Lësho distinktivin",
+        "none": "Ende nuk ka distinktiv kioske.",
+        "notEligible": "Një distinktiv i ri mund të lëshohet vetëm për sa kohë që punonjësi është aktiv. Pas një ripunësimi, lëshoni një distinktiv të ri.",
+        "openToPrint": "Hap për të printuar",
+        "pdf": {
+          "instructions": "Priteni distinktivin përgjatë vijës së ndërprerë. Kushdo që mban një kopje mund të regjistrojë orët si ky punonjës në kioskat e organizatës, prandaj mbajeni si çelës. Nëse humbet, kërkoni një zëvendësim: çdo kopje e këtij distinktivi më pas pushon së funksionuari.",
+          "title": "Distinktivi i kioskës"
+        },
+        "replace": "Zëvendëso distinktivin",
+        "revoke": "Shfuqizo distinktivin",
+        "revoked": "Distinktivi i kioskës u shfuqizua",
+        "revokedOn": "Nuk ka distinktiv aktiv për kioskën. I fundit u shfuqizua më {date}.",
+        "saveNow": "Ruajeni PDF-në tani: Z8 nuk mund ta shfaqë më këtë distinktiv. Mund të riprintoni një kopje të ruajtur. Nëse skedari ose distinktivi humbet, zëvendësoni distinktivin."
       },
       "kioskPin": {
         "addEmailDescription": "Ata marrin një ftesë për të zgjedhur një fjalëkalim dhe më pas mund të identifikohen. PIN-i i tyre i kioskës dhe historiku mbeten siç janë.",
@@ -762,6 +788,7 @@
       "area": {
         "back": "Dosjet e personelit",
         "description": "Punonjësit dosjet e personelit të të cilëve menaxhoni.",
+        "documentRequests": "Kërkesat për dokumente",
         "dueForDeletion": "Për t'u fshirë",
         "empty": "Ende nuk ka punonjës në fushëveprimin tuaj.",
         "former": "Ish-punonjës",
@@ -849,16 +876,15 @@
       },
       "due": {
         "confirm": "Pastro",
-        "confirmDescription": "Dokumentet dhe skedarët e tyre fshihen përgjithmonë. Regjistri i auditimit ruan personin që i pastroi, punonjësin, kategorinë, datën e dokumentit dhe periudhën e pagesës, si dhe arsyen tuaj.",
         "confirmTitle": "{count, plural, one {Të pastrohet # dokument?} other {Të pastrohen # dokumente?}}",
         "description": "Dokumentet e ish-punonjësve periudha e ruajtjes së të cilëve ka kaluar. Ato qëndrojnë derisa të konfirmoni pastrimin e tyre; lini një dokument këtu për ta ruajtur.",
         "dueSince": "Për fshirje që nga {date}",
         "empty": "Asnjë dokument në fushëveprimin tuaj nuk është gati për fshirje.",
         "loadFailed": "Dokumentet e planifikuara për fshirje nuk mund të ngarkoheshin.",
         "loading": "Po ngarkohen dokumentet e planifikuara për fshirje",
+        "purgeAuditDescription": "Dokumentet dhe skedarët e tyre fshihen përgjithmonë. Regjistri i auditimit ruan se kush i fshiu, punonjësin, kategorinë, datën e dokumentit dhe periudhën e pagesës. Titujt dhe emrat e skedarëve hiqen gjithashtu nga të dhënat e mëparshme të auditimit të dokumenteve.",
         "purged": "{count, plural, one {# dokument u pastrua} other {# dokumente u pastruan}}",
         "purgeSelected": "{count, plural, =0 {Pastro të përzgjedhurat} one {Pastro # dokument} other {Pastro # dokumente}}",
-        "reason": "Arsyeja (opsionale)",
         "selectAll": "Përzgjidh të gjitha",
         "skipped": "{count, plural, one {# dokument nuk u pastrua sepse nuk është më për t'u fshirë ose nuk është në fushëveprimin tuaj.} other {# dokumente nuk u pastruan sepse nuk janë më për t'u fshirë ose nuk janë në fushëveprimin tuaj.}}",
         "title": "Për t'u fshirë",
@@ -877,6 +903,9 @@
         "empty": "Asnjë dokument nuk po skadon.",
         "expiredAgo": "{days, plural, other {Skaduar # ditë më parë} }",
         "inDays": "{days, plural, other {Skadon për # ditë} }",
+        "renewalRequested": "U kërkua rinovimi",
+        "requestRenewal": "Kërko rinovim",
+        "requestRenewalFor": "Kërko një rinovim të {title} ({employee})",
         "title": "Dokumentet që po skadojnë",
         "today": "Skadon sot"
       },
@@ -910,6 +939,24 @@
         "description": "Dokumente nga dosja juaj e personelit që organizata juaj ka ndarë me ju.",
         "empty": "Ende nuk është ndarë asnjë dokument me ju.",
         "loading": "Po ngarkohen dokumentet tuaja",
+        "requested": {
+          "description": "Dokumentet që organizata juaj kërkoi nga ju, së bashku me afatin e tyre.",
+          "submit": {
+            "button": "Dorëzo",
+            "confirm": "Dorëzo",
+            "description": "{count, plural, one {# dokument është dorëzuar për \"{title}\". Organizata juaj do t'i shqyrtojë dhe do t'ju njoftojë për rezultatin.} other {# dokumente janë dorëzuar për \"{title}\". Organizata juaj do t'i shqyrtojë dhe do t'ju njoftojë për rezultatin.}}",
+            "note": "Shënim (opsionale)",
+            "open": "Dorëzo {title}",
+            "success": "U dorëzua",
+            "title": "Të dorëzohen dokumentet?"
+          },
+          "title": "Dokumentet e kërkuara",
+          "upload": {
+            "button": "Ngarko",
+            "description": "Për kërkesën \"{title}\". Dorëzojeni kërkesën sapo të jenë ngarkuar të gjitha dokumentet e saj.",
+            "open": "Ngarko një dokument për {title}"
+          }
+        },
         "title": "Dokumentet e mia",
         "upload": {
           "button": "Ngarko dokument",
@@ -973,6 +1020,146 @@
         "saved": "Koha paraprake e kujtuesit u ruajt",
         "saveFailed": "Koha paraprake e kujtuesit nuk mund të ruhej.",
         "title": "Kujtuesit e skadencës"
+      },
+      "requests": {
+        "accept": {
+          "button": "Prano",
+          "confirm": "Prano",
+          "description": "Kërkesa \"{title}\" u përfundua dhe punonjësi është njoftuar.",
+          "failed": "Kërkesa nuk mund të pranohej.",
+          "open": "Prano {title}",
+          "success": "Kërkesa u pranua",
+          "title": "Të pranohet dorëzimi?"
+        },
+        "bulk": {
+          "close": "Mbyll",
+          "created": "{count, plural, =0 {Nuk u krijua asnjë kërkesë për dokumente.} one {# kërkesë për dokument u krijua.} other {# kërkesa për dokumente u krijuan.}}",
+          "description": "Çdo punonjës merr kërkesën e tij dhe njoftohet. Punonjësit që nuk i mbuloni ju, ish-punonjësit dhe kushdo që tashmë ka një kërkesë të hapur me këtë titull kapërcehen.",
+          "doneTitle": "Dokumentet e kërkuara",
+          "employees": "Punonjësit",
+          "noTeams": "Nuk ka ekipe për të zgjedhur.",
+          "open": "Kërko nga disa",
+          "selectEmployees": "Zgjidh punonjësit",
+          "skipped": "{count, plural, one {# punonjës u kapërcye:} other {# punonjës u kapërcyen:}}",
+          "skippedAlreadyRequested": "{count, plural, one {# ka tashmë një kërkesë të hapur me këtë titull} other {# kanë tashmë një kërkesë të hapur me këtë titull}}",
+          "skippedFormer": "{count, plural, other {# ish-punonjës} }",
+          "skippedNotCovered": "{count, plural, one {# nuk mbulohet nga qasja juaj} other {# nuk mbulohen nga qasja juaj}}",
+          "skippedOwnFile": "Skedari juaj",
+          "teams": "Ekipet",
+          "teamsHint": "Të gjithë ata që janë aktualisht në ekip, për aq sa ju i mbuloni.",
+          "title": "Kërkoni një dokument nga disa punonjës"
+        },
+        "cancel": {
+          "button": "Anulo",
+          "confirm": "Anulo kërkesën",
+          "description": "Punonjësi nuk ka më nevojë të ngarkojë \"{title}\" dhe njoftohet për arsyen. Dokumentet e ngarkuara tashmë mbeten në dosje.",
+          "keep": "Mbaj kërkesën",
+          "open": "Anulo {title}",
+          "reason": "Arsyeja",
+          "success": "Kërkesa u anulua",
+          "title": "Të anulohet kërkesa?"
+        },
+        "create": {
+          "deadline": "Afati i fundit",
+          "deadlineHint": "Dita deri në të cilën punonjësi duhet ta dorëzojë. Pas kësaj dite, kërkesa konsiderohet e vonuar.",
+          "description": "Punonjësi njoftohet dhe i ngarkon dokumentet nga Dokumentet e mia. Çfarë ai ngarkon shkon menjëherë në dosjen e tij, e ndarë me të.",
+          "note": "Shënim (opsionale)",
+          "open": "Kërkoni një dokument",
+          "submit": "Kërko",
+          "success": "Dokumenti u kërkua",
+          "title": "Kërkoni një dokument",
+          "titleHint": "Çfarë duhet të ngarkojë punonjësi, si p.sh. një certifikatë të rinovuar të ndihmës së parë."
+        },
+        "deadline": "Afati: {date}",
+        "description": "Certifikatat dhe dokumentet e tjera të kërkuara nga ky punonjës, së bashku me afatin dhe historikun e tyre.",
+        "edit": {
+          "button": "Ndrysho",
+          "deadlineHint": "Një afat i ri nuk mund të jetë në të kaluarën. Zhvendosja e tij rinis përkujtuesit e afatit.",
+          "description": "Ndryshoni afatin ose shënimin për \"{title}\". Ndryshimi shfaqet në historikun e kërkesës. Për të kërkuar diçka tjetër, anuloni kërkesën dhe krijoni një të re.",
+          "open": "Ndrysho {title}",
+          "submit": "Ruaj ndryshimet",
+          "success": "Kërkesa u ndryshua",
+          "title": "Ndrysho kërkesën"
+        },
+        "empty": "Ende nuk është kërkuar asnjë dokument.",
+        "error": {
+          "categoryNotRequestable": "Mund të kërkohen vetëm certifikata dhe dokumente të tjera.",
+          "conflict": "Ndërkohë dikush tjetër e ka ndryshuar këtë kërkesë. Ringarkojeni dhe provoni përsëri.",
+          "deadlineInPast": "Afati i fundit nuk mund të jetë në të kaluarën.",
+          "formerEmployee": "Marrëdhënia e punës e këtij punonjësi ka përfunduar.",
+          "invalidDeadline": "Zgjidhni një afat.",
+          "invalidNote": "Shënimi mund të ketë më së shumti {max} karaktere.",
+          "invalidReason": "Arsyeja mund të ketë më së shumti {max} karaktere.",
+          "invalidTitle": "Vendosni një titull me më së shumti {max} karaktere.",
+          "noDocuments": "Ngarkoni të paktën një dokument para se ta dorëzoni.",
+          "noRecipients": "Zgjidhni të paktën një punonjës ose ekip.",
+          "notEditable": "Mund të ndryshohen vetëm afati dhe shënimi. Në vend të kësaj, anuloni kërkesën dhe krijoni një të re.",
+          "ownFile": "Nuk mund të kërkoni dokumente në dosjen tuaj personale.",
+          "reasonRequired": "Vendosni një arsye.",
+          "renewalAlreadyRequested": "Ky dokument ka tashmë një kërkesë të hapur për ripërtëritjen e tij.",
+          "renewalExpiryDateRequired": "Aftësia e ripërtërirë kërkon një datë skadimi. Shtoni datën e skadimit te certifikata e dorëzuar, pastaj pranojeni.",
+          "renewalNotInBulk": "Kërkesat për disa punonjës nuk mund të përcaktojnë një dokument të ripërtërirë.",
+          "renewedDocumentMismatch": "Dokumenti i ripërtërirë duhet të jetë një dokument i të njëjtit punonjës dhe i së njëjtës kategori.",
+          "tooManyRecipients": "Kërkoni dokumente nga më së shumti {max} punonjës njëherësh."
+        },
+        "event": {
+          "accepted": "Pranuar",
+          "cancelled": "Anuluar",
+          "created": "Kërkuar",
+          "edited": "Ndryshuar",
+          "returned": "Kthyer",
+          "submitted": "Dorëzuar"
+        },
+        "history": {
+          "deadlineChanged": "Afati {from} → {to}",
+          "noteChanged": "Shënimi u ndryshua",
+          "title": "Historiku"
+        },
+        "loadFailed": "Kërkesat për dokumente nuk mund të ngarkoheshin.",
+        "overdue": "Me afat të kaluar",
+        "page": {
+          "description": "Dokumentet e kërkuara nga punonjësit, certifikatat ose dokumentet e tjera të të cilëve i menaxhoni ju. Një kërkesë është me afat të kaluar kur mbetet ende e hapur pas skadimit të afatit të saj.",
+          "empty": "Asnjë kërkesë për dokumente nuk përputhet me filtrat.",
+          "filters": {
+            "active": "Të hapura dhe të dorëzuara",
+            "all": "Të gjitha statuset",
+            "overdue": "Vetëm me afat të kaluar",
+            "status": "Statusi"
+          },
+          "loading": "Duke ngarkuar kërkesat për dokumente",
+          "next": "Faqja tjetër",
+          "pagination": "Faqja {page} nga {pageCount}",
+          "previous": "Faqja e mëparshme",
+          "title": "Kërkesat për dokumente"
+        },
+        "pendingDocuments": "Ngarkuar, ende pa u dorëzuar",
+        "pendingDocumentsClosed": "Ngarkuar, pa u dorëzuar asnjëherë",
+        "reasonCode": {
+          "employmentEnded": "Punësimi ka përfunduar"
+        },
+        "renewal": {
+          "hint": "Pasi ta pranoni kërkesën, ky dokument nuk llogaritet më sikur po skadon. Deri atëherë, përkujtuesit e skadimit të tij u dërgohen vetëm administratorëve.",
+          "hrOnly": "Ky dokument është vetëm për BNJ. Punonjësi nuk e sheh atë, por vetëm titullin, shënimin, kategorinë dhe afatin e kësaj kërkese.",
+          "title": "Kërko një rinovim"
+        },
+        "renews": "Rinovon {title}",
+        "return": {
+          "button": "Kthe",
+          "confirm": "Ktheja punonjësit",
+          "description": "Punonjësit i kërkohet të ngarkojë përsëri \"{title}\" dhe i shpjegohet arsyeja. Dokumentet e dorëzuara prej tij mbeten në dosje.",
+          "open": "Kthe {title}",
+          "reason": "Arsyeja",
+          "success": "Kërkesa u kthye",
+          "title": "Të kthehet dorëzimi?"
+        },
+        "status": {
+          "accepted": "Pranuar",
+          "cancelled": "Anuluar",
+          "open": "Hapur",
+          "submitted": "Dorëzuar"
+        },
+        "submission": "Dorëzuar më {date}",
+        "title": "Kërkesat për dokumente"
       },
       "retention": {
         "apply": "Zbato sugjerimin",

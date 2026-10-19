@@ -172,7 +172,6 @@
       "label-available": "Kullanılabilir",
       "label-pending": "Beklemede",
       "label-used": "Kullanılan",
-      "no-policy": "Bu yıl için yapılandırılmış bir tatil politikası yok",
       "pending": "{days} beklemede",
       "percent-used": "%{percent} kullanıldı",
       "title": "Tatil Bakiyesi",

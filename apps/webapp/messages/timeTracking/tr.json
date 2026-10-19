@@ -17,8 +17,33 @@
       "noCustomer": "Yalnızca müşterisi olan bir projedeki çalışma faturalandırılabilir"
     },
     "breakInProgress": {
+      "connectionRequired": "Mola başlatmak veya molaya devam etmek için bağlantı gereklidir.",
       "description": "Moladasınız",
-      "since": "{time} itibarıyla molada"
+      "endDay": "Günü bitir",
+      "errors": {
+        "alreadyOnBreak": "Zaten moladasınız.",
+        "breakChanged": "Molanız başka bir cihazda değiştirildi. Saatiniz artık güncel durumu gösteriyor.",
+        "collision": "Bu mola önceki bir taleple çakışıyor. Lütfen sayfayı yenileyin ve tekrar deneyin.",
+        "refreshed": "Saatiniz değişti. Artık güncel durumu gösteriyor.",
+        "resumeNotAllowed": "Bu moladan devam edemezsiniz.",
+        "resumeRetry": "İşe devam edilemedi. Lütfen tekrar deneyin.",
+        "resumeUnconfirmed": "Devam etme işlemi onaylanamadı. Tekrar denemeden önce saatinizi kontrol edin.",
+        "startNotAllowed": "Mola başlatamazsınız.",
+        "startRetry": "Molanız başlatılamadı. Lütfen tekrar deneyin.",
+        "tooEarly": "Mola yalnızca çalışmanız başladıktan sonra başlatılabilir.",
+        "unconfirmed": "Molanız onaylanamadı. Tekrar denemeden önce saatinizi kontrol edin.",
+        "workChanged": "Saatiniz başka bir cihazda değişti. Artık güncel durumu gösteriyor."
+      },
+      "pendingClockActions": "Kaydedilen saat işlemleri hâlâ gönderiliyor. Senkronize edildikten sonra tekrar deneyin.",
+      "resume": "Devam et",
+      "resumed": "İşe devam edildi",
+      "since": "{time} itibarıyla molada",
+      "start": "Mola başlat",
+      "started": "Mola başladı",
+      "startedDescription": "Döndüğünüzde devam edin veya gününüzü bitirin.",
+      "trigger": "Molada",
+      "uncertain": "Molanız onaylanamadı",
+      "uncertainDescription": "Saatiniz yenilendi. Tekrar denemeden önce kontrol edin."
     },
     "budget": "Bütçe",
     "clockedOutSuccess": "Mesainizi bitirdiniz!",
@@ -147,9 +172,41 @@
         "resume": "İşe devam et",
         "startBreak": "Mola başlat"
       },
+      "attribution": {
+        "back": "Geri",
+        "keep": "{name} kalsın",
+        "noProject": "Proje yok",
+        "noWorkCategory": "İş kategorisi yok",
+        "project": "Proje",
+        "title": "Ne üzerinde çalıştınız?",
+        "workCategory": "İş kategorisi"
+      },
+      "badge": {
+        "checking": "Kartınız kontrol ediliyor…",
+        "failed": "Kart kontrol edilemedi. Hiçbir kayıt yapılmadı. Kartı tekrar okutun veya PIN'inizi kullanmak için adınıza dokunun.",
+        "inputDisabled": "Bu kiosktaki kart okutma kapalı. PIN'inizi kullanmak için adınıza dokunun.",
+        "notAccepted": "Bu kart bu kioskta kabul edilmiyor. Hiçbir kayıt yapılmadı. PIN'inizi kullanmak için adınıza dokunun veya yöneticinize danışın.",
+        "notRecorded": "İşleminiz kaydedilmedi. Yeniden seçmek için kartınızı tekrar okutun.",
+        "offline": "Kartla saat kaydı için bağlantı gerekiyor. Hiçbir kayıt yapılmadı.",
+        "offlinePin": "Kartla saat kaydı için bağlantı gerekiyor. Hiçbir kayıt yapılmadı. PIN'inizle giriş/çıkış yapmak için adınıza dokunun.",
+        "rateLimited": "Bu kioskta çok fazla kart okutuldu. {seconds} saniye sonra tekrar deneyin veya PIN'inizi kullanmak için adınıza dokunun.",
+        "unreadable": "Bu kod bir kiosk kartı değil. Hiçbir kayıt yapılmadı. Kiosk kartınızı okutun veya PIN'inizi kullanmak için adınıza dokunun."
+      },
       "board": {
         "empty": "Şu anda giriş yapmış kimse yok.",
         "title": "Kimler içeride"
+      },
+      "camera": {
+        "cancel": "Taramayı iptal et",
+        "denied": "Kiosk kamerayı kullanamıyor olabilir. Tarayıcıda bu sayfa için kamera erişimine izin verin veya PIN'inizi kullanmak için adınıza dokunun.",
+        "failed": "Kamera başlatılamadı. Tekrar deneyin veya PIN'inizi kullanmak için adınıza dokunun.",
+        "hint": "QR kodu çerçevenin içinde tutun. Kod bu kioskta okunur; hiçbir fotoğraf kaydedilmez.",
+        "missing": "Bu kioskta tarama yapabilen bir kamera yok. PIN'inizi kullanmak için adınıza dokunun.",
+        "notBadge": "Bu kod bir kiosk kartı değil. Kiosk kartınızı tutun veya iptal edip PIN'inizi kullanmak için adınıza dokunun.",
+        "preview": "Kamera önizlemesi",
+        "starting": "Kamera başlatılıyor…",
+        "title": "Kiosk kartınızı kameraya doğru tutun",
+        "unsupported": "Bu tarayıcı kamera ile kart tarayamaz. PIN'inizi kullanmak için adınıza dokunun."
       },
       "done": {
         "button": "Bitti",
@@ -174,6 +231,8 @@
         "loadFailed": "İsimler yüklenemedi. Ağ bağlantısını kontrol edin.",
         "loading": "İsimler yükleniyor…",
         "noMatch": "Aramanızla eşleşen ad bulunamadı.",
+        "scanBadge": "Kartı tara",
+        "scanHint": "Veya kiosk kartınızı tarayıcıda tarayın.",
         "search": "Adınızı bulun",
         "title": "Giriş veya çıkış yapmak için adınıza dokunun"
       },
@@ -226,15 +285,19 @@
       },
       "refusal": {
         "alreadyClockedIn": "Zaten giriş yaptınız.",
+        "attemptClosed": "Bu işlem kaydedilmedi. Hâlâ yapmak istiyorsanız tekrar seçin.",
         "billing": "Mesai kaydı şu anda kuruluşunuz için kullanılamıyor. Yöneticinizle iletişime geçin.",
         "generic": "İşlem başarısız oldu. Hiçbir şey kaydedilmedi. Tekrar deneyin veya yöneticinize danışın.",
         "holiday": "Tatil nedeniyle bugün mesai kaydı engellendi. Yöneticinize danışın.",
         "monthClosed": "Bu süre kapatılan bir ayda yer alıyor ve değiştirilemez. Yöneticinize danışın.",
         "noBreak": "Molada değilsiniz.",
         "notClockedIn": "Giriş yapmadınız.",
+        "notRecorded": "İşleminiz kaydedilmedi. Tekrar seçmek için PIN'inizi girin.",
         "onBreak": "Zaten moladasınız.",
+        "projectNotAllowed": "Bu projeye artık kayıt yapılamıyor. Hiçbir şey kaydedilmedi. Başka bir proje seçin veya geçerli olanı koruyup tekrar deneyin.",
         "unconfirmed": "Kiosk bunun kaydedilip kaydedilmediğini doğrulayamadı. Tekrar denemeden önce durumunuzu kontrol edin.",
-        "underReview": "Bugünkü çalışma süreniz inceleniyor. Yöneticinize danışın."
+        "underReview": "Bugünkü çalışma süreniz inceleniyor. Yöneticinize danışın.",
+        "workCategoryNotAllowed": "Bu çalışma kategorisine artık kayıt yapılamıyor. Hiçbir şey kaydedilmedi. Başka bir kategori seçin veya geçerli olanı koruyup tekrar deneyin."
       },
       "retry": "Tekrar deneyin",
       "revoked": {
@@ -246,6 +309,14 @@
         "clockedIn": "{time} saatinden beri mesaide",
         "clockedOut": "Giriş yapılmadı",
         "onBreak": "{time} saatinden beri molada"
+      },
+      "uncertain": {
+        "action": "{name}: {action}",
+        "back": "Geri",
+        "conflict": "Bu işlem bu kioskta kontrol edilemedi. Tekrar giriş/çıkış yapmadan önce durumunuzu yöneticinizle kontrol edin.",
+        "title": "İşleminizin kaydedilip kaydedilmediği kontrol ediliyor",
+        "unavailable": "Şu anda Z8'e ulaşılamıyor. Kiosk kontrol etmeye devam ediyor.",
+        "wait": "Tekrar giriş/çıkış yapmayın. Kiosk kontrol etmeye devam eder ve daha sonra dönseniz bile Z8 yanıt verir vermez sonucu size gösterir."
       },
       "unreachableDescription": "Kiosk sunucuya erişemiyor. Ağ bağlantısını kontrol edin; mesai kaydı yalnızca çevrim içi çalışır.",
       "unreachableTitle": "Kiosk çevrim dışı",
@@ -336,18 +407,42 @@
     "periodSubmissions": {
       "blocker": {
         "absenceRequest": "{dates} tarihli bir izin talebi henüz karara bağlanmadı.",
+        "absenceRequestAction": "Bu devamsızlığa bir onaylayıcı karar verir. Bekleme süresince talebi Taleplerim bölümünden iptal edebilirsiniz.",
         "liveWork": "{start} itibarıyla başlayan çalışma hâlâ devam ediyor.",
+        "liveWorkAction": "Bu çalışma sona erdiğinde çıkış yapın.",
         "manualWork": "{start} tarihindeki manuel çalışma henüz karara bağlanmadı.",
-        "timeCorrection": "{start} tarihindeki çalışma için yapılan zaman düzeltmesi henüz karara bağlanmadı."
+        "manualWorkAction": "Bu çalışmaya bir onaylayıcı karar verir. Herhangi bir işlem yapmanız gerekmez.",
+        "openClock": "Zaman saatine git",
+        "openRequest": "Talebi aç",
+        "openTimeline": "Zaman çizelgesinde göster",
+        "timeCorrection": "{start} tarihindeki çalışma için yapılan zaman düzeltmesi henüz karara bağlanmadı.",
+        "timeCorrectionAction": "Bu düzeltmeye bir onaylayıcı karar verir. Bekleme süresince düzeltmeyi Taleplerim bölümünden iptal edebilirsiniz.",
+        "timeCorrectionWaitAction": "Bu düzeltmeye bir onaylayıcı karar verir. Yalnızca onaylayıcının kararını bekleyebilirsiniz."
       },
       "description": "Her dönem için çalışmalarınızın ve devamsızlıklarınızın eksiksiz ve doğru olduğunu onaylayın.",
-      "opensOn": "{date} tarihinden itibaren gönderebilirsiniz.",
+      "focus": {
+        "notShown": "Bu çalışma burada gösterilemiyor. Dönem hazırlığı yeniden kontrol edildi.",
+        "resolved": "Bu çalışma artık bir dönemi açık tutmuyor. Dönem hazırlığı yeniden kontrol edildi."
+      },
+      "readiness": {
+        "checking": "Bu dönemin hazır olup olmadığı kontrol ediliyor…",
+        "hideDetails": "Ayrıntıları gizle",
+        "notReady": "Bu dönem hazır olduğunda Gönder kullanılabilir.",
+        "openItems": "{count, plural, other {# öge bu dönemi açık tutuyor.} }",
+        "opensOn": "Gönderim {date} tarihinde açılır.",
+        "ready": "Gönderilmeye hazır",
+        "retry": "Yeniden dene",
+        "showDetails": "Ayrıntıları göster",
+        "submitUnavailable": "Hazırlık durumu kontrol edilene kadar Gönder kullanılamaz.",
+        "unavailable": "Gönderim hazırlığı şu anda kullanılamıyor, bu nedenle Gönder devre dışı."
+      },
       "refusal": {
         "alreadySubmitted": "Bu dönem zaten gönderildi.",
         "noApprover": "Bu dönemi henüz kimse onaylayamaz. Bir sistem yöneticisinden size bir yönetici atamasını isteyin.",
         "notEnded": "Bu dönemi son gününden itibaren gönderebilirsiniz.",
         "notExpected": "Bu dönemin gönderilmesi gerekmiyor.",
-        "periodOpen": "Bu dönem hâlâ açık"
+        "periodOpen": "Bu dönem hâlâ açık",
+        "writeGateClosed": "Kuruluşunuzda dönem gönderimleri şu anda duraklatıldı. Daha sonra tekrar deneyin veya bir yöneticiye danışın."
       },
       "rejectionReason": "Neden: {reason}",
       "status": {

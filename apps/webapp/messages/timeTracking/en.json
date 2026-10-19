@@ -17,8 +17,33 @@
       "noCustomer": "Only work on a project with a customer can be billable"
     },
     "breakInProgress": {
+      "connectionRequired": "Starting or resuming a break needs a connection.",
       "description": "You're on a break",
-      "since": "On break since {time}"
+      "endDay": "End day",
+      "errors": {
+        "alreadyOnBreak": "You are already on a break.",
+        "breakChanged": "Your break changed on another device. Your clock now shows the current state.",
+        "collision": "This break conflicts with an earlier request. Please refresh and try again.",
+        "refreshed": "Your clock changed. It now shows the current state.",
+        "resumeNotAllowed": "You cannot resume this break.",
+        "resumeRetry": "Could not resume work. Please try again.",
+        "resumeUnconfirmed": "Resuming could not be confirmed. Check your clock before trying again.",
+        "startNotAllowed": "You cannot start a break.",
+        "startRetry": "Could not start your break. Please try again.",
+        "tooEarly": "A break can only start after your work has started.",
+        "unconfirmed": "Your break could not be confirmed. Check your clock before trying again.",
+        "workChanged": "Your clock changed on another device. It now shows the current state."
+      },
+      "pendingClockActions": "Saved clock actions are still being sent. Try again once they are synced.",
+      "resume": "Resume",
+      "resumed": "Work resumed",
+      "since": "On break since {time}",
+      "start": "Start break",
+      "started": "Break started",
+      "startedDescription": "Resume when you are back, or end your day.",
+      "trigger": "On break",
+      "uncertain": "Your break could not be confirmed",
+      "uncertainDescription": "Your clock has been refreshed. Check it before trying again."
     },
     "budget": "Budget",
     "clockedOutSuccess": "You've clocked out!",
@@ -147,9 +172,41 @@
         "resume": "Resume work",
         "startBreak": "Start break"
       },
+      "attribution": {
+        "back": "Back",
+        "keep": "Keep {name}",
+        "noProject": "No project",
+        "noWorkCategory": "No work category",
+        "project": "Project",
+        "title": "What did you work on?",
+        "workCategory": "Work category"
+      },
+      "badge": {
+        "checking": "Checking your badge…",
+        "failed": "The badge could not be checked. Nothing was recorded. Scan it again, or tap your name to use your PIN.",
+        "inputDisabled": "Badge scanning is switched off at this kiosk. Tap your name to use your PIN.",
+        "notAccepted": "This badge is not accepted at this kiosk. Nothing was recorded. Tap your name to use your PIN, or ask your manager.",
+        "notRecorded": "Your action was not recorded. Scan your badge again to choose it again.",
+        "offline": "Badge clocking needs a connection. Nothing was recorded.",
+        "offlinePin": "Badge clocking needs a connection. Nothing was recorded. Tap your name to clock with your PIN.",
+        "rateLimited": "Too many badge scans at this kiosk. Try again in {seconds} seconds, or tap your name to use your PIN.",
+        "unreadable": "This code is not a kiosk badge. Nothing was recorded. Scan your kiosk badge, or tap your name to use your PIN."
+      },
       "board": {
         "empty": "Nobody is clocked in right now.",
         "title": "Who is in"
+      },
+      "camera": {
+        "cancel": "Cancel scanning",
+        "denied": "The kiosk may not use the camera. Allow camera access for this page in the browser, or tap your name to use your PIN.",
+        "failed": "The camera could not be started. Try again, or tap your name to use your PIN.",
+        "hint": "Keep the QR code inside the frame. The code is read on this kiosk; no picture is saved.",
+        "missing": "This kiosk has no camera that can scan. Tap your name to use your PIN.",
+        "notBadge": "This code is not a kiosk badge. Hold up your kiosk badge, or cancel and tap your name to use your PIN.",
+        "preview": "Camera preview",
+        "starting": "Starting the camera…",
+        "title": "Hold your kiosk badge up to the camera",
+        "unsupported": "This browser cannot scan badges with the camera. Tap your name to use your PIN."
       },
       "done": {
         "button": "Done",
@@ -174,6 +231,8 @@
         "loadFailed": "The names could not be loaded. Check the network connection.",
         "loading": "Loading names…",
         "noMatch": "No name matches your search.",
+        "scanBadge": "Scan badge",
+        "scanHint": "Or scan your kiosk badge at the scanner.",
         "search": "Find your name",
         "title": "Tap your name to clock in or out"
       },
@@ -226,15 +285,19 @@
       },
       "refusal": {
         "alreadyClockedIn": "You are already clocked in.",
+        "attemptClosed": "This action was not recorded. Choose it again if you still want it.",
         "billing": "Clocking is not available for your organization right now. Contact your admin.",
         "generic": "That did not work. Nothing was recorded. Try again or ask your manager.",
         "holiday": "Clocking is blocked today because of a holiday. Ask your manager.",
         "monthClosed": "This time is in a closed month and cannot be changed. Ask your manager.",
         "noBreak": "You are not on a break.",
         "notClockedIn": "You are not clocked in.",
+        "notRecorded": "Your action was not recorded. Enter your PIN to choose it again.",
         "onBreak": "You are already on a break.",
+        "projectNotAllowed": "This project can no longer be booked. Nothing was recorded. Choose another one, or keep the current one, and try again.",
         "unconfirmed": "The kiosk could not confirm whether this was saved. Check your status before you try again.",
-        "underReview": "Your time for today is under review. Ask your manager."
+        "underReview": "Your time for today is under review. Ask your manager.",
+        "workCategoryNotAllowed": "This work category can no longer be booked. Nothing was recorded. Choose another one, or keep the current one, and try again."
       },
       "retry": "Try again",
       "revoked": {
@@ -246,6 +309,14 @@
         "clockedIn": "Clocked in since {time}",
         "clockedOut": "Not clocked in",
         "onBreak": "On break since {time}"
+      },
+      "uncertain": {
+        "action": "{name}: {action}",
+        "back": "Back",
+        "conflict": "This action could not be checked on this kiosk. Check your status with your manager before you clock again.",
+        "title": "Checking whether your action was recorded",
+        "unavailable": "Z8 cannot be reached right now. The kiosk keeps checking.",
+        "wait": "Do not clock again. The kiosk keeps checking and shows you the result as soon as Z8 answers, also if you come back later."
       },
       "unreachableDescription": "The kiosk cannot reach the server. Check the network connection; clocking works only while online.",
       "unreachableTitle": "Kiosk offline",
@@ -336,18 +407,42 @@
     "periodSubmissions": {
       "blocker": {
         "absenceRequest": "An absence request for {dates} is undecided.",
+        "absenceRequestAction": "An approver decides this absence. While it waits, you can cancel it in My Requests.",
         "liveWork": "Work started {start} is still running.",
+        "liveWorkAction": "Clock out when this work ends.",
         "manualWork": "Manual work on {start} is undecided.",
-        "timeCorrection": "A time correction for work on {start} is undecided."
+        "manualWorkAction": "An approver decides this work. You don't need to do anything.",
+        "openClock": "Go to the clock",
+        "openRequest": "Open request",
+        "openTimeline": "Show on timeline",
+        "timeCorrection": "A time correction for work on {start} is undecided.",
+        "timeCorrectionAction": "An approver decides this correction. While it waits, you can cancel it in My Requests.",
+        "timeCorrectionWaitAction": "An approver decides this correction. You can only wait for their decision."
       },
       "description": "Confirm that your work and absences for each period are complete and correct.",
-      "opensOn": "You can submit from {date}.",
+      "focus": {
+        "notShown": "This work can't be shown here. Period readiness was checked again.",
+        "resolved": "This work no longer keeps a period open. Period readiness was checked again."
+      },
+      "readiness": {
+        "checking": "Checking whether this period is ready…",
+        "hideDetails": "Hide details",
+        "notReady": "Submit is available once this period is ready.",
+        "openItems": "{count, plural, one {# item keeps this period open.} other {# items keep this period open.}}",
+        "opensOn": "Submitting opens on {date}.",
+        "ready": "Ready to submit",
+        "retry": "Retry",
+        "showDetails": "Show details",
+        "submitUnavailable": "Submit is unavailable until readiness can be checked.",
+        "unavailable": "Submission readiness is unavailable right now, so Submit is disabled."
+      },
       "refusal": {
         "alreadySubmitted": "This period has already been submitted.",
         "noApprover": "No one can approve this period yet. Ask an administrator to assign you a manager.",
         "notEnded": "You can submit this period from its last day onward.",
         "notExpected": "This period does not need to be submitted.",
-        "periodOpen": "This period is still open"
+        "periodOpen": "This period is still open",
+        "writeGateClosed": "Period submissions are paused in your organization right now. Try again later, or ask an administrator."
       },
       "rejectionReason": "Reason: {reason}",
       "status": {

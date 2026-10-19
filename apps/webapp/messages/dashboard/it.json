@@ -172,7 +172,6 @@
       "label-available": "Disponibile",
       "label-pending": "In attesa",
       "label-used": "Usato",
-      "no-policy": "Nessuna politica ferie configurata per quest'anno",
       "pending": "{days} in attesa",
       "percent-used": "{percent}% usato",
       "title": "Saldo ferie",

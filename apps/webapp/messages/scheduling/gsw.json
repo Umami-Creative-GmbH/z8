@@ -68,6 +68,7 @@
         "failed": "Schicht hät nöd chöne aktualisiert werde",
         "overlapDescription": "Die Schicht überschniidet sich mit {count} andere Schicht(e)",
         "overlapWarning": "Schicht mit Überschniidigswarnig gspeicheret",
+        "skillOverrideReasonRequired": "Dem/der Mitarbeitenden fehlt an diesem Tag eine erforderliche Qualifikation. Öffnen Sie die Schicht, um einen Grund anzugeben.",
         "updated": "Schicht aktualisiert"
       }
     },
@@ -118,6 +119,35 @@
       "updated": "Schicht aktualisiert",
       "updateShift": "Schicht aktualisiere"
     },
+    "shiftRequests": {
+      "approve": "Genehmigen",
+      "approved": "Anfrage genehmigt",
+      "approveFailed": "Die Anfrage konnte nicht genehmigt werden",
+      "button": "Schichtanfragen",
+      "confirmApprove": "Genehmigung bestätigen",
+      "confirmReject": "Ablehnung bestätigen",
+      "description": "Ausstehende Übernahme- und Tauschanfragen genehmigen oder ablehnen",
+      "empty": "Keine ausstehenden Anfragen",
+      "loadFailed": "Anfragen konnten nicht geladen werden",
+      "loading": "Anfragen werden geladen…",
+      "notes": "Notizen: {notes}",
+      "overrideReasonHelp": "Wird mit der Genehmigung als Qualifikations-Override erfasst.",
+      "pickupSummary": "{requester} möchte diese offene Schicht übernehmen",
+      "reason": "Begründung: {reason}",
+      "reject": "Ablehnen",
+      "rejected": "Anfrage abgelehnt",
+      "rejectFailed": "Die Anfrage konnte nicht abgelehnt werden",
+      "rejectReason": "Grund für die Ablehnung (optional)",
+      "shiftWhen": "{date}, {start}–{end}",
+      "swapSummary": "{requester} möchte diese Schicht an {target} übergeben",
+      "swapWithoutTarget": "{requester} möchte diese Schicht abgeben, hat aber keine Kollegin und keinen Kollegen genannt",
+      "title": "Schichtanfragen",
+      "type": {
+        "pickup": "Übernahme",
+        "swap": "Tausch"
+      },
+      "unnamedEmployee": "Nicht benannte/r Mitarbeitende/r"
+    },
     "skills": {
       "certificateOnFile": "Zertifikat hinterleit",
       "expiredCertifications": "Abglaufeni Zertifizierige:",
@@ -125,13 +155,15 @@
       "missingPreferred": "Fehlendi bevorzugti Fähigkeite:",
       "missingPreferredCount": "{count} bevorzugti Fähigkeite fehle",
       "missingRequired": "Fehlendi erforderlechi Fähigkeite:",
+      "overrideReason": "Grund für den Qualifikations-Override",
+      "overrideReasonNotice": "Sie können diese Schicht trotzdem mit einer Begründung zuweisen. Die Begründung wird als Qualifikations-Override protokolliert.",
+      "overrideReasonRequired": "Geben Sie eine Begründung an, um eine/n Mitarbeitende/n zuzuweisen, der/die nicht über alle erforderlichen Qualifikationen verfügt.",
       "preferred": "Bevorzugt",
       "preferredSkillsMissing": "Bevorzugti Fähigkeite fehle",
       "requirementsNotMet": "Fähigkeitsaaforderige nöd erfüllt",
       "unqualified": "Nöd qualifiziert",
       "validating": "Fähigkeite wärded prüeft…",
-      "validatingDescription": "Mitarbeiterqualifikations-Prüefig",
-      "warningMessage": "Du chasch die Schicht immer no zueordne, aber es wird als Überschriibig protokolliert."
+      "validatingDescription": "Mitarbeiterqualifikations-Prüefig"
     },
     "staffingSuggestions": {
       "empty": "Kei verfüegbari Mitarbeiter für die Schicht",

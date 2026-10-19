@@ -42,6 +42,9 @@
       "title": "Hitta förfrågningar",
       "type": "Typ"
     },
+    "focus": {
+      "unavailable": "Denna begäran väntar inte längre på åtgärd eller kan inte visas här. Periodens beredskap kontrolleras igen."
+    },
     "inReview": {
       "description": "Förfrågningar som väntar på godkännande eller hantering.",
       "title": "Under granskning"

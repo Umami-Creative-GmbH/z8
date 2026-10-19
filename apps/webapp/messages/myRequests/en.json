@@ -42,6 +42,9 @@
       "title": "Find requests",
       "type": "Type"
     },
+    "focus": {
+      "unavailable": "This request is no longer pending, or it can't be shown here. Period readiness is being checked again."
+    },
     "inReview": {
       "description": "Requests waiting for approval or processing.",
       "title": "In review"

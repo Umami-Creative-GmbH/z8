@@ -66,6 +66,7 @@
         "noScheduleAssigned": "Nessun orario assegnato",
         "personnelNumber": "Numero di matricola",
         "personnelNumberDescription": "Il numero identificativo della tua organizzazione per questo dipendente, utilizzato nelle esportazioni delle paghe. Deve essere univoco, anche tra gli ex dipendenti.",
+        "personnelNumberManagedByIdp": "Gestito dal tuo provider di identità. Modifica il numero del personale lì.",
         "position": "Posizione",
         "positionDescription": "Qualifica o ruolo",
         "positionPlaceholder": "Inserisci posizione",
@@ -160,6 +161,31 @@
       "invitations": {
         "description": "Invita membri e rivedi le richieste di partecipazione in sospeso",
         "title": "Inviti"
+      },
+      "kioskBadge": {
+        "active": "Attivo dal {date}.",
+        "confirmReplace": "Sostituisci il badge",
+        "confirmReplaceText": "La sostituzione crea un nuovo badge. Tutte le copie del badge attuale smetteranno immediatamente di funzionare.",
+        "confirmRevoke": "Revoca il badge",
+        "confirmRevokeText": "Tutte le copie di questo badge smetteranno di funzionare definitivamente. Il PIN kiosk del dipendente continuerà a funzionare.",
+        "description": "Un codice QR stampato che il dipendente scansiona presso un kiosk online invece di inserire il PIN. Non effettua mai l'accesso per nessuno.",
+        "done": "Fatto",
+        "download": "Scarica PDF",
+        "endedByDeparture": "Nessun badge per chiosco attivo. L'ultimo è scaduto con la partenza del dipendente il {date}. Le vecchie copie non funzioneranno mai più, nemmeno dopo una riassunzione.",
+        "heading": "Badge per chiosco",
+        "issue": "Rilascia badge",
+        "none": "Ancora nessun badge per chiosco.",
+        "notEligible": "È possibile rilasciare un nuovo badge solo quando il dipendente è attivo. Dopo una riassunzione, rilascia un nuovo badge.",
+        "openToPrint": "Apri per stampare",
+        "pdf": {
+          "instructions": "Ritaglia il badge lungo la linea tratteggiata. Chiunque sia in possesso di una copia può timbrare come questo dipendente presso i chioschi dell'organizzazione, quindi conservalo come fosse una chiave. In caso di smarrimento, richiedi una sostituzione: ogni copia di questo badge smetterà di funzionare.",
+          "title": "Badge per chiosco"
+        },
+        "replace": "Sostituisci badge",
+        "revoke": "Revoca badge",
+        "revoked": "Badge per chiosco revocato",
+        "revokedOn": "Nessun badge per chiosco attivo. L'ultimo è stato revocato il {date}.",
+        "saveNow": "Salva subito il PDF: Z8 non potrà mostrare nuovamente questo badge. Puoi ristampare una copia salvata. In caso di smarrimento del file o del badge, sostituisci il badge."
       },
       "kioskPin": {
         "addEmailDescription": "Riceverà un invito per scegliere una password e potrà quindi accedere. Il PIN del chiosco e la cronologia resteranno invariati.",
@@ -762,6 +788,7 @@
       "area": {
         "back": "Fascicoli del personale",
         "description": "I dipendenti di cui gestisci il fascicolo personale.",
+        "documentRequests": "Richieste di documenti",
         "dueForDeletion": "Da eliminare",
         "empty": "Nessun dipendente rientra ancora nel tuo ambito.",
         "former": "Ex dipendente",
@@ -849,16 +876,15 @@
       },
       "due": {
         "confirm": "Elimina definitivamente",
-        "confirmDescription": "I documenti e i relativi file verranno eliminati definitivamente. Nel registro di controllo rimarranno le informazioni su chi li ha eliminati, il dipendente, la categoria, la data del documento, il periodo di retribuzione e il motivo indicato.",
         "confirmTitle": "{count, plural, one {Eliminare definitivamente # documento?} other {Eliminare definitivamente # documenti?}}",
         "description": "Documenti di ex dipendenti per i quali il periodo di conservazione è terminato. Rimangono qui fino a quando non confermi l'eliminazione definitiva; lascia un documento qui per conservarlo.",
         "dueSince": "In scadenza dal {date}",
         "empty": "Nessun documento nel tuo ambito è da eliminare.",
         "loadFailed": "Impossibile caricare i documenti da eliminare.",
         "loading": "Caricamento dei documenti da eliminare",
+        "purgeAuditDescription": "I documenti e i relativi file vengono eliminati definitivamente. Il registro di controllo conserva chi li ha eliminati, il dipendente, la categoria, la data del documento e il periodo di paga. Anche i titoli e i nomi dei file vengono rimossi dai precedenti record di controllo dei documenti.",
         "purged": "{count, plural, one {# documento eliminato definitivamente} other {# documenti eliminati definitivamente}}",
         "purgeSelected": "{count, plural, =0 {Elimina definitivamente selezionati} one {Elimina definitivamente # documento} other {Elimina definitivamente # documenti}}",
-        "reason": "Motivo (facoltativo)",
         "selectAll": "Seleziona tutto",
         "skipped": "{count, plural, one {# documento non è stato eliminato definitivamente perché non è più da eliminare o non rientra nel tuo ambito.} other {# documenti non sono stati eliminati definitivamente perché non sono più da eliminare o non rientrano nel tuo ambito.}}",
         "title": "Da eliminare",
@@ -877,6 +903,9 @@
         "empty": "Nessun documento in scadenza.",
         "expiredAgo": "{days, plural, one {Scaduto # giorno fa} other {Scaduto # giorni fa}}",
         "inDays": "{days, plural, one {Scade tra # giorno} other {Scade tra # giorni}}",
+        "renewalRequested": "Rinnovo richiesto",
+        "requestRenewal": "Richiedi rinnovo",
+        "requestRenewalFor": "Richiedi un rinnovo di {title} ({employee})",
         "title": "Documenti in scadenza",
         "today": "Scade oggi"
       },
@@ -910,6 +939,24 @@
         "description": "Documenti del tuo fascicolo del personale condivisi con te dalla tua organizzazione.",
         "empty": "Nessun documento è ancora stato condiviso con te.",
         "loading": "Caricamento dei tuoi documenti",
+        "requested": {
+          "description": "Documenti richiesti dalla tua organizzazione, con la relativa scadenza.",
+          "submit": {
+            "button": "Invia",
+            "confirm": "Invia",
+            "description": "{count, plural, one {# documento è stato consegnato per \"{title}\". La tua organizzazione lo esaminerà e ti comunicherà l'esito.} other {# documenti sono stati consegnati per \"{title}\". La tua organizzazione li esaminerà e ti comunicherà l'esito.}}",
+            "note": "Nota (facoltativa)",
+            "open": "Invia {title}",
+            "success": "Inviato",
+            "title": "Inviare i documenti?"
+          },
+          "title": "Documenti richiesti",
+          "upload": {
+            "button": "Carica",
+            "description": "Per la richiesta \"{title}\". Invia la richiesta una volta caricati tutti i relativi documenti.",
+            "open": "Carica un documento per {title}"
+          }
+        },
         "title": "I miei documenti",
         "upload": {
           "button": "Carica documento",
@@ -973,6 +1020,146 @@
         "saved": "Tempo di preavviso del promemoria salvato",
         "saveFailed": "Impossibile salvare il tempo di preavviso del promemoria.",
         "title": "Promemoria di scadenza"
+      },
+      "requests": {
+        "accept": {
+          "button": "Accetta",
+          "confirm": "Accetta",
+          "description": "La richiesta \"{title}\" è completata e il dipendente viene informato.",
+          "failed": "Impossibile accettare la richiesta.",
+          "open": "Accetta {title}",
+          "success": "Richiesta accettata",
+          "title": "Accettare la consegna?"
+        },
+        "bulk": {
+          "close": "Chiudi",
+          "created": "{count, plural, =0 {Nessuna richiesta di documenti creata.} one {# richiesta di documenti creata.} other {# richieste di documenti create.}}",
+          "description": "Ogni dipendente riceve la propria richiesta e viene informato. I dipendenti non coperti dal tuo accesso, gli ex dipendenti e chiunque abbia già una richiesta aperta con questo titolo vengono ignorati.",
+          "doneTitle": "Documenti richiesti",
+          "employees": "Dipendenti",
+          "noTeams": "Nessun team tra cui scegliere.",
+          "open": "Richiedi a più persone",
+          "selectEmployees": "Seleziona dipendenti",
+          "skipped": "{count, plural, one {# dipendente ignorato:} other {# dipendenti ignorati:}}",
+          "skippedAlreadyRequested": "{count, plural, one {# ha già una richiesta aperta con questo titolo} other {# hanno già una richiesta aperta con questo titolo}}",
+          "skippedFormer": "{count, plural, one {# ex dipendente} other {# ex dipendenti}}",
+          "skippedNotCovered": "{count, plural, one {# non coperto dal tuo accesso} other {# non coperti dal tuo accesso}}",
+          "skippedOwnFile": "Il tuo fascicolo",
+          "teams": "Team",
+          "teamsHint": "Tutti i membri attuali del team di tua competenza.",
+          "title": "Richiedi un documento a più dipendenti"
+        },
+        "cancel": {
+          "button": "Annulla",
+          "confirm": "Annulla richiesta",
+          "description": "Il dipendente non deve più caricare \"{title}\" e ne riceve la motivazione. I documenti già caricati rimangono nel fascicolo.",
+          "keep": "Mantieni richiesta",
+          "open": "Annulla {title}",
+          "reason": "Motivo",
+          "success": "Richiesta annullata",
+          "title": "Annullare la richiesta?"
+        },
+        "create": {
+          "deadline": "Scadenza",
+          "deadlineHint": "La data entro cui il dipendente deve effettuare l'invio. Oltre tale data, la richiesta risulterà scaduta.",
+          "description": "Il dipendente riceve una notifica e carica i documenti da I miei documenti. I file caricati compaiono subito nel suo fascicolo e sono condivisi con lui.",
+          "note": "Nota (facoltativa)",
+          "open": "Richiedi un documento",
+          "submit": "Richiedi",
+          "success": "Documento richiesto",
+          "title": "Richiedi un documento",
+          "titleHint": "Ciò che il dipendente deve caricare, ad esempio un attestato di primo soccorso rinnovato."
+        },
+        "deadline": "Scadenza: {date}",
+        "description": "Certificati e altri documenti richiesti a questo dipendente, con la relativa scadenza e cronologia.",
+        "edit": {
+          "button": "Modifica",
+          "deadlineHint": "La nuova scadenza non può essere nel passato. Modificandola, i promemoria di scadenza verranno riavviati.",
+          "description": "Modifica la scadenza o la nota per \"{title}\". La modifica comparirà nella cronologia della richiesta. Per richiedere qualcos'altro, annulla la richiesta e creane una nuova.",
+          "open": "Modifica {title}",
+          "submit": "Salva modifiche",
+          "success": "Richiesta modificata",
+          "title": "Modifica richiesta"
+        },
+        "empty": "Nessun documento ancora richiesto.",
+        "error": {
+          "categoryNotRequestable": "È possibile richiedere solo certificati e altri documenti.",
+          "conflict": "Nel frattempo un altro utente ha modificato questa richiesta. Ricarica la pagina e riprova.",
+          "deadlineInPast": "La scadenza non può essere nel passato.",
+          "formerEmployee": "Il rapporto di lavoro di questo dipendente è terminato.",
+          "invalidDeadline": "Scegli una scadenza.",
+          "invalidNote": "La nota può contenere al massimo {max} caratteri.",
+          "invalidReason": "Il motivo può contenere al massimo {max} caratteri.",
+          "invalidTitle": "Inserisci un titolo di massimo {max} caratteri.",
+          "noDocuments": "Carica almeno un documento prima di inviare.",
+          "noRecipients": "Seleziona almeno un dipendente o un team.",
+          "notEditable": "È possibile modificare solo la scadenza e la nota. In alternativa, annulla la richiesta e creane una nuova.",
+          "ownFile": "Non puoi richiedere documenti per il tuo fascicolo personale.",
+          "reasonRequired": "Inserisci un motivo.",
+          "renewalAlreadyRequested": "È già presente una richiesta aperta per il rinnovo di questo documento.",
+          "renewalExpiryDateRequired": "La competenza rinnovata richiede una data di scadenza. Aggiungi la data di scadenza a un certificato inviato, quindi accetta.",
+          "renewalNotInBulk": "Le richieste per più dipendenti non possono indicare un documento rinnovato.",
+          "renewedDocumentMismatch": "Il documento rinnovato deve appartenere allo stesso dipendente e alla stessa categoria.",
+          "tooManyRecipients": "Richiedi documenti a un massimo di {max} dipendenti contemporaneamente."
+        },
+        "event": {
+          "accepted": "Accettato",
+          "cancelled": "Annullato",
+          "created": "Richiesto",
+          "edited": "Modificato",
+          "returned": "Restituito",
+          "submitted": "Inviato"
+        },
+        "history": {
+          "deadlineChanged": "Scadenza {from} → {to}",
+          "noteChanged": "Nota modificata",
+          "title": "Cronologia"
+        },
+        "loadFailed": "Impossibile caricare le richieste di documenti.",
+        "overdue": "In ritardo",
+        "page": {
+          "description": "I documenti richiesti ai dipendenti di cui gestisci certificati o altri documenti. Una richiesta è in ritardo se risulta ancora aperta dopo la data di scadenza.",
+          "empty": "Nessuna richiesta di documenti corrisponde ai filtri.",
+          "filters": {
+            "active": "Aperti e inviati",
+            "all": "Tutti gli stati",
+            "overdue": "Solo in ritardo",
+            "status": "Stato"
+          },
+          "loading": "Caricamento delle richieste di documenti",
+          "next": "Pagina successiva",
+          "pagination": "Pagina {page} di {pageCount}",
+          "previous": "Pagina precedente",
+          "title": "Richieste di documenti"
+        },
+        "pendingDocuments": "Caricato, non ancora inviato",
+        "pendingDocumentsClosed": "Caricato, mai inviato",
+        "reasonCode": {
+          "employmentEnded": "Rapporto di lavoro terminato"
+        },
+        "renewal": {
+          "hint": "Una volta accettata la richiesta, questo documento non risulterà più in scadenza. Fino ad allora, i promemoria di scadenza verranno inviati solo ai responsabili.",
+          "hrOnly": "Questo documento è riservato alle risorse umane. Il dipendente non può visualizzarlo: vedrà solo il titolo, la nota, la categoria e la scadenza della richiesta.",
+          "title": "Richiedi un rinnovo"
+        },
+        "renews": "Rinnova {title}",
+        "return": {
+          "button": "Restituisci",
+          "confirm": "Restituisci al dipendente",
+          "description": "Verrà chiesto al dipendente di caricare nuovamente \"{title}\" indicandone il motivo. I documenti inviati rimarranno nel fascicolo.",
+          "open": "Restituisci {title}",
+          "reason": "Motivo",
+          "success": "Richiesta restituita",
+          "title": "Restituire l'invio?"
+        },
+        "status": {
+          "accepted": "Accettato",
+          "cancelled": "Annullato",
+          "open": "Aperto",
+          "submitted": "Inviato"
+        },
+        "submission": "Inviato il {date}",
+        "title": "Richieste di documenti"
       },
       "retention": {
         "apply": "Applica suggerimento",

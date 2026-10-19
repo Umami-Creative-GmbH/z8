@@ -427,6 +427,7 @@
     "uploading": "Μεταφόρτωση...",
     "vacationAllowance": {
       "cappedAtFullAllowance": "με ανώτατο όριο την πλήρη άδεια",
+      "convertedSummary": "{allowance} ημέρες: {conversion}",
       "employmentMonths": "{months, plural, one {# πλήρης μήνας απασχόλησης} other {# πλήρεις μήνες απασχόλησης}}",
       "lastWorkingDay": "τελευταία εργάσιμη ημέρα {date}",
       "notEmployed": "{allowance} από {fullAllowance} ημέρες: δεν απασχολήθηκε το {year}",
@@ -434,7 +435,10 @@
       "overdrawnHint": "Άδεια που λήφθηκε πέραν του δικαιούμενου ορίου. Εμφανίζεται μόνο για ενημέρωση: δεν αφαιρείται τίποτα.",
       "proratedSummary": "{allowance} από {fullAllowance} ημέρες, κατ' αναλογία: {details}",
       "started": "έναρξη {date}",
-      "statutoryMinimumApplies": "ισχύει το νόμιμο ελάχιστο"
+      "statutoryMinimumApplies": "ισχύει το νόμιμο ελάχιστο",
+      "workingDaysPerWeek": "{days, plural, one {# εργάσιμη ημέρα ανά εβδομάδα} other {# εργάσιμες ημέρες ανά εβδομάδα}}",
+      "workingWeekConversion": "{reference} ημέρες αναφοράς μετατράπηκαν σε {weeks}",
+      "workingWeekPeriod": "{week} από {start} έως {end}"
     },
     "validate": "Επικύρωση",
     "validationError": "Σφάλμα επικύρωσης",
@@ -929,6 +933,7 @@
     },
     "page": {
       "context": "Η προσωπική εγγραφή, η ανάκτηση και η επιλογή οργανισμού παραμένουν διαθέσιμες ενώ η πρόσβαση στον οργανισμό απαιτεί επαλήθευση.",
+      "description": "Επαληθεύστε μια εφαρμογή ελέγχου ταυτότητας για να διατηρήσετε την πρόσβαση στους οργανισμούς σας.",
       "title": "Επαλήθευση ασφαλείας"
     },
     "passkey": {
@@ -1311,6 +1316,42 @@
         "message": "Κάντε λήψη των προσωπικών σας δεδομένων από την ενότητα «Τα δεδομένα μου» πριν από τις {untilDate}. Μετά από αυτό, μόνο ένας διαχειριστής μπορεί να τα εξαγάγει για εσάς.",
         "title": "Κάντε λήψη των προσωπικών σας δεδομένων πριν αποχωρήσετε"
       },
+      "personnelFileDocumentRequestAccepted": {
+        "message": "Τα έγγραφά σας για το \"{title}\" έγιναν δεκτά.",
+        "title": "Τα έγγραφα έγιναν δεκτά"
+      },
+      "personnelFileDocumentRequestCancelled": {
+        "message": "Το αίτημα \"{title}\" ακυρώθηκε: {reason}",
+        "messageWithoutReason": "Το αίτημα \"{title}\" ακυρώθηκε.",
+        "title": "Το αίτημα εγγράφου ακυρώθηκε"
+      },
+      "personnelFileDocumentRequestDueSoon": {
+        "message": "Παρακαλούμε μεταφορτώστε το \"{title}\" έως τις {deadline}.",
+        "title": "Το έγγραφο λήγει σύντομα"
+      },
+      "personnelFileDocumentRequestDueToday": {
+        "message": "Παρακαλούμε μεταφορτώστε το \"{title}\" σήμερα.",
+        "title": "Το έγγραφο λήγει σήμερα"
+      },
+      "personnelFileDocumentRequested": {
+        "message": "Παρακαλούμε μεταφορτώστε το \"{title}\" έως τις {deadline}.",
+        "title": "Ζητήθηκε έγγραφο"
+      },
+      "personnelFileDocumentRequestOverdue": {
+        "message": "Η προθεσμία για το \"{title}\" ήταν στις {deadline}. Παρακαλούμε μεταφορτώστε το.",
+        "officerMessage": "Ο/Η {employee} δεν έχει υποβάλει το \"{title}\", το οποίο έληγε στις {deadline}.",
+        "officerTitle": "Το αιτούμενο έγγραφο είναι εκπρόθεσμο",
+        "title": "Εκπρόθεσμο έγγραφο"
+      },
+      "personnelFileDocumentRequestReturned": {
+        "message": "Παρακαλούμε μεταφορτώστε ξανά το \"{title}\" έως τις {deadline}: {reason}",
+        "messageWithoutReason": "Παρακαλούμε μεταφορτώστε ξανά το \"{title}\" έως τις {deadline}.",
+        "title": "Τα έγγραφα επιστράφηκαν"
+      },
+      "personnelFileDocumentRequestSubmitted": {
+        "message": "Ο/Η {name} υπέβαλε έγγραφα για το \"{title}\". Παρακαλούμε ελέγξτε τα.",
+        "title": "Τα έγγραφα υποβλήθηκαν"
+      },
       "personnelFileDocumentShared": {
         "message": "Το έγγραφο \"{title}\" κοινοποιήθηκε σε εσάς.",
         "title": "Νέο έγγραφο στον φάκελο προσωπικού σας"
@@ -1652,6 +1693,11 @@
         "personal_data_export_admin_exported": "Τα προσωπικά δεδομένα εξήχθησαν από έναν διαχειριστή",
         "personal_data_export_ready": "Η εξαγωγή προσωπικών δεδομένων είναι έτοιμη",
         "personal_data_export_reminder": "Κάντε λήψη των δεδομένων σας πριν αποχωρήσετε",
+        "personnel_file_document_request_decided": "Το αίτημα εγγράφου έγινε αποδεκτό, επιστράφηκε ή ακυρώθηκε",
+        "personnel_file_document_requested": "Ζητήθηκε έγγραφο από εσάς",
+        "personnel_file_document_request_overdue": "Εκπρόθεσμο αίτημα εγγράφου",
+        "personnel_file_document_request_reminder": "Το αιτούμενο έγγραφο λήγει σύντομα",
+        "personnel_file_document_request_submitted": "Υποβλήθηκαν τα αιτούμενα έγγραφα (υπεύθυνοι φακέλων προσωπικού)",
         "skill_expired_today": "Η δεξιότητα λήγει σήμερα",
         "skill_expiry_upcoming": "Η δεξιότητα λήγει σύντομα",
         "work_balance_adjustment_cancelled": "Η προσαρμογή υπολοίπου ακυρώθηκε",
@@ -3066,7 +3112,10 @@
     "theme-toggle": "Εναλλαγή θέματος"
   },
   "vacationBalance": {
-    "previouslyTaken": "Περιλαμβάνει {days} ημέρες που λήφθηκαν πριν από την παρακολούθηση"
+    "conflictingPolicies": "Αλληλοσυγκρουόμενες πολιτικές αδειών",
+    "missingPolicy": "Λείπει η πολιτική αδειών",
+    "previouslyTaken": "Περιλαμβάνει {days} ημέρες που λήφθηκαν πριν από την παρακολούθηση",
+    "zeroWorkingDays": "Πρόγραμμα εργασίας χωρίς εργάσιμες ημέρες"
   },
   "validation": {
     "first-name-required": "Το όνομα είναι υποχρεωτικό",

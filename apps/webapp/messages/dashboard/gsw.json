@@ -172,7 +172,6 @@
       "label-available": "Verfügbar",
       "label-pending": "Pängdig",
       "label-used": "Brucht",
-      "no-policy": "Kei Ferierichtlinie für das Jahr konfiguriert",
       "pending": "{days} pängdig",
       "percent-used": "{percent}% brucht",
       "title": "Feriesaldo",

@@ -172,7 +172,6 @@
       "label-available": "Dostupno",
       "label-pending": "Na čekanju",
       "label-used": "Iskorišteno",
-      "no-policy": "Nije konfigurisana politika godišnjeg odmora za ovu godinu",
       "pending": "{days} na čekanju",
       "percent-used": "{percent}% iskorišteno",
       "title": "Stanje godišnjeg odmora",

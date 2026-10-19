@@ -66,6 +66,7 @@
         "noScheduleAssigned": "Nema dodijeljenog rasporeda",
         "personnelNumber": "Broj zaposlenika",
         "personnelNumberDescription": "Interni broj vaše organizacije za ovog zaposlenika koji se koristi pri izvozu obračuna plaća. Mora biti jedinstven, uključujući i među bivšim zaposlenicima.",
+        "personnelNumberManagedByIdp": "Upravlja vaš davatelj identiteta. Tamo promijenite kadrovski broj.",
         "position": "Radno mjesto",
         "positionDescription": "Naziv radnog mjesta ili uloga",
         "positionPlaceholder": "Unesite radno mjesto",
@@ -160,6 +161,31 @@
       "invitations": {
         "description": "Pozovite članove i pregledajte zahtjeve za pridruživanje na čekanju",
         "title": "Pozivnice"
+      },
+      "kioskBadge": {
+        "active": "Aktivno od {date}.",
+        "confirmReplace": "Zamijeni značku",
+        "confirmReplaceText": "Zamjenom se stvara nova značka. Svaki primjerak trenutne značke odmah prestaje raditi.",
+        "confirmRevoke": "Opozovi značku",
+        "confirmRevokeText": "Svaki primjerak ove značke trajno prestaje raditi. Kiosk PIN zaposlenika i dalje radi.",
+        "description": "Ispisani QR kôd koji zaposlenik skenira na mrežnom kiosku umjesto unosa PIN-a. Nikada nikoga ne prijavljuje u sustav.",
+        "done": "Gotovo",
+        "download": "Preuzmi PDF",
+        "endedByDeparture": "Nema aktivne značke za kiosk. Posljednja je istekla odlaskom zaposlenika dana {date}. Stari primjerci više nikada ne rade, čak ni nakon ponovnog zapošljavanja.",
+        "heading": "Značka za kiosk",
+        "issue": "Izdaj značku",
+        "none": "Još nema značke za kiosk.",
+        "notEligible": "Nova se značka može izdati samo dok je zaposlenik aktivan. Nakon ponovnog zapošljavanja izdajte novu značku.",
+        "openToPrint": "Otvori za ispis",
+        "pdf": {
+          "instructions": "Izrežite značku duž isprekidane crte. Tko god ima primjerak može se evidentirati kao ovaj zaposlenik na kioscima organizacije, stoga je čuvajte poput ključa. Ako se izgubi, zatražite zamjenu: svaki primjerak ove značke tada prestaje raditi.",
+          "title": "Značka za kiosk"
+        },
+        "replace": "Zamijeni značku",
+        "revoke": "Opozovi značku",
+        "revoked": "Značka za kiosk je opozvana",
+        "revokedOn": "Nema aktivne značke za kiosk. Posljednja je opozvana dana {date}.",
+        "saveNow": "Spremite PDF sada: Z8 više ne može prikazati ovu značku. Možete ponovno ispisati spremljeni primjerak. Ako se datoteka ili značka izgubi, zamijenite značku."
       },
       "kioskPin": {
         "addEmailDescription": "Primit će pozivnicu za odabir lozinke i potom se mogu prijaviti. Njihov PIN za kiosk i povijest ostaju nepromijenjeni.",
@@ -762,6 +788,7 @@
       "area": {
         "back": "Kadrovski dosjei",
         "description": "Zaposlenici čijim kadrovskim dosjeima upravljate.",
+        "documentRequests": "Zahtjevi za dokumente",
         "dueForDeletion": "Predviđeno za brisanje",
         "empty": "Još nema zaposlenika u vašem djelokrugu.",
         "former": "Bivši zaposlenik",
@@ -849,16 +876,15 @@
       },
       "due": {
         "confirm": "Trajno izbriši",
-        "confirmDescription": "Dokumenti i njihove datoteke trajno se brišu. U revizijskom dnevniku bilježi se tko ih je trajno izbrisao, zaposlenik, kategorija, datum dokumenta i razdoblje isplate te vaš razlog.",
         "confirmTitle": "{count, plural, one {Trajno izbrisati # dokument?} few {Trajno izbrisati # dokumenta?} other {Trajno izbrisati # dokumenata?}}",
         "description": "Dokumenti bivših zaposlenika kojima je istekao rok čuvanja. Ostat će ovdje dok ne potvrdite njihovo trajno brisanje; ostavite dokument ovdje ako ga želite zadržati.",
         "dueSince": "Dospjelo od {date}",
         "empty": "Nijedan dokument u vašoj nadležnosti nije dospio za brisanje.",
         "loadFailed": "Nije uspjelo učitavanje dokumenata dospjelih za brisanje.",
         "loading": "Učitavanje dokumenata dospjelih za brisanje",
+        "purgeAuditDescription": "Dokumenti i njihove datoteke trajno se brišu. Zapisnik radnji bilježi tko ih je izbrisao, zaposlenika, kategoriju, datum dokumenta i obračunsko razdoblje. Naslovi i nazivi datoteka također se uklanjaju iz ranijih zapisa o dokumentima.",
         "purged": "{count, plural, one {# dokument trajno je izbrisan} few {# dokumenta trajno su izbrisana} other {# dokumenata trajno je izbrisano}}",
         "purgeSelected": "{count, plural, =0 {Trajno izbriši odabrano} one {Trajno izbriši # dokument} few {Trajno izbriši # dokumenta} other {Trajno izbriši # dokumenata}}",
-        "reason": "Razlog (neobavezno)",
         "selectAll": "Odaberi sve",
         "skipped": "{count, plural, one {# dokument nije trajno izbrisan jer više nije dospio za brisanje ili nije u vašoj nadležnosti.} few {# dokumenta nisu trajno izbrisana jer više nisu dospjela za brisanje ili nisu u vašoj nadležnosti.} other {# dokumenata nije trajno izbrisano jer više nisu dospjeli za brisanje ili nisu u vašoj nadležnosti.}}",
         "title": "Dospjelo za brisanje",
@@ -877,6 +903,9 @@
         "empty": "Nijedan dokument ne istječe.",
         "expiredAgo": "{days, plural, one {Isteklo prije # dan} other {Isteklo prije # dana} }",
         "inDays": "{days, plural, one {Istječe za # dan} other {Istječe za # dana} }",
+        "renewalRequested": "Obnova zatražena",
+        "requestRenewal": "Zatraži obnovu",
+        "requestRenewalFor": "Zatražite obnovu za {title} ({employee})",
         "title": "Dokumenti koji istječu",
         "today": "Istječe danas"
       },
@@ -910,6 +939,24 @@
         "description": "Dokumenti iz vašeg dosjea koje je vaša organizacija podijelila s vama.",
         "empty": "Još nijedan dokument nije podijeljen s vama.",
         "loading": "Učitavanje vaših dokumenata",
+        "requested": {
+          "description": "Dokumenti koje je vaša organizacija zatražila od vas, s njihovim rokom.",
+          "submit": {
+            "button": "Predaj",
+            "confirm": "Predaj",
+            "description": "{count, plural, one {# dokument je predan za \"{title}\". Vaša organizacija ih pregledava i obavještava vas o rezultatu.} few {# dokumenta su predana za \"{title}\". Vaša organizacija ih pregledava i obavještava vas o rezultatu.} other {# dokumenata je predano za \"{title}\". Vaša organizacija ih pregledava i obavještava vas o rezultatu.}}",
+            "note": "Napomena (neobavezno)",
+            "open": "Predaj {title}",
+            "success": "Predano",
+            "title": "Predati dokumente?"
+          },
+          "title": "Zatraženi dokumenti",
+          "upload": {
+            "button": "Učitaj",
+            "description": "Za zahtjev \"{title}\". Predajte zahtjev nakon što se učitaju svi pripadajući dokumenti.",
+            "open": "Učitajte dokument za {title}"
+          }
+        },
         "title": "Moji dokumenti",
         "upload": {
           "button": "Prenesi dokument",
@@ -973,6 +1020,146 @@
         "saved": "Vrijeme najave podsjetnika je spremljeno",
         "saveFailed": "Rok najave podsjetnika nije bilo moguće spremiti.",
         "title": "Podsjetnici o isteku"
+      },
+      "requests": {
+        "accept": {
+          "button": "Prihvati",
+          "confirm": "Prihvati",
+          "description": "Zahtjev \"{title}\" je dovršen i zaposlenik je obaviješten.",
+          "failed": "Zahtjev se nije mogao prihvatiti.",
+          "open": "Prihvati {title}",
+          "success": "Zahtjev prihvaćen",
+          "title": "Prihvatiti predano?"
+        },
+        "bulk": {
+          "close": "Zatvori",
+          "created": "{count, plural, =0 {Nema stvorenih zahtjeva za dokumente.} one {# stvoreni zahtjev za dokumente.} few {# stvorena zahtjeva za dokumente.} other {# stvorenih zahtjeva za dokumente.}}",
+          "description": "Svaki zaposlenik dobiva vlastiti zahtjev i biva obaviješten. Zaposlenici koji nisu obuhvaćeni vašim pristupom, bivši zaposlenici i svi koji već imaju otvoren zahtjev s ovim nazivom preskaču se.",
+          "doneTitle": "Dokumenti zatraženi",
+          "employees": "Zaposlenici",
+          "noTeams": "Nema timova za odabir.",
+          "open": "Zatraži od više osoba",
+          "selectEmployees": "Odaberite zaposlenike",
+          "skipped": "{count, plural, one {# zaposlenik preskočen:} few {# zaposlenika preskočena:} other {# zaposlenika preskočeno:}}",
+          "skippedAlreadyRequested": "{count, plural, few {# već imaju otvoren zahtjev s ovim nazivom} other {# već ima otvoren zahtjev s ovim nazivom} }",
+          "skippedFormer": "{count, plural, one {# bivši zaposlenik} few {# bivša zaposlenika} other {# bivših zaposlenika}}",
+          "skippedNotCovered": "{count, plural, one {# nije obuhvaćen vašim pristupom} few {# nisu obuhvaćena vašim pristupom} other {# nije obuhvaćeno vašim pristupom}}",
+          "skippedOwnFile": "Vaš vlastiti dosje",
+          "teams": "Timovi",
+          "teamsHint": "Svi koji su trenutačno u timu, u onoj mjeri u kojoj ih pokrivate.",
+          "title": "Zatražite dokument od više zaposlenika"
+        },
+        "cancel": {
+          "button": "Odustani",
+          "confirm": "Otkaži zahtjev",
+          "description": "Zaposlenik više ne mora učitati \"{title}\" i obaviješten je o razlogu. Već učitani dokumenti ostaju u dosjeu.",
+          "keep": "Zadrži zahtjev",
+          "open": "Otkaži {title}",
+          "reason": "Razlog",
+          "success": "Zahtjev je otkazan",
+          "title": "Otkazati zahtjev?"
+        },
+        "create": {
+          "deadline": "Rok",
+          "deadlineHint": "Dan do kojeg zaposlenik treba predati dokument. Nakon tog datuma zahtjev kasni.",
+          "description": "Zaposlenik prima obavijest i učitava dokumente iz odjeljka Moji dokumenti. Sve što učita odmah se nalazi u njegovu dosjeu i dijeli se s njim.",
+          "note": "Napomena (neobavezno)",
+          "open": "Zatražite dokument",
+          "submit": "Zatraži",
+          "success": "Dokument je zatražen",
+          "title": "Zatraži dokument",
+          "titleHint": "Što bi zaposlenik trebao učitati, primjerice obnovljeno uvjerenje o prvoj pomoći."
+        },
+        "deadline": "Rok: {date}",
+        "description": "Certifikati i drugi dokumenti zatraženi od ovog zaposlenika, s njihovim rokom i poviješću.",
+        "edit": {
+          "button": "Promijeni",
+          "deadlineHint": "Novi rok ne može biti u prošlosti. Njegovim pomicanjem ponovno se pokreću podsjetnici na rok.",
+          "description": "Promijenite rok ili napomenu za \"{title}\". Promjena se prikazuje u povijesti zahtjeva. Da biste zatražili nešto drugo, otkažite zahtjev i izradite novi.",
+          "open": "Promijeni {title}",
+          "submit": "Spremi promjene",
+          "success": "Zahtjev je promijenjen",
+          "title": "Promijeni zahtjev"
+        },
+        "empty": "Još nema zatraženih dokumenata.",
+        "error": {
+          "categoryNotRequestable": "Moguće je zatražiti samo certifikate i druge dokumente.",
+          "conflict": "Netko je drugi u međuvremenu promijenio ovaj zahtjev. Ponovno ga učitajte i pokušajte ponovno.",
+          "deadlineInPast": "Rok ne može biti u prošlosti.",
+          "formerEmployee": "Radni odnos ovog zaposlenika je završio.",
+          "invalidDeadline": "Odaberite rok.",
+          "invalidNote": "Napomena može sadržavati najviše {max} znakova.",
+          "invalidReason": "Razlog može sadržavati najviše {max} znakova.",
+          "invalidTitle": "Unesite naslov od najviše {max} znakova.",
+          "noDocuments": "Učitajte barem jedan dokument prije slanja.",
+          "noRecipients": "Odaberite barem jednog zaposlenika ili tim.",
+          "notEditable": "Moguće je promijeniti samo rok i napomenu. Umjesto toga otkažite zahtjev i izradite novi.",
+          "ownFile": "Ne možete zatražiti dokumente za vlastiti kadrovski dosje.",
+          "reasonRequired": "Unesite razlog.",
+          "renewalAlreadyRequested": "Za ovaj dokument već postoji otvoren zahtjev za obnovu.",
+          "renewalExpiryDateRequired": "Obnovljena vještina zahtijeva datum isteka. Dodajte datum isteka predanom certifikatu, a zatim prihvatite.",
+          "renewalNotInBulk": "Zahtjevi za više zaposlenika ne mogu navoditi obnovljeni dokument.",
+          "renewedDocumentMismatch": "Obnovljeni dokument mora biti dokument istog zaposlenika i iste kategorije.",
+          "tooManyRecipients": "Zatražite dokumente od najviše {max} zaposlenika odjednom."
+        },
+        "event": {
+          "accepted": "Prihvaćeno",
+          "cancelled": "Otkazano",
+          "created": "Zatraženo",
+          "edited": "Promijenjeno",
+          "returned": "Vraćeno",
+          "submitted": "Predano"
+        },
+        "history": {
+          "deadlineChanged": "Rok {from} → {to}",
+          "noteChanged": "Napomena promijenjena",
+          "title": "Povijest"
+        },
+        "loadFailed": "Nije moguće učitati zahtjeve za dokumente.",
+        "overdue": "Prekoračen rok",
+        "page": {
+          "description": "Dokumenti zatraženi od zaposlenika čijim certifikatima ili drugim dokumentima upravljate. Zahtjev ima prekoračen rok kada je još uvijek otvoren nakon isteka roka.",
+          "empty": "Nema zahtjeva za dokumente koji odgovaraju filtrima.",
+          "filters": {
+            "active": "Otvoreno i predano",
+            "all": "Svi statusi",
+            "overdue": "Samo s prekoračenim rokom",
+            "status": "Status"
+          },
+          "loading": "Učitavanje zahtjeva za dokumente",
+          "next": "Sljedeća stranica",
+          "pagination": "Stranica {page} od {pageCount}",
+          "previous": "Prethodna stranica",
+          "title": "Zahtjevi za dokumente"
+        },
+        "pendingDocuments": "Preneseno, još nije predano",
+        "pendingDocumentsClosed": "Preneseno, nikad predano",
+        "reasonCode": {
+          "employmentEnded": "Radni odnos završen"
+        },
+        "renewal": {
+          "hint": "Nakon što prihvatite zahtjev, ovaj se dokument više ne smatra dokumentom koji istječe. Do tada podsjetnici o isteku stižu samo službenicima.",
+          "hrOnly": "Ovaj je dokument namijenjen samo HR-u. Zaposlenik ga ne vidi, već samo naslov, napomenu, kategoriju i rok ovog zahtjeva.",
+          "title": "Zatraži obnovu"
+        },
+        "renews": "Obnavlja {title}",
+        "return": {
+          "button": "Vrati",
+          "confirm": "Vrati zaposleniku",
+          "description": "Od zaposlenika se traži da ponovno prenese \"{title}\" uz obrazloženje zašto. Dokumenti koje je predao ostaju u spisu.",
+          "open": "Vrati {title}",
+          "reason": "Razlog",
+          "success": "Zahtjev vraćen",
+          "title": "Vratiti podnesak?"
+        },
+        "status": {
+          "accepted": "Prihvaćeno",
+          "cancelled": "Otkazano",
+          "open": "Otvoreno",
+          "submitted": "Predano"
+        },
+        "submission": "Predano {date}",
+        "title": "Zahtjevi za dokumente"
       },
       "retention": {
         "apply": "Primijeni prijedlog",

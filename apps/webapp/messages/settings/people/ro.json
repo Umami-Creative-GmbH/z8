@@ -66,6 +66,7 @@
         "noScheduleAssigned": "Niciun program alocat",
         "personnelNumber": "Număr de personal",
         "personnelNumberDescription": "Numărul atribuit de organizația dvs. acestui angajat, utilizat în exporturile de salarii. Acesta trebuie să fie unic, inclusiv în rândul foștilor angajați.",
+        "personnelNumberManagedByIdp": "Gestionat de furnizorul dvs. de identitate. Modificați numărul de personal acolo.",
         "position": "Funcție",
         "positionDescription": "Titlul funcției sau rolul",
         "positionPlaceholder": "Introduceți funcția",
@@ -160,6 +161,31 @@
       "invitations": {
         "description": "Invitați membri și examinați cererile de alăturare în așteptare",
         "title": "Invitații"
+      },
+      "kioskBadge": {
+        "active": "Activ din {date}.",
+        "confirmReplace": "Înlocuiți ecusonul",
+        "confirmReplaceText": "Înlocuirea creează un nou ecuson. Toate copiile ecusonului actual vor înceta imediat să funcționeze.",
+        "confirmRevoke": "Revocați ecusonul",
+        "confirmRevokeText": "Toate copiile acestui ecuson vor înceta să funcționeze definitiv. Codul PIN de chioșc al angajatului continuă să funcționeze.",
+        "description": "Un cod QR tipărit pe care angajatul îl scanează la un chioșc online în loc să introducă codul PIN. Acesta nu autentifică niciodată pe nimeni.",
+        "done": "Gata",
+        "download": "Descărcați PDF",
+        "endedByDeparture": "Niciun ecuson de chioșc activ. Ultimul a încetat la plecarea angajatului pe {date}. Copiile vechi nu mai funcționează niciodată, nici măcar după o reangajare.",
+        "heading": "Ecuson de chioșc",
+        "issue": "Emiteți ecuson",
+        "none": "Niciun ecuson de chioșc încă.",
+        "notEligible": "Un ecuson nou poate fi emis doar cât timp angajatul este activ. După o reangajare, emiteți un ecuson nou.",
+        "openToPrint": "Deschideți pentru imprimare",
+        "pdf": {
+          "instructions": "Decupați ecusonul de-a lungul liniei punctate. Oricine deține o copie poate ponta ca acest angajat la chioșcurile organizației, așa că păstrați-l ca pe o cheie. Dacă este pierdut, solicitați o înlocuire: fiecare copie a acestui ecuson va înceta atunci să funcționeze.",
+          "title": "Ecuson de chioșc"
+        },
+        "replace": "Înlocuiți ecusonul",
+        "revoke": "Revocați ecusonul",
+        "revoked": "Ecuson de chioșc revocat",
+        "revokedOn": "Niciun ecuson de chioșc activ. Ultimul a fost revocat pe {date}.",
+        "saveNow": "Salvați PDF-ul acum: Z8 nu poate afișa din nou acest ecuson. Puteți retipări o copie salvată. Dacă fișierul sau ecusonul se pierde, înlocuiți ecusonul."
       },
       "kioskPin": {
         "addEmailDescription": "Aceștia primesc o invitație de a alege o parolă și se pot conecta ulterior. PIN-ul de chioșc și istoricul acestora rămân neschimbate.",
@@ -762,6 +788,7 @@
       "area": {
         "back": "Dosare de personal",
         "description": "Angajații ale căror dosare de personal le gestionați.",
+        "documentRequests": "Solicitări de documente",
         "dueForDeletion": "Programat pentru ștergere",
         "empty": "Niciun angajat nu se află încă în sfera dvs. de gestionare.",
         "former": "Fost angajat",
@@ -849,16 +876,15 @@
       },
       "due": {
         "confirm": "Eliminați definitiv",
-        "confirmDescription": "Documentele și fișierele lor sunt șterse definitiv. Jurnalul de audit reține persoana care le-a eliminat definitiv, angajatul, categoria, data documentului, perioada de plată și motivul dumneavoastră.",
         "confirmTitle": "{count, plural, one {Eliminați definitiv # document?} few {Eliminați definitiv # documente?} other {Eliminați definitiv # de documente?}}",
         "description": "Documentele foștilor angajați a căror perioadă de păstrare a trecut. Ele rămân până când confirmați eliminarea lor definitivă; lăsați un document aici pentru a-l păstra.",
         "dueSince": "Scadent din {date}",
         "empty": "Niciun document din aria dvs. de competență nu este scadent pentru ștergere.",
         "loadFailed": "Documentele scadente pentru ștergere nu au putut fi încărcate.",
         "loading": "Se încarcă documentele scadente pentru ștergere",
+        "purgeAuditDescription": "Documentele și fișierele acestora sunt șterse definitiv. Jurnalul de audit păstrează cine le-a eliminat, angajatul, categoria, data documentului și perioada de plată. Titlurile și numele fișierelor sunt, de asemenea, eliminate din înregistrările anterioare de audit ale documentelor.",
         "purged": "{count, plural, one {# document eliminat definitiv} other {# documente eliminate definitiv}}",
         "purgeSelected": "{count, plural, =0 {Elimină selecția} one {Elimină definitiv # document} other {Elimină definitiv # documente}}",
-        "reason": "Motiv (opțional)",
         "selectAll": "Selectează tot",
         "skipped": "{count, plural, one {# document nu a fost eliminat definitiv deoarece nu mai este scadent pentru ștergere sau nu se află în aria dvs. de competență.} other {# documente nu au fost eliminate definitiv deoarece nu mai sunt scadente pentru ștergere sau nu se află în aria dvs. de competență.}}",
         "title": "Scadente pentru ștergere",
@@ -877,6 +903,9 @@
         "empty": "Niciun document nu expiră.",
         "expiredAgo": "{days, plural, one {A expirat acum # zi} other {A expirat acum # zile}}",
         "inDays": "{days, plural, one {Expiră în # zi} other {Expiră în # zile}}",
+        "renewalRequested": "Reînnoire solicitată",
+        "requestRenewal": "Solicitați reînnoirea",
+        "requestRenewalFor": "Solicitați o reînnoire pentru {title} ({employee})",
         "title": "Documente care expiră",
         "today": "Expiră astăzi"
       },
@@ -910,6 +939,24 @@
         "description": "Documente din dosarul dvs. de personal pe care organizația le-a partajat cu dvs.",
         "empty": "Nu a fost partajat încă niciun document cu dvs.",
         "loading": "Se încarcă documentele dvs.",
+        "requested": {
+          "description": "Documente solicitate de organizația dvs., cu termenul-limită aferent.",
+          "submit": {
+            "button": "Trimiteți",
+            "confirm": "Trimiteți",
+            "description": "{count, plural, one {# document este predat pentru \"{title}\". Organizația dvs. le examinează și vă comunică rezultatul.} other {# documente sunt predate pentru \"{title}\". Organizația dvs. le examinează și vă comunică rezultatul.}}",
+            "note": "Notă (opțional)",
+            "open": "Trimiteți {title}",
+            "success": "Trimis",
+            "title": "Trimiteți documentele?"
+          },
+          "title": "Documente solicitate",
+          "upload": {
+            "button": "Încărcați",
+            "description": "Pentru solicitarea \"{title}\". Trimiteți solicitarea după ce toate documentele aferente au fost încărcate.",
+            "open": "Încărcați un document pentru {title}"
+          }
+        },
         "title": "Documentele mele",
         "upload": {
           "button": "Încarcă document",
@@ -973,6 +1020,146 @@
         "saved": "Timpul de notificare în avans a fost salvat",
         "saveFailed": "Intervalul de notificare nu a putut fi salvat.",
         "title": "Mementouri de expirare"
+      },
+      "requests": {
+        "accept": {
+          "button": "Acceptați",
+          "confirm": "Acceptați",
+          "description": "Solicitarea \"{title}\" este finalizată, iar angajatul este notificat.",
+          "failed": "Solicitarea nu a putut fi acceptată.",
+          "open": "Acceptați {title}",
+          "success": "Solicitare acceptată",
+          "title": "Acceptați trimiterea?"
+        },
+        "bulk": {
+          "close": "Închideți",
+          "created": "{count, plural, =0 {Nicio solicitare de documente creată.} one {# solicitare de documente creată.} other {# solicitări de documente create.}}",
+          "description": "Fiecare angajat primește propria solicitare și este notificat. Angajații pe care nu îi acoperiți, foștii angajați și oricine are deja o solicitare deschisă cu acest titlu sunt omiși.",
+          "doneTitle": "Documente solicitate",
+          "employees": "Angajați",
+          "noTeams": "Nicio echipă din care să alegeți.",
+          "open": "Solicitați de la mai mulți",
+          "selectEmployees": "Selectați angajații",
+          "skipped": "{count, plural, one {# angajat omis:} other {# angajați omiși:}}",
+          "skippedAlreadyRequested": "{count, plural, one {# are deja o solicitare deschisă cu acest titlu} other {# au deja o solicitare deschisă cu acest titlu}}",
+          "skippedFormer": "{count, plural, one {# fost angajat} other {# foști angajați}}",
+          "skippedNotCovered": "{count, plural, one {# nu este acoperit de accesul dvs.} other {# nu sunt acoperiți de accesul dvs.}}",
+          "skippedOwnFile": "Propriul dosar",
+          "teams": "Echipe",
+          "teamsHint": "Toți membrii actuali ai echipei, în măsura în care intră în responsabilitatea ta.",
+          "title": "Solicită un document de la mai mulți angajați"
+        },
+        "cancel": {
+          "button": "Anulează",
+          "confirm": "Anulează solicitarea",
+          "description": "Angajatul nu mai trebuie să încarce „{title}” și este informat cu privire la motiv. Documentele deja încărcate rămân în dosar.",
+          "keep": "Păstrează solicitarea",
+          "open": "Anulează {title}",
+          "reason": "Motiv",
+          "success": "Solicitare anulată",
+          "title": "Anulezi solicitarea?"
+        },
+        "create": {
+          "deadline": "Termen limită",
+          "deadlineHint": "Data până la care angajatul trebuie să trimită documentul. După această dată, solicitarea este restantă.",
+          "description": "Angajatul este notificat și încarcă documentele din Documentele mele. Ceea ce încarcă apare imediat în dosarul său, fiind partajat cu acesta.",
+          "note": "Notă (opțional)",
+          "open": "Solicită un document",
+          "submit": "Solicită",
+          "success": "Document solicitat",
+          "title": "Solicită un document",
+          "titleHint": "Ce ar trebui să încarce angajatul, de exemplu un certificat de prim ajutor reînnoit."
+        },
+        "deadline": "Termen: {date}",
+        "description": "Certificate și alte documente solicitate acestui angajat, împreună cu termenul limită și istoricul acestora.",
+        "edit": {
+          "button": "Modifică",
+          "deadlineHint": "Un nou termen limită nu poate fi în trecut. Modificarea acestuia repornește mementourile pentru termenul limită.",
+          "description": "Modifică termenul limită sau nota pentru „{title}”. Modificarea apare în istoricul solicitării. Pentru a cere altceva, anulează solicitarea și creează una nouă.",
+          "open": "Modifică {title}",
+          "submit": "Salvează modificările",
+          "success": "Solicitare modificată",
+          "title": "Modifică solicitarea"
+        },
+        "empty": "Niciun document solicitat încă.",
+        "error": {
+          "categoryNotRequestable": "Se pot solicita doar certificate și alte documente.",
+          "conflict": "Altcineva a modificat această solicitare între timp. Reîncarcă și încearcă din nou.",
+          "deadlineInPast": "Termenul limită nu poate fi în trecut.",
+          "formerEmployee": "Raportul de muncă al acestui angajat s-a încheiat.",
+          "invalidDeadline": "Alege un termen limită.",
+          "invalidNote": "Nota poate avea cel mult {max} caractere.",
+          "invalidReason": "Motivul poate avea cel mult {max} caractere.",
+          "invalidTitle": "Introdu un titlu de cel mult {max} caractere.",
+          "noDocuments": "Încarcă cel puțin un document înainte de a trimite.",
+          "noRecipients": "Alege cel puțin un angajat sau o echipă.",
+          "notEditable": "Se pot modifica doar termenul limită și nota. În caz contrar, anulează solicitarea și creează una nouă.",
+          "ownFile": "Nu poți solicita documente pentru propriul dosar de personal.",
+          "reasonRequired": "Introdu un motiv.",
+          "renewalAlreadyRequested": "Acest document are deja o solicitare deschisă pentru reînnoire.",
+          "renewalExpiryDateRequired": "Competența reînnoită necesită o dată de expirare. Adaugă data de expirare la certificatul trimis, apoi acceptă.",
+          "renewalNotInBulk": "Solicitările pentru mai mulți angajați nu pot specifica un document reînnoit.",
+          "renewedDocumentMismatch": "Documentul reînnoit trebuie să fie un document al aceluiași angajat și din aceeași categorie.",
+          "tooManyRecipients": "Solicită documente de la cel mult {max} angajați în același timp."
+        },
+        "event": {
+          "accepted": "Acceptat",
+          "cancelled": "Anulat",
+          "created": "Solicitat",
+          "edited": "Modificat",
+          "returned": "Returnat",
+          "submitted": "Trimis"
+        },
+        "history": {
+          "deadlineChanged": "Termen limită {from} → {to}",
+          "noteChanged": "Notă modificată",
+          "title": "Istoric"
+        },
+        "loadFailed": "Cererile de documente nu au putut fi încărcate.",
+        "overdue": "Termen depășit",
+        "page": {
+          "description": "Documentele solicitate angajaților ale căror certificate sau alte documente le gestionați. O cerere este considerată cu termen depășit atunci când este încă deschisă după data limită.",
+          "empty": "Nicio cerere de documente nu corespunde filtrelor.",
+          "filters": {
+            "active": "Deschise și trimise",
+            "all": "Toate stările",
+            "overdue": "Doar cu termen depășit",
+            "status": "Stare"
+          },
+          "loading": "Se încarcă cererile de documente",
+          "next": "Pagina următoare",
+          "pagination": "Pagina {page} din {pageCount}",
+          "previous": "Pagina anterioară",
+          "title": "Cereri de documente"
+        },
+        "pendingDocuments": "Încărcat, netrimis încă",
+        "pendingDocumentsClosed": "Încărcat, niciodată trimis",
+        "reasonCode": {
+          "employmentEnded": "Activitate încheiată"
+        },
+        "renewal": {
+          "hint": "Odată ce acceptați cererea, acest document nu mai este considerat ca fiind pe cale de expirare. Până atunci, mementourile privind expirarea sunt trimise doar administratorilor.",
+          "hrOnly": "Acest document este destinat exclusiv departamentului HR. Angajatul nu îl poate vedea, având acces doar la titlul, nota, categoria și termenul limită al acestei cereri.",
+          "title": "Solicită o reînnoire"
+        },
+        "renews": "Reînnoiește {title}",
+        "return": {
+          "button": "Returnează",
+          "confirm": "Returnează angajatului",
+          "description": "Angajatului i se solicită să încarce din nou \"{title}\" și i se comunică motivul. Documentele trimise anterior rămân în dosar.",
+          "open": "Returnează {title}",
+          "reason": "Motiv",
+          "success": "Cerere returnată",
+          "title": "Returnați documentul trimis?"
+        },
+        "status": {
+          "accepted": "Acceptat",
+          "cancelled": "Anulat",
+          "open": "Deschis",
+          "submitted": "Trimis"
+        },
+        "submission": "Trimis la {date}",
+        "title": "Cereri de documente"
       },
       "retention": {
         "apply": "Aplicați sugestia",

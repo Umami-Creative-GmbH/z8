@@ -68,6 +68,7 @@
         "failed": "Aggiornamento turno non riuscito",
         "overlapDescription": "Questo turno si sovrappone ad altri {count} turno/i",
         "overlapWarning": "Turno salvato con avviso di sovrapposizione",
+        "skillOverrideReasonRequired": "Il dipendente non possiede una competenza richiesta per questo giorno. Apri il turno per specificare un motivo.",
         "updated": "Turno aggiornato"
       }
     },
@@ -118,6 +119,35 @@
       "updated": "Turno aggiornato",
       "updateShift": "Aggiorna turno"
     },
+    "shiftRequests": {
+      "approve": "Approva",
+      "approved": "Richiesta approvata",
+      "approveFailed": "Impossibile approvare la richiesta",
+      "button": "Richieste di turno",
+      "confirmApprove": "Conferma approvazione",
+      "confirmReject": "Conferma rifiuto",
+      "description": "Approva o rifiuta le richieste di presa in carico e scambio in sospeso",
+      "empty": "Nessuna richiesta in sospeso",
+      "loadFailed": "Impossibile caricare le richieste",
+      "loading": "Caricamento richieste in corso…",
+      "notes": "Note: {notes}",
+      "overrideReasonHelp": "Registrato con l'approvazione come deroga alle competenze.",
+      "pickupSummary": "{requester} desidera prendere in carico questo turno aperto",
+      "reason": "Motivo: {reason}",
+      "reject": "Rifiuta",
+      "rejected": "Richiesta rifiutata",
+      "rejectFailed": "Impossibile rifiutare la richiesta",
+      "rejectReason": "Motivo del rifiuto (facoltativo)",
+      "shiftWhen": "{date}, {start}–{end}",
+      "swapSummary": "{requester} desidera cedere questo turno a {target}",
+      "swapWithoutTarget": "{requester} desidera cedere questo turno, ma non ha indicato un collega",
+      "title": "Richieste di turno",
+      "type": {
+        "pickup": "Presa in carico",
+        "swap": "Scambio"
+      },
+      "unnamedEmployee": "Dipendente senza nome"
+    },
     "skills": {
       "certificateOnFile": "Certificato in archivio",
       "expiredCertifications": "Certificazioni scadute:",
@@ -125,13 +155,15 @@
       "missingPreferred": "Competenze preferenziali mancanti:",
       "missingPreferredCount": "{count} preferenze mancanti",
       "missingRequired": "Competenze richieste mancanti:",
+      "overrideReason": "Motivo della deroga alle competenze",
+      "overrideReasonNotice": "Puoi comunque assegnare questo turno specificando un motivo. Il motivo verrà registrato come deroga alle competenze.",
+      "overrideReasonRequired": "Fornisci un motivo per assegnare un dipendente privo di tutte le competenze richieste.",
       "preferred": "Preferenziale",
       "preferredSkillsMissing": "Competenze preferenziali mancanti",
       "requirementsNotMet": "Requisiti di competenza non soddisfatti",
       "unqualified": "Non qualificato",
       "validating": "Convalida competenze in corso…",
-      "validatingDescription": "Verifica delle qualifiche del dipendente",
-      "warningMessage": "È ancora possibile assegnare questo turno, ma verrà registrato come eccezione."
+      "validatingDescription": "Verifica delle qualifiche del dipendente"
     },
     "staffingSuggestions": {
       "empty": "Nessun dipendente disponibile per questo turno",

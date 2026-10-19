@@ -427,6 +427,7 @@
     "uploading": "Se încarcă...",
     "vacationAllowance": {
       "cappedAtFullAllowance": "plafonat la dreptul integral",
+      "convertedSummary": "{allowance} zile: {conversion}",
       "employmentMonths": "{months, plural, one {# lună întreagă de angajare} other {# luni întregi de angajare}}",
       "lastWorkingDay": "ultima zi lucrătoare {date}",
       "notEmployed": "{allowance} din {fullAllowance} zile: neangajat în {year}",
@@ -434,7 +435,10 @@
       "overdrawnHint": "Concediu efectuat peste dreptul cuvenit. Afișat doar în scop informativ: nu se deduce nimic.",
       "proratedSummary": "{allowance} din {fullAllowance} zile, calculat proporțional: {details}",
       "started": "început la {date}",
-      "statutoryMinimumApplies": "se aplică minimul legal"
+      "statutoryMinimumApplies": "se aplică minimul legal",
+      "workingDaysPerWeek": "{days, plural, one {# zi lucrătoare pe săptămână} few {# zile lucrătoare pe săptămână} other {# de zile lucrătoare pe săptămână}}",
+      "workingWeekConversion": "{reference} zile de referință convertite în {weeks}",
+      "workingWeekPeriod": "{week} de la {start} la {end}"
     },
     "validate": "Validează",
     "validationError": "Eroare de validare",
@@ -929,6 +933,7 @@
     },
     "page": {
       "context": "Înscrierea personală, recuperarea și selectarea organizației rămân disponibile în timp ce accesul la organizație necesită verificare.",
+      "description": "Verificați un autentificator pentru a vă păstra accesul la organizațiile dvs.",
       "title": "Verificare de securitate"
     },
     "passkey": {
@@ -1311,6 +1316,42 @@
         "message": "Descărcați datele dvs. cu caracter personal de la Datele mele înainte de {untilDate}. După această dată, doar un administrator le va mai putea exporta pentru dvs.",
         "title": "Descărcați datele dvs. cu caracter personal înainte de a pleca"
       },
+      "personnelFileDocumentRequestAccepted": {
+        "message": "Documentele dvs. pentru \"{title}\" au fost acceptate.",
+        "title": "Documente acceptate"
+      },
+      "personnelFileDocumentRequestCancelled": {
+        "message": "Cererea \"{title}\" a fost anulată: {reason}",
+        "messageWithoutReason": "Cererea \"{title}\" a fost anulată.",
+        "title": "Cerere de documente anulată"
+      },
+      "personnelFileDocumentRequestDueSoon": {
+        "message": "Vă rugăm să încărcați „{title}” până la {deadline}.",
+        "title": "Document scadent în curând"
+      },
+      "personnelFileDocumentRequestDueToday": {
+        "message": "Vă rugăm să încărcați „{title}” astăzi.",
+        "title": "Document scadent astăzi"
+      },
+      "personnelFileDocumentRequested": {
+        "message": "Vă rugăm să încărcați „{title}” până la {deadline}.",
+        "title": "Document solicitat"
+      },
+      "personnelFileDocumentRequestOverdue": {
+        "message": "Termenul pentru „{title}” a fost {deadline}. Vă rugăm să îl încărcați.",
+        "officerMessage": "{employee} nu a predat „{title}”, scadent la {deadline}.",
+        "officerTitle": "Document solicitat restant",
+        "title": "Document restant"
+      },
+      "personnelFileDocumentRequestReturned": {
+        "message": "Vă rugăm să încărcați din nou „{title}” până la {deadline}: {reason}",
+        "messageWithoutReason": "Vă rugăm să încărcați din nou „{title}” până la {deadline}.",
+        "title": "Documente returnate"
+      },
+      "personnelFileDocumentRequestSubmitted": {
+        "message": "{name} a trimis documente pentru „{title}”. Vă rugăm să le examinați.",
+        "title": "Documente trimise"
+      },
       "personnelFileDocumentShared": {
         "message": "Documentul „{title}” a fost partajat cu dvs.",
         "title": "Document nou în dosarul dvs. de personal"
@@ -1652,6 +1693,11 @@
         "personal_data_export_admin_exported": "Date cu caracter personal exportate de un administrator",
         "personal_data_export_ready": "Exportul datelor cu caracter personal este gata",
         "personal_data_export_reminder": "Descarcă-ți datele înainte de a pleca",
+        "personnel_file_document_request_decided": "Solicitare de document acceptată, returnată sau anulată",
+        "personnel_file_document_requested": "Document solicitat de la dvs.",
+        "personnel_file_document_request_overdue": "Solicitare de document restantă",
+        "personnel_file_document_request_reminder": "Document solicitat scadent în curând",
+        "personnel_file_document_request_submitted": "Documente solicitate trimise (responsabili dosar de personal)",
         "skill_expired_today": "Competența expiră astăzi",
         "skill_expiry_upcoming": "Competența expiră în curând",
         "work_balance_adjustment_cancelled": "Ajustare de sold anulată",
@@ -3066,7 +3112,10 @@
     "theme-toggle": "Comută tema"
   },
   "vacationBalance": {
-    "previouslyTaken": "Include {days} zile efectuate anterior înainte de monitorizare"
+    "conflictingPolicies": "Politici de concediu conflictuale",
+    "missingPolicy": "Politică de concediu lipsă",
+    "previouslyTaken": "Include {days} zile efectuate anterior înainte de monitorizare",
+    "zeroWorkingDays": "Program de lucru fără zile lucrătoare"
   },
   "validation": {
     "first-name-required": "Prenumele este obligatoriu",

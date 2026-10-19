@@ -427,6 +427,7 @@
     "uploading": "Po ngarkohet...",
     "vacationAllowance": {
       "cappedAtFullAllowance": "kufizuar në lejen e plotë",
+      "convertedSummary": "{allowance} ditë: {conversion}",
       "employmentMonths": "{months, plural, one {# muaj i plotë punësimi} other {# muaj të plotë punësimi}}",
       "lastWorkingDay": "dita e fundit e punës {date}",
       "notEmployed": "{allowance} nga {fullAllowance} ditë: pa marrëdhënie pune në {year}",
@@ -434,7 +435,10 @@
       "overdrawnHint": "Pushime të marra përtej lejes së caktuar. Shfaqet vetëm për informacion: asgjë nuk zbritet.",
       "proratedSummary": "{allowance} nga {fullAllowance} ditë, në proporcion: {details}",
       "started": "filloi më {date}",
-      "statutoryMinimumApplies": "zbatohet minimumi ligjor"
+      "statutoryMinimumApplies": "zbatohet minimumi ligjor",
+      "workingDaysPerWeek": "{days, plural, other {# ditë pune në javë} }",
+      "workingWeekConversion": "{reference} ditë referencë të konvertuara në {weeks}",
+      "workingWeekPeriod": "{week} nga {start} deri më {end}"
     },
     "validate": "Valido",
     "validationError": "Gabim vërtetimi",
@@ -929,6 +933,7 @@
     },
     "page": {
       "context": "Regjistrimi personal, rikuperimi dhe zgjedhja e organizatës mbeten të disponueshme ndërsa qasja në organizatë kërkon verifikim.",
+      "description": "Verifikoni një aplikacion autentifikimi për të ruajtur qasjen në organizatat tuaja.",
       "title": "Verifikimi i sigurisë"
     },
     "passkey": {
@@ -1311,6 +1316,42 @@
         "message": "Shkarkoni të dhënat tuaja personale te Të dhënat e mia para datës {untilDate}. Pas kësaj, vetëm një administrator mund t'i eksportojë ato për ju.",
         "title": "Shkarkoni të dhënat tuaja personale para se të largoheni"
       },
+      "personnelFileDocumentRequestAccepted": {
+        "message": "Dokumentet tuaja për \"{title}\" u pranuan.",
+        "title": "Dokumentet u pranuan"
+      },
+      "personnelFileDocumentRequestCancelled": {
+        "message": "Kërkesa \"{title}\" u anulua: {reason}",
+        "messageWithoutReason": "Kërkesa \"{title}\" u anulua.",
+        "title": "Kërkesa për dokumente u anulua"
+      },
+      "personnelFileDocumentRequestDueSoon": {
+        "message": "Ju lutemi ngarkoni \"{title}\" deri më {deadline}.",
+        "title": "Afati i dokumentit përfundon së shpejti"
+      },
+      "personnelFileDocumentRequestDueToday": {
+        "message": "Ju lutemi ngarkoni \"{title}\" sot.",
+        "title": "Afati i dokumentit përfundon sot"
+      },
+      "personnelFileDocumentRequested": {
+        "message": "Ju lutemi ngarkoni \"{title}\" deri më {deadline}.",
+        "title": "Dokumenti u kërkua"
+      },
+      "personnelFileDocumentRequestOverdue": {
+        "message": "Afati për \"{title}\" ishte më {deadline}. Ju lutemi ngarkojeni atë.",
+        "officerMessage": "{employee} nuk e ka dorëzuar \"{title}\", me afat më {deadline}.",
+        "officerTitle": "Dokumenti i kërkuar ka kaluar afatin",
+        "title": "Dokumenti ka kaluar afatin"
+      },
+      "personnelFileDocumentRequestReturned": {
+        "message": "Ju lutemi ngarkoni sërish \"{title}\" deri më {deadline}: {reason}",
+        "messageWithoutReason": "Ju lutemi ngarkoni sërish \"{title}\" deri më {deadline}.",
+        "title": "Dokumentet u kthyen"
+      },
+      "personnelFileDocumentRequestSubmitted": {
+        "message": "{name} dorëzoi dokumente për \"{title}\". Ju lutemi shqyrtojini ato.",
+        "title": "Dokumentet u dorëzuan"
+      },
       "personnelFileDocumentShared": {
         "message": "Dokumenti \"{title}\" u nda me ju.",
         "title": "Dokument i ri në dosjen tuaj të personelit"
@@ -1652,6 +1693,11 @@
         "personal_data_export_admin_exported": "Të dhënat personale u eksportuan nga një administrator",
         "personal_data_export_ready": "Eksportimi i të dhënave personale është gati",
         "personal_data_export_reminder": "Shkarkoni të dhënat tuaja para se të largoheni",
+        "personnel_file_document_request_decided": "Kërkesa për dokument u pranua, u kthye ose u anulua",
+        "personnel_file_document_requested": "Dokument i kërkuar nga ju",
+        "personnel_file_document_request_overdue": "Kërkesa për dokument ka kaluar afatin",
+        "personnel_file_document_request_reminder": "Afati i dokumentit të kërkuar përfundon së shpejti",
+        "personnel_file_document_request_submitted": "Dokumentet e kërkuara u dorëzuan (zyrtarët e dosjes së personelit)",
         "skill_expired_today": "Aftësia skadon sot",
         "skill_expiry_upcoming": "Aftësia skadon së shpejti",
         "work_balance_adjustment_cancelled": "Rregullimi i bilancit u anulua",
@@ -3066,7 +3112,10 @@
     "theme-toggle": "Ndrysho temën"
   },
   "vacationBalance": {
-    "previouslyTaken": "Përfshin {days} ditë të marra më parë përpara gjurmimit"
+    "conflictingPolicies": "Përplasje politikash për pushimet",
+    "missingPolicy": "Mungon politika e pushimeve",
+    "previouslyTaken": "Përfshin {days} ditë të marra më parë përpara gjurmimit",
+    "zeroWorkingDays": "Orar pune pa ditë pune"
   },
   "validation": {
     "first-name-required": "Emri është i detyrueshëm",

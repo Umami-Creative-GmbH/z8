@@ -1,5 +1,19 @@
 {
   "settings": {
+    "approvalTriage": {
+      "correctionError": "Angi et heltall fra 0 til 60 minutter.",
+      "correctionHelp": "Null deaktiverer hurtigsporet for små korreksjoner, inkludert endringer uten differanse. Ellers brukes 1–60 minutter; all påkrevd dokumentasjon må fortsatt verifiseres.",
+      "correctionLabel": "Grense for små korreksjoner (minutter)",
+      "description": "Angi når ventende forespørsler krever oppfølging, og hvilke små tidskorreksjoner som kan bruke hurtigsporet. Risikoregler og dokumentasjonskrav forblir faste.",
+      "save": "Lagre innstillinger for vurdering",
+      "saved": "Innstillinger for vurdering er lagret.",
+      "saveError": "Kunne ikke lagre innstillinger for vurdering. Prøv igjen.",
+      "staleError": "Angi et heltall fra 1 til 720 timer.",
+      "staleHelp": "Ventende forespørsler blir foreldet etter så mange forløpte timer (1–720). Helger og sommertidsendringer pauser ikke klokken.",
+      "staleLabel": "Foreldet etter (timer)",
+      "thresholds": "Prioriteringsterskler",
+      "title": "Godkjenningsprioritering"
+    },
     "assignedLocations": {
       "added": "Tildelt lokasjon lagt til",
       "employeeDescription": "Lokasjonene denne ansatte jobber ved. Kiosker godtar bare ansatte som er tildelt deres lokasjon.",
@@ -466,6 +480,7 @@
       },
       "historyEmpty": "Ingen måneder har blitt stengt ennå.",
       "historyTitle": "Historikk",
+      "locationNotFound": "Denne lokasjonen finnes ikke lenger.",
       "monthsDescription": "Ved å stenge en måned låses arbeid, tildeling og fravær for lønnskjøring. Notater kan fortsatt redigeres.",
       "monthsTitle": "Måneder",
       "nothingToClose": "Alle innenfor dette omfanget er allerede stengt for denne måneden.",
@@ -481,9 +496,14 @@
       "reopenTitle": "Gjenåpne {month}",
       "scope": {
         "all": "Alt",
+        "deletedLocation": "Slettet lokasjon",
         "deletedTeam": "Slettet team",
         "employees": "Valgte ansatte",
-        "organization": "Organisasjon"
+        "locationHelp": "Stenger hele måneden for alle som er tilknyttet denne lokasjonen nå, inkludert tidligere ansatte. Arbeidet deres på andre lokasjoner fryses også. Ansatte som tilknyttes senere, omfattes ikke.",
+        "locationNamed": "Lokasjon {name}",
+        "locations": "Lokasjoner",
+        "organization": "Organisasjon",
+        "teams": "Team"
       },
       "scopeLabel": "Lukk for",
       "teamNotFound": "Dette teamet eksisterer ikke lenger.",
@@ -1336,6 +1356,77 @@
       "title": "Implementeringssjekkliste"
     },
     "import": {
+      "csv": {
+        "acceptSelected": "Godkjenn valgte gyldige rader",
+        "applyMapping": "Bruk tilordning",
+        "chooseSource": "Velg en kildeverdi",
+        "chooseTarget": "Velg en eksisterende oppføring",
+        "commit": "Lagre godkjente rader",
+        "committing": "Importerer godkjente rader …",
+        "description": "Importer én fullført arbeidsperiode per rad. Vis pauser som mellomrom mellom rader. Ingenting registreres før du gjennomgår og godkjenner det.",
+        "download": "Last ned CSV-mal",
+        "duplicateSkipped": "Hoppet over duplikat",
+        "existingEmployee": "Eksisterende ansatt",
+        "existingVehicle": "Eksisterende kjøretøy",
+        "file": "CSV-fil",
+        "fileTimezone": "Tidssone for lokale tidsstempler",
+        "format": "Bruk UTF-8, kommaskilletegn og overskriftene fra malen. Maksimalt 500 KB og 1 000 rader. Kjøretøyskolonner er valgfrie; avlesninger og avstand bruker hele kilometer.",
+        "interval": "Hendelseslokal start og slutt",
+        "mappingHelp": "Tilordninger gjelder bare for denne bunken og beholder de opprinnelige kildeverdiene. Hvis du endrer en tilordning eller kontrollerer på nytt, tilbakestilles godkjenningen for rader som ikke er lagret.",
+        "mappingTitle": "Koble kildeverdier til eksisterende oppføringer",
+        "mappingType": "Tilordningstype",
+        "offsetsOnly": "kun eksplisitte forskyvninger",
+        "organizationVehicle": "Organisasjonskjøretøy",
+        "outcome": "Status og problemer",
+        "ownVehicle": "Eget kjøretøy",
+        "pages": "CSV-gjennomgangssider",
+        "partialHelp": "Godkjente gyldige rader kan importeres mens andre rader forblir uløste. Rett opp feilformaterte tidsstempler eller tall i CSV-filen og last opp på nytt; arbeid som allerede er importert, blir hoppet over.",
+        "person": "Ansatt",
+        "preparing": "Klargjør forhåndsvisning …",
+        "preview": "Forhåndsvis CSV",
+        "readFailed": "Den valgte filen kunne ikke leses",
+        "recheck": "Kontroller uløste rader på nytt",
+        "rejectSelected": "Avvis valgte rader",
+        "reviewTitle": "Gjennomgå fullført arbeid fra CSV",
+        "row": "CSV-rad",
+        "scanning": "Klargjør gjennomgangen …",
+        "selectPage": "Velg alle rader på denne siden",
+        "selectRow": "Velg CSV-rad",
+        "sourcePlate": "Kilderegistreringsnummer",
+        "sourceValue": "Kildeverdi",
+        "status": {
+          "accepted": "Godkjent",
+          "blocked": "Krever oppmerksomhet",
+          "commit_failed": "Krever oppfølging",
+          "committed": "Importert",
+          "committing": "Importerer",
+          "needs_mapping": "Krever oppfølging",
+          "rejected": "Avvist",
+          "staged": "Venter på gjennomgang"
+        },
+        "summary": {
+          "accepted": "Godkjent",
+          "imported": "Importert",
+          "rejected": "Avvist",
+          "skipped": "Hoppet over duplikater",
+          "total": "Totalt antall rader",
+          "unresolved": "Uavklart"
+        },
+        "tab": "CSV-arbeid",
+        "timezone": "Tidssone for lokale tidsstempler",
+        "timezoneHelp": "Påkrevd for tidsstempler uten tidsavvik. Eksplisitte avvik som +02:00 har forrang. Nettleserens tidssone brukes aldri implisitt.",
+        "title": "CSV fullført arbeid",
+        "tooLarge": "CSV-filer kan ikke være større enn 500 kB",
+        "vehicle": "Kjøretøybruk",
+        "warning": {
+          "distance_above_limit": "Avstanden er over 1 500 km",
+          "driving_details_missing": "Kjøredetaljer mangler",
+          "duplicate_will_skip": "Identisk arbeid vil bli hoppet over",
+          "speed_above_limit": "Beregnet gjennomsnittshastighet er over 150 km/t",
+          "start_below_last_end": "Startavlesning er lavere enn siste registrerte sluttavlesning",
+          "vehicle_on_other_live_work": "Kjøretøyet er i bruk på en annen ansatts pågående arbeid"
+        }
+      },
       "description": "Importer data fra støttede leverandører som Clockodo og Clockin.",
       "review": {
         "billability": {
@@ -1437,7 +1528,20 @@
         },
         "title": "Importgjennomgang"
       },
+      "supportedSources": "Importer arbeid fra CSV-filer eller koble til støttede leverandører som Clockodo og Clockin.",
       "title": "Importer data"
+    },
+    "kioskBadge": {
+      "errors": {
+        "badgeChanged": "Noen andre endret dette kioskkortet i mellomtiden. Sjekk statusen og prøv igjen.",
+        "badgeExists": "Denne ansatte har allerede et kioskkort. Erstatt det i stedet.",
+        "employeeInactive": "Bare aktive ansatte kan få et kioskkort.",
+        "employeeNotFound": "Fant ikke denne ansatte.",
+        "failed": "Noe gikk galt. Vennligst prøv igjen.",
+        "noBadge": "Denne ansatte har ikke noe kioskkort.",
+        "notAllowed": "Du har ikke tillatelse til å gjøre dette.",
+        "signInRequired": "Logg inn for å fortsette."
+      }
     },
     "kioskPin": {
       "errors": {
@@ -1460,6 +1564,8 @@
     },
     "kiosks": {
       "add": "Legg til kiosk",
+      "badgeCameraOn": "Kortkamera på",
+      "badgeScannerOn": "Kortskanner på",
       "boardOn": "Hvem er inne-tavle på",
       "columns": {
         "actions": "Handlinger",
@@ -1489,6 +1595,10 @@
         "offlineNeedsAdoption": "Frakoblet modus krever koordinerte stemplingskommandoer, som denne organisasjonen ikke bruker ennå."
       },
       "fields": {
+        "badgeCamera": "Kortkamera",
+        "badgeCameraDescription": "Ansatte trykker på «Skann kort» og holder kioskkortet sitt opp mot kameraet på denne kiosken i stedet for å taste PIN-kode. Koden leses på enheten; ingen bilder lastes opp eller lagres. Nettleseren ber om kameratilgang én gang. Stempling med kort krever tilkobling; navn og PIN fortsetter å fungere.",
+        "badgeScanner": "Kortskanner",
+        "badgeScannerDescription": "Ansatte skanner kioskkortet sitt med en QR-skanner koblet til denne kiosken i stedet for å taste PIN-kode. Stempling med kort krever tilkobling; navn og PIN fortsetter å fungere.",
         "board": "Hvem er på jobb-tavle",
         "boardDescription": "Viser på kiosken hvem som er på jobb eller har pause, med fornavn og forbokstav i etternavnet.",
         "location": "Lokasjon",

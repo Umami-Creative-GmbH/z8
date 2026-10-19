@@ -17,8 +17,33 @@
       "noCustomer": "Samo rad na projektu s klijentom može biti naplativ"
     },
     "breakInProgress": {
+      "connectionRequired": "Za početak ili nastavak pauze potrebna je veza.",
       "description": "Na pauzi ste",
-      "since": "Na pauzi od {time}"
+      "endDay": "Završi dan",
+      "errors": {
+        "alreadyOnBreak": "Već ste na pauzi.",
+        "breakChanged": "Vaša se pauza promijenila na drugom uređaju. Vaš sat sada prikazuje trenutno stanje.",
+        "collision": "Ova je pauza u sukobu s ranijim zahtjevom. Osvježite i pokušajte ponovno.",
+        "refreshed": "Vaš se sat promijenio. Sada prikazuje trenutno stanje.",
+        "resumeNotAllowed": "Ne možete nastaviti ovu pauzu.",
+        "resumeRetry": "Nastavak rada nije uspio. Pokušajte ponovno.",
+        "resumeUnconfirmed": "Nastavak se nije mogao potvrditi. Provjerite svoj sat prije ponovnog pokušaja.",
+        "startNotAllowed": "Ne možete započeti pauzu.",
+        "startRetry": "Početak pauze nije uspio. Pokušajte ponovno.",
+        "tooEarly": "Pauza može započeti tek nakon što započnete s radom.",
+        "unconfirmed": "Vaša se pauza nije mogla potvrditi. Provjerite svoj sat prije ponovnog pokušaja.",
+        "workChanged": "Vaš se sat promijenio na drugom uređaju. Sada prikazuje trenutno stanje."
+      },
+      "pendingClockActions": "Spremljene radnje sata još se šalju. Pokušajte ponovno nakon što se sinkroniziraju.",
+      "resume": "Nastavi",
+      "resumed": "Rad je nastavljen",
+      "since": "Na pauzi od {time}",
+      "start": "Započni pauzu",
+      "started": "Pauza je započela",
+      "startedDescription": "Nastavite kada se vratite ili završite svoj dan.",
+      "trigger": "Na pauzi",
+      "uncertain": "Vaša se pauza nije mogla potvrditi",
+      "uncertainDescription": "Vaš je sat osvježen. Provjerite ga prije ponovnog pokušaja."
     },
     "budget": "Proračun",
     "clockedOutSuccess": "Odjavili ste se!",
@@ -147,9 +172,41 @@
         "resume": "Nastavi s radom",
         "startBreak": "Započni pauzu"
       },
+      "attribution": {
+        "back": "Natrag",
+        "keep": "Zadrži {name}",
+        "noProject": "Nema projekta",
+        "noWorkCategory": "Nema kategorije rada",
+        "project": "Projekt",
+        "title": "Na čemu ste radili?",
+        "workCategory": "Kategorija rada"
+      },
+      "badge": {
+        "checking": "Provjera vaše kartice…",
+        "failed": "Kartica se nije mogla provjeriti. Ništa nije zabilježeno. Ponovno je skenirajte ili dodirnite svoje ime za upotrebu PIN-a.",
+        "inputDisabled": "Skeniranje kartica isključeno je na ovom kiosku. Dodirnite svoje ime za upotrebu PIN-a.",
+        "notAccepted": "Ova kartica nije prihvaćena na ovom kiosku. Ništa nije zabilježeno. Dodirnite svoje ime za upotrebu PIN-a ili se obratite voditelju.",
+        "notRecorded": "Vaša radnja nije zabilježena. Ponovno skenirajte svoju karticu kako biste je ponovno odabrali.",
+        "offline": "Za registraciju karticom potrebna je veza. Ništa nije zabilježeno.",
+        "offlinePin": "Za registraciju karticom potrebna je veza. Ništa nije zabilježeno. Dodirnite svoje ime za registraciju PIN-om.",
+        "rateLimited": "Previše skeniranja kartice na ovom kiosku. Pokušajte ponovno za {seconds} sekundi ili dodirnite svoje ime za upotrebu PIN-a.",
+        "unreadable": "Ovaj kod nije kartica za kiosk. Ništa nije zabilježeno. Skenirajte svoju karticu za kiosk ili dodirnite svoje ime za upotrebu PIN-a."
+      },
       "board": {
         "empty": "Nitko trenutno nije prijavljen.",
         "title": "Tko je prisutan"
+      },
+      "camera": {
+        "cancel": "Otkaži skeniranje",
+        "denied": "Kiosk ne smije koristiti kameru. Dopustite pristup kameri za ovu stranicu u pregledniku ili dodirnite svoje ime da biste upotrijebili PIN.",
+        "failed": "Nije moguće pokrenuti kameru. Pokušajte ponovno ili dodirnite svoje ime da biste upotrijebili PIN.",
+        "hint": "Držite QR kôd unutar okvira. Kôd se očitava na ovom kiosku; slika se ne sprema.",
+        "missing": "Ovaj kiosk nema kameru koja može skenirati. Dodirnite svoje ime da biste upotrijebili PIN.",
+        "notBadge": "Ovaj kôd nije iskaznica za kiosk. Pokažite svoju iskaznicu za kiosk ili otkažite i dodirnite svoje ime da biste upotrijebili PIN.",
+        "preview": "Pretpregled kamere",
+        "starting": "Pokretanje kamere…",
+        "title": "Pokažite iskaznicu za kiosk kameri",
+        "unsupported": "Ovaj preglednik ne može skenirati iskaznice kamerom. Dodirnite svoje ime da biste upotrijebili PIN."
       },
       "done": {
         "button": "Gotovo",
@@ -174,6 +231,8 @@
         "loadFailed": "Imena se nisu mogla učitati. Provjerite mrežnu vezu.",
         "loading": "Učitavanje imena…",
         "noMatch": "Nijedno ime ne odgovara vašem pretraživanju.",
+        "scanBadge": "Skenirajte iskaznicu",
+        "scanHint": "Ili skenirajte svoju iskaznicu za kiosk na skeneru.",
         "search": "Pronađite svoje ime",
         "title": "Dodirnite svoje ime za prijavu ili odjavu"
       },
@@ -226,15 +285,19 @@
       },
       "refusal": {
         "alreadyClockedIn": "Već ste prijavljeni.",
+        "attemptClosed": "Ova radnja nije zabilježena. Odaberite je ponovno ako to i dalje želite.",
         "billing": "Prijava i odjava trenutno nisu dostupne za vašu organizaciju. Obratite se administratoru.",
         "generic": "To nije uspjelo. Ništa nije zabilježeno. Pokušajte ponovno ili se obratite svom voditelju.",
         "holiday": "Prijava i odjava danas su blokirane zbog praznika. Obratite se svom voditelju.",
         "monthClosed": "Ovo vrijeme je u zatvorenom mjesecu i ne može se mijenjati. Obratite se svom voditelju.",
         "noBreak": "Niste na pauzi.",
         "notClockedIn": "Niste prijavljeni.",
+        "notRecorded": "Vaša radnja nije zabilježena. Unesite PIN da biste je ponovno odabrali.",
         "onBreak": "Već ste na pauzi.",
+        "projectNotAllowed": "Za ovaj projekt više nije moguće evidentirati rad. Ništa nije zabilježeno. Odaberite drugi ili zadržite trenutačni i pokušajte ponovno.",
         "unconfirmed": "Kiosk nije mogao potvrditi je li ovo spremljeno. Provjerite svoj status prije ponovnog pokušaja.",
-        "underReview": "Vaše radno vrijeme za danas je na pregledu. Obratite se svom voditelju."
+        "underReview": "Vaše radno vrijeme za danas je na pregledu. Obratite se svom voditelju.",
+        "workCategoryNotAllowed": "Za ovu kategoriju rada više nije moguće evidentirati rad. Ništa nije zabilježeno. Odaberite drugu ili zadržite trenutačnu i pokušajte ponovno."
       },
       "retry": "Pokušajte ponovno",
       "revoked": {
@@ -246,6 +309,14 @@
         "clockedIn": "Prijavljeni od {time}",
         "clockedOut": "Niste prijavljeni",
         "onBreak": "Na pauzi od {time}"
+      },
+      "uncertain": {
+        "action": "{name}: {action}",
+        "back": "Natrag",
+        "conflict": "Ovu radnju nije bilo moguće provjeriti na ovom kiosku. Provjerite svoj status s voditeljem prije ponovnog evidentiranja radnog vremena.",
+        "title": "Provjera je li vaša radnja zabilježena",
+        "unavailable": "Z8 trenutačno nije dostupan. Kiosk nastavlja provjeravati.",
+        "wait": "Nemojte ponovno evidentirati radno vrijeme. Kiosk nastavlja provjeravati i prikazat će vam rezultat čim Z8 odgovori, čak i ako se vratite kasnije."
       },
       "unreachableDescription": "Kiosk ne može uspostaviti vezu s poslužiteljem. Provjerite mrežnu vezu; evidencija radnog vremena radi samo na mreži.",
       "unreachableTitle": "Kiosk je izvan mreže",
@@ -336,18 +407,42 @@
     "periodSubmissions": {
       "blocker": {
         "absenceRequest": "Zahtjev za odsutnost za {dates} još nije riješen.",
+        "absenceRequestAction": "O ovoj odsutnosti odlučuje odobravatelj. Dok je na čekanju, možete je otkazati u odjeljku Moji zahtjevi.",
         "liveWork": "Rad započet {start} još traje.",
+        "liveWorkAction": "Odjavite se kada ovaj rad završi.",
         "manualWork": "Ručni unos rada za {start} još nije riješen.",
-        "timeCorrection": "Ispravak radnog vremena za rad {start} još nije riješen."
+        "manualWorkAction": "O ovom radu odlučuje odobravatelj. Ne morate ništa poduzimati.",
+        "openClock": "Idi na evidenciju radnog vremena",
+        "openRequest": "Otvori zahtjev",
+        "openTimeline": "Prikaži na vremenskoj traci",
+        "timeCorrection": "Ispravak radnog vremena za rad {start} još nije riješen.",
+        "timeCorrectionAction": "O ovom ispravku odlučuje odobravatelj. Dok je na čekanju, možete ga otkazati u odjeljku Moji zahtjevi.",
+        "timeCorrectionWaitAction": "O ovom ispravku odlučuje odobravatelj. Možete samo pričekati odluku."
       },
       "description": "Potvrdite da su vaš rad i odsutnosti za svako razdoblje potpuni i točni.",
-      "opensOn": "Možete predati od {date}.",
+      "focus": {
+        "notShown": "Ovaj se rad ne može prikazati ovdje. Spremnost razdoblja ponovno je provjerena.",
+        "resolved": "Zbog ovog rada razdoblje više nije otvoreno. Spremnost razdoblja ponovno je provjerena."
+      },
+      "readiness": {
+        "checking": "Provjera je li ovo razdoblje spremno…",
+        "hideDetails": "Sakrij pojedinosti",
+        "notReady": "Slanje je dostupno kada ovo razdoblje bude spremno.",
+        "openItems": "{count, plural, one {# stavka drži ovo razdoblje otvorenim.} few {# stavke drže ovo razdoblje otvorenim.} other {# stavki drži ovo razdoblje otvorenim.}}",
+        "opensOn": "Slanje započinje {date}.",
+        "ready": "Spremno za slanje",
+        "retry": "Pokušaj ponovno",
+        "showDetails": "Prikaži pojedinosti",
+        "submitUnavailable": "Slanje nije dostupno dok se ne provjeri spremnost.",
+        "unavailable": "Spremnost za slanje trenutačno nije dostupna, stoga je slanje onemogućeno."
+      },
       "refusal": {
         "alreadySubmitted": "Ovo je razdoblje već predano.",
         "noApprover": "Nitko još ne može odobriti ovo razdoblje. Zatražite od administratora da vam dodijeli voditelja.",
         "notEnded": "Ovo razdoblje možete predati od njegova posljednjeg dana pa nadalje.",
         "notExpected": "Ovo razdoblje nije potrebno predati.",
-        "periodOpen": "Ovo je razdoblje još otvoreno"
+        "periodOpen": "Ovo je razdoblje još otvoreno",
+        "writeGateClosed": "Slanje razdoblja trenutačno je pauzirano u vašoj organizaciji. Pokušajte ponovno kasnije ili se obratite administratoru."
       },
       "rejectionReason": "Razlog: {reason}",
       "status": {

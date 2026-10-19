@@ -165,11 +165,13 @@
         "selectWorkCategory": "Odaberite kategoriju rada",
         "sourceType": "Vrsta izvora",
         "specialCategory": "Posebna kategorija",
+        "subtitle": "Povežite svoje kategorije rada i vrste odsutnosti sa šiframa vrsta plaća za obračun plaća",
         "table": {
           "category": "Kategorija",
           "datev": "DATEV",
           "lexware": "Lexware",
           "sage": "Sage",
+          "successFactors": "SAP SuccessFactors",
           "type": "Vrsta"
         },
         "title": "Mapiranja vrsta plaće",
@@ -238,9 +240,7 @@
         "title": "Sage Payroll"
       },
       "specialCategory": {
-        "holidayCompensation": "Naknada za godišnji odmor",
-        "overtime": "Prekovremeni rad",
-        "overtimeReduction": "Smanjenje prekovremenih sati"
+        "overtime": "Prekovremeni rad"
       },
       "successfactors": {
         "batchSize": "Veličina paketa",

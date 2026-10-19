@@ -1,5 +1,19 @@
 {
   "settings": {
+    "approvalTriage": {
+      "correctionError": "Geben Sie eine ganze Zahl von 0 bis 60 Minuten ein.",
+      "correctionHelp": "Null deaktiviert die Fast Lane für Kleinkorrekturen einschliesslich Null-Delta-Bearbeitungen. Verwenden Sie andernfalls 1–60 Minuten; alle erforderlichen Nachweise müssen weiterhin überprüft werden.",
+      "correctionLabel": "Grenzwert für Kleinkorrekturen (Minuten)",
+      "description": "Legen Sie fest, wann ausstehende Anfragen Aufmerksamkeit erfordern und welche kleinen Zeitkorrekturen die Fast Lane nutzen dürfen. Risikoregeln und Nachweisanforderungen bleiben unverändert.",
+      "save": "Triage-Einstellungen speichern",
+      "saved": "Triage-Einstellungen gespeichert.",
+      "saveError": "Triage-Einstellungen konnten nicht gespeichert werden. Bitte versuchen Sie es erneut.",
+      "staleError": "Gib e ganzi Zahl vo 1 bis 720 Stund ii.",
+      "staleHelp": "Pendanti Aafraage wärded nach so viele abglaufene Stund (1–720) ungültig. Wuchenend und Summerzitaapassige halted d'Uhr nöd aa.",
+      "staleLabel": "Ungültig nach (Stund)",
+      "thresholds": "Triage-Schwellenwert",
+      "title": "Freigaab-Triage"
+    },
     "assignedLocations": {
       "added": "Zuegwisene Standort hinzuegfüegt",
       "employeeDescription": "D Standört, wo de Mitarbeiter schafft. Kiosks akzeptiered nur Mitarbeiter, wo ihrem Standort zuegwise sind.",
@@ -466,6 +480,7 @@
       },
       "historyEmpty": "Es isch no kein Monet abgschlosse worde.",
       "historyTitle": "Verlauf",
+      "locationNotFound": "Dä Standort git's nümme.",
       "monthsDescription": "En Monet abzschliesse friert d Arbet, d Zueordnig und d Absänze für d Lohnabrechnig ii. Notize bliibed bearbeitbar.",
       "monthsTitle": "Monet",
       "nothingToClose": "Alli i däm Bereich sind für dä Monet scho abgschlosse.",
@@ -481,9 +496,14 @@
       "reopenTitle": "{month} widereröffne",
       "scope": {
         "all": "Alles",
+        "deletedLocation": "Glöschte Standort",
         "deletedTeam": "Glöschts Team",
         "employees": "Uswählti Mitarbeiter",
-        "organization": "Organisation"
+        "locationHelp": "Schlüsst de ganz Monet für alli ab, wo däm Standort jetz zuegwise sind, inklusive ehemoligi Mitarbeiter. Ihri Arbet a andere Standort wird au igfrore. Mitarbeiter, wo spöter zuegwise wärded, sind nöd debii.",
+        "locationNamed": "Standort {name}",
+        "locations": "Standort",
+        "organization": "Organisation",
+        "teams": "Teams"
       },
       "scopeLabel": "Schlüsse für",
       "teamNotFound": "Das Team git's nüme.",
@@ -1336,6 +1356,77 @@
       "title": "Implementierungs-Checkliste"
     },
     "import": {
+      "csv": {
+        "acceptSelected": "Uusgwählti gültigi Zile akzeptiere",
+        "applyMapping": "Zueordnig aawände",
+        "chooseSource": "Wähl en Quellwert uus",
+        "chooseTarget": "Wähl en bestehende Datensatz uus",
+        "commit": "Akzeptierti Zile übernäh",
+        "committing": "Akzeptierti Zile wärded importiert…",
+        "description": "Importier pro Zile ei abgschlosseni Arbetsperiode. Pausene chasch als Luggene zwüsche de Zile aagee. Es wird nüt gspicheret, bis du's überprüeft und akzeptiert häsch.",
+        "download": "CSV-Vorlage abelade",
+        "duplicateSkipped": "Übersprungnigs Duplikat",
+        "existingEmployee": "Bestehende Mitarbeiter",
+        "existingVehicle": "Bestehends Fahrzeug",
+        "file": "CSV-Datei",
+        "fileTimezone": "Zitzone für lokali Zitstempel",
+        "format": "Verwänd UTF-8, Kommatrennzeichä und d'Chopfzile vo de Vorlag. Maximal 500 KB und 1'000 Zile. Fahrzeug-Spalte sind optional; Zählerständ und Distanze bruched ganzi Kilometer.",
+        "interval": "Ereignis-lokale Start und Endi",
+        "mappingHelp": "Zueordnige gelted nume für dä Batch und bhalted d'Originalquellwert bii. S'Ändere vonere Zueordnig oder s'Neuüberprüefe setzt d'Akzeptanz bi nöd übernohne Zile zrugg.",
+        "mappingTitle": "Quellwert zu bestehende Datensätz zueordne",
+        "mappingType": "Zueordnigstyp",
+        "offsetsOnly": "nume expliziti Offsets",
+        "organizationVehicle": "Organisationsfahrzeug",
+        "outcome": "Status und Problem",
+        "ownVehicle": "Eignigs Fahrzeug",
+        "pages": "CSV-Überprüefigssite",
+        "partialHelp": "Akzeptierti gültigi Zile chönd importiert wärde, während anderi Zile unglöst bliibid. Korrigier fählerhafti Zitstempel oder Zahle im CSV und lad's nomol ue; bereits importierti Arbet wird übersprunge.",
+        "person": "Mitarbeiter",
+        "preparing": "Vorschau wird vorbereitet…",
+        "preview": "CSV-Vorschau",
+        "readFailed": "D'uusgwählti Datei hät nöd chönne gläse wärde",
+        "recheck": "Unglösti Zile nomol überprüefe",
+        "rejectSelected": "Uusgwählti Zile ablehne",
+        "reviewTitle": "Abgschlosseni Arbet im CSV überprüefe",
+        "row": "CSV-Zile",
+        "scanning": "Überprüefig wird vorbereitet…",
+        "selectPage": "Alli Zile uf dere Site uswähle",
+        "selectRow": "CSV-Zile uswähle",
+        "sourcePlate": "Quell-Kontrollschild",
+        "sourceValue": "Quellwert",
+        "status": {
+          "accepted": "Akzeptiert",
+          "blocked": "Brucht Ufmerksamkeit",
+          "commit_failed": "Bruucht Ufmerksamkeit",
+          "committed": "Importiert",
+          "committing": "Wird importiert",
+          "needs_mapping": "Bruucht Ufmerksamkeit",
+          "rejected": "Abglehnt",
+          "staged": "Wartet uf Überprüefig"
+        },
+        "summary": {
+          "accepted": "Akzeptiert",
+          "imported": "Importiert",
+          "rejected": "Abglehnt",
+          "skipped": "Übersprungnigi Duplikat",
+          "total": "Zyle total",
+          "unresolved": "Ungglöst"
+        },
+        "tab": "CSV-Arbet",
+        "timezone": "Zitzone für lokali Zitstempel",
+        "timezoneHelp": "Erforderlich für Zitstempel ohni Offset. Expliziti Offsets wie +02:00 händ Vorrang. D Zitzone vo dim Browser wird nie implizit verwändet.",
+        "title": "CSV abgschlosseni Arbet",
+        "tooLarge": "CSV-Dateie dörfed höchstens 500 KB gross si",
+        "vehicle": "Fahrzüüg-Nutzig",
+        "warning": {
+          "distance_above_limit": "Distanz isch über 1'500 km",
+          "driving_details_missing": "Fahrtdetails fähled",
+          "duplicate_will_skip": "Identischi Arbet wird übersprunge",
+          "speed_above_limit": "Berechneti Durchschnittsgschwindigkeit isch über 150 km/h",
+          "start_below_last_end": "Afangs-Zählerstand isch under em letscht erfasste Endstand",
+          "vehicle_on_other_live_work": "Fahrzüüg wird grad vonere andere Person bruucht"
+        }
+      },
       "description": "Daten von unterstützten Anbietern wie Clockodo und Clockin importieren.",
       "review": {
         "billability": {
@@ -1437,7 +1528,20 @@
         },
         "title": "Import-Überprüfung"
       },
+      "supportedSources": "Importier Arbet us CSV-Dateie oder verbind unterstützti Abüter wie Clockodo und Clockin.",
       "title": "Daten importieren"
+    },
+    "kioskBadge": {
+      "errors": {
+        "badgeChanged": "Öpper anders hät dä Kiosk-Badge i de Zwüschezit gänderet. Überprüef de Status und probier's nomol.",
+        "badgeExists": "Die Person hät scho en Kiosk-Badge. Ersetz en stattdesse.",
+        "employeeInactive": "Nur aktivi Mitarbeiter chönd en Kiosk-Badge übercho.",
+        "employeeNotFound": "Die Person isch nöd gfunde worde.",
+        "failed": "Öppis isch schiefglaufe. Bitte probier's nomol.",
+        "noBadge": "Die Person hät kein Kiosk-Badge.",
+        "notAllowed": "Du dörfsch das nöd mache.",
+        "signInRequired": "Mäld di a, zum witermache."
+      }
     },
     "kioskPin": {
       "errors": {
@@ -1460,6 +1564,8 @@
     },
     "kiosks": {
       "add": "Kiosk hinzuefüege",
+      "badgeCameraOn": "Badge-Kamera a",
+      "badgeScannerOn": "Badge-Scanner a",
       "boardOn": "«Wer isch da»-Board aa",
       "columns": {
         "actions": "Aktione",
@@ -1489,6 +1595,10 @@
         "offlineNeedsAdoption": "De Offline-Modus brucht koordinierti Stämpel-Befehl, wo die Organisation no nöd brucht."
       },
       "fields": {
+        "badgeCamera": "Badge-Kamera",
+        "badgeCameraDescription": "Mitarbeiter tipped uf «Badge scanne» und hebed ihre Kiosk-Badge vor d Kamera vo dem Kiosk, statt ihre PIN izgeh. De Code wird uf em Grät gläse; es wird keis Bild ufeghlade oder gspeicheret. De Browser frogt eimol noch em Kamerazuegriff. Badge-Stämple bruucht e Verbindig; Name und PIN funktioniered witerhin.",
+        "badgeScanner": "Badge-Scanner",
+        "badgeScannerDescription": "Mitarbeiter scannet ihre Kiosk-Badge mit eme QR-Scanner a dem Kiosk, statt ihre PIN izgeh. Badge-Stämple bruucht e Verbindig; Name und PIN funktioniered witerhin.",
         "board": "«Wer isch da»-Board",
         "boardDescription": "Zeigt uf em Kiosk mit Vorname und em erste Buechstabe vom Nachname aa, wer da isch oder Pause macht.",
         "location": "Standort",

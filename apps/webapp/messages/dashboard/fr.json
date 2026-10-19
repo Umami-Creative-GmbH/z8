@@ -172,7 +172,6 @@
       "label-available": "Disponible",
       "label-pending": "En attente",
       "label-used": "Utilisé",
-      "no-policy": "Aucune politique de vacances configurée pour cette année",
       "pending": "{days} en attente",
       "percent-used": "{percent}% utilisé",
       "title": "Solde de vacances",

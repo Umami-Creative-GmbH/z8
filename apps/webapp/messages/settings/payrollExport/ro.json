@@ -165,11 +165,13 @@
         "selectWorkCategory": "Selectați categoria de lucru",
         "sourceType": "Tip sursă",
         "specialCategory": "Categorie specială",
+        "subtitle": "Asociați categoriile de activități și tipurile de absențe cu codurile tipurilor de remunerație din statul de plată",
         "table": {
           "category": "Categorie",
           "datev": "DATEV",
           "lexware": "Lexware",
           "sage": "Sage",
+          "successFactors": "SAP SuccessFactors",
           "type": "Tip"
         },
         "title": "Mapări ale tipurilor de salarii",
@@ -238,9 +240,7 @@
         "title": "Sage Payroll"
       },
       "specialCategory": {
-        "holidayCompensation": "Compensație pentru concediu",
-        "overtime": "Ore suplimentare",
-        "overtimeReduction": "Reducere ore suplimentare"
+        "overtime": "Ore suplimentare"
       },
       "successfactors": {
         "batchSize": "Dimensiune lot",

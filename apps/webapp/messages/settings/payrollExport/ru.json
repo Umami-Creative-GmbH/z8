@@ -165,11 +165,13 @@
         "selectWorkCategory": "Выберите категорию работы",
         "sourceType": "Тип источника",
         "specialCategory": "Специальная категория",
+        "subtitle": "Сопоставьте категории работ и типы отсутствия с кодами видов оплаты для расчета заработной платы",
         "table": {
           "category": "Категория",
           "datev": "DATEV",
           "lexware": "Lexware",
           "sage": "Sage",
+          "successFactors": "SAP SuccessFactors",
           "type": "Тип"
         },
         "title": "Сопоставления видов оплаты",
@@ -238,9 +240,7 @@
         "title": "Sage Payroll"
       },
       "specialCategory": {
-        "holidayCompensation": "Компенсация за праздничные дни",
-        "overtime": "Сверхурочные",
-        "overtimeReduction": "Списание сверхурочных"
+        "overtime": "Сверхурочные"
       },
       "successfactors": {
         "batchSize": "Размер пакета",

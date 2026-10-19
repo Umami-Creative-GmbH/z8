@@ -68,6 +68,7 @@
         "failed": "Falha ao atualizar turno",
         "overlapDescription": "Este turno se sobrepõe a {count} outro(s) turno(s)",
         "overlapWarning": "Turno salvo com aviso de sobreposição",
+        "skillOverrideReasonRequired": "O funcionário não possui uma habilidade necessária neste dia. Abra o turno para informar um motivo.",
         "updated": "Turno atualizado"
       }
     },
@@ -118,6 +119,35 @@
       "updated": "Turno atualizado",
       "updateShift": "Atualizar turno"
     },
+    "shiftRequests": {
+      "approve": "Aprovar",
+      "approved": "Solicitação aprovada",
+      "approveFailed": "Falha ao aprovar a solicitação",
+      "button": "Solicitações de turno",
+      "confirmApprove": "Confirmar aprovação",
+      "confirmReject": "Confirmar rejeição",
+      "description": "Aprovar ou rejeitar solicitações pendentes de assunção e troca",
+      "empty": "Nenhuma solicitação pendente",
+      "loadFailed": "Falha ao carregar as solicitações",
+      "loading": "Carregando solicitações…",
+      "notes": "Observações: {notes}",
+      "overrideReasonHelp": "Registrado com a aprovação como uma substituição de habilidade.",
+      "pickupSummary": "{requester} deseja assumir este turno aberto",
+      "reason": "Motivo: {reason}",
+      "reject": "Rejeitar",
+      "rejected": "Solicitação rejeitada",
+      "rejectFailed": "Falha ao rejeitar a solicitação",
+      "rejectReason": "Motivo da rejeição (opcional)",
+      "shiftWhen": "{date}, {start}–{end}",
+      "swapSummary": "{requester} deseja passar este turno para {target}",
+      "swapWithoutTarget": "{requester} deseja passar este turno adiante, mas não indicou um colega",
+      "title": "Solicitações de turno",
+      "type": {
+        "pickup": "Assunção",
+        "swap": "Troca"
+      },
+      "unnamedEmployee": "Funcionário sem nome"
+    },
     "skills": {
       "certificateOnFile": "Certificado em arquivo",
       "expiredCertifications": "Certificações Expiradas:",
@@ -125,13 +155,15 @@
       "missingPreferred": "Habilidades Preferenciais Ausentes:",
       "missingPreferredCount": "{count} preferenciais ausentes",
       "missingRequired": "Habilidades Obrigatórias Ausentes:",
+      "overrideReason": "Motivo da substituição de habilidade",
+      "overrideReasonNotice": "Você ainda pode atribuir este turno com uma justificativa. O motivo será registrado como uma substituição de habilidade.",
+      "overrideReasonRequired": "Informe um motivo para atribuir um funcionário que não possui todas as habilidades necessárias.",
       "preferred": "Preferencial",
       "preferredSkillsMissing": "Habilidades Preferenciais Ausentes",
       "requirementsNotMet": "Requisitos de Habilidade Não Atendidos",
       "unqualified": "Não qualificado",
       "validating": "Validando habilidades…",
-      "validatingDescription": "Verificando qualificações do funcionário",
-      "warningMessage": "Você ainda pode atribuir este turno, mas ele será registrado como uma substituição."
+      "validatingDescription": "Verificando qualificações do funcionário"
     },
     "staffingSuggestions": {
       "empty": "Não há funcionários disponíveis para este turno",

@@ -42,6 +42,9 @@
       "title": "Finn forespørsler",
       "type": "Type"
     },
+    "focus": {
+      "unavailable": "Denne forespørselen venter ikke lenger, eller den kan ikke vises her. Periodens klargjøring kontrolleres på nytt."
+    },
     "inReview": {
       "description": "Forespørsler som venter på godkjenning eller behandling.",
       "title": "Under vurdering"

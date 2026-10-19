@@ -68,6 +68,7 @@
         "failed": "Kunne ikke oppdatere vakt",
         "overlapDescription": "Denne vakten overlapper med {count} annen/andre vakt(er)",
         "overlapWarning": "Vakt lagret med overlappsvarsel",
+        "skillOverrideReasonRequired": "Den ansatte mangler en nødvendig ferdighet denne dagen. Åpne vakten for å oppgi en årsak.",
         "updated": "Vakt oppdatert"
       }
     },
@@ -118,6 +119,35 @@
       "updated": "Vakt oppdatert",
       "updateShift": "Oppdater vakt"
     },
+    "shiftRequests": {
+      "approve": "Godkjenn",
+      "approved": "Forespørsel godkjent",
+      "approveFailed": "Kunne ikke godkjenne forespørselen",
+      "button": "Vaktforespørsler",
+      "confirmApprove": "Bekreft godkjenning",
+      "confirmReject": "Bekreft avvisning",
+      "description": "Godkjenn eller avvis ventende forespørsler om vaktbytte og overtagelse",
+      "empty": "Ingen ventende forespørsler",
+      "loadFailed": "Kunne ikke laste inn forespørsler",
+      "loading": "Laster inn forespørsler…",
+      "notes": "Notater: {notes}",
+      "overrideReasonHelp": "Registrert med godkjenningen som en overstyring av ferdighet.",
+      "pickupSummary": "{requester} ønsker å ta denne ledige vakten",
+      "reason": "Årsak: {reason}",
+      "reject": "Avvis",
+      "rejected": "Forespørsel avvist",
+      "rejectFailed": "Kunne ikke avvise forespørselen",
+      "rejectReason": "Årsak til avvisning (valgfritt)",
+      "shiftWhen": "{date}, {start}–{end}",
+      "swapSummary": "{requester} ønsker å gi denne vakten til {target}",
+      "swapWithoutTarget": "{requester} ønsker å gi fra seg denne vakten, men har ikke oppgitt en kollega",
+      "title": "Vaktforespørsler",
+      "type": {
+        "pickup": "Ta vakt",
+        "swap": "Bytte"
+      },
+      "unnamedEmployee": "Ikke-navngitt ansatt"
+    },
     "skills": {
       "certificateOnFile": "Sertifikat registrert",
       "expiredCertifications": "Utløpte sertifiseringer:",
@@ -125,13 +155,15 @@
       "missingPreferred": "Mangler foretrukne ferdigheter:",
       "missingPreferredCount": "{count} foretrukne mangler",
       "missingRequired": "Mangler påkrevde ferdigheter:",
+      "overrideReason": "Årsak til overstyring av ferdighet",
+      "overrideReasonNotice": "Du kan fortsatt tildele denne vakten med en årsak. Årsaken logges som en overstyring av ferdighet.",
+      "overrideReasonRequired": "Oppgi en årsak for å tildele en ansatt som ikke har alle nødvendige ferdigheter.",
       "preferred": "Foretrukket",
       "preferredSkillsMissing": "Foretrukne ferdigheter mangler",
       "requirementsNotMet": "Ferdighetskrav ikke oppfylt",
       "unqualified": "Ikke kvalifisert",
       "validating": "Validerer ferdigheter…",
-      "validatingDescription": "Sjekker ansattes kvalifikasjoner",
-      "warningMessage": "Du kan fortsatt tildele denne vakten, men det vil bli loggført som en overstyring."
+      "validatingDescription": "Sjekker ansattes kvalifikasjoner"
     },
     "staffingSuggestions": {
       "empty": "Ingen tilgjengelige ansatte for denne vakten",

@@ -427,6 +427,7 @@
     "uploading": "Завантаження...",
     "vacationAllowance": {
       "cappedAtFullAllowance": "обмежено повною нормою",
+      "convertedSummary": "{allowance} дн.: {conversion}",
       "employmentMonths": "{months, plural, one {# повний місяць роботи} few {# повні місяці роботи} other {# повних місяців роботи} }",
       "lastWorkingDay": "останній робочий день: {date}",
       "notEmployed": "{allowance} з {fullAllowance} днів: без працевлаштування в {year}",
@@ -434,7 +435,10 @@
       "overdrawnHint": "Відпустка, використана понад норму. Відображається лише для довідки: нічого не списується.",
       "proratedSummary": "{allowance} з {fullAllowance} днів, пропорційно: {details}",
       "started": "початок: {date}",
-      "statutoryMinimumApplies": "застосовується встановлений законом мінімум"
+      "statutoryMinimumApplies": "застосовується встановлений законом мінімум",
+      "workingDaysPerWeek": "{days, plural, one {# робочий день на тиждень} few {# робочі дні на тиждень} other {# робочих днів на тиждень} }",
+      "workingWeekConversion": "{reference} базових днів конвертовано в {weeks}",
+      "workingWeekPeriod": "{week} з {start} до {end}"
     },
     "validate": "Перевірити",
     "validationError": "Помилка перевірки",
@@ -929,6 +933,7 @@
     },
     "page": {
       "context": "Особиста реєстрація, відновлення та вибір організації залишаються доступними, поки доступ до організації потребує підтвердження.",
+      "description": "Підтвердьте засіб автентифікації, щоб зберегти доступ до своїх організацій.",
       "title": "Перевірка безпеки"
     },
     "passkey": {
@@ -1311,6 +1316,42 @@
         "message": "Завантажте свої персональні дані в розділі «Мої дані» до {untilDate}. Після цього лише адміністратор зможе експортувати їх для вас.",
         "title": "Завантажте свої персональні дані перед тим, як піти"
       },
+      "personnelFileDocumentRequestAccepted": {
+        "message": "Ваші документи для \"{title}\" прийнято.",
+        "title": "Документи прийнято"
+      },
+      "personnelFileDocumentRequestCancelled": {
+        "message": "Запит \"{title}\" було скасовано: {reason}",
+        "messageWithoutReason": "Запит \"{title}\" було скасовано.",
+        "title": "Запит документів скасовано"
+      },
+      "personnelFileDocumentRequestDueSoon": {
+        "message": "Будь ласка, завантажте \"{title}\" до {deadline}.",
+        "title": "Термін подання документа спливає незабаром"
+      },
+      "personnelFileDocumentRequestDueToday": {
+        "message": "Будь ласка, завантажте \"{title}\" сьогодні.",
+        "title": "Термін подання документа спливає сьогодні"
+      },
+      "personnelFileDocumentRequested": {
+        "message": "Будь ласка, завантажте \"{title}\" до {deadline}.",
+        "title": "Документ запитано"
+      },
+      "personnelFileDocumentRequestOverdue": {
+        "message": "Термін подання \"{title}\" минув {deadline}. Будь ласка, завантажте його.",
+        "officerMessage": "{employee} не надав(-ла) \"{title}\", термін подання: {deadline}.",
+        "officerTitle": "Запитуваний документ прострочено",
+        "title": "Документ прострочено"
+      },
+      "personnelFileDocumentRequestReturned": {
+        "message": "Будь ласка, завантажте \"{title}\" повторно до {deadline}: {reason}",
+        "messageWithoutReason": "Будь ласка, завантажте \"{title}\" повторно до {deadline}.",
+        "title": "Документи повернуто"
+      },
+      "personnelFileDocumentRequestSubmitted": {
+        "message": "{name} надав(-ла) документи для \"{title}\". Будь ласка, перегляньте їх.",
+        "title": "Документи подано"
+      },
       "personnelFileDocumentShared": {
         "message": "З вами поділилися документом «{title}».",
         "title": "Новий документ у вашій особовій справі"
@@ -1652,6 +1693,11 @@
         "personal_data_export_admin_exported": "Персональні дані експортовано адміністратором",
         "personal_data_export_ready": "Експорт персональних даних готовий",
         "personal_data_export_reminder": "Завантажте свої дані перед виходом",
+        "personnel_file_document_request_decided": "Запит документа прийнято, повернуто або скасовано",
+        "personnel_file_document_requested": "У вас запитали документ",
+        "personnel_file_document_request_overdue": "Запит документа прострочено",
+        "personnel_file_document_request_reminder": "Термін надання запитаного документа спливає незабаром",
+        "personnel_file_document_request_submitted": "Запитувані документи подано (відповідальні за особові справи)",
         "skill_expired_today": "Термін дії навички закінчується сьогодні",
         "skill_expiry_upcoming": "Термін дії навички скоро закінчується",
         "work_balance_adjustment_cancelled": "Коригування балансу скасовано",
@@ -3066,7 +3112,10 @@
     "theme-toggle": "Перемкнути тему"
   },
   "vacationBalance": {
-    "previouslyTaken": "Включає {days} дн., раніше використаних до початку обліку"
+    "conflictingPolicies": "Конфлікт правил відпусток",
+    "missingPolicy": "Відсутнє правило відпусток",
+    "previouslyTaken": "Включає {days} дн., раніше використаних до початку обліку",
+    "zeroWorkingDays": "Робочий графік без робочих днів"
   },
   "validation": {
     "first-name-required": "Ім'я обов'язкове",

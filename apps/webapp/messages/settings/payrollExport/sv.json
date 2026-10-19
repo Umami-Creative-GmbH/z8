@@ -165,11 +165,13 @@
         "selectWorkCategory": "Välj arbetskategori",
         "sourceType": "Källtyp",
         "specialCategory": "Specialkategori",
+        "subtitle": "Mappa dina arbetskategorier och frånvarotyper till löneartskoder",
         "table": {
           "category": "Kategori",
           "datev": "DATEV",
           "lexware": "Lexware",
           "sage": "Sage",
+          "successFactors": "SAP SuccessFactors",
           "type": "Typ"
         },
         "title": "Löneartskopplingar",
@@ -238,9 +240,7 @@
         "title": "Sage Payroll"
       },
       "specialCategory": {
-        "holidayCompensation": "Semesterersättning",
-        "overtime": "Övertid",
-        "overtimeReduction": "Övertidsreducering"
+        "overtime": "Övertid"
       },
       "successfactors": {
         "batchSize": "Batchstorlek",

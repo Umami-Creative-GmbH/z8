@@ -427,6 +427,7 @@
     "uploading": "Laddar upp...",
     "vacationAllowance": {
       "cappedAtFullAllowance": "begränsad till full tilldelning",
+      "convertedSummary": "{allowance} dagar: {conversion}",
       "employmentMonths": "{months, plural, one {# hel anställningsmånad} other {# hela anställningsmånader}}",
       "lastWorkingDay": "sista arbetsdag {date}",
       "notEmployed": "{allowance} av {fullAllowance} dagar: ej anställd under {year}",
@@ -434,7 +435,10 @@
       "overdrawnHint": "Semester uttagen utöver tilldelningen. Visas endast som information: inget dras av.",
       "proratedSummary": "{allowance} av {fullAllowance} dagar, proportionellt beräknat: {details}",
       "started": "började {date}",
-      "statutoryMinimumApplies": "lagstadgat minimum gäller"
+      "statutoryMinimumApplies": "lagstadgat minimum gäller",
+      "workingDaysPerWeek": "{days, plural, one {# arbetsdag per vecka} other {# arbetsdagar per vecka}}",
+      "workingWeekConversion": "{reference} referensdagar konverterade till {weeks}",
+      "workingWeekPeriod": "{week} från {start} till {end}"
     },
     "validate": "Validera",
     "validationError": "Valideringsfel",
@@ -929,6 +933,7 @@
     },
     "page": {
       "context": "Personlig registrering, återställning och val av organisation förblir tillgängliga medan organisationsåtkomst kräver verifiering.",
+      "description": "Verifiera en autentiseringsapp för att behålla åtkomsten till dina organisationer.",
       "title": "Säkerhetsverifiering"
     },
     "passkey": {
@@ -1311,6 +1316,42 @@
         "message": "Ladda ned dina personuppgifter under Mina uppgifter före {untilDate}. Därefter kan endast en administratör exportera dem åt dig.",
         "title": "Ladda ned dina personuppgifter innan du slutar"
       },
+      "personnelFileDocumentRequestAccepted": {
+        "message": "Dina dokument för \"{title}\" godtogs.",
+        "title": "Dokument godtogs"
+      },
+      "personnelFileDocumentRequestCancelled": {
+        "message": "Förfrågan \"{title}\" avbröts: {reason}",
+        "messageWithoutReason": "Förfrågan \"{title}\" avbröts.",
+        "title": "Dokumentförfrågan avbröts"
+      },
+      "personnelFileDocumentRequestDueSoon": {
+        "message": "Ladda upp \"{title}\" senast {deadline}.",
+        "title": "Dokument förfaller snart"
+      },
+      "personnelFileDocumentRequestDueToday": {
+        "message": "Ladda upp \"{title}\" i dag.",
+        "title": "Dokument förfaller i dag"
+      },
+      "personnelFileDocumentRequested": {
+        "message": "Ladda upp \"{title}\" senast {deadline}.",
+        "title": "Dokument har begärts"
+      },
+      "personnelFileDocumentRequestOverdue": {
+        "message": "\"{title}\" förföll den {deadline}. Ladda upp det.",
+        "officerMessage": "{employee} har inte lämnat in \"{title}\", som förföll den {deadline}.",
+        "officerTitle": "Begärt dokument har förfallit",
+        "title": "Dokument har förfallit"
+      },
+      "personnelFileDocumentRequestReturned": {
+        "message": "Ladda upp \"{title}\" igen senast {deadline}: {reason}",
+        "messageWithoutReason": "Ladda upp \"{title}\" igen senast {deadline}.",
+        "title": "Dokument har returnerats"
+      },
+      "personnelFileDocumentRequestSubmitted": {
+        "message": "{name} har skickat in dokument för \"{title}\". Granska dem.",
+        "title": "Dokument har skickats in"
+      },
       "personnelFileDocumentShared": {
         "message": "Dokumentet \"{title}\" delades med dig.",
         "title": "Nytt dokument i din personalakt"
@@ -1652,6 +1693,11 @@
         "personal_data_export_admin_exported": "Personuppgifter har exporterats av en administratör",
         "personal_data_export_ready": "Export av personuppgifter är klar",
         "personal_data_export_reminder": "Ladda ner dina data innan du lämnar",
+        "personnel_file_document_request_decided": "Dokumentbegäran godkänd, returnerad eller avbruten",
+        "personnel_file_document_requested": "Dokument begärt från dig",
+        "personnel_file_document_request_overdue": "Dokumentbegäran har förfallit",
+        "personnel_file_document_request_reminder": "Begärt dokument förfaller snart",
+        "personnel_file_document_request_submitted": "Begärda dokument inskickade (personaktsansvariga)",
         "skill_expired_today": "Kompetens löper ut idag",
         "skill_expiry_upcoming": "Kompetens löper ut snart",
         "work_balance_adjustment_cancelled": "Saldojustering annullerad",
@@ -3066,7 +3112,10 @@
     "theme-toggle": "Växla tema"
   },
   "vacationBalance": {
-    "previouslyTaken": "Inkluderar {days} dagar som tidigare tagits ut före spårning"
+    "conflictingPolicies": "Motstridiga semesterpolicyer",
+    "missingPolicy": "Semesterpolicy saknas",
+    "previouslyTaken": "Inkluderar {days} dagar som tidigare tagits ut före spårning",
+    "zeroWorkingDays": "Arbetsschema utan arbetsdagar"
   },
   "validation": {
     "first-name-required": "Förnamn är obligatoriskt",

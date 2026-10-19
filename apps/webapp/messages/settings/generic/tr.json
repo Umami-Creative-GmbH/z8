@@ -1,5 +1,19 @@
 {
   "settings": {
+    "approvalTriage": {
+      "correctionError": "0 ile 60 dakika arasında bir tam sayı girin.",
+      "correctionHelp": "Sıfır, sıfır fark düzenlemeleri de dahil olmak üzere küçük düzeltme hızlı şeridini devre dışı bırakır. Aksi takdirde 1–60 dakika girin; gerekli tüm kanıtların yine de doğrulanması gerekir.",
+      "correctionLabel": "Küçük düzeltme sınırı (dakika)",
+      "description": "Bekleyen taleplerin ne zaman ilgilenilmesi gerektiğini ve hangi küçük zaman düzeltmelerinin hızlı şeridi kullanabileceğini belirleyin. Risk kuralları ve kanıt gereksinimleri sabit kalır.",
+      "save": "Triyaj ayarlarını kaydet",
+      "saved": "Triyaj ayarları kaydedildi.",
+      "saveError": "Triyaj ayarları kaydedilemedi. Lütfen tekrar deneyin.",
+      "staleError": "1 ile 720 saat arasında bir tam sayı girin.",
+      "staleHelp": "Bekleyen talepler, bu kadar saat (1–720) geçtikten sonra güncelliğini yitirir. Hafta sonları ve yaz saati uygulaması değişiklikleri süreyi durdurmaz.",
+      "staleLabel": "Güncelliğini yitirme süresi (saat)",
+      "thresholds": "Önceliklendirme eşikleri",
+      "title": "Onay önceliklendirmesi"
+    },
     "assignedLocations": {
       "added": "Atanan konum eklendi",
       "employeeDescription": "Bu çalışanın çalıştığı konumlar. Kiosklar yalnızca kendi konumlarına atanmış çalışanları kabul eder.",
@@ -466,6 +480,7 @@
       },
       "historyEmpty": "Henüz hiçbir ay kapatılmadı.",
       "historyTitle": "Geçmiş",
+      "locationNotFound": "Bu konum artık mevcut değil.",
       "monthsDescription": "Bir ayın kapatılması; bordro için çalışma, ilişkilendirme ve devamsızlıkları dondurur. Notlar düzenlenebilir kalır.",
       "monthsTitle": "Aylar",
       "nothingToClose": "Bu kapsamdaki herkes için bu ay zaten kapatılmış.",
@@ -481,9 +496,14 @@
       "reopenTitle": "{month} ayını yeniden aç",
       "scope": {
         "all": "Tümü",
+        "deletedLocation": "Silinen konum",
         "deletedTeam": "Silinen ekip",
         "employees": "Seçilen çalışanlar",
-        "organization": "Kuruluş"
+        "locationHelp": "Şu anda bu konuma atanmış olan herkes (eski çalışanlar dahil) için tüm ayı kapatır. Diğer konumlardaki çalışmaları da dondurulur. Daha sonra atanan çalışanlar kapsama dahil edilmez.",
+        "locationNamed": "{name} Konumu",
+        "locations": "Konumlar",
+        "organization": "Kuruluş",
+        "teams": "Ekipler"
       },
       "scopeLabel": "Şunun için kapat",
       "teamNotFound": "Bu ekip artık mevcut değil.",
@@ -1336,6 +1356,77 @@
       "title": "Uygulama kontrol listesi"
     },
     "import": {
+      "csv": {
+        "acceptSelected": "Seçilen geçerli satırları kabul et",
+        "applyMapping": "Eşlemeyi uygula",
+        "chooseSource": "Bir kaynak değer seçin",
+        "chooseTarget": "Mevcut bir kayıt seçin",
+        "commit": "Kabul edilen satırları işle",
+        "committing": "Kabul edilen satırlar içe aktarılıyor…",
+        "description": "Her satıra tamamlanmış bir çalışma dönemi aktarın. Molaları satırlar arasındaki boşluklar olarak gösterin. Siz inceleyip kabul edene kadar hiçbir şey kaydedilmez.",
+        "download": "CSV şablonunu indir",
+        "duplicateSkipped": "Atlanan yinelenen kayıt",
+        "existingEmployee": "Mevcut çalışan",
+        "existingVehicle": "Mevcut araç",
+        "file": "CSV dosyası",
+        "fileTimezone": "Yerel zaman damgaları için saat dilimi",
+        "format": "UTF-8, virgül ayırıcıları ve şablon başlıklarını kullanın. En fazla 500 KB ve 1.000 satır. Araç sütunları isteğe bağlıdır; göstergeler ve mesafe tam kilometre cinsinden belirtilir.",
+        "interval": "Etkinliğe göre yerel başlangıç ve bitiş",
+        "mappingHelp": "Eşlemeler yalnızca bu grup için geçerlidir ve orijinal kaynak değerleri korur. Bir eşlemeyi değiştirmek veya yeniden denetlemek, henüz işlenmemiş satırlardaki kabul durumunu sıfırlar.",
+        "mappingTitle": "Kaynak değerleri mevcut kayıtlarla eşleyin",
+        "mappingType": "Eşleme türü",
+        "offsetsOnly": "yalnızca açık uzaklıklar",
+        "organizationVehicle": "Kurum aracı",
+        "outcome": "Durum ve sorunlar",
+        "ownVehicle": "Kendi aracı",
+        "pages": "CSV inceleme sayfaları",
+        "partialHelp": "Kabul edilen geçerli satırlar, diğer satırlar çözümlenmemiş olsa bile içe aktarılabilir. CSV'deki hatalı biçimlendirilmiş zaman damgalarını veya sayıları düzeltip tekrar yükleyin; önceden içe aktarılmış çalışmalar atlanacaktır.",
+        "person": "Çalışan",
+        "preparing": "Önizleme hazırlanıyor…",
+        "preview": "CSV önizlemesi",
+        "readFailed": "Seçilen dosya okunamadı",
+        "recheck": "Çözümlenmemiş satırları yeniden denetle",
+        "rejectSelected": "Seçilen satırları reddet",
+        "reviewTitle": "CSV tamamlanan çalışmaları incele",
+        "row": "CSV satırı",
+        "scanning": "İnceleme hazırlanıyor…",
+        "selectPage": "Bu sayfadaki tüm satırları seç",
+        "selectRow": "CSV satırını seç",
+        "sourcePlate": "Kaynak plaka",
+        "sourceValue": "Kaynak değer",
+        "status": {
+          "accepted": "Kabul edildi",
+          "blocked": "İlgilenilmesi gerekiyor",
+          "commit_failed": "İlgilenilmesi gerekiyor",
+          "committed": "İçe aktarıldı",
+          "committing": "İçe aktarılıyor",
+          "needs_mapping": "İlgilenilmesi gerekiyor",
+          "rejected": "Reddedildi",
+          "staged": "İnceleme bekleniyor"
+        },
+        "summary": {
+          "accepted": "Kabul edildi",
+          "imported": "İçe aktarıldı",
+          "rejected": "Reddedildi",
+          "skipped": "Atlanan kopyalar",
+          "total": "Toplam satır",
+          "unresolved": "Çözülmedi"
+        },
+        "tab": "CSV işi",
+        "timezone": "Yerel zaman damgaları için saat dilimi",
+        "timezoneHelp": "Sapması olmayan zaman damgaları için gereklidir. +02:00 gibi açıkça belirtilen sapmalar önceliklidir. Tarayıcınızın saat dilimi hiçbir zaman örtük olarak kullanılmaz.",
+        "title": "CSV tamamlanan iş",
+        "tooLarge": "CSV dosyaları en fazla 500 KB olmalıdır",
+        "vehicle": "Araç kullanımı",
+        "warning": {
+          "distance_above_limit": "Mesafe 1.500 km'nin üzerinde",
+          "driving_details_missing": "Sürüş ayrıntıları eksik",
+          "duplicate_will_skip": "Aynı işler atlanacak",
+          "speed_above_limit": "Öngörülen ortalama hız 150 km/s'nin üzerinde",
+          "start_below_last_end": "Başlangıç değeri son kaydedilen bitiş değerinin altında",
+          "vehicle_on_other_live_work": "Araç başka bir çalışanın devam eden işinde"
+        }
+      },
       "description": "Clockodo ve Clockin gibi desteklenen sağlayıcılardan veri içe aktarın.",
       "review": {
         "billability": {
@@ -1437,7 +1528,20 @@
         },
         "title": "İçe Aktarma İncelemesi"
       },
+      "supportedSources": "CSV dosyalarından iş içe aktarın veya Clockodo ve Clockin gibi desteklenen sağlayıcıları bağlayın.",
       "title": "Veri İçe Aktar"
+    },
+    "kioskBadge": {
+      "errors": {
+        "badgeChanged": "Bu arada başka biri bu kiosk rozetini değiştirdi. Durumunu kontrol edip tekrar deneyin.",
+        "badgeExists": "Bu çalışanın zaten bir kiosk rozeti var. Bunun yerine rozeti değiştirin.",
+        "employeeInactive": "Yalnızca aktif çalışanlar kiosk rozeti alabilir.",
+        "employeeNotFound": "Bu çalışan bulunamadı.",
+        "failed": "Bir şeyler ters gitti. Lütfen tekrar deneyin.",
+        "noBadge": "Bu çalışanın kiosk rozeti yok.",
+        "notAllowed": "Bunu yapmaya yetkiniz yok.",
+        "signInRequired": "Devam etmek için giriş yapın."
+      }
     },
     "kioskPin": {
       "errors": {
@@ -1460,6 +1564,8 @@
     },
     "kiosks": {
       "add": "Kiosk ekle",
+      "badgeCameraOn": "Rozet kamerası açık",
+      "badgeScannerOn": "Rozet tarayıcı açık",
       "boardOn": "Kimler içeride panosu açık",
       "columns": {
         "actions": "İşlemler",
@@ -1489,6 +1595,10 @@
         "offlineNeedsAdoption": "Çevrimdışı mod, bu kuruluşun henüz kullanmadığı koordineli saat komutlarına ihtiyaç duyar."
       },
       "fields": {
+        "badgeCamera": "Rozet kamerası",
+        "badgeCameraDescription": "Çalışanlar, PIN kodlarını girmek yerine Rozeti tara seçeneğine dokunur ve kiosk rozetlerini bu kioskun kamerasına tutar. Kod cihazda okunur; hiçbir görüntü yüklenmez veya saklanmaz. Tarayıcı kamera erişimi için bir kez izin ister. Rozetle giriş bağlantı gerektirir; ad ve PIN çalışmaya devam eder.",
+        "badgeScanner": "Rozet tarayıcı",
+        "badgeScannerDescription": "Çalışanlar, PIN kodlarını girmek yerine bu kioska bağlı bir QR tarayıcıyla kiosk rozetlerini tarar. Rozetle giriş bağlantı gerektirir; ad ve PIN çalışmaya devam eder.",
         "board": "Kimler içeride panosu",
         "boardDescription": "Kioskta kimin içeride veya molada olduğunu ad ve soyadı baş harfiyle gösterir.",
         "location": "Konum",

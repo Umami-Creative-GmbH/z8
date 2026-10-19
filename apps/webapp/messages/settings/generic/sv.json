@@ -1,5 +1,19 @@
 {
   "settings": {
+    "approvalTriage": {
+      "correctionError": "Ange ett heltal från 0 till 60 minuter.",
+      "correctionHelp": "Noll inaktiverar snabbspåret för små korrigeringar, inklusive redigeringar med noll-delta. Använd annars 1–60 minuter; alla obligatoriska underlag måste fortfarande verifieras.",
+      "correctionLabel": "Gräns för små korrigeringar (minuter)",
+      "description": "Ange när väntande förfrågningar kräver åtgärd och vilka små tidskorrigeringar som får använda snabbspåret. Riskregler och underlagskrav förblir oförändrade.",
+      "save": "Spara triageinställningar",
+      "saved": "Triageinställningarna har sparats.",
+      "saveError": "Det gick inte att spara triageinställningarna. Försök igen.",
+      "staleError": "Ange ett heltal från 1 till 720 timmar.",
+      "staleHelp": "Väntande förfrågningar blir inaktuella efter så här många förflutna timmar (1–720). Helger och omställningar för sommartid pausar inte klockan.",
+      "staleLabel": "Inaktuell efter (timmar)",
+      "thresholds": "Tröskelvärden för prioritering",
+      "title": "Godkännandeprioritering"
+    },
     "assignedLocations": {
       "added": "Tilldelad plats lades till",
       "employeeDescription": "Platserna som den här medarbetaren arbetar på. Kiosker godkänner endast medarbetare som är tilldelade till deras plats.",
@@ -466,6 +480,7 @@
       },
       "historyEmpty": "Ingen månad har stängts ännu.",
       "historyTitle": "Historik",
+      "locationNotFound": "Den här platsen finns inte längre.",
       "monthsDescription": "Att stänga en månad låser dess arbete, tilldelning och frånvaro för lönekörning. Anteckningar förblir redigerbara.",
       "monthsTitle": "Månader",
       "nothingToClose": "Alla inom detta omfång är redan stängda för denna månad.",
@@ -481,9 +496,14 @@
       "reopenTitle": "Återöppna {month}",
       "scope": {
         "all": "Allt",
+        "deletedLocation": "Borttagen plats",
         "deletedTeam": "Borttaget team",
         "employees": "Valda medarbetare",
-        "organization": "Organisation"
+        "locationHelp": "Stänger hela månaden för alla som är tilldelade den här platsen nu, inklusive tidigare anställda. Deras arbete på andra platser fryses också. Anställda som tilldelas senare omfattas inte.",
+        "locationNamed": "Plats {name}",
+        "locations": "Platser",
+        "organization": "Organisation",
+        "teams": "Team"
       },
       "scopeLabel": "Stäng för",
       "teamNotFound": "Det här teamet finns inte längre.",
@@ -1336,6 +1356,77 @@
       "title": "Implementeringschecklista"
     },
     "import": {
+      "csv": {
+        "acceptSelected": "Acceptera markerade giltiga rader",
+        "applyMapping": "Tillämpa mappning",
+        "chooseSource": "Välj ett källvärde",
+        "chooseTarget": "Välj en befintlig post",
+        "commit": "Verkställ accepterade rader",
+        "committing": "Importerar accepterade rader…",
+        "description": "Importera en slutförd arbetsperiod per rad. Ange raster som mellanrum mellan rader. Inget registreras förrän du granskar och accepterar det.",
+        "download": "Ladda ned CSV-mall",
+        "duplicateSkipped": "Överhoppad dubblett",
+        "existingEmployee": "Befintlig anställd",
+        "existingVehicle": "Befintligt fordon",
+        "file": "CSV-fil",
+        "fileTimezone": "Tidszon för lokala tidsstämplar",
+        "format": "Använd UTF-8, kommaavgränsare och mallens rubriker. Maximalt 500 KB och 1 000 rader. Fordonskolumner är valfria; mätarställning och sträcka anges i hela kilometer.",
+        "interval": "Händelselokal start och slut",
+        "mappingHelp": "Mappningar gäller endast för denna batch och behåller de ursprungliga källvärdena. Att ändra en mappning eller kontrollera igen återställer godkännandet för icke-verkställda rader.",
+        "mappingTitle": "Mappa källvärden till befintliga poster",
+        "mappingType": "Mappningstyp",
+        "offsetsOnly": "endast explicita tidsförskjutningar",
+        "organizationVehicle": "Organisationsfordon",
+        "outcome": "Status och problem",
+        "ownVehicle": "Eget fordon",
+        "pages": "Sidor för CSV-granskning",
+        "partialHelp": "Accepterade giltiga rader kan importeras medan andra rader förblir olösta. Korrigera felaktiga tidsstämplar eller siffror i CSV-filen och ladda upp igen; arbete som redan importerats kommer att hoppas över.",
+        "person": "Anställd",
+        "preparing": "Förbereder förhandsgranskning…",
+        "preview": "Förhandsgranska CSV",
+        "readFailed": "Den valda filen kunde inte läsas",
+        "recheck": "Kontrollera olösta rader igen",
+        "rejectSelected": "Avvisa markerade rader",
+        "reviewTitle": "Granska slutfört arbete från CSV",
+        "row": "CSV-rad",
+        "scanning": "Förbereder granskningen…",
+        "selectPage": "Markera alla rader på den här sidan",
+        "selectRow": "Markera CSV-rad",
+        "sourcePlate": "Källregistreringsnummer",
+        "sourceValue": "Källvärde",
+        "status": {
+          "accepted": "Accepterad",
+          "blocked": "Kräver åtgärd",
+          "commit_failed": "Kräver åtgärd",
+          "committed": "Importerad",
+          "committing": "Importerar",
+          "needs_mapping": "Kräver åtgärd",
+          "rejected": "Avvisad",
+          "staged": "Väntar på granskning"
+        },
+        "summary": {
+          "accepted": "Accepterad",
+          "imported": "Importerad",
+          "rejected": "Avvisad",
+          "skipped": "Överhoppade dubbletter",
+          "total": "Totalt antal rader",
+          "unresolved": "Olöst"
+        },
+        "tab": "CSV-arbete",
+        "timezone": "Tidszon för lokala tidsstämplar",
+        "timezoneHelp": "Krävs för tidsstämplar utan tidsförskjutning. Uttryckliga förskjutningar som +02:00 har företräde. Webbläsarens tidszon används aldrig implicit.",
+        "title": "CSV-slutfört arbete",
+        "tooLarge": "CSV-filer får vara högst 500 KB",
+        "vehicle": "Fordonsanvändning",
+        "warning": {
+          "distance_above_limit": "Sträckan är över 1 500 km",
+          "driving_details_missing": "Körinformation saknas",
+          "duplicate_will_skip": "Identiskt arbete hoppas över",
+          "speed_above_limit": "Beräknad genomsnittshastighet är över 150 km/h",
+          "start_below_last_end": "Startmätarställningen är lägre än den senast registrerade slutmätarställningen",
+          "vehicle_on_other_live_work": "Fordonet används i en annan medarbetares pågående arbete"
+        }
+      },
       "description": "Importera data från leverantörer som stöds, till exempel Clockodo och Clockin.",
       "review": {
         "billability": {
@@ -1437,7 +1528,20 @@
         },
         "title": "Importgranskning"
       },
+      "supportedSources": "Importera arbete från CSV-filer eller anslut leverantörer som stöds, till exempel Clockodo och Clockin.",
       "title": "Importera data"
+    },
+    "kioskBadge": {
+      "errors": {
+        "badgeChanged": "Någon annan har ändrat denna kioskbricka under tiden. Kontrollera dess status och försök igen.",
+        "badgeExists": "Den här medarbetaren har redan en kioskbricka. Ersätt den i stället.",
+        "employeeInactive": "Endast aktiva medarbetare kan tilldelas en kioskbricka.",
+        "employeeNotFound": "Den här medarbetaren hittades inte.",
+        "failed": "Något gick fel. Försök igen.",
+        "noBadge": "Den här medarbetaren har ingen kioskbricka.",
+        "notAllowed": "Du har inte behörighet att göra detta.",
+        "signInRequired": "Logga in för att fortsätta."
+      }
     },
     "kioskPin": {
       "errors": {
@@ -1460,6 +1564,8 @@
     },
     "kiosks": {
       "add": "Lägg till kiosk",
+      "badgeCameraOn": "Brickkamera på",
+      "badgeScannerOn": "Brickskanner på",
       "boardOn": "Närvarotavla på",
       "columns": {
         "actions": "Åtgärder",
@@ -1489,6 +1595,10 @@
         "offlineNeedsAdoption": "Offlineläge kräver samordnade stämplingskommandon, vilket denna organisation inte använder ännu."
       },
       "fields": {
+        "badgeCamera": "Brickkamera",
+        "badgeCameraDescription": "Medarbetare trycker på Skanna bricka och håller upp sin kioskbricka mot den här kioskens kamera i stället för att ange sin PIN-kod. Koden läses av på enheten; ingen bild laddas upp eller sparas. Webbläsaren ber om kameraåtkomst en gång. Stämpling med bricka kräver anslutning; namn och PIN-kod fortsätter att fungera.",
+        "badgeScanner": "Brickskanner",
+        "badgeScannerDescription": "Medarbetare skannar sin kioskbricka med en QR-skanner ansluten till den här kiosken i stället för att ange sin PIN-kod. Stämpling med bricka kräver anslutning; namn och PIN-kod fortsätter att fungera.",
         "board": "Närvarotavla",
         "boardDescription": "Visar på kiosken vem som är på plats eller har rast, med förnamn och första bokstaven i efternamnet.",
         "location": "Plats",

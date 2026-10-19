@@ -427,6 +427,7 @@
     "uploading": "A carregar...",
     "vacationAllowance": {
       "cappedAtFullAllowance": "limitado ao limite total",
+      "convertedSummary": "{allowance} dias: {conversion}",
       "employmentMonths": "{months, plural, one {# mês completo de trabalho} other {# meses completos de trabalho}}",
       "lastWorkingDay": "último dia útil {date}",
       "notEmployed": "{allowance} de {fullAllowance} dias: não empregado em {year}",
@@ -434,7 +435,10 @@
       "overdrawnHint": "Férias usufruídas além do limite. Exibido apenas para informação: nada é deduzido.",
       "proratedSummary": "{allowance} de {fullAllowance} dias, proporcional: {details}",
       "started": "início em {date}",
-      "statutoryMinimumApplies": "aplica-se o mínimo legal"
+      "statutoryMinimumApplies": "aplica-se o mínimo legal",
+      "workingDaysPerWeek": "{days, plural, one {# dia útil por semana} other {# dias úteis por semana}}",
+      "workingWeekConversion": "{reference} dias de referência convertidos em {weeks}",
+      "workingWeekPeriod": "{week} de {start} a {end}"
     },
     "validate": "Validar",
     "validationError": "Erro de validação",
@@ -929,6 +933,7 @@
     },
     "page": {
       "context": "O cadastro pessoal, a recuperação e a seleção de organização continuam disponíveis enquanto o acesso à organização necessitar de verificação.",
+      "description": "Verifique um autenticador para manter o acesso às suas organizações.",
       "title": "Verificação de segurança"
     },
     "passkey": {
@@ -1311,6 +1316,42 @@
         "message": "Baixe seus dados pessoais em Meus dados antes de {untilDate}. Depois disso, apenas um administrador poderá exportá-los para você.",
         "title": "Baixe seus dados pessoais antes de sair"
       },
+      "personnelFileDocumentRequestAccepted": {
+        "message": "Seus documentos para \"{title}\" foram aceitos.",
+        "title": "Documentos aceitos"
+      },
+      "personnelFileDocumentRequestCancelled": {
+        "message": "A solicitação \"{title}\" foi cancelada: {reason}",
+        "messageWithoutReason": "A solicitação \"{title}\" foi cancelada.",
+        "title": "Solicitação de documento cancelada"
+      },
+      "personnelFileDocumentRequestDueSoon": {
+        "message": "Faça upload de \"{title}\" até {deadline}.",
+        "title": "Documento vence em breve"
+      },
+      "personnelFileDocumentRequestDueToday": {
+        "message": "Faça upload de \"{title}\" hoje.",
+        "title": "Documento vence hoje"
+      },
+      "personnelFileDocumentRequested": {
+        "message": "Faça upload de \"{title}\" até {deadline}.",
+        "title": "Documento solicitado"
+      },
+      "personnelFileDocumentRequestOverdue": {
+        "message": "O prazo de \"{title}\" venceu em {deadline}. Faça o upload.",
+        "officerMessage": "{employee} não entregou \"{title}\", com prazo até {deadline}.",
+        "officerTitle": "Documento solicitado em atraso",
+        "title": "Documento em atraso"
+      },
+      "personnelFileDocumentRequestReturned": {
+        "message": "Faça upload de \"{title}\" novamente até {deadline}: {reason}",
+        "messageWithoutReason": "Faça upload de \"{title}\" novamente até {deadline}.",
+        "title": "Documentos devolvidos"
+      },
+      "personnelFileDocumentRequestSubmitted": {
+        "message": "{name} enviou documentos para \"{title}\". Revise-os.",
+        "title": "Documentos enviados"
+      },
       "personnelFileDocumentShared": {
         "message": "O documento \"{title}\" foi compartilhado com você.",
         "title": "Novo documento na sua pasta funcional"
@@ -1652,6 +1693,11 @@
         "personal_data_export_admin_exported": "Dados pessoais exportados por um administrador",
         "personal_data_export_ready": "Exportação de dados pessoais pronta",
         "personal_data_export_reminder": "Baixe seus dados antes de sair",
+        "personnel_file_document_request_decided": "Solicitação de documento aceita, devolvida ou cancelada",
+        "personnel_file_document_requested": "Documento solicitado a você",
+        "personnel_file_document_request_overdue": "Solicitação de documento em atraso",
+        "personnel_file_document_request_reminder": "Documento solicitado vence em breve",
+        "personnel_file_document_request_submitted": "Documentos solicitados enviados (responsáveis pelo arquivo de pessoal)",
         "skill_expired_today": "Habilidade expira hoje",
         "skill_expiry_upcoming": "Habilidade expira em breve",
         "work_balance_adjustment_cancelled": "Ajuste de saldo cancelado",
@@ -3066,7 +3112,10 @@
     "theme-toggle": "Alternar tema"
   },
   "vacationBalance": {
-    "previouslyTaken": "Inclui {days} dias tirados anteriormente antes do rastreamento"
+    "conflictingPolicies": "Políticas de férias conflitantes",
+    "missingPolicy": "Política de férias ausente",
+    "previouslyTaken": "Inclui {days} dias tirados anteriormente antes do rastreamento",
+    "zeroWorkingDays": "Escala de trabalho sem dias de trabalho"
   },
   "validation": {
     "first-name-required": "O nome é obrigatório",

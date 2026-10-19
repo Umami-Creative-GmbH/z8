@@ -17,8 +17,33 @@
       "noCustomer": "Solo il lavoro su un progetto con un cliente può essere fatturabile"
     },
     "breakInProgress": {
+      "connectionRequired": "L'avvio o la ripresa di una pausa richiede una connessione.",
       "description": "Sei in pausa",
-      "since": "In pausa dalle {time}"
+      "endDay": "Termina giornata",
+      "errors": {
+        "alreadyOnBreak": "Sei già in pausa.",
+        "breakChanged": "La tua pausa è stata modificata su un altro dispositivo. Il tuo orologio ora mostra lo stato attuale.",
+        "collision": "Questa pausa è in conflitto con una richiesta precedente. Aggiorna e riprova.",
+        "refreshed": "Il tuo orologio è cambiato. Ora mostra lo stato attuale.",
+        "resumeNotAllowed": "Non puoi riprendere questa pausa.",
+        "resumeRetry": "Impossibile riprendere il lavoro. Riprova.",
+        "resumeUnconfirmed": "Impossibile confermare la ripresa. Controlla il tuo orologio prima di riprovare.",
+        "startNotAllowed": "Non puoi avviare una pausa.",
+        "startRetry": "Impossibile avviare la pausa. Riprova.",
+        "tooEarly": "Una pausa può iniziare solo dopo aver iniziato a lavorare.",
+        "unconfirmed": "Impossibile confermare la pausa. Controlla il tuo orologio prima di riprovare.",
+        "workChanged": "Il tuo orologio è cambiato su un altro dispositivo. Ora mostra lo stato attuale."
+      },
+      "pendingClockActions": "Le azioni di timbratura salvate sono ancora in fase di invio. Riprova una volta sincronizzate.",
+      "resume": "Riprendi",
+      "resumed": "Lavoro ripreso",
+      "since": "In pausa dalle {time}",
+      "start": "Avvia pausa",
+      "started": "Pausa iniziata",
+      "startedDescription": "Riprendi quando torni, oppure termina la giornata.",
+      "trigger": "In pausa",
+      "uncertain": "Impossibile confermare la pausa",
+      "uncertainDescription": "Il tuo orologio è stato aggiornato. Controllalo prima di riprovare."
     },
     "budget": "Budget",
     "clockedOutSuccess": "Hai timbrato l'uscita!",
@@ -147,9 +172,41 @@
         "resume": "Riprendi lavoro",
         "startBreak": "Inizia pausa"
       },
+      "attribution": {
+        "back": "Indietro",
+        "keep": "Mantieni {name}",
+        "noProject": "Nessun progetto",
+        "noWorkCategory": "Nessuna categoria di lavoro",
+        "project": "Progetto",
+        "title": "A cosa hai lavorato?",
+        "workCategory": "Categoria di lavoro"
+      },
+      "badge": {
+        "checking": "Verifica del badge in corso…",
+        "failed": "Impossibile verificare il badge. Non è stato registrato nulla. Esegui nuovamente la scansione oppure tocca il tuo nome per usare il PIN.",
+        "inputDisabled": "La scansione del badge è disattivata su questo chiosco. Tocca il tuo nome per usare il PIN.",
+        "notAccepted": "Questo badge non è accettato su questo chiosco. Non è stato registrato nulla. Tocca il tuo nome per usare il PIN o chiedi al tuo responsabile.",
+        "notRecorded": "L'azione non è stata registrata. Esegui nuovamente la scansione del badge per selezionarla di nuovo.",
+        "offline": "La timbratura con badge richiede una connessione. Non è stato registrato nulla.",
+        "offlinePin": "La timbratura con badge richiede una connessione. Non è stato registrato nulla. Tocca il tuo nome per timbrare con il PIN.",
+        "rateLimited": "Troppe scansioni del badge su questo chiosco. Riprova tra {seconds} secondi o tocca il tuo nome per usare il PIN.",
+        "unreadable": "Questo codice non è un badge per il chiosco. Non è stato registrato nulla. Esegui la scansione del badge del chiosco o tocca il tuo nome per usare il PIN."
+      },
       "board": {
         "empty": "Nessuno ha timbrato l'entrata in questo momento.",
         "title": "Chi è presente"
+      },
+      "camera": {
+        "cancel": "Annulla scansione",
+        "denied": "Il chiosco non può utilizzare la fotocamera. Consenti l'accesso alla fotocamera per questa pagina nel browser oppure tocca il tuo nome per usare il PIN.",
+        "failed": "Impossibile avviare la fotocamera. Riprova oppure tocca il tuo nome per usare il PIN.",
+        "hint": "Tieni il codice QR all'interno dell'inquadratura. Il codice viene letto su questo chiosco; nessuna immagine viene salvata.",
+        "missing": "Questo chiosco non dispone di una fotocamera in grado di scansionare. Tocca il tuo nome per usare il PIN.",
+        "notBadge": "Questo codice non è un badge per chiosco. Avvicina il tuo badge per chiosco oppure annulla e tocca il tuo nome per usare il PIN.",
+        "preview": "Anteprima fotocamera",
+        "starting": "Avvio della fotocamera…",
+        "title": "Avvicina il tuo badge per chiosco alla fotocamera",
+        "unsupported": "Questo browser non può scansionare i badge con la fotocamera. Tocca il tuo nome per usare il PIN."
       },
       "done": {
         "button": "Fatto",
@@ -174,6 +231,8 @@
         "loadFailed": "Impossibile caricare i nomi. Controlla la connessione di rete.",
         "loading": "Caricamento nomi…",
         "noMatch": "Nessun nome corrisponde alla ricerca.",
+        "scanBadge": "Scansiona badge",
+        "scanHint": "Oppure scansiona il tuo badge per chiosco allo scanner.",
         "search": "Trova il tuo nome",
         "title": "Tocca il tuo nome per timbrare l'entrata o l'uscita"
       },
@@ -226,15 +285,19 @@
       },
       "refusal": {
         "alreadyClockedIn": "Hai già timbrato l'entrata.",
+        "attemptClosed": "Questa azione non è stata registrata. Selezionala di nuovo se desideri ancora eseguirla.",
         "billing": "La timbratura non è al momento disponibile per la tua organizzazione. Contatta l'amministratore.",
         "generic": "Operazione non riuscita. Non è stato registrato nulla. Riprova o rivolgiti al tuo responsabile.",
         "holiday": "Oggi la timbratura è bloccata a causa di una festività. Rivolgiti al tuo responsabile.",
         "monthClosed": "Questo orario rientra in un mese chiuso e non può essere modificato. Rivolgiti al tuo manager.",
         "noBreak": "Non sei in pausa.",
         "notClockedIn": "Non hai timbrato l'entrata.",
+        "notRecorded": "La tua azione non è stata registrata. Inserisci il PIN per selezionarla di nuovo.",
         "onBreak": "Sei già in pausa.",
+        "projectNotAllowed": "Non è più possibile registrare attività su questo progetto. Non è stato registrato nulla. Scegline un altro oppure mantieni quello corrente e riprova.",
         "unconfirmed": "Il chiosco non è riuscito a confermare il salvataggio. Controlla il tuo stato prima di riprovare.",
-        "underReview": "Le tue ore di oggi sono in fase di revisione. Rivolgiti al tuo responsabile."
+        "underReview": "Le tue ore di oggi sono in fase di revisione. Rivolgiti al tuo responsabile.",
+        "workCategoryNotAllowed": "Non è più possibile registrare attività su questa categoria di lavoro. Non è stato registrato nulla. Scegline un'altra oppure mantieni quella corrente e riprova."
       },
       "retry": "Riprova",
       "revoked": {
@@ -246,6 +309,14 @@
         "clockedIn": "In servizio dalle {time}",
         "clockedOut": "Entrata non registrata",
         "onBreak": "In pausa dalle {time}"
+      },
+      "uncertain": {
+        "action": "{name}: {action}",
+        "back": "Indietro",
+        "conflict": "Impossibile verificare questa azione su questo chiosco. Verifica il tuo stato con il tuo responsabile prima di timbrare di nuovo.",
+        "title": "Verifica se l'azione è stata registrata in corso",
+        "unavailable": "Al momento non è possibile raggiungere Z8. Il chiosco continuerà a verificare.",
+        "wait": "Non timbrare di nuovo. Il chiosco continuerà a verificare e ti mostrerà il risultato non appena Z8 risponderà, anche se torni più tardi."
       },
       "unreachableDescription": "Il chiosco non riesce a raggiungere il server. Controlla la connessione di rete; la timbratura funziona solo online.",
       "unreachableTitle": "Chiosco offline",
@@ -336,18 +407,42 @@
     "periodSubmissions": {
       "blocker": {
         "absenceRequest": "Una richiesta di assenza per {dates} è in sospeso.",
+        "absenceRequestAction": "Un approvatore deciderà su questa assenza. Nell'attesa, puoi annullarla in Le mie richieste.",
         "liveWork": "Il lavoro iniziato {start} è ancora in corso.",
+        "liveWorkAction": "Timbra l'uscita al termine di questa attività.",
         "manualWork": "Il lavoro manuale del {start} è in sospeso.",
-        "timeCorrection": "Una correzione dell'orario per il lavoro del {start} è in sospeso."
+        "manualWorkAction": "Un approvatore deciderà su questa attività. Non devi fare nulla.",
+        "openClock": "Vai alla timbratrice",
+        "openRequest": "Apri richiesta",
+        "openTimeline": "Mostra nella timeline",
+        "timeCorrection": "Una correzione dell'orario per il lavoro del {start} è in sospeso.",
+        "timeCorrectionAction": "Un approvatore deciderà su questa correzione. Nell'attesa, puoi annullarla in Le mie richieste.",
+        "timeCorrectionWaitAction": "Un approvatore deciderà su questa correzione. Puoi solo attendere la sua decisione."
       },
       "description": "Conferma che le ore lavorate e le assenze per ciascun periodo siano complete e corrette.",
-      "opensOn": "Puoi inviare a partire dal {date}.",
+      "focus": {
+        "notShown": "Impossibile mostrare questa attività qui. La disponibilità del periodo è stata verificata di nuovo.",
+        "resolved": "Questa attività non mantiene più aperto il periodo. La disponibilità del periodo è stata verificata di nuovo."
+      },
+      "readiness": {
+        "checking": "Verifica se questo periodo è pronto…",
+        "hideDetails": "Nascondi dettagli",
+        "notReady": "L'opzione Invia sarà disponibile non appena questo periodo sarà pronto.",
+        "openItems": "{count, plural, one {# elemento mantiene aperto questo periodo.} other {# elementi mantengono aperto questo periodo.}}",
+        "opensOn": "L'invio sarà disponibile il {date}.",
+        "ready": "Pronto per l'invio",
+        "retry": "Riprova",
+        "showDetails": "Mostra dettagli",
+        "submitUnavailable": "L'opzione Invia non è disponibile finché non sarà possibile verificare lo stato.",
+        "unavailable": "La verifica per l'invio non è al momento disponibile, pertanto l'opzione Invia è disabilitata."
+      },
       "refusal": {
         "alreadySubmitted": "Questo periodo è già stato inviato.",
         "noApprover": "Nessuno può ancora approvare questo periodo. Chiedi a un amministratore di assegnarti un responsabile.",
         "notEnded": "Puoi inviare questo periodo a partire dal suo ultimo giorno.",
         "notExpected": "Non è necessario inviare questo periodo.",
-        "periodOpen": "Questo periodo è ancora aperto"
+        "periodOpen": "Questo periodo è ancora aperto",
+        "writeGateClosed": "Al momento l'invio dei periodi è sospeso nella tua organizzazione. Riprova più tardi o contatta un amministratore."
       },
       "rejectionReason": "Motivo: {reason}",
       "status": {

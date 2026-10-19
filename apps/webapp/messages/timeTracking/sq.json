@@ -17,8 +17,33 @@
       "noCustomer": "Vetëm puna në një projekt me klient mund të jetë e faturueshme"
     },
     "breakInProgress": {
+      "connectionRequired": "Fillimi ose rifillimi i një pushimi kërkon lidhje me internetin.",
       "description": "Jeni në pushim",
-      "since": "Në pushim që nga {time}"
+      "endDay": "Përfundo ditën",
+      "errors": {
+        "alreadyOnBreak": "Tashmë jeni në pushim.",
+        "breakChanged": "Pushimi juaj ndryshoi në një pajisje tjetër. Ora juaj tani tregon gjendjen aktuale.",
+        "collision": "Ky pushim bie në konflikt me një kërkesë të mëparshme. Ju lutemi rifreskoni dhe provoni përsëri.",
+        "refreshed": "Ora juaj ndryshoi. Tani tregon gjendjen aktuale.",
+        "resumeNotAllowed": "Nuk mund ta rifilloni këtë pushim.",
+        "resumeRetry": "Nuk mund të rifillonte puna. Ju lutemi provoni përsëri.",
+        "resumeUnconfirmed": "Rifillimi nuk mund të konfirmohej. Kontrolloni orën tuaj përpara se të provoni përsëri.",
+        "startNotAllowed": "Nuk mund të nisni një pushim.",
+        "startRetry": "Nuk mund të niste pushimi juaj. Ju lutemi provoni përsëri.",
+        "tooEarly": "Pushimi mund të nisë vetëm pasi të ketë filluar puna juaj.",
+        "unconfirmed": "Pushimi juaj nuk mund të konfirmohej. Kontrolloni orën tuaj përpara se të provoni përsëri.",
+        "workChanged": "Ora juaj ndryshoi në një pajisje tjetër. Tani tregon gjendjen aktuale."
+      },
+      "pendingClockActions": "Veprimet e ruajtura të orës po dërgohen ende. Provoni përsëri pasi të jenë sinkronizuar.",
+      "resume": "Rifillo",
+      "resumed": "Puna rifilloi",
+      "since": "Në pushim që nga {time}",
+      "start": "Nis pushimin",
+      "started": "Pushimi nisi",
+      "startedDescription": "Rifilloni kur të ktheheni, ose përfundoni ditën tuaj.",
+      "trigger": "Në pushim",
+      "uncertain": "Pushimi juaj nuk mund të konfirmohej",
+      "uncertainDescription": "Ora juaj është rifreskuar. Kontrollojeni përpara se të provoni përsëri."
     },
     "budget": "Buxheti",
     "clockedOutSuccess": "Keni regjistruar daljen!",
@@ -147,9 +172,41 @@
         "resume": "Rifillo punën",
         "startBreak": "Fillo pushimin"
       },
+      "attribution": {
+        "back": "Prapa",
+        "keep": "Mbaj {name}",
+        "noProject": "Pa projekt",
+        "noWorkCategory": "Pa kategori pune",
+        "project": "Projekt",
+        "title": "Në çfarë punuat?",
+        "workCategory": "Kategoria e punës"
+      },
+      "badge": {
+        "checking": "Po kontrollohet karta juaj…",
+        "failed": "Karta nuk mund të kontrollohej. Asgjë nuk u regjistrua. Skanojeni përsëri, ose prekni emrin tuaj për të përdorur PIN-in.",
+        "inputDisabled": "Skanimi i kartës është i çaktivizuar në këtë kioskë. Prekni emrin tuaj për të përdorur PIN-in.",
+        "notAccepted": "Kjo kartë nuk pranohet në këtë kioskë. Asgjë nuk u regjistrua. Prekni emrin tuaj për të përdorur PIN-in ose pyesni menaxherin tuaj.",
+        "notRecorded": "Veprimi juaj nuk u regjistrua. Skanoni përsëri kartën tuaj për ta zgjedhur sërish.",
+        "offline": "Regjistrimi me kartë kërkon lidhje me internetin. Asgjë nuk u regjistrua.",
+        "offlinePin": "Regjistrimi me kartë kërkon lidhje me internetin. Asgjë nuk u regjistrua. Prekni emrin tuaj për t'u regjistruar me PIN-in tuaj.",
+        "rateLimited": "Shumë skanime të kartës në këtë kioskë. Provoni përsëri pas {seconds} sekondash, ose prekni emrin tuaj për të përdorur PIN-in.",
+        "unreadable": "Ky kod nuk është një kartë kioske. Asgjë nuk u regjistrua. Skanoni kartën tuaj të kioskës, ose prekni emrin tuaj për të përdorur PIN-in."
+      },
       "board": {
         "empty": "Askush nuk është i regjistruar në punë tani.",
         "title": "Kush është në punë"
+      },
+      "camera": {
+        "cancel": "Anulo skanimin",
+        "denied": "Kioska mund të mos përdorë kamerën. Lejoni qasjen në kamerë për këtë faqe në shfletues, ose prekni emrin tuaj për të përdorur PIN-in tuaj.",
+        "failed": "Kamera nuk mund të nisej. Provoni përsëri, ose prekni emrin tuaj për të përdorur PIN-in tuaj.",
+        "hint": "Mbajeni kodin QR brenda kornizës. Kodi lexohet në këtë kioskë; asnjë foto nuk ruhet.",
+        "missing": "Kjo kioskë nuk ka kamerë që mund të skanojë. Prekni emrin tuaj për të përdorur PIN-in tuaj.",
+        "notBadge": "Ky kod nuk është një distinktiv kioske. Drejtojeni distinktivin tuaj të kioskës, ose anuloni dhe prekni emrin tuaj për të përdorur PIN-in tuaj.",
+        "preview": "Pamja paraprake e kamerës",
+        "starting": "Po niset kamera…",
+        "title": "Drejtojeni distinktivin tuaj të kioskës drejt kamerës",
+        "unsupported": "Ky shfletues nuk mund të skanojë distinktivë me kamerë. Prekni emrin tuaj për të përdorur PIN-in tuaj."
       },
       "done": {
         "button": "U krye",
@@ -174,6 +231,8 @@
         "loadFailed": "Emrat nuk mund të ngarkoheshin. Kontrolloni lidhjen e rrjetit.",
         "loading": "Po ngarkohen emrat…",
         "noMatch": "Asnjë emër nuk përputhet me kërkimin tuaj.",
+        "scanBadge": "Skano distinktivin",
+        "scanHint": "Ose skanoni distinktivin tuaj të kioskës te skaneri.",
         "search": "Gjeni emrin tuaj",
         "title": "Prekni emrin tuaj për të regjistruar hyrjen ose daljen"
       },
@@ -226,15 +285,19 @@
       },
       "refusal": {
         "alreadyClockedIn": "Tashmë jeni regjistruar në hyrje.",
+        "attemptClosed": "Ky veprim nuk u regjistrua. Zgjidheni përsëri nëse ende dëshironi ta kryeni.",
         "billing": "Regjistrimi i orarit nuk është i disponueshëm për organizatën tuaj për momentin. Kontaktoni administratorin tuaj.",
         "generic": "Kjo nuk funksionoi. Asgjë nuk u regjistrua. Provoni përsëri ose pyesni menaxherin tuaj.",
         "holiday": "Regjistrimi i orarit është i bllokuar sot për shkak të një feste zyrtare. Pyesni menaxherin tuaj.",
         "monthClosed": "Kjo kohë është në një muaj të mbyllur dhe nuk mund të ndryshohet. Pyesni menaxherin tuaj.",
         "noBreak": "Nuk jeni në pushim.",
         "notClockedIn": "Nuk jeni regjistruar në hyrje.",
+        "notRecorded": "Veprimi juaj nuk u regjistrua. Vendosni PIN-in tuaj për ta zgjedhur përsëri.",
         "onBreak": "Tashmë jeni në pushim.",
+        "projectNotAllowed": "Ky projekt nuk mund të rezervohet më. Asgjë nuk u regjistrua. Zgjidhni një tjetër, ose mbani aktualin, dhe provoni përsëri.",
         "unconfirmed": "Kiosku nuk mundi të konfirmonte nëse kjo u ruajt. Kontrolloni statusin tuaj para se të provoni përsëri.",
-        "underReview": "Orari juaj për sot është në shqyrtim. Pyesni menaxherin tuaj."
+        "underReview": "Orari juaj për sot është në shqyrtim. Pyesni menaxherin tuaj.",
+        "workCategoryNotAllowed": "Kjo kategori pune nuk mund të rezervohet më. Asgjë nuk u regjistrua. Zgjidhni një tjetër, ose mbani aktualen, dhe provoni përsëri."
       },
       "retry": "Provo përsëri",
       "revoked": {
@@ -246,6 +309,14 @@
         "clockedIn": "Regjistruar në hyrje që nga {time}",
         "clockedOut": "Nuk jeni regjistruar në hyrje",
         "onBreak": "Në pushim që nga {time}"
+      },
+      "uncertain": {
+        "action": "{name}: {action}",
+        "back": "Prapa",
+        "conflict": "Ky veprim nuk mund të kontrollohej në këtë kioskë. Kontrolloni statusin tuaj me menaxherin tuaj përpara se të regjistroni përsëri orarin.",
+        "title": "Po kontrollohet nëse veprimi juaj u regjistrua",
+        "unavailable": "Z8 nuk mund të arrihet tani. Kioska po vazhdon të kontrollojë.",
+        "wait": "Mos e regjistroni përsëri orarin. Kioska vazhdon të kontrollojë dhe do t'ju shfaqë rezultatin sapo Z8 të përgjigjet, edhe nëse ktheheni më vonë."
       },
       "unreachableDescription": "Kiosku nuk mund të lidhet me serverin. Kontrolloni lidhjen me rrjetin; regjistrimi i orarit funksionon vetëm kur jeni në linjë.",
       "unreachableTitle": "Kiosku jashtë linje",
@@ -336,18 +407,42 @@
     "periodSubmissions": {
       "blocker": {
         "absenceRequest": "Një kërkesë për mungesë për {dates} është pa vendim.",
+        "absenceRequestAction": "Një miratues vendos për këtë mungesë. Ndërsa është në pritje, mund ta anuloni te Kërkesat e mia.",
         "liveWork": "Puna e nisur më {start} është ende në vazhdim.",
+        "liveWorkAction": "Regjistroni daljen kur të përfundojë kjo punë.",
         "manualWork": "Puna manuale më {start} është pa vendim.",
-        "timeCorrection": "Një korrigjim kohe për punën më {start} është pa vendim."
+        "manualWorkAction": "Një miratues vendos për këtë punë. Nuk keni nevojë të bëni asgjë.",
+        "openClock": "Shko te ora",
+        "openRequest": "Hap kërkesën",
+        "openTimeline": "Shfaq në vijën kohore",
+        "timeCorrection": "Një korrigjim kohe për punën më {start} është pa vendim.",
+        "timeCorrectionAction": "Një miratues vendos për këtë korrigjim. Ndërsa është në pritje, mund ta anuloni te Kërkesat e mia.",
+        "timeCorrectionWaitAction": "Një miratues vendos për këtë korrigjim. Mund vetëm të prisni për vendimin e tij."
       },
       "description": "Konfirmoni që puna dhe mungesat tuaja për çdo periudhë janë të plota dhe të sakta.",
-      "opensOn": "Mund të dorëzoni duke filluar nga {date}.",
+      "focus": {
+        "notShown": "Kjo punë nuk mund të shfaqet këtu. Gatishmëria e periudhës u kontrollua përsëri.",
+        "resolved": "Kjo punë nuk e mban më një periudhë të hapur. Gatishmëria e periudhës u kontrollua përsëri."
+      },
+      "readiness": {
+        "checking": "Po kontrollohet nëse kjo periudhë është gati…",
+        "hideDetails": "Fshih detajet",
+        "notReady": "Dorëzimi bëhet i disponueshëm sapo kjo periudhë të jetë gati.",
+        "openItems": "{count, plural, one {# element e mban këtë periudhë të hapur.} other {# elemente e mbajnë këtë periudhë të hapur.}}",
+        "opensOn": "Dorëzimi hapet më {date}.",
+        "ready": "Gati për t'u dorëzuar",
+        "retry": "Riprovo",
+        "showDetails": "Shfaq detajet",
+        "submitUnavailable": "Dorëzimi nuk është i disponueshëm derisa të mund të kontrollohet gatishmëria.",
+        "unavailable": "Gatishmëria e dorëzimit nuk është e disponueshme tani, prandaj Dorëzimi është i çaktivizuar."
+      },
       "refusal": {
         "alreadySubmitted": "Kjo periudhë tashmë është dorëzuar.",
         "noApprover": "Askush nuk mund ta miratojë ende këtë periudhë. Kërkojini një administratori t'ju caktojë një menaxher.",
         "notEnded": "Mund ta dorëzoni këtë periudhë duke filluar nga dita e fundit e saj.",
         "notExpected": "Kjo periudhë nuk ka nevojë të dorëzohet.",
-        "periodOpen": "Kjo periudhë është ende e hapur"
+        "periodOpen": "Kjo periudhë është ende e hapur",
+        "writeGateClosed": "Dorëzimet e periudhave janë pezulluar në organizatën tuaj tani. Provoni përsëri më vonë ose pyesni një administrator."
       },
       "rejectionReason": "Arsyeja: {reason}",
       "status": {

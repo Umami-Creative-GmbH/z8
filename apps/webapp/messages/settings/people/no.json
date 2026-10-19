@@ -66,6 +66,7 @@
         "noScheduleAssigned": "Ingen tidsplan tilordnet",
         "personnelNumber": "Ansattnummer",
         "personnelNumberDescription": "Organisasjonens eget nummer for denne ansatte, brukt i lønnseksporter. Det må være unikt, også blant tidligere ansatte.",
+        "personnelNumberManagedByIdp": "Administreres av identitetsleverandøren din. Endre ansattnummeret der.",
         "position": "Stilling",
         "positionDescription": "Stillingstittel eller rolle",
         "positionPlaceholder": "Angi stilling",
@@ -160,6 +161,31 @@
       "invitations": {
         "description": "Inviter medlemmer og vurder ventende forespørsler om medlemskap",
         "title": "Invitasjoner"
+      },
+      "kioskBadge": {
+        "active": "Aktiv siden {date}.",
+        "confirmReplace": "Erstatt kortet",
+        "confirmReplaceText": "Erstatning oppretter et nytt kort. Alle kopier av det nåværende kortet slutter å fungere umiddelbart.",
+        "confirmRevoke": "Tilbakekall kortet",
+        "confirmRevokeText": "Alle kopier av dette kortet slutter permanent å fungere. Den ansattes kiosk-PIN fortsetter å fungere.",
+        "description": "En trykt QR-kode som den ansatte skanner ved en online kiosk i stedet for å taste PIN-koden sin. Den logger aldri noen inn.",
+        "done": "Ferdig",
+        "download": "Last ned PDF",
+        "endedByDeparture": "Ikke noe aktivt kioskkort. Det forrige opphørte da den ansatte sluttet den {date}. Gamle eksemplarer vil aldri fungere igjen, heller ikke etter en gjenansettelse.",
+        "heading": "Kioskkort",
+        "issue": "Utsted kort",
+        "none": "Ikke noe kioskkort ennå.",
+        "notEligible": "Et nytt kort kan bare utstedes mens den ansatte er aktiv. Etter en gjenansettelse må det utstedes et nytt kort.",
+        "openToPrint": "Åpne for utskrift",
+        "pdf": {
+          "instructions": "Klipp ut kortet langs den stiplede linjen. Den som har en kopi, kan stemple som denne ansatte på organisasjonens kiosker, så ta vare på det som en nøkkel. Hvis det går tapt, må du be om et nytt: alle kopier av dette kortet slutter da å fungere.",
+          "title": "Kioskkort"
+        },
+        "replace": "Erstatt kort",
+        "revoke": "Tilbakekall kort",
+        "revoked": "Kioskkort tilbakekalt",
+        "revokedOn": "Ikke noe aktivt kioskkort. Det forrige ble tilbakekalt den {date}.",
+        "saveNow": "Lagre PDF-en nå: Z8 kan ikke vise dette kortet igjen. Du kan skrive ut en lagret kopi på nytt. Hvis filen eller kortet går tapt, må kortet erstattes."
       },
       "kioskPin": {
         "addEmailDescription": "De mottar en invitasjon til å velge et passord og kan deretter logge inn. Kiosk-PIN-koden og historikken deres forblir uendret.",
@@ -762,6 +788,7 @@
       "area": {
         "back": "Personalmapper",
         "description": "De ansatte hvis personalmappe du administrerer.",
+        "documentRequests": "Dokumentforespørsler",
         "dueForDeletion": "Klar for sletting",
         "empty": "Ingen ansatte er i ansvarsområdet ditt ennå.",
         "former": "Tidligere ansatt",
@@ -849,16 +876,15 @@
       },
       "due": {
         "confirm": "Slett permanent",
-        "confirmDescription": "Dokumentene og filene slettes for godt. Revisjonsloggen beholder hvem som slettet dem permanent, den ansatte, kategori, dokumentdato og lønnsperiode, samt din årsak.",
         "confirmTitle": "{count, plural, one {Slette # dokument permanent?} other {Slette # dokumenter permanent?}}",
         "description": "Dokumenter for tidligere ansatte der oppbevaringstiden er utløpt. De blir værende til du bekrefter at de skal slettes permanent; la et dokument stå her for å beholde det.",
         "dueSince": "Klar for sletting siden {date}",
         "empty": "Ingen dokumenter innenfor ditt ansvarsområde er klare for sletting.",
         "loadFailed": "Kunne ikke laste inn dokumentene som er klare for sletting.",
         "loading": "Laster inn dokumenter som er klare for sletting",
+        "purgeAuditDescription": "Dokumentene og filene deres slettes for godt. Revisjonsloggen beholder hvem som slettet dem, den ansatte, kategori, dokumentdato og lønnsperiode. Titler og filnavn fjernes også fra dokumentenes tidligere revisjonsoppføringer.",
         "purged": "{count, plural, one {# dokument slettet permanent} other {# dokumenter slettet permanent}}",
         "purgeSelected": "{count, plural, =0 {Slett valgte permanent} one {Slett # dokument permanent} other {Slett # dokumenter permanent}}",
-        "reason": "Årsak (valgfritt)",
         "selectAll": "Velg alle",
         "skipped": "{count, plural, one {# dokument ble ikke slettet permanent fordi det ikke lenger er klart for sletting eller ikke er innenfor ditt ansvarsområde.} other {# dokumenter ble ikke slettet permanent fordi de ikke lenger er klare for sletting eller ikke er innenfor ditt ansvarsområde.}}",
         "title": "Klar for sletting",
@@ -877,6 +903,9 @@
         "empty": "Ingen dokumenter utløper.",
         "expiredAgo": "{days, plural, one {Utløp for # dag siden} other {Utløp for # dager siden}}",
         "inDays": "{days, plural, one {Utløper om # dag} other {Utløper om # dager}}",
+        "renewalRequested": "Fornyelse forespurt",
+        "requestRenewal": "Be om fornyelse",
+        "requestRenewalFor": "Be om fornyelse av {title} ({employee})",
         "title": "Dokumenter som utløper",
         "today": "Utløper i dag"
       },
@@ -910,6 +939,24 @@
         "description": "Dokumenter fra personalmappen din som organisasjonen har delt med deg.",
         "empty": "Ingen dokumenter har blitt delt med deg ennå.",
         "loading": "Laster inn dokumentene dine",
+        "requested": {
+          "description": "Dokumenter organisasjonen din har bedt deg om, med frist.",
+          "submit": {
+            "button": "Send inn",
+            "confirm": "Send inn",
+            "description": "{count, plural, one {# dokument er levert inn for \"{title}\". Organisasjonen din går gjennom det og gir deg beskjed om resultatet.} other {# dokumenter er levert inn for \"{title}\". Organisasjonen din går gjennom dem og gir deg beskjed om resultatet.}}",
+            "note": "Notat (valgfritt)",
+            "open": "Send inn {title}",
+            "success": "Sendt inn",
+            "title": "Sende inn dokumenter?"
+          },
+          "title": "Etterspurte dokumenter",
+          "upload": {
+            "button": "Last opp",
+            "description": "For forespørselen \"{title}\". Send inn forespørselen når alle dokumentene er lastet opp.",
+            "open": "Last opp et dokument for {title}"
+          }
+        },
         "title": "Mine dokumenter",
         "upload": {
           "button": "Last opp dokument",
@@ -973,6 +1020,146 @@
         "saved": "Varslingstid for påminnelse er lagret",
         "saveFailed": "Kunne ikke lagre varslingstiden for påminnelse.",
         "title": "Utløpspåminnelser"
+      },
+      "requests": {
+        "accept": {
+          "button": "Godkjenn",
+          "confirm": "Godkjenn",
+          "description": "Forespørselen \"{title}\" er fullført, og den ansatte blir varslet.",
+          "failed": "Forespørselen kunne ikke godkjennes.",
+          "open": "Godkjenn {title}",
+          "success": "Forespørsel godkjent",
+          "title": "Godkjenne innsending?"
+        },
+        "bulk": {
+          "close": "Lukk",
+          "created": "{count, plural, =0 {Ingen dokumentforespørsler opprettet.} one {# dokumentforespørsel opprettet.} other {# dokumentforespørsler opprettet.}}",
+          "description": "Hver ansatt får sin egen forespørsel og blir varslet. Ansatte du ikke dekker, tidligere ansatte og alle som allerede har en åpen forespørsel med denne tittelen, hoppes over.",
+          "doneTitle": "Dokumenter etterspurt",
+          "employees": "Ansatte",
+          "noTeams": "Ingen team å velge mellom.",
+          "open": "Be om fra flere",
+          "selectEmployees": "Velg ansatte",
+          "skipped": "{count, plural, one {# ansatt hoppet over:} other {# ansatte hoppet over:}}",
+          "skippedAlreadyRequested": "{count, plural, other {# har allerede en åpen forespørsel med denne tittelen} }",
+          "skippedFormer": "{count, plural, one {# tidligere ansatt} other {# tidligere ansatte}}",
+          "skippedNotCovered": "{count, plural, other {# omfattes ikke av tilgangen din} }",
+          "skippedOwnFile": "Din egen fil",
+          "teams": "Team",
+          "teamsHint": "Alle som for øyeblikket er i teamet, så langt ditt ansvarsområde gjelder.",
+          "title": "Be om et dokument fra flere ansatte"
+        },
+        "cancel": {
+          "button": "Avbryt",
+          "confirm": "Kanseller forespørsel",
+          "description": "Den ansatte trenger ikke lenger å laste opp \"{title}\" og får beskjed om hvorfor. Dokumenter som allerede er lastet opp, blir værende i mappen.",
+          "keep": "Behold forespørsel",
+          "open": "Kanseller {title}",
+          "reason": "Årsak",
+          "success": "Forespørsel kansellert",
+          "title": "Kansellere forespørsel?"
+        },
+        "create": {
+          "deadline": "Frist",
+          "deadlineHint": "Datoen den ansatte må levere innen. Etter denne er forespørselen forfalt.",
+          "description": "Den ansatte blir varslet og laster opp dokumentene fra Mine dokumenter. Det de laster opp, havner umiddelbart i mappen deres og deles med dem.",
+          "note": "Notat (valgfritt)",
+          "open": "Be om et dokument",
+          "submit": "Send forespørsel",
+          "success": "Dokument etterspurt",
+          "title": "Be om et dokument",
+          "titleHint": "Hva den ansatte skal laste opp, for eksempel et fornyet førstehjelpskurs."
+        },
+        "deadline": "Frist {date}",
+        "description": "Sertifikater og andre dokumenter som er etterspurt fra denne ansatte, med frist og historikk.",
+        "edit": {
+          "button": "Endre",
+          "deadlineHint": "En ny frist kan ikke være tilbake i tid. Å flytte den starter fristpåminnelsene på nytt.",
+          "description": "Endre fristen eller notatet for \"{title}\". Endringen vises i forespørselens historikk. Hvis du vil be om noe annet, kansellerer du forespørselen og oppretter en ny.",
+          "open": "Endre {title}",
+          "submit": "Lagre endringer",
+          "success": "Forespørsel endret",
+          "title": "Endre forespørsel"
+        },
+        "empty": "Ingen dokumenter er etterspurt ennå.",
+        "error": {
+          "categoryNotRequestable": "Kun sertifikater og andre dokumenter kan etterspørres.",
+          "conflict": "Noen andre har endret denne forespørselen i mellomtiden. Last inn på nytt og prøv igjen.",
+          "deadlineInPast": "Fristen kan ikke være tilbake i tid.",
+          "formerEmployee": "Denne ansattes ansettelsesforhold er avsluttet.",
+          "invalidDeadline": "Velg en frist.",
+          "invalidNote": "Notatet kan inneholde maksimalt {max} tegn.",
+          "invalidReason": "Årsaken kan inneholde maksimalt {max} tegn.",
+          "invalidTitle": "Angi en tittel på maksimalt {max} tegn.",
+          "noDocuments": "Last opp minst ett dokument før du sender inn.",
+          "noRecipients": "Velg minst én ansatt eller ett team.",
+          "notEditable": "Kun fristen og notatet kan endres. Kanseller heller forespørselen og opprett en ny.",
+          "ownFile": "Du kan ikke be om dokumenter til din egen personalmappe.",
+          "reasonRequired": "Oppgi en årsak.",
+          "renewalAlreadyRequested": "Dette dokumentet har allerede en åpen forespørsel om fornyelse.",
+          "renewalExpiryDateRequired": "Den fornyede kompetansen krever en utløpsdato. Legg til utløpsdatoen på et innsendt sertifikat, og godkjenn deretter.",
+          "renewalNotInBulk": "Forespørsler for flere ansatte kan ikke angi et fornyet dokument.",
+          "renewedDocumentMismatch": "Det fornyede dokumentet må være et dokument for samme ansatt og kategori.",
+          "tooManyRecipients": "Be om dokumenter fra maksimalt {max} ansatte om gangen."
+        },
+        "event": {
+          "accepted": "Godkjent",
+          "cancelled": "Kansellert",
+          "created": "Forespurt",
+          "edited": "Endret",
+          "returned": "Returnert",
+          "submitted": "Innsendt"
+        },
+        "history": {
+          "deadlineChanged": "Frist {from} → {to}",
+          "noteChanged": "Notat endret",
+          "title": "Historikk"
+        },
+        "loadFailed": "Kunne ikke laste inn dokumentforespørslene.",
+        "overdue": "Forfalt",
+        "page": {
+          "description": "Dokumentene som er etterspurt fra de ansatte hvis sertifikater eller andre dokumenter du administrerer. En forespørsel er forfalt når den fortsatt er åpen etter fristen.",
+          "empty": "Ingen dokumentforespørsler samsvarer med filtrene.",
+          "filters": {
+            "active": "Åpne og innsendte",
+            "all": "Alle statuser",
+            "overdue": "Kun forfalte",
+            "status": "Status"
+          },
+          "loading": "Laster inn dokumentforespørsler",
+          "next": "Neste side",
+          "pagination": "Side {page} av {pageCount}",
+          "previous": "Forrige side",
+          "title": "Dokumentforespørsler"
+        },
+        "pendingDocuments": "Lastet opp, ikke sendt inn ennå",
+        "pendingDocumentsClosed": "Lastet opp, aldri sendt inn",
+        "reasonCode": {
+          "employmentEnded": "Arbeidsforhold avsluttet"
+        },
+        "renewal": {
+          "hint": "Når du godkjenner forespørselen, regnes ikke dette dokumentet lenger som utløpende. Frem til da sendes utløpspåminnelser kun til administratorer.",
+          "hrOnly": "Dette dokumentet er kun for HR. Den ansatte ser det ikke, bare denne forespørselens tittel, notat, kategori og frist.",
+          "title": "Be om fornyelse"
+        },
+        "renews": "Fornyer {title}",
+        "return": {
+          "button": "Returner",
+          "confirm": "Returner til ansatt",
+          "description": "Den ansatte blir bedt om å laste opp \"{title}\" på nytt og får vite årsaken. Dokumentene de sendte inn, blir værende i filen.",
+          "open": "Returner {title}",
+          "reason": "Årsak",
+          "success": "Forespørsel returnert",
+          "title": "Returnere innsending?"
+        },
+        "status": {
+          "accepted": "Godkjent",
+          "cancelled": "Kansellert",
+          "open": "Åpen",
+          "submitted": "Innsendt"
+        },
+        "submission": "Innsendt {date}",
+        "title": "Dokumentforespørsler"
       },
       "retention": {
         "apply": "Bruk forslag",

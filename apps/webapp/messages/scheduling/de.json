@@ -68,6 +68,7 @@
         "failed": "Aktualisierung der Schicht fehlgeschlagen",
         "overlapDescription": "Diese Schicht überschneidet sich mit {count} anderen Schicht(en)",
         "overlapWarning": "Schicht mit Überschneidungswarnung gespeichert",
+        "skillOverrideReasonRequired": "Dem Mitarbeiter fehlt an diesem Tag eine erforderliche Qualifikation. Öffnen Sie die Schicht, um einen Grund anzugeben.",
         "updated": "Schicht aktualisiert"
       }
     },
@@ -118,6 +119,35 @@
       "updated": "Schicht aktualisiert",
       "updateShift": "Schicht aktualisieren"
     },
+    "shiftRequests": {
+      "approve": "Genehmigen",
+      "approved": "Anfrage genehmigt",
+      "approveFailed": "Anfrage konnte nicht genehmigt werden",
+      "button": "Schichtanfragen",
+      "confirmApprove": "Genehmigung bestätigen",
+      "confirmReject": "Ablehnung bestätigen",
+      "description": "Ausstehende Übernahme- und Tauschanfragen genehmigen oder ablehnen",
+      "empty": "Keine ausstehenden Anfragen",
+      "loadFailed": "Anfragen konnten nicht geladen werden",
+      "loading": "Anfragen werden geladen…",
+      "notes": "Notizen: {notes}",
+      "overrideReasonHelp": "Mit der Genehmigung als Qualifikationsüberschreibung erfasst.",
+      "pickupSummary": "{requester} möchte diese offene Schicht übernehmen",
+      "reason": "Grund: {reason}",
+      "reject": "Ablehnen",
+      "rejected": "Anfrage abgelehnt",
+      "rejectFailed": "Anfrage konnte nicht abgelehnt werden",
+      "rejectReason": "Grund für die Ablehnung (optional)",
+      "shiftWhen": "{date}, {start}–{end}",
+      "swapSummary": "{requester} möchte diese Schicht an {target} übergeben",
+      "swapWithoutTarget": "{requester} möchte diese Schicht abgeben, hat jedoch keinen Kollegen benannt",
+      "title": "Schichtanfragen",
+      "type": {
+        "pickup": "Übernahme",
+        "swap": "Tausch"
+      },
+      "unnamedEmployee": "Unbenannter Mitarbeiter"
+    },
     "skills": {
       "certificateOnFile": "Zertifikat hinterlegt",
       "expiredCertifications": "Abgelaufene Zertifizierungen:",
@@ -125,13 +155,15 @@
       "missingPreferred": "Fehlende bevorzugte Qualifikationen:",
       "missingPreferredCount": "{count} bevorzugte Qualifikationen fehlen",
       "missingRequired": "Fehlende erforderliche Qualifikationen:",
+      "overrideReason": "Grund für die Qualifikationsüberschreibung",
+      "overrideReasonNotice": "Sie können diese Schicht dennoch mit einer Begründung zuweisen. Der Grund wird als Qualifikationsüberschreibung protokolliert.",
+      "overrideReasonRequired": "Geben Sie einen Grund an, um einen Mitarbeiter ohne alle erforderlichen Qualifikationen zuzuweisen.",
       "preferred": "Bevorzugt",
       "preferredSkillsMissing": "Bevorzugte Qualifikationen fehlen",
       "requirementsNotMet": "Qualifikationsanforderungen nicht erfüllt",
       "unqualified": "Nicht qualifiziert",
       "validating": "Qualifikationen werden validiert…",
-      "validatingDescription": "Mitarbeiterqualifikationen werden geprüft",
-      "warningMessage": "Sie können diese Schicht dennoch zuweisen, sie wird jedoch als manuelle Übersteuerung protokolliert."
+      "validatingDescription": "Mitarbeiterqualifikationen werden geprüft"
     },
     "staffingSuggestions": {
       "empty": "Keine verfügbaren Mitarbeiter für diese Schicht",

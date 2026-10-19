@@ -17,8 +17,33 @@
       "noCustomer": "Nur Arbet an eme Projekt mit emne Chund cha verrechebar si"
     },
     "breakInProgress": {
+      "connectionRequired": "Zum e Pause aafange oder wiitermache bruuchts e Verbindig.",
       "description": "Sie sind in der Pause",
-      "since": "I de Pause sit {time}"
+      "endDay": "Tag beände",
+      "errors": {
+        "alreadyOnBreak": "Du bisch scho i de Pause.",
+        "breakChanged": "Dini Pause isch uf emene andere Gräat gänderet worde. Dini Stächuhr zeigt jetzt de aktuell Status aa.",
+        "collision": "Die Pause kollidiert mit ere früenere Aafroog. Bitte aktualisier d Siite und probiers nomal.",
+        "refreshed": "Dini Stächuhr hät sich gänderet. Sie zeigt jetzt de aktuell Status aa.",
+        "resumeNotAllowed": "Du chasch die Pause nöd fortsetze.",
+        "resumeRetry": "Arbet hät nöd chönne fortgsetzt werde. Bitte probiers nomal.",
+        "resumeUnconfirmed": "Fortsetzig hät nöd chönne bestätigt werde. Überprüef dini Stächuhr, vori du's nomal probiersch.",
+        "startNotAllowed": "Du chasch kei Pause aafange.",
+        "startRetry": "Pause hät nöd chönne gstartet werde. Bitte probiers nomal.",
+        "tooEarly": "E Pause chan erscht aagfange werde, wänn dini Arbet aagfange hät.",
+        "unconfirmed": "Dini Pause hät nöd chönne bestätigt werde. Überprüef dini Stächuhr, vori du's nomal probiersch.",
+        "workChanged": "Dini Stächuhr isch uf emene andere Gräat gänderet worde. Sie zeigt jetzt de aktuell Status aa."
+      },
+      "pendingClockActions": "Gspychereti Stächuhr-Aktione werded no gsendet. Probier's nomal, sobald sie synchronisiert sind.",
+      "resume": "Wiitermache",
+      "resumed": "Arbet fortgsetzt",
+      "since": "I de Pause sit {time}",
+      "start": "Pause aafange",
+      "started": "Pause gstartet",
+      "startedDescription": "Mach wiiter, wänn zrugg bisch, oder beänd din Tag.",
+      "trigger": "I de Pause",
+      "uncertain": "Dini Pause hät nöd chönne bestätigt werde",
+      "uncertainDescription": "Dini Stächuhr isch aktualisiert worde. Überprüef sie, vori du's nomal probiersch."
     },
     "budget": "Budget",
     "clockedOutSuccess": "Du häsch usgstämplet!",
@@ -147,9 +172,41 @@
         "resume": "Witer schaffe",
         "startBreak": "Pause starte"
       },
+      "attribution": {
+        "back": "Zrugg",
+        "keep": "{name} bhalte",
+        "noProject": "Keis Projekt",
+        "noWorkCategory": "Kei Arbetskategori",
+        "project": "Projekt",
+        "title": "A was häsch gschaffet?",
+        "workCategory": "Arbetskategori"
+      },
+      "badge": {
+        "checking": "Badge wird überprüft…",
+        "failed": "De Badge hät nöd chönne überprüft werde. Es isch nüüt erfasst worde. Scann en nomal oder tipp uf din Name, zum din PIN z'bruuche.",
+        "inputDisabled": "Badge-Scanne isch a däm Kiosk abgschaltet. Tipp uf din Name, zum din PIN z'bruuche.",
+        "notAccepted": "Dä Badge wird a däm Kiosk nöd akzeptiert. Es isch nüüt erfasst worde. Tipp uf din Name, zum din PIN z'bruuche, oder frag dini Füehrigskraft.",
+        "notRecorded": "Dini Aktion isch nöd erfasst worde. Scann din Badge nomal, zum sie nomal uswähle.",
+        "offline": "Badge-Stäche bruucht e Verbindig. Es isch nüüt erfasst worde.",
+        "offlinePin": "Badge-Stäche bruucht e Verbindig. Es isch nüüt erfasst worde. Tipp uf din Name, zum mit dim PIN z'stäche.",
+        "rateLimited": "Zvill Badge-Scans a däm Kiosk. Probier's in {seconds} Sekunde nomal oder tipp uf din Name, zum din PIN z'bruuche.",
+        "unreadable": "Dä Code isch keis Kiosk-Badge. Es isch nüüt erfasst worde. Scann din Kiosk-Badge oder tipp uf din Name, zum din PIN z'bruuche."
+      },
       "board": {
         "empty": "Im Momänt isch niemert iigstämpflet.",
         "title": "Wer isch da"
+      },
+      "camera": {
+        "cancel": "Scan abbreche",
+        "denied": "De Kiosk dörf d Kamera nöd bruuche. Erlaub im Browser de Zuegriff uf d Kamera für die Siite, oder druck uf din Name, zum din PIN z'bruuche.",
+        "failed": "D Kamera hät nöd chönne gstartet werde. Probier's namal, oder druck uf din Name, zum din PIN z'bruuche.",
+        "hint": "Heb de QR-Code im Rahme. De Code wird uf dem Kiosk gläse; es wird keis Bild gspeicheret.",
+        "missing": "Dä Kiosk hät kei Kamera, wo scanne cha. Druck uf din Name, zum din PIN z'bruuche.",
+        "notBadge": "Dä Code isch kei Kiosk-Badge. Heb din Kiosk-Badge ane, oder brich ab und druck uf din Name, zum din PIN z'bruuche.",
+        "preview": "Kamera-Vorschau",
+        "starting": "Kamera wird gstartet…",
+        "title": "Heb din Kiosk-Badge vor d Kamera",
+        "unsupported": "Dä Browser cha mit de Kamera kei Badges scanne. Druck uf din Name, zum din PIN z'bruuche."
       },
       "done": {
         "button": "Fertig",
@@ -174,6 +231,8 @@
         "loadFailed": "D Näme händ nöd chönne glade werde. Überprüef d Netzwerkverbindig.",
         "loading": "Näme wärded glade…",
         "noMatch": "Kei Name passt zu dinere Suech.",
+        "scanBadge": "Badge scanne",
+        "scanHint": "Oder scann din Kiosk-Badge am Scanner.",
         "search": "Find din Name",
         "title": "Tipp uf din Name zum Ii- oder Usstämple"
       },
@@ -226,15 +285,19 @@
       },
       "refusal": {
         "alreadyClockedIn": "Sie sind bereits eingestempelt.",
+        "attemptClosed": "Die Aktion isch nöd erfasst worde. Wähl si namal uus, wenn si immer no wotsch.",
         "billing": "Stempeln ist für Ihre Organisation derzeit nicht verfügbar. Wenden Sie sich an Ihren Administrator.",
         "generic": "Das hat nicht funktioniert. Es wurde nichts erfasst. Versuchen Sie es erneut oder fragen Sie Ihre Führungskraft.",
         "holiday": "Stempeln ist heute aufgrund eines Feiertags blockiert. Fragen Sie Ihre Führungskraft.",
         "monthClosed": "Die Ziit isch imene gschlossene Monet und chan nöd gänderet werde. Frög din Manager.",
         "noBreak": "Sie sind nicht in einer Pause.",
         "notClockedIn": "Sie sind nicht eingestempelt.",
+        "notRecorded": "Dini Aktion isch nöd erfasst worde. Gib din PIN ii, zum si namal uuszwähle.",
         "onBreak": "Sie sind bereits in einer Pause.",
+        "projectNotAllowed": "Uf das Projekt cha nümme buecht werde. Es isch nüt erfasst worde. Wähl es anders uus, oder bhalt s aktuelle, und probier's namal.",
         "unconfirmed": "Der Kiosk konnte nicht bestätigen, ob dies gespeichert wurde. Überprüfen Sie Ihren Status, bevor Sie es erneut versuchen.",
-        "underReview": "Ihre Arbeitszeit für heute wird überprüft. Fragen Sie Ihre Führungskraft."
+        "underReview": "Ihre Arbeitszeit für heute wird überprüft. Fragen Sie Ihre Führungskraft.",
+        "workCategoryNotAllowed": "Die Tätigkeitskategorie cha nümme buecht werde. Es isch nüt erfasst worde. Wähl en anderi uus, oder bhalt die aktuelli, und probier's namal."
       },
       "retry": "Erneut versuchen",
       "revoked": {
@@ -246,6 +309,14 @@
         "clockedIn": "Eingestempelt seit {time}",
         "clockedOut": "Nicht eingestempelt",
         "onBreak": "In Pause seit {time}"
+      },
+      "uncertain": {
+        "action": "{name}: {action}",
+        "back": "Zrugg",
+        "conflict": "Die Aktion hät uf dem Kiosk nöd chönne überprüft werde. Prüef din Status bi dinere Füehrigschraft, bevor du dich namal istempflisch.",
+        "title": "Überprüefe, ob dini Aktion erfasst worde isch",
+        "unavailable": "Z8 isch im Moment nöd erreichbar. De Kiosk prüeft's wiiter.",
+        "wait": "Stempfel nöd namal. De Kiosk prüeft's wiiter und zeigt dir s Ergebnis, sobald Z8 antwortet – au wenn spöter zruggchunsch."
       },
       "unreachableDescription": "Der Kiosk kann den Server nicht erreichen. Überprüfen Sie die Netzwerkverbindung; Stempeln funktioniert nur online.",
       "unreachableTitle": "Kiosk offline",
@@ -336,18 +407,42 @@
     "periodSubmissions": {
       "blocker": {
         "absenceRequest": "E Abwäseheitsafrag für {dates} isch no unentschide.",
+        "absenceRequestAction": "E genehmigendi Person entscheidet über die Abweseheit. Während em Warte chasch si unter «Mini Aaträg» abbreche.",
         "liveWork": "D Arbet, wo am {start} agfange hät, lauft immer no.",
+        "liveWorkAction": "Stempfel uus, wenn die Arbet fertig isch.",
         "manualWork": "Manuelle Arbeit am {start} ist noch nicht entschieden.",
-        "timeCorrection": "Eine Zeitkorrektur für Arbeit am {start} ist noch nicht entschieden."
+        "manualWorkAction": "E genehmigendi Person entscheidet über die Arbet. Du muesch nüt mache.",
+        "openClock": "Zur Stempfeluhr",
+        "openRequest": "Aatrag öffne",
+        "openTimeline": "Uf de Zitleiste aazeige",
+        "timeCorrection": "Eine Zeitkorrektur für Arbeit am {start} ist noch nicht entschieden.",
+        "timeCorrectionAction": "E genehmigendi Person entscheidet über die Korrektur. Während em Warte chasch si unter «Mini Aaträg» abbreche.",
+        "timeCorrectionWaitAction": "E genehmigendi Person entscheidet über die Korrektur. Du chasch nur uf ihri Entschaidig warte."
       },
       "description": "Bestätige, dass deine Arbeit und Absenzen für jede Periode vollständig und korrekt sind.",
-      "opensOn": "Du kannst ab {date} einreichen.",
+      "focus": {
+        "notShown": "Die Arbet cha da nöd aazeigt werde. D Bereitschaft vo de Periode isch namal überprüft worde.",
+        "resolved": "Die Arbet haltet d Periode nümme offe. D Bereitschaft vo de Periode isch namal überprüft worde."
+      },
+      "readiness": {
+        "checking": "Überprüefe, ob die Periode bereit isch…",
+        "hideDetails": "Details usblende",
+        "notReady": "Iireiche isch verfügbar, sobald die Periode bereit isch.",
+        "openItems": "{count, plural, one {# Iitrag haltet die Periode offe.} other {# Iiträg halted die Periode offe.}}",
+        "opensOn": "Iireiche isch ab {date} möglich.",
+        "ready": "Bereit zum Iireiche",
+        "retry": "Namal probiere",
+        "showDetails": "Details aazeige",
+        "submitUnavailable": "Iireiche isch nöd verfügbar, bis d Bereitschaft überprüft werde cha.",
+        "unavailable": "D Bereitschaft zum Iireiche isch grad nöd verfügbar, drum isch Iireiche deaktiviert."
+      },
       "refusal": {
         "alreadySubmitted": "Diese Periode wurde bereits eingereicht.",
         "noApprover": "Niemand kann diese Periode bisher genehmigen. Bitte einen Administrator, dir eine vorgesetzte Person zuzuweisen.",
         "notEnded": "Du kannst diese Periode ab ihrem letzten Tag einreichen.",
         "notExpected": "Diese Periode muss nicht eingereicht werden.",
-        "periodOpen": "Diese Periode ist noch offen"
+        "periodOpen": "Diese Periode ist noch offen",
+        "writeGateClosed": "Iireichige vo Periode sind i dinere Organisation grad pausiert. Probier's spöter namal oder frog en Administrator."
       },
       "rejectionReason": "Grund: {reason}",
       "status": {

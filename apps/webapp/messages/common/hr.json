@@ -427,6 +427,7 @@
     "uploading": "Učitavanje...",
     "vacationAllowance": {
       "cappedAtFullAllowance": "ograničeno na puni fond",
+      "convertedSummary": "{allowance} dana: {conversion}",
       "employmentMonths": "{months, plural, one {# puni mjesec zaposlenja} few {# puna mjeseca zaposlenja} other {# punih mjeseci zaposlenja}}",
       "lastWorkingDay": "zadnji radni dan {date}",
       "notEmployed": "{allowance} od {fullAllowance} dana: nije u radnom odnosu u {year}.",
@@ -434,7 +435,10 @@
       "overdrawnHint": "Godišnji odmor iskorišten iznad fonda. Prikazano samo informativno: ništa se ne oduzima.",
       "proratedSummary": "{allowance} od {fullAllowance} dana, razmjerno: {details}",
       "started": "početak rada {date}",
-      "statutoryMinimumApplies": "primjenjuje se zakonski minimum"
+      "statutoryMinimumApplies": "primjenjuje se zakonski minimum",
+      "workingDaysPerWeek": "{days, plural, one {# radni dan tjedno} few {# radna dana tjedno} other {# radnih dana tjedno}}",
+      "workingWeekConversion": "{reference} referentnih dana pretvoreno u {weeks}",
+      "workingWeekPeriod": "{week} od {start} do {end}"
     },
     "validate": "Provjeri valjanost",
     "validationError": "Pogreška provjere valjanosti",
@@ -929,6 +933,7 @@
     },
     "page": {
       "context": "Osobna registracija, oporavak i odabir organizacije ostaju dostupni dok je za pristup organizaciji potrebna provjera.",
+      "description": "Potvrdite autentifikator kako biste zadržali pristup svojim organizacijama.",
       "title": "Sigurnosna provjera"
     },
     "passkey": {
@@ -1311,6 +1316,42 @@
         "message": "Preuzmite svoje osobne podatke pod Moji podaci prije {untilDate}. Nakon toga ih samo administrator može izvesti za vas.",
         "title": "Preuzmite svoje osobne podatke prije odlaska"
       },
+      "personnelFileDocumentRequestAccepted": {
+        "message": "Vaši dokumenti za \"{title}\" su prihvaćeni.",
+        "title": "Dokumenti prihvaćeni"
+      },
+      "personnelFileDocumentRequestCancelled": {
+        "message": "Zahtjev \"{title}\" je otkazan: {reason}",
+        "messageWithoutReason": "Zahtjev \"{title}\" je otkazan.",
+        "title": "Zahtjev za dokumente je otkazan"
+      },
+      "personnelFileDocumentRequestDueSoon": {
+        "message": "Učitajte \"{title}\" do {deadline}.",
+        "title": "Rok za dokument uskoro istječe"
+      },
+      "personnelFileDocumentRequestDueToday": {
+        "message": "Učitajte \"{title}\" danas.",
+        "title": "Rok za dokument istječe danas"
+      },
+      "personnelFileDocumentRequested": {
+        "message": "Učitajte \"{title}\" do {deadline}.",
+        "title": "Dokument je zatražen"
+      },
+      "personnelFileDocumentRequestOverdue": {
+        "message": "Rok za \"{title}\" istekao je {deadline}. Učitajte ga.",
+        "officerMessage": "{employee} nije predao \"{title}\", čiji je rok bio {deadline}.",
+        "officerTitle": "Rok za zatraženi dokument je istekao",
+        "title": "Rok za dokument je istekao"
+      },
+      "personnelFileDocumentRequestReturned": {
+        "message": "Ponovno učitajte \"{title}\" do {deadline}: {reason}",
+        "messageWithoutReason": "Ponovno učitajte \"{title}\" do {deadline}.",
+        "title": "Dokumenti su vraćeni"
+      },
+      "personnelFileDocumentRequestSubmitted": {
+        "message": "{name} je poslao dokumente za \"{title}\". Pregledajte ih.",
+        "title": "Dokumenti su predani"
+      },
       "personnelFileDocumentShared": {
         "message": "Dokument „{title}” podijeljen je s vama.",
         "title": "Novi dokument u vašem dosjeu"
@@ -1652,6 +1693,11 @@
         "personal_data_export_admin_exported": "Administrator je izvezao osobne podatke",
         "personal_data_export_ready": "Izvoz osobnih podataka je spreman",
         "personal_data_export_reminder": "Preuzmite svoje podatke prije odlaska",
+        "personnel_file_document_request_decided": "Zahtjev za dokument je prihvaćen, vraćen ili otkazan",
+        "personnel_file_document_requested": "Od vas je zatražen dokument",
+        "personnel_file_document_request_overdue": "Rok za zahtjev za dokument je istekao",
+        "personnel_file_document_request_reminder": "Rok za zatraženi dokument uskoro istječe",
+        "personnel_file_document_request_submitted": "Zatraženi dokumenti su predani (referenti za kadrovske dosjee)",
         "skill_expired_today": "Vještina istječe danas",
         "skill_expiry_upcoming": "Vještina uskoro istječe",
         "work_balance_adjustment_cancelled": "Prilagodba salda poništena",
@@ -3066,7 +3112,10 @@
     "theme-toggle": "Promijeni temu"
   },
   "vacationBalance": {
-    "previouslyTaken": "Uključuje {days} dana prethodno iskorištenih prije praćenja"
+    "conflictingPolicies": "Sukobljena pravila o godišnjem odmoru",
+    "missingPolicy": "Nedostaje pravilo o godišnjem odmoru",
+    "previouslyTaken": "Uključuje {days} dana prethodno iskorištenih prije praćenja",
+    "zeroWorkingDays": "Raspored rada bez radnih dana"
   },
   "validation": {
     "first-name-required": "Ime je obavezno",

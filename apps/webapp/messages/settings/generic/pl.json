@@ -1,5 +1,19 @@
 {
   "settings": {
+    "approvalTriage": {
+      "correctionError": "Wprowadź liczbę całkowitą od 0 do 60 minut.",
+      "correctionHelp": "Wartość zero wyłącza szybką ścieżkę drobnych korekt, w tym edycje bez zmian. W przeciwnym razie wprowadź wartość od 1 do 60 minut; wszystkie wymagane potwierdzenia nadal muszą zostać zweryfikowane.",
+      "correctionLabel": "Limit drobnej korekty (w minutach)",
+      "description": "Określ, kiedy oczekujące wnioski wymagają uwagi oraz które drobne korekty czasu mogą korzystać z szybkiej ścieżki. Reguły ryzyka i wymagania dotyczące potwierdzeń pozostają bez zmian.",
+      "save": "Zapisz ustawienia selekcji",
+      "saved": "Ustawienia selekcji zostały zapisane.",
+      "saveError": "Nie można zapisać ustawień selekcji. Spróbuj ponownie.",
+      "staleError": "Wprowadź liczbę całkowitą od 1 do 720 godzin.",
+      "staleHelp": "Oczekujące wnioski stają się nieaktualne po upływie tej liczby godzin (1–720). Weekendy oraz zmiany czasu nie wstrzymują odliczania.",
+      "staleLabel": "Nieaktualne po (godz.)",
+      "thresholds": "Progi weryfikacji",
+      "title": "Weryfikacja zatwierdzeń"
+    },
     "assignedLocations": {
       "added": "Dodano przypisaną lokalizację",
       "employeeDescription": "Lokalizacje, w których pracuje ten pracownik. Kioski akceptują tylko pracowników przypisanych do danej lokalizacji.",
@@ -466,6 +480,7 @@
       },
       "historyEmpty": "Żaden miesiąc nie został jeszcze zamknięty.",
       "historyTitle": "Historia",
+      "locationNotFound": "Ta lokalizacja już nie istnieje.",
       "monthsDescription": "Zamknięcie miesiąca blokuje czas pracy, przypisania i nieobecności na potrzeby listy płac. Notatki nadal można edytować.",
       "monthsTitle": "Miesiące",
       "nothingToClose": "Wszyscy w tym zakresie są już zamknięci dla tego miesiąca.",
@@ -481,9 +496,14 @@
       "reopenTitle": "Otwórz ponownie {month}",
       "scope": {
         "all": "Wszystko",
+        "deletedLocation": "Usunięta lokalizacja",
         "deletedTeam": "Usunięty zespół",
         "employees": "Wybrani pracownicy",
-        "organization": "Organizacja"
+        "locationHelp": "Zamyka cały miesiąc dla wszystkich osób aktualnie przypisanych do tej lokalizacji, w tym byłych pracowników. Ich praca w innych lokalizacjach również zostaje zamrożona. Pracownicy przypisani później nie są objęci tą zmianą.",
+        "locationNamed": "Lokalizacja {name}",
+        "locations": "Lokalizacje",
+        "organization": "Organizacja",
+        "teams": "Zespoły"
       },
       "scopeLabel": "Zamknij dla",
       "teamNotFound": "Ten zespół już nie istnieje.",
@@ -1336,6 +1356,77 @@
       "title": "Lista kontrolna wdrożenia"
     },
     "import": {
+      "csv": {
+        "acceptSelected": "Zaakceptuj zaznaczone prawidłowe wiersze",
+        "applyMapping": "Zastosuj mapowanie",
+        "chooseSource": "Wybierz wartość źródłową",
+        "chooseTarget": "Wybierz istniejący rekord",
+        "commit": "Zatwierdź zaakceptowane wiersze",
+        "committing": "Importowanie zaakceptowanych wierszy…",
+        "description": "Zaimportuj jeden ukończony okres pracy na wiersz. Przerwy należy przedstawić jako odstępy między wierszami. Nic nie zostanie zarejestrowane, dopóki tego nie przejrzysz i nie zaakceptujesz.",
+        "download": "Pobierz szablon CSV",
+        "duplicateSkipped": "Pominięty duplikat",
+        "existingEmployee": "Istniejący pracownik",
+        "existingVehicle": "Istniejący pojazd",
+        "file": "Plik CSV",
+        "fileTimezone": "Strefa czasowa dla lokalnych znaczników czasu",
+        "format": "Użyj kodowania UTF-8, przecinków jako separatorów oraz nagłówków z szablonu. Maksymalnie 500 KB i 1000 wierszy. Kolumny dotyczące pojazdów są opcjonalne; odczyty licznika i odległość podawane są w pełnych kilometrach.",
+        "interval": "Początek i koniec wg czasu lokalnego zdarzenia",
+        "mappingHelp": "Mapowania mają zastosowanie tylko do tej partii i zachowują oryginalne wartości źródłowe. Zmiana mapowania lub ponowne sprawdzenie resetuje akceptację niezatwierdzonych wierszy.",
+        "mappingTitle": "Mapuj wartości źródłowe na istniejące rekordy",
+        "mappingType": "Typ mapowania",
+        "offsetsOnly": "tylko jawne przesunięcia",
+        "organizationVehicle": "Pojazd organizacji",
+        "outcome": "Status i problemy",
+        "ownVehicle": "Własny pojazd",
+        "pages": "Strony przeglądu pliku CSV",
+        "partialHelp": "Zaakceptowane prawidłowe wiersze można zaimportować, podczas gdy inne wiersze pozostają nierozwiązane. Popraw niepoprawne znaczniki czasu lub liczby w pliku CSV i prześlij go ponownie; zaimportowana już praca zostanie pominięta.",
+        "person": "Pracownik",
+        "preparing": "Przygotowywanie podglądu…",
+        "preview": "Podgląd CSV",
+        "readFailed": "Nie udało się odczytać wybranego pliku",
+        "recheck": "Sprawdź ponownie nierozwiązane wiersze",
+        "rejectSelected": "Odrzuć zaznaczone wiersze",
+        "reviewTitle": "Przejrzyj ukończoną pracę z pliku CSV",
+        "row": "Wiersz CSV",
+        "scanning": "Przygotowywanie przeglądu…",
+        "selectPage": "Zaznacz wszystkie wiersze na tej stronie",
+        "selectRow": "Zaznacz wiersz CSV",
+        "sourcePlate": "Źródłowy numer rejestracyjny",
+        "sourceValue": "Wartość źródłowa",
+        "status": {
+          "accepted": "Zaakceptowano",
+          "blocked": "Wymaga uwagi",
+          "commit_failed": "Wymaga uwagi",
+          "committed": "Zaimportowano",
+          "committing": "Importowanie",
+          "needs_mapping": "Wymaga uwagi",
+          "rejected": "Odrzucono",
+          "staged": "Oczekuje na weryfikację"
+        },
+        "summary": {
+          "accepted": "Zaakceptowano",
+          "imported": "Zaimportowano",
+          "rejected": "Odrzucono",
+          "skipped": "Pominięte duplikaty",
+          "total": "Łączna liczba wierszy",
+          "unresolved": "Nierozwiązane"
+        },
+        "tab": "Praca z pliku CSV",
+        "timezone": "Strefa czasowa dla lokalnych znaczników czasu",
+        "timezoneHelp": "Wymagane w przypadku znaczników czasu bez przesunięcia. Wyraźne przesunięcia, takie jak +02:00, mają pierwszeństwo. Strefa czasowa przeglądarki nigdy nie jest używana domyślnie.",
+        "title": "Zakończona praca z pliku CSV",
+        "tooLarge": "Pliki CSV mogą mieć maksymalnie 500 KB",
+        "vehicle": "Użycie pojazdu",
+        "warning": {
+          "distance_above_limit": "Dystans przekracza 1 500 km",
+          "driving_details_missing": "Brak szczegółów przejazdu",
+          "duplicate_will_skip": "Identyczna praca zostanie pominięta",
+          "speed_above_limit": "Wynikająca średnia prędkość przekracza 150 km/h",
+          "start_below_last_end": "Stan początkowy licznika jest niższy niż ostatni zarejestrowany stan końcowy",
+          "vehicle_on_other_live_work": "Pojazd jest przypisany do aktywnej pracy innego pracownika"
+        }
+      },
       "description": "Importuj dane z obsługiwanych dostawców, takich jak Clockodo i Clockin.",
       "review": {
         "billability": {
@@ -1437,7 +1528,20 @@
         },
         "title": "Przegląd importu"
       },
+      "supportedSources": "Importuj czas pracy z plików CSV lub połącz się z obsługiwanymi dostawcami, takimi jak Clockodo i Clockin.",
       "title": "Importuj dane"
+    },
+    "kioskBadge": {
+      "errors": {
+        "badgeChanged": "Ktoś inny zmienił w międzyczasie ten identyfikator kiosku. Sprawdź jego status i spróbuj ponownie.",
+        "badgeExists": "Ten pracownik ma już identyfikator do kiosku. Zamiast tego wymień go.",
+        "employeeInactive": "Tylko aktywni pracownicy mogą otrzymać identyfikator do kiosku.",
+        "employeeNotFound": "Nie znaleziono tego pracownika.",
+        "failed": "Coś poszło nie tak. Spróbuj ponownie.",
+        "noBadge": "Ten pracownik nie ma identyfikatora do kiosku.",
+        "notAllowed": "Nie masz uprawnień do wykonania tej czynności.",
+        "signInRequired": "Zaloguj się, aby kontynuować."
+      }
     },
     "kioskPin": {
       "errors": {
@@ -1460,6 +1564,8 @@
     },
     "kiosks": {
       "add": "Dodaj kiosk",
+      "badgeCameraOn": "Kamera do identyfikatorów włączona",
+      "badgeScannerOn": "Skaner identyfikatorów włączony",
       "boardOn": "Tablica obecności włączona",
       "columns": {
         "actions": "Akcje",
@@ -1489,6 +1595,10 @@
         "offlineNeedsAdoption": "Tryb offline wymaga skoordynowanych poleceń zegara, których ta organizacja jeszcze nie używa."
       },
       "fields": {
+        "badgeCamera": "Kamera do identyfikatorów",
+        "badgeCameraDescription": "Pracownicy dotykają opcji „Skanuj identyfikator” i przybliżają swój identyfikator do kamery tego kiosku zamiast wpisywać kod PIN. Kod jest odczytywany na urządzeniu; żaden obraz nie jest przesyłany ani zapisywany. Przeglądarka pyta jednorazowo o dostęp do kamery. Rejestracja identyfikatorem wymaga połączenia z siecią; imię i nazwisko oraz kod PIN działają nadal.",
+        "badgeScanner": "Skaner identyfikatorów",
+        "badgeScannerDescription": "Pracownicy skanują swój identyfikator do kiosku skanerem kodów QR podłączonym do tego kiosku zamiast wpisywać kod PIN. Rejestracja identyfikatorem wymaga połączenia z siecią; imię i nazwisko oraz kod PIN działają nadal.",
         "board": "Tablica obecności",
         "boardDescription": "Pokazuje na kiosku, kto jest obecny lub na przerwie, podając imię i pierwszą literę nazwiska.",
         "location": "Lokalizacja",

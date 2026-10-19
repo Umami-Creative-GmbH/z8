@@ -68,6 +68,7 @@
         "failed": "Vardiya güncellenemedi",
         "overlapDescription": "Bu vardiya diğer {count} vardiya ile çakışıyor",
         "overlapWarning": "Vardiya, çakışma uyarısıyla kaydedildi",
+        "skillOverrideReasonRequired": "Çalışan bu gün gerekli bir beceriye sahip değil. Bir gerekçe belirtmek için vardiyayı açın.",
         "updated": "Vardiya güncellendi"
       }
     },
@@ -118,6 +119,35 @@
       "updated": "Vardiya güncellendi",
       "updateShift": "Vardiyayı Güncelle"
     },
+    "shiftRequests": {
+      "approve": "Onayla",
+      "approved": "Talep onaylandı",
+      "approveFailed": "Talep onaylanamadı",
+      "button": "Vardiya talepleri",
+      "confirmApprove": "Onayı onayla",
+      "confirmReject": "Reddetmeyi onayla",
+      "description": "Bekleyen vardiya alma ve takas taleplerini onaylayın veya reddedin",
+      "empty": "Bekleyen talep yok",
+      "loadFailed": "Talepler yüklenemedi",
+      "loading": "Talepler yükleniyor…",
+      "notes": "Notlar: {notes}",
+      "overrideReasonHelp": "Onayla birlikte beceri geçersiz kılma olarak kaydedildi.",
+      "pickupSummary": "{requester} bu açık vardiyayı almak istiyor",
+      "reason": "Gerekçe: {reason}",
+      "reject": "Reddet",
+      "rejected": "Talep reddedildi",
+      "rejectFailed": "Talep reddedilemedi",
+      "rejectReason": "Reddetme gerekçesi (isteğe bağlı)",
+      "shiftWhen": "{date}, {start}–{end}",
+      "swapSummary": "{requester} bu vardiyayı {target} kişisine devretmek istiyor",
+      "swapWithoutTarget": "{requester} bu vardiyayı devretmek istiyor ancak bir iş arkadaşı belirtmedi",
+      "title": "Vardiya talepleri",
+      "type": {
+        "pickup": "Vardiya alma",
+        "swap": "Takas"
+      },
+      "unnamedEmployee": "Adsız çalışan"
+    },
     "skills": {
       "certificateOnFile": "Kayıtlı sertifika",
       "expiredCertifications": "Süresi Dolan Sertifikalar:",
@@ -125,13 +155,15 @@
       "missingPreferred": "Eksik Tercih Edilen Beceriler:",
       "missingPreferredCount": "{count} tercih edilen beceri eksik",
       "missingRequired": "Eksik Zorunlu Beceriler:",
+      "overrideReason": "Beceri geçersiz kılma gerekçesi",
+      "overrideReasonNotice": "Yine de bir gerekçe belirterek bu vardiyayı atayabilirsiniz. Gerekçe, beceri geçersiz kılma olarak günlüğe kaydedilir.",
+      "overrideReasonRequired": "Gerekli tüm becerilere sahip olmayan bir çalışanı atamak için bir gerekçe belirtin.",
       "preferred": "Tercih edilen",
       "preferredSkillsMissing": "Tercih Edilen Beceriler Eksik",
       "requirementsNotMet": "Beceri Gereksinimleri Karşılanmadı",
       "unqualified": "Niteliksiz",
       "validating": "Beceriler doğrulanıyor…",
-      "validatingDescription": "Çalışan nitelikleri kontrol ediliyor",
-      "warningMessage": "Bu vardiyayı yine de atayabilirsiniz, ancak geçersiz kılma olarak kaydedilecektir."
+      "validatingDescription": "Çalışan nitelikleri kontrol ediliyor"
     },
     "staffingSuggestions": {
       "empty": "Bu vardiya için uygun çalışan yok",

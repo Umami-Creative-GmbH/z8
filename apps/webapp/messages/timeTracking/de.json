@@ -17,8 +17,33 @@
       "noCustomer": "Nur Arbeit an einem Projekt mit einem Kunden kann abrechenbar sein"
     },
     "breakInProgress": {
+      "connectionRequired": "Das Starten oder Fortsetzen einer Pause erfordert eine Verbindung.",
       "description": "Sie machen gerade Pause",
-      "since": "In Pause seit {time}"
+      "endDay": "Arbeitstag beenden",
+      "errors": {
+        "alreadyOnBreak": "Sie befinden sich bereits in einer Pause.",
+        "breakChanged": "Ihre Pause wurde auf einem anderen Gerät geändert. Ihre Zeiterfassung zeigt jetzt den aktuellen Status an.",
+        "collision": "Diese Pause steht in Konflikt mit einer früheren Anfrage. Bitte aktualisieren Sie die Ansicht und versuchen Sie es erneut.",
+        "refreshed": "Ihre Zeiterfassung hat sich geändert. Sie zeigt jetzt den aktuellen Status an.",
+        "resumeNotAllowed": "Sie können diese Pause nicht fortsetzen.",
+        "resumeRetry": "Die Arbeit konnte nicht fortgesetzt werden. Bitte versuchen Sie es erneut.",
+        "resumeUnconfirmed": "Das Fortsetzen konnte nicht bestätigt werden. Überprüfen Sie Ihre Zeiterfassung, bevor Sie es erneut versuchen.",
+        "startNotAllowed": "Sie können keine Pause starten.",
+        "startRetry": "Ihre Pause konnte nicht gestartet werden. Bitte versuchen Sie es erneut.",
+        "tooEarly": "Eine Pause kann erst begonnen werden, nachdem Ihre Arbeit gestartet wurde.",
+        "unconfirmed": "Ihre Pause konnte nicht bestätigt werden. Überprüfen Sie Ihre Zeiterfassung, bevor Sie es erneut versuchen.",
+        "workChanged": "Ihre Zeiterfassung wurde auf einem anderen Gerät geändert. Sie zeigt jetzt den aktuellen Status an."
+      },
+      "pendingClockActions": "Gespeicherte Aktionen der Zeiterfassung werden noch übertragen. Versuchen Sie es erneut, sobald sie synchronisiert sind.",
+      "resume": "Fortsetzen",
+      "resumed": "Arbeit fortgesetzt",
+      "since": "In Pause seit {time}",
+      "start": "Pause starten",
+      "started": "Pause gestartet",
+      "startedDescription": "Setzen Sie die Arbeit fort, wenn Sie zurück sind, oder beenden Sie Ihren Arbeitstag.",
+      "trigger": "In der Pause",
+      "uncertain": "Ihre Pause konnte nicht bestätigt werden",
+      "uncertainDescription": "Ihre Zeiterfassung wurde aktualisiert. Überprüfen Sie diese, bevor Sie es erneut versuchen."
     },
     "budget": "Budget",
     "clockedOutSuccess": "Sie haben ausgestempelt!",
@@ -147,9 +172,41 @@
         "resume": "Arbeit fortsetzen",
         "startBreak": "Pause starten"
       },
+      "attribution": {
+        "back": "Zurück",
+        "keep": "{name} behalten",
+        "noProject": "Kein Projekt",
+        "noWorkCategory": "Keine Tätigkeitskategorie",
+        "project": "Projekt",
+        "title": "Woran haben Sie gearbeitet?",
+        "workCategory": "Tätigkeitskategorie"
+      },
+      "badge": {
+        "checking": "Ausweis wird überprüft …",
+        "failed": "Der Ausweis konnte nicht überprüft werden. Es wurde nichts erfasst. Scannen Sie ihn erneut oder tippen Sie auf Ihren Namen, um Ihre PIN zu verwenden.",
+        "inputDisabled": "Das Scannen von Ausweisen ist an diesem Kiosk deaktiviert. Tippen Sie auf Ihren Namen, um Ihre PIN zu verwenden.",
+        "notAccepted": "Dieser Ausweis wird an diesem Kiosk nicht akzeptiert. Es wurde nichts erfasst. Tippen Sie auf Ihren Namen, um Ihre PIN zu verwenden, oder wenden Sie sich an Ihre Führungskraft.",
+        "notRecorded": "Ihre Aktion wurde nicht erfasst. Scannen Sie Ihren Ausweis erneut, um die Auswahl noch einmal zu treffen.",
+        "offline": "Das Stempeln per Ausweis erfordert eine Verbindung. Es wurde nichts erfasst.",
+        "offlinePin": "Das Stempeln per Ausweis erfordert eine Verbindung. Es wurde nichts erfasst. Tippen Sie auf Ihren Namen, um mit Ihrer PIN zu stempeln.",
+        "rateLimited": "Zu viele Ausweisscans an diesem Kiosk. Versuchen Sie es in {seconds} Sekunden erneut oder tippen Sie auf Ihren Namen, um Ihre PIN zu verwenden.",
+        "unreadable": "Dieser Code ist kein Kiosk-Ausweis. Es wurde nichts erfasst. Scannen Sie Ihren Kiosk-Ausweis oder tippen Sie auf Ihren Namen, um Ihre PIN zu verwenden."
+      },
       "board": {
         "empty": "Derzeit ist niemand eingestempelt.",
         "title": "Wer ist anwesend"
+      },
+      "camera": {
+        "cancel": "Scannen abbrechen",
+        "denied": "Der Kiosk darf die Kamera nicht verwenden. Erlauben Sie im Browser den Kamerazugriff für diese Seite oder tippen Sie auf Ihren Namen, um Ihre PIN zu verwenden.",
+        "failed": "Die Kamera konnte nicht gestartet werden. Versuchen Sie es erneut oder tippen Sie auf Ihren Namen, um Ihre PIN zu verwenden.",
+        "hint": "Halten Sie den QR-Code innerhalb des Rahmens. Der Code wird auf diesem Kiosk eingelesen; es wird kein Bild gespeichert.",
+        "missing": "Dieser Kiosk verfügt über keine Kamera zum Scannen. Tippen Sie auf Ihren Namen, um Ihre PIN zu verwenden.",
+        "notBadge": "Dieser Code ist kein Kiosk-Ausweis. Halten Sie Ihren Kiosk-Ausweis vor die Kamera oder brechen Sie ab und tippen Sie auf Ihren Namen, um Ihre PIN zu verwenden.",
+        "preview": "Kameravorschau",
+        "starting": "Kamera wird gestartet…",
+        "title": "Halten Sie Ihren Kiosk-Ausweis vor die Kamera",
+        "unsupported": "Dieser Browser kann keine Ausweise mit der Kamera scannen. Tippen Sie auf Ihren Namen, um Ihre PIN zu verwenden."
       },
       "done": {
         "button": "Fertig",
@@ -174,6 +231,8 @@
         "loadFailed": "Die Namen konnten nicht geladen werden. Überprüfen Sie die Netzwerkverbindung.",
         "loading": "Namen werden geladen…",
         "noMatch": "Kein Name entspricht Ihrer Suche.",
+        "scanBadge": "Ausweis scannen",
+        "scanHint": "Oder scannen Sie Ihren Kiosk-Ausweis am Scanner.",
         "search": "Finden Sie Ihren Namen",
         "title": "Tippen Sie auf Ihren Namen, um sich ein- oder auszustempeln"
       },
@@ -226,15 +285,19 @@
       },
       "refusal": {
         "alreadyClockedIn": "Sie sind bereits eingestempelt.",
+        "attemptClosed": "Diese Aktion wurde nicht erfasst. Wählen Sie sie erneut aus, falls Sie dies weiterhin möchten.",
         "billing": "Das Einstempeln ist für Ihre Organisation derzeit nicht verfügbar. Wenden Sie sich an Ihre Administration.",
         "generic": "Das hat nicht funktioniert. Es wurde nichts erfasst. Versuchen Sie es erneut oder wenden Sie sich an Ihre Führungskraft.",
         "holiday": "Das Einstempeln ist heute aufgrund eines Feiertags gesperrt. Wenden Sie sich an Ihre Führungskraft.",
         "monthClosed": "Diese Zeit liegt in einem abgeschlossenen Monat und kann nicht geändert werden. Wenden Sie sich an Ihre Führungskraft.",
         "noBreak": "Sie befinden sich nicht in einer Pause.",
         "notClockedIn": "Sie sind nicht eingestempelt.",
+        "notRecorded": "Ihre Aktion wurde nicht erfasst. Geben Sie Ihre PIN ein, um sie erneut auszuwählen.",
         "onBreak": "Sie befinden sich bereits in einer Pause.",
+        "projectNotAllowed": "Dieses Projekt kann nicht mehr gebucht werden. Es wurde nichts erfasst. Wählen Sie ein anderes aus oder behalten Sie das aktuelle bei und versuchen Sie es erneut.",
         "unconfirmed": "Der Kiosk konnte nicht bestätigen, ob dies gespeichert wurde. Überprüfen Sie Ihren Status, bevor Sie es erneut versuchen.",
-        "underReview": "Ihre Arbeitszeit für heute wird überprüft. Wenden Sie sich an Ihre Führungskraft."
+        "underReview": "Ihre Arbeitszeit für heute wird überprüft. Wenden Sie sich an Ihre Führungskraft.",
+        "workCategoryNotAllowed": "Diese Tätigkeitskategorie kann nicht mehr gebucht werden. Es wurde nichts erfasst. Wählen Sie eine andere aus oder behalten Sie die aktuelle bei und versuchen Sie es erneut."
       },
       "retry": "Erneut versuchen",
       "revoked": {
@@ -246,6 +309,14 @@
         "clockedIn": "Eingestempelt seit {time}",
         "clockedOut": "Nicht eingestempelt",
         "onBreak": "In Pause seit {time}"
+      },
+      "uncertain": {
+        "action": "{name}: {action}",
+        "back": "Zurück",
+        "conflict": "Diese Aktion konnte auf diesem Kiosk nicht überprüft werden. Klären Sie Ihren Status mit Ihrer Führungskraft ab, bevor Sie erneut stempeln.",
+        "title": "Überprüfen, ob Ihre Aktion erfasst wurde",
+        "unavailable": "Z8 ist derzeit nicht erreichbar. Der Kiosk prüft dies weiterhin.",
+        "wait": "Stempeln Sie nicht erneut. Der Kiosk prüft dies weiterhin und zeigt Ihnen das Ergebnis an, sobald Z8 antwortet – auch wenn Sie später wiederkommen."
       },
       "unreachableDescription": "Der Kiosk kann den Server nicht erreichen. Überprüfen Sie die Netzwerkverbindung; Stempeln funktioniert nur im Online-Modus.",
       "unreachableTitle": "Kiosk offline",
@@ -336,18 +407,42 @@
     "periodSubmissions": {
       "blocker": {
         "absenceRequest": "Ein Abwesenheitsantrag für {dates} ist noch nicht entschieden.",
+        "absenceRequestAction": "Eine genehmigende Person entscheidet über diese Abwesenheit. Solange die Entscheidung aussteht, können Sie sie unter „Meine Anträge“ stornieren.",
         "liveWork": "Die {start} begonnene Arbeit läuft noch.",
+        "liveWorkAction": "Stempeln Sie aus, wenn diese Arbeit beendet ist.",
         "manualWork": "Manuelle Arbeit am {start} ist noch nicht entschieden.",
-        "timeCorrection": "Eine Zeitkorrektur für Arbeit am {start} ist noch nicht entschieden."
+        "manualWorkAction": "Eine genehmigende Person entscheidet über diese Arbeit. Sie müssen nichts weiter tun.",
+        "openClock": "Zur Stempeluhr",
+        "openRequest": "Antrag öffnen",
+        "openTimeline": "Auf Zeitleiste anzeigen",
+        "timeCorrection": "Eine Zeitkorrektur für Arbeit am {start} ist noch nicht entschieden.",
+        "timeCorrectionAction": "Eine genehmigende Person entscheidet über diese Korrektur. Solange die Entscheidung aussteht, können Sie sie unter „Meine Anträge“ stornieren.",
+        "timeCorrectionWaitAction": "Eine genehmigende Person entscheidet über diese Korrektur. Sie können nur auf die Entscheidung warten."
       },
       "description": "Bestätigen Sie, dass Ihre Arbeits- und Abwesenheitszeiten für jeden Zeitraum vollständig und korrekt sind.",
-      "opensOn": "Sie können ab {date} einreichen.",
+      "focus": {
+        "notShown": "Diese Arbeit kann hier nicht angezeigt werden. Die Bereitschaft des Zeitraums wurde erneut überprüft.",
+        "resolved": "Diese Arbeit hält keinen Zeitraum mehr offen. Die Bereitschaft des Zeitraums wurde erneut überprüft."
+      },
+      "readiness": {
+        "checking": "Prüfen, ob dieser Zeitraum bereit ist…",
+        "hideDetails": "Details ausblenden",
+        "notReady": "Einreichen ist verfügbar, sobald dieser Zeitraum bereit ist.",
+        "openItems": "{count, plural, one {# Element hält diesen Zeitraum offen.} other {# Elemente halten diesen Zeitraum offen.}}",
+        "opensOn": "Das Einreichen ist ab dem {date} möglich.",
+        "ready": "Bereit zum Einreichen",
+        "retry": "Erneut versuchen",
+        "showDetails": "Details anzeigen",
+        "submitUnavailable": "Einreichen ist nicht verfügbar, bis die Bereitschaft überprüft werden kann.",
+        "unavailable": "Die Bereitschaft zur Einreichung ist derzeit nicht verfügbar, daher ist „Einreichen“ deaktiviert."
+      },
       "refusal": {
         "alreadySubmitted": "Dieser Zeitraum wurde bereits eingereicht.",
         "noApprover": "Niemand kann diesen Zeitraum derzeit genehmigen. Bitten Sie einen Administrator, Ihnen eine Führungskraft zuzuweisen.",
         "notEnded": "Sie können diesen Zeitraum ab dessen letztem Tag einreichen.",
         "notExpected": "Dieser Zeitraum muss nicht eingereicht werden.",
-        "periodOpen": "Dieser Zeitraum ist noch offen"
+        "periodOpen": "Dieser Zeitraum ist noch offen",
+        "writeGateClosed": "Periodeneinreichungen sind in Ihrer Organisation derzeit pausiert. Versuchen Sie es später erneut oder wenden Sie sich an einen Administrator."
       },
       "rejectionReason": "Grund: {reason}",
       "status": {

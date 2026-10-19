@@ -68,6 +68,7 @@
         "failed": "Actualizarea turei a eșuat",
         "overlapDescription": "Această tură se suprapune cu alte {count} tură(e)",
         "overlapWarning": "Tură salvată cu avertisment de suprapunere",
+        "skillOverrideReasonRequired": "Angajatul nu deține o competență necesară în această zi. Deschideți tura pentru a introduce un motiv.",
         "updated": "Tură actualizată"
       }
     },
@@ -118,6 +119,35 @@
       "updated": "Tură actualizată",
       "updateShift": "Actualizează tura"
     },
+    "shiftRequests": {
+      "approve": "Aprobă",
+      "approved": "Cerere aprobată",
+      "approveFailed": "Aprobarea cererii a eșuat",
+      "button": "Cereri de tură",
+      "confirmApprove": "Confirmă aprobarea",
+      "confirmReject": "Confirmă respingerea",
+      "description": "Aprobați sau respingeți cererile în așteptare de preluare și schimb de tură",
+      "empty": "Nicio cerere în așteptare",
+      "loadFailed": "Încărcarea cererilor a eșuat",
+      "loading": "Se încarcă cererile…",
+      "notes": "Note: {notes}",
+      "overrideReasonHelp": "Înregistrat odată cu aprobarea ca derogare de competență.",
+      "pickupSummary": "{requester} dorește să preia această tură liberă",
+      "reason": "Motiv: {reason}",
+      "reject": "Respinge",
+      "rejected": "Cerere respinsă",
+      "rejectFailed": "Respingerea cererii a eșuat",
+      "rejectReason": "Motivul respingerii (opțional)",
+      "shiftWhen": "{date}, {start}–{end}",
+      "swapSummary": "{requester} dorește să cedeze această tură către {target}",
+      "swapWithoutTarget": "{requester} dorește să cedeze această tură, dar nu a specificat un coleg",
+      "title": "Cereri de tură",
+      "type": {
+        "pickup": "Preluare",
+        "swap": "Schimb"
+      },
+      "unnamedEmployee": "Angajat nespecificat"
+    },
     "skills": {
       "certificateOnFile": "Certificat la dosar",
       "expiredCertifications": "Certificări expirate:",
@@ -125,13 +155,15 @@
       "missingPreferred": "Competențe preferate lipsă:",
       "missingPreferredCount": "{count} preferate lipsă",
       "missingRequired": "Competențe obligatorii lipsă:",
+      "overrideReason": "Motivul derogării de competență",
+      "overrideReasonNotice": "Puteți totuși atribui această tură dacă indicați un motiv. Motivul este înregistrat ca derogare de competență.",
+      "overrideReasonRequired": "Indicați un motiv pentru a atribui un angajat care nu deține toate competențele necesare.",
       "preferred": "Preferat",
       "preferredSkillsMissing": "Competențe preferate lipsă",
       "requirementsNotMet": "Cerințele de competență nu sunt îndeplinite",
       "unqualified": "Necalificat",
       "validating": "Se validează competențele…",
-      "validatingDescription": "Se verifică calificările angajatului",
-      "warningMessage": "Puteți atribui în continuare această tură, dar va fi înregistrată ca o derogare."
+      "validatingDescription": "Se verifică calificările angajatului"
     },
     "staffingSuggestions": {
       "empty": "Niciun angajat disponibil pentru această tură",

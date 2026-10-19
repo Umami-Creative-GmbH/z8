@@ -17,8 +17,33 @@
       "noCustomer": "Doar munca la un proiect cu client poate fi facturabilă"
     },
     "breakInProgress": {
+      "connectionRequired": "Începerea sau reluarea unei pauze necesită o conexiune.",
       "description": "Ești în pauză",
-      "since": "În pauză de la {time}"
+      "endDay": "Încheie ziua",
+      "errors": {
+        "alreadyOnBreak": "Sunteți deja în pauză.",
+        "breakChanged": "Pauza dvs. a fost modificată pe un alt dispozitiv. Pontajul dvs. indică acum starea actuală.",
+        "collision": "Această pauză este în conflict cu o solicitare anterioară. Reîmprospătați și încercați din nou.",
+        "refreshed": "Pontajul dvs. s-a modificat. Acesta indică acum starea actuală.",
+        "resumeNotAllowed": "Nu puteți relua această pauză.",
+        "resumeRetry": "Nu s-a putut relua lucrul. Vă rugăm să încercați din nou.",
+        "resumeUnconfirmed": "Reluarea nu a putut fi confirmată. Verificați-vă pontajul înainte de a încerca din nou.",
+        "startNotAllowed": "Nu puteți începe o pauză.",
+        "startRetry": "Nu s-a putut începe pauza. Vă rugăm să încercați din nou.",
+        "tooEarly": "O pauză poate începe doar după ce ați început lucrul.",
+        "unconfirmed": "Pauza dvs. nu a putut fi confirmată. Verificați-vă pontajul înainte de a încerca din nou.",
+        "workChanged": "Pontajul dvs. s-a modificat pe un alt dispozitiv. Acesta indică acum starea actuală."
+      },
+      "pendingClockActions": "Acțiunile de pontare salvate sunt încă în curs de trimitere. Încercați din nou după ce sunt sincronizate.",
+      "resume": "Reia",
+      "resumed": "Lucrul a fost reluat",
+      "since": "În pauză de la {time}",
+      "start": "Începe pauza",
+      "started": "Pauză începută",
+      "startedDescription": "Reluați lucrul când reveniți sau încheiați ziua.",
+      "trigger": "În pauză",
+      "uncertain": "Pauza dvs. nu a putut fi confirmată",
+      "uncertainDescription": "Pontajul dvs. a fost actualizat. Verificați-l înainte de a încerca din nou."
     },
     "budget": "Buget",
     "clockedOutSuccess": "Ați pontat ieșirea!",
@@ -147,9 +172,41 @@
         "resume": "Reia lucrul",
         "startBreak": "Începe pauza"
       },
+      "attribution": {
+        "back": "Înapoi",
+        "keep": "Păstrează {name}",
+        "noProject": "Fără proiect",
+        "noWorkCategory": "Fără categorie de lucru",
+        "project": "Proiect",
+        "title": "La ce ați lucrat?",
+        "workCategory": "Categorie de lucru"
+      },
+      "badge": {
+        "checking": "Se verifică ecusonul…",
+        "failed": "Ecusonul nu a putut fi verificat. Nu s-a înregistrat nimic. Scanați-l din nou sau atingeți numele dvs. pentru a utiliza codul PIN.",
+        "inputDisabled": "Scanarea ecusoanelor este dezactivată la acest chioșc. Atingeți numele dvs. pentru a utiliza codul PIN.",
+        "notAccepted": "Acest ecuson nu este acceptat la acest chioșc. Nu s-a înregistrat nimic. Atingeți numele dvs. pentru a utiliza codul PIN sau întrebați managerul.",
+        "notRecorded": "Acțiunea dvs. nu a fost înregistrată. Scanați din nou ecusonul pentru a o alege din nou.",
+        "offline": "Pontarea cu ecuson necesită o conexiune. Nu s-a înregistrat nimic.",
+        "offlinePin": "Pontarea cu ecuson necesită o conexiune. Nu s-a înregistrat nimic. Atingeți numele dvs. pentru a vă ponta cu codul PIN.",
+        "rateLimited": "Prea multe scanări de ecuson la acest chioșc. Încercați din nou în {seconds} secunde sau atingeți numele dvs. pentru a utiliza codul PIN.",
+        "unreadable": "Acest cod nu este un ecuson de chioșc. Nu s-a înregistrat nimic. Scanați ecusonul de chioșc sau atingeți numele dvs. pentru a utiliza codul PIN."
+      },
       "board": {
         "empty": "Nimeni nu este pontat în acest moment.",
         "title": "Cine este prezent"
+      },
+      "camera": {
+        "cancel": "Anulați scanarea",
+        "denied": "Chioșcul nu poate folosi camera. Permiteți accesul la cameră pentru această pagină în browser sau atingeți-vă numele pentru a folosi codul PIN.",
+        "failed": "Camera nu a putut fi pornită. Încercați din nou sau atingeți-vă numele pentru a folosi codul PIN.",
+        "hint": "Mențineți codul QR în interiorul cadrului. Codul este citit pe acest chioșc; nicio imagine nu este salvată.",
+        "missing": "Acest chioșc nu are o cameră care poate scana. Atingeți-vă numele pentru a folosi codul PIN.",
+        "notBadge": "Acest cod nu este o legitimație de chioșc. Apropiați legitimația de chioșc sau anulați și atingeți-vă numele pentru a folosi codul PIN.",
+        "preview": "Previzualizare cameră",
+        "starting": "Se pornește camera…",
+        "title": "Apropiați legitimația de chioșc de cameră",
+        "unsupported": "Acest browser nu poate scana legitimații cu camera. Atingeți-vă numele pentru a folosi codul PIN."
       },
       "done": {
         "button": "Gata",
@@ -174,6 +231,8 @@
         "loadFailed": "Numele nu au putut fi încărcate. Verifică conexiunea la rețea.",
         "loading": "Se încarcă numele…",
         "noMatch": "Niciun nume nu corespunde căutării tale.",
+        "scanBadge": "Scanați legitimația",
+        "scanHint": "Sau scanați legitimația de chioșc la scaner.",
         "search": "Găsește-ți numele",
         "title": "Atinge-ți numele pentru a te ponta la intrare sau la ieșire"
       },
@@ -226,15 +285,19 @@
       },
       "refusal": {
         "alreadyClockedIn": "Ești deja pontat la intrare.",
+        "attemptClosed": "Această acțiune nu a fost înregistrată. Alegeți-o din nou dacă doriți în continuare.",
         "billing": "Pontarea nu este disponibilă pentru organizația ta în acest moment. Contactează administratorul.",
         "generic": "Nu a funcționat. Nu s-a înregistrat nimic. Încearcă din nou sau adresează-te managerului tău.",
         "holiday": "Pontarea este blocată astăzi din cauza unei sărbători legale. Adresează-te managerului tău.",
         "monthClosed": "Acest timp se află într-o lună închisă și nu poate fi modificat. Adresați-vă managerului dvs.",
         "noBreak": "Nu ești în pauză.",
         "notClockedIn": "Nu ești pontat la intrare.",
+        "notRecorded": "Acțiunea dvs. nu a fost înregistrată. Introduceți codul PIN pentru a o alege din nou.",
         "onBreak": "Ești deja în pauză.",
+        "projectNotAllowed": "Acest proiect nu mai poate fi pontat. Nu s-a înregistrat nimic. Alegeți altul sau păstrați-l pe cel curent și încercați din nou.",
         "unconfirmed": "Kiosk-ul nu a putut confirma dacă datele au fost salvate. Verificați-vă starea înainte de a încerca din nou.",
-        "underReview": "Orele dvs. de astăzi sunt în curs de revizuire. Adresați-vă managerului dvs."
+        "underReview": "Orele dvs. de astăzi sunt în curs de revizuire. Adresați-vă managerului dvs.",
+        "workCategoryNotAllowed": "Această categorie de muncă nu mai poate fi pontată. Nu s-a înregistrat nimic. Alegeți alta sau păstrați-o pe cea curentă și încercați din nou."
       },
       "retry": "Încercați din nou",
       "revoked": {
@@ -246,6 +309,14 @@
         "clockedIn": "Pontat de la {time}",
         "clockedOut": "Nepontat",
         "onBreak": "În pauză de la {time}"
+      },
+      "uncertain": {
+        "action": "{name}: {action}",
+        "back": "Înapoi",
+        "conflict": "Această acțiune nu a putut fi verificată pe acest chioșc. Verificați-vă starea cu managerul înainte de a ponta din nou.",
+        "title": "Se verifică dacă acțiunea dvs. a fost înregistrată",
+        "unavailable": "Z8 nu poate fi contactat momentan. Chioșcul continuă verificarea.",
+        "wait": "Nu pontați din nou. Chioșcul continuă verificarea și vă va afișa rezultatul de îndată ce Z8 răspunde, chiar dacă reveniți mai târziu."
       },
       "unreachableDescription": "Kiosk-ul nu poate contacta serverul. Verificați conexiunea la rețea; pontarea funcționează doar online.",
       "unreachableTitle": "Kiosk offline",
@@ -336,18 +407,42 @@
     "periodSubmissions": {
       "blocker": {
         "absenceRequest": "O cerere de absență pentru {dates} este în așteptarea unei decizii.",
+        "absenceRequestAction": "Un aprobator decide în privința acestei absențe. În timp ce este în așteptare, o puteți anula din Cererile mele.",
         "liveWork": "Activitatea începută la {start} este încă în desfășurare.",
+        "liveWorkAction": "Pontați ieșirea când se termină această activitate.",
         "manualWork": "Activitatea manuală din {start} este în așteptarea unei decizii.",
-        "timeCorrection": "O corecție de timp pentru activitatea din {start} este în așteptarea unei decizii."
+        "manualWorkAction": "Un aprobator decide în privința acestei activități. Nu este nevoie să faceți nimic.",
+        "openClock": "Mergeți la pontaj",
+        "openRequest": "Deschideți cererea",
+        "openTimeline": "Afișați pe cronologie",
+        "timeCorrection": "O corecție de timp pentru activitatea din {start} este în așteptarea unei decizii.",
+        "timeCorrectionAction": "Un aprobator decide în privința acestei corecții. În timp ce este în așteptare, o puteți anula din Cererile mele.",
+        "timeCorrectionWaitAction": "Un aprobator decide în privința acestei corecții. Puteți doar să așteptați decizia acestuia."
       },
       "description": "Confirmați că orele de lucru și absențele dvs. pentru fiecare perioadă sunt complete și corecte.",
-      "opensOn": "Puteți trimite începând cu {date}.",
+      "focus": {
+        "notShown": "Această activitate nu poate fi afișată aici. Starea de pregătire a perioadei a fost verificată din nou.",
+        "resolved": "Această activitate nu mai menține o perioadă deschisă. Starea de pregătire a perioadei a fost verificată din nou."
+      },
+      "readiness": {
+        "checking": "Se verifică dacă această perioadă este gata…",
+        "hideDetails": "Ascundeți detaliile",
+        "notReady": "Trimiterea este disponibilă după ce această perioadă este gata.",
+        "openItems": "{count, plural, one {# element menține această perioadă deschisă.} few {# elemente mențin această perioadă deschisă.} other {# de elemente mențin această perioadă deschisă.}}",
+        "opensOn": "Trimiterea se deschide pe {date}.",
+        "ready": "Gata de trimitere",
+        "retry": "Reîncercați",
+        "showDetails": "Afișați detaliile",
+        "submitUnavailable": "Trimiterea este indisponibilă până când starea de pregătire poate fi verificată.",
+        "unavailable": "Starea de pregătire pentru trimitere este indisponibilă momentan, prin urmare Trimiterea este dezactivată."
+      },
       "refusal": {
         "alreadySubmitted": "Această perioadă a fost deja trimisă.",
         "noApprover": "Nimeni nu poate aproba această perioadă încă. Solicitați unui administrator să vă atribuie un manager.",
         "notEnded": "Puteți trimite această perioadă începând cu ultima sa zi.",
         "notExpected": "Această perioadă nu trebuie trimisă.",
-        "periodOpen": "Această perioadă este încă deschisă"
+        "periodOpen": "Această perioadă este încă deschisă",
+        "writeGateClosed": "Trimiterile de perioade sunt întrerupte temporar în organizația dvs. Încercați din nou mai târziu sau adresați-vă unui administrator."
       },
       "rejectionReason": "Motiv: {reason}",
       "status": {

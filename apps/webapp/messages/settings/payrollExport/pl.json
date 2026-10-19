@@ -165,11 +165,13 @@
         "selectWorkCategory": "Wybierz kategorię pracy",
         "sourceType": "Typ źródła",
         "specialCategory": "Kategoria specjalna",
+        "subtitle": "Przypisz kategorie pracy i rodzaje nieobecności do kodów składników wynagrodzenia w liście płac",
         "table": {
           "category": "Kategoria",
           "datev": "DATEV",
           "lexware": "Lexware",
           "sage": "Sage",
+          "successFactors": "SAP SuccessFactors",
           "type": "Typ"
         },
         "title": "Mapowanie składników płacowych",
@@ -238,9 +240,7 @@
         "title": "Sage Payroll"
       },
       "specialCategory": {
-        "holidayCompensation": "Ekwiwalent za urlop",
-        "overtime": "Nadgodziny",
-        "overtimeReduction": "Redukcja nadgodzin"
+        "overtime": "Nadgodziny"
       },
       "successfactors": {
         "batchSize": "Rozmiar partii",

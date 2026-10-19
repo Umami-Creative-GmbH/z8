@@ -165,11 +165,13 @@
         "selectWorkCategory": "Sélectionner une catégorie de travail",
         "sourceType": "Type de source",
         "specialCategory": "Catégorie spéciale",
+        "subtitle": "Associez vos catégories de travail et types d'absence aux codes de types de salaire pour la paie",
         "table": {
           "category": "Catégorie",
           "datev": "DATEV",
           "lexware": "Lexware",
           "sage": "Sage",
+          "successFactors": "SAP SuccessFactors",
           "type": "Type"
         },
         "title": "Mappages de types de salaire",
@@ -238,9 +240,7 @@
         "title": "Sage Lohn"
       },
       "specialCategory": {
-        "holidayCompensation": "Indemnité de congés",
-        "overtime": "Heures supplémentaires",
-        "overtimeReduction": "Réduction des heures supplémentaires"
+        "overtime": "Heures supplémentaires"
       },
       "successfactors": {
         "batchSize": "Taille du lot",

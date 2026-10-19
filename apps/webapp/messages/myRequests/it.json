@@ -42,6 +42,9 @@
       "title": "Trova richieste",
       "type": "Tipo"
     },
+    "focus": {
+      "unavailable": "Questa richiesta non è più in sospeso oppure non può essere mostrata qui. È in corso una nuova verifica della disponibilità del periodo."
+    },
     "inReview": {
       "description": "Richieste in attesa di approvazione o elaborazione.",
       "title": "In revisione"

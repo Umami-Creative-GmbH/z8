@@ -68,6 +68,7 @@
         "failed": "Përditësimi i turnit dështoi",
         "overlapDescription": "Ky turn mbivendoset me {count} turn(e) tjetër(tëra)",
         "overlapWarning": "Turni u ruajt me paralajmërim mbivendosjeje",
+        "skillOverrideReasonRequired": "Punonjësit i mungon një aftësi e kërkuar në këtë ditë. Hapni turnin për të dhënë një arsye.",
         "updated": "Turni u përditësua"
       }
     },
@@ -118,6 +119,35 @@
       "updated": "Turni u përditësua",
       "updateShift": "Përditëso turnin"
     },
+    "shiftRequests": {
+      "approve": "Mirato",
+      "approved": "Kërkesa u miratua",
+      "approveFailed": "Miratimi i kërkesës dështoi",
+      "button": "Kërkesat për turne",
+      "confirmApprove": "Konfirmo miratimin",
+      "confirmReject": "Konfirmo refuzimin",
+      "description": "Miratoni ose refuzoni kërkesat pezull për marrje dhe ndërrim turni",
+      "empty": "Nuk ka kërkesa pezull",
+      "loadFailed": "Ngarkimi i kërkesave dështoi",
+      "loading": "Po ngarkohen kërkesat…",
+      "notes": "Shënime: {notes}",
+      "overrideReasonHelp": "Regjistruar me miratimin si anashkalim i aftësisë.",
+      "pickupSummary": "{requester} dëshiron të marrë këtë turn të hapur",
+      "reason": "Arsyeja: {reason}",
+      "reject": "Refuzo",
+      "rejected": "Kërkesa u refuzua",
+      "rejectFailed": "Refuzimi i kërkesës dështoi",
+      "rejectReason": "Arsyeja e refuzimit (opsionale)",
+      "shiftWhen": "{date}, {start}–{end}",
+      "swapSummary": "{requester} dëshiron t'ia kalojë këtë turn {target}",
+      "swapWithoutTarget": "{requester} dëshiron ta kalojë këtë turn, por nuk ka caktuar një koleg",
+      "title": "Kërkesat për turne",
+      "type": {
+        "pickup": "Marrje",
+        "swap": "Ndërrim"
+      },
+      "unnamedEmployee": "Punonjës pa emër"
+    },
     "skills": {
       "certificateOnFile": "Certifikata në dosje",
       "expiredCertifications": "Certifikime të skaduara:",
@@ -125,13 +155,15 @@
       "missingPreferred": "Aftësi të preferuara që mungojnë:",
       "missingPreferredCount": "{count} të preferuara mungojnë",
       "missingRequired": "Aftësi të kërkuara që mungojnë:",
+      "overrideReason": "Arsyeja për anashkalimin e aftësisë",
+      "overrideReasonNotice": "Mund ta caktoni sërish këtë turn duke dhënë një arsye. Arsyeja regjistrohet si anashkalim i aftësisë.",
+      "overrideReasonRequired": "Jepni një arsye për të caktuar një punonjës pa të gjitha aftësitë e kërkuara.",
       "preferred": "E preferuar",
       "preferredSkillsMissing": "Mungojnë aftësitë e preferuara",
       "requirementsNotMet": "Kërkesat e aftësive nuk plotësohen",
       "unqualified": "I pakualifikuar",
       "validating": "Po vërtetohen aftësitë…",
-      "validatingDescription": "Po kontrollohen kualifikimet e punonjësit",
-      "warningMessage": "Ju përsëri mund ta caktoni këtë turn, por do të regjistrohet si një tejkalim."
+      "validatingDescription": "Po kontrollohen kualifikimet e punonjësit"
     },
     "staffingSuggestions": {
       "empty": "Nuk ka punonjës të disponueshëm për këtë turn",

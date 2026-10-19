@@ -42,6 +42,9 @@
       "title": "Encontrar solicitações",
       "type": "Tipo"
     },
+    "focus": {
+      "unavailable": "Esta solicitação não está mais pendente ou não pode ser exibida aqui. A prontidão do período está sendo verificada novamente."
+    },
     "inReview": {
       "description": "Solicitações aguardando aprovação ou processamento.",
       "title": "Em análise"

@@ -42,6 +42,9 @@
       "title": "İstekleri bul",
       "type": "Tür"
     },
+    "focus": {
+      "unavailable": "Bu talep artık beklemede değil veya burada gösterilemiyor. Dönem hazırlığı yeniden kontrol ediliyor."
+    },
     "inReview": {
       "description": "Onay veya işlem bekleyen istekler.",
       "title": "İnceleniyor"

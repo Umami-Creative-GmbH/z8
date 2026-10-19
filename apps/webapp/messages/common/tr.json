@@ -427,6 +427,7 @@
     "uploading": "Yükleniyor...",
     "vacationAllowance": {
       "cappedAtFullAllowance": "tam hak edişle sınırlandırıldı",
+      "convertedSummary": "{allowance} gün: {conversion}",
       "employmentMonths": "{months, plural, other {# tam çalışma ayı} }",
       "lastWorkingDay": "son çalışma günü: {date}",
       "notEmployed": "{fullAllowance} gün üzerinden {allowance} gün: {year} yılında istihdam edilmedi",
@@ -434,7 +435,10 @@
       "overdrawnHint": "Hak edişin ötesinde kullanılan izin. Yalnızca bilgilendirme amaçlı gösterilmektedir: herhangi bir kesinti yapılmaz.",
       "proratedSummary": "{fullAllowance} gün üzerinden {allowance} gün, orantılı: {details}",
       "started": "başlangıç: {date}",
-      "statutoryMinimumApplies": "yasal asgari geçerlidir"
+      "statutoryMinimumApplies": "yasal asgari geçerlidir",
+      "workingDaysPerWeek": "{days, plural, other {Haftada # iş günü} }",
+      "workingWeekConversion": "{reference} referans gün {weeks} olarak dönüştürüldü",
+      "workingWeekPeriod": "{week}, {start} ile {end} arası"
     },
     "validate": "Doğrula",
     "validationError": "Doğrulama hatası",
@@ -929,6 +933,7 @@
     },
     "page": {
       "context": "Kuruluş erişimi doğrulama gerektirirken kişisel kayıt, kurtarma ve kuruluş seçimi kullanılabilir kalır.",
+      "description": "Kuruluşlarınıza erişimi sürdürmek için bir kimlik doğrulayıcı doğrulayın.",
       "title": "Güvenlik doğrulaması"
     },
     "passkey": {
@@ -1311,6 +1316,42 @@
         "message": "{untilDate} tarihinden önce kişisel verilerinizi Verilerim bölümünden indirin. Bu tarihten sonra verileri sizin için yalnızca bir yönetici dışa aktarabilir.",
         "title": "Ayrılmadan önce kişisel verilerinizi indirin"
       },
+      "personnelFileDocumentRequestAccepted": {
+        "message": "\"{title}\" için belgeleriniz kabul edildi.",
+        "title": "Belgeler kabul edildi"
+      },
+      "personnelFileDocumentRequestCancelled": {
+        "message": "\"{title}\" talebi iptal edildi: {reason}",
+        "messageWithoutReason": "\"{title}\" talebi iptal edildi.",
+        "title": "Belge talebi iptal edildi"
+      },
+      "personnelFileDocumentRequestDueSoon": {
+        "message": "Lütfen \"{title}\" belgesini {deadline} tarihine kadar yükleyin.",
+        "title": "Belgenin teslim tarihi yaklaşıyor"
+      },
+      "personnelFileDocumentRequestDueToday": {
+        "message": "Lütfen \"{title}\" belgesini bugün yükleyin.",
+        "title": "Belgenin teslim tarihi bugün"
+      },
+      "personnelFileDocumentRequested": {
+        "message": "Lütfen \"{title}\" belgesini {deadline} tarihine kadar yükleyin.",
+        "title": "Belge talep edildi"
+      },
+      "personnelFileDocumentRequestOverdue": {
+        "message": "\"{title}\" belgesinin teslim tarihi {deadline} idi. Lütfen yükleyin.",
+        "officerMessage": "{employee}, son teslim tarihi {deadline} olan \"{title}\" belgesini henüz teslim etmedi.",
+        "officerTitle": "Talep edilen belgenin teslim tarihi geçti",
+        "title": "Belgenin teslim tarihi geçti"
+      },
+      "personnelFileDocumentRequestReturned": {
+        "message": "Lütfen \"{title}\" belgesini {deadline} tarihine kadar tekrar yükleyin: {reason}",
+        "messageWithoutReason": "Lütfen \"{title}\" belgesini {deadline} tarihine kadar tekrar yükleyin.",
+        "title": "Belgeler iade edildi"
+      },
+      "personnelFileDocumentRequestSubmitted": {
+        "message": "{name}, \"{title}\" için belgeleri gönderdi. Lütfen inceleyin.",
+        "title": "Belgeler gönderildi"
+      },
       "personnelFileDocumentShared": {
         "message": "\"{title}\" adlı belge sizinle paylaşıldı.",
         "title": "Özlük dosyanızda yeni belge"
@@ -1652,6 +1693,11 @@
         "personal_data_export_admin_exported": "Kişisel veriler bir yönetici tarafından dışa aktarıldı",
         "personal_data_export_ready": "Kişisel veri dışa aktarımı hazır",
         "personal_data_export_reminder": "Ayrılmadan önce verilerinizi indirin",
+        "personnel_file_document_request_decided": "Belge talebi kabul edildi, iade edildi veya iptal edildi",
+        "personnel_file_document_requested": "Sizden belge talep edildi",
+        "personnel_file_document_request_overdue": "Belge talebinin süresi geçti",
+        "personnel_file_document_request_reminder": "Talep edilen belgenin teslim tarihi yaklaşıyor",
+        "personnel_file_document_request_submitted": "Talep edilen belgeler gönderildi (özlük dosyası sorumluları)",
         "skill_expired_today": "Yetkinliğin süresi bugün doluyor",
         "skill_expiry_upcoming": "Yetkinliğin süresi yakında dolacak",
         "work_balance_adjustment_cancelled": "Bakiye düzeltmesi iptal edildi",
@@ -3066,7 +3112,10 @@
     "theme-toggle": "Temayı değiştir"
   },
   "vacationBalance": {
-    "previouslyTaken": "Takip öncesinde kullanılan {days} günü içerir"
+    "conflictingPolicies": "Çakışan izin politikaları",
+    "missingPolicy": "Eksik izin politikası",
+    "previouslyTaken": "Takip öncesinde kullanılan {days} günü içerir",
+    "zeroWorkingDays": "Çalışma günü bulunmayan çalışma programı"
   },
   "validation": {
     "first-name-required": "Ad gerekli",

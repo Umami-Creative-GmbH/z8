@@ -42,6 +42,9 @@
       "title": "Gjeni kërkesa",
       "type": "Lloji"
     },
+    "focus": {
+      "unavailable": "Kjo kërkesë nuk është më në pritje ose nuk mund të shfaqet këtu. Gatishmëria e periudhës po kontrollohet përsëri."
+    },
     "inReview": {
       "description": "Kërkesat në pritje të miratimit ose përpunimit.",
       "title": "Në shqyrtim"

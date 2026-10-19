@@ -427,6 +427,7 @@
     "uploading": "Caricamento...",
     "vacationAllowance": {
       "cappedAtFullAllowance": "limitato all'indennità massima",
+      "convertedSummary": "{allowance} giorni: {conversion}",
       "employmentMonths": "{months, plural, one {# mese intero di impiego} other {# mesi interi di impiego}}",
       "lastWorkingDay": "ultimo giorno lavorativo {date}",
       "notEmployed": "{allowance} su {fullAllowance} giorni: non impiegato nel {year}",
@@ -434,7 +435,10 @@
       "overdrawnHint": "Ferie usufruite oltre i giorni spettanti. Mostrato solo a scopo informativo: non viene detratto nulla.",
       "proratedSummary": "{allowance} su {fullAllowance} giorni, riproporzionati: {details}",
       "started": "iniziato il {date}",
-      "statutoryMinimumApplies": "si applica il minimo di legge"
+      "statutoryMinimumApplies": "si applica il minimo di legge",
+      "workingDaysPerWeek": "{days, plural, one {# giorno lavorativo a settimana} other {# giorni lavorativi a settimana}}",
+      "workingWeekConversion": "{reference} giorni di riferimento convertiti in {weeks}",
+      "workingWeekPeriod": "{week} da {start} a {end}"
     },
     "validate": "Convalida",
     "validationError": "Errore di convalida",
@@ -929,6 +933,7 @@
     },
     "page": {
       "context": "La registrazione personale, il ripristino e la selezione dell'organizzazione rimangono disponibili mentre l'accesso all'organizzazione richiede la verifica.",
+      "description": "Verifica un autenticatore per mantenere l'accesso alle tue organizzazioni.",
       "title": "Verifica di sicurezza"
     },
     "passkey": {
@@ -1311,6 +1316,42 @@
         "message": "Scarica i tuoi dati personali da I miei dati prima del {untilDate}. Successivamente, solo un amministratore potrà esportarli per te.",
         "title": "Scarica i tuoi dati personali prima di andartene"
       },
+      "personnelFileDocumentRequestAccepted": {
+        "message": "I tuoi documenti per \"{title}\" sono stati accettati.",
+        "title": "Documenti accettati"
+      },
+      "personnelFileDocumentRequestCancelled": {
+        "message": "La richiesta \"{title}\" è stata annullata: {reason}",
+        "messageWithoutReason": "La richiesta \"{title}\" è stata annullata.",
+        "title": "Richiesta documenti annullata"
+      },
+      "personnelFileDocumentRequestDueSoon": {
+        "message": "Carica \"{title}\" entro il {deadline}.",
+        "title": "Documento in scadenza a breve"
+      },
+      "personnelFileDocumentRequestDueToday": {
+        "message": "Carica \"{title}\" oggi.",
+        "title": "Documento in scadenza oggi"
+      },
+      "personnelFileDocumentRequested": {
+        "message": "Carica \"{title}\" entro il {deadline}.",
+        "title": "Documento richiesto"
+      },
+      "personnelFileDocumentRequestOverdue": {
+        "message": "\"{title}\" scadeva il {deadline}. Carica il documento.",
+        "officerMessage": "{employee} non ha consegnato \"{title}\", in scadenza il {deadline}.",
+        "officerTitle": "Documento richiesto scaduto",
+        "title": "Documento scaduto"
+      },
+      "personnelFileDocumentRequestReturned": {
+        "message": "Carica nuovamente \"{title}\" entro il {deadline}: {reason}",
+        "messageWithoutReason": "Carica nuovamente \"{title}\" entro il {deadline}.",
+        "title": "Documenti restituiti"
+      },
+      "personnelFileDocumentRequestSubmitted": {
+        "message": "{name} ha inviato i documenti per \"{title}\". Esaminali.",
+        "title": "Documenti inviati"
+      },
       "personnelFileDocumentShared": {
         "message": "Il documento \"{title}\" è stato condiviso con te.",
         "title": "Nuovo documento nel tuo fascicolo personale"
@@ -1652,6 +1693,11 @@
         "personal_data_export_admin_exported": "Dati personali esportati da un amministratore",
         "personal_data_export_ready": "Esportazione dei dati personali pronta",
         "personal_data_export_reminder": "Scarica i tuoi dati prima di andartene",
+        "personnel_file_document_request_decided": "Richiesta di documento accettata, restituita o annullata",
+        "personnel_file_document_requested": "Documento a te richiesto",
+        "personnel_file_document_request_overdue": "Richiesta di documento scaduta",
+        "personnel_file_document_request_reminder": "Documento richiesto in scadenza a breve",
+        "personnel_file_document_request_submitted": "Documenti richiesti inviati (responsabili del fascicolo personale)",
         "skill_expired_today": "Competenza in scadenza oggi",
         "skill_expiry_upcoming": "Competenza in scadenza a breve",
         "work_balance_adjustment_cancelled": "Rettifica del saldo annullata",
@@ -3066,7 +3112,10 @@
     "theme-toggle": "Cambia tema"
   },
   "vacationBalance": {
-    "previouslyTaken": "Include {days} giorni già fruiti prima del tracciamento"
+    "conflictingPolicies": "Criteri per le ferie in conflitto",
+    "missingPolicy": "Criterio per le ferie mancante",
+    "previouslyTaken": "Include {days} giorni già fruiti prima del tracciamento",
+    "zeroWorkingDays": "Orario di lavoro senza giorni lavorativi"
   },
   "validation": {
     "first-name-required": "Il nome è obbligatorio",

@@ -42,6 +42,9 @@
       "title": "Buscar solicitudes",
       "type": "Tipo"
     },
+    "focus": {
+      "unavailable": "Esta solicitud ya no está pendiente o no se puede mostrar aquí. Se está comprobando de nuevo la preparación del período."
+    },
     "inReview": {
       "description": "Solicitudes a la espera de aprobación o procesamiento.",
       "title": "En revisión"

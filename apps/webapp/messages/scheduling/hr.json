@@ -68,6 +68,7 @@
         "failed": "Ažuriranje smjene nije uspjelo",
         "overlapDescription": "Ova se smjena preklapa s još {count} smjena",
         "overlapWarning": "Smjena je spremljena uz upozorenje o preklapanju",
+        "skillOverrideReasonRequired": "Zaposleniku na ovaj dan nedostaje potrebna vještina. Otvorite smjenu kako biste naveli razlog.",
         "updated": "Smjena je ažurirana"
       }
     },
@@ -118,6 +119,35 @@
       "updated": "Smjena je ažurirana",
       "updateShift": "Ažuriraj smjenu"
     },
+    "shiftRequests": {
+      "approve": "Odobri",
+      "approved": "Zahtjev je odobren",
+      "approveFailed": "Odobravanje zahtjeva nije uspjelo",
+      "button": "Zahtjevi za smjenu",
+      "confirmApprove": "Potvrdi odobrenje",
+      "confirmReject": "Potvrdi odbijanje",
+      "description": "Odobrite ili odbijte zahtjeve na čekanju za preuzimanje i zamjenu",
+      "empty": "Nema zahtjeva na čekanju",
+      "loadFailed": "Učitavanje zahtjeva nije uspjelo",
+      "loading": "Učitavanje zahtjeva…",
+      "notes": "Napomene: {notes}",
+      "overrideReasonHelp": "Zabilježeno uz odobrenje kao nadjačavanje vještine.",
+      "pickupSummary": "{requester} želi preuzeti ovu otvorenu smjenu",
+      "reason": "Razlog: {reason}",
+      "reject": "Odbij",
+      "rejected": "Zahtjev je odbijen",
+      "rejectFailed": "Odbijanje zahtjeva nije uspjelo",
+      "rejectReason": "Razlog odbijanja (neobavezno)",
+      "shiftWhen": "{date}, {start}–{end}",
+      "swapSummary": "{requester} želi prepustiti ovu smjenu korisniku {target}",
+      "swapWithoutTarget": "{requester} želi prepustiti ovu smjenu, ali nije naveo kolegu",
+      "title": "Zahtjevi za smjenu",
+      "type": {
+        "pickup": "Preuzimanje",
+        "swap": "Zamjena"
+      },
+      "unnamedEmployee": "Neimenovani zaposlenik"
+    },
     "skills": {
       "certificateOnFile": "Certifikat u evidenciji",
       "expiredCertifications": "Istekli certifikati:",
@@ -125,13 +155,15 @@
       "missingPreferred": "Nedostaju poželjne vještine:",
       "missingPreferredCount": "{count} poželjnih nedostaje",
       "missingRequired": "Nedostaju obvezne vještine:",
+      "overrideReason": "Razlog za nadjačavanje vještine",
+      "overrideReasonNotice": "I dalje možete dodijeliti ovu smjenu uz navođenje razloga. Razlog se bilježi kao nadjačavanje vještine.",
+      "overrideReasonRequired": "Navedite razlog za dodjelu smjene zaposleniku koji nema sve potrebne vještine.",
       "preferred": "Poželjno",
       "preferredSkillsMissing": "Nedostaju poželjne vještine",
       "requirementsNotMet": "Zahtjevi za vještinama nisu ispunjeni",
       "unqualified": "Nekvalificiran",
       "validating": "Provjera vještina…",
-      "validatingDescription": "Provjera kvalifikacija zaposlenika",
-      "warningMessage": "I dalje možete dodijeliti ovu smjenu, ali bit će zabilježena kao premošćivanje."
+      "validatingDescription": "Provjera kvalifikacija zaposlenika"
     },
     "staffingSuggestions": {
       "empty": "Nema dostupnih zaposlenika za ovu smjenu",

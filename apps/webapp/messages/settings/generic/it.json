@@ -1,5 +1,19 @@
 {
   "settings": {
+    "approvalTriage": {
+      "correctionError": "Inserisci un numero intero compreso tra 0 e 60 minuti.",
+      "correctionHelp": "Lo zero disattiva la corsia preferenziale per le piccole correzioni, comprese le modifiche a delta zero. In caso contrario, usa un intervallo da 1 a 60 minuti; tutti i giustificativi richiesti dovranno comunque essere verificati.",
+      "correctionLabel": "Limite per piccole correzioni (minuti)",
+      "description": "Imposta quando le richieste in sospeso richiedono attenzione e quali piccole correzioni orarie possono usufruire della corsia preferenziale. Le regole di rischio e i requisiti relativi ai giustificativi rimangono invariati.",
+      "save": "Salva impostazioni di valutazione",
+      "saved": "Impostazioni di valutazione salvate.",
+      "saveError": "Impossibile salvare le impostazioni di valutazione. Riprova.",
+      "staleError": "Inserisci un numero intero da 1 a 720 ore.",
+      "staleHelp": "Le richieste in sospeso diventano obsolete dopo questo numero di ore trascorse (1–720). I fine settimana e i cambi dell'ora legale non mettono in pausa il conteggio.",
+      "staleLabel": "Obsoleto dopo (ore)",
+      "thresholds": "Soglie di valutazione",
+      "title": "Valutazione approvazioni"
+    },
     "assignedLocations": {
       "added": "Sede assegnata aggiunta",
       "employeeDescription": "Le sedi in cui lavora questo dipendente. I chioschi accettano solo i dipendenti assegnati alla loro sede.",
@@ -466,6 +480,7 @@
       },
       "historyEmpty": "Nessun mese è stato ancora chiuso.",
       "historyTitle": "Cronologia",
+      "locationNotFound": "Questa sede non esiste più.",
       "monthsDescription": "La chiusura di un mese blocca lavoro, attribuzioni e assenze per le buste paga. Le note rimangono modificabili.",
       "monthsTitle": "Mesi",
       "nothingToClose": "Tutti in questo ambito risultano già chiusi per questo mese.",
@@ -481,9 +496,14 @@
       "reopenTitle": "Riapri {month}",
       "scope": {
         "all": "Tutto",
+        "deletedLocation": "Sede eliminata",
         "deletedTeam": "Team eliminato",
         "employees": "Dipendenti selezionati",
-        "organization": "Organizzazione"
+        "locationHelp": "Chiude l'intero mese per tutti gli utenti attualmente assegnati a questa sede, inclusi gli ex dipendenti. Anche il loro lavoro presso altre sedi viene bloccato. I dipendenti assegnati successivamente non sono inclusi.",
+        "locationNamed": "Sede {name}",
+        "locations": "Sedi",
+        "organization": "Organizzazione",
+        "teams": "Team"
       },
       "scopeLabel": "Chiudi per",
       "teamNotFound": "Questo team non esiste più.",
@@ -1336,6 +1356,77 @@
       "title": "Checklist di implementazione"
     },
     "import": {
+      "csv": {
+        "acceptSelected": "Accetta le righe valide selezionate",
+        "applyMapping": "Applica mappatura",
+        "chooseSource": "Scegli un valore di origine",
+        "chooseTarget": "Scegli un record esistente",
+        "commit": "Conferma le righe accettate",
+        "committing": "Importazione delle righe accettate…",
+        "description": "Importa un periodo di lavoro completato per riga. Rappresenta le pause come intervalli tra le righe. Non viene registrato nulla finché non viene esaminato e accettato.",
+        "download": "Scarica il modello CSV",
+        "duplicateSkipped": "Duplicato ignorato",
+        "existingEmployee": "Dipendente esistente",
+        "existingVehicle": "Veicolo esistente",
+        "file": "File CSV",
+        "fileTimezone": "Fuso orario per i timestamp locali",
+        "format": "Usa UTF-8, le virgole come separatori e le intestazioni del modello. Massimo 500 KB e 1.000 righe. Le colonne dei veicoli sono facoltative; le letture e le distanze utilizzano chilometri interi.",
+        "interval": "Inizio e fine locali dell'evento",
+        "mappingHelp": "Le mappature si applicano solo a questo batch e mantengono i valori di origine originali. La modifica di una mappatura o una nuova verifica reimposta l'accettazione sulle righe non confermate.",
+        "mappingTitle": "Mappa i valori di origine sui record esistenti",
+        "mappingType": "Tipo di mappatura",
+        "offsetsOnly": "solo offset espliciti",
+        "organizationVehicle": "Veicolo aziendale",
+        "outcome": "Stato e problemi",
+        "ownVehicle": "Veicolo personale",
+        "pages": "Pagine di revisione CSV",
+        "partialHelp": "Le righe valide accettate possono essere importate mentre le altre righe rimangono non risolte. Correggi i timestamp o i numeri non validi nel CSV e carica nuovamente il file; il lavoro già importato verrà ignorato.",
+        "person": "Dipendente",
+        "preparing": "Preparazione dell'anteprima…",
+        "preview": "Anteprima CSV",
+        "readFailed": "Impossibile leggere il file selezionato",
+        "recheck": "Riverifica le righe non risolte",
+        "rejectSelected": "Rifiuta le righe selezionate",
+        "reviewTitle": "Rivedi lavoro completato del CSV",
+        "row": "Riga CSV",
+        "scanning": "Preparazione della revisione…",
+        "selectPage": "Seleziona tutte le righe in questa pagina",
+        "selectRow": "Seleziona riga CSV",
+        "sourcePlate": "Targa di origine",
+        "sourceValue": "Valore di origine",
+        "status": {
+          "accepted": "Accettato",
+          "blocked": "Richiede attenzione",
+          "commit_failed": "Richiede attenzione",
+          "committed": "Importato",
+          "committing": "Importazione in corso",
+          "needs_mapping": "Richiede attenzione",
+          "rejected": "Rifiutato",
+          "staged": "In attesa di revisione"
+        },
+        "summary": {
+          "accepted": "Accettato",
+          "imported": "Importato",
+          "rejected": "Rifiutato",
+          "skipped": "Duplicati ignorati",
+          "total": "Righe totali",
+          "unresolved": "Non risolto"
+        },
+        "tab": "Attività CSV",
+        "timezone": "Fuso orario per i timestamp locali",
+        "timezoneHelp": "Obbligatorio per i timestamp senza offset. Gli offset espliciti come +02:00 hanno la precedenza. Il fuso orario del browser non viene mai utilizzato implicitamente.",
+        "title": "Attività completate da CSV",
+        "tooLarge": "I file CSV non devono superare i 500 KB",
+        "vehicle": "Uso del veicolo",
+        "warning": {
+          "distance_above_limit": "La distanza è superiore a 1.500 km",
+          "driving_details_missing": "Dati di guida mancanti",
+          "duplicate_will_skip": "Le attività identiche verranno ignorate",
+          "speed_above_limit": "La velocità media calcolata è superiore a 150 km/h",
+          "start_below_last_end": "La lettura iniziale è inferiore all'ultima lettura finale registrata",
+          "vehicle_on_other_live_work": "Il veicolo è utilizzato in un'attività in corso di un altro dipendente"
+        }
+      },
       "description": "Importa dati da provider supportati come Clockodo e Clockin.",
       "review": {
         "billability": {
@@ -1437,7 +1528,20 @@
         },
         "title": "Revisione importazione"
       },
+      "supportedSources": "Importa le attività da file CSV o collega i provider supportati come Clockodo e Clockin.",
       "title": "Importa dati"
+    },
+    "kioskBadge": {
+      "errors": {
+        "badgeChanged": "Qualcun altro ha modificato questo badge kiosk nel frattempo. Verifica lo stato e riprova.",
+        "badgeExists": "Questo dipendente ha già un badge kiosk. Sostituiscilo invece.",
+        "employeeInactive": "Solo i dipendenti attivi possono ricevere un badge kiosk.",
+        "employeeNotFound": "Questo dipendente non è stato trovato.",
+        "failed": "Si è verificato un errore. Riprova.",
+        "noBadge": "Questo dipendente non ha un badge kiosk.",
+        "notAllowed": "Non disponi dell'autorizzazione per eseguire questa operazione.",
+        "signInRequired": "Accedi per continuare."
+      }
     },
     "kioskPin": {
       "errors": {
@@ -1460,6 +1564,8 @@
     },
     "kiosks": {
       "add": "Aggiungi chiosco",
+      "badgeCameraOn": "Fotocamera badge attiva",
+      "badgeScannerOn": "Scanner badge attivo",
       "boardOn": "Bacheca \"Chi è presente\" attiva",
       "columns": {
         "actions": "Azioni",
@@ -1489,6 +1595,10 @@
         "offlineNeedsAdoption": "La modalità offline richiede comandi di timbratura coordinati, che questa organizzazione non utilizza ancora."
       },
       "fields": {
+        "badgeCamera": "Fotocamera badge",
+        "badgeCameraDescription": "I dipendenti toccano Scansiona badge e avvicinano il proprio badge kiosk alla fotocamera di questo kiosk invece di inserire il PIN. Il codice viene letto sul dispositivo; nessuna immagine viene caricata o memorizzata. Il browser richiede l'accesso alla fotocamera una sola volta. La timbratura con badge richiede una connessione; nome e PIN continuano a funzionare.",
+        "badgeScanner": "Scanner badge",
+        "badgeScannerDescription": "I dipendenti scansionano il proprio badge kiosk con uno scanner QR collegato a questo kiosk invece di inserire il PIN. La timbratura con badge richiede una connessione; nome e PIN continuano a funzionare.",
         "board": "Tabellone presenze",
         "boardDescription": "Mostra sul chiosco chi è presente o in pausa, con nome e iniziale del cognome.",
         "location": "Sede",

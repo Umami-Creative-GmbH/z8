@@ -172,7 +172,6 @@
       "label-available": "Available",
       "label-pending": "Pending",
       "label-used": "Used",
-      "no-policy": "No vacation policy configured for this year",
       "pending": "{days} pending",
       "percent-used": "{percent}% used",
       "title": "Vacation Balance",

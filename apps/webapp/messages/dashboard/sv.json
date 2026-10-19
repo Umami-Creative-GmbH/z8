@@ -172,7 +172,6 @@
       "label-available": "Tillgängligt",
       "label-pending": "Väntande",
       "label-used": "Använt",
-      "no-policy": "Ingen semesterpolicy har konfigurerats för i år",
       "pending": "{days} väntande",
       "percent-used": "{percent}% använt",
       "title": "Semestersaldo",

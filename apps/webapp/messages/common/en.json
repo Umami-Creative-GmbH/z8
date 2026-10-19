@@ -427,6 +427,7 @@
     "uploading": "Uploading...",
     "vacationAllowance": {
       "cappedAtFullAllowance": "capped at the full allowance",
+      "convertedSummary": "{allowance} days: {conversion}",
       "employmentMonths": "{months, plural, one {# full employment month} other {# full employment months}}",
       "lastWorkingDay": "last working day {date}",
       "notEmployed": "{allowance} of {fullAllowance} days: not employed in {year}",
@@ -434,7 +435,10 @@
       "overdrawnHint": "Vacation taken beyond the allowance. Shown for information only: nothing is deducted.",
       "proratedSummary": "{allowance} of {fullAllowance} days, prorated: {details}",
       "started": "started {date}",
-      "statutoryMinimumApplies": "statutory minimum applies"
+      "statutoryMinimumApplies": "statutory minimum applies",
+      "workingDaysPerWeek": "{days, plural, one {# working day per week} other {# working days per week}}",
+      "workingWeekConversion": "{reference} reference days converted to {weeks}",
+      "workingWeekPeriod": "{week} from {start} to {end}"
     },
     "validate": "Validate",
     "validationError": "Validation error",
@@ -929,6 +933,7 @@
     },
     "page": {
       "context": "Personal enrollment, recovery and organization selection remain available while organization access needs verification.",
+      "description": "Verify an authenticator to keep access to your organizations.",
       "title": "Security verification"
     },
     "passkey": {
@@ -1311,6 +1316,42 @@
         "message": "Download your personal data on My data before {untilDate}. After that, only an administrator can export it for you.",
         "title": "Download your personal data before you leave"
       },
+      "personnelFileDocumentRequestAccepted": {
+        "message": "Your documents for \"{title}\" were accepted.",
+        "title": "Documents accepted"
+      },
+      "personnelFileDocumentRequestCancelled": {
+        "message": "The request \"{title}\" was cancelled: {reason}",
+        "messageWithoutReason": "The request \"{title}\" was cancelled.",
+        "title": "Document request cancelled"
+      },
+      "personnelFileDocumentRequestDueSoon": {
+        "message": "Please upload \"{title}\" by {deadline}.",
+        "title": "Document due soon"
+      },
+      "personnelFileDocumentRequestDueToday": {
+        "message": "Please upload \"{title}\" today.",
+        "title": "Document due today"
+      },
+      "personnelFileDocumentRequested": {
+        "message": "Please upload \"{title}\" by {deadline}.",
+        "title": "Document requested"
+      },
+      "personnelFileDocumentRequestOverdue": {
+        "message": "\"{title}\" was due on {deadline}. Please upload it.",
+        "officerMessage": "{employee} has not handed in \"{title}\", due on {deadline}.",
+        "officerTitle": "Requested document overdue",
+        "title": "Document overdue"
+      },
+      "personnelFileDocumentRequestReturned": {
+        "message": "Please upload \"{title}\" again by {deadline}: {reason}",
+        "messageWithoutReason": "Please upload \"{title}\" again by {deadline}.",
+        "title": "Documents returned"
+      },
+      "personnelFileDocumentRequestSubmitted": {
+        "message": "{name} submitted documents for \"{title}\". Please review them.",
+        "title": "Documents submitted"
+      },
       "personnelFileDocumentShared": {
         "message": "The document \"{title}\" was shared with you.",
         "title": "New document in your personnel file"
@@ -1652,6 +1693,11 @@
         "personal_data_export_admin_exported": "Personal data exported by an administrator",
         "personal_data_export_ready": "Personal data export ready",
         "personal_data_export_reminder": "Download your data before you leave",
+        "personnel_file_document_request_decided": "Document request accepted, returned or cancelled",
+        "personnel_file_document_requested": "Document requested from you",
+        "personnel_file_document_request_overdue": "Document request overdue",
+        "personnel_file_document_request_reminder": "Requested document due soon",
+        "personnel_file_document_request_submitted": "Requested documents submitted (personnel file officers)",
         "skill_expired_today": "Skill expires today",
         "skill_expiry_upcoming": "Skill expires soon",
         "work_balance_adjustment_cancelled": "Balance adjustment cancelled",
@@ -3066,7 +3112,10 @@
     "theme-toggle": "Toggle theme"
   },
   "vacationBalance": {
-    "previouslyTaken": "Includes {days} days previously taken before tracking"
+    "conflictingPolicies": "Conflicting vacation policies",
+    "missingPolicy": "Missing vacation policy",
+    "previouslyTaken": "Includes {days} days previously taken before tracking",
+    "zeroWorkingDays": "Work schedule without working days"
   },
   "validation": {
     "first-name-required": "First Name is required",

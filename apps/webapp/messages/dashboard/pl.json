@@ -172,7 +172,6 @@
       "label-available": "Dostępne",
       "label-pending": "Oczekujące",
       "label-used": "Wykorzystane",
-      "no-policy": "Brak skonfigurowanej polityki urlopowej na ten rok",
       "pending": "{days} oczekujących",
       "percent-used": "{percent}% wykorzystane",
       "title": "Bilans urlopowy",

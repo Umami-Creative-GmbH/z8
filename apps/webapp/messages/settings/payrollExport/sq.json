@@ -165,11 +165,13 @@
         "selectWorkCategory": "Zgjidhni kategorinë e punës",
         "sourceType": "Lloji i burimit",
         "specialCategory": "Kategoria speciale",
+        "subtitle": "Përputhni kategoritë tuaja të punës dhe llojet e mungesave me kodet e llojit të pagës së listëpagesës",
         "table": {
           "category": "Kategoria",
           "datev": "DATEV",
           "lexware": "Lexware",
           "sage": "Sage",
+          "successFactors": "SAP SuccessFactors",
           "type": "Lloji"
         },
         "title": "Përputhjet e llojit të pagës",
@@ -238,9 +240,7 @@
         "title": "Sage Payroll"
       },
       "specialCategory": {
-        "holidayCompensation": "Kompensimi i pushimeve",
-        "overtime": "Orët shtesë",
-        "overtimeReduction": "Zvogëlimi i orëve shtesë"
+        "overtime": "Orët shtesë"
       },
       "successfactors": {
         "batchSize": "Madhësia e grupit",

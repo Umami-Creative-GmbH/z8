@@ -42,6 +42,9 @@
       "title": "Znajdź wnioski",
       "type": "Typ"
     },
+    "focus": {
+      "unavailable": "Ten wniosek nie oczekuje już na rozpatrzenie lub nie można go tutaj wyświetlić. Trwa ponowne sprawdzanie gotowości okresu."
+    },
     "inReview": {
       "description": "Wnioski oczekujące na zatwierdzenie lub przetworzenie.",
       "title": "W trakcie weryfikacji"
