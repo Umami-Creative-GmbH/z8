@@ -68,8 +68,6 @@ function renderOverview(
 		<DocumentRequestsOverview
 			filters={filters}
 			rows={rows}
-			total={rows.length}
-			page={filters.page}
 			pageCount={options.pageCount ?? 1}
 			today="2026-10-18"
 			timezone="Europe/Berlin"

@@ -265,8 +265,12 @@ export function BulkDocumentRequestsDialog({
 											employees={offered.employees.map((person) =>
 												toSelectableEmployee({ ...person, email: "" }, { isActive: true }),
 											)}
+											error={
+												typeof field.state.meta.errors[0] === "string"
+													? field.state.meta.errors[0]
+													: undefined
+											}
 										/>
-										<TFormMessage field={field} />
 									</TFormItem>
 								)}
 							</form.Field>
@@ -412,7 +416,7 @@ function BulkSummary({ summary }: { summary: DocumentRequestBulkSummary }) {
 			count: skippedBy.not_covered,
 			text: t(
 				"settings.personnelFiles.requests.bulk.skippedNotCovered",
-				"{count} not covered by your access",
+				"{count, plural, one {# not covered by your access} other {# not covered by your access}}",
 				{ count: skippedBy.not_covered },
 			),
 		},

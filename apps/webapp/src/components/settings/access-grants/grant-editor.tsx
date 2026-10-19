@@ -231,8 +231,8 @@ export function TeamSwitches({
 							<span
 								className={`block size-4 rounded-full bg-background ring-0 transition-transform dark:bg-foreground ${
 									isSelected
-									? "translate-x-[calc(100%-2px)] dark:bg-primary-foreground"
-									: "translate-x-0"
+										? "translate-x-[calc(100%-2px)] dark:bg-primary-foreground"
+										: "translate-x-0"
 								}`}
 							/>
 						</span>

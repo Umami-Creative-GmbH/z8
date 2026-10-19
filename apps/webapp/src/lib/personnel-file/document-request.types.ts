@@ -36,6 +36,23 @@ export function isActiveDocumentRequestStatus(status: DocumentRequestStatus): bo
 	return (ACTIVE_DOCUMENT_REQUEST_STATUSES as readonly string[]).includes(status);
 }
 
+/**
+ * The entity type of a request's audit records and notifications: their
+ * `entity_id` is the request id.
+ */
+export const DOCUMENT_REQUEST_ENTITY_TYPE = "employee_document_request";
+
+/**
+ * How lists, notifications and reminders of document requests name an
+ * employee: their user name, else their employee number, else "An employee".
+ */
+export function documentRequestEmployeeName(person: {
+	userName: string | null | undefined;
+	employeeNumber: string | null | undefined;
+}): string {
+	return person.userName?.trim() || person.employeeNumber?.trim() || "An employee";
+}
+
 /** What the request history records: every transition and edit, with actor and time. */
 export const DOCUMENT_REQUEST_EVENT_KINDS = [
 	"created",

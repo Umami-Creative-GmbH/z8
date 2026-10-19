@@ -27,7 +27,7 @@ import {
 } from "./audit";
 import { DOCUMENT_CATEGORIES, type DocumentCategory, type PayPeriod } from "./document.types";
 import {
-	documentRequestsOfDocuments,
+	lockDocumentRequestsOfDocuments,
 	purgeDocumentRequestsOfDocuments,
 } from "./document-request-purge";
 import { loadOrganizationDay } from "./organization-day";
@@ -375,8 +375,10 @@ export class PurgeAuditMinimisationError extends Error {
  * title, file or reason). The purged documents' descriptions are removed from
  * the earlier audit records about them in the same transaction (#923); when a
  * record cannot be minimised, the whole purge fails. The document requests
- * the purged documents were uploaded from lose their free text, and a request
- * left without documents is deleted with them (#1408). The deletion trigger
+ * the purged documents were uploaded from lose their free text, and a closed
+ * request left without documents is deleted with them (#1408; an accepted
+ * renewal only once its renewed document is gone too, see
+ * `purgeDocumentRequestsOfDocuments`). The deletion trigger
  * hands each stored object to the cleanup ledger in the same transaction.
  * Everything else requested is skipped.
  */
@@ -390,6 +392,12 @@ export async function purgeDueDocuments(
 	if (requested.length === 0) return { purged: [], skipped: [] };
 	const at = dateFromInstant(now);
 	return database.transaction(async (tx) => {
+		// The documents' requests first (#1408), then the documents: the lock order of an accept.
+		// Read before the deletion: a purged document's request links go with it.
+		const requestsOf = await lockDocumentRequestsOfDocuments(tx, {
+			organizationId: access.organizationId,
+			documentIds: requested,
+		});
 		const locked = await tx
 			.select({ id: employeeDocument.id, employeeId: employeeDocument.employeeId })
 			.from(employeeDocument)
@@ -428,11 +436,6 @@ export async function purgeDueDocuments(
 		const due = new Map<string, DueDocument | RetentionUnknownDocument>(
 			[...documents, ...unknownStart].map((document) => [document.id, document]),
 		);
-		// Read before the deletion: a purged document's request link goes with it (#1408).
-		const requestOfDocument = await documentRequestsOfDocuments(tx, {
-			organizationId: access.organizationId,
-			documentIds: [...due.keys()],
-		});
 		const purged: string[] = [];
 		const purgedRows: Array<{ id: string; employeeId: string }> = [];
 		const unlinkedSkillIds: string[] = [];
@@ -494,7 +497,8 @@ export async function purgeDueDocuments(
 		// The purged documents' requests lose their free text; emptied ones go (#1408).
 		const requests = await purgeDocumentRequestsOfDocuments(tx, {
 			organizationId: access.organizationId,
-			requestIds: purged.flatMap((id) => requestOfDocument.get(id) ?? []),
+			requestIds: purged.flatMap((id) => requestsOf.uploadedFrom.get(id) ?? []),
+			renewalRequestIds: purged.flatMap((id) => requestsOf.renewedBy.get(id) ?? []),
 			actorUserId: access.userId,
 			at,
 		});

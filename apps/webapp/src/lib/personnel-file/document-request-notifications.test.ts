@@ -7,6 +7,7 @@ const {
 	buildDocumentRequestedNotification,
 	buildDocumentRequestReminderNotification,
 	buildDocumentRequestSubmittedNotification,
+	redactDocumentRequestNotification,
 } = await import("./document-request-notifications");
 
 const request = {
@@ -53,10 +54,11 @@ describe("buildDocumentRequestedNotification", () => {
 describe("buildDocumentRequestReminderNotification", () => {
 	const reminded = { ...request, employeeName: "Anna Example" };
 
-	it("reminds the employee 3 days before and on the deadline day, once per deadline", () => {
+	it("reminds the employee 3 days before and on the deadline day, once per claimed reminder", () => {
 		const soon = buildDocumentRequestReminderNotification({
 			organizationId: "org",
 			recipientUserId: "anna",
+			markerId: "marker-1",
 			audience: "employee",
 			kind: "three_days_before",
 			request: reminded,
@@ -70,7 +72,7 @@ describe("buildDocumentRequestReminderNotification", () => {
 			entityType: "employee_document_request",
 			entityId: request.id,
 			actionUrl: "/my-documents",
-			idempotencyKey: `personnel-file-document-request-reminder:${request.id}:three_days_before:2026-11-30:anna`,
+			idempotencyKey: "personnel-file-document-request-reminder:marker-1:anna",
 			metadata: {
 				category: "certificate",
 				reminder: "three_days_before",
@@ -88,6 +90,7 @@ describe("buildDocumentRequestReminderNotification", () => {
 		const today = buildDocumentRequestReminderNotification({
 			organizationId: "org",
 			recipientUserId: "anna",
+			markerId: "marker-1",
 			audience: "employee",
 			kind: "deadline_day",
 			request: reminded,
@@ -96,7 +99,7 @@ describe("buildDocumentRequestReminderNotification", () => {
 			type: "personnel_file_document_request_reminder",
 			title: "Document due today",
 			message: 'Please upload "First aid refresher" today.',
-			idempotencyKey: `personnel-file-document-request-reminder:${request.id}:deadline_day:2026-11-30:anna`,
+			idempotencyKey: "personnel-file-document-request-reminder:marker-1:anna",
 		});
 	});
 
@@ -104,6 +107,7 @@ describe("buildDocumentRequestReminderNotification", () => {
 		const employee = buildDocumentRequestReminderNotification({
 			organizationId: "org",
 			recipientUserId: "anna",
+			markerId: "marker-1",
 			audience: "employee",
 			kind: "overdue",
 			request: reminded,
@@ -117,6 +121,7 @@ describe("buildDocumentRequestReminderNotification", () => {
 		const officer = buildDocumentRequestReminderNotification({
 			organizationId: "org",
 			recipientUserId: "otto",
+			markerId: "marker-1",
 			audience: "officer",
 			kind: "overdue",
 			request: reminded,
@@ -127,7 +132,7 @@ describe("buildDocumentRequestReminderNotification", () => {
 			title: "Requested document overdue",
 			message: 'Anna Example has not handed in "First aid refresher", due on Nov 30, 2026.',
 			actionUrl: `/personnel-files/${request.employeeId}`,
-			idempotencyKey: `personnel-file-document-request-reminder:${request.id}:overdue:2026-11-30:otto`,
+			idempotencyKey: "personnel-file-document-request-reminder:marker-1:otto",
 			metadata: {
 				i18n: {
 					messageKey:
@@ -213,5 +218,56 @@ describe("buildDocumentRequestSubmittedNotification", () => {
 				},
 			},
 		});
+	});
+});
+
+describe("redactDocumentRequestNotification", () => {
+	const stored = (decision: "returned" | "cancelled" | "accepted") => {
+		const built = buildDocumentRequestDecidedNotification({
+			organizationId: "org",
+			recipientUserId: "anna",
+			eventId: "event-9",
+			request,
+			decision,
+			reason: decision === "accepted" ? null : "The scan is unreadable",
+		});
+		return { title: built.title, message: built.message, metadata: JSON.stringify(built.metadata) };
+	};
+
+	it("removes the typed reason from a return's message and params, once", () => {
+		const redacted = redactDocumentRequestNotification(stored("returned"));
+		if (redacted.kind !== "redacted") throw new Error("not redacted");
+		expect(redacted.message).toBe('Please upload "First aid refresher" again by Nov 30, 2026.');
+		expect(JSON.parse(redacted.metadata)).toMatchObject({
+			decision: "returned",
+			reasonRemoved: true,
+			i18n: {
+				messageKey:
+					"common:notifications.content.personnelFileDocumentRequestReturned.messageWithoutReason",
+				params: { title: "First aid refresher" },
+			},
+		});
+		expect(redacted.metadata).not.toContain("unreadable");
+		expect(redactDocumentRequestNotification({ title: "Documents returned", ...redacted })).toEqual(
+			{ kind: "unchanged" },
+		);
+	});
+
+	it("removes a cancel's reason and leaves an accept as it is", () => {
+		expect(redactDocumentRequestNotification(stored("cancelled"))).toMatchObject({
+			kind: "redacted",
+			message: 'The request "First aid refresher" was cancelled.',
+		});
+		expect(redactDocumentRequestNotification(stored("accepted"))).toEqual({ kind: "unchanged" });
+	});
+
+	it("keeps only the title when the metadata cannot be read", () => {
+		expect(
+			redactDocumentRequestNotification({
+				title: "Documents returned",
+				message: "Please upload it again: private reason",
+				metadata: "{not json",
+			}),
+		).toMatchObject({ kind: "redacted", message: "Documents returned" });
 	});
 });

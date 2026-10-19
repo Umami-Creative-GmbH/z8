@@ -41,14 +41,17 @@ vi.mock("@/components/employee-select", () => ({
 		value,
 		onChange,
 		employees = [],
+		error,
 	}: {
 		label: string;
 		value: string[];
 		onChange: (value: string[]) => void;
 		employees?: SelectableEmployee[];
+		error?: string;
 	}) => (
-		<fieldset>
+		<fieldset aria-invalid={error ? true : undefined}>
 			<legend>{label}</legend>
+			{error ? <p>{error}</p> : null}
 			{employees.map((employee) => (
 				<label key={employee.id}>
 					<input

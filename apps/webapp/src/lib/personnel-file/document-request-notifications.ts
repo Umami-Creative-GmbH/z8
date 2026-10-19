@@ -8,13 +8,16 @@ import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { createLogger } from "@/lib/logger";
 import {
 	fillNotificationTemplate,
+	isRecord,
 	notificationParam,
 } from "@/lib/notifications/notification-params";
 import { createNotification } from "@/lib/notifications/notification-service";
 import type { CreateNotificationParams } from "@/lib/notifications/types";
-import type {
-	DocumentRequestCategory,
-	DocumentRequestReminderKind,
+import {
+	DOCUMENT_REQUEST_ENTITY_TYPE,
+	type DocumentRequestCategory,
+	type DocumentRequestReminderKind,
+	documentRequestEmployeeName,
 } from "./document-request.types";
 import { listPersonnelFileNotificationRecipients } from "./notification-recipients";
 import { MY_DOCUMENTS_PATH } from "./notifications";
@@ -26,12 +29,10 @@ import { personnelFilePath } from "./paths";
  * decision (accepted, returned, cancelled), and of its deadline (#1406); the
  * covering officers of an overdue request and of each submission (#1402). One
  * notification per history event and recipient: the event id is the
- * idempotency key; a deadline reminder's key is its request, kind and deadline.
+ * idempotency key; a deadline reminder's key is its claimed ledger row.
  */
 
 const logger = createLogger("PersonnelFileDocumentRequestNotifications");
-
-export const DOCUMENT_REQUEST_NOTIFICATION_ENTITY_TYPE = "employee_document_request";
 
 type NotifiedRequest = {
 	id: string;
@@ -78,6 +79,76 @@ const DECISION_COPY = {
 
 export type DocumentRequestDecision = keyof typeof DECISION_COPY;
 
+/** A cancel or return notification once its typed reason is removed (purge, deletion). */
+const cancelledWithoutReasonCopy = {
+	titleKey: cancelledCopy.titleKey,
+	titleDefault: cancelledCopy.titleDefault,
+	messageKey:
+		"common:notifications.content.personnelFileDocumentRequestCancelled.messageWithoutReason",
+	messageDefault: 'The request "{title}" was cancelled.',
+} as const;
+
+const returnedWithoutReasonCopy = {
+	titleKey: returnedCopy.titleKey,
+	titleDefault: returnedCopy.titleDefault,
+	messageKey:
+		"common:notifications.content.personnelFileDocumentRequestReturned.messageWithoutReason",
+	messageDefault: 'Please upload "{title}" again by {deadline}.',
+} as const;
+
+const WITHOUT_REASON_COPY = {
+	cancelled: cancelledWithoutReasonCopy,
+	returned: returnedWithoutReasonCopy,
+} as const;
+
+export type RedactedDocumentRequestNotification =
+	| { kind: "unchanged" }
+	| { kind: "redacted"; message: string; metadata: string };
+
+/**
+ * A stored cancel or return notification without its typed reason (#1307
+ * review, user decision 2026-10-19): the reason is free text of the request,
+ * removed when the request's free text is purged or the request is deleted.
+ * The message and the stored translation params lose it; the copy switches to
+ * one without a reason. Unreadable metadata keeps only the title as message.
+ */
+export function redactDocumentRequestNotification(row: {
+	title: string;
+	message: string;
+	metadata: string | null;
+}): RedactedDocumentRequestNotification {
+	let metadata: Record<string, unknown> | null = null;
+	try {
+		const parsed: unknown = row.metadata ? JSON.parse(row.metadata) : null;
+		if (isRecord(parsed)) metadata = parsed;
+	} catch {
+		metadata = null;
+	}
+	const decision = metadata?.decision;
+	// Accepted (and other) notifications carry no typed reason.
+	if (metadata && decision !== "cancelled" && decision !== "returned") return { kind: "unchanged" };
+	const i18n = metadata?.i18n;
+	if (!metadata || !isRecord(i18n) || !isRecord(i18n.params)) {
+		return row.message === row.title
+			? { kind: "unchanged" }
+			: {
+					kind: "redacted",
+					message: row.title,
+					metadata: JSON.stringify({ ...metadata, i18n: undefined, reasonRemoved: true }),
+				};
+	}
+	const copy = WITHOUT_REASON_COPY[decision as "cancelled" | "returned"];
+	if (i18n.messageKey === copy.messageKey && !("reason" in i18n.params)) {
+		return { kind: "unchanged" };
+	}
+	const { reason: _reason, ...params } = i18n.params;
+	return {
+		kind: "redacted",
+		message: fillNotificationTemplate(copy.messageDefault, params),
+		metadata: JSON.stringify({ ...metadata, i18n: { ...copy, params }, reasonRemoved: true }),
+	};
+}
+
 function idempotencyKey(eventId: string, recipientUserId: string): string {
 	return `personnel-file-document-request:${eventId}:${recipientUserId}`;
 }
@@ -104,7 +175,7 @@ export function buildDocumentRequestedNotification(input: {
 		type: "personnel_file_document_requested",
 		title: requestedCopy.titleDefault,
 		message: fillNotificationTemplate(requestedCopy.messageDefault, params),
-		entityType: DOCUMENT_REQUEST_NOTIFICATION_ENTITY_TYPE,
+		entityType: DOCUMENT_REQUEST_ENTITY_TYPE,
 		entityId: input.request.id,
 		actionUrl: MY_DOCUMENTS_PATH,
 		idempotencyKey: idempotencyKey(input.eventId, input.recipientUserId),
@@ -134,7 +205,7 @@ export function buildDocumentRequestDecidedNotification(input: {
 		type: "personnel_file_document_request_decided",
 		title: copy.titleDefault,
 		message: fillNotificationTemplate(copy.messageDefault, params),
-		entityType: DOCUMENT_REQUEST_NOTIFICATION_ENTITY_TYPE,
+		entityType: DOCUMENT_REQUEST_ENTITY_TYPE,
 		entityId: input.request.id,
 		actionUrl: MY_DOCUMENTS_PATH,
 		idempotencyKey: idempotencyKey(input.eventId, input.recipientUserId),
@@ -183,13 +254,16 @@ const EMPLOYEE_REMINDER_COPY = {
 /**
  * A deadline reminder (#1406): to the employee 3 days before the deadline, on
  * the deadline day and when overdue; to the covering officers (or owners and
- * admins) only when overdue. One per request, kind, deadline and recipient, so
- * a moved deadline reminds again.
+ * admins) only when overdue. One per claimed reminder (`markerId`, the ledger
+ * row) and recipient: a moved deadline re-arms the reminder with a new ledger
+ * row, so it is delivered again, also when the deadline moves back.
  */
 export function buildDocumentRequestReminderNotification(
 	input: {
 		organizationId: string;
 		recipientUserId: string;
+		/** The reminder's claimed `employee_document_request_reminder` row. */
+		markerId: string;
 		request: NotifiedRequest & { employeeName: string };
 	} & (
 		| { audience: "employee"; kind: DocumentRequestReminderKind }
@@ -211,10 +285,10 @@ export function buildDocumentRequestReminderNotification(
 				: "personnel_file_document_request_reminder",
 		title: copy.titleDefault,
 		message: fillNotificationTemplate(copy.messageDefault, params),
-		entityType: DOCUMENT_REQUEST_NOTIFICATION_ENTITY_TYPE,
+		entityType: DOCUMENT_REQUEST_ENTITY_TYPE,
 		entityId: request.id,
 		actionUrl: officer ? personnelFilePath(request.employeeId) : MY_DOCUMENTS_PATH,
-		idempotencyKey: `personnel-file-document-request-reminder:${request.id}:${input.kind}:${request.deadline}:${input.recipientUserId}`,
+		idempotencyKey: `personnel-file-document-request-reminder:${input.markerId}:${input.recipientUserId}`,
 		metadata: {
 			category: request.category,
 			reminder: input.kind,
@@ -295,7 +369,7 @@ export function buildDocumentRequestSubmittedNotification(input: {
 		type: "personnel_file_document_request_submitted",
 		title: submittedCopy.titleDefault,
 		message: fillNotificationTemplate(submittedCopy.messageDefault, params),
-		entityType: DOCUMENT_REQUEST_NOTIFICATION_ENTITY_TYPE,
+		entityType: DOCUMENT_REQUEST_ENTITY_TYPE,
 		entityId: input.request.id,
 		actionUrl: personnelFilePath(input.request.employeeId),
 		idempotencyKey: idempotencyKey(input.eventId, input.recipientUserId),
@@ -324,7 +398,7 @@ export async function notifyDocumentRequestSubmitted(
 				category: input.request.category,
 			}),
 			database
-				.select({ name: user.name, employeeNumber: employee.employeeNumber })
+				.select({ userName: user.name, employeeNumber: employee.employeeNumber })
 				.from(employee)
 				.innerJoin(user, eq(user.id, employee.userId))
 				.where(
@@ -335,7 +409,10 @@ export async function notifyDocumentRequestSubmitted(
 				)
 				.limit(1),
 		]);
-		const employeeName = subject?.name?.trim() || subject?.employeeNumber || "An employee";
+		const employeeName = documentRequestEmployeeName({
+			userName: subject?.userName,
+			employeeNumber: subject?.employeeNumber,
+		});
 		await Promise.all(
 			recipients.map((recipientUserId) =>
 				createNotification(

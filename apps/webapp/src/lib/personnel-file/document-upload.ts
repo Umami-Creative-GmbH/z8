@@ -50,6 +50,8 @@ export type RecordUploadedDocumentResult =
 	| { kind: "absence_unavailable" }
 	/** The document request no longer takes uploads (#1402); the stored object is cleaned up. */
 	| { kind: "request_unavailable" }
+	/** The document request asks for another category; the stored object is cleaned up. */
+	| { kind: "request_category_mismatch" }
 	/** The ledger cleanup claimed the staged object meanwhile (a very slow upload). */
 	| { kind: "not_pending" };
 
@@ -69,6 +71,11 @@ export function uploadNotRecorded(
 			return { status: 409, error: "This absence can no longer take a sick note." };
 		case "request_unavailable":
 			return { status: 409, error: "This document request no longer takes documents." };
+		case "request_category_mismatch":
+			return {
+				status: 400,
+				error: "This document request asks for documents of another category.",
+			};
 		case "not_pending":
 			return { status: 409, error: "The upload took too long. Please upload the file again." };
 	}
@@ -159,7 +166,11 @@ export async function recordUploadedPersonnelDocument(
 
 	if (finalized.kind === "recorded") return finalized;
 
-	if (finalized.kind === "absence_unavailable" || finalized.kind === "request_unavailable") {
+	if (
+		finalized.kind === "absence_unavailable" ||
+		finalized.kind === "request_unavailable" ||
+		finalized.kind === "request_category_mismatch"
+	) {
 		// Cancelled, rejected, submitted or no longer allowed while the file was stored.
 		await markPersonnelFileUploadFailed(database, {
 			...staged,

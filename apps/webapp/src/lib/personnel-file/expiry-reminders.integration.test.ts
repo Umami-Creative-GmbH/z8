@@ -524,7 +524,11 @@ describe("expiring documents list with renewals (#1404)", () => {
 		).toMatchObject({ success: false, code: "renewed_document_mismatch" });
 
 		expect(
-			await cancelDocumentRequestAction({ requestId: created.data.id, reason: "Wrong course" }),
+			await cancelDocumentRequestAction({
+				requestId: created.data.id,
+				reason: "Wrong course",
+				expectedVersion: created.data.version,
+			}),
 		).toMatchObject({ success: true });
 		session.userId = null;
 		const cancelled = await listFor("officer", "2026-11-01T08:00:00Z");

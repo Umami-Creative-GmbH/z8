@@ -33,6 +33,9 @@ const store = await import("./document-request-store");
 const { linkDocumentRequestUpload } = await import("./document-request-uploads");
 const { purgeDueDocuments, saveRetentionPeriods } = await import("./retention-store");
 const { runDocumentRequestRetention } = await import("./document-request-retention");
+const { buildDocumentRequestDecidedNotification } = await import(
+	"./document-request-notifications"
+);
 
 type Fixture = Awaited<ReturnType<typeof createLifecycleDatabaseFixture>>;
 type Seeded = Awaited<ReturnType<Fixture["seedEmployee"]>>;
@@ -71,7 +74,12 @@ const ownerAccess = (at: Instant = CREATED) => accessOf(fixture.ownerUserId, at)
 
 async function createRequest(
 	employee: Seeded,
-	input: { category?: "certificate" | "other"; title?: string; note?: string | null } = {},
+	input: {
+		category?: "certificate" | "other";
+		title?: string;
+		note?: string | null;
+		renewedDocumentId?: string;
+	} = {},
 ) {
 	const result = await store.createDocumentRequest(
 		db,
@@ -82,6 +90,7 @@ async function createRequest(
 			title: input.title ?? "First aid card",
 			note: input.note === undefined ? "Bring the original" : input.note,
 			deadline: "2026-09-30",
+			renewedDocumentId: input.renewedDocumentId ?? null,
 		},
 		CREATED,
 	);
@@ -90,6 +99,29 @@ async function createRequest(
 }
 
 let documentCounter = 0;
+
+/** A shared document in the employee's file, not uploaded from any request. */
+async function seedDocument(employee: Seeded, category = "certificate") {
+	documentCounter += 1;
+	const id = randomUUID();
+	await fixture.pool.query(
+		`insert into employee_document
+		 (id, organization_id, employee_id, category, title, document_date, visibility, storage_provider,
+		  storage_bucket, storage_key, file_name, mime_type, size_bytes, checksum_sha256, uploaded_by)
+		 values ($1,$2,$3,$4,$5,'2026-09-02','shared','s3-private','t1408',$7,'card.pdf',
+		  'application/pdf',10,'x',$6)`,
+		[
+			id,
+			fixture.organizationId,
+			employee.employeeId,
+			category,
+			`Card ${documentCounter}`,
+			employee.userId,
+			`t1408/${id}`,
+		],
+	);
+	return id;
+}
 
 /** A shared document the employee uploaded from the request (not handed in yet). */
 async function upload(employee: Seeded, requestId: string, category = "certificate") {
@@ -122,11 +154,20 @@ async function upload(employee: Seeded, requestId: string, category = "certifica
 	return id;
 }
 
+/** The request's current version, as the person acting would have seen it. */
+async function versionOf(requestId: string): Promise<number> {
+	const result = await fixture.pool.query<{ version: number }>(
+		"select version from employee_document_request where id = $1",
+		[requestId],
+	);
+	return result.rows[0]?.version ?? 0;
+}
+
 async function submit(employee: Seeded, requestId: string, note: string | null) {
 	const result = await store.submitDocumentRequest(
 		db,
 		await accessOf(employee.userId, CREATED),
-		{ requestId, note },
+		{ requestId, note, expectedVersion: await versionOf(requestId) },
 		CREATED,
 	);
 	if (result.kind !== "submitted") throw new Error(`submit failed: ${JSON.stringify(result)}`);
@@ -136,14 +177,19 @@ async function returnRequest(requestId: string, reason: string) {
 	const result = await store.returnDocumentRequest(
 		db,
 		await ownerAccess(),
-		{ requestId, reason },
+		{ requestId, reason, expectedVersion: await versionOf(requestId) },
 		CREATED,
 	);
 	if (result.kind !== "returned") throw new Error(`return failed: ${JSON.stringify(result)}`);
 }
 
 async function accept(requestId: string) {
-	const result = await store.acceptDocumentRequest(db, await ownerAccess(), { requestId }, CREATED);
+	const result = await store.acceptDocumentRequest(
+		db,
+		await ownerAccess(),
+		{ requestId, expectedVersion: await versionOf(requestId) },
+		CREATED,
+	);
 	if (result.kind !== "accepted") throw new Error(`accept failed: ${JSON.stringify(result)}`);
 }
 
@@ -151,7 +197,7 @@ async function cancel(requestId: string, reason: string, at: Instant = CREATED) 
 	const result = await store.cancelDocumentRequest(
 		db,
 		await accessOf(fixture.ownerUserId, at),
-		{ requestId, reason },
+		{ requestId, reason, expectedVersion: await versionOf(requestId) },
 		at,
 	);
 	if (result.kind !== "cancelled") throw new Error(`cancel failed: ${JSON.stringify(result)}`);
@@ -483,5 +529,190 @@ describe("requests without documents", () => {
 		for (const id of [unretained, ofColleague, stillOpen]) {
 			expect(await requestRow(id)).not.toBeNull();
 		}
+	});
+});
+
+/** Stores a decision notification as if it had been delivered (delivery is replaced here). */
+async function storeDecisionNotification(input: {
+	organizationId: string;
+	recipientUserId: string;
+	requestId: string;
+	decision: "returned" | "cancelled";
+	reason: string;
+}) {
+	const built = buildDocumentRequestDecidedNotification({
+		organizationId: input.organizationId,
+		recipientUserId: input.recipientUserId,
+		eventId: randomUUID(),
+		request: {
+			id: input.requestId,
+			employeeId: randomUUID(),
+			title: "First aid card",
+			category: "certificate",
+			deadline: "2026-09-30",
+		},
+		decision: input.decision,
+		reason: input.reason,
+	});
+	const { rows } = await fixture.pool.query<{ id: string }>(
+		`insert into notification
+		 (user_id, organization_id, type, title, message, entity_type, entity_id, action_url, metadata, idempotency_key)
+		 values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) returning id`,
+		[
+			built.userId,
+			built.organizationId,
+			built.type,
+			built.title,
+			built.message,
+			built.entityType,
+			built.entityId,
+			built.actionUrl,
+			JSON.stringify(built.metadata),
+			built.idempotencyKey,
+		],
+	);
+	return rows[0]?.id ?? "";
+}
+
+async function storedNotification(id: string) {
+	const { rows } = await fixture.pool.query<{ message: string; metadata: string }>(
+		"select message, metadata from notification where id = $1",
+		[id],
+	);
+	const row = rows[0];
+	if (!row) return null;
+	const metadata = JSON.parse(row.metadata) as {
+		i18n: { messageKey: string; messageDefault: string; params: Record<string, unknown> };
+	};
+	return { message: row.message, i18n: metadata.i18n };
+}
+
+describe("stored notifications of a purged or deleted request (#1307 review, user decision)", () => {
+	it("loses the typed reason when the request's free text is purged or the request is deleted, in its organization only", async () => {
+		await retainCertificatesOneYear();
+		const otherOrganization = await fixture.createOrganization();
+		const leaver = await fixture.seedEmployee();
+		const purged = await createRequest(leaver, { title: "Purged" });
+		const first = await upload(leaver, purged);
+		await submit(leaver, purged, null);
+		await returnRequest(purged, "The scan is unreadable");
+		await upload(leaver, purged);
+		await submit(leaver, purged, null);
+		await accept(purged);
+		const returnedNotice = await storeDecisionNotification({
+			organizationId: fixture.organizationId,
+			recipientUserId: leaver.userId,
+			requestId: purged,
+			decision: "returned",
+			reason: "The scan is unreadable",
+		});
+		// The same entity id in another organization is never touched.
+		const foreignNotice = await storeDecisionNotification({
+			organizationId: otherOrganization,
+			recipientUserId: leaver.userId,
+			requestId: purged,
+			decision: "returned",
+			reason: "The scan is unreadable",
+		});
+		const deleted = await createRequest(leaver, { title: "Deleted" });
+		await cancel(deleted, "Wrong employee picked");
+		const cancelledNotice = await storeDecisionNotification({
+			organizationId: fixture.organizationId,
+			recipientUserId: leaver.userId,
+			requestId: deleted,
+			decision: "cancelled",
+			reason: "Wrong employee picked",
+		});
+		await offboard(leaver);
+
+		await purge([first]);
+		expect(await requestRow(purged)).toMatchObject({ status: "accepted" });
+		const redacted = await storedNotification(returnedNotice);
+		expect(redacted?.message).not.toContain("unreadable");
+		expect(redacted?.message).toBe('Please upload "First aid card" again by Sep 30, 2026.');
+		expect(redacted?.i18n.params).not.toHaveProperty("reason");
+		expect(JSON.stringify(redacted?.i18n)).not.toContain("unreadable");
+		expect((await storedNotification(foreignNotice))?.message).toContain("unreadable");
+
+		expect(
+			await runDocumentRequestRetention(db, {
+				now: PURGE_DAY,
+				organizationIds: [fixture.organizationId],
+			}),
+		).toMatchObject({
+			deleted: expect.any(Number),
+		});
+		expect(await requestRow(deleted)).toBeNull();
+		const cancelled = await storedNotification(cancelledNotice);
+		expect(cancelled?.message).toBe('The request "First aid card" was cancelled.');
+		expect(JSON.stringify(cancelled?.i18n)).not.toContain("Wrong employee");
+	});
+});
+
+describe("accepted renewals at purge and retention (#1307 review)", () => {
+	it("keeps an accepted renewal while its renewed document exists, so that document stays renewed; deletes it with the renewed document", async () => {
+		await retainCertificatesOneYear();
+		const leaver = await fixture.seedEmployee();
+		const old = await seedDocument(leaver);
+		const renewal = await createRequest(leaver, {
+			title: "Renewal",
+			note: "The old card expires",
+			renewedDocumentId: old,
+		});
+		const replacement = await upload(leaver, renewal);
+		await submit(leaver, renewal, "New card");
+		await accept(renewal);
+		await offboard(leaver);
+
+		// Its only uploaded document is purged: the request stays, without its free text.
+		await purge([replacement]);
+		const kept = await fixture.pool.query<{ status: string; note: string | null; renewed: string }>(
+			"select status, note, renewed_document_id as renewed from employee_document_request where id = $1",
+			[renewal],
+		);
+		expect(kept.rows).toEqual([{ status: "accepted", note: null, renewed: old }]);
+		expect(await submissionNotes(renewal)).toEqual([null]);
+		// Nor does the retention job delete it while the renewed document exists.
+		await runDocumentRequestRetention(db, {
+			now: PURGE_DAY,
+			organizationIds: [fixture.organizationId],
+		});
+		expect(await requestRow(renewal)).not.toBeNull();
+
+		// The renewed document goes too: so does the request.
+		await purge([old]);
+		expect(await requestRow(renewal)).toBeNull();
+		expect((await requestAudits(renewal)).at(-1)).toMatchObject({
+			action: "personnel_file.document_request_deleted",
+			performedBy: fixture.ownerUserId,
+		});
+		for (const audit of await requestAudits(renewal)) {
+			expect(freeTextIn(audit.metadata)).toEqual([]);
+		}
+	});
+});
+
+describe("active requests at purge (#1307 review)", () => {
+	it("never deletes a request that is still open or submitted (a legacy inactive employee), only removes its free text", async () => {
+		await retainCertificatesOneYear();
+		const leaver = await fixture.seedEmployee();
+		const request = await createRequest(leaver, { note: "Please hurry" });
+		const document = await upload(leaver, request);
+		await submit(leaver, request, "Here it is");
+		await offboard(leaver);
+		// As if the employee had been deactivated without a departure: never cancelled.
+		await fixture.pool.query(
+			"update employee_document_request set status = 'submitted' where id = $1",
+			[request],
+		);
+
+		expect((await purge([document])).purged).toEqual([document]);
+		expect(await requestRow(request)).toMatchObject({ status: "submitted", note: null });
+		expect(await submissionNotes(request)).toEqual([null]);
+		expect(
+			(await requestAudits(request)).some(
+				(audit) => audit.action === "personnel_file.document_request_deleted",
+			),
+		).toBe(false);
 	});
 });

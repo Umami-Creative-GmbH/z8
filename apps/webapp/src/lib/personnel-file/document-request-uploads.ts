@@ -19,14 +19,18 @@ type Database = typeof appDb;
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 
 /**
- * Locks the request an upload is for. Null unless it is the actor's own open
- * request, for the upload's employee and category.
+ * Locks the request an upload is for: `locked` when it is the actor's own open
+ * request for the upload's employee and category; `category_mismatch` when it
+ * is, but asks for another category; `unavailable` otherwise (not theirs, not
+ * there, or no longer open).
  */
 export async function lockDocumentRequestForUpload(
 	tx: Transaction,
 	access: PersonnelFileAccess,
 	input: { requestId: string; employeeId: string; category: DocumentCategory },
-): Promise<{ id: string } | null> {
+): Promise<
+	{ kind: "locked"; id: string } | { kind: "unavailable" } | { kind: "category_mismatch" }
+> {
 	const [request] = await tx
 		.select({
 			id: employeeDocumentRequest.id,
@@ -46,12 +50,12 @@ export async function lockDocumentRequestForUpload(
 		!request ||
 		request.employeeId !== input.employeeId ||
 		!isOwnDocument(access, request.employeeId) ||
-		request.status !== "open" ||
-		request.category !== input.category
+		request.status !== "open"
 	) {
-		return null;
+		return { kind: "unavailable" };
 	}
-	return { id: request.id };
+	if (request.category !== input.category) return { kind: "category_mismatch" };
+	return { kind: "locked", id: request.id };
 }
 
 /** Links a document uploaded from a request to it, not handed in yet. */

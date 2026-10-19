@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, max, notExists, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, max, ne, notExists, or, sql } from "drizzle-orm";
 import type { Temporal } from "temporal-polyfill";
 import type { db as appDb } from "@/db";
 import { organization } from "@/db/auth-schema";
@@ -18,8 +18,17 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import type { UnprocessableAuditRecord } from "./audit";
-import { DOCUMENT_REQUEST_CATEGORIES } from "./document-request.types";
-import { deleteDocumentRequestRow, minimiseDocumentRequestAudits } from "./document-request-purge";
+import {
+	DOCUMENT_REQUEST_CATEGORIES,
+	type DocumentRequestCategory,
+	type DocumentRequestEventKind,
+	type DocumentRequestStatus,
+} from "./document-request.types";
+import {
+	deleteDocumentRequestRow,
+	minimiseDocumentRequestAudits,
+	redactDocumentRequestNotifications,
+} from "./document-request-purge";
 import { loadOrganizationDay } from "./organization-day";
 import { type EmploymentPeriodForRetention, retentionDueDate } from "./retention";
 import { loadRetentionPeriods, type RetentionPeriods } from "./retention-store";
@@ -32,11 +41,12 @@ import { loadRetentionPeriods, type RetentionPeriods } from "./retention-store";
  * of that year and the year the employment ended. Once the category's
  * retention period has passed since then, the request is deleted without
  * confirmation, with its history, and its free text is removed from its audit
- * records. Open and submitted requests, requests of current employees (no
- * retention start) and categories without a retention period are never
- * deleted here. A request with documents goes only with its last purged
- * document (`purgeDueDocuments`). The deletion writes no audit record: it has
- * no actor, and the audit log needs one.
+ * records and stored notifications. Open and submitted requests, requests of
+ * current employees (no retention start), categories without a retention
+ * period and accepted renewals whose renewed document still exists (they keep
+ * it renewed) are never deleted here. A request with documents goes only with
+ * its last purged document (`purgeDueDocuments`). The deletion writes no audit
+ * record: it has no actor, and the audit log needs one.
  */
 
 const logger = createLogger("PersonnelFileDocumentRequestRetention");
@@ -45,14 +55,27 @@ type Database = typeof appDb;
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 type Reader = Database | Pick<Transaction, "select">;
 
-const CLOSED_STATUSES = ["accepted", "cancelled"] as const;
+const CLOSED_STATUSES = [
+	"accepted",
+	"cancelled",
+] as const satisfies readonly DocumentRequestStatus[];
+
+/** The history events that close a request: its retention counts from the last one. */
+const CLOSING_EVENT_KINDS = [
+	"accepted",
+	"cancelled",
+] as const satisfies readonly DocumentRequestEventKind[];
 
 export interface DocumentRequestRetentionResult {
+	/** False when an organization or a due request failed (logged; retried next run). */
+	success: boolean;
 	/** Organizations with personnel files on that were checked. */
 	organizations: number;
 	deleted: number;
-	/** Requests that were due but could not be deleted (logged; retried next run). */
+	/** Requests that were due but could not be deleted. */
 	failed: number;
+	/** Organizations whose run failed as a whole. */
+	errors: Array<{ organizationId: string; error: string }>;
 }
 
 /** The request's audit records cannot be minimised, so it is not deleted. */
@@ -70,7 +93,7 @@ export class DocumentRequestRetentionAuditError extends Error {
 interface ClosedRequest {
 	id: string;
 	employeeId: string;
-	category: (typeof DOCUMENT_REQUEST_CATEGORIES)[number];
+	category: DocumentRequestCategory;
 	updatedAt: Date;
 }
 
@@ -97,6 +120,11 @@ function closedRequestsWithoutDocuments(
 				input.requestId ? eq(employeeDocumentRequest.id, input.requestId) : undefined,
 				inArray(employeeDocumentRequest.status, [...CLOSED_STATUSES]),
 				inArray(employeeDocumentRequest.category, [...input.categories]),
+				// An accepted renewal keeps its renewed document renewed while that document exists.
+				or(
+					ne(employeeDocumentRequest.status, "accepted"),
+					isNull(employeeDocumentRequest.renewedDocumentId),
+				),
 				notExists(
 					database
 						.select({ one: sql`1` })
@@ -141,7 +169,7 @@ async function loadClosingInstants(
 			and(
 				eq(employeeDocumentRequestEvent.organizationId, input.organizationId),
 				inArray(employeeDocumentRequestEvent.requestId, [...input.requestIds]),
-				inArray(employeeDocumentRequestEvent.kind, [...CLOSED_STATUSES]),
+				inArray(employeeDocumentRequestEvent.kind, [...CLOSING_EVENT_KINDS]),
 			),
 		)
 		.groupBy(employeeDocumentRequestEvent.requestId);
@@ -258,6 +286,7 @@ async function deleteDueRequest(
 			requestIds: [due.id],
 		});
 		if (unprocessable.length > 0) throw new DocumentRequestRetentionAuditError(unprocessable);
+		await redactDocumentRequestNotifications(tx, { organizationId, requestIds: [due.id] });
 		return deleteDocumentRequestRow(tx, { organizationId, requestId: due.id });
 	});
 }
@@ -314,7 +343,13 @@ export async function runDocumentRequestRetention(
 					: undefined,
 			),
 		);
-	const result: DocumentRequestRetentionResult = { organizations: 0, deleted: 0, failed: 0 };
+	const result: DocumentRequestRetentionResult = {
+		success: true,
+		organizations: 0,
+		deleted: 0,
+		failed: 0,
+		errors: [],
+	};
 	// One tenant at a time keeps failures isolated.
 	// react-doctor-disable-next-line react-doctor/async-await-in-loop
 	for (const { id } of organizations) {
@@ -323,7 +358,13 @@ export async function runDocumentRequestRetention(
 			result.organizations += 1;
 			result.deleted += outcome.deleted;
 			result.failed += outcome.failed;
+			if (outcome.failed > 0) result.success = false;
 		} catch (error) {
+			result.success = false;
+			result.errors.push({
+				organizationId: id,
+				error: error instanceof Error ? error.message : String(error),
+			});
 			logger.error({ error, organizationId: id }, "Document request retention failed");
 		}
 	}

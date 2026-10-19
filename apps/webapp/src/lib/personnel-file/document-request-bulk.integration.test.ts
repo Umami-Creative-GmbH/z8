@@ -53,9 +53,8 @@ vi.setConfig({ testTimeout: 60_000 });
 const actions = await import("@/app/[locale]/(app)/personnel-files/document-request-actions");
 const { db } = await import("@/db");
 const { resolvePersonnelFileAccess } = await import("./access-store");
-const { createDocumentRequestsInBulk, listDocumentRequestRecipientOptions } = await import(
-	"./document-request-store"
-);
+const { createDocumentRequest, createDocumentRequestsInBulk, listDocumentRequestRecipientOptions } =
+	await import("./document-request-store");
 const { seedPersonnelFileOfficerGrant } = await import("./testing/officer-grant.test.fixture");
 
 const ORG = "t1407-org";
@@ -492,5 +491,41 @@ describe("document requests: bulk create (#1407)", () => {
 		const rows = await requestRows();
 		expect(rows).toHaveLength(4);
 		expect(new Set(rows.map((row) => row.employee_id)).size).toBe(4);
+	});
+
+	it("waits for a single create of the same employee, then skips the identical request it made", async () => {
+		const access = await accessOf("owner");
+		const input = {
+			category: "certificate",
+			title: "Safety briefing",
+			note: null,
+			deadline: "2099-11-30",
+		};
+		let bulk: ReturnType<typeof createDocumentRequestsInBulk> | undefined;
+		// The single create's transaction stays open while the bulk create starts.
+		await db.transaction(async (outer) => {
+			const single = await createDocumentRequest(outer as never, access, {
+				...input,
+				employeeId: ids.anna,
+			});
+			expect(single.kind).toBe("created");
+			bulk = createDocumentRequestsInBulk(db, access, {
+				...input,
+				employeeIds: [ids.anna, ids.ben],
+				teamIds: [],
+			});
+			const settled = await Promise.race([
+				bulk.then(() => "settled"),
+				new Promise((resolve) => setTimeout(() => resolve("waiting"), 300)),
+			]);
+			expect(settled).toBe("waiting");
+		});
+		const result = await bulk;
+		expect(result).toMatchObject({
+			kind: "created",
+			skippedBy: { already_requested: 1 },
+		});
+		const rows = await requestRows();
+		expect(rows.map((row) => row.employee_id).toSorted()).toEqual([ids.anna, ids.ben].toSorted());
 	});
 });

@@ -8,10 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { formatDateOnly } from "@/components/ui/date-picker-utils";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import { formatInstant, localeDefaultTimeFormat } from "@/lib/datetime/temporal-format";
-import type {
-	DocumentRequestDocumentView,
-	DocumentRequestEventView,
-	DocumentRequestView,
+import {
+	type DocumentRequestDocumentView,
+	type DocumentRequestEventView,
+	type DocumentRequestView,
+	isActiveDocumentRequestStatus,
 } from "@/lib/personnel-file/document-request.types";
 import { personnelDocumentUrl, usePersonnelFileLabels } from "./document-labels";
 import { useDocumentRequestLabels } from "./document-request-labels";
@@ -20,7 +21,7 @@ type Labels = ReturnType<typeof useDocumentRequestLabels>;
 
 function statusVariant(request: DocumentRequestView) {
 	if (request.overdue) return "destructive" as const;
-	if (request.status === "open" || request.status === "submitted") return "default" as const;
+	if (isActiveDocumentRequestStatus(request.status)) return "default" as const;
 	return "secondary" as const;
 }
 
@@ -93,20 +94,21 @@ function DocumentLinks({ documents }: { documents: readonly DocumentRequestDocum
  * Document requests with their status, deadline, note, submissions and
  * history (#1307), for the employee's Requested documents and an employee's
  * file in the officer area. The server decided what is listed and which
- * documents the viewer may see.
+ * documents the viewer may see. Generic, so the slots get the rows as passed
+ * (e.g. with the employee's name on the officer page).
  */
-export function DocumentRequestList({
+export function DocumentRequestList<Request extends DocumentRequestView>({
 	requests,
 	timezone,
 	actions,
 	subject,
 }: {
-	requests: readonly DocumentRequestView[];
+	requests: readonly Request[];
 	/** The organization's timezone: history times are shown in it. */
 	timezone: string;
-	actions?: (request: DocumentRequestView) => ReactNode;
+	actions?: (request: Request) => ReactNode;
 	/** Whose request it is, above its title (the officer page across employees, #1403). */
-	subject?: (request: DocumentRequestView) => ReactNode;
+	subject?: (request: Request) => ReactNode;
 }) {
 	const { t } = useTranslate();
 	const locale = useAppLocale();
@@ -148,16 +150,23 @@ export function DocumentRequestList({
 								</p>
 							) : null}
 						</div>
-						{actions ? <div className="flex items-center gap-1">{actions(request)}</div> : null}
+						{actions ? (
+							<div className="flex flex-wrap items-center gap-1">{actions(request)}</div>
+						) : null}
 					</div>
 					{request.note ? <p className="whitespace-pre-line text-sm">{request.note}</p> : null}
 					{request.pendingDocuments.length > 0 ? (
 						<div className="rounded-md border border-dashed p-2 text-sm">
 							<p className="font-medium">
-								{t(
-									"settings.personnelFiles.requests.pendingDocuments",
-									"Uploaded, not submitted yet",
-								)}
+								{isActiveDocumentRequestStatus(request.status)
+									? t(
+											"settings.personnelFiles.requests.pendingDocuments",
+											"Uploaded, not submitted yet",
+										)
+									: t(
+											"settings.personnelFiles.requests.pendingDocumentsClosed",
+											"Uploaded, never submitted",
+										)}
 							</p>
 							<DocumentLinks documents={request.pendingDocuments} />
 						</div>

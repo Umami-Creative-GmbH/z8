@@ -1,4 +1,4 @@
-import { and, eq, inArray, type SQL, sql } from "drizzle-orm";
+import { type AnyColumn, and, eq, inArray, type SQL, sql } from "drizzle-orm";
 import { employeeDocument, employeeDocumentRequest } from "@/db/schema";
 import {
 	ACTIVE_DOCUMENT_REQUEST_STATUSES,
@@ -32,4 +32,25 @@ export function isRenewedDocument(): SQL {
  */
 export function hasActiveRenewalRequest(): SQL<boolean> {
 	return namedByRequest(ACTIVE_DOCUMENT_REQUEST_STATUSES) as SQL<boolean>;
+}
+
+/**
+ * An open or submitted request of the organization renews a certificate that
+ * names the employee skill (correlated on `employee_skill` rows): the skill
+ * expiry job then leaves the employee out of its reminders and tells only the
+ * managers (or owners and admins), like the certificate's own expiry
+ * reminders (user decision 2026-10-19).
+ */
+export function employeeSkillHasActiveRenewalRequest(
+	organizationId: string,
+	employeeSkillId: AnyColumn,
+): SQL<boolean> {
+	return sql<boolean>`exists (select 1 from ${employeeDocumentRequest} inner join ${employeeDocument} on ${and(
+		eq(employeeDocument.id, employeeDocumentRequest.renewedDocumentId),
+		eq(employeeDocument.organizationId, employeeDocumentRequest.organizationId),
+	)} where ${and(
+		eq(employeeDocumentRequest.organizationId, organizationId),
+		inArray(employeeDocumentRequest.status, [...ACTIVE_DOCUMENT_REQUEST_STATUSES]),
+		eq(employeeDocument.employeeSkillId, employeeSkillId),
+	)})`;
 }

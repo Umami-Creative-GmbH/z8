@@ -83,7 +83,7 @@ vi.mock("@/lib/jobs/personnel-file-document-request-reminders", () => {
 });
 const documentRequestRetention = vi.hoisted(() => ({
 	imported: vi.fn(),
-	run: vi.fn(async () => ({ organizations: 2, deleted: 1, failed: 0 })),
+	run: vi.fn(async () => ({ success: true, organizations: 2, deleted: 1, failed: 0, errors: [] })),
 }));
 vi.mock("@/lib/jobs/personnel-file-document-request-retention", () => {
 	documentRequestRetention.imported();
@@ -469,7 +469,7 @@ describe("document request retention cron (#1408)", () => {
 			await CRON_JOBS["cron:personnel-file-document-request-retention"].processor({
 				triggeredAt: "2028-01-01T00:15:00Z",
 			}),
-		).toEqual({ organizations: 2, deleted: 1, failed: 0 });
+		).toEqual({ success: true, organizations: 2, deleted: 1, failed: 0, errors: [] });
 		expect(documentRequestRetention.run).toHaveBeenCalledOnce();
 	});
 });

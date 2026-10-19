@@ -6,7 +6,10 @@ import { logger } from "@/lib/logger";
 import { loadCurrentPersonnelFileAccess } from "@/lib/personnel-file/current-access";
 import {
 	DOCUMENT_REQUEST_BULK_MAX_RECIPIENTS,
+	DOCUMENT_REQUEST_TEXT_MAX_LENGTH,
+	DOCUMENT_REQUEST_TITLE_MAX_LENGTH,
 	type DocumentRequestBulkSummary,
+	type DocumentRequestCategory,
 	type DocumentRequestRefusal,
 	type DocumentRequestView,
 } from "@/lib/personnel-file/document-request.types";
@@ -33,7 +36,8 @@ import { isCanonicalUuid } from "@/lib/validations/canonical-uuid";
  * personnel file access first and the store re-checks coverage of the
  * employee and category under the request's lock; without access everything
  * reads as not found. Refusals come back with their reason as `code`; a
- * decision on a request that moved on comes back with code `conflict`.
+ * write on a request that moved on, or one that names no `expectedVersion`,
+ * comes back with code `conflict`.
  */
 
 const NOT_FOUND = "Document request not found";
@@ -45,12 +49,12 @@ export type { DocumentRequestView } from "@/lib/personnel-file/document-request.
 /** English fallbacks; the client shows translated text by `code`. */
 const REFUSAL_MESSAGES: Readonly<Record<DocumentRequestRefusal, string>> = {
 	category_not_requestable: "Only certificates and other documents can be requested.",
-	invalid_title: "Enter a title of at most 200 characters.",
-	invalid_note: "The note can be at most 2000 characters.",
+	invalid_title: `Enter a title of at most ${DOCUMENT_REQUEST_TITLE_MAX_LENGTH} characters.`,
+	invalid_note: `The note can be at most ${DOCUMENT_REQUEST_TEXT_MAX_LENGTH} characters.`,
 	invalid_deadline: "Choose a deadline.",
 	deadline_in_past: "The deadline cannot be in the past.",
 	reason_required: "Enter a reason.",
-	invalid_reason: "The reason can be at most 2000 characters.",
+	invalid_reason: `The reason can be at most ${DOCUMENT_REQUEST_TEXT_MAX_LENGTH} characters.`,
 	own_file: "You cannot request documents on your own personnel file.",
 	former_employee: "This employee's employment has ended.",
 	renewed_document_mismatch:
@@ -75,9 +79,31 @@ function failure(error: unknown, fallback: string): { success: false; error: str
 	return { success: false, error: fallback };
 }
 
+/** The store results every write shares besides its success. */
+type Unsuccessful =
+	| { kind: "not_found" }
+	| { kind: "conflict" }
+	| { kind: "refused"; reason: DocumentRequestRefusal };
+
+function unsuccessful(result: Unsuccessful): { success: false; error: string; code?: string } {
+	switch (result.kind) {
+		case "not_found":
+			return { success: false, error: NOT_FOUND };
+		case "conflict":
+			return { success: false, error: CONFLICT_MESSAGE, code: "conflict" };
+		case "refused":
+			return refused(result.reason);
+	}
+}
+
+/** The `version` a person saw, or null (none, or not a whole number): the store then conflicts. */
+function safeVersion(value: unknown): number | null {
+	return typeof value === "number" && Number.isSafeInteger(value) ? value : null;
+}
+
 export interface CreateDocumentRequestInput {
 	employeeId: string;
-	category: "certificate" | "other";
+	category: DocumentRequestCategory;
 	title: string;
 	note?: string | null;
 	/** `YYYY-MM-DD` */
@@ -108,19 +134,13 @@ export async function createDocumentRequestAction(
 			deadline: input.deadline,
 			renewedDocumentId,
 		});
-		switch (result.kind) {
-			case "not_found":
-				return { success: false, error: NOT_FOUND };
-			case "refused":
-				return refused(result.reason);
-			case "created":
-				await notifyDocumentRequested(db, {
-					organizationId: current.access.organizationId,
-					eventId: result.eventId,
-					request: result.request,
-				});
-				return { success: true, data: result.request };
-		}
+		if (result.kind !== "created") return unsuccessful(result);
+		await notifyDocumentRequested(db, {
+			organizationId: current.access.organizationId,
+			eventId: result.eventId,
+			request: result.request,
+		});
+		return { success: true, data: result.request };
 	} catch (error) {
 		return failure(error, "Failed to create the document request");
 	}
@@ -131,7 +151,7 @@ export interface CreateDocumentRequestsInBulkInput {
 	employeeIds: string[];
 	/** Teams whose current members (primary team or membership) are included. */
 	teamIds: string[];
-	category: "certificate" | "other";
+	category: DocumentRequestCategory;
 	title: string;
 	note?: string | null;
 	/** `YYYY-MM-DD` */
@@ -174,29 +194,22 @@ export async function createDocumentRequestsInBulkAction(
 			note: input.note ?? null,
 			deadline: input.deadline,
 		});
-		switch (result.kind) {
-			case "not_found":
-				return { success: false, error: NOT_FOUND };
-			case "refused":
-				return refused(result.reason);
-			case "created": {
-				const { organizationId } = current.access;
-				for (let start = 0; start < result.created.length; start += BULK_NOTIFY_CONCURRENCY) {
-					await Promise.all(
-						result.created
-							.slice(start, start + BULK_NOTIFY_CONCURRENCY)
-							.map(({ request, eventId }) =>
-								notifyDocumentRequested(db, { organizationId, eventId, request }),
-							),
-					);
-				}
-				const skipped = Object.values(result.skippedBy).reduce((sum, count) => sum + count, 0);
-				return {
-					success: true,
-					data: { created: result.created.length, skipped, skippedBy: result.skippedBy },
-				};
-			}
+		if (result.kind !== "created") return unsuccessful(result);
+		const { organizationId } = current.access;
+		for (let start = 0; start < result.created.length; start += BULK_NOTIFY_CONCURRENCY) {
+			await Promise.all(
+				result.created
+					.slice(start, start + BULK_NOTIFY_CONCURRENCY)
+					.map(({ request, eventId }) =>
+						notifyDocumentRequested(db, { organizationId, eventId, request }),
+					),
+			);
 		}
+		const skipped = Object.values(result.skippedBy).reduce((sum, count) => sum + count, 0);
+		return {
+			success: true,
+			data: { created: result.created.length, skipped, skippedBy: result.skippedBy },
+		};
 	} catch (error) {
 		return failure(error, "Failed to create the document requests");
 	}
@@ -206,40 +219,28 @@ export async function createDocumentRequestsInBulkAction(
 export async function cancelDocumentRequestAction(input: {
 	requestId: string;
 	reason: string;
-	/** The `version` the officer saw; a changed request conflicts. */
-	expectedVersion?: number | null;
+	/** The `version` the officer saw; a changed request, or none, conflicts. */
+	expectedVersion: number;
 }): Promise<ServerActionResult<DocumentRequestView>> {
 	try {
 		const current = await loadCurrentPersonnelFileAccess();
 		if (current.status !== "resolved" || !isCanonicalUuid(input?.requestId)) {
 			return { success: false, error: NOT_FOUND };
 		}
-		const expectedVersion =
-			typeof input.expectedVersion === "number" && Number.isSafeInteger(input.expectedVersion)
-				? input.expectedVersion
-				: null;
 		const result = await cancelDocumentRequest(db, current.access, {
 			requestId: input.requestId,
 			reason: input.reason,
-			expectedVersion,
+			expectedVersion: safeVersion(input.expectedVersion),
 		});
-		switch (result.kind) {
-			case "not_found":
-				return { success: false, error: NOT_FOUND };
-			case "refused":
-				return refused(result.reason);
-			case "conflict":
-				return { success: false, error: CONFLICT_MESSAGE, code: "conflict" };
-			case "cancelled":
-				await notifyDocumentRequestDecided(db, {
-					organizationId: current.access.organizationId,
-					eventId: result.eventId,
-					request: result.request,
-					decision: "cancelled",
-					reason: result.request.history.at(-1)?.reason ?? null,
-				});
-				return { success: true, data: result.request };
-		}
+		if (result.kind !== "cancelled") return unsuccessful(result);
+		await notifyDocumentRequestDecided(db, {
+			organizationId: current.access.organizationId,
+			eventId: result.eventId,
+			request: result.request,
+			decision: "cancelled",
+			reason: result.reason,
+		});
+		return { success: true, data: result.request };
 	} catch (error) {
 		return failure(error, "Failed to cancel the document request");
 	}
@@ -253,8 +254,8 @@ export async function cancelDocumentRequestAction(input: {
 export async function submitDocumentRequestAction(input: {
 	requestId: string;
 	note?: string | null;
-	/** The `version` the employee saw; a changed request conflicts. */
-	expectedVersion?: number | null;
+	/** The `version` the employee saw; a changed request, or none, conflicts. */
+	expectedVersion: number;
 }): Promise<ServerActionResult<DocumentRequestView>> {
 	try {
 		const current = await loadCurrentPersonnelFileAccess();
@@ -266,21 +267,13 @@ export async function submitDocumentRequestAction(input: {
 			note: input.note ?? null,
 			expectedVersion: safeVersion(input.expectedVersion),
 		});
-		switch (result.kind) {
-			case "not_found":
-				return { success: false, error: NOT_FOUND };
-			case "refused":
-				return refused(result.reason);
-			case "conflict":
-				return { success: false, error: CONFLICT_MESSAGE, code: "conflict" };
-			case "submitted":
-				await notifyDocumentRequestSubmitted(db, {
-					organizationId: current.access.organizationId,
-					eventId: result.eventId,
-					request: result.request,
-				});
-				return { success: true, data: result.request };
-		}
+		if (result.kind !== "submitted") return unsuccessful(result);
+		await notifyDocumentRequestSubmitted(db, {
+			organizationId: current.access.organizationId,
+			eventId: result.eventId,
+			request: result.request,
+		});
+		return { success: true, data: result.request };
 	} catch (error) {
 		return failure(error, "Failed to submit the documents");
 	}
@@ -293,7 +286,8 @@ export async function submitDocumentRequestAction(input: {
 export async function returnDocumentRequestAction(input: {
 	requestId: string;
 	reason: string;
-	expectedVersion?: number | null;
+	/** The `version` the officer saw; a changed request, or none, conflicts. */
+	expectedVersion: number;
 }): Promise<ServerActionResult<DocumentRequestView>> {
 	try {
 		const current = await loadCurrentPersonnelFileAccess();
@@ -305,23 +299,15 @@ export async function returnDocumentRequestAction(input: {
 			reason: input.reason,
 			expectedVersion: safeVersion(input.expectedVersion),
 		});
-		switch (result.kind) {
-			case "not_found":
-				return { success: false, error: NOT_FOUND };
-			case "refused":
-				return refused(result.reason);
-			case "conflict":
-				return { success: false, error: CONFLICT_MESSAGE, code: "conflict" };
-			case "returned":
-				await notifyDocumentRequestDecided(db, {
-					organizationId: current.access.organizationId,
-					eventId: result.eventId,
-					request: result.request,
-					decision: "returned",
-					reason: result.request.history.at(-1)?.reason ?? null,
-				});
-				return { success: true, data: result.request };
-		}
+		if (result.kind !== "returned") return unsuccessful(result);
+		await notifyDocumentRequestDecided(db, {
+			organizationId: current.access.organizationId,
+			eventId: result.eventId,
+			request: result.request,
+			decision: "returned",
+			reason: result.reason,
+		});
+		return { success: true, data: result.request };
 	} catch (error) {
 		return failure(error, "Failed to return the document request");
 	}
@@ -330,7 +316,8 @@ export async function returnDocumentRequestAction(input: {
 /** Accepts a submitted request (#1402) and notifies the employee. */
 export async function acceptDocumentRequestAction(input: {
 	requestId: string;
-	expectedVersion?: number | null;
+	/** The `version` the officer saw; a changed request, or none, conflicts. */
+	expectedVersion: number;
 }): Promise<ServerActionResult<DocumentRequestView>> {
 	try {
 		const current = await loadCurrentPersonnelFileAccess();
@@ -341,23 +328,15 @@ export async function acceptDocumentRequestAction(input: {
 			requestId: input.requestId,
 			expectedVersion: safeVersion(input.expectedVersion),
 		});
-		switch (result.kind) {
-			case "not_found":
-				return { success: false, error: NOT_FOUND };
-			case "refused":
-				return refused(result.reason);
-			case "conflict":
-				return { success: false, error: CONFLICT_MESSAGE, code: "conflict" };
-			case "accepted":
-				await notifyDocumentRequestDecided(db, {
-					organizationId: current.access.organizationId,
-					eventId: result.eventId,
-					request: result.request,
-					decision: "accepted",
-					reason: null,
-				});
-				return { success: true, data: result.request };
-		}
+		if (result.kind !== "accepted") return unsuccessful(result);
+		await notifyDocumentRequestDecided(db, {
+			organizationId: current.access.organizationId,
+			eventId: result.eventId,
+			request: result.request,
+			decision: "accepted",
+			reason: null,
+		});
+		return { success: true, data: result.request };
 	} catch (error) {
 		return failure(error, "Failed to accept the document request");
 	}
@@ -369,8 +348,8 @@ export interface EditDocumentRequestInput {
 	deadline?: string;
 	/** The new note; empty clears it; left out, it stays. */
 	note?: string | null;
-	/** The `version` the officer saw; a changed request conflicts. */
-	expectedVersion?: number | null;
+	/** The `version` the officer saw; a changed request, or none, conflicts. */
+	expectedVersion: number;
 }
 
 const EDITABLE_FIELDS: ReadonlySet<string> = new Set<keyof EditDocumentRequestInput>([
@@ -402,23 +381,11 @@ export async function editDocumentRequestAction(
 			note: input.note,
 			expectedVersion: safeVersion(input.expectedVersion),
 		});
-		switch (result.kind) {
-			case "not_found":
-				return { success: false, error: NOT_FOUND };
-			case "refused":
-				return refused(result.reason);
-			case "conflict":
-				return { success: false, error: CONFLICT_MESSAGE, code: "conflict" };
-			case "edited":
-				return { success: true, data: result.request };
-		}
+		if (result.kind !== "edited") return unsuccessful(result);
+		return { success: true, data: result.request };
 	} catch (error) {
 		return failure(error, "Failed to change the document request");
 	}
-}
-
-function safeVersion(value: unknown): number | null {
-	return typeof value === "number" && Number.isSafeInteger(value) ? value : null;
 }
 
 /** One employee's requests the actor covers (the requests section of their file). */

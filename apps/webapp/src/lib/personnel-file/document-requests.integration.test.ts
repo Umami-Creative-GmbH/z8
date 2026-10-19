@@ -425,7 +425,13 @@ describe("document requests: create and cancel (#1401)", () => {
 
 		it("requires a reason", async () => {
 			const requestId = await createdId("officer");
-			expect(await actions.cancelDocumentRequestAction({ requestId, reason: "  " })).toMatchObject({
+			expect(
+				await actions.cancelDocumentRequestAction({
+					requestId,
+					reason: "  ",
+					expectedVersion: 1,
+				}),
+			).toMatchObject({
 				success: false,
 				code: "reason_required",
 			});
@@ -435,11 +441,19 @@ describe("document requests: create and cancel (#1401)", () => {
 			const requestId = await createdId("officer");
 			signIn("anna");
 			expect(
-				await actions.cancelDocumentRequestAction({ requestId, reason: "I don't want to" }),
+				await actions.cancelDocumentRequestAction({
+					requestId,
+					reason: "I don't want to",
+					expectedVersion: 1,
+				}),
 			).toMatchObject({ success: false });
 			signIn("ben");
 			expect(
-				await actions.cancelDocumentRequestAction({ requestId, reason: "Not mine" }),
+				await actions.cancelDocumentRequestAction({
+					requestId,
+					reason: "Not mine",
+					expectedVersion: 1,
+				}),
 			).toMatchObject({ success: false });
 			const { rows } = await admin.query(
 				"select status from employee_document_request where id = $1",
@@ -459,7 +473,11 @@ describe("document requests: create and cancel (#1401)", () => {
 				}),
 			).toMatchObject({ success: true });
 			expect(
-				await actions.cancelDocumentRequestAction({ requestId, reason: "Again" }),
+				await actions.cancelDocumentRequestAction({
+					requestId,
+					reason: "Again",
+					expectedVersion: 2,
+				}),
 			).toMatchObject({ success: false, code: "conflict" });
 
 			const second = await createdId("officer");
@@ -552,7 +570,11 @@ describe("document requests: create and cancel (#1401)", () => {
 				await actions.listEmployeeDocumentRequestsAction({ employeeId: ids.anna }),
 			).toMatchObject({ success: false });
 			expect(
-				await actions.cancelDocumentRequestAction({ requestId, reason: "Still mine?" }),
+				await actions.cancelDocumentRequestAction({
+					requestId,
+					reason: "Still mine?",
+					expectedVersion: 1,
+				}),
 			).toMatchObject({ success: false });
 			signIn("admin");
 			const all = await actions.listEmployeeDocumentRequestsAction({ employeeId: ids.anna });
@@ -576,7 +598,11 @@ describe("document requests: create and cancel (#1401)", () => {
 			});
 			if (!first.success) return;
 			signIn("admin");
-			await actions.cancelDocumentRequestAction({ requestId: first.data.id, reason: "Redo" });
+			await actions.cancelDocumentRequestAction({
+				requestId: first.data.id,
+				reason: "Redo",
+				expectedVersion: first.data.version,
+			});
 			expect(await createAs("admin", { renewedDocumentId: ids.annaCertificate })).toMatchObject({
 				success: true,
 			});
@@ -642,7 +668,11 @@ describe("document requests: create and cancel (#1401)", () => {
 				await actions.listEmployeeDocumentRequestsAction({ employeeId: ids.anna }),
 			).toMatchObject({ success: false });
 			expect(
-				await actions.cancelDocumentRequestAction({ requestId, reason: "Foreign" }),
+				await actions.cancelDocumentRequestAction({
+					requestId,
+					reason: "Foreign",
+					expectedVersion: 1,
+				}),
 			).toMatchObject({ success: false });
 			expect(
 				await actions.createDocumentRequestAction({ ...certificateRequest } as never),
