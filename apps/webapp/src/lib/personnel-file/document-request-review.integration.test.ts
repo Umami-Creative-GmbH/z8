@@ -455,7 +455,11 @@ describe("document requests: submit, return and accept (#1402)", () => {
 		it("refuses uploads of another category and uploads once the request is submitted", async () => {
 			const requestId = await createRequest("officer");
 			signIn("anna");
-			expect((await uploadForRequest({ requestId, category: "other" })).status).toBe(409);
+			const wrongCategory = await uploadForRequest({ requestId, category: "other" });
+			expect(wrongCategory.status).toBe(400);
+			expect(await wrongCategory.json()).toMatchObject({
+				error: "This document request asks for documents of another category.",
+			});
 			await uploadedId(requestId);
 			await requestActions.submitDocumentRequestAction({ requestId, expectedVersion: await versionOf(requestId) });
 			expect((await uploadForRequest({ requestId })).status).toBe(409);

@@ -8,6 +8,7 @@ import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { createLogger } from "@/lib/logger";
 import {
 	fillNotificationTemplate,
+	isRecord,
 	notificationParam,
 } from "@/lib/notifications/notification-params";
 import { createNotification } from "@/lib/notifications/notification-service";
@@ -77,6 +78,75 @@ const DECISION_COPY = {
 } as const;
 
 export type DocumentRequestDecision = keyof typeof DECISION_COPY;
+
+/** A cancel or return notification once its typed reason is removed (purge, deletion). */
+const cancelledWithoutReasonCopy = {
+	titleKey: cancelledCopy.titleKey,
+	titleDefault: cancelledCopy.titleDefault,
+	messageKey:
+		"common:notifications.content.personnelFileDocumentRequestCancelled.messageWithoutReason",
+	messageDefault: 'The request "{title}" was cancelled.',
+} as const;
+
+const returnedWithoutReasonCopy = {
+	titleKey: returnedCopy.titleKey,
+	titleDefault: returnedCopy.titleDefault,
+	messageKey: "common:notifications.content.personnelFileDocumentRequestReturned.messageWithoutReason",
+	messageDefault: 'Please upload "{title}" again by {deadline}.',
+} as const;
+
+const WITHOUT_REASON_COPY = {
+	cancelled: cancelledWithoutReasonCopy,
+	returned: returnedWithoutReasonCopy,
+} as const;
+
+export type RedactedDocumentRequestNotification =
+	| { kind: "unchanged" }
+	| { kind: "redacted"; message: string; metadata: string };
+
+/**
+ * A stored cancel or return notification without its typed reason (#1307
+ * review, user decision 2026-10-19): the reason is free text of the request,
+ * removed when the request's free text is purged or the request is deleted.
+ * The message and the stored translation params lose it; the copy switches to
+ * one without a reason. Unreadable metadata keeps only the title as message.
+ */
+export function redactDocumentRequestNotification(row: {
+	title: string;
+	message: string;
+	metadata: string | null;
+}): RedactedDocumentRequestNotification {
+	let metadata: Record<string, unknown> | null = null;
+	try {
+		const parsed: unknown = row.metadata ? JSON.parse(row.metadata) : null;
+		if (isRecord(parsed)) metadata = parsed;
+	} catch {
+		metadata = null;
+	}
+	const decision = metadata?.decision;
+	// Accepted (and other) notifications carry no typed reason.
+	if (metadata && decision !== "cancelled" && decision !== "returned") return { kind: "unchanged" };
+	const i18n = metadata?.i18n;
+	if (!metadata || !isRecord(i18n) || !isRecord(i18n.params)) {
+		return row.message === row.title
+			? { kind: "unchanged" }
+			: {
+					kind: "redacted",
+					message: row.title,
+					metadata: JSON.stringify({ ...metadata, i18n: undefined, reasonRemoved: true }),
+				};
+	}
+	const copy = WITHOUT_REASON_COPY[decision as "cancelled" | "returned"];
+	if (i18n.messageKey === copy.messageKey && !("reason" in i18n.params)) {
+		return { kind: "unchanged" };
+	}
+	const { reason: _reason, ...params } = i18n.params;
+	return {
+		kind: "redacted",
+		message: fillNotificationTemplate(copy.messageDefault, params),
+		metadata: JSON.stringify({ ...metadata, i18n: { ...copy, params }, reasonRemoved: true }),
+	};
+}
 
 function idempotencyKey(eventId: string, recipientUserId: string): string {
 	return `personnel-file-document-request:${eventId}:${recipientUserId}`;

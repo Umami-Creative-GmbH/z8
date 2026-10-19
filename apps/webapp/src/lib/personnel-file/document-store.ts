@@ -206,8 +206,10 @@ export type FinalizePersonnelDocumentResult =
 	| { kind: "not_pending" }
 	/** The absence can no longer take the sick note (cancelled, rejected, setting off). */
 	| { kind: "absence_unavailable" }
-	/** Not the uploader's own open request of the document's category (any more, #1402). */
-	| { kind: "request_unavailable" };
+	/** Not the uploader's own open request (any more, #1402). */
+	| { kind: "request_unavailable" }
+	/** The uploader's own open request asks for another category of document. */
+	| { kind: "request_category_mismatch" };
 
 /**
  * Records a stored object as an employee document and releases its staging
@@ -250,7 +252,10 @@ export async function finalizePersonnelDocumentUpload(
 					category: input.metadata.category,
 				})
 			: null;
-		if (input.documentRequest && !documentRequest) return { kind: "request_unavailable" };
+		if (documentRequest?.kind === "unavailable") return { kind: "request_unavailable" };
+		if (documentRequest?.kind === "category_mismatch") {
+			return { kind: "request_category_mismatch" };
+		}
 		let absence: SickNoteAbsence | null = null;
 		if (input.sickNote) {
 			absence = await lockSickNoteAbsence(tx, input.sickNote.access, {

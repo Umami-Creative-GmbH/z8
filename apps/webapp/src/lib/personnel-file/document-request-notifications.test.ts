@@ -7,6 +7,7 @@ const {
 	buildDocumentRequestedNotification,
 	buildDocumentRequestReminderNotification,
 	buildDocumentRequestSubmittedNotification,
+	redactDocumentRequestNotification,
 } = await import("./document-request-notifications");
 
 const request = {
@@ -217,5 +218,56 @@ describe("buildDocumentRequestSubmittedNotification", () => {
 				},
 			},
 		});
+	});
+});
+
+describe("redactDocumentRequestNotification", () => {
+	const stored = (decision: "returned" | "cancelled" | "accepted") => {
+		const built = buildDocumentRequestDecidedNotification({
+			organizationId: "org",
+			recipientUserId: "anna",
+			eventId: "event-9",
+			request,
+			decision,
+			reason: decision === "accepted" ? null : "The scan is unreadable",
+		});
+		return { title: built.title, message: built.message, metadata: JSON.stringify(built.metadata) };
+	};
+
+	it("removes the typed reason from a return's message and params, once", () => {
+		const redacted = redactDocumentRequestNotification(stored("returned"));
+		if (redacted.kind !== "redacted") throw new Error("not redacted");
+		expect(redacted.message).toBe('Please upload "First aid refresher" again by Nov 30, 2026.');
+		expect(JSON.parse(redacted.metadata)).toMatchObject({
+			decision: "returned",
+			reasonRemoved: true,
+			i18n: {
+				messageKey:
+					"common:notifications.content.personnelFileDocumentRequestReturned.messageWithoutReason",
+				params: { title: "First aid refresher" },
+			},
+		});
+		expect(redacted.metadata).not.toContain("unreadable");
+		expect(
+			redactDocumentRequestNotification({ title: "Documents returned", ...redacted }),
+		).toEqual({ kind: "unchanged" });
+	});
+
+	it("removes a cancel's reason and leaves an accept as it is", () => {
+		expect(redactDocumentRequestNotification(stored("cancelled"))).toMatchObject({
+			kind: "redacted",
+			message: 'The request "First aid refresher" was cancelled.',
+		});
+		expect(redactDocumentRequestNotification(stored("accepted"))).toEqual({ kind: "unchanged" });
+	});
+
+	it("keeps only the title when the metadata cannot be read", () => {
+		expect(
+			redactDocumentRequestNotification({
+				title: "Documents returned",
+				message: "Please upload it again: private reason",
+				metadata: "{not json",
+			}),
+		).toMatchObject({ kind: "redacted", message: "Documents returned" });
 	});
 });
