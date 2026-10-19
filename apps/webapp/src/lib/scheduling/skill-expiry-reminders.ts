@@ -8,6 +8,7 @@ import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { dueExpiryReminder, type ExpiryReminderKind } from "@/lib/expiry-reminders/expiry";
 import { createLogger } from "@/lib/logger";
 import { createNotification } from "@/lib/notifications/notification-service";
+import { employeeSkillHasActiveRenewalRequest } from "@/lib/personnel-file/renewed-documents";
 import type { CreateNotificationParams } from "@/lib/notifications/types";
 import {
 	buildSkillExpiryReminderNotification,
@@ -25,6 +26,9 @@ import { loadSkillReminderWindow } from "./skill-reminder-store";
  *
  * Recipients: the employee and their managers, or the owners and admins when
  * the employee has no manager. Former employees and inactive skills get none.
+ * While an open or submitted document request renews a certificate naming the
+ * employee skill, the employee is left out (#1307, user decision 2026-10-19);
+ * read when the reminder is sent, so after a cancel the next one reaches them.
  *
  * At most once: a reminder is claimed in `skill_expiry_reminder` (unique per
  * employee skill, kind and skill expiry date) before anyone is notified, so a
@@ -47,6 +51,8 @@ export interface SkillExpiryReminderResult {
 interface DueReminder {
 	kind: ExpiryReminderKind;
 	employeeSkill: ExpiringEmployeeSkillRef & { employeeUserId: string; employeeEmail: string };
+	/** A renewal of a certificate naming the skill is requested (#1307): not to the employee. */
+	renewalRequested: boolean;
 }
 
 export async function runSkillExpiryReminders(
@@ -124,6 +130,7 @@ async function remindOrganization(
 				skillName: row.skillName,
 				expiryDate: row.expiryDate,
 			},
+			renewalRequested: row.renewalRequested,
 		});
 	}
 	if (due.length === 0) return { reminders: 0, notifications: 0 };
@@ -197,7 +204,7 @@ async function buildReminderMessages(
 			employeeSkill: expiring,
 		}),
 	);
-	if (skillReminderReachesEmployee(expiring.employeeEmail)) {
+	if (!reminder.renewalRequested && skillReminderReachesEmployee(expiring.employeeEmail)) {
 		messages.push(
 			buildSkillExpiryReminderNotification({
 				organizationId,
@@ -233,6 +240,7 @@ function selectRemindedEmployeeSkills(
 			employeeNumber: employee.employeeNumber,
 			skillName: skill.name,
 			expiryDate: employeeSkill.expiresAt,
+			renewalRequested: employeeSkillHasActiveRenewalRequest(organizationId, employeeSkill.id),
 		})
 		.from(employeeSkill)
 		.innerJoin(

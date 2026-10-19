@@ -17,8 +17,10 @@ import { loadCertificateSkill } from "./skill-certificate-store";
  * (#1405, spec #1307, ADR 0003). When the renewed document of an accepted
  * request is a certificate that names an employee skill, every certificate of
  * the accepted submission is linked to that employee skill with the existing
- * skill-certificate rules, in the accept's transaction, and the skill expiry
- * date is recomputed once (#1145: the latest dated linked certificate). An
+ * skill-certificate rules, in the accept's transaction, the renewed certificate
+ * stops naming the skill (it stays in the file), and the skill expiry date is
+ * recomputed once from the certificates that name it then (#1145: the latest
+ * dated one; none dated = no expiry date; user decision 2026-10-19). An
  * employee never moves a skill expiry date through a request: only this
  * officer's acceptance does.
  *
@@ -40,7 +42,13 @@ export type RenewalSkillLinkPlan =
 	| { kind: "none" }
 	/** The skill requires an expiry date and no submitted certificate has one. */
 	| { kind: "refused"; reason: "renewal_expiry_date_required" }
-	| { kind: "link"; employeeSkillId: string; documentIds: string[] };
+	| {
+			kind: "link";
+			employeeSkillId: string;
+			documentIds: string[];
+			/** The renewed certificate: it stops naming the skill (it stays in the file). */
+			renewedDocumentId: string;
+	  };
 
 /**
  * What accepting the request links, read under the documents' locks. Call it
@@ -127,13 +135,18 @@ export async function planRenewalSkillLink(
 		kind: "link",
 		employeeSkillId: skill.employeeSkillId,
 		documentIds: linkable.map((document) => document.id),
+		renewedDocumentId: renewed.id,
 	};
 }
 
 /**
- * Links the planned certificates (audited as skill-certificate links by the
- * deciding officer, naming the request), then recomputes the skill expiry date
- * once for the employee skill and every skill a certificate stopped naming.
+ * Links the planned certificates and unlinks the renewed one (each audited as
+ * a skill-certificate link or unlink by the deciding officer, naming the
+ * request), then recomputes the skill expiry date once for the employee skill
+ * and every skill a certificate stopped naming. The renewed skill's date then
+ * comes from the certificates that still name it; when none of them is dated
+ * it has no expiry date (user decision 2026-10-19), while other skills keep
+ * theirs as usual.
  */
 export async function applyRenewalSkillLink(
 	tx: Transaction,
@@ -142,15 +155,22 @@ export async function applyRenewalSkillLink(
 	input: { requestId: string; now: Instant },
 ): Promise<void> {
 	const previous: (string | null)[] = [];
+	const changes = [
+		...plan.documentIds.map((documentId) => ({
+			documentId,
+			employeeSkillId: plan.employeeSkillId as string | null,
+		})),
+		{ documentId: plan.renewedDocumentId, employeeSkillId: null },
+	].toSorted((a, b) => a.documentId.localeCompare(b.documentId));
 	// In id order, under the locks the plan took.
 	// react-doctor-disable-next-line react-doctor/async-await-in-loop
-	for (const documentId of plan.documentIds) {
+	for (const { documentId, employeeSkillId } of changes) {
 		const linked = await setCertificateSkillInTransaction(
 			tx,
 			access,
 			{
 				documentId,
-				employeeSkillId: plan.employeeSkillId,
+				employeeSkillId,
 				auditMetadata: { documentRequestId: input.requestId },
 			},
 			input.now,
@@ -164,5 +184,6 @@ export async function applyRenewalSkillLink(
 	await recomputeCertificateSkillExpiry(tx, {
 		organizationId: access.organizationId,
 		employeeSkillIds: [plan.employeeSkillId, ...previous],
+		clearWhenUndated: [plan.employeeSkillId],
 	});
 }

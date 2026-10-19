@@ -273,6 +273,69 @@ describe("skill expiry reminders (#1143)", () => {
 		});
 	});
 
+	describe("while a renewal of the skill's certificate is requested (#1307)", () => {
+		async function seedCertificate(employee: SeededEmployee, employeeSkillId: string) {
+			const id = randomUUID();
+			await fixture.pool.query(
+				`insert into employee_document
+				 (id, organization_id, employee_id, category, title, document_date, visibility, expiry_date,
+				  employee_skill_id, storage_provider, storage_bucket, storage_key, file_name, mime_type,
+				  size_bytes, checksum_sha256)
+				 values ($1, $2, $3, 'certificate', 'Crane licence', '2026-01-01', 'shared', '2027-09-30', $4,
+				  's3-private', 't1307-private', $5, 'licence.pdf', 'application/pdf', 1, $6)`,
+				[id, org, employee.employeeId, employeeSkillId, `t1307/${id}.pdf`, "0".repeat(64)],
+			);
+			return id;
+		}
+
+		async function requestRenewal(
+			employee: SeededEmployee,
+			documentId: string,
+			status: "open" | "submitted",
+		) {
+			const id = randomUUID();
+			await fixture.pool.query(
+				`insert into employee_document_request
+				 (id, organization_id, employee_id, category, title, deadline, renewed_document_id, status)
+				 values ($1, $2, $3, 'certificate', 'Crane licence renewal', '2027-09-15', $4, $5)`,
+				[id, org, employee.employeeId, documentId, status],
+			);
+			return id;
+		}
+
+		it("reminds only the managers (or owners and admins), not the employee, until the request is closed", async () => {
+			const crane = await createSkill(org, "Crane licence");
+			const carla = await fixture.seedEmployee();
+			const dora = await fixture.seedEmployee();
+			const carlaCrane = await assign(carla, crane, "2027-09-30");
+			const doraCrane = await assign(dora, crane, "2027-09-30");
+			const carlaRequest = await requestRenewal(
+				carla,
+				await seedCertificate(carla, carlaCrane),
+				"open",
+			);
+			await requestRenewal(dora, await seedCertificate(dora, doraCrane), "submitted");
+
+			// The day before the skill expiry date is within any lead time.
+			await run("2027-09-29T08:00:00Z");
+			const officers = [fixture.ownerUserId, admin.userId];
+			expect(toldAbout(carlaCrane)).toEqual(pairs(officers, "skill_expiry_upcoming"));
+			expect(toldAbout(doraCrane)).toEqual(pairs(officers, "skill_expiry_upcoming"));
+
+			// Cancelled: the employee hears the next reminder again.
+			await fixture.pool.query(
+				"update employee_document_request set status = 'cancelled' where id = $1",
+				[carlaRequest],
+			);
+			sent.length = 0;
+			await run("2027-09-30T08:00:00Z");
+			expect(toldAbout(carlaCrane)).toEqual(
+				pairs([carla.userId, ...officers], "skill_expired_today"),
+			);
+			expect(toldAbout(doraCrane)).toEqual(pairs(officers, "skill_expired_today"));
+		});
+	});
+
 	describe("the employee's own skills (the reminder's link target)", () => {
 		it("lists only the employee's skills of their organization, with today and the lead time", async () => {
 			const own = await loadOwnSkills(db, {

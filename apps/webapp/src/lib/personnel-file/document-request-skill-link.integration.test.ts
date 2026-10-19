@@ -313,7 +313,8 @@ describe("document requests: skill link on accept (#1405)", () => {
 			expect(await statusOf(requestId)).toBe("accepted");
 			expect(await skillOf(front)).toBe(ids.annaForklift);
 			expect(await skillOf(back)).toBe(ids.annaForklift);
-			expect(await skillOf(renewed)).toBe(ids.annaForklift);
+			// The renewed certificate stops naming the skill; it stays in the file (user, 2026-10-19).
+			expect(await skillOf(renewed)).toBeNull();
 			expect(await expiryOf(ids.annaForklift)).toBe("2029-09-30");
 
 			// Audited as skill-certificate links by the deciding officer, naming the request.
@@ -325,6 +326,15 @@ describe("document requests: skill link on accept (#1405)", () => {
 					metadata: expect.objectContaining({ documentRequestId: requestId }),
 				})),
 			);
+			// The renewed certificate's unlink is audited the same way.
+			const { rows: unlinked } = await admin.query<{ entity_id: string; metadata: string }>(
+				`select entity_id, metadata from audit_log
+				 where organization_id = $1 and action = 'personnel_file.skill_certificate_unlinked'`,
+				[ORG],
+			);
+			expect(
+				unlinked.map((row) => [row.entity_id, JSON.parse(row.metadata).documentRequestId]),
+			).toEqual([[renewed, requestId]]);
 			// The accept's own audit record names what it linked.
 			const { rows } = await admin.query<{ metadata: string }>(
 				`select metadata from audit_log
@@ -387,8 +397,33 @@ describe("document requests: skill link on accept (#1405)", () => {
 
 			expect(await accept(requestId)).toMatchObject({ kind: "accepted" });
 			expect(await skillOf(undated)).toBe(ids.annaFirstAid);
-			// No dated certificate names the skill: it keeps its date.
-			expect(await expiryOf(ids.annaFirstAid)).toBe("2026-09-30");
+			expect(await skillOf(renewed)).toBeNull();
+			// Only the new, undated certificate proves the skill now: it has no expiry date.
+			expect(await expiryOf(ids.annaFirstAid)).toBeNull();
+		});
+
+		it("recomputes the skill expiry date from the new certificates only, not the renewed one", async () => {
+			// The old certificate is dated later than the new one; it no longer counts once renewed.
+			const renewed = await seedDocument({
+				expiryDate: "2030-12-31",
+				employeeSkillId: ids.annaFirstAid,
+			});
+			await admin.query("update employee_skill set expires_at = '2030-12-31' where id = $1", [
+				ids.annaFirstAid,
+			]);
+			const requestId = await createRequest({ renewedDocumentId: renewed });
+			const renewal = await seedDocument({ expiryDate: "2029-12-31" });
+			await submit(requestId, [renewal]);
+
+			expect(await accept(requestId)).toMatchObject({ kind: "accepted" });
+			expect(await skillOf(renewed)).toBeNull();
+			expect(await skillOf(renewal)).toBe(ids.annaFirstAid);
+			expect(await expiryOf(ids.annaFirstAid)).toBe("2029-12-31");
+			// The renewed document stays in the file.
+			const { rows } = await admin.query("select id from employee_document where id = $1", [
+				renewed,
+			]);
+			expect(rows).toHaveLength(1);
 		});
 
 		it("links only the dated certificates when the skill requires an expiry date; undated ones stay unlinked", async () => {
