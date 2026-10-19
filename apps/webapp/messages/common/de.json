@@ -427,6 +427,7 @@
     "uploading": "Hochladen...",
     "vacationAllowance": {
       "cappedAtFullAllowance": "auf den vollen Anspruch begrenzt",
+      "convertedSummary": "{allowance} Tage: {conversion}",
       "employmentMonths": "{months, plural, one {# voller Beschäftigungsmonat} other {# volle Beschäftigungsmonate}}",
       "lastWorkingDay": "letzter Arbeitstag {date}",
       "notEmployed": "{allowance} von {fullAllowance} Tagen: nicht beschäftigt im Jahr {year}",
@@ -434,7 +435,10 @@
       "overdrawnHint": "Urlaub über den Anspruch hinaus genommen. Dient nur zur Information: Es wird nichts abgezogen.",
       "proratedSummary": "{allowance} von {fullAllowance} Tagen, anteilig: {details}",
       "started": "begonnen am {date}",
-      "statutoryMinimumApplies": "es gilt der gesetzliche Mindestanspruch"
+      "statutoryMinimumApplies": "es gilt der gesetzliche Mindestanspruch",
+      "workingDaysPerWeek": "{days, plural, one {# Arbeitstag pro Woche} other {# Arbeitstage pro Woche}}",
+      "workingWeekConversion": "{reference} Referenztage umgerechnet in {weeks}",
+      "workingWeekPeriod": "{week} von {start} bis {end}"
     },
     "validate": "Validieren",
     "validationError": "Validierungsfehler",
@@ -929,6 +933,7 @@
     },
     "page": {
       "context": "Persönliche Registrierung, Wiederherstellung und Organisationsauswahl bleiben verfügbar, während der Organisationszugriff verifiziert werden muss.",
+      "description": "Bestätigen Sie eine Authentifikator-App, um den Zugriff auf Ihre Organisationen beizubehalten.",
       "title": "Sicherheitsüberprüfung"
     },
     "passkey": {
@@ -1311,6 +1316,42 @@
         "message": "Laden Sie Ihre personenbezogenen Daten vor dem {untilDate} unter „Meine Daten“ herunter. Danach kann nur noch ein Administrator sie für Sie exportieren.",
         "title": "Laden Sie Ihre personenbezogenen Daten vor Ihrem Ausscheiden herunter"
       },
+      "personnelFileDocumentRequestAccepted": {
+        "message": "Ihre Dokumente für „{title}“ wurden akzeptiert.",
+        "title": "Dokumente akzeptiert"
+      },
+      "personnelFileDocumentRequestCancelled": {
+        "message": "Die Anfrage „{title}“ wurde storniert: {reason}",
+        "messageWithoutReason": "Die Anfrage „{title}“ wurde storniert.",
+        "title": "Dokumentenanforderung storniert"
+      },
+      "personnelFileDocumentRequestDueSoon": {
+        "message": "Bitte laden Sie \"{title}\" bis zum {deadline} hoch.",
+        "title": "Dokument bald fällig"
+      },
+      "personnelFileDocumentRequestDueToday": {
+        "message": "Bitte laden Sie \"{title}\" heute hoch.",
+        "title": "Dokument heute fällig"
+      },
+      "personnelFileDocumentRequested": {
+        "message": "Bitte laden Sie \"{title}\" bis zum {deadline} hoch.",
+        "title": "Dokument angefordert"
+      },
+      "personnelFileDocumentRequestOverdue": {
+        "message": "\"{title}\" war am {deadline} fällig. Bitte laden Sie es hoch.",
+        "officerMessage": "{employee} hat das am {deadline} fällige Dokument \"{title}\" nicht eingereicht.",
+        "officerTitle": "Angefordertes Dokument überfällig",
+        "title": "Dokument überfällig"
+      },
+      "personnelFileDocumentRequestReturned": {
+        "message": "Bitte laden Sie \"{title}\" bis zum {deadline} erneut hoch: {reason}",
+        "messageWithoutReason": "Bitte laden Sie \"{title}\" bis zum {deadline} erneut hoch.",
+        "title": "Dokumente zurückgegeben"
+      },
+      "personnelFileDocumentRequestSubmitted": {
+        "message": "{name} hat Dokumente für \"{title}\" eingereicht. Bitte überprüfen Sie diese.",
+        "title": "Dokumente eingereicht"
+      },
       "personnelFileDocumentShared": {
         "message": "Das Dokument \"{title}\" wurde mit Ihnen geteilt.",
         "title": "Neues Dokument in Ihrer Personalakte"
@@ -1652,6 +1693,11 @@
         "personal_data_export_admin_exported": "Personenbezogene Daten wurden durch einen Administrator exportiert",
         "personal_data_export_ready": "Export der personenbezogenen Daten bereit",
         "personal_data_export_reminder": "Laden Sie Ihre Daten herunter, bevor Sie gehen",
+        "personnel_file_document_request_decided": "Dokumentanforderung akzeptiert, zurückgegeben oder abgebrochen",
+        "personnel_file_document_requested": "Dokument von Ihnen angefordert",
+        "personnel_file_document_request_overdue": "Dokumentanforderung überfällig",
+        "personnel_file_document_request_reminder": "Angefordertes Dokument bald fällig",
+        "personnel_file_document_request_submitted": "Angeforderte Dokumente eingereicht (Personalaktenverantwortliche)",
         "skill_expired_today": "Skill läuft heute ab",
         "skill_expiry_upcoming": "Skill läuft bald ab",
         "work_balance_adjustment_cancelled": "Saldoanpassung storniert",
@@ -3066,7 +3112,10 @@
     "theme-toggle": "Design umschalten"
   },
   "vacationBalance": {
-    "previouslyTaken": "Enthält {days} bereits vor der Erfassung genommene Tage"
+    "conflictingPolicies": "Widersprüchliche Urlaubsrichtlinien",
+    "missingPolicy": "Fehlende Urlaubsrichtlinie",
+    "previouslyTaken": "Enthält {days} bereits vor der Erfassung genommene Tage",
+    "zeroWorkingDays": "Arbeitszeitplan ohne Arbeitstage"
   },
   "validation": {
     "first-name-required": "Vorname ist erforderlich",

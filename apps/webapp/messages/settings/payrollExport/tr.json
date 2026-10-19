@@ -165,11 +165,13 @@
         "selectWorkCategory": "Çalışma kategorisi seçin",
         "sourceType": "Kaynak Türü",
         "specialCategory": "Özel Kategori",
+        "subtitle": "İş kategorilerinizi ve devamsızlık türlerinizi bordro ücret türü kodlarıyla eşleyin",
         "table": {
           "category": "Kategori",
           "datev": "DATEV",
           "lexware": "Lexware",
           "sage": "Sage",
+          "successFactors": "SAP SuccessFactors",
           "type": "Tür"
         },
         "title": "Ücret Türü Eşlemeleri",
@@ -238,9 +240,7 @@
         "title": "Sage Bordro"
       },
       "specialCategory": {
-        "holidayCompensation": "Tatil Tazminatı",
-        "overtime": "Fazla Mesai",
-        "overtimeReduction": "Fazla Mesai İndirimi"
+        "overtime": "Fazla Mesai"
       },
       "successfactors": {
         "batchSize": "Yığın Boyutu",

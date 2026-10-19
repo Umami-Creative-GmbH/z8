@@ -165,11 +165,13 @@
         "selectWorkCategory": "Виберіть категорію роботи",
         "sourceType": "Тип джерела",
         "specialCategory": "Спеціальна категорія",
+        "subtitle": "Зіставте свої категорії робіт і типи відсутності з кодами видів оплати праці",
         "table": {
           "category": "Категорія",
           "datev": "DATEV",
           "lexware": "Lexware",
           "sage": "Sage",
+          "successFactors": "SAP SuccessFactors",
           "type": "Тип"
         },
         "title": "Зіставлення видів оплати",
@@ -238,9 +240,7 @@
         "title": "Sage Payroll"
       },
       "specialCategory": {
-        "holidayCompensation": "Компенсація за святкові дні",
-        "overtime": "Понаднормові",
-        "overtimeReduction": "Зменшення понаднормових"
+        "overtime": "Понаднормові"
       },
       "successfactors": {
         "batchSize": "Розмір пакета",

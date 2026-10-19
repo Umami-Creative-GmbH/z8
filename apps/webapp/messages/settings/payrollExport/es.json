@@ -165,11 +165,13 @@
         "selectWorkCategory": "Seleccionar categoría de trabajo",
         "sourceType": "Tipo de origen",
         "specialCategory": "Categoría especial",
+        "subtitle": "Asigne sus categorías de trabajo y tipos de ausencia a los códigos de conceptos de nómina",
         "table": {
           "category": "Categoría",
           "datev": "DATEV",
           "lexware": "Lexware",
           "sage": "Sage",
+          "successFactors": "SAP SuccessFactors",
           "type": "Tipo"
         },
         "title": "Asignaciones de tipo de salario",
@@ -238,9 +240,7 @@
         "title": "Sage Lohn"
       },
       "specialCategory": {
-        "holidayCompensation": "Compensación por vacaciones",
-        "overtime": "Horas extras",
-        "overtimeReduction": "Reducción de horas extras"
+        "overtime": "Horas extras"
       },
       "successfactors": {
         "batchSize": "Tamaño del lote",

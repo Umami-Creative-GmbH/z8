@@ -42,6 +42,9 @@
       "title": "Găsiți cereri",
       "type": "Tip"
     },
+    "focus": {
+      "unavailable": "Această solicitare nu mai este în așteptare sau nu poate fi afișată aici. Disponibilitatea perioadei este verificată din nou."
+    },
     "inReview": {
       "description": "Cereri în așteptarea aprobării sau procesării.",
       "title": "În curs de examinare"

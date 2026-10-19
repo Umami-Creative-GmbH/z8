@@ -65,8 +65,8 @@
         "managers": "Managers",
         "noScheduleAssigned": "No schedule assigned",
         "personnelNumber": "Personnel number",
-        "personnelNumberManagedByIdp": "Managed by your identity provider. Change the personnel number there.",
         "personnelNumberDescription": "Your organization's own number for this employee, used in payroll exports. It must be unique, including among former employees.",
+        "personnelNumberManagedByIdp": "Managed by your identity provider. Change the personnel number there.",
         "position": "Position",
         "positionDescription": "Job title or role",
         "positionPlaceholder": "Enter position",
@@ -161,6 +161,31 @@
       "invitations": {
         "description": "Invite members and review pending join requests",
         "title": "Invitations"
+      },
+      "kioskBadge": {
+        "active": "Active since {date}.",
+        "confirmReplace": "Replace the badge",
+        "confirmReplaceText": "Replacing creates a new badge. Every copy of the current badge stops working at once.",
+        "confirmRevoke": "Revoke the badge",
+        "confirmRevokeText": "Every copy of this badge stops working for good. The employee's kiosk PIN keeps working.",
+        "description": "A printed QR code the employee scans at an online kiosk instead of entering their PIN. It never signs anyone in.",
+        "done": "Done",
+        "download": "Download PDF",
+        "endedByDeparture": "No active kiosk badge. The last one ended with the employee's departure on {date}. Old copies never work again, not even after a rehire.",
+        "heading": "Kiosk badge",
+        "issue": "Issue badge",
+        "none": "No kiosk badge yet.",
+        "notEligible": "A new badge can be issued only while the employee is active. After a rehire, issue a new badge.",
+        "openToPrint": "Open to print",
+        "pdf": {
+          "instructions": "Cut out the badge along the dashed line. Whoever holds a copy can clock as this employee at the organization's kiosks, so keep it like a key. If it is lost, ask for a replacement: every copy of this badge then stops working.",
+          "title": "Kiosk badge"
+        },
+        "replace": "Replace badge",
+        "revoke": "Revoke badge",
+        "revoked": "Kiosk badge revoked",
+        "revokedOn": "No active kiosk badge. The last one was revoked on {date}.",
+        "saveNow": "Save the PDF now: Z8 cannot show this badge again. You can reprint a saved copy. If the file or the badge is lost, replace the badge."
       },
       "kioskPin": {
         "addEmailDescription": "They receive an invitation to choose a password and can then sign in. Their kiosk PIN and history stay as they are.",
@@ -763,6 +788,7 @@
       "area": {
         "back": "Personnel files",
         "description": "The employees whose personnel file you manage.",
+        "documentRequests": "Document requests",
         "dueForDeletion": "Due for deletion",
         "empty": "No employees are in your scope yet.",
         "former": "Former employee",
@@ -850,16 +876,15 @@
       },
       "due": {
         "confirm": "Purge",
-        "confirmDescription": "The documents and their files are deleted for good. The audit log keeps who purged them, the employee, category, document date and pay period, and your reason.",
         "confirmTitle": "{count, plural, one {Purge # document?} other {Purge # documents?}}",
         "description": "Documents of former employees whose retention period has passed. They stay until you confirm their purge; leave a document here to keep it.",
         "dueSince": "Due since {date}",
         "empty": "No documents in your scope are due for deletion.",
         "loadFailed": "The documents due for deletion could not be loaded.",
         "loading": "Loading documents due for deletion",
+        "purgeAuditDescription": "The documents and their files are deleted for good. The audit log keeps who purged them, the employee, category, document date and pay period. Titles and file names are also removed from the documents' earlier audit records.",
         "purged": "{count, plural, one {# document purged} other {# documents purged}}",
         "purgeSelected": "{count, plural, =0 {Purge selected} one {Purge # document} other {Purge # documents}}",
-        "reason": "Reason (optional)",
         "selectAll": "Select all",
         "skipped": "{count, plural, one {# document was not purged because it is no longer due for deletion or not in your scope.} other {# documents were not purged because they are no longer due for deletion or not in your scope.}}",
         "title": "Due for deletion",
@@ -878,6 +903,9 @@
         "empty": "No documents are expiring.",
         "expiredAgo": "{days, plural, one {Expired # day ago} other {Expired # days ago}}",
         "inDays": "{days, plural, one {Expires in # day} other {Expires in # days}}",
+        "renewalRequested": "Renewal requested",
+        "requestRenewal": "Request renewal",
+        "requestRenewalFor": "Request a renewal of {title} ({employee})",
         "title": "Expiring documents",
         "today": "Expires today"
       },
@@ -911,6 +939,24 @@
         "description": "Documents from your personnel file that your organization shared with you.",
         "empty": "No documents have been shared with you yet.",
         "loading": "Loading your documents",
+        "requested": {
+          "description": "Documents your organization asked you for, with their deadline.",
+          "submit": {
+            "button": "Submit",
+            "confirm": "Submit",
+            "description": "{count, plural, one {# document is handed in for \"{title}\". Your organization reviews them and tells you the result.} other {# documents are handed in for \"{title}\". Your organization reviews them and tells you the result.}}",
+            "note": "Note (optional)",
+            "open": "Submit {title}",
+            "success": "Submitted",
+            "title": "Submit documents?"
+          },
+          "title": "Requested documents",
+          "upload": {
+            "button": "Upload",
+            "description": "For the request \"{title}\". Submit the request once all its documents are uploaded.",
+            "open": "Upload a document for {title}"
+          }
+        },
         "title": "My Documents",
         "upload": {
           "button": "Upload document",
@@ -974,6 +1020,146 @@
         "saved": "Reminder lead time saved",
         "saveFailed": "The reminder lead time could not be saved.",
         "title": "Expiry reminders"
+      },
+      "requests": {
+        "accept": {
+          "button": "Accept",
+          "confirm": "Accept",
+          "description": "The request \"{title}\" is complete, and the employee is told.",
+          "failed": "The request could not be accepted.",
+          "open": "Accept {title}",
+          "success": "Request accepted",
+          "title": "Accept submission?"
+        },
+        "bulk": {
+          "close": "Close",
+          "created": "{count, plural, =0 {No document requests created.} one {# document request created.} other {# document requests created.}}",
+          "description": "Each employee gets their own request and is notified. Employees you do not cover, former employees and anyone who already has an open request with this title are skipped.",
+          "doneTitle": "Documents requested",
+          "employees": "Employees",
+          "noTeams": "No teams to choose from.",
+          "open": "Request from several",
+          "selectEmployees": "Select employees",
+          "skipped": "{count, plural, one {# employee skipped:} other {# employees skipped:}}",
+          "skippedAlreadyRequested": "{count, plural, one {# already has an open request with this title} other {# already have an open request with this title}}",
+          "skippedFormer": "{count, plural, one {# former employee} other {# former employees}}",
+          "skippedNotCovered": "{count, plural, other {# not covered by your access} }",
+          "skippedOwnFile": "Your own file",
+          "teams": "Teams",
+          "teamsHint": "Everyone currently in the team, as far as you cover them.",
+          "title": "Request a document from several employees"
+        },
+        "cancel": {
+          "button": "Cancel",
+          "confirm": "Cancel request",
+          "description": "The employee no longer has to upload \"{title}\" and is told why. Documents already uploaded stay in the file.",
+          "keep": "Keep request",
+          "open": "Cancel {title}",
+          "reason": "Reason",
+          "success": "Request cancelled",
+          "title": "Cancel request?"
+        },
+        "create": {
+          "deadline": "Deadline",
+          "deadlineHint": "The day by which the employee should submit. After it, the request is overdue.",
+          "description": "The employee is notified and uploads the documents from My documents. What they upload is in their file at once, shared with them.",
+          "note": "Note (optional)",
+          "open": "Request a document",
+          "submit": "Request",
+          "success": "Document requested",
+          "title": "Request a document",
+          "titleHint": "What the employee should upload, such as a renewed first aid certificate."
+        },
+        "deadline": "Due {date}",
+        "description": "Certificates and other documents asked of this employee, with their deadline and history.",
+        "edit": {
+          "button": "Change",
+          "deadlineHint": "A new deadline cannot be in the past. Moving it restarts the deadline reminders.",
+          "description": "Change the deadline or note of \"{title}\". The change shows in the history of the request. To ask for something else, cancel the request and create a new one.",
+          "open": "Change {title}",
+          "submit": "Save changes",
+          "success": "Request changed",
+          "title": "Change request"
+        },
+        "empty": "No documents requested yet.",
+        "error": {
+          "categoryNotRequestable": "Only certificates and other documents can be requested.",
+          "conflict": "Someone else changed this request in the meantime. Reload it and try again.",
+          "deadlineInPast": "The deadline cannot be in the past.",
+          "formerEmployee": "This employee's employment has ended.",
+          "invalidDeadline": "Choose a deadline.",
+          "invalidNote": "The note can be at most {max} characters.",
+          "invalidReason": "The reason can be at most {max} characters.",
+          "invalidTitle": "Enter a title of at most {max} characters.",
+          "noDocuments": "Upload at least one document before you submit.",
+          "noRecipients": "Choose at least one employee or team.",
+          "notEditable": "Only the deadline and note can be changed. Cancel the request and create a new one instead.",
+          "ownFile": "You cannot request documents on your own personnel file.",
+          "reasonRequired": "Enter a reason.",
+          "renewalAlreadyRequested": "This document already has an open request for its renewal.",
+          "renewalExpiryDateRequired": "The renewed skill requires an expiry date. Add the expiry date to a submitted certificate, then accept.",
+          "renewalNotInBulk": "Requests for several employees cannot name a renewed document.",
+          "renewedDocumentMismatch": "The renewed document must be a document of the same employee and category.",
+          "tooManyRecipients": "Request documents from at most {max} employees at once."
+        },
+        "event": {
+          "accepted": "Accepted",
+          "cancelled": "Cancelled",
+          "created": "Requested",
+          "edited": "Changed",
+          "returned": "Returned",
+          "submitted": "Submitted"
+        },
+        "history": {
+          "deadlineChanged": "Deadline {from} → {to}",
+          "noteChanged": "Note changed",
+          "title": "History"
+        },
+        "loadFailed": "The document requests could not be loaded.",
+        "overdue": "Overdue",
+        "page": {
+          "description": "The documents asked of the employees whose certificates or other documents you manage. A request is overdue when it is still open after its deadline.",
+          "empty": "No document requests match the filters.",
+          "filters": {
+            "active": "Open and submitted",
+            "all": "All statuses",
+            "overdue": "Only overdue",
+            "status": "Status"
+          },
+          "loading": "Loading document requests",
+          "next": "Next page",
+          "pagination": "Page {page} of {pageCount}",
+          "previous": "Previous page",
+          "title": "Document requests"
+        },
+        "pendingDocuments": "Uploaded, not submitted yet",
+        "pendingDocumentsClosed": "Uploaded, never submitted",
+        "reasonCode": {
+          "employmentEnded": "Employment ended"
+        },
+        "renewal": {
+          "hint": "Once you accept the request, this document no longer counts as expiring. Until then, its expiry reminders go to officers only.",
+          "hrOnly": "This document is HR-only. The employee does not see it, only this request's title, note, category and deadline.",
+          "title": "Request a renewal"
+        },
+        "renews": "Renews {title}",
+        "return": {
+          "button": "Return",
+          "confirm": "Return to employee",
+          "description": "The employee is asked to upload \"{title}\" again and is told why. The documents they submitted stay in the file.",
+          "open": "Return {title}",
+          "reason": "Reason",
+          "success": "Request returned",
+          "title": "Return submission?"
+        },
+        "status": {
+          "accepted": "Accepted",
+          "cancelled": "Cancelled",
+          "open": "Open",
+          "submitted": "Submitted"
+        },
+        "submission": "Submitted {date}",
+        "title": "Document requests"
       },
       "retention": {
         "apply": "Apply suggestion",

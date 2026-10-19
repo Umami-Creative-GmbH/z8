@@ -66,6 +66,7 @@
         "noScheduleAssigned": "Aucun planning attribué",
         "personnelNumber": "Numéro de personnel",
         "personnelNumberDescription": "Numéro attribué par votre organisation à cet employé, utilisé dans les exportations de paie. Il doit être unique, y compris parmi les anciens employés.",
+        "personnelNumberManagedByIdp": "Géré par votre fournisseur d'identité. Modifiez le matricule de l'employé à cet endroit.",
         "position": "Poste",
         "positionDescription": "Intitulé de poste ou rôle",
         "positionPlaceholder": "Saisir un poste",
@@ -160,6 +161,31 @@
       "invitations": {
         "description": "Inviter des membres et examiner les demandes d'adhésion en attente",
         "title": "Invitations"
+      },
+      "kioskBadge": {
+        "active": "Actif depuis le {date}.",
+        "confirmReplace": "Remplacer le badge",
+        "confirmReplaceText": "Le remplacement génère un nouveau badge. Chaque exemplaire du badge actuel cesse immédiatement de fonctionner.",
+        "confirmRevoke": "Révoquer le badge",
+        "confirmRevokeText": "Chaque exemplaire de ce badge cesse définitivement de fonctionner. Le code PIN de borne de l'employé reste actif.",
+        "description": "Un code QR imprimé que l'employé scanne sur une borne en ligne au lieu de saisir son code PIN. Il ne connecte jamais qui que ce soit.",
+        "done": "Terminé",
+        "download": "Télécharger le PDF",
+        "endedByDeparture": "Aucun badge de borne actif. Le dernier a pris fin au départ de l'employé le {date}. Les anciennes copies ne fonctionneront plus jamais, même après une réembauche.",
+        "heading": "Badge de borne",
+        "issue": "Délivrer le badge",
+        "none": "Aucun badge de borne pour le moment.",
+        "notEligible": "Un nouveau badge ne peut être délivré que lorsque l'employé est actif. Après une réembauche, délivrez un nouveau badge.",
+        "openToPrint": "Ouvrir pour imprimer",
+        "pdf": {
+          "instructions": "Découpez le badge le long de la ligne en pointillés. Toute personne détenant une copie peut pointer en tant que cet employé sur les bornes de l'organisation, conservez-le donc comme une clé. En cas de perte, demandez un remplacement : toutes les copies de ce badge cesseront alors de fonctionner.",
+          "title": "Badge de borne"
+        },
+        "replace": "Remplacer le badge",
+        "revoke": "Révoquer le badge",
+        "revoked": "Badge de borne révoqué",
+        "revokedOn": "Aucun badge de borne actif. Le dernier a été révoqué le {date}.",
+        "saveNow": "Enregistrez le PDF dès maintenant : Z8 ne pourra plus afficher ce badge. Vous pourrez réimprimer une copie enregistrée. Si le fichier ou le badge est perdu, remplacez le badge."
       },
       "kioskPin": {
         "addEmailDescription": "Cette personne recevra une invitation pour choisir un mot de passe et pourra ensuite se connecter. Son code PIN de borne et son historique restent inchangés.",
@@ -762,6 +788,7 @@
       "area": {
         "back": "Dossiers du personnel",
         "description": "Les employés dont vous gérez le dossier du personnel.",
+        "documentRequests": "Demandes de documents",
         "dueForDeletion": "Prévu pour suppression",
         "empty": "Aucun employé ne fait encore partie de votre périmètre.",
         "former": "Ancien employé",
@@ -849,16 +876,15 @@
       },
       "due": {
         "confirm": "Purger",
-        "confirmDescription": "Les documents et leurs fichiers sont définitivement supprimés. Le journal d'audit conserve l'auteur de la purge, l'employé, la catégorie, la date du document, la période de paie et votre motif.",
         "confirmTitle": "{count, plural, one {Purger # document ?} other {Purger # documents ?}}",
         "description": "Documents d'anciens employés dont la durée de conservation est dépassée. Ils restent ici jusqu'à ce que vous confirmiez leur purge ; laissez un document ici pour le conserver.",
         "dueSince": "À supprimer depuis le {date}",
         "empty": "Aucun document dans votre périmètre n'est à supprimer.",
         "loadFailed": "Impossible de charger les documents à supprimer.",
         "loading": "Chargement des documents à supprimer",
+        "purgeAuditDescription": "Les documents et leurs fichiers sont définitivement supprimés. Le journal d'audit conserve l'auteur de la suppression, l'employé, la catégorie, la date du document et la période de paie. Les titres et les noms de fichiers sont également retirés des précédents enregistrements d'audit de ces documents.",
         "purged": "{count, plural, one {# document purgé} other {# documents purgés}}",
         "purgeSelected": "{count, plural, =0 {Purger la sélection} one {Purger # document} other {Purger # documents}}",
-        "reason": "Motif (facultatif)",
         "selectAll": "Tout sélectionner",
         "skipped": "{count, plural, one {# document n'a pas été purgé, car il n'est plus à supprimer ou ne fait pas partie de votre périmètre.} other {# documents n'ont pas été purgés, car ils ne sont plus à supprimer ou ne font pas partie de votre périmètre.}}",
         "title": "À supprimer",
@@ -877,6 +903,9 @@
         "empty": "Aucun document n'arrive à expiration.",
         "expiredAgo": "{days, plural, one {Expiré il y a # jour} other {Expiré il y a # jours}}",
         "inDays": "{days, plural, one {Expire dans # jour} other {Expire dans # jours}}",
+        "renewalRequested": "Renouvellement demandé",
+        "requestRenewal": "Demander un renouvellement",
+        "requestRenewalFor": "Demander un renouvellement pour {title} ({employee})",
         "title": "Documents arrivant à expiration",
         "today": "Expire aujourd'hui"
       },
@@ -910,6 +939,24 @@
         "description": "Documents de votre dossier du personnel partagés par votre organisation.",
         "empty": "Aucun document n'a encore été partagé avec vous.",
         "loading": "Chargement de vos documents",
+        "requested": {
+          "description": "Documents demandés par votre organisation, avec leur date limite.",
+          "submit": {
+            "button": "Soumettre",
+            "confirm": "Soumettre",
+            "description": "{count, plural, one {# document est remis pour \"{title}\". Votre organisation l'examine et vous communique le résultat.} other {# documents sont remis pour \"{title}\". Votre organisation les examine et vous communique le résultat.}}",
+            "note": "Note (facultatif)",
+            "open": "Soumettre {title}",
+            "success": "Soumis",
+            "title": "Soumettre les documents ?"
+          },
+          "title": "Documents demandés",
+          "upload": {
+            "button": "Téléverser",
+            "description": "Pour la demande \"{title}\". Soumettez la demande une fois que tous ses documents ont été téléversés.",
+            "open": "Téléverser un document pour {title}"
+          }
+        },
         "title": "Mes documents",
         "upload": {
           "button": "Importer un document",
@@ -973,6 +1020,146 @@
         "saved": "Délai de rappel enregistré",
         "saveFailed": "Impossible d'enregistrer le délai de rappel.",
         "title": "Rappels d'expiration"
+      },
+      "requests": {
+        "accept": {
+          "button": "Accepter",
+          "confirm": "Accepter",
+          "description": "La demande \"{title}\" est terminée, et l'employé en est informé.",
+          "failed": "La demande n'a pas pu être acceptée.",
+          "open": "Accepter {title}",
+          "success": "Demande acceptée",
+          "title": "Accepter la soumission ?"
+        },
+        "bulk": {
+          "close": "Fermer",
+          "created": "{count, plural, =0 {Aucune demande de document créée.} one {# demande de document créée.} other {# demandes de documents créées.}}",
+          "description": "Chaque employé reçoit sa propre demande et en est informé. Les employés que vous ne couvrez pas, les anciens employés et toute personne ayant déjà une demande ouverte avec ce titre sont ignorés.",
+          "doneTitle": "Documents demandés",
+          "employees": "Employés",
+          "noTeams": "Aucune équipe parmi lesquelles choisir.",
+          "open": "Demander à plusieurs",
+          "selectEmployees": "Sélectionner des employés",
+          "skipped": "{count, plural, one {# employé ignoré :} other {# employés ignorés :}}",
+          "skippedAlreadyRequested": "{count, plural, one {# a déjà une demande ouverte avec ce titre} other {# ont déjà une demande ouverte avec ce titre}}",
+          "skippedFormer": "{count, plural, one {# ancien employé} other {# anciens employés}}",
+          "skippedNotCovered": "{count, plural, one {# non couvert par votre accès} other {# non couverts par votre accès}}",
+          "skippedOwnFile": "Votre propre dossier",
+          "teams": "Équipes",
+          "teamsHint": "Tous les membres actuels de l'équipe, dans la limite de votre périmètre.",
+          "title": "Demander un document à plusieurs employés"
+        },
+        "cancel": {
+          "button": "Annuler",
+          "confirm": "Annuler la demande",
+          "description": "L'employé n'a plus besoin d'importer \"{title}\" et est informé du motif. Les documents déjà importés restent dans le dossier.",
+          "keep": "Conserver la demande",
+          "open": "Annuler {title}",
+          "reason": "Motif",
+          "success": "Demande annulée",
+          "title": "Annuler la demande ?"
+        },
+        "create": {
+          "deadline": "Date limite",
+          "deadlineHint": "La date à laquelle l'employé doit soumettre le document. Passé ce délai, la demande est en retard.",
+          "description": "L'employé est notifié et importe les documents depuis Mes documents. Les éléments importés apparaissent immédiatement dans son dossier et sont partagés avec lui.",
+          "note": "Note (facultatif)",
+          "open": "Demander un document",
+          "submit": "Demander",
+          "success": "Document demandé",
+          "title": "Demander un document",
+          "titleHint": "Ce que l'employé doit importer, comme un certificat de premiers secours renouvelé."
+        },
+        "deadline": "Échéance : {date}",
+        "description": "Certificats et autres documents demandés à cet employé, avec leur date limite et leur historique.",
+        "edit": {
+          "button": "Modifier",
+          "deadlineHint": "Une nouvelle date limite ne peut pas être dans le passé. La reporter réinitialise les rappels d'échéance.",
+          "description": "Modifiez la date limite ou la note de \"{title}\". La modification apparaîtra dans l'historique de la demande. Pour demander autre chose, annulez la demande et créez-en une nouvelle.",
+          "open": "Modifier {title}",
+          "submit": "Enregistrer les modifications",
+          "success": "Demande modifiée",
+          "title": "Modifier la demande"
+        },
+        "empty": "Aucun document demandé pour le moment.",
+        "error": {
+          "categoryNotRequestable": "Seuls des certificats et d'autres documents peuvent être demandés.",
+          "conflict": "Quelqu'un d'autre a modifié cette demande entre-temps. Rechargez-la et réessayez.",
+          "deadlineInPast": "La date limite ne peut pas être dans le passé.",
+          "formerEmployee": "Le contrat de cet employé a pris fin.",
+          "invalidDeadline": "Choisissez une date limite.",
+          "invalidNote": "La note ne peut pas dépasser {max} caractères.",
+          "invalidReason": "Le motif ne peut pas dépasser {max} caractères.",
+          "invalidTitle": "Saisissez un titre de {max} caractères au maximum.",
+          "noDocuments": "Importez au moins un document avant de soumettre.",
+          "noRecipients": "Choisissez au moins un employé ou une équipe.",
+          "notEditable": "Seules la date limite et la note peuvent être modifiées. Annulez plutôt la demande et créez-en une nouvelle.",
+          "ownFile": "Vous ne pouvez pas demander de documents pour votre propre dossier du personnel.",
+          "reasonRequired": "Indiquez un motif.",
+          "renewalAlreadyRequested": "Ce document fait déjà l'objet d'une demande de renouvellement en cours.",
+          "renewalExpiryDateRequired": "La compétence renouvelée nécessite une date d'expiration. Ajoutez la date d'expiration à un certificat soumis, puis acceptez.",
+          "renewalNotInBulk": "Les demandes adressées à plusieurs employés ne peuvent pas désigner un document renouvelé.",
+          "renewedDocumentMismatch": "Le document renouvelé doit être un document du même employé et de la même catégorie.",
+          "tooManyRecipients": "Demandez des documents à au maximum {max} employés à la fois."
+        },
+        "event": {
+          "accepted": "Accepté",
+          "cancelled": "Annulé",
+          "created": "Demandé",
+          "edited": "Modifié",
+          "returned": "Renvoyé",
+          "submitted": "Soumis"
+        },
+        "history": {
+          "deadlineChanged": "Date limite {from} → {to}",
+          "noteChanged": "Note modifiée",
+          "title": "Historique"
+        },
+        "loadFailed": "Impossible de charger les demandes de documents.",
+        "overdue": "En retard",
+        "page": {
+          "description": "Les documents demandés aux employés dont vous gérez les certificats ou d'autres documents. Une demande est en retard lorsqu'elle est toujours ouverte après sa date limite.",
+          "empty": "Aucune demande de document ne correspond aux filtres.",
+          "filters": {
+            "active": "Ouvertes et soumises",
+            "all": "Tous les statuts",
+            "overdue": "En retard uniquement",
+            "status": "Statut"
+          },
+          "loading": "Chargement des demandes de documents",
+          "next": "Page suivante",
+          "pagination": "Page {page} sur {pageCount}",
+          "previous": "Page précédente",
+          "title": "Demandes de documents"
+        },
+        "pendingDocuments": "Téléversé, pas encore soumis",
+        "pendingDocumentsClosed": "Téléversé, jamais soumis",
+        "reasonCode": {
+          "employmentEnded": "Fin de contrat"
+        },
+        "renewal": {
+          "hint": "Une fois la demande acceptée, ce document n'est plus considéré comme arrivant à expiration. D'ici là, les rappels d'expiration sont envoyés uniquement aux responsables.",
+          "hrOnly": "Ce document est réservé aux RH. L'employé ne le voit pas, il voit uniquement le titre, la note, la catégorie et la date limite de cette demande.",
+          "title": "Demander un renouvellement"
+        },
+        "renews": "Renouvelle {title}",
+        "return": {
+          "button": "Renvoyer",
+          "confirm": "Renvoyer à l'employé",
+          "description": "L'employé est invité à téléverser de nouveau « {title} » et en est informé de la raison. Les documents qu'il a soumis restent dans le dossier.",
+          "open": "Renvoyer {title}",
+          "reason": "Motif",
+          "success": "Demande renvoyée",
+          "title": "Renvoyer la soumission ?"
+        },
+        "status": {
+          "accepted": "Accepté",
+          "cancelled": "Annulé",
+          "open": "Ouvert",
+          "submitted": "Soumis"
+        },
+        "submission": "Soumis le {date}",
+        "title": "Demandes de documents"
       },
       "retention": {
         "apply": "Appliquer la suggestion",

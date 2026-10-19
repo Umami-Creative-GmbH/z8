@@ -1,5 +1,19 @@
 {
   "settings": {
+    "approvalTriage": {
+      "correctionError": "Insira um número inteiro de 0 a 60 minutos.",
+      "correctionHelp": "Zero desativa a via rápida para pequenas correções, incluindo edições de diferença zero. Caso contrário, use de 1 a 60 minutos; todas as comprovações obrigatórias ainda devem ser verificadas.",
+      "correctionLabel": "Limite para pequenas correções (minutos)",
+      "description": "Defina quando as solicitações pendentes exigem atenção e quais pequenas correções de horário podem usar a via rápida. As regras de risco e os requisitos de comprovação permanecem fixos.",
+      "save": "Salvar configurações de triagem",
+      "saved": "Configurações de triagem salvas.",
+      "saveError": "Não foi possível salvar as configurações de triagem. Tente novamente.",
+      "staleError": "Insira um número inteiro de 1 a 720 horas.",
+      "staleHelp": "As solicitações pendentes tornam-se obsoletas após este número de horas decorridas (1–720). Finais de semana e alterações do horário de verão não pausam o relógio.",
+      "staleLabel": "Obsoleto após (horas)",
+      "thresholds": "Limites de triagem",
+      "title": "Triagem de aprovação"
+    },
     "assignedLocations": {
       "added": "Local atribuído adicionado",
       "employeeDescription": "Os locais onde este funcionário trabalha. Os quiosques aceitam apenas funcionários atribuídos ao seu local.",
@@ -466,6 +480,7 @@
       },
       "historyEmpty": "Nenhum mês foi fechado ainda.",
       "historyTitle": "Histórico",
+      "locationNotFound": "Este local não existe mais.",
       "monthsDescription": "Fechar um mês congela o trabalho, a atribuição e as ausências para a folha de pagamento. As observações continuam editáveis.",
       "monthsTitle": "Meses",
       "nothingToClose": "Todos neste escopo já estão fechados para este mês.",
@@ -481,9 +496,14 @@
       "reopenTitle": "Reabrir {month}",
       "scope": {
         "all": "Tudo",
+        "deletedLocation": "Local excluído",
         "deletedTeam": "Equipe excluída",
         "employees": "Funcionários selecionados",
-        "organization": "Organização"
+        "locationHelp": "Fecha o mês inteiro para todas as pessoas atribuídas a este local agora, incluindo ex-funcionários. O trabalho deles em outros locais também é congelado. Funcionários atribuídos posteriormente não são cobertos.",
+        "locationNamed": "Local {name}",
+        "locations": "Locais",
+        "organization": "Organização",
+        "teams": "Equipes"
       },
       "scopeLabel": "Fechar para",
       "teamNotFound": "Esta equipe não existe mais.",
@@ -1336,6 +1356,77 @@
       "title": "Lista de verificação de implementação"
     },
     "import": {
+      "csv": {
+        "acceptSelected": "Aceitar linhas válidas selecionadas",
+        "applyMapping": "Aplicar mapeamento",
+        "chooseSource": "Escolha um valor de origem",
+        "chooseTarget": "Escolha um registro existente",
+        "commit": "Confirmar linhas aceitas",
+        "committing": "Importando linhas aceitas…",
+        "description": "Importe um período de trabalho concluído por linha. Represente intervalos como lacunas entre as linhas. Nada será registrado até que você revise e aceite.",
+        "download": "Baixar modelo CSV",
+        "duplicateSkipped": "Duplicado ignorado",
+        "existingEmployee": "Funcionário existente",
+        "existingVehicle": "Veículo existente",
+        "file": "Arquivo CSV",
+        "fileTimezone": "Fuso horário para marcações de data/hora locais",
+        "format": "Use UTF-8, separadores por vírgula e os cabeçalhos do modelo. Máximo de 500 KB e 1.000 linhas. As colunas de veículos são opcionais; medições e distâncias usam quilômetros inteiros.",
+        "interval": "Início e término no horário local do evento",
+        "mappingHelp": "Os mapeamentos se aplicam apenas a este lote e mantêm os valores de origem originais. Alterar um mapeamento ou verificar novamente redefine a aceitação nas linhas não confirmadas.",
+        "mappingTitle": "Mapear valores de origem para registros existentes",
+        "mappingType": "Tipo de mapeamento",
+        "offsetsOnly": "apenas deslocamentos explícitos",
+        "organizationVehicle": "Veículo da organização",
+        "outcome": "Status e problemas",
+        "ownVehicle": "Veículo próprio",
+        "pages": "Páginas de revisão do CSV",
+        "partialHelp": "As linhas válidas aceitas podem ser importadas enquanto outras linhas permanecem não resolvidas. Corrija marcações de data/hora ou números incorretos no CSV e envie novamente; o trabalho já importado será ignorado.",
+        "person": "Funcionário",
+        "preparing": "Preparando pré-visualização…",
+        "preview": "Pré-visualizar CSV",
+        "readFailed": "Não foi possível ler o arquivo selecionado",
+        "recheck": "Verificar novamente linhas não resolvidas",
+        "rejectSelected": "Rejeitar linhas selecionadas",
+        "reviewTitle": "Revisar trabalho concluído do CSV",
+        "row": "Linha do CSV",
+        "scanning": "Preparando a revisão…",
+        "selectPage": "Selecionar todas as linhas nesta página",
+        "selectRow": "Selecionar linha do CSV",
+        "sourcePlate": "Placa de origem",
+        "sourceValue": "Valor de origem",
+        "status": {
+          "accepted": "Aceito",
+          "blocked": "Requer atenção",
+          "commit_failed": "Requer atenção",
+          "committed": "Importado",
+          "committing": "Importando",
+          "needs_mapping": "Requer atenção",
+          "rejected": "Rejeitado",
+          "staged": "Aguardando revisão"
+        },
+        "summary": {
+          "accepted": "Aceito",
+          "imported": "Importado",
+          "rejected": "Rejeitado",
+          "skipped": "Duplicatas ignoradas",
+          "total": "Total de linhas",
+          "unresolved": "Não resolvido"
+        },
+        "tab": "Trabalho em CSV",
+        "timezone": "Fuso horário para registros de data/hora locais",
+        "timezoneHelp": "Necessário para registros de data/hora sem deslocamento. Deslocamentos explícitos, como +02:00, têm precedência. O fuso horário do seu navegador nunca é usado implicitamente.",
+        "title": "Trabalho concluído em CSV",
+        "tooLarge": "Os arquivos CSV devem ter no máximo 500 KB",
+        "vehicle": "Uso do veículo",
+        "warning": {
+          "distance_above_limit": "A distância é superior a 1.500 km",
+          "driving_details_missing": "Detalhes de condução ausentes",
+          "duplicate_will_skip": "Trabalhos idênticos serão ignorados",
+          "speed_above_limit": "A velocidade média implícita é superior a 150 km/h",
+          "start_below_last_end": "A leitura inicial é inferior à última leitura final registrada",
+          "vehicle_on_other_live_work": "O veículo está em um trabalho em andamento de outro funcionário"
+        }
+      },
       "description": "Importe dados de provedores suportados, como Clockodo e Clockin.",
       "review": {
         "billability": {
@@ -1437,7 +1528,20 @@
         },
         "title": "Revisão de importação"
       },
+      "supportedSources": "Importe trabalhos de arquivos CSV ou conecte provedores compatíveis, como Clockodo e Clockin.",
       "title": "Importar dados"
+    },
+    "kioskBadge": {
+      "errors": {
+        "badgeChanged": "Outra pessoa alterou este crachá de quiosque nesse meio-tempo. Verifique o status e tente novamente.",
+        "badgeExists": "Este funcionário já possui um crachá de quiosque. Em vez disso, substitua-o.",
+        "employeeInactive": "Apenas funcionários ativos podem receber um crachá de quiosque.",
+        "employeeNotFound": "Este funcionário não foi encontrado.",
+        "failed": "Ocorreu um erro. Tente novamente.",
+        "noBadge": "Este funcionário não possui um crachá de quiosque.",
+        "notAllowed": "Você não tem permissão para fazer isso.",
+        "signInRequired": "Faça login para continuar."
+      }
     },
     "kioskPin": {
       "errors": {
@@ -1460,6 +1564,8 @@
     },
     "kiosks": {
       "add": "Adicionar quiosque",
+      "badgeCameraOn": "Câmera de crachá ativada",
+      "badgeScannerOn": "Leitor de crachá ativado",
       "boardOn": "Painel de presença ativado",
       "columns": {
         "actions": "Ações",
@@ -1489,6 +1595,10 @@
         "offlineNeedsAdoption": "O modo offline precisa de comandos de ponto coordenados, que esta organização ainda não utiliza."
       },
       "fields": {
+        "badgeCamera": "Câmera de crachá",
+        "badgeCameraDescription": "Os funcionários tocam em Escanear crachá e posicionam o crachá de quiosque em frente à câmera deste quiosque em vez de digitar o PIN. O código é lido no dispositivo; nenhuma imagem é enviada ou armazenada. O navegador solicita acesso à câmera uma única vez. O registro por crachá requer conexão; o nome e o PIN continuam funcionando.",
+        "badgeScanner": "Leitor de crachá",
+        "badgeScannerDescription": "Os funcionários escaneiam o crachá de quiosque com um leitor de QR conectado a este quiosque em vez de digitar o PIN. O registro por crachá requer conexão; o nome e o PIN continuam funcionando.",
         "board": "Painel de presença",
         "boardDescription": "Mostra no quiosque quem está presente ou em pausa, pelo primeiro nome e inicial do sobrenome.",
         "location": "Local",

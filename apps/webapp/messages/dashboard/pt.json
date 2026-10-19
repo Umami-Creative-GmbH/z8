@@ -172,7 +172,6 @@
       "label-available": "Disponível",
       "label-pending": "Pendente",
       "label-used": "Usado",
-      "no-policy": "Nenhuma política de férias configurada para este ano",
       "pending": "{days} pendentes",
       "percent-used": "{percent}% usado",
       "title": "Saldo de férias",

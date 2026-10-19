@@ -66,6 +66,7 @@
         "noScheduleAssigned": "Nenhum horário atribuído",
         "personnelNumber": "Número de pessoal",
         "personnelNumberDescription": "O número próprio da sua organização para este colaborador, usado em exportações da folha de pagamento. Ele deve ser exclusivo, inclusive entre ex-colaboradores.",
+        "personnelNumberManagedByIdp": "Gerenciado pelo seu provedor de identidade. Altere o número de matrícula lá.",
         "position": "Cargo",
         "positionDescription": "Título do cargo ou função",
         "positionPlaceholder": "Inserir cargo",
@@ -160,6 +161,31 @@
       "invitations": {
         "description": "Convide membros e analise solicitações de entrada pendentes",
         "title": "Convites"
+      },
+      "kioskBadge": {
+        "active": "Ativo desde {date}.",
+        "confirmReplace": "Substituir o crachá",
+        "confirmReplaceText": "A substituição gera um novo crachá. Todas as cópias do crachá atual deixam de funcionar imediatamente.",
+        "confirmRevoke": "Revogar o crachá",
+        "confirmRevokeText": "Todas as cópias deste crachá deixam de funcionar permanentemente. O PIN de quiosque do funcionário continua funcionando.",
+        "description": "Um código QR impresso que o funcionário escaneia em um quiosque online em vez de digitar o PIN. Ele nunca faz login de ninguém.",
+        "done": "Concluído",
+        "download": "Baixar PDF",
+        "endedByDeparture": "Nenhum crachá de quiosque ativo. O último expirou com o desligamento do colaborador em {date}. Cópias antigas nunca mais funcionam, nem mesmo após uma recontratação.",
+        "heading": "Crachá do quiosque",
+        "issue": "Emitir crachá",
+        "none": "Nenhum crachá de quiosque ainda.",
+        "notEligible": "Um novo crachá só pode ser emitido enquanto o colaborador estiver ativo. Após uma recontratação, emita um novo crachá.",
+        "openToPrint": "Abrir para imprimir",
+        "pdf": {
+          "instructions": "Recorte o crachá ao longo da linha tracejada. Qualquer pessoa com uma cópia pode registrar o ponto como este colaborador nos quiosques da organização, portanto, guarde-o como uma chave. Se for perdido, solicite uma substituição: todas as cópias deste crachá deixarão de funcionar.",
+          "title": "Crachá do quiosque"
+        },
+        "replace": "Substituir crachá",
+        "revoke": "Revogar crachá",
+        "revoked": "Crachá do quiosque revogado",
+        "revokedOn": "Nenhum crachá de quiosque ativo. O último foi revogado em {date}.",
+        "saveNow": "Salve o PDF agora: o Z8 não poderá mostrar este crachá novamente. Você pode reimprimir uma cópia salva. Se o arquivo ou o crachá for perdido, substitua o crachá."
       },
       "kioskPin": {
         "addEmailDescription": "Ele receberá um convite para escolher uma senha e poderá fazer login. O PIN do quiosque e o histórico permanecerão inalterados.",
@@ -762,6 +788,7 @@
       "area": {
         "back": "Arquivos de pessoal",
         "description": "Os colaboradores cujo arquivo pessoal você gerencia.",
+        "documentRequests": "Solicitações de documentos",
         "dueForDeletion": "Programado para exclusão",
         "empty": "Ainda não há colaboradores no seu escopo.",
         "former": "Ex-colaborador",
@@ -849,16 +876,15 @@
       },
       "due": {
         "confirm": "Expurgar",
-        "confirmDescription": "Os documentos e seus arquivos são excluídos definitivamente. O registro de auditoria mantém quem os expurgou, o funcionário, a categoria, a data do documento e o período de pagamento, além do seu motivo.",
         "confirmTitle": "{count, plural, one {Expurgar # documento?} other {Expurgar # documentos?}}",
         "description": "Documentos de ex-funcionários cujo período de retenção expirou. Eles permanecem até que você confirme seu expurgo; deixe um documento aqui para mantê-lo.",
         "dueSince": "Pendente desde {date}",
         "empty": "Nenhum documento no seu escopo está pendente de exclusão.",
         "loadFailed": "Não foi possível carregar os documentos pendentes de exclusão.",
         "loading": "Carregando documentos pendentes de exclusão",
+        "purgeAuditDescription": "Os documentos e seus arquivos são excluídos definitivamente. O registro de auditoria mantém quem os expurgou, o colaborador, a categoria, a data do documento e o período de pagamento. Títulos e nomes de arquivos também são removidos dos registros de auditoria anteriores dos documentos.",
         "purged": "{count, plural, one {# documento expurgado} other {# documentos expurgados}}",
         "purgeSelected": "{count, plural, =0 {Expurgar selecionados} one {Expurgar # documento} other {Expurgar # documentos}}",
-        "reason": "Motivo (opcional)",
         "selectAll": "Selecionar tudo",
         "skipped": "{count, plural, one {# documento não foi expurgado porque não está mais pendente de exclusão ou não está no seu escopo.} other {# documentos não foram expurgados porque não estão mais pendentes de exclusão ou não estão no seu escopo.}}",
         "title": "Pendente de exclusão",
@@ -877,6 +903,9 @@
         "empty": "Nenhum documento está prestes a expirar.",
         "expiredAgo": "{days, plural, one {Expirou há # dia} other {Expirou há # dias}}",
         "inDays": "{days, plural, one {Expira em # dia} other {Expira em # dias}}",
+        "renewalRequested": "Renovação solicitada",
+        "requestRenewal": "Solicitar renovação",
+        "requestRenewalFor": "Solicitar a renovação de {title} ({employee})",
         "title": "Documentos a expirar",
         "today": "Expira hoje"
       },
@@ -910,6 +939,24 @@
         "description": "Documentos do seu dossiê de pessoal que a sua organização compartilhou com você.",
         "empty": "Nenhum documento foi compartilhado com você ainda.",
         "loading": "Carregando seus documentos",
+        "requested": {
+          "description": "Documentos solicitados pela sua organização, com seus prazos.",
+          "submit": {
+            "button": "Enviar",
+            "confirm": "Enviar",
+            "description": "{count, plural, one {# documento foi entregue para \"{title}\". Sua organização o analisa e informa o resultado.} other {# documentos foram entregues para \"{title}\". Sua organização os analisa e informa o resultado.}}",
+            "note": "Observação (opcional)",
+            "open": "Enviar {title}",
+            "success": "Enviado",
+            "title": "Enviar documentos?"
+          },
+          "title": "Documentos solicitados",
+          "upload": {
+            "button": "Carregar",
+            "description": "Para a solicitação \"{title}\". Envie a solicitação assim que todos os seus documentos forem carregados.",
+            "open": "Carregar um documento para {title}"
+          }
+        },
         "title": "Meus documentos",
         "upload": {
           "button": "Enviar documento",
@@ -973,6 +1020,146 @@
         "saved": "Antecedência do lembrete salva",
         "saveFailed": "Não foi possível salvar a antecedência do lembrete.",
         "title": "Lembretes de validade"
+      },
+      "requests": {
+        "accept": {
+          "button": "Aceitar",
+          "confirm": "Aceitar",
+          "description": "A solicitação \"{title}\" está concluída, e o colaborador é informado.",
+          "failed": "A solicitação não pôde ser aceita.",
+          "open": "Aceitar {title}",
+          "success": "Solicitação aceita",
+          "title": "Aceitar envio?"
+        },
+        "bulk": {
+          "close": "Fechar",
+          "created": "{count, plural, =0 {Nenhuma solicitação de documento criada.} one {# solicitação de documento criada.} other {# solicitações de documentos criadas.}}",
+          "description": "Cada colaborador recebe sua própria solicitação e é notificado. Colaboradores que não fazem parte do seu escopo, ex-colaboradores e qualquer pessoa que já tenha uma solicitação aberta com este título serão ignorados.",
+          "doneTitle": "Documentos solicitados",
+          "employees": "Colaboradores",
+          "noTeams": "Nenhuma equipe disponível para seleção.",
+          "open": "Solicitar de vários",
+          "selectEmployees": "Selecionar colaboradores",
+          "skipped": "{count, plural, one {# colaborador ignorado:} other {# colaboradores ignorados:}}",
+          "skippedAlreadyRequested": "{count, plural, one {# já tem uma solicitação aberta com este título} other {# já têm uma solicitação aberta com este título}}",
+          "skippedFormer": "{count, plural, one {# ex-colaborador} other {# ex-colaboradores}}",
+          "skippedNotCovered": "{count, plural, one {# não coberto pelo seu acesso} other {# não cobertos pelo seu acesso}}",
+          "skippedOwnFile": "Seu próprio arquivo",
+          "teams": "Equipes",
+          "teamsHint": "Todos atualmente na equipe, dentro do seu escopo de cobertura.",
+          "title": "Solicitar um documento a vários colaboradores"
+        },
+        "cancel": {
+          "button": "Cancelar",
+          "confirm": "Cancelar solicitação",
+          "description": "O colaborador não precisa mais enviar \"{title}\" e é informado sobre o motivo. Os documentos já enviados permanecem no arquivo.",
+          "keep": "Manter solicitação",
+          "open": "Cancelar {title}",
+          "reason": "Motivo",
+          "success": "Solicitação cancelada",
+          "title": "Cancelar solicitação?"
+        },
+        "create": {
+          "deadline": "Prazo",
+          "deadlineHint": "A data limite para o colaborador enviar. Após essa data, a solicitação estará atrasada.",
+          "description": "O colaborador é notificado e envia os documentos a partir de Meus documentos. O que for enviado fica imediatamente em seu arquivo, compartilhado com ele.",
+          "note": "Observação (opcional)",
+          "open": "Solicitar um documento",
+          "submit": "Solicitar",
+          "success": "Documento solicitado",
+          "title": "Solicitar um documento",
+          "titleHint": "O que o colaborador deve enviar, como um certificado de primeiros socorros renovado."
+        },
+        "deadline": "Vencimento em {date}",
+        "description": "Certificados e outros documentos solicitados a este colaborador, com respectivos prazos e histórico.",
+        "edit": {
+          "button": "Alterar",
+          "deadlineHint": "Um novo prazo não pode ser no passado. Ao alterá-lo, os lembretes de prazo são reiniciados.",
+          "description": "Altere o prazo ou a observação de \"{title}\". A alteração é exibida no histórico da solicitação. Para solicitar algo diferente, cancele a solicitação e crie uma nova.",
+          "open": "Alterar {title}",
+          "submit": "Salvar alterações",
+          "success": "Solicitação alterada",
+          "title": "Alterar solicitação"
+        },
+        "empty": "Nenhum documento solicitado ainda.",
+        "error": {
+          "categoryNotRequestable": "Apenas certificados e outros documentos podem ser solicitados.",
+          "conflict": "Outra pessoa alterou esta solicitação nesse meio-tempo. Recarregue e tente novamente.",
+          "deadlineInPast": "O prazo não pode ser no passado.",
+          "formerEmployee": "O vínculo empregatício deste colaborador foi encerrado.",
+          "invalidDeadline": "Escolha um prazo.",
+          "invalidNote": "A observação pode ter no máximo {max} caracteres.",
+          "invalidReason": "O motivo pode ter no máximo {max} caracteres.",
+          "invalidTitle": "Insira um título com no máximo {max} caracteres.",
+          "noDocuments": "Faça upload de pelo menos um documento antes de enviar.",
+          "noRecipients": "Escolha pelo menos um colaborador ou equipe.",
+          "notEditable": "Apenas o prazo e a observação podem ser alterados. Em vez disso, cancele a solicitação e crie uma nova.",
+          "ownFile": "Você não pode solicitar documentos no seu próprio arquivo pessoal.",
+          "reasonRequired": "Insira um motivo.",
+          "renewalAlreadyRequested": "Este documento já possui uma solicitação de renovação em aberto.",
+          "renewalExpiryDateRequired": "A competência renovada requer uma data de validade. Adicione a data de validade a um certificado enviado e depois aceite.",
+          "renewalNotInBulk": "Solicitações para vários colaboradores não podem especificar um documento renovado.",
+          "renewedDocumentMismatch": "O documento renovado deve ser um documento do mesmo colaborador e da mesma categoria.",
+          "tooManyRecipients": "Solicite documentos de no máximo {max} colaboradores por vez."
+        },
+        "event": {
+          "accepted": "Aceito",
+          "cancelled": "Cancelado",
+          "created": "Solicitado",
+          "edited": "Alterado",
+          "returned": "Devolvido",
+          "submitted": "Enviado"
+        },
+        "history": {
+          "deadlineChanged": "Prazo {from} → {to}",
+          "noteChanged": "Nota alterada",
+          "title": "Histórico"
+        },
+        "loadFailed": "Não foi possível carregar as solicitações de documentos.",
+        "overdue": "Em atraso",
+        "page": {
+          "description": "Os documentos solicitados aos colaboradores cujos certificados ou outros documentos você gerencia. Uma solicitação fica em atraso quando permanece aberta após o prazo final.",
+          "empty": "Nenhuma solicitação de documento corresponde aos filtros.",
+          "filters": {
+            "active": "Abertas e enviadas",
+            "all": "Todos os status",
+            "overdue": "Apenas em atraso",
+            "status": "Status"
+          },
+          "loading": "Carregando solicitações de documentos",
+          "next": "Próxima página",
+          "pagination": "Página {page} de {pageCount}",
+          "previous": "Página anterior",
+          "title": "Solicitações de documentos"
+        },
+        "pendingDocuments": "Carregado, ainda não enviado",
+        "pendingDocumentsClosed": "Carregado, nunca enviado",
+        "reasonCode": {
+          "employmentEnded": "Contrato encerrado"
+        },
+        "renewal": {
+          "hint": "Assim que você aceitar a solicitação, este documento não constará mais como a expirar. Até lá, os lembretes de expiração serão enviados apenas para os responsáveis.",
+          "hrOnly": "Este documento é exclusivo do RH. O colaborador não o vê, apenas o título, nota, categoria e prazo desta solicitação.",
+          "title": "Solicitar uma renovação"
+        },
+        "renews": "Renova {title}",
+        "return": {
+          "button": "Devolver",
+          "confirm": "Devolver ao colaborador",
+          "description": "O colaborador é solicitado a carregar \"{title}\" novamente e é informado do motivo. Os documentos enviados permanecem no arquivo.",
+          "open": "Devolver {title}",
+          "reason": "Motivo",
+          "success": "Solicitação devolvida",
+          "title": "Devolver envio?"
+        },
+        "status": {
+          "accepted": "Aceito",
+          "cancelled": "Cancelado",
+          "open": "Aberto",
+          "submitted": "Enviado"
+        },
+        "submission": "Enviado em {date}",
+        "title": "Solicitações de documentos"
       },
       "retention": {
         "apply": "Aplicar sugestão",

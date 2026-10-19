@@ -1,5 +1,19 @@
 {
   "settings": {
+    "approvalTriage": {
+      "correctionError": "Introduceți un număr întreg între 0 și 60 de minute.",
+      "correctionHelp": "Zero dezactivează procesarea rapidă a corecțiilor minore, inclusiv modificările cu diferență zero. În caz contrar, folosiți 1–60 de minute; toate dovezile necesare trebuie să fie în continuare verificate.",
+      "correctionLabel": "Limită corecție minoră (minute)",
+      "description": "Stabiliți când cererile în așteptare necesită atenție și ce corecții minore de timp pot utiliza procesarea rapidă. Regulile de risc și cerințele privind dovezile rămân neschimbate.",
+      "save": "Salvează setările de triaj",
+      "saved": "Setările de triaj au fost salvate.",
+      "saveError": "Nu s-au putut salva setările de triaj. Vă rugăm să încercați din nou.",
+      "staleError": "Introduceți un număr întreg între 1 și 720 de ore.",
+      "staleHelp": "Cererile în așteptare devin perimate după acest număr de ore scurse (1–720). Weekendurile și modificările orei de vară nu opresc cronometrul.",
+      "staleLabel": "Perimat după (ore)",
+      "thresholds": "Praguri de triaj",
+      "title": "Triaj aprobări"
+    },
     "assignedLocations": {
       "added": "Locația alocată a fost adăugată",
       "employeeDescription": "Locațiile în care lucrează acest angajat. Chioșcurile acceptă doar angajați alocați locației lor.",
@@ -466,6 +480,7 @@
       },
       "historyEmpty": "Nicio lună nu a fost închisă încă.",
       "historyTitle": "Istoric",
+      "locationNotFound": "Această locație nu mai există.",
       "monthsDescription": "Închiderea unei luni blochează activitatea, alocările și absențele pentru salarizare. Notițele rămân editabile.",
       "monthsTitle": "Luni",
       "nothingToClose": "Toată lumea din acest domeniu este deja închisă pentru această lună.",
@@ -481,9 +496,14 @@
       "reopenTitle": "Redeschide {month}",
       "scope": {
         "all": "Tot",
+        "deletedLocation": "Locație ștearsă",
         "deletedTeam": "Echipă ștearsă",
         "employees": "Angajații selectați",
-        "organization": "Organizație"
+        "locationHelp": "Închide întreaga lună pentru toți cei alocați acestei locații în prezent, inclusiv pentru foștii angajați. Munca lor în alte locații este de asemenea înghețată. Angajații alocați ulterior nu sunt incluși.",
+        "locationNamed": "Locația {name}",
+        "locations": "Locații",
+        "organization": "Organizație",
+        "teams": "Echipe"
       },
       "scopeLabel": "Închide pentru",
       "teamNotFound": "Această echipă nu mai există.",
@@ -1336,6 +1356,77 @@
       "title": "Listă de verificare pentru implementare"
     },
     "import": {
+      "csv": {
+        "acceptSelected": "Acceptă rândurile valide selectate",
+        "applyMapping": "Aplică maparea",
+        "chooseSource": "Alegeți o valoare sursă",
+        "chooseTarget": "Alegeți o înregistrare existentă",
+        "commit": "Confirmă rândurile acceptate",
+        "committing": "Se importă rândurile acceptate…",
+        "description": "Importați o perioadă de lucru finalizată per rând. Reprezentați pauzele ca intervale libere între rânduri. Nimic nu este înregistrat până când nu revizuiți și acceptați.",
+        "download": "Descarcă șablonul CSV",
+        "duplicateSkipped": "Duplicat omis",
+        "existingEmployee": "Angajat existent",
+        "existingVehicle": "Vehicul existent",
+        "file": "Fișier CSV",
+        "fileTimezone": "Fus orar pentru marcajele temporale locale",
+        "format": "Utilizați UTF-8, separatori prin virgulă și anteturile din șablon. Maximum 500 KB și 1.000 de rânduri. Coloanele pentru vehicul sunt opționale; citirile și distanța folosesc kilometri întregi.",
+        "interval": "Început și sfârșit locale pentru eveniment",
+        "mappingHelp": "Mapările se aplică doar acestui lot și păstrează valorile sursă originale. Modificarea unei mapări sau reverificarea resetează acceptarea pentru rândurile neconfirmate.",
+        "mappingTitle": "Mapează valorile sursă la înregistrările existente",
+        "mappingType": "Tip de mapare",
+        "offsetsOnly": "doar decalaje explicite",
+        "organizationVehicle": "Vehiculul organizației",
+        "outcome": "Stare și probleme",
+        "ownVehicle": "Vehicul propriu",
+        "pages": "Pagini de revizuire CSV",
+        "partialHelp": "Rândurile valide acceptate pot fi importate în timp ce alte rânduri rămân nerezolvate. Corectați marcajele temporale sau numerele formatate incorect din CSV și reîncărcați; munca deja importată va fi omisă.",
+        "person": "Angajat",
+        "preparing": "Se pregătește previzualizarea…",
+        "preview": "Previzualizare CSV",
+        "readFailed": "Fișierul selectat nu a putut fi citit",
+        "recheck": "Reverifică rândurile nerezolvate",
+        "rejectSelected": "Respinge rândurile selectate",
+        "reviewTitle": "Revizuire muncă finalizată din CSV",
+        "row": "Rând CSV",
+        "scanning": "Se pregătește revizuirea…",
+        "selectPage": "Selectează toate rândurile de pe această pagină",
+        "selectRow": "Selectează rândul CSV",
+        "sourcePlate": "Număr de înmatriculare sursă",
+        "sourceValue": "Valoare sursă",
+        "status": {
+          "accepted": "Acceptat",
+          "blocked": "Necesită atenție",
+          "commit_failed": "Necesită atenție",
+          "committed": "Importat",
+          "committing": "Se importă",
+          "needs_mapping": "Necesită atenție",
+          "rejected": "Respins",
+          "staged": "În așteptarea revizuirii"
+        },
+        "summary": {
+          "accepted": "Acceptat",
+          "imported": "Importat",
+          "rejected": "Respins",
+          "skipped": "Duplicate omise",
+          "total": "Total rânduri",
+          "unresolved": "Nerezolvat"
+        },
+        "tab": "Activități CSV",
+        "timezone": "Fus orar pentru marcajele temporale locale",
+        "timezoneHelp": "Necesar pentru marcajele temporale fără decalaj. Decalajele explicite, cum ar fi +02:00, au prioritate. Fusul orar al browserului nu este utilizat niciodată în mod implicit.",
+        "title": "Activități finalizate CSV",
+        "tooLarge": "Fișierele CSV trebuie să aibă maximum 500 KB",
+        "vehicle": "Utilizare vehicul",
+        "warning": {
+          "distance_above_limit": "Distanța depășește 1.500 km",
+          "driving_details_missing": "Lipsesc detaliile despre cursă",
+          "duplicate_will_skip": "Activitățile identice vor fi omise",
+          "speed_above_limit": "Viteza medie rezultată depășește 150 km/h",
+          "start_below_last_end": "Indexul de pornire este mai mic decât ultimul index final înregistrat",
+          "vehicle_on_other_live_work": "Vehiculul este utilizat într-o activitate în curs a altui angajat"
+        }
+      },
       "description": "Importați date de la furnizori acceptați, precum Clockodo și Clockin.",
       "review": {
         "billability": {
@@ -1437,7 +1528,20 @@
         },
         "title": "Revizuire import"
       },
+      "supportedSources": "Importați activități din fișiere CSV sau conectați furnizori acceptați, cum ar fi Clockodo și Clockin.",
       "title": "Importare date"
+    },
+    "kioskBadge": {
+      "errors": {
+        "badgeChanged": "Altcineva a modificat acest ecuson de chioșc între timp. Verificați starea acestuia și încercați din nou.",
+        "badgeExists": "Acest angajat are deja un ecuson de chioșc. Înlocuiți-l în schimb.",
+        "employeeInactive": "Doar angajații activi pot primi un ecuson de chioșc.",
+        "employeeNotFound": "Acest angajat nu a fost găsit.",
+        "failed": "Ceva nu a funcționat. Vă rugăm să încercați din nou.",
+        "noBadge": "Acest angajat nu are un ecuson de chioșc.",
+        "notAllowed": "Nu aveți permisiunea de a efectua această acțiune.",
+        "signInRequired": "Conectați-vă pentru a continua."
+      }
     },
     "kioskPin": {
       "errors": {
@@ -1460,6 +1564,8 @@
     },
     "kiosks": {
       "add": "Adăugare chioșc",
+      "badgeCameraOn": "Cameră ecuson activată",
+      "badgeScannerOn": "Scaner de ecusoane activat",
       "boardOn": "Panou de prezență activat",
       "columns": {
         "actions": "Acțiuni",
@@ -1489,6 +1595,10 @@
         "offlineNeedsAdoption": "Modul offline necesită comenzi de pontare coordonate, pe care această organizație nu le utilizează încă."
       },
       "fields": {
+        "badgeCamera": "Cameră pentru ecusoane",
+        "badgeCameraDescription": "Angajații apasă pe „Scanați ecusonul” și apropie ecusonul de chioșc de camera acestui chioșc în loc să își introducă codul PIN. Codul este citit pe dispozitiv; nicio imagine nu este încărcată sau stocată. Browserul solicită permisiunea de acces la cameră o singură dată. Pontajul cu ecuson necesită o conexiune; numele și codul PIN continuă să funcționeze.",
+        "badgeScanner": "Scaner de ecusoane",
+        "badgeScannerDescription": "Angajații își scanează ecusonul de chioșc cu un scaner QR conectat la acest chioșc în loc să își introducă codul PIN. Pontajul cu ecuson necesită o conexiune; numele și codul PIN continuă să funcționeze.",
         "board": "Panou de prezență",
         "boardDescription": "Afișează pe chioșc cine este prezent sau în pauză, după prenume și inițiala numelui.",
         "location": "Locație",

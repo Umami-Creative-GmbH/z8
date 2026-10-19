@@ -42,6 +42,9 @@
       "title": "Pronađite zahtjeve",
       "type": "Vrsta"
     },
+    "focus": {
+      "unavailable": "Ovaj zahtjev više nije na čekanju ili se ne može prikazati ovdje. Spremnost perioda se ponovo provjerava."
+    },
     "inReview": {
       "description": "Zahtjevi koji čekaju na odobrenje ili obradu.",
       "title": "U pregledu"

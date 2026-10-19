@@ -427,6 +427,7 @@
     "uploading": "Téléchargement...",
     "vacationAllowance": {
       "cappedAtFullAllowance": "plafonné au droit complet",
+      "convertedSummary": "{allowance} jours : {conversion}",
       "employmentMonths": "{months, plural, one {# mois complet d'emploi} other {# mois complets d'emploi}}",
       "lastWorkingDay": "dernier jour travaillé le {date}",
       "notEmployed": "{allowance} sur {fullAllowance} jours : non employé en {year}",
@@ -434,7 +435,10 @@
       "overdrawnHint": "Congés pris au-delà du droit. Affiché pour information uniquement : rien n'est déduit.",
       "proratedSummary": "{allowance} sur {fullAllowance} jours, au prorata : {details}",
       "started": "a débuté le {date}",
-      "statutoryMinimumApplies": "le minimum légal s'applique"
+      "statutoryMinimumApplies": "le minimum légal s'applique",
+      "workingDaysPerWeek": "{days, plural, one {# jour ouvré par semaine} other {# jours ouvrés par semaine}}",
+      "workingWeekConversion": "{reference} jours de référence convertis en {weeks}",
+      "workingWeekPeriod": "{week} du {start} au {end}"
     },
     "validate": "Valider",
     "validationError": "Erreur de validation",
@@ -929,6 +933,7 @@
     },
     "page": {
       "context": "L'inscription personnelle, la récupération et la sélection d'organisation restent accessibles tant que l'accès à l'organisation requiert une vérification.",
+      "description": "Vérifiez un moyen d'authentification pour conserver l'accès à vos organisations.",
       "title": "Vérification de sécurité"
     },
     "passkey": {
@@ -1311,6 +1316,42 @@
         "message": "Téléchargez vos données personnelles dans Mes données avant le {untilDate}. Passé ce délai, seul un administrateur pourra les exporter pour vous.",
         "title": "Téléchargez vos données personnelles avant votre départ"
       },
+      "personnelFileDocumentRequestAccepted": {
+        "message": "Vos documents pour « {title} » ont été acceptés.",
+        "title": "Documents acceptés"
+      },
+      "personnelFileDocumentRequestCancelled": {
+        "message": "La demande « {title} » a été annulée : {reason}",
+        "messageWithoutReason": "La demande « {title} » a été annulée.",
+        "title": "Demande de documents annulée"
+      },
+      "personnelFileDocumentRequestDueSoon": {
+        "message": "Veuillez téléverser \"{title}\" avant le {deadline}.",
+        "title": "Document bientôt à échéance"
+      },
+      "personnelFileDocumentRequestDueToday": {
+        "message": "Veuillez téléverser \"{title}\" aujourd'hui.",
+        "title": "Document à remettre aujourd'hui"
+      },
+      "personnelFileDocumentRequested": {
+        "message": "Veuillez téléverser \"{title}\" avant le {deadline}.",
+        "title": "Document demandé"
+      },
+      "personnelFileDocumentRequestOverdue": {
+        "message": "\"{title}\" était attendu le {deadline}. Veuillez le téléverser.",
+        "officerMessage": "{employee} n'a pas remis \"{title}\", attendu le {deadline}.",
+        "officerTitle": "Document demandé en retard",
+        "title": "Document en retard"
+      },
+      "personnelFileDocumentRequestReturned": {
+        "message": "Veuillez téléverser à nouveau \"{title}\" avant le {deadline} : {reason}",
+        "messageWithoutReason": "Veuillez téléverser à nouveau \"{title}\" avant le {deadline}.",
+        "title": "Documents renvoyés"
+      },
+      "personnelFileDocumentRequestSubmitted": {
+        "message": "{name} a soumis des documents pour \"{title}\". Veuillez les examiner.",
+        "title": "Documents soumis"
+      },
       "personnelFileDocumentShared": {
         "message": "Le document « {title} » a été partagé avec vous.",
         "title": "Nouveau document dans votre dossier du personnel"
@@ -1652,6 +1693,11 @@
         "personal_data_export_admin_exported": "Données personnelles exportées par un administrateur",
         "personal_data_export_ready": "Export des données personnelles prêt",
         "personal_data_export_reminder": "Téléchargez vos données avant votre départ",
+        "personnel_file_document_request_decided": "Demande de document acceptée, renvoyée ou annulée",
+        "personnel_file_document_requested": "Document requis de votre part",
+        "personnel_file_document_request_overdue": "Demande de document en retard",
+        "personnel_file_document_request_reminder": "Document demandé bientôt à échéance",
+        "personnel_file_document_request_submitted": "Documents demandés soumis (gestionnaires du dossier du personnel)",
         "skill_expired_today": "Compétence expirant aujourd'hui",
         "skill_expiry_upcoming": "Compétence expirant bientôt",
         "work_balance_adjustment_cancelled": "Ajustement du solde annulé",
@@ -3066,7 +3112,10 @@
     "theme-toggle": "Basculer le thème"
   },
   "vacationBalance": {
-    "previouslyTaken": "Comprend {days} jours déjà pris avant le suivi"
+    "conflictingPolicies": "Politiques de congés en conflit",
+    "missingPolicy": "Politique de congés manquante",
+    "previouslyTaken": "Comprend {days} jours déjà pris avant le suivi",
+    "zeroWorkingDays": "Planning de travail sans jours ouvrés"
   },
   "validation": {
     "first-name-required": "Le prénom est requis",

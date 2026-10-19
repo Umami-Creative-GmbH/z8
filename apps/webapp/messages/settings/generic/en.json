@@ -1,5 +1,19 @@
 {
   "settings": {
+    "approvalTriage": {
+      "correctionError": "Enter a whole number from 0 to 60 minutes.",
+      "correctionHelp": "Zero disables the small-correction fast lane, including zero-delta edits. Otherwise use 1–60 minutes; all required evidence must still be verified.",
+      "correctionLabel": "Small correction limit (minutes)",
+      "description": "Set when pending requests need attention and which small time corrections may use the fast lane. Risk rules and evidence requirements remain fixed.",
+      "save": "Save triage settings",
+      "saved": "Triage settings saved.",
+      "saveError": "Unable to save triage settings. Please try again.",
+      "staleError": "Enter a whole number from 1 to 720 hours.",
+      "staleHelp": "Pending requests become stale after this many elapsed hours (1–720). Weekends and daylight-saving changes do not pause the clock.",
+      "staleLabel": "Stale after (hours)",
+      "thresholds": "Triage thresholds",
+      "title": "Approval triage"
+    },
     "assignedLocations": {
       "added": "Assigned location added",
       "employeeDescription": "The locations this employee works at. Kiosks accept only employees assigned to their location.",
@@ -466,6 +480,7 @@
       },
       "historyEmpty": "No month has been closed yet.",
       "historyTitle": "History",
+      "locationNotFound": "This location no longer exists.",
       "monthsDescription": "Closing a month freezes its work, attribution and absences for payroll. Notes stay editable.",
       "monthsTitle": "Months",
       "nothingToClose": "Everyone in this scope is already closed for this month.",
@@ -481,9 +496,14 @@
       "reopenTitle": "Reopen {month}",
       "scope": {
         "all": "Everything",
+        "deletedLocation": "Deleted location",
         "deletedTeam": "Deleted team",
         "employees": "Selected employees",
-        "organization": "Organization"
+        "locationHelp": "Closes the whole month for everyone assigned to this location now, including former employees. Their work at other locations is frozen too. Employees assigned later are not covered.",
+        "locationNamed": "Location {name}",
+        "locations": "Locations",
+        "organization": "Organization",
+        "teams": "Teams"
       },
       "scopeLabel": "Close for",
       "teamNotFound": "This team no longer exists.",
@@ -1336,6 +1356,77 @@
       "title": "Implementation checklist"
     },
     "import": {
+      "csv": {
+        "acceptSelected": "Accept selected valid rows",
+        "applyMapping": "Apply mapping",
+        "chooseSource": "Choose a source value",
+        "chooseTarget": "Choose an existing record",
+        "commit": "Commit accepted rows",
+        "committing": "Importing accepted rows…",
+        "description": "Import one completed work period per row. Represent breaks as gaps between rows. Nothing is recorded until you review and accept it.",
+        "download": "Download CSV template",
+        "duplicateSkipped": "Skipped duplicate",
+        "existingEmployee": "Existing employee",
+        "existingVehicle": "Existing vehicle",
+        "file": "CSV file",
+        "fileTimezone": "Timezone for local timestamps",
+        "format": "Use UTF-8, comma separators and the template headers. Maximum 500 KB and 1,000 rows. Vehicle columns are optional; readings and distance use whole kilometres.",
+        "interval": "Event-local start and end",
+        "mappingHelp": "Mappings apply only to this batch and retain the original source values. Changing a mapping or rechecking resets acceptance on uncommitted rows.",
+        "mappingTitle": "Map source values to existing records",
+        "mappingType": "Mapping type",
+        "offsetsOnly": "explicit offsets only",
+        "organizationVehicle": "Organization vehicle",
+        "outcome": "Status and issues",
+        "ownVehicle": "Own vehicle",
+        "pages": "CSV review pages",
+        "partialHelp": "Accepted valid rows can be imported while other rows remain unresolved. Correct malformed timestamps or numbers in the CSV and re-upload; work already imported will be skipped.",
+        "person": "Employee",
+        "preparing": "Preparing preview…",
+        "preview": "Preview CSV",
+        "readFailed": "The selected file could not be read",
+        "recheck": "Recheck unresolved rows",
+        "rejectSelected": "Reject selected rows",
+        "reviewTitle": "Review CSV completed work",
+        "row": "CSV row",
+        "scanning": "Preparing the review…",
+        "selectPage": "Select all rows on this page",
+        "selectRow": "Select CSV row",
+        "sourcePlate": "Source plate",
+        "sourceValue": "Source value",
+        "status": {
+          "accepted": "Accepted",
+          "blocked": "Needs attention",
+          "commit_failed": "Needs attention",
+          "committed": "Imported",
+          "committing": "Importing",
+          "needs_mapping": "Needs attention",
+          "rejected": "Rejected",
+          "staged": "Awaiting review"
+        },
+        "summary": {
+          "accepted": "Accepted",
+          "imported": "Imported",
+          "rejected": "Rejected",
+          "skipped": "Skipped duplicates",
+          "total": "Total rows",
+          "unresolved": "Unresolved"
+        },
+        "tab": "CSV work",
+        "timezone": "Timezone for local timestamps",
+        "timezoneHelp": "Required for timestamps without an offset. Explicit offsets such as +02:00 take precedence. Your browser timezone is never used implicitly.",
+        "title": "CSV completed work",
+        "tooLarge": "CSV files must be at most 500 KB",
+        "vehicle": "Vehicle use",
+        "warning": {
+          "distance_above_limit": "Distance is above 1,500 km",
+          "driving_details_missing": "Driving details missing",
+          "duplicate_will_skip": "Identical work will be skipped",
+          "speed_above_limit": "Implied average speed is above 150 km/h",
+          "start_below_last_end": "Start reading is below the last recorded end reading",
+          "vehicle_on_other_live_work": "Vehicle is on another employee’s live work"
+        }
+      },
       "description": "Import data from supported providers like Clockodo and Clockin.",
       "review": {
         "billability": {
@@ -1437,7 +1528,20 @@
         },
         "title": "Import Review"
       },
+      "supportedSources": "Import work from CSV files or connect supported providers such as Clockodo and Clockin.",
       "title": "Import Data"
+    },
+    "kioskBadge": {
+      "errors": {
+        "badgeChanged": "Someone else changed this kiosk badge in the meantime. Check its status and try again.",
+        "badgeExists": "This employee already has a kiosk badge. Replace it instead.",
+        "employeeInactive": "Only active employees can receive a kiosk badge.",
+        "employeeNotFound": "This employee was not found.",
+        "failed": "Something went wrong. Please try again.",
+        "noBadge": "This employee has no kiosk badge.",
+        "notAllowed": "You are not allowed to do this.",
+        "signInRequired": "Sign in to continue."
+      }
     },
     "kioskPin": {
       "errors": {
@@ -1460,6 +1564,8 @@
     },
     "kiosks": {
       "add": "Add kiosk",
+      "badgeCameraOn": "Badge camera on",
+      "badgeScannerOn": "Badge scanner on",
       "boardOn": "Who-is-in board on",
       "columns": {
         "actions": "Actions",
@@ -1489,6 +1595,10 @@
         "offlineNeedsAdoption": "Offline mode needs coordinated clock commands, which this organization does not use yet."
       },
       "fields": {
+        "badgeCamera": "Badge camera",
+        "badgeCameraDescription": "Employees tap Scan badge and hold their kiosk badge to this kiosk's camera instead of entering their PIN. The code is read on the device; no image is uploaded or stored. The browser asks once for camera access. Badge clocking needs a connection; name and PIN keep working.",
+        "badgeScanner": "Badge scanner",
+        "badgeScannerDescription": "Employees scan their kiosk badge with a QR scanner attached to this kiosk instead of entering their PIN. Badge clocking needs a connection; name and PIN keep working.",
         "board": "Who-is-in board",
         "boardDescription": "Shows on the kiosk who is in or on break, by first name and last initial.",
         "location": "Location",

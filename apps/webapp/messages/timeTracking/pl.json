@@ -17,8 +17,33 @@
       "noCustomer": "Tylko praca nad projektem z klientem może być rozliczalna"
     },
     "breakInProgress": {
+      "connectionRequired": "Rozpoczęcie lub wznowienie przerwy wymaga połączenia z internetem.",
       "description": "Masz przerwę",
-      "since": "Na przerwie od {time}"
+      "endDay": "Zakończ dzień",
+      "errors": {
+        "alreadyOnBreak": "Jesteś już na przerwie.",
+        "breakChanged": "Twoja przerwa została zmieniona na innym urządzeniu. Rejestrator pokazuje teraz aktualny stan.",
+        "collision": "Ta przerwa koliduje z wcześniejszym wnioskiem. Odśwież i spróbuj ponownie.",
+        "refreshed": "Stan Twojego rejestratora uległ zmianie. Pokazuje teraz aktualny stan.",
+        "resumeNotAllowed": "Nie możesz wznowić tej przerwy.",
+        "resumeRetry": "Nie udało się wznowić pracy. Spróbuj ponownie.",
+        "resumeUnconfirmed": "Nie udało się potwierdzić wznowienia. Sprawdź rejestrator przed ponowną próbą.",
+        "startNotAllowed": "Nie możesz rozpocząć przerwy.",
+        "startRetry": "Nie udało się rozpocząć przerwy. Spróbuj ponownie.",
+        "tooEarly": "Przerwę można rozpocząć dopiero po rozpoczęciu pracy.",
+        "unconfirmed": "Nie udało się potwierdzić przerwy. Sprawdź rejestrator przed ponowną próbą.",
+        "workChanged": "Stan Twojego rejestratora zmienił się na innym urządzeniu. Pokazuje teraz aktualny stan."
+      },
+      "pendingClockActions": "Zapisane zdarzenia rejestratora są nadal wysyłane. Spróbuj ponownie po ich zsynchronizowaniu.",
+      "resume": "Wznów",
+      "resumed": "Wznowiono pracę",
+      "since": "Na przerwie od {time}",
+      "start": "Rozpocznij przerwę",
+      "started": "Rozpoczęto przerwę",
+      "startedDescription": "Wznów pracę po powrocie lub zakończ dzień.",
+      "trigger": "Na przerwie",
+      "uncertain": "Nie udało się potwierdzić przerwy",
+      "uncertainDescription": "Twój rejestrator został odświeżony. Sprawdź go przed ponowną próbą."
     },
     "budget": "Budżet",
     "clockedOutSuccess": "Wylogowano z systemu!",
@@ -147,9 +172,41 @@
         "resume": "Wznów pracę",
         "startBreak": "Rozpocznij przerwę"
       },
+      "attribution": {
+        "back": "Wstecz",
+        "keep": "Zachowaj {name}",
+        "noProject": "Brak projektu",
+        "noWorkCategory": "Brak kategorii pracy",
+        "project": "Projekt",
+        "title": "Nad czym pracowałeś(-aś)?",
+        "workCategory": "Kategoria pracy"
+      },
+      "badge": {
+        "checking": "Sprawdzanie identyfikatora…",
+        "failed": "Nie udało się sprawdzić identyfikatora. Nic nie zostało zarejestrowane. Zeskanuj go ponownie lub dotknij swojego nazwiska, aby użyć kodu PIN.",
+        "inputDisabled": "Skanowanie identyfikatorów jest wyłączone w tym kiosku. Dotknij swojego nazwiska, aby użyć kodu PIN.",
+        "notAccepted": "Ten identyfikator nie jest akceptowany w tym kiosku. Nic nie zostało zarejestrowane. Dotknij swojego nazwiska, aby użyć kodu PIN, lub skontaktuj się z przełożonym.",
+        "notRecorded": "Twoje działanie nie zostało zarejestrowane. Zeskanuj identyfikator ponownie, aby wybrać je jeszcze raz.",
+        "offline": "Rejestracja identyfikatorem wymaga połączenia. Nic nie zostało zarejestrowane.",
+        "offlinePin": "Rejestracja identyfikatorem wymaga połączenia. Nic nie zostało zarejestrowane. Dotknij swojego nazwiska, aby zarejestrować czas za pomocą kodu PIN.",
+        "rateLimited": "Zbyt wiele prób skanowania identyfikatora w tym kiosku. Spróbuj ponownie za {seconds} sek. lub dotknij swojego nazwiska, aby użyć kodu PIN.",
+        "unreadable": "Ten kod nie jest identyfikatorem kiosku. Nic nie zostało zarejestrowane. Zeskanuj swój identyfikator kiosku lub dotknij swojego nazwiska, aby użyć kodu PIN."
+      },
       "board": {
         "empty": "Nikt nie jest obecnie w pracy.",
         "title": "Kto jest w pracy"
+      },
+      "camera": {
+        "cancel": "Anuluj skanowanie",
+        "denied": "Kiosk nie może używać kamery. Zezwól na dostęp do kamery dla tej strony w przeglądarce lub dotknij swojego nazwiska, aby użyć kodu PIN.",
+        "failed": "Nie udało się uruchomić kamery. Spróbuj ponownie lub dotknij swojego nazwiska, aby użyć kodu PIN.",
+        "hint": "Trzymaj kod QR wewnątrz ramki. Kod jest odczytywany na tym kiosku; żadne zdjęcie nie jest zapisywane.",
+        "missing": "Ten kiosk nie ma kamery obsługującej skanowanie. Dotknij swojego nazwiska, aby użyć kodu PIN.",
+        "notBadge": "Ten kod nie jest identyfikatorem kiosku. Przyłóż identyfikator kiosku lub anuluj i dotknij swojego nazwiska, aby użyć kodu PIN.",
+        "preview": "Podgląd z kamery",
+        "starting": "Uruchamianie kamery…",
+        "title": "Przyłóż identyfikator kiosku do kamery",
+        "unsupported": "Ta przeglądarka nie może skanować identyfikatorów za pomocą kamery. Dotknij swojego nazwiska, aby użyć kodu PIN."
       },
       "done": {
         "button": "Gotowe",
@@ -174,6 +231,8 @@
         "loadFailed": "Nie udało się załadować nazwisk. Sprawdź połączenie z siecią.",
         "loading": "Wczytywanie nazwisk…",
         "noMatch": "Żadne nazwisko nie pasuje do wyszukiwania.",
+        "scanBadge": "Zeskanuj identyfikator",
+        "scanHint": "Lub zeskanuj swój identyfikator kiosku przy czytniku.",
         "search": "Znajdź swoje nazwisko",
         "title": "Dotknij swojego nazwiska, aby zarejestrować wejście lub wyjście"
       },
@@ -226,15 +285,19 @@
       },
       "refusal": {
         "alreadyClockedIn": "Masz już zarejestrowane wejście.",
+        "attemptClosed": "Ta czynność nie została zarejestrowana. Wybierz ją ponownie, jeśli nadal chcesz ją wykonać.",
         "billing": "Rejestracja czasu pracy jest obecnie niedostępna dla Twojej organizacji. Skontaktuj się z administratorem.",
         "generic": "To się nie powiodło. Nic nie zostało zarejestrowane. Spróbuj ponownie lub skontaktuj się z przełożonym.",
         "holiday": "Rejestracja czasu pracy jest dziś zablokowana ze względu na święto. Skontaktuj się z przełożonym.",
         "monthClosed": "Ten czas dotyczy zamkniętego miesiąca i nie można go zmienić. Skontaktuj się ze swoim przełożonym.",
         "noBreak": "Nie jesteś na przerwie.",
         "notClockedIn": "Nie masz zarejestrowanego wejścia.",
+        "notRecorded": "Twoja czynność nie została zarejestrowana. Wprowadź kod PIN, aby wybrać ją ponownie.",
         "onBreak": "Jesteś już na przerwie.",
+        "projectNotAllowed": "Dla tego projektu nie można już rejestrować czasu. Nic nie zostało zarejestrowane. Wybierz inny lub zachowaj bieżący i spróbuj ponownie.",
         "unconfirmed": "Kiosk nie mógł potwierdzić, czy zostało to zapisane. Sprawdź swój status przed ponowną próbą.",
-        "underReview": "Twój dzisiejszy czas pracy oczekuje na weryfikację. Skontaktuj się z przełożonym."
+        "underReview": "Twój dzisiejszy czas pracy oczekuje na weryfikację. Skontaktuj się z przełożonym.",
+        "workCategoryNotAllowed": "Dla tej kategorii pracy nie można już rejestrować czasu. Nic nie zostało zarejestrowane. Wybierz inną lub zachowaj bieżącą i spróbuj ponownie."
       },
       "retry": "Spróbuj ponownie",
       "revoked": {
@@ -246,6 +309,14 @@
         "clockedIn": "W pracy od {time}",
         "clockedOut": "Nie zarejestrowano wejścia",
         "onBreak": "Na przerwie od {time}"
+      },
+      "uncertain": {
+        "action": "{name}: {action}",
+        "back": "Wstecz",
+        "conflict": "Nie udało się sprawdzić tej czynności na tym kiosku. Sprawdź swój status u przełożonego przed ponowną rejestracją czasu.",
+        "title": "Sprawdzanie, czy Twoja czynność została zarejestrowana",
+        "unavailable": "W tej chwili nie można nawiązać połączenia z Z8. Kiosk nadal to sprawdza.",
+        "wait": "Nie rejestruj czasu ponownie. Kiosk nadal to sprawdza i wyświetli wynik, gdy tylko Z8 odpowie, również jeśli wrócisz później."
       },
       "unreachableDescription": "Kiosk nie może połączyć się z serwerem. Sprawdź połączenie sieciowe; rejestracja czasu pracy działa tylko w trybie online.",
       "unreachableTitle": "Kiosk offline",
@@ -336,18 +407,42 @@
     "periodSubmissions": {
       "blocker": {
         "absenceRequest": "Wniosek o nieobecność na {dates} nie został rozpatrzony.",
+        "absenceRequestAction": "Osoba zatwierdzająca podejmuje decyzję o tej nieobecności. W czasie oczekiwania możesz ją anulować w sekcji Moje wnioski.",
         "liveWork": "Praca rozpoczęta {start} nadal trwa.",
+        "liveWorkAction": "Zarejestruj wyjście po zakończeniu tej pracy.",
         "manualWork": "Ręczny czas pracy w dniu {start} oczekuje na decyzję.",
-        "timeCorrection": "Korekta czasu pracy z dnia {start} oczekuje na decyzję."
+        "manualWorkAction": "Osoba zatwierdzająca podejmuje decyzję o tej pracy. Nie musisz nic robić.",
+        "openClock": "Przejdź do zegara",
+        "openRequest": "Otwórz wniosek",
+        "openTimeline": "Pokaż na osi czasu",
+        "timeCorrection": "Korekta czasu pracy z dnia {start} oczekuje na decyzję.",
+        "timeCorrectionAction": "Osoba zatwierdzająca podejmuje decyzję o tej korekcie. W czasie oczekiwania możesz ją anulować w sekcji Moje wnioski.",
+        "timeCorrectionWaitAction": "Osoba zatwierdzająca podejmuje decyzję o tej korekcie. Możesz jedynie czekać na jej decyzję."
       },
       "description": "Potwierdź, że Twój czas pracy i nieobecności w każdym okresie są kompletne i prawidłowe.",
-      "opensOn": "Możesz przesłać od {date}.",
+      "focus": {
+        "notShown": "Tej pracy nie można tutaj wyświetlić. Gotowość okresu została sprawdzona ponownie.",
+        "resolved": "Ta praca nie sprawia już, że okres pozostaje otwarty. Gotowość okresu została sprawdzona ponownie."
+      },
+      "readiness": {
+        "checking": "Sprawdzanie, czy ten okres jest gotowy…",
+        "hideDetails": "Ukryj szczegóły",
+        "notReady": "Opcja „Prześlij” będzie dostępna, gdy ten okres będzie gotowy.",
+        "openItems": "{count, plural, one {# element sprawia, że ten okres pozostaje otwarty.} few {# elementy sprawiają, że ten okres pozostaje otwarty.} many {# elementów sprawia, że ten okres pozostaje otwarty.} other {# elementu sprawia, że ten okres pozostaje otwarty.}}",
+        "opensOn": "Przesyłanie będzie dostępne od {date}.",
+        "ready": "Gotowe do przesłania",
+        "retry": "Ponów próbę",
+        "showDetails": "Pokaż szczegóły",
+        "submitUnavailable": "Opcja „Prześlij” jest niedostępna, dopóki nie będzie można sprawdzić gotowości.",
+        "unavailable": "Gotowość do przesłania jest obecnie niedostępna, dlatego opcja „Prześlij” jest wyłączona."
+      },
       "refusal": {
         "alreadySubmitted": "Ten okres został już przesłany.",
         "noApprover": "Nikt nie może jeszcze zatwierdzić tego okresu. Poproś administratora o przypisanie Ci przełożonego.",
         "notEnded": "Możesz przesłać ten okres począwszy od jego ostatniego dnia.",
         "notExpected": "Ten okres nie wymaga przesyłania.",
-        "periodOpen": "Ten okres jest nadal otwarty"
+        "periodOpen": "Ten okres jest nadal otwarty",
+        "writeGateClosed": "Przesyłanie okresów w Twojej organizacji jest obecnie wstrzymane. Spróbuj ponownie później lub skontaktuj się z administratorem."
       },
       "rejectionReason": "Powód: {reason}",
       "status": {

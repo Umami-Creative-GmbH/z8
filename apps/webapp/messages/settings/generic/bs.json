@@ -1,5 +1,19 @@
 {
   "settings": {
+    "approvalTriage": {
+      "correctionError": "Unesite cijeli broj od 0 do 60 minuta.",
+      "correctionHelp": "Nula onemogućava brzu obradu malih ispravki, uključujući izmjene bez razlike. U suprotnom, unesite 1–60 minuta; svi potrebni dokazi i dalje moraju biti verifikovani.",
+      "correctionLabel": "Ograničenje za male ispravke (minute)",
+      "description": "Postavite kada zahtjevi na čekanju zahtijevaju pažnju i koje male vremenske ispravke mogu koristiti brzu obradu. Pravila o riziku i zahtjevi za dokazima ostaju fiksni.",
+      "save": "Sačuvaj postavke trijaže",
+      "saved": "Postavke trijaže su sačuvane.",
+      "saveError": "Nije moguće sačuvati postavke trijaže. Pokušajte ponovo.",
+      "staleError": "Unesite cijeli broj od 1 do 720 sati.",
+      "staleHelp": "Zahtjevi na čekanju postaju zastarjeli nakon ovoliko proteklih sati (1–720). Vikendi i promjene računanja vremena ne zaustavljaju sat.",
+      "staleLabel": "Zastarjelo nakon (sati)",
+      "thresholds": "Pragovi trijaže",
+      "title": "Trijaža odobrenja"
+    },
     "assignedLocations": {
       "added": "Dodijeljena lokacija je dodana",
       "employeeDescription": "Lokacije na kojima ovaj zaposlenik radi. Kiosci prihvataju samo zaposlenike dodijeljene njihovoj lokaciji.",
@@ -466,6 +480,7 @@
       },
       "historyEmpty": "Nijedan mjesec još nije zatvoren.",
       "historyTitle": "Historija",
+      "locationNotFound": "Ova lokacija više ne postoji.",
       "monthsDescription": "Zatvaranje mjeseca zamrzava radne sate, atribuciju i odsustva za obračun plata. Bilješke ostaju dostupne za uređivanje.",
       "monthsTitle": "Mjeseci",
       "nothingToClose": "Svi u ovom opsegu su već zatvoreni za ovaj mjesec.",
@@ -481,9 +496,14 @@
       "reopenTitle": "Ponovo otvori {month}",
       "scope": {
         "all": "Sve",
+        "deletedLocation": "Izbrisana lokacija",
         "deletedTeam": "Izbrisani tim",
         "employees": "Odabrani zaposlenici",
-        "organization": "Organizacija"
+        "locationHelp": "Zatvara cijeli mjesec za sve trenutno dodijeljene ovoj lokaciji, uključujući bivše zaposlenike. Njihov rad na drugim lokacijama također se zamrzava. Zaposlenici dodijeljeni kasnije nisu obuhvaćeni.",
+        "locationNamed": "Lokacija {name}",
+        "locations": "Lokacije",
+        "organization": "Organizacija",
+        "teams": "Timovi"
       },
       "scopeLabel": "Zatvori za",
       "teamNotFound": "Ovaj tim više ne postoji.",
@@ -1336,6 +1356,77 @@
       "title": "Kontrolna lista za implementaciju"
     },
     "import": {
+      "csv": {
+        "acceptSelected": "Prihvati odabrane važeće redove",
+        "applyMapping": "Primijeni mapiranje",
+        "chooseSource": "Odaberite izvornu vrijednost",
+        "chooseTarget": "Odaberite postojeći zapis",
+        "commit": "Potvrdi prihvaćene redove",
+        "committing": "Uvoz prihvaćenih redova…",
+        "description": "Uvezite jedan završeni radni period po redu. Pauze prikažite kao razmake između redova. Ništa se ne bilježi dok ne pregledate i ne prihvatite.",
+        "download": "Preuzmi CSV šablon",
+        "duplicateSkipped": "Preskočeni duplikat",
+        "existingEmployee": "Postojeći zaposlenik",
+        "existingVehicle": "Postojeće vozilo",
+        "file": "CSV datoteka",
+        "fileTimezone": "Vremenska zona za lokalne vremenske oznake",
+        "format": "Koristite UTF-8, zareze kao separatore i zaglavlja iz šablona. Maksimalno 500 KB i 1.000 redova. Kolone za vozila su opcionalne; očitanja i udaljenost koriste cijele kilometre.",
+        "interval": "Početak i kraj lokalno za događaj",
+        "mappingHelp": "Mapiranja se primjenjuju samo na ovu grupu i zadržavaju originalne izvorne vrijednosti. Promjena mapiranja ili ponovna provjera poništava prihvatanje na nepotvrđenim redovima.",
+        "mappingTitle": "Mapirajte izvorne vrijednosti na postojeće zapise",
+        "mappingType": "Vrsta mapiranja",
+        "offsetsOnly": "samo eksplicitni pomaci",
+        "organizationVehicle": "Vozilo organizacije",
+        "outcome": "Status i problemi",
+        "ownVehicle": "Vlastito vozilo",
+        "pages": "Stranice za pregled CSV-a",
+        "partialHelp": "Prihvaćeni važeći redovi mogu se uvesti dok ostali redovi ostaju neriješeni. Ispravite neispravne vremenske oznake ili brojeve u CSV-u i ponovo ga prenesite; već uvezeni rad će biti preskočen.",
+        "person": "Zaposlenik",
+        "preparing": "Priprema pregleda…",
+        "preview": "Pregledaj CSV",
+        "readFailed": "Odabranu datoteku nije moguće pročitati",
+        "recheck": "Ponovo provjeri neriješene redove",
+        "rejectSelected": "Odbij odabrane redove",
+        "reviewTitle": "Pregledaj završeni rad iz CSV-a",
+        "row": "CSV red",
+        "scanning": "Priprema pregleda…",
+        "selectPage": "Odaberi sve redove na ovoj stranici",
+        "selectRow": "Odaberi CSV red",
+        "sourcePlate": "Izvorna registarska tablica",
+        "sourceValue": "Izvorna vrijednost",
+        "status": {
+          "accepted": "Prihvaćeno",
+          "blocked": "Zahtijeva pažnju",
+          "commit_failed": "Zahtijeva pažnju",
+          "committed": "Uvezeno",
+          "committing": "Uvoz u toku",
+          "needs_mapping": "Zahtijeva pažnju",
+          "rejected": "Odbijeno",
+          "staged": "Čeka na pregled"
+        },
+        "summary": {
+          "accepted": "Prihvaćeno",
+          "imported": "Uvezeno",
+          "rejected": "Odbijeno",
+          "skipped": "Preskočeni duplikati",
+          "total": "Ukupno redova",
+          "unresolved": "Neriješeno"
+        },
+        "tab": "CSV rad",
+        "timezone": "Vremenska zona za lokalne vremenske oznake",
+        "timezoneHelp": "Obavezno za vremenske oznake bez pomaka. Izričiti pomaci kao što je +02:00 imaju prednost. Vremenska zona vašeg preglednika nikada se ne koristi implicitno.",
+        "title": "CSV završeni rad",
+        "tooLarge": "CSV datoteke moraju imati najviše 500 KB",
+        "vehicle": "Korištenje vozila",
+        "warning": {
+          "distance_above_limit": "Udaljenost je veća od 1.500 km",
+          "driving_details_missing": "Nedostaju detalji o vožnji",
+          "duplicate_will_skip": "Identičan rad će biti preskočen",
+          "speed_above_limit": "Pretpostavljena prosječna brzina je iznad 150 km/h",
+          "start_below_last_end": "Početno stanje je manje od posljednjeg zabilježenog završnog stanja",
+          "vehicle_on_other_live_work": "Vozilo je na aktivnom radu drugog zaposlenika"
+        }
+      },
       "description": "Uvezite podatke od podržanih pružalaca usluga poput Clockodo i Clockin.",
       "review": {
         "billability": {
@@ -1437,7 +1528,20 @@
         },
         "title": "Pregled uvoza"
       },
+      "supportedSources": "Uvezite rad iz CSV datoteka ili povežite podržane pružaoce usluga kao što su Clockodo i Clockin.",
       "title": "Uvoz podataka"
+    },
+    "kioskBadge": {
+      "errors": {
+        "badgeChanged": "Neko drugi je u međuvremenu promijenio ovaj bedž za kiosk. Provjerite njegov status i pokušajte ponovo.",
+        "badgeExists": "Ovaj zaposlenik već ima bedž za kiosk. Umjesto toga ga zamijenite.",
+        "employeeInactive": "Samo aktivni zaposlenici mogu dobiti bedž za kiosk.",
+        "employeeNotFound": "Ovaj zaposlenik nije pronađen.",
+        "failed": "Nešto je pošlo po zlu. Pokušajte ponovo.",
+        "noBadge": "Ovaj zaposlenik nema bedž za kiosk.",
+        "notAllowed": "Nemate dozvolu za ovu radnju.",
+        "signInRequired": "Prijavite se za nastavak."
+      }
     },
     "kioskPin": {
       "errors": {
@@ -1460,6 +1564,8 @@
     },
     "kiosks": {
       "add": "Dodaj kiosk",
+      "badgeCameraOn": "Kamera za bedževe uključena",
+      "badgeScannerOn": "Skener bedževa uključen",
       "boardOn": "Pregled prisutnosti uključen",
       "columns": {
         "actions": "Radnje",
@@ -1489,6 +1595,10 @@
         "offlineNeedsAdoption": "Offline način rada zahtijeva koordinirane komande za evidenciju radnog vremena, koje ova organizacija još ne koristi."
       },
       "fields": {
+        "badgeCamera": "Kamera za bedževe",
+        "badgeCameraDescription": "Zaposlenici dodirnu „Skeniraj bedž“ i prislone svoj bedž za kiosk kameri ovog kioska umjesto unosa PIN-a. Kod se očitava na uređaju; nijedna slika se ne prenosi niti pohranjuje. Preglednik jednom traži pristup kameri. Evidentiranje putem bedža zahtijeva vezu; ime i PIN nastavljaju raditi.",
+        "badgeScanner": "Skener bedževa",
+        "badgeScannerDescription": "Zaposlenici skeniraju svoj bedž za kiosk pomoću QR skenera povezanog s ovim kioskom umjesto unosa PIN-a. Evidentiranje putem bedža zahtijeva vezu; ime i PIN nastavljaju raditi.",
         "board": "Pregled prisutnosti",
         "boardDescription": "Prikazuje na kiosku ko je prisutan ili na pauzi, prema imenu i početnom slovu prezimena.",
         "location": "Lokacija",

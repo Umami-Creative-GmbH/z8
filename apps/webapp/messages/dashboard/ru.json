@@ -172,7 +172,6 @@
       "label-available": "Доступно",
       "label-pending": "На рассмотрении",
       "label-used": "Использовано",
-      "no-policy": "На этот год не настроена политика отпусков",
       "pending": "{days} на рассмотрении",
       "percent-used": "{percent}% использовано",
       "title": "Баланс отпуска",

@@ -1,5 +1,19 @@
 {
   "settings": {
+    "approvalTriage": {
+      "correctionError": "Saisissez un nombre entier compris entre 0 et 60 minutes.",
+      "correctionHelp": "Zéro désactive la voie rapide pour les petites corrections, y compris les modifications sans variation. Sinon, utilisez une valeur de 1 à 60 minutes ; tous les justificatifs requis doivent tout de même être vérifiés.",
+      "correctionLabel": "Limite pour petite correction (minutes)",
+      "description": "Définissez le moment où les demandes en attente requièrent une attention et quelles petites corrections d'horaires peuvent emprunter la voie rapide. Les règles de risque et les exigences de justificatifs restent inchangées.",
+      "save": "Enregistrer les paramètres de tri",
+      "saved": "Paramètres de tri enregistrés.",
+      "saveError": "Impossible d'enregistrer les paramètres de tri. Veuillez réessayer.",
+      "staleError": "Saisissez un nombre entier compris entre 1 et 720 heures.",
+      "staleHelp": "Les demandes en attente deviennent obsolètes après ce nombre d'heures écoulées (1 à 720). Les week-ends et les changements d'heure n'interrompent pas le décompte.",
+      "staleLabel": "Obsolète après (heures)",
+      "thresholds": "Seuils de tri",
+      "title": "Tri des approbations"
+    },
     "assignedLocations": {
       "added": "Lieu attribué ajouté",
       "employeeDescription": "Les lieux où travaille cet employé. Les bornes acceptent uniquement les employés attribués à leur lieu.",
@@ -466,6 +480,7 @@
       },
       "historyEmpty": "Aucun mois n'a encore été clôturé.",
       "historyTitle": "Historique",
+      "locationNotFound": "Cet emplacement n'existe plus.",
       "monthsDescription": "Clôturer un mois fige le travail, l'attribution et les absences pour la paie. Les notes restent modifiables.",
       "monthsTitle": "Mois",
       "nothingToClose": "Toutes les personnes de ce périmètre sont déjà clôturées pour ce mois.",
@@ -481,9 +496,14 @@
       "reopenTitle": "Rouvrir {month}",
       "scope": {
         "all": "Tout",
+        "deletedLocation": "Emplacement supprimé",
         "deletedTeam": "Équipe supprimée",
         "employees": "Employés sélectionnés",
-        "organization": "Organisation"
+        "locationHelp": "Clôture l'ensemble du mois pour toutes les personnes actuellement affectées à cet emplacement, y compris les anciens employés. Leur travail sur d'autres emplacements est également gelé. Les employés affectés ultérieurement ne sont pas concernés.",
+        "locationNamed": "Emplacement {name}",
+        "locations": "Emplacements",
+        "organization": "Organisation",
+        "teams": "Équipes"
       },
       "scopeLabel": "Clôturer pour",
       "teamNotFound": "Cette équipe n'existe plus.",
@@ -1336,6 +1356,77 @@
       "title": "Liste de contrôle d'implémentation"
     },
     "import": {
+      "csv": {
+        "acceptSelected": "Accepter les lignes valides sélectionnées",
+        "applyMapping": "Appliquer le mappage",
+        "chooseSource": "Choisir une valeur source",
+        "chooseTarget": "Choisir un enregistrement existant",
+        "commit": "Valider les lignes acceptées",
+        "committing": "Importation des lignes acceptées…",
+        "description": "Importez une période de travail effectuée par ligne. Indiquez les pauses sous forme d'intervalles entre les lignes. Rien n'est enregistré tant que vous ne l'avez pas vérifié et accepté.",
+        "download": "Télécharger le modèle CSV",
+        "duplicateSkipped": "Doublon ignoré",
+        "existingEmployee": "Employé existant",
+        "existingVehicle": "Véhicule existant",
+        "file": "Fichier CSV",
+        "fileTimezone": "Fuseau horaire pour les horodatages locaux",
+        "format": "Utilisez l'encodage UTF-8, des virgules comme séparateurs et les en-têtes du modèle. 500 Ko et 1 000 lignes au maximum. Les colonnes de véhicule sont facultatives ; les relevés et la distance utilisent des kilomètres entiers.",
+        "interval": "Début et fin locaux de l'événement",
+        "mappingHelp": "Les mappages s'appliquent uniquement à ce lot et conservent les valeurs sources d'origine. La modification d'un mappage ou une nouvelle vérification réinitialise l'acceptation des lignes non validées.",
+        "mappingTitle": "Associer les valeurs sources aux enregistrements existants",
+        "mappingType": "Type de mappage",
+        "offsetsOnly": "décalages explicites uniquement",
+        "organizationVehicle": "Véhicule de l'organisation",
+        "outcome": "Statut et problèmes",
+        "ownVehicle": "Véhicule personnel",
+        "pages": "Pages de vérification du CSV",
+        "partialHelp": "Les lignes valides acceptées peuvent être importées tandis que d'autres lignes restent non résolues. Corrigez les horodatages ou les nombres mal formatés dans le CSV et importez-le à nouveau ; le travail déjà importé sera ignoré.",
+        "person": "Employé",
+        "preparing": "Préparation de l'aperçu…",
+        "preview": "Aperçu du CSV",
+        "readFailed": "Le fichier sélectionné n'a pas pu être lu",
+        "recheck": "Revérifier les lignes non résolues",
+        "rejectSelected": "Rejeter les lignes sélectionnées",
+        "reviewTitle": "Vérifier le travail effectué dans le CSV",
+        "row": "Ligne CSV",
+        "scanning": "Préparation de la vérification…",
+        "selectPage": "Sélectionner toutes les lignes de cette page",
+        "selectRow": "Sélectionner la ligne CSV",
+        "sourcePlate": "Plaque d'immatriculation source",
+        "sourceValue": "Valeur source",
+        "status": {
+          "accepted": "Accepté",
+          "blocked": "Nécessite une attention particulière",
+          "commit_failed": "Nécessite une attention particulière",
+          "committed": "Importé",
+          "committing": "Importation en cours",
+          "needs_mapping": "Nécessite une attention particulière",
+          "rejected": "Rejeté",
+          "staged": "En attente de révision"
+        },
+        "summary": {
+          "accepted": "Accepté",
+          "imported": "Importé",
+          "rejected": "Rejeté",
+          "skipped": "Doublons ignorés",
+          "total": "Nombre total de lignes",
+          "unresolved": "Non résolu"
+        },
+        "tab": "Travaux CSV",
+        "timezone": "Fuseau horaire pour les horodatages locaux",
+        "timezoneHelp": "Requis pour les horodatages sans décalage. Les décalages explicites comme +02:00 ont la priorité. Le fuseau horaire de votre navigateur n'est jamais utilisé implicitement.",
+        "title": "Travaux terminés CSV",
+        "tooLarge": "La taille des fichiers CSV ne doit pas dépasser 500 Ko",
+        "vehicle": "Utilisation du véhicule",
+        "warning": {
+          "distance_above_limit": "La distance est supérieure à 1 500 km",
+          "driving_details_missing": "Détails de conduite manquants",
+          "duplicate_will_skip": "Les travaux identiques seront ignorés",
+          "speed_above_limit": "La vitesse moyenne implicite est supérieure à 150 km/h",
+          "start_below_last_end": "Le relevé de départ est inférieur au dernier relevé d'arrivée enregistré",
+          "vehicle_on_other_live_work": "Le véhicule est associé à une session en cours d'un autre employé"
+        }
+      },
       "description": "Importez des données depuis des fournisseurs pris en charge tels que Clockodo et Clockin.",
       "review": {
         "billability": {
@@ -1437,7 +1528,20 @@
         },
         "title": "Examen de l'importation"
       },
+      "supportedSources": "Importez du travail à partir de fichiers CSV ou connectez des fournisseurs pris en charge tels que Clockodo et Clockin.",
       "title": "Importer des données"
+    },
+    "kioskBadge": {
+      "errors": {
+        "badgeChanged": "Quelqu'un d'autre a modifié ce badge de borne entre-temps. Vérifiez son statut et réessayez.",
+        "badgeExists": "Cet employé possède déjà un badge de borne. Remplacez-le plutôt.",
+        "employeeInactive": "Seuls les employés actifs peuvent recevoir un badge de borne.",
+        "employeeNotFound": "Cet employé est introuvable.",
+        "failed": "Un problème est survenu. Veuillez réessayer.",
+        "noBadge": "Cet employé n'a pas de badge de borne.",
+        "notAllowed": "Vous n'êtes pas autorisé à faire cela.",
+        "signInRequired": "Connectez-vous pour continuer."
+      }
     },
     "kioskPin": {
       "errors": {
@@ -1460,6 +1564,8 @@
     },
     "kiosks": {
       "add": "Ajouter une borne",
+      "badgeCameraOn": "Caméra pour badge activée",
+      "badgeScannerOn": "Lecteur de badge activé",
       "boardOn": "Tableau des présences activé",
       "columns": {
         "actions": "Actions",
@@ -1489,6 +1595,10 @@
         "offlineNeedsAdoption": "Le mode hors ligne nécessite des commandes de pointage coordonnées, que cette organisation n'utilise pas encore."
       },
       "fields": {
+        "badgeCamera": "Caméra pour badge",
+        "badgeCameraDescription": "Les employés appuient sur Scanner le badge et présentent leur badge de borne devant la caméra de cette borne au lieu de saisir leur code PIN. Le code est lu directement sur l'appareil ; aucune image n'est importée ni enregistrée. Le navigateur demande une seule fois l'accès à la caméra. Le pointage par badge nécessite une connexion ; le nom et le code PIN continuent de fonctionner.",
+        "badgeScanner": "Lecteur de badge",
+        "badgeScannerDescription": "Les employés scannent leur badge de borne à l'aide d'un lecteur QR connecté à cette borne au lieu de saisir leur code PIN. Le pointage par badge nécessite une connexion ; le nom et le code PIN continuent de fonctionner.",
         "board": "Tableau des présences",
         "boardDescription": "Affiche sur la borne qui est présent ou en pause, par son prénom et l'initiale de son nom.",
         "location": "Emplacement",

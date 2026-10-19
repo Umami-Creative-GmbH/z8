@@ -427,6 +427,7 @@
     "uploading": "Загрузка...",
     "vacationAllowance": {
       "cappedAtFullAllowance": "ограничено полной нормой",
+      "convertedSummary": "{allowance} дн.: {conversion}",
       "employmentMonths": "{months, plural, one {# полный месяц работы} few {# полных месяца работы} other {# полных месяцев работы} }",
       "lastWorkingDay": "последний рабочий день: {date}",
       "notEmployed": "{allowance} из {fullAllowance} дн.: не трудоустроен(а) в {year} г.",
@@ -434,7 +435,10 @@
       "overdrawnHint": "Отпуск, взятый сверх нормы. Отображается только для информации: вычеты не производятся.",
       "proratedSummary": "{allowance} из {fullAllowance} дн., пропорционально: {details}",
       "started": "начало работы: {date}",
-      "statutoryMinimumApplies": "применяется установленный законом минимум"
+      "statutoryMinimumApplies": "применяется установленный законом минимум",
+      "workingDaysPerWeek": "{days, plural, one {# рабочий день в неделю} few {# рабочих дня в неделю} other {# рабочих дней в неделю} }",
+      "workingWeekConversion": "{reference} базовых дней переведено в {weeks}",
+      "workingWeekPeriod": "{week} с {start} по {end}"
     },
     "validate": "Проверить",
     "validationError": "Ошибка валидации",
@@ -929,6 +933,7 @@
     },
     "page": {
       "context": "Личная регистрация, восстановление и выбор организации остаются доступными, пока доступ к организации требует подтверждения.",
+      "description": "Подтвердите средство аутентификации, чтобы сохранить доступ к вашим организациям.",
       "title": "Проверка безопасности"
     },
     "passkey": {
@@ -1311,6 +1316,42 @@
         "message": "Скачайте свои персональные данные в разделе «Мои данные» до {untilDate}. После этого экспортировать их сможет только администратор.",
         "title": "Скачайте персональные данные перед уходом"
       },
+      "personnelFileDocumentRequestAccepted": {
+        "message": "Ваши документы для «{title}» приняты.",
+        "title": "Документы приняты"
+      },
+      "personnelFileDocumentRequestCancelled": {
+        "message": "Запрос «{title}» отменен: {reason}",
+        "messageWithoutReason": "Запрос «{title}» отменен.",
+        "title": "Запрос документов отменен"
+      },
+      "personnelFileDocumentRequestDueSoon": {
+        "message": "Пожалуйста, загрузите «{title}» до {deadline}.",
+        "title": "Скоро истекает срок подачи документа"
+      },
+      "personnelFileDocumentRequestDueToday": {
+        "message": "Пожалуйста, загрузите «{title}» сегодня.",
+        "title": "Срок подачи документа истекает сегодня"
+      },
+      "personnelFileDocumentRequested": {
+        "message": "Пожалуйста, загрузите «{title}» до {deadline}.",
+        "title": "Запрошен документ"
+      },
+      "personnelFileDocumentRequestOverdue": {
+        "message": "Срок подачи документа «{title}» истек {deadline}. Пожалуйста, загрузите его.",
+        "officerMessage": "Сотрудник {employee} не предоставил документ «{title}», срок сдачи которого истек {deadline}.",
+        "officerTitle": "Срок подачи запрошенного документа истек",
+        "title": "Срок подачи документа истек"
+      },
+      "personnelFileDocumentRequestReturned": {
+        "message": "Пожалуйста, загрузите «{title}» повторно до {deadline}: {reason}",
+        "messageWithoutReason": "Пожалуйста, загрузите «{title}» повторно до {deadline}.",
+        "title": "Документы возвращены"
+      },
+      "personnelFileDocumentRequestSubmitted": {
+        "message": "{name} предоставил(а) документы для «{title}». Пожалуйста, проверьте их.",
+        "title": "Документы отправлены"
+      },
       "personnelFileDocumentShared": {
         "message": "Вам предоставлен доступ к документу «{title}».",
         "title": "Новый документ в вашем личном деле"
@@ -1652,6 +1693,11 @@
         "personal_data_export_admin_exported": "Персональные данные экспортированы администратором",
         "personal_data_export_ready": "Экспорт персональных данных готов",
         "personal_data_export_reminder": "Скачайте свои данные перед уходом",
+        "personnel_file_document_request_decided": "Запрос документа принят, возвращен или отменен",
+        "personnel_file_document_requested": "У вас запрошен документ",
+        "personnel_file_document_request_overdue": "Срок запроса документа истек",
+        "personnel_file_document_request_reminder": "Скоро истекает срок подачи запрошенного документа",
+        "personnel_file_document_request_submitted": "Запрошенные документы отправлены (ответственные за личные дела)",
         "skill_expired_today": "Срок действия навыка истекает сегодня",
         "skill_expiry_upcoming": "Срок действия навыка скоро истекает",
         "work_balance_adjustment_cancelled": "Корректировка баланса отменена",
@@ -3066,7 +3112,10 @@
     "theme-toggle": "Переключить тему"
   },
   "vacationBalance": {
-    "previouslyTaken": "Включает {days} дн., использованных до начала учета"
+    "conflictingPolicies": "Конфликт правил предоставления отпусков",
+    "missingPolicy": "Отсутствует правило предоставления отпусков",
+    "previouslyTaken": "Включает {days} дн., использованных до начала учета",
+    "zeroWorkingDays": "График работы без рабочих дней"
   },
   "validation": {
     "first-name-required": "Имя обязательно для заполнения",

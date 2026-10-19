@@ -165,11 +165,13 @@
         "selectWorkCategory": "Velg arbeidskategori",
         "sourceType": "Kildetype",
         "specialCategory": "Spesialkategori",
+        "subtitle": "Koble arbeidskategorier og fraværstyper til koder for lønnsarter",
         "table": {
           "category": "Kategori",
           "datev": "DATEV",
           "lexware": "Lexware",
           "sage": "Sage",
+          "successFactors": "SAP SuccessFactors",
           "type": "Type"
         },
         "title": "Lønnsarttilordninger",
@@ -238,9 +240,7 @@
         "title": "Sage Payroll"
       },
       "specialCategory": {
-        "holidayCompensation": "Feriekompensasjon",
-        "overtime": "Overtid",
-        "overtimeReduction": "Overtidsreduksjon"
+        "overtime": "Overtid"
       },
       "successfactors": {
         "batchSize": "Batch-størrelse",

@@ -17,8 +17,33 @@
       "noCustomer": "Endast arbete på ett projekt med en kund kan vara fakturerbart"
     },
     "breakInProgress": {
+      "connectionRequired": "Att starta eller återuppta en paus kräver en anslutning.",
       "description": "Du har rast",
-      "since": "På rast sedan {time}"
+      "endDay": "Avsluta dagen",
+      "errors": {
+        "alreadyOnBreak": "Du har redan en paus.",
+        "breakChanged": "Din paus ändrades på en annan enhet. Din stämpelklocka visar nu aktuell status.",
+        "collision": "Denna paus krockar med en tidigare förfrågan. Uppdatera och försök igen.",
+        "refreshed": "Din stämpelklocka har ändrats. Den visar nu aktuell status.",
+        "resumeNotAllowed": "Du kan inte återuppta denna paus.",
+        "resumeRetry": "Det gick inte att återuppta arbetet. Försök igen.",
+        "resumeUnconfirmed": "Återupptagandet kunde inte bekräftas. Kontrollera din stämpelklocka innan du försöker igen.",
+        "startNotAllowed": "Du kan inte starta en paus.",
+        "startRetry": "Det gick inte att starta din paus. Försök igen.",
+        "tooEarly": "En paus kan bara startas efter att ditt arbete har börjat.",
+        "unconfirmed": "Din paus kunde inte bekräftas. Kontrollera din stämpelklocka innan du försöker igen.",
+        "workChanged": "Din stämpelklocka ändrades på en annan enhet. Den visar nu aktuell status."
+      },
+      "pendingClockActions": "Sparade stämplingsåtgärder skickas fortfarande. Försök igen när de har synkroniserats.",
+      "resume": "Återuppta",
+      "resumed": "Arbetet har återupptagits",
+      "since": "På rast sedan {time}",
+      "start": "Starta paus",
+      "started": "Paus startad",
+      "startedDescription": "Återuppta när du är tillbaka, eller avsluta dagen.",
+      "trigger": "På paus",
+      "uncertain": "Din paus kunde inte bekräftas",
+      "uncertainDescription": "Din stämpelklocka har uppdaterats. Kontrollera den innan du försöker igen."
     },
     "budget": "Budget",
     "clockedOutSuccess": "Du har stämplat ut!",
@@ -147,9 +172,41 @@
         "resume": "Återuppta arbete",
         "startBreak": "Starta rast"
       },
+      "attribution": {
+        "back": "Tillbaka",
+        "keep": "Behåll {name}",
+        "noProject": "Inget projekt",
+        "noWorkCategory": "Ingen arbetskategori",
+        "project": "Projekt",
+        "title": "Vad arbetade du med?",
+        "workCategory": "Arbetskategori"
+      },
+      "badge": {
+        "checking": "Kontrollerar din bricka…",
+        "failed": "Brickan kunde inte kontrolleras. Inget registrerades. Skanna den igen eller tryck på ditt namn för att använda din PIN-kod.",
+        "inputDisabled": "Brickskanning är avstängd på denna kiosk. Tryck på ditt namn för att använda din PIN-kod.",
+        "notAccepted": "Den här brickan accepteras inte på denna kiosk. Inget registrerades. Tryck på ditt namn för att använda din PIN-kod, eller fråga din chef.",
+        "notRecorded": "Din åtgärd registrerades inte. Skanna din bricka igen för att välja den på nytt.",
+        "offline": "Stämpling med bricka kräver en anslutning. Inget registrerades.",
+        "offlinePin": "Stämpling med bricka kräver en anslutning. Inget registrerades. Tryck på ditt namn för att stämpla med din PIN-kod.",
+        "rateLimited": "För många brickskanningar på denna kiosk. Försök igen om {seconds} sekunder eller tryck på ditt namn för att använda din PIN-kod.",
+        "unreadable": "Den här koden är inte en kioskbricka. Inget registrerades. Skanna din kioskbricka eller tryck på ditt namn för att använda din PIN-kod."
+      },
       "board": {
         "empty": "Ingen är instämplad just nu.",
         "title": "Vilka är här"
+      },
+      "camera": {
+        "cancel": "Avbryt skanning",
+        "denied": "Kiosken har inte tillåtelse att använda kameran. Tillåt kameraåtkomst för den här sidan i webbläsaren, eller tryck på ditt namn för att använda din PIN-kod.",
+        "failed": "Det gick inte att starta kameran. Försök igen eller tryck på ditt namn för att använda din PIN-kod.",
+        "hint": "Håll QR-koden inom ramen. Koden läses av på den här kiosken, ingen bild sparas.",
+        "missing": "Den här kiosken har ingen kamera som kan skanna. Tryck på ditt namn för att använda din PIN-kod.",
+        "notBadge": "Den här koden är ingen kioskbricka. Håll upp din kioskbricka, eller avbryt och tryck på ditt namn för att använda din PIN-kod.",
+        "preview": "Kameraförhandsgranskning",
+        "starting": "Startar kameran…",
+        "title": "Håll upp din kioskbricka mot kameran",
+        "unsupported": "Den här webbläsaren kan inte skanna brickor med kameran. Tryck på ditt namn för att använda din PIN-kod."
       },
       "done": {
         "button": "Klar",
@@ -174,6 +231,8 @@
         "loadFailed": "Namnen kunde inte läsas in. Kontrollera nätverksanslutningen.",
         "loading": "Läser in namn…",
         "noMatch": "Inget namn matchar din sökning.",
+        "scanBadge": "Skanna bricka",
+        "scanHint": "Eller skanna din kioskbricka vid skannern.",
         "search": "Hitta ditt namn",
         "title": "Tryck på ditt namn för att stämpla in eller ut"
       },
@@ -226,15 +285,19 @@
       },
       "refusal": {
         "alreadyClockedIn": "Du är redan instämplad.",
+        "attemptClosed": "Den här åtgärden registrerades inte. Välj den igen om du fortfarande vill utföra den.",
         "billing": "Stämpling är inte tillgänglig för din organisation just nu. Kontakta din administratör.",
         "generic": "Det fungerade inte. Ingenting registrerades. Försök igen eller fråga din chef.",
         "holiday": "Stämpling är blockerad idag på grund av en helgdag. Fråga din chef.",
         "monthClosed": "Den här tiden är i en stängd månad och kan inte ändras. Fråga din chef.",
         "noBreak": "Du är inte på rast.",
         "notClockedIn": "Du är inte instämplad.",
+        "notRecorded": "Din åtgärd registrerades inte. Ange din PIN-kod för att välja den igen.",
         "onBreak": "Du är redan på rast.",
+        "projectNotAllowed": "Det här projektet kan inte längre bokas. Inget registrerades. Välj ett annat, eller behåll det nuvarande och försök igen.",
         "unconfirmed": "Kiosken kunde inte bekräfta om detta sparades. Kontrollera din status innan du försöker igen.",
-        "underReview": "Din tid för idag granskas. Fråga din chef."
+        "underReview": "Din tid för idag granskas. Fråga din chef.",
+        "workCategoryNotAllowed": "Den här arbetskategorin kan inte längre bokas. Inget registrerades. Välj en annan, eller behåll den nuvarande och försök igen."
       },
       "retry": "Försök igen",
       "revoked": {
@@ -246,6 +309,14 @@
         "clockedIn": "Instämplad sedan {time}",
         "clockedOut": "Inte instämplad",
         "onBreak": "På rast sedan {time}"
+      },
+      "uncertain": {
+        "action": "{name}: {action}",
+        "back": "Tillbaka",
+        "conflict": "Den här åtgärden kunde inte kontrolleras på den här kiosken. Kontrollera din status med din chef innan du stämplar igen.",
+        "title": "Kontrollerar om din åtgärd registrerades",
+        "unavailable": "Z8 kan inte nås just nu. Kiosken fortsätter att kontrollera.",
+        "wait": "Stämpla inte igen. Kiosken fortsätter att kontrollera och visar resultatet så snart Z8 svarar, även om du kommer tillbaka senare."
       },
       "unreachableDescription": "Kiosken kan inte nå servern. Kontrollera nätverksanslutningen; stämpling fungerar endast online.",
       "unreachableTitle": "Kiosk offline",
@@ -336,18 +407,42 @@
     "periodSubmissions": {
       "blocker": {
         "absenceRequest": "En frånvaroansökan för {dates} är oavgjord.",
+        "absenceRequestAction": "En godkännare beslutar om denna frånvaro. Under tiden den väntar kan du avbryta den i Mina förfrågningar.",
         "liveWork": "Arbete som påbörjades {start} pågår fortfarande.",
+        "liveWorkAction": "Stämpla ut när detta arbete är slut.",
         "manualWork": "Manuellt arbete den {start} är inte beslutat.",
-        "timeCorrection": "En tidskorrigering för arbete den {start} är inte beslutad."
+        "manualWorkAction": "En godkännare beslutar om detta arbete. Du behöver inte göra något.",
+        "openClock": "Gå till stämpelklockan",
+        "openRequest": "Öppna förfrågan",
+        "openTimeline": "Visa på tidslinjen",
+        "timeCorrection": "En tidskorrigering för arbete den {start} är inte beslutad.",
+        "timeCorrectionAction": "En godkännare beslutar om denna korrigering. Under tiden den väntar kan du avbryta den i Mina förfrågningar.",
+        "timeCorrectionWaitAction": "En godkännare beslutar om denna korrigering. Du kan bara vänta på deras beslut."
       },
       "description": "Bekräfta att ditt arbete och din frånvaro för varje period är fullständiga och korrekta.",
-      "opensOn": "Du kan skicka in från och med {date}.",
+      "focus": {
+        "notShown": "Det här arbetet kan inte visas här. Periodens beredskap kontrollerades igen.",
+        "resolved": "Det här arbetet håller inte längre en period öppen. Periodens beredskap kontrollerades igen."
+      },
+      "readiness": {
+        "checking": "Kontrollerar om den här perioden är klar…",
+        "hideDetails": "Dölj detaljer",
+        "notReady": "Lämna in blir tillgängligt när den här perioden är klar.",
+        "openItems": "{count, plural, one {# post håller den här perioden öppen.} other {# poster håller den här perioden öppen.}}",
+        "opensOn": "Inlämning öppnar den {date}.",
+        "ready": "Klar att lämna in",
+        "retry": "Försök igen",
+        "showDetails": "Visa detaljer",
+        "submitUnavailable": "Lämna in är inte tillgängligt förrän beredskapen kan kontrolleras.",
+        "unavailable": "Inlämningsberedskap kan inte kontrolleras just nu, så Lämna in är inaktiverat."
+      },
       "refusal": {
         "alreadySubmitted": "Den här perioden har redan skickats in.",
         "noApprover": "Ingen kan godkänna den här perioden ännu. Be en administratör att tilldela dig en chef.",
         "notEnded": "Du kan skicka in den här perioden från och med dess sista dag.",
         "notExpected": "Den här perioden behöver inte skickas in.",
-        "periodOpen": "Den här perioden är fortfarande öppen"
+        "periodOpen": "Den här perioden är fortfarande öppen",
+        "writeGateClosed": "Periodinlämningar är pausade i din organisation just nu. Försök igen senare eller kontakta en administratör."
       },
       "rejectionReason": "Orsak: {reason}",
       "status": {

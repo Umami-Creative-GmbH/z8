@@ -42,6 +42,9 @@
       "title": "Aaträg finde",
       "type": "Art"
     },
+    "focus": {
+      "unavailable": "Die Aafraag isch nüme hängig oder cha da nöd aazeigt werde. D'Bereitschaft vode Periode wird nomal prüeft."
+    },
     "inReview": {
       "description": "Aaträg, wo uf Gnehmigung oder Bearbeitig warted.",
       "title": "In Überprüfig"

@@ -68,6 +68,7 @@
         "failed": "Nie udało się zaktualizować zmiany",
         "overlapDescription": "Ta zmiana nakłada się na {count} inną zmianę(-y)",
         "overlapWarning": "Zmiana zapisana z ostrzeżeniem o nakładaniu się",
+        "skillOverrideReasonRequired": "Pracownikowi brakuje wymaganej umiejętności w tym dniu. Otwórz zmianę, aby podać powód.",
         "updated": "Zmiana zaktualizowana"
       }
     },
@@ -118,6 +119,35 @@
       "updated": "Zmiana zaktualizowana",
       "updateShift": "Aktualizuj zmianę"
     },
+    "shiftRequests": {
+      "approve": "Zatwierdź",
+      "approved": "Wniosek zatwierdzony",
+      "approveFailed": "Nie udało się zatwierdzić wniosku",
+      "button": "Wnioski dotyczące zmian",
+      "confirmApprove": "Potwierdź zatwierdzenie",
+      "confirmReject": "Potwierdź odrzucenie",
+      "description": "Zatwierdzaj lub odrzucaj oczekujące wnioski o przejęcie i zamianę",
+      "empty": "Brak oczekujących wniosków",
+      "loadFailed": "Nie udało się załadować wniosków",
+      "loading": "Ładowanie wniosków…",
+      "notes": "Uwagi: {notes}",
+      "overrideReasonHelp": "Zarejestrowano z zatwierdzeniem jako pominięcie wymogu umiejętności.",
+      "pickupSummary": "{requester} chce przejąć tę wolną zmianę",
+      "reason": "Powód: {reason}",
+      "reject": "Odrzuć",
+      "rejected": "Wniosek odrzucony",
+      "rejectFailed": "Nie udało się odrzucić wniosku",
+      "rejectReason": "Powód odrzucenia (opcjonalnie)",
+      "shiftWhen": "{date}, {start}–{end}",
+      "swapSummary": "{requester} chce przekazać tę zmianę użytkownikowi {target}",
+      "swapWithoutTarget": "{requester} chce przekazać tę zmianę, ale nie wskazano współpracownika",
+      "title": "Wnioski dotyczące zmian",
+      "type": {
+        "pickup": "Przejęcie",
+        "swap": "Zamiana"
+      },
+      "unnamedEmployee": "Nienazwany pracownik"
+    },
     "skills": {
       "certificateOnFile": "Certyfikat w aktach",
       "expiredCertifications": "Wygasłe certyfikaty:",
@@ -125,13 +155,15 @@
       "missingPreferred": "Brakujące preferowane umiejętności:",
       "missingPreferredCount": "brak {count} preferowanych",
       "missingRequired": "Brakujące wymagane umiejętności:",
+      "overrideReason": "Powód pominięcia wymogu umiejętności",
+      "overrideReasonNotice": "Nadal możesz przypisać tę zmianę, podając powód. Zostanie on zarejestrowany jako pominięcie wymogu umiejętności.",
+      "overrideReasonRequired": "Podaj powód, aby przypisać pracownika, który nie posiada wszystkich wymaganych umiejętności.",
       "preferred": "Preferowane",
       "preferredSkillsMissing": "Brak preferowanych umiejętności",
       "requirementsNotMet": "Wymagania dotyczące umiejętności nie zostały spełnione",
       "unqualified": "Brak kwalifikacji",
       "validating": "Weryfikacja umiejętności…",
-      "validatingDescription": "Sprawdzanie kwalifikacji pracownika",
-      "warningMessage": "Nadal możesz przypisać tę zmianę, ale zostanie ona zarejestrowana jako nadpisanie."
+      "validatingDescription": "Sprawdzanie kwalifikacji pracownika"
     },
     "staffingSuggestions": {
       "empty": "Brak dostępnych pracowników na tę zmianę",

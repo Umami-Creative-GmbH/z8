@@ -172,7 +172,6 @@
       "label-available": "Tilgjengelig",
       "label-pending": "Til behandling",
       "label-used": "Brukt",
-      "no-policy": "Ingen feriepolicy er konfigurert for dette året",
       "pending": "{days} til behandling",
       "percent-used": "{percent}% brukt",
       "title": "Feriesaldo",

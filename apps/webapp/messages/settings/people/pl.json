@@ -66,6 +66,7 @@
         "noScheduleAssigned": "Brak przypisanego harmonogramu",
         "personnelNumber": "Numer kadrowy",
         "personnelNumberDescription": "Wewnętrzny numer pracownika w Twojej organizacji, używany w eksportach płacowych. Musi być unikalny, także w odniesieniu do byłych pracowników.",
+        "personnelNumberManagedByIdp": "Zarządzane przez Twojego dostawcę tożsamości. Zmień tam numer pracownika.",
         "position": "Stanowisko",
         "positionDescription": "Stanowisko lub rola",
         "positionPlaceholder": "Wprowadź stanowisko",
@@ -160,6 +161,31 @@
       "invitations": {
         "description": "Zaproś członków i przejrzyj oczekujące prośby o dołączenie",
         "title": "Zaproszenia"
+      },
+      "kioskBadge": {
+        "active": "Aktywny od {date}.",
+        "confirmReplace": "Wymień identyfikator",
+        "confirmReplaceText": "Wymiana powoduje utworzenie nowego identyfikatora. Wszystkie kopie obecnego identyfikatora natychmiast przestają działać.",
+        "confirmRevoke": "Unieważnij identyfikator",
+        "confirmRevokeText": "Wszystkie kopie tego identyfikatora bezpowrotnie przestają działać. Kod PIN pracownika do kiosku nadal działa.",
+        "description": "Wydrukowany kod QR, który pracownik skanuje w kiosku online zamiast wpisywać kod PIN. Nigdy nikogo nie loguje.",
+        "done": "Gotowe",
+        "download": "Pobierz PDF",
+        "endedByDeparture": "Brak aktywnego identyfikatora do kiosku. Ostatni wygasł wraz z odejściem pracownika w dniu {date}. Stare egzemplarze nigdy więcej nie zadziałają, nawet po ponownym zatrudnieniu.",
+        "heading": "Identyfikator do kiosku",
+        "issue": "Wydaj identyfikator",
+        "none": "Brak identyfikatora do kiosku.",
+        "notEligible": "Nowy identyfikator można wydać tylko wtedy, gdy pracownik jest aktywny. Po ponownym zatrudnieniu należy wydać nowy identyfikator.",
+        "openToPrint": "Otwórz, aby wydrukować",
+        "pdf": {
+          "instructions": "Wytnij identyfikator wzdłuż przerywanej linii. Każdy posiadacz kopii może rejestrować czas pracy jako ten pracownik w kioskach organizacji, dlatego należy chronić go jak klucz. Jeśli zostanie zgubiony, poproś o wymianę: wszystkie kopie tego identyfikatora przestaną wtedy działać.",
+          "title": "Identyfikator do kiosku"
+        },
+        "replace": "Wymień identyfikator",
+        "revoke": "Unieważnij identyfikator",
+        "revoked": "Identyfikator do kiosku unieważniony",
+        "revokedOn": "Brak aktywnego identyfikatora do kiosku. Ostatni został unieważniony w dniu {date}.",
+        "saveNow": "Zapisz plik PDF teraz: Z8 nie wyświetli ponownie tego identyfikatora. Możesz wydrukować zapisaną kopię. W przypadku utraty pliku lub identyfikatora wymień identyfikator."
       },
       "kioskPin": {
         "addEmailDescription": "Otrzymają zaproszenie do utworzenia hasła i będą mogli się zalogować. Ich PIN do kiosku oraz historia pozostaną bez zmian.",
@@ -762,6 +788,7 @@
       "area": {
         "back": "Akta osobowe",
         "description": "Pracownicy, których aktami osobowymi zarządzasz.",
+        "documentRequests": "Prośby o dokumenty",
         "dueForDeletion": "Do usunięcia",
         "empty": "W Twoim zakresie nie ma jeszcze żadnych pracowników.",
         "former": "Były pracownik",
@@ -849,16 +876,15 @@
       },
       "due": {
         "confirm": "Trwale usuń",
-        "confirmDescription": "Dokumenty i ich pliki zostaną bezpowrotnie usunięte. W dzienniku audytu zachowane zostaną informacje o tym, kto je trwale usunął, o pracowniku, kategorii, dacie dokumentu, okresie rozliczeniowym oraz Twoim powodzie.",
         "confirmTitle": "{count, plural, one {Trwale usunąć # dokument?} other {Trwale usunąć # dokumentów?}}",
         "description": "Dokumenty byłych pracowników, których okres przechowywania minął. Pozostają tutaj do momentu potwierdzenia ich trwałego usunięcia; pozostaw dokument w tym miejscu, aby go zachować.",
         "dueSince": "Do usunięcia od {date}",
         "empty": "Żadne dokumenty w Twoim zakresie nie kwalifikują się do usunięcia.",
         "loadFailed": "Nie udało się wczytać dokumentów przeznaczonych do usunięcia.",
         "loading": "Wczytywanie dokumentów przeznaczonych do usunięcia",
+        "purgeAuditDescription": "Dokumenty i powiązane z nimi pliki zostaną trwale usunięte. Dziennik audytu zachowuje informację o osobie usuwającej, pracowniku, kategorii, dacie dokumentu i okresie rozliczeniowym. Tytuły i nazwy plików są również usuwane z wcześniejszych wpisów audytowych tych dokumentów.",
         "purged": "{count, plural, one {Trwale usunięto # dokument} other {Trwale usunięto # dokumentów}}",
         "purgeSelected": "{count, plural, =0 {Trwale usuń zaznaczone} one {Trwale usuń # dokument} other {Trwale usuń # dokumentów}}",
-        "reason": "Powód (opcjonalnie)",
         "selectAll": "Zaznacz wszystko",
         "skipped": "{count, plural, one {# dokument nie został trwale usunięty, ponieważ nie kwalifikuje się już do usunięcia lub nie znajduje się w Twoim zakresie.} other {# dokumentów nie zostało trwale usuniętych, ponieważ nie kwalifikują się już do usunięcia lub nie znajdują się w Twoim zakresie.}}",
         "title": "Przeznaczone do usunięcia",
@@ -877,6 +903,9 @@
         "empty": "Żadne dokumenty nie wygasają.",
         "expiredAgo": "{days, plural, one {Wygasł # dzień temu} other {Wygasł # dni temu}}",
         "inDays": "{days, plural, one {Wygasa za # dzień} other {Wygasa za # dni}}",
+        "renewalRequested": "Wysłano prośbę o odnowienie",
+        "requestRenewal": "Poproś o odnowienie",
+        "requestRenewalFor": "Poproś o odnowienie: {title} ({employee})",
         "title": "Wygasające dokumenty",
         "today": "Wygasa dzisiaj"
       },
@@ -910,6 +939,24 @@
         "description": "Dokumenty z Twoich akt osobowych, które udostępniła Ci Twoja organizacja.",
         "empty": "Nie udostępniono Ci jeszcze żadnych dokumentów.",
         "loading": "Wczytywanie Twoich dokumentów",
+        "requested": {
+          "description": "Dokumenty wymagane przez Twoją organizację wraz z terminem ich złożenia.",
+          "submit": {
+            "button": "Wyślij",
+            "confirm": "Wyślij",
+            "description": "{count, plural, one {Przekazano # dokument dla \"{title}\". Twoja organizacja go sprawdzi i poinformuje Cię o wyniku.} few {Przekazano # dokumenty dla \"{title}\". Twoja organizacja je sprawdzi i poinformuje Cię o wyniku.} many {Przekazano # dokumentów dla \"{title}\". Twoja organizacja je sprawdzi i poinformuje Cię o wyniku.} other {Przekazano # dokumentu dla \"{title}\". Twoja organizacja je sprawdzi i poinformuje Cię o wyniku.}}",
+            "note": "Notatka (opcjonalnie)",
+            "open": "Wyślij {title}",
+            "success": "Wysłano",
+            "title": "Wysłać dokumenty?"
+          },
+          "title": "Wymagane dokumenty",
+          "upload": {
+            "button": "Wgraj",
+            "description": "Dotyczy prośby \"{title}\". Wyślij prośbę, gdy wszystkie dokumenty zostaną wgrane.",
+            "open": "Wgraj dokument dla {title}"
+          }
+        },
         "title": "Moje dokumenty",
         "upload": {
           "button": "Prześlij dokument",
@@ -973,6 +1020,146 @@
         "saved": "Zapisano czas wyprzedzenia przypomnienia",
         "saveFailed": "Nie udało się zapisać czasu wyprzedzenia przypomnienia.",
         "title": "Przypomnienia o wygaśnięciu"
+      },
+      "requests": {
+        "accept": {
+          "button": "Zaakceptuj",
+          "confirm": "Zaakceptuj",
+          "description": "Prośba \"{title}\" została zrealizowana, a pracownik został powiadomiony.",
+          "failed": "Nie udało się zaakceptować prośby.",
+          "open": "Zaakceptuj {title}",
+          "success": "Prośba zaakceptowana",
+          "title": "Zaakceptować zgłoszenie?"
+        },
+        "bulk": {
+          "close": "Zamknij",
+          "created": "{count, plural, =0 {Nie utworzono żadnych próśb o dokumenty.} one {Utworzono # prośbę o dokumenty.} many {Utworzono # próśb o dokumenty.} other {Utworzono # prośby o dokumenty.} }",
+          "description": "Każdy pracownik otrzymuje osobną prośbę i zostaje powiadomiony. Pracownicy spoza Twojego zakresu dostępu, byli pracownicy oraz osoby mające już otwartą prośbę o tym tytule zostaną pominięci.",
+          "doneTitle": "Wysłano prośbę o dokumenty",
+          "employees": "Pracownicy",
+          "noTeams": "Brak zespołów do wyboru.",
+          "open": "Poproś od wielu",
+          "selectEmployees": "Wybierz pracowników",
+          "skipped": "{count, plural, few {Pominięto # pracowników:} many {Pominięto # pracowników:} other {Pominięto # pracownika:} }",
+          "skippedAlreadyRequested": "{count, plural, few {# mają już otwartą prośbę o tym tytule} other {# ma już otwartą prośbę o tym tytule} }",
+          "skippedFormer": "{count, plural, one {# były pracownik} few {# byli pracownicy} many {# byłych pracowników} other {# byłego pracownika}}",
+          "skippedNotCovered": "{count, plural, other {# poza Twoim zakresem dostępu} }",
+          "skippedOwnFile": "Twoje akta",
+          "teams": "Zespoły",
+          "teamsHint": "Wszyscy obecni członkowie zespołu w zakresie Twoich uprawnień.",
+          "title": "Poproś o dokument wielu pracowników"
+        },
+        "cancel": {
+          "button": "Anuluj",
+          "confirm": "Anuluj prośbę",
+          "description": "Pracownik nie musi już przesyłać dokumentu „{title}” i otrzyma informację o powodzie. Dokumenty przesłane wcześniej pozostaną w aktach.",
+          "keep": "Zachowaj prośbę",
+          "open": "Anuluj {title}",
+          "reason": "Powód",
+          "success": "Prośba została anulowana",
+          "title": "Anulować prośbę?"
+        },
+        "create": {
+          "deadline": "Termin",
+          "deadlineHint": "Dzień, do którego pracownik powinien przesłać dokument. Po tej dacie prośba będzie przeterminowana.",
+          "description": "Pracownik zostanie powiadomiony i prześle dokumenty z sekcji Moje dokumenty. Przesłane pliki od razu trafią do jego akt i będą mu udostępnione.",
+          "note": "Notatka (opcjonalnie)",
+          "open": "Poproś o dokument",
+          "submit": "Poproś",
+          "success": "Poproszono o dokument",
+          "title": "Poproś o dokument",
+          "titleHint": "To, co pracownik powinien przesłać, na przykład odnowiony certyfikat pierwszej pomocy."
+        },
+        "deadline": "Termin: {date}",
+        "description": "Certyfikaty i inne dokumenty, o które poproszono tego pracownika, wraz z terminem i historią.",
+        "edit": {
+          "button": "Zmień",
+          "deadlineHint": "Nowy termin nie może przypadać w przeszłości. Jego zmiana spowoduje ponowne uruchomienie przypomnień o terminie.",
+          "description": "Zmień termin lub notatkę dla „{title}”. Zmiana pojawi się w historii prośby. Aby poprosić o coś innego, anuluj tę prośbę i utwórz nową.",
+          "open": "Zmień {title}",
+          "submit": "Zapisz zmiany",
+          "success": "Zmieniono prośbę",
+          "title": "Zmień prośbę"
+        },
+        "empty": "Nie poproszono jeszcze o żadne dokumenty.",
+        "error": {
+          "categoryNotRequestable": "Można prosić tylko o certyfikaty i inne dokumenty.",
+          "conflict": "W międzyczasie ktoś inny zmodyfikował tę prośbę. Załaduj ją ponownie i spróbuj jeszcze raz.",
+          "deadlineInPast": "Termin nie może przypadać w przeszłości.",
+          "formerEmployee": "Zatrudnienie tego pracownika dobiegło końca.",
+          "invalidDeadline": "Wybierz termin.",
+          "invalidNote": "Notatka może mieć maksymalnie {max} znaków.",
+          "invalidReason": "Powód może mieć maksymalnie {max} znaków.",
+          "invalidTitle": "Wpisz tytuł mający maksymalnie {max} znaków.",
+          "noDocuments": "Prześlij co najmniej jeden dokument przed zatwierdzeniem.",
+          "noRecipients": "Wybierz co najmniej jednego pracownika lub zespół.",
+          "notEditable": "Można zmienić tylko termin i notatkę. W zamian anuluj prośbę i utwórz nową.",
+          "ownFile": "Nie możesz prosić o dokumenty do własnych akt osobowych.",
+          "reasonRequired": "Podaj powód.",
+          "renewalAlreadyRequested": "Dla tego dokumentu istnieje już otwarta prośba o odnowienie.",
+          "renewalExpiryDateRequired": "Odnowiona umiejętność wymaga daty ważności. Dodaj datę ważności do przesłanego certyfikatu, a następnie zaakceptuj.",
+          "renewalNotInBulk": "Prośby skierowane do wielu pracowników nie mogą wskazywać odnawianego dokumentu.",
+          "renewedDocumentMismatch": "Odnawiany dokument musi należeć do tego samego pracownika i tej samej kategorii.",
+          "tooManyRecipients": "Możesz poprosić o dokumenty maksymalnie {max} pracowników jednocześnie."
+        },
+        "event": {
+          "accepted": "Zaakceptowano",
+          "cancelled": "Anulowano",
+          "created": "Wysłano prośbę",
+          "edited": "Zmieniono",
+          "returned": "Zwrócono",
+          "submitted": "Przesłano"
+        },
+        "history": {
+          "deadlineChanged": "Termin {from} → {to}",
+          "noteChanged": "Zmieniono notatkę",
+          "title": "Historia"
+        },
+        "loadFailed": "Nie udało się załadować próśb o dokumenty.",
+        "overdue": "Po terminie",
+        "page": {
+          "description": "Dokumenty, o które poproszono pracowników, których certyfikatami lub innymi dokumentami zarządzasz. Prośba jest po terminie, gdy nadal pozostaje otwarta po upływie wyznaczonej daty.",
+          "empty": "Brak próśb o dokumenty spełniających kryteria filtrów.",
+          "filters": {
+            "active": "Otwarte i przesłane",
+            "all": "Wszystkie statusy",
+            "overdue": "Tylko po terminie",
+            "status": "Status"
+          },
+          "loading": "Ładowanie próśb o dokumenty",
+          "next": "Następna strona",
+          "pagination": "Strona {page} z {pageCount}",
+          "previous": "Poprzednia strona",
+          "title": "Prośby o dokumenty"
+        },
+        "pendingDocuments": "Wgrano, jeszcze nie przesłano",
+        "pendingDocumentsClosed": "Wgrano, nigdy nie przesłano",
+        "reasonCode": {
+          "employmentEnded": "Zatrudnienie zakończone"
+        },
+        "renewal": {
+          "hint": "Gdy zaakceptujesz prośbę, ten dokument nie będzie już traktowany jako wygasający. Do tego czasu przypomnienia o wygaśnięciu trafiają wyłącznie do osób zarządzających.",
+          "hrOnly": "Ten dokument jest widoczny tylko dla działu HR. Pracownik go nie widzi – widzi jedynie tytuł prośby, notatkę, kategorię oraz termin.",
+          "title": "Poproś o odnowienie"
+        },
+        "renews": "Odnawia {title}",
+        "return": {
+          "button": "Zwróć",
+          "confirm": "Zwróć pracownikowi",
+          "description": "Pracownik zostanie poproszony o ponowne wgranie dokumentu „{title}” wraz z uzasadnieniem. Przesłane wcześniej dokumenty pozostaną w aktach.",
+          "open": "Zwróć {title}",
+          "reason": "Powód",
+          "success": "Zwrócono prośbę",
+          "title": "Zwrócić zgłoszenie?"
+        },
+        "status": {
+          "accepted": "Zaakceptowano",
+          "cancelled": "Anulowano",
+          "open": "Otwarte",
+          "submitted": "Przesłano"
+        },
+        "submission": "Przesłano {date}",
+        "title": "Prośby o dokumenty"
       },
       "retention": {
         "apply": "Zastosuj sugestię",

@@ -165,11 +165,13 @@
         "selectWorkCategory": "Επιλογή κατηγορίας εργασίας",
         "sourceType": "Τύπος πηγής",
         "specialCategory": "Ειδική κατηγορία",
+        "subtitle": "Αντιστοιχίστε τις κατηγορίες εργασίας και τους τύπους απουσιών σας με κωδικούς τύπου αποδοχών μισθοδοσίας",
         "table": {
           "category": "Κατηγορία",
           "datev": "DATEV",
           "lexware": "Lexware",
           "sage": "Sage",
+          "successFactors": "SAP SuccessFactors",
           "type": "Τύπος"
         },
         "title": "Αντιστοιχίσεις τύπων μισθοδοσίας",
@@ -238,9 +240,7 @@
         "title": "Sage Payroll"
       },
       "specialCategory": {
-        "holidayCompensation": "Αποζημίωση άδειας",
-        "overtime": "Υπερωρίες",
-        "overtimeReduction": "Μείωση υπερωριών"
+        "overtime": "Υπερωρίες"
       },
       "successfactors": {
         "batchSize": "Μέγεθος παρτίδας",

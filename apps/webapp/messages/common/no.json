@@ -427,6 +427,7 @@
     "uploading": "Laster opp...",
     "vacationAllowance": {
       "cappedAtFullAllowance": "begrenset til full kvote",
+      "convertedSummary": "{allowance} dager: {conversion}",
       "employmentMonths": "{months, plural, one {# hel ansettelsesmåned} other {# hele ansettelsesmåneder}}",
       "lastWorkingDay": "siste arbeidsdag {date}",
       "notEmployed": "{allowance} av {fullAllowance} dager: ikke ansatt i {year}",
@@ -434,7 +435,10 @@
       "overdrawnHint": "Ferie tatt ut utover kvoten. Vises kun til informasjon: ingenting trekkes.",
       "proratedSummary": "{allowance} av {fullAllowance} dager, forholdsmessig beregnet: {details}",
       "started": "startet {date}",
-      "statutoryMinimumApplies": "lovfestet minimum gjelder"
+      "statutoryMinimumApplies": "lovfestet minimum gjelder",
+      "workingDaysPerWeek": "{days, plural, one {# arbeidsdag per uke} other {# arbeidsdager per uke}}",
+      "workingWeekConversion": "{reference} referansedager konvertert til {weeks}",
+      "workingWeekPeriod": "{week} fra {start} til {end}"
     },
     "validate": "Valider",
     "validationError": "Valideringsfeil",
@@ -929,6 +933,7 @@
     },
     "page": {
       "context": "Personlig registrering, gjenoppretting og organisasjonsvalg forblir tilgjengelig mens organisasjonstilgang krever verifisering.",
+      "description": "Bekreft en autentiseringsapp for å beholde tilgangen til organisasjonene dine.",
       "title": "Sikkerhetsverifisering"
     },
     "passkey": {
@@ -1311,6 +1316,42 @@
         "message": "Last ned personopplysningene dine under Mine data før {untilDate}. Etter det kan bare en administrator eksportere dem for deg.",
         "title": "Last ned personopplysningene dine før du slutter"
       },
+      "personnelFileDocumentRequestAccepted": {
+        "message": "Dokumentene dine for «{title}» ble godtatt.",
+        "title": "Dokumenter godtatt"
+      },
+      "personnelFileDocumentRequestCancelled": {
+        "message": "Forespørselen «{title}» ble kansellert: {reason}",
+        "messageWithoutReason": "Forespørselen «{title}» ble kansellert.",
+        "title": "Dokumentforespørsel kansellert"
+      },
+      "personnelFileDocumentRequestDueSoon": {
+        "message": "Vennligst last opp \"{title}\" innen {deadline}.",
+        "title": "Dokument forfaller snart"
+      },
+      "personnelFileDocumentRequestDueToday": {
+        "message": "Vennligst last opp \"{title}\" i dag.",
+        "title": "Dokument forfaller i dag"
+      },
+      "personnelFileDocumentRequested": {
+        "message": "Vennligst last opp \"{title}\" innen {deadline}.",
+        "title": "Dokument etterspurt"
+      },
+      "personnelFileDocumentRequestOverdue": {
+        "message": "\"{title}\" forfalt {deadline}. Vennligst last det opp.",
+        "officerMessage": "{employee} har ikke levert \"{title}\", som forfalt {deadline}.",
+        "officerTitle": "Etterspurt dokument har forfalt",
+        "title": "Dokument forfalt"
+      },
+      "personnelFileDocumentRequestReturned": {
+        "message": "Vennligst last opp \"{title}\" på nytt innen {deadline}: {reason}",
+        "messageWithoutReason": "Vennligst last opp \"{title}\" på nytt innen {deadline}.",
+        "title": "Dokumenter returnert"
+      },
+      "personnelFileDocumentRequestSubmitted": {
+        "message": "{name} sendte inn dokumenter for \"{title}\". Vennligst se over dem.",
+        "title": "Dokumenter sendt inn"
+      },
       "personnelFileDocumentShared": {
         "message": "Dokumentet \"{title}\" ble delt med deg.",
         "title": "Nytt dokument i personalmappen din"
@@ -1652,6 +1693,11 @@
         "personal_data_export_admin_exported": "Personopplysninger eksportert av en administrator",
         "personal_data_export_ready": "Eksport av personopplysninger er klar",
         "personal_data_export_reminder": "Last ned dataene dine før du slutter",
+        "personnel_file_document_request_decided": "Dokumentforespørsel godtatt, returnert eller kansellert",
+        "personnel_file_document_requested": "Dokument etterspurt fra deg",
+        "personnel_file_document_request_overdue": "Dokumentforespørsel forfalt",
+        "personnel_file_document_request_reminder": "Etterspurt dokument forfaller snart",
+        "personnel_file_document_request_submitted": "Etterspurte dokumenter sendt inn (personalkontor)",
         "skill_expired_today": "Kompetanse utløper i dag",
         "skill_expiry_upcoming": "Kompetanse utløper snart",
         "work_balance_adjustment_cancelled": "Saldojustering kansellert",
@@ -3066,7 +3112,10 @@
     "theme-toggle": "Veksle tema"
   },
   "vacationBalance": {
-    "previouslyTaken": "Inkluderer {days} dager tidligere avviklet før sporing"
+    "conflictingPolicies": "Motstridende ferieretningslinjer",
+    "missingPolicy": "Manglende ferieretningslinje",
+    "previouslyTaken": "Inkluderer {days} dager tidligere avviklet før sporing",
+    "zeroWorkingDays": "Arbeidsplan uten arbeidsdager"
   },
   "validation": {
     "first-name-required": "Fornavn er påkrevd",

@@ -165,11 +165,13 @@
         "selectWorkCategory": "Arbeitskategorie auswählen",
         "sourceType": "Quelltyp",
         "specialCategory": "Sonderkategorie",
+        "subtitle": "Ordnen Sie Ihre Arbeitskategorien und Abwesenheitsarten den Lohnarten-Codes für die Entgeltabrechnung zu",
         "table": {
           "category": "Kategorie",
           "datev": "DATEV",
           "lexware": "Lexware",
           "sage": "Sage",
+          "successFactors": "SAP SuccessFactors",
           "type": "Typ"
         },
         "title": "Lohnartenzuordnungen",
@@ -238,9 +240,7 @@
         "title": "Sage Lohn"
       },
       "specialCategory": {
-        "holidayCompensation": "Urlaubsabgeltung",
-        "overtime": "Überstunden",
-        "overtimeReduction": "Überstundenabbau"
+        "overtime": "Überstunden"
       },
       "successfactors": {
         "batchSize": "Batch-Größe",

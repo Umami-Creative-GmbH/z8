@@ -17,8 +17,33 @@
       "noCustomer": "Apenas o trabalho em um projeto com cliente pode ser faturável"
     },
     "breakInProgress": {
+      "connectionRequired": "Iniciar ou retomar uma pausa requer uma conexão.",
       "description": "Você está em pausa",
-      "since": "Em pausa desde {time}"
+      "endDay": "Encerrar o dia",
+      "errors": {
+        "alreadyOnBreak": "Você já está em uma pausa.",
+        "breakChanged": "Sua pausa foi alterada em outro dispositivo. Seu relógio agora mostra o estado atual.",
+        "collision": "Esta pausa entra em conflito com uma solicitação anterior. Atualize e tente novamente.",
+        "refreshed": "Seu relógio foi alterado. Ele agora mostra o estado atual.",
+        "resumeNotAllowed": "Você não pode retomar esta pausa.",
+        "resumeRetry": "Não foi possível retomar o trabalho. Tente novamente.",
+        "resumeUnconfirmed": "A retomada não pôde ser confirmada. Verifique seu relógio antes de tentar novamente.",
+        "startNotAllowed": "Você não pode iniciar uma pausa.",
+        "startRetry": "Não foi possível iniciar sua pausa. Tente novamente.",
+        "tooEarly": "Uma pausa só pode começar depois que seu trabalho tiver começado.",
+        "unconfirmed": "Sua pausa não pôde ser confirmada. Verifique seu relógio antes de tentar novamente.",
+        "workChanged": "Seu relógio foi alterado em outro dispositivo. Ele agora mostra o estado atual."
+      },
+      "pendingClockActions": "As ações de ponto salvas ainda estão sendo enviadas. Tente novamente após a sincronização.",
+      "resume": "Retomar",
+      "resumed": "Trabalho retomado",
+      "since": "Em pausa desde {time}",
+      "start": "Iniciar pausa",
+      "started": "Pausa iniciada",
+      "startedDescription": "Retome quando voltar ou encerre o seu dia.",
+      "trigger": "Em pausa",
+      "uncertain": "Não foi possível confirmar sua pausa",
+      "uncertainDescription": "Seu relógio foi atualizado. Verifique-o antes de tentar novamente."
     },
     "budget": "Orçamento",
     "clockedOutSuccess": "Você registrou a saída!",
@@ -147,9 +172,41 @@
         "resume": "Retomar trabalho",
         "startBreak": "Iniciar pausa"
       },
+      "attribution": {
+        "back": "Voltar",
+        "keep": "Manter {name}",
+        "noProject": "Nenhum projeto",
+        "noWorkCategory": "Nenhuma categoria de trabalho",
+        "project": "Projeto",
+        "title": "No que você trabalhou?",
+        "workCategory": "Categoria de trabalho"
+      },
+      "badge": {
+        "checking": "Verificando seu crachá…",
+        "failed": "Não foi possível verificar o crachá. Nada foi registrado. Escaneie-o novamente ou toque no seu nome para usar seu PIN.",
+        "inputDisabled": "A leitura de crachá está desativada neste quiosque. Toque no seu nome para usar seu PIN.",
+        "notAccepted": "Este crachá não é aceito neste quiosque. Nada foi registrado. Toque no seu nome para usar seu PIN ou fale com seu gerente.",
+        "notRecorded": "Sua ação não foi registrada. Escaneie seu crachá novamente para selecioná-la de novo.",
+        "offline": "O registro por crachá requer conexão. Nada foi registrado.",
+        "offlinePin": "O registro por crachá requer conexão. Nada foi registrado. Toque no seu nome para registrar o ponto com seu PIN.",
+        "rateLimited": "Muitas leituras de crachá neste quiosque. Tente novamente em {seconds} segundos ou toque no seu nome para usar seu PIN.",
+        "unreadable": "Este código não é um crachá de quiosque. Nada foi registrado. Escaneie seu crachá de quiosque ou toque no seu nome para usar seu PIN."
+      },
       "board": {
         "empty": "Ninguém registrou entrada no momento.",
         "title": "Quem está presente"
+      },
+      "camera": {
+        "cancel": "Cancelar leitura",
+        "denied": "O quiosque não pode usar a câmera. Permita o acesso à câmera para esta página no navegador ou toque no seu nome para usar o PIN.",
+        "failed": "Não foi possível iniciar a câmera. Tente novamente ou toque no seu nome para usar o PIN.",
+        "hint": "Mantenha o código QR dentro da moldura. O código é lido neste quiosque; nenhuma imagem é salva.",
+        "missing": "Este quiosque não possui uma câmera compatível com leitura. Toque no seu nome para usar o PIN.",
+        "notBadge": "Este código não é um crachá de quiosque. Aponte o seu crachá de quiosque ou cancele e toque no seu nome para usar o PIN.",
+        "preview": "Pré-visualização da câmera",
+        "starting": "Iniciando a câmera…",
+        "title": "Aponte seu crachá de quiosque para a câmera",
+        "unsupported": "Este navegador não pode ler crachás com a câmera. Toque no seu nome para usar o PIN."
       },
       "done": {
         "button": "Concluído",
@@ -174,6 +231,8 @@
         "loadFailed": "Não foi possível carregar os nomes. Verifique a conexão de rede.",
         "loading": "Carregando nomes…",
         "noMatch": "Nenhum nome corresponde à sua busca.",
+        "scanBadge": "Ler crachá",
+        "scanHint": "Ou faça a leitura do seu crachá de quiosque no leitor.",
         "search": "Encontre seu nome",
         "title": "Toque no seu nome para registrar entrada ou saída"
       },
@@ -226,15 +285,19 @@
       },
       "refusal": {
         "alreadyClockedIn": "Você já registrou a entrada.",
+        "attemptClosed": "Esta ação não foi registrada. Selecione-a novamente se ainda desejar realizá-la.",
         "billing": "O registro de ponto não está disponível para a sua organização no momento. Entre em contato com o administrador.",
         "generic": "Não deu certo. Nada foi registrado. Tente novamente ou fale com seu gestor.",
         "holiday": "O registro de ponto está bloqueado hoje devido a um feriado. Fale com seu gestor.",
         "monthClosed": "Este registro de horas está em um mês fechado e não pode ser alterado. Fale com seu gestor.",
         "noBreak": "Você não está em pausa.",
         "notClockedIn": "Você não registrou a entrada.",
+        "notRecorded": "Sua ação não foi registrada. Insira seu PIN para selecioná-la novamente.",
         "onBreak": "Você já está em pausa.",
+        "projectNotAllowed": "Não é mais possível apontar horas neste projeto. Nada foi registrado. Escolha outro ou mantenha o atual e tente novamente.",
         "unconfirmed": "O quiosque não pôde confirmar se isso foi salvo. Verifique seu status antes de tentar novamente.",
-        "underReview": "Seu registro de horas de hoje está em análise. Fale com seu gestor."
+        "underReview": "Seu registro de horas de hoje está em análise. Fale com seu gestor.",
+        "workCategoryNotAllowed": "Não é mais possível fazer lançamentos nesta categoria de trabalho. Nada foi registrado. Escolha outra ou mantenha a atual e tente novamente."
       },
       "retry": "Tentar novamente",
       "revoked": {
@@ -246,6 +309,14 @@
         "clockedIn": "Entrada registrada desde {time}",
         "clockedOut": "Entrada não registrada",
         "onBreak": "Em pausa desde {time}"
+      },
+      "uncertain": {
+        "action": "{name}: {action}",
+        "back": "Voltar",
+        "conflict": "Não foi possível verificar esta ação neste quiosque. Verifique sua situação com seu gestor antes de registrar o ponto novamente.",
+        "title": "Verificando se sua ação foi registrada",
+        "unavailable": "Não foi possível acessar o Z8 no momento. O quiosque continuará tentando.",
+        "wait": "Não registre o ponto novamente. O quiosque continuará verificando e mostrará o resultado assim que o Z8 responder, mesmo se você voltar mais tarde."
       },
       "unreachableDescription": "O quiosque não consegue se conectar ao servidor. Verifique a conexão de rede; o registro de ponto funciona apenas online.",
       "unreachableTitle": "Quiosque offline",
@@ -336,18 +407,42 @@
     "periodSubmissions": {
       "blocker": {
         "absenceRequest": "Uma solicitação de ausência para {dates} está pendente.",
+        "absenceRequestAction": "Um aprovador decide sobre esta ausência. Enquanto estiver pendente, você pode cancelá-la em Minhas solicitações.",
         "liveWork": "O trabalho iniciado em {start} ainda está em andamento.",
+        "liveWorkAction": "Registre a saída quando este trabalho terminar.",
         "manualWork": "O trabalho manual em {start} está pendente de decisão.",
-        "timeCorrection": "Uma correção de horas para o trabalho em {start} está pendente de decisão."
+        "manualWorkAction": "Um aprovador decide sobre este trabalho. Você não precisa fazer nada.",
+        "openClock": "Ir para o relógio de ponto",
+        "openRequest": "Abrir solicitação",
+        "openTimeline": "Mostrar na linha do tempo",
+        "timeCorrection": "Uma correção de horas para o trabalho em {start} está pendente de decisão.",
+        "timeCorrectionAction": "Um aprovador decide sobre esta correção. Enquanto estiver pendente, você pode cancelá-la em Minhas solicitações.",
+        "timeCorrectionWaitAction": "Um aprovador decide sobre esta correção. Você só pode aguardar a decisão dele."
       },
       "description": "Confirme se o seu trabalho e as suas ausências para cada período estão completos e corretos.",
-      "opensOn": "Você pode enviar a partir de {date}.",
+      "focus": {
+        "notShown": "Este trabalho não pode ser exibido aqui. A prontidão do período foi verificada novamente.",
+        "resolved": "Este trabalho não mantém mais um período aberto. A prontidão do período foi verificada novamente."
+      },
+      "readiness": {
+        "checking": "Verificando se este período está pronto…",
+        "hideDetails": "Ocultar detalhes",
+        "notReady": "O envio estará disponível assim que este período estiver pronto.",
+        "openItems": "{count, plural, one {# item mantém este período aberto.} other {# itens mantêm este período aberto.}}",
+        "opensOn": "O envio abre em {date}.",
+        "ready": "Pronto para enviar",
+        "retry": "Tentar novamente",
+        "showDetails": "Mostrar detalhes",
+        "submitUnavailable": "O envio fica indisponível até que a prontidão possa ser verificada.",
+        "unavailable": "A prontidão de envio está indisponível no momento, portanto o Envio está desativado."
+      },
       "refusal": {
         "alreadySubmitted": "Este período já foi enviado.",
         "noApprover": "Ninguém pode aprovar este período ainda. Peça a um administrador para atribuir um gestor a você.",
         "notEnded": "Você pode enviar este período a partir do último dia dele.",
         "notExpected": "Este período não precisa ser enviado.",
-        "periodOpen": "Este período ainda está aberto"
+        "periodOpen": "Este período ainda está aberto",
+        "writeGateClosed": "Os envios de período estão pausados na sua organização no momento. Tente novamente mais tarde ou consulte um administrador."
       },
       "rejectionReason": "Motivo: {reason}",
       "status": {

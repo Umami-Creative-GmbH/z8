@@ -68,6 +68,7 @@
         "failed": "Kunde inte uppdatera passet",
         "overlapDescription": "Det här passet överlappar med {count} annat/andra pass",
         "overlapWarning": "Passet sparades med överlappningsvarning",
+        "skillOverrideReasonRequired": "Medarbetaren saknar en kompetens som krävs denna dag. Öppna passet för att ange ett skäl.",
         "updated": "Passet har uppdaterats"
       }
     },
@@ -118,6 +119,35 @@
       "updated": "Passet har uppdaterats",
       "updateShift": "Uppdatera pass"
     },
+    "shiftRequests": {
+      "approve": "Godkänn",
+      "approved": "Förfrågan godkänd",
+      "approveFailed": "Det gick inte att godkänna förfrågan",
+      "button": "Passförfrågningar",
+      "confirmApprove": "Bekräfta godkännande",
+      "confirmReject": "Bekräfta nekande",
+      "description": "Godkänn eller neka väntande förfrågningar om passövertagande och passbyte",
+      "empty": "Inga väntande förfrågningar",
+      "loadFailed": "Det gick inte att läsa in förfrågningar",
+      "loading": "Läser in förfrågningar…",
+      "notes": "Anteckningar: {notes}",
+      "overrideReasonHelp": "Registreras med godkännandet som ett kompetensundantag.",
+      "pickupSummary": "{requester} vill ta det här lediga passet",
+      "reason": "Skäl: {reason}",
+      "reject": "Neka",
+      "rejected": "Förfrågan nekad",
+      "rejectFailed": "Det gick inte att neka förfrågan",
+      "rejectReason": "Skäl för att neka (valfritt)",
+      "shiftWhen": "{date}, {start}–{end}",
+      "swapSummary": "{requester} vill lämna över det här passet till {target}",
+      "swapWithoutTarget": "{requester} vill lämna över det här passet, men har inte angett en kollega",
+      "title": "Passförfrågningar",
+      "type": {
+        "pickup": "Passövertagande",
+        "swap": "Passbyte"
+      },
+      "unnamedEmployee": "Icke namngiven medarbetare"
+    },
     "skills": {
       "certificateOnFile": "Certifikat registrerat",
       "expiredCertifications": "Utgångna certifieringar:",
@@ -125,13 +155,15 @@
       "missingPreferred": "Saknade önskade kompetenser:",
       "missingPreferredCount": "{count} önskade saknas",
       "missingRequired": "Saknade obligatoriska kompetenser:",
+      "overrideReason": "Skäl för kompetensundantag",
+      "overrideReasonNotice": "Du kan fortfarande tilldela passet om du anger ett skäl. Skälet loggas som ett kompetensundantag.",
+      "overrideReasonRequired": "Ange ett skäl för att tilldela en medarbetare som inte har alla kompetenser som krävs.",
       "preferred": "Önskad",
       "preferredSkillsMissing": "Önskade kompetenser saknas",
       "requirementsNotMet": "Kompetenskraven uppfylls inte",
       "unqualified": "Ej kvalificerad",
       "validating": "Validerar kompetenser…",
-      "validatingDescription": "Kontrollerar anställdas kvalifikationer",
-      "warningMessage": "Du kan fortfarande tilldela detta pass, men det kommer att loggas som en överstyrning."
+      "validatingDescription": "Kontrollerar anställdas kvalifikationer"
     },
     "staffingSuggestions": {
       "empty": "Inga tillgängliga medarbetare för detta pass",

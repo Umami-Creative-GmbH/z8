@@ -165,11 +165,13 @@
         "selectWorkCategory": "Select work category",
         "sourceType": "Source Type",
         "specialCategory": "Special Category",
+        "subtitle": "Map your work categories and absence types to payroll wage type codes",
         "table": {
           "category": "Category",
           "datev": "DATEV",
           "lexware": "Lexware",
           "sage": "Sage",
+          "successFactors": "SAP SuccessFactors",
           "type": "Type"
         },
         "title": "Wage Type Mappings",
@@ -238,9 +240,7 @@
         "title": "Sage Payroll"
       },
       "specialCategory": {
-        "holidayCompensation": "Holiday Compensation",
-        "overtime": "Overtime",
-        "overtimeReduction": "Overtime Reduction"
+        "overtime": "Overtime"
       },
       "successfactors": {
         "batchSize": "Batch Size",

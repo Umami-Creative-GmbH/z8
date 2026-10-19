@@ -66,6 +66,7 @@
         "noScheduleAssigned": "Inget schema tilldelat",
         "personnelNumber": "Anställningsnummer",
         "personnelNumberDescription": "Din organisations eget nummer för den anställde, som används vid löneexporter. Det måste vara unikt, även bland tidigare anställda.",
+        "personnelNumberManagedByIdp": "Hanteras av din identitetsleverantör. Ändra anställningsnumret där.",
         "position": "Befattning",
         "positionDescription": "Jobbtitel eller roll",
         "positionPlaceholder": "Ange befattning",
@@ -160,6 +161,31 @@
       "invitations": {
         "description": "Bjud in medlemmar och granska väntande förfrågningar om att gå med",
         "title": "Inbjudningar"
+      },
+      "kioskBadge": {
+        "active": "Aktiv sedan {date}.",
+        "confirmReplace": "Ersätt brickan",
+        "confirmReplaceText": "Ett byte skapar en ny bricka. Alla kopior av den nuvarande brickan slutar omedelbart att fungera.",
+        "confirmRevoke": "Återkalla brickan",
+        "confirmRevokeText": "Alla kopior av denna bricka slutar fungera permanent. Medarbetarens kiosk-PIN fortsätter att fungera.",
+        "description": "En utskriven QR-kod som medarbetaren skannar vid en onlinekiosk i stället för att ange sin PIN-kod. Den loggar aldrig in någon.",
+        "done": "Klar",
+        "download": "Ladda ned PDF",
+        "endedByDeparture": "Ingen aktiv kioskbricka. Den senaste upphörde när medarbetaren slutade den {date}. Gamla kopior fungerar aldrig igen, inte ens efter en återanställning.",
+        "heading": "Kioskbricka",
+        "issue": "Utfärda bricka",
+        "none": "Ingen kioskbricka ännu.",
+        "notEligible": "En ny bricka kan endast utfärdas när medarbetaren är aktiv. Utfärda en ny bricka efter en återanställning.",
+        "openToPrint": "Öppna för att skriva ut",
+        "pdf": {
+          "instructions": "Klipp ut brickan längs den streckade linjen. Den som har en kopia kan stämpla som denna medarbetare vid organisationens kiosker, så förvara den som en nyckel. Om den tappas bort, be om en ersättning: alla kopior av denna bricka slutar då att fungera.",
+          "title": "Kioskbricka"
+        },
+        "replace": "Ersätt bricka",
+        "revoke": "Återkalla bricka",
+        "revoked": "Kioskbricka återkallad",
+        "revokedOn": "Ingen aktiv kioskbricka. Den senaste återkallades den {date}.",
+        "saveNow": "Spara PDF-filen nu: Z8 kan inte visa denna bricka igen. Du kan skriva ut en sparad kopia igen. Om filen eller brickan tappas bort, ersätt brickan."
       },
       "kioskPin": {
         "addEmailDescription": "De får en inbjudan att välja ett lösenord och kan därefter logga in. Deras PIN-kod för kiosk och historik förblir oförändrade.",
@@ -762,6 +788,7 @@
       "area": {
         "back": "Personalakter",
         "description": "De anställda vars personalakt du hanterar.",
+        "documentRequests": "Dokumentförfrågningar",
         "dueForDeletion": "Ska raderas",
         "empty": "Inga anställda ingår i ditt område ännu.",
         "former": "Tidigare anställd",
@@ -849,16 +876,15 @@
       },
       "due": {
         "confirm": "Gallra",
-        "confirmDescription": "Dokumenten och deras filer tas bort för gott. Revisionsloggen sparar vem som gallrade dem, medarbetaren, kategori, dokumentdatum och löneperiod samt din anledning.",
         "confirmTitle": "{count, plural, other {Gallra # dokument?} }",
         "description": "Dokument för tidigare anställda vars lagringsperiod har löpt ut. De ligger kvar tills du bekräftar gallringen; lämna ett dokument här för att behålla det.",
         "dueSince": "Förfallet sedan {date}",
         "empty": "Inga dokument inom ditt behörighetsområde ska raderas.",
         "loadFailed": "Det gick inte att läsa in dokumenten som ska raderas.",
         "loading": "Läser in dokument som ska raderas",
+        "purgeAuditDescription": "Dokumenten och deras filer raderas för gott. Granskningsloggen sparar vem som rensade dem, medarbetaren, kategori, dokumentdatum och löneperiod. Titlar och filnamn tas även bort från dokumentens tidigare granskningsposter.",
         "purged": "{count, plural, other {# dokument har gallrats} }",
         "purgeSelected": "{count, plural, =0 {Gallra markerade} other {Gallra # dokument} }",
-        "reason": "Anledning (valfritt)",
         "selectAll": "Markera alla",
         "skipped": "{count, plural, one {# dokument gallrades inte eftersom det inte längre ska raderas eller inte ingår i ditt behörighetsområde.} other {# dokument gallrades inte eftersom de inte längre ska raderas eller inte ingår i ditt behörighetsområde.}}",
         "title": "Ska raderas",
@@ -877,6 +903,9 @@
         "empty": "Inga dokument löper ut.",
         "expiredAgo": "{days, plural, one {Löpte ut för # dag sedan} other {Löpte ut för # dagar sedan}}",
         "inDays": "{days, plural, one {Löper ut om # dag} other {Löper ut om # dagar}}",
+        "renewalRequested": "Förnyelse begärd",
+        "requestRenewal": "Begär förnyelse",
+        "requestRenewalFor": "Begär en förnyelse av {title} ({employee})",
         "title": "Dokument som löper ut",
         "today": "Löper ut idag"
       },
@@ -910,6 +939,24 @@
         "description": "Dokument från din personalakt som din organisation har delat med dig.",
         "empty": "Inga dokument har delats med dig ännu.",
         "loading": "Läser in dina dokument",
+        "requested": {
+          "description": "Dokument som din organisation har begärt från dig, med deras tidsfrist.",
+          "submit": {
+            "button": "Skicka in",
+            "confirm": "Skicka in",
+            "description": "{count, plural, one {# dokument har lämnats in för \"{title}\". Din organisation granskar det och meddelar dig resultatet.} other {# dokument har lämnats in för \"{title}\". Din organisation granskar dem och meddelar dig resultatet.}}",
+            "note": "Anteckning (valfritt)",
+            "open": "Skicka in {title}",
+            "success": "Inskickad",
+            "title": "Skicka in dokument?"
+          },
+          "title": "Begärda dokument",
+          "upload": {
+            "button": "Ladda upp",
+            "description": "För förfrågan \"{title}\". Skicka in förfrågan när alla dess dokument har laddats upp.",
+            "open": "Ladda upp ett dokument för {title}"
+          }
+        },
         "title": "Mina dokument",
         "upload": {
           "button": "Ladda upp dokument",
@@ -973,6 +1020,146 @@
         "saved": "Ledtid för påminnelse sparad",
         "saveFailed": "Ledtiden för påminnelsen kunde inte sparas.",
         "title": "Utgångspåminnelser"
+      },
+      "requests": {
+        "accept": {
+          "button": "Godkänn",
+          "confirm": "Godkänn",
+          "description": "Förfrågan \"{title}\" är klar och medarbetaren har meddelats.",
+          "failed": "Förfrågan kunde inte godkännas.",
+          "open": "Godkänn {title}",
+          "success": "Förfrågan godkänd",
+          "title": "Godkänn inlämning?"
+        },
+        "bulk": {
+          "close": "Stäng",
+          "created": "{count, plural, =0 {Inga dokumentförfrågningar har skapats.} one {# dokumentförfrågan skapad.} other {# dokumentförfrågningar skapade.}}",
+          "description": "Varje medarbetare får en egen förfrågan och meddelas. Medarbetare som inte omfattas av din behörighet, tidigare medarbetare och alla som redan har en öppen förfrågan med denna titel hoppas över.",
+          "doneTitle": "Dokument begärda",
+          "employees": "Medarbetare",
+          "noTeams": "Inga team att välja mellan.",
+          "open": "Begär från flera",
+          "selectEmployees": "Välj medarbetare",
+          "skipped": "{count, plural, other {# medarbetare hoppades över:} }",
+          "skippedAlreadyRequested": "{count, plural, other {# har redan en öppen förfrågan med denna titel} }",
+          "skippedFormer": "{count, plural, other {# tidigare medarbetare} }",
+          "skippedNotCovered": "{count, plural, other {# omfattas inte av din behörighet} }",
+          "skippedOwnFile": "Din egen fil",
+          "teams": "Team",
+          "teamsHint": "Alla som för närvarande ingår i teamet, så långt din behörighet sträcker sig.",
+          "title": "Begär ett dokument från flera medarbetare"
+        },
+        "cancel": {
+          "button": "Avbryt",
+          "confirm": "Avbryt begäran",
+          "description": "Medarbetaren behöver inte längre ladda upp \"{title}\" och får veta varför. Dokument som redan har laddats upp finns kvar i personakten.",
+          "keep": "Behåll begäran",
+          "open": "Avbryt {title}",
+          "reason": "Anledning",
+          "success": "Begäran avbruten",
+          "title": "Avbryt begäran?"
+        },
+        "create": {
+          "deadline": "Tidsfrist",
+          "deadlineHint": "Det datum då medarbetaren senast ska skicka in. Därefter är begäran förfallen.",
+          "description": "Medarbetaren meddelas och laddar upp dokumenten från Mina dokument. Det som laddas upp visas direkt i deras personakt och delas med dem.",
+          "note": "Anteckning (valfritt)",
+          "open": "Begär ett dokument",
+          "submit": "Begär",
+          "success": "Dokument begärt",
+          "title": "Begär ett dokument",
+          "titleHint": "Vad medarbetaren ska ladda upp, till exempel ett förnyat första hjälpen-intyg."
+        },
+        "deadline": "Förfaller {date}",
+        "description": "Intyg och andra dokument som begärts från den här medarbetaren, med tidsfrist och historik.",
+        "edit": {
+          "button": "Ändra",
+          "deadlineHint": "En ny tidsfrist kan inte ha passerat. Om du flyttar den startas påminnelserna om tidsfristen om.",
+          "description": "Ändra tidsfristen eller anteckningen för \"{title}\". Ändringen visas i begärans historik. Om du vill be om något annat avbryter du begäran och skapar en ny.",
+          "open": "Ändra {title}",
+          "submit": "Spara ändringar",
+          "success": "Begäran ändrad",
+          "title": "Ändra begäran"
+        },
+        "empty": "Inga dokument har begärts än.",
+        "error": {
+          "categoryNotRequestable": "Endast intyg och andra dokument kan begäras.",
+          "conflict": "Någon annan har ändrat den här begäran under tiden. Ladda om den och försök igen.",
+          "deadlineInPast": "Tidsfristen kan inte ha passerat.",
+          "formerEmployee": "Den här medarbetarens anställning har upphört.",
+          "invalidDeadline": "Välj en tidsfrist.",
+          "invalidNote": "Anteckningen får innehålla högst {max} tecken.",
+          "invalidReason": "Anledningen får innehålla högst {max} tecken.",
+          "invalidTitle": "Ange en titel på högst {max} tecken.",
+          "noDocuments": "Ladda upp minst ett dokument innan du skickar in.",
+          "noRecipients": "Välj minst en medarbetare eller ett team.",
+          "notEditable": "Endast tidsfristen och anteckningen kan ändras. Avbryt begäran och skapa en ny i stället.",
+          "ownFile": "Du kan inte begära dokument till din egen personakt.",
+          "reasonRequired": "Ange en anledning.",
+          "renewalAlreadyRequested": "Det finns redan en öppen begäran om att förnya det här dokumentet.",
+          "renewalExpiryDateRequired": "Den förnyade kompetensen kräver ett utgångsdatum. Lägg till utgångsdatumet på ett inskickat intyg och godkänn sedan.",
+          "renewalNotInBulk": "Begäranden för flera medarbetare kan inte ange ett förnyat dokument.",
+          "renewedDocumentMismatch": "Det förnyade dokumentet måste vara ett dokument för samma medarbetare och kategori.",
+          "tooManyRecipients": "Begär dokument från högst {max} medarbetare samtidigt."
+        },
+        "event": {
+          "accepted": "Godkänd",
+          "cancelled": "Avbruten",
+          "created": "Begärd",
+          "edited": "Ändrad",
+          "returned": "Returnerad",
+          "submitted": "Inskickad"
+        },
+        "history": {
+          "deadlineChanged": "Tidsfrist {from} → {to}",
+          "noteChanged": "Anteckning ändrad",
+          "title": "Historik"
+        },
+        "loadFailed": "Det gick inte att läsa in dokumentförfrågningarna.",
+        "overdue": "Förfallen",
+        "page": {
+          "description": "Dokumenten som begärts från de medarbetare vars intyg eller andra dokument du hanterar. En förfrågan är förfallen när den fortfarande är öppen efter sin tidsfrist.",
+          "empty": "Inga dokumentförfrågningar matchar filtren.",
+          "filters": {
+            "active": "Öppna och inskickade",
+            "all": "Alla statusar",
+            "overdue": "Endast förfallna",
+            "status": "Status"
+          },
+          "loading": "Läser in dokumentförfrågningar",
+          "next": "Nästa sida",
+          "pagination": "Sida {page} av {pageCount}",
+          "previous": "Föregående sida",
+          "title": "Dokumentförfrågningar"
+        },
+        "pendingDocuments": "Uppladdad, inte inskickad ännu",
+        "pendingDocumentsClosed": "Uppladdad, aldrig inskickad",
+        "reasonCode": {
+          "employmentEnded": "Anställning avslutad"
+        },
+        "renewal": {
+          "hint": "När du har godkänt förfrågan räknas detta dokument inte längre som utgående. Fram till dess skickas påminnelser om utgångsdatum endast till administratörer.",
+          "hrOnly": "Detta dokument är endast synligt för HR. Medarbetaren ser det inte, endast förfrågans rubrik, anteckning, kategori och tidsfrist.",
+          "title": "Begär en förnyelse"
+        },
+        "renews": "Förnyar {title}",
+        "return": {
+          "button": "Returnera",
+          "confirm": "Returnera till medarbetare",
+          "description": "Medarbetaren ombeds ladda upp \"{title}\" igen och informeras om varför. De dokument som skickades in finns kvar i akten.",
+          "open": "Returnera {title}",
+          "reason": "Anledning",
+          "success": "Förfrågan returnerad",
+          "title": "Returnera inlämning?"
+        },
+        "status": {
+          "accepted": "Godkänd",
+          "cancelled": "Avbruten",
+          "open": "Öppen",
+          "submitted": "Inskickad"
+        },
+        "submission": "Inskickad {date}",
+        "title": "Dokumentförfrågningar"
       },
       "retention": {
         "apply": "Tillämpa förslag",

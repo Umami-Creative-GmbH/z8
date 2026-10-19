@@ -427,6 +427,7 @@
     "uploading": "Przesyłanie...",
     "vacationAllowance": {
       "cappedAtFullAllowance": "ograniczono do pełnego wymiaru",
+      "convertedSummary": "{allowance} dni: {conversion}",
       "employmentMonths": "{months, plural, one {# pełny miesiąc zatrudnienia} few {# pełne miesiące zatrudnienia} many {# pełnych miesięcy zatrudnienia} other {# pełnego miesiąca zatrudnienia}}",
       "lastWorkingDay": "ostatni dzień pracy: {date}",
       "notEmployed": "{allowance} z {fullAllowance} dni: brak zatrudnienia w {year}",
@@ -434,7 +435,10 @@
       "overdrawnHint": "Urlop wykorzystany ponad limit. Wyświetlane wyłącznie informacyjnie: nic nie jest potrącane.",
       "proratedSummary": "{allowance} z {fullAllowance} dni, proporcjonalnie: {details}",
       "started": "rozpoczęto {date}",
-      "statutoryMinimumApplies": "obowiązuje minimum ustawowe"
+      "statutoryMinimumApplies": "obowiązuje minimum ustawowe",
+      "workingDaysPerWeek": "{days, plural, one {# dzień roboczy w tygodniu} few {# dni robocze w tygodniu} many {# dni roboczych w tygodniu} other {# dnia roboczego w tygodniu}}",
+      "workingWeekConversion": "{reference} dni referencyjnych przeliczonych na {weeks}",
+      "workingWeekPeriod": "{week} od {start} do {end}"
     },
     "validate": "Weryfikuj",
     "validationError": "Błąd walidacji",
@@ -929,6 +933,7 @@
     },
     "page": {
       "context": "Rejestracja osobista, odzyskiwanie konta i wybór organizacji pozostają dostępne, gdy dostęp do organizacji wymaga weryfikacji.",
+      "description": "Zweryfikuj aplikację uwierzytelniającą, aby zachować dostęp do swoich organizacji.",
       "title": "Weryfikacja bezpieczeństwa"
     },
     "passkey": {
@@ -1311,6 +1316,42 @@
         "message": "Pobierz swoje dane osobowe w zakładce Moje dane przed {untilDate}. Po tym terminie tylko administrator będzie mógł je wyeksportować.",
         "title": "Pobierz swoje dane osobowe przed odejściem"
       },
+      "personnelFileDocumentRequestAccepted": {
+        "message": "Twoje dokumenty dla „{title}” zostały zaakceptowane.",
+        "title": "Dokumenty zaakceptowane"
+      },
+      "personnelFileDocumentRequestCancelled": {
+        "message": "Wniosek „{title}” został anulowany: {reason}",
+        "messageWithoutReason": "Wniosek „{title}” został anulowany.",
+        "title": "Prośba o dokumenty anulowana"
+      },
+      "personnelFileDocumentRequestDueSoon": {
+        "message": "Proszę przesłać \"{title}\" do {deadline}.",
+        "title": "Zbliża się termin złożenia dokumentu"
+      },
+      "personnelFileDocumentRequestDueToday": {
+        "message": "Proszę przesłać \"{title}\" dzisiaj.",
+        "title": "Termin złożenia dokumentu upływa dzisiaj"
+      },
+      "personnelFileDocumentRequested": {
+        "message": "Proszę przesłać \"{title}\" do {deadline}.",
+        "title": "Zażądano dokumentu"
+      },
+      "personnelFileDocumentRequestOverdue": {
+        "message": "Termin dla \"{title}\" upłynął {deadline}. Proszę go przesłać.",
+        "officerMessage": "{employee} nie przekazał(a) \"{title}\", którego termin upłynął {deadline}.",
+        "officerTitle": "Wymagany dokument jest po terminie",
+        "title": "Dokument po terminie"
+      },
+      "personnelFileDocumentRequestReturned": {
+        "message": "Proszę przesłać \"{title}\" ponownie do {deadline}: {reason}",
+        "messageWithoutReason": "Proszę przesłać \"{title}\" ponownie do {deadline}.",
+        "title": "Dokumenty zwrócone"
+      },
+      "personnelFileDocumentRequestSubmitted": {
+        "message": "{name} przesłał(a) dokumenty do \"{title}\". Proszę je przejrzeć.",
+        "title": "Dokumenty przesłane"
+      },
       "personnelFileDocumentShared": {
         "message": "Dokument \"{title}\" został Ci udostępniony.",
         "title": "Nowy dokument w Twoich aktach osobowych"
@@ -1652,6 +1693,11 @@
         "personal_data_export_admin_exported": "Dane osobowe wyeksportowane przez administratora",
         "personal_data_export_ready": "Eksport danych osobowych gotowy",
         "personal_data_export_reminder": "Pobierz swoje dane przed odejściem",
+        "personnel_file_document_request_decided": "Żądanie dokumentu zaakceptowane, zwrócone lub anulowane",
+        "personnel_file_document_requested": "Zażądano dokumentu od Ciebie",
+        "personnel_file_document_request_overdue": "Żądanie dokumentu po terminie",
+        "personnel_file_document_request_reminder": "Zbliża się termin wymaganego dokumentu",
+        "personnel_file_document_request_submitted": "Wymagane dokumenty przesłane (osoby prowadzące akta osobowe)",
         "skill_expired_today": "Umiejętność wygasa dzisiaj",
         "skill_expiry_upcoming": "Umiejętność wkrótce wygasa",
         "work_balance_adjustment_cancelled": "Anulowano korektę salda",
@@ -3066,7 +3112,10 @@
     "theme-toggle": "Przełącz motyw"
   },
   "vacationBalance": {
-    "previouslyTaken": "Obejmuje {days} dni wykorzystanych przed rozpoczęciem rejestrowania"
+    "conflictingPolicies": "Sprzeczne zasady urlopowe",
+    "missingPolicy": "Brak zasad urlopowych",
+    "previouslyTaken": "Obejmuje {days} dni wykorzystanych przed rozpoczęciem rejestrowania",
+    "zeroWorkingDays": "Harmonogram pracy bez dni roboczych"
   },
   "validation": {
     "first-name-required": "Imię jest wymagane",

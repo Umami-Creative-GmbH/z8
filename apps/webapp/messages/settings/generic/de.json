@@ -1,5 +1,19 @@
 {
   "settings": {
+    "approvalTriage": {
+      "correctionError": "Geben Sie eine ganze Zahl von 0 bis 60 Minuten ein.",
+      "correctionHelp": "Null deaktiviert die Schnellspur für kleine Korrekturen, einschließlich Bearbeitungen ohne Differenz. Verwenden Sie andernfalls 1–60 Minuten; alle erforderlichen Nachweise müssen dennoch überprüft werden.",
+      "correctionLabel": "Grenzwert für kleine Korrekturen (Minuten)",
+      "description": "Legen Sie fest, wann ausstehende Anfragen Aufmerksamkeit erfordern und welche kleinen Zeitkorrekturen die Schnellspur nutzen dürfen. Risikoregeln und Nachweisanforderungen bleiben unverändert.",
+      "save": "Triage-Einstellungen speichern",
+      "saved": "Triage-Einstellungen gespeichert.",
+      "saveError": "Triage-Einstellungen konnten nicht gespeichert werden. Bitte versuchen Sie es erneut.",
+      "staleError": "Geben Sie eine ganze Zahl von 1 bis 720 Stunden ein.",
+      "staleHelp": "Ausstehende Anfragen veralten nach Ablauf dieser Stundenzahl (1–720). Wochenenden und Sommerzeitumstellungen halten die Zeit nicht an.",
+      "staleLabel": "Veraltet nach (Stunden)",
+      "thresholds": "Triage-Schwellenwerte",
+      "title": "Genehmigungs-Triage"
+    },
     "assignedLocations": {
       "added": "Zugewiesener Standort hinzugefügt",
       "employeeDescription": "Die Standorte, an denen dieser Mitarbeiter arbeitet. Kioske akzeptieren nur Mitarbeiter, die ihrem Standort zugewiesen sind.",
@@ -466,6 +480,7 @@
       },
       "historyEmpty": "Es wurde noch kein Monat abgeschlossen.",
       "historyTitle": "Verlauf",
+      "locationNotFound": "Dieser Standort existiert nicht mehr.",
       "monthsDescription": "Beim Abschließen eines Monats werden Arbeitszeiten, Zuordnungen und Abwesenheiten für die Lohnabrechnung eingefroren. Notizen bleiben bearbeitbar.",
       "monthsTitle": "Monate",
       "nothingToClose": "Alle in diesem Bereich sind für diesen Monat bereits abgeschlossen.",
@@ -481,9 +496,14 @@
       "reopenTitle": "{month} wiedereröffnen",
       "scope": {
         "all": "Alles",
+        "deletedLocation": "Gelöschter Standort",
         "deletedTeam": "Gelöschtes Team",
         "employees": "Ausgewählte Mitarbeiter",
-        "organization": "Organisation"
+        "locationHelp": "Schließt den gesamten Monat für alle ab, die diesem Standort derzeit zugewiesen sind, einschließlich ehemaliger Mitarbeiter. Ihre Arbeit an anderen Standorten wird ebenfalls eingefroren. Später zugewiesene Mitarbeiter sind nicht betroffen.",
+        "locationNamed": "Standort {name}",
+        "locations": "Standorte",
+        "organization": "Organisation",
+        "teams": "Teams"
       },
       "scopeLabel": "Schließen für",
       "teamNotFound": "Dieses Team existiert nicht mehr.",
@@ -1336,6 +1356,77 @@
       "title": "Implementierungs-Checkliste"
     },
     "import": {
+      "csv": {
+        "acceptSelected": "Ausgewählte gültige Zeilen akzeptieren",
+        "applyMapping": "Zuordnung anwenden",
+        "chooseSource": "Quellwert auswählen",
+        "chooseTarget": "Vorhandenen Datensatz auswählen",
+        "commit": "Akzeptierte Zeilen übernehmen",
+        "committing": "Akzeptierte Zeilen werden importiert…",
+        "description": "Importieren Sie einen abgeschlossenen Arbeitszeitraum pro Zeile. Stellen Sie Pausen als Lücken zwischen den Zeilen dar. Es wird nichts erfasst, bevor Sie es überprüft und akzeptiert haben.",
+        "download": "CSV-Vorlage herunterladen",
+        "duplicateSkipped": "Übersprungenes Duplikat",
+        "existingEmployee": "Bestehender Mitarbeiter",
+        "existingVehicle": "Bestehendes Fahrzeug",
+        "file": "CSV-Datei",
+        "fileTimezone": "Zeitzone für lokale Zeitstempel",
+        "format": "Verwenden Sie UTF-8, Kommas als Trennzeichen und die Spaltenüberschriften der Vorlage. Maximal 500 KB und 1.000 Zeilen. Fahrzeugspalten sind optional; Zählerstände und Entfernungen verwenden ganze Kilometer.",
+        "interval": "Ereignislokale Start- und Endzeit",
+        "mappingHelp": "Zuordnungen gelten nur für diesen Stapel und behalten die ursprünglichen Quellwerte bei. Das Ändern einer Zuordnung oder eine erneute Prüfung setzt die Akzeptanz für noch nicht übernommene Zeilen zurück.",
+        "mappingTitle": "Quellwerte vorhandenen Datensätzen zuordnen",
+        "mappingType": "Zuordnungstyp",
+        "offsetsOnly": "nur explizite Offsets",
+        "organizationVehicle": "Organisationsfahrzeug",
+        "outcome": "Status und Probleme",
+        "ownVehicle": "Eigenes Fahrzeug",
+        "pages": "CSV-Überprüfungsseiten",
+        "partialHelp": "Akzeptierte gültige Zeilen können importiert werden, während andere Zeilen ungelöst bleiben. Korrigieren Sie fehlerhafte Zeitstempel oder Zahlen in der CSV-Datei und laden Sie sie erneut hoch; bereits importierte Arbeit wird übersprungen.",
+        "person": "Mitarbeiter",
+        "preparing": "Vorschau wird vorbereitet…",
+        "preview": "CSV-Vorschau",
+        "readFailed": "Die ausgewählte Datei konnte nicht gelesen werden",
+        "recheck": "Ungelöste Zeilen erneut prüfen",
+        "rejectSelected": "Ausgewählte Zeilen ablehnen",
+        "reviewTitle": "Abgeschlossene Arbeit aus CSV überprüfen",
+        "row": "CSV-Zeile",
+        "scanning": "Überprüfung wird vorbereitet…",
+        "selectPage": "Alle Zeilen auf dieser Seite auswählen",
+        "selectRow": "CSV-Zeile auswählen",
+        "sourcePlate": "Quell-Kennzeichen",
+        "sourceValue": "Quellwert",
+        "status": {
+          "accepted": "Akzeptiert",
+          "blocked": "Erfordert Aufmerksamkeit",
+          "commit_failed": "Handlungsbedarf",
+          "committed": "Importiert",
+          "committing": "Wird importiert",
+          "needs_mapping": "Handlungsbedarf",
+          "rejected": "Abgelehnt",
+          "staged": "Ausstehende Prüfung"
+        },
+        "summary": {
+          "accepted": "Akzeptiert",
+          "imported": "Importiert",
+          "rejected": "Abgelehnt",
+          "skipped": "Übersprungene Duplikate",
+          "total": "Zeilen insgesamt",
+          "unresolved": "Ungelöst"
+        },
+        "tab": "CSV-Arbeit",
+        "timezone": "Zeitzone für lokale Zeitstempel",
+        "timezoneHelp": "Erforderlich für Zeitstempel ohne Offset. Explizite Offsets wie +02:00 haben Vorrang. Die Zeitzone Ihres Browsers wird niemals implizit verwendet.",
+        "title": "CSV – Abgeschlossene Arbeit",
+        "tooLarge": "CSV-Dateien dürfen maximal 500 KB groß sein",
+        "vehicle": "Fahrzeugnutzung",
+        "warning": {
+          "distance_above_limit": "Distanz liegt über 1.500 km",
+          "driving_details_missing": "Fahrtdetails fehlen",
+          "duplicate_will_skip": "Identische Arbeit wird übersprungen",
+          "speed_above_limit": "Rechnerische Durchschnittsgeschwindigkeit liegt über 150 km/h",
+          "start_below_last_end": "Anfangszählerstand liegt unter dem zuletzt erfassten Endzählerstand",
+          "vehicle_on_other_live_work": "Fahrzeug wird bereits in einer aktiven Arbeit eines anderen Mitarbeiters verwendet"
+        }
+      },
       "description": "Importieren Sie Daten von unterstützten Anbietern wie Clockodo und Clockin.",
       "review": {
         "billability": {
@@ -1437,7 +1528,20 @@
         },
         "title": "Importprüfung"
       },
+      "supportedSources": "Importieren Sie Arbeit aus CSV-Dateien oder verbinden Sie unterstützte Anbieter wie Clockodo und Clockin.",
       "title": "Daten importieren"
+    },
+    "kioskBadge": {
+      "errors": {
+        "badgeChanged": "Jemand anderes hat diesen Kiosk-Ausweis in der Zwischenzeit geändert. Überprüfen Sie den Status und versuchen Sie es erneut.",
+        "badgeExists": "Dieser Mitarbeiter hat bereits einen Kiosk-Ausweis. Ersetzen Sie ihn stattdessen.",
+        "employeeInactive": "Nur aktive Mitarbeiter können einen Kiosk-Ausweis erhalten.",
+        "employeeNotFound": "Dieser Mitarbeiter wurde nicht gefunden.",
+        "failed": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
+        "noBadge": "Dieser Mitarbeiter hat keinen Kiosk-Ausweis.",
+        "notAllowed": "Sie sind nicht berechtigt, dies zu tun.",
+        "signInRequired": "Melden Sie sich an, um fortzufahren."
+      }
     },
     "kioskPin": {
       "errors": {
@@ -1460,6 +1564,8 @@
     },
     "kiosks": {
       "add": "Kiosk hinzufügen",
+      "badgeCameraOn": "Ausweiskamera ein",
+      "badgeScannerOn": "Ausweisscanner ein",
       "boardOn": "Anwesenheitsübersicht an",
       "columns": {
         "actions": "Aktionen",
@@ -1489,6 +1595,10 @@
         "offlineNeedsAdoption": "Der Offlinemodus erfordert koordinierte Stempelbefehle, die von dieser Organisation noch nicht verwendet werden."
       },
       "fields": {
+        "badgeCamera": "Ausweiskamera",
+        "badgeCameraDescription": "Mitarbeiter tippen auf „Ausweis scannen“ und halten ihren Kiosk-Ausweis vor die Kamera dieses Kiosks, anstatt ihre PIN einzugeben. Der Code wird auf dem Gerät ausgelesen; es werden keine Bilder hochgeladen oder gespeichert. Der Browser fragt einmalig nach dem Kamerazugriff. Das Stempeln per Ausweis erfordert eine Verbindung; Name und PIN funktionieren weiterhin.",
+        "badgeScanner": "Ausweisscanner",
+        "badgeScannerDescription": "Mitarbeiter scannen ihren Kiosk-Ausweis mit einem an diesem Kiosk angeschlossenen QR-Scanner, anstatt ihre PIN einzugeben. Das Stempeln per Ausweis erfordert eine Verbindung; Name und PIN funktionieren weiterhin.",
         "board": "Anwesenheitsübersicht",
         "boardDescription": "Zeigt am Kiosk mit Vorname und erstem Buchstaben des Nachnamens an, wer anwesend ist oder Pause macht.",
         "location": "Standort",

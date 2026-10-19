@@ -66,6 +66,7 @@
         "noScheduleAssigned": "Atanmış program yok",
         "personnelNumber": "Personel numarası",
         "personnelNumberDescription": "Kuruluşunuzun bordro dışa aktarımlarında kullanılan, bu çalışana özel numarası. Eski çalışanlar da dahil olmak üzere benzersiz olmalıdır.",
+        "personnelNumberManagedByIdp": "Kimlik sağlayıcınız tarafından yönetilir. Personel numarasını oradan değiştirin.",
         "position": "Pozisyon",
         "positionDescription": "İş unvanı veya rol",
         "positionPlaceholder": "Pozisyon girin",
@@ -160,6 +161,31 @@
       "invitations": {
         "description": "Üyeleri davet edin ve bekleyen katılım isteklerini inceleyin",
         "title": "Davetler"
+      },
+      "kioskBadge": {
+        "active": "{date} tarihinden beri aktif.",
+        "confirmReplace": "Rozeti değiştir",
+        "confirmReplaceText": "Değiştirildiğinde yeni bir rozet oluşturulur. Mevcut rozetin tüm kopyaları anında çalışmayı durdurur.",
+        "confirmRevoke": "Rozeti iptal et",
+        "confirmRevokeText": "Bu rozetin tüm kopyaları kalıcı olarak devre dışı kalır. Çalışanın kiosk PIN'i çalışmaya devam eder.",
+        "description": "Çalışanın PIN kodunu girmek yerine çevrim içi bir kiosktan tarattığı yazdırılmış QR kod. Asla kimsenin oturumunu açmaz.",
+        "done": "Bitti",
+        "download": "PDF İndir",
+        "endedByDeparture": "Etkin kiosk kartı yok. Sonuncusu, çalışanın {date} tarihindeki ayrılışıyla sona erdi. Eski kopyalar, işe yeniden alımdan sonra bile bir daha asla çalışmaz.",
+        "heading": "Kiosk kartı",
+        "issue": "Kart ver",
+        "none": "Henüz kiosk kartı yok.",
+        "notEligible": "Yeni bir kart yalnızca çalışan etkinken verilebilir. İşe yeniden alımdan sonra yeni bir kart verin.",
+        "openToPrint": "Yazdırmak için aç",
+        "pdf": {
+          "instructions": "Kartı kesikli çizgi boyunca kesin. Bir kopyaya sahip olan herkes, kuruluşun kiosklarında bu çalışan olarak giriş/çıkış yapabilir, bu nedenle bir anahtar gibi saklayın. Kaybolursa yenisini isteyin: bu kartın tüm kopyaları o zaman çalışmayı durdurur.",
+          "title": "Kiosk kartı"
+        },
+        "replace": "Kartı değiştir",
+        "revoke": "Kartı iptal et",
+        "revoked": "Kiosk kartı iptal edildi",
+        "revokedOn": "Etkin kiosk kartı yok. Sonuncusu {date} tarihinde iptal edildi.",
+        "saveNow": "PDF'yi şimdi kaydedin: Z8 bu kartı bir daha gösteremez. Kaydedilen bir kopyayı yeniden yazdırabilirsiniz. Dosya veya kart kaybolursa kartı değiştirin."
       },
       "kioskPin": {
         "addEmailDescription": "Şifre belirlemek için bir davet alırlar ve ardından giriş yapabilirler. Kiosk PIN'leri ve geçmişleri olduğu gibi kalır.",
@@ -762,6 +788,7 @@
       "area": {
         "back": "Personel dosyaları",
         "description": "Özlük dosyasını yönettiğiniz çalışanlar.",
+        "documentRequests": "Belge talepleri",
         "dueForDeletion": "Silinmesi gereken",
         "empty": "Kapsamınızda henüz çalışan yok.",
         "former": "Eski çalışan",
@@ -849,16 +876,15 @@
       },
       "due": {
         "confirm": "Kalıcı olarak sil",
-        "confirmDescription": "Belgeler ve bunlara ait dosyalar kalıcı olarak silinir. Denetim günlüğü; belgeleri kimin sildiğini, çalışanı, kategoriyi, belge tarihini, bordro dönemini ve silme gerekçenizi saklar.",
         "confirmTitle": "{count, plural, other {# belge kalıcı olarak silinsin mi?} }",
         "description": "Saklama süresi dolmuş eski çalışanlara ait belgeler. Kalıcı olarak silinmelerini onaylayana kadar burada kalırlar; bir belgeyi tutmak istiyorsanız burada bırakın.",
         "dueSince": "{date} tarihinden beri süresi dolmuş",
         "empty": "Kapsamınızda silinmesi gereken herhangi bir belge bulunmuyor.",
         "loadFailed": "Silinmesi gereken belgeler yüklenemedi.",
         "loading": "Silinmesi gereken belgeler yükleniyor",
+        "purgeAuditDescription": "Belgeler ve dosyaları kalıcı olarak silinir. Denetim günlüğü; bunları kimin sildiğini, çalışanı, kategoriyi, belge tarihini ve bordro dönemini saklar. Başlıklar ve dosya adları da belgelerin önceki denetim kayıtlarından kaldırılır.",
         "purged": "{count, plural, other {# belge kalıcı olarak silindi} }",
         "purgeSelected": "{count, plural, =0 {Seçilenleri kalıcı olarak sil} other {# belgeyi kalıcı olarak sil} }",
-        "reason": "Neden (isteğe bağlı)",
         "selectAll": "Tümünü seç",
         "skipped": "{count, plural, other {# belge, artık silinmesi gerekmediğinden veya kapsamınızda olmadığından kalıcı olarak silinmedi.} }",
         "title": "Silinmesi gerekenler",
@@ -877,6 +903,9 @@
         "empty": "Süresi dolan belge yok.",
         "expiredAgo": "{days, plural, other {# gün önce süresi doldu} }",
         "inDays": "{days, plural, other {# gün içinde süresi doluyor} }",
+        "renewalRequested": "Yenileme talep edildi",
+        "requestRenewal": "Yenileme talep et",
+        "requestRenewalFor": "{title} için yenileme talep et ({employee})",
         "title": "Süresi dolan belgeler",
         "today": "Süresi bugün doluyor"
       },
@@ -910,6 +939,24 @@
         "description": "Kuruluşunuzun sizinle paylaştığı özlük dosyanıza ait belgeler.",
         "empty": "Henüz sizinle hiçbir belge paylaşılmadı.",
         "loading": "Belgeleriniz yükleniyor",
+        "requested": {
+          "description": "Kuruluşunuzun sizden istediği belgeler ve son teslim tarihleri.",
+          "submit": {
+            "button": "Gönder",
+            "confirm": "Gönder",
+            "description": "{count, plural, other {\"{title}\" için # belge teslim edildi. Kuruluşunuz bunları inceler ve sonucu size bildirir.} }",
+            "note": "Not (isteğe bağlı)",
+            "open": "{title} gönder",
+            "success": "Gönderildi",
+            "title": "Belgeler gönderilsin mi?"
+          },
+          "title": "Talep edilen belgeler",
+          "upload": {
+            "button": "Yükle",
+            "description": "\"{title}\" talebi için. Tüm belgeler yüklendikten sonra talebi gönderin.",
+            "open": "{title} için bir belge yükle"
+          }
+        },
         "title": "Belgelerim",
         "upload": {
           "button": "Belge yükle",
@@ -973,6 +1020,146 @@
         "saved": "Hatırlatıcı hazırlık süresi kaydedildi",
         "saveFailed": "Hatırlatıcı hazırlık süresi kaydedilemedi.",
         "title": "Sona erme hatırlatıcıları"
+      },
+      "requests": {
+        "accept": {
+          "button": "Kabul et",
+          "confirm": "Kabul et",
+          "description": "\"{title}\" talebi tamamlandı ve çalışana bildirildi.",
+          "failed": "Talep kabul edilemedi.",
+          "open": "{title} kabul et",
+          "success": "Talep kabul edildi",
+          "title": "Gönderim kabul edilsin mi?"
+        },
+        "bulk": {
+          "close": "Kapat",
+          "created": "{count, plural, =0 {Hiç belge talebi oluşturulmadı.} other {# belge talebi oluşturuldu.} }",
+          "description": "Her çalışana kendi talebi iletilir ve çalışan bilgilendirilir. Kapsamınızda olmayan çalışanlar, eski çalışanlar ve bu başlıkla zaten açık bir talebi olan herkes atlanır.",
+          "doneTitle": "Belgeler talep edildi",
+          "employees": "Çalışanlar",
+          "noTeams": "Seçilebilecek ekip yok.",
+          "open": "Birden fazla kişiden talep et",
+          "selectEmployees": "Çalışanları seç",
+          "skipped": "{count, plural, other {# çalışan atlandı:} }",
+          "skippedAlreadyRequested": "{count, plural, other {# kişinin bu başlıkla zaten açık bir talebi var} }",
+          "skippedFormer": "{count, plural, other {# eski çalışan} }",
+          "skippedNotCovered": "{count, plural, other {# erişim kapsamınızda değil} }",
+          "skippedOwnFile": "Kendi dosyanız",
+          "teams": "Ekipler",
+          "teamsHint": "Yetkiniz dahilinde olduğu sürece, şu anda ekipte bulunan herkes.",
+          "title": "Birden fazla çalışandan belge talep et"
+        },
+        "cancel": {
+          "button": "İptal",
+          "confirm": "Talebi iptal et",
+          "description": "Çalışanın artık \"{title}\" belgesini yüklemesi gerekmez ve kendisine nedeni bildirilir. Daha önce yüklenmiş belgeler dosyada kalır.",
+          "keep": "Talebi koru",
+          "open": "{title} talebini iptal et",
+          "reason": "Gerekçe",
+          "success": "Talep iptal edildi",
+          "title": "Talep iptal edilsin mi?"
+        },
+        "create": {
+          "deadline": "Son teslim tarihi",
+          "deadlineHint": "Çalışanın teslim etmesi gereken son gün. Bu tarihten sonra talebin süresi geçmiş olur.",
+          "description": "Çalışana bildirim gönderilir ve çalışan belgeleri Belgelerim bölümünden yükler. Yüklenen belgeler anında dosyasına eklenir ve kendisiyle paylaşılır.",
+          "note": "Not (isteğe bağlı)",
+          "open": "Belge talep et",
+          "submit": "Talep et",
+          "success": "Belge talep edildi",
+          "title": "Belge talep et",
+          "titleHint": "Yenilenmiş ilk yardım sertifikası gibi çalışanın yüklemesi gereken belge."
+        },
+        "deadline": "Son teslim tarihi: {date}",
+        "description": "Bu çalışandan istenen sertifikalar ve diğer belgeler; son teslim tarihleri ve geçmişleriyle birlikte.",
+        "edit": {
+          "button": "Değiştir",
+          "deadlineHint": "Yeni son teslim tarihi geçmişte olamaz. Tarihi değiştirmek, son teslim tarihi hatırlatıcılarını yeniden başlatır.",
+          "description": "\"{title}\" için son teslim tarihini veya notu değiştirin. Değişiklik, talebin geçmişinde gösterilir. Başka bir şey istemek için talebi iptal edin ve yeni bir talep oluşturun.",
+          "open": "{title} öğesini değiştir",
+          "submit": "Değişiklikleri kaydet",
+          "success": "Talep değiştirildi",
+          "title": "Talebi değiştir"
+        },
+        "empty": "Henüz hiçbir belge talep edilmedi.",
+        "error": {
+          "categoryNotRequestable": "Yalnızca sertifikalar ve diğer belgeler talep edilebilir.",
+          "conflict": "Bu arada başka biri bu talebi değiştirdi. Sayfayı yenileyip tekrar deneyin.",
+          "deadlineInPast": "Son teslim tarihi geçmişte olamaz.",
+          "formerEmployee": "Bu çalışanın iş ilişkisi sona erdi.",
+          "invalidDeadline": "Bir son teslim tarihi seçin.",
+          "invalidNote": "Not en fazla {max} karakter olabilir.",
+          "invalidReason": "Gerekçe en fazla {max} karakter olabilir.",
+          "invalidTitle": "En fazla {max} karakterden oluşan bir başlık girin.",
+          "noDocuments": "Göndermeden önce en az bir belge yükleyin.",
+          "noRecipients": "En az bir çalışan veya ekip seçin.",
+          "notEditable": "Yalnızca son teslim tarihi ve not değiştirilebilir. Bunun yerine talebi iptal edip yeni bir talep oluşturun.",
+          "ownFile": "Kendi personel dosyanız için belge talep edemezsiniz.",
+          "reasonRequired": "Bir gerekçe girin.",
+          "renewalAlreadyRequested": "Bu belgenin yenilenmesi için zaten açık bir talep bulunmaktadır.",
+          "renewalExpiryDateRequired": "Yenilenen yetkinlik bir geçerlilik sonu tarihi gerektirir. Gönderilen sertifikaya geçerlilik sonu tarihini ekleyin, ardından onaylayın.",
+          "renewalNotInBulk": "Birden fazla çalışan için yapılan taleplerde yenilenen bir belge adı belirtilemez.",
+          "renewedDocumentMismatch": "Yenilenen belge, aynı çalışana ve aynı kategoriye ait bir belge olmalıdır.",
+          "tooManyRecipients": "Aynı anda en fazla {max} çalışandan belge talep edebilirsiniz."
+        },
+        "event": {
+          "accepted": "Kabul edildi",
+          "cancelled": "İptal edildi",
+          "created": "Talep edildi",
+          "edited": "Değiştirildi",
+          "returned": "Geri gönderildi",
+          "submitted": "Gönderildi"
+        },
+        "history": {
+          "deadlineChanged": "Son teslim tarihi {from} → {to}",
+          "noteChanged": "Not değiştirildi",
+          "title": "Geçmiş"
+        },
+        "loadFailed": "Belge talepleri yüklenemedi.",
+        "overdue": "Süresi geçmiş",
+        "page": {
+          "description": "Sertifikalarını veya diğer belgelerini yönettiğiniz çalışanlardan istenen belgeler. Bir talep, son teslim tarihi geçtikten sonra hâlâ açıksa süresi geçmiş sayılır.",
+          "empty": "Filtrelerle eşleşen belge talebi yok.",
+          "filters": {
+            "active": "Açık ve gönderilmiş",
+            "all": "Tüm durumlar",
+            "overdue": "Yalnızca süresi geçenler",
+            "status": "Durum"
+          },
+          "loading": "Belge talepleri yükleniyor",
+          "next": "Sonraki sayfa",
+          "pagination": "Sayfa {page} / {pageCount}",
+          "previous": "Önceki sayfa",
+          "title": "Belge talepleri"
+        },
+        "pendingDocuments": "Yüklendi, henüz gönderilmedi",
+        "pendingDocumentsClosed": "Yüklendi, hiç gönderilmedi",
+        "reasonCode": {
+          "employmentEnded": "İş akdi sona erdi"
+        },
+        "renewal": {
+          "hint": "Talebi kabul ettiğinizde bu belge artık süresi dolmak üzere olarak sayılmaz. O zamana kadar, geçerlilik süresi hatırlatıcıları yalnızca yetkililere gider.",
+          "hrOnly": "Bu belge yalnızca İK içindir. Çalışan bunu görmez; yalnızca bu talebin başlığını, notunu, kategorisini ve son teslim tarihini görür.",
+          "title": "Yenileme talep et"
+        },
+        "renews": "{title} yeniler",
+        "return": {
+          "button": "Geri gönder",
+          "confirm": "Çalışana geri gönder",
+          "description": "Çalışandan \"{title}\" belgesini tekrar yüklemesi istenir ve nedeni belirtilir. Gönderdiği belgeler dosyada kalır.",
+          "open": "{title} geri gönder",
+          "reason": "Neden",
+          "success": "Talep geri gönderildi",
+          "title": "Gönderim geri gönderilsin mi?"
+        },
+        "status": {
+          "accepted": "Kabul edildi",
+          "cancelled": "İptal edildi",
+          "open": "Açık",
+          "submitted": "Gönderildi"
+        },
+        "submission": "{date} tarihinde gönderildi",
+        "title": "Belge talepleri"
       },
       "retention": {
         "apply": "Öneriyi uygula",

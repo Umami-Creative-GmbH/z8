@@ -1,5 +1,19 @@
 {
   "settings": {
+    "approvalTriage": {
+      "correctionError": "Futni një numër të plotë nga 0 në 60 minuta.",
+      "correctionHelp": "Zeroja çaktivizon korsinë e shpejtë për korrigjime të vogla, duke përfshirë redaktimet pa diferencë kohore. Përndryshe përdorni 1–60 minuta; të gjitha provat e kërkuara duhet të verifikohen gjithsesi.",
+      "correctionLabel": "Limiti i korrigjimit të vogël (minuta)",
+      "description": "Caktoni se kur kërkesat pezull kërkojnë vëmendje dhe cilat korrigjime të vogla kohore mund të përdorin korsinë e shpejtë. Rregullat e rrezikut dhe kërkesat për prova mbeten të pandryshuara.",
+      "save": "Ruaj cilësimet e triazhit",
+      "saved": "Cilësimet e triazhit u ruajtën.",
+      "saveError": "Nuk mund të ruhen cilësimet e triazhit. Ju lutemi provoni përsëri.",
+      "staleError": "Futni një numër të plotë nga 1 deri në 720 orë.",
+      "staleHelp": "Kërkesat në pritje skadojnë pas kaq orësh të kaluara (1–720). Fundjavat dhe ndryshimet e orës verore nuk e ndalin numërimin.",
+      "staleLabel": "Skadon pas (orë)",
+      "thresholds": "Pragjet e triazhit",
+      "title": "Triazhi i miratimeve"
+    },
     "assignedLocations": {
       "added": "Vendndodhja e caktuar u shtua",
       "employeeDescription": "Vendndodhjet ku punon ky punonjës. Kioskat pranojnë vetëm punonjësit e caktuar në vendndodhjen e tyre.",
@@ -466,6 +480,7 @@
       },
       "historyEmpty": "Ende nuk është mbyllur asnjë muaj.",
       "historyTitle": "Historiku",
+      "locationNotFound": "Kjo vendndodhje nuk ekziston më.",
       "monthsDescription": "Mbyllja e një muaji ngrin punën, atribuimin dhe mungesat e tij për listëpagesën. Shënimet mbeten të modifikueshme.",
       "monthsTitle": "Muajt",
       "nothingToClose": "Gjithsecili në këtë fushëveprim është mbyllur tashmë për këtë muaj.",
@@ -481,9 +496,14 @@
       "reopenTitle": "Rihap {month}",
       "scope": {
         "all": "Gjithçka",
+        "deletedLocation": "Vendndodhje e fshirë",
         "deletedTeam": "Ekipi i fshirë",
         "employees": "Punonjësit e përzgjedhur",
-        "organization": "Organizata"
+        "locationHelp": "Mbyll të gjithë muajin për këdo të caktuar në këtë vendndodhje tani, duke përfshirë ish-punonjësit. Puna e tyre në vendndodhje të tjera ngrihet gjithashtu. Punonjësit e caktuar më vonë nuk mbulohen.",
+        "locationNamed": "Vendndodhja {name}",
+        "locations": "Vendndodhjet",
+        "organization": "Organizata",
+        "teams": "Ekipet"
       },
       "scopeLabel": "Mbyll për",
       "teamNotFound": "Ky ekip nuk ekziston më.",
@@ -1336,6 +1356,77 @@
       "title": "Lista e kontrollit të zbatimit"
     },
     "import": {
+      "csv": {
+        "acceptSelected": "Prano rreshtat e vlefshëm të përzgjedhur",
+        "applyMapping": "Zbato përputhjen",
+        "chooseSource": "Zgjidhni një vlerë burimore",
+        "chooseTarget": "Zgjidhni një regjistrim ekzistues",
+        "commit": "Konfirmo rreshtat e pranuar",
+        "committing": "Po importohen rreshtat e pranuar…",
+        "description": "Importoni një periudhë të përfunduar pune për çdo rresht. Paraqitini pushimet si boshllëqe midis rreshtave. Asgjë nuk regjistrohet derisa ta shqyrtoni dhe ta pranoni.",
+        "download": "Shkarko shabllonin CSV",
+        "duplicateSkipped": "Dublikatë e anashkaluar",
+        "existingEmployee": "Punonjës ekzistues",
+        "existingVehicle": "Automjet ekzistues",
+        "file": "Skedar CSV",
+        "fileTimezone": "Zona kohore për vulat kohore lokale",
+        "format": "Përdorni UTF-8, ndarës me presje dhe kryet e shabllonit. Maksimumi 500 KB dhe 1,000 rreshta. Kolonat e automjeteve janë opsionale; leximet dhe distanca përdorin kilometra të plotë.",
+        "interval": "Fillimi dhe mbarimi lokal i ngjarjes",
+        "mappingHelp": "Përputhjet zbatohen vetëm për këtë grup dhe ruajnë vlerat origjinale burimore. Ndryshimi i një përputhjeje ose rikollontrollimi rivendos pranimin në rreshtat e pakonfirmuar.",
+        "mappingTitle": "Përputhni vlerat burimore me regjistrimet ekzistuese",
+        "mappingType": "Lloji i përputhjes",
+        "offsetsOnly": "vetëm zhvendosje të qarta",
+        "organizationVehicle": "Automjeti i organizatës",
+        "outcome": "Statusi dhe problemet",
+        "ownVehicle": "Automjeti personal",
+        "pages": "Faqet e shqyrtimit të CSV-së",
+        "partialHelp": "Rreshtat e vlefshëm të pranuar mund të importohen ndërkohë që rreshtat e tjerë mbeten të pazgjidhur. Korrigjoni vulat kohore ose numrat e pasaktë në CSV dhe ringarkojeni; puna e importuar tashmë do të anashkalohet.",
+        "person": "Punonjës",
+        "preparing": "Po përgatitet pamja paraprake…",
+        "preview": "Shiko paraprakisht CSV-në",
+        "readFailed": "Skedari i përzgjedhur nuk mund të lexohej",
+        "recheck": "Rikontrollo rreshtat e pazgjidhur",
+        "rejectSelected": "Refuzo rreshtat e përzgjedhur",
+        "reviewTitle": "Shqyrto punën e përfunduar nga CSV",
+        "row": "Rreshti i CSV-së",
+        "scanning": "Po përgatitet shqyrtimi…",
+        "selectPage": "Zgjidh të gjithë rreshtat në këtë faqe",
+        "selectRow": "Zgjidh rreshtin e CSV-së",
+        "sourcePlate": "Targa burimore",
+        "sourceValue": "Vlera burimore",
+        "status": {
+          "accepted": "Pranuar",
+          "blocked": "Kërkon vëmendje",
+          "commit_failed": "Kërkon vëmendje",
+          "committed": "U importua",
+          "committing": "Po importohet",
+          "needs_mapping": "Kërkon vëmendje",
+          "rejected": "Refuzuar",
+          "staged": "Në pritje të shqyrtimit"
+        },
+        "summary": {
+          "accepted": "Pranuar",
+          "imported": "U importua",
+          "rejected": "Refuzuar",
+          "skipped": "Dublikatat e anashkaluara",
+          "total": "Rreshtat gjithsej",
+          "unresolved": "E pazgjidhur"
+        },
+        "tab": "Puna CSV",
+        "timezone": "Zona kohore për vulat kohore lokale",
+        "timezoneHelp": "Kërkohet për vulat kohore pa një zhvendosje. Zhvendosjet e qarta si p.sh. +02:00 kanë përparësi. Zona kohore e shfletuesit tuaj nuk përdoret kurrë në mënyrë të nënkuptuar.",
+        "title": "Puna e përfunduar në CSV",
+        "tooLarge": "Skedarët CSV duhet të jenë më së shumti 500 KB",
+        "vehicle": "Përdorimi i automjetit",
+        "warning": {
+          "distance_above_limit": "Distanca është mbi 1,500 km",
+          "driving_details_missing": "Mungojnë detajet e drejtimit të automjetit",
+          "duplicate_will_skip": "Puna identike do të anashkalohet",
+          "speed_above_limit": "Shpejtësia mesatare e nënkuptuar është mbi 150 km/h",
+          "start_below_last_end": "Leximi fillestar është më i ulët se leximi i fundit përfundimtar i regjistruar",
+          "vehicle_on_other_live_work": "Automjeti është në punën aktive të një punonjësi tjetër"
+        }
+      },
       "description": "Importoni të dhëna nga ofrues të mbështetur si Clockodo dhe Clockin.",
       "review": {
         "billability": {
@@ -1437,7 +1528,20 @@
         },
         "title": "Shqyrtimi i importit"
       },
+      "supportedSources": "Importoni punën nga skedarët CSV ose lidhni ofruesit e mbështetur si Clockodo dhe Clockin.",
       "title": "Importo të dhëna"
+    },
+    "kioskBadge": {
+      "errors": {
+        "badgeChanged": "Dikush tjetër e ndryshoi këtë distinktiv kioske ndërkohë. Kontrolloni statusin e tij dhe provoni përsëri.",
+        "badgeExists": "Ky punonjës ka tashmë një distinktiv kioske. Zëvendësojeni atë në vend të kësaj.",
+        "employeeInactive": "Vetëm punonjësit aktivë mund të marrin një distinktiv kioske.",
+        "employeeNotFound": "Ky punonjës nuk u gjet.",
+        "failed": "Diçka shkoi keq. Ju lutemi provoni përsëri.",
+        "noBadge": "Ky punonjës nuk ka distinktiv kioske.",
+        "notAllowed": "Nuk keni leje për ta bërë këtë.",
+        "signInRequired": "Identifikohuni për të vazhduar."
+      }
     },
     "kioskPin": {
       "errors": {
@@ -1460,6 +1564,8 @@
     },
     "kiosks": {
       "add": "Shto kioskë",
+      "badgeCameraOn": "Kamera e distinktivit aktive",
+      "badgeScannerOn": "Skaneri i distinktivit aktiv",
       "boardOn": "Tabela «Kush është brenda» aktive",
       "columns": {
         "actions": "Veprimet",
@@ -1489,6 +1595,10 @@
         "offlineNeedsAdoption": "Modaliteti jashtë linje ka nevojë për komanda të koordinuara të orës, të cilat kjo organizatë nuk i përdor ende."
       },
       "fields": {
+        "badgeCamera": "Kamera e distinktivit",
+        "badgeCameraDescription": "Punonjësit prekin Skano distinktivin dhe mbajnë distinktivin e tyre të kioskës para kamerës së kësaj kioske në vend që të fusin PIN-in e tyre. Kodi lexohet në pajisje; asnjë imazh nuk ngarkohet apo ruhet. Shfletuesi kërkon vetëm një herë qasje në kamerë. Regjistrimi me distinktiv kërkon lidhje; emri dhe PIN-i vazhdojnë të funksionojnë.",
+        "badgeScanner": "Skaneri i distinktivit",
+        "badgeScannerDescription": "Punonjësit skanojnë distinktivin e tyre të kioskës me një skaner QR të lidhur me këtë kioskë në vend që të fusin PIN-in e tyre. Regjistrimi me distinktiv kërkon lidhje; emri dhe PIN-i vazhdojnë të funksionojnë.",
         "board": "Tabela «Kush është brenda»",
         "boardDescription": "Shfaq në kioskë se kush është i pranishëm ose në pushim, sipas emrit dhe inicialit të mbiemrit.",
         "location": "Vendndodhja",

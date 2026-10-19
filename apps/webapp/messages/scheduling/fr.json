@@ -68,6 +68,7 @@
         "failed": "Échec de la mise à jour du quart",
         "overlapDescription": "Ce quart chevauche {count} autre(s) quart(s)",
         "overlapWarning": "Quart enregistré avec avertissement de chevauchement",
+        "skillOverrideReasonRequired": "L'employé ne dispose pas d'une compétence requise ce jour-là. Ouvrez le quart de travail pour indiquer un motif.",
         "updated": "Quart mis à jour"
       }
     },
@@ -118,6 +119,35 @@
       "updated": "Quart de travail mis à jour",
       "updateShift": "Mettre à jour le quart de travail"
     },
+    "shiftRequests": {
+      "approve": "Approuver",
+      "approved": "Demande approuvée",
+      "approveFailed": "Échec de l'approbation de la demande",
+      "button": "Demandes de quart",
+      "confirmApprove": "Confirmer l'approbation",
+      "confirmReject": "Confirmer le refus",
+      "description": "Approuver ou refuser les demandes de reprise et d'échange en attente",
+      "empty": "Aucune demande en attente",
+      "loadFailed": "Échec du chargement des demandes",
+      "loading": "Chargement des demandes…",
+      "notes": "Notes : {notes}",
+      "overrideReasonHelp": "Enregistré avec l'approbation en tant que dérogation de compétence.",
+      "pickupSummary": "{requester} souhaite reprendre ce quart disponible",
+      "reason": "Motif : {reason}",
+      "reject": "Refuser",
+      "rejected": "Demande refusée",
+      "rejectFailed": "Échec du refus de la demande",
+      "rejectReason": "Motif du refus (facultatif)",
+      "shiftWhen": "{date}, {start}–{end}",
+      "swapSummary": "{requester} souhaite céder ce quart à {target}",
+      "swapWithoutTarget": "{requester} souhaite céder ce quart, mais n'a pas désigné de collègue",
+      "title": "Demandes de quart",
+      "type": {
+        "pickup": "Reprise",
+        "swap": "Échange"
+      },
+      "unnamedEmployee": "Employé non désigné"
+    },
     "skills": {
       "certificateOnFile": "Certificat au dossier",
       "expiredCertifications": "Certifications expirées :",
@@ -125,13 +155,15 @@
       "missingPreferred": "Compétences préférées manquantes :",
       "missingPreferredCount": "{count} compétence préférée manquante",
       "missingRequired": "Compétences requises manquantes :",
+      "overrideReason": "Motif de la dérogation de compétence",
+      "overrideReasonNotice": "Vous pouvez tout de même attribuer ce quart en indiquant un motif. Le motif est consigné en tant que dérogation de compétence.",
+      "overrideReasonRequired": "Indiquez un motif pour attribuer le quart à un employé ne possédant pas toutes les compétences requises.",
       "preferred": "Préféré",
       "preferredSkillsMissing": "Compétences préférées manquantes",
       "requirementsNotMet": "Exigences de compétences non satisfaites",
       "unqualified": "Non qualifié",
       "validating": "Validation des compétences…",
-      "validatingDescription": "Vérification des qualifications de l'employé",
-      "warningMessage": "Vous pouvez toujours attribuer ce quart de travail, mais il sera enregistré comme une dérogation."
+      "validatingDescription": "Vérification des qualifications de l'employé"
     },
     "staffingSuggestions": {
       "empty": "Aucun employé disponible pour ce créneau",

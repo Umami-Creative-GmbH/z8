@@ -172,7 +172,6 @@
       "label-available": "Të disponueshme",
       "label-pending": "Në pritje",
       "label-used": "Të përdorura",
-      "no-policy": "Nuk është konfiguruar asnjë politikë pushimesh për këtë vit",
       "pending": "{days} në pritje",
       "percent-used": "{percent}% të përdorura",
       "title": "Bilanci i pushimeve",

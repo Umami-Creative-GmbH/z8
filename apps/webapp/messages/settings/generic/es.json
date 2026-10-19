@@ -1,5 +1,19 @@
 {
   "settings": {
+    "approvalTriage": {
+      "correctionError": "Introduzca un número entero de 0 a 60 minutos.",
+      "correctionHelp": "Cero desactiva la vía rápida para correcciones menores, incluidas las ediciones sin variación. De lo contrario, use entre 1 y 60 minutos; aún se deben verificar todos los justificantes requeridos.",
+      "correctionLabel": "Límite de corrección menor (minutos)",
+      "description": "Defina cuándo las solicitudes pendientes requieren atención y qué correcciones de tiempo menores pueden usar la vía rápida. Las reglas de riesgo y los requisitos de justificantes se mantienen fijos.",
+      "save": "Guardar configuración de triaje",
+      "saved": "Configuración de triaje guardada.",
+      "saveError": "No se pudo guardar la configuración de triaje. Inténtelo de nuevo.",
+      "staleError": "Introduce un número entero de 1 a 720 horas.",
+      "staleHelp": "Las solicitudes pendientes caducan una vez transcurridas estas horas (1-720). Los fines de semana y los cambios de horario de verano no detienen el reloj.",
+      "staleLabel": "Caduca tras (horas)",
+      "thresholds": "Umbrales de triaje",
+      "title": "Triaje de aprobaciones"
+    },
     "assignedLocations": {
       "added": "Ubicación asignada agregada",
       "employeeDescription": "Las ubicaciones en las que trabaja este empleado. Los quioscos solo aceptan empleados asignados a su ubicación.",
@@ -466,6 +480,7 @@
       },
       "historyEmpty": "Todavía no se ha cerrado ningún mes.",
       "historyTitle": "Historial",
+      "locationNotFound": "Esta ubicación ya no existe.",
       "monthsDescription": "Cerrar un mes congela el trabajo, la atribución y las ausencias para la nómina. Las notas se pueden seguir editando.",
       "monthsTitle": "Meses",
       "nothingToClose": "Todos en este ámbito ya están cerrados para este mes.",
@@ -481,9 +496,14 @@
       "reopenTitle": "Reabrir {month}",
       "scope": {
         "all": "Todo",
+        "deletedLocation": "Ubicación eliminada",
         "deletedTeam": "Equipo eliminado",
         "employees": "Empleados seleccionados",
-        "organization": "Organización"
+        "locationHelp": "Cierra todo el mes para todas las personas asignadas a esta ubicación ahora, incluidos los exempleados. Su trabajo en otras ubicaciones también se congelará. No se incluye a los empleados asignados posteriormente.",
+        "locationNamed": "Ubicación {name}",
+        "locations": "Ubicaciones",
+        "organization": "Organización",
+        "teams": "Equipos"
       },
       "scopeLabel": "Cerrar para",
       "teamNotFound": "Este equipo ya no existe.",
@@ -1336,6 +1356,77 @@
       "title": "Lista de verificación de implementación"
     },
     "import": {
+      "csv": {
+        "acceptSelected": "Aceptar filas válidas seleccionadas",
+        "applyMapping": "Aplicar asignación",
+        "chooseSource": "Elegir un valor de origen",
+        "chooseTarget": "Elegir un registro existente",
+        "commit": "Confirmar filas aceptadas",
+        "committing": "Importando filas aceptadas…",
+        "description": "Importa un periodo de trabajo completado por fila. Representa los descansos como intervalos entre filas. No se registrará nada hasta que lo revises y lo aceptes.",
+        "download": "Descargar plantilla CSV",
+        "duplicateSkipped": "Duplicado omitido",
+        "existingEmployee": "Empleado existente",
+        "existingVehicle": "Vehículo existente",
+        "file": "Archivo CSV",
+        "fileTimezone": "Zona horaria para marcas de tiempo locales",
+        "format": "Usa UTF-8, comas como separadores y los encabezados de la plantilla. Máximo 500 KB y 1000 filas. Las columnas de vehículos son opcionales; las lecturas y la distancia utilizan kilómetros enteros.",
+        "interval": "Inicio y fin locales del evento",
+        "mappingHelp": "Las asignaciones solo se aplican a este lote y conservan los valores de origen originales. Cambiar una asignación o volver a comprobar restablece la aceptación en las filas no confirmadas.",
+        "mappingTitle": "Asignar valores de origen a registros existentes",
+        "mappingType": "Tipo de asignación",
+        "offsetsOnly": "solo desfases explícitos",
+        "organizationVehicle": "Vehículo de la organización",
+        "outcome": "Estado y problemas",
+        "ownVehicle": "Vehículo propio",
+        "pages": "Páginas de revisión de CSV",
+        "partialHelp": "Las filas válidas aceptadas se pueden importar mientras otras filas siguen sin resolverse. Corrige las marcas de tiempo o los números con formato incorrecto en el CSV y vuelve a subirlo; el trabajo ya importado se omitirá.",
+        "person": "Empleado",
+        "preparing": "Preparando la vista previa…",
+        "preview": "Vista previa del CSV",
+        "readFailed": "No se ha podido leer el archivo seleccionado",
+        "recheck": "Volver a comprobar filas no resueltas",
+        "rejectSelected": "Rechazar filas seleccionadas",
+        "reviewTitle": "Revisar trabajo completado del CSV",
+        "row": "Fila del CSV",
+        "scanning": "Preparando la revisión…",
+        "selectPage": "Seleccionar todas las filas de esta página",
+        "selectRow": "Seleccionar fila del CSV",
+        "sourcePlate": "Matrícula de origen",
+        "sourceValue": "Valor de origen",
+        "status": {
+          "accepted": "Aceptado",
+          "blocked": "Requiere atención",
+          "commit_failed": "Requiere atención",
+          "committed": "Importado",
+          "committing": "Importando",
+          "needs_mapping": "Requiere atención",
+          "rejected": "Rechazado",
+          "staged": "Pendiente de revisión"
+        },
+        "summary": {
+          "accepted": "Aceptado",
+          "imported": "Importado",
+          "rejected": "Rechazado",
+          "skipped": "Duplicados omitidos",
+          "total": "Total de filas",
+          "unresolved": "Sin resolver"
+        },
+        "tab": "Trabajo de CSV",
+        "timezone": "Zona horaria para marcas de tiempo locales",
+        "timezoneHelp": "Obligatorio para marcas de tiempo sin desfase. Los desfases explícitos como +02:00 tienen prioridad. La zona horaria de su navegador nunca se utiliza de forma implícita.",
+        "title": "Trabajo completado de CSV",
+        "tooLarge": "Los archivos CSV deben tener un tamaño máximo de 500 KB",
+        "vehicle": "Uso del vehículo",
+        "warning": {
+          "distance_above_limit": "La distancia es superior a 1500 km",
+          "driving_details_missing": "Faltan detalles de conducción",
+          "duplicate_will_skip": "El trabajo idéntico se omitirá",
+          "speed_above_limit": "La velocidad media implícita supera los 150 km/h",
+          "start_below_last_end": "La lectura inicial es inferior a la última lectura final registrada",
+          "vehicle_on_other_live_work": "El vehículo está asignado al trabajo en curso de otro empleado"
+        }
+      },
       "description": "Importe datos de proveedores compatibles como Clockodo y Clockin.",
       "review": {
         "billability": {
@@ -1437,7 +1528,20 @@
         },
         "title": "Revisión de importación"
       },
+      "supportedSources": "Importe trabajo desde archivos CSV o conecte proveedores compatibles como Clockodo y Clockin.",
       "title": "Importar datos"
+    },
+    "kioskBadge": {
+      "errors": {
+        "badgeChanged": "Otra persona ha modificado esta credencial de quiosco mientras tanto. Compruebe su estado e inténtelo de nuevo.",
+        "badgeExists": "Este empleado ya tiene una credencial de quiosco. Sustitúyala en su lugar.",
+        "employeeInactive": "Solo los empleados activos pueden recibir una credencial de quiosco.",
+        "employeeNotFound": "No se ha encontrado a este empleado.",
+        "failed": "Se ha producido un error. Inténtelo de nuevo.",
+        "noBadge": "Este empleado no tiene credencial de quiosco.",
+        "notAllowed": "No tiene permiso para hacer esto.",
+        "signInRequired": "Inicie sesión para continuar."
+      }
     },
     "kioskPin": {
       "errors": {
@@ -1460,6 +1564,8 @@
     },
     "kiosks": {
       "add": "Añadir quiosco",
+      "badgeCameraOn": "Cámara para credenciales activada",
+      "badgeScannerOn": "Escáner de credenciales activado",
       "boardOn": "Panel de presencia activado",
       "columns": {
         "actions": "Acciones",
@@ -1489,6 +1595,10 @@
         "offlineNeedsAdoption": "El modo sin conexión requiere comandos de fichaje coordinados, los cuales esta organización aún no utiliza."
       },
       "fields": {
+        "badgeCamera": "Cámara para credenciales",
+        "badgeCameraDescription": "Los empleados pulsan en «Escanear credencial» y muestran su credencial de quiosco a la cámara de este quiosco en lugar de introducir su PIN. El código se lee en el dispositivo; no se sube ni almacena ninguna imagen. El navegador solicita acceso a la cámara una sola vez. Fichar con credencial requiere conexión; el nombre y el PIN siguen funcionando.",
+        "badgeScanner": "Escáner de credenciales",
+        "badgeScannerDescription": "Los empleados escanean su credencial de quiosco con un escáner QR conectado a este quiosco en lugar de introducir su PIN. Fichar con credencial requiere conexión; el nombre y el PIN siguen funcionando.",
         "board": "Panel de presencia",
         "boardDescription": "Muestra en el quiosco quién está presente o en descanso, por nombre e inicial del apellido.",
         "location": "Ubicación",

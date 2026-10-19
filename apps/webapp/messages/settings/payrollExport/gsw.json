@@ -165,11 +165,13 @@
         "selectWorkCategory": "Arbeitskategorie uswähle",
         "sourceType": "Quelle-Typ",
         "specialCategory": "Spezialkategorie",
+        "subtitle": "Ordne dini Arbetskategorie und Abwäsehäitsarte de Lohnarte-Codes vo de Lohnbuechhaltig zue",
         "table": {
           "category": "Kategorie",
           "datev": "DATEV",
           "lexware": "Lexware",
           "sage": "Sage",
+          "successFactors": "SAP SuccessFactors",
           "type": "Typ"
         },
         "title": "Lohnartenzuordnungen",
@@ -238,9 +240,7 @@
         "title": "Sage Lohnabrächnig"
       },
       "specialCategory": {
-        "holidayCompensation": "Ferienentschädigung",
-        "overtime": "Überziit",
-        "overtimeReduction": "Überziit-Abbau"
+        "overtime": "Überziit"
       },
       "successfactors": {
         "batchSize": "Batch-Grössi",

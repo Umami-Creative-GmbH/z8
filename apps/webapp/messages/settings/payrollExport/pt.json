@@ -165,11 +165,13 @@
         "selectWorkCategory": "Selecionar categoria de trabalho",
         "sourceType": "Tipo de origem",
         "specialCategory": "Categoria especial",
+        "subtitle": "Mapeie suas categorias de trabalho e tipos de ausência para os códigos de tipo de remuneração da folha de pagamento",
         "table": {
           "category": "Categoria",
           "datev": "DATEV",
           "lexware": "Lexware",
           "sage": "Sage",
+          "successFactors": "SAP SuccessFactors",
           "type": "Tipo"
         },
         "title": "Mapeamentos de tipo de salário",
@@ -238,9 +240,7 @@
         "title": "Sage Lohn"
       },
       "specialCategory": {
-        "holidayCompensation": "Compensação de férias",
-        "overtime": "Horas extras",
-        "overtimeReduction": "Redução de horas extras"
+        "overtime": "Horas extras"
       },
       "successfactors": {
         "batchSize": "Tamanho do lote",

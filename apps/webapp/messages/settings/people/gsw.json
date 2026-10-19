@@ -66,6 +66,7 @@
         "noScheduleAssigned": "Kei Zytplan zuegwise",
         "personnelNumber": "Personalnummere",
         "personnelNumberDescription": "D Nummere vo dinere Organisation für de Mitarbeiter, wo bi Lohnexport brucht wird. Si muess eidütig si, au bi ehemalige Mitarbeiter.",
+        "personnelNumberManagedByIdp": "Wird vo dim Identity-Provider verwaltet. Änder d Personalnummere döt.",
         "position": "Position",
         "positionDescription": "Jobtitel oder Rolle",
         "positionPlaceholder": "Position iigee",
@@ -160,6 +161,31 @@
       "invitations": {
         "description": "Mitglieder einladen und ausstehende Beitrittsanfragen prüfen",
         "title": "Einladungen"
+      },
+      "kioskBadge": {
+        "active": "Aktiv sit {date}.",
+        "confirmReplace": "Badge ersetze",
+        "confirmReplaceText": "Bim Ersetze wird en neue Badge erstellt. Jedi Kopie vom aktuelle Badge funktioniert ab sofort nümme.",
+        "confirmRevoke": "Badge widerrüefe",
+        "confirmRevokeText": "Jedi Kopie vo dem Badge funktioniert definitiv nümme. De Kiosk-PIN vo de Person funktioniert witerhin.",
+        "description": "En usdruckte QR-Code, wo d Person amene Online-Kiosk scannt, statt de PIN izgeh. Er mäldet niemert a.",
+        "done": "Fertig",
+        "download": "PDF abelade",
+        "endedByDeparture": "Kein aktiver Kiosk-Badge. Der letzte endete mit dem Austritt des Mitarbeiters am {date}. Alte Kopien funktionieren nie wieder, auch nicht nach einer Wiedereinstellung.",
+        "heading": "Kiosk-Badge",
+        "issue": "Badge ausstellen",
+        "none": "Noch kein Kiosk-Badge.",
+        "notEligible": "Ein neuer Badge kann nur ausgestellt werden, solange der Mitarbeiter aktiv ist. Stellen Sie nach einer Wiedereinstellung einen neuen Badge aus.",
+        "openToPrint": "Zum Drucken öffnen",
+        "pdf": {
+          "instructions": "Schneiden Sie den Badge entlang der gestrichelten Linie aus. Wer eine Kopie besitzt, kann an den Kiosken der Organisation als dieser Mitarbeiter stempeln; bewahren Sie ihn daher wie einen Schlüssel auf. Wenn er verloren geht, fordern Sie Ersatz an: Jede Kopie dieses Badges funktioniert danach nicht mehr.",
+          "title": "Kiosk-Badge"
+        },
+        "replace": "Badge ersetzen",
+        "revoke": "Badge widerrufen",
+        "revoked": "Kiosk-Badge widerrufen",
+        "revokedOn": "Kein aktiver Kiosk-Badge. Der letzte wurde am {date} widerrufen.",
+        "saveNow": "Speichern Sie das PDF jetzt: Z8 kann diesen Badge nicht mehr anzeigen. Sie können eine gespeicherte Kopie erneut ausdrucken. Wenn die Datei oder der Badge verloren geht, ersetzen Sie den Badge."
       },
       "kioskPin": {
         "addEmailDescription": "Si bechömid en Iiladig zum es Passwort uswähle und chönd sich dänn aamälde. Ihre Kiosk-PIN und Verlauf bliibid wie si sind.",
@@ -762,6 +788,7 @@
       "area": {
         "back": "Personaldossiers",
         "description": "D Mitarbeiter, wo du s Personaldossier devo verwaltisch.",
+        "documentRequests": "Dokumentanforderungen",
         "dueForDeletion": "Fällig zum Lösche",
         "empty": "Es sind no kei Mitarbeiter i dim Zueständigkeitsberiich.",
         "former": "Ehemalige Mitarbeiter",
@@ -849,16 +876,15 @@
       },
       "due": {
         "confirm": "Endgültig löschen",
-        "confirmDescription": "Die Dokumente und ihre Dateien werden endgültig gelöscht. Im Audit-Protokoll wird festgehalten, wer sie endgültig gelöscht hat, die Mitarbeiterin oder der Mitarbeiter, die Kategorie, das Dokumentdatum und die Abrechnungsperiode sowie Ihr Grund.",
         "confirmTitle": "{count, plural, one {# Dokument endgültig löschen?} other {# Dokumente endgültig löschen?}}",
         "description": "Dokumente von ehemaligen Mitarbeitenden, deren Aufbewahrungsfrist abgelaufen ist. Sie bleiben erhalten, bis Sie deren endgültige Löschung bestätigen; belassen Sie ein Dokument hier, um es zu behalten.",
         "dueSince": "Fällig seit {date}",
         "empty": "In Ihrem Zuständigkeitsbereich sind keine Dokumente zur Löschung fällig.",
         "loadFailed": "Die zur Löschung fälligen Dokumente konnten nicht geladen werden.",
         "loading": "Zur Löschung fällige Dokumente werden geladen",
+        "purgeAuditDescription": "Die Dokumente und ihre Dateien werden endgültig gelöscht. Das Audit-Log speichert, wer sie gelöscht hat, den Mitarbeiter, die Kategorie, das Dokumentdatum und die Lohnperiode. Titel und Dateinamen werden auch aus früheren Audit-Einträgen der Dokumente entfernt.",
         "purged": "{count, plural, one {# Dokument endgültig gelöscht} other {# Dokumente endgültig gelöscht}}",
         "purgeSelected": "{count, plural, =0 {Ausgewählte endgültig löschen} one {# Dokument endgültig löschen} other {# Dokumente endgültig löschen}}",
-        "reason": "Grund (optional)",
         "selectAll": "Alle auswählen",
         "skipped": "{count, plural, one {# Dokument wurde nicht endgültig gelöscht, da es nicht mehr zur Löschung fällig ist oder nicht in Ihren Zuständigkeitsbereich fällt.} other {# Dokumente wurden nicht endgültig gelöscht, da sie nicht mehr zur Löschung fällig sind oder nicht in Ihren Zuständigkeitsbereich fallen.}}",
         "title": "Zur Löschung fällig",
@@ -877,6 +903,9 @@
         "empty": "Es laufen keine Dokumente ab.",
         "expiredAgo": "{days, plural, one {Vor # Tag abgelaufen} other {Vor # Tagen abgelaufen}}",
         "inDays": "{days, plural, one {Läuft in # Tag ab} other {Läuft in # Tagen ab}}",
+        "renewalRequested": "Erneuerung angefordert",
+        "requestRenewal": "Erneuerung anfordern",
+        "requestRenewalFor": "Erneuerung von {title} ({employee}) anfordern",
         "title": "Ablaufende Dokumente",
         "today": "Läuft heute ab"
       },
@@ -910,6 +939,24 @@
         "description": "Dokumente aus Ihrem Personaldossier, die Ihre Organisation mit Ihnen geteilt hat.",
         "empty": "Es wurden noch keine Dokumente mit Ihnen geteilt.",
         "loading": "Ihre Dokumente werden geladen",
+        "requested": {
+          "description": "Dokumente, die Ihre Organisation von Ihnen angefordert hat, mit deren Frist.",
+          "submit": {
+            "button": "Einreichen",
+            "confirm": "Einreichen",
+            "description": "{count, plural, one {# Dokument für \"{title}\" eingereicht. Ihre Organisation prüft es und teilt Ihnen das Ergebnis mit.} other {# Dokumente für \"{title}\" eingereicht. Ihre Organisation prüft sie und teilt Ihnen das Ergebnis mit.}}",
+            "note": "Notiz (optional)",
+            "open": "{title} einreichen",
+            "success": "Eingereicht",
+            "title": "Dokumente einreichen?"
+          },
+          "title": "Angeforderte Dokumente",
+          "upload": {
+            "button": "Hochladen",
+            "description": "Für die Anforderung \"{title}\". Reichen Sie die Anforderung ein, sobald alle zugehörigen Dokumente hochgeladen sind.",
+            "open": "Dokument für {title} hochladen"
+          }
+        },
         "title": "Meine Dokumente",
         "upload": {
           "button": "Dokument hochladen",
@@ -973,6 +1020,146 @@
         "saved": "Vorlaufzeit für Erinnerungen gespeichert",
         "saveFailed": "Die Vorlaufzeit für Erinnerungen konnte nicht gespeichert werden.",
         "title": "Ablauferinnerungen"
+      },
+      "requests": {
+        "accept": {
+          "button": "Akzeptieren",
+          "confirm": "Akzeptieren",
+          "description": "Die Anforderung \"{title}\" ist abgeschlossen, und der Mitarbeiter wird benachrichtigt.",
+          "failed": "Die Anforderung konnte nicht akzeptiert werden.",
+          "open": "{title} akzeptieren",
+          "success": "Anforderung akzeptiert",
+          "title": "Einreichung akzeptieren?"
+        },
+        "bulk": {
+          "close": "Schliessen",
+          "created": "{count, plural, =0 {Keine Dokumentanforderungen erstellt.} one {# Dokumentanforderung erstellt.} other {# Dokumentanforderungen erstellt.}}",
+          "description": "Jeder Mitarbeiter erhält eine eigene Anforderung und wird benachrichtigt. Mitarbeiter, für die Sie nicht zuständig sind, ehemalige Mitarbeiter und alle, die bereits eine offene Anforderung mit diesem Titel haben, werden übersprungen.",
+          "doneTitle": "Dokumente angefordert",
+          "employees": "Mitarbeiter",
+          "noTeams": "Keine Teams zur Auswahl.",
+          "open": "Von mehreren anfordern",
+          "selectEmployees": "Mitarbeiter auswählen",
+          "skipped": "{count, plural, other {# Mitarbeiter übersprungen:} }",
+          "skippedAlreadyRequested": "{count, plural, one {# hat bereits eine offene Anforderung mit diesem Titel} other {# haben bereits eine offene Anforderung mit diesem Titel}}",
+          "skippedFormer": "{count, plural, one {# ehemaliger Mitarbeiter} other {# ehemalige Mitarbeiter}}",
+          "skippedNotCovered": "{count, plural, other {# nicht durch Ihren Zugriff abgedeckt} }",
+          "skippedOwnFile": "Eigene Akte",
+          "teams": "Teams",
+          "teamsHint": "Alli, wo aktuell im Team sind, sowiit du für si zueständig bisch.",
+          "title": "Es Dokument vo mehrere Mitarbeitende aafordere"
+        },
+        "cancel": {
+          "button": "Abbreche",
+          "confirm": "Aaforderig abbreche",
+          "description": "De Mitarbeiter muess \"{title}\" nümme ufelade und erfahrt de Grund. Bereits uegladnigi Dokument bliibid im Dossier.",
+          "keep": "Aaforderig bhalte",
+          "open": "{title} abbreche",
+          "reason": "Grund",
+          "success": "Aaforderig abbroche",
+          "title": "Aaforderig abbreche?"
+        },
+        "create": {
+          "deadline": "Frist",
+          "deadlineHint": "De Tag, bis wenn de Mitarbeiter iireiche söll. Denach isch d Aaforderig überfällig.",
+          "description": "De Mitarbeiter wird benachrichtigt und ladt d Dokument unter «Myni Dokument» ufe. Was ueglade wird, isch sofort im Dossier und mit ihm teilt.",
+          "note": "Notiz (optional)",
+          "open": "Es Dokument aafordere",
+          "submit": "Aafordere",
+          "success": "Dokument aagforderet",
+          "title": "Es Dokument aafordere",
+          "titleHint": "Was de Mitarbeiter ufelade söll, wie z. B. es ernöits Nothelferzertifikat."
+        },
+        "deadline": "Fällig am {date}",
+        "description": "Zertifikat und anderi Dokument, wo vo däm Mitarbeiter aagforderet worde sind, mit Frist und Verlauf.",
+        "edit": {
+          "button": "Ändere",
+          "deadlineHint": "E nöii Frist cha nöd i de Vergangeheit ligge. Wenn si verschobe wird, startid d Fristerinnerige vo vorn.",
+          "description": "Frist oder Notiz vo \"{title}\" ändere. D Änderig wird im Verlauf vo de Aaforderig aazeigt. Um öppis anders aazfordere, brich d Aaforderig ab und erstell e nöii.",
+          "open": "{title} ändere",
+          "submit": "Änderige spaichere",
+          "success": "Aaforderig gänderet",
+          "title": "Aaforderig ändere"
+        },
+        "empty": "No kaini Dokument aagforderet.",
+        "error": {
+          "categoryNotRequestable": "Es chönd nur Zertifikat und anderi Dokument aagforderet werde.",
+          "conflict": "Öpper anders hät die Aaforderig i de Zwüschezyt gänderet. Lad si nöi und probier's namal.",
+          "deadlineInPast": "D Frist cha nöd i de Vergangeheit ligge.",
+          "formerEmployee": "S Aastelligsverhältnis vo däm Mitarbeiter isch beendet.",
+          "invalidDeadline": "Wähl e Frist uus.",
+          "invalidNote": "D Notiz cha maximal {max} Zeiche haa.",
+          "invalidReason": "De Grund cha maximal {max} Zeiche haa.",
+          "invalidTitle": "Gib en Titel mit maximal {max} Zeiche ii.",
+          "noDocuments": "Lad mindestens ei Dokument ufe, bevor du iireichsch.",
+          "noRecipients": "Wähl mindestens ein Mitarbeiter oder es Team uus.",
+          "notEditable": "Nur d Frist und d Notiz chönd gänderet werde. Brich stattdesse d Aaforderig ab und erstell e nöii.",
+          "ownFile": "Du chasch für dis eignige Personaldossier kaini Dokument aafordere.",
+          "reasonRequired": "Gib en Grund ii.",
+          "renewalAlreadyRequested": "Für das Dokument git's scho e offeni Aaforderig zur Ernöierig.",
+          "renewalExpiryDateRequired": "D ernöiti Fähigkeit bruucht es Ablaufdatum. Füeg s Ablaufdatum zum iigreichte Zertifikat dezue und nimm's dänn aa.",
+          "renewalNotInBulk": "Aaforderige für mehreri Mitarbeitende chönd kes ernöits Dokument aageh.",
+          "renewedDocumentMismatch": "S ernöite Dokument muess es Dokument vom gliche Mitarbeiter und us de gliche Kategorie sii.",
+          "tooManyRecipients": "Forder Dokument vo maximal {max} Mitarbeitende glichzytig aa."
+        },
+        "event": {
+          "accepted": "Aagnaa",
+          "cancelled": "Abbroche",
+          "created": "Aagforderet",
+          "edited": "Gänderet",
+          "returned": "Zrugggschickt",
+          "submitted": "Iigreicht"
+        },
+        "history": {
+          "deadlineChanged": "Frischt {from} → {to}",
+          "noteChanged": "Notiz gänderet",
+          "title": "Verlauf"
+        },
+        "loadFailed": "D Dokumenteaaforderige händ nöd chönne glade werde.",
+        "overdue": "Überfällig",
+        "page": {
+          "description": "D Dokument, wo vo de Mitarbeiter aagforderet worde sind, wo du d Zertifikat oder anderi Dokument vonene verwaltisch. En Aaforderig isch überfällig, wenn si nach de Frischt immer no offe isch.",
+          "empty": "Kei Dokumenteaaforderige passed zu de Filter.",
+          "filters": {
+            "active": "Offe und iigreicht",
+            "all": "Alli Status",
+            "overdue": "Nur überfälligi",
+            "status": "Status"
+          },
+          "loading": "Dokumenteaaforderige wärded glade",
+          "next": "Nächschti Sitte",
+          "pagination": "Sitte {page} vo {pageCount}",
+          "previous": "Vorhärigi Sitte",
+          "title": "Dokumenteaaforderige"
+        },
+        "pendingDocuments": "Ufeglade, no nöd iigreicht",
+        "pendingDocumentsClosed": "Ufeglade, nie iigreicht",
+        "reasonCode": {
+          "employmentEnded": "Aastellig beändet"
+        },
+        "renewal": {
+          "hint": "Sobald du d Aaforderig aanimmsch, gilt das Dokument nümme als ablauffend. Bis dänn gönd d Ablauferinnerige nur an d Verantwortliche.",
+          "hrOnly": "Das Dokument isch nur fürs HR. De Mitarbeiter gseht s nöd, nur de Titel, d Notiz, d Kategorie und d Frischt vo dere Aaforderig.",
+          "title": "En Erneuerig aafordere"
+        },
+        "renews": "Erneuert {title}",
+        "return": {
+          "button": "Zrugggäh",
+          "confirm": "Am Mitarbeiter zrugggäh",
+          "description": "De Mitarbeiter wird bätte, \"{title}\" nomal ufezlade, und erfahrt au warum. D Dokument, wo iigreicht worde sind, bliibid im Dossier.",
+          "open": "{title} zrugggäh",
+          "reason": "Grund",
+          "success": "Aaforderig zrugggschickt",
+          "title": "Iireichig zrugggäh?"
+        },
+        "status": {
+          "accepted": "Aagnaa",
+          "cancelled": "Abbroche",
+          "open": "Offe",
+          "submitted": "Iigreicht"
+        },
+        "submission": "Iigreicht am {date}",
+        "title": "Dokumenteaaforderige"
       },
       "retention": {
         "apply": "Vorschlag übernehmen",

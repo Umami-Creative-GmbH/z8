@@ -172,7 +172,6 @@
       "label-available": "Verfügbar",
       "label-pending": "Ausstehend",
       "label-used": "Verbraucht",
-      "no-policy": "Keine Urlaubsrichtlinie für dieses Jahr konfiguriert",
       "pending": "{days} ausstehend",
       "percent-used": "{percent}% verbraucht",
       "title": "Urlaubssaldo",

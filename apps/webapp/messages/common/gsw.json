@@ -427,6 +427,7 @@
     "uploading": "Am ufelade...",
     "vacationAllowance": {
       "cappedAtFullAllowance": "decklet ufs volle Guthabe",
+      "convertedSummary": "{allowance} Täg: {conversion}",
       "employmentMonths": "{months, plural, one {# volle Aastelligsmonet} other {# volli Aastelligsmonet}}",
       "lastWorkingDay": "letschte Arbetstag {date}",
       "notEmployed": "{allowance} vo {fullAllowance} Tääg: nöd aagstellt im {year}",
@@ -434,7 +435,10 @@
       "overdrawnHint": "Ferietääg über s Guthabe use gnah. Wird nur zur Information aazeigt: es wird nüüt abzoge.",
       "proratedSummary": "{allowance} vo {fullAllowance} Tääg, aateilig: {details}",
       "started": "aagfange am {date}",
-      "statutoryMinimumApplies": "gsetzliche Mindestaspruch gilt"
+      "statutoryMinimumApplies": "gsetzliche Mindestaspruch gilt",
+      "workingDaysPerWeek": "{days, plural, one {# Arbetstag pro Wuche} other {# Arbetstäg pro Wuche}}",
+      "workingWeekConversion": "{reference} Referenztäg umgrechnet in {weeks}",
+      "workingWeekPeriod": "{week} vo {start} bis {end}"
     },
     "validate": "Validiere",
     "validationError": "Validierigsfehler",
@@ -929,6 +933,7 @@
     },
     "page": {
       "context": "Persönlechi Registrierig, Widerherstellig und d'Organisationsuswahl bliibed verfüegbar, während de Organisationszuegang e Bestätigung brucht.",
+      "description": "Bestätig en Authenticator, zum de Zuegriff uf dini Organisatione z bhalte.",
       "title": "Sicherheitsüberprüefig"
     },
     "passkey": {
@@ -1311,6 +1316,42 @@
         "message": "Lad dini persönliche Date vor em {untilDate} unter «Mini Date» abe. Denach cha s nur no en Administrator für dich exportiere.",
         "title": "Lad dini persönliche Date abe, bevor du gahsch"
       },
+      "personnelFileDocumentRequestAccepted": {
+        "message": "Dini Dokumänt für \"{title}\" sind akzeptiert worde.",
+        "title": "Dokumänt akzeptiert"
+      },
+      "personnelFileDocumentRequestCancelled": {
+        "message": "De Aatrag \"{title}\" isch abbroche worde: {reason}",
+        "messageWithoutReason": "De Aatrag \"{title}\" isch abbroche worde.",
+        "title": "Dokumäntaaforderig abbroche"
+      },
+      "personnelFileDocumentRequestDueSoon": {
+        "message": "Bitte lad \"{title}\" bis am {deadline} ufe.",
+        "title": "Dokumänt bald fellig"
+      },
+      "personnelFileDocumentRequestDueToday": {
+        "message": "Bitte lad \"{title}\" hüt ufe.",
+        "title": "Dokumänt hüt fellig"
+      },
+      "personnelFileDocumentRequested": {
+        "message": "Bitte lad \"{title}\" bis am {deadline} ufe.",
+        "title": "Dokumänt aagforderet"
+      },
+      "personnelFileDocumentRequestOverdue": {
+        "message": "\"{title}\" isch am {deadline} fellig gsi. Bitte lad s ufe.",
+        "officerMessage": "{employee} hät \"{title}\" nonig iigreicht, fellig am {deadline}.",
+        "officerTitle": "Aagforderets Dokumänt überfellig",
+        "title": "Dokumänt überfellig"
+      },
+      "personnelFileDocumentRequestReturned": {
+        "message": "Bitte lad \"{title}\" bis am {deadline} nomal ufe: {reason}",
+        "messageWithoutReason": "Bitte lad \"{title}\" bis am {deadline} nomal ufe.",
+        "title": "Dokumänt zrugggschickt"
+      },
+      "personnelFileDocumentRequestSubmitted": {
+        "message": "{name} hät Dokumänt für \"{title}\" iigreicht. Bitte überprüef si.",
+        "title": "Dokumänt iigreicht"
+      },
       "personnelFileDocumentShared": {
         "message": "S Dokumänt \"{title}\" isch mit dir teilt worde.",
         "title": "Neus Dokumänt i dim Personaldossier"
@@ -1652,6 +1693,11 @@
         "personal_data_export_admin_exported": "Persönlechi Date dur en Administrator exportiert",
         "personal_data_export_ready": "Export vo de persönliche Date isch parat",
         "personal_data_export_reminder": "Lade dini Date abe, bevor du gahsch",
+        "personnel_file_document_request_decided": "Dokumäntaaforderig akzeptiert, zrugggschickt oder abbroche",
+        "personnel_file_document_requested": "Dokumänt vo dir aagforderet",
+        "personnel_file_document_request_overdue": "Dokumäntaaforderig überfellig",
+        "personnel_file_document_request_reminder": "Aagforderets Dokumänt bald fellig",
+        "personnel_file_document_request_submitted": "Aagfordereti Dokumänt iigreicht (Personaldossier-Verwaltig)",
         "skill_expired_today": "Fähigkeit lauft hüt ab",
         "skill_expiry_upcoming": "Fähigkeit lauft bald ab",
         "work_balance_adjustment_cancelled": "Saldoanpassung storniert",
@@ -3066,7 +3112,10 @@
     "theme-toggle": "Theme wächsle"
   },
   "vacationBalance": {
-    "previouslyTaken": "Enthaltet {days} Täg, wo vor em Tracking bezoge worde sind"
+    "conflictingPolicies": "Widersprüchlichi Ferierichtlinie",
+    "missingPolicy": "Fehlendi Ferierichtlinie",
+    "previouslyTaken": "Enthaltet {days} Täg, wo vor em Tracking bezoge worde sind",
+    "zeroWorkingDays": "Arbeitsplan ohni Arbetstäg"
   },
   "validation": {
     "first-name-required": "Vorname isch erforderlich",

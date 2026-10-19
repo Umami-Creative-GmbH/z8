@@ -17,8 +17,33 @@
       "noCustomer": "Kun arbeid på et prosjekt med en kunde kan være fakturerbart"
     },
     "breakInProgress": {
+      "connectionRequired": "Å starte eller gjenoppta en pause krever tilkobling.",
       "description": "Du har pause",
-      "since": "På pause siden {time}"
+      "endDay": "Avslutt dagen",
+      "errors": {
+        "alreadyOnBreak": "Du er allerede på pause.",
+        "breakChanged": "Pausen din ble endret på en annen enhet. Klokken din viser nå gjeldende status.",
+        "collision": "Denne pausen er i konflikt med en tidligere forespørsel. Vennligst oppdater og prøv igjen.",
+        "refreshed": "Klokken din ble endret. Den viser nå gjeldende status.",
+        "resumeNotAllowed": "Du kan ikke gjenoppta denne pausen.",
+        "resumeRetry": "Kunne ikke gjenoppta arbeidet. Vennligst prøv igjen.",
+        "resumeUnconfirmed": "Gjenopptakelse kunne ikke bekreftes. Sjekk klokken før du prøver igjen.",
+        "startNotAllowed": "Du kan ikke starte en pause.",
+        "startRetry": "Kunne ikke starte pausen. Vennligst prøv igjen.",
+        "tooEarly": "En pause kan bare starte etter at arbeidet ditt har startet.",
+        "unconfirmed": "Pausen din kunne ikke bekreftes. Sjekk klokken før du prøver igjen.",
+        "workChanged": "Klokken din ble endret på en annen enhet. Den viser nå gjeldende status."
+      },
+      "pendingClockActions": "Lagrede stemplinger sendes fortsatt. Prøv igjen når de er synkronisert.",
+      "resume": "Gjenoppta",
+      "resumed": "Arbeid gjenopptatt",
+      "since": "På pause siden {time}",
+      "start": "Start pause",
+      "started": "Pause startet",
+      "startedDescription": "Gjenoppta når du er tilbake, eller avslutt dagen.",
+      "trigger": "På pause",
+      "uncertain": "Pausen din kunne ikke bekreftes",
+      "uncertainDescription": "Klokken din har blitt oppdatert. Sjekk den før du prøver igjen."
     },
     "budget": "Budsjett",
     "clockedOutSuccess": "Du har stemplet ut!",
@@ -147,9 +172,41 @@
         "resume": "Gjenoppta arbeid",
         "startBreak": "Start pause"
       },
+      "attribution": {
+        "back": "Tilbake",
+        "keep": "Behold {name}",
+        "noProject": "Ingen prosjekt",
+        "noWorkCategory": "Ingen arbeidskategori",
+        "project": "Prosjekt",
+        "title": "Hva jobbet du med?",
+        "workCategory": "Arbeidskategori"
+      },
+      "badge": {
+        "checking": "Sjekker adgangskortet…",
+        "failed": "Adgangskortet kunne ikke sjekkes. Ingenting ble registrert. Skann det på nytt, eller trykk på navnet ditt for å bruke PIN-kode.",
+        "inputDisabled": "Skanning av adgangskort er slått av på denne kiosken. Trykk på navnet ditt for å bruke PIN-kode.",
+        "notAccepted": "Dette adgangskortet godtas ikke på denne kiosken. Ingenting ble registrert. Trykk på navnet ditt for å bruke PIN-kode, eller spør lederen din.",
+        "notRecorded": "Handlingen din ble ikke registrert. Skann adgangskortet igjen for å velge det på nytt.",
+        "offline": "Stempling med adgangskort krever tilkobling. Ingenting ble registrert.",
+        "offlinePin": "Stempling med adgangskort krever tilkobling. Ingenting ble registrert. Trykk på navnet ditt for å stemple med PIN-kode.",
+        "rateLimited": "For mange skanninger av adgangskort på denne kiosken. Prøv igjen om {seconds} sekunder, eller trykk på navnet ditt for å bruke PIN-kode.",
+        "unreadable": "Denne koden er ikke et gyldig kiosk-adgangskort. Ingenting ble registrert. Skann kiosk-adgangskortet ditt, eller trykk på navnet ditt for å bruke PIN-kode."
+      },
       "board": {
         "empty": "Ingen er stemplet inn akkurat nå.",
         "title": "Hvem er på jobb"
+      },
+      "camera": {
+        "cancel": "Avbryt skanning",
+        "denied": "Kiosken har ikke tillatelse til å bruke kameraet. Gi tilgang til kameraet for denne siden i nettleseren, eller trykk på navnet ditt for å bruke PIN-koden din.",
+        "failed": "Kameraet kunne ikke startes. Prøv igjen, eller trykk på navnet ditt for å bruke PIN-koden din.",
+        "hint": "Hold QR-koden innenfor rammen. Koden leses på denne kiosken; ingen bilder lagres.",
+        "missing": "Denne kiosken har ikke noe kamera som kan skanne. Trykk på navnet ditt for å bruke PIN-koden din.",
+        "notBadge": "Denne koden er ikke et kiosk-adgangskort. Hold opp kiosk-adgangskortet ditt, eller avbryt og trykk på navnet ditt for å bruke PIN-koden din.",
+        "preview": "Forhåndsvisning av kamera",
+        "starting": "Starter kameraet…",
+        "title": "Hold kiosk-adgangskortet ditt opp mot kameraet",
+        "unsupported": "Denne nettleseren kan ikke skanne adgangskort med kameraet. Trykk på navnet ditt for å bruke PIN-koden din."
       },
       "done": {
         "button": "Ferdig",
@@ -174,6 +231,8 @@
         "loadFailed": "Kunne ikke laste inn navnene. Sjekk nettverkstilkoblingen.",
         "loading": "Laster inn navn…",
         "noMatch": "Ingen navn samsvarer med søket ditt.",
+        "scanBadge": "Skann adgangskort",
+        "scanHint": "Eller skann kiosk-adgangskortet ditt med skanneren.",
         "search": "Finn navnet ditt",
         "title": "Trykk på navnet ditt for å stemple inn eller ut"
       },
@@ -226,15 +285,19 @@
       },
       "refusal": {
         "alreadyClockedIn": "Du er allerede stemplet inn.",
+        "attemptClosed": "Denne handlingen ble ikke registrert. Velg den på nytt hvis du fortsatt ønsker det.",
         "billing": "Stempling er ikke tilgjengelig for organisasjonen din akkurat nå. Kontakt administratoren din.",
         "generic": "Det fungerte ikke. Ingenting ble registrert. Prøv igjen eller spør lederen din.",
         "holiday": "Stempling er blokkert i dag på grunn av en helligdag. Spør lederen din.",
         "monthClosed": "Denne tiden er i en lukket måned og kan ikke endres. Spør lederen din.",
         "noBreak": "Du er ikke på pause.",
         "notClockedIn": "Du er ikke stemplet inn.",
+        "notRecorded": "Handlingen din ble ikke registrert. Angi PIN-koden din for å velge den på nytt.",
         "onBreak": "Du er allerede på pause.",
+        "projectNotAllowed": "Dette prosjektet kan ikke lenger bookes. Ingenting ble registrert. Velg et annet, eller behold det nåværende, og prøv igjen.",
         "unconfirmed": "Kiosken kunne ikke bekrefte om dette ble lagret. Sjekk statusen din før du prøver igjen.",
-        "underReview": "Arbeidstiden din for i dag er til vurdering. Spør lederen din."
+        "underReview": "Arbeidstiden din for i dag er til vurdering. Spør lederen din.",
+        "workCategoryNotAllowed": "Denne arbeidskategorien kan ikke lenger bookes. Ingenting ble registrert. Velg en annen, eller behold den nåværende, og prøv igjen."
       },
       "retry": "Prøv igjen",
       "revoked": {
@@ -246,6 +309,14 @@
         "clockedIn": "Stemplet inn siden {time}",
         "clockedOut": "Ikke stemplet inn",
         "onBreak": "På pause siden {time}"
+      },
+      "uncertain": {
+        "action": "{name}: {action}",
+        "back": "Tilbake",
+        "conflict": "Denne handlingen kunne ikke sjekkes på denne kiosken. Sjekk statusen din med lederen din før du stempler igjen.",
+        "title": "Sjekker om handlingen din ble registrert",
+        "unavailable": "Får ikke kontakt med Z8 akkurat nå. Kiosken fortsetter å sjekke.",
+        "wait": "Ikke stemple igjen. Kiosken fortsetter å sjekke og viser deg resultatet så snart Z8 svarer, også hvis du kommer tilbake senere."
       },
       "unreachableDescription": "Kiosken får ikke kontakt med serveren. Sjekk nettverkstilkoblingen; stempling fungerer bare på nett.",
       "unreachableTitle": "Kiosk frakoblet",
@@ -336,18 +407,42 @@
     "periodSubmissions": {
       "blocker": {
         "absenceRequest": "En fraværsforespørsel for {dates} er uavklart.",
+        "absenceRequestAction": "En godkjenner avgjør dette fraværet. Mens det venter, kan du avbryte det i Mine forespørsler.",
         "liveWork": "Arbeid startet {start} pågår fortsatt.",
+        "liveWorkAction": "Stemple ut når dette arbeidet avsluttes.",
         "manualWork": "Manuelt arbeid den {start} er uavklart.",
-        "timeCorrection": "En tidskorrigering for arbeid den {start} er uavklart."
+        "manualWorkAction": "En godkjenner avgjør dette arbeidet. Du trenger ikke å gjøre noe.",
+        "openClock": "Gå til stemplingsuret",
+        "openRequest": "Åpne forespørsel",
+        "openTimeline": "Vis på tidslinje",
+        "timeCorrection": "En tidskorrigering for arbeid den {start} er uavklart.",
+        "timeCorrectionAction": "En godkjenner avgjør denne korrigeringen. Mens den venter, kan du avbryte den i Mine forespørsler.",
+        "timeCorrectionWaitAction": "En godkjenner avgjør denne korrigeringen. Du kan bare vente på avgjørelsen."
       },
       "description": "Bekreft at arbeid og fravær for hver periode er fullstendig og korrekt.",
-      "opensOn": "Du kan sende inn fra {date}.",
+      "focus": {
+        "notShown": "Dette arbeidet kan ikke vises her. Det ble sjekket på nytt om perioden er klar.",
+        "resolved": "Dette arbeidet holder ikke lenger en periode åpen. Det ble sjekket på nytt om perioden er klar."
+      },
+      "readiness": {
+        "checking": "Sjekker om denne perioden er klar…",
+        "hideDetails": "Skjul detaljer",
+        "notReady": "Send inn er tilgjengelig når denne perioden er klar.",
+        "openItems": "{count, plural, one {# element holder denne perioden åpen.} other {# elementer holder denne perioden åpen.}}",
+        "opensOn": "Innsending åpner {date}.",
+        "ready": "Klar til innsending",
+        "retry": "Prøv på nytt",
+        "showDetails": "Vis detaljer",
+        "submitUnavailable": "Send inn er utilgjengelig frem til det kan sjekkes om perioden er klar.",
+        "unavailable": "Det er ikke mulig å sjekke om perioden er klar for innsending akkurat nå, så Send inn er deaktivert."
+      },
       "refusal": {
         "alreadySubmitted": "Denne perioden er allerede sendt inn.",
         "noApprover": "Ingen kan godkjenne denne perioden ennå. Be en administrator om å tildele deg en leder.",
         "notEnded": "Du kan sende inn denne perioden fra og med den siste dagen.",
         "notExpected": "Denne perioden trenger ikke å sendes inn.",
-        "periodOpen": "Denne perioden er fortsatt åpen"
+        "periodOpen": "Denne perioden er fortsatt åpen",
+        "writeGateClosed": "Innsending av perioder er satt på pause i organisasjonen din akkurat nå. Prøv igjen senere, eller spør en administrator."
       },
       "rejectionReason": "Årsak: {reason}",
       "status": {

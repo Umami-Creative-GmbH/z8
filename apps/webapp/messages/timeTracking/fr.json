@@ -17,8 +17,33 @@
       "noCustomer": "Seul le travail sur un projet avec un client peut être facturable"
     },
     "breakInProgress": {
+      "connectionRequired": "Une connexion est requise pour démarrer ou reprendre une pause.",
       "description": "Vous êtes en pause",
-      "since": "En pause depuis {time}"
+      "endDay": "Terminer la journée",
+      "errors": {
+        "alreadyOnBreak": "Vous êtes déjà en pause.",
+        "breakChanged": "Votre pause a été modifiée sur un autre appareil. Votre pointeuse affiche maintenant l'état actuel.",
+        "collision": "Cette pause est en conflit avec une demande antérieure. Veuillez actualiser et réessayer.",
+        "refreshed": "Votre pointeuse a été mise à jour. Elle affiche désormais l'état actuel.",
+        "resumeNotAllowed": "Vous ne pouvez pas reprendre cette pause.",
+        "resumeRetry": "Impossible de reprendre le travail. Veuillez réessayer.",
+        "resumeUnconfirmed": "La reprise du travail n'a pas pu être confirmée. Vérifiez votre pointeuse avant de réessayer.",
+        "startNotAllowed": "Vous ne pouvez pas démarrer une pause.",
+        "startRetry": "Impossible de démarrer votre pause. Veuillez réessayer.",
+        "tooEarly": "Une pause ne peut commencer qu'après le début de votre travail.",
+        "unconfirmed": "Votre pause n'a pas pu être confirmée. Vérifiez votre pointeuse avant de réessayer.",
+        "workChanged": "Votre pointeuse a été modifiée sur un autre appareil. Elle affiche désormais l'état actuel."
+      },
+      "pendingClockActions": "Les pointages enregistrés sont toujours en cours d'envoi. Réessayez une fois la synchronisation terminée.",
+      "resume": "Reprendre",
+      "resumed": "Travail repris",
+      "since": "En pause depuis {time}",
+      "start": "Démarrer la pause",
+      "started": "Pause démarrée",
+      "startedDescription": "Reprenez lorsque vous êtes de retour, ou terminez votre journée.",
+      "trigger": "En pause",
+      "uncertain": "Votre pause n'a pas pu être confirmée",
+      "uncertainDescription": "Votre pointeuse a été actualisée. Vérifiez-la avant de réessayer."
     },
     "budget": "Budget",
     "clockedOutSuccess": "Vous avez pointé votre départ !",
@@ -147,9 +172,41 @@
         "resume": "Reprendre le travail",
         "startBreak": "Démarrer la pause"
       },
+      "attribution": {
+        "back": "Retour",
+        "keep": "Conserver {name}",
+        "noProject": "Aucun projet",
+        "noWorkCategory": "Aucune catégorie de travail",
+        "project": "Projet",
+        "title": "Sur quoi avez-vous travaillé ?",
+        "workCategory": "Catégorie de travail"
+      },
+      "badge": {
+        "checking": "Vérification de votre badge…",
+        "failed": "Le badge n'a pas pu être vérifié. Rien n'a été enregistré. Scannez-le à nouveau ou appuyez sur votre nom pour utiliser votre code PIN.",
+        "inputDisabled": "La lecture de badge est désactivée sur cette borne. Appuyez sur votre nom pour utiliser votre code PIN.",
+        "notAccepted": "Ce badge n'est pas accepté sur cette borne. Rien n'a été enregistré. Appuyez sur votre nom pour utiliser votre code PIN ou contactez votre responsable.",
+        "notRecorded": "Votre action n'a pas été enregistrée. Scannez à nouveau votre badge pour refaire votre choix.",
+        "offline": "Le pointage par badge nécessite une connexion. Rien n'a été enregistré.",
+        "offlinePin": "Le pointage par badge nécessite une connexion. Rien n'a été enregistré. Appuyez sur votre nom pour pointer avec votre code PIN.",
+        "rateLimited": "Trop de scans de badges sur cette borne. Réessayez dans {seconds} secondes ou appuyez sur votre nom pour utiliser votre code PIN.",
+        "unreadable": "Ce code n'est pas un badge de borne. Rien n'a été enregistré. Scannez le badge de votre borne ou appuyez sur votre nom pour utiliser votre code PIN."
+      },
       "board": {
         "empty": "Personne n'a pointé pour le moment.",
         "title": "Qui est présent"
+      },
+      "camera": {
+        "cancel": "Annuler le scan",
+        "denied": "La borne n'est pas autorisée à utiliser la caméra. Autorisez l'accès à la caméra pour cette page dans le navigateur, ou appuyez sur votre nom pour utiliser votre code PIN.",
+        "failed": "Impossible de démarrer la caméra. Réessayez ou appuyez sur votre nom pour utiliser votre code PIN.",
+        "hint": "Maintenez le code QR dans le cadre. Le code est lu sur cette borne ; aucune photo n'est enregistrée.",
+        "missing": "Cette borne ne dispose d'aucune caméra permettant de scanner. Appuyez sur votre nom pour utiliser votre code PIN.",
+        "notBadge": "Ce code n'est pas un badge de borne. Présentez votre badge de borne, ou annulez et appuyez sur votre nom pour utiliser votre code PIN.",
+        "preview": "Aperçu de la caméra",
+        "starting": "Démarrage de la caméra…",
+        "title": "Présentez votre badge de borne devant la caméra",
+        "unsupported": "Ce navigateur ne peut pas scanner les badges avec la caméra. Appuyez sur votre nom pour utiliser votre code PIN."
       },
       "done": {
         "button": "Terminé",
@@ -174,6 +231,8 @@
         "loadFailed": "Impossible de charger les noms. Vérifiez la connexion réseau.",
         "loading": "Chargement des noms…",
         "noMatch": "Aucun nom ne correspond à votre recherche.",
+        "scanBadge": "Scanner le badge",
+        "scanHint": "Ou scannez votre badge de borne sur le scanner.",
         "search": "Trouvez votre nom",
         "title": "Appuyez sur votre nom pour pointer l'arrivée ou le départ"
       },
@@ -226,15 +285,19 @@
       },
       "refusal": {
         "alreadyClockedIn": "Vous avez déjà pointé.",
+        "attemptClosed": "Cette action n'a pas été enregistrée. Sélectionnez-la de nouveau si vous souhaitez toujours l'effectuer.",
         "billing": "Le pointage n'est pas disponible pour votre organisation actuellement. Contactez votre administrateur.",
         "generic": "Cela n'a pas fonctionné. Rien n'a été enregistré. Réessayez ou adressez-vous à votre responsable.",
         "holiday": "Le pointage est bloqué aujourd'hui en raison d'un jour férié. Adressez-vous à votre responsable.",
         "monthClosed": "Ces heures se trouvent dans un mois clôturé et ne peuvent pas être modifiées. Contactez votre responsable.",
         "noBreak": "Vous n'êtes pas en pause.",
         "notClockedIn": "Vous n'avez pas pointé.",
+        "notRecorded": "Votre action n'a pas été enregistrée. Saisissez votre code PIN pour la sélectionner de nouveau.",
         "onBreak": "Vous êtes déjà en pause.",
+        "projectNotAllowed": "Il n'est plus possible d'enregistrer des heures sur ce projet. Rien n'a été enregistré. Choisissez-en un autre ou conservez l'actuel, puis réessayez.",
         "unconfirmed": "La borne n'a pas pu confirmer si cela a été enregistré. Vérifiez votre statut avant de réessayer.",
-        "underReview": "Vos heures d'aujourd'hui sont en cours d'examen. Adressez-vous à votre responsable."
+        "underReview": "Vos heures d'aujourd'hui sont en cours d'examen. Adressez-vous à votre responsable.",
+        "workCategoryNotAllowed": "Il n'est plus possible d'enregistrer des heures sur cette catégorie de travail. Rien n'a été enregistré. Choisissez-en une autre ou conservez l'actuelle, puis réessayez."
       },
       "retry": "Réessayer",
       "revoked": {
@@ -246,6 +309,14 @@
         "clockedIn": "Pointé depuis {time}",
         "clockedOut": "Non pointé",
         "onBreak": "En pause depuis {time}"
+      },
+      "uncertain": {
+        "action": "{name} : {action}",
+        "back": "Retour",
+        "conflict": "Cette action n'a pas pu être vérifiée sur cette borne. Vérifiez votre statut auprès de votre responsable avant de pointer à nouveau.",
+        "title": "Vérification de l'enregistrement de votre action",
+        "unavailable": "Z8 est inaccessible pour le moment. La borne continue de vérifier.",
+        "wait": "Ne pointez pas à nouveau. La borne continue de vérifier et affichera le résultat dès que Z8 répondra, même si vous revenez plus tard."
       },
       "unreachableDescription": "La borne ne parvient pas à joindre le serveur. Vérifiez la connexion réseau ; le pointage fonctionne uniquement en ligne.",
       "unreachableTitle": "Borne hors ligne",
@@ -336,18 +407,42 @@
     "periodSubmissions": {
       "blocker": {
         "absenceRequest": "Une demande d'absence pour {dates} est en attente de décision.",
+        "absenceRequestAction": "Un approbateur doit statuer sur cette absence. En attendant, vous pouvez l'annuler dans Mes demandes.",
         "liveWork": "Le travail commencé {start} est toujours en cours.",
+        "liveWorkAction": "Pointez votre sortie à la fin de ce travail.",
         "manualWork": "Le travail manuel du {start} est en attente de décision.",
-        "timeCorrection": "Une correction d'heures pour le travail du {start} est en attente de décision."
+        "manualWorkAction": "Un approbateur doit statuer sur ce travail. Vous n'avez rien à faire.",
+        "openClock": "Aller à la pointeuse",
+        "openRequest": "Ouvrir la demande",
+        "openTimeline": "Afficher sur la chronologie",
+        "timeCorrection": "Une correction d'heures pour le travail du {start} est en attente de décision.",
+        "timeCorrectionAction": "Un approbateur doit statuer sur cette correction. En attendant, vous pouvez l'annuler dans Mes demandes.",
+        "timeCorrectionWaitAction": "Un approbateur doit statuer sur cette correction. Vous devez simplement attendre sa décision."
       },
       "description": "Confirmez que vos heures de travail et vos absences pour chaque période sont complètes et exactes.",
-      "opensOn": "Vous pouvez soumettre à partir du {date}.",
+      "focus": {
+        "notShown": "Ce travail ne peut pas être affiché ici. L'état de préparation de la période a été vérifié à nouveau.",
+        "resolved": "Ce travail ne maintient plus de période ouverte. L'état de préparation de la période a été vérifié à nouveau."
+      },
+      "readiness": {
+        "checking": "Vérification pour savoir si cette période est prête…",
+        "hideDetails": "Masquer les détails",
+        "notReady": "L'option Soumettre sera disponible dès que cette période sera prête.",
+        "openItems": "{count, plural, one {# élément maintient cette période ouverte.} other {# éléments maintiennent cette période ouverte.}}",
+        "opensOn": "La soumission débutera le {date}.",
+        "ready": "Prêt pour la soumission",
+        "retry": "Réessayer",
+        "showDetails": "Afficher les détails",
+        "submitUnavailable": "L'option Soumettre est indisponible tant que l'état de préparation n'a pas pu être vérifié.",
+        "unavailable": "L'état de préparation pour la soumission est indisponible pour le moment, l'option Soumettre est donc désactivée."
+      },
       "refusal": {
         "alreadySubmitted": "Cette période a déjà été soumise.",
         "noApprover": "Personne ne peut encore approuver cette période. Demandez à un administrateur de vous attribuer un responsable.",
         "notEnded": "Vous pouvez soumettre cette période à partir de son dernier jour.",
         "notExpected": "Cette période n'a pas besoin d'être soumise.",
-        "periodOpen": "Cette période est encore ouverte"
+        "periodOpen": "Cette période est encore ouverte",
+        "writeGateClosed": "La soumission des périodes est actuellement suspendue dans votre organisation. Réessayez plus tard ou contactez un administrateur."
       },
       "rejectionReason": "Motif : {reason}",
       "status": {

@@ -165,11 +165,13 @@
         "selectWorkCategory": "Seleziona categoria lavoro",
         "sourceType": "Tipo di origine",
         "specialCategory": "Categoria speciale",
+        "subtitle": "Mappa le categorie di lavoro e i tipi di assenza sui codici delle voci retributive",
         "table": {
           "category": "Categoria",
           "datev": "DATEV",
           "lexware": "Lexware",
           "sage": "Sage",
+          "successFactors": "SAP SuccessFactors",
           "type": "Tipo"
         },
         "title": "Mappature tipi retribuzione",
@@ -238,9 +240,7 @@
         "title": "Sage Lohn"
       },
       "specialCategory": {
-        "holidayCompensation": "Compensazione ferie",
-        "overtime": "Straordinari",
-        "overtimeReduction": "Riduzione straordinari"
+        "overtime": "Straordinari"
       },
       "successfactors": {
         "batchSize": "Dimensione batch",

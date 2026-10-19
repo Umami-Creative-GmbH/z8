@@ -42,6 +42,9 @@
       "title": "Anfragen finden",
       "type": "Typ"
     },
+    "focus": {
+      "unavailable": "Diese Anfrage ist nicht mehr ausstehend oder kann hier nicht angezeigt werden. Die Periodenbereitschaft wird erneut überprüft."
+    },
     "inReview": {
       "description": "Anfragen, die auf Genehmigung oder Bearbeitung warten.",
       "title": "In Prüfung"

@@ -65,8 +65,8 @@
         "managers": "Vorgesetzte",
         "noScheduleAssigned": "Kein Arbeitsplan zugewiesen",
         "personnelNumber": "Personalnummer",
-        "personnelNumberManagedByIdp": "Wird von Ihrem Identitätsanbieter verwaltet. Ändern Sie die Personalnummer dort.",
         "personnelNumberDescription": "Die organisationsinterne Nummer für diesen Mitarbeiter, die bei Lohnexporten verwendet wird. Sie muss eindeutig sein, auch gegenüber ehemaligen Mitarbeitern.",
+        "personnelNumberManagedByIdp": "Wird von Ihrem Identitätsanbieter verwaltet. Ändern Sie die Personalnummer dort.",
         "position": "Position",
         "positionDescription": "Berufsbezeichnung oder Rolle",
         "positionPlaceholder": "Position eingeben",
@@ -161,6 +161,31 @@
       "invitations": {
         "description": "Mitglieder einladen und ausstehende Beitrittsanfragen prüfen",
         "title": "Einladungen"
+      },
+      "kioskBadge": {
+        "active": "Aktiv seit {date}.",
+        "confirmReplace": "Ausweis ersetzen",
+        "confirmReplaceText": "Durch das Ersetzen wird ein neuer Ausweis erstellt. Jede Kopie des aktuellen Ausweises wird sofort ungültig.",
+        "confirmRevoke": "Ausweis widerrufen",
+        "confirmRevokeText": "Jede Kopie dieses Ausweises wird dauerhaft ungültig. Die Kiosk-PIN des Mitarbeiters funktioniert weiterhin.",
+        "description": "Ein gedruckter QR-Code, den Mitarbeiter an einem Online-Kiosk scannen, anstatt ihre PIN einzugeben. Dadurch wird niemand angemeldet.",
+        "done": "Fertig",
+        "download": "PDF herunterladen",
+        "endedByDeparture": "Kein aktiver Kiosk-Ausweis. Der letzte endete mit dem Ausscheiden des Mitarbeiters am {date}. Alte Kopien funktionieren nie wieder, auch nicht nach einer Wiedereinstellung.",
+        "heading": "Kiosk-Ausweis",
+        "issue": "Ausweis ausstellen",
+        "none": "Noch kein Kiosk-Ausweis.",
+        "notEligible": "Ein neuer Ausweis kann nur ausgestellt werden, solange der Mitarbeiter aktiv ist. Stellen Sie nach einer Wiedereinstellung einen neuen Ausweis aus.",
+        "openToPrint": "Zum Drucken öffnen",
+        "pdf": {
+          "instructions": "Schneiden Sie den Ausweis entlang der gestrichelten Linie aus. Jeder, der eine Kopie besitzt, kann an den Kiosken der Organisation als dieser Mitarbeiter stempeln; bewahren Sie ihn daher wie einen Schlüssel auf. Geht er verloren, fordern Sie Ersatz an: Alle Kopien dieses Ausweises funktionieren dann nicht mehr.",
+          "title": "Kiosk-Ausweis"
+        },
+        "replace": "Ausweis ersetzen",
+        "revoke": "Ausweis widerrufen",
+        "revoked": "Kiosk-Ausweis widerrufen",
+        "revokedOn": "Kein aktiver Kiosk-Ausweis. Der letzte wurde am {date} widerrufen.",
+        "saveNow": "Speichern Sie das PDF jetzt: Z8 kann diesen Ausweis nicht noch einmal anzeigen. Sie können eine gespeicherte Kopie erneut drucken. Wenn die Datei oder der Ausweis verloren geht, ersetzen Sie den Ausweis."
       },
       "kioskPin": {
         "addEmailDescription": "Die Person erhält eine Einladung, ein Passwort festzulegen, und kann sich danach anmelden. Kiosk-PIN und Verlauf bleiben unverändert.",
@@ -763,6 +788,7 @@
       "area": {
         "back": "Personalakten",
         "description": "Die Mitarbeiter, deren Personalakte Sie verwalten.",
+        "documentRequests": "Dokumentanforderungen",
         "dueForDeletion": "Zur Löschung fällig",
         "empty": "In Ihrem Zuständigkeitsbereich befinden sich noch keine Mitarbeiter.",
         "former": "Ehemaliger Mitarbeiter",
@@ -850,16 +876,15 @@
       },
       "due": {
         "confirm": "Endgültig löschen",
-        "confirmDescription": "Die Dokumente und ihre Dateien werden unwiderruflich gelöscht. Im Audit-Protokoll wird festgehalten, wer sie gelöscht hat, die/der Mitarbeitende, Kategorie, Dokumentdatum und Abrechnungszeitraum sowie Ihr Grund.",
         "confirmTitle": "{count, plural, one {# Dokument endgültig löschen?} other {# Dokumente endgültig löschen?}}",
         "description": "Dokumente ehemaliger Mitarbeitender, deren Aufbewahrungsfrist abgelaufen ist. Sie verbleiben hier, bis Sie deren endgültige Löschung bestätigen; belassen Sie ein Dokument hier, um es zu behalten.",
         "dueSince": "Fällig seit {date}",
         "empty": "In Ihrem Zuständigkeitsbereich sind keine Dokumente zur Löschung fällig.",
         "loadFailed": "Die zur Löschung fälligen Dokumente konnten nicht geladen werden.",
         "loading": "Zur Löschung fällige Dokumente werden geladen",
+        "purgeAuditDescription": "Die Dokumente und ihre Dateien werden endgültig gelöscht. Das Prüfprotokoll speichert, wer sie endgültig gelöscht hat, den Mitarbeiter, die Kategorie, das Belegdatum und den Abrechnungszeitraum. Titel und Dateinamen werden auch aus früheren Prüfprotokolleinträgen der Dokumente entfernt.",
         "purged": "{count, plural, one {# Dokument endgültig gelöscht} other {# Dokumente endgültig gelöscht}}",
         "purgeSelected": "{count, plural, =0 {Ausgewählte endgültig löschen} one {# Dokument endgültig löschen} other {# Dokumente endgültig löschen}}",
-        "reason": "Grund (optional)",
         "selectAll": "Alle auswählen",
         "skipped": "{count, plural, one {# Dokument wurde nicht endgültig gelöscht, da es nicht mehr zur Löschung fällig ist oder nicht in Ihrem Zuständigkeitsbereich liegt.} other {# Dokumente wurden nicht endgültig gelöscht, da sie nicht mehr zur Löschung fällig sind oder nicht in Ihrem Zuständigkeitsbereich liegen.}}",
         "title": "Zur Löschung fällig",
@@ -878,6 +903,9 @@
         "empty": "Es laufen keine Dokumente ab.",
         "expiredAgo": "{days, plural, one {Vor # Tag abgelaufen} other {Vor # Tagen abgelaufen}}",
         "inDays": "{days, plural, one {Läuft in # Tag ab} other {Läuft in # Tagen ab}}",
+        "renewalRequested": "Erneuerung angefordert",
+        "requestRenewal": "Erneuerung anfordern",
+        "requestRenewalFor": "Erneuerung von {title} ({employee}) anfordern",
         "title": "Ablaufende Dokumente",
         "today": "Läuft heute ab"
       },
@@ -911,6 +939,24 @@
         "description": "Dokumente aus Ihrer Personalakte, die Ihre Organisation mit Ihnen geteilt hat.",
         "empty": "Es wurden noch keine Dokumente mit Ihnen geteilt.",
         "loading": "Ihre Dokumente werden geladen",
+        "requested": {
+          "description": "Dokumente, die Ihre Organisation von Ihnen angefordert hat, mit ihrer Frist.",
+          "submit": {
+            "button": "Einreichen",
+            "confirm": "Einreichen",
+            "description": "{count, plural, one {# Dokument wurde für \"{title}\" eingereicht. Ihre Organisation prüft es und teilt Ihnen das Ergebnis mit.} other {# Dokumente wurden für \"{title}\" eingereicht. Ihre Organisation prüft sie und teilt Ihnen das Ergebnis mit.}}",
+            "note": "Notiz (optional)",
+            "open": "{title} einreichen",
+            "success": "Eingereicht",
+            "title": "Dokumente einreichen?"
+          },
+          "title": "Angeforderte Dokumente",
+          "upload": {
+            "button": "Hochladen",
+            "description": "Für die Anforderung \"{title}\". Reichen Sie die Anforderung ein, sobald alle zugehörigen Dokumente hochgeladen wurden.",
+            "open": "Dokument für {title} hochladen"
+          }
+        },
         "title": "Meine Dokumente",
         "upload": {
           "button": "Dokument hochladen",
@@ -974,6 +1020,146 @@
         "saved": "Vorlaufzeit für Erinnerung gespeichert",
         "saveFailed": "Die Vorlaufzeit für Erinnerungen konnte nicht gespeichert werden.",
         "title": "Ablauferinnerungen"
+      },
+      "requests": {
+        "accept": {
+          "button": "Akzeptieren",
+          "confirm": "Akzeptieren",
+          "description": "Die Anforderung \"{title}\" ist abgeschlossen und der Mitarbeiter wird benachrichtigt.",
+          "failed": "Die Anforderung konnte nicht akzeptiert werden.",
+          "open": "{title} akzeptieren",
+          "success": "Anforderung akzeptiert",
+          "title": "Einreichung akzeptieren?"
+        },
+        "bulk": {
+          "close": "Schließen",
+          "created": "{count, plural, =0 {Keine Dokumentanforderungen erstellt.} one {# Dokumentanforderung erstellt.} other {# Dokumentanforderungen erstellt.}}",
+          "description": "Jeder Mitarbeiter erhält eine eigene Anforderung und wird benachrichtigt. Mitarbeiter, für die Sie nicht zuständig sind, ehemalige Mitarbeiter und alle, die bereits eine offene Anforderung mit diesem Titel haben, werden übersprungen.",
+          "doneTitle": "Dokumente angefordert",
+          "employees": "Mitarbeiter",
+          "noTeams": "Keine Teams zur Auswahl.",
+          "open": "Von mehreren anfordern",
+          "selectEmployees": "Mitarbeiter auswählen",
+          "skipped": "{count, plural, other {# Mitarbeiter übersprungen:} }",
+          "skippedAlreadyRequested": "{count, plural, one {# hat bereits eine offene Anforderung mit diesem Titel} other {# haben bereits eine offene Anforderung mit diesem Titel}}",
+          "skippedFormer": "{count, plural, one {# ehemaliger Mitarbeiter} other {# ehemalige Mitarbeiter}}",
+          "skippedNotCovered": "{count, plural, other {# nicht von Ihrem Zugriff abgedeckt} }",
+          "skippedOwnFile": "Ihre eigene Akte",
+          "teams": "Teams",
+          "teamsHint": "Alle, die sich derzeit im Team befinden, soweit Sie für sie zuständig sind.",
+          "title": "Ein Dokument von mehreren Mitarbeitern anfordern"
+        },
+        "cancel": {
+          "button": "Abbrechen",
+          "confirm": "Anforderung abbrechen",
+          "description": "Der Mitarbeiter muss „{title}“ nicht mehr hochladen und wird über den Grund informiert. Bereits hochgeladene Dokumente verbleiben in der Akte.",
+          "keep": "Anforderung beibehalten",
+          "open": "{title} abbrechen",
+          "reason": "Grund",
+          "success": "Anforderung abgebrochen",
+          "title": "Anforderung abbrechen?"
+        },
+        "create": {
+          "deadline": "Frist",
+          "deadlineHint": "Der Tag, bis zu dem der Mitarbeiter einreichen sollte. Danach ist die Anforderung überfällig.",
+          "description": "Der Mitarbeiter wird benachrichtigt und lädt die Dokumente über „Meine Dokumente“ hoch. Hochgeladene Dokumente sind sofort in der Personalakte und für den Mitarbeiter einsehbar.",
+          "note": "Notiz (optional)",
+          "open": "Dokument anfordern",
+          "submit": "Anfordern",
+          "success": "Dokument angefordert",
+          "title": "Dokument anfordern",
+          "titleHint": "Was der Mitarbeiter hochladen soll, z. B. eine erneuerte Ersthelfer-Bescheinigung."
+        },
+        "deadline": "Fällig am {date}",
+        "description": "Von diesem Mitarbeiter angeforderte Zertifikate und andere Dokumente, einschließlich Frist und Verlauf.",
+        "edit": {
+          "button": "Ändern",
+          "deadlineHint": "Eine neue Frist darf nicht in der Vergangenheit liegen. Durch das Verschieben werden die Fristerinnerungen neu gestartet.",
+          "description": "Ändern Sie die Frist oder die Notiz von „{title}“. Die Änderung wird im Verlauf der Anforderung angezeigt. Um etwas anderes anzufordern, brechen Sie die Anforderung ab und erstellen Sie eine neue.",
+          "open": "{title} ändern",
+          "submit": "Änderungen speichern",
+          "success": "Anforderung geändert",
+          "title": "Anforderung bearbeiten"
+        },
+        "empty": "Bisher wurden keine Dokumente angefordert.",
+        "error": {
+          "categoryNotRequestable": "Es können nur Zertifikate und andere Dokumente angefordert werden.",
+          "conflict": "Diese Anforderung wurde in der Zwischenzeit von jemand anderem geändert. Laden Sie sie neu und versuchen Sie es erneut.",
+          "deadlineInPast": "Die Frist darf nicht in der Vergangenheit liegen.",
+          "formerEmployee": "Das Beschäftigungsverhältnis dieses Mitarbeiters wurde beendet.",
+          "invalidDeadline": "Wählen Sie eine Frist aus.",
+          "invalidNote": "Die Notiz darf maximal {max} Zeichen lang sein.",
+          "invalidReason": "Der Grund darf maximal {max} Zeichen lang sein.",
+          "invalidTitle": "Geben Sie einen Titel mit maximal {max} Zeichen ein.",
+          "noDocuments": "Laden Sie mindestens ein Dokument hoch, bevor Sie es einreichen.",
+          "noRecipients": "Wählen Sie mindestens einen Mitarbeiter oder ein Team aus.",
+          "notEditable": "Es können nur die Frist und die Notiz geändert werden. Brechen Sie die Anforderung stattdessen ab und erstellen Sie eine neue.",
+          "ownFile": "Sie können keine Dokumente für Ihre eigene Personalakte anfordern.",
+          "reasonRequired": "Geben Sie einen Grund ein.",
+          "renewalAlreadyRequested": "Für dieses Dokument liegt bereits eine offene Anforderung zur Erneuerung vor.",
+          "renewalExpiryDateRequired": "Die erneuerte Qualifikation erfordert ein Ablaufdatum. Fügen Sie dem eingereichten Zertifikat das Ablaufdatum hinzu und akzeptieren Sie es anschließend.",
+          "renewalNotInBulk": "Anforderungen für mehrere Mitarbeiter können kein erneuertes Dokument benennen.",
+          "renewedDocumentMismatch": "Das erneuerte Dokument muss ein Dokument desselben Mitarbeiters und derselben Kategorie sein.",
+          "tooManyRecipients": "Fordern Sie Dokumente von maximal {max} Mitarbeitern gleichzeitig an."
+        },
+        "event": {
+          "accepted": "Akzeptiert",
+          "cancelled": "Abgebrochen",
+          "created": "Angefordert",
+          "edited": "Geändert",
+          "returned": "Zurückgegeben",
+          "submitted": "Eingereicht"
+        },
+        "history": {
+          "deadlineChanged": "Frist {from} → {to}",
+          "noteChanged": "Notiz geändert",
+          "title": "Verlauf"
+        },
+        "loadFailed": "Die Dokumentenanforderungen konnten nicht geladen werden.",
+        "overdue": "Überfällig",
+        "page": {
+          "description": "Die von den Mitarbeitern angeforderten Dokumente, deren Zertifikate oder sonstige Unterlagen Sie verwalten. Eine Anforderung ist überfällig, wenn sie nach Ablauf ihrer Frist noch offen ist.",
+          "empty": "Keine Dokumentenanforderungen entsprechen den Filtern.",
+          "filters": {
+            "active": "Offen und eingereicht",
+            "all": "Alle Status",
+            "overdue": "Nur überfällige",
+            "status": "Status"
+          },
+          "loading": "Dokumentenanforderungen werden geladen",
+          "next": "Nächste Seite",
+          "pagination": "Seite {page} von {pageCount}",
+          "previous": "Vorherige Seite",
+          "title": "Dokumentenanforderungen"
+        },
+        "pendingDocuments": "Hochgeladen, noch nicht eingereicht",
+        "pendingDocumentsClosed": "Hochgeladen, nie eingereicht",
+        "reasonCode": {
+          "employmentEnded": "Beschäftigung beendet"
+        },
+        "renewal": {
+          "hint": "Sobald Sie die Anforderung akzeptieren, gilt dieses Dokument nicht mehr als ablaufend. Bis dahin gehen Erinnerungen zum Ablauf nur an Verantwortliche.",
+          "hrOnly": "Dieses Dokument ist nur für HR sichtbar. Der Mitarbeiter sieht es nicht, sondern nur Titel, Notiz, Kategorie und Frist dieser Anforderung.",
+          "title": "Verlängerung anfordern"
+        },
+        "renews": "Verlängert {title}",
+        "return": {
+          "button": "Zurückgeben",
+          "confirm": "An Mitarbeiter zurückgeben",
+          "description": "Der Mitarbeiter wird gebeten, \"{title}\" erneut hochzuladen, und erfährt den Grund dafür. Die eingereichten Dokumente verbleiben in der Akte.",
+          "open": "{title} zurückgeben",
+          "reason": "Grund",
+          "success": "Anforderung zurückgegeben",
+          "title": "Einreichung zurückgeben?"
+        },
+        "status": {
+          "accepted": "Akzeptiert",
+          "cancelled": "Storniert",
+          "open": "Offen",
+          "submitted": "Eingereicht"
+        },
+        "submission": "Eingereicht am {date}",
+        "title": "Dokumentenanforderungen"
       },
       "retention": {
         "apply": "Vorschlag übernehmen",

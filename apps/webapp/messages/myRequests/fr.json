@@ -42,6 +42,9 @@
       "title": "Trouver des demandes",
       "type": "Type"
     },
+    "focus": {
+      "unavailable": "Cette demande n'est plus en attente ou ne peut pas être affichée ici. L'état de préparation de la période est en cours de revérification."
+    },
     "inReview": {
       "description": "Demandes en attente d'approbation ou de traitement.",
       "title": "En cours d'examen"

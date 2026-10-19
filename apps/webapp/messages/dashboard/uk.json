@@ -172,7 +172,6 @@
       "label-available": "Доступно",
       "label-pending": "На розгляді",
       "label-used": "Використано",
-      "no-policy": "Для цього року не налаштовано політику відпусток",
       "pending": "{days} на розгляді",
       "percent-used": "{percent}% використано",
       "title": "Баланс відпустки",
