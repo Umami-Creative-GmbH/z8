@@ -113,7 +113,7 @@ async function remindOrganization(
 	const { organizationId, now } = input;
 	const { timezone, today } = await loadOrganizationDay(database, input);
 
-	// A moved deadline re-arms the reminders, also when it moves back.
+	// A moved deadline re-arms the reminders, also when it moves back (a new ledger row, a new key).
 	await database.execute(sql`
 		DELETE FROM ${employeeDocumentRequestReminder}
 		WHERE ${employeeDocumentRequestReminder.organizationId} = ${organizationId}
@@ -219,15 +219,15 @@ async function remindOrganization(
 		const { request, kind } = reminder;
 		if (alreadySent.has(`${request.id}:${kind}:${request.deadline}`)) continue;
 		// Recipients first, then the claim: a failure before the claim retries next run.
-		const messages = await buildReminderMessages(database, { organizationId, now, reminder });
-		const claimed = await database
+		const messagesFor = await buildReminderMessages(database, { organizationId, now, reminder });
+		const [claimed] = await database
 			.insert(employeeDocumentRequestReminder)
 			.values({ organizationId, requestId: request.id, kind, deadline: request.deadline })
 			.onConflictDoNothing()
 			.returning({ id: employeeDocumentRequestReminder.id });
-		if (claimed.length === 0) continue;
+		if (!claimed) continue;
 		reminders += 1;
-		notifications += await deliver(messages);
+		notifications += await deliver(messagesFor(claimed.id));
 	}
 	return { reminders, notifications };
 }
@@ -263,40 +263,45 @@ async function loadOpenedDays(
 	return days;
 }
 
+/**
+ * The reminder's recipients, read now; the messages are built once the
+ * reminder is claimed, keyed by its ledger row (`markerId`).
+ */
 async function buildReminderMessages(
 	database: Database,
 	input: { organizationId: string; now: Instant; reminder: DueReminder },
-): Promise<CreateNotificationParams[]> {
+): Promise<(markerId: string) => CreateNotificationParams[]> {
 	const { organizationId, reminder } = input;
 	const { request, kind } = reminder;
-	const messages = [
+	const officers =
+		kind === "overdue"
+			? await listPersonnelFileNotificationRecipients(database, {
+					organizationId,
+					employeeId: request.employeeId,
+					category: request.category,
+					now: input.now,
+				})
+			: [];
+	return (markerId) => [
 		buildDocumentRequestReminderNotification({
 			organizationId,
 			recipientUserId: request.employeeUserId,
+			markerId,
 			audience: "employee",
 			kind,
 			request,
 		}),
-	];
-	if (kind !== "overdue") return messages;
-	const officers = await listPersonnelFileNotificationRecipients(database, {
-		organizationId,
-		employeeId: request.employeeId,
-		category: request.category,
-		now: input.now,
-	});
-	for (const recipientUserId of officers) {
-		messages.push(
+		...officers.map((recipientUserId) =>
 			buildDocumentRequestReminderNotification({
 				organizationId,
 				recipientUserId,
+				markerId,
 				audience: "officer",
-				kind,
+				kind: "overdue",
 				request,
 			}),
-		);
-	}
-	return messages;
+		),
+	];
 }
 
 /** Sends after the claim; a failed delivery is logged, never retried (at most once). */

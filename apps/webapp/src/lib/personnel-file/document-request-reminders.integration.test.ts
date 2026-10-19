@@ -371,4 +371,36 @@ describe("document request deadline reminders", () => {
 		await run("2026-11-21T09:00:00Z");
 		expect(ours()).toEqual([]);
 	});
+
+	it("delivers a reminder again when the deadline moves away and back (a new notification key per arming)", async () => {
+		const moveBen = (deadline: string) =>
+			admin.query(
+				"update employee_document_request set deadline = $2, version = version + 1 where id = $1",
+				[requests.ben, deadline],
+			);
+		const keys = () =>
+			sent
+				.filter((notification) => notification.entityId === requests.ben)
+				.map((notification) => notification.idempotencyKey);
+
+		await moveBen("2026-12-10");
+		await run("2026-12-07T08:00:00Z");
+		const [first] = keys();
+		expect(toldAbout(requests.ben)).toEqual([
+			"t1406-ben:personnel_file_document_request_reminder:three_days_before",
+		]);
+
+		// Away and back on the same day: the reminder is armed again and must reach Ben again.
+		await moveBen("2026-12-20");
+		await run("2026-12-07T09:00:00Z");
+		await moveBen("2026-12-10");
+		sent.length = 0;
+		await run("2026-12-07T10:00:00Z");
+		expect(toldAbout(requests.ben)).toEqual([
+			"t1406-ben:personnel_file_document_request_reminder:three_days_before",
+		]);
+		const [second] = keys();
+		expect(second).toBeTruthy();
+		expect(second).not.toBe(first);
+	});
 });

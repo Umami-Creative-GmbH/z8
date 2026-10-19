@@ -28,7 +28,7 @@ import { personnelFilePath } from "./paths";
  * decision (accepted, returned, cancelled), and of its deadline (#1406); the
  * covering officers of an overdue request and of each submission (#1402). One
  * notification per history event and recipient: the event id is the
- * idempotency key; a deadline reminder's key is its request, kind and deadline.
+ * idempotency key; a deadline reminder's key is its claimed ledger row.
  */
 
 const logger = createLogger("PersonnelFileDocumentRequestNotifications");
@@ -183,13 +183,16 @@ const EMPLOYEE_REMINDER_COPY = {
 /**
  * A deadline reminder (#1406): to the employee 3 days before the deadline, on
  * the deadline day and when overdue; to the covering officers (or owners and
- * admins) only when overdue. One per request, kind, deadline and recipient, so
- * a moved deadline reminds again.
+ * admins) only when overdue. One per claimed reminder (`markerId`, the ledger
+ * row) and recipient: a moved deadline re-arms the reminder with a new ledger
+ * row, so it is delivered again, also when the deadline moves back.
  */
 export function buildDocumentRequestReminderNotification(
 	input: {
 		organizationId: string;
 		recipientUserId: string;
+		/** The reminder's claimed `employee_document_request_reminder` row. */
+		markerId: string;
 		request: NotifiedRequest & { employeeName: string };
 	} & (
 		| { audience: "employee"; kind: DocumentRequestReminderKind }
@@ -214,7 +217,7 @@ export function buildDocumentRequestReminderNotification(
 		entityType: DOCUMENT_REQUEST_ENTITY_TYPE,
 		entityId: request.id,
 		actionUrl: officer ? personnelFilePath(request.employeeId) : MY_DOCUMENTS_PATH,
-		idempotencyKey: `personnel-file-document-request-reminder:${request.id}:${input.kind}:${request.deadline}:${input.recipientUserId}`,
+		idempotencyKey: `personnel-file-document-request-reminder:${input.markerId}:${input.recipientUserId}`,
 		metadata: {
 			category: request.category,
 			reminder: input.kind,
