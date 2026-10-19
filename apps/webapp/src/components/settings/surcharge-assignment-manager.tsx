@@ -15,6 +15,8 @@ import {
 	deleteSurchargeAssignment,
 	getSurchargeAssignments,
 } from "@/app/[locale]/(app)/settings/surcharges/actions";
+import { AssignmentLevelCardHeader } from "@/components/settings/assignment-level-card-header";
+import { AssignmentManagerSkeleton } from "@/components/settings/assignment-manager-skeleton";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -26,14 +28,7 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent } from "@/components/ui/card";
 import { queryKeys } from "@/lib/query";
 import {
 	type SurchargeAssignmentData,
@@ -135,21 +130,7 @@ export function SurchargeAssignmentManager({
 	);
 
 	if (isLoading) {
-		return (
-			<div className="space-y-6">
-				{[1, 2, 3].map((i) => (
-					<Card key={i}>
-						<CardHeader>
-							<Skeleton className="h-6 w-40" />
-							<Skeleton className="h-4 w-64" />
-						</CardHeader>
-						<CardContent>
-							<Skeleton className="h-16 w-full" />
-						</CardContent>
-					</Card>
-				))}
-			</div>
-		);
+		return <AssignmentManagerSkeleton />;
 	}
 
 	if (error) {
@@ -169,22 +150,14 @@ export function SurchargeAssignmentManager({
 			<div className="space-y-6">
 				{/* Organization Level */}
 				<Card>
-					<CardHeader>
-						<div className="flex items-center gap-2">
-							<IconBuilding className="size-5 text-muted-foreground" />
-							<div>
-								<CardTitle className="text-base">
-									{t("settings.surcharges.orgLevel", "Organization Level")}
-								</CardTitle>
-								<CardDescription>
-									{t(
-										"settings.surcharges.orgLevelDescription",
-										"Default surcharge model applied to all employees unless overridden",
-									)}
-								</CardDescription>
-							</div>
-						</div>
-					</CardHeader>
+					<AssignmentLevelCardHeader
+						icon={IconBuilding}
+						title={t("settings.surcharges.orgLevel", "Organization Level")}
+						description={t(
+							"settings.surcharges.orgLevelDescription",
+							"Default surcharge model applied to all employees unless overridden",
+						)}
+					/>
 					<CardContent>
 						<div className="flex items-center justify-between mb-2">
 							<h4 className="text-sm font-medium text-muted-foreground">

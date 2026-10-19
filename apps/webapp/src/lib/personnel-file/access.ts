@@ -5,6 +5,7 @@ import {
 	type DocumentVisibility,
 	EMPLOYEE_UPLOAD_CATEGORIES,
 } from "./document.types";
+import { DOCUMENT_REQUEST_CATEGORIES, isDocumentRequestCategory } from "./document-request.types";
 
 /**
  * Who may see and manage which employee documents (ADR 0001). One resolver
@@ -226,6 +227,28 @@ export function canViewDocument(
 		canManageDocument(access, document.employee, document.category) ||
 		(isOwnDocument(access, document.employee.id) && document.visibility === "shared")
 	);
+}
+
+/**
+ * Whether the actor may create, edit, decide and cancel document requests of
+ * the category for the employee (#1307): whoever manages the employee's
+ * documents of that category now, and only for requestable categories. Never
+ * on the actor's own file; there is no named reviewer.
+ */
+export function canManageDocumentRequest(
+	access: PersonnelFileAccess,
+	employee: EmployeeRef,
+	category: DocumentCategory,
+): boolean {
+	return isDocumentRequestCategory(category) && canManageDocument(access, employee, category);
+}
+
+/**
+ * Whether the actor covers a requestable category for at least one employee:
+ * the gate of the officer "Document requests" page (#1403).
+ */
+export function managesDocumentRequests(access: PersonnelFileAccess): boolean {
+	return DOCUMENT_REQUEST_CATEGORIES.some((category) => managesCategory(access, category));
 }
 
 /** Whether the actor manages documents of the category for at least one employee. */

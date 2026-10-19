@@ -220,6 +220,9 @@ export async function loadEmploymentDateCorrectionImpact(
 		...refresh.carryovers.map((row) => row.year),
 	]);
 	for (let year = firstYear; year <= currentYear; year++) years.add(year);
+	const carryoverByYear = new Map<number, (typeof refresh.carryovers)[number]>();
+	for (const row of refresh.carryovers)
+		if (!carryoverByYear.has(row.year)) carryoverByYear.set(row.year, row);
 	for (const year of [...years].sort((a, b) => a - b)) {
 		const params = {
 			organizationId: input.organizationId,
@@ -234,14 +237,9 @@ export async function loadEmploymentDateCorrectionImpact(
 			employeeEmploymentStartDateOverrides: new Map([
 				[proposal.employeeId, proposal.employmentStartDate],
 			]),
-			carryoverDaysOverrides: refresh.carryovers.some(
-				(row) => row.year === year,
-			)
+			carryoverDaysOverrides: carryoverByYear.has(year)
 				? new Map([
-						[
-							proposal.employeeId,
-							refresh.carryovers.find((row) => row.year === year)?.days ?? "0",
-						],
+						[proposal.employeeId, carryoverByYear.get(year)?.days ?? "0"],
 					])
 				: undefined,
 			accrualDaysOverrides: refresh.accrualSums.has(year)
@@ -281,9 +279,11 @@ export async function loadEmploymentDateCorrectionImpact(
 				isNull(closedMonthEmployee.reopenedAt),
 			),
 		);
+	// Each year appears once: the years come from a Set.
+	const vacationByYear = new Map(vacation.map((row) => [row.year, row]));
 	for (const closure of closures) {
 		const year = Number(closure.month.slice(0, 4));
-		const annual = vacation.find((row) => row.year === year);
+		const annual = vacationByYear.get(year);
 		if (
 			annual &&
 			JSON.stringify(annual.before) !== JSON.stringify(annual.after) &&

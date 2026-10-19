@@ -324,9 +324,6 @@ export function EmployeeAllowanceEditPageClient({
 	const { employeeId } = use(params);
 	const { t } = useTranslate();
 	const router = useRouter();
-	const assignedPolicyId = useId();
-	const customAnnualDaysId = useId();
-	const carryoverDaysId = useId();
 	const {
 		adjustmentSummary,
 		balanceView,
@@ -463,138 +460,12 @@ export function EmployeeAllowanceEditPageClient({
 							}}
 							className="space-y-6"
 						>
-							<form.Field name="policyId">
-								{(field) => (
-									<div className="space-y-2">
-										<Label htmlFor={assignedPolicyId}>
-											{t(
-												"settings.vacation.employees.detail.assignedPolicy",
-												"Assigned Policy",
-											)}
-										</Label>
-										<Select
-											onValueChange={field.handleChange}
-											value={field.state.value}
-										>
-											<SelectTrigger id={assignedPolicyId}>
-												<SelectValue
-													placeholder={t(
-														"settings.vacation.employees.detail.useOrganizationTeamDefault",
-														"Use organization/team default",
-													)}
-												/>
-											</SelectTrigger>
-											<SelectContent>
-												<SelectItem value={DEFAULT_POLICY_VALUE}>
-													{t(
-														"settings.vacation.employees.detail.useDefault",
-														"Use default",
-													)}
-												</SelectItem>
-												{policies.map((policy) => (
-													<SelectItem key={policy.id} value={policy.id}>
-														{t(
-															"settings.vacation.employees.detail.policyOptionDays",
-															"{name} ({days} days)",
-															{
-																name: policy.name,
-																days: policy.defaultAnnualDays,
-															},
-														)}
-													</SelectItem>
-												))}
-											</SelectContent>
-										</Select>
-										<p className="text-sm text-muted-foreground">
-											{currentAssignment
-												? t(
-														"settings.vacation.employees.detail.currentlyAssigned",
-														"Currently assigned: {name}",
-														{ name: currentAssignment.policy?.name },
-													)
-												: t(
-														"settings.vacation.employees.detail.fallsBackToDefaultPolicy",
-														"Falls back to team or organization default policy",
-													)}
-										</p>
-									</div>
-								)}
-							</form.Field>
-
-							<Separator />
-
-							<form.Field name="customAnnualDays">
-								{(field) => (
-									<div className="space-y-2">
-										<Label htmlFor={customAnnualDaysId}>
-											{t(
-												"settings.vacation.employees.detail.customAnnualDaysOptional",
-												"Custom Annual Days (Optional)",
-											)}
-										</Label>
-										<Input
-											id={customAnnualDaysId}
-											type="number"
-											step="0.5"
-											placeholder={t(
-												"settings.vacation.employees.detail.defaultDaysPlaceholder",
-												"Default: {days} days",
-												{
-													days: defaultDays,
-												},
-											)}
-											value={field.state.value}
-											onChange={(e) => field.handleChange(e.target.value)}
-											onBlur={field.handleBlur}
-										/>
-										<p className="text-sm text-muted-foreground">
-											{t(
-												"settings.vacation.employees.detail.overrideEffectivePolicy",
-												"Override the assigned policy allowance ({days} days) for this employee",
-												{ days: defaultDays },
-											)}
-										</p>
-										{field.state.meta.errors.length > 0 && (
-											<p className="text-sm text-destructive">
-												{field.state.meta.errors[0]}
-											</p>
-										)}
-									</div>
-								)}
-							</form.Field>
-
-							<form.Field name="customCarryoverDays">
-								{(field) => (
-									<div className="space-y-2">
-										<Label htmlFor={carryoverDaysId}>
-											{t(
-												"settings.vacation.employees.detail.carryoverDaysOptional",
-												"Carryover Days (Optional)",
-											)}
-										</Label>
-										<Input
-											id={carryoverDaysId}
-											type="number"
-											step="0.5"
-											placeholder="0"
-											value={field.state.value}
-											onChange={(e) => field.handleChange(e.target.value)}
-											onBlur={field.handleBlur}
-										/>
-										<p className="text-sm text-muted-foreground">
-											{t(
-												"settings.vacation.employees.detail.daysCarriedOverDescription",
-												"Days carried over from previous year",
-											)}
-										</p>
-										{field.state.meta.errors.length > 0 && (
-											<p className="text-sm text-destructive">
-												{field.state.meta.errors[0]}
-											</p>
-										)}
-									</div>
-								)}
-							</form.Field>
+							<AllowanceSettingsFields
+								form={form}
+								policies={policies}
+								currentAssignment={currentAssignment}
+								defaultDays={defaultDays}
+							/>
 
 							<Separator />
 
@@ -625,6 +496,159 @@ export function EmployeeAllowanceEditPageClient({
 				</Card>
 			</div>
 		</div>
+	);
+}
+
+function AllowanceSettingsFields({
+	form,
+	policies,
+	currentAssignment,
+	defaultDays,
+}: {
+	form: EmployeeAllowanceFormApi;
+	policies: EmployeeAllowanceEditorState["policies"];
+	currentAssignment: EmployeeAllowanceEditorState["currentAssignment"];
+	defaultDays: string;
+}) {
+	const { t } = useTranslate();
+	const assignedPolicyId = useId();
+	const customAnnualDaysId = useId();
+	const carryoverDaysId = useId();
+	return (
+		<>
+			<form.Field name="policyId">
+				{(field) => (
+					<div className="space-y-2">
+						<Label htmlFor={assignedPolicyId}>
+							{t(
+								"settings.vacation.employees.detail.assignedPolicy",
+								"Assigned Policy",
+							)}
+						</Label>
+						<Select
+							onValueChange={field.handleChange}
+							value={field.state.value}
+						>
+							<SelectTrigger id={assignedPolicyId}>
+								<SelectValue
+									placeholder={t(
+										"settings.vacation.employees.detail.useOrganizationTeamDefault",
+										"Use organization/team default",
+									)}
+								/>
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value={DEFAULT_POLICY_VALUE}>
+									{t(
+										"settings.vacation.employees.detail.useDefault",
+										"Use default",
+									)}
+								</SelectItem>
+								{policies.map((policy) => (
+									<SelectItem key={policy.id} value={policy.id}>
+										{t(
+											"settings.vacation.employees.detail.policyOptionDays",
+											"{name} ({days} days)",
+											{
+												name: policy.name,
+												days: policy.defaultAnnualDays,
+											},
+										)}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+						<p className="text-sm text-muted-foreground">
+							{currentAssignment
+								? t(
+										"settings.vacation.employees.detail.currentlyAssigned",
+										"Currently assigned: {name}",
+										{ name: currentAssignment.policy?.name },
+									)
+								: t(
+										"settings.vacation.employees.detail.fallsBackToDefaultPolicy",
+										"Falls back to team or organization default policy",
+									)}
+						</p>
+					</div>
+				)}
+			</form.Field>
+
+			<Separator />
+
+			<form.Field name="customAnnualDays">
+				{(field) => (
+					<div className="space-y-2">
+						<Label htmlFor={customAnnualDaysId}>
+							{t(
+								"settings.vacation.employees.detail.customAnnualDaysOptional",
+								"Custom Annual Days (Optional)",
+							)}
+						</Label>
+						<Input
+							id={customAnnualDaysId}
+							type="number"
+							step="0.5"
+							placeholder={t(
+								"settings.vacation.employees.detail.defaultDaysPlaceholder",
+								"Default: {days} days",
+								{
+									days: defaultDays,
+								},
+							)}
+							value={field.state.value}
+							onChange={(e) => field.handleChange(e.target.value)}
+							onBlur={field.handleBlur}
+						/>
+						<p className="text-sm text-muted-foreground">
+							{t(
+								"settings.vacation.employees.detail.overrideEffectivePolicy",
+								"Override the assigned policy allowance ({days} days) for this employee",
+								{ days: defaultDays },
+							)}
+						</p>
+						{field.state.meta.errors.length > 0 && (
+							<p className="text-sm text-destructive">
+								{field.state.meta.errors[0]}
+							</p>
+						)}
+					</div>
+				)}
+			</form.Field>
+
+			<form.Field name="customCarryoverDays">
+				{(field) => (
+					<div className="space-y-2">
+						<Label htmlFor={carryoverDaysId}>
+							{t(
+								"settings.vacation.employees.detail.carryoverDaysOptional",
+								"Carryover Days (Optional)",
+							)}
+						</Label>
+						<Input
+							id={carryoverDaysId}
+							type="number"
+							step="0.5"
+							placeholder="0"
+							value={field.state.value}
+							onChange={(e) => field.handleChange(e.target.value)}
+							onBlur={field.handleBlur}
+						/>
+						<p className="text-sm text-muted-foreground">
+							{t(
+								"settings.vacation.employees.detail.daysCarriedOverDescription",
+								"Days carried over from previous year",
+							)}
+						</p>
+						{field.state.meta.errors.length > 0 && (
+							<p className="text-sm text-destructive">
+								{field.state.meta.errors[0]}
+							</p>
+						)}
+					</div>
+				)}
+			</form.Field>
+		</>
 	);
 }
 

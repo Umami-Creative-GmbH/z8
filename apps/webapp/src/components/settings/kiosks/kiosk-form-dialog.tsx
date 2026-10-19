@@ -73,6 +73,21 @@ type KioskFormValues = {
 	badgeCameraEnabled: boolean;
 };
 
+/** The form's starting values: the kiosk being edited, or a new kiosk's defaults. */
+function kioskFormDefaults(props: KioskFormDialogProps): KioskFormValues {
+	const editing = props.mode === "edit" ? props.kiosk : null;
+	return {
+		name: editing?.name ?? "",
+		locationId: editing?.locationId ?? props.locations[0]?.id ?? "",
+		// A new kiosk starts in the organization's zone, never the admin's browser zone.
+		timezone: props.mode === "edit" ? props.kiosk.timezone : props.defaultTimezone,
+		boardEnabled: editing?.boardEnabled ?? false,
+		offlineModeEnabled: editing?.offlineModeEnabled ?? false,
+		badgeScannerEnabled: editing?.badgeScannerEnabled ?? false,
+		badgeCameraEnabled: editing?.badgeCameraEnabled ?? false,
+	};
+}
+
 /**
  * Creates a kiosk, or edits one: name, location, zone and (when editing) the
  * who-is-in board, offline mode, attached-scanner badge input (#1366) and
@@ -90,16 +105,7 @@ function KioskFormDialogContent(props: KioskFormDialogProps) {
 	const editing = props.mode === "edit" ? props.kiosk : null;
 
 	const form = useForm({
-		defaultValues: {
-			name: editing?.name ?? "",
-			locationId: editing?.locationId ?? props.locations[0]?.id ?? "",
-			// A new kiosk starts in the organization's zone, never the admin's browser zone.
-			timezone: props.mode === "edit" ? props.kiosk.timezone : props.defaultTimezone,
-			boardEnabled: editing?.boardEnabled ?? false,
-			offlineModeEnabled: editing?.offlineModeEnabled ?? false,
-			badgeScannerEnabled: editing?.badgeScannerEnabled ?? false,
-			badgeCameraEnabled: editing?.badgeCameraEnabled ?? false,
-		} satisfies KioskFormValues,
+		defaultValues: kioskFormDefaults(props),
 		onSubmit: async ({ value }) => {
 			setSaving(true);
 			const save = async () => {

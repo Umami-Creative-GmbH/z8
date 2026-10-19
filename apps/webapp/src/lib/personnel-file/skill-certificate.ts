@@ -31,6 +31,8 @@ import {
  */
 
 type Database = typeof appDb;
+type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
+type DocumentRow = typeof employeeDocument.$inferSelect;
 
 export type SkillCertificateLinkRefusal =
 	| SkillCertificateRuleRefusal
@@ -53,72 +55,108 @@ export async function setCertificateSkill(
 	input: { documentId: string; employeeSkillId: string | null },
 	now: Instant = systemClock.nowInstant(),
 ): Promise<SetCertificateSkillResult> {
-	const at = dateFromInstant(now);
-	return database.transaction(async (tx) => {
-		const current = await lockDocument(tx, access.organizationId, input.documentId);
-		if (!current) return { kind: "not_found" };
-		const employee = await loadEmployeeRef(tx, {
-			organizationId: access.organizationId,
-			employeeId: current.employeeId,
-		});
-		// Whoever does not manage the certificates of this employee, the
-		// employee themselves included, never learns the document exists.
-		if (!employee || !canManageDocument(access, employee, "certificate")) {
-			return { kind: "not_found" };
-		}
-		if (!canManageDocument(access, employee, current.category)) return { kind: "not_found" };
-
-		const from = current.employeeSkillId;
-		const to = input.employeeSkillId;
-		if (to !== null) {
-			const proven = await loadCertificateSkill(tx, {
-				organizationId: access.organizationId,
-				employeeId: current.employeeId,
-				employeeSkillId: to,
-			});
-			const refusal =
-				skillCertificateRefusal(current, { requiresExpiry: proven?.requiresExpiry ?? false }) ??
-				(proven ? null : "not_employee_skill");
-			if (refusal) return { kind: "refused", reason: refusal };
-		} else if (current.category !== "certificate") {
-			return { kind: "refused", reason: "not_certificate" };
-		}
-
-		if (from === to) {
-			const [document] = await toDocumentViews(tx, access.organizationId, [current]);
-			if (!document) return { kind: "not_found" };
-			return { kind: "saved", document };
-		}
-		const [row] = await tx
-			.update(employeeDocument)
-			.set({ employeeSkillId: to, updatedBy: access.userId, updatedAt: at })
-			.where(
-				and(
-					eq(employeeDocument.id, current.id),
-					eq(employeeDocument.organizationId, access.organizationId),
-				),
-			)
-			.returning();
-		if (!row) return { kind: "not_found" };
-		await writeDocumentAudit(tx, {
-			action:
-				to === null
-					? AuditAction.PERSONNEL_FILE_SKILL_CERTIFICATE_UNLINKED
-					: AuditAction.PERSONNEL_FILE_SKILL_CERTIFICATE_LINKED,
-			actorUserId: access.userId,
-			document: row,
-			changes: { employeeSkillId: { from, to } },
-		});
+	return database.transaction(async (tx): Promise<SetCertificateSkillResult> => {
+		const linked = await setCertificateSkillInTransaction(tx, access, input, now);
+		if (linked.kind !== "saved") return linked;
 		// The skill expiry date follows the certificates (#1145), for the skill
 		// the certificate stopped naming and the one it names now.
 		await recomputeCertificateSkillExpiry(tx, {
 			organizationId: access.organizationId,
-			employeeSkillIds: [from, to],
+			employeeSkillIds: linked.changed ? [linked.from, linked.document.employeeSkillId] : [],
 		});
-		const [document] = await toDocumentViews(tx, access.organizationId, [row]);
+		const [document] = await toDocumentViews(tx, access.organizationId, [linked.document]);
 		if (!document) return { kind: "not_found" };
 		return { kind: "saved", document };
 	});
+}
+
+export type SetCertificateSkillInTransactionResult =
+	| {
+			kind: "saved";
+			/** The document row as it is now. */
+			document: DocumentRow;
+			/** The employee skill it named before. */
+			from: string | null;
+			/** False when it named that employee skill already: nothing was written. */
+			changed: boolean;
+	  }
+	| { kind: "not_found" }
+	| { kind: "refused"; reason: SkillCertificateLinkRefusal };
+
+/**
+ * `setCertificateSkill`'s rules and write in the caller's transaction, for a
+ * write that links certificates as part of something larger (#1405: accepting
+ * a skill certificate renewal). Locks the document, checks the actor manages
+ * the employee's certificates and the employee skill is theirs, updates the
+ * document and audits the change (`auditMetadata` joins the audit record).
+ *
+ * It does NOT recompute the skill expiry date: the caller calls
+ * `recomputeCertificateSkillExpiry` once, after its last link, with every
+ * `from` and `to`, so the employee skills are locked last (lock order:
+ * documents first, employee skills last).
+ */
+export async function setCertificateSkillInTransaction(
+	tx: Transaction,
+	access: PersonnelFileAccess,
+	input: {
+		documentId: string;
+		employeeSkillId: string | null;
+		auditMetadata?: Record<string, unknown>;
+	},
+	now: Instant = systemClock.nowInstant(),
+): Promise<SetCertificateSkillInTransactionResult> {
+	const current = await lockDocument(tx, access.organizationId, input.documentId);
+	if (!current) return { kind: "not_found" };
+	const employee = await loadEmployeeRef(tx, {
+		organizationId: access.organizationId,
+		employeeId: current.employeeId,
+	});
+	// Whoever does not manage the certificates of this employee, the
+	// employee themselves included, never learns the document exists.
+	if (!employee || !canManageDocument(access, employee, "certificate")) {
+		return { kind: "not_found" };
+	}
+	if (!canManageDocument(access, employee, current.category)) return { kind: "not_found" };
+
+	const from = current.employeeSkillId;
+	const to = input.employeeSkillId;
+	if (to !== null) {
+		const proven = await loadCertificateSkill(tx, {
+			organizationId: access.organizationId,
+			employeeId: current.employeeId,
+			employeeSkillId: to,
+		});
+		const refusal =
+			skillCertificateRefusal(current, { requiresExpiry: proven?.requiresExpiry ?? false }) ??
+			(proven ? null : "not_employee_skill");
+		if (refusal) return { kind: "refused", reason: refusal };
+	} else if (current.category !== "certificate") {
+		return { kind: "refused", reason: "not_certificate" };
+	}
+
+	if (from === to) return { kind: "saved", document: current, from, changed: false };
+	const [row] = await tx
+		.update(employeeDocument)
+		.set({ employeeSkillId: to, updatedBy: access.userId, updatedAt: dateFromInstant(now) })
+		.where(
+			and(
+				eq(employeeDocument.id, current.id),
+				eq(employeeDocument.organizationId, access.organizationId),
+			),
+		)
+		.returning();
+	if (!row) return { kind: "not_found" };
+	await writeDocumentAudit(tx, {
+		action:
+			to === null
+				? AuditAction.PERSONNEL_FILE_SKILL_CERTIFICATE_UNLINKED
+				: AuditAction.PERSONNEL_FILE_SKILL_CERTIFICATE_LINKED,
+		actorUserId: access.userId,
+		document: row,
+		changes: { employeeSkillId: { from, to } },
+		...(input.auditMetadata ? { metadata: input.auditMetadata } : {}),
+	});
+	return { kind: "saved", document: row, from, changed: true };
 }
 
 /**

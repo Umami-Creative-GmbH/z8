@@ -19,6 +19,7 @@ import {
 	TFormItem,
 	TFormLabel,
 } from "@/components/ui/tanstack-form";
+import type { VacationPolicyResolution } from "@/lib/absences/vacation-policy-history";
 import { useVacationPolicyHistoryContext } from "./use-vacation-policy-history-context";
 
 export function VacationPolicyPreview({
@@ -49,24 +50,6 @@ export function VacationPolicyPreview({
 		},
 	});
 	const result = preview.data;
-	const sourceLabel =
-		result?.status === "resolved"
-			? {
-					employee: t(
-						"settings.vacation.history.sourceEmployee",
-						"Employee assignment",
-					),
-					team: t("settings.vacation.history.sourceTeam", "Team assignment"),
-					organization: t(
-						"settings.vacation.history.sourceOrganization",
-						"Organization assignment",
-					),
-					company_default: t(
-						"settings.vacation.history.sourceCompanyDefault",
-						"Company default",
-					),
-				}[result.source]
-			: null;
 	return (
 		<Card>
 			<CardHeader>
@@ -153,74 +136,92 @@ export function VacationPolicyPreview({
 						)}
 					</p>
 				) : null}
-				{result ? (
-					<div
-						role="status"
-						className="rounded-lg border bg-muted/30 p-4 text-sm"
-					>
-						{result.status === "resolved" ? (
-							<>
-								<p className="font-medium">{result.policy.name}</p>
-								<p className="text-muted-foreground">{sourceLabel}</p>
-							</>
-						) : null}
-						{result.status === "missing" ? (
-							<>
-								<p className="font-medium">
-									{t(
-										"settings.vacation.history.missing",
-										"No policy for this date",
-									)}
-								</p>
-								<p className="text-muted-foreground">
-									{t(
-										"settings.vacation.history.missingHelp",
-										"Add a dated assignment or a company default covering this date.",
-									)}
-								</p>
-							</>
-						) : null}
-						{result.status === "conflict" ? (
-							<>
-								<p className="font-medium text-destructive">
-									{t(
-										"settings.vacation.history.conflict",
-										"Conflicting policies",
-									)}
-								</p>
-								<p className="text-muted-foreground">
-									{result.reason === "incompatible_transition"
-										? t(
-												"settings.vacation.history.incompatibleTransition",
-												"Calculation method or joiner/leaver proration changes must take effect on 1 January. Review this assignment.",
-											)
-										: t(
-												"settings.vacation.history.conflictHelp",
-												"Resolve the overlapping assignments before this date can use a policy.",
-											)}
-								</p>
-							</>
-						) : null}
-						{result.status === "legacy" ? (
-							<>
-								<p className="font-medium">
-									{t(
-										"settings.vacation.history.legacy",
-										"Before dated policy history",
-									)}
-								</p>
-								<p className="text-muted-foreground">
-									{t(
-										"settings.vacation.history.legacyHelp",
-										"Dated policy history for this organization starts after this date. Legacy policy rules apply.",
-									)}
-								</p>
-								{result.policy ? <p>{result.policy.name}</p> : null}
-							</>
-						) : null}
-					</div>
-				) : null}
+				{result ? <VacationPolicyPreviewResult result={result} /> : null}
 			</CardContent>
 		</Card>
+	);
+}
+
+function VacationPolicyPreviewResult({
+	result,
+}: {
+	result: VacationPolicyResolution;
+}) {
+	const { t } = useTranslate();
+	const sourceLabel =
+		result.status === "resolved"
+			? {
+					employee: t(
+						"settings.vacation.history.sourceEmployee",
+						"Employee assignment",
+					),
+					team: t("settings.vacation.history.sourceTeam", "Team assignment"),
+					organization: t(
+						"settings.vacation.history.sourceOrganization",
+						"Organization assignment",
+					),
+					company_default: t(
+						"settings.vacation.history.sourceCompanyDefault",
+						"Company default",
+					),
+				}[result.source]
+			: null;
+	return (
+		<div role="status" className="rounded-lg border bg-muted/30 p-4 text-sm">
+			{result.status === "resolved" ? (
+				<>
+					<p className="font-medium">{result.policy.name}</p>
+					<p className="text-muted-foreground">{sourceLabel}</p>
+				</>
+			) : null}
+			{result.status === "missing" ? (
+				<>
+					<p className="font-medium">
+						{t("settings.vacation.history.missing", "No policy for this date")}
+					</p>
+					<p className="text-muted-foreground">
+						{t(
+							"settings.vacation.history.missingHelp",
+							"Add a dated assignment or a company default covering this date.",
+						)}
+					</p>
+				</>
+			) : null}
+			{result.status === "conflict" ? (
+				<>
+					<p className="font-medium text-destructive">
+						{t("settings.vacation.history.conflict", "Conflicting policies")}
+					</p>
+					<p className="text-muted-foreground">
+						{result.reason === "incompatible_transition"
+							? t(
+									"settings.vacation.history.incompatibleTransition",
+									"Calculation method or joiner/leaver proration changes must take effect on 1 January. Review this assignment.",
+								)
+							: t(
+									"settings.vacation.history.conflictHelp",
+									"Resolve the overlapping assignments before this date can use a policy.",
+								)}
+					</p>
+				</>
+			) : null}
+			{result.status === "legacy" ? (
+				<>
+					<p className="font-medium">
+						{t(
+							"settings.vacation.history.legacy",
+							"Before dated policy history",
+						)}
+					</p>
+					<p className="text-muted-foreground">
+						{t(
+							"settings.vacation.history.legacyHelp",
+							"Dated policy history for this organization starts after this date. Legacy policy rules apply.",
+						)}
+					</p>
+					{result.policy ? <p>{result.policy.name}</p> : null}
+				</>
+			) : null}
+		</div>
 	);
 }

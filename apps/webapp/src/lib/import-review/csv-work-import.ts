@@ -695,16 +695,17 @@ export async function refreshCsvWorkImport(input: CsvWorkBatchActor) {
 
 export async function getCsvWorkReview(input: CsvWorkBatchActor) {
 	await assertCsvAdmin(db, input);
-	const batch = await readBatch(db, input);
-	const rows = await db
-		.select()
-		.from(importStagedRow)
-		.where(rowWhere(input))
-		.orderBy(
-			sql`(${importStagedRow.sourcePayload}->>'rowNumber')::int`,
-			asc(importStagedRow.id),
-		);
-	const [people, vehicles] = await Promise.all([
+	// Independent pooled reads, all scoped to the organization and batch.
+	const [batch, rows, people, vehicles, issues] = await Promise.all([
+		readBatch(db, input),
+		db
+			.select()
+			.from(importStagedRow)
+			.where(rowWhere(input))
+			.orderBy(
+				sql`(${importStagedRow.sourcePayload}->>'rowNumber')::int`,
+				asc(importStagedRow.id),
+			),
 		db
 			.select({
 				id: employee.id,
@@ -729,17 +730,17 @@ export async function getCsvWorkReview(input: CsvWorkBatchActor) {
 				),
 			)
 			.orderBy(asc(organizationVehicle.name)),
+		db
+			.select()
+			.from(importIssue)
+			.where(
+				and(
+					eq(importIssue.organizationId, input.organizationId),
+					eq(importIssue.batchId, input.batchId),
+				),
+			)
+			.orderBy(asc(importIssue.createdAt)),
 	]);
-	const issues = await db
-		.select()
-		.from(importIssue)
-		.where(
-			and(
-				eq(importIssue.organizationId, input.organizationId),
-				eq(importIssue.batchId, input.batchId),
-			),
-		)
-		.orderBy(asc(importIssue.createdAt));
 	const imported = rows.filter((row) => row.rowStatus === "committed").length;
 	const skipped = rows.filter(
 		(row) => row.decisionReason === "duplicate",

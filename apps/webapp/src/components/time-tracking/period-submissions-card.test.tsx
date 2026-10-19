@@ -27,7 +27,7 @@ const state = vi.hoisted(() => ({
 	announceArrival: vi.fn(),
 }));
 
-vi.mock("./period-blocker-focus", () => ({
+vi.mock("./period-blocker-arrival", () => ({
 	announcePeriodBlockerArrival: state.announceArrival,
 }));
 

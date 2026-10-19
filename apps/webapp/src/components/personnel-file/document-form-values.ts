@@ -78,6 +78,19 @@ export function ownUploadValues(input: { today: string }): DocumentFormValues {
 	};
 }
 
+/** An employee's upload for a document request (#1402): its category, titled like it, shared. */
+export function requestUploadValues(input: {
+	today: string;
+	request: { category: DocumentCategory; title: string };
+}): DocumentFormValues {
+	return {
+		...defaultUploadValues({ today: input.today, category: input.request.category }),
+		title: input.request.title,
+		visibility: "shared",
+		visibilityChosen: true,
+	};
+}
+
 export function valuesFromDocument(document: DocumentMetadataPayload): DocumentFormValues {
 	return {
 		category: document.category,

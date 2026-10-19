@@ -10,6 +10,7 @@ import {
 	getWorkPolicyAssignments,
 	type WorkPolicyAssignmentWithDetails,
 } from "@/app/[locale]/(app)/settings/work-policies/actions";
+import { AssignmentManagerSkeleton } from "@/components/settings/assignment-manager-skeleton";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -20,8 +21,7 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent } from "@/components/ui/card";
 import { queryKeys } from "@/lib/query";
 import { getWorkPolicyAssignmentSectionVisibility } from "../policy-assignment-surface";
 import { WorkPolicyAssignmentSections } from "./work-policy-assignment-sections";
@@ -112,21 +112,7 @@ export function WorkPolicyAssignmentManager({
 		});
 
 	if (isLoading) {
-		return (
-			<div className="space-y-6">
-				{[1, 2, 3].map((i) => (
-					<Card key={i}>
-						<CardHeader>
-							<Skeleton className="h-6 w-40" />
-							<Skeleton className="h-4 w-64" />
-						</CardHeader>
-						<CardContent>
-							<Skeleton className="h-16 w-full" />
-						</CardContent>
-					</Card>
-				))}
-			</div>
-		);
+		return <AssignmentManagerSkeleton />;
 	}
 
 	if (error) {

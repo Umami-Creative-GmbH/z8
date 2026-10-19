@@ -2,6 +2,7 @@
 
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
+import { useId } from "react";
 import { mapCsvWorkAction } from "@/app/[locale]/(app)/settings/import/csv-actions";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,6 +41,7 @@ export function CsvWorkMapping({
 	onError: (message: string) => void;
 }) {
 	const { t } = useTranslate();
+	const labelId = useId();
 	const form = useForm({
 		defaultValues: defaults,
 		onSubmit: async ({ value }) => {
@@ -110,11 +112,12 @@ export function CsvWorkMapping({
 					return (
 						<div className="grid items-end gap-3 md:grid-cols-[1fr_1fr_1fr_auto]">
 							<TFormItem>
-								<TFormLabel>
+								<TFormLabel id={`${labelId}-kind`}>
 									{t("settings.import.csv.mappingType", "Mapping type")}
 								</TFormLabel>
 								<TFormControl>
 									<select
+										aria-labelledby={`${labelId}-kind`}
 										className={selectClass}
 										disabled={disabled || submitting}
 										value={values.kind}
@@ -142,11 +145,12 @@ export function CsvWorkMapping({
 								</TFormControl>
 							</TFormItem>
 							<TFormItem>
-								<TFormLabel>
+								<TFormLabel id={`${labelId}-source`}>
 									{t("settings.import.csv.sourceValue", "Source value")}
 								</TFormLabel>
 								<TFormControl>
 									<select
+										aria-labelledby={`${labelId}-source`}
 										className={selectClass}
 										disabled={disabled || submitting}
 										value={values.sourceValue}
@@ -169,7 +173,7 @@ export function CsvWorkMapping({
 								</TFormControl>
 							</TFormItem>
 							<TFormItem>
-								<TFormLabel>
+								<TFormLabel id={`${labelId}-target`}>
 									{values.kind === "employee"
 										? t(
 												"settings.import.csv.existingEmployee",
@@ -182,6 +186,7 @@ export function CsvWorkMapping({
 								</TFormLabel>
 								<TFormControl>
 									<select
+										aria-labelledby={`${labelId}-target`}
 										className={selectClass}
 										disabled={disabled || submitting}
 										value={values.targetId}

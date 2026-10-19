@@ -35,6 +35,11 @@ const requestSchema = z.object({
 	 * manages the employee's sick notes (#984).
 	 */
 	absenceId: z.uuid().optional(),
+	/**
+	 * With "own": the employee uploads for this open document request of
+	 * theirs (#1402); the document must be of the request's category.
+	 */
+	documentRequestId: z.uuid().optional(),
 	fileName: z.string().max(255).optional(),
 	metadata: z.object({
 		category: z.unknown(),
@@ -61,6 +66,9 @@ function notFound() {
  * (or owners and admins) are notified instead of the employee. With an
  * `absenceId` as well, the upload is a sick note attached to that sick-leave
  * absence of theirs (#982): always a shared sick note without expiry date.
+ * With a `documentRequestId` instead, the upload is for their open document
+ * request of that category (#1402): in the file at once, linked to the
+ * request, and the officers hear of it when the employee submits.
  *
  * Without "own", an `absenceId` attaches a sick note to the employee's
  * sick-leave absence on the authority of whoever manages the employee's sick
@@ -82,8 +90,13 @@ export async function POST(request: NextRequest) {
 		if (!parsed.success) {
 			return NextResponse.json({ error: "Invalid upload request" }, { status: 400 });
 		}
-		const { tusFileKey, employeeId, fileName, metadata, absenceId } = parsed.data;
+		const { tusFileKey, employeeId, fileName, metadata, absenceId, documentRequestId } =
+			parsed.data;
 		const own = parsed.data.source === "own";
+		// Only the employee uploads for their request, and never a sick note.
+		if (documentRequestId && (!own || absenceId)) {
+			return NextResponse.json({ error: "Invalid upload request" }, { status: 400 });
+		}
 		const authority: SickNoteAuthority = own ? "employee" : "officer";
 
 		const employee = await loadEmployeeRef(db, {
@@ -154,6 +167,7 @@ export async function POST(request: NextRequest) {
 			metadata: validated.value,
 			...(own ? { source: "employee" as const } : {}),
 			...(absenceId ? { sickNote: { absenceId, authority } } : {}),
+			...(documentRequestId ? { documentRequestId } : {}),
 		});
 
 		if (finalized.kind !== "recorded") {
@@ -162,10 +176,13 @@ export async function POST(request: NextRequest) {
 		}
 
 		if (own) {
-			await notifyEmployeeUpload(db, {
-				organizationId: access.organizationId,
-				document: finalized.document,
-			});
+			// An upload for a request reaches the officers with its submission (#1402).
+			if (!documentRequestId) {
+				await notifyEmployeeUpload(db, {
+					organizationId: access.organizationId,
+					document: finalized.document,
+				});
+			}
 		} else if (finalized.shareEventId) {
 			await notifyDocumentShared(db, {
 				organizationId: access.organizationId,

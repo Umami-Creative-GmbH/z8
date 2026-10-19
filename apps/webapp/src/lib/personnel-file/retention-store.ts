@@ -26,6 +26,10 @@ import {
 	writeDocumentAudit,
 } from "./audit";
 import { DOCUMENT_CATEGORIES, type DocumentCategory, type PayPeriod } from "./document.types";
+import {
+	lockDocumentRequestsOfDocuments,
+	purgeDocumentRequestsOfDocuments,
+} from "./document-request-purge";
 import { loadOrganizationDay } from "./organization-day";
 import {
 	type EmploymentPeriodForRetention,
@@ -370,7 +374,11 @@ export class PurgeAuditMinimisationError extends Error {
  * (actor, employee, category, document date, pay period, retention facts; no
  * title, file or reason). The purged documents' descriptions are removed from
  * the earlier audit records about them in the same transaction (#923); when a
- * record cannot be minimised, the whole purge fails. The deletion trigger
+ * record cannot be minimised, the whole purge fails. The document requests
+ * the purged documents were uploaded from lose their free text, and a closed
+ * request left without documents is deleted with them (#1408; an accepted
+ * renewal only once its renewed document is gone too, see
+ * `purgeDocumentRequestsOfDocuments`). The deletion trigger
  * hands each stored object to the cleanup ledger in the same transaction.
  * Everything else requested is skipped.
  */
@@ -384,6 +392,12 @@ export async function purgeDueDocuments(
 	if (requested.length === 0) return { purged: [], skipped: [] };
 	const at = dateFromInstant(now);
 	return database.transaction(async (tx) => {
+		// The documents' requests first (#1408), then the documents: the lock order of an accept.
+		// Read before the deletion: a purged document's request links go with it.
+		const requestsOf = await lockDocumentRequestsOfDocuments(tx, {
+			organizationId: access.organizationId,
+			documentIds: requested,
+		});
 		const locked = await tx
 			.select({ id: employeeDocument.id, employeeId: employeeDocument.employeeId })
 			.from(employeeDocument)
@@ -480,8 +494,17 @@ export async function purgeDueDocuments(
 			organizationId: access.organizationId,
 			documents: purgedRows,
 		});
-		if (minimisation.unprocessable.length > 0) {
-			throw new PurgeAuditMinimisationError(minimisation.unprocessable);
+		// The purged documents' requests lose their free text; emptied ones go (#1408).
+		const requests = await purgeDocumentRequestsOfDocuments(tx, {
+			organizationId: access.organizationId,
+			requestIds: purged.flatMap((id) => requestsOf.uploadedFrom.get(id) ?? []),
+			renewalRequestIds: purged.flatMap((id) => requestsOf.renewedBy.get(id) ?? []),
+			actorUserId: access.userId,
+			at,
+		});
+		const unprocessable = [...minimisation.unprocessable, ...requests.unprocessable];
+		if (unprocessable.length > 0) {
+			throw new PurgeAuditMinimisationError(unprocessable);
 		}
 		// Purged skill certificates no longer set the skill expiry date (#1145).
 		await recomputeCertificateSkillExpiry(tx, {
