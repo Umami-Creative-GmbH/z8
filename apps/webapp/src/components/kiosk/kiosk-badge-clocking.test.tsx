@@ -399,6 +399,8 @@ describe("kiosk badge clocking with an attached scanner (#1366)", () => {
 		const alert = await screen.findByRole("alert");
 		expect(alert.textContent).toMatch(/This badge is not accepted at this kiosk/);
 		expect(alert.textContent).not.toMatch(/Anna|Ben/);
+		// The reopened home screen listens for the scanner once its effects ran, as its names show.
+		await screen.findByRole("button", { name: /Anna Berger/ });
 
 		scanKeys(BADGE);
 		expect(await screen.findByRole("heading", { name: "Anna Berger" })).toBeTruthy();

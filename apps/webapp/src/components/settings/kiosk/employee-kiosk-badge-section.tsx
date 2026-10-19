@@ -28,6 +28,9 @@ type Translate = ReturnType<typeof useTranslate>["t"];
 /** A just-issued badge PDF as a local file; it lives only in this component's state. */
 type IssuedFile = { url: string; filename: string };
 
+/** Which change of the active badge waits for its confirmation. */
+type Confirming = "replace" | "revoke" | null;
+
 /** An instant's date in the organization's zone, in the UI language. */
 function dateLabel(iso: string, zone: string, locale: string): string {
 	return Temporal.Instant.from(iso)
@@ -103,7 +106,7 @@ export function KioskBadgeSection({
 }) {
 	const locale = useTolgee(["language"]).getLanguage() ?? "en";
 	const [issued, setIssued] = useState<IssuedFile | null>(null);
-	const [confirming, setConfirming] = useState<"replace" | "revoke" | null>(null);
+	const [confirming, setConfirming] = useState<Confirming>(null);
 
 	// The PDF is dropped with the component: nothing keeps it after the page.
 	useEffect(() => {
@@ -173,33 +176,7 @@ export function KioskBadgeSection({
 				<BadgeStatus badge={badge} locale={locale} t={t} />
 			</p>
 
-			{issued && (
-				<div className="space-y-3 rounded-md border bg-muted/50 p-3" role="status">
-					<p className="text-sm">
-						{t(
-							"settings.employees.kioskBadge.saveNow",
-							"Save the PDF now: Z8 cannot show this badge again. You can reprint a saved copy. If the file or the badge is lost, replace the badge.",
-						)}
-					</p>
-					<div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-						<Button asChild>
-							<a href={issued.url} download={issued.filename}>
-								<IconDownload className="mr-2 size-4" aria-hidden="true" />
-								{t("settings.employees.kioskBadge.download", "Download PDF")}
-							</a>
-						</Button>
-						<Button asChild variant="outline">
-							<a href={issued.url} target="_blank" rel="noopener noreferrer">
-								<IconExternalLink className="mr-2 size-4" aria-hidden="true" />
-								{t("settings.employees.kioskBadge.openToPrint", "Open to print")}
-							</a>
-						</Button>
-						<Button variant="ghost" onClick={done}>
-							{t("settings.employees.kioskBadge.done", "Done")}
-						</Button>
-					</div>
-				</div>
-			)}
+			{issued && <IssuedBadgeFile issued={issued} onDone={done} t={t} />}
 
 			{confirming && (
 				<p className="text-sm text-muted-foreground" role="alert">
@@ -225,44 +202,122 @@ export function KioskBadgeSection({
 			)}
 
 			<div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-				{!badge.activeIssuedAt ? (
-					badge.canIssue && (
-						<Button onClick={() => issueMutation.mutate("issue")} disabled={busy}>
-							{issueMutation.isPending && <IconLoader2 className={SPINNER} aria-hidden="true" />}
-							{t("settings.employees.kioskBadge.issue", "Issue badge")}
-						</Button>
-					)
-				) : confirming ? (
-					<>
-						<Button variant="outline" onClick={() => setConfirming(null)} disabled={busy}>
-							{t("common.cancel", "Cancel")}
-						</Button>
-						{confirming === "replace" ? (
-							<Button onClick={() => issueMutation.mutate("replace")} disabled={busy}>
-								{issueMutation.isPending && <IconLoader2 className={SPINNER} aria-hidden="true" />}
-								{t("settings.employees.kioskBadge.confirmReplace", "Replace the badge")}
-							</Button>
-						) : (
-							<Button variant="destructive" onClick={() => revokeMutation.mutate()} disabled={busy}>
-								{revokeMutation.isPending && <IconLoader2 className={SPINNER} aria-hidden="true" />}
-								{t("settings.employees.kioskBadge.confirmRevoke", "Revoke the badge")}
-							</Button>
-						)}
-					</>
-				) : (
-					<>
-						{badge.canIssue && (
-							<Button variant="outline" onClick={() => setConfirming("replace")} disabled={busy}>
-								{t("settings.employees.kioskBadge.replace", "Replace badge")}
-							</Button>
-						)}
-						<Button variant="outline" onClick={() => setConfirming("revoke")} disabled={busy}>
-							<IconShieldOff className="mr-2 size-4" aria-hidden="true" />
-							{t("settings.employees.kioskBadge.revoke", "Revoke badge")}
-						</Button>
-					</>
-				)}
+				<BadgeButtons
+					badge={badge}
+					confirming={confirming}
+					busy={busy}
+					issuing={issueMutation.isPending}
+					revoking={revokeMutation.isPending}
+					onIssue={(kind) => issueMutation.mutate(kind)}
+					onRevoke={() => revokeMutation.mutate()}
+					onConfirming={setConfirming}
+					t={t}
+				/>
 			</div>
 		</section>
+	);
+}
+
+/** A just-issued badge's PDF: download or print it now, then Done drops it. */
+function IssuedBadgeFile({
+	issued,
+	onDone,
+	t,
+}: {
+	issued: IssuedFile;
+	onDone: () => void;
+	t: Translate;
+}) {
+	return (
+		<div className="space-y-3 rounded-md border bg-muted/50 p-3" role="status">
+			<p className="text-sm">
+				{t(
+					"settings.employees.kioskBadge.saveNow",
+					"Save the PDF now: Z8 cannot show this badge again. You can reprint a saved copy. If the file or the badge is lost, replace the badge.",
+				)}
+			</p>
+			<div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+				<Button asChild>
+					<a href={issued.url} download={issued.filename}>
+						<IconDownload className="mr-2 size-4" aria-hidden="true" />
+						{t("settings.employees.kioskBadge.download", "Download PDF")}
+					</a>
+				</Button>
+				<Button asChild variant="outline">
+					<a href={issued.url} target="_blank" rel="noopener noreferrer">
+						<IconExternalLink className="mr-2 size-4" aria-hidden="true" />
+						{t("settings.employees.kioskBadge.openToPrint", "Open to print")}
+					</a>
+				</Button>
+				<Button variant="ghost" onClick={onDone}>
+					{t("settings.employees.kioskBadge.done", "Done")}
+				</Button>
+			</div>
+		</div>
+	);
+}
+
+/** Issue a first badge; or replace and revoke the active one, each after confirming. */
+function BadgeButtons({
+	badge,
+	confirming,
+	busy,
+	issuing,
+	revoking,
+	onIssue,
+	onRevoke,
+	onConfirming,
+	t,
+}: {
+	badge: EmployeeKioskBadgeState;
+	confirming: Confirming;
+	busy: boolean;
+	issuing: boolean;
+	revoking: boolean;
+	onIssue: (kind: "issue" | "replace") => void;
+	onRevoke: () => void;
+	onConfirming: (confirming: Confirming) => void;
+	t: Translate;
+}) {
+	if (!badge.activeIssuedAt) {
+		return badge.canIssue ? (
+			<Button onClick={() => onIssue("issue")} disabled={busy}>
+				{issuing && <IconLoader2 className={SPINNER} aria-hidden="true" />}
+				{t("settings.employees.kioskBadge.issue", "Issue badge")}
+			</Button>
+		) : null;
+	}
+	if (confirming) {
+		return (
+			<>
+				<Button variant="outline" onClick={() => onConfirming(null)} disabled={busy}>
+					{t("common.cancel", "Cancel")}
+				</Button>
+				{confirming === "replace" ? (
+					<Button onClick={() => onIssue("replace")} disabled={busy}>
+						{issuing && <IconLoader2 className={SPINNER} aria-hidden="true" />}
+						{t("settings.employees.kioskBadge.confirmReplace", "Replace the badge")}
+					</Button>
+				) : (
+					<Button variant="destructive" onClick={onRevoke} disabled={busy}>
+						{revoking && <IconLoader2 className={SPINNER} aria-hidden="true" />}
+						{t("settings.employees.kioskBadge.confirmRevoke", "Revoke the badge")}
+					</Button>
+				)}
+			</>
+		);
+	}
+	return (
+		<>
+			{badge.canIssue && (
+				<Button variant="outline" onClick={() => onConfirming("replace")} disabled={busy}>
+					{t("settings.employees.kioskBadge.replace", "Replace badge")}
+				</Button>
+			)}
+			<Button variant="outline" onClick={() => onConfirming("revoke")} disabled={busy}>
+				<IconShieldOff className="mr-2 size-4" aria-hidden="true" />
+				{t("settings.employees.kioskBadge.revoke", "Revoke badge")}
+			</Button>
+		</>
 	);
 }

@@ -259,12 +259,11 @@ export const CRON_JOBS = {
 		description:
 			"Remove expired payroll comparison evidence and short-lived reviewed results",
 		processor: async (): Promise<{ expired: number }> => {
-			const { cleanupExpiredPayrollBaselines } = await import(
-				"@/lib/payroll-export/baseline-evidence"
-			);
-			const { cleanupExpiredPayrollComparisons } = await import(
-				"@/lib/payroll-export/comparison-service"
-			);
+			const [{ cleanupExpiredPayrollBaselines }, { cleanupExpiredPayrollComparisons }] =
+				await Promise.all([
+					import("@/lib/payroll-export/baseline-evidence"),
+					import("@/lib/payroll-export/comparison-service"),
+				]);
 			await cleanupExpiredPayrollComparisons();
 			return { expired: await cleanupExpiredPayrollBaselines() };
 		},

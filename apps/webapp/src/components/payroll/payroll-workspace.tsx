@@ -414,6 +414,226 @@ function usePayrollBlockerClearing({
 	return { clearingBlockerKeys, clearPayrollBlocker, focusRequest };
 }
 
+/** Switching the date mode, stepping between periods and applying a custom range. */
+function payrollPeriodActions({
+	dateMode,
+	dispatch,
+	endDate,
+	filteredEmployeeIds,
+	refreshSummary,
+	startDate,
+	summary,
+}: {
+	dateMode: PayrollDateRangeMode;
+	dispatch: React.Dispatch<PayrollWorkspaceAction>;
+	endDate: string;
+	filteredEmployeeIds: string[] | undefined;
+	refreshSummary: (
+		nextRequest: PayrollPeriodRequest,
+		employeeIds?: string[],
+		onSuccess?: () => void,
+	) => void;
+	startDate: string;
+	summary: PayrollWorkspaceSummary;
+}) {
+	function applyDateMode(nextMode: PayrollDateRangeMode) {
+		if (nextMode === "custom") {
+			dispatch({ type: "dateModeChanged", dateMode: nextMode });
+			return;
+		}
+
+		refreshSummary(
+			buildPeriodRequest(DateTime.utc().startOf(nextMode), nextMode),
+			filteredEmployeeIds,
+			() => dispatch({ type: "dateModeChanged", dateMode: nextMode }),
+		);
+	}
+
+	function navigatePeriod(direction: "previous" | "next") {
+		if (dateMode === "custom") return;
+
+		const currentStart = DateTime.fromISO(summary.period.start, {
+			zone: "utc",
+		});
+		const amount = direction === "previous" ? -1 : 1;
+		const nextStart = currentStart
+			.plus({ [dateMode]: amount })
+			.startOf(dateMode);
+
+		refreshSummary(buildPeriodRequest(nextStart, dateMode));
+	}
+
+	function returnToCurrentPeriod() {
+		if (dateMode === "custom") return;
+
+		refreshSummary(
+			buildPeriodRequest(DateTime.utc().startOf(dateMode), dateMode),
+		);
+	}
+
+	function applyCustomRange() {
+		const start = DateTime.fromISO(startDate);
+		const end = DateTime.fromISO(endDate);
+
+		refreshSummary({
+			startDate,
+			endDate,
+			label: formatPeriodLabel(start, end, "custom"),
+		});
+	}
+
+	return {
+		applyCustomRange,
+		applyDateMode,
+		navigatePeriod,
+		returnToCurrentPeriod,
+	};
+}
+
+/** The PDF download and the payroll export for the current request. */
+function usePayrollExportActions({
+	filtersHaveNoMatches,
+	formatId,
+	request,
+	startTransition,
+	t,
+}: {
+	filtersHaveNoMatches: boolean;
+	formatId: string;
+	request: PayrollPeriodRequest;
+	startTransition: React.TransitionStartFunction;
+	t: PayrollTranslate;
+}) {
+	const queryClient = useQueryClient();
+
+	function downloadPdf() {
+		if (filtersHaveNoMatches) {
+			toast.error(
+				t(
+					"payroll.filters.noMatchingEmployees",
+					"No employees match the selected payroll filters.",
+				),
+			);
+			return;
+		}
+
+		startTransition(async () => {
+			const result = await exportPayrollPdfAction(request);
+
+			if (!result.success) {
+				toast.error(result.error);
+				return;
+			}
+
+			const blob = new Blob([new Uint8Array(result.data.data)], {
+				type: "application/pdf",
+			});
+			const url = URL.createObjectURL(blob);
+			const link = document.createElement("a");
+			link.href = url;
+			link.download = result.data.filename;
+			document.body.appendChild(link);
+			link.click();
+			link.remove();
+			URL.revokeObjectURL(url);
+		});
+	}
+
+	function triggerExport() {
+		if (!formatId) return;
+		if (filtersHaveNoMatches) {
+			toast.error(
+				t(
+					"payroll.filters.noMatchingEmployees",
+					"No employees match the selected payroll filters.",
+				),
+			);
+			return;
+		}
+
+		startTransition(async () => {
+			const result = await startScopedPayrollExportAction({
+				...request,
+				formatId,
+			});
+
+			if (!result.success) {
+				toast.error(result.error);
+				return;
+			}
+
+			toast.success(
+				result.data.isAsync
+					? t("payroll.export.queued", "Payroll export queued")
+					: t("payroll.export.completed", "Payroll export completed"),
+			);
+			if (result.data.unmappedOvertimePayoutCount) {
+				toast.warning(
+					t(
+						"payroll.export.unmappedOvertimePayouts",
+						"{count, plural, one {# overtime payout was} other {# overtime payouts were}} not exported",
+						{ count: result.data.unmappedOvertimePayoutCount },
+					),
+					{
+						description: t(
+							"payroll.export.unmappedOvertimePayoutsDescription",
+							"No wage type is mapped to Overtime for this format. Ask an organization administrator to map one, or pay these hours out another way.",
+						),
+					},
+				);
+			}
+			void queryClient.invalidateQueries({
+				queryKey: ["payroll", "baselines"],
+			});
+			void queryClient.invalidateQueries({
+				queryKey: ["payroll", "comparisonBaselines"],
+			});
+			// A payroll run may now include expense reports (#852), which changes readiness (#854).
+			void queryClient.invalidateQueries({
+				queryKey: queryKeys.travelExpenses.payrollRuns(),
+			});
+		});
+	}
+
+	return { downloadPdf, triggerExport };
+}
+
+function PayrollSummaryCards({
+	blockersSummaryRef,
+	displayedTotals,
+	readyEmployeeCount,
+	t,
+}: {
+	blockersSummaryRef: React.RefObject<HTMLDivElement | null>;
+	displayedTotals: PayrollWorkspaceSummary["totals"];
+	readyEmployeeCount: number;
+	t: PayrollTranslate;
+}) {
+	return (
+		<section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+			<SummaryCard
+				icon={<IconUsers aria-hidden="true" className="size-5" />}
+				label={t("payroll.summary.employees", "Employees")}
+				value={displayedTotals.employeeCount.toString()}
+			/>
+			<SummaryCard
+				label={t("payroll.summary.workedHours", "Worked hours")}
+				value={formatHours(displayedTotals.totalWorkedHours)}
+			/>
+			<SummaryCard
+				label={t("payroll.summary.ready", "Ready")}
+				value={readyEmployeeCount.toString()}
+			/>
+			<SummaryCard
+				focusRef={blockersSummaryRef}
+				label={t("payroll.summary.blockers", "Blockers")}
+				value={displayedTotals.blockerCount.toString()}
+				tone={displayedTotals.blockerCount > 0 ? "warning" : "default"}
+			/>
+		</section>
+	);
+}
+
 export function PayrollWorkspace({
 	initialSummary,
 	exportFormats,
@@ -438,7 +658,6 @@ export function PayrollWorkspace({
 		formatId,
 	} = state;
 	const [isPending, startTransition] = useTransition();
-	const queryClient = useQueryClient();
 	const isMountedRef = useMountedRef();
 	const blockersSummaryRef = useRef<HTMLDivElement | null>(null);
 
@@ -572,140 +791,27 @@ export function PayrollWorkspace({
 		});
 	}
 
-	function applyDateMode(nextMode: PayrollDateRangeMode) {
-		if (nextMode === "custom") {
-			dispatch({ type: "dateModeChanged", dateMode: nextMode });
-			return;
-		}
-
-		refreshSummary(
-			buildPeriodRequest(DateTime.utc().startOf(nextMode), nextMode),
-			filteredEmployeeIds,
-			() => dispatch({ type: "dateModeChanged", dateMode: nextMode }),
-		);
-	}
-
-	function navigatePeriod(direction: "previous" | "next") {
-		if (dateMode === "custom") return;
-
-		const currentStart = DateTime.fromISO(summary.period.start, {
-			zone: "utc",
-		});
-		const amount = direction === "previous" ? -1 : 1;
-		const nextStart = currentStart
-			.plus({ [dateMode]: amount })
-			.startOf(dateMode);
-
-		refreshSummary(buildPeriodRequest(nextStart, dateMode));
-	}
-
-	function returnToCurrentPeriod() {
-		if (dateMode === "custom") return;
-
-		refreshSummary(
-			buildPeriodRequest(DateTime.utc().startOf(dateMode), dateMode),
-		);
-	}
-
-	function applyCustomRange() {
-		const start = DateTime.fromISO(startDate);
-		const end = DateTime.fromISO(endDate);
-
-		refreshSummary({
-			startDate,
-			endDate,
-			label: formatPeriodLabel(start, end, "custom"),
-		});
-	}
-
-	function downloadPdf() {
-		if (filtersHaveNoMatches) {
-			toast.error(
-				t(
-					"payroll.filters.noMatchingEmployees",
-					"No employees match the selected payroll filters.",
-				),
-			);
-			return;
-		}
-
-		startTransition(async () => {
-			const result = await exportPayrollPdfAction(request);
-
-			if (!result.success) {
-				toast.error(result.error);
-				return;
-			}
-
-			const blob = new Blob([new Uint8Array(result.data.data)], {
-				type: "application/pdf",
-			});
-			const url = URL.createObjectURL(blob);
-			const link = document.createElement("a");
-			link.href = url;
-			link.download = result.data.filename;
-			document.body.appendChild(link);
-			link.click();
-			link.remove();
-			URL.revokeObjectURL(url);
-		});
-	}
-
-	function triggerExport() {
-		if (!formatId) return;
-		if (filtersHaveNoMatches) {
-			toast.error(
-				t(
-					"payroll.filters.noMatchingEmployees",
-					"No employees match the selected payroll filters.",
-				),
-			);
-			return;
-		}
-
-		startTransition(async () => {
-			const result = await startScopedPayrollExportAction({
-				...request,
-				formatId,
-			});
-
-			if (!result.success) {
-				toast.error(result.error);
-				return;
-			}
-
-			toast.success(
-				result.data.isAsync
-					? t("payroll.export.queued", "Payroll export queued")
-					: t("payroll.export.completed", "Payroll export completed"),
-			);
-			if (result.data.unmappedOvertimePayoutCount) {
-				toast.warning(
-					t(
-						"payroll.export.unmappedOvertimePayouts",
-						"{count, plural, one {# overtime payout was} other {# overtime payouts were}} not exported",
-						{ count: result.data.unmappedOvertimePayoutCount },
-					),
-					{
-						description: t(
-							"payroll.export.unmappedOvertimePayoutsDescription",
-							"No wage type is mapped to Overtime for this format. Ask an organization administrator to map one, or pay these hours out another way.",
-						),
-					},
-				);
-			}
-			void queryClient.invalidateQueries({
-				queryKey: ["payroll", "baselines"],
-			});
-			void queryClient.invalidateQueries({
-				queryKey: ["payroll", "comparisonBaselines"],
-			});
-			// A payroll run may now include expense reports (#852), which changes readiness (#854).
-			void queryClient.invalidateQueries({
-				queryKey: queryKeys.travelExpenses.payrollRuns(),
-			});
-		});
-	}
+	const {
+		applyCustomRange,
+		applyDateMode,
+		navigatePeriod,
+		returnToCurrentPeriod,
+	} = payrollPeriodActions({
+		dateMode,
+		dispatch,
+		endDate,
+		filteredEmployeeIds,
+		refreshSummary,
+		startDate,
+		summary,
+	});
+	const { downloadPdf, triggerExport } = usePayrollExportActions({
+		filtersHaveNoMatches,
+		formatId,
+		request,
+		startTransition,
+		t,
+	});
 
 	return (
 		<div className="@container/main flex flex-1 flex-col gap-6 p-4 md:p-6">
@@ -731,27 +837,12 @@ export function PayrollWorkspace({
 				t={t}
 			/>
 
-			<section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-				<SummaryCard
-					icon={<IconUsers aria-hidden="true" className="size-5" />}
-					label={t("payroll.summary.employees", "Employees")}
-					value={displayedTotals.employeeCount.toString()}
-				/>
-				<SummaryCard
-					label={t("payroll.summary.workedHours", "Worked hours")}
-					value={formatHours(displayedTotals.totalWorkedHours)}
-				/>
-				<SummaryCard
-					label={t("payroll.summary.ready", "Ready")}
-					value={readyEmployeeCount.toString()}
-				/>
-				<SummaryCard
-					focusRef={blockersSummaryRef}
-					label={t("payroll.summary.blockers", "Blockers")}
-					value={displayedTotals.blockerCount.toString()}
-					tone={displayedTotals.blockerCount > 0 ? "warning" : "default"}
-				/>
-			</section>
+			<PayrollSummaryCards
+				blockersSummaryRef={blockersSummaryRef}
+				displayedTotals={displayedTotals}
+				readyEmployeeCount={readyEmployeeCount}
+				t={t}
+			/>
 
 			<PayrollScopeCard
 				filtersHaveNoMatches={filtersHaveNoMatches}
@@ -1468,6 +1559,138 @@ function getPayrollScopeSummary({
 	});
 }
 
+/** The blocker's type label and the action that resolves it. */
+function payrollBlockerAction(
+	blocker: PayrollWorkspaceSummary["blockers"][number],
+	formattedDate: string | null,
+	t: PayrollTranslate,
+) {
+	let blockerType: string;
+	let actionLabel: string;
+	let href: string;
+
+	switch (blocker.type) {
+		case "missing_clock_out":
+		case "unresolved_work_minutes":
+			blockerType =
+				blocker.type === "missing_clock_out"
+					? t(
+							"payroll.blockers.missingClockOut",
+							"Missing clock-out",
+						)
+					: t(
+							"payroll.blockers.unresolvedWorkMinutes",
+							"Work minutes need review",
+						);
+			actionLabel = t(
+				"payroll.blockers.openCalendar",
+				"Open calendar",
+			);
+			href = `/calendar/${encodeURIComponent(blocker.employeeId)}${
+				formattedDate && blocker.date
+					? `?date=${encodeURIComponent(blocker.date)}`
+					: ""
+			}`;
+			break;
+		case "offboarding_clock_repair":
+			// Fixed through the existing time correction flow on the calendar.
+			blockerType = t(
+				"payroll.blockers.offboardingClockRepair",
+				"Offboarding clock-out needs repair",
+			);
+			actionLabel = t(
+				"payroll.blockers.openCalendar",
+				"Open calendar",
+			);
+			href = `/calendar/${encodeURIComponent(blocker.employeeId)}${
+				formattedDate && blocker.date
+					? `?date=${encodeURIComponent(blocker.date)}`
+					: ""
+			}`;
+			break;
+		case "open_work":
+			blockerType = t(
+				"payroll.blockers.openWork",
+				"Work without clock-out",
+			);
+			actionLabel = t(
+				"payroll.blockers.openCalendar",
+				"Open calendar",
+			);
+			href = `/calendar/${encodeURIComponent(blocker.employeeId)}${
+				formattedDate && blocker.date
+					? `?date=${encodeURIComponent(blocker.date)}`
+					: ""
+			}`;
+			break;
+		case "pending_work_approval":
+		case "pending_work_correction":
+			blockerType =
+				blocker.type === "pending_work_approval"
+					? t(
+							"payroll.blockers.pendingWorkApproval",
+							"Work awaiting approval",
+						)
+					: t(
+							"payroll.blockers.pendingTimeCorrection",
+							"Pending time correction",
+						);
+			actionLabel = t(
+				"payroll.blockers.openApprovals",
+				"Open approvals",
+			);
+			href = "/approvals/inbox?types=time_entry";
+			break;
+		case "uncertain_historical_work":
+			blockerType = t(
+				"payroll.blockers.uncertainHistoricalWork",
+				"Historical work needs review",
+			);
+			actionLabel = t(
+				"payroll.blockers.openWorkDiagnostics",
+				"Open work diagnostics",
+			);
+			href = "/settings/work-diagnostics";
+			break;
+		case "pending_time_correction":
+			blockerType = t(
+				"payroll.blockers.pendingTimeCorrection",
+				"Pending time correction",
+			);
+			actionLabel = t(
+				"payroll.blockers.openApprovals",
+				"Open approvals",
+			);
+			href = "/approvals/inbox?types=time_entry";
+			break;
+		case "pending_absence":
+			blockerType = t(
+				"payroll.blockers.pendingAbsence",
+				"Pending absence",
+			);
+			actionLabel = t(
+				"payroll.blockers.openApprovals",
+				"Open approvals",
+			);
+			href = "/approvals/inbox?types=absence_entry";
+			break;
+		case "missing_identifier":
+			// The configured custom field identifier has no value (#821).
+			blockerType = t(
+				"payroll.blockers.missingIdentifier",
+				"Missing identifier",
+			);
+			actionLabel = t(
+				"payroll.blockers.openEmployee",
+				"Open employee",
+			);
+			href = `/settings/employees/${encodeURIComponent(blocker.employeeId)}`;
+			break;
+	}
+
+	return { blockerType, actionLabel, href };
+}
+
 function PayrollBlockersAlert({
 	blockers,
 	clearingBlockerKeys,
@@ -1589,128 +1812,11 @@ function PayrollBlockersAlert({
 							const metadata = formattedDate
 								? [formattedDate, blocker.time].filter(Boolean).join(", ")
 								: t("payroll.blockers.dateUnavailable", "Date unavailable");
-							let blockerType: string;
-							let actionLabel: string;
-							let href: string;
-
-							switch (blocker.type) {
-								case "missing_clock_out":
-								case "unresolved_work_minutes":
-									blockerType =
-										blocker.type === "missing_clock_out"
-											? t(
-													"payroll.blockers.missingClockOut",
-													"Missing clock-out",
-												)
-											: t(
-													"payroll.blockers.unresolvedWorkMinutes",
-													"Work minutes need review",
-												);
-									actionLabel = t(
-										"payroll.blockers.openCalendar",
-										"Open calendar",
-									);
-									href = `/calendar/${encodeURIComponent(blocker.employeeId)}${
-										formattedDate && blocker.date
-											? `?date=${encodeURIComponent(blocker.date)}`
-											: ""
-									}`;
-									break;
-								case "offboarding_clock_repair":
-									// Fixed through the existing time correction flow on the calendar.
-									blockerType = t(
-										"payroll.blockers.offboardingClockRepair",
-										"Offboarding clock-out needs repair",
-									);
-									actionLabel = t(
-										"payroll.blockers.openCalendar",
-										"Open calendar",
-									);
-									href = `/calendar/${encodeURIComponent(blocker.employeeId)}${
-										formattedDate && blocker.date
-											? `?date=${encodeURIComponent(blocker.date)}`
-											: ""
-									}`;
-									break;
-								case "open_work":
-									blockerType = t(
-										"payroll.blockers.openWork",
-										"Work without clock-out",
-									);
-									actionLabel = t(
-										"payroll.blockers.openCalendar",
-										"Open calendar",
-									);
-									href = `/calendar/${encodeURIComponent(blocker.employeeId)}${
-										formattedDate && blocker.date
-											? `?date=${encodeURIComponent(blocker.date)}`
-											: ""
-									}`;
-									break;
-								case "pending_work_approval":
-								case "pending_work_correction":
-									blockerType =
-										blocker.type === "pending_work_approval"
-											? t(
-													"payroll.blockers.pendingWorkApproval",
-													"Work awaiting approval",
-												)
-											: t(
-													"payroll.blockers.pendingTimeCorrection",
-													"Pending time correction",
-												);
-									actionLabel = t(
-										"payroll.blockers.openApprovals",
-										"Open approvals",
-									);
-									href = "/approvals/inbox?types=time_entry";
-									break;
-								case "uncertain_historical_work":
-									blockerType = t(
-										"payroll.blockers.uncertainHistoricalWork",
-										"Historical work needs review",
-									);
-									actionLabel = t(
-										"payroll.blockers.openWorkDiagnostics",
-										"Open work diagnostics",
-									);
-									href = "/settings/work-diagnostics";
-									break;
-								case "pending_time_correction":
-									blockerType = t(
-										"payroll.blockers.pendingTimeCorrection",
-										"Pending time correction",
-									);
-									actionLabel = t(
-										"payroll.blockers.openApprovals",
-										"Open approvals",
-									);
-									href = "/approvals/inbox?types=time_entry";
-									break;
-								case "pending_absence":
-									blockerType = t(
-										"payroll.blockers.pendingAbsence",
-										"Pending absence",
-									);
-									actionLabel = t(
-										"payroll.blockers.openApprovals",
-										"Open approvals",
-									);
-									href = "/approvals/inbox?types=absence_entry";
-									break;
-								case "missing_identifier":
-									// The configured custom field identifier has no value (#821).
-									blockerType = t(
-										"payroll.blockers.missingIdentifier",
-										"Missing identifier",
-									);
-									actionLabel = t(
-										"payroll.blockers.openEmployee",
-										"Open employee",
-									);
-									href = `/settings/employees/${encodeURIComponent(blocker.employeeId)}`;
-									break;
-							}
+							const { blockerType, actionLabel, href } = payrollBlockerAction(
+								blocker,
+								formattedDate,
+								t,
+							);
 
 							return (
 								<li

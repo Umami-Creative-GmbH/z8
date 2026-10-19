@@ -398,7 +398,8 @@ describe("kiosk badge clocking with the kiosk camera (#1367)", () => {
 			fireEvent.click(screen.getByRole("button", { name: SCAN }));
 
 			expect((await screen.findByRole("alert")).textContent).toBe(message);
-			fireEvent.click(screen.getByRole("button", { name: /Anna Berger/ }));
+			// The home screen reopens and loads its names again.
+			fireEvent.click(await screen.findByRole("button", { name: /Anna Berger/ }));
 			expect(await screen.findByText("Enter your kiosk PIN")).toBeTruthy();
 			expect(urls(calls, "/api/kiosk/employee-status")).toEqual([]);
 		},
@@ -421,7 +422,7 @@ describe("kiosk badge clocking with the kiosk camera (#1367)", () => {
 				"This browser cannot scan badges with the camera. Tap your name to use your PIN.",
 			);
 			if (camera) expect(camera.getUserMedia).not.toHaveBeenCalled();
-			expect(screen.getByRole("button", { name: /Anna Berger/ })).toBeTruthy();
+			expect(await screen.findByRole("button", { name: /Anna Berger/ })).toBeTruthy();
 		},
 	);
 

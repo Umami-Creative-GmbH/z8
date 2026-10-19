@@ -99,6 +99,7 @@ export function CsvWorkUpload({ organizationId }: { organizationId: string }) {
 										return;
 									}
 									setReading(true);
+									// No `finally`: the React Compiler cannot compile it.
 									try {
 										const csv = await file.text();
 										form.setFieldValue("csv", csv);
@@ -110,9 +111,8 @@ export function CsvWorkUpload({ organizationId }: { organizationId: string }) {
 												"The selected file could not be read",
 											),
 										);
-									} finally {
-										setReading(false);
 									}
+									setReading(false);
 								}}
 							/>
 						</TFormControl>

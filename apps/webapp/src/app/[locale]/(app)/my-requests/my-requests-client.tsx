@@ -4,7 +4,8 @@ import { useTranslate } from "@tolgee/react";
 import { DateTime } from "luxon";
 import { useLocale } from "next-intl";
 import { useEffect, useId, useState, useTransition } from "react";
-import { ArrivalNotice, focusArrivalTarget } from "@/components/time-tracking/arrival-focus";
+import { ArrivalNotice } from "@/components/time-tracking/arrival-focus";
+import { focusArrivalTarget } from "@/components/time-tracking/arrival-focus-target";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -221,13 +222,20 @@ function findFocusedRequest(items: SelfServiceRequestItem[], focusRequest: strin
 	return { requested: true, item } as const;
 }
 
-export function MyRequestsClient({ initialResult, focusRequest }: MyRequestsClientProps) {
-	const { t } = useTranslate();
-	const locale = useLocale();
+/**
+ * The filters, plus the period blocker focus (#1349): a newly focused request is revealed by
+ * resetting any filter hiding it, then takes focus once it renders.
+ */
+function useMyRequestsFilters(
+	items: SelfServiceRequestItem[],
+	focusRequest: string | undefined,
+	locale: string,
+	t: Translate,
+) {
 	const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 	const [sourceTypeFilter, setSourceTypeFilter] = useState<SourceTypeFilter>("all");
 	const [search, setSearch] = useState("");
-	const focused = findFocusedRequest(initialResult.items, focusRequest);
+	const focused = findFocusedRequest(items, focusRequest);
 	const focusedItem = focused.item;
 
 	// A newly focused request is revealed: any filter hiding it is set to show it.
@@ -253,12 +261,38 @@ export function MyRequestsClient({ initialResult, focusRequest }: MyRequestsClie
 	// decided) while they stay here leaves no notice and takes no focus.
 	const arrivedUnavailable = focused.requested && !focusedItem && revealedFocus !== focusRequest;
 
-	const filteredItems = initialResult.items.filter((item) => {
+	const filteredItems = items.filter((item) => {
 		const matchesStatus = statusFilter === "all" || item.status === statusFilter;
 		const matchesSourceType = sourceTypeFilter === "all" || item.sourceType === sourceTypeFilter;
 
 		return matchesStatus && matchesSourceType && matchesSearch(item, search, locale, t);
 	});
+
+	return {
+		statusFilter,
+		setStatusFilter,
+		sourceTypeFilter,
+		setSourceTypeFilter,
+		search,
+		setSearch,
+		arrivedUnavailable,
+		filteredItems,
+	};
+}
+
+export function MyRequestsClient({ initialResult, focusRequest }: MyRequestsClientProps) {
+	const { t } = useTranslate();
+	const locale = useLocale();
+	const {
+		statusFilter,
+		setStatusFilter,
+		sourceTypeFilter,
+		setSourceTypeFilter,
+		search,
+		setSearch,
+		arrivedUnavailable,
+		filteredItems,
+	} = useMyRequestsFilters(initialResult.items, focusRequest, locale, t);
 	const groupedItems = groupRequestItems(filteredItems, new Date());
 
 	return (

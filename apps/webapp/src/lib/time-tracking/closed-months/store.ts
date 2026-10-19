@@ -807,30 +807,33 @@ export async function closedMonthHistory(
 	input: { organizationId: string; limit?: number },
 ): Promise<ClosedMonthHistoryEntry[]> {
 	const limit = input.limit ?? 100;
-	const closes = await database
-		.select({
-			id: closedMonth.id,
-			month: closedMonth.month,
-			scope: closedMonth.scope,
-			teamId: closedMonth.teamId,
-			locationId: closedMonth.locationId,
-			locationName: closedMonth.locationName,
-			actorKind: closedMonth.actorKind,
-			closedBy: closedMonth.closedBy,
-			closedAt: closedMonth.closedAt,
-			// The outer column is qualified by hand, as in `closeBlockers`.
-			employeeCount: sql<number>`(select count(*)::int from ${closedMonthEmployee} where ${closedMonthEmployee.closedMonthId} = "closed_month"."id")`,
-		})
-		.from(closedMonth)
-		.where(eq(closedMonth.organizationId, input.organizationId))
-		.orderBy(desc(closedMonth.closedAt))
-		.limit(limit);
-	const reopenings = await database
-		.select()
-		.from(closedMonthReopening)
-		.where(eq(closedMonthReopening.organizationId, input.organizationId))
-		.orderBy(desc(closedMonthReopening.reopenedAt))
-		.limit(limit);
+	// Two independent reads; callers pass the pooled database.
+	const [closes, reopenings] = await Promise.all([
+		database
+			.select({
+				id: closedMonth.id,
+				month: closedMonth.month,
+				scope: closedMonth.scope,
+				teamId: closedMonth.teamId,
+				locationId: closedMonth.locationId,
+				locationName: closedMonth.locationName,
+				actorKind: closedMonth.actorKind,
+				closedBy: closedMonth.closedBy,
+				closedAt: closedMonth.closedAt,
+				// The outer column is qualified by hand, as in `closeBlockers`.
+				employeeCount: sql<number>`(select count(*)::int from ${closedMonthEmployee} where ${closedMonthEmployee.closedMonthId} = "closed_month"."id")`,
+			})
+			.from(closedMonth)
+			.where(eq(closedMonth.organizationId, input.organizationId))
+			.orderBy(desc(closedMonth.closedAt))
+			.limit(limit),
+		database
+			.select()
+			.from(closedMonthReopening)
+			.where(eq(closedMonthReopening.organizationId, input.organizationId))
+			.orderBy(desc(closedMonthReopening.reopenedAt))
+			.limit(limit),
+	]);
 	return [
 		...closes.map(
 			(row): ClosedMonthHistoryEntry => ({

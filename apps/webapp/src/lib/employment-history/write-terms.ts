@@ -171,6 +171,7 @@ async function adjustNeighbours(
 	next: EmployeeEmploymentHistory,
 ) {
 	const adjusted = adjustConfirmedTimeline({ existing, next });
+	const existingById = new Map(existing.map((row) => [row.id, row]));
 	for (const update of adjusted.updates) {
 		await tx
 			.update(employeeEmploymentHistory)
@@ -182,7 +183,7 @@ async function adjustNeighbours(
 					eq(employeeEmploymentHistory.organizationId, scope.organizationId),
 				),
 			);
-		const previous = existing.find((row) => row.id === update.id);
+		const previous = existingById.get(update.id);
 		if (previous) {
 			await syncTermsPolicy(tx, scope, { ...previous, validUntil: update.validUntil });
 		}

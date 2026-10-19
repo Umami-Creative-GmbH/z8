@@ -1093,6 +1093,7 @@ export async function withVacationReconciliation<
 				? result.error
 				: "The absence was refused. No reconciliation was applied.",
 		);
+	// Deliberately the JSON shape the jsonb receipt stores: dates become strings, undefined drops.
 	const receipt = JSON.parse(JSON.stringify(result)) as Record<string, unknown>;
 	await database
 		.update(vacationReconciliation)

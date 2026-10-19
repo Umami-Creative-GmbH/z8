@@ -67,7 +67,8 @@ import {
 	AbsenceDurationFields,
 	useAbsenceForm,
 } from "./absence-duration-fields";
-import { AbsencePlanPreviewPanel, noWorkingDaysMessage } from "./absence-plan-preview-panel";
+import { noWorkingDaysMessage } from "./absence-plan-preview-messages";
+import { AbsencePlanPreviewPanel } from "./absence-plan-preview-panel";
 import { CategoryBadge } from "./category-badge";
 import { DeputyPicker, deputyRefusalText, deputyRequiredText } from "./deputy-picker";
 import type { StagedSickNoteFile } from "./sick-notes/sick-note-files-field";

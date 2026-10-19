@@ -365,10 +365,11 @@ export async function getApprovalInboxListFromSources({
 	const cursor = parseCursor(params.cursor);
 	const limit = getEffectiveLimit(params.limit);
 	const canonicalFilters = normalizeCanonicalFilters(params);
+	const selectedReadSet = new Set(selectedReads);
 	// Canonical reads hold only pending assignments; each is counted under its type.
 	const canonicalResults = await Promise.all(
 		reads.map(async (read) => {
-			const listed = pending && selectedReads.includes(read);
+			const listed = pending && selectedReadSet.has(read);
 			const approvals: CanonicalInboxApprovalBatch = listed
 				? await read.load({
 						approverId: params.approverId,
@@ -508,60 +509,63 @@ async function loadCoveringSections(input: {
 				includeAllApprovers: undefined,
 				coveredApproverIds: undefined,
 			};
-			const loaded = await Promise.all(
-				deputySources.map(async (source) => {
-					const exit = await runtime.runPromiseExit(
-						source.handler.getApprovals(sectionParams),
-					);
-					return Exit.isSuccess(exit)
-						? await Promise.all(
-								exit.value
-									.filter(
-										(approval) =>
-											approval.organizationId === params.organizationId,
-									)
-									.map(async (approval) => ({
-										item: await toInboxItem(source, approval, input.now, {
-											triagePolicy: input.triagePolicy,
-											loadTriageEvidence: input.loadTriageEvidence,
-										}),
-										approverId: approval.approverId,
-										requesterEmployeeId: approval.requester.id,
-									})),
-							)
-						: [];
-				}),
-			);
-			const canonicalBatches = await Promise.all(
-				deputyReads.map(
-					async (read) =>
-						await Promise.all(
-							(
-								await read.load({
-									approverId: cover.approverId,
-									organizationId: params.organizationId,
-									filters: normalizeCanonicalFilters(params),
-									limit: COVERING_SECTION_LIMIT + 1,
-									...(isEvidenceAwareRead(read)
-										? { evaluateBeforePagination: true }
-										: {}),
-									now: input.now,
-								})
-							).map(async (approval) => ({
-								item: await evaluateCanonicalInboxItem(
-									approval,
-									params.organizationId,
-									input.now,
-									input.triagePolicy,
-									input.loadTriageEvidence,
-								),
-								approverId: approval.decisionTarget?.approverId,
-								requesterEmployeeId:
-									approval.decisionTarget?.requesterEmployeeId,
-							})),
-						),
+			// Legacy sources and canonical reads are independent pooled reads.
+			const [loaded, canonicalBatches] = await Promise.all([
+				Promise.all(
+					deputySources.map(async (source) => {
+						const exit = await runtime.runPromiseExit(
+							source.handler.getApprovals(sectionParams),
+						);
+						return Exit.isSuccess(exit)
+							? await Promise.all(
+									exit.value
+										.filter(
+											(approval) =>
+												approval.organizationId === params.organizationId,
+										)
+										.map(async (approval) => ({
+											item: await toInboxItem(source, approval, input.now, {
+												triagePolicy: input.triagePolicy,
+												loadTriageEvidence: input.loadTriageEvidence,
+											}),
+											approverId: approval.approverId,
+											requesterEmployeeId: approval.requester.id,
+										})),
+								)
+							: [];
+					}),
 				),
-			);
+				Promise.all(
+					deputyReads.map(
+						async (read) =>
+							await Promise.all(
+								(
+									await read.load({
+										approverId: cover.approverId,
+										organizationId: params.organizationId,
+										filters: normalizeCanonicalFilters(params),
+										limit: COVERING_SECTION_LIMIT + 1,
+										...(isEvidenceAwareRead(read)
+											? { evaluateBeforePagination: true }
+											: {}),
+										now: input.now,
+									})
+								).map(async (approval) => ({
+									item: await evaluateCanonicalInboxItem(
+										approval,
+										params.organizationId,
+										input.now,
+										input.triagePolicy,
+										input.loadTriageEvidence,
+									),
+									approverId: approval.decisionTarget?.approverId,
+									requesterEmployeeId:
+										approval.decisionTarget?.requesterEmployeeId,
+								})),
+							),
+					),
+				),
+			]);
 			const candidates = [...loaded.flat(), ...canonicalBatches.flat()];
 			const truncated = [...loaded, ...canonicalBatches].some(
 				(rows) => rows.length > COVERING_SECTION_LIMIT,
@@ -627,25 +631,31 @@ async function countCoveringSections(input: {
 	);
 	return await Promise.all(
 		input.covers.map(async (cover) => {
-			const counts = await Promise.all(
-				deputySources.map(async (source) => {
-					const exit = await runtime.runPromiseExit(
-						source.handler.getCount(cover.approverId, input.organizationId, {}),
-					);
-					return Exit.isSuccess(exit) ? exit.value : 0;
-				}),
-			);
-			const canonical = await Promise.all(
-				deputyReads.map((read) =>
-					read.count
-						? read.count({
-								approverId: cover.approverId,
-								organizationId: input.organizationId,
-								now: input.now,
-							})
-						: 0,
+			const [counts, canonical] = await Promise.all([
+				Promise.all(
+					deputySources.map(async (source) => {
+						const exit = await runtime.runPromiseExit(
+							source.handler.getCount(
+								cover.approverId,
+								input.organizationId,
+								{},
+							),
+						);
+						return Exit.isSuccess(exit) ? exit.value : 0;
+					}),
 				),
-			);
+				Promise.all(
+					deputyReads.map((read) =>
+						read.count
+							? read.count({
+									approverId: cover.approverId,
+									organizationId: input.organizationId,
+									now: input.now,
+								})
+							: 0,
+					),
+				),
+			]);
 			return {
 				approverId: cover.approverId,
 				approverName: cover.approverName,

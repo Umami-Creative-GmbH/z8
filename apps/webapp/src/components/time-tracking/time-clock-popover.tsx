@@ -49,8 +49,8 @@ import {
 	BreakConnectionNote,
 	OnBreakActions,
 	StartBreakButton,
-	breakInProgressHandlers,
 } from "./break-in-progress-actions";
+import { breakInProgressHandlers } from "./break-in-progress-handlers";
 import { BreakInProgressNotice } from "./break-in-progress-notice";
 import { toastClockCommandError } from "./clock-command-error-toast";
 import { ClockConnectionNotice } from "./clock-connection-notice";
@@ -915,8 +915,6 @@ function ClockActionButtons({
 	| "isOffline"
 	| "t"
 >) {
-	// The clock button's own progress; a break command shows its own.
-	const isClocking = isMutating && !isStartingBreak && !isResumingBreak;
 	return (
 		<ClockCaptureControls
 			mode={captureMode}
@@ -937,43 +935,111 @@ function ClockActionButtons({
 					t={t}
 				/>
 			) : (
-				<div className="flex flex-col gap-2">
-					<Button
-						size="default"
-						variant={isClockedIn ? "destructive" : "default"}
-						onClick={onClockAction}
-						disabled={isMutating || clockOutNeedsTask}
-						className="w-full"
-					>
-						{isClocking ? (
-							<>
-								<IconLoader2 className="size-4 animate-spin" />
-								{isClockingOut
-									? t("timeTracking.clockingOut", "Clocking Out…")
-									: t("timeTracking.clockingIn", "Clocking In…")}
-							</>
-						) : isClockedIn ? (
-							<>
-								<IconPlayerStop aria-hidden="true" className="size-4" />
-								{t("timeTracking.clockOut", "Clock Out")}
-							</>
-						) : (
-							<>
-								<IconPlayerPlay aria-hidden="true" className="size-4" />
-								{t("timeTracking.clockIn", "Clock In")}
-							</>
-						)}
-					</Button>
-					{isClockedIn ? (
-						<StartBreakButton
-							onClick={onStartBreak}
-							disabled={isMutating || isOffline}
-							pending={isStartingBreak}
-							t={t}
-						/>
-					) : null}
-				</div>
+				<ClockAndBreakButtons
+					isMutating={isMutating}
+					isClockedIn={isClockedIn}
+					onClockAction={onClockAction}
+					isClockingOut={isClockingOut}
+					clockOutNeedsTask={clockOutNeedsTask}
+					onStartBreak={onStartBreak}
+					isStartingBreak={isStartingBreak}
+					isResumingBreak={isResumingBreak}
+					isOffline={isOffline}
+					t={t}
+				/>
 			)}
 		</ClockCaptureControls>
+	);
+}
+
+/** Clock In or Clock Out, and Start Break while working. */
+function ClockAndBreakButtons({
+	isMutating,
+	isClockedIn,
+	onClockAction,
+	isClockingOut,
+	clockOutNeedsTask,
+	onStartBreak,
+	isStartingBreak,
+	isResumingBreak,
+	isOffline,
+	t,
+}: Pick<
+	Parameters<typeof ClockControlsView>[0],
+	| "isMutating"
+	| "isClockedIn"
+	| "onClockAction"
+	| "isClockingOut"
+	| "clockOutNeedsTask"
+	| "onStartBreak"
+	| "isStartingBreak"
+	| "isResumingBreak"
+	| "isOffline"
+	| "t"
+>) {
+	// The clock button's own progress; a break command shows its own.
+	const isClocking = isMutating && !isStartingBreak && !isResumingBreak;
+	return (
+		<div className="flex flex-col gap-2">
+			<Button
+				size="default"
+				variant={isClockedIn ? "destructive" : "default"}
+				onClick={onClockAction}
+				disabled={isMutating || clockOutNeedsTask}
+				className="w-full"
+			>
+				<ClockButtonLabel
+					isClocking={isClocking}
+					isClockingOut={isClockingOut}
+					isClockedIn={isClockedIn}
+					t={t}
+				/>
+			</Button>
+			{isClockedIn ? (
+				<StartBreakButton
+					onClick={onStartBreak}
+					disabled={isMutating || isOffline}
+					pending={isStartingBreak}
+					t={t}
+				/>
+			) : null}
+		</div>
+	);
+}
+
+function ClockButtonLabel({
+	isClocking,
+	isClockingOut,
+	isClockedIn,
+	t,
+}: {
+	isClocking: boolean;
+	isClockingOut: boolean;
+	isClockedIn: boolean;
+	t: Translate;
+}) {
+	if (isClocking) {
+		return (
+			<>
+				<IconLoader2 className="size-4 animate-spin" />
+				{isClockingOut
+					? t("timeTracking.clockingOut", "Clocking Out…")
+					: t("timeTracking.clockingIn", "Clocking In…")}
+			</>
+		);
+	}
+	if (isClockedIn) {
+		return (
+			<>
+				<IconPlayerStop aria-hidden="true" className="size-4" />
+				{t("timeTracking.clockOut", "Clock Out")}
+			</>
+		);
+	}
+	return (
+		<>
+			<IconPlayerPlay aria-hidden="true" className="size-4" />
+			{t("timeTracking.clockIn", "Clock In")}
+		</>
 	);
 }

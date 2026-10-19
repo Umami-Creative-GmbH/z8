@@ -4,15 +4,6 @@ import { IconInfoCircle } from "@tabler/icons-react";
 import { type ReactNode, useEffect, useRef } from "react";
 
 /**
- * Moves focus to what a link arrived for (#1349): scrolls it into view and focuses it without a
- * second scroll jump.
- */
-export function focusArrivalTarget(element: HTMLElement): void {
-	element.scrollIntoView?.({ block: "center" });
-	element.focus({ preventScroll: true });
-}
-
-/**
  * The neutral notice shown when a link's target can't be focused on arrival (decided, gone, or not
  * on this page). It takes focus when it appears, so keyboard and screen reader users land on the
  * explanation; render it only for an arrival.
