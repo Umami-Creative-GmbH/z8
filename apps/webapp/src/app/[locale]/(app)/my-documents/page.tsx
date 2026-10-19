@@ -2,23 +2,27 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { MyDocumentsList } from "@/components/personnel-file/my-documents-list";
 import { MyDocumentsUpload } from "@/components/personnel-file/my-documents-upload";
+import { RequestedDocuments } from "@/components/personnel-file/requested-documents";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
 import { loadOwnUploadCapability } from "@/lib/personnel-file/panel";
 import { getTranslate } from "@/tolgee/server";
 import { getMyDocumentsAction } from "../personnel-files/actions";
+import { getMyDocumentRequestsAction } from "../personnel-files/document-request-actions";
 
 /**
  * My documents (#865): the signed-in employee's shared employee documents.
  * Unavailable (not found) while personnel files are off, and for anyone
  * without a current employee profile, former employees included. Employees
- * upload certificates and other documents here (#867).
+ * upload certificates and other documents here (#867) and see what officers
+ * requested from them (#1401).
  */
 async function MyDocumentsContent() {
-	const [t, result, uploadCapability] = await Promise.all([
+	const [t, result, uploadCapability, requests] = await Promise.all([
 		getTranslate(),
 		getMyDocumentsAction(),
 		loadOwnUploadCapability(),
+		getMyDocumentRequestsAction(),
 	]);
 	if (!result.success) notFound();
 
@@ -38,6 +42,9 @@ async function MyDocumentsContent() {
 				</div>
 				{uploadCapability ? <MyDocumentsUpload capability={uploadCapability} /> : null}
 			</header>
+			{requests.success && uploadCapability ? (
+				<RequestedDocuments requests={requests.data} capability={uploadCapability} />
+			) : null}
 			<MyDocumentsList documents={result.data} />
 		</div>
 	);

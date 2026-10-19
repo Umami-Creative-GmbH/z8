@@ -79,6 +79,14 @@ export const NOTIFICATION_TYPES = [
 	"personnel_file_expired_today",
 	// Documents newly due for deletion, for covering officers (#870)
 	"personnel_file_due_for_deletion",
+	// Document requests (#1307): to the employee on a new request, a decision
+	// (accepted, returned, cancelled) and before the deadline; to the covering
+	// officers on a submission; to both when the request is overdue.
+	"personnel_file_document_requested",
+	"personnel_file_document_request_decided",
+	"personnel_file_document_request_reminder",
+	"personnel_file_document_request_submitted",
+	"personnel_file_document_request_overdue",
 	// Deputy on an absence: named, removed, new dates, day-before reminder (#1013)
 	"absence_deputy_assigned",
 	"absence_deputy_removed",

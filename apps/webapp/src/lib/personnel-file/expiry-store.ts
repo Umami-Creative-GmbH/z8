@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, isNotNull, lte } from "drizzle-orm";
+import { and, asc, eq, inArray, isNotNull, lte, not } from "drizzle-orm";
 import type { db as appDb } from "@/db";
 import { user } from "@/db/auth-schema";
 import { employee, employeeDocument, personnelFileReminderSetting } from "@/db/schema";
@@ -14,6 +14,7 @@ import type { PersonnelFileAccess } from "./access";
 import { managedDocumentsCondition } from "./access-store";
 import { type DocumentCategory, EXPIRY_DATE_CATEGORIES } from "./document.types";
 import { loadOrganizationDay } from "./organization-day";
+import { hasActiveRenewalRequest, isRenewedDocument } from "./renewed-documents";
 
 /**
  * Expiry reminder settings and the expiring documents list (#869).
@@ -84,13 +85,16 @@ export interface ExpiringDocument {
 	/** YYYY-MM-DD */
 	expiryDate: string;
 	expiry: ExpiryDescription;
+	/** An open or submitted document request names it as its renewed document (#1404). */
+	renewalRequested: boolean;
 }
 
 /**
  * The documents the actor manages that expire within the lead time or have
  * already expired, earliest first (the Personnel files area). Documents of
  * former employees are left out, like the reminders: nothing about them is
- * still to be renewed.
+ * still to be renewed. A renewed document (an accepted request names it,
+ * #1404) no longer counts as expiring.
  */
 export async function listExpiringDocuments(
 	database: Reader,
@@ -113,6 +117,7 @@ export async function listExpiringDocuments(
 			category: employeeDocument.category,
 			visibility: employeeDocument.visibility,
 			expiryDate: employeeDocument.expiryDate,
+			renewalRequested: hasActiveRenewalRequest(),
 		})
 		.from(employeeDocument)
 		.innerJoin(
@@ -129,6 +134,7 @@ export async function listExpiringDocuments(
 				inArray(employeeDocument.category, [...EXPIRY_DATE_CATEGORIES]),
 				isNotNull(employeeDocument.expiryDate),
 				lte(employeeDocument.expiryDate, windowEnd),
+				not(isRenewedDocument()),
 				employeeHasOrganizationAccess(input.now),
 			),
 		)
@@ -150,6 +156,7 @@ export async function listExpiringDocuments(
 				visibility: row.visibility,
 				expiryDate: row.expiryDate,
 				expiry: describeExpiry({ today, expiryDate: row.expiryDate }),
+				renewalRequested: row.renewalRequested === true,
 			},
 		];
 	});

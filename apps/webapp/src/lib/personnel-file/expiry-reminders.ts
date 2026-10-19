@@ -1,4 +1,4 @@
-import { and, eq, gte, inArray, isNotNull, lte, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, isNotNull, lte, not, sql } from "drizzle-orm";
 import type { db as appDb } from "@/db";
 import { organization, user } from "@/db/auth-schema";
 import { employee, employeeDocument, personnelFileExpiryReminder } from "@/db/schema";
@@ -13,6 +13,7 @@ import { EXPIRY_DATE_CATEGORIES } from "./document.types";
 import { buildExpiryReminderNotification, type ExpiringDocumentRef } from "./expiry-notifications";
 import { loadExpiryReminderWindow } from "./expiry-store";
 import { listPersonnelFileNotificationRecipients } from "./notification-recipients";
+import { hasActiveRenewalRequest, isRenewedDocument } from "./renewed-documents";
 
 /**
  * The expiry reminder job (#869), run hourly so every organization's
@@ -28,6 +29,11 @@ import { listPersonnelFileNotificationRecipients } from "./notification-recipien
  * one goes to the officers only. Where no skill reminder reaches the employee
  * for that date (inactive skill, other date, kiosk-only employee), this one
  * still does, so the employee is reminded exactly once.
+ * Renewals (#1404): while an open or submitted document request names the
+ * document as its renewed document, its reminders go to the officers only
+ * (read at send time, so after a cancel the employee gets the next one). A
+ * renewed document (an accepted request names it) is no longer expiring and
+ * gets no reminders.
  * Former employees' documents are skipped; deleted documents no longer exist.
  *
  * At most once: a reminder is claimed in `personnel_file_expiry_reminder`
@@ -56,6 +62,8 @@ interface DueReminder {
 	 * one only, the officers still get this one.
 	 */
 	employeeRemindedBySkill: boolean;
+	/** An open or submitted document request renews it (#1404): officers only. */
+	renewalRequested: boolean;
 }
 
 export async function runPersonnelFileExpiryReminders(
@@ -122,6 +130,7 @@ async function remindOrganization(
 			visibility: employeeDocument.visibility,
 			expiryDate: employeeDocument.expiryDate,
 			employeeSkillId: employeeDocument.employeeSkillId,
+			renewalRequested: hasActiveRenewalRequest(),
 		})
 		.from(employeeDocument)
 		.innerJoin(
@@ -139,6 +148,7 @@ async function remindOrganization(
 				isNotNull(employeeDocument.expiryDate),
 				gte(employeeDocument.expiryDate, today),
 				lte(employeeDocument.expiryDate, windowEnd),
+				not(isRenewedDocument()),
 				employeeHasOrganizationAccess(now),
 			),
 		);
@@ -161,6 +171,7 @@ async function remindOrganization(
 			employeeRemindedBySkill:
 				row.employeeSkillId !== null &&
 				skillReminderDates.get(row.employeeSkillId) === row.expiryDate,
+			renewalRequested: row.renewalRequested === true,
 			kind,
 			document: {
 				id: row.id,
@@ -239,8 +250,13 @@ async function buildReminderMessages(
 			document,
 		}),
 	);
-	// HR-only documents never reach the employee; a skill certificate reaches them as its skill reminder.
-	if (document.visibility === "shared" && !reminder.employeeRemindedBySkill) {
+	// HR-only documents never reach the employee; a skill certificate reaches them as its skill
+	// reminder; while a document request asks for its renewal, the officers only (#1404).
+	if (
+		document.visibility === "shared" &&
+		!reminder.employeeRemindedBySkill &&
+		!reminder.renewalRequested
+	) {
 		messages.push(
 			buildExpiryReminderNotification({
 				organizationId,

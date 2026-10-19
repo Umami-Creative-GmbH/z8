@@ -269,6 +269,10 @@ export const queryKeys = {
 		/** The employee skills a certificate may name (#1144). */
 		certificateSkills: (employeeId: string) =>
 			["personnel-file", "certificate-skills", employeeId] as const,
+		/** Document requests (#1307): all of them, and one employee's in the officer area. */
+		documentRequestsAll: () => ["personnel-file", "document-requests"] as const,
+		employeeDocumentRequests: (employeeId: string) =>
+			["personnel-file", "document-requests", "employee", employeeId] as const,
 	},
 
 	// Employee clock statuses

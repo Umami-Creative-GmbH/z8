@@ -52,6 +52,9 @@ const { seedPersonnelFileOfficerGrant } = await import("./testing/officer-grant.
 const { savePersonnelFileExpiryLeadDaysAction } = await import(
 	"@/app/[locale]/(app)/settings/personnel-files/reminder-actions"
 );
+const { createDocumentRequestAction, cancelDocumentRequestAction } = await import(
+	"@/app/[locale]/(app)/personnel-files/document-request-actions"
+);
 
 const ORG = "t869-org";
 const OFF_ORG = "t869-off";
@@ -193,6 +196,33 @@ async function seed() {
 		category: "contract",
 		expiryDate: null,
 	});
+}
+
+/** A document request naming `documentId` as its renewed document (#1404). */
+async function seedRenewalRequest(input: {
+	id: string;
+	employee: Person;
+	documentId: string;
+	category?: "certificate" | "other";
+	status: "open" | "submitted" | "accepted" | "cancelled";
+}) {
+	await admin.query(
+		`insert into employee_document_request (id, organization_id, employee_id, category, title, deadline,
+		 renewed_document_id, status, created_at, updated_at)
+		 values ($1, $2, $3, $4, 'Renewal', '2026-12-31', $5, $6, now(), now())`,
+		[
+			input.id,
+			ORG,
+			ids[input.employee],
+			input.category ?? "certificate",
+			input.documentId,
+			input.status,
+		],
+	);
+}
+
+async function setRequestStatus(id: string, status: "open" | "accepted" | "cancelled") {
+	await admin.query("update employee_document_request set status = $2 where id = $1", [id, status]);
 }
 
 const at = (value: string) => Temporal.Instant.from(value);
@@ -398,6 +428,174 @@ describe("expiring documents list", () => {
 		expect(await listExpiringDocuments(db, access, { now: at("2026-11-01T08:00:00Z") })).toEqual(
 			[],
 		);
+	});
+});
+
+const requests = {
+	annaCertificate: "e8693000-0000-4000-8000-000000000001",
+	annaExpired: "e8693000-0000-4000-8000-000000000002",
+	annaHrOnly: "e8693000-0000-4000-8000-000000000003",
+	benCertificate: "e8693000-0000-4000-8000-000000000004",
+	annaOther: "e8693000-0000-4000-8000-000000000005",
+} as const;
+
+describe("expiring documents list with renewals (#1404)", () => {
+	beforeAll(async () => {
+		await seed();
+		// Renewed: an accepted request names it. Still expiring: a cancelled one names it.
+		await seedRenewalRequest({
+			id: requests.annaExpired,
+			employee: "anna",
+			documentId: docs.annaExpired,
+			status: "accepted",
+		});
+		await seedRenewalRequest({
+			id: requests.annaCertificate,
+			employee: "anna",
+			documentId: docs.annaCertificate,
+			status: "open",
+		});
+		await seedRenewalRequest({
+			id: requests.annaHrOnly,
+			employee: "anna",
+			documentId: docs.annaHrOnly,
+			category: "other",
+			status: "cancelled",
+		});
+	});
+	afterAll(cleanup);
+
+	async function listFor(person: Person, instant: string) {
+		const access = await resolvePersonnelFileAccess(db, {
+			userId: userOf(person),
+			organizationId: ORG,
+		});
+		if (!access) throw new Error(`${person} has no access`);
+		return listExpiringDocuments(db, access, { now: at(instant) });
+	}
+
+	it("leaves out a renewed document and marks the one whose renewal is requested", async () => {
+		const rows = await listFor("admin", "2026-11-01T08:00:00Z");
+		expect(
+			rows.map((row) => ({ documentId: row.documentId, renewalRequested: row.renewalRequested })),
+		).toEqual([
+			{ documentId: docs.annaHrOnly, renewalRequested: false },
+			{ documentId: docs.benCertificate, renewalRequested: false },
+			{ documentId: docs.annaCertificate, renewalRequested: true },
+		]);
+	});
+
+	it("lists the document again as requested while the request is submitted, and drops it once accepted", async () => {
+		await admin.query("update employee_document_request set status = 'submitted' where id = $1", [
+			requests.annaCertificate,
+		]);
+		const submitted = await listFor("officer", "2026-11-01T08:00:00Z");
+		expect(submitted.find((row) => row.documentId === docs.annaCertificate)).toMatchObject({
+			renewalRequested: true,
+		});
+		await setRequestStatus(requests.annaCertificate, "accepted");
+		const accepted = await listFor("officer", "2026-11-01T08:00:00Z");
+		expect(accepted.map((row) => row.documentId)).toEqual([docs.annaHrOnly]);
+	});
+
+	it("marks a document once 'Request renewal' created its request, and frees it after a cancel", async () => {
+		const renewal = {
+			employeeId: ids.anna,
+			category: "other" as const,
+			title: "Renewed course certificate",
+			deadline: "2099-12-31",
+			renewedDocumentId: docs.annaHrOnly,
+		};
+		session.userId = userOf("officer");
+		const created = await createDocumentRequestAction(renewal);
+		if (!created.success) throw new Error(created.error);
+		const requested = await listFor("officer", "2026-11-01T08:00:00Z");
+		expect(requested.find((row) => row.documentId === docs.annaHrOnly)).toMatchObject({
+			renewalRequested: true,
+		});
+		// One active request per renewed document; another employee's document is refused.
+		session.userId = userOf("admin");
+		expect(await createDocumentRequestAction(renewal)).toMatchObject({
+			success: false,
+			code: "renewal_already_requested",
+		});
+		expect(
+			await createDocumentRequestAction({ ...renewal, renewedDocumentId: docs.benCertificate }),
+		).toMatchObject({ success: false, code: "renewed_document_mismatch" });
+
+		expect(
+			await cancelDocumentRequestAction({
+				requestId: created.data.id,
+				reason: "Wrong course",
+				expectedVersion: created.data.version,
+			}),
+		).toMatchObject({ success: true });
+		session.userId = null;
+		const cancelled = await listFor("officer", "2026-11-01T08:00:00Z");
+		expect(cancelled.find((row) => row.documentId === docs.annaHrOnly)).toMatchObject({
+			renewalRequested: false,
+		});
+	});
+});
+
+describe("expiry reminders during a renewal (#1404)", () => {
+	const annaOther = "e8692000-0000-4000-8000-000000000020";
+
+	beforeAll(async () => {
+		await seed();
+		await seedDocument({
+			id: annaOther,
+			employee: "anna",
+			category: "other",
+			expiryDate: "2026-11-15",
+		});
+		await seedRenewalRequest({
+			id: requests.annaCertificate,
+			employee: "anna",
+			documentId: docs.annaCertificate,
+			status: "open",
+		});
+		await seedRenewalRequest({
+			id: requests.annaOther,
+			employee: "anna",
+			documentId: annaOther,
+			category: "other",
+			status: "submitted",
+		});
+		await seedRenewalRequest({
+			id: requests.benCertificate,
+			employee: "ben",
+			documentId: docs.benCertificate,
+			status: "accepted",
+		});
+	});
+	afterAll(cleanup);
+	beforeEach(() => {
+		sent.length = 0;
+	});
+
+	it("reminds the officers only while an open or submitted request names the document", async () => {
+		await run("2026-10-31T09:00:00Z");
+		expect(toldAbout(docs.annaCertificate)).toEqual([
+			"t869-officer:personnel_file_expiry_upcoming",
+		]);
+		expect(toldAbout(annaOther)).toEqual(["t869-officer:personnel_file_expiry_upcoming"]);
+		// Renewed (accepted): no longer expiring.
+		expect(toldAbout(docs.benCertificate)).toEqual([]);
+	});
+
+	it("sends a renewed document no expired-today reminder either", async () => {
+		await run("2026-11-25T09:00:00Z");
+		expect(toldAbout(docs.benCertificate)).toEqual([]);
+	});
+
+	it("reminds the employee again after the request is cancelled", async () => {
+		await setRequestStatus(requests.annaCertificate, "cancelled");
+		await run("2026-11-30T09:00:00Z");
+		expect(toldAbout(docs.annaCertificate)).toEqual([
+			"t869-anna:personnel_file_expired_today",
+			"t869-officer:personnel_file_expired_today",
+		]);
 	});
 });
 
