@@ -223,6 +223,7 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 	"absence_request_submitted",
 	"absence_request_approved",
 	"absence_request_rejected",
+	"approved_absence_cancelled",
 	"team_member_added",
 	"team_member_removed",
 	"password_changed",
@@ -286,6 +287,14 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 	"personnel_file_expired_today",
 	// Documents newly due for deletion, for covering officers (#870)
 	"personnel_file_due_for_deletion",
+	// Document requests (#1307): to the employee on a new request, a decision
+	// (accepted, returned, cancelled) and before the deadline; to the covering
+	// officers on a submission; to both when the request is overdue.
+	"personnel_file_document_requested",
+	"personnel_file_document_request_decided",
+	"personnel_file_document_request_reminder",
+	"personnel_file_document_request_submitted",
+	"personnel_file_document_request_overdue",
 	// Closed months (#762): automatic close, its blockers, and reopenings
 	"month_closed_automatically",
 	"month_close_blocked",

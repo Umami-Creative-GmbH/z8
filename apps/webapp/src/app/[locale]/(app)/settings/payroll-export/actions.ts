@@ -1317,17 +1317,17 @@ export async function saveMappingAction(
 							input.sageWageTypeName ||
 							input.successFactorsTimeTypeName ||
 							null,
-						// Format-specific codes
-						datevWageTypeCode: input.datevWageTypeCode ?? existing.datevWageTypeCode,
-						datevWageTypeName: input.datevWageTypeName ?? existing.datevWageTypeName,
-						lexwareWageTypeCode: input.lexwareWageTypeCode ?? existing.lexwareWageTypeCode,
-						lexwareWageTypeName: input.lexwareWageTypeName ?? existing.lexwareWageTypeName,
-						sageWageTypeCode: input.sageWageTypeCode ?? existing.sageWageTypeCode,
-						sageWageTypeName: input.sageWageTypeName ?? existing.sageWageTypeName,
+						// Drizzle ignores undefined fields; explicit null clears the stored value.
+						datevWageTypeCode: input.datevWageTypeCode,
+						datevWageTypeName: input.datevWageTypeName,
+						lexwareWageTypeCode: input.lexwareWageTypeCode,
+						lexwareWageTypeName: input.lexwareWageTypeName,
+						sageWageTypeCode: input.sageWageTypeCode,
+						sageWageTypeName: input.sageWageTypeName,
 						successFactorsTimeTypeCode:
-							input.successFactorsTimeTypeCode ?? existing.successFactorsTimeTypeCode,
+							input.successFactorsTimeTypeCode,
 						successFactorsTimeTypeName:
-							input.successFactorsTimeTypeName ?? existing.successFactorsTimeTypeName,
+							input.successFactorsTimeTypeName,
 						isActive: true,
 					})
 					.where(

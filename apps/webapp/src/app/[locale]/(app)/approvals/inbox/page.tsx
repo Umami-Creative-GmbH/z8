@@ -32,12 +32,13 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import type { ApprovalFastLaneReview } from "@/lib/approvals/inbox/fast-lane-review";
 import type {
 	ApprovalInboxBulkDecisionResult,
+	ApprovalInboxCoveringSection,
 	ApprovalInboxDecisionFailure,
 	ApprovalInboxFastLaneGroup,
 	ApprovalInboxItem,
-	ApprovalInboxCoveringSection,
 	ApprovalInboxType,
 	ApprovalInboxWarning,
 } from "@/lib/approvals/inbox/types";
@@ -57,7 +58,10 @@ import { ApprovalFastLanes } from "./components/approval-fast-lanes";
 import { ApprovalInboxTable } from "./components/approval-inbox-table";
 import { ApprovalInboxToolbar } from "./components/approval-inbox-toolbar";
 import { ApprovalSprintPanel } from "./components/approval-sprint-panel";
-import { getCoveringForDescription, getCoveringForTitle } from "./components/covering-notes";
+import {
+	getCoveringForDescription,
+	getCoveringForTitle,
+} from "./components/covering-notes";
 
 type BulkDecision = "approve" | "reject";
 
@@ -209,7 +213,10 @@ function groupFastLaneItems(
  * fast-laned.
  */
 function isDecidableByViewer(item: ApprovalInboxItem): boolean {
-	return item.capabilities.ownRequest !== true && item.capabilities.decidedEarlierStage !== true;
+	return (
+		item.capabilities.ownRequest !== true &&
+		item.capabilities.decidedEarlierStage !== true
+	);
 }
 
 function sortSprintItems(items: ApprovalInboxItem[]): ApprovalInboxItem[] {
@@ -525,8 +532,15 @@ function ApprovalInboxRequestsCard({
 	selectedIds: Set<string>;
 	supportedTypes: ApprovalInboxType[];
 	paginationState: ApprovalInboxPaginationState;
-	onBulkApprove: (approvalIds: string[]) => Promise<void>;
-	onBulkReject: (approvalIds: string[], reason: string) => Promise<void>;
+	onBulkApprove: (
+		approvalIds: string[],
+		review: ApprovalFastLaneReview,
+	) => Promise<void>;
+	onBulkReject: (
+		approvalIds: string[],
+		reason: string,
+		review: ApprovalFastLaneReview,
+	) => Promise<void>;
 	onFiltersChange: (nextFilters: ApprovalInboxFilters) => void;
 	onSelectAll: (checked: boolean) => void;
 	onSelectItem: (id: string, checked: boolean) => void;
@@ -572,7 +586,9 @@ function ApprovalInboxRequestsCard({
 							onFiltersChange={onFiltersChange}
 							selectedCount={selectedCount}
 							totalCount={totalCount}
-							allSelected={selectableCount > 0 && selectedCount === selectableCount}
+							allSelected={
+								selectableCount > 0 && selectedCount === selectableCount
+							}
 							onSelectAll={onSelectAll}
 							supportedTypes={supportedTypes}
 						/>
@@ -650,14 +666,13 @@ function ApprovalInboxRequestsCard({
 	);
 }
 
-
-
 /**
  * The cover start summary links to a "Covering for" section (#1018). Sections
  * arrive after the page loaded, so the linked one scrolls into view on mount.
  */
 function scrollToLinkedSection(node: HTMLDivElement | null) {
-	if (node && window.location.hash === `#${node.id}`) node.scrollIntoView({ block: "start" });
+	if (node && window.location.hash === `#${node.id}`)
+		node.scrollIntoView({ block: "start" });
 }
 
 function BulkRejectPanel({
@@ -760,8 +775,15 @@ type ApprovalInboxPanelsProps = {
 	};
 	sprintItems: ApprovalInboxItem[];
 	onBulkApprove: () => void;
-	onFastLaneApprove: (approvalIds: string[]) => Promise<void>;
-	onFastLaneReject: (approvalIds: string[], reason: string) => Promise<void>;
+	onFastLaneApprove: (
+		approvalIds: string[],
+		review: ApprovalFastLaneReview,
+	) => Promise<void>;
+	onFastLaneReject: (
+		approvalIds: string[],
+		reason: string,
+		review: ApprovalFastLaneReview,
+	) => Promise<void>;
 	onSelectAll: (checked: boolean) => void;
 	onSelectItem: (id: string, checked: boolean) => void;
 	onFetchNextPage: () => void;
@@ -1038,12 +1060,18 @@ function ApprovalInboxContent({
 		bulkActionInFlightRef.current = false;
 	};
 
-	const handleFastLaneApprove = async (approvalIds: string[]) => {
+	const handleFastLaneApprove = async (
+		approvalIds: string[],
+		fastLane: ApprovalFastLaneReview,
+	) => {
 		if (approvalIds.length === 0 || bulkActionInFlightRef.current) return;
 
 		bulkActionInFlightRef.current = true;
 		try {
-			const result = await bulkApproveMutation.mutateAsync(approvalIds);
+			const result = await bulkApproveMutation.mutateAsync({
+				approvalIds,
+				fastLane,
+			});
 			handleBulkDecisionToasts(t, result, "approve");
 
 			dispatch({ type: "selectionCleared", itemIdsKey });
@@ -1068,6 +1096,7 @@ function ApprovalInboxContent({
 	const handleFastLaneReject = async (
 		approvalIds: string[],
 		reason: string,
+		fastLane: ApprovalFastLaneReview,
 	) => {
 		const trimmedReason = reason.trim();
 		if (
@@ -1082,6 +1111,7 @@ function ApprovalInboxContent({
 			const result = await bulkRejectMutation.mutateAsync({
 				approvalIds,
 				reason: trimmedReason,
+				fastLane,
 			});
 			handleBulkDecisionToasts(t, result, "reject");
 

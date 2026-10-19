@@ -994,3 +994,24 @@ describe("getApprovalInboxListFromSources", () => {
 		});
 	});
 });
+it.each([["absence_entry", "absence"], ["time_entry", "time_correction"], ["absence_change_request", "absence_change"]] as const)("evaluates current canonical %s risk before pagination", async (type, kind) => {
+ const make = (id: string) => ({ ...canonicalItem(id, "2026-05-31T09:00:00.000Z", "normal", "medium"), decisionTarget: { workflowKind: kind }, item: { ...canonicalItem(id, "2026-05-31T09:00:00.000Z", "normal", "medium").item, type } });
+ const rows = [make("first"), make("high"), make("last")];
+ const read = { type, workflowTypes: [kind], load: async (input: { limit?: number; evaluateBeforePagination?: boolean }) => input.evaluateBeforePagination ? rows : rows.slice(0, input.limit), count: async () => rows.length };
+ const input = { sources: [], canonicalReads: [read], params: { organizationId: "org-1", approverId: "manager-1", limit: 1 }, now: new Date("2026-05-31T10:00:00Z"), loadTriageEvidence: async (target: { context: { organizationId: string; requestId: string; entityId: string; revision: string | null; scope: string } }) => { const context = { ...target.context, revision: "submitted-1" }; return { context, evidence: [{ check: "payroll" as const, state: "clear" as const, validity: "current" as const, context, payrollPeriod: { startDate: "2026-05-01", endDate: "2026-05-31" } }, { check: kind === "time_correction" ? "correction" as const : "coverage" as const, state: target.context.requestId === "high" ? "finding" as const : "clear" as const, validity: "current" as const, context, reason: kind === "time_correction" ? "time_entry_deleted" : "staffing_shortfall" }] }; } };
+ const first = await getApprovalInboxListFromSources(input);
+ expect(first.items.map(row => row.id)).toEqual(["high"]);
+ const second = await getApprovalInboxListFromSources({ ...input, params: { ...input.params, cursor: first.nextCursor ?? undefined } });
+ expect(second.items.map(row => row.id)).toEqual(["first"]);
+ const third = await getApprovalInboxListFromSources({ ...input, params: { ...input.params, cursor: second.nextCursor ?? undefined } });
+ expect(third.items.map(row => row.id)).toEqual(["last"]);
+ expect(third.hasMore).toBe(false);
+});
+it("does not omit mixed-kind rows sharing an identity suffix at a page boundary", async () => {
+ const sources = [source("absence_entry", [item({ id: "same-id" })]), source("travel_expense_claim", [item({ id: "same-id", approvalType: "travel_expense_claim" })])];
+ const input = { sources, params: { organizationId: "org-1", approverId: "manager-1", limit: 1 }, now: new Date("2026-05-31T10:00:00Z") };
+ const first = await getApprovalInboxListFromSources(input);
+ const second = await getApprovalInboxListFromSources({ ...input, params: { ...input.params, cursor: first.nextCursor ?? undefined } });
+ expect([first.items[0]?.type, second.items[0]?.type]).toEqual(["absence_entry", "travel_expense_claim"]);
+ expect(second.hasMore).toBe(false);
+});

@@ -1,8 +1,10 @@
-import { and, eq, type SQL, sql } from "drizzle-orm";
+import { and, desc, eq, lte, or, type SQL, sql } from "drizzle-orm";
+import { Temporal } from "temporal-polyfill";
 import type { db as rootDatabase } from "@/db";
 import { member } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
-import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
+import { employeeDeparture } from "@/db/schema/employee-lifecycle";
+import { dateFromInstant, type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 
 export type EmployeeOrganizationAccess =
 	| { allowed: true; employeeId: string | null }
@@ -25,6 +27,68 @@ export function employeeHasOrganizationAccess(now?: Instant): SQL<boolean> {
 function dueDepartureDeniesAccess(now?: Instant): SQL {
 	const at = now ? sql`${dateFromInstant(now)}::timestamptz` : sql`now()`;
 	return sql`employee_departure_denies_access("employee"."organization_id", "employee"."id", ${at})`;
+}
+
+/** The departure that ended an employment period's access, as `departureEndingEmploymentPeriod` reads it. */
+export type EndingDeparture = {
+	cutoff: Instant;
+	/** The last working day in the departure's zone (an offboard-now departure's own day). */
+	lastWorkingDay: Temporal.PlainDate;
+};
+
+/**
+ * The departure that ends an employment period's access at `now`, if any: an
+ * effective departure of that period, or a pending one past its cutoff that
+ * would take effect. The pending case is the live rule
+ * `employeeHasOrganizationAccess` enforces (`employee_departure_denies_access`
+ * evaluates `employee_departure_blocked_reason` now, not the stored column), so
+ * what managers are shown agrees with what kiosks and sign-in accept. Read
+ * within the organization only.
+ */
+export async function departureEndingEmploymentPeriod(
+	database: Pick<typeof rootDatabase, "select">,
+	input: { organizationId: string; employeeId: string; employmentPeriodId: string; now: Instant },
+): Promise<EndingDeparture | null> {
+	const at = dateFromInstant(input.now);
+	const [departure] = await database
+		.select({
+			cutoffAt: employeeDeparture.cutoffAt,
+			lastWorkingDay: employeeDeparture.lastWorkingDay,
+			timezone: employeeDeparture.timezone,
+		})
+		.from(employeeDeparture)
+		.innerJoin(
+			employee,
+			and(
+				eq(employee.id, employeeDeparture.employeeId),
+				eq(employee.organizationId, employeeDeparture.organizationId),
+			),
+		)
+		.where(
+			and(
+				eq(employeeDeparture.organizationId, input.organizationId),
+				eq(employeeDeparture.employeeId, input.employeeId),
+				eq(employeeDeparture.employmentPeriodId, input.employmentPeriodId),
+				lte(employeeDeparture.cutoffAt, at),
+				or(
+					eq(employeeDeparture.status, "effective"),
+					and(
+						eq(employeeDeparture.status, "pending"),
+						sql`employee_departure_blocked_reason(${employeeDeparture.organizationId}, ${employee.userId}, ${employeeDeparture.createdBy}) IS NULL`,
+					),
+				),
+			),
+		)
+		.orderBy(desc(employeeDeparture.cutoffAt))
+		.limit(1);
+	if (!departure) return null;
+	const cutoff = instantFromDate(departure.cutoffAt);
+	return {
+		cutoff,
+		lastWorkingDay: departure.lastWorkingDay
+			? Temporal.PlainDate.from(departure.lastWorkingDay)
+			: cutoff.toZonedDateTimeISO(departure.timezone).toPlainDate(),
+	};
 }
 
 /**

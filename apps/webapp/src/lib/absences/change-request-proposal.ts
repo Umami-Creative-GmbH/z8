@@ -1,15 +1,20 @@
 import { and, eq, gte, lte, ne, or } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
-import { organization } from "@/db/auth-schema";
 import { absenceCategory, absenceEntry, timeRecord } from "@/db/schema";
-import { dateFromInstant, type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
-import { assertAbsenceDaysOpen } from "@/lib/time-tracking/closed-months/store";
-import { type AbsenceDayRange, clipAbsenceDayRange, refusalForAbsenceDays } from "./absence-days";
 import {
-	assertHistoricalVacationNotOverlapping,
-	historicalVacationRefusalOf,
-} from "./historical-vacation";
-import { getAbsenceDays } from "./absence-days-resolver";
+	dateFromInstant,
+	type Instant,
+	instantFromDate,
+} from "@/lib/datetime/temporal-core";
+import { assertAbsenceDaysOpen } from "@/lib/time-tracking/closed-months/store";
+import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
+import {
+	type AbsenceDayRange,
+	absenceDaysByYear,
+	countAbsenceDays,
+	refusalForAbsenceDays,
+} from "./absence-days";
+import { loadWorkingDays } from "./absence-days-resolver";
 import { hasExactAbsenceHours } from "./change-request-coverage";
 import type { AbsenceChangeDatabase } from "./change-request-store";
 import {
@@ -17,7 +22,12 @@ import {
 	type AbsenceChangeOriginal,
 	type AbsenceChangeProposal,
 } from "./change-request-types";
+import {
+	assertHistoricalVacationNotOverlapping,
+	historicalVacationRefusalOf,
+} from "./historical-vacation";
 import { getBlockingOverlapMessage } from "./sick-vacation-override";
+import { vacationConfigurationProblem } from "./types";
 import { loadVacationBalances } from "./vacation-balance-store";
 
 export async function loadCanonicalCoverage(
@@ -59,7 +69,9 @@ export function resolveProposedCoverage(
 ): AbsenceChangeProposal {
 	const proposed = { ...range };
 	const originalStart = original.canonical
-		? Temporal.Instant.from(original.canonical.startAt).toZonedDateTimeISO("UTC")
+		? Temporal.Instant.from(original.canonical.startAt).toZonedDateTimeISO(
+				"UTC",
+			)
 		: null;
 	const originalEnd = original.canonical
 		? Temporal.Instant.from(original.canonical.endAt).toZonedDateTimeISO("UTC")
@@ -74,7 +86,9 @@ export function resolveProposedCoverage(
 		proposed.startPeriod = original.startPeriod;
 		proposed.endPeriod = original.endPeriod;
 		if (originalStart && originalEnd) {
-			start = Temporal.PlainDate.from(range.startDate).toPlainDateTime(originalStart.toPlainTime());
+			start = Temporal.PlainDate.from(range.startDate).toPlainDateTime(
+				originalStart.toPlainTime(),
+			);
 			const overnightDays = Temporal.PlainDate.from(original.endDate).until(
 				originalEnd.toPlainDate(),
 			).days;
@@ -97,7 +111,10 @@ export function resolveProposedCoverage(
 		}
 	}
 	if (Temporal.PlainDateTime.compare(start, end) >= 0)
-		throw new AbsenceChangeError("invalid_dates", "The absence must end after it starts.");
+		throw new AbsenceChangeError(
+			"invalid_dates",
+			"The absence must end after it starts.",
+		);
 	const canonical = {
 		startAt: start.toZonedDateTime("UTC").toInstant().toString(),
 		endAt: end.toZonedDateTime("UTC").toInstant().toString(),
@@ -107,7 +124,8 @@ export function resolveProposedCoverage(
 		proposed.endDate === original.endDate &&
 		proposed.startPeriod === original.startPeriod &&
 		proposed.endPeriod === original.endPeriod &&
-		(!original.canonical || JSON.stringify(canonical) === JSON.stringify(original.canonical))
+		(!original.canonical ||
+			JSON.stringify(canonical) === JSON.stringify(original.canonical))
 	)
 		throw new AbsenceChangeError(
 			"unchanged",
@@ -151,7 +169,10 @@ export async function validateAbsenceProposal(
 	await assertAbsenceDaysOpen(database, {
 		organizationId: input.organizationId,
 		employeeId: input.employeeId,
-		days: [coverageDays(input.original), ...(input.proposed ? [coverageDays(input.proposed)] : [])],
+		days: [
+			coverageDays(input.original),
+			...(input.proposed ? [coverageDays(input.proposed)] : []),
+		],
 	});
 	if (!input.proposed) return [];
 	const [category] = await database
@@ -164,7 +185,10 @@ export async function validateAbsenceProposal(
 			),
 		);
 	if (!category?.isActive)
-		throw new AbsenceChangeError("category_unavailable", "This absence category is unavailable.");
+		throw new AbsenceChangeError(
+			"category_unavailable",
+			"This absence category is unavailable.",
+		);
 	const proposed = input.proposed;
 	try {
 		await assertHistoricalVacationNotOverlapping(database, {
@@ -210,16 +234,28 @@ export async function validateAbsenceProposal(
 				lte(absenceEntry.startDate, coverageDays(proposed).endDate),
 				gte(
 					absenceEntry.endDate,
-					Temporal.PlainDate.from(proposed.startDate).subtract({ days: 1 }).toString(),
+					Temporal.PlainDate.from(proposed.startDate)
+						.subtract({ days: 1 })
+						.toString(),
 				),
-				or(eq(absenceEntry.status, "pending"), eq(absenceEntry.status, "approved")),
+				or(
+					eq(absenceEntry.status, "pending"),
+					eq(absenceEntry.status, "approved"),
+				),
 			),
 		)
 		.for("update", { of: absenceEntry });
 	const displaced: AbsenceChangeProposal["displacedVacations"] = [];
-	for (const { absence, category: existingCategory, canonicalStart, canonicalEnd } of overlaps) {
+	for (const {
+		absence,
+		category: existingCategory,
+		canonicalStart,
+		canonicalEnd,
+	} of overlaps) {
 		if (absence.status !== "pending" && absence.status !== "approved") continue;
-		const bounds = canonicalStart ? { startAt: canonicalStart, endAt: canonicalEnd } : null;
+		const bounds = canonicalStart
+			? { startAt: canonicalStart, endAt: canonicalEnd }
+			: null;
 		const existingDays = bounds?.endAt
 			? coverageDays({
 					...absence,
@@ -264,46 +300,66 @@ export async function validateAbsenceProposal(
 			days: displaced,
 		});
 	if (category.countsAgainstVacation) {
-		const proposedDays = await getAbsenceDays(database, {
-			...input,
-			absence: proposed,
+		// One read of the working days over both ranges serves the whole check.
+		const isWorkingDay = await loadWorkingDays(database, {
+			organizationId: input.organizationId,
+			employeeId: input.employeeId,
+			startDate:
+				input.original.startDate < proposed.startDate
+					? input.original.startDate
+					: proposed.startDate,
+			endDate:
+				input.original.endDate > proposed.endDate
+					? input.original.endDate
+					: proposed.endDate,
 		});
+		const proposedDays = countAbsenceDays(proposed, isWorkingDay);
 		if (
 			refusalForAbsenceDays({
 				countsAgainstVacation: true,
 				absenceDays: proposedDays,
 			})
 		)
-			throw new AbsenceChangeError("no_working_days", "This range contains no working days.");
-		const [org] = await database
-			.select({ timezone: organization.timezone })
-			.from(organization)
-			.where(eq(organization.id, input.organizationId));
-		for (
-			let year = Temporal.PlainDate.from(proposed.startDate).year;
-			year <= Temporal.PlainDate.from(proposed.endDate).year;
-			year++
-		) {
-			const window = { startDate: `${year}-01-01`, endDate: `${year}-12-31` };
-			const oldRange = clipAbsenceDayRange(input.original, window);
-			const newRange = clipAbsenceDayRange(proposed, window);
-			if (!newRange) continue;
-			const oldDays = oldRange
-				? await getAbsenceDays(database, { ...input, absence: oldRange })
-				: 0;
-			const newDays = await getAbsenceDays(database, {
-				...input,
-				absence: newRange,
-			});
-			const { balances } = await loadVacationBalances(database, {
-				organizationId: input.organizationId,
-				employeeIds: [input.employeeId],
-				year,
-				timezone: org?.timezone ?? "UTC",
-				currentDate: dateFromInstant(input.at),
-			});
+			throw new AbsenceChangeError(
+				"no_working_days",
+				"This range contains no working days.",
+			);
+		const timezone = await loadOrganizationTimezone(
+			database,
+			input.organizationId,
+		);
+		const originalDaysByYear = new Map(
+			absenceDaysByYear(input.original, isWorkingDay).map((charge) => [
+				charge.year,
+				charge.absenceDays,
+			]),
+		);
+		for (const { year, absenceDays: newDays } of absenceDaysByYear(
+			proposed,
+			isWorkingDay,
+		)) {
+			const oldDays = originalDaysByYear.get(year) ?? 0;
+			const { balances, configurations } = await loadVacationBalances(
+				database,
+				{
+					organizationId: input.organizationId,
+					employeeIds: [input.employeeId],
+					year,
+					timezone,
+					currentDate: dateFromInstant(input.at),
+				},
+			);
 			const balance = balances.get(input.employeeId);
-			if (newDays > oldDays && (!balance || newDays - oldDays > balance.remainingDays))
+			if (newDays > oldDays && !balance)
+				throw new AbsenceChangeError(
+					"policy_configuration",
+					vacationConfigurationProblem(configurations.get(input.employeeId)),
+				);
+			if (
+				newDays > oldDays &&
+				balance &&
+				newDays - oldDays > balance.remainingDays
+			)
 				throw new AbsenceChangeError(
 					"insufficient_balance",
 					"The proposed dates exceed your available vacation balance.",

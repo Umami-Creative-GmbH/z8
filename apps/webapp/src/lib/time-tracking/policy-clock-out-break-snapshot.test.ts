@@ -377,7 +377,7 @@ describe("resolvePolicyClockOutBreakSnapshotInTransaction", () => {
 					'assignment.organization_id = employee_row."organizationId"',
 				);
 				expect(compiled.sql).toContain("assignment.effective_from <=");
-				expect(compiled.sql).toContain("assignment.effective_until >=");
+				expect(compiled.sql).toContain("assignment.effective_until >");
 				expect(compiled.sql.indexOf("assignment.priority desc")).toBeLessThan(
 					compiled.sql.indexOf("case assignment.assignment_type"),
 				);

@@ -867,6 +867,7 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 						sla: buildSLAInfo(slaDeadline),
 						display: review.display,
 						isActionable: review.isActionable,
+						triage: { requestKind: review.kind === "time_correction" ? "time_correction" : "other" },
 						warning: review.warning,
 					};
 				},
@@ -1193,6 +1194,7 @@ export const TimeCorrectionHandler: ApprovalTypeHandler<WorkPeriodWithRelations>
 						sla: buildSLAInfo(slaDeadline),
 						display: review.display,
 						isActionable: review.isActionable,
+						triage: { requestKind: review.kind === "time_correction" ? "time_correction" : "other" },
 						warning: review.warning,
 					},
 					entity: periodWithReview,

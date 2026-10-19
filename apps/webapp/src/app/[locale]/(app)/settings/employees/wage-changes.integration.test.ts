@@ -4,15 +4,9 @@
  * only the request/session, SSO session store, Next cache and logger are
  * replaced.
  */
-import {
-	afterAll,
-	beforeAll,
-	beforeEach,
-	describe,
-	expect,
-	it,
-	vi,
-} from "vitest";
+import { Temporal } from "temporal-polyfill";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { systemClock } from "@/lib/datetime/temporal-core";
 import {
 	createLifecycleDatabaseFixture,
 	type LifecycleDatabaseFixture,
@@ -78,11 +72,11 @@ vi.mock("@/lib/logger", () => ({
 	}),
 }));
 
-const { changeEmployeeWageAction } = await import(
+const { changeEmployeeWageAction, cancelEmployeeEmploymentHistoryAction } = await import(
 	"./employment-history-actions"
 );
 const { updateEmployeeAction } = await import("./employee-mutations.actions");
-const { getEmployeeAction } = await import("./employee-queries.actions");
+const { getEmployeeAction, listEmployeesAction } = await import("./employee-queries.actions");
 
 describe("wage changes on PostgreSQL", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
@@ -138,11 +132,11 @@ describe("wage changes on PostgreSQL", () => {
 		);
 	});
 
+	afterEach(() => vi.restoreAllMocks());
 	beforeEach(async () => {
-		await fixture.pool.query(
-			"delete from employee_employment_history where employee_id = $1",
-			[fixture.employeeId],
-		);
+		await fixture.pool.query("delete from employee_employment_history where employee_id = $1", [
+			fixture.employeeId,
+		]);
 		await fixture.pool.query(
 			"update employee set contract_type = 'hourly', position = null where id = $1",
 			[fixture.employeeId],
@@ -283,12 +277,28 @@ describe("wage changes on PostgreSQL", () => {
 		expect(await terms()).toHaveLength(1);
 	});
 
+	it.each(["owner", "manager"])(
+		"shows confirmed contract types in the %s's employee directory",
+		async (actor) => {
+			actAs(actor === "owner" ? fixture.ownerUserId : managerUserId);
+			await fixture.pool.query("update employee set contract_type = 'fixed' where id = $1", [
+				fixture.employeeId,
+			]);
+
+			const result = await listEmployeesAction({ limit: 50, status: "active" });
+			expect(result).toMatchObject({ success: true });
+			if (!result.success) throw new Error(result.error);
+			expect(result.data.employees.find((row) => row.id === fixture.employeeId)?.contractType).toBe(
+				"hourly",
+			);
+		},
+	);
+
 	it("reads the contract type of today's confirmed terms for the edit form", async () => {
 		actAs(managerUserId);
-		await fixture.pool.query(
-			"update employee set contract_type = 'fixed' where id = $1",
-			[fixture.employeeId],
-		);
+		await fixture.pool.query("update employee set contract_type = 'fixed' where id = $1", [
+			fixture.employeeId,
+		]);
 
 		const result = await getEmployeeAction(fixture.employeeId);
 
@@ -296,6 +306,63 @@ describe("wage changes on PostgreSQL", () => {
 			success: true,
 			data: { contractTypeToday: "hourly" },
 		});
+	});
+
+	it("keeps cancelled future terms out of later directory reads", async () => {
+		actAs(fixture.ownerUserId);
+		const future = systemClock
+			.nowInstant()
+			.toZonedDateTimeISO("UTC")
+			.toPlainDate()
+			.add({ days: 2 });
+		await fixture.pool.query("update employee set contract_type = 'fixed' where id = $1", [
+			fixture.employeeId,
+		]);
+		await fixture.pool.query(
+			"update employee_employment_history set valid_until = $2 where employee_id = $1",
+			[fixture.employeeId, future.toString()],
+		);
+		const {
+			rows: [change],
+		} = await fixture.pool.query<{ id: string }>(
+			`insert into employee_employment_history
+			 (employee_id, organization_id, employment_period_id, valid_from, contract_type,
+			  weekly_contract_minutes, review_state, created_by, updated_at)
+			 values ($1, $2, $3, $4, 'fixed', 2400, 'confirmed', $5, now()) returning id`,
+			[
+				fixture.employeeId,
+				fixture.organizationId,
+				fixture.employmentPeriodId,
+				future.toString(),
+				fixture.ownerUserId,
+			],
+		);
+		expect(
+			await cancelEmployeeEmploymentHistoryAction(fixture.employeeId, change.id),
+		).toMatchObject({ success: true });
+		vi.spyOn(Temporal.Now, "instant").mockReturnValue(future.toZonedDateTime("UTC").toInstant());
+		const result = await listEmployeesAction({ limit: 50 });
+		expect(result).toMatchObject({ success: true });
+		if (!result.success) throw new Error(result.error);
+		expect(result.data.employees.find((row) => row.id === fixture.employeeId)?.contractType).toBe(
+			"hourly",
+		);
+	});
+
+	it("preserves the terms-only detail's missing state while the directory retains its fallback", async () => {
+		actAs(fixture.ownerUserId);
+		await fixture.pool.query("delete from employee_employment_history where employee_id = $1", [
+			fixture.employeeId,
+		]);
+		expect(await getEmployeeAction(fixture.employeeId)).toMatchObject({
+			success: true,
+			data: { contractTypeToday: null },
+		});
+		const result = await listEmployeesAction({ limit: 50 });
+		if (!result.success) throw new Error(result.error);
+		expect(result.data.employees.find((row) => row.id === fixture.employeeId)?.contractType).toBe(
+			"hourly",
+		);
 	});
 
 	it("leaves every wage and contract field unchanged on an org admin's save", async () => {

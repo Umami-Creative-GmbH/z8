@@ -119,7 +119,6 @@ const NESTED_NAMESPACE_PREFIXES = [
 	["settings.employeeGroups.", "settings/people"],
 	["settings.managerAssignment.", "settings/people"],
 	["settings.skills.", "settings/people"],
-	["settings.rateHistory.", "settings/people"],
 	["settings.personnelFiles.", "settings/people"],
 	["settings.telegram.", "settings/integrations"],
 	["settings.slack.", "settings/integrations"],

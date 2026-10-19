@@ -71,6 +71,9 @@ export const queryKeys = {
 		all: ["absence-plan-preview"] as const,
 		detail: <T extends object>(orgId: string, input: T) =>
 			["absence-plan-preview", orgId, input] as const,
+		/** One vacation comparison option (#1342), keyed by context and input. */
+		comparison: <T extends object>(orgId: string, userId: string, input: T) =>
+			["absence-plan-preview", orgId, "comparison", userId, input] as const,
 	},
 
 	// Deputies on absences (#1011)
@@ -162,6 +165,10 @@ export const queryKeys = {
 
 	// Payroll workspace
 	payroll: {
+		baselines: (request: { startDate: string; endDate: string }) =>
+			["payroll", "baselines", request.startDate, request.endDate] as const,
+		baselineDetails: () => ["payroll", "baseline"] as const,
+		baseline: (baselineId: string) => ["payroll", "baseline", baselineId] as const,
 		/** How many employees an export of the period would cover (#1001). */
 		exportScope: (request: { startDate: string; endDate: string }) =>
 			["payroll", "export-scope", request.startDate, request.endDate] as const,
@@ -187,6 +194,15 @@ export const queryKeys = {
 		/** What a close of the month for the scope would warn about (#1065). */
 		closeWarnings: (month: string, scope: string) =>
 			["closed-months", "close-warnings", month, scope] as const,
+	},
+
+	// Period submissions (#1348)
+	periodSubmissions: {
+		/** Every period submission read; invalidate it after a change that can affect readiness. */
+		all: ["period-submissions"] as const,
+		/** The employee's period view with readiness, for the organization and employee shown. */
+		readiness: (orgId: string, employeeId: string) =>
+			["period-submissions", "readiness", orgId, employeeId] as const,
 	},
 
 	// Employees
@@ -253,6 +269,10 @@ export const queryKeys = {
 		/** The employee skills a certificate may name (#1144). */
 		certificateSkills: (employeeId: string) =>
 			["personnel-file", "certificate-skills", employeeId] as const,
+		/** Document requests (#1307): all of them, and one employee's in the officer area. */
+		documentRequestsAll: () => ["personnel-file", "document-requests"] as const,
+		employeeDocumentRequests: (employeeId: string) =>
+			["personnel-file", "document-requests", "employee", employeeId] as const,
 	},
 
 	// Employee clock statuses

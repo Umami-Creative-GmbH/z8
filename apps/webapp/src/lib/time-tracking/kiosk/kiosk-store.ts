@@ -43,6 +43,10 @@ export type KioskListing = {
 	boardEnabled: boolean;
 	/** The stored switch; it takes effect only while the organization is adopted. */
 	offlineModeEnabled: boolean;
+	/** Whether badges read by an attached QR scanner identify employees (#1366). */
+	badgeScannerEnabled: boolean;
+	/** Whether badges read with the kiosk's own camera identify employees (#1367). */
+	badgeCameraEnabled: boolean;
 	status: KioskStatus;
 	pairingCodeExpiresAt: Date | null;
 	pairedAt: Date | null;
@@ -120,6 +124,8 @@ export async function listKiosks(
 			timezone: kiosk.timezone,
 			boardEnabled: kiosk.boardEnabled,
 			offlineModeEnabled: kiosk.offlineModeEnabled,
+			badgeScannerEnabled: kiosk.badgeScannerEnabled,
+			badgeCameraEnabled: kiosk.badgeCameraEnabled,
 			hasToken: kiosk.tokenHash,
 			pairingCodeExpiresAt: kiosk.pairingCodeExpiresAt,
 			pairedAt: kiosk.pairedAt,
@@ -175,7 +181,15 @@ export async function createKiosk(
 		actorUserId: input.actorUserId,
 		changes: {
 			from: null,
-			to: { name, locationId: site.id, timezone, boardEnabled: false, offlineModeEnabled: false },
+			to: {
+				name,
+				locationId: site.id,
+				timezone,
+				boardEnabled: false,
+				offlineModeEnabled: false,
+				badgeScannerEnabled: false,
+				badgeCameraEnabled: false,
+			},
 		},
 	});
 
@@ -191,6 +205,8 @@ async function lockManagedKiosk(tx: KioskClient, organizationId: string, kioskId
 			timezone: kiosk.timezone,
 			boardEnabled: kiosk.boardEnabled,
 			offlineModeEnabled: kiosk.offlineModeEnabled,
+			badgeScannerEnabled: kiosk.badgeScannerEnabled,
+			badgeCameraEnabled: kiosk.badgeCameraEnabled,
 			tokenHash: kiosk.tokenHash,
 			revokedAt: kiosk.revokedAt,
 		})
@@ -209,12 +225,15 @@ export type KioskConfigurationChange = Partial<{
 	timezone: unknown;
 	boardEnabled: boolean;
 	offlineModeEnabled: boolean;
+	badgeScannerEnabled: boolean;
+	badgeCameraEnabled: boolean;
 }>;
 
 /**
  * Renames a kiosk, moves it to another location of the organization, changes
- * its zone, board or offline mode. Offline mode can be switched on only while
- * the organization is adopted (`append` admission, ADR 0002); switching it off
+ * its zone, board, offline mode, attached-scanner badge input (#1366) or camera
+ * badge input (#1367), each switch on its own. Offline mode can be switched on
+ * only while the organization is adopted (`append` admission, ADR 0002); switching it off
  * is always allowed, also after a pilot rollback returned the organization to
  * `legacy`.
  */
@@ -238,6 +257,14 @@ export async function updateKiosk(
 			change.offlineModeEnabled === undefined
 				? current.offlineModeEnabled
 				: change.offlineModeEnabled,
+		badgeScannerEnabled:
+			change.badgeScannerEnabled === undefined
+				? current.badgeScannerEnabled
+				: change.badgeScannerEnabled,
+		badgeCameraEnabled:
+			change.badgeCameraEnabled === undefined
+				? current.badgeCameraEnabled
+				: change.badgeCameraEnabled,
 	};
 	if (
 		next.offlineModeEnabled &&
@@ -257,6 +284,8 @@ export async function updateKiosk(
 		"locationId",
 		"boardEnabled",
 		"offlineModeEnabled",
+		"badgeScannerEnabled",
+		"badgeCameraEnabled",
 	] as const) {
 		if (next[key] !== current[key]) {
 			from[key] = current[key];
@@ -382,7 +411,7 @@ export async function readKioskDeviceInfo(
 	client: KioskClient,
 	authenticated: PairedKiosk,
 ): Promise<KioskDeviceInfo> {
-	const [[site], offlineMode] = await Promise.all([
+	const [[site], offlineMode, badgeInputs] = await Promise.all([
 		client
 			.select({ name: location.name, language: organizationNotificationSettings.defaultLanguage })
 			.from(location)
@@ -401,6 +430,10 @@ export async function readKioskDeviceInfo(
 			organizationId: authenticated.organizationId,
 			kioskId: authenticated.kioskId,
 		}),
+		readKioskBadgeInputs(client, {
+			organizationId: authenticated.organizationId,
+			kioskId: authenticated.kioskId,
+		}),
 	]);
 	return {
 		id: authenticated.kioskId,
@@ -411,6 +444,29 @@ export async function readKioskDeviceInfo(
 		boardEnabled: authenticated.boardEnabled,
 		language: kioskLanguage(site?.language),
 		offlineMode,
+		...badgeInputs,
+	};
+}
+
+/**
+ * A kiosk's badge input switches, read afresh: the attached QR scanner (#1366)
+ * and the kiosk's camera (#1367), each on its own (`kioskAcceptsBadgeInput`). A
+ * kiosk of another organization reads as both off. They grant nothing on their
+ * own; Clocking checks the input that read a badge again inside each badge
+ * action's work transaction.
+ */
+export async function readKioskBadgeInputs(
+	client: Pick<KioskClient, "select">,
+	input: { organizationId: string; kioskId: string },
+): Promise<{ badgeScannerEnabled: boolean; badgeCameraEnabled: boolean }> {
+	const [found] = await client
+		.select({ scanner: kiosk.badgeScannerEnabled, camera: kiosk.badgeCameraEnabled })
+		.from(kiosk)
+		.where(and(eq(kiosk.organizationId, input.organizationId), eq(kiosk.id, input.kioskId)))
+		.limit(1);
+	return {
+		badgeScannerEnabled: found?.scanner === true,
+		badgeCameraEnabled: found?.camera === true,
 	};
 }
 

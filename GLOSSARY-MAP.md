@@ -45,5 +45,5 @@
 - **Time Tracking → Travel Expenses**: distance driven in an own vehicle can pre-fill a mileage item; only the mileage item is reimbursed, after its own submission and approval
 - **Every context → Notifications**: a context decides who must hear about one of its events and supplies the text as translation keys with English defaults; Notifications picks the recipient language and delivers over each channel
 - **Scheduled Exports → Notifications**: an approved external recipient has no Z8 user, so their emails use the organization's default language
-- **Personnel File → Scheduling**: a skill certificate names the employee skill it proves; Scheduling knows only that one is on file, and personnel file access decides who opens it
+- **Personnel File → Scheduling**: a skill certificate names the employee skill it proves; Scheduling knows only that one is on file, and personnel file access decides who opens it; accepting a document request that renews a skill certificate links its replacement to the same employee skill
 - **Scheduling → Time Tracking**: a shift is planned work and a work period is recorded work; a staffing suggestion reads a candidate's work periods to judge compliance and never writes them

@@ -115,6 +115,8 @@ describe("reviewed bulk employment corrections through public upload actions", (
 		await fixture?.close();
 		vi.useRealTimers();
 	});
+	// Both employees work only Mondays, so their allowances convert to one fifth of the five-day
+	// reference (Absences ADR 0003): 30 days become 6, and the May joiners' 20 become 4.
 	const csv = () =>
 		"employee_number,employment_start_date,reason\nQA001,2019-01-01,Signed employment record\nQA002,2021-02-01,Signed joining record\n";
 	async function vacation() {
@@ -127,9 +129,100 @@ describe("reviewed bulk employment corrections through public upload actions", (
 			})
 		).balances;
 	}
+	it("refreshes assigned accrual and annual employees together through a reviewed upload", async () => {
+		vi.setSystemTime(new Date("2027-06-01T10:00:00Z"));
+		const { vacationAllowance, vacationPolicyAssignment } = await import(
+			"@/db/schema"
+		);
+		const [policy] = await fixture.db
+			.insert(vacationAllowance)
+			.values({
+				organizationId: fixture.organizationId,
+				name: "Assigned monthly",
+				startDate: "2027-01-01",
+				defaultAnnualDays: "24",
+				statutoryMinimumDays: "20",
+				accrualType: "monthly",
+				createdBy: fixture.ownerUserId,
+			})
+			.returning();
+		await fixture.db.insert(vacationPolicyAssignment).values({
+			organizationId: fixture.organizationId,
+			policyId: policy.id,
+			assignmentType: "employee",
+			employeeId: fixture.employeeId,
+			effectiveStartDate: "2027-01-01",
+			createdBy: fixture.ownerUserId,
+		});
+		await fixture.pool.query(
+			"update vacation_policy_rollout set calculations_enabled=true where organization_id=$1",
+			[fixture.organizationId],
+		);
+		const review = await readyUpload();
+		expect(
+			review.rows[0].impact?.vacation.find((row) => row.year === 2027)?.after,
+		).toMatchObject({ totalDays: 2.4 });
+		expect(
+			review.rows[1].impact?.vacation.find((row) => row.year === 2027)?.after,
+		).toMatchObject({ totalDays: 6 });
+		expect(
+			await actions.commitEmploymentDateUploadAction({
+				csv: csv(),
+				fingerprint: review.fingerprint,
+			}),
+		).toMatchObject({
+			success: true,
+			data: { status: "committed", corrected: 2 },
+		});
+		const result = await loadVacationBalances(fixture.db, {
+			organizationId: fixture.organizationId,
+			employeeIds: [fixture.employeeId, secondId],
+			year: 2027,
+			timezone: "Europe/Berlin",
+		});
+		expect(result.balances.get(fixture.employeeId)).toMatchObject({
+			totalDays: 2.4,
+		});
+		expect(result.balances.get(secondId)).toMatchObject({ totalDays: 6 });
+	});
+	it("blocks the entire reviewed upload when vacation policy coverage is missing", async () => {
+		vi.setSystemTime(new Date("2027-06-01T10:00:00Z"));
+		const prior = await readyUpload();
+		await fixture.pool.query(
+			"update vacation_allowance set is_active=false where organization_id=$1",
+			[fixture.organizationId],
+		);
+		await fixture.pool.query(
+			"update vacation_policy_rollout set calculations_enabled=true where organization_id=$1",
+			[fixture.organizationId],
+		);
+		const review = await previewUpload();
+		expect(review).toMatchObject({
+			status: "has_errors",
+			rows: [
+				{
+					errors: expect.arrayContaining([
+						expect.objectContaining({ code: "vacation_policy_configuration" }),
+					]),
+				},
+				{
+					errors: expect.arrayContaining([
+						expect.objectContaining({ code: "vacation_policy_configuration" }),
+					]),
+				},
+			],
+		});
+		expect(
+			await actions.commitEmploymentDateUploadAction({
+				csv: csv(),
+				fingerprint: prior.fingerprint,
+			}),
+		).toMatchObject({ success: true, data: { status: "has_errors" } });
+		await assertOriginalDates();
+	});
 	it("reviews two supplied historical joining dates then restores their allowances together without pre-rollout required time", async () => {
 		expect([...(await vacation()).values()].map((balance) => balance.allowanceDays)).toEqual([
-			20, 20,
+			4, 4,
 		]);
 		const preview = await actions.previewEmploymentDateUploadAction({ csv: csv() });
 		expect(preview).toMatchObject({
@@ -147,8 +240,8 @@ describe("reviewed bulk employment corrections through public upload actions", (
 							vacation: expect.arrayContaining([
 								expect.objectContaining({
 									year: 2026,
-									before: expect.objectContaining({ allowanceDays: 20 }),
-									after: expect.objectContaining({ allowanceDays: 30 }),
+									before: expect.objectContaining({ allowanceDays: 4 }),
+									after: expect.objectContaining({ allowanceDays: 6 }),
 								}),
 							]),
 						},
@@ -158,7 +251,7 @@ describe("reviewed bulk employment corrections through public upload actions", (
 			},
 		});
 		expect([...(await vacation()).values()].map((balance) => balance.allowanceDays)).toEqual([
-			20, 20,
+			4, 4,
 		]);
 		if (!preview.success || preview.data.status !== "ready")
 			throw new Error("Expected reviewable upload");
@@ -169,7 +262,7 @@ describe("reviewed bulk employment corrections through public upload actions", (
 			}),
 		).toMatchObject({ success: true, data: { status: "committed", corrected: 2 } });
 		expect([...(await vacation()).values()].map((balance) => balance.allowanceDays)).toEqual([
-			30, 30,
+			6, 6,
 		]);
 		for (const employeeId of [fixture.employeeId, secondId])
 			expect(await getEmployeeTrackingDateAction(employeeId)).toMatchObject({
@@ -398,7 +491,7 @@ describe("reviewed bulk employment corrections through public upload actions", (
 		).toMatchObject({ success: true, data: { status: "has_errors" } });
 		await assertOriginalDates();
 		expect([...(await vacation()).values()].map((balance) => balance.allowanceDays)).toEqual([
-			20, 20,
+			4, 4,
 		]);
 		expect(
 			await months.reopenMonthAction({
@@ -433,7 +526,7 @@ describe("reviewed bulk employment corrections through public upload actions", (
 			).toMatchObject({ success: false, code: "failed" });
 			await assertOriginalDates();
 			expect([...(await vacation()).values()].map((balance) => balance.allowanceDays)).toEqual([
-				20, 20,
+				4, 4,
 			]);
 		} finally {
 			await fixture.pool.query(`drop trigger t1243_refuse_audit on audit_log`);

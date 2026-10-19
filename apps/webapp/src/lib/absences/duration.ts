@@ -78,26 +78,70 @@ export function normalizeAbsenceDurationInput(
 	};
 }
 
-export function validateAbsenceDurationInput(input: AbsenceDurationInput): string | null {
-	const normalized = normalizeAbsenceDurationInput(input);
+/** Why an absence's dates, duration or partial-day times are invalid; translated by the viewer. */
+export type AbsenceDurationIssueCode =
+	| "start_date_required"
+	| "invalid_date"
+	| "end_before_start"
+	/** Legacy half days: an afternoon start cannot end that same morning. */
+	| "afternoon_start_morning_end"
+	| "times_required"
+	| "invalid_time"
+	| "partial_day_span"
+	| "end_time_before_start";
 
-	if (!normalized.categoryId) {
+export interface AbsenceDurationIssue {
+	code: AbsenceDurationIssueCode;
+	/** The English message, for server errors and logs. */
+	message: string;
+}
+
+const DURATION_ISSUE_MESSAGES: Record<AbsenceDurationIssueCode, string> = {
+	start_date_required: "Start date is required",
+	invalid_date: "Invalid date format",
+	end_before_start: "Start date must be before end date",
+	afternoon_start_morning_end:
+		"Cannot end in the morning if starting in the afternoon on the same day",
+	times_required: "Enter a start time and end time for a partial-day absence.",
+	invalid_time: "Enter times in HH:mm format.",
+	partial_day_span: "Partial-day absences can only be same-day or overnight.",
+	end_time_before_start:
+		"Enter an end time after the start time, or choose the next end date for an overnight absence.",
+};
+
+/** The request's category, dates, duration and times by the ordinary request rules. */
+export function validateAbsenceDurationInput(input: AbsenceDurationInput): string | null {
+	if (!input.categoryId?.trim()) {
 		return "Category is required";
 	}
+	return findAbsenceDurationIssue(input)?.message ?? null;
+}
+
+/**
+ * The ordinary request rules for dates, duration and partial-day times only; the category is not
+ * checked. Null when they hold.
+ */
+export function findAbsenceDurationIssue(input: AbsenceDurationInput): AbsenceDurationIssue | null {
+	const code = durationIssueCode(input);
+	return code ? { code, message: DURATION_ISSUE_MESSAGES[code] } : null;
+}
+
+function durationIssueCode(input: AbsenceDurationInput): AbsenceDurationIssueCode | null {
+	const normalized = normalizeAbsenceDurationInput(input);
 
 	if (!normalized.startDate) {
-		return "Start date is required";
+		return "start_date_required";
 	}
 
 	if (!isDateOnly(normalized.startDate) || !isDateOnly(normalized.endDate)) {
-		return "Invalid date format";
+		return "invalid_date";
 	}
 
 	const start = DateTime.fromISO(normalized.startDate, { zone: "utc" });
 	const end = DateTime.fromISO(normalized.endDate, { zone: "utc" });
 
 	if (end < start) {
-		return "Start date must be before end date";
+		return "end_before_start";
 	}
 
 	if (normalized.durationKind === "full_day") {
@@ -105,7 +149,7 @@ export function validateAbsenceDurationInput(input: AbsenceDurationInput): strin
 	}
 
 	if (hasInvalidSameDayLegacyPeriodRange(input, normalized)) {
-		return "Cannot end in the morning if starting in the afternoon on the same day";
+		return "afternoon_start_morning_end";
 	}
 
 	if (hasLegacyPeriodOnlyIntent(input)) {
@@ -113,11 +157,11 @@ export function validateAbsenceDurationInput(input: AbsenceDurationInput): strin
 	}
 
 	if (!normalized.startTime || !normalized.endTime) {
-		return "Enter a start time and end time for a partial-day absence.";
+		return "times_required";
 	}
 
 	if (!TIME_PATTERN.test(normalized.startTime) || !TIME_PATTERN.test(normalized.endTime)) {
-		return "Enter times in HH:mm format.";
+		return "invalid_time";
 	}
 
 	const dateDeltaDays = end.diff(start, "days").days;
@@ -125,7 +169,7 @@ export function validateAbsenceDurationInput(input: AbsenceDurationInput): strin
 		hasExplicitPartialTimes(normalized) &&
 		(dateDeltaDays > 1 || (dateDeltaDays === 1 && normalized.endTime >= normalized.startTime))
 	) {
-		return "Partial-day absences can only be same-day or overnight.";
+		return "partial_day_span";
 	}
 
 	const startAt = DateTime.fromISO(`${normalized.startDate}T${normalized.startTime}`, {
@@ -134,11 +178,11 @@ export function validateAbsenceDurationInput(input: AbsenceDurationInput): strin
 	const endAt = DateTime.fromISO(`${normalized.endDate}T${normalized.endTime}`, { zone: "utc" });
 
 	if (!startAt.isValid || !endAt.isValid) {
-		return "Invalid date format";
+		return "invalid_date";
 	}
 
 	if (endAt <= startAt) {
-		return "Enter an end time after the start time, or choose the next end date for an overnight absence.";
+		return "end_time_before_start";
 	}
 
 	return null;

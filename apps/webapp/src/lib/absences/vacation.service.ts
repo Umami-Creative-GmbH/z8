@@ -5,11 +5,11 @@
  * carryover logic, expiry enforcement, and accrual.
  */
 
-import { eq } from "drizzle-orm";
-import { DateTime } from "luxon";
+import { and, eq } from "drizzle-orm";
+import { Temporal } from "temporal-polyfill";
 import { db } from "@/db";
 import { organization } from "@/db/auth-schema";
-import { employee, employeeVacationAllowance } from "@/db/schema";
+import { employee } from "@/db/schema";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { createLogger } from "@/lib/logger";
 import {
@@ -23,15 +23,26 @@ import {
 } from "@/lib/query/vacation.queries";
 import { calculateCarryoverExpiryDate } from "./date-utils";
 import { loadProratedVacationAllowances } from "./prorated-allowance-store";
-import type { VacationBalance } from "./types";
+import {
+	type VacationBalance,
+	type VacationBalanceConfiguration,
+	vacationConfigurationProblem,
+} from "./types";
 import {
 	loadVacationAdjustmentSums,
 	type VacationAdjustmentSums,
 	vacationAdjustmentTotal,
 } from "./vacation-adjustments";
 import { loadVacationBalances } from "./vacation-balance-store";
-import { calculateCarryoverDays, startingAllowanceDays } from "./vacation-calculator";
-import type { VacationPolicy } from "./vacation-policy-store";
+import {
+	calculateCarryoverDays,
+	startingAllowanceDays,
+} from "./vacation-calculator";
+import {
+	commitAnnualVacationCarryover,
+	expireCommittedVacationCarryover,
+} from "./vacation-carryover";
+import { vacationPolicyCalculationsEnabled } from "./vacation-policy-rollout";
 
 const logger = createLogger("vacation-service");
 
@@ -60,7 +71,11 @@ export interface CarryoverSummary {
 	employeesProcessed: number;
 	totalDaysCarriedOver: number;
 	results: CarryoverResult[];
-	errors: Array<{ employeeId: string; error: string }>;
+	errors: Array<{
+		employeeId: string;
+		error: string;
+		configuration?: VacationBalanceConfiguration;
+	}>;
 }
 
 export interface ExpiryResult {
@@ -75,75 +90,96 @@ export interface ExpiryResult {
 
 /**
  * An employee's vacation balance for a year with its parts, for the dashboard and the reports:
- * the same balance as every other reader (`loadVacationBalances`). Null without a company default
- * policy for the year or for an unknown employee.
+ * the same balance as every other reader (`loadVacationBalances`). Null for unavailable policy
+ * coverage or an unknown employee; the companion result exposes configuration details.
  */
 export async function getEnhancedVacationBalance(input: {
 	employeeId: string;
 	year: number;
 	currentDate?: Date;
 	timezone?: string;
+	organizationId?: string;
 }): Promise<EnhancedVacationBalance | null> {
-	const { employeeId, year, currentDate = new Date(), timezone = "UTC" } = input;
+	return (await getEnhancedVacationBalanceResult(input)).balance;
+}
 
+/** A visible configuration result accompanies unavailable balances; callers retain actor scope. */
+export async function getEnhancedVacationBalanceResult(input: {
+	employeeId: string;
+	year: number;
+	currentDate?: Date;
+	timezone?: string;
+	organizationId?: string;
+}): Promise<{
+	balance: EnhancedVacationBalance | null;
+	configuration: VacationBalanceConfiguration | null;
+}> {
+	const {
+		employeeId,
+		year,
+		currentDate = new Date(),
+		timezone = "UTC",
+	} = input;
 	const emp = await db.query.employee.findFirst({
-		where: eq(employee.id, employeeId),
+		where: and(
+			eq(employee.id, employeeId),
+			input.organizationId
+				? eq(employee.organizationId, input.organizationId)
+				: undefined,
+		),
 		columns: { organizationId: true },
 	});
-	if (!emp) {
-		return null;
-	}
-
-	const { policy, balances, adjustments } = await loadVacationBalances(db, {
+	if (!emp) return { balance: null, configuration: null };
+	const result = await loadVacationBalances(db, {
 		organizationId: emp.organizationId,
 		employeeIds: [employeeId],
 		year,
 		timezone,
 		currentDate,
 	});
-	if (!policy) {
-		logger.warn({ organizationId: emp.organizationId, year }, "No vacation policy found");
-		return null;
-	}
-	const balance = balances.get(employeeId);
-	if (!balance) return null;
-
-	return enhanceVacationBalance({
-		balance,
-		policy,
-		adjustments: adjustments.get(employeeId),
-		currentDate,
-		timezone,
-	});
+	const balance = result.balances.get(employeeId);
+	return {
+		balance: balance
+			? enhanceVacationBalance({
+					balance,
+					adjustments: result.adjustments.get(employeeId),
+					currentDate,
+					timezone,
+				})
+			: null,
+		configuration: result.configurations.get(employeeId) ?? null,
+	};
 }
 
 function enhanceVacationBalance(input: {
 	balance: VacationBalance;
-	policy: VacationPolicy;
 	adjustments: VacationAdjustmentSums | undefined;
 	currentDate: Date;
 	timezone: string;
 }): EnhancedVacationBalance {
-	const { balance, policy, timezone } = input;
-
-	// Calculate carryover expiry details
+	const { balance } = input;
 	let carryoverExpiring = 0;
 	let carryoverExpiryDaysRemaining: number | null = null;
-
-	if (balance.carryoverDays && balance.carryoverDays > 0 && policy.carryoverExpiryMonths) {
-		const expiryDate = calculateCarryoverExpiryDate(
-			balance.year,
-			policy.carryoverExpiryMonths,
-			timezone,
+	if (
+		balance.carryoverDays &&
+		balance.carryoverDays > 0 &&
+		balance.carryoverExpiryDate
+	) {
+		const expiry = Temporal.Instant.from(
+			balance.carryoverExpiryDate.toISOString(),
 		);
-		const currentDT = DateTime.fromJSDate(input.currentDate).setZone(timezone);
-
-		if (currentDT < expiryDate) {
+		const current = Temporal.Instant.from(input.currentDate.toISOString());
+		if (Temporal.Instant.compare(current, expiry) <= 0) {
 			carryoverExpiring = balance.carryoverDays;
-			carryoverExpiryDaysRemaining = Math.ceil(expiryDate.diff(currentDT, "days").days);
+			const expiryTimezone = balance.carryoverExpiryTimezone ?? input.timezone;
+			const from = current.toZonedDateTimeISO(expiryTimezone);
+			carryoverExpiryDaysRemaining = Math.ceil(
+				from
+					.until(expiry.toZonedDateTimeISO(expiryTimezone))
+					.total({ unit: "days", relativeTo: from }),
+			);
 		}
 	}
-
 	return {
 		...balance,
 		baseAllowance: balance.allowanceDays,
@@ -163,11 +199,21 @@ export async function calculateAnnualCarryover(
 	performedBy: string,
 	timezone = "UTC",
 ): Promise<CarryoverSummary> {
+	if (await vacationPolicyCalculationsEnabled(db, organizationId, fromYear))
+		return commitAnnualVacationCarryover(
+			organizationId,
+			fromYear,
+			performedBy,
+			timezone,
+		);
 	const toYear = fromYear + 1;
 	const results: CarryoverResult[] = [];
 	const errors: Array<{ employeeId: string; error: string }> = [];
 
-	logger.info({ organizationId, fromYear, toYear }, "Starting annual carryover calculation");
+	logger.info(
+		{ organizationId, fromYear, toYear },
+		"Starting annual carryover calculation",
+	);
 
 	// Get vacation policies for both years independently.
 	const [fromYearPolicy, toYearPolicy] = await Promise.all([
@@ -194,7 +240,10 @@ export async function calculateAnnualCarryover(
 	}
 
 	// Get all employees with vacation data
-	const employees = await getEmployeesWithVacationData(organizationId, fromYear);
+	const employees = await getEmployeesWithVacationData(
+		organizationId,
+		fromYear,
+	);
 	// The fromYear allowance of each employee, prorated in a start or exit year (#1110), and
 	// their adjustments, manual and accrual (#1105, #1106)
 	const employeeIds = employees.map((emp) => emp.id);
@@ -205,10 +254,32 @@ export async function calculateAnnualCarryover(
 			year: fromYear,
 			policy: fromYearPolicy,
 		}),
-		loadVacationAdjustmentSums(db, { organizationId, employeeIds, year: fromYear }),
+		loadVacationAdjustmentSums(db, {
+			organizationId,
+			employeeIds,
+			year: fromYear,
+		}),
 	]);
 
 	for (const emp of employees) {
+		if (!allowances.has(emp.id)) {
+			// With a shared policy, every employee of the organization gets an allowance unless their
+			// work schedule has no working days, which leaves it unknown (Absences ADR 0003).
+			errors.push({
+				employeeId: emp.id,
+				error: vacationConfigurationProblem({
+					status: "conflict",
+					periods: [
+						{
+							startDate: `${fromYear}-01-01`,
+							endDate: `${fromYear}-12-31`,
+							reason: "zero_working_days",
+						},
+					],
+				}),
+			});
+			continue;
+		}
 		try {
 			// Get vacation taken in fromYear
 			const vacationTaken = await getVacationTakenInYear(emp.id, fromYear);
@@ -224,14 +295,28 @@ export async function calculateAnnualCarryover(
 			// Include previous carryover if still valid
 			let previousCarryover = 0;
 			if (emp.allowance?.customCarryoverDays) {
-				const carryoverBalance = await getCarryoverBalance(emp.id, fromYear, undefined, timezone);
+				const carryoverBalance = await getCarryoverBalance(
+					emp.id,
+					fromYear,
+					undefined,
+					timezone,
+				);
 				previousCarryover = carryoverBalance.balance;
 			}
 
 			const adjustments = vacationAdjustmentTotal(adjustmentSums.get(emp.id));
 
 			const totalAllowance = baseAllowance + previousCarryover + adjustments;
-			const {remaining,applied:carryoverApplied,capped:carryoverCapped}=calculateCarryoverDays({totalAllowance,usedDays:vacationTaken.totalDays,previouslyTakenDays:adjustmentSums.get(emp.id)?.previouslyTaken??0,maxCarryoverDays:fromYearPolicy.maxCarryoverDays});
+			const {
+				remaining,
+				applied: carryoverApplied,
+				capped: carryoverCapped,
+			} = calculateCarryoverDays({
+				totalAllowance,
+				usedDays: vacationTaken.totalDays,
+				previouslyTakenDays: adjustmentSums.get(emp.id)?.previouslyTaken ?? 0,
+				maxCarryoverDays: fromYearPolicy.maxCarryoverDays,
+			});
 
 			// Calculate expiry date
 			let expiryDate: Date | null = null;
@@ -281,8 +366,12 @@ export async function calculateAnnualCarryover(
 				expiryDate,
 			});
 		} catch (error) {
-			const errorMessage = error instanceof Error ? error.message : "Unknown error";
-			logger.error({ employeeId: emp.id, error: errorMessage }, "Failed to process carryover");
+			const errorMessage =
+				error instanceof Error ? error.message : "Unknown error";
+			logger.error(
+				{ employeeId: emp.id, error: errorMessage },
+				"Failed to process carryover",
+			);
 			errors.push({ employeeId: emp.id, error: errorMessage });
 		}
 	}
@@ -293,7 +382,10 @@ export async function calculateAnnualCarryover(
 		toYear,
 		processedAt: new Date(),
 		employeesProcessed: results.length,
-		totalDaysCarriedOver: results.reduce((sum, r) => sum + r.carryoverApplied, 0),
+		totalDaysCarriedOver: results.reduce(
+			(sum, r) => sum + r.carryoverApplied,
+			0,
+		),
 		results,
 		errors,
 	};
@@ -320,98 +412,12 @@ export async function expireCarryoverDays(
 	currentDate: Date = new Date(),
 	timezone = "UTC",
 ): Promise<ExpiryResult> {
-	const currentYear = DateTime.fromJSDate(currentDate).setZone(timezone).year;
-
-	logger.info({ organizationId, currentYear }, "Checking for expired carryover");
-
-	// Get vacation policy
-	const policy = await getVacationAllowance(organizationId, currentYear);
-
-	if (!policy?.allowCarryover || !policy.carryoverExpiryMonths) {
-		return { employeesAffected: 0, daysExpired: 0, details: [] };
-	}
-
-	// Calculate expiry date
-	const expiryDate = calculateCarryoverExpiryDate(
-		currentYear,
-		policy.carryoverExpiryMonths,
+	return expireCommittedVacationCarryover(
+		organizationId,
+		performedBy,
+		currentDate,
 		timezone,
 	);
-	const currentDT = DateTime.fromJSDate(currentDate).setZone(timezone);
-
-	// If expiry date hasn't passed, nothing to do
-	if (currentDT < expiryDate) {
-		logger.info({ expiryDate: expiryDate.toISO() }, "Carryover not yet expired");
-		return { employeesAffected: 0, daysExpired: 0, details: [] };
-	}
-
-	// Get all employees with carryover
-	const employees = await getEmployeesWithVacationData(organizationId, currentYear);
-	const details = (
-		await Promise.all(
-			employees.map(async (emp) => {
-				if (!emp.allowance?.customCarryoverDays) return null;
-
-				const carryoverDays = parseFloat(emp.allowance.customCarryoverDays);
-				if (carryoverDays <= 0) return null;
-
-				// Set carryover to 0 (expired)
-				await db
-					.update(employeeVacationAllowance)
-					.set({
-						customCarryoverDays: "0",
-					})
-					.where(eq(employeeVacationAllowance.id, emp.allowance.id));
-
-				// Log to audit
-				await logAudit({
-					action: AuditAction.VACATION_CARRYOVER_EXPIRED,
-					actorId: performedBy,
-					targetId: emp.id,
-					targetType: "employee",
-					organizationId,
-					employeeId: emp.id,
-					timestamp: new Date(),
-					metadata: {
-						year: currentYear,
-						daysExpired: carryoverDays,
-						expiryDate: expiryDate.toISO(),
-					},
-				});
-
-				return {
-					employeeId: emp.id,
-					employeeName: emp.name,
-					daysExpired: carryoverDays,
-				};
-			}),
-		)
-	).filter(
-		(
-			detail,
-		): detail is {
-			employeeId: string;
-			employeeName: string;
-			daysExpired: number;
-		} => detail !== null,
-	);
-
-	const result: ExpiryResult = {
-		employeesAffected: details.length,
-		daysExpired: details.reduce((sum, d) => sum + d.daysExpired, 0),
-		details,
-	};
-
-	logger.info(
-		{
-			organizationId,
-			employeesAffected: result.employeesAffected,
-			daysExpired: result.daysExpired,
-		},
-		"Carryover expiry complete",
-	);
-
-	return result;
 }
 
 /**
@@ -434,7 +440,10 @@ export async function updateVacationAllowance(input: {
 		throw new Error("Employee not found");
 	}
 
-	const existing = await getEmployeeVacationAllowance(input.employeeId, input.year);
+	const existing = await getEmployeeVacationAllowance(
+		input.employeeId,
+		input.year,
+	);
 
 	// Update base allowance if customAnnualDays provided
 	if (input.customAnnualDays !== undefined) {
@@ -503,43 +512,46 @@ export async function getVacationSummary(
 	Array<{
 		employeeId: string;
 		employeeName: string;
-		totalAllowance: number;
-		carryover: number;
-		adjustments: number;
-		used: number;
-		pending: number;
-		remaining: number;
+		configuration: VacationBalanceConfiguration | null;
+		totalAllowance: number | null;
+		carryover: number | null;
+		adjustments: number | null;
+		used: number | null;
+		pending: number | null;
+		remaining: number | null;
 		carryoverExpiryDate: Date | null;
+		timezone: string;
 	}>
 > {
-	const org = await db.query.organization.findFirst({
-		where: eq(organization.id, organizationId),
-		columns: { timezone: true },
-	});
-	const timezone = org?.timezone || "UTC";
-	const employees = await getEmployeesWithVacationData(organizationId, year);
-	const { balances, adjustments } = await loadVacationBalances(db, {
+	const [org, employees] = await Promise.all([
+		db.query.organization.findFirst({
+			where: eq(organization.id, organizationId),
+			columns: { timezone: true },
+		}),
+		getEmployeesWithVacationData(organizationId, year),
+	]);
+	const result = await loadVacationBalances(db, {
 		organizationId,
 		employeeIds: employees.map((emp) => emp.id),
 		year,
-		timezone,
+		timezone: org?.timezone || "UTC",
 	});
-
-	return employees.flatMap((emp) => {
-		const balance = balances.get(emp.id);
-		if (!balance) return [];
-		return [
-			{
-				employeeId: emp.id,
-				employeeName: emp.name,
-				totalAllowance: balance.totalDays,
-				carryover: balance.carryoverDays || 0,
-				adjustments: vacationAdjustmentTotal(adjustments.get(emp.id)),
-				used: balance.usedDays,
-				pending: balance.pendingDays,
-				remaining: balance.remainingDays,
-				carryoverExpiryDate: balance.carryoverExpiryDate || null,
-			},
-		];
+	return employees.map((emp) => {
+		const balance = result.balances.get(emp.id);
+		return {
+			employeeId: emp.id,
+			employeeName: emp.name,
+			configuration: result.configurations.get(emp.id) ?? null,
+			totalAllowance: balance?.totalDays ?? null,
+			carryover: balance ? (balance.carryoverDays ?? 0) : null,
+			adjustments: balance
+				? vacationAdjustmentTotal(result.adjustments.get(emp.id))
+				: null,
+			used: balance?.usedDays ?? null,
+			pending: balance?.pendingDays ?? null,
+			remaining: balance?.remainingDays ?? null,
+			carryoverExpiryDate: balance?.carryoverExpiryDate ?? null,
+			timezone: balance?.carryoverExpiryTimezone ?? org?.timezone ?? "UTC",
+		};
 	});
 }

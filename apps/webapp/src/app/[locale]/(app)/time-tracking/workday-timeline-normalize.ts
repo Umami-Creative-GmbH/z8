@@ -1,4 +1,5 @@
 import { DateTime } from "luxon";
+import { hasAttemptedOrdinaryTimeApprovalEvidence } from "@/lib/approvals/time-request-kind";
 import { dateFromInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { shiftInterval } from "@/lib/scheduling/shift-occasion";
 import { formatTimeInZone } from "@/lib/time-tracking/timezone-utils";
@@ -111,6 +112,7 @@ export function normalizeWorkdayTimeline({
 		...workPeriods.map<WorkdayTimelineItem>((period) => ({
 			id: `work-period:${period.id}`,
 			type: "work-period",
+			workPeriodId: period.id,
 			title: "Recorded work",
 			subtitle: formatDuration(period.durationMinutes),
 			startTime: period.startTime,
@@ -167,7 +169,9 @@ function getWorkPeriodWarnings(period: WorkdayWorkPeriodSource): WorkdayTimeline
 			title: "Pending edit request",
 			subtitle: "This work period has changes awaiting approval.",
 			severity: "info",
-			link: { label: "Review request", href: "/my-requests" },
+			...(hasRequestInMyRequests(period)
+				? { link: { label: "Review request", href: "/my-requests" } }
+				: {}),
 		});
 	}
 
@@ -192,6 +196,33 @@ function getWorkPeriodWarnings(period: WorkdayWorkPeriodSource): WorkdayTimeline
 	}
 
 	return warnings;
+}
+
+/**
+ * Only a requested change to work that already counts has a request in My Requests. Pending
+ * manual work and a pending policy clock-out wait as ordinary submissions with no request view
+ * (their pending changes carry the ordinary submission's marker), so they get no link.
+ */
+function hasRequestInMyRequests(period: WorkdayWorkPeriodSource): boolean {
+	if (!period.pendingChanges || period.approvalStatus === "pending") return false;
+	if (hasAttemptedOrdinaryTimeApprovalEvidence({ pendingChanges: period.pendingChanges })) {
+		return false;
+	}
+	const changes = parsePendingChanges(period.pendingChanges);
+	return changes !== null && !Object.hasOwn(changes, "ordinarySubmission");
+}
+
+/** Pending changes are stored as JSON text; null when they are not an object. */
+function parsePendingChanges(value: unknown): object | null {
+	let parsed: unknown = value;
+	if (typeof value === "string") {
+		try {
+			parsed = JSON.parse(value);
+		} catch {
+			return null;
+		}
+	}
+	return typeof parsed === "object" && parsed !== null && !Array.isArray(parsed) ? parsed : null;
 }
 
 function getShiftDateTimes(

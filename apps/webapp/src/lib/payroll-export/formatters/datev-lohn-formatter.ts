@@ -6,6 +6,10 @@ import { DateTime } from "luxon";
 import { createLogger } from "@/lib/logger";
 import { personnelNumberTypeError } from "../personnel-identifier";
 import type {
+	SupportedPayrollContribution,
+	SupportedPayrollOutputRow,
+} from "../supported-output-evidence";
+import type {
 	AbsenceData,
 	DatevLohnConfig,
 	ExpenseLineData,
@@ -22,7 +26,6 @@ import {
 	germanPersonnelNumber,
 } from "./expense-lines";
 import {
-	addOvertimePayoutHours,
 	GERMAN_OVERTIME_PAYOUT_NOTE,
 	overtimePayoutsForFormat,
 	widenDateRangeByPayouts,
@@ -40,6 +43,13 @@ const DEFAULT_WAGE_TYPE_CODE = "1000";
  */
 const SYNC_THRESHOLD = 500;
 
+type AggregatedEntry = {
+	hours: number;
+	note: string;
+	contributions: SupportedPayrollContribution[];
+};
+type AggregatedRows = Map<string, Map<string, Map<string, AggregatedEntry>>>;
+
 /**
  * DATEV Lohn & Gehalt CSV formatter
  */
@@ -52,7 +62,10 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 		return SYNC_THRESHOLD;
 	}
 
-	validateConfig(config: Record<string, unknown>): { valid: boolean; errors?: string[] } {
+	validateConfig(config: Record<string, unknown>): {
+		valid: boolean;
+		errors?: string[];
+	} {
 		const errors: string[] = [];
 		const datevConfig = config as Partial<DatevLohnConfig>;
 
@@ -113,21 +126,53 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 		);
 
 		// Add absence data
-		this.addAbsenceData(absences, absenceCategoryMappings, aggregatedData, datevConfig);
+		this.addAbsenceData(
+			absences,
+			absenceCategoryMappings,
+			aggregatedData,
+			datevConfig,
+		);
 
 		// Overtime payouts (#1001): hours on the payout's day under the "overtime" wage type.
-		const payouts = overtimePayoutsForFormat(overtimePayouts, mappings, "datev");
-		addOvertimePayoutHours(aggregatedData, payouts.mapped, {
-			personnelNumber: (payout) => this.personnelNumber(payout, datevConfig),
-			period: (payout) => payout.day,
-			add: (existing, hours) => ({
+		const payouts = overtimePayoutsForFormat(
+			overtimePayouts,
+			mappings,
+			"datev",
+		);
+		const overtimeMapping = mappings.find(
+			(mapping) => mapping.specialCategory === "overtime",
+		);
+		for (const { payout, wageTypeCode, hours } of payouts.mapped) {
+			const personnelNumber = this.personnelNumber(payout, datevConfig);
+			const employeeData =
+				aggregatedData.get(personnelNumber) ??
+				new Map<string, Map<string, AggregatedEntry>>();
+			aggregatedData.set(personnelNumber, employeeData);
+			const dateData =
+				employeeData.get(payout.day) ?? new Map<string, AggregatedEntry>();
+			employeeData.set(payout.day, dateData);
+			const existing = dateData.get(wageTypeCode);
+			dateData.set(wageTypeCode, {
 				hours: (existing?.hours ?? 0) + hours,
 				note: existing?.note || GERMAN_OVERTIME_PAYOUT_NOTE,
-			}),
-		});
+				contributions: [
+					...(existing?.contributions ?? []),
+					{
+						...this.contributionIdentity(payout, hours),
+						kind: "overtime_payout",
+						facts: {
+							day: payout.day,
+							minutes: payout.minutes,
+							mappingId: overtimeMapping?.id ?? null,
+						},
+					},
+				],
+			});
+		}
 
 		// Generate CSV content
 		const lines: string[] = [];
+		const supportedRows: SupportedPayrollOutputRow[] = [];
 
 		// Header row
 		lines.push(this.generateHeaderRow());
@@ -146,17 +191,34 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 
 				for (const [wageTypeCode, data] of sortedWageTypes) {
 					if (data.hours > 0 || datevConfig.includeZeroHours) {
+						const quantity = this.formatHours(data.hours);
 						lines.push(
-							this.generateDataRow(personnelNumber, wageTypeCode, data.hours, dateStr, data.note),
+							this.generateDataRow(
+								personnelNumber,
+								wageTypeCode,
+								quantity,
+								dateStr,
+								data.note,
+							),
 						);
+						supportedRows.push({
+							personnelNumber,
+							wageTypeCode,
+							date: dateStr,
+							quantity,
+							unit: "hours",
+							note: data.note,
+							contributions: data.contributions,
+						});
 					}
 				}
 			}
 		}
 
 		// Expense money lines (#852): a euro Betrag on the period's last day, labeled as money.
-		for (const { personnelNumber, line } of expenseLinesInFileOrder(expenseLines, (line) =>
-			germanPersonnelNumber(line, datevConfig),
+		for (const { personnelNumber, line } of expenseLinesInFileOrder(
+			expenseLines,
+			(line) => germanPersonnelNumber(line, datevConfig),
 		)) {
 			lines.push(
 				[
@@ -171,9 +233,12 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 
 		// Calculate metadata
 		const uniqueEmployees = new Set(workPeriods.map((p) => p.employeeId));
-		absences.forEach((a) => uniqueEmployees.add(a.employeeId));
+		absences.forEach((a) => {
+			uniqueEmployees.add(a.employeeId);
+		});
 		for (const line of expenseLines) uniqueEmployees.add(line.employeeId);
-		for (const { payout } of payouts.mapped) uniqueEmployees.add(payout.employeeId);
+		for (const { payout } of payouts.mapped)
+			uniqueEmployees.add(payout.employeeId);
 
 		const dateRange = widenDateRangeByPayouts(
 			this.getDateRange(workPeriods, absences),
@@ -195,6 +260,13 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 		const csvContent = lines.join("\r\n");
 
 		return {
+			supportedOutputEvidence: {
+				version: 1,
+				formatId: "datev_lohn",
+				formatterVersion: this.version,
+				excludedLineKinds: ["expense"],
+				rows: supportedRows,
+			},
 			fileName,
 			content: csvContent,
 			mimeType: "text/csv",
@@ -218,8 +290,8 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 		workPeriods: WorkPeriodData[],
 		workCategoryMappings: Map<string, WageTypeMapping>,
 		config: DatevLohnConfig,
-	): Map<string, Map<string, Map<string, { hours: number; note: string }>>> {
-		const result = new Map<string, Map<string, Map<string, { hours: number; note: string }>>>();
+	): AggregatedRows {
+		const result: AggregatedRows = new Map();
 
 		for (const period of workPeriods) {
 			if (!period.durationMinutes || !period.endTime) continue;
@@ -260,10 +332,33 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 			const dateData = employeeData.get(dateStr)!;
 
 			// Aggregate hours
-			const existing = dateData.get(wageTypeCode) || { hours: 0, note: "" };
+			const existing = dateData.get(wageTypeCode) || {
+				hours: 0,
+				note: "",
+				contributions: [],
+			};
 			dateData.set(wageTypeCode, {
 				hours: existing.hours + hours,
 				note: note || existing.note,
+				contributions: [
+					...existing.contributions,
+					{
+						...this.contributionIdentity(period, hours),
+						kind: "work",
+						facts: {
+							startAt: period.startTime.toUTC().toISO(),
+							endAt: period.endTime.toUTC().toISO(),
+							durationMinutes: period.durationMinutes,
+							workCategoryId: period.workCategoryId,
+							workCategoryName: period.workCategoryName,
+							projectId: period.projectId,
+							projectName: period.projectName,
+							mappingId: period.workCategoryId
+								? (workCategoryMappings.get(period.workCategoryId)?.id ?? null)
+								: null,
+						},
+					},
+				],
 			});
 		}
 
@@ -276,7 +371,7 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 	private addAbsenceData(
 		absences: AbsenceData[],
 		absenceCategoryMappings: Map<string, WageTypeMapping>,
-		aggregatedData: Map<string, Map<string, Map<string, { hours: number; note: string }>>>,
+		aggregatedData: AggregatedRows,
 		config: DatevLohnConfig,
 	): void {
 		for (const absence of absences) {
@@ -286,7 +381,8 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 
 			const personnelNumber = this.personnelNumber(absence, config);
 			const wageTypeCode = mappedCode;
-			const note = mapping.datevWageTypeName || absence.absenceCategoryName || "";
+			const note =
+				mapping.datevWageTypeName || absence.absenceCategoryName || "";
 
 			// Calculate days (DATEV typically uses days for absences, not hours)
 			// Use startOf('day') to ensure consistent date comparison
@@ -312,13 +408,49 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 
 				// For absences, we typically record 8 hours (full day)
 				// This could be configurable based on the employee's work schedule
-				const existing = dateData.get(wageTypeCode) || { hours: 0, note: "" };
+				const existing = dateData.get(wageTypeCode) || {
+					hours: 0,
+					note: "",
+					contributions: [],
+				};
 				dateData.set(wageTypeCode, {
 					hours: existing.hours + 8, // Full day
 					note: note || existing.note,
+					contributions: [
+						...existing.contributions,
+						{
+							...this.contributionIdentity(absence, 8),
+							kind: "absence",
+							facts: {
+								startDate: absence.startDate,
+								endDate: absence.endDate,
+								absenceCategoryId: absence.absenceCategoryId,
+								absenceCategoryName: absence.absenceCategoryName,
+								absenceType: absence.absenceType,
+								status: absence.status,
+								mappingId: mapping.id,
+							},
+						},
+					],
 				});
 			}
 		}
+	}
+
+	private contributionIdentity(
+		row: WorkPeriodData | AbsenceData | OvertimePayoutData,
+		hours: number,
+	) {
+		return {
+			sourceId: row.id,
+			sourceRevision: row.sourceRevision ?? null,
+			employeeId: row.employeeId,
+			firstName: row.firstName,
+			lastName: row.lastName,
+			hours,
+			reason: row.sourceReason ?? null,
+			sourceActorId: row.sourceActorId ?? null,
+		};
 	}
 
 	/**
@@ -329,7 +461,10 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 		row: WorkPeriodData | AbsenceData | OvertimePayoutData,
 		config: DatevLohnConfig,
 	): string {
-		if (config.personnelNumberType === "employeeNumber" && !row.employeeNumber) {
+		if (
+			config.personnelNumberType === "employeeNumber" &&
+			!row.employeeNumber
+		) {
 			logger.warn(
 				{ employeeId: row.employeeId, rowId: row.id },
 				"Employee number not set, falling back to employeeId",
@@ -337,7 +472,6 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 		}
 		return germanPersonnelNumber(row, config);
 	}
-
 
 	/**
 	 * Generate CSV header row
@@ -355,14 +489,14 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 	private generateDataRow(
 		personnelNumber: string,
 		wageTypeCode: string,
-		hours: number,
+		quantity: string,
 		dateStr: string,
 		note: string,
 	): string {
 		return [
 			this.escapeCSV(personnelNumber),
 			this.escapeCSV(wageTypeCode),
-			this.formatHours(hours),
+			quantity,
 			this.escapeCSV(dateStr),
 			this.escapeCSV(note),
 		].join(";");
@@ -421,9 +555,14 @@ export class DatevLohnFormatter implements IPayrollExportFormatter {
 	/**
 	 * Generate file name based on date range
 	 */
-	private generateFileName(dateRange: { start: DateTime | null; end: DateTime | null }): string {
+	private generateFileName(dateRange: {
+		start: DateTime | null;
+		end: DateTime | null;
+	}): string {
 		const now = DateTime.now();
-		const dateStr = dateRange.start ? dateRange.start.toFormat("yyyy-MM") : now.toFormat("yyyy-MM");
+		const dateStr = dateRange.start
+			? dateRange.start.toFormat("yyyy-MM")
+			: now.toFormat("yyyy-MM");
 		return `datev_lohn_${dateStr}_${now.toFormat("yyyyMMdd_HHmmss")}.csv`;
 	}
 }

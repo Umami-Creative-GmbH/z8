@@ -2,7 +2,11 @@ import type { ProratedAllowance } from "./prorated-allowance";
 
 // Legacy half-day compatibility period for absence forms and stored requests.
 export type DayPeriod = "full_day" | "am" | "pm";
-export type SickDetail = "child_sick" | "with_certificate" | "without_certificate" | "other";
+export type SickDetail =
+	| "child_sick"
+	| "with_certificate"
+	| "without_certificate"
+	| "other";
 
 export type AbsenceDurationKind = "full_day" | "partial_day";
 
@@ -26,7 +30,8 @@ export interface VacationBalance {
 	 */
 	overdrawnDays: number;
 	carryoverDays?: number; // From previous year
-	carryoverExpiryDate?: Date; // When carryover expires
+	carryoverExpiryDate?: Date;
+	carryoverExpiryTimezone?: string; // When carryover expires
 	/** The vacation allowance in `totalDays` and why it is prorated or full (#1110). */
 	allowance?: ProratedAllowance;
 }
@@ -93,4 +98,47 @@ export interface Holiday {
 	startDate: Date;
 	endDate: Date;
 	categoryId: string;
+}
+
+/** One reviewed problem period of a vacation balance configuration. */
+export interface VacationConfigurationProblemPeriod {
+	startDate: string;
+	endDate: string;
+	policyIds?: string[];
+	/**
+	 * `zero_working_days`: the effective work policy explicitly schedules no working days, so the
+	 * allowance cannot be converted to the working week (Absences ADR 0003).
+	 */
+	reason?: "incompatible_transition" | "zero_working_days";
+	/** The work policy of a `zero_working_days` period. */
+	workPolicyId?: string | null;
+}
+
+/** Whether the required employee policy periods can produce a reliable balance. */
+export type VacationBalanceConfiguration =
+	| { status: "resolved" | "legacy" }
+	| {
+			status: "missing" | "conflict";
+			periods: VacationConfigurationProblemPeriod[];
+	  };
+
+/** A conflict that comes from a work schedule without working days, not from vacation policies. */
+export function hasZeroWorkingDaysSchedule(
+	configuration: VacationBalanceConfiguration | undefined | null,
+): boolean {
+	return (
+		configuration?.status === "conflict" &&
+		configuration.periods.some((period) => period.reason === "zero_working_days")
+	);
+}
+
+/** Human-readable refusal for reviewed operations that require a known allowance. */
+export function vacationConfigurationProblem(
+	configuration: VacationBalanceConfiguration | undefined | null,
+): string {
+	if (hasZeroWorkingDaysSchedule(configuration))
+		return "A work schedule without working days requires review for the selected year.";
+	return configuration?.status === "conflict"
+		? "Conflicting vacation policies require review for the selected year."
+		: "Missing vacation policy coverage requires review for the selected year.";
 }

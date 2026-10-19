@@ -27,7 +27,7 @@ The month a payslip settles. Only payslips have one.
 _Avoid_: payroll month, billing period
 
 **Expiry date**:
-The last day a certificate or other document is valid. Officers and, for shared documents, the employee are reminded before it and on it. When a shared skill certificate expires with its employee skill, the employee is reminded only by the skill reminder.
+The last day a certificate or other document is valid. Officers and, for shared documents, the employee are reminded before it and on it. When a shared skill certificate expires with its employee skill, the employee is reminded only by the skill reminder. While a document request names the document as its renewed document, only officers are reminded.
 _Avoid_: valid until, due date
 
 **Skill certificate**:
@@ -66,6 +66,24 @@ No one is a personnel file officer for their own personnel file: an officer, own
 An employee whose employment a departure ended. Their personnel file stays with the organization, but they no longer see it.
 _Avoid_: ex-employee, leaver
 
+### Document requests
+
+**Document request**:
+An officer's request, with a title and an optional note, that one employee supply employee documents of one document category, certificate or other, by a deadline. It is open until the employee submits, then submitted until an officer accepts it or returns it with a reason, which opens it again; an officer can cancel it while it is open or submitted. Any officer covering the employee and the category may decide it, not only the one who made it.
+_Avoid_: task, document task, renewal request (a request need not renew anything), upload request
+
+**Deadline**:
+The calendar day by which a document request should be submitted. A request still open after its deadline has passed in the organization's timezone is overdue.
+_Avoid_: due date, expiry date (that is the last day a document is valid)
+
+**Submission**:
+The employee documents an employee uploads for a document request and hands in together. Uploaded documents are in the personnel file at once; a return keeps them, and the next submission adds new ones.
+_Avoid_: response, answer, evidence
+
+**Renewed document**:
+The expiring or expired document a document request replaces, named on the request. Once the request is accepted, the renewed document no longer counts as expiring.
+_Avoid_: old version, superseded document, previous certificate
+
 ### Retention
 
 **Retention period**:
@@ -81,5 +99,9 @@ Said of an employee document whose retention period has passed since its retenti
 _Avoid_: expired (that is the expiry date), overdue
 
 **Purge**:
-The confirmed, irreversible deletion of an employee document that is due for deletion.
+The confirmed, irreversible deletion of an employee document that is due for deletion. Every audit record about the document stays, but loses its document descriptions. Who did what and when, the employee, the document category, the document date and the pay period remain.
 _Avoid_: cleanup, archive
+
+**Document description**:
+What in an audit record describes an employee document rather than records an event: its title, file name and ZIP entry name, the old and new values of a title change, and free-text reasons. A purge removes them from every audit record about the document.
+_Avoid_: metadata (the category, document date and pay period stay), personal data

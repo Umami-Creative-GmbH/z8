@@ -18,6 +18,8 @@ export interface PersonnelFilePanelCapability {
 	categories: DocumentCategory[];
 	/** Today in the organization's timezone: the default document date. */
 	today: string;
+	/** The organization's timezone, for showing instants such as request history (#1307). */
+	timezone: string;
 }
 
 /**
@@ -41,7 +43,7 @@ export async function personnelFilePanelCapabilityFor(
 	if (!employee) return null;
 	const managed = managedCategoriesFor(access, employee);
 	if (managed.size === 0) return null;
-	const { today } = await loadOrganizationDay(db, {
+	const { today, timezone } = await loadOrganizationDay(db, {
 		organizationId: access.organizationId,
 		now: systemClock.nowInstant(),
 	});
@@ -49,6 +51,7 @@ export async function personnelFilePanelCapabilityFor(
 		employeeId: employee.id,
 		categories: DOCUMENT_CATEGORIES.filter((category) => managed.has(category)),
 		today: today.toString(),
+		timezone,
 	};
 }
 
@@ -59,7 +62,7 @@ export async function personnelFilePanelCapabilityFor(
 export async function loadOwnUploadCapability(): Promise<PersonnelFilePanelCapability | null> {
 	const current = await loadCurrentPersonnelFileAccess();
 	if (current.status !== "resolved" || !current.access.selfEmployeeId) return null;
-	const { today } = await loadOrganizationDay(db, {
+	const { today, timezone } = await loadOrganizationDay(db, {
 		organizationId: current.access.organizationId,
 		now: systemClock.nowInstant(),
 	});
@@ -67,5 +70,6 @@ export async function loadOwnUploadCapability(): Promise<PersonnelFilePanelCapab
 		employeeId: current.access.selfEmployeeId,
 		categories: [...EMPLOYEE_UPLOAD_CATEGORIES],
 		today: today.toString(),
+		timezone,
 	};
 }

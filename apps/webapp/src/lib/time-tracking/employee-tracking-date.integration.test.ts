@@ -83,6 +83,7 @@ describe("reviewed employee tracking exceptions through public actions", () => {
 			`insert into work_policy_schedule (id,policy_id,schedule_cycle,schedule_type,working_days_preset,updated_at) values ($1,$2,'weekly','detailed','custom',now())`,
 			[schedule, policy],
 		);
+		// One working day a week converts the 30-day allowance to 6 (Absences ADR 0003).
 		await fixture.pool.query(
 			`insert into work_policy_schedule_day (schedule_id,day_of_week,hours_per_day,is_work_day) values ($1,'monday','1.00',true)`,
 			[schedule],
@@ -378,7 +379,7 @@ describe("reviewed employee tracking exceptions through public actions", () => {
 			openingBalance: { day: "2026-05-20", minutes: 120 },
 			before: { adjustmentMinutes: 90 },
 			after: { adjustmentMinutes: 90 },
-			vacation: [{ year: 2026, allowanceDays: 30 }],
+			vacation: [{ year: 2026, allowanceDays: 6 }],
 		});
 		expect(await saveDate("2026-05-26")).toMatchObject({ success: true });
 		expect(await currentBalance()).toBe(90);
@@ -401,7 +402,7 @@ describe("reviewed employee tracking exceptions through public actions", () => {
 			year: 2026,
 			timezone: "Europe/Berlin",
 		});
-		expect(vacation.balances.get(fixture.employeeId)).toMatchObject({ allowanceDays: 30 });
+		expect(vacation.balances.get(fixture.employeeId)).toMatchObject({ allowanceDays: 6 });
 		expect(await actions.getEmployeeTrackingDateAction(fixture.employeeId)).toMatchObject({
 			success: true,
 			data: { employmentStartDate: "2026-01-01" },

@@ -40,6 +40,23 @@ When holidays affect your absence period, Z8 can show holiday context directly i
 
 Use the preview before submitting a request. It can help you check balance impact, schedule conflicts, and coverage risk before the request reaches a manager.
 
+### Coverage in the preview
+
+The preview compares your absence with your own published shifts and your organization's coverage rules:
+
+- **Only the time you're away counts.** A partial-day absence affects only the hours it overlaps. For the rest of the shift you still count as working. A night shift that starts the evening before your absence and runs into it is included too. Each affected shift shows which part of it you'll miss.
+- **Warnings show the exact interval.** When published staffing would drop below a rule's minimum while you're away, the preview shows the date, area, time, and how many staff would remain. If staffing changes during your shift, each interval is listed separately.
+- **Incomplete evidence is marked as incomplete.** If no coverage rule applies to part of your affected work, or shifts or rules couldn't be read, the preview says so instead of showing an all-clear. Any warnings it did find stay visible.
+- **Rules ending at 23:59 run to midnight.** Coverage rules can't end at 24:00, so a rule that ends at 23:59 counts until midnight. Late and night shifts are fully covered by a rule that ends at 23:59 together with one that starts at 00:00 the next day.
+
+<Callout type="warn">
+Coverage is based only on published shifts and configured coverage rules. It doesn't consider colleagues' absences or unpublished schedule changes. When the preview shows no warning, that doesn't guarantee enough staffing or that your request will be approved.
+</Callout>
+
+All times are read in your organization's time zone, so everyone sees the same result.
+
+The preview also lists your own pending or approved absences that the request overlaps, with their dates. When it finds nothing to flag, it says that no warnings were found in the available evidence. That is not an approval decision: your manager still decides.
+
 ---
 
 ## Checking Request Status
@@ -76,6 +93,50 @@ Go to **Absences** to see the balance: the days remaining out of your total, and
 ### Joining or leaving during the year
 
 In a year you join or leave, your allowance can be prorated: you get 1/12 of the yearly allowance for each full month you are employed, and once your six-month waiting period is complete it never drops below the statutory minimum, unless you leave by 30 June. The balance then explains it, for example "8 of 30 days, prorated: started 1 Oct 2026, 3 full employment months". A custom allowance is never prorated.
+
+### Balance impact in the request preview
+
+When you request vacation, the preview shows the absence days of the request and, for each calendar year it takes days from, the days charged to that year, your current recorded balance and the estimated balance after the request. A year the request charges nothing, for example when it only touches a weekend or holiday of that year, isn't listed and its balance isn't checked.
+
+- A request across New Year is split by year: each working day is charged to the year it falls in. Holidays, part-time schedules and work policy changes count as they do for any absence.
+- A partial-day absence, including one that runs overnight into the next year, takes half a day from the year it starts in, and nothing when that day is not a working day.
+- The figures are your recorded balance at the time shown under the list. They are estimates: carryover and accrual for a future year are not counted until they are recorded.
+- When a year has no vacation policy yet, conflicting policies, or its balance can't be read, the preview shows its balance as unavailable instead of 0. You can still submit the request.
+
+You can't submit a request that takes more days from a year than that year's recorded balance has left. The check runs again when you submit, so if your balance changed in the meantime, the request is not sent and your entries stay in the form.
+
+---
+
+## Comparing Vacation Dates
+
+Not sure which dates to take? In the request form you can compare your dates with up to two other date ranges before you submit.
+
+<Steps>
+  <Step>
+    Choose a vacation type that uses your vacation balance and enter your dates.
+  </Step>
+  <Step>
+    Click **Compare dates**. Your current dates appear as the **Original request**, the baseline for the comparison.
+  </Step>
+  <Step>
+    Click **Add alternative**, or **Duplicate** an option to start from its dates, then choose other dates. An alternative can be any length and doesn't need to be near your original dates. It can be full days or a partial day, including one that runs overnight.
+  </Step>
+  <Step>
+    Click **Use these dates** on the option you want. Its dates, duration and times replace the ones in your request. The type, notes and deputy stay as they were. You're back in the request form, where the preview updates for the new dates. Then submit as usual. If you change the dates by hand afterwards, the note that an option was applied disappears.
+  </Step>
+</Steps>
+
+Each option shows its dates and times, its absence days, the days charged to each calendar year with the estimated balance after it, holidays, overlaps with your own absences, your affected shifts, coverage warnings, unavailable evidence, and when it was checked. Every option is checked on its own, as if it were your only request, so one option never takes days from another.
+
+- Each time you open the comparison, every option is checked again with the latest data. When you change an alternative's dates, only that option is checked again. **Refresh all** checks every option again.
+- If one option can't be checked, the others stay visible. An option with invalid dates explains what's wrong and can't be used until you fix it. An option with warnings or unavailable evidence can still be used; the warnings stay in the preview.
+- **Back to request** returns to your form without changing it. Your alternatives are kept, also after you use one of them, until you close the form, submit, or change the absence type. Click **Compare dates** again to see them next to your request as it is now.
+
+<Callout type="info">
+Comparing doesn't save, reserve or submit anything, and no one else sees it. The figures are estimates, not an approval decision. When you submit, the request is checked again in full: your balance, overlaps, your deputy, closed months and approval rules. If something changed in the meantime, the request isn't sent and your entries stay in the form.
+</Callout>
+
+Only vacation that uses your vacation balance can be compared. Sick leave, time off in lieu and other absence types can't.
 
 ---
 

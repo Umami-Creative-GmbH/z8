@@ -1,4 +1,8 @@
-import { isKioskCallUnreachable, type KioskCallResult } from "@/lib/time-tracking/kiosk/device";
+import {
+	isKioskCallUncertain,
+	isKioskCallUnreachable,
+	type KioskCallResult,
+} from "@/lib/time-tracking/kiosk/device";
 import type { KioskContactAnchor, SealedKioskPin } from "@/lib/time-tracking/kiosk/frozen-command";
 import type { CachedKioskEmployee } from "@/lib/time-tracking/kiosk/offline-cache";
 import { kioskOfflineClock } from "@/lib/time-tracking/kiosk/offline-clock";
@@ -15,6 +19,8 @@ import {
 import { frozenCommandsOf, kioskOfflineQueue } from "@/lib/time-tracking/kiosk/offline-queue";
 import { sealKioskPin } from "@/lib/time-tracking/kiosk/pin-seal";
 import type {
+	KioskAttribution,
+	KioskClockAttemptOutcome,
 	KioskClockRefusal,
 	KioskClockResult,
 	KioskDeviceInfo,
@@ -22,6 +28,8 @@ import type {
 	KioskEmployeeSnapshot,
 	KioskVehicleUse,
 } from "@/lib/time-tracking/kiosk/protocol";
+import type { KioskUncertainAction } from "@/lib/time-tracking/kiosk/uncertain-action";
+import type { AttributionAnswer, KioskAttributionValues } from "./kiosk-attribution";
 import type { KioskPanelAction } from "./kiosk-employee-panel";
 import { KIOSK_PIN_REFUSALS } from "./kiosk-messages";
 import { type KioskVehicleQuestion, kioskVehicleQuestion } from "./kiosk-vehicle-use";
@@ -65,8 +73,85 @@ export type OfflineTurn = {
 	contact: KioskContactAnchor;
 };
 
+/**
+ * What proves the employee on an online turn: the PIN they entered, or (#1366)
+ * the kiosk badge they scanned. Kept only in the turn's state and sent with each
+ * call; never stored on the device. A badge read with the kiosk's camera
+ * (#1367) says so (`input: "camera"`), so Z8 holds every call of the turn to
+ * the camera's switch; without it, the attached scanner.
+ */
+export type KioskTurnProof =
+	| { pin: string; badge?: never; input?: never }
+	| { badge: string; input?: "camera"; pin?: never };
+
+/** A badge call's body: the badge, and which input read it when that was the camera (#1367). */
+export function kioskBadgeBody(badge: string, input?: "camera") {
+	return input === "camera" ? { badge, badgeInput: "camera" as const } : { badge };
+}
+
+/** The proof's part of a kiosk call's body. */
+export function kioskProofBody(proof: KioskTurnProof, employeeId: string) {
+	return proof.badge === undefined
+		? { employeeId, pin: proof.pin }
+		: { employeeId, ...kioskBadgeBody(proof.badge, proof.input) };
+}
+
+/**
+ * Why the kiosk's camera could not scan (#1367): access refused by the person
+ * or the browser, no camera, a browser that cannot read QR codes live, or a
+ * camera that would not start (or stopped).
+ */
+export type KioskCameraProblem =
+	| "camera_denied"
+	| "camera_missing"
+	| "camera_unsupported"
+	| "camera_failed";
+
+/**
+ * Why the home screen shows a note (#1366): a badge scan that did not open a
+ * turn, a badge turn that ended without its action, or (#1367) why the camera
+ * could not scan. Never names anyone.
+ */
+export type KioskHomeNotice =
+	| {
+			code:
+				| "badge_not_accepted"
+				| "badge_input_disabled"
+				| "badge_unreadable"
+				| "badge_offline"
+				| "badge_failed"
+				| "badge_not_recorded"
+				| KioskCameraProblem;
+	  }
+	| { code: "badge_rate_limited"; retryAfter: number };
+
+/** Refusals of a badge call: the turn (if any) ends and the home screen says why. */
+const KIOSK_BADGE_REFUSALS: ReadonlySet<string> = new Set([
+	"badge_not_accepted",
+	"badge_input_disabled",
+	"rate_limited",
+]);
+
+/** A limited badge call's wait when Z8 names none: the badge limit's window. */
+const BADGE_RETRY_FALLBACK_SECONDS = 60;
+
+function badgeRefusalNotice(refusal: KioskClockRefusal): KioskHomeNotice {
+	if (refusal.code === "rate_limited") {
+		return {
+			code: "badge_rate_limited",
+			retryAfter:
+				"retryAfter" in refusal && typeof refusal.retryAfter === "number"
+					? refusal.retryAfter
+					: BADGE_RETRY_FALLBACK_SECONDS,
+		};
+	}
+	return {
+		code: refusal.code === "badge_input_disabled" ? "badge_input_disabled" : "badge_not_accepted",
+	};
+}
+
 export type KioskFlow =
-	| { step: "home" }
+	| { step: "home"; notice?: KioskHomeNotice }
 	| {
 			step: "pin";
 			employee: KioskEmployeeListing;
@@ -75,19 +160,47 @@ export type KioskFlow =
 			error: KioskClockRefusal | "offline" | null;
 	  }
 	| {
+			/**
+			 * The kiosk's camera looks for a badge (#1367), opened by "Scan badge" on
+			 * the home screen. Leaving this step, by whatever way, stops the camera.
+			 */
+			step: "camera";
+	  }
+	| {
+			/** A scanned badge is being checked (#1366); nothing is shown about anyone yet. */
+			step: "badge";
+	  }
+	| {
 			step: "employee";
-			pin: string;
+			proof: KioskTurnProof;
 			snapshot: KioskEmployeeSnapshot;
 			pending: KioskPanelAction | null;
 			error: KioskClockRefusal | "offline" | null;
 	  }
 	| {
+			/**
+			 * Project and work category asked between "Clock out" and the clock-out
+			 * (#887), online only. A refusal, or a call never sent, returns here with
+			 * the choices kept, so the employee can change them or keep and retry.
+			 */
+			step: "attribution";
+			proof: KioskTurnProof;
+			snapshot: KioskEmployeeSnapshot;
+			action: KioskPanelAction;
+			ask: KioskAttribution;
+			values: KioskAttributionValues;
+			pending: boolean;
+			error: KioskClockRefusal | "offline" | null;
+	  }
+	| {
 			/** Vehicle use asked between the action's button and the action (#1123). */
 			step: "vehicle";
-			pin: string;
+			proof: KioskTurnProof;
 			snapshot: KioskEmployeeSnapshot;
 			action: KioskPanelAction;
 			ask: VehicleAsk;
+			/** The project and work category chosen before (#887). */
+			attribution?: AttributionAnswer;
 			pending: boolean;
 	  }
 	| {
@@ -113,6 +226,18 @@ export type KioskFlow =
 			ask: VehicleAsk;
 			pending: boolean;
 	  }
+	| {
+			/**
+			 * An online action whose reply was lost (#1363): the kiosk asks Z8 what
+			 * became of it and offers its employee nothing to do until Z8 answers;
+			 * everyone else keeps using the kiosk (user decision 2026-10-17). `checking`
+			 * until a question fails, then `unavailable`; `conflict` when Z8 recorded
+			 * the operation for another employee or action, or elsewhere.
+			 */
+			step: "uncertain";
+			attempt: KioskUncertainAction;
+			check: "checking" | "unavailable" | "conflict";
+	  }
 	| { step: "done"; confirmation: KioskTurnConfirmation };
 
 /** A kiosk call's answer other than a refused device token, which ends the kiosk's session. */
@@ -123,12 +248,17 @@ export function isKioskFlowBusy(flow: KioskFlow): boolean {
 	switch (flow.step) {
 		case "pin":
 			return flow.busy;
+		case "badge":
+			return true;
 		case "employee":
 		case "offline":
 			return flow.pending !== null;
+		case "attribution":
 		case "vehicle":
 		case "offline-vehicle":
 			return flow.pending;
+		// An unresolved action holds only its employee (user decision 2026-10-17): its
+		// screen returns home like any other, and the kiosk keeps checking meanwhile.
 		default:
 			return false;
 	}
@@ -239,7 +369,7 @@ export async function pinCheckedFlow(input: {
 	if (result.kind === "ok") {
 		return {
 			step: "employee",
-			pin,
+			proof: { pin },
 			snapshot: result.body,
 			pending: null,
 			error: null,
@@ -261,45 +391,128 @@ export async function pinCheckedFlow(input: {
 	};
 }
 
-/** The screen while an online action is sent: the vehicle step or the employee panel, pending. */
-export function actingFlow(
-	pin: string,
+/**
+ * The screen after a badge scan's check (#1366): the badge's employee with
+ * their state, day total and actions, or the home screen again with why not.
+ * Badge clocking needs a connection: an unreachable Z8 never opens an offline
+ * turn, and nothing is queued. Identification itself recorded nothing.
+ */
+export function badgeCheckedFlow(input: {
+	badge: string;
+	/** The camera read the badge (#1367); otherwise the attached scanner. */
+	input?: "camera";
+	result: AnsweredCall<KioskEmployeeSnapshot>;
+	/** A call found Z8 unreachable while the browser had a network. */
+	contactLost: () => void;
+}): KioskFlow {
+	const { result } = input;
+	if (result.kind === "ok") {
+		return {
+			step: "employee",
+			proof:
+				input.input === "camera" ? { badge: input.badge, input: "camera" } : { badge: input.badge },
+			snapshot: result.body,
+			pending: null,
+			error: null,
+		};
+	}
+	if (result.kind === "refused" && KIOSK_BADGE_REFUSALS.has(result.refusal.code)) {
+		return { step: "home", notice: badgeRefusalNotice(result.refusal) };
+	}
+	if (isKioskCallUnreachable(result) && result.kind !== "offline") input.contactLost();
+	return {
+		step: "home",
+		notice: { code: result.kind === "offline" && !result.sent ? "badge_offline" : "badge_failed" },
+	};
+}
+
+/** The project and work-category step (#887) with its choices, idle unless `pending` or refused. */
+export function attributionFlow(
+	proof: KioskTurnProof,
 	snapshot: KioskEmployeeSnapshot,
 	action: KioskPanelAction,
-	vehicle?: VehicleAnswer,
+	answer: AttributionAnswer,
+	status: { pending?: boolean; error?: KioskClockRefusal | "offline" } = {},
 ): KioskFlow {
-	return vehicle
-		? {
-				step: "vehicle",
-				pin,
-				snapshot,
-				action,
-				ask: vehicle.ask,
-				pending: true,
-			}
-		: { step: "employee", pin, snapshot, pending: action, error: null };
+	return {
+		step: "attribution",
+		proof,
+		snapshot,
+		action,
+		ask: answer.ask,
+		values: answer.values,
+		pending: status.pending ?? false,
+		error: status.error ?? null,
+	};
+}
+
+/** Back from the vehicle step: to the choices it followed (#887), with them kept, or the panel. */
+export function vehicleBackFlow(flow: Extract<KioskFlow, { step: "vehicle" }>): KioskFlow {
+	const { proof, snapshot } = flow;
+	return flow.attribution
+		? attributionFlow(proof, snapshot, flow.action, flow.attribution)
+		: { step: "employee", proof, snapshot, pending: null, error: null };
 }
 
 /**
- * The screen after an online action: the confirmation, the PIN pad again when
- * Z8 refused the PIN, or the employee panel with the refusal (and the state Z8
- * reported with it).
+ * The screen while an online action is sent: the step that asked last (vehicle
+ * use, or project and work category) or the employee panel, pending.
+ */
+export function actingFlow(
+	proof: KioskTurnProof,
+	snapshot: KioskEmployeeSnapshot,
+	action: KioskPanelAction,
+	vehicle?: VehicleAnswer,
+	attribution?: AttributionAnswer,
+): KioskFlow {
+	if (vehicle) {
+		return {
+			step: "vehicle",
+			proof,
+			snapshot,
+			action,
+			ask: vehicle.ask,
+			...(attribution ? { attribution } : {}),
+			pending: true,
+		};
+	}
+	if (attribution) return attributionFlow(proof, snapshot, action, attribution, { pending: true });
+	return { step: "employee", proof, snapshot, pending: action, error: null };
+}
+
+/**
+ * The screen after an online action: the confirmation, the uncertain step when
+ * the reply leaves open whether Z8 recorded it (#1363), the PIN pad again when
+ * Z8 refused the PIN, the home screen with why when Z8 no longer accepts the
+ * badge (#1366), or the employee panel with the refusal (and the state Z8
+ * reported with it). Only a call that was never sent says the kiosk is offline.
+ * A clock-out that chose a project or work category (#887) returns to that step
+ * instead, with the choices kept, while the employee is still clocked in.
  */
 export function actedFlow(input: {
-	pin: string;
+	proof: KioskTurnProof;
 	snapshot: KioskEmployeeSnapshot;
 	action: KioskPanelAction;
+	attempt: KioskUncertainAction;
 	vehicle?: VehicleAnswer;
+	attribution?: AttributionAnswer;
 	result: AnsweredCall<KioskClockResult>;
 }): KioskFlow {
-	const { pin, snapshot, action, result } = input;
+	const { proof, snapshot, action, result } = input;
 	if (result.kind === "ok") {
 		return {
 			step: "done",
 			confirmation: confirmationOf(action, result.body, input.vehicle?.answer.leftOut ?? false),
 		};
 	}
-	if (result.kind === "refused" && KIOSK_PIN_REFUSALS.has(result.refusal.code)) {
+	if (isKioskCallUncertain(result)) {
+		return { step: "uncertain", attempt: input.attempt, check: "checking" };
+	}
+	if (proof.badge !== undefined) {
+		if (result.kind === "refused" && KIOSK_BADGE_REFUSALS.has(result.refusal.code)) {
+			return { step: "home", notice: badgeRefusalNotice(result.refusal) };
+		}
+	} else if (result.kind === "refused" && KIOSK_PIN_REFUSALS.has(result.refusal.code)) {
 		const employee = { id: snapshot.employee.id, name: snapshot.employee.name };
 		return {
 			step: "pin",
@@ -314,13 +527,93 @@ export function actedFlow(input: {
 		refusal !== "offline" && "state" in refusal && refusal.state && refusal.dayTotal
 			? { ...snapshot, state: refusal.state, dayTotal: refusal.dayTotal }
 			: snapshot;
+	if (input.attribution && after.state.status === "clocked_in") {
+		return attributionFlow(proof, after, action, input.attribution, { error: refusal });
+	}
 	return {
 		step: "employee",
-		pin,
+		proof,
 		snapshot: after,
 		pending: null,
 		error: refusal,
 	};
+}
+
+/**
+ * The screen after asking what became of an uncertain action (#1363): its
+ * original confirmation once, when Z8 recorded it; the PIN pad for a fresh,
+ * explicit action once Z8 has closed it as not recorded; otherwise still
+ * uncertain. Never the old action again.
+ */
+export function resolvedFlow(
+	attempt: KioskUncertainAction,
+	result: AnsweredCall<KioskClockAttemptOutcome>,
+): KioskFlow {
+	if (result.kind !== "ok") return { step: "uncertain", attempt, check: "unavailable" };
+	const answer = result.body;
+	if (answer.outcome === "committed") return committedFlow(attempt, answer.at);
+	if (answer.outcome === "not_recorded") {
+		// The badge left with the turn (#1366): a fresh action starts with a new scan or the PIN.
+		if (attempt.via === "badge") return { step: "home", notice: { code: "badge_not_recorded" } };
+		return {
+			step: "pin",
+			employee: attempt.employee,
+			attempt: 0,
+			busy: false,
+			error: { code: "not_recorded" },
+		};
+	}
+	if (answer.outcome === "conflict") return { step: "uncertain", attempt, check: "conflict" };
+	return { step: "uncertain", attempt, check: "unavailable" };
+}
+
+/** The original action's confirmation, once Z8 confirmed it was recorded (#1363). */
+function committedFlow(
+	attempt: KioskUncertainAction,
+	at: { instant: string; zone: string },
+): KioskFlow {
+	return {
+		step: "done",
+		confirmation: {
+			name: attempt.employee.name,
+			action: attempt.action,
+			at: at.instant,
+			zone: at.zone,
+			// What the device knew when it sent the action; never claimed otherwise.
+			vehicleUseLeftOut: attempt.vehicleUseLeftOut === true,
+			unconfirmed: false,
+		},
+	};
+}
+
+/**
+ * The screen for an employee who identifies again (by name, or by badge with
+ * the badge turn that opened) while an action of theirs is unresolved, or was
+ * answered while they were away (#1363, user decision 2026-10-17): the original
+ * action's confirmation once; after "not recorded", a fresh turn that says so
+ * (the PIN pad for a name, the badge turn's actions for a badge); that it
+ * cannot be checked here; or that the kiosk is still checking, with no PIN pad
+ * and no action, so each employee has at most one unresolved action.
+ */
+export function heldFlow(
+	attempt: KioskUncertainAction,
+	check: "checking" | "unavailable",
+	badgeTurn?: Extract<KioskFlow, { step: "employee" }>,
+): KioskFlow {
+	const resolved = attempt.resolved;
+	if (resolved?.outcome === "committed") return committedFlow(attempt, resolved.at);
+	if (resolved?.outcome === "not_recorded") {
+		if (badgeTurn) return { ...badgeTurn, error: { code: "attempt_closed" } };
+		return {
+			step: "pin",
+			employee: attempt.employee,
+			attempt: 0,
+			busy: false,
+			error: { code: "not_recorded" },
+		};
+	}
+	if (resolved?.outcome === "conflict") return { step: "uncertain", attempt, check: "conflict" };
+	return { step: "uncertain", attempt, check };
 }
 
 /** The screen while an offline action is queued: the vehicle step or the employee panel, pending. */

@@ -22,6 +22,10 @@ _Avoid_: unassigned shift, vacant shift
 An employee's request to be assigned a published open shift, which a planner approves or rejects.
 _Avoid_: claim, shift application
 
+**Swap request**:
+An employee's request to hand their published shift to a named colleague, which a planner approves or rejects. Approving assigns the colleague.
+_Avoid_: shift trade, exchange
+
 **Planner**:
 An employee with the manager or admin role who creates shifts and assigns employees to them.
 _Avoid_: scheduler, shift manager
@@ -44,7 +48,18 @@ _Avoid_: expires at, valid until
 An employee skill whose skill expiry date is before the day in question: the shift date when planning a shift, the organization's today for reminders.
 _Avoid_: invalid skill, lapsed skill
 
+**Required skill** / **Preferred skill**:
+A skill a subarea or shift template asks for. Without a required skill, assigning the employee is a skill override; a missing or expired preferred skill is only shown. When the subarea and the template both name a skill, required wins.
+_Avoid_: hard/soft requirement, optional skill
+
+**Skill override**:
+Assigning an employee to a shift while a required skill is missing or expired on the shift date. The planner gives a reason, and the override is recorded with the assignment in one transaction: by a shift save or a shift request approval. A save that keeps the employee, shift date, subarea and template needs no new override (`scheduling/skill-override.ts`).
+_Avoid_: exception, waiver, skill warning (the warning is what the planner sees before deciding)
+
 ### Staffing
+
+**Compliance week**:
+The calendar interval from Monday midnight up to the following Monday midnight, on the organization's calendar for planned shifts. It shares its Monday start with Time Tracking's compliance check, independently of personal calendar preferences and submission cadence.
 
 **Staffing suggestion**:
 A ranked list of employees who could take one open shift, each shown with the reasons for its place and any warnings. A planner picks from it; it is never applied automatically and never stored.

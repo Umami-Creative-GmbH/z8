@@ -494,3 +494,10 @@ describe("ApprovalSprintPanel", () => {
 		expect(screen.queryByText("Expense review")).toBeNull();
 	});
 });
+it("shows every assessment reason in sprint review", () => {
+ const item = createApproval("triage-sprint", "Avery", "Correction");
+ item.triage.reasons = [{ code: "utc_offset_changed", riskLevel: "high", text: { key: "approvals:triage.test.offset", fallback: "Captured UTC offset changes." } }, { code: "payroll_unverified", riskLevel: "medium", text: { key: "approvals:triage.test.payrollUnknown", fallback: "Payroll impact unverified." } }];
+ render(<ApprovalSprintPanel open={true} items={[item]} onOpenChange={vi.fn()} onActioned={vi.fn()} />);
+ expect(screen.getByText("Captured UTC offset changes.")).toBeTruthy();
+ expect(screen.getByText("Payroll impact unverified.")).toBeTruthy();
+});

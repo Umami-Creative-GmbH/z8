@@ -8,13 +8,20 @@ import {
 	IconReceipt,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { summaryField, useApprovalInboxText } from "@/components/approvals/use-approval-inbox-text";
+import {
+	summaryField,
+	useApprovalInboxText,
+} from "@/components/approvals/use-approval-inbox-text";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { UserAvatar } from "@/components/user-avatar";
-import type { ApprovalInboxItem, ApprovalInboxType } from "@/lib/approvals/inbox/types";
+import type {
+	ApprovalInboxItem,
+	ApprovalInboxType,
+} from "@/lib/approvals/inbox/types";
 import { useEmployeeClockStatuses } from "@/lib/query";
 import { cn } from "@/lib/utils";
+import { ApprovalTriageReasons } from "./approval-triage-reasons";
 import { getApprovalTypeLabels } from "./approval-type-labels";
 import { getDecidedEarlierStageNote } from "./covering-notes";
 import { getOwnRequestNote } from "./own-request-note";
@@ -27,7 +34,10 @@ interface ApprovalInboxTableProps {
 	isFetching: boolean;
 }
 
-const TYPE_ICONS: Record<ApprovalInboxType, React.ComponentType<{ className?: string }>> = {
+const TYPE_ICONS: Record<
+	ApprovalInboxType,
+	React.ComponentType<{ className?: string }>
+> = {
 	absence_entry: IconCalendarOff,
 	absence_change_request: IconCalendarOff,
 	time_entry: IconClockEdit,
@@ -45,14 +55,21 @@ const RISK_BADGE_VARIANTS: Record<
 	high: "destructive",
 };
 
-function getAgeLabel(t: ReturnType<typeof useTranslate>["t"], ageDays: number): string {
+function getAgeLabel(
+	t: ReturnType<typeof useTranslate>["t"],
+	ageDays: number,
+): string {
 	if (ageDays <= 0) {
 		return t("approvals:approvals.requestedToday", "Today");
 	}
 
-	return t("approvals:approvals.requestAgeDays", "{count, plural, one {# day} other {# days}}", {
-		count: ageDays,
-	});
+	return t(
+		"approvals:approvals.requestAgeDays",
+		"{count, plural, one {# day} other {# days}}",
+		{
+			count: ageDays,
+		},
+	);
 }
 
 export function ApprovalInboxTable({
@@ -92,7 +109,8 @@ export function ApprovalInboxTable({
 						const isSelected = selectedIds.has(item.id);
 						const isHighRisk = item.triage.riskLevel === "high";
 						const isOwnRequest = item.capabilities.ownRequest === true;
-						const decidedEarlierStage = item.capabilities.decidedEarlierStage === true;
+						const decidedEarlierStage =
+							item.capabilities.decidedEarlierStage === true;
 
 						return (
 							<div
@@ -106,7 +124,9 @@ export function ApprovalInboxTable({
 								<div className="flex items-start md:items-center">
 									<Checkbox
 										checked={isSelected}
-										onCheckedChange={(checked) => onSelectItem(item.id, !!checked)}
+										onCheckedChange={(checked) =>
+											onSelectItem(item.id, !!checked)
+										}
 										onClick={(event) => event.stopPropagation()}
 										disabled={isOwnRequest || decidedEarlierStage}
 										aria-label={ariaLabel}
@@ -120,8 +140,7 @@ export function ApprovalInboxTable({
 									aria-label={t(
 										"approvals:approvals.openDetailsFor",
 										"Open details for {title}",
-										{ title: text(summaryField(item.summary, "title")),
-									}
+										{ title: text(summaryField(item.summary, "title")) },
 									)}
 								>
 									<div className="flex min-w-0 items-center gap-3">
@@ -133,7 +152,9 @@ export function ApprovalInboxTable({
 											clockStatus={presence.getStatus(item.requester.id)}
 										/>
 										<div className="min-w-0">
-											<div className="truncate font-medium text-sm">{item.requester.name}</div>
+											<div className="truncate font-medium text-sm">
+												{item.requester.name}
+											</div>
 											<div className="truncate text-muted-foreground text-xs">
 												{item.requester.email}
 											</div>
@@ -146,9 +167,14 @@ export function ApprovalInboxTable({
 												<TypeIcon className="size-3.5" aria-hidden="true" />
 												{typeLabels[item.type]}
 											</span>
-											<Badge variant={RISK_BADGE_VARIANTS[item.triage.riskLevel]}>
+											<Badge
+												variant={RISK_BADGE_VARIANTS[item.triage.riskLevel]}
+											>
 												{isHighRisk && (
-													<IconAlertTriangle className="mr-1 size-3" aria-hidden="true" />
+													<IconAlertTriangle
+														className="mr-1 size-3"
+														aria-hidden="true"
+													/>
 												)}
 												{t(
 													`approvals:approvals.risk.${item.triage.riskLevel}`,
@@ -164,9 +190,7 @@ export function ApprovalInboxTable({
 												{text(summaryField(item.summary, "detail"))}
 											</div>
 										</div>
-										<p className="text-muted-foreground text-xs leading-5">
-											{item.triage.explanation}
-										</p>
+										<ApprovalTriageReasons triage={item.triage} />
 										{isOwnRequest && (
 											<p className="font-medium text-muted-foreground text-xs leading-5">
 												{getOwnRequestNote(t)}

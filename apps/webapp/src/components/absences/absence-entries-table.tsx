@@ -1,12 +1,5 @@
 "use client";
 
-import {
-	IconCalendarCancel,
-	IconEdit,
-	IconPaperclip,
-	IconUserShare,
-	IconX,
-} from "@tabler/icons-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
@@ -14,28 +7,18 @@ import { toast } from "sonner";
 import { cancelAbsenceRequest } from "@/app/[locale]/(app)/absences/actions";
 import { DataTable, DataTableToolbar } from "@/components/data-table-server";
 import type { DataTableFeatures } from "@/components/data-table-server/data-table-features";
-import {
-	AlertDialog,
-	AlertDialogAction,
-	AlertDialogCancel,
-	AlertDialogContent,
-	AlertDialogDescription,
-	AlertDialogFooter,
-	AlertDialogHeader,
-	AlertDialogTitle,
-	AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { AbsenceChangeKind } from "@/lib/absences/change-request-types";
 import { formatDateRange, formatDays } from "@/lib/absences/date-utils";
 import { getSickDetailLabel, getSickDetailLabelKey } from "@/lib/absences/sick-details";
-import type { AbsenceWithCategory, AbsenceWithDays, DayPeriod } from "@/lib/absences/types";
-import { comparePlainDates, parsePlainDate } from "@/lib/datetime/temporal-core";
+import type { AbsenceWithDays, DayPeriod } from "@/lib/absences/types";
+import type { SickNoteMarker as SickNoteMarkerData } from "@/lib/personnel-file/sick-note-store";
+import { useInvalidatePeriodSubmissionReadiness } from "@/lib/query/period-submission-readiness";
 import { useRouter } from "@/navigation";
 import { AbsenceChangeDialog } from "./absence-change-dialog";
 import { AbsenceChangeHistory } from "./absence-change-history";
+import { AbsenceEntryActions } from "./absence-entry-actions";
 import { CategoryBadge } from "./category-badge";
 import { ChangeDeputyDialog } from "./change-deputy-dialog";
 import { DeputyName } from "./deputy-name";
@@ -45,22 +28,12 @@ import { SickNoteMarker } from "./sick-notes/sick-note-marker";
 import { useOwnAbsenceSickNotes } from "./sick-notes/use-own-absence-sick-notes";
 import { useOwnAbsenceChanges } from "./use-own-absence-changes";
 
+type TranslateFn = ReturnType<typeof useTranslate>["t"];
+
 interface AbsenceEntriesTableProps {
 	absences: AbsenceWithDays[];
 	currentDate: string;
 	onUpdate?: () => void;
-}
-
-function canShowCancelAction(absence: AbsenceWithDays): boolean {
-	return absence.status === "pending";
-}
-
-/** The deputy can change on pending and approved absences until they have ended (#1011). */
-function canChangeDeputy(absence: AbsenceWithCategory, today: string): boolean {
-	return (
-		(absence.status === "pending" || absence.status === "approved") &&
-		comparePlainDates(parsePlainDate(absence.endDate), parsePlainDate(today)) >= 0
-	);
 }
 
 /** Sick notes go on the employee's own sick leave unless it was rejected (#982). */
@@ -68,9 +41,35 @@ function takesSickNotes(absence: AbsenceWithDays): boolean {
 	return absence.category.type === "sick" && absence.status !== "rejected";
 }
 
+// Format period for display
+function formatPeriod(period: DayPeriod, t: TranslateFn): string {
+	switch (period) {
+		case "am":
+			return ` (${t("absences.period.am", "AM")})`;
+		case "pm":
+			return ` (${t("absences.period.pm", "PM")})`;
+		default:
+			return "";
+	}
+}
+
+// Translate status for display
+function getStatusLabel(status: "pending" | "approved" | "rejected", t: TranslateFn): string {
+	switch (status) {
+		case "pending":
+			return t("absences.status.pending", "Pending");
+		case "approved":
+			return t("absences.status.approved", "Approved");
+		case "rejected":
+			return t("absences.status.rejected", "Rejected");
+	}
+}
+
 export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: AbsenceEntriesTableProps) {
 	const { t } = useTranslate();
 	const { refresh } = useRouter();
+	// Pending absence requests keep their submission periods open (#1350).
+	const invalidateReadiness = useInvalidatePeriodSubmissionReadiness();
 	const [cancelingId, setCancelingId] = useState<string | null>(null);
 	const [search, setSearch] = useState("");
 	const sickNotes = useOwnAbsenceSickNotes(absences);
@@ -85,6 +84,7 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 	const changed = () => {
 		void changes.refetch();
 		refresh();
+		void invalidateReadiness();
 		onUpdate?.();
 	};
 
@@ -93,30 +93,6 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 		void sickNotes.refresh();
 		refresh();
 		onUpdate?.();
-	};
-
-	// Format period for display
-	const formatPeriod = (period: DayPeriod): string => {
-		switch (period) {
-			case "am":
-				return ` (${t("absences.period.am", "AM")})`;
-			case "pm":
-				return ` (${t("absences.period.pm", "PM")})`;
-			default:
-				return "";
-		}
-	};
-
-	// Translate status for display
-	const getStatusLabel = (status: "pending" | "approved" | "rejected"): string => {
-		switch (status) {
-			case "pending":
-				return t("absences.status.pending", "Pending");
-			case "approved":
-				return t("absences.status.approved", "Approved");
-			case "rejected":
-				return t("absences.status.rejected", "Rejected");
-		}
 	};
 
 	const handleCancel = async (absenceId: string) => {
@@ -130,6 +106,7 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 			toast.success(t("absences.toast.requestCancelled", "Absence cancelled"));
 			// Revalidate the page data to reflect the cancelled absence
 			refresh();
+			void invalidateReadiness();
 			onUpdate?.();
 		} else {
 			toast.error(
@@ -155,72 +132,17 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 		{
 			accessorKey: "dateRange",
 			header: t("absences.table.headers.dateRange", "Date Range"),
-			cell: ({ row }) => {
-				const absence = row.original;
-				const dateRangeText = formatDateRange(absence.startDate, absence.endDate);
-				const showPeriods = absence.startPeriod !== "full_day" || absence.endPeriod !== "full_day";
-
-				return (
-					<div className="flex flex-col">
-						<span className="font-medium">{dateRangeText}</span>
-						{showPeriods && (
-							<span className="text-xs text-muted-foreground">
-								{formatPeriod(absence.startPeriod) && (
-									<>
-										{t("absences.table.start", "Start")}
-										{formatPeriod(absence.startPeriod)}
-									</>
-								)}
-								{formatPeriod(absence.startPeriod) && formatPeriod(absence.endPeriod) && (
-									<> &middot; </>
-								)}
-								{formatPeriod(absence.endPeriod) && (
-									<>
-										{t("absences.table.end", "End")}
-										{formatPeriod(absence.endPeriod)}
-									</>
-								)}
-							</span>
-						)}
-					</div>
-				);
-			},
+			cell: ({ row }) => <AbsenceDateRangeCell absence={row.original} />,
 		},
 		{
 			accessorKey: "type",
 			header: t("absences.table.headers.type", "Type"),
 			cell: ({ row }) => (
-				<div className="flex flex-col items-start gap-1">
-					<CategoryBadge
-						name={row.original.category.name}
-						type={row.original.category.type}
-						color={row.original.category.color}
-					/>
-					{row.original.category.type === "sick" && row.original.sickDetail && (
-						<span className="text-muted-foreground text-xs">
-							{t(
-								getSickDetailLabelKey(row.original.sickDetail),
-								getSickDetailLabel(row.original.sickDetail),
-							)}
-						</span>
-					)}
-					{row.original.category.type === "sick" ? (
-						<SickNoteMarker
-							count={sickNotes.markers[row.original.id]?.count ?? 0}
-							onOpen={
-								sickNotes.markers[row.original.id]?.viewable
-									? () => setSickNotesOf(row.original)
-									: undefined
-							}
-						/>
-					) : null}
-					{row.original.deputy ? (
-						<span className="text-xs">
-							<span className="text-muted-foreground">{t("absences.deputy.label", "Deputy")}</span>{" "}
-							<DeputyName deputy={row.original.deputy} className="font-medium" />
-						</span>
-					) : null}
-				</div>
+				<AbsenceTypeCell
+					absence={row.original}
+					sickNoteMarker={sickNotes.markers[row.original.id]}
+					onOpenSickNotes={() => setSickNotesOf(row.original)}
+				/>
 			),
 		},
 		{
@@ -245,7 +167,7 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 								: "destructive"
 					}
 				>
-					{getStatusLabel(row.original.status)}
+					{getStatusLabel(row.original.status, t)}
 				</Badge>
 			),
 		},
@@ -263,130 +185,20 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 			header: () => (
 				<div className="text-right">{t("absences.table.headers.actions", "Actions")}</div>
 			),
-			cell: ({ row }) => {
-				const absence = row.original;
-				const canAttachSickNote = sickNotes.canAttach && takesSickNotes(absence);
-				const canCancel = canShowCancelAction(absence);
-				const canRequestChange = absence.status === "approved";
-				const pendingChange = changes.data?.some(
-					(request) => request.absenceId === absence.id && request.status === "pending",
-				);
-				const canChange = canChangeDeputy(absence, currentDate);
-				if (!canCancel && !canAttachSickNote && !canChange && !canRequestChange) return null;
-				const cancelLabel = t("absences.table.cancelAbsence", "Cancel absence");
-				const cancelTooltip = t("absences.table.cancelAbsenceTooltip", "Cancel absence");
-				const attachLabel = t("absences.sickNotes.attachAction", "Attach sick note");
-				const changeDeputyLabel = t("absences.deputy.changeAction", "Change deputy");
-				const requestChangeLabel = t("absences.change.request", "Request change");
-				const requestCancellationLabel = t(
-					"absences.change.requestCancellation",
-					"Request cancellation",
-				);
-
-				return (
-					<div className="flex justify-end gap-1">
-						{canRequestChange ? (
-							<>
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<Button
-											variant="ghost"
-											size="sm"
-											disabled={!changes.isSuccess || pendingChange}
-											onClick={() => setChangeOf({ absence, kind: "change" })}
-											aria-label={requestChangeLabel}
-										>
-											<IconEdit aria-hidden="true" className="size-4" />
-											<span className="sm:sr-only">{requestChangeLabel}</span>
-										</Button>
-									</TooltipTrigger>
-									<TooltipContent>{requestChangeLabel}</TooltipContent>
-								</Tooltip>
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<Button
-											variant="ghost"
-											size="sm"
-											disabled={!changes.isSuccess || pendingChange}
-											onClick={() => setChangeOf({ absence, kind: "cancel" })}
-											aria-label={requestCancellationLabel}
-										>
-											<IconCalendarCancel aria-hidden="true" className="size-4" />
-											<span className="sm:sr-only">{requestCancellationLabel}</span>
-										</Button>
-									</TooltipTrigger>
-									<TooltipContent>{requestCancellationLabel}</TooltipContent>
-								</Tooltip>
-							</>
-						) : null}
-						{canChange ? (
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={() => setChangingDeputyOf(absence)}
-								aria-label={changeDeputyLabel}
-							>
-								<IconUserShare aria-hidden="true" className="size-4" />
-								<span className="sm:sr-only">{changeDeputyLabel}</span>
-							</Button>
-						) : null}
-						{canAttachSickNote ? (
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={() => setAttachingTo(absence)}
-								aria-label={attachLabel}
-							>
-								<IconPaperclip aria-hidden="true" className="size-4" />
-								<span className="sm:sr-only">{attachLabel}</span>
-							</Button>
-						) : null}
-						{canCancel ? (
-							<Tooltip>
-								<AlertDialog>
-									<TooltipTrigger asChild>
-										<AlertDialogTrigger asChild>
-											<Button
-												variant="ghost"
-												size="sm"
-												disabled={cancelingId === absence.id}
-												aria-label={cancelLabel}
-											>
-												<IconX className="size-4" />
-												{/* Touch screens cannot show the tooltip (#846). */}
-												<span className="sm:sr-only">{cancelLabel}</span>
-											</Button>
-										</AlertDialogTrigger>
-									</TooltipTrigger>
-									<TooltipContent>{cancelTooltip}</TooltipContent>
-									<AlertDialogContent>
-										<AlertDialogHeader>
-											<AlertDialogTitle>
-												{t("absences.dialog.cancelTitle", "Cancel Absence")}
-											</AlertDialogTitle>
-											<AlertDialogDescription>
-												{t(
-													"absences.dialog.cancelDescription",
-													"Are you sure you want to cancel this absence? This action cannot be undone.",
-												)}
-											</AlertDialogDescription>
-										</AlertDialogHeader>
-										<AlertDialogFooter>
-											<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
-											<AlertDialogAction
-												onClick={() => handleCancel(absence.id)}
-												className="bg-destructive text-white hover:bg-destructive/90"
-											>
-												{t("absences.dialog.confirmCancel", "Yes, cancel absence")}
-											</AlertDialogAction>
-										</AlertDialogFooter>
-									</AlertDialogContent>
-								</AlertDialog>
-							</Tooltip>
-						) : null}
-					</div>
-				);
-			},
+			cell: ({ row }) => (
+				<AbsenceEntryActions
+					absence={row.original}
+					currentDate={currentDate}
+					canAttachSickNote={sickNotes.canAttach && takesSickNotes(row.original)}
+					changeRequests={changes.data}
+					changesLoaded={changes.isSuccess}
+					isCanceling={cancelingId === row.original.id}
+					onRequestChange={(kind) => setChangeOf({ absence: row.original, kind })}
+					onChangeDeputy={() => setChangingDeputyOf(row.original)}
+					onAttachSickNote={() => setAttachingTo(row.original)}
+					onCancel={() => handleCancel(row.original.id)}
+				/>
+			),
 		},
 	];
 
@@ -467,6 +279,75 @@ export function AbsenceEntriesTable({ absences, currentDate, onUpdate }: Absence
 					}}
 					onAttached={handleSickNotesChanged}
 				/>
+			) : null}
+		</div>
+	);
+}
+
+function AbsenceDateRangeCell({ absence }: { absence: AbsenceWithDays }) {
+	const { t } = useTranslate();
+	const dateRangeText = formatDateRange(absence.startDate, absence.endDate);
+	const showPeriods = absence.startPeriod !== "full_day" || absence.endPeriod !== "full_day";
+	const startPeriod = formatPeriod(absence.startPeriod, t);
+	const endPeriod = formatPeriod(absence.endPeriod, t);
+
+	return (
+		<div className="flex flex-col">
+			<span className="font-medium">{dateRangeText}</span>
+			{showPeriods && (
+				<span className="text-xs text-muted-foreground">
+					{startPeriod && (
+						<>
+							{t("absences.table.start", "Start")}
+							{startPeriod}
+						</>
+					)}
+					{startPeriod && endPeriod && <> &middot; </>}
+					{endPeriod && (
+						<>
+							{t("absences.table.end", "End")}
+							{endPeriod}
+						</>
+					)}
+				</span>
+			)}
+		</div>
+	);
+}
+
+function AbsenceTypeCell({
+	absence,
+	sickNoteMarker,
+	onOpenSickNotes,
+}: {
+	absence: AbsenceWithDays;
+	sickNoteMarker: SickNoteMarkerData | undefined;
+	onOpenSickNotes: () => void;
+}) {
+	const { t } = useTranslate();
+	return (
+		<div className="flex flex-col items-start gap-1">
+			<CategoryBadge
+				name={absence.category.name}
+				type={absence.category.type}
+				color={absence.category.color}
+			/>
+			{absence.category.type === "sick" && absence.sickDetail && (
+				<span className="text-muted-foreground text-xs">
+					{t(getSickDetailLabelKey(absence.sickDetail), getSickDetailLabel(absence.sickDetail))}
+				</span>
+			)}
+			{absence.category.type === "sick" ? (
+				<SickNoteMarker
+					count={sickNoteMarker?.count ?? 0}
+					onOpen={sickNoteMarker?.viewable ? onOpenSickNotes : undefined}
+				/>
+			) : null}
+			{absence.deputy ? (
+				<span className="text-xs">
+					<span className="text-muted-foreground">{t("absences.deputy.label", "Deputy")}</span>{" "}
+					<DeputyName deputy={absence.deputy} className="font-medium" />
+				</span>
 			) : null}
 		</div>
 	);

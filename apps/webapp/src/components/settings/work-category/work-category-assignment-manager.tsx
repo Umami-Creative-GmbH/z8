@@ -1,7 +1,5 @@
 "use client";
 
-/* eslint-disable react-doctor/no-giant-component */
-
 import {
 	IconBuilding,
 	IconLoader2,
@@ -19,6 +17,8 @@ import {
 	deleteSetAssignment,
 	getWorkCategorySetAssignments,
 } from "@/app/[locale]/(app)/settings/work-categories/actions";
+import { AssignmentLevelCardHeader } from "@/components/settings/assignment-level-card-header";
+import { AssignmentManagerSkeleton } from "@/components/settings/assignment-manager-skeleton";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -29,23 +29,23 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent } from "@/components/ui/card";
 import { queryKeys } from "@/lib/query";
+
+type AssignmentType = "organization" | "team" | "employee";
 
 interface WorkCategoryAssignmentManagerProps {
 	organizationId: string;
 	canManage: boolean;
-	onAssignClick: (type: "organization" | "team" | "employee") => void;
+	onAssignClick: (type: AssignmentType) => void;
 }
 
 interface AssignmentData {
 	id: string;
 	setId: string;
 	organizationId: string;
-	assignmentType: "organization" | "team" | "employee";
+	assignmentType: AssignmentType;
 	teamId: string | null;
 	employeeId: string | null;
 	priority: number;
@@ -69,22 +69,14 @@ interface AssignmentData {
 	} | null;
 }
 
-export function WorkCategoryAssignmentManager({
-	organizationId,
-	canManage,
-	onAssignClick,
-}: WorkCategoryAssignmentManagerProps) {
-	const { t } = useTranslate();
-	const queryClient = useQueryClient();
-	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-	const [selectedAssignment, setSelectedAssignment] = useState<AssignmentData | null>(null);
+interface AssignmentLevelProps {
+	canManage: boolean;
+	onAssignClick: () => void;
+	onDeleteClick: (assignment: AssignmentData) => void;
+}
 
-	// Fetch assignments
-	const {
-		data: assignments,
-		isLoading,
-		error,
-	} = useQuery({
+function useWorkCategoryAssignments(organizationId: string) {
+	return useQuery({
 		queryKey: queryKeys.workCategorySetAssignments.list(organizationId),
 		queryFn: async () => {
 			const result = await getWorkCategorySetAssignments(organizationId);
@@ -94,8 +86,14 @@ export function WorkCategoryAssignmentManager({
 			return result.data as AssignmentData[];
 		},
 	});
+}
 
-	// Delete mutation
+function useWorkCategoryAssignmentDeletion(organizationId: string) {
+	const { t } = useTranslate();
+	const queryClient = useQueryClient();
+	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+	const [selectedAssignment, setSelectedAssignment] = useState<AssignmentData | null>(null);
+
 	const deleteMutation = useMutation({
 		mutationFn: (assignmentId: string) => deleteSetAssignment(assignmentId),
 		onSuccess: (result) => {
@@ -131,22 +129,311 @@ export function WorkCategoryAssignmentManager({
 		}
 	};
 
+	return {
+		deleteDialogOpen,
+		setDeleteDialogOpen,
+		selectedAssignment,
+		isDeleting: deleteMutation.isPending,
+		handleDeleteClick,
+		handleDeleteConfirm,
+	};
+}
+
+function RemoveAssignmentButton({
+	canManage,
+	onClick,
+}: {
+	canManage: boolean;
+	onClick: () => void;
+}) {
+	const { t } = useTranslate();
+
+	return canManage ? (
+		<Button
+			variant="ghost"
+			size="icon"
+			className="size-8 text-muted-foreground hover:text-destructive"
+			onClick={onClick}
+			aria-label={t("common.remove", "Remove")}
+		>
+			<IconTrash className="size-4" />
+		</Button>
+	) : null;
+}
+
+function OrganizationAssignmentCard({
+	assignment,
+	canManage,
+	onAssignClick,
+	onDeleteClick,
+}: AssignmentLevelProps & { assignment: AssignmentData | undefined }) {
+	const { t } = useTranslate();
+
+	return (
+		<Card>
+			<AssignmentLevelCardHeader
+				icon={IconBuilding}
+				title={t("settings.workCategories.orgLevel", "Organization Default")}
+				description={t(
+					"settings.workCategories.orgLevelDescription",
+					"Default category set applied to all employees unless overridden",
+				)}
+			/>
+			<CardContent>
+				<div className="flex items-center justify-between mb-2">
+					<h4 className="text-sm font-medium text-muted-foreground">
+						{t("settings.workCategories.defaultSet", "Default Category Set")}
+					</h4>
+					{canManage && !assignment && (
+						<Button onClick={onAssignClick} size="sm" variant="outline">
+							<IconPlus className="mr-2 size-4" />
+							{t("settings.workCategories.setDefault", "Set Default")}
+						</Button>
+					)}
+				</div>
+				{assignment ? (
+					<div className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/50 transition-colors">
+						<div className="flex items-center gap-3">
+							<IconTag className="size-4 text-muted-foreground" />
+							<div>
+								<span className="font-medium">{assignment.set.name}</span>
+								{assignment.set.description && (
+									<p className="text-sm text-muted-foreground">{assignment.set.description}</p>
+								)}
+							</div>
+						</div>
+						<RemoveAssignmentButton
+							canManage={canManage}
+							onClick={() => onDeleteClick(assignment)}
+						/>
+					</div>
+				) : (
+					<p className="text-sm text-muted-foreground text-center py-2 border rounded-lg bg-muted/30">
+						{t(
+							"settings.workCategories.noOrgDefault",
+							"No default category set. Employees won't have work categories available.",
+						)}
+					</p>
+				)}
+			</CardContent>
+		</Card>
+	);
+}
+
+function AssignButton({
+	canManage,
+	label,
+	onClick,
+}: {
+	canManage: boolean;
+	label: string;
+	onClick: () => void;
+}) {
+	return canManage ? (
+		<div className="flex justify-end mb-2">
+			<Button onClick={onClick} size="sm" variant="outline">
+				<IconPlus className="mr-2 size-4" />
+				{label}
+			</Button>
+		</div>
+	) : null;
+}
+
+function TeamAssignmentsCard({
+	assignments,
+	canManage,
+	onAssignClick,
+	onDeleteClick,
+}: AssignmentLevelProps & { assignments: AssignmentData[] }) {
+	const { t } = useTranslate();
+
+	return (
+		<Card>
+			<AssignmentLevelCardHeader
+				icon={IconUsers}
+				title={t("settings.workCategories.teamLevel", "Team Level")}
+				description={t(
+					"settings.workCategories.teamLevelDescription",
+					"Override organization default for specific teams",
+				)}
+				count={assignments.length}
+			/>
+			<CardContent>
+				<AssignButton
+					canManage={canManage}
+					label={t("settings.workCategories.assignTeam", "Assign to Team")}
+					onClick={onAssignClick}
+				/>
+				{assignments.length > 0 ? (
+					<div className="space-y-2">
+						{assignments.map((assignment) => (
+							<div
+								key={assignment.id}
+								className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/50 transition-colors"
+							>
+								<div className="flex items-center gap-3">
+									<IconUsers className="size-4 text-muted-foreground" />
+									<div>
+										<span className="font-medium">{assignment.team?.name}</span>
+										<span className="text-muted-foreground mx-2">→</span>
+										<span className="text-sm">{assignment.set.name}</span>
+									</div>
+								</div>
+								<RemoveAssignmentButton
+									canManage={canManage}
+									onClick={() => onDeleteClick(assignment)}
+								/>
+							</div>
+						))}
+					</div>
+				) : (
+					<p className="text-sm text-muted-foreground text-center py-4">
+						{t("settings.workCategories.noTeamAssignments", "No team-level assignments")}
+					</p>
+				)}
+			</CardContent>
+		</Card>
+	);
+}
+
+function EmployeeAssignmentsCard({
+	assignments,
+	canManage,
+	onAssignClick,
+	onDeleteClick,
+}: AssignmentLevelProps & { assignments: AssignmentData[] }) {
+	const { t } = useTranslate();
+
+	return (
+		<Card>
+			<AssignmentLevelCardHeader
+				icon={IconUser}
+				title={t("settings.workCategories.employeeLevel", "Employee Overrides")}
+				description={t(
+					"settings.workCategories.employeeLevelDescription",
+					"Override team or organization defaults for specific employees",
+				)}
+				count={assignments.length}
+			/>
+			<CardContent>
+				<AssignButton
+					canManage={canManage}
+					label={t("settings.workCategories.assignEmployee", "Assign to Employee")}
+					onClick={onAssignClick}
+				/>
+				{assignments.length > 0 ? (
+					<div className="space-y-2">
+						{assignments.map((assignment) => (
+							<div
+								key={assignment.id}
+								className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/50 transition-colors"
+							>
+								<div className="flex items-center gap-3">
+									<IconUser className="size-4 text-muted-foreground" />
+									<div>
+										<span className="font-medium">
+											{assignment.employee?.firstName} {assignment.employee?.lastName}
+										</span>
+										<span className="text-muted-foreground mx-2">→</span>
+										<span className="text-sm">{assignment.set.name}</span>
+									</div>
+								</div>
+								<RemoveAssignmentButton
+									canManage={canManage}
+									onClick={() => onDeleteClick(assignment)}
+								/>
+							</div>
+						))}
+					</div>
+				) : (
+					<p className="text-sm text-muted-foreground text-center py-4">
+						{t("settings.workCategories.noEmployeeAssignments", "No employee-level overrides")}
+					</p>
+				)}
+			</CardContent>
+		</Card>
+	);
+}
+
+function DeleteAssignmentDialog({
+	open,
+	onOpenChange,
+	selectedAssignment,
+	isDeleting,
+	onConfirm,
+}: {
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
+	selectedAssignment: AssignmentData | null;
+	isDeleting: boolean;
+	onConfirm: () => void;
+}) {
+	const { t } = useTranslate();
+
+	return (
+		<AlertDialog open={open} onOpenChange={onOpenChange}>
+			<AlertDialogContent>
+				<AlertDialogHeader>
+					<AlertDialogTitle>
+						{t("settings.workCategories.deleteAssignmentTitle", "Remove Assignment?")}
+					</AlertDialogTitle>
+					<AlertDialogDescription>
+						{selectedAssignment?.assignmentType === "organization" &&
+							t(
+								"settings.workCategories.deleteOrgAssignment",
+								"This will remove the organization default. Employees will not have work categories available unless assigned individually.",
+							)}
+						{selectedAssignment?.assignmentType === "team" &&
+							t(
+								"settings.workCategories.deleteTeamAssignment",
+								'This will remove the category set from team "{team}". They will use the organization default.',
+								{ team: selectedAssignment.team?.name },
+							)}
+						{selectedAssignment?.assignmentType === "employee" &&
+							t(
+								"settings.workCategories.deleteEmployeeAssignment",
+								'This will remove the override for "{name}". They will use their team or organization default.',
+								{
+									name: `${selectedAssignment?.employee?.firstName} ${selectedAssignment?.employee?.lastName}`,
+								},
+							)}
+					</AlertDialogDescription>
+				</AlertDialogHeader>
+				<AlertDialogFooter>
+					<AlertDialogCancel disabled={isDeleting}>
+						{t("common.cancel", "Cancel")}
+					</AlertDialogCancel>
+					<AlertDialogAction
+						onClick={onConfirm}
+						disabled={isDeleting}
+						className="bg-destructive hover:bg-destructive/90"
+					>
+						{isDeleting ? (
+							<>
+								<IconLoader2 className="mr-2 size-4 animate-spin" />
+								{t("common.removing", "Removing...")}
+							</>
+						) : (
+							t("common.remove", "Remove")
+						)}
+					</AlertDialogAction>
+				</AlertDialogFooter>
+			</AlertDialogContent>
+		</AlertDialog>
+	);
+}
+
+export function WorkCategoryAssignmentManager({
+	organizationId,
+	canManage,
+	onAssignClick,
+}: WorkCategoryAssignmentManagerProps) {
+	const { t } = useTranslate();
+	const { data: assignments, isLoading, error } = useWorkCategoryAssignments(organizationId);
+	const deletion = useWorkCategoryAssignmentDeletion(organizationId);
+
 	if (isLoading) {
-		return (
-			<div className="space-y-6">
-				{[1, 2, 3].map((i) => (
-					<Card key={i}>
-						<CardHeader>
-							<Skeleton className="h-6 w-40" />
-							<Skeleton className="h-4 w-64" />
-						</CardHeader>
-						<CardContent>
-							<Skeleton className="h-16 w-full" />
-						</CardContent>
-					</Card>
-				))}
-			</div>
-		);
+		return <AssignmentManagerSkeleton />;
 	}
 
 	if (error) {
@@ -170,263 +457,33 @@ export function WorkCategoryAssignmentManager({
 	return (
 		<>
 			<div className="space-y-6">
-				{/* Organization Level */}
-				<Card>
-					<CardHeader>
-						<div className="flex items-center gap-2">
-							<IconBuilding className="size-5 text-muted-foreground" />
-							<div>
-								<CardTitle className="text-base">
-									{t("settings.workCategories.orgLevel", "Organization Default")}
-								</CardTitle>
-								<CardDescription>
-									{t(
-										"settings.workCategories.orgLevelDescription",
-										"Default category set applied to all employees unless overridden",
-									)}
-								</CardDescription>
-							</div>
-						</div>
-					</CardHeader>
-					<CardContent>
-						<div className="flex items-center justify-between mb-2">
-							<h4 className="text-sm font-medium text-muted-foreground">
-								{t("settings.workCategories.defaultSet", "Default Category Set")}
-							</h4>
-							{canManage && !orgAssignment && (
-								<Button onClick={() => onAssignClick("organization")} size="sm" variant="outline">
-									<IconPlus className="mr-2 size-4" />
-									{t("settings.workCategories.setDefault", "Set Default")}
-								</Button>
-							)}
-						</div>
-						{orgAssignment ? (
-							<div className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/50 transition-colors">
-								<div className="flex items-center gap-3">
-									<IconTag className="size-4 text-muted-foreground" />
-									<div>
-										<span className="font-medium">{orgAssignment.set.name}</span>
-										{orgAssignment.set.description && (
-											<p className="text-sm text-muted-foreground">
-												{orgAssignment.set.description}
-											</p>
-										)}
-									</div>
-								</div>
-								{canManage ? (
-									<Button
-										variant="ghost"
-										size="icon"
-										className="size-8 text-muted-foreground hover:text-destructive"
-										onClick={() => handleDeleteClick(orgAssignment)}
-										aria-label={t("common.remove", "Remove")}
-									>
-										<IconTrash className="size-4" />
-									</Button>
-								) : null}
-							</div>
-						) : (
-							<p className="text-sm text-muted-foreground text-center py-2 border rounded-lg bg-muted/30">
-								{t(
-									"settings.workCategories.noOrgDefault",
-									"No default category set. Employees won't have work categories available.",
-								)}
-							</p>
-						)}
-					</CardContent>
-				</Card>
-
-				{/* Team Level */}
-				<Card>
-					<CardHeader>
-						<div className="flex items-center gap-2">
-							<IconUsers className="size-5 text-muted-foreground" />
-							<div>
-								<CardTitle className="text-base">
-									{t("settings.workCategories.teamLevel", "Team Level")}
-									{teamAssignments.length > 0 && (
-										<Badge variant="secondary" className="ml-2">
-											{teamAssignments.length}
-										</Badge>
-									)}
-								</CardTitle>
-								<CardDescription>
-									{t(
-										"settings.workCategories.teamLevelDescription",
-										"Override organization default for specific teams",
-									)}
-								</CardDescription>
-							</div>
-						</div>
-					</CardHeader>
-					<CardContent>
-						{canManage ? (
-							<div className="flex justify-end mb-2">
-								<Button onClick={() => onAssignClick("team")} size="sm" variant="outline">
-									<IconPlus className="mr-2 size-4" />
-									{t("settings.workCategories.assignTeam", "Assign to Team")}
-								</Button>
-							</div>
-						) : null}
-						{teamAssignments.length > 0 ? (
-							<div className="space-y-2">
-								{teamAssignments.map((assignment) => (
-									<div
-										key={assignment.id}
-										className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/50 transition-colors"
-									>
-										<div className="flex items-center gap-3">
-											<IconUsers className="size-4 text-muted-foreground" />
-											<div>
-												<span className="font-medium">{assignment.team?.name}</span>
-												<span className="text-muted-foreground mx-2">→</span>
-												<span className="text-sm">{assignment.set.name}</span>
-											</div>
-										</div>
-										{canManage ? (
-											<Button
-												variant="ghost"
-												size="icon"
-												className="size-8 text-muted-foreground hover:text-destructive"
-												onClick={() => handleDeleteClick(assignment)}
-												aria-label={t("common.remove", "Remove")}
-											>
-												<IconTrash className="size-4" />
-											</Button>
-										) : null}
-									</div>
-								))}
-							</div>
-						) : (
-							<p className="text-sm text-muted-foreground text-center py-4">
-								{t("settings.workCategories.noTeamAssignments", "No team-level assignments")}
-							</p>
-						)}
-					</CardContent>
-				</Card>
-
-				{/* Employee Level */}
-				<Card>
-					<CardHeader>
-						<div className="flex items-center gap-2">
-							<IconUser className="size-5 text-muted-foreground" />
-							<div>
-								<CardTitle className="text-base">
-									{t("settings.workCategories.employeeLevel", "Employee Overrides")}
-									{employeeAssignments.length > 0 && (
-										<Badge variant="secondary" className="ml-2">
-											{employeeAssignments.length}
-										</Badge>
-									)}
-								</CardTitle>
-								<CardDescription>
-									{t(
-										"settings.workCategories.employeeLevelDescription",
-										"Override team or organization defaults for specific employees",
-									)}
-								</CardDescription>
-							</div>
-						</div>
-					</CardHeader>
-					<CardContent>
-						{canManage ? (
-							<div className="flex justify-end mb-2">
-								<Button onClick={() => onAssignClick("employee")} size="sm" variant="outline">
-									<IconPlus className="mr-2 size-4" />
-									{t("settings.workCategories.assignEmployee", "Assign to Employee")}
-								</Button>
-							</div>
-						) : null}
-						{employeeAssignments.length > 0 ? (
-							<div className="space-y-2">
-								{employeeAssignments.map((assignment) => (
-									<div
-										key={assignment.id}
-										className="flex items-center justify-between rounded-lg border p-3 hover:bg-accent/50 transition-colors"
-									>
-										<div className="flex items-center gap-3">
-											<IconUser className="size-4 text-muted-foreground" />
-											<div>
-												<span className="font-medium">
-													{assignment.employee?.firstName} {assignment.employee?.lastName}
-												</span>
-												<span className="text-muted-foreground mx-2">→</span>
-												<span className="text-sm">{assignment.set.name}</span>
-											</div>
-										</div>
-										{canManage ? (
-											<Button
-												variant="ghost"
-												size="icon"
-												className="size-8 text-muted-foreground hover:text-destructive"
-												onClick={() => handleDeleteClick(assignment)}
-												aria-label={t("common.remove", "Remove")}
-											>
-												<IconTrash className="size-4" />
-											</Button>
-										) : null}
-									</div>
-								))}
-							</div>
-						) : (
-							<p className="text-sm text-muted-foreground text-center py-4">
-								{t("settings.workCategories.noEmployeeAssignments", "No employee-level overrides")}
-							</p>
-						)}
-					</CardContent>
-				</Card>
+				<OrganizationAssignmentCard
+					assignment={orgAssignment}
+					canManage={canManage}
+					onAssignClick={() => onAssignClick("organization")}
+					onDeleteClick={deletion.handleDeleteClick}
+				/>
+				<TeamAssignmentsCard
+					assignments={teamAssignments}
+					canManage={canManage}
+					onAssignClick={() => onAssignClick("team")}
+					onDeleteClick={deletion.handleDeleteClick}
+				/>
+				<EmployeeAssignmentsCard
+					assignments={employeeAssignments}
+					canManage={canManage}
+					onAssignClick={() => onAssignClick("employee")}
+					onDeleteClick={deletion.handleDeleteClick}
+				/>
 			</div>
 
-			{/* Delete Confirmation Dialog */}
-			<AlertDialog open={canManage && deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-				<AlertDialogContent>
-					<AlertDialogHeader>
-						<AlertDialogTitle>
-							{t("settings.workCategories.deleteAssignmentTitle", "Remove Assignment?")}
-						</AlertDialogTitle>
-						<AlertDialogDescription>
-							{selectedAssignment?.assignmentType === "organization" &&
-								t(
-									"settings.workCategories.deleteOrgAssignment",
-									"This will remove the organization default. Employees will not have work categories available unless assigned individually.",
-								)}
-							{selectedAssignment?.assignmentType === "team" &&
-								t(
-									"settings.workCategories.deleteTeamAssignment",
-									'This will remove the category set from team "{team}". They will use the organization default.',
-									{ team: selectedAssignment.team?.name },
-								)}
-							{selectedAssignment?.assignmentType === "employee" &&
-								t(
-									"settings.workCategories.deleteEmployeeAssignment",
-									'This will remove the override for "{name}". They will use their team or organization default.',
-									{
-										name: `${selectedAssignment?.employee?.firstName} ${selectedAssignment?.employee?.lastName}`,
-									},
-								)}
-						</AlertDialogDescription>
-					</AlertDialogHeader>
-					<AlertDialogFooter>
-						<AlertDialogCancel disabled={deleteMutation.isPending}>
-							{t("common.cancel", "Cancel")}
-						</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={handleDeleteConfirm}
-							disabled={deleteMutation.isPending}
-							className="bg-destructive hover:bg-destructive/90"
-						>
-							{deleteMutation.isPending ? (
-								<>
-									<IconLoader2 className="mr-2 size-4 animate-spin" />
-									{t("common.removing", "Removing...")}
-								</>
-							) : (
-								t("common.remove", "Remove")
-							)}
-						</AlertDialogAction>
-					</AlertDialogFooter>
-				</AlertDialogContent>
-			</AlertDialog>
+			<DeleteAssignmentDialog
+				open={canManage && deletion.deleteDialogOpen}
+				onOpenChange={deletion.setDeleteDialogOpen}
+				selectedAssignment={deletion.selectedAssignment}
+				isDeleting={deletion.isDeleting}
+				onConfirm={deletion.handleDeleteConfirm}
+			/>
 		</>
 	);
 }

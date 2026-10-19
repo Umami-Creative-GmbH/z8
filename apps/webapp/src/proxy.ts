@@ -297,8 +297,9 @@ export async function proxy(request: NextRequest) {
 	// Set pathname header for server components (used for callback URLs)
 	response.headers.set(DOMAIN_HEADERS.PATHNAME, pathname);
 
-	// Apply enterprise security headers (HSTS, frame/referrer/content type policies)
-	applySecurityHeaders(response);
+	// Apply enterprise security headers (HSTS, frame/referrer/content type policies); the
+	// kiosk page alone may use the camera, to read badges (#1367).
+	applySecurityHeaders(response, { pathname });
 	if (isSetupPage) applySetupResponseHeaders(response);
 
 	// Custom domain detection. Platform organization subdomains are resolved separately

@@ -1,19 +1,16 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { Effect } from "effect";
-import { DateTime } from "luxon";
 import {
 	type EmployeeEmploymentHistory,
-	employee,
 	employeeEmploymentHistory,
 	employeeEmploymentPeriod,
 } from "@/db/schema";
-import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { type DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { termsCalendarDate } from "@/lib/employment-history/terms-in-force";
-import type { TimelineUpdate } from "@/lib/employment-history/timeline";
 import {
+	cancelEmploymentTerms,
 	changeHourlyWage,
 	confirmEmploymentTerms,
 	writeEmploymentTerms,
@@ -38,125 +35,6 @@ import {
 } from "./employee-action-utils";
 
 const logger = createLogger("EmploymentHistoryActions");
-
-type EmploymentHistoryCancelableRow = Pick<EmployeeEmploymentHistory, "reviewState" | "validFrom">;
-
-type EmploymentHistoryAssignmentRow = Pick<
-	EmployeeEmploymentHistory,
-	"employeeId" | "organizationId" | "workPolicyId" | "validFrom" | "validUntil" | "reviewState"
->;
-
-type EmploymentHistoryAssignmentWindowRow = Pick<
-	EmployeeEmploymentHistory,
-	"id" | "employeeId" | "organizationId" | "workPolicyId" | "validFrom" | "validUntil"
->;
-
-type EmploymentHistoryCancellationRestorationRow = Pick<
-	EmployeeEmploymentHistory,
-	| "id"
-	| "employeeId"
-	| "organizationId"
-	| "workPolicyId"
-	| "validFrom"
-	| "validUntil"
-	| "reviewState"
->;
-
-export function canCancelEmploymentHistoryRow(
-	row: EmploymentHistoryCancelableRow,
-	now = DateTime.utc().toJSDate(),
-) {
-	if (row.reviewState === "draft" || row.reviewState === "pending") {
-		return true;
-	}
-
-	return DateTime.fromJSDate(row.validFrom).toUTC() > DateTime.fromJSDate(now).toUTC();
-}
-
-export function buildEmploymentAssignmentSyncPlan(row: EmploymentHistoryAssignmentRow) {
-	if (row.reviewState !== "confirmed" || !row.workPolicyId) {
-		return null;
-	}
-
-	return {
-		policyId: row.workPolicyId,
-		organizationId: row.organizationId,
-		assignmentType: "employee" as const,
-		employeeId: row.employeeId,
-		teamId: null,
-		priority: 2,
-		effectiveFrom: row.validFrom,
-		effectiveUntil: row.validUntil,
-		isActive: true,
-	};
-}
-
-export function buildEmploymentAssignmentWindowUpdates({
-	updates,
-	existing,
-}: {
-	updates: TimelineUpdate[];
-	existing: EmploymentHistoryAssignmentWindowRow[];
-}) {
-	return updates.flatMap((update) => {
-		const historyRow = existing.find((row) => row.id === update.id);
-		if (!historyRow?.workPolicyId) {
-			return [];
-		}
-
-		return [
-			{
-				employeeId: historyRow.employeeId,
-				organizationId: historyRow.organizationId,
-				workPolicyId: historyRow.workPolicyId,
-				effectiveFrom: historyRow.validFrom,
-				effectiveUntil: update.validUntil,
-			},
-		];
-	});
-}
-
-export function buildEmploymentCancellationRestorationPlan({
-	canceled,
-	existing,
-}: {
-	canceled: EmploymentHistoryCancellationRestorationRow;
-	existing: EmploymentHistoryCancellationRestorationRow[];
-}) {
-	if (canceled.reviewState !== "confirmed") {
-		return null;
-	}
-
-	const confirmed = existing
-		.filter((row) => row.reviewState === "confirmed" && row.id !== canceled.id)
-		.sort((a, b) => a.validFrom.getTime() - b.validFrom.getTime());
-	const previous = confirmed
-		.filter((row) => row.validFrom.getTime() < canceled.validFrom.getTime())
-		.at(-1);
-
-	if (!previous) {
-		return null;
-	}
-
-	const next = confirmed.find((row) => row.validFrom.getTime() > canceled.validFrom.getTime());
-	const validUntil = next ? next.validFrom : null;
-
-	return {
-		historyUpdate: {
-			id: previous.id,
-			validUntil,
-		},
-		assignmentWindowUpdate: previous.workPolicyId
-			? {
-					employeeId: previous.employeeId,
-					organizationId: previous.organizationId,
-					workPolicyId: previous.workPolicyId,
-					effectiveFrom: previous.validFrom,
-					effectiveUntil: validUntil,
-				}
-			: null,
-	};
-}
 
 /**
  * The wage command throws its refusals inside the query; keep their type so
@@ -495,92 +373,18 @@ export async function cancelEmployeeEmploymentHistoryAction(
 					action: "cancel",
 				});
 
-				const canceledHistory = yield* dbService.query(
-					"cancelEmployeeEmploymentHistory",
-					async () => {
-						return await dbService.db.transaction(async (tx) => {
-							await tx.execute(sql`
-								select ${employee.id}
-								from ${employee}
-								where ${employee.id} = ${employeeId}
-									and ${employee.organizationId} = ${actor.organizationId}
-								for update
-							`);
-
-							const existing = await tx.query.employeeEmploymentHistory.findMany({
-								where: and(
-									eq(employeeEmploymentHistory.employeeId, employeeId),
-									eq(employeeEmploymentHistory.organizationId, actor.organizationId),
-								),
-							});
-							const targetHistory = existing.find((row) => row.id === historyId);
-
-							if (!targetHistory) {
-								throw new NotFoundError({
-									message: "Employment history not found",
-									entityType: "employment_history",
-									entityId: historyId,
-								});
-							}
-
-							if (!canCancelEmploymentHistoryRow(targetHistory)) {
-								throw new ValidationError({
-									message: "Employment history has already taken effect",
-									field: "validFrom",
-								});
-							}
-
-							const now = currentTimestamp();
-							// Restoration only extends terms inside the same open period; after
-							// a departure the previous terms already end at the cutoff.
-							const periodStatus = targetHistory.employmentPeriodId
-								? await tx.execute<{ status: string }>(sql`
-										select status from employee_employment_period
-										where id = ${targetHistory.employmentPeriodId}
-											and organization_id = ${actor.organizationId}
-									`)
-								: null;
-							const periodIsOpen = periodStatus ? periodStatus.rows[0]?.status === "open" : true;
-							const restorationPlan = periodIsOpen
-								? buildEmploymentCancellationRestorationPlan({
-										canceled: targetHistory,
-										existing: existing.filter(
-											(row) => row.employmentPeriodId === targetHistory.employmentPeriodId,
-										),
-									})
-								: null;
-
-							await tx
-								.delete(employeeEmploymentHistory)
-								.where(
-									and(
-										eq(employeeEmploymentHistory.id, historyId),
-										eq(employeeEmploymentHistory.employeeId, employeeId),
-										eq(employeeEmploymentHistory.organizationId, actor.organizationId),
-									),
-								);
-
-							if (restorationPlan) {
-								await tx
-									.update(employeeEmploymentHistory)
-									.set({
-										validUntil: restorationPlan.historyUpdate.validUntil,
-										updatedBy: session.user.id,
-										updatedAt: now,
-									})
-									.where(
-										and(
-											eq(employeeEmploymentHistory.id, restorationPlan.historyUpdate.id),
-											eq(employeeEmploymentHistory.employeeId, employeeId),
-											eq(employeeEmploymentHistory.organizationId, actor.organizationId),
-										),
-									);
-							}
-
-							return targetHistory;
-						});
-					},
-				);
+				const canceledHistory = yield* dbService
+					.query("cancelEmployeeEmploymentHistory", () =>
+						dbService.db.transaction((tx) =>
+							cancelEmploymentTerms(tx, {
+								organizationId: actor.organizationId,
+								employeeId,
+								actorUserId: session.user.id,
+								termsId: historyId,
+							}),
+						),
+					)
+					.pipe(Effect.mapError(keepTermsRefusal));
 
 				if (canceledHistory.reviewState === "confirmed") {
 					yield* Effect.promise(() =>

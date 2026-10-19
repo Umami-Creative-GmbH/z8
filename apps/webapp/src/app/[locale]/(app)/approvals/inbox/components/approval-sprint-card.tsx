@@ -8,7 +8,10 @@ import {
 	IconX,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { summaryField, useApprovalInboxText } from "@/components/approvals/use-approval-inbox-text";
+import {
+	summaryField,
+	useApprovalInboxText,
+} from "@/components/approvals/use-approval-inbox-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +28,8 @@ import type {
 	ApprovalInboxRiskLevel,
 } from "@/lib/approvals/inbox/types";
 
+import { ApprovalTriageReasons } from "./approval-triage-reasons";
+
 interface ApprovalSprintCardProps {
 	item: ApprovalInboxItem;
 	isBusy: boolean;
@@ -34,12 +39,14 @@ interface ApprovalSprintCardProps {
 	onOpenDetails: () => void;
 }
 
-const RISK_BADGE_VARIANTS: Record<ApprovalInboxRiskLevel, "secondary" | "outline" | "destructive"> =
-	{
-		low: "secondary",
-		medium: "outline",
-		high: "destructive",
-	};
+const RISK_BADGE_VARIANTS: Record<
+	ApprovalInboxRiskLevel,
+	"secondary" | "outline" | "destructive"
+> = {
+	low: "secondary",
+	medium: "outline",
+	high: "destructive",
+};
 
 const PRIORITY_BADGE_VARIANTS: Record<
 	ApprovalInboxPriority,
@@ -96,10 +103,10 @@ export function ApprovalSprintCard({
 				</div>
 
 				<div className="space-y-2 rounded-lg border bg-background p-4">
-					<div className="font-medium text-sm">{t("approvals:sprint.triage", "Triage")}</div>
-					<p className="break-words text-muted-foreground text-sm leading-6">
-						{item.triage.explanation}
-					</p>
+					<div className="font-medium text-sm">
+						{t("approvals:sprint.triage", "Triage")}
+					</div>
+					<ApprovalTriageReasons triage={item.triage} />
 					<div className="flex flex-wrap gap-2">
 						<Badge variant={PRIORITY_BADGE_VARIANTS[item.triage.priority]}>
 							{getPriorityLabel(t, item.triage.priority)}
@@ -111,18 +118,23 @@ export function ApprovalSprintCard({
 						</Badge>
 						{item.capabilities.canBulkApprove ? (
 							<Badge variant="secondary">
-								{t("approvals:sprint.capabilities.bulkApprove", "Bulk eligible")}
+								{t(
+									"approvals:sprint.capabilities.bulkApprove",
+									"Bulk eligible",
+								)}
 							</Badge>
 						) : null}
 					</div>
 				</div>
 
 				<div className="flex flex-wrap gap-2">
-					{item.triage.riskReasons.map((reason) => (
-						<Badge key={reason} variant="outline">
-							{getRiskReasonLabel(t, reason)}
-						</Badge>
-					))}
+					{(item.triage.reasons?.length ? [] : item.triage.riskReasons).map(
+						(reason) => (
+							<Badge key={reason} variant="outline">
+								{getRiskReasonLabel(t, reason)}
+							</Badge>
+						),
+					)}
 					{canApprove ? null : item.capabilities.requiresDetailReview ? (
 						<Badge variant="outline">
 							{t(
@@ -132,19 +144,30 @@ export function ApprovalSprintCard({
 						</Badge>
 					) : (
 						<Badge variant="outline">
-							{t("approvals:sprint.capabilities.approveUnavailable", "Approval unavailable")}
+							{t(
+								"approvals:sprint.capabilities.approveUnavailable",
+								"Approval unavailable",
+							)}
 						</Badge>
 					)}
 					{canReject ? null : (
 						<Badge variant="outline">
-							{t("approvals:sprint.capabilities.rejectUnavailable", "Rejection unavailable")}
+							{t(
+								"approvals:sprint.capabilities.rejectUnavailable",
+								"Rejection unavailable",
+							)}
 						</Badge>
 					)}
 				</div>
 			</CardContent>
 
 			<CardFooter className="flex flex-col items-stretch gap-3 sm:flex-row sm:justify-between">
-				<Button type="button" variant="ghost" onClick={onOpenDetails} disabled={isBusy}>
+				<Button
+					type="button"
+					variant="ghost"
+					onClick={onOpenDetails}
+					disabled={isBusy}
+				>
 					<IconExternalLink aria-hidden="true" />
 					{t("approvals:sprint.openDetails", "Open details")}
 				</Button>
@@ -153,7 +176,10 @@ export function ApprovalSprintCard({
 						type="button"
 						onClick={onApprove}
 						disabled={isBusy || !canApprove}
-						aria-label={t("approvals:sprint.approveCurrentApproval", "Approve current approval")}
+						aria-label={t(
+							"approvals:sprint.approveCurrentApproval",
+							"Approve current approval",
+						)}
 					>
 						<IconCheck aria-hidden="true" />
 						{t("approvals:sprint.approve", "Approve")}
@@ -163,7 +189,10 @@ export function ApprovalSprintCard({
 						variant="outline"
 						onClick={onReject}
 						disabled={isBusy || !canReject}
-						aria-label={t("approvals:sprint.rejectCurrentApproval", "Reject current approval")}
+						aria-label={t(
+							"approvals:sprint.rejectCurrentApproval",
+							"Reject current approval",
+						)}
 					>
 						<IconX aria-hidden="true" />
 						{t("approvals:sprint.reject", "Reject")}
@@ -173,7 +202,10 @@ export function ApprovalSprintCard({
 						variant="secondary"
 						onClick={onSkip}
 						disabled={isBusy}
-						aria-label={t("approvals:sprint.skipCurrentApproval", "Skip current approval")}
+						aria-label={t(
+							"approvals:sprint.skipCurrentApproval",
+							"Skip current approval",
+						)}
 					>
 						<IconPlayerSkipForward aria-hidden="true" />
 						{t("approvals:sprint.skip", "Skip")}
@@ -185,7 +217,10 @@ export function ApprovalSprintCard({
 	);
 }
 
-function getRiskLabel(t: ReturnType<typeof useTranslate>["t"], riskLevel: ApprovalInboxRiskLevel) {
+function getRiskLabel(
+	t: ReturnType<typeof useTranslate>["t"],
+	riskLevel: ApprovalInboxRiskLevel,
+) {
 	switch (riskLevel) {
 		case "low":
 			return t("approvals:sprint.risk.low", "Low risk");
@@ -212,16 +247,28 @@ function getPriorityLabel(
 	}
 }
 
-function getRiskReasonLabel(t: ReturnType<typeof useTranslate>["t"], reason: string) {
+function getRiskReasonLabel(
+	t: ReturnType<typeof useTranslate>["t"],
+	reason: string,
+) {
 	switch (reason) {
 		case "no_conflicts_detected":
-			return t("approvals:sprint.riskReasons.noConflictsDetected", "No conflicts detected");
+			return t(
+				"approvals:sprint.riskReasons.noConflictsDetected",
+				"No conflicts detected",
+			);
 		case "small_time_delta":
-			return t("approvals:sprint.riskReasons.smallTimeDelta", "Small time delta");
+			return t(
+				"approvals:sprint.riskReasons.smallTimeDelta",
+				"Small time delta",
+			);
 		case "stale_pending":
 			return t("approvals:sprint.riskReasons.stalePending", "Stale pending");
 		case "payroll_relevant":
-			return t("approvals:sprint.riskReasons.payrollRelevant", "Payroll relevant");
+			return t(
+				"approvals:sprint.riskReasons.payrollRelevant",
+				"Payroll relevant",
+			);
 		case "needs_review":
 			return t("approvals:sprint.riskReasons.needsReview", "Needs review");
 		default:
@@ -229,14 +276,20 @@ function getRiskReasonLabel(t: ReturnType<typeof useTranslate>["t"], reason: str
 	}
 }
 
-function getTypeLabel(t: ReturnType<typeof useTranslate>["t"], type: ApprovalInboxItem["type"]) {
+function getTypeLabel(
+	t: ReturnType<typeof useTranslate>["t"],
+	type: ApprovalInboxItem["type"],
+) {
 	switch (type) {
 		case "absence_entry":
 			return t("approvals:sprint.types.absenceEntry", "Absence request");
 		case "time_entry":
 			return t("approvals:sprint.types.timeEntry", "Time entry");
 		case "travel_expense_claim":
-			return t("approvals:sprint.types.travelExpenseClaim", "Travel expense claim");
+			return t(
+				"approvals:sprint.types.travelExpenseClaim",
+				"Travel expense claim",
+			);
 		case "travel_expense_report":
 			return t("approvals:sprint.types.travelExpenseReport", "Expense report");
 	}

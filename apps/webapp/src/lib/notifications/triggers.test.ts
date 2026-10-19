@@ -281,12 +281,11 @@ describe("approval notification triggers", () => {
 			endDate: "2026-05-22",
 		});
 
-		// #1136 (its own notification type) has not landed: the type stays as it is.
 		expect(createNotification).toHaveBeenCalledWith(
 			expect.objectContaining({
 				userId: "user-manager",
 				organizationId: "org-1",
-				type: "absence_request_approved",
+				type: "approved_absence_cancelled",
 				title: "Approved absence cancelled",
 				entityType: "absence_entry",
 				entityId: "absence-1",

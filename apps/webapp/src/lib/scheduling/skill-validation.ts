@@ -20,18 +20,22 @@ import { isExpiredSkillOn } from "./skill-expiry";
  */
 
 type Database = typeof appDb;
+/** A transaction checks inside the write it guards (#893). */
+type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 type Skill = typeof skill.$inferSelect;
 type SkillCategory = Skill["category"];
 
 export interface SkillValidationResult {
+	/** No required skill is missing or expired. Preferred skills never disqualify (#893). */
 	isQualified: boolean;
+	/** Requirements not held validly on the shift date; an expired skill is listed here too. */
 	missingSkills: Array<{
 		id: string;
 		name: string;
 		category: SkillCategory;
 		isRequired: boolean;
 	}>;
-	/** Required skills that are expired skills on the shift date. */
+	/** Required and preferred skills that are expired skills on the shift date. */
 	expiredSkills: Array<{
 		id: string;
 		name: string;
@@ -39,7 +43,16 @@ export interface SkillValidationResult {
 		expiresAt: string;
 		/** A skill certificate is on file for this employee skill (#1144); never its content. */
 		certificateOnFile: boolean;
+		isRequired: boolean;
 	}>;
+}
+
+/**
+ * The required skills missing or expired on the shift date, each once: assigning the employee
+ * anyway is a skill override (#893).
+ */
+export function unmetRequiredSkillIds(validation: SkillValidationResult): string[] {
+	return validation.missingSkills.flatMap((entry) => (entry.isRequired ? [entry.id] : []));
 }
 
 /** Drops rows whose skill belongs to another organization (pre-#1135 data). */
@@ -57,7 +70,7 @@ export function withOrganizationSkills<Row extends { skill: { organizationId: st
  * organization.
  */
 export async function loadSkillValidation(
-	database: Database,
+	database: Database | Transaction,
 	input: {
 		organizationId: string;
 		employeeId: string;
@@ -134,10 +147,12 @@ export async function loadSkillValidation(
 		name: row.skill.name,
 		expiresAt: row.expiresAt,
 		certificateOnFile: onFile.has(row.id),
+		isRequired: requirements.get(row.skillId)?.isRequired ?? false,
 	}));
 
 	return {
-		isQualified: !missingSkills.some((entry) => entry.isRequired) && expiredSkills.length === 0,
+		// An expired required skill is also a missing one.
+		isQualified: !missingSkills.some((entry) => entry.isRequired),
 		missingSkills,
 		expiredSkills,
 	};

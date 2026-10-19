@@ -1,6 +1,10 @@
 import "server-only";
 
 import type {
+	ResumeBreakOutcome,
+	StartBreakRefusal,
+} from "@/lib/time-tracking/clocking/break-in-progress";
+import type {
 	BreakFailure,
 	BreakRefusal,
 	ClockInFailure,
@@ -178,6 +182,96 @@ const BREAK_REVIEW_MESSAGES: Record<
 	],
 };
 
+/** A break in progress the employee started or resumes on the web (#888). */
+const WORK_CHANGED: Message = [
+	"timeTracking.breakInProgress.errors.workChanged",
+	"Your clock changed on another device. It now shows the current state.",
+];
+const BREAK_CHANGED: Message = [
+	"timeTracking.breakInProgress.errors.breakChanged",
+	"Your break changed on another device. Your clock now shows the current state.",
+];
+const BREAK_COLLISION: Message = [
+	"timeTracking.breakInProgress.errors.collision",
+	"This break conflicts with an earlier request. Please refresh and try again.",
+];
+const START_BREAK_RETRY: Message = [
+	"timeTracking.breakInProgress.errors.startRetry",
+	"Could not start your break. Please try again.",
+];
+const RESUME_RETRY: Message = [
+	"timeTracking.breakInProgress.errors.resumeRetry",
+	"Could not resume work. Please try again.",
+];
+
+/** How the web words every start refusal; the wire keeps each code (#888). */
+const START_BREAK_FAILURE_MESSAGES: Record<
+	Exclude<StartBreakRefusal["code"], "billing_required" | "under_review"> | WebClockRefusal,
+	Message
+> = {
+	...WEB_REFUSAL_MESSAGES,
+	// The employee's live work is not the work they saw.
+	not_clocked_in: WORK_CHANGED,
+	already_on_break: [
+		"timeTracking.breakInProgress.errors.alreadyOnBreak",
+		"You are already on a break.",
+	],
+	invalid_interval: [
+		"timeTracking.breakInProgress.errors.tooEarly",
+		"A break can only start after your work has started.",
+	],
+	access_denied: [
+		"timeTracking.breakInProgress.errors.startNotAllowed",
+		"You cannot start a break.",
+	],
+	collision: BREAK_COLLISION,
+	unconfirmed: [
+		"timeTracking.breakInProgress.errors.unconfirmed",
+		"Your break could not be confirmed. Check your clock before trying again.",
+	],
+	// A live web start is never frozen and carries no age window.
+	admission_window: START_BREAK_RETRY,
+	invalid_command: START_BREAK_RETRY,
+	frozen_not_accepted: START_BREAK_RETRY,
+	failed: START_BREAK_RETRY,
+};
+
+type ResumeRefusal = Extract<ResumeBreakOutcome, { outcome: "refused" }>["failure"];
+
+/** How the web words every resume refusal; the wire keeps each code (#888). */
+const RESUME_FAILURE_MESSAGES: Record<
+	| Exclude<ResumeRefusal["code"], "billing_required" | "under_review" | "month_closed">
+	| WebClockRefusal,
+	Message
+> = {
+	...WEB_REFUSAL_MESSAGES,
+	// The break the employee saw is no longer the one in progress.
+	no_break_in_progress: BREAK_CHANGED,
+	on_break: BREAK_CHANGED,
+	not_clocked_in: WORK_CHANGED,
+	target_unknown: WORK_CHANGED,
+	target_not_active: WORK_CHANGED,
+	holiday_blocked: BREAK_FAILURE_MESSAGES.holiday_blocked,
+	occupancy_conflict: BREAK_FAILURE_MESSAGES.occupancy_conflict,
+	invalid_interval: BREAK_CHANGED,
+	collision: BREAK_COLLISION,
+	append_review_required: BREAK_FAILURE_MESSAGES.append_review_required,
+	access_denied: [
+		"timeTracking.breakInProgress.errors.resumeNotAllowed",
+		"You cannot resume this break.",
+	],
+	unconfirmed: [
+		"timeTracking.breakInProgress.errors.resumeUnconfirmed",
+		"Resuming could not be confirmed. Check your clock before trying again.",
+	],
+	admission_window: RESUME_RETRY,
+	invalid_command: RESUME_RETRY,
+	invalid_break_duration: RESUME_RETRY,
+	frozen_not_accepted: RESUME_RETRY,
+	legacy_not_accepted: RESUME_RETRY,
+	failed: RESUME_RETRY,
+};
+
 function interpolate(fallback: string, params: Params = {}) {
 	return fallback.replace(/\{(\w+)\}/g, (match, name: string) => params[name] ?? match);
 }
@@ -214,6 +308,32 @@ export async function clockInFailureMessage(
 	if (failure === "month_closed" && params?.month) return monthClosedMessage(params.month);
 	const [key, fallback] = CLOCK_IN_FAILURE_MESSAGES[failure];
 	return (await translator())(key, fallback, params);
+}
+
+export async function startBreakFailureMessage(
+	refusal: Exclude<StartBreakRefusal, { code: "billing_required" }> | { code: WebClockRefusal },
+): Promise<string> {
+	const translate = await translator();
+	if (refusal.code === "under_review") return translate(...BREAK_REVIEW_MESSAGES[refusal.review]);
+	return translate(...START_BREAK_FAILURE_MESSAGES[refusal.code]);
+}
+
+export async function resumeBreakFailureMessage(
+	refusal: Exclude<ResumeRefusal, { code: "billing_required" }> | { code: WebClockRefusal },
+): Promise<string> {
+	const translate = await translator();
+	switch (refusal.code) {
+		case "month_closed":
+			return monthClosedMessage(refusal.month);
+		case "under_review":
+			return translate(...BREAK_REVIEW_MESSAGES[refusal.review]);
+		case "holiday_blocked":
+			return translate(...RESUME_FAILURE_MESSAGES.holiday_blocked, {
+				holidayName: refusal.holidayName ?? "",
+			});
+		default:
+			return translate(...RESUME_FAILURE_MESSAGES[refusal.code]);
+	}
 }
 
 export async function breakFailureMessage(

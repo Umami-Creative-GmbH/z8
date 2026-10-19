@@ -56,6 +56,8 @@ function kiosk(overrides: Partial<KioskData> = {}): KioskData {
 		timezone: "Europe/Berlin",
 		boardEnabled: false,
 		offlineModeEnabled: false,
+		badgeScannerEnabled: false,
+		badgeCameraEnabled: false,
 		status: "paired",
 		pairingCodeExpiresAt: null,
 		pairedAt: "2026-10-01T08:00:00.000Z",
@@ -176,6 +178,86 @@ describe("KioskSettings", () => {
 			expect(mocks.revokeKioskAction).toHaveBeenCalledWith({ kioskId: kiosk().id }),
 		);
 		expect(mocks.refresh).toHaveBeenCalled();
+	});
+
+	describe("attached-scanner badge input (#1366)", () => {
+		it("is off by default and an admin switches it on for one kiosk", async () => {
+			mocks.updateKioskAction.mockResolvedValue({ success: true, data: { kioskId: kiosk().id } });
+			renderSettings([kiosk()]);
+			expect(screen.queryByText(/Badge scanner on/)).toBeNull();
+
+			fireEvent.click(screen.getByRole("button", { name: "Edit" }));
+			const scanner = screen.getByRole("switch", { name: "Badge scanner" });
+			expect(scanner.getAttribute("aria-checked")).toBe("false");
+			fireEvent.click(scanner);
+			fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+			await waitFor(() =>
+				expect(mocks.updateKioskAction).toHaveBeenCalledWith(
+					expect.objectContaining({ kioskId: kiosk().id, badgeScannerEnabled: true }),
+				),
+			);
+		});
+
+		it("shows which kiosks accept badges and lets an admin switch it off", async () => {
+			mocks.updateKioskAction.mockResolvedValue({ success: true, data: { kioskId: kiosk().id } });
+			renderSettings([kiosk({ badgeScannerEnabled: true })]);
+			expect(screen.getByText(/Badge scanner on/)).toBeTruthy();
+
+			fireEvent.click(screen.getByRole("button", { name: "Edit" }));
+			fireEvent.click(screen.getByRole("switch", { name: "Badge scanner" }));
+			fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+			await waitFor(() =>
+				expect(mocks.updateKioskAction).toHaveBeenCalledWith(
+					expect.objectContaining({ badgeScannerEnabled: false }),
+				),
+			);
+		});
+	});
+
+	describe("camera badge input (#1367)", () => {
+		it("is off by default and switches on without touching the scanner", async () => {
+			mocks.updateKioskAction.mockResolvedValue({ success: true, data: { kioskId: kiosk().id } });
+			renderSettings([kiosk()]);
+			expect(screen.queryByText(/Badge camera on/)).toBeNull();
+
+			fireEvent.click(screen.getByRole("button", { name: "Edit" }));
+			const camera = screen.getByRole("switch", { name: "Badge camera" });
+			expect(camera.getAttribute("aria-checked")).toBe("false");
+			fireEvent.click(camera);
+			expect(
+				screen.getByRole("switch", { name: "Badge scanner" }).getAttribute("aria-checked"),
+			).toBe("false");
+			fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+			await waitFor(() =>
+				expect(mocks.updateKioskAction).toHaveBeenCalledWith(
+					expect.objectContaining({
+						kioskId: kiosk().id,
+						badgeCameraEnabled: true,
+						badgeScannerEnabled: false,
+					}),
+				),
+			);
+		});
+
+		it("shows each input on its own and switches the camera off while the scanner stays on", async () => {
+			mocks.updateKioskAction.mockResolvedValue({ success: true, data: { kioskId: kiosk().id } });
+			renderSettings([kiosk({ badgeScannerEnabled: true, badgeCameraEnabled: true })]);
+			expect(screen.getByText(/Badge scanner on/)).toBeTruthy();
+			expect(screen.getByText(/Badge camera on/)).toBeTruthy();
+
+			fireEvent.click(screen.getByRole("button", { name: "Edit" }));
+			fireEvent.click(screen.getByRole("switch", { name: "Badge camera" }));
+			fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+			await waitFor(() =>
+				expect(mocks.updateKioskAction).toHaveBeenCalledWith(
+					expect.objectContaining({ badgeCameraEnabled: false, badgeScannerEnabled: true }),
+				),
+			);
+		});
 	});
 
 	describe("offline mode (#1287)", () => {

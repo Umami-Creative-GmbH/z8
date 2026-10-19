@@ -48,7 +48,17 @@ export type BreakInProgressCommand = Pick<
 	 * its break's receipt command, which keeps the break start it ended.
 	 */
 	| "payload"
->;
+> & {
+	/**
+	 * What the employee saw when they acted (#888): the command changes only that
+	 * live work and, for a resume, that break in progress; anything else refuses as
+	 * if there were none. A committed retry still replays.
+	 */
+	expected?: BreakExpectation;
+};
+
+/** The live work, and for a resume its break's recorded start, a command acts on. */
+export type BreakExpectation = { workPeriodId: string; breakStart?: Instant };
 
 /** A resume becomes a break command; it may carry that command's request evidence. */
 export type ResumeBreakCommand = BreakInProgressCommand &
@@ -65,12 +75,15 @@ export type StartBreakRefusal =
 	| { code: "admission_window"; reason: "too_old" | "in_future" }
 	| { code: "under_review"; review: "approval" | "time_correction" }
 	| { code: "failed" | "unconfirmed"; cause?: unknown }
+	/**
+	 * The identity started another employee's break, or (`cause` a
+	 * `KioskAttemptClosedError`, #1363) its kiosk attempt was resolved as not recorded.
+	 */
+	| { code: "collision"; cause?: unknown }
 	| {
 			code:
 				| "access_denied"
 				| "invalid_command"
-				/** The identity started another employee's break. */
-				| "collision"
 				| "not_clocked_in"
 				/** A break in progress is already open on the live work. */
 				| "already_on_break"
@@ -126,6 +139,20 @@ export const breakStartColumns = {
 function sameBreak(a: BreakStart | null, b: BreakStart | null) {
 	if (!a || !b) return a === b;
 	return compareInstants(a.instant, b.instant) === 0 && a.zone === b.zone;
+}
+
+/** Whether the live work is the one a command expects, and for a resume its break too. */
+export function meetsExpectation(
+	live: { workPeriodId: string; breakInProgress: BreakStart | null },
+	expected: BreakExpectation | undefined,
+) {
+	if (!expected) return true;
+	if (live.workPeriodId !== expected.workPeriodId) return false;
+	if (!expected.breakStart) return true;
+	return (
+		live.breakInProgress !== null &&
+		compareInstants(live.breakInProgress.instant, expected.breakStart) === 0
+	);
 }
 
 /** The employee's live work, with its break in progress if one is open. */

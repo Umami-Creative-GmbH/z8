@@ -11,7 +11,10 @@ import { RequestAbsenceDialog } from "./request-absence-dialog";
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
-		t: (_key: string, fallback?: string) => fallback ?? _key,
+		t: (_key: string, fallback?: string, params?: Record<string, unknown>) =>
+			fallback
+				? fallback.replace(/\{(\w+)\}/g, (_, key) => String(params?.[key] ?? `{${key}}`))
+				: _key,
 	}),
 }));
 
@@ -183,29 +186,60 @@ const categories = [
 const riskyPreview: AbsencePlanPreview = {
 	requestedAbsenceDays: 2,
 	refusal: null,
-	balance: {
-		year: 2026,
-		remainingDays: 10,
-		remainingAfterRequest: 8,
-		countsAgainstVacation: true,
-	},
+	countsAgainstVacation: true,
+	balances: [
+		{
+			year: 2026,
+			chargedAbsenceDays: 2,
+			futureYear: false,
+			status: "available",
+			remainingDays: 10,
+			remainingAfterRequest: 8,
+		},
+	],
+	evaluatedAt: "2026-10-18T08:30:00Z",
+	workBalance: null,
 	holidays: [],
-	overlaps: [],
+	overlaps: [
+		{
+			id: "absence-earlier",
+			startDate: "2026-05-11",
+			endDate: "2026-05-11",
+			status: "pending",
+			categoryName: "Vacation",
+		},
+	],
 	affectedShifts: [],
-	coverage: { risks: [], hasConfiguredRulesForAffectedShifts: true },
-	approvalSignal: "risky",
-	warnings: ["Coverage may be tight for this request."],
-	reasons: ["Request follows the normal approval path."],
+	coverage: { risks: [], status: "complete", gaps: [] },
+	notes: [],
 };
+
+// Wed 2026-12-30 to Sat 2027-01-02: 2 days in 2026, 1 in 2027.
+const acrossNewYearBalances: AbsencePlanPreview["balances"] = [
+	{
+		year: 2026,
+		chargedAbsenceDays: 2,
+		futureYear: false,
+		status: "available",
+		remainingDays: 2,
+		remainingAfterRequest: 0,
+	},
+	{
+		year: 2027,
+		chargedAbsenceDays: 1,
+		futureYear: true,
+		status: "available",
+		remainingDays: 20,
+		remainingAfterRequest: 19,
+	},
+];
 
 function renderDialog({
 	onOpenChange = vi.fn(),
 	organizationId = "org-1",
-	remainingDays = 10,
 }: {
 	onOpenChange?: (open: boolean) => void;
 	organizationId?: string;
-	remainingDays?: number;
 } = {}) {
 	const queryClient = new QueryClient({
 		defaultOptions: { queries: { retry: false } },
@@ -217,7 +251,6 @@ function renderDialog({
 				open
 				onOpenChange={onOpenChange}
 				organizationId={organizationId}
-				remainingDays={remainingDays}
 				categories={categories}
 			/>
 		</QueryClientProvider>,
@@ -272,12 +305,7 @@ describe("RequestAbsenceDialog", () => {
 
 		render(
 			<QueryClientProvider client={queryClient}>
-				<RequestAbsenceDialog
-					open
-					organizationId="org-1"
-					remainingDays={10}
-					categories={categories}
-				/>
+				<RequestAbsenceDialog open organizationId="org-1" categories={categories} />
 			</QueryClientProvider>,
 		);
 
@@ -327,7 +355,7 @@ describe("RequestAbsenceDialog", () => {
 			}),
 		).toBeTruthy();
 		expect(await screen.findByRole("heading", { name: "Smart planner" })).toBeTruthy();
-		expect(screen.getByText("Coverage may be tight for this request.")).toBeTruthy();
+		expect(screen.getByText(/^Overlaps your pending absence/)).toBeTruthy();
 	});
 
 	it("shows the sick detail field when the sick category is selected", () => {
@@ -397,11 +425,23 @@ describe("RequestAbsenceDialog", () => {
 		renderDialog();
 
 		fillRequiredFields();
-		expect(await screen.findByText("Coverage may be tight for this request.")).toBeTruthy();
+		expect(await screen.findByText(/^Overlaps your pending absence/)).toBeTruthy();
 
 		fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
 
 		await waitFor(() => expect(requestAbsenceMock).toHaveBeenCalledTimes(1));
+	});
+
+	it("checks period submission readiness again after a request is submitted (#1350)", async () => {
+		const { queryClient } = renderDialog();
+		const readinessKey = ["period-submissions", "readiness", "org-1", "employee-1"];
+		queryClient.setQueryData(readinessKey, null);
+
+		fillRequiredFields();
+		expect(await screen.findByText(/^Overlaps your pending absence/)).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
+
+		await waitFor(() => expect(queryClient.getQueryState(readinessKey)?.isInvalidated).toBe(true));
 	});
 
 	it("blocks invalid same-day partial-day times before submission", async () => {
@@ -416,9 +456,13 @@ describe("RequestAbsenceDialog", () => {
 
 		const validationError = screen.getByRole("alert");
 		expect(validationError.getAttribute("aria-live")).toBe("polite");
-		expect(validationError.textContent).toContain(
-			"Enter an end time after the start time, or choose the next end date for an overnight absence.",
+		expect(validationError.textContent).toBe(
+			"End after the start time, or end on the next day for an overnight absence.",
 		);
+		// The message belongs to the end time and is tied to its input.
+		const endTime = screen.getByLabelText("End Time *");
+		expect(endTime.getAttribute("aria-invalid")).toBe("true");
+		expect(endTime.getAttribute("aria-describedby")).toContain(validationError.id);
 		expect(screen.getByRole("button", { name: "Submit Request" }).hasAttribute("disabled")).toBe(
 			true,
 		);
@@ -438,7 +482,7 @@ describe("RequestAbsenceDialog", () => {
 		fireEvent.change(screen.getByLabelText("Start Time *"), { target: { value: "09:00" } });
 		fireEvent.change(screen.getByLabelText("End Time *"), { target: { value: "13:00" } });
 		// Vacation waits for the plan preview's absence days.
-		await screen.findByText("Coverage may be tight for this request.");
+		await screen.findByText(/^Overlaps your pending absence/);
 
 		fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
 
@@ -457,12 +501,25 @@ describe("RequestAbsenceDialog", () => {
 		});
 	});
 
-	it("blocks insufficient vacation balance before submission", async () => {
-		renderDialog({ remainingDays: 1 });
+	it("blocks vacation that exceeds a year's balance in the plan preview", async () => {
+		getAbsencePlanPreviewMock.mockResolvedValue({
+			success: true,
+			data: {
+				...riskyPreview,
+				requestedAbsenceDays: 3,
+				balances: [
+					{ ...acrossNewYearBalances[0] },
+					{ ...acrossNewYearBalances[1], remainingDays: 0.5, remainingAfterRequest: -0.5 },
+				],
+			},
+		});
+		renderDialog();
 
 		fillRequiredFields();
-		fireEvent.change(screen.getByLabelText("End Date"), { target: { value: "2026-05-14" } });
 		expect(await screen.findByText("Insufficient vacation balance for this request")).toBeTruthy();
+		expect(
+			screen.getByText("Estimated balance after request (2027):").nextSibling?.textContent,
+		).toBe("-0.5 days");
 
 		const submit = screen.getByRole("button", { name: "Submit Request" });
 		expect(submit.hasAttribute("disabled")).toBe(true);
@@ -509,7 +566,7 @@ describe("RequestAbsenceDialog", () => {
 		fillRequiredFields();
 
 		expect(await screen.findByText("Absence days:")).toBeTruthy();
-		expect(screen.getAllByText("{count} days").length).toBeGreaterThan(0);
+		expect(screen.getByText("Absence days:").nextSibling?.textContent).toBe("4 days");
 	});
 
 	it("blocks vacation that the plan preview refuses for having no working days", async () => {
@@ -537,11 +594,100 @@ describe("RequestAbsenceDialog", () => {
 		renderDialog();
 
 		fillRequiredFields();
-		await screen.findByText("Coverage may be tight for this request.");
+		await screen.findByText(/^Overlaps your pending absence/);
 		fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
 
 		await waitFor(() =>
 			expect(toastMock.error).toHaveBeenCalledWith("This range contains no working days."),
 		);
+	});
+
+	it("shows each year's estimated balance after the request from the plan preview", async () => {
+		getAbsencePlanPreviewMock.mockResolvedValue({
+			success: true,
+			data: { ...riskyPreview, requestedAbsenceDays: 3, balances: acrossNewYearBalances },
+		});
+		renderDialog();
+
+		fillRequiredFields();
+
+		expect(await screen.findByText("Estimated balance after request (2026):")).toBeTruthy();
+		expect(
+			screen.getByText("Estimated balance after request (2026):").nextSibling?.textContent,
+		).toBe("0 days");
+		expect(
+			screen.getByText("Estimated balance after request (2027):").nextSibling?.textContent,
+		).toBe("19 days");
+		expect(screen.queryByText("Insufficient vacation balance for this request")).toBeNull();
+	});
+
+	it("does not take a cross-year request from a single year's balance", async () => {
+		// 3 days requested, 2 left in 2026: the old single-year check would block this.
+		getAbsencePlanPreviewMock.mockResolvedValue({
+			success: true,
+			data: { ...riskyPreview, requestedAbsenceDays: 3, balances: acrossNewYearBalances },
+		});
+		renderDialog();
+
+		fillRequiredFields();
+		await screen.findByText("Estimated balance after request (2027):");
+		const submit = screen.getByRole("button", { name: "Submit Request" });
+		expect(submit.hasAttribute("disabled")).toBe(false);
+		fireEvent.click(submit);
+
+		await waitFor(() => expect(requestAbsenceMock).toHaveBeenCalledTimes(1));
+	});
+
+	it("warns about a year whose balance is unavailable without blocking submission", async () => {
+		getAbsencePlanPreviewMock.mockResolvedValue({
+			success: true,
+			data: {
+				...riskyPreview,
+				requestedAbsenceDays: 3,
+				balances: [
+					acrossNewYearBalances[0],
+					{
+						year: 2027,
+						chargedAbsenceDays: 1,
+						futureYear: true,
+						status: "unavailable",
+						reason: "missing_policy",
+					},
+				],
+			},
+		});
+		renderDialog();
+
+		fillRequiredFields();
+		expect(await screen.findByText("Estimated balance after request (2027):")).toBeTruthy();
+		expect(
+			screen.getByText("Estimated balance after request (2027):").nextSibling?.textContent,
+		).toBe("Unavailable");
+		fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
+
+		await waitFor(() => expect(requestAbsenceMock).toHaveBeenCalledTimes(1));
+	});
+
+	it("keeps the draft and explains when the server refuses an exceeded balance", async () => {
+		const onOpenChange = vi.fn();
+		requestAbsenceMock.mockResolvedValue({
+			success: false,
+			error: "The requested dates exceed your available vacation balance for 2026.",
+			code: "ValidationError",
+			refusal: "insufficient_balance",
+		});
+		renderDialog({ onOpenChange });
+
+		fillRequiredFields();
+		await screen.findByText(/^Overlaps your pending absence/);
+		fireEvent.click(screen.getByRole("button", { name: "Submit Request" }));
+
+		await waitFor(() =>
+			expect(toastMock.error).toHaveBeenCalledWith(
+				"Your vacation balance changed and no longer covers these dates. Your request was not submitted.",
+			),
+		);
+		expect(onOpenChange).not.toHaveBeenCalledWith(false);
+		expect((screen.getByLabelText("Start Date *") as HTMLInputElement).value).toBe("2026-05-11");
 	});
 });

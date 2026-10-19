@@ -4,7 +4,10 @@ import { fileURLToPath } from "node:url";
 import { withPostHogConfig } from "@posthog/nextjs-config";
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
-import { REPORT_SHARE_REQUEST_PATH, SETUP_REQUEST_PATH } from "./src/lib/setup/telemetry";
+import {
+	REPORT_SHARE_REQUEST_PATH,
+	SETUP_REQUEST_PATH,
+} from "./src/lib/setup/telemetry";
 
 // Initialize before Next.js starts build or server workers.
 process.env.TZ ||= "UTC";
@@ -56,7 +59,11 @@ const hasPostHogSourcemapConfig =
 const nextConfig: NextConfig = {
 	reactStrictMode: true,
 	allowedDevOrigins: ["z8.localhost", "*.z8.localhost"],
-	logging: { incomingRequests: { ignore: [SETUP_REQUEST_PATH, REPORT_SHARE_REQUEST_PATH] } },
+	logging: {
+		incomingRequests: {
+			ignore: [SETUP_REQUEST_PATH, REPORT_SHARE_REQUEST_PATH],
+		},
+	},
 	async rewrites() {
 		return [
 			{
@@ -85,6 +92,8 @@ const nextConfig: NextConfig = {
 		unoptimized: false,
 	},
 	experimental: {
+		// Transfer large prerender result batches without JSON IPC string limits.
+		workerThreads: true,
 		agentUpgrade: "latest",
 		useTypeScriptCli: true,
 		// CI does not restore this cache between runners. Avoid retaining the

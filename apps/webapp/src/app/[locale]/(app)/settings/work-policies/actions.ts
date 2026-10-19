@@ -1,6 +1,6 @@
 "use server";
 
-import { and, desc, eq, gte, isNull, lte, or, sql } from "drizzle-orm";
+import { gt, and, desc, eq, gte, isNull, lte, or, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import {
 	employee,
@@ -1968,7 +1968,7 @@ export async function getEmployeeEffectiveScheduleDetails(
 					),
 					or(
 						isNull(workPolicyAssignment.effectiveUntil),
-						gte(workPolicyAssignment.effectiveUntil, now),
+						gt(workPolicyAssignment.effectiveUntil, now),
 					),
 				),
 				orderBy: (assignment, { desc }) => [
@@ -2027,7 +2027,7 @@ export async function getEmployeeEffectiveScheduleDetails(
 						),
 						or(
 							isNull(workPolicyAssignment.effectiveUntil),
-							gte(workPolicyAssignment.effectiveUntil, now),
+							gt(workPolicyAssignment.effectiveUntil, now),
 						),
 					),
 					orderBy: (assignment, { desc }) => [
@@ -2082,7 +2082,7 @@ export async function getEmployeeEffectiveScheduleDetails(
 					),
 					or(
 						isNull(workPolicyAssignment.effectiveUntil),
-						gte(workPolicyAssignment.effectiveUntil, now),
+						gt(workPolicyAssignment.effectiveUntil, now),
 					),
 				),
 				orderBy: (assignment, { desc }) => [

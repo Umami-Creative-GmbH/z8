@@ -1,4 +1,4 @@
-import type { Temporal } from "temporal-polyfill";
+import { Temporal } from "temporal-polyfill";
 import { holidayDateKeys, type IsWorkingDay, mondayToFriday } from "./absence-days";
 import type { Holiday } from "./types";
 
@@ -24,6 +24,8 @@ export interface WorkingDaySchedule {
  */
 export interface WorkingDayPolicyAssignment {
 	id: string;
+	/** The assigned work policy, so a working-week problem can name it. */
+	policyId?: string;
 	assignmentType: "organization" | "team" | "employee";
 	effectiveFrom: Temporal.Instant | null;
 	effectiveUntil: Temporal.Instant | null;
@@ -71,7 +73,7 @@ function inForceOn(assignment: WorkingDayPolicyAssignment, day: Temporal.PlainDa
 	const nextDayStart = day.add({ days: 1 }).toZonedDateTime("UTC").epochMilliseconds;
 	return (
 		(!assignment.effectiveFrom || assignment.effectiveFrom.epochMilliseconds < nextDayStart) &&
-		(!assignment.effectiveUntil || assignment.effectiveUntil.epochMilliseconds >= dayStart)
+		(!assignment.effectiveUntil || assignment.effectiveUntil.epochMilliseconds > dayStart)
 	);
 }
 
@@ -95,30 +97,98 @@ export function workingDaysFrom(input: {
 	assignments: readonly WorkingDayPolicyAssignment[];
 	holidays: readonly Holiday[];
 }): IsWorkingDay {
-	const byLevel = LEVELS.map((level) =>
-		input.assignments
-			.filter((assignment) => assignment.assignmentType === level)
-			.toSorted(compareAssignments),
-	);
-	const weekdaysBySchedule = new Map<WorkingDaySchedule, ReadonlySet<number>>();
+	const effectiveWeekdays = effectiveWeekdaysFrom(input.assignments);
 	const holidays = holidayDateKeys(input.holidays);
 
 	return (day) => {
 		if (holidays.has(day.toString())) return false;
+		const weekdays = effectiveWeekdays(day).weekdays;
+		return weekdays ? weekdays.has(day.dayOfWeek) : mondayToFriday(day);
+	};
+}
 
+/**
+ * The assignment in effect on a day and its scheduled ISO weekdays; null weekdays when no
+ * assignment applies or its policy has no schedule.
+ */
+function effectiveWeekdaysFrom(assignments: readonly WorkingDayPolicyAssignment[]) {
+	const byLevel = LEVELS.map((level) =>
+		assignments
+			.filter((assignment) => assignment.assignmentType === level)
+			.toSorted(compareAssignments),
+	);
+	const weekdaysBySchedule = new Map<WorkingDaySchedule, ReadonlySet<number>>();
+
+	return (
+		day: Temporal.PlainDate,
+	): { assignment?: WorkingDayPolicyAssignment; weekdays: ReadonlySet<number> | null } => {
 		let assignment: WorkingDayPolicyAssignment | undefined;
 		for (const candidates of byLevel) {
 			assignment = candidates.find((candidate) => inForceOn(candidate, day));
 			if (assignment) break;
 		}
 		const schedule = assignment?.schedule;
-		if (!schedule) return mondayToFriday(day);
+		if (!schedule) return { assignment, weekdays: null };
 
 		let weekdays = weekdaysBySchedule.get(schedule);
 		if (!weekdays) {
 			weekdays = scheduledWeekdays(schedule);
 			weekdaysBySchedule.set(schedule, weekdays);
 		}
-		return weekdays.has(day.dayOfWeek);
+		return { assignment, weekdays };
 	};
+}
+
+/** Days with the same scheduled working week (Absences ADR 0003). Dates are inclusive. */
+export interface WorkingWeekPeriod {
+	startDate: string;
+	endDate: string;
+	/**
+	 * The distinct weekdays the effective schedule works, before holidays and regardless of hours.
+	 * Five without a policy or schedule; 0 only for an explicitly configured schedule without
+	 * working days, which is a configuration error.
+	 */
+	workingDaysPerWeek: number;
+	/** The work policy in effect; null when no work policy applies. */
+	workPolicyId: string | null;
+}
+
+const MONDAY_TO_FRIDAY_DAYS = 5;
+
+/**
+ * The employee's working days per week over a range, from the work policy in effect on each day
+ * with the same precedence and schedule interpretation as `workingDaysFrom`. Public holidays never
+ * reduce the week. Consecutive days with the same week and policy form one period.
+ */
+export function workingWeekPeriodsFrom(input: {
+	assignments: readonly WorkingDayPolicyAssignment[];
+	/** First calendar day, `YYYY-MM-DD`. */
+	startDate: string;
+	/** Last calendar day (inclusive), `YYYY-MM-DD`. */
+	endDate: string;
+}): WorkingWeekPeriod[] {
+	const effectiveWeekdays = effectiveWeekdaysFrom(input.assignments);
+	const end = Temporal.PlainDate.from(input.endDate);
+	const periods: WorkingWeekPeriod[] = [];
+	for (
+		let day = Temporal.PlainDate.from(input.startDate);
+		Temporal.PlainDate.compare(day, end) <= 0;
+		day = day.add({ days: 1 })
+	) {
+		const { assignment, weekdays } = effectiveWeekdays(day);
+		const workingDaysPerWeek = weekdays ? weekdays.size : MONDAY_TO_FRIDAY_DAYS;
+		const workPolicyId = assignment?.policyId ?? null;
+		const last = periods.at(-1);
+		if (last && last.workingDaysPerWeek === workingDaysPerWeek && last.workPolicyId === workPolicyId) {
+			last.endDate = day.toString();
+		} else {
+			periods.push({
+				startDate: day.toString(),
+				endDate: day.toString(),
+				workingDaysPerWeek,
+				workPolicyId,
+			});
+		}
+	}
+	return periods;
 }

@@ -463,10 +463,11 @@ describe("absence days resolved from work policies and holidays", () => {
 			},
 		]);
 
+		// The 30 reference days convert to 24 for four working days (Absences ADR 0003).
 		expect(await getVacationBalance(employeeId, 2026)).toMatchObject({
 			usedDays: 4,
 			pendingDays: 4,
-			remainingDays: 22,
+			remainingDays: 16,
 		});
 		expect((await getVacationTakenInYear(employeeId, 2026)).totalDays).toBe(4);
 		expect(

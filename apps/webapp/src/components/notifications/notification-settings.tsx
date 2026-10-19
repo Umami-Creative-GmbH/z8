@@ -99,6 +99,7 @@ const NOTIFICATION_CATEGORIES = [
 			"absence_request_submitted",
 			"absence_request_approved",
 			"absence_request_rejected",
+			"approved_absence_cancelled",
 			"absence_deputy_assigned",
 			"absence_deputy_removed",
 			"absence_deputy_dates_changed",
@@ -139,6 +140,11 @@ const NOTIFICATION_CATEGORIES = [
 			"personnel_file_expiry_upcoming",
 			"personnel_file_expired_today",
 			"personnel_file_due_for_deletion",
+			"personnel_file_document_requested",
+			"personnel_file_document_request_reminder",
+			"personnel_file_document_request_decided",
+			"personnel_file_document_request_submitted",
+			"personnel_file_document_request_overdue",
 		] as NotificationType[],
 	},
 	{
@@ -220,6 +226,7 @@ const NOTIFICATION_CATEGORIES = [
 /** Types whose labels are static `t()` calls in `getTypeLabel` (extractable with their defaults). */
 type StaticallyLabelledType =
 	| ClockingReminderType
+	| "approved_absence_cancelled"
 	| "work_balance_adjustment_recorded"
 	| "work_balance_adjustment_cancelled"
 	| AbsenceDeputyNotificationType
@@ -233,7 +240,12 @@ type StaticallyLabelledType =
 	| "skill_expired_today"
 	| "driving_licence_reminder"
 	| "driving_authorization_suspended"
-	| "kiosk_command_refused";
+	| "kiosk_command_refused"
+	| "personnel_file_document_requested"
+	| "personnel_file_document_request_reminder"
+	| "personnel_file_document_request_decided"
+	| "personnel_file_document_request_submitted"
+	| "personnel_file_document_request_overdue";
 
 // Human-readable labels for the other notification types, looked up by a computed key.
 const TYPE_LABELS: Record<
@@ -433,6 +445,11 @@ function useNotificationSettingsViewModel() {
 		);
 	const getTypeLabel = (type: NotificationType) => {
 		switch (type) {
+			case "approved_absence_cancelled":
+				return t(
+					"common:notifications.content.approvedAbsenceCancelled.title",
+					"Approved absence cancelled",
+				);
 			case "missed_clock_in_reminder":
 				return t(
 					"common:notifications.preferences.types.missed_clock_in_reminder",
@@ -467,6 +484,31 @@ function useNotificationSettingsViewModel() {
 				return t(
 					"common:notifications.preferences.types.kiosk_command_refused",
 					"Kiosk clocking not recorded",
+				);
+			case "personnel_file_document_requested":
+				return t(
+					"common:notifications.preferences.types.personnel_file_document_requested",
+					"Document requested from you",
+				);
+			case "personnel_file_document_request_reminder":
+				return t(
+					"common:notifications.preferences.types.personnel_file_document_request_reminder",
+					"Requested document due soon",
+				);
+			case "personnel_file_document_request_decided":
+				return t(
+					"common:notifications.preferences.types.personnel_file_document_request_decided",
+					"Document request accepted, returned or cancelled",
+				);
+			case "personnel_file_document_request_submitted":
+				return t(
+					"common:notifications.preferences.types.personnel_file_document_request_submitted",
+					"Requested documents submitted (personnel file officers)",
+				);
+			case "personnel_file_document_request_overdue":
+				return t(
+					"common:notifications.preferences.types.personnel_file_document_request_overdue",
+					"Document request overdue",
 				);
 			case "period_submission_reminder":
 				return t(

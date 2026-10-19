@@ -44,7 +44,7 @@ const { withAuditTrail } = await import("@/lib/audit-trail");
 type KioskFrozenRefusal = import("./frozen-refusals").KioskFrozenRefusal;
 type RecordedKioskFrozenRefusal = import("./frozen-refusals").RecordedKioskFrozenRefusal;
 type KioskContactAnchor = import("./frozen-command").KioskContactAnchor;
-type KioskPinProof = import("@/lib/time-tracking/clocking/types").KioskPinProof;
+type KioskEmployeeProof = import("@/lib/time-tracking/clocking/types").KioskEmployeeProof;
 
 const ids = {
 	organization: "t1289-kiosk-org",
@@ -845,11 +845,11 @@ describe("frozen kiosk clock commands on PostgreSQL", () => {
 			return verification.proof;
 		}
 
-		function clockIn(proof: KioskPinProof, operationId: string, occurredAt: string) {
+		function clockIn(proof: KioskEmployeeProof, operationId: string, occurredAt: string) {
 			const instant = parseInstant(occurredAt);
 			return newClocking().run({
 				organizationId: ids.organization,
-				principal: { kind: "kiosk", kioskId: ids.kiosk, userId: ids.workerUser, pin: proof },
+				principal: { kind: "kiosk", kioskId: ids.kiosk, userId: ids.workerUser, proof },
 				subject: { employeeId: ids.worker },
 				identity: { origin: "client", id: operationId },
 				channel: "kiosk",
@@ -902,7 +902,7 @@ describe("frozen kiosk clock commands on PostgreSQL", () => {
 					kind: "kiosk",
 					kioskId: ids.kiosk,
 					userId: ids.workerUser,
-					pin: await frozenProof(operationId, "2026-08-03T09:00:00Z"),
+					proof: await frozenProof(operationId, "2026-08-03T09:00:00Z"),
 				},
 				subject: { employeeId: ids.worker },
 				identity: { origin: "client", id: operationId },

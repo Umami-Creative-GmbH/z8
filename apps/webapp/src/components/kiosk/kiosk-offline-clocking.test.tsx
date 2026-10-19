@@ -427,6 +427,49 @@ describe("offline kiosk clocking (#1292)", () => {
 		expect(record?.token).toBe("z8k_device-token");
 	});
 
+	it("keeps offline PIN clocking open to everyone else while one employee's online action is unresolved (#1363)", async () => {
+		stubFetch({
+			"/api/kiosk/session": () => Response.json(session),
+			"/api/kiosk/employees": () => Response.json(listed),
+			"/api/kiosk/employee-status": () =>
+				Response.json({
+					employee: ben,
+					state: { status: "clocked_out" },
+					dayTotal: { date: "2026-10-16", timezone: "Europe/Berlin", minutes: 0 },
+				}),
+			// Ben's online clock-in is sent, and its reply is lost.
+			"/api/kiosk/clock": () => {
+				throw new TypeError("Failed to fetch");
+			},
+		});
+		render(<KioskApp />);
+		fireEvent.click(await screen.findByRole("button", { name: /Ben Özdemir/ }));
+		await enterPin("1357");
+		fireEvent.click(await screen.findByRole("button", { name: "Clock in" }));
+		expect(
+			await screen.findByRole("heading", { name: "Checking whether your action was recorded" }),
+		).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: "Back" }));
+
+		// The connection goes; Anna clocks out with her sealed PIN as usual.
+		stubNoNetwork();
+		setOnline(false);
+		fireEvent.click(await screen.findByRole("button", { name: /Anna Berger/ }));
+		await enterPin("2468");
+		fireEvent.click(await screen.findByRole("button", { name: "Clock out" }));
+		expect(await screen.findByText(/Saved on this kiosk, not yet confirmed/)).toBeTruthy();
+		expect((await queued()).map((record) => record.employeeId)).toEqual([anna.id]);
+		fireEvent.click(screen.getByRole("button", { name: /Back|Done|OK/ }));
+
+		// Ben stays held: no PIN pad, no second action, while his first is unresolved.
+		fireEvent.click(await screen.findByRole("button", { name: /Ben Özdemir/ }));
+		expect(
+			await screen.findByRole("heading", { name: "Checking whether your action was recorded" }),
+		).toBeTruthy();
+		expect(screen.queryByRole("button", { name: "OK" })).toBeNull();
+		expect((await queued()).map((record) => record.employeeId)).toEqual([anna.id]);
+	});
+
 	it("still refuses clocking offline once offline mode is off", async () => {
 		stubFetch({
 			"/api/kiosk/session": () => Response.json({ kiosk: { ...kiosk, offlineMode: false } }),

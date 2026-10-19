@@ -333,7 +333,7 @@ export const workPolicyAssignment = pgTable(
 		// Priority: 0=org, 1=team, 2=employee (higher wins)
 		priority: integer("priority").default(0).notNull(),
 
-		// Effective dates
+		// Half-open effective interval [from, until); null means unbounded.
 		effectiveFrom: timestamp("effective_from"),
 		effectiveUntil: timestamp("effective_until"),
 

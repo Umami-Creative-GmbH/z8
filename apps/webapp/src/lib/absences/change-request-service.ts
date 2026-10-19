@@ -1,5 +1,3 @@
-import { withReviewedVacationReconciliation } from "./vacation-reconciliation";
-import { acquireExclusiveOrganizationConfigurationGuard } from "@/lib/time-tracking/work-transaction";
 import { createHash } from "node:crypto";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { db as applicationDatabase } from "@/db";
@@ -11,6 +9,7 @@ import {
 	employee,
 } from "@/db/schema";
 import { recordCanonicalDeputyDecisionOf } from "@/lib/approvals/deputy/deputy-decision-store";
+import type { ApprovalActionOptions } from "@/lib/approvals/domain/types";
 import type { ApprovalWorkflowTransactionContext } from "@/lib/approvals/domain-adapters/types";
 import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policies/manager-eligibility-db";
 import { createCanonicalSourceApprovalRuntime } from "@/lib/approvals/server/period-submission-runtime";
@@ -32,6 +31,7 @@ import {
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
+import { acquireExclusiveOrganizationConfigurationGuard } from "@/lib/time-tracking/work-transaction";
 import { isUuid } from "@/lib/validations/uuid";
 import {
 	type AppliedAbsenceChange,
@@ -56,6 +56,7 @@ import {
 	type AbsenceChangeSummary,
 } from "./change-request-types";
 import { parseAbsenceChangeInput } from "./change-request-validation";
+import { withReviewedVacationReconciliation } from "./vacation-reconciliation";
 
 type Dependencies = {
 	database?: AbsenceChangeDatabase;
@@ -332,6 +333,7 @@ export async function requestAbsenceChange(
 
 export async function decideAbsenceChange(
 	input: {
+		shortcutGuard?: ApprovalActionOptions["shortcutGuard"];
 		organizationId: string;
 		actorEmployeeId: string;
 		assignmentId: string;
@@ -376,6 +378,16 @@ export async function decideAbsenceChange(
 	return runtime.repository
 		.withTransaction(async (context) => {
 			const tx = context.dbService.db as unknown as AbsenceChangeDatabase;
+			if (input.shortcutGuard) {
+				await context.writeGate.acquire({
+					organizationId: input.organizationId,
+					workflowType: "absence_change",
+				});
+				await acquireExclusiveOrganizationConfigurationGuard(
+					tx,
+					input.organizationId,
+				);
+			}
 			const [assignment] = await tx
 				.select()
 				.from(approvalStageAssignment)
@@ -395,6 +407,7 @@ export async function decideAbsenceChange(
 			if (snapshot.workflowType !== "absence_change")
 				throw new AbsenceChangeError("not_found", "Approval not found");
 			workflowToRetire = snapshot.id;
+			if (input.shortcutGuard) await input.shortcutGuard(tx);
 			const command: Extract<
 				ApprovalWorkflowCommand,
 				{ type: "approve" | "reject" }

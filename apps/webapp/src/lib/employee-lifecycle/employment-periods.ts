@@ -2,7 +2,14 @@ import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { db as rootDatabase } from "@/db";
 import { employee } from "@/db/schema";
 import { employeeDeparture, employeeEmploymentPeriod } from "@/db/schema/employee-lifecycle";
-import { dateFromInstant, instantFromDate, parsePlainDate } from "@/lib/datetime/temporal-core";
+import {
+	comparePlainDates,
+	dateFromInstant,
+	instantFromDate,
+	parsePlainDate,
+	plainDateAt,
+} from "@/lib/datetime/temporal-core";
+import { termsCalendarDate } from "@/lib/employment-history/terms-in-force";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import type { EmploymentInterval } from "./employment-coverage";
 import type { LifecycleClient } from "./types";
@@ -100,8 +107,10 @@ export async function resolveCurrentEmploymentPeriod(
 
 /**
  * The employment period new or confirmed terms belong to. Terms never reopen
- * an ended period, and never start before a recorded (rehire) start, so a
- * timeline cannot bridge the employment gap.
+ * an ended period, and never start before the org-local day of a recorded
+ * (rehire) start, so a timeline cannot bridge the employment gap. Terms are
+ * calendar dates while the period starts at an instant, so the two compare on
+ * org-local calendar days.
  */
 export async function resolveTermsEmploymentPeriod(
 	tx: LifecycleClient,
@@ -109,12 +118,12 @@ export async function resolveTermsEmploymentPeriod(
 ): Promise<string> {
 	const period = await resolveCurrentEmploymentPeriod(tx, input);
 	if (!period) throw new EmploymentPeriodError("employment_period_closed");
-	if (
-		period.startProvenance === "recorded" &&
-		period.startedAt &&
-		input.validFrom.getTime() < period.startedAt.getTime()
-	) {
-		throw new EmploymentPeriodError("terms_before_period_start");
+	if (period.startProvenance === "recorded" && period.startedAt) {
+		const timezone = await loadOrganizationTimezone(tx, input.organizationId);
+		const firstDay = plainDateAt(instantFromDate(period.startedAt), timezone);
+		if (comparePlainDates(termsCalendarDate(input.validFrom, timezone), firstDay) < 0) {
+			throw new EmploymentPeriodError("terms_before_period_start");
+		}
 	}
 	return period.id;
 }

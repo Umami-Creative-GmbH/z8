@@ -10,11 +10,15 @@ import type {
 } from "@/lib/personnel-file/sick-note-upload";
 import { getCurrentEmployee as getCurrentEmployeeAction } from "./current-employee";
 import { cancelAbsenceRequest as cancelAbsenceRequestAction } from "./mutations";
-import { getAbsencePlanPreview as getAbsencePlanPreviewAction } from "./plan-preview";
+import {
+	getAbsenceComparisonPreview as getAbsenceComparisonPreviewAction,
+	getAbsencePlanPreview as getAbsencePlanPreviewAction,
+} from "./plan-preview";
 import {
 	getAbsenceEntries as getAbsenceEntriesAction,
 	getHolidays as getHolidaysAction,
 	getVacationBalance as getVacationBalanceAction,
+	getVacationBalanceResult as getVacationBalanceResultAction,
 } from "./queries";
 import {
 	requestAbsenceEffect as requestAbsenceAction,
@@ -113,10 +117,29 @@ export async function getVacationBalance(
 		: getVacationBalanceAction(employeeId, year, timezone);
 }
 
+export async function getVacationBalanceResult(
+	employeeId: string,
+	year: number,
+	timezone?: string,
+) {
+	const currentEmployee = await getCurrentEmployeeAction();
+	if (!currentEmployee || currentEmployee.id !== employeeId) {
+		return { balance: null, configuration: null };
+	}
+	return getVacationBalanceResultAction(employeeId, year, timezone);
+}
+
 export async function getAbsencePlanPreview(
 	...args: Parameters<typeof getAbsencePlanPreviewAction>
 ) {
 	return getAbsencePlanPreviewAction(...args);
+}
+
+/** One option of a vacation comparison, refused for ineligible categories (#1342). */
+export async function getAbsenceComparisonPreview(
+	...args: Parameters<typeof getAbsenceComparisonPreviewAction>
+) {
+	return getAbsenceComparisonPreviewAction(...args);
 }
 
 /**

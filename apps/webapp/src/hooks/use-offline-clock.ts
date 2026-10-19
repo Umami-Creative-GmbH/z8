@@ -15,6 +15,7 @@ import type {
 	SWToClientMessage,
 } from "@/lib/offline/types";
 import { queryKeys } from "@/lib/query/keys";
+import { invalidatePeriodSubmissionReadiness } from "@/lib/query/period-submission-readiness";
 import {
 	type BrowserClockActionResult,
 	type BrowserClockCommandCapabilities,
@@ -252,6 +253,8 @@ export function useOfflineClock() {
 					)
 						break;
 					update({ lastSyncAt: Date.now() });
+					// The period card reports its own failed check (#1350).
+					void invalidatePeriodSubmissionReadiness(queryClient);
 					void Promise.all([
 						queryClient.invalidateQueries(
 							{ queryKey: queryKeys.timeClock.status() },

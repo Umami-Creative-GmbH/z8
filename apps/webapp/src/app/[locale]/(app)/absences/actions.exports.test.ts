@@ -15,9 +15,14 @@ describe("absences actions module structure", () => {
 		expect(actionsSource).toMatch(
 			/import\s*\{[^}]*cancelAbsenceRequest\s+as\s+cancelAbsenceRequestAction[^}]*\}\s*from\s*"\.\/mutations";/,
 		);
-		expect(actionsSource).toContain(
-			'import { getAbsencePlanPreview as getAbsencePlanPreviewAction } from "./plan-preview";',
+		expect(actionsSource).toMatch(
+			/import\s*\{[^}]*getAbsencePlanPreview\s+as\s+getAbsencePlanPreviewAction[^}]*\}\s*from\s*"\.\/plan-preview";/,
 		);
+		expect(actionsSource).toMatch(
+			/import\s*\{[^}]*getAbsenceComparisonPreview\s+as\s+getAbsenceComparisonPreviewAction[^}]*\}\s*from\s*"\.\/plan-preview";/,
+		);
+		expect(actionsSource).toContain("export async function getAbsenceComparisonPreview(");
+		expect(actionsSource).toContain("return getAbsenceComparisonPreviewAction(...args);");
 		expect(actionsSource).toContain(
 			"requestAbsenceEffect as requestAbsenceAction",
 		);

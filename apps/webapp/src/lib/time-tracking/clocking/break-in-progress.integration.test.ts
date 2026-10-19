@@ -385,6 +385,93 @@ describe("Clocking break in progress on PostgreSQL", () => {
 			expect(await snapshot()).toEqual(committed);
 		});
 
+		it("starts a break only on the live work the employee saw (#888), without writes otherwise", async () => {
+			const active = await startWork();
+			const { clocking } = newClocking(breakStart);
+			const before = await snapshot();
+
+			await expect(
+				clocking.startBreak(breakCommand({ expected: { workPeriodId: randomUUID() } })),
+			).resolves.toEqual({ outcome: "refused", failure: { code: "not_clocked_in" } });
+			expect(await snapshot()).toEqual(before);
+
+			const start = breakCommand({ expected: { workPeriodId: active.id } });
+			await expect(clocking.startBreak(start)).resolves.toMatchObject({
+				outcome: "executed",
+				result: { workPeriodId: active.id },
+			});
+			// A retried start that committed replays, whatever it now expects.
+			await expect(
+				newClocking(resumeAt).clocking.startBreak({
+					...start,
+					expected: { workPeriodId: randomUUID() },
+				}),
+			).resolves.toMatchObject({ outcome: "replayed", result: { workPeriodId: active.id } });
+		});
+
+		it("resumes only the break the employee saw (#888), without writes otherwise", async () => {
+			const active = await startWork();
+			await startBreak();
+			const { clocking } = newClocking(resumeAt);
+			const before = await snapshot();
+
+			for (const expected of [
+				{ workPeriodId: active.id, breakStart: parseInstant("2026-07-22T09:40:00Z") },
+				{ workPeriodId: randomUUID(), breakStart },
+			]) {
+				await expect(clocking.resumeBreak(breakCommand({ expected }))).resolves.toEqual({
+					outcome: "refused",
+					failure: { code: "no_break_in_progress" },
+				});
+			}
+			expect(await snapshot()).toEqual(before);
+
+			const resume = breakCommand({ expected: { workPeriodId: active.id, breakStart } });
+			const resumed = await clocking.resumeBreak(resume);
+			expect(resumed).toMatchObject({ outcome: "executed" });
+			const committed = await snapshot();
+			// Its retry replays, though the break it expected has ended.
+			await expect(newClocking(resumeAt).clocking.resumeBreak(resume)).resolves.toEqual({
+				outcome: "replayed",
+				result: resumed.outcome === "executed" && { ...resumed.result },
+			});
+			expect(await snapshot()).toEqual(committed);
+		});
+
+		it("records each endpoint in its own zone across midnight and DST (#888)", async () => {
+			// Berlin leaves CET at 01:00Z on 2026-03-29; New York is on EDT already.
+			await startWork(parseInstant("2026-03-28T20:00:00Z"));
+			const started = await newClocking(parseInstant("2026-03-28T23:30:00Z")).clocking.startBreak(
+				breakCommand({ zone: { device: "America/New_York", fallback: "UTC" } }),
+			);
+			expect(started).toMatchObject({ outcome: "executed" });
+			await expect(
+				newClocking(parseInstant("2026-03-29T01:30:00Z")).clocking.resumeBreak(
+					breakCommand({ zone: { device: "Europe/Berlin", fallback: "UTC" } }),
+				),
+			).resolves.toMatchObject({ outcome: "executed" });
+
+			const { rows } = await admin.query(
+				`select type, timestamp, timezone, utc_offset_minutes
+				 from time_entry where employee_id = $1 order by timestamp, created_at`,
+				[ids.employee],
+			);
+			expect(rows.slice(1)).toEqual([
+				{
+					type: "clock_out",
+					timestamp: new Date("2026-03-28T23:30:00Z"),
+					timezone: "America/New_York",
+					utc_offset_minutes: -240,
+				},
+				{
+					type: "clock_in",
+					timestamp: new Date("2026-03-29T01:30:00Z"),
+					timezone: "Europe/Berlin",
+					utc_offset_minutes: 120,
+				},
+			]);
+		});
+
 		it("refuses another break while a break in progress is open", async () => {
 			await startWork();
 			await startBreak();

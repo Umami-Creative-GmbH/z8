@@ -110,6 +110,7 @@ export enum AuditAction {
 	APPROVAL_ESCALATION_TRANSFERRED = "approval_escalation.transferred",
 	// "Deputies can decide approvals" turned on or off (#1015)
 	APPROVAL_SETTING_DEPUTY_DECISIONS_CHANGED = "approval_setting.deputy_decisions_changed",
+	APPROVAL_SETTING_TRIAGE_CHANGED = "approval_setting.triage_changed",
 
 	// Vacation Operations
 	VACATION_CARRYOVER_APPLIED = "vacation.carryover_applied",
@@ -187,6 +188,15 @@ export enum AuditAction {
 	// A certificate naming (or changing) the employee skill it proves, or no longer naming one (#1144)
 	PERSONNEL_FILE_SKILL_CERTIFICATE_LINKED = "personnel_file.skill_certificate_linked",
 	PERSONNEL_FILE_SKILL_CERTIFICATE_UNLINKED = "personnel_file.skill_certificate_unlinked",
+	// Document requests: one record per history event (#1307)
+	PERSONNEL_FILE_DOCUMENT_REQUEST_CREATED = "personnel_file.document_request_created",
+	PERSONNEL_FILE_DOCUMENT_REQUEST_EDITED = "personnel_file.document_request_edited",
+	PERSONNEL_FILE_DOCUMENT_REQUEST_SUBMITTED = "personnel_file.document_request_submitted",
+	PERSONNEL_FILE_DOCUMENT_REQUEST_RETURNED = "personnel_file.document_request_returned",
+	PERSONNEL_FILE_DOCUMENT_REQUEST_ACCEPTED = "personnel_file.document_request_accepted",
+	PERSONNEL_FILE_DOCUMENT_REQUEST_CANCELLED = "personnel_file.document_request_cancelled",
+	// A purge removed the request's last document (#1408)
+	PERSONNEL_FILE_DOCUMENT_REQUEST_DELETED = "personnel_file.document_request_deleted",
 
 	// ICS Feed Operations (#991)
 	ICS_FEED_CREATED = "ics_feed.created",
@@ -312,6 +322,11 @@ export enum AuditAction {
 	KIOSK_ONLY_EMPLOYEE_CREATED = "kiosk_only_employee.created",
 	KIOSK_ONLY_EMPLOYEE_EMAIL_ADDED = "kiosk_only_employee.email_added",
 
+	// Kiosk badges (#1364); never the credential or the PDF
+	KIOSK_BADGE_ISSUED = "kiosk_badge.issued",
+	KIOSK_BADGE_REPLACED = "kiosk_badge.replaced",
+	KIOSK_BADGE_REVOKED = "kiosk_badge.revoked",
+
 	// Kiosk enrolment (#859)
 	KIOSK_CREATED = "kiosk.created",
 	KIOSK_UPDATED = "kiosk.updated",
@@ -420,6 +435,7 @@ export interface AuditLogEntry {
 		| "employee_assigned_location"
 		| "user"
 		| "kiosk_pin"
+		| "kiosk_badge"
 		| "audit_pack_request"
 		| "works_council_settings"
 		| "works_council_export"

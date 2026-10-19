@@ -67,12 +67,26 @@ export async function kioskRefusalOf(response: Response): Promise<KioskRefusalCo
  * a proxy in front of a server that is down) or an answer that is not a Z8
  * answer (a captive portal's page). An offline-mode kiosk treats it as being
  * offline (#885); every other kiosk shows it as a failure, as before.
+ *
+ * `offline` with `sent` (#1363) is a request that left the device but got no
+ * answer (the connection dropped, or it timed out): Z8 may have acted on it. A
+ * call never sent has no `sent`.
  */
 export type KioskCallResult<T> =
 	| { kind: "ok"; body: T }
 	| { kind: "refused"; status: number; refusal: KioskClockRefusal; unavailable: boolean }
 	| { kind: "kiosk"; code: KioskRefusalCode }
-	| { kind: "offline" };
+	| { kind: "offline"; sent?: true };
+
+/**
+ * Whether a call's answer leaves open what Z8 did with it (#1363): sent without
+ * an answer, a server error, an answer that is not Z8's, or Z8's own
+ * `unconfirmed`. An action answered this way may have been recorded.
+ */
+export function isKioskCallUncertain(result: KioskCallResult<unknown>): boolean {
+	if (result.kind === "offline") return result.sent === true;
+	return result.kind === "refused" && (result.unavailable || result.refusal.code === "unconfirmed");
+}
 
 /** Whether a call did not reach Z8 in a way that answered it: offline, or not Z8's answer. */
 export function isKioskCallUnreachable(result: KioskCallResult<unknown>): boolean {
@@ -83,13 +97,21 @@ export async function kioskCall<T>(
 	token: string,
 	path: string,
 	init: RequestInit = {},
+	options: { timeoutMs?: number } = {},
 ): Promise<KioskCallResult<T>> {
 	if (typeof navigator !== "undefined" && navigator.onLine === false) return { kind: "offline" };
+	const controller = options.timeoutMs === undefined ? null : new AbortController();
+	const timer = controller ? setTimeout(() => controller.abort(), options.timeoutMs) : undefined;
 	let response: Response;
 	try {
-		response = await kioskFetch(token, path, init);
+		response = await kioskFetch(token, path, {
+			...init,
+			...(controller ? { signal: controller.signal } : {}),
+		});
 	} catch {
-		return { kind: "offline" };
+		return { kind: "offline", sent: true };
+	} finally {
+		clearTimeout(timer);
 	}
 	const kioskRefusal = await kioskRefusalOf(response);
 	if (kioskRefusal) return { kind: "kiosk", code: kioskRefusal };
@@ -107,13 +129,23 @@ export async function kioskCall<T>(
 	};
 }
 
-/** A kiosk call with a JSON body. */
-export function kioskPost<T>(token: string, path: string, body: unknown) {
-	return kioskCall<T>(token, path, {
-		method: "POST",
-		headers: { "content-type": "application/json", accept: "application/json" },
-		body: JSON.stringify(body),
-	});
+/** A kiosk call with a JSON body; with `timeoutMs`, an unanswered call gives up (as `sent`). */
+export function kioskPost<T>(
+	token: string,
+	path: string,
+	body: unknown,
+	options: { timeoutMs?: number } = {},
+) {
+	return kioskCall<T>(
+		token,
+		path,
+		{
+			method: "POST",
+			headers: { "content-type": "application/json", accept: "application/json" },
+			body: JSON.stringify(body),
+		},
+		options,
+	);
 }
 
 export type KioskSession =

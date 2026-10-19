@@ -20,6 +20,11 @@ import { createRatelimitRedisAdapter } from "@/lib/rate-limit-redis";
 import { ensureRedisReady, redis as redisClient } from "@/lib/redis";
 import { KIOSK_PIN_ATTEMPT_LIMIT } from "@/lib/time-tracking/kiosk/pin-attempt-limit";
 
+/** Kiosk badge-carrying calls per kiosk (#1366), counted apart from PIN attempts. */
+export const KIOSK_BADGE_ATTEMPT_LIMIT = { attempts: 60, windowSeconds: 60 } as const;
+/** Kiosk outcome questions per kiosk (#1363). */
+export const KIOSK_OUTCOME_LOOKUP_LIMIT = { attempts: 60, windowSeconds: 60 } as const;
+
 /**
  * Check if rate limiting is disabled
  * - Explicitly disabled via RATE_LIMIT_DISABLED=true
@@ -222,6 +227,34 @@ const limiters = {
 		prefix: "ratelimit:kiosk-pin",
 		analytics: false,
 	}),
+	/**
+	 * Kiosk badge calls per kiosk (#1366): 60 per minute, every badge-carrying call
+	 * counts (a scan and its action are two). Separate from the PIN limit: a
+	 * badge never counts as a PIN attempt.
+	 */
+	kioskBadgeAttempts: new Ratelimit({
+		redis,
+		limiter: Ratelimit.slidingWindow(
+			KIOSK_BADGE_ATTEMPT_LIMIT.attempts,
+			`${KIOSK_BADGE_ATTEMPT_LIMIT.windowSeconds} s`,
+		),
+		prefix: "ratelimit:kiosk-badge",
+		analytics: false,
+	}),
+	/**
+	 * Kiosk outcome questions per kiosk (#1363): 60 per minute. A kiosk asks
+	 * about one unresolved action every few seconds; each question may write a
+	 * closed attempt, so a token cannot grow that table without bound.
+	 */
+	kioskOutcomeLookups: new Ratelimit({
+		redis,
+		limiter: Ratelimit.slidingWindow(
+			KIOSK_OUTCOME_LOOKUP_LIMIT.attempts,
+			`${KIOSK_OUTCOME_LOOKUP_LIMIT.windowSeconds} s`,
+		),
+		prefix: "ratelimit:kiosk-outcome",
+		analytics: false,
+	}),
 	/** ICS feed fetches, keyed by feed id (120 per hour) */
 	icsFeed: new Ratelimit({
 		redis,
@@ -294,6 +327,14 @@ export const RATE_LIMIT_CONFIGS = {
 	kioskPinAttempts: {
 		maxRequests: KIOSK_PIN_ATTEMPT_LIMIT.attempts,
 		windowSeconds: KIOSK_PIN_ATTEMPT_LIMIT.windowSeconds,
+	},
+	kioskBadgeAttempts: {
+		maxRequests: KIOSK_BADGE_ATTEMPT_LIMIT.attempts,
+		windowSeconds: KIOSK_BADGE_ATTEMPT_LIMIT.windowSeconds,
+	},
+	kioskOutcomeLookups: {
+		maxRequests: KIOSK_OUTCOME_LOOKUP_LIMIT.attempts,
+		windowSeconds: KIOSK_OUTCOME_LOOKUP_LIMIT.windowSeconds,
 	},
 	icsFeed: {
 		maxRequests: icsFeedConfig.requests,

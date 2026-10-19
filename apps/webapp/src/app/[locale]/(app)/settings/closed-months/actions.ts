@@ -4,13 +4,13 @@ import { and, asc, eq, inArray } from "drizzle-orm";
 import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
 import { organization, user } from "@/db/auth-schema";
-import { employee, team } from "@/db/schema";
+import { employee, location, team } from "@/db/schema";
 import { getAbility } from "@/lib/auth-helpers";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { AuthorizationError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AuthService } from "@/lib/effect/services/auth.service";
-import { DatabaseService } from "@/lib/effect/services/database.service";
+import { type DatabaseClient, DatabaseService } from "@/lib/effect/services/database.service";
 import {
 	type ClosedMonthSettings,
 	loadClosedMonthSettings,
@@ -20,6 +20,7 @@ import {
 	type CloseMonthWarning,
 	monthCloseWarnings,
 } from "@/lib/time-tracking/closed-months/close-warnings";
+import { parseCloseMonthScope } from "@/lib/time-tracking/closed-months/close-scope";
 import { notifyReopening } from "@/lib/time-tracking/closed-months/notifications";
 import { canCloseMonths, canReopenMonths } from "@/lib/time-tracking/closed-months/permissions";
 import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
@@ -78,6 +79,29 @@ const parseMonth = (value: string) =>
 		catch: () => new ValidationError({ message: "Choose a calendar month", field: "month" }),
 	});
 
+/** The client's close scope, checked for shape; organization membership is the close's check. */
+const parseScope = (value: unknown) => {
+	const scope = parseCloseMonthScope(value);
+	return scope
+		? Effect.succeed(scope)
+		: Effect.fail(new ValidationError({ message: "Choose what to close for", field: "scope" }));
+};
+
+/** The organization's teams and locations (#836), the scopes a close may name besides it. */
+const closeScopeOptions = (database: DatabaseClient, organizationId: string) =>
+	Promise.all([
+		database
+			.select({ id: team.id, name: team.name })
+			.from(team)
+			.where(eq(team.organizationId, organizationId))
+			.orderBy(asc(team.name)),
+		database
+			.select({ id: location.id, name: location.name })
+			.from(location)
+			.where(eq(location.organizationId, organizationId))
+			.orderBy(asc(location.name)),
+	]);
+
 export interface ClosedMonthsHistoryRow extends ClosedMonthHistoryEntry {
 	actorName: string | null;
 	teamName: string | null;
@@ -90,6 +114,7 @@ export interface ClosedMonthsOverview {
 	months: MonthClosureStatus[];
 	history: ClosedMonthsHistoryRow[];
 	teams: Array<{ id: string; name: string }>;
+	locations: Array<{ id: string; name: string }>;
 	employees: Array<{ id: string; name: string; teamId: string | null }>;
 	settings: ClosedMonthSettings;
 }
@@ -123,17 +148,13 @@ export async function getClosedMonthsOverview(): Promise<ServerActionResult<Clos
 					.where(eq(organization.id, actor.organizationId))
 					.limit(1);
 				const timezone = resolveOrganizationTimezone(org?.timezone).timezone;
-				const [months, history, teams, employees, settings] = await Promise.all([
+				const [months, history, [teams, locations], employees, settings] = await Promise.all([
 					monthClosureStatuses(database, {
 						organizationId: actor.organizationId,
 						months: recentMonths(timezone),
 					}),
 					closedMonthHistory(database, { organizationId: actor.organizationId }),
-					database
-						.select({ id: team.id, name: team.name })
-						.from(team)
-						.where(eq(team.organizationId, actor.organizationId))
-						.orderBy(asc(team.name)),
+					closeScopeOptions(database, actor.organizationId),
 					database
 						.select({
 							id: employee.id,
@@ -157,6 +178,7 @@ export async function getClosedMonthsOverview(): Promise<ServerActionResult<Clos
 						: [];
 				const actorNames = new Map(actors.map((row) => [row.id, row.name]));
 				const teamNames = new Map(teams.map((row) => [row.id, row.name]));
+				const locationNames = new Map(locations.map((row) => [row.id, row.name]));
 				return {
 					canClose: actor.canClose,
 					canReopen: actor.canReopen,
@@ -167,8 +189,13 @@ export async function getClosedMonthsOverview(): Promise<ServerActionResult<Clos
 						...row,
 						actorName: row.actorUserId ? (actorNames.get(row.actorUserId) ?? null) : null,
 						teamName: row.teamId ? (teamNames.get(row.teamId) ?? null) : null,
+						// The current name, else the name at close once the location is deleted.
+						locationName: row.locationId
+							? (locationNames.get(row.locationId) ?? row.locationName)
+							: null,
 					})),
 					teams,
+					locations,
 					employees: employees
 						.map((row) => ({
 							id: row.id,
@@ -182,7 +209,10 @@ export async function getClosedMonthsOverview(): Promise<ServerActionResult<Clos
 	);
 }
 
-/** Closes a month for the organization or one team. Refused results carry the blockers. */
+/**
+ * Closes a month for the organization, one team or one location. Refused results carry the
+ * blockers.
+ */
 export async function closeMonthAction(input: {
 	month: string;
 	scope: CloseMonthScope;
@@ -191,12 +221,13 @@ export async function closeMonthAction(input: {
 		Effect.gen(function* () {
 			const actor = yield* closedMonthsActor("close");
 			const month = yield* parseMonth(input.month);
+			const scope = yield* parseScope(input.scope);
 			const dbService = yield* DatabaseService;
 			const result = yield* dbService.query("closedMonths.close", () =>
 				closeMonth(dbService.db, {
 					organizationId: actor.organizationId,
 					month,
-					scope: input.scope,
+					scope,
 					actor: { kind: "user", userId: actor.userId },
 					now: systemClock.nowInstant(),
 				}),
@@ -219,12 +250,13 @@ export async function getMonthCloseWarningsAction(input: {
 		Effect.gen(function* () {
 			const actor = yield* closedMonthsActor("close");
 			const month = yield* parseMonth(input.month);
+			const scope = yield* parseScope(input.scope);
 			const dbService = yield* DatabaseService;
 			return yield* dbService.query("closedMonths.closeWarnings", () =>
 				monthCloseWarnings(dbService.db, {
 					organizationId: actor.organizationId,
 					month,
-					scope: input.scope,
+					scope,
 					now: systemClock.nowInstant(),
 				}),
 			);
@@ -347,33 +379,34 @@ export async function saveClosedMonthSettingsAction(
 	);
 }
 
+export interface MonthCloseContext {
+	canClose: boolean;
+	teams: Array<{ id: string; name: string }>;
+	locations: Array<{ id: string; name: string }>;
+}
+
 /**
- * Whether the viewer may close months, and the teams a close may cover: what
- * the payroll export's `Close this month` offer needs. Never fails for a
- * viewer without the permission; they just get no offer.
+ * Whether the viewer may close months, and the teams and locations a close may
+ * cover: what the payroll export's `Close this month` offer needs. Never fails
+ * for a viewer without the permission; they just get no offer.
  */
-export async function getMonthCloseContext(): Promise<
-	ServerActionResult<{ canClose: boolean; teams: Array<{ id: string; name: string }> }>
-> {
+export async function getMonthCloseContext(): Promise<ServerActionResult<MonthCloseContext>> {
 	return runServerActionSafe(
 		Effect.gen(function* () {
 			const authService = yield* AuthService;
 			const session = yield* authService.getSession();
 			const organizationId = session.session.activeOrganizationId;
-			if (!organizationId) return { canClose: false, teams: [] };
+			const none: MonthCloseContext = { canClose: false, teams: [], locations: [] };
+			if (!organizationId) return none;
 			const ability = yield* Effect.promise(() => getAbility());
 			if (!ability || !canCloseMonths(ability, organizationId, organizationId)) {
-				return { canClose: false, teams: [] };
+				return none;
 			}
 			const dbService = yield* DatabaseService;
-			const teams = yield* dbService.query("closedMonths.teams", () =>
-				dbService.db
-					.select({ id: team.id, name: team.name })
-					.from(team)
-					.where(eq(team.organizationId, organizationId))
-					.orderBy(asc(team.name)),
+			const [teams, locations] = yield* dbService.query("closedMonths.closeScopes", () =>
+				closeScopeOptions(dbService.db, organizationId),
 			);
-			return { canClose: true, teams };
+			return { canClose: true, teams, locations };
 		}),
 	);
 }

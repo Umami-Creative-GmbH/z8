@@ -1,12 +1,13 @@
 import { addJob } from "@/lib/queue";
 import type {
 	AccountingCustomerScanJobData,
+	CsvWorkScanJobData,
 	ImportCommitJobData,
 	ImportScanJobData,
 } from "./types";
 
 export async function enqueueImportScanJob(
-	data: ImportScanJobData | AccountingCustomerScanJobData,
+	data: ImportScanJobData | AccountingCustomerScanJobData | CsvWorkScanJobData,
 ) {
 	const queueJobId = `import-review-scan-${data.jobId}`;
 	return addJob(queueJobId, data, { priority: 4, jobId: queueJobId });

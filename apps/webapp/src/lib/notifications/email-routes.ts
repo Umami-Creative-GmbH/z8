@@ -74,6 +74,7 @@ const NOTIFICATION_EMAIL_ROUTES: {
 	two_factor_disabled: dedicated("two_factor_disabled"),
 
 	// Shared layout only.
+	approved_absence_cancelled: layout("/team/absences"),
 	organization_mfa_notice: layout("/mfa"),
 	automatic_clock_out: layout("/calendar/"),
 	travel_expense_reimbursed: layout("/travel-expenses/"),
@@ -98,6 +99,12 @@ const NOTIFICATION_EMAIL_ROUTES: {
 	personnel_file_expiry_upcoming: layout("/personnel-files/", "/my-documents"),
 	personnel_file_expired_today: layout("/personnel-files/", "/my-documents"),
 	personnel_file_due_for_deletion: layout("/personnel-files/"),
+	// Document requests (#1307): the employee's My documents, the officers' personnel files.
+	personnel_file_document_requested: layout("/my-documents"),
+	personnel_file_document_request_decided: layout("/my-documents"),
+	personnel_file_document_request_reminder: layout("/my-documents"),
+	personnel_file_document_request_submitted: layout("/personnel-files/"),
+	personnel_file_document_request_overdue: layout("/personnel-files/", "/my-documents"),
 	// The deputy's dashboard, which shows whom they cover (#1013).
 	absence_deputy_assigned: layout("/"),
 	absence_deputy_removed: layout("/"),

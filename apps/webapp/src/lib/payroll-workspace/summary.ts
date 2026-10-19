@@ -1,5 +1,5 @@
-import { and, eq, gte, inArray, isNotNull, isNull, lte, or } from "drizzle-orm";
 import { createHash } from "node:crypto";
+import { and, eq, gte, inArray, isNotNull, isNull, lte, or } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { Temporal } from "temporal-polyfill";
 import { organization, user } from "@/db/auth-schema";
@@ -19,6 +19,7 @@ import {
 	findOpenDepartureClockRepairs,
 	type OpenDepartureClockRepair,
 } from "@/lib/employee-lifecycle/reviews";
+import { loadCurrentContractTypes } from "@/lib/employment-history/load-terms-in-force";
 import {
 	allocateProtectedMinutes,
 	employeePayrollWindow,
@@ -38,14 +39,14 @@ import { buildPayrollQueryEnvelope } from "@/lib/payroll-export/calendar-boundar
 import { payrollIdentifierCustomFieldId } from "@/lib/payroll-export/personnel-identifier";
 import { readPersonnelIdentifierValues } from "@/lib/payroll-export/personnel-identifier-store";
 import {
-	classifyPayrollRunCandidates,
-	exportIsPayrollRun,
-} from "@/lib/travel-expenses/payroll-run";
-import {
 	assertCanonicalAbsencesReady,
 	assertCanonicalCutoverReady,
 } from "@/lib/time-record/migration/cutover-state";
 import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
+import {
+	classifyPayrollRunCandidates,
+	exportIsPayrollRun,
+} from "@/lib/travel-expenses/payroll-run";
 import { buildPayrollAbsenceDetails, payrollAbsenceDetailDays } from "./absence-details";
 import { filterDismissedPayrollBlockerCandidates } from "./blocker-dismissal-loader";
 import type {
@@ -494,39 +495,44 @@ async function getMissingIdentifierBlockers(input: {
 	if (formatsByField.size === 0) return [];
 
 	const allowed = new Set(input.allowedEmployeeIds);
-	const blockers: PayrollWorkBlocker[] = [];
-	for (const [customFieldId, formatIds] of [...formatsByField].toSorted(([left], [right]) =>
-		left.localeCompare(right),
-	)) {
-		const employeeIds = new Set(input.employeesWithRows);
-		for (const formatId of formatIds.toSorted()) {
-			if (!(await exportIsPayrollRun(db, { organizationId: input.organizationId, formatId }))) {
-				continue;
-			}
-			const candidates = await classifyPayrollRunCandidates(db, {
-				organizationId: input.organizationId,
-				format: formatId,
-				period: { startDate: input.period.start, endDate: input.period.end },
-				employeeIds: input.allowedEmployeeIds,
-			});
-			for (const candidate of candidates) {
-				if (candidate.classification.outcome === "include") {
-					employeeIds.add(candidate.account.employeeId);
+	// Independent pooled reads per identifier field and per format; results are
+	// combined in sorted order, so the blockers read as before.
+	const blockersByField = await Promise.all(
+		[...formatsByField]
+			.toSorted(([left], [right]) => left.localeCompare(right))
+			.map(async ([customFieldId, formatIds]): Promise<PayrollWorkBlocker[]> => {
+				const candidatesByFormat = await Promise.all(
+					formatIds.toSorted().map(async (formatId) =>
+						(await exportIsPayrollRun(db, { organizationId: input.organizationId, formatId }))
+							? classifyPayrollRunCandidates(db, {
+									organizationId: input.organizationId,
+									format: formatId,
+									period: { startDate: input.period.start, endDate: input.period.end },
+									employeeIds: input.allowedEmployeeIds,
+								})
+							: [],
+					),
+				);
+				const employeeIds = new Set(input.employeesWithRows);
+				for (const candidate of candidatesByFormat.flat()) {
+					if (candidate.classification.outcome === "include") {
+						employeeIds.add(candidate.account.employeeId);
+					}
 				}
-			}
-		}
-		const inScope = [...employeeIds].filter((employeeId) => allowed.has(employeeId));
-		const values = await readPersonnelIdentifierValues(db, {
-			organizationId: input.organizationId,
-			customFieldId,
-			employeeIds: inScope,
-			asOf: parsePlainDate(input.period.end),
-		});
-		blockers.push(
-			...missingPersonnelIdentifierBlockers({ customFieldId, values, employeeIds: inScope }),
-		);
-	}
-	return payrollBlockersFromCollection({ blockers, employeeTimezones: {} });
+				const inScope = [...employeeIds].filter((employeeId) => allowed.has(employeeId));
+				const values = await readPersonnelIdentifierValues(db, {
+					organizationId: input.organizationId,
+					customFieldId,
+					employeeIds: inScope,
+					asOf: parsePlainDate(input.period.end),
+				});
+				return missingPersonnelIdentifierBlockers({ customFieldId, values, employeeIds: inScope });
+			}),
+	);
+	return payrollBlockersFromCollection({
+		blockers: blockersByField.flat(),
+		employeeTimezones: {},
+	});
 }
 
 async function getEmployeeRows(
@@ -553,12 +559,17 @@ async function getEmployeeRows(
 			),
 		);
 
+	const contractTypes = await loadCurrentContractTypes(db, {
+		organizationId,
+		employees: rows,
+	});
+
 	return rows.map((row) => ({
 		id: row.id,
 		name: formatEmployeeDisplayName(row.userName, row.employeeNumber, row.id),
 		employeeNumber: row.employeeNumber,
 		teamName: row.teamName,
-		contractType: row.contractType,
+		contractType: contractTypes.get(row.id) ?? row.contractType,
 	}));
 }
 

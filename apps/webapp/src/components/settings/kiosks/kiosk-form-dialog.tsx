@@ -69,11 +69,29 @@ type KioskFormValues = {
 	timezone: string;
 	boardEnabled: boolean;
 	offlineModeEnabled: boolean;
+	badgeScannerEnabled: boolean;
+	badgeCameraEnabled: boolean;
 };
+
+/** The form's starting values: the kiosk being edited, or a new kiosk's defaults. */
+function kioskFormDefaults(props: KioskFormDialogProps): KioskFormValues {
+	const editing = props.mode === "edit" ? props.kiosk : null;
+	return {
+		name: editing?.name ?? "",
+		locationId: editing?.locationId ?? props.locations[0]?.id ?? "",
+		// A new kiosk starts in the organization's zone, never the admin's browser zone.
+		timezone: props.mode === "edit" ? props.kiosk.timezone : props.defaultTimezone,
+		boardEnabled: editing?.boardEnabled ?? false,
+		offlineModeEnabled: editing?.offlineModeEnabled ?? false,
+		badgeScannerEnabled: editing?.badgeScannerEnabled ?? false,
+		badgeCameraEnabled: editing?.badgeCameraEnabled ?? false,
+	};
+}
 
 /**
  * Creates a kiosk, or edits one: name, location, zone and (when editing) the
- * who-is-in board and offline mode.
+ * who-is-in board, offline mode, attached-scanner badge input (#1366) and
+ * camera badge input (#1367), each switch on its own.
  */
 export function KioskFormDialog(props: KioskFormDialogProps) {
 	// Remount per opening so a reopened dialog starts from fresh defaults.
@@ -87,14 +105,7 @@ function KioskFormDialogContent(props: KioskFormDialogProps) {
 	const editing = props.mode === "edit" ? props.kiosk : null;
 
 	const form = useForm({
-		defaultValues: {
-			name: editing?.name ?? "",
-			locationId: editing?.locationId ?? props.locations[0]?.id ?? "",
-			// A new kiosk starts in the organization's zone, never the admin's browser zone.
-			timezone: props.mode === "edit" ? props.kiosk.timezone : props.defaultTimezone,
-			boardEnabled: editing?.boardEnabled ?? false,
-			offlineModeEnabled: editing?.offlineModeEnabled ?? false,
-		} satisfies KioskFormValues,
+		defaultValues: kioskFormDefaults(props),
 		onSubmit: async ({ value }) => {
 			setSaving(true);
 			const save = async () => {
@@ -122,6 +133,8 @@ function KioskFormDialogContent(props: KioskFormDialogProps) {
 					timezone: value.timezone,
 					boardEnabled: value.boardEnabled,
 					offlineModeEnabled: value.offlineModeEnabled,
+					badgeScannerEnabled: value.badgeScannerEnabled,
+					badgeCameraEnabled: value.badgeCameraEnabled,
 				});
 				if (!result.success) {
 					toast.error(
@@ -295,6 +308,56 @@ function KioskFormDialogContent(props: KioskFormDialogProps) {
 											checked={field.state.value}
 											// Switching off stays possible after a rollback to legacy.
 											disabled={!props.organizationAdopted && !field.state.value}
+											onCheckedChange={(checked) => field.handleChange(checked === true)}
+										/>
+									</TFormControl>
+								</TFormItem>
+							)}
+						</form.Field>
+					) : null}
+					{editing ? (
+						<form.Field name="badgeScannerEnabled">
+							{(field) => (
+								<TFormItem className="flex flex-row items-center justify-between gap-4 rounded-md border p-3">
+									<div className="space-y-1">
+										<TFormLabel>
+											{t("settings.kiosks.fields.badgeScanner", "Badge scanner")}
+										</TFormLabel>
+										<TFormDescription>
+											{t(
+												"settings.kiosks.fields.badgeScannerDescription",
+												"Employees scan their kiosk badge with a QR scanner attached to this kiosk instead of entering their PIN. Badge clocking needs a connection; name and PIN keep working.",
+											)}
+										</TFormDescription>
+									</div>
+									<TFormControl>
+										<Switch
+											checked={field.state.value}
+											onCheckedChange={(checked) => field.handleChange(checked === true)}
+										/>
+									</TFormControl>
+								</TFormItem>
+							)}
+						</form.Field>
+					) : null}
+					{editing ? (
+						<form.Field name="badgeCameraEnabled">
+							{(field) => (
+								<TFormItem className="flex flex-row items-center justify-between gap-4 rounded-md border p-3">
+									<div className="space-y-1">
+										<TFormLabel>
+											{t("settings.kiosks.fields.badgeCamera", "Badge camera")}
+										</TFormLabel>
+										<TFormDescription>
+											{t(
+												"settings.kiosks.fields.badgeCameraDescription",
+												"Employees tap Scan badge and hold their kiosk badge to this kiosk's camera instead of entering their PIN. The code is read on the device; no image is uploaded or stored. The browser asks once for camera access. Badge clocking needs a connection; name and PIN keep working.",
+											)}
+										</TFormDescription>
+									</div>
+									<TFormControl>
+										<Switch
+											checked={field.state.value}
 											onCheckedChange={(checked) => field.handleChange(checked === true)}
 										/>
 									</TFormControl>

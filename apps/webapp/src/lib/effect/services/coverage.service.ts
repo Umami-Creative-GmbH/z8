@@ -26,6 +26,7 @@ import {
 import {
 	type CoverageRuleEntity,
 	type DayOfWeek,
+	dayOfWeekOf,
 	toCoverageRuleEntity,
 } from "@/lib/coverage/domain/entities/coverage-rule";
 import type { HeatmapDataPoint } from "@/lib/coverage/domain/entities/coverage-snapshot";
@@ -302,19 +303,6 @@ export function resolveCoveragePlainDates(
 	}
 
 	return dates;
-}
-
-function dayOfWeekForDate(date: PlainDate): DayOfWeek {
-	const days: Record<number, DayOfWeek> = {
-		1: "monday",
-		2: "tuesday",
-		3: "wednesday",
-		4: "thursday",
-		5: "friday",
-		6: "saturday",
-		7: "sunday",
-	};
-	return days[date.dayOfWeek];
 }
 
 function coverageDateToDate(date: PlainDate, timezone: string): Date {
@@ -931,7 +919,7 @@ export const CoverageServiceLive = Layer.effect(
 
 							const result = calculateCoverage({
 								date: coverageDateToDate(date, timezone),
-								dayOfWeek: dayOfWeekForDate(date),
+								dayOfWeek: dayOfWeekOf(date),
 								subareaId,
 								subareaName: subareaInfo.name,
 								locationName: subareaInfo.locationName,
@@ -1065,7 +1053,7 @@ export const CoverageServiceLive = Layer.effect(
 
 							const result = calculateCoverage({
 								date: coverageDateToDate(date, timezone),
-								dayOfWeek: dayOfWeekForDate(date),
+								dayOfWeek: dayOfWeekOf(date),
 								subareaId,
 								subareaName: subareaInfo.name,
 								locationName: subareaInfo.locationName,

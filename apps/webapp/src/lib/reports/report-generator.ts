@@ -19,11 +19,14 @@ import {
 	parsePlainDate,
 } from "@/lib/datetime/temporal-core";
 import { runtime } from "@/lib/effect/runtime";
-import { loadConfirmedTermsSpans } from "@/lib/employment-history/load-terms-in-force";
+import {
+	loadConfirmedTermsSpans,
+	loadCurrentContractTypes,
+} from "@/lib/employment-history/load-terms-in-force";
 import { readCustomFieldReportValues } from "@/lib/organization/custom-fields/report-reads";
 import type { CustomFieldViewer } from "@/lib/organization/custom-fields/values";
-import { sumWorkMinutesWithinTracking } from "@/lib/work-balance/tracked-work";
 import { calculateExpectedWorkHoursForEmployee } from "@/lib/time-tracking/calculations";
+import { sumWorkMinutesWithinTracking } from "@/lib/work-balance/tracked-work";
 import { completedWorkPeriodCondition } from "./completed-work";
 import { formatDateRangeLabel } from "./date-ranges";
 import { calculateHourlyEarningsFromTerms } from "./hourly-earnings";
@@ -137,34 +140,40 @@ export async function generateEmployeeReport(
 
 	// Aggregate data in parallel
 	const reportRange = getReportRange(startDate, endDate, calendarRange);
-	const [periods, absences, homeOffice, expectedHours, customFields] = await Promise.all([
-		loadCompletedWorkPeriods(employeeId, organizationId, reportRange),
-		aggregateAbsences(employeeId, organizationId, startDate, endDate, calendarRange),
-		aggregateHomeOfficeDays(employeeId, organizationId, startDate, endDate, calendarRange),
-		runtime.runPromise(
-			calculateExpectedWorkHoursForEmployee(
-				employeeId,
-				organizationId,
-				startDate,
-				endDate,
-				calendarRange?.timezone ?? "utc",
+	const [periods, absences, homeOffice, expectedHours, customFields, contractTypes] =
+		await Promise.all([
+			loadCompletedWorkPeriods(employeeId, organizationId, reportRange),
+			aggregateAbsences(employeeId, organizationId, startDate, endDate, calendarRange),
+			aggregateHomeOfficeDays(employeeId, organizationId, startDate, endDate, calendarRange),
+			runtime.runPromise(
+				calculateExpectedWorkHoursForEmployee(
+					employeeId,
+					organizationId,
+					startDate,
+					endDate,
+					calendarRange?.timezone ?? "utc",
+				),
 			),
-		),
-		// Values as of the period's last day in the report's (organization) zone.
-		readCustomFieldReportValues(db, {
-			organizationId,
-			entity: "employee",
-			recordIds: [employeeId],
-			asOf: parsePlainDate(reportRange.endDate),
-			viewer: options.customFieldViewer ?? { kind: "level", level: null },
-		}),
-	]);
+			// Values as of the period's last day in the report's (organization) zone.
+			readCustomFieldReportValues(db, {
+				organizationId,
+				entity: "employee",
+				recordIds: [employeeId],
+				asOf: parsePlainDate(reportRange.endDate),
+				viewer: options.customFieldViewer ?? { kind: "level", level: null },
+			}),
+			loadCurrentContractTypes(db, { organizationId, employees: [emp] }),
+		]);
 	const workHours = aggregateWorkHoursFromPeriods(periods, reportRange);
 
 	// Calculate compliance metrics using schedule-based expected hours
 	const trackedMinutes =
-		(await sumWorkMinutesWithinTracking(db, { employeeId, organizationId, startDate, endDate })) ??
-		workHours.totalMinutes;
+		(await sumWorkMinutesWithinTracking(db, {
+			employeeId,
+			organizationId,
+			startDate,
+			endDate,
+		})) ?? workHours.totalMinutes;
 	// Historical work remains in the report; its overtime uses the shared tracking window.
 	const complianceMetrics = calculateComplianceMetrics(
 		{ ...workHours, totalMinutes: trackedMinutes },
@@ -187,7 +196,7 @@ export async function generateEmployeeReport(
 			employeeNumber: emp.employeeNumber,
 			position: emp.position,
 			email: emp.user.email,
-			contractType: emp.contractType,
+			contractType: contractTypes.get(emp.id) ?? emp.contractType,
 			customFields: customFields.byRecord[employeeId] ?? [],
 		},
 		period: {
@@ -313,25 +322,27 @@ export async function aggregateAbsences(
 		calendarRange?.startDate ?? format(startOfDay(fromJSDate(startDate)), "yyyy-MM-dd");
 	const rangeEndStr = calendarRange?.endDate ?? format(endOfDay(fromJSDate(endDate)), "yyyy-MM-dd");
 
-	// Fetch all absences in date range
-	const absences = await db.query.absenceEntry.findMany({
-		where: and(
-			eq(absenceEntry.employeeId, employeeId),
-			eq(absenceEntry.organizationId, organizationId),
-			lte(absenceEntry.startDate, rangeEndStr),
-			gte(absenceEntry.endDate, rangeStartStr),
-		),
-		with: {
-			category: true,
-		},
-		orderBy: (absences, { asc }) => [asc(absences.startDate)],
-	});
-	const isWorkingDay = await loadWorkingDays(db, {
-		organizationId,
-		employeeId,
-		startDate: rangeStartStr,
-		endDate: rangeEndStr,
-	});
+	// Fetch all absences in date range and the working days that count them
+	const [absences, isWorkingDay] = await Promise.all([
+		db.query.absenceEntry.findMany({
+			where: and(
+				eq(absenceEntry.employeeId, employeeId),
+				eq(absenceEntry.organizationId, organizationId),
+				lte(absenceEntry.startDate, rangeEndStr),
+				gte(absenceEntry.endDate, rangeStartStr),
+			),
+			with: {
+				category: true,
+			},
+			orderBy: (absences, { asc }) => [asc(absences.startDate)],
+		}),
+		loadWorkingDays(db, {
+			organizationId,
+			employeeId,
+			startDate: rangeStartStr,
+			endDate: rangeEndStr,
+		}),
+	]);
 
 	const byCategory = new Map<string, AbsenceSummary>();
 	let totalDays = 0;

@@ -98,6 +98,7 @@ export function ClosedMonthsSettings({ overview }: { overview: ClosedMonthsOverv
 				open={panel?.kind === "close"}
 				month={panel?.kind === "close" ? panel.month.month : null}
 				teams={overview.teams}
+				locations={overview.locations}
 				onOpenChange={(open) => !open && setPanel(null)}
 			/>
 			<ReopenMonthPanel
@@ -222,11 +223,7 @@ function AutomaticCloseCard({ settings }: { settings: ClosedMonthsOverview["sett
 function HistoryCard({ overview }: { overview: ClosedMonthsOverview }) {
 	const { t } = useTranslate();
 	const locale = useTolgee(["language"]).getLanguage() ?? "en";
-	const timestamp = new Intl.DateTimeFormat(locale, {
-		dateStyle: "medium",
-		timeStyle: "short",
-		timeZone: overview.timezone,
-	});
+	const timestamp = getHistoryTimestampFormatter(locale, overview.timezone);
 
 	return (
 		<Card>
@@ -276,6 +273,23 @@ function HistoryCard({ overview }: { overview: ClosedMonthsOverview }) {
 	);
 }
 
+const historyTimestampFormatters = new Map<string, Intl.DateTimeFormat>();
+
+/** History timestamps in the viewer's language and the organization's timezone. */
+function getHistoryTimestampFormatter(locale: string, timeZone: string) {
+	const cacheKey = `${locale}\u0000${timeZone}`;
+	let formatter = historyTimestampFormatters.get(cacheKey);
+	if (!formatter) {
+		formatter = new Intl.DateTimeFormat(locale, {
+			dateStyle: "medium",
+			timeStyle: "short",
+			timeZone,
+		});
+		historyTimestampFormatters.set(cacheKey, formatter);
+	}
+	return formatter;
+}
+
 function historyScope(
 	t: ReturnType<typeof useTranslate>["t"],
 	entry: ClosedMonthsOverview["history"][number],
@@ -287,7 +301,13 @@ function historyScope(
 			return t("settings.closedMonths.scope.all", "Everything");
 		case "employees":
 			return t("settings.closedMonths.scope.employees", "Selected employees");
-		default:
+		case "location":
+			return entry.locationName
+				? t("settings.closedMonths.scope.locationNamed", "Location {name}", {
+						name: entry.locationName,
+					})
+				: t("settings.closedMonths.scope.deletedLocation", "Deleted location");
+		case "team":
 			return entry.teamName ?? t("settings.closedMonths.scope.deletedTeam", "Deleted team");
 	}
 }

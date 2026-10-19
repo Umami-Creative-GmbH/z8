@@ -14,7 +14,7 @@ describe("which clock commands record vehicle use", () => {
 					kind: "kiosk",
 					kioskId: "k",
 					userId: "u",
-					pin: { organizationId: "o", kioskId: "k", employeeId: subject.employeeId },
+					proof: { kind: "pin", organizationId: "o", kioskId: "k", employeeId: subject.employeeId },
 				},
 				subject,
 			}),

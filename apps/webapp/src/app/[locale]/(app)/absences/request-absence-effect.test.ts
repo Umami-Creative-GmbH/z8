@@ -1,5 +1,6 @@
 import { Effect } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { mondayToFriday } from "@/lib/absences/absence-days";
 import { approvalWriteGateResult } from "@/lib/approvals/authority";
 import type { ApprovalWorkflowTransactionContext } from "@/lib/approvals/domain-adapters/types";
 import type { ApprovalCompatibilityWriter } from "@/lib/approvals/workflow/compatibility-writer";
@@ -19,7 +20,8 @@ const callerMocks = vi.hoisted(() => ({
 	absenceEntryFindMany: vi.fn(),
 	createAbsenceApprovalWorkflow: vi.fn(),
 	employeeFindFirst: vi.fn(),
-	getAbsenceDays: vi.fn(),
+	loadWorkingDays: vi.fn(),
+	findYearsExceedingBalance: vi.fn(),
 	notificationPreferenceFindMany: vi.fn(),
 	notificationInsert: vi.fn(),
 	userFindFirst: vi.fn(),
@@ -64,7 +66,12 @@ vi.mock("@/db", () => ({
 
 // Absence days (#979): absences/absence-days-resolver.integration.test.ts.
 vi.mock("@/lib/absences/absence-days-resolver", () => ({
-	getAbsenceDays: callerMocks.getAbsenceDays,
+	loadWorkingDays: callerMocks.loadWorkingDays,
+}));
+
+// Per-year vacation balances (#1340): vacation-year-balance-store.test.ts and plan-preview.integration.test.ts.
+vi.mock("@/lib/absences/vacation-year-balance-store", () => ({
+	findYearsExceedingBalance: callerMocks.findYearsExceedingBalance,
 }));
 
 // Legacy submission intents (#384): legacy-bound-approval.integration.test.ts.
@@ -217,7 +224,7 @@ function createLegacyApprovalLifecycle(
 		startCanonicalWorkflow: vi.fn(),
 		captureCanonicalEvidence: vi.fn(async () => null),
 		captureLegacyEvidence: vi.fn(async () => null),
-		nowInstant: vi.fn(() => ({ toString: () => "2026-07-19T10:00:00Z" })),
+		nowInstant: vi.fn(() => parseInstant("2026-07-19T10:00:00Z")),
 	};
 }
 
@@ -247,7 +254,8 @@ beforeEach(() => {
 		requiresApproval: true,
 	});
 	callerMocks.absenceEntryFindMany.mockResolvedValue([]);
-	callerMocks.getAbsenceDays.mockResolvedValue(2);
+	callerMocks.loadWorkingDays.mockResolvedValue(mondayToFriday);
+	callerMocks.findYearsExceedingBalance.mockResolvedValue([]);
 	callerMocks.notificationPreferenceFindMany.mockResolvedValue([]);
 	callerMocks.userFindFirst.mockResolvedValue({
 		name: "Avery Employee",
@@ -273,7 +281,11 @@ beforeEach(() => {
 	);
 });
 
+/** The inserts of the caller transactions `configureAbsenceCallerTransaction` opened. */
+const callerTransactionInserts: ReturnType<typeof vi.fn>[] = [];
+
 function configureAbsenceCallerTransaction() {
+	callerTransactionInserts.length = 0;
 	callerMocks.transaction.mockImplementation(async (callback) => {
 		const insert = vi
 			.fn()
@@ -289,14 +301,23 @@ function configureAbsenceCallerTransaction() {
 			)
 			.mockReturnValueOnce(createInsertBuilder([{ id: "canonical-1" }]))
 			.mockReturnValueOnce(createVoidInsertBuilder());
+		callerTransactionInserts.push(insert);
 		return callback({
 			execute: async () => [],
+			query: { absenceEntry: { findMany: callerMocks.absenceEntryFindMany } },
 			insert,
 			update: vi.fn(() => createUpdateBuilder()),
 		});
 	});
 	return createLegacyApprovalLifecycle(callerMocks.transaction);
 }
+
+/** The admission inputs the caller reads before the transaction (#1396). */
+const testAdmission = {
+	isWorkingDay: mondayToFriday,
+	now: parseInstant("2026-07-19T10:00:00Z"),
+	hasDefaultApprover: true,
+};
 
 const absenceRequest = {
 	categoryId: "category-1",
@@ -438,21 +459,18 @@ describe("requestAbsenceForEmployeeEffect absence days (#979)", () => {
 			approvalLifecycle as never,
 		);
 
-		expect(callerMocks.getAbsenceDays).toHaveBeenCalledWith(expect.anything(), {
+		expect(callerMocks.loadWorkingDays).toHaveBeenCalledTimes(1);
+		expect(callerMocks.loadWorkingDays).toHaveBeenCalledWith(expect.anything(), {
 			organizationId: "org-1",
 			employeeId: "employee-1",
-			absence: {
-				startDate: "2026-05-11",
-				startPeriod: "full_day",
-				endDate: "2026-05-12",
-				endPeriod: "full_day",
-			},
+			startDate: "2026-05-11",
+			endDate: "2026-05-12",
 		});
 	});
 
 	it("refuses vacation that covers no working day before recording anything", async () => {
 		const approvalLifecycle = configureAbsenceCallerTransaction();
-		callerMocks.getAbsenceDays.mockResolvedValue(0);
+		callerMocks.loadWorkingDays.mockResolvedValue(() => false);
 
 		const result = await requestAbsenceForEmployeeEffect(
 			absenceRequest,
@@ -472,7 +490,7 @@ describe("requestAbsenceForEmployeeEffect absence days (#979)", () => {
 
 	it("accepts sick leave that covers no working day", async () => {
 		const approvalLifecycle = configureAbsenceCallerTransaction();
-		callerMocks.getAbsenceDays.mockResolvedValue(0);
+		callerMocks.loadWorkingDays.mockResolvedValue(() => false);
 		callerMocks.absenceCategoryFindFirst.mockResolvedValue({
 			id: "category-1",
 			name: "Sick leave",
@@ -502,6 +520,119 @@ describe("requestAbsenceForEmployeeEffect absence days (#979)", () => {
 		);
 
 		expect(result).toEqual({ success: true, data: { absenceId: "absence-1" } });
+	});
+});
+
+describe("requestAbsenceForEmployeeEffect vacation balance (#1340)", () => {
+	const employeeContext = { id: "employee-1", organizationId: "org-1", teamId: "team-1" };
+
+	it("checks each year's balance for the employee in their organization", async () => {
+		const approvalLifecycle = configureAbsenceCallerTransaction();
+
+		await requestAbsenceForEmployeeEffect(
+			absenceRequest,
+			employeeContext,
+			"user-1",
+			approvalLifecycle as never,
+		);
+
+		// The working days read once for the absence days are reused, at the flow's clock.
+		expect(callerMocks.loadWorkingDays).toHaveBeenCalledTimes(1);
+		expect(callerMocks.findYearsExceedingBalance).toHaveBeenCalledWith(expect.anything(), {
+			organizationId: "org-1",
+			employeeId: "employee-1",
+			absence: {
+				startDate: "2026-05-11",
+				startPeriod: "full_day",
+				endDate: "2026-05-12",
+				endPeriod: "full_day",
+			},
+			isWorkingDay: mondayToFriday,
+			currentDate: new Date("2026-07-19T10:00:00Z"),
+		});
+	});
+
+	it("refuses vacation that exceeds a year's recorded balance before recording anything", async () => {
+		const approvalLifecycle = configureAbsenceCallerTransaction();
+		callerMocks.findYearsExceedingBalance.mockResolvedValue([
+			{
+				year: 2026,
+				chargedAbsenceDays: 2,
+				futureYear: false,
+				status: "available",
+				remainingDays: 1,
+				remainingAfterRequest: -1,
+			},
+		]);
+
+		const result = await requestAbsenceForEmployeeEffect(
+			absenceRequest,
+			employeeContext,
+			"user-1",
+			approvalLifecycle as never,
+		);
+
+		expect(result).toEqual({
+			success: false,
+			error: "The requested dates exceed your available vacation balance for 2026.",
+			code: "ValidationError",
+			refusal: "insufficient_balance",
+		});
+		// Judged inside the guarded submission transaction (#1396), before its first insert.
+		expect(callerMocks.findYearsExceedingBalance).toHaveBeenCalledWith(
+			expect.objectContaining({ insert: callerTransactionInserts[0] }),
+			expect.anything(),
+		);
+		expect(callerTransactionInserts[0]).not.toHaveBeenCalled();
+		expect(callerMocks.createAbsenceApprovalWorkflow).not.toHaveBeenCalled();
+	});
+
+	it("explains that a future year's carryover and accrual are not counted yet", async () => {
+		const approvalLifecycle = configureAbsenceCallerTransaction();
+		callerMocks.findYearsExceedingBalance.mockResolvedValue([
+			{
+				year: 2027,
+				chargedAbsenceDays: 1,
+				futureYear: true,
+				status: "available",
+				remainingDays: 0,
+				remainingAfterRequest: -1,
+			},
+		]);
+
+		const result = await requestAbsenceForEmployeeEffect(
+			absenceRequest,
+			employeeContext,
+			"user-1",
+			approvalLifecycle as never,
+		);
+
+		expect(result).toMatchObject({
+			success: false,
+			refusal: "insufficient_balance",
+			error:
+				"The requested dates exceed your available vacation balance for 2027. Carryover and accrual for future years are not counted yet.",
+		});
+	});
+
+	it("does not check the balance of a category that does not count against vacation", async () => {
+		const approvalLifecycle = configureAbsenceCallerTransaction();
+		callerMocks.absenceCategoryFindFirst.mockResolvedValue({
+			id: "category-1",
+			name: "Sick leave",
+			type: "sick",
+			countsAgainstVacation: false,
+			requiresApproval: true,
+		});
+
+		await requestAbsenceForEmployeeEffect(
+			{ ...absenceRequest, sickDetail: "with_certificate" },
+			employeeContext,
+			"user-1",
+			approvalLifecycle as never,
+		);
+
+		expect(callerMocks.findYearsExceedingBalance).not.toHaveBeenCalled();
 	});
 });
 
@@ -741,6 +872,7 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 			}),
 			query: {
 				absenceEntry: {
+					findMany: vi.fn().mockResolvedValue([]),
 					findFirst: vi.fn().mockResolvedValue({
 						id: "absence-1",
 						organizationId: "org-1",
@@ -987,6 +1119,7 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 					type: "vacation",
 				},
 				createdBy: "user-1",
+				admission: testAdmission,
 				hasManagerApprovalWorkflow: true,
 				approvalWorkflow: {
 					categoryId: "category-1",
@@ -999,14 +1132,14 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 	}
 
 	it.each([
-		["legacy", ["transaction", "source", "canonical", "gate", "legacy-create"]],
+		["legacy", ["transaction", "gate", "source", "canonical", "legacy-create"]],
 		[
 			"shadow",
 			[
 				"transaction",
+				"gate",
 				"source",
 				"canonical",
-				"gate",
 				"capture-before",
 				"legacy-create",
 				"capture-after",
@@ -1018,9 +1151,9 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 			"ready",
 			[
 				"transaction",
+				"gate",
 				"source",
 				"canonical",
-				"gate",
 				"capture-before",
 				"legacy-create",
 				"capture-after",
@@ -1032,9 +1165,9 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 			"canonical",
 			[
 				"transaction",
+				"gate",
 				"source",
 				"canonical",
-				"gate",
 				"start",
 				"bind",
 				"evidence-capture",
@@ -1043,7 +1176,7 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 		],
 		[
 			"complete",
-			["transaction", "source", "canonical", "gate", "start", "bind", "evidence-capture"],
+			["transaction", "gate", "source", "canonical", "start", "bind", "evidence-capture"],
 		],
 	] as const)("routes %s submissions in one approval-owned transaction", async (mode, expected) => {
 		const harness = createModeRoutingHarness(mode);
@@ -1073,6 +1206,7 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 					type: "vacation",
 				},
 				createdBy: "user-1",
+				admission: testAdmission,
 				hasManagerApprovalWorkflow: true,
 				approvalWorkflow: {
 					categoryId: "category-1",
@@ -1196,6 +1330,7 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 					type: "vacation",
 				},
 				createdBy: "user-1",
+				admission: testAdmission,
 				hasManagerApprovalWorkflow: true,
 				approvalWorkflow: {
 					categoryId: "category-1",
@@ -1657,6 +1792,7 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 					type: "vacation",
 				},
 				createdBy: "user-1",
+				admission: testAdmission,
 				hasManagerApprovalWorkflow: true,
 				approvalWorkflow: {
 					categoryId: "category-1",
@@ -1669,9 +1805,9 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 
 		expect(harness.calls).toEqual([
 			"transaction",
+			"gate",
 			"source",
 			"canonical",
-			"gate",
 			"start",
 			"bind",
 			"auto-finalizer",
@@ -1833,6 +1969,7 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 					type: "vacation",
 				},
 				createdBy: "user-1",
+				admission: testAdmission,
 				hasManagerApprovalWorkflow: true,
 				approvalWorkflow: {
 					categoryId: "category-1",
@@ -1933,6 +2070,7 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 		const tx = {
 			// The real historical-overlap read is empty in these existing submission fixtures.
 			execute: async () => [],
+			query: { absenceEntry: { findMany: callerMocks.absenceEntryFindMany } },
 			insert,
 			update: vi.fn(() => createUpdateBuilder()),
 		};
@@ -1969,6 +2107,7 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 						type: "vacation",
 					},
 					createdBy: "user-1",
+					admission: testAdmission,
 					hasManagerApprovalWorkflow: true,
 					approvalWorkflow: {
 						categoryId: "category-1",
@@ -2004,6 +2143,7 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 		const tx = {
 			// The real historical-overlap read is empty in these existing submission fixtures.
 			execute: async () => [],
+			query: { absenceEntry: { findMany: callerMocks.absenceEntryFindMany } },
 			insert,
 			update: vi.fn(() => createUpdateBuilder()),
 		};
@@ -2055,6 +2195,7 @@ describe("createRequestedAbsenceRecordsInTransaction", () => {
 					type: "vacation",
 				},
 				createdBy: "user-1",
+				admission: testAdmission,
 				hasManagerApprovalWorkflow: true,
 				approvalWorkflow: {
 					categoryId: "category-1",

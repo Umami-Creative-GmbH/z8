@@ -73,7 +73,15 @@ export async function loadCertificateSkillExpiryDates(
  */
 export async function recomputeCertificateSkillExpiry(
 	tx: Transaction,
-	input: { organizationId: string; employeeSkillIds: readonly (string | null)[] },
+	input: {
+		organizationId: string;
+		employeeSkillIds: readonly (string | null)[];
+		/**
+		 * Employee skills among them that lose their date instead of keeping it
+		 * when no dated certificate names them (an accepted renewal, #1307).
+		 */
+		clearWhenUndated?: readonly string[];
+	},
 ): Promise<void> {
 	const ids = [...new Set(input.employeeSkillIds.flatMap((id) => (id ? [id] : [])))];
 	if (ids.length === 0) return;
@@ -99,8 +107,9 @@ export async function recomputeCertificateSkillExpiry(
 		organizationId: input.organizationId,
 		employeeSkillIds: locked.map((row) => row.id),
 	});
+	const clearWhenUndated = new Set(input.clearWhenUndated ?? []);
 	for (const row of locked) {
-		const date = dates.get(row.id);
+		const date = dates.get(row.id) ?? (clearWhenUndated.has(row.id) ? null : undefined);
 		if (date === undefined || date === row.expiresAt) continue;
 		await tx.update(employeeSkill).set({ expiresAt: date }).where(eq(employeeSkill.id, row.id));
 	}

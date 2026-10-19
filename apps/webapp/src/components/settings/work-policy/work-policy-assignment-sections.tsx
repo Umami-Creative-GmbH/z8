@@ -8,6 +8,7 @@ import {
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import type { WorkPolicyAssignmentWithDetails } from "@/app/[locale]/(app)/settings/work-policies/actions";
+import { AssignmentLevelCardHeader } from "@/components/settings/assignment-level-card-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,22 +59,14 @@ export function OrganizationAssignmentSection({
 
 	return (
 		<Card>
-			<CardHeader>
-				<div className="flex items-center gap-2">
-					<IconBuilding className="size-5 text-muted-foreground" />
-					<div>
-						<CardTitle className="text-base">
-							{t("settings.workPolicies.orgLevel", "Organization Default")}
-						</CardTitle>
-						<CardDescription>
-							{t(
-								"settings.workPolicies.orgLevelDescription",
-								"Default work policy applied to all employees unless overridden",
-							)}
-						</CardDescription>
-					</div>
-				</div>
-			</CardHeader>
+			<AssignmentLevelCardHeader
+				icon={IconBuilding}
+				title={t("settings.workPolicies.orgLevel", "Organization Default")}
+				description={t(
+					"settings.workPolicies.orgLevelDescription",
+					"Default work policy applied to all employees unless overridden",
+				)}
+			/>
 			<CardContent>
 				{assignment ? (
 					<div className="flex items-center justify-between rounded-lg border bg-muted/30 p-3">

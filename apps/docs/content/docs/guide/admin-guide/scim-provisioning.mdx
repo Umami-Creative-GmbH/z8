@@ -67,6 +67,41 @@ Review resulting organization members and employee records in [Employee Manageme
 
 ---
 
+## Personnel Numbers
+
+Map the identity provider's personnel number to `employeeNumber` in the standard enterprise User extension:
+
+```json
+{
+  "schemas": [
+    "urn:ietf:params:scim:schemas:core:2.0:User",
+    "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"
+  ],
+  "userName": "employee@example.com",
+  "externalId": "paired-provider-subject",
+  "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User": {
+    "employeeNumber": "0042"
+  }
+}
+```
+
+Once SCIM supplies the attribute, the identity provider owns that employee's personnel number in this organization. Z8 shows it read-only in employee settings; make corrections in the identity provider. Other employee fields retain their existing editing rules. Users provisioned without this attribute keep local editing until the identity provider supplies it.
+
+Z8 trims surrounding whitespace and preserves case and leading zeros. The number can contain at most 50 characters after trimming. It must be unique within the organization, including among former employees; comparisons ignore case. The same number can be used in a different organization.
+
+| Provider operation | Result |
+| --- | --- |
+| Create, replace or PATCH with a number | Saves the number and assigns its ownership to the identity provider. |
+| Explicit `null`, empty or whitespace-only number | Clears the number and keeps IdP ownership. |
+| PATCH `remove` on `urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:employeeNumber`, or on the enterprise extension | Clears the number and keeps IdP ownership. |
+| Full User replacement omitting an IdP-owned number | Clears the number; local editing stays locked. |
+| Unrelated PATCH, group update or projection replay | Leaves the number and its ownership unchanged. |
+
+A replacement that omits a number the identity provider has never supplied preserves the existing local number. Credential rotation also preserves ownership. SCIM User reads return the current personnel number from the employee record.
+
+If another current or former employee already holds the number, Z8 returns HTTP `409` with `scimType: "uniqueness"`. The entire User request is refused, including other changes in the same PATCH. Correct the conflict in the identity provider and retry. A personnel-number update never reactivates employment that ended through offboarding; that requires an explicit rehire in Z8.
+
+---
 ## Decommission A Connection
 
 Choose **Decommission** only when the organization will no longer use this SCIM connection. Decommissioning is irreversible: it retires the managed connection and prevents further provisioning. It is not a temporary pause; use credential rotation or revocation for operational changes instead.

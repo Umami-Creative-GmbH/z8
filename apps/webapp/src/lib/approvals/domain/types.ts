@@ -1,3 +1,4 @@
+import type { ApprovalTriageContext, ApprovalTriageEvidence, ApprovalTriageRequestKind } from "../triage-assessment";
 /**
  * Unified Approval Center - Domain Types
  *
@@ -24,7 +25,8 @@ export type ApprovalRiskReason =
 	| "stale_pending"
 	| "payroll_relevant"
 	| "policy_exception"
-	| "needs_review";
+	| "needs_review"
+	| (string & {});
 
 export type ApprovalFastLaneGroupKey =
 	| "low_risk_absence"
@@ -33,6 +35,9 @@ export type ApprovalFastLaneGroupKey =
 	| "payroll_blocker";
 
 export interface ApprovalTriageMetadata {
+	requestKind?: ApprovalTriageRequestKind;
+	context?: ApprovalTriageContext;
+	evidence?: ApprovalTriageEvidence[];
 	riskLevel?: ApprovalRiskLevel;
 	riskReasons?: ApprovalRiskReason[];
 	fastLaneGroup?: ApprovalFastLaneGroupKey | null;
@@ -290,6 +295,8 @@ export interface ApprovalTimelineEvent {
 }
 
 export interface ApprovalActionOptions {
+	/** Internal trusted-server requirement; supporting owners run it inside their transaction. */
+	shortcutGuard?: (database: import("../server/types").ApprovalDatabase) => Promise<void>;
 	transactional?: boolean;
 	approvalRequestId?: string;
 	allowAnyApprover?: boolean;

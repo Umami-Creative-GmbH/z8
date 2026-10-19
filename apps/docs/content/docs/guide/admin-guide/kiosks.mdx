@@ -1,6 +1,6 @@
 ---
 title: Kiosks
-description: Shared clocking devices at a location, where employees clock with their kiosk PIN
+description: Shared clocking devices at a location, where employees clock with their kiosk PIN or kiosk badge
 icon: Clock
 ---
 
@@ -43,15 +43,101 @@ After five wrong PINs in a row the employee's PIN is locked for 15 minutes. A ki
 
 ---
 
+## Kiosk Badges
+
+A kiosk badge is a printed QR code that identifies an employee at a kiosk instead of their PIN. It never signs anyone in to Z8, and the employee's kiosk PIN keeps working alongside it. A kiosk reads badges only when its badge scanner or its badge camera is switched on (see [Clocking with a Badge](#clocking-with-a-badge)).
+
+Owners, admins and the employee's direct manager manage badges in the **Kiosk access** card on the employee's page in **Settings -> Employees**, one employee at a time. Only active employees, including kiosk-only employees, can receive a badge.
+
+| Action | Effect |
+|--------|--------|
+| **Issue badge** | Creates the employee's badge and offers it as a PDF with their name, the organization and the QR code. An employee has at most one active badge, and it does not expire. |
+| **Replace badge** | Creates a new badge and PDF. Every copy of the old badge stops working at once. |
+| **Revoke badge** | Every copy of the badge stops working for good. The employee's kiosk PIN is not changed. |
+
+<Callout type="warn" title="Save the PDF when you issue the badge">
+Z8 keeps only a fingerprint of the badge, never the badge itself, so it cannot show or download the same badge again. Save the PDF (**Download PDF**) or print it (**Open to print**) before you choose **Done** or leave the page. You can reprint a saved PDF as often as you need. If the file or a printed badge is lost, replace the badge.
+</Callout>
+
+Whoever holds a copy of a badge can use it, so treat it like a key. Cut it out along the dashed line; it fits a standard card sleeve.
+
+### Badges and Departures
+
+A badge ends with the employee's departure. It keeps working until the departure's cutoff, the start of the day after the last working day in the organization's timezone, and stops working at that moment, even if Z8 has not finished processing the departure yet. Scheduling a departure does not end the badge early; if you move or cancel the departure before its cutoff, the badge follows the current date. The card then shows that the last badge ended with the departure.
+
+A rehire never brings an old badge back: every copy of it stays invalid. To let a rehired employee use a badge again, issue a new one. Until the rehire, Z8 offers no new badge. The employee's kiosk PIN is not changed by a departure or a rehire.
+
+---
+
 ## Clocking at a Kiosk
 
 1. The employee taps their name on the kiosk's home screen.
 2. They enter their kiosk PIN.
 3. The kiosk shows their state and today's day total, and only the actions that fit: **Clock in**, or **Start break** and **Clock out**, or **Resume work** and **End day**. Ending the day while on a break ends the work at the start of the break.
-4. When vehicle use is asked or expected for the employee, the kiosk asks for the vehicle and odometer reading before the action (see [Vehicles and Kilometres](/docs/guide/admin-guide/vehicles-and-kilometres)).
-5. A confirmation shows the action and its time, then the kiosk returns to the home screen.
+4. On **Clock out**, the kiosk asks which project and work category the work was for (see [Projects and Work Categories at Clock-Out](#projects-and-work-categories-at-clock-out)).
+5. When vehicle use is asked or expected for the employee, the kiosk asks for the vehicle and odometer reading before the action (see [Vehicles and Kilometres](/docs/guide/admin-guide/vehicles-and-kilometres)).
+6. A confirmation shows the action and its time, then the kiosk returns to the home screen.
 
-The kiosk keeps an employee's PIN, state and day total only for their turn. It does not show history, corrections, projects or work categories.
+The kiosk keeps an employee's PIN, state, day total and project choices only for their turn. It does not show history or corrections.
+
+### Projects and Work Categories at Clock-Out
+
+When an employee clocks out while connected, the kiosk shows the project and work category the work is booked to. The employee can keep them (the default), choose another one, or choose **No project** or **No work category**. The choice applies only to the work that ends now, not to earlier work that day.
+
+- The kiosk offers the same choices as the web clock: projects the employee may book (assigned to them or their team, in a bookable status, while projects are on for the organization), and the active work categories of their category set. Kiosk-only employees get their own choices.
+- Nothing is required. An employee with nothing to choose clocks out at once, and keeping a project or category that is no longer offered still works.
+- Z8 checks the choice again when the work ends. If the project or category can no longer be booked, nothing is recorded; the kiosk says so and keeps the choice, so the employee can choose again or keep the current one.
+- The kiosk asks for no task and no billability. Changing the project follows the usual rules: the task is cleared and the project's billable default applies. A project that requires a task is booked without one, and the work is marked as missing a task.
+- Clocking in, breaks, **End day** on a break and offline clocking ask nothing and keep the work's project and category.
+
+### Clocking with a Badge
+
+A kiosk reads kiosk badges in two ways, which owners and admins switch on separately per kiosk in the kiosk's **Edit** dialog. Both are off for every kiosk until you switch them on, and switching one off never changes the other. The kiosks list shows "Badge scanner on" and "Badge camera on" for the kiosks that use them.
+
+- **Badge scanner**: a QR scanner attached to the device, the kind that types what it reads like a keyboard (often called a keyboard or "wedge" scanner, connected by USB or Bluetooth). Set the scanner up as a keyboard that ends each scan with Enter (most scanners do by default). Badges use only digits and capital letters without Y and Z, so they read correctly whatever keyboard layout the scanner or the device uses.
+- **Badge camera**: the kiosk device's own camera. The home screen then shows **Scan badge** (see [Scanning with the Kiosk's Camera](#scanning-with-the-kiosks-camera)).
+
+With either input on:
+
+1. The employee scans their badge at the kiosk's home screen: at the scanner, or by tapping **Scan badge** and holding the badge up to the camera. They do not tap their name or enter a PIN, and the scan alone records nothing.
+2. The kiosk shows their state, today's day total and the actions that fit, as after a PIN.
+3. They choose the action; vehicle questions and the confirmation follow as usual, and the kiosk returns to the home screen.
+
+Things to know:
+
+- **Only the home screen reads badges.** A scan during someone's turn, on a confirmation or while the kiosk checks an action is ignored: it cannot switch the employee or press anything. Typing a name into the search works as before.
+- **Every action checks the badge again.** If the badge was replaced or revoked, the employee's departure took effect, they are no longer assigned to the kiosk's location, the kiosk was revoked or the input that read the badge (scanner or camera) was switched off since the scan, the action is refused and nothing is recorded.
+- **Refused badges name nobody.** An unknown, replaced, revoked or foreign badge, or one of an employee who cannot clock at this kiosk, shows the same message. A code that is not a kiosk badge (a link, a product barcode) is never opened.
+- **Badge clocking needs a connection.** Offline, the kiosk says so and records and saves nothing for the badge. The employee can tap their name and use their PIN; with offline mode on, that PIN clocking is saved on the kiosk as usual.
+- **PIN and badge are independent.** Wrong badges never count toward an employee's PIN lockout. A kiosk accepts at most 60 badge requests per minute (a scan and its action are two).
+- **A lost answer is checked, never repeated.** If the connection drops after the employee chose an action, the kiosk shows "Checking whether your action was recorded" and keeps checking in the background, also after a reload. Only that employee waits: **Back** (or 30 seconds without a touch) returns the kiosk to everyone else, and offline PIN clocking keeps working for them. Until Z8 answers, the waiting employee gets no PIN pad and no actions when they tap their name or scan their badge, only the same "Checking" screen. If the action was recorded, the kiosk shows its original time once, when they come back. If Z8 confirms nothing was recorded, the kiosk tells them so and lets them choose the action again; it never sends the old action on its own.
+
+### Scanning with the Kiosk's Camera
+
+With **Badge camera** on, the kiosk's home screen shows **Scan badge**. The camera turns on only when an employee taps it:
+
+1. The kiosk asks the browser for the camera. The first time, the browser asks whether the page may use it: allow it once on the kiosk device. Z8 lets only the kiosk page use the camera; the microphone stays blocked.
+2. The kiosk shows the camera picture. The employee holds their badge's QR code inside the frame. The front camera, which faces the person at a tablet on a stand, is used when there is one.
+3. As soon as the kiosk reads the badge, the camera turns off and the employee's turn starts as with the scanner.
+
+The camera turns off when it has read a badge, when the employee taps **Cancel scanning**, after 30 seconds without a touch, when the kiosk page is hidden or closed, and when you switch **Badge camera** off. It stays off during the employee's turn, on the confirmation and while the kiosk checks an action. Holding up the badge again, or another badge, during a turn changes nothing.
+
+The QR code is read on the kiosk device. No picture is uploaded, stored or attached to any work: Z8 receives only the badge's code, as from the scanner. There is no photo capture and no face recognition.
+
+When the camera cannot scan, the kiosk says why on the home screen, and the employee taps their name and uses their PIN instead:
+
+| Message | What to do |
+|---------|------------|
+| The kiosk may not use the camera | Camera access was refused. Allow the camera for the kiosk page in the browser's site settings, then reload the page. |
+| This kiosk has no camera that can scan | Connect a camera, or use a badge scanner instead. |
+| This browser cannot scan badges with the camera | Use a current version of Chrome, Edge, Safari or Firefox. The kiosk must be opened over HTTPS. |
+| The camera could not be started | Another app may be using the camera. Close it and try again. |
+
+A code the camera reads that is not a kiosk badge is never opened: the kiosk says so and keeps looking. Badge clocking with the camera needs a connection, like the scanner; offline, **Scan badge** says so and does not turn the camera on.
+
+<Callout type="info" title="Printed or on screen">
+The camera reads the badge printed from its PDF. Print it at full size on white paper and keep it flat and free of glare. A badge PDF shown on another screen also works, but treat that screen like the badge itself.
+</Callout>
 
 ---
 

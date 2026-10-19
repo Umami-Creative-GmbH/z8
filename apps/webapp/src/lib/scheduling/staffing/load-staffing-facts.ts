@@ -1,10 +1,20 @@
-import { and, asc, eq, gt, gte, inArray, isNotNull, isNull, lt, lte, ne, or } from "drizzle-orm";
+import {
+	and,
+	asc,
+	eq,
+	gte,
+	inArray,
+	isNotNull,
+	lt,
+	lte,
+	ne,
+	or,
+} from "drizzle-orm";
 import type { db as rootDatabase } from "@/db";
 import {
 	absenceCategory,
 	absenceEntry,
 	employee,
-	employeeEmploymentHistory,
 	employeeSkill,
 	location,
 	locationSubarea,
@@ -22,6 +32,7 @@ import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import { dateFromInstant, type PlainDate } from "@/lib/datetime/temporal-core";
 import type { EmploymentInterval } from "@/lib/employee-lifecycle/employment-coverage";
 import { loadEmploymentCoverageByEmployee } from "@/lib/employee-lifecycle/employment-periods";
+import { loadTermsInForceOnByEmployee } from "@/lib/employment-history/load-terms-in-force";
 import { loadSkillCertificatesOnFile } from "@/lib/personnel-file/skill-certificate-store";
 import type {
 	ComplianceShiftSource,
@@ -72,60 +83,72 @@ export async function loadStaffingShiftContext(
 		.limit(1);
 	if (!subarea) return null;
 
-	const [subareaRequirements, templateRequirements, pickupRequests] = await Promise.all([
-		database
-			.select({
-				skillId: subareaSkillRequirement.skillId,
-				skillName: skill.name,
-				isRequired: subareaSkillRequirement.isRequired,
-			})
-			.from(subareaSkillRequirement)
-			.innerJoin(skill, eq(subareaSkillRequirement.skillId, skill.id))
-			.where(
-				and(
-					eq(subareaSkillRequirement.subareaId, input.subareaId),
-					eq(skill.organizationId, input.organizationId),
-				),
-			)
-			.orderBy(asc(skill.name)),
-		input.templateId
-			? database
-					.select({
-						skillId: shiftTemplateSkillRequirement.skillId,
-						skillName: skill.name,
-						isRequired: shiftTemplateSkillRequirement.isRequired,
-					})
-					.from(shiftTemplateSkillRequirement)
-					.innerJoin(shiftTemplate, eq(shiftTemplateSkillRequirement.templateId, shiftTemplate.id))
-					.innerJoin(skill, eq(shiftTemplateSkillRequirement.skillId, skill.id))
-					.where(
-						and(
-							eq(shiftTemplateSkillRequirement.templateId, input.templateId),
-							eq(shiftTemplate.organizationId, input.organizationId),
-							eq(skill.organizationId, input.organizationId),
-						),
-					)
-					.orderBy(asc(skill.name))
-			: Promise.resolve([]),
-		input.shiftId
-			? database
-					.select({ requesterId: shiftRequest.requesterId })
-					.from(shiftRequest)
-					.innerJoin(shift, eq(shiftRequest.shiftId, shift.id))
-					.where(
-						and(
-							eq(shiftRequest.shiftId, input.shiftId),
-							eq(shift.organizationId, input.organizationId),
-							eq(shiftRequest.type, "pickup"),
-							eq(shiftRequest.status, "pending"),
-						),
-					)
-			: Promise.resolve([]),
-	]);
+	const [subareaRequirements, templateRequirements, pickupRequests] =
+		await Promise.all([
+			database
+				.select({
+					skillId: subareaSkillRequirement.skillId,
+					skillName: skill.name,
+					isRequired: subareaSkillRequirement.isRequired,
+				})
+				.from(subareaSkillRequirement)
+				.innerJoin(skill, eq(subareaSkillRequirement.skillId, skill.id))
+				.where(
+					and(
+						eq(subareaSkillRequirement.subareaId, input.subareaId),
+						eq(skill.organizationId, input.organizationId),
+					),
+				)
+				.orderBy(asc(skill.name)),
+			input.templateId
+				? database
+						.select({
+							skillId: shiftTemplateSkillRequirement.skillId,
+							skillName: skill.name,
+							isRequired: shiftTemplateSkillRequirement.isRequired,
+						})
+						.from(shiftTemplateSkillRequirement)
+						.innerJoin(
+							shiftTemplate,
+							eq(shiftTemplateSkillRequirement.templateId, shiftTemplate.id),
+						)
+						.innerJoin(
+							skill,
+							eq(shiftTemplateSkillRequirement.skillId, skill.id),
+						)
+						.where(
+							and(
+								eq(shiftTemplateSkillRequirement.templateId, input.templateId),
+								eq(shiftTemplate.organizationId, input.organizationId),
+								eq(skill.organizationId, input.organizationId),
+							),
+						)
+						.orderBy(asc(skill.name))
+				: Promise.resolve([]),
+			input.shiftId
+				? database
+						.select({ requesterId: shiftRequest.requesterId })
+						.from(shiftRequest)
+						.innerJoin(shift, eq(shiftRequest.shiftId, shift.id))
+						.where(
+							and(
+								eq(shiftRequest.shiftId, input.shiftId),
+								eq(shift.organizationId, input.organizationId),
+								eq(shiftRequest.type, "pickup"),
+								eq(shiftRequest.status, "pending"),
+							),
+						)
+				: Promise.resolve([]),
+		]);
 
 	return {
-		requirements: resolveSkillRequirements([...subareaRequirements, ...templateRequirements]),
-		pickupRequesterIds: new Set(pickupRequests.map((request) => request.requesterId)),
+		requirements: resolveSkillRequirements([
+			...subareaRequirements,
+			...templateRequirements,
+		]),
+		pickupRequesterIds: new Set(
+			pickupRequests.map((request) => request.requesterId),
+		),
 	};
 }
 
@@ -171,7 +194,10 @@ export async function loadStaffingBlockerFacts(
 			.select({ id: employee.id })
 			.from(employee)
 			.where(
-				and(eq(employee.organizationId, input.organizationId), inArray(employee.id, employeeIds)),
+				and(
+					eq(employee.organizationId, input.organizationId),
+					inArray(employee.id, employeeIds),
+				),
 			),
 		loadEmploymentCoverageByEmployee(database, {
 			organizationId: input.organizationId,
@@ -188,7 +214,10 @@ export async function loadStaffingBlockerFacts(
 				categoryName: absenceCategory.name,
 			})
 			.from(absenceEntry)
-			.innerJoin(absenceCategory, eq(absenceEntry.categoryId, absenceCategory.id))
+			.innerJoin(
+				absenceCategory,
+				eq(absenceEntry.categoryId, absenceCategory.id),
+			)
 			.where(
 				and(
 					eq(absenceEntry.organizationId, input.organizationId),
@@ -196,7 +225,10 @@ export async function loadStaffingBlockerFacts(
 					inArray(absenceEntry.employeeId, employeeIds),
 					// Approved absences block only outside work time; any pending one is a warning.
 					or(
-						and(eq(absenceEntry.status, "approved"), eq(absenceCategory.requiresWorkTime, false)),
+						and(
+							eq(absenceEntry.status, "approved"),
+							eq(absenceCategory.requiresWorkTime, false),
+						),
 						eq(absenceEntry.status, "pending"),
 					),
 					lte(absenceEntry.startDate, nextDay),
@@ -244,7 +276,8 @@ export async function loadStaffingBlockerFacts(
 		else target?.pendingAbsences.push(range);
 	}
 	for (const nearby of nearbyShifts) {
-		if (nearby.employeeId) facts.get(nearby.employeeId)?.nearbyShifts.push(nearby);
+		if (nearby.employeeId)
+			facts.get(nearby.employeeId)?.nearbyShifts.push(nearby);
 	}
 	return facts;
 }
@@ -285,15 +318,16 @@ export async function loadStaffingRankingFacts(
 	const facts = new Map<string, StaffingRankingFacts>();
 	if (input.employeeIds.length === 0) return facts;
 	const employeeIds = [...input.employeeIds];
-	const shiftBounds = shiftDateRangeBounds(input.shiftsFrom, input.until, input.timezone);
+	const shiftBounds = shiftDateRangeBounds(
+		input.shiftsFrom,
+		input.until,
+		input.timezone,
+	);
 	const lookbackStart = dateFromInstant(
 		localDayRange(
 			input.shiftDate.subtract({ days: STAFFING_LOOKBACK_DAYS }).toString(),
 			input.timezone,
 		).start,
-	);
-	const shiftDayStart = dateFromInstant(
-		localDayRange(input.shiftDate.toString(), input.timezone).start,
 	);
 
 	const [shifts, periods, skills, employees, terms] = await Promise.all([
@@ -350,42 +384,52 @@ export async function loadStaffingRankingFacts(
 			.select({ id: employee.id, contractType: employee.contractType })
 			.from(employee)
 			.where(
-				and(eq(employee.organizationId, input.organizationId), inArray(employee.id, employeeIds)),
-			),
-		database
-			.select({
-				employeeId: employeeEmploymentHistory.employeeId,
-				validFrom: employeeEmploymentHistory.validFrom,
-				contractType: employeeEmploymentHistory.contractType,
-				workPolicyId: employeeEmploymentHistory.workPolicyId,
-				policyActive: workPolicy.isActive,
-				scheduleEnabled: workPolicy.scheduleEnabled,
-				scheduleCycle: workPolicySchedule.scheduleCycle,
-			})
-			.from(employeeEmploymentHistory)
-			.leftJoin(
-				workPolicy,
 				and(
-					eq(employeeEmploymentHistory.workPolicyId, workPolicy.id),
-					eq(workPolicy.organizationId, input.organizationId),
-				),
-			)
-			.leftJoin(workPolicySchedule, eq(workPolicySchedule.policyId, workPolicy.id))
-			.where(
-				and(
-					eq(employeeEmploymentHistory.organizationId, input.organizationId),
-					inArray(employeeEmploymentHistory.employeeId, employeeIds),
-					eq(employeeEmploymentHistory.reviewState, "confirmed"),
-					lte(employeeEmploymentHistory.validFrom, shiftDayStart),
-					or(
-						isNull(employeeEmploymentHistory.validUntil),
-						gt(employeeEmploymentHistory.validUntil, shiftDayStart),
-					),
+					eq(employee.organizationId, input.organizationId),
+					inArray(employee.id, employeeIds),
 				),
 			),
+		loadTermsInForceOnByEmployee(database, {
+			organizationId: input.organizationId,
+			employeeIds,
+			date: input.shiftDate,
+			timezone: input.timezone,
+		}),
 	]);
 
-	const contractTypeByEmployee = new Map(employees.map((row) => [row.id, row.contractType]));
+	const policyIds = [
+		...new Set(
+			[...terms.values()].flatMap((row) =>
+				row.workPolicyId ? [row.workPolicyId] : [],
+			),
+		),
+	];
+	const policies =
+		policyIds.length === 0
+			? []
+			: await database
+					.select({
+						id: workPolicy.id,
+						isActive: workPolicy.isActive,
+						scheduleEnabled: workPolicy.scheduleEnabled,
+						scheduleCycle: workPolicySchedule.scheduleCycle,
+					})
+					.from(workPolicy)
+					.leftJoin(
+						workPolicySchedule,
+						eq(workPolicySchedule.policyId, workPolicy.id),
+					)
+					.where(
+						and(
+							eq(workPolicy.organizationId, input.organizationId),
+							inArray(workPolicy.id, policyIds),
+						),
+					);
+	const policiesById = new Map(policies.map((policy) => [policy.id, policy]));
+
+	const contractTypeByEmployee = new Map(
+		employees.map((row) => [row.id, row.contractType]),
+	);
 	for (const employeeId of employeeIds) {
 		facts.set(employeeId, {
 			shifts: [],
@@ -415,15 +459,20 @@ export async function loadStaffingRankingFacts(
 			certificateOnFile: certificatesOnFile.has(row.id),
 		});
 	}
-	// The latest confirmed terms in force on the shift date win.
-	for (const row of terms.toSorted((a, b) => a.validFrom.getTime() - b.validFrom.getTime())) {
+	for (const row of terms.values()) {
 		const target = facts.get(row.employeeId);
 		if (!target) continue;
+		const policy = row.workPolicyId
+			? policiesById.get(row.workPolicyId)
+			: undefined;
 		target.contract = {
 			contractType: row.contractType,
 			termsScheduleCycle: row.workPolicyId
 				? {
-						cycle: row.policyActive && row.scheduleEnabled ? (row.scheduleCycle ?? null) : null,
+						cycle:
+							policy?.isActive && policy.scheduleEnabled
+								? (policy.scheduleCycle ?? null)
+								: null,
 					}
 				: null,
 		};

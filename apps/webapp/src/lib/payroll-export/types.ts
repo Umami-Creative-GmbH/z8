@@ -3,6 +3,7 @@
  */
 import type { DateTime } from "luxon";
 import type { PersonnelNumberType } from "./personnel-identifier";
+import type { SupportedPayrollOutputEvidence } from "./supported-output-evidence";
 
 // ============================================
 // CONFIGURATION TYPES
@@ -115,7 +116,10 @@ export type SpecialWageCategory = (typeof SPECIAL_WAGE_CATEGORIES)[number];
 /**
  * Default DATEV wage type codes (Lohnarten)
  */
-export const DEFAULT_DATEV_LOHNARTEN: Record<string, { code: string; name: string }> = {
+export const DEFAULT_DATEV_LOHNARTEN: Record<
+	string,
+	{ code: string; name: string }
+> = {
 	// Work time
 	arbeitszeit: { code: "1000", name: "Arbeitszeit" },
 	// Overtime
@@ -147,7 +151,10 @@ export const DEFAULT_DATEV_LOHNARTEN: Record<string, { code: string; name: strin
 	// Child illness
 	krankheit_kind: { code: "1000", name: "Krankheit eines Kindes" },
 	// Child illness (unpaid)
-	krankheit_kind_unbezahlt: { code: "", name: "Krankheit eines Kindes (unbezahlt)" },
+	krankheit_kind_unbezahlt: {
+		code: "",
+		name: "Krankheit eines Kindes (unbezahlt)",
+	},
 };
 
 /**
@@ -216,6 +223,9 @@ export interface SerializedPayrollExportFilters {
  */
 export interface WorkPeriodData {
 	id: string;
+	sourceRevision?: string | null;
+	sourceReason?: string | null;
+	sourceActorId?: string | null;
 	employeeId: string;
 	employeeNumber: string | null;
 	email?: string | null;
@@ -238,6 +248,9 @@ export interface WorkPeriodData {
  */
 export interface AbsenceData {
 	id: string;
+	sourceRevision?: string | null;
+	sourceReason?: string | null;
+	sourceActorId?: string | null;
 	employeeId: string;
 	employeeNumber: string | null;
 	email?: string | null;
@@ -282,6 +295,9 @@ export interface ExpenseLineData {
  * "overtime" special category (#1050).
  */
 export interface OvertimePayoutData {
+	sourceRevision?: string | null;
+	sourceReason?: string | null;
+	sourceActorId?: string | null;
 	/** The balance adjustment's id. */
 	id: string;
 	employeeId: string;
@@ -317,6 +333,8 @@ export interface UnmappedOvertimePayout {
  * Result of export transformation
  */
 export interface ExportResult {
+	/** Evidence from this exact formatter attempt; absent for unsupported formats. */
+	supportedOutputEvidence?: SupportedPayrollOutputEvidence;
 	fileName: string;
 	content: Buffer | string;
 	mimeType: string;
@@ -333,7 +351,11 @@ export interface ExportResult {
 /**
  * Export job status
  */
-export type PayrollExportStatus = "pending" | "processing" | "completed" | "failed";
+export type PayrollExportStatus =
+	| "pending"
+	| "processing"
+	| "completed"
+	| "failed";
 
 /**
  * Export job summary
@@ -377,7 +399,10 @@ export interface IPayrollExportFormatter {
 	/**
 	 * Validate configuration for this format
 	 */
-	validateConfig(config: Record<string, unknown>): { valid: boolean; errors?: string[] };
+	validateConfig(config: Record<string, unknown>): {
+		valid: boolean;
+		errors?: string[];
+	};
 
 	/**
 	 * Transform work periods, absences and expense money lines to export format.

@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { AbsencesViewContainer } from "@/components/absences/absences-view-container";
 import { VacationBalanceCard } from "@/components/absences/vacation-balance-card";
+import { hasZeroWorkingDaysSchedule } from "@/lib/absences/types";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,7 +15,7 @@ import {
 	getAbsenceEntries,
 	getCurrentEmployee,
 	getHolidays,
-	getVacationBalance,
+	getVacationBalanceResult,
 } from "./actions";
 import { getAbsenceCategories } from "./queries";
 
@@ -61,28 +62,43 @@ async function AbsencesPageContent() {
 	const calendarEndDate = calendarEnd.toISODate() ?? `${calendarYear}-12-31`;
 
 	// Fetch all data in parallel
-	const [vacationBalance, absences, holidays, categories] = await Promise.all([
-		getVacationBalance(employee.id, calendarYear, timezone),
+	const [
+		{ balance: vacationBalance, configuration },
+		absences,
+		holidays,
+		categories,
+	] = await Promise.all([
+		getVacationBalanceResult(employee.id, calendarYear, timezone),
 		getAbsenceEntries(employee.id, calendarStartDate, calendarEndDate),
 		getHolidays(employee.id, calendarStart.toJSDate(), calendarEnd.toJSDate()),
 		getAbsenceCategories(employee.organizationId),
 	]);
 
-	// If no vacation allowance is set up, show message
+	// Missing or conflicting policy periods cannot produce a reliable balance.
 	if (!vacationBalance) {
 		return (
 			<div className="flex flex-1 items-center justify-center p-6">
 				<div className="text-center">
 					<h2 className="text-2xl font-semibold mb-2">
-						{t(
-							"absences.errors.allowanceNotConfigured",
-							"Vacation Allowance Not Configured",
-						)}
+						{hasZeroWorkingDaysSchedule(configuration)
+							? t(
+									"common:vacationBalance.zeroWorkingDays",
+									"Work schedule without working days",
+								)
+							: configuration?.status === "conflict"
+								? t(
+										"common:vacationBalance.conflictingPolicies",
+										"Conflicting vacation policies",
+									)
+								: t(
+										"common:vacationBalance.missingPolicy",
+										"Missing vacation policy",
+									)}
 					</h2>
 					<p className="text-muted-foreground">
 						{t(
-							"absences.errors.allowanceNotConfiguredMessage",
-							"Your organization hasn't set up vacation allowances for {currentYear} yet.",
+							"absences.errors.policyConfigurationMessage",
+							"Vacation policy configuration needs attention for {currentYear}.",
 							{ currentYear: calendarYear },
 						)}
 						<br />
@@ -124,7 +140,6 @@ async function AbsencesPageContent() {
 					holidays={holidays}
 					categories={categories}
 					organizationId={employee.organizationId}
-					remainingDays={vacationBalance.remainingDays}
 					currentYear={calendarYear}
 					currentDate={currentDate}
 				/>

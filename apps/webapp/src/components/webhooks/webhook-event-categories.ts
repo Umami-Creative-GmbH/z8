@@ -5,6 +5,7 @@ export const EVENT_CATEGORIES = {
 			"absence_request_submitted",
 			"absence_request_approved",
 			"absence_request_rejected",
+			"approved_absence_cancelled",
 			"absence_deputy_assigned",
 			"absence_deputy_removed",
 			"absence_deputy_dates_changed",

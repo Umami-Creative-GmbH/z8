@@ -11,6 +11,8 @@ import {
 	closedMonthEmployee,
 	closedMonthReopening,
 	employee,
+	employeeAssignedLocation,
+	location,
 	periodSubmission,
 	team,
 	userSettings,
@@ -56,7 +58,14 @@ export type ClosedMonthReader = Pick<Database, "select"> | Pick<Transaction, "se
 
 export const CLOSED_MONTH_AUDIT_ENTITY_TYPE = "closed_month";
 
-export type CloseMonthScope = { kind: "organization" } | { kind: "team"; teamId: string };
+/**
+ * A location close (#836) covers the employees assigned to the location at close, and
+ * freezes each one's whole month, including work at other locations.
+ */
+export type CloseMonthScope =
+	| { kind: "organization" }
+	| { kind: "team"; teamId: string }
+	| { kind: "location"; locationId: string };
 export type ClosedMonthActor = { kind: "user"; userId: string } | { kind: "system" };
 
 export type CloseMonthBlocker =
@@ -102,7 +111,8 @@ export type CloseMonthResult =
 	| { kind: "closed"; closedMonthId: string; month: ClosedMonthKey; employeeIds: string[] }
 	| { kind: "blocked"; month: ClosedMonthKey; blockers: CloseMonthBlocker[] }
 	| { kind: "nothing_to_close"; month: ClosedMonthKey }
-	| { kind: "team_not_found" };
+	| { kind: "team_not_found" }
+	| { kind: "location_not_found" };
 
 export type ReopenMonthScope =
 	| { kind: "employees"; employeeIds: readonly string[] }
@@ -307,7 +317,8 @@ export async function monthClosureStatuses(
 
 /**
  * The employees a close of the month for the scope covers: those not closed for it yet, each
- * with their month as instants in their effective timezone.
+ * with their month as instants in their effective timezone. A location's employees are those
+ * assigned to it now, active or not (#836); its supervisors only when also assigned.
  */
 export async function employeesInScope(
 	transaction: ClosedMonthReader,
@@ -333,6 +344,20 @@ export async function employeesInScope(
 			and(
 				eq(employee.organizationId, input.organizationId),
 				input.scope.kind === "team" ? eq(employee.teamId, input.scope.teamId) : undefined,
+				input.scope.kind === "location"
+					? inArray(
+							employee.id,
+							transaction
+								.select({ id: employeeAssignedLocation.employeeId })
+								.from(employeeAssignedLocation)
+								.where(
+									and(
+										eq(employeeAssignedLocation.organizationId, input.organizationId),
+										eq(employeeAssignedLocation.locationId, input.scope.locationId),
+									),
+								),
+						)
+					: undefined,
 			),
 		)
 		.orderBy(asc(employee.id));
@@ -547,7 +572,7 @@ async function writeAudit(
 }
 
 /**
- * Closes a month for the organization or one team. Covers only employees still
+ * Closes a month for the organization, one team or one location. Covers only employees still
  * open for the month, and is refused (with the blockers) while a covered
  * employee has an undecided request about the month, live work touching it,
  * or the month has not ended yet in their timezone.
@@ -571,6 +596,21 @@ export async function closeMonth(
 				.limit(1);
 			if (!found) return { kind: "team_not_found" };
 		}
+		let locationName: string | null = null;
+		if (input.scope.kind === "location") {
+			const [found] = await tx
+				.select({ name: location.name })
+				.from(location)
+				.where(
+					and(
+						eq(location.id, input.scope.locationId),
+						eq(location.organizationId, input.organizationId),
+					),
+				)
+				.limit(1);
+			if (!found) return { kind: "location_not_found" };
+			locationName = found.name;
+		}
 		const covered = await employeesInScope(tx, input);
 		if (covered.length === 0) {
 			return { kind: "nothing_to_close", month: input.month };
@@ -588,6 +628,8 @@ export async function closeMonth(
 			month,
 			scope: input.scope.kind,
 			teamId: input.scope.kind === "team" ? input.scope.teamId : null,
+			locationId: input.scope.kind === "location" ? input.scope.locationId : null,
+			locationName,
 			coversNewEmployees: input.scope.kind === "organization",
 			actorKind: input.actor.kind,
 			closedBy: input.actor.kind === "user" ? input.actor.userId : null,
@@ -616,6 +658,7 @@ export async function closeMonth(
 				metadata: {
 					month: input.month,
 					scope: input.scope,
+					...(locationName === null ? {} : { locationName }),
 					employeeIds,
 					ranges: covered.map((row) => ({
 						employeeId: row.id,
@@ -745,8 +788,12 @@ export interface ClosedMonthHistoryEntry {
 	kind: "close" | "reopening";
 	id: string;
 	month: ClosedMonthKey;
-	scope: string;
+	/** A close's `CloseMonthScope` kind, or a reopening's `ReopenMonthScope` kind. */
+	scope: CloseMonthScope["kind"] | ReopenMonthScope["kind"];
 	teamId: string | null;
+	/** A location close's location (#836), and its name at close. */
+	locationId: string | null;
+	locationName: string | null;
 	automatic: boolean;
 	actorUserId: string | null;
 	at: string;
@@ -760,28 +807,33 @@ export async function closedMonthHistory(
 	input: { organizationId: string; limit?: number },
 ): Promise<ClosedMonthHistoryEntry[]> {
 	const limit = input.limit ?? 100;
-	const closes = await database
-		.select({
-			id: closedMonth.id,
-			month: closedMonth.month,
-			scope: closedMonth.scope,
-			teamId: closedMonth.teamId,
-			actorKind: closedMonth.actorKind,
-			closedBy: closedMonth.closedBy,
-			closedAt: closedMonth.closedAt,
-			// The outer column is qualified by hand, as in `closeBlockers`.
-			employeeCount: sql<number>`(select count(*)::int from ${closedMonthEmployee} where ${closedMonthEmployee.closedMonthId} = "closed_month"."id")`,
-		})
-		.from(closedMonth)
-		.where(eq(closedMonth.organizationId, input.organizationId))
-		.orderBy(desc(closedMonth.closedAt))
-		.limit(limit);
-	const reopenings = await database
-		.select()
-		.from(closedMonthReopening)
-		.where(eq(closedMonthReopening.organizationId, input.organizationId))
-		.orderBy(desc(closedMonthReopening.reopenedAt))
-		.limit(limit);
+	// Two independent reads; callers pass the pooled database.
+	const [closes, reopenings] = await Promise.all([
+		database
+			.select({
+				id: closedMonth.id,
+				month: closedMonth.month,
+				scope: closedMonth.scope,
+				teamId: closedMonth.teamId,
+				locationId: closedMonth.locationId,
+				locationName: closedMonth.locationName,
+				actorKind: closedMonth.actorKind,
+				closedBy: closedMonth.closedBy,
+				closedAt: closedMonth.closedAt,
+				// The outer column is qualified by hand, as in `closeBlockers`.
+				employeeCount: sql<number>`(select count(*)::int from ${closedMonthEmployee} where ${closedMonthEmployee.closedMonthId} = "closed_month"."id")`,
+			})
+			.from(closedMonth)
+			.where(eq(closedMonth.organizationId, input.organizationId))
+			.orderBy(desc(closedMonth.closedAt))
+			.limit(limit),
+		database
+			.select()
+			.from(closedMonthReopening)
+			.where(eq(closedMonthReopening.organizationId, input.organizationId))
+			.orderBy(desc(closedMonthReopening.reopenedAt))
+			.limit(limit),
+	]);
 	return [
 		...closes.map(
 			(row): ClosedMonthHistoryEntry => ({
@@ -790,6 +842,8 @@ export async function closedMonthHistory(
 				month: monthOfFirstDay(row.month),
 				scope: row.scope,
 				teamId: row.teamId,
+				locationId: row.locationId,
+				locationName: row.locationName,
 				automatic: row.actorKind === "system",
 				actorUserId: row.closedBy,
 				at: row.closedAt.toISOString(),
@@ -804,6 +858,8 @@ export async function closedMonthHistory(
 				month: monthOfFirstDay(row.month),
 				scope: row.scope,
 				teamId: row.teamId,
+				locationId: null,
+				locationName: null,
 				automatic: false,
 				actorUserId: row.reopenedBy,
 				at: row.reopenedAt.toISOString(),

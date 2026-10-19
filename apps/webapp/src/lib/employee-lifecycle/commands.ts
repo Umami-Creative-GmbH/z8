@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { and, desc, eq, inArray, lte, sql } from "drizzle-orm";
 import type { db as rootDatabase } from "@/db";
 import { organization } from "@/db/auth-schema";
-import { employee, employeeManagers, workPolicyAssignment } from "@/db/schema";
+import { employee, employeeManagers } from "@/db/schema";
 import {
 	employeeDeparture,
 	employeeDepartureEvent,
@@ -15,8 +15,11 @@ import {
 	type Instant,
 	instantFromDate,
 	parsePlainDate,
+	plainDateAt,
 } from "@/lib/datetime/temporal-core";
+import { utcMidnight } from "@/lib/employment-history/terms-in-force";
 import { writeEmploymentTerms } from "@/lib/employment-history/write-terms";
+import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { departureCutoff } from "./cutoff";
 import { queueDataExportReminder } from "./data-export-reminder";
 import { runDepartureTransaction } from "./departure-transaction";
@@ -627,7 +630,7 @@ async function rehireEmployee(
 		}
 
 		await assertRehireTermsBelongToOrganization(tx, actor.organizationId, target.id, input);
-		const timezone = await organizationTimezone(tx, actor.organizationId);
+		const timezone = await loadOrganizationTimezone(tx, actor.organizationId);
 
 		const [period] = await tx
 			.insert(employeeEmploymentPeriod)
@@ -643,15 +646,15 @@ async function rehireEmployee(
 			.returning({ id: employeeEmploymentPeriod.id });
 		if (!period) throw new Error("employment_period_not_created");
 
-		// The new stint's terms start at the rehire instant, which is also the
-		// recorded period start (#1162 tracks moving rehire to calendar dates).
+		// The period starts at the rehire instant; its terms start on the
+		// org-local rehire date, stored as a calendar date like all terms (D1).
 		await writeEmploymentTerms(tx, {
 			organizationId: actor.organizationId,
 			employeeId: target.id,
 			actorUserId: actor.userId,
 			now: nowDate,
 			terms: {
-				validFrom: nowDate,
+				validFrom: utcMidnight(plainDateAt(now, timezone)),
 				status: "active",
 				contractType: input.contractType,
 				weeklyContractMinutes: input.weeklyContractMinutes,
@@ -665,20 +668,6 @@ async function rehireEmployee(
 				reviewState: "confirmed",
 			},
 		});
-		await tx.insert(workPolicyAssignment).values({
-			policyId: input.workPolicyId,
-			organizationId: actor.organizationId,
-			assignmentType: "employee",
-			employeeId: target.id,
-			priority: 2,
-			effectiveFrom: nowDate,
-			effectiveUntil: null,
-			isActive: true,
-			createdBy: actor.userId,
-			createdAt: nowDate,
-			updatedAt: nowDate,
-		});
-
 		await tx.delete(employeeManagers).where(eq(employeeManagers.employeeId, target.id));
 		if (input.primaryManagerId) {
 			await tx.insert(employeeManagers).values({
@@ -765,14 +754,6 @@ async function assertRehireTermsBelongToOrganization(
 	if (!checks?.policy_ok || !checks.team_ok || !checks.manager_ok) {
 		throw new DepartureCommandError("rehire_terms_invalid");
 	}
-}
-
-async function organizationTimezone(tx: LifecycleClient, organizationId: string) {
-	const [org] = await tx
-		.select({ timezone: organization.timezone })
-		.from(organization)
-		.where(eq(organization.id, organizationId));
-	return org?.timezone ?? "UTC";
 }
 
 /** ISO calendar date interpreted at its start of day in the organization zone. */

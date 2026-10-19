@@ -105,6 +105,40 @@ export function clipAbsenceDayRange(
 	};
 }
 
+/** The absence days a range charges to one calendar year. */
+export interface AbsenceDaysInYear {
+	year: number;
+	absenceDays: number;
+}
+
+/**
+ * The absence days of a range split by the calendar year each day falls in, ascending: every
+ * year the range touches, also one it charges nothing. Each year counts the range clipped to
+ * that year, exactly as that year's vacation balance does.
+ */
+export function absenceDaysByYear(
+	range: AbsenceDayRange,
+	isWorkingDay: IsWorkingDay,
+): AbsenceDaysInYear[] {
+	return calendarYearsOf(range).map((year) => {
+		const clipped = clipAbsenceDayRange(range, {
+			startDate: Temporal.PlainDate.from({ year, month: 1, day: 1 }).toString(),
+			endDate: Temporal.PlainDate.from({ year, month: 12, day: 31 }).toString(),
+		});
+		return { year, absenceDays: clipped ? countAbsenceDays(clipped, isWorkingDay) : 0 };
+	});
+}
+
+/** Every calendar year a range of calendar days touches, ascending. */
+export function calendarYearsOf(range: { startDate: string; endDate: string }): number[] {
+	const years: number[] = [];
+	const lastYear = Temporal.PlainDate.from(range.endDate).year;
+	for (let year = Temporal.PlainDate.from(range.startDate).year; year <= lastYear; year++) {
+		years.push(year);
+	}
+	return years;
+}
+
 /** Why an absence request is refused for its absence days. */
 export type AbsenceDaysRefusal = "no_working_days";
 

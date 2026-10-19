@@ -56,6 +56,7 @@ vi.mock("drizzle-orm", () => ({
 	and: vi.fn((...args: unknown[]) => ({ and: args })),
 	eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
 	desc: vi.fn((value: unknown) => value),
+	gt: vi.fn((left: unknown, right: unknown) => ({ gt: [left, right] })),
 	gte: vi.fn((left: unknown, right: unknown) => ({ gte: [left, right] })),
 	isNull: vi.fn((value: unknown) => ({ isNull: value })),
 	lte: vi.fn((left: unknown, right: unknown) => ({ lte: [left, right] })),

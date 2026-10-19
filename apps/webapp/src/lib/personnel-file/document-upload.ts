@@ -48,6 +48,10 @@ export type RecordUploadedDocumentResult =
 	| { kind: "unreadable"; status: number; error: string }
 	/** The sick note's absence can no longer take it; the stored object is cleaned up. */
 	| { kind: "absence_unavailable" }
+	/** The document request no longer takes uploads (#1402); the stored object is cleaned up. */
+	| { kind: "request_unavailable" }
+	/** The document request asks for another category; the stored object is cleaned up. */
+	| { kind: "request_category_mismatch" }
 	/** The ledger cleanup claimed the staged object meanwhile (a very slow upload). */
 	| { kind: "not_pending" };
 
@@ -65,6 +69,13 @@ export function uploadNotRecorded(
 			return { status: result.status, error: result.error };
 		case "absence_unavailable":
 			return { status: 409, error: "This absence can no longer take a sick note." };
+		case "request_unavailable":
+			return { status: 409, error: "This document request no longer takes documents." };
+		case "request_category_mismatch":
+			return {
+				status: 400,
+				error: "This document request asks for documents of another category.",
+			};
 		case "not_pending":
 			return { status: 409, error: "The upload took too long. Please upload the file again." };
 	}
@@ -83,6 +94,8 @@ export async function recordUploadedPersonnelDocument(
 		source?: PersonnelDocumentUploadSource;
 		/** Attaches the document as a sick note to the absence (#982). */
 		sickNote?: { absenceId: string; authority: SickNoteAttachAuthority };
+		/** Links the document to the employee's own open document request (#1402). */
+		documentRequestId?: string;
 	},
 ): Promise<RecordUploadedDocumentResult> {
 	const { access } = input;
@@ -134,6 +147,9 @@ export async function recordUploadedPersonnelDocument(
 			checksumSha256: upload.checksumSha256,
 			...(input.source ? { source: input.source } : {}),
 			...(input.sickNote ? { sickNote: { ...input.sickNote, access } } : {}),
+			...(input.documentRequestId
+				? { documentRequest: { requestId: input.documentRequestId, access } }
+				: {}),
 		});
 	} catch (error) {
 		await markPersonnelFileUploadFailed(database, {
@@ -150,8 +166,12 @@ export async function recordUploadedPersonnelDocument(
 
 	if (finalized.kind === "recorded") return finalized;
 
-	if (finalized.kind === "absence_unavailable") {
-		// Cancelled, rejected or no longer allowed while the file was stored.
+	if (
+		finalized.kind === "absence_unavailable" ||
+		finalized.kind === "request_unavailable" ||
+		finalized.kind === "request_category_mismatch"
+	) {
+		// Cancelled, rejected, submitted or no longer allowed while the file was stored.
 		await markPersonnelFileUploadFailed(database, {
 			...staged,
 			stored,

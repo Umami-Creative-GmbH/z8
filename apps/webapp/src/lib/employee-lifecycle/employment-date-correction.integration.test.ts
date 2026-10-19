@@ -10,13 +10,18 @@ const harness = vi.hoisted(() => ({
 	organizationId: null as string | null,
 }));
 vi.mock("@/lib/datetime/temporal-core", async (original) => {
-	const actual = await original<typeof import("@/lib/datetime/temporal-core")>();
+	const actual =
+		await original<typeof import("@/lib/datetime/temporal-core")>();
 	return {
 		...actual,
-		systemClock: { nowInstant: () => actual.parseInstant(new Date().toISOString()) },
+		systemClock: {
+			nowInstant: () => actual.parseInstant(new Date().toISOString()),
+		},
 	};
 });
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/headers", async () =>
+	(await import("@/test/integration-harness")).nextHeaders(),
+);
 vi.mock("next/server", async (original) =>
 	(await import("@/test/integration-harness")).nextServer(original),
 );
@@ -46,8 +51,12 @@ vi.mock("@/lib/email/email-service", async (original) =>
 vi.mock("@/lib/billing/guard", async () =>
 	(await import("@/test/integration-harness")).billingGuard(),
 );
-const actions = await import("@/app/[locale]/(app)/settings/employees/employment-date-actions");
-const { loadVacationBalances } = await import("@/lib/absences/vacation-balance-store");
+const actions = await import(
+	"@/app/[locale]/(app)/settings/employees/employment-date-actions"
+);
+const { loadVacationBalances } = await import(
+	"@/lib/absences/vacation-balance-store"
+);
 const balances = await import("@/lib/work-balance/service");
 
 describe("reviewed actual employment corrections through public admin actions", () => {
@@ -61,12 +70,14 @@ describe("reviewed actual employment corrections through public admin actions", 
 		employeeId = fixture.employeeId;
 		harness.userId = fixture.ownerUserId;
 		harness.organizationId = fixture.organizationId;
-		await fixture.pool.query("update organization set timezone='Europe/Berlin' where id=$1", [
-			fixture.organizationId,
-		]);
-		await fixture.pool.query("update employee set start_date='2026-05-21' where id=$1", [
-			employeeId,
-		]);
+		await fixture.pool.query(
+			"update organization set timezone='Europe/Berlin' where id=$1",
+			[fixture.organizationId],
+		);
+		await fixture.pool.query(
+			"update employee set start_date='2026-05-21' where id=$1",
+			[employeeId],
+		);
 		await fixture.pool.query(
 			"update employee_employment_period set started_at='2026-05-20T22:00:00Z',start_provenance='legacy' where id=$1",
 			[fixture.employmentPeriodId],
@@ -115,6 +126,308 @@ describe("reviewed actual employment corrections through public admin actions", 
 			})
 		).balances.get(employeeId);
 	}
+	it("refreshes the employee's assigned monthly policy through the reviewed single correction", async () => {
+		vi.setSystemTime(new Date("2027-06-01T10:00:00Z"));
+		await fixture.pool.query(
+			"update employee set start_date='2027-05-21' where id=$1",
+			[employeeId],
+		);
+		await fixture.pool.query(
+			"update employee_employment_period set started_at='2027-05-20T22:00:00Z' where employee_id=$1",
+			[employeeId],
+		);
+		const { vacationAllowance, vacationPolicyAssignment } = await import(
+			"@/db/schema"
+		);
+		const [policy] = await fixture.db
+			.insert(vacationAllowance)
+			.values({
+				organizationId: fixture.organizationId,
+				name: "Assigned monthly",
+				startDate: "2027-01-01",
+				defaultAnnualDays: "24",
+				statutoryMinimumDays: "20",
+				accrualType: "monthly",
+				createdBy: fixture.ownerUserId,
+			})
+			.returning();
+		await fixture.db.insert(vacationPolicyAssignment).values({
+			organizationId: fixture.organizationId,
+			policyId: policy.id,
+			assignmentType: "employee",
+			employeeId,
+			effectiveStartDate: "2027-01-01",
+			createdBy: fixture.ownerUserId,
+		});
+		await fixture.pool.query(
+			"update vacation_policy_rollout set calculations_enabled=true where organization_id=$1",
+			[fixture.organizationId],
+		);
+		const review = await preview();
+		expect(review.employmentBlockers).toEqual([]);
+		expect(
+			review.vacation.find((row) => row.year === 2027)?.after,
+		).toMatchObject({ totalDays: 12 });
+		await fixture.db.transaction(async (tx) => {
+			const { sql } = await import("drizzle-orm");
+			await tx.execute(
+				sql`select set_config('z8.vacation_effective_date','2027-03-01',true)`,
+			);
+			await tx.execute(
+				sql`update vacation_allowance set default_annual_days=36 where id=${policy.id}`,
+			);
+		});
+		expect(await commit(review)).toMatchObject({
+			success: false,
+			code: "stale_preview",
+		});
+		const fresh = await preview();
+		expect(
+			fresh.vacation.find((row) => row.year === 2027)?.after,
+		).toMatchObject({ totalDays: 16 });
+		expect(await commit(fresh)).toMatchObject({ success: true });
+		const result = await loadVacationBalances(fixture.db, {
+			organizationId: fixture.organizationId,
+			employeeIds: [employeeId],
+			year: 2027,
+			timezone: "Europe/Berlin",
+		});
+		expect(result.balances.get(employeeId)).toMatchObject({ totalDays: 16 });
+		expect(await commit(await preview())).toMatchObject({ success: true });
+		const repeated = await loadVacationBalances(fixture.db, {
+			organizationId: fixture.organizationId,
+			employeeIds: [employeeId],
+			year: 2027,
+			timezone: "Europe/Berlin",
+		});
+		expect(repeated.balances.get(employeeId)).toMatchObject({ totalDays: 16 });
+	});
+	it("refreshes a system transfer without a human audit and preserves a later same-amount manual edit", async () => {
+		vi.setSystemTime(new Date("2027-02-01T10:00:00Z"));
+		await fixture.pool.query(
+			"update vacation_allowance set allow_carryover=true,max_carryover_days=25 where organization_id=$1",
+			[fixture.organizationId],
+		);
+		const allowance = await fixture.pool.query(
+			"insert into employee_vacation_allowance(employee_id,year,custom_carryover_days,updated_at) values ($1,2027,20,'2027-01-01T00:00:00Z') returning id",
+			[employeeId],
+		);
+		const { vacationCarryoverTransfer } = await import("@/db/schema");
+		await fixture.db.insert(vacationCarryoverTransfer).values({
+			organizationId: fixture.organizationId,
+			employeeId,
+			sourceYear: 2026,
+			allowanceId: allowance.rows[0].id,
+			outcome: "generated",
+			days: "20",
+			originalDays: "20",
+			performedBy: "system-automation",
+			expiryDate: null,
+			timezone: "Europe/Berlin",
+			createdAt: new Date("2027-01-01T00:00:00Z"),
+		});
+		const first = await preview();
+		expect(
+			first.vacation.find((row) => row.year === 2027)?.after,
+		).toMatchObject({ carryoverDays: 25 });
+		expect(await commit(first)).toMatchObject({ success: true });
+		vi.setSystemTime(new Date("2027-02-02T10:00:00Z"));
+		const second = await preview("2026-10-01");
+		expect(
+			second.vacation.find((row) => row.year === 2027)?.after,
+		).toMatchObject({ carryoverDays: 8 });
+		expect(await commit(second)).toMatchObject({ success: true });
+		await fixture.pool.query(
+			"update employee_vacation_allowance set custom_carryover_days=8,updated_at='2027-02-03T10:00:00Z' where employee_id=$1 and year=2027",
+			[employeeId],
+		);
+		vi.setSystemTime(new Date("2027-02-04T10:00:00Z"));
+		const afterManual = await preview();
+		expect(
+			afterManual.vacation.find((row) => row.year === 2027)?.after,
+		).toMatchObject({ carryoverDays: 8 });
+		expect(await commit(afterManual)).toMatchObject({ success: true });
+		const balances = await loadVacationBalances(fixture.db, {
+			organizationId: fixture.organizationId,
+			employeeIds: [employeeId],
+			year: 2027,
+			timezone: "Europe/Berlin",
+		});
+		expect(balances.balances.get(employeeId)).toMatchObject({
+			carryoverDays: 8,
+		});
+	});
+	it("recomputes proven carryover from the employee's source December policy", async () => {
+		vi.setSystemTime(new Date("2028-02-01T10:00:00Z"));
+		await fixture.pool.query(
+			"update employee set start_date='2027-05-21' where id=$1",
+			[employeeId],
+		);
+		await fixture.pool.query(
+			"update employee_employment_period set started_at='2027-05-20T22:00:00Z' where employee_id=$1",
+			[employeeId],
+		);
+		await fixture.pool.query(
+			"update vacation_allowance set allow_carryover=true,max_carryover_days=25 where organization_id=$1",
+			[fixture.organizationId],
+		);
+		const { vacationAllowance, vacationPolicyAssignment } = await import(
+			"@/db/schema"
+		);
+		const [policy] = await fixture.db
+			.insert(vacationAllowance)
+			.values({
+				organizationId: fixture.organizationId,
+				name: "Source policy",
+				startDate: "2027-01-01",
+				defaultAnnualDays: "24",
+				statutoryMinimumDays: "20",
+				accrualType: "annual",
+				allowCarryover: true,
+				maxCarryoverDays: "7",
+				createdBy: fixture.ownerUserId,
+			})
+			.returning();
+		await fixture.db.insert(vacationPolicyAssignment).values({
+			organizationId: fixture.organizationId,
+			policyId: policy.id,
+			assignmentType: "employee",
+			employeeId,
+			effectiveStartDate: "2027-01-01",
+			createdBy: fixture.ownerUserId,
+		});
+		await fixture.pool.query(
+			"update vacation_policy_rollout set calculations_enabled=true where organization_id=$1",
+			[fixture.organizationId],
+		);
+		await fixture.pool.query(
+			"insert into employee_vacation_allowance(employee_id,year,custom_carryover_days,updated_at) values ($1,2028,5,'2028-01-01T00:00:00Z')",
+			[employeeId],
+		);
+		await fixture.pool.query(
+			"insert into audit_log(organization_id,entity_type,entity_id,action,performed_by,metadata,timestamp) values ($1,'employee',$2,'vacation.carryover_applied',$3,$4,'2028-01-01T00:00:01Z')",
+			[
+				fixture.organizationId,
+				employeeId,
+				fixture.ownerUserId,
+				JSON.stringify({ fromYear: 2027, toYear: 2028, carryoverApplied: 5 }),
+			],
+		);
+		const { vacationCarryoverTransfer } = await import("@/db/schema");
+		const allowance = await fixture.pool.query(
+			"select id from employee_vacation_allowance where employee_id=$1 and year=2028",
+			[employeeId],
+		);
+		await fixture.db.insert(vacationCarryoverTransfer).values({
+			organizationId: fixture.organizationId,
+			employeeId,
+			sourceYear: 2027,
+			allowanceId: allowance.rows[0].id,
+			outcome: "generated",
+			days: "5",
+			originalDays: "5",
+			performedBy: fixture.ownerUserId,
+			expiryDate: new Date("2028-03-31T21:59:59.999Z"),
+			timezone: "Europe/Berlin",
+			sourcePolicyId: policy.id,
+			receivingPolicyId: policy.id,
+			createdAt: new Date("2028-01-01T00:00:00Z"),
+		});
+		const review = await preview();
+		expect(
+			review.vacation.find((row) => row.year === 2028)?.after,
+		).toMatchObject({ carryoverDays: 7 });
+		await fixture.pool.query(
+			"update vacation_carryover_transfer set expiry_date='2028-04-30T21:59:59.999Z' where employee_id=$1",
+			[employeeId],
+		);
+		expect(await commit(review)).toMatchObject({
+			success: false,
+			code: "stale_preview",
+		});
+		expect(await commit(await preview())).toMatchObject({ success: true });
+		const result = await loadVacationBalances(fixture.db, {
+			organizationId: fixture.organizationId,
+			employeeIds: [employeeId],
+			year: 2028,
+			timezone: "Europe/Berlin",
+			currentDate: new Date("2028-02-01T10:00:00Z"),
+		});
+		expect(result.balances.get(employeeId)).toMatchObject({
+			carryoverDays: 7,
+			carryoverExpiryDate: new Date("2028-04-30T21:59:59.999Z"),
+		});
+		const expired = await loadVacationBalances(fixture.db, {
+			organizationId: fixture.organizationId,
+			employeeIds: [employeeId],
+			year: 2028,
+			timezone: "Europe/Berlin",
+			currentDate: new Date("2028-05-01T10:00:00Z"),
+		});
+		expect(expired.balances.get(employeeId)?.carryoverDays ?? 0).toBe(0);
+	});
+	it("blocks a reviewed correction when dated team policies conflict", async () => {
+		vi.setSystemTime(new Date("2027-06-01T10:00:00Z"));
+		const {
+			vacationAllowance,
+			vacationPolicyAssignment,
+			team,
+			teamMembership,
+		} = await import("@/db/schema");
+		for (const annualDays of [24, 25]) {
+			const [policy] = await fixture.db
+				.insert(vacationAllowance)
+				.values({
+					organizationId: fixture.organizationId,
+					name: `Team ${annualDays}`,
+					startDate: "2027-01-01",
+					defaultAnnualDays: String(annualDays),
+					statutoryMinimumDays: "20",
+					accrualType: "annual",
+					createdBy: fixture.ownerUserId,
+				})
+				.returning();
+			const [targetTeam] = await fixture.db
+				.insert(team)
+				.values({
+					organizationId: fixture.organizationId,
+					name: `Team ${annualDays}`,
+				})
+				.returning();
+			await fixture.db.insert(teamMembership).values({
+				organizationId: fixture.organizationId,
+				employeeId,
+				teamId: targetTeam.id,
+			});
+			await fixture.db.insert(vacationPolicyAssignment).values({
+				organizationId: fixture.organizationId,
+				policyId: policy.id,
+				assignmentType: "team",
+				teamId: targetTeam.id,
+				effectiveStartDate: "2027-01-01",
+				createdBy: fixture.ownerUserId,
+			});
+		}
+		await fixture.pool.query(
+			"update vacation_policy_rollout set calculations_enabled=true where organization_id=$1",
+			[fixture.organizationId],
+		);
+		const review = await preview();
+		expect(review.vacation.find((row) => row.year === 2027)).toMatchObject({
+			beforeConfiguration: { status: "conflict" },
+			afterConfiguration: { status: "conflict" },
+			before: null,
+			after: null,
+		});
+		expect(review.employmentBlockers).toContainEqual(
+			expect.objectContaining({ code: "vacation_policy_configuration" }),
+		);
+		expect(await commit(review)).toMatchObject({
+			success: false,
+			code: "blocked",
+		});
+		expect((await preview()).previousEmploymentStartDate).toBe("2026-05-21");
+	});
 	it("restores a full annual allowance without moving the explicit rollout boundary", async () => {
 		expect(await vacation()).toMatchObject({ allowanceDays: 20 });
 		const review = await preview();
@@ -123,11 +436,17 @@ describe("reviewed actual employment corrections through public admin actions", 
 			after: { allowanceDays: 30 },
 		});
 		expect(await vacation()).toMatchObject({ allowanceDays: 20 });
-		expect(await commit(review)).toMatchObject({ success: true, data: { status: "committed" } });
+		expect(await commit(review)).toMatchObject({
+			success: true,
+			data: { status: "committed" },
+		});
 		expect(await vacation()).toMatchObject({ allowanceDays: 30 });
 		expect(
 			(
-				await fixture.pool.query("select start_date from employee where id=$1", [employeeId])
+				await fixture.pool.query(
+					"select start_date from employee where id=$1",
+					[employeeId],
+				)
 			).rows[0].start_date
 				.toISOString()
 				.slice(0, 10),
@@ -159,10 +478,15 @@ describe("reviewed actual employment corrections through public admin actions", 
 		).toBe("2026-05-21");
 	});
 	it("recalculates monthly accrual once while preserving custom allowance and unrelated manual adjustments", async () => {
-		await fixture.pool.query(
-			"update vacation_allowance set accrual_type='monthly' where organization_id=$1",
-			[fixture.organizationId],
-		);
+		await fixture.db.transaction(async (tx) => {
+			const { sql } = await import("drizzle-orm");
+			await tx.execute(
+				sql`select set_config('z8.vacation_effective_date','2026-01-01',true)`,
+			);
+			await tx.execute(
+				sql`update vacation_allowance set accrual_type='monthly' where organization_id=${fixture.organizationId}`,
+			);
+		});
 		await fixture.pool.query(
 			"insert into employee_vacation_allowance(employee_id,year,custom_annual_days,custom_carryover_days,updated_at) values ($1,2026,36,4,now())",
 			[employeeId],
@@ -176,7 +500,9 @@ describe("reviewed actual employment corrections through public admin actions", 
 			[employeeId, fixture.ownerEmployeeId],
 		);
 		const review = await preview();
-		expect(review.vacation.find((row) => row.year === 2026)?.after).toMatchObject({
+		expect(
+			review.vacation.find((row) => row.year === 2026)?.after,
+		).toMatchObject({
 			totalDays: 20,
 		});
 		expect(await commit(review)).toMatchObject({ success: true });
@@ -213,13 +539,25 @@ describe("reviewed actual employment corrections through public admin actions", 
 	});
 
 	it("blocks corrections whose changed vacation results belong to a closed month", async () => {
-		const months = await import("@/app/[locale]/(app)/settings/closed-months/actions");
+		const months = await import(
+			"@/app/[locale]/(app)/settings/closed-months/actions"
+		);
 		expect(
-			await months.closeMonthAction({ month: "2026-05", scope: { kind: "organization" } }),
+			await months.closeMonthAction({
+				month: "2026-05",
+				scope: { kind: "organization" },
+			}),
 		).toMatchObject({ success: true });
 		const review = await preview();
-		expect(review.blockers).toContainEqual({ employeeId, kind: "month_closed", month: "2026-05" });
-		expect(await commit(review)).toMatchObject({ success: false, code: "blocked" });
+		expect(review.blockers).toContainEqual({
+			employeeId,
+			kind: "month_closed",
+			month: "2026-05",
+		});
+		expect(await commit(review)).toMatchObject({
+			success: false,
+			code: "blocked",
+		});
 		expect(await vacation()).toMatchObject({ allowanceDays: 20 });
 		expect(
 			await months.reopenMonthAction({
@@ -232,9 +570,10 @@ describe("reviewed actual employment corrections through public admin actions", 
 	});
 
 	it("refreshes proven automatic carryover while preserving an independently edited carryover", async () => {
-		await fixture.pool.query("update employee set start_date='2026-05-21' where id=$1", [
-			employeeId,
-		]);
+		await fixture.pool.query(
+			"update employee set start_date='2026-05-21' where id=$1",
+			[employeeId],
+		);
 		await fixture.pool.query(
 			"update vacation_allowance set allow_carryover=true,max_carryover_days=25 where organization_id=$1",
 			[fixture.organizationId],
@@ -255,7 +594,9 @@ describe("reviewed actual employment corrections through public admin actions", 
 			],
 		);
 		const review = await preview();
-		expect(review.vacation.find((row) => row.year === 2027)?.after).toMatchObject({
+		expect(
+			review.vacation.find((row) => row.year === 2027)?.after,
+		).toMatchObject({
 			carryoverDays: 25,
 		});
 		expect(await commit(review)).toMatchObject({ success: true });
@@ -271,7 +612,9 @@ describe("reviewed actual employment corrections through public admin actions", 
 			"update employee_vacation_allowance set custom_carryover_days=7,updated_at='2027-02-02T00:00:00Z' where employee_id=$1 and year=2027",
 			[employeeId],
 		);
-		expect(await commit(await preview("2023-01-01"))).toMatchObject({ success: true });
+		expect(await commit(await preview("2023-01-01"))).toMatchObject({
+			success: true,
+		});
 		expect(
 			(
 				await fixture.pool.query(
@@ -330,9 +673,10 @@ describe("reviewed actual employment corrections through public admin actions", 
 	it("preserves a genuine departure, later rehire and confirmed terms while correcting the original stint", async () => {
 		const rehire = randomUUID(),
 			term = randomUUID();
-		await fixture.pool.query("update employee set start_date='2026-01-15' where id=$1", [
-			employeeId,
-		]);
+		await fixture.pool.query(
+			"update employee set start_date='2026-01-15' where id=$1",
+			[employeeId],
+		);
 		await fixture.pool.query(
 			"update employee_employment_period set started_at='2026-01-15T00:00:00Z',ended_at='2026-02-28T00:00:00Z',status='closed' where id=$1",
 			[fixture.employmentPeriodId],
@@ -346,31 +690,42 @@ describe("reviewed actual employment corrections through public admin actions", 
 			[term, fixture.organizationId, employeeId, rehire, fixture.ownerUserId],
 		);
 		const history = (
-			await fixture.pool.query("select * from employee_employment_history where id=$1", [term])
+			await fixture.pool.query(
+				"select * from employee_employment_history where id=$1",
+				[term],
+			)
 		).rows;
 		expect(await vacation()).toMatchObject({ allowanceDays: 23 });
 		const review = await preview("2025-01-01");
-		expect(review.vacation.find((row) => row.year === 2026)?.after).toMatchObject({
+		expect(
+			review.vacation.find((row) => row.year === 2026)?.after,
+		).toMatchObject({
 			allowanceDays: 25,
 		});
 		expect(await commit(review)).toMatchObject({ success: true });
 		expect(await vacation()).toMatchObject({ allowanceDays: 25 });
 		expect(
-			(await fixture.pool.query("select * from employee_employment_history where id=$1", [term]))
-				.rows,
+			(
+				await fixture.pool.query(
+					"select * from employee_employment_history where id=$1",
+					[term],
+				)
+			).rows,
 		).toEqual(history);
 		expect(
 			(
-				await fixture.pool.query("select started_at from employee_employment_period where id=$1", [
-					rehire,
-				])
+				await fixture.pool.query(
+					"select started_at from employee_employment_period where id=$1",
+					[rehire],
+				)
 			).rows[0].started_at.toISOString(),
 		).toBe("2026-05-20T22:00:00.000Z");
 		expect(
 			(
-				await fixture.pool.query("select ended_at from employee_employment_period where id=$1", [
-					fixture.employmentPeriodId,
-				])
+				await fixture.pool.query(
+					"select ended_at from employee_employment_period where id=$1",
+					[fixture.employmentPeriodId],
+				)
 			).rows[0].ended_at.toISOString(),
 		).toBe("2026-02-28T00:00:00.000Z");
 	});
@@ -380,7 +735,10 @@ describe("reviewed actual employment corrections through public admin actions", 
 			"update employee set position='Changed personnel evidence' where id=$1",
 			[employeeId],
 		);
-		expect(await commit(review)).toMatchObject({ success: false, code: "stale_preview" });
+		expect(await commit(review)).toMatchObject({
+			success: false,
+			code: "stale_preview",
+		});
 		expect(await vacation()).toMatchObject({ allowanceDays: 20 });
 		const foreign = await fixture.seedEmployee({
 			organizationId: await fixture.createOrganization(),
@@ -397,7 +755,10 @@ describe("reviewed actual employment corrections through public admin actions", 
 			"update member set role='member' where user_id=$1 and organization_id=$2",
 			[fixture.ownerUserId, fixture.organizationId],
 		);
-		expect(await commit(current)).toMatchObject({ success: false, code: "not_permitted" });
+		expect(await commit(current)).toMatchObject({
+			success: false,
+			code: "not_permitted",
+		});
 		await fixture.pool.query(
 			"update member set role='owner' where user_id=$1 and organization_id=$2",
 			[fixture.ownerUserId, fixture.organizationId],
@@ -429,7 +790,10 @@ describe("reviewed actual employment corrections through public admin actions", 
 			exceptionDate: "2026-06-01",
 			minimumDate: "2026-06-15",
 		});
-		expect(await commit(conflict)).toMatchObject({ success: false, code: "blocked" });
+		expect(await commit(conflict)).toMatchObject({
+			success: false,
+			code: "blocked",
+		});
 	});
 
 	it("returns the same corrected thirty-day allowance and seventeen-day balance across public views", async () => {
@@ -442,7 +806,9 @@ describe("reviewed actual employment corrections through public admin actions", 
 			"insert into absence_entry(employee_id,organization_id,category_id,start_date,end_date,status,updated_at) values($1,$2,$3,'2026-06-01','2026-06-05','approved',now())",
 			[employeeId, fixture.organizationId, category],
 		);
-		const usage = await import("@/app/[locale]/(app)/settings/vacation/historical-usage-actions");
+		const usage = await import(
+			"@/app/[locale]/(app)/settings/vacation/historical-usage-actions"
+		);
 		const historicalInput = {
 			employeeId,
 			organizationId: fixture.organizationId,
@@ -450,7 +816,8 @@ describe("reviewed actual employment corrections through public admin actions", 
 			days: 8,
 			reason: "Prior system usage",
 		};
-		const historical = await usage.previewPreviouslyTakenVacation(historicalInput);
+		const historical =
+			await usage.previewPreviouslyTakenVacation(historicalInput);
 		if (!historical.success) throw new Error(historical.error);
 		expect(
 			await usage.commitPreviouslyTakenVacation({
@@ -460,34 +827,52 @@ describe("reviewed actual employment corrections through public admin actions", 
 		).toMatchObject({ success: true });
 		const review = await preview();
 		expect(await commit(review)).toMatchObject({ success: true });
-		expect(await vacation()).toMatchObject({ allowanceDays: 30, usedDays: 13, remainingDays: 17 });
+		expect(await vacation()).toMatchObject({
+			allowanceDays: 30,
+			usedDays: 13,
+			remainingDays: 17,
+		});
 		const employeeQuery = await import("@/app/[locale]/(app)/absences/queries");
-		expect(await employeeQuery.getVacationBalance(employeeId, 2026)).toMatchObject({
+		expect(
+			await employeeQuery.getVacationBalance(employeeId, 2026),
+		).toMatchObject({
 			allowanceDays: 30,
 			remainingDays: 17,
 		});
-		const adminQuery = await import("@/app/[locale]/(app)/settings/vacation/actions");
+		const adminQuery = await import(
+			"@/app/[locale]/(app)/settings/vacation/actions"
+		);
 		const admin = await adminQuery.getEmployeeVacationBalance(employeeId);
 		expect(admin.success && admin.data.balance).toMatchObject({
 			allowanceDays: 30,
 			remainingDays: 17,
 		});
-		const managerQuery = await import("@/app/[locale]/(app)/team/absences/actions");
+		const managerQuery = await import(
+			"@/app/[locale]/(app)/team/absences/actions"
+		);
 		const team = await managerQuery.getManagerAbsenceEmployees({ year: 2026 });
-		expect(team.success && team.data.rows.find((row) => row.id === employeeId)).toMatchObject({
+		expect(
+			team.success && team.data.rows.find((row) => row.id === employeeId),
+		).toMatchObject({
 			remainingVacationDays: 17,
 		});
 		harness.userId = (
-			await fixture.pool.query("select user_id from employee where id=$1", [employeeId])
+			await fixture.pool.query("select user_id from employee where id=$1", [
+				employeeId,
+			])
 		).rows[0].user_id;
 		const dashboardQuery = await import("@/components/dashboard/actions");
 		const dashboard = await dashboardQuery.getVacationBalance();
-		expect(dashboard.success && dashboard.data).toMatchObject({ remainingDays: 17 });
+		expect(dashboard.success && dashboard.data).toMatchObject({
+			remainingDays: 17,
+		});
 	});
 	it.each([120, -120, 0])(
 		"keeps a signed opening balance of %i intact through employment correction",
 		async (minutes) => {
-			const ledger = await import("@/app/[locale]/(app)/settings/employees/work-balance-actions");
+			const ledger = await import(
+				"@/app/[locale]/(app)/settings/employees/work-balance-actions"
+			);
 			expect(
 				await ledger.setOpeningBalanceAction({
 					employeeId,
@@ -505,17 +890,24 @@ describe("reviewed actual employment corrections through public admin actions", 
 				after: { balanceMinutes: minutes },
 			});
 			expect(await commit(review)).toMatchObject({ success: true });
-			expect(await ledger.getEmployeeWorkBalanceSectionAction({ employeeId })).toMatchObject({
+			expect(
+				await ledger.getEmployeeWorkBalanceSectionAction({ employeeId }),
+			).toMatchObject({
 				success: true,
 				data: { adjustments: [{ day: "2026-05-20", minutes }] },
 			});
 		},
 	);
 	it("rolls back employment evidence, grants and audit together when audit persistence fails", async () => {
-		await fixture.pool.query(
-			"update vacation_allowance set accrual_type='monthly' where organization_id=$1",
-			[fixture.organizationId],
-		);
+		await fixture.db.transaction(async (tx) => {
+			const { sql } = await import("drizzle-orm");
+			await tx.execute(
+				sql`select set_config('z8.vacation_effective_date','2026-01-01',true)`,
+			);
+			await tx.execute(
+				sql`update vacation_allowance set accrual_type='monthly' where organization_id=${fixture.organizationId}`,
+			);
+		});
 		const review = await preview();
 		await fixture.pool.query(
 			"create function t1242_refuse_audit() returns trigger language plpgsql as $$ begin if NEW.action='employee.employment_start_corrected' then raise exception 'injected audit refusal'; end if; return NEW; end $$",
@@ -527,9 +919,10 @@ describe("reviewed actual employment corrections through public admin actions", 
 			expect(await commit(review)).toMatchObject({ success: false });
 			expect(
 				(
-					await fixture.pool.query("select start_date::date::text from employee where id=$1", [
-						employeeId,
-					])
+					await fixture.pool.query(
+						"select start_date::date::text from employee where id=$1",
+						[employeeId],
+					)
 				).rows[0].start_date,
 			).toBe("2026-05-21");
 			expect(
@@ -568,7 +961,9 @@ describe("reviewed actual employment corrections through public admin actions", 
 					[employeeId, custom],
 				);
 			const review = await preview(date);
-			expect(review.vacation.find((row) => row.year === 2026)?.after).toMatchObject({
+			expect(
+				review.vacation.find((row) => row.year === 2026)?.after,
+			).toMatchObject({
 				allowanceDays: expected,
 			});
 			expect(await commit(review)).toMatchObject({ success: true });
@@ -578,12 +973,20 @@ describe("reviewed actual employment corrections through public admin actions", 
 	it("refuses an original joining date that would exclude confirmed terms", async () => {
 		await fixture.pool.query(
 			"insert into employee_employment_history(organization_id,employee_id,employment_period_id,valid_from,weekly_contract_minutes,review_state,created_by,updated_at) values($1,$2,$3,'2026-05-21',2400,'confirmed',$4,now())",
-			[fixture.organizationId, employeeId, fixture.employmentPeriodId, fixture.ownerUserId],
+			[
+				fixture.organizationId,
+				employeeId,
+				fixture.employmentPeriodId,
+				fixture.ownerUserId,
+			],
 		);
 		const review = await preview("2026-06-01");
 		expect(review.employmentBlockers).toEqual([
 			expect.objectContaining({ code: "confirmed_terms" }),
 		]);
-		expect(await commit(review)).toMatchObject({ success: false, code: "blocked" });
+		expect(await commit(review)).toMatchObject({
+			success: false,
+			code: "blocked",
+		});
 	});
 });

@@ -42,6 +42,56 @@ function prorated(
 const explain = (allowance: ProratedAllowance) =>
 	explainVacationAllowance({ allowance, year: 2026, locale: "en-GB", t });
 
+describe("explainVacationAllowance with a working-week conversion", () => {
+	it("explains the reference allowance of a full-year part-time allowance", () => {
+		expect(
+			explain({
+				fullAllowance: 24,
+				days: 24,
+				reason: { kind: "none", cause: "full_year" },
+				workingWeek: {
+					referenceAllowance: 30,
+					periods: [{ startDate: "2026-01-01", endDate: "2026-12-31", workingDaysPerWeek: 4 }],
+				},
+			}),
+		).toBe("24 days: 30 reference days converted to 4 working days per week");
+	});
+
+	it("names each working week with its dates when it changes in the year", () => {
+		expect(
+			explain({
+				fullAllowance: 27,
+				days: 27,
+				reason: { kind: "none", cause: "full_year" },
+				workingWeek: {
+					referenceAllowance: 30,
+					periods: [
+						{ startDate: "2026-01-01", endDate: "2026-06-30", workingDaysPerWeek: 5 },
+						{ startDate: "2026-07-01", endDate: "2026-12-31", workingDaysPerWeek: 4 },
+					],
+				},
+			}),
+		).toBe(
+			"27 days: 30 reference days converted to 5 working days per week from 1 Jan 2026 to 30 Jun 2026, 4 working days per week from 1 Jul 2026 to 31 Dec 2026",
+		);
+	});
+
+	it("adds the conversion to a prorated allowance", () => {
+		expect(
+			explain({
+				...prorated(6, [employment({ startDate: "2026-10-01", employmentMonths: 3, days: 6 })]),
+				fullAllowance: 24,
+				workingWeek: {
+					referenceAllowance: 30,
+					periods: [{ startDate: "2026-10-01", endDate: "2026-12-31", workingDaysPerWeek: 4 }],
+				},
+			}),
+		).toBe(
+			"6 of 24 days, prorated: started 1 Oct 2026, 3 full employment months; 30 reference days converted to 4 working days per week",
+		);
+	});
+});
+
 describe("explainVacationAllowance", () => {
 	it("explains a joiner's prorated allowance with the start date and employment months", () => {
 		expect(

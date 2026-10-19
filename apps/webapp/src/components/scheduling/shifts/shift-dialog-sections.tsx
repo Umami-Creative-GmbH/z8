@@ -43,6 +43,8 @@ interface ShiftDialogSectionsProps {
 		isLoading: boolean;
 		isError: boolean;
 	} | null;
+	/** The server refused the save for want of a skill override reason (#893). */
+	skillOverrideReasonRequested?: boolean;
 }
 
 interface ShiftDialogFooterBaseProps {
@@ -101,6 +103,8 @@ function FieldErrorText({ errors }: { errors: readonly unknown[] }) {
 	return <p className="text-sm font-medium text-destructive">{message}</p>;
 }
 
+type SkillValidation = ShiftDialogSectionsProps["skillValidation"];
+
 export function ShiftDialogSections({
 	form,
 	formValues,
@@ -113,225 +117,57 @@ export function ShiftDialogSections({
 	isEditing,
 	shift,
 	staffing,
+	skillOverrideReasonRequested = false,
 }: ShiftDialogSectionsProps) {
-	const { t } = useTranslate();
-
 	return (
 		<>
-			<form.Field name="date" validators={{ onChange: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }}>
-				{(field) => (
-					<div className="flex flex-col gap-y-2">
-						<Label htmlFor="shift-dialog-date">
-							{t("scheduling:scheduling.shiftDialog.date", "Date")}
-						</Label>
-						<DatePicker
-							id="shift-dialog-date"
-							required
-							value={field.state.value}
-							onChange={field.handleChange}
-							onBlur={field.handleBlur}
-							disabled={!isManager}
-							placeholder={t("scheduling:scheduling.shiftDialog.pickDate", "Pick a date")}
-						/>
-						<FieldErrorText errors={field.state.meta.errors} />
-					</div>
-				)}
-			</form.Field>
+			<ShiftDateField form={form} isManager={isManager} />
 
 			{isManager && templates.length > 0 && (
-				<form.Field name="templateId">
-					{(field) => (
-						<div className="gap-y-2">
-							<Label>
-								{t("scheduling:scheduling.shiftDialog.template", "Template (Optional)")}
-							</Label>
-							<Select
-								onValueChange={(value) => field.handleChange(value === "none" ? null : value)}
-								value={field.state.value || "none"}
-							>
-								<SelectTrigger>
-									<SelectValue
-										placeholder={t(
-											"scheduling:scheduling.shiftDialog.selectTemplate",
-											"Select a template",
-										)}
-									/>
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="none">
-										{t("scheduling:scheduling.shiftDialog.noTemplate", "No template")}
-									</SelectItem>
-									{templates.flatMap((template) =>
-										template.isActive
-											? [
-													<SelectItem key={template.id} value={template.id}>
-														{template.name} ({template.startTime} - {template.endTime})
-													</SelectItem>,
-												]
-											: [],
-									)}
-								</SelectContent>
-							</Select>
-							<p className="text-sm text-muted-foreground">
-								{t(
-									"scheduling:scheduling.shiftDialog.templateHelp",
-									"Selecting a template will auto-fill the times",
-								)}
-							</p>
-						</div>
-					)}
-				</form.Field>
+				<ShiftTemplateField form={form} templates={templates} />
 			)}
 
-			<div className="grid grid-cols-2 gap-4">
-				<form.Field
-					name="startTime"
-					validators={{
-						onChange: z.string().regex(/^\d{2}:\d{2}$/, "Invalid time format"),
-					}}
-				>
-					{(field) => (
-						<div className="gap-y-2">
-							<Label>{t("scheduling:scheduling.shiftDialog.startTime", "Start Time")}</Label>
-							<TimeInput
-								value={field.state.value}
-								onChange={(event) => field.handleChange(event.target.value)}
-								onBlur={field.handleBlur}
-								disabled={!isManager}
-							/>
-							<FieldErrorText errors={field.state.meta.errors} />
-						</div>
-					)}
-				</form.Field>
+			<ShiftTimeFields form={form} isManager={isManager} />
 
-				<form.Field
-					name="endTime"
-					validators={{
-						onChange: z.string().regex(/^\d{2}:\d{2}$/, "Invalid time format"),
-					}}
-				>
-					{(field) => (
-						<div className="gap-y-2">
-							<Label>{t("scheduling:scheduling.shiftDialog.endTime", "End Time")}</Label>
-							<TimeInput
-								value={field.state.value}
-								onChange={(event) => field.handleChange(event.target.value)}
-								onBlur={field.handleBlur}
-								disabled={!isManager}
-							/>
-							<FieldErrorText errors={field.state.meta.errors} />
-						</div>
-					)}
-				</form.Field>
-			</div>
+			{isManager && <ShiftSubareaField form={form} locations={locations} />}
 
 			{isManager && (
-				<form.Field name="subareaId">
-					{(field) => (
-						<div className="gap-y-2">
-							<Label>
-								<span className="flex items-center gap-2">
-									<IconMapPin className="size-4" aria-hidden="true" />
-									{t("scheduling:scheduling.shiftDialog.subarea", "Subarea")}
-									<span className="text-destructive">*</span>
-								</span>
-							</Label>
-							<Select onValueChange={field.handleChange} value={field.state.value}>
-								<SelectTrigger>
-									<SelectValue
-										placeholder={t(
-											"scheduling:scheduling.shiftDialog.selectSubarea",
-											"Select a subarea…",
-										)}
-									/>
-								</SelectTrigger>
-								<SelectContent>
-									{locations.flatMap((location) =>
-										location.subareas.flatMap((subarea) =>
-											subarea.isActive
-												? [
-														<SelectItem key={subarea.id} value={subarea.id}>
-															{location.name} – {subarea.name}
-														</SelectItem>,
-													]
-												: [],
-										),
-									)}
-								</SelectContent>
-							</Select>
-							<p className="text-sm text-muted-foreground">
-								{t(
-									"scheduling:scheduling.shiftDialog.subareaHelp",
-									"Where this shift will take place",
-								)}
-							</p>
-						</div>
-					)}
-				</form.Field>
+				<ShiftEmployeeField form={form} employees={employees} skillValidation={skillValidation} />
 			)}
 
 			{isManager && (
-				<form.Field name="employeeId">
-					{(field) => (
-						<div className="gap-y-2">
-							<Label>
-								<span className="flex items-center gap-2">
-									<IconUsers className="size-4" aria-hidden="true" />
-									{t("scheduling:scheduling.shiftDialog.assignTo", "Assign To")}
-								</span>
-							</Label>
-							<Select
-								onValueChange={(value) => field.handleChange(value === "open" ? null : value)}
-								value={field.state.value || "open"}
-							>
-								<SelectTrigger>
-									<SelectValue
-										placeholder={t(
-											"scheduling:scheduling.shiftDialog.selectEmployee",
-											"Select an employee",
-										)}
-									/>
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="open">
-										<span className="flex items-center gap-2">
-											<Badge variant="secondary">
-												{t("scheduling:scheduling.shiftDialog.openShift", "Open Shift")}
-											</Badge>
-											<span className="text-muted-foreground">
-												{t(
-													"scheduling:scheduling.shiftDialog.anyoneCanPickUp",
-													"Anyone can pick up",
-												)}
-											</span>
-										</span>
-									</SelectItem>
-									{employees.map((employee) => (
-										<SelectItem key={employee.id} value={employee.id}>
-											<span className="flex items-center gap-2">
-												{buildAuthUserDisplayName(employee.user) || employee.id}
-										{field.state.value === employee.id &&
-											skillValidation &&
-											!skillValidation.isQualified && (
-												<SkillWarningBadge validation={skillValidation} />
-											)}
-											</span>
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-							<p className="text-sm text-muted-foreground">
-								{t(
-									"scheduling:scheduling.shiftDialog.openShiftHelp",
-									'Leave as "Open Shift" to allow employees to claim it',
-								)}
-							</p>
-						</div>
-					)}
-				</form.Field>
+				<ShiftAssignmentAssist
+					form={form}
+					formValues={formValues}
+					skillValidation={skillValidation}
+					isValidatingSkills={isValidatingSkills}
+					staffing={staffing}
+					skillOverrideReasonRequested={skillOverrideReasonRequested}
+				/>
 			)}
 
-			{isManager && staffing && (
+			{isManager && <ShiftNotesField form={form} />}
+
+			{isEditing && shift && <ShiftStatusRow shift={shift} />}
+		</>
+	);
+}
+
+/** Manager-only staffing suggestions, skill warning and skill override reason. */
+function ShiftAssignmentAssist({
+	form,
+	formValues,
+	skillValidation,
+	isValidatingSkills,
+	staffing,
+	skillOverrideReasonRequested,
+}: Pick<
+	ShiftDialogSectionsProps,
+	"form" | "formValues" | "skillValidation" | "isValidatingSkills" | "staffing"
+> & { skillOverrideReasonRequested: boolean }) {
+	return (
+		<>
+			{staffing && (
 				<StaffingSuggestionsPanel
 					suggestions={staffing.suggestions}
 					isLoading={staffing.isLoading}
@@ -340,43 +176,354 @@ export function ShiftDialogSections({
 				/>
 			)}
 
-			{isManager && formValues.employeeId && formValues.subareaId && (
+			{formValues.employeeId && formValues.subareaId && (
 				<SkillWarningAlert validation={skillValidation} isLoading={isValidatingSkills} />
 			)}
 
-			{isManager && (
-				<form.Field name="notes">
-					{(field) => (
-						<div className="gap-y-2">
-							<Label>{t("scheduling:scheduling.shiftDialog.notes", "Notes (Optional)")}</Label>
-							<Textarea
-								placeholder={t(
-									"scheduling:scheduling.shiftDialog.notesPlaceholder",
-									"Any special instructions or notes...",
-								)}
-								className="resize-none"
-								value={field.state.value}
-								onChange={(event) => field.handleChange(event.target.value)}
-								onBlur={field.handleBlur}
-							/>
-						</div>
-					)}
-				</form.Field>
-			)}
+			{formValues.employeeId &&
+				(skillOverrideReasonRequested || (skillValidation && !skillValidation.isQualified)) && (
+					<ShiftSkillOverrideReasonField
+						form={form}
+						skillOverrideReasonRequested={skillOverrideReasonRequested}
+					/>
+				)}
+		</>
+	);
+}
 
-			{isEditing && shift && (
-				<div className="flex items-center gap-2 text-sm">
-					<span className="text-muted-foreground">
-						{t("scheduling:scheduling.shiftDialog.status", "Status:")}
-					</span>
-					<Badge variant={shift.status === "published" ? "default" : "secondary"}>
-						{shift.status === "published"
-							? t("scheduling:scheduling.shiftDialog.published", "Published")
-							: t("scheduling:scheduling.shiftDialog.draft", "Draft")}
-					</Badge>
+function ShiftDateField({ form, isManager }: { form: ShiftDialogFormApi; isManager: boolean }) {
+	const { t } = useTranslate();
+
+	return (
+		<form.Field name="date" validators={{ onChange: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }}>
+			{(field) => (
+				<div className="flex flex-col gap-y-2">
+					<Label htmlFor="shift-dialog-date">
+						{t("scheduling:scheduling.shiftDialog.date", "Date")}
+					</Label>
+					<DatePicker
+						id="shift-dialog-date"
+						required
+						value={field.state.value}
+						onChange={field.handleChange}
+						onBlur={field.handleBlur}
+						disabled={!isManager}
+						placeholder={t("scheduling:scheduling.shiftDialog.pickDate", "Pick a date")}
+					/>
+					<FieldErrorText errors={field.state.meta.errors} />
 				</div>
 			)}
-		</>
+		</form.Field>
+	);
+}
+
+function ShiftTemplateField({
+	form,
+	templates,
+}: {
+	form: ShiftDialogFormApi;
+	templates: ShiftTemplate[];
+}) {
+	const { t } = useTranslate();
+
+	return (
+		<form.Field name="templateId">
+			{(field) => (
+				<div className="gap-y-2">
+					<Label>{t("scheduling:scheduling.shiftDialog.template", "Template (Optional)")}</Label>
+					<Select
+						onValueChange={(value) => field.handleChange(value === "none" ? null : value)}
+						value={field.state.value || "none"}
+					>
+						<SelectTrigger>
+							<SelectValue
+								placeholder={t(
+									"scheduling:scheduling.shiftDialog.selectTemplate",
+									"Select a template",
+								)}
+							/>
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="none">
+								{t("scheduling:scheduling.shiftDialog.noTemplate", "No template")}
+							</SelectItem>
+							{templates.flatMap((template) =>
+								template.isActive
+									? [
+											<SelectItem key={template.id} value={template.id}>
+												{template.name} ({template.startTime} - {template.endTime})
+											</SelectItem>,
+										]
+									: [],
+							)}
+						</SelectContent>
+					</Select>
+					<p className="text-sm text-muted-foreground">
+						{t(
+							"scheduling:scheduling.shiftDialog.templateHelp",
+							"Selecting a template will auto-fill the times",
+						)}
+					</p>
+				</div>
+			)}
+		</form.Field>
+	);
+}
+
+function ShiftTimeFields({ form, isManager }: { form: ShiftDialogFormApi; isManager: boolean }) {
+	const { t } = useTranslate();
+
+	return (
+		<div className="grid grid-cols-2 gap-4">
+			<form.Field
+				name="startTime"
+				validators={{
+					onChange: z.string().regex(/^\d{2}:\d{2}$/, "Invalid time format"),
+				}}
+			>
+				{(field) => (
+					<div className="gap-y-2">
+						<Label>{t("scheduling:scheduling.shiftDialog.startTime", "Start Time")}</Label>
+						<TimeInput
+							value={field.state.value}
+							onChange={(event) => field.handleChange(event.target.value)}
+							onBlur={field.handleBlur}
+							disabled={!isManager}
+						/>
+						<FieldErrorText errors={field.state.meta.errors} />
+					</div>
+				)}
+			</form.Field>
+
+			<form.Field
+				name="endTime"
+				validators={{
+					onChange: z.string().regex(/^\d{2}:\d{2}$/, "Invalid time format"),
+				}}
+			>
+				{(field) => (
+					<div className="gap-y-2">
+						<Label>{t("scheduling:scheduling.shiftDialog.endTime", "End Time")}</Label>
+						<TimeInput
+							value={field.state.value}
+							onChange={(event) => field.handleChange(event.target.value)}
+							onBlur={field.handleBlur}
+							disabled={!isManager}
+						/>
+						<FieldErrorText errors={field.state.meta.errors} />
+					</div>
+				)}
+			</form.Field>
+		</div>
+	);
+}
+
+function ShiftSubareaField({
+	form,
+	locations,
+}: {
+	form: ShiftDialogFormApi;
+	locations: ShiftDialogLocation[];
+}) {
+	const { t } = useTranslate();
+
+	return (
+		<form.Field name="subareaId">
+			{(field) => (
+				<div className="gap-y-2">
+					<Label>
+						<span className="flex items-center gap-2">
+							<IconMapPin className="size-4" aria-hidden="true" />
+							{t("scheduling:scheduling.shiftDialog.subarea", "Subarea")}
+							<span className="text-destructive">*</span>
+						</span>
+					</Label>
+					<Select onValueChange={field.handleChange} value={field.state.value}>
+						<SelectTrigger>
+							<SelectValue
+								placeholder={t(
+									"scheduling:scheduling.shiftDialog.selectSubarea",
+									"Select a subarea…",
+								)}
+							/>
+						</SelectTrigger>
+						<SelectContent>
+							{locations.flatMap((location) =>
+								location.subareas.flatMap((subarea) =>
+									subarea.isActive
+										? [
+												<SelectItem key={subarea.id} value={subarea.id}>
+													{location.name} – {subarea.name}
+												</SelectItem>,
+											]
+										: [],
+								),
+							)}
+						</SelectContent>
+					</Select>
+					<p className="text-sm text-muted-foreground">
+						{t("scheduling:scheduling.shiftDialog.subareaHelp", "Where this shift will take place")}
+					</p>
+				</div>
+			)}
+		</form.Field>
+	);
+}
+
+function ShiftEmployeeField({
+	form,
+	employees,
+	skillValidation,
+}: {
+	form: ShiftDialogFormApi;
+	employees: ShiftDialogEmployee[];
+	skillValidation: SkillValidation;
+}) {
+	const { t } = useTranslate();
+
+	return (
+		<form.Field name="employeeId">
+			{(field) => (
+				<div className="gap-y-2">
+					<Label>
+						<span className="flex items-center gap-2">
+							<IconUsers className="size-4" aria-hidden="true" />
+							{t("scheduling:scheduling.shiftDialog.assignTo", "Assign To")}
+						</span>
+					</Label>
+					<Select
+						onValueChange={(value) => field.handleChange(value === "open" ? null : value)}
+						value={field.state.value || "open"}
+					>
+						<SelectTrigger>
+							<SelectValue
+								placeholder={t(
+									"scheduling:scheduling.shiftDialog.selectEmployee",
+									"Select an employee",
+								)}
+							/>
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="open">
+								<span className="flex items-center gap-2">
+									<Badge variant="secondary">
+										{t("scheduling:scheduling.shiftDialog.openShift", "Open Shift")}
+									</Badge>
+									<span className="text-muted-foreground">
+										{t("scheduling:scheduling.shiftDialog.anyoneCanPickUp", "Anyone can pick up")}
+									</span>
+								</span>
+							</SelectItem>
+							{employees.map((employee) => (
+								<SelectItem key={employee.id} value={employee.id}>
+									<span className="flex items-center gap-2">
+										{buildAuthUserDisplayName(employee.user) || employee.id}
+										{field.state.value === employee.id &&
+											skillValidation &&
+											!skillValidation.isQualified && (
+												<SkillWarningBadge validation={skillValidation} />
+											)}
+									</span>
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+					<p className="text-sm text-muted-foreground">
+						{t(
+							"scheduling:scheduling.shiftDialog.openShiftHelp",
+							'Leave as "Open Shift" to allow employees to claim it',
+						)}
+					</p>
+				</div>
+			)}
+		</form.Field>
+	);
+}
+
+function ShiftSkillOverrideReasonField({
+	form,
+	skillOverrideReasonRequested,
+}: {
+	form: ShiftDialogFormApi;
+	skillOverrideReasonRequested: boolean;
+}) {
+	const { t } = useTranslate();
+
+	return (
+		<form.Field name="skillOverrideReason">
+			{(field) => {
+				// The server decides whether a reason is needed (#893); it asked and got none.
+				const missing = skillOverrideReasonRequested && !field.state.value.trim();
+				return (
+					<div className="flex flex-col gap-y-2">
+						<Label htmlFor="shift-dialog-skill-override-reason">
+							{t("scheduling:scheduling.skills.overrideReason", "Reason for the skill override")}
+						</Label>
+						<Textarea
+							id="shift-dialog-skill-override-reason"
+							className="resize-none"
+							value={field.state.value}
+							onChange={(event) => field.handleChange(event.target.value)}
+							onBlur={field.handleBlur}
+							aria-invalid={missing || undefined}
+							aria-describedby={missing ? "shift-dialog-skill-override-reason-error" : undefined}
+						/>
+						{missing && (
+							<p
+								id="shift-dialog-skill-override-reason-error"
+								className="text-sm font-medium text-destructive"
+							>
+								{t(
+									"scheduling:scheduling.skills.overrideReasonRequired",
+									"Give a reason to assign an employee without every required skill.",
+								)}
+							</p>
+						)}
+					</div>
+				);
+			}}
+		</form.Field>
+	);
+}
+
+function ShiftNotesField({ form }: { form: ShiftDialogFormApi }) {
+	const { t } = useTranslate();
+
+	return (
+		<form.Field name="notes">
+			{(field) => (
+				<div className="gap-y-2">
+					<Label>{t("scheduling:scheduling.shiftDialog.notes", "Notes (Optional)")}</Label>
+					<Textarea
+						placeholder={t(
+							"scheduling:scheduling.shiftDialog.notesPlaceholder",
+							"Any special instructions or notes...",
+						)}
+						className="resize-none"
+						value={field.state.value}
+						onChange={(event) => field.handleChange(event.target.value)}
+						onBlur={field.handleBlur}
+					/>
+				</div>
+			)}
+		</form.Field>
+	);
+}
+
+function ShiftStatusRow({ shift }: { shift: ShiftWithRelations }) {
+	const { t } = useTranslate();
+
+	return (
+		<div className="flex items-center gap-2 text-sm">
+			<span className="text-muted-foreground">
+				{t("scheduling:scheduling.shiftDialog.status", "Status:")}
+			</span>
+			<Badge variant={shift.status === "published" ? "default" : "secondary"}>
+				{shift.status === "published"
+					? t("scheduling:scheduling.shiftDialog.published", "Published")
+					: t("scheduling:scheduling.shiftDialog.draft", "Draft")}
+			</Badge>
+		</div>
 	);
 }
 

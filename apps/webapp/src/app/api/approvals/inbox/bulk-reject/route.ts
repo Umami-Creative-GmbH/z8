@@ -1,3 +1,4 @@
+import { isApprovalFastLaneReview } from "@/lib/approvals/inbox/fast-lane-review";
 /**
  * Bulk Reject API
  *
@@ -9,13 +10,17 @@ import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { employee } from "@/db/schema";
+import { loadInboxCovers } from "@/lib/approvals/deputy/deputy-decision-store";
 import { bulkRejectApprovalInboxItems } from "@/lib/approvals/inbox/decision-service";
 import { getEligibleApprovalScopesForManager } from "@/lib/approvals/policies/manager-eligibility-db";
 import { auth } from "@/lib/auth";
 import { getAbility } from "@/lib/auth-helpers";
-import { loadInboxCovers } from "@/lib/approvals/deputy/deputy-decision-store";
+import {
+	canAccessApprovalInbox,
+	ForbiddenError,
+	toHttpError,
+} from "@/lib/authorization";
 import { systemClock } from "@/lib/datetime/temporal-core";
-import { canAccessApprovalInbox, ForbiddenError, toHttpError } from "@/lib/authorization";
 import { createLogger } from "@/lib/logger";
 
 // Ensure handlers are registered
@@ -28,15 +33,28 @@ const MAX_BULK_REJECT = 50;
 export async function POST(request: NextRequest) {
 	try {
 		const body = await request.json().catch(() => ({}));
+		if (
+			body.fastLane !== undefined &&
+			!isApprovalFastLaneReview(body.fastLane)
+		) {
+			return NextResponse.json(
+				{ error: "Invalid fast-lane review" },
+				{ status: 400 },
+			);
+		}
 		const approvalIds = Array.isArray(body.approvalIds)
 			? body.approvalIds.filter(
-					(id: unknown): id is string => typeof id === "string" && id.length > 0,
+					(id: unknown): id is string =>
+						typeof id === "string" && id.length > 0,
 				)
 			: [];
 		const reason = typeof body.reason === "string" ? body.reason : "";
 
 		if (!Array.isArray(approvalIds) || approvalIds.length === 0) {
-			return NextResponse.json({ error: "approvalIds array is required" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "approvalIds array is required" },
+				{ status: 400 },
+			);
 		}
 
 		if (approvalIds.length > MAX_BULK_REJECT) {
@@ -47,7 +65,10 @@ export async function POST(request: NextRequest) {
 		}
 
 		if (!reason || reason.trim().length === 0) {
-			return NextResponse.json({ error: "Rejection reason is required" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "Rejection reason is required" },
+				{ status: 400 },
+			);
 		}
 
 		const session = await auth.api.getSession({ headers: await headers() });
@@ -57,7 +78,10 @@ export async function POST(request: NextRequest) {
 
 		const activeOrganizationId = session.session?.activeOrganizationId;
 		if (!activeOrganizationId) {
-			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "No active organization" },
+				{ status: 400 },
+			);
 		}
 
 		const ability = await getAbility();
@@ -77,7 +101,10 @@ export async function POST(request: NextRequest) {
 		});
 
 		if (!currentEmployee) {
-			return NextResponse.json({ error: "Employee not found" }, { status: 404 });
+			return NextResponse.json(
+				{ error: "Employee not found" },
+				{ status: 404 },
+			);
 		}
 
 		if (!canAccessApprovalInbox(ability, currentEmployee)) {
@@ -97,6 +124,7 @@ export async function POST(request: NextRequest) {
 		const result = await bulkRejectApprovalInboxItems({
 			approvalIds,
 			actorEmployeeId: currentEmployee.id,
+			...(body.fastLane !== undefined ? { fastLane: body.fastLane } : {}),
 			organizationId: currentEmployee.organizationId,
 			reason,
 			includeAllApprovers: canManageApprovals || undefined,
@@ -124,6 +152,9 @@ export async function POST(request: NextRequest) {
 		return NextResponse.json(result);
 	} catch (error) {
 		logger.error({ error }, "Failed to bulk reject");
-		return NextResponse.json({ error: "Failed to process bulk rejection" }, { status: 500 });
+		return NextResponse.json(
+			{ error: "Failed to process bulk rejection" },
+			{ status: 500 },
+		);
 	}
 }

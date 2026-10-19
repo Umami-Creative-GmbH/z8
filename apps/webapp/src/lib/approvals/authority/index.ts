@@ -18,6 +18,7 @@ export {
 	createApprovalWriteGate,
 	readApprovalAuthoritySnapshot,
 	readApprovalAuthoritySnapshots,
+	readApprovalWriteGateOpenSnapshot,
 } from "./gate";
 export {
 	type ApprovalAuthority,

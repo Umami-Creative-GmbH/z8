@@ -229,6 +229,12 @@ function KioskTable({
 														)
 											}`
 										: ""}
+									{kiosk.badgeScannerEnabled
+										? ` · ${t("settings.kiosks.badgeScannerOn", "Badge scanner on")}`
+										: ""}
+									{kiosk.badgeCameraEnabled
+										? ` · ${t("settings.kiosks.badgeCameraOn", "Badge camera on")}`
+										: ""}
 								</div>
 							</TableCell>
 							<TableCell>{kiosk.locationName}</TableCell>

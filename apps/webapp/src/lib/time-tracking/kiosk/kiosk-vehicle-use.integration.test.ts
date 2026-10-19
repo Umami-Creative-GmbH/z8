@@ -120,6 +120,8 @@ describe("vehicle use at the kiosk on PostgreSQL", () => {
 			clocking,
 			clock,
 			limitPinAttempts: async () => ({ allowed: true, retryAfter: 0 }),
+			limitBadgeAttempts: async () => ({ allowed: true, retryAfter: 0 }),
+			limitOutcomeLookups: async () => ({ allowed: true, retryAfter: 0 }),
 		});
 	}
 

@@ -5,6 +5,11 @@ import { describe, expect, it, vi } from "vitest";
 import type { AbsencePlanPreview } from "@/lib/absences/absence-plan-preview";
 import { AbsencePlanPreviewPanel } from "./absence-plan-preview-panel";
 
+vi.mock("next-intl", () => ({ useLocale: () => "en-GB" }));
+vi.mock("@/hooks/use-display-context", () => ({
+	useDisplayContext: () => ({ locale: "en-GB", timezone: "Europe/Berlin", timeFormat: "24h" }),
+}));
+
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
 		t: (_key: string, fallback?: string, params?: Record<string, unknown>) => {
@@ -17,12 +22,18 @@ vi.mock("@tolgee/react", () => ({
 const riskyPreview: AbsencePlanPreview = {
 	requestedAbsenceDays: 6,
 	refusal: null,
-	balance: {
-		year: 2026,
-		remainingDays: 4,
-		remainingAfterRequest: -2,
-		countsAgainstVacation: true,
-	},
+	countsAgainstVacation: true,
+	balances: [
+		{
+			year: 2026,
+			chargedAbsenceDays: 6,
+			futureYear: false,
+			status: "available",
+			remainingDays: 4,
+			remainingAfterRequest: -2,
+		},
+	],
+	evaluatedAt: "2026-10-18T08:30:00Z",
 	workBalance: null,
 	holidays: [
 		{
@@ -32,7 +43,15 @@ const riskyPreview: AbsencePlanPreview = {
 			endDate: "2026-05-14",
 		},
 	],
-	overlaps: [],
+	overlaps: [
+		{
+			id: "absence-1",
+			startDate: "2026-05-14",
+			endDate: "2026-05-15",
+			status: "pending",
+			categoryName: "Vacation",
+		},
+	],
 	affectedShifts: [],
 	coverage: {
 		risks: [
@@ -46,28 +65,19 @@ const riskyPreview: AbsencePlanPreview = {
 				staffCountAfterAbsence: 1,
 			},
 		],
-		hasConfiguredRulesForAffectedShifts: true,
+		status: "complete",
+		gaps: [],
 	},
-	approvalSignal: "risky",
-	warnings: ["Vacation balance would be negative after this request."],
-	reasons: [
-		"Coverage rules are not configured for the affected scheduled work.",
-		"Request follows the normal approval path.",
-	],
+	notes: ["no_manager_auto_approval"],
 };
 
 const nonVacationPreview: AbsencePlanPreview = {
 	...riskyPreview,
-	balance: {
-		year: 2026,
-		remainingDays: 4,
-		remainingAfterRequest: 4,
-		countsAgainstVacation: false,
-	},
-	coverage: { risks: [], hasConfiguredRulesForAffectedShifts: true },
-	approvalSignal: "likely",
-	warnings: [],
-	reasons: ["Policy check passed without using vacation-specific copy."],
+	countsAgainstVacation: false,
+	balances: [],
+	overlaps: [],
+	coverage: { risks: [], status: "complete", gaps: [] },
+	notes: ["does_not_reduce_vacation", "no_approval_required"],
 };
 
 const affectedShiftPreview: AbsencePlanPreview = {
@@ -75,16 +85,18 @@ const affectedShiftPreview: AbsencePlanPreview = {
 	affectedShifts: [
 		{
 			id: "shift-1",
-			subareaId: "kitchen",
+			subareaId: "kitchen-id",
+			subareaName: "Kitchen",
 			date: "2026-05-16",
 			startTime: "12:00",
 			endTime: "18:00",
+			affectedStartTime: "12:00",
+			affectedEndTime: "18:00",
 		},
 	],
-	coverage: { risks: [], hasConfiguredRulesForAffectedShifts: true },
-	approvalSignal: "likely",
-	warnings: [],
-	reasons: ["Request follows the normal approval path."],
+	overlaps: [],
+	coverage: { risks: [], status: "complete", gaps: [] },
+	notes: ["normal_approval_path"],
 };
 
 const affectedShiftWithRiskPreview: AbsencePlanPreview = {
@@ -94,18 +106,58 @@ const affectedShiftWithRiskPreview: AbsencePlanPreview = {
 
 const affectedShiftWithoutRulesPreview: AbsencePlanPreview = {
 	...affectedShiftPreview,
-	coverage: { risks: [], hasConfiguredRulesForAffectedShifts: false },
-	approvalSignal: "needs_review",
-	reasons: ["Coverage rules are not configured for the affected scheduled work."],
+	coverage: { risks: [], status: "incomplete", gaps: ["rules_missing", "rules_partial"] },
+};
+
+const partialOvernightShiftPreview: AbsencePlanPreview = {
+	...affectedShiftPreview,
+	affectedShifts: [
+		{
+			id: "shift-night",
+			subareaId: "kitchen-id",
+			subareaName: null,
+			date: "2026-05-15",
+			startTime: "22:00",
+			endTime: "06:00",
+			affectedStartTime: "00:00",
+			affectedEndTime: "02:00",
+		},
+	],
+};
+
+const unreadableCoveragePreview: AbsencePlanPreview = {
+	...nonVacationPreview,
+	coverage: { risks: [], status: "incomplete", gaps: ["read_failed"] },
 };
 
 describe("AbsencePlanPreviewPanel", () => {
-	it("renders risky advisory preview with a warning", () => {
+	it("renders an advisory preview with a warning and no approval prediction", () => {
 		render(<AbsencePlanPreviewPanel preview={riskyPreview} />);
 
 		expect(screen.getByRole("heading", { name: "Smart planner" })).toBeTruthy();
-		expect(screen.getByText("Risky")).toBeTruthy();
-		expect(screen.getByText("Vacation balance would be negative after this request.")).toBeTruthy();
+		// The employee's own overlap, with its dates and status in the viewer's language.
+		expect(
+			screen.getByText(/^Overlaps your pending absence \(14\s?–\s?15 May 2026\)\.$/),
+		).toBeTruthy();
+		for (const prediction of ["Risky", "Likely", "Needs review"]) {
+			expect(screen.queryByText(prediction)).toBeNull();
+		}
+		expect(screen.getByText(/It does not predict approval\./)).toBeTruthy();
+	});
+
+	it("explains the published-schedule limits of coverage evidence", () => {
+		render(<AbsencePlanPreviewPanel preview={nonVacationPreview} />);
+
+		const coverage = screen.getByRole("region", { name: "Coverage" });
+		expect(coverage.textContent).toContain(
+			"Based on published shifts and configured coverage rules. Colleagues' absences and unpublished schedule changes are not considered, so no warning does not guarantee staffing or approval.",
+		);
+	});
+
+	it("says when none of the requester's published shifts overlap the absence", () => {
+		render(<AbsencePlanPreviewPanel preview={nonVacationPreview} />);
+
+		expect(screen.getByText("None of your published shifts overlap this absence.")).toBeTruthy();
 	});
 
 	it("shows vacation balance impact for the selected category", () => {
@@ -124,42 +176,119 @@ describe("AbsencePlanPreviewPanel", () => {
 	it("renders compact coverage risk details by day and subarea", () => {
 		render(<AbsencePlanPreviewPanel preview={riskyPreview} />);
 
-		expect(screen.getByText("2026-05-15 · Front desk")).toBeTruthy();
+		expect(screen.getByText("15 May 2026 · Front desk")).toBeTruthy();
 		expect(screen.getByText("09:00-17:00 · 1/2 staff after request")).toBeTruthy();
 	});
 
 	it("renders affected published shifts without coverage risk", () => {
 		render(<AbsencePlanPreviewPanel preview={affectedShiftPreview} />);
 
-		expect(screen.getByText("No published coverage risk")).toBeTruthy();
-		expect(screen.getByText("2026-05-16 · kitchen")).toBeTruthy();
-		expect(screen.getByText("12:00-18:00 affected shift")).toBeTruthy();
+		expect(screen.getByText("No coverage warnings in the published schedule.")).toBeTruthy();
+		expect(screen.getByText("16 May 2026 · Kitchen")).toBeTruthy();
+		expect(screen.getByText("12:00-18:00 · whole shift affected")).toBeTruthy();
+		expect(screen.queryByText(/kitchen-id/)).toBeNull();
 	});
 
-	it("renders missing coverage rules for affected published shifts", () => {
+	it("shows the affected part of an overnight shift", () => {
+		render(<AbsencePlanPreviewPanel preview={partialOvernightShiftPreview} />);
+
+		expect(screen.getByText("15 May 2026 · Unknown subarea")).toBeTruthy();
+		expect(screen.getByText("22:00-06:00 (ends next day) · away 00:00-02:00")).toBeTruthy();
+	});
+
+	it("keeps missing and partial coverage rules visibly incomplete", () => {
 		render(<AbsencePlanPreviewPanel preview={affectedShiftWithoutRulesPreview} />);
 
-		expect(screen.getByText("No coverage rules configured for affected shifts")).toBeTruthy();
-		expect(screen.queryByText("No published coverage risk")).toBeNull();
-		expect(screen.getByText("2026-05-16 · kitchen")).toBeTruthy();
+		expect(
+			screen.getByText(
+				"Coverage evidence is incomplete, so missing warnings don't mean staffing is adequate.",
+			),
+		).toBeTruthy();
+		expect(screen.getByText("No coverage rules apply to some of your affected work.")).toBeTruthy();
+		expect(
+			screen.getByText("Coverage rules apply to only part of your affected work."),
+		).toBeTruthy();
+		expect(screen.queryByText("No coverage warnings in the published schedule.")).toBeNull();
+		expect(screen.getByText("16 May 2026 · Kitchen")).toBeTruthy();
+	});
+
+	it("shows unreadable coverage evidence instead of an all-clear", () => {
+		render(<AbsencePlanPreviewPanel preview={unreadableCoveragePreview} />);
+
+		expect(screen.getByText("Published shifts or coverage rules could not be read.")).toBeTruthy();
+		expect(screen.queryByText("None of your published shifts overlap this absence.")).toBeNull();
+	});
+
+	it("keeps known coverage warnings alongside incomplete evidence", () => {
+		render(
+			<AbsencePlanPreviewPanel
+				preview={{
+					...riskyPreview,
+					coverage: { ...riskyPreview.coverage, status: "incomplete", gaps: ["unsupported"] },
+				}}
+			/>,
+		);
+
+		expect(screen.getByText("09:00-17:00 · 1/2 staff after request")).toBeTruthy();
+		expect(screen.getByText("Some request or schedule times could not be evaluated.")).toBeTruthy();
 	});
 
 	it("renders affected published shifts with coverage risk details", () => {
 		render(<AbsencePlanPreviewPanel preview={affectedShiftWithRiskPreview} />);
 
-		expect(screen.getByText("2026-05-15 · Front desk")).toBeTruthy();
+		expect(screen.getByText("15 May 2026 · Front desk")).toBeTruthy();
 		expect(screen.getByText("09:00-17:00 · 1/2 staff after request")).toBeTruthy();
-		expect(screen.getByText("2026-05-16 · kitchen")).toBeTruthy();
-		expect(screen.getByText("12:00-18:00 affected shift")).toBeTruthy();
+		expect(screen.getByText("16 May 2026 · Kitchen")).toBeTruthy();
+		expect(screen.getByText("12:00-18:00 · whole shift affected")).toBeTruthy();
 	});
 
-	it("renders all explainable approval reasons", () => {
+	it("explains each structured note in the viewer's language", () => {
 		render(<AbsencePlanPreviewPanel preview={riskyPreview} />);
 
 		expect(
-			screen.getByText("Coverage rules are not configured for the affected scheduled work."),
+			screen.getByText(
+				"No manager is assigned, so this request follows the current auto-approval behavior.",
+			),
 		).toBeTruthy();
-		expect(screen.getByText("Request follows the normal approval path.")).toBeTruthy();
+		render(<AbsencePlanPreviewPanel preview={nonVacationPreview} />);
+		expect(screen.getByText("This absence type does not reduce vacation balance.")).toBeTruthy();
+		expect(screen.getByText("This absence type does not require approval.")).toBeTruthy();
+	});
+
+	it("falls back to a localized line when there are no notes", () => {
+		render(<AbsencePlanPreviewPanel preview={{ ...riskyPreview, notes: [] }} />);
+
+		expect(screen.getByText("Planner checked the available request signals.")).toBeTruthy();
+	});
+
+	it("keeps the approval section neutral when nothing is flagged", () => {
+		const { container } = render(<AbsencePlanPreviewPanel preview={affectedShiftPreview} />);
+
+		const approval = screen.getByRole("region", { name: "Approval" });
+		expect(approval.textContent).toContain("Request follows the normal approval path.");
+		expect(approval.textContent).toContain("No warnings found in the available evidence.");
+		expect(approval.textContent).not.toContain("No approval warnings");
+		expect(container.querySelector(".tabler-icon-check")).toBeNull();
+	});
+
+	it("lists a negative work balance among the approval warnings", () => {
+		render(
+			<AbsencePlanPreviewPanel
+				preview={{
+					...nonVacationPreview,
+					workBalance: {
+						currentBalanceMinutes: 0,
+						drawnMinutes: 60,
+						projectedBalanceMinutes: -60,
+						wouldBeNegative: true,
+					},
+				}}
+			/>,
+		);
+
+		const approval = screen.getByRole("region", { name: "Approval" });
+		expect(approval.textContent).toContain("Work balance would be negative after this request.");
+		expect(approval.textContent).not.toContain("No warnings found in the available evidence.");
 	});
 
 	it("renders non-blocking unavailable copy for an error", () => {
@@ -191,6 +320,124 @@ describe("AbsencePlanPreviewPanel", () => {
 		);
 
 		expect(screen.getByRole("alert").textContent).toBe("This range contains no working days.");
+	});
+});
+
+describe("AbsencePlanPreviewPanel vacation balance by year (#1340)", () => {
+	const acrossNewYear: AbsencePlanPreview = {
+		...riskyPreview,
+		requestedAbsenceDays: 3,
+		balances: [
+			{
+				year: 2026,
+				chargedAbsenceDays: 2,
+				futureYear: false,
+				status: "available",
+				remainingDays: 5,
+				remainingAfterRequest: 3,
+			},
+			{
+				year: 2027,
+				chargedAbsenceDays: 1,
+				futureYear: true,
+				status: "available",
+				remainingDays: 0.5,
+				remainingAfterRequest: -0.5,
+			},
+		],
+	};
+
+	function yearRow(year: number) {
+		return screen.getByRole("listitem", { name: String(year) });
+	}
+
+	it("shows each year's charged days, recorded balance and estimate after the request", () => {
+		render(<AbsencePlanPreviewPanel preview={acrossNewYear} />);
+
+		expect(yearRow(2026).textContent).toContain("2 days charged");
+		expect(yearRow(2026).textContent).toContain("Current recorded balance5 days");
+		expect(yearRow(2026).textContent).toContain("Estimated after request3 days");
+		expect(yearRow(2027).textContent).toContain("1 day charged");
+		expect(yearRow(2027).textContent).toContain("Estimated after request-0.5 days");
+	});
+
+	it("warns about a year the request exceeds, noting uncounted future carryover and accrual", () => {
+		render(<AbsencePlanPreviewPanel preview={acrossNewYear} />);
+
+		expect(yearRow(2027).textContent).toContain(
+			"This request exceeds your recorded balance for 2027.",
+		);
+		expect(yearRow(2027).textContent).toContain(
+			"Carryover and accrual for 2027 are not counted yet.",
+		);
+		expect(yearRow(2026).textContent).not.toContain("exceeds");
+	});
+
+	it("names when the balances were read and that they are estimates", () => {
+		render(<AbsencePlanPreviewPanel preview={acrossNewYear} />);
+
+		const balance = screen.getByRole("region", { name: "Balance" });
+		expect(balance.textContent).toContain("Recorded balances as of 18 Oct 2026, 10:30");
+		expect(balance.textContent).toContain("Estimates, not guaranteed future balances.");
+	});
+
+	it("shows a year without balance evidence as unavailable, never as zero", () => {
+		render(
+			<AbsencePlanPreviewPanel
+				preview={{
+					...acrossNewYear,
+					balances: [
+						acrossNewYear.balances[0],
+						{
+							year: 2027,
+							chargedAbsenceDays: 1,
+							futureYear: true,
+							status: "unavailable",
+							reason: "missing_policy",
+						},
+					],
+				}}
+			/>,
+		);
+
+		expect(yearRow(2026).textContent).toContain("Estimated after request3 days");
+		expect(yearRow(2027).textContent).toContain(
+			"Balance unavailable: no vacation policy covers 2027 yet. You can still submit.",
+		);
+		expect(yearRow(2027).textContent).not.toContain("0 days");
+	});
+
+	it("explains a conflicting policy and a failed read", () => {
+		render(
+			<AbsencePlanPreviewPanel
+				preview={{
+					...acrossNewYear,
+					balances: [
+						{
+							year: 2026,
+							chargedAbsenceDays: 2,
+							futureYear: false,
+							status: "unavailable",
+							reason: "conflicting_policy",
+						},
+						{
+							year: 2027,
+							chargedAbsenceDays: 1,
+							futureYear: true,
+							status: "unavailable",
+							reason: "read_failed",
+						},
+					],
+				}}
+			/>,
+		);
+
+		expect(yearRow(2026).textContent).toContain(
+			"Balance unavailable: conflicting vacation policies for 2026 need review. You can still submit.",
+		);
+		expect(yearRow(2027).textContent).toContain(
+			"Balance unavailable: the 2027 balance could not be read. You can still submit.",
+		);
 	});
 });
 

@@ -30,7 +30,8 @@
     "rollout:rollback-readiness": "tsx scripts/rollback-readiness.ts",
     "queue:obliterate": "tsx scripts/obliterate-job-queue.ts",
     "work-records:attach-missing": "tsx --import ./src/worker-preload.mjs scripts/attach-missing-work-records.ts",
-    "billing:reconcile-kiosk-seats": "tsx --import ./src/worker-preload.mjs scripts/reconcile-kiosk-seats.ts"
+    "billing:reconcile-kiosk-seats": "tsx --import ./src/worker-preload.mjs scripts/reconcile-kiosk-seats.ts",
+    "personnel-files:minimise-purged-audits": "tsx --import ./src/worker-preload.mjs scripts/minimise-purged-document-audits.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1149.0",
@@ -114,6 +115,7 @@
     "file-type": "^22.1.1",
     "input-otp": "^1.5.0",
     "ioredis": "^6.0.0",
+    "jsqr": "1.4.0",
     "jszip": "^3.10.2",
     "luxon": "^3.7.2",
     "nanoid": "^6.0.2",

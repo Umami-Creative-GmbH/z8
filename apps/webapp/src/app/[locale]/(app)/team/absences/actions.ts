@@ -1,6 +1,4 @@
 "use server";
-import { withVacationReconciliation } from "@/lib/absences/vacation-reconciliation";
-import { acquireOrganizationConfigurationGuard } from "@/lib/time-tracking/work-transaction";
 
 import {
 	and,
@@ -30,10 +28,6 @@ import {
 	getAbsenceDays,
 	loadWorkingDaysForEmployees,
 } from "@/lib/absences/absence-days-resolver";
-import {
-	assertHistoricalVacationNotOverlapping,
-	historicalVacationRefusalOf,
-} from "@/lib/absences/historical-vacation";
 import { dateRangesOverlap } from "@/lib/absences/date-utils";
 import { DEPUTY_REFUSAL_MESSAGES } from "@/lib/absences/deputy";
 import {
@@ -54,11 +48,16 @@ import {
 	toAbsenceEntryDurationFields,
 } from "@/lib/absences/duration";
 import {
+	assertHistoricalVacationNotOverlapping,
+	historicalVacationRefusalOf,
+} from "@/lib/absences/historical-vacation";
+import {
 	adjustVacationAbsencesForSickness,
 	getBlockingOverlapMessage,
 } from "@/lib/absences/sick-vacation-override";
 import type { AbsenceWithCategory } from "@/lib/absences/types";
 import { loadVacationBalances } from "@/lib/absences/vacation-balance-store";
+import { withVacationReconciliation } from "@/lib/absences/vacation-reconciliation";
 import { AuditTrail } from "@/lib/audit-trail";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import {
@@ -66,7 +65,6 @@ import {
 	parseInstant,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
-import { isCanonicalUuid } from "@/lib/validations/canonical-uuid";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { createLogger } from "@/lib/logger";
 import { resolvePersonnelFileAccess } from "@/lib/personnel-file/access-store";
@@ -77,7 +75,12 @@ import {
 	type StagedSickNoteInput,
 } from "@/lib/personnel-file/sick-note-upload";
 import { addCalendarSyncJob } from "@/lib/queue";
+import { monthClosedActionResult } from "@/lib/time-tracking/closed-months/refusal-message";
+import { assertAbsenceDaysOpen } from "@/lib/time-tracking/closed-months/store";
+import { sendBackChangedPeriodSubmissions } from "@/lib/time-tracking/period-submissions/submission-send-back";
+import { acquireOrganizationConfigurationGuard } from "@/lib/time-tracking/work-transaction";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
+import { isCanonicalUuid } from "@/lib/validations/canonical-uuid";
 import {
 	buildCanonicalAbsenceRecordValues,
 	buildInaccessibleTeamAbsenceListResult,
@@ -105,9 +108,6 @@ import type {
 	ManagerAbsenceTeamOption,
 	RecordAbsenceForEmployeeInput,
 } from "./manager-absence-types";
-import { monthClosedActionResult } from "@/lib/time-tracking/closed-months/refusal-message";
-import { assertAbsenceDaysOpen } from "@/lib/time-tracking/closed-months/store";
-import { sendBackChangedPeriodSubmissions } from "@/lib/time-tracking/period-submissions/submission-send-back";
 
 const logger = createLogger("ManagerAbsenceActions");
 const ACCESS_ERROR = "Employee not found or not accessible";
@@ -365,22 +365,24 @@ export async function getManagerAbsenceCalendar(params: {
 			? await notEndedAt(listedRows, actor.organizationId, deputyCover.at)
 			: listedRows;
 
-		// Only that sick notes exist (#982, ADR 0002); opening them is not offered here.
-		const sickNotes = await countSickNotesForAbsences(db, {
-			organizationId: actor.organizationId,
-			absenceIds: rows
-				.filter((row) => row.categoryType === "sick")
-				.map((row) => row.id),
-			access: null,
-		});
-		const deputyMissing = await findDeputyMissingAbsenceIds(db, {
-			organizationId: actor.organizationId,
-			at: systemClock.nowInstant(),
-			absences: rows,
-		});
-		// Every listed absence is one the actor manages; its deputy can change
-		// until it has ended on the absent employee's own day (#1012).
-		const { deputies, todays } = await loadCalendarDeputies(actor, rows);
+		const [sickNotes, deputyMissing, { deputies, todays }] = await Promise.all([
+			// Only that sick notes exist (#982, ADR 0002); opening them is not offered here.
+			countSickNotesForAbsences(db, {
+				organizationId: actor.organizationId,
+				absenceIds: rows
+					.filter((row) => row.categoryType === "sick")
+					.map((row) => row.id),
+				access: null,
+			}),
+			findDeputyMissingAbsenceIds(db, {
+				organizationId: actor.organizationId,
+				at: systemClock.nowInstant(),
+				absences: rows,
+			}),
+			// Every listed absence is one the actor manages; its deputy can change
+			// until it has ended on the absent employee's own day (#1012).
+			loadCalendarDeputies(actor, rows),
+		]);
 
 		return {
 			success: true,
@@ -1114,30 +1116,31 @@ async function addMetricsToRows(
 	const employeeIds = rows.map((row) => row.id);
 	const yearStart = `${year}-01-01`;
 	const yearEnd = `${year}-12-31`;
-	const [{ balances }, absences, workingDaysByEmployeeId] = await Promise.all([
-		// The same vacation balances as every other page (#1111).
-		loadVacationBalances(db, {
-			organizationId,
-			employeeIds,
-			year,
-			timezone: await loadOrganizationTimezone(db, organizationId),
-		}),
-		db.query.absenceEntry.findMany({
-			where: and(
-				eq(absenceEntry.organizationId, organizationId),
-				inArray(absenceEntry.employeeId, employeeIds),
-				lte(absenceEntry.startDate, yearEnd),
-				gte(absenceEntry.endDate, yearStart),
-			),
-			with: { category: true },
-		}),
-		loadWorkingDaysForEmployees(db, {
-			organizationId,
-			employeeIds,
-			startDate: yearStart,
-			endDate: yearEnd,
-		}),
-	]);
+	const [{ balances, configurations }, absences, workingDaysByEmployeeId] =
+		await Promise.all([
+			// The same vacation balances as every other page (#1111).
+			loadVacationBalances(db, {
+				organizationId,
+				employeeIds,
+				year,
+				timezone: await loadOrganizationTimezone(db, organizationId),
+			}),
+			db.query.absenceEntry.findMany({
+				where: and(
+					eq(absenceEntry.organizationId, organizationId),
+					inArray(absenceEntry.employeeId, employeeIds),
+					lte(absenceEntry.startDate, yearEnd),
+					gte(absenceEntry.endDate, yearStart),
+				),
+				with: { category: true },
+			}),
+			loadWorkingDaysForEmployees(db, {
+				organizationId,
+				employeeIds,
+				startDate: yearStart,
+				endDate: yearEnd,
+			}),
+		]);
 
 	const absencesByEmployeeId = new Map<string, AbsenceWithCategory[]>();
 	for (const absence of absences as AbsenceWithCategory[]) {
@@ -1150,6 +1153,7 @@ async function addMetricsToRows(
 		const metrics = calculateManagerAbsenceMetrics({
 			year,
 			balance: balances.get(row.id),
+			configuration: configurations.get(row.id) ?? null,
 			absences: absencesByEmployeeId.get(row.id) ?? [],
 			isWorkingDay: workingDaysByEmployeeId.get(row.id),
 		});
@@ -1215,7 +1219,11 @@ function compareManagerAbsenceRowValues(
 		return teamA.localeCompare(teamB, undefined, { sensitivity: "base" });
 	}
 
-	return a[sort] - b[sort];
+	const valueA = a[sort];
+	const valueB = b[sort];
+	if (valueA === null) return valueB === null ? 0 : 1;
+	if (valueB === null) return -1;
+	return valueA - valueB;
 }
 
 async function resolveAccessibleTarget(

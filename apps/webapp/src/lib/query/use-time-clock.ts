@@ -1,16 +1,19 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { type QueryClient, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useSyncExternalStore } from "react";
 import {
 	addBreakToActiveSession,
 	getTimeClockStatus,
+	resumeBreakInProgress,
+	startBreakInProgress,
 	updateTimeEntryNotes,
 } from "@/app/[locale]/(app)/time-tracking/actions";
 import type { PositionConsentQuestion } from "@/components/position-capture/position-consent-prompt";
 import { useOfflineClock } from "@/hooks/use-offline-clock";
 import { useSession } from "@/lib/auth-client";
 import { type Instant, instantFromDate, systemClock } from "@/lib/datetime/temporal-core";
+import { serializeInstant } from "@/lib/datetime/temporal-wire";
 import type { BookedProjectTask } from "@/lib/projects/project-task-model";
 import {
 	clockConnectionRequired,
@@ -29,6 +32,7 @@ import type {
 } from "@/lib/time-tracking/vehicle-use/clock-vehicle-use";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 import { queryKeys } from "./keys";
+import { invalidatePeriodSubmissionReadiness } from "./period-submission-readiness";
 
 export interface TimeClockState {
 	hasEmployee: boolean;
@@ -43,6 +47,36 @@ export interface TimeClockState {
 		breakStartedAt?: Date | null;
 		breakStartedZone?: string | null;
 	} | null;
+}
+
+/**
+ * A Start Break or Resume (#888). `uncertain`: the answer was lost or unconfirmed,
+ * so the break may be recorded; the clock refreshes and a retry replays. Codes the
+ * clock itself answers: `connection_required`, `pending_clock_actions`,
+ * `not_clocked_in`, `already_on_break`, `no_break_in_progress`.
+ */
+export type BreakInProgressClientResult =
+	| { success: true; data: { workPeriodId: string; at: string } }
+	| { success: false; code: string; error?: string; uncertain?: true };
+
+/** Codes after which the same attempt may be sent again under its identity. */
+const RETRYABLE_BREAK_CODES = new Set(["unconfirmed", "failed"]);
+
+type BreakCommandState = {
+	attempt: { target: string; id: string } | null;
+	inFlight: Promise<BreakInProgressClientResult> | null;
+};
+
+/** One break attempt per page, shared by the full clock and the compact one (#888). */
+const breakCommandStates = new WeakMap<QueryClient, BreakCommandState>();
+
+function breakCommandState(client: QueryClient): BreakCommandState {
+	let state = breakCommandStates.get(client);
+	if (!state) {
+		state = { attempt: null, inFlight: null };
+		breakCommandStates.set(client, state);
+	}
+	return state;
 }
 
 function subscribeToSecondTick(onStoreChange: () => void) {
@@ -141,6 +175,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		isOnline,
 		isOffline,
 		pendingCount,
+		waitingCount,
 		isSyncing,
 		queueClockEvent,
 		commandCapabilities,
@@ -333,6 +368,8 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.calendar.allEvents,
 				});
+				// Live work keeps its submission period open (#1350).
+				void invalidatePeriodSubmissionReadiness(queryClient);
 				if (status?.employeeId) {
 					void queryClient.invalidateQueries({
 						queryKey: queryKeys.workPolicies.presence.status(status.employeeId),
@@ -420,6 +457,8 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.calendar.allEvents,
 				});
+				// Live work keeps its submission period open (#1350).
+				void invalidatePeriodSubmissionReadiness(queryClient);
 				if (status?.employeeId) {
 					void queryClient.invalidateQueries({
 						queryKey: queryKeys.workPolicies.presence.status(status.employeeId),
@@ -488,8 +527,118 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.calendar.allEvents,
 				});
+				// Live work keeps its submission period open (#1350).
+				void invalidatePeriodSubmissionReadiness(queryClient);
 			}
 		},
+	});
+
+	/**
+	 * A break in progress started or resumed from this clock (#888, Time Tracking
+	 * ADR 0007): online only, on the confirmed server state shown, one request at a
+	 * time across the page's clock surfaces. An attempt keeps its identity until its
+	 * outcome is known, so a retry after an uncertain answer replays instead of
+	 * acting twice. Every answer refreshes the clock, which is how a refusal or a
+	 * lost answer reconciles.
+	 */
+	const breakCommands = breakCommandState(queryClient);
+	const liveWork = status?.isClockedIn ? status.activeWorkPeriod : null;
+
+	function refreshAfterBreakCommand(confirmed: boolean) {
+		void queryClient.invalidateQueries({ queryKey: queryKeys.timeClock.status() });
+		if (!confirmed) return;
+		void queryClient.invalidateQueries({ queryKey: queryKeys.timeClock.breakStatus() });
+		void queryClient.invalidateQueries({ queryKey: queryKeys.employeeClockStatuses.all });
+		// The interrupted work keeps counting until the break ends (ADR 0007).
+		void queryClient.invalidateQueries({ queryKey: queryKeys.calendar.allEvents });
+		void invalidatePeriodSubmissionReadiness(queryClient);
+	}
+
+	/** `target` names what the attempt acts on; another target is another attempt. */
+	async function sendBreakCommand(
+		target: string,
+		send: (submissionId: string) => Promise<BreakInProgressClientResult>,
+	): Promise<BreakInProgressClientResult> {
+		if (breakCommands.attempt?.target !== target) {
+			breakCommands.attempt = { target, id: crypto.randomUUID() };
+		}
+		const attempt = breakCommands.attempt;
+		let result: BreakInProgressClientResult;
+		try {
+			result = await send(attempt.id);
+		} catch {
+			// The answer was lost: the break may or may not be recorded.
+			result = { success: false, code: "unconfirmed" };
+		}
+		const settled = result.success || !RETRYABLE_BREAK_CODES.has(result.code);
+		if (settled && breakCommands.attempt === attempt) breakCommands.attempt = null;
+		refreshAfterBreakCommand(result.success);
+		if (!result.success && result.code === "unconfirmed") return { ...result, uncertain: true };
+		return result;
+	}
+
+	function breakCommandRefusal(): BreakInProgressClientResult | null {
+		if (isOffline) return { success: false, code: "connection_required" };
+		// A frozen clock action still being sent may change the work this command
+		// acts on. Records held for review change nothing on their own.
+		if (waitingCount > 0 || isSyncing) {
+			return { success: false, code: "pending_clock_actions" };
+		}
+		return null;
+	}
+
+	async function startBreakInProgressCommand(): Promise<BreakInProgressClientResult> {
+		const refused = breakCommandRefusal();
+		if (refused) return refused;
+		const live = liveWork;
+		if (!live) return { success: false, code: "not_clocked_in" };
+		if (live.breakStartedAt) return { success: false, code: "already_on_break" };
+		return sendBreakCommand(`start:${live.id}`, (submissionId) =>
+			startBreakInProgress({
+				submissionId,
+				workPeriodId: live.id,
+				browserTimezone: getBrowserTimezone(),
+			}),
+		);
+	}
+
+	async function resumeBreakInProgressCommand(): Promise<BreakInProgressClientResult> {
+		const refused = breakCommandRefusal();
+		if (refused) return refused;
+		const live = liveWork;
+		if (!live?.breakStartedAt) return { success: false, code: "no_break_in_progress" };
+		const breakStart = serializeInstant(instantFromDate(new Date(live.breakStartedAt)));
+		return sendBreakCommand(`resume:${live.id}:${breakStart}`, async (submissionId) => {
+			// The one fix is taken where the work resumes and stamps the resumed work (#826).
+			const event = await captureClockEvent(true);
+			const result = await resumeBreakInProgress({
+				submissionId,
+				workPeriodId: live.id,
+				breakStart,
+				browserTimezone: getBrowserTimezone(),
+				...(event.position ? { position: event.position } : {}),
+			});
+			return afterClockEvent(result, event);
+		});
+	}
+
+	/** Clicks sent together, from either clock surface, share the one request in flight. */
+	function serializedBreakCommand(run: () => Promise<BreakInProgressClientResult>) {
+		if (breakCommands.inFlight) return breakCommands.inFlight;
+		const pending = run().finally(() => {
+			breakCommands.inFlight = null;
+		});
+		breakCommands.inFlight = pending;
+		return pending;
+	}
+
+	const startBreakMutation = useMutation({
+		networkMode: "always",
+		mutationFn: startBreakInProgressCommand,
+	});
+	const resumeBreakMutation = useMutation({
+		networkMode: "always",
+		mutationFn: resumeBreakInProgressCommand,
 	});
 
 	// Refetch status manually
@@ -542,15 +691,23 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		// One identity per request, as for clock-out; the server replays a committed identity.
 		addBreak: (params: { breakMinutes: number; vehicleUse?: BreakVehicleUse }) =>
 			addBreakMutation.mutateAsync({ ...params, submissionId: crypto.randomUUID() }),
+		/** Starts a break in progress on the work shown (#888); online only. */
+		startBreak: () => serializedBreakCommand(() => startBreakMutation.mutateAsync()),
+		/** Resumes the break in progress shown at its recorded start (#888); online only. */
+		resumeBreak: () => serializedBreakCommand(() => resumeBreakMutation.mutateAsync()),
 		updateNotes: updateNotesMutation.mutateAsync,
 		isClockingIn: clockInMutation.isPending,
 		isClockingOut: clockOutMutation.isPending,
 		isAddingBreak: addBreakMutation.isPending,
+		isStartingBreak: startBreakMutation.isPending,
+		isResumingBreak: resumeBreakMutation.isPending,
 		isUpdatingNotes: updateNotesMutation.isPending,
 		isMutating:
 			clockInMutation.isPending ||
 			clockOutMutation.isPending ||
 			addBreakMutation.isPending ||
+			startBreakMutation.isPending ||
+			resumeBreakMutation.isPending ||
 			updateNotesMutation.isPending,
 
 		// Utilities

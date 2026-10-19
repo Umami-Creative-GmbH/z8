@@ -23,6 +23,20 @@ describe("queryKeys.notifications", () => {
 	});
 });
 
+describe("queryKeys.periodSubmissions", () => {
+	it("separates readiness by organization and employee under one invalidation prefix", () => {
+		expect(queryKeys.periodSubmissions.readiness("org-a", "employee-1")).not.toEqual(
+			queryKeys.periodSubmissions.readiness("org-b", "employee-1"),
+		);
+		expect(queryKeys.periodSubmissions.readiness("org-a", "employee-1")).not.toEqual(
+			queryKeys.periodSubmissions.readiness("org-a", "employee-2"),
+		);
+		expect(queryKeys.periodSubmissions.readiness("org-a", "employee-1")[0]).toBe(
+			queryKeys.periodSubmissions.all[0],
+		);
+	});
+});
+
 describe("queryKeys.employees", () => {
 	it("provides an organization prefix for employee queries", () => {
 		expect(queryKeys.employees.organization("org-1")).toEqual(["employees", "org-1"]);

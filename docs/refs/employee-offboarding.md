@@ -13,7 +13,7 @@ departure when it is scheduled (or the command instant for *Offboard now*). At
 the cutoff access ends, the running timer is closed at the cutoff, the paid seat
 is released, the employee's expense officer, payroll access and personnel file
 officer grants are revoked, all driving authorizations and held driving licence verifier
-grants end, and the employee's pending approval duties are handed over. The
+grants end, the employee's kiosk badge stops working, and the employee's pending approval duties are handed over. The
 departure is *effective* even while follow-up work (billing, session sign-out,
 timer post-processing, approval handover, notifications) is still pending or has
 failed; follow-up never decides whether someone has left. A **rehire** starts a
@@ -155,6 +155,22 @@ issued verifier grant are required. An old departure retry cannot affect the new
 employment period. Old impediment reports remain historical evidence, rather
 than being represented as resolved or applied to the new employment period.
 
+## Kiosk badges
+
+A kiosk badge (#889, Time Tracking ADR 0013) belongs to the employment period
+it was issued in. Kiosks stop accepting it at the departure cutoff through the
+employment access rule, also while departure processing is delayed; a scheduled
+departure ends nothing early, and an edit or cancellation before the cutoff is
+followed. When the departure takes effect, the badges of the ended period are
+revoked in the departure's transaction (#1365), with `revoked_at` at the cutoff
+(never before the badge was issued) and reason `employee_departure`, audited as
+`kiosk_badge.revoked` under the departure's initiator with metadata
+`{ reason: "employee_departure", departureId, employmentPeriodId }`. The
+revocation names the ended period, so an old departure retry never touches a
+badge of a later period. A rehire never revives a badge: a manager issues a new
+one, which belongs to the new period; the employee card offers it only while
+the employee has access. The kiosk PIN keeps its own rules and is left as is.
+
 ## Absence deputies
 
 When the departure takes effect, the employee is cleared as **deputy** on every
@@ -196,11 +212,14 @@ skipped, because their notifications would go to their managers.
 
 *Rehire employee* is offered after an effective departure. It requires approved
 membership; otherwise re-invite first. Confirm role, team, primary manager, work
-policy and all contract terms. The new period starts at the server's instant;
-the gap between periods is shown in the employment history, which is grouped by
-stint (legacy periods without a recorded start show *Date not recorded*). A
-rehire never restores expense officer, payroll access or personnel file officer
-grants; an admin must grant them again.
+policy and all contract terms. The new period starts at the server's instant,
+and its terms start on the organization-local date of that instant, so terms
+dated on the rehire day replace them (#1162). Terms dated before the rehire day
+are refused. The gap between periods is shown in the employment history, which
+is grouped by stint (legacy periods without a recorded start show *Date not
+recorded*). A rehire never restores expense officer, payroll access or
+personnel file officer grants; an admin must grant them again. Nor does it
+revive a kiosk badge: issue a new one.
 
 ## Personnel file retention
 
@@ -214,7 +233,11 @@ documents is due while they are employed again. A former employee whose
 employment end was never recorded (no employment period, or only a legacy
 period without an end) has no retention start: their documents are listed
 separately as *retention start unknown*, never counted by the daily reminder,
-and purged only when an officer reviews and confirms them.
+and purged only when an officer reviews and confirms them. A purge also
+removes the document's descriptions (title, file name, ZIP entry names and
+free-text reasons) from every audit record about it (#923). The records
+themselves, with the actor, the employee, the category, the dates and their
+timestamps, stay until the 365-day audit-log cleanup.
 
 ## Billing reconciliation
 

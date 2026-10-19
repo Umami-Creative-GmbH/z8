@@ -10,8 +10,8 @@ import {
 	uniqueIndex,
 	uuid,
 } from "drizzle-orm/pg-core";
-import { currentTimestamp } from "./timestamp";
 import { organization, user } from "../auth-schema";
+import { currentTimestamp } from "./timestamp";
 
 export const importBatch = pgTable(
 	"import_batch",
@@ -21,7 +21,9 @@ export const importBatch = pgTable(
 			.notNull()
 			.references(() => organization.id, { onDelete: "cascade" }),
 		// "accounting": the customer import from the accounting connection (#906).
-		provider: text("provider").$type<"clockodo" | "clockin" | "accounting">().notNull(),
+		provider: text("provider")
+			.$type<"clockodo" | "clockin" | "csv" | "accounting">()
+			.notNull(),
 		status: text("status")
 			.$type<
 				| "draft"
@@ -35,8 +37,12 @@ export const importBatch = pgTable(
 			>()
 			.notNull()
 			.default("draft"),
-		selectedScope: jsonb("selected_scope").$type<Record<string, unknown>>().notNull(),
-		dateRange: jsonb("date_range").$type<{ startDate: string; endDate: string }>().notNull(),
+		selectedScope: jsonb("selected_scope")
+			.$type<Record<string, unknown>>()
+			.notNull(),
+		dateRange: jsonb("date_range")
+			.$type<{ startDate: string; endDate: string }>()
+			.notNull(),
 		totalRows: integer("total_rows").notNull().default(0),
 		processedRows: integer("processed_rows").notNull().default(0),
 		issueCount: integer("issue_count").notNull().default(0),
@@ -53,7 +59,10 @@ export const importBatch = pgTable(
 			.notNull(),
 	},
 	(table) => [
-		unique("importBatch_id_organizationId_idx").on(table.id, table.organizationId),
+		unique("importBatch_id_organizationId_idx").on(
+			table.id,
+			table.organizationId,
+		),
 		index("importBatch_organizationId_idx").on(table.organizationId),
 		index("importBatch_status_idx").on(table.status),
 		index("importBatch_org_status_created_idx").on(
@@ -92,7 +101,10 @@ export const importBatchJob = pgTable(
 	},
 	(table) => [
 		index("importBatchJob_batchId_idx").on(table.batchId),
-		index("importBatchJob_org_status_idx").on(table.organizationId, table.status),
+		index("importBatchJob_org_status_idx").on(
+			table.organizationId,
+			table.status,
+		),
 		foreignKey({
 			columns: [table.batchId, table.organizationId],
 			foreignColumns: [importBatch.id, importBatch.organizationId],
@@ -117,8 +129,12 @@ export const importStagedRow = pgTable(
 		entityType: text("entity_type").notNull(),
 		providerSourceId: text("provider_source_id").notNull(),
 		sourcePayloadHash: text("source_payload_hash").notNull(),
-		sourcePayload: jsonb("source_payload").$type<Record<string, unknown>>().notNull(),
-		normalizedPayload: jsonb("normalized_payload").$type<Record<string, unknown>>().notNull(),
+		sourcePayload: jsonb("source_payload")
+			.$type<Record<string, unknown>>()
+			.notNull(),
+		normalizedPayload: jsonb("normalized_payload")
+			.$type<Record<string, unknown>>()
+			.notNull(),
 		matchTarget: jsonb("match_target").$type<Record<string, unknown> | null>(),
 		rowStatus: text("row_status")
 			.$type<
@@ -143,7 +159,10 @@ export const importStagedRow = pgTable(
 		// The reviewer's commit choice for an accepted row that links onto an
 		// existing Z8 record instead of creating one (#906 customer import: link to
 		// an existing customer). Null = accepted rows create, rejected rows skip.
-		commitChoice: jsonb("commit_choice").$type<{ kind: "link"; targetId: string } | null>(),
+		commitChoice: jsonb("commit_choice").$type<{
+			kind: "link";
+			targetId: string;
+		} | null>(),
 		commitTargetTable: text("commit_target_table"),
 		commitTargetId: text("commit_target_id"),
 		commitError: text("commit_error"),
@@ -157,9 +176,16 @@ export const importStagedRow = pgTable(
 			.notNull(),
 	},
 	(table) => [
-		unique("import_staged_row_id_batch_org_idx").on(table.id, table.batchId, table.organizationId),
+		unique("import_staged_row_id_batch_org_idx").on(
+			table.id,
+			table.batchId,
+			table.organizationId,
+		),
 		index("importStagedRow_batchId_idx").on(table.batchId),
-		index("importStagedRow_org_entity_idx").on(table.organizationId, table.entityType),
+		index("importStagedRow_org_entity_idx").on(
+			table.organizationId,
+			table.entityType,
+		),
 		index("importStagedRow_status_idx").on(table.rowStatus),
 		index("importStagedRow_org_batch_status_created_id_idx").on(
 			table.organizationId,
@@ -197,14 +223,20 @@ export const importIssue = pgTable(
 				| "suspicious_gap"
 				| "unmatched_employee"
 				| "unmatched_project"
+				| "unmatched_vehicle"
 				| "validation_error"
 				| "dependency_blocker"
 			>()
 			.notNull(),
-		severity: text("severity").$type<"info" | "warning" | "blocking">().notNull(),
+		severity: text("severity")
+			.$type<"info" | "warning" | "blocking">()
+			.notNull(),
 		clusterKey: text("cluster_key"),
 		message: text("message").notNull(),
-		details: jsonb("details").$type<Record<string, unknown>>().notNull().default({}),
+		details: jsonb("details")
+			.$type<Record<string, unknown>>()
+			.notNull()
+			.default({}),
 		detectionRuleVersion: text("detection_rule_version").notNull(),
 		createdAt: timestamp("created_at").defaultNow().notNull(),
 	},

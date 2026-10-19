@@ -5028,22 +5028,23 @@ export async function dispatchTimeCorrectionDecisionPostCommit(input: {
 	// Legacy request metadata also carries submission evidence and the original
 	// work metadata beside `timeCorrection`.
 	const correction = correctionPayload(request.metadata);
-	const result = await loadCanonicalAutoCompletionReplay({
-		dbService: input.dbService,
-		organizationId: input.actor.organizationId,
-		requesterEmployeeId: effects.terminal.requesterEmployeeId,
-		workPeriodId: request.entityId,
-		correction,
-	});
-	// A covering deputy's decision reads "Y (deputy for X)" (#1016).
-	const actor = await asDeputyDecider(
-		input.dbService.db as never,
-		input.actor,
-		await loadDeputyActingFor(input.dbService.db as never, {
+	// Both are independent post-commit reads on the pooled database.
+	const [result, actor] = await Promise.all([
+		loadCanonicalAutoCompletionReplay({
+			dbService: input.dbService,
+			organizationId: input.actor.organizationId,
+			requesterEmployeeId: effects.terminal.requesterEmployeeId,
+			workPeriodId: request.entityId,
+			correction,
+		}),
+		// A covering deputy's decision reads "Y (deputy for X)" (#1016).
+		loadDeputyActingFor(input.dbService.db as never, {
 			organizationId: input.actor.organizationId,
 			approvalRequestId: request.id,
-		}),
-	);
+		}).then((actingFor) =>
+			asDeputyDecider(input.dbService.db as never, input.actor, actingFor),
+		),
+	]);
 	// The balance refresh committed with the corrected work (work records, ADR 0010).
 	if (effects.terminal.kind === "approved") {
 		notifyApprovedCorrection(result.period, request.entityId, actor, result);
@@ -5081,6 +5082,7 @@ export async function completeTimeCorrectionDecisionAfterCommit<
 }
 
 export interface ExecuteTimeCorrectionDecisionInput {
+	shortcutGuard?: ApprovalActionOptions["shortcutGuard"];
 	/** Builds the runtime over the database it is handed: the borrowed work transaction. */
 	createRuntime(database: ApprovalWorkflowDatabase): TimeCorrectionDecisionRuntime;
 	/** The caller's database, which opens the transaction; defaults to the application database. */
@@ -5454,6 +5456,7 @@ export async function executeTimeCorrectionDecisionInTransaction(
 					field: "approvalRequest.metadata.timeRequest.kind",
 				});
 			}
+			if (input.shortcutGuard) await input.shortcutGuard(transactionDb);
 			if (input.bound && kind !== "time_correction") {
 				// A time-correction binding decides only a time correction.
 				throw new ApprovalEvidenceError("binding_mismatch");
@@ -6003,6 +6006,7 @@ export function decideTimeCorrectionWithStableTargetEffect(
 							actorEmployeeId: currentEmployee.id,
 							actorUserId: currentEmployee.userId,
 							approvalRequestId,
+							shortcutGuard: options?.shortcutGuard,
 							action,
 							reason,
 							query: dbService.query,

@@ -1,4 +1,4 @@
-import { and, eq, gt, gte, isNotNull, isNull, lt, lte, min, or } from "drizzle-orm";
+import { and, eq, gte, isNotNull, lt, lte, min } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
 import {
@@ -10,28 +10,42 @@ import {
 	workPeriod,
 	workPolicy,
 } from "@/db/schema";
-import { loadEmployeeTrackingContext } from "@/lib/time-tracking/tracking-start";
-import { dateFromInstant, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { absenceCategoryReleasesRequiredTime } from "@/lib/absences/required-time-release";
-import { comparePlainDates, instantFromDate, plainDateAt } from "@/lib/datetime/temporal-core";
+import {
+	comparePlainDates,
+	dateFromInstant,
+	instantFromDate,
+	parsePlainDate,
+	plainDateAt,
+} from "@/lib/datetime/temporal-core";
 import { runtime } from "@/lib/effect/runtime";
 import {
-	DatabaseService,
 	type DatabaseClient,
+	DatabaseService,
 	makeDatabaseService,
 } from "@/lib/effect/services/database.service";
-import type { WorkBalanceDbClient } from "@/lib/work-balance/db-client";
-import { clipRequirementsToEmployment } from "@/lib/employee-lifecycle/employment-coverage";
-import { loadEmploymentCoverage } from "@/lib/employee-lifecycle/employment-periods";
 import {
 	type EffectiveWorkPolicy,
 	WorkPolicyService,
 	WorkPolicyServiceLive,
 } from "@/lib/effect/services/work-policy.service";
-import { shiftCalendarDate, shiftDateRangeBounds } from "@/lib/scheduling/shift-date";
+import { clipRequirementsToEmployment } from "@/lib/employee-lifecycle/employment-coverage";
+import { loadEmploymentCoverage } from "@/lib/employee-lifecycle/employment-periods";
+import { loadConfirmedTermsSpans } from "@/lib/employment-history/load-terms-in-force";
+import {
+	type CalendarDateRange,
+	clipTermsSpans,
+} from "@/lib/employment-history/terms-in-force";
+import {
+	shiftCalendarDate,
+	shiftDateRangeBounds,
+} from "@/lib/scheduling/shift-date";
 import { shiftInterval } from "@/lib/scheduling/shift-occasion";
+import { loadEmployeeTrackingContext } from "@/lib/time-tracking/tracking-start";
+import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { isValidIanaTimeZone } from "@/lib/timezone/validation";
+import type { WorkBalanceDbClient } from "@/lib/work-balance/db-client";
 import {
 	type ApprovedAbsenceRange,
 	applyAbsenceAdjustmentsToRequirements,
@@ -59,7 +73,15 @@ const WEEKDAY_BY_NUMBER: Record<number, EffectiveWorkPolicyScheduleDayName> = {
 const PRESET_DAYS: Record<string, EffectiveWorkPolicyScheduleDayName[]> = {
 	weekdays: ["monday", "tuesday", "wednesday", "thursday", "friday"],
 	weekends: ["saturday", "sunday"],
-	all_days: ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
+	all_days: [
+		"monday",
+		"tuesday",
+		"wednesday",
+		"thursday",
+		"friday",
+		"saturday",
+		"sunday",
+	],
 };
 
 interface BuildDailyWorkRequirementsOptions {
@@ -81,14 +103,6 @@ interface BuildShiftDailyWorkRequirementsOptions {
 	/** The organization's timezone, which `shift.date` and the wall times are read in. */
 	organizationTimezone: string;
 }
-
-type EmploymentRequirementSlice = {
-	validFrom: Date;
-	validUntil: Date | null;
-	contractType: "fixed" | "hourly";
-	weeklyContractMinutes: number;
-	workPolicyId: string | null;
-};
 
 type PolicyWithDetails = typeof workPolicy.$inferSelect & {
 	schedule: {
@@ -116,7 +130,9 @@ function getSimpleWorkDays(
 	schedule: NonNullable<EffectiveWorkPolicy["schedule"]>,
 ): EffectiveWorkPolicyScheduleDayName[] {
 	if (schedule.workingDaysPreset === "custom") {
-		return schedule.days.flatMap((day) => (day.isWorkDay ? [day.dayOfWeek] : []));
+		return schedule.days.flatMap((day) =>
+			day.isWorkDay ? [day.dayOfWeek] : [],
+		);
 	}
 
 	return PRESET_DAYS[schedule.workingDaysPreset] ?? [];
@@ -133,7 +149,9 @@ function getRequiredMinutesForDay(
 	if (schedule.scheduleType === "detailed") {
 		if (schedule.scheduleCycle !== "weekly") return 0;
 
-		const configuredDay = schedule.days.find((day) => day.dayOfWeek === dayName && day.isWorkDay);
+		const configuredDay = schedule.days.find(
+			(day) => day.dayOfWeek === dayName && day.isWorkDay,
+		);
 		return hoursToMinutes(configuredDay?.hoursPerDay);
 	}
 
@@ -143,7 +161,8 @@ function getRequiredMinutesForDay(
 		const workDays = getSimpleWorkDays(schedule);
 		if (!workDays.includes(dayName) || workDays.length === 0) return 0;
 
-		const cycleMinutes = weeklyContractMinutes ?? hoursToMinutes(schedule.hoursPerCycle);
+		const cycleMinutes =
+			weeklyContractMinutes ?? hoursToMinutes(schedule.hoursPerCycle);
 		return cycleMinutes > 0 ? Math.round(cycleMinutes / workDays.length) : 0;
 	}
 
@@ -160,21 +179,31 @@ export function buildDailyWorkRequirements({
 	if (!policy?.schedule) return {};
 
 	const requestedZone = timezone || "utc";
-	const zonedStart = DateTime.fromJSDate(startDate, { zone: "utc" }).setZone(requestedZone);
-	const zonedEnd = DateTime.fromJSDate(endDate, { zone: "utc" }).setZone(requestedZone);
-	const start = (
-		zonedStart.isValid ? zonedStart : DateTime.fromJSDate(startDate, { zone: "utc" })
-	).startOf("day");
-	const end = (zonedEnd.isValid ? zonedEnd : DateTime.fromJSDate(endDate, { zone: "utc" })).startOf(
-		"day",
+	const zonedStart = DateTime.fromJSDate(startDate, { zone: "utc" }).setZone(
+		requestedZone,
 	);
+	const zonedEnd = DateTime.fromJSDate(endDate, { zone: "utc" }).setZone(
+		requestedZone,
+	);
+	const start = (
+		zonedStart.isValid
+			? zonedStart
+			: DateTime.fromJSDate(startDate, { zone: "utc" })
+	).startOf("day");
+	const end = (
+		zonedEnd.isValid ? zonedEnd : DateTime.fromJSDate(endDate, { zone: "utc" })
+	).startOf("day");
 	if (!start.isValid || !end.isValid || end < start) return {};
 
 	const requirements: DailyWorkRequirements = {};
 
 	for (let cursor = start; cursor <= end; cursor = cursor.plus({ days: 1 })) {
 		const dayName = WEEKDAY_BY_NUMBER[cursor.weekday];
-		const requiredMinutes = getRequiredMinutesForDay(policy, dayName, weeklyContractMinutes);
+		const requiredMinutes = getRequiredMinutesForDay(
+			policy,
+			dayName,
+			weeklyContractMinutes,
+		);
 		if (requiredMinutes <= 0) continue;
 
 		requirements[cursor.toFormat("yyyy-MM-dd")] = {
@@ -195,7 +224,8 @@ function mergeDailyWorkRequirements(
 		const existing = target[dateKey];
 		target[dateKey] = existing
 			? {
-					requiredMinutes: existing.requiredMinutes + requirement.requiredMinutes,
+					requiredMinutes:
+						existing.requiredMinutes + requirement.requiredMinutes,
 					policyId: requirement.policyId,
 					policyName: requirement.policyName,
 				}
@@ -203,21 +233,6 @@ function mergeDailyWorkRequirements(
 	}
 
 	return target;
-}
-
-function getSliceDateRange(slice: EmploymentRequirementSlice, startDate: Date, endDate: Date) {
-	const start = DateTime.max(
-		DateTime.fromJSDate(startDate, { zone: "utc" }),
-		DateTime.fromJSDate(slice.validFrom, { zone: "utc" }),
-	).toJSDate();
-	const sliceEnd = slice.validUntil
-		? DateTime.fromJSDate(slice.validUntil, { zone: "utc" }).minus({
-				milliseconds: 1,
-			})
-		: DateTime.fromJSDate(endDate, { zone: "utc" });
-	const end = DateTime.min(DateTime.fromJSDate(endDate, { zone: "utc" }), sliceEnd).toJSDate();
-
-	return { start, end };
 }
 
 function mapPolicyToEffective(policy: PolicyWithDetails): EffectiveWorkPolicy {
@@ -298,37 +313,49 @@ async function getApprovedAbsenceRanges(params: {
 	const zonedStart = DateTime.fromJSDate(params.startDate, {
 		zone: "utc",
 	}).setZone(requestedZone);
-	const zonedEnd = DateTime.fromJSDate(params.endDate, { zone: "utc" }).setZone(requestedZone);
+	const zonedEnd = DateTime.fromJSDate(params.endDate, { zone: "utc" }).setZone(
+		requestedZone,
+	);
 	const start = (
-		zonedStart.isValid ? zonedStart : DateTime.fromJSDate(params.startDate, { zone: "utc" })
+		zonedStart.isValid
+			? zonedStart
+			: DateTime.fromJSDate(params.startDate, { zone: "utc" })
 	).toFormat("yyyy-MM-dd");
 	const end = (
-		zonedEnd.isValid ? zonedEnd : DateTime.fromJSDate(params.endDate, { zone: "utc" })
+		zonedEnd.isValid
+			? zonedEnd
+			: DateTime.fromJSDate(params.endDate, { zone: "utc" })
 	).toFormat("yyyy-MM-dd");
 
 	return Effect.runPromise(
-		params.database.query("getApprovedAbsencesForCalendarRequirements", async () => {
-			return params.database.db
-				.select({
-					startDate: absenceEntry.startDate,
-					startPeriod: absenceEntry.startPeriod,
-					endDate: absenceEntry.endDate,
-					endPeriod: absenceEntry.endPeriod,
-				})
-				.from(absenceEntry)
-				.innerJoin(absenceCategory, eq(absenceEntry.categoryId, absenceCategory.id))
-				.where(
-					and(
-						eq(absenceEntry.employeeId, params.employeeId),
-						eq(absenceEntry.organizationId, params.organizationId),
-						eq(absenceEntry.status, "approved"),
-						eq(absenceCategory.organizationId, params.organizationId),
-						absenceCategoryReleasesRequiredTime(),
-						lte(absenceEntry.startDate, end),
-						gte(absenceEntry.endDate, start),
-					),
-				);
-		}),
+		params.database.query(
+			"getApprovedAbsencesForCalendarRequirements",
+			async () => {
+				return params.database.db
+					.select({
+						startDate: absenceEntry.startDate,
+						startPeriod: absenceEntry.startPeriod,
+						endDate: absenceEntry.endDate,
+						endPeriod: absenceEntry.endPeriod,
+					})
+					.from(absenceEntry)
+					.innerJoin(
+						absenceCategory,
+						eq(absenceEntry.categoryId, absenceCategory.id),
+					)
+					.where(
+						and(
+							eq(absenceEntry.employeeId, params.employeeId),
+							eq(absenceEntry.organizationId, params.organizationId),
+							eq(absenceEntry.status, "approved"),
+							eq(absenceCategory.organizationId, params.organizationId),
+							absenceCategoryReleasesRequiredTime(),
+							lte(absenceEntry.startDate, end),
+							gte(absenceEntry.endDate, start),
+						),
+					);
+			},
+		),
 	);
 }
 
@@ -346,75 +373,54 @@ export async function getPublishedShiftRequirementsForEmployee(params: {
 	timezone?: string | null;
 }): Promise<DailyWorkRequirements> {
 	const requestedZone =
-		params.timezone && isValidIanaTimeZone(params.timezone) ? params.timezone : "UTC";
-	const firstDay = plainDateAt(instantFromDate(params.startDate), requestedZone);
+		params.timezone && isValidIanaTimeZone(params.timezone)
+			? params.timezone
+			: "UTC";
+	const firstDay = plainDateAt(
+		instantFromDate(params.startDate),
+		requestedZone,
+	);
 	const lastDay = plainDateAt(instantFromDate(params.endDate), requestedZone);
 	if (comparePlainDates(firstDay, lastDay) > 0) return {};
 
 	const assignedShifts = await Effect.runPromise(
-		params.database.query("getPublishedShiftsForCalendarRequirements", async () => {
-			const organizationTimezone = await loadOrganizationTimezone(
-				params.database.db,
-				params.organizationId,
-			);
-			const bounds = shiftDateRangeBounds(firstDay, lastDay.add({ days: 1 }), organizationTimezone);
-			const shifts = await params.database.db
-				.select({
-					date: shift.date,
-					startTime: shift.startTime,
-					endTime: shift.endTime,
-				})
-				.from(shift)
-				.where(
-					and(
-						eq(shift.employeeId, params.employeeId),
-						eq(shift.organizationId, params.organizationId),
-						eq(shift.status, "published"),
-						gte(shift.date, bounds.start),
-						lt(shift.date, bounds.endExclusive),
-					),
+		params.database.query(
+			"getPublishedShiftsForCalendarRequirements",
+			async () => {
+				const organizationTimezone = await loadOrganizationTimezone(
+					params.database.db,
+					params.organizationId,
 				);
-			return { organizationTimezone, shifts };
-		}),
+				const bounds = shiftDateRangeBounds(
+					firstDay,
+					lastDay.add({ days: 1 }),
+					organizationTimezone,
+				);
+				const shifts = await params.database.db
+					.select({
+						date: shift.date,
+						startTime: shift.startTime,
+						endTime: shift.endTime,
+					})
+					.from(shift)
+					.where(
+						and(
+							eq(shift.employeeId, params.employeeId),
+							eq(shift.organizationId, params.organizationId),
+							eq(shift.status, "published"),
+							gte(shift.date, bounds.start),
+							lt(shift.date, bounds.endExclusive),
+						),
+					);
+				return { organizationTimezone, shifts };
+			},
+		),
 	);
 
 	return buildShiftDailyWorkRequirements({
 		shifts: assignedShifts.shifts,
 		organizationTimezone: assignedShifts.organizationTimezone,
 	});
-}
-
-async function getConfirmedEmploymentRequirementSlices(params: {
-	database: typeof DatabaseService.Service;
-	organizationId: string;
-	employeeId: string;
-	startDate: Date;
-	endDate: Date;
-}): Promise<EmploymentRequirementSlice[]> {
-	return Effect.runPromise(
-		params.database.query("getConfirmedEmploymentRequirementSlices", async () => {
-			return params.database.db.query.employeeEmploymentHistory.findMany({
-				where: and(
-					eq(employeeEmploymentHistory.employeeId, params.employeeId),
-					eq(employeeEmploymentHistory.organizationId, params.organizationId),
-					eq(employeeEmploymentHistory.reviewState, "confirmed"),
-					lte(employeeEmploymentHistory.validFrom, params.endDate),
-					or(
-						isNull(employeeEmploymentHistory.validUntil),
-						gt(employeeEmploymentHistory.validUntil, params.startDate),
-					),
-				),
-				columns: {
-					validFrom: true,
-					validUntil: true,
-					contractType: true,
-					weeklyContractMinutes: true,
-					workPolicyId: true,
-				},
-				orderBy: (history, { asc }) => [asc(history.validFrom)],
-			});
-		}),
-	);
 }
 
 async function getEmploymentHistoryWorkPolicy(params: {
@@ -449,14 +455,55 @@ async function buildEmploymentHistoryDailyRequirements(params: {
 	timezone?: string | null;
 	fallbackPolicy: EffectiveWorkPolicy | null;
 }): Promise<DailyWorkRequirements | null> {
-	const slices = await getConfirmedEmploymentRequirementSlices(params);
-	if (slices.length === 0) return null;
+	const timezone =
+		params.timezone && isValidIanaTimeZone(params.timezone)
+			? params.timezone
+			: "UTC";
+	const range: CalendarDateRange = {
+		from: plainDateAt(instantFromDate(params.startDate), timezone),
+		toExclusive: plainDateAt(instantFromDate(params.endDate), timezone).add({
+			days: 1,
+		}),
+	};
+	const spans = await Effect.runPromise(
+		params.database.query("getConfirmedEmploymentRequirementSlices", () =>
+			loadConfirmedTermsSpans(params.database.db, {
+				organizationId: params.organizationId,
+				employeeId: params.employeeId,
+				range,
+				timezone,
+			}),
+		),
+	);
+	if (spans.length === 0) {
+		// Only employees without confirmed terms use the legacy policy fallback.
+		// A gap in an established terms timeline must not manufacture required time.
+		const anyTerms = await Effect.runPromise(
+			params.database.query("calendarRequirements.hasConfirmedTerms", () =>
+				params.database.db.query.employeeEmploymentHistory.findFirst({
+					where: and(
+						eq(employeeEmploymentHistory.organizationId, params.organizationId),
+						eq(employeeEmploymentHistory.employeeId, params.employeeId),
+						eq(employeeEmploymentHistory.reviewState, "confirmed"),
+					),
+					columns: { id: true },
+				}),
+			),
+		);
+		return anyTerms ? {} : null;
+	}
 
 	const requirements: DailyWorkRequirements = {};
 	const sliceRequirements = await Promise.all(
-		slices.map(async (slice) => {
-			const { start, end } = getSliceDateRange(slice, params.startDate, params.endDate);
-			if (start > end) return null;
+		clipTermsSpans(spans, range).map(async ({ terms: slice, from, until }) => {
+			// Resolve calendar ownership before converting back to reader boundary instants.
+			const start = dateFromInstant(from.toZonedDateTime(timezone).toInstant());
+			const end = dateFromInstant(
+				(until ?? range.toExclusive)
+					.subtract({ days: 1 })
+					.toZonedDateTime(timezone)
+					.toInstant(),
+			);
 
 			if (slice.contractType === "hourly") {
 				return getPublishedShiftRequirementsForEmployee({
@@ -465,7 +512,7 @@ async function buildEmploymentHistoryDailyRequirements(params: {
 					employeeId: params.employeeId,
 					startDate: start,
 					endDate: end,
-					timezone: params.timezone,
+					timezone,
 				});
 			}
 
@@ -481,14 +528,15 @@ async function buildEmploymentHistoryDailyRequirements(params: {
 				policy,
 				startDate: start,
 				endDate: end,
-				timezone: params.timezone,
+				timezone,
 				weeklyContractMinutes: slice.weeklyContractMinutes,
 			});
 		}),
 	);
 
 	for (const sliceRequirement of sliceRequirements) {
-		if (sliceRequirement) mergeDailyWorkRequirements(requirements, sliceRequirement);
+		if (sliceRequirement)
+			mergeDailyWorkRequirements(requirements, sliceRequirement);
 	}
 
 	return requirements;
@@ -501,20 +549,23 @@ async function getFirstCompletedWorkPeriodBeforeAccount(params: {
 	accountCreatedAt: Date;
 }): Promise<Date | null> {
 	const [row] = await Effect.runPromise(
-		params.database.query("getFirstCompletedWorkPeriodBeforeAccount", async () => {
-			return params.database.db
-				.select({ value: min(workPeriod.startTime) })
-				.from(workPeriod)
-				.where(
-					and(
-						eq(workPeriod.employeeId, params.employeeId),
-						eq(workPeriod.organizationId, params.organizationId),
-						isNotNull(workPeriod.endTime),
-						isNotNull(workPeriod.durationMinutes),
-						lt(workPeriod.startTime, params.accountCreatedAt),
-					),
-				);
-		}),
+		params.database.query(
+			"getFirstCompletedWorkPeriodBeforeAccount",
+			async () => {
+				return params.database.db
+					.select({ value: min(workPeriod.startTime) })
+					.from(workPeriod)
+					.where(
+						and(
+							eq(workPeriod.employeeId, params.employeeId),
+							eq(workPeriod.organizationId, params.organizationId),
+							isNotNull(workPeriod.endTime),
+							isNotNull(workPeriod.durationMinutes),
+							lt(workPeriod.startTime, params.accountCreatedAt),
+						),
+					);
+			},
+		),
 	);
 
 	return row?.value ?? null;
@@ -527,8 +578,8 @@ type DailyWorkRequirementsParams = {
 	endDate: Date;
 	timezone?: string | null;
 	trackingStartDateOverride?: string | null;
- employeeTrackingStartDateOverride?: string | null;
- employeeEmploymentStartDateOverride?: string;
+	employeeTrackingStartDateOverride?: string | null;
+	employeeEmploymentStartDateOverride?: string;
 	employeeTimezoneOverride?: string;
 };
 
@@ -536,20 +587,38 @@ type DailyWorkRequirementsParams = {
  * The employee's daily work requirements from `startDate`'s day through `endDate`'s, as an effect
  * on the caller's `DatabaseService` and `WorkPolicyService`.
  */
-export function loadDailyWorkRequirementsForEmployee(params: DailyWorkRequirementsParams) {
+export function loadDailyWorkRequirementsForEmployee(
+	params: DailyWorkRequirementsParams,
+) {
 	return Effect.gen(function* () {
 		const database = yield* DatabaseService;
-		const scopedEmployee = yield* database.query("getEmployeeForCalendarRequirements", async () => {
-			return database.db.query.employee.findFirst({
-				where: and(
-					eq(employee.id, params.employeeId),
-					eq(employee.organizationId, params.organizationId),
-				),
-				columns: { id: true, startDate: true, contractType: true },
-				with: { user: { columns: { createdAt: true } } },
-			});
-		});
+		const scopedEmployee = yield* database.query(
+			"getEmployeeForCalendarRequirements",
+			async () => {
+				return database.db.query.employee.findFirst({
+					where: and(
+						eq(employee.id, params.employeeId),
+						eq(employee.organizationId, params.organizationId),
+					),
+					columns: { id: true, startDate: true, contractType: true },
+					with: {
+						user: { columns: { createdAt: true } },
+						userSettings: { columns: { timezone: true } },
+						organization: { columns: { timezone: true } },
+					},
+				});
+			},
+		);
 		if (!scopedEmployee) return {};
+		params = {
+			...params,
+			timezone:
+				params.employeeTimezoneOverride ??
+				resolveEffectiveTimezone(
+					scopedEmployee.userSettings?.timezone,
+					scopedEmployee.organization?.timezone,
+				),
+		};
 
 		// This is the balance requirement projection. Historical policy-at-date and published
 		// shift readers above remain unbounded, so rollout never rewrites schedule history.
@@ -560,9 +629,12 @@ export function loadDailyWorkRequirementsForEmployee(params: DailyWorkRequiremen
 		const requestedStartDate = DateTime.fromJSDate(params.startDate, {
 			zone: "utc",
 		});
-		const accountCreatedDate = DateTime.fromJSDate(scopedEmployee.user.createdAt, {
-			zone: "utc",
-		});
+		const accountCreatedDate = DateTime.fromJSDate(
+			scopedEmployee.user.createdAt,
+			{
+				zone: "utc",
+			},
+		);
 		const firstCompletedWorkPeriodBeforeAccount = tracking
 			? null
 			: yield* Effect.promise(() =>
@@ -574,15 +646,19 @@ export function loadDailyWorkRequirementsForEmployee(params: DailyWorkRequiremen
 					}),
 				);
 		const employeeStartDate = params.employeeEmploymentStartDateOverride
- ? DateTime.fromISO(params.employeeEmploymentStartDateOverride, {zone: "utc"})
- : scopedEmployee.startDate
-			? DateTime.fromJSDate(scopedEmployee.startDate, { zone: "utc" })
-			: accountCreatedDate;
+			? DateTime.fromISO(params.employeeEmploymentStartDateOverride, {
+					zone: "utc",
+				})
+			: scopedEmployee.startDate
+				? DateTime.fromJSDate(scopedEmployee.startDate, { zone: "utc" })
+				: accountCreatedDate;
 		const normalStartDate = DateTime.max(accountCreatedDate, employeeStartDate);
 		const lowerBoundDate = tracking
 			? DateTime.fromJSDate(
 					dateFromInstant(
-						parsePlainDate(tracking.startDate).toZonedDateTime(tracking.timezone).toInstant(),
+						parsePlainDate(tracking.startDate)
+							.toZonedDateTime(tracking.timezone)
+							.toInstant(),
 					),
 					{ zone: "utc" },
 				)
@@ -594,7 +670,10 @@ export function loadDailyWorkRequirementsForEmployee(params: DailyWorkRequiremen
 						normalStartDate,
 					)
 				: normalStartDate;
-		const effectiveStartDate = DateTime.max(requestedStartDate, lowerBoundDate).toJSDate();
+		const effectiveStartDate = DateTime.max(
+			requestedStartDate,
+			lowerBoundDate,
+		).toJSDate();
 		if (effectiveStartDate > params.endDate) return {};
 
 		const service = yield* WorkPolicyService;
@@ -641,12 +720,15 @@ export function loadDailyWorkRequirementsForEmployee(params: DailyWorkRequiremen
 		);
 
 		// Days outside employment (after a departure, or between stints) require nothing.
-		const employmentCoverage = yield* database.query("getEmploymentCoverageForRequirements", () =>
-			loadEmploymentCoverage(database.db, {
-    employeeEmploymentStartDateOverride: params.employeeEmploymentStartDateOverride,
-				organizationId: params.organizationId,
-				employeeId: params.employeeId,
-			}),
+		const employmentCoverage = yield* database.query(
+			"getEmploymentCoverageForRequirements",
+			() =>
+				loadEmploymentCoverage(database.db, {
+					employeeEmploymentStartDateOverride:
+						params.employeeEmploymentStartDateOverride,
+					organizationId: params.organizationId,
+					employeeId: params.employeeId,
+				}),
 		);
 		const employedRequirements = clipRequirementsToEmployment(
 			requirements,
@@ -684,7 +766,10 @@ export async function getDailyWorkRequirementsForEmployee(
 	return runtime.runPromise(
 		effect.pipe(
 			Effect.provide(WorkPolicyServiceLive, { local: true }),
-			Effect.provideService(DatabaseService, makeDatabaseService(dbClient as DatabaseClient)),
+			Effect.provideService(
+				DatabaseService,
+				makeDatabaseService(dbClient as DatabaseClient),
+			),
 		),
 	);
 }

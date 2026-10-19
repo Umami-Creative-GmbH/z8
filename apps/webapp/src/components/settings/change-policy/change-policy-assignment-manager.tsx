@@ -19,6 +19,7 @@ import {
 	deleteChangePolicyAssignment,
 	getChangePolicyAssignments,
 } from "@/app/[locale]/(app)/settings/change-policies/actions";
+import { AssignmentManagerSkeleton } from "@/components/settings/assignment-manager-skeleton";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -32,7 +33,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { queryKeys } from "@/lib/query";
 
@@ -485,21 +485,7 @@ export function ChangePolicyAssignmentManager({
 	const employeeAssignments = assignments?.filter((a) => a.assignmentType === "employee") ?? [];
 
 	if (isLoading) {
-		return (
-			<div className="space-y-6">
-				{[1, 2, 3].map((i) => (
-					<Card key={i}>
-						<CardHeader>
-							<Skeleton className="h-6 w-40" />
-							<Skeleton className="h-4 w-64" />
-						</CardHeader>
-						<CardContent>
-							<Skeleton className="h-16 w-full" />
-						</CardContent>
-					</Card>
-				))}
-			</div>
-		);
+		return <AssignmentManagerSkeleton />;
 	}
 
 	if (error) {

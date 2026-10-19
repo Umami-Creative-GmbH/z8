@@ -194,3 +194,17 @@ it("supplies what the schema cannot declare for vehicle use (#807)", async () =>
 	).rows;
 	expect(setNull).toEqual([{ columns: ["source_work_period_id"] }]);
 });
+
+it("supplies what the schema cannot declare for document requests (#1307)", async () => {
+	const pool = integrationAdminPool();
+	// A deleted renewed document clears only the request's link, never its organization (0279):
+	// Drizzle declares the action, not the column list.
+	const setNull = (
+		await pool.query<{ action: string; columns: string[] }>(`
+ select con.confdeltype::text as action,
+ array(select a.attname::text from unnest(con.confdelsetcols) k(num) join pg_attribute a on a.attrelid=con.conrelid and a.attnum=k.num) as columns
+ from pg_constraint con where con.conname = 'employee_document_request_renewed_document_fk'
+ `)
+	).rows;
+	expect(setNull).toEqual([{ action: "n", columns: ["renewed_document_id"] }]);
+});
