@@ -218,6 +218,10 @@ async function rowOf(requestId: string) {
 	return rows[0];
 }
 
+async function versionOf(requestId: string): Promise<number> {
+	return (await rowOf(requestId))?.version ?? 0;
+}
+
 describe("the officer Document requests page (#1403)", () => {
 	beforeAll(seed);
 	afterAll(async () => {
@@ -294,7 +298,11 @@ describe("the officer Document requests page (#1403)", () => {
 			});
 			const cancelled = await create("admin", { employeeId: ids.anna, title: "Cancelled" });
 			signIn("admin");
-			await actions.cancelDocumentRequestAction({ requestId: cancelled, reason: "Not needed" });
+			await actions.cancelDocumentRequestAction({
+				requestId: cancelled,
+				reason: "Not needed",
+				expectedVersion: 1,
+			});
 
 			expect(await titlesFor("admin")).toEqual(["Open", "Submitted"]);
 			expect(await titlesFor("admin", { status: "submitted" })).toEqual(["Submitted"]);
@@ -396,7 +404,11 @@ describe("the officer Document requests page (#1403)", () => {
 			const requestId = await create("admin", { employeeId: ids.anna, title: "Handed in" });
 			await setRow(requestId, { status: "submitted" });
 			signIn("officer");
-			const result = await actions.editDocumentRequestAction({ requestId, note: "" });
+			const result = await actions.editDocumentRequestAction({
+				requestId,
+				note: "",
+				expectedVersion: await versionOf(requestId),
+			});
 			expect(result).toMatchObject({
 				success: true,
 				data: { status: "submitted", note: null, deadline: "2099-11-30" },
@@ -421,13 +433,25 @@ describe("the officer Document requests page (#1403)", () => {
 			await setRow(requestId, { deadline: "2020-01-31" });
 			signIn("officer");
 			expect(
-				await actions.editDocumentRequestAction({ requestId, note: "Still waiting." }),
+				await actions.editDocumentRequestAction({
+					requestId,
+					note: "Still waiting.",
+					expectedVersion: await versionOf(requestId),
+				}),
 			).toMatchObject({ success: true, data: { deadline: "2020-01-31", overdue: true } });
 			expect(
-				await actions.editDocumentRequestAction({ requestId, deadline: "2020-02-15" }),
+				await actions.editDocumentRequestAction({
+					requestId,
+					deadline: "2020-02-15",
+					expectedVersion: await versionOf(requestId),
+				}),
 			).toMatchObject({ success: false, code: "deadline_in_past" });
 			expect(
-				await actions.editDocumentRequestAction({ requestId, deadline: "2099-01-31" }),
+				await actions.editDocumentRequestAction({
+					requestId,
+					deadline: "2099-01-31",
+					expectedVersion: await versionOf(requestId),
+				}),
 			).toMatchObject({ success: true, data: { deadline: "2099-01-31", overdue: false } });
 		});
 
@@ -446,6 +470,7 @@ describe("the officer Document requests page (#1403)", () => {
 					await actions.editDocumentRequestAction({
 						requestId,
 						deadline: "2099-12-31",
+						expectedVersion: 1,
 						...extra,
 					} as never),
 				).toMatchObject({ success: false, code: "not_editable" });
@@ -463,9 +488,13 @@ describe("the officer Document requests page (#1403)", () => {
 					expectedVersion: 5,
 				}),
 			).toMatchObject({ success: false, code: "conflict" });
-			await actions.cancelDocumentRequestAction({ requestId, reason: "Not needed" });
+			await actions.cancelDocumentRequestAction({ requestId, reason: "Not needed", expectedVersion: 1 });
 			expect(
-				await actions.editDocumentRequestAction({ requestId, deadline: "2099-12-31" }),
+				await actions.editDocumentRequestAction({
+					requestId,
+					deadline: "2099-12-31",
+					expectedVersion: await versionOf(requestId),
+				}),
 			).toMatchObject({ success: false, code: "conflict" });
 			expect((await rowOf(requestId))?.deadline).toBe("2099-11-30");
 		});
@@ -476,19 +505,19 @@ describe("the officer Document requests page (#1403)", () => {
 			const bens = await create("admin", { employeeId: ids.ben, title: "Ben's" });
 			signIn("anna");
 			expect(
-				await actions.editDocumentRequestAction({ requestId: annas, note: "Mine" }),
+				await actions.editDocumentRequestAction({ requestId: annas, note: "Mine", expectedVersion: 1 }),
 			).toMatchObject({ success: false });
 			signIn("officer");
 			expect(
-				await actions.editDocumentRequestAction({ requestId: bens, note: "Not covered" }),
+				await actions.editDocumentRequestAction({ requestId: bens, note: "Not covered", expectedVersion: 1 }),
 			).toMatchObject({ success: false });
 			signIn("admin");
 			expect(
-				await actions.editDocumentRequestAction({ requestId: adams, note: "My own" }),
+				await actions.editDocumentRequestAction({ requestId: adams, note: "My own", expectedVersion: 1 }),
 			).toMatchObject({ success: false, code: "own_file" });
 			signIn("stranger", OTHER_ORG);
 			expect(
-				await actions.editDocumentRequestAction({ requestId: annas, note: "Foreign" }),
+				await actions.editDocumentRequestAction({ requestId: annas, note: "Foreign", expectedVersion: 1 }),
 			).toMatchObject({ success: false });
 			for (const requestId of [annas, adams, bens]) {
 				expect((await rowOf(requestId))?.version).toBe(1);
@@ -510,10 +539,14 @@ describe("the officer Document requests page (#1403)", () => {
 			const section = await actions.listEmployeeDocumentRequestsAction({ employeeId: ids.anna });
 			expect(section.success ? section.data : []).toEqual([]);
 			expect(
-				await actions.editDocumentRequestAction({ requestId, deadline: "2099-12-31" }),
+				await actions.editDocumentRequestAction({
+					requestId,
+					deadline: "2099-12-31",
+					expectedVersion: 1,
+				}),
 			).toMatchObject({ success: false, error: "Document request not found" });
 			expect(
-				await actions.cancelDocumentRequestAction({ requestId, reason: "Still mine?" }),
+				await actions.cancelDocumentRequestAction({ requestId, reason: "Still mine?", expectedVersion: 1 }),
 			).toMatchObject({ success: false, error: "Document request not found" });
 			// Deciding (#1402) starts from the same lookup.
 			const access = await accessOf("officer");

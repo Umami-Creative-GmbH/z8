@@ -13,9 +13,10 @@ import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { createLogger } from "@/lib/logger";
 import { createNotification } from "@/lib/notifications/notification-service";
 import type { CreateNotificationParams } from "@/lib/notifications/types";
-import type {
-	DocumentRequestCategory,
-	DocumentRequestReminderKind,
+import {
+	type DocumentRequestCategory,
+	type DocumentRequestReminderKind,
+	documentRequestEmployeeName,
 } from "./document-request.types";
 import { buildDocumentRequestReminderNotification } from "./document-request-notifications";
 import {
@@ -180,7 +181,7 @@ async function remindOrganization(
 				id: row.id,
 				employeeId: row.employeeId,
 				employeeUserId: row.employeeUserId,
-				employeeName: row.userName?.trim() || row.employeeNumber || row.employeeId,
+				employeeName: documentRequestEmployeeName(row),
 				title: row.title,
 				category: row.category,
 				deadline: row.deadline,

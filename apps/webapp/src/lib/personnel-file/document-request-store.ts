@@ -37,6 +37,7 @@ import {
 	DOCUMENT_REQUEST_BULK_MAX_RECIPIENTS,
 	DOCUMENT_REQUEST_BULK_MAX_TEAMS,
 	DOCUMENT_REQUEST_CATEGORIES,
+	DOCUMENT_REQUEST_ENTITY_TYPE,
 	type DocumentRequestBulkSkipReason,
 	type DocumentRequestDocumentView,
 	type DocumentRequestEventChanges,
@@ -46,6 +47,7 @@ import {
 	type DocumentRequestRefusal,
 	type DocumentRequestStatus,
 	type DocumentRequestView,
+	documentRequestEmployeeName,
 	isActiveDocumentRequestStatus,
 } from "./document-request.types";
 import type {
@@ -78,11 +80,12 @@ import {
  * scoped to the organization; officers read through
  * `managedDocumentRequestsCondition`, the employee only their own requests.
  *
- * Later slices extend it rather than fork it:
- * - `lockManagedDocumentRequest` + `applyDocumentRequestEvent` for officer
- *   events (return, accept, edit), `lockDocumentRequest` + the same helper for
- *   the employee's submit and for system events (departure).
- * - `toDocumentRequestViews` for every list.
+ * Officer events (return, accept, edit, cancel) start from
+ * `lockManagedDocumentRequest`, the employee's submit and system events
+ * (departure) from `lockDocumentRequest`; all of them go through
+ * `applyDocumentRequestEvent`. Every write a person makes names the `version`
+ * they saw; a stale or missing one conflicts. Every list is built by
+ * `toDocumentRequestViews`.
  */
 
 type Database = typeof appDb;
@@ -90,7 +93,13 @@ type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 type Reader = Database | Pick<Transaction, "select">;
 export type DocumentRequestRow = typeof employeeDocumentRequest.$inferSelect;
 
-export const DOCUMENT_REQUEST_AUDIT_ENTITY_TYPE = "employee_document_request";
+/**
+ * The person's view of the request is stale, or names no version at all: a
+ * conflict. Server actions are public endpoints, so the version is required.
+ */
+function isStaleView(request: DocumentRequestRow, expectedVersion: number | null): boolean {
+	return expectedVersion !== request.version;
+}
 
 const EVENT_AUDIT_ACTIONS: Readonly<Record<DocumentRequestEventKind, AuditAction>> = {
 	created: AuditAction.PERSONNEL_FILE_DOCUMENT_REQUEST_CREATED,
@@ -129,7 +138,7 @@ function documentRequestAuditValues(
 	const { request } = input;
 	return {
 		organizationId: request.organizationId,
-		entityType: DOCUMENT_REQUEST_AUDIT_ENTITY_TYPE,
+		entityType: DOCUMENT_REQUEST_ENTITY_TYPE,
 		entityId: request.id,
 		action: EVENT_AUDIT_ACTIONS[input.kind],
 		performedBy: input.actorUserId,
@@ -231,7 +240,10 @@ export async function applyDocumentRequestEvent(
 	input: {
 		request: DocumentRequestRow;
 		event: DocumentRequestEventInput;
-		/** The version the actor saw; omitted, only the lifecycle step is checked. */
+		/**
+		 * The version the person saw (`null`, none: a conflict). Left out only by
+		 * system events (departure), which check the lifecycle step alone.
+		 */
 		expectedVersion?: number | null;
 		now?: Instant;
 	},
@@ -241,9 +253,7 @@ export async function applyDocumentRequestEvent(
 	const next = nextDocumentRequestStatus(request.status, event.kind);
 	if (
 		next === null ||
-		(input.expectedVersion !== undefined &&
-			input.expectedVersion !== null &&
-			input.expectedVersion !== request.version)
+		(input.expectedVersion !== undefined && isStaleView(request, input.expectedVersion))
 	) {
 		return { kind: "conflict", status: request.status };
 	}
@@ -356,6 +366,8 @@ export async function createDocumentRequest(
 			)
 			.limit(1);
 		if (!current?.hasAccess) return { kind: "refused", reason: "former_employee" };
+		// The same per-employee lock as a bulk create, so its duplicate check sees this request.
+		await lockEmployeesDocumentRequests(tx, [employeeRef.id]);
 
 		const renewedDocumentId = input.renewedDocumentId ?? null;
 		if (renewedDocumentId !== null) {
@@ -417,8 +429,7 @@ export async function createDocumentRequest(
 			eventId: event.id,
 			at,
 		});
-		const [view] = await toDocumentRequestViews(tx, access, [row], today);
-		if (!view) throw new Error("Failed to read the document request");
+		const view = await toDocumentRequestView(tx, access, row, today);
 		return { kind: "created", request: view, eventId: event.id };
 	});
 }
@@ -646,10 +657,7 @@ export async function listDocumentRequestRecipientOptions(
 			return [
 				category,
 				{
-					employees: rows.map((row) => ({
-						id: row.id,
-						name: row.userName?.trim() || row.employeeNumber || row.id,
-					})),
+					employees: rows.map((row) => ({ id: row.id, name: documentRequestEmployeeName(row) })),
 					teams,
 				},
 			] as const;
@@ -679,7 +687,13 @@ async function lockEmployeesDocumentRequests(
 }
 
 export type CancelDocumentRequestResult =
-	| { kind: "cancelled"; request: DocumentRequestView; eventId: string }
+	| {
+			kind: "cancelled";
+			request: DocumentRequestView;
+			eventId: string;
+			/** The validated reason, as recorded (for the employee's notification). */
+			reason: string;
+	  }
 	| { kind: "not_found" }
 	| { kind: "conflict" }
 	| { kind: "refused"; reason: DocumentRequestRefusal };
@@ -691,7 +705,7 @@ export type CancelDocumentRequestResult =
 export async function cancelDocumentRequest(
 	database: Database,
 	access: PersonnelFileAccess,
-	input: { requestId: string; reason: unknown; expectedVersion?: number | null },
+	input: { requestId: string; reason: unknown; expectedVersion: number | null },
 	now: Instant = systemClock.nowInstant(),
 ): Promise<CancelDocumentRequestResult> {
 	const reason = validateDocumentRequestReason(input.reason);
@@ -710,9 +724,8 @@ export async function cancelDocumentRequest(
 			now,
 		});
 		if (applied.kind === "conflict") return { kind: "conflict" };
-		const [view] = await toDocumentRequestViews(tx, access, [applied.request], today);
-		if (!view) throw new Error("Failed to read the document request");
-		return { kind: "cancelled", request: view, eventId: applied.eventId };
+		const view = await toDocumentRequestView(tx, access, applied.request, today);
+		return { kind: "cancelled", request: view, eventId: applied.eventId, reason: reason.value };
 	});
 }
 
@@ -788,7 +801,7 @@ export type SubmitDocumentRequestResult =
 export async function submitDocumentRequest(
 	database: Database,
 	access: PersonnelFileAccess,
-	input: { requestId: string; note: unknown; expectedVersion?: number | null },
+	input: { requestId: string; note: unknown; expectedVersion: number | null },
 	now: Instant = systemClock.nowInstant(),
 ): Promise<SubmitDocumentRequestResult> {
 	const note = optionalDocumentRequestText(input.note);
@@ -803,7 +816,7 @@ export async function submitDocumentRequest(
 		if (!request || !isOwnDocument(access, request.employeeId)) return { kind: "not_found" };
 		if (
 			nextDocumentRequestStatus(request.status, "submitted") === null ||
-			(input.expectedVersion != null && input.expectedVersion !== request.version)
+			isStaleView(request, input.expectedVersion)
 		) {
 			return { kind: "conflict" };
 		}
@@ -859,8 +872,7 @@ export async function submitDocumentRequest(
 		});
 		// Locked and checked above: only a bug gets here.
 		if (applied.kind === "conflict") throw new Error("Document request moved on under its lock");
-		const [view] = await toDocumentRequestViews(tx, access, [applied.request], today);
-		if (!view) throw new Error("Failed to read the document request");
+		const view = await toDocumentRequestView(tx, access, applied.request, today);
 		return {
 			kind: "submitted",
 			request: view,
@@ -871,7 +883,13 @@ export async function submitDocumentRequest(
 }
 
 export type DecideDocumentRequestResult<Kind extends "returned" | "accepted"> =
-	| { kind: Kind; request: DocumentRequestView; eventId: string }
+	| {
+			kind: Kind;
+			request: DocumentRequestView;
+			eventId: string;
+			/** A return's validated reason, as recorded (null for an accept). */
+			reason: string | null;
+	  }
 	| { kind: "not_found" }
 	/** Not submitted (any more): another decision won, or the officer's view is stale. */
 	| { kind: "conflict" }
@@ -889,7 +907,7 @@ async function decideDocumentRequest<Kind extends "returned" | "accepted">(
 		requestId: string;
 		kind: Kind;
 		reason: string | null;
-		expectedVersion?: number | null;
+		expectedVersion: number | null;
 	},
 	now: Instant,
 ): Promise<DecideDocumentRequestResult<Kind>> {
@@ -904,7 +922,7 @@ async function decideDocumentRequest<Kind extends "returned" | "accepted">(
 		// A decided request or a stale view conflicts before anything else is read.
 		if (
 			nextDocumentRequestStatus(request.status, input.kind) === null ||
-			(input.expectedVersion != null && input.expectedVersion !== request.version)
+			isStaleView(request, input.expectedVersion)
 		) {
 			return { kind: "conflict" };
 		}
@@ -937,9 +955,8 @@ async function decideDocumentRequest<Kind extends "returned" | "accepted">(
 		if (skillLink.kind === "link") {
 			await applyRenewalSkillLink(tx, access, skillLink, { requestId: request.id, now });
 		}
-		const [view] = await toDocumentRequestViews(tx, access, [applied.request], today);
-		if (!view) throw new Error("Failed to read the document request");
-		return { kind: input.kind, request: view, eventId: applied.eventId };
+		const view = await toDocumentRequestView(tx, access, applied.request, today);
+		return { kind: input.kind, request: view, eventId: applied.eventId, reason: input.reason };
 	});
 }
 
@@ -951,7 +968,7 @@ async function decideDocumentRequest<Kind extends "returned" | "accepted">(
 export async function returnDocumentRequest(
 	database: Database,
 	access: PersonnelFileAccess,
-	input: { requestId: string; reason: unknown; expectedVersion?: number | null },
+	input: { requestId: string; reason: unknown; expectedVersion: number | null },
 	now: Instant = systemClock.nowInstant(),
 ): Promise<DecideDocumentRequestResult<"returned">> {
 	const reason = validateDocumentRequestReason(input.reason);
@@ -979,7 +996,7 @@ export async function returnDocumentRequest(
 export async function acceptDocumentRequest(
 	database: Database,
 	access: PersonnelFileAccess,
-	input: { requestId: string; expectedVersion?: number | null },
+	input: { requestId: string; expectedVersion: number | null },
 	now: Instant = systemClock.nowInstant(),
 ): Promise<DecideDocumentRequestResult<"accepted">> {
 	return decideDocumentRequest(
@@ -1017,7 +1034,7 @@ export async function editDocumentRequest(
 		requestId: string;
 		deadline?: unknown;
 		note?: unknown;
-		expectedVersion?: number | null;
+		expectedVersion: number | null;
 	},
 	now: Instant = systemClock.nowInstant(),
 ): Promise<EditDocumentRequestResult> {
@@ -1031,17 +1048,14 @@ export async function editDocumentRequest(
 		const { request } = lookup;
 		if (
 			!isActiveDocumentRequestStatus(request.status) ||
-			(input.expectedVersion !== undefined &&
-				input.expectedVersion !== null &&
-				input.expectedVersion !== request.version)
+			isStaleView(request, input.expectedVersion)
 		) {
 			return { kind: "conflict" };
 		}
 		const validated = validateDocumentRequestEdit(request, input, today);
 		if (!validated.ok) return { kind: "refused", reason: validated.reason };
 		if (Object.keys(validated.value).length === 0) {
-			const [view] = await toDocumentRequestViews(tx, access, [request], today);
-			if (!view) throw new Error("Failed to read the document request");
+			const view = await toDocumentRequestView(tx, access, request, today);
 			return { kind: "edited", request: view, eventId: null };
 		}
 		const applied = await applyDocumentRequestEvent(tx, {
@@ -1051,8 +1065,7 @@ export async function editDocumentRequest(
 			now,
 		});
 		if (applied.kind === "conflict") return { kind: "conflict" };
-		const [view] = await toDocumentRequestViews(tx, access, [applied.request], today);
-		if (!view) throw new Error("Failed to read the document request");
+		const view = await toDocumentRequestView(tx, access, applied.request, today);
 		return { kind: "edited", request: view, eventId: applied.eventId };
 	});
 }
@@ -1080,7 +1093,8 @@ function statusFilterCondition(filters: DocumentRequestOverviewFilters): SQL | u
 	}
 }
 
-const isActiveRequest = () => sql`${employeeDocumentRequest.status} in ('open', 'submitted')`;
+const isActiveRequest = () =>
+	inArray(employeeDocumentRequest.status, [...ACTIVE_DOCUMENT_REQUEST_STATUSES]);
 
 /**
  * One page of the requests the viewer covers as an officer, across employees
@@ -1128,7 +1142,8 @@ export async function listManagedDocumentRequests(
 			request: employeeDocumentRequest,
 			userName: user.name,
 			employeeNumber: employee.employeeNumber,
-			isActive: employee.isActive,
+			// Former as for create and bulk create: no organization access now.
+			hasAccess: employeeHasOrganizationAccess(now),
 		})
 		.from(employeeDocumentRequest)
 		.innerJoin(employee, ofEmployee)
@@ -1155,9 +1170,12 @@ export async function listManagedDocumentRequests(
 			const row = rows[index];
 			return {
 				...view,
-				employeeName: row?.userName?.trim() || row?.employeeNumber || view.employeeId,
+				employeeName: documentRequestEmployeeName({
+					userName: row?.userName,
+					employeeNumber: row?.employeeNumber,
+				}),
 				employeeNumber: row?.employeeNumber ?? null,
-				isFormer: row ? !row.isActive : false,
+				isFormer: row ? !row.hasAccess : false,
 			};
 		}),
 		total,
@@ -1232,6 +1250,18 @@ export async function listEmployeeDocumentRequests(
 		now,
 	});
 	return toDocumentRequestViews(database, access, rows, today);
+}
+
+/** One request as the actor may see it (`toDocumentRequestViews`). */
+async function toDocumentRequestView(
+	database: Reader,
+	access: PersonnelFileAccess,
+	row: DocumentRequestRow,
+	today: Temporal.PlainDate,
+): Promise<DocumentRequestView> {
+	const [view] = await toDocumentRequestViews(database, access, [row], today);
+	if (!view) throw new Error("Failed to read the document request");
+	return view;
 }
 
 /**

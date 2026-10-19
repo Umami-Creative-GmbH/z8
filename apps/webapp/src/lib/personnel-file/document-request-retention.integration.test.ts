@@ -122,11 +122,20 @@ async function upload(employee: Seeded, requestId: string, category = "certifica
 	return id;
 }
 
+/** The request's current version, as the person acting would have seen it. */
+async function versionOf(requestId: string): Promise<number> {
+	const result = await fixture.pool.query<{ version: number }>(
+		"select version from employee_document_request where id = $1",
+		[requestId],
+	);
+	return result.rows[0]?.version ?? 0;
+}
+
 async function submit(employee: Seeded, requestId: string, note: string | null) {
 	const result = await store.submitDocumentRequest(
 		db,
 		await accessOf(employee.userId, CREATED),
-		{ requestId, note },
+		{ requestId, note, expectedVersion: await versionOf(requestId) },
 		CREATED,
 	);
 	if (result.kind !== "submitted") throw new Error(`submit failed: ${JSON.stringify(result)}`);
@@ -136,14 +145,19 @@ async function returnRequest(requestId: string, reason: string) {
 	const result = await store.returnDocumentRequest(
 		db,
 		await ownerAccess(),
-		{ requestId, reason },
+		{ requestId, reason, expectedVersion: await versionOf(requestId) },
 		CREATED,
 	);
 	if (result.kind !== "returned") throw new Error(`return failed: ${JSON.stringify(result)}`);
 }
 
 async function accept(requestId: string) {
-	const result = await store.acceptDocumentRequest(db, await ownerAccess(), { requestId }, CREATED);
+	const result = await store.acceptDocumentRequest(
+		db,
+		await ownerAccess(),
+		{ requestId, expectedVersion: await versionOf(requestId) },
+		CREATED,
+	);
 	if (result.kind !== "accepted") throw new Error(`accept failed: ${JSON.stringify(result)}`);
 }
 
@@ -151,7 +165,7 @@ async function cancel(requestId: string, reason: string, at: Instant = CREATED) 
 	const result = await store.cancelDocumentRequest(
 		db,
 		await accessOf(fixture.ownerUserId, at),
-		{ requestId, reason },
+		{ requestId, reason, expectedVersion: await versionOf(requestId) },
 		at,
 	);
 	if (result.kind !== "cancelled") throw new Error(`cancel failed: ${JSON.stringify(result)}`);

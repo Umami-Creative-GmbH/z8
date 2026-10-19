@@ -10,6 +10,7 @@ import {
 import { AuditAction } from "@/lib/audit-logger";
 import type { UnprocessableAuditRecord } from "./audit";
 import { minimiseDocumentRequestAudit } from "./audit-minimisation";
+import { DOCUMENT_REQUEST_ENTITY_TYPE } from "./document-request.types";
 
 /**
  * Document requests at purge time (#1408, spec #1307). A request's note, its
@@ -25,8 +26,6 @@ type Database = typeof appDb;
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 type ReadWriteTransaction = Pick<Transaction, "select" | "update" | "delete" | "insert">;
 
-/** Same entity type as the request store's records (`DOCUMENT_REQUEST_AUDIT_ENTITY_TYPE`). */
-const REQUEST_AUDIT_ENTITY_TYPE = "employee_document_request";
 
 /**
  * The request of each given document of the organization that was uploaded
@@ -73,7 +72,7 @@ export async function minimiseDocumentRequestAudits(
 		.where(
 			and(
 				eq(auditLog.organizationId, input.organizationId),
-				eq(auditLog.entityType, REQUEST_AUDIT_ENTITY_TYPE),
+				eq(auditLog.entityType, DOCUMENT_REQUEST_ENTITY_TYPE),
 				inArray(auditLog.entityId, [...input.requestIds]),
 			),
 		)
@@ -88,7 +87,7 @@ export async function minimiseDocumentRequestAudits(
 		if (minimised.kind === "unprocessable") {
 			unprocessable.push({
 				auditId: record.id,
-				entityType: REQUEST_AUDIT_ENTITY_TYPE,
+				entityType: DOCUMENT_REQUEST_ENTITY_TYPE,
 				entityId: record.entityId,
 				reason: minimised.reason,
 			});
@@ -219,7 +218,7 @@ export async function purgeDocumentRequestsOfDocuments(
 		if (!(await deleteDocumentRequestRow(tx, { organizationId, requestId: request.id }))) continue;
 		await tx.insert(auditLog).values({
 			organizationId,
-			entityType: REQUEST_AUDIT_ENTITY_TYPE,
+			entityType: DOCUMENT_REQUEST_ENTITY_TYPE,
 			entityId: request.id,
 			action: AuditAction.PERSONNEL_FILE_DOCUMENT_REQUEST_DELETED,
 			performedBy: input.actorUserId,

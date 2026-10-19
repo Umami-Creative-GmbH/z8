@@ -12,9 +12,11 @@ import {
 } from "@/lib/notifications/notification-params";
 import { createNotification } from "@/lib/notifications/notification-service";
 import type { CreateNotificationParams } from "@/lib/notifications/types";
-import type {
-	DocumentRequestCategory,
-	DocumentRequestReminderKind,
+import {
+	DOCUMENT_REQUEST_ENTITY_TYPE,
+	type DocumentRequestCategory,
+	type DocumentRequestReminderKind,
+	documentRequestEmployeeName,
 } from "./document-request.types";
 import { listPersonnelFileNotificationRecipients } from "./notification-recipients";
 import { MY_DOCUMENTS_PATH } from "./notifications";
@@ -30,8 +32,6 @@ import { personnelFilePath } from "./paths";
  */
 
 const logger = createLogger("PersonnelFileDocumentRequestNotifications");
-
-export const DOCUMENT_REQUEST_NOTIFICATION_ENTITY_TYPE = "employee_document_request";
 
 type NotifiedRequest = {
 	id: string;
@@ -104,7 +104,7 @@ export function buildDocumentRequestedNotification(input: {
 		type: "personnel_file_document_requested",
 		title: requestedCopy.titleDefault,
 		message: fillNotificationTemplate(requestedCopy.messageDefault, params),
-		entityType: DOCUMENT_REQUEST_NOTIFICATION_ENTITY_TYPE,
+		entityType: DOCUMENT_REQUEST_ENTITY_TYPE,
 		entityId: input.request.id,
 		actionUrl: MY_DOCUMENTS_PATH,
 		idempotencyKey: idempotencyKey(input.eventId, input.recipientUserId),
@@ -134,7 +134,7 @@ export function buildDocumentRequestDecidedNotification(input: {
 		type: "personnel_file_document_request_decided",
 		title: copy.titleDefault,
 		message: fillNotificationTemplate(copy.messageDefault, params),
-		entityType: DOCUMENT_REQUEST_NOTIFICATION_ENTITY_TYPE,
+		entityType: DOCUMENT_REQUEST_ENTITY_TYPE,
 		entityId: input.request.id,
 		actionUrl: MY_DOCUMENTS_PATH,
 		idempotencyKey: idempotencyKey(input.eventId, input.recipientUserId),
@@ -211,7 +211,7 @@ export function buildDocumentRequestReminderNotification(
 				: "personnel_file_document_request_reminder",
 		title: copy.titleDefault,
 		message: fillNotificationTemplate(copy.messageDefault, params),
-		entityType: DOCUMENT_REQUEST_NOTIFICATION_ENTITY_TYPE,
+		entityType: DOCUMENT_REQUEST_ENTITY_TYPE,
 		entityId: request.id,
 		actionUrl: officer ? personnelFilePath(request.employeeId) : MY_DOCUMENTS_PATH,
 		idempotencyKey: `personnel-file-document-request-reminder:${request.id}:${input.kind}:${request.deadline}:${input.recipientUserId}`,
@@ -295,7 +295,7 @@ export function buildDocumentRequestSubmittedNotification(input: {
 		type: "personnel_file_document_request_submitted",
 		title: submittedCopy.titleDefault,
 		message: fillNotificationTemplate(submittedCopy.messageDefault, params),
-		entityType: DOCUMENT_REQUEST_NOTIFICATION_ENTITY_TYPE,
+		entityType: DOCUMENT_REQUEST_ENTITY_TYPE,
 		entityId: input.request.id,
 		actionUrl: personnelFilePath(input.request.employeeId),
 		idempotencyKey: idempotencyKey(input.eventId, input.recipientUserId),
@@ -324,7 +324,7 @@ export async function notifyDocumentRequestSubmitted(
 				category: input.request.category,
 			}),
 			database
-				.select({ name: user.name, employeeNumber: employee.employeeNumber })
+				.select({ userName: user.name, employeeNumber: employee.employeeNumber })
 				.from(employee)
 				.innerJoin(user, eq(user.id, employee.userId))
 				.where(
@@ -335,7 +335,10 @@ export async function notifyDocumentRequestSubmitted(
 				)
 				.limit(1),
 		]);
-		const employeeName = subject?.name?.trim() || subject?.employeeNumber || "An employee";
+		const employeeName = documentRequestEmployeeName({
+			userName: subject?.userName,
+			employeeNumber: subject?.employeeNumber,
+		});
 		await Promise.all(
 			recipients.map((recipientUserId) =>
 				createNotification(

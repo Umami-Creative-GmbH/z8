@@ -221,6 +221,7 @@ async function submit(requestId: string, documentIds: readonly string[]): Promis
 	const submitted = await store.submitDocumentRequest(db, await accessOf("anna"), {
 		requestId,
 		note: null,
+		expectedVersion: await versionOf(requestId),
 	});
 	if (submitted.kind !== "submitted")
 		throw new Error(`submit failed: ${JSON.stringify(submitted)}`);
@@ -228,7 +229,18 @@ async function submit(requestId: string, documentIds: readonly string[]): Promis
 }
 
 async function accept(requestId: string, person: Person = "officer") {
-	return store.acceptDocumentRequest(db, await accessOf(person), { requestId });
+	return store.acceptDocumentRequest(db, await accessOf(person), {
+		requestId,
+		expectedVersion: await versionOf(requestId),
+	});
+}
+
+async function versionOf(requestId: string): Promise<number> {
+	const { rows } = await admin.query<{ version: number }>(
+		"select version from employee_document_request where id = $1",
+		[requestId],
+	);
+	return rows[0]?.version ?? 0;
 }
 
 async function skillOf(documentId: string): Promise<string | null | undefined> {
@@ -355,6 +367,7 @@ describe("document requests: skill link on accept (#1405)", () => {
 			const returnedResult = await store.returnDocumentRequest(db, await accessOf("officer"), {
 				requestId,
 				reason: "Wrong card.",
+				expectedVersion: await versionOf(requestId),
 			});
 			expect(returnedResult.kind).toBe("returned");
 			const resubmitted = await seedDocument({ expiryDate: "2028-12-31" });
@@ -470,7 +483,7 @@ describe("document requests: skill link on accept (#1405)", () => {
 
 			harness.userId = userOf("officer");
 			harness.organizationId = ORG;
-			expect(await requestActions.acceptDocumentRequestAction({ requestId })).toMatchObject({
+			expect(await requestActions.acceptDocumentRequestAction({ requestId, expectedVersion: version })).toMatchObject({
 				success: false,
 				code: "renewal_expiry_date_required",
 			});
