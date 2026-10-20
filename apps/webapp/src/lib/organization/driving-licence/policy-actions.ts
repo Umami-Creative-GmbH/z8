@@ -9,6 +9,7 @@ import {
 import { readDrivingLicenceIntendedDriverAdminData } from "./intended-drivers";
 import {
 	readDrivingLicencePolicy,
+	readDrivingLicenceReactivationImpact,
 	saveDrivingLicencePolicy,
 	switchDrivingLicenceControl,
 } from "./policy";
@@ -49,6 +50,13 @@ export async function switchDrivingLicenceControlAction(input: unknown) {
 			input,
 		),
 	);
+}
+/** Read-only count for the switch-on confirmation (#1422): authorizations the switch-on suspends. */
+export async function getDrivingLicenceReactivationImpactAction() {
+	return action(async () => {
+		const actor = await requireDrivingLicenceAdministrator();
+		return readDrivingLicenceReactivationImpact(actor.organizationId);
+	});
 }
 /** The settings page: the policy and the intended-driver assignments (#1423). */
 export async function getDrivingLicenceAdminDataAction() {

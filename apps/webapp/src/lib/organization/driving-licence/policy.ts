@@ -18,8 +18,16 @@ import {
 	materializeExpiredDrivingAuthorizations,
 } from "./checks";
 import type { DrivingLicenceActor } from "./context";
+import {
+	collectDrivingLicenceReactivationSuspensions,
+	deliverDrivingLicenceOccasion,
+	readDrivingLicenceOffPeriods,
+} from "./reminders";
 import { reconcileDrivingLicenceTasks } from "./tasks";
-import type { DrivingLicenceTransaction } from "./verifiers";
+import type {
+	DrivingLicenceDatabase,
+	DrivingLicenceTransaction,
+} from "./verifiers";
 
 const intervalMonthsInput = z.number().int().min(1).max(120);
 /** An explicit IANA zone (or UTC); deadlines never follow the viewer's zone. */
@@ -275,13 +283,22 @@ async function activateDrivingLicenceControlFirstTime(
 	);
 }
 
+/** When the current off period began, or null when control is on or was never on. */
+async function readSwitchedOffAt(
+	database: DrivingLicenceDatabase,
+	organizationId: string,
+) {
+	const periods = await readDrivingLicenceOffPeriods(database, organizationId);
+	const last = periods.at(-1);
+	return last && last.onAt === null ? last.offAt : null;
+}
+
 /**
- * Switching on again reuses the saved policy unchanged.
- *
- * Seam for #1422: settle what changed while the feature was off here, inside the
- * same locked transaction (suspend authorizations whose deadline or expiry passed,
- * one suspension notice each, skip reminder occasions that passed while off). Its
- * read-only impact count should share that selection.
+ * Switching on again reuses the saved policy unchanged and settles what changed while
+ * off (#1422), inside the same locked transaction: authorizations whose deadline or
+ * expiry passed are suspended, and each gets exactly one suspension notice to the
+ * employee and their responsible verifiers. Reminder occasions that fell while off are
+ * skipped by the reminder job (`reminderOccasionFellWhileOff`), not caught up.
  */
 async function reactivateDrivingLicenceControl(
 	tx: DrivingLicenceTransaction,
@@ -289,6 +306,7 @@ async function reactivateDrivingLicenceControl(
 	previous: DrivingLicencePolicyRow,
 	now: Instant,
 ) {
+	const offAt = await readSwitchedOffAt(tx, actor.organizationId);
 	await materializeExpiredDrivingAuthorizations(tx, actor.organizationId, now);
 	await writeDrivingLicencePolicy(
 		tx,
@@ -297,6 +315,38 @@ async function reactivateDrivingLicenceControl(
 		{ ...policyValues(previous), enabled: true },
 		now,
 	);
+	const settled = await collectDrivingLicenceReactivationSuspensions(
+		tx,
+		actor.organizationId,
+		offAt,
+		now,
+	);
+	for (const occasion of settled)
+		await deliverDrivingLicenceOccasion(tx, occasion, now);
+}
+
+export type DrivingLicenceReactivationImpact = {
+	/** Authorizations the switch-on suspends, each with one suspension notice. */
+	suspendedAuthorizations: number;
+};
+
+/**
+ * Read-only count for the switch-on confirmation (#1422): the same selection the
+ * switch-on settles. Zero while control is on or before its first activation.
+ */
+export async function readDrivingLicenceReactivationImpact(
+	organizationId: string,
+): Promise<DrivingLicenceReactivationImpact> {
+	const policy = await readDrivingLicencePolicy(organizationId);
+	if (!policy || policy.enabled || policy.retentionMonths === null)
+		return { suspendedAuthorizations: 0 };
+	const settled = await collectDrivingLicenceReactivationSuspensions(
+		db,
+		organizationId,
+		await readSwitchedOffAt(db, organizationId),
+		systemClock.nowInstant(),
+	);
+	return { suspendedAuthorizations: settled.length };
 }
 
 /**

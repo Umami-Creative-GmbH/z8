@@ -3,11 +3,22 @@ import {
 	finishDrivingLicenceRetentionChange,
 } from "./retention-state";
 import "server-only";
-import { and, asc, desc, eq, inArray, isNull, lte, sql } from "drizzle-orm";
+import {
+	and,
+	asc,
+	desc,
+	eq,
+	ilike,
+	inArray,
+	isNull,
+	lte,
+	or,
+	sql,
+} from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
-import { employee, employeeEmploymentPeriod } from "@/db/schema";
+import { employee, employeeEmploymentPeriod, team } from "@/db/schema";
 import {
 	drivingAuthorization,
 	drivingAuthorizationEvent,
@@ -40,6 +51,11 @@ import type { DrivingLicenceActor } from "./context";
 import { drivingAuthorizationDeadline } from "./deadlines";
 import { isDrivingLicenceIntendedDriver } from "./intended-drivers";
 import { lockDrivingLicenceOrganization } from "./locks";
+import {
+	drivingLicenceNextDeadline,
+	drivingLicenceWorklistQuery,
+	sortDrivingLicenceWorklist,
+} from "./worklist-query";
 
 export { lockDrivingLicenceOrganization } from "./locks";
 
@@ -692,15 +708,64 @@ export async function completeDrivingLicenceCheck(
 		return { checkId: check.id };
 	});
 }
-export async function readDrivingLicenceWorklist(actor: DrivingLicenceActor) {
+/**
+ * The verifier's Checks table (#1428): intended drivers in the current grant's scope (never
+ * the verifier), with primary team and next deadline. Name search narrows the scope in SQL;
+ * the status filter and the order (checks due now, then soonest deadline) apply to the
+ * effective status, which is evaluated per employee.
+ */
+export async function readDrivingLicenceWorklist(
+	actor: DrivingLicenceActor,
+	raw?: unknown,
+) {
+	const query = drivingLicenceWorklistQuery.parse(raw ?? {});
 	const now = systemClock.nowInstant();
 	const available = await listDrivingLicenceVerifierEmployees(db, {
 		organizationId: actor.organizationId,
 		userId: actor.userId,
 		now,
 	});
+	if (!available.length) return [];
+	const term = query.search
+		? `%${query.search.replaceAll("\\", "\\\\").replaceAll("%", "\\%").replaceAll("_", "\\_")}%`
+		: null;
+	const identities = await db
+		.select({
+			id: employee.id,
+			name: user.name,
+			teamId: team.id,
+			teamName: team.name,
+		})
+		.from(employee)
+		.innerJoin(user, eq(user.id, employee.userId))
+		.leftJoin(
+			team,
+			and(
+				eq(team.id, employee.teamId),
+				eq(team.organizationId, actor.organizationId),
+			),
+		)
+		.where(
+			and(
+				eq(employee.organizationId, actor.organizationId),
+				inArray(
+					employee.id,
+					available.map((target) => target.id),
+				),
+				term
+					? or(
+							ilike(user.name, term),
+							ilike(user.firstName, term),
+							ilike(user.lastName, term),
+						)
+					: undefined,
+			),
+		);
+	const identityById = new Map(identities.map((row) => [row.id, row]));
 	const rows = await Promise.all(
 		available.map(async (target) => {
+			const identity = identityById.get(target.id);
+			if (!identity) return null;
 			const status = await readEffectiveDrivingAuthorization(
 				db,
 				actor.organizationId,
@@ -708,23 +773,26 @@ export async function readDrivingLicenceWorklist(actor: DrivingLicenceActor) {
 				now,
 			);
 			if (!status.enrolled) return null;
-			const [identity] = await db
-				.select({ name: user.name })
-				.from(employee)
-				.innerJoin(user, eq(user.id, employee.userId))
-				.where(
-					and(
-						eq(employee.organizationId, actor.organizationId),
-						eq(employee.id, target.id),
-					),
-				);
 			return {
 				employeeId: target.id,
 				canVerify: target.canVerify,
-				name: identity?.name ?? target.id,
+				name: identity.name ?? target.id,
+				team:
+					identity.teamId && identity.teamName
+						? { id: identity.teamId, name: identity.teamName }
+						: null,
+				nextDeadline: drivingLicenceNextDeadline(status.classes),
 				...status,
 			};
 		}),
 	);
-	return rows.filter((row): row is NonNullable<typeof row> => row !== null);
+	return sortDrivingLicenceWorklist(
+		rows.filter(
+			(row): row is NonNullable<typeof row> =>
+				row !== null && (!query.status || row.status === query.status),
+		),
+	);
 }
+export type DrivingLicenceWorklistRow = Awaited<
+	ReturnType<typeof readDrivingLicenceWorklist>
+>[number];
