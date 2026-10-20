@@ -11,6 +11,7 @@ import {
 	listDrivingLicenceEmployees,
 	listDrivingLicenceParticipants,
 	readDrivingLicencePolicy,
+	readDrivingLicenceReactivationImpact,
 	saveDrivingLicencePolicy,
 	switchDrivingLicenceControl,
 } from "./policy";
@@ -51,6 +52,13 @@ export async function switchDrivingLicenceControlAction(input: unknown) {
 			input,
 		),
 	);
+}
+/** Read-only count for the switch-on confirmation (#1422): authorizations the switch-on suspends. */
+export async function getDrivingLicenceReactivationImpactAction() {
+	return action(async () => {
+		const actor = await requireDrivingLicenceAdministrator();
+		return readDrivingLicenceReactivationImpact(actor.organizationId);
+	});
 }
 export async function enrollDrivingLicenceEmployeeAction(input: unknown) {
 	return action(async () =>

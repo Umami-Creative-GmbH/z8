@@ -8,6 +8,7 @@ import { render } from "@/test/render-with-translations";
 
 const mocks = vi.hoisted(() => ({
 	switchControl: vi.fn(),
+	impact: vi.fn(),
 	refresh: vi.fn(),
 	push: vi.fn(),
 	toastError: vi.fn(),
@@ -18,6 +19,7 @@ vi.mock("@/app/[locale]/(app)/settings/organizations/actions", () => ({
 }));
 vi.mock("@/lib/organization/driving-licence/policy-actions", () => ({
 	switchDrivingLicenceControlAction: mocks.switchControl,
+	getDrivingLicenceReactivationImpactAction: mocks.impact,
 }));
 vi.mock("@/navigation", () => ({
 	useRouter: () => ({ refresh: mocks.refresh, push: mocks.push }),
@@ -68,6 +70,9 @@ describe("OrganizationFeaturesCard driving licence control (#1421)", () => {
 		mocks.switchControl
 			.mockReset()
 			.mockResolvedValue({ success: true, data: { enabled: true, firstActivation: true } });
+		mocks.impact
+			.mockReset()
+			.mockResolvedValue({ success: true, data: { suspendedAuthorizations: 0 } });
 		mocks.push.mockReset();
 		mocks.refresh.mockReset();
 		mocks.toastError.mockReset();
@@ -158,18 +163,60 @@ describe("OrganizationFeaturesCard driving licence control (#1421)", () => {
 		expect(drivingSwitch().getAttribute("aria-checked")).toBe("false");
 	});
 
-	it("switches an existing policy on again without the setup dialog", async () => {
+	it("shows how many authorizations will be suspended before switching an existing policy on again (#1422)", async () => {
 		mocks.switchControl.mockResolvedValue({
 			success: true,
 			data: { enabled: true, firstActivation: false },
 		});
+		mocks.impact.mockResolvedValue({ success: true, data: { suspendedAuthorizations: 3 } });
 		renderCard({ drivingLicence: { ...active, enabled: false } });
 
 		fireEvent.click(drivingSwitch());
 
-		await waitFor(() => expect(mocks.switchControl).toHaveBeenCalledWith({ enabled: true }));
+		expect(
+			await screen.findByText(
+				"3 authorizations will be suspended because their deadline or expiry passed while control was off.",
+			),
+		).toBeTruthy();
 		expect(screen.queryByRole("dialog")).toBeNull();
+		expect(mocks.switchControl).not.toHaveBeenCalled();
+		fireEvent.click(screen.getByRole("button", { name: "Switch on" }));
+
+		await waitFor(() => expect(mocks.switchControl).toHaveBeenCalledWith({ enabled: true }));
 		expect(mocks.push).not.toHaveBeenCalled();
+		expect(drivingSwitch().getAttribute("aria-checked")).toBe("true");
+	});
+
+	it("says when switching on again suspends nothing, and stays off when cancelled", async () => {
+		mocks.impact.mockResolvedValue({ success: true, data: { suspendedAuthorizations: 0 } });
+		renderCard({ drivingLicence: { ...active, enabled: false } });
+
+		fireEvent.click(drivingSwitch());
+
+		expect(
+			await screen.findByText(
+				"No authorization will be suspended: no deadline or expiry passed while control was off.",
+			),
+		).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+		expect(mocks.switchControl).not.toHaveBeenCalled();
+		expect(drivingSwitch().getAttribute("aria-checked")).toBe("false");
+	});
+
+	it("doesn't switch on again when the impact can't be counted", async () => {
+		mocks.impact.mockResolvedValue({ success: false, error: "save_failed" });
+		renderCard({ drivingLicence: { ...active, enabled: false } });
+
+		fireEvent.click(drivingSwitch());
+
+		await waitFor(() =>
+			expect(mocks.toastError).toHaveBeenCalledWith(
+				"Driving licence control could not be changed. Please try again.",
+			),
+		);
+		expect(screen.queryByRole("alertdialog")).toBeNull();
+		expect(mocks.switchControl).not.toHaveBeenCalled();
+		expect(drivingSwitch().getAttribute("aria-checked")).toBe("false");
 	});
 
 	it("asks before switching off and explains that data is kept and cleanup continues", async () => {
@@ -208,6 +255,7 @@ describe("OrganizationFeaturesCard driving licence control (#1421)", () => {
 		renderCard({ drivingLicence: { ...active, enabled: false } });
 
 		fireEvent.click(drivingSwitch());
+		fireEvent.click(await screen.findByRole("button", { name: "Switch on" }));
 
 		await waitFor(() =>
 			expect(mocks.toastError).toHaveBeenCalledWith(
