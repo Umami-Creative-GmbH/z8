@@ -7,6 +7,7 @@ import {
 	readDrivingLicenceWorklist,
 } from "./checks";
 import { requireDrivingLicenceActor } from "./context";
+import type { DrivingLicenceWorklistQuery } from "./worklist-query";
 
 async function run<T>(
 	operation: () => Promise<T>,
@@ -44,8 +45,11 @@ export async function getDrivingLicenceEmployeeRecordAction(input: {
 		),
 	);
 }
-export async function getDrivingLicenceCheckWorklistAction() {
+/** Search and status filter are validated on the server (`drivingLicenceWorklistQuery`). */
+export async function getDrivingLicenceCheckWorklistAction(
+	query?: DrivingLicenceWorklistQuery,
+) {
 	return run(async () =>
-		readDrivingLicenceWorklist(await requireDrivingLicenceActor()),
+		readDrivingLicenceWorklist(await requireDrivingLicenceActor(), query),
 	);
 }
