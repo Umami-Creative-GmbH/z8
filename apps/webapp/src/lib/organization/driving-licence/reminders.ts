@@ -39,6 +39,7 @@ import {
 	drivingLicenceOffPeriods,
 	reminderOccasionFellWhileOff,
 } from "./off-periods";
+import { DRIVING_LICENCE_PATH, drivingLicenceCheckPath } from "./paths";
 import { reconcileDrivingLicenceTasks } from "./tasks";
 import type {
 	DrivingLicenceDatabase,
@@ -419,11 +420,16 @@ export async function collectDrivingLicenceReactivationSuspensions(
 	}
 	return occasions;
 }
+/**
+ * In-app and email payload for one recipient. The employee is linked to their own licence;
+ * a verifier to that employee's check page (#1429).
+ */
 function reminderParams(
 	occasion: DrivingLicenceReminderOccasion,
 	recipientUserId: string,
-	employeeName: string,
+	employee: { userId: string; name: string },
 ): CreateNotificationParams {
+	const employeeName = employee.name;
 	const suspended = occasion.kind === "suspension";
 	const copy = suspended
 		? {
@@ -464,7 +470,10 @@ function reminderParams(
 		message: content.message,
 		entityType: "driving_licence",
 		entityId: occasion.employeeId,
-		actionUrl: `/driving-licence?employeeId=${occasion.employeeId}`,
+		actionUrl:
+			recipientUserId === employee.userId
+				? DRIVING_LICENCE_PATH
+				: drivingLicenceCheckPath(occasion.employeeId),
 		idempotencyKey: `driving:${occasion.key}:${recipientUserId}`,
 		metadata: {
 			i18n: content.i18n,
@@ -526,7 +535,7 @@ async function prepareReminderEmail(
 	const payload = reminderParams(
 		current,
 		delivery.recipientUserId,
-		recipients.employee.name,
+		recipients.employee,
 	);
 	const [preference] = await tx
 		.select({ enabled: notificationPreference.enabled })
@@ -579,7 +588,7 @@ export async function deliverDrivingLicenceOccasion(
 	];
 	let created = 0;
 	for (const userId of userIds) {
-		const payload = reminderParams(occasion, userId, recipients.employee.name);
+		const payload = reminderParams(occasion, userId, recipients.employee);
 		const [delivery] = await tx
 			.insert(drivingLicenceReminderDelivery)
 			.values({

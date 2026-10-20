@@ -5,6 +5,13 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
+vi.mock("@/navigation", () => ({
+	Link: ({ children, href, ...props }: { children: React.ReactNode; href: string }) => (
+		<a href={href} {...props}>
+			{children}
+		</a>
+	),
+}));
 vi.mock("@/lib/auth-client", () => ({
 	useSession: () => ({
 		data: { user: { id: "verifier" }, session: { activeOrganizationId: "org" } },
@@ -154,12 +161,18 @@ describe("the verifier's Checks table", () => {
 		expect(screen.queryByText("Nobody to check yet")).toBeNull();
 	});
 
-	it("opens the existing check form from a row", async () => {
-		const user = userEvent.setup();
+	it("links each row to that employee's check page (#1429)", async () => {
+		remote.rows = [
+			row("Bruno Soon", "active", { validThrough: "2026-02-10" }),
+			row("Fiona Former", "ended", { canVerify: false }),
+		];
 		renderWorklist();
-		await user.click(await screen.findByRole("button", { name: "Check Bruno Soon" }));
 		expect(
-			await screen.findByRole("heading", { name: "Inspect Bruno Soon's original licence" }),
-		).toBeTruthy();
+			(await screen.findByRole("link", { name: "Check Bruno Soon" })).getAttribute("href"),
+		).toBe("/driving-licence/checks/bruno-soon");
+		expect(
+			screen.getByRole("link", { name: "View ended record for Fiona Former" }).getAttribute("href"),
+		).toBe("/driving-licence/checks/fiona-former");
+		expect(screen.queryByRole("heading", { name: /original licence/ })).toBeNull();
 	});
 });

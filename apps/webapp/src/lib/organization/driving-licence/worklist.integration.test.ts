@@ -31,6 +31,7 @@ const policies = await import("./policy-actions");
 const intendedDrivers = await import("./intended-driver-actions");
 const grants = await import("./verifier-actions");
 const checks = await import("./check-actions");
+const { readDrivingLicenceCheckSubject } = await import("./check-subject");
 
 const setup = {
 	intervalMonths: 6,
@@ -290,5 +291,37 @@ describe("the verifier's Checks worklist", () => {
 		expect(await names(verifier.userId)).toEqual(["Olga Other"]);
 		session.organizationId = fixture.organizationId;
 		expect(await names(verifier.userId)).not.toContain("Olga Other");
+	});
+});
+
+describe("the check page subject (#1429)", () => {
+	const subject = (userId: string, employeeId: string, organizationId = fixture.organizationId) =>
+		readDrivingLicenceCheckSubject({ organizationId, userId, employeeId });
+
+	it("names an employee the viewer's current grant covers", async () => {
+		expect(await subject(verifier.userId, people.bruno.employeeId)).toEqual({
+			employeeId: people.bruno.employeeId,
+			name: "Bruno Soon",
+			canVerify: true,
+		});
+	});
+
+	it("refuses the verifier's own check", async () => {
+		expect(await subject(verifier.userId, verifier.employeeId)).toBeNull();
+	});
+
+	it("refuses an employee outside the grant and a viewer without a grant", async () => {
+		const teamVerifier = await named("Tess Team");
+		await grantVerifier(teamVerifier.employeeId, { scope: "specific", teamIds: [northTeamId] });
+		expect(await subject(teamVerifier.userId, people.bruno.employeeId)).not.toBeNull();
+		expect(await subject(teamVerifier.userId, people.carla.employeeId)).toBeNull();
+		expect(await subject(people.frank.userId, people.bruno.employeeId)).toBeNull();
+	});
+
+	it("refuses an employee of another organization", async () => {
+		const otherOrganizationId = await fixture.createOrganization();
+		const stranger = await named("Olga Other", otherOrganizationId);
+		expect(await subject(verifier.userId, stranger.employeeId)).toBeNull();
+		expect(await subject(verifier.userId, people.bruno.employeeId, otherOrganizationId)).toBeNull();
 	});
 });

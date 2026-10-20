@@ -4,6 +4,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { useSession } from "@/lib/auth-client";
 import type { LicenceClass } from "@/lib/organization/driving-licence/check-types";
 import type { DrivingLicenceEmployeeRecord } from "@/lib/organization/driving-licence/checks";
@@ -12,6 +15,10 @@ import {
 	reinstateDrivingAuthorizationAction,
 } from "@/lib/organization/driving-licence/impediment-actions";
 
+/**
+ * The explicit reinstatement step (#1429: on the check page). The classes to reinstate and
+ * the resolution confirmation are checkboxes, like the check's own confirmations.
+ */
 export function ReinstateDrivingAuthorization({
 	employeeId,
 	record,
@@ -87,22 +94,24 @@ export function ReinstateDrivingAuthorization({
 	if (record.status !== "suspended" && record.status !== "partially_active")
 		return null;
 	return (
-		<section
-			className="space-y-3 rounded-lg border p-4"
-			aria-labelledby={`${fieldId}-title`}
-		>
-			<h3 id={`${fieldId}-title`} className="font-semibold">
-				{t(
-					"drivingLicence.impediment.reinstateTitle",
-					"Explicitly reinstate driving authorization",
-				)}
-			</h3>
-			<p className="text-sm text-muted-foreground">
-				{t(
-					"drivingLicence.impediment.reinstateHelp",
-					"First record a new personal original check after the suspension. Establish that every impediment has been resolved; inspect any necessary supporting evidence outside Z8. Seeing the licence card alone may be insufficient. Only the selected successfully checked classes will be reinstated.",
-				)}
-			</p>
+		<Card role="region" aria-labelledby={`${fieldId}-title`}>
+			<CardHeader>
+				<CardTitle>
+					<h2 id={`${fieldId}-title`} className="text-lg font-semibold">
+						{t(
+							"drivingLicence.impediment.reinstateTitle",
+							"Explicitly reinstate driving authorization",
+						)}
+					</h2>
+				</CardTitle>
+				<CardDescription>
+					{t(
+						"drivingLicence.impediment.reinstateHelp",
+						"First record a new personal original check after the suspension. Establish that every impediment has been resolved; inspect any necessary supporting evidence outside Z8. Seeing the licence card alone may be insufficient. Only the selected successfully checked classes will be reinstated.",
+					)}
+				</CardDescription>
+			</CardHeader>
+			<CardContent className="space-y-3">
 			{state.data?.success && state.data.data.reports.length > 0 && (
 				<p className="text-sm font-medium">
 					{t(
@@ -136,18 +145,15 @@ export function ReinstateDrivingAuthorization({
 									)}
 								</legend>
 								{candidates.map((c) => (
-									<label
-										key={c.code}
-										className="flex items-center gap-2 text-sm"
-									>
-										<input
-											type="checkbox"
+									<div key={c.code} className="flex items-center gap-2">
+										<Checkbox
+											id={`${fieldId}-class-${c.code}`}
 											name="classCodes"
 											value={c.code}
 											checked={field.state.value.includes(c.code)}
-											onChange={(event) =>
+											onCheckedChange={(checked) =>
 												field.handleChange(
-													event.target.checked
+													checked === true
 														? [...field.state.value, c.code]
 														: field.state.value.filter(
 																(code) => code !== c.code,
@@ -155,26 +161,34 @@ export function ReinstateDrivingAuthorization({
 												)
 											}
 										/>
-										{c.code}
-									</label>
+										<Label htmlFor={`${fieldId}-class-${c.code}`} translate="no">
+											{c.code}
+										</Label>
+									</div>
 								))}
 							</fieldset>
 						)}
 					</form.Field>
 					<form.Field name="impedimentResolved">
 						{(field) => (
-							<label className="flex items-start gap-2 text-sm">
-								<input
-									type="checkbox"
+							<div className="flex items-start gap-3">
+								<Checkbox
+									id={`${fieldId}-resolved`}
 									name="impedimentResolved"
+									className="mt-0.5"
 									checked={field.state.value}
-									onChange={(event) => field.handleChange(event.target.checked)}
+									onCheckedChange={(checked) => field.handleChange(checked === true)}
 								/>
-								{t(
-									"drivingLicence.impediment.resolutionConfirmation",
-									"I have established that all person-wide, document-wide and reported impediments are resolved, examined necessary supporting evidence outside Z8, and explicitly authorize the selected classes again.",
-								)}
-							</label>
+								<Label
+									htmlFor={`${fieldId}-resolved`}
+									className="text-sm font-normal leading-snug"
+								>
+									{t(
+										"drivingLicence.impediment.resolutionConfirmation",
+										"I have established that all person-wide, document-wide and reported impediments are resolved, examined necessary supporting evidence outside Z8, and explicitly authorize the selected classes again.",
+									)}
+								</Label>
+							</div>
 						)}
 					</form.Field>
 					<form.Subscribe
@@ -223,6 +237,7 @@ export function ReinstateDrivingAuthorization({
 					)}
 				</p>
 			)}
-		</section>
+			</CardContent>
+		</Card>
 	);
 }

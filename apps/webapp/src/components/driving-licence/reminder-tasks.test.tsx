@@ -91,6 +91,27 @@ it("shows unavailable direct notification before and after completing a personal
 		),
 	).toBeTruthy();
 });
+it("links a personal reminder task to the employee's check page (#1429)", async () => {
+	remote.list.mockResolvedValue({
+		success: true,
+		data: [
+			{
+				id: "task",
+				employeeName: "Driver",
+				employeeId: "employee",
+				kind: "personal_reminder",
+				state: "pending",
+				directEmployeeNotification: "unavailable",
+				occasion: { kind: "deadline", classCode: "B", validThrough: "2026-02-28" },
+				completedAt: null,
+			},
+		],
+	});
+	mount(<DrivingLicencePersonalReminderTasks />);
+	expect(
+		(await screen.findByRole("link", { name: "Open check" })).getAttribute("href"),
+	).toBe("/driving-licence/checks/employee");
+});
 it("offers responsibility assignment without personal reminder completion or inspection controls", async () => {
 	remote.list.mockResolvedValue({
 		success: true,

@@ -236,6 +236,25 @@ it("escalates missing current verifier responsibility to admins with minimal ass
 	expect((await tasks.getDrivingLicenceTasksAction()).success).toBe(true);
 });
 
+it("links a verifier's personal reminder task notice to the employee's check page (#1429)", async () => {
+	await fixture.pool.query('update "user" set email=$2 where id=$1', [
+		subjectUserId,
+		`terminal-${subjectUserId}@kiosk.invalid`,
+	]);
+	await runDrivingLicenceRemindersJob();
+	expect(
+		(await inbox(verifier.userId)).map((notice) => ({
+			entityType: notice.entityType,
+			actionUrl: notice.actionUrl,
+		})),
+	).toEqual([
+		{
+			entityType: "driving_licence_task",
+			actionUrl: `/driving-licence/checks/${fixture.employeeId}`,
+		},
+	]);
+});
+
 it("creates initial terminal tasks and transfers visibility to current verifiers without granting administrators inspection access", async () => {
 	await fixture.pool.query('update "user" set email=$2 where id=$1', [
 		subjectUserId,
