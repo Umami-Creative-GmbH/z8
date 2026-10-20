@@ -5,7 +5,12 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { addTeamMember, removeTeamMember } from "@/app/[locale]/(app)/settings/teams/actions";
+import {
+	addTeamMember,
+	previewTeamMemberChangeDrivingImpact,
+	removeTeamMember,
+} from "@/app/[locale]/(app)/settings/teams/actions";
+import { useDrivingLicenceTeamChangeWarning } from "@/components/driving-licence/ending-confirmation";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -48,6 +53,7 @@ export function TeamMembersDialog({
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");
+	const { confirmTeamChange, drivingLicenceWarning } = useDrivingLicenceTeamChangeWarning();
 	const presence = useEmployeeClockStatuses(
 		allMembers.map((member) => member.employee?.id ?? ""),
 		{ polling: false },
@@ -113,12 +119,26 @@ export function TeamMembersDialog({
 			!m.teamMemberships?.some((membership) => membership.teamId === team.id),
 	);
 
-	const handleAddMember = () => {
+	// A primary-team change can end driving authorizations: warn first (#1425).
+	const handleAddMember = async () => {
 		if (!selectedEmployeeId) return;
-		addMutation.mutate({ teamId: team.id, employeeId: selectedEmployeeId });
+		const employeeId = selectedEmployeeId;
+		if (
+			!(await confirmTeamChange(() =>
+				previewTeamMemberChangeDrivingImpact(team.id, employeeId, "add"),
+			))
+		)
+			return;
+		addMutation.mutate({ teamId: team.id, employeeId });
 	};
 
-	const handleRemoveMember = (employeeId: string) => {
+	const handleRemoveMember = async (employeeId: string) => {
+		if (
+			!(await confirmTeamChange(() =>
+				previewTeamMemberChangeDrivingImpact(team.id, employeeId, "remove"),
+			))
+		)
+			return;
 		removeMutation.mutate({ teamId: team.id, employeeId });
 	};
 
@@ -274,6 +294,7 @@ export function TeamMembersDialog({
 					</Button>
 				</ActionPanelFooter>
 			</ActionPanelContent>
+			{drivingLicenceWarning}
 		</ActionPanel>
 	);
 }

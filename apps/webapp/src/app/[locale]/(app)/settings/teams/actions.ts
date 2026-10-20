@@ -25,6 +25,11 @@ import { DatabaseService } from "@/lib/effect/services/database.service";
 import { PermissionsService } from "@/lib/effect/services/permissions.service";
 import { createLogger } from "@/lib/logger";
 import { onTeamMemberAdded, onTeamMemberRemoved } from "@/lib/notifications/triggers";
+import type { DrivingLicenceEnding } from "@/lib/organization/driving-licence/intended-driver-rules";
+import {
+	previewDrivingLicenceIntendedDriverWrite,
+	runDrivingLicenceIntendedDriverWrite,
+} from "@/lib/organization/driving-licence/no-longer-intended";
 import {
 	buildTeamSettingsSurface,
 	canUseManagerScopedTeamSettings,
@@ -254,6 +259,249 @@ function resolveTeamSettingsActor(
 			employeeRecord: typedEmployeeRecord,
 		};
 	});
+}
+
+// =============================================================================
+// Team writes that can change an employee's primary team
+// =============================================================================
+
+type TeamWriteTransaction = Parameters<Parameters<typeof withAuthorizationMutation>[1]>[0];
+
+/** Adds the membership; the team becomes the primary team only of an employee without one. */
+async function writeTeamMemberAddition(
+	tx: TeamWriteTransaction,
+	input: {
+		organizationId: string;
+		teamId: string;
+		employeeId: string;
+		hadPrimaryTeam: boolean;
+		createdBy: string;
+	},
+) {
+	await tx
+		.insert(teamMembership)
+		.values({
+			organizationId: input.organizationId,
+			teamId: input.teamId,
+			employeeId: input.employeeId,
+			createdBy: input.createdBy,
+		})
+		.onConflictDoNothing();
+
+	// Keep legacy employee.teamId populated only for employees without a compatibility team.
+	if (input.hadPrimaryTeam) return;
+	await tx
+		.update(employee)
+		.set({ teamId: input.teamId, updatedAt: currentTimestamp() })
+		.where(
+			and(eq(employee.id, input.employeeId), eq(employee.organizationId, input.organizationId)),
+		);
+}
+
+/**
+ * Removes the membership; when it was the primary team, the alphabetically first remaining
+ * membership (by id) becomes the primary team, else none.
+ */
+async function writeTeamMemberRemoval(
+	tx: TeamWriteTransaction,
+	input: { organizationId: string; teamId: string; employeeId: string },
+) {
+	const { organizationId, teamId, employeeId } = input;
+	await tx
+		.delete(teamMembership)
+		.where(
+			and(
+				eq(teamMembership.organizationId, organizationId),
+				eq(teamMembership.teamId, teamId),
+				eq(teamMembership.employeeId, employeeId),
+			),
+		);
+
+	// Re-read under protection: the compatibility team may have moved.
+	const current = await tx.query.employee.findFirst({
+		where: and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)),
+		columns: { teamId: true },
+	});
+	if (current?.teamId !== teamId) return;
+
+	const remainingMemberships = await tx.query.teamMembership.findMany({
+		where: and(
+			eq(teamMembership.organizationId, organizationId),
+			eq(teamMembership.employeeId, employeeId),
+		),
+	});
+	const nextTeamId =
+		remainingMemberships
+			.flatMap((membership) => (membership.teamId !== teamId ? [membership.teamId] : []))
+			.toSorted()[0] ?? null;
+
+	await tx
+		.update(employee)
+		.set({ teamId: nextTeamId, updatedAt: currentTimestamp() })
+		.where(and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)));
+}
+
+/** Deletes a team without memberships; false when it still has members. */
+async function writeTeamDeletion(
+	tx: TeamWriteTransaction,
+	input: { organizationId: string; teamId: string },
+) {
+	const members = await tx.query.teamMembership.findMany({
+		where: and(
+			eq(teamMembership.organizationId, input.organizationId),
+			eq(teamMembership.teamId, input.teamId),
+		),
+	});
+	if (members.length > 0) return false;
+	await tx
+		.delete(team)
+		.where(and(eq(team.id, input.teamId), eq(team.organizationId, input.organizationId)));
+	return true;
+}
+
+/** The same checks as the team member and team deletion actions, for their previews. */
+function authorizeTeamChange(
+	teamId: string,
+	permission: "canManageTeamMembers" | "canManageTeamSettings",
+) {
+	return Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
+		const dbService = yield* DatabaseService;
+		const permissionsService = yield* PermissionsService;
+		const targetTeam = yield* dbService
+			.query("getTeam", async () => {
+				return await dbService.db.query.team.findFirst({ where: eq(team.id, teamId) });
+			})
+			.pipe(
+				Effect.flatMap((t) =>
+					t
+						? Effect.succeed(t)
+						: Effect.fail(
+								new NotFoundError({
+									message: "Team not found",
+									entityType: "team",
+									entityId: teamId,
+								}),
+							),
+				),
+			);
+		const actor = yield* resolveTeamSettingsActor(
+			dbService,
+			session.user,
+			targetTeam.organizationId,
+		);
+		if (actor.accessTier === "member") {
+			yield* ensureManagerScopedEmployee(actor.employeeRecord);
+		}
+		const canManage =
+			actor.accessTier === "orgAdmin"
+				? true
+				: yield* permissionsService.hasTeamPermission(actor.actorId, permission, teamId);
+		if (!canManage) {
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions to change this team",
+					userId: actor.actorId,
+					resource: "team",
+					action: "update",
+				}),
+			);
+		}
+		return { session, dbService, targetTeam };
+	});
+}
+
+const teamMemberChangeSchema = z.enum(["add", "remove"]);
+
+/**
+ * The warning before adding or removing a team member (#1425): who would lose which driving
+ * authorizations because their primary team changes. Read-only.
+ */
+export async function previewTeamMemberChangeDrivingImpact(
+	teamId: string,
+	employeeId: string,
+	change: "add" | "remove",
+): Promise<ServerActionResult<DrivingLicenceEnding[]>> {
+	const effect = Effect.gen(function* () {
+		const kind = yield* validateTeamMemberChange(change);
+		const { session, dbService, targetTeam } = yield* authorizeTeamChange(
+			teamId,
+			"canManageTeamMembers",
+		);
+		const organizationId = targetTeam.organizationId;
+		const targetEmployee = yield* dbService.query("getTargetEmployee", async () => {
+			return await dbService.db.query.employee.findFirst({
+				where: and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)),
+			});
+		});
+		if (!targetEmployee) {
+			return yield* Effect.fail(
+				new NotFoundError({
+					message: "Employee not found in this organization",
+					entityType: "employee",
+					entityId: employeeId,
+				}),
+			);
+		}
+		return yield* dbService.query("previewTeamMemberChangeDrivingImpact", () =>
+			previewDrivingLicenceIntendedDriverWrite<TeamWriteTransaction>(
+				{ organizationId, employeeIds: [employeeId] },
+				(work) =>
+					withAuthorizationMutation(
+						{ organizationId, employeeIds: [employeeId] },
+						work,
+						dbService.db,
+					),
+				(tx) =>
+					kind === "add"
+						? writeTeamMemberAddition(tx, {
+								organizationId,
+								teamId,
+								employeeId,
+								hadPrimaryTeam: Boolean(targetEmployee.teamId),
+								createdBy: session.user.id,
+							})
+						: writeTeamMemberRemoval(tx, { organizationId, teamId, employeeId }),
+			),
+		);
+	});
+	return runServerActionSafe(effect);
+}
+
+function validateTeamMemberChange(change: unknown) {
+	const parsed = teamMemberChangeSchema.safeParse(change);
+	return parsed.success
+		? Effect.succeed(parsed.data)
+		: Effect.fail(
+				new ValidationError({
+					message: "Invalid team member change",
+					field: "change",
+					value: change,
+				}),
+			);
+}
+
+/**
+ * The warning before deleting a team (#1425): who would lose which driving authorizations
+ * because the team is their primary team or its intended-driver assignment goes. Read-only.
+ */
+export async function previewTeamDeletionDrivingImpact(
+	teamId: string,
+): Promise<ServerActionResult<DrivingLicenceEnding[]>> {
+	const effect = Effect.gen(function* () {
+		const { dbService, targetTeam } = yield* authorizeTeamChange(teamId, "canManageTeamSettings");
+		const organizationId = targetTeam.organizationId;
+		return yield* dbService.query("previewTeamDeletionDrivingImpact", () =>
+			previewDrivingLicenceIntendedDriverWrite<TeamWriteTransaction>(
+				{ organizationId },
+				(work) =>
+					withAuthorizationMutation({ organizationId, organizationWide: true }, work, dbService.db),
+				(tx) => writeTeamDeletion(tx, { organizationId, teamId }),
+			),
+		);
+	});
+	return runServerActionSafe(effect);
 }
 
 // =============================================================================
@@ -657,28 +905,22 @@ export async function deleteTeam(teamId: string): Promise<ServerActionResult<voi
 				}
 
 				// Deletion cascades into employee teams and team permissions across the
-				// organization, so it takes the organization-wide protection.
+				// organization, so it takes the organization-wide protection. Clearing a
+				// primary team and the team's intended-driver assignment can end driving
+				// authorizations (#1425).
+				const deletion = { organizationId: targetTeam.organizationId, teamId };
 				const deleted = yield* dbService.query("deleteTeam", () =>
 					withAuthorizationMutation(
 						{
 							organizationId: targetTeam.organizationId,
 							organizationWide: true,
 						},
-						async (tx) => {
-							const members = await tx.query.teamMembership.findMany({
-								where: and(
-									eq(teamMembership.organizationId, targetTeam.organizationId),
-									eq(teamMembership.teamId, teamId),
-								),
-							});
-							if (members.length > 0) return false;
-							await tx
-								.delete(team)
-								.where(
-									and(eq(team.id, teamId), eq(team.organizationId, targetTeam.organizationId)),
-								);
-							return true;
-						},
+						(tx) =>
+							runDrivingLicenceIntendedDriverWrite(
+								tx,
+								{ organizationId: targetTeam.organizationId, actorUserId: session.user.id },
+								(write) => writeTeamDeletion(write, deletion),
+							),
 						dbService.db,
 					),
 				);
@@ -1036,36 +1278,31 @@ export async function addTeamMember(
 				}
 
 				// The target's team feeds manual target facts; both writes commit under
-				// the employee's configuration/access protection.
+				// the employee's configuration/access protection. A new primary team can end
+				// the employee's driving authorization (#1425).
+				const addition = {
+					organizationId: targetTeam.organizationId,
+					teamId,
+					employeeId: targetEmployee.id,
+					hadPrimaryTeam: Boolean(targetEmployee.teamId),
+					createdBy: session.user.id,
+				};
 				yield* dbService.query("addTeamMembership", () =>
 					withAuthorizationMutation(
 						{
 							organizationId: targetTeam.organizationId,
 							employeeIds: [targetEmployee.id],
 						},
-						async (tx) => {
-							await tx
-								.insert(teamMembership)
-								.values({
+						(tx) =>
+							runDrivingLicenceIntendedDriverWrite(
+								tx,
+								{
 									organizationId: targetTeam.organizationId,
-									teamId,
-									employeeId: targetEmployee.id,
-									createdBy: session.user.id,
-								})
-								.onConflictDoNothing();
-
-							// Keep legacy employee.teamId populated only for employees without a compatibility team.
-							if (targetEmployee.teamId) return;
-							await tx
-								.update(employee)
-								.set({ teamId, updatedAt: currentTimestamp() })
-								.where(
-									and(
-										eq(employee.id, targetEmployee.id),
-										eq(employee.organizationId, targetTeam.organizationId),
-									),
-								);
-						},
+									employeeIds: [targetEmployee.id],
+									actorUserId: session.user.id,
+								},
+								(write) => writeTeamMemberAddition(write, addition),
+							),
 						dbService.db,
 					),
 				);
@@ -1201,56 +1438,24 @@ export async function removeTeamMember(
 					});
 				});
 
+				// Moving the primary team can end the employee's driving authorization (#1425).
+				const removal = { organizationId: targetTeam.organizationId, teamId, employeeId };
 				yield* dbService.query("removeTeamMembership", () =>
 					withAuthorizationMutation(
 						{
 							organizationId: targetTeam.organizationId,
 							employeeIds: [employeeId],
 						},
-						async (tx) => {
-							await tx
-								.delete(teamMembership)
-								.where(
-									and(
-										eq(teamMembership.organizationId, targetTeam.organizationId),
-										eq(teamMembership.teamId, teamId),
-										eq(teamMembership.employeeId, employeeId),
-									),
-								);
-
-							// Re-read under protection: the compatibility team may have moved.
-							const current = await tx.query.employee.findFirst({
-								where: and(
-									eq(employee.id, employeeId),
-									eq(employee.organizationId, targetTeam.organizationId),
-								),
-								columns: { teamId: true },
-							});
-							if (current?.teamId !== teamId) return;
-
-							const remainingMemberships = await tx.query.teamMembership.findMany({
-								where: and(
-									eq(teamMembership.organizationId, targetTeam.organizationId),
-									eq(teamMembership.employeeId, employeeId),
-								),
-							});
-							const nextTeamId =
-								remainingMemberships
-									.flatMap((membership) =>
-										membership.teamId !== teamId ? [membership.teamId] : [],
-									)
-									.toSorted()[0] ?? null;
-
-							await tx
-								.update(employee)
-								.set({ teamId: nextTeamId, updatedAt: currentTimestamp() })
-								.where(
-									and(
-										eq(employee.id, employeeId),
-										eq(employee.organizationId, targetTeam.organizationId),
-									),
-								);
-						},
+						(tx) =>
+							runDrivingLicenceIntendedDriverWrite(
+								tx,
+								{
+									organizationId: targetTeam.organizationId,
+									employeeIds: [employeeId],
+									actorUserId: session.user.id,
+								},
+								(write) => writeTeamMemberRemoval(write, removal),
+							),
 						dbService.db,
 					),
 				);

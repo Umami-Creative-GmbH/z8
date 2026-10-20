@@ -50,7 +50,8 @@ export interface DrivingLicenceReminderOccasion {
 	employeeId: string;
 	employmentPeriodId: string | null;
 	key: string;
-	kind: "deadline" | "suspension";
+	/** `ended`: the authorizations ended because the employee is no longer an intended driver (#1425). */
+	kind: "deadline" | "suspension" | "ended";
 	classCode: string | null;
 	validThrough: string | null;
 	leadDays: number | null;
@@ -419,13 +420,24 @@ export async function collectDrivingLicenceReactivationSuspensions(
 	}
 	return occasions;
 }
+const DRIVING_AUTHORIZATION_ENDED_COPY = {
+	titleKey: "common:notifications.content.drivingAuthorizationEnded.title",
+	titleDefault: "Driving authorization ended",
+	messageKey: "common:notifications.content.drivingAuthorizationEnded.message",
+	messageDefault:
+		"{employeeName} is no longer an intended driver, so their driving authorization ({classes}) has ended. Driving again requires a new check.",
+};
 function reminderParams(
 	occasion: DrivingLicenceReminderOccasion,
 	recipientUserId: string,
 	employeeName: string,
 ): CreateNotificationParams {
-	const suspended = occasion.kind === "suspension";
-	const copy = suspended
+	// The end notice shares the suspension notice's type and channels (#1425).
+	const suspended = occasion.kind !== "deadline";
+	const copy =
+		occasion.kind === "ended"
+			? DRIVING_AUTHORIZATION_ENDED_COPY
+			: suspended
 		? {
 				titleKey:
 					"common:notifications.content.drivingAuthorizationSuspended.title",
@@ -473,6 +485,27 @@ function reminderParams(
 		},
 	};
 }
+/** The end notice of a delivery (#1425): key `ended:<period>:<instant>:<class+class…>`. */
+function endedOccasion(
+	organizationId: string,
+	delivery: typeof drivingLicenceReminderDelivery.$inferSelect,
+): DrivingLicenceReminderOccasion | undefined {
+	const key = delivery.occasionKey;
+	if (!key.startsWith("ended:")) return undefined;
+	return {
+		organizationId,
+		employeeId: delivery.employeeId,
+		employmentPeriodId: delivery.employmentPeriodId,
+		key,
+		kind: "ended",
+		classCode: key
+			.slice(key.lastIndexOf(":") + 1)
+			.split("+")
+			.join(", "),
+		validThrough: null,
+		leadDays: null,
+	};
+}
 async function prepareReminderEmail(
 	tx: DrivingLicenceTransaction,
 	organizationId: string,
@@ -491,17 +524,21 @@ async function prepareReminderEmail(
 		)
 		.for("update");
 	if (delivery?.emailState !== expectedState) return;
-	const occasions = await collectDrivingLicenceReminderOccasions(
-		tx,
-		organizationId,
-		now,
-		delivery.employeeId,
-	);
-	const current = occasions.find(
-		(o) =>
-			o.key === delivery.occasionKey &&
-			o.employmentPeriodId === delivery.employmentPeriodId,
-	);
+	// An end notice reports a past fact; it is not re-collected like current occasions.
+	const current =
+		endedOccasion(organizationId, delivery) ??
+		(
+			await collectDrivingLicenceReminderOccasions(
+				tx,
+				organizationId,
+				now,
+				delivery.employeeId,
+			)
+		).find(
+			(o) =>
+				o.key === delivery.occasionKey &&
+				o.employmentPeriodId === delivery.employmentPeriodId,
+		);
 	const recipients = await resolveDrivingLicenceReminderRecipients(
 		tx,
 		organizationId,

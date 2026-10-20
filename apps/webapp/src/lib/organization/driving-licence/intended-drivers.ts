@@ -7,15 +7,24 @@ import { auditLog, employee, team } from "@/db/schema";
 import { drivingLicenceIntendedDriverAssignment } from "@/db/schema/driving-licence-intended-drivers";
 import { drivingLicencePolicy } from "@/db/schema/driving-licence-policy";
 import { AuditAction } from "@/lib/audit-logger";
-import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
+import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import type { DrivingLicenceActor } from "./context";
 import type {
+	DrivingLicenceEndingPreview,
 	IntendedDriverAdminData,
 	IntendedDriverAssignment,
 	IntendedDriverAssignmentTarget,
 } from "./intended-driver-rules";
 import { lockDrivingLicenceOrganization } from "./locks";
+import {
+	beginDrivingLicenceIntendedDriverChange,
+	type DrivingLicenceIntendedDriverChange,
+	drivingLicenceEndingToken,
+	endDrivingAuthorizationNoLongerIntended,
+	previewDrivingLicenceEndingByRollback,
+	previewDrivingLicenceIntendedDriverChange,
+} from "./no-longer-intended";
 import type { DrivingLicenceDatabase, DrivingLicenceTransaction } from "./verifiers";
 
 /**
@@ -154,11 +163,17 @@ const assignmentTarget = z.discriminatedUnion("type", [
 	z.strictObject({ type: z.literal("team"), teamId: z.uuid() }),
 	z.strictObject({ type: z.literal("employee"), employeeId: z.uuid() }),
 ]);
+/** The token of the preview the admin confirmed (#1425); a save that ends something else is refused. */
+const previewToken = z
+	.string()
+	.regex(/^[0-9a-f]{64}$/)
+	.optional();
 export const intendedDriverAssignmentInput = z.strictObject({
 	target: assignmentTarget,
 	value: z.enum(["required", "not_required"]),
+	previewToken,
 });
-export const intendedDriverRemovalInput = z.strictObject({ assignmentId: z.uuid() });
+export const intendedDriverRemovalInput = z.strictObject({ assignmentId: z.uuid(), previewToken });
 
 /**
  * Locks the organization and refuses while driving licence control is off: assignments are
@@ -217,111 +232,213 @@ function assignableEmployee(
 		.limit(1);
 }
 
+type AssignmentInput = z.infer<typeof intendedDriverAssignmentInput>;
+type RemovalInput = z.infer<typeof intendedDriverRemovalInput>;
+type AssignmentWrite = {
+	assignmentId: string;
+	change: DrivingLicenceIntendedDriverChange | null;
+};
+
+/**
+ * Runs an assignment write and ends the authorizations of employees who stop being intended
+ * drivers through it (#1425), in one locked transaction. A given `previewToken` must match
+ * what is ended, so the admin's confirmation can't go stale.
+ */
+async function saveAssignmentChange(
+	actor: DrivingLicenceActor,
+	token: string | undefined,
+	write: (tx: DrivingLicenceTransaction, now: Instant) => Promise<AssignmentWrite>,
+) {
+	return db.transaction(async (tx) => {
+		const now = systemClock.nowInstant();
+		const { assignmentId, change } = await write(tx, now);
+		const endings = await previewDrivingLicenceIntendedDriverChange(tx, change, now);
+		if (token !== undefined && token !== drivingLicenceEndingToken(endings))
+			throw new Error("stale_preview");
+		if (change && endings.length)
+			await endDrivingAuthorizationNoLongerIntended(tx, {
+				organizationId: actor.organizationId,
+				endings,
+				actorUserId: actor.userId,
+				now,
+			});
+		return { assignmentId };
+	});
+}
+
+/** The same write in a transaction that is rolled back: who would lose which classes. */
+async function previewAssignmentChange(
+	write: (tx: DrivingLicenceTransaction, now: Instant) => Promise<AssignmentWrite>,
+): Promise<DrivingLicenceEndingPreview> {
+	const employees = await previewDrivingLicenceEndingByRollback((rollBack) =>
+		db.transaction(async (tx) => {
+			const now = systemClock.nowInstant();
+			const { change } = await write(tx, now);
+			rollBack(await previewDrivingLicenceIntendedDriverChange(tx, change, now));
+		}),
+	);
+	return { employees, previewToken: drivingLicenceEndingToken(employees) };
+}
+
 /**
  * Assigns Required or Not required to the organization, a team or an employee; one row per
- * target, changed in place. Applies at once. Owners and admins only (the action checks).
+ * target, changed in place. Applies at once and ends the authorizations of employees who
+ * stop being intended drivers. Owners and admins only (the action checks).
  */
 export async function setDrivingLicenceIntendedDriverAssignment(
 	actor: DrivingLicenceActor,
 	raw: unknown,
 ): Promise<{ assignmentId: string }> {
-	const { target, value } = intendedDriverAssignmentInput.parse(raw);
-	const required = value === "required";
-	return db.transaction(async (tx) => {
-		const { organizationId } = actor;
-		await beginAssignmentChange(tx, organizationId);
-		await assertTargetInOrganization(tx, organizationId, target);
-		const table = drivingLicenceIntendedDriverAssignment;
-		const targetFilter =
-			target.type === "organization"
-				? eq(table.assignmentType, "organization")
-				: target.type === "team"
-					? eq(table.teamId, target.teamId)
-					: eq(table.employeeId, target.employeeId);
-		const [existing] = await tx
-			.select({ id: table.id, required: table.required })
-			.from(table)
-			.where(and(eq(table.organizationId, organizationId), targetFilter))
-			.limit(1);
-		if (existing?.required === required) return { assignmentId: existing.id };
-		const now = dateFromInstant(systemClock.nowInstant());
-		// #1425 seam: preview and end the authorizations of employees who stop being intended
-		// drivers through this change, here inside the same locked transaction.
-		let assignmentId: string;
-		if (existing) {
-			await tx
-				.update(table)
-				.set({ required, updatedAt: now, updatedBy: actor.userId })
-				.where(and(eq(table.organizationId, organizationId), eq(table.id, existing.id)));
-			assignmentId = existing.id;
-		} else {
-			const [inserted] = await tx
-				.insert(table)
-				.values({
-					organizationId,
-					assignmentType: target.type,
-					teamId: target.type === "team" ? target.teamId : null,
-					employeeId: target.type === "employee" ? target.employeeId : null,
-					priority: target.type === "organization" ? 0 : target.type === "team" ? 1 : 2,
-					required,
-					createdAt: now,
-					createdBy: actor.userId,
-					updatedAt: now,
-					updatedBy: actor.userId,
-				})
-				.returning({ id: table.id });
-			assignmentId = inserted.id;
-		}
-		await tx.insert(auditLog).values({
-			organizationId,
-			entityType: "driving_licence_intended_driver_assignment",
-			entityId: assignmentId,
-			action: AuditAction.DRIVING_LICENCE_INTENDED_DRIVER_SET,
-			performedBy: actor.userId,
-			employeeId: target.type === "employee" ? target.employeeId : null,
-			changes: JSON.stringify({
-				target,
-				from: existing ? { required: existing.required } : null,
-				to: { required },
-			}),
-		});
-		return { assignmentId };
-	});
+	const input = intendedDriverAssignmentInput.parse(raw);
+	return saveAssignmentChange(actor, input.previewToken, (tx, now) =>
+		writeAssignment(tx, actor, input, now),
+	);
 }
 
-/** Removes one assignment of the organization; the next broader assignment then applies. */
+/** Read-only: who would lose which class authorizations if this assignment were saved. */
+export async function previewDrivingLicenceIntendedDriverAssignment(
+	actor: DrivingLicenceActor,
+	raw: unknown,
+): Promise<DrivingLicenceEndingPreview> {
+	const input = intendedDriverAssignmentInput.parse(raw);
+	return previewAssignmentChange((tx, now) => writeAssignment(tx, actor, input, now));
+}
+
+async function writeAssignment(
+	tx: DrivingLicenceTransaction,
+	actor: DrivingLicenceActor,
+	{ target, value }: AssignmentInput,
+	nowInstant: Instant,
+): Promise<AssignmentWrite> {
+	const required = value === "required";
+	const { organizationId } = actor;
+	await beginAssignmentChange(tx, organizationId);
+	await assertTargetInOrganization(tx, organizationId, target);
+	const table = drivingLicenceIntendedDriverAssignment;
+	const targetFilter =
+		target.type === "organization"
+			? eq(table.assignmentType, "organization")
+			: target.type === "team"
+				? eq(table.teamId, target.teamId)
+				: eq(table.employeeId, target.employeeId);
+	const [existing] = await tx
+		.select({ id: table.id, required: table.required })
+		.from(table)
+		.where(and(eq(table.organizationId, organizationId), targetFilter))
+		.limit(1);
+	if (existing?.required === required) return { assignmentId: existing.id, change: null };
+	const now = dateFromInstant(nowInstant);
+	const change = await beginDrivingLicenceIntendedDriverChange(
+		tx,
+		organizationId,
+		nowInstant,
+		target.type === "employee" ? [target.employeeId] : undefined,
+	);
+	let assignmentId: string;
+	if (existing) {
+		await tx
+			.update(table)
+			.set({ required, updatedAt: now, updatedBy: actor.userId })
+			.where(and(eq(table.organizationId, organizationId), eq(table.id, existing.id)));
+		assignmentId = existing.id;
+	} else {
+		const [inserted] = await tx
+			.insert(table)
+			.values({
+				organizationId,
+				assignmentType: target.type,
+				teamId: target.type === "team" ? target.teamId : null,
+				employeeId: target.type === "employee" ? target.employeeId : null,
+				priority: target.type === "organization" ? 0 : target.type === "team" ? 1 : 2,
+				required,
+				createdAt: now,
+				createdBy: actor.userId,
+				updatedAt: now,
+				updatedBy: actor.userId,
+			})
+			.returning({ id: table.id });
+		assignmentId = inserted.id;
+	}
+	await tx.insert(auditLog).values({
+		organizationId,
+		entityType: "driving_licence_intended_driver_assignment",
+		entityId: assignmentId,
+		action: AuditAction.DRIVING_LICENCE_INTENDED_DRIVER_SET,
+		performedBy: actor.userId,
+		employeeId: target.type === "employee" ? target.employeeId : null,
+		changes: JSON.stringify({
+			target,
+			from: existing ? { required: existing.required } : null,
+			to: { required },
+		}),
+	});
+	return { assignmentId, change };
+}
+
+/**
+ * Removes one assignment of the organization; the next broader assignment then applies, and
+ * the authorizations of employees who stop being intended drivers end.
+ */
 export async function removeDrivingLicenceIntendedDriverAssignment(
 	actor: DrivingLicenceActor,
 	raw: unknown,
 ): Promise<{ assignmentId: string }> {
-	const { assignmentId } = intendedDriverRemovalInput.parse(raw);
-	return db.transaction(async (tx) => {
-		const { organizationId } = actor;
-		await beginAssignmentChange(tx, organizationId);
-		const table = drivingLicenceIntendedDriverAssignment;
-		// #1425 seam: preview and end the authorizations this removal takes away, before deleting.
-		const [removed] = await tx
-			.delete(table)
-			.where(and(eq(table.organizationId, organizationId), eq(table.id, assignmentId)))
-			.returning();
-		if (!removed) throw new Error("assignment_not_found");
-		await tx.insert(auditLog).values({
-			organizationId,
-			entityType: "driving_licence_intended_driver_assignment",
-			entityId: removed.id,
-			action: AuditAction.DRIVING_LICENCE_INTENDED_DRIVER_REMOVED,
-			performedBy: actor.userId,
-			employeeId: removed.employeeId,
-			changes: JSON.stringify({
-				from: {
-					assignmentType: removed.assignmentType,
-					teamId: removed.teamId,
-					employeeId: removed.employeeId,
-					required: removed.required,
-				},
-				to: null,
-			}),
-		});
-		return { assignmentId: removed.id };
+	const input = intendedDriverRemovalInput.parse(raw);
+	return saveAssignmentChange(actor, input.previewToken, (tx, now) =>
+		writeRemoval(tx, actor, input, now),
+	);
+}
+
+/** Read-only: who would lose which class authorizations if this assignment were removed. */
+export async function previewDrivingLicenceIntendedDriverRemoval(
+	actor: DrivingLicenceActor,
+	raw: unknown,
+): Promise<DrivingLicenceEndingPreview> {
+	const input = intendedDriverRemovalInput.parse(raw);
+	return previewAssignmentChange((tx, now) => writeRemoval(tx, actor, input, now));
+}
+
+async function writeRemoval(
+	tx: DrivingLicenceTransaction,
+	actor: DrivingLicenceActor,
+	{ assignmentId }: RemovalInput,
+	now: Instant,
+): Promise<AssignmentWrite> {
+	const { organizationId } = actor;
+	await beginAssignmentChange(tx, organizationId);
+	const table = drivingLicenceIntendedDriverAssignment;
+	const [target] = await tx
+		.select({ employeeId: table.employeeId })
+		.from(table)
+		.where(and(eq(table.organizationId, organizationId), eq(table.id, assignmentId)));
+	if (!target) throw new Error("assignment_not_found");
+	const change = await beginDrivingLicenceIntendedDriverChange(
+		tx,
+		organizationId,
+		now,
+		target.employeeId ? [target.employeeId] : undefined,
+	);
+	const [removed] = await tx
+		.delete(table)
+		.where(and(eq(table.organizationId, organizationId), eq(table.id, assignmentId)))
+		.returning();
+	if (!removed) throw new Error("assignment_not_found");
+	await tx.insert(auditLog).values({
+		organizationId,
+		entityType: "driving_licence_intended_driver_assignment",
+		entityId: removed.id,
+		action: AuditAction.DRIVING_LICENCE_INTENDED_DRIVER_REMOVED,
+		performedBy: actor.userId,
+		employeeId: removed.employeeId,
+		changes: JSON.stringify({
+			from: {
+				assignmentType: removed.assignmentType,
+				teamId: removed.teamId,
+				employeeId: removed.employeeId,
+				required: removed.required,
+			},
+			to: null,
+		}),
 	});
+	return { assignmentId: removed.id, change };
 }

@@ -79,7 +79,12 @@ export function DrivingClassReason({ reason }: { reason: string }) {
 						"drivingLicence.class.overdue",
 						"Routine check overdue. This is an organizational suspension, not a statement that legal driving entitlement was withdrawn.",
 					)
-				: t(
+				: reason === "no_longer_intended"
+					? t(
+							"drivingLicence.class.noLongerIntended",
+							"Ended because the employee is no longer an intended driver. Driving again requires a new check.",
+						)
+					: t(
 						"drivingLicence.class.recheck",
 						"A new original check and explicit reinstatement are required.",
 					)}

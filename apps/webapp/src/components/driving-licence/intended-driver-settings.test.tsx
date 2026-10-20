@@ -7,6 +7,8 @@ import type { IntendedDriverAdminData } from "@/lib/organization/driving-licence
 const api = vi.hoisted(() => ({
 	set: vi.fn(),
 	remove: vi.fn(),
+	previewSet: vi.fn(),
+	previewRemove: vi.fn(),
 	refresh: vi.fn(),
 	invalidate: vi.fn(),
 	toast: { success: vi.fn(), error: vi.fn() },
@@ -30,6 +32,8 @@ vi.mock("sonner", () => ({ toast: api.toast }));
 vi.mock("@/lib/organization/driving-licence/intended-driver-actions", () => ({
 	setDrivingLicenceIntendedDriverAssignmentAction: api.set,
 	removeDrivingLicenceIntendedDriverAssignmentAction: api.remove,
+	previewDrivingLicenceIntendedDriverAssignmentAction: api.previewSet,
+	previewDrivingLicenceIntendedDriverRemovalAction: api.previewRemove,
 }));
 vi.mock("@/components/employee-select", () => ({
 	EmployeeSingleSelect: ({
@@ -70,6 +74,15 @@ function adminData(overrides: Partial<IntendedDriverAdminData> = {}): IntendedDr
 		...overrides,
 	};
 }
+const nobodyEnds = { success: true, data: { employees: [], previewToken: "0".repeat(64) } };
+const token = "a".repeat(64);
+const danaEnds = {
+	success: true,
+	data: {
+		employees: [{ employeeId, name: "Dana Driver", classCodes: ["B", "CE"] }],
+		previewToken: token,
+	},
+};
 const stamp = {
 	createdAt: "2026-01-15T08:30:00.000Z",
 	createdBy: "owner",
@@ -81,6 +94,8 @@ describe("IntendedDriverSettings", () => {
 	beforeEach(() => {
 		api.set.mockReset().mockResolvedValue({ success: true, data: { assignmentId: "a" } });
 		api.remove.mockReset().mockResolvedValue({ success: true, data: { assignmentId: "a" } });
+		api.previewSet.mockReset().mockResolvedValue(nobodyEnds);
+		api.previewRemove.mockReset().mockResolvedValue(nobodyEnds);
 		api.refresh.mockReset();
 		api.invalidate.mockReset();
 		api.toast.success.mockReset();
@@ -186,6 +201,112 @@ describe("IntendedDriverSettings", () => {
 		await waitFor(() =>
 			expect(api.toast.success).toHaveBeenCalledWith("Intended driver assignment removed"),
 		);
+	});
+
+	it("shows who loses which classes before a save that ends authorizations, and saves on confirmation", async () => {
+		api.previewSet.mockResolvedValue(danaEnds);
+		render(<IntendedDriverSettings data={adminData()} />);
+		await userEvent.click(screen.getByRole("button", { name: "Set Organization Default" }));
+		await userEvent.click(screen.getByRole("combobox", { name: "Driving licence checks" }));
+		await userEvent.click(await screen.findByRole("option", { name: "Not required (excluded)" }));
+		await userEvent.click(screen.getByRole("button", { name: "Save" }));
+
+		const dialog = await screen.findByRole("alertdialog", { name: "End driving authorizations?" });
+		const list = within(dialog).getByRole("list", { name: "Driving authorizations that end" });
+		expect(within(list).getByText("Dana Driver")).toBeTruthy();
+		expect(within(list).getByText("B, CE")).toBeTruthy();
+		expect(api.previewSet).toHaveBeenCalledWith({
+			target: { type: "organization" },
+			value: "not_required",
+		});
+		expect(api.set).not.toHaveBeenCalled();
+
+		await userEvent.click(
+			within(dialog).getByRole("button", { name: "Save and end authorizations" }),
+		);
+		await waitFor(() =>
+			expect(api.set).toHaveBeenCalledWith({
+				target: { type: "organization" },
+				value: "not_required",
+				previewToken: token,
+			}),
+		);
+		await waitFor(() => expect(api.refresh).toHaveBeenCalled());
+	});
+
+	it("saves nothing when the admin cancels the ending", async () => {
+		api.previewRemove.mockResolvedValue(danaEnds);
+		render(
+			<IntendedDriverSettings
+				data={adminData({
+					assignments: [
+						{
+							id: "a1",
+							assignmentType: "team",
+							teamId,
+							employeeId: null,
+							value: "required",
+							...stamp,
+						},
+					],
+				})}
+			/>,
+		);
+		const teams = screen.getByRole("list", { name: "Team Overrides" });
+		await userEvent.click(within(teams).getByRole("button", { name: "Remove Delivery" }));
+		const dialog = await screen.findByRole("alertdialog");
+		await userEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+		await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+		expect(api.previewRemove).toHaveBeenCalledWith({ assignmentId: "a1" });
+		expect(api.remove).not.toHaveBeenCalled();
+		expect(api.refresh).not.toHaveBeenCalled();
+	});
+
+	it("removes on confirmation with the confirmed preview", async () => {
+		api.previewRemove.mockResolvedValue(danaEnds);
+		render(
+			<IntendedDriverSettings
+				data={adminData({
+					assignments: [
+						{
+							id: "a1",
+							assignmentType: "team",
+							teamId,
+							employeeId: null,
+							value: "required",
+							...stamp,
+						},
+					],
+				})}
+			/>,
+		);
+		const teams = screen.getByRole("list", { name: "Team Overrides" });
+		await userEvent.click(within(teams).getByRole("button", { name: "Remove Delivery" }));
+		const dialog = await screen.findByRole("alertdialog");
+		await userEvent.click(
+			within(dialog).getByRole("button", { name: "Save and end authorizations" }),
+		);
+		await waitFor(() =>
+			expect(api.remove).toHaveBeenCalledWith({ assignmentId: "a1", previewToken: token }),
+		);
+	});
+
+	it("asks for a fresh review when the ending changed before the save", async () => {
+		api.previewSet.mockResolvedValue(danaEnds);
+		api.set.mockResolvedValue({ success: false, error: "stale_preview" });
+		render(<IntendedDriverSettings data={adminData()} />);
+		await userEvent.click(screen.getByRole("button", { name: "Set Organization Default" }));
+		await userEvent.click(screen.getByRole("button", { name: "Save" }));
+		const dialog = await screen.findByRole("alertdialog");
+		await userEvent.click(
+			within(dialog).getByRole("button", { name: "Save and end authorizations" }),
+		);
+		await waitFor(() =>
+			expect(api.toast.error).toHaveBeenCalledWith(
+				"Who this change affects has changed in the meantime. Review it and save again.",
+			),
+		);
+		expect(api.refresh).not.toHaveBeenCalled();
 	});
 
 	it("explains a refusal by its code", async () => {
