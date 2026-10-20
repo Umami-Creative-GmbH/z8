@@ -30,6 +30,7 @@ const {
 	loadCurrentPersonnelFileAccessMock,
 	loadCollectsPeriodSubmissionsMock,
 	listWhoIsInLocationsMock,
+	readDrivingLicenceVisibilityMock,
 } = vi.hoisted(() => ({
 	navMainSpy: vi.fn(),
 	navSecondarySpy: vi.fn(),
@@ -47,6 +48,7 @@ const {
 	loadCurrentPersonnelFileAccessMock: vi.fn(),
 	loadCollectsPeriodSubmissionsMock: vi.fn(),
 	listWhoIsInLocationsMock: vi.fn(),
+	readDrivingLicenceVisibilityMock: vi.fn(),
 }));
 
 vi.mock("@tolgee/react", () => ({
@@ -84,6 +86,10 @@ vi.mock("@/lib/time-tracking/period-submissions/settings", () => ({
 
 vi.mock("@/lib/time-tracking/who-is-in/queries", () => ({
 	listWhoIsInLocations: listWhoIsInLocationsMock,
+}));
+
+vi.mock("@/lib/organization/driving-licence/visibility", () => ({
+	readDrivingLicenceVisibility: readDrivingLicenceVisibilityMock,
 }));
 
 vi.mock("@/components/travel-expenses/finance/finance-nav-badge", () => ({
@@ -182,6 +188,15 @@ describe("app sidebar compliance navigation", () => {
 		loadCollectsPeriodSubmissionsMock.mockResolvedValue(false);
 		listWhoIsInLocationsMock.mockReset();
 		listWhoIsInLocationsMock.mockResolvedValue([]);
+		readDrivingLicenceVisibilityMock.mockReset();
+		readDrivingLicenceVisibilityMock.mockResolvedValue({
+			featureEnabled: false,
+			intendedDriver: false,
+			ownRetainedRecords: false,
+			verifier: false,
+			planner: false,
+			settings: "hidden",
+		});
 		vi.resetModules();
 	});
 
@@ -272,6 +287,41 @@ describe("app sidebar compliance navigation", () => {
 		expect(urls.indexOf("/personnel-files")).toBe(urls.indexOf("/my-documents") + 1);
 	});
 
+	it("renders the personal Driving licence item after Personnel Files only with the capability (#1420)", () => {
+		const { unmount } = render(<AppSidebar employeeRole="employee" />);
+		expect(screen.queryByRole("link", { name: "Driving licence" })).toBeNull();
+		unmount();
+
+		render(
+			<AppSidebar
+				employeeRole="employee"
+				navigationCapabilities={{
+					scheduling: false,
+					compliance: false,
+					payroll: false,
+					finance: false,
+					worksCouncil: false,
+					personnelFiles: true,
+					drivingLicence: true,
+					platformAdmin: false,
+				}}
+			/>,
+		);
+
+		expect(screen.getByRole("link", { name: "Driving licence" }).getAttribute("href")).toBe(
+			"/driving-licence",
+		);
+		const urls = navMainSpy.mock.lastCall?.[0].map((item) => item.url) ?? [];
+		expect(urls.indexOf("/driving-licence")).toBe(urls.indexOf("/personnel-files") + 1);
+		expect(appSearchSpy).toHaveBeenLastCalledWith(
+			expect.objectContaining({
+				staticResults: expect.arrayContaining([
+					expect.objectContaining({ title: "Driving licence", href: "/driving-licence" }),
+				]),
+			}),
+		);
+	});
+
 	it.each([
 		["shows", true, { status: "resolved", access: { grants: [{ categories: new Set(["payslip"]) }] } }, true],
 		["hides", true, { status: "resolved", access: { grants: [] } }, false],
@@ -332,6 +382,94 @@ describe("app sidebar compliance navigation", () => {
 				if (!enabled) expect(loadCurrentPersonnelFileAccessMock).not.toHaveBeenCalled();
 			} finally {
 				// Later tests render the real sidebar through the server component.
+				vi.doUnmock("./app-sidebar");
+			}
+		},
+	);
+
+	it.each([
+		[
+			"intended driver",
+			{ featureEnabled: true, intendedDriver: true, settings: "hidden" },
+			true,
+			false,
+		],
+		["verifier", { featureEnabled: true, verifier: true, settings: "hidden" }, true, false],
+		["planner", { featureEnabled: true, planner: true, settings: "hidden" }, true, false],
+		[
+			"former intended driver",
+			{ featureEnabled: true, ownRetainedRecords: true, settings: "full" },
+			true,
+			true,
+		],
+		["member without a role", { featureEnabled: true, settings: "full" }, false, true],
+		["feature off", { featureEnabled: false, settings: "retention_only" }, false, true],
+		["feature off without records", { featureEnabled: false, settings: "hidden" }, false, false],
+	])(
+		"decides the Driving licence item and settings entry from the visibility reader (%s, #1420)",
+		async (_case, view, drivingLicence, drivingLicenceSettingsVisible) => {
+			vi.stubEnv("BILLING_ENABLED", "false");
+			canCreateOrganizationsForDeploymentMock.mockImplementation((value: boolean) => value);
+			getUserOrganizationsMock.mockResolvedValue([
+				{
+					id: "org_1",
+					shiftsEnabled: false,
+					projectsEnabled: false,
+					surchargesEnabled: false,
+					demoDataEnabled: true,
+					worksCouncilEnabled: false,
+					personnelFilesEnabled: false,
+				},
+			]);
+			getAuthContextMock.mockResolvedValue({
+				user: { id: "user_1", role: "user" },
+				session: { activeOrganizationId: "org_1" },
+				employee: { id: "emp_1", organizationId: "org_1", role: "employee" },
+			});
+			getCurrentSettingsAccessTierMock.mockResolvedValueOnce("orgAdmin");
+			hasActivePayrollAccessGrantMock.mockResolvedValue(false);
+			loadFinanceActorMock.mockResolvedValue(null);
+			readDrivingLicenceVisibilityMock.mockResolvedValue({
+				featureEnabled: false,
+				intendedDriver: false,
+				ownRetainedRecords: false,
+				verifier: false,
+				planner: false,
+				...view,
+			});
+
+			vi.doMock("@/lib/auth-helpers", () => ({
+				getUserOrganizations: getUserOrganizationsMock,
+				getAuthContext: getAuthContextMock,
+				getCurrentSettingsAccessTier: getCurrentSettingsAccessTierMock,
+				requireAbility: requireAbilityMock,
+			}));
+			vi.doMock("@/lib/organization/creation-policy.server", () => ({
+				canCreateOrganizationsForDeployment: canCreateOrganizationsForDeploymentMock,
+			}));
+			vi.doMock("./app-sidebar", () => ({
+				AppSidebar: (props: Record<string, unknown>) => {
+					appSidebarSpy(props);
+					return <div data-testid="server-sidebar-proxy" />;
+				},
+			}));
+
+			try {
+				const { ServerAppSidebar } = await import("./server-app-sidebar");
+
+				render(await ServerAppSidebar({}));
+
+				expect(readDrivingLicenceVisibilityMock).toHaveBeenCalledWith({
+					organizationId: "org_1",
+					userId: "user_1",
+				});
+				expect(appSidebarSpy).toHaveBeenCalledWith(
+					expect.objectContaining({
+						navigationCapabilities: expect.objectContaining({ drivingLicence }),
+						drivingLicenceSettingsVisible,
+					}),
+				);
+			} finally {
 				vi.doUnmock("./app-sidebar");
 			}
 		},

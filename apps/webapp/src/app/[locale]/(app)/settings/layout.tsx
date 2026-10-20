@@ -5,6 +5,7 @@ import { SettingsContentLoading } from "@/components/shells/settings-content-loa
 import { Skeleton } from "@/components/ui/skeleton";
 import { env } from "@/env";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { loadDrivingLicenceSettingsVisible } from "@/lib/organization/driving-licence/visibility";
 import { managesProjectBelowManagerTier } from "@/lib/projects/project-manager-settings-access";
 import { RouteTranslationBoundary } from "@/tolgee/route-boundary";
 
@@ -17,6 +18,11 @@ async function SettingsNavigation() {
 		settingsRouteContext?.authContext.user.id ?? null,
 		settingsRouteContext?.authContext.session.activeOrganizationId ?? null,
 	);
+	const drivingLicenceSettingsVisible = await loadDrivingLicenceSettingsVisible(
+		accessTier,
+		settingsRouteContext?.authContext.user.id ?? null,
+		settingsRouteContext?.authContext.session.activeOrganizationId ?? null,
+	);
 
 	return (
 		<aside className="w-64 border-r bg-card hidden md:block overflow-auto">
@@ -24,6 +30,7 @@ async function SettingsNavigation() {
 				accessTier={accessTier}
 				billingEnabled={billingEnabled}
 				managesProject={managesProject}
+				drivingLicenceSettingsVisible={drivingLicenceSettingsVisible}
 			/>
 		</aside>
 	);

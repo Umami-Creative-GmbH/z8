@@ -26,7 +26,6 @@ describe("settings visibility tiers", () => {
 			"wellness",
 			"position-stamps",
 			"my-data",
-			"my-driving-licence",
 		]);
 	});
 
@@ -723,6 +722,44 @@ describe("settings visibility tiers", () => {
 			expect(
 				canResolvedTierAccessRoute("member", "/settings/billable-time"),
 			).toBe(false);
+		});
+	});
+
+	describe("Driving licence control entries (#1420)", () => {
+		const visibleIds = (
+			accessTier: "member" | "manager" | "orgAdmin",
+			drivingLicenceSettingsVisible?: boolean,
+		) =>
+			getResolvedSettingsVisibility({
+				accessTier,
+				billingEnabled: true,
+				featureFlags: {},
+				drivingLicenceSettingsVisible,
+			}).visibleSettings.map((entry) => entry.id);
+
+		it("no longer lists My driving authorization in Settings", () => {
+			expect(SETTINGS_ENTRIES.some((entry) => entry.href === "/driving-licence")).toBe(false);
+			expect(visibleIds("member", true)).not.toContain("my-driving-licence");
+		});
+
+		it("shows the admin entry in the compliance group only when the visibility reader allows it", () => {
+			expect(visibleIds("orgAdmin", true)).toContain("driving-licence");
+			expect(visibleIds("orgAdmin", false)).not.toContain("driving-licence");
+			expect(visibleIds("orgAdmin")).not.toContain("driving-licence");
+			expect(
+				getResolvedSettingsVisibility({
+					accessTier: "orgAdmin",
+					drivingLicenceSettingsVisible: true,
+				}).visibleSettings.find((entry) => entry.id === "driving-licence"),
+			).toMatchObject({
+				group: "compliance",
+				href: "/settings/driving-licence",
+			});
+		});
+
+		it("never shows the admin entry below the org admin tier", () => {
+			expect(visibleIds("manager", true)).not.toContain("driving-licence");
+			expect(visibleIds("member", true)).not.toContain("driving-licence");
 		});
 	});
 });

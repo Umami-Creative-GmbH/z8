@@ -8,6 +8,12 @@ import {
 } from "@/lib/auth-helpers";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
+import { readDrivingLicenceVisibility } from "@/lib/organization/driving-licence/visibility";
+import {
+	HIDDEN_DRIVING_LICENCE_VISIBILITY,
+	showsDrivingLicenceNavigation,
+	showsDrivingLicenceSettings,
+} from "@/lib/organization/driving-licence/visibility-rules";
 import { hasActivePayrollAccessGrant } from "@/lib/payroll-access/permissions";
 import { managesAnyDocuments } from "@/lib/personnel-file/access";
 import { loadCurrentPersonnelFileAccess } from "@/lib/personnel-file/current-access";
@@ -57,6 +63,8 @@ export async function ServerAppSidebar({
 		showPersonnelFilesNav,
 		showPeriodSubmissionsNav,
 		showTeamPresenceNav,
+		showDrivingLicenceNav,
+		drivingLicenceSettingsVisible,
 		managesProject,
 		authContext,
 		canCreateOrganizations,
@@ -83,12 +91,14 @@ export async function ServerAppSidebar({
 				personnelFiles: showPersonnelFilesNav,
 				periodSubmissions: showPeriodSubmissionsNav,
 				teamPresence: showTeamPresenceNav,
+				drivingLicence: showDrivingLicenceNav,
 				platformAdmin: authContext?.user.role === "admin",
 			}}
 			settingsAccessTier={settingsAccessTier ?? "member"}
 			billingEnabled={env.BILLING_ENABLED === "true"}
 			featureFlags={featureFlags}
 			managesProject={managesProject}
+			drivingLicenceSettingsVisible={drivingLicenceSettingsVisible}
 			canCreateOrganizations={canCreateOrganizations}
 		/>
 	);
@@ -166,6 +176,16 @@ async function resolveSidebarAccess(showWorksCouncilNav: boolean) {
 			: [],
 	]);
 	const showTeamPresenceNav = presenceLocations.length > 0;
+	// Driving licence (#1420): the item and the settings entry follow the visibility reader only.
+	const drivingLicenceVisibility =
+		activeOrganizationId && authContext
+			? await readDrivingLicenceVisibility({
+					organizationId: activeOrganizationId,
+					userId: authContext.user.id,
+				})
+			: HIDDEN_DRIVING_LICENCE_VISIBILITY;
+	const showDrivingLicenceNav = showsDrivingLicenceNavigation(drivingLicenceVisibility);
+	const drivingLicenceSettingsVisible = showsDrivingLicenceSettings(drivingLicenceVisibility);
 	// App search offers project managers below the manager tier their Projects view (#928).
 	const managesProject =
 		featureFlags.projectsEnabled &&
@@ -188,6 +208,8 @@ async function resolveSidebarAccess(showWorksCouncilNav: boolean) {
 		showPersonnelFilesNav,
 		showPeriodSubmissionsNav,
 		showTeamPresenceNav,
+		showDrivingLicenceNav,
+		drivingLicenceSettingsVisible,
 		managesProject,
 		authContext,
 		canCreateOrganizations,
