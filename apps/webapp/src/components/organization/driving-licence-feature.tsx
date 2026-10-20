@@ -42,7 +42,10 @@ import type {
 	DrivingLicenceFeatureState,
 	DrivingLicenceSetupInput,
 } from "@/lib/organization/driving-licence/policy";
-import { switchDrivingLicenceControlAction } from "@/lib/organization/driving-licence/policy-actions";
+import {
+	getDrivingLicenceReactivationImpactAction,
+	switchDrivingLicenceControlAction,
+} from "@/lib/organization/driving-licence/policy-actions";
 import { useRouter } from "@/navigation";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
@@ -106,6 +109,8 @@ export function DrivingLicenceFeature({
 	const [enabled, setEnabled] = useServerDataState(state.enabled);
 	const [setupOpen, setSetupOpen] = useState(false);
 	const [confirmOffOpen, setConfirmOffOpen] = useState(false);
+	/** Authorizations switching on again will suspend; null while not confirming. */
+	const [reactivationImpact, setReactivationImpact] = useState<number | null>(null);
 	const [saving, setSaving] = useState(false);
 
 	const submit = async (next: boolean, setup?: DrivingLicenceSetupInput) => {
@@ -139,6 +144,18 @@ export function DrivingLicenceFeature({
 		return true;
 	};
 
+	/** Counts what switching on again suspends (#1422) before asking to confirm. */
+	const askToSwitchOnAgain = async () => {
+		setSaving(true);
+		const impact = await getDrivingLicenceReactivationImpactAction();
+		setSaving(false);
+		if (!impact.success) {
+			toast.error(switchError(t, impact.error));
+			return;
+		}
+		setReactivationImpact(impact.data.suspendedAuthorizations);
+	};
+
 	const handleCheckedChange = (next: boolean) => {
 		if (!canEdit) return;
 		if (!next) {
@@ -149,8 +166,7 @@ export function DrivingLicenceFeature({
 			setSetupOpen(true);
 			return;
 		}
-		// #1422 shows the re-activation impact count in a confirmation here.
-		void submit(true);
+		void askToSwitchOnAgain();
 	};
 
 	const busy = saving || isPending;
@@ -243,6 +259,48 @@ export function DrivingLicenceFeature({
 						<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
 						<AlertDialogAction onClick={() => void submit(false)}>
 							{t("organization.features.driving-licence-disable-confirm", "Switch off")}
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+
+			<AlertDialog
+				open={reactivationImpact !== null}
+				onOpenChange={(open) => {
+					if (!open) setReactivationImpact(null);
+				}}
+			>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>
+							{t(
+								"organization.features.driving-licence-enable-again-title",
+								"Switch driving licence control on again?",
+							)}
+						</AlertDialogTitle>
+						<AlertDialogDescription>
+							{t(
+								"organization.features.driving-licence-enable-again-impact",
+								"{count, plural, =0 {No authorization will be suspended: no deadline or expiry passed while control was off.} one {# authorization will be suspended because its deadline or expiry passed while control was off.} other {# authorizations will be suspended because their deadline or expiry passed while control was off.}}",
+								{ count: reactivationImpact ?? 0 },
+							)}
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<p className="text-sm text-muted-foreground">
+						{t(
+							"organization.features.driving-licence-enable-again-description",
+							"Each suspended authorization gets one suspension notice to the employee and their verifiers. Reminders that fell due while control was off aren't sent; later reminders follow the usual schedule.",
+						)}
+					</p>
+					<AlertDialogFooter>
+						<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
+						<AlertDialogAction
+							onClick={() => {
+								setReactivationImpact(null);
+								void submit(true);
+							}}
+						>
+							{t("organization.features.driving-licence-setup-confirm", "Switch on")}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>
