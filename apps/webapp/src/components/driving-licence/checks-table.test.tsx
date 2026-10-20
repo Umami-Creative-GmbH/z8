@@ -144,6 +144,47 @@ describe("the verifier's Checks table", () => {
 		);
 	});
 
+	it("sorts by soonest deadline by default and asks the server to sort by another column", async () => {
+		const user = userEvent.setup();
+		renderWorklist();
+		const table = await screen.findByRole("table");
+		const header = (name: string) =>
+			within(table)
+				.getByRole("button", { name: new RegExp(`^${name}`) })
+				.closest("th");
+		expect(header("Next deadline")?.getAttribute("aria-sort")).toBe("ascending");
+		expect(header("Name")?.getAttribute("aria-sort")).toBe("none");
+
+		await user.click(within(table).getByRole("button", { name: /^Name/ }));
+		await waitFor(() =>
+			expect(remote.worklist).toHaveBeenLastCalledWith({
+				search: "",
+				status: undefined,
+				sort: "name",
+				direction: "asc",
+			}),
+		);
+		expect(header("Name")?.getAttribute("aria-sort")).toBe("ascending");
+		await user.click(within(table).getByRole("button", { name: /^Name/ }));
+		await waitFor(() =>
+			expect(remote.worklist).toHaveBeenLastCalledWith({
+				search: "",
+				status: undefined,
+				sort: "name",
+				direction: "desc",
+			}),
+		);
+		await user.click(within(table).getByRole("button", { name: /^Team/ }));
+		await waitFor(() =>
+			expect(remote.worklist).toHaveBeenLastCalledWith({
+				search: "",
+				status: undefined,
+				sort: "team",
+				direction: "asc",
+			}),
+		);
+	});
+
 	it("explains an empty scope", async () => {
 		remote.rows = [];
 		renderWorklist();

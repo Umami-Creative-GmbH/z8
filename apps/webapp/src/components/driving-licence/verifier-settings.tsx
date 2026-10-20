@@ -43,6 +43,7 @@ import type {
 	DrivingLicenceVerifierGrantView,
 	SaveDrivingLicenceVerifierGrantInput,
 } from "@/lib/organization/driving-licence/verifiers";
+import { queryKeys } from "@/lib/query";
 
 const EMPTY: SaveDrivingLicenceVerifierGrantInput = {
 	verifierEmployeeId: "",
@@ -454,12 +455,10 @@ export function VerifierSettings() {
 	const { t } = useTranslate();
 	const { data: session } = useSession();
 	const client = useQueryClient();
-	const queryKey = [
-		"drivingLicence",
-		"verifiers",
+	const queryKey = queryKeys.drivingLicence.verifiers(
 		session?.session.activeOrganizationId,
 		session?.user.id,
-	];
+	);
 	const query = useQuery({
 		queryKey,
 		enabled: !!session?.session.activeOrganizationId,
@@ -509,7 +508,7 @@ export function VerifierSettings() {
 						key={session?.session.activeOrganizationId}
 						data={query.data}
 						onSaved={() =>
-							client.invalidateQueries({ queryKey: ["drivingLicence"] })
+							client.invalidateQueries({ queryKey: queryKeys.drivingLicence.all })
 						}
 					/>
 				)}
@@ -523,12 +522,10 @@ export function VerifierResponsibility() {
 	const locale = useAppLocale();
 	const { data: session } = useSession();
 	const query = useQuery({
-		queryKey: [
-			"drivingLicence",
-			"myResponsibility",
+		queryKey: queryKeys.drivingLicence.myResponsibility(
 			session?.session.activeOrganizationId,
 			session?.user.id,
-		],
+		),
 		enabled: !!session?.session.activeOrganizationId,
 		queryFn: async () => {
 			const result = await getDrivingLicenceVerifierResponsibilityAction();

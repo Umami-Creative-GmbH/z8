@@ -14,6 +14,7 @@ import type {
 	IntendedDriverAdminData,
 	IntendedDriverRequirement,
 } from "@/lib/organization/driving-licence/intended-driver-rules";
+import { queryKeys } from "@/lib/query";
 import { useDrivingLicenceEndingConfirmation } from "./ending-confirmation";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
@@ -67,7 +68,7 @@ export function IntendedDriverSettings({ data }: { data: IntendedDriverAdminData
 	const { confirm, dialog: endingConfirmation } = useDrivingLicenceEndingConfirmation("assignment");
 	const applied = (message: string) => {
 		toast.success(message);
-		void queryClient.invalidateQueries({ queryKey: ["driving-authorization-status"] });
+		void queryClient.invalidateQueries({ queryKey: queryKeys.drivingLicence.status });
 		router.refresh();
 		return true;
 	};

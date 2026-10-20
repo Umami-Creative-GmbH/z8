@@ -10,6 +10,9 @@ import type { StaffingShiftInput } from "@/lib/scheduling/staffing/types";
  * - queryKeys.teams.list(orgId) - teams for a specific org
  * - queryKeys.teams.detail(teamId) - specific team
  */
+/** A session's organization or user id as the session hook returns it. */
+type Id = string | null | undefined;
+
 export const queryKeys = {
 	// Organizations
 	organizations: {
@@ -43,6 +46,37 @@ export const queryKeys = {
 		all: ["pending-members"] as const,
 		list: (orgId: string) => ["pending-members", orgId] as const,
 		count: (orgId: string) => ["pending-members", "count", orgId] as const,
+	},
+
+	// Driving licence control (#1418). Per-viewer keys carry the active organization and user,
+	// so a cached answer never crosses a session switch.
+	drivingLicence: {
+		/** Every driving licence task query (the task list and the reassignment alert). */
+		all: ["drivingLicence"] as const,
+		/** The operational status: clock advisory and planning panel. */
+		status: ["driving-authorization-status"] as const,
+		/** One viewer's status read: their own (`self`) or a planner's read of `employeeId`. */
+		statusFor: (orgId: Id, userId: Id, employeeId?: string) =>
+			["driving-authorization-status", orgId, userId, employeeId ?? "self"] as const,
+		operationalEmployees: (orgId: Id, userId: Id, search: string) =>
+			["driving-operational-employees", orgId, userId, search] as const,
+		impediments: (orgId: Id, userId: Id, employeeId: string, latestCheckId: string | undefined) =>
+			["driving-licence-impediments", orgId, userId, employeeId, latestCheckId] as const,
+		retention: (orgId?: Id, userId?: Id) => ["driving-licence-retention", orgId, userId] as const,
+		verifiers: (orgId?: Id, userId?: Id) => ["drivingLicence", "verifiers", orgId, userId] as const,
+		myResponsibility: (orgId?: Id, userId?: Id) =>
+			["drivingLicence", "myResponsibility", orgId, userId] as const,
+		tasksAll: ["drivingLicence", "tasks"] as const,
+		tasks: (orgId?: Id, userId?: Id) => ["drivingLicence", "tasks", orgId, userId] as const,
+		worklistAll: (orgId?: Id, userId?: Id) => ["driving-licence-worklist", orgId, userId] as const,
+		worklist: <T extends object>(orgId: Id, userId: Id, query: T) =>
+			["driving-licence-worklist", orgId, userId, query] as const,
+		record: (orgId: Id, userId: Id, employeeId: string) =>
+			["driving-licence-record", orgId, userId, employeeId] as const,
+		historyAll: (orgId: Id, userId: Id, employeeId: string) =>
+			["driving-licence-history", orgId, userId, employeeId] as const,
+		history: <T extends object>(orgId: Id, userId: Id, employeeId: string, period: T) =>
+			["driving-licence-history", orgId, userId, employeeId, period] as const,
 	},
 
 	// Teams

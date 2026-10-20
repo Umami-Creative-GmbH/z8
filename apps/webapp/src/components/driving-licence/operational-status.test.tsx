@@ -153,7 +153,7 @@ it("shows no clock advisory while the feature is off or the member is not an int
 	await waitFor(() =>
 		expect(screen.queryByRole("complementary", { name: "Driving authorization" })).toBeNull(),
 	);
-	expect(screen.queryByText("Not enrolled — no driving authorization")).toBeNull();
+	expect(screen.queryByText("Not an intended driver — no driving authorization")).toBeNull();
 	expect(screen.queryByText("Loading driving authorization…")).toBeNull();
 	expect(screen.getByRole("button", { name: "Clock In" })).toBeTruthy();
 });
@@ -191,7 +191,7 @@ it("does not reuse another organization or user's cached status", async () => {
 		</QueryClientProvider>,
 	);
 	expect(
-		await screen.findByText("Not enrolled — no driving authorization"),
+		await screen.findByText("Not an intended driver — no driving authorization"),
 	).toBeTruthy();
 	expect(screen.queryByText("Driving authorization active")).toBeNull();
 });

@@ -43,7 +43,6 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"drivingLicence.operational.unavailable",
 		"drivingLicence.operational.recordingHelp",
 		"drivingLicence.status",
-		"drivingLicence.notEnrolled",
 		"drivingLicence.notChecked",
 		"drivingLicence.class.active",
 		"drivingLicence.class.suspended",

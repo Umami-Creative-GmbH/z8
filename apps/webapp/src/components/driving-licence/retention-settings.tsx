@@ -44,6 +44,7 @@ import {
 	placeDrivingLicenceHoldAction,
 	releaseDrivingLicenceHoldAction,
 } from "@/lib/organization/driving-licence/retention-actions";
+import { queryKeys } from "@/lib/query";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 type RetentionRecord = DrivingLicenceRetentionData["records"][number];
@@ -53,11 +54,10 @@ export function DrivingLicenceRetentionSettings() {
 	const { t } = useTranslate();
 	const { data: session } = useSession();
 	const query = useQuery({
-		queryKey: [
-			"driving-licence-retention",
+		queryKey: queryKeys.drivingLicence.retention(
 			session?.session.activeOrganizationId,
 			session?.user.id,
-		],
+		),
 		queryFn: async () => {
 			const result = await getDrivingLicenceRetentionAction();
 			if (!result.success) throw new Error(result.error);

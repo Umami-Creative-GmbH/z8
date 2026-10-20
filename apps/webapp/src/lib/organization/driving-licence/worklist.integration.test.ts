@@ -217,6 +217,29 @@ describe("the verifier's Checks worklist", () => {
 		});
 	});
 
+	it("sorts by name or by team on the server when asked", async () => {
+		expect(await names(verifier.userId, { sort: "name", direction: "desc" })).toEqual([
+			"Erik Expired",
+			"Dora Partial",
+			"Carla Unchecked",
+			"Bruno Soon",
+			"Anna Later",
+		]);
+		// North first (by name within it), then the employees without a primary team.
+		expect(await names(verifier.userId, { sort: "team" })).toEqual([
+			"Anna Later",
+			"Bruno Soon",
+			"Carla Unchecked",
+			"Dora Partial",
+			"Erik Expired",
+		]);
+		expect(
+			await as(verifier.userId, () =>
+				checks.getDrivingLicenceCheckWorklistAction({ sort: "status" } as never),
+			),
+		).toMatchObject({ success: false });
+	});
+
 	it("never lists the verifier themselves or employees who are not intended drivers", async () => {
 		const listed = await names(verifier.userId);
 		expect(listed).not.toContain("Vera Verifier");

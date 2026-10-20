@@ -1,5 +1,5 @@
 "use client";
-import { IconUserSearch } from "@tabler/icons-react";
+import { IconArrowDown, IconArrowsSort, IconArrowUp, IconUserSearch } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useId, useState } from "react";
@@ -36,24 +36,56 @@ import type { AuthorizationStatus } from "@/lib/organization/driving-licence/che
 import { drivingLicenceCheckPath } from "@/lib/organization/driving-licence/paths";
 import {
 	DRIVING_LICENCE_WORKLIST_STATUSES,
+	type DrivingLicenceWorklistDirection,
+	type DrivingLicenceWorklistSort,
 	type DrivingLicenceWorklistStatus,
 } from "@/lib/organization/driving-licence/worklist-query";
+import { queryKeys } from "@/lib/query";
 import { Link } from "@/navigation";
+import { useDrivingStatusLabels } from "./check-evidence";
 import { DrivingDeadlineDate } from "./deadline-date";
 
 const SEARCH_DELAY_MS = 300;
 type StatusFilter = DrivingLicenceWorklistStatus | "all";
 
-function useStatusLabels(): Record<AuthorizationStatus, string> {
-	const { t } = useTranslate();
-	return {
-		not_yet_checked: t("drivingLicence.checks.status.notYetChecked", "Not yet checked"),
-		active: t("drivingLicence.checks.status.active", "Active"),
-		partially_active: t("drivingLicence.checks.status.partiallyActive", "Partially active"),
-		suspended: t("drivingLicence.checks.status.suspended", "Suspended"),
-		ended: t("drivingLicence.checks.status.ended", "Ended"),
-		not_enrolled: t("drivingLicence.checks.status.notIntended", "Not an intended driver"),
-	};
+type Order = { sort: DrivingLicenceWorklistSort; direction: DrivingLicenceWorklistDirection };
+const DEFAULT_ORDER: Order = { sort: "deadline", direction: "asc" };
+
+/** A column header that sorts the table on the server; the same column again flips it. */
+function SortableHead({
+	column,
+	order,
+	onSort,
+	children,
+}: {
+	column: DrivingLicenceWorklistSort;
+	order: Order;
+	onSort: (order: Order) => void;
+	children: string;
+}) {
+	const active = order.sort === column;
+	const Icon = !active ? IconArrowsSort : order.direction === "asc" ? IconArrowUp : IconArrowDown;
+	return (
+		<TableHead
+			aria-sort={active ? (order.direction === "asc" ? "ascending" : "descending") : "none"}
+		>
+			<Button
+				type="button"
+				variant="ghost"
+				size="sm"
+				className="-ml-2 h-8 px-2"
+				onClick={() =>
+					onSort({
+						sort: column,
+						direction: active && order.direction === "asc" ? "desc" : "asc",
+					})
+				}
+			>
+				{children}
+				<Icon aria-hidden="true" className="size-3.5" />
+			</Button>
+		</TableHead>
+	);
 }
 const STATUS_BADGE: Record<
 	AuthorizationStatus,
@@ -68,30 +100,37 @@ const STATUS_BADGE: Record<
 };
 
 /**
- * The verifier's Checks table (#1428): intended drivers in scope, searched and filtered on
- * the server, checks due now first, then the soonest deadline. A row's action opens that
+ * The verifier's Checks table (#1428): intended drivers in scope, searched, filtered and sorted
+ * on the server; by default checks due now first, then the soonest deadline. A row's action opens that
  * employee's check page (#1429).
  */
 export function DrivingLicenceVerifierWorklist() {
 	const { t } = useTranslate();
 	const { data: session } = useSession();
-	const identity = [session?.session.activeOrganizationId, session?.user.id];
+	const organizationId = session?.session.activeOrganizationId;
+	const userId = session?.user.id;
 	const searchId = useId();
 	const statusId = useId();
-	const statusLabels = useStatusLabels();
+	const statusLabels = useDrivingStatusLabels();
 	const [search, setSearch] = useState("");
 	const [submittedSearch, setSubmittedSearch] = useState("");
 	const [status, setStatus] = useState<StatusFilter>("all");
+	const [order, setOrder] = useState<Order>(DEFAULT_ORDER);
 	useEffect(() => {
 		const timer = setTimeout(() => setSubmittedSearch(search.trim()), SEARCH_DELAY_MS);
 		return () => clearTimeout(timer);
 	}, [search]);
+	const isDefaultOrder =
+		order.sort === DEFAULT_ORDER.sort && order.direction === DEFAULT_ORDER.direction;
 	const query = {
 		search: submittedSearch,
 		status: status === "all" ? undefined : status,
+		// Soonest deadline first is the server's default order.
+		sort: isDefaultOrder ? undefined : order.sort,
+		direction: isDefaultOrder ? undefined : order.direction,
 	};
 	const worklist = useQuery({
-		queryKey: ["driving-licence-worklist", ...identity, query],
+		queryKey: queryKeys.drivingLicence.worklist(organizationId, userId, query),
 		queryFn: () => getDrivingLicenceCheckWorklistAction(query),
 		placeholderData: (previous) => previous,
 	});
@@ -101,7 +140,7 @@ export function DrivingLicenceVerifierWorklist() {
 		{ value: "all", label: t("drivingLicence.checks.filter.all", "All statuses") },
 		...DRIVING_LICENCE_WORKLIST_STATUSES.map((value) => ({
 			value,
-			label: statusLabels[value],
+			label: statusLabels[value].short,
 		})),
 	];
 
@@ -197,10 +236,16 @@ export function DrivingLicenceVerifierWorklist() {
 					<Table aria-busy={worklist.isFetching} mobileLayout="stacked">
 						<TableHeader>
 							<TableRow>
-								<TableHead>{t("drivingLicence.checks.column.name", "Name")}</TableHead>
+								<SortableHead column="name" order={order} onSort={setOrder}>
+									{t("drivingLicence.checks.column.name", "Name")}
+								</SortableHead>
 								<TableHead>{t("drivingLicence.checks.column.status", "Status")}</TableHead>
-								<TableHead>{t("drivingLicence.checks.column.deadline", "Next deadline")}</TableHead>
-								<TableHead>{t("drivingLicence.checks.column.team", "Team")}</TableHead>
+								<SortableHead column="deadline" order={order} onSort={setOrder}>
+									{t("drivingLicence.checks.column.deadline", "Next deadline")}
+								</SortableHead>
+								<SortableHead column="team" order={order} onSort={setOrder}>
+									{t("drivingLicence.checks.column.team", "Team")}
+								</SortableHead>
 								<TableHead>
 									<span className="sr-only">
 										{t("drivingLicence.checks.column.action", "Action")}
@@ -214,7 +259,7 @@ export function DrivingLicenceVerifierWorklist() {
 									<TableCell className="font-medium">{person.name}</TableCell>
 									<TableCell>
 										<Badge variant={STATUS_BADGE[person.status]}>
-											{statusLabels[person.status]}
+											{statusLabels[person.status].short}
 										</Badge>
 									</TableCell>
 									<TableCell>

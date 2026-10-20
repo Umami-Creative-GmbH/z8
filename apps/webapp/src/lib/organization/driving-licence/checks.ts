@@ -51,7 +51,7 @@ import {
 import type { DrivingLicenceActor } from "./context";
 import { assertDrivingLicenceControlOn } from "./control-state";
 import { drivingAuthorizationDeadline } from "./deadlines";
-import { isDrivingLicenceIntendedDriver } from "./intended-drivers";
+import { intendedDriverCondition, isDrivingLicenceIntendedDriver } from "./intended-drivers";
 import { lockDrivingLicenceOrganization } from "./locks";
 import {
 	drivingLicenceNextDeadline,
@@ -734,9 +734,10 @@ export async function completeDrivingLicenceCheck(
 }
 /**
  * The verifier's Checks table (#1428): intended drivers in the current grant's scope (never
- * the verifier), with primary team and next deadline. Name search narrows the scope in SQL;
- * the status filter and the order (checks due now, then soonest deadline) apply to the
- * effective status, which is evaluated per employee.
+ * the verifier), with primary team and next deadline. Name search and the intended-driver
+ * resolver narrow the scope in SQL; the status filter and the column order (default: checks
+ * due now, then soonest deadline; or name, or team) apply to the effective status, which is
+ * evaluated per remaining employee.
  */
 export async function readDrivingLicenceWorklist(
 	actor: DrivingLicenceActor,
@@ -777,6 +778,8 @@ export async function readDrivingLicenceWorklist(
 					employee.id,
 					available.map((target) => target.id),
 				),
+				// Only intended drivers, selected in SQL (#1418 review).
+				intendedDriverCondition(actor.organizationId),
 				term
 					? or(
 							ilike(user.name, term),
@@ -797,7 +800,6 @@ export async function readDrivingLicenceWorklist(
 				target.id,
 				now,
 			);
-			if (!status.enrolled) return null;
 			return {
 				employeeId: target.id,
 				canVerify: target.canVerify,
@@ -816,6 +818,7 @@ export async function readDrivingLicenceWorklist(
 			(row): row is NonNullable<typeof row> =>
 				row !== null && (!query.status || row.status === query.status),
 		),
+		query,
 	);
 }
 export type DrivingLicenceWorklistRow = Awaited<

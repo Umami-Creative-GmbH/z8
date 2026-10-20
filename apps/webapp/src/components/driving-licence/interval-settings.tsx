@@ -26,6 +26,7 @@ import {
 	previewDrivingLicenceIntervalAction,
 } from "@/lib/organization/driving-licence/interval-actions";
 import type { DrivingLicenceIntervalPreview } from "@/lib/organization/driving-licence/policy-intervals";
+import { queryKeys } from "@/lib/query";
 
 /** Changing the routine interval: preview every affected class, then apply that preview. */
 export function DrivingLicenceIntervalSettings({ intervalMonths }: { intervalMonths: number }) {
@@ -74,7 +75,7 @@ export function DrivingLicenceIntervalSettings({ intervalMonths }: { intervalMon
 				),
 			);
 			void queryClient.invalidateQueries({
-				queryKey: ["driving-authorization-status"],
+				queryKey: queryKeys.drivingLicence.status,
 			});
 			router.refresh();
 		});
