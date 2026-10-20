@@ -47,6 +47,9 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"drivingLicence.class.active",
 		"drivingLicence.class.suspended",
 		"drivingLicence.class.ended",
+		"drivingLicence.class.noLongerIntended",
+		// The status label itself (`DrivingStatusLabel` in check-evidence).
+		"drivingLicence.checks.status",
 		// The header clock's status panel, its roster search and class evidence.
 		"drivingLicence.operational.title",
 		"drivingLicence.operational.search",
