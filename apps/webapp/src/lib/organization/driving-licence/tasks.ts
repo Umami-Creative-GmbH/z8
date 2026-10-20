@@ -17,7 +17,7 @@ import { NO_LONGER_INTENDED } from "./check-types";
 import { currentDrivingEmployment } from "./checks";
 import type { DrivingLicenceActor } from "./context";
 import { listDrivingLicenceIntendedDriverIds } from "./intended-drivers";
-import { drivingLicenceCheckPath } from "./paths";
+import { DRIVING_LICENCE_VERIFIER_SETTINGS_PATH, drivingLicenceCheckPath } from "./paths";
 import {
 	collectDrivingLicenceReminderOccasions,
 	type DrivingLicenceReminderOccasion,
@@ -86,7 +86,7 @@ async function notifyAssignment(
 				entityId: row.id,
 				// A personal reminder task goes to verifiers: straight to the check (#1429).
 				actionUrl: assignment
-					? "/settings/driving-licence"
+					? DRIVING_LICENCE_VERIFIER_SETTINGS_PATH
 					: drivingLicenceCheckPath(row.employeeId),
 				idempotencyKey: `driving-task:${row.id}:${row.generation}:${userId}`,
 				metadata: {

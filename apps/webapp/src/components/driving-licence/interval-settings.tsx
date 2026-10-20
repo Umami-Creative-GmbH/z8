@@ -27,6 +27,7 @@ import {
 } from "@/lib/organization/driving-licence/interval-actions";
 import type { DrivingLicenceIntervalPreview } from "@/lib/organization/driving-licence/policy-intervals";
 import { queryKeys } from "@/lib/query";
+import { useDrivingDateOnly } from "./deadline-date";
 
 /** Changing the routine interval: preview every affected class, then apply that preview. */
 export function DrivingLicenceIntervalSettings({ intervalMonths }: { intervalMonths: number }) {
@@ -156,6 +157,7 @@ function IntervalImpact({
 	onApply: () => void;
 }) {
 	const { t } = useTranslate();
+	const formatDate = useDrivingDateOnly();
 	return (
 		<section
 			className="space-y-4 rounded-md border p-4"
@@ -190,11 +192,13 @@ function IntervalImpact({
 									{row.employeeName} · {row.classCode}
 								</TableCell>
 								<TableCell>
-									<time dateTime={row.routineValidThrough}>{row.routineValidThrough}</time>
+									<time dateTime={row.routineValidThrough}>
+										{formatDate(row.routineValidThrough)}
+									</time>
 								</TableCell>
 								<TableCell>
 									{row.validThrough !== row.routineValidThrough ? (
-										<time dateTime={row.validThrough}>{row.validThrough}</time>
+										<time dateTime={row.validThrough}>{formatDate(row.validThrough)}</time>
 									) : (
 										"—"
 									)}

@@ -494,7 +494,13 @@ function reminderParams(
 		},
 	};
 }
-/** The end notice of a delivery (#1425): key `ended:<period>:<instant>:<class+class…>`. */
+/**
+ * The end notice of a delivery (#1425): key `ended:<period>:<instant>:<class+class…>`.
+ * The class list is read back from the key on purpose: the delivery row has no structured
+ * class field, the ended classes are fixed at the ending instant, and the key is also the
+ * notice's once-only identity. A column only for this email copy was not worth a migration
+ * (#1418 review).
+ */
 function endedOccasion(
 	organizationId: string,
 	delivery: typeof drivingLicenceReminderDelivery.$inferSelect,

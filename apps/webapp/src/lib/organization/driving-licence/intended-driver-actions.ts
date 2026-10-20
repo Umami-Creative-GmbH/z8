@@ -1,6 +1,6 @@
 "use server";
 import { revalidatePath } from "next/cache";
-import { z } from "zod";
+import { runDrivingLicenceAction } from "./action-result";
 import { requireDrivingLicenceAdministrator } from "./context";
 import { INTENDED_DRIVER_REFUSALS } from "./intended-driver-rules";
 import {
@@ -10,20 +10,11 @@ import {
 	setDrivingLicenceIntendedDriverAssignment,
 } from "./intended-drivers";
 
-type Result<T> = { success: true; data: T } | { success: false; error: string };
-async function action<T>(run: () => Promise<T>): Promise<Result<T>> {
-	try {
-		return { success: true, data: await run() };
-	} catch (error) {
-		const refusals: readonly string[] = INTENDED_DRIVER_REFUSALS;
-		const code =
-			error instanceof z.ZodError
-				? "invalid_assignment"
-				: error instanceof Error && refusals.includes(error.message)
-					? error.message
-					: "save_failed";
-		return { success: false, error: code };
-	}
+function action<T>(run: () => Promise<T>) {
+	return runDrivingLicenceAction(run, {
+		refusals: INTENDED_DRIVER_REFUSALS,
+		invalidCode: "invalid_assignment",
+	});
 }
 function revalidate() {
 	revalidatePath("/settings/driving-licence");

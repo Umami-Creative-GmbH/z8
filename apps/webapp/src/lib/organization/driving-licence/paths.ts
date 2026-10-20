@@ -10,3 +10,6 @@ export const DRIVING_LICENCE_PATH = "/driving-licence";
 export function drivingLicenceCheckPath(employeeId: string): string {
 	return `${DRIVING_LICENCE_PATH}/checks/${encodeURIComponent(employeeId)}`;
 }
+
+/** The Verifiers tab of the driving licence settings: where reassignment tasks are resolved. */
+export const DRIVING_LICENCE_VERIFIER_SETTINGS_PATH = "/settings/driving-licence?tab=verifiers";

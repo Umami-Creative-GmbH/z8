@@ -470,10 +470,11 @@ function useNotificationSettingsViewModel() {
 					"common:notifications.preferences.types.driving_licence_reminder",
 					"Driving licence check due",
 				);
+			// Also carries the notice that an authorization ended (no longer an intended driver, #1425).
 			case "driving_authorization_suspended":
 				return t(
-					"common:notifications.preferences.types.driving_authorization_suspended",
-					"Driving authorization suspended",
+					"common:notifications.preferences.types.driving_authorization_suspended_or_ended",
+					"Driving authorization suspended or ended",
 				);
 			case "driving_details_missing_reminder":
 				return t(

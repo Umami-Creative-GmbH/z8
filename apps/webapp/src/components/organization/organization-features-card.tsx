@@ -111,6 +111,8 @@ function useOrganizationFeatures({
 	const canEdit = currentMemberRole === "owner";
 	// Personnel files are switched by owners and admins (#865).
 	const canEditPersonnelFiles = canEdit || currentMemberRole === "admin";
+	// Driving licence control too (#1421): the same owner-or-admin rule, under its own name.
+	const canSwitchDrivingLicence = canEditPersonnelFiles;
 	const [confirmPersonnelFilesOff, setConfirmPersonnelFilesOff] = useState(false);
 
 	const applyFeatures = (values: Partial<OrganizationFeatureState>) => {
@@ -205,6 +207,7 @@ function useOrganizationFeatures({
 		saveBillableTime,
 		setConfirmPersonnelFilesOff,
 		canEditPersonnelFiles,
+		canSwitchDrivingLicence,
 		confirmPersonnelFilesOff,
 	};
 }
@@ -231,6 +234,7 @@ function OrganizationFeaturesCardContent({
 		saveBillableTime,
 		setConfirmPersonnelFilesOff,
 		canEditPersonnelFiles,
+		canSwitchDrivingLicence,
 		confirmPersonnelFilesOff,
 	} = useOrganizationFeatures({
 		organizationId,
@@ -390,7 +394,7 @@ function OrganizationFeaturesCardContent({
 					<DrivingLicenceFeature
 						state={drivingLicence}
 						organizationTimezone={organizationTimezone ?? "UTC"}
-						canEdit={canEditPersonnelFiles}
+						canEdit={canSwitchDrivingLicence}
 					/>
 				)}
 

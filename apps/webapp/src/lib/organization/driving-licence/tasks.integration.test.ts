@@ -211,7 +211,7 @@ it("escalates missing current verifier responsibility to admins with minimal ass
 	expect(missing.data[0]).not.toHaveProperty("directEmployeeNotification");
 	const notices = await inbox(fixture.ownerUserId);
 	expect(notices).toHaveLength(1);
-	expect(notices[0].actionUrl).toBe("/settings/driving-licence");
+	expect(notices[0].actionUrl).toBe("/settings/driving-licence?tab=verifiers");
 	await runDrivingLicenceRemindersJob();
 	expect(await inbox(fixture.ownerUserId)).toHaveLength(1);
 	expect(
@@ -455,7 +455,7 @@ it("opens exactly one reassignment task for the employee an ended until-dated gr
 	});
 	const notices = await inbox(fixture.ownerUserId);
 	expect(notices).toHaveLength(1);
-	expect(notices[0].actionUrl).toBe("/settings/driving-licence");
+	expect(notices[0].actionUrl).toBe("/settings/driving-licence?tab=verifiers");
 });
 
 it.each(["expired", "inactive", "terminal", "revoked"] as const)(

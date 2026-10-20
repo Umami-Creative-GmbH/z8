@@ -64,7 +64,7 @@ it("requires an impact preview, shows newly overdue classes, and discards a stal
 	const impact = await screen.findByRole("table");
 	expect(impact.textContent).toContain("Dana Driver");
 	expect(screen.getByText("Newly overdue — will be suspended")).toBeTruthy();
-	expect(screen.getByText("2026-02-28")).toBeTruthy();
+	expect(screen.getByText("Feb 28, 2026")).toBeTruthy();
 	expect(screen.getByText("Europe/Berlin")).toBeTruthy();
 	await userEvent.click(
 		screen.getByRole("button", { name: "Apply interval change" }),
