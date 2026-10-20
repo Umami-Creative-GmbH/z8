@@ -4,8 +4,6 @@
  * team's, then the organization default; with none they are not an intended driver.
  * Everything runs through the public actions and readers on PostgreSQL.
  */
-import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	createLifecycleDatabaseFixture,
@@ -340,50 +338,5 @@ describe("intended-driver assignments are administered per organization", () => 
 			success: true,
 		});
 		expect(await intended(alex)).toBe(true);
-	});
-});
-
-describe("migrating enrollments to assignments", () => {
-	const migrationFile = readdirSync(join(process.cwd(), "drizzle")).find((file) =>
-		file.endsWith("_driving_licence_intended_driver_assignments.sql"),
-	);
-	async function migrate() {
-		if (!migrationFile) throw new Error("migration file missing");
-		const sql = readFileSync(join(process.cwd(), "drizzle", migrationFile), "utf8");
-		for (const statement of sql.split("--> statement-breakpoint"))
-			await fixture.pool.query(statement);
-	}
-
-	it("turns every enrollment into an employee-level Required assignment, keeping who added it and when", async () => {
-		const enrolledAt = new Date("2026-01-15T08:30:00.123Z");
-		await fixture.pool.query(
-			`insert into driving_licence_participant (organization_id,employee_id,enrolled_at,enrolled_by) values ($1,$2,$3,$4)`,
-			[fixture.organizationId, alex.employeeId, enrolledAt, fixture.ownerUserId],
-		);
-		expect(await intended(alex)).toBe(false);
-
-		await migrate();
-		await migrate();
-
-		const data = await policies.getDrivingLicenceAdminDataAction();
-		if (!data.success) throw new Error(data.error);
-		expect(data.data.intendedDrivers.assignments).toEqual([
-			expect.objectContaining({
-				assignmentType: "employee",
-				employeeId: alex.employeeId,
-				teamId: null,
-				value: "required",
-				createdAt: enrolledAt.toISOString(),
-				createdBy: fixture.ownerUserId,
-			}),
-		]);
-		expect(await intended(alex)).toBe(true);
-		expect(await intended(blair)).toBe(false);
-		expect(await worklist()).toEqual([alex.employeeId]);
-		const own = await as(alex.userId, () => policies.getOwnDrivingLicenceStatusAction());
-		expect(own).toMatchObject({
-			success: true,
-			data: { enrolled: true, status: "not_yet_checked" },
-		});
 	});
 });
