@@ -16,16 +16,8 @@ import type { IntendedDriverAdminData } from "@/lib/organization/driving-licence
 import type { DrivingLicenceSettingsVisibility } from "@/lib/organization/driving-licence/visibility-rules";
 import { IntendedDriverSettings } from "./intended-driver-settings";
 import { DrivingLicenceReassignmentAlert } from "./reassignment-alert";
+import { DRIVING_LICENCE_SETTINGS_TABS, type DrivingLicenceSettingsTab } from "./settings-tab-ids";
 import { useLinkedTabs } from "./use-linked-tabs";
-
-/** `?tab=` values, in display order, so each tab can be linked to. */
-export const DRIVING_LICENCE_SETTINGS_TABS = [
-	"policy",
-	"intended-drivers",
-	"verifiers",
-	"retention",
-] as const;
-export type DrivingLicenceSettingsTab = (typeof DRIVING_LICENCE_SETTINGS_TABS)[number];
 
 /**
  * `/settings/driving-licence` (#1427), laid out like vehicle use settings. While control is

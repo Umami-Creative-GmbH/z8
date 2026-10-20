@@ -13,16 +13,16 @@ async function SettingsNavigation() {
 	const settingsRouteContext = await getCurrentSettingsRouteContext();
 	const accessTier = settingsRouteContext?.accessTier ?? "member";
 	const billingEnabled = env.BILLING_ENABLED === "true";
-	const managesProject = await managesProjectBelowManagerTier(
-		settingsRouteContext?.accessTier ?? null,
-		settingsRouteContext?.authContext.user.id ?? null,
-		settingsRouteContext?.authContext.session.activeOrganizationId ?? null,
-	);
-	const drivingLicenceSettingsVisible = await loadDrivingLicenceSettingsVisible(
-		accessTier,
-		settingsRouteContext?.authContext.user.id ?? null,
-		settingsRouteContext?.authContext.session.activeOrganizationId ?? null,
-	);
+	const userId = settingsRouteContext?.authContext.user.id ?? null;
+	const organizationId = settingsRouteContext?.authContext.session.activeOrganizationId ?? null;
+	const [managesProject, drivingLicenceSettingsVisible] = await Promise.all([
+		managesProjectBelowManagerTier(
+			settingsRouteContext?.accessTier ?? null,
+			userId,
+			organizationId,
+		),
+		loadDrivingLicenceSettingsVisible(accessTier, userId, organizationId),
+	]);
 
 	return (
 		<aside className="w-64 border-r bg-card hidden md:block overflow-auto">

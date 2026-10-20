@@ -359,37 +359,14 @@ function VerifierEditor({
 					/>
 					<form.Field name="until">
 						{(field) => (
-							<div className="space-y-2">
-								<Label htmlFor={UNTIL_FIELD_ID}>
-									{t(
-										"settings.drivingLicence.verifiers.untilLabel",
-										"Until (optional)",
-									)}
-								</Label>
-								<DatePicker
-									id={UNTIL_FIELD_ID}
-									aria-describedby={`${UNTIL_FIELD_ID}-help`}
-									value={field.state.value ?? null}
-									onChange={(value) => field.handleChange(value || null)}
-									onBlur={field.handleBlur}
-									min={today}
-									disabled={submitting}
-									placeholder={t(
-										"settings.drivingLicence.verifiers.untilPlaceholder",
-										"No end date",
-									)}
-								/>
-								<p
-									id={`${UNTIL_FIELD_ID}-help`}
-									className="text-muted-foreground text-sm"
-								>
-									{t(
-										"settings.drivingLicence.verifiers.untilHelp",
-										"For temporary cover. Responsibility ends after this whole day in {timezone}. Leave empty for no end.",
-										{ timezone: data.timezone },
-									)}
-								</p>
-							</div>
+							<VerifierUntilField
+								value={field.state.value ?? null}
+								onChange={(value) => field.handleChange(value || null)}
+								onBlur={field.handleBlur}
+								min={today}
+								disabled={submitting}
+								timezone={data.timezone}
+							/>
 						)}
 					</form.Field>
 					<div className="flex gap-2">
@@ -418,36 +395,85 @@ function VerifierEditor({
 					</div>
 				</form>
 			)}
-			{data.grants.some((g) => g.revokedAt) && (
-				<details className="text-sm">
-					<summary className="cursor-pointer font-medium">
-						{t(
-							"settings.drivingLicence.verifiers.history",
-							"Responsibility history",
-						)}
-					</summary>
-					<ul className="mt-3 space-y-3">
-						{data.grants
-							.filter((g) => g.revokedAt)
-							.map((g) => (
-								<li key={g.id}>
-									{nameOf(g.verifierEmployeeId)} —{" "}
-									{t(
-										"settings.drivingLicence.verifiers.historyEntry",
-										"Granted by {grantor} at {granted}; revoked by {revoker} at {revoked}",
-										{
-											grantor: g.grantedBy,
-											granted: grantTime(g.grantedAt),
-											revoker: g.revokedBy ?? "",
-											revoked: g.revokedAt ? grantTime(g.revokedAt) : "",
-										},
-									)}
-								</li>
-							))}
-					</ul>
-				</details>
-			)}
+			<RevokedGrantHistory grants={data.grants.filter((g) => g.revokedAt)} nameOf={nameOf} />
 		</div>
+	);
+}
+
+function VerifierUntilField({
+	value,
+	onChange,
+	onBlur,
+	min,
+	disabled,
+	timezone,
+}: {
+	value: string | null;
+	onChange: (value: string | null) => void;
+	onBlur: () => void;
+	min: string;
+	disabled: boolean;
+	timezone: string;
+}) {
+	const { t } = useTranslate();
+	return (
+		<div className="space-y-2">
+			<Label htmlFor={UNTIL_FIELD_ID}>
+				{t("settings.drivingLicence.verifiers.untilLabel", "Until (optional)")}
+			</Label>
+			<DatePicker
+				id={UNTIL_FIELD_ID}
+				aria-describedby={`${UNTIL_FIELD_ID}-help`}
+				value={value}
+				onChange={onChange}
+				onBlur={onBlur}
+				min={min}
+				disabled={disabled}
+				placeholder={t("settings.drivingLicence.verifiers.untilPlaceholder", "No end date")}
+			/>
+			<p id={`${UNTIL_FIELD_ID}-help`} className="text-muted-foreground text-sm">
+				{t(
+					"settings.drivingLicence.verifiers.untilHelp",
+					"For temporary cover. Responsibility ends after this whole day in {timezone}. Leave empty for no end.",
+					{ timezone },
+				)}
+			</p>
+		</div>
+	);
+}
+
+function RevokedGrantHistory({
+	grants,
+	nameOf,
+}: {
+	grants: readonly DrivingLicenceVerifierGrantView[];
+	nameOf: (employeeId: string) => string;
+}) {
+	const { t } = useTranslate();
+	if (!grants.length) return null;
+	return (
+		<details className="text-sm">
+			<summary className="cursor-pointer font-medium">
+				{t("settings.drivingLicence.verifiers.history", "Responsibility history")}
+			</summary>
+			<ul className="mt-3 space-y-3">
+				{grants.map((g) => (
+					<li key={g.id}>
+						{nameOf(g.verifierEmployeeId)} —{" "}
+						{t(
+							"settings.drivingLicence.verifiers.historyEntry",
+							"Granted by {grantor} at {granted}; revoked by {revoker} at {revoked}",
+							{
+								grantor: g.grantedBy,
+								granted: grantTime(g.grantedAt),
+								revoker: g.revokedBy ?? "",
+								revoked: g.revokedAt ? grantTime(g.revokedAt) : "",
+							},
+						)}
+					</li>
+				))}
+			</ul>
+		</details>
 	);
 }
 

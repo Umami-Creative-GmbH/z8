@@ -111,10 +111,13 @@ async function readVisibility(
 	database: DrivingLicenceDatabase,
 ): Promise<DrivingLicenceVisibility> {
 	const now = input.now ?? systemClock.nowInstant();
+	// Sequential on purpose (see above): the reader may run inside a caller's transaction.
+	// react-doctor-disable-next-line react-doctor/async-parallel
 	const [policy] = await database
 		.select({ enabled: drivingLicencePolicy.enabled })
 		.from(drivingLicencePolicy)
 		.where(eq(drivingLicencePolicy.organizationId, input.organizationId));
+	// react-doctor-disable-next-line react-doctor/server-sequential-independent-await
 	const [membership] = await database
 		.select({ role: member.role })
 		.from(member)
@@ -155,13 +158,17 @@ async function readVisibility(
 		organizationId: input.organizationId,
 		employeeId: profile.id,
 	};
+	// Sequential on purpose (see above): the reader may run inside a caller's transaction.
+	// react-doctor-disable-next-line react-doctor/async-parallel
 	const intendedDriver = await isDrivingLicenceIntendedDriver(database, subject);
+	// react-doctor-disable-next-line react-doctor/server-sequential-independent-await
 	const ownRetainedRecords = await hasOwnRetainedRecords(database, subject);
 	const grant = await loadDrivingLicenceVerifierGrant(database, {
 		organizationId: input.organizationId,
 		verifierEmployeeId: profile.id,
 		now,
 	});
+	// react-doctor-disable-next-line react-doctor/server-sequential-independent-await
 	const [permission] = await drivingAuthorizationPlanningPermission(database, subject);
 	return {
 		featureEnabled,

@@ -49,22 +49,6 @@ export function OriginalDrivingCheckForm({
 	onCompleted: () => Promise<void>;
 }) {
 	const { t } = useTranslate();
-	const failureScopeId = useId();
-	const failureScopes: { value: FailureScope; label: string }[] = [
-		{
-			value: "classes",
-			label: t("drivingLicence.check.scopeClasses", "Only the affected inspected classes"),
-		},
-		{
-			value: "document",
-			label: t("drivingLicence.check.scopeDocument", "Every authorization based on the document"),
-		},
-		{
-			value: "person",
-			label: t("drivingLicence.check.scopePerson", "All driving authorization for the employee"),
-		},
-	];
-
 	const [error, setError] = useState("");
 	const [commandId, setCommandId] = useState(() => crypto.randomUUID());
 	const form = useForm({
@@ -150,38 +134,22 @@ export function OriginalDrivingCheckForm({
 				</legend>
 				<form.Field name="documentIssuedOn">
 					{(field) => (
-						<TFormItem>
-							<TFormLabel>
-								{t("drivingLicence.check.issueDate", "Document issue date")}
-							</TFormLabel>
-							<TFormControl>
-								<Input
-									type="date"
-									required
-									value={field.state.value}
-									onBlur={field.handleBlur}
-									onChange={(event) => field.handleChange(event.target.value)}
-								/>
-							</TFormControl>
-						</TFormItem>
+						<DocumentDateInput
+							label={t("drivingLicence.check.issueDate", "Document issue date")}
+							value={field.state.value}
+							onBlur={field.handleBlur}
+							onChange={field.handleChange}
+						/>
 					)}
 				</form.Field>
 				<form.Field name="documentExpiresOn">
 					{(field) => (
-						<TFormItem>
-							<TFormLabel>
-								{t("drivingLicence.check.expiryDate", "Document expiry date")}
-							</TFormLabel>
-							<TFormControl>
-								<Input
-									type="date"
-									required
-									value={field.state.value}
-									onBlur={field.handleBlur}
-									onChange={(event) => field.handleChange(event.target.value)}
-								/>
-							</TFormControl>
-						</TFormItem>
+						<DocumentDateInput
+							label={t("drivingLicence.check.expiryDate", "Document expiry date")}
+							value={field.state.value}
+							onBlur={field.handleBlur}
+							onChange={field.handleChange}
+						/>
 					)}
 				</form.Field>
 			</fieldset>
@@ -228,32 +196,7 @@ export function OriginalDrivingCheckForm({
 			</fieldset>
 			<form.Field name="failureScope">
 				{(field) => (
-					<div className="flex flex-col gap-1.5">
-						<span id={failureScopeId} className="text-sm font-medium">
-							{t(
-								"drivingLicence.check.failureScope",
-								"Scope of an unsuccessful or inconclusive check",
-							)}
-						</span>
-						<Select
-							value={field.state.value}
-							items={failureScopes}
-							onValueChange={(value) => {
-								if (value) field.handleChange(value as FailureScope);
-							}}
-						>
-							<SelectTrigger aria-labelledby={failureScopeId} className="w-full">
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent>
-								{failureScopes.map((scope) => (
-									<SelectItem key={scope.value} value={scope.value}>
-										{scope.label}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					</div>
+					<FailureScopeSelect value={field.state.value} onChange={field.handleChange} />
 				)}
 			</form.Field>
 			<fieldset className="space-y-3">
@@ -342,6 +285,83 @@ export function OriginalDrivingCheckForm({
 		</form>
 			</CardContent>
 		</Card>
+	);
+}
+
+function DocumentDateInput({
+	label,
+	value,
+	onBlur,
+	onChange,
+}: {
+	label: string;
+	value: string;
+	onBlur: () => void;
+	onChange: (value: string) => void;
+}) {
+	return (
+		<TFormItem>
+			<TFormLabel>{label}</TFormLabel>
+			<TFormControl>
+				<Input
+					type="date"
+					required
+					value={value}
+					onBlur={onBlur}
+					onChange={(event) => onChange(event.target.value)}
+				/>
+			</TFormControl>
+		</TFormItem>
+	);
+}
+
+function FailureScopeSelect({
+	value,
+	onChange,
+}: {
+	value: FailureScope;
+	onChange: (value: FailureScope) => void;
+}) {
+	const { t } = useTranslate();
+	const id = useId();
+	const scopes: { value: FailureScope; label: string }[] = [
+		{
+			value: "classes",
+			label: t("drivingLicence.check.scopeClasses", "Only the affected inspected classes"),
+		},
+		{
+			value: "document",
+			label: t("drivingLicence.check.scopeDocument", "Every authorization based on the document"),
+		},
+		{
+			value: "person",
+			label: t("drivingLicence.check.scopePerson", "All driving authorization for the employee"),
+		},
+	];
+	return (
+		<div className="flex flex-col gap-1.5">
+			<span id={id} className="text-sm font-medium">
+				{t("drivingLicence.check.failureScope", "Scope of an unsuccessful or inconclusive check")}
+			</span>
+			<Select
+				value={value}
+				items={scopes}
+				onValueChange={(next) => {
+					if (next) onChange(next as FailureScope);
+				}}
+			>
+				<SelectTrigger aria-labelledby={id} className="w-full">
+					<SelectValue />
+				</SelectTrigger>
+				<SelectContent>
+					{scopes.map((scope) => (
+						<SelectItem key={scope.value} value={scope.value}>
+							{scope.label}
+						</SelectItem>
+					))}
+				</SelectContent>
+			</Select>
+		</div>
 	);
 }
 

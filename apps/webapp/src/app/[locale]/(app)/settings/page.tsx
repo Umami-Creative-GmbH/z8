@@ -62,18 +62,19 @@ async function SettingsPageContent() {
 			}
 		: undefined;
 
-	// The projects page grants the tasks-only view in the session's active organization.
-	const managesProject = await managesProjectBelowManagerTier(
-		accessTier,
-		authContext.user.id,
-		authContext.session.activeOrganizationId ?? null,
-	);
-
-	const drivingLicenceSettingsVisible = await loadDrivingLicenceSettingsVisible(
-		accessTier,
-		authContext.user.id,
-		authContext.session.activeOrganizationId ?? null,
-	);
+	const [managesProject, drivingLicenceSettingsVisible] = await Promise.all([
+		// The projects page grants the tasks-only view in the session's active organization.
+		managesProjectBelowManagerTier(
+			accessTier,
+			authContext.user.id,
+			authContext.session.activeOrganizationId ?? null,
+		),
+		loadDrivingLicenceSettingsVisible(
+			accessTier,
+			authContext.user.id,
+			authContext.session.activeOrganizationId ?? null,
+		),
+	]);
 
 	const { visibleSettings, visibleGroups } = getResolvedSettingsVisibility({
 		accessTier,
