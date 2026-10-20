@@ -312,8 +312,11 @@ async function reactivateDrivingLicenceControl(
 		offAt,
 		now,
 	);
-	for (const occasion of settled)
+	for (const occasion of settled) {
+		// Ordered writes on the switch-on transaction connection.
+		// react-doctor-disable-next-line react-doctor/async-await-in-loop
 		await deliverDrivingLicenceOccasion(tx, occasion, now);
+	}
 }
 
 export type DrivingLicenceReactivationImpact = {

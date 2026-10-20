@@ -79,6 +79,10 @@ function switchError(t: Translate, error: string) {
 	}
 }
 
+/** Stands in for a rejected action call, so the busy flag resets and the generic error shows. */
+const UNEXPECTED_FAILURE = { success: false, error: "unexpected" } as const;
+type UnexpectedFailure = typeof UNEXPECTED_FAILURE;
+
 /** A whole number of months from 1 to 120, or null. */
 function monthsFrom(value: string) {
 	if (!value.trim()) return null;
@@ -117,9 +121,13 @@ export function DrivingLicenceFeature({
 		if (!canEdit) return false;
 		setSaving(true);
 		setEnabled(next);
-		const result = await switchDrivingLicenceControlAction(
-			setup ? { enabled: next, setup } : { enabled: next },
-		);
+		const input = setup ? { enabled: next, setup } : { enabled: next };
+		let result: Awaited<ReturnType<typeof switchDrivingLicenceControlAction>> | UnexpectedFailure;
+		try {
+			result = await switchDrivingLicenceControlAction(input);
+		} catch {
+			result = UNEXPECTED_FAILURE;
+		}
 		setSaving(false);
 		if (!result.success) {
 			setEnabled(!next);
@@ -147,7 +155,14 @@ export function DrivingLicenceFeature({
 	/** Counts what switching on again suspends (#1422) before asking to confirm. */
 	const askToSwitchOnAgain = async () => {
 		setSaving(true);
-		const impact = await getDrivingLicenceReactivationImpactAction();
+		let impact:
+			| Awaited<ReturnType<typeof getDrivingLicenceReactivationImpactAction>>
+			| UnexpectedFailure;
+		try {
+			impact = await getDrivingLicenceReactivationImpactAction();
+		} catch {
+			impact = UNEXPECTED_FAILURE;
+		}
 		setSaving(false);
 		if (!impact.success) {
 			toast.error(switchError(t, impact.error));

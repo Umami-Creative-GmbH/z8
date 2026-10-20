@@ -61,6 +61,8 @@ export function DrivingLicenceStatusSummary({
 				) : null}
 				{record.classes.length ? (
 					<Table mobileLayout="stacked">
+						{/* Incidental: unrelated tables merely share a 4-column header. */}
+						{/* react-doctor-disable-next-line react-doctor/duplicate-jsx-subtree */}
 						<TableHeader>
 							<TableRow>
 								<TableHead>{t("drivingLicence.summary.class", "Class")}</TableHead>

@@ -170,6 +170,8 @@ export async function endDrivingAuthorizationNoLongerIntended(
 	const notices: Array<{ employeeId: string; employmentPeriodId: string | null; codes: string[] }> =
 		[];
 	for (const item of input.endings) {
+		// Ordered writes on the caller's transaction connection.
+		// react-doctor-disable-next-line react-doctor/async-await-in-loop
 		const rows = await tx
 			.update(drivingAuthorization)
 			.set({
@@ -222,7 +224,9 @@ export async function endDrivingAuthorizationNoLongerIntended(
 	// Loaded on use: team and employee actions import this module, the notification stack
 	// only matters once something ends.
 	const { deliverDrivingLicenceOccasion } = await import("./reminders");
-	for (const notice of notices)
+	for (const notice of notices) {
+		// Ordered writes on the caller's transaction connection.
+		// react-doctor-disable-next-line react-doctor/async-await-in-loop
 		await deliverDrivingLicenceOccasion(
 			tx,
 			{
@@ -237,6 +241,7 @@ export async function endDrivingAuthorizationNoLongerIntended(
 			},
 			now,
 		);
+	}
 }
 
 /**
@@ -292,6 +297,8 @@ export async function runDrivingLicenceIntendedDriverWrite<Tx extends DrivingLic
 		scope.employeeIds,
 	);
 	const result = await write(tx);
+	// Must read after `write`: the preview compares against what the write changed.
+	// react-doctor-disable-next-line react-doctor/server-sequential-independent-await
 	const endings = await previewDrivingLicenceIntendedDriverChange(tx, change, now);
 	// Without a token and an ending there is nothing to compare.
 	if (endings.length || scope.previewToken !== undefined) {

@@ -137,6 +137,8 @@ export function ReinstateDrivingAuthorization({
 					)}
 				</p>
 			) : (
+				// Client-validated TanStack form; the action needs the loaded report and suspension state.
+				// react-doctor-disable-next-line react-doctor/no-prevent-default
 				<form
 					className="space-y-4"
 					onSubmit={(event) => {

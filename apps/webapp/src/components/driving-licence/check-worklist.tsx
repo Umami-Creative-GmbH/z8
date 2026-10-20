@@ -33,6 +33,7 @@ import {
 import { useSession } from "@/lib/auth-client";
 import { getDrivingLicenceCheckWorklistAction } from "@/lib/organization/driving-licence/check-actions";
 import type { AuthorizationStatus } from "@/lib/organization/driving-licence/check-types";
+import type { DrivingLicenceWorklistRow } from "@/lib/organization/driving-licence/checks";
 import { drivingLicenceCheckPath } from "@/lib/organization/driving-licence/paths";
 import {
 	DRIVING_LICENCE_WORKLIST_STATUSES,
@@ -207,93 +208,112 @@ export function DrivingLicenceVerifierWorklist() {
 						)}
 					</p>
 				) : !rows.length ? (
-					filtered ? (
-						<p role="status" className="text-sm text-muted-foreground">
-							{t(
-								"drivingLicence.checks.noMatches",
-								"No intended drivers match the search or filter.",
-							)}
-						</p>
-					) : (
-						<Empty className="border">
-							<EmptyHeader>
-								<EmptyMedia variant="icon">
-									<IconUserSearch aria-hidden="true" />
-								</EmptyMedia>
-								<EmptyTitle>
-									{t("drivingLicence.checks.empty.title", "Nobody to check yet")}
-								</EmptyTitle>
-								<EmptyDescription>
-									{t(
-										"drivingLicence.checks.empty.description",
-										"Intended drivers in your verifier responsibility appear here. Ask an administrator if someone is missing.",
-									)}
-								</EmptyDescription>
-							</EmptyHeader>
-						</Empty>
-					)
+					<WorklistEmpty filtered={filtered} />
 				) : (
-					<Table aria-busy={worklist.isFetching} mobileLayout="stacked">
-						<TableHeader>
-							<TableRow>
-								<SortableHead column="name" order={order} onSort={setOrder}>
-									{t("drivingLicence.checks.column.name", "Name")}
-								</SortableHead>
-								<TableHead>{t("drivingLicence.checks.column.status", "Status")}</TableHead>
-								<SortableHead column="deadline" order={order} onSort={setOrder}>
-									{t("drivingLicence.checks.column.deadline", "Next deadline")}
-								</SortableHead>
-								<SortableHead column="team" order={order} onSort={setOrder}>
-									{t("drivingLicence.checks.column.team", "Team")}
-								</SortableHead>
-								<TableHead>
-									<span className="sr-only">
-										{t("drivingLicence.checks.column.action", "Action")}
-									</span>
-								</TableHead>
-							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{rows.map((person) => (
-								<TableRow key={person.employeeId}>
-									<TableCell className="font-medium">{person.name}</TableCell>
-									<TableCell>
-										<Badge variant={STATUS_BADGE[person.status]}>
-											{statusLabels[person.status].short}
-										</Badge>
-									</TableCell>
-									<TableCell>
-										{person.nextDeadline ? (
-											<DrivingDeadlineDate
-												validThrough={person.nextDeadline.validThrough}
-												timezone={person.nextDeadline.timezone}
-											/>
-										) : person.status === "ended" ? (
-											"—"
-										) : (
-											t("drivingLicence.checks.dueNow", "Check due now")
-										)}
-									</TableCell>
-									<TableCell>{person.team ? person.team.name : "—"}</TableCell>
-									<TableCell className="text-right">
-										<Button asChild variant="outline" size="sm">
-											<Link href={drivingLicenceCheckPath(person.employeeId)}>
-												{person.canVerify
-													? t("drivingLicence.worklist.open", "Check {name}", {
-															name: person.name,
-														})
-													: t("drivingLicence.worklist.viewEnded", "View ended record for {name}", {
-															name: person.name,
-														})}
-											</Link>
-										</Button>
-									</TableCell>
-								</TableRow>
-							))}
-						</TableBody>
-					</Table>
+					<WorklistTable rows={rows} busy={worklist.isFetching} order={order} onSort={setOrder} />
 				)}
 			</CardContent>
 		</Card>
+	);
+}
+
+/** No rows: either nothing matches the search or filter, or nobody is in scope yet. */
+function WorklistEmpty({ filtered }: { filtered: boolean }) {
+	const { t } = useTranslate();
+	if (filtered)
+		return (
+			<p role="status" className="text-sm text-muted-foreground">
+				{t("drivingLicence.checks.noMatches", "No intended drivers match the search or filter.")}
+			</p>
+		);
+	return (
+		<Empty className="border">
+			<EmptyHeader>
+				<EmptyMedia variant="icon">
+					<IconUserSearch aria-hidden="true" />
+				</EmptyMedia>
+				<EmptyTitle>{t("drivingLicence.checks.empty.title", "Nobody to check yet")}</EmptyTitle>
+				<EmptyDescription>
+					{t(
+						"drivingLicence.checks.empty.description",
+						"Intended drivers in your verifier responsibility appear here. Ask an administrator if someone is missing.",
+					)}
+				</EmptyDescription>
+			</EmptyHeader>
+		</Empty>
+	);
+}
+
+function WorklistTable({
+	rows,
+	busy,
+	order,
+	onSort,
+}: {
+	rows: readonly DrivingLicenceWorklistRow[];
+	busy: boolean;
+	order: Order;
+	onSort: (order: Order) => void;
+}) {
+	const { t } = useTranslate();
+	const statusLabels = useDrivingStatusLabels();
+	return (
+		<Table aria-busy={busy} mobileLayout="stacked">
+			<TableHeader>
+				<TableRow>
+					<SortableHead column="name" order={order} onSort={onSort}>
+						{t("drivingLicence.checks.column.name", "Name")}
+					</SortableHead>
+					<TableHead>{t("drivingLicence.checks.column.status", "Status")}</TableHead>
+					<SortableHead column="deadline" order={order} onSort={onSort}>
+						{t("drivingLicence.checks.column.deadline", "Next deadline")}
+					</SortableHead>
+					<SortableHead column="team" order={order} onSort={onSort}>
+						{t("drivingLicence.checks.column.team", "Team")}
+					</SortableHead>
+					<TableHead>
+						<span className="sr-only">{t("drivingLicence.checks.column.action", "Action")}</span>
+					</TableHead>
+				</TableRow>
+			</TableHeader>
+			<TableBody>
+				{rows.map((person) => (
+					<TableRow key={person.employeeId}>
+						<TableCell className="font-medium">{person.name}</TableCell>
+						<TableCell>
+							<Badge variant={STATUS_BADGE[person.status]}>
+								{statusLabels[person.status].short}
+							</Badge>
+						</TableCell>
+						<TableCell>
+							{person.nextDeadline ? (
+								<DrivingDeadlineDate
+									validThrough={person.nextDeadline.validThrough}
+									timezone={person.nextDeadline.timezone}
+								/>
+							) : person.status === "ended" ? (
+								"—"
+							) : (
+								t("drivingLicence.checks.dueNow", "Check due now")
+							)}
+						</TableCell>
+						<TableCell>{person.team ? person.team.name : "—"}</TableCell>
+						<TableCell className="text-right">
+							<Button asChild variant="outline" size="sm">
+								<Link href={drivingLicenceCheckPath(person.employeeId)}>
+									{person.canVerify
+										? t("drivingLicence.worklist.open", "Check {name}", {
+												name: person.name,
+											})
+										: t("drivingLicence.worklist.viewEnded", "View ended record for {name}", {
+												name: person.name,
+											})}
+								</Link>
+							</Button>
+						</TableCell>
+					</TableRow>
+				))}
+			</TableBody>
+		</Table>
 	);
 }
