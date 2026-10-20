@@ -6,6 +6,7 @@ import { z } from "zod";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { employee, team } from "@/db/schema";
+import { systemClock } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { logger } from "@/lib/logger";
 import {
@@ -18,25 +19,34 @@ import {
 	requireDrivingLicenceAdministrator,
 } from "./context";
 import {
-	type DrivingLicenceVerifierGrantRecord,
+	type DrivingLicenceVerifierGrantView,
 	listDrivingLicenceVerifierGrants,
+	readDrivingLicenceCalendarTimezone,
 	revokeDrivingLicenceVerifierGrant,
 	type SaveDrivingLicenceVerifierGrantInput,
 	saveDrivingLicenceVerifierGrant,
+	VERIFIER_UNTIL_IN_PAST,
+	viewDrivingLicenceVerifierGrant,
 } from "./verifiers";
 
 export interface DrivingLicenceVerifierResponsibility
-	extends DrivingLicenceVerifierGrantRecord {
+	extends DrivingLicenceVerifierGrantView {
 	teams: Array<{ id: string; name: string }>;
 	employees: Array<{ id: string; name: string }>;
+	/** Calendar zone the until date is shown in. */
+	timezone: string;
 }
 type Result<T> = { success: true; data: T } | { success: false; error: string };
 export interface DrivingLicenceVerifierAdminData {
 	employees: Array<{ id: string; name: string; email: string }>;
 	teams: Array<{ id: string; name: string }>;
-	grants: DrivingLicenceVerifierGrantRecord[];
+	grants: DrivingLicenceVerifierGrantView[];
+	/** Calendar zone that until dates are entered and shown in. */
+	timezone: string;
 }
 function failure(error: unknown): { success: false; error: string } {
+	if (error instanceof Error && error.message === VERIFIER_UNTIL_IN_PAST)
+		return { success: false, error: VERIFIER_UNTIL_IN_PAST };
 	logger.error({ error }, "Driving licence verifier action failed");
 	return {
 		success: false,
@@ -49,7 +59,7 @@ export async function getDrivingLicenceVerifierAdminDataAction(): Promise<
 > {
 	try {
 		const actor = await requireDrivingLicenceAdministrator();
-		const [employees, teams, grants] = await Promise.all([
+		const [employees, teams, grants, timezone] = await Promise.all([
 			db
 				.select({ id: employee.id, name: user.name, email: user.email })
 				.from(employee)
@@ -67,8 +77,20 @@ export async function getDrivingLicenceVerifierAdminDataAction(): Promise<
 				.where(eq(team.organizationId, actor.organizationId))
 				.orderBy(team.name),
 			listDrivingLicenceVerifierGrants(db, actor.organizationId),
+			readDrivingLicenceCalendarTimezone(db, actor.organizationId),
 		]);
-		return { success: true, data: { employees, teams, grants } };
+		const now = systemClock.nowInstant();
+		return {
+			success: true,
+			data: {
+				employees,
+				teams,
+				grants: grants.map((grant) =>
+					viewDrivingLicenceVerifierGrant(grant, timezone, now),
+				),
+				timezone,
+			},
+		};
 	} catch (error) {
 		return failure(error);
 	}
@@ -117,7 +139,7 @@ export async function getDrivingLicenceVerifierResponsibilityAction(): Promise<
 		const access = await resolveDrivingLicenceAccess(db, actor);
 		if (!access?.grant) return { success: true, data: null };
 		const grant = access.grant;
-		const [teams, employees] = await Promise.all([
+		const [teams, employees, timezone] = await Promise.all([
 			grant.teamIds.length
 				? db
 						.select({ id: team.id, name: team.name })
@@ -143,8 +165,21 @@ export async function getDrivingLicenceVerifierResponsibilityAction(): Promise<
 						)
 						.orderBy(user.name)
 				: [],
+			readDrivingLicenceCalendarTimezone(db, actor.organizationId),
 		]);
-		return { success: true, data: { ...grant, teams, employees } };
+		return {
+			success: true,
+			data: {
+				...viewDrivingLicenceVerifierGrant(
+					grant,
+					timezone,
+					systemClock.nowInstant(),
+				),
+				teams,
+				employees,
+				timezone,
+			},
+		};
 	} catch (error) {
 		return failure(error);
 	}

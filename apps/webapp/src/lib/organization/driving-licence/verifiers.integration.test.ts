@@ -321,6 +321,144 @@ describe("driving licence verifier grants through public actions", () => {
 			data: [{ id: ids.ben, canVerify: true }],
 		});
 	});
+	it("ends an until-dated grant after that whole day in the policy calendar timezone", async () => {
+		await pool.query(
+			"insert into driving_licence_policy(organization_id,enabled,interval_months,timezone,reminder_lead_days,updated_at,updated_by) values($1,false,24,'America/New_York','[30,7]',now(),'t1312-admin')",
+			[ORG],
+		);
+		const clock = vi
+			.spyOn(Temporal.Now, "instant")
+			.mockReturnValue(Temporal.Instant.from("2026-10-16T12:00:00Z"));
+		expect(
+			(
+				await actions.saveDrivingLicenceVerifierGrantAction({
+					verifierEmployeeId: ids.verifier,
+					scope: "all",
+					teamIds: [],
+					employeeIds: [],
+					until: "2026-10-20",
+				})
+			).success,
+		).toBe(true);
+		const admin = await actions.getDrivingLicenceVerifierAdminDataAction();
+		expect(admin.success && admin.data.timezone).toBe("America/New_York");
+		expect(admin.success && admin.data.grants).toEqual([
+			expect.objectContaining({
+				verifierEmployeeId: ids.verifier,
+				until: "2026-10-20",
+				expired: false,
+				expiresAt: "2026-10-21T04:00:00.000Z",
+			}),
+		]);
+		signIn("verifier");
+		const own = await actions.getDrivingLicenceVerifierResponsibilityAction();
+		expect(own.success && own.data).toMatchObject({
+			until: "2026-10-20",
+			timezone: "America/New_York",
+		});
+		clock.mockReturnValue(Temporal.Instant.from("2026-10-21T03:59:59.999Z"));
+		expect(
+			await actions.getDrivingLicenceEmployeeAccessAction({
+				employeeId: ids.anna,
+			}),
+		).toEqual({ success: true, data: { canRead: true, canVerify: true } });
+		expect(
+			await actions.getDrivingLicenceEmployeeAccessAction({
+				employeeId: ids.verifier,
+			}),
+		).toEqual({ success: true, data: { canRead: true, canVerify: false } });
+		clock.mockReturnValue(Temporal.Instant.from("2026-10-21T04:00:00Z"));
+		expect(
+			await actions.getDrivingLicenceVerifierResponsibilityAction(),
+		).toEqual({ success: true, data: null });
+		expect(
+			await actions.getDrivingLicenceEmployeeAccessAction({
+				employeeId: ids.anna,
+			}),
+		).toEqual({ success: true, data: { canRead: false, canVerify: false } });
+		expect(await actions.listDrivingLicenceVerifierEmployeesAction()).toEqual({
+			success: true,
+			data: [],
+		});
+		signIn("admin");
+		const ended = await actions.getDrivingLicenceVerifierAdminDataAction();
+		expect(ended.success && ended.data.grants).toEqual([
+			expect.objectContaining({ until: "2026-10-20", expired: true }),
+		]);
+	});
+	it("lets administrators set, change and clear an until date that is never in the past", async () => {
+		vi.spyOn(Temporal.Now, "instant").mockReturnValue(
+			// 00:30 on 17 October in the organization timezone (no policy saved yet).
+			Temporal.Instant.from("2026-10-16T22:30:00Z"),
+		);
+		const grant = {
+			verifierEmployeeId: ids.verifier,
+			scope: "all" as const,
+			teamIds: [],
+			employeeIds: [],
+		};
+		expect(
+			await actions.saveDrivingLicenceVerifierGrantAction({
+				...grant,
+				until: "2026-10-16",
+			}),
+		).toEqual({ success: false, error: "until_in_past" });
+		expect(
+			(
+				await actions.saveDrivingLicenceVerifierGrantAction({
+					...grant,
+					until: "2026-10-17",
+					expiresAt: "2026-10-18T00:00:00Z",
+				})
+			).success,
+		).toBe(false);
+		expect(
+			(
+				await actions.saveDrivingLicenceVerifierGrantAction({
+					...grant,
+					until: "2026-10-17",
+				})
+			).success,
+		).toBe(true);
+		const current = async () => {
+			const data = await actions.getDrivingLicenceVerifierAdminDataAction();
+			if (!data.success) throw new Error(data.error);
+			return data.data.grants.filter((g) => !g.revokedAt);
+		};
+		expect(await current()).toEqual([
+			expect.objectContaining({
+				until: "2026-10-17",
+				expiresAt: "2026-10-17T22:00:00.000Z",
+			}),
+		]);
+		expect(
+			(
+				await actions.saveDrivingLicenceVerifierGrantAction({
+					...grant,
+					until: "2026-10-30",
+				})
+			).success,
+		).toBe(true);
+		expect(await current()).toEqual([
+			expect.objectContaining({
+				until: "2026-10-30",
+				expiresAt: "2026-10-30T23:00:00.000Z",
+			}),
+		]);
+		expect(
+			(
+				await actions.saveDrivingLicenceVerifierGrantAction({
+					...grant,
+					until: null,
+				})
+			).success,
+		).toBe(true);
+		expect(await current()).toEqual([
+			expect.objectContaining({ until: null, expiresAt: null, expired: false }),
+		]);
+		const all = await actions.getDrivingLicenceVerifierAdminDataAction();
+		expect(all.success && all.data.grants).toHaveLength(3);
+	});
 	it("does not inherit verifier authority from management, payroll or personnel file grants", async () => {
 		await pool.query("update employee set role='manager' where id=$1", [
 			ids.verifier,

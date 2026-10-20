@@ -1,16 +1,19 @@
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { db as appDb } from "@/db";
-import { member } from "@/db/auth-schema";
+import { member, organization } from "@/db/auth-schema";
 import { employee, employeeEmploymentPeriod, team } from "@/db/schema";
+import { drivingLicencePolicy } from "@/db/schema/driving-licence-policy";
 import { drivingLicenceVerifierGrant } from "@/db/schema/driving-licence-verifiers";
 import {
 	dateFromInstant,
 	type Instant,
 	parseInstant,
+	plainDateAt,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
+import { verifierGrantExpiry, verifierGrantUntil } from "./deadlines";
 import { lockDrivingLicenceOrganization } from "./locks";
 
 export type DrivingLicenceDatabase = Pick<typeof appDb, "select">;
@@ -24,9 +27,18 @@ export const verifierGrantInput = z
 		scope: z.enum(["all", "specific"]),
 		teamIds: z.array(z.uuid()).max(1000),
 		employeeIds: z.array(z.uuid()).max(1000),
+		/** Exact expiry instant; kept for existing callers. The editor sends `until`. */
 		expiresAt: z.string().nullable().optional(),
+		/** Last covered calendar day in the driving licence calendar timezone. */
+		until: z.iso.date().nullable().optional(),
 	})
 	.superRefine((value, context) => {
+		if (value.until && value.expiresAt)
+			context.addIssue({
+				code: "custom",
+				message: "Send either an until date or an expiry instant",
+				path: ["until"],
+			});
 		if (
 			value.scope === "specific" &&
 			value.teamIds.length + value.employeeIds.length === 0
@@ -71,6 +83,50 @@ function present(
 		grantedAt: row.grantedAt.toISOString(),
 		expiresAt: row.expiresAt?.toISOString() ?? null,
 		revokedAt: row.revokedAt?.toISOString() ?? null,
+	};
+}
+/** Refusal code: a verifier grant's until date lies before today in the calendar timezone. */
+export const VERIFIER_UNTIL_IN_PAST = "until_in_past";
+/**
+ * The calendar zone for verifier until dates: the policy's fixed deadline timezone,
+ * or the organization timezone before a policy exists.
+ */
+export async function readDrivingLicenceCalendarTimezone(
+	database: DrivingLicenceDatabase,
+	organizationId: string,
+): Promise<string> {
+	const [row] = await database
+		.select({
+			policy: drivingLicencePolicy.timezone,
+			organization: organization.timezone,
+		})
+		.from(organization)
+		.leftJoin(
+			drivingLicencePolicy,
+			eq(drivingLicencePolicy.organizationId, organization.id),
+		)
+		.where(eq(organization.id, organizationId))
+		.limit(1);
+	return row?.policy ?? row?.organization ?? "UTC";
+}
+export interface DrivingLicenceVerifierGrantView
+	extends DrivingLicenceVerifierGrantRecord {
+	/** Last covered calendar day in `timezone`, or null for no end. */
+	until: string | null;
+	expired: boolean;
+}
+export function viewDrivingLicenceVerifierGrant(
+	grant: DrivingLicenceVerifierGrantRecord,
+	timezone: string,
+	now: Instant,
+): DrivingLicenceVerifierGrantView {
+	const expiresAt = grant.expiresAt ? parseInstant(grant.expiresAt) : null;
+	return {
+		...grant,
+		until: expiresAt ? verifierGrantUntil(expiresAt, timezone) : null,
+		expired: expiresAt
+			? expiresAt.epochNanoseconds <= now.epochNanoseconds
+			: false,
 	};
 }
 export async function listDrivingLicenceVerifierGrants(
@@ -144,7 +200,16 @@ export async function saveDrivingLicenceVerifierGrant(
 		sql`SELECT pg_advisory_xact_lock(hashtextextended(${`${input.organizationId}:${value.verifierEmployeeId}:driving-verifier`}, 0))`,
 	);
 	const now = systemClock.nowInstant();
-	const expiresAt = value.expiresAt ? parseInstant(value.expiresAt) : null;
+	let expiresAt = value.expiresAt ? parseInstant(value.expiresAt) : null;
+	if (value.until) {
+		const timezone = await readDrivingLicenceCalendarTimezone(
+			tx,
+			input.organizationId,
+		);
+		if (value.until < plainDateAt(now, timezone).toString())
+			throw new Error(VERIFIER_UNTIL_IN_PAST);
+		expiresAt = verifierGrantExpiry(value.until, timezone);
+	}
 	if (expiresAt && expiresAt.epochNanoseconds <= now.epochNanoseconds)
 		throw new Error("Expiry must be in the future");
 	const [recipient] = await tx
