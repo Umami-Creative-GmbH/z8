@@ -6,7 +6,9 @@ import { beforeEach, expect, it, vi } from "vitest";
 const api = vi.hoisted(() => ({
 	save: vi.fn(),
 	refresh: vi.fn(),
+	toast: { success: vi.fn(), error: vi.fn() },
 }));
+vi.mock("sonner", () => ({ toast: api.toast }));
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
 		t: (_key: string, fallback: string, params?: Record<string, string>) =>
@@ -35,6 +37,8 @@ import { DrivingLicenceSettings } from "./policy-settings";
 
 beforeEach(() => {
 	api.save.mockReset().mockResolvedValue({ success: true, data: {} });
+	api.toast.success.mockReset();
+	api.toast.error.mockReset();
 });
 it("points to the Features switch instead of offering a policy form before the first activation", () => {
 	render(
@@ -78,9 +82,7 @@ it("saves retention and reminders without an activation control, and no longer l
 		target: { value: "Our justified internal evidence retention policy." },
 	});
 	await userEvent.click(screen.getByRole("button", { name: "Save policy" }));
-	await waitFor(() =>
-		expect(screen.getByRole("status").textContent).toContain("Policy saved"),
-	);
+	await waitFor(() => expect(api.toast.success).toHaveBeenCalledWith("Policy saved"));
 	expect(api.save).toHaveBeenCalledWith(
 		expect.objectContaining({
 			timezone: "Europe/Berlin",
@@ -106,13 +108,39 @@ it("routes an existing policy's interval edits to impact preview", () => {
 			}}
 		/>,
 	);
-	expect(
-		screen.getByLabelText("Routine check interval (months)"),
-	).toHaveProperty("readOnly", true);
+	// The current interval and the fixed deadline timezone are shown, not editable.
+	expect(screen.getByText("6")).toBeTruthy();
+	expect(screen.getByText("Europe/Berlin")).toBeTruthy();
+	expect(screen.queryByRole("textbox", { name: /timezone/i })).toBeNull();
+	expect(screen.queryByRole("spinbutton", { name: "Routine check interval (months)" })).toBeNull();
 	expect(
 		screen.getByRole("button", { name: "Preview interval impact" }),
 	).toBeTruthy();
 	expect(
 		screen.queryByRole("button", { name: "Apply interval change" }),
 	).toBeNull();
+});
+it("reports a refused save in a toast", async () => {
+	api.save.mockResolvedValue({ success: false, error: "retention_required" });
+	render(
+		<DrivingLicenceSettings
+			data={{
+				policy: {
+					enabled: true,
+					intervalMonths: 6,
+					timezone: "Europe/Berlin",
+					reminderLeadDays: [30, 7],
+					retentionMonths: 12,
+					retentionJustification: "Organization evidence retention",
+				},
+			}}
+		/>,
+	);
+	await userEvent.click(screen.getByRole("button", { name: "Save policy" }));
+	await waitFor(() =>
+		expect(api.toast.error).toHaveBeenCalledWith(
+			expect.stringContaining("Keep a finite, justified retention period"),
+		),
+	);
+	expect(api.toast.success).not.toHaveBeenCalled();
 });

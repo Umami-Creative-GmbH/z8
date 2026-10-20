@@ -3,8 +3,9 @@ import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
 	TFormControl,
@@ -43,43 +44,33 @@ function policySaveError(t: Translate, error: string | undefined) {
 }
 
 /**
- * The organization policy form; a save reports through `feedback`. It never switches
- * control on or off: the Features card switch is the only activation (#1421).
+ * The organization policy form; a save reports in a toast. It never switches control on or
+ * off: the Features card switch is the only activation (#1421). The interval and timezone
+ * are saved as they are; the interval changes only through its impact preview.
  */
-function usePolicyForm(
-	data: DrivingLicenceSettingsData,
-	feedback: {
-		setMessage: (message: string) => void;
-		setError: (error: string) => void;
-	},
-) {
+function usePolicyForm(policy: DrivingLicencePolicyInput) {
 	const { t } = useTranslate();
 	const router = useRouter();
 	const queryClient = useQueryClient();
-	const policy = data.policy;
 	return useForm({
 		defaultValues: {
-			intervalMonths: policy?.intervalMonths ?? 6,
-			timezone: policy?.timezone ?? "Europe/Berlin",
-			reminderLeadDays: (policy?.reminderLeadDays ?? [30, 7]).join(", "),
-			retentionMonths: policy?.retentionMonths?.toString() ?? "",
-			retentionJustification: policy?.retentionJustification ?? "",
+			reminderLeadDays: policy.reminderLeadDays.join(", "),
+			retentionMonths: policy.retentionMonths?.toString() ?? "",
+			retentionJustification: policy.retentionJustification ?? "",
 		},
 		onSubmit: async ({ value }) => {
-			feedback.setMessage("");
-			feedback.setError("");
 			const result = await saveDrivingLicencePolicyAction({
-				...value,
-				intervalMonths: policy?.intervalMonths ?? value.intervalMonths,
+				intervalMonths: policy.intervalMonths,
+				timezone: policy.timezone,
 				reminderLeadDays: value.reminderLeadDays.split(",").map((s) => Number(s.trim())),
 				retentionMonths: value.retentionMonths.trim() ? Number(value.retentionMonths) : null,
 				retentionJustification: value.retentionJustification.trim() || null,
-			});
-			if (!result.success) {
-				feedback.setError(policySaveError(t, result.error));
+			}).catch(() => null);
+			if (!result?.success) {
+				toast.error(policySaveError(t, result?.error));
 				return;
 			}
-			feedback.setMessage(t("drivingLicence.saved", "Policy saved"));
+			toast.success(t("drivingLicence.saved", "Policy saved"));
 			void queryClient.invalidateQueries({
 				queryKey: ["driving-authorization-status"],
 			});
@@ -90,148 +81,118 @@ function usePolicyForm(
 
 type PolicyForm = ReturnType<typeof usePolicyForm>;
 
+/** The Policy tab (#1427): the interval with its impact preview, reminders and retention. */
 export function DrivingLicenceSettings({ data }: { data: DrivingLicenceSettingsData }) {
 	const { t } = useTranslate();
-	const [message, setMessage] = useState("");
-	const [error, setError] = useState("");
-	const form = usePolicyForm(data, { setMessage, setError });
-	return (
-		<div className="space-y-8">
-			<section
-				aria-labelledby="driving-policy-title"
-				className="rounded-lg border bg-card p-5 sm:p-6"
-			>
-				<h2 id="driving-policy-title" className="text-lg font-semibold">
-					{t("drivingLicence.policyTitle", "Organization policy")}
-				</h2>
-				{data.policy ? (
-					<>
-						<p className="mt-1 text-sm text-muted-foreground">
-							{t(
-								"drivingLicence.policyIntro",
-								"Germany-first original licence checks. Choose the routine interval and justify a finite evidence retention period before activation.",
-							)}
-						</p>
-						{/* TanStack Form owns the submission lifecycle; see .react-doctor/false-positives.md. */}
-						{/* react-doctor-disable-next-line react-doctor/no-prevent-default */}
-						<form
-							className="mt-6 space-y-5"
-							onSubmit={(event) => {
-								event.preventDefault();
-								event.stopPropagation();
-								void form.handleSubmit();
-							}}
-						>
-							<PolicyScheduleFields form={form} policy={data.policy} t={t} />
-							<PolicyReminderField form={form} t={t} />
-							<PolicyRetentionFields form={form} t={t} />
-							<form.Subscribe selector={(state) => state.isSubmitting}>
-								{(submitting) => (
-									<Button type="submit" disabled={submitting}>
-										{submitting
-											? t("drivingLicence.saving", "Saving…")
-											: t("drivingLicence.save", "Save policy")}
-									</Button>
-								)}
-							</form.Subscribe>
-						</form>
-					</>
-				) : (
-					<p className="mt-1 text-sm text-muted-foreground">
+	if (!data.policy)
+		return (
+			<Card>
+				<CardHeader>
+					<CardTitle>{t("drivingLicence.policyTitle", "Organization policy")}</CardTitle>
+					<CardDescription>
 						{t(
 							"drivingLicence.switchOnFirst",
 							"Switch on driving licence control on the Features card in Organization settings. Setting it up there saves the first policy.",
 						)}
-					</p>
-				)}
-				{data.policy ? (
-					<DrivingLicenceIntervalSettings
-						key={data.policy.intervalMonths}
-						intervalMonths={data.policy.intervalMonths}
-					/>
-				) : null}
-			</section>
-			<p role="status" className="text-sm" aria-live="polite">
-				{message}
-			</p>
-			{error ? (
-				<p role="alert" className="text-sm text-destructive">
-					{error}
-				</p>
-			) : null}
+					</CardDescription>
+				</CardHeader>
+			</Card>
+		);
+	return (
+		<div className="space-y-6">
+			<PolicyScheduleCard policy={data.policy} />
+			<PolicyFormCard policy={data.policy} />
 		</div>
 	);
 }
 
-/** The routine interval and the calendar timezone; both are fixed once a policy is saved. */
-function PolicyScheduleFields({
-	form,
-	policy,
-	t,
-}: {
-	form: PolicyForm;
-	policy: DrivingLicencePolicyInput | null;
-	t: Translate;
-}) {
+/** The routine interval and the deadline timezone, both shown read-only, then the interval change. */
+function PolicyScheduleCard({ policy }: { policy: DrivingLicencePolicyInput }) {
+	const { t } = useTranslate();
 	return (
-		<div className="grid gap-5 sm:grid-cols-2">
-			<form.Field name="intervalMonths">
-				{(field) => (
-					<TFormItem>
-						<TFormLabel>
+		<Card>
+			<CardHeader>
+				<CardTitle>{t("drivingLicence.settingsTabs.scheduleTitle", "Check schedule")}</CardTitle>
+				<CardDescription>
+					{t(
+						"drivingLicence.intervalHelp",
+						"Each checked class uses its own last successful check as the routine-check anchor.",
+					)}
+				</CardDescription>
+			</CardHeader>
+			<CardContent className="space-y-6">
+				<dl className="grid gap-4 sm:grid-cols-2">
+					<div className="space-y-1">
+						<dt className="text-sm text-muted-foreground">
 							{t("drivingLicence.interval", "Routine check interval (months)")}
-						</TFormLabel>
-						<TFormControl>
-							<Input
-								name={field.name}
-								autoComplete="off"
-								type="number"
-								min={1}
-								max={120}
-								step={1}
-								required
-								value={policy?.intervalMonths ?? field.state.value}
-								readOnly={policy !== null}
-								onChange={(event) => field.handleChange(Number(event.target.value))}
-								onBlur={field.handleBlur}
-							/>
-						</TFormControl>
-						<TFormDescription>
-							{t(
-								"drivingLicence.intervalHelp",
-								"Each checked class uses its own last successful check as the routine-check anchor.",
-							)}
-						</TFormDescription>
-					</TFormItem>
-				)}
-			</form.Field>
-			<form.Field name="timezone">
-				{(field) => (
-					<TFormItem>
-						<TFormLabel>{t("drivingLicence.timezone", "Fixed calendar timezone")}</TFormLabel>
-						<TFormControl>
-							<Input
-								name={field.name}
-								autoComplete="off"
-								required
-								maxLength={100}
-								value={field.state.value}
-								readOnly={policy !== null}
-								onChange={(event) => field.handleChange(event.target.value)}
-								onBlur={field.handleBlur}
-								spellCheck={false}
-							/>
-						</TFormControl>
-						<TFormDescription>
-							{t(
-								"drivingLicence.zoneHelp",
-								"Date-only limits include the whole shown day in this timezone. It is fixed when first saved; the viewer's timezone never changes a deadline.",
-							)}
-						</TFormDescription>
-					</TFormItem>
-				)}
-			</form.Field>
-		</div>
+						</dt>
+						<dd className="font-medium tabular-nums">{policy.intervalMonths}</dd>
+					</div>
+					<div className="space-y-1">
+						<dt className="text-sm text-muted-foreground">
+							{t("drivingLicence.settingsTabs.deadlineTimezone", "Deadline timezone")}
+						</dt>
+						<dd className="font-medium break-words">{policy.timezone}</dd>
+					</div>
+				</dl>
+				<p className="text-sm text-muted-foreground">
+					{t(
+						"drivingLicence.zoneHelp",
+						"Date-only limits include the whole shown day in this timezone. It is fixed when first saved; the viewer's timezone never changes a deadline.",
+					)}
+				</p>
+				<div className="border-t pt-6">
+					<DrivingLicenceIntervalSettings
+						key={policy.intervalMonths}
+						intervalMonths={policy.intervalMonths}
+					/>
+				</div>
+			</CardContent>
+		</Card>
+	);
+}
+
+function PolicyFormCard({ policy }: { policy: DrivingLicencePolicyInput }) {
+	const { t } = useTranslate();
+	const form = usePolicyForm(policy);
+	return (
+		<Card>
+			<CardHeader>
+				<CardTitle>
+					{t("drivingLicence.settingsTabs.remindersTitle", "Reminders and retention")}
+				</CardTitle>
+				<CardDescription>
+					{t(
+						"drivingLicence.settingsTabs.remindersDescription",
+						"When reminders go out before a deadline, and how long evidence is kept once it no longer supports an authorization.",
+					)}
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
+				{/* TanStack Form owns the submission lifecycle; see .react-doctor/false-positives.md. */}
+				{/* react-doctor-disable-next-line react-doctor/no-prevent-default */}
+				<form
+					className="space-y-5"
+					onSubmit={(event) => {
+						event.preventDefault();
+						event.stopPropagation();
+						void form.handleSubmit();
+					}}
+				>
+					<PolicyReminderField form={form} t={t} />
+					<PolicyRetentionFields form={form} t={t} />
+					<form.Subscribe selector={(state) => state.isSubmitting}>
+						{(submitting) => (
+							<Button type="submit" disabled={submitting}>
+								{submitting
+									? t("drivingLicence.saving", "Saving…")
+									: t("drivingLicence.save", "Save policy")}
+							</Button>
+						)}
+					</form.Subscribe>
+				</form>
+			</CardContent>
+		</Card>
 	);
 }
 

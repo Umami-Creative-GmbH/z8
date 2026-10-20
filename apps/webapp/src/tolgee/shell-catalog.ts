@@ -66,7 +66,7 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		// Settings search entry for driving licence control, and the `/driving-licence`
 		// route title (#1420; the sidebar item itself is `nav.driving-licence`).
 		"drivingLicence.title",
-		"drivingLicence.settingsDescription",
+		"drivingLicence.settingsSummary",
 		"drivingLicence.myTitle",
 	]),
 	...keys("timeTracking", [
