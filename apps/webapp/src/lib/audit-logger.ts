@@ -145,6 +145,10 @@ export enum AuditAction {
 	VEHICLE_USE_ASSIGNMENT_SET = "vehicle_use.assignment_set",
 	VEHICLE_USE_ASSIGNMENT_REMOVED = "vehicle_use.assignment_removed",
 
+	// Driving licence intended-driver assignments (#1423)
+	DRIVING_LICENCE_INTENDED_DRIVER_SET = "driving_licence.intended_driver_set",
+	DRIVING_LICENCE_INTENDED_DRIVER_REMOVED = "driving_licence.intended_driver_removed",
+
 	// Expense Officer Grant Operations
 	EXPENSE_OFFICER_GRANT_CREATED = "expense_officer.grant_created",
 	EXPENSE_OFFICER_GRANT_CHANGED = "expense_officer.grant_changed",

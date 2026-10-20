@@ -10,17 +10,11 @@ import type { TFnType } from "@tolgee/react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatDurationWithSeconds } from "@/lib/time-tracking/time-utils";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 import { getTimeFormatDateTimeOptions, type TimeFormat } from "@/lib/user-preferences/time-format";
 import { workLocationIcons } from "./work-location-indicator";
-
-const {
-	office: IconBuilding,
-	home: IconHome,
-	remote: IconMapPin,
-	other: IconCompass,
-} = workLocationIcons;
 
 export function ActiveSessionSummary({
 	elapsedSeconds,
@@ -90,31 +84,29 @@ export function WorkLocationSelector({
 			}}
 			className="w-full pointer-coarse:*:h-11"
 		>
-			<ToggleGroupItem value="office" aria-label={t("timeTracking.workLocationOffice", "Office")}>
-				<IconBuilding className="size-4" />
-				<span className="hidden @[24rem]/widget:inline text-xs">
-					{t("timeTracking.workLocationOffice", "Office")}
-				</span>
-			</ToggleGroupItem>
-			<ToggleGroupItem value="home" aria-label={t("timeTracking.workLocationHome", "Home")}>
-				<IconHome className="size-4" />
-				<span className="hidden @[24rem]/widget:inline text-xs">
-					{t("timeTracking.workLocationHome", "Home")}
-				</span>
-			</ToggleGroupItem>
-			<ToggleGroupItem value="remote" aria-label={t("timeTracking.workLocationRemote", "Remote")}>
-				<IconMapPin className="size-4" />
-				<span className="hidden @[24rem]/widget:inline text-xs">
-					{t("timeTracking.workLocationRemote", "Remote")}
-				</span>
-			</ToggleGroupItem>
-			<ToggleGroupItem value="other" aria-label={t("timeTracking.workLocationOther", "Other")}>
-				<IconCompass className="size-4" />
-				<span className="hidden @[24rem]/widget:inline text-xs">
-					{t("timeTracking.workLocationOther", "Other")}
-				</span>
-			</ToggleGroupItem>
+			<WorkLocationOption value="office" label={t("timeTracking.workLocationOffice", "Office")} />
+			<WorkLocationOption value="home" label={t("timeTracking.workLocationHome", "Home")} />
+			<WorkLocationOption value="remote" label={t("timeTracking.workLocationRemote", "Remote")} />
+			<WorkLocationOption value="other" label={t("timeTracking.workLocationOther", "Other")} />
 		</ToggleGroup>
+	);
+}
+
+/** Narrow widgets show only the icon, so the tooltip names the location. */
+function WorkLocationOption({ value, label }: { value: WorkLocationType; label: string }) {
+	const Icon = workLocationIcons[value];
+	return (
+		<Tooltip>
+			<TooltipTrigger
+				render={
+					<ToggleGroupItem value={value} aria-label={label}>
+						<Icon className="size-4" />
+						<span className="hidden @[24rem]/widget:inline text-xs">{label}</span>
+					</ToggleGroupItem>
+				}
+			/>
+			<TooltipContent>{label}</TooltipContent>
+		</Tooltip>
 	);
 }
 

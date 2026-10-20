@@ -15,7 +15,7 @@
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/db";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
-import { seedSuspendedDrivingParticipant } from "@/lib/organization/driving-licence/testing/recording.test.fixture";
+import { seedSuspendedIntendedDriver } from "@/lib/organization/driving-licence/testing/recording.test.fixture";
 import { integrationAdminPool } from "@/test/integration-database";
 
 vi.mock("next/server", async (importOriginal) =>
@@ -334,7 +334,7 @@ describe("vehicle use at the kiosk on PostgreSQL", () => {
 			"records clock events and actual vehicle use with %s driving authorization",
 			async (drivingState) => {
 				if (drivingState === "suspended")
-					await seedSuspendedDrivingParticipant(admin, {
+					await seedSuspendedIntendedDriver(admin, {
 						organizationId: ids.organization,
 						employeeId: ids.driver,
 						userId: ids.driverUser,

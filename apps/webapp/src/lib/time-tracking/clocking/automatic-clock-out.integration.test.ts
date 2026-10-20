@@ -4,7 +4,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { workPeriod } from "@/db/schema";
 import { dateFromInstant, parseInstant } from "@/lib/datetime/temporal-core";
 import { createLifecycleDatabaseFixture } from "@/lib/employee-lifecycle/testing/database.test.fixture";
-import { seedSuspendedDrivingParticipant } from "@/lib/organization/driving-licence/testing/recording.test.fixture";
+import { seedSuspendedIntendedDriver } from "@/lib/organization/driving-licence/testing/recording.test.fixture";
 import type { AutoClockOutDecision } from "../automatic-clock-out/types";
 import {
 	createClockingService,
@@ -176,7 +176,7 @@ describe("automatic Clocking authority in PostgreSQL", () => {
 				async (drivingState) => {
 					const { decision, employee } = await seed(admission);
 					if (drivingState === "suspended")
-						await seedSuspendedDrivingParticipant(fixture.pool, {
+						await seedSuspendedIntendedDriver(fixture.pool, {
 							organizationId: decision.organizationId,
 							employeeId: employee.employeeId,
 							userId: employee.userId,

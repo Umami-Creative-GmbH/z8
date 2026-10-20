@@ -2,10 +2,7 @@ import "server-only";
 import { and, eq, gt, isNull } from "drizzle-orm";
 import { member, user } from "@/db/auth-schema";
 import { drivingLicenceCheck } from "@/db/schema/driving-licence-checks";
-import {
-	drivingLicenceParticipant,
-	drivingLicencePolicy,
-} from "@/db/schema/driving-licence-policy";
+import { drivingLicencePolicy } from "@/db/schema/driving-licence-policy";
 import { drivingLicenceTask } from "@/db/schema/driving-licence-tasks";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import { isReservedEmail } from "@/lib/auth/reserved-email";
@@ -15,6 +12,7 @@ import { insertInAppNotification } from "@/lib/notifications/notification-servic
 import { resolveDrivingLicenceAccess } from "./access";
 import { currentDrivingEmployment } from "./checks";
 import type { DrivingLicenceActor } from "./context";
+import { listDrivingLicenceIntendedDriverIds } from "./intended-drivers";
 import { drivingLicenceCheckPath } from "./paths";
 import {
 	collectDrivingLicenceReminderOccasions,
@@ -145,10 +143,9 @@ export async function reconcileDrivingLicenceTasks(
 		suppliedOccasions ??
 		(await collectDrivingLicenceReminderOccasions(tx, organizationId, now));
 	const participants = policy?.enabled
-		? await tx
-				.select()
-				.from(drivingLicenceParticipant)
-				.where(eq(drivingLicenceParticipant.organizationId, organizationId))
+		? (await listDrivingLicenceIntendedDriverIds(tx, organizationId)).map((id) => ({
+				employeeId: id,
+			}))
 		: [];
 	const rows = await tx
 		.select()

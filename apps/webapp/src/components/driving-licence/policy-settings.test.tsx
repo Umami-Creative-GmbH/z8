@@ -5,7 +5,6 @@ import { beforeEach, expect, it, vi } from "vitest";
 
 const api = vi.hoisted(() => ({
 	save: vi.fn(),
-	enroll: vi.fn(),
 	refresh: vi.fn(),
 }));
 vi.mock("@tolgee/react", () => ({
@@ -25,7 +24,6 @@ vi.mock("next/navigation", () => ({
 }));
 vi.mock("@/lib/organization/driving-licence/policy-actions", () => ({
 	saveDrivingLicencePolicyAction: api.save,
-	enrollDrivingLicenceEmployeeAction: api.enroll,
 }));
 
 vi.mock("@/lib/organization/driving-licence/interval-actions", () => ({
@@ -37,12 +35,11 @@ import { DrivingLicenceSettings } from "./policy-settings";
 
 beforeEach(() => {
 	api.save.mockReset().mockResolvedValue({ success: true, data: {} });
-	api.enroll.mockReset().mockResolvedValue({ success: true, data: {} });
 });
 it("points to the Features switch instead of offering a policy form before the first activation", () => {
 	render(
 		<DrivingLicenceSettings
-			data={{ policy: null, employees: [], participants: [] }}
+			data={{ policy: null }}
 		/>,
 	);
 	expect(
@@ -51,7 +48,7 @@ it("points to the Features switch instead of offering a policy form before the f
 	expect(screen.queryByRole("button", { name: "Save policy" })).toBeNull();
 	expect(screen.queryByRole("checkbox")).toBeNull();
 });
-it("saves retention and reminders without an activation control, and enrolls an employee without implying authorization", async () => {
+it("saves retention and reminders without an activation control, and no longer lists employees to enroll", async () => {
 	render(
 		<DrivingLicenceSettings
 			data={{
@@ -63,8 +60,6 @@ it("saves retention and reminders without an activation control, and enrolls an 
 					retentionMonths: 12,
 					retentionJustification: "Organization evidence retention",
 				},
-				employees: [{ id: "e1311", name: "Dana Driver" }],
-				participants: [],
 			}}
 		/>,
 	);
@@ -94,15 +89,7 @@ it("saves retention and reminders without an activation control, and enrolls an 
 		}),
 	);
 	expect(api.save.mock.lastCall?.[0]).not.toHaveProperty("enabled");
-	await userEvent.click(
-		screen.getByRole("button", { name: "Enroll Dana Driver" }),
-	);
-	await waitFor(() =>
-		expect(
-			screen.getByText("Not yet checked — no driving authorization"),
-		).toBeTruthy(),
-	);
-	expect(api.enroll).toHaveBeenCalledWith({ employeeId: "e1311" });
+	expect(screen.queryByRole("button", { name: /Enroll/ })).toBeNull();
 });
 it("routes an existing policy's interval edits to impact preview", () => {
 	render(
@@ -116,8 +103,6 @@ it("routes an existing policy's interval edits to impact preview", () => {
 					retentionMonths: 36,
 					retentionJustification: "Organization evidence retention",
 				},
-				employees: [],
-				participants: [],
 			}}
 		/>,
 	);

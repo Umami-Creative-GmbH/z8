@@ -33,6 +33,7 @@ vi.mock("@/lib/datetime/temporal-core", async (original) => {
 const operational = await import("./operational-actions");
 const checks = await import("./check-actions");
 const policies = await import("./policy-actions");
+const intendedDrivers = await import("./intended-driver-actions");
 const grants = await import("./verifier-actions");
 let fixture: LifecycleDatabaseFixture;
 let planner: SeededEmployee;
@@ -140,8 +141,9 @@ async function completeOriginal() {
 	).toBe(true);
 	expect(
 		(
-			await policies.enrollDrivingLicenceEmployeeAction({
-				employeeId: fixture.employeeId,
+			await intendedDrivers.setDrivingLicenceIntendedDriverAssignmentAction({
+				target: { type: "employee", employeeId: fixture.employeeId },
+				value: "required",
 			})
 		).success,
 	).toBe(true);

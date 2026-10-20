@@ -28,6 +28,7 @@ vi.mock("@/lib/datetime/temporal-core", async (original) => {
 	};
 });
 const policies = await import("./policy-actions");
+const intendedDrivers = await import("./intended-driver-actions");
 const grants = await import("./verifier-actions");
 const checks = await import("./check-actions");
 const operational = await import("./operational-actions");
@@ -70,10 +71,13 @@ async function switchOff() {
 		),
 	).toMatchObject({ success: true });
 }
-async function enroll(employeeId: string) {
+async function assignIntendedDriver(employeeId: string, value: "required" | "not_required" = "required") {
 	expect(
 		await as(fixture.ownerUserId, () =>
-			policies.enrollDrivingLicenceEmployeeAction({ employeeId }),
+			intendedDrivers.setDrivingLicenceIntendedDriverAssignmentAction({
+				target: { type: "employee", employeeId },
+				value,
+			}),
 		),
 	).toMatchObject({ success: true });
 }
@@ -109,12 +113,8 @@ async function recordCheck(employeeId: string) {
 		),
 	).toMatchObject({ success: true });
 }
-/** #1423 replaces enrollment with assignments; until then the participant row is the only way out. */
 async function stopIntendingDriver(employeeId: string) {
-	await fixture.pool.query(
-		`delete from driving_licence_participant where organization_id=$1 and employee_id=$2`,
-		[fixture.organizationId, employeeId],
-	);
+	await assignIntendedDriver(employeeId, "not_required");
 }
 
 beforeEach(async () => {
@@ -131,7 +131,7 @@ afterEach(async () => fixture?.close());
 describe("driving licence visibility while the feature is on", () => {
 	beforeEach(async () => {
 		await switchOn();
-		await enroll(fixture.employeeId);
+		await assignIntendedDriver(fixture.employeeId);
 		expect(
 			await grants.saveDrivingLicenceVerifierGrantAction({
 				verifierEmployeeId: verifier.employeeId,
@@ -196,7 +196,7 @@ describe("driving licence visibility while the feature is on", () => {
 	});
 
 	it("keeps My licence for a former intended driver whose check records are retained", async () => {
-		await enroll(bystander.employeeId);
+		await assignIntendedDriver(bystander.employeeId);
 		await recordCheck(bystander.employeeId);
 		await stopIntendingDriver(bystander.employeeId);
 		const former = await read(bystander.userId);
@@ -250,7 +250,7 @@ describe("driving licence visibility while the feature is off", () => {
 
 	it("hides every personal surface after switching off and keeps only Retention & holds while records are retained", async () => {
 		await switchOn();
-		await enroll(fixture.employeeId);
+		await assignIntendedDriver(fixture.employeeId);
 		expect(
 			await grants.saveDrivingLicenceVerifierGrantAction({
 				verifierEmployeeId: verifier.employeeId,
@@ -288,7 +288,7 @@ describe("driving licence visibility while the feature is off", () => {
 
 	it("keeps Retention & holds reachable while a legal-case hold exists", async () => {
 		await switchOn();
-		await enroll(fixture.employeeId);
+		await assignIntendedDriver(fixture.employeeId);
 		expect(
 			await grants.saveDrivingLicenceVerifierGrantAction({
 				verifierEmployeeId: verifier.employeeId,
@@ -322,7 +322,7 @@ describe("driving licence visibility while the feature is off", () => {
 
 it("decides each organization separately for a member of two organizations", async () => {
 	await switchOn();
-	await enroll(fixture.employeeId);
+	await assignIntendedDriver(fixture.employeeId);
 	expect(
 		await grants.saveDrivingLicenceVerifierGrantAction({
 			verifierEmployeeId: verifier.employeeId,
