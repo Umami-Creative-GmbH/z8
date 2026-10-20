@@ -498,26 +498,30 @@ function CleanupCard({
 	const { t } = useTranslate();
 	const formatTime = useRetentionTime();
 	const [busy, setBusy] = useState(false);
+	function failed() {
+		toast.error(
+			t(
+				"drivingLicence.retention.error",
+				"Retention administration could not be completed. Refresh and check your access and case details.",
+			),
+		);
+	}
 	async function cleanup() {
 		setBusy(true);
 		try {
-			const result = await cleanupDrivingLicenceEvidenceAction().catch(() => null);
-			if (!result?.success) {
-				toast.error(
-					t(
-						"drivingLicence.retention.error",
-						"Retention administration could not be completed. Refresh and check your access and case details.",
-					),
+			const result = await cleanupDrivingLicenceEvidenceAction();
+			if (result.success) {
+				toast.success(
+					t("drivingLicence.settingsTabs.cleanupFinished", "Due evidence cleanup finished"),
 				);
-				return;
+				await onCleaned();
+			} else {
+				failed();
 			}
-			toast.success(
-				t("drivingLicence.settingsTabs.cleanupFinished", "Due evidence cleanup finished"),
-			);
-			await onCleaned();
-		} finally {
-			setBusy(false);
+		} catch {
+			failed();
 		}
+		setBusy(false);
 	}
 	return (
 		<Card>

@@ -3,6 +3,12 @@
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
+// Module-level so the default parameter is an identifier: React Compiler cannot lower an inline
+// arrow-function default.
+function tabValue(tab: string) {
+	return tab;
+}
+
 /**
  * Tabs whose selection is linkable through `?tab=` (replaced in place, no navigation), with
  * panels that mount on first visit and then stay mounted so unsaved input survives switching.
@@ -10,7 +16,7 @@ import { useState } from "react";
  */
 export function useLinkedTabs<Tab extends string>(
 	tabs: readonly Tab[],
-	param: (tab: Tab) => string = (tab) => tab,
+	param: (tab: Tab) => string = tabValue,
 ) {
 	const searchParams = useSearchParams();
 	const requested = searchParams.get("tab");
