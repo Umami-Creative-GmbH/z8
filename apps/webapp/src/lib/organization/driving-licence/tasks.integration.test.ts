@@ -351,6 +351,86 @@ it("restores a still-current terminal task after a personal route was temporaril
 	]);
 });
 
+it("opens exactly one reassignment task for the employee an ended until-dated grant leaves uncovered", async () => {
+	harness.userId = fixture.ownerUserId;
+	const covered = await fixture.seedEmployee();
+	const cover = await fixture.seedEmployee();
+	expect(
+		(
+			await policy.enrollDrivingLicenceEmployeeAction({
+				employeeId: covered.employeeId,
+			})
+		).success,
+	).toBe(true);
+	expect(
+		(
+			await grants.saveDrivingLicenceVerifierGrantAction({
+				verifierEmployeeId: cover.employeeId,
+				scope: "specific",
+				teamIds: [],
+				employeeIds: [covered.employeeId],
+			})
+		).success,
+	).toBe(true);
+	expect(
+		(
+			await grants.saveDrivingLicenceVerifierGrantAction({
+				verifierEmployeeId: verifier.employeeId,
+				scope: "all",
+				teamIds: [],
+				employeeIds: [],
+				until: "2026-02-10",
+			})
+		).success,
+	).toBe(true);
+	// Last moment of 10 February in Europe/Berlin: the grant still covers everyone.
+	harness.now = "2026-02-10T22:59:59Z";
+	await runDrivingLicenceRemindersJob();
+	expect(await tasks.getDrivingLicenceTasksAction()).toEqual({
+		success: true,
+		data: [],
+	});
+	harness.userId = verifier.userId;
+	expect(
+		(
+			await checks.getDrivingLicenceEmployeeRecordAction({
+				employeeId: fixture.employeeId,
+			})
+		).success,
+	).toBe(true);
+	harness.now = "2026-02-10T23:00:00Z";
+	expect(
+		(
+			await checks.getDrivingLicenceEmployeeRecordAction({
+				employeeId: fixture.employeeId,
+			})
+		).success,
+	).toBe(false);
+	expect(
+		(await checks.completeDrivingLicenceCheckAction(original())).success,
+	).toBe(false);
+	harness.userId = fixture.ownerUserId;
+	await Promise.all([
+		runDrivingLicenceRemindersJob(),
+		runDrivingLicenceRemindersJob(),
+	]);
+	await runDrivingLicenceRemindersJob();
+	const open = await tasks.getDrivingLicenceTasksAction();
+	expect(open).toEqual({
+		success: true,
+		data: [
+			expect.objectContaining({
+				kind: "reassignment",
+				state: "pending",
+				employeeId: fixture.employeeId,
+			}),
+		],
+	});
+	const notices = await inbox(fixture.ownerUserId);
+	expect(notices).toHaveLength(1);
+	expect(notices[0].actionUrl).toBe("/settings/driving-licence");
+});
+
 it.each(["expired", "inactive", "terminal", "revoked"] as const)(
 	"escalates an %s verifier and reopens assignment only for a new unavailability episode",
 	async (unavailable) => {
