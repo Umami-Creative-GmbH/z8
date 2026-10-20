@@ -480,8 +480,8 @@ export function VerifierSettings() {
 				</CardTitle>
 				<CardDescription>
 					{t(
-						"settings.drivingLicence.verifiers.description",
-						"Grant responsibility separately from driver enrollment, line management and personnel file access. Managing these grants does not permit reading inspection records. Self-verification is always prohibited.",
+						"settings.drivingLicence.verifiers.summary",
+						"Verifier responsibility is separate from intended-driver assignments, line management and personnel file access. Managing these grants does not permit reading inspection records. Self-verification is always prohibited.",
 					)}
 				</CardDescription>
 			</CardHeader>
