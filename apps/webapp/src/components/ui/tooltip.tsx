@@ -121,7 +121,8 @@ function TooltipContent({
 					{...props}
 				>
 					{children}
-					<TooltipPrimitive.Arrow className="z-50 size-2.5 rotate-45 rounded-[2px] bg-primary fill-primary" />
+					{/* Base UI only positions the arrow along the popup edge; each side must pin it to the edge facing the trigger. */}
+					<TooltipPrimitive.Arrow className="z-50 size-2.5 rotate-45 rounded-[2px] bg-primary fill-primary data-[side=bottom]:-top-1.25 data-[side=inline-end]:-left-1.25 data-[side=inline-start]:-right-1.25 data-[side=left]:-right-1.25 data-[side=right]:-left-1.25 data-[side=top]:-bottom-1.25" />
 				</TooltipPrimitive.Popup>
 			</TooltipPrimitive.Positioner>
 		</TooltipPrimitive.Portal>
