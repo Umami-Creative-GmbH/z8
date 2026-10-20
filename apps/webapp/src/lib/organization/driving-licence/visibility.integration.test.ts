@@ -33,11 +33,9 @@ const checks = await import("./check-actions");
 const operational = await import("./operational-actions");
 const visibility = await import("./visibility");
 
-const policy = {
-	enabled: true,
+const setup = {
 	intervalMonths: 6,
 	timezone: "Europe/Berlin",
-	reminderLeadDays: [30, 7],
 	retentionMonths: 36,
 	retentionJustification: "Organization driving evidence retention",
 };
@@ -60,13 +58,15 @@ function read(userId: string, organizationId = fixture.organizationId) {
 }
 async function switchOn() {
 	expect(
-		await as(fixture.ownerUserId, () => policies.saveDrivingLicencePolicyAction(policy)),
+		await as(fixture.ownerUserId, () =>
+			policies.switchDrivingLicenceControlAction({ enabled: true, setup }),
+		),
 	).toMatchObject({ success: true });
 }
 async function switchOff() {
 	expect(
 		await as(fixture.ownerUserId, () =>
-			policies.saveDrivingLicencePolicyAction({ ...policy, enabled: false }),
+			policies.switchDrivingLicenceControlAction({ enabled: false }),
 		),
 	).toMatchObject({ success: true });
 }
