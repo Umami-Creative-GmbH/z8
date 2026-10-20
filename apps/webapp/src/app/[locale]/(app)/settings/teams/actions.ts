@@ -25,11 +25,13 @@ import { DatabaseService } from "@/lib/effect/services/database.service";
 import { PermissionsService } from "@/lib/effect/services/permissions.service";
 import { createLogger } from "@/lib/logger";
 import { onTeamMemberAdded, onTeamMemberRemoved } from "@/lib/notifications/triggers";
-import type { DrivingLicenceEnding } from "@/lib/organization/driving-licence/intended-driver-rules";
+import type { DrivingLicenceTeamChangeImpact } from "@/lib/organization/driving-licence/intended-driver-rules";
 import {
+	type DrivingLicenceChangeViewer,
 	previewDrivingLicenceIntendedDriverWrite,
 	runDrivingLicenceIntendedDriverWrite,
 } from "@/lib/organization/driving-licence/no-longer-intended";
+import { keepDrivingLicenceStalePreview } from "@/lib/organization/driving-licence/stale-preview";
 import {
 	buildTeamSettingsSurface,
 	canUseManagerScopedTeamSettings,
@@ -359,83 +361,87 @@ async function writeTeamDeletion(
 	return true;
 }
 
-/** The same checks as the team member and team deletion actions, for their previews. */
-function authorizeTeamChange(
-	teamId: string,
-	permission: "canManageTeamMembers" | "canManageTeamSettings",
-) {
+// =============================================================================
+// Shared authorization of team changes (the action and its driving licence preview)
+// =============================================================================
+
+function loadTeam(dbService: DatabaseServiceInstance, teamId: string) {
+	return dbService
+		.query("team.get", async () => {
+			return await dbService.db.query.team.findFirst({ where: eq(team.id, teamId) });
+		})
+		.pipe(
+			Effect.flatMap((t) =>
+				t
+					? Effect.succeed(t)
+					: Effect.fail(
+							new NotFoundError({
+								message: "Team not found",
+								entityType: "team",
+								entityId: teamId,
+							}),
+						),
+			),
+		);
+}
+
+/**
+ * Who may add `employeeId` to or remove them from `teamId`. Both the member actions and their
+ * driving licence previews use it, so a preview never reveals more than the change allows.
+ */
+function authorizeTeamMemberChange(teamId: string, employeeId: string, kind: "add" | "remove") {
 	return Effect.gen(function* () {
 		const authService = yield* AuthService;
 		const session = yield* authService.getSession();
 		const dbService = yield* DatabaseService;
 		const permissionsService = yield* PermissionsService;
-		const targetTeam = yield* dbService
-			.query("getTeam", async () => {
-				return await dbService.db.query.team.findFirst({ where: eq(team.id, teamId) });
-			})
-			.pipe(
-				Effect.flatMap((t) =>
-					t
-						? Effect.succeed(t)
-						: Effect.fail(
-								new NotFoundError({
-									message: "Team not found",
-									entityType: "team",
-									entityId: teamId,
-								}),
-							),
-				),
-			);
+		const action = kind === "add" ? "create" : "delete";
+
+		// Get the team first to know its organization
+		const targetTeam = yield* loadTeam(dbService, teamId);
 		const actor = yield* resolveTeamSettingsActor(
 			dbService,
 			session.user,
 			targetTeam.organizationId,
+			{ includeEmployeeUser: true },
 		);
+
 		if (actor.accessTier === "member") {
 			yield* ensureManagerScopedEmployee(actor.employeeRecord);
 		}
+
 		const canManage =
 			actor.accessTier === "orgAdmin"
 				? true
-				: yield* permissionsService.hasTeamPermission(actor.actorId, permission, teamId);
+				: yield* permissionsService.hasTeamPermission(
+						actor.actorId,
+						"canManageTeamMembers",
+						teamId,
+					);
+
 		if (!canManage) {
 			yield* Effect.fail(
 				new AuthorizationError({
-					message: "Insufficient permissions to change this team",
+					message: "Insufficient permissions to manage team members",
 					userId: actor.actorId,
-					resource: "team",
-					action: "update",
+					resource: "team_member",
+					action,
 				}),
 			);
 		}
-		return { session, dbService, targetTeam };
-	});
-}
 
-const teamMemberChangeSchema = z.enum(["add", "remove"]);
-
-/**
- * The warning before adding or removing a team member (#1425): who would lose which driving
- * authorizations because their primary team changes. Read-only.
- */
-export async function previewTeamMemberChangeDrivingImpact(
-	teamId: string,
-	employeeId: string,
-	change: "add" | "remove",
-): Promise<ServerActionResult<DrivingLicenceEnding[]>> {
-	const effect = Effect.gen(function* () {
-		const kind = yield* validateTeamMemberChange(change);
-		const { session, dbService, targetTeam } = yield* authorizeTeamChange(
-			teamId,
-			"canManageTeamMembers",
-		);
-		const organizationId = targetTeam.organizationId;
-		const targetEmployee = yield* dbService.query("getTargetEmployee", async () => {
+		// The target employee must belong to the team's organization (with user info).
+		const targetEmployee = yield* dbService.query("team.getTargetEmployee", async () => {
 			return await dbService.db.query.employee.findFirst({
-				where: and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)),
+				where: and(
+					eq(employee.id, employeeId),
+					eq(employee.organizationId, targetTeam.organizationId),
+				),
+				with: { user: true },
 			});
 		});
-		if (!targetEmployee) {
+
+		if (kind === "add" && !targetEmployee) {
 			return yield* Effect.fail(
 				new NotFoundError({
 					message: "Employee not found in this organization",
@@ -444,9 +450,130 @@ export async function previewTeamMemberChangeDrivingImpact(
 				}),
 			);
 		}
-		return yield* dbService.query("previewTeamMemberChangeDrivingImpact", () =>
+
+		if (kind === "add" && targetEmployee && actor.accessTier !== "orgAdmin") {
+			const scopedPermissions = yield* loadScopedPermissions(
+				dbService,
+				actor.actorId,
+				targetTeam.organizationId,
+			);
+			const targetEmployeeMemberships = yield* dbService.query(
+				"team.getTargetEmployeeMemberships",
+				async () => {
+					return await dbService.db.query.teamMembership.findMany({
+						where: and(
+							eq(teamMembership.organizationId, targetTeam.organizationId),
+							eq(teamMembership.employeeId, targetEmployee.id),
+						),
+					});
+				},
+			);
+			const manageableTeamIds = new Set(
+				Array.from(scopedPermissions.byTeamId.entries()).flatMap(([managedTeamId, flags]) =>
+					flags.canManageTeamMembers ? [managedTeamId] : [],
+				),
+			);
+			const currentTeamIds = new Set(
+				[
+					targetEmployee.teamId,
+					...targetEmployeeMemberships.map((membership) => membership.teamId),
+				].filter((currentTeamId): currentTeamId is string => Boolean(currentTeamId)),
+			);
+
+			if (
+				!scopedPermissions.orgWide?.canManageTeamMembers &&
+				Array.from(currentTeamIds).some((currentTeamId) => !manageableTeamIds.has(currentTeamId))
+			) {
+				yield* Effect.fail(
+					new AuthorizationError({
+						message: "Cannot move employees from teams outside your scope",
+						userId: actor.actorId,
+						resource: "team_member",
+						action: "create",
+					}),
+				);
+			}
+		}
+
+		return { session, dbService, targetTeam, actor, targetEmployee };
+	});
+}
+
+/** Who may delete `teamId`; shared by `deleteTeam` and its driving licence preview. */
+function authorizeTeamDeletion(teamId: string) {
+	return Effect.gen(function* () {
+		const authService = yield* AuthService;
+		const session = yield* authService.getSession();
+		const dbService = yield* DatabaseService;
+		const permissionsService = yield* PermissionsService;
+
+		// Get team to verify it exists and belongs to same organization
+		const targetTeam = yield* loadTeam(dbService, teamId);
+		const actor = yield* resolveTeamSettingsActor(
+			dbService,
+			session.user,
+			targetTeam.organizationId,
+		);
+
+		if (actor.accessTier === "member") {
+			yield* ensureManagerScopedEmployee(actor.employeeRecord);
+		}
+
+		const canManage =
+			actor.accessTier === "orgAdmin"
+				? true
+				: yield* permissionsService.hasTeamPermission(
+						actor.actorId,
+						"canManageTeamSettings",
+						teamId,
+					);
+
+		if (!canManage) {
+			yield* Effect.fail(
+				new AuthorizationError({
+					message: "Insufficient permissions to delete team",
+					userId: actor.actorId,
+					resource: "team",
+					action: "delete",
+				}),
+			);
+		}
+
+		return { session, dbService, targetTeam, actor };
+	});
+}
+
+/** How much of a driving licence warning the actor may see (owners/admins: names and classes). */
+function drivingLicenceViewer(
+	session: { user: { id: string } },
+	actor: TeamSettingsActor,
+): DrivingLicenceChangeViewer {
+	return { userId: session.user.id, organizationAdmin: actor.accessTier === "orgAdmin" };
+}
+
+/** The confirmed driving licence warning a team save takes (#1425). */
+export type TeamChangeOptions = { drivingLicencePreviewToken?: string };
+
+const teamMemberChangeSchema = z.enum(["add", "remove"]);
+
+/**
+ * The warning before adding or removing a team member (#1425): what the actor may see of who
+ * would lose which driving authorizations because their primary team changes, and the token
+ * the save takes. Read-only; authorized exactly like the change itself.
+ */
+export async function previewTeamMemberChangeDrivingImpact(
+	teamId: string,
+	employeeId: string,
+	change: "add" | "remove",
+): Promise<ServerActionResult<DrivingLicenceTeamChangeImpact>> {
+	const effect = Effect.gen(function* () {
+		const kind = yield* validateTeamMemberChange(change);
+		const { session, dbService, targetTeam, actor, targetEmployee } =
+			yield* authorizeTeamMemberChange(teamId, employeeId, kind);
+		const organizationId = targetTeam.organizationId;
+		return yield* dbService.query("team.previewMemberChangeDrivingImpact", () =>
 			previewDrivingLicenceIntendedDriverWrite<TeamWriteTransaction>(
-				{ organizationId, employeeIds: [employeeId] },
+				{ organizationId, employeeIds: [employeeId], viewer: drivingLicenceViewer(session, actor) },
 				(work) =>
 					withAuthorizationMutation(
 						{ organizationId, employeeIds: [employeeId] },
@@ -459,7 +586,7 @@ export async function previewTeamMemberChangeDrivingImpact(
 								organizationId,
 								teamId,
 								employeeId,
-								hadPrimaryTeam: Boolean(targetEmployee.teamId),
+								hadPrimaryTeam: Boolean(targetEmployee?.teamId),
 								createdBy: session.user.id,
 							})
 						: writeTeamMemberRemoval(tx, { organizationId, teamId, employeeId }),
@@ -483,18 +610,19 @@ function validateTeamMemberChange(change: unknown) {
 }
 
 /**
- * The warning before deleting a team (#1425): who would lose which driving authorizations
- * because the team is their primary team or its intended-driver assignment goes. Read-only.
+ * The warning before deleting a team (#1425): what the actor may see of who would lose which
+ * driving authorizations because the team is their primary team or its intended-driver
+ * assignment goes, and the token the save takes. Read-only.
  */
 export async function previewTeamDeletionDrivingImpact(
 	teamId: string,
-): Promise<ServerActionResult<DrivingLicenceEnding[]>> {
+): Promise<ServerActionResult<DrivingLicenceTeamChangeImpact>> {
 	const effect = Effect.gen(function* () {
-		const { dbService, targetTeam } = yield* authorizeTeamChange(teamId, "canManageTeamSettings");
+		const { session, dbService, targetTeam, actor } = yield* authorizeTeamDeletion(teamId);
 		const organizationId = targetTeam.organizationId;
-		return yield* dbService.query("previewTeamDeletionDrivingImpact", () =>
+		return yield* dbService.query("team.previewDeletionDrivingImpact", () =>
 			previewDrivingLicenceIntendedDriverWrite<TeamWriteTransaction>(
-				{ organizationId },
+				{ organizationId, viewer: drivingLicenceViewer(session, actor) },
 				(work) =>
 					withAuthorizationMutation({ organizationId, organizationWide: true }, work, dbService.db),
 				(tx) => writeTeamDeletion(tx, { organizationId, teamId }),
@@ -835,7 +963,10 @@ export async function updateTeam(
  * Delete a team
  * Requires canManageTeamSettings permission for the team
  */
-export async function deleteTeam(teamId: string): Promise<ServerActionResult<void>> {
+export async function deleteTeam(
+	teamId: string,
+	options: TeamChangeOptions = {},
+): Promise<ServerActionResult<void>> {
 	const tracer = trace.getTracer("teams");
 
 	const effect = tracer.startActiveSpan(
@@ -847,81 +978,33 @@ export async function deleteTeam(teamId: string): Promise<ServerActionResult<voi
 		},
 		(span) => {
 			return Effect.gen(function* () {
-				const authService = yield* AuthService;
-				const session = yield* authService.getSession();
-				const dbService = yield* DatabaseService;
-				const permissionsService = yield* PermissionsService;
-
-				// Get team to verify it exists and belongs to same organization
-				const targetTeam = yield* dbService
-					.query("getTeam", async () => {
-						return await dbService.db.query.team.findFirst({
-							where: eq(team.id, teamId),
-						});
-					})
-					.pipe(
-						Effect.flatMap((t) =>
-							t
-								? Effect.succeed(t)
-								: Effect.fail(
-										new NotFoundError({
-											message: "Team not found",
-											entityType: "team",
-											entityId: teamId,
-										}),
-									),
-						),
-					);
-
-				const actor = yield* resolveTeamSettingsActor(
-					dbService,
-					session.user,
-					targetTeam.organizationId,
-				);
-
-				if (actor.accessTier === "member") {
-					yield* ensureManagerScopedEmployee(actor.employeeRecord);
-				}
-
-				// Check permission
-				const canManage =
-					actor.accessTier === "orgAdmin"
-						? true
-						: yield* permissionsService.hasTeamPermission(
-								actor.actorId,
-								"canManageTeamSettings",
-								teamId,
-							);
-
-				if (!canManage) {
-					yield* Effect.fail(
-						new AuthorizationError({
-							message: "Insufficient permissions to delete team",
-							userId: actor.actorId,
-							resource: "team",
-							action: "delete",
-						}),
-					);
-				}
+				const { session, dbService, targetTeam, actor } = yield* authorizeTeamDeletion(teamId);
 
 				// Deletion cascades into employee teams and team permissions across the
 				// organization, so it takes the organization-wide protection. Clearing a
 				// primary team and the team's intended-driver assignment can end driving
 				// authorizations (#1425).
 				const deletion = { organizationId: targetTeam.organizationId, teamId };
-				const deleted = yield* dbService.query("deleteTeam", () =>
-					withAuthorizationMutation(
-						{
-							organizationId: targetTeam.organizationId,
-							organizationWide: true,
-						},
-						(tx) =>
-							runDrivingLicenceIntendedDriverWrite(
-								tx,
-								{ organizationId: targetTeam.organizationId, actorUserId: session.user.id },
-								(write) => writeTeamDeletion(write, deletion),
-							),
-						dbService.db,
+				const deleted = yield* keepDrivingLicenceStalePreview(
+					dbService.query("deleteTeam", () =>
+						withAuthorizationMutation(
+							{
+								organizationId: targetTeam.organizationId,
+								organizationWide: true,
+							},
+							(tx) =>
+								runDrivingLicenceIntendedDriverWrite(
+									tx,
+									{
+										organizationId: targetTeam.organizationId,
+										actorUserId: session.user.id,
+										viewer: drivingLicenceViewer(session, actor),
+										previewToken: options.drivingLicencePreviewToken,
+									},
+									(write) => writeTeamDeletion(write, deletion),
+								),
+							dbService.db,
+						),
 					),
 				);
 
@@ -1133,6 +1216,7 @@ export async function listTeams(
 export async function addTeamMember(
 	teamId: string,
 	employeeId: string,
+	options: TeamChangeOptions = {},
 ): Promise<ServerActionResult<void>> {
 	const tracer = trace.getTracer("teams");
 
@@ -1146,136 +1230,10 @@ export async function addTeamMember(
 		},
 		(span) => {
 			return Effect.gen(function* () {
-				const authService = yield* AuthService;
-				const session = yield* authService.getSession();
-				const dbService = yield* DatabaseService;
-				const permissionsService = yield* PermissionsService;
-
-				// Get the team first to know its organization
-				const targetTeam = yield* dbService
-					.query("getTeam", async () => {
-						return await dbService.db.query.team.findFirst({
-							where: eq(team.id, teamId),
-						});
-					})
-					.pipe(
-						Effect.flatMap((t) =>
-							t
-								? Effect.succeed(t)
-								: Effect.fail(
-										new NotFoundError({
-											message: "Team not found",
-											entityType: "team",
-											entityId: teamId,
-										}),
-									),
-						),
-					);
-
-				const actor = yield* resolveTeamSettingsActor(
-					dbService,
-					session.user,
-					targetTeam.organizationId,
-					{
-						includeEmployeeUser: true,
-					},
-				);
-
-				if (actor.accessTier === "member") {
-					yield* ensureManagerScopedEmployee(actor.employeeRecord);
-				}
-
-				// Check permission
-				const canManage =
-					actor.accessTier === "orgAdmin"
-						? true
-						: yield* permissionsService.hasTeamPermission(
-								actor.actorId,
-								"canManageTeamMembers",
-								teamId,
-							);
-
-				if (!canManage) {
-					yield* Effect.fail(
-						new AuthorizationError({
-							message: "Insufficient permissions to manage team members",
-							userId: actor.actorId,
-							resource: "team_member",
-							action: "create",
-						}),
-					);
-				}
-
-				// Verify target employee exists and is in the same organization as the team (with user info)
-				const targetEmployee = yield* dbService
-					.query("getTargetEmployee", async () => {
-						return await dbService.db.query.employee.findFirst({
-							where: and(
-								eq(employee.id, employeeId),
-								eq(employee.organizationId, targetTeam.organizationId),
-							),
-							with: { user: true },
-						});
-					})
-					.pipe(
-						Effect.flatMap((emp) =>
-							emp
-								? Effect.succeed(emp)
-								: Effect.fail(
-										new NotFoundError({
-											message: "Employee not found in this organization",
-											entityType: "employee",
-											entityId: employeeId,
-										}),
-									),
-						),
-					);
-
-				if (actor.accessTier !== "orgAdmin") {
-					const scopedPermissions = yield* loadScopedPermissions(
-						dbService,
-						actor.actorId,
-						targetTeam.organizationId,
-					);
-					const targetEmployeeMemberships = yield* dbService.query(
-						"getTargetEmployeeMemberships",
-						async () => {
-							return await dbService.db.query.teamMembership.findMany({
-								where: and(
-									eq(teamMembership.organizationId, targetTeam.organizationId),
-									eq(teamMembership.employeeId, targetEmployee.id),
-								),
-							});
-						},
-					);
-					const manageableTeamIds = new Set(
-						Array.from(scopedPermissions.byTeamId.entries()).flatMap(([managedTeamId, flags]) =>
-							flags.canManageTeamMembers ? [managedTeamId] : [],
-						),
-					);
-					const currentTeamIds = new Set(
-						[
-							targetEmployee.teamId,
-							...targetEmployeeMemberships.map((membership) => membership.teamId),
-						].filter((currentTeamId): currentTeamId is string => Boolean(currentTeamId)),
-					);
-
-					if (
-						!scopedPermissions.orgWide?.canManageTeamMembers &&
-						Array.from(currentTeamIds).some(
-							(currentTeamId) => !manageableTeamIds.has(currentTeamId),
-						)
-					) {
-						yield* Effect.fail(
-							new AuthorizationError({
-								message: "Cannot move employees from teams outside your scope",
-								userId: actor.actorId,
-								resource: "team_member",
-								action: "create",
-							}),
-						);
-					}
-				}
+				const authorized = yield* authorizeTeamMemberChange(teamId, employeeId, "add");
+				const { session, dbService, targetTeam, actor } = authorized;
+				// authorizeTeamMemberChange refuses an add without a target employee.
+				const targetEmployee = authorized.targetEmployee!;
 
 				// The target's team feeds manual target facts; both writes commit under
 				// the employee's configuration/access protection. A new primary team can end
@@ -1287,23 +1245,27 @@ export async function addTeamMember(
 					hadPrimaryTeam: Boolean(targetEmployee.teamId),
 					createdBy: session.user.id,
 				};
-				yield* dbService.query("addTeamMembership", () =>
-					withAuthorizationMutation(
-						{
-							organizationId: targetTeam.organizationId,
-							employeeIds: [targetEmployee.id],
-						},
-						(tx) =>
-							runDrivingLicenceIntendedDriverWrite(
-								tx,
-								{
-									organizationId: targetTeam.organizationId,
-									employeeIds: [targetEmployee.id],
-									actorUserId: session.user.id,
-								},
-								(write) => writeTeamMemberAddition(write, addition),
-							),
-						dbService.db,
+				yield* keepDrivingLicenceStalePreview(
+					dbService.query("addTeamMembership", () =>
+						withAuthorizationMutation(
+							{
+								organizationId: targetTeam.organizationId,
+								employeeIds: [targetEmployee.id],
+							},
+							(tx) =>
+								runDrivingLicenceIntendedDriverWrite(
+									tx,
+									{
+										organizationId: targetTeam.organizationId,
+										employeeIds: [targetEmployee.id],
+										actorUserId: session.user.id,
+										viewer: drivingLicenceViewer(session, actor),
+										previewToken: options.drivingLicencePreviewToken,
+									},
+									(write) => writeTeamMemberAddition(write, addition),
+								),
+							dbService.db,
+						),
 					),
 				);
 
@@ -1354,6 +1316,7 @@ export async function addTeamMember(
 export async function removeTeamMember(
 	teamId: string,
 	employeeId: string,
+	options: TeamChangeOptions = {},
 ): Promise<ServerActionResult<void>> {
 	const tracer = trace.getTracer("teams");
 
@@ -1367,96 +1330,33 @@ export async function removeTeamMember(
 		},
 		(span) => {
 			return Effect.gen(function* () {
-				const authService = yield* AuthService;
-				const session = yield* authService.getSession();
-				const dbService = yield* DatabaseService;
-				const permissionsService = yield* PermissionsService;
-
-				// Get the team first to know its organization
-				const targetTeam = yield* dbService
-					.query("getTeam", async () => {
-						return await dbService.db.query.team.findFirst({
-							where: eq(team.id, teamId),
-						});
-					})
-					.pipe(
-						Effect.flatMap((t) =>
-							t
-								? Effect.succeed(t)
-								: Effect.fail(
-										new NotFoundError({
-											message: "Team not found",
-											entityType: "team",
-											entityId: teamId,
-										}),
-									),
-						),
-					);
-
-				const actor = yield* resolveTeamSettingsActor(
-					dbService,
-					session.user,
-					targetTeam.organizationId,
-					{
-						includeEmployeeUser: true,
-					},
-				);
-
-				if (actor.accessTier === "member") {
-					yield* ensureManagerScopedEmployee(actor.employeeRecord);
-				}
-
-				// Check permission
-				const canManage =
-					actor.accessTier === "orgAdmin"
-						? true
-						: yield* permissionsService.hasTeamPermission(
-								actor.actorId,
-								"canManageTeamMembers",
-								teamId,
-							);
-
-				if (!canManage) {
-					yield* Effect.fail(
-						new AuthorizationError({
-							message: "Insufficient permissions to manage team members",
-							userId: actor.actorId,
-							resource: "team_member",
-							action: "delete",
-						}),
-					);
-				}
-
-				// Get target employee info for notification before removal
-				const targetEmployee = yield* dbService.query("getTargetEmployee", async () => {
-					return await dbService.db.query.employee.findFirst({
-						where: and(
-							eq(employee.id, employeeId),
-							eq(employee.organizationId, targetTeam.organizationId),
-						),
-						with: { user: true },
-					});
-				});
+				// The target employee info is kept for the notification after removal.
+				const { session, dbService, targetTeam, actor, targetEmployee } =
+					yield* authorizeTeamMemberChange(teamId, employeeId, "remove");
 
 				// Moving the primary team can end the employee's driving authorization (#1425).
 				const removal = { organizationId: targetTeam.organizationId, teamId, employeeId };
-				yield* dbService.query("removeTeamMembership", () =>
-					withAuthorizationMutation(
-						{
-							organizationId: targetTeam.organizationId,
-							employeeIds: [employeeId],
-						},
-						(tx) =>
-							runDrivingLicenceIntendedDriverWrite(
-								tx,
-								{
-									organizationId: targetTeam.organizationId,
-									employeeIds: [employeeId],
-									actorUserId: session.user.id,
-								},
-								(write) => writeTeamMemberRemoval(write, removal),
-							),
-						dbService.db,
+				yield* keepDrivingLicenceStalePreview(
+					dbService.query("removeTeamMembership", () =>
+						withAuthorizationMutation(
+							{
+								organizationId: targetTeam.organizationId,
+								employeeIds: [employeeId],
+							},
+							(tx) =>
+								runDrivingLicenceIntendedDriverWrite(
+									tx,
+									{
+										organizationId: targetTeam.organizationId,
+										employeeIds: [employeeId],
+										actorUserId: session.user.id,
+										viewer: drivingLicenceViewer(session, actor),
+										previewToken: options.drivingLicencePreviewToken,
+									},
+									(write) => writeTeamMemberRemoval(write, removal),
+								),
+							dbService.db,
+						),
 					),
 				);
 

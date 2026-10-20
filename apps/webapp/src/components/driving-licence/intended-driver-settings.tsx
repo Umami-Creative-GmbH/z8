@@ -106,11 +106,13 @@ export function IntendedDriverSettings({ data }: { data: IntendedDriverAdminData
 						toast.error(refusalMessage(t, preview.error));
 						return false;
 					}
-					const ending = preview.data.employees.length > 0;
 					if (!(await confirm(preview.data.employees))) return false;
-					const result = await setDrivingLicenceIntendedDriverAssignmentAction(
-						ending ? { target, value, previewToken: preview.data.previewToken } : { target, value },
-					);
+					// Always confirm the preview, also when it listed nobody (#1418 review).
+					const result = await setDrivingLicenceIntendedDriverAssignmentAction({
+						target,
+						value,
+						previewToken: preview.data.previewToken,
+					});
 					if (!result.success) {
 						toast.error(refusalMessage(t, result.error));
 						return false;
@@ -123,11 +125,11 @@ export function IntendedDriverSettings({ data }: { data: IntendedDriverAdminData
 						toast.error(refusalMessage(t, preview.error));
 						return false;
 					}
-					const ending = preview.data.employees.length > 0;
 					if (!(await confirm(preview.data.employees))) return false;
-					const result = await removeDrivingLicenceIntendedDriverAssignmentAction(
-						ending ? { assignmentId, previewToken: preview.data.previewToken } : { assignmentId },
-					);
+					const result = await removeDrivingLicenceIntendedDriverAssignmentAction({
+						assignmentId,
+						previewToken: preview.data.previewToken,
+					});
 					if (!result.success) {
 						toast.error(refusalMessage(t, result.error));
 						return false;

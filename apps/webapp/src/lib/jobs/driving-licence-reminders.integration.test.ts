@@ -5,6 +5,9 @@ import {
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
+import {
+	saveConfirmedIntendedDriverAssignment,
+} from "@/lib/organization/driving-licence/testing/control.test.fixture";
 
 const harness = vi.hoisted(() => ({
 	userId: "",
@@ -127,7 +130,7 @@ beforeEach(async () => {
 	).toBe(true);
 	expect(
 		(
-			await intendedDrivers.setDrivingLicenceIntendedDriverAssignmentAction({
+			await saveConfirmedIntendedDriverAssignment({
 				target: { type: "employee", employeeId: fixture.employeeId },
 				value: "required",
 			})

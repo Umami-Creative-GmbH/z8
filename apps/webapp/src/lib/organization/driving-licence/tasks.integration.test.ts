@@ -5,6 +5,7 @@ import {
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
+import { saveConfirmedIntendedDriverAssignment } from "./testing/control.test.fixture";
 
 const harness = vi.hoisted(() => ({
 	userId: "",
@@ -111,7 +112,7 @@ beforeEach(async () => {
 	).toBe(true);
 	expect(
 		(
-			await intendedDrivers.setDrivingLicenceIntendedDriverAssignmentAction({
+			await saveConfirmedIntendedDriverAssignment({
 				target: { type: "employee", employeeId: fixture.employeeId },
 				value: "required",
 			})
@@ -380,7 +381,7 @@ it("opens exactly one reassignment task for the employee an ended until-dated gr
 	const cover = await fixture.seedEmployee();
 	expect(
 		(
-			await intendedDrivers.setDrivingLicenceIntendedDriverAssignmentAction({
+			await saveConfirmedIntendedDriverAssignment({
 				target: { type: "employee", employeeId: covered.employeeId },
 				value: "required",
 			})

@@ -72,18 +72,21 @@ async function clickRemove() {
 }
 
 describe("TeamMembersDialog driving licence warning (#1425)", () => {
+	const token = "a".repeat(64);
+	const nobody = { success: true, data: { detail: "full", employees: [], previewToken: token } };
+	const confirmed = { drivingLicencePreviewToken: token };
 	beforeEach(() => {
 		api.add.mockReset().mockResolvedValue({ success: true, data: undefined });
 		api.remove.mockReset().mockResolvedValue({ success: true, data: undefined });
-		api.preview.mockReset().mockResolvedValue({ success: true, data: [] });
+		api.preview.mockReset().mockResolvedValue(nobody);
 		api.toast.success.mockReset();
 		api.toast.error.mockReset();
 	});
 
-	it("removes at once when the change ends no driving authorization", async () => {
+	it("removes at once when the change ends no driving authorization, confirming the empty preview", async () => {
 		renderDialog();
 		await clickRemove();
-		await waitFor(() => expect(api.remove).toHaveBeenCalledWith(teamId, employeeId));
+		await waitFor(() => expect(api.remove).toHaveBeenCalledWith(teamId, employeeId, confirmed));
 		expect(api.preview).toHaveBeenCalledWith(teamId, employeeId, "remove");
 		expect(screen.queryByRole("alertdialog")).toBeNull();
 	});
@@ -91,7 +94,11 @@ describe("TeamMembersDialog driving licence warning (#1425)", () => {
 	it("warns who loses which classes before removing, and removes on confirmation", async () => {
 		api.preview.mockResolvedValue({
 			success: true,
-			data: [{ employeeId, name: "Dana Driver", classCodes: ["B", "C"] }],
+			data: {
+				detail: "full",
+				employees: [{ employeeId, name: "Dana Driver", classCodes: ["B", "C"] }],
+				previewToken: token,
+			},
 		});
 		renderDialog();
 		await clickRemove();
@@ -103,13 +110,64 @@ describe("TeamMembersDialog driving licence warning (#1425)", () => {
 		await userEvent.click(
 			within(warning).getByRole("button", { name: "Continue and end authorizations" }),
 		);
-		await waitFor(() => expect(api.remove).toHaveBeenCalledWith(teamId, employeeId));
+		await waitFor(() => expect(api.remove).toHaveBeenCalledWith(teamId, employeeId, confirmed));
+	});
+
+	it("shows a team manager only that some driving authorizations end: no names or classes", async () => {
+		api.preview.mockResolvedValue({
+			success: true,
+			data: { detail: "generic", affected: true, previewToken: token },
+		});
+		renderDialog();
+		await clickRemove();
+		const warning = await screen.findByRole("alertdialog", {
+			name: "This team change ends driving authorizations",
+		});
+		expect(
+			within(warning).getByText("This change ends driving authorizations for some employees."),
+		).toBeTruthy();
+		expect(within(warning).queryByRole("list")).toBeNull();
+		await userEvent.click(
+			within(warning).getByRole("button", { name: "Continue and end authorizations" }),
+		);
+		await waitFor(() => expect(api.remove).toHaveBeenCalledWith(teamId, employeeId, confirmed));
+	});
+
+	it("removes at once when a generic preview shows nothing ends", async () => {
+		api.preview.mockResolvedValue({
+			success: true,
+			data: { detail: "generic", affected: false, previewToken: token },
+		});
+		renderDialog();
+		await clickRemove();
+		await waitFor(() => expect(api.remove).toHaveBeenCalledWith(teamId, employeeId, confirmed));
+		expect(screen.queryByRole("alertdialog")).toBeNull();
+	});
+
+	it("asks for a fresh review when the warning went stale before the save", async () => {
+		api.remove.mockResolvedValue({
+			success: false,
+			error: "Who this change affects has changed in the meantime. Review it and try again.",
+			code: "ValidationError",
+			refusal: "stale_preview",
+		});
+		renderDialog();
+		await clickRemove();
+		await waitFor(() =>
+			expect(api.toast.error).toHaveBeenCalledWith(
+				"Who this change affects has changed in the meantime. Try the change again to review it.",
+			),
+		);
 	});
 
 	it("keeps the member when the warning is cancelled", async () => {
 		api.preview.mockResolvedValue({
 			success: true,
-			data: [{ employeeId, name: "Dana Driver", classCodes: ["B"] }],
+			data: {
+				detail: "full",
+				employees: [{ employeeId, name: "Dana Driver", classCodes: ["B"] }],
+				previewToken: token,
+			},
 		});
 		renderDialog();
 		await clickRemove();

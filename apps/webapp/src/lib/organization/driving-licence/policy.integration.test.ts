@@ -8,6 +8,7 @@ import {
 	vi,
 } from "vitest";
 import { integrationAdminPool } from "@/test/integration-database";
+import { saveConfirmedIntendedDriverAssignment } from "./testing/control.test.fixture";
 
 const session = vi.hoisted(() => ({
 	userId: "t1311-admin",
@@ -39,7 +40,7 @@ vi.mock("@/lib/datetime/temporal-core", async (original) => {
 const actions = await import("./policy-actions");
 const intendedDrivers = await import("./intended-driver-actions");
 function assignIntendedDriver(id: string) {
-	return intendedDrivers.setDrivingLicenceIntendedDriverAssignmentAction({
+	return saveConfirmedIntendedDriverAssignment({
 		target: { type: "employee", employeeId: id },
 		value: "required",
 	});

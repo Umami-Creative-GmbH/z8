@@ -4,6 +4,7 @@ import {
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
+import { saveConfirmedIntendedDriverAssignment } from "./testing/control.test.fixture";
 
 const session = vi.hoisted(() => ({
 	userId: "",
@@ -28,7 +29,6 @@ vi.mock("@/lib/datetime/temporal-core", async (original) => {
 	};
 });
 const policies = await import("./policy-actions");
-const intendedDrivers = await import("./intended-driver-actions");
 const grants = await import("./verifier-actions");
 const checks = await import("./check-actions");
 const { readDrivingLicenceCheckSubject } = await import("./check-subject");
@@ -91,7 +91,7 @@ async function switchOn(ownerUserId = fixture.ownerUserId) {
 async function makeIntendedDriver(employeeId: string, ownerUserId = fixture.ownerUserId) {
 	expect(
 		await as(ownerUserId, () =>
-			intendedDrivers.setDrivingLicenceIntendedDriverAssignmentAction({
+			saveConfirmedIntendedDriverAssignment({
 				target: { type: "employee", employeeId },
 				value: "required",
 			}),

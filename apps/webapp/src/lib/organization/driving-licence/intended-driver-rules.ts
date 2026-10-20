@@ -44,12 +44,27 @@ export type DrivingLicenceEnding = {
 
 /**
  * What an assignment save would end, read under the organization lock. Pass `previewToken`
- * back with the save: when the ending changed in between, the save is refused.
+ * back with the save (also when nobody is affected): when the ending changed in between, or
+ * the token is missing, the save is refused with `stale_preview`.
  */
 export type DrivingLicenceEndingPreview = {
 	employees: DrivingLicenceEnding[];
 	previewToken: string;
 };
+
+/**
+ * The warning before a team change (#1425): owners, admins and, while the feature is on,
+ * holders of the planning permission see who loses which classes (`full`); any other team
+ * manager only learns that some driving authorizations end (`generic`: no names, classes or
+ * count). Pass `previewToken` back with the save; a save whose outcome no longer matches what
+ * was shown is refused with `stale_preview`.
+ */
+export type DrivingLicenceTeamChangeImpact =
+	| { detail: "full"; employees: DrivingLicenceEnding[]; previewToken: string }
+	| { detail: "generic"; affected: boolean; previewToken: string };
+
+/** The refusal of a save whose confirmed preview no longer matches its outcome. */
+export const DRIVING_LICENCE_STALE_PREVIEW = "stale_preview";
 
 /** Refusals the intended-driver actions return by code; anything else is generic. */
 export const INTENDED_DRIVER_REFUSALS = [

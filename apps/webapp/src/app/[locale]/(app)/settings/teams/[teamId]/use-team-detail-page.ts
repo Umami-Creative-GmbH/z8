@@ -23,6 +23,9 @@ import {
 	useTeamPageUiState,
 } from "./page-state";
 
+/** A member change with the driving licence warning it confirmed (#1425). */
+type ConfirmedChange = { employeeId: string; previewToken: string };
+
 type TeamDetail = Extract<
 	Awaited<ReturnType<typeof getTeam>>,
 	{ success: true }
@@ -33,7 +36,8 @@ export function useTeamDetailPage(teamId: string) {
 	const { push } = useRouter();
 	const queryClient = useQueryClient();
 	const [uiState, dispatch] = useTeamPageUiState();
-	const { confirmTeamChange, drivingLicenceWarning } = useDrivingLicenceTeamChangeWarning();
+	const { confirmTeamChange, teamChangeError, drivingLicenceWarning } =
+		useDrivingLicenceTeamChangeWarning();
 
 	const form = useForm({
 		defaultValues: {
@@ -128,15 +132,19 @@ export function useTeamDetailPage(teamId: string) {
 	});
 
 	const addMemberMutation = useMutation({
-		mutationFn: async (employeeId: string) => {
-			const result = await addTeamMember(teamId, employeeId);
+		mutationFn: async ({ employeeId, previewToken }: ConfirmedChange) => {
+			const result = await addTeamMember(teamId, employeeId, {
+				drivingLicencePreviewToken: previewToken,
+			});
 			if (!result.success) {
 				throw new Error(
-					result.error ||
+					teamChangeError(
+						result,
 						t(
 							"settings.teams.detail.errors.addTeamMember",
 							"Failed to add team member",
 						),
+					),
 				);
 			}
 			return result;
@@ -159,20 +167,24 @@ export function useTeamDetailPage(teamId: string) {
 	});
 
 	const removeMemberMutation = useMutation({
-		mutationFn: async (employeeId: string) => {
-			const result = await removeTeamMember(teamId, employeeId);
+		mutationFn: async ({ employeeId, previewToken }: ConfirmedChange) => {
+			const result = await removeTeamMember(teamId, employeeId, {
+				drivingLicencePreviewToken: previewToken,
+			});
 			if (!result.success) {
 				throw new Error(
-					result.error ||
+					teamChangeError(
+						result,
 						t(
 							"settings.teams.detail.errors.removeTeamMember",
 							"Failed to remove team member",
 						),
+					),
 				);
 			}
 			return result;
 		},
-		onMutate: async (employeeId) => {
+		onMutate: async ({ employeeId }) => {
 			await queryClient.cancelQueries({
 				queryKey: queryKeys.teams.detail(teamId),
 			});
@@ -223,15 +235,19 @@ export function useTeamDetailPage(teamId: string) {
 	});
 
 	const deleteTeamMutation = useMutation({
-		mutationFn: async () => {
-			const result = await deleteTeam(teamId);
+		mutationFn: async (previewToken: string) => {
+			const result = await deleteTeam(teamId, {
+				drivingLicencePreviewToken: previewToken,
+			});
 			if (!result.success) {
 				throw new Error(
-					result.error ||
+					teamChangeError(
+						result,
 						t(
 							"settings.teams.detail.errors.deleteTeam",
 							"Failed to delete team",
 						),
+					),
 				);
 			}
 			return result;
@@ -262,29 +278,26 @@ export function useTeamDetailPage(teamId: string) {
 		}
 
 		const employeeId = uiState.selectedEmployee;
-		if (
-			!(await confirmTeamChange(() =>
-				previewTeamMemberChangeDrivingImpact(teamId, employeeId, "add"),
-			))
-		)
-			return;
-		addMemberMutation.mutate(employeeId);
+		const previewToken = await confirmTeamChange(() =>
+			previewTeamMemberChangeDrivingImpact(teamId, employeeId, "add"),
+		);
+		if (previewToken === null) return;
+		addMemberMutation.mutate({ employeeId, previewToken });
 	}
 
 	// A primary-team change can end driving authorizations: warn first (#1425).
 	async function handleRemoveMember(employeeId: string) {
-		if (
-			!(await confirmTeamChange(() =>
-				previewTeamMemberChangeDrivingImpact(teamId, employeeId, "remove"),
-			))
-		)
-			return;
-		removeMemberMutation.mutate(employeeId);
+		const previewToken = await confirmTeamChange(() =>
+			previewTeamMemberChangeDrivingImpact(teamId, employeeId, "remove"),
+		);
+		if (previewToken === null) return;
+		removeMemberMutation.mutate({ employeeId, previewToken });
 	}
 
 	async function handleDeleteTeam() {
-		if (!(await confirmTeamChange(() => previewTeamDeletionDrivingImpact(teamId)))) return;
-		deleteTeamMutation.mutate();
+		const previewToken = await confirmTeamChange(() => previewTeamDeletionDrivingImpact(teamId));
+		if (previewToken === null) return;
+		deleteTeamMutation.mutate(previewToken);
 	}
 
 	const loading =

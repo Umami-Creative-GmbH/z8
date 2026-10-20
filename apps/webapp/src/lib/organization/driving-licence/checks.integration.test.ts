@@ -4,6 +4,7 @@ import {
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
+import { saveConfirmedIntendedDriverAssignment } from "./testing/control.test.fixture";
 
 const harness = vi.hoisted(() => ({
 	userId: "",
@@ -37,7 +38,6 @@ vi.mock("@/lib/datetime/temporal-core", async (original) => {
 });
 const checks = await import("./check-actions");
 const policy = await import("./policy-actions");
-const intendedDrivers = await import("./intended-driver-actions");
 const grants = await import("./verifier-actions");
 let fixture: LifecycleDatabaseFixture;
 let verifier: SeededEmployee;
@@ -82,7 +82,7 @@ beforeEach(async () => {
 	).toBe(true);
 	expect(
 		(
-			await intendedDrivers.setDrivingLicenceIntendedDriverAssignmentAction({
+			await saveConfirmedIntendedDriverAssignment({
 				target: { type: "employee", employeeId: fixture.employeeId },
 				value: "required",
 			})
@@ -560,7 +560,7 @@ it("refuses a granted verifier's self-check and a target removed from their curr
 	signIn(fixture.ownerUserId);
 	expect(
 		(
-			await intendedDrivers.setDrivingLicenceIntendedDriverAssignmentAction({
+			await saveConfirmedIntendedDriverAssignment({
 				target: { type: "employee", employeeId: verifier.employeeId },
 				value: "required",
 			})

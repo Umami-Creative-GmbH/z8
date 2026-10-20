@@ -25,6 +25,7 @@ import {
 	previewDrivingLicenceEndingByRollback,
 	previewDrivingLicenceIntendedDriverChange,
 } from "./no-longer-intended";
+import { DrivingLicenceStalePreviewError } from "./stale-preview";
 import type { DrivingLicenceDatabase, DrivingLicenceTransaction } from "./verifiers";
 
 /**
@@ -163,16 +164,21 @@ const assignmentTarget = z.discriminatedUnion("type", [
 	z.strictObject({ type: z.literal("team"), teamId: z.uuid() }),
 	z.strictObject({ type: z.literal("employee"), employeeId: z.uuid() }),
 ]);
-/** The token of the preview the admin confirmed (#1425); a save that ends something else is refused. */
+/**
+ * The token of the preview the admin confirmed (#1425), also when it listed nobody. A save
+ * without it, or one that ends something else, is refused with `stale_preview`.
+ */
 const previewToken = z
 	.string()
 	.regex(/^[0-9a-f]{64}$/)
 	.optional();
-export const intendedDriverAssignmentInput = z.strictObject({
+const assignmentChange = {
 	target: assignmentTarget,
 	value: z.enum(["required", "not_required"]),
-	previewToken,
-});
+};
+export const intendedDriverAssignmentPreviewInput = z.strictObject(assignmentChange);
+export const intendedDriverAssignmentInput = z.strictObject({ ...assignmentChange, previewToken });
+export const intendedDriverRemovalPreviewInput = z.strictObject({ assignmentId: z.uuid() });
 export const intendedDriverRemovalInput = z.strictObject({ assignmentId: z.uuid(), previewToken });
 
 /**
@@ -232,8 +238,8 @@ function assignableEmployee(
 		.limit(1);
 }
 
-type AssignmentInput = z.infer<typeof intendedDriverAssignmentInput>;
-type RemovalInput = z.infer<typeof intendedDriverRemovalInput>;
+type AssignmentInput = z.infer<typeof intendedDriverAssignmentPreviewInput>;
+type RemovalInput = z.infer<typeof intendedDriverRemovalPreviewInput>;
 type AssignmentWrite = {
 	assignmentId: string;
 	change: DrivingLicenceIntendedDriverChange | null;
@@ -241,8 +247,8 @@ type AssignmentWrite = {
 
 /**
  * Runs an assignment write and ends the authorizations of employees who stop being intended
- * drivers through it (#1425), in one locked transaction. A given `previewToken` must match
- * what is ended, so the admin's confirmation can't go stale.
+ * drivers through it (#1425), in one locked transaction. The `previewToken` must match what
+ * is ended, so the admin's confirmation can't go stale; a save without one is refused too.
  */
 async function saveAssignmentChange(
 	actor: DrivingLicenceActor,
@@ -253,8 +259,7 @@ async function saveAssignmentChange(
 		const now = systemClock.nowInstant();
 		const { assignmentId, change } = await write(tx, now);
 		const endings = await previewDrivingLicenceIntendedDriverChange(tx, change, now);
-		if (token !== undefined && token !== drivingLicenceEndingToken(endings))
-			throw new Error("stale_preview");
+		if (token !== drivingLicenceEndingToken(endings)) throw new DrivingLicenceStalePreviewError();
 		if (change && endings.length)
 			await endDrivingAuthorizationNoLongerIntended(tx, {
 				organizationId: actor.organizationId,
@@ -300,7 +305,7 @@ export async function previewDrivingLicenceIntendedDriverAssignment(
 	actor: DrivingLicenceActor,
 	raw: unknown,
 ): Promise<DrivingLicenceEndingPreview> {
-	const input = intendedDriverAssignmentInput.parse(raw);
+	const input = intendedDriverAssignmentPreviewInput.parse(raw);
 	return previewAssignmentChange((tx, now) => writeAssignment(tx, actor, input, now));
 }
 
@@ -394,7 +399,7 @@ export async function previewDrivingLicenceIntendedDriverRemoval(
 	actor: DrivingLicenceActor,
 	raw: unknown,
 ): Promise<DrivingLicenceEndingPreview> {
-	const input = intendedDriverRemovalInput.parse(raw);
+	const input = intendedDriverRemovalPreviewInput.parse(raw);
 	return previewAssignmentChange((tx, now) => writeRemoval(tx, actor, input, now));
 }
 

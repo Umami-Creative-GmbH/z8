@@ -12,39 +12,52 @@ import {
 	AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import type { DrivingLicenceEnding } from "@/lib/organization/driving-licence/intended-driver-rules";
+import {
+	DRIVING_LICENCE_STALE_PREVIEW,
+	type DrivingLicenceEnding,
+	type DrivingLicenceTeamChangeImpact,
+} from "@/lib/organization/driving-licence/intended-driver-rules";
 
 type Variant = "assignment" | "team_change";
+/** What the dialog lists: who loses which classes, or (generic) only that some authorizations end. */
+type Shown = { kind: "full"; endings: readonly DrivingLicenceEnding[] } | { kind: "generic" };
 
 /**
  * Asks before a save that ends driving authorizations (#1425, Organization ADR 0005): who
  * stops being an intended driver and which class authorizations end. `confirm(endings)`
- * resolves true at once when nobody is affected, else when the admin confirms. Render
- * `dialog` once next to the screen that saves.
+ * resolves true at once when nobody is affected, else when the admin confirms;
+ * `confirmGeneric()` asks without names or classes. Render `dialog` once next to the screen
+ * that saves.
  */
 export function useDrivingLicenceEndingConfirmation(variant: Variant): {
 	confirm: (endings: readonly DrivingLicenceEnding[]) => Promise<boolean>;
+	confirmGeneric: () => Promise<boolean>;
 	dialog: ReactNode;
 } {
 	const { t } = useTranslate();
-	const [endings, setEndings] = useState<readonly DrivingLicenceEnding[] | null>(null);
+	const [shown, setShown] = useState<Shown | null>(null);
 	const resolver = useRef<((confirmed: boolean) => void) | null>(null);
 	const settle = useCallback((confirmed: boolean) => {
 		resolver.current?.(confirmed);
 		resolver.current = null;
-		setEndings(null);
+		setShown(null);
 	}, []);
-	const confirm = useCallback((next: readonly DrivingLicenceEnding[]) => {
-		if (!next.length) return Promise.resolve(true);
+	const ask = useCallback((next: Shown) => {
 		resolver.current?.(false);
 		return new Promise<boolean>((resolve) => {
 			resolver.current = resolve;
-			setEndings(next);
+			setShown(next);
 		});
 	}, []);
+	const confirm = useCallback(
+		(next: readonly DrivingLicenceEnding[]) =>
+			next.length ? ask({ kind: "full", endings: next }) : Promise.resolve(true),
+		[ask],
+	);
+	const confirmGeneric = useCallback(() => ask({ kind: "generic" }), [ask]);
 	const dialog = (
 		<AlertDialog
-			open={endings !== null}
+			open={shown !== null}
 			onOpenChange={(open) => {
 				if (!open) settle(false);
 			}}
@@ -60,30 +73,37 @@ export function useDrivingLicenceEndingConfirmation(variant: Variant): {
 								)}
 					</AlertDialogTitle>
 					<AlertDialogDescription>
-						{variant === "assignment"
+						{shown?.kind === "generic"
 							? t(
-									"drivingLicence.ending.assignmentDescription",
-									"These employees stop being intended drivers when you save. Their driving authorizations end at once and their check records start their retention period. Driving again requires a new check.",
+									"drivingLicence.ending.teamChangeGeneric",
+									"This change ends driving authorizations for some employees.",
 								)
-							: t(
-									"drivingLicence.ending.teamChangeDescription",
-									"These employees stop being intended drivers because their primary team changes. Their driving authorizations end at once and their check records start their retention period. Driving again requires a new check.",
-								)}
+							: variant === "assignment"
+								? t(
+										"drivingLicence.ending.assignmentDescription",
+										"These employees stop being intended drivers when you save. Their driving authorizations end at once and their check records start their retention period. Driving again requires a new check.",
+									)
+								: t(
+										"drivingLicence.ending.teamChangeDescription",
+										"These employees stop being intended drivers because their primary team changes. Their driving authorizations end at once and their check records start their retention period. Driving again requires a new check.",
+									)}
 					</AlertDialogDescription>
 				</AlertDialogHeader>
-				<ul
-					aria-label={t("drivingLicence.ending.listLabel", "Driving authorizations that end")}
-					className="space-y-1 text-sm"
-				>
-					{endings?.map((item) => (
-						<li key={item.employeeId} className="flex flex-wrap justify-between gap-2">
-							<span className="font-medium">{item.name}</span>
-							<span className="text-muted-foreground" translate="no">
-								{item.classCodes.join(", ")}
-							</span>
-						</li>
-					))}
-				</ul>
+				{shown?.kind === "full" ? (
+					<ul
+						aria-label={t("drivingLicence.ending.listLabel", "Driving authorizations that end")}
+						className="space-y-1 text-sm"
+					>
+						{shown.endings.map((item) => (
+							<li key={item.employeeId} className="flex flex-wrap justify-between gap-2">
+								<span className="font-medium">{item.name}</span>
+								<span className="text-muted-foreground" translate="no">
+									{item.classCodes.join(", ")}
+								</span>
+							</li>
+						))}
+					</ul>
+				) : null}
 				<AlertDialogFooter>
 					<AlertDialogCancel>{t("common.cancel", "Cancel")}</AlertDialogCancel>
 					<Button variant="destructive" onClick={() => settle(true)}>
@@ -95,23 +115,26 @@ export function useDrivingLicenceEndingConfirmation(variant: Variant): {
 			</AlertDialogContent>
 		</AlertDialog>
 	);
-	return { confirm, dialog };
+	return { confirm, confirmGeneric, dialog };
 }
 
 type Preview =
-	| { success: true; data: DrivingLicenceEnding[] }
+	| { success: true; data: DrivingLicenceTeamChangeImpact }
 	| { success: false; error?: string | null };
+type SaveRefusal = { error?: string | null; refusal?: string };
 
 /**
  * The warning on screens that can change an employee's primary team (#1425):
- * `confirmTeamChange(load)` loads the preview of the change and asks when it ends driving
- * authorizations. A preview that can't be loaded refuses the change with a toast.
+ * `confirmTeamChange(load)` loads the preview of the change, asks when it ends driving
+ * authorizations, and resolves the token the save takes (null: don't save). A preview that
+ * can't be loaded refuses the change with a toast. `teamChangeError(result, fallback)` words
+ * a refused save, including a warning that went stale.
  */
 export function useDrivingLicenceTeamChangeWarning() {
 	const { t } = useTranslate();
-	const { confirm, dialog } = useDrivingLicenceEndingConfirmation("team_change");
+	const { confirm, confirmGeneric, dialog } = useDrivingLicenceEndingConfirmation("team_change");
 	const confirmTeamChange = useCallback(
-		async (load: () => Promise<Preview>) => {
+		async (load: () => Promise<Preview>): Promise<string | null> => {
 			let preview: Preview;
 			try {
 				preview = await load();
@@ -125,11 +148,26 @@ export function useDrivingLicenceTeamChangeWarning() {
 						"Couldn't check whether this change ends driving authorizations. Try again.",
 					),
 				);
-				return false;
+				return null;
 			}
-			return confirm(preview.data);
+			const impact = preview.data;
+			const confirmed =
+				impact.detail === "full"
+					? await confirm(impact.employees)
+					: !impact.affected || (await confirmGeneric());
+			return confirmed ? impact.previewToken : null;
 		},
-		[confirm, t],
+		[confirm, confirmGeneric, t],
 	);
-	return { confirmTeamChange, drivingLicenceWarning: dialog };
+	const teamChangeError = useCallback(
+		(result: SaveRefusal, fallback: string) =>
+			result.refusal === DRIVING_LICENCE_STALE_PREVIEW
+				? t(
+						"drivingLicence.ending.teamChangeStale",
+						"Who this change affects has changed in the meantime. Try the change again to review it.",
+					)
+				: result.error || fallback,
+		[t],
+	);
+	return { confirmTeamChange, teamChangeError, drivingLicenceWarning: dialog };
 }

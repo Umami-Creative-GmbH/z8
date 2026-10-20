@@ -5,6 +5,7 @@ import {
 	type SeededEmployee,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
 import type { SendEmailParams } from "@/lib/email/email-service";
+import { saveConfirmedIntendedDriverAssignment } from "./testing/control.test.fixture";
 
 const harness = vi.hoisted(() => ({
 	userId: "",
@@ -41,7 +42,6 @@ vi.mock("@/lib/datetime/temporal-core", async (original) => {
 vi.setConfig({ testTimeout: 90_000 });
 
 const policy = await import("./policy-actions");
-const intendedDrivers = await import("./intended-driver-actions");
 const checks = await import("./check-actions");
 const grants = await import("./verifier-actions");
 const { runDrivingLicenceRemindersJob } = await import("@/lib/jobs/driving-licence-reminders");
@@ -124,7 +124,7 @@ async function prepare(org: Organization) {
 	);
 	for (const subject of [org.overdue, org.inDate])
 		await expectSuccess(
-			intendedDrivers.setDrivingLicenceIntendedDriverAssignmentAction({
+			saveConfirmedIntendedDriverAssignment({
 				target: { type: "employee", employeeId: subject.employeeId },
 				value: "required",
 			}),

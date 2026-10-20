@@ -13,6 +13,7 @@ import type { DrivingLicenceActor } from "./context";
 import type { DrivingLicenceTransaction } from "./verifiers";
 import {
 	drivingAuthorizationPlanningPermission,
+	drivingLicenceRoles,
 	readDrivingLicenceVisibility,
 	showsDrivingAuthorizationAdvisory,
 } from "./visibility";
@@ -76,9 +77,20 @@ async function currentOperationalInstant(
 	if (!profile?.allowed) throw new Error("unavailable");
 	return now;
 }
+/** The visibility reader decides every operational read (#1418): nothing while the feature is off. */
+function readViewerVisibility(tx: DrivingLicenceTransaction, actor: DrivingLicenceActor) {
+	return readDrivingLicenceVisibility(
+		{ organizationId: actor.organizationId, userId: actor.userId },
+		tx,
+	);
+}
+
 /**
- * Without a target this is the clock advisory: `null` unless the visibility reader shows it
- * (feature on and the viewer is an intended driver). Planner reads of a target are unchanged.
+ * Decided by the visibility reader. Without a target this is the clock advisory: `null`
+ * unless the viewer is an intended driver while the feature is on. The viewer's own employee
+ * as target: `null` unless they have My licence (intended driver or own retained records).
+ * Another employee: refused unless the viewer holds the planning permission while the
+ * feature is on.
  */
 export async function readOperationalDrivingStatus(
 	actor: DrivingLicenceActor,
@@ -86,20 +98,16 @@ export async function readOperationalDrivingStatus(
 ) {
 	return db.transaction(async (tx) => {
 		await lockDrivingLicenceOrganization(tx, actor.organizationId);
-		if (
-			targetId === undefined &&
-			!showsDrivingAuthorizationAdvisory(
-				await readDrivingLicenceVisibility(
-					{ organizationId: actor.organizationId, userId: actor.userId },
-					tx,
-				),
-			)
-		)
-			return null;
+		const visibility = await readViewerVisibility(tx, actor);
+		if (targetId === undefined && !showsDrivingAuthorizationAdvisory(visibility)) return null;
 		const ownEmployeeId = await lockOperationalViewer(tx, actor);
 		const employeeId = targetId ?? ownEmployeeId;
-		if (employeeId !== ownEmployeeId)
+		if (employeeId === ownEmployeeId) {
+			if (!drivingLicenceRoles(visibility).myLicence) return null;
+		} else {
+			if (!drivingLicenceRoles(visibility).planning) throw new Error("unavailable");
 			await requireOperationalPermission(tx, actor, ownEmployeeId);
+		}
 		const now = await currentOperationalInstant(tx, actor, ownEmployeeId);
 		const [target] = await tx
 			.select({ id: employee.id })
@@ -140,6 +148,8 @@ export async function readOperationalDrivingEmployees(
 ) {
 	return db.transaction(async (tx) => {
 		await lockDrivingLicenceOrganization(tx, actor.organizationId);
+		if (!drivingLicenceRoles(await readViewerVisibility(tx, actor)).planning)
+			throw new Error("unavailable");
 		const ownEmployeeId = await lockOperationalViewer(tx, actor);
 		await requireOperationalPermission(tx, actor, ownEmployeeId);
 		const now = await currentOperationalInstant(tx, actor, ownEmployeeId);
