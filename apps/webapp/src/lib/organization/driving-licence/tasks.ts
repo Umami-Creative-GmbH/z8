@@ -15,6 +15,7 @@ import { insertInAppNotification } from "@/lib/notifications/notification-servic
 import { resolveDrivingLicenceAccess } from "./access";
 import { currentDrivingEmployment } from "./checks";
 import type { DrivingLicenceActor } from "./context";
+import { drivingLicenceCheckPath } from "./paths";
 import {
 	collectDrivingLicenceReminderOccasions,
 	type DrivingLicenceReminderOccasion,
@@ -81,9 +82,10 @@ async function notifyAssignment(
 				message: content.message,
 				entityType: "driving_licence_task",
 				entityId: row.id,
+				// A personal reminder task goes to verifiers: straight to the check (#1429).
 				actionUrl: assignment
 					? "/settings/driving-licence"
-					: "/driving-licence",
+					: drivingLicenceCheckPath(row.employeeId),
 				idempotencyKey: `driving-task:${row.id}:${row.generation}:${userId}`,
 				metadata: {
 					i18n: content.i18n,

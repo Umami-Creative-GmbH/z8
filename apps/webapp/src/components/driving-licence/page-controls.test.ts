@@ -6,18 +6,17 @@ const webapp = path.resolve(__dirname, "../../..");
 /**
  * Source scan, because the design-system Checkbox renders a hidden native input for form
  * integration and a DOM query can't tell them apart.
- *
- * The inline check and reinstatement forms (`original-check-form.tsx`,
- * `reinstate-authorization.tsx`) still carry native checkboxes; #1429 converts them on the
- * check page and adds them here.
  */
 const PAGE_FILES = [
 	"src/app/[locale]/(app)/driving-licence/page.tsx",
 	"src/app/[locale]/(app)/driving-licence/layout.tsx",
+	"src/app/[locale]/(app)/driving-licence/checks/[employee]/page.tsx",
 	"src/components/driving-licence/role-tabs.tsx",
 	"src/components/driving-licence/my-licence.tsx",
 	"src/components/driving-licence/check-worklist.tsx",
 	"src/components/driving-licence/check-panel.tsx",
+	"src/components/driving-licence/original-check-form.tsx",
+	"src/components/driving-licence/reinstate-authorization.tsx",
 	"src/components/driving-licence/check-evidence.tsx",
 	"src/components/driving-licence/deadline-date.tsx",
 	"src/components/driving-licence/history-panel.tsx",
@@ -34,5 +33,14 @@ describe("/driving-licence controls", () => {
 	it.each(PAGE_FILES)("%s renders no native checkbox", (file) => {
 		const source = readFileSync(path.join(webapp, file), "utf8");
 		expect(source).not.toMatch(/type=\{?\s*["'`]checkbox["'`]/);
+	});
+	// The check and reinstatement forms choose results and scopes with the design-system
+	// Select (#1429).
+	it.each([
+		"src/components/driving-licence/original-check-form.tsx",
+		"src/components/driving-licence/reinstate-authorization.tsx",
+	])("%s renders no native select", (file) => {
+		const source = readFileSync(path.join(webapp, file), "utf8");
+		expect(source).not.toMatch(/<select[\s>]/);
 	});
 });

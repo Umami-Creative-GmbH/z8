@@ -164,7 +164,7 @@ it("persists mandatory unread inbox reminders on the exact organization-zone lea
 		type: "driving_licence_reminder",
 		isRead: false,
 		readAt: null,
-		actionUrl: `/driving-licence?employeeId=${fixture.employeeId}`,
+		actionUrl: "/driving-licence",
 	});
 	expect(await inbox(verifier.userId)).toHaveLength(1);
 	expect(await inbox(fixture.ownerUserId)).toHaveLength(0);
@@ -179,6 +179,34 @@ it("persists mandatory unread inbox reminders on the exact organization-zone lea
 	).toBe(true);
 	await runDrivingLicenceRemindersJob();
 	expect(await inbox()).toHaveLength(1);
+});
+
+it("links the employee to their own licence and each verifier to the employee's check page, in the inbox and in email (#1429)", async () => {
+	expect(
+		(await checks.completeDrivingLicenceCheckAction(original("2026-02-10"))).success,
+	).toBe(true);
+	const checkPage = `/driving-licence/checks/${fixture.employeeId}`;
+	harness.now = "2026-02-05T10:00:00Z"; // Within seven days of the document's expiry.
+	await runDrivingLicenceRemindersJob();
+	expect((await inbox()).map((n) => n.actionUrl)).toEqual(["/driving-licence"]);
+	expect((await inbox(verifier.userId)).map((n) => n.actionUrl)).toEqual([checkPage]);
+	const mailTo = (userId: string) =>
+		harness.mail.mock.calls
+			.map(([message]) => message)
+			.find((message) => message.to === `${userId}@lifecycle.test`)?.html;
+	expect(mailTo(subjectUserId)).toContain('href="https://z8.test/driving-licence"');
+	expect(mailTo(verifier.userId)).toContain(`href="https://z8.test${checkPage}"`);
+
+	harness.now = "2026-02-10T23:00:00Z"; // The document has expired in Berlin.
+	await runDrivingLicenceRemindersJob();
+	const suspended = (userId: string) =>
+		inbox(userId).then((notices) =>
+			notices
+				.filter((n) => n.type === "driving_authorization_suspended")
+				.map((n) => n.actionUrl),
+		);
+	expect(await suspended(subjectUserId)).toEqual(["/driving-licence"]);
+	expect(await suspended(verifier.userId)).toEqual([checkPage]);
 });
 
 it("persists an uncertain email attempt before provider acceptance and never blindly retries an ambiguous outcome", async () => {

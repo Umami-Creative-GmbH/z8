@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { afterEach, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
@@ -18,7 +17,9 @@ vi.mock("@tolgee/react", () => ({
 		t: (_key: string, fallback: string, values: Record<string, unknown> = {}) =>
 			fallback.replace(/\{(\w+)\}/g, (_, key) => String(values[key] ?? key)),
 	}),
+	useTolgee: () => ({ getLanguage: () => "en" }),
 }));
+const remote = vi.hoisted(() => ({ status: "ended" }));
 vi.mock("@/lib/organization/driving-licence/check-actions", () => ({
 	getDrivingLicenceCheckWorklistAction: async () => ({
 		success: true,
@@ -35,7 +36,7 @@ vi.mock("@/lib/organization/driving-licence/check-actions", () => ({
 		success: true,
 		data: {
 			enrolled: true,
-			status: "ended",
+			status: remote.status,
 			authorizedClasses: [],
 			classes: [],
 			checks: [],
@@ -53,23 +54,23 @@ vi.mock("@/lib/organization/driving-licence/impediment-actions", () => ({
 	getDrivingImpedimentStateAction: vi.fn(),
 	reinstateDrivingAuthorizationAction: vi.fn(),
 }));
-const { DrivingLicenceVerifierWorklist } = await import("./check-worklist");
-afterEach(cleanup);
-it("opens a former employee's ended evidence without offering a new check or reinstatement", async () => {
+const { DrivingLicenceCheckPanel } = await import("./check-panel");
+afterEach(() => {
+	cleanup();
+	remote.status = "ended";
+});
+function renderPanel(canVerify: boolean) {
 	const client = new QueryClient({
 		defaultOptions: { queries: { retry: false } },
 	});
-	const user = userEvent.setup();
 	render(
 		<QueryClientProvider client={client}>
-			<DrivingLicenceVerifierWorklist />
+			<DrivingLicenceCheckPanel employeeId="former" name="Anna Driver" canVerify={canVerify} />
 		</QueryClientProvider>,
 	);
-	await user.click(
-		await screen.findByRole("button", {
-			name: "View ended record for Anna Driver",
-		}),
-	);
+}
+it("opens a former employee's ended evidence without offering a new check or reinstatement", async () => {
+	renderPanel(false);
 	expect(
 		await screen.findByRole("heading", { name: "Original check evidence" }),
 	).toBeTruthy();
@@ -80,4 +81,15 @@ it("opens a former employee's ended evidence without offering a new check or rei
 		screen.queryByRole("heading", { name: /Inspect Anna Driver/ }),
 	).toBeNull();
 	expect(screen.queryByRole("button", { name: /Reinstate/ })).toBeNull();
+});
+
+it("offers no check for an employee who is not an intended driver (#1429)", async () => {
+	remote.status = "not_enrolled";
+	renderPanel(true);
+	expect(
+		await screen.findByText(
+			"Anna Driver is not an intended driver. A check is needed only for intended drivers.",
+		),
+	).toBeTruthy();
+	expect(screen.queryByRole("heading", { name: /Inspect Anna Driver/ })).toBeNull();
 });

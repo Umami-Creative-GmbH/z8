@@ -33,11 +33,12 @@ import {
 import { useSession } from "@/lib/auth-client";
 import { getDrivingLicenceCheckWorklistAction } from "@/lib/organization/driving-licence/check-actions";
 import type { AuthorizationStatus } from "@/lib/organization/driving-licence/check-types";
+import { drivingLicenceCheckPath } from "@/lib/organization/driving-licence/paths";
 import {
 	DRIVING_LICENCE_WORKLIST_STATUSES,
 	type DrivingLicenceWorklistStatus,
 } from "@/lib/organization/driving-licence/worklist-query";
-import { DrivingLicenceCheckPanel } from "./check-panel";
+import { Link } from "@/navigation";
 import { DrivingDeadlineDate } from "./deadline-date";
 
 const SEARCH_DELAY_MS = 300;
@@ -68,8 +69,8 @@ const STATUS_BADGE: Record<
 
 /**
  * The verifier's Checks table (#1428): intended drivers in scope, searched and filtered on
- * the server, checks due now first, then the soonest deadline. A row's action opens the
- * existing check inline (`DrivingLicenceCheckPanel`) until #1429 links it to the check page.
+ * the server, checks due now first, then the soonest deadline. A row's action opens that
+ * employee's check page (#1429).
  */
 export function DrivingLicenceVerifierWorklist() {
 	const { t } = useTranslate();
@@ -81,11 +82,6 @@ export function DrivingLicenceVerifierWorklist() {
 	const [search, setSearch] = useState("");
 	const [submittedSearch, setSubmittedSearch] = useState("");
 	const [status, setStatus] = useState<StatusFilter>("all");
-	const [selected, setSelected] = useState<{
-		employeeId: string;
-		name: string;
-		canVerify: boolean;
-	} | null>(null);
 	useEffect(() => {
 		const timer = setTimeout(() => setSubmittedSearch(search.trim()), SEARCH_DELAY_MS);
 		return () => clearTimeout(timer);
@@ -110,150 +106,133 @@ export function DrivingLicenceVerifierWorklist() {
 	];
 
 	return (
-		<div className="space-y-6">
-			<Card>
-				<CardHeader>
-					<CardTitle>
-						<h2 className="text-lg font-semibold">
-							{t("drivingLicence.checks.title", "Intended drivers to check")}
-						</h2>
-					</CardTitle>
-					<CardDescription>
-						{t(
-							"drivingLicence.checks.help",
-							"Intended drivers covered by your current verifier responsibility. You never appear in your own list.",
-						)}
-					</CardDescription>
-				</CardHeader>
-				<CardContent className="space-y-4">
-					<div className="flex flex-wrap items-end gap-3">
-						<div className="flex min-w-56 flex-1 flex-col gap-1.5">
-							<Label htmlFor={searchId}>
-								{t("drivingLicence.checks.search", "Search by name")}
-							</Label>
-							<Input
-								id={searchId}
-								type="search"
-								name="driving-check-search"
-								autoComplete="off"
-								maxLength={100}
-								value={search}
-								onChange={(event) => setSearch(event.target.value)}
-							/>
-						</div>
-						<div className="flex min-w-48 flex-col gap-1.5">
-							<span id={statusId} className="text-sm font-medium">
-								{t("drivingLicence.checks.filter.status", "Status")}
-							</span>
-							<Select
-								value={status}
-								items={filterOptions}
-								onValueChange={(value) => setStatus((value as StatusFilter | null) ?? "all")}
-							>
-								<SelectTrigger aria-labelledby={statusId} className="w-full">
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									{filterOptions.map((option) => (
-										<SelectItem key={option.value} value={option.value}>
-											{option.label}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</div>
+		<Card>
+			<CardHeader>
+				<CardTitle>
+					<h2 className="text-lg font-semibold">
+						{t("drivingLicence.checks.title", "Intended drivers to check")}
+					</h2>
+				</CardTitle>
+				<CardDescription>
+					{t(
+						"drivingLicence.checks.help",
+						"Intended drivers covered by your current verifier responsibility. You never appear in your own list.",
+					)}
+				</CardDescription>
+			</CardHeader>
+			<CardContent className="space-y-4">
+				<div className="flex flex-wrap items-end gap-3">
+					<div className="flex min-w-56 flex-1 flex-col gap-1.5">
+						<Label htmlFor={searchId}>{t("drivingLicence.checks.search", "Search by name")}</Label>
+						<Input
+							id={searchId}
+							type="search"
+							name="driving-check-search"
+							autoComplete="off"
+							maxLength={100}
+							value={search}
+							onChange={(event) => setSearch(event.target.value)}
+						/>
 					</div>
-					{worklist.isPending ? (
+					<div className="flex min-w-48 flex-col gap-1.5">
+						<span id={statusId} className="text-sm font-medium">
+							{t("drivingLicence.checks.filter.status", "Status")}
+						</span>
+						<Select
+							value={status}
+							items={filterOptions}
+							onValueChange={(value) => setStatus((value as StatusFilter | null) ?? "all")}
+						>
+							<SelectTrigger aria-labelledby={statusId} className="w-full">
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								{filterOptions.map((option) => (
+									<SelectItem key={option.value} value={option.value}>
+										{option.label}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+				</div>
+				{worklist.isPending ? (
+					<p role="status" className="text-sm text-muted-foreground">
+						{t("drivingLicence.checks.loading", "Loading intended drivers…")}
+					</p>
+				) : !rows ? (
+					<p role="alert" className="text-sm text-destructive">
+						{t(
+							"drivingLicence.checks.loadError",
+							"The list could not be loaded. Check your current verifier responsibility.",
+						)}
+					</p>
+				) : !rows.length ? (
+					filtered ? (
 						<p role="status" className="text-sm text-muted-foreground">
-							{t("drivingLicence.checks.loading", "Loading intended drivers…")}
-						</p>
-					) : !rows ? (
-						<p role="alert" className="text-sm text-destructive">
 							{t(
-								"drivingLicence.checks.loadError",
-								"The list could not be loaded. Check your current verifier responsibility.",
+								"drivingLicence.checks.noMatches",
+								"No intended drivers match the search or filter.",
 							)}
 						</p>
-					) : !rows.length ? (
-						filtered ? (
-							<p role="status" className="text-sm text-muted-foreground">
-								{t(
-									"drivingLicence.checks.noMatches",
-									"No intended drivers match the search or filter.",
-								)}
-							</p>
-						) : (
-							<Empty className="border">
-								<EmptyHeader>
-									<EmptyMedia variant="icon">
-										<IconUserSearch aria-hidden="true" />
-									</EmptyMedia>
-									<EmptyTitle>
-										{t("drivingLicence.checks.empty.title", "Nobody to check yet")}
-									</EmptyTitle>
-									<EmptyDescription>
-										{t(
-											"drivingLicence.checks.empty.description",
-											"Intended drivers in your verifier responsibility appear here. Ask an administrator if someone is missing.",
-										)}
-									</EmptyDescription>
-								</EmptyHeader>
-							</Empty>
-						)
 					) : (
-						<Table aria-busy={worklist.isFetching} mobileLayout="stacked">
-							<TableHeader>
-								<TableRow>
-									<TableHead>{t("drivingLicence.checks.column.name", "Name")}</TableHead>
-									<TableHead>{t("drivingLicence.checks.column.status", "Status")}</TableHead>
-									<TableHead>
-										{t("drivingLicence.checks.column.deadline", "Next deadline")}
-									</TableHead>
-									<TableHead>{t("drivingLicence.checks.column.team", "Team")}</TableHead>
-									<TableHead>
-										<span className="sr-only">
-											{t("drivingLicence.checks.column.action", "Action")}
-										</span>
-									</TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{rows.map((person) => (
-									<TableRow
-										key={person.employeeId}
-										data-state={selected?.employeeId === person.employeeId ? "selected" : undefined}
-									>
-										<TableCell className="font-medium">{person.name}</TableCell>
-										<TableCell>
-											<Badge variant={STATUS_BADGE[person.status]}>
-												{statusLabels[person.status]}
-											</Badge>
-										</TableCell>
-										<TableCell>
-											{person.nextDeadline ? (
-												<DrivingDeadlineDate
-													validThrough={person.nextDeadline.validThrough}
-													timezone={person.nextDeadline.timezone}
-												/>
-											) : person.status === "ended" ? (
-												"—"
-											) : (
-												t("drivingLicence.checks.dueNow", "Check due now")
-											)}
-										</TableCell>
-										<TableCell>{person.team ? person.team.name : "—"}</TableCell>
-										<TableCell className="text-right">
-											<Button
-												variant="outline"
-												size="sm"
-												onClick={() =>
-													setSelected({
-														employeeId: person.employeeId,
-														name: person.name,
-														canVerify: person.canVerify,
-													})
-												}
-											>
+						<Empty className="border">
+							<EmptyHeader>
+								<EmptyMedia variant="icon">
+									<IconUserSearch aria-hidden="true" />
+								</EmptyMedia>
+								<EmptyTitle>
+									{t("drivingLicence.checks.empty.title", "Nobody to check yet")}
+								</EmptyTitle>
+								<EmptyDescription>
+									{t(
+										"drivingLicence.checks.empty.description",
+										"Intended drivers in your verifier responsibility appear here. Ask an administrator if someone is missing.",
+									)}
+								</EmptyDescription>
+							</EmptyHeader>
+						</Empty>
+					)
+				) : (
+					<Table aria-busy={worklist.isFetching} mobileLayout="stacked">
+						<TableHeader>
+							<TableRow>
+								<TableHead>{t("drivingLicence.checks.column.name", "Name")}</TableHead>
+								<TableHead>{t("drivingLicence.checks.column.status", "Status")}</TableHead>
+								<TableHead>{t("drivingLicence.checks.column.deadline", "Next deadline")}</TableHead>
+								<TableHead>{t("drivingLicence.checks.column.team", "Team")}</TableHead>
+								<TableHead>
+									<span className="sr-only">
+										{t("drivingLicence.checks.column.action", "Action")}
+									</span>
+								</TableHead>
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							{rows.map((person) => (
+								<TableRow key={person.employeeId}>
+									<TableCell className="font-medium">{person.name}</TableCell>
+									<TableCell>
+										<Badge variant={STATUS_BADGE[person.status]}>
+											{statusLabels[person.status]}
+										</Badge>
+									</TableCell>
+									<TableCell>
+										{person.nextDeadline ? (
+											<DrivingDeadlineDate
+												validThrough={person.nextDeadline.validThrough}
+												timezone={person.nextDeadline.timezone}
+											/>
+										) : person.status === "ended" ? (
+											"—"
+										) : (
+											t("drivingLicence.checks.dueNow", "Check due now")
+										)}
+									</TableCell>
+									<TableCell>{person.team ? person.team.name : "—"}</TableCell>
+									<TableCell className="text-right">
+										<Button asChild variant="outline" size="sm">
+											<Link href={drivingLicenceCheckPath(person.employeeId)}>
 												{person.canVerify
 													? t("drivingLicence.worklist.open", "Check {name}", {
 															name: person.name,
@@ -261,23 +240,15 @@ export function DrivingLicenceVerifierWorklist() {
 													: t("drivingLicence.worklist.viewEnded", "View ended record for {name}", {
 															name: person.name,
 														})}
-											</Button>
-										</TableCell>
-									</TableRow>
-								))}
-							</TableBody>
-						</Table>
-					)}
-				</CardContent>
-			</Card>
-			{selected && (
-				<DrivingLicenceCheckPanel
-					key={selected.employeeId}
-					employeeId={selected.employeeId}
-					name={selected.name}
-					canVerify={selected.canVerify}
-				/>
-			)}
-		</div>
+											</Link>
+										</Button>
+									</TableCell>
+								</TableRow>
+							))}
+						</TableBody>
+					</Table>
+				)}
+			</CardContent>
+		</Card>
 	);
 }

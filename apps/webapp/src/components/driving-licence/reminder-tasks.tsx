@@ -11,7 +11,11 @@ import {
 	getDrivingLicenceTasksAction,
 } from "@/lib/organization/driving-licence/task-actions";
 import type { DrivingLicenceTaskView } from "@/lib/organization/driving-licence/tasks";
+import { drivingLicenceCheckPath } from "@/lib/organization/driving-licence/paths";
 import { Link } from "@/navigation";
+
+const TASK_LINK_CLASS =
+	"block w-fit rounded-sm text-sm font-medium text-primary underline underline-offset-4 hover:text-primary/80 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring";
 
 function PersonalReminderItem({
 	task,
@@ -111,6 +115,9 @@ function PersonalReminderItem({
 					{error}
 				</p>
 			) : null}
+			<Link className={TASK_LINK_CLASS} href={drivingLicenceCheckPath(task.employeeId)}>
+				{t("drivingLicence.tasks.openCheck", "Open check")}
+			</Link>
 		</li>
 	);
 }
@@ -143,7 +150,7 @@ function ReassignmentItem({
 				</p>
 			) : (
 				<Link
-					className="rounded-sm text-sm font-medium text-primary underline underline-offset-4 hover:text-primary/80 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+					className={TASK_LINK_CLASS}
 					href="/settings/driving-licence#driving-verifier-settings"
 				>
 					{t("drivingLicence.tasks.assign", "Assign responsibility")}
