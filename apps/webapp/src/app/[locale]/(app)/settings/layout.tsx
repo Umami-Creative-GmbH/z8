@@ -5,6 +5,7 @@ import { SettingsContentLoading } from "@/components/shells/settings-content-loa
 import { Skeleton } from "@/components/ui/skeleton";
 import { env } from "@/env";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
+import { loadDrivingLicenceSettingsVisible } from "@/lib/organization/driving-licence/visibility";
 import { managesProjectBelowManagerTier } from "@/lib/projects/project-manager-settings-access";
 import { RouteTranslationBoundary } from "@/tolgee/route-boundary";
 
@@ -12,11 +13,16 @@ async function SettingsNavigation() {
 	const settingsRouteContext = await getCurrentSettingsRouteContext();
 	const accessTier = settingsRouteContext?.accessTier ?? "member";
 	const billingEnabled = env.BILLING_ENABLED === "true";
-	const managesProject = await managesProjectBelowManagerTier(
-		settingsRouteContext?.accessTier ?? null,
-		settingsRouteContext?.authContext.user.id ?? null,
-		settingsRouteContext?.authContext.session.activeOrganizationId ?? null,
-	);
+	const userId = settingsRouteContext?.authContext.user.id ?? null;
+	const organizationId = settingsRouteContext?.authContext.session.activeOrganizationId ?? null;
+	const [managesProject, drivingLicenceSettingsVisible] = await Promise.all([
+		managesProjectBelowManagerTier(
+			settingsRouteContext?.accessTier ?? null,
+			userId,
+			organizationId,
+		),
+		loadDrivingLicenceSettingsVisible(accessTier, userId, organizationId),
+	]);
 
 	return (
 		<aside className="w-64 border-r bg-card hidden md:block overflow-auto">
@@ -24,6 +30,7 @@ async function SettingsNavigation() {
 				accessTier={accessTier}
 				billingEnabled={billingEnabled}
 				managesProject={managesProject}
+				drivingLicenceSettingsVisible={drivingLicenceSettingsVisible}
 			/>
 		</aside>
 	);

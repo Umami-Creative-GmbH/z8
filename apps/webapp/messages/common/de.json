@@ -545,8 +545,6 @@
     "yes": "Ja"
   },
   "drivingLicence": {
-    "activate": "Führerscheinkontrolle aktivieren",
-    "activationHelp": "Die Registrierung erteilt keine Fahrberechtigung. Ein autorisierter Prüfer muss zuerst den Original-Führerschein prüfen.",
     "applyingInterval": "Wird angewendet…",
     "applyInterval": "Intervalländerung anwenden",
     "check": {
@@ -562,6 +560,7 @@
       "issueDate": "Ausstellungsdatum des Dokuments",
       "original": "Ich habe den Original-Führerschein in Anwesenheit des Mitarbeiters persönlich geprüft.",
       "privacy": "Erfassen Sie nur Dokumentdaten, geprüfte Klassen und erforderliche Fahrbeschränkungen. Geben Sie keine Führerscheinnummer, Adresse, medizinische Erklärungen oder persönliche Hintergründe ein.",
+      "recorded": "Originalprüfung erfasst",
       "restrictions": "Erforderliche Fahrbeschränkungen",
       "result": "Ergebnis",
       "saving": "Prüfung wird erfasst…",
@@ -573,14 +572,54 @@
       "title": "Original-Führerschein von {name} prüfen",
       "verifier": "Ich bestätige, dass die erfassten Angaben und individuellen Klassenergebnisse meiner Prüfung entsprechen."
     },
+    "checkPage": {
+      "back": "Prüfungen",
+      "former": "Ehemaliger Mitarbeiter",
+      "loadError": "Der Führerscheindatensatz konnte nicht geladen werden. Überprüfen Sie Ihre aktuelle Prüfverantwortung.",
+      "loading": "Führerscheindatensatz wird geladen …",
+      "notIntended": "{name} ist kein vorgesehener Fahrer. Eine Prüfung ist nur für vorgesehene Fahrer erforderlich.",
+      "title": "Führerscheinkontrolle für {name}"
+    },
+    "checks": {
+      "column": {
+        "action": "Aktion",
+        "deadline": "Nächste Frist",
+        "name": "Name",
+        "status": "Status",
+        "team": "Team"
+      },
+      "deadline": "{date} ({timezone})",
+      "dueNow": "Prüfung jetzt fällig",
+      "empty": {
+        "description": "Vorgesehene Fahrer in Ihrer Prüfverantwortung werden hier angezeigt. Wenden Sie sich an einen Administrator, falls jemand fehlt.",
+        "title": "Noch niemand zu prüfen"
+      },
+      "filter": {
+        "all": "Alle Status",
+        "status": "Status"
+      },
+      "help": "Vorgesehene Fahrer, die von Ihrer aktuellen Prüfverantwortung abgedeckt werden. Sie selbst erscheinen nie in Ihrer eigenen Liste.",
+      "loadError": "Die Liste konnte nicht geladen werden. Überprüfen Sie Ihre aktuelle Prüfverantwortung.",
+      "loading": "Vorgesehene Fahrer werden geladen …",
+      "noMatches": "Keine vorgesehenen Fahrer stimmen mit der Suche oder dem Filter überein.",
+      "search": "Nach Name suchen",
+      "status": {
+        "active": "Aktiv",
+        "ended": "Beendet",
+        "notIntended": "Kein vorgesehener Fahrer",
+        "notYetChecked": "Noch nicht geprüft",
+        "partiallyActive": "Teilweise aktiv",
+        "suspended": "Ausgesetzt"
+      },
+      "title": "Zu prüfende vorgesehene Fahrer"
+    },
     "class": {
       "active": "Berechtigt",
       "ended": "Beendet",
+      "noLongerIntended": "Beendet, da der Mitarbeiter kein vorgesehener Fahrer mehr ist. Vor einer erneuten Fahrt ist eine neue Prüfung erforderlich.",
       "overdue": "Regelprüfung überfällig. Dies ist eine organisatorische Aussetzung, keine Feststellung über den Entzug der gesetzlichen Fahrerlaubnis.",
       "recheck": "Eine erneute Originalprüfung und eine ausdrückliche Wiederherstellung sind erforderlich.",
-      "restrictions": "Fahrbeschränkungen: {restrictions}",
-      "suspended": "Ausgesetzt",
-      "validThrough": "Gültig bis {date} ({timezone})"
+      "suspended": "Ausgesetzt"
     },
     "declaration": {
       "text": "Ich bestätige, dass kein bekanntes Fahrverbot, kein Entzug oder sonstiges Hindernis dem vorgesehenen Führen von Fahrzeugen entgegensteht und dass ich die geltenden Fahrbeschränkungen erfülle."
@@ -589,11 +628,18 @@
       "uncertain": "Bei optionalen Erinnerungs-E-Mails an Sie ist der Zustellstatus ungewiss ({count}). Sie werden nicht automatisch erneut gesendet. Ihre In-App-Erinnerungen bleiben verfügbar; die E-Mail-Zustellung bestätigt keine Kenntnisnahme."
     },
     "earlierLimit": "Frühere Dokumenten-/Klassenbefristung",
-    "enroll": "Registrieren",
-    "enrollError": "Der Mitarbeiter konnte nicht registriert werden. Aktivieren Sie zuerst die Richtlinie und überprüfen Sie Ihre Zugriffsrechte.",
-    "enrollmentHelp": "Registrieren Sie Mitarbeiter, die Fahrzeuge führen sollen. Fahrzeugzuweisungen und frühere Fahrzeugnutzung begründen niemals eine Fahrberechtigung.",
-    "enrollmentTitle": "Vorgesehene Fahrer",
-    "enrollName": "{name} registrieren",
+    "ending": {
+      "assignmentConfirm": "Speichern und Berechtigungen beenden",
+      "assignmentDescription": "Diese Mitarbeiter sind beim Speichern keine vorgesehenen Fahrer mehr. Ihre Fahrberechtigungen enden sofort und für ihre Prüfdatensätze beginnt die Aufbewahrungsfrist. Vor einer erneuten Fahrt ist eine neue Prüfung erforderlich.",
+      "assignmentTitle": "Fahrberechtigungen beenden?",
+      "listLabel": "Fahrberechtigungen, die enden",
+      "teamChangeConfirm": "Fortfahren und Berechtigungen beenden",
+      "teamChangeDescription": "Diese Mitarbeiter sind keine vorgesehenen Fahrer mehr, da sich ihr primäres Team ändert. Ihre Fahrberechtigungen enden sofort und für ihre Prüfdatensätze beginnt die Aufbewahrungsfrist. Vor einer erneuten Fahrt ist eine neue Prüfung erforderlich.",
+      "teamChangeGeneric": "Diese Änderung beendet die Fahrberechtigungen für einige Mitarbeiter.",
+      "teamChangePreviewFailed": "Es konnte nicht geprüft werden, ob diese Änderung Fahrberechtigungen beendet. Versuchen Sie es erneut.",
+      "teamChangeStale": "Der Kreis der von dieser Änderung betroffenen Personen hat sich zwischenzeitlich geändert. Versuchen Sie die Änderung erneut, um sie zu überprüfen.",
+      "teamChangeTitle": "Dieser Teamwechsel beendet Fahrberechtigungen"
+    },
     "evidence": {
       "confirmation": "Prüferbestätigung mit Richtlinienversion {version} erfasst; für Fristen gilt {timezone}.",
       "declarationConfirmed": "Der Mitarbeiter hat die Erklärung persönlich abgegeben; der Prüfer hat sie zum Kontrollzeitpunkt bestätigt.",
@@ -640,6 +686,7 @@
       "loading": "Verlauf wird geladen …",
       "minimalEvidence": "Erfassen Sie nur erforderliche Fahrnachweise. Geben Sie keine Dokumentnummern, medizinischen Begründungen oder persönlichen Hintergründe ein.",
       "missingDetail": "Fehlendes Detail",
+      "noLongerIntended": "Kein vorgesehener Fahrer mehr",
       "none": "Keine erfasst",
       "openSupplement": "Originalprüfung vom {date} ergänzen",
       "original": "Originalprüfung und Bestätigung",
@@ -655,6 +702,7 @@
       "recordingError": "Erfassungsfehler",
       "reinstated": "Berechtigung nach erneuter Prüfung ausdrücklich wiedererteilt",
       "save": "Ergänzung speichern",
+      "saved": "Ergänzung gespeichert",
       "saveError": "Die Ergänzung konnte nicht gespeichert werden. Überprüfen Sie Ihre aktuelle Zuständigkeit und die Korrekturdetails.",
       "snapshot": "Richtlinie {version}; Intervall {months} Monate; Zeitzone der Frist {timezone}",
       "supplementBy": "Ergänzung durch {name}",
@@ -677,6 +725,7 @@
       "reinstating": "Wiedererteilung wird gespeichert…",
       "report": "Melden, dass ich nicht fahren kann",
       "reported": "Alle Ihre Klassenberechtigungen sind ausgesetzt. Wenden Sie sich an Ihren zuständigen Prüfer für eine neue Originalprüfung und die ausdrückliche Wiedererteilung, sobald das Hindernis behoben ist.",
+      "reportedToast": "Bericht gespeichert",
       "reportFailed": "Die Meldung konnte nicht gespeichert werden. Versuchen Sie es erneut oder wenden Sie sich umgehend an Ihren zuständigen Prüfer.",
       "reportHelp": "Melden Sie eine aktuelle Fahruntauglichkeit. Alle Klassenberechtigungen werden sofort ausgesetzt. Sie müssen keine persönlichen Gründe angeben.",
       "reporting": "Meldung wird gespeichert…",
@@ -684,6 +733,25 @@
       "selectClasses": "Aus der letzten Originalprüfung wiederzuerteilende Klassen",
       "title": "Fahruntauglich?",
       "unresolvedReport": "Ein von einem Mitarbeiter gemeldetes personenbezogenes Hindernis muss noch behoben werden."
+    },
+    "intendedDrivers": {
+      "description": "Vorgesehene Fahrer erhalten Kontrollen des Originalführerscheins, Erinnerungen und einen Fahrstatus. Niemand ist ein vorgesehener Fahrer, bis Sie ihn zuweisen. Die spezifischste Zuweisung hat Vorrang: die eigene eines Mitarbeiters vor der seines primären Teams und die eines Teams vor der der gesamten Organisation. Andere Teammitgliedschaften zählen nicht. „Nicht erforderlich“ schließt ein Team oder einen Mitarbeiter von einer übergeordneten Zuweisung aus.",
+      "error": {
+        "assignmentNotFound": "Diese Zuweisung ist nicht mehr vorhanden. Laden Sie die Seite neu.",
+        "employeeNotFound": "Dieser Mitarbeiter ist kein aktueller Mitarbeiter dieser Organisation mehr.",
+        "failed": "Die vorgesehenen Fahrer konnten nicht gespeichert werden. Versuchen Sie es erneut.",
+        "forbidden": "Nur Inhaber und Administratoren der Organisation können vorgesehene Fahrer zuweisen.",
+        "notEnabled": "Aktivieren Sie die Führerscheinkontrolle, bevor Sie vorgesehene Fahrer zuweisen.",
+        "stalePreview": "Wer von dieser Änderung betroffen ist, hat sich in der Zwischenzeit geändert. Bitte überprüfen und erneut speichern.",
+        "teamNotFound": "Dieses Team existiert nicht mehr."
+      },
+      "notRequired": "Nicht erforderlich (ausgeschlossen)",
+      "removed": "Zuweisung als vorgesehener Fahrer entfernt",
+      "required": "Erforderlich",
+      "saved": "Vorgesehene Fahrer gespeichert",
+      "targetOrganization": "Gesamte Organisation",
+      "title": "Vorgesehene Fahrer",
+      "valueLabel": "Führerscheinprüfungen"
     },
     "interval": "Intervall für Routineprüfungen (Monate)",
     "intervalAnchorHelp": "Berechnet ab der letzten erfolgreichen Prüfung jeder Klasse.",
@@ -698,16 +766,20 @@
     "justification": "Aufbewahrungsbegründung",
     "justificationHelp": "Begründen Sie, warum dieser befristete Zeitraum erforderlich ist (mindestens 10 Zeichen). Geben Sie keine privaten oder medizinischen Details an.",
     "loadError": "Die Führerscheinkontrolle konnte nicht geladen werden. Überprüfen Sie Ihren Organisationszugriff.",
-    "myDescription": "Status Ihrer Führerscheinprüfung anzeigen",
+    "myLicence": {
+      "former": "Sie sind kein vorgesehener Fahrer mehr. Ihre aufbewahrten Prüfprotokolle bleiben weiterhin zur Ansicht und zum Export verfügbar."
+    },
     "myTitle": "Meine Fahrberechtigung",
     "newInterval": "Neues Routineintervall (Monate)",
     "newlyOverdue": "Neu überfällig – wird ausgesetzt",
     "newRoutineDate": "Nächste Routineprüfung",
     "noEmployeeRecord": "In dieser Organisation ist kein Führerscheindatensatz für Mitarbeiter verfügbar.",
-    "noEmployees": "Es sind keine aktiven Mitarbeiter zum Erfassen vorhanden.",
     "noIntervalClasses": "Keine bestehenden Klassenberechtigungen erfordern eine Neuberechnung.",
     "notChecked": "Noch nicht geprüft – keine Fahrberechtigung",
-    "notEnrolled": "Nicht erfasst – keine Fahrberechtigung",
+    "off": {
+      "description": "Niemand sieht die Führerscheinkontrolle und es werden keine Erinnerungen gesendet. Vorgesehene Fahrer, Prüfberechtigungen, Prüfprotokolle und Berechtigungen bleiben erhalten und die Nachweisbereinigung wird gemäß der gespeicherten Aufbewahrungsfrist fortgeführt. Bis zur erneuten Aktivierung ist nur „Aufbewahrung & Sperren“ verfügbar.",
+      "title": "Führerscheinkontrolle ist deaktiviert"
+    },
     "operational": {
       "advisory": "Fahrberechtigung",
       "loading": "Fahrberechtigung wird geladen…",
@@ -719,7 +791,9 @@
       "title": "Fahrstatus für die Planung",
       "unavailable": "Fahrberechtigungsstatus ist nicht verfügbar."
     },
-    "policyIntro": "Original-Führerscheinprüfungen nach deutschem Standard. Wählen Sie vor der Aktivierung das Routineintervall und begründen Sie eine befristete Aufbewahrungsdauer für Nachweise.",
+    "page": {
+      "title": "Führerschein"
+    },
     "policyTitle": "Organisationsrichtlinie",
     "previewingInterval": "Auswirkungen werden geladen…",
     "previewInterval": "Auswirkungen des Intervalls in der Vorschau anzeigen",
@@ -768,23 +842,71 @@
     "saved": "Richtlinie gespeichert",
     "saveError": "Die Richtlinie konnte nicht gespeichert werden. Überprüfen Sie das Intervall, die Zeitzone, die Erinnerungen und die begründete Aufbewahrungsfrist.",
     "saving": "Speichern…",
-    "settingsDescription": "Originalprüfungen konfigurieren und vorgesehene Fahrer registrieren",
+    "settingsSummary": "Legen Sie die Prüfrichtlinie, vorgesehene Fahrer, Prüfer und die Nachweisaufbewahrung fest",
+    "settingsTabs": {
+      "cleanupDescription": "Fällige Nachweise werden automatisch gelöscht. Führen Sie die Bereinigung jetzt aus, um sie sofort zu löschen.",
+      "cleanupFinished": "Bereinigung fälliger Nachweise abgeschlossen",
+      "cleanupTitle": "Nachweisbereinigung",
+      "deadlineTimezone": "Zeitzone für Fristen",
+      "holdPlaced": "Aufbewahrungssperre aktiviert",
+      "holdReleased": "Aufbewahrungssperre aufgehoben",
+      "holdsColumn": "Offene Sperren",
+      "holdsTitle": "Aufbewahrungssperren",
+      "impactClass": "Mitarbeiter und Klasse",
+      "impactResult": "Ergebnis",
+      "impactTimezone": "Zeitzone",
+      "intendedDrivers": "Vorgesehene Fahrer",
+      "intendedDriversDescription": "Legen Sie fest, wer Prüfungen des Original-Führerscheins benötigt: die gesamte Organisation, ein primäres Team oder ein einzelner Mitarbeiter.",
+      "intendedDriversEmpty": {
+        "description": "Legen Sie „Erforderlich“ für die gesamte Organisation, für ein primäres Team oder für einen einzelnen Mitarbeiter fest. Die spezifischste Auswahl hat Vorrang, und „Nicht erforderlich“ schließt ein Team oder einen Mitarbeiter von einer übergeordneten Auswahl aus. Nur vorgesehene Fahrer erhalten Prüfungen, Erinnerungen und einen Fahrstatus.",
+        "title": "Bisher ist niemand als vorgesehener Fahrer eingetragen"
+      },
+      "policy": "Richtlinie",
+      "policyDescription": "Das routinemäßige Prüfintervall, die Vorlaufzeiten für Erinnerungen und die Aufbewahrungsfrist für Nachweise.",
+      "reassignment": {
+        "description": "Deren Prüfungen und Erinnerungen haben keinen Prüfer. Die Zuweisung von Zuständigkeiten gewährt Ihnen keine Prüfrechte und verlängert keine Frist.",
+        "title": "Mitarbeiter ohne zuständigen Prüfer"
+      },
+      "remindersDescription": "Wann Erinnerungen vor einer Frist versendet werden und wie lange Nachweise aufbewahrt werden, sobald sie keine Berechtigung mehr begründen.",
+      "remindersTitle": "Erinnerungen und Aufbewahrung",
+      "reportColumn": "Bericht",
+      "retention": "Aufbewahrung & Sperren",
+      "retentionColumn": "Aufbewahrung",
+      "retentionDescription": "Aufbewahrte Prüfprotokolle, Aufbewahrungssperren und Nachweisbereinigung.",
+      "scheduleTitle": "Prüfzeitplan",
+      "verifiers": "Prüfer",
+      "verifiersDescription": "Wer wessen Führerschein prüft, optional bis zu einem bestimmten Datum."
+    },
     "status": {
       "active": "Fahrberechtigung aktiv",
       "ended": "Fahrberechtigung beendet",
       "explanation": "Die betriebliche Fahrberechtigung umfasst die aufgeführten Klassen und Beschränkungen. Sie begründet keine Eignung für jedes Fahrzeug. Sie können die Arbeitszeit und die tatsächliche Fahrzeugnutzung weiterhin erfassen.",
+      "notIntended": "Kein vorgesehener Fahrer – keine Fahrberechtigung",
       "partial": "Einige Führerscheinklassen sind ausgesetzt",
       "suspended": "Fahrberechtigung ausgesetzt"
     },
     "staysCurrent": "Bleibt aktuell",
     "staysSuspended": "Bleibt ausgesetzt",
-    "subtitle": "Konfigurieren Sie Originalprüfungen und registrieren Sie vorgesehene Fahrer. Die Fahrberechtigung gilt spezifisch für geprüfte Klassen und Beschränkungen.",
+    "summary": {
+      "class": "Klasse",
+      "empty": "Es ist noch keine Klasse freigegeben. Ein Prüfer erfasst Ihre erste Originalprüfung.",
+      "emptyForVerifier": "Es ist noch keine Klasse freigegeben.",
+      "personWide": "Ein Hinderungsgrund sperrt das Fahren in allen Klassen, bis ein Prüfer dies wieder aufhebt. Eine neue Prüfung allein hebt ihn nicht auf.",
+      "restrictions": "Einschränkungen",
+      "status": "Status",
+      "validThrough": "Gültig bis"
+    },
+    "switchOnFirst": "Aktivieren Sie die Führerscheinkontrolle auf der Funktionskarte in den Organisationseinstellungen. Durch die Einrichtung dort wird die erste Richtlinie gespeichert.",
+    "tabs": {
+      "checks": "Prüfungen",
+      "myLicence": "Mein Führerschein",
+      "planning": "Planung"
+    },
     "tasks": {
       "assign": "Zuständigkeit zuweisen",
-      "assigned": "Zuständigkeit zugewiesen",
-      "assignmentBoundary": "Diese Aufgabe gewährt keine Prüfrechte und verlängert keine Frist.",
       "class": "Klasse {classCode}",
       "complete": "Persönliche Erinnerung als erledigt markieren",
+      "completedToast": "Persönliche Erinnerung als erledigt markiert",
       "completeError": "Diese Aufgabe konnte nicht abgeschlossen werden. Überprüfen Sie Ihre aktuelle Prüferzuständigkeit.",
       "completing": "Wird abgeschlossen…",
       "deadline": "Originalprüfung fällig",
@@ -793,21 +915,16 @@
       "loadError": "Führerscheinaufgaben konnten nicht geladen werden. Überprüfen Sie Ihre Zugriffsrechte für die Organisation.",
       "loading": "Führerscheinaufgaben werden geladen…",
       "noDeliveryReceipt": "Der Aufgabenabschluss bestätigt weder die direkte Zustellung noch die Kenntnisnahme durch den Mitarbeiter. Es wird keine Frist verlängert.",
-      "noVerifier": "Für diesen Mitarbeiter ist kein verfügbarer Prüfer zuständig.",
+      "openCheck": "Prüfung öffnen",
       "personalCompleted": "Persönliche Erinnerung erledigt",
       "personalTitle": "Aufgaben für persönliche Erinnerungen",
-      "reassignmentTitle": "Aufgaben zur Prüferzuständigkeit",
       "refresh": "Zuständigkeit erneut prüfen",
       "suspension": "Fahrberechtigung ausgesetzt",
       "validThrough": "Gültig bis {date} in der für die Frist der Prüfung gespeicherten Zeitzone"
     },
-    "timezone": "Feste Kalender-Zeitzone",
     "title": "Führerscheinkontrolle",
-    "unnamedEmployee": "Mitarbeiter",
     "worklist": {
-      "help": "Hier werden nur registrierte Mitarbeiter angezeigt, für die Sie aktuell als Prüfer zuständig sind.",
       "open": "{name} prüfen",
-      "title": "Ihre Arbeitsliste für Originalprüfungen",
       "viewEnded": "Beendeten Datensatz für {name} anzeigen"
     },
     "zoneFixedError": "Die Kalender-Zeitzone ist festgelegt. Bestehende Fristen müssen ihre ursprüngliche Bedeutung behalten.",
@@ -999,6 +1116,7 @@
     "calendar": "Kalender",
     "compliance": "Compliance",
     "dashboard": "Dashboard",
+    "driving-licence": "Führerschein",
     "feedback": "Feedback",
     "finance": "Finanzen",
     "financeAwaiting": "{count, plural, one {# Ausgabe wartet auf Erstattung} other {# Ausgaben warten auf Erstattung}}",
@@ -1185,6 +1303,10 @@
       "complianceExceptionRequested": {
         "message": "{employeeName} hat eine Ausnahme ({exceptionType, select, rest_period {Ruhezeit} overtime_daily {tägliche Überstunden} overtime_weekly {wöchentliche Überstunden} overtime_monthly {monatliche Überstunden} other {Compliance}}) beantragt: \"{reason}\"",
         "title": "Compliance-Ausnahme beantragt"
+      },
+      "drivingAuthorizationEnded": {
+        "message": "{employeeName} ist kein vorgesehener Fahrer mehr, daher ist die Fahrberechtigung ({classes}) abgelaufen. Für ein erneutes Fahren ist eine neue Prüfung erforderlich.",
+        "title": "Fahrberechtigung beendet"
       },
       "drivingAuthorizationSuspended": {
         "message": "Die Fahrberechtigung für {employeeName} ({classes}) ist ausgesetzt. Vor dem Fahren ist eine erneute Prüfung und eine ausdrückliche Wiederinkraftsetzung erforderlich.",
@@ -1681,7 +1803,7 @@
         "approval_cover_return_summary": "Von Ihrer Vertretung entschieden",
         "approval_cover_started": "Abwesenheitsvertretung hat begonnen",
         "break_due_reminder": "Pause fällig",
-        "driving_authorization_suspended": "Fahrberechtigung ausgesetzt",
+        "driving_authorization_suspended_or_ended": "Fahrberechtigung ausgesetzt oder beendet",
         "driving_details_missing_reminder": "Fahrtdetails fehlen",
         "driving_licence_reminder": "Führerscheinprüfung fällig",
         "forgotten_clock_out_reminder": "Vergessenes Ausstempeln",
@@ -2140,6 +2262,8 @@
         },
         "drivingLicence": {
           "actor_name": "Der Name der Person, die diese Aktion ausgeführt hat; leer bei einer Systemaktion oder nicht verfügbarem Akteur.",
+          "assigned_at": "Zeitpunkt (UTC), zu dem Ihre eigene Zuweisung als vorgesehener Fahrer erstmals gespeichert wurde.",
+          "assigned_by": "Der Name der Person, die Ihre eigene Zuweisung als vorgesehener Fahrer erstmals gespeichert hat.",
           "authorization_events": {
             "summary": "Ihre Fahrberechtigungshistorie, einschließlich Meldungen von Hinderungsgründen, Klärungen und ausdrücklicher Wiederinkraftsetzungen."
           },
@@ -2178,7 +2302,6 @@
           "employee_ids": "Die opaken Mitarbeiter-IDs in Ihrem spezifischen Prüferbereich, codiert als JSON-Array.",
           "employment_period_id": "Der Beschäftigungszeitraum, zu dem dieser Nachweis gehört; leer bei Altbeschäftigungen.",
           "enabled": "Gibt an, ob die referenzierte Prüfrichtlinie der Organisation aktiviert war.",
-          "enrolled_at": "Wann Sie für die Führerscheinprüfungen der Organisation angemeldet wurden.",
           "expires_at": "Der UTC-Zeitpunkt, an dem diese Autorisierung oder Prüferberechtigung abläuft.",
           "expiry_date": "Das bei der Prüfung erfasste Ablaufdatum der Klasse; leer, wenn keines erfasst wurde.",
           "failure_scope": "Gibt an, ob eine nicht erfolgreiche Prüfung Klassen, das Dokument oder die Person betraf.",
@@ -2190,6 +2313,9 @@
           "impedimentReports": {
             "summary": "Ihre minimalen Meldungen über Fahrhindernisse und deren ausdrückliche Beilegung, ohne medizinische Erklärungen oder private Gründe."
           },
+          "intendedDriverAssignment": {
+            "summary": "Ihre eigene Zuweisung als vorgesehener Fahrer für die Führerscheinkontrollen der Organisation. Zuweisungen über die Organisation oder Teams, die Sie ebenfalls betreffen, werden nicht aufgeführt."
+          },
           "interval_months": "Die Anzahl der Kalendermonate zwischen Routineprüfungen gemäß dieser Richtlinie.",
           "kind": "Das Autorisierungsereignis, die Aussetzung oder die Aufgabenart; Aufgaben sind personal_reminder oder reassignment.",
           "last_successful_at": "Wann diese Klasse zuletzt eine erfolgreiche Originalprüfung bestanden hat.",
@@ -2199,9 +2325,6 @@
           "notificationId": "Die mit dieser Erinnerung verknüpfte App-Benachrichtigung; leer, wenn keine erstellt wurde.",
           "occasionKey": "Das Vorkommnis, das diese Erinnerung oder Aufgabe betrifft; es identifiziert die Anstellung, die Klassenfrist oder die Aussetzung, ohne die Prüfung zu kopieren.",
           "original_inspected": "Gibt an, ob die prüfende Person die persönliche Prüfung des Originaldokuments bestätigt hat.",
-          "participation": {
-            "summary": "Ihre Teilnahme an den Führerscheinprüfungen der Organisation."
-          },
           "placedAt": "Wann diese Aufbewahrungspflicht verhängt wurde, als UTC-Zeitpunkt.",
           "placedBy": "Der Name des Administrators, der diese Fall-Aufbewahrungssperre verhängt hat.",
           "policies": {
@@ -2227,6 +2350,7 @@
           },
           "reportedAt": "Wann Sie ein personenweites Fahrhindernis gemeldet haben, als UTC-Zeitpunkt.",
           "reporterName": "Der Name der Person, die das Hindernis gemeldet hat.",
+          "required": "Gibt an, ob Ihre eigene Zuweisung Sie zu einem vorgesehenen Fahrer macht (wahr) oder Sie von einer Team- oder Organisationszuweisung ausschließt (falsch).",
           "resolvedAt": "Wann ein Prüfer diese Meldung explizit gelöst hat; leer bei einer ungelösten Meldung.",
           "resolvedBy": "Der Name des Prüfers, der diese Meldung explizit gelöst hat.",
           "restrictions": "Die relevanten Fahrbeschränkungen, die für diese Klasse erfasst wurden.",
@@ -2253,6 +2377,8 @@
             "summary": "Ihr aktueller Datensatz zur personenweiten oder dokumentweiten Aussetzung der Fahrberechtigung."
           },
           "team_ids": "Die opaken Team-IDs in Ihrem spezifischen Prüferbereich, codiert als JSON-Array.",
+          "updated_at": "Zeitpunkt (UTC), zu dem Ihre eigene Zuweisung als vorgesehener Fahrer zuletzt geändert wurde.",
+          "updated_by": "Der Name der Person, die Ihre eigene Zuweisung als vorgesehener Fahrer zuletzt geändert hat.",
           "valid_through": "Der früheste anwendbare letzte Kalendertag dieser Klassenfreigabe.",
           "value": "Der durch diese Ergänzung bereitgestellte Wert; leer bedeutet, dass der optionale Klassenablauf gelöscht wurde.",
           "verifier_confirmed": "Gibt an, ob der Prüfer den Prüfungsdatensatz bestätigt hat.",

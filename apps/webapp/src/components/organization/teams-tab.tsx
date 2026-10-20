@@ -5,8 +5,12 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { deleteTeam } from "@/app/[locale]/(app)/settings/teams/actions";
+import {
+	deleteTeam,
+	previewTeamDeletionDrivingImpact,
+} from "@/app/[locale]/(app)/settings/teams/actions";
 import type { ScopedTeam } from "@/app/[locale]/(app)/settings/teams/team-scope";
+import { useDrivingLicenceTeamChangeWarning } from "@/components/driving-licence/ending-confirmation";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -288,6 +292,8 @@ export function TeamsTab({
 
 	// Selected team
 	const [selectedTeam, setSelectedTeam] = useState<ScopedTeam | null>(null);
+	const { confirmTeamChange, teamChangeError, drivingLicenceWarning } =
+		useDrivingLicenceTeamChangeWarning();
 
 	const activeTeamPatches =
 		teamPatches.baseTeams === initialTeams
@@ -363,8 +369,9 @@ export function TeamsTab({
 
 	// Delete mutation with optimistic update
 	const deleteMutation = useMutation({
-		mutationFn: (teamId: string) => deleteTeam(teamId),
-		onMutate: async (teamId) => {
+		mutationFn: ({ teamId, previewToken }: { teamId: string; previewToken: string }) =>
+			deleteTeam(teamId, { drivingLicencePreviewToken: previewToken }),
+		onMutate: async ({ teamId }) => {
 			const previousTeamPatches = teamPatches;
 			setTeamPatches((previous) => {
 				const patches =
@@ -395,8 +402,10 @@ export function TeamsTab({
 				setTeamPatches(context.previousTeamPatches);
 			}
 			toast.error(
-				result.error ||
+				teamChangeError(
+					result,
 					t("organization.teams.deleteError", "Failed to delete team"),
+				),
 			);
 		},
 		onError: (_error, _teamId, context) => {
@@ -467,9 +476,13 @@ export function TeamsTab({
 		setDeleteDialogOpen(true);
 	};
 
-	const handleDeleteConfirm = () => {
+	// Deleting a team can clear primary teams and end driving authorizations: warn first (#1425).
+	const handleDeleteConfirm = async () => {
 		if (!selectedTeam) return;
-		deleteMutation.mutate(selectedTeam.id);
+		const teamId = selectedTeam.id;
+		const previewToken = await confirmTeamChange(() => previewTeamDeletionDrivingImpact(teamId));
+		if (previewToken === null) return;
+		deleteMutation.mutate({ teamId, previewToken });
 	};
 
 	// Handle manage members
@@ -512,9 +525,10 @@ export function TeamsTab({
 				onDeleteOpenChange={setDeleteDialogOpen}
 				onCreated={handleTeamCreated}
 				onUpdated={handleTeamUpdated}
-				onDeleteConfirm={handleDeleteConfirm}
+				onDeleteConfirm={() => void handleDeleteConfirm()}
 				t={t}
 			/>
+			{drivingLicenceWarning}
 		</div>
 	);
 }

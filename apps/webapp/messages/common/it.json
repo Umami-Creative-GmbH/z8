@@ -545,8 +545,6 @@
     "yes": "Sì"
   },
   "drivingLicence": {
-    "activate": "Attiva controllo della patente di guida",
-    "activationHelp": "L'iscrizione non concede l'autorizzazione alla guida. Un verificatore autorizzato deve prima controllare la patente originale.",
     "applyingInterval": "Applicazione in corso…",
     "applyInterval": "Applica modifica dell'intervallo",
     "check": {
@@ -562,6 +560,7 @@
       "issueDate": "Data di rilascio del documento",
       "original": "Ho verificato personalmente la patente di guida originale alla presenza del dipendente.",
       "privacy": "Registra solo le date del documento, le categorie verificate e le limitazioni alla guida necessarie. Non inserire il numero della patente, l'indirizzo, motivazioni mediche o informazioni personali.",
+      "recorded": "Verifica originale registrata",
       "restrictions": "Limitazioni alla guida necessarie",
       "result": "Risultato",
       "saving": "Registrazione del controllo in corso…",
@@ -573,14 +572,54 @@
       "title": "Verifica la patente originale di {name}",
       "verifier": "Confermo che i dati registrati e i risultati delle singole categorie riflettono la mia verifica."
     },
+    "checkPage": {
+      "back": "Verifiche",
+      "former": "Ex dipendente",
+      "loadError": "Impossibile caricare il record della patente di guida. Controlla la tua attuale responsabilità di verifica.",
+      "loading": "Caricamento del record della patente di guida in corso…",
+      "notIntended": "{name} non è un conducente designato. La verifica è necessaria solo per i conducenti designati.",
+      "title": "Verifica della patente di guida per {name}"
+    },
+    "checks": {
+      "column": {
+        "action": "Azione",
+        "deadline": "Prossima scadenza",
+        "name": "Nome",
+        "status": "Stato",
+        "team": "Team"
+      },
+      "deadline": "{date} ({timezone})",
+      "dueNow": "Verifica da effettuare ora",
+      "empty": {
+        "description": "I conducenti designati sotto la tua responsabilità di verifica compaiono qui. Rivolgiti a un amministratore se manca qualcuno.",
+        "title": "Ancora nessuno da verificare"
+      },
+      "filter": {
+        "all": "Tutti gli stati",
+        "status": "Stato"
+      },
+      "help": "Conducenti designati coperti dalla tua attuale responsabilità di verifica. Il tuo nominativo non compare mai nel tuo elenco.",
+      "loadError": "Impossibile caricare l'elenco. Controlla la tua attuale responsabilità di verifica.",
+      "loading": "Caricamento dei conducenti designati in corso…",
+      "noMatches": "Nessun conducente designato corrisponde alla ricerca o al filtro.",
+      "search": "Cerca per nome",
+      "status": {
+        "active": "Attivo",
+        "ended": "Terminato",
+        "notIntended": "Non è un conducente designato",
+        "notYetChecked": "Non ancora verificato",
+        "partiallyActive": "Parzialmente attivo",
+        "suspended": "Sospeso"
+      },
+      "title": "Conducenti designati da verificare"
+    },
     "class": {
       "active": "Autorizzato",
       "ended": "Terminato",
+      "noLongerIntended": "Terminato perché il dipendente non è più un conducente designato. Per guidare di nuovo è necessaria una nuova verifica.",
       "overdue": "Controllo periodico scaduto. Si tratta di una sospensione organizzativa, non di una dichiarazione di revoca dell'abilitazione alla guida per legge.",
       "recheck": "Sono necessari un nuovo controllo dell'originale e una decisione esplicita di reintegro.",
-      "restrictions": "Limitazioni alla guida: {restrictions}",
-      "suspended": "Sospeso",
-      "validThrough": "Valido fino al {date} ({timezone})"
+      "suspended": "Sospeso"
     },
     "declaration": {
       "text": "Confermo che nessun divieto di guida, revoca o altro impedimento noto ostacola la guida prevista e che rispetto le limitazioni alla guida applicabili."
@@ -589,11 +628,18 @@
       "uncertain": "Le e-mail di promemoria facoltative a te indirizzate hanno un esito di recapito incerto ({count}). Non verranno inviate nuovamente in modo automatico. I promemoria nell'app rimangono disponibili; la consegna dell'e-mail non conferma la lettura."
     },
     "earlierLimit": "Limite documento/categoria precedente",
-    "enroll": "Iscrivi",
-    "enrollError": "Impossibile iscrivere il dipendente. Attiva prima la policy e verifica il tuo accesso.",
-    "enrollmentHelp": "Iscrivi i dipendenti destinati alla guida. Le assegnazioni del veicolo e l'utilizzo precedente del veicolo non generano mai un'autorizzazione.",
-    "enrollmentTitle": "Conducenti designati",
-    "enrollName": "Iscrivi {name}",
+    "ending": {
+      "assignmentConfirm": "Salva e termina autorizzazioni",
+      "assignmentDescription": "Al salvataggio, questi dipendenti non saranno più conducenti designati. Le loro autorizzazioni alla guida termineranno immediatamente e per i relativi record di verifica inizierà il periodo di conservazione. Per guidare di nuovo sarà necessaria una nuova verifica.",
+      "assignmentTitle": "Terminare le autorizzazioni alla guida?",
+      "listLabel": "Autorizzazioni alla guida che terminano",
+      "teamChangeConfirm": "Continua e termina autorizzazioni",
+      "teamChangeDescription": "Questi dipendenti non saranno più conducenti designati a causa del cambio del loro team principale. Le loro autorizzazioni alla guida termineranno immediatamente e per i relativi record di verifica inizierà il periodo di conservazione. Per guidare di nuovo sarà necessaria una nuova verifica.",
+      "teamChangeGeneric": "Questa modifica termina le autorizzazioni alla guida per alcuni dipendenti.",
+      "teamChangePreviewFailed": "Impossibile verificare se questa modifica termina le autorizzazioni alla guida. Riprova.",
+      "teamChangeStale": "I dipendenti interessati da questa modifica sono cambiati nel frattempo. Riprova ad applicare la modifica per riesaminarla.",
+      "teamChangeTitle": "Questa modifica del team termina le autorizzazioni alla guida"
+    },
     "evidence": {
       "confirmation": "Conferma del verificatore registrata con la versione della policy {version}; le scadenze utilizzano il fuso orario {timezone}.",
       "declarationConfirmed": "Il dipendente ha rilasciato la dichiarazione di persona; il verificatore l'ha attestata al momento del controllo.",
@@ -640,6 +686,7 @@
       "loading": "Caricamento della cronologia in corso…",
       "minimalEvidence": "Registra solo le prove di guida necessarie. Non inserire numeri di documento, spiegazioni mediche o informazioni personali.",
       "missingDetail": "Dettaglio mancante",
+      "noLongerIntended": "Non più un conducente designato",
       "none": "Nessuna registrazione",
       "openSupplement": "Integra controllo originale del {date}",
       "original": "Controllo originale e conferma",
@@ -655,6 +702,7 @@
       "recordingError": "Errore di registrazione",
       "reinstated": "Autorizzazione esplicitamente ripristinata dopo un nuovo controllo",
       "save": "Salva integrazione",
+      "saved": "Integrazione salvata",
       "saveError": "Impossibile salvare l'integrazione. Verifica la tua responsabilità attuale e i dettagli della correzione.",
       "snapshot": "Criterio {version}; intervallo {months} mesi; fuso orario di scadenza {timezone}",
       "supplementBy": "Integrazione da parte di {name}",
@@ -677,6 +725,7 @@
       "reinstating": "Salvataggio del ripristino in corso…",
       "report": "Segnala che non posso guidare",
       "reported": "Tutte le autorizzazioni per le tue categorie sono sospese. Contatta il verificatore responsabile per un nuovo controllo originale e il ripristino esplicito una volta risolto l'impedimento.",
+      "reportedToast": "Report salvato",
       "reportFailed": "Impossibile salvare la segnalazione. Riprova o contatta immediatamente il verificatore responsabile.",
       "reportHelp": "Segnala l'attuale impossibilità di guidare. Tutte le autorizzazioni per le categorie saranno sospese immediatamente. Non è necessario fornire motivazioni personali.",
       "reporting": "Salvataggio della segnalazione in corso…",
@@ -684,6 +733,25 @@
       "selectClasses": "Categorie da ripristinare dall'ultimo controllo originale",
       "title": "Impossibilitato a guidare?",
       "unresolvedReport": "Un impedimento a livello di persona segnalato dal dipendente richiede ancora una risoluzione."
+    },
+    "intendedDrivers": {
+      "description": "I conducenti designati ricevono verifiche della patente originale, promemoria e uno stato di guida. Nessuno è un conducente designato finché non viene assegnato come tale. L'assegnazione più specifica prevale: quella individuale del dipendente prevale su quella del suo team principale, e quella del team prevale su quella dell'intera organizzazione. L'appartenenza ad altri team non viene considerata. L'opzione Non richiesto esclude un team o un dipendente da un'assegnazione più ampia.",
+      "error": {
+        "assignmentNotFound": "Questa assegnazione non esiste più. Ricarica la pagina.",
+        "employeeNotFound": "Questo collaboratore non è più un dipendente attuale di questa organizzazione.",
+        "failed": "Impossibile salvare i conducenti designati. Riprova.",
+        "forbidden": "Solo i proprietari e gli amministratori dell'organizzazione possono assegnare i conducenti designati.",
+        "notEnabled": "Attiva il controllo della patente di guida prima di assegnare i conducenti designati.",
+        "stalePreview": "Nel frattempo le persone interessate da questa modifica sono cambiate. Rivedi e salva di nuovo.",
+        "teamNotFound": "Quel team non esiste più."
+      },
+      "notRequired": "Non richiesto (escluso)",
+      "removed": "Assegnazione conducente designato rimossa",
+      "required": "Richiesto",
+      "saved": "Conducenti designati salvati",
+      "targetOrganization": "Intera organizzazione",
+      "title": "Conducenti designati",
+      "valueLabel": "Controlli della patente di guida"
     },
     "interval": "Intervallo di controllo di routine (mesi)",
     "intervalAnchorHelp": "Calcolato a partire dall'ultimo controllo superato di ciascuna categoria.",
@@ -698,16 +766,20 @@
     "justification": "Motivazione della conservazione",
     "justificationHelp": "Spiega perché questo periodo definito è necessario (almeno 10 caratteri). Non includere dettagli privati o medici.",
     "loadError": "Impossibile caricare il controllo della patente di guida. Verifica l'accesso della tua organizzazione.",
-    "myDescription": "Visualizza lo stato di verifica della tua patente di guida",
+    "myLicence": {
+      "former": "Non sei più un conducente designato. I registri dei controlli conservati restano disponibili per la consultazione e l'esportazione."
+    },
     "myTitle": "La mia autorizzazione alla guida",
     "newInterval": "Nuovo intervallo di routine (mesi)",
     "newlyOverdue": "Scaduto di recente — verrà sospeso",
     "newRoutineDate": "Prossimo controllo di routine",
     "noEmployeeRecord": "Nessun record di patente di guida dei dipendenti disponibile in questa organizzazione.",
-    "noEmployees": "Non ci sono dipendenti attivi da registrare.",
     "noIntervalClasses": "Nessuna autorizzazione di categoria esistente richiede il ricalcolo.",
     "notChecked": "Non ancora verificato — nessuna autorizzazione alla guida",
-    "notEnrolled": "Non registrato — nessuna autorizzazione alla guida",
+    "off": {
+      "description": "Nessuno visualizza il controllo delle patenti di guida e non viene inviato alcun promemoria. I conducenti designati, le autorizzazioni dei verificatori, i registri dei controlli e le autorizzazioni vengono mantenuti, e l'eliminazione delle prove prosegue in base al periodo di conservazione salvato. Fino alla riattivazione, sarà disponibile solo Conservazione e blocchi.",
+      "title": "Il controllo della patente di guida è disattivato"
+    },
     "operational": {
       "advisory": "Autorizzazione alla guida",
       "loading": "Caricamento autorizzazione alla guida in corso…",
@@ -719,7 +791,9 @@
       "title": "Stato di guida per la pianificazione",
       "unavailable": "Lo stato dell'autorizzazione alla guida non è disponibile."
     },
-    "policyIntro": "Controlli prioritari per la patente originale in Germania. Scegli l'intervallo di routine e motiva un periodo definito di conservazione delle prove prima dell'attivazione.",
+    "page": {
+      "title": "Patente di guida"
+    },
     "policyTitle": "Criteri dell'organizzazione",
     "previewingInterval": "Caricamento dell'impatto in corso…",
     "previewInterval": "Anteprima dell'impatto dell'intervallo",
@@ -768,23 +842,71 @@
     "saved": "Criteri salvati",
     "saveError": "Impossibile salvare i criteri. Verifica l'intervallo, il fuso orario, i promemoria e il periodo di conservazione giustificato.",
     "saving": "Salvataggio in corso…",
-    "settingsDescription": "Configura i controlli dell'originale e registra i conducenti previsti",
+    "settingsSummary": "Imposta la politica di controllo, i conducenti designati, i verificatori e la conservazione delle prove",
+    "settingsTabs": {
+      "cleanupDescription": "Le prove scadute vengono eliminate automaticamente. Esegui la pulizia adesso per eliminarle subito.",
+      "cleanupFinished": "Pulizia delle prove scadute completata",
+      "cleanupTitle": "Pulizia delle prove",
+      "deadlineTimezone": "Fuso orario della scadenza",
+      "holdPlaced": "Blocco legale applicato",
+      "holdReleased": "Blocco legale revocato",
+      "holdsColumn": "Blocchi aperti",
+      "holdsTitle": "Blocchi legali",
+      "impactClass": "Dipendente e categoria",
+      "impactResult": "Risultato",
+      "impactTimezone": "Fuso orario",
+      "intendedDrivers": "Conducenti designati",
+      "intendedDriversDescription": "Decidi chi necessita dei controlli della patente originale: l'intera organizzazione, un team principale o un singolo dipendente.",
+      "intendedDriversEmpty": {
+        "description": "Imposta Richiesto per l'intera organizzazione, per un team principale o per un singolo dipendente. La scelta più specifica prevale, e Non richiesto esclude un team o un dipendente da un livello più ampio. Solo i conducenti designati ricevono controlli, promemoria e uno stato di guida.",
+        "title": "Nessuno è ancora un conducente designato"
+      },
+      "policy": "Politica",
+      "policyDescription": "L'intervallo dei controlli di routine, i tempi di preavviso dei promemoria e il periodo di conservazione delle prove.",
+      "reassignment": {
+        "description": "I loro controlli e promemoria non hanno alcun verificatore. L'assegnazione della responsabilità non ti concede diritti di ispezione e non proroga alcuna scadenza.",
+        "title": "Dipendenti senza un verificatore responsabile"
+      },
+      "remindersDescription": "Quando inviare i promemoria prima di una scadenza e per quanto tempo conservare le prove una volta che non supportano più un'autorizzazione.",
+      "remindersTitle": "Promemoria e conservazione",
+      "reportColumn": "Report",
+      "retention": "Conservazione e blocchi",
+      "retentionColumn": "Conservazione",
+      "retentionDescription": "Registri dei controlli conservati, blocchi legali e pulizia delle prove.",
+      "scheduleTitle": "Pianificazione controlli",
+      "verifiers": "Verificatori",
+      "verifiersDescription": "Chi controlla la patente di chi, facoltativamente fino a una data prestabilita."
+    },
     "status": {
       "active": "Autorizzazione alla guida attiva",
       "ended": "Autorizzazione alla guida terminata",
       "explanation": "L'autorizzazione aziendale alla guida copre le categorie e le limitazioni elencate. Non attesta l'idoneità per tutti i veicoli. Puoi continuare a registrare l'orario di lavoro e l'effettivo utilizzo dei veicoli.",
+      "notIntended": "Non è un conducente designato — nessuna autorizzazione alla guida",
       "partial": "Alcune categorie di guida sono sospese",
       "suspended": "Autorizzazione alla guida sospesa"
     },
     "staysCurrent": "Rimane valido",
     "staysSuspended": "Rimane sospesa",
-    "subtitle": "Configura i controlli dell'originale e registra i conducenti previsti. L'autorizzazione alla guida è specifica per le categorie e le limitazioni verificate.",
+    "summary": {
+      "class": "Categoria",
+      "empty": "Nessuna categoria è ancora autorizzata. Un verificatore registrerà il tuo primo controllo originale.",
+      "emptyForVerifier": "Nessuna categoria è ancora autorizzata.",
+      "personWide": "Un impedimento sospende la guida per tutte le categorie finché un verificatore non la ripristina. Un nuovo controllo da solo non lo revoca.",
+      "restrictions": "Limitazioni",
+      "status": "Stato",
+      "validThrough": "Valido fino al"
+    },
+    "switchOnFirst": "Attiva il controllo della patente di guida nella scheda Funzionalità nelle impostazioni dell'organizzazione. La configurazione da questa sezione salverà la prima policy.",
+    "tabs": {
+      "checks": "Controlli",
+      "myLicence": "La mia patente",
+      "planning": "Pianificazione"
+    },
     "tasks": {
       "assign": "Assegna responsabilità",
-      "assigned": "Responsabilità assegnata",
-      "assignmentBoundary": "Questa attività non concede diritti di ispezione e non proroga alcuna scadenza.",
       "class": "Categoria {classCode}",
       "complete": "Segna promemoria personale come completato",
+      "completedToast": "Promemoria personale contrassegnato come completato",
       "completeError": "Impossibile completare questa attività. Verifica la tua attuale responsabilità come verificatore.",
       "completing": "Completamento in corso…",
       "deadline": "Controllo dell'originale da eseguire",
@@ -793,21 +915,16 @@
       "loadError": "Impossibile caricare le attività relative alla patente di guida. Verifica i tuoi permessi di accesso per l'organizzazione.",
       "loading": "Caricamento delle attività relative alla patente di guida…",
       "noDeliveryReceipt": "Il completamento dell'attività non conferma l'avvenuta consegna diretta o la lettura da parte del dipendente. Nessuna scadenza viene prorogata.",
-      "noVerifier": "Nessun verificatore disponibile è responsabile di questo dipendente.",
+      "openCheck": "Apri controllo",
       "personalCompleted": "Promemoria personale completato",
       "personalTitle": "Attività di promemoria personale",
-      "reassignmentTitle": "Attività di responsabilità del verificatore",
       "refresh": "Riverifica responsabilità",
       "suspension": "Autorizzazione alla guida sospesa",
       "validThrough": "Valido fino al {date} nel fuso orario salvato per la scadenza del controllo"
     },
-    "timezone": "Fuso orario fisso del calendario",
     "title": "Controllo patente di guida",
-    "unnamedEmployee": "Dipendente",
     "worklist": {
-      "help": "Qui compaiono solo i dipendenti registrati che rientrano nella tua attuale responsabilità di verifica.",
       "open": "Verifica {name}",
-      "title": "La tua lista di lavoro per il controllo originale",
       "viewEnded": "Visualizza record concluso per {name}"
     },
     "zoneFixedError": "Il fuso orario del calendario è fisso. Le scadenze esistenti devono mantenere il loro significato originale.",
@@ -999,6 +1116,7 @@
     "calendar": "Calendario",
     "compliance": "Conformità",
     "dashboard": "Dashboard",
+    "driving-licence": "Patente di guida",
     "feedback": "Feedback",
     "finance": "Finanza",
     "financeAwaiting": "{count, plural, one {# spesa in attesa di rimborso} other {# spese in attesa di rimborso}}",
@@ -1185,6 +1303,10 @@
       "complianceExceptionRequested": {
         "message": "{employeeName} ha richiesto un'eccezione per {exceptionType, select, rest_period {periodo di riposo} overtime_daily {straordinario giornaliero} overtime_weekly {straordinario settimanale} overtime_monthly {straordinario mensile} other {conformità}}: \"{reason}\"",
         "title": "Richiesta eccezione di conformità"
+      },
+      "drivingAuthorizationEnded": {
+        "message": "{employeeName} non è più un conducente designato, pertanto l'autorizzazione alla guida ({classes}) è terminata. Per guidare di nuovo è necessario un nuovo controllo.",
+        "title": "Autorizzazione alla guida terminata"
       },
       "drivingAuthorizationSuspended": {
         "message": "L'autorizzazione alla guida per {employeeName} ({classes}) è sospesa. Prima di guidare sono necessari un nuovo controllo e un reintegro esplicito.",
@@ -1681,7 +1803,7 @@
         "approval_cover_return_summary": "Deciso dal tuo sostituto",
         "approval_cover_started": "Copertura dell'assenza iniziata",
         "break_due_reminder": "Pausa prevista",
-        "driving_authorization_suspended": "Autorizzazione alla guida sospesa",
+        "driving_authorization_suspended_or_ended": "Autorizzazione alla guida sospesa o terminata",
         "driving_details_missing_reminder": "Dettagli di guida mancanti",
         "driving_licence_reminder": "Controllo patente di guida in scadenza",
         "forgotten_clock_out_reminder": "Timbratura di uscita dimenticata",
@@ -2140,6 +2262,8 @@
         },
         "drivingLicence": {
           "actor_name": "Il nome della persona che ha eseguito questa azione; vuoto per un'azione di sistema o un operatore non disponibile.",
+          "assigned_at": "Data e ora (UTC) del primo salvataggio della tua assegnazione come conducente designato.",
+          "assigned_by": "Il nome della persona che ha salvato per prima la tua assegnazione come conducente designato.",
           "authorization_events": {
             "summary": "La cronologia delle tue autorizzazioni alla guida, comprese le segnalazioni di impedimento, le risoluzioni e i reintegri espliciti."
           },
@@ -2178,7 +2302,6 @@
           "employee_ids": "Gli ID opachi dei dipendenti nel tuo ambito specifico di verificatore, codificati come array JSON.",
           "employment_period_id": "Il periodo di lavoro a cui appartiene questa prova; vuoto per i rapporti di lavoro precedenti.",
           "enabled": "Indica se il criterio di verifica dell'organizzazione a cui si fa riferimento era abilitato.",
-          "enrolled_at": "Quando sei stato iscritto alle verifiche della patente di guida dell'organizzazione.",
           "expires_at": "L'istante UTC in cui scade questa autorizzazione o concessione del ruolo di verificatore.",
           "expiry_date": "La data di scadenza della categoria registrata al momento dell'ispezione; vuoto se non ne è stata registrata alcuna.",
           "failure_scope": "Indica se un'ispezione non riuscita ha riguardato le categorie, il documento o la persona.",
@@ -2190,6 +2313,9 @@
           "impedimentReports": {
             "summary": "Le segnalazioni minime relative a impedimenti alla guida e la loro esplicita risoluzione, senza spiegazioni mediche o motivi personali."
           },
+          "intendedDriverAssignment": {
+            "summary": "La tua assegnazione come conducente designato per i controlli della patente di guida dell'organizzazione. Le assegnazioni a livello di organizzazione e team che ti riguardano non sono elencate."
+          },
           "interval_months": "Il numero di mesi di calendario tra le verifiche periodiche previste da questo criterio.",
           "kind": "L'evento di autorizzazione, la sospensione o il tipo di attività; le attività sono personal_reminder o reassignment.",
           "last_successful_at": "Quando questa categoria ha superato per l'ultima volta un'ispezione dell'originale con esito positivo.",
@@ -2199,9 +2325,6 @@
           "notificationId": "La notifica dell'app collegata a questo promemoria; vuoto se non ne è stata creata alcuna.",
           "occasionKey": "L'evento a cui si riferisce questo promemoria o attività; identifica il rapporto di lavoro, la scadenza della categoria o la sospensione senza duplicare la verifica.",
           "original_inspected": "Indica se il verificatore ha confermato di aver ispezionato di persona il documento originale.",
-          "participation": {
-            "summary": "La tua iscrizione alle verifiche della patente di guida dell'organizzazione."
-          },
           "placedAt": "Quando è stato applicato questo blocco legale, come istante UTC.",
           "placedBy": "Il nome dell'amministratore che ha applicato questo blocco del caso.",
           "policies": {
@@ -2227,6 +2350,7 @@
           },
           "reportedAt": "Quando hai segnalato un impedimento alla guida a livello di persona, come istante UTC.",
           "reporterName": "Il nome della persona che ha segnalato l'impedimento.",
+          "required": "Indica se l'assegnazione personale ti designa come conducente (vero) o ti esclude da un'assegnazione di team o di organizzazione (falso).",
           "resolvedAt": "Quando un verificatore ha risolto esplicitamente questa segnalazione; vuoto per una segnalazione non risolta.",
           "resolvedBy": "Il nome del verificatore che ha risolto esplicitamente questa segnalazione.",
           "restrictions": "Le limitazioni di guida pertinenti registrate per questa categoria.",
@@ -2253,6 +2377,8 @@
             "summary": "Il tuo record attuale di sospensione dell'autorizzazione alla guida a livello di persona o di documento."
           },
           "team_ids": "Gli ID di team opachi nel tuo ambito di verifica specifico, codificati come array JSON.",
+          "updated_at": "Data e ora (UTC) dell'ultima modifica della tua assegnazione come conducente designato.",
+          "updated_by": "Il nome della persona che ha modificato per l'ultima volta la tua assegnazione come conducente designato.",
           "valid_through": "Il primo giorno di calendario finale applicabile per l'abilitazione di questa categoria.",
           "value": "Il valore fornito da questa integrazione; vuoto indica che la scadenza facoltativa della categoria è stata cancellata.",
           "verifier_confirmed": "Indica se il verificatore ha confermato il record di ispezione.",

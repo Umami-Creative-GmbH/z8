@@ -14,7 +14,7 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
-import { seedSuspendedDrivingParticipant } from "@/lib/organization/driving-licence/testing/recording.test.fixture";
+import { seedSuspendedIntendedDriver } from "@/lib/organization/driving-licence/testing/recording.test.fixture";
 import { integrationAdminPool } from "@/test/integration-database";
 
 const harness = vi.hoisted(() => ({
@@ -398,7 +398,7 @@ describe("vehicle use on a work period on PostgreSQL (#1120)", () => {
 		"truthfully attributes and corrects a vehicle used with %s driving authorization",
 		async (drivingState) => {
 			if (drivingState === "suspended")
-				await seedSuspendedDrivingParticipant(admin, {
+				await seedSuspendedIntendedDriver(admin, {
 					organizationId: ORG,
 					employeeId: ids.requester,
 					userId: userOf("requester"),

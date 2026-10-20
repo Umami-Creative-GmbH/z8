@@ -10,6 +10,7 @@ import {
 	getCurrentSettingsRouteContext,
 	requireUser,
 } from "@/lib/auth-helpers";
+import { loadDrivingLicenceSettingsVisible } from "@/lib/organization/driving-licence/visibility";
 import { managesProjectBelowManagerTier } from "@/lib/projects/project-manager-settings-access";
 
 export default function SettingsPage() {
@@ -61,18 +62,26 @@ async function SettingsPageContent() {
 			}
 		: undefined;
 
-	// The projects page grants the tasks-only view in the session's active organization.
-	const managesProject = await managesProjectBelowManagerTier(
-		accessTier,
-		authContext.user.id,
-		authContext.session.activeOrganizationId ?? null,
-	);
+	const [managesProject, drivingLicenceSettingsVisible] = await Promise.all([
+		// The projects page grants the tasks-only view in the session's active organization.
+		managesProjectBelowManagerTier(
+			accessTier,
+			authContext.user.id,
+			authContext.session.activeOrganizationId ?? null,
+		),
+		loadDrivingLicenceSettingsVisible(
+			accessTier,
+			authContext.user.id,
+			authContext.session.activeOrganizationId ?? null,
+		),
+	]);
 
 	const { visibleSettings, visibleGroups } = getResolvedSettingsVisibility({
 		accessTier,
 		billingEnabled,
 		featureFlags,
 		managesProject,
+		drivingLicenceSettingsVisible,
 	});
 
 	return (

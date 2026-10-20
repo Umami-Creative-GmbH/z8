@@ -871,16 +871,15 @@
         "all": "Tous les employés de cette organisation",
         "allDescription": "La responsabilité dépend de l'appartenance actuelle à l'organisation. Les vérificateurs ne peuvent jamais se vérifier eux-mêmes.",
         "attribution": "Accordé par {actor} à {time}",
-        "description": "Attribuez cette responsabilité indépendamment de l'inscription des conducteurs, du management hiérarchique et de l'accès aux dossiers du personnel. La gestion de ces autorisations ne permet pas de consulter les rapports d'inspection. L'auto-vérification est systématiquement interdite.",
         "editor": "Périmètre du vérificateur",
         "empty": "Aucune responsabilité de vérificateur attribuée",
-        "expiry": "Expire à {time}",
         "history": "Historique des responsabilités",
         "historyEntry": "Accordé par {grantor} à {granted} ; révoqué par {revoker} à {revoked}",
         "loadFailed": "Impossible de charger les responsabilités de vérificateur",
         "myAll": "Vous êtes responsable des vérifications pour l'ensemble de cette organisation. Vous ne pouvez pas vous vérifier vous-même.",
         "mySelected": "Vous êtes responsable de {teams} équipes sélectionnées et de {employees} employés nommés. L'appartenance actuelle aux équipes détermine l'accès. Vous ne pouvez pas vous vérifier vous-même.",
         "myTitle": "Votre responsabilité de vérificateur",
+        "myUntil": "Votre responsabilité prend fin après le {date} ({timezone}).",
         "none": "Vous n'avez actuellement aucune responsabilité de vérificateur de permis de conduire.",
         "noTeams": "Aucune équipe disponible",
         "person": "Vérificateur",
@@ -895,7 +894,14 @@
         "selectEmployees": "Sélectionner des employés",
         "specific": "Équipes et employés sélectionnés",
         "specificDescription": "Comprend les employés nommés et les membres actuels des équipes sélectionnées. Les changements d'équipe prennent effet immédiatement.",
-        "title": "Vérificateurs de permis de conduire"
+        "summary": "La responsabilité de vérificateur est distincte des affectations de conducteurs prévus, de la hiérarchie directe et de l'accès aux dossiers du personnel. La gestion de ces autorisations ne permet pas de consulter les comptes-rendus d'inspection. L'auto-vérification est toujours interdite.",
+        "title": "Vérificateurs de permis de conduire",
+        "until": "Jusqu'au {date} (fin de journée, {timezone})",
+        "untilEnded": "A pris fin après le {date} ({timezone}). Modifiez-la pour la prolonger ou la révoquer.",
+        "untilHelp": "Pour un remplacement temporaire. La responsabilité prend fin après cette journée entière en {timezone}. Laissez vide pour une durée indéterminée.",
+        "untilInPast": "La date de fin ne peut pas être dans le passé.",
+        "untilLabel": "Jusqu'au (facultatif)",
+        "untilPlaceholder": "Aucune date de fin"
       }
     },
     "emailTemplates": {

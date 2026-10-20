@@ -1,11 +1,11 @@
 import "server-only";
-import { and, eq, gt, isNull } from "drizzle-orm";
+import { and, eq, gt, isNull, max } from "drizzle-orm";
 import { member, user } from "@/db/auth-schema";
-import { drivingLicenceCheck } from "@/db/schema/driving-licence-checks";
 import {
-	drivingLicenceParticipant,
-	drivingLicencePolicy,
-} from "@/db/schema/driving-licence-policy";
+	drivingAuthorizationEvent,
+	drivingLicenceCheck,
+} from "@/db/schema/driving-licence-checks";
+import { drivingLicencePolicy } from "@/db/schema/driving-licence-policy";
 import { drivingLicenceTask } from "@/db/schema/driving-licence-tasks";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import { isReservedEmail } from "@/lib/auth/reserved-email";
@@ -13,8 +13,11 @@ import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
 import { translatedContent } from "@/lib/notifications/notification-copy";
 import { insertInAppNotification } from "@/lib/notifications/notification-service";
 import { resolveDrivingLicenceAccess } from "./access";
+import { NO_LONGER_INTENDED } from "./check-types";
 import { currentDrivingEmployment } from "./checks";
 import type { DrivingLicenceActor } from "./context";
+import { listDrivingLicenceIntendedDriverIds } from "./intended-drivers";
+import { DRIVING_LICENCE_VERIFIER_SETTINGS_PATH, drivingLicenceCheckPath } from "./paths";
 import {
 	collectDrivingLicenceReminderOccasions,
 	type DrivingLicenceReminderOccasion,
@@ -81,9 +84,10 @@ async function notifyAssignment(
 				message: content.message,
 				entityType: "driving_licence_task",
 				entityId: row.id,
+				// A personal reminder task goes to verifiers: straight to the check (#1429).
 				actionUrl: assignment
-					? "/settings/driving-licence"
-					: "/driving-licence",
+					? DRIVING_LICENCE_VERIFIER_SETTINGS_PATH
+					: drivingLicenceCheckPath(row.employeeId),
 				idempotencyKey: `driving-task:${row.id}:${row.generation}:${userId}`,
 				metadata: {
 					i18n: content.i18n,
@@ -143,10 +147,9 @@ export async function reconcileDrivingLicenceTasks(
 		suppliedOccasions ??
 		(await collectDrivingLicenceReminderOccasions(tx, organizationId, now));
 	const participants = policy?.enabled
-		? await tx
-				.select()
-				.from(drivingLicenceParticipant)
-				.where(eq(drivingLicenceParticipant.organizationId, organizationId))
+		? (await listDrivingLicenceIntendedDriverIds(tx, organizationId)).map((id) => ({
+				employeeId: id,
+			}))
 		: [];
 	const rows = await tx
 		.select()
@@ -207,11 +210,13 @@ export async function reconcileDrivingLicenceTasks(
 						.where(condition);
 				} else if (!recipients.verifiers.length) {
 					if (task.state !== "pending") {
+						// A completed task needed again is new work (next generation, new notice); an
+						// obsolete one (e.g. open at switch-off) comes back as it was, silently.
 						[task] = await tx
 							.update(drivingLicenceTask)
 							.set({
 								state: "pending",
-								generation: task.generation + 1,
+								generation: task.state === "obsolete" ? task.generation : task.generation + 1,
 								completedAt: null,
 								completedBy: null,
 							})
@@ -227,6 +232,23 @@ export async function reconcileDrivingLicenceTasks(
 		const employeeOccasions = occasions.filter(
 			(o) => o.employeeId === participant.employeeId,
 		);
+		// Checks before the employee last stopped being an intended driver don't count: once
+		// intended again they are not yet checked, a new first check (#1425, #1418 review).
+		const [lastEnding] = await tx
+			.select({ at: max(drivingAuthorizationEvent.effectiveAt) })
+			.from(drivingAuthorizationEvent)
+			.where(
+				and(
+					eq(drivingAuthorizationEvent.organizationId, organizationId),
+					eq(drivingAuthorizationEvent.employeeId, participant.employeeId),
+					eq(drivingAuthorizationEvent.kind, "ended"),
+					eq(drivingAuthorizationEvent.reason, NO_LONGER_INTENDED),
+					employment.periodId
+						? eq(drivingAuthorizationEvent.employmentPeriodId, employment.periodId)
+						: isNull(drivingAuthorizationEvent.employmentPeriodId),
+				),
+			);
+		const endedAt = lastEnding?.at ?? null;
 		const [previousCheck] = await tx
 			.select({ id: drivingLicenceCheck.id })
 			.from(drivingLicenceCheck)
@@ -237,6 +259,7 @@ export async function reconcileDrivingLicenceTasks(
 					employment.lastDepartureAt
 						? gt(drivingLicenceCheck.controlledAt, employment.lastDepartureAt)
 						: undefined,
+					endedAt ? gt(drivingLicenceCheck.controlledAt, endedAt) : undefined,
 					employment.periodId
 						? eq(drivingLicenceCheck.employmentPeriodId, employment.periodId)
 						: isNull(drivingLicenceCheck.employmentPeriodId),
@@ -245,7 +268,9 @@ export async function reconcileDrivingLicenceTasks(
 			.limit(1);
 		const keys = employeeOccasions.map((o) => o.key);
 		if (!previousCheck)
-			keys.push(`initial:${participant.employeeId}:${employmentIdentity}`);
+			keys.push(
+				`initial:${participant.employeeId}:${employmentIdentity}${endedAt ? `:intended-after:${endedAt.toISOString()}` : ""}`,
+			);
 		for (const key of keys) {
 			current.add(`personal_reminder:${key}`);
 			let task = rows.find(
@@ -265,13 +290,12 @@ export async function reconcileDrivingLicenceTasks(
 					.onConflictDoNothing()
 					.returning();
 			}
+			// The same occasion again (e.g. open at switch-off): restored as it was, without a
+			// new generation, so its notice is not repeated (#1418 review).
 			if (task?.state === "obsolete") {
 				[task] = await tx
 					.update(drivingLicenceTask)
-					.set({
-						state: task.completedAt ? "completed" : "pending",
-						generation: task.generation + 1,
-					})
+					.set({ state: task.completedAt ? "completed" : "pending" })
 					.where(
 						and(
 							eq(drivingLicenceTask.organizationId, organizationId),
@@ -351,7 +375,8 @@ export async function listDrivingLicenceTasks(
 				kind: "personal_reminder",
 				directEmployeeNotification: "unavailable",
 				occasion: {
-					kind: occasion?.kind ?? "initial",
+					// Collected occasions are never end notices (#1425); those are no tasks.
+					kind: occasion && occasion.kind !== "ended" ? occasion.kind : "initial",
 					classCode: occasion?.classCode ?? null,
 					validThrough: occasion?.validThrough ?? null,
 				},

@@ -1,10 +1,14 @@
 # Driving licence management
 
-Confirmed on 2026-10-16 after the product-design interview (Q1–Q29).
+Confirmed on 2026-10-16 after the product-design interview (Q1–Q29). The
+optional feature switch, intended-driver assignment and screen layout were
+confirmed on 2026-10-20.
 
-**Status: accepted product design; implementation pending.** This reference
-records the agreed behavior. It does not claim that the described screens,
-permissions, reminders or storage already exist.
+**Status:** the 2026-10-16 rules are implemented (#1313–#1322). The
+2026-10-20 changes in [Switching control on and off](#switching-control-on-and-off),
+[Intended drivers](#intended-drivers) and [Screens and navigation](#screens-and-navigation)
+are accepted design, not implemented yet. Where they conflict with an older
+section, the 2026-10-20 sections apply.
 
 ## Purpose and boundaries (Q1–Q3)
 
@@ -32,10 +36,11 @@ The boundary decision is in
 
 ## Participants, verifiers and access (Q4, Q10, Q20, Q23, Q26)
 
-The organization selects the employees who are intended to drive its vehicles
-and therefore need checks. On enrollment, an employee has no driving
-authorization and is shown as not yet checked. An existing assigned-driver
-suggestion or vehicle selection creates no authorization.
+The organization decides which employees are **intended drivers** of its
+vehicles and therefore need checks; see [Intended drivers](#intended-drivers).
+A new intended driver has no driving authorization and is shown as not yet
+checked. An existing assigned-driver suggestion or vehicle selection creates
+no authorization.
 
 The organization explicitly grants verifier rights for all its employees or
 selected employees and teams. Verifiers may inspect only within their scope.
@@ -209,6 +214,112 @@ This preserves [Time Tracking ADR 0009](../../apps/webapp/src/lib/time-tracking/
 vehicle use remains amendable work attribution and clock commands are not
 refused or delayed because of vehicle details.
 
+## Switching control on and off
+
+Confirmed on 2026-10-20.
+
+Driving licence control is an optional organization feature. Owners and admins
+switch it on and off under **Settings → Organizations → Features**. This switch
+is its only activation; the policy page has no separate activation control.
+
+The first time it is switched on, a setup dialog asks for:
+
+- the retention period and its justification, which activation requires,
+- the check interval, and
+- the deadline timezone, prefilled with the organization's timezone. The
+  timezone cannot be changed after this first save.
+
+Reminder lead times start at 30 and 7 days and can be edited later on the policy
+page. Nobody is an intended driver yet. When the dialog closes, the admin lands
+on the empty **Intended drivers** tab.
+
+Switching it off asks for confirmation. While it is off:
+
+- Nobody sees the sidebar item, the `/driving-licence` page or the clock advisory.
+  The page returns not found.
+- No reminders, notifications or tasks are created.
+- Intended-driver assignments, verifier grants, check records and authorizations
+  are kept. Deadlines keep running.
+- Evidence cleanup continues under the saved retention policy. The settings
+  entry appears only while retained records or legal-case holds exist, and it
+  opens on **Retention & holds** only, with a notice that the feature is off.
+
+When it is switched on again, missed reminders are not caught up. Each
+authorization that became overdue or expired while it was off is suspended and
+gets one suspension notice to the employee and their verifiers; later reminders
+follow the usual schedule. The confirmation dialog shows how many authorizations
+will be suspended.
+
+## Intended drivers
+
+Confirmed on 2026-10-20. The decision is recorded in
+[Organization ADR 0005](../../apps/webapp/src/lib/organization/docs/adr/0005-intended-driver-is-a-scoped-assignment-and-losing-it-ends-authorization.md).
+
+The organization decides who is an intended driver in the same way as other policy
+assignments, such as vehicle use or work policies:
+
+1. An employee's own assignment applies first.
+2. Otherwise their **primary team's** assignment applies. Other team
+   memberships don't count.
+3. Otherwise the organization default applies.
+
+Each assignment is **Required** or **Not required**. *Not required* excludes
+someone from a broader assignment. With no matching assignment, the employee
+is not an intended driver. An assignment applies from the moment it is saved
+and has no effective dates.
+
+Only intended drivers appear in verifier worklists, get reminders and see the
+clock advisory. Verifier scope is separate. It is an access grant and still
+covers every team the employee belongs to.
+
+Someone stops being an intended driver when an assignment changes, when they
+are excluded, or when they move to another primary team. All their driving
+authorizations then end at once, and their check records start their retention
+period. Before any of these is saved, the admin sees who loses which
+authorization: the assignment page previews it, and a team change warns about
+it. Becoming an intended driver again requires a new check and creates no
+authorization by itself.
+
+Enrollments that existed before this change became employee-level *Required*
+assignments, so nobody's status changed.
+
+## Screens and navigation
+
+Confirmed on 2026-10-20.
+
+**Sidebar.** A personal **Driving licence** item appears while the feature is on
+for intended drivers, verifiers and holders of the planning permission. It
+replaces the former "My driving authorization" settings entry.
+
+**`/driving-licence`.** You see only the tabs for the roles you hold:
+
+- **My licence**: the status of each class and its valid-through date, then
+  the evidence, the history and *Unable to drive?*
+- **Checks**, for verifiers: a table of intended drivers in scope, with status,
+  next deadline and team, plus search, a status filter and the soonest deadline
+  first. Verifiers never appear in their own table.
+- **Planning**, for holders of the planning permission.
+
+Each check opens on its own page, `/driving-licence/checks/[employee]`.
+Reminders and tasks link straight to it.
+
+**`/settings/driving-licence`.** The page has four tabs, like vehicle use
+settings:
+
+- **Policy**: the interval with its impact preview, reminder lead times, and the
+  timezone shown read-only.
+- **Intended drivers**: the organization, team and employee assignments.
+- **Verifiers**: the shared access-grant editor, with an optional *until* date
+  for temporary cover. An expired grant counts as missing responsibility and
+  creates the admin reassignment task.
+- **Retention & holds**.
+
+Open verifier-responsibility tasks appear as an alert above the tabs.
+
+**Controls.** Every on/off setting uses a switch. In the check form, the
+employee's declaration, the verifier's confirmations and the inspected classes
+use checkboxes, because they confirm statements and are not settings.
+
 ## Examples of the confirmed rules
 
 | Situation | Result |
@@ -222,6 +333,9 @@ refused or delayed because of vehicle details.
 | The employee reports a driving impediment despite a recent check. | The affected authorization is suspended immediately. |
 | Someone records a vehicle actually driven during suspension. | The facts remain recordable; recording them grants no authorization. |
 | A verifier leaves and no replacement covers an employee. | Their grant ends; admins receive a reassignment task; the employee's deadline is not extended. |
+| The organization default is Required and one employee is set to Not required. | That employee is not an intended driver: no checks, reminders or clock advisory. |
+| An authorized intended driver moves to a primary team set to Not required. | The team change warns first; on save their authorizations end and record retention starts. |
+| The feature is off for two months, and a check falls due during that time. | No reminder is sent while it is off. Switching it on again suspends that authorization and sends one suspension notice. |
 
 ## Legal grounding and product-policy limits
 
@@ -238,7 +352,7 @@ interval or retention period into a universally sufficient legal rule.
 ## Operating evidence retention and legal-case holds
 
 Organization administrators manage retention under **Settings → Driving licence
-control → Evidence retention and legal-case holds**. The list identifies retained
+control → Retention & holds**. The list identifies retained
 records and their inactivity/deletion times, without giving administrators the
 inspection declarations, outcomes or document details. Reading that evidence still
 requires the employee's own access or a current scoped verifier grant.

@@ -2,8 +2,19 @@
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useId, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
 import {
 	TFormControl,
 	TFormItem,
@@ -22,6 +33,12 @@ const DEFAULT_CLASSES: DrivingCheckClass[] = LICENCE_CLASSES.map((code) => ({
 	expiryDate: null,
 	restrictions: "",
 }));
+type FailureScope = "classes" | "document" | "person";
+
+/**
+ * The original check (#1429: on the check page). The inspected classes, the employee's
+ * declaration and the verifier's confirmations are checkboxes: each confirms a statement.
+ */
 export function OriginalDrivingCheckForm({
 	employeeId,
 	name,
@@ -32,7 +49,6 @@ export function OriginalDrivingCheckForm({
 	onCompleted: () => Promise<void>;
 }) {
 	const { t } = useTranslate();
-
 	const [error, setError] = useState("");
 	const [commandId, setCommandId] = useState(() => crypto.randomUUID());
 	const form = useForm({
@@ -43,7 +59,7 @@ export function OriginalDrivingCheckForm({
 			identityConfirmed: false,
 			employeeDeclaration: false,
 			verifierConfirmed: false,
-			failureScope: "classes" as "classes" | "document" | "person",
+			failureScope: "classes" as FailureScope,
 			selected: [] as string[],
 			classes: DEFAULT_CLASSES,
 		},
@@ -75,76 +91,65 @@ export function OriginalDrivingCheckForm({
 				classes,
 			});
 			if (!result.success) {
-				setError(result.error);
+				toast.error(result.error);
 				return;
 			}
+			toast.success(t("drivingLicence.check.recorded", "Original check recorded"));
 			await onCompleted();
 			setCommandId(crypto.randomUUID());
 			form.reset();
 		},
 	});
 	return (
+		<Card>
+			<CardHeader>
+				<CardTitle>
+					<h2 className="text-lg font-semibold">
+						{t(
+							"drivingLicence.check.title",
+							"Inspect {name}'s original licence",
+							{ name },
+						)}
+					</h2>
+				</CardTitle>
+				<CardDescription>
+					{t(
+						"drivingLicence.check.privacy",
+						"Record only document dates, inspected classes and necessary driving restrictions. Do not enter a licence number, address, medical explanations or personal background.",
+					)}
+				</CardDescription>
+			</CardHeader>
+			<CardContent>
 		<form
-			className="space-y-6 rounded-lg border bg-card p-5"
+			className="space-y-6"
 			onSubmit={(event) => {
 				event.preventDefault();
 				event.stopPropagation();
 				void form.handleSubmit();
 			}}
 		>
-			<div>
-				<h3 className="text-lg font-semibold">
-					{t(
-						"drivingLicence.check.title",
-						"Inspect {name}'s original licence",
-						{ name },
-					)}
-				</h3>
-				<p className="mt-1 text-sm text-muted-foreground">
-					{t(
-						"drivingLicence.check.privacy",
-						"Record only document dates, inspected classes and necessary driving restrictions. Do not enter a licence number, address, medical explanations or personal background.",
-					)}
-				</p>
-			</div>
 			<fieldset className="grid gap-4 sm:grid-cols-2">
 				<legend className="mb-3 font-medium">
 					{t("drivingLicence.check.documentDates", "Original document dates")}
 				</legend>
 				<form.Field name="documentIssuedOn">
 					{(field) => (
-						<TFormItem>
-							<TFormLabel>
-								{t("drivingLicence.check.issueDate", "Document issue date")}
-							</TFormLabel>
-							<TFormControl>
-								<Input
-									type="date"
-									required
-									value={field.state.value}
-									onBlur={field.handleBlur}
-									onChange={(event) => field.handleChange(event.target.value)}
-								/>
-							</TFormControl>
-						</TFormItem>
+						<DocumentDateInput
+							label={t("drivingLicence.check.issueDate", "Document issue date")}
+							value={field.state.value}
+							onBlur={field.handleBlur}
+							onChange={field.handleChange}
+						/>
 					)}
 				</form.Field>
 				<form.Field name="documentExpiresOn">
 					{(field) => (
-						<TFormItem>
-							<TFormLabel>
-								{t("drivingLicence.check.expiryDate", "Document expiry date")}
-							</TFormLabel>
-							<TFormControl>
-								<Input
-									type="date"
-									required
-									value={field.state.value}
-									onBlur={field.handleBlur}
-									onChange={(event) => field.handleChange(event.target.value)}
-								/>
-							</TFormControl>
-						</TFormItem>
+						<DocumentDateInput
+							label={t("drivingLicence.check.expiryDate", "Document expiry date")}
+							value={field.state.value}
+							onBlur={field.handleBlur}
+							onChange={field.handleChange}
+						/>
 					)}
 				</form.Field>
 			</fieldset>
@@ -191,48 +196,7 @@ export function OriginalDrivingCheckForm({
 			</fieldset>
 			<form.Field name="failureScope">
 				{(field) => (
-					<TFormItem>
-						<TFormLabel>
-							{t(
-								"drivingLicence.check.failureScope",
-								"Scope of an unsuccessful or inconclusive check",
-							)}
-						</TFormLabel>
-						<TFormControl>
-							<select
-								className="h-9 w-full rounded-md border bg-background px-2 focus-visible:ring-2 focus-visible:ring-ring"
-								aria-label={t(
-									"drivingLicence.check.failureScope",
-									"Scope of an unsuccessful or inconclusive check",
-								)}
-								value={field.state.value}
-								onChange={(event) =>
-									field.handleChange(
-										event.target.value as "classes" | "document" | "person",
-									)
-								}
-							>
-								<option value="classes">
-									{t(
-										"drivingLicence.check.scopeClasses",
-										"Only the affected inspected classes",
-									)}
-								</option>
-								<option value="document">
-									{t(
-										"drivingLicence.check.scopeDocument",
-										"Every authorization based on the document",
-									)}
-								</option>
-								<option value="person">
-									{t(
-										"drivingLicence.check.scopePerson",
-										"All driving authorization for the employee",
-									)}
-								</option>
-							</select>
-						</TFormControl>
-					</TFormItem>
+					<FailureScopeSelect value={field.state.value} onChange={field.handleChange} />
 				)}
 			</form.Field>
 			<fieldset className="space-y-3">
@@ -319,6 +283,85 @@ export function OriginalDrivingCheckForm({
 				)}
 			</form.Subscribe>
 		</form>
+			</CardContent>
+		</Card>
+	);
+}
+
+function DocumentDateInput({
+	label,
+	value,
+	onBlur,
+	onChange,
+}: {
+	label: string;
+	value: string;
+	onBlur: () => void;
+	onChange: (value: string) => void;
+}) {
+	return (
+		<TFormItem>
+			<TFormLabel>{label}</TFormLabel>
+			<TFormControl>
+				<Input
+					type="date"
+					required
+					value={value}
+					onBlur={onBlur}
+					onChange={(event) => onChange(event.target.value)}
+				/>
+			</TFormControl>
+		</TFormItem>
+	);
+}
+
+function FailureScopeSelect({
+	value,
+	onChange,
+}: {
+	value: FailureScope;
+	onChange: (value: FailureScope) => void;
+}) {
+	const { t } = useTranslate();
+	const id = useId();
+	const scopes: { value: FailureScope; label: string }[] = [
+		{
+			value: "classes",
+			label: t("drivingLicence.check.scopeClasses", "Only the affected inspected classes"),
+		},
+		{
+			value: "document",
+			label: t("drivingLicence.check.scopeDocument", "Every authorization based on the document"),
+		},
+		{
+			value: "person",
+			label: t("drivingLicence.check.scopePerson", "All driving authorization for the employee"),
+		},
+	];
+	return (
+		<div className="flex flex-col gap-1.5">
+			<span id={id} className="text-sm font-medium">
+				{t("drivingLicence.check.failureScope", "Scope of an unsuccessful or inconclusive check")}
+			</span>
+			<Select
+				value={value}
+				items={scopes}
+				onValueChange={(next) => {
+					if (next) onChange(next as FailureScope);
+				}}
+			>
+				<SelectTrigger aria-labelledby={id} className="w-full">
+					<SelectValue />
+				</SelectTrigger>
+				<SelectContent>
+					{scopes.map((scope) => (
+						<SelectItem key={scope.value} value={scope.value}>
+							{scope.label}
+						</SelectItem>
+					))}
+				</SelectContent>
+			</Select>
+		</div>
 	);
 }
 
@@ -335,39 +378,46 @@ function InspectionClassRow({
 }) {
 	const { t } = useTranslate();
 	const id = useId();
+	const results: { value: CheckResult; label: string }[] = [
+		{ value: "successful", label: t("drivingLicence.result.successful", "Successful") },
+		{ value: "unsuccessful", label: t("drivingLicence.result.unsuccessful", "Unsuccessful") },
+		{ value: "inconclusive", label: t("drivingLicence.result.inconclusive", "Inconclusive") },
+	];
 	return (
 		<div className="rounded-md border p-3">
-			<label className="flex items-center gap-2 font-medium">
-				<input
-					type="checkbox"
+			<div className="flex items-center gap-2">
+				<Checkbox
+					id={`${id}-class`}
 					checked={chosen}
-					onChange={(event) => onSelect(event.target.checked)}
+					onCheckedChange={(checked) => onSelect(checked === true)}
 				/>
-				{inspected.code}
-			</label>
+				<Label htmlFor={`${id}-class`} className="font-medium" translate="no">
+					{inspected.code}
+				</Label>
+			</div>
 			{chosen && (
 				<div className="mt-3 grid gap-3 sm:grid-cols-3">
-					<label className="space-y-1 text-sm" htmlFor={`${id}-result`}>
-						<span>{t("drivingLicence.check.result", "Result")}</span>
-						<select
-							id={`${id}-result`}
-							className="h-9 w-full rounded-md border bg-background px-2 focus-visible:ring-2 focus-visible:ring-ring"
+					<div className="space-y-1 text-sm">
+						<span id={`${id}-result`}>{t("drivingLicence.check.result", "Result")}</span>
+						<Select
 							value={inspected.result}
-							onChange={(event) =>
-								onChange({ result: event.target.value as CheckResult })
-							}
+							items={results}
+							onValueChange={(value) => {
+								if (value) onChange({ result: value as CheckResult });
+							}}
 						>
-							<option value="successful">
-								{t("drivingLicence.result.successful", "Successful")}
-							</option>
-							<option value="unsuccessful">
-								{t("drivingLicence.result.unsuccessful", "Unsuccessful")}
-							</option>
-							<option value="inconclusive">
-								{t("drivingLicence.result.inconclusive", "Inconclusive")}
-							</option>
-						</select>
-					</label>
+							<SelectTrigger aria-labelledby={`${id}-result`} className="w-full">
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								{results.map((result) => (
+									<SelectItem key={result.value} value={result.value}>
+										{result.label}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
 					<label className="space-y-1 text-sm" htmlFor={`${id}-expiry`}>
 						<span>
 							{t(
@@ -421,16 +471,19 @@ function InspectionConfirmation({
 	label: string;
 	required?: boolean;
 }) {
+	const id = useId();
 	return (
-		<label className="flex items-start gap-3 text-sm">
-			<input
-				type="checkbox"
+		<div className="flex items-start gap-3">
+			<Checkbox
+				id={id}
 				required={required}
-				className="mt-1"
+				className="mt-0.5"
 				checked={checked}
-				onChange={(event) => onChange(event.target.checked)}
+				onCheckedChange={(next) => onChange(next === true)}
 			/>
-			{label}
-		</label>
+			<Label htmlFor={id} className="text-sm font-normal leading-snug">
+				{label}
+			</Label>
+		</div>
 	);
 }

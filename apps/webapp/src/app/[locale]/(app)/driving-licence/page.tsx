@@ -1,68 +1,67 @@
 import { Suspense } from "react";
-import { DrivingLicenceEvidence } from "@/components/driving-licence/check-evidence";
 import { DrivingLicenceVerifierWorklist } from "@/components/driving-licence/check-worklist";
-import { DrivingLicenceHistoryPanel } from "@/components/driving-licence/history-panel";
+import { MyDrivingLicence } from "@/components/driving-licence/my-licence";
 import { OperationalDrivingStatusPanel } from "@/components/driving-licence/operational-status";
 import { DrivingLicencePersonalReminderTasks } from "@/components/driving-licence/reminder-tasks";
-import { ReportDrivingImpediment } from "@/components/driving-licence/report-impediment";
+import { DrivingLicenceRoleTabs } from "@/components/driving-licence/role-tabs";
 import { VerifierResponsibility } from "@/components/driving-licence/verifier-settings";
 import { getDrivingLicenceEmployeeRecordAction } from "@/lib/organization/driving-licence/check-actions";
-import { requireDrivingLicenceActor } from "@/lib/organization/driving-licence/context";
+import { requireDrivingLicencePage } from "@/lib/organization/driving-licence/page-guards";
 import { getTranslate } from "@/tolgee/server";
 
-async function OwnDrivingLicenceContent() {
-	const [actor, t] = await Promise.all([
-		requireDrivingLicenceActor(),
+/**
+ * Not found while the feature is off or the viewer holds no driving licence role (#1420).
+ * One tab per role the visibility reader grants (#1428); only held roles are rendered.
+ */
+async function DrivingLicenceContent() {
+	const [{ actor, visibility, roles }, t] = await Promise.all([
+		requireDrivingLicencePage(),
 		getTranslate(),
 	]);
-	const record = actor.employeeId
-		? await getDrivingLicenceEmployeeRecordAction({
-				employeeId: actor.employeeId,
-			})
-		: null;
+	const record =
+		roles.myLicence && actor.employeeId
+			? await getDrivingLicenceEmployeeRecordAction({
+					employeeId: actor.employeeId,
+				})
+			: null;
+	const identity = `${actor.organizationId}:${actor.userId}`;
 	return (
-		<div className="mx-auto w-full max-w-4xl space-y-6 p-4 sm:p-6">
-			<h1 className="text-2xl font-semibold">
-				{t("drivingLicence.myTitle", "My driving authorization")}
-			</h1>
-			{record?.success ? (
-				<>
-					<DrivingLicenceEvidence record={record.data} />
-					{actor.employeeId && (
-						<DrivingLicenceHistoryPanel
-							key={`${actor.organizationId}:${actor.userId}:${actor.employeeId}`}
+		<DrivingLicenceRoleTabs
+			roles={roles}
+			panels={{
+				myLicence:
+					roles.myLicence &&
+					(record?.success && actor.employeeId ? (
+						<MyDrivingLicence
+							key={`${identity}:${actor.employeeId}`}
+							record={record.data}
 							employeeId={actor.employeeId}
+							intendedDriver={visibility.intendedDriver}
 						/>
-					)}
-					{record.data.enrolled && (
-						<ReportDrivingImpediment
-							key={`${actor.organizationId}:${actor.userId}`}
-						/>
-					)}
-				</>
-			) : (
-				<p role="status">
-					{t(
-						"drivingLicence.noEmployeeRecord",
-						"No employee driving licence record is available in this organization.",
-					)}
-				</p>
-			)}
-			<OperationalDrivingStatusPanel />
-			<VerifierResponsibility />
-			<DrivingLicencePersonalReminderTasks
-				key={`tasks:${actor.organizationId}:${actor.userId}`}
-			/>
-			<DrivingLicenceVerifierWorklist
-				key={`${actor.organizationId}:${actor.userId}`}
-			/>
-		</div>
+					) : (
+						<p role="status">
+							{t(
+								"drivingLicence.noEmployeeRecord",
+								"No employee driving licence record is available in this organization.",
+							)}
+						</p>
+					)),
+				checks: roles.checks && (
+					<div className="space-y-6">
+						<VerifierResponsibility />
+						<DrivingLicencePersonalReminderTasks key={`tasks:${identity}`} />
+						<DrivingLicenceVerifierWorklist key={identity} />
+					</div>
+				),
+				planning: roles.planning && <OperationalDrivingStatusPanel />,
+			}}
+		/>
 	);
 }
-export default function OwnDrivingLicencePage() {
+export default function DrivingLicencePage() {
 	return (
 		<Suspense fallback={<div className="p-6" aria-busy="true" />}>
-			<OwnDrivingLicenceContent />
+			<DrivingLicenceContent />
 		</Suspense>
 	);
 }

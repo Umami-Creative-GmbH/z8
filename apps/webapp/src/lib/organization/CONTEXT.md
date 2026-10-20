@@ -93,6 +93,14 @@ _Avoid_: driving authorization, assigned driver
 The official document presented as evidence of an employee's driving entitlement. Its validity and the validity of individual licence classes are separate.
 _Avoid_: driving authorization, driving entitlement
 
+**Driving licence control**:
+An optional organization feature that arranges, records and repeats driving licence checks. While it is off, nobody sees it and no reminders go out, but its records, grants and deadlines remain.
+_Avoid_: driving licence verification, licence module
+
+**Intended driver**:
+An employee the organization intends to let drive its vehicles, and who therefore needs driving licence checks. The organization decides this for everyone, for teams or for single employees, and can exclude someone from a broader decision.
+_Avoid_: enrolled employee, participant, assigned driver
+
 **Driving licence check**:
 An authorized verifier's recorded personal inspection of an employee's original driving licence for explicitly identified classes. It establishes what was checked at that time.
 _Avoid_: licence upload, licence photo, self-certification
@@ -127,5 +135,6 @@ _Avoid_: permanent archive, statutory three-year retention
 
 ## Confirmed design references
 
-- [Driving licence management](../../../../../docs/refs/driving-licence-management.md): the confirmed product rules, awaiting implementation.
+- [Driving licence management](../../../../../docs/refs/driving-licence-management.md): the confirmed product rules and their implementation status.
 - [Driving authorization and check evidence have their own lifecycle](./docs/adr/0004-driving-authorization-and-check-evidence-have-their-own-lifecycle.md): why permission and check evidence stay separate from vehicle attribution, skill certificates and generic audit retention.
+- [Intended-driver status is a scoped assignment, and losing it ends driving authorization](./docs/adr/0005-intended-driver-is-a-scoped-assignment-and-losing-it-ends-authorization.md): why intended drivers are assigned like a policy, matched by primary team, and why leaving ends authorization.

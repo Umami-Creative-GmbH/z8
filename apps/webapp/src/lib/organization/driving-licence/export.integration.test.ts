@@ -6,6 +6,10 @@ import {
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
+import {
+	activateDrivingLicenceControl,
+	saveConfirmedIntendedDriverAssignment,
+} from "./testing/control.test.fixture";
 
 const harness = vi.hoisted(() => ({
 	userId: "",
@@ -100,8 +104,7 @@ beforeEach(async () => {
 	harness.userId = fixture.ownerUserId;
 	expect(
 		(
-			await policy.saveDrivingLicencePolicyAction({
-				enabled: true,
+			await activateDrivingLicenceControl({
 				intervalMonths: 1,
 				timezone: "Europe/Berlin",
 				reminderLeadDays: [30, 7],
@@ -113,8 +116,9 @@ beforeEach(async () => {
 	).toBe(true);
 	expect(
 		(
-			await policy.enrollDrivingLicenceEmployeeAction({
-				employeeId: fixture.employeeId,
+			await saveConfirmedIntendedDriverAssignment({
+				target: { type: "employee", employeeId: fixture.employeeId },
+				value: "required",
 			})
 		).success,
 	).toBe(true);
@@ -508,8 +512,9 @@ it("includes period corrections, report resolution and explicit reinstatement wi
 	harness.userId = fixture.ownerUserId;
 	expect(
 		(
-			await policy.enrollDrivingLicenceEmployeeAction({
-				employeeId: other.employeeId,
+			await saveConfirmedIntendedDriverAssignment({
+				target: { type: "employee", employeeId: other.employeeId },
+				value: "required",
 			})
 		).success,
 	).toBe(true);

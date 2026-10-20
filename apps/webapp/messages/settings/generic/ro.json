@@ -871,16 +871,15 @@
         "all": "Toți angajații din această organizație",
         "allDescription": "Responsabilitatea urmează calitatea actuală de membru al organizației. Verificatorii nu se pot verifica niciodată pe ei înșiși.",
         "attribution": "Acordat de {actor} la {time}",
-        "description": "Acordați responsabilitatea separat de înscrierea șoferului, managementul direct și accesul la dosarul de personal. Gestionarea acestor acordări nu permite citirea înregistrărilor de inspecție. Autoverificarea este întotdeauna interzisă.",
         "editor": "Domeniu de competență al verificatorului",
         "empty": "Nicio responsabilitate de verificator atribuită",
-        "expiry": "Expiră la {time}",
         "history": "Istoric responsabilități",
         "historyEntry": "Acordată de {grantor} la {granted}; revocată de {revoker} la {revoked}",
         "loadFailed": "Nu s-au putut încărca responsabilitățile de verificator",
         "myAll": "Sunteți responsabil pentru verificări în întreaga organizație. Nu vă puteți verifica pe dvs. înșivă.",
         "mySelected": "Sunteți responsabil pentru {teams} echipe selectate și {employees} angajați nominalizați. Apartenența curentă la echipă determină accesul. Nu vă puteți verifica pe dvs. înșivă.",
         "myTitle": "Responsabilitatea dvs. de verificator",
+        "myUntil": "Responsabilitatea dumneavoastră se încheie după {date} ({timezone}).",
         "none": "Nu aveți nicio responsabilitate curentă de verificare a permiselor de conducere.",
         "noTeams": "Nicio echipă disponibilă",
         "person": "Verificator",
@@ -895,7 +894,14 @@
         "selectEmployees": "Selectați angajați",
         "specific": "Echipe și angajați selectați",
         "specificDescription": "Include angajații nominalizați și membrii actuali ai echipelor selectate. Modificările aduse echipelor intră în vigoare imediat.",
-        "title": "Verificatori permise de conducere"
+        "summary": "Responsabilitatea de verificator este separată de atribuirile de șofer desemnat, managementul direct și accesul la dosarul de personal. Gestionarea acestor permisiuni nu permite vizualizarea înregistrărilor de inspecție. Autoverificarea este întotdeauna interzisă.",
+        "title": "Verificatori permise de conducere",
+        "until": "Până la {date} (sfârșitul zilei, {timezone})",
+        "untilEnded": "S-a încheiat după {date} ({timezone}). Editați pentru a prelungi sau a revoca.",
+        "untilHelp": "Pentru acoperire temporară. Responsabilitatea se încheie după această zi întreagă în {timezone}. Lăsați necompletat dacă nu există dată de sfârșit.",
+        "untilInPast": "Data de sfârșit nu poate fi în trecut.",
+        "untilLabel": "Până la (opțional)",
+        "untilPlaceholder": "Fără dată de sfârșit"
       }
     },
     "emailTemplates": {

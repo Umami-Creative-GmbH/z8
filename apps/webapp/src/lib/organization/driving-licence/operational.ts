@@ -3,11 +3,6 @@ import { and, asc, eq, ilike, or } from "drizzle-orm";
 import { db } from "@/db";
 import { member, user } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
-import {
-	customRole,
-	customRolePermission,
-	employeeCustomRole,
-} from "@/db/schema/custom-role";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import {
@@ -16,6 +11,12 @@ import {
 } from "./checks";
 import type { DrivingLicenceActor } from "./context";
 import type { DrivingLicenceTransaction } from "./verifiers";
+import {
+	drivingAuthorizationPlanningPermission,
+	drivingLicenceRoles,
+	readDrivingLicenceVisibility,
+	showsDrivingAuthorizationAdvisory,
+} from "./visibility";
 
 /** Deliberately independent of CASL's `manage all`, employee read and verifier grants. */
 async function lockOperationalViewer(
@@ -51,25 +52,10 @@ async function requireOperationalPermission(
 	actor: DrivingLicenceActor,
 	employeeId: string,
 ) {
-	const [grant] = await tx
-		.select({ id: customRole.id })
-		.from(employeeCustomRole)
-		.innerJoin(customRole, eq(customRole.id, employeeCustomRole.customRoleId))
-		.innerJoin(
-			customRolePermission,
-			eq(customRolePermission.customRoleId, customRole.id),
-		)
-		.where(
-			and(
-				eq(employeeCustomRole.employeeId, employeeId),
-				eq(customRole.organizationId, actor.organizationId),
-				eq(customRole.isActive, true),
-				eq(customRolePermission.action, "read"),
-				eq(customRolePermission.subject, "DrivingAuthorization"),
-			),
-		)
-		.limit(1)
-		.for("share");
+	const [grant] = await drivingAuthorizationPlanningPermission(tx, {
+		organizationId: actor.organizationId,
+		employeeId,
+	}).for("share");
 	if (!grant) throw new Error("unavailable");
 }
 /** Sample after permission locks, so a contended read cannot revive an elapsed deadline. */
@@ -91,16 +77,37 @@ async function currentOperationalInstant(
 	if (!profile?.allowed) throw new Error("unavailable");
 	return now;
 }
+/** The visibility reader decides every operational read (#1418): nothing while the feature is off. */
+function readViewerVisibility(tx: DrivingLicenceTransaction, actor: DrivingLicenceActor) {
+	return readDrivingLicenceVisibility(
+		{ organizationId: actor.organizationId, userId: actor.userId },
+		tx,
+	);
+}
+
+/**
+ * Decided by the visibility reader. Without a target this is the clock advisory: `null`
+ * unless the viewer is an intended driver while the feature is on. The viewer's own employee
+ * as target: `null` unless they have My licence (intended driver or own retained records).
+ * Another employee: refused unless the viewer holds the planning permission while the
+ * feature is on.
+ */
 export async function readOperationalDrivingStatus(
 	actor: DrivingLicenceActor,
 	targetId?: string,
 ) {
 	return db.transaction(async (tx) => {
 		await lockDrivingLicenceOrganization(tx, actor.organizationId);
+		const visibility = await readViewerVisibility(tx, actor);
+		if (targetId === undefined && !showsDrivingAuthorizationAdvisory(visibility)) return null;
 		const ownEmployeeId = await lockOperationalViewer(tx, actor);
 		const employeeId = targetId ?? ownEmployeeId;
-		if (employeeId !== ownEmployeeId)
+		if (employeeId === ownEmployeeId) {
+			if (!drivingLicenceRoles(visibility).myLicence) return null;
+		} else {
+			if (!drivingLicenceRoles(visibility).planning) throw new Error("unavailable");
 			await requireOperationalPermission(tx, actor, ownEmployeeId);
+		}
 		const now = await currentOperationalInstant(tx, actor, ownEmployeeId);
 		const [target] = await tx
 			.select({ id: employee.id })
@@ -132,8 +139,8 @@ export async function readOperationalDrivingStatus(
 		};
 	});
 }
-export type OperationalDrivingStatus = Awaited<
-	ReturnType<typeof readOperationalDrivingStatus>
+export type OperationalDrivingStatus = NonNullable<
+	Awaited<ReturnType<typeof readOperationalDrivingStatus>>
 >;
 export async function readOperationalDrivingEmployees(
 	actor: DrivingLicenceActor,
@@ -141,6 +148,8 @@ export async function readOperationalDrivingEmployees(
 ) {
 	return db.transaction(async (tx) => {
 		await lockDrivingLicenceOrganization(tx, actor.organizationId);
+		if (!drivingLicenceRoles(await readViewerVisibility(tx, actor)).planning)
+			throw new Error("unavailable");
 		const ownEmployeeId = await lockOperationalViewer(tx, actor);
 		await requireOperationalPermission(tx, actor, ownEmployeeId);
 		const now = await currentOperationalInstant(tx, actor, ownEmployeeId);

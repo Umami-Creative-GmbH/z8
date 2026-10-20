@@ -3,11 +3,22 @@ import {
 	finishDrivingLicenceRetentionChange,
 } from "./retention-state";
 import "server-only";
-import { and, asc, desc, eq, inArray, isNull, lte, sql } from "drizzle-orm";
+import {
+	and,
+	asc,
+	desc,
+	eq,
+	ilike,
+	inArray,
+	isNull,
+	lte,
+	or,
+	sql,
+} from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
-import { employee, employeeEmploymentPeriod } from "@/db/schema";
+import { employee, employeeEmploymentPeriod, team } from "@/db/schema";
 import {
 	drivingAuthorization,
 	drivingAuthorizationEvent,
@@ -15,10 +26,7 @@ import {
 	drivingLicenceSubject,
 } from "@/db/schema/driving-licence-checks";
 import { drivingImpedimentReport } from "@/db/schema/driving-licence-impediments";
-import {
-	drivingLicenceParticipant,
-	drivingLicencePolicy,
-} from "@/db/schema/driving-licence-policy";
+import { drivingLicencePolicy } from "@/db/schema/driving-licence-policy";
 import { drivingLicenceReminderDelivery } from "@/db/schema/driving-licence-reminders";
 import { drivingLicenceVerifierGrant } from "@/db/schema/driving-licence-verifiers";
 import {
@@ -37,11 +45,19 @@ import {
 import {
 	type AuthorizationStatus,
 	EMPLOYEE_DRIVING_DECLARATION,
+	endedAsNoLongerIntended,
 	LICENCE_CLASSES,
 } from "./check-types";
 import type { DrivingLicenceActor } from "./context";
+import { assertDrivingLicenceControlOn } from "./control-state";
 import { drivingAuthorizationDeadline } from "./deadlines";
+import { intendedDriverCondition, isDrivingLicenceIntendedDriver } from "./intended-drivers";
 import { lockDrivingLicenceOrganization } from "./locks";
+import {
+	drivingLicenceNextDeadline,
+	drivingLicenceWorklistQuery,
+	sortDrivingLicenceWorklist,
+} from "./worklist-query";
 
 export { lockDrivingLicenceOrganization } from "./locks";
 
@@ -216,15 +232,12 @@ export async function readEffectiveDrivingAuthorization(
 	employeeId: string,
 	now: Instant = systemClock.nowInstant(),
 ) {
-	const [participant] = await database
-		.select()
-		.from(drivingLicenceParticipant)
-		.where(
-			and(
-				eq(drivingLicenceParticipant.organizationId, organizationId),
-				eq(drivingLicenceParticipant.employeeId, employeeId),
-			),
-		);
+	// "enrolled" / "not_enrolled" keep their names for the existing readers; the source is
+	// the intended-driver assignment resolver (#1423).
+	const intendedDriver = await isDrivingLicenceIntendedDriver(database, {
+		organizationId,
+		employeeId,
+	});
 	const [policy] = await database
 		.select()
 		.from(drivingLicencePolicy)
@@ -302,24 +315,41 @@ export async function readEffectiveDrivingAuthorization(
 	const authorizedClasses = classes
 		.filter((c) => c.status === "active")
 		.map((c) => c.code);
-	const status: AuthorizationStatus = !participant
+	// Classes that ended when the employee stopped being an intended driver stay listed as
+	// history but don't count: once intended again they are not yet checked (#1425).
+	const current = classes.filter((_, index) => !endedAsNoLongerIntended(rows[index]));
+	// A person-wide suspension of the current employment (an open impediment report or a
+	// failed declaration / document check) outlives ending and re-intending: the next check
+	// keeps it, so it is the status until resolved (#1418 review).
+	const subjectApplies =
+		!!employment?.hasAccess && !!global && global.employmentPeriodId === employment.periodId;
+	const personWideReason = reportApplies
+		? "person_impediment"
+		: subjectApplies
+			? `${global.suspensionKind}_impediment`
+			: null;
+	const status: AuthorizationStatus = !intendedDriver
 		? "not_enrolled"
 		: !employment?.hasAccess
 			? "ended"
 			: reportApplies
 				? "suspended"
-				: !classes.length
-					? "not_yet_checked"
-					: authorizedClasses.length === classes.length
+				: !current.length
+					? subjectApplies
+						? "suspended"
+						: "not_yet_checked"
+					: authorizedClasses.length === current.length
 						? "active"
 						: authorizedClasses.length
 							? "partially_active"
-							: classes.every((c) => c.status === "ended")
+							: current.every((c) => c.status === "ended")
 								? "ended"
 								: "suspended";
 	return {
-		enrolled: !!participant,
+		enrolled: intendedDriver,
 		status,
+		/** Why the whole person is suspended (`person_impediment` / `document_impediment`), else null. */
+		personWideReason: intendedDriver ? personWideReason : null,
 		authorizedClasses,
 		classes,
 		timezone: policy?.timezone ?? null,
@@ -329,6 +359,7 @@ export async function readDrivingLicenceEmployeeRecord(
 	actor: DrivingLicenceActor,
 	employeeId: string,
 ) {
+	await assertDrivingLicenceControlOn(db, actor.organizationId);
 	const now = systemClock.nowInstant();
 	await assertDrivingLicenceRecordAccess(db, {
 		organizationId: actor.organizationId,
@@ -440,15 +471,10 @@ export async function completeDrivingLicenceCheck(
 			.select()
 			.from(drivingLicencePolicy)
 			.where(eq(drivingLicencePolicy.organizationId, actor.organizationId));
-		const [participant] = await tx
-			.select()
-			.from(drivingLicenceParticipant)
-			.where(
-				and(
-					eq(drivingLicenceParticipant.organizationId, actor.organizationId),
-					eq(drivingLicenceParticipant.employeeId, input.employeeId),
-				),
-			);
+		const intendedDriver = await isDrivingLicenceIntendedDriver(tx, {
+			organizationId: actor.organizationId,
+			employeeId: input.employeeId,
+		});
 		const employment = await currentDrivingEmployment(
 			tx,
 			actor.organizationId,
@@ -457,7 +483,7 @@ export async function completeDrivingLicenceCheck(
 		);
 		if (
 			!policy?.enabled ||
-			!participant ||
+			!intendedDriver ||
 			!employment?.hasAccess ||
 			!actor.employeeId
 		)
@@ -577,7 +603,7 @@ export async function completeDrivingLicenceCheck(
 				),
 			);
 		for (const inspected of input.classes) {
-			const [previous] = await tx
+			const [stored] = await tx
 				.select()
 				.from(drivingAuthorization)
 				.where(
@@ -586,6 +612,10 @@ export async function completeDrivingLicenceCheck(
 						eq(drivingAuthorization.classCode, inspected.code),
 					),
 				);
+			// A class that ended when the employee stopped being an intended driver is not
+			// carried on: the new check starts it afresh (#1425).
+			const previous =
+				stored && !endedAsNoLongerIntended(stored) ? stored : undefined;
 			const samePeriod = previous?.employmentPeriodId === employment.periodId;
 			const { routineValidThrough, validThrough, expires } =
 				drivingAuthorizationDeadline({
@@ -702,39 +732,95 @@ export async function completeDrivingLicenceCheck(
 		return { checkId: check.id };
 	});
 }
-export async function readDrivingLicenceWorklist(actor: DrivingLicenceActor) {
+/**
+ * The verifier's Checks table (#1428): intended drivers in the current grant's scope (never
+ * the verifier), with primary team and next deadline. Name search and the intended-driver
+ * resolver narrow the scope in SQL; the status filter and the column order (default: checks
+ * due now, then soonest deadline; or name, or team) apply to the effective status, which is
+ * evaluated per remaining employee.
+ */
+export async function readDrivingLicenceWorklist(
+	actor: DrivingLicenceActor,
+	raw?: unknown,
+) {
+	const query = drivingLicenceWorklistQuery.parse(raw ?? {});
+	await assertDrivingLicenceControlOn(db, actor.organizationId);
 	const now = systemClock.nowInstant();
 	const available = await listDrivingLicenceVerifierEmployees(db, {
 		organizationId: actor.organizationId,
 		userId: actor.userId,
 		now,
 	});
+	if (!available.length) return [];
+	const term = query.search
+		? `%${query.search.replaceAll("\\", "\\\\").replaceAll("%", "\\%").replaceAll("_", "\\_")}%`
+		: null;
+	const identities = await db
+		.select({
+			id: employee.id,
+			name: user.name,
+			teamId: team.id,
+			teamName: team.name,
+		})
+		.from(employee)
+		.innerJoin(user, eq(user.id, employee.userId))
+		.leftJoin(
+			team,
+			and(
+				eq(team.id, employee.teamId),
+				eq(team.organizationId, actor.organizationId),
+			),
+		)
+		.where(
+			and(
+				eq(employee.organizationId, actor.organizationId),
+				inArray(
+					employee.id,
+					available.map((target) => target.id),
+				),
+				// Only intended drivers, selected in SQL (#1418 review).
+				intendedDriverCondition(actor.organizationId),
+				term
+					? or(
+							ilike(user.name, term),
+							ilike(user.firstName, term),
+							ilike(user.lastName, term),
+						)
+					: undefined,
+			),
+		);
+	const identityById = new Map(identities.map((row) => [row.id, row]));
 	const rows = await Promise.all(
 		available.map(async (target) => {
+			const identity = identityById.get(target.id);
+			if (!identity) return null;
 			const status = await readEffectiveDrivingAuthorization(
 				db,
 				actor.organizationId,
 				target.id,
 				now,
 			);
-			if (!status.enrolled) return null;
-			const [identity] = await db
-				.select({ name: user.name })
-				.from(employee)
-				.innerJoin(user, eq(user.id, employee.userId))
-				.where(
-					and(
-						eq(employee.organizationId, actor.organizationId),
-						eq(employee.id, target.id),
-					),
-				);
 			return {
 				employeeId: target.id,
 				canVerify: target.canVerify,
-				name: identity?.name ?? target.id,
+				name: identity.name ?? target.id,
+				team:
+					identity.teamId && identity.teamName
+						? { id: identity.teamId, name: identity.teamName }
+						: null,
+				nextDeadline: drivingLicenceNextDeadline(status.classes),
 				...status,
 			};
 		}),
 	);
-	return rows.filter((row): row is NonNullable<typeof row> => row !== null);
+	return sortDrivingLicenceWorklist(
+		rows.filter(
+			(row): row is NonNullable<typeof row> =>
+				row !== null && (!query.status || row.status === query.status),
+		),
+		query,
+	);
 }
+export type DrivingLicenceWorklistRow = Awaited<
+	ReturnType<typeof readDrivingLicenceWorklist>
+>[number];

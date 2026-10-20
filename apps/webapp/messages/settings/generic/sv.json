@@ -871,16 +871,15 @@
         "all": "Alla anställda i denna organisation",
         "allDescription": "Ansvaret följer aktuellt medlemskap i organisationen. Granskare kan aldrig granska sig själva.",
         "attribution": "Tilldelad av {actor} {time}",
-        "description": "Tilldela ansvar separat från förarregistrering, linjeansvar och åtkomst till personalakter. Att hantera dessa tilldelningar ger inte behörighet att läsa kontrollrapporter. Självverifiering är alltid förbjuden.",
         "editor": "Verifierarens omfattning",
         "empty": "Inget verifieraransvar tilldelat",
-        "expiry": "Löper ut {time}",
         "history": "Ansvarshistorik",
         "historyEntry": "Beviljades av {grantor} {granted}; återkallades av {revoker} {revoked}",
         "loadFailed": "Kunde inte läsa in verifieraransvar",
         "myAll": "Du ansvarar för kontroller inom hela denna organisation. Du kan inte verifiera dig själv.",
         "mySelected": "Du ansvarar för {teams} valda team och {employees} namngivna medarbetare. Aktuellt teammedlemskap avgör åtkomsten. Du kan inte verifiera dig själv.",
         "myTitle": "Ditt verifieraransvar",
+        "myUntil": "Ditt ansvar upphör efter {date} ({timezone}).",
         "none": "Du har för närvarande inget ansvar för verifiering av körkort.",
         "noTeams": "Inga team tillgängliga",
         "person": "Verifierare",
@@ -895,7 +894,14 @@
         "selectEmployees": "Välj medarbetare",
         "specific": "Valda team och medarbetare",
         "specificDescription": "Inkluderar namngivna medarbetare och nuvarande medlemmar i valda team. Teamändringar träder i kraft omedelbart.",
-        "title": "Körkortsverifierare"
+        "summary": "Kontrollantansvar är skilt från tilldelningar som avsedd förare, linjeledning och åtkomst till personalakter. Att hantera dessa behörigheter ger inte rätt att läsa granskningsposter. Självkontroll är alltid förbjudet.",
+        "title": "Körkortsverifierare",
+        "until": "Till och med {date} (slutet av dagen, {timezone})",
+        "untilEnded": "Upphörde efter {date} ({timezone}). Redigera för att förlänga eller återkalla.",
+        "untilHelp": "För tillfällig täckning. Ansvaret upphör efter hela denna dag i {timezone}. Lämna tomt för obegränsad tid.",
+        "untilInPast": "Slutdatumet kan inte ligga i det förflutna.",
+        "untilLabel": "Till och med (valfritt)",
+        "untilPlaceholder": "Inget slutdatum"
       }
     },
     "emailTemplates": {

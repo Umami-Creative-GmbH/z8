@@ -4,8 +4,17 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
 import {
 	TFormControl,
 	TFormDescription,
@@ -17,32 +26,25 @@ import {
 	previewDrivingLicenceIntervalAction,
 } from "@/lib/organization/driving-licence/interval-actions";
 import type { DrivingLicenceIntervalPreview } from "@/lib/organization/driving-licence/policy-intervals";
-export function DrivingLicenceIntervalSettings({
-	intervalMonths,
-}: {
-	intervalMonths: number;
-}) {
+import { queryKeys } from "@/lib/query";
+import { useDrivingDateOnly } from "./deadline-date";
+
+/** Changing the routine interval: preview every affected class, then apply that preview. */
+export function DrivingLicenceIntervalSettings({ intervalMonths }: { intervalMonths: number }) {
 	const { t } = useTranslate();
 	const router = useRouter();
 	const queryClient = useQueryClient();
-	const [preview, setPreview] = useState<DrivingLicenceIntervalPreview | null>(
-		null,
-	);
-	const [error, setError] = useState("");
-	const [message, setMessage] = useState("");
+	const [preview, setPreview] = useState<DrivingLicenceIntervalPreview | null>(null);
 	const [applying, startApply] = useTransition();
 	const form = useForm({
 		defaultValues: { intervalMonths },
 		onSubmit: async ({ value }) => {
-			setError("");
-			setMessage("");
 			setPreview(null);
 			const result = await previewDrivingLicenceIntervalAction(value);
 			if (result.success) {
-				if (form.state.values.intervalMonths === value.intervalMonths)
-					setPreview(result.data);
+				if (form.state.values.intervalMonths === value.intervalMonths) setPreview(result.data);
 			} else
-				setError(
+				toast.error(
 					t(
 						"drivingLicence.intervalPreviewError",
 						"The impact could not be loaded. Check your access and choose an interval from 1 to 120 months.",
@@ -53,14 +55,13 @@ export function DrivingLicenceIntervalSettings({
 	function apply() {
 		if (!preview) return;
 		startApply(async () => {
-			setError("");
 			const result = await applyDrivingLicenceIntervalAction({
 				intervalMonths: preview.intervalMonths,
 				previewToken: preview.previewToken,
 			});
 			setPreview(null);
 			if (!result.success) {
-				setError(
+				toast.error(
 					t(
 						"drivingLicence.intervalStale",
 						"The policy or driving authorization changed, or your access is unavailable. Preview the current impact again before applying.",
@@ -68,23 +69,20 @@ export function DrivingLicenceIntervalSettings({
 				);
 				return;
 			}
-			setMessage(
+			toast.success(
 				t(
 					"drivingLicence.intervalApplied",
 					"Interval applied. Existing suspensions remain in effect.",
 				),
 			);
 			void queryClient.invalidateQueries({
-				queryKey: ["driving-authorization-status"],
+				queryKey: queryKeys.drivingLicence.status,
 			});
 			router.refresh();
 		});
 	}
 	return (
-		<section
-			aria-labelledby="driving-interval-title"
-			className="mt-8 space-y-4 border-t pt-6"
-		>
+		<section aria-labelledby="driving-interval-title" className="space-y-4">
 			<h3 id="driving-interval-title" className="font-semibold">
 				{t("drivingLicence.intervalChangeTitle", "Change the routine interval")}
 			</h3>
@@ -105,10 +103,7 @@ export function DrivingLicenceIntervalSettings({
 					{(field) => (
 						<TFormItem className="w-full sm:w-64">
 							<TFormLabel>
-								{t(
-									"drivingLicence.newInterval",
-									"New routine interval (months)",
-								)}
+								{t("drivingLicence.newInterval", "New routine interval (months)")}
 							</TFormLabel>
 							<TFormControl>
 								<Input
@@ -125,8 +120,6 @@ export function DrivingLicenceIntervalSettings({
 									onChange={(event) => {
 										field.handleChange(Number(event.target.value));
 										setPreview(null);
-										setError("");
-										setMessage("");
 									}}
 								/>
 							</TFormControl>
@@ -141,111 +134,106 @@ export function DrivingLicenceIntervalSettings({
 				</form.Field>
 				<form.Subscribe selector={(state) => state.isSubmitting}>
 					{(submitting) => (
-						<Button
-							type="submit"
-							variant="outline"
-							disabled={submitting || applying}
-						>
+						<Button type="submit" variant="outline" disabled={submitting || applying}>
 							{submitting
 								? t("drivingLicence.previewingInterval", "Loading impact…")
-								: t(
-										"drivingLicence.previewInterval",
-										"Preview interval impact",
-									)}
+								: t("drivingLicence.previewInterval", "Preview interval impact")}
 						</Button>
 					)}
 				</form.Subscribe>
 			</form>
-			{preview ? (
-				<section
-					className="space-y-4 rounded-md border p-4"
-					aria-live="polite"
-					aria-label={t("drivingLicence.intervalImpact", "Interval impact")}
-				>
-					<p className="text-sm font-medium">
-						{t(
-							"drivingLicence.intervalImpactHelp",
-							"Review the new routine date and the earlier effective limit for every affected class. Dates use the stated calendar timezone.",
-						)}
-					</p>
-					{preview.classes.length ? (
-						<ul className="divide-y">
-							{preview.classes.map((row) => (
-								<li
-									key={`${row.employeeId}:${row.classCode}`}
-									className="min-w-0 break-words space-y-1 py-3 text-sm [content-visibility:auto] [contain-intrinsic-size:auto_100px]"
-								>
-									<p className="font-medium">
-										{row.employeeName} · {row.classCode}
-									</p>
-									<p>
-										{t("drivingLicence.newRoutineDate", "Next routine check")}:{" "}
-										<time dateTime={row.routineValidThrough}>
-											{row.routineValidThrough}
-										</time>
-									</p>
+			{preview ? <IntervalImpact preview={preview} applying={applying} onApply={apply} /> : null}
+		</section>
+	);
+}
+
+function IntervalImpact({
+	preview,
+	applying,
+	onApply,
+}: {
+	preview: DrivingLicenceIntervalPreview;
+	applying: boolean;
+	onApply: () => void;
+}) {
+	const { t } = useTranslate();
+	const formatDate = useDrivingDateOnly();
+	return (
+		<section
+			className="space-y-4 rounded-md border p-4"
+			aria-live="polite"
+			aria-label={t("drivingLicence.intervalImpact", "Interval impact")}
+		>
+			<p className="text-sm font-medium">
+				{t(
+					"drivingLicence.intervalImpactHelp",
+					"Review the new routine date and the earlier effective limit for every affected class. Dates use the stated calendar timezone.",
+				)}
+			</p>
+			{preview.classes.length ? (
+				<Table mobileLayout="stacked">
+					<TableHeader>
+						<TableRow>
+							<TableHead>
+								{t("drivingLicence.settingsTabs.impactClass", "Employee and class")}
+							</TableHead>
+							<TableHead>{t("drivingLicence.newRoutineDate", "Next routine check")}</TableHead>
+							<TableHead>
+								{t("drivingLicence.earlierLimit", "Earlier document/class limit")}
+							</TableHead>
+							<TableHead>{t("drivingLicence.settingsTabs.impactTimezone", "Timezone")}</TableHead>
+							<TableHead>{t("drivingLicence.settingsTabs.impactResult", "Result")}</TableHead>
+						</TableRow>
+					</TableHeader>
+					<TableBody>
+						{preview.classes.map((row) => (
+							<TableRow key={`${row.employeeId}:${row.classCode}`}>
+								<TableCell className="font-medium whitespace-normal break-words">
+									{row.employeeName} · {row.classCode}
+								</TableCell>
+								<TableCell>
+									<time dateTime={row.routineValidThrough}>
+										{formatDate(row.routineValidThrough)}
+									</time>
+								</TableCell>
+								<TableCell>
 									{row.validThrough !== row.routineValidThrough ? (
-										<p>
-											{t(
-												"drivingLicence.earlierLimit",
-												"Earlier document/class limit",
-											)}
-											:{" "}
-											<time dateTime={row.validThrough}>
-												{row.validThrough}
-											</time>
-										</p>
-									) : null}
-									<p className="text-muted-foreground">
-										{row.deadlineTimezone}
-									</p>
-									<p
-										className={
-											row.newlyOverdue
-												? "font-medium text-destructive"
-												: "text-muted-foreground"
-										}
-									>
-										{row.newlyOverdue
-											? t(
-													"drivingLicence.newlyOverdue",
-													"Newly overdue — will be suspended",
-												)
-											: row.remainsSuspended
-												? t(
-														"drivingLicence.staysSuspended",
-														"Remains suspended",
-													)
-												: t("drivingLicence.staysCurrent", "Remains current")}
-									</p>
-								</li>
-							))}
-						</ul>
-					) : (
-						<p className="text-sm">
-							{t(
-								"drivingLicence.noIntervalClasses",
-								"No existing class authorizations need recalculation.",
-							)}
-						</p>
+										<time dateTime={row.validThrough}>{formatDate(row.validThrough)}</time>
+									) : (
+										"—"
+									)}
+								</TableCell>
+								<TableCell className="text-muted-foreground">{row.deadlineTimezone}</TableCell>
+								<TableCell
+									className={
+										row.newlyOverdue
+											? "font-medium whitespace-normal text-destructive"
+											: "whitespace-normal text-muted-foreground"
+									}
+								>
+									{row.newlyOverdue
+										? t("drivingLicence.newlyOverdue", "Newly overdue — will be suspended")
+										: row.remainsSuspended
+											? t("drivingLicence.staysSuspended", "Remains suspended")
+											: t("drivingLicence.staysCurrent", "Remains current")}
+								</TableCell>
+							</TableRow>
+						))}
+					</TableBody>
+				</Table>
+			) : (
+				<p className="text-sm">
+					{t(
+						"drivingLicence.noIntervalClasses",
+						"No existing class authorizations need recalculation.",
 					)}
-					<Button type="button" disabled={applying} onClick={apply}>
-						{applying
-							? t("drivingLicence.applyingInterval", "Applying…")
-							: t("drivingLicence.applyInterval", "Apply interval change")}
-					</Button>
-				</section>
-			) : null}
-			{error ? (
-				<p role="alert" className="text-sm text-destructive">
-					{error}
 				</p>
-			) : null}
-			{message ? (
-				<p role="status" className="text-sm">
-					{message}
-				</p>
-			) : null}
+			)}
+			<Button type="button" disabled={applying} onClick={onApply}>
+				{applying
+					? t("drivingLicence.applyingInterval", "Applying…")
+					: t("drivingLicence.applyInterval", "Apply interval change")}
+			</Button>
 		</section>
 	);
 }

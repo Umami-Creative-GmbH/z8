@@ -871,16 +871,15 @@
         "all": "Todos os funcionários nesta organização",
         "allDescription": "A responsabilidade segue a filiação atual à organização. Os verificadores nunca podem verificar a si mesmos.",
         "attribution": "Concedido por {actor} em {time}",
-        "description": "Conceda a responsabilidade separadamente do cadastro de motoristas, da gestão direta e do acesso aos registros de pessoal. O gerenciamento dessas concessões não permite a visualização de registros de inspeção. A autoverificação é sempre proibida.",
         "editor": "Escopo do verificador",
         "empty": "Nenhuma responsabilidade de verificador atribuída",
-        "expiry": "Expira às {time}",
         "history": "Histórico de responsabilidades",
         "historyEntry": "Concedido por {grantor} em {granted}; revogado por {revoker} em {revoked}",
         "loadFailed": "Não foi possível carregar as responsabilidades do verificador",
         "myAll": "Você é responsável pelas verificações em toda esta organização. Você não pode verificar a si mesmo.",
         "mySelected": "Você é responsável por {teams} equipes selecionadas e {employees} funcionários nomeados. A participação atual na equipe determina o acesso. Você não pode verificar a si mesmo.",
         "myTitle": "Sua responsabilidade de verificador",
+        "myUntil": "Sua responsabilidade termina após {date} ({timezone}).",
         "none": "Você não tem nenhuma responsabilidade ativa de verificação de carteira de motorista.",
         "noTeams": "Nenhuma equipe disponível",
         "person": "Verificador",
@@ -895,7 +894,14 @@
         "selectEmployees": "Selecionar funcionários",
         "specific": "Equipes e funcionários selecionados",
         "specificDescription": "Inclui funcionários nomeados e membros atuais das equipes selecionadas. As alterações na equipe entram em vigor imediatamente.",
-        "title": "Verificadores de carteira de motorista"
+        "summary": "A responsabilidade de verificador é separada das atribuições de motorista previsto, da gestão direta e do acesso aos arquivos de pessoal. Gerenciar essas permissões não autoriza a leitura de registros de inspeção. A autoverificação é sempre proibida.",
+        "title": "Verificadores de carteira de motorista",
+        "until": "Até {date} (fim do dia, {timezone})",
+        "untilEnded": "Encerrado após {date} ({timezone}). Edite para prorrogar ou revogar.",
+        "untilHelp": "Para cobertura temporária. A responsabilidade termina após este dia inteiro em {timezone}. Deixe em branco se não houver término.",
+        "untilInPast": "A data limite não pode estar no passado.",
+        "untilLabel": "Até (opcional)",
+        "untilPlaceholder": "Sem data de término"
       }
     },
     "emailTemplates": {

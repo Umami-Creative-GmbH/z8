@@ -43,11 +43,13 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"drivingLicence.operational.unavailable",
 		"drivingLicence.operational.recordingHelp",
 		"drivingLicence.status",
-		"drivingLicence.notEnrolled",
 		"drivingLicence.notChecked",
 		"drivingLicence.class.active",
 		"drivingLicence.class.suspended",
 		"drivingLicence.class.ended",
+		"drivingLicence.class.noLongerIntended",
+		// The status label itself (`DrivingStatusLabel` in check-evidence).
+		"drivingLicence.checks.status",
 		// The header clock's status panel, its roster search and class evidence.
 		"drivingLicence.operational.title",
 		"drivingLicence.operational.search",
@@ -63,11 +65,11 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"drivingLicence.result",
 		// The organization MFA requirement banner is shown above every app route.
 		"mfa.banner",
-		// Settings search and navigation entries for driving licence control.
+		// Settings search entry for driving licence control, and the `/driving-licence`
+		// route title (#1420; the sidebar item itself is `nav.driving-licence`).
 		"drivingLicence.title",
-		"drivingLicence.settingsDescription",
+		"drivingLicence.settingsSummary",
 		"drivingLicence.myTitle",
-		"drivingLicence.myDescription",
 	]),
 	...keys("timeTracking", [
 		"timeTracking.errors",

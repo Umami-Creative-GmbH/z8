@@ -545,8 +545,6 @@
     "yes": "Evet"
   },
   "drivingLicence": {
-    "activate": "Sürücü belgesi kontrolünü etkinleştir",
-    "activationHelp": "Kayıt, araç kullanma yetkisi vermez. Yetkili bir doğrulayıcı öncelikle orijinal sürücü belgesini kontrol etmelidir.",
     "applyingInterval": "Uygulanıyor…",
     "applyInterval": "Aralık değişikliğini uygula",
     "check": {
@@ -562,6 +560,7 @@
       "issueDate": "Belge düzenlenme tarihi",
       "original": "Orijinal sürücü belgesini çalışanın huzurunda bizzat inceledim.",
       "privacy": "Yalnızca belge tarihlerini, incelenen sınıfları ve gerekli sürüş kısıtlamalarını kaydedin. Sürücü belgesi numarası, adres, tıbbi açıklamalar veya kişisel geçmiş bilgileri girmeyin.",
+      "recorded": "Orijinal kontrol kaydedildi",
       "restrictions": "Gerekli sürüş kısıtlamaları",
       "result": "Sonuç",
       "saving": "Kontrol kaydediliyor…",
@@ -573,14 +572,54 @@
       "title": "{name} adlı kişinin orijinal sürücü belgesini incele",
       "verifier": "Kaydedilen bilgilerin ve münferit sınıf sonuçlarının incelememi yansıttığını onaylıyorum."
     },
+    "checkPage": {
+      "back": "Kontroller",
+      "former": "Eski çalışan",
+      "loadError": "Sürücü belgesi kaydı yüklenemedi. Mevcut doğrulayıcı sorumluluğunuzu kontrol edin.",
+      "loading": "Sürücü belgesi kaydı yükleniyor…",
+      "notIntended": "{name} öngörülen bir sürücü değil. Kontrol yalnızca öngörülen sürücüler için gereklidir.",
+      "title": "{name} için sürücü belgesi kontrolü"
+    },
+    "checks": {
+      "column": {
+        "action": "İşlem",
+        "deadline": "Bir sonraki son tarih",
+        "name": "Ad",
+        "status": "Durum",
+        "team": "Ekip"
+      },
+      "deadline": "{date} ({timezone})",
+      "dueNow": "Kontrol zamanı geldi",
+      "empty": {
+        "description": "Doğrulayıcı sorumluluğunuzdaki öngörülen sürücüler burada görünür. Eksik biri varsa bir yöneticiye danışın.",
+        "title": "Henüz kontrol edilecek kimse yok"
+      },
+      "filter": {
+        "all": "Tüm durumlar",
+        "status": "Durum"
+      },
+      "help": "Mevcut doğrulayıcı sorumluluğunuz kapsamındaki öngörülen sürücüler. Kendi listenizde asla görünmezsiniz.",
+      "loadError": "Liste yüklenemedi. Mevcut doğrulayıcı sorumluluğunuzu kontrol edin.",
+      "loading": "Öngörülen sürücüler yükleniyor…",
+      "noMatches": "Arama veya filtreyle eşleşen öngörülen sürücü yok.",
+      "search": "Ada göre ara",
+      "status": {
+        "active": "Aktif",
+        "ended": "Sona erdi",
+        "notIntended": "Öngörülen sürücü değil",
+        "notYetChecked": "Henüz kontrol edilmedi",
+        "partiallyActive": "Kısmen aktif",
+        "suspended": "Askıya alındı"
+      },
+      "title": "Kontrol edilecek öngörülen sürücüler"
+    },
     "class": {
       "active": "Yetkilendirildi",
       "ended": "Sona erdi",
+      "noLongerIntended": "Çalışan artık öngörülen sürücü olmadığı için sona erdi. Tekrar araç kullanmak yeni bir kontrol gerektirir.",
       "overdue": "Rutin kontrolün süresi geçti. Bu kurumsal bir askıya alma işlemidir; yasal araç kullanma hakkının geri alındığı anlamına gelmez.",
       "recheck": "Yeni bir orijinal kontrol ve açık bir yeniden etkinleştirme gereklidir.",
-      "restrictions": "Sürüş kısıtlamaları: {restrictions}",
-      "suspended": "Askıya alındı",
-      "validThrough": "{date} ({timezone}) tarihine kadar geçerli"
+      "suspended": "Askıya alındı"
     },
     "declaration": {
       "text": "Amaçlanan sürüşü engelleyen bilinen herhangi bir sürüş yasağı, hak mahrumiyeti veya başka bir engel bulunmadığını ve geçerli sürüş kısıtlamalarını karşıladığımı onaylıyorum."
@@ -589,11 +628,18 @@
       "uncertain": "Size gönderilen isteğe bağlı hatırlatma e-postalarının teslimat durumu belirsiz ({count}). Bunlar otomatik olarak tekrar gönderilmeyecektir. Uygulama içi hatırlatıcılarınız kullanılabilir durumda kalır; e-postanın teslim edilmesi okunduğu anlamına gelmez."
     },
     "earlierLimit": "Daha önceki belge/sınıf sınırı",
-    "enroll": "Kaydet",
-    "enrollError": "Çalışan kaydedilemedi. Önce politikayı etkinleştirin ve erişiminizi kontrol edin.",
-    "enrollmentHelp": "Araç kullanması planlanan çalışanları kaydedin. Araç atamaları ve geçmişteki araç kullanımları asla yetki oluşturmaz.",
-    "enrollmentTitle": "Planlanan sürücüler",
-    "enrollName": "{name} adlı kişiyi kaydet",
+    "ending": {
+      "assignmentConfirm": "Kaydet ve yetkileri sonlandır",
+      "assignmentDescription": "Kaydettiğinizde bu çalışanlar öngörülen sürücü olmaktan çıkar. Sürüş yetkileri derhal sona erer ve kontrol kayıtlarının saklama süresi başlar. Tekrar araç kullanmak yeni bir kontrol gerektirir.",
+      "assignmentTitle": "Sürüş yetkileri sonlandırılsın mı?",
+      "listLabel": "Sona eren sürüş yetkileri",
+      "teamChangeConfirm": "Devam et ve yetkileri sonlandır",
+      "teamChangeDescription": "Birincil ekipleri değiştiği için bu çalışanlar öngörülen sürücü olmaktan çıkar. Sürüş yetkileri derhal sona erer ve kontrol kayıtlarının saklama süresi başlar. Tekrar araç kullanmak yeni bir kontrol gerektirir.",
+      "teamChangeGeneric": "Bu değişiklik bazı çalışanların sürüş yetkilerini sonlandırır.",
+      "teamChangePreviewFailed": "Bu değişikliğin sürüş yetkilerini sonlandırıp sonlandırmadığı kontrol edilemedi. Tekrar deneyin.",
+      "teamChangeStale": "Bu değişikliğin etkilediği kişiler bu sırada değişti. Değişikliği gözden geçirmek için tekrar deneyin.",
+      "teamChangeTitle": "Bu ekip değişikliği sürüş yetkilerini sonlandırır"
+    },
     "evidence": {
       "confirmation": "Doğrulayıcı onayı {version} politika sürümüyle kaydedildi; son tarihler için {timezone} kullanılır.",
       "declarationConfirmed": "Çalışan beyanı bizzat yaptı; doğrulayıcı bunu kontrol anında tasdik etti.",
@@ -640,6 +686,7 @@
       "loading": "Geçmiş yükleniyor…",
       "minimalEvidence": "Yalnızca gerekli sürüş kanıtlarını kaydedin. Belge numaralarını, tıbbi açıklamaları veya kişisel geçmişi girmeyin.",
       "missingDetail": "Eksik ayrıntı",
+      "noLongerIntended": "Artık öngörülen sürücü değil",
       "none": "Kayıt yok",
       "openSupplement": "{date} tarihli orijinal kontrole ekleme yap",
       "original": "Orijinal kontrol ve onay",
@@ -655,6 +702,7 @@
       "recordingError": "Kayıt hatası",
       "reinstated": "Yetkilendirme, yeni bir kontrolden sonra açıkça yeniden etkinleştirildi",
       "save": "Ek kaydı kaydet",
+      "saved": "Ek kaydedildi",
       "saveError": "Ek kaydedilemedi. Geçerli sorumluluğunuzu ve düzeltme ayrıntılarını kontrol edin.",
       "snapshot": "Politika {version}; aralık {months} ay; son tarih saat dilimi {timezone}",
       "supplementBy": "{name} tarafından yapılan ekleme",
@@ -677,6 +725,7 @@
       "reinstating": "Yeniden etkinleştirme kaydediliyor…",
       "report": "Araç kullanamadığımı bildir",
       "reported": "Tüm sınıf yetkilendirmeleriniz askıya alındı. Engel çözüldükten sonra yeni bir orijinal kontrol ve açıkça yeniden etkinleştirme için sorumlu doğrulayıcınızla iletişime geçin.",
+      "reportedToast": "Rapor kaydedildi",
       "reportFailed": "Bildirim kaydedilemedi. Yeniden deneyin veya sorumlu doğrulayıcınızla hemen iletişime geçin.",
       "reportHelp": "Şu anda araç kullanamadığınızı bildirin. Tüm sınıf yetkilendirmeleri derhal askıya alınacaktır. Kişisel nedenler belirtmeniz gerekmez.",
       "reporting": "Bildirim kaydediliyor…",
@@ -684,6 +733,25 @@
       "selectClasses": "Son orijinal kontrolden yeniden etkinleştirilecek sınıflar",
       "title": "Araç kullanamıyor musunuz?",
       "unresolvedReport": "Çalışan tarafından bildirilen kişi genelindeki bir engelin hâlâ çözülmesi gerekiyor."
+    },
+    "intendedDrivers": {
+      "description": "Öngörülen sürücüler orijinal sürücü belgesi kontrolleri, hatırlatıcılar ve bir sürüş durumu alır. Siz atayana kadar kimse öngörülen sürücü değildir. En özel atama önceliklidir: bir çalışanın kendi ataması birincil ekibininkine, bir ekibinki ise tüm kuruluşunkine üstün gelir. Diğer ekip üyelikleri hesaba katılmaz. 'Gerekli değil' seçeneği, bir ekibi veya çalışanı daha kapsamlı bir atamanın dışında tutar.",
+      "error": {
+        "assignmentNotFound": "Bu atama artık mevcut değil. Sayfayı yeniden yükleyin.",
+        "employeeNotFound": "Bu çalışan artık bu kuruluşun mevcut bir çalışanı değil.",
+        "failed": "Öngörülen sürücüler kaydedilemedi. Tekrar deneyin.",
+        "forbidden": "Yalnızca kuruluş sahipleri ve yöneticiler öngörülen sürücüleri atayabilir.",
+        "notEnabled": "Öngörülen sürücüleri atamadan önce sürücü belgesi kontrolünü açın.",
+        "stalePreview": "Bu değişikliğin kimi etkileyeceği bu süre zarfında değişti. Gözden geçirin ve tekrar kaydedin.",
+        "teamNotFound": "Bu ekip artık mevcut değil."
+      },
+      "notRequired": "Gerekli değil (hariç tutuldu)",
+      "removed": "Öngörülen sürücü ataması kaldırıldı",
+      "required": "Gerekli",
+      "saved": "Öngörülen sürücüler kaydedildi",
+      "targetOrganization": "Tüm kuruluş",
+      "title": "Öngörülen sürücüler",
+      "valueLabel": "Sürücü belgesi kontrolleri"
     },
     "interval": "Rutin kontrol aralığı (ay)",
     "intervalAnchorHelp": "Her sınıfın son başarılı kontrolünden hesaplanır.",
@@ -698,16 +766,20 @@
     "justification": "Saklama gerekçesi",
     "justificationHelp": "Bu belirli sürenin neden gerekli olduğunu açıklayın (en az 10 karakter). Özel veya tıbbi ayrıntıları dahil etmeyin.",
     "loadError": "Sürücü belgesi kontrolü yüklenemedi. Kuruluş erişiminizi kontrol edin.",
-    "myDescription": "Sürücü belgesi kontrol durumunuzu görüntüleyin",
+    "myLicence": {
+      "former": "Artık öngörülen bir sürücü değilsiniz. Saklanan kontrol kayıtlarınız görüntülenmek ve dışa aktarılmak üzere erişilebilir kalmaya devam eder."
+    },
     "myTitle": "Sürüş yetkim",
     "newInterval": "Yeni rutin aralığı (ay)",
     "newlyOverdue": "Yeni gecikmiş — askıya alınacak",
     "newRoutineDate": "Sonraki rutin kontrol",
     "noEmployeeRecord": "Bu kuruluşta kullanılabilir çalışan sürücü belgesi kaydı yok.",
-    "noEmployees": "Kaydedilecek aktif çalışan yok.",
     "noIntervalClasses": "Mevcut sınıf yetkilerinden hiçbirinin yeniden hesaplanması gerekmiyor.",
     "notChecked": "Henüz kontrol edilmedi — sürüş yetkisi yok",
-    "notEnrolled": "Kaydedilmedi — sürüş yetkisi yok",
+    "off": {
+      "description": "Hiç kimse sürücü belgesi kontrolünü göremez ve hiçbir hatırlatıcı gönderilmez. Öngörülen sürücüler, doğrulayıcı yetkileri, kontrol kayıtları ve yetkilendirmeler korunur ve kanıt temizleme işlemi kayıtlı saklama süresi kapsamında devam eder. Yeniden açılana kadar yalnızca Saklama ve alıkoymalar kullanılabilir.",
+      "title": "Sürücü belgesi kontrolü kapalı"
+    },
     "operational": {
       "advisory": "Sürüş yetkisi",
       "loading": "Sürüş yetkisi yükleniyor…",
@@ -719,7 +791,9 @@
       "title": "Planlama için sürüş durumu",
       "unavailable": "Sürüş yetkisi durumu kullanılamıyor."
     },
-    "policyIntro": "Almanya öncelikli orijinal ehliyet kontrolleri. Etkinleştirmeden önce rutin aralığını seçin ve belirli bir kanıt saklama süresi için gerekçe belirtin.",
+    "page": {
+      "title": "Sürücü belgesi"
+    },
     "policyTitle": "Kuruluş politikası",
     "previewingInterval": "Etki yükleniyor…",
     "previewInterval": "Aralık etkisini önizle",
@@ -768,23 +842,71 @@
     "saved": "Politika kaydedildi",
     "saveError": "Politika kaydedilemedi. Aralığı, saat dilimini, hatırlatıcıları ve gerekçeli saklama süresini kontrol edin.",
     "saving": "Kaydediliyor…",
-    "settingsDescription": "Orijinal kontrolleri yapılandırın ve hedeflenen sürücüleri kaydedin",
+    "settingsSummary": "Kontrol politikasını, öngörülen sürücüleri, doğrulayıcıları ve kanıt saklama süresini belirleyin",
+    "settingsTabs": {
+      "cleanupDescription": "Süresi dolan kanıtlar otomatik olarak silinir. Hepsini bir kerede silmek için temizleme işlemini şimdi çalıştırın.",
+      "cleanupFinished": "Süresi dolan kanıtların temizlenmesi tamamlandı",
+      "cleanupTitle": "Kanıt temizleme",
+      "deadlineTimezone": "Son tarih saat dilimi",
+      "holdPlaced": "Yasal süreç alıkoyması uygulandı",
+      "holdReleased": "Yasal süreç alıkoyması kaldırıldı",
+      "holdsColumn": "Açık alıkoymalar",
+      "holdsTitle": "Yasal süreç alıkoymaları",
+      "impactClass": "Çalışan ve sınıf",
+      "impactResult": "Sonuç",
+      "impactTimezone": "Saat dilimi",
+      "intendedDrivers": "Öngörülen sürücüler",
+      "intendedDriversDescription": "Orijinal sürücü belgesi kontrolünün kime gerekeceğine karar verin: tüm kuruluş, birincil bir ekip veya tek bir çalışan.",
+      "intendedDriversEmpty": {
+        "description": "Tüm kuruluş, birincil bir ekip veya tek bir çalışan için Gerekli olarak ayarlayın. En özel seçim geçerli olur ve Gerekli değil seçeneği, bir ekibi veya çalışanı daha kapsamlı olandan hariç tutar. Yalnızca öngörülen sürücüler kontrolleri, hatırlatıcıları ve sürüş durumunu alır.",
+        "title": "Henüz kimse öngörülen sürücü değil"
+      },
+      "policy": "Politika",
+      "policyDescription": "Rutin kontrol aralığı, hatırlatıcı ön bildirim süreleri ve kanıt saklama süresi.",
+      "reassignment": {
+        "description": "Kontrollerinin ve hatırlatıcılarının bir doğrulayıcısı yok. Sorumluluk atamak size denetim hakları tanımaz ve son teslim tarihini uzatmaz.",
+        "title": "Sorumlu bir doğrulayıcısı olmayan çalışanlar"
+      },
+      "remindersDescription": "Son teslim tarihinden ne kadar önce hatırlatıcıların gönderileceği ve artık bir yetkilendirmeyi desteklemediğinde kanıtın ne kadar süreyle saklanacağı.",
+      "remindersTitle": "Hatırlatıcılar ve saklama",
+      "reportColumn": "Rapor",
+      "retention": "Saklama ve alıkoymalar",
+      "retentionColumn": "Saklama",
+      "retentionDescription": "Saklanan kontrol kayıtları, yasal süreç alıkoymaları ve kanıt temizleme.",
+      "scheduleTitle": "Kontrol takvimi",
+      "verifiers": "Doğrulayıcılar",
+      "verifiersDescription": "Kimin sürücü belgesini kimin kontrol edeceği; isteğe bağlı olarak belirli bir tarihe kadar."
+    },
     "status": {
       "active": "Sürüş yetkisi aktif",
       "ended": "Sürüş yetkisi sona erdi",
       "explanation": "Kuruluş sürüş yetkisi, listelenen sınıfları ve kısıtlamaları kapsar. Her araç için uygunluk tesis etmez. Çalışma süresini ve fiili araç kullanımını kaydetmeye devam edebilirsiniz.",
+      "notIntended": "Öngörülen bir sürücü değil — sürüş yetkisi yok",
       "partial": "Bazı sürüş sınıfları askıya alındı",
       "suspended": "Sürüş yetkisi askıya alındı"
     },
     "staysCurrent": "Güncelliğini koruyor",
     "staysSuspended": "Askıda kalmaya devam ediyor",
-    "subtitle": "Orijinal kontrolleri yapılandırın ve hedeflenen sürücüleri kaydedin. Sürüş yetkisi, kontrol edilen sınıflara ve kısıtlamalara özeldir.",
+    "summary": {
+      "class": "Sınıf",
+      "empty": "Henüz hiçbir sınıf yetkilendirilmedi. Bir doğrulayıcı ilk orijinal kontrolünüzü kaydeder.",
+      "emptyForVerifier": "Henüz hiçbir sınıf yetkilendirilmedi.",
+      "personWide": "Bir engel durumu, doğrulayıcı eski haline getirene kadar tüm sınıflardaki sürüşü askıya alır. Tek başına yeni bir kontrol bunu kaldırmaz.",
+      "restrictions": "Kısıtlamalar",
+      "status": "Durum",
+      "validThrough": "Geçerlilik tarihi"
+    },
+    "switchOnFirst": "Kuruluş ayarlarındaki Özellikler kartından sürücü belgesi kontrolünü açın. Buradan ayarlamak ilk ilkeyi kaydeder.",
+    "tabs": {
+      "checks": "Kontroller",
+      "myLicence": "Sürücü belgem",
+      "planning": "Planlama"
+    },
     "tasks": {
       "assign": "Sorumluluk ata",
-      "assigned": "Sorumluluk atandı",
-      "assignmentBoundary": "Bu görev herhangi bir denetim hakkı tanımaz ve hiçbir son tarihi uzatmaz.",
       "class": "Sınıf {classCode}",
       "complete": "Kişisel hatırlatıcıyı tamamlandı olarak işaretle",
+      "completedToast": "Kişisel hatırlatıcı tamamlandı olarak işaretlendi",
       "completeError": "Bu görev tamamlanamadı. Mevcut doğrulayıcı sorumluluğunuzu kontrol edin.",
       "completing": "Tamamlanıyor…",
       "deadline": "Orijinal kontrol tarihi geldi",
@@ -793,21 +915,16 @@
       "loadError": "Sürücü belgesi görevleri yüklenemedi. Kuruluş erişiminizi kontrol edin.",
       "loading": "Sürücü belgesi görevleri yükleniyor…",
       "noDeliveryReceipt": "Görevin tamamlanması doğrudan teslimatı veya çalışanın okuduğunu doğrulamaz. Hiçbir son tarih uzatılmaz.",
-      "noVerifier": "Bu çalışan için sorumlu uygun bir doğrulayıcı yok.",
+      "openCheck": "Kontrolü aç",
       "personalCompleted": "Kişisel hatırlatıcı tamamlandı",
       "personalTitle": "Kişisel hatırlatıcı görevleri",
-      "reassignmentTitle": "Doğrulayıcı sorumluluğu görevleri",
       "refresh": "Sorumluluğu yeniden kontrol et",
       "suspension": "Sürüş yetkisi askıya alındı",
       "validThrough": "Kontrolün kayıtlı son tarih saat dilimine göre {date} tarihine kadar geçerlidir"
     },
-    "timezone": "Sabit takvim saat dilimi",
     "title": "Sürücü belgesi kontrolü",
-    "unnamedEmployee": "Çalışan",
     "worklist": {
-      "help": "Yalnızca geçerli doğrulayıcı sorumluluğunuz kapsamındaki kayıtlı çalışanlar burada görünür.",
       "open": "{name} kontrol et",
-      "title": "Orijinal kontrol iş listeniz",
       "viewEnded": "{name} için sona eren kaydı görüntüle"
     },
     "zoneFixedError": "Takvim saat dilimi sabittir. Mevcut son tarihler orijinal anlamlarını korumalıdır.",
@@ -999,6 +1116,7 @@
     "calendar": "Takvim",
     "compliance": "Uyumluluk",
     "dashboard": "Panel",
+    "driving-licence": "Sürücü belgesi",
     "feedback": "Geri bildirim",
     "finance": "Finans",
     "financeAwaiting": "{count, plural, other {# masraf geri ödeme bekliyor} }",
@@ -1185,6 +1303,10 @@
       "complianceExceptionRequested": {
         "message": "{employeeName} bir {exceptionType, select, rest_period {dinlenme süresi} overtime_daily {günlük fazla mesai} overtime_weekly {haftalık fazla mesai} overtime_monthly {aylık fazla mesai} other {uyumluluk}} istisnası talep etti: \"{reason}\"",
         "title": "Uyumluluk istisnası talep edildi"
+      },
+      "drivingAuthorizationEnded": {
+        "message": "{employeeName} artık öngörülen bir sürücü değil, bu nedenle sürüş yetkisi ({classes}) sona erdi. Tekrar araç kullanmak için yeni bir kontrol gerekir.",
+        "title": "Sürüş yetkisi sona erdi"
       },
       "drivingAuthorizationSuspended": {
         "message": "{employeeName} ({classes}) için sürüş yetkisi askıya alındı. Araç kullanmadan önce yeni bir kontrol ve açıkça yeniden yetkilendirme yapılması gerekir.",
@@ -1681,7 +1803,7 @@
         "approval_cover_return_summary": "Vekiliniz tarafından karara bağlandı",
         "approval_cover_started": "İzin vekilliği başladı",
         "break_due_reminder": "Mola vakti",
-        "driving_authorization_suspended": "Sürüş yetkisi askıya alındı",
+        "driving_authorization_suspended_or_ended": "Sürüş yetkisi askıya alındı veya sona erdi",
         "driving_details_missing_reminder": "Sürüş ayrıntıları eksik",
         "driving_licence_reminder": "Sürücü belgesi kontrolünün süresi geldi",
         "forgotten_clock_out_reminder": "Unutulan çıkış",
@@ -2140,6 +2262,8 @@
         },
         "drivingLicence": {
           "actor_name": "Bu eylemi gerçekleştiren kişinin adı; bir sistem eylemi veya işlem yapan kişi mevcut değilse boştur.",
+          "assigned_at": "Öngörülen sürücü atamanızın ilk kaydedildiği zaman (UTC anı olarak).",
+          "assigned_by": "Öngörülen sürücü atamanızı ilk kaydeden kişinin adı.",
           "authorization_events": {
             "summary": "Engel bildirimleri, çözümler ve açıkça yeniden yetkilendirmeler dahil olmak üzere sürüş yetkisi geçmişiniz."
           },
@@ -2178,7 +2302,6 @@
           "employee_ids": "JSON dizisi olarak kodlanmış, belirli doğrulayıcı kapsamınızdaki opak çalışan kimlikleri.",
           "employment_period_id": "Bu kanıtın ait olduğu istihdam dönemi; eski istihdam için boştur.",
           "enabled": "Referans verilen kuruluş kontrol politikasının etkinleştirilip etkinleştirilmediği.",
-          "enrolled_at": "Kuruluşun sürücü belgesi kontrollerine ne zaman kaydedildiğiniz.",
           "expires_at": "Bu yetkilendirmenin veya doğrulayıcı yetkisinin sona erdiği UTC anı.",
           "expiry_date": "Denetimde kaydedilen sınıf son geçerlilik tarihi; hiçbiri kaydedilmediyse boştur.",
           "failure_scope": "Başarısız bir denetimin sınıflarla mı, belgeyle mi yoksa kişiyle mi ilgili olduğu.",
@@ -2190,6 +2313,9 @@
           "impedimentReports": {
             "summary": "Tıbbi açıklamalar veya özel nedenler olmaksızın, asgari sürüş engeli bildirimleriniz ve bunların açık çözümü."
           },
+          "intendedDriverAssignment": {
+            "summary": "Kuruluşun sürücü belgesi kontrolleri için kendi öngörülen sürücü atamanız. Size de uygulanan kuruluş ve ekip atamaları listelenmez."
+          },
           "interval_months": "Bu politika kapsamındaki rutin kontroller arasındaki takvim ayı sayısı.",
           "kind": "Yetkilendirme olayı, askıya alma veya görev türü; görevler personal_reminder veya reassignment şeklindedir.",
           "last_successful_at": "Bu sınıfın en son ne zaman başarılı bir orijinal denetimden geçtiği.",
@@ -2199,9 +2325,6 @@
           "notificationId": "Bu hatırlatıcıya bağlı uygulama bildirimi; hiçbiri oluşturulmadığında boştur.",
           "occasionKey": "Bu hatırlatıcının veya görevin ilgili olduğu durum; kontrolü kopyalamadan istihdamı, sınıf son tarihini veya askıya almayı tanımlar.",
           "original_inspected": "Doğrulayıcının orijinal belgeyi bizzat denetlediğini onaylayıp onaylamadığı.",
-          "participation": {
-            "summary": "Kuruluşun sürücü belgesi kontrollerine kaydınız."
-          },
           "placedAt": "Bu yasal alıkoymanın ne zaman uygulandığı (UTC anı olarak).",
           "placedBy": "Bu vaka alıkoymasını uygulayan yöneticinin adı.",
           "policies": {
@@ -2227,6 +2350,7 @@
           },
           "reportedAt": "Kişi genelinde bir sürüş engelini ne zaman bildirdiğiniz (UTC anı olarak).",
           "reporterName": "Engeli bildiren kişinin adı.",
+          "required": "Kendi atamanızın sizi öngörülen bir sürücü yapıp yapmadığı (doğru) veya sizi bir ekip ya da kuruluş atamasından hariç tutup tutmadığı (yanlış).",
           "resolvedAt": "Bir doğrulayıcının bu bildirimi açıkça çözümlediği zaman; çözümlenmemiş bildirimler için boştur.",
           "resolvedBy": "Bu bildirimi açıkça çözümleyen doğrulayıcının adı.",
           "restrictions": "Bu sınıf için kaydedilmiş ilgili sürüş kısıtlamaları.",
@@ -2253,6 +2377,8 @@
             "summary": "Mevcut kişi genelinde veya belge genelindeki sürüş yetkilendirmesi askıya alma kaydınız."
           },
           "team_ids": "Belirli doğrulayıcı kapsamınızdaki, bir JSON dizisi olarak kodlanmış opak ekip kimlikleri.",
+          "updated_at": "Öngörülen sürücü atamanızın en son değiştirildiği zaman (UTC anı olarak).",
+          "updated_by": "Öngörülen sürücü atamanızı en son değiştiren kişinin adı.",
           "valid_through": "Bu sınıf onayının geçerli en erken son takvim günü.",
           "value": "Bu ek tarafından sağlanan değer; boş olması isteğe bağlı sınıf geçerlilik süresinin temizlendiği anlamına gelir.",
           "verifier_confirmed": "Doğrulayıcının denetim kaydını onaylayıp onaylamadığı.",

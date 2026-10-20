@@ -5,6 +5,10 @@ import {
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
+import {
+	activateDrivingLicenceControl,
+	saveConfirmedIntendedDriverAssignment,
+} from "./testing/control.test.fixture";
 
 const harness = vi.hoisted(() => ({
 	userId: "",
@@ -41,6 +45,9 @@ vi.mock("@/lib/datetime/temporal-core", async (original) => {
 const checks = await import("@/lib/organization/driving-licence/check-actions");
 const policy = await import(
 	"@/lib/organization/driving-licence/policy-actions"
+);
+const intendedDrivers = await import(
+	"@/lib/organization/driving-licence/intended-driver-actions"
 );
 const grants = await import(
 	"@/lib/organization/driving-licence/verifier-actions"
@@ -95,8 +102,7 @@ beforeEach(async () => {
 	).rows[0].user_id;
 	expect(
 		(
-			await policy.saveDrivingLicencePolicyAction({
-				enabled: true,
+			await activateDrivingLicenceControl({
 				intervalMonths: 1,
 				timezone: "Europe/Berlin",
 				reminderLeadDays: [30, 7],
@@ -108,8 +114,9 @@ beforeEach(async () => {
 	).toBe(true);
 	expect(
 		(
-			await policy.enrollDrivingLicenceEmployeeAction({
-				employeeId: fixture.employeeId,
+			await saveConfirmedIntendedDriverAssignment({
+				target: { type: "employee", employeeId: fixture.employeeId },
+				value: "required",
 			})
 		).success,
 	).toBe(true);
@@ -204,7 +211,7 @@ it("escalates missing current verifier responsibility to admins with minimal ass
 	expect(missing.data[0]).not.toHaveProperty("directEmployeeNotification");
 	const notices = await inbox(fixture.ownerUserId);
 	expect(notices).toHaveLength(1);
-	expect(notices[0].actionUrl).toBe("/settings/driving-licence");
+	expect(notices[0].actionUrl).toBe("/settings/driving-licence?tab=verifiers");
 	await runDrivingLicenceRemindersJob();
 	expect(await inbox(fixture.ownerUserId)).toHaveLength(1);
 	expect(
@@ -230,6 +237,25 @@ it("escalates missing current verifier responsibility to admins with minimal ass
 	]);
 	harness.userId = verifier.userId;
 	expect((await tasks.getDrivingLicenceTasksAction()).success).toBe(true);
+});
+
+it("links a verifier's personal reminder task notice to the employee's check page (#1429)", async () => {
+	await fixture.pool.query('update "user" set email=$2 where id=$1', [
+		subjectUserId,
+		`terminal-${subjectUserId}@kiosk.invalid`,
+	]);
+	await runDrivingLicenceRemindersJob();
+	expect(
+		(await inbox(verifier.userId)).map((notice) => ({
+			entityType: notice.entityType,
+			actionUrl: notice.actionUrl,
+		})),
+	).toEqual([
+		{
+			entityType: "driving_licence_task",
+			actionUrl: `/driving-licence/checks/${fixture.employeeId}`,
+		},
+	]);
 });
 
 it("creates initial terminal tasks and transfers visibility to current verifiers without granting administrators inspection access", async () => {
@@ -349,6 +375,87 @@ it("restores a still-current terminal task after a personal route was temporaril
 			directEmployeeNotification: "unavailable",
 		},
 	]);
+});
+
+it("opens exactly one reassignment task for the employee an ended until-dated grant leaves uncovered", async () => {
+	harness.userId = fixture.ownerUserId;
+	const covered = await fixture.seedEmployee();
+	const cover = await fixture.seedEmployee();
+	expect(
+		(
+			await saveConfirmedIntendedDriverAssignment({
+				target: { type: "employee", employeeId: covered.employeeId },
+				value: "required",
+			})
+		).success,
+	).toBe(true);
+	expect(
+		(
+			await grants.saveDrivingLicenceVerifierGrantAction({
+				verifierEmployeeId: cover.employeeId,
+				scope: "specific",
+				teamIds: [],
+				employeeIds: [covered.employeeId],
+			})
+		).success,
+	).toBe(true);
+	expect(
+		(
+			await grants.saveDrivingLicenceVerifierGrantAction({
+				verifierEmployeeId: verifier.employeeId,
+				scope: "all",
+				teamIds: [],
+				employeeIds: [],
+				until: "2026-02-10",
+			})
+		).success,
+	).toBe(true);
+	// Last moment of 10 February in Europe/Berlin: the grant still covers everyone.
+	harness.now = "2026-02-10T22:59:59Z";
+	await runDrivingLicenceRemindersJob();
+	expect(await tasks.getDrivingLicenceTasksAction()).toEqual({
+		success: true,
+		data: [],
+	});
+	harness.userId = verifier.userId;
+	expect(
+		(
+			await checks.getDrivingLicenceEmployeeRecordAction({
+				employeeId: fixture.employeeId,
+			})
+		).success,
+	).toBe(true);
+	harness.now = "2026-02-10T23:00:00Z";
+	expect(
+		(
+			await checks.getDrivingLicenceEmployeeRecordAction({
+				employeeId: fixture.employeeId,
+			})
+		).success,
+	).toBe(false);
+	expect(
+		(await checks.completeDrivingLicenceCheckAction(original())).success,
+	).toBe(false);
+	harness.userId = fixture.ownerUserId;
+	await Promise.all([
+		runDrivingLicenceRemindersJob(),
+		runDrivingLicenceRemindersJob(),
+	]);
+	await runDrivingLicenceRemindersJob();
+	const open = await tasks.getDrivingLicenceTasksAction();
+	expect(open).toEqual({
+		success: true,
+		data: [
+			expect.objectContaining({
+				kind: "reassignment",
+				state: "pending",
+				employeeId: fixture.employeeId,
+			}),
+		],
+	});
+	const notices = await inbox(fixture.ownerUserId);
+	expect(notices).toHaveLength(1);
+	expect(notices[0].actionUrl).toBe("/settings/driving-licence?tab=verifiers");
 });
 
 it.each(["expired", "inactive", "terminal", "revoked"] as const)(

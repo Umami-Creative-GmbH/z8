@@ -25,6 +25,12 @@ import {
 	saveFormCustomFieldValues,
 } from "@/lib/organization/custom-fields/form-values";
 import type { CustomFieldValuesInput } from "@/lib/organization/custom-fields/value-rules";
+import type { DrivingLicenceTeamChangeImpact } from "@/lib/organization/driving-licence/intended-driver-rules";
+import {
+	previewDrivingLicenceIntendedDriverWrite,
+	runDrivingLicenceIntendedDriverWrite,
+} from "@/lib/organization/driving-licence/no-longer-intended";
+import { keepDrivingLicenceStalePreview } from "@/lib/organization/driving-licence/stale-preview";
 import { personnelNumberKey } from "@/lib/organization/personnel-number";
 import {
 	assertPersonnelNumberFree,
@@ -238,15 +244,100 @@ export async function createEmployeeAction(
 }
 
 /**
+ * Who may save `data` on the employee, and what of it they may change (scoped managers only
+ * some fields). Shared by `updateEmployeeAction` and its driving licence preview.
+ */
+function authorizeEmployeeUpdate(employeeId: string, data: UpdateEmployee) {
+	return Effect.gen(function* () {
+		const actor = yield* getEmployeeSettingsActorContext({ queryName: "updateEmployeeAction:actor" });
+		const inputData: UpdateEmployee =
+			actor.accessTier === "manager"
+				? (filterEmployeeUpdateForScopedManager(data) as UpdateEmployee)
+				: data;
+		const validatedData = yield* validateInput(updateEmployeeSchema, inputData);
+		const targetEmployee = yield* getTargetEmployee(employeeId);
+
+		yield* ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
+			message: "You do not have access to this employee",
+			resource: "employee",
+			action: "update",
+		});
+		return { actor, validatedData, targetEmployee };
+	});
+}
+
+/**
+ * The warning before saving a new primary team on the employee (#1425): what the actor may
+ * see of the driving authorizations that would end, and the token `updateEmployeeAction`
+ * takes. Read-only; authorized exactly like the save.
+ */
+export async function previewEmployeeTeamChangeDrivingImpact(
+	employeeId: string,
+	teamId: string | null,
+): Promise<ServerActionResult<DrivingLicenceTeamChangeImpact>> {
+	return runTracedEmployeeAction({
+		name: "previewEmployeeTeamChangeDrivingImpact",
+		attributes: { "employee.id": employeeId },
+		logError: (error) => {
+			logger.error({ error, employeeId }, "Failed to preview the employee team change");
+		},
+		execute: () =>
+			Effect.gen(function* () {
+				const { actor, validatedData, targetEmployee } = yield* authorizeEmployeeUpdate(
+					employeeId,
+					{ teamId },
+				);
+				const { session, dbService } = actor;
+				const organizationId = targetEmployee.organizationId;
+				return yield* dbService.query("employee.previewTeamChangeDrivingImpact", () =>
+					previewDrivingLicenceIntendedDriverWrite<TeamWriteTransaction>(
+						{
+							organizationId,
+							employeeIds: [employeeId],
+							viewer: {
+								userId: session.user.id,
+								organizationAdmin: actor.accessTier === "orgAdmin",
+							},
+						},
+						(work) =>
+							withAuthorizationMutation(
+								{ organizationId, employeeIds: [employeeId] },
+								work,
+								dbService.db,
+							),
+						async (tx) => {
+							// A scoped manager can't change the team: nothing changes then.
+							if (!Object.hasOwn(validatedData, "teamId")) return;
+							await tx
+								.update(employee)
+								.set({ teamId: validatedData.teamId ?? null })
+								.where(
+									and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)),
+								);
+						},
+					),
+				);
+			}),
+	});
+}
+
+type TeamWriteTransaction = Parameters<Parameters<typeof withAuthorizationMutation>[1]>[0];
+
+/** The confirmed driving licence warning of a primary-team change (#1425). */
+export type UpdateEmployeeOptions = { drivingLicencePreviewToken?: string };
+
+/**
  * Saves the employee detail form. `customFieldValues` are the form's custom
  * field values (#818): written in the same transaction, refused above the
  * actor's edit level, and every required field the actor may edit must have a
- * value afterwards.
+ * value afterwards. A new primary team must match its confirmed driving licence
+ * warning (`options.drivingLicencePreviewToken`, #1425); without one it may end nothing.
  */
 export async function updateEmployeeAction(
 	employeeId: string,
 	data: UpdateEmployee,
 	customFieldValues?: CustomFieldValuesInput,
+	options: UpdateEmployeeOptions = {},
 ): Promise<ServerActionResult<void>> {
 	return runTracedEmployeeAction({
 		name: "updateEmployee",
@@ -258,21 +349,11 @@ export async function updateEmployeeAction(
 		},
 		execute: () =>
 			Effect.gen(function* () {
-				const actor = yield* getEmployeeSettingsActorContext({ queryName: "updateEmployeeAction:actor" });
+				const { actor, validatedData, targetEmployee } = yield* authorizeEmployeeUpdate(
+					employeeId,
+					data,
+				);
 				const { session, dbService } = actor;
-
-				const inputData: UpdateEmployee =
-					actor.accessTier === "manager"
-						? (filterEmployeeUpdateForScopedManager(data) as UpdateEmployee)
-						: data;
-				const validatedData = yield* validateInput(updateEmployeeSchema, inputData);
-				const targetEmployee = yield* getTargetEmployee(employeeId);
-
-				yield* ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
-					message: "You do not have access to this employee",
-					resource: "employee",
-					action: "update",
-				});
 
 				const scopedData: UpdateEmployee = validatedData;
 
@@ -331,15 +412,34 @@ export async function updateEmployeeAction(
 										personnelNumber,
 									});
 								}
-								await tx
-									.update(employee)
-									.set(employeeUpdateData)
-									.where(
-										and(
-											eq(employee.id, employeeId),
-											eq(employee.organizationId, targetEmployee.organizationId),
-										),
+								const writeEmployee = async () => {
+									await tx
+										.update(employee)
+										.set(employeeUpdateData)
+										.where(
+											and(
+												eq(employee.id, employeeId),
+												eq(employee.organizationId, targetEmployee.organizationId),
+											),
+										);
+								};
+								// A new primary team can end the employee's driving authorization (#1425).
+								if (Object.hasOwn(employeeUpdateData, "teamId"))
+									await runDrivingLicenceIntendedDriverWrite(
+										tx,
+										{
+											organizationId: targetEmployee.organizationId,
+											employeeIds: [employeeId],
+											actorUserId: session.user.id,
+											viewer: {
+												userId: session.user.id,
+												organizationAdmin: actor.accessTier === "orgAdmin",
+											},
+											previewToken: options.drivingLicencePreviewToken,
+										},
+										writeEmployee,
 									);
+								else await writeEmployee();
 								await saveFormCustomFieldValues(tx, {
 									organizationId: targetEmployee.organizationId,
 									actorUserId: session.user.id,
@@ -353,6 +453,7 @@ export async function updateEmployeeAction(
 					)
 					.pipe(
 						keepCustomFieldRefusal,
+						keepDrivingLicenceStalePreview,
 						// A concurrent save that took the number first hits the unique index.
 						keepPersonnelNumberRefusal(() =>
 							personnelNumber === null

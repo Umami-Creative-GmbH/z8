@@ -871,16 +871,15 @@
         "all": "Todos los empleados de esta organización",
         "allDescription": "La responsabilidad sigue la pertenencia actual a la organización. Los verificadores nunca pueden verificarse a sí mismos.",
         "attribution": "Concedido por {actor} a las {time}",
-        "description": "Otorgue la responsabilidad de forma independiente a la inscripción de conductores, la gestión jerárquica y el acceso al expediente del personal. La gestión de estas concesiones no permite leer los registros de inspección. La autoverificación está siempre prohibida.",
         "editor": "Alcance del verificador",
         "empty": "No hay responsabilidades de verificador asignadas",
-        "expiry": "Caduca a las {time}",
         "history": "Historial de responsabilidades",
         "historyEntry": "Otorgado por {grantor} el {granted}; revocado por {revoker} el {revoked}",
         "loadFailed": "No se pudieron cargar las responsabilidades de verificador",
         "myAll": "Usted es responsable de las comprobaciones en toda esta organización. No puede verificarse a sí mismo.",
         "mySelected": "Usted es responsable de {teams} equipos seleccionados y {employees} empleados designados. La pertenencia actual al equipo determina el acceso. No puede verificarse a sí mismo.",
         "myTitle": "Su responsabilidad de verificador",
+        "myUntil": "Su responsabilidad finaliza después del {date} ({timezone}).",
         "none": "Actualmente no tiene ninguna responsabilidad de verificador de permisos de conducir.",
         "noTeams": "No hay equipos disponibles",
         "person": "Verificador",
@@ -895,7 +894,14 @@
         "selectEmployees": "Seleccionar empleados",
         "specific": "Equipos y empleados seleccionados",
         "specificDescription": "Incluye a los empleados designados y a los miembros actuales de los equipos seleccionados. Los cambios en los equipos surten efecto de inmediato.",
-        "title": "Verificadores de permisos de conducir"
+        "summary": "La responsabilidad de verificador es independiente de las asignaciones de conductor previsto, la supervisión directa y el acceso a los expedientes de personal. Gestionar estos permisos no autoriza a leer los registros de inspección. La autoverificación siempre está prohibida.",
+        "title": "Verificadores de permisos de conducir",
+        "until": "Hasta el {date} (final del día, {timezone})",
+        "untilEnded": "Finalizó después del {date} ({timezone}). Modifíquelo para prorrogarlo o revocarlo.",
+        "untilHelp": "Para coberturas temporales. La responsabilidad finaliza una vez concluido este día completo en {timezone}. Déjelo vacío si no tiene fecha límite.",
+        "untilInPast": "La fecha «Hasta» no puede pertenecer al pasado.",
+        "untilLabel": "Hasta (opcional)",
+        "untilPlaceholder": "Sin fecha de finalización"
       }
     },
     "emailTemplates": {

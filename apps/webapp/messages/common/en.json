@@ -545,8 +545,6 @@
     "yes": "Yes"
   },
   "drivingLicence": {
-    "activate": "Activate driving licence control",
-    "activationHelp": "Enrollment does not grant driving authorization. An authorized verifier must first check the original licence.",
     "applyingInterval": "Applying…",
     "applyInterval": "Apply interval change",
     "check": {
@@ -562,6 +560,7 @@
       "issueDate": "Document issue date",
       "original": "I personally inspected the original driving licence in the employee's presence.",
       "privacy": "Record only document dates, inspected classes and necessary driving restrictions. Do not enter a licence number, address, medical explanations or personal background.",
+      "recorded": "Original check recorded",
       "restrictions": "Necessary driving restrictions",
       "result": "Result",
       "saving": "Recording check…",
@@ -573,14 +572,54 @@
       "title": "Inspect {name}'s original licence",
       "verifier": "I confirm that the recorded facts and individual class results reflect my inspection."
     },
+    "checkPage": {
+      "back": "Checks",
+      "former": "Former employee",
+      "loadError": "The driving licence record could not be loaded. Check your current verifier responsibility.",
+      "loading": "Loading the driving licence record…",
+      "notIntended": "{name} is not an intended driver. A check is needed only for intended drivers.",
+      "title": "Driving licence check for {name}"
+    },
+    "checks": {
+      "column": {
+        "action": "Action",
+        "deadline": "Next deadline",
+        "name": "Name",
+        "status": "Status",
+        "team": "Team"
+      },
+      "deadline": "{date} ({timezone})",
+      "dueNow": "Check due now",
+      "empty": {
+        "description": "Intended drivers in your verifier responsibility appear here. Ask an administrator if someone is missing.",
+        "title": "Nobody to check yet"
+      },
+      "filter": {
+        "all": "All statuses",
+        "status": "Status"
+      },
+      "help": "Intended drivers covered by your current verifier responsibility. You never appear in your own list.",
+      "loadError": "The list could not be loaded. Check your current verifier responsibility.",
+      "loading": "Loading intended drivers…",
+      "noMatches": "No intended drivers match the search or filter.",
+      "search": "Search by name",
+      "status": {
+        "active": "Active",
+        "ended": "Ended",
+        "notIntended": "Not an intended driver",
+        "notYetChecked": "Not yet checked",
+        "partiallyActive": "Partially active",
+        "suspended": "Suspended"
+      },
+      "title": "Intended drivers to check"
+    },
     "class": {
       "active": "Authorized",
       "ended": "Ended",
+      "noLongerIntended": "Ended because the employee is no longer an intended driver. Driving again requires a new check.",
       "overdue": "Routine check overdue. This is an organizational suspension, not a statement that legal driving entitlement was withdrawn.",
       "recheck": "A new original check and explicit reinstatement are required.",
-      "restrictions": "Driving restrictions: {restrictions}",
-      "suspended": "Suspended",
-      "validThrough": "Valid through {date} ({timezone})"
+      "suspended": "Suspended"
     },
     "declaration": {
       "text": "I confirm that no known driving ban, withdrawal or other impediment prevents the intended driving, and that I meet the applicable driving restrictions."
@@ -589,11 +628,18 @@
       "uncertain": "Optional reminder emails to you have an uncertain delivery outcome ({count}). They will not be sent again automatically. Your in-app reminders remain available; email delivery does not confirm reading."
     },
     "earlierLimit": "Earlier document/class limit",
-    "enroll": "Enroll",
-    "enrollError": "The employee could not be enrolled. Activate the policy first and check your access.",
-    "enrollmentHelp": "Enroll employees who are intended to drive. Vehicle assignments and previous vehicle use never create authorization.",
-    "enrollmentTitle": "Intended drivers",
-    "enrollName": "Enroll {name}",
+    "ending": {
+      "assignmentConfirm": "Save and end authorizations",
+      "assignmentDescription": "These employees stop being intended drivers when you save. Their driving authorizations end at once and their check records start their retention period. Driving again requires a new check.",
+      "assignmentTitle": "End driving authorizations?",
+      "listLabel": "Driving authorizations that end",
+      "teamChangeConfirm": "Continue and end authorizations",
+      "teamChangeDescription": "These employees stop being intended drivers because their primary team changes. Their driving authorizations end at once and their check records start their retention period. Driving again requires a new check.",
+      "teamChangeGeneric": "This change ends driving authorizations for some employees.",
+      "teamChangePreviewFailed": "Couldn't check whether this change ends driving authorizations. Try again.",
+      "teamChangeStale": "Who this change affects has changed in the meantime. Try the change again to review it.",
+      "teamChangeTitle": "This team change ends driving authorizations"
+    },
     "evidence": {
       "confirmation": "Verifier confirmation recorded with policy version {version}; deadlines use {timezone}.",
       "declarationConfirmed": "The employee made the declaration in person; the verifier attested it at the control time.",
@@ -640,6 +686,7 @@
       "loading": "Loading history…",
       "minimalEvidence": "Record only necessary driving evidence. Do not enter document numbers, medical explanations or personal background.",
       "missingDetail": "Missing detail",
+      "noLongerIntended": "No longer an intended driver",
       "none": "None recorded",
       "openSupplement": "Supplement original check {date}",
       "original": "Original check and confirmation",
@@ -655,6 +702,7 @@
       "recordingError": "Recording error",
       "reinstated": "Authorization explicitly reinstated after a new check",
       "save": "Save supplement",
+      "saved": "Supplement saved",
       "saveError": "The supplement could not be saved. Check your current responsibility and correction details.",
       "snapshot": "Policy {version}; interval {months} months; deadline timezone {timezone}",
       "supplementBy": "Supplement by {name}",
@@ -677,6 +725,7 @@
       "reinstating": "Saving reinstatement…",
       "report": "Report that I cannot drive",
       "reported": "All your class authorizations are suspended. Contact your responsible verifier for a new original check and explicit reinstatement after the impediment is resolved.",
+      "reportedToast": "Report saved",
       "reportFailed": "The report could not be saved. Retry or contact your responsible verifier immediately.",
       "reportHelp": "Report a current inability to drive. All class authorizations will be suspended immediately. You do not need to provide personal reasons.",
       "reporting": "Saving report…",
@@ -684,6 +733,25 @@
       "selectClasses": "Classes to reinstate from the latest original check",
       "title": "Unable to drive?",
       "unresolvedReport": "An employee-reported person-wide impediment still requires resolution."
+    },
+    "intendedDrivers": {
+      "description": "Intended drivers get original licence checks, reminders and a driving status. Nobody is an intended driver until you assign them. The most specific assignment wins: an employee's own over their primary team's, and a team's over the whole organization's. Other team memberships don't count. Not required excludes a team or employee from a broader assignment.",
+      "error": {
+        "assignmentNotFound": "That assignment no longer exists. Reload the page.",
+        "employeeNotFound": "That employee is no longer a current employee of this organization.",
+        "failed": "The intended drivers could not be saved. Try again.",
+        "forbidden": "Only organization owners and admins can assign intended drivers.",
+        "notEnabled": "Switch on driving licence control before assigning intended drivers.",
+        "stalePreview": "Who this change affects has changed in the meantime. Review it and save again.",
+        "teamNotFound": "That team no longer exists."
+      },
+      "notRequired": "Not required (excluded)",
+      "removed": "Intended driver assignment removed",
+      "required": "Required",
+      "saved": "Intended drivers saved",
+      "targetOrganization": "Whole organization",
+      "title": "Intended drivers",
+      "valueLabel": "Driving licence checks"
     },
     "interval": "Routine check interval (months)",
     "intervalAnchorHelp": "Calculated from each class's last successful check.",
@@ -698,16 +766,20 @@
     "justification": "Retention justification",
     "justificationHelp": "Explain why this finite period is necessary (at least 10 characters). Do not include private or medical details.",
     "loadError": "Driving licence control could not be loaded. Check your organization access.",
-    "myDescription": "View your driving licence check status",
+    "myLicence": {
+      "former": "You are no longer an intended driver. Your retained check records stay available to view and export."
+    },
     "myTitle": "My driving authorization",
     "newInterval": "New routine interval (months)",
     "newlyOverdue": "Newly overdue — will be suspended",
     "newRoutineDate": "Next routine check",
     "noEmployeeRecord": "No employee driving licence record is available in this organization.",
-    "noEmployees": "There are no active employees to enroll.",
     "noIntervalClasses": "No existing class authorizations need recalculation.",
     "notChecked": "Not yet checked — no driving authorization",
-    "notEnrolled": "Not enrolled — no driving authorization",
+    "off": {
+      "description": "Nobody sees driving licence control and no reminders are sent. Intended drivers, verifier grants, check records and authorizations are kept, and evidence cleanup continues under the saved retention period. Only Retention & holds is available until it is switched on again.",
+      "title": "Driving licence control is off"
+    },
     "operational": {
       "advisory": "Driving authorization",
       "loading": "Loading driving authorization…",
@@ -719,7 +791,9 @@
       "title": "Driving status for planning",
       "unavailable": "Driving authorization status is unavailable."
     },
-    "policyIntro": "Germany-first original licence checks. Choose the routine interval and justify a finite evidence retention period before activation.",
+    "page": {
+      "title": "Driving licence"
+    },
     "policyTitle": "Organization policy",
     "previewingInterval": "Loading impact…",
     "previewInterval": "Preview interval impact",
@@ -768,23 +842,71 @@
     "saved": "Policy saved",
     "saveError": "The policy could not be saved. Check the interval, timezone, reminders and justified retention period.",
     "saving": "Saving…",
-    "settingsDescription": "Configure original checks and enroll intended drivers",
+    "settingsSummary": "Set the check policy, intended drivers, verifiers and evidence retention",
+    "settingsTabs": {
+      "cleanupDescription": "Due evidence is deleted automatically. Run cleanup now to delete it at once.",
+      "cleanupFinished": "Due evidence cleanup finished",
+      "cleanupTitle": "Evidence cleanup",
+      "deadlineTimezone": "Deadline timezone",
+      "holdPlaced": "Legal-case hold placed",
+      "holdReleased": "Legal-case hold released",
+      "holdsColumn": "Open holds",
+      "holdsTitle": "Legal-case holds",
+      "impactClass": "Employee and class",
+      "impactResult": "Result",
+      "impactTimezone": "Timezone",
+      "intendedDrivers": "Intended drivers",
+      "intendedDriversDescription": "Decide who needs original licence checks: the whole organization, a primary team or one employee.",
+      "intendedDriversEmpty": {
+        "description": "Set Required for the whole organization, for a primary team or for one employee. The most specific choice wins, and Not required excludes a team or employee from a broader one. Only intended drivers get checks, reminders and a driving status.",
+        "title": "Nobody is an intended driver yet"
+      },
+      "policy": "Policy",
+      "policyDescription": "The routine check interval, reminder lead times and the evidence retention period.",
+      "reassignment": {
+        "description": "Their checks and reminders have no verifier. Assigning responsibility grants no inspection rights to you and extends no deadline.",
+        "title": "Employees without a responsible verifier"
+      },
+      "remindersDescription": "When reminders go out before a deadline, and how long evidence is kept once it no longer supports an authorization.",
+      "remindersTitle": "Reminders and retention",
+      "reportColumn": "Report",
+      "retention": "Retention & holds",
+      "retentionColumn": "Retention",
+      "retentionDescription": "Retained check records, legal-case holds and evidence cleanup.",
+      "scheduleTitle": "Check schedule",
+      "verifiers": "Verifiers",
+      "verifiersDescription": "Who checks whose licence, optionally until a set date."
+    },
     "status": {
       "active": "Driving authorization active",
       "ended": "Driving authorization ended",
       "explanation": "Organization driving authorization covers the listed classes and restrictions. It does not establish suitability for every vehicle. You can continue recording working time and actual vehicle use.",
+      "notIntended": "Not an intended driver — no driving authorization",
       "partial": "Some driving classes are suspended",
       "suspended": "Driving authorization suspended"
     },
     "staysCurrent": "Remains current",
     "staysSuspended": "Remains suspended",
-    "subtitle": "Configure original checks and enroll intended drivers. Driving authorization is specific to checked classes and restrictions.",
+    "summary": {
+      "class": "Class",
+      "empty": "No class is authorized yet. A verifier records your first original check.",
+      "emptyForVerifier": "No class is authorized yet.",
+      "personWide": "An impediment suspends driving in every class until a verifier reinstates it. A new check alone does not lift it.",
+      "restrictions": "Restrictions",
+      "status": "Status",
+      "validThrough": "Valid through"
+    },
+    "switchOnFirst": "Switch on driving licence control on the Features card in Organization settings. Setting it up there saves the first policy.",
+    "tabs": {
+      "checks": "Checks",
+      "myLicence": "My licence",
+      "planning": "Planning"
+    },
     "tasks": {
       "assign": "Assign responsibility",
-      "assigned": "Responsibility assigned",
-      "assignmentBoundary": "This task grants no inspection rights and does not extend any deadline.",
       "class": "Class {classCode}",
       "complete": "Mark personal reminder completed",
+      "completedToast": "Personal reminder marked completed",
       "completeError": "Could not complete this task. Check your current verifier responsibility.",
       "completing": "Completing…",
       "deadline": "Original check due",
@@ -793,21 +915,16 @@
       "loadError": "Could not load driving licence tasks. Check your organization access.",
       "loading": "Loading driving licence tasks…",
       "noDeliveryReceipt": "Task completion does not confirm direct delivery or employee reading. No deadline is extended.",
-      "noVerifier": "No available verifier is responsible for this employee.",
+      "openCheck": "Open check",
       "personalCompleted": "Personal reminder completed",
       "personalTitle": "Personal reminder tasks",
-      "reassignmentTitle": "Verifier responsibility tasks",
       "refresh": "Recheck responsibility",
       "suspension": "Driving authorization suspended",
       "validThrough": "Valid through {date} in the check’s saved deadline timezone"
     },
-    "timezone": "Fixed calendar timezone",
     "title": "Driving licence control",
-    "unnamedEmployee": "Employee",
     "worklist": {
-      "help": "Only enrolled employees within your current verifier responsibility appear here.",
       "open": "Check {name}",
-      "title": "Your original-check worklist",
       "viewEnded": "View ended record for {name}"
     },
     "zoneFixedError": "The calendar timezone is fixed. Existing deadlines must keep their original meaning.",
@@ -999,6 +1116,7 @@
     "calendar": "Calendar",
     "compliance": "Compliance",
     "dashboard": "Dashboard",
+    "driving-licence": "Driving licence",
     "feedback": "Feedback",
     "finance": "Finance",
     "financeAwaiting": "{count, plural, one {# expense awaiting reimbursement} other {# expenses awaiting reimbursement}}",
@@ -1185,6 +1303,10 @@
       "complianceExceptionRequested": {
         "message": "{employeeName} requested a {exceptionType, select, rest_period {rest period} overtime_daily {daily overtime} overtime_weekly {weekly overtime} overtime_monthly {monthly overtime} other {compliance}} exception: \"{reason}\"",
         "title": "Compliance exception requested"
+      },
+      "drivingAuthorizationEnded": {
+        "message": "{employeeName} is no longer an intended driver, so their driving authorization ({classes}) has ended. Driving again requires a new check.",
+        "title": "Driving authorization ended"
       },
       "drivingAuthorizationSuspended": {
         "message": "Driving authorization for {employeeName} ({classes}) is suspended. A new check and explicit reinstatement are required before driving.",
@@ -1681,7 +1803,7 @@
         "approval_cover_return_summary": "Decided by your deputy",
         "approval_cover_started": "Absence cover started",
         "break_due_reminder": "Break due",
-        "driving_authorization_suspended": "Driving authorization suspended",
+        "driving_authorization_suspended_or_ended": "Driving authorization suspended or ended",
         "driving_details_missing_reminder": "Driving details missing",
         "driving_licence_reminder": "Driving licence check due",
         "forgotten_clock_out_reminder": "Forgotten clock-out",
@@ -2140,6 +2262,8 @@
         },
         "drivingLicence": {
           "actor_name": "The name of the person who performed this action; empty for a system action or unavailable actor.",
+          "assigned_at": "When your own intended-driver assignment was first saved, as a UTC instant.",
+          "assigned_by": "The name of the person who first saved your own intended-driver assignment.",
           "authorization_events": {
             "summary": "Your driving authorization history, including impediment reports, resolutions and explicit reinstatements."
           },
@@ -2178,7 +2302,6 @@
           "employee_ids": "The opaque employee IDs in your specific verifier scope, encoded as a JSON array.",
           "employment_period_id": "The employment period this evidence belongs to; empty for legacy employment.",
           "enabled": "Whether the referenced organization check policy was enabled.",
-          "enrolled_at": "When you were enrolled in the organization's driving licence checks.",
           "expires_at": "The UTC instant when this authorization or verifier grant expires.",
           "expiry_date": "The class expiry date recorded at inspection; empty if none was recorded.",
           "failure_scope": "Whether an unsuccessful inspection concerned classes, the document or the person.",
@@ -2190,6 +2313,9 @@
           "impedimentReports": {
             "summary": "Your minimal driving impediment reports and their explicit resolution, without medical explanations or private reasons."
           },
+          "intendedDriverAssignment": {
+            "summary": "Your own intended-driver assignment for the organization's driving licence checks. Organization and team assignments that also reach you are not listed."
+          },
           "interval_months": "The number of calendar months between routine checks under this policy.",
           "kind": "The authorization event, suspension or task kind; tasks are personal_reminder or reassignment.",
           "last_successful_at": "When this class last passed a successful original inspection.",
@@ -2199,9 +2325,6 @@
           "notificationId": "The app notification linked to this reminder; empty when none was created.",
           "occasionKey": "The occurrence this reminder or task concerns; it identifies the employment, class deadline or suspension without copying the check.",
           "original_inspected": "Whether the verifier confirmed personally inspecting the original document.",
-          "participation": {
-            "summary": "Your enrolment in the organization's driving licence checks."
-          },
           "placedAt": "When this legal hold was placed, as a UTC instant.",
           "placedBy": "The name of the administrator who placed this case hold.",
           "policies": {
@@ -2227,6 +2350,7 @@
           },
           "reportedAt": "When you reported a person-wide driving impediment, as a UTC instant.",
           "reporterName": "The name of the person who reported the impediment.",
+          "required": "Whether your own assignment makes you an intended driver (true) or excludes you from a team or organization assignment (false).",
           "resolvedAt": "When a verifier explicitly resolved this report; empty for an unresolved report.",
           "resolvedBy": "The name of the verifier who explicitly resolved this report.",
           "restrictions": "The relevant driving restrictions recorded for this class.",
@@ -2253,6 +2377,8 @@
             "summary": "Your current person-wide or document-wide driving authorization suspension record."
           },
           "team_ids": "The opaque team IDs in your specific verifier scope, encoded as a JSON array.",
+          "updated_at": "When your own intended-driver assignment was last changed, as a UTC instant.",
+          "updated_by": "The name of the person who last changed your own intended-driver assignment.",
           "valid_through": "The earliest applicable final calendar day of this class clearance.",
           "value": "The value supplied by this supplement; empty means the optional class expiry was cleared.",
           "verifier_confirmed": "Whether the verifier confirmed the inspection record.",

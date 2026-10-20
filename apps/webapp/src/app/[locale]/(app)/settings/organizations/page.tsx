@@ -10,6 +10,7 @@ import { getBillableTimeSettings } from "@/lib/billable-time/settings";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
+import { readDrivingLicenceFeatureState } from "@/lib/organization/driving-licence/policy";
 import { getTranslate } from "@/tolgee/server";
 
 async function OrganizationsPageContent() {
@@ -40,6 +41,7 @@ async function OrganizationsPageContent() {
 		memberCountRows,
 		organizationNotificationSettingsRecord,
 		billableTimeSettings,
+		drivingLicence,
 	] = await Promise.all([
 		db.query.organization.findFirst({
 			where: eq(authSchema.organization.id, organizationId),
@@ -66,6 +68,7 @@ async function OrganizationsPageContent() {
 			columns: { defaultLanguage: true },
 		}),
 		getBillableTimeSettings(organizationId, db),
+		readDrivingLicenceFeatureState(organizationId),
 	]);
 
 	const [currentMemberRecord] = currentMember;
@@ -103,6 +106,7 @@ async function OrganizationsPageContent() {
 				organizationNotificationSettingsRecord?.defaultLanguage ?? "en"
 			}
 			billableCurrency={billableTimeSettings.currency}
+			drivingLicence={drivingLicence}
 			canCreateOrganizations={canCreateOrganizationsForDeployment(
 				authContext.user.canCreateOrganizations ||
 					authContext.user.role === "admin",

@@ -47,6 +47,8 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 	featureFlags?: FeatureFlagState;
 	/** The user manages a project below the manager tier (#928). */
 	managesProject?: boolean;
+	/** The driving licence visibility reader offers its settings (#1420). */
+	drivingLicenceSettingsVisible?: boolean;
 	canCreateOrganizations?: boolean;
 }
 
@@ -67,6 +69,7 @@ const DEFAULT_NAVIGATION_CAPABILITIES: NavigationCapabilities = {
 	personnelFiles: false,
 	periodSubmissions: false,
 	teamPresence: false,
+	drivingLicence: false,
 	platformAdmin: false,
 };
 
@@ -107,6 +110,7 @@ export function AppSidebar({
 	billingEnabled = false,
 	featureFlags,
 	managesProject = false,
+	drivingLicenceSettingsVisible = false,
 	canCreateOrganizations = false,
 	...props
 }: AppSidebarProps) {
@@ -121,6 +125,8 @@ export function AppSidebar({
 		showPayrollNav: navigationCapabilities.payroll,
 		featureFlags,
 		managesProject,
+		showDrivingLicenceNav: navigationCapabilities.drivingLicence ?? false,
+		drivingLicenceSettingsVisible,
 	};
 	const staticCommands = buildStaticAppCommands(staticSearchInput);
 	const staticSearchResults = buildStaticAppSearchResults(staticSearchInput);

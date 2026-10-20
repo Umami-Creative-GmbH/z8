@@ -871,16 +871,15 @@
         "all": "Wszyscy pracownicy w tej organizacji",
         "allDescription": "Uprawnienia zależą od bieżącego członkostwa w organizacji. Weryfikatorzy nigdy nie mogą weryfikować samych siebie.",
         "attribution": "Nadane przez: {actor} o {time}",
-        "description": "Przyznawaj uprawnienia niezależnie od rejestracji kierowców, zarządzania bezpośredniego i dostępu do akt osobowych. Zarządzanie tymi uprawnieniami nie pozwala na wgląd w protokoły kontroli. Weryfikacja samego siebie jest zawsze zabroniona.",
         "editor": "Zakres weryfikatora",
         "empty": "Brak przypisanych uprawnień weryfikatora",
-        "expiry": "Wygasa o {time}",
         "history": "Historia uprawnień",
         "historyEntry": "Przyznano przez {grantor} o {granted}; odebrano przez {revoker} o {revoked}",
         "loadFailed": "Nie udało się załadować uprawnień weryfikatora",
         "myAll": "Odpowiadasz za kontrole w całej organizacji. Nie możesz weryfikować samego siebie.",
         "mySelected": "Odpowiadasz za {teams} wybranych zespołów i {employees} wskazanych pracowników. Dostęp zależy od aktualnej przynależności do zespołu. Nie możesz weryfikować samego siebie.",
         "myTitle": "Twoje uprawnienia weryfikatora",
+        "myUntil": "Twoja odpowiedzialność kończy się po {date} ({timezone}).",
         "none": "Nie masz obecnie uprawnień weryfikatora praw jazdy.",
         "noTeams": "Brak dostępnych zespołów",
         "person": "Weryfikator",
@@ -895,7 +894,14 @@
         "selectEmployees": "Wybierz pracowników",
         "specific": "Wybrane zespoły i pracownicy",
         "specificDescription": "Obejmuje wskazanych pracowników oraz bieżących członków wybranych zespołów. Zmiany w zespołach wchodzą w życie natychmiast.",
-        "title": "Weryfikatorzy praw jazdy"
+        "summary": "Odpowiedzialność weryfikatora jest niezależna od przypisania jako kierowcy, podległości służbowej i dostępu do akt osobowych. Zarządzanie tymi uprawnieniami nie pozwala na odczyt protokołów kontroli. Samoweryfikacja jest zawsze zabroniona.",
+        "title": "Weryfikatorzy praw jazdy",
+        "until": "Do {date} (koniec dnia, {timezone})",
+        "untilEnded": "Zakończono po {date} ({timezone}). Edytuj, aby przedłużyć lub cofnąć.",
+        "untilHelp": "W przypadku tymczasowego zastępstwa. Odpowiedzialność kończy się po upływie całego tego dnia w strefie {timezone}. Pozostaw puste w przypadku braku terminu końcowego.",
+        "untilInPast": "Data końcowa nie może być w przeszłości.",
+        "untilLabel": "Do (opcjonalnie)",
+        "untilPlaceholder": "Brak daty końcowej"
       }
     },
     "emailTemplates": {

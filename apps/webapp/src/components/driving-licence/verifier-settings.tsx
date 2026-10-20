@@ -21,9 +21,17 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import { useAppLocale } from "@/components/providers/app-locale-provider";
+import { DatePicker } from "@/components/ui/date-picker";
+import { formatDateOnly } from "@/components/ui/date-picker-utils";
+import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSession } from "@/lib/auth-client";
-import { parseInstant } from "@/lib/datetime/temporal-core";
+import {
+	parseInstant,
+	plainDateAt,
+	systemClock,
+} from "@/lib/datetime/temporal-core";
 import {
 	type DrivingLicenceVerifierAdminData,
 	getDrivingLicenceVerifierAdminDataAction,
@@ -32,16 +40,19 @@ import {
 	saveDrivingLicenceVerifierGrantAction,
 } from "@/lib/organization/driving-licence/verifier-actions";
 import type {
-	DrivingLicenceVerifierGrantRecord,
+	DrivingLicenceVerifierGrantView,
 	SaveDrivingLicenceVerifierGrantInput,
 } from "@/lib/organization/driving-licence/verifiers";
+import { queryKeys } from "@/lib/query";
 
 const EMPTY: SaveDrivingLicenceVerifierGrantInput = {
 	verifierEmployeeId: "",
 	scope: "specific",
 	teamIds: [],
 	employeeIds: [],
+	until: null,
 };
+const UNTIL_FIELD_ID = "driving-verifier-until";
 const grantTimeFormatter = new Intl.DateTimeFormat(undefined, {
 	year: "numeric",
 	month: "short",
@@ -58,10 +69,11 @@ function VerifierGrantSummary({
 	grant,
 	data,
 }: {
-	grant: DrivingLicenceVerifierGrantRecord;
+	grant: DrivingLicenceVerifierGrantView;
 	data: DrivingLicenceVerifierAdminData;
 }) {
 	const { t } = useTranslate();
+	const locale = useAppLocale();
 	const nameOf = (id: string) =>
 		data.employees.find((person) => person.id === id)?.name ?? id;
 	return (
@@ -98,11 +110,25 @@ function VerifierGrantSummary({
 					{ actor: grant.grantedBy, time: grantTime(grant.grantedAt) },
 				)}
 			</p>
-			{grant.expiresAt && (
+			{grant.until && (
 				<p>
-					{t("settings.drivingLicence.verifiers.expiry", "Expires at {time}", {
-						time: grantTime(grant.expiresAt),
-					})}
+					{grant.expired
+						? t(
+								"settings.drivingLicence.verifiers.untilEnded",
+								"Ended after {date} ({timezone}). Edit it to extend or revoke it.",
+								{
+									date: formatDateOnly(grant.until, locale),
+									timezone: data.timezone,
+								},
+							)
+						: t(
+								"settings.drivingLicence.verifiers.until",
+								"Until {date} (end of day, {timezone})",
+								{
+									date: formatDateOnly(grant.until, locale),
+									timezone: data.timezone,
+								},
+							)}
 				</p>
 			)}
 		</div>
@@ -118,16 +144,26 @@ function VerifierEditor({
 	const { t } = useTranslate();
 	const [open, setOpen] = useState(false);
 	const [editing, setEditing] =
-		useState<DrivingLicenceVerifierGrantRecord | null>(null);
+		useState<DrivingLicenceVerifierGrantView | null>(null);
 	const [revoking, setRevoking] =
-		useState<DrivingLicenceVerifierGrantRecord | null>(null);
+		useState<DrivingLicenceVerifierGrantView | null>(null);
 	const [pending, setPending] = useState(false);
 	const form = useForm({
 		defaultValues: EMPTY,
 		onSubmit: async ({ value }) => {
-			const result = await saveDrivingLicenceVerifierGrantAction(value);
+			const result = await saveDrivingLicenceVerifierGrantAction({
+				...value,
+				until: value.until || null,
+			});
 			if (!result.success) {
-				toast.error(result.error);
+				toast.error(
+					result.error === "until_in_past"
+						? t(
+								"settings.drivingLicence.verifiers.untilInPast",
+								"The until date can't be in the past.",
+							)
+						: result.error,
+				);
 				return;
 			}
 			await onSaved();
@@ -152,14 +188,17 @@ function VerifierEditor({
 			!g.revokedAt &&
 			data.employees.some((person) => person.id === g.verifierEmployeeId),
 	);
-	const edit = (grant: DrivingLicenceVerifierGrantRecord | null) => {
+	// Until dates are calendar days in the fixed driving licence timezone, never the viewer's.
+	const today = plainDateAt(systemClock.nowInstant(), data.timezone).toString();
+	const edit = (grant: DrivingLicenceVerifierGrantView | null) => {
 		setEditing(grant);
 		const next = grant ?? EMPTY;
 		form.setFieldValue("verifierEmployeeId", next.verifierEmployeeId);
 		form.setFieldValue("scope", next.scope);
 		form.setFieldValue("teamIds", next.teamIds);
 		form.setFieldValue("employeeIds", next.employeeIds);
-		form.setFieldValue("expiresAt", next.expiresAt);
+		// An ended grant's old date would be refused; start from no end instead.
+		form.setFieldValue("until", grant && !grant.expired ? grant.until : null);
 		setOpen(true);
 	};
 	const revoke = async () => {
@@ -318,6 +357,18 @@ function VerifierEditor({
 							departedNotice: null,
 						}}
 					/>
+					<form.Field name="until">
+						{(field) => (
+							<VerifierUntilField
+								value={field.state.value ?? null}
+								onChange={(value) => field.handleChange(value || null)}
+								onBlur={field.handleBlur}
+								min={today}
+								disabled={submitting}
+								timezone={data.timezone}
+							/>
+						)}
+					</form.Field>
 					<div className="flex gap-2">
 						<Button
 							type="submit"
@@ -344,36 +395,85 @@ function VerifierEditor({
 					</div>
 				</form>
 			)}
-			{data.grants.some((g) => g.revokedAt) && (
-				<details className="text-sm">
-					<summary className="cursor-pointer font-medium">
-						{t(
-							"settings.drivingLicence.verifiers.history",
-							"Responsibility history",
-						)}
-					</summary>
-					<ul className="mt-3 space-y-3">
-						{data.grants
-							.filter((g) => g.revokedAt)
-							.map((g) => (
-								<li key={g.id}>
-									{nameOf(g.verifierEmployeeId)} —{" "}
-									{t(
-										"settings.drivingLicence.verifiers.historyEntry",
-										"Granted by {grantor} at {granted}; revoked by {revoker} at {revoked}",
-										{
-											grantor: g.grantedBy,
-											granted: grantTime(g.grantedAt),
-											revoker: g.revokedBy ?? "",
-											revoked: g.revokedAt ? grantTime(g.revokedAt) : "",
-										},
-									)}
-								</li>
-							))}
-					</ul>
-				</details>
-			)}
+			<RevokedGrantHistory grants={data.grants.filter((g) => g.revokedAt)} nameOf={nameOf} />
 		</div>
+	);
+}
+
+function VerifierUntilField({
+	value,
+	onChange,
+	onBlur,
+	min,
+	disabled,
+	timezone,
+}: {
+	value: string | null;
+	onChange: (value: string | null) => void;
+	onBlur: () => void;
+	min: string;
+	disabled: boolean;
+	timezone: string;
+}) {
+	const { t } = useTranslate();
+	return (
+		<div className="space-y-2">
+			<Label htmlFor={UNTIL_FIELD_ID}>
+				{t("settings.drivingLicence.verifiers.untilLabel", "Until (optional)")}
+			</Label>
+			<DatePicker
+				id={UNTIL_FIELD_ID}
+				aria-describedby={`${UNTIL_FIELD_ID}-help`}
+				value={value}
+				onChange={onChange}
+				onBlur={onBlur}
+				min={min}
+				disabled={disabled}
+				placeholder={t("settings.drivingLicence.verifiers.untilPlaceholder", "No end date")}
+			/>
+			<p id={`${UNTIL_FIELD_ID}-help`} className="text-muted-foreground text-sm">
+				{t(
+					"settings.drivingLicence.verifiers.untilHelp",
+					"For temporary cover. Responsibility ends after this whole day in {timezone}. Leave empty for no end.",
+					{ timezone },
+				)}
+			</p>
+		</div>
+	);
+}
+
+function RevokedGrantHistory({
+	grants,
+	nameOf,
+}: {
+	grants: readonly DrivingLicenceVerifierGrantView[];
+	nameOf: (employeeId: string) => string;
+}) {
+	const { t } = useTranslate();
+	if (!grants.length) return null;
+	return (
+		<details className="text-sm">
+			<summary className="cursor-pointer font-medium">
+				{t("settings.drivingLicence.verifiers.history", "Responsibility history")}
+			</summary>
+			<ul className="mt-3 space-y-3">
+				{grants.map((g) => (
+					<li key={g.id}>
+						{nameOf(g.verifierEmployeeId)} —{" "}
+						{t(
+							"settings.drivingLicence.verifiers.historyEntry",
+							"Granted by {grantor} at {granted}; revoked by {revoker} at {revoked}",
+							{
+								grantor: g.grantedBy,
+								granted: grantTime(g.grantedAt),
+								revoker: g.revokedBy ?? "",
+								revoked: g.revokedAt ? grantTime(g.revokedAt) : "",
+							},
+						)}
+					</li>
+				))}
+			</ul>
+		</details>
 	);
 }
 
@@ -381,12 +481,10 @@ export function VerifierSettings() {
 	const { t } = useTranslate();
 	const { data: session } = useSession();
 	const client = useQueryClient();
-	const queryKey = [
-		"drivingLicence",
-		"verifiers",
+	const queryKey = queryKeys.drivingLicence.verifiers(
 		session?.session.activeOrganizationId,
 		session?.user.id,
-	];
+	);
 	const query = useQuery({
 		queryKey,
 		enabled: !!session?.session.activeOrganizationId,
@@ -407,8 +505,8 @@ export function VerifierSettings() {
 				</CardTitle>
 				<CardDescription>
 					{t(
-						"settings.drivingLicence.verifiers.description",
-						"Grant responsibility separately from driver enrollment, line management and personnel file access. Managing these grants does not permit reading inspection records. Self-verification is always prohibited.",
+						"settings.drivingLicence.verifiers.summary",
+						"Verifier responsibility is separate from intended-driver assignments, line management and personnel file access. Managing these grants does not permit reading inspection records. Self-verification is always prohibited.",
 					)}
 				</CardDescription>
 			</CardHeader>
@@ -436,7 +534,7 @@ export function VerifierSettings() {
 						key={session?.session.activeOrganizationId}
 						data={query.data}
 						onSaved={() =>
-							client.invalidateQueries({ queryKey: ["drivingLicence"] })
+							client.invalidateQueries({ queryKey: queryKeys.drivingLicence.all })
 						}
 					/>
 				)}
@@ -447,14 +545,13 @@ export function VerifierSettings() {
 
 export function VerifierResponsibility() {
 	const { t } = useTranslate();
+	const locale = useAppLocale();
 	const { data: session } = useSession();
 	const query = useQuery({
-		queryKey: [
-			"drivingLicence",
-			"myResponsibility",
+		queryKey: queryKeys.drivingLicence.myResponsibility(
 			session?.session.activeOrganizationId,
 			session?.user.id,
-		],
+		),
 		enabled: !!session?.session.activeOrganizationId,
 		queryFn: async () => {
 			const result = await getDrivingLicenceVerifierResponsibilityAction();
@@ -522,6 +619,18 @@ export function VerifierResponsibility() {
 							<li key={person.id}>{person.name}</li>
 						))}
 					</ul>
+				)}
+				{query.data?.until && (
+					<p className="mt-3 text-sm">
+						{t(
+							"settings.drivingLicence.verifiers.myUntil",
+							"Your responsibility ends after {date} ({timezone}).",
+							{
+								date: formatDateOnly(query.data.until, locale),
+								timezone: query.data.timezone,
+							},
+						)}
+					</p>
 				)}
 			</CardContent>
 		</Card>

@@ -871,16 +871,15 @@
         "all": "Alli Mitarbeiter i däre Organisation",
         "allDescription": "D Verantwortig richtet sich nach de aktuelle Organisations-Mitglidschaft. Prüefer chönd sich nie sälber überprüefe.",
         "attribution": "Vergeh dur {actor} am {time}",
-        "description": "Verantwortig separat vo de Fahreraamäldig, Liniefüehrig und em Zuegriff uf d Personalakte vergää. D Verwaltig vo dene Berächtigunge git kei Erlaubnis zum Prüefprotokoll läse. Sälber überprüefe isch immer verbote.",
         "editor": "Prüfer-Beriich",
         "empty": "Kei Prüfer-Verantwortige zuegwise",
-        "expiry": "Lauft ab um {time}",
         "history": "Verlauf vo de Verantwortig",
         "historyEntry": "Vergää dur {grantor} am {granted}; widerzoge dur {revoker} am {revoked}",
         "loadFailed": "Prüfer-Verantwortige händ nöd chönne glade wärde",
         "myAll": "Du bisch verantwortlich für Überprüefige i dere Organisation. Du chasch dich nöd sälber überprüefe.",
         "mySelected": "Du bisch verantwortlich für {teams} uswählti Teams und {employees} gnannti Mitarbeiter. Di aktuelli Team-Mitglidschaft bestimmt de Zuegriff. Du chasch dich nöd sälber überprüefe.",
         "myTitle": "Dini Prüfer-Verantwortig",
+        "myUntil": "Ihre Zuständigkeit endet nach dem {date} ({timezone}).",
         "none": "Du häsch aktuell kei Verantwortig für d Fahruuswiis-Prüefig.",
         "noTeams": "Kei Teams verfüegbar",
         "person": "Prüfer",
@@ -895,7 +894,14 @@
         "selectEmployees": "Mitarbeiter uswähle",
         "specific": "Uswählti Teams und Mitarbeiter",
         "specificDescription": "Umfasst gnannti Mitarbeiter und aktuelli Mitglider vo uswählte Teams. Team-Apassige wärded sofort wirksam.",
-        "title": "Fahruuswiis-Prüfer"
+        "summary": "Die Prüfzuständigkeit ist getrennt von Zuweisungen als vorgesehener Fahrer, Linienvorgesetztenfunktionen und dem Zugriff auf Personaldossiers. Die Verwaltung dieser Berechtigungen berechtigt nicht zum Einsehen von Prüfprotokollen. Selbstprüfungen sind grundsätzlich unzulässig.",
+        "title": "Fahruuswiis-Prüfer",
+        "until": "Bis {date} (Tagesende, {timezone})",
+        "untilEnded": "Beendet nach dem {date} ({timezone}). Bearbeiten Sie den Eintrag, um ihn zu verlängern oder zu widerrufen.",
+        "untilHelp": "Für temporäre Stellvertretungen. Die Zuständigkeit endet nach Ablauf dieses ganzen Tages in {timezone}. Leer lassen für unbefristet.",
+        "untilInPast": "Das Bis-Datum darf nicht in der Vergangenheit liegen.",
+        "untilLabel": "Bis (optional)",
+        "untilPlaceholder": "Keis Enddatum"
       }
     },
     "emailTemplates": {

@@ -13,7 +13,7 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
-import { seedSuspendedDrivingParticipant } from "@/lib/organization/driving-licence/testing/recording.test.fixture";
+import { seedSuspendedIntendedDriver } from "@/lib/organization/driving-licence/testing/recording.test.fixture";
 import { integrationAdminPool } from "@/test/integration-database";
 
 vi.mock("next/server", async (importOriginal) =>
@@ -312,7 +312,7 @@ describe("vehicle use on clock commands on PostgreSQL", () => {
 		"records clock-in/out and actual vehicle use with %s driving authorization, without granting authorization",
 		async (drivingState) => {
 			if (drivingState === "suspended")
-				await seedSuspendedDrivingParticipant(admin, {
+				await seedSuspendedIntendedDriver(admin, {
 					organizationId: ids.organization,
 					employeeId: ids.employee,
 					userId: ids.user,
@@ -496,7 +496,7 @@ describe("vehicle use on clock commands on PostgreSQL", () => {
 		"leaves the end reading empty on an on-behalf clock-out with %s driving authorization, keeping the vehicle",
 		async (drivingState) => {
 			if (drivingState === "suspended")
-				await seedSuspendedDrivingParticipant(admin, {
+				await seedSuspendedIntendedDriver(admin, {
 					organizationId: ids.organization,
 					employeeId: ids.employee,
 					userId: ids.user,

@@ -871,16 +871,15 @@
         "all": "Alle Mitarbeiter in dieser Organisation",
         "allDescription": "Die Zuständigkeit richtet sich nach der aktuellen Organisationsmitgliedschaft. Prüfer können sich niemals selbst überprüfen.",
         "attribution": "Erteilt von {actor} am {time}",
-        "description": "Zuständigkeit unabhängig von Fahrerregistrierung, Linienmanagement und Personalaktenzugriff erteilen. Die Verwaltung dieser Zuweisungen berechtigt nicht zur Einsicht in Prüfprotokolle. Eine Selbstprüfung ist grundsätzlich unzulässig.",
         "editor": "Prüferbereich",
         "empty": "Keine Prüferzuständigkeiten zugewiesen",
-        "expiry": "Läuft um {time} ab",
         "history": "Zuständigkeitshistorie",
         "historyEntry": "Erteilt von {grantor} am {granted}; widerrufen von {revoker} am {revoked}",
         "loadFailed": "Prüferzuständigkeiten konnten nicht geladen werden",
         "myAll": "Sie sind für Prüfungen in dieser gesamten Organisation zuständig. Sie können sich nicht selbst prüfen.",
         "mySelected": "Sie sind für {teams} ausgewählte Teams und {employees} namentlich genannte Mitarbeiter zuständig. Die aktuelle Teamzugehörigkeit bestimmt den Zugriff. Sie können sich nicht selbst prüfen.",
         "myTitle": "Ihre Prüferzuständigkeit",
+        "myUntil": "Ihre Zuständigkeit endet nach dem {date} ({timezone}).",
         "none": "Sie haben derzeit keine Zuständigkeit für die Führerscheinprüfung.",
         "noTeams": "Keine Teams verfügbar",
         "person": "Prüfer",
@@ -895,7 +894,14 @@
         "selectEmployees": "Mitarbeiter auswählen",
         "specific": "Ausgewählte Teams und Mitarbeiter",
         "specificDescription": "Umfasst namentlich genannte Mitarbeiter und aktuelle Mitglieder ausgewählter Teams. Teamänderungen werden sofort wirksam.",
-        "title": "Führerscheinprüfer"
+        "summary": "Die Prüferzuständigkeit ist getrennt von Fahrerzuweisungen, Linienmanagement und Personalaktenzugriff. Die Verwaltung dieser Berechtigungen berechtigt nicht zum Einsehen von Prüfprotokollen. Eine Selbstprüfung ist grundsätzlich unzulässig.",
+        "title": "Führerscheinprüfer",
+        "until": "Bis {date} (Tagesende, {timezone})",
+        "untilEnded": "Beendet nach dem {date} ({timezone}). Bearbeiten Sie den Eintrag, um ihn zu verlängern oder zu widerrufen.",
+        "untilHelp": "Für vorübergehende Vertretung. Die Zuständigkeit endet nach Ablauf dieses vollen Tages in {timezone}. Leer lassen für unbegrenzte Dauer.",
+        "untilInPast": "Das Enddatum darf nicht in der Vergangenheit liegen.",
+        "untilLabel": "Bis (optional)",
+        "untilPlaceholder": "Kein Enddatum"
       }
     },
     "emailTemplates": {
