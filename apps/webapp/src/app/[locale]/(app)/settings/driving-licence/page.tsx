@@ -1,5 +1,6 @@
 import { IconInfoCircle } from "@tabler/icons-react";
 import { Suspense } from "react";
+import { IntendedDriverSettings } from "@/components/driving-licence/intended-driver-settings";
 import { DrivingLicenceSettings } from "@/components/driving-licence/policy-settings";
 import { DrivingLicenceReassignmentTasks } from "@/components/driving-licence/reminder-tasks";
 import { DrivingLicenceRetentionSettings } from "@/components/driving-licence/retention-settings";
@@ -36,10 +37,15 @@ async function DrivingLicenceSettingsContent() {
 				</p>
 			</div>
 			{result.success ? (
-				<DrivingLicenceSettings
-					key={`${result.data.policy?.organizationId ?? "new"}:${result.data.policy?.version ?? 0}:${result.data.participants.map((p) => p.employeeId).join(",")}`}
-					data={result.data}
-				/>
+				<>
+					<DrivingLicenceSettings
+						key={`${result.data.policy?.organizationId ?? "new"}:${result.data.policy?.version ?? 0}`}
+						data={result.data}
+					/>
+					{result.data.policy?.enabled ? (
+						<IntendedDriverSettings data={result.data.intendedDrivers} />
+					) : null}
+				</>
 			) : (
 				<p role="alert">
 					{t(

@@ -5,16 +5,14 @@ import { member } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { customRole, customRolePermission, employeeCustomRole } from "@/db/schema/custom-role";
 import { drivingLicenceCheck } from "@/db/schema/driving-licence-checks";
-import {
-	drivingLicenceParticipant,
-	drivingLicencePolicy,
-} from "@/db/schema/driving-licence-policy";
+import { drivingLicencePolicy } from "@/db/schema/driving-licence-policy";
 import { drivingLicenceHold } from "@/db/schema/driving-licence-retention";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import { getAuthContext } from "@/lib/auth-helpers";
 import { type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import type { SettingsAccessTier } from "@/lib/settings-access";
+import { isDrivingLicenceIntendedDriver } from "./intended-drivers";
 import { type DrivingLicenceDatabase, loadDrivingLicenceVerifierGrant } from "./verifiers";
 import {
 	type DrivingLicenceVisibility,
@@ -54,26 +52,6 @@ export function drivingAuthorizationPlanningPermission(
 		.limit(1);
 }
 
-/**
- * The single source of "is an intended driver" for visibility. Today that is an
- * enrolled employee; #1423 swaps this for the intended-driver assignment resolver.
- */
-async function isIntendedDriver(
-	database: DrivingLicenceDatabase,
-	input: { organizationId: string; employeeId: string },
-) {
-	const [row] = await database
-		.select({ id: drivingLicenceParticipant.id })
-		.from(drivingLicenceParticipant)
-		.where(
-			and(
-				eq(drivingLicenceParticipant.organizationId, input.organizationId),
-				eq(drivingLicenceParticipant.employeeId, input.employeeId),
-			),
-		)
-		.limit(1);
-	return !!row;
-}
 async function hasOwnRetainedRecords(
 	database: DrivingLicenceDatabase,
 	input: { organizationId: string; employeeId: string },
@@ -165,7 +143,7 @@ export async function readDrivingLicenceVisibility(
 		organizationId: input.organizationId,
 		employeeId: profile.id,
 	};
-	const intendedDriver = await isIntendedDriver(database, subject);
+	const intendedDriver = await isDrivingLicenceIntendedDriver(database, subject);
 	const ownRetainedRecords = await hasOwnRetainedRecords(database, subject);
 	const grant = await loadDrivingLicenceVerifierGrant(database, {
 		organizationId: input.organizationId,

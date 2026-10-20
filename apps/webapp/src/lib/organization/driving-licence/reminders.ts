@@ -7,10 +7,7 @@ import {
 	drivingAuthorization,
 	drivingLicenceSubject,
 } from "@/db/schema/driving-licence-checks";
-import {
-	drivingLicenceParticipant,
-	drivingLicencePolicy,
-} from "@/db/schema/driving-licence-policy";
+import { drivingLicencePolicy } from "@/db/schema/driving-licence-policy";
 import { drivingLicenceReminderDelivery } from "@/db/schema/driving-licence-reminders";
 import { drivingLicenceVerifierGrant } from "@/db/schema/driving-licence-verifiers";
 import { isReservedEmail } from "@/lib/auth/reserved-email";
@@ -33,6 +30,7 @@ import {
 	lockDrivingLicenceOrganization,
 	materializeExpiredDrivingAuthorizations,
 } from "./checks";
+import { listDrivingLicenceIntendedDriverIds } from "./intended-drivers";
 import { reconcileDrivingLicenceTasks } from "./tasks";
 import type { DrivingLicenceTransaction } from "./verifiers";
 
@@ -138,17 +136,9 @@ export async function collectDrivingLicenceReminderOccasions(
 		.from(drivingLicencePolicy)
 		.where(eq(drivingLicencePolicy.organizationId, organizationId));
 	if (!policy?.enabled) return [];
-	const participants = await tx
-		.select()
-		.from(drivingLicenceParticipant)
-		.where(
-			and(
-				eq(drivingLicenceParticipant.organizationId, organizationId),
-				employeeId
-					? eq(drivingLicenceParticipant.employeeId, employeeId)
-					: undefined,
-			),
-		);
+	const participants = (
+		await listDrivingLicenceIntendedDriverIds(tx, organizationId, employeeId)
+	).map((id) => ({ employeeId: id }));
 	const occasions: DrivingLicenceReminderOccasion[] = [];
 	for (const participant of participants) {
 		const employment = await currentDrivingEmployment(

@@ -6,10 +6,8 @@ import {
 	requireDrivingLicenceActor,
 	requireDrivingLicenceAdministrator,
 } from "./context";
+import { readDrivingLicenceIntendedDriverAdminData } from "./intended-drivers";
 import {
-	enrollDrivingLicenceEmployee,
-	listDrivingLicenceEmployees,
-	listDrivingLicenceParticipants,
 	readDrivingLicencePolicy,
 	saveDrivingLicencePolicy,
 	switchDrivingLicenceControl,
@@ -52,23 +50,15 @@ export async function switchDrivingLicenceControlAction(input: unknown) {
 		),
 	);
 }
-export async function enrollDrivingLicenceEmployeeAction(input: unknown) {
-	return action(async () =>
-		enrollDrivingLicenceEmployee(
-			await requireDrivingLicenceAdministrator(),
-			input,
-		),
-	);
-}
+/** The settings page: the policy and the intended-driver assignments (#1423). */
 export async function getDrivingLicenceAdminDataAction() {
 	return action(async () => {
 		const actor = await requireDrivingLicenceAdministrator();
-		const [policy, employees, participants] = await Promise.all([
+		const [policy, intendedDrivers] = await Promise.all([
 			readDrivingLicencePolicy(actor.organizationId),
-			listDrivingLicenceEmployees(actor.organizationId),
-			listDrivingLicenceParticipants(actor.organizationId),
+			readDrivingLicenceIntendedDriverAdminData(actor.organizationId),
 		]);
-		return { policy, employees, participants };
+		return { policy, intendedDrivers };
 	});
 }
 export async function getOwnDrivingLicenceStatusAction() {

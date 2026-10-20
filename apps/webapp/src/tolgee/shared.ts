@@ -245,6 +245,12 @@ export const ROUTE_NAMESPACES: Record<string, AppNamespace[]> = {
 		"settings/generic",
 		"settings/workPolicies",
 	],
+	// settings/workPolicies: the intended-driver assignment cards (#1423).
+	"/settings/driving-licence": [
+		"common",
+		"settings/generic",
+		"settings/workPolicies",
+	],
 	"/settings/position-capture": [
 		"common",
 		"settings/generic",

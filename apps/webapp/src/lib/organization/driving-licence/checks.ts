@@ -15,10 +15,7 @@ import {
 	drivingLicenceSubject,
 } from "@/db/schema/driving-licence-checks";
 import { drivingImpedimentReport } from "@/db/schema/driving-licence-impediments";
-import {
-	drivingLicenceParticipant,
-	drivingLicencePolicy,
-} from "@/db/schema/driving-licence-policy";
+import { drivingLicencePolicy } from "@/db/schema/driving-licence-policy";
 import { drivingLicenceReminderDelivery } from "@/db/schema/driving-licence-reminders";
 import { drivingLicenceVerifierGrant } from "@/db/schema/driving-licence-verifiers";
 import {
@@ -41,6 +38,7 @@ import {
 } from "./check-types";
 import type { DrivingLicenceActor } from "./context";
 import { drivingAuthorizationDeadline } from "./deadlines";
+import { isDrivingLicenceIntendedDriver } from "./intended-drivers";
 import { lockDrivingLicenceOrganization } from "./locks";
 
 export { lockDrivingLicenceOrganization } from "./locks";
@@ -216,15 +214,12 @@ export async function readEffectiveDrivingAuthorization(
 	employeeId: string,
 	now: Instant = systemClock.nowInstant(),
 ) {
-	const [participant] = await database
-		.select()
-		.from(drivingLicenceParticipant)
-		.where(
-			and(
-				eq(drivingLicenceParticipant.organizationId, organizationId),
-				eq(drivingLicenceParticipant.employeeId, employeeId),
-			),
-		);
+	// "enrolled" / "not_enrolled" keep their names for the existing readers; the source is
+	// the intended-driver assignment resolver (#1423).
+	const intendedDriver = await isDrivingLicenceIntendedDriver(database, {
+		organizationId,
+		employeeId,
+	});
 	const [policy] = await database
 		.select()
 		.from(drivingLicencePolicy)
@@ -302,7 +297,7 @@ export async function readEffectiveDrivingAuthorization(
 	const authorizedClasses = classes
 		.filter((c) => c.status === "active")
 		.map((c) => c.code);
-	const status: AuthorizationStatus = !participant
+	const status: AuthorizationStatus = !intendedDriver
 		? "not_enrolled"
 		: !employment?.hasAccess
 			? "ended"
@@ -318,7 +313,7 @@ export async function readEffectiveDrivingAuthorization(
 								? "ended"
 								: "suspended";
 	return {
-		enrolled: !!participant,
+		enrolled: intendedDriver,
 		status,
 		authorizedClasses,
 		classes,
@@ -440,15 +435,10 @@ export async function completeDrivingLicenceCheck(
 			.select()
 			.from(drivingLicencePolicy)
 			.where(eq(drivingLicencePolicy.organizationId, actor.organizationId));
-		const [participant] = await tx
-			.select()
-			.from(drivingLicenceParticipant)
-			.where(
-				and(
-					eq(drivingLicenceParticipant.organizationId, actor.organizationId),
-					eq(drivingLicenceParticipant.employeeId, input.employeeId),
-				),
-			);
+		const intendedDriver = await isDrivingLicenceIntendedDriver(tx, {
+			organizationId: actor.organizationId,
+			employeeId: input.employeeId,
+		});
 		const employment = await currentDrivingEmployment(
 			tx,
 			actor.organizationId,
@@ -457,7 +447,7 @@ export async function completeDrivingLicenceCheck(
 		);
 		if (
 			!policy?.enabled ||
-			!participant ||
+			!intendedDriver ||
 			!employment?.hasAccess ||
 			!actor.employeeId
 		)

@@ -42,6 +42,9 @@ const checks = await import("@/lib/organization/driving-licence/check-actions");
 const policy = await import(
 	"@/lib/organization/driving-licence/policy-actions"
 );
+const intendedDrivers = await import(
+	"@/lib/organization/driving-licence/intended-driver-actions"
+);
 const grants = await import(
 	"@/lib/organization/driving-licence/verifier-actions"
 );
@@ -108,8 +111,9 @@ beforeEach(async () => {
 	).toBe(true);
 	expect(
 		(
-			await policy.enrollDrivingLicenceEmployeeAction({
-				employeeId: fixture.employeeId,
+			await intendedDrivers.setDrivingLicenceIntendedDriverAssignmentAction({
+				target: { type: "employee", employeeId: fixture.employeeId },
+				value: "required",
 			})
 		).success,
 	).toBe(true);
@@ -357,8 +361,9 @@ it("opens exactly one reassignment task for the employee an ended until-dated gr
 	const cover = await fixture.seedEmployee();
 	expect(
 		(
-			await policy.enrollDrivingLicenceEmployeeAction({
-				employeeId: covered.employeeId,
+			await intendedDrivers.setDrivingLicenceIntendedDriverAssignmentAction({
+				target: { type: "employee", employeeId: covered.employeeId },
+				value: "required",
 			})
 		).success,
 	).toBe(true);
