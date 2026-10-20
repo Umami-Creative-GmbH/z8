@@ -39,16 +39,37 @@ beforeEach(() => {
 	api.save.mockReset().mockResolvedValue({ success: true, data: {} });
 	api.enroll.mockReset().mockResolvedValue({ success: true, data: {} });
 });
-it("lets an administrator choose retention, save a policy, and enroll an employee without implying authorization", async () => {
+it("points to the Features switch instead of offering a policy form before the first activation", () => {
+	render(
+		<DrivingLicenceSettings
+			data={{ policy: null, employees: [], participants: [] }}
+		/>,
+	);
+	expect(
+		screen.getByText(/Switch on driving licence control on the Features card/),
+	).toBeTruthy();
+	expect(screen.queryByRole("button", { name: "Save policy" })).toBeNull();
+	expect(screen.queryByRole("checkbox")).toBeNull();
+});
+it("saves retention and reminders without an activation control, and enrolls an employee without implying authorization", async () => {
 	render(
 		<DrivingLicenceSettings
 			data={{
-				policy: null,
+				policy: {
+					enabled: true,
+					intervalMonths: 6,
+					timezone: "Europe/Berlin",
+					reminderLeadDays: [30, 7],
+					retentionMonths: 12,
+					retentionJustification: "Organization evidence retention",
+				},
 				employees: [{ id: "e1311", name: "Dana Driver" }],
 				participants: [],
 			}}
 		/>,
 	);
+	expect(screen.queryByLabelText("Activate driving licence control")).toBeNull();
+	expect(screen.queryByRole("checkbox")).toBeNull();
 	expect(
 		(screen.getByLabelText("Reminder lead days") as HTMLInputElement).value,
 	).toBe("30, 7");
@@ -61,21 +82,18 @@ it("lets an administrator choose retention, save a policy, and enroll an employe
 	fireEvent.change(screen.getByLabelText("Retention justification"), {
 		target: { value: "Our justified internal evidence retention policy." },
 	});
-	await userEvent.click(
-		screen.getByLabelText("Activate driving licence control"),
-	);
 	await userEvent.click(screen.getByRole("button", { name: "Save policy" }));
 	await waitFor(() =>
 		expect(screen.getByRole("status").textContent).toContain("Policy saved"),
 	);
 	expect(api.save).toHaveBeenCalledWith(
 		expect.objectContaining({
-			enabled: true,
 			timezone: "Europe/Berlin",
 			reminderLeadDays: [30, 7],
 			retentionMonths: 24,
 		}),
 	);
+	expect(api.save.mock.lastCall?.[0]).not.toHaveProperty("enabled");
 	await userEvent.click(
 		screen.getByRole("button", { name: "Enroll Dana Driver" }),
 	);

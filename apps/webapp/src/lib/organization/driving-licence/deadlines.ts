@@ -27,3 +27,20 @@ export function drivingAuthorizationDeadline(input: {
 		.toInstant();
 	return { routineValidThrough, validThrough, expires };
 }
+
+/** A verifier grant's until date covers that whole day in the calendar zone; access ends at the next midnight. */
+export function verifierGrantExpiry(until: string, timezone: string): Instant {
+	return Temporal.PlainDate.from(until)
+		.add({ days: 1 })
+		.toZonedDateTime({ timeZone: timezone, plainTime: "00:00" })
+		.toInstant();
+}
+
+/** The last calendar day a grant expiring at `expiresAt` still covers (exclusive expiry). */
+export function verifierGrantUntil(expiresAt: Instant, timezone: string): string {
+	return expiresAt
+		.subtract({ nanoseconds: 1 })
+		.toZonedDateTimeISO(timezone)
+		.toPlainDate()
+		.toString();
+}
