@@ -70,6 +70,8 @@ const PAYROLL_PAGE_DESTINATION = routeMetadata("payroll");
 
 const SETTINGS_PAGE_DESTINATION = routeMetadata("settings");
 
+const DRIVING_LICENCE_PAGE_DESTINATION = routeMetadata("driving-licence");
+
 function isManagerOrAdmin(
 	employeeRole: StaticAppSearchInput["employeeRole"],
 ): boolean {
@@ -106,6 +108,8 @@ export function buildStaticAppSearchResults({
 	showPayrollNav,
 	featureFlags,
 	managesProject,
+	showDrivingLicenceNav,
+	drivingLicenceSettingsVisible,
 }: StaticAppSearchInput): AppSearchResult[] {
 	const pageResults: AppSearchResult[] = PERSONAL_PAGE_DESTINATIONS.map(
 		(destination) => ({
@@ -158,6 +162,16 @@ export function buildStaticAppSearchResults({
 		});
 	}
 
+	// Named like the personal sidebar item, which the visibility reader also decides (#1420).
+	if (showDrivingLicenceNav) {
+		pageResults.push({
+			type: "page",
+			id: `page:${DRIVING_LICENCE_PAGE_DESTINATION.id}`,
+			title: t("nav.driving-licence", "Driving licence"),
+			href: DRIVING_LICENCE_PAGE_DESTINATION.href,
+		});
+	}
+
 	if (showComplianceNav) {
 		pageResults.push({
 			type: "page",
@@ -194,6 +208,7 @@ export function buildStaticAppSearchResults({
 		billingEnabled,
 		featureFlags,
 		managesProject,
+		drivingLicenceSettingsVisible,
 	});
 
 	const settingsResults: AppSearchResult[] = visibleSettings.map((setting) => ({

@@ -7,12 +7,13 @@ import { DrivingLicencePersonalReminderTasks } from "@/components/driving-licenc
 import { ReportDrivingImpediment } from "@/components/driving-licence/report-impediment";
 import { VerifierResponsibility } from "@/components/driving-licence/verifier-settings";
 import { getDrivingLicenceEmployeeRecordAction } from "@/lib/organization/driving-licence/check-actions";
-import { requireDrivingLicenceActor } from "@/lib/organization/driving-licence/context";
+import { requireDrivingLicencePage } from "@/lib/organization/driving-licence/page-guards";
 import { getTranslate } from "@/tolgee/server";
 
+/** Not found while the feature is off or the viewer holds no driving licence role (#1420). */
 async function OwnDrivingLicenceContent() {
-	const [actor, t] = await Promise.all([
-		requireDrivingLicenceActor(),
+	const [{ actor }, t] = await Promise.all([
+		requireDrivingLicencePage(),
 		getTranslate(),
 	]);
 	const record = actor.employeeId

@@ -1,14 +1,23 @@
+import { IconInfoCircle } from "@tabler/icons-react";
 import { Suspense } from "react";
 import { DrivingLicenceSettings } from "@/components/driving-licence/policy-settings";
 import { DrivingLicenceReassignmentTasks } from "@/components/driving-licence/reminder-tasks";
 import { DrivingLicenceRetentionSettings } from "@/components/driving-licence/retention-settings";
 import { VerifierSettings } from "@/components/driving-licence/verifier-settings";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
+import { requireDrivingLicenceSettingsPage } from "@/lib/organization/driving-licence/page-guards";
 import { getDrivingLicenceAdminDataAction } from "@/lib/organization/driving-licence/policy-actions";
 import { getTranslate } from "@/tolgee/server";
 
+/**
+ * The visibility reader decides (#1420): not found while it hides the settings, and only
+ * Retention & holds while the feature is off but records or legal-case holds remain.
+ */
 async function DrivingLicenceSettingsContent() {
 	await requireOrgAdminSettingsAccess();
+	const { settings } = await requireDrivingLicenceSettingsPage();
+	if (settings === "retention_only") return <RetentionOnlySettings />;
 	const [result, t] = await Promise.all([
 		getDrivingLicenceAdminDataAction(),
 		getTranslate(),
@@ -43,6 +52,29 @@ async function DrivingLicenceSettingsContent() {
 			<div id="driving-verifier-settings" className="scroll-mt-6">
 				<VerifierSettings />
 			</div>
+			<DrivingLicenceRetentionSettings />
+		</div>
+	);
+}
+async function RetentionOnlySettings() {
+	const t = await getTranslate();
+	return (
+		<div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
+			<h1 className="text-2xl font-semibold">
+				{t("drivingLicence.title", "Driving licence control")}
+			</h1>
+			<Alert role="status">
+				<IconInfoCircle aria-hidden="true" />
+				<AlertTitle>
+					{t("drivingLicence.off.title", "Driving licence control is off")}
+				</AlertTitle>
+				<AlertDescription>
+					{t(
+						"drivingLicence.off.description",
+						"Nobody sees driving licence control and no reminders are sent. Intended drivers, verifier grants, check records and authorizations are kept, and evidence cleanup continues under the saved retention period. Only Retention & holds is available until it is switched on again.",
+					)}
+				</AlertDescription>
+			</Alert>
 			<DrivingLicenceRetentionSettings />
 		</div>
 	);

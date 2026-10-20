@@ -21,6 +21,7 @@ import {
 	IconServerCog,
 	IconSettings,
 	IconShieldCheck,
+	IconSteeringWheel,
 	IconUserCheck,
 	IconUsers,
 } from "@tabler/icons-react";
@@ -41,6 +42,8 @@ export interface NavigationCapabilities {
 	periodSubmissions?: boolean;
 	/** Who Is In is useful only while the active organization has active locations. */
 	teamPresence?: boolean;
+	/** Decided by the driving licence visibility reader: feature on and a driving licence role (#1420). */
+	drivingLicence?: boolean;
 	platformAdmin: boolean;
 }
 
@@ -120,6 +123,15 @@ export function buildPersonalNav(
 						title: t("nav.personnel-files", "Personnel Files"),
 						url: "/personnel-files",
 						icon: IconFolders,
+					},
+				]
+			: []),
+		...(navigationCapabilities.drivingLicence
+			? [
+					{
+						title: t("nav.driving-licence", "Driving licence"),
+						url: "/driving-licence",
+						icon: IconSteeringWheel,
 					},
 				]
 			: []),

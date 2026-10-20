@@ -33,6 +33,11 @@ interface ResolveSettingsVisibilityInput {
 	featureFlags?: FeatureFlagState;
 	/** The caller manages at least one project of the organization (#928). */
 	managesProject?: boolean;
+	/**
+	 * The driving licence visibility reader offers its settings to the caller (#1420).
+	 * Hidden unless a server caller passes the reader's answer.
+	 */
+	drivingLicenceSettingsVisible?: boolean;
 }
 
 export type SettingsIconName =
@@ -99,6 +104,8 @@ export interface SettingsEntry {
 	requiresBilling?: boolean;
 	/** If true, also show below `minimumTier` to users who manage a project (#928) */
 	visibleToProjectManagers?: boolean;
+	/** If true, show only when the driving licence visibility reader offers its settings (#1420) */
+	requiresDrivingLicenceSettings?: boolean;
 }
 
 export interface SettingsGroupConfig {
@@ -312,17 +319,7 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		icon: "shield-check",
 		minimumTier: "orgAdmin",
 		group: "compliance",
-	},
-	{
-		id: "my-driving-licence",
-		titleKey: "drivingLicence.myTitle",
-		titleDefault: "My driving authorization",
-		descriptionKey: "drivingLicence.myDescription",
-		descriptionDefault: "View your driving licence check status",
-		href: "/driving-licence",
-		icon: "car",
-		minimumTier: "member",
-		group: "account",
+		requiresDrivingLicenceSettings: true,
 	},
 	{
 		id: "vehicles",
@@ -799,6 +796,7 @@ export function getVisibleSettings(
 	accessTier: SettingsAccessTier,
 	billingEnabled = false,
 	managesProject = false,
+	drivingLicenceSettingsVisible = false,
 ): SettingsEntry[] {
 	return SETTINGS_ENTRIES.filter((entry) => {
 		const projectManagerAccess =
@@ -810,6 +808,7 @@ export function getVisibleSettings(
 			return false;
 		}
 		if (entry.requiresBilling && !billingEnabled) return false;
+		if (entry.requiresDrivingLicenceSettings && !drivingLicenceSettingsVisible) return false;
 		return true;
 	});
 }
@@ -855,6 +854,7 @@ export function getResolvedSettingsVisibility({
 	billingEnabled = false,
 	featureFlags,
 	managesProject = false,
+	drivingLicenceSettingsVisible = false,
 }: ResolveSettingsVisibilityInput): {
 	visibleSettings: SettingsEntry[];
 	visibleGroups: SettingsGroupConfig[];
@@ -863,6 +863,7 @@ export function getResolvedSettingsVisibility({
 		accessTier,
 		billingEnabled,
 		managesProject,
+		drivingLicenceSettingsVisible,
 	);
 	const visibleSettings = featureFlags
 		? filterSettingsByFeatureFlags(tierVisibleSettings, featureFlags)

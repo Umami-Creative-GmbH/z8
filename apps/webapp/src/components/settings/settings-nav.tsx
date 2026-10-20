@@ -26,9 +26,16 @@ interface SettingsNavProps {
 	billingEnabled: boolean;
 	/** The user manages a project below the manager tier (#928). */
 	managesProject?: boolean;
+	/** The driving licence visibility reader offers its settings (#1420). */
+	drivingLicenceSettingsVisible?: boolean;
 }
 
-export function SettingsNav({ accessTier, billingEnabled, managesProject }: SettingsNavProps) {
+export function SettingsNav({
+	accessTier,
+	billingEnabled,
+	managesProject,
+	drivingLicenceSettingsVisible,
+}: SettingsNavProps) {
 	const pathname = usePathname();
 	const { t } = useTranslate();
 	const orgSettings = useOrganizationSettings();
@@ -39,6 +46,7 @@ export function SettingsNav({ accessTier, billingEnabled, managesProject }: Sett
 		billingEnabled,
 		featureFlags: isHydrated ? orgSettings : undefined,
 		managesProject,
+		drivingLicenceSettingsVisible,
 	});
 
 	// Memoize to prevent recreation on every render
