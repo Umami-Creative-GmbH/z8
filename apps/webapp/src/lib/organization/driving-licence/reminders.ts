@@ -1,5 +1,5 @@
 import "server-only";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, asc, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { member, user } from "@/db/auth-schema";
 import { employee, notificationPreference } from "@/db/schema";
@@ -10,6 +10,7 @@ import {
 import {
 	drivingLicenceParticipant,
 	drivingLicencePolicy,
+	drivingLicencePolicyRevision,
 } from "@/db/schema/driving-licence-policy";
 import { drivingLicenceReminderDelivery } from "@/db/schema/driving-licence-reminders";
 import { drivingLicenceVerifierGrant } from "@/db/schema/driving-licence-verifiers";
@@ -33,8 +34,16 @@ import {
 	lockDrivingLicenceOrganization,
 	materializeExpiredDrivingAuthorizations,
 } from "./checks";
+import {
+	type DrivingLicenceOffPeriod,
+	drivingLicenceOffPeriods,
+	reminderOccasionFellWhileOff,
+} from "./off-periods";
 import { reconcileDrivingLicenceTasks } from "./tasks";
-import type { DrivingLicenceTransaction } from "./verifiers";
+import type {
+	DrivingLicenceDatabase,
+	DrivingLicenceTransaction,
+} from "./verifiers";
 
 export interface DrivingLicenceReminderOccasion {
 	organizationId: string;
@@ -126,7 +135,137 @@ export async function resolveDrivingLicenceReminderRecipients(
 		verifiers,
 	};
 }
-/** Current occurrences, including the closest missed lead threshold while the deadline remains current. */
+type DrivingEmployment = NonNullable<
+	Awaited<ReturnType<typeof currentDrivingEmployment>>
+>;
+type DrivingAuthorizationRow = typeof drivingAuthorization.$inferSelect;
+type ReminderCommon = Pick<
+	DrivingLicenceReminderOccasion,
+	"organizationId" | "employeeId" | "employmentPeriodId"
+>;
+
+/** The intended drivers reminders consider: participants, optionally one employee. */
+async function reminderParticipants(
+	database: DrivingLicenceDatabase,
+	organizationId: string,
+	employeeId?: string,
+) {
+	return database
+		.select({ employeeId: drivingLicenceParticipant.employeeId })
+		.from(drivingLicenceParticipant)
+		.where(
+			and(
+				eq(drivingLicenceParticipant.organizationId, organizationId),
+				employeeId
+					? eq(drivingLicenceParticipant.employeeId, employeeId)
+					: undefined,
+			),
+		);
+}
+
+/**
+ * What reminders see of one employee in their current employment: a current
+ * person-wide suspension (which replaces per-class occasions), or else the class
+ * authorizations of this employment that have not ended.
+ */
+async function readReminderAuthorizations(
+	database: DrivingLicenceDatabase,
+	organizationId: string,
+	employeeId: string,
+	employment: DrivingEmployment,
+) {
+	const rows = await database
+		.select()
+		.from(drivingAuthorization)
+		.where(
+			and(
+				eq(drivingAuthorization.organizationId, organizationId),
+				eq(drivingAuthorization.employeeId, employeeId),
+			),
+		);
+	const [global] = await database
+		.select()
+		.from(drivingLicenceSubject)
+		.where(
+			and(
+				eq(drivingLicenceSubject.organizationId, organizationId),
+				eq(drivingLicenceSubject.employeeId, employeeId),
+			),
+		);
+	const currentGlobal =
+		global &&
+		global.employmentPeriodId === employment.periodId &&
+		(!employment.lastDepartureAt ||
+			instantFromDate(global.suspendedAt).epochNanoseconds >
+				instantFromDate(employment.lastDepartureAt).epochNanoseconds)
+			? global
+			: null;
+	return {
+		currentGlobal,
+		rows: rows.filter(
+			(row) =>
+				row.employmentPeriodId === employment.periodId &&
+				row.state !== "ended" &&
+				!(
+					employment.lastDepartureAt &&
+					(!row.lastSuccessfulAt ||
+						instantFromDate(row.lastSuccessfulAt).epochNanoseconds <=
+							instantFromDate(employment.lastDepartureAt).epochNanoseconds)
+				),
+		),
+	};
+}
+
+function occasionIdentity(
+	employment: DrivingEmployment,
+	row: DrivingAuthorizationRow,
+) {
+	return `${employment.periodId}:${row.id}:${row.supportingCheckId}`;
+}
+
+/** One class authorization's suspension occasion; its key makes the notice once-only. */
+function classSuspensionOccasion(
+	common: ReminderCommon,
+	employment: DrivingEmployment,
+	row: DrivingAuthorizationRow,
+	suspendedAt: Date | null,
+): DrivingLicenceReminderOccasion {
+	return {
+		...common,
+		key: `suspended:${occasionIdentity(employment, row)}:${suspendedAt?.toISOString()}`,
+		kind: "suspension",
+		classCode: row.classCode,
+		validThrough: row.validThrough,
+		leadDays: null,
+	};
+}
+
+/** Stretches while driving licence control was off, from the append-only policy revisions. */
+export async function readDrivingLicenceOffPeriods(
+	database: DrivingLicenceDatabase,
+	organizationId: string,
+): Promise<DrivingLicenceOffPeriod[]> {
+	const revisions = await database
+		.select({
+			policy: drivingLicencePolicyRevision.policy,
+			changedAt: drivingLicencePolicyRevision.changedAt,
+		})
+		.from(drivingLicencePolicyRevision)
+		.where(eq(drivingLicencePolicyRevision.organizationId, organizationId))
+		.orderBy(asc(drivingLicencePolicyRevision.version));
+	return drivingLicenceOffPeriods(
+		revisions.map((revision) => ({
+			enabled: revision.policy.enabled,
+			changedAt: instantFromDate(revision.changedAt),
+		})),
+	);
+}
+
+/**
+ * Current occurrences, including the closest missed lead threshold while the deadline
+ * remains current. A lead threshold whose date fell while control was switched off is
+ * skipped rather than caught up (#1422).
+ */
 export async function collectDrivingLicenceReminderOccasions(
 	tx: DrivingLicenceTransaction,
 	organizationId: string,
@@ -138,17 +277,12 @@ export async function collectDrivingLicenceReminderOccasions(
 		.from(drivingLicencePolicy)
 		.where(eq(drivingLicencePolicy.organizationId, organizationId));
 	if (!policy?.enabled) return [];
-	const participants = await tx
-		.select()
-		.from(drivingLicenceParticipant)
-		.where(
-			and(
-				eq(drivingLicenceParticipant.organizationId, organizationId),
-				employeeId
-					? eq(drivingLicenceParticipant.employeeId, employeeId)
-					: undefined,
-			),
-		);
+	const participants = await reminderParticipants(
+		tx,
+		organizationId,
+		employeeId,
+	);
+	const offPeriods = await readDrivingLicenceOffPeriods(tx, organizationId);
 	const occasions: DrivingLicenceReminderOccasion[] = [];
 	for (const participant of participants) {
 		const employment = await currentDrivingEmployment(
@@ -164,30 +298,12 @@ export async function collectDrivingLicenceReminderOccasions(
 			now,
 			participant.employeeId,
 		);
-		const rows = await tx
-			.select()
-			.from(drivingAuthorization)
-			.where(
-				and(
-					eq(drivingAuthorization.organizationId, organizationId),
-					eq(drivingAuthorization.employeeId, participant.employeeId),
-				),
-			);
-		const [global] = await tx
-			.select()
-			.from(drivingLicenceSubject)
-			.where(
-				and(
-					eq(drivingLicenceSubject.organizationId, organizationId),
-					eq(drivingLicenceSubject.employeeId, participant.employeeId),
-				),
-			);
-		const currentGlobal =
-			global &&
-			global.employmentPeriodId === employment.periodId &&
-			(!employment.lastDepartureAt ||
-				instantFromDate(global.suspendedAt).epochNanoseconds >
-					instantFromDate(employment.lastDepartureAt).epochNanoseconds);
+		const { currentGlobal, rows } = await readReminderAuthorizations(
+			tx,
+			organizationId,
+			participant.employeeId,
+			employment,
+		);
 		const common = {
 			organizationId,
 			employeeId: participant.employeeId,
@@ -196,7 +312,7 @@ export async function collectDrivingLicenceReminderOccasions(
 		if (currentGlobal) {
 			occasions.push({
 				...common,
-				key: `global:${employment.periodId}:${global.suspendedAt.toISOString()}`,
+				key: `global:${employment.periodId}:${currentGlobal.suspendedAt.toISOString()}`,
 				kind: "suspension",
 				classCode: null,
 				validThrough: null,
@@ -205,25 +321,10 @@ export async function collectDrivingLicenceReminderOccasions(
 			continue;
 		}
 		for (const row of rows) {
-			if (
-				row.employmentPeriodId !== employment.periodId ||
-				row.state === "ended" ||
-				(employment.lastDepartureAt &&
-					(!row.lastSuccessfulAt ||
-						instantFromDate(row.lastSuccessfulAt).epochNanoseconds <=
-							instantFromDate(employment.lastDepartureAt).epochNanoseconds))
-			)
-				continue;
-			const identity = `${employment.periodId}:${row.id}:${row.supportingCheckId}`;
 			if (row.state === "suspended") {
-				occasions.push({
-					...common,
-					key: `suspended:${identity}:${row.suspendedAt?.toISOString()}`,
-					kind: "suspension",
-					classCode: row.classCode,
-					validThrough: row.validThrough,
-					leadDays: null,
-				});
+				occasions.push(
+					classSuspensionOccasion(common, employment, row, row.suspendedAt),
+				);
 				continue;
 			}
 			const today = now.toZonedDateTimeISO(row.deadlineTimezone).toPlainDate();
@@ -231,15 +332,93 @@ export async function collectDrivingLicenceReminderOccasions(
 			const lead = [...policy.reminderLeadDays]
 				.filter((d) => days >= 0 && days <= d)
 				.sort((a, b) => a - b)[0];
-			if (lead === undefined) continue;
+			if (
+				lead === undefined ||
+				reminderOccasionFellWhileOff({
+					validThrough: row.validThrough,
+					leadDays: lead,
+					timezone: row.deadlineTimezone,
+					offPeriods,
+				})
+			)
+				continue;
 			occasions.push({
 				...common,
-				key: `deadline:${identity}:${row.validThrough}:${row.deadlineTimezone}:${lead}`,
+				key: `deadline:${occasionIdentity(employment, row)}:${row.validThrough}:${row.deadlineTimezone}:${lead}`,
 				kind: "deadline",
 				classCode: row.classCode,
 				validThrough: row.validThrough,
 				leadDays: lead,
 			});
+		}
+	}
+	return occasions;
+}
+
+const DEADLINE_SUSPENSION_REASONS = new Set([
+	"check_overdue",
+	"document_expired",
+	"class_expired",
+]);
+
+/**
+ * The suspensions switching driving licence control on again settles (#1422): class
+ * authorizations whose routine deadline, document expiry or class expiry passed after
+ * `offAt` (the switch-off), whether still active or already suspended silently by
+ * evidence cleanup while off. Read-only, so it is also the confirmation's impact count;
+ * eligibility matches the reminder occasions, so the job never adds a notice for them.
+ */
+export async function collectDrivingLicenceReactivationSuspensions(
+	database: DrivingLicenceDatabase,
+	organizationId: string,
+	offAt: Instant | null,
+	now: Instant,
+): Promise<DrivingLicenceReminderOccasion[]> {
+	if (!offAt) return [];
+	const passedWhileOff = (at: Date) => {
+		const ns = instantFromDate(at).epochNanoseconds;
+		return ns > offAt.epochNanoseconds && ns <= now.epochNanoseconds;
+	};
+	const occasions: DrivingLicenceReminderOccasion[] = [];
+	for (const participant of await reminderParticipants(
+		database,
+		organizationId,
+	)) {
+		const employment = await currentDrivingEmployment(
+			database,
+			organizationId,
+			participant.employeeId,
+			now,
+		);
+		if (!employment?.hasAccess) continue;
+		const { currentGlobal, rows } = await readReminderAuthorizations(
+			database,
+			organizationId,
+			participant.employeeId,
+			employment,
+		);
+		// A current person-wide suspension already stands for every class.
+		if (currentGlobal) continue;
+		const common = {
+			organizationId,
+			employeeId: participant.employeeId,
+			employmentPeriodId: employment.periodId,
+		};
+		for (const row of rows) {
+			// Expiry materializes with suspendedAt = expiresAt, so both read the same key.
+			const suspendedAt =
+				row.state === "active" && passedWhileOff(row.expiresAt)
+					? row.expiresAt
+					: row.state === "suspended" &&
+							row.suspendedAt &&
+							DEADLINE_SUSPENSION_REASONS.has(row.suspensionReason ?? "") &&
+							passedWhileOff(row.suspendedAt)
+						? row.suspendedAt
+						: null;
+			if (suspendedAt)
+				occasions.push(
+					classSuspensionOccasion(common, employment, row, suspendedAt),
+				);
 		}
 	}
 	return occasions;
@@ -375,6 +554,66 @@ async function prepareReminderEmail(
 	return { payload, condition, delivery };
 }
 
+/**
+ * Delivers one occasion to the employee (personal route) and every responsible
+ * verifier: a delivery row per recipient, which makes it once-only, and the mandatory
+ * in-app notice. The email stays pending for the reminder job's email phase, which
+ * applies the recipient's email preference. Returns the in-app notices created.
+ */
+export async function deliverDrivingLicenceOccasion(
+	tx: DrivingLicenceTransaction,
+	occasion: DrivingLicenceReminderOccasion,
+	now: Instant,
+) {
+	const { organizationId } = occasion;
+	const recipients = await resolveDrivingLicenceReminderRecipients(
+		tx,
+		organizationId,
+		occasion.employeeId,
+		now,
+	);
+	if (!recipients.employee) return 0;
+	const userIds = [
+		...new Set([
+			...recipients.verifiers.map((v) => v.userId),
+			...(recipients.employee.personalRoute
+				? [recipients.employee.userId]
+				: []),
+		]),
+	];
+	let created = 0;
+	for (const userId of userIds) {
+		const payload = reminderParams(occasion, userId, recipients.employee.name);
+		const [delivery] = await tx
+			.insert(drivingLicenceReminderDelivery)
+			.values({
+				organizationId,
+				employeeId: occasion.employeeId,
+				employmentPeriodId: occasion.employmentPeriodId,
+				occasionKey: occasion.key,
+				recipientUserId: userId,
+				createdAt: dateFromInstant(now),
+			})
+			.onConflictDoNothing()
+			.returning();
+		if (!delivery) continue;
+		const inserted = await insertInAppNotification(payload, tx);
+		if (inserted.kind === "created") {
+			await tx
+				.update(drivingLicenceReminderDelivery)
+				.set({ notificationId: inserted.notification.id })
+				.where(
+					and(
+						eq(drivingLicenceReminderDelivery.organizationId, organizationId),
+						eq(drivingLicenceReminderDelivery.id, delivery.id),
+					),
+				);
+			created++;
+		}
+	}
+	return created;
+}
+
 export async function runDrivingLicenceReminders(clock: Clock) {
 	const organizations = await db
 		.select({ organizationId: drivingLicencePolicy.organizationId })
@@ -396,59 +635,12 @@ export async function runDrivingLicenceReminders(clock: Clock) {
 				now,
 			);
 			await reconcileDrivingLicenceTasks(tx, organizationId, now, occasions);
-			for (const occasion of occasions) {
-				const recipients = await resolveDrivingLicenceReminderRecipients(
+			for (const occasion of occasions)
+				result.inAppCreated += await deliverDrivingLicenceOccasion(
 					tx,
-					organizationId,
-					occasion.employeeId,
+					occasion,
 					now,
 				);
-				if (!recipients.employee) continue;
-				const userIds = [
-					...new Set([
-						...recipients.verifiers.map((v) => v.userId),
-						...(recipients.employee.personalRoute
-							? [recipients.employee.userId]
-							: []),
-					]),
-				];
-				for (const userId of userIds) {
-					const payload = reminderParams(
-						occasion,
-						userId,
-						recipients.employee.name,
-					);
-					const [delivery] = await tx
-						.insert(drivingLicenceReminderDelivery)
-						.values({
-							organizationId,
-							employeeId: occasion.employeeId,
-							employmentPeriodId: occasion.employmentPeriodId,
-							occasionKey: occasion.key,
-							recipientUserId: userId,
-							createdAt: dateFromInstant(now),
-						})
-						.onConflictDoNothing()
-						.returning();
-					if (!delivery) continue;
-					const inserted = await insertInAppNotification(payload, tx);
-					if (inserted.kind === "created") {
-						await tx
-							.update(drivingLicenceReminderDelivery)
-							.set({ notificationId: inserted.notification.id })
-							.where(
-								and(
-									eq(
-										drivingLicenceReminderDelivery.organizationId,
-										organizationId,
-									),
-									eq(drivingLicenceReminderDelivery.id, delivery.id),
-								),
-							);
-						result.inAppCreated++;
-					}
-				}
-			}
 		});
 		// Email failure cannot roll back mandatory inbox creation or suspension materialization.
 		const pending = await db
