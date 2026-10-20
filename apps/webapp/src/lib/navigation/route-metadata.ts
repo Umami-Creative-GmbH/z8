@@ -58,6 +58,14 @@ export const APP_ROUTE_METADATA: readonly AppRouteMetadata[] = [
 		titleKey: "nav.travel-expenses",
 		titleDefault: "Travel Expenses",
 	},
+	// Formerly a settings entry (#1420). Route titles must exist in the synced catalogs, so this
+	// keeps the existing key until `nav.driving-licence` is synced from Tolgee.
+	{
+		id: "driving-licence",
+		href: "/driving-licence",
+		titleKey: "drivingLicence.myTitle",
+		titleDefault: "My driving authorization",
+	},
 	{
 		id: "reports-projects",
 		href: "/reports/projects",

@@ -36,6 +36,30 @@ beforeAll(() => {
 });
 
 describe("SettingsNav", () => {
+	it("lists Driving licence control only when the visibility reader offers it (#1420)", () => {
+		const { unmount } = render(
+			<SidebarProvider>
+				<SettingsNav accessTier="orgAdmin" billingEnabled={true} />
+			</SidebarProvider>,
+		);
+		expect(screen.queryByText("Driving licence control")).toBeNull();
+		expect(screen.queryByText("My driving authorization")).toBeNull();
+		unmount();
+
+		render(
+			<SidebarProvider>
+				<SettingsNav
+					accessTier="orgAdmin"
+					billingEnabled={true}
+					drivingLicenceSettingsVisible={true}
+				/>
+			</SidebarProvider>,
+		);
+		expect(screen.getByText("Driving licence control").closest("a")?.getAttribute("href")).toBe(
+			"/settings/driving-licence",
+		);
+	});
+
 	it("renders group labels as sticky scroll headers", () => {
 		render(
 			<SidebarProvider>

@@ -38,6 +38,10 @@ export function DrivingAuthorizationAdvisory({
 		retry: false,
 	});
 	if (!organizationId || !userId) return null;
+	// The server answers `null` unless the visibility reader shows the advisory (feature on,
+	// intended driver). Render nothing until it has answered, so others never see a flash.
+	if (query.isPending) return null;
+	if (!query.isError && query.data?.success && query.data.data === null) return null;
 	const data = !query.isError && query.data?.success ? query.data.data : null;
 	return (
 		<aside

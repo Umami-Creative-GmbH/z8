@@ -3,11 +3,6 @@ import { and, asc, eq, ilike, or } from "drizzle-orm";
 import { db } from "@/db";
 import { member, user } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
-import {
-	customRole,
-	customRolePermission,
-	employeeCustomRole,
-} from "@/db/schema/custom-role";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import {
@@ -16,6 +11,11 @@ import {
 } from "./checks";
 import type { DrivingLicenceActor } from "./context";
 import type { DrivingLicenceTransaction } from "./verifiers";
+import {
+	drivingAuthorizationPlanningPermission,
+	readDrivingLicenceVisibility,
+	showsDrivingAuthorizationAdvisory,
+} from "./visibility";
 
 /** Deliberately independent of CASL's `manage all`, employee read and verifier grants. */
 async function lockOperationalViewer(
@@ -51,25 +51,10 @@ async function requireOperationalPermission(
 	actor: DrivingLicenceActor,
 	employeeId: string,
 ) {
-	const [grant] = await tx
-		.select({ id: customRole.id })
-		.from(employeeCustomRole)
-		.innerJoin(customRole, eq(customRole.id, employeeCustomRole.customRoleId))
-		.innerJoin(
-			customRolePermission,
-			eq(customRolePermission.customRoleId, customRole.id),
-		)
-		.where(
-			and(
-				eq(employeeCustomRole.employeeId, employeeId),
-				eq(customRole.organizationId, actor.organizationId),
-				eq(customRole.isActive, true),
-				eq(customRolePermission.action, "read"),
-				eq(customRolePermission.subject, "DrivingAuthorization"),
-			),
-		)
-		.limit(1)
-		.for("share");
+	const [grant] = await drivingAuthorizationPlanningPermission(tx, {
+		organizationId: actor.organizationId,
+		employeeId,
+	}).for("share");
 	if (!grant) throw new Error("unavailable");
 }
 /** Sample after permission locks, so a contended read cannot revive an elapsed deadline. */
@@ -91,12 +76,26 @@ async function currentOperationalInstant(
 	if (!profile?.allowed) throw new Error("unavailable");
 	return now;
 }
+/**
+ * Without a target this is the clock advisory: `null` unless the visibility reader shows it
+ * (feature on and the viewer is an intended driver). Planner reads of a target are unchanged.
+ */
 export async function readOperationalDrivingStatus(
 	actor: DrivingLicenceActor,
 	targetId?: string,
 ) {
 	return db.transaction(async (tx) => {
 		await lockDrivingLicenceOrganization(tx, actor.organizationId);
+		if (
+			targetId === undefined &&
+			!showsDrivingAuthorizationAdvisory(
+				await readDrivingLicenceVisibility(
+					{ organizationId: actor.organizationId, userId: actor.userId },
+					tx,
+				),
+			)
+		)
+			return null;
 		const ownEmployeeId = await lockOperationalViewer(tx, actor);
 		const employeeId = targetId ?? ownEmployeeId;
 		if (employeeId !== ownEmployeeId)
@@ -132,8 +131,8 @@ export async function readOperationalDrivingStatus(
 		};
 	});
 }
-export type OperationalDrivingStatus = Awaited<
-	ReturnType<typeof readOperationalDrivingStatus>
+export type OperationalDrivingStatus = NonNullable<
+	Awaited<ReturnType<typeof readOperationalDrivingStatus>>
 >;
 export async function readOperationalDrivingEmployees(
 	actor: DrivingLicenceActor,

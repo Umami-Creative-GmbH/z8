@@ -109,9 +109,11 @@ it("keeps the real clock button usable while status is pending, suspended or fai
 			/>
 		</QueryClientProvider>,
 	);
+	// #1420: nothing shows until the server says the advisory applies to this member.
+	await waitFor(() => expect(remote.status).toHaveBeenCalled());
 	expect(
-		await screen.findByText("Loading driving authorization…"),
-	).toBeTruthy();
+		screen.queryByRole("complementary", { name: "Driving authorization" }),
+	).toBeNull();
 	fireEvent.click(screen.getByRole("button", { name: "Clock In" }));
 	expect(remote.clockIn).toHaveBeenCalledTimes(1);
 	resolveStatus({
@@ -139,6 +141,21 @@ it("keeps the real clock button usable while status is pending, suspended or fai
 	).toBeTruthy();
 	fireEvent.click(screen.getByRole("button", { name: "Clock In" }));
 	expect(remote.clockIn).toHaveBeenCalledTimes(2);
+});
+it("shows no clock advisory while the feature is off or the member is not an intended driver (#1420)", async () => {
+	remote.status.mockResolvedValue({ success: true, data: null });
+	render(
+		<QueryClientProvider client={client()}>
+			<ClockInOutWidget activeWorkPeriod={null} employeeName="Office worker" timeFormat="24h" />
+		</QueryClientProvider>,
+	);
+	await waitFor(() => expect(remote.status).toHaveBeenCalledWith({}));
+	await waitFor(() =>
+		expect(screen.queryByRole("complementary", { name: "Driving authorization" })).toBeNull(),
+	);
+	expect(screen.queryByText("Not enrolled — no driving authorization")).toBeNull();
+	expect(screen.queryByText("Loading driving authorization…")).toBeNull();
+	expect(screen.getByRole("button", { name: "Clock In" })).toBeTruthy();
 });
 it("does not reuse another organization or user's cached status", async () => {
 	remote.status

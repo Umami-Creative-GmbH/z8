@@ -13,6 +13,8 @@ describe("route metadata", () => {
 		["/en/works-council", "Works Council"],
 		["/en/team/absences", "Team Absences"],
 		["/en/team/driving", "Driving Details"],
+		["/en/driving-licence", "My driving authorization"],
+		["/en/driving-licence/checks/employee-1", "My driving authorization"],
 		["/en/reports/projects", "Project Reports"],
 		["/en/reports/vehicles", "Distance per Vehicle"],
 		["/en/settings/employees/employee-1", "Employees"],
