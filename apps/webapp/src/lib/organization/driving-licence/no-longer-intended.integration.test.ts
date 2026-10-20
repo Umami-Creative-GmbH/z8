@@ -797,6 +797,90 @@ describe("what ending leaves behind", () => {
 		});
 	});
 
+	it("shows a re-intended employee the person-wide suspension that still applies instead of not yet checked", async () => {
+		const impediments = await import("./impediment-actions");
+		await assign({ type: "employee", employeeId: alex.employeeId }, "required");
+		await check(alex);
+		// A failed employee declaration suspends the person, not only the classes.
+		unwrap(
+			await as(verifier.userId, () =>
+				checks.completeDrivingLicenceCheckAction({
+					employeeId: alex.employeeId,
+					commandId: crypto.randomUUID(),
+					originalInspected: true,
+					identityConfirmed: true,
+					employeeDeclaration: false,
+					verifierConfirmed: true,
+					documentIssuedOn: "2020-05-01",
+					documentExpiresOn: "2035-05-01",
+					classes: [{ code: "B", result: "inconclusive", expiryDate: null, restrictions: "" }],
+				}),
+			),
+		);
+		await assign({ type: "employee", employeeId: alex.employeeId }, "not_required");
+		await assign({ type: "employee", employeeId: alex.employeeId }, "required");
+		expect(await record(alex)).toMatchObject({
+			status: "suspended",
+			personWideReason: "person_impediment",
+		});
+		// What the verifier sees is what the next check does: a successful check stays suspended.
+		await check(alex, ["B"]);
+		expect(await record(alex)).toMatchObject({
+			status: "suspended",
+			personWideReason: "person_impediment",
+			authorizedClasses: [],
+		});
+
+		// An open impediment report of the current employment counts the same way.
+		await assign({ type: "employee", employeeId: blair.employeeId }, "required");
+		await check(blair, ["B"]);
+		unwrap(
+			await as(blair.userId, () =>
+				impediments.reportDrivingImpedimentAction({ commandId: crypto.randomUUID() }),
+			),
+		);
+		await assign({ type: "employee", employeeId: blair.employeeId }, "not_required");
+		await assign({ type: "employee", employeeId: blair.employeeId }, "required");
+		expect(await record(blair)).toMatchObject({
+			status: "suspended",
+			personWideReason: "person_impediment",
+		});
+	});
+
+	it("gives a terminal-only employee who becomes an intended driver again a new first-check task", async () => {
+		const tasks = await import("./task-actions");
+		await fixture.pool.query('update "user" set email=$2 where id=$1', [
+			alex.userId,
+			`terminal-${alex.userId}@kiosk.invalid`,
+		]);
+		await assign({ type: "employee", employeeId: alex.employeeId }, "required");
+		await check(alex);
+		const verifierTasks = async () => {
+			const result = await as(verifier.userId, () => tasks.getDrivingLicenceTasksAction());
+			if (!result.success) throw new Error(result.error);
+			return result.data.filter((task) => task.employeeId === alex.employeeId);
+		};
+		const taskNotices = async () =>
+			(
+				await getUserNotifications(verifier.userId, fixture.organizationId, { limit: 100 })
+			).notifications.filter((n) => n.entityType === "driving_licence_task").length;
+		// Checked: no first-check task any more.
+		expect(await verifierTasks()).toEqual([]);
+		const before = await taskNotices();
+
+		session.now = "2026-03-10T09:00:00Z";
+		await assign({ type: "employee", employeeId: alex.employeeId }, "not_required");
+		await assign({ type: "employee", employeeId: alex.employeeId }, "required");
+		expect(await verifierTasks()).toEqual([
+			expect.objectContaining({
+				kind: "personal_reminder",
+				state: "pending",
+				occasion: expect.objectContaining({ kind: "initial" }),
+			}),
+		]);
+		expect(await taskNotices()).toBe(before + 1);
+	});
+
 	it("leaves an employee who becomes an intended driver again not yet checked, and a new check grants normally", async () => {
 		await assign({ type: "employee", employeeId: alex.employeeId }, "required");
 		const first = await check(alex);

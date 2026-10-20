@@ -1,7 +1,10 @@
 import "server-only";
-import { and, eq, gt, isNull } from "drizzle-orm";
+import { and, eq, gt, isNull, max } from "drizzle-orm";
 import { member, user } from "@/db/auth-schema";
-import { drivingLicenceCheck } from "@/db/schema/driving-licence-checks";
+import {
+	drivingAuthorizationEvent,
+	drivingLicenceCheck,
+} from "@/db/schema/driving-licence-checks";
 import { drivingLicencePolicy } from "@/db/schema/driving-licence-policy";
 import { drivingLicenceTask } from "@/db/schema/driving-licence-tasks";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
@@ -10,6 +13,7 @@ import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
 import { translatedContent } from "@/lib/notifications/notification-copy";
 import { insertInAppNotification } from "@/lib/notifications/notification-service";
 import { resolveDrivingLicenceAccess } from "./access";
+import { NO_LONGER_INTENDED } from "./check-types";
 import { currentDrivingEmployment } from "./checks";
 import type { DrivingLicenceActor } from "./context";
 import { listDrivingLicenceIntendedDriverIds } from "./intended-drivers";
@@ -206,11 +210,13 @@ export async function reconcileDrivingLicenceTasks(
 						.where(condition);
 				} else if (!recipients.verifiers.length) {
 					if (task.state !== "pending") {
+						// A completed task needed again is new work (next generation, new notice); an
+						// obsolete one (e.g. open at switch-off) comes back as it was, silently.
 						[task] = await tx
 							.update(drivingLicenceTask)
 							.set({
 								state: "pending",
-								generation: task.generation + 1,
+								generation: task.state === "obsolete" ? task.generation : task.generation + 1,
 								completedAt: null,
 								completedBy: null,
 							})
@@ -226,6 +232,23 @@ export async function reconcileDrivingLicenceTasks(
 		const employeeOccasions = occasions.filter(
 			(o) => o.employeeId === participant.employeeId,
 		);
+		// Checks before the employee last stopped being an intended driver don't count: once
+		// intended again they are not yet checked, a new first check (#1425, #1418 review).
+		const [lastEnding] = await tx
+			.select({ at: max(drivingAuthorizationEvent.effectiveAt) })
+			.from(drivingAuthorizationEvent)
+			.where(
+				and(
+					eq(drivingAuthorizationEvent.organizationId, organizationId),
+					eq(drivingAuthorizationEvent.employeeId, participant.employeeId),
+					eq(drivingAuthorizationEvent.kind, "ended"),
+					eq(drivingAuthorizationEvent.reason, NO_LONGER_INTENDED),
+					employment.periodId
+						? eq(drivingAuthorizationEvent.employmentPeriodId, employment.periodId)
+						: isNull(drivingAuthorizationEvent.employmentPeriodId),
+				),
+			);
+		const endedAt = lastEnding?.at ?? null;
 		const [previousCheck] = await tx
 			.select({ id: drivingLicenceCheck.id })
 			.from(drivingLicenceCheck)
@@ -236,6 +259,7 @@ export async function reconcileDrivingLicenceTasks(
 					employment.lastDepartureAt
 						? gt(drivingLicenceCheck.controlledAt, employment.lastDepartureAt)
 						: undefined,
+					endedAt ? gt(drivingLicenceCheck.controlledAt, endedAt) : undefined,
 					employment.periodId
 						? eq(drivingLicenceCheck.employmentPeriodId, employment.periodId)
 						: isNull(drivingLicenceCheck.employmentPeriodId),
@@ -244,7 +268,9 @@ export async function reconcileDrivingLicenceTasks(
 			.limit(1);
 		const keys = employeeOccasions.map((o) => o.key);
 		if (!previousCheck)
-			keys.push(`initial:${participant.employeeId}:${employmentIdentity}`);
+			keys.push(
+				`initial:${participant.employeeId}:${employmentIdentity}${endedAt ? `:intended-after:${endedAt.toISOString()}` : ""}`,
+			);
 		for (const key of keys) {
 			current.add(`personal_reminder:${key}`);
 			let task = rows.find(
@@ -264,13 +290,12 @@ export async function reconcileDrivingLicenceTasks(
 					.onConflictDoNothing()
 					.returning();
 			}
+			// The same occasion again (e.g. open at switch-off): restored as it was, without a
+			// new generation, so its notice is not repeated (#1418 review).
 			if (task?.state === "obsolete") {
 				[task] = await tx
 					.update(drivingLicenceTask)
-					.set({
-						state: task.completedAt ? "completed" : "pending",
-						generation: task.generation + 1,
-					})
+					.set({ state: task.completedAt ? "completed" : "pending" })
 					.where(
 						and(
 							eq(drivingLicenceTask.organizationId, organizationId),

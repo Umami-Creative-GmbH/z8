@@ -76,6 +76,7 @@ export async function getOwnDrivingLicenceStatusAction() {
 			return {
 				enrolled: false,
 				status: "not_enrolled" as const,
+				personWideReason: null,
 				authorizedClasses: [] as string[],
 				classes: [],
 				timezone: null,

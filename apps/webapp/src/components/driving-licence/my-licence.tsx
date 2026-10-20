@@ -28,7 +28,7 @@ export function DrivingLicenceStatusSummary({
 	record,
 	audience = "employee",
 }: {
-	record: Pick<DrivingLicenceEmployeeRecord, "status" | "classes">;
+	record: Pick<DrivingLicenceEmployeeRecord, "status" | "classes" | "personWideReason">;
 	/** The verifier's check page (#1429) words the empty state for someone else's record. */
 	audience?: "employee" | "verifier";
 }) {
@@ -51,6 +51,14 @@ export function DrivingLicenceStatusSummary({
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="space-y-3">
+				{record.personWideReason ? (
+					<p className="text-sm font-medium">
+						{t(
+							"drivingLicence.summary.personWide",
+							"An impediment suspends driving in every class until a verifier reinstates it. A new check alone does not lift it.",
+						)}
+					</p>
+				) : null}
 				{record.classes.length ? (
 					<Table mobileLayout="stacked">
 						<TableHeader>

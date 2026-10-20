@@ -318,6 +318,16 @@ export async function readEffectiveDrivingAuthorization(
 	// Classes that ended when the employee stopped being an intended driver stay listed as
 	// history but don't count: once intended again they are not yet checked (#1425).
 	const current = classes.filter((_, index) => !endedAsNoLongerIntended(rows[index]));
+	// A person-wide suspension of the current employment (an open impediment report or a
+	// failed declaration / document check) outlives ending and re-intending: the next check
+	// keeps it, so it is the status until resolved (#1418 review).
+	const subjectApplies =
+		!!employment?.hasAccess && !!global && global.employmentPeriodId === employment.periodId;
+	const personWideReason = reportApplies
+		? "person_impediment"
+		: subjectApplies
+			? `${global.suspensionKind}_impediment`
+			: null;
 	const status: AuthorizationStatus = !intendedDriver
 		? "not_enrolled"
 		: !employment?.hasAccess
@@ -325,7 +335,9 @@ export async function readEffectiveDrivingAuthorization(
 			: reportApplies
 				? "suspended"
 				: !current.length
-					? "not_yet_checked"
+					? subjectApplies
+						? "suspended"
+						: "not_yet_checked"
 					: authorizedClasses.length === current.length
 						? "active"
 						: authorizedClasses.length
@@ -336,6 +348,8 @@ export async function readEffectiveDrivingAuthorization(
 	return {
 		enrolled: intendedDriver,
 		status,
+		/** Why the whole person is suspended (`person_impediment` / `document_impediment`), else null. */
+		personWideReason: intendedDriver ? personWideReason : null,
 		authorizedClasses,
 		classes,
 		timezone: policy?.timezone ?? null,
