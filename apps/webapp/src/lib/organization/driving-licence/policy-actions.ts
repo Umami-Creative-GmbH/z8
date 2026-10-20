@@ -12,6 +12,7 @@ import {
 	listDrivingLicenceParticipants,
 	readDrivingLicencePolicy,
 	saveDrivingLicencePolicy,
+	switchDrivingLicenceControl,
 } from "./policy";
 
 type Result<T> = { success: true; data: T } | { success: false; error: string };
@@ -29,6 +30,8 @@ async function action<T>(run: () => Promise<T>): Promise<Result<T>> {
 							"not_enabled",
 							"interval_preview_required",
 							"retention_required",
+							"setup_required",
+							"invalid_setup",
 						].includes(error.message)
 					? error.message
 					: "save_failed";
@@ -38,6 +41,15 @@ async function action<T>(run: () => Promise<T>): Promise<Result<T>> {
 export async function saveDrivingLicencePolicyAction(input: unknown) {
 	return action(async () =>
 		saveDrivingLicencePolicy(await requireDrivingLicenceAdministrator(), input),
+	);
+}
+/** The Features switch (#1421): owners and admins switch driving licence control on and off. */
+export async function switchDrivingLicenceControlAction(input: unknown) {
+	return action(async () =>
+		switchDrivingLicenceControl(
+			await requireDrivingLicenceAdministrator(),
+			input,
+		),
 	);
 }
 export async function enrollDrivingLicenceEmployeeAction(input: unknown) {

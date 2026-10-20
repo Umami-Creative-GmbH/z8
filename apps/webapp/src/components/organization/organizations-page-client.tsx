@@ -3,6 +3,7 @@
 import { useTranslate } from "@tolgee/react";
 import type * as authSchema from "@/db/auth-schema";
 import type { BillableCurrency } from "@/lib/billable-time/currency";
+import type { DrivingLicenceFeatureState } from "@/lib/organization/driving-licence/policy";
 import { OrganizationTab } from "./organization-tab";
 
 interface OrganizationsPageClientProps {
@@ -13,6 +14,7 @@ interface OrganizationsPageClientProps {
 	defaultNotificationLanguage: string;
 	canCreateOrganizations: boolean;
 	billableCurrency: BillableCurrency | null;
+	drivingLicence: DrivingLicenceFeatureState;
 }
 
 export function OrganizationsPageClient({
@@ -23,6 +25,7 @@ export function OrganizationsPageClient({
 	defaultNotificationLanguage,
 	canCreateOrganizations,
 	billableCurrency,
+	drivingLicence,
 }: OrganizationsPageClientProps) {
 	const { t } = useTranslate();
 	const organizationTitle = t("settings.organizations.title", "Organization");
@@ -47,6 +50,7 @@ export function OrganizationsPageClient({
 					defaultNotificationLanguage={defaultNotificationLanguage}
 					canCreateOrganizations={canCreateOrganizations}
 					billableCurrency={billableCurrency}
+					drivingLicence={drivingLicence}
 				/>
 			</div>
 		</div>

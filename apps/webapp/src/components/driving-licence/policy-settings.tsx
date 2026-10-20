@@ -52,13 +52,15 @@ function policySaveError(t: Translate, error: string | undefined) {
 	);
 }
 
-/** The organization policy form; a save reports through `feedback`. */
+/**
+ * The organization policy form; a save reports through `feedback`. It never switches
+ * control on or off: the Features card switch is the only activation (#1421).
+ */
 function usePolicyForm(
 	data: DrivingLicenceSettingsData,
 	feedback: {
 		setMessage: (message: string) => void;
 		setError: (error: string) => void;
-		setEnabled: (enabled: boolean) => void;
 	},
 ) {
 	const { t } = useTranslate();
@@ -67,7 +69,6 @@ function usePolicyForm(
 	const policy = data.policy;
 	return useForm({
 		defaultValues: {
-			enabled: policy?.enabled ?? false,
 			intervalMonths: policy?.intervalMonths ?? 6,
 			timezone: policy?.timezone ?? "Europe/Berlin",
 			reminderLeadDays: (policy?.reminderLeadDays ?? [30, 7]).join(", "),
@@ -88,7 +89,6 @@ function usePolicyForm(
 				feedback.setError(policySaveError(t, result.error));
 				return;
 			}
-			feedback.setEnabled(value.enabled);
 			feedback.setMessage(t("drivingLicence.saved", "Policy saved"));
 			void queryClient.invalidateQueries({
 				queryKey: ["driving-authorization-status"],
@@ -104,8 +104,8 @@ export function DrivingLicenceSettings({ data }: { data: DrivingLicenceSettingsD
 	const { t } = useTranslate();
 	const [message, setMessage] = useState("");
 	const [error, setError] = useState("");
-	const [enabled, setEnabled] = useState(data.policy?.enabled ?? false);
-	const form = usePolicyForm(data, { setMessage, setError, setEnabled });
+	const enabled = data.policy?.enabled ?? false;
+	const form = usePolicyForm(data, { setMessage, setError });
 	return (
 		<div className="space-y-8">
 			<section
@@ -115,36 +115,46 @@ export function DrivingLicenceSettings({ data }: { data: DrivingLicenceSettingsD
 				<h2 id="driving-policy-title" className="text-lg font-semibold">
 					{t("drivingLicence.policyTitle", "Organization policy")}
 				</h2>
-				<p className="mt-1 text-sm text-muted-foreground">
-					{t(
-						"drivingLicence.policyIntro",
-						"Germany-first original licence checks. Choose the routine interval and justify a finite evidence retention period before activation.",
-					)}
-				</p>
-				{/* TanStack Form owns the submission lifecycle; see .react-doctor/false-positives.md. */}
-				{/* react-doctor-disable-next-line react-doctor/no-prevent-default */}
-				<form
-					className="mt-6 space-y-5"
-					onSubmit={(event) => {
-						event.preventDefault();
-						event.stopPropagation();
-						void form.handleSubmit();
-					}}
-				>
-					<PolicyActivationField form={form} t={t} />
-					<PolicyScheduleFields form={form} policy={data.policy} t={t} />
-					<PolicyReminderField form={form} t={t} />
-					<PolicyRetentionFields form={form} t={t} />
-					<form.Subscribe selector={(state) => state.isSubmitting}>
-						{(submitting) => (
-							<Button type="submit" disabled={submitting}>
-								{submitting
-									? t("drivingLicence.saving", "Saving…")
-									: t("drivingLicence.save", "Save policy")}
-							</Button>
+				{data.policy ? (
+					<>
+						<p className="mt-1 text-sm text-muted-foreground">
+							{t(
+								"drivingLicence.policyIntro",
+								"Germany-first original licence checks. Choose the routine interval and justify a finite evidence retention period before activation.",
+							)}
+						</p>
+						{/* TanStack Form owns the submission lifecycle; see .react-doctor/false-positives.md. */}
+						{/* react-doctor-disable-next-line react-doctor/no-prevent-default */}
+						<form
+							className="mt-6 space-y-5"
+							onSubmit={(event) => {
+								event.preventDefault();
+								event.stopPropagation();
+								void form.handleSubmit();
+							}}
+						>
+							<PolicyScheduleFields form={form} policy={data.policy} t={t} />
+							<PolicyReminderField form={form} t={t} />
+							<PolicyRetentionFields form={form} t={t} />
+							<form.Subscribe selector={(state) => state.isSubmitting}>
+								{(submitting) => (
+									<Button type="submit" disabled={submitting}>
+										{submitting
+											? t("drivingLicence.saving", "Saving…")
+											: t("drivingLicence.save", "Save policy")}
+									</Button>
+								)}
+							</form.Subscribe>
+						</form>
+					</>
+				) : (
+					<p className="mt-1 text-sm text-muted-foreground">
+						{t(
+							"drivingLicence.switchOnFirst",
+							"Switch on driving licence control on the Features card in Organization settings. Setting it up there saves the first policy.",
 						)}
-					</form.Subscribe>
-				</form>
+					</p>
+				)}
 				{data.policy ? (
 					<DrivingLicenceIntervalSettings
 						key={data.policy.intervalMonths}
@@ -162,37 +172,6 @@ export function DrivingLicenceSettings({ data }: { data: DrivingLicenceSettingsD
 			) : null}
 			<DriverEnrollment data={data} enabled={enabled} onError={setError} />
 		</div>
-	);
-}
-
-function PolicyActivationField({ form, t }: { form: PolicyForm; t: Translate }) {
-	return (
-		<form.Field name="enabled">
-			{(field) => (
-				<TFormItem>
-					<TFormLabel>
-						{t("drivingLicence.activate", "Activate driving licence control")}
-					</TFormLabel>
-					<TFormControl>
-						<input
-							type="checkbox"
-							aria-label={t("drivingLicence.activate", "Activate driving licence control")}
-							name={field.name}
-							className="size-4 accent-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-							checked={field.state.value}
-							onChange={(event) => field.handleChange(event.target.checked)}
-							onBlur={field.handleBlur}
-						/>
-					</TFormControl>
-					<TFormDescription>
-						{t(
-							"drivingLicence.activationHelp",
-							"Enrollment does not grant driving authorization. An authorized verifier must first check the original licence.",
-						)}
-					</TFormDescription>
-				</TFormItem>
-			)}
-		</form.Field>
 	);
 }
 
