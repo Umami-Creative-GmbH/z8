@@ -34,6 +34,7 @@ import {
 	readEffectiveDrivingAuthorization,
 } from "./checks";
 import type { DrivingLicenceActor } from "./context";
+import { assertDrivingLicenceControlOn } from "./control-state";
 import type { DrivingLicenceTransaction } from "./verifiers";
 
 async function lockHistoryActor(
@@ -413,6 +414,7 @@ export async function readDrivingLicenceHistory(
 	const input = historyQueryInput.parse(raw);
 	return db.transaction(async (tx) => {
 		await lockDrivingLicenceOrganization(tx, actor.organizationId);
+		await assertDrivingLicenceControlOn(tx, actor.organizationId);
 		await lockHistoryActor(tx, actor);
 		const now = systemClock.nowInstant();
 		const accessInput = {

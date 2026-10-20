@@ -6,13 +6,16 @@ import { employee, employeeEmploymentPeriod, team } from "@/db/schema";
 import { drivingLicencePolicy } from "@/db/schema/driving-licence-policy";
 import { drivingLicenceVerifierGrant } from "@/db/schema/driving-licence-verifiers";
 import {
+	comparePlainDates,
 	dateFromInstant,
 	type Instant,
 	parseInstant,
+	parsePlainDate,
 	plainDateAt,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
+import { assertDrivingLicenceControlOn } from "./control-state";
 import { verifierGrantExpiry, verifierGrantUntil } from "./deadlines";
 import { lockDrivingLicenceOrganization } from "./locks";
 
@@ -195,6 +198,7 @@ export async function saveDrivingLicenceVerifierGrant(
 ) {
 	const value = verifierGrantInput.parse(input.grant);
 	await lockDrivingLicenceOrganization(tx, input.organizationId);
+	await assertDrivingLicenceControlOn(tx, input.organizationId);
 	// Serialize replacements and grants for the same recipient, including when no grant exists yet.
 	await tx.execute(
 		sql`SELECT pg_advisory_xact_lock(hashtextextended(${`${input.organizationId}:${value.verifierEmployeeId}:driving-verifier`}, 0))`,
@@ -206,7 +210,7 @@ export async function saveDrivingLicenceVerifierGrant(
 			tx,
 			input.organizationId,
 		);
-		if (value.until < plainDateAt(now, timezone).toString())
+		if (comparePlainDates(parsePlainDate(value.until), plainDateAt(now, timezone)) < 0)
 			throw new Error(VERIFIER_UNTIL_IN_PAST);
 		expiresAt = verifierGrantExpiry(value.until, timezone);
 	}
@@ -307,6 +311,7 @@ export async function revokeDrivingLicenceVerifierGrant(
 ) {
 	const grantId = z.uuid().parse(input.grantId);
 	await lockDrivingLicenceOrganization(tx, input.organizationId);
+	await assertDrivingLicenceControlOn(tx, input.organizationId);
 	const [row] = await tx
 		.update(drivingLicenceVerifierGrant)
 		.set({

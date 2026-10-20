@@ -4,7 +4,10 @@ import {
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
-import { saveConfirmedIntendedDriverAssignment } from "./testing/control.test.fixture";
+import {
+	activateDrivingLicenceControl,
+	saveConfirmedIntendedDriverAssignment,
+} from "./testing/control.test.fixture";
 
 const harness = vi.hoisted(() => ({
 	userId: "",
@@ -41,7 +44,6 @@ const intervals = await import("./interval-actions");
 let fixture: LifecycleDatabaseFixture;
 let verifier: SeededEmployee;
 const initialPolicy = {
-	enabled: true,
 	intervalMonths: 6,
 	timezone: "Europe/Berlin",
 	reminderLeadDays: [30, 7],
@@ -77,7 +79,7 @@ beforeEach(async () => {
 	harness.now = "2026-01-31T11:00:00Z";
 	harness.userId = fixture.ownerUserId;
 	expect(
-		(await policy.saveDrivingLicencePolicyAction(initialPolicy)).success,
+		(await activateDrivingLicenceControl(initialPolicy)).success,
 	).toBe(true);
 	expect(
 		(

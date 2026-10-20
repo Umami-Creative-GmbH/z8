@@ -15,6 +15,8 @@ async function run<T>(
 	try {
 		return { success: true, data: await operation() };
 	} catch (error) {
+		if (error instanceof Error && error.message === "not_enabled")
+			return { success: false, error: "not_enabled" };
 		return {
 			success: false,
 			error:

@@ -45,8 +45,11 @@ export interface DrivingLicenceVerifierAdminData {
 	timezone: string;
 }
 function failure(error: unknown): { success: false; error: string } {
-	if (error instanceof Error && error.message === VERIFIER_UNTIL_IN_PAST)
-		return { success: false, error: VERIFIER_UNTIL_IN_PAST };
+	if (
+		error instanceof Error &&
+		(error.message === VERIFIER_UNTIL_IN_PAST || error.message === "not_enabled")
+	)
+		return { success: false, error: error.message };
 	logger.error({ error }, "Driving licence verifier action failed");
 	return {
 		success: false,

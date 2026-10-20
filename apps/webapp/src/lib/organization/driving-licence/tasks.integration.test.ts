@@ -5,7 +5,10 @@ import {
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
-import { saveConfirmedIntendedDriverAssignment } from "./testing/control.test.fixture";
+import {
+	activateDrivingLicenceControl,
+	saveConfirmedIntendedDriverAssignment,
+} from "./testing/control.test.fixture";
 
 const harness = vi.hoisted(() => ({
 	userId: "",
@@ -99,8 +102,7 @@ beforeEach(async () => {
 	).rows[0].user_id;
 	expect(
 		(
-			await policy.saveDrivingLicencePolicyAction({
-				enabled: true,
+			await activateDrivingLicenceControl({
 				intervalMonths: 1,
 				timezone: "Europe/Berlin",
 				reminderLeadDays: [30, 7],

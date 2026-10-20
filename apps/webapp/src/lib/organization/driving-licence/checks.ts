@@ -49,6 +49,7 @@ import {
 	LICENCE_CLASSES,
 } from "./check-types";
 import type { DrivingLicenceActor } from "./context";
+import { assertDrivingLicenceControlOn } from "./control-state";
 import { drivingAuthorizationDeadline } from "./deadlines";
 import { isDrivingLicenceIntendedDriver } from "./intended-drivers";
 import { lockDrivingLicenceOrganization } from "./locks";
@@ -344,6 +345,7 @@ export async function readDrivingLicenceEmployeeRecord(
 	actor: DrivingLicenceActor,
 	employeeId: string,
 ) {
+	await assertDrivingLicenceControlOn(db, actor.organizationId);
 	const now = systemClock.nowInstant();
 	await assertDrivingLicenceRecordAccess(db, {
 		organizationId: actor.organizationId,
@@ -727,6 +729,7 @@ export async function readDrivingLicenceWorklist(
 	raw?: unknown,
 ) {
 	const query = drivingLicenceWorklistQuery.parse(raw ?? {});
+	await assertDrivingLicenceControlOn(db, actor.organizationId);
 	const now = systemClock.nowInstant();
 	const available = await listDrivingLicenceVerifierEmployees(db, {
 		organizationId: actor.organizationId,

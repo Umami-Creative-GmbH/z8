@@ -4,7 +4,10 @@ import {
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
-import { saveConfirmedIntendedDriverAssignment } from "./testing/control.test.fixture";
+import {
+	activateDrivingLicenceControl,
+	saveConfirmedIntendedDriverAssignment,
+} from "./testing/control.test.fixture";
 
 const harness = vi.hoisted(() => ({
 	userId: "",
@@ -69,8 +72,7 @@ beforeEach(async () => {
 	harness.userId = fixture.ownerUserId;
 	expect(
 		(
-			await policy.saveDrivingLicencePolicyAction({
-				enabled: true,
+			await activateDrivingLicenceControl({
 				intervalMonths: 1,
 				timezone: "Europe/Berlin",
 				reminderLeadDays: [30, 7],
@@ -440,17 +442,7 @@ it("starts never-supporting unsuccessful evidence at its control instant and con
 		retentionStartedAt: "2026-02-02T12:00:00.000Z",
 	});
 	expect(
-		(
-			await policy.saveDrivingLicencePolicyAction({
-				enabled: false,
-				intervalMonths: 1,
-				timezone: "Europe/Berlin",
-				reminderLeadDays: [30, 7],
-				retentionMonths: 1,
-				retentionJustification:
-					"Necessary evidence for organization driving checks",
-			})
-		).success,
+		(await policy.switchDrivingLicenceControlAction({ enabled: false })).success,
 	).toBe(true);
 	harness.now = "2026-03-03T12:00:00Z";
 	expect((await jobs.runDrivingLicenceRetentionJob()).deletedCount).toBe(1);
@@ -621,7 +613,7 @@ it("uses a due departure's actual cutoff before its worker runs and permits due 
 	expect((await adminRetention()).records).toHaveLength(0);
 });
 
-it("requires finite justified retention when disabling an established policy, keeps evidence due and honors its hold", async () => {
+it("keeps finite justified retention when switching control off, keeps evidence due and honors its hold", async () => {
 	harness.userId = fixture.ownerUserId;
 	const hold = await retention.placeDrivingLicenceHoldAction({
 		checkId,
@@ -629,9 +621,9 @@ it("requires finite justified retention when disabling an established policy, ke
 		preservationReason: "Preserve the evidence during the pending case.",
 	});
 	if (!hold.success) throw new Error(hold.error);
+	// An established retention period can't be cleared, before or after the switch-off.
 	expect(
 		await policy.saveDrivingLicencePolicyAction({
-			enabled: false,
 			intervalMonths: 1,
 			timezone: "Europe/Berlin",
 			reminderLeadDays: [30, 7],
@@ -639,19 +631,18 @@ it("requires finite justified retention when disabling an established policy, ke
 			retentionJustification: null,
 		}),
 	).toMatchObject({ success: false, error: "retention_required" });
+	expect((await policy.switchDrivingLicenceControlAction({ enabled: false })).success).toBe(
+		true,
+	);
 	expect(
-		(
-			await policy.saveDrivingLicencePolicyAction({
-				enabled: false,
-				intervalMonths: 1,
-				timezone: "Europe/Berlin",
-				reminderLeadDays: [30, 7],
-				retentionMonths: 1,
-				retentionJustification:
-					"Necessary evidence for organization driving checks",
-			})
-		).success,
-	).toBe(true);
+		await policy.saveDrivingLicencePolicyAction({
+			intervalMonths: 1,
+			timezone: "Europe/Berlin",
+			reminderLeadDays: [30, 7],
+			retentionMonths: null,
+			retentionJustification: null,
+		}),
+	).toMatchObject({ success: false, error: "not_enabled" });
 	harness.now = "2026-04-01T12:00:00Z";
 	expect((await adminRetention()).records[0]).toMatchObject({
 		deleteAfter: "2026-03-31T22:00:00.000Z",
@@ -661,7 +652,7 @@ it("requires finite justified retention when disabling an established policy, ke
 		true,
 	);
 	expect((await adminRetention()).runs[0].heldCount).toBeGreaterThanOrEqual(1);
-	expect((await ownHistory()).checks).toHaveLength(1);
+	expect((await adminRetention()).records.map((r) => r.checkId)).toContain(checkId);
 	harness.userId = fixture.ownerUserId;
 	expect(
 		(
@@ -674,7 +665,7 @@ it("requires finite justified retention when disabling an established policy, ke
 	expect(
 		(await jobs.runDrivingLicenceRetentionJob()).deletedCount,
 	).toBeGreaterThanOrEqual(1);
-	expect((await ownHistory()).checks).toEqual([]);
+	expect((await adminRetention()).records.map((r) => r.checkId)).not.toContain(checkId);
 });
 
 async function reportOwnImpediment() {

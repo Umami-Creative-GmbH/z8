@@ -88,6 +88,11 @@ async function seed() {
 			[ids[name], name === "foreign" ? "t1312-foreign" : ORG],
 		);
 	}
+	// Verifier grants change only while driving licence control is on (#1418).
+	await pool.query(
+		"insert into driving_licence_policy(organization_id,enabled,interval_months,timezone,reminder_lead_days,retention_months,retention_justification,updated_at,updated_by) values($1,true,24,'Europe/Berlin','[30,7]',36,'Necessary evidence for organization driving checks',now(),'t1312-admin')",
+		[ORG],
+	);
 	session.userId = "t1312-admin";
 	session.organizationId = ORG;
 }
@@ -323,7 +328,7 @@ describe("driving licence verifier grants through public actions", () => {
 	});
 	it("ends an until-dated grant after that whole day in the policy calendar timezone", async () => {
 		await pool.query(
-			"insert into driving_licence_policy(organization_id,enabled,interval_months,timezone,reminder_lead_days,updated_at,updated_by) values($1,false,24,'America/New_York','[30,7]',now(),'t1312-admin')",
+			"update driving_licence_policy set timezone='America/New_York' where organization_id=$1",
 			[ORG],
 		);
 		const clock = vi
@@ -388,7 +393,7 @@ describe("driving licence verifier grants through public actions", () => {
 	});
 	it("lets administrators set, change and clear an until date that is never in the past", async () => {
 		vi.spyOn(Temporal.Now, "instant").mockReturnValue(
-			// 00:30 on 17 October in the organization timezone (no policy saved yet).
+			// 00:30 on 17 October in the policy timezone (Europe/Berlin).
 			Temporal.Instant.from("2026-10-16T22:30:00Z"),
 		);
 		const grant = {

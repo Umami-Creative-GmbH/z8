@@ -299,11 +299,9 @@ describe("switching off and on again", () => {
 			success: true,
 			data: { status: "active", authorizedClasses: ["B"] },
 		});
-		const own = await history.getDrivingLicenceHistoryAction({
-			employeeId: fixture.employeeId,
-		});
-		expect(own.success && own.data.checks).toHaveLength(1);
 
+		// The record stays; nothing can clear the retention period while off (the policy
+		// form is refused as a whole), and it is all there again once switched on.
 		harness.userId = fixture.ownerUserId;
 		expect(
 			await policy.saveDrivingLicencePolicyAction({
@@ -313,8 +311,93 @@ describe("switching off and on again", () => {
 				retentionMonths: null,
 				retentionJustification: null,
 			}),
-		).toEqual({ success: false, error: "retention_required" });
+		).toEqual({ success: false, error: "not_enabled" });
 		expect((await readDrivingLicenceFeatureState(fixture.organizationId)).enabled).toBe(false);
+		expect((await policy.switchDrivingLicenceControlAction({ enabled: true })).success).toBe(true);
+		harness.userId = subjectUserId;
+		const own = await history.getDrivingLicenceHistoryAction({
+			employeeId: fixture.employeeId,
+		});
+		expect(own.success && own.data.checks).toHaveLength(1);
+		harness.userId = fixture.ownerUserId;
+		expect(await policy.getDrivingLicenceAdminDataAction()).toMatchObject({
+			success: true,
+			data: { policy: { retentionMonths: 1 } },
+		});
+	});
+
+	it("refuses configuration, verifier grants, the Checks worklist and evidence while off; retention, holds and cleanup stay", async () => {
+		const checkId = (
+			await fixture.pool.query("select id from driving_licence_check where employee_id=$1", [
+				fixture.employeeId,
+			])
+		).rows[0].id as string;
+		const intervals = await import("./interval-actions");
+		const retention = await import("./retention-actions");
+		expect((await policy.switchDrivingLicenceControlAction({ enabled: false })).success).toBe(true);
+
+		expect(
+			await policy.saveDrivingLicencePolicyAction({
+				intervalMonths: 1,
+				timezone: "Europe/Berlin",
+				reminderLeadDays: [14],
+				retentionMonths: 1,
+				retentionJustification: setup.retentionJustification,
+			}),
+		).toEqual({ success: false, error: "not_enabled" });
+		expect(await intervals.previewDrivingLicenceIntervalAction({ intervalMonths: 6 })).toEqual({
+			success: false,
+			error: "not_enabled",
+		});
+		expect(
+			await intervals.applyDrivingLicenceIntervalAction({
+				intervalMonths: 6,
+				previewToken: "0".repeat(64),
+			}),
+		).toEqual({ success: false, error: "not_enabled" });
+		expect(
+			await grants.saveDrivingLicenceVerifierGrantAction({
+				verifierEmployeeId: admin.employeeId,
+				scope: "all",
+				teamIds: [],
+				employeeIds: [],
+			}),
+		).toEqual({ success: false, error: "not_enabled" });
+		expect(
+			await grants.revokeDrivingLicenceVerifierGrantAction({ grantId: await verifierGrantId() }),
+		).toEqual({ success: false, error: "not_enabled" });
+
+		harness.userId = member.userId;
+		expect(await checks.getDrivingLicenceCheckWorklistAction()).toEqual({
+			success: false,
+			error: "not_enabled",
+		});
+		expect(
+			await checks.getDrivingLicenceEmployeeRecordAction({ employeeId: fixture.employeeId }),
+		).toEqual({ success: false, error: "not_enabled" });
+		expect(await history.getDrivingLicenceHistoryAction({ employeeId: fixture.employeeId })).toEqual(
+			{ success: false, error: "not_enabled" },
+		);
+
+		// Retention & holds stays available to owners and admins.
+		harness.userId = fixture.ownerUserId;
+		expect((await retention.getDrivingLicenceRetentionAction()).success).toBe(true);
+		const held = await retention.placeDrivingLicenceHoldAction({
+			checkId,
+			caseReference: "CASE-1418",
+			preservationReason: "Preserved for a pending legal case",
+		});
+		expect(held.success).toBe(true);
+		if (!held.success) return;
+		expect(
+			(
+				await retention.releaseDrivingLicenceHoldAction({
+					holdId: held.data.holdId,
+					releaseReason: "The legal case has been closed",
+				})
+			).success,
+		).toBe(true);
+		expect((await retention.cleanupDrivingLicenceEvidenceAction()).success).toBe(true);
 	});
 
 	it("keeps deadlines running and evidence cleanup going while off", async () => {
@@ -328,6 +411,9 @@ describe("switching off and on again", () => {
 		});
 		harness.now = "2026-04-01T12:00:00Z";
 		expect((await runDrivingLicenceRetentionJob()).deletedCount).toBeGreaterThanOrEqual(1);
+		harness.userId = fixture.ownerUserId;
+		expect((await policy.switchDrivingLicenceControlAction({ enabled: true })).success).toBe(true);
+		harness.userId = subjectUserId;
 		const own = await history.getDrivingLicenceHistoryAction({
 			employeeId: fixture.employeeId,
 		});

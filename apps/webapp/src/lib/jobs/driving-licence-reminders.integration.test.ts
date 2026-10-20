@@ -6,6 +6,7 @@ import {
 	type SeededEmployee,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
 import {
+	activateDrivingLicenceControl,
 	saveConfirmedIntendedDriverAssignment,
 } from "@/lib/organization/driving-licence/testing/control.test.fixture";
 
@@ -117,8 +118,7 @@ beforeEach(async () => {
 	).rows[0].user_id;
 	expect(
 		(
-			await policy.saveDrivingLicencePolicyAction({
-				enabled: true,
+			await activateDrivingLicenceControl({
 				intervalMonths: 1,
 				timezone: "Europe/Berlin",
 				reminderLeadDays: [30, 7],
@@ -375,6 +375,17 @@ it("excludes foreign, expired, out-of-scope, inactive and kiosk recipients and n
 	});
 	harness.organizationId = foreignOrganizationId;
 	harness.userId = foreign.userId;
+	// Verifier grants change only while driving licence control is on (#1418).
+	expect(
+		(
+			await activateDrivingLicenceControl({
+				intervalMonths: 1,
+				timezone: "Europe/Berlin",
+				retentionMonths: 36,
+				retentionJustification: "Evidence retained for organization driving checks",
+			})
+		).success,
+	).toBe(true);
 	expect(
 		(
 			await grants.saveDrivingLicenceVerifierGrantAction({

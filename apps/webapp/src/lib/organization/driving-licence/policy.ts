@@ -42,29 +42,21 @@ const deadlineTimezoneInput = z
 			return false;
 		}
 	});
-export const drivingLicencePolicyInput = z
-	.strictObject({
-		/**
-		 * Omitted by the policy form: the Features switch is the only activation
-		 * (#1421), so a save without it keeps the stored on/off value.
-		 */
-		enabled: z.boolean().optional(),
-		intervalMonths: intervalMonthsInput,
-		timezone: deadlineTimezoneInput,
-		reminderLeadDays: z
-			.array(z.number().int().min(0).max(365))
-			.min(1)
-			.max(12)
-			.refine((days) => new Set(days).size === days.length),
-		retentionMonths: z.number().int().min(1).max(120).nullable(),
-		retentionJustification: z.string().trim().max(2000).nullable(),
-	})
-	.refine(
-		(p) =>
-			!p.enabled ||
-			(p.retentionMonths !== null &&
-				(p.retentionJustification?.length ?? 0) >= 10),
-	);
+/**
+ * The policy tab's form. It never switches control on or off: the Features switch is the only
+ * activation (#1421), and the form saves only while control is on.
+ */
+export const drivingLicencePolicyInput = z.strictObject({
+	intervalMonths: intervalMonthsInput,
+	timezone: deadlineTimezoneInput,
+	reminderLeadDays: z
+		.array(z.number().int().min(0).max(365))
+		.min(1)
+		.max(12)
+		.refine((days) => new Set(days).size === days.length),
+	retentionMonths: z.number().int().min(1).max(120).nullable(),
+	retentionJustification: z.string().trim().max(2000).nullable(),
+});
 export type DrivingLicencePolicyInput = z.infer<
 	typeof drivingLicencePolicyInput
 >;
@@ -87,10 +79,9 @@ export async function saveDrivingLicencePolicy(
 			.select()
 			.from(drivingLicencePolicy)
 			.where(eq(drivingLicencePolicy.organizationId, actor.organizationId));
-		const policy = {
-			...input,
-			enabled: input.enabled ?? previous?.enabled ?? false,
-		};
+		// Saved only while control is on; switching is the Features card's job.
+		if (!previous?.enabled) throw new Error("not_enabled");
+		const policy = { ...input, enabled: true };
 		// Once established, a finite policy survives deactivation and cannot be erased.
 		if (
 			previous?.retentionMonths &&

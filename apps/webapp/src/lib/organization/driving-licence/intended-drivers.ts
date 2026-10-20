@@ -5,11 +5,11 @@ import { db } from "@/db";
 import { member, user } from "@/db/auth-schema";
 import { auditLog, employee, team } from "@/db/schema";
 import { drivingLicenceIntendedDriverAssignment } from "@/db/schema/driving-licence-intended-drivers";
-import { drivingLicencePolicy } from "@/db/schema/driving-licence-policy";
 import { AuditAction } from "@/lib/audit-logger";
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import type { DrivingLicenceActor } from "./context";
+import { assertDrivingLicenceControlOn } from "./control-state";
 import type {
 	DrivingLicenceEndingPreview,
 	IntendedDriverAdminData,
@@ -187,11 +187,7 @@ export const intendedDriverRemovalInput = z.strictObject({ assignmentId: z.uuid(
  */
 async function beginAssignmentChange(tx: DrivingLicenceTransaction, organizationId: string) {
 	await lockDrivingLicenceOrganization(tx, organizationId);
-	const [policy] = await tx
-		.select({ enabled: drivingLicencePolicy.enabled })
-		.from(drivingLicencePolicy)
-		.where(eq(drivingLicencePolicy.organizationId, organizationId));
-	if (!policy?.enabled) throw new Error("not_enabled");
+	await assertDrivingLicenceControlOn(tx, organizationId);
 }
 
 async function assertTargetInOrganization(
