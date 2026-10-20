@@ -2,6 +2,7 @@
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useId, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -106,9 +107,10 @@ export function OriginalDrivingCheckForm({
 				classes,
 			});
 			if (!result.success) {
-				setError(result.error);
+				toast.error(result.error);
 				return;
 			}
+			toast.success(t("drivingLicence.check.recorded", "Original check recorded"));
 			await onCompleted();
 			setCommandId(crypto.randomUUID());
 			form.reset();

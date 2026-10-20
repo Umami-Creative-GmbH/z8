@@ -1,6 +1,6 @@
 "use server";
-import { z } from "zod";
 import { db } from "@/db";
+import { runDrivingLicenceAction } from "./action-result";
 import { readEffectiveDrivingAuthorization } from "./checks";
 import {
 	requireDrivingLicenceActor,
@@ -14,28 +14,17 @@ import {
 	switchDrivingLicenceControl,
 } from "./policy";
 
-type Result<T> = { success: true; data: T } | { success: false; error: string };
-async function action<T>(run: () => Promise<T>): Promise<Result<T>> {
-	try {
-		return { success: true, data: await run() };
-	} catch (error) {
-		const code =
-			error instanceof z.ZodError
-				? "invalid_policy"
-				: error instanceof Error &&
-						[
-							"forbidden",
-							"timezone_fixed",
-							"not_enabled",
-							"interval_preview_required",
-							"retention_required",
-							"setup_required",
-							"invalid_setup",
-						].includes(error.message)
-					? error.message
-					: "save_failed";
-		return { success: false, error: code };
-	}
+const POLICY_REFUSALS = [
+	"forbidden",
+	"timezone_fixed",
+	"not_enabled",
+	"interval_preview_required",
+	"retention_required",
+	"setup_required",
+	"invalid_setup",
+];
+function action<T>(run: () => Promise<T>) {
+	return runDrivingLicenceAction(run, { refusals: POLICY_REFUSALS, invalidCode: "invalid_policy" });
 }
 export async function saveDrivingLicencePolicyAction(input: unknown) {
 	return action(async () =>
@@ -76,6 +65,7 @@ export async function getOwnDrivingLicenceStatusAction() {
 			return {
 				enrolled: false,
 				status: "not_enrolled" as const,
+				personWideReason: null,
 				authorizedClasses: [] as string[],
 				classes: [],
 				timezone: null,

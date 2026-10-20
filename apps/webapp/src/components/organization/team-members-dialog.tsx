@@ -35,6 +35,9 @@ import type { team } from "@/db/schema";
 import { queryKeys, useEmployeeClockStatuses } from "@/lib/query";
 import type { MemberWithUserAndEmployee } from "./people-management-types";
 
+/** A member change with the driving licence warning it confirmed (#1425). */
+type TeamMemberChange = { teamId: string; employeeId: string; previewToken: string };
+
 interface TeamMembersDialogProps {
 	team: typeof team.$inferSelect | null;
 	allMembers: MemberWithUserAndEmployee[];
@@ -53,7 +56,8 @@ export function TeamMembersDialog({
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");
-	const { confirmTeamChange, drivingLicenceWarning } = useDrivingLicenceTeamChangeWarning();
+	const { confirmTeamChange, teamChangeError, drivingLicenceWarning } =
+		useDrivingLicenceTeamChangeWarning();
 	const presence = useEmployeeClockStatuses(
 		allMembers.map((member) => member.employee?.id ?? ""),
 		{ polling: false },
@@ -61,8 +65,8 @@ export function TeamMembersDialog({
 
 	// Add member mutation
 	const addMutation = useMutation({
-		mutationFn: ({ teamId, employeeId }: { teamId: string; employeeId: string }) =>
-			addTeamMember(teamId, employeeId),
+		mutationFn: ({ teamId, employeeId, previewToken }: TeamMemberChange) =>
+			addTeamMember(teamId, employeeId, { drivingLicencePreviewToken: previewToken }),
 		onSuccess: (result) => {
 			if (result.success) {
 				toast.success(t("organization.teams.members.addSuccess", "Member added to team"));
@@ -71,7 +75,7 @@ export function TeamMembersDialog({
 				queryClient.invalidateQueries({ queryKey: queryKeys.members.all });
 			} else {
 				toast.error(
-					result.error || t("organization.teams.members.addError", "Failed to add member"),
+					teamChangeError(result, t("organization.teams.members.addError", "Failed to add member")),
 				);
 			}
 		},
@@ -82,8 +86,8 @@ export function TeamMembersDialog({
 
 	// Remove member mutation
 	const removeMutation = useMutation({
-		mutationFn: ({ teamId, employeeId }: { teamId: string; employeeId: string }) =>
-			removeTeamMember(teamId, employeeId),
+		mutationFn: ({ teamId, employeeId, previewToken }: TeamMemberChange) =>
+			removeTeamMember(teamId, employeeId, { drivingLicencePreviewToken: previewToken }),
 		onSuccess: (result) => {
 			if (result.success) {
 				toast.success(t("organization.teams.members.removeSuccess", "Member removed from team"));
@@ -91,7 +95,10 @@ export function TeamMembersDialog({
 				queryClient.invalidateQueries({ queryKey: queryKeys.members.all });
 			} else {
 				toast.error(
-					result.error || t("organization.teams.members.removeError", "Failed to remove member"),
+					teamChangeError(
+						result,
+						t("organization.teams.members.removeError", "Failed to remove member"),
+					),
 				);
 			}
 		},
@@ -123,23 +130,19 @@ export function TeamMembersDialog({
 	const handleAddMember = async () => {
 		if (!selectedEmployeeId) return;
 		const employeeId = selectedEmployeeId;
-		if (
-			!(await confirmTeamChange(() =>
-				previewTeamMemberChangeDrivingImpact(team.id, employeeId, "add"),
-			))
-		)
-			return;
-		addMutation.mutate({ teamId: team.id, employeeId });
+		const previewToken = await confirmTeamChange(() =>
+			previewTeamMemberChangeDrivingImpact(team.id, employeeId, "add"),
+		);
+		if (previewToken === null) return;
+		addMutation.mutate({ teamId: team.id, employeeId, previewToken });
 	};
 
 	const handleRemoveMember = async (employeeId: string) => {
-		if (
-			!(await confirmTeamChange(() =>
-				previewTeamMemberChangeDrivingImpact(team.id, employeeId, "remove"),
-			))
-		)
-			return;
-		removeMutation.mutate({ teamId: team.id, employeeId });
+		const previewToken = await confirmTeamChange(() =>
+			previewTeamMemberChangeDrivingImpact(team.id, employeeId, "remove"),
+		);
+		if (previewToken === null) return;
+		removeMutation.mutate({ teamId: team.id, employeeId, previewToken });
 	};
 
 	const isActioning = (id: string) =>

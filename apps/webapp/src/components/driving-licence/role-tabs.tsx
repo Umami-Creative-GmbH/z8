@@ -1,10 +1,10 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
-import { useSearchParams } from "next/navigation";
-import { type ReactNode, useState } from "react";
+import type { ReactNode } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { drivingLicenceRoles } from "@/lib/organization/driving-licence/visibility-rules";
+import { useLinkedTabs } from "./use-linked-tabs";
 
 type DrivingLicenceRoles = ReturnType<typeof drivingLicenceRoles>;
 
@@ -30,7 +30,6 @@ export function DrivingLicenceRoleTabs({
 	panels: Partial<Record<DrivingLicenceRoleTab, ReactNode>>;
 }) {
 	const { t } = useTranslate();
-	const searchParams = useSearchParams();
 	const labels: Record<DrivingLicenceRoleTab, string> = {
 		myLicence: t("drivingLicence.tabs.myLicence", "My licence"),
 		checks: t("drivingLicence.tabs.checks", "Checks"),
@@ -38,18 +37,7 @@ export function DrivingLicenceRoleTabs({
 	};
 	const title = t("drivingLicence.page.title", "Driving licence");
 	const tabs = ORDER.filter((tab) => roles[tab]);
-	const requested = searchParams.get("tab");
-	const active = tabs.find((tab) => PARAM[tab] === requested) ?? tabs[0];
-	const [visited, setVisited] = useState(() => new Set<DrivingLicenceRoleTab>([active]));
-
-	function select(value: unknown) {
-		const selected = tabs.find((tab) => tab === value);
-		if (!selected) return;
-		setVisited((previous) => new Set([...previous, active, selected]));
-		const url = new URL(window.location.href);
-		url.searchParams.set("tab", PARAM[selected]);
-		window.history.replaceState(null, "", url.pathname + url.search + url.hash);
-	}
+	const { active, select, mounted } = useLinkedTabs(tabs, (tab) => PARAM[tab]);
 
 	return (
 		<div className="mx-auto flex w-full min-w-0 max-w-5xl flex-col gap-6 p-4 sm:p-6">
@@ -69,7 +57,7 @@ export function DrivingLicenceRoleTabs({
 					</div>
 					{tabs.map((tab) => (
 						<TabsContent key={tab} value={tab} keepMounted className="min-w-0">
-							{active === tab || visited.has(tab) ? panels[tab] : null}
+							{mounted(tab) ? panels[tab] : null}
 						</TabsContent>
 					))}
 				</Tabs>

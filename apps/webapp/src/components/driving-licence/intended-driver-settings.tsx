@@ -14,6 +14,7 @@ import type {
 	IntendedDriverAdminData,
 	IntendedDriverRequirement,
 } from "@/lib/organization/driving-licence/intended-driver-rules";
+import { queryKeys } from "@/lib/query";
 import { useDrivingLicenceEndingConfirmation } from "./ending-confirmation";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
@@ -67,7 +68,7 @@ export function IntendedDriverSettings({ data }: { data: IntendedDriverAdminData
 	const { confirm, dialog: endingConfirmation } = useDrivingLicenceEndingConfirmation("assignment");
 	const applied = (message: string) => {
 		toast.success(message);
-		void queryClient.invalidateQueries({ queryKey: ["driving-authorization-status"] });
+		void queryClient.invalidateQueries({ queryKey: queryKeys.drivingLicence.status });
 		router.refresh();
 		return true;
 	};
@@ -106,11 +107,13 @@ export function IntendedDriverSettings({ data }: { data: IntendedDriverAdminData
 						toast.error(refusalMessage(t, preview.error));
 						return false;
 					}
-					const ending = preview.data.employees.length > 0;
 					if (!(await confirm(preview.data.employees))) return false;
-					const result = await setDrivingLicenceIntendedDriverAssignmentAction(
-						ending ? { target, value, previewToken: preview.data.previewToken } : { target, value },
-					);
+					// Always confirm the preview, also when it listed nobody (#1418 review).
+					const result = await setDrivingLicenceIntendedDriverAssignmentAction({
+						target,
+						value,
+						previewToken: preview.data.previewToken,
+					});
 					if (!result.success) {
 						toast.error(refusalMessage(t, result.error));
 						return false;
@@ -123,11 +126,11 @@ export function IntendedDriverSettings({ data }: { data: IntendedDriverAdminData
 						toast.error(refusalMessage(t, preview.error));
 						return false;
 					}
-					const ending = preview.data.employees.length > 0;
 					if (!(await confirm(preview.data.employees))) return false;
-					const result = await removeDrivingLicenceIntendedDriverAssignmentAction(
-						ending ? { assignmentId, previewToken: preview.data.previewToken } : { assignmentId },
-					);
+					const result = await removeDrivingLicenceIntendedDriverAssignmentAction({
+						assignmentId,
+						previewToken: preview.data.previewToken,
+					});
 					if (!result.success) {
 						toast.error(refusalMessage(t, result.error));
 						return false;

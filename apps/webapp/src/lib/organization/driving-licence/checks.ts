@@ -49,8 +49,9 @@ import {
 	LICENCE_CLASSES,
 } from "./check-types";
 import type { DrivingLicenceActor } from "./context";
+import { assertDrivingLicenceControlOn } from "./control-state";
 import { drivingAuthorizationDeadline } from "./deadlines";
-import { isDrivingLicenceIntendedDriver } from "./intended-drivers";
+import { intendedDriverCondition, isDrivingLicenceIntendedDriver } from "./intended-drivers";
 import { lockDrivingLicenceOrganization } from "./locks";
 import {
 	drivingLicenceNextDeadline,
@@ -317,6 +318,16 @@ export async function readEffectiveDrivingAuthorization(
 	// Classes that ended when the employee stopped being an intended driver stay listed as
 	// history but don't count: once intended again they are not yet checked (#1425).
 	const current = classes.filter((_, index) => !endedAsNoLongerIntended(rows[index]));
+	// A person-wide suspension of the current employment (an open impediment report or a
+	// failed declaration / document check) outlives ending and re-intending: the next check
+	// keeps it, so it is the status until resolved (#1418 review).
+	const subjectApplies =
+		!!employment?.hasAccess && !!global && global.employmentPeriodId === employment.periodId;
+	const personWideReason = reportApplies
+		? "person_impediment"
+		: subjectApplies
+			? `${global.suspensionKind}_impediment`
+			: null;
 	const status: AuthorizationStatus = !intendedDriver
 		? "not_enrolled"
 		: !employment?.hasAccess
@@ -324,7 +335,9 @@ export async function readEffectiveDrivingAuthorization(
 			: reportApplies
 				? "suspended"
 				: !current.length
-					? "not_yet_checked"
+					? subjectApplies
+						? "suspended"
+						: "not_yet_checked"
 					: authorizedClasses.length === current.length
 						? "active"
 						: authorizedClasses.length
@@ -335,6 +348,8 @@ export async function readEffectiveDrivingAuthorization(
 	return {
 		enrolled: intendedDriver,
 		status,
+		/** Why the whole person is suspended (`person_impediment` / `document_impediment`), else null. */
+		personWideReason: intendedDriver ? personWideReason : null,
 		authorizedClasses,
 		classes,
 		timezone: policy?.timezone ?? null,
@@ -344,6 +359,7 @@ export async function readDrivingLicenceEmployeeRecord(
 	actor: DrivingLicenceActor,
 	employeeId: string,
 ) {
+	await assertDrivingLicenceControlOn(db, actor.organizationId);
 	const now = systemClock.nowInstant();
 	await assertDrivingLicenceRecordAccess(db, {
 		organizationId: actor.organizationId,
@@ -718,15 +734,17 @@ export async function completeDrivingLicenceCheck(
 }
 /**
  * The verifier's Checks table (#1428): intended drivers in the current grant's scope (never
- * the verifier), with primary team and next deadline. Name search narrows the scope in SQL;
- * the status filter and the order (checks due now, then soonest deadline) apply to the
- * effective status, which is evaluated per employee.
+ * the verifier), with primary team and next deadline. Name search and the intended-driver
+ * resolver narrow the scope in SQL; the status filter and the column order (default: checks
+ * due now, then soonest deadline; or name, or team) apply to the effective status, which is
+ * evaluated per remaining employee.
  */
 export async function readDrivingLicenceWorklist(
 	actor: DrivingLicenceActor,
 	raw?: unknown,
 ) {
 	const query = drivingLicenceWorklistQuery.parse(raw ?? {});
+	await assertDrivingLicenceControlOn(db, actor.organizationId);
 	const now = systemClock.nowInstant();
 	const available = await listDrivingLicenceVerifierEmployees(db, {
 		organizationId: actor.organizationId,
@@ -760,6 +778,8 @@ export async function readDrivingLicenceWorklist(
 					employee.id,
 					available.map((target) => target.id),
 				),
+				// Only intended drivers, selected in SQL (#1418 review).
+				intendedDriverCondition(actor.organizationId),
 				term
 					? or(
 							ilike(user.name, term),
@@ -780,7 +800,6 @@ export async function readDrivingLicenceWorklist(
 				target.id,
 				now,
 			);
-			if (!status.enrolled) return null;
 			return {
 				employeeId: target.id,
 				canVerify: target.canVerify,
@@ -799,6 +818,7 @@ export async function readDrivingLicenceWorklist(
 			(row): row is NonNullable<typeof row> =>
 				row !== null && (!query.status || row.status === query.status),
 		),
+		query,
 	);
 }
 export type DrivingLicenceWorklistRow = Awaited<

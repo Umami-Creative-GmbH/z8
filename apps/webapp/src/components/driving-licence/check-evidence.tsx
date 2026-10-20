@@ -1,60 +1,52 @@
 "use client";
 import { useTranslate } from "@tolgee/react";
 import { useId } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { AuthorizationStatus } from "@/lib/organization/driving-licence/check-types";
 import type { DrivingLicenceEmployeeRecord } from "@/lib/organization/driving-licence/checks";
-export function DrivingStatusLabel({
-	status,
-}: {
-	status: AuthorizationStatus;
-}) {
+
+/**
+ * The one vocabulary for a person's driving status (#1418): `headline` for the status
+ * summary, history and the header clock, `short` for table badges and filters. Someone the
+ * control doesn't apply to is "not an intended driver".
+ */
+export function useDrivingStatusLabels(): Record<
+	AuthorizationStatus,
+	{ headline: string; short: string }
+> {
 	const { t } = useTranslate();
-	switch (status) {
-		case "active":
-			return (
-				<>{t("drivingLicence.status.active", "Driving authorization active")}</>
-			);
-		case "partially_active":
-			return (
-				<>
-					{t(
-						"drivingLicence.status.partial",
-						"Some driving classes are suspended",
-					)}
-				</>
-			);
-		case "suspended":
-			return (
-				<>
-					{t(
-						"drivingLicence.status.suspended",
-						"Driving authorization suspended",
-					)}
-				</>
-			);
-		case "ended":
-			return (
-				<>{t("drivingLicence.status.ended", "Driving authorization ended")}</>
-			);
-		case "not_enrolled":
-			return (
-				<>
-					{t(
-						"drivingLicence.notEnrolled",
-						"Not enrolled — no driving authorization",
-					)}
-				</>
-			);
-		case "not_yet_checked":
-			return (
-				<>
-					{t(
-						"drivingLicence.notChecked",
-						"Not yet checked — no driving authorization",
-					)}
-				</>
-			);
-	}
+	return {
+		active: {
+			headline: t("drivingLicence.status.active", "Driving authorization active"),
+			short: t("drivingLicence.checks.status.active", "Active"),
+		},
+		partially_active: {
+			headline: t("drivingLicence.status.partial", "Some driving classes are suspended"),
+			short: t("drivingLicence.checks.status.partiallyActive", "Partially active"),
+		},
+		suspended: {
+			headline: t("drivingLicence.status.suspended", "Driving authorization suspended"),
+			short: t("drivingLicence.checks.status.suspended", "Suspended"),
+		},
+		ended: {
+			headline: t("drivingLicence.status.ended", "Driving authorization ended"),
+			short: t("drivingLicence.checks.status.ended", "Ended"),
+		},
+		not_enrolled: {
+			headline: t(
+				"drivingLicence.status.notIntended",
+				"Not an intended driver — no driving authorization",
+			),
+			short: t("drivingLicence.checks.status.notIntended", "Not an intended driver"),
+		},
+		not_yet_checked: {
+			headline: t("drivingLicence.notChecked", "Not yet checked — no driving authorization"),
+			short: t("drivingLicence.checks.status.notYetChecked", "Not yet checked"),
+		},
+	};
+}
+export function DrivingStatusLabel({ status }: { status: AuthorizationStatus }) {
+	return <>{useDrivingStatusLabels()[status].headline}</>;
 }
 /** One class authorization's state: Authorized, Suspended or Ended. */
 export function DrivingClassStatusLabel({ status }: { status: string }) {
@@ -85,82 +77,10 @@ export function DrivingClassReason({ reason }: { reason: string }) {
 							"Ended because the employee is no longer an intended driver. Driving again requires a new check.",
 						)
 					: t(
-						"drivingLicence.class.recheck",
-						"A new original check and explicit reinstatement are required.",
-					)}
+							"drivingLicence.class.recheck",
+							"A new original check and explicit reinstatement are required.",
+						)}
 		</>
-	);
-}
-export function DrivingLicenceEvidence({
-	record,
-}: {
-	record: DrivingLicenceEmployeeRecord;
-}) {
-	const { t } = useTranslate();
-	const statusTitleId = useId();
-	return (
-		<div className="space-y-5">
-			{record.uncertainEmailCount > 0 ? (
-				<p role="status" className="text-sm text-muted-foreground">
-					{t(
-						"drivingLicence.delivery.uncertain",
-						"Optional reminder emails to you have an uncertain delivery outcome ({count}). They will not be sent again automatically. Your in-app reminders remain available; email delivery does not confirm reading.",
-						{ count: record.uncertainEmailCount },
-					)}
-				</p>
-			) : null}
-			<section
-				className="rounded-lg border bg-card p-5"
-				aria-labelledby={statusTitleId}
-			>
-				<h2 id={statusTitleId} className="text-lg font-semibold">
-					<DrivingStatusLabel status={record.status} />
-				</h2>
-				<p className="mt-2 text-sm text-muted-foreground">
-					{t(
-						"drivingLicence.status.explanation",
-						"Organization driving authorization covers the listed classes and restrictions. It does not establish suitability for every vehicle. You can continue recording working time and actual vehicle use.",
-					)}
-				</p>
-				<ul className="mt-4 divide-y">
-					{record.classes.map((authorization) => (
-						<li key={authorization.code} className="space-y-1 py-3">
-							<div className="flex flex-wrap justify-between gap-2">
-								<strong>{authorization.code}</strong>
-								<span>
-									<DrivingClassStatusLabel status={authorization.status} />
-								</span>
-							</div>
-							<p className="text-sm">
-								{t(
-									"drivingLicence.class.validThrough",
-									"Valid through {date} ({timezone})",
-									{
-										date: authorization.validThrough,
-										timezone: authorization.deadlineTimezone,
-									},
-								)}
-							</p>
-							{authorization.reason && (
-								<p className="text-sm text-muted-foreground">
-									<DrivingClassReason reason={authorization.reason} />
-								</p>
-							)}
-							{authorization.restrictions && (
-								<p className="text-sm">
-									{t(
-										"drivingLicence.class.restrictions",
-										"Driving restrictions: {restrictions}",
-										{ restrictions: authorization.restrictions },
-									)}
-								</p>
-							)}
-						</li>
-					))}
-				</ul>
-			</section>
-			<DrivingLicenceCheckEvidence record={record} />
-		</div>
 	);
 }
 /** The original checks as recorded, newest first. */
@@ -172,104 +92,97 @@ export function DrivingLicenceCheckEvidence({
 	const { t } = useTranslate();
 	const titleId = useId();
 	return (
-		<section aria-labelledby={titleId}>
-			<h2 id={titleId} className="mb-3 text-lg font-semibold">
-				{t("drivingLicence.evidence.title", "Original check evidence")}
-			</h2>
-			{!record.checks.length && (
-				<p className="text-sm text-muted-foreground">
-					{t(
-						"drivingLicence.evidence.empty",
-						"No original check has been completed.",
-					)}
-				</p>
-			)}
-			<ol className="space-y-4">
-				{record.checks.map((check) => (
-					<li key={check.id} className="space-y-2 rounded-lg border p-4">
-						<p className="font-medium">
-							{check.employeeName} · {check.controlledAt}
-						</p>
-						<p className="text-sm">
-							{t(
-								"drivingLicence.evidence.verifier",
-								"Original check recorded by {name}",
-								{ name: check.verifierName },
-							)}
-						</p>
-						<p className="text-sm">
-							{t(
-								"drivingLicence.evidence.document",
-								"Document issued {issued}; expires {expiry}",
-								{
-									issued: check.documentIssuedOn,
-									expiry: check.documentExpiresOn,
-								},
-							)}
-						</p>
-						<p className="text-sm">
-							{check.originalInspected && check.identityConfirmed
-								? t(
-										"drivingLicence.evidence.originalConfirmed",
-										"Original personally inspected and employee identity confirmed.",
-									)
-								: t(
-										"drivingLicence.evidence.originalUnconfirmed",
-										"Original inspection or employee identity could not be confirmed.",
-									)}
-						</p>
-						<p className="text-sm">
-							{check.employeeDeclaration
-								? t(
-										"drivingLicence.evidence.declarationConfirmed",
-										"The employee made the declaration in person; the verifier attested it at the control time.",
-									)
-								: t(
-										"drivingLicence.evidence.declarationUnconfirmed",
-										"The employee declaration could not be confirmed.",
-									)}
-						</p>
-						<blockquote className="border-l-2 pl-3 text-sm text-muted-foreground">
-							{t(
-								"drivingLicence.declaration.text",
-								"I confirm that no known driving ban, withdrawal or other impediment prevents the intended driving, and that I meet the applicable driving restrictions.",
-							)}
-						</blockquote>
-						<p className="text-sm">
-							{t(
-								"drivingLicence.evidence.confirmation",
-								"Verifier confirmation recorded with policy version {version}; deadlines use {timezone}.",
-								{
-									version: check.policyVersion,
-									timezone: check.deadlineTimezone,
-								},
-							)}
-						</p>
-						<ul className="text-sm">
-							{check.classes.map((inspected) => (
-								<li key={inspected.code}>
-									{inspected.code}:{" "}
-									{inspected.result === "successful"
-										? t("drivingLicence.result.successful", "Successful")
-										: inspected.result === "unsuccessful"
-											? t(
-													"drivingLicence.result.unsuccessful",
-													"Unsuccessful",
-												)
-											: t(
-													"drivingLicence.result.inconclusive",
-													"Inconclusive",
-												)}
-									{inspected.expiryDate ? ` · ${inspected.expiryDate}` : ""}
-									{inspected.restrictions
-										? ` · ${inspected.restrictions}`
-										: ""}
-								</li>
-							))}
-						</ul>
-					</li>
-				))}
-			</ol>
-		</section>
+		<Card role="region" aria-labelledby={titleId}>
+			<CardHeader>
+				<CardTitle>
+					<h2 id={titleId} className="text-lg font-semibold">
+						{t("drivingLicence.evidence.title", "Original check evidence")}
+					</h2>
+				</CardTitle>
+			</CardHeader>
+			<CardContent>
+				{!record.checks.length && (
+					<p className="text-sm text-muted-foreground">
+						{t("drivingLicence.evidence.empty", "No original check has been completed.")}
+					</p>
+				)}
+				<ol className="divide-y">
+					{record.checks.map((check) => (
+						<li key={check.id} className="space-y-2 py-4 first:pt-0 last:pb-0">
+							<p className="font-medium">
+								{check.employeeName} · {check.controlledAt}
+							</p>
+							<p className="text-sm">
+								{t("drivingLicence.evidence.verifier", "Original check recorded by {name}", {
+									name: check.verifierName,
+								})}
+							</p>
+							<p className="text-sm">
+								{t(
+									"drivingLicence.evidence.document",
+									"Document issued {issued}; expires {expiry}",
+									{
+										issued: check.documentIssuedOn,
+										expiry: check.documentExpiresOn,
+									},
+								)}
+							</p>
+							<p className="text-sm">
+								{check.originalInspected && check.identityConfirmed
+									? t(
+											"drivingLicence.evidence.originalConfirmed",
+											"Original personally inspected and employee identity confirmed.",
+										)
+									: t(
+											"drivingLicence.evidence.originalUnconfirmed",
+											"Original inspection or employee identity could not be confirmed.",
+										)}
+							</p>
+							<p className="text-sm">
+								{check.employeeDeclaration
+									? t(
+											"drivingLicence.evidence.declarationConfirmed",
+											"The employee made the declaration in person; the verifier attested it at the control time.",
+										)
+									: t(
+											"drivingLicence.evidence.declarationUnconfirmed",
+											"The employee declaration could not be confirmed.",
+										)}
+							</p>
+							<blockquote className="border-l-2 pl-3 text-sm text-muted-foreground">
+								{t(
+									"drivingLicence.declaration.text",
+									"I confirm that no known driving ban, withdrawal or other impediment prevents the intended driving, and that I meet the applicable driving restrictions.",
+								)}
+							</blockquote>
+							<p className="text-sm">
+								{t(
+									"drivingLicence.evidence.confirmation",
+									"Verifier confirmation recorded with policy version {version}; deadlines use {timezone}.",
+									{
+										version: check.policyVersion,
+										timezone: check.deadlineTimezone,
+									},
+								)}
+							</p>
+							<ul className="text-sm">
+								{check.classes.map((inspected) => (
+									<li key={inspected.code}>
+										{inspected.code}:{" "}
+										{inspected.result === "successful"
+											? t("drivingLicence.result.successful", "Successful")
+											: inspected.result === "unsuccessful"
+												? t("drivingLicence.result.unsuccessful", "Unsuccessful")
+												: t("drivingLicence.result.inconclusive", "Inconclusive")}
+										{inspected.expiryDate ? ` · ${inspected.expiryDate}` : ""}
+										{inspected.restrictions ? ` · ${inspected.restrictions}` : ""}
+									</li>
+								))}
+							</ul>
+						</li>
+					))}
+				</ol>
+			</CardContent>
+		</Card>
 	);
 }

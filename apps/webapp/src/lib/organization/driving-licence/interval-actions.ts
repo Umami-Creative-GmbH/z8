@@ -11,7 +11,7 @@ function failure(error: unknown) {
 		success: false as const,
 		error:
 			error instanceof Error &&
-			["forbidden", "stale_preview", "not_configured"].includes(error.message)
+			["forbidden", "stale_preview", "not_configured", "not_enabled"].includes(error.message)
 				? error.message
 				: "invalid_interval",
 	};

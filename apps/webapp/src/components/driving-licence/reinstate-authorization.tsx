@@ -2,7 +2,8 @@
 import { useForm } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useId, useState } from "react";
+import { useId } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -14,6 +15,7 @@ import {
 	getDrivingImpedimentStateAction,
 	reinstateDrivingAuthorizationAction,
 } from "@/lib/organization/driving-licence/impediment-actions";
+import { queryKeys } from "@/lib/query";
 
 /**
  * The explicit reinstatement step (#1429: on the check page). The classes to reinstate and
@@ -31,16 +33,20 @@ export function ReinstateDrivingAuthorization({
 	const { t } = useTranslate();
 	const { data: session } = useSession();
 	const fieldId = useId();
-	const [error, setError] = useState(false);
-	const [saved, setSaved] = useState(false);
+	const refused = () =>
+		toast.error(
+			t(
+				"drivingLicence.impediment.reinstateFailed",
+				"Reinstatement was refused. Refresh and review the current record, your responsibility and a new original check.",
+			),
+		);
 	const state = useQuery({
-		queryKey: [
-			"driving-licence-impediments",
+		queryKey: queryKeys.drivingLicence.impediments(
 			session?.session.activeOrganizationId,
 			session?.user.id,
 			employeeId,
 			record.checks[0]?.id,
-		],
+		),
 		enabled:
 			record.status === "suspended" || record.status === "partially_active",
 		queryFn: () => getDrivingImpedimentStateAction({ employeeId }),
@@ -69,8 +75,6 @@ export function ReinstateDrivingAuthorization({
 		},
 		onSubmit: async ({ value }) => {
 			if (!check || !state.data?.success) return;
-			setError(false);
-			setSaved(false);
 			try {
 				const response = await reinstateDrivingAuthorizationAction({
 					employeeId,
@@ -80,14 +84,19 @@ export function ReinstateDrivingAuthorization({
 					expectedSuspension: state.data.data.suspension,
 				});
 				if (!response.success) {
-					setError(true);
+					refused();
 					return;
 				}
 				form.reset();
-				setSaved(true);
+				toast.success(
+					t(
+						"drivingLicence.impediment.reinstated",
+						"The selected classes were explicitly reinstated.",
+					),
+				);
 				await Promise.all([state.refetch(), onCompleted()]);
 			} catch {
-				setError(true);
+				refused();
 			}
 		},
 	});
@@ -220,22 +229,6 @@ export function ReinstateDrivingAuthorization({
 						)}
 					</form.Subscribe>
 				</form>
-			)}
-			{error && (
-				<p role="alert" className="text-sm text-destructive">
-					{t(
-						"drivingLicence.impediment.reinstateFailed",
-						"Reinstatement was refused. Refresh and review the current record, your responsibility and a new original check.",
-					)}
-				</p>
-			)}
-			{saved && (
-				<p role="status" className="text-sm">
-					{t(
-						"drivingLicence.impediment.reinstated",
-						"The selected classes were explicitly reinstated.",
-					)}
-				</p>
 			)}
 			</CardContent>
 		</Card>

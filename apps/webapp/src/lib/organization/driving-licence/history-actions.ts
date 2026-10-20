@@ -11,7 +11,9 @@ async function run<T>(
 ): Promise<{ success: true; data: T } | { success: false; error: string }> {
 	try {
 		return { success: true, data: await operation() };
-	} catch {
+	} catch (error) {
+		if (error instanceof Error && error.message === "not_enabled")
+			return { success: false, error: "not_enabled" };
 		return {
 			success: false,
 			error:

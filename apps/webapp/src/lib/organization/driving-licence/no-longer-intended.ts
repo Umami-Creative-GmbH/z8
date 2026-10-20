@@ -11,22 +11,24 @@ import { drivingLicencePolicy } from "@/db/schema/driving-licence-policy";
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { NO_LONGER_INTENDED } from "./check-types";
-import type { DrivingLicenceEnding } from "./intended-driver-rules";
+import type { DrivingLicenceEnding, DrivingLicenceTeamChangeImpact } from "./intended-driver-rules";
 import { intendedDriverCondition } from "./intended-drivers";
 import { lockDrivingLicenceOrganization } from "./locks";
 import {
 	beginDrivingLicenceRetentionChange,
 	finishDrivingLicenceRetentionChange,
 } from "./retention-state";
+import { DrivingLicenceStalePreviewError } from "./stale-preview";
 import type { DrivingLicenceDatabase, DrivingLicenceTransaction } from "./verifiers";
 
 /**
  * "End authorization because no longer intended" (#1425, Organization ADR 0005). Whatever
  * takes intended-driver status away (an assignment change or exclusion, a move to another
- * primary team, a team deletion) wraps its write in `begin…` / `finish…` inside one
+ * primary team, a team deletion) wraps its write in `begin…` / `preview…` inside one
  * transaction: begin takes the driving licence organization lock and notes the intended
- * drivers holding a current class authorization; finish ends the authorizations of those no
- * longer intended after the write. A preview runs the same write and `preview…` in a
+ * drivers holding a current class authorization; after the write the caller checks the
+ * outcome against the confirmed preview token and ends the authorizations of those no longer
+ * intended (`endDrivingAuthorizationNoLongerIntended`). A preview runs the same write and `preview…` in a
  * transaction it rolls back (`previewDrivingLicenceEndingByRollback`), so it lists exactly
  * what the save ends. Nothing here creates an authorization.
  */
@@ -147,23 +149,6 @@ export async function previewDrivingLicenceIntendedDriverChange(
 	return [...endings.values()];
 }
 
-/** After the change's write: ends what `preview…` lists and returns it. */
-export async function finishDrivingLicenceIntendedDriverChange(
-	tx: DrivingLicenceTransaction,
-	change: DrivingLicenceIntendedDriverChange | null,
-	input: { actorUserId: string; now: Instant },
-): Promise<DrivingLicenceEnding[]> {
-	const endings = await previewDrivingLicenceIntendedDriverChange(tx, change, input.now);
-	if (change && endings.length)
-		await endDrivingAuthorizationNoLongerIntended(tx, {
-			organizationId: change.organizationId,
-			endings,
-			actorUserId: input.actorUserId,
-			now: input.now,
-		});
-	return endings;
-}
-
 /**
  * The domain operation. Caller holds the driving licence organization lock and passes what
  * `preview…` returned. Ends the listed class authorizations at `now` with an attributable
@@ -254,20 +239,49 @@ export async function endDrivingAuthorizationNoLongerIntended(
 		);
 }
 
+/**
+ * Who asks for a write outside driving licence control: decides how much of its warning they
+ * see. `organizationAdmin` = owner or admin of the organization.
+ */
+export type DrivingLicenceChangeViewer = { userId: string; organizationAdmin: boolean };
+
 type IntendedDriverWriteScope = {
 	organizationId: string;
 	/** The employees whose primary team the write can change; omit when any can change. */
 	employeeIds?: readonly string[];
+	viewer: DrivingLicenceChangeViewer;
 };
+
+/**
+ * Names and classes are for owners and admins, and while the feature is on for holders of
+ * the planning permission (through the visibility reader); anyone else gets the generic
+ * warning.
+ */
+async function endingDetail(
+	database: DrivingLicenceDatabase,
+	organizationId: string,
+	viewer: DrivingLicenceChangeViewer,
+): Promise<DrivingLicenceEndingDetail> {
+	if (viewer.organizationAdmin) return "full";
+	// Loaded on use: the reader pulls in the intended-driver resolver, which imports this file.
+	const { readDrivingLicenceVisibility } = await import("./visibility");
+	const visibility = await readDrivingLicenceVisibility(
+		{ organizationId, userId: viewer.userId },
+		database,
+	);
+	return visibility.planner ? "full" : "generic";
+}
 
 /**
  * Runs `write` (inside the caller's transaction, after its authorization-mutation protection)
  * between `begin…` and `finish…`: for writes outside driving licence control that can change
- * who is an intended driver, such as primary-team changes and team deletion.
+ * who is an intended driver, such as primary-team changes and team deletion. The outcome must
+ * match the preview the viewer confirmed (`previewToken`); without a token the viewer is held
+ * to "nobody is affected". Otherwise throws `DrivingLicenceStalePreviewError` before ending.
  */
 export async function runDrivingLicenceIntendedDriverWrite<Tx extends DrivingLicenceTransaction, T>(
 	tx: Tx,
-	scope: IntendedDriverWriteScope & { actorUserId: string },
+	scope: IntendedDriverWriteScope & { actorUserId: string; previewToken?: string },
 	write: (tx: Tx) => Promise<T>,
 ): Promise<T> {
 	const now = systemClock.nowInstant();
@@ -278,16 +292,28 @@ export async function runDrivingLicenceIntendedDriverWrite<Tx extends DrivingLic
 		scope.employeeIds,
 	);
 	const result = await write(tx);
-	await finishDrivingLicenceIntendedDriverChange(tx, change, {
-		actorUserId: scope.actorUserId,
-		now,
-	});
+	const endings = await previewDrivingLicenceIntendedDriverChange(tx, change, now);
+	// Without a token and an ending there is nothing to compare.
+	if (endings.length || scope.previewToken !== undefined) {
+		const detail = await endingDetail(tx, scope.organizationId, scope.viewer);
+		const confirmed = scope.previewToken ?? drivingLicenceEndingToken([], detail);
+		if (confirmed !== drivingLicenceEndingToken(endings, detail))
+			throw new DrivingLicenceStalePreviewError();
+	}
+	if (change && endings.length)
+		await endDrivingAuthorizationNoLongerIntended(tx, {
+			organizationId: scope.organizationId,
+			endings,
+			actorUserId: scope.actorUserId,
+			now,
+		});
 	return result;
 }
 
 /**
  * The warning for such a write: runs it in a transaction opened by `transaction` (the same
- * protection as the real write) and rolls it back, returning who would lose which classes.
+ * protection as the real write) and rolls it back, returning what the viewer may see of who
+ * would lose which classes, with the token the save takes.
  */
 export async function previewDrivingLicenceIntendedDriverWrite<
 	Tx extends DrivingLicenceTransaction,
@@ -295,8 +321,9 @@ export async function previewDrivingLicenceIntendedDriverWrite<
 	scope: IntendedDriverWriteScope,
 	transaction: (work: (tx: Tx) => Promise<void>) => Promise<unknown>,
 	write: (tx: Tx) => Promise<unknown>,
-): Promise<DrivingLicenceEnding[]> {
-	return previewDrivingLicenceEndingByRollback((rollBack) =>
+): Promise<DrivingLicenceTeamChangeImpact> {
+	const seen: { detail: DrivingLicenceEndingDetail } = { detail: "generic" };
+	const endings = await previewDrivingLicenceEndingByRollback((rollBack) =>
 		transaction(async (tx) => {
 			const now = systemClock.nowInstant();
 			const change = await beginDrivingLicenceIntendedDriverChange(
@@ -306,17 +333,35 @@ export async function previewDrivingLicenceIntendedDriverWrite<
 				scope.employeeIds,
 			);
 			await write(tx);
-			rollBack(await previewDrivingLicenceIntendedDriverChange(tx, change, now));
+			const result = await previewDrivingLicenceIntendedDriverChange(tx, change, now);
+			seen.detail = await endingDetail(tx, scope.organizationId, scope.viewer);
+			rollBack(result);
 		}),
 	);
+	const { detail } = seen;
+	const previewToken = drivingLicenceEndingToken(endings, detail);
+	return detail === "full"
+		? { detail, employees: endings, previewToken }
+		: { detail, affected: endings.length > 0, previewToken };
 }
 
-/** The token a save compares with the preview the admin confirmed. */
-export function drivingLicenceEndingToken(endings: readonly DrivingLicenceEnding[]) {
+/** How much of an ending a viewer saw: everything, or only whether anything ends. */
+export type DrivingLicenceEndingDetail = "full" | "generic";
+
+/**
+ * The token a save compares with the preview the viewer confirmed. A generic preview showed
+ * only whether anything ends, so its token covers only that.
+ */
+export function drivingLicenceEndingToken(
+	endings: readonly DrivingLicenceEnding[],
+	detail: DrivingLicenceEndingDetail = "full",
+) {
+	const shown =
+		detail === "full"
+			? endings.map((item) => [item.employeeId, [...item.classCodes].sort()]).sort()
+			: { affected: endings.length > 0 };
 	return createHash("sha256")
-		.update(
-			JSON.stringify(endings.map((item) => [item.employeeId, [...item.classCodes].sort()]).sort()),
-		)
+		.update(JSON.stringify([detail, shown]))
 		.digest("hex");
 }
 

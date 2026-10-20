@@ -122,13 +122,15 @@ async function previewAssign(target: Target, value: "required" | "not_required")
 		),
 	);
 }
+/** Saves with the given preview token; without one, previews first and confirms what it shows. */
 async function assign(target: Target, value: "required" | "not_required", previewToken?: string) {
+	const token = previewToken ?? (await previewAssign(target, value)).previewToken;
 	return unwrap(
 		await owner(() =>
 			intendedDrivers.setDrivingLicenceIntendedDriverAssignmentAction({
 				target,
 				value,
-				...(previewToken ? { previewToken } : {}),
+				previewToken: token,
 			}),
 		),
 	).assignmentId;
@@ -141,11 +143,12 @@ async function previewRemove(assignmentId: string) {
 	);
 }
 async function remove(assignmentId: string, previewToken?: string) {
+	const token = previewToken ?? (await previewRemove(assignmentId)).previewToken;
 	return unwrap(
 		await owner(() =>
 			intendedDrivers.removeDrivingLicenceIntendedDriverAssignmentAction({
 				assignmentId,
-				...(previewToken ? { previewToken } : {}),
+				previewToken: token,
 			}),
 		),
 	);
@@ -341,12 +344,100 @@ describe("assignment changes end the authorizations of employees who stop being 
 		).toEqual({ success: false, error: "stale_preview" });
 		expect(await status(alex)).toBe("active");
 	});
+
+	it("refuses a save after an empty preview once a check is recorded in the meantime", async () => {
+		const organization = await assign({ type: "organization" }, "required");
+		const preview = await previewAssign({ type: "organization" }, "not_required");
+		expect(preview.employees).toEqual([]);
+		await check(alex);
+		expect(
+			await owner(() =>
+				intendedDrivers.setDrivingLicenceIntendedDriverAssignmentAction({
+					target: { type: "organization" },
+					value: "not_required",
+					previewToken: preview.previewToken,
+				}),
+			),
+		).toEqual({ success: false, error: "stale_preview" });
+		expect(await status(alex)).toBe("active");
+
+		const removal = await previewRemove(organization);
+		expect(removal.employees).toEqual([ending(alex)]);
+		await check(blair, ["B"]);
+		expect(
+			await owner(() =>
+				intendedDrivers.removeDrivingLicenceIntendedDriverAssignmentAction({
+					assignmentId: organization,
+					previewToken: removal.previewToken,
+				}),
+			),
+		).toEqual({ success: false, error: "stale_preview" });
+		expect(await status(alex)).toBe("active");
+	});
+
+	it("refuses a save that carries no preview token, even when nothing ends", async () => {
+		expect(
+			await owner(() =>
+				intendedDrivers.setDrivingLicenceIntendedDriverAssignmentAction({
+					target: { type: "team", teamId: drivers },
+					value: "required",
+				}),
+			),
+		).toEqual({ success: false, error: "stale_preview" });
+		const own = await assign({ type: "employee", employeeId: alex.employeeId }, "required");
+		expect(
+			await owner(() =>
+				intendedDrivers.removeDrivingLicenceIntendedDriverAssignmentAction({ assignmentId: own }),
+			),
+		).toEqual({ success: false, error: "stale_preview" });
+		expect(
+			unwrap(await owner(() => policies.getDrivingLicenceAdminDataAction())).intendedDrivers
+				.assignments,
+		).toHaveLength(1);
+	});
 });
 
 describe("primary-team changes end the authorizations of employees who stop being intended drivers", () => {
 	const teams = () => import("@/app/[locale]/(app)/settings/teams/actions");
 	const employees = () =>
 		import("@/app/[locale]/(app)/settings/employees/employee-mutations.actions");
+	type TeamImpact =
+		| { detail: "full"; employees: unknown[]; previewToken: string }
+		| { detail: "generic"; affected: boolean; previewToken: string };
+	function impact(result: { success: true; data: TeamImpact } | { success: false; error: string }) {
+		return unwrap(result);
+	}
+	function full(endings: unknown[]) {
+		return { detail: "full", employees: endings, previewToken: expect.any(String) };
+	}
+	/** A team manager of `teamId` (canManageTeamMembers + settings), not an admin. */
+	async function teamManager(teamId: string) {
+		const manager = await fixture.seedEmployee();
+		await fixture.pool.query(`update employee set role='manager' where id=$1`, [
+			manager.employeeId,
+		]);
+		await fixture.pool.query(
+			`insert into team_permissions (employee_id, organization_id, team_id, can_manage_team_members, can_manage_team_settings, granted_by, updated_at)
+			 values ($1,$2,$3,true,true,$4,now())`,
+			[manager.employeeId, fixture.organizationId, teamId, fixture.ownerEmployeeId],
+		);
+		return manager;
+	}
+	async function grantPlanning(employee: SeededEmployee) {
+		const roleId = crypto.randomUUID();
+		await fixture.pool.query(
+			`insert into custom_role (id, organization_id, name, created_by, updated_at) values ($1,$2,'Driving planner',$3,now())`,
+			[roleId, fixture.organizationId, fixture.ownerUserId],
+		);
+		await fixture.pool.query(
+			`insert into custom_role_permission (custom_role_id,action,subject) values ($1,'read','DrivingAuthorization')`,
+			[roleId],
+		);
+		await fixture.pool.query(
+			`insert into employee_custom_role (employee_id,custom_role_id,assigned_by) values ($1,$2,$3)`,
+			[employee.employeeId, roleId, fixture.ownerUserId],
+		);
+	}
 
 	it("removing the primary team moves the employee to their next team: warned, then ended", async () => {
 		const { previewTeamMemberChangeDrivingImpact, removeTeamMember } = await teams();
@@ -356,16 +447,23 @@ describe("primary-team changes end the authorizations of employees who stop bein
 
 		// Leaving a team that is not the primary team changes nothing.
 		expect(
-			await owner(() => previewTeamMemberChangeDrivingImpact(office, alex.employeeId, "remove")),
-		).toEqual({ success: true, data: [] });
-		expect(
+			impact(
+				await owner(() => previewTeamMemberChangeDrivingImpact(office, alex.employeeId, "remove")),
+			),
+		).toEqual(full([]));
+		const preview = impact(
 			await owner(() => previewTeamMemberChangeDrivingImpact(drivers, alex.employeeId, "remove")),
-		).toEqual({ success: true, data: [ending(alex)] });
+		);
+		expect(preview).toEqual(full([ending(alex)]));
 		expect(await status(alex)).toBe("active");
 
-		expect(await owner(() => removeTeamMember(drivers, alex.employeeId))).toMatchObject({
-			success: true,
-		});
+		expect(
+			await owner(() =>
+				removeTeamMember(drivers, alex.employeeId, {
+					drivingLicencePreviewToken: preview.previewToken,
+				}),
+			),
+		).toMatchObject({ success: true });
 		const after = await record(alex);
 		expect(after.status).toBe("not_enrolled");
 		expect(after.classes.map((c) => c.reason)).toEqual([
@@ -382,18 +480,25 @@ describe("primary-team changes end the authorizations of employees who stop bein
 		await assign({ type: "team", teamId: office }, "not_required");
 		await check(carol, ["B"]);
 
-		expect(
+		const preview = impact(
 			await owner(() => previewTeamMemberChangeDrivingImpact(office, carol.employeeId, "add")),
-		).toEqual({ success: true, data: [ending(carol, ["B"])] });
-		expect(await owner(() => addTeamMember(office, carol.employeeId))).toMatchObject({
-			success: true,
-		});
+		);
+		expect(preview).toEqual(full([ending(carol, ["B"])]));
+		expect(
+			await owner(() =>
+				addTeamMember(office, carol.employeeId, {
+					drivingLicencePreviewToken: preview.previewToken,
+				}),
+			),
+		).toMatchObject({ success: true });
 		await expectEnded(carol);
 		// An employee who already has a primary team keeps it when joining another team.
 		await check(alex, ["B"]);
 		expect(
-			await owner(() => previewTeamMemberChangeDrivingImpact(office, alex.employeeId, "add")),
-		).toEqual({ success: true, data: [] });
+			impact(
+				await owner(() => previewTeamMemberChangeDrivingImpact(office, alex.employeeId, "add")),
+			),
+		).toEqual(full([]));
 	});
 
 	it("deleting a team clears it as primary team and drops its assignment: warned, then ended", async () => {
@@ -404,32 +509,157 @@ describe("primary-team changes end the authorizations of employees who stop bein
 		await assign({ type: "team", teamId: vans }, "required");
 		await check(dana);
 
-		expect(await owner(() => previewTeamDeletionDrivingImpact(vans))).toEqual({
-			success: true,
-			data: [ending(dana)],
-		});
-		expect(await owner(() => deleteTeam(vans))).toMatchObject({ success: true });
+		const preview = impact(await owner(() => previewTeamDeletionDrivingImpact(vans)));
+		expect(preview).toEqual(full([ending(dana)]));
+		expect(
+			await owner(() => deleteTeam(vans, { drivingLicencePreviewToken: preview.previewToken })),
+		).toMatchObject({ success: true });
 		await expectEnded(dana);
 	});
 
 	it("changing the primary team on the employee ends the authorizations too", async () => {
-		const { updateEmployeeAction } = await employees();
+		const { previewEmployeeTeamChangeDrivingImpact, updateEmployeeAction } = await employees();
 		await assign({ type: "team", teamId: drivers }, "required");
 		await check(alex);
+		const preview = impact(
+			await owner(() => previewEmployeeTeamChangeDrivingImpact(alex.employeeId, office)),
+		);
+		expect(preview).toEqual(full([ending(alex)]));
 		expect(
-			await owner(() => updateEmployeeAction(alex.employeeId, { teamId: office })),
+			await owner(() =>
+				updateEmployeeAction(alex.employeeId, { teamId: office }, undefined, {
+					drivingLicencePreviewToken: preview.previewToken,
+				}),
+			),
 		).toMatchObject({ success: true });
 		await expectEnded(alex);
 	});
 
+	it("refuses a team change whose preview went stale, and one that skipped the preview", async () => {
+		const { previewTeamMemberChangeDrivingImpact, removeTeamMember, deleteTeam } = await teams();
+		const { updateEmployeeAction } = await employees();
+		await assign({ type: "team", teamId: drivers }, "required");
+		const preview = impact(
+			await owner(() => previewTeamMemberChangeDrivingImpact(drivers, alex.employeeId, "remove")),
+		);
+		expect(preview).toEqual(full([]));
+		await check(alex);
+
+		const stale = await owner(() =>
+			removeTeamMember(drivers, alex.employeeId, {
+				drivingLicencePreviewToken: preview.previewToken,
+			}),
+		);
+		expect(stale).toMatchObject({ success: false, refusal: "stale_preview" });
+		// Callers that previewed nothing are held to "nobody is affected".
+		expect(await owner(() => removeTeamMember(drivers, alex.employeeId))).toMatchObject({
+			success: false,
+			refusal: "stale_preview",
+		});
+		expect(
+			await owner(() => updateEmployeeAction(alex.employeeId, { teamId: office })),
+		).toMatchObject({ success: false, refusal: "stale_preview" });
+		const vans = await seedTeam("Vans");
+		await assign({ type: "team", teamId: vans }, "required");
+		await fixture.pool.query(`update employee set team_id=$1 where id=$2`, [
+			vans,
+			blair.employeeId,
+		]);
+		await check(blair, ["B"]);
+		expect(await owner(() => deleteTeam(vans))).toMatchObject({
+			success: false,
+			refusal: "stale_preview",
+		});
+		expect(await status(alex)).toBe("active");
+		expect(await status(blair)).toBe("active");
+	});
+
+	it("shows a team manager without the planning permission only that some authorizations end", async () => {
+		const { previewTeamMemberChangeDrivingImpact, removeTeamMember } = await teams();
+		const manager = await teamManager(drivers);
+		await assign({ type: "team", teamId: drivers }, "required");
+		await check(alex);
+
+		const preview = impact(
+			await as(manager.userId, () =>
+				previewTeamMemberChangeDrivingImpact(drivers, alex.employeeId, "remove"),
+			),
+		);
+		expect(preview).toEqual({
+			detail: "generic",
+			affected: true,
+			previewToken: expect.any(String),
+		});
+		expect(JSON.stringify(preview)).not.toContain(alex.employeeId);
+		expect(
+			await as(manager.userId, () =>
+				removeTeamMember(drivers, alex.employeeId, {
+					drivingLicencePreviewToken: preview.previewToken,
+				}),
+			),
+		).toMatchObject({ success: true });
+		await expectEnded(alex);
+	});
+
+	it("shows a team manager with the planning permission names and classes, but only while the feature is on", async () => {
+		const { previewTeamMemberChangeDrivingImpact } = await teams();
+		const manager = await teamManager(drivers);
+		await grantPlanning(manager);
+		await assign({ type: "team", teamId: drivers }, "required");
+		await check(alex);
+		const preview = () =>
+			as(manager.userId, () =>
+				previewTeamMemberChangeDrivingImpact(drivers, alex.employeeId, "remove"),
+			);
+		expect(impact(await preview())).toEqual(full([ending(alex)]));
+		unwrap(await policies.switchDrivingLicenceControlAction({ enabled: false }));
+		expect(impact(await preview())).toMatchObject({ detail: "generic", affected: true });
+		// Owners and admins see the names whether the feature is on or off.
+		expect(
+			impact(
+				await owner(() => previewTeamMemberChangeDrivingImpact(drivers, alex.employeeId, "remove")),
+			),
+		).toEqual(full([ending(alex)]));
+	});
+
+	it("refuses a team manager's preview of an add the add itself refuses", async () => {
+		const { previewTeamMemberChangeDrivingImpact, addTeamMember } = await teams();
+		const manager = await teamManager(office);
+		const carol = await fixture.seedEmployee();
+		// carol belongs to a team outside the manager's scope and has no primary team.
+		await joinTeam(carol.employeeId, drivers, false);
+		await assign({ type: "organization" }, "required");
+		await check(carol, ["B"]);
+
+		const preview = await as(manager.userId, () =>
+			previewTeamMemberChangeDrivingImpact(office, carol.employeeId, "add"),
+		);
+		expect(preview).toMatchObject({
+			success: false,
+			error: "Cannot move employees from teams outside your scope",
+		});
+		expect(JSON.stringify(preview)).not.toContain(carol.employeeId);
+		expect(await as(manager.userId, () => addTeamMember(office, carol.employeeId))).toMatchObject({
+			success: false,
+			error: "Cannot move employees from teams outside your scope",
+		});
+	});
+
 	it("ends silently while the feature is off: no notices", async () => {
-		const { removeTeamMember } = await teams();
+		const { previewTeamMemberChangeDrivingImpact, removeTeamMember } = await teams();
 		await assign({ type: "team", teamId: drivers }, "required");
 		await check(alex);
 		unwrap(await policies.switchDrivingLicenceControlAction({ enabled: false }));
-		expect(await owner(() => removeTeamMember(drivers, alex.employeeId))).toMatchObject({
-			success: true,
-		});
+		const preview = impact(
+			await owner(() => previewTeamMemberChangeDrivingImpact(drivers, alex.employeeId, "remove")),
+		);
+		expect(
+			await owner(() =>
+				removeTeamMember(drivers, alex.employeeId, {
+					drivingLicencePreviewToken: preview.previewToken,
+				}),
+			),
+		).toMatchObject({ success: true });
 		unwrap(await policies.switchDrivingLicenceControlAction({ enabled: true }));
 		await expectEnded(alex);
 		expect((await record(alex)).classes.map((c) => c.status)).toEqual(["ended", "ended"]);
@@ -496,10 +726,16 @@ describe("serialization and scope", () => {
 		session.organizationId = otherOrganizationId;
 		await as(otherOwner.userId, async () => {
 			unwrap(await policies.switchDrivingLicenceControlAction({ enabled: true, setup }));
+			const organizationDefault = { target: { type: "organization" as const }, value: "required" };
+			const { previewToken } = unwrap(
+				await intendedDrivers.previewDrivingLicenceIntendedDriverAssignmentAction(
+					organizationDefault,
+				),
+			);
 			unwrap(
 				await intendedDrivers.setDrivingLicenceIntendedDriverAssignmentAction({
-					target: { type: "organization" },
-					value: "required",
+					...organizationDefault,
+					previewToken,
 				}),
 			);
 			unwrap(
@@ -559,6 +795,90 @@ describe("what ending leaves behind", () => {
 			protected: true,
 			retentionStartedAt: null,
 		});
+	});
+
+	it("shows a re-intended employee the person-wide suspension that still applies instead of not yet checked", async () => {
+		const impediments = await import("./impediment-actions");
+		await assign({ type: "employee", employeeId: alex.employeeId }, "required");
+		await check(alex);
+		// A failed employee declaration suspends the person, not only the classes.
+		unwrap(
+			await as(verifier.userId, () =>
+				checks.completeDrivingLicenceCheckAction({
+					employeeId: alex.employeeId,
+					commandId: crypto.randomUUID(),
+					originalInspected: true,
+					identityConfirmed: true,
+					employeeDeclaration: false,
+					verifierConfirmed: true,
+					documentIssuedOn: "2020-05-01",
+					documentExpiresOn: "2035-05-01",
+					classes: [{ code: "B", result: "inconclusive", expiryDate: null, restrictions: "" }],
+				}),
+			),
+		);
+		await assign({ type: "employee", employeeId: alex.employeeId }, "not_required");
+		await assign({ type: "employee", employeeId: alex.employeeId }, "required");
+		expect(await record(alex)).toMatchObject({
+			status: "suspended",
+			personWideReason: "person_impediment",
+		});
+		// What the verifier sees is what the next check does: a successful check stays suspended.
+		await check(alex, ["B"]);
+		expect(await record(alex)).toMatchObject({
+			status: "suspended",
+			personWideReason: "person_impediment",
+			authorizedClasses: [],
+		});
+
+		// An open impediment report of the current employment counts the same way.
+		await assign({ type: "employee", employeeId: blair.employeeId }, "required");
+		await check(blair, ["B"]);
+		unwrap(
+			await as(blair.userId, () =>
+				impediments.reportDrivingImpedimentAction({ commandId: crypto.randomUUID() }),
+			),
+		);
+		await assign({ type: "employee", employeeId: blair.employeeId }, "not_required");
+		await assign({ type: "employee", employeeId: blair.employeeId }, "required");
+		expect(await record(blair)).toMatchObject({
+			status: "suspended",
+			personWideReason: "person_impediment",
+		});
+	});
+
+	it("gives a terminal-only employee who becomes an intended driver again a new first-check task", async () => {
+		const tasks = await import("./task-actions");
+		await fixture.pool.query('update "user" set email=$2 where id=$1', [
+			alex.userId,
+			`terminal-${alex.userId}@kiosk.invalid`,
+		]);
+		await assign({ type: "employee", employeeId: alex.employeeId }, "required");
+		await check(alex);
+		const verifierTasks = async () => {
+			const result = await as(verifier.userId, () => tasks.getDrivingLicenceTasksAction());
+			if (!result.success) throw new Error(result.error);
+			return result.data.filter((task) => task.employeeId === alex.employeeId);
+		};
+		const taskNotices = async () =>
+			(
+				await getUserNotifications(verifier.userId, fixture.organizationId, { limit: 100 })
+			).notifications.filter((n) => n.entityType === "driving_licence_task").length;
+		// Checked: no first-check task any more.
+		expect(await verifierTasks()).toEqual([]);
+		const before = await taskNotices();
+
+		session.now = "2026-03-10T09:00:00Z";
+		await assign({ type: "employee", employeeId: alex.employeeId }, "not_required");
+		await assign({ type: "employee", employeeId: alex.employeeId }, "required");
+		expect(await verifierTasks()).toEqual([
+			expect.objectContaining({
+				kind: "personal_reminder",
+				state: "pending",
+				occasion: expect.objectContaining({ kind: "initial" }),
+			}),
+		]);
+		expect(await taskNotices()).toBe(before + 1);
 	});
 
 	it("leaves an employee who becomes an intended driver again not yet checked, and a new check grants normally", async () => {

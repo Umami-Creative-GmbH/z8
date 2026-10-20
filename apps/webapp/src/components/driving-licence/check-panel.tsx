@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useSession } from "@/lib/auth-client";
 import { getDrivingLicenceEmployeeRecordAction } from "@/lib/organization/driving-licence/check-actions";
+import { queryKeys } from "@/lib/query";
 import { DrivingLicenceCheckEvidence } from "./check-evidence";
 import { DrivingLicenceHistoryPanel } from "./history-panel";
 import { DrivingLicenceStatusSummary } from "./my-licence";
@@ -27,23 +28,24 @@ export function DrivingLicenceCheckPanel({
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const { data: session } = useSession();
-	const identity = [session?.session.activeOrganizationId, session?.user.id];
+	const organizationId = session?.session.activeOrganizationId;
+	const userId = session?.user.id;
 	const record = useQuery({
-		queryKey: ["driving-licence-record", ...identity, employeeId],
+		queryKey: queryKeys.drivingLicence.record(organizationId, userId, employeeId),
 		queryFn: () => getDrivingLicenceEmployeeRecordAction({ employeeId }),
 	});
 	const refresh = async () => {
 		void queryClient.invalidateQueries({
-			queryKey: ["driving-authorization-status"],
+			queryKey: queryKeys.drivingLicence.status,
 		});
 		await queryClient.invalidateQueries({
-			queryKey: ["driving-licence-history", ...identity, employeeId],
+			queryKey: queryKeys.drivingLicence.historyAll(organizationId, userId, employeeId),
 		});
 		await queryClient.invalidateQueries({
-			queryKey: ["driving-licence-worklist", ...identity],
+			queryKey: queryKeys.drivingLicence.worklistAll(organizationId, userId),
 		});
 		await queryClient.invalidateQueries({
-			queryKey: ["driving-licence-record", ...identity, employeeId],
+			queryKey: queryKeys.drivingLicence.record(organizationId, userId, employeeId),
 		});
 	};
 	if (record.isPending)

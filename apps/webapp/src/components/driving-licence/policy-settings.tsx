@@ -16,6 +16,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import type { DrivingLicencePolicyInput } from "@/lib/organization/driving-licence/policy";
 import { saveDrivingLicencePolicyAction } from "@/lib/organization/driving-licence/policy-actions";
+import { queryKeys } from "@/lib/query";
 import { DrivingLicenceIntervalSettings } from "./interval-settings";
 export interface DrivingLicenceSettingsData {
 	policy: DrivingLicencePolicyInput | null;
@@ -72,7 +73,7 @@ function usePolicyForm(policy: DrivingLicencePolicyInput) {
 			}
 			toast.success(t("drivingLicence.saved", "Policy saved"));
 			void queryClient.invalidateQueries({
-				queryKey: ["driving-authorization-status"],
+				queryKey: queryKeys.drivingLicence.status,
 			});
 			router.refresh();
 		},

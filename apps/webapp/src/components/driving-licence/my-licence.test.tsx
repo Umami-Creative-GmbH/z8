@@ -119,6 +119,31 @@ describe("My licence", () => {
 		expect(await screen.findByRole("link", { name: "Download evidence PDF" })).toBeTruthy();
 	});
 
+	it("explains a person-wide suspension that a new check alone does not lift", async () => {
+		const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+		render(
+			<QueryClientProvider client={client}>
+				<MyDrivingLicence
+					record={{
+						...record,
+						status: "suspended",
+						personWideReason: "person_impediment",
+						classes: [],
+						authorizedClasses: [],
+					}}
+					employeeId="driver-employee"
+					intendedDriver
+				/>
+			</QueryClientProvider>,
+		);
+		const summary = screen.getByRole("region", { name: "Driving authorization suspended" });
+		expect(
+			within(summary).getByText(
+				"An impediment suspends driving in every class until a verifier reinstates it. A new check alone does not lift it.",
+			),
+		).toBeTruthy();
+	});
+
 	it("shows empty states before the first check", async () => {
 		const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 		render(

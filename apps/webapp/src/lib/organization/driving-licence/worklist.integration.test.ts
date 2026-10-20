@@ -4,6 +4,7 @@ import {
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
+import { saveConfirmedIntendedDriverAssignment } from "./testing/control.test.fixture";
 
 const session = vi.hoisted(() => ({
 	userId: "",
@@ -28,7 +29,6 @@ vi.mock("@/lib/datetime/temporal-core", async (original) => {
 	};
 });
 const policies = await import("./policy-actions");
-const intendedDrivers = await import("./intended-driver-actions");
 const grants = await import("./verifier-actions");
 const checks = await import("./check-actions");
 const { readDrivingLicenceCheckSubject } = await import("./check-subject");
@@ -91,7 +91,7 @@ async function switchOn(ownerUserId = fixture.ownerUserId) {
 async function makeIntendedDriver(employeeId: string, ownerUserId = fixture.ownerUserId) {
 	expect(
 		await as(ownerUserId, () =>
-			intendedDrivers.setDrivingLicenceIntendedDriverAssignmentAction({
+			saveConfirmedIntendedDriverAssignment({
 				target: { type: "employee", employeeId },
 				value: "required",
 			}),
@@ -215,6 +215,29 @@ describe("the verifier's Checks worklist", () => {
 			status: "suspended",
 			nextDeadline: null,
 		});
+	});
+
+	it("sorts by name or by team on the server when asked", async () => {
+		expect(await names(verifier.userId, { sort: "name", direction: "desc" })).toEqual([
+			"Erik Expired",
+			"Dora Partial",
+			"Carla Unchecked",
+			"Bruno Soon",
+			"Anna Later",
+		]);
+		// North first (by name within it), then the employees without a primary team.
+		expect(await names(verifier.userId, { sort: "team" })).toEqual([
+			"Anna Later",
+			"Bruno Soon",
+			"Carla Unchecked",
+			"Dora Partial",
+			"Erik Expired",
+		]);
+		expect(
+			await as(verifier.userId, () =>
+				checks.getDrivingLicenceCheckWorklistAction({ sort: "status" } as never),
+			),
+		).toMatchObject({ success: false });
 	});
 
 	it("never lists the verifier themselves or employees who are not intended drivers", async () => {

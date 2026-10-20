@@ -10,6 +10,10 @@ import {
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
+import {
+	removeConfirmedIntendedDriverAssignment,
+	saveConfirmedIntendedDriverAssignment,
+} from "./testing/control.test.fixture";
 
 const session = vi.hoisted(() => ({
 	userId: "",
@@ -90,9 +94,7 @@ async function joinTeam(employeeId: string, teamId: string, primary: boolean) {
 		await fixture.pool.query(`update employee set team_id=$1 where id=$2`, [teamId, employeeId]);
 }
 function assign(target: Target, value: "required" | "not_required") {
-	return as(fixture.ownerUserId, () =>
-		intendedDrivers.setDrivingLicenceIntendedDriverAssignmentAction({ target, value }),
-	);
+	return as(fixture.ownerUserId, () => saveConfirmedIntendedDriverAssignment({ target, value }));
 }
 async function assignOk(target: Target, value: "required" | "not_required") {
 	const result = await assign(target, value);
@@ -161,7 +163,7 @@ describe("intended-driver resolution", () => {
 
 		expect(
 			await as(fixture.ownerUserId, () =>
-				intendedDrivers.removeDrivingLicenceIntendedDriverAssignmentAction({
+				removeConfirmedIntendedDriverAssignment({
 					assignmentId: organization,
 				}),
 			),
@@ -256,7 +258,7 @@ describe("intended-driver assignments are administered per organization", () => 
 		for (const userId of [alex.userId, verifier.userId, ""]) {
 			expect(
 				await as(userId, () =>
-					intendedDrivers.setDrivingLicenceIntendedDriverAssignmentAction({
+					saveConfirmedIntendedDriverAssignment({
 						target: { type: "organization" },
 						value: "not_required",
 					}),
@@ -264,7 +266,7 @@ describe("intended-driver assignments are administered per organization", () => 
 			).toEqual({ success: false, error: "forbidden" });
 			expect(
 				await as(userId, () =>
-					intendedDrivers.removeDrivingLicenceIntendedDriverAssignmentAction({
+					removeConfirmedIntendedDriverAssignment({
 						assignmentId: id,
 					}),
 				),
@@ -273,7 +275,7 @@ describe("intended-driver assignments are administered per organization", () => 
 		const admin = await fixture.seedEmployee({ role: "admin" });
 		expect(
 			await as(admin.userId, () =>
-				intendedDrivers.setDrivingLicenceIntendedDriverAssignmentAction({
+				saveConfirmedIntendedDriverAssignment({
 					target: { type: "organization" },
 					value: "not_required",
 				}),
@@ -306,7 +308,7 @@ describe("intended-driver assignments are administered per organization", () => 
 			),
 		).toMatchObject({ success: true });
 		const foreignDefault = await as(otherOwner.userId, () =>
-			intendedDrivers.setDrivingLicenceIntendedDriverAssignmentAction({
+			saveConfirmedIntendedDriverAssignment({
 				target: { type: "organization" },
 				value: "required",
 			}),
@@ -316,7 +318,7 @@ describe("intended-driver assignments are administered per organization", () => 
 		expect(await intended(alex)).toBe(false);
 		expect(
 			await as(fixture.ownerUserId, () =>
-				intendedDrivers.removeDrivingLicenceIntendedDriverAssignmentAction({
+				removeConfirmedIntendedDriverAssignment({
 					assignmentId: foreignDefault.data.assignmentId,
 				}),
 			),

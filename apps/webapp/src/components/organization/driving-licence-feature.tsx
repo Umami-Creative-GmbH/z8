@@ -194,7 +194,9 @@ export function DrivingLicenceFeature({
 					</div>
 				</div>
 				<div className="flex items-center gap-2">
-					{busy && <IconLoader2 className="size-4 animate-spin text-muted-foreground" />}
+					{busy && (
+						<IconLoader2 aria-hidden="true" className="size-4 animate-spin text-muted-foreground" />
+					)}
 					<Switch
 						id="driving-licence-toggle"
 						checked={enabled}

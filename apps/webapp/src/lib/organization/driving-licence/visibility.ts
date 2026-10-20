@@ -1,5 +1,6 @@
 import "server-only";
 import { and, eq, isNull } from "drizzle-orm";
+import { cache } from "react";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
@@ -8,7 +9,6 @@ import { drivingLicenceCheck } from "@/db/schema/driving-licence-checks";
 import { drivingLicencePolicy } from "@/db/schema/driving-licence-policy";
 import { drivingLicenceHold } from "@/db/schema/driving-licence-retention";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
-import { getAuthContext } from "@/lib/auth-helpers";
 import { type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import type { SettingsAccessTier } from "@/lib/settings-access";
@@ -90,13 +90,25 @@ async function hasRetainedEvidence(database: DrivingLicenceDatabase, organizatio
 }
 
 /**
- * Reads afresh on every call and never trusts a client-supplied role. A user without an
- * approved membership, or whose employee profile has departed, sees nothing. Queries run
- * one after another so the reader also works inside a caller's transaction.
+ * Never trusts a client-supplied role. A user without an approved membership, or whose
+ * employee profile has departed, sees nothing. Queries run one after another so the reader
+ * also works inside a caller's transaction, where it always reads afresh. Outside one (the
+ * sidebar, settings layout and page guards of one render) the answer is read once per request.
  */
 export async function readDrivingLicenceVisibility(
 	input: { organizationId: string; userId: string; now?: Instant },
 	database: DrivingLicenceDatabase = db,
+): Promise<DrivingLicenceVisibility> {
+	if (database === db && input.now === undefined)
+		return readRequestDrivingLicenceVisibility(input.organizationId, input.userId);
+	return readVisibility(input, database);
+}
+const readRequestDrivingLicenceVisibility = cache((organizationId: string, userId: string) =>
+	readVisibility({ organizationId, userId }, db),
+);
+async function readVisibility(
+	input: { organizationId: string; userId: string; now?: Instant },
+	database: DrivingLicenceDatabase,
 ): Promise<DrivingLicenceVisibility> {
 	const now = input.now ?? systemClock.nowInstant();
 	const [policy] = await database
@@ -171,15 +183,4 @@ export async function loadDrivingLicenceSettingsVisible(
 	return showsDrivingLicenceSettings(
 		await readDrivingLicenceVisibility({ organizationId, userId }),
 	);
-}
-
-/** The visibility for the signed-in user in their active organization. */
-export async function readCurrentDrivingLicenceVisibility(): Promise<DrivingLicenceVisibility> {
-	const auth = await getAuthContext();
-	const organizationId = auth?.session.activeOrganizationId;
-	if (!auth || !organizationId) return HIDDEN_DRIVING_LICENCE_VISIBILITY;
-	return readDrivingLicenceVisibility({
-		organizationId,
-		userId: auth.user.id,
-	});
 }

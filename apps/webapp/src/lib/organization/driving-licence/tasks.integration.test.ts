@@ -5,6 +5,10 @@ import {
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
+import {
+	activateDrivingLicenceControl,
+	saveConfirmedIntendedDriverAssignment,
+} from "./testing/control.test.fixture";
 
 const harness = vi.hoisted(() => ({
 	userId: "",
@@ -98,8 +102,7 @@ beforeEach(async () => {
 	).rows[0].user_id;
 	expect(
 		(
-			await policy.saveDrivingLicencePolicyAction({
-				enabled: true,
+			await activateDrivingLicenceControl({
 				intervalMonths: 1,
 				timezone: "Europe/Berlin",
 				reminderLeadDays: [30, 7],
@@ -111,7 +114,7 @@ beforeEach(async () => {
 	).toBe(true);
 	expect(
 		(
-			await intendedDrivers.setDrivingLicenceIntendedDriverAssignmentAction({
+			await saveConfirmedIntendedDriverAssignment({
 				target: { type: "employee", employeeId: fixture.employeeId },
 				value: "required",
 			})
@@ -208,7 +211,7 @@ it("escalates missing current verifier responsibility to admins with minimal ass
 	expect(missing.data[0]).not.toHaveProperty("directEmployeeNotification");
 	const notices = await inbox(fixture.ownerUserId);
 	expect(notices).toHaveLength(1);
-	expect(notices[0].actionUrl).toBe("/settings/driving-licence");
+	expect(notices[0].actionUrl).toBe("/settings/driving-licence?tab=verifiers");
 	await runDrivingLicenceRemindersJob();
 	expect(await inbox(fixture.ownerUserId)).toHaveLength(1);
 	expect(
@@ -380,7 +383,7 @@ it("opens exactly one reassignment task for the employee an ended until-dated gr
 	const cover = await fixture.seedEmployee();
 	expect(
 		(
-			await intendedDrivers.setDrivingLicenceIntendedDriverAssignmentAction({
+			await saveConfirmedIntendedDriverAssignment({
 				target: { type: "employee", employeeId: covered.employeeId },
 				value: "required",
 			})
@@ -452,7 +455,7 @@ it("opens exactly one reassignment task for the employee an ended until-dated gr
 	});
 	const notices = await inbox(fixture.ownerUserId);
 	expect(notices).toHaveLength(1);
-	expect(notices[0].actionUrl).toBe("/settings/driving-licence");
+	expect(notices[0].actionUrl).toBe("/settings/driving-licence?tab=verifiers");
 });
 
 it.each(["expired", "inactive", "terminal", "revoked"] as const)(

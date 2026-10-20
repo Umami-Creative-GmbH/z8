@@ -8,6 +8,10 @@ import {
 	vi,
 } from "vitest";
 import { integrationAdminPool } from "@/test/integration-database";
+import {
+	activateDrivingLicenceControl,
+	saveConfirmedIntendedDriverAssignment,
+} from "./testing/control.test.fixture";
 
 const session = vi.hoisted(() => ({
 	userId: "t1311-admin",
@@ -37,9 +41,8 @@ vi.mock("@/lib/datetime/temporal-core", async (original) => {
 	};
 });
 const actions = await import("./policy-actions");
-const intendedDrivers = await import("./intended-driver-actions");
 function assignIntendedDriver(id: string) {
-	return intendedDrivers.setDrivingLicenceIntendedDriverAssignmentAction({
+	return saveConfirmedIntendedDriverAssignment({
 		target: { type: "employee", employeeId: id },
 		value: "required",
 	});
@@ -48,7 +51,6 @@ const pool = integrationAdminPool();
 const employeeId = "e1311000-0000-4000-8000-000000000001";
 const foreignId = "e1311000-0000-4000-8000-000000000002";
 const validPolicy = {
-	enabled: true,
 	intervalMonths: 6,
 	timezone: "Europe/Berlin",
 	reminderLeadDays: [30, 7],
@@ -102,9 +104,7 @@ beforeEach(async () => {
 });
 describe("driving licence policy and intended drivers through public actions", () => {
 	it("persists an explicitly configured policy and assigns an intended driver with no authorization", async () => {
-		expect(
-			await actions.saveDrivingLicencePolicyAction(validPolicy),
-		).toMatchObject({ success: true });
+		expect(await activateDrivingLicenceControl(validPolicy)).toMatchObject({ success: true });
 		expect(await assignIntendedDriver(employeeId)).toMatchObject({
 			success: true,
 		});
@@ -112,11 +112,9 @@ describe("driving licence policy and intended drivers through public actions", (
 		expect(settings).toMatchObject({
 			success: true,
 			data: {
-				policy: validPolicy,
+				policy: { ...validPolicy, enabled: true },
 				intendedDrivers: {
-					assignments: [
-						{ assignmentType: "employee", employeeId, value: "required" },
-					],
+					assignments: [{ assignmentType: "employee", employeeId, value: "required" }],
 				},
 			},
 		});
@@ -133,15 +131,14 @@ describe("driving licence policy and intended drivers through public actions", (
 	});
 });
 
-it("keeps the explicit calendar zone fixed after activation, including while disabled", async () => {
+it("keeps the explicit calendar zone fixed after activation and saves the policy only while control is on", async () => {
+	expect(await actions.saveDrivingLicencePolicyAction(validPolicy)).toEqual({
+		success: false,
+		error: "not_enabled",
+	});
+	expect(await activateDrivingLicenceControl(validPolicy)).toMatchObject({ success: true });
 	expect(
-		await actions.saveDrivingLicencePolicyAction(validPolicy),
-	).toMatchObject({ success: true });
-	expect(
-		await actions.saveDrivingLicencePolicyAction({
-			...validPolicy,
-			enabled: false,
-		}),
+		await actions.saveDrivingLicencePolicyAction({ ...validPolicy, reminderLeadDays: [14] }),
 	).toMatchObject({ success: true });
 	expect(
 		await actions.saveDrivingLicencePolicyAction({
@@ -149,13 +146,23 @@ it("keeps the explicit calendar zone fixed after activation, including while dis
 			timezone: "America/New_York",
 		}),
 	).toEqual({ success: false, error: "timezone_fixed" });
+	// The policy form never switches: the Features switch is the only activation.
+	expect(await actions.saveDrivingLicencePolicyAction({ ...validPolicy, enabled: false })).toEqual(
+		{ success: false, error: "invalid_policy" },
+	);
+	expect(await actions.switchDrivingLicenceControlAction({ enabled: false })).toMatchObject({
+		success: true,
+	});
+	expect(await actions.saveDrivingLicencePolicyAction(validPolicy)).toEqual({
+		success: false,
+		error: "not_enabled",
+	});
 });
-it("requires a justified finite retention period before activation and validates all policy limits", async () => {
+it("keeps a justified finite retention period and validates all policy limits", async () => {
+	expect(await activateDrivingLicenceControl(validPolicy)).toMatchObject({ success: true });
 	for (const invalid of [
-		{ retentionMonths: null },
 		{ retentionMonths: 0 },
 		{ retentionMonths: 121 },
-		{ retentionJustification: "" },
 		{ intervalMonths: 0 },
 		{ intervalMonths: 1.5 },
 		{ timezone: "viewer" },
@@ -170,13 +177,17 @@ it("requires a justified finite retention period before activation and validates
 			}),
 		).toMatchObject({ success: false, error: "invalid_policy" });
 	}
+	for (const cleared of [{ retentionMonths: null }, { retentionJustification: "" }])
+		expect(
+			await actions.saveDrivingLicencePolicyAction({ ...validPolicy, ...cleared }),
+		).toEqual({ success: false, error: "retention_required" });
 	expect(await actions.getDrivingLicenceAdminDataAction()).toMatchObject({
 		success: true,
-		data: { policy: null, intendedDrivers: { assignments: [] } },
+		data: { policy: { ...validPolicy, enabled: true }, intendedDrivers: { assignments: [] } },
 	});
 });
 it("enforces approved membership and organization administration on every public settings operation", async () => {
-	await actions.saveDrivingLicencePolicyAction(validPolicy);
+	await activateDrivingLicenceControl(validPolicy);
 	for (const identity of [
 		{ userId: "t1311-employee", organizationId: "t1311-org" },
 		{ userId: "t1311-admin", organizationId: "t1311-foreign" },
@@ -202,7 +213,8 @@ it("rejects foreign employees, inactive employees, and assignment while disabled
 		success: false,
 		error: "not_enabled",
 	});
-	await actions.saveDrivingLicencePolicyAction(validPolicy);
+	await activateDrivingLicenceControl(validPolicy);
+
 	expect(await assignIntendedDriver(foreignId)).toEqual({
 		success: false,
 		error: "employee_not_found",

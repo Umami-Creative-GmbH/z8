@@ -5,6 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, expect, it, vi } from "vitest";
 import type { DrivingLicenceEmployeeRecord } from "@/lib/organization/driving-licence/checks";
 
+vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
 		t: (_key: string, fallback: string) => fallback,
@@ -63,6 +64,7 @@ const record = {
 	],
 	events: [],
 } as unknown as DrivingLicenceEmployeeRecord;
+const { toast } = await import("sonner");
 
 it("reinstates the chosen classes only after the verifier ticks the resolution confirmation (#1429)", async () => {
 	remote.reinstate.mockResolvedValue({ success: true, data: {} });
@@ -102,6 +104,8 @@ it("reinstates the chosen classes only after the verifier ticks the resolution c
 			expectedSuspension: null,
 		}),
 	);
-	expect(await screen.findByText("The selected classes were explicitly reinstated.")).toBeTruthy();
+	await waitFor(() =>
+		expect(toast.success).toHaveBeenCalledWith("The selected classes were explicitly reinstated."),
+	);
 	expect(onCompleted).toHaveBeenCalled();
 });

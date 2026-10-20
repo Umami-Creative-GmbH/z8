@@ -1,18 +1,20 @@
 "use client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTolgee, useTranslate } from "@tolgee/react";
-import { useId, useState, useTransition } from "react";
+import { useTranslate } from "@tolgee/react";
+import { useId, useTransition } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSession } from "@/lib/auth-client";
-import { parsePlainDate } from "@/lib/datetime/temporal-core";
-import { formatPlainDate } from "@/lib/datetime/temporal-format";
+import { drivingLicenceCheckPath } from "@/lib/organization/driving-licence/paths";
 import {
 	completeDrivingLicencePersonalReminderAction,
 	getDrivingLicenceTasksAction,
 } from "@/lib/organization/driving-licence/task-actions";
 import type { DrivingLicenceTaskView } from "@/lib/organization/driving-licence/tasks";
-import { drivingLicenceCheckPath } from "@/lib/organization/driving-licence/paths";
+import { queryKeys } from "@/lib/query";
 import { Link } from "@/navigation";
+import { useDrivingDateOnly } from "./deadline-date";
 
 const TASK_LINK_CLASS =
 	"block w-fit rounded-sm text-sm font-medium text-primary underline underline-offset-4 hover:text-primary/80 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring";
@@ -23,40 +25,35 @@ function PersonalReminderItem({
 	task: Extract<DrivingLicenceTaskView, { kind: "personal_reminder" }>;
 }) {
 	const { t } = useTranslate();
-	const tolgee = useTolgee(["language"]);
-	const locale = tolgee.getLanguage() || "en";
+	const formatDate = useDrivingDateOnly();
 	const client = useQueryClient();
 	const [pending, startTransition] = useTransition();
-	const [error, setError] = useState<string | null>(null);
 	const complete = () =>
 		startTransition(async () => {
-			setError(null);
 			const result = await completeDrivingLicencePersonalReminderAction({
 				taskId: task.id,
 			});
-			if (!result.success)
-				setError(
+			if (result.success)
+				toast.success(
+					t("drivingLicence.tasks.completedToast", "Personal reminder marked completed"),
+				);
+			else
+				toast.error(
 					t(
 						"drivingLicence.tasks.completeError",
 						"Could not complete this task. Check your current verifier responsibility.",
 					),
 				);
-			await client.invalidateQueries({ queryKey: ["drivingLicence", "tasks"] });
+			await client.invalidateQueries({ queryKey: queryKeys.drivingLicence.tasksAll });
 		});
 	return (
-		<li className="space-y-3 p-4">
+		<li className="space-y-3 py-4 first:pt-0 last:pb-0">
 			<p className="break-words font-medium">{task.employeeName}</p>
 			<p className="text-sm">
 				{task.occasion.kind === "initial"
-					? t(
-							"drivingLicence.tasks.initialCheck",
-							"Initial original check required",
-						)
+					? t("drivingLicence.tasks.initialCheck", "Initial original check required")
 					: task.occasion.kind === "suspension"
-						? t(
-								"drivingLicence.tasks.suspension",
-								"Driving authorization suspended",
-							)
+						? t("drivingLicence.tasks.suspension", "Driving authorization suspended")
 						: t("drivingLicence.tasks.deadline", "Original check due")}
 			</p>
 			{task.occasion.classCode ? (
@@ -71,13 +68,7 @@ function PersonalReminderItem({
 					{t(
 						"drivingLicence.tasks.validThrough",
 						"Valid through {date} in the check’s saved deadline timezone",
-						{
-							date: formatPlainDate(
-								parsePlainDate(task.occasion.validThrough),
-								locale,
-								"dateMedium",
-							),
-						},
+						{ date: formatDate(task.occasion.validThrough) },
 					)}
 				</p>
 			) : null}
@@ -95,93 +86,42 @@ function PersonalReminderItem({
 			</p>
 			{task.state === "completed" ? (
 				<p role="status" className="text-sm">
-					{t(
-						"drivingLicence.tasks.personalCompleted",
-						"Personal reminder completed",
-					)}
+					{t("drivingLicence.tasks.personalCompleted", "Personal reminder completed")}
 				</p>
 			) : (
 				<Button variant="outline" disabled={pending} onClick={complete}>
 					{pending
 						? t("drivingLicence.tasks.completing", "Completing…")
-						: t(
-								"drivingLicence.tasks.complete",
-								"Mark personal reminder completed",
-							)}
+						: t("drivingLicence.tasks.complete", "Mark personal reminder completed")}
 				</Button>
 			)}
-			{error ? (
-				<p role="alert" className="text-sm text-destructive">
-					{error}
-				</p>
-			) : null}
 			<Link className={TASK_LINK_CLASS} href={drivingLicenceCheckPath(task.employeeId)}>
 				{t("drivingLicence.tasks.openCheck", "Open check")}
 			</Link>
 		</li>
 	);
 }
-function ReassignmentItem({
-	task,
-}: {
-	task: Extract<DrivingLicenceTaskView, { kind: "reassignment" }>;
-}) {
-	const { t } = useTranslate();
-	return (
-		<li className="space-y-3 p-4">
-			<p className="break-words font-medium">{task.employeeName}</p>
-			<p className="text-sm text-muted-foreground">
-				{t(
-					"drivingLicence.tasks.assignmentBoundary",
-					"This task grants no inspection rights and does not extend any deadline.",
-				)}
-			</p>
-			{task.state === "pending" ? (
-				<p className="text-sm">
-					{t(
-						"drivingLicence.tasks.noVerifier",
-						"No available verifier is responsible for this employee.",
-					)}
-				</p>
-			) : null}
-			{task.state === "completed" ? (
-				<p role="status" className="text-sm">
-					{t("drivingLicence.tasks.assigned", "Responsibility assigned")}
-				</p>
-			) : (
-				<Link
-					className={TASK_LINK_CLASS}
-					href="/settings/driving-licence#driving-verifier-settings"
-				>
-					{t("drivingLicence.tasks.assign", "Assign responsibility")}
-				</Link>
-			)}
-		</li>
-	);
-}
-function DrivingLicenceTasks({
-	kind,
-}: {
-	kind: DrivingLicenceTaskView["kind"];
-}) {
+
+/**
+ * The verifier's personal reminder tasks on the Checks tab: terminal-only intended drivers
+ * to remind in person. Reassignment tasks show above the settings tabs instead
+ * (`DrivingLicenceReassignmentAlert`).
+ */
+export function DrivingLicencePersonalReminderTasks() {
 	const { t } = useTranslate();
 	const { data: session } = useSession();
 	const titleId = useId();
 	const tasks = useQuery({
-		queryKey: [
-			"drivingLicence",
-			"tasks",
+		queryKey: queryKeys.drivingLicence.tasks(
 			session?.session.activeOrganizationId,
 			session?.user.id,
-		],
+		),
 		queryFn: getDrivingLicenceTasksAction,
 		enabled: !!session?.session.activeOrganizationId && !!session.user.id,
 	});
 	if (tasks.isPending)
 		return (
-			<p role="status">
-				{t("drivingLicence.tasks.loading", "Loading driving licence tasks…")}
-			</p>
+			<p role="status">{t("drivingLicence.tasks.loading", "Loading driving licence tasks…")}</p>
 		);
 	if (tasks.isError || !tasks.data?.success)
 		return (
@@ -192,42 +132,30 @@ function DrivingLicenceTasks({
 				)}
 			</p>
 		);
-	const visible = tasks.data.data.filter((task) => task.kind === kind);
+	const visible = tasks.data.data.filter(
+		(task): task is Extract<DrivingLicenceTaskView, { kind: "personal_reminder" }> =>
+			task.kind === "personal_reminder",
+	);
 	if (!visible.length) return null;
 	return (
-		<section className="space-y-4 border-t pt-6" aria-labelledby={titleId}>
-			<div className="flex flex-wrap items-center justify-between gap-3">
-				<h2 id={titleId} className="text-balance text-xl font-semibold">
-					{kind === "personal_reminder"
-						? t("drivingLicence.tasks.personalTitle", "Personal reminder tasks")
-						: t(
-								"drivingLicence.tasks.reassignmentTitle",
-								"Verifier responsibility tasks",
-							)}
-				</h2>
-				<Button
-					variant="outline"
-					disabled={tasks.isFetching}
-					onClick={() => void tasks.refetch()}
-				>
+		<Card role="region" aria-labelledby={titleId}>
+			<CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
+				<CardTitle>
+					<h2 id={titleId} className="text-balance text-lg font-semibold">
+						{t("drivingLicence.tasks.personalTitle", "Personal reminder tasks")}
+					</h2>
+				</CardTitle>
+				<Button variant="outline" disabled={tasks.isFetching} onClick={() => void tasks.refetch()}>
 					{t("drivingLicence.tasks.refresh", "Recheck responsibility")}
 				</Button>
-			</div>
-			<ul className="divide-y rounded-lg border">
-				{visible.map((task) =>
-					task.kind === "personal_reminder" ? (
+			</CardHeader>
+			<CardContent>
+				<ul className="divide-y">
+					{visible.map((task) => (
 						<PersonalReminderItem key={task.id} task={task} />
-					) : (
-						<ReassignmentItem key={task.id} task={task} />
-					),
-				)}
-			</ul>
-		</section>
+					))}
+				</ul>
+			</CardContent>
+		</Card>
 	);
-}
-export function DrivingLicencePersonalReminderTasks() {
-	return <DrivingLicenceTasks kind="personal_reminder" />;
-}
-export function DrivingLicenceReassignmentTasks() {
-	return <DrivingLicenceTasks kind="reassignment" />;
 }

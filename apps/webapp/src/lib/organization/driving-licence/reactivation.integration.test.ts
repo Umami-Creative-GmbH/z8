@@ -5,6 +5,7 @@ import {
 	type SeededEmployee,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
 import type { SendEmailParams } from "@/lib/email/email-service";
+import { saveConfirmedIntendedDriverAssignment } from "./testing/control.test.fixture";
 
 const harness = vi.hoisted(() => ({
 	userId: "",
@@ -41,7 +42,6 @@ vi.mock("@/lib/datetime/temporal-core", async (original) => {
 vi.setConfig({ testTimeout: 90_000 });
 
 const policy = await import("./policy-actions");
-const intendedDrivers = await import("./intended-driver-actions");
 const checks = await import("./check-actions");
 const grants = await import("./verifier-actions");
 const { runDrivingLicenceRemindersJob } = await import("@/lib/jobs/driving-licence-reminders");
@@ -124,7 +124,7 @@ async function prepare(org: Organization) {
 	);
 	for (const subject of [org.overdue, org.inDate])
 		await expectSuccess(
-			intendedDrivers.setDrivingLicenceIntendedDriverAssignmentAction({
+			saveConfirmedIntendedDriverAssignment({
 				target: { type: "employee", employeeId: subject.employeeId },
 				value: "required",
 			}),
@@ -268,6 +268,60 @@ describe("switching driving licence control on again", () => {
 			reminders: before.inDate.reminders + 1,
 		});
 		expect((await inbox(org, org.overdue)).suspended).toBe(before.overdue.suspended + 2);
+	});
+
+	it("brings back tasks that were open at switch-off without notifying again", async () => {
+		const tasks = await import("./task-actions");
+		harness.now = "2026-03-05T09:00:00Z";
+		actAs(org.id, org.adminUserId);
+		await expectSuccess(policy.switchDrivingLicenceControlAction({ enabled: true }));
+		// A terminal-only intended driver (no personal route) gets a personal reminder task for
+		// the verifier; the verifier as intended driver is uncovered (never their own verifier).
+		const terminal = await person(await fixture.seedEmployee({ organizationId: org.id }));
+		await fixture.pool.query('update "user" set email=$2 where id=$1', [
+			terminal.userId,
+			`terminal-${terminal.userId}@kiosk.invalid`,
+		]);
+		for (const subject of [terminal, org.verifier])
+			await expectSuccess(
+				saveConfirmedIntendedDriverAssignment({
+					target: { type: "employee", employeeId: subject.employeeId },
+					value: "required",
+				}),
+			);
+		await runDrivingLicenceRemindersJob();
+		async function open(userId: string) {
+			actAs(org.id, userId);
+			const result = await tasks.getDrivingLicenceTasksAction();
+			if (!result.success) throw new Error(result.error);
+			return result.data.map((task) => [task.kind, task.employeeId, task.state]);
+		}
+		async function taskNotices() {
+			let count = 0;
+			for (const userId of [org.adminUserId, org.verifier.userId]) {
+				const { notifications } = await getUserNotifications(userId, org.id, { limit: 100 });
+				count += notifications.filter((n) => n.entityType === "driving_licence_task").length;
+			}
+			return count;
+		}
+		const adminTasks = await open(org.adminUserId);
+		const verifierTasks = await open(org.verifier.userId);
+		expect(adminTasks).toContainEqual(["reassignment", org.verifier.employeeId, "pending"]);
+		expect(verifierTasks).toContainEqual(["personal_reminder", terminal.employeeId, "pending"]);
+		const before = await taskNotices();
+		expect(before).toBeGreaterThanOrEqual(2);
+
+		actAs(org.id, org.adminUserId);
+		await expectSuccess(policy.switchDrivingLicenceControlAction({ enabled: false }));
+		expect(await open(org.adminUserId)).toEqual([]);
+		harness.now = "2026-03-06T09:00:00Z";
+		actAs(org.id, org.adminUserId);
+		await expectSuccess(policy.switchDrivingLicenceControlAction({ enabled: true }));
+		await runDrivingLicenceRemindersJob();
+		await runDrivingLicenceRemindersJob();
+		expect(await open(org.adminUserId)).toEqual(adminTasks);
+		expect(await open(org.verifier.userId)).toEqual(verifierTasks);
+		expect(await taskNotices()).toBe(before);
 	});
 
 	it("leaves another organization alone", async () => {

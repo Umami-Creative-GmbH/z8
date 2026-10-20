@@ -147,6 +147,8 @@ describe("IntendedDriverSettings", () => {
 							? { type: "team", teamId }
 							: { type: "employee", employeeId },
 				value: "not_required",
+				// The empty preview's token is confirmed too.
+				previewToken: nobodyEnds.data.previewToken,
 			});
 			await waitFor(() => expect(api.refresh).toHaveBeenCalled());
 			expect(api.toast.success).toHaveBeenCalledWith("Intended drivers saved");
@@ -194,10 +196,16 @@ describe("IntendedDriverSettings", () => {
 		expect(api.set).toHaveBeenCalledWith({
 			target: { type: "organization" },
 			value: "not_required",
+			previewToken: nobodyEnds.data.previewToken,
 		});
 
 		await userEvent.click(within(teams).getByRole("button", { name: "Remove Delivery" }));
-		expect(api.remove).toHaveBeenCalledWith({ assignmentId: "a1" });
+		await waitFor(() =>
+			expect(api.remove).toHaveBeenCalledWith({
+				assignmentId: "a1",
+				previewToken: nobodyEnds.data.previewToken,
+			}),
+		);
 		await waitFor(() =>
 			expect(api.toast.success).toHaveBeenCalledWith("Intended driver assignment removed"),
 		);

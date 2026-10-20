@@ -2,8 +2,7 @@
 
 import { IconInfoCircle, IconSteeringWheel } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useSearchParams } from "next/navigation";
-import { type ReactNode, useState } from "react";
+import type { ReactNode } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
 	Empty,
@@ -17,6 +16,7 @@ import type { IntendedDriverAdminData } from "@/lib/organization/driving-licence
 import type { DrivingLicenceSettingsVisibility } from "@/lib/organization/driving-licence/visibility-rules";
 import { IntendedDriverSettings } from "./intended-driver-settings";
 import { DrivingLicenceReassignmentAlert } from "./reassignment-alert";
+import { useLinkedTabs } from "./use-linked-tabs";
 
 /** `?tab=` values, in display order, so each tab can be linked to. */
 export const DRIVING_LICENCE_SETTINGS_TABS = [
@@ -41,7 +41,6 @@ export function DrivingLicenceSettingsTabs({
 	panels: Partial<Record<DrivingLicenceSettingsTab, ReactNode>>;
 }) {
 	const { t } = useTranslate();
-	const searchParams = useSearchParams();
 	const title = t("drivingLicence.title", "Driving licence control");
 	const labels: Record<DrivingLicenceSettingsTab, string> = {
 		policy: t("drivingLicence.settingsTabs.policy", "Policy"),
@@ -69,17 +68,7 @@ export function DrivingLicenceSettingsTabs({
 	};
 	const tabs =
 		settings === "retention_only" ? (["retention"] as const) : DRIVING_LICENCE_SETTINGS_TABS;
-	const active = tabs.find((tab) => tab === searchParams.get("tab")) ?? tabs[0];
-	const [visited, setVisited] = useState(() => new Set<DrivingLicenceSettingsTab>([active]));
-
-	function select(value: unknown) {
-		const selected = tabs.find((tab) => tab === value);
-		if (!selected) return;
-		setVisited((previous) => new Set([...previous, active, selected]));
-		const url = new URL(window.location.href);
-		url.searchParams.set("tab", selected);
-		window.history.replaceState(null, "", url.pathname + url.search + url.hash);
-	}
+	const { active, select, mounted } = useLinkedTabs<DrivingLicenceSettingsTab>(tabs);
 
 	return (
 		<div className="flex min-w-0 flex-1 flex-col gap-6 p-4 md:p-6">
@@ -113,7 +102,7 @@ export function DrivingLicenceSettingsTabs({
 				</div>
 				{tabs.map((tab) => (
 					<TabsContent key={tab} value={tab} keepMounted className="min-w-0">
-						{active === tab || visited.has(tab) ? panels[tab] : null}
+						{mounted(tab) ? panels[tab] : null}
 					</TabsContent>
 				))}
 			</Tabs>

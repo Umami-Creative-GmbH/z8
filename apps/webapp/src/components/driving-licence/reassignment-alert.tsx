@@ -6,6 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/auth-client";
 import { getDrivingLicenceTasksAction } from "@/lib/organization/driving-licence/task-actions";
+import { queryKeys } from "@/lib/query";
 
 /**
  * Open verifier-responsibility tasks (#1427), shown above the settings tabs so admins see
@@ -15,7 +16,10 @@ export function DrivingLicenceReassignmentAlert({ onAssign }: { onAssign: () => 
 	const { t } = useTranslate();
 	const { data: session } = useSession();
 	const tasks = useQuery({
-		queryKey: ["drivingLicence", "tasks", session?.session.activeOrganizationId, session?.user.id],
+		queryKey: queryKeys.drivingLicence.tasks(
+			session?.session.activeOrganizationId,
+			session?.user.id,
+		),
 		queryFn: getDrivingLicenceTasksAction,
 		enabled: !!session?.session.activeOrganizationId && !!session.user.id,
 	});
