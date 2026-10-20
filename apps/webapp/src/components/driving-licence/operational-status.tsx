@@ -4,9 +4,11 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useDeferredValue, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useSession } from "@/lib/auth-client";
+import { queryKeys } from "@/lib/query";
 import { DrivingStatusLabel } from "./check-evidence";
 import {
 	loadDrivingAuthorizationStatus,
@@ -24,12 +26,7 @@ export function DrivingAuthorizationAdvisory({
 	const organizationId = session?.session.activeOrganizationId;
 	const userId = session?.user.id;
 	const query = useQuery({
-		queryKey: [
-			"driving-authorization-status",
-			organizationId,
-			userId,
-			employeeId ?? "self",
-		],
+		queryKey: queryKeys.drivingLicence.statusFor(organizationId, userId, employeeId),
 		queryFn: ({ signal }) =>
 			loadDrivingAuthorizationStatus(organizationId ?? "", employeeId, signal),
 		enabled: !!organizationId && !!userId,
@@ -38,6 +35,10 @@ export function DrivingAuthorizationAdvisory({
 		retry: false,
 	});
 	if (!organizationId || !userId) return null;
+	// The server answers `null` unless the visibility reader shows the advisory (feature on,
+	// intended driver). Render nothing until it has answered, so others never see a flash.
+	if (query.isPending) return null;
+	if (!query.isError && query.data?.success && query.data.data === null) return null;
 	const data = !query.isError && query.data?.success ? query.data.data : null;
 	return (
 		<aside
@@ -136,12 +137,7 @@ function OperationalDrivingEmployees({
 	const [selected, setSelected] = useState<string | null>(null);
 	const deferredSearch = useDeferredValue(search);
 	const query = useQuery({
-		queryKey: [
-			"driving-operational-employees",
-			organizationId,
-			userId,
-			deferredSearch,
-		],
+		queryKey: queryKeys.drivingLicence.operationalEmployees(organizationId, userId, deferredSearch),
 		queryFn: ({ signal }) =>
 			loadOperationalDrivingEmployees(organizationId, deferredSearch, signal),
 		placeholderData: (previous) => previous,
@@ -151,58 +147,60 @@ function OperationalDrivingEmployees({
 	// No independent operational permission means no roster and no additional inspection access.
 	if (query.isError || !query.data?.success) return null;
 	return (
-		<section
-			className="space-y-3 rounded-lg border p-4"
-			aria-labelledby={`${id}-title`}
-			aria-busy={query.isFetching}
-		>
-			<h2 id={`${id}-title`} className="text-lg font-semibold">
-				{t("drivingLicence.operational.title", "Driving status for planning")}
-			</h2>
-			<Label htmlFor={id}>
-				{t("drivingLicence.operational.search", "Find employee")}
-			</Label>
-			<Input
-				id={id}
-				type="search"
-				name="driving-employee-search"
-				autoComplete="off"
-				maxLength={100}
-				value={search}
-				onChange={(event) => {
-					setSearch(event.target.value);
-					setSelected(null);
-				}}
-			/>
-			<p className="text-xs text-muted-foreground">
-				{t(
-					"drivingLicence.operational.searchHelp",
-					"Up to 50 employees are shown. Narrow the search to find another employee. This view contains no inspection records.",
-				)}
-			</p>
-			<ul className="flex flex-wrap gap-2">
-				{query.data.data.map((entry) => (
-					<li key={entry.employeeId}>
-						<Button
-							type="button"
-							variant={selected === entry.employeeId ? "secondary" : "outline"}
-							aria-pressed={selected === entry.employeeId}
-							onClick={() => setSelected(entry.employeeId)}
-						>
-							{entry.name}
-						</Button>
-					</li>
-				))}
-			</ul>
-			{!query.data.data.length ? (
-				<p>
+		<Card role="region" aria-labelledby={`${id}-title`} aria-busy={query.isFetching}>
+			<CardHeader>
+				<CardTitle>
+					<h2 id={`${id}-title`} className="text-lg font-semibold">
+						{t("drivingLicence.operational.title", "Driving status for planning")}
+					</h2>
+				</CardTitle>
+			</CardHeader>
+			<CardContent className="space-y-3">
+				<Label htmlFor={id}>
+					{t("drivingLicence.operational.search", "Find employee")}
+				</Label>
+				<Input
+					id={id}
+					type="search"
+					name="driving-employee-search"
+					autoComplete="off"
+					maxLength={100}
+					value={search}
+					onChange={(event) => {
+						setSearch(event.target.value);
+						setSelected(null);
+					}}
+				/>
+				<p className="text-xs text-muted-foreground">
 					{t(
-						"drivingLicence.operational.noEmployees",
-						"No matching employees.",
+						"drivingLicence.operational.searchHelp",
+						"Up to 50 employees are shown. Narrow the search to find another employee. This view contains no inspection records.",
 					)}
 				</p>
-			) : null}
-			{selected ? <DrivingAuthorizationAdvisory employeeId={selected} /> : null}
-		</section>
+				<ul className="flex flex-wrap gap-2">
+					{query.data.data.map((entry) => (
+						<li key={entry.employeeId}>
+							<Button
+								type="button"
+								variant={selected === entry.employeeId ? "secondary" : "outline"}
+								aria-pressed={selected === entry.employeeId}
+								onClick={() => setSelected(entry.employeeId)}
+							>
+								{entry.name}
+							</Button>
+						</li>
+					))}
+				</ul>
+				{!query.data.data.length ? (
+					<p>
+						{t(
+							"drivingLicence.operational.noEmployees",
+							"No matching employees.",
+						)}
+					</p>
+				) : null}
+				{selected ? <DrivingAuthorizationAdvisory employeeId={selected} /> : null}
+			</CardContent>
+		</Card>
 	);
 }

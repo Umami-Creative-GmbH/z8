@@ -4,6 +4,9 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, expect, it, vi } from "vitest";
 
+const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }));
+vi.mock("sonner", () => ({ toast }));
+
 const remote = vi.hoisted(() => ({
 	held: false,
 	released: false,
@@ -102,6 +105,8 @@ afterEach(() => {
 	remote.cleaned = false;
 	remote.place.mockReset();
 	remote.release.mockReset();
+	toast.success.mockReset();
+	toast.error.mockReset();
 });
 it("lets an administrator document and release a legal-case hold, then inspect the cleanup result without inspection details", async () => {
 	const client = new QueryClient({
@@ -113,10 +118,8 @@ it("lets an administrator document and release a legal-case hold, then inspect t
 			<DrivingLicenceRetentionSettings />
 		</QueryClientProvider>,
 	);
-	await user.selectOptions(
-		await screen.findByRole("combobox", { name: "Check record" }),
-		"check",
-	);
+	await user.click(await screen.findByRole("combobox", { name: "Check record" }));
+	await user.click(await screen.findByRole("option", { name: /Anna Driver/ }));
 	await user.type(
 		screen.getByRole("textbox", { name: "Specific legal-case reference" }),
 		"CASE-17",
@@ -131,6 +134,7 @@ it("lets an administrator document and release a legal-case hold, then inspect t
 		screen.getByRole("button", { name: "Place a specific-case hold" }),
 	);
 	await screen.findByText(/Case CASE-17:/);
+	expect(toast.success).toHaveBeenCalledWith("Legal-case hold placed");
 	expect(remote.place).toHaveBeenCalledWith({
 		checkId: "check",
 		caseReference: "CASE-17",
@@ -144,11 +148,14 @@ it("lets an administrator document and release a legal-case hold, then inspect t
 	);
 	await user.click(screen.getByRole("button", { name: "Release hold" }));
 	await screen.findByText(/Released by admin/);
+	expect(toast.success).toHaveBeenCalledWith("Legal-case hold released");
 	await user.click(
 		screen.getByRole("button", { name: "Run due evidence cleanup" }),
 	);
 	await user.click(screen.getByRole("button", { name: "Delete due evidence" }));
 	await screen.findByText(/1 deleted, 0 held, 0 protected/);
+	expect(toast.success).toHaveBeenCalledWith("Due evidence cleanup finished");
+	expect(toast.error).not.toHaveBeenCalled();
 	expect(
 		screen.queryByText(/declaration|document expiry|Original inspected/i),
 	).toBeNull();

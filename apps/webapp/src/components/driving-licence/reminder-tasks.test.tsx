@@ -27,16 +27,15 @@ vi.mock("@/lib/organization/driving-licence/task-actions", () => ({
 	getDrivingLicenceTasksAction: remote.list,
 	completeDrivingLicencePersonalReminderAction: remote.complete,
 }));
+vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock("@/navigation", () => ({
 	Link: ({ children, href }: { children: React.ReactNode; href: string }) => (
 		<a href={href}>{children}</a>
 	),
 }));
 
-import {
-	DrivingLicencePersonalReminderTasks,
-	DrivingLicenceReassignmentTasks,
-} from "./reminder-tasks";
+import { toast } from "sonner";
+import { DrivingLicencePersonalReminderTasks } from "./reminder-tasks";
 
 afterEach(() => {
 	cleanup();
@@ -85,13 +84,14 @@ it("shows unavailable direct notification before and after completing a personal
 		expect(remote.complete).toHaveBeenCalledWith({ taskId: "task" }),
 	);
 	expect(await screen.findByText("Personal reminder completed")).toBeTruthy();
+	expect(toast.success).toHaveBeenCalledWith("Personal reminder marked completed");
 	expect(
 		screen.getByText(
 			/Task completion does not confirm direct delivery or employee reading/,
 		),
 	).toBeTruthy();
 });
-it("offers responsibility assignment without personal reminder completion or inspection controls", async () => {
+it("links a personal reminder task to the employee's check page (#1429)", async () => {
 	remote.list.mockResolvedValue({
 		success: true,
 		data: [
@@ -99,20 +99,16 @@ it("offers responsibility assignment without personal reminder completion or ins
 				id: "task",
 				employeeName: "Driver",
 				employeeId: "employee",
-				kind: "reassignment",
+				kind: "personal_reminder",
 				state: "pending",
+				directEmployeeNotification: "unavailable",
+				occasion: { kind: "deadline", classCode: "B", validThrough: "2026-02-28" },
 				completedAt: null,
 			},
 		],
 	});
-	mount(<DrivingLicenceReassignmentTasks />);
+	mount(<DrivingLicencePersonalReminderTasks />);
 	expect(
-		await screen.findByRole("link", { name: "Assign responsibility" }),
-	).toBeTruthy();
-	expect(
-		screen.queryByRole("button", { name: "Mark personal reminder completed" }),
-	).toBeNull();
-	expect(
-		screen.getByText(/This task grants no inspection rights/),
-	).toBeTruthy();
+		(await screen.findByRole("link", { name: "Open check" })).getAttribute("href"),
+	).toBe("/driving-licence/checks/employee");
 });

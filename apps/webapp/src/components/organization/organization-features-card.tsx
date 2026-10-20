@@ -40,8 +40,10 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useServerDataState } from "@/hooks/use-server-data-state";
 import type { BillableCurrency } from "@/lib/billable-time/currency";
+import type { DrivingLicenceFeatureState } from "@/lib/organization/driving-licence/policy";
 import { useRouter } from "@/navigation";
 import { useOrganizationSettings } from "@/stores/organization-settings-store";
+import { DrivingLicenceFeature } from "./driving-licence-feature";
 import {
 	type OrganizationFeature,
 	type OrganizationFeatureState,
@@ -59,6 +61,10 @@ interface OrganizationFeaturesCardProps {
 	/** The billable currency, or null until Billable Time was first switched on. */
 	billableCurrency: BillableCurrency | null;
 	personnelFilesEnabled: boolean;
+	/** Driving licence control (#1421): the policy's on/off, read on the server. */
+	drivingLicence?: DrivingLicenceFeatureState;
+	/** Prefills the driving licence deadline timezone on its first switch-on. */
+	organizationTimezone?: string;
 	currentMemberRole: "owner" | "admin" | "member";
 }
 
@@ -105,6 +111,8 @@ function useOrganizationFeatures({
 	const canEdit = currentMemberRole === "owner";
 	// Personnel files are switched by owners and admins (#865).
 	const canEditPersonnelFiles = canEdit || currentMemberRole === "admin";
+	// Driving licence control too (#1421): the same owner-or-admin rule, under its own name.
+	const canSwitchDrivingLicence = canEditPersonnelFiles;
 	const [confirmPersonnelFilesOff, setConfirmPersonnelFilesOff] = useState(false);
 
 	const applyFeatures = (values: Partial<OrganizationFeatureState>) => {
@@ -199,6 +207,7 @@ function useOrganizationFeatures({
 		saveBillableTime,
 		setConfirmPersonnelFilesOff,
 		canEditPersonnelFiles,
+		canSwitchDrivingLicence,
 		confirmPersonnelFilesOff,
 	};
 }
@@ -207,6 +216,8 @@ function OrganizationFeaturesCardContent({
 	organizationId,
 	currentMemberRole,
 	billableCurrency,
+	drivingLicence,
+	organizationTimezone,
 	initialFeatures,
 }: Omit<OrganizationFeaturesCardProps, OrganizationFeature> & {
 	initialFeatures: OrganizationFeatureState;
@@ -223,6 +234,7 @@ function OrganizationFeaturesCardContent({
 		saveBillableTime,
 		setConfirmPersonnelFilesOff,
 		canEditPersonnelFiles,
+		canSwitchDrivingLicence,
 		confirmPersonnelFilesOff,
 	} = useOrganizationFeatures({
 		organizationId,
@@ -377,13 +389,27 @@ function OrganizationFeaturesCardContent({
 					</AlertDialogContent>
 				</AlertDialog>
 
+				{/* Driving Licence Control (#1421): owners and admins, the feature's only activation */}
+				{drivingLicence && (
+					<DrivingLicenceFeature
+						state={drivingLicence}
+						organizationTimezone={organizationTimezone ?? "UTC"}
+						canEdit={canSwitchDrivingLicence}
+					/>
+				)}
+
 				{!canEdit && (
 					<p className="text-xs text-muted-foreground">
 						{canEditPersonnelFiles
-							? t(
-									"organization.features.owner-only-except-personnel-files",
-									"Only organization owners can change feature settings, except personnel files.",
-								)
+							? drivingLicence
+								? t(
+										"organization.features.owner-only-except-admin-features",
+										"Only organization owners can change feature settings, except personnel files and driving licence control.",
+									)
+								: t(
+										"organization.features.owner-only-except-personnel-files",
+										"Only organization owners can change feature settings, except personnel files.",
+									)
 							: t(
 									"organization.features.owner-only",
 									"Only organization owners can change feature settings.",

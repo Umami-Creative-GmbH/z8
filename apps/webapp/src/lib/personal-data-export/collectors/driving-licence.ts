@@ -7,10 +7,8 @@ import {
 } from "@/db/schema/driving-licence-checks";
 import { drivingLicenceSupplement } from "@/db/schema/driving-licence-history";
 import { drivingImpedimentReport } from "@/db/schema/driving-licence-impediments";
-import {
-	drivingLicenceParticipant,
-	drivingLicencePolicyRevision,
-} from "@/db/schema/driving-licence-policy";
+import { drivingLicenceIntendedDriverAssignment } from "@/db/schema/driving-licence-intended-drivers";
+import { drivingLicencePolicyRevision } from "@/db/schema/driving-licence-policy";
 import { drivingLicenceReminderDelivery } from "@/db/schema/driving-licence-reminders";
 import {
 	drivingLicenceHold,
@@ -38,7 +36,7 @@ export const drivingLicenceCollector: PersonalDataCollector = {
 			supplements,
 			events,
 			authorizations,
-			participation,
+			intendedDriverAssignments,
 			suspension,
 			reports,
 			grants,
@@ -89,13 +87,15 @@ export const drivingLicenceCollector: PersonalDataCollector = {
 						eq(drivingAuthorization.employeeId, employeeId),
 					),
 				),
+			// Only the subject's own employee-level assignment is their personal data; organization and
+			// team assignments concern everyone they reach.
 			database
 				.select()
-				.from(drivingLicenceParticipant)
+				.from(drivingLicenceIntendedDriverAssignment)
 				.where(
 					and(
-						eq(drivingLicenceParticipant.organizationId, organizationId),
-						eq(drivingLicenceParticipant.employeeId, employeeId),
+						eq(drivingLicenceIntendedDriverAssignment.organizationId, organizationId),
+						eq(drivingLicenceIntendedDriverAssignment.employeeId, employeeId),
 					),
 				),
 			database
@@ -245,7 +245,7 @@ export const drivingLicenceCollector: PersonalDataCollector = {
 			...events.map((e) => e.actorUserId),
 			...reports.flatMap((r) => [r.reporterUserId, r.resolvedByUserId]),
 			...policies.map((p) => p.changedBy),
-			...participation.map((p) => p.enrolledBy),
+			...intendedDriverAssignments.flatMap((a) => [a.createdBy, a.updatedBy]),
 			...grants.flatMap((g) => [g.grantedBy, g.revokedBy]),
 		]);
 		return {
@@ -502,12 +502,15 @@ export const drivingLicenceCollector: PersonalDataCollector = {
 					})),
 				),
 				tablePart(
-					"participation",
-					["id", "enrolled_at", "actor_name"],
-					participation.map((p) => ({
-						id: p.id,
-						enrolled_at: instantText(p.enrolledAt),
-						actor_name: name(p.enrolledBy),
+					"intended_driver_assignment",
+					["id", "required", "assigned_at", "assigned_by", "updated_at", "updated_by"],
+					intendedDriverAssignments.map((a) => ({
+						id: a.id,
+						required: a.required,
+						assigned_at: instantText(a.createdAt),
+						assigned_by: name(a.createdBy),
+						updated_at: instantText(a.updatedAt),
+						updated_by: name(a.updatedBy),
 					})),
 				),
 				tablePart(

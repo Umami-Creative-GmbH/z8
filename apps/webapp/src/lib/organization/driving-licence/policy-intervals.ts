@@ -31,6 +31,7 @@ import {
 	materializeExpiredDrivingAuthorizations,
 } from "./checks";
 import type { DrivingLicenceActor } from "./context";
+import { assertDrivingLicenceControlOn } from "./control-state";
 import { drivingAuthorizationDeadline } from "./deadlines";
 import type { DrivingLicenceTransaction } from "./verifiers";
 
@@ -144,6 +145,7 @@ export async function previewDrivingLicenceInterval(
 	const { intervalMonths } = intervalInput.parse(raw);
 	return db.transaction(async (tx) => {
 		await lockDrivingLicenceOrganization(tx, actor.organizationId);
+		await assertDrivingLicenceControlOn(tx, actor.organizationId);
 		return (
 			await impact(
 				tx,
@@ -162,6 +164,7 @@ export async function applyDrivingLicenceInterval(
 	const input = applyInput.parse(raw);
 	return db.transaction(async (tx) => {
 		await lockDrivingLicenceOrganization(tx, actor.organizationId);
+		await assertDrivingLicenceControlOn(tx, actor.organizationId);
 		const now = systemClock.nowInstant();
 		const retentionBefore = await beginDrivingLicenceRetentionChange(
 			tx,

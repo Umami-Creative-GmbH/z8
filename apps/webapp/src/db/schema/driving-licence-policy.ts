@@ -2,7 +2,6 @@ import { sql } from "drizzle-orm";
 import {
 	boolean,
 	check,
-	foreignKey,
 	integer,
 	jsonb,
 	pgTable,
@@ -12,7 +11,6 @@ import {
 	uuid,
 } from "drizzle-orm/pg-core";
 import { organization, user } from "../auth-schema";
-import { employee } from "./organization";
 export const drivingLicencePolicy = pgTable(
 	"driving_licence_policy",
 	{
@@ -74,29 +72,5 @@ export const drivingLicencePolicyRevision = pgTable(
 			t.organizationId,
 			t.version,
 		),
-	],
-);
-export const drivingLicenceParticipant = pgTable(
-	"driving_licence_participant",
-	{
-		id: uuid("id").defaultRandom().primaryKey(),
-		organizationId: text("organization_id")
-			.notNull()
-			.references(() => organization.id, { onDelete: "cascade" }),
-		employeeId: uuid("employee_id").notNull(),
-		enrolledAt: timestamp("enrolled_at", { withTimezone: true }).notNull(),
-		enrolledBy: text("enrolled_by")
-			.notNull()
-			.references(() => user.id),
-	},
-	(t) => [
-		unique("driving_licence_participant_employee").on(
-			t.organizationId,
-			t.employeeId,
-		),
-		foreignKey({
-			columns: [t.employeeId, t.organizationId],
-			foreignColumns: [employee.id, employee.organizationId],
-		}).onDelete("cascade"),
 	],
 );

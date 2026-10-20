@@ -7,7 +7,9 @@ const api = vi.hoisted(() => ({
 	preview: vi.fn(),
 	apply: vi.fn(),
 	refresh: vi.fn(),
+	toast: { success: vi.fn(), error: vi.fn() },
 }));
+vi.mock("sonner", () => ({ toast: api.toast }));
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
 }));
@@ -59,17 +61,43 @@ it("requires an impact preview, shows newly overdue classes, and discards a stal
 	await userEvent.click(
 		screen.getByRole("button", { name: "Preview interval impact" }),
 	);
-	await waitFor(() => expect(screen.getByText(/Dana Driver/)).toBeTruthy());
+	const impact = await screen.findByRole("table");
+	expect(impact.textContent).toContain("Dana Driver");
 	expect(screen.getByText("Newly overdue — will be suspended")).toBeTruthy();
-	expect(screen.getByText("2026-02-28")).toBeTruthy();
+	expect(screen.getByText("Feb 28, 2026")).toBeTruthy();
 	expect(screen.getByText("Europe/Berlin")).toBeTruthy();
 	await userEvent.click(
 		screen.getByRole("button", { name: "Apply interval change" }),
 	);
 	await waitFor(() =>
-		expect(screen.getByRole("alert").textContent).toContain("changed"),
+		expect(api.toast.error).toHaveBeenCalledWith(expect.stringContaining("changed")),
 	);
 	expect(
 		screen.queryByRole("button", { name: "Apply interval change" }),
 	).toBeNull();
+});
+it("confirms an applied interval in a toast", async () => {
+	api.preview.mockResolvedValue({
+		success: true,
+		data: {
+			intervalMonths: 12,
+			previousIntervalMonths: 6,
+			policyVersion: 1,
+			previewToken: "token",
+			classes: [],
+		},
+	});
+	api.apply.mockResolvedValue({ success: true, data: {} });
+	render(<DrivingLicenceIntervalSettings intervalMonths={6} />);
+	fireEvent.change(screen.getByLabelText("New routine interval (months)"), {
+		target: { value: "12" },
+	});
+	await userEvent.click(screen.getByRole("button", { name: "Preview interval impact" }));
+	await userEvent.click(await screen.findByRole("button", { name: "Apply interval change" }));
+	await waitFor(() =>
+		expect(api.toast.success).toHaveBeenCalledWith(
+			"Interval applied. Existing suspensions remain in effect.",
+		),
+	);
+	expect(api.refresh).toHaveBeenCalled();
 });

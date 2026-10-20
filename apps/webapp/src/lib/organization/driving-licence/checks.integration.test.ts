@@ -4,6 +4,10 @@ import {
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
+import {
+	activateDrivingLicenceControl,
+	saveConfirmedIntendedDriverAssignment,
+} from "./testing/control.test.fixture";
 
 const harness = vi.hoisted(() => ({
 	userId: "",
@@ -68,8 +72,7 @@ beforeEach(async () => {
 	signIn(fixture.ownerUserId);
 	expect(
 		(
-			await policy.saveDrivingLicencePolicyAction({
-				enabled: true,
+			await activateDrivingLicenceControl({
 				intervalMonths: 1,
 				timezone: "Europe/Berlin",
 				reminderLeadDays: [30, 7],
@@ -81,8 +84,9 @@ beforeEach(async () => {
 	).toBe(true);
 	expect(
 		(
-			await policy.enrollDrivingLicenceEmployeeAction({
-				employeeId: fixture.employeeId,
+			await saveConfirmedIntendedDriverAssignment({
+				target: { type: "employee", employeeId: fixture.employeeId },
+				value: "required",
 			})
 		).success,
 	).toBe(true);
@@ -558,8 +562,9 @@ it("refuses a granted verifier's self-check and a target removed from their curr
 	signIn(fixture.ownerUserId);
 	expect(
 		(
-			await policy.enrollDrivingLicenceEmployeeAction({
-				employeeId: verifier.employeeId,
+			await saveConfirmedIntendedDriverAssignment({
+				target: { type: "employee", employeeId: verifier.employeeId },
+				value: "required",
 			})
 		).success,
 	).toBe(true);

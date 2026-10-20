@@ -7,6 +7,7 @@ import {
 	readDrivingLicenceWorklist,
 } from "./checks";
 import { requireDrivingLicenceActor } from "./context";
+import type { DrivingLicenceWorklistQuery } from "./worklist-query";
 
 async function run<T>(
 	operation: () => Promise<T>,
@@ -14,6 +15,8 @@ async function run<T>(
 	try {
 		return { success: true, data: await operation() };
 	} catch (error) {
+		if (error instanceof Error && error.message === "not_enabled")
+			return { success: false, error: "not_enabled" };
 		return {
 			success: false,
 			error:
@@ -44,8 +47,11 @@ export async function getDrivingLicenceEmployeeRecordAction(input: {
 		),
 	);
 }
-export async function getDrivingLicenceCheckWorklistAction() {
+/** Search and status filter are validated on the server (`drivingLicenceWorklistQuery`). */
+export async function getDrivingLicenceCheckWorklistAction(
+	query?: DrivingLicenceWorklistQuery,
+) {
 	return run(async () =>
-		readDrivingLicenceWorklist(await requireDrivingLicenceActor()),
+		readDrivingLicenceWorklist(await requireDrivingLicenceActor(), query),
 	);
 }

@@ -4,6 +4,7 @@ import {
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
+import { saveConfirmedIntendedDriverAssignment } from "./testing/control.test.fixture";
 
 const session = vi.hoisted(() => ({
 	userId: "",
@@ -56,8 +57,92 @@ beforeEach(async () => {
 		`insert into employee_custom_role (employee_id,custom_role_id,assigned_by) values ($1,$2,$3)`,
 		[planner.employeeId, roleId, fixture.ownerUserId],
 	);
+	expect(
+		(
+			await policies.switchDrivingLicenceControlAction({
+				enabled: true,
+				setup: {
+					intervalMonths: 1,
+					timezone: "Europe/Berlin",
+					retentionMonths: 36,
+					retentionJustification: "Organization driving evidence retention",
+				},
+			})
+		).success,
+	).toBe(true);
 });
 afterEach(async () => fixture?.close());
+
+async function switchControl(enabled: boolean) {
+	const previous = session.userId;
+	session.userId = fixture.ownerUserId;
+	expect((await policies.switchDrivingLicenceControlAction({ enabled })).success).toBe(true);
+	session.userId = previous;
+}
+
+it("refuses targeted status reads and the employee search while driving licence control is off", async () => {
+	await switchControl(false);
+	session.userId = planner.userId;
+	expect(
+		await operational.getDrivingAuthorizationStatusAction({ employeeId: fixture.employeeId }),
+	).toMatchObject({ success: false });
+	expect(await operational.getOperationalDrivingEmployeesAction()).toMatchObject({
+		success: false,
+	});
+	const { GET: status } = await import("@/app/api/driving-licence/status/route");
+	const response = await status(
+		new Request(
+			`http://localhost/api/driving-licence/status?organizationId=${fixture.organizationId}&employeeId=${fixture.employeeId}`,
+		),
+	);
+	expect(response.status).toBe(404);
+	await switchControl(true);
+	expect(
+		await operational.getDrivingAuthorizationStatusAction({ employeeId: fixture.employeeId }),
+	).toMatchObject({ success: true });
+});
+
+it("shows a member their own status only as an intended driver or with own retained records", async () => {
+	const { userId } = await fixture.pool
+		.query<{ userId: string }>(`select user_id "userId" from employee where id=$1`, [
+			fixture.employeeId,
+		])
+		.then((result) => result.rows[0]);
+	const own = () =>
+		operational.getDrivingAuthorizationStatusAction({ employeeId: fixture.employeeId });
+	session.userId = userId;
+	// Not an intended driver, no records: nothing, also when asking by their own id.
+	expect(await own()).toEqual({ success: true, data: null });
+	expect(await operational.getDrivingAuthorizationStatusAction()).toEqual({
+		success: true,
+		data: null,
+	});
+
+	await completeOriginal();
+	session.userId = userId;
+	expect(await own()).toMatchObject({ success: true, data: { status: "active" } });
+
+	// A former intended driver keeps reading their own retained status, but gets no advisory.
+	session.userId = fixture.ownerUserId;
+	expect(
+		(
+			await saveConfirmedIntendedDriverAssignment({
+				target: { type: "employee", employeeId: fixture.employeeId },
+				value: "not_required",
+			})
+		).success,
+	).toBe(true);
+	session.userId = userId;
+	expect(await own()).toMatchObject({ success: true, data: { status: "not_enrolled" } });
+	expect(await operational.getDrivingAuthorizationStatusAction()).toEqual({
+		success: true,
+		data: null,
+	});
+
+	await switchControl(false);
+	session.userId = userId;
+	expect(await own()).toEqual({ success: true, data: null });
+});
 
 it("lets explicitly authorized planners read absent authorization without gaining inspection access", async () => {
 	session.userId = planner.userId;
@@ -128,20 +213,9 @@ async function completeOriginal() {
 	session.userId = fixture.ownerUserId;
 	expect(
 		(
-			await policies.saveDrivingLicencePolicyAction({
-				enabled: true,
-				intervalMonths: 1,
-				timezone: "Europe/Berlin",
-				reminderLeadDays: [30, 7],
-				retentionMonths: 36,
-				retentionJustification: "Organization driving evidence retention",
-			})
-		).success,
-	).toBe(true);
-	expect(
-		(
-			await policies.enrollDrivingLicenceEmployeeAction({
-				employeeId: fixture.employeeId,
+			await saveConfirmedIntendedDriverAssignment({
+				target: { type: "employee", employeeId: fixture.employeeId },
+				value: "required",
 			})
 		).success,
 	).toBe(true);

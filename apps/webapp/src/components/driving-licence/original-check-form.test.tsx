@@ -6,6 +6,7 @@ import {
 	render,
 	screen,
 	waitFor,
+	within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, expect, it, vi } from "vitest";
@@ -23,6 +24,7 @@ vi.mock("@tolgee/react", () => ({
 				String(values[key] ?? key),
 			),
 	}),
+	useTolgee: () => ({ getLanguage: () => "en" }),
 }));
 vi.mock("@/lib/auth-client", () => ({
 	useSession: () => ({
@@ -102,7 +104,11 @@ vi.mock("@/lib/organization/driving-licence/check-actions", () => ({
 		return { success: true, data: { checkId: "check" } };
 	},
 }));
-const { DrivingLicenceVerifierWorklist } = await import("./check-worklist");
+vi.mock("@/lib/organization/driving-licence/impediment-actions", () => ({
+	getDrivingImpedimentStateAction: vi.fn(),
+	reinstateDrivingAuthorizationAction: vi.fn(),
+}));
+const { DrivingLicenceCheckPanel } = await import("./check-panel");
 afterEach(() => {
 	cleanup();
 	remote.completed = false;
@@ -115,29 +121,45 @@ it("lets a scoped verifier record explicit original/employee attestations and th
 	});
 	render(
 		<QueryClientProvider client={client}>
-			<DrivingLicenceVerifierWorklist />
+			<DrivingLicenceCheckPanel employeeId="employee" name="Anna Driver" canVerify />
 		</QueryClientProvider>,
 	);
-	await user.click(
-		await screen.findByRole("button", { name: "Check Anna Driver" }),
-	);
+	await screen.findByRole("heading", { name: "Inspect Anna Driver's original licence" });
 	fireEvent.change(screen.getByLabelText("Document issue date"), {
 		target: { value: "2020-01-01" },
 	});
 	fireEvent.change(screen.getByLabelText("Document expiry date"), {
 		target: { value: "2035-01-01" },
 	});
-	await user.click(screen.getByLabelText("B", { exact: true }));
+	// Inspected classes, the declaration and the confirmations are design-system
+	// checkboxes (#1429), not native inputs.
+	const classB = screen.getByRole("checkbox", { name: "B" });
+	expect(classB.tagName).not.toBe("INPUT");
+	await user.click(classB);
+	await user.click(screen.getByRole("combobox", { name: "Result" }));
+	await user.click(await screen.findByRole("option", { name: "Inconclusive" }));
 	await user.click(
-		screen.getByLabelText(/I personally inspected the original/),
+		screen.getByRole("combobox", {
+			name: "Scope of an unsuccessful or inconclusive check",
+		}),
 	);
 	await user.click(
-		screen.getByLabelText(/I confirmed that the original document belongs/),
+		await screen.findByRole("option", {
+			name: "Every authorization based on the document",
+		}),
 	);
-	await user.click(
-		screen.getByLabelText(/The employee personally made the declaration/),
-	);
-	await user.click(screen.getByLabelText(/I confirm that the recorded facts/));
+	for (const statement of [
+		/I personally inspected the original/,
+		/I confirmed that the original document belongs/,
+		/The employee personally made the declaration/,
+		/I confirm that the recorded facts/,
+	]) {
+		const confirmation = screen.getByRole("checkbox", { name: statement });
+		expect(confirmation.tagName).not.toBe("INPUT");
+		expect(confirmation.getAttribute("aria-checked")).toBe("false");
+		await user.click(confirmation);
+		expect(confirmation.getAttribute("aria-checked")).toBe("true");
+	}
 	await user.click(
 		screen.getByRole("button", { name: "Record original check" }),
 	);
@@ -149,10 +171,11 @@ it("lets a scoped verifier record explicit original/employee attestations and th
 				identityConfirmed: true,
 				employeeDeclaration: true,
 				verifierConfirmed: true,
+				failureScope: "document",
 				classes: [
 					{
 						code: "B",
-						result: "successful",
+						result: "inconclusive",
 						expiryDate: null,
 						restrictions: "",
 					},
@@ -163,9 +186,8 @@ it("lets a scoped verifier record explicit original/employee attestations and th
 	expect(
 		await screen.findByText("Original check recorded by Vera Verifier"),
 	).toBeTruthy();
-	expect(
-		screen.getByText("Valid through 2026-11-16 (Europe/Berlin)"),
-	).toBeTruthy();
+	const status = screen.getByRole("region", { name: "Driving authorization active" });
+	expect(within(status).getByText("Nov 16, 2026 (Europe/Berlin)")).toBeTruthy();
 	expect(screen.queryByLabelText(/licence number/i)).toBeNull();
 	expect(document.querySelector('input[type="file"]')).toBeNull();
 	client.clear();

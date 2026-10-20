@@ -13,7 +13,6 @@ import {
 	drivingLicenceSubject,
 } from "@/db/schema/driving-licence-checks";
 import { drivingImpedimentReport } from "@/db/schema/driving-licence-impediments";
-import { drivingLicenceParticipant } from "@/db/schema/driving-licence-policy";
 import { drivingLicenceVerifierGrant } from "@/db/schema/driving-licence-verifiers";
 import {
 	dateFromInstant,
@@ -32,6 +31,7 @@ import {
 	materializeExpiredDrivingAuthorizations,
 } from "./checks";
 import type { DrivingLicenceActor } from "./context";
+import { isDrivingLicenceIntendedDriver } from "./intended-drivers";
 import type { DrivingLicenceDatabase } from "./verifiers";
 
 export async function reportDrivingImpediment(
@@ -55,17 +55,12 @@ export async function reportDrivingImpediment(
 			employeeId,
 			now,
 		);
-		const [participant] = await tx
-			.select()
-			.from(drivingLicenceParticipant)
-			.where(
-				and(
-					eq(drivingLicenceParticipant.organizationId, actor.organizationId),
-					eq(drivingLicenceParticipant.employeeId, employeeId),
-				),
-			);
+		const intendedDriver = await isDrivingLicenceIntendedDriver(tx, {
+			organizationId: actor.organizationId,
+			employeeId,
+		});
 		if (
-			!participant ||
+			!intendedDriver ||
 			!employment?.hasAccess ||
 			employment.userId !== actor.userId
 		)
@@ -291,16 +286,13 @@ export async function reinstateDrivingAuthorization(
 			now,
 		);
 		if (!employment?.hasAccess) throw new Error("unavailable");
-		const [participant] = await tx
-			.select()
-			.from(drivingLicenceParticipant)
-			.where(
-				and(
-					eq(drivingLicenceParticipant.organizationId, actor.organizationId),
-					eq(drivingLicenceParticipant.employeeId, input.employeeId),
-				),
-			);
-		if (!participant) throw new Error("unavailable");
+		if (
+			!(await isDrivingLicenceIntendedDriver(tx, {
+				organizationId: actor.organizationId,
+				employeeId: input.employeeId,
+			}))
+		)
+			throw new Error("unavailable");
 		await materializeExpiredDrivingAuthorizations(
 			tx,
 			actor.organizationId,

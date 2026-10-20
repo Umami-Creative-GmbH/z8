@@ -5,6 +5,10 @@ import {
 	type LifecycleDatabaseFixture,
 	type SeededEmployee,
 } from "@/lib/employee-lifecycle/testing/database.test.fixture";
+import {
+	activateDrivingLicenceControl,
+	saveConfirmedIntendedDriverAssignment,
+} from "@/lib/organization/driving-licence/testing/control.test.fixture";
 
 const harness = vi.hoisted(() => ({
 	userId: "",
@@ -41,6 +45,9 @@ vi.mock("@/lib/datetime/temporal-core", async (original) => {
 const checks = await import("@/lib/organization/driving-licence/check-actions");
 const policy = await import(
 	"@/lib/organization/driving-licence/policy-actions"
+);
+const intendedDrivers = await import(
+	"@/lib/organization/driving-licence/intended-driver-actions"
 );
 const grants = await import(
 	"@/lib/organization/driving-licence/verifier-actions"
@@ -111,8 +118,7 @@ beforeEach(async () => {
 	).rows[0].user_id;
 	expect(
 		(
-			await policy.saveDrivingLicencePolicyAction({
-				enabled: true,
+			await activateDrivingLicenceControl({
 				intervalMonths: 1,
 				timezone: "Europe/Berlin",
 				reminderLeadDays: [30, 7],
@@ -124,8 +130,9 @@ beforeEach(async () => {
 	).toBe(true);
 	expect(
 		(
-			await policy.enrollDrivingLicenceEmployeeAction({
-				employeeId: fixture.employeeId,
+			await saveConfirmedIntendedDriverAssignment({
+				target: { type: "employee", employeeId: fixture.employeeId },
+				value: "required",
 			})
 		).success,
 	).toBe(true);
@@ -164,7 +171,7 @@ it("persists mandatory unread inbox reminders on the exact organization-zone lea
 		type: "driving_licence_reminder",
 		isRead: false,
 		readAt: null,
-		actionUrl: `/driving-licence?employeeId=${fixture.employeeId}`,
+		actionUrl: "/driving-licence",
 	});
 	expect(await inbox(verifier.userId)).toHaveLength(1);
 	expect(await inbox(fixture.ownerUserId)).toHaveLength(0);
@@ -179,6 +186,34 @@ it("persists mandatory unread inbox reminders on the exact organization-zone lea
 	).toBe(true);
 	await runDrivingLicenceRemindersJob();
 	expect(await inbox()).toHaveLength(1);
+});
+
+it("links the employee to their own licence and each verifier to the employee's check page, in the inbox and in email (#1429)", async () => {
+	expect(
+		(await checks.completeDrivingLicenceCheckAction(original("2026-02-10"))).success,
+	).toBe(true);
+	const checkPage = `/driving-licence/checks/${fixture.employeeId}`;
+	harness.now = "2026-02-05T10:00:00Z"; // Within seven days of the document's expiry.
+	await runDrivingLicenceRemindersJob();
+	expect((await inbox()).map((n) => n.actionUrl)).toEqual(["/driving-licence"]);
+	expect((await inbox(verifier.userId)).map((n) => n.actionUrl)).toEqual([checkPage]);
+	const mailTo = (userId: string) =>
+		harness.mail.mock.calls
+			.map(([message]) => message)
+			.find((message) => message.to === `${userId}@lifecycle.test`)?.html;
+	expect(mailTo(subjectUserId)).toContain('href="https://z8.test/driving-licence"');
+	expect(mailTo(verifier.userId)).toContain(`href="https://z8.test${checkPage}"`);
+
+	harness.now = "2026-02-10T23:00:00Z"; // The document has expired in Berlin.
+	await runDrivingLicenceRemindersJob();
+	const suspended = (userId: string) =>
+		inbox(userId).then((notices) =>
+			notices
+				.filter((n) => n.type === "driving_authorization_suspended")
+				.map((n) => n.actionUrl),
+		);
+	expect(await suspended(subjectUserId)).toEqual(["/driving-licence"]);
+	expect(await suspended(verifier.userId)).toEqual([checkPage]);
 });
 
 it("persists an uncertain email attempt before provider acceptance and never blindly retries an ambiguous outcome", async () => {
@@ -340,6 +375,17 @@ it("excludes foreign, expired, out-of-scope, inactive and kiosk recipients and n
 	});
 	harness.organizationId = foreignOrganizationId;
 	harness.userId = foreign.userId;
+	// Verifier grants change only while driving licence control is on (#1418).
+	expect(
+		(
+			await activateDrivingLicenceControl({
+				intervalMonths: 1,
+				timezone: "Europe/Berlin",
+				retentionMonths: 36,
+				retentionJustification: "Evidence retained for organization driving checks",
+			})
+		).success,
+	).toBe(true);
 	expect(
 		(
 			await grants.saveDrivingLicenceVerifierGrantAction({

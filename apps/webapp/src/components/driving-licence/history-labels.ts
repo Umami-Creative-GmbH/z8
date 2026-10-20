@@ -86,6 +86,10 @@ export function useDrivingHistoryLabels() {
 			"drivingLicence.history.employmentEnded",
 			"Employment ended",
 		),
+		no_longer_intended: t(
+			"drivingLicence.history.noLongerIntended",
+			"No longer an intended driver",
+		),
 	};
 	return { labels, fields, outcomes, reasons };
 }

@@ -23,15 +23,16 @@ export function TeamDetailPageClient({
 	const {
 		canManageMembers,
 		canManageSettings,
-		deleteTeamMutation,
 		dispatch,
+		drivingLicenceWarning,
 		form,
 		handleAddMember,
+		handleDeleteTeam,
+		handleRemoveMember,
 		isLoadingTeam,
 		loading,
 		loadAvailableEmployees,
 		managerOptions,
-		removeMemberMutation,
 		team,
 		uiState,
 	} = useTeamDetailPage(teamId);
@@ -118,7 +119,7 @@ export function TeamDetailPageClient({
 				}
 				onConfirm={() =>
 					uiState.selectedMemberToRemove &&
-					removeMemberMutation.mutate(uiState.selectedMemberToRemove)
+					void handleRemoveMember(uiState.selectedMemberToRemove)
 				}
 				loading={loading}
 			/>
@@ -128,9 +129,10 @@ export function TeamDetailPageClient({
 				onOpenChange={(open) =>
 					dispatch({ type: "setShowDeleteDialog", value: open })
 				}
-				onConfirm={() => deleteTeamMutation.mutate()}
+				onConfirm={() => void handleDeleteTeam()}
 				loading={loading}
 			/>
+			{drivingLicenceWarning}
 		</div>
 	);
 }

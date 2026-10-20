@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import type * as authSchema from "@/db/auth-schema";
 import type { BillableCurrency } from "@/lib/billable-time/currency";
+import type { DrivingLicenceFeatureState } from "@/lib/organization/driving-licence/policy";
 import { CreateOrganizationDialog } from "./create-organization-dialog";
 import { OrganizationDangerZoneCard } from "./organization-danger-zone-card";
 import { OrganizationDetailsCard } from "./organization-details-card";
@@ -21,6 +22,7 @@ interface OrganizationTabProps {
 	defaultNotificationLanguage: string;
 	canCreateOrganizations: boolean;
 	billableCurrency: BillableCurrency | null;
+	drivingLicence: DrivingLicenceFeatureState;
 }
 
 export function OrganizationTab({
@@ -31,6 +33,7 @@ export function OrganizationTab({
 	defaultNotificationLanguage,
 	canCreateOrganizations,
 	billableCurrency,
+	drivingLicence,
 }: OrganizationTabProps) {
 	const { t } = useTranslate();
 	const [createOrgDialogOpen, setCreateOrgDialogOpen] = useState(false);
@@ -68,6 +71,8 @@ export function OrganizationTab({
 				billableTimeEnabled={organization.billableTimeEnabled ?? false}
 				billableCurrency={billableCurrency}
 				personnelFilesEnabled={organization.personnelFilesEnabled ?? false}
+				drivingLicence={drivingLicence}
+				organizationTimezone={organization.timezone ?? "UTC"}
 				currentMemberRole={currentMemberRole}
 			/>
 

@@ -11,6 +11,25 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
+vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+// The period fields are the design-system DatePicker; a plain input stands in for its calendar.
+vi.mock("@/components/ui/date-picker", async () => {
+	const { createElement } = await import("react");
+	return {
+		DatePicker: (props: {
+			id?: string;
+			value?: string | null;
+			onChange: (value: string) => void;
+			onBlur?: () => void;
+		}) =>
+			createElement("input", {
+				id: props.id,
+				value: props.value ?? "",
+				onBlur: props.onBlur,
+				onChange: (event: { target: { value: string } }) => props.onChange(event.target.value),
+			}),
+	};
+});
 const remote = vi.hoisted(() => ({
 	available: true,
 	canSupplement: true,
@@ -107,6 +126,7 @@ vi.mock("@/lib/organization/driving-licence/history-actions", () => ({
 	},
 }));
 const { DrivingLicenceHistoryPanel } = await import("./history-panel");
+const { toast } = await import("sonner");
 afterEach(() => {
 	cleanup();
 	remote.available = true;
@@ -132,10 +152,10 @@ it("appends a correction beside unchanged original confirmation and authorizatio
 	await user.click(
 		await screen.findByRole("button", { name: /Supplement original check/ }),
 	);
-	await user.selectOptions(
-		screen.getByLabelText("Corrected field"),
-		"documentIssuedOn",
-	);
+	// Document issue date is the preselected corrected field (design-system Select).
+	expect(
+		screen.getByRole("combobox", { name: "Corrected field" }).textContent,
+	).toContain("Document issue date");
 	fireEvent.change(screen.getByLabelText("Corrected value"), {
 		target: { value: "2020-05-02" },
 	});
@@ -149,6 +169,7 @@ it("appends a correction beside unchanged original confirmation and authorizatio
 			}),
 		),
 	);
+	expect(toast.success).toHaveBeenCalledWith("Supplement saved");
 	expect(await screen.findByText("2020-05-02")).toBeTruthy();
 	expect(screen.getByText(/Document issued 2020-05-01/)).toBeTruthy();
 	expect(screen.getByText("Original check and confirmation")).toBeTruthy();
