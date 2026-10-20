@@ -4,6 +4,8 @@ import { z } from "zod";
 import { requireDrivingLicenceAdministrator } from "./context";
 import { INTENDED_DRIVER_REFUSALS } from "./intended-driver-rules";
 import {
+	previewDrivingLicenceIntendedDriverAssignment,
+	previewDrivingLicenceIntendedDriverRemoval,
 	removeDrivingLicenceIntendedDriverAssignment,
 	setDrivingLicenceIntendedDriverAssignment,
 } from "./intended-drivers";
@@ -38,6 +40,26 @@ export async function setDrivingLicenceIntendedDriverAssignmentAction(input: unk
 		revalidate();
 		return result;
 	});
+}
+
+/**
+ * Owners and admins: who would lose which class authorizations if this assignment were
+ * saved (#1425). Read-only; pass `previewToken` with the save.
+ */
+export async function previewDrivingLicenceIntendedDriverAssignmentAction(input: unknown) {
+	return action(async () =>
+		previewDrivingLicenceIntendedDriverAssignment(
+			await requireDrivingLicenceAdministrator(),
+			input,
+		),
+	);
+}
+
+/** Owners and admins: who would lose which class authorizations if this assignment were removed. */
+export async function previewDrivingLicenceIntendedDriverRemovalAction(input: unknown) {
+	return action(async () =>
+		previewDrivingLicenceIntendedDriverRemoval(await requireDrivingLicenceAdministrator(), input),
+	);
 }
 
 /** Owners and admins remove an assignment; the next broader one then applies. */

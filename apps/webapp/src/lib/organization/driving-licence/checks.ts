@@ -45,6 +45,7 @@ import {
 import {
 	type AuthorizationStatus,
 	EMPLOYEE_DRIVING_DECLARATION,
+	endedAsNoLongerIntended,
 	LICENCE_CLASSES,
 } from "./check-types";
 import type { DrivingLicenceActor } from "./context";
@@ -313,19 +314,22 @@ export async function readEffectiveDrivingAuthorization(
 	const authorizedClasses = classes
 		.filter((c) => c.status === "active")
 		.map((c) => c.code);
+	// Classes that ended when the employee stopped being an intended driver stay listed as
+	// history but don't count: once intended again they are not yet checked (#1425).
+	const current = classes.filter((_, index) => !endedAsNoLongerIntended(rows[index]));
 	const status: AuthorizationStatus = !intendedDriver
 		? "not_enrolled"
 		: !employment?.hasAccess
 			? "ended"
 			: reportApplies
 				? "suspended"
-				: !classes.length
+				: !current.length
 					? "not_yet_checked"
-					: authorizedClasses.length === classes.length
+					: authorizedClasses.length === current.length
 						? "active"
 						: authorizedClasses.length
 							? "partially_active"
-							: classes.every((c) => c.status === "ended")
+							: current.every((c) => c.status === "ended")
 								? "ended"
 								: "suspended";
 	return {
@@ -583,7 +587,7 @@ export async function completeDrivingLicenceCheck(
 				),
 			);
 		for (const inspected of input.classes) {
-			const [previous] = await tx
+			const [stored] = await tx
 				.select()
 				.from(drivingAuthorization)
 				.where(
@@ -592,6 +596,10 @@ export async function completeDrivingLicenceCheck(
 						eq(drivingAuthorization.classCode, inspected.code),
 					),
 				);
+			// A class that ended when the employee stopped being an intended driver is not
+			// carried on: the new check starts it afresh (#1425).
+			const previous =
+				stored && !endedAsNoLongerIntended(stored) ? stored : undefined;
 			const samePeriod = previous?.employmentPeriodId === employment.periodId;
 			const { routineValidThrough, validThrough, expires } =
 				drivingAuthorizationDeadline({

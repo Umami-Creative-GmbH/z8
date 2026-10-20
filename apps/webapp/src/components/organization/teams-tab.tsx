@@ -5,8 +5,12 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { deleteTeam } from "@/app/[locale]/(app)/settings/teams/actions";
+import {
+	deleteTeam,
+	previewTeamDeletionDrivingImpact,
+} from "@/app/[locale]/(app)/settings/teams/actions";
 import type { ScopedTeam } from "@/app/[locale]/(app)/settings/teams/team-scope";
+import { useDrivingLicenceTeamChangeWarning } from "@/components/driving-licence/ending-confirmation";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -288,6 +292,7 @@ export function TeamsTab({
 
 	// Selected team
 	const [selectedTeam, setSelectedTeam] = useState<ScopedTeam | null>(null);
+	const { confirmTeamChange, drivingLicenceWarning } = useDrivingLicenceTeamChangeWarning();
 
 	const activeTeamPatches =
 		teamPatches.baseTeams === initialTeams
@@ -467,9 +472,12 @@ export function TeamsTab({
 		setDeleteDialogOpen(true);
 	};
 
-	const handleDeleteConfirm = () => {
+	// Deleting a team can clear primary teams and end driving authorizations: warn first (#1425).
+	const handleDeleteConfirm = async () => {
 		if (!selectedTeam) return;
-		deleteMutation.mutate(selectedTeam.id);
+		const teamId = selectedTeam.id;
+		if (!(await confirmTeamChange(() => previewTeamDeletionDrivingImpact(teamId)))) return;
+		deleteMutation.mutate(teamId);
 	};
 
 	// Handle manage members
@@ -512,9 +520,10 @@ export function TeamsTab({
 				onDeleteOpenChange={setDeleteDialogOpen}
 				onCreated={handleTeamCreated}
 				onUpdated={handleTeamUpdated}
-				onDeleteConfirm={handleDeleteConfirm}
+				onDeleteConfirm={() => void handleDeleteConfirm()}
 				t={t}
 			/>
+			{drivingLicenceWarning}
 		</div>
 	);
 }

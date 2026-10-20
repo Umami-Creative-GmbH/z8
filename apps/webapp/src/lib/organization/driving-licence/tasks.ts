@@ -350,7 +350,8 @@ export async function listDrivingLicenceTasks(
 				kind: "personal_reminder",
 				directEmployeeNotification: "unavailable",
 				occasion: {
-					kind: occasion?.kind ?? "initial",
+					// Collected occasions are never end notices (#1425); those are no tasks.
+					kind: occasion && occasion.kind !== "ended" ? occasion.kind : "initial",
 					classCode: occasion?.classCode ?? null,
 					validThrough: occasion?.validThrough ?? null,
 				},

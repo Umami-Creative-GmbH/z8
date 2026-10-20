@@ -31,6 +31,26 @@ export type IntendedDriverAdminData = {
 	employees: { id: string; name: string }[];
 };
 
+/**
+ * One employee who stops being an intended driver through a change, with the class
+ * authorizations that change ends (#1425, Organization ADR 0005).
+ */
+export type DrivingLicenceEnding = {
+	employeeId: string;
+	name: string;
+	/** The current class authorizations that end, by class code. */
+	classCodes: string[];
+};
+
+/**
+ * What an assignment save would end, read under the organization lock. Pass `previewToken`
+ * back with the save: when the ending changed in between, the save is refused.
+ */
+export type DrivingLicenceEndingPreview = {
+	employees: DrivingLicenceEnding[];
+	previewToken: string;
+};
+
 /** Refusals the intended-driver actions return by code; anything else is generic. */
 export const INTENDED_DRIVER_REFUSALS = [
 	"forbidden",
@@ -39,5 +59,6 @@ export const INTENDED_DRIVER_REFUSALS = [
 	"employee_not_found",
 	"assignment_not_found",
 	"invalid_assignment",
+	"stale_preview",
 ] as const;
 export type IntendedDriverRefusal = (typeof INTENDED_DRIVER_REFUSALS)[number];

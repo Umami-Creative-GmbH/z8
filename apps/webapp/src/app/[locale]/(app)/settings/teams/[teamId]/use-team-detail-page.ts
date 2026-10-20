@@ -4,6 +4,7 @@ import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { toast } from "sonner";
+import { useDrivingLicenceTeamChangeWarning } from "@/components/driving-licence/ending-confirmation";
 import { queryKeys } from "@/lib/query";
 import { useRouter } from "@/navigation";
 import { listEmployeesForSelect } from "../../employees/actions";
@@ -11,6 +12,8 @@ import {
 	addTeamMember,
 	deleteTeam,
 	getTeam,
+	previewTeamDeletionDrivingImpact,
+	previewTeamMemberChangeDrivingImpact,
 	removeTeamMember,
 	updateTeam,
 } from "../actions";
@@ -30,6 +33,7 @@ export function useTeamDetailPage(teamId: string) {
 	const { push } = useRouter();
 	const queryClient = useQueryClient();
 	const [uiState, dispatch] = useTeamPageUiState();
+	const { confirmTeamChange, drivingLicenceWarning } = useDrivingLicenceTeamChangeWarning();
 
 	const form = useForm({
 		defaultValues: {
@@ -246,7 +250,7 @@ export function useTeamDetailPage(teamId: string) {
 		onSettled: () => dispatch({ type: "setShowDeleteDialog", value: false }),
 	});
 
-	function handleAddMember() {
+	async function handleAddMember() {
 		if (!uiState.selectedEmployee) {
 			toast.error(
 				t(
@@ -257,7 +261,30 @@ export function useTeamDetailPage(teamId: string) {
 			return;
 		}
 
-		addMemberMutation.mutate(uiState.selectedEmployee);
+		const employeeId = uiState.selectedEmployee;
+		if (
+			!(await confirmTeamChange(() =>
+				previewTeamMemberChangeDrivingImpact(teamId, employeeId, "add"),
+			))
+		)
+			return;
+		addMemberMutation.mutate(employeeId);
+	}
+
+	// A primary-team change can end driving authorizations: warn first (#1425).
+	async function handleRemoveMember(employeeId: string) {
+		if (
+			!(await confirmTeamChange(() =>
+				previewTeamMemberChangeDrivingImpact(teamId, employeeId, "remove"),
+			))
+		)
+			return;
+		removeMemberMutation.mutate(employeeId);
+	}
+
+	async function handleDeleteTeam() {
+		if (!(await confirmTeamChange(() => previewTeamDeletionDrivingImpact(teamId)))) return;
+		deleteTeamMutation.mutate();
 	}
 
 	const loading =
@@ -271,8 +298,11 @@ export function useTeamDetailPage(teamId: string) {
 		canManageSettings,
 		deleteTeamMutation,
 		dispatch,
+		drivingLicenceWarning,
 		form,
 		handleAddMember,
+		handleDeleteTeam,
+		handleRemoveMember,
 		isLoadingTeam,
 		loading,
 		loadAvailableEmployees,

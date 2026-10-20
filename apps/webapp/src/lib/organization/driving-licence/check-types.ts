@@ -38,6 +38,15 @@ export interface CompleteDrivingLicenceCheckInput {
 	classes: DrivingCheckClass[];
 	failureScope?: "classes" | "document" | "person";
 }
+/**
+ * Reason of a class authorization ended because the employee is no longer an intended driver
+ * (#1425). Such a class is history: it never counts towards the status, and a later check
+ * starts afresh instead of carrying it on.
+ */
+export const NO_LONGER_INTENDED = "no_longer_intended";
+export function endedAsNoLongerIntended(row: { state: string; suspensionReason: string | null }) {
+	return row.state === "ended" && row.suspensionReason === NO_LONGER_INTENDED;
+}
 export type AuthorizationStatus =
 	| "not_enrolled"
 	| "not_yet_checked"

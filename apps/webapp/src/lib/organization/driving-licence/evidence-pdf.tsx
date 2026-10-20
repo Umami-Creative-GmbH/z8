@@ -65,6 +65,7 @@ const evidenceLabels: Readonly<Record<string, string>> = {
 	person_impediment: "Person-wide impediment",
 	document_impediment: "Document-wide impediment",
 	employment_ended: "Employment ended",
+	no_longer_intended: "No longer an intended driver",
 	new_original_and_impediment_resolved:
 		"New original check and impediment explicitly resolved",
 };

@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ScopedFeatureAssignments } from "@/components/settings/scoped-feature-assignments";
 import {
+	previewDrivingLicenceIntendedDriverAssignmentAction,
+	previewDrivingLicenceIntendedDriverRemovalAction,
 	removeDrivingLicenceIntendedDriverAssignmentAction,
 	setDrivingLicenceIntendedDriverAssignmentAction,
 } from "@/lib/organization/driving-licence/intended-driver-actions";
@@ -12,6 +14,7 @@ import type {
 	IntendedDriverAdminData,
 	IntendedDriverRequirement,
 } from "@/lib/organization/driving-licence/intended-driver-rules";
+import { useDrivingLicenceEndingConfirmation } from "./ending-confirmation";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
 
@@ -34,6 +37,11 @@ function refusalMessage(t: Translate, error: string) {
 				"drivingLicence.intendedDrivers.error.employeeNotFound",
 				"That employee is no longer a current employee of this organization.",
 			);
+		case "stale_preview":
+			return t(
+				"drivingLicence.intendedDrivers.error.stalePreview",
+				"Who this change affects has changed in the meantime. Review it and save again.",
+			);
 		case "assignment_not_found":
 			return t(
 				"drivingLicence.intendedDrivers.error.assignmentNotFound",
@@ -55,6 +63,8 @@ export function IntendedDriverSettings({ data }: { data: IntendedDriverAdminData
 	const { t } = useTranslate();
 	const router = useRouter();
 	const queryClient = useQueryClient();
+	// #1425: a save that ends driving authorizations asks first (preview under the org lock).
+	const { confirm, dialog: endingConfirmation } = useDrivingLicenceEndingConfirmation("assignment");
 	const applied = (message: string) => {
 		toast.success(message);
 		void queryClient.invalidateQueries({ queryKey: ["driving-authorization-status"] });
@@ -88,7 +98,19 @@ export function IntendedDriverSettings({ data }: { data: IntendedDriverAdminData
 					"Intended drivers get original licence checks, reminders and a driving status. Nobody is an intended driver until you assign them. The most specific assignment wins: an employee's own over their primary team's, and a team's over the whole organization's. Other team memberships don't count. Not required excludes a team or employee from a broader assignment.",
 				)}
 				onSave={async (target, value) => {
-					const result = await setDrivingLicenceIntendedDriverAssignmentAction({ target, value });
+					const preview = await previewDrivingLicenceIntendedDriverAssignmentAction({
+						target,
+						value,
+					});
+					if (!preview.success) {
+						toast.error(refusalMessage(t, preview.error));
+						return false;
+					}
+					const ending = preview.data.employees.length > 0;
+					if (!(await confirm(preview.data.employees))) return false;
+					const result = await setDrivingLicenceIntendedDriverAssignmentAction(
+						ending ? { target, value, previewToken: preview.data.previewToken } : { target, value },
+					);
 					if (!result.success) {
 						toast.error(refusalMessage(t, result.error));
 						return false;
@@ -96,7 +118,16 @@ export function IntendedDriverSettings({ data }: { data: IntendedDriverAdminData
 					return applied(t("drivingLicence.intendedDrivers.saved", "Intended drivers saved"));
 				}}
 				onRemove={async (assignmentId) => {
-					const result = await removeDrivingLicenceIntendedDriverAssignmentAction({ assignmentId });
+					const preview = await previewDrivingLicenceIntendedDriverRemovalAction({ assignmentId });
+					if (!preview.success) {
+						toast.error(refusalMessage(t, preview.error));
+						return false;
+					}
+					const ending = preview.data.employees.length > 0;
+					if (!(await confirm(preview.data.employees))) return false;
+					const result = await removeDrivingLicenceIntendedDriverAssignmentAction(
+						ending ? { assignmentId, previewToken: preview.data.previewToken } : { assignmentId },
+					);
 					if (!result.success) {
 						toast.error(refusalMessage(t, result.error));
 						return false;
@@ -106,6 +137,7 @@ export function IntendedDriverSettings({ data }: { data: IntendedDriverAdminData
 					);
 				}}
 			/>
+			{endingConfirmation}
 		</section>
 	);
 }

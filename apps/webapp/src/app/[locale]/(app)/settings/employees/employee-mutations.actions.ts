@@ -25,6 +25,7 @@ import {
 	saveFormCustomFieldValues,
 } from "@/lib/organization/custom-fields/form-values";
 import type { CustomFieldValuesInput } from "@/lib/organization/custom-fields/value-rules";
+import { runDrivingLicenceIntendedDriverWrite } from "@/lib/organization/driving-licence/no-longer-intended";
 import { personnelNumberKey } from "@/lib/organization/personnel-number";
 import {
 	assertPersonnelNumberFree,
@@ -331,15 +332,29 @@ export async function updateEmployeeAction(
 										personnelNumber,
 									});
 								}
-								await tx
-									.update(employee)
-									.set(employeeUpdateData)
-									.where(
-										and(
-											eq(employee.id, employeeId),
-											eq(employee.organizationId, targetEmployee.organizationId),
-										),
+								const writeEmployee = async () => {
+									await tx
+										.update(employee)
+										.set(employeeUpdateData)
+										.where(
+											and(
+												eq(employee.id, employeeId),
+												eq(employee.organizationId, targetEmployee.organizationId),
+											),
+										);
+								};
+								// A new primary team can end the employee's driving authorization (#1425).
+								if (Object.hasOwn(employeeUpdateData, "teamId"))
+									await runDrivingLicenceIntendedDriverWrite(
+										tx,
+										{
+											organizationId: targetEmployee.organizationId,
+											employeeIds: [employeeId],
+											actorUserId: session.user.id,
+										},
+										writeEmployee,
 									);
+								else await writeEmployee();
 								await saveFormCustomFieldValues(tx, {
 									organizationId: targetEmployee.organizationId,
 									actorUserId: session.user.id,

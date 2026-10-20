@@ -49,6 +49,17 @@ vi.mock("@/lib/authorization/authorization-mutation", () => ({
 	) => mutation(database),
 }));
 
+// Ending driving authorizations on a primary-team change (#1425) is covered by the
+// driving licence PostgreSQL suite; here the team write runs on its own.
+vi.mock("@/lib/organization/driving-licence/no-longer-intended", () => ({
+	runDrivingLicenceIntendedDriverWrite: (
+		tx: unknown,
+		_scope: unknown,
+		write: (tx: unknown) => Promise<unknown>,
+	) => write(tx),
+	previewDrivingLicenceIntendedDriverWrite: async () => [],
+}));
+
 vi.mock("next/cache", () => ({
 	revalidateTag: mockState.revalidateTag,
 }));
