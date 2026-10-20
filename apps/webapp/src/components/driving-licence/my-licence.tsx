@@ -26,8 +26,11 @@ import { ReportDrivingImpediment } from "./report-impediment";
 /** Each class with its state, valid-through date (in its saved zone) and restrictions. */
 export function DrivingLicenceStatusSummary({
 	record,
+	audience = "employee",
 }: {
 	record: Pick<DrivingLicenceEmployeeRecord, "status" | "classes">;
+	/** The verifier's check page (#1429) words the empty state for someone else's record. */
+	audience?: "employee" | "verifier";
 }) {
 	const { t } = useTranslate();
 	const titleId = useId();
@@ -80,10 +83,12 @@ export function DrivingLicenceStatusSummary({
 					</Table>
 				) : (
 					<p className="text-sm text-muted-foreground">
-						{t(
-							"drivingLicence.summary.empty",
-							"No class is authorized yet. A verifier records your first original check.",
-						)}
+						{audience === "verifier"
+							? t("drivingLicence.summary.emptyForVerifier", "No class is authorized yet.")
+							: t(
+									"drivingLicence.summary.empty",
+									"No class is authorized yet. A verifier records your first original check.",
+								)}
 					</p>
 				)}
 				{explained.length ? (
