@@ -871,16 +871,15 @@
         "all": "Svi zaposlenici u ovoj organizaciji",
         "allDescription": "Odgovornost prati trenutno članstvo u organizaciji. Verifikatori nikada ne mogu verificirati sami sebe.",
         "attribution": "Dodijelio/la {actor} u {time}",
-        "description": "Dodijelite odgovornost odvojeno od upisa vozača, linijskog upravljanja i pristupa osobnim dosjeima. Upravljanje ovim dodjelama ne dopušta čitanje evidencije pregleda. Samostalna provjera uvijek je zabranjena.",
         "editor": "Doseg provjeritelja",
         "empty": "Nisu dodijeljene odgovornosti provjeritelja",
-        "expiry": "Istječe u {time}",
         "history": "Povijest odgovornosti",
         "historyEntry": "Dodijelio {grantor} u {granted}; opozvao {revoker} u {revoked}",
         "loadFailed": "Nije bilo moguće učitati odgovornosti provjeritelja",
         "myAll": "Odgovorni ste za provjere u cijeloj ovoj organizaciji. Ne možete provjeriti sami sebe.",
         "mySelected": "Odgovorni ste za {teams} odabranih timova i {employees} imenovanih zaposlenika. Trenutačno članstvo u timu određuje pristup. Ne možete provjeriti sami sebe.",
         "myTitle": "Vaša odgovornost provjeritelja",
+        "myUntil": "Vaša odgovornost završava nakon {date} ({timezone}).",
         "none": "Trenutačno nemate odgovornost provjeritelja vozačkih dozvola.",
         "noTeams": "Nema dostupnih timova",
         "person": "Provjeritelj",
@@ -895,7 +894,14 @@
         "selectEmployees": "Odaberite zaposlenike",
         "specific": "Odabrani timovi i zaposlenici",
         "specificDescription": "Uključuje imenovane zaposlenike i trenutačne članove odabranih timova. Promjene u timu stupaju na snagu odmah.",
-        "title": "Provjeritelji vozačkih dozvola"
+        "summary": "Odgovornost provjeravatelja odvojena je od dodjela predviđenih vozača, linijskog upravljanja i pristupa kadrovskim dosjeima. Upravljanje ovim ovlaštenjima ne dopušta pregledavanje zapisa o provjeri. Samostalna provjera je uvijek zabranjena.",
+        "title": "Provjeritelji vozačkih dozvola",
+        "until": "Do {date} (kraj dana, {timezone})",
+        "untilEnded": "Završilo nakon {date} ({timezone}). Uredite kako biste produžili ili opozvali.",
+        "untilHelp": "Za privremenu zamjenu. Odgovornost završava nakon ovog cijelog dana u vremenskoj zoni {timezone}. Ostavite prazno ako nema završetka.",
+        "untilInPast": "Datum završetka ne može biti u prošlosti.",
+        "untilLabel": "Do (neobavezno)",
+        "untilPlaceholder": "Bez datuma završetka"
       }
     },
     "emailTemplates": {

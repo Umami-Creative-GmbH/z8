@@ -871,16 +871,15 @@
         "all": "Të gjithë punonjësit në këtë organizatë",
         "allDescription": "Përgjegjësia ndjek anëtarësimin aktual në organizatë. Verifikuesit nuk mund të verifikojnë kurrë veten e tyre.",
         "attribution": "Dhënë nga {actor} më {time}",
-        "description": "Jepni përgjegjësi veçmas nga regjistrimi i shoferit, menaxhimi i linjës dhe aksesi në dosjen e personelit. Menaxhimi i këtyre autorizimeve nuk lejon leximin e të dhënave të inspektimit. Vetë-verifikimi është gjithmonë i ndaluar.",
         "editor": "Fusha e verifikuesit",
         "empty": "Nuk janë caktuar përgjegjësi verifikuesi",
-        "expiry": "Skadon më {time}",
         "history": "Historiku i përgjegjësive",
         "historyEntry": "Dhënë nga {grantor} më {granted}; revokuar nga {revoker} më {revoked}",
         "loadFailed": "Nuk mund të ngarkoheshin përgjegjësitë e verifikuesit",
         "myAll": "Ju jeni përgjegjës për kontrollet në të gjithë këtë organizatë. Nuk mund të verifikoni veten.",
         "mySelected": "Ju jeni përgjegjës për {teams} ekipe të zgjedhura dhe {employees} punonjës të emërtuar. Anëtarësimi aktual në ekip përcakton aksesin. Nuk mund të verifikoni veten.",
         "myTitle": "Përgjegjësia juaj si verifikues",
+        "myUntil": "Përgjegjësia juaj përfundon pas datës {date} ({timezone}).",
         "none": "Aktualisht nuk keni asnjë përgjegjësi verifikuesi të patentë shoferit.",
         "noTeams": "Nuk ka ekipe të disponueshme",
         "person": "Verifikuesi",
@@ -895,7 +894,14 @@
         "selectEmployees": "Zgjidhni punonjësit",
         "specific": "Ekipet dhe punonjësit e përzgjedhur",
         "specificDescription": "Përfshin punonjësit e emërtuar dhe anëtarët aktualë të ekipeve të përzgjedhura. Ndryshimet në ekip hyjnë në fuqi menjëherë.",
-        "title": "Verifikuesit e patentë shoferit"
+        "summary": "Përgjegjësia e verifikuesit është e ndarë nga caktimet e shoferëve të planifikuar, menaxhimi i linjës dhe qasja në dosjet e personelit. Menaxhimi i këtyre të drejtave nuk lejon leximin e regjistrimeve të inspektimit. Vetëverifikimi është gjithmonë i ndaluar.",
+        "title": "Verifikuesit e patentë shoferit",
+        "until": "Deri më {date} (fundi i ditës, {timezone})",
+        "untilEnded": "Ka përfunduar pas datës {date} ({timezone}). Redaktojeni për ta zgjatur ose revokuar.",
+        "untilHelp": "Për mbulim të përkohshëm. Përgjegjësia përfundon pas kësaj dite të plotë në {timezone}. Lëreni bosh nëse nuk ka përfundim.",
+        "untilInPast": "Data e përfundimit nuk mund të jetë në të kaluarën.",
+        "untilLabel": "Deri më (opsionale)",
+        "untilPlaceholder": "Pa datë përfundimi"
       }
     },
     "emailTemplates": {

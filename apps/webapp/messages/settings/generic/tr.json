@@ -871,16 +871,15 @@
         "all": "Bu kuruluştaki tüm çalışanlar",
         "allDescription": "Sorumluluk mevcut kuruluş üyeliğini takip eder. Doğrulayıcılar hiçbir zaman kendilerini doğrulayamaz.",
         "attribution": "{actor} tarafından {time} tarihinde verildi",
-        "description": "Sorumluluğu; sürücü kaydı, doğrudan yöneticilik ve personel dosyası erişiminden ayrı olarak verin. Bu izinleri yönetmek denetim kayıtlarını okuma yetkisi vermez. Kendi kendini doğrulama her zaman yasaktır.",
         "editor": "Doğrulayıcı kapsamı",
         "empty": "Atanmış doğrulayıcı sorumluluğu yok",
-        "expiry": "{time} itibarıyla sona erer",
         "history": "Sorumluluk geçmişi",
         "historyEntry": "{grantor} tarafından {granted} tarihinde verildi; {revoker} tarafından {revoked} tarihinde iptal edildi",
         "loadFailed": "Doğrulayıcı sorumlulukları yüklenemedi",
         "myAll": "Bu kuruluş genelindeki kontrollerden siz sorumlusunuz. Kendi kendinizi doğrulayamazsınız.",
         "mySelected": "Seçilen {teams} ekipten ve adı belirtilen {employees} çalışandan sorumlusunuz. Erişimi mevcut ekip üyeliği belirler. Kendi kendinizi doğrulayamazsınız.",
         "myTitle": "Doğrulayıcı sorumluluğunuz",
+        "myUntil": "Sorumluluğunuz {date} ({timezone}) sonrasında sona erer.",
         "none": "Şu anda herhangi bir sürücü belgesi doğrulayıcı sorumluluğunuz yok.",
         "noTeams": "Kullanılabilir ekip yok",
         "person": "Doğrulayıcı",
@@ -895,7 +894,14 @@
         "selectEmployees": "Çalışanları seçin",
         "specific": "Seçilen ekipler ve çalışanlar",
         "specificDescription": "Adı belirtilen çalışanları ve seçilen ekiplerin mevcut üyelerini içerir. Ekip değişiklikleri derhal geçerli olur.",
-        "title": "Sürücü belgesi doğrulayıcıları"
+        "summary": "Doğrulayıcı sorumluluğu; öngörülen sürücü atamalarından, ilk amirlikten ve personel dosyası erişiminden ayrıdır. Bu yetkileri yönetmek inceleme kayıtlarını okuma hakkı tanımaz. Kendi kendini doğrulama her zaman yasaktır.",
+        "title": "Sürücü belgesi doğrulayıcıları",
+        "until": "{date} tarihine kadar (gün sonu, {timezone})",
+        "untilEnded": "{date} ({timezone}) sonrasında sona erdi. Uzatmak veya geri almak için düzenleyin.",
+        "untilHelp": "Geçici vekalet içindir. Sorumluluk, {timezone} saat diliminde bu tam günün ardından sona erer. Süresiz olması için boş bırakın.",
+        "untilInPast": "Bitiş tarihi geçmişte olamaz.",
+        "untilLabel": "Bitiş tarihi (isteğe bağlı)",
+        "untilPlaceholder": "Bitiş tarihi yok"
       }
     },
     "emailTemplates": {

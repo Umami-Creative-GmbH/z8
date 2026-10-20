@@ -871,16 +871,15 @@
         "all": "Tutti i dipendenti di questa organizzazione",
         "allDescription": "La responsabilità segue l'attuale appartenenza all'organizzazione. I verificatori non possono mai verificare se stessi.",
         "attribution": "Concessa da {actor} alle {time}",
-        "description": "Assegna la responsabilità separatamente dalla registrazione del conducente, dalla gestione gerarchica e dall'accesso al fascicolo del personale. La gestione di queste assegnazioni non consente la lettura dei registri di ispezione. L'auto-verifica è sempre vietata.",
         "editor": "Ambito del verificatore",
         "empty": "Nessuna responsabilità di verifica assegnata",
-        "expiry": "Scade alle {time}",
         "history": "Cronologia delle responsabilità",
         "historyEntry": "Assegnata da {grantor} il {granted}; revocata da {revoker} il {revoked}",
         "loadFailed": "Impossibile caricare le responsabilità del verificatore",
         "myAll": "Sei responsabile dei controlli nell'intera organizzazione. Non puoi verificare te stesso.",
         "mySelected": "Sei responsabile di {teams} team selezionati e di {employees} dipendenti specificati. L'appartenenza attuale al team determina l'accesso. Non puoi verificare te stesso.",
         "myTitle": "La tua responsabilità di verificatore",
+        "myUntil": "La tua responsabilità termina dopo il {date} ({timezone}).",
         "none": "Al momento non hai alcuna responsabilità di verifica delle patenti di guida.",
         "noTeams": "Nessun team disponibile",
         "person": "Verificatore",
@@ -895,7 +894,14 @@
         "selectEmployees": "Seleziona dipendenti",
         "specific": "Team e dipendenti selezionati",
         "specificDescription": "Include i dipendenti specificati e i membri attuali dei team selezionati. Le modifiche ai team hanno effetto immediato.",
-        "title": "Verificatori delle patenti di guida"
+        "summary": "La responsabilità del verificatore è separata dalle assegnazioni come conducente designato, dalla gestione gerarchica e dall'accesso ai fascicoli del personale. La gestione di queste autorizzazioni non consente la lettura dei registri di ispezione. L'auto-verifica è sempre vietata.",
+        "title": "Verificatori delle patenti di guida",
+        "until": "Fino al {date} (fine giornata, {timezone})",
+        "untilEnded": "Terminata dopo il {date} ({timezone}). Modificala per estenderla o revocarla.",
+        "untilHelp": "Per coperture temporanee. La responsabilità termina dopo l'intera giornata in {timezone}. Lascia vuoto se non c'è una data di fine.",
+        "untilInPast": "La data di fine non può essere nel passato.",
+        "untilLabel": "Fino al (facoltativo)",
+        "untilPlaceholder": "Nessuna data di fine"
       }
     },
     "emailTemplates": {

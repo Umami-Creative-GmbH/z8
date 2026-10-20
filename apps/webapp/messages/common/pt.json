@@ -545,8 +545,6 @@
     "yes": "Sim"
   },
   "drivingLicence": {
-    "activate": "Ativar controlo da carta de condução",
-    "activationHelp": "A inscrição não concede autorização de condução. Um verificador autorizado deve primeiro verificar a carta de condução original.",
     "applyingInterval": "A aplicar…",
     "applyInterval": "Aplicar alteração de intervalo",
     "check": {
@@ -562,6 +560,7 @@
       "issueDate": "Data de emissão do documento",
       "original": "Inspecionei pessoalmente a carta de condução original na presença do funcionário.",
       "privacy": "Registe apenas as datas do documento, as categorias inspecionadas e as restrições de condução necessárias. Não introduza o número da carta, morada, explicações médicas ou antecedentes pessoais.",
+      "recorded": "Verificação original registrada",
       "restrictions": "Restrições de condução necessárias",
       "result": "Resultado",
       "saving": "A registar a verificação…",
@@ -573,14 +572,54 @@
       "title": "Inspecionar a carta original de {name}",
       "verifier": "Confirmo que os factos registados e os resultados individuais das categorias refletem a minha inspeção."
     },
+    "checkPage": {
+      "back": "Verificações",
+      "former": "Ex-funcionário",
+      "loadError": "Não foi possível carregar o registro da carteira de habilitação. Verifique sua responsabilidade de verificador atual.",
+      "loading": "Carregando o registro da carteira de habilitação…",
+      "notIntended": "{name} não é um motorista previsto. Uma verificação só é necessária para motoristas previstos.",
+      "title": "Verificação da carteira de habilitação de {name}"
+    },
+    "checks": {
+      "column": {
+        "action": "Ação",
+        "deadline": "Próximo prazo",
+        "name": "Nome",
+        "status": "Status",
+        "team": "Equipe"
+      },
+      "deadline": "{date} ({timezone})",
+      "dueNow": "Verificação pendente agora",
+      "empty": {
+        "description": "Os motoristas previstos sob sua responsabilidade de verificador aparecem aqui. Consulte um administrador se alguém estiver faltando.",
+        "title": "Ninguém para verificar ainda"
+      },
+      "filter": {
+        "all": "Todos os status",
+        "status": "Status"
+      },
+      "help": "Motoristas previstos cobertos pela sua responsabilidade de verificador atual. Você nunca aparece na sua própria lista.",
+      "loadError": "Não foi possível carregar a lista. Verifique sua responsabilidade de verificador atual.",
+      "loading": "Carregando motoristas previstos…",
+      "noMatches": "Nenhum motorista previsto corresponde à pesquisa ou ao filtro.",
+      "search": "Pesquisar por nome",
+      "status": {
+        "active": "Ativo",
+        "ended": "Encerrado",
+        "notIntended": "Não é um motorista previsto",
+        "notYetChecked": "Ainda não verificado",
+        "partiallyActive": "Parcialmente ativo",
+        "suspended": "Suspenso"
+      },
+      "title": "Motoristas previstos para verificar"
+    },
     "class": {
       "active": "Autorizado",
       "ended": "Terminado",
+      "noLongerIntended": "Encerrado porque o funcionário não é mais um motorista previsto. Para dirigir novamente, é necessária uma nova verificação.",
       "overdue": "Verificação de rotina em atraso. Trata-se de uma suspensão organizacional e não de uma declaração de que o direito legal de conduzir foi retirado.",
       "recheck": "É necessária uma nova verificação original e um restabelecimento explícito.",
-      "restrictions": "Restrições de condução: {restrictions}",
-      "suspended": "Suspenso",
-      "validThrough": "Válido até {date} ({timezone})"
+      "suspended": "Suspenso"
     },
     "declaration": {
       "text": "Confirmo que nenhuma proibição de conduzir, apreensão da carta ou outro impedimento conhecido impossibilita a condução pretendida e que cumpro as restrições de condução aplicáveis."
@@ -589,11 +628,18 @@
       "uncertain": "Os e-mails opcionais de lembrete para você têm um resultado de entrega incerto ({count}). Eles não serão reenviados automaticamente. Seus lembretes no aplicativo continuam disponíveis; a entrega do e-mail não confirma a leitura."
     },
     "earlierLimit": "Limite anterior de documento/categoria",
-    "enroll": "Cadastrar",
-    "enrollError": "Não foi possível cadastrar o funcionário. Ative a política primeiro e verifique seu acesso.",
-    "enrollmentHelp": "Cadastre funcionários designados para dirigir. Atribuições de veículos e uso anterior de veículos nunca geram autorização.",
-    "enrollmentTitle": "Motoristas designados",
-    "enrollName": "Cadastrar {name}",
+    "ending": {
+      "assignmentConfirm": "Salvar e encerrar autorizações",
+      "assignmentDescription": "Esses funcionários deixarão de ser motoristas previstos quando você salvar. Suas autorizações para dirigir serão encerradas imediatamente e seus registros de verificação iniciarão o período de retenção. Para dirigir novamente, será necessária uma nova verificação.",
+      "assignmentTitle": "Encerrar autorizações para dirigir?",
+      "listLabel": "Autorizações para dirigir que serão encerradas",
+      "teamChangeConfirm": "Continuar e encerrar autorizações",
+      "teamChangeDescription": "Esses funcionários deixarão de ser motoristas previstos devido à mudança da equipe principal. Suas autorizações para dirigir serão encerradas imediatamente e seus registros de verificação iniciarão o período de retenção. Para dirigir novamente, será necessária uma nova verificação.",
+      "teamChangeGeneric": "Esta alteração encerra as autorizações para dirigir de alguns funcionários.",
+      "teamChangePreviewFailed": "Não foi possível verificar se esta alteração encerra autorizações para dirigir. Tente novamente.",
+      "teamChangeStale": "As pessoas afetadas por esta alteração mudaram entretanto. Tente fazer a alteração novamente para revisá-la.",
+      "teamChangeTitle": "Esta alteração de equipe encerra autorizações para dirigir"
+    },
     "evidence": {
       "confirmation": "Confirmação do verificador registrada com a versão da política {version}; os prazos usam {timezone}.",
       "declarationConfirmed": "O funcionário fez a declaração pessoalmente; o verificador a atestou no momento do controle.",
@@ -640,6 +686,7 @@
       "loading": "Carregando histórico…",
       "minimalEvidence": "Registre apenas as evidências de condução necessárias. Não insira números de documentos, explicações médicas ou histórico pessoal.",
       "missingDetail": "Detalhe ausente",
+      "noLongerIntended": "Não é mais um motorista previsto",
       "none": "Nenhum registrado",
       "openSupplement": "Suplementar verificação original {date}",
       "original": "Verificação e confirmação originais",
@@ -655,6 +702,7 @@
       "recordingError": "Erro de gravação",
       "reinstated": "Autorização explicitamente restabelecida após uma nova verificação",
       "save": "Salvar suplemento",
+      "saved": "Complemento salvo",
       "saveError": "Não foi possível salvar o suplemento. Verifique sua responsabilidade atual e os detalhes da correção.",
       "snapshot": "Política {version}; intervalo de {months} meses; fuso horário do prazo {timezone}",
       "supplementBy": "Suplemento por {name}",
@@ -677,6 +725,7 @@
       "reinstating": "Salvando restabelecimento…",
       "report": "Informar que não posso dirigir",
       "reported": "Todas as suas autorizações de categorias estão suspensas. Entre em contato com o verificador responsável para uma nova verificação original e restabelecimento explícito após a resolução do impedimento.",
+      "reportedToast": "Relatório salvo",
       "reportFailed": "Não foi possível salvar o informe. Tente novamente ou entre em contato com o verificador responsável imediatamente.",
       "reportHelp": "Informe uma incapacidade atual de dirigir. Todas as autorizações de categorias serão suspensas imediatamente. Não é necessário fornecer motivos pessoais.",
       "reporting": "Salvando informe…",
@@ -684,6 +733,25 @@
       "selectClasses": "Categorias a serem restabelecidas a partir da última verificação original",
       "title": "Incapaz de dirigir?",
       "unresolvedReport": "Um impedimento para toda a pessoa relatado pelo funcionário ainda precisa de resolução."
+    },
+    "intendedDrivers": {
+      "description": "Motoristas previstos recebem verificações originais de carteira de habilitação, lembretes e um status de condução. Ninguém é um motorista previsto até você atribuí-lo. A atribuição mais específica prevalece: a do próprio funcionário sobre a da sua equipe principal, e a de uma equipe sobre a de toda a organização. Outras participações em equipes não contam. 'Não obrigatório' exclui uma equipe ou funcionário de uma atribuição mais ampla.",
+      "error": {
+        "assignmentNotFound": "Essa atribuição não existe mais. Recarregue a página.",
+        "employeeNotFound": "Esse funcionário não faz mais parte desta organização.",
+        "failed": "Não foi possível salvar os motoristas previstos. Tente novamente.",
+        "forbidden": "Apenas proprietários e administradores da organização podem atribuir motoristas previstos.",
+        "notEnabled": "Ative o controle de carteira de habilitação antes de atribuir motoristas previstos.",
+        "stalePreview": "Quem é afetado por esta alteração mudou entretanto. Reveja e guarde novamente.",
+        "teamNotFound": "Essa equipa já não existe."
+      },
+      "notRequired": "Não obrigatório (excluído)",
+      "removed": "Atribuição de condutor previsto removida",
+      "required": "Obrigatório",
+      "saved": "Condutores previstos guardados",
+      "targetOrganization": "Toda a organização",
+      "title": "Condutores previstos",
+      "valueLabel": "Verificações da carta de condução"
     },
     "interval": "Intervalo da verificação de rotina (meses)",
     "intervalAnchorHelp": "Calculado a partir da última verificação bem-sucedida de cada categoria.",
@@ -698,16 +766,20 @@
     "justification": "Justificativa de retenção",
     "justificationHelp": "Explique por que este período finito é necessário (pelo menos 10 caracteres). Não inclua detalhes médicos ou privados.",
     "loadError": "Não foi possível carregar o controle de carteira de motorista. Verifique o acesso da sua organização.",
-    "myDescription": "Visualizar o status de verificação da carteira de motorista",
+    "myLicence": {
+      "former": "Já não é um condutor previsto. Os seus registos de verificação retidos continuam disponíveis para visualização e exportação."
+    },
     "myTitle": "Minha autorização de condução",
     "newInterval": "Novo intervalo de rotina (meses)",
     "newlyOverdue": "Recentemente vencido — será suspenso",
     "newRoutineDate": "Próxima verificação de rotina",
     "noEmployeeRecord": "Nenhum registro de carteira de motorista de colaborador está disponível nesta organização.",
-    "noEmployees": "Não há colaboradores ativos para cadastrar.",
     "noIntervalClasses": "Nenhuma autorização de categoria existente necessita de recálculo.",
     "notChecked": "Ainda não verificado — sem autorização de condução",
-    "notEnrolled": "Não cadastrado — sem autorização de condução",
+    "off": {
+      "description": "Ninguém vê o controlo da carta de condução e não são enviados lembretes. Os condutores previstos, permissões de verificadores, registos de verificação e autorizações são mantidos, e a limpeza de comprovativos continua de acordo com o período de retenção guardado. Apenas Retenção e bloqueios está disponível até ser novamente ativado.",
+      "title": "O controlo da carta de condução está desativado"
+    },
     "operational": {
       "advisory": "Autorização de condução",
       "loading": "Carregando autorização de condução…",
@@ -719,7 +791,9 @@
       "title": "Status de condução para planejamento",
       "unavailable": "O status da autorização de condução está indisponível."
     },
-    "policyIntro": "Verificações de carteiras originais com foco na Alemanha. Escolha o intervalo de rotina e justifique um período finito de retenção de evidências antes da ativação.",
+    "page": {
+      "title": "Carta de condução"
+    },
     "policyTitle": "Política da organização",
     "previewingInterval": "Carregando impacto…",
     "previewInterval": "Visualizar impacto do intervalo",
@@ -768,23 +842,71 @@
     "saved": "Política salva",
     "saveError": "Não foi possível salvar a política. Verifique o intervalo, fuso horário, lembretes e o período de retenção justificado.",
     "saving": "Salvando…",
-    "settingsDescription": "Configurar verificações originais e cadastrar motoristas pretendidos",
+    "settingsSummary": "Defina a política de verificação, os condutores previstos, os verificadores e a retenção de comprovativos",
+    "settingsTabs": {
+      "cleanupDescription": "Os comprovativos expirados são eliminados automaticamente. Execute a limpeza agora para os eliminar de imediato.",
+      "cleanupFinished": "Limpeza de comprovativos expirados concluída",
+      "cleanupTitle": "Limpeza de comprovativos",
+      "deadlineTimezone": "Fuso horário do prazo",
+      "holdPlaced": "Bloqueio judicial aplicado",
+      "holdReleased": "Bloqueio judicial libertado",
+      "holdsColumn": "Bloqueios abertos",
+      "holdsTitle": "Bloqueios judiciais",
+      "impactClass": "Funcionário e categoria",
+      "impactResult": "Resultado",
+      "impactTimezone": "Fuso horário",
+      "intendedDrivers": "Condutores previstos",
+      "intendedDriversDescription": "Decida quem necessita de verificações da carta original: toda a organização, uma equipa principal ou um funcionário individual.",
+      "intendedDriversEmpty": {
+        "description": "Defina Obrigatório para toda a organização, para uma equipa principal ou para um funcionário individual. A opção mais específica prevalece, e Não obrigatório exclui uma equipa ou funcionário de uma regra mais abrangente. Apenas os condutores previstos recebem verificações, lembretes e um estado de condução.",
+        "title": "Ainda não existem condutores previstos"
+      },
+      "policy": "Política",
+      "policyDescription": "O intervalo de verificações de rotina, os prazos de aviso dos lembretes e o período de retenção de comprovativos.",
+      "reassignment": {
+        "description": "As suas verificações e lembretes não têm verificador associado. Atribuir a responsabilidade não lhe concede direitos de inspeção nem prolonga prazos.",
+        "title": "Funcionários sem um verificador responsável"
+      },
+      "remindersDescription": "Quando são enviados os lembretes antes de um prazo e durante quanto tempo os comprovativos são guardados após deixarem de fundamentar uma autorização.",
+      "remindersTitle": "Lembretes e retenção",
+      "reportColumn": "Relatório",
+      "retention": "Retenção e bloqueios",
+      "retentionColumn": "Retenção",
+      "retentionDescription": "Registos de verificação retidos, bloqueios judiciais e limpeza de comprovativos.",
+      "scheduleTitle": "Agendamento de verificações",
+      "verifiers": "Verificadores",
+      "verifiersDescription": "Quem verifica a carta de quem, opcionalmente até uma data definida."
+    },
     "status": {
       "active": "Autorização de condução ativa",
       "ended": "Autorização de condução encerrada",
       "explanation": "A autorização de condução da organização abrange as categorias e restrições listadas. Ela não estabelece aptidão para todos os veículos. Você pode continuar registrando a jornada de trabalho e o uso real do veículo.",
+      "notIntended": "Não é um condutor previsto — sem autorização de condução",
       "partial": "Algumas categorias de condução estão suspensas",
       "suspended": "Autorização de condução suspensa"
     },
     "staysCurrent": "Permanece válida",
     "staysSuspended": "Permanece suspensa",
-    "subtitle": "Configure as verificações originais e cadastre os motoristas pretendidos. A autorização de condução é específica para as categorias e restrições verificadas.",
+    "summary": {
+      "class": "Categoria",
+      "empty": "Ainda não há categorias autorizadas. Um verificador registará a sua primeira verificação da carta original.",
+      "emptyForVerifier": "Ainda não há categorias autorizadas.",
+      "personWide": "Um impedimento suspende a condução em todas as categorias até ser reintegrada por um verificador. Uma nova verificação, por si só, não o revoga.",
+      "restrictions": "Restrições",
+      "status": "Estado",
+      "validThrough": "Válido até"
+    },
+    "switchOnFirst": "Ative o controle de carteira de habilitação no cartão Recursos nas configurações da organização. Configurá-lo lá salva a primeira política.",
+    "tabs": {
+      "checks": "Verificações",
+      "myLicence": "Minha habilitação",
+      "planning": "Planejamento"
+    },
     "tasks": {
       "assign": "Atribuir responsabilidade",
-      "assigned": "Responsabilidade atribuída",
-      "assignmentBoundary": "Esta tarefa não concede direitos de inspeção e não prorroga nenhum prazo.",
       "class": "Categoria {classCode}",
       "complete": "Marcar lembrete pessoal como concluído",
+      "completedToast": "Lembrete pessoal marcado como concluído",
       "completeError": "Não foi possível concluir esta tarefa. Verifique sua responsabilidade atual como verificador.",
       "completing": "Concluindo…",
       "deadline": "Verificação original pendente",
@@ -793,21 +915,16 @@
       "loadError": "Não foi possível carregar as tarefas da carteira de habilitação. Verifique seu acesso à organização.",
       "loading": "Carregando tarefas da carteira de habilitação…",
       "noDeliveryReceipt": "A conclusão da tarefa não confirma a entrega direta nem a leitura pelo funcionário. Nenhum prazo é prorrogado.",
-      "noVerifier": "Nenhum verificador disponível é responsável por este funcionário.",
+      "openCheck": "Abrir verificação",
       "personalCompleted": "Lembrete pessoal concluído",
       "personalTitle": "Tarefas de lembrete pessoal",
-      "reassignmentTitle": "Tarefas de responsabilidade do verificador",
       "refresh": "Reverificar responsabilidade",
       "suspension": "Autorização de condução suspensa",
       "validThrough": "Válida até {date} no fuso horário do prazo salvo da verificação"
     },
-    "timezone": "Fuso horário fixo do calendário",
     "title": "Controle da carteira de habilitação",
-    "unnamedEmployee": "Funcionário",
     "worklist": {
-      "help": "Apenas os funcionários inscritos dentro da sua responsabilidade atual de verificador aparecem aqui.",
       "open": "Verificar {name}",
-      "title": "Sua lista de trabalho de verificação original",
       "viewEnded": "Visualizar registro finalizado de {name}"
     },
     "zoneFixedError": "O fuso horário do calendário é fixo. Os prazos existentes devem manter o significado original.",
@@ -999,6 +1116,7 @@
     "calendar": "Calendário",
     "compliance": "Conformidade",
     "dashboard": "Painel",
+    "driving-licence": "Carteira de habilitação",
     "feedback": "Feedback",
     "finance": "Financeiro",
     "financeAwaiting": "{count, plural, one {# despesa aguardando reembolso} other {# despesas aguardando reembolso}}",
@@ -1185,6 +1303,10 @@
       "complianceExceptionRequested": {
         "message": "{employeeName} solicitou uma exceção de {exceptionType, select, rest_period {período de descanso} overtime_daily {horas extras diárias} overtime_weekly {horas extras semanais} overtime_monthly {horas extras mensais} other {conformidade}}: \"{reason}\"",
         "title": "Exceção de conformidade solicitada"
+      },
+      "drivingAuthorizationEnded": {
+        "message": "{employeeName} não é mais um motorista previsto, portanto sua autorização para dirigir ({classes}) terminou. Dirigir novamente requer uma nova verificação.",
+        "title": "Autorização para dirigir encerrada"
       },
       "drivingAuthorizationSuspended": {
         "message": "A autorização de condução de {employeeName} ({classes}) está suspensa. É necessária uma nova verificação e reintegração explícita antes de conduzir.",
@@ -1681,7 +1803,7 @@
         "approval_cover_return_summary": "Decidido pelo seu substituto",
         "approval_cover_started": "Cobertura de ausência iniciada",
         "break_due_reminder": "Intervalo pendente",
-        "driving_authorization_suspended": "Autorização de condução suspensa",
+        "driving_authorization_suspended_or_ended": "Autorização para dirigir suspensa ou encerrada",
         "driving_details_missing_reminder": "Detalhes de condução ausentes",
         "driving_licence_reminder": "Verificação da carta de condução pendente",
         "forgotten_clock_out_reminder": "Saída não registrada",
@@ -2140,6 +2262,8 @@
         },
         "drivingLicence": {
           "actor_name": "O nome da pessoa que realizou esta ação; vazio no caso de uma ação do sistema ou de interveniente indisponível.",
+          "assigned_at": "Quando a sua própria atribuição de motorista previsto foi salva pela primeira vez, como um instante UTC.",
+          "assigned_by": "O nome da pessoa que salvou sua própria atribuição de motorista previsto pela primeira vez.",
           "authorization_events": {
             "summary": "O seu histórico de autorização de condução, incluindo participações de impedimentos, resoluções e reintegrações explícitas."
           },
@@ -2178,7 +2302,6 @@
           "employee_ids": "Os IDs opacos de funcionários no seu escopo específico de verificador, codificados como uma matriz JSON.",
           "employment_period_id": "O período de emprego ao qual esta evidência pertence; vazio para vínculos empregatícios legados.",
           "enabled": "Se a política de verificação da organização referenciada estava habilitada.",
-          "enrolled_at": "Quando você foi inscrito nas verificações de carteira de habilitação da organização.",
           "expires_at": "O instante UTC em que esta autorização ou concessão de verificador expira.",
           "expiry_date": "A data de validade da categoria registrada na inspeção; vazio se nenhuma tiver sido registrada.",
           "failure_scope": "Se uma inspeção malsucedida dizia respeito a categorias, ao documento ou à pessoa.",
@@ -2190,6 +2313,9 @@
           "impedimentReports": {
             "summary": "Seus relatórios mínimos de impedimento de condução e a resolução explícita deles, sem explicações médicas ou motivos particulares."
           },
+          "intendedDriverAssignment": {
+            "summary": "Sua própria atribuição de motorista previsto para as verificações de carteira de habilitação da organização. Atribuições de organização e equipe que também se aplicam a você não são listadas."
+          },
           "interval_months": "O número de meses civis entre verificações de rotina sob esta política.",
           "kind": "O evento de autorização, suspensão ou tipo de tarefa; as tarefas são personal_reminder ou reassignment.",
           "last_successful_at": "Quando esta categoria passou pela última inspeção original bem-sucedida.",
@@ -2199,9 +2325,6 @@
           "notificationId": "A notificação no aplicativo vinculada a este lembrete; vazio quando nenhuma foi criada.",
           "occasionKey": "A ocorrência a que este lembrete ou tarefa se refere; identifica o vínculo empregatício, o prazo da categoria ou a suspensão sem copiar a verificação.",
           "original_inspected": "Se o verificador confirmou ter inspecionado pessoalmente o documento original.",
-          "participation": {
-            "summary": "Sua inscrição nas verificações de carteira de habilitação da organização."
-          },
           "placedAt": "Quando esta retenção legal foi aplicada, como um instante UTC.",
           "placedBy": "O nome do administrador que aplicou esta retenção de caso.",
           "policies": {
@@ -2227,6 +2350,7 @@
           },
           "reportedAt": "Quando você comunicou um impedimento geral de condução da pessoa, como um instante UTC.",
           "reporterName": "O nome da pessoa que relatou o impedimento.",
+          "required": "Se a sua própria atribuição o torna um motorista previsto (verdadeiro) ou o exclui de uma atribuição de equipe ou organização (falso).",
           "resolvedAt": "Quando um verificador resolveu explicitamente este relatório; vazio para um relatório não resolvido.",
           "resolvedBy": "O nome do verificador que resolveu explicitamente este relatório.",
           "restrictions": "As restrições de condução relevantes registradas para esta categoria.",
@@ -2253,6 +2377,8 @@
             "summary": "Seu registro atual de suspensão de autorização de condução relativo a uma pessoa ou a um documento."
           },
           "team_ids": "Os IDs de equipe opacos no seu escopo específico de verificador, codificados como um array JSON.",
+          "updated_at": "Quando a sua própria atribuição de motorista previsto foi alterada pela última vez, como um instante UTC.",
+          "updated_by": "O nome da pessoa que alterou sua própria atribuição de motorista previsto pela última vez.",
           "valid_through": "O último dia civil aplicável mais próximo desta liberação de categoria.",
           "value": "O valor fornecido por este suplemento; vazio significa que a expiração opcional da categoria foi removida.",
           "verifier_confirmed": "Se o verificador confirmou o registro de inspeção.",

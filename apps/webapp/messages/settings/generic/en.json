@@ -871,16 +871,15 @@
         "all": "All employees in this organization",
         "allDescription": "Responsibility follows current organization membership. Verifiers can never verify themselves.",
         "attribution": "Granted by {actor} at {time}",
-        "description": "Grant responsibility separately from driver enrollment, line management and personnel file access. Managing these grants does not permit reading inspection records. Self-verification is always prohibited.",
         "editor": "Verifier scope",
         "empty": "No verifier responsibilities assigned",
-        "expiry": "Expires at {time}",
         "history": "Responsibility history",
         "historyEntry": "Granted by {grantor} at {granted}; revoked by {revoker} at {revoked}",
         "loadFailed": "Could not load verifier responsibilities",
         "myAll": "You are responsible for checks across this organization. You cannot verify yourself.",
         "mySelected": "You are responsible for {teams} selected teams and {employees} named employees. Current team membership determines access. You cannot verify yourself.",
         "myTitle": "Your verifier responsibility",
+        "myUntil": "Your responsibility ends after {date} ({timezone}).",
         "none": "You have no current driving licence verifier responsibility.",
         "noTeams": "No teams available",
         "person": "Verifier",
@@ -895,7 +894,14 @@
         "selectEmployees": "Select employees",
         "specific": "Selected teams and employees",
         "specificDescription": "Includes named employees and current members of selected teams. Team changes take effect immediately.",
-        "title": "Driving licence verifiers"
+        "summary": "Verifier responsibility is separate from intended-driver assignments, line management and personnel file access. Managing these grants does not permit reading inspection records. Self-verification is always prohibited.",
+        "title": "Driving licence verifiers",
+        "until": "Until {date} (end of day, {timezone})",
+        "untilEnded": "Ended after {date} ({timezone}). Edit it to extend or revoke it.",
+        "untilHelp": "For temporary cover. Responsibility ends after this whole day in {timezone}. Leave empty for no end.",
+        "untilInPast": "The until date can't be in the past.",
+        "untilLabel": "Until (optional)",
+        "untilPlaceholder": "No end date"
       }
     },
     "emailTemplates": {

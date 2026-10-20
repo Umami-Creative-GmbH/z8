@@ -545,8 +545,6 @@
     "yes": "Ja"
   },
   "drivingLicence": {
-    "activate": "Aktiver førerkortkontroll",
-    "activationHelp": "Registrering gir ikke kjøretillatelse. En autorisert kontrollør må først kontrollere det originale førerkortet.",
     "applyingInterval": "Bruker…",
     "applyInterval": "Bruk intervallendring",
     "check": {
@@ -562,6 +560,7 @@
       "issueDate": "Dokumentets utstedelsesdato",
       "original": "Jeg kontrollerte det originale førerkortet personlig i den ansattes nærvær.",
       "privacy": "Registrer kun dokumentdatoer, kontrollerte klasser og nødvendige kjørebegrensninger. Ikke skriv inn førerkortnummer, adresse, medisinske forklaringer eller personlig bakgrunn.",
+      "recorded": "Original kontroll registrert",
       "restrictions": "Nødvendige kjørebegrensninger",
       "result": "Resultat",
       "saving": "Registrerer kontroll…",
@@ -573,14 +572,54 @@
       "title": "Kontroller {name}s originale førerkort",
       "verifier": "Jeg bekrefter at de registrerte faktaene og individuelle klasseresultatene gjenspeiler min kontroll."
     },
+    "checkPage": {
+      "back": "Kontroller",
+      "former": "Tidligere ansatt",
+      "loadError": "Førerkortoppføringen kunne ikke lastes inn. Sjekk ditt gjeldende kontrolløransvar.",
+      "loading": "Laster inn førerkortoppføringen …",
+      "notIntended": "{name} er ikke en tiltenkt sjåfør. Kontroll er kun nødvendig for tiltenkte sjåfører.",
+      "title": "Førerkortkontroll for {name}"
+    },
+    "checks": {
+      "column": {
+        "action": "Handling",
+        "deadline": "Neste frist",
+        "name": "Navn",
+        "status": "Status",
+        "team": "Team"
+      },
+      "deadline": "{date} ({timezone})",
+      "dueNow": "Kontroll forfaller nå",
+      "empty": {
+        "description": "Tiltenkte sjåfører under ditt kontrolløransvar vises her. Kontakt en administrator hvis noen mangler.",
+        "title": "Ingen å kontrollere ennå"
+      },
+      "filter": {
+        "all": "Alle statuser",
+        "status": "Status"
+      },
+      "help": "Tiltenkte sjåfører som dekkes av ditt gjeldende kontrolløransvar. Du vises aldri i din egen liste.",
+      "loadError": "Listen kunne ikke lastes inn. Sjekk ditt gjeldende kontrolløransvar.",
+      "loading": "Laster inn tiltenkte sjåfører …",
+      "noMatches": "Ingen tiltenkte sjåfører samsvarer med søket eller filteret.",
+      "search": "Søk etter navn",
+      "status": {
+        "active": "Aktiv",
+        "ended": "Avsluttet",
+        "notIntended": "Ikke en tiltenkt sjåfør",
+        "notYetChecked": "Ikke kontrollert ennå",
+        "partiallyActive": "Delvis aktiv",
+        "suspended": "Suspendert"
+      },
+      "title": "Tiltenkte sjåfører som skal kontrolleres"
+    },
     "class": {
       "active": "Autorisert",
       "ended": "Avsluttet",
+      "noLongerIntended": "Avsluttet fordi den ansatte ikke lenger er en tiltenkt sjåfør. For å kjøre igjen kreves en ny kontroll.",
       "overdue": "Rutinekontroll er forfalt. Dette er en organisatorisk suspensjon, ikke en erklæring om at den juridiske førerretten er inndratt.",
       "recheck": "En ny originalkontroll og eksplisitt gjenoppretting kreves.",
-      "restrictions": "Kjørebegrensninger: {restrictions}",
-      "suspended": "Suspendert",
-      "validThrough": "Gyldig til og med {date} ({timezone})"
+      "suspended": "Suspendert"
     },
     "declaration": {
       "text": "Jeg bekrefter at ingen kjente kjøreforbud, inndragelser eller andre hindringer forhindrer den tiltenkte kjøringen, og at jeg oppfyller gjeldende kjørebegrensninger."
@@ -589,11 +628,18 @@
       "uncertain": "Valgfrie påminnelser på e-post til deg har et usikkert leveringsresultat ({count}). De vil ikke bli sendt på nytt automatisk. Påminnelsene dine i appen er fortsatt tilgjengelige; e-postlevering bekrefter ikke at de er lest."
     },
     "earlierLimit": "Tidligere dokument-/klassegrense",
-    "enroll": "Registrer",
-    "enrollError": "Den ansatte kunne ikke registreres. Aktiver retningslinjen først og kontroller tilgangen din.",
-    "enrollmentHelp": "Registrer ansatte som skal kjøre. Kjøretøytildelinger og tidligere kjøretøybruk gir aldri autorisasjon.",
-    "enrollmentTitle": "Tiltenkte sjåfører",
-    "enrollName": "Registrer {name}",
+    "ending": {
+      "assignmentConfirm": "Lagre og avslutt autorisasjoner",
+      "assignmentDescription": "Disse ansatte slutter å være tiltenkte sjåfører når du lagrer. Kjøreautorisasjonene deres opphører umiddelbart, og oppbevaringsperioden for kontrollpostene starter. For å kjøre igjen kreves en ny kontroll.",
+      "assignmentTitle": "Avslutte kjøreautorisasjoner?",
+      "listLabel": "Kjøreautorisasjoner som opphører",
+      "teamChangeConfirm": "Fortsett og avslutt autorisasjoner",
+      "teamChangeDescription": "Disse ansatte slutter å være tiltenkte sjåfører fordi primærteamet deres endres. Kjøreautorisasjonene deres opphører umiddelbart, og oppbevaringsperioden for kontrollpostene starter. For å kjøre igjen kreves en ny kontroll.",
+      "teamChangeGeneric": "Denne endringen avslutter kjøreautorisasjoner for enkelte ansatte.",
+      "teamChangePreviewFailed": "Kunne ikke kontrollere om denne endringen avslutter kjøreautorisasjoner. Prøv igjen.",
+      "teamChangeStale": "Hvem denne endringen påvirker, har endret seg i mellomtiden. Prøv endringen på nytt for å se over den.",
+      "teamChangeTitle": "Denne teamendringen avslutter kjøreautorisasjoner"
+    },
     "evidence": {
       "confirmation": "Kontrollørbekreftelse registrert med retningslinjeversjon {version}; tidsfrister bruker {timezone}.",
       "declarationConfirmed": "Den ansatte avga egenerklæringen personlig; kontrolløren attesterte den på kontrolltidspunktet.",
@@ -640,6 +686,7 @@
       "loading": "Laster inn historikk …",
       "minimalEvidence": "Registrer kun nødvendig kjøredokumentasjon. Ikke oppgi dokumentnumre, medisinske forklaringer eller personlig bakgrunn.",
       "missingDetail": "Manglende detalj",
+      "noLongerIntended": "Ikke lenger en tiltenkt sjåfør",
       "none": "Ingen registrert",
       "openSupplement": "Suppler opprinnelig kontroll {date}",
       "original": "Opprinnelig kontroll og bekreftelse",
@@ -655,6 +702,7 @@
       "recordingError": "Registreringsfeil",
       "reinstated": "Autorisasjon eksplisitt gjenopprettet etter en ny kontroll",
       "save": "Lagre supplement",
+      "saved": "Tillegg lagret",
       "saveError": "Supplementet kunne ikke lagres. Kontroller ditt gjeldende ansvarsområde og korrigeringsdetaljer.",
       "snapshot": "Retningslinje {version}; intervall {months} måneder; tidssone for frist {timezone}",
       "supplementBy": "Supplement av {name}",
@@ -677,6 +725,7 @@
       "reinstating": "Lagrer gjenoppretting…",
       "report": "Meld fra om at jeg ikke kan kjøre",
       "reported": "Alle dine klasseautorisasjoner er suspendert. Kontakt din ansvarlige kontrollør for en ny originalkontroll og eksplisitt gjenoppretting etter at hindringen er løst.",
+      "reportedToast": "Rapport lagret",
       "reportFailed": "Meldingen kunne ikke lagres. Prøv igjen eller kontakt din ansvarlige kontrollør umiddelbart.",
       "reportHelp": "Meld fra om manglende kjøreevne. Alle klasseautorisasjoner suspenderes umiddelbart. Du trenger ikke å oppgi personlige årsaker.",
       "reporting": "Lagrer melding…",
@@ -684,6 +733,25 @@
       "selectClasses": "Klasser som skal gjenopprettes fra den nyeste originalkontrollen",
       "title": "Ikke i stand til å kjøre?",
       "unresolvedReport": "En personomfattende hindring rapportert av en ansatt krever fortsatt løsning."
+    },
+    "intendedDrivers": {
+      "description": "Tiltenkte sjåfører får kontroller av originalførerkort, påminnelser og en kjørestatus. Ingen er en tiltenkt sjåfør før du tildeler dem det. Den mest spesifikke tildelingen overstyrer: den ansattes egen over primærteamets, og et teams over hele organisasjonens. Andre teammedlemskap teller ikke. «Ikke påkrevd» ekskluderer et team eller en ansatt fra en overordnet tildeling.",
+      "error": {
+        "assignmentNotFound": "Denne tildelingen finnes ikke lenger. Last inn siden på nytt.",
+        "employeeNotFound": "Den ansatte er ikke lenger ansatt i denne organisasjonen.",
+        "failed": "De tiltenkte sjåførene kunne ikke lagres. Prøv igjen.",
+        "forbidden": "Kun organisasjonseiere og administratorer kan tildele tiltenkte sjåfører.",
+        "notEnabled": "Slå på førerkortkontroll før du tildeler tiltenkte sjåfører.",
+        "stalePreview": "Hvem denne endringen påvirker, har endret seg i mellomtiden. Se over og lagre på nytt.",
+        "teamNotFound": "Dette teamet finnes ikke lenger."
+      },
+      "notRequired": "Ikke påkrevd (ekskludert)",
+      "removed": "Tildeling som tiltenkt sjåfør er fjernet",
+      "required": "Påkrevd",
+      "saved": "Tiltenkte sjåfører er lagret",
+      "targetOrganization": "Hele organisasjonen",
+      "title": "Tiltenkte sjåfører",
+      "valueLabel": "Førerkortkontroller"
     },
     "interval": "Intervall for rutinekontroll (måneder)",
     "intervalAnchorHelp": "Beregnet fra hver klasses siste vellykkede kontroll.",
@@ -698,16 +766,20 @@
     "justification": "Begrunnelse for oppbevaring",
     "justificationHelp": "Forklar hvorfor denne avgrensede perioden er nødvendig (minst 10 tegn). Ikke oppgi private eller medisinske opplysninger.",
     "loadError": "Kunne ikke laste inn førerkortkontroll. Sjekk organisasjonstilgangen din.",
-    "myDescription": "Se status for førerkortkontroll",
+    "myLicence": {
+      "former": "Du er ikke lenger en tiltenkt sjåfør. Dine lagrede kontrollposter forblir tilgjengelige for visning og eksport."
+    },
     "myTitle": "Min kjøretillatelse",
     "newInterval": "Nytt rutineintervall (måneder)",
     "newlyOverdue": "Nylig forfalt – vil bli suspendert",
     "newRoutineDate": "Neste rutinekontroll",
     "noEmployeeRecord": "Ingen førerkortoppføring for ansatte er tilgjengelig i denne organisasjonen.",
-    "noEmployees": "Det er ingen aktive ansatte å registrere.",
     "noIntervalClasses": "Ingen eksisterende klassetillatelser krever omberegning.",
     "notChecked": "Ikke kontrollert ennå – ingen kjøretillatelse",
-    "notEnrolled": "Ikke registrert – ingen kjøretillatelse",
+    "off": {
+      "description": "Ingen ser førerkortkontroll, og det sendes ingen påminnelser. Tiltenkte sjåfører, kontrollørtilganger, kontrollposter og autorisasjoner beholdes, og opprydding av bevisdokumentasjon fortsetter under den lagrede oppbevaringsperioden. Kun Oppbevaring og sperrer er tilgjengelig frem til det slås på igjen.",
+      "title": "Førerkortkontroll er slått av"
+    },
     "operational": {
       "advisory": "Kjøretillatelse",
       "loading": "Laster inn kjøretillatelse …",
@@ -719,7 +791,9 @@
       "title": "Kjørestatus for planlegging",
       "unavailable": "Status for kjøretillatelse er utilgjengelig."
     },
-    "policyIntro": "Kontroll av førerkortoriginaler med Tyskland først. Velg rutineintervall og begrunn en tidsbegrenset oppbevaringsperiode for dokumentasjon før aktivering.",
+    "page": {
+      "title": "Førerkort"
+    },
     "policyTitle": "Organisasjonens retningslinje",
     "previewingInterval": "Laster inn konsekvenser …",
     "previewInterval": "Forhåndsvis intervallkonsekvenser",
@@ -768,23 +842,71 @@
     "saved": "Retningslinje lagret",
     "saveError": "Retningslinjen kunne ikke lagres. Kontroller intervall, tidssone, påminnelser og begrunnet oppbevaringsperiode.",
     "saving": "Lagrer…",
-    "settingsDescription": "Konfigurer originalkontroller og registrer tiltenkte sjåfører",
+    "settingsSummary": "Angi kontrollpolicy, tiltenkte sjåfører, kontrollører og oppbevaring av bevisdokumentasjon",
+    "settingsTabs": {
+      "cleanupDescription": "Forfalt bevisdokumentasjon slettes automatisk. Kjør opprydding nå for å slette den umiddelbart.",
+      "cleanupFinished": "Opprydding av forfalt bevisdokumentasjon er fullført",
+      "cleanupTitle": "Opprydding av bevisdokumentasjon",
+      "deadlineTimezone": "Tidssone for tidsfrist",
+      "holdPlaced": "Juridisk sperre iverksatt",
+      "holdReleased": "Juridisk sperre opphevet",
+      "holdsColumn": "Åpne sperrer",
+      "holdsTitle": "Juridiske sperrer",
+      "impactClass": "Ansatt og klasse",
+      "impactResult": "Resultat",
+      "impactTimezone": "Tidssone",
+      "intendedDrivers": "Tiltenkte sjåfører",
+      "intendedDriversDescription": "Bestem hvem som trenger originalkontroll av førerkort: hele organisasjonen, et primærteam eller én ansatt.",
+      "intendedDriversEmpty": {
+        "description": "Angi Påkrevd for hele organisasjonen, for et primærteam eller for én ansatt. Det mest spesifikke valget gjelder, og Ikke påkrevd ekskluderer et team eller en ansatt fra et mer overordnet valg. Kun tiltenkte sjåfører mottar kontroller, påminnelser og kjørestatus.",
+        "title": "Ingen er tiltenkt sjåfør ennå"
+      },
+      "policy": "Policy",
+      "policyDescription": "Intervallet for rutinekontroller, varslingstid for påminnelser og oppbevaringsperioden for bevisdokumentasjon.",
+      "reassignment": {
+        "description": "Kontrollene og påminnelsene deres har ingen kontrollør. Å tildele ansvar gir deg ingen inspeksjonsrettigheter og forlenger ingen tidsfrist.",
+        "title": "Ansatte uten ansvarlig kontrollør"
+      },
+      "remindersDescription": "Når påminnelser sendes ut før en tidsfrist, og hvor lenge bevisdokumentasjon oppbevares etter at den ikke lenger underbygger en autorisasjon.",
+      "remindersTitle": "Påminnelser og oppbevaring",
+      "reportColumn": "Rapport",
+      "retention": "Oppbevaring og sperrer",
+      "retentionColumn": "Oppbevaring",
+      "retentionDescription": "Oppbevarte kontrollposter, juridiske sperrer og opprydding av bevisdokumentasjon.",
+      "scheduleTitle": "Kontrollplan",
+      "verifiers": "Kontrollører",
+      "verifiersDescription": "Hvem som kontrollerer hvems førerkort, eventuelt frem til en fastsatt dato."
+    },
     "status": {
       "active": "Kjøretillatelse aktiv",
       "ended": "Kjøretillatelse opphørt",
       "explanation": "Organisasjonens kjøretillatelse dekker de oppførte klassene og begrensningene. Den fastslår ikke egnethet for ethvert kjøretøy. Du kan fortsette å registrere arbeidstid og faktisk bruk av kjøretøy.",
+      "notIntended": "Ikke en tiltenkt sjåfør — ingen kjøreautorisasjon",
       "partial": "Enkelte førerkortklasser er suspendert",
       "suspended": "Kjøretillatelse suspendert"
     },
     "staysCurrent": "Forblir gjeldende",
     "staysSuspended": "Forblir suspendert",
-    "subtitle": "Konfigurer originalkontroller og registrer tiltenkte sjåfører. Kjøretillatelse er spesifikk for kontrollerte klasser og begrensninger.",
+    "summary": {
+      "class": "Klasse",
+      "empty": "Ingen klasse er autorisert ennå. En kontrollør registrerer din første originalkontroll.",
+      "emptyForVerifier": "Ingen klasse er autorisert ennå.",
+      "personWide": "En hindring suspenderer kjøring i alle klasser frem til en kontrollør gjenoppretter det. En ny kontroll alene opphever det ikke.",
+      "restrictions": "Begrensninger",
+      "status": "Status",
+      "validThrough": "Gyldig til"
+    },
+    "switchOnFirst": "Slå på førerkortkontroll på Funksjoner-kortet i organisasjonsinnstillingene. Når du konfigurerer det der, lagres den første policyen.",
+    "tabs": {
+      "checks": "Kontroller",
+      "myLicence": "Førerkortet mitt",
+      "planning": "Planlegging"
+    },
     "tasks": {
       "assign": "Tildel ansvar",
-      "assigned": "Ansvar tildelt",
-      "assignmentBoundary": "Denne oppgaven gir ingen inspeksjonsrettigheter og forlenger ingen frist.",
       "class": "Klasse {classCode}",
       "complete": "Merk personlig påminnelse som fullført",
+      "completedToast": "Personlig påminnelse merket som fullført",
       "completeError": "Kunne ikke fullføre denne oppgaven. Kontroller ditt nåværende kontrolløransvar.",
       "completing": "Fullfører…",
       "deadline": "Originalkontroll forfaller",
@@ -793,21 +915,16 @@
       "loadError": "Kunne ikke laste inn førerkortoppgaver. Kontroller organisasjonstilgangen din.",
       "loading": "Laster inn førerkortoppgaver…",
       "noDeliveryReceipt": "Fullføring av oppgaven bekrefter ikke direkte levering eller at den ansatte har lest varselet. Ingen frist forlenges.",
-      "noVerifier": "Ingen tilgjengelig kontrollør har ansvar for denne ansatte.",
+      "openCheck": "Åpne kontroll",
       "personalCompleted": "Personlig påminnelse fullført",
       "personalTitle": "Personlige påminnelsesoppgaver",
-      "reassignmentTitle": "Oppgaver for kontrolløransvar",
       "refresh": "Kontroller ansvar på nytt",
       "suspension": "Kjøretillatelse suspendert",
       "validThrough": "Gyldig til og med {date} i kontrollens lagrede tidssone for frist"
     },
-    "timezone": "Fast tidssone for kalender",
     "title": "Førerkortkontroll",
-    "unnamedEmployee": "Ansatt",
     "worklist": {
-      "help": "Bare registrerte ansatte innenfor ditt nåværende kontrollansvar vises her.",
       "open": "Kontroller {name}",
-      "title": "Arbeidslisten din for opprinnelig kontroll",
       "viewEnded": "Vis avsluttet oppføring for {name}"
     },
     "zoneFixedError": "Kalenderens tidssone er fast. Eksisterende frister må beholde sin opprinnelige betydning.",
@@ -999,6 +1116,7 @@
     "calendar": "Kalender",
     "compliance": "Samsvar",
     "dashboard": "Dashbord",
+    "driving-licence": "Førerkort",
     "feedback": "Tilbakemelding",
     "finance": "Økonomi",
     "financeAwaiting": "{count, plural, one {# utgift venter på refusjon} other {# utgifter venter på refusjon}}",
@@ -1185,6 +1303,10 @@
       "complianceExceptionRequested": {
         "message": "{employeeName} ba om et unntak for {exceptionType, select, rest_period {hvileperiode} overtime_daily {daglig overtid} overtime_weekly {ukentlig overtid} overtime_monthly {månedlig overtid} other {samsvar}}: \"{reason}\"",
         "title": "Samsvarsunntak forespurt"
+      },
+      "drivingAuthorizationEnded": {
+        "message": "{employeeName} er ikke lenger en tiltenkt sjåfør, så kjøretillatelsen ({classes}) er avsluttet. For å kjøre igjen kreves det en ny kontroll.",
+        "title": "Kjøretillatelse avsluttet"
       },
       "drivingAuthorizationSuspended": {
         "message": "Kjøretillatelse for {employeeName} ({classes}) er suspendert. En ny kontroll og eksplisitt gjenoppretting kreves før kjøring.",
@@ -1681,7 +1803,7 @@
         "approval_cover_return_summary": "Avgjort av din stedfortreder",
         "approval_cover_started": "Fraværsdekning startet",
         "break_due_reminder": "Tid for pause",
-        "driving_authorization_suspended": "Kjøretillatelse suspendert",
+        "driving_authorization_suspended_or_ended": "Kjøretillatelse suspendert eller avsluttet",
         "driving_details_missing_reminder": "Kjøredetaljer mangler",
         "driving_licence_reminder": "Førerkortkontroll forfaller",
         "forgotten_clock_out_reminder": "Glemt utstempling",
@@ -2140,6 +2262,8 @@
         },
         "drivingLicence": {
           "actor_name": "Navnet på personen som utførte denne handlingen; tomt for en systemhandling eller utilgjengelig aktør.",
+          "assigned_at": "Når din egen tilordning som tiltenkt sjåfør først ble lagret, som et UTC-tidspunkt.",
+          "assigned_by": "Navnet på personen som først lagret din egen tilordning som tiltenkt sjåfør.",
           "authorization_events": {
             "summary": "Din historikk for kjøretillatelser, inkludert hindringsrapporter, løsninger og eksplisitte gjenopprettinger."
           },
@@ -2178,7 +2302,6 @@
           "employee_ids": "De ugjennomsiktige ansatt-ID-ene innenfor ditt spesifikke kontrolløromfang, kodet som en JSON-matrise.",
           "employment_period_id": "Ansettelsesperioden dette beviset tilhører; tomt for eldre ansettelser.",
           "enabled": "Hvorvidt den refererte retningslinjen for organisasjonskontroll var aktivert.",
-          "enrolled_at": "Når du ble registrert i organisasjonens førerkortkontroller.",
           "expires_at": "UTC-tidspunktet når denne autorisasjonen eller kontrollørtildelingen utløper.",
           "expiry_date": "Klassens utløpsdato registrert ved kontroll; tomt hvis ingen ble registrert.",
           "failure_scope": "Hvorvidt en mislykket kontroll gjaldt klasser, dokumentet eller personen.",
@@ -2190,6 +2313,9 @@
           "impedimentReports": {
             "summary": "Dine minimale rapporter om kjørehindringer og deres eksplisitte løsning, uten medisinske forklaringer eller private årsaker."
           },
+          "intendedDriverAssignment": {
+            "summary": "Din egen tilordning som tiltenkt sjåfør for organisasjonens førerkortkontroller. Organisasjons- og teamtilordninger som også gjelder deg, vises ikke."
+          },
           "interval_months": "Antall kalendermåneder mellom rutinekontroller i henhold til denne retningslinjen.",
           "kind": "Autorisasjonshendelsen, suspensjonen eller oppgavetypen; oppgaver er personal_reminder eller reassignment.",
           "last_successful_at": "Når denne klassen sist besto en vellykket originalkontroll.",
@@ -2199,9 +2325,6 @@
           "notificationId": "App-varselet som er koblet til denne påminnelsen; tomt når ingen ble opprettet.",
           "occasionKey": "Forekomsten denne påminnelsen eller oppgaven gjelder; den identifiserer ansettelsen, klassefristen eller suspensjonen uten å kopiere kontrollen.",
           "original_inspected": "Hvorvidt kontrolløren bekreftet å ha inspisert originaldokumentet personlig.",
-          "participation": {
-            "summary": "Din registrering i organisasjonens førerkortkontroller."
-          },
           "placedAt": "Når denne juridiske oppbevaringssperren ble iverksatt, som et UTC-tidspunkt.",
           "placedBy": "Navnet på administratoren som iverksatte denne sakssperren.",
           "policies": {
@@ -2227,6 +2350,7 @@
           },
           "reportedAt": "Når du rapporterte en personomfattende kjørehindring, som et UTC-tidspunkt.",
           "reporterName": "Navnet på personen som rapporterte hindringen.",
+          "required": "Hvorvidt din egen tilordning gjør deg til en tiltenkt sjåfør (sann) eller ekskluderer deg fra en team- eller organisasjonstilordning (usann).",
           "resolvedAt": "Når en kontrollør eksplisitt løste denne rapporten; tomt for en uløst rapport.",
           "resolvedBy": "Navnet på kontrolløren som eksplisitt løste denne rapporten.",
           "restrictions": "De relevante kjørebegrensningene registrert for denne klassen.",
@@ -2253,6 +2377,8 @@
             "summary": "Din gjeldende personomfattende eller dokumentomfattende suspensjonsoppføring for kjøreautorisasjon."
           },
           "team_ids": "De ugjennomsiktige team-ID-ene i ditt spesifikke kontrolløromfang, kodet som en JSON-matrise.",
+          "updated_at": "Når din egen tilordning som tiltenkt sjåfør sist ble endret, som et UTC-tidspunkt.",
+          "updated_by": "Navnet på personen som sist endret din egen tilordning som tiltenkt sjåfør.",
           "valid_through": "Den tidligste gjeldende siste kalenderdagen for denne klassegodkjenningen.",
           "value": "Verdien oppgitt av dette tillegget; tomt betyr at den valgfrie klasseutløpsdatoen ble fjernet.",
           "verifier_confirmed": "Hvorvidt kontrolløren bekreftet inspeksjonsoppføringen.",

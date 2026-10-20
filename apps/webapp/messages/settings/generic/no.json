@@ -871,16 +871,15 @@
         "all": "Alle ansatte i denne organisasjonen",
         "allDescription": "Ansvar følger nåværende organisasjonsmedlemskap. Kontrollører kan aldri verifisere seg selv.",
         "attribution": "Tildelt av {actor} {time}",
-        "description": "Tildel ansvar separat fra sjåførregistrering, linjeledelse og tilgang til personalmapper. Administrasjon av disse tildelingene gir ikke tillatelse til å lese kontrollrapporter. Egenverifisering er alltid forbudt.",
         "editor": "Kontrolløromfang",
         "empty": "Ingen kontrolløransvar tildelt",
-        "expiry": "Utløper {time}",
         "history": "Ansvarshistorikk",
         "historyEntry": "Tildelt av {grantor} {granted}; tilbakekalt av {revoker} {revoked}",
         "loadFailed": "Kunne ikke laste inn kontrolløransvar",
         "myAll": "Du er ansvarlig for kontroller i hele organisasjonen. Du kan ikke verifisere deg selv.",
         "mySelected": "Du er ansvarlig for {teams} valgte team og {employees} navngitte ansatte. Gjeldende teammedlemskap avgjør tilgangen. Du kan ikke verifisere deg selv.",
         "myTitle": "Ditt kontrolløransvar",
+        "myUntil": "Ansvaret ditt opphører etter {date} ({timezone}).",
         "none": "Du har for øyeblikket ikke ansvar for kontroll av førerkort.",
         "noTeams": "Ingen team tilgjengelig",
         "person": "Kontrollør",
@@ -895,7 +894,14 @@
         "selectEmployees": "Velg ansatte",
         "specific": "Valgte team og ansatte",
         "specificDescription": "Inkluderer navngitte ansatte og gjeldende medlemmer av valgte team. Teamendringer trer i kraft umiddelbart.",
-        "title": "Førerkortkontrollører"
+        "summary": "Kontrolløransvar er atskilt fra tilordninger som tiltenkt sjåfør, linjeledelse og tilgang til personalmapper. Administrasjon av disse tildelingene gir ikke tillatelse til å lese kontrollposter. Egenkontroll er alltid forbudt.",
+        "title": "Førerkortkontrollører",
+        "until": "Frem til {date} (slutten av dagen, {timezone})",
+        "untilEnded": "Avsluttet etter {date} ({timezone}). Rediger for å forlenge eller tilbakekalle det.",
+        "untilHelp": "For midlertidig dekning. Ansvaret opphører etter hele denne dagen i {timezone}. La stå tomt hvis det ikke er noen sluttdato.",
+        "untilInPast": "Sluttdatoen kan ikke være i fortiden.",
+        "untilLabel": "Til og med (valgfritt)",
+        "untilPlaceholder": "Ingen sluttdato"
       }
     },
     "emailTemplates": {

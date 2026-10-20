@@ -545,8 +545,6 @@
     "yes": "Oui"
   },
   "drivingLicence": {
-    "activate": "Activer le contrôle du permis de conduire",
-    "activationHelp": "L'inscription ne confère pas d'autorisation de conduire. Un vérificateur autorisé doit d'abord vérifier le permis original.",
     "applyingInterval": "Application en cours…",
     "applyInterval": "Appliquer la modification d'intervalle",
     "check": {
@@ -562,6 +560,7 @@
       "issueDate": "Date de délivrance du document",
       "original": "J'ai vérifié en personne le permis de conduire original en présence de l'employé.",
       "privacy": "Enregistrez uniquement les dates du document, les catégories vérifiées et les restrictions de conduite nécessaires. Ne saisissez pas de numéro de permis, d'adresse, d'explications médicales ou d'antécédents personnels.",
+      "recorded": "Contrôle de l'original enregistré",
       "restrictions": "Restrictions de conduite nécessaires",
       "result": "Résultat",
       "saving": "Enregistrement du contrôle…",
@@ -573,14 +572,54 @@
       "title": "Vérifier le permis original de {name}",
       "verifier": "Je confirme que les faits enregistrés et les résultats individuels des catégories reflètent ma vérification."
     },
+    "checkPage": {
+      "back": "Contrôles",
+      "former": "Ancien employé",
+      "loadError": "Impossible de charger le dossier de permis de conduire. Vérifiez votre périmètre de vérification actuel.",
+      "loading": "Chargement du dossier de permis de conduire…",
+      "notIntended": "{name} n'est pas un conducteur désigné. Un contrôle n'est requis que pour les conducteurs désignés.",
+      "title": "Contrôle du permis de conduire pour {name}"
+    },
+    "checks": {
+      "column": {
+        "action": "Action",
+        "deadline": "Prochaine échéance",
+        "name": "Nom",
+        "status": "Statut",
+        "team": "Équipe"
+      },
+      "deadline": "{date} ({timezone})",
+      "dueNow": "Contrôle à effectuer maintenant",
+      "empty": {
+        "description": "Les conducteurs désignés relevant de votre périmètre de vérification s'affichent ici. Adressez-vous à un administrateur s'il manque quelqu'un.",
+        "title": "Personne à contrôler pour le moment"
+      },
+      "filter": {
+        "all": "Tous les statuts",
+        "status": "Statut"
+      },
+      "help": "Conducteurs désignés couverts par votre périmètre de vérification actuel. Vous n'apparaissez jamais dans votre propre liste.",
+      "loadError": "Impossible de charger la liste. Vérifiez votre périmètre de vérification actuel.",
+      "loading": "Chargement des conducteurs désignés…",
+      "noMatches": "Aucun conducteur désigné ne correspond à la recherche ou au filtre.",
+      "search": "Rechercher par nom",
+      "status": {
+        "active": "Actif",
+        "ended": "Terminé",
+        "notIntended": "Pas un conducteur désigné",
+        "notYetChecked": "Pas encore contrôlé",
+        "partiallyActive": "Partiellement actif",
+        "suspended": "Suspendu"
+      },
+      "title": "Conducteurs désignés à contrôler"
+    },
     "class": {
       "active": "Autorisé",
       "ended": "Terminé",
+      "noLongerIntended": "Terminé car l'employé n'est plus un conducteur désigné. Pour conduire à nouveau, un nouveau contrôle est nécessaire.",
       "overdue": "Contrôle de routine en retard. Il s'agit d'une suspension organisationnelle et non d'une déclaration de retrait du droit légal de conduire.",
       "recheck": "Un nouveau contrôle de l'original et un rétablissement explicite sont requis.",
-      "restrictions": "Restrictions de conduite : {restrictions}",
-      "suspended": "Suspendu",
-      "validThrough": "Valide jusqu'au {date} ({timezone})"
+      "suspended": "Suspendu"
     },
     "declaration": {
       "text": "Je confirme qu'aucune interdiction de conduire connue, aucun retrait ou autre empêchement ne s'oppose à la conduite prévue, et que je respecte les restrictions de conduite applicables."
@@ -589,11 +628,18 @@
       "uncertain": "Les e-mails de rappel facultatifs qui vous sont destinés ont un statut d'acheminement incertain ({count}). Ils ne seront pas renvoyés automatiquement. Vos rappels dans l'application restent disponibles ; la distribution des e-mails ne confirme pas leur lecture."
     },
     "earlierLimit": "Limite antérieure du document/de la catégorie",
-    "enroll": "Inscrire",
-    "enrollError": "Impossible d'inscrire l'employé. Activez d'abord la politique et vérifiez vos droits d'accès.",
-    "enrollmentHelp": "Inscrivez les employés appelés à conduire. L'attribution d'un véhicule et son utilisation passée ne valent en aucun cas autorisation.",
-    "enrollmentTitle": "Conducteurs prévus",
-    "enrollName": "Inscrire {name}",
+    "ending": {
+      "assignmentConfirm": "Enregistrer et mettre fin aux autorisations",
+      "assignmentDescription": "Ces employés cesseront d'être des conducteurs désignés lors de l'enregistrement. Leurs autorisations de conduite prendront fin immédiatement et le délai de conservation de leurs dossiers de contrôle débutera. Pour conduire à nouveau, un nouveau contrôle sera nécessaire.",
+      "assignmentTitle": "Mettre fin aux autorisations de conduite ?",
+      "listLabel": "Autorisations de conduite prenant fin",
+      "teamChangeConfirm": "Continuer et mettre fin aux autorisations",
+      "teamChangeDescription": "Ces employés cessent d'être des conducteurs désignés en raison du changement de leur équipe principale. Leurs autorisations de conduite prennent fin immédiatement et le délai de conservation de leurs dossiers de contrôle débute. Pour conduire à nouveau, un nouveau contrôle est nécessaire.",
+      "teamChangeGeneric": "Cette modification met fin aux autorisations de conduite de certains employés.",
+      "teamChangePreviewFailed": "Impossible de vérifier si cette modification met fin à des autorisations de conduite. Réessayez.",
+      "teamChangeStale": "Les personnes concernées par cette modification ont changé entre-temps. Réessayez d'effectuer la modification pour l'examiner.",
+      "teamChangeTitle": "Ce changement d'équipe met fin aux autorisations de conduite"
+    },
     "evidence": {
       "confirmation": "Confirmation du vérificateur enregistrée avec la version {version} de la politique ; les échéances utilisent {timezone}.",
       "declarationConfirmed": "L'employé a effectué la déclaration en personne ; le vérificateur l'a attestée lors du contrôle.",
@@ -640,6 +686,7 @@
       "loading": "Chargement de l'historique…",
       "minimalEvidence": "N'enregistrez que les justificatifs de conduite nécessaires. Ne saisissez pas de numéros de document, d'explications médicales ni d'antécédents personnels.",
       "missingDetail": "Détail manquant",
+      "noLongerIntended": "N'est plus un conducteur désigné",
       "none": "Aucun enregistrement",
       "openSupplement": "Compléter la vérification originale du {date}",
       "original": "Vérification originale et confirmation",
@@ -655,6 +702,7 @@
       "recordingError": "Erreur d'enregistrement",
       "reinstated": "Autorisation explicitement rétablie après une nouvelle vérification",
       "save": "Enregistrer le complément",
+      "saved": "Complément enregistré",
       "saveError": "Impossible d'enregistrer le complément. Vérifiez vos responsabilités actuelles et les détails de la correction.",
       "snapshot": "Politique {version} ; intervalle {months} mois ; fuseau horaire de l'échéance {timezone}",
       "supplementBy": "Complément par {name}",
@@ -677,6 +725,7 @@
       "reinstating": "Enregistrement du rétablissement…",
       "report": "Signaler mon incapacité à conduire",
       "reported": "Toutes vos autorisations de catégories sont suspendues. Contactez votre vérificateur responsable pour une nouvelle vérification originale et un rétablissement explicite une fois l'empêchement résolu.",
+      "reportedToast": "Rapport enregistré",
       "reportFailed": "Impossible d'enregistrer le signalement. Réessayez ou contactez immédiatement votre vérificateur responsable.",
       "reportHelp": "Signalez une incapacité actuelle à conduire. Toutes les autorisations de catégories seront immédiatement suspendues. Vous n'avez pas besoin de fournir de motifs personnels.",
       "reporting": "Enregistrement du signalement…",
@@ -684,6 +733,25 @@
       "selectClasses": "Catégories à rétablir d'après la dernière vérification originale",
       "title": "Dans l'incapacité de conduire ?",
       "unresolvedReport": "Un empêchement lié à la personne signalé par un employé nécessite encore une résolution."
+    },
+    "intendedDrivers": {
+      "description": "Les conducteurs désignés bénéficient de contrôles du permis original, de rappels et d'un statut de conduite. Personne n'est conducteur désigné tant que vous ne lui avez pas attribué ce rôle. L'attribution la plus spécifique prévaut : celle d'un employé l'emporte sur celle de son équipe principale, et celle d'une équipe l'emporte sur celle de l'organisation tout entière. L'appartenance à d'autres équipes n'est pas prise en compte. « Non requis » exclut une équipe ou un employé d'une attribution plus large.",
+      "error": {
+        "assignmentNotFound": "Cette attribution n'existe plus. Rechargez la page.",
+        "employeeNotFound": "Cet employé ne fait plus partie du personnel actuel de cette organisation.",
+        "failed": "Impossible d'enregistrer les conducteurs désignés. Réessayez.",
+        "forbidden": "Seuls les propriétaires et les administrateurs de l'organisation peuvent désigner des conducteurs.",
+        "notEnabled": "Activez le contrôle des permis de conduire avant de désigner des conducteurs.",
+        "stalePreview": "Les personnes concernées par cette modification ont changé entre-temps. Vérifiez et enregistrez à nouveau.",
+        "teamNotFound": "Cette équipe n'existe plus."
+      },
+      "notRequired": "Non requis (exclu)",
+      "removed": "Attribution de conducteur prévu supprimée",
+      "required": "Requis",
+      "saved": "Conducteurs prévus enregistrés",
+      "targetOrganization": "Toute l'organisation",
+      "title": "Conducteurs prévus",
+      "valueLabel": "Vérifications du permis de conduire"
     },
     "interval": "Intervalle de vérification de routine (mois)",
     "intervalAnchorHelp": "Calculé à partir de la dernière vérification réussie de chaque catégorie.",
@@ -698,16 +766,20 @@
     "justification": "Justification de la conservation",
     "justificationHelp": "Expliquez pourquoi cette période définie est nécessaire (au moins 10 caractères). N'incluez aucun détail privé ou médical.",
     "loadError": "Impossible de charger le contrôle du permis de conduire. Vérifiez les accès de votre organisation.",
-    "myDescription": "Afficher le statut du contrôle de votre permis de conduire",
+    "myLicence": {
+      "former": "Vous n'êtes plus un conducteur prévu. Vos dossiers de vérification conservés restent consultables et exportables."
+    },
     "myTitle": "Mon autorisation de conduite",
     "newInterval": "Nouvel intervalle de routine (mois)",
     "newlyOverdue": "Nouvellement en retard — sera suspendu",
     "newRoutineDate": "Prochain contrôle de routine",
     "noEmployeeRecord": "Aucun dossier de permis de conduire d'employé n'est disponible dans cette organisation.",
-    "noEmployees": "Il n'y a aucun employé actif à inscrire.",
     "noIntervalClasses": "Aucune autorisation de catégorie existante ne nécessite de recalcul.",
     "notChecked": "Pas encore contrôlé — aucune autorisation de conduite",
-    "notEnrolled": "Non inscrit — aucune autorisation de conduite",
+    "off": {
+      "description": "Personne ne voit le contrôle du permis de conduire et aucun rappel n'est envoyé. Les conducteurs prévus, les attributions de vérificateurs, les dossiers de vérification et les autorisations sont conservés, et le nettoyage des justificatifs se poursuit selon la durée de conservation enregistrée. Seule la section « Conservation et blocages » reste disponible jusqu'à sa réactivation.",
+      "title": "Le contrôle du permis de conduire est désactivé"
+    },
     "operational": {
       "advisory": "Autorisation de conduite",
       "loading": "Chargement de l'autorisation de conduite…",
@@ -719,7 +791,9 @@
       "title": "Statut de conduite pour la planification",
       "unavailable": "Le statut de l'autorisation de conduite est indisponible."
     },
-    "policyIntro": "Contrôles du permis original axés sur l'Allemagne. Choisissez l'intervalle de routine et justifiez une période définie de conservation des justificatifs avant l'activation.",
+    "page": {
+      "title": "Permis de conduire"
+    },
     "policyTitle": "Politique de l'organisation",
     "previewingInterval": "Chargement de l'impact…",
     "previewInterval": "Aperçu de l'impact de l'intervalle",
@@ -768,23 +842,71 @@
     "saved": "Politique enregistrée",
     "saveError": "Impossible d'enregistrer la politique. Vérifiez l'intervalle, le fuseau horaire, les rappels et la période de conservation justifiée.",
     "saving": "Enregistrement…",
-    "settingsDescription": "Configurer les contrôles originaux et inscrire les conducteurs prévus",
+    "settingsSummary": "Définissez la politique de vérification, les conducteurs prévus, les vérificateurs et la conservation des justificatifs",
+    "settingsTabs": {
+      "cleanupDescription": "Les justificatifs arrivés à échéance sont supprimés automatiquement. Lancez le nettoyage maintenant pour les supprimer immédiatement.",
+      "cleanupFinished": "Nettoyage des justificatifs arrivés à échéance terminé",
+      "cleanupTitle": "Nettoyage des justificatifs",
+      "deadlineTimezone": "Fuseau horaire de l'échéance",
+      "holdPlaced": "Blocage conservatoire appliqué",
+      "holdReleased": "Blocage conservatoire levé",
+      "holdsColumn": "Blocages actifs",
+      "holdsTitle": "Blocages conservatoires",
+      "impactClass": "Employé et catégorie",
+      "impactResult": "Résultat",
+      "impactTimezone": "Fuseau horaire",
+      "intendedDrivers": "Conducteurs prévus",
+      "intendedDriversDescription": "Déterminez qui doit faire l'objet de vérifications du permis original : toute l'organisation, une équipe principale ou un seul employé.",
+      "intendedDriversEmpty": {
+        "description": "Définissez « Requis » pour toute l'organisation, pour une équipe principale ou pour un seul employé. Le choix le plus spécifique prévaut, et « Non requis » permet d'exclure une équipe ou un employé d'un ensemble plus large. Seuls les conducteurs prévus font l'objet de vérifications, de rappels et d'un statut de conduite.",
+        "title": "Personne n'est encore désigné comme conducteur prévu"
+      },
+      "policy": "Politique",
+      "policyDescription": "L'intervalle de vérification périodique, les délais de préavis des rappels et la durée de conservation des justificatifs.",
+      "reassignment": {
+        "description": "Leurs vérifications et rappels n'ont aucun vérificateur. L'attribution de la responsabilité ne vous accorde aucun droit d'inspection et ne prolonge aucun délai.",
+        "title": "Employés sans vérificateur responsable"
+      },
+      "remindersDescription": "Le moment d'envoi des rappels avant une échéance, et la durée de conservation des justificatifs lorsqu'ils ne justifient plus une autorisation.",
+      "remindersTitle": "Rappels et conservation",
+      "reportColumn": "Rapport",
+      "retention": "Conservation et blocages",
+      "retentionColumn": "Conservation",
+      "retentionDescription": "Dossiers de vérification conservés, blocages conservatoires et nettoyage des justificatifs.",
+      "scheduleTitle": "Calendrier des vérifications",
+      "verifiers": "Vérificateurs",
+      "verifiersDescription": "Qui vérifie le permis de qui, éventuellement jusqu'à une date définie."
+    },
     "status": {
       "active": "Autorisation de conduire active",
       "ended": "Autorisation de conduire terminée",
       "explanation": "L'autorisation de conduire de l'organisation couvre les catégories et restrictions répertoriées. Elle n'établit pas l'adéquation pour chaque véhicule. Vous pouvez continuer à enregistrer le temps de travail et l'utilisation réelle du véhicule.",
+      "notIntended": "Pas un conducteur prévu — aucune autorisation de conduire",
       "partial": "Certaines catégories de conduite sont suspendues",
       "suspended": "Autorisation de conduire suspendue"
     },
     "staysCurrent": "Reste valide",
     "staysSuspended": "Reste suspendue",
-    "subtitle": "Configurez les contrôles originaux et inscrivez les conducteurs prévus. L'autorisation de conduire est spécifique aux catégories et restrictions contrôlées.",
+    "summary": {
+      "class": "Catégorie",
+      "empty": "Aucune catégorie n'est encore autorisée. Un vérificateur doit enregistrer votre première vérification de l'original.",
+      "emptyForVerifier": "Aucune catégorie n'est encore autorisée.",
+      "personWide": "Un empêchement suspend la conduite dans toutes les catégories jusqu'à ce qu'un vérificateur la rétablisse. Une nouvelle vérification seule ne suffit pas à le lever.",
+      "restrictions": "Restrictions",
+      "status": "Statut",
+      "validThrough": "Valide jusqu'au"
+    },
+    "switchOnFirst": "Activez le contrôle des permis de conduire sur la carte Fonctionnalités dans les paramètres de l'organisation. La configuration à cet endroit enregistre la première politique.",
+    "tabs": {
+      "checks": "Contrôles",
+      "myLicence": "Mon permis",
+      "planning": "Planification"
+    },
     "tasks": {
       "assign": "Attribuer la responsabilité",
-      "assigned": "Responsabilité attribuée",
-      "assignmentBoundary": "Cette tâche n'accorde aucun droit d'inspection et ne prolonge aucun délai.",
       "class": "Catégorie {classCode}",
       "complete": "Marquer le rappel personnel comme terminé",
+      "completedToast": "Rappel personnel marqué comme terminé",
       "completeError": "Impossible de terminer cette tâche. Vérifiez votre responsabilité actuelle de vérificateur.",
       "completing": "Finalisation…",
       "deadline": "Contrôle original à effectuer",
@@ -793,21 +915,16 @@
       "loadError": "Impossible de charger les tâches de permis de conduire. Vérifiez vos droits d'accès à l'organisation.",
       "loading": "Chargement des tâches de permis de conduire…",
       "noDeliveryReceipt": "La réalisation de la tâche ne confirme pas la remise directe ni la lecture par l'employé. Aucun délai n'est prolongé.",
-      "noVerifier": "Aucun vérificateur disponible n'est responsable de cet employé.",
+      "openCheck": "Ouvrir le contrôle",
       "personalCompleted": "Rappel personnel terminé",
       "personalTitle": "Tâches de rappel personnel",
-      "reassignmentTitle": "Tâches de responsabilité du vérificateur",
       "refresh": "Revérifier la responsabilité",
       "suspension": "Autorisation de conduire suspendue",
       "validThrough": "Valide jusqu'au {date} dans le fuseau horaire de date limite enregistré pour le contrôle"
     },
-    "timezone": "Fuseau horaire fixe du calendrier",
     "title": "Contrôle du permis de conduire",
-    "unnamedEmployee": "Employé",
     "worklist": {
-      "help": "Seuls les employés inscrits relevant de votre responsabilité actuelle de vérificateur apparaissent ici.",
       "open": "Vérifier {name}",
-      "title": "Votre liste de travail de vérification initiale",
       "viewEnded": "Afficher l'enregistrement clôturé pour {name}"
     },
     "zoneFixedError": "Le fuseau horaire du calendrier est fixe. Les échéances existantes doivent conserver leur signification d'origine.",
@@ -999,6 +1116,7 @@
     "calendar": "Calendrier",
     "compliance": "Conformité",
     "dashboard": "Tableau de bord",
+    "driving-licence": "Permis de conduire",
     "feedback": "Commentaires",
     "finance": "Finances",
     "financeAwaiting": "{count, plural, one {# dépense en attente de remboursement} other {# dépenses en attente de remboursement}}",
@@ -1185,6 +1303,10 @@
       "complianceExceptionRequested": {
         "message": "{employeeName} a demandé une dérogation {exceptionType, select, rest_period {au temps de repos} overtime_daily {aux heures supplémentaires quotidiennes} overtime_weekly {aux heures supplémentaires hebdomadaires} overtime_monthly {aux heures supplémentaires mensuelles} other {de conformité}} : \"{reason}\"",
         "title": "Dérogation de conformité demandée"
+      },
+      "drivingAuthorizationEnded": {
+        "message": "{employeeName} n'est plus un conducteur prévu, son autorisation de conduite ({classes}) a donc pris fin. Pour conduire à nouveau, un nouveau contrôle est requis.",
+        "title": "Autorisation de conduite expirée"
       },
       "drivingAuthorizationSuspended": {
         "message": "L'autorisation de conduite pour {employeeName} ({classes}) est suspendue. Un nouveau contrôle et une réintégration explicite sont requis avant de pouvoir conduire.",
@@ -1681,7 +1803,7 @@
         "approval_cover_return_summary": "Décidé par votre remplaçant",
         "approval_cover_started": "Remplacement d'absence commencé",
         "break_due_reminder": "Pause requise",
-        "driving_authorization_suspended": "Autorisation de conduite suspendue",
+        "driving_authorization_suspended_or_ended": "Autorisation de conduite suspendue ou expirée",
         "driving_details_missing_reminder": "Informations de conduite manquantes",
         "driving_licence_reminder": "Contrôle du permis de conduire requis",
         "forgotten_clock_out_reminder": "Oubli de pointage de sortie",
@@ -2140,6 +2262,8 @@
         },
         "drivingLicence": {
           "actor_name": "Le nom de la personne ayant effectué cette action ; vide pour une action système ou un intervenant indisponible.",
+          "assigned_at": "Date et heure UTC auxquelles votre propre affectation de conducteur prévu a été enregistrée pour la première fois.",
+          "assigned_by": "Le nom de la personne qui a enregistré pour la première fois votre propre affectation de conducteur prévu.",
           "authorization_events": {
             "summary": "L'historique de vos autorisations de conduite, y compris les signalements d'empêchement, les résolutions et les réintégrations explicites."
           },
@@ -2178,7 +2302,6 @@
           "employee_ids": "Les identifiants opaques des employés relevant de votre périmètre de vérificateur spécifique, encodés sous forme de tableau JSON.",
           "employment_period_id": "La période d'emploi à laquelle appartient cette preuve ; vide pour les emplois antérieurs.",
           "enabled": "Indique si la politique de vérification de l'organisation référencée était activée.",
-          "enrolled_at": "Moment où vous avez été inscrit(e) aux vérifications de permis de conduire de l'organisation.",
           "expires_at": "L'instant UTC auquel cette autorisation ou cette attribution de vérificateur expire.",
           "expiry_date": "La date d'expiration de la catégorie enregistrée lors de l'inspection ; vide si aucune n'a été enregistrée.",
           "failure_scope": "Indique si une inspection infructueuse concernait les catégories, le document ou la personne.",
@@ -2190,6 +2313,9 @@
           "impedimentReports": {
             "summary": "Vos signalements minimaux d'empêchement à la conduite et leur résolution explicite, sans explications médicales ni motifs personnels."
           },
+          "intendedDriverAssignment": {
+            "summary": "Votre propre affectation de conducteur prévu pour les contrôles de permis de conduire de l'organisation. Les affectations d'organisation et d'équipe qui vous concernent également ne sont pas répertoriées."
+          },
           "interval_months": "Le nombre de mois calendaires entre les vérifications de routine dans le cadre de cette politique.",
           "kind": "Le type d'événement d'autorisation, de suspension ou de tâche ; les tâches sont personal_reminder ou reassignment.",
           "last_successful_at": "Moment où cette catégorie a fait l'objet d'une inspection originale réussie pour la dernière fois.",
@@ -2199,9 +2325,6 @@
           "notificationId": "La notification intégrée à l'application liée à ce rappel ; vide si aucune n'a été créée.",
           "occasionKey": "L'occurrence concernée par ce rappel ou cette tâche ; elle identifie l'emploi, l'échéance de catégorie ou la suspension sans copier la vérification.",
           "original_inspected": "Indique si le vérificateur a confirmé avoir inspecté en personne le document original.",
-          "participation": {
-            "summary": "Votre inscription aux vérifications de permis de conduire de l'organisation."
-          },
           "placedAt": "Moment où cette suspension conservatoire a été appliquée, sous forme d'instant UTC.",
           "placedBy": "Le nom de l'administrateur ayant appliqué cette suspension conservatoire de dossier.",
           "policies": {
@@ -2227,6 +2350,7 @@
           },
           "reportedAt": "Moment où vous avez signalé un empêchement de conduire concernant la personne dans son ensemble, sous forme d'instant UTC.",
           "reporterName": "Le nom de la personne qui a signalé l'obstacle.",
+          "required": "Indique si votre propre affectation fait de vous un conducteur prévu (true) ou vous exclut d'une affectation d'équipe ou d'organisation (false).",
           "resolvedAt": "Date et heure auxquelles un vérificateur a explicitement résolu ce signalement ; vide pour un signalement non résolu.",
           "resolvedBy": "Le nom du vérificateur qui a explicitement résolu ce signalement.",
           "restrictions": "Les restrictions de conduite applicables enregistrées pour cette catégorie.",
@@ -2253,6 +2377,8 @@
             "summary": "Votre enregistrement actuel de suspension d'autorisation de conduire à l'échelle de la personne ou du document."
           },
           "team_ids": "Les identifiants d'équipe opaques dans votre périmètre de vérificateur spécifique, encodés sous forme de tableau JSON.",
+          "updated_at": "Date et heure UTC auxquelles votre propre affectation de conducteur prévu a été modifiée pour la dernière fois.",
+          "updated_by": "Le nom de la personne qui a modifié pour la dernière fois votre propre affectation de conducteur prévu.",
           "valid_through": "Le premier jour calendaire final applicable de validation de cette catégorie.",
           "value": "La valeur fournie par ce complément ; si vide, la date d'expiration facultative de la catégorie a été effacée.",
           "verifier_confirmed": "Indique si le vérificateur a confirmé l'enregistrement de l'inspection.",

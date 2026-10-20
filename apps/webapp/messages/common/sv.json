@@ -545,8 +545,6 @@
     "yes": "Ja"
   },
   "drivingLicence": {
-    "activate": "Aktivera körkortskontroll",
-    "activationHelp": "Registreringen ger inte körtillstånd. En behörig kontrollant måste först kontrollera originalkörkortet.",
     "applyingInterval": "Tillämpar…",
     "applyInterval": "Tillämpa intervalländring",
     "check": {
@@ -562,6 +560,7 @@
       "issueDate": "Dokumentets utfärdandedatum",
       "original": "Jag kontrollerade personligen originalkörkortet i den anställdes närvaro.",
       "privacy": "Registrera endast dokumentdatum, kontrollerade behörigheter och nödvändiga körbegränsningar. Ange inte körkortsnummer, adress, medicinska förklaringar eller personlig bakgrund.",
+      "recorded": "Originalkontroll registrerad",
       "restrictions": "Nödvändiga körbegränsningar",
       "result": "Resultat",
       "saving": "Registrerar kontroll…",
@@ -573,14 +572,54 @@
       "title": "Kontrollera {name}s originalkörkort",
       "verifier": "Jag bekräftar att de registrerade uppgifterna och de enskilda behörighetsresultaten återspeglar min kontroll."
     },
+    "checkPage": {
+      "back": "Kontroller",
+      "former": "Tidigare anställd",
+      "loadError": "Körkortsposten kunde inte läsas in. Kontrollera ditt nuvarande kontrollantansvar.",
+      "loading": "Läser in körkortsposten…",
+      "notIntended": "{name} är inte en avsedd förare. En kontroll behövs endast för avsedda förare.",
+      "title": "Körkortskontroll för {name}"
+    },
+    "checks": {
+      "column": {
+        "action": "Åtgärd",
+        "deadline": "Nästa tidsfrist",
+        "name": "Namn",
+        "status": "Status",
+        "team": "Team"
+      },
+      "deadline": "{date} ({timezone})",
+      "dueNow": "Kontroll ska göras nu",
+      "empty": {
+        "description": "Avsedda förare inom ditt kontrollantansvar visas här. Kontakta en administratör om någon saknas.",
+        "title": "Ingen att kontrollera än"
+      },
+      "filter": {
+        "all": "Alla statusar",
+        "status": "Status"
+      },
+      "help": "Avsedda förare som omfattas av ditt nuvarande kontrollantansvar. Du visas aldrig i din egen lista.",
+      "loadError": "Listan kunde inte läsas in. Kontrollera ditt nuvarande kontrollantansvar.",
+      "loading": "Läser in avsedda förare…",
+      "noMatches": "Inga avsedda förare matchar sökningen eller filtret.",
+      "search": "Sök efter namn",
+      "status": {
+        "active": "Aktiv",
+        "ended": "Avslutad",
+        "notIntended": "Inte en avsedd förare",
+        "notYetChecked": "Ännu inte kontrollerad",
+        "partiallyActive": "Delvis aktiv",
+        "suspended": "Avstängd"
+      },
+      "title": "Avsedda förare att kontrollera"
+    },
     "class": {
       "active": "Behörig",
       "ended": "Avslutad",
+      "noLongerIntended": "Avslutades eftersom den anställde inte längre är en avsedd förare. Att köra igen kräver en ny kontroll.",
       "overdue": "Rutinkontroll har förfallit. Detta är en organisatorisk avstängning, inte ett påstående om att den juridiska körrätten har återkallats.",
       "recheck": "Det krävs en ny originalkontroll och ett uttryckligt återupprättande.",
-      "restrictions": "Körbegränsningar: {restrictions}",
-      "suspended": "Suspenderad",
-      "validThrough": "Giltig till och med {date} ({timezone})"
+      "suspended": "Suspenderad"
     },
     "declaration": {
       "text": "Jag bekräftar att inget känt körförbud, återkallande eller annat hinder förhindrar den avsedda körningen och att jag uppfyller tillämpliga körbegränsningar."
@@ -589,11 +628,18 @@
       "uncertain": "Valfria påminnelsemeddelanden via e-post till dig har ett osäkert leveransresultat ({count}). De skickas inte igen automatiskt. Dina påminnelser i appen finns kvar; e-postleverans bekräftar inte att de har lästs."
     },
     "earlierLimit": "Tidigare gräns för dokument/behörighet",
-    "enroll": "Registrera",
-    "enrollError": "Medarbetaren kunde inte registreras. Aktivera policyn först och kontrollera din åtkomst.",
-    "enrollmentHelp": "Registrera medarbetare som ska köra. Fordonstilldelningar och tidigare fordonsanvändning ger aldrig körtillstånd.",
-    "enrollmentTitle": "Avsedda förare",
-    "enrollName": "Registrera {name}",
+    "ending": {
+      "assignmentConfirm": "Spara och avsluta behörigheter",
+      "assignmentDescription": "Dessa anställda slutar vara avsedda förare när du sparar. Deras körbehörigheter upphör omedelbart och lagringsperioden för deras kontrollposter inleds. Att köra igen kräver en ny kontroll.",
+      "assignmentTitle": "Avsluta körbehörigheter?",
+      "listLabel": "Körbehörigheter som upphör",
+      "teamChangeConfirm": "Fortsätt och avsluta behörigheter",
+      "teamChangeDescription": "Dessa anställda slutar vara avsedda förare eftersom deras primära team ändras. Deras körbehörigheter upphör omedelbart och lagringsperioden för deras kontrollposter inleds. Att köra igen kräver en ny kontroll.",
+      "teamChangeGeneric": "Den här ändringen avslutar körbehörigheter för vissa anställda.",
+      "teamChangePreviewFailed": "Det gick inte att kontrollera om den här ändringen avslutar körbehörigheter. Försök igen.",
+      "teamChangeStale": "Vilka som påverkas av denna ändring har ändrats under tiden. Gör om ändringen för att granska den.",
+      "teamChangeTitle": "Denna teamändring avslutar körbehörigheter"
+    },
     "evidence": {
       "confirmation": "Granskarens bekräftelse registrerades med policyversion {version}; tidsfrister använder {timezone}.",
       "declarationConfirmed": "Medarbetaren gjorde försäkran personligen; granskaren intygade den vid kontrolltillfället.",
@@ -640,6 +686,7 @@
       "loading": "Läser in historik…",
       "minimalEvidence": "Registrera endast nödvändigt körunderlag. Ange inte dokumentnummer, medicinska förklaringar eller personlig bakgrund.",
       "missingDetail": "Saknad uppgift",
+      "noLongerIntended": "Inte längre en avsedd förare",
       "none": "Inget registrerat",
       "openSupplement": "Komplettera ursprunglig kontroll {date}",
       "original": "Ursprunglig kontroll och bekräftelse",
@@ -655,6 +702,7 @@
       "recordingError": "Registreringsfel",
       "reinstated": "Behörighet uttryckligen återupprättad efter en ny kontroll",
       "save": "Spara komplettering",
+      "saved": "Komplettering sparad",
       "saveError": "Kompletteringen kunde inte sparas. Kontrollera ditt nuvarande ansvarsområde och korrigeringsuppgifter.",
       "snapshot": "Policy {version}; intervall {months} månader; tidszon för tidsfrist {timezone}",
       "supplementBy": "Komplettering av {name}",
@@ -677,6 +725,7 @@
       "reinstating": "Sparar återupprättande…",
       "report": "Anmäl att jag inte kan köra",
       "reported": "Alla dina klassbehörigheter är upphävda. Kontakta din ansvariga verifierare för en ny ursprunglig kontroll och uttryckligt återupprättande efter att hindret har undanröjts.",
+      "reportedToast": "Rapport sparad",
       "reportFailed": "Anmälan kunde inte sparas. Försök igen eller kontakta din ansvariga verifierare omedelbart.",
       "reportHelp": "Anmäl en nuvarande oförmåga att köra. Alla klassbehörigheter upphävs omedelbart. Du behöver inte ange personliga skäl.",
       "reporting": "Sparar anmälan…",
@@ -684,6 +733,25 @@
       "selectClasses": "Klasser att återupprätta från den senaste ursprungliga kontrollen",
       "title": "Kan du inte köra?",
       "unresolvedReport": "Ett personövergripande hinder som anmälts av den anställde måste fortfarande undanröjas."
+    },
+    "intendedDrivers": {
+      "description": "Avsedda förare får kontroller av originalkörkort, påminnelser och en körstatus. Ingen är en avsedd förare förrän du tilldelar dem det. Den mest specifika tilldelningen gäller: en anställds egen före dennes primära teams, och ett teams före hela organisationens. Andra teammedlemskap räknas inte. ”Krävs inte” utesluter ett team eller en anställd från en bredare tilldelning.",
+      "error": {
+        "assignmentNotFound": "Den tilldelningen finns inte längre. Läs in sidan igen.",
+        "employeeNotFound": "Den personen är inte längre anställd i den här organisationen.",
+        "failed": "De avsedda förarna kunde inte sparas. Försök igen.",
+        "forbidden": "Endast organisationsägare och administratörer kan tilldela avsedda förare.",
+        "notEnabled": "Aktivera körkortskontroll innan du tilldelar avsedda förare.",
+        "stalePreview": "Vem denna ändring påverkar har ändrats under tiden. Granska den och spara igen.",
+        "teamNotFound": "Det teamet finns inte längre."
+      },
+      "notRequired": "Krävs inte (undantagen)",
+      "removed": "Tilldelning av avsedd förare togs bort",
+      "required": "Krävs",
+      "saved": "Avsedda förare har sparats",
+      "targetOrganization": "Hela organisationen",
+      "title": "Avsedda förare",
+      "valueLabel": "Körkortskontroller"
     },
     "interval": "Intervall för rutinkontroll (månader)",
     "intervalAnchorHelp": "Beräknat från varje klass senaste godkända kontroll.",
@@ -698,16 +766,20 @@
     "justification": "Motivering för lagring",
     "justificationHelp": "Förklara varför denna tidsbegränsade period är nödvändig (minst 10 tecken). Inkludera inte privata eller medicinska uppgifter.",
     "loadError": "Körkortskontrollen kunde inte läsas in. Kontrollera din organisationsbehörighet.",
-    "myDescription": "Visa status för din körkortskontroll",
+    "myLicence": {
+      "former": "Du är inte längre en avsedd förare. Dina sparade kontrollposter förblir tillgängliga för visning och export."
+    },
     "myTitle": "Mitt körtillstånd",
     "newInterval": "Nytt rutinintervall (månader)",
     "newlyOverdue": "Nyligen förfallen – kommer att spärras",
     "newRoutineDate": "Nästa rutinkontroll",
     "noEmployeeRecord": "Ingen körkortspost för anställda finns tillgänglig i denna organisation.",
-    "noEmployees": "Det finns inga aktiva medarbetare att registrera.",
     "noIntervalClasses": "Inga befintliga behörighetsklasser behöver beräknas om.",
     "notChecked": "Inte kontrollerad ännu – inget körtillstånd",
-    "notEnrolled": "Inte registrerad – inget körtillstånd",
+    "off": {
+      "description": "Ingen ser körkortskontroll och inga påminnelser skickas. Avsedda förare, kontrollörsbehörigheter, kontrollposter och auktorisationer behålls, och rensning av underlag fortsätter enligt den sparade lagringsperioden. Endast Lagring och spärrar är tillgängligt tills det slås på igen.",
+      "title": "Körkortskontroll är avstängd"
+    },
     "operational": {
       "advisory": "Körtillstånd",
       "loading": "Läser in körtillstånd…",
@@ -719,7 +791,9 @@
       "title": "Körstatus för planering",
       "unavailable": "Status för körtillstånd är inte tillgänglig."
     },
-    "policyIntro": "Originalkörkortskontroller med Tyskland först. Välj rutinintervall och motivera en tidsbegränsad lagringsperiod för underlag före aktivering.",
+    "page": {
+      "title": "Körkort"
+    },
     "policyTitle": "Organisationspolicy",
     "previewingInterval": "Läser in påverkan…",
     "previewInterval": "Förhandsgranska intervallpåverkan",
@@ -768,23 +842,71 @@
     "saved": "Policy sparad",
     "saveError": "Policyn kunde inte sparas. Kontrollera intervall, tidszon, påminnelser och motiverad lagringsperiod.",
     "saving": "Sparar…",
-    "settingsDescription": "Konfigurera originalkontroller och registrera avsedda förare",
+    "settingsSummary": "Ställ in kontrollpolicy, avsedda förare, kontrollörer och lagring av underlag",
+    "settingsTabs": {
+      "cleanupDescription": "Förfallet underlag tas bort automatiskt. Kör rensning nu för att ta bort det direkt.",
+      "cleanupFinished": "Rensning av förfallet underlag slutförd",
+      "cleanupTitle": "Rensning av underlag",
+      "deadlineTimezone": "Tidszon för tidsgräns",
+      "holdPlaced": "Rättslig spärr har aktiverats",
+      "holdReleased": "Rättslig spärr har hävts",
+      "holdsColumn": "Öppna spärrar",
+      "holdsTitle": "Rättsliga spärrar",
+      "impactClass": "Medarbetare och behörighet",
+      "impactResult": "Resultat",
+      "impactTimezone": "Tidszon",
+      "intendedDrivers": "Avsedda förare",
+      "intendedDriversDescription": "Bestäm vem som behöver kontroller av originalkörkort: hela organisationen, ett primärt team eller en enskild medarbetare.",
+      "intendedDriversEmpty": {
+        "description": "Ställ in Krävs för hela organisationen, för ett primärt team eller för en enskild medarbetare. Det mest specifika valet gäller, och Krävs inte undantar ett team eller en medarbetare från ett bredare val. Endast avsedda förare får kontroller, påminnelser och körstatus.",
+        "title": "Ingen är en avsedd förare ännu"
+      },
+      "policy": "Policy",
+      "policyDescription": "Intervall för rutinkontroll, ledtider för påminnelser och lagringsperiod för underlag.",
+      "reassignment": {
+        "description": "Deras kontroller och påminnelser har ingen kontrollör. Att tilldela ansvar ger dig inga granskningsrättigheter och förlänger ingen tidsgräns.",
+        "title": "Medarbetare utan ansvarig kontrollör"
+      },
+      "remindersDescription": "När påminnelser skickas innan en tidsgräns och hur länge underlag sparas efter att det inte längre stöder en auktorisation.",
+      "remindersTitle": "Påminnelser och lagring",
+      "reportColumn": "Rapport",
+      "retention": "Lagring och spärrar",
+      "retentionColumn": "Lagring",
+      "retentionDescription": "Sparade kontrollposter, rättsliga spärrar och rensning av underlag.",
+      "scheduleTitle": "Kontrollschema",
+      "verifiers": "Kontrollörer",
+      "verifiersDescription": "Vem som kontrollerar vems körkort, eventuellt fram till ett visst datum."
+    },
     "status": {
       "active": "Körbehörighet aktiv",
       "ended": "Körbehörighet avslutad",
       "explanation": "Organisationens körbehörighet omfattar angivna klasser och begränsningar. Den fastställer inte lämplighet för varje fordon. Du kan fortsätta registrera arbetstid och faktisk fordonsanvändning.",
+      "notIntended": "Inte en avsedd förare – ingen körauktorisation",
       "partial": "Vissa behörighetsklasser är avstängda",
       "suspended": "Körbehörighet avstängd"
     },
     "staysCurrent": "Förblir giltig",
     "staysSuspended": "Förblir avstängd",
-    "subtitle": "Konfigurera originalkontroller och registrera avsedda förare. Körbehörigheten är specifik för kontrollerade klasser och begränsningar.",
+    "summary": {
+      "class": "Behörighet",
+      "empty": "Ingen behörighet är auktoriserad ännu. En kontrollör registrerar din första originalkontroll.",
+      "emptyForVerifier": "Ingen behörighet är auktoriserad ännu.",
+      "personWide": "Ett hinder upphäver körning för alla behörigheter tills en kontrollör återställer den. En ny kontroll i sig häver inte detta.",
+      "restrictions": "Begränsningar",
+      "status": "Status",
+      "validThrough": "Giltigt till och med"
+    },
+    "switchOnFirst": "Slå på körkortskontroll på kortet Funktioner i organisationsinställningarna. När du konfigurerar den där sparas den första policyn.",
+    "tabs": {
+      "checks": "Kontroller",
+      "myLicence": "Mitt körkort",
+      "planning": "Planering"
+    },
     "tasks": {
       "assign": "Tilldela ansvar",
-      "assigned": "Ansvar tilldelat",
-      "assignmentBoundary": "Denna uppgift ger inga granskningsrättigheter och förlänger ingen tidsfrist.",
       "class": "Klass {classCode}",
       "complete": "Markera personlig påminnelse som slutförd",
+      "completedToast": "Personlig påminnelse markerad som slutförd",
       "completeError": "Kunde inte slutföra denna uppgift. Kontrollera ditt nuvarande granskaransvar.",
       "completing": "Slutför…",
       "deadline": "Dags för originalkontroll",
@@ -793,21 +915,16 @@
       "loadError": "Kunde inte läsa in körkortsuppgifter. Kontrollera din organisationsbehörighet.",
       "loading": "Läser in körkortsuppgifter…",
       "noDeliveryReceipt": "Att slutföra uppgiften bekräftar inte direkt leverans eller att medarbetaren har läst den. Ingen tidsfrist förlängs.",
-      "noVerifier": "Ingen tillgänglig granskare är ansvarig för denna medarbetare.",
+      "openCheck": "Öppna kontroll",
       "personalCompleted": "Personlig påminnelse slutförd",
       "personalTitle": "Uppgifter för personliga påminnelser",
-      "reassignmentTitle": "Uppgifter för granskaransvar",
       "refresh": "Ansvar för återkontroll",
       "suspension": "Körbehörighet avstängd",
       "validThrough": "Giltig till och med {date} i kontrollens sparade tidszon för tidsfrist"
     },
-    "timezone": "Fast tidszon för kalender",
     "title": "Körkortskontroll",
-    "unnamedEmployee": "Anställd",
     "worklist": {
-      "help": "Endast registrerade anställda inom ditt nuvarande granskningsansvar visas här.",
       "open": "Kontrollera {name}",
-      "title": "Din arbetslista för ursprungskontroll",
       "viewEnded": "Visa avslutad post för {name}"
     },
     "zoneFixedError": "Kalenderns tidszon är fast. Befintliga tidsfrister måste behålla sin ursprungliga betydelse.",
@@ -999,6 +1116,7 @@
     "calendar": "Kalender",
     "compliance": "Efterlevnad",
     "dashboard": "Översikt",
+    "driving-licence": "Körkort",
     "feedback": "Feedback",
     "finance": "Ekonomi",
     "financeAwaiting": "{count, plural, other {# utlägg väntar på ersättning} }",
@@ -1185,6 +1303,10 @@
       "complianceExceptionRequested": {
         "message": "{employeeName} begärde ett undantag för {exceptionType, select, rest_period {viloperiod} overtime_daily {daglig övertid} overtime_weekly {veckoövertid} overtime_monthly {månadsövertid} other {regelefterlevnad}}: \"{reason}\"",
         "title": "Undantag för regelefterlevnad begärt"
+      },
+      "drivingAuthorizationEnded": {
+        "message": "{employeeName} är inte längre en avsedd förare, så personens körtillstånd ({classes}) har upphört. För att köra igen krävs en ny kontroll.",
+        "title": "Körtillstånd har upphört"
       },
       "drivingAuthorizationSuspended": {
         "message": "Körtillståndet för {employeeName} ({classes}) är spärrat. En ny kontroll och ett uttryckligt återinförande krävs före körning.",
@@ -1681,7 +1803,7 @@
         "approval_cover_return_summary": "Beslutat av din ersättare",
         "approval_cover_started": "Ersättning vid frånvaro har startat",
         "break_due_reminder": "Dags för rast",
-        "driving_authorization_suspended": "Körtillstånd spärrat",
+        "driving_authorization_suspended_or_ended": "Körtillstånd tillfälligt upphävt eller upphört",
         "driving_details_missing_reminder": "Körinformation saknas",
         "driving_licence_reminder": "Körkortskontroll ska utföras",
         "forgotten_clock_out_reminder": "Glömd utstämpling",
@@ -2140,6 +2262,8 @@
         },
         "drivingLicence": {
           "actor_name": "Namnet på personen som utförde denna åtgärd; tomt för en systemåtgärd eller otillgänglig aktör.",
+          "assigned_at": "När din egen tilldelning som avsedd förare sparades för första gången, som en UTC-tidpunkt.",
+          "assigned_by": "Namnet på personen som först sparade din egen tilldelning som avsedd förare.",
           "authorization_events": {
             "summary": "Din körtillståndshistorik, inklusive anmälningar om hinder, lösningar och uttryckliga återinföranden."
           },
@@ -2178,7 +2302,6 @@
           "employee_ids": "De opaka medarbetar-ID:na inom ditt specifika verifieraromfång, kodade som en JSON-array.",
           "employment_period_id": "Anställningsperioden som detta underlag tillhör; tomt för tidigare anställning.",
           "enabled": "Huruvida den refererade kontrollpolicyn för organisationen var aktiverad.",
-          "enrolled_at": "När du registrerades i organisationens körkortskontroller.",
           "expires_at": "UTC-tidpunkten då denna behörighet eller verifierartilldelning löper ut.",
           "expiry_date": "Klassens utgångsdatum som registrerades vid granskningen; tomt om inget registrerades.",
           "failure_scope": "Huruvida en misslyckad granskning gällde klasser, dokumentet eller personen.",
@@ -2190,6 +2313,9 @@
           "impedimentReports": {
             "summary": "Dina minimala rapporter om körhinder och deras uttryckliga lösning, utan medicinska förklaringar eller privata skäl."
           },
+          "intendedDriverAssignment": {
+            "summary": "Din egen tilldelning som avsedd förare för organisationens körkortskontroller. Organisations- och teamtilldelningar som också omfattar dig listas inte."
+          },
           "interval_months": "Antalet kalendermånader mellan rutinmässiga kontroller enligt denna policy.",
           "kind": "Auktoriseringshändelsen, avstängningen eller uppgiftstypen; uppgifter är personal_reminder eller reassignment.",
           "last_successful_at": "När denna klass senast godkändes vid en framgångsrik originalgranskning.",
@@ -2199,9 +2325,6 @@
           "notificationId": "Appaviseringen som är länkad till denna påminnelse; tomt om ingen skapades.",
           "occasionKey": "Händelsen som denna påminnelse eller uppgift rör; den identifierar anställningen, tidsgränsen för klassen eller avstängningen utan att kopiera kontrollen.",
           "original_inspected": "Huruvida verifieraren bekräftade att ha granskat originaldokumentet personligen.",
-          "participation": {
-            "summary": "Din registrering i organisationens körkortskontroller."
-          },
           "placedAt": "När denna bevarandespärr infördes, som en UTC-tidpunkt.",
           "placedBy": "Namnet på administratören som införde denna ärendespärr.",
           "policies": {
@@ -2227,6 +2350,7 @@
           },
           "reportedAt": "När du rapporterade ett personomfattande körhinder, som en UTC-tidpunkt.",
           "reporterName": "Namnet på personen som rapporterade hindret.",
+          "required": "Huruvida din egen tilldelning gör dig till en avsedd förare (sant) eller exkluderar dig från en team- eller organisationstilldelning (falskt).",
           "resolvedAt": "När en granskare uttryckligen löste denna rapport; tomt för en olöst rapport.",
           "resolvedBy": "Namnet på granskaren som uttryckligen löste denna rapport.",
           "restrictions": "De relevanta körkortsrestriktionerna som registrerats för denna behörighet.",
@@ -2253,6 +2377,8 @@
             "summary": "Din aktuella person- eller dokumentövergripande post för tillfälligt upphävd körbehörighet."
           },
           "team_ids": "De opaka team-ID:na i ditt specifika granskningsomfång, kodade som en JSON-matris.",
+          "updated_at": "När din egen tilldelning som avsedd förare senast ändrades, som en UTC-tidpunkt.",
+          "updated_by": "Namnet på personen som senast ändrade din egen tilldelning som avsedd förare.",
           "valid_through": "Den tidigaste tillämpliga sista kalenderdagen för detta behörighetsgodkännande.",
           "value": "Värdet som tillhandahålls av detta tillägg; tomt innebär att det valfria utgångsdatumet för behörigheten rensades.",
           "verifier_confirmed": "Huruvida granskaren bekräftade inspektionsposten.",

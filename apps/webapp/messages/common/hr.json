@@ -545,8 +545,6 @@
     "yes": "Da"
   },
   "drivingLicence": {
-    "activate": "Aktiviraj provjeru vozačke dozvole",
-    "activationHelp": "Prijava ne daje ovlaštenje za vožnju. Ovlašteni verifikator mora prvo provjeriti originalnu vozačku dozvolu.",
     "applyingInterval": "Primjena…",
     "applyInterval": "Primijeni promjenu intervala",
     "check": {
@@ -562,6 +560,7 @@
       "issueDate": "Datum izdavanja dokumenta",
       "original": "Osobno sam pregledao/la originalnu vozačku dozvolu u prisutnosti zaposlenika.",
       "privacy": "Zabilježite samo datume dokumenta, pregledane kategorije i potrebna vozačka ograničenja. Nemojte unositi broj vozačke dozvole, adresu, medicinska obrazloženja ni osobne podatke.",
+      "recorded": "Provjera izvornika zabilježena",
       "restrictions": "Potrebna vozačka ograničenja",
       "result": "Rezultat",
       "saving": "Bilježenje provjere…",
@@ -573,14 +572,54 @@
       "title": "Pregledajte originalnu vozačku dozvolu korisnika {name}",
       "verifier": "Potvrđujem da zabilježene činjenice i rezultati pojedinih kategorija odražavaju moj pregled."
     },
+    "checkPage": {
+      "back": "Provjere",
+      "former": "Bivši zaposlenik",
+      "loadError": "Zapis o vozačkoj dozvoli nije se mogao učitati. Provjerite svoju trenutačnu nadležnost za provjeru.",
+      "loading": "Učitavanje zapisa o vozačkoj dozvoli…",
+      "notIntended": "{name} nije predviđeni vozač. Provjera je potrebna samo za predviđene vozače.",
+      "title": "Provjera vozačke dozvole za: {name}"
+    },
+    "checks": {
+      "column": {
+        "action": "Radnja",
+        "deadline": "Sljedeći rok",
+        "name": "Ime",
+        "status": "Status",
+        "team": "Tim"
+      },
+      "deadline": "{date} ({timezone})",
+      "dueNow": "Provjera je dospjela",
+      "empty": {
+        "description": "Ovdje se prikazuju predviđeni vozači u vašoj nadležnosti za provjeru. Obratite se administratoru ako netko nedostaje.",
+        "title": "Još nema nikoga za provjeru"
+      },
+      "filter": {
+        "all": "Svi statusi",
+        "status": "Status"
+      },
+      "help": "Predviđeni vozači obuhvaćeni vašom trenutačnom nadležnošću za provjeru. Nikada se ne prikazujete na vlastitom popisu.",
+      "loadError": "Popis se nije mogao učitati. Provjerite svoju trenutačnu nadležnost za provjeru.",
+      "loading": "Učitavanje predviđenih vozača…",
+      "noMatches": "Nijedan predviđeni vozač ne odgovara pretrazi ili filtru.",
+      "search": "Pretraži po imenu",
+      "status": {
+        "active": "Aktivno",
+        "ended": "Završeno",
+        "notIntended": "Nije predviđeni vozač",
+        "notYetChecked": "Još nije provjereno",
+        "partiallyActive": "Djelomično aktivno",
+        "suspended": "Suspendirano"
+      },
+      "title": "Predviđeni vozači za provjeru"
+    },
     "class": {
       "active": "Ovlašteno",
       "ended": "Završeno",
+      "noLongerIntended": "Završeno jer zaposlenik više nije predviđeni vozač. Za ponovnu vožnju potrebna je nova provjera.",
       "overdue": "Redovita provjera kasni. Ovo je organizacijska suspenzija, a ne izjava o oduzimanju zakonskog prava na upravljanje vozilom.",
       "recheck": "Potrebna je nova izvorna provjera i izričito vraćanje ovlaštenja.",
-      "restrictions": "Vozačka ograničenja: {restrictions}",
-      "suspended": "Suspendirano",
-      "validThrough": "Vrijedi do {date} ({timezone})"
+      "suspended": "Suspendirano"
     },
     "declaration": {
       "text": "Potvrđujem da nijedna poznata zabrana upravljanja vozilom, oduzimanje ili druga zapreka ne sprječava namjeravanu vožnju te da ispunjavam primjenjiva vozačka ograničenja."
@@ -589,11 +628,18 @@
       "uncertain": "Neobavezni podsjetnici e-poštom imaju neizvjestan ishod isporuke ({count}). Neće se automatski ponovno slati. Vaši podsjetnici u aplikaciji ostaju dostupni; isporuka e-pošte ne potvrđuje čitanje."
     },
     "earlierLimit": "Ranije ograničenje dokumenta/kategorije",
-    "enroll": "Upiši",
-    "enrollError": "Zaposlenik se ne može upisati. Prvo aktivirajte pravilo i provjerite svoja prava pristupa.",
-    "enrollmentHelp": "Upišite zaposlenike koji bi trebali voziti. Dodjela vozila i prethodno korištenje vozila nikada ne stvaraju ovlaštenje.",
-    "enrollmentTitle": "Predviđeni vozači",
-    "enrollName": "Upiši {name}",
+    "ending": {
+      "assignmentConfirm": "Spremi i prekini ovlaštenja",
+      "assignmentDescription": "Ovi zaposlenici prestaju biti predviđeni vozači kada spremite. Njihova ovlaštenja za vožnju odmah prestaju, a za njihove zapise o provjeri započinje razdoblje čuvanja. Za ponovnu vožnju potrebna je nova provjera.",
+      "assignmentTitle": "Prekinuti ovlaštenja za vožnju?",
+      "listLabel": "Ovlaštenja za vožnju koja prestaju",
+      "teamChangeConfirm": "Nastavi i prekini ovlaštenja",
+      "teamChangeDescription": "Ovi zaposlenici prestaju biti predviđeni vozači jer se mijenja njihov primarni tim. Njihova ovlaštenja za vožnju odmah prestaju, a za njihove zapise o provjeri započinje razdoblje čuvanja. Za ponovnu vožnju potrebna je nova provjera.",
+      "teamChangeGeneric": "Ova promjena prekida ovlaštenja za vožnju za neke zaposlenike.",
+      "teamChangePreviewFailed": "Nije bilo moguće provjeriti prekida li ova promjena ovlaštenja za vožnju. Pokušajte ponovno.",
+      "teamChangeStale": "Krug osoba na koje ova promjena utječe promijenio se u međuvremenu. Pokušajte ponovno provesti promjenu kako biste je pregledali.",
+      "teamChangeTitle": "Ova promjena tima prekida ovlaštenja za vožnju"
+    },
     "evidence": {
       "confirmation": "Potvrda verifikatora zabilježena je uz verziju pravila {version}; rokovi koriste vremensku zonu {timezone}.",
       "declarationConfirmed": "Zaposlenik je izjavu dao osobno; verifikator ju je ovjerio u vrijeme provjere.",
@@ -640,6 +686,7 @@
       "loading": "Učitavanje povijesti…",
       "minimalEvidence": "Zabilježite samo nužne dokaze o vožnji. Nemojte unositi brojeve dokumenata, medicinska objašnjenja niti osobnu pozadinu.",
       "missingDetail": "Nedostajući detalj",
+      "noLongerIntended": "Više nije predviđeni vozač",
       "none": "Nema zabilježenih",
       "openSupplement": "Dopuna izvorne provjere {date}",
       "original": "Izvorna provjera i potvrda",
@@ -655,6 +702,7 @@
       "recordingError": "Pogreška pri bilježenju",
       "reinstated": "Ovlaštenje izričito vraćeno nakon nove provjere",
       "save": "Spremi dopunu",
+      "saved": "Dopuna spremljena",
       "saveError": "Dopuna se nije mogla spremiti. Provjerite svoju trenutačnu odgovornost i pojedinosti ispravka.",
       "snapshot": "Pravilo {version}; interval {months} mj.; vremenska zona roka {timezone}",
       "supplementBy": "Dopunio/la {name}",
@@ -677,6 +725,7 @@
       "reinstating": "Spremanje vraćanja…",
       "report": "Prijavi nesposobnost za vožnju",
       "reported": "Sva vaša ovlaštenja za kategorije su obustavljena. Obratite se svom nadležnom ovjeritelju radi nove izvorne provjere i izričitog vraćanja nakon što se zapreka otkloni.",
+      "reportedToast": "Izvješće spremljeno",
       "reportFailed": "Prijava se nije mogla spremiti. Pokušajte ponovno ili odmah kontaktirajte nadležnog ovjeritelja.",
       "reportHelp": "Prijavite trenutačnu nesposobnost za vožnju. Sva ovlaštenja za kategorije bit će odmah obustavljena. Niste dužni navoditi osobne razloge.",
       "reporting": "Spremanje prijave…",
@@ -684,6 +733,25 @@
       "selectClasses": "Kategorije za vraćanje iz posljednje izvorne provjere",
       "title": "Niste u mogućnosti voziti?",
       "unresolvedReport": "Zapreka vezana uz osobu koju je prijavio zaposlenik još uvijek zahtijeva rješavanje."
+    },
+    "intendedDrivers": {
+      "description": "Predviđeni vozači dobivaju provjere izvornika vozačke dozvole, podsjetnike i status vozača. Nitko nije predviđeni vozač dok ga ne dodijelite. Primjenjuje se najspecifičnija dodjela: vlastita dodjela zaposlenika ima prednost pred dodjelom primarnog tima, a dodjela tima pred dodjelom cijele organizacije. Članstva u drugim timovima ne računaju se. Oznaka „Nije potrebno” isključuje tim ili zaposlenika iz šire dodjele.",
+      "error": {
+        "assignmentNotFound": "Ta dodjela više ne postoji. Ponovno učitajte stranicu.",
+        "employeeNotFound": "Taj zaposlenik više nije trenutačni zaposlenik ove organizacije.",
+        "failed": "Predviđeni vozači nisu se mogli spremiti. Pokušajte ponovno.",
+        "forbidden": "Samo vlasnici organizacije i administratori mogu dodjeljivati predviđene vozače.",
+        "notEnabled": "Uključite kontrolu vozačkih dozvola prije dodjele predviđenih vozača.",
+        "stalePreview": "Osobe na koje ova promjena utječe promijenile su se u međuvremenu. Pregledajte je i ponovno spremite.",
+        "teamNotFound": "Taj tim više ne postoji."
+      },
+      "notRequired": "Nije obavezno (isključeno)",
+      "removed": "Dodjela predviđenog vozača je uklonjena",
+      "required": "Obavezno",
+      "saved": "Predviđeni vozači su spremljeni",
+      "targetOrganization": "Cijela organizacija",
+      "title": "Predviđeni vozači",
+      "valueLabel": "Provjere vozačke dozvole"
     },
     "interval": "Interval redovite provjere (mjeseci)",
     "intervalAnchorHelp": "Izračunato na temelju posljednje uspješne provjere svake kategorije.",
@@ -698,16 +766,20 @@
     "justification": "Obrazloženje zadržavanja",
     "justificationHelp": "Objasnite zašto je ovo ograničeno razdoblje nužno (najmanje 10 znakova). Nemojte uključivati privatne ili medicinske podatke.",
     "loadError": "Nije moguće učitati kontrolu vozačkih dozvola. Provjerite svoja prava pristupa organizaciji.",
-    "myDescription": "Prikažite status provjere vozačke dozvole",
+    "myLicence": {
+      "former": "Više niste predviđeni vozač. Vaši zadržani zapisi o provjerama ostaju dostupni za pregled i izvoz."
+    },
     "myTitle": "Moje ovlaštenje za upravljanje vozilom",
     "newInterval": "Novi rutinski interval (mjeseci)",
     "newlyOverdue": "Novo prekoračenje roka — bit će suspendirano",
     "newRoutineDate": "Sljedeća rutinska provjera",
     "noEmployeeRecord": "U ovoj organizaciji nema dostupnih zapisa o vozačkim dozvolama zaposlenika.",
-    "noEmployees": "Nema aktivnih zaposlenika za prijavu.",
     "noIntervalClasses": "Nijedno postojeće ovlaštenje za kategoriju ne zahtijeva ponovni izračun.",
     "notChecked": "Još nije provjereno — nema ovlaštenja za upravljanje vozilom",
-    "notEnrolled": "Nije prijavljeno — nema ovlaštenja za upravljanje vozilom",
+    "off": {
+      "description": "Nitko ne vidi kontrolu vozačkih dozvola i podsjetnici se ne šalju. Predviđeni vozači, dodijeljena prava provjeritelja, zapisi o provjerama i ovlaštenja se zadržavaju, a čišćenje dokaza se nastavlja prema spremljenom razdoblju čuvanja. Dostupna je samo opcija „Čuvanje i zadržavanja” dok se ponovno ne uključi.",
+      "title": "Kontrola vozačkih dozvola je isključena"
+    },
     "operational": {
       "advisory": "Ovlaštenje za upravljanje vozilom",
       "loading": "Učitavanje ovlaštenja za upravljanje vozilom…",
@@ -719,7 +791,9 @@
       "title": "Vozački status za planiranje",
       "unavailable": "Status ovlaštenja za upravljanje vozilom nije dostupan."
     },
-    "policyIntro": "Provjere originalne vozačke dozvole prvenstveno za Njemačku. Prije aktivacije odaberite rutinski interval i obrazložite ograničeno razdoblje zadržavanja dokaza.",
+    "page": {
+      "title": "Vozačka dozvola"
+    },
     "policyTitle": "Pravila organizacije",
     "previewingInterval": "Učitavanje utjecaja…",
     "previewInterval": "Pretpregled utjecaja intervala",
@@ -768,23 +842,71 @@
     "saved": "Pravilo spremljeno",
     "saveError": "Pravilo se ne može spremiti. Provjerite interval, vremensku zonu, podsjetnike i opravdano razdoblje čuvanja.",
     "saving": "Spremanje…",
-    "settingsDescription": "Konfigurirajte izvorne provjere i upišite predviđene vozače",
+    "settingsSummary": "Postavite pravila provjere, predviđene vozače, provjeritelje i čuvanje dokaza",
+    "settingsTabs": {
+      "cleanupDescription": "Dospjeli dokazi brišu se automatski. Pokrenite čišćenje odmah kako biste ih izbrisali odjednom.",
+      "cleanupFinished": "Čišćenje dospjelih dokaza je završeno",
+      "cleanupTitle": "Čišćenje dokaza",
+      "deadlineTimezone": "Vremenska zona roka",
+      "holdPlaced": "Postavljeno je zadržavanje zbog pravnog postupka",
+      "holdReleased": "Ukinuto je zadržavanje zbog pravnog postupka",
+      "holdsColumn": "Aktivna zadržavanja",
+      "holdsTitle": "Zadržavanja zbog pravnog postupka",
+      "impactClass": "Zaposlenik i kategorija",
+      "impactResult": "Rezultat",
+      "impactTimezone": "Vremenska zona",
+      "intendedDrivers": "Predviđeni vozači",
+      "intendedDriversDescription": "Odlučite kome je potrebna provjera originala dozvole: cijeloj organizaciji, primarnom timu ili jednom zaposleniku.",
+      "intendedDriversEmpty": {
+        "description": "Postavite „Obavezno” za cijelu organizaciju, za primarni tim ili za jednog zaposlenika. Najspecifičniji odabir ima prednost, a „Nije obavezno” isključuje tim ili zaposlenika iz šireg odabira. Samo predviđeni vozači dobivaju provjere, podsjetnike i vozački status.",
+        "title": "Još nitko nije predviđeni vozač"
+      },
+      "policy": "Pravila",
+      "policyDescription": "Interval redovite provjere, vrijeme unaprijed za slanje podsjetnika i razdoblje čuvanja dokaza.",
+      "reassignment": {
+        "description": "Njihove provjere i podsjetnici nemaju provjeritelja. Dodjela odgovornosti ne daje vam prava na pregled i ne produžuje rok.",
+        "title": "Zaposlenici bez odgovornog provjeritelja"
+      },
+      "remindersDescription": "Kada se šalju podsjetnici prije isteka roka i koliko se dugo čuvaju dokazi nakon što više ne potvrđuju ovlaštenje.",
+      "remindersTitle": "Podsjetnici i čuvanje",
+      "reportColumn": "Izvješće",
+      "retention": "Čuvanje i zadržavanja",
+      "retentionColumn": "Čuvanje",
+      "retentionDescription": "Zadržani zapisi o provjerama, zadržavanja zbog pravnog postupka i čišćenje dokaza.",
+      "scheduleTitle": "Raspored provjera",
+      "verifiers": "Provjeritelji",
+      "verifiersDescription": "Tko provjerava čiju dozvolu, po želji do postavljenog datuma."
+    },
     "status": {
       "active": "Ovlaštenje za vožnju aktivno",
       "ended": "Ovlaštenje za vožnju završeno",
       "explanation": "Organizacijsko ovlaštenje za vožnju pokriva navedene kategorije i ograničenja. Ono ne utvrđuje prikladnost za svako vozilo. Možete nastaviti s bilježenjem radnog vremena i stvarne upotrebe vozila.",
+      "notIntended": "Nije predviđeni vozač — nema ovlaštenja za vožnju",
       "partial": "Neke vozačke kategorije su suspendirane",
       "suspended": "Ovlaštenje za vožnju suspendirano"
     },
     "staysCurrent": "Ostaje važeće",
     "staysSuspended": "Ostaje suspendirano",
-    "subtitle": "Konfigurirajte izvorne provjere i upišite predviđene vozače. Ovlaštenje za vožnju specifično je za provjerene kategorije i ograničenja.",
+    "summary": {
+      "class": "Kategorija",
+      "empty": "Nijedna kategorija još nije odobrena. Provjeritelj bilježi vašu prvu provjeru originala.",
+      "emptyForVerifier": "Nijedna kategorija još nije odobrena.",
+      "personWide": "Zapreka obustavlja vožnju za sve kategorije dok je provjeritelj ponovno ne aktivira. Sama nova provjera ne ukida zapreku.",
+      "restrictions": "Ograničenja",
+      "status": "Status",
+      "validThrough": "Vrijedi do"
+    },
+    "switchOnFirst": "Uključite kontrolu vozačkih dozvola na kartici Značajke u postavkama organizacije. Postavljanjem ondje sprema se prvo pravilo.",
+    "tabs": {
+      "checks": "Provjere",
+      "myLicence": "Moja vozačka dozvola",
+      "planning": "Planiranje"
+    },
     "tasks": {
       "assign": "Dodijeli odgovornost",
-      "assigned": "Odgovornost dodijeljena",
-      "assignmentBoundary": "Ovaj zadatak ne daje prava pregleda i ne produljuje rokove.",
       "class": "Kategorija {classCode}",
       "complete": "Označi osobni podsjetnik dovršenim",
+      "completedToast": "Osobni podsjetnik označen kao dovršen",
       "completeError": "Nije moguće dovršiti ovaj zadatak. Provjerite svoju trenutnu odgovornost verifikatora.",
       "completing": "Dovršavanje…",
       "deadline": "Rok za izvornu provjeru",
@@ -793,21 +915,16 @@
       "loadError": "Nije moguće učitati zadatke vozačke dozvole. Provjerite svoja prava pristupa u organizaciji.",
       "loading": "Učitavanje zadataka vozačke dozvole…",
       "noDeliveryReceipt": "Dovršetak zadatka ne potvrđuje izravnu dostavu niti da je zaposlenik pročitao obavijest. Nijedan se rok ne produljuje.",
-      "noVerifier": "Nijedan dostupan verifikator nije odgovoran za ovog zaposlenika.",
+      "openCheck": "Otvori provjeru",
       "personalCompleted": "Osobni podsjetnik dovršen",
       "personalTitle": "Zadaci osobnog podsjetnika",
-      "reassignmentTitle": "Zadaci odgovornosti verifikatora",
       "refresh": "Ponovno provjeri odgovornost",
       "suspension": "Ovlaštenje za vožnju suspendirano",
       "validThrough": "Vrijedi do {date} u vremenskoj zoni spremljenog roka provjere"
     },
-    "timezone": "Fiksna vremenska zona kalendara",
     "title": "Kontrola vozačke dozvole",
-    "unnamedEmployee": "Zaposlenik",
     "worklist": {
-      "help": "Ovdje se prikazuju samo registrirani zaposlenici unutar vaše trenutne odgovornosti provjeravatelja.",
       "open": "Provjeri {name}",
-      "title": "Vaš radni popis izvornih provjera",
       "viewEnded": "Prikaži završeni zapis za {name}"
     },
     "zoneFixedError": "Vremenska zona kalendara je fiksna. Postojeći rokovi moraju zadržati svoje izvorno značenje.",
@@ -999,6 +1116,7 @@
     "calendar": "Kalendar",
     "compliance": "Usklađenost",
     "dashboard": "Nadzorna ploča",
+    "driving-licence": "Vozačka dozvola",
     "feedback": "Povratne informacije",
     "finance": "Financije",
     "financeAwaiting": "{count, plural, one {# trošak čeka povrat} few {# troška čekaju povrat} other {# troškova čeka povrat}}",
@@ -1185,6 +1303,10 @@
       "complianceExceptionRequested": {
         "message": "{employeeName} je zatražio/la izuzeće za {exceptionType, select, rest_period {razdoblje odmora} overtime_daily {dnevni prekovremeni rad} overtime_weekly {tjedni prekovremeni rad} overtime_monthly {mjesečni prekovremeni rad} other {usklađenost}}: \"{reason}\"",
         "title": "Zatraženo izuzeće od usklađenosti"
+      },
+      "drivingAuthorizationEnded": {
+        "message": "{employeeName} više nije predviđeni vozač, pa je ovlaštenje za vožnju ({classes}) isteklo. Za ponovnu vožnju potrebna je nova provjera.",
+        "title": "Ovlaštenje za vožnju je završeno"
       },
       "drivingAuthorizationSuspended": {
         "message": "Ovlaštenje za vožnju za {employeeName} ({classes}) je obustavljeno. Prije vožnje potrebna je nova provjera i izričito vraćanje ovlaštenja.",
@@ -1681,7 +1803,7 @@
         "approval_cover_return_summary": "Odluku donio vaš zamjenik",
         "approval_cover_started": "Zamjena za odsutnost je započela",
         "break_due_reminder": "Vrijeme je za pauzu",
-        "driving_authorization_suspended": "Ovlaštenje za vožnju obustavljeno",
+        "driving_authorization_suspended_or_ended": "Ovlaštenje za vožnju suspendirano ili završeno",
         "driving_details_missing_reminder": "Nedostaju podaci o vožnji",
         "driving_licence_reminder": "Dospjela provjera vozačke dozvole",
         "forgotten_clock_out_reminder": "Zaboravljena odjava",
@@ -2140,6 +2262,8 @@
         },
         "drivingLicence": {
           "actor_name": "Ime osobe koja je izvršila ovu radnju; prazno u slučaju sistemske radnje ili nedostupnog izvršitelja.",
+          "assigned_at": "Kada je vaša dodjela predviđenog vozača prvi put spremljena, kao UTC trenutak.",
+          "assigned_by": "Ime osobe koja je prvi put spremila vašu dodjelu predviđenog vozača.",
           "authorization_events": {
             "summary": "Vaša povijest ovlaštenja za vožnju, uključujući prijave zapreka, rješenja i izričita vraćanja ovlaštenja."
           },
@@ -2178,7 +2302,6 @@
           "employee_ids": "Neprozirni ID-jevi zaposlenika u vašem specifičnom opsegu ovjeravatelja, kodirani kao JSON niz.",
           "employment_period_id": "Razdoblje zaposlenja kojem ovaj dokaz pripada; prazno za naslijeđeno zaposlenje.",
           "enabled": "Je li navedeno pravilo provjere organizacije bilo omogućeno.",
-          "enrolled_at": "Kada ste uključeni u provjere vozačkih dozvola organizacije.",
           "expires_at": "UTC trenutak kada ova autorizacija ili dodjela prava ovjeravatelja istječe.",
           "expiry_date": "Datum isteka kategorije zabilježen pri pregledu; prazno ako nijedan nije zabilježen.",
           "failure_scope": "Je li se neuspješan pregled odnosio na kategorije, dokument ili osobu.",
@@ -2190,6 +2313,9 @@
           "impedimentReports": {
             "summary": "Vaša minimalna izvješća o zaprekama za upravljanje vozilom i njihovo izričito rješenje, bez medicinskih objašnjenja ili privatnih razloga."
           },
+          "intendedDriverAssignment": {
+            "summary": "Vaša osobna dodjela predviđenog vozača za provjere vozačkih dozvola u organizaciji. Dodjele na razini organizacije i tima koje vas također obuhvaćaju nisu navedene."
+          },
           "interval_months": "Broj kalendarskih mjeseci između redovitih provjera prema ovom pravilu.",
           "kind": "Događaj autorizacije, suspenzija ili vrsta zadatka; zadaci su personal_reminder ili reassignment.",
           "last_successful_at": "Kada je ova kategorija zadnji put uspješno prošla izvorni pregled.",
@@ -2199,9 +2325,6 @@
           "notificationId": "Obavijest u aplikaciji povezana s ovim podsjetnikom; prazno ako nijedna nije stvorena.",
           "occasionKey": "Događaj na koji se ovaj podsjetnik ili zadatak odnosi; identificira zaposlenje, rok za kategoriju ili suspenziju bez kopiranja provjere.",
           "original_inspected": "Je li ovjeravatelj potvrdio da je osobno pregledao izvorni dokument.",
-          "participation": {
-            "summary": "Vaše uključivanje u provjere vozačkih dozvola organizacije."
-          },
           "placedAt": "Kada je postavljeno ovo pravno zadržavanje, kao UTC trenutak.",
           "placedBy": "Ime administratora koji je postavio ovo zadržavanje slučaja.",
           "policies": {
@@ -2227,6 +2350,7 @@
           },
           "reportedAt": "Kada ste prijavili zapreku za upravljanje vozilom na razini osobe, kao UTC trenutak.",
           "reporterName": "Ime osobe koja je prijavila zapreku.",
+          "required": "Čini li vas vaša dodjela predviđenim vozačem (true) ili vas isključuje iz timske ili organizacijske dodjele (false).",
           "resolvedAt": "Kada je verifikator izričito riješio ovo izvješće; prazno za neriješeno izvješće.",
           "resolvedBy": "Ime verifikatora koji je izričito riješio ovo izvješće.",
           "restrictions": "Relevantna ograničenja vožnje zabilježena za ovu kategoriju.",
@@ -2253,6 +2377,8 @@
             "summary": "Vaš trenutni zapis o suspenziji ovlaštenja za vožnju na razini osobe ili na razini dokumenta."
           },
           "team_ids": "Neprozirni ID-jevi timova u vašem specifičnom opsegu verifikatora, kodirani kao JSON niz.",
+          "updated_at": "Kada je vaša dodjela predviđenog vozača zadnji put promijenjena, kao UTC trenutak.",
+          "updated_by": "Ime osobe koja je zadnja promijenila vašu dodjelu predviđenog vozača.",
           "valid_through": "Najraniji primjenjivi posljednji kalendarski dan odobrenja za ovu kategoriju.",
           "value": "Vrijednost navedena u ovoj dopuni; prazno znači da je neobavezni istek kategorije izbrisan.",
           "verifier_confirmed": "Je li verifikator potvrdio zapis o pregledu.",
