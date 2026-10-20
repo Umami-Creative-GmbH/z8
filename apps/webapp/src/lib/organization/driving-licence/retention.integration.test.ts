@@ -37,6 +37,7 @@ vi.mock("@/lib/datetime/temporal-core", async (original) => {
 });
 const checks = await import("./check-actions");
 const policy = await import("./policy-actions");
+const intendedDrivers = await import("./intended-driver-actions");
 const grants = await import("./verifier-actions");
 const history = await import("./history-actions");
 const reinstatement = await import("./impediment-actions");
@@ -81,8 +82,9 @@ beforeEach(async () => {
 	).toBe(true);
 	expect(
 		(
-			await policy.enrollDrivingLicenceEmployeeAction({
-				employeeId: fixture.employeeId,
+			await intendedDrivers.setDrivingLicenceIntendedDriverAssignmentAction({
+				target: { type: "employee", employeeId: fixture.employeeId },
+				value: "required",
 			})
 		).success,
 	).toBe(true);
@@ -934,8 +936,9 @@ it("starts unversioned legacy report retention at its first subsequent explicit 
 	harness.userId = fixture.ownerUserId;
 	expect(
 		(
-			await policy.enrollDrivingLicenceEmployeeAction({
-				employeeId: legacy.employeeId,
+			await intendedDrivers.setDrivingLicenceIntendedDriverAssignmentAction({
+				target: { type: "employee", employeeId: legacy.employeeId },
+				value: "required",
 			})
 		).success,
 	).toBe(true);

@@ -226,9 +226,25 @@ export const drivingLicenceFieldGuide: PersonalDataFieldGuide = (t) => {
 			"personalDataExport.readme.fields.drivingLicence.suspended_at",
 			"When the authorization was suspended, as a UTC instant.",
 		),
-		enrolled_at: t(
-			"personalDataExport.readme.fields.drivingLicence.enrolled_at",
-			"When you were enrolled in the organization's driving licence checks.",
+		required: t(
+			"personalDataExport.readme.fields.drivingLicence.required",
+			"Whether your own assignment makes you an intended driver (true) or excludes you from a team or organization assignment (false).",
+		),
+		assigned_at: t(
+			"personalDataExport.readme.fields.drivingLicence.assigned_at",
+			"When your own intended-driver assignment was first saved, as a UTC instant.",
+		),
+		assigned_by: t(
+			"personalDataExport.readme.fields.drivingLicence.assigned_by",
+			"The name of the person who first saved your own intended-driver assignment.",
+		),
+		updated_at: t(
+			"personalDataExport.readme.fields.drivingLicence.updated_at",
+			"When your own intended-driver assignment was last changed, as a UTC instant.",
+		),
+		updated_by: t(
+			"personalDataExport.readme.fields.drivingLicence.updated_by",
+			"The name of the person who last changed your own intended-driver assignment.",
 		),
 		scope: t(
 			"personalDataExport.readme.fields.drivingLicence.scope",
@@ -361,10 +377,10 @@ export const drivingLicenceFieldGuide: PersonalDataFieldGuide = (t) => {
 			),
 			fields,
 		},
-		participation: {
+		intended_driver_assignment: {
 			summary: t(
-				"personalDataExport.readme.fields.drivingLicence.participation.summary",
-				"Your enrolment in the organization's driving licence checks.",
+				"personalDataExport.readme.fields.drivingLicence.intendedDriverAssignment.summary",
+				"Your own intended-driver assignment for the organization's driving licence checks. Organization and team assignments that also reach you are not listed.",
 			),
 			fields,
 		},

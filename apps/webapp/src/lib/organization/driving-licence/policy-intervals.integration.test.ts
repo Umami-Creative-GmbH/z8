@@ -34,6 +34,7 @@ vi.mock("@/lib/datetime/temporal-core", async (original) => {
 	};
 });
 const policy = await import("./policy-actions");
+const intendedDrivers = await import("./intended-driver-actions");
 const checks = await import("./check-actions");
 const grants = await import("./verifier-actions");
 const intervals = await import("./interval-actions");
@@ -80,8 +81,9 @@ beforeEach(async () => {
 	).toBe(true);
 	expect(
 		(
-			await policy.enrollDrivingLicenceEmployeeAction({
-				employeeId: fixture.employeeId,
+			await intendedDrivers.setDrivingLicenceIntendedDriverAssignmentAction({
+				target: { type: "employee", employeeId: fixture.employeeId },
+				value: "required",
 			})
 		).success,
 	).toBe(true);

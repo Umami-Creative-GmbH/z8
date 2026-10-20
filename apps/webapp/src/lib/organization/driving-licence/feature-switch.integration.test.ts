@@ -41,6 +41,7 @@ vi.mock("@/lib/datetime/temporal-core", async (original) => {
 vi.setConfig({ testTimeout: 60_000 });
 
 const policy = await import("./policy-actions");
+const intendedDrivers = await import("./intended-driver-actions");
 const { readDrivingLicenceFeatureState } = await import("./policy");
 const checks = await import("./check-actions");
 const grants = await import("./verifier-actions");
@@ -227,8 +228,9 @@ describe("switching off and on again", () => {
 		);
 		expect(
 			(
-				await policy.enrollDrivingLicenceEmployeeAction({
-					employeeId: fixture.employeeId,
+				await intendedDrivers.setDrivingLicenceIntendedDriverAssignmentAction({
+					target: { type: "employee", employeeId: fixture.employeeId },
+					value: "required",
 				})
 			).success,
 		).toBe(true);

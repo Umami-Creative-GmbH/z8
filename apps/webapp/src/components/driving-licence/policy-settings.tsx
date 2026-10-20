@@ -3,7 +3,7 @@ import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -13,21 +13,11 @@ import {
 	TFormLabel,
 } from "@/components/ui/tanstack-form";
 import { Textarea } from "@/components/ui/textarea";
-import type { AuthorizationStatus } from "@/lib/organization/driving-licence/check-types";
 import type { DrivingLicencePolicyInput } from "@/lib/organization/driving-licence/policy";
-import {
-	enrollDrivingLicenceEmployeeAction,
-	saveDrivingLicencePolicyAction,
-} from "@/lib/organization/driving-licence/policy-actions";
-import { DrivingStatusLabel } from "./check-evidence";
+import { saveDrivingLicencePolicyAction } from "@/lib/organization/driving-licence/policy-actions";
 import { DrivingLicenceIntervalSettings } from "./interval-settings";
 export interface DrivingLicenceSettingsData {
 	policy: DrivingLicencePolicyInput | null;
-	employees: {
-		id: string;
-		name: string;
-	}[];
-	participants: { employeeId: string; status?: AuthorizationStatus }[];
 }
 
 type Translate = ReturnType<typeof useTranslate>["t"];
@@ -104,7 +94,6 @@ export function DrivingLicenceSettings({ data }: { data: DrivingLicenceSettingsD
 	const { t } = useTranslate();
 	const [message, setMessage] = useState("");
 	const [error, setError] = useState("");
-	const enabled = data.policy?.enabled ?? false;
 	const form = usePolicyForm(data, { setMessage, setError });
 	return (
 		<div className="space-y-8">
@@ -170,7 +159,6 @@ export function DrivingLicenceSettings({ data }: { data: DrivingLicenceSettingsD
 					{error}
 				</p>
 			) : null}
-			<DriverEnrollment data={data} enabled={enabled} onError={setError} />
 		</div>
 	);
 }
@@ -330,101 +318,5 @@ function PolicyRetentionFields({ form, t }: { form: PolicyForm; t: Translate }) 
 				)}
 			</form.Field>
 		</div>
-	);
-}
-
-function DriverEnrollment({
-	data,
-	enabled,
-	onError,
-}: {
-	data: DrivingLicenceSettingsData;
-	enabled: boolean;
-	onError: (message: string) => void;
-}) {
-	const { t } = useTranslate();
-	const router = useRouter();
-	const queryClient = useQueryClient();
-	const [enrolled, setEnrolled] = useState(
-		() => new Set(data.participants.map((p) => p.employeeId)),
-	);
-	const [isEnrolling, startEnrollment] = useTransition();
-	function enroll(employeeId: string) {
-		startEnrollment(async () => {
-			onError("");
-			const result = await enrollDrivingLicenceEmployeeAction({ employeeId });
-			if (!result.success) {
-				onError(
-					t(
-						"drivingLicence.enrollError",
-						"The employee could not be enrolled. Activate the policy first and check your access.",
-					),
-				);
-				return;
-			}
-			setEnrolled((previous) => new Set([...previous, employeeId]));
-			void queryClient.invalidateQueries({
-				queryKey: ["driving-authorization-status"],
-			});
-			router.refresh();
-		});
-	}
-	return (
-		<section
-			aria-labelledby="driving-enrollment-title"
-			className="rounded-lg border bg-card p-5 sm:p-6"
-		>
-			<h2 id="driving-enrollment-title" className="text-lg font-semibold">
-				{t("drivingLicence.enrollmentTitle", "Intended drivers")}
-			</h2>
-			<p className="mt-1 text-sm text-muted-foreground">
-				{t(
-					"drivingLicence.enrollmentHelp",
-					"Enroll employees who are intended to drive. Vehicle assignments and previous vehicle use never create authorization.",
-				)}
-			</p>
-			{data.employees.length === 0 ? (
-				<p className="mt-5 text-sm text-muted-foreground">
-					{t("drivingLicence.noEmployees", "There are no active employees to enroll.")}
-				</p>
-			) : (
-				<ul className="mt-5 divide-y">
-					{data.employees.map((employee) => {
-						const name =
-							employee.name.trim() ||
-							t("drivingLicence.unnamedEmployee", "Employee");
-						return (
-							<li
-								key={employee.id}
-								className="flex flex-wrap items-center justify-between gap-3 py-4 [content-visibility:auto] [contain-intrinsic-size:auto_64px]"
-							>
-								<span className="min-w-0 break-words font-medium">{name}</span>
-								{enrolled.has(employee.id) ? (
-									<span className="rounded-md bg-muted px-3 py-1 text-sm">
-										<DrivingStatusLabel
-											status={
-												data.participants.find(
-													(participant) => participant.employeeId === employee.id,
-												)?.status ?? "not_yet_checked"
-											}
-										/>
-									</span>
-								) : (
-									<Button
-										type="button"
-										variant="outline"
-										disabled={!enabled || isEnrolling}
-										aria-label={t("drivingLicence.enrollName", "Enroll {name}", { name })}
-										onClick={() => enroll(employee.id)}
-									>
-										{t("drivingLicence.enroll", "Enroll")}
-									</Button>
-								)}
-							</li>
-						);
-					})}
-				</ul>
-			)}
-		</section>
 	);
 }

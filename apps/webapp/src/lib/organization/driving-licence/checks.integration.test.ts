@@ -37,6 +37,7 @@ vi.mock("@/lib/datetime/temporal-core", async (original) => {
 });
 const checks = await import("./check-actions");
 const policy = await import("./policy-actions");
+const intendedDrivers = await import("./intended-driver-actions");
 const grants = await import("./verifier-actions");
 let fixture: LifecycleDatabaseFixture;
 let verifier: SeededEmployee;
@@ -81,8 +82,9 @@ beforeEach(async () => {
 	).toBe(true);
 	expect(
 		(
-			await policy.enrollDrivingLicenceEmployeeAction({
-				employeeId: fixture.employeeId,
+			await intendedDrivers.setDrivingLicenceIntendedDriverAssignmentAction({
+				target: { type: "employee", employeeId: fixture.employeeId },
+				value: "required",
 			})
 		).success,
 	).toBe(true);
@@ -558,8 +560,9 @@ it("refuses a granted verifier's self-check and a target removed from their curr
 	signIn(fixture.ownerUserId);
 	expect(
 		(
-			await policy.enrollDrivingLicenceEmployeeAction({
-				employeeId: verifier.employeeId,
+			await intendedDrivers.setDrivingLicenceIntendedDriverAssignmentAction({
+				target: { type: "employee", employeeId: verifier.employeeId },
+				value: "required",
 			})
 		).success,
 	).toBe(true);

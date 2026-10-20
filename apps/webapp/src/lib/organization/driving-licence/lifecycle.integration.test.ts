@@ -35,6 +35,7 @@ vi.mock("@/lib/datetime/temporal-core", async (original) => {
 });
 const checks = await import("./check-actions");
 const policy = await import("./policy-actions");
+const intendedDrivers = await import("./intended-driver-actions");
 const grants = await import("./verifier-actions");
 const impediments = await import("./impediment-actions");
 let fixture: LifecycleDatabaseFixture;
@@ -102,8 +103,9 @@ beforeEach(async () => {
 	).toBe(true);
 	expect(
 		(
-			await policy.enrollDrivingLicenceEmployeeAction({
-				employeeId: target.employeeId,
+			await intendedDrivers.setDrivingLicenceIntendedDriverAssignmentAction({
+				target: { type: "employee", employeeId: target.employeeId },
+				value: "required",
 			})
 		).success,
 	).toBe(true);
@@ -304,8 +306,9 @@ it("shows an enrolled employee with no check as ended at the effective cutoff", 
 	harness.userId = fixture.ownerUserId;
 	expect(
 		(
-			await policy.enrollDrivingLicenceEmployeeAction({
-				employeeId: unchecked.employeeId,
+			await intendedDrivers.setDrivingLicenceIntendedDriverAssignmentAction({
+				target: { type: "employee", employeeId: unchecked.employeeId },
+				value: "required",
 			})
 		).success,
 	).toBe(true);
@@ -369,8 +372,9 @@ it("terminates legacy unversioned authorizations and held grants when departure 
 	harness.userId = fixture.ownerUserId;
 	expect(
 		(
-			await policy.enrollDrivingLicenceEmployeeAction({
-				employeeId: target.employeeId,
+			await intendedDrivers.setDrivingLicenceIntendedDriverAssignmentAction({
+				target: { type: "employee", employeeId: target.employeeId },
+				value: "required",
 			})
 		).success,
 	).toBe(true);

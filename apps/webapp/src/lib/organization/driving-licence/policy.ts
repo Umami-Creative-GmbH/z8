@@ -3,24 +3,19 @@ import { and, eq } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
 import { z } from "zod";
 import { db } from "@/db";
-import { member, user } from "@/db/auth-schema";
 import {
-	drivingLicenceParticipant,
 	drivingLicencePolicy,
 	drivingLicencePolicyRevision,
 } from "@/db/schema/driving-licence-policy";
 import { drivingLicenceReminderDelivery } from "@/db/schema/driving-licence-reminders";
-import { employee } from "@/db/schema/organization";
 import {
 	dateFromInstant,
 	type Instant,
 	systemClock,
 } from "@/lib/datetime/temporal-core";
-import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import {
 	lockDrivingLicenceOrganization,
 	materializeExpiredDrivingAuthorizations,
-	readEffectiveDrivingAuthorization,
 } from "./checks";
 import type { DrivingLicenceActor } from "./context";
 import {
@@ -385,98 +380,4 @@ async function deactivateDrivingLicenceControl(
 				eq(drivingLicenceReminderDelivery.emailState, "pending"),
 			),
 		);
-}
-export async function listDrivingLicenceEmployees(organizationId: string) {
-	return db
-		.select({
-			id: employee.id,
-			name: user.name,
-		})
-		.from(employee)
-		.innerJoin(
-			member,
-			and(
-				eq(member.userId, employee.userId),
-				eq(member.organizationId, employee.organizationId),
-				eq(member.status, "approved"),
-			),
-		)
-		.innerJoin(user, eq(user.id, employee.userId))
-		.where(
-			and(
-				eq(employee.organizationId, organizationId),
-				employeeHasOrganizationAccess(),
-			),
-		);
-}
-export async function enrollDrivingLicenceEmployee(
-	actor: DrivingLicenceActor,
-	raw: unknown,
-) {
-	const { employeeId } = z.strictObject({ employeeId: z.uuid() }).parse(raw);
-	return db.transaction(async (tx) => {
-		await lockDrivingLicenceOrganization(tx, actor.organizationId);
-		const [policy] = await tx
-			.select()
-			.from(drivingLicencePolicy)
-			.where(eq(drivingLicencePolicy.organizationId, actor.organizationId));
-		if (!policy?.enabled) throw new Error("not_enabled");
-		const [target] = await tx
-			.select({ id: employee.id })
-			.from(employee)
-			.innerJoin(
-				member,
-				and(
-					eq(member.userId, employee.userId),
-					eq(member.organizationId, employee.organizationId),
-					eq(member.status, "approved"),
-				),
-			)
-			.where(
-				and(
-					eq(employee.organizationId, actor.organizationId),
-					eq(employee.id, employeeId),
-					employeeHasOrganizationAccess(),
-				),
-			);
-		if (!target) throw new Error("forbidden");
-		await tx
-			.insert(drivingLicenceParticipant)
-			.values({
-				organizationId: actor.organizationId,
-				employeeId,
-				enrolledBy: actor.userId,
-				enrolledAt: dateFromInstant(systemClock.nowInstant()),
-			})
-			.onConflictDoNothing();
-		return {
-			employeeId,
-			status: "not_yet_checked" as const,
-			authorizedClasses: [] as string[],
-		};
-	});
-}
-export async function listDrivingLicenceParticipants(organizationId: string) {
-	const rows = await db
-		.select({
-			employeeId: drivingLicenceParticipant.employeeId,
-			enrolledAt: drivingLicenceParticipant.enrolledAt,
-		})
-		.from(drivingLicenceParticipant)
-		.where(eq(drivingLicenceParticipant.organizationId, organizationId));
-	return Promise.all(
-		rows.map(async (row) => {
-			const status = await readEffectiveDrivingAuthorization(
-				db,
-				organizationId,
-				row.employeeId,
-			);
-			return {
-				...row,
-				enrolledAt: row.enrolledAt.toISOString(),
-				status: status.status,
-				authorizedClasses: status.authorizedClasses,
-			};
-		}),
-	);
 }

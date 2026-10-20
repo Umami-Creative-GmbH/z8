@@ -8,7 +8,6 @@ import {
 	drivingLicenceSubject,
 } from "@/db/schema/driving-licence-checks";
 import {
-	drivingLicenceParticipant,
 	drivingLicencePolicy,
 	drivingLicencePolicyRevision,
 } from "@/db/schema/driving-licence-policy";
@@ -34,6 +33,7 @@ import {
 	lockDrivingLicenceOrganization,
 	materializeExpiredDrivingAuthorizations,
 } from "./checks";
+import { listDrivingLicenceIntendedDriverIds } from "./intended-drivers";
 import {
 	type DrivingLicenceOffPeriod,
 	drivingLicenceOffPeriods,
@@ -144,23 +144,19 @@ type ReminderCommon = Pick<
 	"organizationId" | "employeeId" | "employmentPeriodId"
 >;
 
-/** The intended drivers reminders consider: participants, optionally one employee. */
+/** The intended drivers reminders consider (the assignment resolver, #1423), optionally one employee. */
 async function reminderParticipants(
 	database: DrivingLicenceDatabase,
 	organizationId: string,
 	employeeId?: string,
 ) {
-	return database
-		.select({ employeeId: drivingLicenceParticipant.employeeId })
-		.from(drivingLicenceParticipant)
-		.where(
-			and(
-				eq(drivingLicenceParticipant.organizationId, organizationId),
-				employeeId
-					? eq(drivingLicenceParticipant.employeeId, employeeId)
-					: undefined,
-			),
-		);
+	return (
+		await listDrivingLicenceIntendedDriverIds(
+			database,
+			organizationId,
+			employeeId,
+		)
+	).map((id) => ({ employeeId: id }));
 }
 
 /**

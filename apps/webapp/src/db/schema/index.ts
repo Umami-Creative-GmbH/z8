@@ -60,6 +60,7 @@ export * from "./discord-integration";
 export * from "./driving-licence-checks";
 export * from "./driving-licence-history";
 export * from "./driving-licence-impediments";
+export * from "./driving-licence-intended-drivers";
 export * from "./driving-licence-policy";
 export * from "./driving-licence-reminders";
 export * from "./driving-licence-retention";

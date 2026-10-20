@@ -28,6 +28,7 @@ vi.mock("@/lib/datetime/temporal-core", async (original) => {
 	};
 });
 const policies = await import("./policy-actions");
+const intendedDrivers = await import("./intended-driver-actions");
 const grants = await import("./verifier-actions");
 const checks = await import("./check-actions");
 
@@ -88,7 +89,12 @@ async function switchOn(ownerUserId = fixture.ownerUserId) {
 /** #1423 replaces enrollment with intended-driver assignments: swap this helper's body only. */
 async function makeIntendedDriver(employeeId: string, ownerUserId = fixture.ownerUserId) {
 	expect(
-		await as(ownerUserId, () => policies.enrollDrivingLicenceEmployeeAction({ employeeId })),
+		await as(ownerUserId, () =>
+			intendedDrivers.setDrivingLicenceIntendedDriverAssignmentAction({
+				target: { type: "employee", employeeId },
+				value: "required",
+			}),
+		),
 	).toMatchObject({ success: true });
 }
 async function grantVerifier(

@@ -41,6 +41,7 @@ vi.mock("@/lib/datetime/temporal-core", async (original) => {
 vi.setConfig({ testTimeout: 90_000 });
 
 const policy = await import("./policy-actions");
+const intendedDrivers = await import("./intended-driver-actions");
 const checks = await import("./check-actions");
 const grants = await import("./verifier-actions");
 const { runDrivingLicenceRemindersJob } = await import("@/lib/jobs/driving-licence-reminders");
@@ -123,7 +124,10 @@ async function prepare(org: Organization) {
 	);
 	for (const subject of [org.overdue, org.inDate])
 		await expectSuccess(
-			policy.enrollDrivingLicenceEmployeeAction({ employeeId: subject.employeeId }),
+			intendedDrivers.setDrivingLicenceIntendedDriverAssignmentAction({
+				target: { type: "employee", employeeId: subject.employeeId },
+				value: "required",
+			}),
 		);
 	await expectSuccess(
 		grants.saveDrivingLicenceVerifierGrantAction({
