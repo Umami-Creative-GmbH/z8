@@ -1,12 +1,12 @@
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import type { db as rootDatabase } from "@/db";
 import { member, user } from "@/db/auth-schema";
 import { employee, employeeManagers } from "@/db/schema";
 import { isReservedEmail } from "@/lib/auth/reserved-email";
-import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
+import type { Instant } from "@/lib/datetime/temporal-core";
 import { memberIsAccessibleOwnerOrAdmin } from "@/lib/employee-lifecycle/authority-sql";
-import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
+import { onCurrentRoster, rosterCheckInstant } from "@/lib/employee-lifecycle/current-roster";
 
 type Reader = Pick<typeof rootDatabase, "select">;
 
@@ -98,7 +98,7 @@ export async function currentRosterManagerRecipients(
 
 	// The alias `m` is what `memberIsAccessibleOwnerOrAdmin` reads.
 	const m = alias(member, "m");
-	const at = input.now ? sql`${dateFromInstant(input.now)}::timestamptz` : sql`now()`;
+	const at = rosterCheckInstant(input.now);
 	const admins = keep(
 		await client
 			.select({ userId: m.userId, email: user.email })

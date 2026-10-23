@@ -2,7 +2,7 @@
 
 import { IconCheck } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { FormerEmployeeBadge } from "@/components/former-employees/former-employee-ui";
+import { FormerEmployeeBadge, isMarkedFormer } from "@/components/former-employees/former-employee-ui";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { UserAvatar } from "@/components/user-avatar";
@@ -15,7 +15,7 @@ import type { EmployeeSelectItemProps, SelectableEmployee } from "./types";
 export function isFormerSelectableEmployee(
 	employee: Pick<SelectableEmployee, "isActive" | "isFormer">,
 ) {
-	return employee.isFormer === true || !employee.isActive;
+	return isMarkedFormer(employee);
 }
 
 const roleColors = {

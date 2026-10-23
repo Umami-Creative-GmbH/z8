@@ -12,7 +12,6 @@ import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
  */
 type Reader = Pick<typeof rootDatabase, "select">;
 
-// Named, so that no brace precedes a function body (the roster surface guard reads bodies).
 type ReportsInput = { organizationId: string; managerEmployeeId: string };
 type DigestManagerInput = { organizationId: string; userId: string };
 type DigestManager = { id: string };

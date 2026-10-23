@@ -65,14 +65,12 @@ function managedEmployeeRows(
 	organizationId: string,
 	roster: ManagedEmployeesRoster,
 ) {
-	const managerInOrganization =
+	const inOrganization = (columns: typeof employee | typeof managerEmployee) =>
 		roster === "current"
-			? onCurrentRoster(organizationId, managerEmployee)
-			: eq(managerEmployee.organizationId, organizationId);
-	const reportInOrganization =
-		roster === "current"
-			? onCurrentRoster(organizationId, employee)
-			: eq(employee.organizationId, organizationId);
+			? onCurrentRoster(organizationId, columns)
+			: eq(columns.organizationId, organizationId);
+	const managerInOrganization = inOrganization(managerEmployee);
+	const reportInOrganization = inOrganization(employee);
 
 	return db
 		.select({

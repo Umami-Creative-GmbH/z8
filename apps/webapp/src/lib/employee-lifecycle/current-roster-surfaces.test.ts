@@ -32,14 +32,15 @@ const SRC_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const ROSTER_RULE =
 	/\b\w*[oO]nCurrentRoster\(|\bisFormerEmployee\(|\bcurrentRoster[A-Z]\w*\(|\bemployeeHasOrganizationAccess\(/;
 /** A hand-written active check on the employee instead of the rule. */
-const RAW_EMPLOYEE_ACTIVE_CHECK = /\bemployee\.isActive\b|"employee"\."is_active"|\bemployee\.is_active\b/;
+const RAW_EMPLOYEE_ACTIVE_CHECK =
+	/\bemployee\.isActive\b|"employee"\."is_active"|\bemployee\.is_active\b/;
 /** A query that reads employees or manager links. */
 const EMPLOYEE_QUERY =
 	/\.from\(\s*employee\b|Join\(\s*employee\b|\.query\.employee\.find|\.query\.employeeManagers\.find|\.from\(\s*employeeManagers\b/;
 
 type Surface = { file: string; functions: string[]; note: string };
 
-export const ROSTER_SURFACES: Surface[] = [
+const ROSTER_SURFACES: Surface[] = [
 	{
 		file: "lib/effect/services/manager.service.ts",
 		functions: ["managedEmployeeRows"],
@@ -57,7 +58,11 @@ export const ROSTER_SURFACES: Surface[] = [
 	},
 	{
 		file: "components/dashboard/current-roster-queries.ts",
-		functions: ["currentRosterEmployeeIds", "currentRosterCount", "currentRosterAverageWeeklyHours"],
+		functions: [
+			"currentRosterEmployeeIds",
+			"currentRosterCount",
+			"currentRosterAverageWeeklyHours",
+		],
 		note: "the dashboard's roster readers",
 	},
 	{
@@ -217,7 +222,7 @@ export const ROSTER_SURFACES: Surface[] = [
 	},
 ];
 
-export const HISTORY_VIEWS: Surface[] = [
+const HISTORY_VIEWS: Surface[] = [
 	{
 		file: "app/[locale]/(app)/team/actions.ts",
 		functions: ["getCalendarManagedEmployees", "getCachedCalendarManagedEmployeeRecords"],
@@ -254,15 +259,26 @@ export const HISTORY_VIEWS: Surface[] = [
  * Employee queries in listed modules that answer neither "who works here now"
  * nor a view of the past, so they neither filter nor mark (#1438).
  */
-export const EXEMPT_EMPLOYEE_QUERIES: Surface[] = [
+const EXEMPT_EMPLOYEE_QUERIES: Surface[] = [
 	{
 		file: "lib/effect/services/manager.service.ts",
-		functions: ["assignManager", "removeManager", "getManagers", "getPrimaryManager", "isManagerOf"],
+		functions: [
+			"assignManager",
+			"removeManager",
+			"getManagers",
+			"getPrimaryManager",
+			"isManagerOf",
+		],
 		note: "manager link commands and lookups of one employee's own managers; assignManager refuses former employees through findEmployeesNotOnCurrentRoster",
 	},
 	{
 		file: "components/dashboard/actions.ts",
-		functions: ["getManagerTodaySummary", "getManagedEmployees", "getQuickStats", "getVacationBalanceResult"],
+		functions: [
+			"getManagerTodaySummary",
+			"getManagedEmployees",
+			"getQuickStats",
+			"getVacationBalanceResult",
+		],
 		note: "the viewer's own data; Your team delegates to managedEmployeeRows with the current roster",
 	},
 	{
@@ -351,7 +367,7 @@ function collectFunctionBodies(source: string, fileName: string): FunctionBody[]
  * and functions or arrows assigned to a variable or an object property. A name
  * declared twice in one file maps to null, so the list must name it uniquely.
  */
-export function functionBodies(source: string, fileName: string): Map<string, string | null> {
+function functionBodies(source: string, fileName: string): Map<string, string | null> {
 	const bodies = new Map<string, string | null>();
 	for (const { name, body } of collectFunctionBodies(source, fileName)) {
 		bodies.set(name, bodies.has(name) ? null : body);
@@ -360,7 +376,7 @@ export function functionBodies(source: string, fileName: string): Map<string, st
 }
 
 /** Employee queries in a module that neither apply the rule nor are listed. */
-export function unclassifiedEmployeeQueries(
+function unclassifiedEmployeeQueries(
 	source: string,
 	fileName: string,
 	classified: ReadonlySet<string>,
@@ -382,7 +398,11 @@ function rawActiveCheckCounts(): Record<string, number> {
 				if (entry !== "node_modules" && entry !== "__tests__" && entry !== "testing") walk(path);
 				continue;
 			}
-			if (!/\.tsx?$/.test(entry) || /\.(?:test|spec)\.tsx?$/.test(entry) || /\.test\.\w+\.ts$/.test(entry)) {
+			if (
+				!/\.tsx?$/.test(entry) ||
+				/\.(?:test|spec)\.tsx?$/.test(entry) ||
+				/\.test\.\w+\.ts$/.test(entry)
+			) {
 				continue;
 			}
 			const found = readFileSync(path, "utf8").match(pattern)?.length ?? 0;
@@ -393,7 +413,7 @@ function rawActiveCheckCounts(): Record<string, number> {
 	return counts;
 }
 
-export function rosterViolation(body: string): string | null {
+function rosterViolation(body: string): string | null {
 	if (!ROSTER_RULE.test(body)) return "does not filter with the current-roster rule";
 	if (RAW_EMPLOYEE_ACTIVE_CHECK.test(body)) return "uses a hand-written active check";
 	return null;
@@ -500,7 +520,10 @@ describe("current-roster surface guard", () => {
 
 	it("adds no hand-written employee active checks beyond the baseline", () => {
 		const baseline = JSON.parse(
-			readFileSync(join(SRC_ROOT, "lib/employee-lifecycle/raw-employee-active-checks.json"), "utf8"),
+			readFileSync(
+				join(SRC_ROOT, "lib/employee-lifecycle/raw-employee-active-checks.json"),
+				"utf8",
+			),
 		) as Record<string, number>;
 		const grown = Object.entries(rawActiveCheckCounts())
 			.filter(([file, count]) => count > (baseline[file] ?? 0))

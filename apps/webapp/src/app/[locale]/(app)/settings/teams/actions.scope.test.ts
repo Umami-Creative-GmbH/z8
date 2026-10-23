@@ -73,6 +73,10 @@ vi.mock("next/cache", () => ({
 
 // The roster rule itself is covered by the PostgreSQL suites (#1438); here a
 // member is current unless the test lists them as former.
+vi.mock("@/lib/employee-lifecycle/current-roster", () => ({
+	onCurrentRoster: vi.fn((organizationId: string) => ({ onCurrentRoster: organizationId })),
+}));
+
 vi.mock("@/lib/employee-lifecycle/current-roster-among", () => ({
 	currentRosterAmong: vi.fn(
 		async (_db: unknown, _organizationId: string, employeeIds: Iterable<string>) =>

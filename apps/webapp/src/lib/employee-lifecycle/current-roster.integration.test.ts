@@ -127,7 +127,10 @@ describe("current roster", () => {
 					.select({ id: employee.id })
 					.from(employee)
 					.where(
-						and(eq(employee.userId, deactivated.userId), onCurrentRoster(organizationId, employee, AFTER)),
+						and(
+							eq(employee.userId, deactivated.userId),
+							onCurrentRoster(organizationId, employee, AFTER),
+						),
 					)
 			).map((row) => row.id);
 
@@ -139,7 +142,9 @@ describe("current roster", () => {
 		const rows = await fixture.db
 			.select({ id: employee.id, former: isFormerEmployee(employee, AFTER) })
 			.from(employee)
-			.where(and(inArray(employee.id, seeded()), eq(employee.organizationId, fixture.organizationId)))
+			.where(
+				and(inArray(employee.id, seeded()), eq(employee.organizationId, fixture.organizationId)),
+			)
 			.orderBy(asc(employee.id));
 		const former = new Map(rows.map((row) => [row.id, row.former]));
 
@@ -179,7 +184,10 @@ describe("current roster", () => {
 
 	it("works inside relational findMany queries", async () => {
 		const found = await fixture.db.query.employee.findMany({
-			where: and(inArray(employee.id, seeded()), onCurrentRoster(fixture.organizationId, employee, AFTER)),
+			where: and(
+				inArray(employee.id, seeded()),
+				onCurrentRoster(fixture.organizationId, employee, AFTER),
+			),
 			columns: { id: true },
 		});
 

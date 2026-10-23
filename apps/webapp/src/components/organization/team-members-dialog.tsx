@@ -13,6 +13,7 @@ import {
 import { useDrivingLicenceTeamChangeWarning } from "@/components/driving-licence/ending-confirmation";
 import {
 	FormerEmployeeBadge,
+	isMarkedFormer,
 	ShowFormerEmployeesSwitch,
 } from "@/components/former-employees/former-employee-ui";
 import {
@@ -47,7 +48,7 @@ type TeamMemberChange = { teamId: string; employeeId: string; previewToken: stri
  * from elsewhere without the mark falls back to the deactivation flag.
  */
 export function isFormerTeamMember(member: MemberWithUserAndEmployee): boolean {
-	return member.isFormerEmployee ?? member.employee?.isActive === false;
+	return isMarkedFormer({ isFormer: member.isFormerEmployee, isActive: member.employee?.isActive });
 }
 
 interface TeamMembersDialogProps {

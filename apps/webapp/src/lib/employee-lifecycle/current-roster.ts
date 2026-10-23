@@ -37,7 +37,11 @@ export function isFormerEmployee(
 	return sql<boolean>`(NOT ${isCurrent(columns, now)})`;
 }
 
+/** The instant a roster or access check is evaluated at: `now`, or the database's own now. */
+export function rosterCheckInstant(now?: Instant): SQL {
+	return now ? sql`${dateFromInstant(now)}::timestamptz` : sql`now()`;
+}
+
 function isCurrent(columns: RosterEmployeeColumns, now?: Instant): SQL {
-	const at = now ? sql`${dateFromInstant(now)}::timestamptz` : sql`now()`;
-	return sql`(${columns.isActive} = true AND NOT employee_departure_denies_access(${columns.organizationId}, ${columns.id}, ${at}))`;
+	return sql`(${columns.isActive} = true AND NOT employee_departure_denies_access(${columns.organizationId}, ${columns.id}, ${rosterCheckInstant(now)}))`;
 }

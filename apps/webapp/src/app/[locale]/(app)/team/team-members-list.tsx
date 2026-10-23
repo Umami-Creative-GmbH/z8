@@ -27,14 +27,16 @@ import {
 	useTable,
 } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
-import { useId, useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { EmployeeActivityText } from "@/components/employee-activity-text";
+import {
+	FormerEmployeeBadge,
+	ShowFormerEmployeesSwitch,
+} from "@/components/former-employees/former-employee-ui";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import {
 	Table,
 	TableBody,
@@ -140,7 +142,7 @@ export function TeamMembersList({ employees, showFormer = false }: TeamMembersLi
 	const { t } = useTranslate();
 	const router = useRouter();
 	const [formerPending, startFormerTransition] = useTransition();
-	const formerLabel = t("team.status.former", "Former");
+	const formerLabel = t("common:formerEmployees.former", "Former");
 	const [searchQuery, setSearchQuery] = useState("");
 	const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
 	const youLabel = t("team.member.you", "You");
@@ -212,7 +214,6 @@ export function TeamMembersList({ employees, showFormer = false }: TeamMembersLi
 						router.replace(next ? `${PATH}?former=1` : PATH, { scroll: false }),
 					)
 				}
-				showFormerLabel={t("team.showFormer", "Show former employees")}
 			/>
 
 			{filteredEmployees.length > 0 ? (
@@ -224,7 +225,6 @@ export function TeamMembersList({ employees, showFormer = false }: TeamMembersLi
 						workBalanceLabel={workBalanceLabel}
 						historyLabel={historyLabel}
 						primaryManagerLabel={primaryManagerLabel}
-						formerLabel={formerLabel}
 					/>
 				) : (
 					<TeamMembersTable
@@ -288,7 +288,6 @@ function TeamMembersToolbar({
 	showFormer,
 	showFormerPending,
 	onShowFormerChange,
-	showFormerLabel,
 }: {
 	searchQuery: string;
 	onSearchQueryChange: (value: string) => void;
@@ -301,9 +300,7 @@ function TeamMembersToolbar({
 	showFormer: boolean;
 	showFormerPending: boolean;
 	onShowFormerChange: (value: boolean) => void;
-	showFormerLabel: string;
 }) {
-	const showFormerId = useId();
 	return (
 		<div className="flex flex-wrap items-center justify-between gap-4">
 			<div className="relative min-w-48 max-w-md flex-1">
@@ -316,17 +313,12 @@ function TeamMembersToolbar({
 					className="pl-10"
 				/>
 			</div>
-			<div className="flex shrink-0 items-center gap-2">
-				<Switch
-					id={showFormerId}
-					checked={showFormer}
-					disabled={showFormerPending}
-					onCheckedChange={onShowFormerChange}
-				/>
-				<Label htmlFor={showFormerId} className="cursor-pointer text-sm font-normal">
-					{showFormerLabel}
-				</Label>
-			</div>
+			<ShowFormerEmployeesSwitch
+				className="shrink-0"
+				checked={showFormer}
+				disabled={showFormerPending}
+				onCheckedChange={onShowFormerChange}
+			/>
 			<ToggleGroup
 				type="single"
 				value={viewMode}
@@ -361,8 +353,7 @@ function TeamMemberCards({
 	workBalanceLabel,
 	historyLabel,
 	primaryManagerLabel,
-	formerLabel,
-}: TeamMemberPresentationProps) {
+}: Omit<TeamMemberPresentationProps, "formerLabel">) {
 	return (
 		<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 			{employees.map((employee) => (
@@ -424,11 +415,7 @@ function TeamMemberCards({
 									workBalanceLabel={workBalanceLabel}
 									historyLabel={historyLabel}
 								/>
-								{employee.isFormer && (
-									<Badge variant="outline" className="text-xs font-normal">
-										{formerLabel}
-									</Badge>
-								)}
+								{employee.isFormer && <FormerEmployeeBadge className="font-normal" />}
 								{employee.role !== "employee" && (
 									<Badge
 										variant={employee.role === "admin" ? "default" : "secondary"}
@@ -571,7 +558,7 @@ function TeamMembersTable({
 				enableSorting: false,
 				cell: ({ row }) => (
 					<Badge variant={row.original.isFormer ? "secondary" : "default"}>
-						{row.original.isFormer ? formerLabel : t("team.status.current", "Current")}
+						{row.original.isFormer ? formerLabel : t("common:formerEmployees.current", "Current")}
 					</Badge>
 				),
 			},

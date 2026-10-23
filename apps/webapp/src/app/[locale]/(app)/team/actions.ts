@@ -11,7 +11,8 @@ import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
-import { isFormerEmployee, onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
+import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
+import { currentRosterAmong } from "@/lib/employee-lifecycle/current-roster-among";
 import { getEmployeeWorkBalances } from "@/lib/work-balance/service";
 import {
 	buildVisibleManagedEmployees,
@@ -58,18 +59,8 @@ async function formerEmployeeIdsAmong(
 	organizationId: string,
 	employeeIds: string[],
 ): Promise<string[]> {
-	if (employeeIds.length === 0) return [];
-	const rows = await database
-		.select({ id: employee.id })
-		.from(employee)
-		.where(
-			and(
-				eq(employee.organizationId, organizationId),
-				inArray(employee.id, employeeIds),
-				isFormerEmployee(),
-			),
-		);
-	return rows.map((row) => row.id);
+	const current = await currentRosterAmong(database, organizationId, employeeIds);
+	return employeeIds.filter((id) => !current.has(id));
 }
 
 function getCachedCalendarManagedEmployeeRecords(

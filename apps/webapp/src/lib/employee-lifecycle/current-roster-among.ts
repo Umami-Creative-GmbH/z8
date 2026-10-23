@@ -2,10 +2,8 @@ import { and, inArray } from "drizzle-orm";
 import { employee } from "@/db/schema";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
+import { isUuid } from "@/lib/validations/uuid";
 import { onCurrentRoster } from "./current-roster";
-
-// Not a uuid can't be an employee; keep it out of the uuid comparison.
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * Which of these employees are on the organization's current roster (#1438).
@@ -21,7 +19,8 @@ export async function currentRosterAmong(
 	employeeIds: Iterable<string>,
 	now?: Instant,
 ): Promise<Set<string>> {
-	const ids = [...new Set(employeeIds)].filter((id) => UUID_PATTERN.test(id));
+	// Not a uuid can't be an employee; keep it out of the uuid comparison.
+	const ids = [...new Set(employeeIds)].filter(isUuid);
 	if (ids.length === 0) return new Set();
 
 	const rows = await db
