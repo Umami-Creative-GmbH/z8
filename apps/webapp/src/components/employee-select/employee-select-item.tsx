@@ -35,7 +35,8 @@ export function EmployeeSelectItem({
 	const name = buildAuthUserDisplayName(employee.user);
 	const pronouns = normalizePronouns(employee.pronouns);
 	const displayName = pronouns ? `${name} (${pronouns})` : name;
-	const isInactive = !employee.isActive;
+	const isFormer = employee.isFormer === true;
+	const isInactive = isFormer || !employee.isActive;
 
 	return (
 		<div
@@ -88,7 +89,9 @@ export function EmployeeSelectItem({
 					<span className="font-medium truncate">{displayName}</span>
 					{isInactive && (
 						<Badge variant="secondary" className="text-xs shrink-0">
-							{t("employeeSelect.inactive", "Inactive")}
+							{isFormer
+								? t("employeeSelect.former", "Former")
+								: t("employeeSelect.inactive", "Inactive")}
 						</Badge>
 					)}
 				</div>

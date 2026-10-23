@@ -9,7 +9,9 @@ import { getRequestSession } from "@/lib/auth/request-session";
 import { CACHE_TAGS } from "@/lib/cache/tags";
 import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import { isFormerEmployee, onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
 import { getEmployeeWorkBalances } from "@/lib/work-balance/service";
 import {
 	buildVisibleManagedEmployees,
@@ -38,8 +40,7 @@ export async function getCurrentEmployee(): Promise<CurrentTeamEmployee | null> 
 
 	if (activeOrgId) {
 		const emp = await db.query.employee.findFirst({
-			where: (e, { and, eq }) =>
-				and(eq(e.userId, session.user.id), eq(e.organizationId, activeOrgId), eq(e.isActive, true)),
+			where: (e, { and, eq }) => and(eq(e.userId, session.user.id), onCurrentRoster(activeOrgId, e)),
 			with: {
 				user: true,
 				team: true,
@@ -51,13 +52,34 @@ export async function getCurrentEmployee(): Promise<CurrentTeamEmployee | null> 
 	return null;
 }
 
+/** Which of the given employees of the organization are former employees (#1438). */
+async function formerEmployeeIdsAmong(
+	database: DatabaseClient,
+	organizationId: string,
+	employeeIds: string[],
+): Promise<string[]> {
+	if (employeeIds.length === 0) return [];
+	const rows = await database
+		.select({ id: employee.id })
+		.from(employee)
+		.where(
+			and(
+				eq(employee.organizationId, organizationId),
+				inArray(employee.id, employeeIds),
+				isFormerEmployee(),
+			),
+		);
+	return rows.map((row) => row.id);
+}
+
 function getCachedCalendarManagedEmployeeRecords(
 	organizationId: string,
 	managerId: string,
 	fresh = false,
 ) {
 	const load = async () => {
-		return await db.query.employeeManagers.findMany({
+		// A calendar is a view of the past: former reports stay, marked (#1438).
+		const records = await db.query.employeeManagers.findMany({
 			where: and(
 				eq(employeeManagers.managerId, managerId),
 				inArray(
@@ -77,6 +99,12 @@ function getCachedCalendarManagedEmployeeRecords(
 				},
 			},
 		});
+		const formerEmployeeIds = await formerEmployeeIdsAmong(
+			db,
+			organizationId,
+			records.map((record) => record.employeeId),
+		);
+		return { records, formerEmployeeIds };
 	};
 	if (fresh) return load();
 	return unstable_cache(load, ["calendar-managed-employees", organizationId, managerId], {
@@ -85,11 +113,16 @@ function getCachedCalendarManagedEmployeeRecords(
 	})();
 }
 
+type CalendarManagedEmployeesOptions = { fresh?: boolean };
+
 /**
  * Lightweight employee list for the calendar selector.
  * Avoids team-page balance refresh work and caches the manager relationship lookup.
+ * Former reports stay selectable, marked, so that their past stays readable.
  */
-export async function getCalendarManagedEmployees(options?: { fresh?: boolean }): Promise<
+export async function getCalendarManagedEmployees(
+	options?: CalendarManagedEmployeesOptions,
+): Promise<
 	ServerActionResult<ManagedEmployee[]>
 > {
 	const effect = Effect.gen(function* () {
@@ -108,11 +141,7 @@ export async function getCalendarManagedEmployees(options?: { fresh?: boolean })
 			? yield* Effect.promise(async () => {
 					return await db.query.employee.findFirst({
 						where: (e, { and, eq }) =>
-							and(
-								eq(e.userId, session.user.id),
-								eq(e.organizationId, activeOrgId),
-								eq(e.isActive, true),
-							),
+							and(eq(e.userId, session.user.id), onCurrentRoster(activeOrgId, e)),
 						with: { user: true, team: true },
 					});
 				})
@@ -137,10 +166,11 @@ export async function getCalendarManagedEmployees(options?: { fresh?: boolean })
 			);
 		}
 
-		const records = yield* Effect.promise(() =>
+		const { records, formerEmployeeIds } = yield* Effect.promise(() =>
 			getCachedCalendarManagedEmployeeRecords(currentEmp.organizationId, currentEmp.id, options?.fresh === true),
 		);
 		const typedRecords = records as unknown as ManagedEmployeeRecord[];
+		const former = new Set(formerEmployeeIds);
 		const byId = new Map<string, ManagedEmployee>();
 
 		for (const record of typedRecords) {
@@ -157,6 +187,7 @@ export async function getCalendarManagedEmployees(options?: { fresh?: boolean })
 				position: recordEmployee.position,
 				role: recordEmployee.role,
 				isActive: recordEmployee.isActive,
+				isFormer: former.has(recordEmployee.id),
 				isPrimaryManager: record.isPrimary,
 				isCurrentUser: false,
 				timeBalance: null,
@@ -182,11 +213,21 @@ export async function getCalendarManagedEmployees(options?: { fresh?: boolean })
 	return runServerActionSafe(effect);
 }
 
+type ManagedEmployeesOptions = {
+	/** Also list reports who are former employees, marked. */
+	includeFormer?: boolean;
+};
+
 /**
  * Get all employees managed by the current user
- * Uses the employeeManagers junction table to find direct reports
+ * Uses the employeeManagers junction table to find direct reports.
+ * Only reports on the current roster, unless `includeFormer` asks for former
+ * employees too; those come back marked (#1438).
  */
-export async function getManagedEmployees(): Promise<ServerActionResult<ManagedEmployee[]>> {
+export async function getManagedEmployees(
+	options?: ManagedEmployeesOptions,
+): Promise<ServerActionResult<ManagedEmployee[]>> {
+	const includeFormer = options?.includeFormer === true;
 	const effect = Effect.gen(function* () {
 		const dbService = yield* DatabaseService;
 
@@ -199,11 +240,7 @@ export async function getManagedEmployees(): Promise<ServerActionResult<ManagedE
 				if (activeOrgId) {
 					return await db.query.employee.findFirst({
 						where: (e, { and, eq }) =>
-							and(
-								eq(e.userId, session.user.id),
-								eq(e.organizationId, activeOrgId),
-								eq(e.isActive, true),
-							),
+							and(eq(e.userId, session.user.id), onCurrentRoster(activeOrgId, e)),
 						with: { user: true, team: true },
 					});
 				}
@@ -230,28 +267,43 @@ export async function getManagedEmployees(): Promise<ServerActionResult<ManagedE
 		}
 
 		// Get all employees where current user is their manager
-		const managedEmployeeRecords = yield* dbService.query("getManagedEmployees", async () => {
-			return await dbService.db.query.employeeManagers.findMany({
-				where: and(
-					eq(employeeManagers.managerId, currentEmp.id),
-					inArray(
-						employeeManagers.employeeId,
-						dbService.db
-							.select({ id: employee.id })
-							.from(employee)
-							.where(eq(employee.organizationId, currentEmp.organizationId)),
+		const { managedEmployeeRecords, formerEmployeeIds } = yield* dbService.query(
+			"getManagedEmployees",
+			async () => {
+				const managedEmployeeRecords = await dbService.db.query.employeeManagers.findMany({
+					where: and(
+						eq(employeeManagers.managerId, currentEmp.id),
+						inArray(
+							employeeManagers.employeeId,
+							dbService.db
+								.select({ id: employee.id })
+								.from(employee)
+								.where(
+									includeFormer
+										? eq(employee.organizationId, currentEmp.organizationId)
+										: onCurrentRoster(currentEmp.organizationId),
+								),
+						),
 					),
-				),
-				with: {
-					employee: {
-						with: {
-							user: true,
-							team: true,
+					with: {
+						employee: {
+							with: {
+								user: true,
+								team: true,
+							},
 						},
 					},
-				},
-			});
-		});
+				});
+				const formerEmployeeIds = includeFormer
+					? await formerEmployeeIdsAmong(
+							dbService.db,
+							currentEmp.organizationId,
+							managedEmployeeRecords.map((record) => record.employeeId),
+						)
+					: [];
+				return { managedEmployeeRecords, formerEmployeeIds };
+			},
+		);
 
 		const typedManagedEmployeeRecords =
 			managedEmployeeRecords as unknown as ManagedEmployeeRecord[];
@@ -274,6 +326,7 @@ export async function getManagedEmployees(): Promise<ServerActionResult<ManagedE
 			currentEmployee: currentEmp as CurrentTeamEmployee,
 			managedRecords: typedManagedEmployeeRecords,
 			balances,
+			formerEmployeeIds: new Set(formerEmployeeIds),
 		});
 	});
 

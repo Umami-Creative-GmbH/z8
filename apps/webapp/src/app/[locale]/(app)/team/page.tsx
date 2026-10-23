@@ -5,9 +5,19 @@ import { getTranslate } from "@/tolgee/server";
 import { getCurrentEmployee, getManagedEmployees } from "./actions";
 import { TeamMembersList } from "./team-members-list";
 
-export default async function TeamPage() {
+type TeamPageProps = {
+	searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function TeamPage({ searchParams }: TeamPageProps) {
 	// Parallelize independent async operations to eliminate waterfall
-	const [t, currentEmployee] = await Promise.all([getTranslate(), getCurrentEmployee()]);
+	const [t, currentEmployee, params] = await Promise.all([
+		getTranslate(),
+		getCurrentEmployee(),
+		searchParams,
+	]);
+	// Former employees are hidden unless asked for (#1438).
+	const showFormer = params.former === "1";
 
 	// Show error if no employee profile found
 	if (!currentEmployee) {
@@ -23,7 +33,7 @@ export default async function TeamPage() {
 		return redirectWithLocale("/");
 	}
 
-	const result = await getManagedEmployees();
+	const result = await getManagedEmployees({ includeFormer: showFormer });
 
 	// Handle error case
 	if (!result.success) {
@@ -61,7 +71,7 @@ export default async function TeamPage() {
 
 			{/* Team Members List */}
 			<div className="px-4 lg:px-6">
-				<TeamMembersList employees={employees} />
+				<TeamMembersList employees={employees} showFormer={showFormer} />
 			</div>
 		</div>
 	);

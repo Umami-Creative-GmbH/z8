@@ -534,9 +534,11 @@ export function getManagedEmployeeIdsForSettingsActor(actor: {
 		}
 
 		const managerService = yield* ManagerService;
+		// Authority, not a roster: a manager keeps reaching a former report (#1438).
 		const managedEmployees = yield* managerService.getManagedEmployees(
 			actor.currentEmployee.id,
 			actor.organizationId,
+			{ roster: "all" },
 		);
 
 		return new Set(
