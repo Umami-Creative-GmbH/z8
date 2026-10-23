@@ -1,10 +1,12 @@
 "use client";
 
-import { useTranslate } from "@tolgee/react";
+import { useTolgee, useTranslate } from "@tolgee/react";
 import { useId } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { parsePlainDate } from "@/lib/datetime/temporal-core";
+import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { cn } from "@/lib/utils";
 
 /**
@@ -17,13 +19,30 @@ export function isMarkedFormer(row: { isFormer?: boolean | null; isActive?: bool
 
 /**
  * The label views put on a former employee (Organization glossary, #1438).
- * Just "Former" until the moment they left is recorded (#1439).
+ * `since` is the organization-local date they left (`YYYY-MM-DD`, #1439):
+ * "Former since 12 Oct 2026". `null` means the date isn't recorded; leave it
+ * out where the source doesn't say, and the label is just "Former".
  */
-export function FormerEmployeeBadge({ className }: { className?: string }) {
+export function FormerEmployeeBadge({
+	since,
+	className,
+}: {
+	since?: string | null;
+	className?: string;
+}) {
 	const { t } = useTranslate();
+	const locale = useTolgee(["language"]).getLanguage() || "en";
+	const label =
+		since === undefined
+			? t("common:formerEmployees.former", "Former")
+			: since === null
+				? t("common:formerEmployees.formerDateNotRecorded", "Former · date not recorded")
+				: t("common:formerEmployees.formerSince", "Former since {date}", {
+						date: formatPlainDate(parsePlainDate(since), locale, "dateMedium"),
+					});
 	return (
 		<Badge variant="secondary" className={cn("shrink-0 text-xs", className)}>
-			{t("common:formerEmployees.former", "Former")}
+			{label}
 		</Badge>
 	);
 }
