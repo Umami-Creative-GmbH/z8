@@ -42,7 +42,10 @@ import {
 } from "@/lib/effect/result";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
-import { ManagerService } from "@/lib/effect/services/manager.service";
+import {
+	type ManagedEmployee,
+	ManagerService,
+} from "@/lib/effect/services/manager.service";
 import {
 	type EffectiveWorkPolicy,
 	WorkPolicyService,
@@ -173,43 +176,57 @@ export async function getManagerTodaySummary(): Promise<ManagerTodaySummaryResul
 	}
 }
 
+export type ManagedEmployeesResult = {
+	/** Whether the Your team widget applies: the caller has reports or is an admin. */
+	isManager: boolean;
+	employees: ManagedEmployee[];
+};
+
 /**
- * Get all employees managed by a specific manager
+ * The caller's own direct reports in the active organization (#1436). The
+ * manager always comes from the session, never from the client.
  */
-export async function getManagedEmployees(
-	managerId: string,
-): Promise<ServerActionResult<any[]>> {
+export async function getManagedEmployees(): Promise<
+	ServerActionResult<ManagedEmployeesResult>
+> {
 	const effect = Effect.gen(function* () {
 		const authService = yield* AuthService;
 		const session = yield* authService.getSession();
+		const activeOrganizationId = session.session.activeOrganizationId;
+		const none: ManagedEmployeesResult = { isManager: false, employees: [] };
+
+		if (!activeOrganizationId) {
+			return none;
+		}
+
 		const dbService = yield* DatabaseService;
-		const managerService = yield* ManagerService;
-
-		// Get current employee
-		const _currentEmployee = yield* dbService
-			.query("getCurrentEmployee", async () => {
+		const currentEmployee = yield* dbService.query(
+			"getManagedEmployeesCurrentEmployee",
+			async () => {
 				return await dbService.db.query.employee.findFirst({
-					where: eq(employee.userId, session.user.id),
+					where: and(
+						eq(employee.userId, session.user.id),
+						eq(employee.organizationId, activeOrganizationId),
+					),
+					columns: { id: true, role: true },
 				});
-			})
-			.pipe(
-				Effect.flatMap((emp) =>
-					emp
-						? Effect.succeed(emp)
-						: Effect.fail(
-								new NotFoundError({
-									message: "Employee profile not found",
-									entityType: "employee",
-								}),
-							),
-				),
-			);
+			},
+		);
 
-		// Get managed employees using ManagerService
-		const managedEmployees =
-			yield* managerService.getManagedEmployees(managerId);
+		if (!currentEmployee) {
+			return none;
+		}
 
-		return managedEmployees;
+		const managerService = yield* ManagerService;
+		const employees = yield* managerService.getManagedEmployees(
+			currentEmployee.id,
+			activeOrganizationId,
+		);
+
+		return {
+			isManager: employees.length > 0 || currentEmployee.role === "admin",
+			employees,
+		};
 	});
 
 	return runServerActionSafe(effect);

@@ -1,6 +1,8 @@
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { Context, Effect, Layer } from "effect";
-import { employee, employeeManagers } from "@/db/schema";
+import { user } from "@/db/auth-schema";
+import { employee, employeeManagers, team } from "@/db/schema";
 import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import { type ConflictError, type DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { DatabaseService } from "./database.service";
@@ -25,6 +27,21 @@ export interface Manager {
 	isPrimary: boolean;
 }
 
+/** A direct report as the dashboard shows it: only what the card renders. */
+export interface ManagedEmployee {
+	id: string;
+	position: string | null;
+	user: {
+		id: string;
+		name: string;
+		email: string;
+		image: string | null;
+	};
+	team: { name: string } | null;
+}
+
+const managerEmployee = alias(employee, "manager_employee");
+
 export class ManagerService extends Context.Service<
 	ManagerService,
 	{
@@ -48,10 +65,11 @@ export class ManagerService extends Context.Service<
 			managerId: string,
 			employeeId: string,
 		) => Effect.Effect<boolean, DatabaseError>;
+		/** The manager's direct reports, both sides in the given organization (#1436). */
 		readonly getManagedEmployees: (
 			managerId: string,
-			// biome-ignore lint/suspicious/noExplicitAny: Will be provided at runtime
-		) => Effect.Effect<any[], DatabaseError>;
+			organizationId: string,
+		) => Effect.Effect<ManagedEmployee[], DatabaseError>;
 	}
 >()("ManagerService") {}
 
@@ -331,23 +349,56 @@ export const ManagerServiceLive = Layer.effect(
 					return assignment !== undefined;
 				}),
 
-			getManagedEmployees: (managerId) =>
+			getManagedEmployees: (managerId, organizationId) =>
 				Effect.gen(function* () {
-					const employees = yield* dbService.query("getManagedEmployees", async () => {
-						return await dbService.db.query.employeeManagers.findMany({
-							where: eq(employeeManagers.managerId, managerId),
-							with: {
-								employee: {
-									with: {
-										user: true,
-										team: true,
-									},
-								},
-							},
-						});
+					const rows = yield* dbService.query("getManagedEmployees", async () => {
+						return await dbService.db
+							.select({
+								id: employee.id,
+								position: employee.position,
+								userId: user.id,
+								userName: user.name,
+								userEmail: user.email,
+								userImage: user.image,
+								teamName: team.name,
+							})
+							.from(employeeManagers)
+							.innerJoin(
+								managerEmployee,
+								and(
+									eq(managerEmployee.id, employeeManagers.managerId),
+									eq(managerEmployee.organizationId, organizationId),
+								),
+							)
+							.innerJoin(
+								employee,
+								and(
+									eq(employee.id, employeeManagers.employeeId),
+									eq(employee.organizationId, organizationId),
+								),
+							)
+							.innerJoin(user, eq(user.id, employee.userId))
+							.leftJoin(
+								team,
+								and(eq(team.id, employee.teamId), eq(team.organizationId, organizationId)),
+							)
+							.where(eq(employeeManagers.managerId, managerId))
+							.orderBy(asc(user.name), asc(employee.id));
 					});
 
-					return employees.map((e) => e.employee);
+					return rows.map(
+						(row): ManagedEmployee => ({
+							id: row.id,
+							position: row.position,
+							user: {
+								id: row.userId,
+								name: row.userName,
+								email: row.userEmail,
+								image: row.userImage,
+							},
+							team: row.teamName === null ? null : { name: row.teamName },
+						}),
+					);
 				}),
 		});
 	}),
