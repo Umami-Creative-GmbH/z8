@@ -141,4 +141,32 @@ describe("team action helpers", () => {
 		expect(employees.map((employee) => employee.id)).toEqual(["manager-1", "employee-1"]);
 		expect(employees[1]?.timeBalance?.balanceMinutes).toBe(120);
 	});
+
+	it("marks reports listed as former employees, never the viewer", () => {
+		const report = {
+			id: "employee-1",
+			userId: "user-2",
+			organizationId: "org-1",
+			teamId: null,
+			firstName: "Grace",
+			lastName: "Hopper",
+			pronouns: null,
+			position: null,
+			role: "employee" as const,
+			isActive: false,
+			user: { ...user, id: "user-2", name: "Grace Hopper" },
+			team: null,
+		};
+		const employees = buildVisibleManagedEmployees({
+			currentEmployee: { ...report, id: "manager-1", userId: "user-1", role: "manager", isActive: true, user },
+			managedRecords: [{ isPrimary: true, employee: report }],
+			balances: new Map(),
+			formerEmployeeIds: new Set(["employee-1", "manager-1"]),
+		});
+
+		expect(employees.map(({ id, isFormer }) => ({ id, isFormer }))).toEqual([
+			{ id: "manager-1", isFormer: false },
+			{ id: "employee-1", isFormer: true },
+		]);
+	});
 });

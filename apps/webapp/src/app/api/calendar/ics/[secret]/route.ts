@@ -10,11 +10,11 @@
  * Returns: text/calendar (ICS format)
  */
 
-import { and, eq, gte, inArray, isNull, lte, or } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, lte, not, or } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { connection, type NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { user } from "@/db/auth-schema";
+import { organization, user } from "@/db/auth-schema";
 import { absenceCategory, absenceEntry, icsFeed } from "@/db/schema";
 import { employee, team } from "@/db/schema/organization";
 import type { AbsenceWithCategory } from "@/lib/absences/types";
@@ -24,6 +24,8 @@ import {
 	isWellFormedIcsFeedSecret,
 } from "@/lib/calendar-sync/ics-feed-secret";
 import type { ICSFeedOptions } from "@/lib/calendar-sync/types";
+import { todayCalendarDateKey } from "@/lib/calendar/date-keys";
+import { isFormerEmployee } from "@/lib/employee-lifecycle/current-roster";
 import { checkRateLimit, createRateLimitResponse, getClientIp } from "@/lib/rate-limit";
 
 // ============================================
@@ -255,6 +257,15 @@ async function fetchTeamAbsences(
 		return [];
 	}
 
+	// A former employee's absences stop at the moment they left (#1438). That
+	// moment isn't recorded yet, so their absences starting after today, in the
+	// organization's timezone, are left out; past weeks still read correctly.
+	const org = await db.query.organization.findFirst({
+		where: eq(organization.id, organizationId),
+		columns: { timezone: true },
+	});
+	const today = todayCalendarDateKey(org?.timezone || "UTC");
+
 	const results = await db
 		.select({
 			absence: absenceEntry,
@@ -274,6 +285,7 @@ async function fetchTeamAbsences(
 				eq(absenceCategory.organizationId, organizationId),
 				inArray(absenceEntry.status, statuses),
 				or(and(lte(absenceEntry.startDate, endDate), gte(absenceEntry.endDate, startDate))),
+				or(not(isFormerEmployee(employee)), lte(absenceEntry.startDate, today)),
 			),
 		);
 

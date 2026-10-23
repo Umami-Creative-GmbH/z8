@@ -43,6 +43,11 @@ vi.mock("@/lib/billing/guard", async () =>
 );
 
 const { getManagedEmployees } = await import("./actions");
+const { runtime } = await import("@/lib/effect/runtime");
+const { ManagerService } = await import("@/lib/effect/services/manager.service");
+
+/** A departure cutoff in the past, so that a pending departure is due (#1438). */
+const PAST_CUTOFF = "2026-09-15T00:00:00Z";
 
 /** The action as a forged client call could invoke it, with extra arguments. */
 const callWithForgedArguments = getManagedEmployees as unknown as (
@@ -63,6 +68,10 @@ describe("Your team lists only the caller's reports in the active organization (
 	let otherManagerInA: string;
 	let otherReportInA: string;
 	let teamInA: string;
+	let deactivatedReportInA: string;
+	let departedReportInA: string;
+	let formerManagerInA: string;
+	let reportOfFormerManagerInA: string;
 
 	beforeAll(async () => {
 		fixture = await createLifecycleDatabaseFixture();
@@ -98,7 +107,42 @@ describe("Your team lists only the caller's reports in the active organization (
 		await link(reportInA, managerInA);
 		await link(reportInB, managerInB);
 		await link(otherReportInA, otherManagerInA);
+
+		// Former employees (#1438): a deactivated report, a report whose departure
+		// is due, and a deactivated manager whose current report stays linked.
+		deactivatedReportInA = (await fixture.seedEmployee({ isActive: false })).employeeId;
+		const departed = await fixture.seedEmployee();
+		departedReportInA = departed.employeeId;
+		await dueDeparture(departed);
+		await link(deactivatedReportInA, managerInA);
+		await link(departedReportInA, managerInA);
+		formerManagerInA = (await fixture.seedEmployee({ isActive: false })).employeeId;
+		await setRole(formerManagerInA, "manager");
+		reportOfFormerManagerInA = (await fixture.seedEmployee()).employeeId;
+		await link(reportOfFormerManagerInA, formerManagerInA);
 	});
+
+	async function dueDeparture(target: { employeeId: string; employmentPeriodId: string }) {
+		await fixture.pool.query(
+			`insert into employee_departure
+			 (organization_id, employee_id, employment_period_id, mode, last_working_day, timezone,
+			  cutoff_at, created_by, request_id, request_fingerprint, revision, status)
+			 values ($1, $2, $3, 'scheduled', '2026-09-14', 'UTC', $4, $5, gen_random_uuid(), 'test', 1, 'pending')`,
+			[organizationA, target.employeeId, target.employmentPeriodId, PAST_CUTOFF, fixture.ownerUserId],
+		);
+	}
+
+	async function serviceReports(
+		managerId: string,
+		organizationId: string,
+		roster: "current" | "all",
+	) {
+		const service = await runtime.runPromise(ManagerService);
+		const employees = await runtime.runPromise(
+			service.getManagedEmployees(managerId, organizationId, { roster }),
+		);
+		return employees.map((employee) => employee.id).toSorted();
+	}
 
 	beforeEach(() => {
 		harness.userId = managerUserId;
@@ -197,6 +241,31 @@ describe("Your team lists only the caller's reports in the active organization (
 		const data = await load();
 
 		expect(data).toEqual({ isManager: true, employees: [] });
+	});
+
+	it("leaves out a deactivated report and one past a due departure (#1438)", async () => {
+		const data = await load();
+
+		expect(data.employees.map((employee) => employee.id)).toEqual([reportInA]);
+	});
+
+	it("lists no reports for a manager who is a former employee (#1438)", async () => {
+		expect(await serviceReports(formerManagerInA, organizationA, "current")).toEqual([]);
+	});
+
+	it("keeps every link for manager authority, former employees included (#1438)", async () => {
+		expect(await serviceReports(managerInA, organizationA, "all")).toEqual(
+			[reportInA, deactivatedReportInA, departedReportInA].toSorted(),
+		);
+		expect(await serviceReports(formerManagerInA, organizationA, "all")).toEqual([
+			reportOfFormerManagerInA,
+		]);
+	});
+
+	it("keeps both roster readings inside the organization (#1438)", async () => {
+		expect(await serviceReports(managerInA, organizationB, "current")).toEqual([]);
+		expect(await serviceReports(managerInA, organizationB, "all")).toEqual([]);
+		expect(await serviceReports(managerInB, organizationB, "current")).toEqual([reportInB]);
 	});
 
 	it("returns only the fields the widget renders", async () => {

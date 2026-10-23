@@ -18,58 +18,12 @@ import { DashboardWidget } from "./dashboard-widget";
 import { WidgetCard } from "./widget-card";
 
 interface TeamStats {
-	totalEmployees: number;
-	activeEmployees: number;
+	currentEmployees: number;
 	teamsCount: number;
 	avgWorkHours: number;
 }
 
 type EmployeeRole = "admin" | "manager" | "employee";
-
-function CircularProgress({
-	progress,
-	size = 64,
-	strokeWidth = 5,
-	children,
-}: {
-	progress: number;
-	size?: number;
-	strokeWidth?: number;
-	children: React.ReactNode;
-}) {
-	const radius = (size - strokeWidth) / 2;
-	const circumference = 2 * Math.PI * radius;
-	const strokeDashoffset = circumference - (Math.min(progress, 100) / 100) * circumference;
-
-	return (
-		<div className="relative inline-flex items-center justify-center">
-			<svg className="-rotate-90" width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-				<circle
-					cx={size / 2}
-					cy={size / 2}
-					r={radius}
-					fill="none"
-					strokeWidth={strokeWidth}
-					className="stroke-muted"
-				/>
-				<circle
-					cx={size / 2}
-					cy={size / 2}
-					r={radius}
-					fill="none"
-					strokeWidth={strokeWidth}
-					strokeLinecap="round"
-					className="stroke-emerald-500 transition-[stroke-dashoffset] duration-500 ease-out"
-					style={{
-						strokeDasharray: circumference,
-						strokeDashoffset,
-					}}
-				/>
-			</svg>
-			<div className="absolute inset-0 flex flex-col items-center justify-center">{children}</div>
-		</div>
-	);
-}
 
 function StatCard({
 	icon: Icon,
@@ -140,8 +94,6 @@ export function TeamOverviewWidget() {
 
 	if (!loading && !stats) return null;
 
-	const activePercentage = stats ? (stats.activeEmployees / stats.totalEmployees) * 100 : 0;
-
 	return (
 		<DashboardWidget id="team-overview">
 			<WidgetCard
@@ -154,28 +106,23 @@ export function TeamOverviewWidget() {
 			>
 				{stats && (
 					<div className="space-y-4">
-						{/* Active Employees - Featured */}
+						{/* Current roster - Featured (#1438): former employees don't count */}
 						<div className="flex items-center gap-4 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 p-4 dark:from-emerald-950/30 dark:to-teal-950/30">
-							<CircularProgress progress={activePercentage}>
-								<span className="text-lg font-bold">{stats.activeEmployees}</span>
-							</CircularProgress>
+							<div className="flex size-16 shrink-0 items-center justify-center rounded-full border-[5px] border-emerald-500">
+								<span className="text-lg font-bold">{stats.currentEmployees}</span>
+							</div>
 
 							<div className="flex-1">
 								<div className="flex items-center gap-2">
 									<IconUserCheck className="size-4 text-emerald-600 dark:text-emerald-400" />
 									<span className="font-medium text-emerald-700 dark:text-emerald-300">
-										{t("dashboard.team-overview.active-employees", "Active Employees")}
+										{t("dashboard.team-overview.current-employees", "Current employees")}
 									</span>
 								</div>
 								<p className="mt-1 text-xs text-emerald-600/80 dark:text-emerald-400/80">
 									{t(
-										"dashboard.team-overview.active-count",
-										"{active} of {total} employees ({percent}%)",
-										{
-											active: stats.activeEmployees,
-											total: stats.totalEmployees,
-											percent: activePercentage.toFixed(0),
-										},
+										"dashboard.team-overview.current-employees-description",
+										"Everyone who works here now",
 									)}
 								</p>
 							</div>

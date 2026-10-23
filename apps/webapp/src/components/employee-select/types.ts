@@ -15,6 +15,8 @@ export interface SelectableEmployee {
 	position: string | null;
 	role: "admin" | "manager" | "employee";
 	isActive: boolean;
+	/** A former employee, offered only by views of the past and labelled (#1438). */
+	isFormer?: boolean;
 	clockStatus?: "clocked-in" | "on-break" | "clocked-out" | "unknown";
 	teamId: string | null;
 	user: {

@@ -27,12 +27,14 @@ import {
 	useTable,
 } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState, useTransition } from "react";
 import { EmployeeActivityText } from "@/components/employee-activity-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
 	Table,
 	TableBody,
@@ -47,7 +49,7 @@ import { BalanceAdjustmentHistoryDialog } from "@/components/work-balance/balanc
 import { useEmployeeClockStatuses } from "@/lib/query";
 import { cn } from "@/lib/utils";
 import { formatSignedWorkBalance } from "@/lib/work-balance/format";
-import { Link } from "@/navigation";
+import { Link, useRouter } from "@/navigation";
 import type { ManagedEmployee } from "./team-members-data";
 
 type ManagedEmployeeWithPresence = ManagedEmployee & {
@@ -74,7 +76,11 @@ const teamTableFeatures = tableFeatures({
 
 interface TeamMembersListProps {
 	employees: ManagedEmployee[];
+	/** Whether former employees are listed too, marked (#1438). Kept in the URL. */
+	showFormer?: boolean;
 }
+
+const PATH = "/team";
 
 function getBalanceVariant(balanceMinutes: number | null | undefined) {
 	if (balanceMinutes == null || balanceMinutes === 0) return "outline" as const;
@@ -130,8 +136,11 @@ function YouBadge({ show, label }: { show: boolean; label: string }) {
 	);
 }
 
-export function TeamMembersList({ employees }: TeamMembersListProps) {
+export function TeamMembersList({ employees, showFormer = false }: TeamMembersListProps) {
 	const { t } = useTranslate();
+	const router = useRouter();
+	const [formerPending, startFormerTransition] = useTransition();
+	const formerLabel = t("team.status.former", "Former");
 	const [searchQuery, setSearchQuery] = useState("");
 	const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
 	const youLabel = t("team.member.you", "You");
@@ -196,6 +205,14 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 				searchLabel={t("team.search.ariaLabel", "Search team members")}
 				cardsLabel={t("team.view.cards", "Card view")}
 				tableLabel={t("team.view.table", "Table view")}
+				showFormer={showFormer}
+				showFormerPending={formerPending}
+				onShowFormerChange={(next) =>
+					startFormerTransition(() =>
+						router.replace(next ? `${PATH}?former=1` : PATH, { scroll: false }),
+					)
+				}
+				showFormerLabel={t("team.showFormer", "Show former employees")}
 			/>
 
 			{filteredEmployees.length > 0 ? (
@@ -207,7 +224,7 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 						workBalanceLabel={workBalanceLabel}
 						historyLabel={historyLabel}
 						primaryManagerLabel={primaryManagerLabel}
-						inactiveLabel={t("team.status.inactive", "Inactive")}
+						formerLabel={formerLabel}
 					/>
 				) : (
 					<TeamMembersTable
@@ -217,6 +234,7 @@ export function TeamMembersList({ employees }: TeamMembersListProps) {
 						workBalanceLabel={workBalanceLabel}
 						historyLabel={historyLabel}
 						primaryManagerLabel={primaryManagerLabel}
+						formerLabel={formerLabel}
 					/>
 				)
 			) : (
@@ -267,6 +285,10 @@ function TeamMembersToolbar({
 	searchLabel,
 	cardsLabel,
 	tableLabel,
+	showFormer,
+	showFormerPending,
+	onShowFormerChange,
+	showFormerLabel,
 }: {
 	searchQuery: string;
 	onSearchQueryChange: (value: string) => void;
@@ -276,10 +298,15 @@ function TeamMembersToolbar({
 	searchLabel: string;
 	cardsLabel: string;
 	tableLabel: string;
+	showFormer: boolean;
+	showFormerPending: boolean;
+	onShowFormerChange: (value: boolean) => void;
+	showFormerLabel: string;
 }) {
+	const showFormerId = useId();
 	return (
-		<div className="flex items-center justify-between gap-4">
-			<div className="relative max-w-md flex-1">
+		<div className="flex flex-wrap items-center justify-between gap-4">
+			<div className="relative min-w-48 max-w-md flex-1">
 				<IconSearch className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
 				<Input
 					placeholder={searchPlaceholder}
@@ -288,6 +315,17 @@ function TeamMembersToolbar({
 					onChange={(event) => onSearchQueryChange(event.target.value)}
 					className="pl-10"
 				/>
+			</div>
+			<div className="flex shrink-0 items-center gap-2">
+				<Switch
+					id={showFormerId}
+					checked={showFormer}
+					disabled={showFormerPending}
+					onCheckedChange={onShowFormerChange}
+				/>
+				<Label htmlFor={showFormerId} className="cursor-pointer text-sm font-normal">
+					{showFormerLabel}
+				</Label>
 			</div>
 			<ToggleGroup
 				type="single"
@@ -313,6 +351,7 @@ type TeamMemberPresentationProps = {
 	workBalanceLabel: string;
 	historyLabel: string;
 	primaryManagerLabel: string;
+	formerLabel: string;
 };
 
 function TeamMemberCards({
@@ -322,8 +361,8 @@ function TeamMemberCards({
 	workBalanceLabel,
 	historyLabel,
 	primaryManagerLabel,
-	inactiveLabel,
-}: TeamMemberPresentationProps & { inactiveLabel: string }) {
+	formerLabel,
+}: TeamMemberPresentationProps) {
 	return (
 		<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 			{employees.map((employee) => (
@@ -385,9 +424,9 @@ function TeamMemberCards({
 									workBalanceLabel={workBalanceLabel}
 									historyLabel={historyLabel}
 								/>
-								{!employee.isActive && (
+								{employee.isFormer && (
 									<Badge variant="outline" className="text-xs font-normal">
-										{inactiveLabel}
+										{formerLabel}
 									</Badge>
 								)}
 								{employee.role !== "employee" && (
@@ -415,6 +454,7 @@ function TeamMembersTable({
 	workBalanceLabel,
 	historyLabel,
 	primaryManagerLabel,
+	formerLabel,
 }: TeamMemberPresentationProps) {
 	const { t } = useTranslate();
 	const [sorting, setSorting] = useState<SortingState>([]);
@@ -526,19 +566,17 @@ function TeamMembersTable({
 				),
 			},
 			{
-				accessorKey: "isActive",
+				accessorKey: "isFormer",
 				header: t("team.table.status", "Status"),
 				enableSorting: false,
 				cell: ({ row }) => (
-					<Badge variant={row.original.isActive ? "default" : "secondary"}>
-						{row.original.isActive
-							? t("team.status.active", "Active")
-							: t("team.status.inactive", "Inactive")}
+					<Badge variant={row.original.isFormer ? "secondary" : "default"}>
+						{row.original.isFormer ? formerLabel : t("team.status.current", "Current")}
 					</Badge>
 				),
 			},
 		],
-		[t, primaryManagerLabel, youLabel, workBalanceLabel, noBalanceLabel, historyLabel],
+		[t, primaryManagerLabel, youLabel, workBalanceLabel, noBalanceLabel, historyLabel, formerLabel],
 	);
 	const table = useTable({
 		features: teamTableFeatures,
