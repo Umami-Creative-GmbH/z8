@@ -1,6 +1,6 @@
 /* @vitest-environment jsdom */
 
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { cloneElement, isValidElement, type ReactElement, type ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -240,5 +240,48 @@ describe("team detail page sections", () => {
 		expect(screen.queryByText("Team Members")).toBeNull();
 		expect(screen.queryByText("Employees assigned to this team")).toBeNull();
 		expect(screen.queryByText("No members in this team")).toBeNull();
+	});
+
+	it("hides former members until asked for, then marks them (#1438)", async () => {
+		const member = (id: string, name: string, isFormer: boolean) => ({
+			id,
+			isFormer,
+			position: null,
+			user: { name, email: `${id}@example.test`, image: null },
+		});
+		const teamWithFormer = {
+			...team,
+			employees: [member("e-1", "Cora Current", false), member("e-2", "Fern Former", true)],
+		};
+		render(
+			<>
+				<TeamInfoCard
+					team={teamWithFormer}
+					isEditing={false}
+					canManageSettings={false}
+					loading={false}
+					form={form}
+					onStartEdit={vi.fn()}
+					onCancelEdit={vi.fn()}
+					onSubmit={vi.fn()}
+				/>
+				<TeamMembersCard
+					team={teamWithFormer}
+					canManageMembers={false}
+					onOpenAddMember={vi.fn()}
+					onRemoveMember={vi.fn()}
+				/>
+			</>,
+		);
+
+		expect(screen.getByText("Cora Current")).toBeTruthy();
+		expect(screen.queryByText("Fern Former")).toBeNull();
+		// The member count is the current roster's.
+		expect(screen.getByText("1")).toBeTruthy();
+
+		fireEvent.click(screen.getByRole("switch", { name: "Show former employees" }));
+
+		expect(screen.getByText("Fern Former")).toBeTruthy();
+		expect(screen.getAllByText("Former")).toHaveLength(1);
 	});
 });

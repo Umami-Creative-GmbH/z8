@@ -21,6 +21,8 @@ import {
 	readProjectActiveCustomerId,
 } from "@/lib/billable-time/project-customer";
 import { type DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
+import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
+import { currentRosterAmong } from "@/lib/employee-lifecycle/current-roster-among";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
 import {
@@ -99,6 +101,11 @@ export interface ProjectWithDetails {
 		teamName: string | null;
 		employeeId: string | null;
 		employeeName: string | null;
+		/**
+		 * The assigned employee is a former employee (#1438): the list hides the
+		 * assignment by default and marks it when shown. False for team assignments.
+		 */
+		employeeIsFormer?: boolean;
 	}[];
 	totalHoursBooked: number;
 	/** A required custom field the viewer sees has no value (#818). */
@@ -325,6 +332,16 @@ export async function getProjects(
 
 				const typedManagers = managers as unknown as ProjectManagerWithEmployee[];
 				const typedAssignments = assignments as unknown as ProjectAssignmentWithRelations[];
+				// Assignments of former employees are hidden by default and marked when shown (#1438).
+				const currentAssigneeIds = yield* dbService.query("getProjectAssignments.currentRoster", () =>
+					currentRosterAmong(
+						dbService.db,
+						organizationId,
+						typedAssignments.flatMap((assignment) =>
+							assignment.employeeId ? [assignment.employeeId] : [],
+						),
+					),
+				);
 				const managersByProject = new Map<string, ProjectWithDetails["managers"]>();
 				for (const manager of typedManagers) {
 					if (manager.employee?.organizationId !== organizationId) {
@@ -356,6 +373,10 @@ export async function getProjects(
 						teamName: assignment.team?.name || null,
 						employeeId: assignment.employeeId,
 						employeeName: assignment.employee?.user?.name || null,
+						employeeIsFormer:
+							assignment.assignmentType === "employee" &&
+							!!assignment.employeeId &&
+							!currentAssigneeIds.has(assignment.employeeId),
 					});
 					assignmentsByProject.set(assignment.projectId, projectAssignments);
 				}
@@ -1285,9 +1306,10 @@ export async function getEmployeesForSelection(
 				});
 				const dbService = actor.dbService;
 
+				// The picker offers the current roster only (#1438).
 				const employees = yield* dbService.query("getEmployees", async () => {
 					return await db.query.employee.findMany({
-						where: and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)),
+						where: onCurrentRoster(organizationId),
 						with: {
 							user: {
 								columns: { firstName: true, lastName: true, name: true, email: true },

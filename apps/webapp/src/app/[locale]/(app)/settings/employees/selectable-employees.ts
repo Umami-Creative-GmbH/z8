@@ -2,18 +2,39 @@ import { and, asc, count, eq, ilike, inArray, notInArray, or, sql } from "drizzl
 import { Effect } from "effect";
 import { user } from "@/db/auth-schema";
 import { employee, employeeManagers, team } from "@/db/schema";
-import type {
-	EmployeeDirectoryStatus,
-	EmployeeSelectParams,
-	SelectableEmployee,
+import { isFormerEmployee, onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
+import {
+	type EmployeeDirectoryStatus,
+	type EmployeeSelectParams,
+	normalizeEmployeeSelectStatus,
+	type SelectableEmployee,
 } from "./employee-action-types";
 import { getEmployeeSettingsActorContext } from "./employee-action-utils";
 
 const DEFAULT_LIMIT = 20;
 
 export type EmployeeFilterParams = Omit<EmployeeSelectParams, "status"> & {
+	/** Every employee when omitted; callers normalize request values first. */
 	status?: EmployeeDirectoryStatus;
 };
+
+/**
+ * Which of the organization's employees a status keeps (#1438). "current" is
+ * the current roster, "former" the employees who left (deactivated or past a
+ * due departure), "draft" none (invitation drafts are listed apart).
+ */
+function employeeStatusCondition(organizationId: string, status: EmployeeDirectoryStatus) {
+	switch (status) {
+		case "current":
+			return onCurrentRoster(organizationId);
+		case "former":
+			return and(eq(employee.organizationId, organizationId), isFormerEmployee())!;
+		case "draft":
+			return and(eq(employee.organizationId, organizationId), sql<boolean>`false`)!;
+		case "all":
+			return eq(employee.organizationId, organizationId);
+	}
+}
 
 export const employeeSortName = sql<string>`
 	coalesce(
@@ -30,7 +51,7 @@ export function buildEmployeeFilters(
 		"search" | "role" | "roles" | "status" | "teamId" | "excludeIds" | "managerId"
 	>,
 ) {
-	const conditions = [eq(employee.organizationId, organizationId)];
+	const conditions = [employeeStatusCondition(organizationId, params.status ?? "all")];
 
 	if (params.role && params.role !== "all") {
 		conditions.push(eq(employee.role, params.role));
@@ -38,14 +59,6 @@ export function buildEmployeeFilters(
 
 	if (params.roles?.length) {
 		conditions.push(inArray(employee.role, params.roles));
-	}
-
-	if (params.status && params.status !== "all") {
-		if (params.status === "draft") {
-			conditions.push(sql<boolean>`false`);
-		} else {
-			conditions.push(eq(employee.isActive, params.status === "active"));
-		}
 	}
 
 	if (params.teamId) {
@@ -88,7 +101,7 @@ export type SelectableEmployeeRow = {
 	employee: Pick<
 		typeof employee.$inferSelect,
 		"id" | "userId" | "pronouns" | "position" | "role" | "isActive" | "teamId"
-	>;
+	> & { isFormer: boolean };
 	user: Pick<
 		typeof user.$inferSelect,
 		"id" | "firstName" | "lastName" | "name" | "email" | "image"
@@ -96,9 +109,36 @@ export type SelectableEmployeeRow = {
 	team: Pick<typeof team.$inferSelect, "id" | "name"> | null;
 };
 
+/** The picker row columns, with the former-employee mark for the "Former" label (#1438). */
+export const selectableEmployeeColumns = {
+	employee: {
+		id: employee.id,
+		userId: employee.userId,
+		pronouns: employee.pronouns,
+		position: employee.position,
+		role: employee.role,
+		isActive: employee.isActive,
+		isFormer: isFormerEmployee(),
+		teamId: employee.teamId,
+	},
+	user: {
+		id: user.id,
+		firstName: user.firstName,
+		lastName: user.lastName,
+		name: user.name,
+		email: user.email,
+		image: user.image,
+	},
+	team: {
+		id: team.id,
+		name: team.name,
+	},
+};
+
 export function mapSelectableEmployeeRow(row: SelectableEmployeeRow): SelectableEmployee {
 	return {
 		...row.employee,
+		isFormer: row.employee.isFormer === true,
 		firstName: row.user.firstName,
 		lastName: row.user.lastName,
 		user: row.user,
@@ -109,7 +149,8 @@ export function mapSelectableEmployeeRow(row: SelectableEmployeeRow): Selectable
 /**
  * One page of the employees the acting settings user may pick, as the employee pickers (and the
  * shift dialog's "Assign To") list them: scoped to the active organization and, for managers, to
- * the employees they manage.
+ * the employees they manage. Only the current roster unless the picker opts in to former
+ * employees for a view of the past (#1438).
  */
 export function loadSelectableEmployeePage(params: EmployeeSelectParams) {
 	return Effect.gen(function* () {
@@ -121,6 +162,7 @@ export function loadSelectableEmployeePage(params: EmployeeSelectParams) {
 		const offset = params.offset ?? 0;
 		const where = buildEmployeeFilters(actor.organizationId, {
 			...params,
+			status: normalizeEmployeeSelectStatus(params.status),
 			managerId:
 				actor.accessTier === "manager" && actor.currentEmployee
 					? actor.currentEmployee.id
@@ -137,29 +179,7 @@ export function loadSelectableEmployeePage(params: EmployeeSelectParams) {
 			}),
 			dbService.query("listEmployeesForSelect", async () => {
 				return await dbService.db
-					.select({
-						employee: {
-							id: employee.id,
-							userId: employee.userId,
-							pronouns: employee.pronouns,
-							position: employee.position,
-							role: employee.role,
-							isActive: employee.isActive,
-							teamId: employee.teamId,
-						},
-						user: {
-							id: user.id,
-							firstName: user.firstName,
-							lastName: user.lastName,
-							name: user.name,
-							email: user.email,
-							image: user.image,
-						},
-						team: {
-							id: team.id,
-							name: team.name,
-						},
-					})
+					.select(selectableEmployeeColumns)
 					.from(employee)
 					.innerJoin(user, eq(employee.userId, user.id))
 					.leftJoin(team, eq(employee.teamId, team.id))

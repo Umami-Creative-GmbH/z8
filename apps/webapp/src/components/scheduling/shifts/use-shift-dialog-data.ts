@@ -36,7 +36,11 @@ export function useShiftDialogData({
 	const { data: employeesResult } = useQuery({
 		queryKey: queryKeys.employees.list(organizationId),
 		queryFn: async () => {
-			const result = await listEmployeesForSelect({ limit: SHIFT_ASSIGNEE_PICKER_LIMIT });
+			// "Assign To" offers the current roster only (#1438).
+			const result = await listEmployeesForSelect({
+				limit: SHIFT_ASSIGNEE_PICKER_LIMIT,
+				status: "current",
+			});
 			if (!result.success) throw new Error(result.error);
 			return result.data;
 		},

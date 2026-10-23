@@ -18,11 +18,14 @@ export function StatusCell({ employee }: { employee: EmployeeDirectoryRow }) {
 		);
 	}
 
+	// A former employee is deactivated or past a due departure (#1438). The list
+	// marks the latter; a deactivation made from this page shows at once.
+	const isFormer = employee.isFormer === true || !employee.isActive;
 	return (
-		<Badge variant={employee.isActive ? "default" : "secondary"}>
-			{employee.isActive
-				? t("settings.employees.directory.statuses.active", "Active")
-				: t("settings.employees.directory.statuses.inactive", "Inactive")}
+		<Badge variant={isFormer ? "secondary" : "default"}>
+			{isFormer
+				? t("settings.employees.directory.statuses.former", "Former")
+				: t("settings.employees.directory.statuses.current", "Current")}
 		</Badge>
 	);
 }

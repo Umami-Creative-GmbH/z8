@@ -5,10 +5,11 @@
  * Uses the employeeManagers junction table for manager relationships.
  */
 
-import { eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { employee, employeeManagers } from "@/db/schema";
 import { asAppSubject, defineAbilityFor } from "@/lib/authorization";
+import { isFormerEmployee } from "@/lib/employee-lifecycle/current-roster";
 import type { AccessibleEmployee } from "./types";
 
 type ReportEmployeeAuthorizationSource = {
@@ -184,7 +185,33 @@ export async function canGenerateReport(
 }
 
 /**
- * Get list of employees that the current employee can generate reports for
+ * Marks the former employees in a report employee list (#1438). Reports look at
+ * the past, so former employees stay selectable and the picker labels them.
+ */
+async function markFormerReportEmployees(
+	organizationId: string,
+	employees: AccessibleEmployee[],
+): Promise<AccessibleEmployee[]> {
+	if (employees.length === 0) return employees;
+	const rows = await db
+		.select({ id: employee.id, isFormer: isFormerEmployee() })
+		.from(employee)
+		.where(
+			and(
+				eq(employee.organizationId, organizationId),
+				inArray(
+					employee.id,
+					employees.map((entry) => entry.id),
+				),
+			),
+		);
+	const former = new Set(rows.flatMap((row) => (row.isFormer ? [row.id] : [])));
+	return employees.map((entry) => ({ ...entry, isFormer: former.has(entry.id) }));
+}
+
+/**
+ * Get list of employees that the current employee can generate reports for.
+ * A view of the past: former employees stay in the list, marked (#1438).
  *
  * Rules:
  * - Employees can only see themselves
@@ -277,15 +304,21 @@ export async function getAccessibleEmployees(
 			];
 		});
 
-		return [currentEmployeeData, ...otherEmployees];
+		return markFormerReportEmployees(currentEmp.organizationId, [
+			currentEmployeeData,
+			...otherEmployees,
+		]);
 	}
 
 	// For managers: get self and direct reports (via employeeManagers junction table)
 	if (currentEmp.role === "manager") {
-		return getManagerReportAccessibleEmployees({
-			currentEmployee: currentEmp,
-			directReports: managerRelations.map((rel) => rel.employee),
-		});
+		return markFormerReportEmployees(
+			currentEmp.organizationId,
+			getManagerReportAccessibleEmployees({
+				currentEmployee: currentEmp,
+				directReports: managerRelations.map((rel) => rel.employee),
+			}),
+		);
 	}
 
 	// For employees: only self

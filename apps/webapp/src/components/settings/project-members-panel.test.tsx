@@ -246,6 +246,47 @@ describe("ProjectMembersPanel", () => {
 		expect(onChanged).toHaveBeenCalledTimes(2);
 	});
 
+	it("hides former employees' assignments until asked for, then marks them (#1438)", async () => {
+		const user = userEvent.setup();
+		const base = project();
+		renderPanel({
+			project: {
+				...base,
+				assignments: [
+					...base.assignments,
+					{
+						id: "assignment-former",
+						type: "employee",
+						teamId: null,
+						teamName: null,
+						employeeId: "emp-former",
+						employeeName: "Fern Former",
+						employeeIsFormer: true,
+					},
+				],
+			},
+		});
+
+		const employees = screen.getByRole("region", { name: "Employees" });
+		expect(within(employees).getByText("Avery Employee")).toBeTruthy();
+		expect(within(employees).queryByText("Fern Former")).toBeNull();
+
+		await user.click(within(employees).getByRole("switch", { name: "Show former employees" }));
+
+		const formerRow = within(employees).getByText("Fern Former").closest("li");
+		expect(formerRow).toBeTruthy();
+		expect(within(formerRow as HTMLElement).getByText("Former")).toBeTruthy();
+		const currentRow = within(employees).getByText("Avery Employee").closest("li");
+		expect(within(currentRow as HTMLElement).queryByText("Former")).toBeNull();
+	});
+
+	it("shows no former-employees toggle when no assignment belongs to one", () => {
+		renderPanel();
+
+		const employees = screen.getByRole("region", { name: "Employees" });
+		expect(within(employees).queryByRole("switch")).toBeNull();
+	});
+
 	it("shows project managers read-only to a manager-tier viewer", () => {
 		renderPanel({ canManageProjectManagers: false });
 

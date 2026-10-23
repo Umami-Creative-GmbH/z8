@@ -6,6 +6,11 @@ export interface MemberWithUserAndEmployee {
 	user: typeof authSchema.user.$inferSelect;
 	employee: typeof employee.$inferSelect | null;
 	teamMemberships?: Array<{ teamId: string }>;
+	/**
+	 * The employee is a former employee (#1438): team lists hide them by default
+	 * and mark them when shown; pickers never offer them. Set by the team settings loader.
+	 */
+	isFormerEmployee?: boolean;
 }
 
 export type InvitationWithInviter = typeof authSchema.invitation.$inferSelect & {

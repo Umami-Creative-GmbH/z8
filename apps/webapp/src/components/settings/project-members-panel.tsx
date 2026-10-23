@@ -17,6 +17,10 @@ import {
 } from "@/app/[locale]/(app)/settings/projects/actions";
 import { BillableRateActionPanel } from "@/components/billable-time/billable-rate-series";
 import {
+	FormerEmployeeBadge,
+	ShowFormerEmployeesSwitch,
+} from "@/components/former-employees/former-employee-ui";
+import {
 	ActionPanel,
 	ActionPanelBody,
 	ActionPanelContent,
@@ -49,6 +53,8 @@ interface ProjectMembersPanelProps {
 interface MemberRow {
 	key: string;
 	name: string;
+	/** Marks a former employee's row (#1438). */
+	isFormer?: boolean;
 	/** Omitted when the viewer may not remove this row. */
 	onRemove?: () => Promise<ServerActionResult<void>>;
 	/** A further action shown before the remove button. */
@@ -74,12 +80,15 @@ function MemberSection({
 	emptyText,
 	rows,
 	onChanged,
+	headerAction,
 	children,
 }: {
 	title: string;
 	emptyText: string;
 	rows: MemberRow[];
 	onChanged: () => void;
+	/** Shown next to the title, such as the former-employees toggle. */
+	headerAction?: ReactNode;
 	children?: ReactNode;
 }) {
 	const { t } = useTranslate();
@@ -104,16 +113,22 @@ function MemberSection({
 
 	return (
 		<section aria-labelledby={headingId} className="space-y-3">
-			<h3 id={headingId} className="text-sm font-medium">
-				{title}
-			</h3>
+			<div className="flex flex-wrap items-center justify-between gap-2">
+				<h3 id={headingId} className="text-sm font-medium">
+					{title}
+				</h3>
+				{headerAction}
+			</div>
 			{rows.length === 0 ? (
 				<p className="text-sm text-muted-foreground">{emptyText}</p>
 			) : (
 				<ul className="divide-y rounded-md border">
 					{rows.map((row) => (
 						<li key={row.key} className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
-							<span>{row.name}</span>
+							<span className="flex items-center gap-2">
+								{row.name}
+								{row.isFormer && <FormerEmployeeBadge />}
+							</span>
 							<span className="flex items-center gap-1">
 								{row.action}
 								{row.onRemove && (
@@ -233,6 +248,14 @@ export function ProjectMembersPanel({
 	const assignments = project?.assignments ?? [];
 	const teamAssignments = assignments.filter((assignment) => assignment.type === "team");
 	const employeeAssignments = assignments.filter((assignment) => assignment.type === "employee");
+	// Former employees' assignments stay hidden until asked for (#1438).
+	const [showFormerEmployees, setShowFormerEmployees] = useState(false);
+	const formerAssignmentCount = employeeAssignments.filter(
+		(assignment) => assignment.employeeIsFormer,
+	).length;
+	const shownEmployeeAssignments = showFormerEmployees
+		? employeeAssignments
+		: employeeAssignments.filter((assignment) => !assignment.employeeIsFormer);
 
 	const { data: teams = [] } = useQuery({
 		queryKey: queryKeys.projects.teamSelection(organizationId),
@@ -319,9 +342,18 @@ export function ProjectMembersPanel({
 							title={t("settings.projects.members.employees", "Employees")}
 							emptyText={t("settings.projects.members.noEmployees", "No employees assigned")}
 							onChanged={onChanged}
-							rows={employeeAssignments.map((assignment) => ({
+							headerAction={
+								formerAssignmentCount > 0 ? (
+									<ShowFormerEmployeesSwitch
+										checked={showFormerEmployees}
+										onCheckedChange={setShowFormerEmployees}
+									/>
+								) : undefined
+							}
+							rows={shownEmployeeAssignments.map((assignment) => ({
 								key: assignment.id,
 								name: assignment.employeeName ?? "",
+								isFormer: assignment.employeeIsFormer,
 								onRemove: () => removeProjectAssignment(assignment.id),
 								action:
 									canSetBillableRates && assignment.employeeId ? (

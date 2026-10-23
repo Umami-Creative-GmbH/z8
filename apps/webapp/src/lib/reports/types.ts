@@ -144,4 +144,6 @@ export interface AccessibleEmployee {
 	pronouns: string | null;
 	position: string | null;
 	role: "admin" | "manager" | "employee";
+	/** Deactivated or past a due departure (#1438): the selector labels them "Former". */
+	isFormer?: boolean;
 }

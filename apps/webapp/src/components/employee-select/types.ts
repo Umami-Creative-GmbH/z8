@@ -15,7 +15,7 @@ export interface SelectableEmployee {
 	position: string | null;
 	role: "admin" | "manager" | "employee";
 	isActive: boolean;
-	/** A former employee, offered only by views of the past and labelled (#1438). */
+	/** Deactivated or past a due departure (#1438): the row is labelled "Former". */
 	isFormer?: boolean;
 	clockStatus?: "clocked-in" | "on-break" | "clocked-out" | "unknown";
 	teamId: string | null;
@@ -38,7 +38,11 @@ export interface SelectableEmployee {
  */
 export interface EmployeeSelectFilters {
 	role?: "admin" | "manager" | "employee" | "all";
-	status?: "active" | "inactive" | "all";
+	/**
+	 * The initial status filter of a picker that includes former employees.
+	 * Ignored otherwise: such a picker offers only the current roster.
+	 */
+	status?: "current" | "former" | "all";
 	teamId?: string;
 }
 
@@ -89,6 +93,12 @@ export interface EmployeeSelectCommonProps {
 	excludeIds?: string[];
 	/** Pre-applied filters */
 	filters?: EmployeeSelectFilters;
+	/**
+	 * Also offer former employees, labelled "Former" (#1438). Only for pickers
+	 * that look at the past, such as report filters; every other picker offers
+	 * the current roster only.
+	 */
+	includeFormerEmployees?: boolean;
 	/** Show filter controls in the modal */
 	showFilters?: boolean;
 	/** Field label */
@@ -145,6 +155,8 @@ export interface EmployeeSelectModalProps {
 	onConfirm: (selectedIds?: string[], selectedEmployees?: SelectableEmployee[]) => void;
 	excludeIds?: string[];
 	filters?: EmployeeSelectFilters;
+	/** Also offer former employees, labelled (#1438); see `EmployeeSelectCommonProps`. */
+	includeFormerEmployees?: boolean;
 	showFilters?: boolean;
 	maxSelections?: number;
 	/**

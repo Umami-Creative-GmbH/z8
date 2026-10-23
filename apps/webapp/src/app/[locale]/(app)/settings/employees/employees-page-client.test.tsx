@@ -171,10 +171,19 @@ describe("EmployeesPageClient people-management tabs", () => {
 
 	it("updates exact cached rows without deleting historical employees", () => {
 		expect(source).toContain("row.id === employeeId");
-		expect(source).toContain("updateCachedEmployee(employeeId, { isActive })");
+		expect(source).toContain("updateCachedEmployee(employeeId, { isActive, isFormer: !isActive })");
 		expect(source).toContain("membership: null");
 		expect(source).toContain("setQueriesData<PaginatedEmployeeResponse>");
 		expect(source).not.toContain("employees.filter((row) => row.id !== employeeId)");
+	});
+
+	it("filters the directory by Current, Former, Draft or All (#1438)", () => {
+		for (const status of ["current", "former", "draft", "all"]) {
+			expect(source).toContain(`<SelectItem value="${status}">`);
+		}
+		expect(source).not.toContain('<SelectItem value="active">');
+		expect(source).not.toContain('<SelectItem value="inactive">');
+		expect(source).toContain('normalizeEmployeeDirectoryStatus(value, "current")');
 	});
 
 	it("uses the native TanStack Table v9 employee feature boundary", () => {
