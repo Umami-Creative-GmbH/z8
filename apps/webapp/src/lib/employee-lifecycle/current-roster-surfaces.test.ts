@@ -25,9 +25,136 @@ const RAW_EMPLOYEE_ACTIVE_CHECK = /\bemployee\.isActive\b|"employee"\."is_active
 
 type Surface = { file: string; functions: string[]; note: string };
 
-export const ROSTER_SURFACES: Surface[] = [];
+export const ROSTER_SURFACES: Surface[] = [
+	{
+		file: "lib/effect/services/manager.service.ts",
+		functions: ["managedEmployeeRows"],
+		note: "a manager's direct reports, both sides on the roster unless authority scoping asks for all links",
+	},
+	{
+		file: "components/dashboard/actions.ts",
+		functions: [
+			"getUpcomingAbsences",
+			"getTeamCalendarData",
+			"getWhosOutToday",
+			"getTeamOverviewStats",
+		],
+		note: "dashboard widgets about the current team",
+	},
+	{
+		file: "components/dashboard/current-roster-queries.ts",
+		functions: ["currentRosterEmployeeIds", "currentRosterCount", "currentRosterAverageWeeklyHours"],
+		note: "the dashboard's roster readers",
+	},
+	{
+		file: "app/[locale]/(app)/team/actions.ts",
+		functions: ["getManagedEmployees", "getCurrentEmployee"],
+		note: "/team: current reports unless former employees are asked for, and the viewer",
+	},
+	{
+		file: "lib/bot-platform/current-roster-team.ts",
+		functions: ["currentRosterReportIds", "currentRosterDigestManager", "currentRosterEmployees"],
+		note: "bot commands, digests and escalation targets",
+	},
+	{
+		file: "lib/notifications/manager-notice-recipients.ts",
+		functions: ["currentRosterManagerRecipients"],
+		note: "manager notices, with the admin fallback for actionable ones",
+	},
+	{
+		file: "lib/teams/commands/whos-out.ts",
+		functions: ["handler"],
+		note: "/whosout",
+	},
+	{
+		file: "lib/teams/commands/clockedin.ts",
+		functions: ["handler"],
+		note: "/clockedin",
+	},
+	{
+		file: "lib/teams/jobs/daily-digest.ts",
+		functions: ["processTenantDigest", "buildDigestDataForManager"],
+		note: "Teams manager digest",
+	},
+	{
+		file: "lib/slack/jobs/daily-digest.ts",
+		functions: ["processBotDigest"],
+		note: "Slack manager digest",
+	},
+	{
+		file: "lib/discord/jobs/daily-digest.ts",
+		functions: ["processBotDigest"],
+		note: "Discord manager digest",
+	},
+	{
+		file: "lib/telegram/jobs/daily-digest.ts",
+		functions: ["processTelegramBotDigest"],
+		note: "Telegram manager digest",
+	},
+	{
+		file: "lib/teams/jobs/escalation-checker.ts",
+		functions: ["escalateApproval"],
+		note: "Teams escalation target",
+	},
+	{
+		file: "lib/slack/jobs/escalation-checker.ts",
+		functions: ["processBotEscalations"],
+		note: "Slack escalation targets",
+	},
+	{
+		file: "lib/discord/jobs/escalation-checker.ts",
+		functions: ["processBotEscalations"],
+		note: "Discord escalation targets",
+	},
+	{
+		file: "lib/telegram/jobs/escalation-checker.ts",
+		functions: ["processBotEscalations"],
+		note: "Telegram escalation targets",
+	},
+	{
+		file: "lib/teams/shift-pickup-handler.ts",
+		functions: ["notifyPrimaryManagerAboutShiftPickup"],
+		note: "shift pickup request to the primary manager",
+	},
+	{
+		file: "app/[locale]/(app)/absences/mutations.ts",
+		functions: ["notifyManagersOfApprovedSelfCancellation"],
+		note: "cancellation notice to managers",
+	},
+	{
+		file: "lib/time-tracking/closed-months/notifications.ts",
+		functions: ["listManagerUserIds", "listMonthCloseRecipients"],
+		note: "month reopened and month close notices",
+	},
+	{
+		file: "lib/time-tracking/vehicle-use/driving-details-missing-store.ts",
+		functions: ["drivingDetailsListedEmployeeCondition"],
+		note: "the missing driving details count on Today",
+	},
+];
 
-export const HISTORY_VIEWS: Surface[] = [];
+export const HISTORY_VIEWS: Surface[] = [
+	{
+		file: "app/[locale]/(app)/team/actions.ts",
+		functions: ["getCalendarManagedEmployees", "getCachedCalendarManagedEmployeeRecords"],
+		note: "historical calendars stay readable; former reports are marked",
+	},
+	{
+		file: "app/api/calendar/ics/[secret]/route.ts",
+		functions: ["fetchTeamAbsences"],
+		note: "a former employee's past absences stay in the feed, later ones are dropped",
+	},
+	{
+		file: "components/dashboard/actions.ts",
+		functions: ["getRecentlyApprovedRequests"],
+		note: "approval history",
+	},
+	{
+		file: "lib/time-tracking/vehicle-use/driving-details-team-store.ts",
+		functions: ["listScopedPeople", "loadTeamDrivingDetails"],
+		note: "work still missing driving details, former drivers marked",
+	},
+];
 
 /**
  * The bodies of the named functions in a source file: declarations, methods,
