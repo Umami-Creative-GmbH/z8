@@ -32,10 +32,15 @@ CREATE TRIGGER "employee_track_deactivated_at_trigger"
 	EXECUTE FUNCTION "employee_track_deactivated_at"();
 --> statement-breakpoint
 -- When a former employee left: the latest departure that ended their access by
--- p_now (effective, or pending past its cutoff and not blocked), or their
+-- p_now (effective, or pending past its cutoff and not blocked, checked per
+-- departure exactly as employee_departure_denies_access does), or their
 -- deactivation, whichever is later. A rehire followed by a deactivation thus
 -- reports the deactivation, not the old departure. NULL when nothing is
 -- recorded. Callers ask only for employees who are not current (#1439).
+--
+-- Known gaps until the #1442 backfill: an employee inserted already inactive
+-- (an import) has no deactivation instant, and an employee who was rehired and
+-- then deactivated before this migration reports the old departure's cutoff.
 CREATE OR REPLACE FUNCTION "employee_left_at"(
 	p_organization_id text,
 	p_employee_id uuid,
@@ -50,6 +55,8 @@ AS $$
 		(
 			SELECT max(d."cutoff_at")
 			FROM public."employee_departure" AS d
+			JOIN public."employee" AS e
+				ON e."id" = d."employee_id" AND e."organization_id" = d."organization_id"
 			WHERE d."organization_id" = p_organization_id
 				AND d."employee_id" = p_employee_id
 				AND d."cutoff_at" <= p_now
@@ -57,7 +64,7 @@ AS $$
 					d."status" = 'effective'
 					OR (
 						d."status" = 'pending'
-						AND "employee_departure_denies_access"(p_organization_id, p_employee_id, p_now)
+						AND "employee_departure_blocked_reason"(p_organization_id, e."user_id", d."created_by") IS NULL
 					)
 				)
 		),
@@ -65,7 +72,9 @@ AS $$
 	);
 $$;
 --> statement-breakpoint
--- The same moment as a calendar date in the organization's timezone.
+-- The same moment as a calendar date in the organization's timezone, through the
+-- 0264 helper that falls back to UTC for a missing or unknown zone name, so one
+-- bad stored timezone can't make every query that shows the date fail.
 CREATE OR REPLACE FUNCTION "employee_left_on"(
 	p_organization_id text,
 	p_employee_id uuid,
@@ -78,9 +87,6 @@ STABLE
 AS $$
 	SELECT (
 		"employee_left_at"(p_organization_id, p_employee_id, p_deactivated_at, p_now)
-		AT TIME ZONE COALESCE(
-			(SELECT NULLIF(o."timezone", '') FROM public."organization" AS o WHERE o."id" = p_organization_id),
-			'UTC'
-		)
+		AT TIME ZONE "vacation_organization_timezone"(p_organization_id)
 	)::date;
 $$;

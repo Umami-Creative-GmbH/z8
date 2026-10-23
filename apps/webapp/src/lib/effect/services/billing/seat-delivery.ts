@@ -119,14 +119,14 @@ export async function deliverOrganizationSeats(input: {
 	organizationId: string;
 	stripe: SeatStripePort | null;
 	kioskSeats?: boolean;
-	requireActiveEmployee?: boolean;
+	requireEmployeeProfile?: boolean;
 	now?: Instant;
 }): Promise<SeatDeliveryOutcome> {
 	const kioskSeats = input.kioskSeats ?? false;
 	return withOrganizationSeatLock(input.pool, input.organizationId, async (client) => {
 		const split = await countBillableSeatsByType(drizzle({ client }), input.organizationId, {
 			kioskSeats,
-			requireActiveEmployee: input.requireActiveEmployee,
+			requireEmployeeProfile: input.requireEmployeeProfile,
 			now: input.now,
 		});
 		const seats = split.full + split.kiosk;

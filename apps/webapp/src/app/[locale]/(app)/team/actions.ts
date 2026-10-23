@@ -13,12 +13,12 @@ import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
 import { formerEmployeesAmong } from "@/lib/employee-lifecycle/current-roster-among";
+import { formerMark } from "@/lib/employee-lifecycle/former-since";
 import { getEmployeeWorkBalances } from "@/lib/work-balance/service";
 import {
 	buildVisibleManagedEmployees,
 	type CurrentTeamEmployee,
 	canUseTeamPage,
-	formerMark,
 	type ManagedEmployee,
 	type ManagedEmployeeRecord,
 } from "./team-members-data";

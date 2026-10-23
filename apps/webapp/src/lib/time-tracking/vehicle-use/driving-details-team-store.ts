@@ -3,6 +3,7 @@ import type { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { employee, employeeManagers, team } from "@/db/schema";
 import { formerSinceDate, isFormerEmployee } from "@/lib/employee-lifecycle/current-roster";
+import { formerSinceField } from "@/lib/employee-lifecycle/former-since";
 import { type MissingDrivingDetail, missingDrivingDetail } from "./driving-details-missing";
 import { listDrivingDetailsMissing } from "./driving-details-missing-store";
 
@@ -167,7 +168,7 @@ export async function loadTeamDrivingDetails(
 				name: person?.name ?? work.employeeId,
 				teamName: person?.teamName ?? null,
 				former,
-				...(former ? { formerSince: person?.formerSince ?? null } : {}),
+				...formerSinceField(former, person?.formerSince),
 				workDay: work.workDay,
 				startedAt: work.startedAt,
 				endedAt: work.endedAt,

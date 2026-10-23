@@ -1,3 +1,4 @@
+import { formerMark } from "@/lib/employee-lifecycle/former-since";
 import type { EmployeeWorkBalancePayload } from "@/lib/work-balance/types";
 
 type TeamMemberUser = {
@@ -114,14 +115,3 @@ export function buildVisibleManagedEmployees(input: {
 	return [...byId.values()];
 }
 
-/**
- * The former mark of one row: `isFormer`, and `formerSince` on a former
- * employee only (#1439), from the map `formerEmployeesAmong` returns.
- */
-export function formerMark(
-	formerSinceById: ReadonlyMap<string, string | null> | undefined,
-	employeeId: string,
-): { isFormer: boolean; formerSince?: string | null } {
-	if (!formerSinceById?.has(employeeId)) return { isFormer: false };
-	return { isFormer: true, formerSince: formerSinceById.get(employeeId) ?? null };
-}

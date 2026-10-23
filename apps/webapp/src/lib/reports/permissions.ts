@@ -10,6 +10,7 @@ import { db } from "@/db";
 import { employee, employeeManagers } from "@/db/schema";
 import { asAppSubject, defineAbilityFor } from "@/lib/authorization";
 import { formerEmployeesAmong } from "@/lib/employee-lifecycle/current-roster-among";
+import { formerMark } from "@/lib/employee-lifecycle/former-since";
 import type { AccessibleEmployee } from "./types";
 
 type ReportEmployeeAuthorizationSource = {
@@ -199,11 +200,7 @@ async function markFormerReportEmployees(
 		organizationId,
 		employees.map((entry) => entry.id),
 	);
-	return employees.map((entry) =>
-		former.has(entry.id)
-			? { ...entry, isFormer: true, formerSince: former.get(entry.id) ?? null }
-			: { ...entry, isFormer: false },
-	);
+	return employees.map((entry) => ({ ...entry, ...formerMark(former, entry.id) }));
 }
 
 /**

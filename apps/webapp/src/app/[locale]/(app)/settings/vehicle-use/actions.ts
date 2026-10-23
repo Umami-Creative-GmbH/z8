@@ -10,6 +10,7 @@ import {
 	isFormerEmployee,
 	onCurrentRoster,
 } from "@/lib/employee-lifecycle/current-roster";
+import { formerSinceField } from "@/lib/employee-lifecycle/former-since";
 import { runVehicleUseAction } from "@/lib/time-tracking/vehicle-use/action-runner";
 import {
 	type VehicleUseActionResult,
@@ -105,7 +106,7 @@ export async function getVehicleUseAdminDataAction(): Promise<
 				id: row.id,
 				name: row.userName?.trim() || row.employeeNumber || row.id,
 				isFormer: row.isFormer,
-				...(row.isFormer ? { formerSince: row.formerSince } : {}),
+				...formerSinceField(row.isFormer, row.formerSince),
 			})),
 		};
 	});

@@ -12,6 +12,7 @@ import {
 	isFormerEmployee,
 	onCurrentRoster,
 } from "@/lib/employee-lifecycle/current-roster";
+import { type FormerSinceField, formerSinceField } from "@/lib/employee-lifecycle/former-since";
 import { FORMER_EMPLOYEE_REFUSAL } from "@/lib/employee-lifecycle/current-roster-guard";
 import { ValidationError } from "@/lib/effect/errors";
 import { logger } from "@/lib/logger";
@@ -46,16 +47,17 @@ type Result<T> = { success: true; data: T } | { success: false; error: string };
 export interface DrivingLicenceVerifierAdminData {
 	/**
 	 * The current roster, and former employees a live grant names (`isFormer`),
-	 * with the organization-local date they left (`formerSince`, #1439; null for
-	 * a current employee and when the date isn't recorded).
+	 * with the organization-local date they left on former rows only
+	 * (`formerSince`, #1439; null when the date isn't recorded).
 	 */
-	employees: Array<{
-		id: string;
-		name: string;
-		email: string;
-		isFormer: boolean;
-		formerSince: string | null;
-	}>;
+	employees: Array<
+		{
+			id: string;
+			name: string;
+			email: string;
+			isFormer: boolean;
+		} & FormerSinceField
+	>;
 	teams: Array<{ id: string; name: string }>;
 	grants: DrivingLicenceVerifierGrantView[];
 	/** Calendar zone that until dates are entered and shown in. */
@@ -122,7 +124,10 @@ export async function getDrivingLicenceVerifierAdminDataAction(): Promise<
 		return {
 			success: true,
 			data: {
-				employees,
+				employees: employees.map(({ formerSince, ...row }) => ({
+					...row,
+					...formerSinceField(row.isFormer, formerSince),
+				})),
 				teams,
 				grants: grants.map((grant) =>
 					viewDrivingLicenceVerifierGrant(grant, timezone, now),

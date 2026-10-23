@@ -5,6 +5,7 @@ import { employee, team, teamMembership } from "@/db/schema";
 import { ensureEmployeeProfilesForOrganizationMembers } from "@/lib/auth/organization-member-provisioning";
 import type { TeamPermissions } from "@/lib/authorization";
 import { formerEmployeesAmong } from "@/lib/employee-lifecycle/current-roster-among";
+import { formerMark } from "@/lib/employee-lifecycle/former-since";
 import { buildTeamSettingsSurface, filterMembersForTeamSettingsSurface } from "./team-scope";
 
 export async function loadTeamSettingsPageData(input: {
@@ -57,16 +58,16 @@ export async function loadTeamSettingsPageData(input: {
 	);
 
 	const membersWithMemberships = membersData.map((memberEntry) => {
-		const former = memberEntry.employee ? formerSinceById.has(memberEntry.employee.id) : false;
+		const { isFormer, ...formerSince } = memberEntry.employee
+			? formerMark(formerSinceById, memberEntry.employee.id)
+			: { isFormer: false };
 		return {
 			...memberEntry,
 			teamMemberships: memberEntry.employee
 				? (membershipsByEmployeeId.get(memberEntry.employee.id) ?? [])
 				: [],
-			isFormerEmployee: former,
-			...(former && memberEntry.employee
-				? { formerSince: formerSinceById.get(memberEntry.employee.id) ?? null }
-				: {}),
+			isFormerEmployee: isFormer,
+			...formerSince,
 		};
 	});
 

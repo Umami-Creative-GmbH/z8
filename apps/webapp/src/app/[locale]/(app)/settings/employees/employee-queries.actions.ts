@@ -11,10 +11,11 @@ import {
 } from "@/db/schema";
 import { ensureEmployeeProfilesForOrganizationMembers } from "@/lib/auth/organization-member-provisioning";
 import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
-import { formerSinceDate, isFormerEmployee } from "@/lib/employee-lifecycle/current-roster";
 import { NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import type { DatabaseClient, DatabaseQuery } from "@/lib/effect/services/database.service";
+import { formerSinceDate, isFormerEmployee } from "@/lib/employee-lifecycle/current-roster";
+import { formerSinceField } from "@/lib/employee-lifecycle/former-since";
 import {
 	loadCurrentContractTypes,
 	loadTermsInForceOn,
@@ -71,7 +72,7 @@ function mapEmployeeRow(row: {
 		team: row.team,
 		membership: row.membership?.id ? row.membership : null,
 		isFormer,
-		...(isFormer ? { formerSince: row.formerSince ?? null } : {}),
+		...formerSinceField(isFormer, row.formerSince),
 	};
 }
 
@@ -408,6 +409,9 @@ export async function getEmployeeAction(
 						role: approvedMembership.role,
 						status: approvedMembership.status,
 					},
+					// The page says whether they left, and since when (#1438, #1439).
+					isFormer: isFormerEmployee(),
+					formerSince: formerSinceDate(),
 				})
 				.from(employee)
 				.innerJoin(user, eq(employee.userId, user.id))
@@ -502,6 +506,8 @@ export async function getEmployeeAction(
 			kind: "employee",
 			membership: targetEmployee.membership?.id ? targetEmployee.membership : null,
 			contractTypeToday: termsToday?.contractType ?? null,
+			isFormer: targetEmployee.isFormer === true,
+			...formerSinceField(targetEmployee.isFormer === true, targetEmployee.formerSince),
 		} as EmployeeWithRelations;
 	});
 

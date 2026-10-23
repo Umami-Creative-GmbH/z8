@@ -736,11 +736,12 @@ describe("driving licence verifier grants through public actions", () => {
 		const data = await actions.getDrivingLicenceVerifierAdminDataAction();
 		if (!data.success) throw new Error(data.error);
 		const formerSince = Object.fromEntries(
-			data.data.employees.map((row) => [row.id, row.formerSince]),
+			data.data.employees.map((row) => [row.id, "formerSince" in row ? row.formerSince : "absent"]),
 		);
+		// Current employees carry no date at all; a former one without a recorded date has null.
 		expect(formerSince).toEqual({
-			[ids.admin]: null,
-			[ids.verifier]: null,
+			[ids.admin]: "absent",
+			[ids.verifier]: "absent",
 			[ids.ben]: "2026-09-15",
 			[ids.anna]: null,
 		});

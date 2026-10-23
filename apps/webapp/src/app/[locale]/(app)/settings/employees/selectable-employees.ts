@@ -7,6 +7,7 @@ import {
 	isFormerEmployee,
 	onCurrentRoster,
 } from "@/lib/employee-lifecycle/current-roster";
+import { formerSinceField } from "@/lib/employee-lifecycle/former-since";
 import {
 	type EmployeeDirectoryStatus,
 	type EmployeeSelectParams,
@@ -149,7 +150,7 @@ export function mapSelectableEmployeeRow(row: SelectableEmployeeRow): Selectable
 	return {
 		...employeeColumns,
 		isFormer,
-		...(isFormer ? { formerSince: formerSince ?? null } : {}),
+		...formerSinceField(isFormer, formerSince),
 		firstName: row.user.firstName,
 		lastName: row.user.lastName,
 		user: row.user,

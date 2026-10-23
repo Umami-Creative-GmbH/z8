@@ -138,7 +138,7 @@ describe("billable seat count", () => {
 		// the deactivated employee no longer counts while the gate is closed)
 		expect(
 			await countBillableSeats(fixture.db, organizationId, {
-				requireActiveEmployee: false,
+				requireEmployeeProfile: false,
 				now: NOW,
 			}),
 		).toBe(7);
@@ -147,7 +147,7 @@ describe("billable seat count", () => {
 	it("stops billing at deactivation and bills again after reactivation, gate closed (#1439)", async () => {
 		const { organizationId, active } = await scenario();
 		const count = () =>
-			countBillableSeats(fixture.db, organizationId, { requireActiveEmployee: false, now: NOW });
+			countBillableSeats(fixture.db, organizationId, { requireEmployeeProfile: false, now: NOW });
 
 		const before = await count();
 		await fixture.pool.query(`update employee set is_active = false where id = $1`, [
@@ -167,7 +167,7 @@ describe("billable seat count", () => {
 		// owner, admin, active, scheduled-later, due-blocked, rehired
 		expect(
 			await countBillableSeats(fixture.db, organizationId, {
-				requireActiveEmployee: true,
+				requireEmployeeProfile: true,
 				now: NOW,
 			}),
 		).toBe(6);
@@ -180,13 +180,13 @@ describe("billable seat count", () => {
 
 		expect(
 			await countBillableSeats(fixture.db, foreignOrganizationId, {
-				requireActiveEmployee: true,
+				requireEmployeeProfile: true,
 				now: NOW,
 			}),
 		).toBe(1);
 		expect(
 			await countBillableSeats(fixture.db, organizationId, {
-				requireActiveEmployee: true,
+				requireEmployeeProfile: true,
 				now: NOW,
 			}),
 		).toBe(6);
@@ -219,7 +219,7 @@ describe("billable seat count", () => {
 			expect(
 				await countBillableSeatsByType(fixture.db, organizationId, {
 					kioskSeats: true,
-					requireActiveEmployee: true,
+					requireEmployeeProfile: true,
 					now: NOW,
 				}),
 			).toEqual({ full: 3, kiosk: 5 });
@@ -231,7 +231,7 @@ describe("billable seat count", () => {
 			expect(
 				await countBillableSeatsByType(fixture.db, organizationId, {
 					kioskSeats: false,
-					requireActiveEmployee: true,
+					requireEmployeeProfile: true,
 					now: NOW,
 				}),
 			).toEqual({ full: 8, kiosk: 0 });
@@ -262,7 +262,7 @@ describe("billable seat count", () => {
 				createdBy,
 			});
 
-			const options = { kioskSeats: true, requireActiveEmployee: true, now: NOW };
+			const options = { kioskSeats: true, requireEmployeeProfile: true, now: NOW };
 			// Kiosk seats: the scheduled-later departure and the untouched one.
 			expect(await countBillableSeatsByType(fixture.db, organizationId, options)).toEqual({
 				full: 1,
@@ -270,7 +270,7 @@ describe("billable seat count", () => {
 			});
 			expect(
 				await countBillableSeats(fixture.db, organizationId, {
-					requireActiveEmployee: true,
+					requireEmployeeProfile: true,
 					now: NOW,
 				}),
 			).toBe(3);
@@ -317,7 +317,7 @@ describe("billable seat count", () => {
 				expect(
 					await countBillableSeatsByType(fixture.db, organizationId, {
 						kioskSeats: true,
-						requireActiveEmployee: true,
+						requireEmployeeProfile: true,
 						now: NOW,
 					}),
 				).toEqual({ full: 1, kiosk: 1 });
@@ -331,7 +331,7 @@ describe("billable seat count", () => {
 			expect(
 				await countBillableSeatsByType(fixture.db, organizationId, {
 					kioskSeats: true,
-					requireActiveEmployee: true,
+					requireEmployeeProfile: true,
 					now: NOW,
 				}),
 			).toEqual({ full: 1, kiosk: 2 });

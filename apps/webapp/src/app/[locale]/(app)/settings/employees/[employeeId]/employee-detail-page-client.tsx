@@ -73,7 +73,8 @@ function EmployeeDetailLifecycleActions({
 			queryKeys.employees.detail(targetEmployeeId),
 			(current) =>
 				current?.kind === "employee" && current.id === targetEmployeeId
-					? { ...current, ...updates }
+					? // The former mark follows at once (#1438); the date arrives with the next read.
+						{ ...current, ...updates, isFormer: !updates.isActive, formerSince: undefined }
 					: current,
 		);
 	};

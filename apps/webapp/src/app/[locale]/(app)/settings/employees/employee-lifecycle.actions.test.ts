@@ -583,6 +583,7 @@ describe("employee lifecycle actions", () => {
 		});
 		expect(mocks.reconcileBillingSeatsForOrganization).toHaveBeenCalledExactlyOnceWith(
 			organizationId,
+			{ alsoWhenBillingDisabled: true },
 		);
 		expect(events).toEqual([
 			"organization-locked",
@@ -798,6 +799,7 @@ describe("employee lifecycle actions", () => {
 		// Reactivation takes a paid seat again (#1439).
 		expect(mocks.reconcileBillingSeatsForOrganization).toHaveBeenCalledExactlyOnceWith(
 			organizationId,
+			{ alsoWhenBillingDisabled: true },
 		);
 		expect(mocks.logAudit).toHaveBeenCalledWith({
 			action: AuditAction.EMPLOYEE_REACTIVATED,

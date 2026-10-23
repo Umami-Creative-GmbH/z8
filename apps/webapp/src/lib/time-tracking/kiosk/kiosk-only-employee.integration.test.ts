@@ -146,7 +146,7 @@ describe("kiosk-only employees on PostgreSQL", () => {
 	afterAll(cleanup);
 
 	const seats = () =>
-		countBillableSeats(db, org, { requireActiveEmployee: true, now: clock.nowInstant() });
+		countBillableSeats(db, org, { requireEmployeeProfile: true, now: clock.nowInstant() });
 
 	it("creates a credential-less user with a unique reserved address that counts as a seat", async () => {
 		const before = await seats();
@@ -385,7 +385,7 @@ describe("kiosk-only employees on PostgreSQL", () => {
 		const seatsByType = () =>
 			countBillableSeatsByType(db, org, {
 				kioskSeats: true,
-				requireActiveEmployee: true,
+				requireEmployeeProfile: true,
 				now: clock.nowInstant(),
 			});
 		const kioskMemberOf = async (userId: string) =>

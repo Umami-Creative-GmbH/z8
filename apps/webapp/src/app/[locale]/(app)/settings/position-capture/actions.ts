@@ -11,6 +11,7 @@ import {
 	isFormerEmployee,
 	onCurrentRoster,
 } from "@/lib/employee-lifecycle/current-roster";
+import { formerSinceField } from "@/lib/employee-lifecycle/former-since";
 import { runPositionCaptureAction } from "@/lib/time-tracking/position-capture/action-runner";
 import {
 	type PositionCaptureActionResult,
@@ -142,7 +143,7 @@ export async function getPositionCaptureAdminDataAction(): Promise<
 				id: row.id,
 				name: row.userName?.trim() || row.employeeNumber || row.id,
 				isFormer: row.isFormer,
-				...(row.isFormer ? { formerSince: row.formerSince } : {}),
+				...formerSinceField(row.isFormer, row.formerSince),
 			})),
 		};
 	});

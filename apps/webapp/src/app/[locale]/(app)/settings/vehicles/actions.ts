@@ -15,6 +15,7 @@ import {
 	isFormerEmployee,
 	onCurrentRoster,
 } from "@/lib/employee-lifecycle/current-roster";
+import { formerSinceField } from "@/lib/employee-lifecycle/former-since";
 import type { VehicleChangeInput } from "@/lib/organization/vehicles/vehicle-rules";
 import {
 	changeOrganizationVehicles,
@@ -34,10 +35,10 @@ export interface VehicleDriverOption {
 	/** A former employee (#1438): offered only where a vehicle already has them. */
 	isFormer: boolean;
 	/**
-	 * The organization-local date a former employee left (`YYYY-MM-DD`, #1439):
-	 * null for a current employee and when the date isn't recorded.
+	 * On a former employee only: the organization-local date they left
+	 * (`YYYY-MM-DD`, #1439), null when the date isn't recorded.
 	 */
-	formerSince: string | null;
+	formerSince?: string | null;
 }
 
 export interface VehicleSettingsData {
@@ -126,7 +127,7 @@ export async function getVehicleSettings(): Promise<ServerActionResult<VehicleSe
 						email: row.email,
 						isActive: !row.isFormer,
 						isFormer: row.isFormer,
-						formerSince: row.isFormer ? row.formerSince : null,
+						...formerSinceField(row.isFormer, row.formerSince),
 					})),
 					teams,
 				};

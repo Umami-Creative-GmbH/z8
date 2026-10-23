@@ -679,10 +679,9 @@ describe("organization vehicles on PostgreSQL", () => {
 				formerSince: "2026-09-15",
 			});
 			expect(byId.get(ids.managerEmployee)).toMatchObject({ isFormer: true, formerSince: null });
-			expect(byId.get(ids.employeeAdminEmployee)).toMatchObject({
-				isFormer: false,
-				formerSince: null,
-			});
+			expect(byId.get(ids.employeeAdminEmployee)).toMatchObject({ isFormer: false });
+			// A current employee carries no date at all.
+			expect(byId.get(ids.employeeAdminEmployee)).not.toHaveProperty("formerSince");
 		});
 
 		it("refuses a driver row that points at another organization's employee in the database", async () => {

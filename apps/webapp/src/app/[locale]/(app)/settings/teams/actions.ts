@@ -11,8 +11,6 @@ import { vacationPolicyWriteFailure } from "@/lib/absences/vacation-policy-assig
 import type { TeamPermissions as ScopedPermissions } from "@/lib/authorization";
 import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import { CACHE_TAGS } from "@/lib/cache/tags";
-import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
-import { formerEmployeesAmong } from "@/lib/employee-lifecycle/current-roster-among";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import {
 	type AnyAppError,
@@ -25,7 +23,10 @@ import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/resul
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { PermissionsService } from "@/lib/effect/services/permissions.service";
+import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
+import { formerEmployeesAmong } from "@/lib/employee-lifecycle/current-roster-among";
 import { ensureOnCurrentRoster } from "@/lib/employee-lifecycle/current-roster-guard";
+import { formerMark } from "@/lib/employee-lifecycle/former-since";
 import { createLogger } from "@/lib/logger";
 import { onTeamMemberAdded, onTeamMemberRemoved } from "@/lib/notifications/triggers";
 import type { DrivingLicenceTeamChangeImpact } from "@/lib/organization/driving-licence/intended-driver-rules";
@@ -1161,11 +1162,10 @@ export async function getTeam(teamId: string): Promise<
 
 		return {
 			...teamWithEmployees,
-			employees: teamWithEmployees.employees.map((member) =>
-				formerSinceById.has(member.id)
-					? { ...member, isFormer: true, formerSince: formerSinceById.get(member.id) ?? null }
-					: { ...member, isFormer: false },
-			),
+			employees: teamWithEmployees.employees.map((member) => ({
+				...member,
+				...formerMark(formerSinceById, member.id),
+			})),
 			canManageMembers: scopedFlags.canManageMembers,
 			canManageSettings: scopedFlags.canManageSettings,
 		};

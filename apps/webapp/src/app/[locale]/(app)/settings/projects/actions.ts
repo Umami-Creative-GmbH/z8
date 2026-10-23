@@ -21,13 +21,14 @@ import {
 	readProjectActiveCustomerId,
 } from "@/lib/billable-time/project-customer";
 import { type DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
 import { formerEmployeesAmong } from "@/lib/employee-lifecycle/current-roster-among";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import {
 	assertOnCurrentRoster,
 	ensureOnCurrentRoster,
 } from "@/lib/employee-lifecycle/current-roster-guard";
+import { formerMark } from "@/lib/employee-lifecycle/former-since";
 import { logger } from "@/lib/logger";
 import {
 	keepCustomFieldRefusal,
@@ -35,13 +36,13 @@ import {
 } from "@/lib/organization/custom-fields/form-values";
 import type { CustomFieldValuesInput } from "@/lib/organization/custom-fields/value-rules";
 import { findRecordsMissingRequiredValues } from "@/lib/organization/custom-fields/values";
-import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
 import {
 	insertProject,
 	insertProjectAssignments,
 	insertProjectManagers,
 } from "@/lib/projects/project-creation";
 import { revokeShareLinksAfterAccessChange } from "@/lib/projects/report-share/access-change";
+import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
 // The narrow module, not the work records index: this action needs nothing else of it.
 import { clearProjectMissingTasks } from "@/lib/time-tracking/work-records/project-missing-tasks";
 import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction";
@@ -372,10 +373,10 @@ export async function getProjects(
 						continue;
 					}
 					const projectAssignments = assignmentsByProject.get(assignment.projectId) ?? [];
-					const employeeIsFormer =
-						assignment.assignmentType === "employee" &&
-						!!assignment.employeeId &&
-						formerAssigneeSince.has(assignment.employeeId);
+					const assignee =
+						assignment.assignmentType === "employee" && assignment.employeeId
+							? formerMark(formerAssigneeSince, assignment.employeeId)
+							: { isFormer: false };
 					projectAssignments.push({
 						id: assignment.id,
 						type: assignment.assignmentType as ProjectAssignmentType,
@@ -383,10 +384,8 @@ export async function getProjects(
 						teamName: assignment.team?.name || null,
 						employeeId: assignment.employeeId,
 						employeeName: assignment.employee?.user?.name || null,
-						employeeIsFormer,
-						...(employeeIsFormer && assignment.employeeId
-							? { employeeFormerSince: formerAssigneeSince.get(assignment.employeeId) ?? null }
-							: {}),
+						employeeIsFormer: assignee.isFormer,
+						...("formerSince" in assignee ? { employeeFormerSince: assignee.formerSince } : {}),
 					});
 					assignmentsByProject.set(assignment.projectId, projectAssignments);
 				}

@@ -155,6 +155,39 @@ describe("when a former employee left", () => {
 		expect(result.leftAt?.toString()).toBe("2026-09-18T08:00:00Z");
 	});
 
+	it("takes the later moment when a deactivated employee's departure then takes effect", async () => {
+		const target = await fixture.seedEmployee();
+		await fixture.pool.query(
+			`update employee set is_active = false, deactivated_at = '2026-09-10T08:00:00Z' where id = $1`,
+			[target.employeeId],
+		);
+		await departure(target, "effective");
+
+		const result = await leftOn(target);
+		if (!result?.former) throw new Error("expected a former employee");
+		expect(result.leftAt?.toString()).toBe("2026-09-14T13:00:00Z");
+	});
+
+	it("falls back to UTC for an organization whose stored timezone is unknown", async () => {
+		const otherOrganizationId = await fixture.createOrganization();
+		await fixture.pool.query(`update organization set timezone = 'Mars/Olympus' where id = $1`, [
+			otherOrganizationId,
+		]);
+		const target = await fixture.seedEmployee({ organizationId: otherOrganizationId });
+		await fixture.pool.query(
+			`update employee set is_active = false, deactivated_at = $2 where id = $1`,
+			[target.employeeId, CUTOFF],
+		);
+
+		const result = await readEmployeeLeftOn(fixture.db, {
+			organizationId: otherOrganizationId,
+			employeeId: target.employeeId,
+			now: AFTER,
+		});
+		if (!result?.former) throw new Error("expected a former employee");
+		expect(result.leftOn?.toString()).toBe("2026-09-14");
+	});
+
 	it("says not recorded for an employee deactivated before the instant was stored", async () => {
 		const legacy = await fixture.seedEmployee({ isActive: false });
 

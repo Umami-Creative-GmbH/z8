@@ -416,9 +416,14 @@ function setEmployeeLifecycleState(
 
 				if (transactionResult.changed) {
 					// A former employee holds no paid seat (#1439); reactivation takes one again.
-					// Best effort after the commit, as for member removal: a failed delivery is
+					// Best effort after the commit, as for member removal (but recounting the local
+					// seats even while external billing is off, as a departure does): a failed delivery is
 					// logged, and the billing seat reconciliation job settles it.
-					yield* Effect.promise(() => reconcileBillingSeatsForOrganization(actor.organizationId));
+					yield* Effect.promise(() =>
+						reconcileBillingSeatsForOrganization(actor.organizationId, {
+							alsoWhenBillingDisabled: true,
+						}),
+					);
 				}
 
 				if (transactionResult.changed && !isActive) {

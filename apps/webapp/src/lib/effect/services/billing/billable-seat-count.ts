@@ -6,7 +6,7 @@ import { EMPLOYEE_OFFBOARDING_RELEASE_READY } from "@/lib/employee-lifecycle/rel
 
 type SeatCountDatabase = Pick<typeof rootDatabase, "execute">;
 
-type SeatCountOptions = { requireActiveEmployee?: boolean; now?: Instant };
+type SeatCountOptions = { requireEmployeeProfile?: boolean; now?: Instant };
 
 /** Billable seats by type (#886): kiosk seats belong to kiosk-only employees, full seats to everyone else. */
 export type SeatsByType = { full: number; kiosk: number };
@@ -16,7 +16,7 @@ export type SeatsByType = { full: number; kiosk: number };
  * `member m`, `"user" u` and `employee e`. See `countBillableSeats`.
  */
 function billableSeatsFrom(organizationId: string, options: SeatCountOptions): SQL {
-	const requireActiveEmployee = options.requireActiveEmployee ?? EMPLOYEE_OFFBOARDING_RELEASE_READY;
+	const requireEmployeeProfile = options.requireEmployeeProfile ?? EMPLOYEE_OFFBOARDING_RELEASE_READY;
 	const at = options.now ? sql`${dateFromInstant(options.now)}::timestamptz` : sql`now()`;
 	return sql`
 		FROM member m
@@ -33,7 +33,7 @@ function billableSeatsFrom(organizationId: string, options: SeatCountOptions): S
 					AND NOT employee_departure_denies_access(m.organization_id, e.id, ${at})
 				)
 			)
-			AND (NOT ${requireActiveEmployee} OR e.id IS NOT NULL)
+			AND (NOT ${requireEmployeeProfile} OR e.id IS NOT NULL)
 	`;
 }
 
