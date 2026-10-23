@@ -14,6 +14,7 @@ import {
 } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
 import { dateFromInstant, type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
+import { findEmployeesNotOnCurrentRoster } from "@/lib/employee-lifecycle/current-roster-guard";
 import type { WorkTransactionClient } from "../work-transaction";
 import { PositionCaptureRefusal } from "./errors";
 import {
@@ -259,6 +260,16 @@ export async function setPositionCaptureAssignment(
 			);
 		assignmentId = existing.id;
 	} else {
+		// A former employee gets no new assignment (#1438); an existing one can still be switched.
+		if (target.type === "employee") {
+			const former = await findEmployeesNotOnCurrentRoster(tx, {
+				organizationId,
+				employeeIds: [target.employeeId],
+			});
+			if (former.length > 0) {
+				throw new PositionCaptureRefusal("former_employee", "The employee is a former employee");
+			}
+		}
 		const [inserted] = await tx
 			.insert(positionCaptureAssignment)
 			.values({

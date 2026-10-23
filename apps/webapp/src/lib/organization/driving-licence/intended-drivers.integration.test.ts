@@ -284,6 +284,17 @@ describe("intended-driver assignments are administered per organization", () => 
 		expect(await intended(alex)).toBe(false);
 	});
 
+	it("refuses assigning a former employee as intended driver (#1438)", async () => {
+		const former = await fixture.seedEmployee({ isActive: false });
+		expect(
+			await assign({ type: "employee", employeeId: former.employeeId }, "required"),
+		).toEqual({ success: false, error: "employee_not_found" });
+		const current = await fixture.seedEmployee();
+		expect(
+			await assign({ type: "employee", employeeId: current.employeeId }, "required"),
+		).toMatchObject({ success: true });
+	});
+
 	it("never reaches into another organization", async () => {
 		const otherOrganizationId = await fixture.createOrganization();
 		const foreignTeam = await seedTeam("Foreign", otherOrganizationId);

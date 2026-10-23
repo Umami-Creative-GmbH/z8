@@ -63,7 +63,8 @@ interface FeatureAssignment<Value extends string> {
 interface ScopedFeatureAssignmentsProps<Value extends string> {
 	assignments: FeatureAssignment<Value>[];
 	teams: { id: string; name: string }[];
-	employees: { id: string; name: string }[];
+	/** A former employee (#1438) is listed only to name an existing row; never offered. */
+	employees: { id: string; name: string; isFormer?: boolean }[];
 	options: { value: Value; label: string }[];
 	valueLabel: string;
 	organizationLabel: string;
@@ -174,7 +175,7 @@ export function ScopedFeatureAssignments<Value extends string>({
 	// The preloaded picker path does not apply excludeIds, so exclude assigned employees here.
 	const assignedEmployeeIdSet = new Set(assignedEmployeeIds);
 	const availableEmployees = employees
-		.filter((employee) => !assignedEmployeeIdSet.has(employee.id))
+		.filter((employee) => !employee.isFormer && !assignedEmployeeIdSet.has(employee.id))
 		.map((employee) =>
 			toSelectableEmployee({ ...employee, email: "" }, { isActive: true }),
 		);

@@ -1,6 +1,6 @@
 "use server";
 
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq, inArray, or } from "drizzle-orm";
 import { Effect } from "effect";
 import { revalidatePath } from "next/cache";
 import { user } from "@/db/auth-schema";
@@ -10,6 +10,7 @@ import { AuthorizationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import { isFormerEmployee, onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
 import type { VehicleChangeInput } from "@/lib/organization/vehicles/vehicle-rules";
 import {
 	changeOrganizationVehicles,
@@ -26,6 +27,8 @@ export interface VehicleDriverOption {
 	email: string;
 	/** Departed employees can't be newly assigned but stay shown where they are. */
 	isActive: boolean;
+	/** A former employee (#1438): offered only where a vehicle already has them. */
+	isFormer: boolean;
 }
 
 export interface VehicleSettingsData {
@@ -71,33 +74,48 @@ export async function getVehicleSettings(): Promise<ServerActionResult<VehicleSe
 			const actor = yield* vehiclesActor("read");
 			const dbService = yield* DatabaseService;
 			return yield* dbService.query("vehicles.settings", async () => {
-				const [vehicles, people, teams] = await Promise.all([
+				const [vehicles, teams] = await Promise.all([
 					listOrganizationVehicles(dbService.db, actor.organizationId),
-					dbService.db
-						.select({
-							id: employee.id,
-							employeeNumber: employee.employeeNumber,
-							isActive: employee.isActive,
-							name: user.name,
-							email: user.email,
-						})
-						.from(employee)
-						.innerJoin(user, eq(user.id, employee.userId))
-						.where(eq(employee.organizationId, actor.organizationId))
-						.orderBy(asc(user.name), asc(employee.id)),
 					dbService.db
 						.select({ id: team.id, name: team.name })
 						.from(team)
 						.where(eq(team.organizationId, actor.organizationId))
 						.orderBy(asc(team.name), asc(team.id)),
 				]);
+				// The current roster (#1438), plus former employees a vehicle still has
+				// as drivers, marked, so editing that vehicle keeps them.
+				const assignedIds = [
+					...new Set(
+						vehicles.flatMap((vehicle) => vehicle.drivers.employees.map((driver) => driver.id)),
+					),
+				];
+				const people = await dbService.db
+					.select({
+						id: employee.id,
+						employeeNumber: employee.employeeNumber,
+						isFormer: isFormerEmployee(employee),
+						name: user.name,
+						email: user.email,
+					})
+					.from(employee)
+					.innerJoin(user, eq(user.id, employee.userId))
+					.where(
+						and(
+							eq(employee.organizationId, actor.organizationId),
+							assignedIds.length > 0
+								? or(onCurrentRoster(actor.organizationId), inArray(employee.id, assignedIds))
+								: onCurrentRoster(actor.organizationId),
+						),
+					)
+					.orderBy(asc(user.name), asc(employee.id));
 				return {
 					vehicles,
 					employees: people.map((row) => ({
 						id: row.id,
 						name: row.name?.trim() || row.employeeNumber || row.id,
 						email: row.email,
-						isActive: row.isActive,
+						isActive: !row.isFormer,
+						isFormer: row.isFormer,
 					})),
 					teams,
 				};

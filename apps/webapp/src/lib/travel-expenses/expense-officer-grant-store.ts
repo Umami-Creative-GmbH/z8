@@ -9,6 +9,7 @@ import {
 	team,
 } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
+import { assertOnCurrentRoster } from "@/lib/employee-lifecycle/current-roster-guard";
 import {
 	DatabaseError,
 	NotFoundError,
@@ -259,6 +260,14 @@ export async function saveExpenseOfficerGrant(
 	) {
 		throw new ValidationError({ message: "Expense officer IDs must be valid" });
 	}
+	// The officer must be on the current roster (#1438). Named employees may be
+	// former: their last reports still need reimbursing.
+	await assertOnCurrentRoster(tx, {
+		organizationId,
+		employeeIds: [officerEmployeeId],
+		field: "officerEmployeeId",
+		message: "The expense officer must be a current employee of the organization",
+	});
 
 	const [current] = await tx
 		.select(grantColumns())

@@ -22,6 +22,10 @@ import {
 } from "@/lib/billable-time/project-customer";
 import { type DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import {
+	assertOnCurrentRoster,
+	ensureOnCurrentRoster,
+} from "@/lib/employee-lifecycle/current-roster-guard";
 import { logger } from "@/lib/logger";
 import {
 	keepCustomFieldRefusal,
@@ -134,11 +138,7 @@ async function getProjectRelationshipEmployee(
 	reader: ProjectSettingsReader = db,
 ) {
 	return reader.query.employee.findFirst({
-		where: and(
-			eq(employee.id, employeeId),
-			eq(employee.organizationId, organizationId),
-			eq(employee.isActive, true),
-		),
+		where: and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)),
 		columns: { id: true },
 	});
 }
@@ -830,6 +830,12 @@ export async function addProjectManager(
 						}),
 					);
 				}
+				// A former employee manages no project (#1438).
+				yield* ensureOnCurrentRoster(dbService, {
+					organizationId: existingProject.organizationId,
+					employeeIds: [employeeId],
+					field: "employeeId",
+				});
 
 				// Check if already a manager
 				const existing = yield* dbService.query("checkExisting", async () => {
@@ -1048,6 +1054,14 @@ export async function addProjectAssignment(
 									throw new ValidationError({
 										message: `${type === "team" ? "Team" : "Employee"} not found in this organization`,
 										field: type === "team" ? "teamId" : "employeeId",
+									});
+								}
+								// A former employee gets no new project assignment (#1438).
+								if (type === "employee") {
+									await assertOnCurrentRoster(tx, {
+										organizationId: existingProject.organizationId,
+										employeeIds: [targetId],
+										field: "employeeId",
 									});
 								}
 

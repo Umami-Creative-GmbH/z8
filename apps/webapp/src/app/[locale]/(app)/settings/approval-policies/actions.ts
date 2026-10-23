@@ -9,12 +9,13 @@ import {
 	approvalPolicy,
 	approvalPolicyCondition,
 	approvalPolicyStage,
-	employee,
+	type employee,
 	employeeGroup,
 	employeeGroupMember,
 	location,
 	team,
 } from "@/db/schema";
+import { findEmployeesNotOnCurrentRoster } from "@/lib/employee-lifecycle/current-roster-guard";
 import {
 	firstZodError,
 	normalizeApprovalPolicyInputForTest,
@@ -126,24 +127,8 @@ async function findMissingActiveOrganizationEmployees(
 	organizationId: string,
 	ids: string[],
 ) {
-	const uniqueIds = uniqueValues(ids);
-	if (uniqueIds.length === 0) {
-		return [];
-	}
-
-	const rows = await db
-		.select({ id: employee.id })
-		.from(employee)
-		.where(
-			and(
-				eq(employee.organizationId, organizationId),
-				eq(employee.isActive, true),
-				inArray(employee.id, uniqueIds),
-			),
-		);
-	const foundIds = new Set(rows.map((row) => row.id));
-
-	return uniqueIds.filter((id) => !foundIds.has(id));
+	// The current roster (#1438): a due departure counts the same as a deactivation.
+	return findEmployeesNotOnCurrentRoster(db, { organizationId, employeeIds: ids });
 }
 
 async function findMissingActiveEmployeeGroups(

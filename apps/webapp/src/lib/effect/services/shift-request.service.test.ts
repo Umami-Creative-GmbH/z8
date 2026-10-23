@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import { Cause, Effect, Exit, Layer, Option } from "effect";
 import { describe, expect, it, vi } from "vitest";
-import { auditLog, shift, shiftRequest } from "@/db/schema";
+import { auditLog, employee, shift, shiftRequest } from "@/db/schema";
 import { DatabaseError } from "@/lib/effect/errors";
 import { DatabaseService } from "./database.service";
 import {
@@ -18,6 +18,23 @@ vi.mock("@/lib/scheduling/skill-override", async (importOriginal) => ({
 vi.mock("@/lib/timezone/load-organization-timezone", () => ({
 	loadOrganizationTimezone: async () => "UTC",
 }));
+// The current-roster guard (#1438) reads the staged employees: inactive ones
+// and those of another organization than org-1 are former.
+const rosterHarness = vi.hoisted(() => ({
+	employees: [] as Array<{ id: string; organizationId: string; isActive: boolean }>,
+}));
+vi.mock("@/lib/employee-lifecycle/current-roster-guard", async () =>
+	(
+		await import("@/lib/employee-lifecycle/testing/current-roster-guard.test.mock")
+	).currentRosterGuardModule(
+		() =>
+			new Set(
+				rosterHarness.employees
+					.filter((row) => !row.isActive || row.organizationId !== "org-1")
+					.map((row) => row.id),
+			),
+	),
+);
 
 type EmployeeRow = {
 	id: string;
@@ -194,9 +211,31 @@ function paramsFrom(
 		value?: unknown;
 	};
 	if (candidate.constructor?.name === "Param") values.push(candidate.value);
-	for (const chunk of candidate.queryChunks ?? [])
-		paramsFrom(chunk, values, seen);
+	for (const chunk of candidate.queryChunks ?? []) {
+		// A raw `sql` template value, such as the current-roster rule's organization id.
+		if (typeof chunk === "string") values.push(chunk);
+		else paramsFrom(chunk, values, seen);
+	}
 	return values;
+}
+
+/** Whether the where names `column`, as the current-roster rule names `employee.isActive`. */
+function referencesColumn(
+	expression: unknown,
+	column: unknown,
+	seen = new WeakSet<object>(),
+): boolean {
+	if (expression === column) return true;
+	if (!expression || typeof expression !== "object") return false;
+	if (seen.has(expression)) return false;
+	seen.add(expression);
+	const chunks = (expression as { queryChunks?: unknown[] }).queryChunks ?? [];
+	return chunks.some((chunk) => referencesColumn(chunk, column, seen));
+}
+
+/** An active-only employee read: `isActive = true` or the current-roster rule. */
+function filtersActive(where: unknown) {
+	return paramsFrom(where).includes(true) || referencesColumn(where, employee.isActive);
 }
 
 function makeQueryPromise<T>(
@@ -297,6 +336,7 @@ function createHarness(
 			});
 			await previous;
 			const staged = structuredClone(durable);
+			rosterHarness.employees = staged.employees;
 
 			const findRequest = (config: QueryConfig) => {
 				const params = paramsFrom(config?.where);
@@ -328,7 +368,7 @@ function createHarness(
 								return undefined;
 							if (params.includes("org-2") && row.organizationId !== "org-2")
 								return undefined;
-							if (params.includes(true) && !row.isActive) return undefined;
+							if (filtersActive(config?.where) && !row.isActive) return undefined;
 							return row;
 						}),
 					},
@@ -480,7 +520,7 @@ function createHarness(
 					const row = durable.employees.find((item) =>
 						params.includes(item.id),
 					);
-					if (!row || (params.includes(true) && !row.isActive))
+					if (!row || (filtersActive(config.where) && !row.isActive))
 						return undefined;
 					if (params.includes("org-1") && row.organizationId !== "org-1")
 						return undefined;
@@ -948,6 +988,23 @@ describe("ShiftRequestService serialized mutations", () => {
 				action: "cancel",
 			}),
 		]);
+	});
+
+	it("refuses approving a request that would assign a former employee (#1438)", async () => {
+		const harness = createHarness((state) => {
+			state.requests.push(request());
+			findEmployee(state, "employee-requester").isActive = false;
+		});
+
+		const exit = await harness.runExit((service) =>
+			service.approveRequest("org-1", "request-1", "employee-manager"),
+		);
+
+		expect(failureTag(exit)).toBe("ValidationError");
+		expect(harness.state.requests[0]?.status).toBe("pending");
+		expect(
+			harness.state.shifts.find((item) => item.id === "shift-open")?.employeeId,
+		).toBeNull();
 	});
 
 	it("does not let an inactive requester act to cancel", async () => {

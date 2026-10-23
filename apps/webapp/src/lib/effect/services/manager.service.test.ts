@@ -6,7 +6,15 @@ import { ManagerService, ManagerServiceLive } from "./manager.service";
 
 // Protection itself is covered by authorization-mutation.test.ts and the
 // PostgreSQL suite; here it runs the mutation in the fake's transaction.
-const protection = vi.hoisted(() => ({ scopes: [] as unknown[] }));
+const protection = vi.hoisted(() => ({
+	scopes: [] as unknown[],
+	formerEmployeeIds: new Set<string>(),
+}));
+vi.mock("@/lib/employee-lifecycle/current-roster-guard", async () =>
+	(
+		await import("@/lib/employee-lifecycle/testing/current-roster-guard.test.mock")
+	).currentRosterGuardModule(() => protection.formerEmployeeIds),
+);
 vi.mock("@/lib/authorization/authorization-mutation", () => ({
 	withAuthorizationMutation: async (
 		scope: unknown,
@@ -139,6 +147,35 @@ describe("ManagerService", () => {
 		});
 		expect(db.insert).not.toHaveBeenCalled();
 		expect(employeeManagersTableUpdateCount()).toBe(0);
+	});
+
+	it("refuses a former manager or a former report for a new link (#1438)", async () => {
+		for (const former of ["manager-1", "employee-1"]) {
+			protection.formerEmployeeIds = new Set([former]);
+			const { db, runAssignManager, employeeManagersTableUpdateCount } =
+				createManagerServiceTestContext();
+
+			await expect(runAssignManager(true)).rejects.toMatchObject({
+				_tag: "ValidationError",
+				field: former === "manager-1" ? "managerId" : "employeeId",
+			});
+			expect(db.insert).not.toHaveBeenCalled();
+			expect(employeeManagersTableUpdateCount()).toBe(0);
+		}
+		protection.formerEmployeeIds = new Set();
+	});
+
+	it("keeps an unchanged link to a former manager savable (#1438)", async () => {
+		protection.formerEmployeeIds = new Set(["manager-1"]);
+		const { db, runAssignManager } = createManagerServiceTestContext({
+			managerAssignments: [
+				{ id: "assignment-1", employeeId: "employee-1", managerId: "manager-1", isPrimary: true },
+			],
+		});
+
+		await expect(runAssignManager(true)).resolves.toBeUndefined();
+		expect(db.insert).not.toHaveBeenCalled();
+		protection.formerEmployeeIds = new Set();
 	});
 
 	it("does not sync employee.managerId when removing the primary manager", async () => {

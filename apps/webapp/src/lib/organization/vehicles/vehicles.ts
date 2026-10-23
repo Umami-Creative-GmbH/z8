@@ -13,6 +13,10 @@ import {
 	team,
 } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
+import {
+	addedEmployeeIds,
+	findEmployeesNotOnCurrentRoster,
+} from "@/lib/employee-lifecycle/current-roster-guard";
 import { isConstraintViolation } from "@/lib/projects/constraint-violation";
 import { queueVehiclePhotoDeletion } from "./vehicle-photos";
 import {
@@ -259,6 +263,21 @@ async function assertDriversOfOrganization(
 	}
 }
 
+/**
+ * Refuses newly assigned drivers who are not on the current roster (#1438).
+ * Drivers the vehicle already has may stay, so an unrelated edit still saves.
+ */
+async function assertAddedDriversCurrent(
+	context: ChangeContext,
+	employeeIds: string[],
+) {
+	const former = await findEmployeesNotOnCurrentRoster(context.tx, {
+		organizationId: context.organizationId,
+		employeeIds,
+	});
+	if (former.length > 0) refuse("former_driver");
+}
+
 async function replaceDrivers(
 	context: ChangeContext,
 	vehicleId: string,
@@ -290,6 +309,7 @@ async function replaceDrivers(
 async function create(context: ChangeContext, change: ChangeOf<"create">) {
 	const drivers = sortedDrivers(change.drivers);
 	await assertDriversOfOrganization(context, drivers);
+	await assertAddedDriversCurrent(context, drivers.employeeIds);
 	const [row] = await context.tx
 		.insert(organizationVehicle)
 		.values({
@@ -317,6 +337,10 @@ async function update(context: ChangeContext, change: ChangeOf<"update">) {
 		licencePlate: row.licencePlate,
 		drivers: await currentDrivers(context, row.id),
 	};
+	await assertAddedDriversCurrent(
+		context,
+		addedEmployeeIds(drivers.employeeIds, before.drivers.employeeIds),
+	);
 	const after = {
 		name: change.name,
 		licencePlate: change.licencePlate,

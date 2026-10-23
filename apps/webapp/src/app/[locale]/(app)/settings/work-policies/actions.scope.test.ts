@@ -50,7 +50,14 @@ const mockState = vi.hoisted(() => ({
 	updateSets: [] as Array<any>,
 	updateWhereArgs: [] as Array<any>,
 	markOrganizationWorkBalancesDirty: vi.fn().mockResolvedValue(undefined),
+	formerEmployeeIds: new Set<string>(),
 }));
+
+vi.mock("@/lib/employee-lifecycle/current-roster-guard", async () =>
+	(
+		await import("@/lib/employee-lifecycle/testing/current-roster-guard.test.mock")
+	).currentRosterGuardModule(() => mockState.formerEmployeeIds),
+);
 
 vi.mock("drizzle-orm", () => ({
 	and: vi.fn((...args: unknown[]) => ({ and: args })),
@@ -435,6 +442,22 @@ describe("work policy settings scope actions", () => {
 		mockState.updateWhereArgs = [];
 		mockState.markOrganizationWorkBalancesDirty.mockClear();
 		mockState.markOrganizationWorkBalancesDirty.mockResolvedValue(undefined);
+		mockState.formerEmployeeIds = new Set();
+	});
+
+	it("refuses assigning a work policy to a former employee (#1438)", async () => {
+		mockState.formerEmployeeIds = new Set(["employee-1"]);
+		mockState.workPolicyQueue = [{ id: "policy-1", organizationId: "org-1" }];
+		mockState.insertQueue = [[{ id: "assignment-1" }]];
+
+		const result = await createWorkPolicyAssignment("org-1", {
+			policyId: "policy-1",
+			assignmentType: "employee",
+			employeeId: "employee-1",
+		});
+
+		expect(result).toMatchObject({ success: false, code: "ValidationError" });
+		expect(mockState.insertValues).toHaveLength(0);
 	});
 
 	it("lets managers read work policy definitions", async () => {

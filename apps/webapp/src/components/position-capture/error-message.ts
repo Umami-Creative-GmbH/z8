@@ -70,6 +70,11 @@ export function positionCaptureErrorMessage(
 			return t("common.positionCaptureErrors.teamNotFound", "This team was not found.");
 		case "employee_not_found":
 			return t("common.positionCaptureErrors.employeeNotFound", "This employee was not found.");
+		case "former_employee":
+			return t(
+				"common.positionCaptureErrors.formerEmployee",
+				"Former employees can't get a new assignment. Choose someone on the current roster.",
+			);
 		case "assignment_not_found":
 			return t(
 				"common.positionCaptureErrors.assignmentNotFound",

@@ -35,7 +35,14 @@ const mockState = vi.hoisted(() => ({
 	insertCalls: [] as Array<any>,
 	updateCalls: [] as Array<any>,
 	deleteCalls: [] as Array<any>,
+	formerEmployeeIds: new Set<string>(),
 }));
+
+vi.mock("@/lib/employee-lifecycle/current-roster-guard", async () =>
+	(
+		await import("@/lib/employee-lifecycle/testing/current-roster-guard.test.mock")
+	).currentRosterGuardModule(() => mockState.formerEmployeeIds),
+);
 
 vi.mock("drizzle-orm", () => ({
 	and: vi.fn((...args: unknown[]) => ({ and: args })),
@@ -220,6 +227,30 @@ describe("location assignment org-admin parity", () => {
 		mockState.insertCalls = [];
 		mockState.updateCalls = [];
 		mockState.deleteCalls = [];
+		mockState.formerEmployeeIds = new Set();
+	});
+
+	it("refuses assigning a former employee to a location or subarea (#1438)", async () => {
+		mockState.membershipRole = "owner";
+		mockState.formerEmployeeIds = new Set([mockState.targetEmployee.id]);
+
+		const location = await assignLocationEmployee({
+			locationId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+			employeeId: mockState.targetEmployee.id,
+			isPrimary: false,
+		});
+		const subarea = await assignSubareaEmployee({
+			subareaId: "11111111-1111-4111-8111-111111111111",
+			employeeId: mockState.targetEmployee.id,
+			isPrimary: false,
+		});
+
+		expect(location).toEqual({
+			success: false,
+			error: "Former employees can't be assigned. Choose someone on the current roster.",
+		});
+		expect(subarea).toMatchObject({ success: false });
+		expect(mockState.insertCalls).toEqual([]);
 	});
 
 	it("rejects manager assignment mutations", async () => {

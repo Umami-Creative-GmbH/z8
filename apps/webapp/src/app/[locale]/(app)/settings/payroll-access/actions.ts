@@ -21,6 +21,7 @@ import {
 } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { type DatabaseClient, DatabaseService } from "@/lib/effect/services/database.service";
+import { isFormerEmployee, onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
 import type { SavePayrollAccessInput } from "@/lib/payroll-access/grant-scope";
 import { revokePayrollAccessGrant, savePayrollAccessGrant } from "@/lib/payroll-access/grant-store";
 import { assertPayrollOfficerSettingsContext } from "./action-helpers";
@@ -73,7 +74,8 @@ export async function getPayrollAccessAdminDataAction(): Promise<
 					.select({
 						id: employee.id,
 						employeeNumber: employee.employeeNumber,
-						isActive: employee.isActive,
+						// Current roster (#1438): a due departure counts the same as a deactivation.
+						isFormer: isFormerEmployee(employee),
 						userName: user.name,
 						userEmail: user.email,
 					})
@@ -83,7 +85,7 @@ export async function getPayrollAccessAdminDataAction(): Promise<
 						and(
 							eq(employee.organizationId, organizationId),
 							or(
-								eq(employee.isActive, true),
+								onCurrentRoster(organizationId),
 								inArray(
 									employee.id,
 									db
@@ -142,8 +144,8 @@ export async function getPayrollAccessAdminDataAction(): Promise<
 		});
 
 		return {
-			employees: employeeRows.filter((row) => row.isActive).map(toOption),
-			departedEmployees: employeeRows.filter((row) => !row.isActive).map(toOption),
+			employees: employeeRows.filter((row) => !row.isFormer).map(toOption),
+			departedEmployees: employeeRows.filter((row) => row.isFormer).map(toOption),
 			teams: teamRows,
 			grants: grantRows.map((grant) => ({
 				id: grant.id,

@@ -6,6 +6,7 @@ import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { employee, team } from "@/db/schema";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
+import { isFormerEmployee } from "@/lib/employee-lifecycle/current-roster";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
 import { requirePersonnelFileAdministrator } from "@/lib/personnel-file/administrator";
@@ -66,7 +67,8 @@ export async function getPersonnelFileOfficerAdminData(): Promise<
 				.select({
 					id: employee.id,
 					employeeNumber: employee.employeeNumber,
-					isActive: employee.isActive,
+					// Current roster (#1438): a due departure counts the same as a deactivation.
+					isFormer: isFormerEmployee(employee),
 					name: user.name,
 					email: user.email,
 				})
@@ -89,8 +91,8 @@ export async function getPersonnelFileOfficerAdminData(): Promise<
 		return {
 			success: true,
 			data: {
-				employees: people.filter((row) => row.isActive).map(toOption),
-				departedEmployees: people.filter((row) => !row.isActive).map(toOption),
+				employees: people.filter((row) => !row.isFormer).map(toOption),
+				departedEmployees: people.filter((row) => row.isFormer).map(toOption),
 				teams,
 				grants,
 			},
