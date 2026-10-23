@@ -34,7 +34,9 @@ function transformAccessibleEmployee(emp: AccessibleEmployee): SelectableEmploye
 		pronouns: emp.pronouns,
 		position: emp.position,
 		role: emp.role,
-		isActive: true,
+		// Reports look at the past: former employees stay selectable, labelled (#1438).
+		isActive: !emp.isFormer,
+		isFormer: emp.isFormer === true,
 		teamId: null,
 		user: {
 			id: emp.id,

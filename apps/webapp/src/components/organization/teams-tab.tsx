@@ -36,7 +36,7 @@ import { CreateTeamDialog, type TeamManagerOption } from "./create-team-dialog";
 import { EditTeamDialog } from "./edit-team-dialog";
 import type { MemberWithUserAndEmployee } from "./people-management-types";
 import { TeamCard } from "./team-card";
-import { TeamMembersDialog } from "./team-members-dialog";
+import { isFormerTeamMember, TeamMembersDialog } from "./team-members-dialog";
 
 interface TeamsTabProps {
 	teams: ScopedTeam[];
@@ -314,12 +314,13 @@ export function TeamsTab({
 		),
 	];
 
-	// Get employees for a specific team
-	const getTeamEmployees = (teamId: string) => {
+	// Get employees for a specific team: the current roster unless asked for everyone (#1438)
+	const getTeamEmployees = (teamId: string, options: { includeFormer?: boolean } = {}) => {
 		return members.filter(
 			(m) =>
-				m.employee?.teamId === teamId ||
-				m.teamMemberships?.some((membership) => membership.teamId === teamId),
+				(options.includeFormer || !isFormerTeamMember(m)) &&
+				(m.employee?.teamId === teamId ||
+					m.teamMemberships?.some((membership) => membership.teamId === teamId)),
 		);
 	};
 
@@ -329,7 +330,7 @@ export function TeamsTab({
 			if (
 				!employee ||
 				employee.organizationId !== organizationId ||
-				!employee.isActive ||
+				isFormerTeamMember(member) ||
 				(employee.role !== "manager" && employee.role !== "admin")
 			) {
 				return [];
@@ -517,7 +518,9 @@ export function TeamsTab({
 				deleteDialogOpen={deleteDialogOpen}
 				deletePending={deleteMutation.isPending}
 				selectedTeamMemberCount={
-					selectedTeam ? getTeamEmployees(selectedTeam.id).length : 0
+					selectedTeam
+						? getTeamEmployees(selectedTeam.id, { includeFormer: true }).length
+						: 0
 				}
 				onCreateOpenChange={setCreateDialogOpen}
 				onEditOpenChange={setEditDialogOpen}

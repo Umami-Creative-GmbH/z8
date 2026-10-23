@@ -129,7 +129,8 @@ export function useEmployee(options: UseEmployeeOptions) {
 		staleTime: 60 * 1000, // 1 minute
 	});
 
-	// Query for available managers (admins and managers, excluding current employee)
+	// Query for available managers: admins and managers on the current roster (#1438),
+	// excluding the employee themselves
 	const managersQuery = useQuery({
 		queryKey: ["available-managers", employeeId],
 		queryFn: async () => {
@@ -137,6 +138,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 				roles: ["admin", "manager"],
 				excludeIds: [employeeId],
 				limit: 1000,
+				status: "current",
 			});
 
 			if (!result.success) {

@@ -97,6 +97,32 @@ describe("EmployeeMultiSelect", () => {
 		);
 	});
 
+	it("labels a former employee in the list and in the selection (#1438)", async () => {
+		const user = userEvent.setup();
+		const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+		const former = { ...makeEmployee("employee-f", "Fern Former"), isActive: false, isFormer: true };
+
+		render(
+			<QueryClientProvider client={queryClient}>
+				<EmployeeMultiSelect
+					label="Employees"
+					value={["employee-f"]}
+					onChange={() => {}}
+					employees={[makeEmployee("employee-a", "Ada Lovelace"), former]}
+				/>
+			</QueryClientProvider>,
+		);
+
+		// The chip of the selected former employee carries the label.
+		expect(screen.getByText("Former")).toBeTruthy();
+		await user.click(screen.getByRole("combobox"));
+		const option = screen.getByRole("option", { name: /Fern Former/i });
+		expect(option.textContent).toContain("Former");
+		expect(screen.getByRole("option", { name: /Ada Lovelace/i }).textContent).not.toContain(
+			"Former",
+		);
+	});
+
 	it("keeps the selection panel mounted across open state changes so it can animate", () => {
 		const source = readFileSync(join(__dirname, "employee-select-field.tsx"), "utf8");
 

@@ -11,6 +11,7 @@ import { vacationPolicyWriteFailure } from "@/lib/absences/vacation-policy-assig
 import type { TeamPermissions as ScopedPermissions } from "@/lib/authorization";
 import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import { CACHE_TAGS } from "@/lib/cache/tags";
+import { currentRosterAmong } from "@/lib/employee-lifecycle/current-roster-among";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import {
 	type AnyAppError,
@@ -1045,12 +1046,13 @@ export async function deleteTeam(
 }
 
 /**
- * Get team details with members
+ * Get team details with members. Every member is listed; former employees are
+ * marked so the page hides them until "Show former employees" is on (#1438).
  */
 export async function getTeam(teamId: string): Promise<
 	ServerActionResult<
 		ScopedTeam & {
-			employees?: Array<typeof employee.$inferSelect & { user: unknown }>;
+			employees?: Array<typeof employee.$inferSelect & { user: unknown; isFormer: boolean }>;
 		}
 	>
 > {
@@ -1131,8 +1133,21 @@ export async function getTeam(teamId: string): Promise<
 			);
 		}
 
+		const teamWithEmployees = withMembershipEmployees(targetTeam as TeamWithMemberRelations);
+		const currentMemberIds = yield* dbService.query("getTeam.currentRoster", () =>
+			currentRosterAmong(
+				dbService.db,
+				targetTeam.organizationId,
+				teamWithEmployees.employees.map((member) => member.id),
+			),
+		);
+
 		return {
-			...withMembershipEmployees(targetTeam as TeamWithMemberRelations),
+			...teamWithEmployees,
+			employees: teamWithEmployees.employees.map((member) => ({
+				...member,
+				isFormer: !currentMemberIds.has(member.id),
+			})),
 			canManageMembers: scopedFlags.canManageMembers,
 			canManageSettings: scopedFlags.canManageSettings,
 		};

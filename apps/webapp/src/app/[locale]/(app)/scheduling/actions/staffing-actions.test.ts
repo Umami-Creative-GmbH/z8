@@ -103,7 +103,11 @@ describe("suggestStaffingForShift", () => {
 			data: [{ employeeId: "employee-1" }],
 		});
 
-		expect(mockState.loadSelectableEmployeePage).toHaveBeenCalledWith({ limit: 1000 });
+		// The picker's current roster (#1438).
+		expect(mockState.loadSelectableEmployeePage).toHaveBeenCalledWith({
+			limit: 1000,
+			status: "current",
+		});
 		expect(mockState.loadOrganizationTimezone).toHaveBeenCalledWith({ scoped: true }, "org-1");
 		expect(mockState.suggestForShift).toHaveBeenCalledWith({
 			organizationId: "org-1",

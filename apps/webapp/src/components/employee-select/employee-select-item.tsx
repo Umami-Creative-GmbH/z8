@@ -2,13 +2,21 @@
 
 import { IconCheck } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { FormerEmployeeBadge } from "@/components/former-employees/former-employee-ui";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { UserAvatar } from "@/components/user-avatar";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { normalizePronouns } from "@/lib/employee-identity";
 import { cn } from "@/lib/utils";
-import type { EmployeeSelectItemProps } from "./types";
+import type { EmployeeSelectItemProps, SelectableEmployee } from "./types";
+
+/** A former employee (#1438): deactivated, or past a due departure as the server marks it. */
+export function isFormerSelectableEmployee(
+	employee: Pick<SelectableEmployee, "isActive" | "isFormer">,
+) {
+	return employee.isFormer === true || !employee.isActive;
+}
 
 const roleColors = {
 	admin: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
@@ -35,7 +43,7 @@ export function EmployeeSelectItem({
 	const name = buildAuthUserDisplayName(employee.user);
 	const pronouns = normalizePronouns(employee.pronouns);
 	const displayName = pronouns ? `${name} (${pronouns})` : name;
-	const isInactive = !employee.isActive;
+	const isFormer = isFormerSelectableEmployee(employee);
 
 	return (
 		<div
@@ -56,7 +64,7 @@ export function EmployeeSelectItem({
 				"hover:bg-accent focus-visible:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
 				isSelected && "bg-primary/10 text-primary",
 				disabled && "opacity-50 cursor-not-allowed",
-				isInactive && "opacity-60",
+				isFormer && "opacity-60",
 			)}
 		>
 			{/* Selection indicator */}
@@ -86,11 +94,7 @@ export function EmployeeSelectItem({
 			<div className="flex-1 min-w-0">
 				<div className="flex items-center gap-2">
 					<span className="font-medium truncate">{displayName}</span>
-					{isInactive && (
-						<Badge variant="secondary" className="text-xs shrink-0">
-							{t("employeeSelect.inactive", "Inactive")}
-						</Badge>
-					)}
+					{isFormer && <FormerEmployeeBadge />}
 				</div>
 				<div className="flex items-center gap-2 text-sm text-muted-foreground">
 					<span className="truncate">{employee.user.email}</span>

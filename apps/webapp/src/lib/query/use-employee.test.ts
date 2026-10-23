@@ -2,7 +2,7 @@
 
 import { readFileSync } from "node:fs";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, renderHook } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { createElement, type ReactNode } from "react";
 import { beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
 import { queryKeys } from "./keys";
@@ -271,5 +271,26 @@ describe("useEmployee contracts", () => {
 		expect(invalidateQueriesSpy).not.toHaveBeenCalledWith({
 			queryKey: queryKeys.employees.detail(employeeId),
 		});
+	});
+
+	it("offers only managers and admins on the current roster as managers (#1438)", async () => {
+		getEmployeeMock.mockResolvedValue({
+			success: true,
+			data: { id: employeeId, kind: "employee", organizationId: "org-1" },
+		});
+		const queryClient = createTestQueryClient();
+		renderHook(() => useEmployeeHook({ employeeId, accessTier: "orgAdmin" }), {
+			wrapper: createWrapper(queryClient),
+		});
+
+		await waitFor(() =>
+			expect(listEmployeesForSelectMock).toHaveBeenCalledWith(
+				expect.objectContaining({
+					roles: ["admin", "manager"],
+					excludeIds: [employeeId],
+					status: "current",
+				}),
+			),
+		);
 	});
 });

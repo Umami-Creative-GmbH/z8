@@ -50,6 +50,7 @@ export function EmployeeSelectField(props: EmployeeSelectFieldProps) {
 	const {
 		excludeIds,
 		filters,
+		includeFormerEmployees,
 		showFilters = true,
 		label,
 		placeholder,
@@ -198,6 +199,7 @@ export function EmployeeSelectField(props: EmployeeSelectFieldProps) {
 				onConfirm={handleConfirm}
 				excludeIds={excludeIds}
 				filters={filters}
+				includeFormerEmployees={includeFormerEmployees}
 				showFilters={showFilters}
 				maxSelections={maxSelections}
 				employees={preFilteredEmployees}
@@ -214,6 +216,8 @@ export interface EmployeeSingleSelectProps {
 	onChange: (value: string | null) => void;
 	excludeIds?: string[];
 	filters?: EmployeeSelectFieldProps["filters"];
+	/** Also offer former employees, labelled (#1438): for views of the past only. */
+	includeFormerEmployees?: boolean;
 	showFilters?: boolean;
 	label?: string;
 	placeholder?: string;
@@ -236,6 +240,8 @@ export interface EmployeeMultiSelectProps {
 	onChange: (value: string[]) => void;
 	excludeIds?: string[];
 	filters?: EmployeeSelectFieldProps["filters"];
+	/** Also offer former employees, labelled (#1438): for views of the past only. */
+	includeFormerEmployees?: boolean;
 	showFilters?: boolean;
 	label?: string;
 	placeholder?: string;

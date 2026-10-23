@@ -32,7 +32,11 @@ export async function suggestStaffingForShift(
 			message: "Only managers and admins can see staffing suggestions",
 			queryName: "getCurrentEmployeeForStaffingSuggestions",
 		});
-		const picker = yield* loadSelectableEmployeePage({ limit: SHIFT_ASSIGNEE_PICKER_LIMIT });
+		// The same current roster the picker offers (#1438).
+		const picker = yield* loadSelectableEmployeePage({
+			limit: SHIFT_ASSIGNEE_PICKER_LIMIT,
+			status: "current",
+		});
 		const timezone = yield* dbService.query("staffing.loadOrganizationTimezone", () =>
 			loadOrganizationTimezone(dbService.db, currentEmployee.organizationId),
 		);
