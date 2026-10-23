@@ -11,7 +11,6 @@ import {
 	approvalRequest,
 	approvalWorkflow,
 	employee,
-	employeeManagers,
 	timeRecord,
 } from "@/db/schema";
 import { notifyAbsenceDeputies } from "@/lib/absences/deputy-notifier";
@@ -39,6 +38,7 @@ import {
 	dateFromInstant,
 	systemClock
 } from "@/lib/datetime/temporal-core";
+import { currentRosterManagerRecipients } from "@/lib/notifications/manager-notice-recipients";
 import { onApprovedAbsenceCancelledByEmployee } from "@/lib/notifications/triggers";
 import { deleteSickNotesOfCancelledAbsence } from "@/lib/personnel-file/sick-note-store";
 import { deletePersonnelDocumentObject } from "@/lib/personnel-file/storage";
@@ -66,10 +66,6 @@ type AbsenceForCancellation = typeof absenceEntry.$inferSelect & {
 	} | null;
 };
 
-type ManagerLinkForNotification = {
-	manager?: { userId?: string | null; organizationId?: string | null } | null;
-};
-
 class AbsenceCancellationError extends Error {
 	constructor(readonly publicMessage: string) {
 		super(publicMessage);
@@ -95,28 +91,25 @@ async function notifyManagersOfApprovedSelfCancellation(
 	organizationId: string,
 ): Promise<void> {
 	try {
-		const managerLinks = await db.query.employeeManagers.findMany({
-			where: eq(employeeManagers.employeeId, absence.employeeId),
-			with: { manager: true },
+		// Informational: the absence is already cancelled and nothing waits on the
+		// managers, so with no current manager left it is dropped (#1438).
+		const recipients = await currentRosterManagerRecipients(db, {
+			organizationId,
+			employeeIds: [absence.employeeId],
+			notice: "informational",
 		});
 		await Promise.allSettled(
-			(managerLinks as ManagerLinkForNotification[]).flatMap((link) => {
-				const managerUserId = link.manager?.userId;
-				if (!managerUserId || link.manager?.organizationId !== organizationId) {
-					return [];
-				}
-				return [
-					onApprovedAbsenceCancelledByEmployee({
-						absenceId: absence.id,
-						managerUserId,
-						employeeName: absence.employee?.user?.name ?? "An employee",
-						organizationId,
-						categoryName: absence.category?.name ?? "absence",
-						startDate: absence.startDate,
-						endDate: absence.endDate,
-					}),
-				];
-			}),
+			recipients.userIds.map((managerUserId) =>
+				onApprovedAbsenceCancelledByEmployee({
+					absenceId: absence.id,
+					managerUserId,
+					employeeName: absence.employee?.user?.name ?? "An employee",
+					organizationId,
+					categoryName: absence.category?.name ?? "absence",
+					startDate: absence.startDate,
+					endDate: absence.endDate,
+				}),
+			),
 		);
 	} catch {
 		// Cancellation remains successful if post-commit notification delivery fails.

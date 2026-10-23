@@ -277,29 +277,56 @@ describe("driving details missing on PostgreSQL", () => {
 		expect(outside.rows).toHaveLength(2);
 	});
 
-	it("counts the flagged work of active employees in SQL, matching the list (/today)", async () => {
+	/** A departure of the employee whose cutoff has passed, so they are a former employee. */
+	async function dueDeparture(org: Org, person: SeededEmployee) {
+		await fixture.pool.query(
+			`insert into employee_departure
+			 (organization_id, employee_id, employment_period_id, mode, last_working_day, timezone,
+			  cutoff_at, created_by, request_id, request_fingerprint, revision, status)
+			 values ($1, $2, $3, 'scheduled', '2026-09-14', 'UTC', '2026-09-15T00:00:00Z', $4,
+			         gen_random_uuid(), 'test', 1, 'pending')`,
+			[org.organizationId, person.employeeId, person.employmentPeriodId, org.creatorUserId],
+		);
+	}
+
+	it("counts only the current roster's flagged work (/today) and lists former employees' work marked (#1438)", async () => {
 		const org = await organization();
 		const active = await fixture.seedEmployee({ organizationId: org.organizationId });
 		const inactive = await fixture.seedEmployee({ organizationId: org.organizationId });
+		const departed = await fixture.seedEmployee({ organizationId: org.organizationId });
 		await switchOn(org);
 		await assign(org, { type: "organization" }, "expected");
 		await work(org, active, "2026-09-07T06:00:00Z", "2026-09-07T14:00:00Z");
 		await work(org, active, "2026-09-08T06:00:00Z", "2026-09-08T14:00:00Z");
-		await work(org, inactive, "2026-09-07T06:00:00Z", "2026-09-07T14:00:00Z");
+		const inactiveWork = await work(org, inactive, "2026-09-07T06:00:00Z", "2026-09-07T14:00:00Z");
+		const departedWork = await work(org, departed, "2026-09-09T06:00:00Z", "2026-09-09T14:00:00Z");
 		await fixture.pool.query("update employee set is_active = false where id = $1", [
 			inactive.employeeId,
 		]);
-		const employeeIds = [active.employeeId, inactive.employeeId];
+		await dueDeparture(org, departed);
+		const employeeIds = [active.employeeId, inactive.employeeId, departed.employeeId];
 
 		await expect(
 			countDrivingDetailsMissing(fixture.db, { organizationId: org.organizationId, employeeIds }),
 		).resolves.toBe(2);
-		const listed = await loadTeamDrivingDetails(fixture.db, {
-			organizationId: org.organizationId,
-			scope: { kind: "all" },
-			filters: { teamId: null, employeeId: null },
-		});
-		expect(listed.rows).toHaveLength(2);
+		const load = (employeeId: string | null = null) =>
+			loadTeamDrivingDetails(fixture.db, {
+				organizationId: org.organizationId,
+				scope: { kind: "all" },
+				filters: { teamId: null, employeeId },
+			});
+		const listed = await load();
+		const ours = listed.rows.filter((row) => employeeIds.includes(row.employeeId));
+		expect(ours).toHaveLength(4);
+		expect(ours.filter((row) => row.former).map((row) => row.workPeriodId).toSorted()).toEqual(
+			[inactiveWork, departedWork].toSorted(),
+		);
+		// The employee filter offers only who drives now.
+		const offered = listed.employees.map((person) => person.id);
+		expect(offered).toContain(active.employeeId);
+		expect(offered).not.toContain(inactive.employeeId);
+		expect(offered).not.toContain(departed.employeeId);
+		expect((await load(departed.employeeId)).filters.employeeId).toBeNull();
 		await expect(
 			countDrivingDetailsMissing(fixture.db, {
 				organizationId: org.organizationId,

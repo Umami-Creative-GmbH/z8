@@ -39,7 +39,7 @@ const mockState = vi.hoisted(() => ({
 	addCalendarSyncJob: vi.fn(),
 	captureLegacyState: vi.fn(),
 	createRuntime: vi.fn(),
-	findManagerLinks: vi.fn(),
+	managerRecipients: vi.fn(),
 	getCurrentEmployee: vi.fn(),
 	isBillingMutationAllowed: vi.fn(),
 	nowInstant: vi.fn(),
@@ -74,12 +74,10 @@ vi.mock("@/lib/personnel-file/storage", () => ({
 	deletePersonnelDocumentObject: vi.fn(),
 }));
 
-vi.mock("@/db", () => ({
-	db: {
-		query: {
-			employeeManagers: { findMany: mockState.findManagerLinks },
-		},
-	},
+vi.mock("@/db", () => ({ db: {} }));
+
+vi.mock("@/lib/notifications/manager-notice-recipients", () => ({
+	currentRosterManagerRecipients: mockState.managerRecipients,
 }));
 
 vi.mock("@/lib/queue", () => ({
@@ -624,7 +622,7 @@ describe("absence cancellation", () => {
 		});
 		mockState.requireBillingForMutation.mockResolvedValue({ canAccess: true });
 		mockState.isBillingMutationAllowed.mockReturnValue(true);
-		mockState.findManagerLinks.mockResolvedValue([]);
+		mockState.managerRecipients.mockResolvedValue({ userIds: [], reason: "none" });
 		mockState.notifyManager.mockResolvedValue(undefined);
 		mockState.addCalendarSyncJob.mockResolvedValue(undefined);
 		mockState.deleteSickNotes.mockResolvedValue([]);
@@ -1450,9 +1448,10 @@ describe("absence cancellation", () => {
 
 	it("does not notify managers for pending cancellation", async () => {
 		harness();
-		mockState.findManagerLinks.mockResolvedValue([
-			{ manager: { userId: "manager-user", organizationId } },
-		]);
+		mockState.managerRecipients.mockResolvedValue({
+			userIds: ["manager-user"],
+			reason: "managers",
+		});
 
 		expect(
 			await mutations.cancelAbsenceRequestForEmployee(absenceId, {

@@ -5,11 +5,10 @@
  * Reuses the shared buildDigestDataForManager from the Teams implementation.
  */
 
-import { and, eq } from "drizzle-orm";
 import { Temporal } from "temporal-polyfill";
 import { db } from "@/db";
-import { employee, employeeManagers } from "@/db/schema";
 import { env } from "@/env";
+import { currentRosterDigestManager } from "@/lib/bot-platform/current-roster-team";
 import { getBotTranslate } from "@/lib/bot-platform/i18n";
 import type { DailyDigestData } from "@/lib/bot-platform/types";
 import { createLogger } from "@/lib/logger";
@@ -83,13 +82,15 @@ export async function runTelegramDailyDigestJob(): Promise<TelegramDailyDigestRe
 	}
 }
 
+type TelegramDigestBot = {
+	organizationId: string;
+	botToken: string;
+	digestTime: string;
+	digestTimezone: string;
+};
+
 export async function processTelegramBotDigest(
-	bot: {
-		organizationId: string;
-		botToken: string;
-		digestTime: string;
-		digestTimezone: string;
-	},
+	bot: TelegramDigestBot,
 	now: Date = new Date(),
 ): Promise<number> {
 	const occurrence = evaluateDigestOccurrence({
@@ -111,22 +112,13 @@ export async function processTelegramBotDigest(
 	const results = await Promise.allSettled(
 		conversations.map(async (conv) => {
 			try {
-				// Get employee record
-				const emp = await db.query.employee.findFirst({
-					where: and(
-						eq(employee.userId, conv.userId),
-						eq(employee.organizationId, bot.organizationId),
-					),
+				// A current manager of at least one current report (#1438).
+				const emp = await currentRosterDigestManager(db, {
+					organizationId: bot.organizationId,
+					userId: conv.userId,
 				});
 
 				if (!emp) return false;
-
-				// Check if manager
-				const manages = await db.query.employeeManagers.findFirst({
-					where: eq(employeeManagers.managerId, emp.id),
-				});
-
-				if (!manages) return false;
 
 				// Skip managers who are not scheduled to work or are absent.
 				if (await shouldSkipDigestForManager(emp.id, bot.organizationId, bot.digestTimezone)) {

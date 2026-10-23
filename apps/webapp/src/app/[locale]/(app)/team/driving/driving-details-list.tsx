@@ -183,7 +183,12 @@ export function DrivingDetailsList({
 									<TableRow key={row.workPeriodId}>
 										<TableCell className="font-medium">
 											<div className="flex flex-col">
-												<span>{row.name}</span>
+												<span className="flex flex-wrap items-center gap-2">
+													{row.name}
+													{row.former ? (
+														<Badge variant="secondary">{t("team.driving.former", "Former")}</Badge>
+													) : null}
+												</span>
 												{row.teamName ? (
 													<span className="text-xs text-muted-foreground">{row.teamName}</span>
 												) : null}

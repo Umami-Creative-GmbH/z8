@@ -23,6 +23,7 @@ import {
 } from "@/db/schema";
 import { dateFromInstant, type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 import { workDayOf } from "@/lib/datetime/temporal-format";
+import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
 import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
 import {
 	type DrivingDetailsConfiguration,
@@ -109,11 +110,13 @@ export async function loadDrivingDetailsConfiguration(
 }
 
 /**
- * The employees whose flagged work the manager surfaces show and count (#1127): `/team/driving`
- * lists and `/today` counts only active employees, by this one predicate.
+ * The employees whose flagged work the manager's `/today` item counts (#1127): the
+ * organization's current roster (#1438), so a former employee no longer adds to the team's
+ * to-dos. `/team/driving` lists former employees' flagged work too, marked as former: it is
+ * what was driven, and still needs completing for the mileage records.
  */
-export function drivingDetailsListedEmployeeCondition(): SQL {
-	return eq(employee.isActive, true);
+export function drivingDetailsListedEmployeeCondition(organizationId: string): SQL {
+	return onCurrentRoster(organizationId);
 }
 
 /**
@@ -125,7 +128,7 @@ export async function loadDrivingDetailsExpectations(
 	input: {
 		organizationId: string;
 		employeeIds: readonly string[] | null;
-		/** Only active employees (`drivingDetailsListedEmployeeCondition`). */
+		/** Only the current roster (`drivingDetailsListedEmployeeCondition`). */
 		activeEmployeesOnly?: boolean;
 	},
 ): Promise<Map<string, Instant>> {
@@ -140,7 +143,9 @@ export async function loadDrivingDetailsExpectations(
 			and(
 				eq(employee.organizationId, input.organizationId),
 				input.employeeIds ? inArray(employee.id, [...input.employeeIds]) : undefined,
-				input.activeEmployeesOnly ? drivingDetailsListedEmployeeCondition() : undefined,
+				input.activeEmployeesOnly
+					? drivingDetailsListedEmployeeCondition(input.organizationId)
+					: undefined,
 			),
 		);
 	const expectations = new Map<string, Instant>();
@@ -203,8 +208,9 @@ async function drivingDetailsMissingCondition(
 }
 
 /**
- * How many work periods of the active employees in scope show "driving details missing", counted
- * in SQL (the manager's `/today` item). It counts what `/team/driving` lists.
+ * How many work periods of the current roster in scope show "driving details missing", counted
+ * in SQL (the manager's `/today` item). It counts what `/team/driving` lists for current
+ * employees; former employees' rows there are not counted.
  */
 export async function countDrivingDetailsMissing(
 	database: Database,

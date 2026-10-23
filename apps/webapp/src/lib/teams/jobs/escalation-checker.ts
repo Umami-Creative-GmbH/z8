@@ -9,6 +9,7 @@ import { and, eq, isNull, lt } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { approvalRequest, employee, employeeManagers, teamsEscalation } from "@/db/schema";
+import { currentRosterEmployees } from "@/lib/bot-platform/current-roster-team";
 import { createLogger } from "@/lib/logger";
 import { getLegacyEscalationSuppression, type LegacyEscalationSuppression } from "@/lib/approvals/escalation/legacy-execution";
 import { sendApprovalCardToManager } from "../approval-handler";
@@ -174,18 +175,22 @@ async function escalateApproval(
 	organizationId: string,
 	timeoutHours: number,
 ): Promise<EscalationResult> {
-	// Find all managers for the requesting employee who are in this org
+	// Find all managers for the requesting employee
 	const managers = await db.query.employeeManagers.findMany({
 		where: eq(employeeManagers.employeeId, requestedById),
-		with: {
-			manager: {
-				columns: { id: true, organizationId: true },
-			},
-		},
+		columns: { managerId: true, isPrimary: true },
 	});
 
-	// Filter to managers in this organization
-	const orgManagers = managers.filter((m) => m.manager.organizationId === organizationId);
+	// Only managers on this organization's current roster may receive it (#1438).
+	const currentManagerIds = new Set(
+		(
+			await currentRosterEmployees(db, {
+				organizationId,
+				employeeIds: managers.map((m) => m.managerId),
+			})
+		).map((manager) => manager.id),
+	);
+	const orgManagers = managers.filter((m) => currentManagerIds.has(m.managerId));
 
 	// Find a backup (non-primary manager who isn't the current approver)
 	const backupManager = orgManagers.find((m) => m.managerId !== currentApproverId && !m.isPrimary);
@@ -206,7 +211,7 @@ async function escalateApproval(
 
 	// Get escalation target's name for logging
 	const escalateToEmployee = await db.query.employee.findFirst({
-		where: eq(employee.id, escalateTo),
+		where: and(eq(employee.id, escalateTo), eq(employee.organizationId, organizationId)),
 		with: {
 			user: { columns: { name: true } },
 		},

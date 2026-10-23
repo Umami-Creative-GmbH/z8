@@ -1,5 +1,5 @@
 import "server-only";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import type { db as appDb } from "@/db";
 import { member } from "@/db/auth-schema";
@@ -8,7 +8,10 @@ import { customRole, customRolePermission, employeeCustomRole } from "@/db/schem
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import { defineAbilityFor } from "@/lib/authorization/ability";
 import { loadOrganizationPrincipalContext } from "@/lib/authorization/principal-loader";
+import { memberIsAccessibleOwnerOrAdmin } from "@/lib/employee-lifecycle/authority-sql";
+import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
 import { createLogger } from "@/lib/logger";
+import { currentRosterManagerRecipients } from "@/lib/notifications/manager-notice-recipients";
 import { insertInAppNotification } from "@/lib/notifications/notification-service";
 import type { CreateNotificationParams } from "@/lib/notifications/types";
 import { canCloseMonths } from "./permissions";
@@ -34,11 +37,16 @@ export async function listMonthCloseRecipients(
 	database: Reader,
 	organizationId: string,
 ): Promise<string[]> {
+	// Only current people (#1438): an owner or admin whose employee profile is
+	// former, and a former employee holding a grant, are not asked any more.
+	const m = alias(member, "m");
 	const [members, grants] = await Promise.all([
 		database
-			.select({ userId: member.userId, role: member.role })
-			.from(member)
-			.where(and(eq(member.organizationId, organizationId), eq(member.status, "approved"))),
+			.select({ userId: m.userId, role: m.role })
+			.from(m)
+			.where(
+				and(eq(m.organizationId, organizationId), memberIsAccessibleOwnerOrAdmin(sql`now()`)),
+			),
 		database
 			.select({ userId: employee.userId })
 			.from(employeeCustomRole)
@@ -47,7 +55,7 @@ export async function listMonthCloseRecipients(
 			.innerJoin(customRolePermission, eq(customRolePermission.customRoleId, customRole.id))
 			.where(
 				and(
-					eq(employee.organizationId, organizationId),
+					onCurrentRoster(organizationId),
 					eq(customRole.organizationId, organizationId),
 					eq(customRole.isActive, true),
 					eq(customRolePermission.action, "close"),
@@ -76,27 +84,23 @@ export async function listMonthCloseRecipients(
 	return [...candidates].filter((_, index) => allowed[index]).toSorted();
 }
 
-/** The users managing any of the employees, sorted. */
+type ManagedEmployees = { organizationId: string; employeeIds: readonly string[] };
+
+/**
+ * The users currently managing any of the employees, sorted: former managers
+ * are skipped (#1438). The reopening notice is informational, so with no
+ * current manager left nobody receives it.
+ */
 export async function listManagerUserIds(
 	database: Reader,
-	input: { organizationId: string; employeeIds: readonly string[] },
+	input: ManagedEmployees,
 ): Promise<string[]> {
-	if (input.employeeIds.length === 0) return [];
-	const managed = alias(employee, "managed");
-	const manager = alias(employee, "manager");
-	const rows = await database
-		.select({ userId: manager.userId })
-		.from(employeeManagers)
-		.innerJoin(managed, eq(managed.id, employeeManagers.employeeId))
-		.innerJoin(manager, eq(manager.id, employeeManagers.managerId))
-		.where(
-			and(
-				inArray(employeeManagers.employeeId, [...input.employeeIds]),
-				eq(managed.organizationId, input.organizationId),
-				eq(manager.organizationId, input.organizationId),
-			),
-		);
-	return [...new Set(rows.flatMap((row) => (row.userId ? [row.userId] : [])))].toSorted();
+	const recipients = await currentRosterManagerRecipients(database, {
+		organizationId: input.organizationId,
+		employeeIds: input.employeeIds,
+		notice: "informational",
+	});
+	return recipients.userIds;
 }
 
 const closedCopy = {
