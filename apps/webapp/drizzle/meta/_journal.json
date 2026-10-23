@@ -1982,6 +1982,13 @@
       "when": 1809100800000,
       "tag": "0282_drop_driving_licence_enrollments",
       "breakpoints": true
+    },
+    {
+      "idx": 283,
+      "version": "7",
+      "when": 1809187200000,
+      "tag": "0283_employee_deactivated_at",
+      "breakpoints": true
     }
   ]
 }

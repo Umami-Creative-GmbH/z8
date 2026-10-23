@@ -131,16 +131,34 @@ describe("billable seat count", () => {
 		return { organizationId, active, legacyInactive };
 	}
 
-	it("keeps the member policy before release but never bills an offboarded employee", async () => {
+	it("never bills a former employee before release; a member without a profile still counts", async () => {
 		const { organizationId } = await scenario();
 
-		// owner, admin, active, legacy-inactive, scheduled-later, due-blocked, rehired, member-only
+		// owner, admin, active, scheduled-later, due-blocked, rehired, member-only (#1439:
+		// the deactivated employee no longer counts while the gate is closed)
 		expect(
 			await countBillableSeats(fixture.db, organizationId, {
 				requireActiveEmployee: false,
 				now: NOW,
 			}),
-		).toBe(8);
+		).toBe(7);
+	});
+
+	it("stops billing at deactivation and bills again after reactivation, gate closed (#1439)", async () => {
+		const { organizationId, active } = await scenario();
+		const count = () =>
+			countBillableSeats(fixture.db, organizationId, { requireActiveEmployee: false, now: NOW });
+
+		const before = await count();
+		await fixture.pool.query(`update employee set is_active = false where id = $1`, [
+			active.employeeId,
+		]);
+		expect(await count()).toBe(before - 1);
+
+		await fixture.pool.query(`update employee set is_active = true where id = $1`, [
+			active.employeeId,
+		]);
+		expect(await count()).toBe(before);
 	});
 
 	it("requires an effectively active employee once released", async () => {
