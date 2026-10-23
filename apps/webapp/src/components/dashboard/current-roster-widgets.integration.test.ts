@@ -187,14 +187,24 @@ describe("dashboard widgets count only the current roster (#1438)", () => {
 		expect([...new Set(absences.map((absence) => absence.employeeId))]).toEqual([current]);
 	});
 
-	it("shows only current employees on the team calendar", async () => {
-		const data = (await unwrap(getTeamCalendarData(today.month, today.year))) as {
-			absenceDays: Array<{ employees: Array<{ id: string }> }>;
+	it("keeps former employees on past calendar days and drops their later absences", async () => {
+		type CalendarData = { absenceDays: Array<{ date: string; employees: Array<{ id: string }> }> };
+		const onDate = async (date: string) => {
+			const plain = Temporal.PlainDate.from(date);
+			const data = (await unwrap(getTeamCalendarData(plain.month, plain.year))) as CalendarData;
+			return new Set(
+				data.absenceDays
+					.filter((entry) => entry.date === date)
+					.flatMap((entry) => entry.employees.map((e) => e.id)),
+			);
 		};
-		const shown = new Set(data.absenceDays.flatMap((entry) => entry.employees.map((e) => e.id)));
 
-		expect(data.absenceDays.length).toBeGreaterThan(0);
-		expect([...shown]).toEqual([current]);
+		// Started yesterday: a view of the past keeps everyone who was here.
+		expect(await onDate(day(-1))).toEqual(
+			new Set([current, deactivated.employeeId, departed.employeeId]),
+		);
+		// Starts after today: only the current roster.
+		expect(await onDate(day(5))).toEqual(new Set([current]));
 	});
 
 	it("counts and averages the current roster only", async () => {

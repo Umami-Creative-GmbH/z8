@@ -32,7 +32,9 @@ import {
 } from "@/db/schema";
 import type { VacationBalanceConfiguration } from "@/lib/absences/types";
 import { getEnhancedVacationBalanceResult } from "@/lib/absences/vacation.service";
+import { todayCalendarDateKey } from "@/lib/calendar/date-keys";
 import { shouldExcludeFromCalculations } from "@/lib/calendar/holiday-service";
+import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
 import { currentTimestamp, dateFromDB } from "@/lib/datetime/drizzle-adapter";
 import { calendarYearAt, instantFromDate } from "@/lib/datetime/temporal-core";
 import { NotFoundError } from "@/lib/effect/errors";
@@ -345,12 +347,33 @@ export async function getTeamCalendarData(
 		const monthStartStr = monthDT.startOf("month").toFormat("yyyy-MM-dd");
 		const monthEndStr = monthDT.endOf("month").toFormat("yyyy-MM-dd");
 
-		// The team calendar shows the current roster (#1438).
-		const orgEmployeeIds = yield* dbService.query(
-			"dashboard.teamCalendar.currentRoster",
+		// A past calendar is a view of the past (#1438): a former employee's
+		// absences stay up to today, in the organization's timezone, as in the team
+		// calendar feed; later ones are left out with them.
+		const [currentIds, orgEmployeeIds, organizationRow] = yield* dbService.query(
+			"dashboard.teamCalendar.employees",
 			() =>
-				currentRosterEmployeeIds(dbService.db, currentEmployee.organizationId),
+				Promise.all([
+					currentRosterEmployeeIds(dbService.db, currentEmployee.organizationId),
+					dbService.db
+						.select({ id: employee.id })
+						.from(employee)
+						.where(eq(employee.organizationId, currentEmployee.organizationId))
+						.then((rows) => rows.map((row) => row.id)),
+					dbService.db.query.organization.findFirst({
+						where: eq(organization.id, currentEmployee.organizationId),
+						columns: { timezone: true },
+					}),
+				]),
 		);
+		const today = todayCalendarDateKey(organizationRow?.timezone || "UTC");
+		const currentOrStartedByToday =
+			currentIds.length > 0
+				? or(
+						inArray(absenceEntry.employeeId, currentIds),
+						lte(absenceEntry.startDate, today),
+					)
+				: lte(absenceEntry.startDate, today);
 
 		// Get all absences for this month
 		const absences = yield* dbService.query("getMonthAbsences", async () => {
@@ -358,6 +381,7 @@ export async function getTeamCalendarData(
 			return await dbService.db.query.absenceEntry.findMany({
 				where: and(
 					inArray(absenceEntry.employeeId, orgEmployeeIds),
+					currentOrStartedByToday,
 					eq(absenceEntry.status, "approved"),
 					or(
 						and(
@@ -550,8 +574,7 @@ export async function getQuickStats(): Promise<ServerActionResult<QuickStats>> {
 				return await dbService.db.query.employee.findFirst({
 					where: and(
 						eq(employee.userId, session.user.id),
-						eq(employee.organizationId, organizationId),
-						eq(employee.isActive, true),
+						onCurrentRoster(organizationId),
 					),
 					with: {
 						workPolicyAssignments: {
@@ -796,8 +819,7 @@ export async function getUpcomingBirthdays(
 			async () => {
 				return await dbService.db.query.employee.findMany({
 					where: and(
-						eq(employee.organizationId, currentEmployee.organizationId),
-						eq(employee.isActive, true),
+						onCurrentRoster(currentEmployee.organizationId),
 						sql`${employee.birthday} IS NOT NULL`,
 					),
 					with: {
@@ -1415,8 +1437,7 @@ export async function getHydrationWidgetData(options?: {
 				const currentEmployee = await dbService.db.query.employee.findFirst({
 					where: and(
 						eq(employee.userId, session.user.id),
-						eq(employee.organizationId, activeOrganizationId),
-						eq(employee.isActive, true),
+						onCurrentRoster(activeOrganizationId),
 					),
 					columns: {
 						id: true,
@@ -1478,8 +1499,7 @@ export async function getHydrationWidgetData(options?: {
 						)
 						.where(
 							and(
-								eq(employee.organizationId, activeOrganizationId),
-								eq(employee.isActive, true),
+								onCurrentRoster(activeOrganizationId),
 								or(
 									inArray(employee.teamId, sortedTeamIds),
 									isNotNull(teamMembership.id),
@@ -1516,8 +1536,7 @@ export async function getHydrationWidgetData(options?: {
 				const currentEmployee = await dbService.db.query.employee.findFirst({
 					where: and(
 						eq(employee.userId, session.user.id),
-						eq(employee.organizationId, activeOrganizationId),
-						eq(employee.isActive, true),
+						onCurrentRoster(activeOrganizationId),
 					),
 					columns: {
 						id: true,
@@ -1540,8 +1559,7 @@ export async function getHydrationWidgetData(options?: {
 					.leftJoin(hydrationStats, eq(hydrationStats.userId, employee.userId))
 					.where(
 						and(
-							eq(employee.organizationId, activeOrganizationId),
-							eq(employee.isActive, true),
+							onCurrentRoster(activeOrganizationId),
 						),
 					);
 

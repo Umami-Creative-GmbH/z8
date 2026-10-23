@@ -107,6 +107,34 @@ describe("current roster", () => {
 		]);
 	});
 
+	it("judges the same person separately in each organization", async () => {
+		// The deactivated employee's user also works in the other organization.
+		const elsewhere = randomUUID();
+		await fixture.pool.query(
+			`insert into member (id, organization_id, user_id, role, status, created_at)
+			 values (gen_random_uuid(), $1, $2, 'member', 'approved', now())`,
+			[otherOrganizationId, deactivated.userId],
+		);
+		await fixture.pool.query(
+			`insert into employee (id, user_id, organization_id, is_active, updated_at)
+			 values ($1, $2, $3, true, now())`,
+			[elsewhere, deactivated.userId, otherOrganizationId],
+		);
+
+		const rosterOfUser = async (organizationId: string) =>
+			(
+				await fixture.db
+					.select({ id: employee.id })
+					.from(employee)
+					.where(
+						and(eq(employee.userId, deactivated.userId), onCurrentRoster(organizationId, employee, AFTER)),
+					)
+			).map((row) => row.id);
+
+		expect(await rosterOfUser(fixture.organizationId)).toEqual([]);
+		expect(await rosterOfUser(otherOrganizationId)).toEqual([elsewhere]);
+	});
+
 	it("marks former employees for views of the past", async () => {
 		const rows = await fixture.db
 			.select({ id: employee.id, former: isFormerEmployee(employee, AFTER) })

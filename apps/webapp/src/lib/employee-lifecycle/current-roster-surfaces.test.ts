@@ -1,5 +1,5 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import * as ts from "typescript/unstable/ast";
 import { describe, expect, it } from "vitest";
@@ -7,10 +7,16 @@ import { withNativeSource } from "@/lib/typescript/native-source-analysis";
 
 /**
  * Every view that answers "who works here now" filters with the current-roster
- * rule (#1438, Organization ADR 0006). Each surface is listed here by file and
- * function; the guard fails when one of them stops calling the rule or goes
- * back to a hand-written active check on the employee, which misses due
- * departures.
+ * rule (#1438, Organization ADR 0006). The guard has three layers:
+ *
+ * 1. Each roster surface is listed by file and function, and fails when it stops
+ *    applying the rule or goes back to a hand-written active check on the
+ *    employee, which misses due departures.
+ * 2. Every other employee query in a listed module must apply the rule too, be
+ *    listed as a view of the past, or be exempted with a reason. A new
+ *    unfiltered query next to a roster surface fails.
+ * 3. Across the whole app, no file may gain hand-written active checks on the
+ *    employee beyond the recorded baseline, so new code reaches for the rule.
  *
  * Views of the past keep former employees on purpose and are listed apart, so
  * that the choice is visible and the entries can't silently rot.
@@ -20,11 +26,16 @@ const SRC_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 
 /**
  * The calls that apply the rule: the predicate, its marking twin (lists that
- * keep a saved former holder and mark it), or a reader built on them.
+ * keep a saved former holder and mark it), the role-save guards, readers built
+ * on them, and the access rule the roster rule itself builds on.
  */
-const ROSTER_RULE = /\bonCurrentRoster\(|\bisFormerEmployee\(|\bcurrentRoster[A-Z]\w*\(/;
+const ROSTER_RULE =
+	/\b\w*[oO]nCurrentRoster\(|\bisFormerEmployee\(|\bcurrentRoster[A-Z]\w*\(|\bemployeeHasOrganizationAccess\(/;
 /** A hand-written active check on the employee instead of the rule. */
 const RAW_EMPLOYEE_ACTIVE_CHECK = /\bemployee\.isActive\b|"employee"\."is_active"|\bemployee\.is_active\b/;
+/** A query that reads employees or manager links. */
+const EMPLOYEE_QUERY =
+	/\.from\(\s*employee\b|Join\(\s*employee\b|\.query\.employee\.find|\.query\.employeeManagers\.find|\.from\(\s*employeeManagers\b/;
 
 type Surface = { file: string; functions: string[]; note: string };
 
@@ -240,17 +251,79 @@ export const HISTORY_VIEWS: Surface[] = [
 ];
 
 /**
- * The bodies of the named functions in a source file: declarations, methods,
- * and functions or arrows assigned to a variable or an object property. A name
- * declared twice in one file maps to null, so the list must name it uniquely.
+ * Employee queries in listed modules that answer neither "who works here now"
+ * nor a view of the past, so they neither filter nor mark (#1438).
  */
-export function functionBodies(source: string, fileName: string): Map<string, string | null> {
+export const EXEMPT_EMPLOYEE_QUERIES: Surface[] = [
+	{
+		file: "lib/effect/services/manager.service.ts",
+		functions: ["assignManager", "removeManager", "getManagers", "getPrimaryManager", "isManagerOf"],
+		note: "manager link commands and lookups of one employee's own managers; assignManager refuses former employees through findEmployeesNotOnCurrentRoster",
+	},
+	{
+		file: "components/dashboard/actions.ts",
+		functions: ["getManagerTodaySummary", "getManagedEmployees", "getQuickStats", "getVacationBalanceResult"],
+		note: "the viewer's own data; Your team delegates to managedEmployeeRows with the current roster",
+	},
+	{
+		file: "app/[locale]/(app)/team/actions.ts",
+		functions: ["load"],
+		note: "the calendar selector's cached loader, part of a listed view of the past",
+	},
+	{
+		file: "lib/teams/jobs/daily-digest.ts",
+		functions: ["shouldSkipDigestForManager"],
+		note: "the digest manager's own absence and schedule",
+	},
+	{
+		file: "app/[locale]/(app)/absences/mutations.ts",
+		functions: ["cancelAbsenceRequestForEmployee"],
+		note: "cancels one employee's own request",
+	},
+	{
+		file: "lib/time-tracking/closed-months/notifications.ts",
+		functions: ["listManagedEmployeeIds"],
+		note: "a manager's authority over employees, not a roster",
+	},
+	{
+		file: "lib/time-tracking/vehicle-use/driving-details-missing-store.ts",
+		functions: ["loadDrivingDetailsExpectations"],
+		note: "expectations for employees the caller already chose",
+	},
+	{
+		file: "app/[locale]/(app)/settings/employees/selectable-employees.ts",
+		functions: ["loadSelectableEmployeePage"],
+		note: "filters through employeeStatusCondition, current roster by default",
+	},
+	{
+		file: "app/[locale]/(app)/settings/projects/actions.ts",
+		functions: ["getProjectRelationshipEmployee"],
+		note: "looks up the employee a save names; the save refuses former employees",
+	},
+	{
+		file: "app/[locale]/(app)/settings/teams/actions.ts",
+		functions: ["resolveTeamSettingsActor", "writeTeamMemberRemoval", "listTeams"],
+		note: "the acting user, and removals, which stay possible for former employees",
+	},
+	{
+		file: "lib/organization/driving-licence/verifier-actions.ts",
+		functions: ["getDrivingLicenceVerifierResponsibilityAction"],
+		note: "the verifier's own grant and the people it names",
+	},
+	{
+		file: "lib/personnel-file/document-request-store.ts",
+		functions: ["listManagedDocumentRequests"],
+		note: "document requests already made, a view of the past",
+	},
+];
+
+type FunctionBody = { name: string; body: string };
+
+function collectFunctionBodies(source: string, fileName: string): FunctionBody[] {
 	return withNativeSource(source, fileName, ({ sourceFile }) => {
-		const bodies = new Map<string, string | null>();
+		const bodies: FunctionBody[] = [];
 		const record = (name: string, body: ts.Node | undefined) => {
-			if (!body) return;
-			const text = source.slice(body.getStart(sourceFile), body.getEnd());
-			bodies.set(name, bodies.has(name) ? null : text);
+			if (body) bodies.push({ name, body: source.slice(body.getStart(sourceFile), body.getEnd()) });
 		};
 		const functionLike = (node: ts.Node | undefined) =>
 			node && (ts.isArrowFunction(node) || ts.isFunctionExpression(node)) ? node : undefined;
@@ -271,6 +344,53 @@ export function functionBodies(source: string, fileName: string): Map<string, st
 		visit(sourceFile);
 		return bodies;
 	});
+}
+
+/**
+ * The bodies of the named functions in a source file: declarations, methods,
+ * and functions or arrows assigned to a variable or an object property. A name
+ * declared twice in one file maps to null, so the list must name it uniquely.
+ */
+export function functionBodies(source: string, fileName: string): Map<string, string | null> {
+	const bodies = new Map<string, string | null>();
+	for (const { name, body } of collectFunctionBodies(source, fileName)) {
+		bodies.set(name, bodies.has(name) ? null : body);
+	}
+	return bodies;
+}
+
+/** Employee queries in a module that neither apply the rule nor are listed. */
+export function unclassifiedEmployeeQueries(
+	source: string,
+	fileName: string,
+	classified: ReadonlySet<string>,
+): string[] {
+	return collectFunctionBodies(source, fileName)
+		.filter(({ name, body }) => EMPLOYEE_QUERY.test(body) && !classified.has(name))
+		.filter(({ body }) => rosterViolation(body) !== null)
+		.map(({ name }) => name);
+}
+
+/** Hand-written employee active checks per source file, tests excluded. */
+function rawActiveCheckCounts(): Record<string, number> {
+	const counts: Record<string, number> = {};
+	const pattern = new RegExp(RAW_EMPLOYEE_ACTIVE_CHECK, "g");
+	const walk = (dir: string) => {
+		for (const entry of readdirSync(dir)) {
+			const path = join(dir, entry);
+			if (statSync(path).isDirectory()) {
+				if (entry !== "node_modules" && entry !== "__tests__" && entry !== "testing") walk(path);
+				continue;
+			}
+			if (!/\.tsx?$/.test(entry) || /\.(?:test|spec)\.tsx?$/.test(entry) || /\.test\.\w+\.ts$/.test(entry)) {
+				continue;
+			}
+			const found = readFileSync(path, "utf8").match(pattern)?.length ?? 0;
+			if (found > 0) counts[relative(SRC_ROOT, path).split(sep).join("/")] = found;
+		}
+	};
+	walk(SRC_ROOT);
+	return counts;
 }
 
 export function rosterViolation(body: string): string | null {
@@ -345,5 +465,49 @@ describe("current-roster surface guard", () => {
 
 	it.each(entries(HISTORY_VIEWS))("%s %s still exists as a listed view of the past", (file, fn) => {
 		expect(bodyOf(file, fn), `${fn} is missing or declared twice in ${file}`).toBeTruthy();
+	});
+
+	it("flags an unlisted employee query next to a roster surface", () => {
+		const source = `
+			export async function listTeam(organizationId: string) {
+				return db.select().from(employee).where(onCurrentRoster(organizationId));
+			}
+			export async function listEveryone(organizationId: string) {
+				return db.select().from(employee).where(eq(employee.organizationId, organizationId));
+			}
+			export async function workOf(id: string) {
+				return db.select().from(workPeriod).where(eq(workPeriod.employeeId, id));
+			}`;
+		expect(unclassifiedEmployeeQueries(source, "/fixture.ts", new Set(["listTeam"]))).toEqual([
+			"listEveryone",
+		]);
+	});
+
+	it.each([...new Set(ROSTER_SURFACES.map((surface) => surface.file))])(
+		"%s has no unclassified employee query",
+		(file) => {
+			const classified = new Set(
+				[...ROSTER_SURFACES, ...HISTORY_VIEWS, ...EXEMPT_EMPLOYEE_QUERIES]
+					.filter((surface) => surface.file === file)
+					.flatMap((surface) => surface.functions),
+			);
+			expect(
+				unclassifiedEmployeeQueries(readFileSync(join(SRC_ROOT, file), "utf8"), file, classified),
+				"apply the current-roster rule, or list the function as a view of the past or an exemption",
+			).toEqual([]);
+		},
+	);
+
+	it("adds no hand-written employee active checks beyond the baseline", () => {
+		const baseline = JSON.parse(
+			readFileSync(join(SRC_ROOT, "lib/employee-lifecycle/raw-employee-active-checks.json"), "utf8"),
+		) as Record<string, number>;
+		const grown = Object.entries(rawActiveCheckCounts())
+			.filter(([file, count]) => count > (baseline[file] ?? 0))
+			.map(([file, count]) => `${file}: ${count} (baseline ${baseline[file] ?? 0})`);
+		expect(
+			grown,
+			"use onCurrentRoster / isFormerEmployee from current-roster.ts instead of employee.isActive",
+		).toEqual([]);
 	});
 });

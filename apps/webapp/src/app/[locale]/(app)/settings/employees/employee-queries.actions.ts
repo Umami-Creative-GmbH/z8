@@ -116,7 +116,9 @@ function buildInvitationDraftFilters(
 	now: Date,
 	params: Pick<EmployeeFilterParams, "search" | "role" | "roles" | "status" | "teamId">,
 ) {
-	if (params.status === "current" || params.status === "former") {
+	// A pending invitation is someone about to join, never a former employee: drafts
+	// stay listed under Current (the default), Draft and All (#1438).
+	if (params.status === "former") {
 		return null;
 	}
 

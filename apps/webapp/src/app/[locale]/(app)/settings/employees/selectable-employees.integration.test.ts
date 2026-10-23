@@ -251,6 +251,34 @@ describe("employee pickers and directory on PostgreSQL (#1438)", () => {
 			expect([...former.values()]).toEqual([true, true]);
 		});
 
+		it("lists a pending invitation draft under Current and All, never under Former", async () => {
+			actAs(fixture.ownerUserId);
+			const invitationId = `t1438-invitation-${fixture.organizationId}`;
+			const email = `t1438-draft-${fixture.organizationId}@lifecycle.test`;
+			await fixture.pool.query(
+				`insert into invitation (id, organization_id, email, role, status, expires_at, inviter_id)
+				 values ($1, $2, $3, 'member', 'pending', now() + interval '7 days', $4)`,
+				[invitationId, fixture.organizationId, email, fixture.ownerUserId],
+			);
+			await fixture.pool.query(
+				`insert into employee_invitation_draft
+				   (invitation_id, organization_id, normalized_email, first_name, last_name)
+				 values ($1, $2, $3, 'Draft', 'Invitee')`,
+				[invitationId, fixture.organizationId, email],
+			);
+
+			const draftsIn = async (status: "current" | "former" | "draft" | "all") => {
+				const result = await listEmployeesAction({ limit: 100, status });
+				if (!result.success) throw new Error(result.error);
+				return result.data.employees.filter((row) => row.kind === "invitationDraft").length;
+			};
+
+			expect(await draftsIn("current")).toBe(1);
+			expect(await draftsIn("draft")).toBe(1);
+			expect(await draftsIn("all")).toBe(1);
+			expect(await draftsIn("former")).toBe(0);
+		});
+
 		it("keeps the legacy active and inactive values working", async () => {
 			actAs(fixture.ownerUserId);
 

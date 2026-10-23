@@ -11,6 +11,7 @@ import { vacationPolicyWriteFailure } from "@/lib/absences/vacation-policy-assig
 import type { TeamPermissions as ScopedPermissions } from "@/lib/authorization";
 import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import { CACHE_TAGS } from "@/lib/cache/tags";
+import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
 import { currentRosterAmong } from "@/lib/employee-lifecycle/current-roster-among";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import {
@@ -138,8 +139,8 @@ function validatePrimaryManager(
 			return await dbService.db.query.employee.findFirst({
 				where: and(
 					eq(employee.id, primaryManagerId),
-					eq(employee.organizationId, organizationId),
-					eq(employee.isActive, true),
+					// A former employee can't become a team's primary manager (#1438).
+					onCurrentRoster(organizationId),
 				),
 			});
 		});
