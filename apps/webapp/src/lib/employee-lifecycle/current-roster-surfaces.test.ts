@@ -131,6 +131,31 @@ export const ROSTER_SURFACES: Surface[] = [
 		functions: ["drivingDetailsListedEmployeeCondition"],
 		note: "the missing driving details count on Today",
 	},
+	{
+		file: "lib/employee-lifecycle/current-roster-among.ts",
+		functions: ["currentRosterAmong"],
+		note: "which of some employees are current, for marking lists",
+	},
+	{
+		file: "app/[locale]/(app)/settings/employees/selectable-employees.ts",
+		functions: ["employeeStatusCondition"],
+		note: "picker and directory status: current is the picker default",
+	},
+	{
+		file: "app/[locale]/(app)/settings/projects/actions.ts",
+		functions: ["getEmployeesForSelection", "getProjects"],
+		note: "project assignee picker, and assignment lists with former members marked",
+	},
+	{
+		file: "app/[locale]/(app)/settings/teams/actions.ts",
+		functions: ["getTeam"],
+		note: "team member list with former members marked",
+	},
+	{
+		file: "app/[locale]/(app)/settings/teams/team-settings-page-data.ts",
+		functions: ["loadTeamSettingsPageData"],
+		note: "teams page members with former members marked",
+	},
 ];
 
 export const HISTORY_VIEWS: Surface[] = [
@@ -153,6 +178,16 @@ export const HISTORY_VIEWS: Surface[] = [
 		file: "lib/time-tracking/vehicle-use/driving-details-team-store.ts",
 		functions: ["listScopedPeople", "loadTeamDrivingDetails"],
 		note: "work still missing driving details, former drivers marked",
+	},
+	{
+		file: "lib/reports/permissions.ts",
+		functions: ["getAccessibleEmployees"],
+		note: "report employee selector, former employees marked",
+	},
+	{
+		file: "app/[locale]/(app)/settings/employees/employee-queries.actions.ts",
+		functions: ["getEmployeesByIdsAction", "loadEmployeePage"],
+		note: "already-selected employees resolve, and the directory filters by the status asked for",
 	},
 ];
 
