@@ -2,7 +2,11 @@ import { and, asc, count, eq, ilike, inArray, notInArray, or, sql } from "drizzl
 import { Effect } from "effect";
 import { user } from "@/db/auth-schema";
 import { employee, employeeManagers, team } from "@/db/schema";
-import { isFormerEmployee, onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
+import {
+	formerSinceDate,
+	isFormerEmployee,
+	onCurrentRoster,
+} from "@/lib/employee-lifecycle/current-roster";
 import {
 	type EmployeeDirectoryStatus,
 	type EmployeeSelectParams,
@@ -101,7 +105,7 @@ export type SelectableEmployeeRow = {
 	employee: Pick<
 		typeof employee.$inferSelect,
 		"id" | "userId" | "pronouns" | "position" | "role" | "isActive" | "teamId"
-	> & { isFormer: boolean };
+	> & { isFormer: boolean; formerSince: string | null };
 	user: Pick<
 		typeof user.$inferSelect,
 		"id" | "firstName" | "lastName" | "name" | "email" | "image"
@@ -109,7 +113,10 @@ export type SelectableEmployeeRow = {
 	team: Pick<typeof team.$inferSelect, "id" | "name"> | null;
 };
 
-/** The picker row columns, with the former-employee mark for the "Former" label (#1438). */
+/**
+ * The picker row columns, with the former-employee mark and the date they left
+ * for the "Former since …" label (#1438, #1439).
+ */
 export const selectableEmployeeColumns = {
 	employee: {
 		id: employee.id,
@@ -119,6 +126,7 @@ export const selectableEmployeeColumns = {
 		role: employee.role,
 		isActive: employee.isActive,
 		isFormer: isFormerEmployee(),
+		formerSince: formerSinceDate(),
 		teamId: employee.teamId,
 	},
 	user: {
@@ -136,9 +144,12 @@ export const selectableEmployeeColumns = {
 };
 
 export function mapSelectableEmployeeRow(row: SelectableEmployeeRow): SelectableEmployee {
+	const { formerSince, ...employeeColumns } = row.employee;
+	const isFormer = employeeColumns.isFormer === true;
 	return {
-		...row.employee,
-		isFormer: row.employee.isFormer === true,
+		...employeeColumns,
+		isFormer,
+		...(isFormer ? { formerSince: formerSince ?? null } : {}),
 		firstName: row.user.firstName,
 		lastName: row.user.lastName,
 		user: row.user,

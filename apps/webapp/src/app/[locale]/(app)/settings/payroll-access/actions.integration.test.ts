@@ -288,13 +288,22 @@ describe("payroll access grant hygiene on PostgreSQL", () => {
 			teamIds: [],
 			employeeIds: [ids.worker, ids.leaver],
 		});
-		await admin.query("update employee set is_active = false where id = $1", [ids.leaver]);
+		await admin.query("update organization set timezone = 'Pacific/Auckland' where id = $1", [
+			ids.organization,
+		]);
+		// 13:00 UTC on 14 September is already the 15th in Auckland (UTC+12).
+		await admin.query(
+			"update employee set is_active = false, deactivated_at = '2026-09-14T13:00:00Z' where id = $1",
+			[ids.leaver],
+		);
 
 		actAs(ids.ownerUser);
 		const adminData = await getPayrollAccessAdminDataAction();
 		if (!adminData.success) throw new Error(adminData.error);
 		expect(adminData.data.employees.map((employee) => employee.id)).not.toContain(ids.leaver);
 		expect(adminData.data.departedEmployees.map((employee) => employee.id)).toEqual([ids.leaver]);
+		// "Former since" reads the organization-local date they left (#1439).
+		expect(adminData.data.departedEmployees[0]?.formerSince).toBe("2026-09-15");
 		const grant = adminData.data.grants.find((candidate) => candidate.id === grantId);
 		expect(grant?.employeeIds.toSorted()).toEqual([ids.worker, ids.leaver].toSorted());
 

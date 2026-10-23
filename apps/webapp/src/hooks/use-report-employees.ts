@@ -39,6 +39,10 @@ function transformAccessibleEmployee(emp: AccessibleEmployee): SelectableEmploye
 		// roster mark, so a former employee also reads as not active.
 		isActive: !emp.isFormer,
 		isFormer: emp.isFormer === true,
+		// "Former since …" (#1439); null when the date isn't recorded.
+		...(emp.isFormer === true && emp.formerSince !== undefined
+			? { formerSince: emp.formerSince }
+			: {}),
 		teamId: null,
 		user: {
 			id: emp.id,

@@ -21,7 +21,11 @@ import {
 } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { type DatabaseClient, DatabaseService } from "@/lib/effect/services/database.service";
-import { isFormerEmployee, onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
+import {
+	formerSinceDate,
+	isFormerEmployee,
+	onCurrentRoster,
+} from "@/lib/employee-lifecycle/current-roster";
 import type { SavePayrollAccessInput } from "@/lib/payroll-access/grant-scope";
 import { revokePayrollAccessGrant, savePayrollAccessGrant } from "@/lib/payroll-access/grant-store";
 import { assertPayrollOfficerSettingsContext } from "./action-helpers";
@@ -47,13 +51,18 @@ export interface PayrollAccessGrantData {
 	employeeIds: string[];
 }
 
+/** A former employee, with the organization-local date they left (#1439; null when not recorded). */
+export interface PayrollAccessDepartedEmployeeOption extends PayrollAccessEmployeeOption {
+	formerSince: string | null;
+}
+
 export interface PayrollAccessAdminData {
 	employees: PayrollAccessEmployeeOption[];
 	/**
 	 * Departed employees still on an active grant, as officer or named employee. A named
 	 * one stays on the grant until an admin removes them.
 	 */
-	departedEmployees: PayrollAccessEmployeeOption[];
+	departedEmployees: PayrollAccessDepartedEmployeeOption[];
 	teams: PayrollAccessTeamOption[];
 	grants: PayrollAccessGrantData[];
 }
@@ -76,6 +85,7 @@ export async function getPayrollAccessAdminDataAction(): Promise<
 						employeeNumber: employee.employeeNumber,
 						// Current roster (#1438): a due departure counts the same as a deactivation.
 						isFormer: isFormerEmployee(employee),
+						formerSince: formerSinceDate(employee),
 						userName: user.name,
 						userEmail: user.email,
 					})
@@ -145,7 +155,9 @@ export async function getPayrollAccessAdminDataAction(): Promise<
 
 		return {
 			employees: employeeRows.filter((row) => !row.isFormer).map(toOption),
-			departedEmployees: employeeRows.filter((row) => row.isFormer).map(toOption),
+			departedEmployees: employeeRows
+				.filter((row) => row.isFormer)
+				.map((row) => ({ ...toOption(row), formerSince: row.formerSince })),
 			teams: teamRows,
 			grants: grantRows.map((grant) => ({
 				id: grant.id,

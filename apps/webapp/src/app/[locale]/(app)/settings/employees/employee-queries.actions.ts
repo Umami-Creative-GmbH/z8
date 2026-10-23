@@ -11,7 +11,7 @@ import {
 } from "@/db/schema";
 import { ensureEmployeeProfilesForOrganizationMembers } from "@/lib/auth/organization-member-provisioning";
 import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
-import { isFormerEmployee } from "@/lib/employee-lifecycle/current-roster";
+import { formerSinceDate, isFormerEmployee } from "@/lib/employee-lifecycle/current-roster";
 import { NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import type { DatabaseClient, DatabaseQuery } from "@/lib/effect/services/database.service";
@@ -61,14 +61,17 @@ function mapEmployeeRow(row: {
 	team: typeof team.$inferSelect | null;
 	membership: EmployeeMembershipSummary | null;
 	isFormer: boolean;
+	formerSince: string | null;
 }): EmployeeWithRelations {
+	const isFormer = row.isFormer === true;
 	return {
 		...row.employee,
 		kind: "employee",
 		user: row.user,
 		team: row.team,
 		membership: row.membership?.id ? row.membership : null,
-		isFormer: row.isFormer === true,
+		isFormer,
+		...(isFormer ? { formerSince: row.formerSince ?? null } : {}),
 	};
 }
 
@@ -248,6 +251,7 @@ function loadEmployeePage(params: EmployeeListParams) {
 				status: approvedMembership.status,
 			},
 			isFormer: isFormerEmployee(),
+			formerSince: formerSinceDate(),
 		};
 
 		const includeInvitationDrafts = actor.accessTier === "orgAdmin";

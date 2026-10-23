@@ -712,4 +712,38 @@ describe("driving licence verifier grants through public actions", () => {
 			[ids.ben]: true,
 		});
 	});
+	it("says since when, in the organization's timezone, a named former employee left (#1439)", async () => {
+		await pool.query("update organization set timezone = 'Pacific/Auckland' where id = $1", [ORG]);
+		expect(
+			(
+				await actions.saveDrivingLicenceVerifierGrantAction({
+					verifierEmployeeId: ids.verifier,
+					scope: "specific",
+					teamIds: [],
+					employeeIds: [ids.ben, ids.anna],
+				})
+			).success,
+		).toBe(true);
+		// 13:00 UTC on 14 September is already the 15th in Auckland (UTC+12).
+		await pool.query(
+			"update employee set is_active = false, deactivated_at = '2026-09-14T13:00:00Z' where id = $1",
+			[ids.ben],
+		);
+		// Deactivated before the instant was stored: the date isn't recorded.
+		await pool.query("update employee set is_active = false where id = $1", [ids.anna]);
+		await pool.query("update employee set deactivated_at = null where id = $1", [ids.anna]);
+
+		const data = await actions.getDrivingLicenceVerifierAdminDataAction();
+		if (!data.success) throw new Error(data.error);
+		const formerSince = Object.fromEntries(
+			data.data.employees.map((row) => [row.id, row.formerSince]),
+		);
+		expect(formerSince).toEqual({
+			[ids.admin]: null,
+			[ids.verifier]: null,
+			[ids.ben]: "2026-09-15",
+			[ids.anna]: null,
+		});
+		expect(data.data.employees.find((row) => row.id === ids.anna)?.isFormer).toBe(true);
+	});
 });

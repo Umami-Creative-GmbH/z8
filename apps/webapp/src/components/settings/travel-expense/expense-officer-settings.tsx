@@ -94,7 +94,9 @@ function ExpenseOfficerEditor({ data }: { data: ExpenseOfficerAdminData }) {
 	// Departed employees can be named: their last approved reports may still be owed.
 	const namedOptions = [
 		...officerOptions,
-		...data.departedEmployees.map((person) => toSelectableEmployee(person, { isActive: false })),
+		...data.departedEmployees.map((person) =>
+			toSelectableEmployee(person, { isActive: false, formerSince: person.formerSince }),
+		),
 	];
 
 	const form = useForm({

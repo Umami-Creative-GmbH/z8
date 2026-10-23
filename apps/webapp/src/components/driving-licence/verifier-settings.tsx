@@ -190,7 +190,10 @@ function VerifierEditor({
 		toSelectableEmployee(person, { isActive: true }),
 	);
 	const scopeOptions = data.employees.map((person) =>
-		toSelectableEmployee(person, { isActive: !person.isFormer }),
+		toSelectableEmployee(
+			person,
+			person.isFormer ? { isActive: false, formerSince: person.formerSince } : { isActive: true },
+		),
 	);
 	const nameOf = (id: string) =>
 		data.employees.find((p) => p.id === id)?.name ?? id;
