@@ -569,6 +569,35 @@ describe("expense officer access (#747)", () => {
 		}
 	});
 
+	it("says since when, in the organization's timezone, a former employee left (#1439)", async () => {
+		await admin.query(
+			"update organization set timezone = 'Pacific/Auckland' where id = 't747-org'",
+		);
+		// 13:00 UTC on 14 September is already the 15th in Auckland (UTC+12).
+		await admin.query(
+			"update employee set is_active = false, deactivated_at = '2026-09-14T13:00:00Z' where id = $1",
+			[ids.auditor],
+		);
+		try {
+			signIn("owner");
+			const data = await officers.getExpenseOfficerAdminData();
+			if (!data.success) throw new Error(data.error);
+			expect(data.data.departedEmployees.find((row) => row.id === ids.auditor)).toMatchObject({
+				formerSince: "2026-09-15",
+			});
+			// Deactivated before the instant was stored: the date isn't recorded.
+			await admin.query("update employee set deactivated_at = null where id = $1", [ids.auditor]);
+			const legacy = await officers.getExpenseOfficerAdminData();
+			if (!legacy.success) throw new Error(legacy.error);
+			expect(legacy.data.departedEmployees.find((row) => row.id === ids.auditor)).toMatchObject({
+				formerSince: null,
+			});
+		} finally {
+			await admin.query("update organization set timezone = 'Europe/Berlin' where id = 't747-org'");
+			await admin.query("update employee set is_active = true where id = $1", [ids.auditor]);
+		}
+	});
+
 	it("refuses grant management to non-administrators and grants in other organizations' terms", async () => {
 		signIn("exporter");
 		expect((await officers.getExpenseOfficerAdminData()).success).toBe(false);

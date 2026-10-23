@@ -64,8 +64,13 @@ const { getEmployeesByIdsAction, listEmployeesAction, listEmployeesForSelectActi
 	"./employee-queries.actions"
 );
 
-/** A cutoff well before the test runs, so the scheduled departure is due. */
-const PAST_CUTOFF = "2026-02-01T00:00:00Z";
+/**
+ * A cutoff well before the test runs, so the scheduled departure is due. 13:00
+ * UTC on 31 January is already 1 February in Auckland (UTC+13), the
+ * organization's timezone: "Former since" reads the organization-local date (#1439).
+ */
+const PAST_CUTOFF = "2026-01-31T13:00:00Z";
+const DUE_FORMER_SINCE = "2026-02-01";
 
 describe("employee pickers and directory on PostgreSQL (#1438)", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
@@ -91,6 +96,10 @@ describe("employee pickers and directory on PostgreSQL (#1438)", () => {
 
 	beforeAll(async () => {
 		fixture = await createLifecycleDatabaseFixture();
+		await fixture.pool.query(
+			`update organization set timezone = 'Pacific/Auckland' where id = $1`,
+			[fixture.organizationId],
+		);
 		manager = await fixture.seedEmployee();
 		await fixture.pool.query("update employee set role = 'manager' where id = $1", [
 			manager.employeeId,
@@ -157,6 +166,19 @@ describe("employee pickers and directory on PostgreSQL (#1438)", () => {
 			expect(rows.has(otherOrganizationEmployee.employeeId)).toBe(false);
 		});
 
+		it("says since when, in the organization's timezone, a former employee left (#1439)", async () => {
+			actAs(fixture.ownerUserId);
+
+			const result = await listEmployeesForSelectAction({ limit: 100, status: "all" });
+			if (!result.success) throw new Error(result.error);
+			const byId = new Map(result.data.employees.map((row) => [row.id, row]));
+
+			expect(byId.get(due.employeeId)?.formerSince).toBe(DUE_FORMER_SINCE);
+			// Deactivated before the instant was stored: the date isn't recorded.
+			expect(byId.get(deactivated.employeeId)?.formerSince).toBeNull();
+			expect(byId.get(fixture.employeeId)).not.toHaveProperty("formerSince");
+		});
+
 		it("lists only former employees on the former filter", async () => {
 			actAs(fixture.ownerUserId);
 
@@ -217,6 +239,13 @@ describe("employee pickers and directory on PostgreSQL (#1438)", () => {
 					[fixture.employeeId, false],
 					[deactivated.employeeId, true],
 					[due.employeeId, true],
+				]),
+			);
+			expect(new Map(result.data.map((row) => [row.id, row.formerSince]))).toEqual(
+				new Map([
+					[fixture.employeeId, undefined],
+					[deactivated.employeeId, null],
+					[due.employeeId, DUE_FORMER_SINCE],
 				]),
 			);
 		});
@@ -296,6 +325,38 @@ describe("employee pickers and directory on PostgreSQL (#1438)", () => {
 			expect(all.get(fixture.employeeId)).toBe(false);
 			expect(all.get(deactivated.employeeId)).toBe(true);
 			expect(all.has(otherOrganizationEmployee.employeeId)).toBe(false);
+		});
+
+		it("says since when a former employee left, or that it isn't recorded (#1439)", async () => {
+			actAs(fixture.ownerUserId);
+			const deactivatedToday = await fixture.seedEmployee();
+			await fixture.pool.query(
+				`update employee set is_active = false, deactivated_at = '2026-09-14T13:00:00Z' where id = $1`,
+				[deactivatedToday.employeeId],
+			);
+
+			const result = await listEmployeesAction({ limit: 100, status: "former" });
+			if (!result.success) throw new Error(result.error);
+			const formerSince = new Map(
+				result.data.employees.map((row) => [
+					row.id,
+					row.kind === "employee" ? row.formerSince : undefined,
+				]),
+			);
+
+			expect(formerSince).toEqual(
+				new Map([
+					[deactivated.employeeId, null],
+					[due.employeeId, DUE_FORMER_SINCE],
+					// 13:00 UTC on 14 September is already the 15th in Auckland (UTC+12).
+					[deactivatedToday.employeeId, "2026-09-15"],
+				]),
+			);
+			const current = await listEmployeesAction({ limit: 100, status: "current" });
+			if (!current.success) throw new Error(current.error);
+			for (const row of current.data.employees) {
+				expect(row).not.toHaveProperty("formerSince");
+			}
 		});
 	});
 });

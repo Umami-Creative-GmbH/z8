@@ -66,6 +66,11 @@ export type EmployeeWithRelations = typeof employee.$inferSelect & {
 	membership: EmployeeMembershipSummary | null;
 	/** Deactivated or past a due departure (#1438); set by the directory list. */
 	isFormer?: boolean;
+	/**
+	 * The organization-local date a former employee left (`YYYY-MM-DD`, #1439),
+	 * `null` when it isn't recorded; set by the directory list on former rows only.
+	 */
+	formerSince?: string | null;
 	/** A required custom field the viewer sees has no value (#818); set by the directory list. */
 	missingRequiredCustomFields?: boolean;
 	/**
@@ -117,6 +122,11 @@ export interface SelectableEmployee {
 	isActive: boolean;
 	/** Deactivated or past a due departure (#1438): pickers label the row "Former". */
 	isFormer?: boolean;
+	/**
+	 * The organization-local date a former employee left (`YYYY-MM-DD`, #1439),
+	 * `null` when it isn't recorded. Only on former rows.
+	 */
+	formerSince?: string | null;
 	clockStatus?: EmployeeClockStatus;
 	teamId: string | null;
 	user: {

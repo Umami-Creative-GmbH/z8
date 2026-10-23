@@ -671,6 +671,33 @@ describe("personnel file officer grants (#866)", () => {
 			if (!data.success) throw new Error(data.error);
 			expect(data.data.grants.map((grant) => grant.id)).toContain(berlinGrant);
 			expect(data.data.departedEmployees.map((person) => person.id)).toEqual([ids.leaver]);
+			// Deactivated before the instant was stored: the date isn't recorded (#1439).
+			expect(data.data.departedEmployees[0]?.formerSince).toBeNull();
+		});
+
+		it("says since when, in the organization's timezone, a departed employee left (#1439)", async () => {
+			// Only the stored instant changes; the trigger fires on is_active alone.
+			await admin.query("update organization set timezone = 'Pacific/Auckland' where id = $1", [
+				ORG,
+			]);
+			await admin.query(
+				"update employee set deactivated_at = '2026-09-14T13:00:00Z' where id = $1",
+				[ids.leaver],
+			);
+			try {
+				signIn("admin");
+				const data = await officerActions.getPersonnelFileOfficerAdminData();
+				if (!data.success) throw new Error(data.error);
+				// 13:00 UTC on 14 September is already the 15th in Auckland (UTC+12).
+				expect(data.data.departedEmployees).toEqual([
+					expect.objectContaining({ id: ids.leaver, formerSince: "2026-09-15" }),
+				]);
+			} finally {
+				await admin.query("update organization set timezone = 'Europe/Berlin' where id = $1", [
+					ORG,
+				]);
+				await admin.query("update employee set deactivated_at = null where id = $1", [ids.leaver]);
+			}
 		});
 	});
 

@@ -6,7 +6,7 @@ import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { employee, team } from "@/db/schema";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
-import { isFormerEmployee } from "@/lib/employee-lifecycle/current-roster";
+import { formerSinceDate, isFormerEmployee } from "@/lib/employee-lifecycle/current-roster";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
 import { requirePersonnelFileAdministrator } from "@/lib/personnel-file/administrator";
@@ -33,11 +33,16 @@ export interface PersonnelFileOfficerPersonOption {
 	email: string;
 }
 
+/** A former employee, with the organization-local date they left (#1439; null when not recorded). */
+export interface PersonnelFileOfficerDepartedPersonOption extends PersonnelFileOfficerPersonOption {
+	formerSince: string | null;
+}
+
 export interface PersonnelFileOfficerAdminData {
 	/** Active employees: possible officers and named employees. */
 	employees: PersonnelFileOfficerPersonOption[];
 	/** Departed employees: they can still be named, their files stay managed. */
-	departedEmployees: PersonnelFileOfficerPersonOption[];
+	departedEmployees: PersonnelFileOfficerDepartedPersonOption[];
 	teams: Array<{ id: string; name: string }>;
 	grants: PersonnelFileOfficerGrantData[];
 }
@@ -69,6 +74,7 @@ export async function getPersonnelFileOfficerAdminData(): Promise<
 					employeeNumber: employee.employeeNumber,
 					// Current roster (#1438): a due departure counts the same as a deactivation.
 					isFormer: isFormerEmployee(employee),
+					formerSince: formerSinceDate(employee),
 					name: user.name,
 					email: user.email,
 				})
@@ -92,7 +98,9 @@ export async function getPersonnelFileOfficerAdminData(): Promise<
 			success: true,
 			data: {
 				employees: people.filter((row) => !row.isFormer).map(toOption),
-				departedEmployees: people.filter((row) => row.isFormer).map(toOption),
+				departedEmployees: people
+					.filter((row) => row.isFormer)
+					.map((row) => ({ ...toOption(row), formerSince: row.formerSince })),
 				teams,
 				grants,
 			},

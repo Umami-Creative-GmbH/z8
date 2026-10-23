@@ -37,9 +37,14 @@ export interface GrantTeamOption {
 
 export type GrantScope = "all" | "specific";
 
+/**
+ * A grant person as a picker row. `isActive: false` marks them former; pass
+ * `formerSince` (the organization-local date they left, null when not recorded,
+ * #1439) for a "Former since …" label, or leave it out for plain "Former".
+ */
 export function toSelectableEmployee(
 	person: GrantPersonOption,
-	{ isActive }: { isActive: boolean },
+	{ isActive, formerSince }: { isActive: boolean; formerSince?: string | null },
 ): SelectableEmployee {
 	return {
 		id: person.id,
@@ -50,6 +55,7 @@ export function toSelectableEmployee(
 		position: null,
 		role: "employee",
 		isActive,
+		...(!isActive && formerSince !== undefined ? { formerSince } : {}),
 		teamId: null,
 		user: { id: person.id, name: person.name, email: person.email, image: null },
 		team: null,

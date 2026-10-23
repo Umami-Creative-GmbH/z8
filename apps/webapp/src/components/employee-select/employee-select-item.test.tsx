@@ -7,8 +7,10 @@ import type { SelectableEmployee } from "./types";
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
-		t: (_key: string, fallback: string) => fallback,
+		t: (_key: string, fallback: string, params?: Record<string, string>) =>
+			fallback.replace(/\{(\w+)\}/g, (_match, name: string) => params?.[name] ?? ""),
 	}),
+	useTolgee: () => ({ getLanguage: () => "en" }),
 }));
 
 vi.mock("@/components/user-avatar", () => ({
@@ -46,6 +48,18 @@ describe("EmployeeSelectItem", () => {
 
 		expect(screen.getByText("Former")).toBeTruthy();
 		expect(screen.queryByText("Inactive")).toBeNull();
+	});
+
+	it("says since when a former employee is former (#1439)", () => {
+		renderItem({ isActive: false, isFormer: true, formerSince: "2026-10-12" });
+
+		expect(screen.getByText("Former since Oct 12, 2026")).toBeTruthy();
+	});
+
+	it("says when a former employee's date isn't recorded (#1439)", () => {
+		renderItem({ isActive: false, isFormer: true, formerSince: null });
+
+		expect(screen.getByText("Former · date not recorded")).toBeTruthy();
 	});
 
 	it("labels a deactivated employee as former too (Organization ADR 0006)", () => {

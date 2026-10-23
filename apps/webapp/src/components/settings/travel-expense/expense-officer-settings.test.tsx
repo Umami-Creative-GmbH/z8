@@ -92,7 +92,9 @@ const people = {
 		{ id: "employee-ada", name: "Ada Lovelace", email: "ada@example.com" },
 		{ id: "employee-grace", name: "Grace Hopper", email: "grace@example.com" },
 	],
-	departedEmployees: [{ id: "employee-gone", name: "Former Colleague", email: "f@example.com" }],
+	departedEmployees: [
+		{ id: "employee-gone", name: "Former Colleague", email: "f@example.com", formerSince: null },
+	],
 	teams: [{ id: "team-berlin", name: "Berlin" }],
 };
 
