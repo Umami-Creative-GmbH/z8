@@ -18,8 +18,11 @@ import { withNativeSource } from "@/lib/typescript/native-source-analysis";
 
 const SRC_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 
-/** The calls that apply the rule: the predicate itself or a reader built on it. */
-const ROSTER_RULE = /\bonCurrentRoster\(|\bcurrentRoster[A-Z]\w*\(/;
+/**
+ * The calls that apply the rule: the predicate, its marking twin (lists that
+ * keep a saved former holder and mark it), or a reader built on them.
+ */
+const ROSTER_RULE = /\bonCurrentRoster\(|\bisFormerEmployee\(|\bcurrentRoster[A-Z]\w*\(/;
 /** A hand-written active check on the employee instead of the rule. */
 const RAW_EMPLOYEE_ACTIVE_CHECK = /\bemployee\.isActive\b|"employee"\."is_active"|\bemployee\.is_active\b/;
 
@@ -155,6 +158,51 @@ export const ROSTER_SURFACES: Surface[] = [
 		file: "app/[locale]/(app)/settings/teams/team-settings-page-data.ts",
 		functions: ["loadTeamSettingsPageData"],
 		note: "teams page members with former members marked",
+	},
+	{
+		file: "lib/employee-lifecycle/current-roster-guard.ts",
+		functions: ["findEmployeesNotOnCurrentRoster"],
+		note: "the server-side refusal of former employees in role saves",
+	},
+	{
+		file: "lib/organization/driving-licence/verifier-actions.ts",
+		functions: ["getDrivingLicenceVerifierAdminDataAction"],
+		note: "driving licence verifier picker",
+	},
+	{
+		file: "app/[locale]/(app)/settings/travel-expenses/expense-officer-actions.ts",
+		functions: ["getExpenseOfficerAdminData"],
+		note: "expense officer picker",
+	},
+	{
+		file: "app/[locale]/(app)/settings/personnel-files/officer-actions.ts",
+		functions: ["getPersonnelFileOfficerAdminData"],
+		note: "personnel file officer picker",
+	},
+	{
+		file: "app/[locale]/(app)/settings/payroll-access/actions.ts",
+		functions: ["getPayrollAccessAdminDataAction"],
+		note: "payroll access picker",
+	},
+	{
+		file: "lib/personnel-file/document-request-store.ts",
+		functions: ["listDocumentRequestRecipientOptions"],
+		note: "bulk document request recipients",
+	},
+	{
+		file: "app/[locale]/(app)/settings/vehicles/actions.ts",
+		functions: ["getVehicleSettings"],
+		note: "vehicle assigned driver picker",
+	},
+	{
+		file: "app/[locale]/(app)/settings/position-capture/actions.ts",
+		functions: ["getPositionCaptureAdminDataAction"],
+		note: "position capture assignment picker",
+	},
+	{
+		file: "app/[locale]/(app)/settings/vehicle-use/actions.ts",
+		functions: ["getVehicleUseAdminDataAction"],
+		note: "vehicle use assignment picker",
 	},
 ];
 

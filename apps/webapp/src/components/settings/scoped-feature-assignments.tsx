@@ -14,6 +14,7 @@ import { useTranslate } from "@tolgee/react";
 import { type ReactNode, useState } from "react";
 import { toast } from "sonner";
 import { EmployeeSingleSelect } from "@/components/employee-select";
+import { FormerEmployeeBadge } from "@/components/former-employees/former-employee-ui";
 import { toSelectableEmployee } from "@/components/settings/access-grants/grant-editor";
 import {
 	ActionPanel,
@@ -428,6 +429,9 @@ function FeatureAssignmentSections<Value extends string>({
 	const employeeNames = new Map(
 		employees.map((employee) => [employee.id, employee.name]),
 	);
+	const formerEmployeeIds = new Set(
+		employees.filter((employee) => employee.isFormer).map((employee) => employee.id),
+	);
 	const optionLabels = new Map(
 		options.map((option) => [option.value, option.label]),
 	);
@@ -533,7 +537,13 @@ function FeatureAssignmentSections<Value extends string>({
 														aria-hidden="true"
 													/>
 													<div className="min-w-0">
-														<p className="break-words font-medium">{label}</p>
+														<p className="flex flex-wrap items-center gap-2 break-words font-medium">
+															{label}
+															{section.type === "employee" &&
+															formerEmployeeIds.has(assignment.employeeId ?? "") ? (
+																<FormerEmployeeBadge />
+															) : null}
+														</p>
 														<p className="text-xs text-muted-foreground">
 															{optionLabels.get(assignment.value)}
 														</p>

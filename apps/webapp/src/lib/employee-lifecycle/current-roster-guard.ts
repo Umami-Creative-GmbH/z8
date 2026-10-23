@@ -1,11 +1,9 @@
-import { and, inArray } from "drizzle-orm";
 import { Effect } from "effect";
 import type { db } from "@/db";
-import { employee } from "@/db/schema";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import { type DatabaseError, ValidationError } from "@/lib/effect/errors";
 import type { DatabaseQuery } from "@/lib/effect/services/database.service";
-import { onCurrentRoster } from "./current-roster";
+import { currentRosterAmong } from "./current-roster-among";
 
 /**
  * The server-side guard for role saves (#1438, Organization ADR 0006). Pickers
@@ -33,8 +31,6 @@ export interface CurrentRosterCheck {
 	now?: Instant;
 }
 
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 export const FORMER_EMPLOYEE_MESSAGE =
 	"Former employees can't be assigned. Choose someone on the current roster.";
 
@@ -55,21 +51,7 @@ export async function findEmployeesNotOnCurrentRoster(
 		...new Set(input.employeeIds.filter((id): id is string => typeof id === "string" && id !== "")),
 	];
 	if (ids.length === 0) return [];
-	// Not a uuid can't be an employee; keep it out of the uuid comparison.
-	const candidates = ids.filter((id) => UUID_PATTERN.test(id));
-	const current =
-		candidates.length === 0
-			? []
-			: await client
-					.select({ id: employee.id })
-					.from(employee)
-					.where(
-						and(
-							inArray(employee.id, candidates),
-							onCurrentRoster(input.organizationId, employee, input.now),
-						),
-					);
-	const currentIds = new Set(current.map((row) => row.id));
+	const currentIds = await currentRosterAmong(client, input.organizationId, ids, input.now);
 	return ids.filter((id) => !currentIds.has(id));
 }
 
