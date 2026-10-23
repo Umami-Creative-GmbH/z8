@@ -50,7 +50,9 @@ export function employeeLeftAt(
 	now?: Instant,
 ): SQL<string | null> {
 	const at = rosterCheckInstant(now);
-	return sql<string | null>`(CASE WHEN ${isCurrent(columns, now)} THEN NULL ELSE to_char(employee_left_at(${columns.organizationId}, ${columns.id}, ${columns.deactivatedAt}, ${at}) AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') END)`;
+	return sql<
+		string | null
+	>`(CASE WHEN ${isCurrent(columns, now)} THEN NULL ELSE to_char(employee_left_at(${columns.organizationId}, ${columns.id}, ${columns.deactivatedAt}, ${at}) AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') END)`;
 }
 
 /**
@@ -62,7 +64,9 @@ export function formerSinceDate(
 	now?: Instant,
 ): SQL<string | null> {
 	const at = rosterCheckInstant(now);
-	return sql<string | null>`(CASE WHEN ${isCurrent(columns, now)} THEN NULL ELSE to_char(employee_left_on(${columns.organizationId}, ${columns.id}, ${columns.deactivatedAt}, ${at}), 'YYYY-MM-DD') END)`;
+	return sql<
+		string | null
+	>`(CASE WHEN ${isCurrent(columns, now)} THEN NULL ELSE to_char(employee_left_on(${columns.organizationId}, ${columns.id}, ${columns.deactivatedAt}, ${at}), 'YYYY-MM-DD') END)`;
 }
 
 /** The instant a roster or access check is evaluated at: `now`, or the database's own now. */

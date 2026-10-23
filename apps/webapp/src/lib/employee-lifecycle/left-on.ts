@@ -31,7 +31,9 @@ export async function readEmployeeLeftOn(
 			leftOn: formerSinceDate(employee, input.now),
 		})
 		.from(employee)
-		.where(and(eq(employee.id, input.employeeId), eq(employee.organizationId, input.organizationId)))
+		.where(
+			and(eq(employee.id, input.employeeId), eq(employee.organizationId, input.organizationId)),
+		)
 		.limit(1);
 	if (!row) return null;
 	if (!row.former) return { former: false };

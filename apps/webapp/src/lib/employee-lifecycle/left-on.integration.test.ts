@@ -21,9 +21,10 @@ describe("when a former employee left", () => {
 
 	beforeAll(async () => {
 		fixture = await createLifecycleDatabaseFixture();
-		await fixture.pool.query(`update organization set timezone = 'Pacific/Auckland' where id = $1`, [
-			fixture.organizationId,
-		]);
+		await fixture.pool.query(
+			`update organization set timezone = 'Pacific/Auckland' where id = $1`,
+			[fixture.organizationId],
+		);
 	});
 
 	afterAll(async () => {
