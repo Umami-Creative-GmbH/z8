@@ -40,6 +40,7 @@ function transformManagedEmployee(emp: ManagedEmployee): SelectableEmployee {
 		isActive: emp.isActive,
 		// Former reports stay selectable for their past, labelled (#1438).
 		isFormer: emp.isFormer,
+		...(emp.isFormer ? { formerSince: emp.formerSince } : {}),
 		teamId: emp.team?.id ?? null,
 		user: {
 			id: emp.user.id,

@@ -53,8 +53,12 @@ const { getCalendarManagedEmployees, getCurrentEmployee, getManagedEmployees } =
 	"./actions"
 );
 
-/** A departure cutoff in the past, so that a pending departure is due. */
-const PAST_CUTOFF = "2026-09-15T00:00:00Z";
+/**
+ * A departure cutoff in the past, so that a pending departure is due. 13:00 UTC
+ * is already the next day in Auckland, the organization's timezone (#1439).
+ */
+const PAST_CUTOFF = "2026-09-14T13:00:00Z";
+const PAST_CUTOFF_LOCAL_DATE = "2026-09-15";
 
 describe("former employees on /team and in the calendar selector (#1438)", () => {
 	vi.setConfig({ testTimeout: 180_000, hookTimeout: 180_000 });
@@ -69,6 +73,9 @@ describe("former employees on /team and in the calendar selector (#1438)", () =>
 
 	beforeAll(async () => {
 		fixture = await createLifecycleDatabaseFixture();
+		await fixture.pool.query(`update organization set timezone = 'Pacific/Auckland' where id = $1`, [
+			fixture.organizationId,
+		]);
 		organizationB = await fixture.createOrganization();
 		manager = await fixture.seedEmployee();
 		await setRole(manager.employeeId, "manager");
@@ -156,7 +163,19 @@ describe("former employees on /team and in the calendar selector (#1438)", () =>
 		});
 	});
 
-	it("keeps former reports in the calendar selector, marked, inside the organization", async () => {
+	it("dates former reports by when they left, in the organization's timezone (#1439)", async () => {
+		const result = await getManagedEmployees({ includeFormer: true });
+		if (!result.success) throw new Error(String(result.error));
+		const since = Object.fromEntries(result.data.map((entry) => [entry.id, entry.formerSince]));
+
+		expect(since[departed.employeeId]).toBe(PAST_CUTOFF_LOCAL_DATE);
+		// Deactivated before the instant was stored: the date isn't recorded.
+		expect(since[deactivated]).toBeNull();
+		expect(since[current]).toBeUndefined();
+		expect(since[manager.employeeId]).toBeUndefined();
+	});
+
+	it("keeps former reports in the calendar selector, marked and dated, inside the organization", async () => {
 		const result = await getCalendarManagedEmployees({ fresh: true });
 		if (!result.success) throw new Error(String(result.error));
 
@@ -165,6 +184,15 @@ describe("former employees on /team and in the calendar selector (#1438)", () =>
 			[deactivated]: true,
 			[departed.employeeId]: true,
 		});
+		const since = Object.fromEntries(result.data.map((entry) => [entry.id, entry.formerSince]));
+		expect(since).toEqual({
+			[current]: undefined,
+			[deactivated]: null,
+			[departed.employeeId]: PAST_CUTOFF_LOCAL_DATE,
+		});
+		expect(Object.hasOwn(result.data.find((entry) => entry.id === current) ?? {}, "formerSince")).toBe(
+			false,
+		);
 	});
 
 	it("follows the active organization", async () => {

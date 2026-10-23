@@ -20,8 +20,13 @@ vi.mock("@/navigation", () => ({
 }));
 
 vi.mock("@tolgee/react", () => ({
+	useTolgee: () => ({ getLanguage: () => "en-GB" }),
 	useTranslate: () => ({
-		t: (key: string, fallback: string) => translations[key] ?? fallback,
+		t: (key: string, fallback: string, params?: Record<string, string | number>) =>
+			Object.entries(params ?? {}).reduce(
+				(text, [name, value]) => text.replace(`{${name}}`, String(value)),
+				translations[key] ?? fallback,
+			),
 	}),
 }));
 
@@ -242,16 +247,21 @@ describe("team detail page sections", () => {
 		expect(screen.queryByText("No members in this team")).toBeNull();
 	});
 
-	it("hides former members until asked for, then marks them (#1438)", async () => {
-		const member = (id: string, name: string, isFormer: boolean) => ({
+	it("hides former members until asked for, then marks them with the date they left (#1438, #1439)", async () => {
+		const member = (id: string, name: string, former?: { since: string | null }) => ({
 			id,
-			isFormer,
+			isFormer: former !== undefined,
+			...(former ? { formerSince: former.since } : {}),
 			position: null,
 			user: { name, email: `${id}@example.test`, image: null },
 		});
 		const teamWithFormer = {
 			...team,
-			employees: [member("e-1", "Cora Current", false), member("e-2", "Fern Former", true)],
+			employees: [
+				member("e-1", "Cora Current"),
+				member("e-2", "Fern Former", { since: "2026-10-12" }),
+				member("e-3", "Gus Gone", { since: null }),
+			],
 		};
 		render(
 			<>
@@ -282,6 +292,8 @@ describe("team detail page sections", () => {
 		fireEvent.click(screen.getByRole("switch", { name: "Show former employees" }));
 
 		expect(screen.getByText("Fern Former")).toBeTruthy();
-		expect(screen.getAllByText("Former")).toHaveLength(1);
+		expect(screen.getAllByText("Former since 12 Oct 2026")).toHaveLength(1);
+		expect(screen.getAllByText("Former · date not recorded")).toHaveLength(1);
+		expect(screen.queryByText("Former")).toBeNull();
 	});
 });

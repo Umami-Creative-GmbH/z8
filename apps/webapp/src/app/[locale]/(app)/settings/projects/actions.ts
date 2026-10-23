@@ -22,7 +22,7 @@ import {
 } from "@/lib/billable-time/project-customer";
 import { type DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
-import { currentRosterAmong } from "@/lib/employee-lifecycle/current-roster-among";
+import { formerEmployeesAmong } from "@/lib/employee-lifecycle/current-roster-among";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import {
 	assertOnCurrentRoster,
@@ -110,6 +110,11 @@ export interface ProjectWithDetails {
 		 * assignment by default and marks it when shown. False for team assignments.
 		 */
 		employeeIsFormer?: boolean;
+		/**
+		 * On a former employee's assignment only: the organization-local date they
+		 * left (`YYYY-MM-DD`), null when not recorded (#1439).
+		 */
+		employeeFormerSince?: string | null;
 	}[];
 	totalHoursBooked: number;
 	/** A required custom field the viewer sees has no value (#818). */
@@ -332,9 +337,10 @@ export async function getProjects(
 
 				const typedManagers = managers as unknown as ProjectManagerWithEmployee[];
 				const typedAssignments = assignments as unknown as ProjectAssignmentWithRelations[];
-				// Assignments of former employees are hidden by default and marked when shown (#1438).
-				const currentAssigneeIds = yield* dbService.query("getProjectAssignments.currentRoster", () =>
-					currentRosterAmong(
+				// Assignments of former employees are hidden by default and marked when shown
+				// (#1438), with the date the employee left (#1439).
+				const formerAssigneeSince = yield* dbService.query("getProjectAssignments.formerAssignees", () =>
+					formerEmployeesAmong(
 						dbService.db,
 						organizationId,
 						typedAssignments.flatMap((assignment) =>
@@ -366,6 +372,10 @@ export async function getProjects(
 						continue;
 					}
 					const projectAssignments = assignmentsByProject.get(assignment.projectId) ?? [];
+					const employeeIsFormer =
+						assignment.assignmentType === "employee" &&
+						!!assignment.employeeId &&
+						formerAssigneeSince.has(assignment.employeeId);
 					projectAssignments.push({
 						id: assignment.id,
 						type: assignment.assignmentType as ProjectAssignmentType,
@@ -373,10 +383,10 @@ export async function getProjects(
 						teamName: assignment.team?.name || null,
 						employeeId: assignment.employeeId,
 						employeeName: assignment.employee?.user?.name || null,
-						employeeIsFormer:
-							assignment.assignmentType === "employee" &&
-							!!assignment.employeeId &&
-							!currentAssigneeIds.has(assignment.employeeId),
+						employeeIsFormer,
+						...(employeeIsFormer && assignment.employeeId
+							? { employeeFormerSince: formerAssigneeSince.get(assignment.employeeId) ?? null }
+							: {}),
 					});
 					assignmentsByProject.set(assignment.projectId, projectAssignments);
 				}

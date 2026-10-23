@@ -55,6 +55,8 @@ interface MemberRow {
 	name: string;
 	/** Marks a former employee's row (#1438). */
 	isFormer?: boolean;
+	/** When the former employee left (`YYYY-MM-DD`), null when not recorded (#1439). */
+	formerSince?: string | null;
 	/** Omitted when the viewer may not remove this row. */
 	onRemove?: () => Promise<ServerActionResult<void>>;
 	/** A further action shown before the remove button. */
@@ -127,7 +129,7 @@ function MemberSection({
 						<li key={row.key} className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
 							<span className="flex items-center gap-2">
 								{row.name}
-								{row.isFormer && <FormerEmployeeBadge />}
+								{row.isFormer && <FormerEmployeeBadge since={row.formerSince} />}
 							</span>
 							<span className="flex items-center gap-1">
 								{row.action}
@@ -354,6 +356,7 @@ export function ProjectMembersPanel({
 								key: assignment.id,
 								name: assignment.employeeName ?? "",
 								isFormer: assignment.employeeIsFormer,
+								formerSince: assignment.employeeFormerSince,
 								onRemove: () => removeProjectAssignment(assignment.id),
 								action:
 									canSetBillableRates && assignment.employeeId ? (

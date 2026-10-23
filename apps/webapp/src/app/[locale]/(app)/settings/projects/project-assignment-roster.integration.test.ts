@@ -64,7 +64,10 @@ vi.mock("@/lib/logger", () => {
 
 const { getEmployeesForSelection, getProjects } = await import("./actions");
 
-const PAST_CUTOFF = "2026-02-01T00:00:00Z";
+// 13:00 UTC is already the next day in Auckland (UTC+13 in February), the
+// organization's timezone (#1439).
+const PAST_CUTOFF = "2026-02-01T13:00:00Z";
+const PAST_CUTOFF_LOCAL_DATE = "2026-02-02";
 
 describe("project assignments on PostgreSQL (#1438)", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
@@ -76,6 +79,10 @@ describe("project assignments on PostgreSQL (#1438)", () => {
 
 	beforeAll(async () => {
 		fixture = await createLifecycleDatabaseFixture();
+		await fixture.pool.query(`update organization set timezone = 'Pacific/Auckland' where id = $1`, [
+			fixture.organizationId,
+		]);
+		// Seeded inactive: deactivated before the instant was stored, so not recorded.
 		deactivated = await fixture.seedEmployee({ isActive: false });
 		due = await fixture.seedEmployee();
 		await fixture.pool.query(
@@ -133,6 +140,15 @@ describe("project assignments on PostgreSQL (#1438)", () => {
 				[due.employeeId, true],
 			]),
 		);
+		const since = new Map(
+			(project?.assignments ?? []).map((assignment) => [
+				assignment.employeeId,
+				assignment.employeeFormerSince,
+			]),
+		);
+		expect(since.get(fixture.employeeId)).toBeUndefined();
+		expect(since.get(deactivated.employeeId)).toBeNull();
+		expect(since.get(due.employeeId)).toBe(PAST_CUTOFF_LOCAL_DATE);
 	});
 
 	it("offers only the organization's current roster for new assignments", async () => {

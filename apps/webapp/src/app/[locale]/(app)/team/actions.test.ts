@@ -161,12 +161,15 @@ describe("team action helpers", () => {
 			currentEmployee: { ...report, id: "manager-1", userId: "user-1", role: "manager", isActive: true, user },
 			managedRecords: [{ isPrimary: true, employee: report }],
 			balances: new Map(),
-			formerEmployeeIds: new Set(["employee-1", "manager-1"]),
+			formerSinceById: new Map([
+				["employee-1", "2026-10-12"],
+				["manager-1", null],
+			]),
 		});
 
-		expect(employees.map(({ id, isFormer }) => ({ id, isFormer }))).toEqual([
-			{ id: "manager-1", isFormer: false },
-			{ id: "employee-1", isFormer: true },
+		expect(employees.map(({ id, isFormer, formerSince }) => ({ id, isFormer, formerSince }))).toEqual([
+			{ id: "manager-1", isFormer: false, formerSince: undefined },
+			{ id: "employee-1", isFormer: true, formerSince: "2026-10-12" },
 		]);
 	});
 });

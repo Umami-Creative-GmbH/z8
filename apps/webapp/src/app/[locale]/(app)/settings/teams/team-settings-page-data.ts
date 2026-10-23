@@ -4,7 +4,7 @@ import * as authSchema from "@/db/auth-schema";
 import { employee, team, teamMembership } from "@/db/schema";
 import { ensureEmployeeProfilesForOrganizationMembers } from "@/lib/auth/organization-member-provisioning";
 import type { TeamPermissions } from "@/lib/authorization";
-import { currentRosterAmong } from "@/lib/employee-lifecycle/current-roster-among";
+import { formerEmployeesAmong } from "@/lib/employee-lifecycle/current-roster-among";
 import { buildTeamSettingsSurface, filterMembersForTeamSettingsSurface } from "./team-scope";
 
 export async function loadTeamSettingsPageData(input: {
@@ -48,22 +48,27 @@ export async function loadTeamSettingsPageData(input: {
 		membershipsByEmployeeId.set(membership.employeeId, employeeMemberships);
 	}
 
-	// Team lists hide former employees by default and their pickers never offer them (#1438).
-	const currentEmployeeIds = await currentRosterAmong(
+	// Team lists hide former employees by default and their pickers never offer them
+	// (#1438); a former one carries the date they left, null when not recorded (#1439).
+	const formerSinceById = await formerEmployeesAmong(
 		db,
 		organizationId,
 		membersData.flatMap((memberEntry) => (memberEntry.employee ? [memberEntry.employee.id] : [])),
 	);
 
-	const membersWithMemberships = membersData.map((memberEntry) => ({
-		...memberEntry,
-		teamMemberships: memberEntry.employee
-			? (membershipsByEmployeeId.get(memberEntry.employee.id) ?? [])
-			: [],
-		isFormerEmployee: memberEntry.employee
-			? !currentEmployeeIds.has(memberEntry.employee.id)
-			: false,
-	}));
+	const membersWithMemberships = membersData.map((memberEntry) => {
+		const former = memberEntry.employee ? formerSinceById.has(memberEntry.employee.id) : false;
+		return {
+			...memberEntry,
+			teamMemberships: memberEntry.employee
+				? (membershipsByEmployeeId.get(memberEntry.employee.id) ?? [])
+				: [],
+			isFormerEmployee: former,
+			...(former && memberEntry.employee
+				? { formerSince: formerSinceById.get(memberEntry.employee.id) ?? null }
+				: {}),
+		};
+	});
 
 	const teamSurface = buildTeamSettingsSurface({
 		accessTier: settingsRouteContext.accessTier,
