@@ -48,10 +48,11 @@ describe("EmployeeSelectItem", () => {
 		expect(screen.queryByText("Inactive")).toBeNull();
 	});
 
-	it("keeps the inactive label for an inactive employee not marked former", () => {
+	it("labels a deactivated employee as former too (Organization ADR 0006)", () => {
 		renderItem({ isActive: false });
 
-		expect(screen.getByText("Inactive")).toBeTruthy();
+		expect(screen.getByText("Former")).toBeTruthy();
+		expect(screen.queryByText("Inactive")).toBeNull();
 	});
 
 	it("shows no status label for a current employee", () => {
