@@ -521,6 +521,7 @@ export function validateAssignmentTargetFields(
 
 export function getManagedEmployeeIdsForSettingsActor(actor: {
 	accessTier: SettingsAccessTier;
+	organizationId: string;
 	currentEmployee: Pick<typeof employee.$inferSelect, "id" | "role"> | null;
 }) {
 	return Effect.gen(function* () {
@@ -535,6 +536,7 @@ export function getManagedEmployeeIdsForSettingsActor(actor: {
 		const managerService = yield* ManagerService;
 		const managedEmployees = yield* managerService.getManagedEmployees(
 			actor.currentEmployee.id,
+			actor.organizationId,
 		);
 
 		return new Set(

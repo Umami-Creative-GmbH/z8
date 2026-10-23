@@ -5,12 +5,10 @@ import { render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { getActivityMock, getCurrentEmployeeMock, getManagedEmployeesMock } =
-	vi.hoisted(() => ({
-		getActivityMock: vi.fn(),
-		getCurrentEmployeeMock: vi.fn(),
-		getManagedEmployeesMock: vi.fn(),
-	}));
+const { getActivityMock, getManagedEmployeesMock } = vi.hoisted(() => ({
+	getActivityMock: vi.fn(),
+	getManagedEmployeesMock: vi.fn(),
+}));
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
@@ -24,10 +22,6 @@ vi.mock("@tolgee/react", () => ({
 				fallback,
 			),
 	}),
-}));
-
-vi.mock("@/app/[locale]/(app)/approvals/actions", () => ({
-	getCurrentEmployee: getCurrentEmployeeMock,
 }));
 
 vi.mock("@/components/user-avatar", () => ({
@@ -107,31 +101,53 @@ function renderManagedEmployeesWidget() {
 	);
 }
 
+const ada = {
+	id: "employee-1",
+	position: "Designer",
+	user: {
+		id: "user-1",
+		name: "Ada Lovelace",
+		email: "ada@example.com",
+		image: null,
+	},
+	team: { name: "Ops" },
+};
+
 describe("ManagedEmployeesWidget", () => {
 	beforeEach(() => {
 		getActivityMock.mockReset().mockReturnValue(null);
+		getManagedEmployeesMock.mockReset();
+	});
+
+	it("asks the server for the caller's own reports without naming a manager", async () => {
+		getManagedEmployeesMock.mockResolvedValue({
+			success: true,
+			data: { isManager: true, employees: [ada] },
+		});
+
+		renderManagedEmployeesWidget();
+
+		await screen.findByRole("link", { name: /ada lovelace/i });
+		expect(getManagedEmployeesMock).toHaveBeenCalledTimes(1);
+		expect(getManagedEmployeesMock).toHaveBeenCalledWith();
+	});
+
+	it("renders nothing for a caller who manages nobody", async () => {
+		getManagedEmployeesMock.mockResolvedValue({
+			success: true,
+			data: { isManager: false, employees: [] },
+		});
+
+		const { container } = renderManagedEmployeesWidget();
+
+		await vi.waitFor(() => expect(getManagedEmployeesMock).toHaveBeenCalled());
+		await vi.waitFor(() => expect(container.textContent).toBe(""));
 	});
 
 	it("scopes employee card hover styles to the hovered employee only", async () => {
-		getCurrentEmployeeMock.mockResolvedValue({
-			id: "manager-1",
-			role: "manager",
-		});
 		getManagedEmployeesMock.mockResolvedValue({
 			success: true,
-			data: [
-				{
-					id: "employee-1",
-					position: "Designer",
-					user: {
-						id: "user-1",
-						name: "Ada Lovelace",
-						email: "ada@example.com",
-						image: null,
-					},
-					team: { name: "Ops" },
-				},
-			],
+			data: { isManager: true, employees: [ada] },
 		});
 
 		renderManagedEmployeesWidget();
@@ -157,25 +173,9 @@ describe("ManagedEmployeesWidget", () => {
 	});
 
 	it("renders employee clock activity metadata in the employee link", async () => {
-		getCurrentEmployeeMock.mockResolvedValue({
-			id: "manager-1",
-			role: "manager",
-		});
 		getManagedEmployeesMock.mockResolvedValue({
 			success: true,
-			data: [
-				{
-					id: "employee-1",
-					position: "Designer",
-					user: {
-						id: "user-1",
-						name: "Ada Lovelace",
-						email: "ada@example.com",
-						image: null,
-					},
-					team: { name: "Ops" },
-				},
-			],
+			data: { isManager: true, employees: [ada] },
 		});
 		getActivityMock.mockReturnValue({
 			lastActivityAt: "2026-07-28T10:40:00.000Z",
