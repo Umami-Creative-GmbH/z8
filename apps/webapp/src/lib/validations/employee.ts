@@ -120,7 +120,8 @@ const updateEmployeeFieldsSchema = z.object({
 	// Dates
 	startDate: z.date().optional().nullable(),
 	endDate: z.date().optional().nullable(),
-	isActive: z.boolean().optional(),
+	// Active state is not a field: only Deactivate / Reactivate change it, with
+	// their owner checks, deputy release and seat sync (#1439).
 
 	// Auth user identity fields (admin-only)
 	firstName: authUserNamePartSchema,
