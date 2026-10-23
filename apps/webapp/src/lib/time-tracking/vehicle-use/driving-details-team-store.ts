@@ -2,11 +2,9 @@ import { and, asc, eq, sql } from "drizzle-orm";
 import type { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { employee, employeeManagers, team } from "@/db/schema";
+import { isFormerEmployee } from "@/lib/employee-lifecycle/current-roster";
 import { type MissingDrivingDetail, missingDrivingDetail } from "./driving-details-missing";
-import {
-	drivingDetailsListedEmployeeCondition,
-	listDrivingDetailsMissing,
-} from "./driving-details-missing-store";
+import { listDrivingDetailsMissing } from "./driving-details-missing-store";
 
 /**
  * The manager's "driving details missing" list (#1127, `/team/driving`): the flagged work of the
@@ -39,6 +37,8 @@ export interface TeamDrivingDetailsRow {
 	employeeId: string;
 	name: string;
 	teamName: string | null;
+	/** A former employee's work: kept as what was driven, marked as former (#1438). */
+	former: boolean;
 	workDay: string;
 	startedAt: string;
 	endedAt: string;
@@ -63,6 +63,10 @@ export const TEAM_DRIVING_DETAILS_LIMIT = 200;
 
 const displayName = sql<string>`coalesce(nullif(trim(concat_ws(' ', ${user.firstName}, ${user.lastName})), ''), ${user.name})`;
 
+/**
+ * Everyone in the viewer's scope, former employees included and marked (#1438): their flagged
+ * work is what was driven and stays listed. The filters offer only the current roster.
+ */
 async function listScopedPeople(
 	database: Database,
 	input: { organizationId: string; scope: DrivingDetailsTeamScope },
@@ -72,11 +76,9 @@ async function listScopedPeople(
 		name: displayName,
 		teamId: employee.teamId,
 		teamName: team.name,
+		former: isFormerEmployee(employee),
 	};
-	const conditions = and(
-		eq(employee.organizationId, input.organizationId),
-		drivingDetailsListedEmployeeCondition(),
-	);
+	const conditions = eq(employee.organizationId, input.organizationId);
 	if (input.scope.kind === "all") {
 		return database
 			.select(columns)
@@ -117,14 +119,16 @@ export async function loadTeamDrivingDetails(
 	},
 ): Promise<TeamDrivingDetails> {
 	const people = await listScopedPeople(database, input);
+	// The filters are who drives now: the current roster and its teams.
+	const current = people.filter((person) => !person.former);
 	const teams = new Map<string, string>();
-	for (const person of people) {
+	for (const person of current) {
 		if (person.teamId && person.teamName) teams.set(person.teamId, person.teamName);
 	}
 	const teamId =
 		input.filters.teamId && teams.has(input.filters.teamId) ? input.filters.teamId : null;
 	const employeeId =
-		input.filters.employeeId && people.some((person) => person.id === input.filters.employeeId)
+		input.filters.employeeId && current.some((person) => person.id === input.filters.employeeId)
 			? input.filters.employeeId
 			: null;
 	const selected = people.filter(
@@ -142,7 +146,7 @@ export async function loadTeamDrivingDetails(
 		teams: [...teams]
 			.map(([id, name]) => ({ id, name }))
 			.toSorted((a, b) => a.name.localeCompare(b.name)),
-		employees: people.map((person) => ({
+		employees: current.map((person) => ({
 			id: person.id,
 			name: person.name,
 			teamId: person.teamId,
@@ -155,6 +159,7 @@ export async function loadTeamDrivingDetails(
 				employeeId: work.employeeId,
 				name: person?.name ?? work.employeeId,
 				teamName: person?.teamName ?? null,
+				former: person?.former ?? false,
 				workDay: work.workDay,
 				startedAt: work.startedAt,
 				endedAt: work.endedAt,

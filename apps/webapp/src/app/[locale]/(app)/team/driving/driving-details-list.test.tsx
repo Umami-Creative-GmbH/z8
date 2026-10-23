@@ -33,6 +33,7 @@ const row = (overrides: Partial<TeamDrivingDetailsRow>): TeamDrivingDetailsRow =
 	employeeId: "employee-1",
 	name: "Ada",
 	teamName: "Field",
+	former: false,
 	workDay: "2026-09-07",
 	startedAt: "2026-09-07T06:00:00Z",
 	endedAt: "2026-09-07T14:00:00Z",
@@ -65,6 +66,25 @@ describe("the driving details missing list (#1127)", () => {
 			within(second).getByRole("link", { name: "Open the calendar of Ada" }).getAttribute("href"),
 		).toBe("/calendar/employee-1?date=2026-09-08");
 		expect(screen.getByText(/missing driving details\.$/)).toBeTruthy();
+	});
+
+	it("marks a former employee's work as former (#1438)", () => {
+		render(
+			<DrivingDetailsList
+				teams={[]}
+				employees={[]}
+				filters={{ teamId: null, employeeId: null }}
+				rows={[
+					row({}),
+					row({ workPeriodId: "work-2", employeeId: "employee-2", name: "Bo", former: true }),
+				]}
+				truncated={false}
+			/>,
+		);
+
+		const [, current, former] = screen.getAllByRole("row");
+		expect(within(current).queryByText("Former")).toBeNull();
+		expect(within(former).getByText("Former")).toBeTruthy();
 	});
 
 	it("says so when nothing is missing", () => {

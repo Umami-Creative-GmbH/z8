@@ -16,7 +16,6 @@ import {
 	approvalRequest,
 	complianceException,
 	employee,
-	employeeManagers,
 	location,
 	locationSubarea,
 	shift,
@@ -24,6 +23,10 @@ import {
 	workPolicyAssignment,
 } from "@/db/schema";
 import { env } from "@/env";
+import {
+	currentRosterDigestManager,
+	currentRosterReportIds,
+} from "@/lib/bot-platform/current-roster-team";
 import { fmtTime, fmtWeekdayShortDate, getBotTranslate } from "@/lib/bot-platform/i18n";
 import { resolveBotTemporalContext } from "@/lib/bot-platform/temporal-context";
 import {
@@ -250,12 +253,14 @@ export async function runDailyDigestJob(): Promise<DailyDigestResult> {
 /**
  * Process daily digest for a single tenant
  */
-async function processTenantDigest(tenant: {
+type DigestTenant = {
 	tenantId: string;
 	organizationId: string;
 	digestTime: string;
 	digestTimezone: string;
-}): Promise<number> {
+};
+
+async function processTenantDigest(tenant: DigestTenant): Promise<number> {
 	// Check if it's time to send the digest
 	const now = DateTime.now().setZone(tenant.digestTimezone);
 	const [digestHour, digestMinute] = tenant.digestTime.split(":").map(Number);
@@ -294,22 +299,13 @@ async function processTenantDigest(tenant: {
 	const results = await Promise.allSettled(
 		conversations.map(async (conv) => {
 			try {
-				// Get employee ID for this user
-				const emp = await db.query.employee.findFirst({
-					where: and(
-						eq(employee.userId, conv.userId),
-						eq(employee.organizationId, tenant.organizationId),
-					),
+				// A current manager of at least one current report (#1438).
+				const emp = await currentRosterDigestManager(db, {
+					organizationId: tenant.organizationId,
+					userId: conv.userId,
 				});
 
 				if (!emp) return false;
-
-				// Check if this employee is a manager (has any employees reporting to them)
-				const manages = await db.query.employeeManagers.findFirst({
-					where: eq(employeeManagers.managerId, emp.id),
-				});
-
-				if (!manages) return false;
 				if (
 					await shouldSkipDigestForManager(emp.id, tenant.organizationId, tenant.digestTimezone)
 				) {
@@ -390,7 +386,7 @@ export async function buildDigestDataForManager(
 	// =========================================
 	const [
 		pendingApprovals,
-		managedEmployeesResult,
+		managedEmployeeIds,
 		[todayShiftsResult, tomorrowShiftsResult],
 		scheduledShifts,
 	] = await Promise.all([
@@ -402,15 +398,8 @@ export async function buildDigestDataForManager(
 				eq(approvalRequest.status, "pending"),
 			),
 		}),
-		// Managed employees
-		db.query.employeeManagers.findMany({
-			where: eq(employeeManagers.managerId, managerId),
-			with: {
-				employee: {
-					columns: { id: true, organizationId: true },
-				},
-			},
-		}),
+		// The manager's team in this organization: its current roster only (#1438).
+		currentRosterReportIds(db, { organizationId, managerEmployeeId: managerId }),
 		// Open shifts count for today and tomorrow
 		Promise.all([
 			db
@@ -458,10 +447,6 @@ export async function buildDigestDataForManager(
 	]);
 
 	// Process Phase 1 results
-	const managedEmployeeIds = managedEmployeesResult.flatMap((m) =>
-		m.employee.organizationId === organizationId ? [m.employeeId] : [],
-	);
-
 	const todayCount = Number(todayShiftsResult[0]?.count) || 0;
 	const tomorrowCount = Number(tomorrowShiftsResult[0]?.count) || 0;
 	const openShiftsToday = todayCount > 0 ? todayCount : undefined;

@@ -5,11 +5,10 @@
  * Reuses the shared buildDigestDataForManager from the Teams implementation.
  */
 
-import { and, eq } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
-import { employee, employeeManagers } from "@/db/schema";
 import { env } from "@/env";
+import { currentRosterDigestManager } from "@/lib/bot-platform/current-roster-team";
 import { getBotTranslate } from "@/lib/bot-platform/i18n";
 import { resolveBotTemporalContext } from "@/lib/bot-platform/temporal-context";
 import type { DailyDigestData } from "@/lib/bot-platform/types";
@@ -77,12 +76,14 @@ export async function runDiscordDailyDigestJob(): Promise<DiscordDailyDigestResu
 	}
 }
 
-async function processBotDigest(bot: {
+type DigestBot = {
 	organizationId: string;
 	botToken: string;
 	digestTime: string;
 	digestTimezone: string;
-}): Promise<number> {
+};
+
+async function processBotDigest(bot: DigestBot): Promise<number> {
 	// Check if it's time to send
 	const now = DateTime.now().setZone(bot.digestTimezone);
 	const [digestHour, digestMinute] = bot.digestTime.split(":").map(Number);
@@ -106,22 +107,13 @@ async function processBotDigest(bot: {
 	const results = await Promise.allSettled(
 		conversations.map(async (conv) => {
 			try {
-				// Get employee record
-				const emp = await db.query.employee.findFirst({
-					where: and(
-						eq(employee.userId, conv.userId),
-						eq(employee.organizationId, bot.organizationId),
-					),
+				// A current manager of at least one current report (#1438).
+				const emp = await currentRosterDigestManager(db, {
+					organizationId: bot.organizationId,
+					userId: conv.userId,
 				});
 
 				if (!emp) return false;
-
-				// Check if manager
-				const manages = await db.query.employeeManagers.findFirst({
-					where: eq(employeeManagers.managerId, emp.id),
-				});
-
-				if (!manages) return false;
 				if (await shouldSkipDigestForManager(emp.id, bot.organizationId, bot.digestTimezone)) {
 					return false;
 				}
