@@ -125,6 +125,7 @@ function useEmployeeSelectModalViewModel({
 	onConfirm,
 	excludeIds,
 	filters,
+	includeFormerEmployees = false,
 	showFilters = true,
 	maxSelections,
 	employees: preFilteredEmployees,
@@ -149,6 +150,7 @@ function useEmployeeSelectModalViewModel({
 	// Use the employee select hook (only when not using pre-filtered list)
 	const serverData = useEmployeeSelect({
 		filters,
+		includeFormerEmployees,
 		excludeIds: effectiveExcludeIds,
 		enabled: open && !usePreFiltered,
 	});
@@ -193,6 +195,7 @@ function useEmployeeSelectModalViewModel({
 	const setRoleFilter = serverData.setRoleFilter;
 	const statusFilter = serverData.statusFilter;
 	const setStatusFilter = serverData.setStatusFilter;
+	const canFilterStatus = serverData.canFilterStatus;
 	const teamFilter = serverData.teamFilter;
 	const setTeamFilter = serverData.setTeamFilter;
 
@@ -334,6 +337,7 @@ function useEmployeeSelectModalViewModel({
 
 	return {
 		activePendingIds,
+		canFilterStatus,
 		effectiveSelectedIds,
 		effectiveShowFilters,
 		employees,
@@ -375,6 +379,7 @@ function EmployeeSelectModalView({
 }) {
 	const {
 		activePendingIds,
+		canFilterStatus,
 		effectiveSelectedIds,
 		effectiveShowFilters,
 		employees,
@@ -491,25 +496,27 @@ function EmployeeSelectModalView({
 									</SelectContent>
 								</Select>
 
-								{/* Status filter */}
-								<Select value={statusFilter} onValueChange={setStatusFilter}>
-									<SelectTrigger className="w-[120px] h-7 text-xs bg-background/50">
-										<SelectValue
-											placeholder={t("common:employeeSelect.status", "Status")}
-										/>
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="all">
-											{t("common.all", "All")}
-										</SelectItem>
-										<SelectItem value="active">
-											{t("common:status.active", "Active")}
-										</SelectItem>
-										<SelectItem value="inactive">
-											{t("common:status.inactive", "Inactive")}
-										</SelectItem>
-									</SelectContent>
-								</Select>
+								{/* Status filter: only a picker that includes former employees has one (#1438) */}
+								{canFilterStatus && (
+									<Select value={statusFilter} onValueChange={setStatusFilter}>
+										<SelectTrigger className="w-[120px] h-7 text-xs bg-background/50">
+											<SelectValue
+												placeholder={t("common:employeeSelect.status", "Status")}
+											/>
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="all">
+												{t("common.all", "All")}
+											</SelectItem>
+											<SelectItem value="current">
+												{t("common:formerEmployees.current", "Current")}
+											</SelectItem>
+											<SelectItem value="former">
+												{t("common:formerEmployees.former", "Former")}
+											</SelectItem>
+										</SelectContent>
+									</Select>
+								)}
 
 								{/* Team filter */}
 								<Select value={teamFilter} onValueChange={setTeamFilter}>

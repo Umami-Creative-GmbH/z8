@@ -9,6 +9,7 @@ import {
 	team,
 } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
+import { assertOnCurrentRoster } from "@/lib/employee-lifecycle/current-roster-guard";
 import { DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { validateId, validateIdList } from "@/lib/payroll-access/grant-scope";
 import { isCanonicalUuid } from "@/lib/validations/canonical-uuid";
@@ -201,6 +202,14 @@ export async function savePersonnelFileOfficerGrant(
 	if (![officerEmployeeId, ...requestedTeamIds, ...requestedEmployeeIds].every(isCanonicalUuid)) {
 		throw new ValidationError({ message: "Personnel file officer IDs must be valid" });
 	}
+	// The officer must be on the current roster (#1438). Named employees may be
+	// former: their files stay under retention after they leave.
+	await assertOnCurrentRoster(tx, {
+		organizationId,
+		employeeIds: [officerEmployeeId],
+		field: "officerEmployeeId",
+		message: "The personnel file officer must be a current employee of the organization",
+	});
 
 	const [current] = await tx
 		.select(grantColumns())

@@ -11,6 +11,7 @@ import {
 } from "@/db/schema";
 import { ensureEmployeeProfilesForOrganizationMembers } from "@/lib/auth/organization-member-provisioning";
 import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
+import { isFormerEmployee } from "@/lib/employee-lifecycle/current-roster";
 import { NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import type { DatabaseClient, DatabaseQuery } from "@/lib/effect/services/database.service";
@@ -35,6 +36,7 @@ import type {
 import {
 	decodeEmployeeInvitationDraftId,
 	encodeEmployeeInvitationDraftId,
+	normalizeEmployeeDirectoryStatus,
 } from "./employee-action-types";
 import {
 	ensureSettingsActorCanAccessEmployeeTarget,
@@ -48,6 +50,7 @@ import {
 	loadSelectableEmployeePage,
 	mapSelectableEmployeeRow,
 	type SelectableEmployeeRow,
+	selectableEmployeeColumns,
 } from "./selectable-employees";
 
 const DEFAULT_LIMIT = 20;
@@ -57,6 +60,7 @@ function mapEmployeeRow(row: {
 	user: typeof user.$inferSelect;
 	team: typeof team.$inferSelect | null;
 	membership: EmployeeMembershipSummary | null;
+	isFormer: boolean;
 }): EmployeeWithRelations {
 	return {
 		...row.employee,
@@ -64,6 +68,7 @@ function mapEmployeeRow(row: {
 		user: row.user,
 		team: row.team,
 		membership: row.membership?.id ? row.membership : null,
+		isFormer: row.isFormer === true,
 	};
 }
 
@@ -111,7 +116,9 @@ function buildInvitationDraftFilters(
 	now: Date,
 	params: Pick<EmployeeFilterParams, "search" | "role" | "roles" | "status" | "teamId">,
 ) {
-	if (params.status === "active" || params.status === "inactive") {
+	// A pending invitation is someone about to join, never a former employee: drafts
+	// stay listed under Current (the default), Draft and All (#1438).
+	if (params.status === "former") {
 		return null;
 	}
 
@@ -220,13 +227,28 @@ function loadEmployeePage(params: EmployeeListParams) {
 		});
 		const limit = params.limit ?? DEFAULT_LIMIT;
 		const offset = params.offset ?? 0;
-		const where = buildEmployeeFilters(actor.organizationId, {
+		const filterParams = {
 			...params,
+			status: normalizeEmployeeDirectoryStatus(params.status, "all"),
+		};
+		const where = buildEmployeeFilters(actor.organizationId, {
+			...filterParams,
 			managerId:
 				actor.accessTier === "manager" && actor.currentEmployee
 					? actor.currentEmployee.id
 					: undefined,
 		});
+		const directoryColumns = {
+			employee,
+			user,
+			team,
+			membership: {
+				id: approvedMembership.id,
+				role: approvedMembership.role,
+				status: approvedMembership.status,
+			},
+			isFormer: isFormerEmployee(),
+		};
 
 		const includeInvitationDrafts = actor.accessTier === "orgAdmin";
 		if (!includeInvitationDrafts) {
@@ -240,16 +262,7 @@ function loadEmployeePage(params: EmployeeListParams) {
 				}),
 				dbService.query("listEmployees", async () => {
 					return await dbService.db
-						.select({
-							employee,
-							user,
-							team,
-							membership: {
-								id: approvedMembership.id,
-								role: approvedMembership.role,
-								status: approvedMembership.status,
-							},
-						})
+						.select(directoryColumns)
 						.from(employee)
 						.innerJoin(user, eq(employee.userId, user.id))
 						.leftJoin(team, eq(employee.teamId, team.id))
@@ -270,20 +283,11 @@ function loadEmployeePage(params: EmployeeListParams) {
 		}
 
 		const now = dateFromInstant(systemClock.nowInstant());
-		const draftWhere = buildInvitationDraftFilters(actor.organizationId, now, params);
+		const draftWhere = buildInvitationDraftFilters(actor.organizationId, now, filterParams);
 		const [employeeRows, draftRows] = yield* Effect.all([
 			dbService.query("listEmployees", async () => {
 				return await dbService.db
-					.select({
-						employee,
-						user,
-						team,
-						membership: {
-							id: approvedMembership.id,
-							role: approvedMembership.role,
-							status: approvedMembership.status,
-						},
-					})
+					.select(directoryColumns)
 					.from(employee)
 					.innerJoin(user, eq(employee.userId, user.id))
 					.leftJoin(team, eq(employee.teamId, team.id))
@@ -528,12 +532,14 @@ export async function getEmployeesByIdsAction(
 		const { dbService } = actor;
 
 		const rows = yield* dbService.query("getEmployeesByIds", async () => {
+			// Already selected employees display even when they have left since (#1438): no
+			// roster filter here, and the row carries the former-employee mark for the label.
 			const scopeWhere = buildEmployeeFilters(actor.organizationId, {
 				excludeIds: [],
 				roles: undefined,
 				role: undefined,
 				search: undefined,
-				status: undefined,
+				status: "all",
 				teamId: undefined,
 				managerId:
 					actor.accessTier === "manager" && actor.currentEmployee
@@ -542,29 +548,7 @@ export async function getEmployeesByIdsAction(
 			});
 
 			return await dbService.db
-				.select({
-					employee: {
-						id: employee.id,
-						userId: employee.userId,
-						pronouns: employee.pronouns,
-						position: employee.position,
-						role: employee.role,
-						isActive: employee.isActive,
-						teamId: employee.teamId,
-					},
-					user: {
-						id: user.id,
-						firstName: user.firstName,
-						lastName: user.lastName,
-						name: user.name,
-						email: user.email,
-						image: user.image,
-					},
-					team: {
-						id: team.id,
-						name: team.name,
-					},
-				})
+				.select(selectableEmployeeColumns)
 				.from(employee)
 				.innerJoin(user, eq(employee.userId, user.id))
 				.leftJoin(team, eq(employee.teamId, team.id))

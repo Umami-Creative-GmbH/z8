@@ -34,7 +34,11 @@ function transformAccessibleEmployee(emp: AccessibleEmployee): SelectableEmploye
 		pronouns: emp.pronouns,
 		position: emp.position,
 		role: emp.role,
-		isActive: true,
+		// Reports look at the past: former employees stay selectable, labelled (#1438).
+		// Report rows carry no deactivation flag; the picker's field is derived from the
+		// roster mark, so a former employee also reads as not active.
+		isActive: !emp.isFormer,
+		isFormer: emp.isFormer === true,
 		teamId: null,
 		user: {
 			id: emp.id,

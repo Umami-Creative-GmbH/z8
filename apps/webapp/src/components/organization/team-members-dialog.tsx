@@ -12,6 +12,11 @@ import {
 } from "@/app/[locale]/(app)/settings/teams/actions";
 import { useDrivingLicenceTeamChangeWarning } from "@/components/driving-licence/ending-confirmation";
 import {
+	FormerEmployeeBadge,
+	isMarkedFormer,
+	ShowFormerEmployeesSwitch,
+} from "@/components/former-employees/former-employee-ui";
+import {
 	ActionPanel,
 	ActionPanelBody,
 	ActionPanelContent,
@@ -38,6 +43,14 @@ import type { MemberWithUserAndEmployee } from "./people-management-types";
 /** A member change with the driving licence warning it confirmed (#1425). */
 type TeamMemberChange = { teamId: string; employeeId: string; previewToken: string };
 
+/**
+ * A former employee (#1438), as the team settings loader marks them. A row
+ * from elsewhere without the mark falls back to the deactivation flag.
+ */
+export function isFormerTeamMember(member: MemberWithUserAndEmployee): boolean {
+	return isMarkedFormer({ isFormer: member.isFormerEmployee, isActive: member.employee?.isActive });
+}
+
 interface TeamMembersDialogProps {
 	team: typeof team.$inferSelect | null;
 	allMembers: MemberWithUserAndEmployee[];
@@ -56,6 +69,8 @@ export function TeamMembersDialog({
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
 	const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");
+	// Former members stay hidden until asked for (#1438).
+	const [showFormer, setShowFormer] = useState(false);
 	const { confirmTeamChange, teamChangeError, drivingLicenceWarning } =
 		useDrivingLicenceTeamChangeWarning();
 	const presence = useEmployeeClockStatuses(
@@ -109,19 +124,23 @@ export function TeamMembersDialog({
 
 	if (!team) return null;
 
-	// Get current team members - must have employee record in this org
-	const teamMembers = allMembers.filter(
+	// Get team members - must have employee record in this org
+	const allTeamMembers = allMembers.filter(
 		(m) =>
 			m.employee?.organizationId === team.organizationId &&
 			(m.employee.teamId === team.id ||
 				m.teamMemberships?.some((membership) => membership.teamId === team.id)),
 	);
+	const currentTeamMembers = allTeamMembers.filter((m) => !isFormerTeamMember(m));
+	const formerCount = allTeamMembers.length - currentTeamMembers.length;
+	const teamMembers = showFormer ? allTeamMembers : currentTeamMembers;
 
-	// Get available employees (not in this team, but have employee record in this org)
+	// Get available employees: on the current roster, not in this team, with an employee record in this org
 	const availableEmployees = allMembers.filter(
 		(m) =>
 			m.employee &&
 			m.employee.organizationId === team.organizationId &&
+			!isFormerTeamMember(m) &&
 			m.employee.teamId !== team.id &&
 			!m.teamMemberships?.some((membership) => membership.teamId === team.id),
 	);
@@ -226,9 +245,12 @@ export function TeamMembersDialog({
 						<div className="flex items-center justify-between">
 							<h4 className="text-sm font-medium">
 								{t("organization.teams.members.currentMembers", "Current Members ({count})", {
-									count: teamMembers.length,
+									count: currentTeamMembers.length,
 								})}
 							</h4>
+							{formerCount > 0 && (
+								<ShowFormerEmployeesSwitch checked={showFormer} onCheckedChange={setShowFormer} />
+							)}
 						</div>
 
 						{teamMembers.length === 0 ? (
@@ -263,7 +285,10 @@ export function TeamMembersDialog({
 													clockStatus={presence.getStatus(member.employee!.id)}
 												/>
 												<div className="flex-1 min-w-0">
-													<div className="font-medium truncate">{member.user.name}</div>
+													<div className="flex items-center gap-2">
+														<span className="font-medium truncate">{member.user.name}</span>
+														{isFormerTeamMember(member) && <FormerEmployeeBadge />}
+													</div>
 													<div className="text-sm text-muted-foreground truncate">
 														{member.employee?.position || member.user.email}
 													</div>

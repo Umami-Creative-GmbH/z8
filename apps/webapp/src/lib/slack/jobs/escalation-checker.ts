@@ -10,11 +10,11 @@ import { DateTime } from "luxon";
 import { db } from "@/db";
 import {
 	approvalRequest,
-	employee,
 	employeeManagers,
 	slackEscalation,
 	slackUserMapping,
 } from "@/db/schema";
+import { currentRosterEmployees } from "@/lib/bot-platform/current-roster-team";
 import { createLogger } from "@/lib/logger";
 import { getLegacyEscalationSuppression, type LegacyEscalationSuppression } from "@/lib/approvals/escalation/legacy-execution";
 import { sendApprovalMessageToManager } from "../approval-handler";
@@ -136,16 +136,11 @@ async function processBotEscalations(bot: {
 			const candidateManagerIds = managers.flatMap((manager) =>
 				manager.managerId !== approval.approverId ? [manager.managerId] : [],
 			);
-			const managerEmployees =
-				candidateManagerIds.length > 0
-					? await db.query.employee.findMany({
-							where: and(
-								inArray(employee.id, candidateManagerIds),
-								eq(employee.organizationId, bot.organizationId),
-							),
-							columns: { id: true, userId: true },
-						})
-					: [];
+			// Only managers on the organization's current roster (#1438).
+			const managerEmployees = await currentRosterEmployees(db, {
+				organizationId: bot.organizationId,
+				employeeIds: candidateManagerIds,
+			});
 			const userIds = managerEmployees.flatMap((emp) => (emp.userId ? [emp.userId] : []));
 			const mappings =
 				userIds.length > 0

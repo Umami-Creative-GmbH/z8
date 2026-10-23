@@ -23,10 +23,10 @@ export function useEmployees(options: UseEmployeesOptions = {}) {
 	const { initialPageSize = 20 } = options;
 	const queryClient = useQueryClient();
 
-	// Filter state (search, role, status)
+	// Filter state (search, role, status). The directory opens on the current roster (#1438).
 	const [search, setSearchState] = useState("");
 	const [role, setRoleState] = useState<string>("all");
-	const [status, setStatusState] = useState<EmployeeDirectoryStatus>("all");
+	const [status, setStatusState] = useState<EmployeeDirectoryStatus>("current");
 
 	// Pagination state (synced with react-table)
 	const [pagination, setPagination] = useState<PaginationState>({

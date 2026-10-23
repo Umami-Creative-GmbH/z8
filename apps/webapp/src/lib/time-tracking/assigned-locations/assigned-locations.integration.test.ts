@@ -227,6 +227,25 @@ describe("assigned locations on PostgreSQL", () => {
 		}
 	});
 
+	it("refuses assigning a former employee and still removes one (#1438)", async () => {
+		const store = await createLocation("Store");
+		const leaver = await fixture.seedEmployee();
+		expect(await assign(leaver.employeeId, store)).toMatchObject({ success: true });
+		await fixture.pool.query(`update employee set is_active = false where id = $1`, [
+			leaver.employeeId,
+		]);
+		const warehouse = await createLocation("Warehouse");
+
+		expect(await assign(leaver.employeeId, warehouse)).toMatchObject({
+			success: false,
+			code: "former_employee",
+		});
+		actAs(owner.userId);
+		expect(
+			await actions.removeAssignedLocationAction({ employeeId: leaver.employeeId, locationId: store }),
+		).toMatchObject({ success: true });
+	});
+
 	it("returns only active employees at active locations from the active-assignment query", async () => {
 		const store = await createLocation("Store");
 		const closed = await createLocation("Closed", { isActive: true });

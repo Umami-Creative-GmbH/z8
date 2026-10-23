@@ -9,7 +9,8 @@ import { and, eq, gte, inArray, lte } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
-import { absenceCategory, absenceEntry, employee, employeeManagers } from "@/db/schema";
+import { absenceCategory, absenceEntry, employee } from "@/db/schema";
+import { currentRosterReportIds } from "@/lib/bot-platform/current-roster-team";
 import { getBotTranslate } from "@/lib/bot-platform/i18n";
 import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
@@ -33,34 +34,19 @@ export const whosOutCommand: BotCommand = {
 			const t = await getBotTranslate(ctx.locale);
 			const temporal = getCommandTemporalContext(ctx);
 			const timezone = temporal.organizationTimezone;
-			// Get employees this user manages (join through employee to filter by org)
-			const managedEmployees = await db.query.employeeManagers.findMany({
-				where: eq(employeeManagers.managerId, ctx.employeeId),
-				with: {
-					employee: {
-						columns: { id: true, organizationId: true },
-						with: {
-							user: {
-								columns: { name: true },
-							},
-						},
-					},
-				},
+			// The manager's team in this organization: its current roster only (#1438).
+			const managedEmployeeIds = await currentRosterReportIds(db, {
+				organizationId: ctx.organizationId,
+				managerEmployeeId: ctx.employeeId,
 			});
 
-			// Filter to employees in this organization
-			const orgManagedEmployees = managedEmployees.filter(
-				(m) => m.employee.organizationId === ctx.organizationId,
-			);
-
-			if (orgManagedEmployees.length === 0) {
+			if (managedEmployeeIds.length === 0) {
 				return {
 					type: "text",
 					text: t("bot.cmd.whosout.noTeam", "You don't have any team members assigned to you."),
 				};
 			}
 
-			const managedEmployeeIds = orgManagedEmployees.map((m) => m.employeeId);
 			const today = temporal.now.toZonedDateTimeISO(timezone).toPlainDate();
 
 			// Get approved absence entries that cover today for managed employees
@@ -101,7 +87,7 @@ export const whosOutCommand: BotCommand = {
 					text: t(
 						"bot.cmd.whosout.noneOut",
 						"All {total} of your team members are available today.",
-						{ total: orgManagedEmployees.length },
+						{ total: managedEmployeeIds.length },
 					),
 				};
 			}
@@ -122,7 +108,7 @@ export const whosOutCommand: BotCommand = {
 			});
 
 			const response = [
-				`**${t("bot.cmd.whosout.header", "{outCount} of {total} team members out today:", { outCount: absences.length, total: orgManagedEmployees.length })}**`,
+				`**${t("bot.cmd.whosout.header", "{outCount} of {total} team members out today:", { outCount: absences.length, total: managedEmployeeIds.length })}**`,
 				"",
 				...lines,
 			].join("\n");

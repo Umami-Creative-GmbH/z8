@@ -1,10 +1,11 @@
 "use server";
 
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, inArray, isNotNull, or } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { user } from "@/db/auth-schema";
-import { employee, team } from "@/db/schema";
+import { employee, team, vehicleUseAssignment } from "@/db/schema";
 import { canManageCurrentOrganizationSettings, getAuthContext } from "@/lib/auth-helpers";
+import { isFormerEmployee, onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
 import { runVehicleUseAction } from "@/lib/time-tracking/vehicle-use/action-runner";
 import {
 	type VehicleUseActionResult,
@@ -31,7 +32,8 @@ export type VehicleUseAdminData = {
 	settings: VehicleUseSettings;
 	assignments: VehicleUseAssignmentData[];
 	teams: VehicleUseOption[];
-	employees: VehicleUseOption[];
+	/** The current roster, and former employees an assignment names (`isFormer`). */
+	employees: Array<VehicleUseOption & { isFormer: boolean }>;
 };
 
 export type SetVehicleUseAssignmentInput = {
@@ -54,15 +56,37 @@ export async function getVehicleUseAdminDataAction(): Promise<
 				.from(team)
 				.where(eq(team.organizationId, organizationId))
 				.orderBy(asc(team.name)),
+			// The current roster (#1438), plus former employees an assignment still
+			// names, marked, so their row keeps its name.
 			db
 				.select({
 					id: employee.id,
 					employeeNumber: employee.employeeNumber,
 					userName: user.name,
+					isFormer: isFormerEmployee(employee),
 				})
 				.from(employee)
 				.innerJoin(user, eq(employee.userId, user.id))
-				.where(and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)))
+				.where(
+					and(
+						eq(employee.organizationId, organizationId),
+						or(
+							onCurrentRoster(organizationId),
+							inArray(
+								employee.id,
+								db
+									.select({ id: vehicleUseAssignment.employeeId })
+									.from(vehicleUseAssignment)
+									.where(
+										and(
+											eq(vehicleUseAssignment.organizationId, organizationId),
+											isNotNull(vehicleUseAssignment.employeeId),
+										),
+									),
+							),
+						),
+					),
+				)
 				.orderBy(asc(user.name), asc(employee.id)),
 		]);
 		return {
@@ -72,6 +96,7 @@ export async function getVehicleUseAdminDataAction(): Promise<
 			employees: employees.map((row) => ({
 				id: row.id,
 				name: row.userName?.trim() || row.employeeNumber || row.id,
+				isFormer: row.isFormer,
 			})),
 		};
 	});

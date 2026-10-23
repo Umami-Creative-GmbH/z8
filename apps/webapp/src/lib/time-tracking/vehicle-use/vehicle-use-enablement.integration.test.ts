@@ -328,6 +328,30 @@ describe("vehicle use enablement on PostgreSQL", () => {
 		expect(await resolve(ids.driver)).toBe("expected");
 	});
 
+	it("refuses a new assignment for a former employee and still switches an existing one (#1438)", async () => {
+		await switchOn();
+		await assign({ type: "employee", employeeId: ids.driver }, "expected");
+		await pool.query("update employee set is_active = false where id = any($1::uuid[])", [
+			[ids.driver, ids.office],
+		]);
+		actAs(ids.ownerUser);
+		expect(
+			await admin.setVehicleUseAssignmentAction({
+				target: { type: "employee", employeeId: ids.office },
+				mode: "expected",
+			}),
+		).toMatchObject({ success: false, code: "former_employee" });
+		await assign({ type: "employee", employeeId: ids.driver }, "off");
+
+		// Offered: the current roster, and the former employee whose row still names them.
+		const data = await admin.getVehicleUseAdminDataAction();
+		if (!data.success) throw new Error(data.error);
+		const offered = new Map(data.data.employees.map((row) => [row.id, row.isFormer]));
+		expect(offered.get(ids.driver)).toBe(true);
+		expect(offered.has(ids.office)).toBe(false);
+		expect(offered.get(ids.manager)).toBe(false);
+	});
+
 	it("audits the switch and every assignment change", async () => {
 		await switchOn();
 		await switchOn(); // unchanged: no second entry

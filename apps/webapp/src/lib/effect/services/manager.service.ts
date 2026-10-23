@@ -5,7 +5,12 @@ import { user } from "@/db/auth-schema";
 import { employee, employeeManagers, team } from "@/db/schema";
 import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import { type ConflictError, type DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
-import { DatabaseService } from "./database.service";
+import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
+import {
+	findEmployeesNotOnCurrentRoster,
+	formerEmployeeRefusal,
+} from "@/lib/employee-lifecycle/current-roster-guard";
+import { type DatabaseClient, DatabaseService } from "./database.service";
 
 export interface ManagerAssignment {
 	id: string;
@@ -40,7 +45,54 @@ export interface ManagedEmployee {
 	team: { name: string } | null;
 }
 
+/**
+ * Which manager links `getManagedEmployees` reads (#1438). The dashboard's Your
+ * team shows `"current"`: a current manager's reports on the current roster.
+ * Manager authority keeps `"all"` links, so a manager still reaches the
+ * records of a report who has left.
+ */
+export type ManagedEmployeesRoster = "current" | "all";
+
 const managerEmployee = alias(employee, "manager_employee");
+
+/**
+ * The manager's direct reports, both sides in the organization. With
+ * `"current"`, both the manager and the report are on the current roster.
+ */
+function managedEmployeeRows(
+	db: DatabaseClient,
+	managerId: string,
+	organizationId: string,
+	roster: ManagedEmployeesRoster,
+) {
+	const inOrganization = (columns: typeof employee | typeof managerEmployee) =>
+		roster === "current"
+			? onCurrentRoster(organizationId, columns)
+			: eq(columns.organizationId, organizationId);
+	const managerInOrganization = inOrganization(managerEmployee);
+	const reportInOrganization = inOrganization(employee);
+
+	return db
+		.select({
+			id: employee.id,
+			position: employee.position,
+			userId: user.id,
+			userName: user.name,
+			userEmail: user.email,
+			userImage: user.image,
+			teamName: team.name,
+		})
+		.from(employeeManagers)
+		.innerJoin(
+			managerEmployee,
+			and(eq(managerEmployee.id, employeeManagers.managerId), managerInOrganization),
+		)
+		.innerJoin(employee, and(eq(employee.id, employeeManagers.employeeId), reportInOrganization))
+		.innerJoin(user, eq(user.id, employee.userId))
+		.leftJoin(team, and(eq(team.id, employee.teamId), eq(team.organizationId, organizationId)))
+		.where(eq(employeeManagers.managerId, managerId))
+		.orderBy(asc(user.name), asc(employee.id));
+}
 
 export class ManagerService extends Context.Service<
 	ManagerService,
@@ -65,10 +117,14 @@ export class ManagerService extends Context.Service<
 			managerId: string,
 			employeeId: string,
 		) => Effect.Effect<boolean, DatabaseError>;
-		/** The manager's direct reports, both sides in the given organization (#1436). */
+		/**
+		 * The manager's direct reports, both sides in the given organization
+		 * (#1436). `roster` says whether former employees count (#1438).
+		 */
 		readonly getManagedEmployees: (
 			managerId: string,
 			organizationId: string,
+			options: { roster: ManagedEmployeesRoster },
 		) => Effect.Effect<ManagedEmployee[], DatabaseError>;
 	}
 >()("ManagerService") {}
@@ -140,6 +196,51 @@ export const ManagerServiceLive = Layer.effect(
 					}
 
 					if (!employeeExists) return;
+
+					// Both sides must be on the current roster for a new link or a primary
+					// change (#1438). Re-saving an unchanged link keeps working.
+					const unchanged = yield* dbService.query("manager.findExistingLink", async () => {
+						const [row] = await dbService.db
+							.select({ isPrimary: employeeManagers.isPrimary })
+							.from(employeeManagers)
+							.where(
+								and(
+									eq(employeeManagers.employeeId, employeeId),
+									eq(employeeManagers.managerId, managerId),
+								),
+							);
+						return row?.isPrimary === isPrimary;
+					});
+					if (!unchanged) {
+						const former = yield* dbService.query("manager.findNotOnCurrentRoster", () =>
+							findEmployeesNotOnCurrentRoster(dbService.db, {
+								organizationId: employeeExists.organizationId,
+								employeeIds: [employeeId, managerId],
+							}),
+						);
+						if (former.includes(employeeId)) {
+							return yield* Effect.fail(
+								formerEmployeeRefusal(
+									{
+										field: "employeeId",
+										message: "A former employee can't get a new manager",
+									},
+									[employeeId],
+								),
+							);
+						}
+						if (former.includes(managerId)) {
+							return yield* Effect.fail(
+								formerEmployeeRefusal(
+									{
+										field: "managerId",
+										message: "A former employee can't be assigned as a manager",
+									},
+									[managerId],
+								),
+							);
+						}
+					}
 
 					// One protected transaction: the relation feeds the manager's creation
 					// authority, so it commits under both users' exclusive protection.
@@ -349,41 +450,15 @@ export const ManagerServiceLive = Layer.effect(
 					return assignment !== undefined;
 				}),
 
-			getManagedEmployees: (managerId, organizationId) =>
+			getManagedEmployees: (managerId, organizationId, options) =>
 				Effect.gen(function* () {
 					const rows = yield* dbService.query("getManagedEmployees", async () => {
-						return await dbService.db
-							.select({
-								id: employee.id,
-								position: employee.position,
-								userId: user.id,
-								userName: user.name,
-								userEmail: user.email,
-								userImage: user.image,
-								teamName: team.name,
-							})
-							.from(employeeManagers)
-							.innerJoin(
-								managerEmployee,
-								and(
-									eq(managerEmployee.id, employeeManagers.managerId),
-									eq(managerEmployee.organizationId, organizationId),
-								),
-							)
-							.innerJoin(
-								employee,
-								and(
-									eq(employee.id, employeeManagers.employeeId),
-									eq(employee.organizationId, organizationId),
-								),
-							)
-							.innerJoin(user, eq(user.id, employee.userId))
-							.leftJoin(
-								team,
-								and(eq(team.id, employee.teamId), eq(team.organizationId, organizationId)),
-							)
-							.where(eq(employeeManagers.managerId, managerId))
-							.orderBy(asc(user.name), asc(employee.id));
+						return await managedEmployeeRows(
+							dbService.db,
+							managerId,
+							organizationId,
+							options.roster,
+						);
 					});
 
 					return rows.map(

@@ -32,7 +32,9 @@ import {
 } from "@/db/schema";
 import type { VacationBalanceConfiguration } from "@/lib/absences/types";
 import { getEnhancedVacationBalanceResult } from "@/lib/absences/vacation.service";
+import { todayCalendarDateKey } from "@/lib/calendar/date-keys";
 import { shouldExcludeFromCalculations } from "@/lib/calendar/holiday-service";
+import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
 import { currentTimestamp, dateFromDB } from "@/lib/datetime/drizzle-adapter";
 import { calendarYearAt, instantFromDate } from "@/lib/datetime/temporal-core";
 import { NotFoundError } from "@/lib/effect/errors";
@@ -41,7 +43,10 @@ import {
 	type ServerActionResult,
 } from "@/lib/effect/result";
 import { AuthService } from "@/lib/effect/services/auth.service";
-import { DatabaseService } from "@/lib/effect/services/database.service";
+import {
+	type DatabaseClient,
+	DatabaseService,
+} from "@/lib/effect/services/database.service";
 import {
 	type ManagedEmployee,
 	ManagerService,
@@ -60,6 +65,11 @@ import {
 	type TeamStreakLeader,
 } from "./hydration-team-streak-leaders";
 import { createHydrationTeamStreakLeadersCacheConfig } from "./hydration-team-streak-leaders-query";
+import {
+	currentRosterAverageWeeklyHours,
+	currentRosterCount,
+	currentRosterEmployeeIds,
+} from "./current-roster-queries";
 import { calculateAdjustedExpectedHoursForRange } from "./quick-stats-calculations";
 import { loadTrackedQuickStats, type QuickStats } from "./quick-stats-tracking";
 import { mapRecentlyApprovedRequestRows } from "./recently-approved-requests";
@@ -94,6 +104,34 @@ type DashboardTodayAbsenceRow = typeof absenceEntry.$inferSelect & {
 	};
 	category: { name: string; color: string | null };
 };
+
+/** The caller's employee in the active organization. */
+const sessionEmployee = Effect.gen(function* () {
+	const authService = yield* AuthService;
+	const session = yield* authService.getSession();
+	const organizationId = session.session.activeOrganizationId;
+	const dbService = yield* DatabaseService;
+	const found = organizationId
+		? yield* dbService.query("dashboard.sessionEmployee", async () => {
+				return await dbService.db.query.employee.findFirst({
+					where: and(
+						eq(employee.userId, session.user.id),
+						eq(employee.organizationId, organizationId),
+					),
+					columns: { id: true, organizationId: true },
+				});
+			})
+		: undefined;
+	if (!found) {
+		return yield* Effect.fail(
+			new NotFoundError({
+				message: "Employee profile not found",
+				entityType: "employee",
+			}),
+		);
+	}
+	return found;
+});
 
 export async function getManagerTodaySummary(): Promise<ManagerTodaySummaryResult> {
 	const effect = Effect.gen(function* () {
@@ -218,9 +256,11 @@ export async function getManagedEmployees(): Promise<
 		}
 
 		const managerService = yield* ManagerService;
+		// Your team is who works here now (#1438).
 		const employees = yield* managerService.getManagedEmployees(
 			currentEmployee.id,
 			activeOrganizationId,
+			{ roster: "current" },
 		);
 
 		return {
@@ -239,47 +279,18 @@ export async function getUpcomingAbsences(
 	limit: number = 5,
 ): Promise<ServerActionResult<any[]>> {
 	const effect = Effect.gen(function* () {
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
 		const dbService = yield* DatabaseService;
-
-		// Get current employee with organization
-		const currentEmployee = yield* dbService
-			.query("getCurrentEmployee", async () => {
-				return await dbService.db.query.employee.findFirst({
-					where: eq(employee.userId, session.user.id),
-					with: {
-						organization: true,
-					},
-				});
-			})
-			.pipe(
-				Effect.flatMap((emp) =>
-					emp
-						? Effect.succeed(emp)
-						: Effect.fail(
-								new NotFoundError({
-									message: "Employee profile not found",
-									entityType: "employee",
-								}),
-							),
-				),
-			);
+		const currentEmployee = yield* sessionEmployee;
 
 		// Get today's date as YYYY-MM-DD string for absence date comparison
 		const todayStr = DateTime.now().toFormat("yyyy-MM-dd");
 
-		// Get all employee IDs in this organization
-		const orgEmployees = yield* dbService.query(
-			"getOrgEmployeeIds",
-			async () => {
-				return await dbService.db.query.employee.findMany({
-					where: eq(employee.organizationId, currentEmployee.organizationId),
-					columns: { id: true },
-				});
-			},
+		// Upcoming time off is the current roster's (#1438).
+		const orgEmployeeIds = yield* dbService.query(
+			"dashboard.upcomingAbsences.currentRoster",
+			() =>
+				currentRosterEmployeeIds(dbService.db, currentEmployee.organizationId),
 		);
-		const orgEmployeeIds = orgEmployees.map((e) => e.id);
 
 		// Get upcoming absences (approved, starting from today)
 		const absences = yield* dbService.query("getUpcomingAbsences", async () => {
@@ -328,46 +339,41 @@ export async function getTeamCalendarData(
 	year: number,
 ): Promise<ServerActionResult<any>> {
 	const effect = Effect.gen(function* () {
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
 		const dbService = yield* DatabaseService;
-
-		// Get current employee
-		const currentEmployee = yield* dbService
-			.query("getCurrentEmployee", async () => {
-				return await dbService.db.query.employee.findFirst({
-					where: eq(employee.userId, session.user.id),
-				});
-			})
-			.pipe(
-				Effect.flatMap((emp) =>
-					emp
-						? Effect.succeed(emp)
-						: Effect.fail(
-								new NotFoundError({
-									message: "Employee profile not found",
-									entityType: "employee",
-								}),
-							),
-				),
-			);
+		const currentEmployee = yield* sessionEmployee;
 
 		// Calculate date range for the month (as YYYY-MM-DD strings)
 		const monthDT = DateTime.utc(year, month, 1);
 		const monthStartStr = monthDT.startOf("month").toFormat("yyyy-MM-dd");
 		const monthEndStr = monthDT.endOf("month").toFormat("yyyy-MM-dd");
 
-		// Get all employee IDs in this organization
-		const orgEmployees = yield* dbService.query(
-			"getOrgEmployeeIds",
-			async () => {
-				return await dbService.db.query.employee.findMany({
-					where: eq(employee.organizationId, currentEmployee.organizationId),
-					columns: { id: true },
-				});
-			},
+		// A past calendar is a view of the past (#1438): a former employee's
+		// absences stay up to today, in the organization's timezone, as in the team
+		// calendar feed; later ones are left out with them.
+		const [currentIds, orgEmployeeIds, organizationRow] = yield* dbService.query(
+			"dashboard.teamCalendar.employees",
+			() =>
+				Promise.all([
+					currentRosterEmployeeIds(dbService.db, currentEmployee.organizationId),
+					dbService.db
+						.select({ id: employee.id })
+						.from(employee)
+						.where(eq(employee.organizationId, currentEmployee.organizationId))
+						.then((rows) => rows.map((row) => row.id)),
+					dbService.db.query.organization.findFirst({
+						where: eq(organization.id, currentEmployee.organizationId),
+						columns: { timezone: true },
+					}),
+				]),
 		);
-		const orgEmployeeIds = orgEmployees.map((e) => e.id);
+		const today = todayCalendarDateKey(organizationRow?.timezone || "UTC");
+		const currentOrStartedByToday =
+			currentIds.length > 0
+				? or(
+						inArray(absenceEntry.employeeId, currentIds),
+						lte(absenceEntry.startDate, today),
+					)
+				: lte(absenceEntry.startDate, today);
 
 		// Get all absences for this month
 		const absences = yield* dbService.query("getMonthAbsences", async () => {
@@ -375,6 +381,7 @@ export async function getTeamCalendarData(
 			return await dbService.db.query.absenceEntry.findMany({
 				where: and(
 					inArray(absenceEntry.employeeId, orgEmployeeIds),
+					currentOrStartedByToday,
 					eq(absenceEntry.status, "approved"),
 					or(
 						and(
@@ -567,8 +574,7 @@ export async function getQuickStats(): Promise<ServerActionResult<QuickStats>> {
 				return await dbService.db.query.employee.findFirst({
 					where: and(
 						eq(employee.userId, session.user.id),
-						eq(employee.organizationId, organizationId),
-						eq(employee.isActive, true),
+						onCurrentRoster(organizationId),
 					),
 					with: {
 						workPolicyAssignments: {
@@ -813,8 +819,7 @@ export async function getUpcomingBirthdays(
 			async () => {
 				return await dbService.db.query.employee.findMany({
 					where: and(
-						eq(employee.organizationId, currentEmployee.organizationId),
-						eq(employee.isActive, true),
+						onCurrentRoster(currentEmployee.organizationId),
 						sql`${employee.birthday} IS NOT NULL`,
 					),
 					with: {
@@ -890,68 +895,25 @@ export async function getUpcomingBirthdays(
 }
 
 /**
- * Get team overview statistics for the organization
+ * Team overview statistics for the organization. The employee count and the
+ * average hours are the current roster's (#1438).
  */
+export type TeamOverviewStats = {
+	currentEmployees: number;
+	teamsCount: number;
+	avgWorkHours: number;
+};
+
 export async function getTeamOverviewStats(): Promise<
-	ServerActionResult<{
-		totalEmployees: number;
-		activeEmployees: number;
-		teamsCount: number;
-		avgWorkHours: number;
-	}>
+	ServerActionResult<TeamOverviewStats>
 > {
 	const effect = Effect.gen(function* () {
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
 		const dbService = yield* DatabaseService;
+		const currentEmployee = yield* sessionEmployee;
 
-		// Get current employee
-		const currentEmployee = yield* dbService
-			.query("getCurrentEmployee", async () => {
-				return await dbService.db.query.employee.findFirst({
-					where: eq(employee.userId, session.user.id),
-				});
-			})
-			.pipe(
-				Effect.flatMap((emp) =>
-					emp
-						? Effect.succeed(emp)
-						: Effect.fail(
-								new NotFoundError({
-									message: "Employee profile not found",
-									entityType: "employee",
-								}),
-							),
-				),
-			);
-
-		// Count total employees in organization
-		const totalEmployeesResult = yield* dbService.query(
-			"getTotalEmployees",
-			async () => {
-				const result = await dbService.db
-					.select({ count: sql<number>`count(*)::int` })
-					.from(employee)
-					.where(eq(employee.organizationId, currentEmployee.organizationId));
-				return result[0]?.count ?? 0;
-			},
-		);
-
-		// Count active employees in organization
-		const activeEmployeesResult = yield* dbService.query(
-			"getActiveEmployees",
-			async () => {
-				const result = await dbService.db
-					.select({ count: sql<number>`count(*)::int` })
-					.from(employee)
-					.where(
-						and(
-							eq(employee.organizationId, currentEmployee.organizationId),
-							eq(employee.isActive, true),
-						),
-					);
-				return result[0]?.count ?? 0;
-			},
+		const currentEmployees = yield* dbService.query(
+			"dashboard.teamOverview.currentRosterCount",
+			() => currentRosterCount(dbService.db, currentEmployee.organizationId),
 		);
 
 		// Count teams in organization
@@ -966,68 +928,17 @@ export async function getTeamOverviewStats(): Promise<
 			},
 		);
 
-		// Calculate average work hours from work schedules
 		const avgWorkHoursResult = yield* dbService.query(
-			"getAvgWorkHours",
-			async () => {
-				// Get all employees with their work schedule assignments (includes template)
-				const employeesWithSchedules =
-					await dbService.db.query.employee.findMany({
-						where: eq(employee.organizationId, currentEmployee.organizationId),
-						with: {
-							workPolicyAssignments: {
-								where: eq(workPolicyAssignment.isActive, true),
-								orderBy: [desc(workPolicyAssignment.effectiveFrom)],
-								limit: 1,
-								with: {
-									policy: {
-										with: {
-											schedule: true,
-										},
-									},
-								},
-							},
-						},
-					});
-
-				// Calculate average from simple schedules that have hoursPerCycle
-				let totalHours = 0;
-				let countWithSchedule = 0;
-
-				for (const emp of employeesWithSchedules) {
-					if (
-						emp.workPolicyAssignments &&
-						emp.workPolicyAssignments.length > 0
-					) {
-						const assignment = emp.workPolicyAssignments[0];
-						const schedule = assignment.policy?.schedule;
-						if (
-							schedule &&
-							schedule.scheduleType === "simple" &&
-							schedule.hoursPerCycle
-						) {
-							// Convert hoursPerCycle to weekly hours based on scheduleCycle
-							const hoursPerCycle = Number.parseFloat(schedule.hoursPerCycle);
-							let weeklyHours = hoursPerCycle;
-							if (schedule.scheduleCycle === "biweekly") {
-								weeklyHours = hoursPerCycle / 2;
-							} else if (schedule.scheduleCycle === "monthly") {
-								weeklyHours = (hoursPerCycle * 12) / 52;
-							}
-							totalHours += weeklyHours;
-							countWithSchedule++;
-						}
-					}
-				}
-
-				// Default to 40 if no schedules found
-				return countWithSchedule > 0 ? totalHours / countWithSchedule : 40;
-			},
+			"dashboard.teamOverview.currentRosterAverageHours",
+			() =>
+				currentRosterAverageWeeklyHours(
+					dbService.db,
+					currentEmployee.organizationId,
+				),
 		);
 
 		return {
-			totalEmployees: totalEmployeesResult,
-			activeEmployees: activeEmployeesResult,
+			currentEmployees,
 			teamsCount: teamsCountResult,
 			avgWorkHours: Math.round(avgWorkHoursResult * 10) / 10, // Round to 1 decimal
 		};
@@ -1036,78 +947,81 @@ export async function getTeamOverviewStats(): Promise<
 	return runServerActionSafe(effect);
 }
 
+/** Holidays excluded from calculations that may fall into the return-date search. */
+async function loadReturnDateHolidayRows(
+	db: DatabaseClient,
+	organizationId: string,
+	searchStart: Date,
+	searchEnd: Date,
+) {
+	return await db
+		.select({
+			startDate: holiday.startDate,
+			endDate: holiday.endDate,
+			recurrenceType: holiday.recurrenceType,
+			recurrenceRule: holiday.recurrenceRule,
+			recurrenceEndDate: holiday.recurrenceEndDate,
+		})
+		.from(holiday)
+		.innerJoin(holidayCategory, eq(holiday.categoryId, holidayCategory.id))
+		.where(
+			and(
+				eq(holiday.organizationId, organizationId),
+				eq(holiday.isActive, true),
+				eq(holidayCategory.isActive, true),
+				eq(holidayCategory.excludeFromCalculations, true),
+				or(
+					eq(holiday.recurrenceType, "yearly"),
+					and(
+						eq(holiday.recurrenceType, "none"),
+						lte(holiday.startDate, searchEnd),
+						gte(holiday.endDate, searchStart),
+					),
+				),
+			),
+		);
+}
+
 /**
  * Get who's out today
  */
+export type WhosOutTodayEmployee = {
+	id: string;
+	userId: string;
+	name: string;
+	image: string | null;
+	category: string;
+	categoryColor: string | null;
+	endsToday: boolean;
+	returnsTomorrow: boolean;
+	returnDate: string;
+};
+
+export type WhosOutToday = {
+	outToday: WhosOutTodayEmployee[];
+	returningTomorrow: WhosOutTodayEmployee[];
+	totalOut: number;
+};
+
 export async function getWhosOutToday(): Promise<
-	ServerActionResult<{
-		outToday: Array<{
-			id: string;
-			userId: string;
-			name: string;
-			image: string | null;
-			category: string;
-			categoryColor: string | null;
-			endsToday: boolean;
-			returnsTomorrow: boolean;
-			returnDate: string;
-		}>;
-		returningTomorrow: Array<{
-			id: string;
-			userId: string;
-			name: string;
-			image: string | null;
-			category: string;
-			categoryColor: string | null;
-			endsToday: boolean;
-			returnsTomorrow: boolean;
-			returnDate: string;
-		}>;
-		totalOut: number;
-	}>
+	ServerActionResult<WhosOutToday>
 > {
 	const effect = Effect.gen(function* () {
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
 		const dbService = yield* DatabaseService;
 		const workPolicyService = yield* WorkPolicyService;
-
-		// Get current employee with organization
-		const currentEmployee = yield* dbService
-			.query("getCurrentEmployee", async () => {
-				return await dbService.db.query.employee.findFirst({
-					where: eq(employee.userId, session.user.id),
-				});
-			})
-			.pipe(
-				Effect.flatMap((emp) =>
-					emp
-						? Effect.succeed(emp)
-						: Effect.fail(
-								new NotFoundError({
-									message: "Employee profile not found",
-									entityType: "employee",
-								}),
-							),
-				),
-			);
+		const currentEmployee = yield* sessionEmployee;
 
 		// Get today's date as YYYY-MM-DD string
 		const todayDT = DateTime.now();
 		const todayStr = todayDT.toFormat("yyyy-MM-dd");
 		const returnSearchStart = todayDT.plus({ days: 1 }).startOf("day");
 		const returnSearchEnd = todayDT.plus({ days: 366 }).endOf("day");
-		// Get all employee IDs in this organization
-		const orgEmployees = yield* dbService.query(
-			"getOrgEmployeeIds",
-			async () => {
-				return await dbService.db.query.employee.findMany({
-					where: eq(employee.organizationId, currentEmployee.organizationId),
-					columns: { id: true },
-				});
-			},
+		// Who's out is the current roster's absences (#1438).
+		const orgEmployeeIds = yield* dbService.query(
+			"dashboard.whosOutToday.currentRoster",
+			() =>
+				currentRosterEmployeeIds(dbService.db, currentEmployee.organizationId),
 		);
-		const orgEmployeeIds = orgEmployees.map((e) => e.id);
 
 		// Get absences that overlap with today
 		const todayAbsences = yield* dbService.query(
@@ -1203,39 +1117,13 @@ export async function getWhosOutToday(): Promise<
 			absenceRangesByEmployee.set(absence.employeeId, ranges);
 		}
 
-		const holidayRows = yield* dbService.query(
-			"getReturnDateHolidays",
-			async () => {
-				return await dbService.db
-					.select({
-						startDate: holiday.startDate,
-						endDate: holiday.endDate,
-						recurrenceType: holiday.recurrenceType,
-						recurrenceRule: holiday.recurrenceRule,
-						recurrenceEndDate: holiday.recurrenceEndDate,
-					})
-					.from(holiday)
-					.innerJoin(
-						holidayCategory,
-						eq(holiday.categoryId, holidayCategory.id),
-					)
-					.where(
-						and(
-							eq(holiday.organizationId, currentEmployee.organizationId),
-							eq(holiday.isActive, true),
-							eq(holidayCategory.isActive, true),
-							eq(holidayCategory.excludeFromCalculations, true),
-							or(
-								eq(holiday.recurrenceType, "yearly"),
-								and(
-									eq(holiday.recurrenceType, "none"),
-									lte(holiday.startDate, returnSearchEnd.toJSDate()),
-									gte(holiday.endDate, returnSearchStart.toJSDate()),
-								),
-							),
-						),
-					);
-			},
+		const holidayRows = yield* dbService.query("getReturnDateHolidays", () =>
+			loadReturnDateHolidayRows(
+				dbService.db,
+				currentEmployee.organizationId,
+				returnSearchStart.toJSDate(),
+				returnSearchEnd.toJSDate(),
+			),
 		);
 
 		const holidayDates = new Set<string>();
@@ -1549,8 +1437,7 @@ export async function getHydrationWidgetData(options?: {
 				const currentEmployee = await dbService.db.query.employee.findFirst({
 					where: and(
 						eq(employee.userId, session.user.id),
-						eq(employee.organizationId, activeOrganizationId),
-						eq(employee.isActive, true),
+						onCurrentRoster(activeOrganizationId),
 					),
 					columns: {
 						id: true,
@@ -1612,8 +1499,7 @@ export async function getHydrationWidgetData(options?: {
 						)
 						.where(
 							and(
-								eq(employee.organizationId, activeOrganizationId),
-								eq(employee.isActive, true),
+								onCurrentRoster(activeOrganizationId),
 								or(
 									inArray(employee.teamId, sortedTeamIds),
 									isNotNull(teamMembership.id),
@@ -1650,8 +1536,7 @@ export async function getHydrationWidgetData(options?: {
 				const currentEmployee = await dbService.db.query.employee.findFirst({
 					where: and(
 						eq(employee.userId, session.user.id),
-						eq(employee.organizationId, activeOrganizationId),
-						eq(employee.isActive, true),
+						onCurrentRoster(activeOrganizationId),
 					),
 					columns: {
 						id: true,
@@ -1674,8 +1559,7 @@ export async function getHydrationWidgetData(options?: {
 					.leftJoin(hydrationStats, eq(hydrationStats.userId, employee.userId))
 					.where(
 						and(
-							eq(employee.organizationId, activeOrganizationId),
-							eq(employee.isActive, true),
+							onCurrentRoster(activeOrganizationId),
 						),
 					);
 

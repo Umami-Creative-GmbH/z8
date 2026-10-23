@@ -592,6 +592,63 @@ describe("organization vehicles on PostgreSQL", () => {
 			expect(await listed()).toEqual([]);
 		});
 
+		it("refuses newly assigning a former employee and keeps one already assigned (#1438)", async () => {
+			await admin.query("update employee set is_active = false where id = $1", [
+				ids.memberEmployee,
+			]);
+			expect(
+				await refusal({
+					kind: "create",
+					name: "Van",
+					licencePlate: "M-AB 1",
+					drivers: { employeeIds: [ids.memberEmployee], teamIds: [] },
+				}),
+			).toBe("former_driver");
+			await admin.query("update employee set is_active = true where id = $1", [
+				ids.memberEmployee,
+			]);
+			const van = await create("Van", "M-AB 1", {
+				employeeIds: [ids.memberEmployee],
+				teamIds: [],
+			});
+			await admin.query("update employee set is_active = false where id = $1", [
+				ids.memberEmployee,
+			]);
+
+			const renamed = await apply({
+				kind: "update",
+				vehicleId: van.id,
+				name: "Blue van",
+				licencePlate: "M-AB 1",
+				drivers: { employeeIds: [ids.memberEmployee, ids.managerEmployee], teamIds: [] },
+			});
+			const offered = async () => {
+				const result = await getVehicleSettings();
+				if (!result.success) throw new Error(result.error);
+				return result.data.employees.find((row) => row.id === ids.memberEmployee);
+			};
+			// Still a driver: offered, marked, so the edit keeps them.
+			expect(await offered()).toMatchObject({ isFormer: true, isActive: false });
+			expect(
+				renamed
+					.find((vehicle) => vehicle.id === van.id)
+					?.drivers.employees.map((driver) => driver.id)
+					.toSorted(),
+			).toEqual([ids.managerEmployee, ids.memberEmployee].toSorted());
+			const removed = await apply({
+				kind: "update",
+				vehicleId: van.id,
+				name: "Blue van",
+				licencePlate: "M-AB 1",
+				drivers: { employeeIds: [ids.managerEmployee], teamIds: [] },
+			});
+			expect(
+				removed.find((vehicle) => vehicle.id === van.id)?.drivers.employees.map((d) => d.id),
+			).toEqual([ids.managerEmployee]);
+			// No longer a driver anywhere: no longer offered.
+			expect(await offered()).toBeUndefined();
+		});
+
 		it("refuses a driver row that points at another organization's employee in the database", async () => {
 			const van = await create("Van", "M-AB 1");
 			await expect(

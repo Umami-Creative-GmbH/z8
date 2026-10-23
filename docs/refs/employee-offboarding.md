@@ -126,6 +126,38 @@ send again.
   reactivate an employee whose employment an effective departure ended; the
   database guard keeps them inactive. Access returns only through a rehire.
 
+## Former employees and the current roster
+
+A deactivation and an effective departure both make a **former employee**
+(Organization glossary, Organization ADR 0006). One rule decides who is on the
+**current roster** (#1438): `onCurrentRoster(organizationId, columns?, now?)` in
+`apps/webapp/src/lib/employee-lifecycle/current-roster.ts`, organization-scoped,
+active, and not past a due departure (the same live check as
+`employeeHasOrganizationAccess`).
+
+- **Roster views** filter with it: dashboard team widgets and counts, `/team`,
+  pickers, team and project member lists, bot commands, digests and escalation
+  targets, and manager notice recipients. Lists people manage hide former
+  employees behind *Show former employees*. Settings → Employees opens on
+  *Current*, which also lists pending invitation drafts.
+- **Views of the past** keep former employees and mark them with
+  `isFormerEmployee`: report selectors, the calendar selector, past team
+  calendar days and the calendar feed up to today, `/team/driving` rows.
+- **Role saves** refuse a former employee through
+  `current-roster-guard.ts`; removals always work. Most saves refuse only
+  employees they add, so a form that still lists a former holder can be saved.
+  Vacation policy and approval group saves refuse every former employee.
+  Expense-officer and personnel-file-officer *scopes* may still name former
+  employees, because their last reports are still owed and their files stay
+  managed; payroll access scope refuses newly named former employees.
+- **Actionable manager notices** (the shift pickup request) go to the current
+  admins when every manager the employee had is former; informational ones are
+  dropped.
+- **Guard**: `current-roster-surfaces.test.ts` lists every roster surface and
+  view of the past, checks every other employee query in listed modules, and
+  keeps hand-written `employee.isActive` checks from growing beyond
+  `raw-employee-active-checks.json`.
+
 ## Access grants
 
 When the departure takes effect, the expense officer grant, the payroll access

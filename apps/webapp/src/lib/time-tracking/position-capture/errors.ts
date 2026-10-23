@@ -19,6 +19,8 @@ export type PositionCaptureErrorCode =
 	| "invalid_selection"
 	| "team_not_found"
 	| "employee_not_found"
+	/** A new assignment names a former employee (#1438). */
+	| "former_employee"
 	| "assignment_not_found"
 	/** Anything unexpected: the action failed for a reason the user cannot act on. */
 	| "failed";

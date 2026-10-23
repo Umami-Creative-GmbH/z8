@@ -66,6 +66,11 @@ function vehicleUseErrorMessage(
 				"settings.vehicleUse.error.employeeNotFound",
 				"That employee no longer exists.",
 			);
+		case "former_employee":
+			return t(
+				"settings.vehicleUse.error.formerEmployee",
+				"Former employees can't get a new assignment. Choose someone on the current roster.",
+			);
 		case "assignment_not_found":
 			return t(
 				"settings.vehicleUse.error.assignmentNotFound",

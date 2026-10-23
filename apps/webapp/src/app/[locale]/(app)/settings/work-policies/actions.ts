@@ -28,6 +28,7 @@ import {
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import { ensureOnCurrentRoster } from "@/lib/employee-lifecycle/current-roster-guard";
 import { hasValidLatestClockIns, latestClockInForDay } from "@/lib/scheduling/latest-clock-in";
 import { markOrganizationWorkBalancesDirty } from "@/lib/work-balance/service";
 import {
@@ -943,6 +944,12 @@ export async function createWorkPolicyAssignment(
 		}
 
 		const dbService = yield* DatabaseService;
+		// A former employee gets no new policy assignment (#1438).
+		yield* ensureOnCurrentRoster(dbService, {
+			organizationId: actor.organizationId,
+			employeeIds: [data.employeeId],
+			field: "employeeId",
+		});
 		const policy = yield* dbService
 			.query("getAssignmentPolicy", async () => {
 				return await dbService.db.query.workPolicy.findFirst({

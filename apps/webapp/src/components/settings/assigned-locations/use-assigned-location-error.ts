@@ -17,6 +17,11 @@ export function useAssignedLocationErrorMessage() {
 					);
 				case "employee_not_found":
 					return t("settings.assignedLocations.errors.employeeNotFound", "Employee not found.");
+				case "former_employee":
+					return t(
+						"settings.assignedLocations.errors.formerEmployee",
+						"Former employees can't be assigned a location.",
+					);
 				case "location_not_found":
 					return t("settings.assignedLocations.errors.locationNotFound", "Location not found.");
 				case "invalid_selection":

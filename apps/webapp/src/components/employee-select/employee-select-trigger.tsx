@@ -7,6 +7,8 @@ import { UserAvatar } from "@/components/user-avatar";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { normalizePronouns } from "@/lib/employee-identity";
 import { cn } from "@/lib/utils";
+import { FormerEmployeeBadge } from "@/components/former-employees/former-employee-ui";
+import { isFormerSelectableEmployee } from "./employee-select-item";
 import type { EmployeeSelectTriggerProps, SelectableEmployee } from "./types";
 
 function getEmployeeName(employee: SelectableEmployee): string {
@@ -55,6 +57,7 @@ function TriggerSelection({
 					clockStatus={employee.clockStatus ?? "unknown"}
 				/>
 				<span className="truncate">{getEmployeeName(employee)}</span>
+				{isFormerSelectableEmployee(employee) && <FormerEmployeeBadge />}
 			</div>
 		);
 	}
@@ -182,6 +185,7 @@ export function EmployeeChips({
 						clockStatus={employee.clockStatus ?? "unknown"}
 					/>
 					<span className="truncate max-w-[120px]">{getEmployeeName(employee)}</span>
+					{isFormerSelectableEmployee(employee) && <FormerEmployeeBadge />}
 					{!disabled && (
 						<button
 							type="button"

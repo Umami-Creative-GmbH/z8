@@ -51,6 +51,8 @@ export interface ManagedEmployee {
 	position: string | null;
 	role: "admin" | "manager" | "employee";
 	isActive: boolean;
+	/** A former employee (Organization ADR 0006), shown only on request and marked (#1438). */
+	isFormer: boolean;
 	isPrimaryManager: boolean;
 	isCurrentUser: boolean;
 	timeBalance: EmployeeWorkBalancePayload | null;
@@ -62,6 +64,8 @@ export function buildVisibleManagedEmployees(input: {
 	currentEmployee: CurrentTeamEmployee;
 	managedRecords: ManagedEmployeeRecord[];
 	balances: Map<string, EmployeeWorkBalancePayload>;
+	/** Reports who are former employees; the viewer is always on the current roster. */
+	formerEmployeeIds?: ReadonlySet<string>;
 }): ManagedEmployee[] {
 	const byId = new Map<string, ManagedEmployee>();
 	const toManagedEmployee = (
@@ -77,6 +81,7 @@ export function buildVisibleManagedEmployees(input: {
 		position: emp.position,
 		role: emp.role,
 		isActive: emp.isActive,
+		isFormer: !isCurrentUser && (input.formerEmployeeIds?.has(emp.id) ?? false),
 		isPrimaryManager,
 		isCurrentUser,
 		timeBalance: input.balances.get(emp.id) ?? null,

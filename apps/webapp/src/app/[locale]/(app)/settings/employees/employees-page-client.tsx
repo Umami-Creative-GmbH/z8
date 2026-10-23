@@ -46,10 +46,11 @@ import { queryKeys, useEmployeeClockStatuses } from "@/lib/query";
 import { useEmployees } from "@/lib/query/use-employees";
 import type { SettingsAccessTier } from "@/lib/settings-access";
 import { createEmployeeColumns } from "./columns";
-import type {
-	EmployeeDirectoryRow,
-	EmployeeDirectoryStatus,
-	PaginatedEmployeeResponse,
+import {
+	type EmployeeDirectoryStatus,
+	type EmployeeWithRelations,
+	normalizeEmployeeDirectoryStatus,
+	type PaginatedEmployeeResponse,
 } from "./employee-action-types";
 import { employeeTableFeatures } from "./employee-table-features";
 
@@ -262,24 +263,30 @@ function EmployeeDirectoryFilters({
 					</SelectItem>
 				</SelectContent>
 			</Select>
-			<Select value={status} onValueChange={onStatusChange}>
-				<SelectTrigger className="w-full sm:w-[180px]">
+			<Select
+				value={status}
+				onValueChange={(value) => onStatusChange(normalizeEmployeeDirectoryStatus(value, "current"))}
+			>
+				<SelectTrigger
+					className="w-full sm:w-[180px]"
+					aria-label={t("settings.employees.directory.statusFilter", "Filter by status")}
+				>
 					<SelectValue
 						placeholder={t("settings.employees.directory.statusFilter", "Filter by status")}
 					/>
 				</SelectTrigger>
 				<SelectContent>
-					<SelectItem value="all">
-						{t("settings.employees.directory.statuses.all", "All Status")}
+					<SelectItem value="current">
+						{t("settings.employees.directory.statuses.current", "Current")}
 					</SelectItem>
-					<SelectItem value="active">
-						{t("settings.employees.directory.statuses.active", "Active")}
-					</SelectItem>
-					<SelectItem value="inactive">
-						{t("settings.employees.directory.statuses.inactive", "Inactive")}
+					<SelectItem value="former">
+						{t("settings.employees.directory.statuses.former", "Former")}
 					</SelectItem>
 					<SelectItem value="draft">
 						{t("settings.employees.directory.statuses.draft", "Draft")}
+					</SelectItem>
+					<SelectItem value="all">
+						{t("settings.employees.directory.statuses.all", "All Status")}
 					</SelectItem>
 				</SelectContent>
 			</Select>
@@ -332,9 +339,8 @@ function EmployeeDirectoryTab(props: {
 	const [searchInput, setSearchInput] = useState("");
 	const updateCachedEmployee = (
 		employeeId: string,
-		updates:
-			| Pick<EmployeeDirectoryRow, "isActive" | "membership">
-			| Pick<EmployeeDirectoryRow, "isActive">,
+		updates: Pick<EmployeeWithRelations, "isActive" | "isFormer"> &
+			Partial<Pick<EmployeeWithRelations, "membership">>,
 	) => {
 		queryClient.setQueriesData<PaginatedEmployeeResponse>(
 			{ queryKey: queryKeys.employees.organization(props.organizationId) },
@@ -353,10 +359,11 @@ function EmployeeDirectoryTab(props: {
 		organizationId: props.organizationId,
 		currentUserId: props.currentUserId,
 		currentMemberRole: props.currentMemberRole,
+		// Deactivating makes a former employee at once; reactivating brings them back (#1438).
 		onOptimisticStatusChange: (employeeId, isActive) =>
-			updateCachedEmployee(employeeId, { isActive }),
+			updateCachedEmployee(employeeId, { isActive, isFormer: !isActive }),
 		onRemoved: (employeeId) =>
-			updateCachedEmployee(employeeId, { isActive: false, membership: null }),
+			updateCachedEmployee(employeeId, { isActive: false, isFormer: true, membership: null }),
 	});
 
 	useEffect(() => {

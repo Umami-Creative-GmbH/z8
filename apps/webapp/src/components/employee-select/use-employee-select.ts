@@ -16,6 +16,11 @@ import type { EmployeeSelectFilters } from "./types";
 interface UseEmployeeSelectOptions {
 	/** Pre-applied filters */
 	filters?: EmployeeSelectFilters;
+	/**
+	 * Also offer former employees (#1438), for pickers that look at the past.
+	 * Off by default: the picker offers the current roster only.
+	 */
+	includeFormerEmployees?: boolean;
 	/** IDs to exclude from results */
 	excludeIds?: string[];
 	/** Page size for pagination */
@@ -45,6 +50,8 @@ interface UseEmployeeSelectReturn {
 	setRoleFilter: (value: string) => void;
 	statusFilter: string;
 	setStatusFilter: (value: string) => void;
+	/** Whether the status filter applies: only a picker that includes former employees has one. */
+	canFilterStatus: boolean;
 	teamFilter: string;
 	setTeamFilter: (value: string) => void;
 
@@ -63,7 +70,13 @@ interface UseEmployeeSelectReturn {
  * Custom hook for employee selection with debounced search and pagination
  */
 export function useEmployeeSelect(options: UseEmployeeSelectOptions = {}): UseEmployeeSelectReturn {
-	const { filters, excludeIds = [], pageSize = 20, enabled = true } = options;
+	const {
+		filters,
+		includeFormerEmployees = false,
+		excludeIds = [],
+		pageSize = 20,
+		enabled = true,
+	} = options;
 
 	// Search state with debouncing
 	const [search, setSearchState] = useState("");
@@ -71,7 +84,9 @@ export function useEmployeeSelect(options: UseEmployeeSelectOptions = {}): UseEm
 
 	// Filter state
 	const [roleFilter, setRoleFilter] = useState<string>(filters?.role || "all");
-	const [statusFilter, setStatusFilter] = useState<string>(filters?.status || "all");
+	const [statusFilter, setStatusFilter] = useState<string>(
+		includeFormerEmployees ? filters?.status || "all" : "current",
+	);
 	const [teamFilter, setTeamFilter] = useState<string>(filters?.teamId || "");
 
 	// Pagination state
@@ -107,7 +122,10 @@ export function useEmployeeSelect(options: UseEmployeeSelectOptions = {}): UseEm
 	const queryParams: EmployeeSelectParams = {
 		search: debouncedSearch || undefined,
 		role: roleFilter === "all" ? undefined : (roleFilter as EmployeeSelectParams["role"]),
-		status: statusFilter === "all" ? undefined : (statusFilter as EmployeeSelectParams["status"]),
+		// The current roster unless this picker opted in to former employees (#1438).
+		status: includeFormerEmployees
+			? (statusFilter as EmployeeSelectParams["status"])
+			: "current",
 		teamId: teamFilter || undefined,
 		excludeIds: excludeIds.length > 0 ? excludeIds : undefined,
 		limit: pageSize,
@@ -186,6 +204,7 @@ export function useEmployeeSelect(options: UseEmployeeSelectOptions = {}): UseEm
 		setRoleFilter: setRoleFilterWithReset,
 		statusFilter,
 		setStatusFilter: setStatusFilterWithReset,
+		canFilterStatus: includeFormerEmployees,
 		teamFilter,
 		setTeamFilter: setTeamFilterWithReset,
 

@@ -470,6 +470,17 @@ describe("document requests: bulk create (#1407)", () => {
 		expect(owner.other.teams.map((option) => option.name)).toEqual(["Berlin", "Hamburg"]);
 	});
 
+	it("never offers a former employee as recipient (#1438)", async () => {
+		await admin.query("update employee set is_active = false where id = $1", [ids.dana]);
+		try {
+			const owner = await listDocumentRequestRecipientOptions(db, await accessOf("owner"));
+			expect(owner.other.employees.map((option) => option.id)).not.toContain(ids.dana);
+			expect(owner.other.employees.map((option) => option.id)).toContain(ids.anna);
+		} finally {
+			await admin.query("update employee set is_active = true where id = $1", [ids.dana]);
+		}
+	});
+
 	it("creates each employee's request once when two bulk creates run at the same time", async () => {
 		const access = await accessOf("owner");
 		const input = {

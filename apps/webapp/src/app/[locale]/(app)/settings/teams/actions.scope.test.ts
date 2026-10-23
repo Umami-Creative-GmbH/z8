@@ -31,8 +31,15 @@ const mockState = vi.hoisted(() => {
 		updateWhere: vi.fn(async () => undefined),
 		deleteWhere: vi.fn(async () => undefined),
 		teamMembershipFindFirst: vi.fn(async () => null),
+		formerEmployeeIds: new Set<string>(),
 	};
 });
+
+vi.mock("@/lib/employee-lifecycle/current-roster-guard", async () =>
+	(
+		await import("@/lib/employee-lifecycle/testing/current-roster-guard.test.mock")
+	).currentRosterGuardModule(() => mockState.formerEmployeeIds),
+);
 
 vi.mock("drizzle-orm", () => ({
 	and: vi.fn((...args: unknown[]) => ({ and: args })),
@@ -62,6 +69,19 @@ vi.mock("@/lib/organization/driving-licence/no-longer-intended", () => ({
 
 vi.mock("next/cache", () => ({
 	revalidateTag: mockState.revalidateTag,
+}));
+
+// The roster rule itself is covered by the PostgreSQL suites (#1438); here a
+// member is current unless the test lists them as former.
+vi.mock("@/lib/employee-lifecycle/current-roster", () => ({
+	onCurrentRoster: vi.fn((organizationId: string) => ({ onCurrentRoster: organizationId })),
+}));
+
+vi.mock("@/lib/employee-lifecycle/current-roster-among", () => ({
+	currentRosterAmong: vi.fn(
+		async (_db: unknown, _organizationId: string, employeeIds: Iterable<string>) =>
+			new Set([...employeeIds].filter((id) => !mockState.formerEmployeeIds.has(id))),
+	),
 }));
 
 vi.mock("@opentelemetry/api", () => ({
@@ -299,6 +319,29 @@ describe("team settings server scope", () => {
 		mockState.insertReturning.mockResolvedValue([]);
 		mockState.updateSet.mockImplementation(() => ({ where: mockState.updateWhere }));
 		mockState.teamMembershipFindFirst.mockResolvedValue(null);
+		mockState.formerEmployeeIds = new Set();
+	});
+
+	it("refuses adding a former employee to a team (#1438)", async () => {
+		mockState.employeeQueue = [
+			{ id: "admin-1", userId: "user-1", organizationId: "org-1", role: "admin", teamId: null },
+			{
+				id: "target-1",
+				userId: "user-2",
+				organizationId: "org-1",
+				role: "employee",
+				teamId: "team-a",
+				user: { id: "user-2", name: "Target", email: "target@example.com" },
+			},
+		];
+		mockState.membershipQueue = [{ organizationId: "org-1", role: "admin" }];
+		mockState.teamQueue = [{ id: "team-b", organizationId: "org-1", name: "Beta" }];
+		mockState.formerEmployeeIds = new Set(["target-1"]);
+
+		const result = await addTeamMember("team-b", "target-1");
+
+		expect(result).toMatchObject({ success: false, code: "ValidationError" });
+		expect(mockState.insertValues).not.toHaveBeenCalled();
 	});
 
 	it("rejects manager team creation even when canCreateTeams is granted", async () => {
@@ -469,7 +512,44 @@ describe("team settings server scope", () => {
 		expect(result.success).toBe(true);
 		if (result.success) {
 			expect(result.data.employees).toEqual([
-				expect.objectContaining({ id: "target-1", user: { id: "user-2", name: "Target" } }),
+				expect.objectContaining({
+					id: "target-1",
+					user: { id: "user-2", name: "Target" },
+					isFormer: false,
+				}),
+			]);
+		}
+	});
+
+	it("marks former team members so the page can hide them (#1438)", async () => {
+		mockState.employeeQueue = [null];
+		mockState.membershipQueue = [{ organizationId: "org-1", role: "owner" }];
+		mockState.formerEmployeeIds = new Set(["former-1"]);
+		mockState.teamQueue = [
+			{
+				id: "team-a",
+				organizationId: "org-1",
+				name: "Alpha",
+				description: null,
+				createdAt: new Date(),
+				updatedAt: new Date(),
+				memberships: ["current-1", "former-1"].map((id) => ({
+					teamId: "team-a",
+					employeeId: id,
+					employee: { id, userId: `user-${id}`, organizationId: "org-1", user: { id: `user-${id}` } },
+				})),
+			},
+		];
+
+		const result = await getTeam("team-a");
+
+		expect(result.success).toBe(true);
+		if (result.success) {
+			expect(
+				result.data.employees?.map((member) => ({ id: member.id, isFormer: member.isFormer })),
+			).toEqual([
+				{ id: "current-1", isFormer: false },
+				{ id: "former-1", isFormer: true },
 			]);
 		}
 	});

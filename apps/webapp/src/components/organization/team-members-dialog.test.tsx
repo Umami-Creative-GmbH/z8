@@ -49,13 +49,13 @@ const dana = {
 	teamMemberships: [{ teamId }],
 } as unknown as MemberWithUserAndEmployee;
 
-function renderDialog() {
+function renderDialog(allMembers: MemberWithUserAndEmployee[] = [dana]) {
 	const client = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
 	return render(
 		<QueryClientProvider client={client}>
 			<TeamMembersDialog
 				team={team}
-				allMembers={[dana]}
+				allMembers={allMembers}
 				open
 				onOpenChange={() => {}}
 				canManageMembers
@@ -70,6 +70,44 @@ async function clickRemove() {
 	if (!(row instanceof HTMLElement)) throw new Error("member row missing");
 	await userEvent.click(within(row).getByRole("button"));
 }
+
+describe("TeamMembersDialog former employees (#1438)", () => {
+	const fern = {
+		member: { id: "m2" },
+		user: { id: "u2", name: "Fern Former", email: "fern@example.test", image: null },
+		employee: { id: "d1425000-0000-4000-8000-000000000002", organizationId, teamId, position: null },
+		teamMemberships: [{ teamId }],
+		isFormerEmployee: true,
+	} as unknown as MemberWithUserAndEmployee;
+	const otto = {
+		member: { id: "m3" },
+		user: { id: "u3", name: "Otto Outside", email: "otto@example.test", image: null },
+		employee: { id: "d1425000-0000-4000-8000-000000000003", organizationId, teamId: null },
+		teamMemberships: [],
+		isFormerEmployee: true,
+	} as unknown as MemberWithUserAndEmployee;
+
+	it("hides former members until asked for, then marks them", async () => {
+		renderDialog([dana, fern]);
+
+		expect(await screen.findByText("Dana Driver")).toBeTruthy();
+		expect(screen.queryByText("Fern Former")).toBeNull();
+		expect(screen.getByText("Current Members (1)")).toBeTruthy();
+
+		await userEvent.click(screen.getByRole("switch", { name: "Show former employees" }));
+
+		const row = screen.getByText("Fern Former").closest("div.flex.items-center.justify-between");
+		expect(within(row as HTMLElement).getByText("Former")).toBeTruthy();
+	});
+
+	it("never offers a former employee to add", () => {
+		renderDialog([dana, otto]);
+
+		// Otto is the only employee outside the team, and former: nobody is left to add.
+		expect(screen.queryByText("Select an employee to add")).toBeNull();
+		expect(screen.queryByRole("switch")).toBeNull();
+	});
+});
 
 describe("TeamMembersDialog driving licence warning (#1425)", () => {
 	const token = "a".repeat(64);

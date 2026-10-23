@@ -6,8 +6,13 @@ import {
 	AuthorizationError,
 	type DatabaseError,
 	NotFoundError,
+	type ValidationError,
 } from "@/lib/effect/errors";
 import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
+import {
+	findEmployeesNotOnCurrentRoster,
+	formerEmployeeRefusal,
+} from "@/lib/employee-lifecycle/current-roster-guard";
 import { DatabaseService } from "./database.service";
 
 export interface PermissionFlags {
@@ -63,7 +68,7 @@ export class PermissionsService extends Context.Service<
 			grantedBy: string,
 		) => Effect.Effect<
 			void,
-			NotFoundError | AuthorizationError | DatabaseError
+			NotFoundError | AuthorizationError | ValidationError | DatabaseError
 		>;
 		readonly revokePermissions: (
 			employeeId: string,
@@ -199,6 +204,14 @@ export const PermissionsServiceLive = Layer.effect(
 									),
 								});
 								if (!target) return { _tag: "TargetNotFound" } as const;
+								// A former employee gets no team permission (#1438); clearing flags stays possible.
+								if (Object.values(permissions).some((flag) => flag === true)) {
+									const former = await findEmployeesNotOnCurrentRoster(tx, {
+										organizationId,
+										employeeIds: [employeeId],
+									});
+									if (former.length > 0) return { _tag: "FormerEmployee", former } as const;
+								}
 
 								const granter = await tx.query.employee.findFirst({
 									where: and(
@@ -345,6 +358,11 @@ export const PermissionsServiceLive = Layer.effect(
 								resource: "team_permissions",
 								action: "grant",
 							}),
+						);
+					}
+					if (outcome._tag === "FormerEmployee") {
+						return yield* Effect.fail(
+							formerEmployeeRefusal({ field: "employeeId" }, outcome.former),
 						);
 					}
 				}),

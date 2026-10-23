@@ -555,6 +555,20 @@ describe("expense officer access (#747)", () => {
 		});
 	});
 
+	it("offers only the current roster as officers and lists former employees apart (#1438)", async () => {
+		await admin.query("update employee set is_active = false where id = $1", [ids.auditor]);
+		try {
+			signIn("owner");
+			const data = await officers.getExpenseOfficerAdminData();
+			if (!data.success) throw new Error(data.error);
+			expect(data.data.employees.map((row) => row.id)).not.toContain(ids.auditor);
+			expect(data.data.departedEmployees.map((row) => row.id)).toContain(ids.auditor);
+			expect(data.data.employees.map((row) => row.id)).toContain(ids.reimburser);
+		} finally {
+			await admin.query("update employee set is_active = true where id = $1", [ids.auditor]);
+		}
+	});
+
 	it("refuses grant management to non-administrators and grants in other organizations' terms", async () => {
 		signIn("exporter");
 		expect((await officers.getExpenseOfficerAdminData()).success).toBe(false);

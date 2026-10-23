@@ -661,4 +661,55 @@ describe("driving licence verifier grants through public actions", () => {
 			).success,
 		).toBe(false);
 	});
+	it("refuses newly naming a former employee and keeps one the grant already names (#1438)", async () => {
+		const named = (employeeIds: string[]) =>
+			actions.saveDrivingLicenceVerifierGrantAction({
+				verifierEmployeeId: ids.verifier,
+				scope: "specific",
+				teamIds: [],
+				employeeIds,
+			});
+		await pool.query("update employee set is_active = false where id = $1", [ids.ben]);
+		expect(await named([ids.ben])).toEqual({ success: false, error: "former_employee" });
+		await pool.query("update employee set is_active = true where id = $1", [ids.ben]);
+		expect((await named([ids.ben])).success).toBe(true);
+		await pool.query("update employee set is_active = false where id = $1", [ids.ben]);
+		expect((await named([ids.ben, ids.anna])).success).toBe(true);
+		const [active] = (
+			await pool.query<{ employee_ids: string[] }>(
+				"select employee_ids from driving_licence_verifier_grant where verifier_employee_id = $1 and revoked_at is null",
+				[ids.verifier],
+			)
+		).rows;
+		expect(active?.employee_ids.toSorted()).toEqual([ids.anna, ids.ben].toSorted());
+	});
+	it("offers the current roster and keeps a former employee a live grant names, marked (#1438)", async () => {
+		const offered = async () => {
+			const data = await actions.getDrivingLicenceVerifierAdminDataAction();
+			if (!data.success) throw new Error(data.error);
+			return Object.fromEntries(data.data.employees.map((row) => [row.id, row.isFormer]));
+		};
+		await pool.query("update employee set is_active = false where id = any($1::uuid[])", [
+			[ids.ben, ids.anna],
+		]);
+		expect(await offered()).toEqual({ [ids.admin]: false, [ids.verifier]: false });
+
+		await pool.query("update employee set is_active = true where id = $1", [ids.ben]);
+		expect(
+			(
+				await actions.saveDrivingLicenceVerifierGrantAction({
+					verifierEmployeeId: ids.verifier,
+					scope: "specific",
+					teamIds: [],
+					employeeIds: [ids.ben],
+				})
+			).success,
+		).toBe(true);
+		await pool.query("update employee set is_active = false where id = $1", [ids.ben]);
+		expect(await offered()).toEqual({
+			[ids.admin]: false,
+			[ids.verifier]: false,
+			[ids.ben]: true,
+		});
+	});
 });

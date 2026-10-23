@@ -16,6 +16,7 @@ import {
 import { AuditAction } from "@/lib/audit-logger";
 import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
+import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
 import {
 	canManageDocumentRequest,
 	type EmployeeRef,
@@ -609,9 +610,9 @@ export async function listDocumentRequestRecipientOptions(
 				.leftJoin(user, eq(user.id, employee.userId))
 				.where(
 					and(
-						eq(employee.organizationId, organizationId),
 						managedEmployeesCondition(access, category, employee.id),
-						employeeHasOrganizationAccess(now),
+						// Only the current roster gets new requests (#1438).
+						onCurrentRoster(organizationId, employee, now),
 					),
 				)
 				.orderBy(asc(user.name), asc(employee.employeeNumber), asc(employee.id));
