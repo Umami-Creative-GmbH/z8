@@ -35,6 +35,12 @@ const mockState = vi.hoisted(() => {
 	};
 });
 
+vi.mock("@/lib/employee-lifecycle/current-roster-guard", async () =>
+	(
+		await import("@/lib/employee-lifecycle/testing/current-roster-guard.test.mock")
+	).currentRosterGuardModule(() => mockState.formerEmployeeIds),
+);
+
 vi.mock("drizzle-orm", () => ({
 	and: vi.fn((...args: unknown[]) => ({ and: args })),
 	eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
@@ -310,6 +316,28 @@ describe("team settings server scope", () => {
 		mockState.updateSet.mockImplementation(() => ({ where: mockState.updateWhere }));
 		mockState.teamMembershipFindFirst.mockResolvedValue(null);
 		mockState.formerEmployeeIds = new Set();
+	});
+
+	it("refuses adding a former employee to a team (#1438)", async () => {
+		mockState.employeeQueue = [
+			{ id: "admin-1", userId: "user-1", organizationId: "org-1", role: "admin", teamId: null },
+			{
+				id: "target-1",
+				userId: "user-2",
+				organizationId: "org-1",
+				role: "employee",
+				teamId: "team-a",
+				user: { id: "user-2", name: "Target", email: "target@example.com" },
+			},
+		];
+		mockState.membershipQueue = [{ organizationId: "org-1", role: "admin" }];
+		mockState.teamQueue = [{ id: "team-b", organizationId: "org-1", name: "Beta" }];
+		mockState.formerEmployeeIds = new Set(["target-1"]);
+
+		const result = await addTeamMember("team-b", "target-1");
+
+		expect(result).toMatchObject({ success: false, code: "ValidationError" });
+		expect(mockState.insertValues).not.toHaveBeenCalled();
 	});
 
 	it("rejects manager team creation even when canCreateTeams is granted", async () => {

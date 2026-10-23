@@ -6,6 +6,10 @@ import { employee, employeeManagers, team } from "@/db/schema";
 import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import { type ConflictError, type DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
+import {
+	findEmployeesNotOnCurrentRoster,
+	formerEmployeeRefusal,
+} from "@/lib/employee-lifecycle/current-roster-guard";
 import { type DatabaseClient, DatabaseService } from "./database.service";
 
 export interface ManagerAssignment {
@@ -194,6 +198,51 @@ export const ManagerServiceLive = Layer.effect(
 					}
 
 					if (!employeeExists) return;
+
+					// Both sides must be on the current roster for a new link or a primary
+					// change (#1438). Re-saving an unchanged link keeps working.
+					const unchanged = yield* dbService.query("manager.findExistingLink", async () => {
+						const [row] = await dbService.db
+							.select({ isPrimary: employeeManagers.isPrimary })
+							.from(employeeManagers)
+							.where(
+								and(
+									eq(employeeManagers.employeeId, employeeId),
+									eq(employeeManagers.managerId, managerId),
+								),
+							);
+						return row?.isPrimary === isPrimary;
+					});
+					if (!unchanged) {
+						const former = yield* dbService.query("manager.findNotOnCurrentRoster", () =>
+							findEmployeesNotOnCurrentRoster(dbService.db, {
+								organizationId: employeeExists.organizationId,
+								employeeIds: [employeeId, managerId],
+							}),
+						);
+						if (former.includes(employeeId)) {
+							return yield* Effect.fail(
+								formerEmployeeRefusal(
+									{
+										field: "employeeId",
+										message: "A former employee can't get a new manager",
+									},
+									[employeeId],
+								),
+							);
+						}
+						if (former.includes(managerId)) {
+							return yield* Effect.fail(
+								formerEmployeeRefusal(
+									{
+										field: "managerId",
+										message: "A former employee can't be assigned as a manager",
+									},
+									[managerId],
+								),
+							);
+						}
+					}
 
 					// One protected transaction: the relation feeds the manager's creation
 					// authority, so it commits under both users' exclusive protection.

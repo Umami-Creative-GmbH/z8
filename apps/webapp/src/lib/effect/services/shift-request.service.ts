@@ -10,6 +10,11 @@ import {
 	shiftRequest,
 } from "@/db/schema";
 import type { AuthUserDisplayNameInput } from "@/lib/auth/derived-user-name";
+import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
+import {
+	findEmployeesNotOnCurrentRoster,
+	formerEmployeeRefusal,
+} from "@/lib/employee-lifecycle/current-roster-guard";
 import {
 	AuthorizationError,
 	ConflictError,
@@ -106,12 +111,9 @@ async function getActiveEmployee(
 	organizationId: string,
 	employeeId: string,
 ) {
+	// Current roster (#1438): a due departure counts the same as a deactivation.
 	return await tx.query.employee.findFirst({
-		where: and(
-			eq(employee.id, employeeId),
-			eq(employee.organizationId, organizationId),
-			eq(employee.isActive, true),
-		),
+		where: and(eq(employee.id, employeeId), onCurrentRoster(organizationId)),
 	});
 }
 
@@ -144,33 +146,23 @@ async function requireActiveRequestParticipants(
 	organizationId: string,
 	request: ShiftRequest,
 ) {
-	const requester = await getActiveEmployee(
-		tx,
+	// Approving assigns the requester or the target to the shift, so both must
+	// be on the current roster (#1438); rejecting such a request stays possible.
+	const former = await findEmployeesNotOnCurrentRoster(tx, {
 		organizationId,
-		request.requesterId,
-	);
-	if (!requester) {
-		abort(notFound("employee", request.requesterId, "Requester not found"));
-	}
-
-	if (request.targetEmployeeId) {
-		const target = await getActiveEmployee(
-			tx,
-			organizationId,
-			request.targetEmployeeId,
+		employeeIds: [request.requesterId, request.targetEmployeeId],
+	});
+	if (former.length > 0) {
+		abort(
+			formerEmployeeRefusal(
+				{
+					field: former.includes(request.requesterId) ? "requesterId" : "targetEmployeeId",
+					message: "This request names a former employee, so the shift can't be assigned.",
+				},
+				former,
+			),
 		);
-		if (!target) {
-			abort(
-				notFound(
-					"employee",
-					request.targetEmployeeId,
-					"Target employee not found",
-				),
-			);
-		}
 	}
-
-	return requester;
 }
 
 async function requireApprover(

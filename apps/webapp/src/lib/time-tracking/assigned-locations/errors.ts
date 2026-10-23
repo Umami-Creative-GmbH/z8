@@ -7,6 +7,8 @@ export type AssignedLocationErrorCode =
 	| "admin_only"
 	| "invalid_selection"
 	| "employee_not_found"
+	/** The employee is a former employee (#1438). */
+	| "former_employee"
 	| "location_not_found"
 	/** Anything unexpected: the action failed for a reason the user cannot act on. */
 	| "failed";

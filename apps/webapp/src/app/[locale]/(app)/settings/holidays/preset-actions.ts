@@ -12,6 +12,7 @@ import {
 	team,
 } from "@/db/schema";
 import { type AnyAppError, ConflictError, DatabaseError, NotFoundError } from "@/lib/effect/errors";
+import { ensureOnCurrentRoster } from "@/lib/employee-lifecycle/current-roster-guard";
 import {
 	type AppServices,
 	runServerActionSafe,
@@ -1127,6 +1128,12 @@ export async function createPresetAssignment(
 					}),
 				);
 			}
+			// A former employee gets no new holiday preset assignment (#1438).
+			yield* ensureOnCurrentRoster(actor.dbService, {
+				organizationId: actor.organizationId,
+				employeeIds: [data.employeeId],
+				field: "employeeId",
+			});
 		}
 
 		// Calculate priority based on assignment type

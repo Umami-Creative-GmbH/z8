@@ -12,6 +12,10 @@ import type { AuthUserDisplayNameInput } from "@/lib/auth/derived-user-name";
 import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
 import {
+	findEmployeesNotOnCurrentRoster,
+	formerEmployeeRefusal,
+} from "@/lib/employee-lifecycle/current-roster-guard";
+import {
 	AuthorizationError,
 	type DatabaseError,
 	NotFoundError,
@@ -499,6 +503,16 @@ export const ShiftServiceLive = Layer.effect(
 									? (existing?.templateId ?? null)
 									: input.templateId;
 
+							// A former employee is never newly assigned (#1438). Editing a shift
+							// that keeps its assignee, such as a past one, still saves.
+							if (employeeId && employeeId !== existing?.employeeId) {
+								const former = await findEmployeesNotOnCurrentRoster(tx, {
+									organizationId: input.organizationId,
+									employeeIds: [employeeId],
+								});
+								if (former.length > 0) return { kind: "former_employee", former } as const;
+							}
+
 							let skillWarning: SkillWarning | undefined;
 							let override:
 								| { context: AssignmentContext; missingSkillIds: string[]; reason: string }
@@ -603,6 +617,11 @@ export const ShiftServiceLive = Layer.effect(
 					if (outcome.kind === "reason_required") {
 						return yield* Effect.fail(
 							skillOverrideReasonRequiredError(outcome.decision.missingSkillIds),
+						);
+					}
+					if (outcome.kind === "former_employee") {
+						return yield* Effect.fail(
+							formerEmployeeRefusal({ field: "employeeId" }, outcome.former),
 						);
 					}
 

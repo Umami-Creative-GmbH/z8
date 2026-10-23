@@ -100,8 +100,15 @@ const mockState = vi.hoisted(() => {
 		db: null as any,
 		logAudit: vi.fn(async () => undefined),
 		revalidateTag: vi.fn(),
+		formerEmployeeIds: new Set<string>(),
 	};
 });
+
+vi.mock("@/lib/employee-lifecycle/current-roster-guard", async () =>
+	(
+		await import("@/lib/employee-lifecycle/testing/current-roster-guard.test.mock")
+	).currentRosterGuardModule(() => mockState.formerEmployeeIds),
+);
 
 vi.mock("drizzle-orm", async (importOriginal) => ({
 	...(await importOriginal<typeof import("drizzle-orm")>()),
@@ -447,6 +454,7 @@ describe("vacation settings scope actions", () => {
 			role: "manager",
 		};
 		mockState.managedEmployeeIds = new Set(["employee-1"]);
+		mockState.formerEmployeeIds = new Set();
 		mockState.targetEmployee = {
 			id: "employee-1",
 			organizationId: "org-1",
@@ -1116,6 +1124,21 @@ describe("vacation settings scope actions", () => {
 		});
 
 		expect(result).toEqual({ success: true, data: { id: "assignment-1" } });
+	});
+
+	it("refuses assigning a vacation policy to a former employee (#1438)", async () => {
+		mockState.formerEmployeeIds = new Set(["employee-1"]);
+		mockState.selectQueue = [[{ id: "policy-1", organizationId: "org-1" }]];
+		mockState.insertQueue = [[{ id: "assignment-1" }]];
+
+		const result = await createVacationPolicyAssignment({
+			policyId: "policy-1",
+			assignmentType: "employee",
+			employeeId: "employee-1",
+		});
+
+		expect(result).toMatchObject({ success: false, code: "ValidationError" });
+		expect(mockState.insertValues).not.toHaveBeenCalled();
 	});
 
 	it("rejects manager vacation policy assignment for unmanaged members", async () => {

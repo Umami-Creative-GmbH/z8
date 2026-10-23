@@ -24,6 +24,7 @@ import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/resul
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { PermissionsService } from "@/lib/effect/services/permissions.service";
+import { ensureOnCurrentRoster } from "@/lib/employee-lifecycle/current-roster-guard";
 import { createLogger } from "@/lib/logger";
 import { onTeamMemberAdded, onTeamMemberRemoved } from "@/lib/notifications/triggers";
 import type { DrivingLicenceTeamChangeImpact } from "@/lib/organization/driving-licence/intended-driver-rules";
@@ -450,6 +451,14 @@ function authorizeTeamMemberChange(teamId: string, employeeId: string, kind: "ad
 					entityId: employeeId,
 				}),
 			);
+		}
+		// A former employee joins no team (#1438); removing one stays possible.
+		if (kind === "add") {
+			yield* ensureOnCurrentRoster(dbService, {
+				organizationId: targetTeam.organizationId,
+				employeeIds: [employeeId],
+				field: "employeeId",
+			});
 		}
 
 		if (kind === "add" && targetEmployee && actor.accessTier !== "orgAdmin") {

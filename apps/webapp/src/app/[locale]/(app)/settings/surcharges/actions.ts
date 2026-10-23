@@ -19,6 +19,10 @@ import {
 } from "@/db/schema";
 import { getAuthContext, verifyOrgMembership } from "@/lib/auth-helpers";
 import {
+	FORMER_EMPLOYEE_MESSAGE,
+	findEmployeesNotOnCurrentRoster,
+} from "@/lib/employee-lifecycle/current-roster-guard";
+import {
 	isSettingsAccessMembershipRole,
 	resolveSettingsAccessTier,
 	type SettingsAccessTier,
@@ -932,6 +936,15 @@ export async function createSurchargeAssignment(
 
 		const { modelId, assignmentType, teamId, employeeId, effectiveFrom, effectiveUntil, isActive } =
 			validated.data;
+
+		// Only an employee of this organization's current roster can be named (#1438).
+		if (assignmentType === "employee") {
+			const refused = await findEmployeesNotOnCurrentRoster(db, {
+				organizationId: actor.organizationId,
+				employeeIds: [employeeId],
+			});
+			if (refused.length > 0) return { success: false, error: FORMER_EMPLOYEE_MESSAGE };
+		}
 
 		// Determine priority based on assignment type
 		const priority = assignmentType === "employee" ? 2 : assignmentType === "team" ? 1 : 0;

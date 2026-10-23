@@ -6,6 +6,7 @@ import { employee, employeeAssignedLocation, location } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
 import type { AuditTrail } from "@/lib/audit-trail";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
+import { findEmployeesNotOnCurrentRoster } from "@/lib/employee-lifecycle/current-roster-guard";
 import type { WorkTransactionClient } from "../work-transaction";
 import { AssignedLocationRefusal } from "./errors";
 
@@ -160,6 +161,14 @@ export async function addAssignedLocation(
 		assertEmployeeInOrganization(tx, input),
 		assertLocationInOrganization(tx, input),
 	]);
+	// A former employee gets no new assigned location (#1438).
+	const former = await findEmployeesNotOnCurrentRoster(tx, {
+		organizationId: input.organizationId,
+		employeeIds: [input.employeeId],
+	});
+	if (former.length > 0) {
+		throw new AssignedLocationRefusal("former_employee", "The employee is a former employee");
+	}
 	const [inserted] = await tx
 		.insert(employeeAssignedLocation)
 		.values({
