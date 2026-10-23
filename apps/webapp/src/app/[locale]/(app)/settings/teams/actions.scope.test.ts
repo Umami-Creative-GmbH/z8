@@ -82,6 +82,15 @@ vi.mock("@/lib/employee-lifecycle/current-roster-among", () => ({
 		async (_db: unknown, _organizationId: string, employeeIds: Iterable<string>) =>
 			new Set([...employeeIds].filter((id) => !mockState.formerEmployeeIds.has(id))),
 	),
+	// Former members left on a recorded date unless the test leaves it out.
+	formerEmployeesAmong: vi.fn(
+		async (_db: unknown, _organizationId: string, employeeIds: Iterable<string>) =>
+			new Map(
+				[...employeeIds]
+					.filter((id) => mockState.formerEmployeeIds.has(id))
+					.map((id) => [id, "2026-10-12"] as const),
+			),
+	),
 }));
 
 vi.mock("@opentelemetry/api", () => ({
@@ -546,11 +555,16 @@ describe("team settings server scope", () => {
 		expect(result.success).toBe(true);
 		if (result.success) {
 			expect(
-				result.data.employees?.map((member) => ({ id: member.id, isFormer: member.isFormer })),
+				result.data.employees?.map((member) => ({
+					id: member.id,
+					isFormer: member.isFormer,
+					formerSince: member.formerSince,
+				})),
 			).toEqual([
-				{ id: "current-1", isFormer: false },
-				{ id: "former-1", isFormer: true },
+				{ id: "current-1", isFormer: false, formerSince: undefined },
+				{ id: "former-1", isFormer: true, formerSince: "2026-10-12" },
 			]);
+			expect(result.data.employees?.[0]).not.toHaveProperty("formerSince");
 		}
 	});
 

@@ -142,7 +142,6 @@ export function TeamMembersList({ employees, showFormer = false }: TeamMembersLi
 	const { t } = useTranslate();
 	const router = useRouter();
 	const [formerPending, startFormerTransition] = useTransition();
-	const formerLabel = t("common:formerEmployees.former", "Former");
 	const [searchQuery, setSearchQuery] = useState("");
 	const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
 	const youLabel = t("team.member.you", "You");
@@ -234,7 +233,6 @@ export function TeamMembersList({ employees, showFormer = false }: TeamMembersLi
 						workBalanceLabel={workBalanceLabel}
 						historyLabel={historyLabel}
 						primaryManagerLabel={primaryManagerLabel}
-						formerLabel={formerLabel}
 					/>
 				)
 			) : (
@@ -343,7 +341,6 @@ type TeamMemberPresentationProps = {
 	workBalanceLabel: string;
 	historyLabel: string;
 	primaryManagerLabel: string;
-	formerLabel: string;
 };
 
 function TeamMemberCards({
@@ -353,7 +350,7 @@ function TeamMemberCards({
 	workBalanceLabel,
 	historyLabel,
 	primaryManagerLabel,
-}: Omit<TeamMemberPresentationProps, "formerLabel">) {
+}: TeamMemberPresentationProps) {
 	return (
 		<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 			{employees.map((employee) => (
@@ -415,7 +412,9 @@ function TeamMemberCards({
 									workBalanceLabel={workBalanceLabel}
 									historyLabel={historyLabel}
 								/>
-								{employee.isFormer && <FormerEmployeeBadge className="font-normal" />}
+								{employee.isFormer && (
+									<FormerEmployeeBadge since={employee.formerSince} className="font-normal" />
+								)}
 								{employee.role !== "employee" && (
 									<Badge
 										variant={employee.role === "admin" ? "default" : "secondary"}
@@ -441,7 +440,6 @@ function TeamMembersTable({
 	workBalanceLabel,
 	historyLabel,
 	primaryManagerLabel,
-	formerLabel,
 }: TeamMemberPresentationProps) {
 	const { t } = useTranslate();
 	const [sorting, setSorting] = useState<SortingState>([]);
@@ -556,14 +554,15 @@ function TeamMembersTable({
 				accessorKey: "isFormer",
 				header: t("team.table.status", "Status"),
 				enableSorting: false,
-				cell: ({ row }) => (
-					<Badge variant={row.original.isFormer ? "secondary" : "default"}>
-						{row.original.isFormer ? formerLabel : t("common:formerEmployees.current", "Current")}
-					</Badge>
-				),
+				cell: ({ row }) =>
+					row.original.isFormer ? (
+						<FormerEmployeeBadge since={row.original.formerSince} className="text-sm" />
+					) : (
+						<Badge variant="default">{t("common:formerEmployees.current", "Current")}</Badge>
+					),
 			},
 		],
-		[t, primaryManagerLabel, youLabel, workBalanceLabel, noBalanceLabel, historyLabel, formerLabel],
+		[t, primaryManagerLabel, youLabel, workBalanceLabel, noBalanceLabel, historyLabel],
 	);
 	const table = useTable({
 		features: teamTableFeatures,

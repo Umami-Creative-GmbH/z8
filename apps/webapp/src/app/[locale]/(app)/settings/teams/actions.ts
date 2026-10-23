@@ -12,7 +12,7 @@ import type { TeamPermissions as ScopedPermissions } from "@/lib/authorization";
 import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import { CACHE_TAGS } from "@/lib/cache/tags";
 import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
-import { currentRosterAmong } from "@/lib/employee-lifecycle/current-roster-among";
+import { formerEmployeesAmong } from "@/lib/employee-lifecycle/current-roster-among";
 import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
 import {
 	type AnyAppError,
@@ -1062,7 +1062,14 @@ export async function deleteTeam(
 export async function getTeam(teamId: string): Promise<
 	ServerActionResult<
 		ScopedTeam & {
-			employees?: Array<typeof employee.$inferSelect & { user: unknown; isFormer: boolean }>;
+			employees?: Array<
+				typeof employee.$inferSelect & {
+					user: unknown;
+					isFormer: boolean;
+					/** On a former member only: the date they left, null when not recorded (#1439). */
+					formerSince?: string | null;
+				}
+			>;
 		}
 	>
 > {
@@ -1144,8 +1151,8 @@ export async function getTeam(teamId: string): Promise<
 		}
 
 		const teamWithEmployees = withMembershipEmployees(targetTeam as TeamWithMemberRelations);
-		const currentMemberIds = yield* dbService.query("getTeam.currentRoster", () =>
-			currentRosterAmong(
+		const formerSinceById = yield* dbService.query("getTeam.formerMembers", () =>
+			formerEmployeesAmong(
 				dbService.db,
 				targetTeam.organizationId,
 				teamWithEmployees.employees.map((member) => member.id),
@@ -1154,10 +1161,11 @@ export async function getTeam(teamId: string): Promise<
 
 		return {
 			...teamWithEmployees,
-			employees: teamWithEmployees.employees.map((member) => ({
-				...member,
-				isFormer: !currentMemberIds.has(member.id),
-			})),
+			employees: teamWithEmployees.employees.map((member) =>
+				formerSinceById.has(member.id)
+					? { ...member, isFormer: true, formerSince: formerSinceById.get(member.id) ?? null }
+					: { ...member, isFormer: false },
+			),
 			canManageMembers: scopedFlags.canManageMembers,
 			canManageSettings: scopedFlags.canManageSettings,
 		};

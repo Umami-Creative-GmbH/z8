@@ -287,7 +287,9 @@ export function TeamMembersDialog({
 												<div className="flex-1 min-w-0">
 													<div className="flex items-center gap-2">
 														<span className="font-medium truncate">{member.user.name}</span>
-														{isFormerTeamMember(member) && <FormerEmployeeBadge />}
+														{isFormerTeamMember(member) && (
+															<FormerEmployeeBadge since={member.formerSince} />
+														)}
 													</div>
 													<div className="text-sm text-muted-foreground truncate">
 														{member.employee?.position || member.user.email}

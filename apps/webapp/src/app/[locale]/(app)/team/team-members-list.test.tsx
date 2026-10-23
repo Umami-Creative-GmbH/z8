@@ -13,6 +13,7 @@ const { getActivityMock, replaceMock, useBalanceAdjustmentSectionMock } = vi.hoi
 }));
 
 vi.mock("@tolgee/react", () => ({
+	useTolgee: () => ({ getLanguage: () => "en-GB" }),
 	useTranslate: () => ({
 		t: (
 			_key: string,
@@ -347,6 +348,7 @@ describe("TeamMembersList", () => {
 					employee({
 						id: "employee-2",
 						isFormer: true,
+						formerSince: "2026-10-12",
 						isActive: false,
 						user: {
 							id: "user-2",
@@ -357,6 +359,20 @@ describe("TeamMembersList", () => {
 							image: null,
 						},
 					}),
+					employee({
+						id: "employee-3",
+						isFormer: true,
+						formerSince: null,
+						isActive: false,
+						user: {
+							id: "user-3",
+							firstName: "Alan",
+							lastName: "Turing",
+							name: "Alan Turing",
+							email: "alan@example.com",
+							image: null,
+						},
+					}),
 				]}
 			/>,
 		);
@@ -364,14 +380,18 @@ describe("TeamMembersList", () => {
 		expect(
 			screen.getByRole("switch", { name: "Show former employees" }).getAttribute("aria-checked"),
 		).toBe("true");
-		expect(screen.getAllByText("Former")).toHaveLength(1);
+		expect(screen.getAllByText("Former since 12 Oct 2026")).toHaveLength(1);
+		expect(screen.getAllByText("Former · date not recorded")).toHaveLength(1);
 
 		fireEvent.click(screen.getByRole("radio", { name: "Table view" }));
 		const rows = screen.getAllByRole("row").slice(1);
 		const former = rows.find((row) => row.textContent?.includes("Grace Hopper"));
+		const unrecorded = rows.find((row) => row.textContent?.includes("Alan Turing"));
 		const current = rows.find((row) => row.textContent?.includes("Ada Lovelace"));
-		expect(former && within(former).getByText("Former")).toBeTruthy();
+		expect(former && within(former).getByText("Former since 12 Oct 2026")).toBeTruthy();
+		expect(unrecorded && within(unrecorded).getByText("Former · date not recorded")).toBeTruthy();
 		expect(current && within(current).getByText("Current")).toBeTruthy();
+		expect(current && within(current).queryByText(/Former/)).toBeNull();
 
 		fireEvent.click(screen.getByRole("switch", { name: "Show former employees" }));
 		expect(replaceMock).toHaveBeenCalledWith("/team", { scroll: false });

@@ -381,7 +381,7 @@ export function TeamMembersCard(props: {
 									{employee.position ? (
 										<Badge variant="secondary">{employee.position}</Badge>
 									) : null}
-									{employee.isFormer ? <FormerEmployeeBadge /> : null}
+									{employee.isFormer ? <FormerEmployeeBadge since={employee.formerSince} /> : null}
 								</div>
 								{canManageMembers ? (
 									<Button

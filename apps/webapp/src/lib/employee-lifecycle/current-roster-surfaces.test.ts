@@ -28,9 +28,10 @@ const SRC_ROOT = fileURLToPath(new URL("../../", import.meta.url));
  * The calls that apply the rule: the predicate, its marking twin (lists that
  * keep a saved former holder and mark it), the role-save guards, readers built
  * on them, and the access rule the roster rule itself builds on.
+ * `formerEmployeesAmong` is the marking reader that also dates former rows (#1439).
  */
 const ROSTER_RULE =
-	/\b\w*[oO]nCurrentRoster\(|\bisFormerEmployee\(|\bcurrentRoster[A-Z]\w*\(|\bemployeeHasOrganizationAccess\(/;
+	/\b\w*[oO]nCurrentRoster\(|\bisFormerEmployee\(|\bcurrentRoster[A-Z]\w*\(|\bformerEmployeesAmong\(|\bemployeeHasOrganizationAccess\(/;
 /** A hand-written active check on the employee instead of the rule. */
 const RAW_EMPLOYEE_ACTIVE_CHECK =
 	/\bemployee\.isActive\b|"employee"\."is_active"|\bemployee\.is_active\b/;

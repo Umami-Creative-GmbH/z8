@@ -5,7 +5,11 @@ import { revalidatePath } from "next/cache";
 import { user } from "@/db/auth-schema";
 import { employee, team, vehicleUseAssignment } from "@/db/schema";
 import { canManageCurrentOrganizationSettings, getAuthContext } from "@/lib/auth-helpers";
-import { isFormerEmployee, onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
+import {
+	formerSinceDate,
+	isFormerEmployee,
+	onCurrentRoster,
+} from "@/lib/employee-lifecycle/current-roster";
 import { runVehicleUseAction } from "@/lib/time-tracking/vehicle-use/action-runner";
 import {
 	type VehicleUseActionResult,
@@ -32,8 +36,11 @@ export type VehicleUseAdminData = {
 	settings: VehicleUseSettings;
 	assignments: VehicleUseAssignmentData[];
 	teams: VehicleUseOption[];
-	/** The current roster, and former employees an assignment names (`isFormer`). */
-	employees: Array<VehicleUseOption & { isFormer: boolean }>;
+	/**
+	 * The current roster, and former employees an assignment names (`isFormer`,
+	 * with `formerSince`: the date they left, null when not recorded, #1439).
+	 */
+	employees: Array<VehicleUseOption & { isFormer: boolean; formerSince?: string | null }>;
 };
 
 export type SetVehicleUseAssignmentInput = {
@@ -64,6 +71,7 @@ export async function getVehicleUseAdminDataAction(): Promise<
 					employeeNumber: employee.employeeNumber,
 					userName: user.name,
 					isFormer: isFormerEmployee(employee),
+					formerSince: formerSinceDate(employee),
 				})
 				.from(employee)
 				.innerJoin(user, eq(employee.userId, user.id))
@@ -97,6 +105,7 @@ export async function getVehicleUseAdminDataAction(): Promise<
 				id: row.id,
 				name: row.userName?.trim() || row.employeeNumber || row.id,
 				isFormer: row.isFormer,
+				...(row.isFormer ? { formerSince: row.formerSince } : {}),
 			})),
 		};
 	});

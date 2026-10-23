@@ -277,13 +277,16 @@ describe("driving details missing on PostgreSQL", () => {
 		expect(outside.rows).toHaveLength(2);
 	});
 
-	/** A departure of the employee whose cutoff has passed, so they are a former employee. */
+	/**
+	 * A departure of the employee whose cutoff has passed, so they are a former employee. 13:00
+	 * UTC is already the next day in Auckland.
+	 */
 	async function dueDeparture(org: Org, person: SeededEmployee) {
 		await fixture.pool.query(
 			`insert into employee_departure
 			 (organization_id, employee_id, employment_period_id, mode, last_working_day, timezone,
 			  cutoff_at, created_by, request_id, request_fingerprint, revision, status)
-			 values ($1, $2, $3, 'scheduled', '2026-09-14', 'UTC', '2026-09-15T00:00:00Z', $4,
+			 values ($1, $2, $3, 'scheduled', '2026-09-14', 'UTC', '2026-09-14T13:00:00Z', $4,
 			         gen_random_uuid(), 'test', 1, 'pending')`,
 			[org.organizationId, person.employeeId, person.employmentPeriodId, org.creatorUserId],
 		);
@@ -303,7 +306,14 @@ describe("driving details missing on PostgreSQL", () => {
 		await fixture.pool.query("update employee set is_active = false where id = $1", [
 			inactive.employeeId,
 		]);
+		// As if deactivated before the instant was stored (#1439): the date isn't recorded.
+		await fixture.pool.query("update employee set deactivated_at = null where id = $1", [
+			inactive.employeeId,
+		]);
 		await dueDeparture(org, departed);
+		await fixture.pool.query(`update organization set timezone = 'Pacific/Auckland' where id = $1`, [
+			org.organizationId,
+		]);
 		const employeeIds = [active.employeeId, inactive.employeeId, departed.employeeId];
 
 		await expect(
@@ -321,6 +331,11 @@ describe("driving details missing on PostgreSQL", () => {
 		expect(ours.filter((row) => row.former).map((row) => row.workPeriodId).toSorted()).toEqual(
 			[inactiveWork, departedWork].toSorted(),
 		);
+		// Former rows carry the organization-local date they left; current rows none (#1439).
+		const since = new Map(ours.map((row) => [row.employeeId, row.formerSince]));
+		expect(since.get(departed.employeeId)).toBe("2026-09-15");
+		expect(since.get(inactive.employeeId)).toBeNull();
+		expect(since.get(active.employeeId)).toBeUndefined();
 		// The employee filter offers only who drives now.
 		const offered = listed.employees.map((person) => person.id);
 		expect(offered).toContain(active.employeeId);

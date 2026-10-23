@@ -63,7 +63,10 @@ vi.mock("@/lib/logger", () => ({
 const { getTeam } = await import("./actions");
 const { loadTeamSettingsPageData } = await import("./team-settings-page-data");
 
-const PAST_CUTOFF = "2026-02-01T00:00:00Z";
+// 13:00 UTC is already the next day in Auckland (UTC+13 in February), the
+// organization's timezone (#1439).
+const PAST_CUTOFF = "2026-02-01T13:00:00Z";
+const PAST_CUTOFF_LOCAL_DATE = "2026-02-02";
 
 describe("team settings member lists on PostgreSQL (#1438)", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
@@ -74,6 +77,10 @@ describe("team settings member lists on PostgreSQL (#1438)", () => {
 
 	beforeAll(async () => {
 		fixture = await createLifecycleDatabaseFixture();
+		await fixture.pool.query(`update organization set timezone = 'Pacific/Auckland' where id = $1`, [
+			fixture.organizationId,
+		]);
+		// Seeded inactive: deactivated before the instant was stored, so not recorded.
 		deactivated = await fixture.seedEmployee({ isActive: false });
 		due = await fixture.seedEmployee();
 		await fixture.pool.query(
@@ -122,6 +129,12 @@ describe("team settings member lists on PostgreSQL (#1438)", () => {
 				[due.employeeId, true],
 			]),
 		);
+		const since = new Map(
+			(result.data.employees ?? []).map((member) => [member.id, member.formerSince]),
+		);
+		expect(since.get(fixture.employeeId)).toBeUndefined();
+		expect(since.get(deactivated.employeeId)).toBeNull();
+		expect(since.get(due.employeeId)).toBe(PAST_CUTOFF_LOCAL_DATE);
 	});
 
 	it("marks former employees among the organization's members on the teams page", async () => {
@@ -140,5 +153,14 @@ describe("team settings member lists on PostgreSQL (#1438)", () => {
 		expect(former.get(fixture.employeeId)).toBe(false);
 		expect(former.get(deactivated.employeeId)).toBe(true);
 		expect(former.get(due.employeeId)).toBe(true);
+
+		const since = new Map(
+			scopedMembers.flatMap((entry) =>
+				entry.employee ? [[entry.employee.id, entry.formerSince] as const] : [],
+			),
+		);
+		expect(since.get(fixture.employeeId)).toBeUndefined();
+		expect(since.get(deactivated.employeeId)).toBeNull();
+		expect(since.get(due.employeeId)).toBe(PAST_CUTOFF_LOCAL_DATE);
 	});
 });
