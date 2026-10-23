@@ -60,7 +60,6 @@ import { Callout } from 'fumadocs-ui/components/callout';
     Edit the information:
     - Personal information (name, gender, birthday)
     - Job information (position, team, role)
-    - Status (active/inactive)
   </Step>
   <Step>
     Click **"Save Changes"**
@@ -100,22 +99,25 @@ When an employee leaves:
 
 <Steps>
   <Step>
-    Navigate to the employee's profile
+    Go to **Settings** → **Employees** and find the employee
   </Step>
   <Step>
-    Change status to **"Inactive"**
+    Open the row's actions menu, or the employee's profile, and choose **Deactivate**
   </Step>
   <Step>
-    Click **"Save"**
+    Confirm
   </Step>
 </Steps>
+
+Only owners and admins can deactivate, and the employee's details form doesn't change whether someone is active.
 
 <Callout type="warn" title="What happens when deactivated">
 - Employee loses system access
 - Cannot submit new requests
-- They become a **former employee**: they no longer appear where Z8 shows who works here now
+- They become a **former employee**: they no longer appear where Z8 shows who works here now, and are shown as *Former since* the day you deactivated them
+- They stop counting as a paid seat
 - Historical data remains intact
-- Can be reactivated later if needed
+- Can be reactivated later if needed; **Reactivate** counts them as a seat again
 </Callout>
 
 ### Current and former employees

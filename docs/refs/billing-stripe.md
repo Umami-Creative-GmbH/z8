@@ -37,6 +37,16 @@
    full seat item at `STRIPE_PRICE_MONTHLY_ID` / `STRIPE_PRICE_YEARLY_ID`, the kiosk seat
    item at `STRIPE_PRICE_KIOSK_MONTHLY_ID` / `STRIPE_PRICE_KIOSK_YEARLY_ID`.
 
+## Former Employees (#1439)
+
+- `countBillableSeats` (`billing/billable-seat-count.ts`) never counts a former employee:
+  an employee profile counts only while it is current (active, and not denied by a due or
+  effective departure), whatever `EMPLOYEE_OFFBOARDING_RELEASE_READY` says. A member
+  without an employee profile counts until the release, and not afterwards.
+- *Deactivate* and *Reactivate* call `reconcileBillingSeatsForOrganization` after the
+  commit, like member removal; a departure and a rehire queue the durable
+  `billing_sync` task instead. The hourly seat reconciliation settles a failed sync.
+
 ## Kiosk Seats (#886)
 
 - A billable seat whose user has a reserved kiosk-only email is a kiosk seat; every other

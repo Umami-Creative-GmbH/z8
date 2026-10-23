@@ -27,7 +27,8 @@ Prices are net prices; VAT is added where applicable.
 
 - Each **approved member** of your organization counts as one seat
 - Demo accounts do not count
-- Employees who have left do not count once their departure takes effect or their last day has passed
+- Former employees do not count: someone you deactivate stops counting at once, and someone whose departure takes effect stops counting after their last day
+- Reactivating an employee counts them again
 - Seat counts are automatically synchronized when employees are added or removed
 - The billing amount adjusts automatically based on your current seat count
 
@@ -127,7 +128,7 @@ If a cancellation is scheduled for the end of the billing period, access remains
 z8 automatically keeps your seat count in sync with Stripe:
 
 - When you **add an employee**, the seat count increases and billing adjusts pro-rata
-- When you **deactivate an employee**, the seat count decreases at the next billing cycle
+- When you **deactivate an employee**, the seat count decreases at once and Stripe prorates the difference; reactivating them adds the seat again
 - When you **add an email to a kiosk-only employee**, one kiosk seat becomes a full seat
 - The **current seat count** is always visible on the billing page
 
