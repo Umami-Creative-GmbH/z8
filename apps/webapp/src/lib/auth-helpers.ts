@@ -15,6 +15,7 @@ import {
 	type AuthContextUser,
 	mapSessionUserToAuthContextUser,
 } from "@/lib/auth/auth-context-user";
+import { organizationForDisplay } from "@/lib/auth/organization-display";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import { getRequestSession } from "@/lib/auth/request-session";
 import {
@@ -269,22 +270,9 @@ export async function getUserOrganizations(): Promise<UserOrganization[]> {
 	);
 
 	// Map without additional queries
-	return memberships.map(({ organization: org, member: mbr }) => ({
-		id: org.id,
-		name: org.name,
-		slug: org.slug,
-		logo: org.logo,
-		memberRole: mbr.role,
-		hasEmployeeRecord: orgsWithEmployee.has(org.id),
-		shiftsEnabled: org.shiftsEnabled ?? false,
-		projectsEnabled: org.projectsEnabled ?? false,
-		surchargesEnabled: org.surchargesEnabled ?? false,
-		demoDataEnabled: org.demoDataEnabled ?? true,
-		worksCouncilEnabled: org.worksCouncilEnabled ?? false,
-		billableTimeEnabled:
-			(org.billableTimeEnabled ?? false) && (org.projectsEnabled ?? false),
-		personnelFilesEnabled: org.personnelFilesEnabled ?? false,
-	}));
+	return memberships.map(({ organization: org, member: mbr }) =>
+		organizationForDisplay(org, mbr.role, orgsWithEmployee.has(org.id)),
+	);
 }
 
 /**

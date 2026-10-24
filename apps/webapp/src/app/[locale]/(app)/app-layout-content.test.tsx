@@ -205,8 +205,9 @@ vi.mock("@/lib/logger", () => ({
 	createLogger: () => ({ error: mockState.loggerError }),
 }));
 
-vi.mock("@/lib/organization-settings", () => ({
-	getOrganizationSettings: mockState.getOrganizationSettings,
+vi.mock("@/lib/auth/render-context", () => ({
+	getRenderOrganizationSettings: mockState.getOrganizationSettings,
+	getRenderApprovedMembership: mockState.findMember,
 }));
 
 vi.mock("@/proxy", () => ({
@@ -281,10 +282,7 @@ describe("authenticated app layout gates", () => {
 				}),
 			]);
 			expect(mockState.checkBillingAccess).not.toHaveBeenCalled();
-			expect(mockState.getOrganizationSettings).toHaveBeenCalledWith(
-				"organization-1",
-				"user-1",
-			);
+			expect(mockState.getOrganizationSettings).toHaveBeenCalledOnce();
 		},
 	);
 
@@ -329,10 +327,7 @@ describe("authenticated app layout gates", () => {
 		expect(html).toContain('data-week-start="sunday"');
 		expect(html).toContain('data-time-format="24h"');
 		expect(html).toContain('data-timezone="UTC"');
-		expect(mockState.getOrganizationSettings).toHaveBeenCalledWith(
-			null,
-			"user-1",
-		);
+		expect(mockState.getOrganizationSettings).toHaveBeenCalledOnce();
 		expect(mockState.checkBillingAccess).not.toHaveBeenCalled();
 	});
 
@@ -398,6 +393,20 @@ describe("authenticated app layout gates", () => {
 		expect(mockState.getOrganizationSettings).not.toHaveBeenCalled();
 		expect(mockState.checkBillingAccess).not.toHaveBeenCalled();
 	});
+	it.each(["/en/settings/billing", "/en/billing/suspended"])(
+		"keeps the recovery route %s accessible after a fresh billing denial",
+		async (pathname) => {
+			mockState.checkBillingAccess.mockResolvedValue({
+				canAccess: false,
+				state: "suspended",
+			});
+			const { errors, html } = await serverRender(pathname);
+			expect(errors).toEqual([]);
+			expect(mockState.checkBillingAccess).toHaveBeenCalledOnce();
+			expect(mockState.redirect).not.toHaveBeenCalled();
+			expect(html).toContain("Protected child content");
+		},
+	);
 	it("renders protected children after all authorization gates succeed", async () => {
 		mockState.getSession.mockResolvedValue({
 			session: { activeOrganizationId: "organization-1" },

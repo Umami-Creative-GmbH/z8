@@ -1,6 +1,6 @@
 import { mfaChallengeFromSession } from "@/lib/organization-mfa/http";
 import { MfaDeadlineBanner } from "@/components/organization-mfa/deadline-banner";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -20,15 +20,17 @@ import { GetTheAppBanner } from "@/components/store-app/get-the-app-banner";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
-import { member } from "@/db/auth-schema";
 import { subscription } from "@/db/schema";
 import { env } from "@/env";
+import {
+	getRenderApprovedMembership,
+	getRenderOrganizationSettings,
+} from "@/lib/auth/render-context";
 import { getRenderSession } from "@/lib/auth/render-session";
 import { runtime } from "@/lib/effect/runtime";
 import type { BillingAccessResult } from "@/lib/effect/services/billing/billing-enforcement.service";
 import { createLogger } from "@/lib/logger";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
-import { getOrganizationSettings } from "@/lib/organization-settings";
 import { appBannerScrollPaddingClassName } from "@/lib/store-app/app-banner";
 import { getRenderUserPreferences } from "@/lib/user-preferences/render-snapshot";
 import { DOMAIN_HEADERS } from "@/proxy";
@@ -108,7 +110,7 @@ export async function AuthenticatedAppContent({
 	// Sync DB locale preference on load (null = user hasn't set preference, respect browser/cookie)
 	const [preferences, organizationSettings] = await Promise.all([
 		getRenderUserPreferences(session.user.id),
-		getOrganizationSettings(activeOrganizationId, session.user.id),
+		getRenderOrganizationSettings(),
 	]);
 	const {
 		locale: dbLocale,
@@ -130,7 +132,7 @@ export async function AuthenticatedAppContent({
 		trialDaysRemaining,
 		canManageBilling,
 		showTrialBanner,
-	} = await loadAppBillingStatus(activeOrganizationId, session.user.id);
+	} = await loadAppBillingStatus(activeOrganizationId);
 	const isBillingRecoveryPath =
 		pathname === `/${locale}/settings/billing` ||
 		pathname.startsWith(`/${locale}/settings/billing/`) ||
@@ -230,7 +232,6 @@ function AppTrialBanner({
 
 async function loadAppBillingStatus(
 	activeOrganizationId: string | null | undefined,
-	userId: string,
 ) {
 	const billingEnabled = env.BILLING_ENABLED === "true";
 	const billingAccess =
@@ -247,12 +248,7 @@ async function loadAppBillingStatus(
 	const [membershipRecord, subscriptionRow] =
 		activeOrganizationId && billingEnabled
 			? await Promise.all([
-					db.query.member.findFirst({
-						where: and(
-							eq(member.userId, userId),
-							eq(member.organizationId, activeOrganizationId),
-						),
-					}),
+					getRenderApprovedMembership(),
 					db.query.subscription.findFirst({
 						where: eq(subscription.organizationId, activeOrganizationId),
 					}),

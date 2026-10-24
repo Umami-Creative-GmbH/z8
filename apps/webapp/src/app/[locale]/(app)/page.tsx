@@ -4,10 +4,10 @@ import { NoOrganizationError } from "@/components/errors/no-organization-error";
 import { SectionCards, SectionCardsSkeleton } from "@/components/section-cards";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import {
-	getOnboardingStatus,
-	getPendingInvitationId,
-	getUserOrganizations,
-} from "@/lib/auth-helpers";
+	getRenderOnboardingStatus as getOnboardingStatus,
+	getRenderPendingInvitationId as getPendingInvitationId,
+	getRenderUserOrganizations as getUserOrganizations,
+} from "@/lib/auth/render-context";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { getOnboardingStepPath } from "@/lib/validations/onboarding";
 import { RouteTranslationBoundary } from "@/tolgee/route-boundary";

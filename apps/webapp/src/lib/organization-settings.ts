@@ -3,6 +3,7 @@ import "server-only";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { member, organization } from "@/db/auth-schema";
+import { organizationSettingsForDisplay } from "@/lib/auth/organization-display";
 import type { OrganizationSettingsBootstrap } from "@/stores/organization-settings-store";
 
 export type { OrganizationSettingsBootstrap } from "@/stores/organization-settings-store";
@@ -48,16 +49,5 @@ export async function getOrganizationSettings(
 		return null;
 	}
 
-	return {
-		organizationId: record.id,
-		shiftsEnabled: record.shiftsEnabled ?? false,
-		projectsEnabled: record.projectsEnabled ?? false,
-		surchargesEnabled: record.surchargesEnabled ?? false,
-		demoDataEnabled: record.demoDataEnabled ?? true,
-		worksCouncilEnabled: record.worksCouncilEnabled ?? false,
-		billableTimeEnabled: (record.billableTimeEnabled ?? false) && (record.projectsEnabled ?? false),
-		personnelFilesEnabled: record.personnelFilesEnabled ?? false,
-		timezone: record.timezone ?? "UTC",
-		deletedAt: record.deletedAt?.toISOString() ?? null,
-	};
+	return organizationSettingsForDisplay(record);
 }

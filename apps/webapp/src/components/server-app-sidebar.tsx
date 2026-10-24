@@ -1,11 +1,11 @@
 import { db } from "@/db";
 import { env } from "@/env";
+import { requireAbility } from "@/lib/auth-helpers";
 import {
-	getAuthContext,
-	getCurrentSettingsAccessTier,
-	getUserOrganizations,
-	requireAbility,
-} from "@/lib/auth-helpers";
+	getRenderAuthContext as getAuthContext,
+	getRenderSettingsAccessTier as getCurrentSettingsAccessTier,
+	getRenderUserOrganizations as getUserOrganizations,
+} from "@/lib/auth/render-context";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
 import { readDrivingLicenceVisibility } from "@/lib/organization/driving-licence/visibility";
