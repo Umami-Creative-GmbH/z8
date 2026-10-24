@@ -142,10 +142,30 @@ function derive(plan, before, releaseRuntime) {
     }
     return result;
   });
+  const primaryResourceBudgetProvenance = {};
   for (const condition of releasePlan.conditions) {
     const relevant = limits.filter((c) =>
       c.key.startsWith(condition.name + "/"),
     );
+    const cdp = before.samples
+      .filter((s) => s.condition === condition.name)
+      .map((s) => s.javascriptBytes)
+      .filter((v) => Number.isFinite(v) && v >= 0);
+    if (!cdp.length)
+      throw Error(
+        "No known CDP JavaScript observations exist for a required compatibility budget.",
+      );
+    const maxObserved = Math.max(...cdp);
+    primaryResourceBudgetProvenance[condition.name] = {
+      javascriptP95Bytes: {
+        byteUnits: "cdp-encoded-response-bytes-includes-headers",
+        scope: "completed transfers through readiness only",
+        basis: "maximum observed lower bound; not a complete before percentile",
+        maximumObservedBytes: maxObserved,
+        beforeFullCostP95: null,
+        diagnosticOnly: true,
+      },
+    };
     condition.budgets = {
       usableContentP95Ms: Math.max(
         ...relevant.map((c) => c.usableContentMs.ceiling),
@@ -156,13 +176,17 @@ function derive(plan, before, releaseRuntime) {
           .filter((c) => c.clockReadyMs)
           .map((c) => c.clockReadyMs.ceiling),
       ),
-      javascriptP95Bytes: Math.max(
-        ...relevant.map((c) => c.javascriptBytes.ceiling ?? policy.bytes.floor),
-      ),
+      javascriptP95Bytes: ceiling(maxObserved, policy.bytes),
       queryCountP95: conditions[condition.name].queryCount,
     };
   }
-  return { releasePlan, policy, cohorts: limits, conditions };
+  return {
+    releasePlan,
+    policy,
+    cohorts: limits,
+    conditions,
+    primaryResourceBudgetProvenance,
+  };
 }
 async function main() {
   const args = process.argv.slice(2),
@@ -270,13 +294,13 @@ async function main() {
       sourceBuild: rp.value.runtime.sourceBuild,
       toolingBuild: rp.value.runtime.toolingBuild,
     });
-    if (settledLimits)
-      applySettledConditionBudgets(regenerated.releasePlan, settledLimits);
     if (
       json(regenerated.releasePlan) !== json(rp.value) ||
       json(regenerated.policy) !== json(budget.policy) ||
       json(regenerated.cohorts) !== json(budget.cohorts) ||
       json(regenerated.conditions) !== json(budget.conditions) ||
+      json(regenerated.primaryResourceBudgetProvenance) !==
+        json(budget.primaryResourceBudgetProvenance) ||
       json(settledLimits) !== json(budget.settled ?? null)
     )
       throw Error(
@@ -366,8 +390,6 @@ async function main() {
     sourceBuild: options["--release-source"],
     toolingBuild: options["--release-tooling"],
   });
-  if (settledLimits)
-    applySettledConditionBudgets(result.releasePlan, settledLimits);
   const releasePlanBytes = json(result.releasePlan);
   const budget = {
     schema: 1,
@@ -380,6 +402,7 @@ async function main() {
     releasePlanSha256: sha(releasePlanBytes),
     cohorts: result.cohorts,
     conditions: result.conditions,
+    primaryResourceBudgetProvenance: result.primaryResourceBudgetProvenance,
     settled: settledLimits,
   };
   if (!options["--out"]) throw Error("Missing --out.");
@@ -426,6 +449,7 @@ function requireEvidence(plan, artifact, native, planHash, phase) {
     plan.fixture.journeysVerified !== true ||
     plan.runtime?.mode !== "production" ||
     plan.runtime?.collectorProtocol !== "z8-fixture-otlp-collector-v2" ||
+    plan.runtime?.traceTransport !== "context-loopback-proxy-v1" ||
     !Number.isFinite(plan.timeoutMs) ||
     plan.timeoutMs <= 0
   )
@@ -446,6 +470,7 @@ function requireEvidence(plan, artifact, native, planHash, phase) {
   if (
     !artifact.runtime?.buildVerified ||
     artifact.runtime.collectorProtocol !== plan.runtime.collectorProtocol ||
+    artifact.runtime.traceTransport !== plan.runtime.traceTransport ||
     artifact.runtime.build !== plan.runtime.build ||
     artifact.runtime.sourceBuild !== plan.runtime.sourceBuild ||
     artifact.runtime.toolingBuild !== plan.runtime.toolingBuild
@@ -632,6 +657,11 @@ function compare(plan, before, head, budget, native, settledComparison) {
           ...rule,
           headP95: value,
           passed: null,
+          diagnosticOnly: true,
+          comparisonUnavailableReason:
+            rule.beforeP95 === null
+              ? rule.basis
+              : "different page-CDP observation window; full body cost is evaluated separately",
           status: byteCensored(current, metric)
             ? "censored-primary-resource-window"
             : "primary-readiness-window-only",
@@ -704,6 +734,7 @@ function compare(plan, before, head, budget, native, settledComparison) {
     resourceAcceptance:
       settledComparison?.gates.length === 0 ? "fulfilled" : "unfulfilled",
     retainedPrimaryGates,
+    primaryResourceBudgetProvenance: budget.primaryResourceBudgetProvenance,
     settledResources: settledComparison,
     gates,
     cohorts: rows,
@@ -751,7 +782,7 @@ function byteCensored(samples, metric) {
 function settledByteValue(sample, metric) {
   return metric === "inlineRscDecodedBytes"
     ? sample.inlineRscDecodedBytes
-    : sample.settled.bytes[metric];
+    : sample.wireSettled.bytes[metric];
 }
 function deriveSettled(artifact, bytes, nativeBytes) {
   const keys = [...new Set(artifact.samples.map(key))];
@@ -760,6 +791,8 @@ function deriveSettled(artifact, bytes, nativeBytes) {
     beforeBackendSha256: sha(nativeBytes),
     policy: artifact.policy,
     protocol: artifact.protocol,
+    byteUnits: artifact.policy.wire.byteUnits,
+    wireProtocol: artifact.policy.wire.protocol,
     cohorts: keys.map((cohort) => {
       const samples = artifact.samples.filter((s) => key(s) === cohort),
         metrics = [
@@ -781,21 +814,20 @@ function deriveSettled(artifact, bytes, nativeBytes) {
             );
             return [
               metric,
-              { beforeP95: measured, ceiling: ceiling(measured, policy.bytes) },
+              {
+                beforeP95: measured,
+                ceiling: ceiling(measured, policy.bytes),
+                byteUnits:
+                  metric === "inlineRscDecodedBytes"
+                    ? "decoded-utf8-inline-flight-script-bytes"
+                    : artifact.policy.wire.byteUnits,
+              },
             ];
           }),
         ),
       };
     }),
   };
-}
-function applySettledConditionBudgets(plan, settled) {
-  for (const condition of plan.conditions)
-    condition.budgets.javascriptP95Bytes = Math.max(
-      ...settled.cohorts
-        .filter((c) => c.key.startsWith(condition.name + "/"))
-        .map((c) => c.metrics.javascript.ceiling),
-    );
 }
 function compareSettled(before, head, limits) {
   const gates = [];
@@ -813,6 +845,10 @@ function compareSettled(before, head, limits) {
         before: statistics(old.map((s) => settledByteValue(s, metric))),
         head: measured,
         passed,
+        byteUnits:
+          metric === "inlineRscDecodedBytes"
+            ? "decoded-utf8-inline-flight-script-bytes"
+            : limits.byteUnits,
       };
       if (!passed)
         gates.push(
@@ -825,14 +861,30 @@ function compareSettled(before, head, limits) {
       metrics,
       beforeBackground: old.map((s) => ({
         iteration: s.iteration,
-        prefetch: s.settled.groups.prefetch,
-        longLived: s.settled.groups.longLived,
+        prefetch: s.wireSettled.groups.prefetch,
+        longLived: s.wireSettled.groups.longLived,
+        byTrace: s.wireSettled.byTrace,
       })),
       headBackground: samples.map((s) => ({
         iteration: s.iteration,
-        prefetch: s.settled.groups.prefetch,
-        longLived: s.settled.groups.longLived,
+        prefetch: s.wireSettled.groups.prefetch,
+        longLived: s.wireSettled.groups.longLived,
+        byTrace: s.wireSettled.byTrace,
       })),
+      cdpObservations: {
+        scope:
+          "page CDP readiness/settling observations; incomplete and ServiceWorker inner transfers are not full wire cost",
+        before: old.map((s) => ({
+          iteration: s.iteration,
+          atReady: s.atReady ?? null,
+          settled: s.settled ?? null,
+        })),
+        head: samples.map((s) => ({
+          iteration: s.iteration,
+          atReady: s.atReady ?? null,
+          settled: s.settled ?? null,
+        })),
+      },
     };
   });
   return {
@@ -842,12 +894,15 @@ function compareSettled(before, head, limits) {
       head: head.nativeRunCoverage,
     },
     policy: limits.policy,
+    byteUnits: limits.byteUnits,
+    wireProtocol: limits.wireProtocol,
     gates,
     cohorts,
     limitations: [
       "A fixed one-second quiet interval and ten-second post-readiness cap bound this finite-resource observation. This is not all future page-lifetime cost.",
       "Explicit Next/purpose prefetch and WebSocket/EventSource are counted separately; unfinished mandatory traffic, failures, unknown lengths and caps cannot fulfill the settled gate.",
       "Inherited priming requests are drained and reported separately, without being charged to measured navigation bytes.",
+      "Wire byte ceilings use compressed HTTP response-body bytes before content decoding and exclude headers. CDP encoded lengths and decoded inline Flight remain different units and are never substituted or added.",
     ],
   };
 }

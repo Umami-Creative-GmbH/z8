@@ -1,3 +1,4 @@
+import { createProxyWireObserver } from "./proxy-wire-observer.mjs";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { mkdtempSync, writeFileSync } from "node:fs";
@@ -24,8 +25,10 @@ test("companion validates required inputs and sample counts before importing a b
 import {
   requireSettledEvidence,
   runCompanionCapture,
+  companionPolicy as settledPolicy,
+  companionWireContract,
 } from "./settled-resources.mjs";
-import { settledPolicy } from "./settled-resource-observer.mjs";
+
 test("native correlation, sample coverage and censored outcomes cannot finalize a resource budget", () => {
   const plan = {
     phase: "baseline",
@@ -35,6 +38,7 @@ test("native correlation, sample coverage and censored outcomes cannot finalize 
     runtime: {
       mode: "production",
       collectorProtocol: "z8-fixture-otlp-collector-v2",
+      traceTransport: "context-loopback-proxy-v1",
       browserPermissions: "notifications-denied-for-fixture-origin",
       build: "aaaaaaaaa",
       sourceBuild: "bbbbbbbbb",
@@ -62,6 +66,14 @@ test("native correlation, sample coverage and censored outcomes cannot finalize 
       iteration,
       traceId: `${mode}-${iteration}`,
       failed: false,
+      traceTransport: {
+        kind: "context-loopback-proxy-v1",
+        requests: 4,
+        rewrittenRequests: 4,
+        refusedRequests: 0,
+        upstreamFailures: 0,
+        responseBodyBytes: 12000,
+      },
       censored: false,
       inlineRscDecodedBytes: 100,
       backend: metrics,
@@ -74,6 +86,7 @@ test("native correlation, sample coverage and censored outcomes cannot finalize 
       },
     })),
   );
+  for (const s of samples) s.wireSettled = wireFixture(s);
   const artifact = {
     kind: "settled-resource-companion",
     nativeRunCoverage: {
@@ -120,10 +133,11 @@ test("native correlation, sample coverage and censored outcomes cannot finalize 
   );
   for (const change of [
     (a) => a.samples.pop(),
-    (a) => (a.samples[0].settled.capped = true),
+    (a) => (a.samples[0].wireSettled.capped = true),
     (a) => (a.samples[0].failed = true),
-    (a) => (a.samples[0].settled.bytes.javascript = null),
+    (a) => (a.samples[0].wireSettled.bytes.javascript = null),
     (a) => (a.finalized = false),
+    (a) => (a.samples[0].wireSettled = null),
     (a) => (a.nativeRunCoverage.complete = false),
     (a) => delete a.nativeRunCoverage,
   ]) {
@@ -151,6 +165,7 @@ test("capture requires registered collector control before any runtime or browse
         mode: "production",
         browserPermissions: "notifications-denied-for-fixture-origin",
         collectorProtocol: "z8-fixture-otlp-collector-v2",
+        traceTransport: "context-loopback-proxy-v1",
       },
       conditions: [{ name: "admin", role: "admin" }],
       ranges: [{ name: "month" }],
@@ -238,3 +253,25 @@ test("whole-run proof includes browser closure and rejects a late query whose ex
   assert.equal(ledger.nativeRunCoverage.observedQueryCount, 1);
   assert.equal(ledger.samples.length, 1);
 });
+
+function wireFixture(sample, overrides = {}) {
+  const wire = createProxyWireObserver();
+  wire.begin(0);
+  const mime = {
+    javascript: "application/javascript",
+    document: "text/html",
+    rsc: "text/x-component",
+    otherFinite: "application/octet-stream",
+  };
+  for (const [name, length] of Object.entries({
+    ...sample.settled.bytes,
+    ...overrides,
+  })) {
+    const id = wire.request({ traceId: sample.traceId, headers: {} }, 1);
+    wire.response(id, { mimeType: mime[name], status: 200 }, 2);
+    wire.bytes(id, length, 3);
+    wire.end(id, {}, 4);
+  }
+  wire.ready(10);
+  return wire.state(1010);
+}

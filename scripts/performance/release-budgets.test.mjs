@@ -1,4 +1,8 @@
-import { settledPolicy } from "./settled-resource-observer.mjs";
+import { createProxyWireObserver } from "./proxy-wire-observer.mjs";
+import {
+  companionPolicy as settledPolicy,
+  companionWireContract,
+} from "./settled-resources.mjs";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
@@ -25,6 +29,7 @@ function fixture() {
     runtime: {
       mode: "production",
       collectorProtocol: "z8-fixture-otlp-collector-v2",
+      traceTransport: "context-loopback-proxy-v1",
       browserPermissions: "notifications-denied-for-fixture-origin",
       build: "aaaaaaaaa",
       sourceBuild: "bbbbbbbbb",
@@ -56,6 +61,14 @@ function fixture() {
       traceId: `trace-${mode}-${i}`,
       backendTraceId: `trace-${mode}-${i}`,
       failed: false,
+      traceTransport: {
+        kind: "context-loopback-proxy-v1",
+        requests: 4,
+        rewrittenRequests: 4,
+        refusedRequests: 0,
+        upstreamFailures: 0,
+        responseBodyBytes: 12000,
+      },
       censored: false,
       resourceScope: "measured-visit",
       usableContentMs: 1000,
@@ -443,6 +456,14 @@ function settledFixture(f, plan, filename) {
     .map((s) => ({
       ...structuredClone(s),
       failed: false,
+      traceTransport: {
+        kind: "context-loopback-proxy-v1",
+        requests: 4,
+        rewrittenRequests: 4,
+        refusedRequests: 0,
+        upstreamFailures: 0,
+        responseBodyBytes: 12000,
+      },
       censored: false,
       settled: {
         complete: true,
@@ -462,6 +483,7 @@ function settledFixture(f, plan, filename) {
       },
       inlineRscDecodedBytes: s.mode === "first-document" ? 2000 : null,
     }));
+  for (const s of samples) s.wireSettled = wireFixture(s);
   const artifact = {
     schema: 1,
     kind: "settled-resource-companion",
@@ -631,4 +653,259 @@ test("complete per-trace evidence cannot register a budget when whole-run wire r
   };
   f.saveBefore();
   assert.equal(f.derive().status, 2);
+});
+test("full byte ceilings use proxy body units while primary CDP budgets keep their separate unit", () => {
+  const f = fixture(),
+    s = settledFixture(f, f.plan, "settled-before.json");
+  for (const sample of s.samples)
+    sample.wireSettled = wireFixture(sample, { javascript: 500000 });
+  f.save("settled-before.json", s);
+  const run = f.run(
+    "derive",
+    "--before-plan",
+    join(f.dir, "before-plan.json"),
+    "--before",
+    join(f.dir, "before.json"),
+    "--backend",
+    join(f.dir, "backend.json"),
+    "--release-build",
+    "ddddddddd",
+    "--release-source",
+    "eeeeeeeee",
+    "--release-tooling",
+    "fffffffff",
+    "--out",
+    join(f.dir, "derived"),
+    "--before-settled",
+    join(f.dir, "settled-before.json"),
+    "--before-settled-backend",
+    join(f.dir, "backend.json"),
+  );
+  assert.equal(run.status, 0, run.stderr);
+  const budgets = JSON.parse(
+      readFileSync(join(f.dir, "derived/release-budgets.json")),
+    ),
+    plan = JSON.parse(readFileSync(join(f.dir, "derived/release-plan.json")));
+  assert.equal(budgets.settled.cohorts[0].metrics.javascript.beforeP95, 500000);
+  assert.equal(budgets.settled.byteUnits, companionWireContract.byteUnits);
+  assert.equal(plan.conditions[0].budgets.javascriptP95Bytes, 26384);
+});
+
+function wireFixture(sample, overrides = {}) {
+  const wire = createProxyWireObserver();
+  wire.begin(0);
+  const mime = {
+    javascript: "application/javascript",
+    document: "text/html",
+    rsc: "text/x-component",
+    otherFinite: "application/octet-stream",
+  };
+  for (const [name, length] of Object.entries({
+    ...sample.settled.bytes,
+    ...overrides,
+  })) {
+    const id = wire.request({ traceId: sample.traceId, headers: {} }, 1);
+    wire.response(id, { mimeType: mime[name], status: 200 }, 2);
+    wire.bytes(id, length, 3);
+    wire.end(id, {}, 4);
+  }
+  wire.ready(10);
+  return wire.state(1010);
+}
+test("main finalizer CDP overage remains diagnostic when censored before bytes have matched complete wire proof", () => {
+  const f = fixture(),
+    template = structuredClone(f.artifact.samples),
+    nativeTemplate = structuredClone(f.backend[0]);
+  Object.assign(f.plan, {
+    origin: "http://localhost:34123",
+    ranges: [{ name: "month" }, { name: "quarter" }, { name: "year" }],
+  });
+  f.plan.conditions = ["employee", "manager", "admin", "restricted"].map(
+    (role, i) => ({
+      name: role,
+      role,
+      organization: i % 2 ? "large" : "small",
+      size: i % 2 ? "large" : "small",
+      employees: i % 2 ? 200 : 8,
+      timezone: "Europe/Berlin",
+      locale: "en",
+      viewport: { width: 1280, height: 900 },
+    }),
+  );
+  const owners = [
+    "employee",
+    "employee",
+    "manager",
+    "manager",
+    "restricted",
+    "admin",
+  ];
+  f.plan.routes = [
+    "dashboard",
+    "time-tracking",
+    "employee-directory",
+    "employee-detail",
+    "reports",
+    "analytics",
+  ].map((name, i) => ({
+    name,
+    path: "/en",
+    ready: "main",
+    clockReady: "button",
+    link: "a",
+    refresh: "button",
+    conditions: [owners[i]],
+    ranges: ["month"],
+    mutation: {
+      steps: [{ click: "button" }],
+      ready: "main",
+      reset: [{ click: "button" }],
+    },
+  }));
+  f.artifact.samples = f.plan.routes.flatMap((route, r) =>
+    template.map((s, i) => ({
+      ...structuredClone(s),
+      condition: owners[r],
+      route: route.name,
+      traceId: (r * 55 + i + 1).toString(16).padStart(32, "0"),
+      backendTraceId: (r * 55 + i + 1).toString(16).padStart(32, "0"),
+      pendingScriptRequests: 1,
+      resourcePendingRequests: 1,
+      resourceWindowComplete: false,
+    })),
+  );
+  assert.equal(f.artifact.samples.length, 330);
+  f.artifact.nativeRunCoverage = {
+    driverQueryCount: 1650,
+    nativeQueryStartedCount: 1650,
+    nativeQueryEndedCount: 1650,
+    observedQueryCount: 1650,
+    pendingNativeQueries: 0,
+    activeTraces: 0,
+    allReceivedTracesReconciled: true,
+    complete: true,
+  };
+  f.artifact.summaries = f.plan.routes.flatMap((route, r) =>
+    Object.entries(f.plan.samplesByMode).map(([mode, count]) => ({
+      condition: owners[r],
+      route: route.name,
+      range: "month",
+      mode,
+      samples: count,
+      failed: 0,
+      usableContentMs: { p95: 1000 },
+      clockReadyMs: { p95: 100 },
+      javascriptBytes: { p95: 10000 },
+    })),
+  );
+  f.backend.splice(
+    0,
+    f.backend.length,
+    ...f.artifact.samples.map((s) => ({
+      ...structuredClone(nativeTemplate),
+      traceId: s.traceId,
+    })),
+  );
+  f.saveBefore();
+  const original = settledFixture(f, f.plan, "settled-before.json");
+  for (const s of original.samples)
+    s.wireSettled = wireFixture(s, { javascript: 500000 });
+  f.save("settled-before.json", original);
+  const originalArgs = [
+    "--before-plan",
+    join(f.dir, "before-plan.json"),
+    "--before",
+    join(f.dir, "before.json"),
+    "--backend",
+    join(f.dir, "backend.json"),
+    "--before-settled",
+    join(f.dir, "settled-before.json"),
+    "--before-settled-backend",
+    join(f.dir, "backend.json"),
+  ];
+  const derived = f.run(
+    "derive",
+    ...originalArgs,
+    "--release-build",
+    "ddddddddd",
+    "--release-source",
+    "eeeeeeeee",
+    "--release-tooling",
+    "fffffffff",
+    "--out",
+    join(f.dir, "derived"),
+  );
+  assert.equal(derived.status, 0, derived.stderr);
+  const h = candidate(f);
+  for (const s of h.artifact.samples)
+    Object.assign(s, {
+      pendingScriptRequests: 0,
+      resourcePendingRequests: 0,
+      resourceWindowComplete: true,
+      javascriptBytes: 100000,
+      totalBytes: 102000,
+    });
+  for (const s of h.artifact.summaries) s.javascriptBytes = { p95: 100000 };
+  f.save("head.json", h.artifact);
+  const finalized = spawnSync(
+    process.execPath,
+    [
+      "scripts/performance/run-baseline.mjs",
+      "--plan",
+      join(f.dir, "derived/release-plan.json"),
+      "--finalize",
+      join(f.dir, "head.json"),
+      "--backend",
+      join(f.dir, "head-backend.json"),
+    ],
+    { encoding: "utf8" },
+  );
+  assert.equal(finalized.status, 1, finalized.stderr);
+  const finalizedHead = JSON.parse(readFileSync(join(f.dir, "head.json")));
+  assert.equal(finalizedHead.evidenceComplete, true);
+  assert.match(
+    finalizedHead.releaseGates.join(" "),
+    /Exceeded javascriptP95Bytes/,
+  );
+  const headWire = settledFixture(f, h.plan, "settled-head.json");
+  for (const s of headWire.samples)
+    s.wireSettled = wireFixture(s, { javascript: 500000 });
+  f.save("settled-head.json", headWire);
+  const compared = f.run(
+    "compare",
+    ...originalArgs,
+    "--plan",
+    join(f.dir, "derived/release-plan.json"),
+    "--budgets",
+    join(f.dir, "derived/release-budgets.json"),
+    "--head",
+    join(f.dir, "head.json"),
+    "--head-backend",
+    join(f.dir, "head-backend.json"),
+    "--head-settled",
+    join(f.dir, "settled-head.json"),
+    "--head-settled-backend",
+    join(f.dir, "head-backend.json"),
+    "--out",
+    join(f.dir, "comparison.json"),
+  );
+  assert.equal(compared.status, 0, compared.stderr);
+  const report = JSON.parse(readFileSync(join(f.dir, "comparison.json"))),
+    budget = JSON.parse(
+      readFileSync(join(f.dir, "derived/release-budgets.json")),
+    );
+  assert.equal(report.resourceAcceptance, "fulfilled");
+  assert.equal(h.plan.conditions[0].budgets.javascriptP95Bytes, 26384);
+  assert.equal(
+    budget.primaryResourceBudgetProvenance.employee.javascriptP95Bytes
+      .diagnosticOnly,
+    true,
+  );
+  assert.match(
+    report.retainedPrimaryGates.join(" "),
+    /Exceeded javascriptP95Bytes/,
+  );
+  assert.equal(report.cohorts[0].budgets.javascriptBytes.passed, null);
+  assert.equal(report.cohorts[0].before.javascriptBytes, null);
+  assert.equal(report.cohorts[0].head.javascriptBytes.p95, 100000);
 });
