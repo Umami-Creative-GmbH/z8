@@ -1320,7 +1320,7 @@ export interface ScanApprovalWriteBoundaryOptions {
 
 const PRODUCTION_SOURCE = /\.[cm]?[jt]sx?$/;
 const TEST_SOURCE = /\.(?:test|spec)\.[cm]?[jt]sx?$/;
-const MAX_PRODUCTION_FILES = 4_096;
+const MAX_PRODUCTION_FILES = 8_192;
 const MAX_SOURCE_BYTES = 2 * 1024 * 1024;
 const MAX_TOTAL_SOURCE_BYTES = 32 * 1024 * 1024;
 const APPROVAL_TABLE_PREFILTER =

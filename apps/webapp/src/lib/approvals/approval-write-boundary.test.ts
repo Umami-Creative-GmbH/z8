@@ -3403,12 +3403,12 @@ describe("approval write boundary production ownership", () => {
 	});
 
 	it("fails closed before parsing when the production file-count limit is exceeded", {
-		timeout: 15_000,
+		timeout: 30_000,
 	}, () => {
 		withApprovalWriteTree({}, (workspaceRoot) => {
 			const sourceRoot = join(workspaceRoot, "src");
 			mkdirSync(sourceRoot, { recursive: true });
-			for (let index = 0; index < 4_097; index += 1) {
+			for (let index = 0; index < 8_193; index += 1) {
 				writeFileSync(join(sourceRoot, `${index}.ts`), "");
 			}
 
@@ -3418,7 +3418,7 @@ describe("approval write boundary production ownership", () => {
 				{
 					column: 0,
 					detail:
-						"Approval write boundary production file-count limit exceeded: 4096.",
+						"Approval write boundary production file-count limit exceeded: 8192.",
 					error: "traversal",
 					kind: "error",
 					line: 0,
