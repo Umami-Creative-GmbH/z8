@@ -1,0 +1,4483 @@
+{
+  "schemaVersion": 1,
+  "classification": "functional-synthetic-only",
+  "statisticalLatencyClaim": false,
+  "fixture": {
+    "largeEmployees": 200,
+    "smallEmployees": 8,
+    "annualHoursPerEmployee": 2088,
+    "annualHours": 417600,
+    "trackingStart": "2025-01-01",
+    "poolMaximum": 10,
+    "realProjectionInitialization": "refreshEmployeeWorkBalanceFromPeriods(forceFullRebuild:true)",
+    "browserNotificationPermission": "denied"
+  },
+  "observations": [
+    {
+      "build": "df73d9b93",
+      "stage": "isolated-annual-repeat",
+      "kind": "work",
+      "phase": "first",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "totalHours": 417600,
+        "undertime": 0,
+        "overtime": 0
+      },
+      "traceId": "f3e3030280901d15e22aea88688652f3",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "df73d9b93",
+      "stage": "isolated-annual-repeat",
+      "kind": "work",
+      "phase": "second",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "totalHours": 417600,
+        "undertime": 0,
+        "overtime": 0
+      },
+      "traceId": "58ccda20c529c0cdeb8f296c09a271ed",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "df73d9b93",
+      "stage": "isolated-annual-repeat",
+      "kind": "team",
+      "phase": "first",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "teams": 2,
+        "totalHours": 417600,
+        "expected": 417600,
+        "variance": 0
+      },
+      "traceId": "c90470907caf2ce50c92d047367d62a1",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "df73d9b93",
+      "stage": "isolated-annual-repeat",
+      "kind": "team",
+      "phase": "second",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "teams": 2,
+        "totalHours": 417600,
+        "expected": 417600,
+        "variance": 0
+      },
+      "traceId": "8f11e31ffb2e0e010073e3f1a3ec2efb",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "df73d9b93",
+      "stage": "isolated-annual-repeat",
+      "kind": "overtime",
+      "phase": "first",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 0
+      },
+      "traceId": "707f44e797ae7dee9884b7c75f529f22",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "df73d9b93",
+      "stage": "isolated-annual-repeat",
+      "kind": "overtime",
+      "phase": "second",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 0
+      },
+      "traceId": "ca3e7686690e7d16f65c0f63fc4fcc5d",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "df73d9b93",
+      "stage": "accepted-canonical-correction",
+      "kind": "work",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "totalHours": 417599,
+        "undertime": 1,
+        "overtime": 0
+      },
+      "traceId": "fcacdbbf790d1125c91dde28cbfcd02e",
+      "queries": 66,
+      "rows": 105615,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "df73d9b93",
+      "stage": "accepted-correction-other-reader",
+      "kind": "team",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "teams": 2,
+        "totalHours": 417599,
+        "expected": 417600,
+        "variance": -1
+      },
+      "traceId": "ea62255d335a981739cc59ae85365c48",
+      "queries": 66,
+      "rows": 105615,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "df73d9b93",
+      "stage": "accepted-correction-other-reader",
+      "kind": "overtime",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 0
+      },
+      "traceId": "fc9be6a17cdcde978a0a4d2fe5a608fe",
+      "queries": 66,
+      "rows": 53415,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "df73d9b93",
+      "stage": "policy-child-same-timestamp",
+      "kind": "work",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "totalHours": 417600,
+        "undertime": 0,
+        "overtime": 0
+      },
+      "traceId": "c9981d0d3cb9dc960d54e805de44f61c",
+      "queries": 66,
+      "rows": 105615,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "df73d9b93",
+      "stage": "policy-child-same-timestamp",
+      "kind": "work",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "totalHours": 417600,
+        "undertime": 0,
+        "overtime": 0
+      },
+      "traceId": "f00c5d32dd73f27852022769833f6a18",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "df73d9b93",
+      "stage": "policy-child-same-timestamp",
+      "kind": "team",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "teams": 2,
+        "totalHours": 417600,
+        "expected": 417600,
+        "variance": 0
+      },
+      "traceId": "c719e67f2226af0b47798162f7db0a7c",
+      "queries": 66,
+      "rows": 105615,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "df73d9b93",
+      "stage": "policy-child-same-timestamp",
+      "kind": "team",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "teams": 2,
+        "totalHours": 417600,
+        "expected": 417600,
+        "variance": 0
+      },
+      "traceId": "01957d194fb95c91dc8827ca4e49f46f",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "df73d9b93",
+      "stage": "policy-child-same-timestamp",
+      "kind": "overtime",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 0
+      },
+      "traceId": "9f59a39422bd5233f89a9c90d500017c",
+      "queries": 66,
+      "rows": 53415,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "df73d9b93",
+      "stage": "policy-child-same-timestamp",
+      "kind": "overtime",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 0
+      },
+      "traceId": "d7c09f1e298f67e164ffc432402fa514",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "df73d9b93",
+      "stage": "policy-child-same-timestamp",
+      "kind": "team",
+      "phase": "unrelated-tenant",
+      "summary": {
+        "success": true,
+        "employees": 8,
+        "teams": 2,
+        "totalHours": 16704,
+        "expected": 16704,
+        "variance": 0
+      },
+      "traceId": "fe1b3ec8c46131256273df2bab657617",
+      "queries": 12,
+      "rows": 15,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "df73d9b93",
+      "stage": "policy-child-same-timestamp-restored",
+      "kind": "work",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "totalHours": 417600,
+        "undertime": 0,
+        "overtime": 0
+      },
+      "traceId": "a30e3ce560bf449754475764332e2187",
+      "queries": 66,
+      "rows": 105615,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "df73d9b93",
+      "stage": "policy-child-same-timestamp-restored",
+      "kind": "work",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "totalHours": 417600,
+        "undertime": 0,
+        "overtime": 0
+      },
+      "traceId": "88ee7aac8f1be8e1f3ee4abd3689121c",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "df73d9b93",
+      "stage": "policy-child-same-timestamp-restored",
+      "kind": "team",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "teams": 2,
+        "totalHours": 417600,
+        "expected": 417600,
+        "variance": 0
+      },
+      "traceId": "988de4e3308e33beda0a331e26ffecca",
+      "queries": 66,
+      "rows": 105615,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "df73d9b93",
+      "stage": "policy-child-same-timestamp-restored",
+      "kind": "team",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "teams": 2,
+        "totalHours": 417600,
+        "expected": 417600,
+        "variance": 0
+      },
+      "traceId": "2f7d8b53280917ba2e1fcf3c0a10b4fd",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "df73d9b93",
+      "stage": "policy-child-same-timestamp-restored",
+      "kind": "overtime",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 0
+      },
+      "traceId": "2380b0c4d0f9a403cd67dbdf037c5aba",
+      "queries": 66,
+      "rows": 53415,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "df73d9b93",
+      "stage": "policy-child-same-timestamp-restored",
+      "kind": "overtime",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 0
+      },
+      "traceId": "3ff2dae43ddf500417737db3b9625d7a",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "df73d9b93",
+      "stage": "policy-child-same-timestamp-restored",
+      "kind": "team",
+      "phase": "unrelated-tenant",
+      "summary": {
+        "success": true,
+        "employees": 8,
+        "teams": 2,
+        "totalHours": 16704,
+        "expected": 16704,
+        "variance": 0
+      },
+      "traceId": "f5d5d06b28fe2b02165a58493c720ce4",
+      "queries": 12,
+      "rows": 15,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "df73d9b93",
+      "stage": "policy-working-days-with-confirmed-terms",
+      "kind": "work",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "totalHours": 417600,
+        "undertime": 0,
+        "overtime": 1600
+      },
+      "traceId": "acebcdae5c16103447080bb890c1b179",
+      "queries": 66,
+      "rows": 105615,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "df73d9b93",
+      "stage": "policy-working-days-with-confirmed-terms",
+      "kind": "work",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "totalHours": 417600,
+        "undertime": 0,
+        "overtime": 1600
+      },
+      "traceId": "02dd62dafb578e498ab6b31d9a29eec4",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "df73d9b93",
+      "stage": "policy-working-days-with-confirmed-terms",
+      "kind": "team",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "teams": 2,
+        "totalHours": 417600,
+        "expected": 416000,
+        "variance": 1600
+      },
+      "traceId": "0d82ae70c83c8730c88d59fcd533fbd0",
+      "queries": 66,
+      "rows": 105615,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "df73d9b93",
+      "stage": "policy-working-days-with-confirmed-terms",
+      "kind": "team",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "teams": 2,
+        "totalHours": 417600,
+        "expected": 416000,
+        "variance": 1600
+      },
+      "traceId": "b868e31be2149ac8ecc1511f8ca25dc8",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "df73d9b93",
+      "stage": "policy-working-days-with-confirmed-terms",
+      "kind": "overtime",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 0
+      },
+      "traceId": "b1d9a72fade08c065fbfa8e7605891d6",
+      "queries": 66,
+      "rows": 53415,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "df73d9b93",
+      "stage": "policy-working-days-with-confirmed-terms",
+      "kind": "overtime",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 0
+      },
+      "traceId": "a39e44e2fa326b3f6123c83704b18a8a",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "df73d9b93",
+      "stage": "policy-working-days-with-confirmed-terms",
+      "kind": "team",
+      "phase": "unrelated-tenant",
+      "summary": {
+        "success": true,
+        "employees": 8,
+        "teams": 2,
+        "totalHours": 16704,
+        "expected": 16704,
+        "variance": 0
+      },
+      "traceId": "6f033333af6dbe7dccab775643944f02",
+      "queries": 12,
+      "rows": 15,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "df73d9b93",
+      "stage": "policy-working-days-with-confirmed-terms-restored",
+      "kind": "work",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "totalHours": 417600,
+        "undertime": 0,
+        "overtime": 0
+      },
+      "traceId": "a16df0ca3128ec5f97a489a4e26e99f9",
+      "queries": 66,
+      "rows": 105615,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "df73d9b93",
+      "stage": "policy-working-days-with-confirmed-terms-restored",
+      "kind": "work",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "totalHours": 417600,
+        "undertime": 0,
+        "overtime": 0
+      },
+      "traceId": "9d1334eeaed82b6504d45834adca8038",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "df73d9b93",
+      "stage": "policy-working-days-with-confirmed-terms-restored",
+      "kind": "team",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "teams": 2,
+        "totalHours": 417600,
+        "expected": 417600,
+        "variance": 0
+      },
+      "traceId": "65729c6a5dfef94a6dee9cc3115f89d9",
+      "queries": 66,
+      "rows": 105615,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "df73d9b93",
+      "stage": "policy-working-days-with-confirmed-terms-restored",
+      "kind": "team",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "teams": 2,
+        "totalHours": 417600,
+        "expected": 417600,
+        "variance": 0
+      },
+      "traceId": "f8b77be3da0823f3c6fe5b93c1ee246f",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "df73d9b93",
+      "stage": "policy-working-days-with-confirmed-terms-restored",
+      "kind": "overtime",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 0
+      },
+      "traceId": "a264f12eb89917f6cc56e66d326a9ecd",
+      "queries": 66,
+      "rows": 53415,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "df73d9b93",
+      "stage": "policy-working-days-with-confirmed-terms-restored",
+      "kind": "overtime",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 0
+      },
+      "traceId": "d19b1b87f79c6f6c5bdb45650f1d3435",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "df73d9b93",
+      "stage": "policy-working-days-with-confirmed-terms-restored",
+      "kind": "team",
+      "phase": "unrelated-tenant",
+      "summary": {
+        "success": true,
+        "employees": 8,
+        "teams": 2,
+        "totalHours": 16704,
+        "expected": 16704,
+        "variance": 0
+      },
+      "traceId": "50a7799b02e910c2cd7d87574c3fd6b3",
+      "queries": 12,
+      "rows": 15,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "df73d9b93",
+      "stage": "native-cache-read-outage",
+      "kind": "work",
+      "phase": "observed",
+      "summary": {
+        "success": false,
+        "denied": false,
+        "cacheError": true
+      },
+      "concurrency": 8,
+      "faultCalls": 8,
+      "traceId": "7c478b273105337d3dee568feb22ec94",
+      "queries": 96,
+      "rows": 1656,
+      "hits": 0,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "df73d9b93",
+      "stage": "denied-before-unavailable-cache",
+      "kind": "work",
+      "phase": "observed",
+      "summary": {
+        "success": false,
+        "denied": true,
+        "cacheError": false
+      },
+      "additionalCacheCalls": 0,
+      "traceId": "8a6be5ad28ba7a4bc9c57d34136a588c",
+      "queries": 10,
+      "rows": 6,
+      "hits": 0,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "df73d9b93",
+      "stage": "cache-read-recovery",
+      "kind": "work",
+      "phase": "observed",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "totalHours": 417600,
+        "undertime": 0,
+        "overtime": 0
+      },
+      "traceId": "bbe3c1ff6f2835be9267480dc078569c",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-approved-half-absence",
+      "kind": "work",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "totalHours": 417600,
+        "undertime": 0,
+        "overtime": 4
+      },
+      "traceId": "f354eb8152c0feccb5f329911d5cfd3e",
+      "queries": 66,
+      "rows": 105616,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-approved-half-absence",
+      "kind": "work",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "totalHours": 417600,
+        "undertime": 0,
+        "overtime": 4
+      },
+      "traceId": "eb918d6830cc5e3f78a68d2ebc96ac36",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-approved-half-absence",
+      "kind": "team",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "teams": 2,
+        "totalHours": 417600,
+        "expected": 417596,
+        "variance": 4
+      },
+      "traceId": "52e8cfe8e614f6c875ebec0d159df5dc",
+      "queries": 66,
+      "rows": 105616,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-approved-half-absence",
+      "kind": "team",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "teams": 2,
+        "totalHours": 417600,
+        "expected": 417596,
+        "variance": 4
+      },
+      "traceId": "d19cbcb0eaf59c7c2dc4ecccbb2c9816",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-approved-half-absence",
+      "kind": "overtime",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 4
+      },
+      "traceId": "3442db78c71a9fb4f93e58509e392b79",
+      "queries": 66,
+      "rows": 53416,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-approved-half-absence",
+      "kind": "overtime",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 4
+      },
+      "traceId": "56745f5f415abfbd601765d70e75e6d4",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-approved-half-absence",
+      "kind": "team",
+      "phase": "unrelated-tenant",
+      "summary": {
+        "success": true,
+        "employees": 8,
+        "teams": 2,
+        "totalHours": 16704,
+        "expected": 16704,
+        "variance": 0
+      },
+      "traceId": "baa6b07331dcaae0a6e3298132a790c3",
+      "queries": 12,
+      "rows": 15,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-approved-half-absence-restored",
+      "kind": "work",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "totalHours": 417600,
+        "undertime": 0,
+        "overtime": 0
+      },
+      "traceId": "a14de03a4eb6339059316dfc42158afa",
+      "queries": 66,
+      "rows": 105615,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-approved-half-absence-restored",
+      "kind": "work",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "totalHours": 417600,
+        "undertime": 0,
+        "overtime": 0
+      },
+      "traceId": "56a03eae1c1c2f96a232f95f9732d3b2",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-approved-half-absence-restored",
+      "kind": "team",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "teams": 2,
+        "totalHours": 417600,
+        "expected": 417600,
+        "variance": 0
+      },
+      "traceId": "abba33710c358faffd118c5b0040b2a9",
+      "queries": 66,
+      "rows": 105615,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-approved-half-absence-restored",
+      "kind": "team",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "teams": 2,
+        "totalHours": 417600,
+        "expected": 417600,
+        "variance": 0
+      },
+      "traceId": "17c349d1d41b6e824e6eced95799236a",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-approved-half-absence-restored",
+      "kind": "overtime",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 0
+      },
+      "traceId": "29b86cabe809bb9372642b92890eb626",
+      "queries": 66,
+      "rows": 53415,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-approved-half-absence-restored",
+      "kind": "overtime",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 0
+      },
+      "traceId": "95b0a1b6e335ea73ab1316137f516e27",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-approved-half-absence-restored",
+      "kind": "team",
+      "phase": "unrelated-tenant",
+      "summary": {
+        "success": true,
+        "employees": 8,
+        "teams": 2,
+        "totalHours": 16704,
+        "expected": 16704,
+        "variance": 0
+      },
+      "traceId": "8a5763d7ffc6ae3dde90bc139c7a173d",
+      "queries": 12,
+      "rows": 15,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-tracking-boundary",
+      "kind": "work",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "totalHours": 417600,
+        "undertime": 0,
+        "overtime": 0
+      },
+      "traceId": "2346f1934a545af58d25d4b9838921bf",
+      "queries": 66,
+      "rows": 105615,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-tracking-boundary",
+      "kind": "work",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "totalHours": 417600,
+        "undertime": 0,
+        "overtime": 0
+      },
+      "traceId": "fe300e03bf81a9edca784103cd87e0e6",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-tracking-boundary",
+      "kind": "team",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "teams": 2,
+        "totalHours": 417600,
+        "expected": 417592,
+        "variance": 0
+      },
+      "traceId": "8f0dc2127aea4533dbb30961095120b1",
+      "queries": 66,
+      "rows": 105615,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-tracking-boundary",
+      "kind": "team",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "teams": 2,
+        "totalHours": 417600,
+        "expected": 417592,
+        "variance": 0
+      },
+      "traceId": "b5af216aa9f3b3af35d30fcd9ddc95bf",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-tracking-boundary",
+      "kind": "overtime",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 0
+      },
+      "traceId": "a215bd7cb418afe7032f16eb943547f9",
+      "queries": 66,
+      "rows": 53415,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-tracking-boundary",
+      "kind": "overtime",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 0
+      },
+      "traceId": "fe08c0ee86f040abf59ec925f35f874a",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-tracking-boundary",
+      "kind": "team",
+      "phase": "unrelated-tenant",
+      "summary": {
+        "success": true,
+        "employees": 8,
+        "teams": 2,
+        "totalHours": 16704,
+        "expected": 16704,
+        "variance": 0
+      },
+      "traceId": "9b1c384a1e9d64dcf91cfa0799e6b8a0",
+      "queries": 12,
+      "rows": 15,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-tracking-boundary-restored",
+      "kind": "work",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "totalHours": 417600,
+        "undertime": 0,
+        "overtime": 0
+      },
+      "traceId": "54964ea9c2e8a9d1947abf9130516255",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-tracking-boundary-restored",
+      "kind": "work",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "totalHours": 417600,
+        "undertime": 0,
+        "overtime": 0
+      },
+      "traceId": "e8337a4d5bf61a415550c30ba1905692",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-tracking-boundary-restored",
+      "kind": "team",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "teams": 2,
+        "totalHours": 417600,
+        "expected": 417600,
+        "variance": 0
+      },
+      "traceId": "24d844ea72eb5d32a22d2c136f0daf43",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-tracking-boundary-restored",
+      "kind": "team",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "teams": 2,
+        "totalHours": 417600,
+        "expected": 417600,
+        "variance": 0
+      },
+      "traceId": "8b6b49dbef5df93a1fe20b8e243f24a4",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-tracking-boundary-restored",
+      "kind": "overtime",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 0
+      },
+      "traceId": "7fc9244ce57f6807a5dbf6ad471cf40d",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-tracking-boundary-restored",
+      "kind": "overtime",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 0
+      },
+      "traceId": "c90d1eeaa8556f676d440de09d3513d7",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-tracking-boundary-restored",
+      "kind": "team",
+      "phase": "unrelated-tenant",
+      "summary": {
+        "success": true,
+        "employees": 8,
+        "teams": 2,
+        "totalHours": 16704,
+        "expected": 16704,
+        "variance": 0
+      },
+      "traceId": "0047304fcc578435a01c63aa57533e37",
+      "queries": 12,
+      "rows": 15,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-confirmed-terms",
+      "kind": "work",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "totalHours": 417600,
+        "undertime": 0,
+        "overtime": 1044
+      },
+      "traceId": "e3d18fc647bfb0a30e0c71a00fbeb44c",
+      "queries": 66,
+      "rows": 105615,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-confirmed-terms",
+      "kind": "work",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "totalHours": 417600,
+        "undertime": 0,
+        "overtime": 1044
+      },
+      "traceId": "ab4655cb7bfcc6bc7819595537743cb4",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-confirmed-terms",
+      "kind": "team",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "teams": 2,
+        "totalHours": 417600,
+        "expected": 416556,
+        "variance": 1044
+      },
+      "traceId": "a6c01cdcaf0ac4c87a5af5c798753635",
+      "queries": 66,
+      "rows": 105615,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-confirmed-terms",
+      "kind": "team",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "teams": 2,
+        "totalHours": 417600,
+        "expected": 416556,
+        "variance": 1044
+      },
+      "traceId": "bbfd42faedcbc543b6761c9c6eb19991",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-confirmed-terms",
+      "kind": "overtime",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 4,
+        "seriesOvertime": 1036
+      },
+      "traceId": "a170d35c22b3cfab466184e8824837f1",
+      "queries": 66,
+      "rows": 53415,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-confirmed-terms",
+      "kind": "overtime",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 4,
+        "seriesOvertime": 1036
+      },
+      "traceId": "10b1b3033218598c918fbdad9fb9e3ab",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-confirmed-terms",
+      "kind": "team",
+      "phase": "unrelated-tenant",
+      "summary": {
+        "success": true,
+        "employees": 8,
+        "teams": 2,
+        "totalHours": 16704,
+        "expected": 16704,
+        "variance": 0
+      },
+      "traceId": "e3cf8ec410ccf2c2b00970ee568a7db0",
+      "queries": 12,
+      "rows": 15,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-confirmed-terms-restored",
+      "kind": "work",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "totalHours": 417600,
+        "undertime": 0,
+        "overtime": 0
+      },
+      "traceId": "c526c2600e37a29d686d36fc9ff42e22",
+      "queries": 66,
+      "rows": 105615,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-confirmed-terms-restored",
+      "kind": "work",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "totalHours": 417600,
+        "undertime": 0,
+        "overtime": 0
+      },
+      "traceId": "d3d2fb682f9ef84bd8f6a2c288ade9e9",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-confirmed-terms-restored",
+      "kind": "team",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "teams": 2,
+        "totalHours": 417600,
+        "expected": 417600,
+        "variance": 0
+      },
+      "traceId": "c465ff344be944c60feb146e5abbf9db",
+      "queries": 66,
+      "rows": 105615,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-confirmed-terms-restored",
+      "kind": "team",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "teams": 2,
+        "totalHours": 417600,
+        "expected": 417600,
+        "variance": 0
+      },
+      "traceId": "e9794f7b82682333d573509406916da2",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-confirmed-terms-restored",
+      "kind": "overtime",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 0
+      },
+      "traceId": "365f8ce6afb65d8ccaa59f0f2f3aeaa1",
+      "queries": 66,
+      "rows": 53415,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-confirmed-terms-restored",
+      "kind": "overtime",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 0
+      },
+      "traceId": "937d100c110ab68e112e386940a6c9b5",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-confirmed-terms-restored",
+      "kind": "team",
+      "phase": "unrelated-tenant",
+      "summary": {
+        "success": true,
+        "employees": 8,
+        "teams": 2,
+        "totalHours": 16704,
+        "expected": 16704,
+        "variance": 0
+      },
+      "traceId": "f350077f5808c9ec4f5366f70467a3c7",
+      "queries": 12,
+      "rows": 15,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "accepted-public-holiday-unassigned",
+      "kind": "work",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "totalHours": 417600,
+        "undertime": 0,
+        "overtime": 0
+      },
+      "traceId": "d222f65e638bebe7fec71eecf806eb53",
+      "queries": 66,
+      "rows": 105616,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "accepted-public-holiday-unassigned",
+      "kind": "work",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "totalHours": 417600,
+        "undertime": 0,
+        "overtime": 0
+      },
+      "traceId": "28945b0aaf9193dbdcc78014310a42e9",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "accepted-public-holiday-unassigned",
+      "kind": "team",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "teams": 2,
+        "totalHours": 417600,
+        "expected": 417600,
+        "variance": 0
+      },
+      "traceId": "389ddc52d8e54284c7eb02f7be3be51c",
+      "queries": 66,
+      "rows": 105616,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "accepted-public-holiday-unassigned",
+      "kind": "team",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "teams": 2,
+        "totalHours": 417600,
+        "expected": 417600,
+        "variance": 0
+      },
+      "traceId": "027a94d9284492170cf9f826fd18c80b",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "accepted-public-holiday-unassigned",
+      "kind": "overtime",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 0
+      },
+      "traceId": "5b3ffe6d389f63089084aa5d294f7f64",
+      "queries": 66,
+      "rows": 53416,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "accepted-public-holiday-unassigned",
+      "kind": "overtime",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 0
+      },
+      "traceId": "af01b2d159042077b8bad9753beabaf2",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "accepted-public-holiday-unassigned",
+      "kind": "team",
+      "phase": "unrelated-tenant",
+      "summary": {
+        "success": true,
+        "employees": 8,
+        "teams": 2,
+        "totalHours": 16704,
+        "expected": 16704,
+        "variance": 0
+      },
+      "traceId": "61b75268b8e5456f91f70d6851144e1a",
+      "queries": 12,
+      "rows": 15,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-holiday-assignment",
+      "kind": "work",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "totalHours": 417600,
+        "undertime": 0,
+        "overtime": 1600
+      },
+      "traceId": "b6e5b0f921517e27d00482bb17ce0a34",
+      "queries": 66,
+      "rows": 105620,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-holiday-assignment",
+      "kind": "work",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "totalHours": 417600,
+        "undertime": 0,
+        "overtime": 1600
+      },
+      "traceId": "374bf11d35995b665b05490734aee66f",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-holiday-assignment",
+      "kind": "team",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "teams": 2,
+        "totalHours": 417600,
+        "expected": 416000,
+        "variance": 1600
+      },
+      "traceId": "b9eef134ec9b7e79342f5b47075a616b",
+      "queries": 66,
+      "rows": 105620,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-holiday-assignment",
+      "kind": "team",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "teams": 2,
+        "totalHours": 417600,
+        "expected": 416000,
+        "variance": 1600
+      },
+      "traceId": "17795854be36e8fe568313957671ad7a",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-holiday-assignment",
+      "kind": "overtime",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 1600
+      },
+      "traceId": "38433ea384cd797d1ab7e743d9a330b4",
+      "queries": 66,
+      "rows": 53420,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-holiday-assignment",
+      "kind": "overtime",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 1600
+      },
+      "traceId": "981803da4d8bb921bd231b06c632c527",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "committed-holiday-assignment",
+      "kind": "team",
+      "phase": "unrelated-tenant",
+      "summary": {
+        "success": true,
+        "employees": 8,
+        "teams": 2,
+        "totalHours": 16704,
+        "expected": 16704,
+        "variance": 0
+      },
+      "traceId": "a767c397ed723332d97a417d5bd56504",
+      "queries": 12,
+      "rows": 15,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "accepted-public-holiday-deleted",
+      "kind": "work",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "totalHours": 417600,
+        "undertime": 0,
+        "overtime": 0
+      },
+      "traceId": "58f6423211bc50f67e733897db95ba5c",
+      "queries": 66,
+      "rows": 105619,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "accepted-public-holiday-deleted",
+      "kind": "work",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "totalHours": 417600,
+        "undertime": 0,
+        "overtime": 0
+      },
+      "traceId": "076538db236fba0824463139f798bac0",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "accepted-public-holiday-deleted",
+      "kind": "team",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "teams": 2,
+        "totalHours": 417600,
+        "expected": 417600,
+        "variance": 0
+      },
+      "traceId": "9291760ff51cad795c9db1d5abb460ca",
+      "queries": 66,
+      "rows": 105619,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "accepted-public-holiday-deleted",
+      "kind": "team",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "teams": 2,
+        "totalHours": 417600,
+        "expected": 417600,
+        "variance": 0
+      },
+      "traceId": "43eb144f1e6729eef91f6fc24898cb96",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "accepted-public-holiday-deleted",
+      "kind": "overtime",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 0
+      },
+      "traceId": "1f93dd9ec3e807a5de11e07762ce1f52",
+      "queries": 66,
+      "rows": 53419,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "accepted-public-holiday-deleted",
+      "kind": "overtime",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 0
+      },
+      "traceId": "2bb8ebec7bd6653d974ab07d48b2d1af",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "accepted-public-holiday-deleted",
+      "kind": "team",
+      "phase": "unrelated-tenant",
+      "summary": {
+        "success": true,
+        "employees": 8,
+        "teams": 2,
+        "totalHours": 16704,
+        "expected": 16704,
+        "variance": 0
+      },
+      "traceId": "04ebb924752025613873c60b2d9b9aea",
+      "queries": 12,
+      "rows": 15,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "eight-concurrent-identical-misses",
+      "kind": "work",
+      "phase": "observed",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "totalHours": 417600,
+        "undertime": 0,
+        "overtime": 0
+      },
+      "concurrency": 8,
+      "equivalent": true,
+      "traceId": "1b980be47b0fcfb9ea7c4ce01dd748a3",
+      "queries": 150,
+      "rows": 107064,
+      "hits": 2,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "accepted-correction-visible-refresh",
+      "kind": "work",
+      "phase": "visible-refresh",
+      "summary": {
+        "employees": 200,
+        "totalHours": 417599
+      },
+      "annualActionCountIncludingVerification": 2,
+      "traceId": "7245ea6cabf6d7b3f9d89935f86a8170",
+      "queries": 243,
+      "rows": 105695,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "accepted-correction-visible-refresh",
+      "kind": "work",
+      "phase": "verification",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "totalHours": 417599,
+        "undertime": 1,
+        "overtime": 0
+      },
+      "traceId": "118694fbc0314111b04e6ffe4b54f935",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "accepted-correction-restored-visible-refresh",
+      "kind": "work",
+      "phase": "visible-refresh",
+      "summary": {
+        "employees": 200,
+        "totalHours": 417600
+      },
+      "annualActionCountIncludingVerification": 2,
+      "traceId": "cd6169bd8c599fb7ce340b8164b57132",
+      "queries": 230,
+      "rows": 105691,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "accepted-correction-restored-visible-refresh",
+      "kind": "work",
+      "phase": "verification",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "totalHours": 417600,
+        "undertime": 0,
+        "overtime": 0
+      },
+      "traceId": "28f7bb9cf17f47f48d74e1f9964c49ac",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "manager-initial",
+      "kind": "work",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 99,
+        "totalHours": 206712,
+        "undertime": 0,
+        "overtime": 0
+      },
+      "visibleEmployees": 99,
+      "traceId": "d410e8eed0ed458e29ff5392d0b397d4",
+      "queries": 12,
+      "rows": 106,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "manager-initial",
+      "kind": "work",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "employees": 99,
+        "totalHours": 206712,
+        "undertime": 0,
+        "overtime": 0
+      },
+      "visibleEmployees": 99,
+      "traceId": "659f1b7a36745cc87f9dcfca2d1ef2c6",
+      "queries": 12,
+      "rows": 106,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "manager-initial",
+      "kind": "team",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 99,
+        "teams": 1,
+        "totalHours": 206712,
+        "expected": 206712,
+        "variance": 0
+      },
+      "visibleEmployees": 99,
+      "traceId": "2503c24281a9fe79d9141030d74dcc30",
+      "queries": 12,
+      "rows": 106,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "manager-initial",
+      "kind": "team",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "employees": 99,
+        "teams": 1,
+        "totalHours": 206712,
+        "expected": 206712,
+        "variance": 0
+      },
+      "visibleEmployees": 99,
+      "traceId": "2cf0c9d816d55cbd6bbb7cef36ff56d3",
+      "queries": 12,
+      "rows": 106,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "manager-initial",
+      "kind": "overtime",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 0
+      },
+      "visibleEmployees": 99,
+      "traceId": "80f1f4ea057ac6446a702340b9b68625",
+      "queries": 12,
+      "rows": 106,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "manager-initial",
+      "kind": "overtime",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 0
+      },
+      "visibleEmployees": 99,
+      "traceId": "97831bcefd7b730e84b00e78d18b40c1",
+      "queries": 12,
+      "rows": 106,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "manager-assignment-reduced",
+      "kind": "work",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 98,
+        "totalHours": 204624,
+        "undertime": 0,
+        "overtime": 0
+      },
+      "visibleEmployees": 98,
+      "traceId": "99757a55029c117e9a24892da5f86880",
+      "queries": 40,
+      "rows": 51755,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "manager-assignment-reduced",
+      "kind": "work",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "employees": 98,
+        "totalHours": 204624,
+        "undertime": 0,
+        "overtime": 0
+      },
+      "visibleEmployees": 98,
+      "traceId": "63815317c5f445f694a9e757ff48a675",
+      "queries": 12,
+      "rows": 105,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "manager-assignment-reduced",
+      "kind": "team",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 98,
+        "teams": 1,
+        "totalHours": 204624,
+        "expected": 204624,
+        "variance": 0
+      },
+      "visibleEmployees": 98,
+      "traceId": "2af32d9dbece43621c6fbe9fd3e8d536",
+      "queries": 40,
+      "rows": 51755,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "manager-assignment-reduced",
+      "kind": "team",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "employees": 98,
+        "teams": 1,
+        "totalHours": 204624,
+        "expected": 204624,
+        "variance": 0
+      },
+      "visibleEmployees": 98,
+      "traceId": "d78846c27b0b56659aed3c1bc585fc2f",
+      "queries": 12,
+      "rows": 105,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "manager-assignment-reduced",
+      "kind": "overtime",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 0
+      },
+      "visibleEmployees": 98,
+      "traceId": "c3da278aebb5404ce039a5c8cbf1b823",
+      "queries": 40,
+      "rows": 26177,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "manager-assignment-reduced",
+      "kind": "overtime",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 0
+      },
+      "visibleEmployees": 98,
+      "traceId": "68d9e4e7133d8dd98452fb9030f10afe",
+      "queries": 12,
+      "rows": 105,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "manager-assignment-restored",
+      "kind": "work",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 99,
+        "totalHours": 206712,
+        "undertime": 0,
+        "overtime": 0
+      },
+      "visibleEmployees": 99,
+      "traceId": "880abea5e909c99d1d6114f7c9e741d7",
+      "queries": 40,
+      "rows": 52283,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "manager-assignment-restored",
+      "kind": "work",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "employees": 99,
+        "totalHours": 206712,
+        "undertime": 0,
+        "overtime": 0
+      },
+      "visibleEmployees": 99,
+      "traceId": "44c76e4919ee13ac5b8e1d3724867d5c",
+      "queries": 12,
+      "rows": 106,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "manager-assignment-restored",
+      "kind": "team",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 99,
+        "teams": 1,
+        "totalHours": 206712,
+        "expected": 206712,
+        "variance": 0
+      },
+      "visibleEmployees": 99,
+      "traceId": "cd060240d65b18931d0d840050c6d8fc",
+      "queries": 40,
+      "rows": 52283,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "manager-assignment-restored",
+      "kind": "team",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "employees": 99,
+        "teams": 1,
+        "totalHours": 206712,
+        "expected": 206712,
+        "variance": 0
+      },
+      "visibleEmployees": 99,
+      "traceId": "f704a03a2b8dff4a04b5d9c0180172aa",
+      "queries": 12,
+      "rows": 106,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "manager-assignment-restored",
+      "kind": "overtime",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 0
+      },
+      "visibleEmployees": 99,
+      "traceId": "9809927163af5bbdccd7e72fae6ef898",
+      "queries": 40,
+      "rows": 26444,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "manager-assignment-restored",
+      "kind": "overtime",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 0
+      },
+      "visibleEmployees": 99,
+      "traceId": "ea28f6878f9e6603fdf324f44bb7cc5f",
+      "queries": 12,
+      "rows": 106,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "custom-report-grant-added-existing-manager-scope",
+      "kind": "work",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 99,
+        "totalHours": 206712,
+        "undertime": 0,
+        "overtime": 0
+      },
+      "visibleEmployees": 99,
+      "traceId": "f2ef07bebc5b336f1bdc6c5336d01b16",
+      "queries": 40,
+      "rows": 52283,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "custom-report-grant-added-existing-manager-scope",
+      "kind": "work",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "employees": 99,
+        "totalHours": 206712,
+        "undertime": 0,
+        "overtime": 0
+      },
+      "visibleEmployees": 99,
+      "traceId": "55101c51f55adcebc3f7141f2e293f70",
+      "queries": 12,
+      "rows": 106,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "custom-report-grant-added-existing-manager-scope",
+      "kind": "team",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 99,
+        "teams": 1,
+        "totalHours": 206712,
+        "expected": 206712,
+        "variance": 0
+      },
+      "visibleEmployees": 99,
+      "traceId": "fb8f30a4b7b34d5cfbbea66214127863",
+      "queries": 40,
+      "rows": 52283,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "custom-report-grant-added-existing-manager-scope",
+      "kind": "team",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "employees": 99,
+        "teams": 1,
+        "totalHours": 206712,
+        "expected": 206712,
+        "variance": 0
+      },
+      "visibleEmployees": 99,
+      "traceId": "6295bf6fff86bf2ce2590dbc258ab665",
+      "queries": 12,
+      "rows": 106,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "custom-report-grant-added-existing-manager-scope",
+      "kind": "overtime",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 0
+      },
+      "visibleEmployees": 99,
+      "traceId": "f546a152a5e0f3d2a947f6521b1f4f19",
+      "queries": 40,
+      "rows": 26444,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "custom-report-grant-added-existing-manager-scope",
+      "kind": "overtime",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 0
+      },
+      "visibleEmployees": 99,
+      "traceId": "1a84709c43a065ed9b4fea25c9b628af",
+      "queries": 12,
+      "rows": 106,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "custom-report-grant-reduced-existing-manager-scope",
+      "kind": "work",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 99,
+        "totalHours": 206712,
+        "undertime": 0,
+        "overtime": 0
+      },
+      "visibleEmployees": 99,
+      "traceId": "662c08a7f5d7f9fc055badefcc01d0ae",
+      "queries": 40,
+      "rows": 52283,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "custom-report-grant-reduced-existing-manager-scope",
+      "kind": "work",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "employees": 99,
+        "totalHours": 206712,
+        "undertime": 0,
+        "overtime": 0
+      },
+      "visibleEmployees": 99,
+      "traceId": "d7ce5d157fd09f3ccce698dad0791c81",
+      "queries": 12,
+      "rows": 106,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "custom-report-grant-reduced-existing-manager-scope",
+      "kind": "team",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 99,
+        "teams": 1,
+        "totalHours": 206712,
+        "expected": 206712,
+        "variance": 0
+      },
+      "visibleEmployees": 99,
+      "traceId": "f6ba6bc804e62e6023bcf86535da3001",
+      "queries": 40,
+      "rows": 52283,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "custom-report-grant-reduced-existing-manager-scope",
+      "kind": "team",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "employees": 99,
+        "teams": 1,
+        "totalHours": 206712,
+        "expected": 206712,
+        "variance": 0
+      },
+      "visibleEmployees": 99,
+      "traceId": "4df044b1d4bdbc99ca62d23b1bb4647a",
+      "queries": 12,
+      "rows": 106,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "custom-report-grant-reduced-existing-manager-scope",
+      "kind": "overtime",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 0
+      },
+      "visibleEmployees": 99,
+      "traceId": "52c54c5d18584e58de8cf7e5f30d0465",
+      "queries": 40,
+      "rows": 26444,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "custom-report-grant-reduced-existing-manager-scope",
+      "kind": "overtime",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 0
+      },
+      "visibleEmployees": 99,
+      "traceId": "524670b1b5cd7211091a3082062c6c2d",
+      "queries": 12,
+      "rows": 106,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "custom-report-grant-restored",
+      "kind": "work",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 99,
+        "totalHours": 206712,
+        "undertime": 0,
+        "overtime": 0
+      },
+      "visibleEmployees": 99,
+      "traceId": "1d3ae15c19ea529c263d26192413449a",
+      "queries": 40,
+      "rows": 52283,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "custom-report-grant-restored",
+      "kind": "work",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "employees": 99,
+        "totalHours": 206712,
+        "undertime": 0,
+        "overtime": 0
+      },
+      "visibleEmployees": 99,
+      "traceId": "05ae0c762f739a557f79b7005510a998",
+      "queries": 12,
+      "rows": 106,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "custom-report-grant-restored",
+      "kind": "team",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 99,
+        "teams": 1,
+        "totalHours": 206712,
+        "expected": 206712,
+        "variance": 0
+      },
+      "visibleEmployees": 99,
+      "traceId": "0a76a83a56c55697dcba9195bb92a5aa",
+      "queries": 40,
+      "rows": 52283,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "custom-report-grant-restored",
+      "kind": "team",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "employees": 99,
+        "teams": 1,
+        "totalHours": 206712,
+        "expected": 206712,
+        "variance": 0
+      },
+      "visibleEmployees": 99,
+      "traceId": "0af68bfc8d5a9e487ce4347fa7c141c3",
+      "queries": 12,
+      "rows": 106,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "custom-report-grant-restored",
+      "kind": "overtime",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 0
+      },
+      "visibleEmployees": 99,
+      "traceId": "8ea2cc77109527a4eeef5b0fa162156e",
+      "queries": 40,
+      "rows": 26444,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "custom-report-grant-restored",
+      "kind": "overtime",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 0
+      },
+      "visibleEmployees": 99,
+      "traceId": "9d39b430ab9ed6411439c78f69b16686",
+      "queries": 12,
+      "rows": 106,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "base-role-reduced-with-additive-report-grant",
+      "kind": "work",
+      "phase": "changed",
+      "summary": {
+        "success": false,
+        "denied": true,
+        "cacheError": false
+      },
+      "traceId": "ef1e0b23ca65a398b17da2fe95faac19",
+      "queries": 10,
+      "rows": 6,
+      "hits": 0,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "base-role-reduced-with-additive-report-grant",
+      "kind": "team",
+      "phase": "changed",
+      "summary": {
+        "success": false,
+        "denied": true,
+        "cacheError": false
+      },
+      "traceId": "818181e89f071a1930a66ce3e2a0109e",
+      "queries": 10,
+      "rows": 6,
+      "hits": 0,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "base-role-reduced-with-additive-report-grant",
+      "kind": "overtime",
+      "phase": "changed",
+      "summary": {
+        "success": false,
+        "denied": true,
+        "cacheError": false
+      },
+      "traceId": "f491fc8ecf187b1d2916e4075135d003",
+      "queries": 10,
+      "rows": 6,
+      "hits": 0,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "base-role-restored",
+      "kind": "work",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 99,
+        "totalHours": 206712,
+        "undertime": 0,
+        "overtime": 0
+      },
+      "visibleEmployees": 99,
+      "traceId": "8356dec77a71e70d835f21d72cddf179",
+      "queries": 40,
+      "rows": 52283,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "base-role-restored",
+      "kind": "work",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "employees": 99,
+        "totalHours": 206712,
+        "undertime": 0,
+        "overtime": 0
+      },
+      "visibleEmployees": 99,
+      "traceId": "b29192fc8c963688f152f3e10cee5523",
+      "queries": 12,
+      "rows": 106,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "base-role-restored",
+      "kind": "team",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "employees": 99,
+        "teams": 1,
+        "totalHours": 206712,
+        "expected": 206712,
+        "variance": 0
+      },
+      "visibleEmployees": 99,
+      "traceId": "49a850ce4318f3a1e04c9ed34e4fb4e7",
+      "queries": 40,
+      "rows": 52283,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "base-role-restored",
+      "kind": "team",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "employees": 99,
+        "teams": 1,
+        "totalHours": 206712,
+        "expected": 206712,
+        "variance": 0
+      },
+      "visibleEmployees": 99,
+      "traceId": "f71d66223fe56d2521d5057a8d3d9530",
+      "queries": 12,
+      "rows": 106,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "base-role-restored",
+      "kind": "overtime",
+      "phase": "changed",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 0
+      },
+      "visibleEmployees": 99,
+      "traceId": "4c2aca5452e2d75b5ddd61f7930b2437",
+      "queries": 40,
+      "rows": 26444,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "base-role-restored",
+      "kind": "overtime",
+      "phase": "repeat",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 0
+      },
+      "visibleEmployees": 99,
+      "traceId": "ee7d7ac6ce1d2a3e87ae0b5fbfbe7c36",
+      "queries": 12,
+      "rows": 106,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "effective-session-large-admin",
+      "kind": "team",
+      "phase": "session",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "teams": 2,
+        "totalHours": 417600,
+        "expected": 417600,
+        "variance": 0
+      },
+      "traceId": "c858dc8e6087590661b9671669896669",
+      "queries": 66,
+      "rows": 105615,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "effective-session-small-admin",
+      "kind": "team",
+      "phase": "session",
+      "summary": {
+        "success": true,
+        "employees": 8,
+        "teams": 2,
+        "totalHours": 16704,
+        "expected": 16704,
+        "variance": 0
+      },
+      "traceId": "9d36d6bf5736acdd445df5fcd33ddea2",
+      "queries": 27,
+      "rows": 4233,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "effective-session-large-manager",
+      "kind": "team",
+      "phase": "session",
+      "summary": {
+        "success": true,
+        "employees": 99,
+        "teams": 1,
+        "totalHours": 206712,
+        "expected": 206712,
+        "variance": 0
+      },
+      "traceId": "904b625055c07674a41a9fb347d8d667",
+      "queries": 12,
+      "rows": 106,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "sixty-second-expiry",
+      "kind": "work",
+      "phase": "warm",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "totalHours": 417600,
+        "undertime": 0,
+        "overtime": 0
+      },
+      "traceId": "a81455facfd5033251d41f030e6667d3",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "sixty-second-expiry",
+      "kind": "work",
+      "phase": "expired",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "totalHours": 417600,
+        "undertime": 0,
+        "overtime": 0
+      },
+      "traceId": "2811121cf6b75bfb72ad5a96e2c4ea8f",
+      "queries": 66,
+      "rows": 105615,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "sixty-second-expiry",
+      "kind": "work",
+      "phase": "repeated",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "totalHours": 417600,
+        "undertime": 0,
+        "overtime": 0
+      },
+      "traceId": "27c80a31a12d04afaad956245015dc95",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "sixty-second-expiry",
+      "kind": "team",
+      "phase": "warm",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "teams": 2,
+        "totalHours": 417600,
+        "expected": 417600,
+        "variance": 0
+      },
+      "traceId": "5d167e42636401af12aa1e5a922a2ea8",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "sixty-second-expiry",
+      "kind": "team",
+      "phase": "expired",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "teams": 2,
+        "totalHours": 417600,
+        "expected": 417600,
+        "variance": 0
+      },
+      "traceId": "4ff6a90ea8fb8034e6d1587417b53de5",
+      "queries": 66,
+      "rows": 105615,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "sixty-second-expiry",
+      "kind": "team",
+      "phase": "repeated",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "teams": 2,
+        "totalHours": 417600,
+        "expected": 417600,
+        "variance": 0
+      },
+      "traceId": "6db0aca6018766592b0e33e94ce2a9cd",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "sixty-second-expiry",
+      "kind": "overtime",
+      "phase": "warm",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 0
+      },
+      "traceId": "939131caff1e25dca84ddd356440c538",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "sixty-second-expiry",
+      "kind": "overtime",
+      "phase": "expired",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 0
+      },
+      "traceId": "92f24ef518955da96cabbe9cb0f8323f",
+      "queries": 66,
+      "rows": 53415,
+      "hits": 0,
+      "misses": 1,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "sixty-second-expiry",
+      "kind": "overtime",
+      "phase": "repeated",
+      "summary": {
+        "success": true,
+        "weeks": 53,
+        "currentOvertime": 0,
+        "seriesOvertime": 0
+      },
+      "traceId": "35898f8532639c26c840a8cfa4e3ca87",
+      "queries": 12,
+      "rows": 207,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "warm-cache-membership-revoked",
+      "kind": "team",
+      "phase": "fresh-guard",
+      "summary": {
+        "success": false,
+        "denied": true,
+        "cacheError": false
+      },
+      "code": "AuthenticationError",
+      "traceId": "e23693aac72d0fc4a93370fbfd1ef593",
+      "queries": 10,
+      "rows": 2,
+      "hits": 0,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "warm-cache-due-departure",
+      "kind": "team",
+      "phase": "fresh-guard",
+      "summary": {
+        "success": false,
+        "denied": false,
+        "cacheError": false
+      },
+      "code": "NotFoundError",
+      "traceId": "68ef374267eb600609ec582f9c3a244d",
+      "queries": 9,
+      "rows": 4,
+      "hits": 0,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "warm-cache-inactive-actor",
+      "kind": "team",
+      "phase": "fresh-guard",
+      "summary": {
+        "success": false,
+        "denied": true,
+        "cacheError": false
+      },
+      "code": "AuthenticationError",
+      "traceId": "5f449147eb6e07ad96123316af07c268",
+      "queries": 10,
+      "rows": 3,
+      "hits": 0,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "warm-cache-billing-revoked",
+      "kind": "team",
+      "phase": "fresh-guard",
+      "summary": {
+        "success": false,
+        "denied": false,
+        "cacheError": false
+      },
+      "code": "BillingError",
+      "traceId": "ea512de1b99688a446edae6e70cce360",
+      "queries": 11,
+      "rows": 7,
+      "hits": 0,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    },
+    {
+      "build": "897b4077b",
+      "stage": "billing-restored",
+      "kind": "team",
+      "phase": "fresh-guard",
+      "summary": {
+        "success": true,
+        "employees": 200,
+        "teams": 2,
+        "totalHours": 417600,
+        "expected": 417600,
+        "variance": 0
+      },
+      "traceId": "ff5a3e9cac6c38d5cd13649e031836b2",
+      "queries": 13,
+      "rows": 208,
+      "hits": 1,
+      "misses": 0,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0
+      }
+    }
+  ]
+}

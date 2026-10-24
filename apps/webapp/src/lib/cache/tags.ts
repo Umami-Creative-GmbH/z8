@@ -25,6 +25,6 @@ export const CACHE_TAGS = {
 	SUBAREA_SKILLS: (subareaId: string) => `subarea-skills:${subareaId}`,
 	TEMPLATE_SKILLS: (templateId: string) => `template-skills:${templateId}`,
 
-	// Analytics (keep in sync with analytics/cache.ts)
-	ANALYTICS_ALL: "analytics:all",
+	// Non-operational recent analytics; authorization never uses this family.
+	RECENT_ANALYTICS: (orgId: string) => `analytics:recent:${orgId}`,
 } as const;

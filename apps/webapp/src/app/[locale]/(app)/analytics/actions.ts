@@ -10,7 +10,19 @@
  * employee record, never from client input. This ensures multi-tenant isolation.
  */
 
+import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
+import { member } from "@/db/auth-schema";
+import { env } from "@/env";
+import {
+	loadRecentAnalyticsIdentity,
+	type RecentAnalyticsRequest,
+} from "@/lib/analytics/recent-identity";
+import {
+	readRecentOvertime,
+	readRecentTeamPerformance,
+	readRecentWorkHours,
+} from "@/lib/analytics/recent-read";
 import type {
 	AbsencePatternsData,
 	DateRange,
@@ -21,8 +33,16 @@ import type {
 	VacationTrendsData,
 	WorkHoursAnalyticsData,
 } from "@/lib/analytics/types";
-import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import {
+	AuthorizationError,
+	BillingError,
+	ExternalServiceError,
+	NotFoundError,
+} from "@/lib/effect/errors";
+import {
+	runServerActionSafe,
+	type ServerActionResult,
+} from "@/lib/effect/result";
 import { AnalyticsService } from "@/lib/effect/services/analytics.service";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
@@ -60,8 +80,36 @@ function checkManagerOrAdminAccess() {
 				),
 			);
 
+		const membership = yield* dbService.query(
+			"analytics.currentMembership",
+			() =>
+				dbService.db
+					.select({ id: member.id })
+					.from(member)
+					.where(
+						and(
+							eq(member.organizationId, currentEmployee.organizationId),
+							eq(member.userId, session.user.id),
+							eq(member.status, "approved"),
+						),
+					)
+					.limit(1),
+		);
+		if (!membership.length)
+			return yield* Effect.fail(
+				new AuthorizationError({
+					message: "Organization access is no longer available",
+					userId: session.user.id,
+					resource: "analytics",
+					action: "view",
+				}),
+			);
+
 		// Check role
-		if (currentEmployee.role !== "admin" && currentEmployee.role !== "manager") {
+		if (
+			currentEmployee.role !== "admin" &&
+			currentEmployee.role !== "manager"
+		) {
 			yield* Effect.fail(
 				new AuthorizationError({
 					message: "Analytics access restricted to managers and admins",
@@ -76,6 +124,58 @@ function checkManagerOrAdminAccess() {
 	});
 }
 
+function prepareRecentAnalytics(request: RecentAnalyticsRequest) {
+	return Effect.gen(function* () {
+		const current = yield* checkManagerOrAdminAccess();
+		if (env.BILLING_ENABLED === "true") {
+			const { BillingEnforcementService, BillingServicesLive } =
+				yield* Effect.promise(() => import("@/lib/effect/services/billing"));
+			const access = yield* Effect.gen(function* () {
+				const billing = yield* BillingEnforcementService;
+				return yield* billing.checkBillingAccess(current.organizationId, {
+					createTrialIfMissing: false,
+				});
+			}).pipe(Effect.provide(BillingServicesLive));
+			if (!access.canAccess)
+				return yield* Effect.fail(
+					new BillingError({
+						message: "Billing access denied",
+						reason: access.reason ?? "subscription_required",
+						organizationId: current.organizationId,
+					}),
+				);
+		}
+		return yield* loadRecentAnalyticsIdentity(
+			{
+				id: current.id,
+				userId: current.userId,
+				organizationId: current.organizationId,
+				role: current.role === "admin" ? "admin" : "manager",
+			},
+			request,
+		);
+	});
+}
+
+/** Cache outage is an isolated retryable read error, never a raw recomputation storm. */
+async function readCachedAnalytics<T>(
+	read: () => Promise<T>,
+): Promise<ServerActionResult<T>> {
+	try {
+		return { success: true, data: await read() };
+	} catch (cause) {
+		return runServerActionSafe(
+			Effect.fail(
+				new ExternalServiceError({
+					message: "Analytics temporarily unavailable. Please retry.",
+					service: "recent-analytics",
+					operation: "read",
+					cause,
+				}),
+			),
+		);
+	}
+}
 /**
  * Get team performance analytics
  * Organization ID is derived from authenticated user's employee record
@@ -84,28 +184,30 @@ export async function getTeamPerformanceData(
 	dateRange: DateRange,
 	teamId?: string,
 ): Promise<ServerActionResult<TeamPerformanceData>> {
-	const effect = Effect.gen(function* () {
-		const currentEmployee = yield* checkManagerOrAdminAccess();
-		const organizationId = currentEmployee.organizationId;
-
-		const analyticsService = yield* AnalyticsService;
-
-		const data = yield* analyticsService.getTeamPerformance({
-			organizationId,
+	const prepared = await runServerActionSafe(
+		prepareRecentAnalytics({
+			kind: "team",
 			dateRange,
-			teamId,
-			scope:
-				currentEmployee.role === "admin"
-					? { role: "admin" }
-					: { role: "manager", managerEmployeeId: currentEmployee.id },
-		});
-
-		return data;
-	});
-
-	return runServerActionSafe(effect);
+			teamId: teamId || undefined,
+		}),
+	);
+	if (!prepared.success) return prepared;
+	const { identity, request } = prepared.data;
+	const params = {
+		organizationId: identity.organizationId,
+		scope: identity.scope,
+		dateRange: request.dateRange,
+		teamId: teamId || undefined,
+	};
+	if (!identity.cacheable)
+		return runServerActionSafe(
+			Effect.gen(function* () {
+				const analytics = yield* AnalyticsService;
+				return yield* analytics.getTeamPerformance(params);
+			}),
+		);
+	return readCachedAnalytics(() => readRecentTeamPerformance(identity, params));
 }
-
 /**
  * Get vacation trends analytics
  * Organization ID is derived from authenticated user's employee record
@@ -138,28 +240,30 @@ export async function getWorkHoursAnalyticsData(
 	dateRange: DateRange,
 	employeeId?: string,
 ): Promise<ServerActionResult<WorkHoursAnalyticsData>> {
-	const effect = Effect.gen(function* () {
-		const currentEmployee = yield* checkManagerOrAdminAccess();
-		const organizationId = currentEmployee.organizationId;
-
-		const analyticsService = yield* AnalyticsService;
-
-		const data = yield* analyticsService.getWorkHoursAnalytics({
-			organizationId,
+	const prepared = await runServerActionSafe(
+		prepareRecentAnalytics({
+			kind: "work-hours",
 			dateRange,
-			employeeId,
-			scope:
-				currentEmployee.role === "admin"
-					? { role: "admin" }
-					: { role: "manager", managerEmployeeId: currentEmployee.id },
-		});
-
-		return data;
-	});
-
-	return runServerActionSafe(effect);
+			employeeId: employeeId || undefined,
+		}),
+	);
+	if (!prepared.success) return prepared;
+	const { identity, request } = prepared.data;
+	const params = {
+		organizationId: identity.organizationId,
+		scope: identity.scope,
+		dateRange: request.dateRange,
+		employeeId: employeeId || undefined,
+	};
+	if (!identity.cacheable)
+		return runServerActionSafe(
+			Effect.gen(function* () {
+				const analytics = yield* AnalyticsService;
+				return yield* analytics.getWorkHoursAnalytics(params);
+			}),
+		);
+	return readCachedAnalytics(() => readRecentWorkHours(identity, params));
 }
-
 /**
  * Get absence patterns analytics
  * Organization ID is derived from authenticated user's employee record
@@ -222,28 +326,35 @@ export async function getOvertimeBurnDownData(
 	dateRange: DateRange,
 	filters?: OvertimeBurnDownParams["filters"],
 ): Promise<ServerActionResult<OvertimeBurnDownData>> {
-	const effect = Effect.gen(function* () {
-		const currentEmployee = yield* checkManagerOrAdminAccess();
-		const organizationId = currentEmployee.organizationId;
-
-		const analyticsService = yield* AnalyticsService;
-		const scope =
-			currentEmployee.role === "admin"
-				? { role: "admin" as const }
-				: {
-						role: "manager" as const,
-						managerEmployeeId: currentEmployee.id,
-					};
-
-		const data = yield* analyticsService.getOvertimeBurnDown({
-			organizationId,
+	const normalizedFilters =
+		filters?.teamId || filters?.managerId || filters?.costCenterId
+			? {
+					teamId: filters?.teamId || undefined,
+					managerId: filters?.managerId || undefined,
+					costCenterId: filters?.costCenterId || undefined,
+				}
+			: undefined;
+	const prepared = await runServerActionSafe(
+		prepareRecentAnalytics({
+			kind: "overtime",
 			dateRange,
-			filters,
-			scope,
-		});
-
-		return data;
-	});
-
-	return runServerActionSafe(effect);
+			filters: normalizedFilters,
+		}),
+	);
+	if (!prepared.success) return prepared;
+	const { identity, request } = prepared.data;
+	const params = {
+		organizationId: identity.organizationId,
+		scope: identity.scope,
+		dateRange: request.dateRange,
+		filters: normalizedFilters,
+	};
+	if (!identity.cacheable)
+		return runServerActionSafe(
+			Effect.gen(function* () {
+				const analytics = yield* AnalyticsService;
+				return yield* analytics.getOvertimeBurnDown(params);
+			}),
+		);
+	return readCachedAnalytics(() => readRecentOvertime(identity, params));
 }
