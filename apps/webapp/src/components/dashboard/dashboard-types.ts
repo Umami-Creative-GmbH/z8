@@ -1,5 +1,9 @@
 import type { DashboardWidgetOrder } from "@/db/schema";
-import type { ManagerTodaySummaryResult } from "./actions";
+import type {
+	ManagedEmployeesResult,
+	ManagerTodaySummaryResult,
+	TeamOverviewStats,
+} from "./actions";
 import type { QuickStats } from "./quick-stats-tracking";
 
 export type DashboardScope = {
@@ -25,7 +29,32 @@ export type DashboardSubject = DashboardScope & {
 	} | null;
 };
 
+export type PendingApprovalsData = {
+	absenceApprovals: {
+		id: string;
+		requester: { user: { name: string } };
+		absence: { startDate: string; endDate: string; category: { name: string } };
+	}[];
+	timeCorrectionApprovals: {
+		id: string;
+		requester: { user: { name: string } };
+		workPeriod: { startTime: string };
+	}[];
+};
+
+export type RecentlyApprovedData = {
+	id: string;
+	type: "absence" | "time_correction";
+	updatedAt: string;
+	requestedByEmployee: { user: { name: string | null } };
+	approverEmployee: { user: { name: string | null } } | null;
+}[];
+
 export type DashboardWidgetData = {
+	"managed-employees": ManagedEmployeesResult;
+	"team-overview": TeamOverviewStats;
+	"pending-approvals": PendingApprovalsData;
+	"recently-approved": RecentlyApprovedData;
 	"manager-today": ManagerTodaySummaryResult;
 	"quick-stats": QuickStats;
 };
@@ -39,6 +68,10 @@ export type DashboardWidgetSnapshot<T> = {
 };
 
 export const SERVER_WIDGET_IDS: readonly ServerWidgetId[] = [
+	"managed-employees",
+	"team-overview",
+	"pending-approvals",
+	"recently-approved",
 	"manager-today",
 	"quick-stats",
 ];

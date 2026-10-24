@@ -8,12 +8,10 @@ import { organization, user } from "@/db/auth-schema";
 import type { DashboardWidgetOrder } from "@/db/schema";
 import {
 	absenceEntry,
-	approvalRequest,
 	employee,
 	holiday,
 	holidayCategory,
 	hydrationStats,
-	team,
 	teamMembership,
 	userSettings,
 	waterIntakeLog,
@@ -37,21 +35,14 @@ import {
 	type DatabaseClient,
 	DatabaseService,
 } from "@/lib/effect/services/database.service";
-import {
-	type ManagedEmployee,
-	ManagerService,
-} from "@/lib/effect/services/manager.service";
+import type { ManagedEmployee } from "@/lib/effect/services/manager.service";
 import {
 	type EffectiveWorkPolicy,
 	WorkPolicyService,
 } from "@/lib/effect/services/work-policy.service";
 import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
 import { writeUserSettings } from "@/lib/user-preferences/user-settings-mutation";
-import {
-	currentRosterAverageWeeklyHours,
-	currentRosterCount,
-	currentRosterEmployeeIds,
-} from "./current-roster-queries";
+import { currentRosterEmployeeIds } from "./current-roster-queries";
 import {
 	buildTeamStreakLeaders,
 	collectUniqueTeamIds,
@@ -61,7 +52,11 @@ import { createHydrationTeamStreakLeadersCacheConfig } from "./hydration-team-st
 import { loadManagerTodayForEmployee } from "./manager-today-read";
 import { loadQuickStatsForSubject } from "./quick-stats-read";
 import type { QuickStats } from "./quick-stats-tracking";
-import { mapRecentlyApprovedRequestRows } from "./recently-approved-requests";
+import {
+	loadManagedEmployeesForEmployee,
+	loadRecentlyApprovedForOrganization,
+	loadTeamOverviewForOrganization,
+} from "./team-approval-reads";
 import {
 	type AbsenceRange,
 	getNextAvailableReturnDate,
@@ -232,18 +227,10 @@ export async function getManagedEmployees(): Promise<
 			return none;
 		}
 
-		const managerService = yield* ManagerService;
-		// Your team is who works here now (#1438).
-		const employees = yield* managerService.getManagedEmployees(
-			currentEmployee.id,
-			activeOrganizationId,
-			{ roster: "current" },
-		);
-
-		return {
-			isManager: employees.length > 0 || currentEmployee.role === "admin",
-			employees,
-		};
+		return yield* loadManagedEmployeesForEmployee({
+			...currentEmployee,
+			organizationId: activeOrganizationId,
+		});
 	});
 
 	return runServerActionSafe(effect);
@@ -451,78 +438,8 @@ export async function getRecentlyApprovedRequests(
 	limit: number = 10,
 ): Promise<ServerActionResult<any[]>> {
 	const effect = Effect.gen(function* () {
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
-		const dbService = yield* DatabaseService;
-
-		// Get current employee
-		const currentEmployee = yield* dbService
-			.query("getCurrentEmployee", async () => {
-				return await dbService.db.query.employee.findFirst({
-					where: eq(employee.userId, session.user.id),
-				});
-			})
-			.pipe(
-				Effect.flatMap((emp) =>
-					emp
-						? Effect.succeed(emp)
-						: Effect.fail(
-								new NotFoundError({
-									message: "Employee profile not found",
-									entityType: "employee",
-								}),
-							),
-				),
-			);
-
-		// Get all employee IDs in this organization for filtering
-		const orgEmployees = yield* dbService.query(
-			"getOrgEmployeeIds",
-			async () => {
-				return await dbService.db.query.employee.findMany({
-					where: eq(employee.organizationId, currentEmployee.organizationId),
-					columns: { id: true },
-				});
-			},
-		);
-		const orgEmployeeIds = orgEmployees.map((e) => e.id);
-
-		// Get recently approved requests
-		const requests = yield* dbService.query("getRecentlyApproved", async () => {
-			if (orgEmployeeIds.length === 0) return [];
-			return await dbService.db.query.approvalRequest.findMany({
-				where: and(
-					inArray(approvalRequest.requestedBy, orgEmployeeIds),
-					eq(approvalRequest.status, "approved"),
-				),
-				orderBy: (approvalRequest, { desc }) => [
-					desc(approvalRequest.updatedAt),
-				],
-				limit,
-				with: {
-					requester: {
-						with: {
-							user: {
-								columns: {
-									name: true,
-								},
-							},
-						},
-					},
-					approver: {
-						with: {
-							user: {
-								columns: {
-									name: true,
-								},
-							},
-						},
-					},
-				},
-			});
-		});
-
-		return mapRecentlyApprovedRequestRows(requests);
+		const currentEmployee = yield* sessionEmployee;
+		return yield* loadRecentlyApprovedForOrganization(currentEmployee.organizationId, limit);
 	});
 
 	return runServerActionSafe(effect);
@@ -668,40 +585,9 @@ export async function getTeamOverviewStats(): Promise<
 	ServerActionResult<TeamOverviewStats>
 > {
 	const effect = Effect.gen(function* () {
-		const dbService = yield* DatabaseService;
 		const currentEmployee = yield* sessionEmployee;
 
-		const currentEmployees = yield* dbService.query(
-			"dashboard.teamOverview.currentRosterCount",
-			() => currentRosterCount(dbService.db, currentEmployee.organizationId),
-		);
-
-		// Count teams in organization
-		const teamsCountResult = yield* dbService.query(
-			"getTeamsCount",
-			async () => {
-				const result = await dbService.db
-					.select({ count: sql<number>`count(*)::int` })
-					.from(team)
-					.where(eq(team.organizationId, currentEmployee.organizationId));
-				return result[0]?.count ?? 0;
-			},
-		);
-
-		const avgWorkHoursResult = yield* dbService.query(
-			"dashboard.teamOverview.currentRosterAverageHours",
-			() =>
-				currentRosterAverageWeeklyHours(
-					dbService.db,
-					currentEmployee.organizationId,
-				),
-		);
-
-		return {
-			currentEmployees,
-			teamsCount: teamsCountResult,
-			avgWorkHours: Math.round(avgWorkHoursResult * 10) / 10, // Round to 1 decimal
-		};
+		return yield* loadTeamOverviewForOrganization(currentEmployee.organizationId);
 	});
 
 	return runServerActionSafe(effect);
