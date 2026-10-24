@@ -30,6 +30,7 @@ function fixture() {
       mode: "production",
       collectorProtocol: "z8-fixture-otlp-collector-v2",
       traceTransport: "context-loopback-proxy-v1",
+      browserPolicy: "isolated-profile-no-prediction-v1",
       browserPermissions: "notifications-denied-for-fixture-origin",
       build: "aaaaaaaaa",
       sourceBuild: "bbbbbbbbb",
@@ -97,6 +98,10 @@ function fixture() {
       },
     })),
   );
+  for (const s of samples) {
+    s.traceTransport = initializedTransport(s.traceTransport);
+    s.browserInitialization = s.traceTransport.browserInitialization;
+  }
   const backend = samples.map((s) => ({
     traceId: s.traceId,
     ...s.backend,
@@ -483,7 +488,11 @@ function settledFixture(f, plan, filename) {
       },
       inlineRscDecodedBytes: s.mode === "first-document" ? 2000 : null,
     }));
-  for (const s of samples) s.wireSettled = wireFixture(s);
+  for (const s of samples) {
+    s.traceTransport = initializedTransport(s.traceTransport);
+    s.browserInitialization = s.traceTransport.browserInitialization;
+    s.wireSettled = wireFixture(s);
+  }
   const artifact = {
     schema: 1,
     kind: "settled-resource-companion",
@@ -909,3 +918,56 @@ test("main finalizer CDP overage remains diagnostic when censored before bytes h
   assert.equal(report.cohorts[0].before.javascriptBytes, null);
   assert.equal(report.cohorts[0].head.javascriptBytes.p95, 100000);
 });
+
+function initializedTransport(snapshot) {
+  const reasons = {
+    unexpectedLoopback: 0,
+    nonLoopbackHttp: 0,
+    loopbackConnect: 0,
+    nonLoopbackConnect: 0,
+    malformed: 0,
+  };
+  const after = {
+    requests: snapshot.requests,
+    rewrittenRequests: snapshot.rewrittenRequests,
+    refusedRequests: 0,
+    upstreamFailures: 0,
+    responseBodyBytes: snapshot.responseBodyBytes,
+    refusalReasons: { ...reasons },
+  };
+  const init = {
+    policy: "isolated-profile-no-prediction-v1",
+    launch: {
+      policy: "isolated-profile-no-prediction-v1",
+      headless: true,
+      preferences: {
+        net: { network_prediction_options: 2 },
+        search: { suggest_enabled: false },
+        default_search_provider: { enabled: false },
+      },
+      arguments: ["--disable-features=AutofillServerCommunication"],
+      browserVersion: "Chrome/131.0",
+    },
+    emptyContext: true,
+    quietMs: 2000,
+    capMs: 10000,
+    quietObservedMs: 2000,
+    elapsedMs: 2000,
+    pending: 0,
+    requests: 0,
+    rewrittenRequests: 0,
+    refusedRequests: 1,
+    upstreamFailures: 0,
+    responseBodyBytes: 0,
+    refusalReasons: { ...reasons, nonLoopbackConnect: 1 },
+    complete: true,
+    capped: false,
+  };
+  return {
+    ...snapshot,
+    refusedRequests: 1,
+    refusalReasons: { ...init.refusalReasons },
+    browserInitialization: init,
+    afterInitialization: after,
+  };
+}
