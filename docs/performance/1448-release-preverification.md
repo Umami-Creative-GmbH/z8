@@ -193,3 +193,11 @@ actual allowlisted projection. All 14 render-context tests and 17 layout/banner/
 pathname tests pass. No application authorization or denial behavior changed.
 The initial full-unit run still contains its earlier failures and is not a pass;
 a final bounded complete rerun is pending after resolving its full result.
+
+The first complete two-worker unit run finished in 1,148 seconds: 19,410 passed,
+16 failed and 38 skipped across 1,816 files. Fifteen failures were the corrected
+existing render/layout guards. The remaining vacation assignment test queried
+an async popup option synchronously under load; the same test passed focused.
+Both selections now await the same accessible option using findByRole, preserving
+all date, review and submitted-value assertions and existing timeout. Both focused
+cases pass. The complete bounded rerun remains the acceptance check.

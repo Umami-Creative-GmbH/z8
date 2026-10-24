@@ -119,7 +119,7 @@ describe("dated vacation assignments", () => {
 		await screen.findByLabelText("Effective from");
 		expect(screen.queryByLabelText("Employee")).toBeNull();
 		await user.click(screen.getByRole("combobox"));
-		await user.click(screen.getByRole("option", { name: /Standard/ }));
+		await user.click(await screen.findByRole("option", { name: /Standard/ }));
 		await user.click(screen.getByRole("button", { name: "Assign" }));
 		await waitFor(() =>
 			expect(createVacationPolicyAssignment).toHaveBeenCalledWith(
@@ -140,7 +140,7 @@ describe("dated vacation assignments", () => {
 		expect(start.value).toBe("2026-10-17");
 		expect(start.min).toBe("2026-01-01");
 		await user.click(screen.getByRole("combobox"));
-		await user.click(screen.getByRole("option", { name: /Standard/ }));
+		await user.click(await screen.findByRole("option", { name: /Standard/ }));
 		fireEvent.change(screen.getByLabelText("Employee"), {
 			target: { value: "employee-1" },
 		});
