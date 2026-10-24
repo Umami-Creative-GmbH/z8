@@ -2,7 +2,9 @@
 
 **Pending root review:** [new actual observer proof and the prospective amendment](1450-observer-v4-proof-refresh.md) now bind numerical policy 4 / companion 4 to original 295/business39; the corrected e059 head build is admitted. Root must review the refreshed unfrozen draft, new fingerprint sidecar and source before executing any freeze/capture/derive block. Old d555/ac2 build records and all diagnostic failures remain preserved.
 
-The mutable `before-plan-c2-DRAFT.json` records the exact reviewed policy/tooling commit in `runtime.toolingBuild`. The new adjacent `before-plan-c2-DRAFT-preparation-observer-v4.json` records that commit, the current draft byte hash and exact primary, companion and budget source fingerprints, and is explicitly **unfrozen**. The prior b2c8f2591 preparation/hash is retained as historical evidence. No corrected full capture, freeze, actual budget derivation or controlled head timing was performed during preparation.
+The mutable `before-plan-c2-DRAFT.json` records the exact reviewed policy/tooling commit in `runtime.toolingBuild`. The new adjacent `before-plan-c2-DRAFT-preparation-observer-v4-policy4.json` records that commit, the current draft byte hash and exact primary, companion and budget source fingerprints, and is explicitly **unfrozen**. The prior b2c8f2591 preparation/hash is retained as historical evidence. No corrected full capture, freeze, actual budget derivation or controlled head timing was performed during preparation.
+
+After merging, refresh the preparation from the actual root checkout into a newly named report if its commit or byte fingerprints differ (including Git line-ending conversion), and update `$prep` below. Freeze checks exact executed file bytes; it must reject source drift rather than treating semantically equivalent files as an accepted hash match.
 
 All non-runtime fields are deeply equal to original C1, whose unchanged byte hash is `3feed7ee263c08f522bc886c8390224abdbfa67926c4ff02d0fb50f3d30dabb3`. Original binary/observer source remains `295de0b706e439bcdaf4d2d25661ce45f02ddb61`; original business source remains `39a08d0bbe77e00ceb5b204b9f9100ab2cfb86be`. There are 114 primary cohorts / 1380 visits: 540 first documents, 540 repeat Links, 135 return visits, 135 manual refreshes and 30 mutation refreshes. Each required first/Link cohort still has twenty samples, each declared functional cohort five. The separate companion has 54 cohorts / 1080 visits. Concurrency remains one. Notification permissions, sizes/roles, ranges, recipes, origin, pool/cache settings and fixture metadata are unchanged. This is holistic journey cost; ordinary caches can warm, `prepare(false)` can leave reads in flight, and Last Year → Custom includes prior annual work.
 
@@ -23,7 +25,7 @@ $ErrorActionPreference = 'Stop'
 $source = 'Y:/Codex/Worktrees/c412/z8'
 $scratch = 'C:/Users/KaiHentschel/.codex/visualizations/2026/10/24/01a16d49-e92f-7142-8e11-9532addefaff/spec1448'
 $draft = Join-Path $scratch 'before-plan-c2-DRAFT.json'
-$prep = Join-Path $scratch 'before-plan-c2-DRAFT-preparation-observer-v4.json'
+$prep = Join-Path $scratch 'before-plan-c2-DRAFT-preparation-observer-v4-policy4.json'
 $run = Join-Path $scratch 'before-c2'
 $auth = Join-Path $scratch 'performance-runtime/auth-private.json'
 $collector = Join-Path $scratch 'performance-runtime/observer-v4/collector-control.json'
