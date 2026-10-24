@@ -64,6 +64,12 @@ vi.mock("@/lib/auth-client", () => ({
 	}),
 }));
 
+vi.mock("@/lib/auth/render-context", () => ({
+	getRenderAuthContext: getAuthContextMock,
+	getRenderUserOrganizations: getUserOrganizationsMock,
+	getRenderSettingsAccessTier: getCurrentSettingsAccessTierMock,
+}));
+
 vi.mock("@/lib/works-council/permissions", () => ({
 	canViewWorksCouncilPortal: canViewWorksCouncilPortalMock,
 }));
