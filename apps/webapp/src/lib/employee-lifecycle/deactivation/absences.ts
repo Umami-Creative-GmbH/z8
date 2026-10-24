@@ -22,7 +22,6 @@ import {
 import { deletePersonnelDocumentObject } from "@/lib/personnel-file/storage";
 import { runPersonnelFileCleanup } from "@/lib/personnel-file/upload-ledger";
 import { addCalendarSyncJob } from "@/lib/queue";
-import { acquireOrganizationConfigurationGuard } from "@/lib/time-tracking/work-transaction/ranks";
 import {
 	type AbsencePlanItem,
 	type AbsencesApplied,
@@ -92,15 +91,19 @@ export async function planAbsences(
 }
 
 /**
- * The shared guards the in-transaction cancellation takes, held from the start of the
- * deactivation transaction so the acquisition protocol's rank order holds (#477; Rank in
- * `work-transaction/ranks.ts`): the approval write gates of absences and of period submissions
- * (rank 2; a cancelled absence can withdraw a submitted period) and the organization
- * configuration guard (rank 3; the closed-month check). Call it before the authorization guards
- * (rank 4) and the organization row lock. Taken later, they would wait on a writer that holds
- * them exclusively (a cutover, a month close, an organization-wide authorization or timezone
- * change) while that writer waits on the deactivation's user guard or organization row. The
- * cancellation re-takes them; a transaction never waits on a lock it holds.
+ * The approval write gates (rank 2 of the acquisition protocol, #477; `Rank` in
+ * `work-transaction/ranks.ts`) the in-transaction cancellation takes, shared: absences, and
+ * period submissions (a cancelled absence can withdraw a submitted period). Take them first in
+ * the deactivation transaction, before the organization configuration guard (rank 3), the
+ * authorization guards (rank 4) and the organization row lock.
+ *
+ * The cancellation also takes the organization configuration guard (rank 3, shared, for the
+ * closed-month check). The deactivation must hold it before rank 4 too: part B's team links
+ * already require `withAuthorizationMutation`'s `organizationWide: true` (rank 3 exclusive),
+ * which covers it. Taken late, either guard would wait on a writer holding it exclusively (an
+ * approval cutover, a month close, an organization-wide authorization or timezone change)
+ * while that writer waits on the deactivation's user guard or organization row: a deadlock.
+ * Re-taking a held guard never waits.
  */
 export async function acquireAbsenceCancellationGuards(
 	tx: DeactivationWriter,
@@ -112,7 +115,6 @@ export async function acquireAbsenceCancellationGuards(
 		organizationId,
 		workflowType: "period_submission",
 	});
-	await acquireOrganizationConfigurationGuard(tx, organizationId);
 }
 
 /**
@@ -127,8 +129,9 @@ export async function acquireAbsenceCancellationGuards(
  * - the person's primary team (`employee.team_id`) still has its membership row, or is cleared
  *   with it as `removeTeamMembership` does: the absence adapter refuses a primary team without
  *   its membership row;
- * - `acquireAbsenceCancellationGuards` ran at the start of the transaction, before the
- *   authorization guards and the organization row lock (lock order, see there).
+ * - `acquireAbsenceCancellationGuards` ran first in the transaction and the organization
+ *   configuration guard is held before the authorization guards and the organization row lock
+ *   (lock order, see there).
  *
  * An absence that is no longer pending or approved (cancelled or rejected meanwhile) is skipped;
  * any other refusal (a closed month, a changed linkage) fails the deactivation.

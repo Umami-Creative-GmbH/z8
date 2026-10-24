@@ -507,12 +507,13 @@ describe("deactivation cancels later absences (#1440)", () => {
 		const ctx = applyContext(person, at);
 
 		const result = await fixture.db.transaction(async (tx) => {
-			// Approval write gates and the organization configuration guard (ranks 2-3) first,
-			// then the user's exclusive access guard (rank 4) and the organization row, as the
-			// deactivation's own transaction takes them.
+			// The approval write gates (rank 2) first, then the exclusive organization configuration
+			// guard (rank 3) and the user's exclusive access guard (rank 4), then the organization
+			// row, as the deactivation's own transaction takes them.
 			await acquireAbsenceCancellationGuards(tx, fixture.organizationId);
 			await protectAuthorizationMutation(tx, {
 				organizationId: fixture.organizationId,
+				organizationWide: true,
 				employeeIds: [person.employeeId],
 			});
 			await tx.execute(
