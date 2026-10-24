@@ -658,7 +658,7 @@ export async function runMultiInstanceStage(stage, directory, source) {
 			const person = actor("large-manager");
 			const assignments = (
 				await pool.query(
-					"select m.* from employee_managers m join employee e on e.id=m.employee_id where m.manager_id=$1 and e.organization_id=$2 and e.is_active=true order by m.employee_id",
+					"select m.*,m.assigned_at::text as assigned_at,m.created_at::text as created_at from employee_managers m join employee e on e.id=m.employee_id where m.manager_id=$1 and e.organization_id=$2 and e.is_active=true order by m.employee_id",
 					[person.employeeId, person.organizationId],
 				)
 			).rows;
