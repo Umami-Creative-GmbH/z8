@@ -31,6 +31,7 @@ test("native correlation, sample coverage and censored outcomes cannot finalize 
     fixture: { kind: "disposable", journeysVerified: true },
     runtime: {
       mode: "production",
+      collectorProtocol: "z8-fixture-otlp-collector-v2",
       browserPermissions: "notifications-denied-for-fixture-origin",
       build: "aaaaaaaaa",
       sourceBuild: "bbbbbbbbb",
@@ -91,6 +92,10 @@ test("native correlation, sample coverage and censored outcomes cannot finalize 
       cache: true,
       eventLoop: true,
       rejectedBatches: 0,
+      registration: true,
+      closed: true,
+      unattributedNativeSpans: 0,
+      incomplete: false,
     },
     observedQueryErrors: 0,
     observedPoolAcquisitionErrors: 0,
@@ -114,4 +119,45 @@ test("native correlation, sample coverage and censored outcomes cannot finalize 
   assert.throws(() =>
     requireSettledEvidence(plan, artifact, incomplete, "hash"),
   );
+});
+test("capture requires registered collector control before any runtime or browser request", () => {
+  const dir = mkdtempSync(join(tmpdir(), "z8-settled-control-")),
+    path = join(dir, "plan.json");
+  writeFileSync(
+    path,
+    JSON.stringify({
+      phase: "baseline",
+      samples: 20,
+      concurrency: 1,
+      fixture: { kind: "disposable", journeysVerified: true },
+      runtime: {
+        mode: "production",
+        browserPermissions: "notifications-denied-for-fixture-origin",
+        collectorProtocol: "z8-fixture-otlp-collector-v2",
+      },
+      conditions: [{ name: "admin", role: "admin" }],
+      ranges: [{ name: "month" }],
+      routes: [
+        { name: "reports", path: "/reports", ready: "#ready", link: "a" },
+      ],
+    }),
+  );
+  const r = spawnSync(
+    process.execPath,
+    [
+      "scripts/performance/settled-resources.mjs",
+      "capture",
+      "--plan",
+      path,
+      "--auth",
+      "nonexistent",
+      "--chrome",
+      "nonexistent",
+      "--out",
+      join(dir, "out.json"),
+    ],
+    { encoding: "utf8" },
+  );
+  assert.equal(r.status, 2);
+  assert.match(r.stderr, /collector/i);
 });

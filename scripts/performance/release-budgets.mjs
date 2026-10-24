@@ -404,6 +404,10 @@ main().catch((error) => {
 });
 
 function requireEvidence(plan, artifact, native, planHash, phase) {
+  if (artifact.interrupted === true || artifact.interruption != null)
+    throw Error(
+      "Interrupted benchmark evidence cannot register a completed before or release comparison.",
+    );
   if (
     plan.phase !== phase ||
     artifact.phase !== phase ||
@@ -417,6 +421,7 @@ function requireEvidence(plan, artifact, native, planHash, phase) {
     plan.fixture?.kind !== "disposable" ||
     plan.fixture.journeysVerified !== true ||
     plan.runtime?.mode !== "production" ||
+    plan.runtime?.collectorProtocol !== "z8-fixture-otlp-collector-v2" ||
     !Number.isFinite(plan.timeoutMs) ||
     plan.timeoutMs <= 0
   )
@@ -484,7 +489,11 @@ function requireEvidence(plan, artifact, native, planHash, phase) {
       !["observer", "pg", "rows", "cache", "eventLoop"].every(
         (name) => e.coverage?.[name] === true,
       ) ||
-      e.coverage.rejectedBatches !== 0
+      e.coverage.rejectedBatches !== 0 ||
+      e.coverage.registration !== true ||
+      e.coverage.closed !== true ||
+      e.coverage.unattributedNativeSpans !== 0 ||
+      e.coverage.incomplete !== false
     )
       throw Error("Native backend correlation coverage is incomplete.");
     for (const metric of backendMetrics)

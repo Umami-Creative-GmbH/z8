@@ -36,6 +36,7 @@ export function settledCohorts(plan) {
     plan.fixture?.kind !== "disposable" ||
     plan.fixture.journeysVerified !== true ||
     plan.runtime?.mode !== "production" ||
+    plan.runtime?.collectorProtocol !== "z8-fixture-otlp-collector-v2" ||
     plan.runtime.browserPermissions !== fixtureBrowserPermissions ||
     !Number.isInteger(plan.concurrency) ||
     plan.concurrency < 1
@@ -81,6 +82,8 @@ export function settledCohorts(plan) {
 }
 export function settledEvidenceGates(plan, artifact, native, planSha) {
   const gates = [];
+  if (artifact.interrupted === true || artifact.interruption != null)
+    gates.push("Interrupted companion evidence cannot fulfill resource gates.");
   if (
     artifact.kind !== "settled-resource-companion" ||
     artifact.phase !== plan.phase ||
@@ -120,7 +123,11 @@ export function settledEvidenceGates(plan, artifact, native, planSha) {
       !["observer", "pg", "rows", "cache", "eventLoop"].every(
         (k) => e.coverage?.[k] === true,
       ) ||
-      e.coverage.rejectedBatches !== 0
+      e.coverage.rejectedBatches !== 0 ||
+      e.coverage.registration !== true ||
+      e.coverage.closed !== true ||
+      e.coverage.unattributedNativeSpans !== 0 ||
+      e.coverage.incomplete !== false
     )
       gates.push("Native companion coverage is incomplete.");
     if (
@@ -173,6 +180,7 @@ async function protocolIdentity() {
     "settled-resource-observer.mjs",
     "journey-steps.mjs",
     "run-baseline.mjs",
+    "collector-client.mjs",
   ];
   return Object.fromEntries(
     await Promise.all(
@@ -192,13 +200,16 @@ async function measure(
   route,
   mode,
   iteration,
+  collectorControl,
+  collector,
 ) {
   const traceId = randomBytes(16).toString("hex"),
     prerequisiteTraceId = randomBytes(16).toString("hex"),
     backgroundTraceId = randomBytes(16).toString("hex");
-  const observer = createSettledObserver(),
-    context = await browser.createBrowserContext();
-  let page,
+  const observer = createSettledObserver();
+  let context,
+    collectorVisit,
+    page,
     client,
     stage = "authentication-context",
     active = false,
@@ -230,6 +241,18 @@ async function measure(
     failureKind: null,
   };
   try {
+    stage = "collector-registration";
+    collectorVisit = await collector.beginCollectorVisit({
+      control: collectorControl,
+      traceIds: [traceId, prerequisiteTraceId, backgroundTraceId],
+    });
+    s.collectorVisit = {
+      protocol: collectorVisit.protocol,
+      registered: true,
+      closed: false,
+    };
+    context = await browser.createBrowserContext();
+    stage = "authentication-context";
     await prepareFixtureBrowserContext(context, plan.origin);
     if (!Array.isArray(auth[condition.name]?.cookies))
       throw Error("Missing fixture authentication.");
@@ -474,7 +497,35 @@ async function measure(
     s.settled = observer.state(performance.now());
   } finally {
     await client?.detach().catch(() => {});
-    await context.close();
+    try {
+      await context?.close();
+    } catch {
+      s.failed = true;
+      s.censored = true;
+      s.failureStage = "close-browser-context";
+      s.failureKind = "browser-close-error";
+    }
+    if (collectorVisit) {
+      try {
+        const closed = await collector.endCollectorVisit(collectorVisit);
+        if (
+          closed.protocol !== "z8-fixture-otlp-collector-v2" ||
+          !closed.traces?.some((e) => e.traceId === traceId)
+        )
+          throw Error(
+            "Collector close proof protocol or measured trace is missing.",
+          );
+        s.collectorVisit.closed =
+          closed.protocol === "z8-fixture-otlp-collector-v2";
+        s.collectorVisit.coverage =
+          closed.traces?.find((e) => e.traceId === traceId)?.coverage ?? null;
+      } catch {
+        s.failed = true;
+        s.censored = true;
+        s.failureStage = "collector-close";
+        s.failureKind = "collector-proof-error";
+      }
+    }
   }
   return s;
 }
@@ -484,7 +535,7 @@ async function main() {
     options = {};
   const allowed =
     command === "capture"
-      ? ["--plan", "--auth", "--chrome", "--out"]
+      ? ["--plan", "--auth", "--chrome", "--out", "--collector"]
       : ["--plan", "--artifact", "--backend"];
   for (let i = 0; i < args.length; i += 2) {
     if (
@@ -502,8 +553,10 @@ async function main() {
   const bytes = await readFile(options["--plan"]),
     plan = JSON.parse(bytes),
     cohorts = settledCohorts(plan),
-    planSha256 = hash(bytes),
-    protocol = await protocolIdentity();
+    planSha256 = hash(bytes);
+  if (command === "capture" && !options["--collector"])
+    throw Error("Capture requires registered --collector control.");
+  const protocol = await protocolIdentity();
   if (command === "finalize") {
     if (!options["--artifact"] || !options["--backend"])
       throw Error("Require artifact and flushed native backend evidence.");
@@ -558,6 +611,7 @@ async function main() {
     !options["--out"]
   )
     throw Error("Capture requires --auth, --chrome and --out.");
+  const collector = await import("./collector-client.mjs");
   const version = await fetch(new URL("/api/app-version", plan.origin), {
       signal: AbortSignal.timeout(10000),
     }),
@@ -622,6 +676,8 @@ async function main() {
                 plan.routes.find((x) => x.name === c.route),
                 c.mode,
                 iteration,
+                options["--collector"],
+                collector,
               ),
             );
             checkpoint = checkpoint.then(() =>

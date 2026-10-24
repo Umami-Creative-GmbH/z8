@@ -24,6 +24,7 @@ function fixture() {
     fixture: { kind: "disposable", journeysVerified: true },
     runtime: {
       mode: "production",
+      collectorProtocol: "z8-fixture-otlp-collector-v2",
       browserPermissions: "notifications-denied-for-fixture-origin",
       build: "aaaaaaaaa",
       sourceBuild: "bbbbbbbbb",
@@ -93,6 +94,10 @@ function fixture() {
       cache: true,
       eventLoop: true,
       rejectedBatches: 0,
+      registration: true,
+      closed: true,
+      unattributedNativeSpans: 0,
+      incomplete: false,
     },
     observedQueryErrors: 0,
     observedPoolAcquisitionErrors: 0,
@@ -531,4 +536,38 @@ test("matched complete companion resolves full-byte gates without relabeling pen
   assert.equal(report.cohorts[0].head.pendingScriptRequests, 1);
   assert.equal(report.cohorts[0].budgets.javascriptBytes.passed, null);
   assert.equal(report.settledResources.cohorts.length, 2);
+});
+test("interrupted ledgers cannot be registered as completed before evidence", () => {
+  const f = fixture();
+  f.artifact.interrupted = true;
+  f.artifact.interruption = { reason: "collector-capacity-exhausted" };
+  f.saveBefore();
+  assert.equal(f.derive().status, 2);
+});
+test("legacy, active or unattributed native coverage cannot register numerical budgets", () => {
+  for (const change of [
+    (e) => {
+      delete e.coverage.registration;
+    },
+    (e) => {
+      e.coverage.registration = false;
+    },
+    (e) => {
+      e.coverage.closed = false;
+    },
+    (e) => {
+      e.coverage.unattributedNativeSpans = 1;
+    },
+    (e) => {
+      e.coverage.incomplete = true;
+    },
+    (e) => {
+      e.coverage.rejectedBatches = 1;
+    },
+  ]) {
+    const f = fixture();
+    change(f.backend[0]);
+    f.saveBefore();
+    assert.equal(f.derive().status, 2);
+  }
 });
