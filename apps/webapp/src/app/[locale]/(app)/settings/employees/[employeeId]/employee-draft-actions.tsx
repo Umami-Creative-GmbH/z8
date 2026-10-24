@@ -95,7 +95,7 @@ export function EmployeeDraftActions({
 					queryKey: queryKeys.employees.organization(organizationId),
 				}),
 			]);
-			queryClient.removeQueries({ queryKey: detailQueryKey, exact: true });
+			queryClient.removeQueries({ queryKey: detailQueryKey });
 			setDeleteDialogOpen(false);
 			push("/settings/employees");
 		},

@@ -102,13 +102,9 @@ describe("fresh guarded time tracking reads", () => {
 	});
 	it("retains the presence action deleted-period filter", () => {
 		const actionsSource = readFileSync(
-			fileURLToPath(new URL("../actions.ts", import.meta.url)),
+			fileURLToPath(new URL("./presence-status-read.ts", import.meta.url)),
 			"utf8",
 		);
-		expect(
-			actionsSource.slice(
-				actionsSource.indexOf("export async function getPresenceStatus"),
-			),
-		).toContain("isNull(workPeriod.deletedAt)");
+		expect(actionsSource).toContain("isNull(workPeriod.deletedAt)");
 	});
 });

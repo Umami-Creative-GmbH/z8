@@ -67,7 +67,9 @@ describe("GET /api/auth/context", () => {
 			worksCouncilEnabled: true,
 		});
 
-		const response = await GET();
+		const response = await GET(
+			new Request("http://localhost/api/auth/context"),
+		);
 		const body = await response.json();
 
 		expect(body.organizationSettings).toEqual({
@@ -81,4 +83,18 @@ describe("GET /api/auth/context", () => {
 			worksCouncilEnabled: true,
 		});
 	});
+
+	it.each([
+		{ "x-z8-context-user": "other-user", "x-z8-context-organization": "org_1" },
+		{ "x-z8-context-user": "user_1", "x-z8-context-organization": "other-org" },
+	])(
+		"rejects a stale expected scope before reading settings: %j",
+		async (headers) => {
+			const response = await GET(
+				new Request("http://localhost/api/auth/context", { headers }),
+			);
+			expect(response.status).toBe(409);
+			expect(mockState.getOrganizationSettings).not.toHaveBeenCalled();
+		},
+	);
 });

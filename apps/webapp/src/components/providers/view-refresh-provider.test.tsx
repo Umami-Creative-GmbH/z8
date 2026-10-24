@@ -1,10 +1,25 @@
 /* @vitest-environment jsdom */
 
-import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+	QueryClient,
+	QueryClientProvider,
+	useQuery,
+} from "@tanstack/react-query";
+import {
+	act,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
 import { useState } from "react";
 import useSWR, { SWRConfig } from "swr";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type {
+	DashboardWidgetData,
+	DashboardWidgetSnapshot,
+} from "@/components/dashboard/dashboard-types";
+import { useDashboardWidget } from "@/components/dashboard/use-dashboard-widget";
 import { HeaderRefreshButton } from "@/components/header-refresh-button";
 import { useServerDataState } from "@/hooks/use-server-data-state";
 import { useViewRefresh, ViewRefreshProvider } from "./view-refresh-provider";
@@ -17,6 +32,14 @@ vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
 }));
 vi.mock("sonner", () => ({ toast: { error: mocks.error } }));
+vi.mock("@/hooks/use-organization", () => ({
+	useOrganization: () => ({
+		userId: "user-a",
+		organizationId: "org-a",
+		role: "manager",
+		isLoading: false,
+	}),
+}));
 
 function setup(content: React.ReactNode) {
 	const client = new QueryClient({
@@ -43,9 +66,107 @@ beforeEach(() => {
 });
 
 describe("View refresh", () => {
+	it("accepts newer server props after a local retry and cancels the older pending GET without losing drafts", async () => {
+		type Snapshot = DashboardWidgetSnapshot<DashboardWidgetData["quick-stats"]>;
+		const snapshot = (hours: number, updatedAt: number): Snapshot => ({
+			scope: { userId: "user-a", organizationId: "org-a" },
+			updatedAt,
+			result: {
+				success: true,
+				data: {
+					thisWeek: { actual: hours, expected: 40, expectedToDate: 8 },
+					thisMonth: { actual: hours, expected: 160, expectedToDate: 8 },
+				},
+			},
+		});
+		const now = Date.now();
+		let finish!: (response: Response) => void;
+		let pendingSignal: AbortSignal | undefined;
+		const request = vi
+			.fn()
+			.mockResolvedValueOnce(Response.json(snapshot(2, now + 1)))
+			.mockImplementationOnce((_url: string, options: RequestInit) => {
+				pendingSignal = options.signal ?? undefined;
+				return new Promise<Response>((resolve) => {
+					finish = resolve;
+				});
+			});
+		vi.stubGlobal("fetch", request);
+		function View({ saved }: { saved: Snapshot }) {
+			const widget = useDashboardWidget("quick-stats", saved);
+			return (
+				<>
+					<input aria-label="Dashboard draft" defaultValue="" />
+					<p>Hours: {widget.data?.thisWeek.actual}</p>
+					<button type="button" onClick={() => void widget.refetch()}>
+						Retry widget
+					</button>
+				</>
+			);
+		}
+		const client = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		function Frame({ saved }: { saved: Snapshot }) {
+			return (
+				<QueryClientProvider client={client}>
+					<SWRConfig value={{ provider: () => new Map() }}>
+						<ViewRefreshProvider>
+							<HeaderRefreshButton />
+							<View saved={saved} />
+						</ViewRefreshProvider>
+					</SWRConfig>
+				</QueryClientProvider>
+			);
+		}
+		const view = render(<Frame saved={snapshot(1, now)} />);
+		expect(request).not.toHaveBeenCalled();
+		fireEvent.change(screen.getByLabelText("Dashboard draft"), {
+			target: { value: "Unsaved layout note" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Retry widget" }));
+		await screen.findByText("Hours: 2");
+		// TanStack's client data clock is deliberately newer than the next server snapshot.
+		client.setQueryData(
+			["dashboard", "widget", "quick-stats", "user-a", "org-a"],
+			snapshot(2, now + 1),
+			{ updatedAt: now + 86_400_000 },
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Retry widget" }));
+		await waitFor(() => expect(request).toHaveBeenCalledTimes(2));
+		fireEvent.click(screen.getByRole("button", { name: "Refresh data" }));
+		await waitFor(() => expect(mocks.refresh).toHaveBeenCalledTimes(1));
+		expect(pendingSignal?.aborted).toBe(true);
+		view.rerender(<Frame saved={snapshot(3, now + 2)} />);
+		await screen.findByText("Hours: 3");
+		await act(async () => {
+			finish(Response.json(snapshot(99, now + 3)));
+		});
+		expect(screen.getByText("Hours: 3")).toBeTruthy();
+		expect(
+			(screen.getByLabelText("Dashboard draft") as HTMLInputElement).value,
+		).toBe("Unsaved layout note");
+		expect(request).toHaveBeenCalledTimes(2);
+		expect(
+			client.getQueryData<Snapshot>([
+				"dashboard",
+				"widget",
+				"quick-stats",
+				"user-a",
+				"org-a",
+			])?.result,
+		).toEqual(snapshot(3, now + 2).result);
+		vi.unstubAllGlobals();
+	});
 	it("refreshes server, active query, SWR and manual data without resetting view state or drafts", async () => {
-		const query = vi.fn().mockResolvedValueOnce("old query").mockResolvedValue("new query");
-		const swr = vi.fn().mockResolvedValueOnce("old SWR").mockResolvedValue("new SWR");
+		const query = vi
+			.fn()
+			.mockResolvedValueOnce("old query")
+			.mockResolvedValue("new query");
+		const swr = vi
+			.fn()
+			.mockResolvedValueOnce("old SWR")
+			.mockResolvedValue("new SWR");
 		function View() {
 			const [year, setYear] = useState("2027");
 			const [manual, setManual] = useState("old manual");
@@ -56,7 +177,11 @@ describe("View refresh", () => {
 			});
 			return (
 				<>
-					<select aria-label="Year" value={year} onChange={(e) => setYear(e.target.value)}>
+					<select
+						aria-label="Year"
+						value={year}
+						onChange={(e) => setYear(e.target.value)}
+					>
 						<option>2027</option>
 						<option>2028</option>
 					</select>
@@ -81,8 +206,12 @@ describe("View refresh", () => {
 		await screen.findByText("new SWR");
 		await screen.findByText("new manual");
 		await waitFor(() => expect(mocks.refresh).toHaveBeenCalledTimes(1));
-		expect((screen.getByLabelText("Year") as HTMLSelectElement).value).toBe("2028");
-		expect((screen.getByLabelText("Draft") as HTMLInputElement).value).toBe("Unsaved note");
+		expect((screen.getByLabelText("Year") as HTMLSelectElement).value).toBe(
+			"2028",
+		);
+		expect((screen.getByLabelText("Draft") as HTMLInputElement).value).toBe(
+			"Unsaved note",
+		);
 		expect(inactive).not.toHaveBeenCalled();
 	});
 
@@ -125,13 +254,24 @@ describe("View refresh", () => {
 
 	it("does not refresh a different route opened while data is pending", async () => {
 		let finish!: () => void;
-		const pending = new Promise<void>(resolve => { finish = resolve; });
-		function View() { useViewRefresh(() => pending); return null; }
+		const pending = new Promise<void>((resolve) => {
+			finish = resolve;
+		});
+		function View() {
+			useViewRefresh(() => pending);
+			return null;
+		}
 		setup(<View />);
 		fireEvent.click(screen.getByRole("button", { name: "Refresh data" }));
 		window.history.pushState(null, "", "/another-view");
 		await act(async () => finish());
-		await waitFor(() => expect(screen.getByRole("button", { name: "Refresh data" }).hasAttribute("disabled")).toBe(false));
+		await waitFor(() =>
+			expect(
+				screen
+					.getByRole("button", { name: "Refresh data" })
+					.hasAttribute("disabled"),
+			).toBe(false),
+		);
 		expect(mocks.refresh).not.toHaveBeenCalled();
 		window.history.replaceState(null, "", "/");
 	});
@@ -143,7 +283,11 @@ describe("View refresh", () => {
 			return (
 				<>
 					<p>{items.join(", ")}</p>
-					<input aria-label="Draft" value={draft} onChange={(e) => setDraft(e.target.value)} />
+					<input
+						aria-label="Draft"
+						value={draft}
+						onChange={(e) => setDraft(e.target.value)}
+					/>
 				</>
 			);
 		}
@@ -153,6 +297,8 @@ describe("View refresh", () => {
 		});
 		rerender(<View saved={["Updated vehicle"]} />);
 		expect(screen.getByText("Updated vehicle")).toBeTruthy();
-		expect((screen.getByLabelText("Draft") as HTMLInputElement).value).toBe("Unsaved vehicle");
+		expect((screen.getByLabelText("Draft") as HTMLInputElement).value).toBe(
+			"Unsaved vehicle",
+		);
 	});
 });

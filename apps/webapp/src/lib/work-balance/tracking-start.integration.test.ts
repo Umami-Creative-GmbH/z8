@@ -363,6 +363,7 @@ describe("explicit tracking start across public balance readers", () => {
 		const analytics = await runtime.runPromise(AnalyticsService);
 		const hours = await runtime.runPromise(
 			analytics.getWorkHoursAnalytics({
+scope:{role:"admin"},
 				organizationId,
 				employeeId: subject.employeeId,
 				dateRange: {
@@ -552,7 +553,11 @@ describe("explicit tracking start across public balance readers", () => {
 			timezone: "Europe/Berlin",
 		};
 		const performance = await runtime.runPromise(
-			analytics.getTeamPerformance({ organizationId, dateRange }),
+			analytics.getTeamPerformance({
+				organizationId,
+				dateRange,
+				scope: { role: "admin" },
+			}),
 		);
 		const subject = performance.teams
 			.flatMap((team) => team.employees)
@@ -580,6 +585,7 @@ describe("explicit tracking start across public balance readers", () => {
 		).toBe(1);
 		const hours = await runtime.runPromise(
 			analytics.getWorkHoursAnalytics({
+scope:{role:"admin"},
 				organizationId,
 				dateRange,
 				employeeId,

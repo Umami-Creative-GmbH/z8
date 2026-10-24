@@ -5,32 +5,17 @@ import { useTolgee, useTranslate } from "@tolgee/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { type EmployeeClockStatus, UserAvatar } from "@/components/user-avatar";
-import { differenceInDays, fromJSDate, startOfDay } from "@/lib/datetime/luxon-utils";
 import { useEmployeeClockStatuses } from "@/lib/query";
 import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
-import { getUpcomingAbsences } from "./actions";
+import type { DashboardWidgetData, DashboardWidgetSnapshot } from "./dashboard-types";
 import { DashboardWidget } from "./dashboard-widget";
 import { formatDashboardDate } from "./format-dashboard-date";
-import { useWidgetData } from "./use-widget-data";
+import { useDashboardWidget } from "./use-dashboard-widget";
 import { WidgetCard } from "./widget-card";
+import { WidgetReadError } from "./widget-read-error";
 
-type UpcomingAbsence = {
-	id: string;
-	startDate: Date;
-	endDate: Date;
-	employee: {
-		id: string;
-		user: {
-			id: string;
-			name: string | null;
-			image: string | null;
-		};
-	};
-	category: {
-		name: string;
-		color: string | null;
-	};
+type UpcomingAbsence = DashboardWidgetData["upcoming-time-off"][number] & {
 	clockStatus?: EmployeeClockStatus;
 };
 
@@ -76,18 +61,12 @@ function TimelineMarker({ daysUntil }: { daysUntil: number }) {
 	);
 }
 
-function getCalendarDaysUntil(date: Date): number {
-	return Math.floor(
-		startOfDay(fromJSDate(date)).diff(startOfDay(fromJSDate(new Date())), "days").days,
-	);
-}
-
 function AbsenceCard({ absence }: { absence: UpcomingAbsence }) {
 	const { t } = useTranslate();
 	const tolgee = useTolgee();
 	const locale = tolgee.getLanguage() || "en";
-	const daysUntil = getCalendarDaysUntil(new Date(absence.startDate));
-	const duration = differenceInDays(new Date(absence.endDate), new Date(absence.startDate)) + 1;
+	const daysUntil = absence.daysUntil;
+	const duration = absence.absenceDays;
 	const name = absence.employee.user.name || t("common.unknown", "Unknown");
 	const durationLabel =
 		duration === 1
@@ -117,14 +96,14 @@ function AbsenceCard({ absence }: { absence: UpcomingAbsence }) {
 					<div className="flex items-center gap-1.5 text-xs text-muted-foreground">
 						<IconCalendarEvent className="size-3" />
 						<span>
-							{formatDashboardDate(new Date(absence.startDate), locale)} -{" "}
-							{formatDashboardDate(new Date(absence.endDate), locale)}
+							{formatDashboardDate(absence.startDate, locale)} -{" "}
+							{formatDashboardDate(absence.endDate, locale)}
 						</span>
 					</div>
 					<div className="flex items-center gap-1.5 mt-0.5 text-xs text-muted-foreground">
 						<IconClock className="size-3" />
 						<span>
-							{duration} {durationLabel}
+							{new Intl.NumberFormat(locale).format(duration)} {durationLabel}
 						</span>
 					</div>
 				</div>
@@ -146,16 +125,19 @@ function AbsenceCard({ absence }: { absence: UpcomingAbsence }) {
 	);
 }
 
-export function UpcomingTimeOffWidget() {
+export function UpcomingTimeOffWidget({
+	initialSnapshot,
+}: {
+	initialSnapshot?: DashboardWidgetSnapshot<DashboardWidgetData["upcoming-time-off"]>;
+} = {}) {
 	const { t } = useTranslate();
 	const {
 		data: absences,
 		loading,
 		refreshing,
 		refetch,
-	} = useWidgetData<UpcomingAbsence[]>(() => getUpcomingAbsences(5), {
-		errorMessage: t("dashboard.upcoming-time-off.error", "Failed to load upcoming time off"),
-	});
+		error,
+	} = useDashboardWidget("upcoming-time-off", initialSnapshot);
 	const presence = useEmployeeClockStatuses(absences?.map((absence) => absence.employee.id) ?? [], {
 		polling: false,
 	});
@@ -163,8 +145,6 @@ export function UpcomingTimeOffWidget() {
 		...absence,
 		clockStatus: presence.getStatus(absence.employee.id),
 	}));
-
-	if (!loading && (!absences || absences.length === 0)) return null;
 
 	return (
 		<DashboardWidget id="upcoming-time-off">
@@ -190,23 +170,34 @@ export function UpcomingTimeOffWidget() {
 				refreshing={refreshing}
 				onRefresh={refetch}
 			>
-				{absencesWithPresence && (
-					<div className="space-y-3">
-						{/* Timeline View */}
-						<div className="space-y-2">
-							{absencesWithPresence.map((absence) => (
-								<AbsenceCard key={absence.id} absence={absence} />
-							))}
-						</div>
+				{error ? (
+					<WidgetReadError
+						title={t("dashboard.upcoming-time-off.title", "Upcoming Time Off")}
+						message={error}
+						retry={refetch}
+						refreshing={refreshing}
+					/>
+				) : !loading && absences?.length === 0 ? (
+					<p role="status">{t("dashboard.upcoming-time-off.empty", "No upcoming time off")}</p>
+				) : (
+					absencesWithPresence && (
+						<div className="space-y-3">
+							{/* Timeline View */}
+							<div className="space-y-2">
+								{absencesWithPresence.map((absence) => (
+									<AbsenceCard key={absence.id} absence={absence} />
+								))}
+							</div>
 
-						{/* Action Button */}
-						<Button className="w-full group" variant="outline" asChild>
-							<Link href="/calendar">
-								<IconCalendar className="mr-2 size-4 transition-transform group-hover:scale-110" />
-								{t("dashboard.upcoming-time-off.view-calendar", "View Full Calendar")}
-							</Link>
-						</Button>
-					</div>
+							{/* Action Button */}
+							<Button className="w-full group" variant="outline" asChild>
+								<Link href="/calendar">
+									<IconCalendar className="mr-2 size-4 transition-transform group-hover:scale-110" />
+									{t("dashboard.upcoming-time-off.view-calendar", "View Full Calendar")}
+								</Link>
+							</Button>
+						</div>
+					)
 				)}
 			</WidgetCard>
 		</DashboardWidget>

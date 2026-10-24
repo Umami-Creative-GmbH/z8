@@ -11,9 +11,24 @@ import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vites
 import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import { integrationAdminPool } from "@/test/integration-database";
 
+const queryEvidence = vi.hoisted(() => ({ workPeriodQueries: [] as string[] }));
+vi.mock("@/db", async () =>
+	(await import("@/test/integration-database")).integrationDbModule({
+		logQuery(query) {
+			if (/\bfrom\s+"work_period"(?:\s|$)/i.test(query)) {
+				queryEvidence.workPeriodQueries.push(query);
+			}
+		},
+	}),
+);
+
 vi.mock("@/lib/effect/runtime", () => ({
 	runtime: {
-		runPromise: async () => ({ totalMinutes: 0, workDays: 0, scheduleInfo: null }),
+		runPromise: async () => ({
+			totalMinutes: 0,
+			workDays: 0,
+			scheduleInfo: null,
+		}),
 	},
 }));
 vi.mock("@/lib/time-tracking/calculations", () => ({
@@ -28,7 +43,11 @@ const ids = {
 	employee: "d7940000-0000-4000-8000-000000000011",
 	homeOffice: "d7940000-0000-4000-8000-0000000000c1",
 } as const;
-const march = { startDate: "2026-03-01", endDate: "2026-03-31", timezone: "UTC" };
+const march = {
+	startDate: "2026-03-01",
+	endDate: "2026-03-31",
+	timezone: "UTC",
+};
 
 describe("employee report on PostgreSQL", () => {
 	vi.setConfig({ testTimeout: 60_000, hookTimeout: 60_000 });
@@ -51,6 +70,7 @@ describe("employee report on PostgreSQL", () => {
 		minutes?: number;
 		deleted?: boolean;
 		offsetMinutes?: number;
+		clockOutOffsetMinutes?: number;
 	}) {
 		const clockInId = randomUUID();
 		const clockOutId = options.end ? randomUUID() : null;
@@ -70,7 +90,9 @@ describe("employee report on PostgreSQL", () => {
 					timestamp,
 					ids.user,
 					entryId,
-					options.offsetMinutes ?? 0,
+					type === "clock_out"
+						? (options.clockOutOffsetMinutes ?? options.offsetMinutes ?? 0)
+						: (options.offsetMinutes ?? 0),
 				],
 			);
 		}
@@ -176,11 +198,15 @@ describe("employee report on PostgreSQL", () => {
 		await admin.query(
 			`insert into absence_entry
 			 (employee_id, category_id, organization_id, start_date, end_date, status, updated_at)
-			 values ($1, $2, $3, '2026-03-10', '2026-03-11', 'approved', now())`,
+			 values ($1, $2, $3, '2026-03-10', '2026-03-12', 'approved', now())`,
 			[ids.employee, ids.homeOffice, ids.organization],
 		);
 		// Counted: 2h of completed work on the first home office day.
-		await workPeriod({ start: "2026-03-10T08:00:00Z", end: "2026-03-10T10:00:00Z", minutes: 120 });
+		await workPeriod({
+			start: "2026-03-10T08:00:00Z",
+			end: "2026-03-10T10:00:00Z",
+			minutes: 120,
+		});
 		// Not counted: 3h deleted by an approved correction on the second home office day.
 		await workPeriod({
 			start: "2026-03-11T08:00:00Z",
@@ -193,13 +219,18 @@ describe("employee report on PostgreSQL", () => {
 
 		const result = await report();
 
-		expect(result.workHours).toMatchObject({ totalMinutes: 120, totalHours: 2, workDays: 1 });
+		expect(result.workHours).toMatchObject({
+			totalMinutes: 120,
+			totalHours: 2,
+			workDays: 1,
+		});
 		expect(result.absences.homeOffice).toEqual({
-			days: 2,
+			days: 3,
 			hoursWorked: 2,
 			dateDetails: [
 				{ date: "2026-03-10", hours: 2 },
 				{ date: "2026-03-11", hours: 0 },
+				{ date: "2026-03-12", hours: 0 },
 			],
 		});
 		expect(result.hourlyEarnings).toMatchObject({
@@ -210,13 +241,61 @@ describe("employee report on PostgreSQL", () => {
 		expect(result.employee).not.toHaveProperty("currentHourlyRate");
 	});
 
+	it("keeps the completed-work query budget constant as home office dates grow", async () => {
+		await terms({ from: "2026-01-01" });
+		await workPeriod({
+			start: "2026-03-10T08:00:00Z",
+			end: "2026-03-10T10:00:00Z",
+			minutes: 120,
+		});
+		await admin.query(
+			`insert into absence_entry
+			 (employee_id, category_id, organization_id, start_date, end_date, status, updated_at)
+			 values ($1, $2, $3, '2026-03-01', '2026-03-01', 'approved', now())`,
+			[ids.employee, ids.homeOffice, ids.organization],
+		);
+		const evidence: Array<{
+			dates: number;
+			workQueries: number;
+			elapsedMs: number;
+		}> = [];
+		for (const dates of [1, 31]) {
+			await admin.query("update absence_entry set end_date = $2 where organization_id = $1", [
+				ids.organization,
+				dates === 1 ? "2026-03-01" : "2026-03-31",
+			]);
+			queryEvidence.workPeriodQueries.length = 0;
+			const start = performance.now();
+			const result = await report();
+			evidence.push({
+				dates,
+				workQueries: queryEvidence.workPeriodQueries.length,
+				elapsedMs: Math.round((performance.now() - start) * 100) / 100,
+			});
+			expect(result.absences.homeOffice.days).toBe(dates);
+			expect(result.absences.homeOffice.hoursWorked).toBe(dates === 1 ? 0 : 2);
+			expect(result.workHours.totalHours).toBe(2);
+			expect(result.hourlyEarnings?.totalEarnings).toBe(40);
+		}
+		console.info("employee-report home-office query evidence", JSON.stringify(evidence));
+		expect(evidence.map((sample) => sample.workQueries)).toEqual([1, 1]);
+	});
+
 	it("pays a confirmed wage change from its date and ignores draft and pending terms", async () => {
 		await terms({ from: "2026-01-01", until: "2026-03-11", wage: "20.00" });
 		await terms({ from: "2026-03-11", wage: "30.00" });
 		await terms({ from: "2026-03-01", wage: "99.00", reviewState: "draft" });
 		await terms({ from: "2026-03-05", wage: "77.00", reviewState: "pending" });
-		await workPeriod({ start: "2026-03-10T08:00:00Z", end: "2026-03-10T10:00:00Z", minutes: 120 });
-		await workPeriod({ start: "2026-03-12T08:00:00Z", end: "2026-03-12T09:00:00Z", minutes: 60 });
+		await workPeriod({
+			start: "2026-03-10T08:00:00Z",
+			end: "2026-03-10T10:00:00Z",
+			minutes: 120,
+		});
+		await workPeriod({
+			start: "2026-03-12T08:00:00Z",
+			end: "2026-03-12T09:00:00Z",
+			minutes: 60,
+		});
 
 		const result = await report();
 
@@ -249,8 +328,16 @@ describe("employee report on PostgreSQL", () => {
 		await admin.query("update employee set contract_type = 'fixed' where id = $1", [ids.employee]);
 		await terms({ from: "2026-01-01", until: "2026-03-15", wage: "25.00" });
 		await terms({ from: "2026-03-15", contractType: "fixed", wage: null });
-		await workPeriod({ start: "2026-03-14T08:00:00Z", end: "2026-03-14T12:00:00Z", minutes: 240 });
-		await workPeriod({ start: "2026-03-16T08:00:00Z", end: "2026-03-16T12:00:00Z", minutes: 240 });
+		await workPeriod({
+			start: "2026-03-14T08:00:00Z",
+			end: "2026-03-14T12:00:00Z",
+			minutes: 240,
+		});
+		await workPeriod({
+			start: "2026-03-16T08:00:00Z",
+			end: "2026-03-16T12:00:00Z",
+			minutes: 240,
+		});
 
 		const result = await report();
 
@@ -263,7 +350,11 @@ describe("employee report on PostgreSQL", () => {
 
 	it("reports no earnings for an employee under fixed terms only", async () => {
 		await terms({ from: "2026-01-01", contractType: "fixed", wage: null });
-		await workPeriod({ start: "2026-03-10T08:00:00Z", end: "2026-03-10T10:00:00Z", minutes: 120 });
+		await workPeriod({
+			start: "2026-03-10T08:00:00Z",
+			end: "2026-03-10T10:00:00Z",
+			minutes: 120,
+		});
 
 		expect((await report()).hourlyEarnings).toBeUndefined();
 	});
@@ -271,6 +362,12 @@ describe("employee report on PostgreSQL", () => {
 	it("splits a Berlin night shift at local midnight of the wage change, by the recorded offsets", async () => {
 		await terms({ from: "2026-01-01", until: "2026-03-11", wage: "20.00" });
 		await terms({ from: "2026-03-11", wage: "30.00" });
+		await admin.query(
+			`insert into absence_entry
+			 (employee_id, category_id, organization_id, start_date, end_date, status, updated_at)
+			 values ($1, $2, $3, '2026-03-10', '2026-03-11', 'approved', now())`,
+			[ids.employee, ids.homeOffice, ids.organization],
+		);
 		// 22:00 on 10 March to 02:00 on 11 March, Berlin time (UTC+1).
 		await workPeriod({
 			start: "2026-03-10T21:00:00Z",
@@ -285,11 +382,123 @@ describe("employee report on PostgreSQL", () => {
 			expect.objectContaining({ rate: 20, hours: 2, earnings: 40 }),
 			expect.objectContaining({ rate: 30, hours: 2, earnings: 60 }),
 		]);
+		expect(result.absences.homeOffice).toEqual({
+			days: 2,
+			hoursWorked: 4,
+			dateDetails: [
+				{ date: "2026-03-10", hours: 2 },
+				{ date: "2026-03-11", hours: 2 },
+			],
+		});
+	});
+
+	it("retains the 23-hour Berlin DST day and clips home office at the month boundary", async () => {
+		await terms({ from: "2026-01-01" });
+		await admin.query(
+			`insert into absence_entry
+			 (employee_id, category_id, organization_id, start_date, end_date, status, updated_at)
+			 values ($1, $2, $3, '2026-03-29', '2026-04-01', 'approved', now())`,
+			[ids.employee, ids.homeOffice, ids.organization],
+		);
+		await workPeriod({
+			start: "2026-03-28T23:00:00Z",
+			end: "2026-03-29T22:00:00Z",
+			minutes: 1380,
+			offsetMinutes: 60,
+			clockOutOffsetMinutes: 120,
+		});
+		// 23:00 March 31 to 03:00 April 1 in Berlin; only one hour belongs to March.
+		await workPeriod({
+			start: "2026-03-31T21:00:00Z",
+			end: "2026-04-01T01:00:00Z",
+			minutes: 240,
+			offsetMinutes: 120,
+		});
+
+		const result = await report({ ...march, timezone: "Europe/Berlin" });
+
+		expect(result.absences.homeOffice).toEqual({
+			days: 3,
+			hoursWorked: 24,
+			dateDetails: [
+				{ date: "2026-03-29", hours: 23 },
+				{ date: "2026-03-30", hours: 0 },
+				{ date: "2026-03-31", hours: 1 },
+			],
+		});
+		expect(result.workHours.totalHours).toBe(24);
+		expect(result.hourlyEarnings?.totalEarnings).toBe(480);
+	});
+
+	it("preserves report-local days and captured-offset wages when travel changes the closing offset", async () => {
+		await terms({ from: "2026-01-01", until: "2026-03-11", wage: "20.00" });
+		await terms({ from: "2026-03-11", wage: "30.00" });
+		await admin.query(
+			`insert into absence_entry
+			 (employee_id, category_id, organization_id, start_date, end_date, status, updated_at)
+			 values ($1, $2, $3, '2026-03-10', '2026-03-11', 'approved', now())`,
+			[ids.employee, ids.homeOffice, ids.organization],
+		);
+		await workPeriod({
+			start: "2026-03-10T21:00:00Z",
+			end: "2026-03-11T02:00:00Z",
+			minutes: 300,
+			offsetMinutes: 60,
+			clockOutOffsetMinutes: -300,
+		});
+
+		const result = await report({ ...march, timezone: "Europe/Berlin" });
+
+		expect(result.absences.homeOffice.dateDetails).toEqual([
+			{ date: "2026-03-10", hours: 2 },
+			{ date: "2026-03-11", hours: 3 },
+		]);
+		expect(result.workHours.totalHours).toBe(5);
+		expect(result.hourlyEarnings).toMatchObject({
+			totalHours: 5,
+			totalEarnings: 130,
+		});
+	});
+
+	it("retains rounded stored durations and historical report work before tracking starts", async () => {
+		await terms({ from: "2026-01-01" });
+		await admin.query(
+			`insert into organization_tracking_settings
+			 (organization_id, tracking_start_date, activated_at) values ($1, '2026-03-15', now())`,
+			[ids.organization],
+		);
+		await admin.query(
+			`insert into absence_entry
+			 (employee_id, category_id, organization_id, start_date, end_date, status, updated_at)
+			 values ($1, $2, $3, '2026-03-10', '2026-03-10', 'approved', now())`,
+			[ids.employee, ids.homeOffice, ids.organization],
+		);
+		await workPeriod({
+			start: "2026-03-10T08:00:00Z",
+			end: "2026-03-10T10:00:00Z",
+			minutes: 90,
+		});
+
+		const result = await generateEmployeeReport(
+			ids.employee,
+			ids.organization,
+			new Date("2026-03-01T00:00:00Z"),
+			new Date("2026-03-31T23:59:59Z"),
+		);
+
+		expect(result.workHours.totalMinutes).toBe(90);
+		expect(result.absences.homeOffice.hoursWorked).toBe(1.5);
+		expect(result.hourlyEarnings?.totalEarnings).toBe(30);
+		expect(result.complianceMetrics.overtimeMinutes).toBe(0);
 	});
 
 	it("rejects hourly work under terms without a wage", async () => {
 		await terms({ from: "2026-01-01", wage: null });
-		await workPeriod({ start: "2026-03-10T08:00:00Z", end: "2026-03-10T10:00:00Z", minutes: 120 });
+		await workPeriod({
+			start: "2026-03-10T08:00:00Z",
+			end: "2026-03-10T10:00:00Z",
+			minutes: 120,
+		});
 
 		await expect(report()).rejects.toMatchObject({ code: "missing_rate" });
 	});

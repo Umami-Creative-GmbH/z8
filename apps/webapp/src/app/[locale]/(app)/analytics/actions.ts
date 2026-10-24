@@ -94,6 +94,10 @@ export async function getTeamPerformanceData(
 			organizationId,
 			dateRange,
 			teamId,
+			scope:
+				currentEmployee.role === "admin"
+					? { role: "admin" }
+					: { role: "manager", managerEmployeeId: currentEmployee.id },
 		});
 
 		return data;
@@ -144,6 +148,10 @@ export async function getWorkHoursAnalyticsData(
 			organizationId,
 			dateRange,
 			employeeId,
+			scope:
+				currentEmployee.role === "admin"
+					? { role: "admin" }
+					: { role: "manager", managerEmployeeId: currentEmployee.id },
 		});
 
 		return data;
@@ -168,6 +176,10 @@ export async function getAbsencePatternsData(
 		const data = yield* analyticsService.getAbsencePatterns({
 			organizationId,
 			dateRange,
+			scope:
+				currentEmployee.role === "admin"
+					? { role: "admin" }
+					: { role: "manager", managerEmployeeId: currentEmployee.id },
 		});
 
 		return data;

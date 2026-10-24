@@ -1,11 +1,7 @@
 /* @vitest-environment jsdom */
 
-import {
-	onlineManager,
-	QueryClient,
-	QueryClientProvider,
-} from "@tanstack/react-query";
-import { act, renderHook, waitFor } from "@testing-library/react";
+import { onlineManager, QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { act, fireEvent, render, renderHook, screen, waitFor } from "@testing-library/react";
 import type React from "react";
 import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -74,7 +70,63 @@ function offlineReviewQueue(queueClockEvent: ReturnType<typeof vi.fn>) {
 }
 
 import { queryKeys } from "./keys";
+
+vi.mock("@/hooks/use-organization", () => ({
+	useOrganization: () => ({
+		userId: "user-1",
+		organizationId: "org-1",
+		role: "employee",
+		isLoading: false,
+	}),
+}));
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({ t: (_key: string, fallback: string) => fallback }),
+}));
+vi.mock("@dnd-kit/sortable", () => ({
+	useSortable: () => ({
+		attributes: {},
+		listeners: {},
+		setNodeRef: vi.fn(),
+		transform: null,
+		transition: undefined,
+		isDragging: false,
+	}),
+}));
+vi.mock("@dnd-kit/utilities", () => ({ CSS: { Translate: { toString: () => undefined } } }));
+
+import { PresenceStatusWidget } from "@/components/dashboard/presence-status-widget";
 import { useElapsedTimer, useTimeClock } from "./use-time-clock";
+
+function ClockPresenceFrame({
+	command,
+	initial,
+}: {
+	command: "clockIn" | "clockOut";
+	initial: NonNullable<React.ComponentProps<typeof PresenceStatusWidget>["initialSnapshot"]>;
+}) {
+	const clock = useTimeClock({
+		initialData: {
+			hasEmployee: true,
+			employeeId: "emp-1",
+			isClockedIn: command === "clockOut",
+			activeWorkPeriod: null,
+		},
+	});
+	return (
+		<>
+			<input aria-label="Draft note" defaultValue="" />
+			<button
+				type="button"
+				onClick={() => {
+					void clock[command]({ browserTimezone: "Europe/Berlin" });
+				}}
+			>
+				Clock command
+			</button>
+			<PresenceStatusWidget initialSnapshot={initial} />
+		</>
+	);
+}
 
 type TimeClockRouteBody = {
 	action: "clock_in" | "clock_out";
@@ -107,9 +159,7 @@ function stubTimeClockRoute() {
 
 function wrapper(client: QueryClient) {
 	return function TestWrapper({ children }: { children: React.ReactNode }) {
-		return (
-			<QueryClientProvider client={client}>{children}</QueryClientProvider>
-		);
+		return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 	};
 }
 
@@ -132,9 +182,7 @@ describe("useElapsedTimer", () => {
 	it("updates from the current instant once per second in the browser", () => {
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date("2026-07-14T10:00:05Z"));
-		const { result } = renderHook(() =>
-			useElapsedTimer(new Date("2026-07-14T10:00:00Z")),
-		);
+		const { result } = renderHook(() => useElapsedTimer(new Date("2026-07-14T10:00:00Z")));
 
 		expect(result.current).toBe(5);
 		act(() => vi.advanceTimersByTime(1000));
@@ -166,6 +214,63 @@ describe("useTimeClock presence invalidation", () => {
 		mocks.getBrowserTimezone.mockReturnValue("Europe/Berlin");
 		stubTimeClockRoute();
 	});
+
+	it.each(["clockIn", "clockOut"] as const)(
+		"refreshes the delivered presence widget after confirmed %s while retaining a draft",
+		async (command) => {
+			const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+			mocks.useSession.mockReturnValue({
+				data: { user: { id: "user-1" }, session: { activeOrganizationId: "org-1" } },
+				isPending: false,
+				error: null,
+			});
+			const data = {
+				presenceEnabled: true,
+				available: true,
+				period: "weekly" as const,
+				periodStart: "2026-10-19T00:00:00Z",
+				periodEnd: "2026-10-25T23:59:59Z",
+				mode: "minimum_count" as const,
+				homeOfficeDaysLeft: 7,
+				officeDaysRequiredLeft: 4,
+				officeDaysCompleted: 1,
+				homeOfficeDaysUsed: 0,
+				workingDaysRemaining: 5,
+				requiredOfficeDays: 5,
+				fixedOfficeDays: [],
+				message: null,
+			};
+			const initial = {
+				scope: { userId: "user-1", organizationId: "org-1" },
+				updatedAt: Date.now(),
+				result: { success: true as const, data },
+			};
+			const request = vi.fn(async (url: string) =>
+				url === "/api/time-clock"
+					? Response.json({ success: true, data: { id: "clock-entry" } })
+					: Response.json({
+							...initial,
+							updatedAt: Date.now() + 1,
+							result: { success: true, data: { ...data, officeDaysRequiredLeft: 3 } },
+						}),
+			);
+			vi.stubGlobal("fetch", request);
+			render(
+				<QueryClientProvider client={client}>
+					<ClockPresenceFrame command={command} initial={initial} />
+				</QueryClientProvider>,
+			);
+			fireEvent.change(screen.getByLabelText("Draft note"), { target: { value: "Unsaved draft" } });
+			expect(request).not.toHaveBeenCalled();
+			fireEvent.click(screen.getByRole("button", { name: "Clock command" }));
+			await screen.findByText("3");
+			expect((screen.getByLabelText("Draft note") as HTMLInputElement).value).toBe("Unsaved draft");
+			expect(request.mock.calls.map(([url]) => url)).toEqual([
+				"/api/time-clock",
+				"/api/dashboard/widgets/presence-status",
+			]);
+		},
+	);
 
 	it("sends clock actions to the deployment-stable time clock route", async () => {
 		const fetchMock = stubTimeClockRoute();
@@ -205,10 +310,7 @@ describe("useTimeClock presence invalidation", () => {
 		vi.stubGlobal(
 			"fetch",
 			vi.fn(async () =>
-				Response.json(
-					{ success: false, error: "Already clocked out" },
-					{ status: 422 },
-				),
+				Response.json({ success: false, error: "Already clocked out" }, { status: 422 }),
 			),
 		);
 
@@ -237,9 +339,7 @@ describe("useTimeClock presence invalidation", () => {
 		});
 		await waitFor(() => expect(result.current.employeeId).toBe("emp-1"));
 
-		await expect(result.current.clockOut()).rejects.toThrow(
-			"Time clock request failed (502)",
-		);
+		await expect(result.current.clockOut()).rejects.toThrow("Time clock request failed (502)");
 	});
 
 	it("invalidates employee clock statuses after clock in", async () => {

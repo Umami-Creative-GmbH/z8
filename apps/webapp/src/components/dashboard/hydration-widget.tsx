@@ -14,34 +14,19 @@ import { toast } from "sonner";
 import { logWaterIntake } from "@/app/[locale]/(app)/wellness/actions";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { getHydrationWidgetData } from "./actions";
+import type { DashboardWidgetData, DashboardWidgetSnapshot } from "./dashboard-types";
 import { DashboardWidget } from "./dashboard-widget";
-import { useWidgetData } from "./use-widget-data";
+import { useDashboardWidget } from "./use-dashboard-widget";
 import { WidgetCard } from "./widget-card";
+import { WidgetReadError } from "./widget-read-error";
 
-type HydrationWidgetData = {
-	enabled: boolean;
-	currentStreak: number;
-	longestStreak: number;
-	todayIntake: number;
-	dailyGoal: number;
-	goalProgress: number;
-	teamStreakLeaders: HydrationStreakLeader[];
-	organizationStreakLeaders: HydrationStreakLeader[];
-};
-
-type HydrationStreakLeader = {
-	employeeId: string;
-	displayName: string;
-	currentStreak: number;
-	isCurrentUser: boolean;
-};
+type HydrationStreakLeader = DashboardWidgetData["hydration"]["teamStreakLeaders"][number];
 
 function WaterGlass({ filled }: { filled: boolean }) {
 	return (
 		<div
 			className={cn(
-				"flex size-7 items-center justify-center rounded-md transition-all",
+				"flex size-7 items-center justify-center rounded-md transition-[background-color,box-shadow] motion-reduce:transition-none",
 				filled
 					? "bg-gradient-to-b from-sky-400 to-blue-500 shadow-sm shadow-blue-500/25"
 					: "bg-muted/50 border border-dashed border-muted-foreground/20",
@@ -74,7 +59,7 @@ function CircularProgress({
 
 	return (
 		<div className="relative inline-flex items-center justify-center">
-			<svg className="size-24 -rotate-90" viewBox="0 0 100 100">
+			<svg aria-hidden="true" className="size-24 -rotate-90" viewBox="0 0 100 100">
 				<circle cx="50" cy="50" r={radius} fill="none" strokeWidth="7" className="stroke-muted" />
 				<circle
 					cx="50"
@@ -84,7 +69,7 @@ function CircularProgress({
 					strokeWidth="7"
 					strokeLinecap="round"
 					className={cn(
-						"transition-all duration-500 ease-out",
+						"transition-[stroke-dashoffset,stroke] duration-500 ease-out motion-reduce:transition-none",
 						isComplete ? "stroke-emerald-500" : "stroke-blue-500",
 					)}
 					style={{
@@ -196,6 +181,7 @@ function HydrationStreakLeaderboard({
 					return (
 						<div
 							key={leader.employeeId}
+							role="group"
 							aria-label={rowLabel}
 							className="flex items-center gap-2 rounded-md px-1.5 py-1 text-xs"
 						>
@@ -210,9 +196,7 @@ function HydrationStreakLeaderboard({
 									{t("dashboard.hydration.you", "You")}
 								</span>
 							) : null}
-							<span className="shrink-0 tabular-nums text-muted-foreground">
-								{streakLabel}
-							</span>
+							<span className="shrink-0 tabular-nums text-muted-foreground">{streakLabel}</span>
 						</div>
 					);
 				})}
@@ -221,7 +205,11 @@ function HydrationStreakLeaderboard({
 	);
 }
 
-export function HydrationWidget() {
+export function HydrationWidget({
+	initialSnapshot,
+}: {
+	initialSnapshot?: DashboardWidgetSnapshot<DashboardWidgetData["hydration"]>;
+} = {}) {
 	const { t } = useTranslate();
 	const [isLogging, setIsLogging] = useState(false);
 	const widgetRef = useRef<HTMLDivElement>(null);
@@ -230,10 +218,8 @@ export function HydrationWidget() {
 		loading,
 		refreshing,
 		refetch,
-	} = useWidgetData<HydrationWidgetData>(() => getHydrationWidgetData({ fresh: true }), {
-		errorMessage: t("dashboard.hydration.error", "Failed to load hydration stats"),
-	});
-
+		error,
+	} = useDashboardWidget("hydration", initialSnapshot);
 	const fireConfetti = async () => {
 		if (!widgetRef.current) return;
 
@@ -261,7 +247,7 @@ export function HydrationWidget() {
 				if (result.data?.goalJustMet) {
 					fireConfetti();
 				}
-				refetch();
+				await refetch();
 			} else {
 				toast.error(
 					result.error ?? t("dashboard.hydration.log-error", "Failed to log water intake"),
@@ -273,8 +259,7 @@ export function HydrationWidget() {
 		setIsLogging(false);
 	};
 
-	if (!stats?.enabled && !loading) return null;
-	if (!stats && !loading) return null;
+	if (!loading && !error && stats?.enabled === false) return null;
 
 	const progressPercentage = stats?.goalProgress ?? 0;
 	const isGoalMet = progressPercentage >= 100;
@@ -294,68 +279,77 @@ export function HydrationWidget() {
 				refreshing={refreshing}
 				onRefresh={refetch}
 			>
-				{stats && (
-					<div ref={widgetRef} className="space-y-4">
-						<div className="flex items-center gap-4">
-							{/* Left: Circular Progress with badge */}
-							<CircularProgress
-								progress={progressPercentage}
-								streak={stats.currentStreak}
-								isRecord={stats.currentStreak === stats.longestStreak && stats.currentStreak > 1}
-							>
-								<span
-									className={cn(
-										"text-xl font-bold tabular-nums",
-										isGoalMet ? "text-emerald-600 dark:text-emerald-400" : "text-foreground",
-									)}
+				{error ? (
+					<WidgetReadError
+						title={t("dashboard.hydration.title", "Hydration")}
+						message={error}
+						retry={refetch}
+						refreshing={refreshing}
+					/>
+				) : (
+					stats && (
+						<div ref={widgetRef} className="space-y-4">
+							<div className="flex items-center gap-4">
+								{/* Left: Circular Progress with badge */}
+								<CircularProgress
+									progress={progressPercentage}
+									streak={stats.currentStreak}
+									isRecord={stats.currentStreak === stats.longestStreak && stats.currentStreak > 1}
 								>
-									{stats.todayIntake}
-								</span>
-								<span className="text-[10px] text-muted-foreground">
-									{t("dashboard.hydration.of-goal", "of {goal}", { goal: stats.dailyGoal })}
-								</span>
-							</CircularProgress>
+									<span
+										className={cn(
+											"text-xl font-bold tabular-nums",
+											isGoalMet ? "text-emerald-600 dark:text-emerald-400" : "text-foreground",
+										)}
+									>
+										{stats.todayIntake}
+									</span>
+									<span className="text-[10px] text-muted-foreground">
+										{t("dashboard.hydration.of-goal", "of {goal}", { goal: stats.dailyGoal })}
+									</span>
+								</CircularProgress>
 
-							{/* Right: Glass Grid + Add Buttons */}
-							<div className="flex flex-1 flex-col gap-3">
-								{/* Glass Grid */}
-								<div className="flex flex-wrap gap-1.5">
-									{glassesArray.map((index) => (
-										<WaterGlass key={index} filled={index < stats.todayIntake} />
-									))}
-								</div>
+								{/* Right: Glass Grid + Add Buttons */}
+								<div className="flex flex-1 flex-col gap-3">
+									{/* Glass Grid */}
+									<div className="flex flex-wrap gap-1.5">
+										{glassesArray.map((index) => (
+											<WaterGlass key={index} filled={index < stats.todayIntake} />
+										))}
+									</div>
 
-								{/* Add Buttons */}
-								<div className="flex gap-2">
-									<AddButton
-										count={1}
-										onClick={() => handleLogWater(1)}
-										disabled={isLogging}
-										label={addOneGlassLabel}
-									/>
-									<AddButton
-										count={2}
-										onClick={() => handleLogWater(2)}
-										disabled={isLogging}
-										label={addTwoGlassesLabel}
-									/>
+									{/* Add Buttons */}
+									<div className="flex gap-2">
+										<AddButton
+											count={1}
+											onClick={() => handleLogWater(1)}
+											disabled={isLogging}
+											label={addOneGlassLabel}
+										/>
+										<AddButton
+											count={2}
+											onClick={() => handleLogWater(2)}
+											disabled={isLogging}
+											label={addTwoGlassesLabel}
+										/>
+									</div>
 								</div>
 							</div>
-						</div>
 
-						<HydrationStreakLeaderboard
-							testId="hydration-team-streak-leaders"
-							title={t("dashboard.hydration.team-streaks", "Team streaks")}
-							leaders={stats.teamStreakLeaders}
-							t={t}
-						/>
-						<HydrationStreakLeaderboard
-							testId="hydration-organization-streak-leaders"
-							title={t("dashboard.hydration.organization-streaks", "Org streaks")}
-							leaders={stats.organizationStreakLeaders}
-							t={t}
-						/>
-					</div>
+							<HydrationStreakLeaderboard
+								testId="hydration-team-streak-leaders"
+								title={t("dashboard.hydration.team-streaks", "Team streaks")}
+								leaders={stats.teamStreakLeaders}
+								t={t}
+							/>
+							<HydrationStreakLeaderboard
+								testId="hydration-organization-streak-leaders"
+								title={t("dashboard.hydration.organization-streaks", "Org streaks")}
+								leaders={stats.organizationStreakLeaders}
+								t={t}
+							/>
+						</div>
+					)
 				)}
 			</WidgetCard>
 		</DashboardWidget>

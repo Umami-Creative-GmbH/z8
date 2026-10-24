@@ -25,14 +25,8 @@ describe("analytics service date boundaries", () => {
 			["2026-05-02", 30],
 		]);
 	});
-	it("uses adapter-provided instants as half-open overlap boundaries", () => {
-		const source = readFileSync(`${SERVICES_ROOT}/analytics.service.ts`, "utf8");
-
-		expect(source).toContain("new Date(dateRange.end.getTime() + 1)");
-		expect(source).toContain("lt(workPeriod.startTime, rangeEndExclusive)");
-		expect(source).toContain("gt(workPeriod.endTime, dateRange.start)");
-		expect(source).toContain("reportRange.splitPeriod");
-	});
+	// Real production overlap reads are covered at the PostgreSQL reader seam in
+	// work-hours-range.integration.test.ts, independent of their source location.
 
 	it("uses explicit adapter calendar metadata instead of UTC date slicing", () => {
 		const source = readFileSync(`${SERVICES_ROOT}/analytics.service.ts`, "utf8");
@@ -63,10 +57,11 @@ describe("analytics service date boundaries", () => {
 		expect(source).toContain("minutesByEmployee.set(");
 	});
 
-	it("uses inclusive PlainDate durations and organization-scoped work-period queries", () => {
+	it("uses inclusive PlainDate durations", () => {
 		const source = readFileSync(`${SERVICES_ROOT}/analytics.service.ts`, "utf8");
 
 		expect(source).toContain("function inclusiveCalendarDays");
-		expect(source).toContain("eq(workPeriod.organizationId, organizationId)");
+		// Organization and employee SQL scope are asserted through the real range
+		// readers in team-performance-range.integration.test.ts and its siblings.
 	});
 });

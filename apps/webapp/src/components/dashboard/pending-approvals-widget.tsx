@@ -7,17 +7,17 @@ import {
 	IconClock,
 	IconClockEdit,
 } from "@tabler/icons-react";
-import { useQuery } from "@tanstack/react-query";
 import { useTolgee, useTranslate } from "@tolgee/react";
-import { getPendingApprovals } from "@/app/[locale]/(app)/approvals/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { ApprovalWithAbsence, ApprovalWithTimeCorrection } from "@/lib/validations/approvals";
 import { Link } from "@/navigation";
+import type { DashboardWidgetData, DashboardWidgetSnapshot } from "./dashboard-types";
 import { DashboardWidget } from "./dashboard-widget";
 import { formatDashboardDate, formatDashboardDateWithYear } from "./format-dashboard-date";
+import { useDashboardWidget } from "./use-dashboard-widget";
 import { WidgetCard } from "./widget-card";
+import { WidgetReadError } from "./widget-read-error";
 
 function UrgencyIndicator({ count }: { count: number }) {
 	const { t } = useTranslate();
@@ -112,36 +112,21 @@ function ApprovalItem({
 	);
 }
 
-export function PendingApprovalsWidget() {
+export function PendingApprovalsWidget({
+	initialSnapshot,
+}: {
+	initialSnapshot?: DashboardWidgetSnapshot<DashboardWidgetData["pending-approvals"]>;
+} = {}) {
 	const { t } = useTranslate();
 	const tolgee = useTolgee();
 	const locale = tolgee.getLanguage() || "en";
-	const pendingApprovalsQuery = useQuery({
-		queryKey: ["dashboard", "pending-approvals"],
-		queryFn: async () => {
-			const pending = await getPendingApprovals().catch(() => null);
-			if (!pending) {
-				throw new Error(t("dashboard.pending-approvals.error", "Failed to load pending approvals"));
-			}
-
-			return pending;
-		},
-	});
-
-	const absenceApprovals: ApprovalWithAbsence[] =
-		pendingApprovalsQuery.data?.absenceApprovals ?? [];
-	const timeCorrectionApprovals: ApprovalWithTimeCorrection[] =
-		pendingApprovalsQuery.data?.timeCorrectionApprovals ?? [];
-	const loading = pendingApprovalsQuery.isLoading;
-	const refreshing = pendingApprovalsQuery.isFetching && !pendingApprovalsQuery.isLoading;
-
-	const refetch = () => {
-		pendingApprovalsQuery.refetch();
-	};
-
+	const { data, loading, refreshing, refetch, error } = useDashboardWidget(
+		"pending-approvals",
+		initialSnapshot,
+	);
+	const absenceApprovals = data?.absenceApprovals ?? [];
+	const timeCorrectionApprovals = data?.timeCorrectionApprovals ?? [];
 	const totalPending = absenceApprovals.length + timeCorrectionApprovals.length;
-
-	if ((!loading && pendingApprovalsQuery.isError) || (!loading && totalPending === 0)) return null;
 
 	return (
 		<DashboardWidget id="pending-approvals">
@@ -157,71 +142,84 @@ export function PendingApprovalsWidget() {
 				onRefresh={refetch}
 			>
 				<div className="space-y-4">
-					{/* Urgency Banner */}
-					<UrgencyIndicator count={totalPending} />
+					{error ? (
+						<WidgetReadError
+							title={t("dashboard.pending-approvals.title", "Pending Approvals")}
+							message={error}
+							retry={refetch}
+							refreshing={refreshing}
+						/>
+					) : totalPending === 0 ? (
+						<p role="status">{t("dashboard.pending-approvals.empty", "No pending approvals")}</p>
+					) : (
+						<>
+							{/* Urgency Banner */}
+							<UrgencyIndicator count={totalPending} />
 
-					{/* Absence Requests */}
-					{absenceApprovals.length > 0 && (
-						<ApprovalSection
-							title={t("dashboard.pending-approvals.absence-requests", "Absence Requests")}
-							icon={IconBeach}
-							iconColor="bg-amber-500"
-							count={absenceApprovals.length}
-						>
-							{absenceApprovals.slice(0, 3).map((approval) => (
-								<ApprovalItem
-									key={approval.id}
-									name={approval.requester.user.name || t("common.unknown", "Unknown")}
-									subtitle={`${formatDashboardDate(approval.absence.startDate, locale)} - ${formatDashboardDateWithYear(approval.absence.endDate, locale)}`}
-									badge={approval.absence.category.name}
-								/>
-							))}
-							{absenceApprovals.length > 3 && (
-								<p className="text-center text-xs text-muted-foreground pt-1">
-									{t("dashboard.pending-approvals.more-requests", "+{count} more requests", {
-										count: absenceApprovals.length - 3,
-									})}
-								</p>
+							{/* Absence Requests */}
+							{absenceApprovals.length > 0 && (
+								<ApprovalSection
+									title={t("dashboard.pending-approvals.absence-requests", "Absence Requests")}
+									icon={IconBeach}
+									iconColor="bg-amber-500"
+									count={absenceApprovals.length}
+								>
+									{absenceApprovals.slice(0, 3).map((approval) => (
+										<ApprovalItem
+											key={approval.id}
+											name={approval.requester.user.name || t("common.unknown", "Unknown")}
+											subtitle={`${formatDashboardDate(approval.absence.startDate, locale)} - ${formatDashboardDateWithYear(approval.absence.endDate, locale)}`}
+											badge={approval.absence.category.name}
+										/>
+									))}
+									{absenceApprovals.length > 3 && (
+										<p className="text-center text-xs text-muted-foreground pt-1">
+											{t("dashboard.pending-approvals.more-requests", "+{count} more requests", {
+												count: absenceApprovals.length - 3,
+											})}
+										</p>
+									)}
+								</ApprovalSection>
 							)}
-						</ApprovalSection>
-					)}
 
-					{/* Time Correction Requests */}
-					{timeCorrectionApprovals.length > 0 && (
-						<ApprovalSection
-							title={t("dashboard.pending-approvals.time-corrections", "Time Corrections")}
-							icon={IconClockEdit}
-							iconColor="bg-blue-500"
-							count={timeCorrectionApprovals.length}
-						>
-							{timeCorrectionApprovals.slice(0, 3).map((approval) => (
-								<ApprovalItem
-									key={approval.id}
-									name={approval.requester.user.name || t("common.unknown", "Unknown")}
-									subtitle={formatDashboardDateWithYear(approval.workPeriod.startTime, locale)}
-									badge={t("dashboard.pending-approvals.correction", "Correction")}
-								/>
-							))}
-							{timeCorrectionApprovals.length > 3 && (
-								<p className="text-center text-xs text-muted-foreground pt-1">
-									{t("dashboard.pending-approvals.more-requests", "+{count} more requests", {
-										count: timeCorrectionApprovals.length - 3,
-									})}
-								</p>
+							{/* Time Correction Requests */}
+							{timeCorrectionApprovals.length > 0 && (
+								<ApprovalSection
+									title={t("dashboard.pending-approvals.time-corrections", "Time Corrections")}
+									icon={IconClockEdit}
+									iconColor="bg-blue-500"
+									count={timeCorrectionApprovals.length}
+								>
+									{timeCorrectionApprovals.slice(0, 3).map((approval) => (
+										<ApprovalItem
+											key={approval.id}
+											name={approval.requester.user.name || t("common.unknown", "Unknown")}
+											subtitle={formatDashboardDateWithYear(approval.workPeriod.startTime, locale)}
+											badge={t("dashboard.pending-approvals.correction", "Correction")}
+										/>
+									))}
+									{timeCorrectionApprovals.length > 3 && (
+										<p className="text-center text-xs text-muted-foreground pt-1">
+											{t("dashboard.pending-approvals.more-requests", "+{count} more requests", {
+												count: timeCorrectionApprovals.length - 3,
+											})}
+										</p>
+									)}
+								</ApprovalSection>
 							)}
-						</ApprovalSection>
-					)}
 
-					{/* Action Button */}
-					<Button className="w-full group" asChild>
-						<Link href="/approvals/inbox">
-							{t("dashboard.pending-approvals.review-all", "Review All Approvals")}
-							<IconArrowRight
-								className="ml-2 size-4 transition-transform group-hover:translate-x-1"
-								aria-hidden="true"
-							/>
-						</Link>
-					</Button>
+							{/* Action Button */}
+							<Button className="w-full group" asChild>
+								<Link href="/approvals/inbox">
+									{t("dashboard.pending-approvals.review-all", "Review All Approvals")}
+									<IconArrowRight
+										className="ml-2 size-4 transition-transform group-hover:translate-x-1"
+										aria-hidden="true"
+									/>
+								</Link>
+							</Button>
+						</>
+					)}
 				</div>
 			</WidgetCard>
 		</DashboardWidget>
