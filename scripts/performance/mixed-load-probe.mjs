@@ -401,6 +401,8 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId) {
 		commandActive = 0,
 		userMaxInflight = 0;
 	let nativeRunCoverage = { complete: false },
+		nativeCloseProof = null,
+		nativeCloseElapsedMs = null,
 		backendGroups = [],
 		transports = [];
 	const tally = () => {
@@ -719,8 +721,12 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId) {
 		}
 		if (observation) {
 			try {
-				({ nativeRunCoverage, rows: backendGroups } =
-					await finishMixedObservation(observation));
+				({
+					nativeRunCoverage,
+					nativeCloseProof,
+					nativeCloseElapsedMs,
+					rows: backendGroups,
+				} = await finishMixedObservation(observation));
 			} catch {
 				stopped = true;
 				failureStage ||= "native-close-proof";
@@ -756,6 +762,8 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId) {
 		browserClosed,
 		pageErrors,
 		nativeRunCoverage,
+		nativeCloseProof,
+		nativeCloseElapsedMs,
 		transports,
 		backendGroups: backendGroups.map((row) => ({
 			traceId: row.traceId,
