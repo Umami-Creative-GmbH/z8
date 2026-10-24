@@ -25,6 +25,7 @@ import { currentOrganizationAdminUserIds } from "@/lib/notifications/manager-not
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { memberIsAccessibleOwnerOrAdmin } from "../authority-sql";
 import { onCurrentRoster, rosterCheckInstant } from "../current-roster";
+import { checklistPlanSnapshot } from "../reactivation-checklist";
 import {
 	insertDeactivation,
 	recordDeactivationOutcome,
@@ -196,7 +197,13 @@ async function organizationsWithCandidates(database: Pick<Database, "execute">):
 	return rows<{ organization_id: string }>(result).map((row) => row.organization_id);
 }
 
-type LeftAt = { at: Instant; source: LeftAtSource; actorUserId: string | null };
+type LeftAt = {
+	at: Instant;
+	source: LeftAtSource;
+	actorUserId: string | null;
+	/** The audit entry the instant was recovered from. */
+	auditId: string | null;
+};
 
 /**
  * When the employee left: the latest surviving evidence of switching them off
@@ -211,13 +218,14 @@ async function recoverLeftAt(
 	const { organizationId, employeeId } = input;
 	const result = await reader.execute(sql`
 		WITH switched_off AS (
-			SELECT (a."timestamp" AT TIME ZONE 'UTC') AS at, 'audit_log' AS source, a.performed_by AS actor
+			SELECT (a."timestamp" AT TIME ZONE 'UTC') AS at, 'audit_log' AS source, a.performed_by AS actor,
+				a.id::text AS audit_id
 			FROM audit_log a
 			WHERE a.organization_id = ${organizationId}
 				AND a.entity_type = 'employee' AND a.entity_id = ${employeeId}::text
 				AND a.action = 'employee.deactivated'
 			UNION ALL
-			SELECT (l.created_at AT TIME ZONE 'UTC'), 'scim', NULL
+			SELECT (l.created_at AT TIME ZONE 'UTC'), 'scim', NULL, NULL
 			FROM user_lifecycle_event l
 			WHERE l.organization_id = ${organizationId} AND l.employee_id = ${employeeId}::uuid
 				AND l.event_type = 'leave'
@@ -238,14 +246,26 @@ async function recoverLeftAt(
 			WHERE p.organization_id = ${organizationId} AND p.employee_id = ${employeeId}::uuid
 				AND p.status IN ('open', 'legacy_unknown') AND p.started_at IS NOT NULL
 		)
-		SELECT ${isoUtc(sql`o.at`)} AS at, o.source, o.actor
+		SELECT ${isoUtc(sql`o.at`)} AS at, o.source, o.actor, o.audit_id
 		FROM switched_off o
 		WHERE NOT EXISTS (SELECT 1 FROM switched_on n WHERE n.at > o.at)
 		ORDER BY o.at DESC, o.source
 		LIMIT 1
 	`);
-	const [row] = rows<{ at: string; source: "audit_log" | "scim"; actor: string | null }>(result);
-	return row ? { at: parseInstant(row.at), source: row.source, actorUserId: row.actor } : null;
+	const [row] = rows<{
+		at: string;
+		source: "audit_log" | "scim";
+		actor: string | null;
+		audit_id: string | null;
+	}>(result);
+	return row
+		? {
+				at: parseInstant(row.at),
+				source: row.source,
+				actorUserId: row.actor,
+				auditId: row.audit_id,
+			}
+		: null;
 }
 
 /** The organization's longest-standing current owner, else admin. */
@@ -284,7 +304,7 @@ async function prepare(
 	const { organizationId, candidate, runAt } = input;
 	const scope = { organizationId, employeeId: candidate.employeeId };
 	const recovered = candidate.deactivatedAt
-		? { at: candidate.deactivatedAt, source: "employee" as const, actorUserId: null }
+		? { at: candidate.deactivatedAt, source: "employee" as const, actorUserId: null, auditId: null }
 		: await recoverLeftAt(reader, scope);
 	const actorUserId =
 		recovered?.actorUserId ?? (await fallbackActorUserId(reader, organizationId, runAt));
@@ -432,7 +452,14 @@ async function applyOne(
 					reportsWithoutManager,
 				},
 			};
-			await recordDeactivationOutcome(tx, { organizationId, deactivationId, applied, result });
+			await recordDeactivationOutcome(tx, {
+				organizationId,
+				deactivationId,
+				applied,
+				result,
+				// The names a reactivated employee's checklist shows (#1441).
+				plan: checklistPlanSnapshot(plan),
+			});
 			if (leftAt && context.employmentPeriodId) {
 				// The employment history event (#1441), only for a recovered instant.
 				await writeReceipt(tx, {
@@ -446,7 +473,8 @@ async function applyOne(
 					kind: "employee_deactivated",
 					occurredAt: dateFromInstant(leftAt.at),
 					result,
-					metadata: { deactivationId, reason: BACKFILL_REASON },
+					// The history shows this event once, not again as its source audit entry.
+					metadata: { deactivationId, reason: BACKFILL_REASON, sourceAuditId: leftAt.auditId },
 				});
 			}
 			return { kind: "applied", entry: reportEntry(prepared, deactivationId), audit, afterCommit };

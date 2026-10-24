@@ -95,6 +95,12 @@ vi.mock("@/lib/auth/member-removal-cleanup", () => ({
 	completeRemovedMemberCleanup: mocks.completeRemovedMemberCleanup,
 }));
 
+// Reactivation's history event needs an employment period; the PostgreSQL suite covers it.
+vi.mock("@/lib/employee-lifecycle/employment-periods", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@/lib/employee-lifecycle/employment-periods")>()),
+	resolveCurrentEmploymentPeriod: async () => null,
+}));
+
 vi.mock("@/lib/employee-lifecycle/deputy-release-runtime", () => ({
 	notifyReleasedDeputyAssignments: mocks.notifyReleasedDeputyAssignments,
 }));
@@ -684,6 +690,8 @@ describe("employee lifecycle actions", () => {
 			targetType: "employee",
 			organizationId,
 			changes: { isActive: { from: true, to: false } },
+			// The history shows this deactivation once (#1441).
+			metadata: { reason: "employee_deactivated", deactivationId: "deactivation-1" },
 			timestamp: expect.any(Date),
 		});
 		expect(mocks.reconcileBillingSeatsForOrganization).toHaveBeenCalledExactlyOnceWith(
@@ -887,7 +895,8 @@ describe("employee lifecycle actions", () => {
 				employeeId,
 				reactivatedAt: expect.anything(),
 				reactivatedBy: actorUserId,
-				reactivationRequestId: null,
+				// Each reactivation has its own request ID (#1441).
+				reactivationRequestId: expect.stringMatching(/^[0-9a-f-]{36}$/),
 			},
 		);
 		expect(events.indexOf("employee-updated")).toBeLessThan(
@@ -1051,6 +1060,7 @@ describe("employee lifecycle actions", () => {
 			targetType: "employee",
 			organizationId,
 			changes: { isActive: { from: false, to: true } },
+			metadata: { reactivationRequestId: expect.any(String) },
 			timestamp: expect.any(Date),
 		});
 	});

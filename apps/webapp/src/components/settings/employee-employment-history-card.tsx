@@ -44,6 +44,7 @@ export function EmployeeEmploymentHistoryCard({
 	isMutating,
 	workPolicies = EMPTY_WORK_POLICIES,
 	notice,
+	lifecycleEvents,
 	changeWage,
 }: EmployeeEmploymentHistoryCardProps) {
 	const { t } = useTranslate();
@@ -213,6 +214,7 @@ export function EmployeeEmploymentHistoryCard({
 					t={t}
 					policyNameById={policyNameById}
 				/>
+				{lifecycleEvents}
 			</CardContent>
 		</Card>
 	);

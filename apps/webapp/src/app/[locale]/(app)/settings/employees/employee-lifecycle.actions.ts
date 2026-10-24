@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
@@ -42,9 +43,9 @@ import {
 	type LifecycleTargetCheck,
 	type LifecycleTargetEmployee,
 } from "@/lib/employee-lifecycle/lifecycle-target";
+import { executeReactivation } from "@/lib/employee-lifecycle/reactivation";
 import {
 	DeactivationRequestConflictError,
-	markDeactivationReactivated,
 	readDeactivationByRequest,
 } from "@/lib/employee-lifecycle/receipts";
 import { createLogger } from "@/lib/logger";
@@ -96,6 +97,8 @@ type DeactivationTransactionResult =
 			type: "success";
 			changed: boolean;
 			targetEmployee: LifecycleTargetEmployee;
+			/** The ledger row, when this request deactivated the employee. */
+			deactivationId: string | null;
 			audit: AuditTrail | null;
 			afterCommit: DeactivationAfterCommit[];
 			releasedDeputies: ReleasedDeputyAssignments | null;
@@ -328,6 +331,7 @@ function deactivateEmployee(input: unknown) {
 										type: "success",
 										changed: false,
 										targetEmployee: check.targetEmployee,
+										deactivationId: null,
 										audit: null,
 										afterCommit: [],
 										releasedDeputies: null,
@@ -348,6 +352,7 @@ function deactivateEmployee(input: unknown) {
 									type: "success",
 									changed: true,
 									targetEmployee: check.targetEmployee,
+									deactivationId: execution.deactivationId,
 									audit: execution.audit,
 									afterCommit: execution.afterCommit,
 									releasedDeputies: execution.releasedDeputies,
@@ -435,6 +440,11 @@ function deactivateEmployee(input: unknown) {
 							changes: {
 								isActive: { from: transactionResult.targetEmployee.isActive, to: false },
 							},
+							// The employment history shows this deactivation once (#1441).
+							metadata: {
+								reason: "employee_deactivated",
+								deactivationId: transactionResult.deactivationId,
+							},
 							timestamp: new Date(),
 						}),
 					);
@@ -515,6 +525,8 @@ function reactivateEmployee(employeeId: string) {
 				});
 
 				const validatedEmployeeId = yield* validateInput(employeeIdSchema, employeeId, "employeeId");
+				// Identifies this reactivation in the ledger, the history event and the audit entry.
+				const requestId = randomUUID();
 				const transactionResult = yield* actor.dbService
 					.query("setEmployeeLifecycleState", async () => {
 						// The target's active state feeds manual creation, so its protection
@@ -541,26 +553,16 @@ function reactivateEmployee(employeeId: string) {
 								}
 								if (check.type !== "change") return check;
 
-								const [updatedEmployee] = await tx
-									.update(employee)
-									.set({ isActive: true })
-									.where(
-										and(
-											eq(employee.id, validatedEmployeeId),
-											eq(employee.organizationId, actor.organizationId),
-										),
-									)
-									.returning({ id: employee.id });
-								if (!updatedEmployee) return { type: "not_found" };
-
-								// The open deactivation ends; its pending handovers stop (#1440).
-								await markDeactivationReactivated(tx, {
+								// Restores nothing the deactivation ended (#1441); the admin
+								// re-grants from the checklist.
+								const reactivation = await executeReactivation(tx, {
 									organizationId: actor.organizationId,
+									actorUserId: actor.session.user.id,
 									employeeId: validatedEmployeeId,
-									reactivatedAt: systemClock.nowInstant(),
-									reactivatedBy: actor.session.user.id,
-									reactivationRequestId: null,
+									requestId,
+									at: systemClock.nowInstant(),
 								});
+								if (reactivation.kind === "not_found") return { type: "not_found" };
 
 								return { type: "success", changed: true, targetEmployee: check.targetEmployee };
 							},
@@ -603,6 +605,8 @@ function reactivateEmployee(employeeId: string) {
 									to: true,
 								},
 							},
+							// The employment history shows this reactivation once (#1441).
+							metadata: { reactivationRequestId: requestId },
 							timestamp: new Date(),
 						}),
 					);

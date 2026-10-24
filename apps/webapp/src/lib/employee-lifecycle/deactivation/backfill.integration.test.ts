@@ -42,6 +42,7 @@ const { createLifecycleDatabaseFixture } = await import("../testing/database.tes
 type LifecycleDatabaseFixture = import("../testing/database.test.fixture").LifecycleDatabaseFixture;
 type SeededEmployee = import("../testing/database.test.fixture").SeededEmployee;
 const { insertDeactivation } = await import("../receipts");
+const { loadLifecycleHistory } = await import("../lifecycle-history");
 const { shiftStoredDate } = await import("@/lib/scheduling/shift-date");
 const { enableCanonicalAbsences, seedPendingAbsenceWorkflow } = await import(
 	"../testing/approval-workflow.test.fixture"
@@ -597,6 +598,26 @@ describe("backfill of employees deactivated before #1440 (#1442)", () => {
 		expect(events.map((row) => [row.employee_id, row.occurred_at.toISOString()])).toEqual([
 			[first.formerManager.employeeId, iso(LEFT_A)],
 		]);
+		// The employment history (#1441) shows it once, not again as its source audit entry.
+		const history = await loadLifecycleHistory(db, {
+			organizationId: first.organizationId,
+			employeeId: first.formerManager.employeeId,
+		});
+		expect(history.events).toEqual([
+			{ kind: "deactivated", at: LEFT_A },
+			{ kind: "reactivated", at: "2026-05-02T10:00:00Z" },
+			{ kind: "deactivated", at: "2026-05-01T10:00:00Z" },
+		]);
+		// The reactivation checklist (#1441) can name what was applied.
+		const plans = (
+			await fixture.pool.query<{ plan: unknown }>(
+				`select plan from employee_deactivation where organization_id = any($1::text[]) and reason = $2`,
+				[[first.organizationId, second.organizationId], BACKFILL],
+			)
+		).rows;
+		expect(plans).toHaveLength(5);
+		for (const row of plans)
+			expect(row.plan).toEqual(expect.objectContaining({ managerLinks: expect.anything() }));
 
 		const notices = backfillNotices();
 		expect(
