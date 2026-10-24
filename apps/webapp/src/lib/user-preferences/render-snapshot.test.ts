@@ -39,7 +39,7 @@ describe("readUserPreferences", () => {
 		expect(await readUserPreferences("user-1")).toEqual(defaults);
 	});
 
-	it("selects only the five presentation preferences for the authorized user", async () => {
+	it("selects the shared presentation and onboarding fields for the authorized user", async () => {
 		await readUserPreferences("user-1");
 		expect(state.findFirst).toHaveBeenCalledExactlyOnceWith({
 			where: { column: "userSettings.userId", value: "user-1" },
@@ -49,6 +49,8 @@ describe("readUserPreferences", () => {
 				timeFormat: true,
 				timezone: true,
 				helpImproveProduct: true,
+				onboardingComplete: true,
+				onboardingStep: true,
 			},
 		});
 	});

@@ -14,6 +14,16 @@ vi.mock("@/lib/fetch", () => ({
 	fetchApi: vi.fn(),
 }));
 
+vi.mock("@/lib/auth-client", () => ({
+	useSession: () => ({
+		data: {
+			user: { id: "user-a" },
+			session: { activeOrganizationId: "org-a" },
+		},
+		isPending: false,
+	}),
+}));
+
 vi.mock("react", async (importOriginal) => ({
 	...(await importOriginal<typeof import("react")>()),
 	useCallback: (callback: unknown) => callback,
@@ -47,8 +57,11 @@ describe("useNotifications", () => {
 			expect.objectContaining({
 				queryKey: [
 					"notifications",
+					"inbox",
+					"user-a",
+					"org-a",
 					"list",
-					{ limit: 100, unreadOnly: true, organizationId: "org-a" },
+					{ limit: 100, unreadOnly: true },
 				],
 			}),
 		);
@@ -62,7 +75,7 @@ describe("useNotifications", () => {
 		expect(useQueryMock).toHaveBeenNthCalledWith(
 			2,
 			expect.objectContaining({
-				queryKey: ["notifications", "unread-count", "org-a"],
+				queryKey: ["notifications", "inbox", "user-a", "org-a", "unread-count"],
 			}),
 		);
 	});

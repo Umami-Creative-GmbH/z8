@@ -14,6 +14,11 @@ import type { StaffingShiftInput } from "@/lib/scheduling/staffing/types";
 type Id = string | null | undefined;
 
 export const queryKeys = {
+	organizationContext: {
+		all: ["organization-context"] as const,
+		current: (userId: Id, organizationId: Id) =>
+			["organization-context", userId, organizationId] as const,
+	},
 	// Organizations
 	organizations: {
 		all: ["organizations"] as const,
@@ -389,12 +394,36 @@ export const queryKeys = {
 	// Notifications
 	notifications: {
 		all: ["notifications"] as const,
-		list: (options?: { limit?: number; unreadOnly?: boolean; organizationId?: string | null }) =>
-			["notifications", "list", options] as const,
-		unreadCount: (organizationId?: string | null) =>
-			organizationId
-				? (["notifications", "unread-count", organizationId] as const)
-				: (["notifications", "unread-count"] as const),
+		inbox: (userId: string | null, organizationId: string | null) =>
+			["notifications", "inbox", userId, organizationId] as const,
+		list: (options?: {
+			limit?: number;
+			unreadOnly?: boolean;
+			organizationId?: string | null;
+			userId?: string | null;
+		}) =>
+			options && "userId" in options
+				? ([
+						"notifications",
+						"inbox",
+						options.userId,
+						options.organizationId,
+						"list",
+						{ limit: options.limit, unreadOnly: options.unreadOnly },
+					] as const)
+				: (["notifications", "list", options] as const),
+		unreadCount: (organizationId?: string | null, userId?: string | null) =>
+			userId !== undefined
+				? ([
+						"notifications",
+						"inbox",
+						userId,
+						organizationId,
+						"unread-count",
+					] as const)
+				: organizationId
+					? (["notifications", "unread-count", organizationId] as const)
+					: (["notifications", "unread-count"] as const),
 		preferences: (organizationId?: string | null) =>
 			organizationId
 				? (["notifications", "preferences", organizationId] as const)
