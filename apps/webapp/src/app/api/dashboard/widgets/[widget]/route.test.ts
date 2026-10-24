@@ -17,7 +17,7 @@ vi.mock("@/env", () => ({
 	},
 }));
 vi.mock("@/lib/billing/guard", () => ({
-	requireBillingForMutation: boundary.billing,
+	requireBillingForRead: boundary.billing,
 	createBillingForbiddenResponse: () =>
 		NextResponse.json({ error: "billing_required" }, { status: 402 }),
 }));

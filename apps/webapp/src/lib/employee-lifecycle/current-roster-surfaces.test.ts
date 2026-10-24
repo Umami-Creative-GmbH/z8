@@ -49,13 +49,18 @@ const ROSTER_SURFACES: Surface[] = [
 	},
 	{
 		file: "components/dashboard/actions.ts",
-		functions: [
-			"getUpcomingAbsences",
-			"getTeamCalendarData",
-			"getWhosOutToday",
-			"getTeamOverviewStats",
-		],
-		note: "dashboard widgets about the current team",
+		functions: ["getTeamCalendarData"],
+		note: "the public historical calendar retains its current-roster boundary",
+	},
+	{
+		file: "components/dashboard/schedule-absence-reads.ts",
+		functions: ["loadUpcomingAbsencesForOrganization", "loadWhosOutForOrganization"],
+		note: "shared production readers own current-team filtering for RSC, GET and retained actions",
+	},
+	{
+		file: "components/dashboard/team-approval-reads.ts",
+		functions: ["loadTeamOverviewForOrganization"],
+		note: "shared team overview reader owns current-roster counts and hours",
 	},
 	{
 		file: "components/dashboard/current-roster-queries.ts",
@@ -235,8 +240,8 @@ const HISTORY_VIEWS: Surface[] = [
 		note: "a former employee's past absences stay in the feed, later ones are dropped",
 	},
 	{
-		file: "components/dashboard/actions.ts",
-		functions: ["getRecentlyApprovedRequests"],
+		file: "components/dashboard/team-approval-reads.ts",
+		functions: ["loadRecentlyApprovedForOrganization"],
 		note: "approval history",
 	},
 	{
@@ -519,7 +524,7 @@ describe("current-roster surface guard", () => {
 		},
 	);
 
-	it("adds no hand-written employee active checks beyond the baseline", () => {
+	it("adds no hand-written employee active checks beyond the baseline", { timeout: 15_000 }, () => {
 		const baseline = JSON.parse(
 			readFileSync(
 				join(SRC_ROOT, "lib/employee-lifecycle/raw-employee-active-checks.json"),

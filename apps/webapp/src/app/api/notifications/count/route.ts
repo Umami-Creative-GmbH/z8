@@ -1,9 +1,7 @@
-import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { connection, NextResponse } from "next/server";
-import { db } from "@/db";
-import { employee } from "@/db/schema";
 import { auth } from "@/lib/auth";
+import { mayUseEmployeeNotifications } from "@/lib/notifications/employee-admission";
 import { getUnreadCount } from "@/lib/notifications/notification-service";
 import {
 	matchesNotificationRequestScope,
@@ -47,26 +45,14 @@ export async function GET(request?: Request) {
 		}
 
 		// Get employee record for the active organization ONLY
-		const [emp] = await db
-			.select({ organizationId: employee.organizationId })
-			.from(employee)
-			.where(
-				and(
-					eq(employee.userId, session.user.id),
-					eq(employee.organizationId, activeOrgId),
-					eq(employee.isActive, true),
-				),
-			)
-			.limit(1);
-
-		if (!emp) {
+		if (!(await mayUseEmployeeNotifications(session, activeOrgId))) {
 			return NextResponse.json(
 				{ error: "No active employee record in this organization" },
 				{ status: 400 },
 			);
 		}
 
-		const count = await getUnreadCount(session.user.id, emp.organizationId);
+		const count = await getUnreadCount(session.user.id, activeOrgId);
 
 		return NextResponse.json({ count });
 	} catch (error) {

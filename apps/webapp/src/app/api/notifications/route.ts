@@ -1,9 +1,7 @@
-import { and, eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { connection, type NextRequest, NextResponse } from "next/server";
-import { db } from "@/db";
-import { employee } from "@/db/schema";
 import { auth } from "@/lib/auth";
+import { mayUseEmployeeNotifications } from "@/lib/notifications/employee-admission";
 import {
 	deleteAllNotifications,
 	deleteNotification,
@@ -54,25 +52,13 @@ export async function GET(request: NextRequest) {
 		}
 
 		// Get employee record for the active organization ONLY
-		const [emp] = await db
-			.select({ organizationId: employee.organizationId })
-			.from(employee)
-			.where(
-				and(
-					eq(employee.userId, session.user.id),
-					eq(employee.organizationId, activeOrgId),
-					eq(employee.isActive, true),
-				),
-			)
-			.limit(1);
-
-		if (!emp) {
+		if (!(await mayUseEmployeeNotifications(session, activeOrgId))) {
 			return NextResponse.json(
 				{ error: "No active employee record in this organization" },
 				{ status: 400 },
 			);
 		}
-		const organizationId = emp.organizationId;
+		const organizationId = activeOrgId;
 
 		const searchParams = request.nextUrl.searchParams;
 		const limit = parseInt(searchParams.get("limit") || "20", 10);
@@ -143,25 +129,13 @@ export async function PATCH(request: NextRequest) {
 		}
 
 		// Get employee record for the active organization ONLY
-		const [emp] = await db
-			.select({ organizationId: employee.organizationId })
-			.from(employee)
-			.where(
-				and(
-					eq(employee.userId, session.user.id),
-					eq(employee.organizationId, activeOrgId),
-					eq(employee.isActive, true),
-				),
-			)
-			.limit(1);
-
-		if (!emp) {
+		if (!(await mayUseEmployeeNotifications(session, activeOrgId))) {
 			return NextResponse.json(
 				{ error: "No active employee record in this organization" },
 				{ status: 400 },
 			);
 		}
-		const organizationId = emp.organizationId;
+		const organizationId = activeOrgId;
 
 		const body = await request.json();
 
@@ -238,25 +212,13 @@ export async function DELETE(request: NextRequest) {
 			);
 		}
 
-		const [emp] = await db
-			.select({ organizationId: employee.organizationId })
-			.from(employee)
-			.where(
-				and(
-					eq(employee.userId, session.user.id),
-					eq(employee.organizationId, activeOrgId),
-					eq(employee.isActive, true),
-				),
-			)
-			.limit(1);
-
-		if (!emp) {
+		if (!(await mayUseEmployeeNotifications(session, activeOrgId))) {
 			return NextResponse.json(
 				{ error: "No active employee record in this organization" },
 				{ status: 400 },
 			);
 		}
-		const organizationId = emp.organizationId;
+		const organizationId = activeOrgId;
 
 		// Delete all notifications
 		if (body.deleteAll) {

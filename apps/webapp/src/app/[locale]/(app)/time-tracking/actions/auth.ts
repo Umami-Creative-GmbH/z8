@@ -8,6 +8,7 @@ import {
 	getRequestSession,
 	type RequestSession,
 } from "@/lib/auth/request-session";
+import { canAccessOrganization } from "@/lib/organization-mfa/organization-access";
 import { resolveEmployeeContext } from "./employee-context";
 import { DEFAULT_TIMEZONE } from "./shared";
 
@@ -16,7 +17,14 @@ export type CurrentEmployee = typeof employee.$inferSelect;
 
 export async function getCurrentSession(): Promise<AuthSession | null> {
 	const session = await getRequestSession();
-	return session ?? null;
+	if (
+		!session?.user ||
+		("ssoRequired" in session && session.ssoRequired === true) ||
+		("mfaRequired" in session && !!session.mfaRequired)
+	) return null;
+	const organizationId = session.session?.activeOrganizationId;
+	if (organizationId && !(await canAccessOrganization(session.session, organizationId))) return null;
+	return session;
 }
 
 export async function getCurrentEmployee(): Promise<CurrentEmployee | null> {

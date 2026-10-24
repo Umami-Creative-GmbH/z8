@@ -58,9 +58,9 @@ async function authorize(
 		return errorResponse("Employee context changed. Refresh to continue.", 409);
 	}
 	if (env.BILLING_ENABLED === "true") {
-		const { requireBillingForMutation, createBillingForbiddenResponse } =
+		const { requireBillingForRead, createBillingForbiddenResponse } =
 			await import("@/lib/billing/guard");
-		const access = await requireBillingForMutation(organizationId);
+		const access = await requireBillingForRead(organizationId);
 		if (!access.canAccess) {
 			const response = createBillingForbiddenResponse(access);
 			response.headers.set("Cache-Control", headers["Cache-Control"]);
