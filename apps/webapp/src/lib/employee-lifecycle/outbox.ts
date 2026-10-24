@@ -45,10 +45,18 @@ type OutboxDatabase = Pick<typeof rootDatabase, "execute">;
  */
 export function createDepartureTaskOutbox(database: OutboxDatabase) {
 	return {
-		async claimDue(now: Instant): Promise<DepartureTaskClaim[]> {
+		/**
+		 * `deactivationOnly` claims only a deactivation's follow-up work (#1440),
+		 * which is delivered while the offboarding release gate is closed.
+		 */
+		async claimDue(
+			now: Instant,
+			options: { deactivationOnly?: boolean } = {},
+		): Promise<DepartureTaskClaim[]> {
 			const claimToken = randomUUID();
 			const claimedAt = dateFromInstant(now);
 			const leaseUntil = dateFromInstant(now.add({ minutes: LEASE_MINUTES }));
+			const anchor = options.deactivationOnly === true ? sql`AND deactivation_id IS NOT NULL` : sql``;
 			const result = await database.execute<{
 				id: string;
 				organization_id: string;
@@ -63,7 +71,7 @@ export function createDepartureTaskOutbox(database: OutboxDatabase) {
 			}>(sql`
 				WITH due AS (
 					SELECT id, organization_id FROM employee_departure_task
-					WHERE status IN ('pending', 'processing') AND available_at <= ${claimedAt}
+					WHERE status IN ('pending', 'processing') AND available_at <= ${claimedAt} ${anchor}
 					ORDER BY available_at, id
 					FOR UPDATE SKIP LOCKED
 					LIMIT ${CLAIM_LIMIT}

@@ -47,8 +47,12 @@ export async function runDepartureTaskDelivery(input: {
 	outbox: DepartureTaskOutbox;
 	handlers: Partial<Record<DepartureTaskKind, DepartureTaskHandler>>;
 	now: Instant;
+	/** Only a deactivation's follow-up work (the release gate is closed). */
+	deactivationOnly?: boolean;
 }): Promise<DepartureTaskDeliveryResult> {
-	const claims = await input.outbox.claimDue(input.now);
+	const claims = await input.outbox.claimDue(input.now, {
+		deactivationOnly: input.deactivationOnly === true,
+	});
 	const result: DepartureTaskDeliveryResult = {
 		claimed: claims.length,
 		completed: 0,
