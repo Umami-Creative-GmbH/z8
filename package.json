@@ -8,6 +8,9 @@
 	"scripts": {
 		"performance:fixture": "node scripts/performance/fixture.mjs",
 		"performance:baseline": "node scripts/performance/run-baseline.mjs",
+		"performance:budgets": "node scripts/performance/release-budgets.mjs",
+		"performance:settled": "node scripts/performance/settled-resources.mjs",
+		"performance:test:budgets": "node --test scripts/performance/release-budgets.test.mjs scripts/performance/settled-resource-observer.test.mjs scripts/performance/settled-resources.test.mjs",
 		"performance:collector": "node scripts/performance/collector.mjs",
 		"performance:mixed": "node scripts/performance/mixed-load-probe.mjs",
 		"performance:test:mixed": "node --test scripts/performance/mixed-load-probe.test.mjs",
