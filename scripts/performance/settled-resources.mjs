@@ -90,6 +90,7 @@ export function settledEvidenceGates(plan, artifact, native, planSha) {
     artifact.planSha256 !== planSha ||
     JSON.stringify(artifact.policy) !== JSON.stringify(settledPolicy) ||
     !artifact.runtime?.buildVerified ||
+    artifact.runtime.collectorProtocol !== plan.runtime.collectorProtocol ||
     artifact.runtime.build !== plan.runtime.build ||
     artifact.runtime.sourceBuild !== plan.runtime.sourceBuild ||
     artifact.runtime.toolingBuild !== plan.runtime.toolingBuild

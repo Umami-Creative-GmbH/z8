@@ -571,3 +571,9 @@ test("legacy, active or unattributed native coverage cannot register numerical b
     assert.equal(f.derive().status, 2);
   }
 });
+test("artifact telemetry identity must match the registered plan protocol", () => {
+  const f = fixture();
+  f.artifact.runtime.collectorProtocol = "z8-fixture-otlp-collector-v1";
+  f.saveBefore();
+  assert.equal(f.derive().status, 2);
+});

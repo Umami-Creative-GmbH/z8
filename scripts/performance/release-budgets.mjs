@@ -441,6 +441,7 @@ function requireEvidence(plan, artifact, native, planHash, phase) {
     throw Error("Before artifact must be finalized baseline-recorded.");
   if (
     !artifact.runtime?.buildVerified ||
+    artifact.runtime.collectorProtocol !== plan.runtime.collectorProtocol ||
     artifact.runtime.build !== plan.runtime.build ||
     artifact.runtime.sourceBuild !== plan.runtime.sourceBuild ||
     artifact.runtime.toolingBuild !== plan.runtime.toolingBuild
