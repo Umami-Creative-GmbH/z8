@@ -2,6 +2,7 @@
 
 import { writeFile } from "node:fs/promises";
 import { createServer, IncomingMessage, type Server } from "node:http";
+import { SpanKind } from "@opentelemetry/api";
 
 type NativeKind = "queries" | "acquisitions" | "cache";
 type NativeSpan = {
@@ -109,7 +110,7 @@ export class FixtureNativeCoverage {
 	}
 	onStart(span: NativeSpan) {
 		const state = this.active.get(span.spanContext().traceId);
-		if (span.kind === 2 && state) {
+		if (span.kind === SpanKind.SERVER && state) {
 			state.servers++;
 			state.lastActivity = performance.now();
 		}
@@ -126,7 +127,7 @@ export class FixtureNativeCoverage {
 	}
 	onEnd(span: NativeSpan) {
 		const state = this.active.get(span.spanContext().traceId);
-		if (span.kind === 2 && state) {
+		if (span.kind === SpanKind.SERVER && state) {
 			state.servers--;
 			state.lastActivity = performance.now();
 		}
