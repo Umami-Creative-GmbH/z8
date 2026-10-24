@@ -140,6 +140,7 @@ async function main() {
 	proof.runnerCollectionExitCode = code;
 	proof.complete =
 		code === 1 &&
+		artifact.nativeRunCoverage?.complete === true &&
 		artifact.kind === "journey-verification" &&
 		artifact.runtime.buildVerified === true &&
 		artifact.samples.length > 0 &&

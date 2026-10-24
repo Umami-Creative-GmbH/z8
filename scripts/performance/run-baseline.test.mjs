@@ -400,7 +400,11 @@ test("a fully observed failed predecessor is recorded while the same failure blo
 				})),
 			),
 		);
-		const finalize = (phase, protocol = plan.runtime.collectorProtocol) => {
+		const finalize = (
+			phase,
+			protocol = plan.runtime.collectorProtocol,
+			nativeComplete = true,
+		) => {
 			plan.phase = phase;
 			const bytes = JSON.stringify(plan);
 			writeFileSync(planPath, bytes);
@@ -408,6 +412,7 @@ test("a fully observed failed predecessor is recorded while the same failure blo
 				artifactPath,
 				JSON.stringify({
 					kind: "benchmark",
+					nativeRunCoverage: { complete: nativeComplete },
 					runtime: { buildVerified: true, collectorProtocol: protocol },
 					planSha256: createHash("sha256").update(bytes).digest("hex"),
 					samples,
@@ -515,6 +520,12 @@ test("a fully observed failed predecessor is recorded while the same failure blo
 		writeFileSync(backendPath, JSON.stringify(nativeBackend));
 		const nativeGood = finalize("baseline");
 		assert.equal(nativeGood.command.status, 0);
+		assert.equal(
+			finalize("baseline", plan.runtime.collectorProtocol, false).command
+				.status,
+			1,
+			"A lost late export blocks the complete run even when earlier trace records are individually reconciled",
+		);
 		assert.doesNotMatch(
 			readFileSync(artifactPath, "utf8"),
 			/PRIVATE_COVERAGE_CANARY/,

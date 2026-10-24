@@ -7,6 +7,8 @@ import {
 	beginCollectorVisit,
 	collectorProtocol,
 	endCollectorVisit,
+	readCollectorCounters,
+	reconcileCollectorRun,
 } from "./collector-client.mjs";
 import {
 	clickVisible,
@@ -286,6 +288,7 @@ async function main() {
 			const nativeComplete =
 				plan.runtime.collectorProtocol !== collectorProtocol ||
 				(result.runtime.collectorProtocol === collectorProtocol &&
+					result.nativeRunCoverage?.complete === true &&
 					["observer", "pg", "rows", "cache", "eventLoop"].every(
 						(name) => evidence?.coverage?.[name] === true,
 					) &&
@@ -542,6 +545,18 @@ async function main() {
 		process.exitCode = 1;
 		return;
 	}
+	const nativeBefore =
+		plan.runtime.collectorProtocol === collectorProtocol
+			? await readCollectorCounters(option("--collector"))
+			: null;
+	if (
+		nativeBefore &&
+		(nativeBefore.activeTraces !== 0 ||
+			nativeBefore.started.queries !== nativeBefore.ended.queries)
+	)
+		fail(
+			"Native work is already pending before capture; use a settled isolated fixture.",
+		);
 	const { default: puppeteer } = await import("puppeteer-core");
 	const browser = await puppeteer.launch({
 		executablePath: option("--chrome"),
@@ -608,6 +623,21 @@ async function main() {
 		}
 	} finally {
 		await browser.close();
+		if (nativeBefore) {
+			try {
+				result.nativeRunCoverage = await reconcileCollectorRun({
+					control: option("--collector"),
+					before: nativeBefore,
+					traceIds: result.samples.flatMap((sample) => [
+						sample.traceId,
+						sample.prerequisiteTraceId,
+						sample.backgroundTraceId,
+					]),
+				});
+			} catch {
+				result.nativeRunCoverage = { complete: false };
+			}
+		}
 		for (const condition of plan.conditions)
 			for (const range of plan.ranges)
 				for (const route of plan.routes)
