@@ -1,8 +1,9 @@
 /**
  * #1442 acceptance (spec #1437, Organization ADR 0006, decision D15): employees
- * deactivated before #1440 get its consequences once, from when they left
- * (recovered from surviving evidence) or else from the run instant, with the
- * backfill's own audit reason. Reports who would be left with no current
+ * deactivated before #1440 get its consequences once, with the backfill's own
+ * audit reason. When they left is recovered from surviving evidence and kept as
+ * the left-on date; shifts and absences change only from the run instant on
+ * (user decision 2026-10-24), so nothing in the past is reopened or cancelled. Reports who would be left with no current
  * manager keep their link and are listed to each organization's admins. The
  * dry run (the default) changes nothing; a second real run changes nothing.
  *
@@ -43,6 +44,9 @@ type LifecycleDatabaseFixture = import("../testing/database.test.fixture").Lifec
 type SeededEmployee = import("../testing/database.test.fixture").SeededEmployee;
 const { insertDeactivation } = await import("../receipts");
 const { loadLifecycleHistory } = await import("../lifecycle-history");
+const { executeReactivation } = await import("../reactivation");
+const { loadReactivationChecklist } = await import("../reactivation-checklist-store");
+const { AuditTrail } = await import("@/lib/audit-trail");
 const { shiftStoredDate } = await import("@/lib/scheduling/shift-date");
 const { enableCanonicalAbsences, seedPendingAbsenceWorkflow } = await import(
 	"../testing/approval-workflow.test.fixture"
@@ -388,7 +392,8 @@ describe("backfill of employees deactivated before #1440 (#1442)", () => {
 					name: "Fiona Former",
 					leftAt: LEFT_A,
 					leftAtSource: "audit_log",
-					consequencesFrom: LEFT_A,
+					// Shifts and absences change only from now on.
+					consequencesFrom: RUN.toString(),
 					// The admin whose deactivation this completes.
 					actorUserId: first.manager.userId,
 					deactivationId: null,
@@ -434,10 +439,8 @@ describe("backfill of employees deactivated before #1440 (#1442)", () => {
 		expect(fiona?.plan.managerLinks.ownManagerLinks).toEqual([
 			{ employeeId: first.manager.employeeId, name: "Mara Manager", isPrimary: true },
 		]);
-		// From when she left: the shift after it opens, the one before stays hers.
-		expect(fiona?.plan.shifts.shiftsToOpen.map((entry) => entry.shiftId)).toEqual([
-			first.shifts.afterLeft,
-		]);
+		// From the run instant: both her shifts are past, so both stay hers.
+		expect(fiona?.plan.shifts.shiftsToOpen).toEqual([]);
 		const nils = a.employees.find((entry) => entry.name === "Nils Nodate");
 		// Not recorded: from the run instant.
 		expect(nils?.plan.shifts.shiftsToOpen.map((entry) => entry.shiftId)).toEqual([
@@ -557,7 +560,7 @@ describe("backfill of employees deactivated before #1440 (#1442)", () => {
 				)
 			).rows[0]?.employee_id;
 		expect(await shiftOwner(first.shifts.beforeLeft)).toBe(first.formerManager.employeeId);
-		expect(await shiftOwner(first.shifts.afterLeft)).toBeNull();
+		expect(await shiftOwner(first.shifts.afterLeft)).toBe(first.formerManager.employeeId);
 		expect(await shiftOwner(first.shifts.beforeRun)).toBe(first.noEvidence.employeeId);
 		expect(await shiftOwner(first.shifts.afterRun)).toBeNull();
 
@@ -577,8 +580,8 @@ describe("backfill of employees deactivated before #1440 (#1442)", () => {
 				"manager.removed", // Clara's link to Nils
 				"manager.primary_changed", // Kai: Mara becomes primary
 				"manager.primary_changed", // Clara: Mara becomes primary
-				"shift.unassigned",
-				"shift.unassigned",
+				"shift.unassigned", // Nils's shift after the run
+				"employee.updated", // Fiona's recovered left-on date
 			].toSorted(),
 		);
 		for (const row of audits) {
@@ -861,5 +864,98 @@ describe("backfill of an unrecorded deactivation: absences and approval duties (
 			[organizationId, duty.workflow],
 		);
 		expect(approvers.rows.map((row) => row.approver_employee_id)).toEqual([manager.employeeId]);
+	});
+});
+
+/**
+ * Employees deactivated through the action after #1439 and before #1440: the
+ * instant is on the employee, and the action's `employee.deactivated` audit
+ * entry (written just after the commit, without metadata) survives. The
+ * history shows that deactivation once, and its admin is the actor. A
+ * backfilled deactivation without a recorded date says so on the checklist.
+ */
+describe("backfill of a deactivation dated on the employee, and an unrecorded one (#1442)", () => {
+	let fixture: LifecycleDatabaseFixture;
+
+	beforeAll(async () => {
+		fixture = await createLifecycleDatabaseFixture();
+		await fixture.pool.query(`update organization set timezone = $2 where id = $1`, [
+			fixture.organizationId,
+			ZONE,
+		]);
+	});
+
+	afterAll(async () => {
+		await fixture?.close();
+	});
+
+	it("shows the deactivation once in the history and attributes it to its admin", async () => {
+		const admin = await fixture.seedEmployee({ role: "admin" });
+		const former = await fixture.seedEmployee();
+		const deactivatedAt = "2026-10-10T09:00:00.000Z";
+		await fixture.pool.query(
+			`update employee set is_active = false, deactivated_at = $2 where id = $1`,
+			[former.employeeId, deactivatedAt],
+		);
+		// logAudit runs after the commit, a moment later; `timestamp` is the UTC wall clock.
+		await fixture.pool.query(
+			`insert into audit_log
+			 (organization_id, entity_type, entity_id, action, performed_by, employee_id, changes, timestamp)
+			 values ($1, 'employee', $2::text, 'employee.deactivated', $3, $2::uuid, $4,
+			         ('2026-10-10T09:00:00.350Z'::timestamptz at time zone 'UTC'))`,
+			[
+				fixture.organizationId,
+				former.employeeId,
+				admin.userId,
+				JSON.stringify({ isActive: { from: true, to: false } }),
+			],
+		);
+
+		const [report] = await backfillDeactivatedEmployees(db, {
+			organizationIds: [fixture.organizationId],
+			apply: true,
+			now: RUN,
+		});
+
+		const entry = report?.employees.find((item) => item.employeeId === former.employeeId);
+		expect(entry).toMatchObject({
+			leftAt: deactivatedAt.replace(".000Z", "Z"),
+			leftAtSource: "employee",
+			actorUserId: admin.userId,
+		});
+		const history = await loadLifecycleHistory(db, {
+			organizationId: fixture.organizationId,
+			employeeId: former.employeeId,
+		});
+		expect(history.events.filter((event) => event.kind === "deactivated")).toHaveLength(1);
+	});
+
+	it("says the date of a deactivation without a recorded date is not recorded on the checklist", async () => {
+		const former = await fixture.seedEmployee({ isActive: false });
+
+		await backfillDeactivatedEmployees(db, {
+			organizationIds: [fixture.organizationId],
+			apply: true,
+			now: RUN,
+		});
+		await fixture.db.transaction((tx) =>
+			executeReactivation(
+				tx,
+				{
+					organizationId: fixture.organizationId,
+					actorUserId: fixture.ownerUserId,
+					employeeId: former.employeeId,
+					requestId: randomUUID(),
+					at: RUN.add({ hours: 1 }),
+				},
+				new AuditTrail(),
+			),
+		);
+
+		const checklist = await loadReactivationChecklist(fixture.db, {
+			organizationId: fixture.organizationId,
+			employeeId: former.employeeId,
+		});
+		expect(checklist).toMatchObject({ deactivatedAt: null });
 	});
 });

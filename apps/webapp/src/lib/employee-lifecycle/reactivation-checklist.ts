@@ -1,4 +1,12 @@
-import type { AccessEndsPlan, DeactivationApplied, DeactivationPlan } from "./deactivation/types";
+import type {
+	AbsencesPlan,
+	AccessEndsPlan,
+	DeactivationApplied,
+	DeactivationPlan,
+	NamedEmployee,
+	ShiftsPlan,
+	TeamLinksPlan,
+} from "./deactivation/types";
 
 /**
  * The re-grant checklist shown after Reactivate (#1441, Organization ADR
@@ -80,8 +88,11 @@ export type ReactivationChecklistItem =
 export type ReactivationChecklist = {
 	deactivationId: string;
 	employeeId: string;
-	/** ISO instants; shown in `timeZone`, the organization's. */
-	deactivatedAt: string;
+	/**
+	 * ISO instants; shown in `timeZone`, the organization's. `deactivatedAt` is
+	 * null when it was not recorded (a backfilled deactivation without evidence).
+	 */
+	deactivatedAt: string | null;
 	reactivatedAt: string;
 	timeZone: string;
 	items: ReactivationChecklistItem[];
@@ -118,11 +129,26 @@ export function checklistPlanSnapshot(plan: DeactivationPlan): DeactivationPlan 
 	};
 }
 
+/** The parts of a stored plan the checklist names items from. */
+export type ChecklistPlan = {
+	managerLinks: {
+		replacementOptions: readonly NamedEmployee[];
+		reportsNeedingReplacement: readonly NamedEmployee[];
+		reportsKeepingAnotherManager: readonly NamedEmployee[];
+		ownManagerLinks: readonly NamedEmployee[];
+		formerReports: readonly NamedEmployee[];
+	};
+	teamLinks: TeamLinksPlan;
+	shifts: Pick<ShiftsPlan, "shiftsToOpen">;
+	absences: Pick<AbsencesPlan, "absencesToCancel">;
+	accessEnds: Pick<AccessEndsPlan, "grants">;
+};
+
 /** The checklist items, in display order, for exactly what `applied` lists. */
 export function buildReactivationChecklistItems(input: {
 	employeeId: string;
 	applied: DeactivationApplied;
-	plan: DeactivationPlan | null;
+	plan: ChecklistPlan | null;
 }): ReactivationChecklistItem[] {
 	const { employeeId: person, applied, plan } = input;
 	const items: ReactivationChecklistItem[] = [];
@@ -134,6 +160,7 @@ export function buildReactivationChecklistItems(input: {
 			...links.replacementOptions,
 			...links.reportsNeedingReplacement,
 			...links.reportsKeepingAnotherManager,
+			...links.formerReports,
 			...links.ownManagerLinks,
 		]) {
 			names.set(named.employeeId, named.name);
