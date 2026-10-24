@@ -5,8 +5,27 @@ import { readFile, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
+import { collectorProtocol } from "./collector-client.mjs";
+import {
+	fixtureBrowserPolicy,
+	initializeFixtureBrowserContext,
+	launchFixtureBrowser,
+} from "./fixture-browser.mjs";
 import { prepareFixtureBrowserContext, waitVisible } from "./journey-steps.mjs";
+import {
+	beginMixedObservation,
+	clockObservationIsComplete,
+	createMixedTracePlan,
+	finishMixedObservation,
+	mixedTransportIsComplete,
+	runMixedReader,
+	settleMixedTransports,
+} from "./mixed-load-observation.mjs";
 import { openPublicHeaderClock } from "./public-header-clock.mjs";
+import {
+	createFixtureTraceTransport,
+	fixtureTraceTransport,
+} from "./trace-transport.mjs";
 
 const timeout = 30000;
 const analytics = [
@@ -63,8 +82,18 @@ async function readFixture(directory) {
 
 function plan() {
 	return {
-		version: 1,
+		version: 2,
 		topology: "single app",
+		collectorProtocol,
+		traceTransport: fixtureTraceTransport,
+		browserPolicy: fixtureBrowserPolicy,
+		semanticTraceIdentities: 56,
+		activeRegistrationLimit: 64,
+		retainedIdentityLimit: 10000,
+		analyticsGrouping:
+			"three reader groups per five clock pairs; numerical backend groups counted once",
+		telemetryDrain:
+			"once after all commands, browser shutdown and finite wire drain; never between reads",
 		userConcurrency: 4,
 		poolMax: 10,
 		clockPairs: 20,
@@ -114,6 +143,7 @@ function numericMetrics(row) {
 		"cacheHits",
 		"cacheMisses",
 		"eventLoopDelayMs",
+		"observedQueryCount",
 		"observedQueryErrors",
 		"observedPoolAcquisitions",
 		"observedPoolAcquisitionErrors",
@@ -127,37 +157,6 @@ function numericMetrics(row) {
 		),
 		coverage: row?.coverage ?? null,
 	};
-}
-
-async function collectMetrics(control, records) {
-	const collected = new Map();
-	const deadline = performance.now() + 10000;
-	for (
-		let attempt = 0;
-		attempt < 20 && performance.now() < deadline;
-		attempt++
-	) {
-		const response = await fetch(new URL("/metrics", control.endpoint), {
-			signal: AbortSignal.timeout(5000),
-		});
-		if (!response.ok) throw new Error("Fixture telemetry unavailable.");
-		const rows = new Map(
-			(await response.json()).map((row) => [row.traceId, row]),
-		);
-		for (const { traceId } of records) {
-			const row = rows.get(traceId);
-			if (
-				row?.coverage?.pg &&
-				row.coverage.eventLoop &&
-				row.coverage.rows &&
-				row.poolWaitMs !== null
-			)
-				collected.set(traceId, numericMetrics(row));
-		}
-		if (records.every(({ traceId }) => collected.has(traceId))) break;
-		await pause(250);
-	}
-	return collected;
 }
 
 function analyticsSummary(kind, payload) {
@@ -192,17 +191,37 @@ function analyticsSummary(kind, payload) {
 	};
 }
 
-async function openPage(browser, auth, origin, actor) {
-	const context = await browser.createBrowserContext();
-	if (!Array.isArray(auth[actor]?.cookies))
-		throw new Error("Fixture authentication is missing.");
-	await context.setCookie(...auth[actor].cookies);
-	await prepareFixtureBrowserContext(context, origin);
-	const page = await context.newPage();
-	await page.setViewport({ width: 1280, height: 900 });
-	await page.emulateTimezone("Europe/Berlin");
-	await page.setRequestInterception(true);
-	return { context, page };
+async function openPage(browser, auth, origin, actor, traceSource, created) {
+	const transport = await createFixtureTraceTransport({
+		origin,
+		getTraceId: ({ headers }) => {
+			const requested = headers.traceparent?.split("-")[1];
+			if (requested && !traceSource.ids.includes(requested))
+				throw Error("Unregistered mixed request identity");
+			return requested ?? traceSource.current();
+		},
+	});
+	let context;
+	try {
+		context = await browser.createBrowserContext(
+			transport.browserContextOptions,
+		);
+		const { page, browserInitialization } =
+			await initializeFixtureBrowserContext({ context, transport });
+		const opened = { context, page, transport, browserInitialization, actor };
+		created(opened);
+		if (!Array.isArray(auth[actor]?.cookies))
+			throw Error("Fixture authentication is missing");
+		await context.setCookie(...auth[actor].cookies);
+		await prepareFixtureBrowserContext(context, origin);
+		await page.setViewport({ width: 1280, height: 900 });
+		await page.emulateTimezone("Europe/Berlin");
+		return opened;
+	} catch (error) {
+		await context?.close().catch(() => {});
+		await transport.close();
+		throw error;
+	}
 }
 
 async function verifyActor(page, expected) {
@@ -226,16 +245,27 @@ async function verifyActor(page, expected) {
 		);
 }
 
-async function captureAnalytics(browser, auth, origin, reader, expectedActor) {
-	const opened = await openPage(browser, auth, origin, reader.actor);
+async function captureAnalytics(
+	browser,
+	auth,
+	origin,
+	reader,
+	expectedActor,
+	traceSource,
+	created,
+) {
+	const opened = await openPage(
+		browser,
+		auth,
+		origin,
+		reader.actor,
+		traceSource,
+		created,
+	);
 	const { page } = opened;
 	let captured;
 	page.on("request", (request) => {
 		const url = new URL(request.url());
-		if (url.origin !== origin) {
-			request.abort().catch(() => {});
-			return;
-		}
 		const headers = request.headers(),
 			body = request.postData();
 		if (
@@ -253,7 +283,6 @@ async function captureAnalytics(browser, auth, origin, reader, expectedActor) {
 						.map((key) => [key, headers[key]]),
 				),
 			};
-		request.continue().catch(() => {});
 	});
 	await page.goto(origin + reader.path, {
 		waitUntil: "domcontentloaded",
@@ -328,123 +357,129 @@ function clockCohorts(records) {
 }
 
 async function run(directory, artifactApp, sourceCommit, collectorPath, runId) {
-	const { origin, fixture } = await readFixture(directory);
-	const auth = await json(join(directory, "auth-private.json"));
-	const control = await json(
-		collectorPath || join(directory, "observer-v2/collector-control.json"),
-	);
-	const collector = new URL(control.endpoint);
+	const { origin, fixture } = await readFixture(directory),
+		auth = await json(join(directory, "auth-private.json"));
+	const control =
+		collectorPath || join(directory, "observer-v2/collector-control.json");
+	const configuration = await json(control);
+	const collector = new URL(configuration.endpoint);
 	localOrigin(collector.origin);
 	if (
+		configuration.kind !== collectorProtocol ||
 		collector.pathname !== "/v1/traces" ||
 		collector.search ||
 		collector.hash ||
 		collector.username ||
 		collector.password
 	)
-		throw new Error("Actual loopback fixture collector required.");
+		throw Error("Registered loopback v2 collector required");
 	const buildId = (
 		await readFile(join(artifactApp, ".next/BUILD_ID"), "utf8")
 	).trim();
 	if (!/^[a-f0-9]{9,40}$/.test(sourceCommit) || !buildId)
-		throw new Error(
-			"Actual source commit and compiled build identity are required.",
-		);
-	const versionResponse = await fetch(new URL("/api/app-version", origin), {
-		signal: AbortSignal.timeout(5000),
-	});
-	const liveVersion = versionResponse.ok
-		? (await versionResponse.json()).buildHash
-		: null;
-	if (
-		typeof liveVersion !== "string" ||
-		!/^[a-f0-9]{9,40}$/.test(liveVersion) ||
-		!(
-			sourceCommit.startsWith(liveVersion) ||
-			liveVersion.startsWith(sourceCommit)
-		)
-	)
-		throw new Error(
-			"The live app source identity does not match the operator pin.",
-		);
-	const require = createRequire(join(artifactApp, "package.json"));
-	const browser = await require("puppeteer-core").launch({
-		executablePath:
-			process.env.Z8_FIXTURE_CHROME ||
-			"C:/Program Files/Google/Chrome/Application/chrome.exe",
-		headless: true,
-	});
-	const records = [];
-	const measuredBackend = new Map();
-	const activeTraces = new Set(),
+		throw Error("Actual source and compiled identity required");
+	const traces = createMixedTracePlan(),
+		records = [],
+		opened = [],
 		activeRequests = new Set();
-	let ownedLive = false,
-		clock,
+	let pageErrors = 0;
+	let browser,
+		observation,
 		controls,
-		uiTrace = trace(),
-		analyticsActive = 0,
-		userMaxInflight = 0,
-		commandActive = 0;
-	let unknownOutstanding = false;
-	let stopped = false,
+		clock,
+		liveVersion = null,
+		ownedLive = false,
+		unknownOutstanding = false,
 		cleanupRequired = false,
-		stage = "capture",
-		failureStage = null,
+		browserClosed = false;
+	let uiTrace = traces.preparation[3],
 		pairsCompleted = 0,
-		cleanupOwned;
+		stopped = false,
+		failureStage = null,
+		stage = "registration",
+		analyticsActive = 0,
+		commandActive = 0,
+		userMaxInflight = 0;
+	let nativeRunCoverage = { complete: false },
+		backendGroups = [],
+		transports = [];
 	const tally = () => {
+		analyticsActive = activeRequests.size;
 		userMaxInflight = Math.max(
 			userMaxInflight,
 			analyticsActive + commandActive,
 		);
 	};
+	const created = (item) => {
+		opened.push(item);
+		item.page.on("pageerror", () => pageErrors++);
+	};
 	try {
+		// One bounded registration precedes version checks, all four browser contexts and cleanup IO.
+		observation = await beginMixedObservation(control, traces.ids);
+		stage = "source-pin";
+		const version = await fetch(new URL("/api/app-version", origin), {
+			headers: { traceparent: traceparent(traces.preparation[0]) },
+			signal: AbortSignal.timeout(5000),
+		});
+		liveVersion = version.ok ? (await version.json()).buildHash : null;
+		if (
+			typeof liveVersion !== "string" ||
+			!/^[a-f0-9]{9,40}$/.test(liveVersion) ||
+			!(
+				sourceCommit.startsWith(liveVersion) ||
+				liveVersion.startsWith(sourceCommit)
+			)
+		)
+			throw Error("Live app source differs from the pin");
+		const require = createRequire(join(artifactApp, "package.json"));
+		browser = await launchFixtureBrowser(
+			require("puppeteer-core"),
+			process.env.Z8_FIXTURE_CHROME ||
+				"C:/Program Files/Google/Chrome/Application/chrome.exe",
+		);
+		stage = "capture";
 		const readers = [];
-		for (const reader of analytics) {
-			const opened = await captureAnalytics(
+		for (const [index, reader] of analytics.entries()) {
+			const item = await captureAnalytics(
 				browser,
 				auth,
 				origin,
 				reader,
 				fixture.actors[reader.actor],
+				{ ids: traces.ids, current: () => traces.preparation[index] },
+				created,
 			);
-			opened.page.on("request", (request) => {
-				const requestTrace = request.headers().traceparent?.split("-")[1];
-				if (activeTraces.has(requestTrace)) {
+			item.page.on("request", (request) => {
+				const value = request.headers().traceparent?.split("-")[1];
+				if (traces.groups.some((group) => group.traceIds.includes(value))) {
 					activeRequests.add(request);
-					analyticsActive = activeRequests.size;
 					tally();
 				}
 			});
 			const finish = (request) => {
 				activeRequests.delete(request);
-				analyticsActive = activeRequests.size;
+				tally();
 			};
-			opened.page.on("requestfinished", finish);
-			opened.page.on("requestfailed", finish);
-			readers.push(opened);
+			item.page.on("requestfinished", finish);
+			item.page.on("requestfailed", finish);
+			readers.push(item);
 		}
-		clock = await openPage(browser, auth, origin, clockActor);
-		clock.page.on("request", (request) => {
-			if (new URL(request.url()).origin !== origin) {
-				request.abort().catch(() => {});
-				return;
-			}
-			request
-				.continue({
-					headers: { ...request.headers(), traceparent: traceparent(uiTrace) },
-				})
-				.catch(() => {});
-		});
+		clock = await openPage(
+			browser,
+			auth,
+			origin,
+			clockActor,
+			{ ids: traces.ids, current: () => uiTrace },
+			created,
+		);
 		controls = await openPublicHeaderClock(clock.page, {
 			origin,
 			expectedActor: fixture.actors[clockActor],
 		});
 		stage = "commands";
-
 		async function command(action, pair, cleanup = false) {
-			const recordStart = records.length;
-			const id = trace();
+			const id = cleanup ? traces.preparation[3] : traces.clock(pair, action);
 			uiTrace = id;
 			const preparationStart = performance.now();
 			let prepared;
@@ -463,79 +498,85 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId) {
 					elapsedUntilFailureMs: performance.now() - preparationStart,
 					clockReadyMs: null,
 				});
-				throw new Error("A header preparation prerequisite failed.");
+				uiTrace = traces.preparation[3];
+				throw Error("Header preparation failed");
 			}
 			const headerPrepareMs = performance.now() - preparationStart;
 			let done = false,
 				overlap = null;
 			const workers = cleanup
 				? []
-				: readers.map(async ({ page, captured, reader }) => {
-						for (let index = 0; index < 100 && !done; index++) {
-							const requestId = trace(),
-								started = performance.now();
-							activeTraces.add(requestId);
-							let observation;
-							try {
-								const result = await page.evaluate(
-									async (input) => {
-										const response = await fetch(input.path, {
-											method: "POST",
-											headers: input.headers,
-											body: input.body,
-											credentials: "same-origin",
-											signal: AbortSignal.timeout(30000),
-										});
-										return {
-											status: response.status,
-											text: await response.text(),
-										};
-									},
-									{
-										...captured,
-										headers: {
-											...captured.headers,
-											traceparent: traceparent(requestId),
+				: readers.map(({ page, captured, reader }, index) =>
+						runMixedReader({
+							limit: 100,
+							stopped: () => done,
+							read: async () => {
+								const requestId = traces.analytics(pair, index),
+									started = performance.now();
+								let result;
+								try {
+									const value = await page.evaluate(
+										async (input) => {
+											const response = await fetch(input.path, {
+												method: "POST",
+												headers: input.headers,
+												body: input.body,
+												credentials: "same-origin",
+												signal: AbortSignal.timeout(30000),
+											});
+											return {
+												status: response.status,
+												text: await response.text(),
+											};
 										},
-									},
-								);
-								const payload = publicResult(result.text);
-								const summary = analyticsSummary(reader.kind, payload);
-								observation = {
-									success: result.status === 200 && summary.correct,
-									httpStatus: result.status,
-									bytes: Buffer.byteLength(result.text),
-									summary,
-									censored: false,
+										{
+											...captured,
+											headers: {
+												...captured.headers,
+												traceparent: traceparent(requestId),
+											},
+										},
+									);
+									const summary = analyticsSummary(
+										reader.kind,
+										publicResult(value.text),
+									);
+									result = {
+										success: value.status === 200 && summary.correct,
+										httpStatus: value.status,
+										bytes: Buffer.byteLength(value.text),
+										summary,
+										censored: false,
+									};
+								} catch {
+									result = {
+										success: false,
+										httpStatus: null,
+										bytes: null,
+										censored: true,
+									};
+								}
+								return {
+									family: "analytics",
+									kind: reader.kind,
+									actor: reader.actor,
+									pair,
+									action,
+									traceId: requestId,
+									elapsedMs: performance.now() - started,
+									...result,
 								};
-							} catch {
-								observation = {
-									success: false,
-									httpStatus: null,
-									bytes: null,
-									censored: true,
-								};
-							} finally {
-								activeTraces.delete(requestId);
-							}
-							records.push({
-								family: "analytics",
-								kind: reader.kind,
-								actor: reader.actor,
-								pair,
-								action,
-								traceId: requestId,
-								elapsedMs: performance.now() - started,
-								...observation,
-							});
-							if (!observation.success) {
-								stopped = true;
-								done = true;
-								failureStage ||= "analytics";
-							}
-						}
-						return !done;
-					});
+							},
+							observe: (value) => {
+								records.push(value);
+								if (!value.success) {
+									stopped = true;
+									done = true;
+									failureStage ||= "analytics";
+								}
+							},
+						}),
+					);
 			const started = performance.now();
 			let result;
 			const observe = (request) => {
@@ -553,7 +594,20 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId) {
 			};
 			clock.page.on("request", observe);
 			try {
+				// Await real dispatch, not synthetic latency. This does not pause any reader's hot loop.
+				const deadline = performance.now() + timeout;
+				while (
+					!cleanup &&
+					analyticsActive < 3 &&
+					!done &&
+					performance.now() < deadline
+				)
+					await pause(1);
+				if (!cleanup && (analyticsActive < 3 || done))
+					throw Error("Independent readers never dispatched concurrently");
 				result = await prepared.submit();
+				if (result.success && !clockObservationIsComplete(result))
+					result = { ...result, success: false, censored: true };
 				if (result.unknownCommandOutcome) unknownOutstanding = true;
 				if (!result.success) {
 					stopped = true;
@@ -562,19 +616,34 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId) {
 					ownedLive = false;
 					unknownOutstanding = false;
 				}
+			} catch {
+				result = {
+					success: false,
+					censored: true,
+					unknownCommandOutcome: ownedLive,
+					clockReadyMs: null,
+					elapsedUntilFailureMs: performance.now() - started,
+				};
+				unknownOutstanding ||= ownedLive;
+				stopped = true;
+				failureStage ||= "command-transport";
 			} finally {
 				done = true;
 				commandActive = 0;
 				clock.page.off("request", observe);
-				const completedWorkers = await Promise.allSettled(workers);
+				const joined = await Promise.allSettled(workers);
 				if (
-					completedWorkers.some(
-						(worker) => worker.status === "fulfilled" && worker.value,
+					joined.some(
+						(value) =>
+							value.status !== "fulfilled" ||
+							value.value.failed ||
+							value.value.boundReached,
 					)
 				) {
 					stopped = true;
 					failureStage ||= "analytics-request-bound";
 				}
+				uiTrace = traces.preparation[3];
 			}
 			records.push({
 				family: cleanup ? "cleanup" : "clock",
@@ -586,66 +655,89 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId) {
 				analyticsInflightAtCommandStart: overlap,
 				...result,
 			});
-			if (!cleanup && overlap === 0) {
+			if (!cleanup && overlap !== 3) {
 				stopped = true;
 				failureStage ||= "mixed-load-overlap";
 			}
-			// Flush per-command evidence before the collector's finite trace-retention window.
-			const stepMetrics = await collectMetrics(
-				control,
-				records.slice(recordStart),
-			).catch(() => new Map());
-			for (const [traceId, metric] of stepMetrics)
-				measuredBackend.set(traceId, metric);
 			return result.success;
 		}
-
-		cleanupOwned = async () => {
-			stage = "resolve-and-cleanup";
-			const state = await controls.resolveState();
-			if (state === "in")
-				cleanupRequired = !(await command("out", pairsCompleted + 1, true));
-			else cleanupRequired = state !== "out" || unknownOutstanding;
-		};
-		for (let pair = 1; pair <= 20 && !stopped; pair++) {
-			if (!(await command("in", pair)) || stopped) break;
-			if (!(await command("out", pair)) || stopped) break;
-			pairsCompleted++;
+		try {
+			for (let pair = 1; pair <= 20 && !stopped; pair++) {
+				if (!(await command("in", pair)) || stopped) break;
+				if (!(await command("out", pair)) || stopped) break;
+				pairsCompleted++;
+			}
+		} finally {
+			if (ownedLive) {
+				stage = "resolve-and-cleanup";
+				uiTrace = traces.preparation[3];
+				try {
+					const state = await controls.resolveState();
+					cleanupRequired =
+						state === "in"
+							? !(await command("out", Math.min(20, pairsCompleted + 1), true))
+							: state !== "out" || unknownOutstanding;
+				} catch {
+					cleanupRequired = true;
+				}
+			}
 		}
 	} catch {
 		stopped = true;
 		failureStage ||= stage;
 		cleanupRequired ||= ownedLive;
 	} finally {
-		if (ownedLive && cleanupOwned)
-			await cleanupOwned().catch(() => {
-				cleanupRequired = true;
-			});
 		controls?.dispose();
-		await browser.close();
+		try {
+			await settleMixedTransports(opened);
+		} catch {
+			stopped = true;
+			failureStage ||= "wire-settlement";
+		}
+		try {
+			await browser?.close();
+			browserClosed = !!browser;
+		} catch {
+			stopped = true;
+			failureStage ||= "browser-close";
+		}
+		for (const item of opened) {
+			try {
+				await item.transport.close();
+				transports.push({
+					actor: item.actor,
+					traceTransport: {
+						kind: fixtureTraceTransport,
+						...item.transport.snapshot(),
+					},
+					wire: item.transport.wire.state(performance.now()),
+				});
+			} catch {
+				stopped = true;
+				failureStage ||= "transport-close";
+			}
+		}
+		if (observation) {
+			try {
+				({ nativeRunCoverage, rows: backendGroups } =
+					await finishMixedObservation(observation));
+			} catch {
+				stopped = true;
+				failureStage ||= "native-close-proof";
+			}
+		}
 	}
-	const metrics = await collectMetrics(
-		control,
-		records.filter((record) => !measuredBackend.has(record.traceId)),
-	).catch(() => new Map());
-	for (const [traceId, metric] of metrics) measuredBackend.set(traceId, metric);
-	for (const record of records)
-		record.backend =
-			measuredBackend.get(record.traceId) ?? numericMetrics(null);
+	const completeTransport =
+		transports.length === 4 && transports.every(mixedTransportIsComplete);
+	const completeCoverage =
+		nativeRunCoverage.complete === true &&
+		completeTransport &&
+		browserClosed &&
+		pageErrors === 0;
 	if (userMaxInflight !== 4) {
 		stopped = true;
 		failureStage ||= "mixed-load-concurrency";
 	}
-	const completeCoverage =
-		records.length > 0 &&
-		records.every(
-			(record) =>
-				record.backend.coverage?.pg &&
-				record.backend.coverage?.rows &&
-				record.backend.coverage?.cache &&
-				record.backend.coverage?.eventLoop &&
-				record.backend.poolWaitMs !== null,
-		);
 	const report = {
 		...plan(),
 		runId,
@@ -661,6 +753,21 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId) {
 		cleanupRequired,
 		unknownOutstanding,
 		completeCoverage,
+		browserClosed,
+		pageErrors,
+		nativeRunCoverage,
+		transports,
+		backendGroups: backendGroups.map((row) => ({
+			traceId: row.traceId,
+			...numericMetrics(row),
+		})),
+		analyticsWindows: traces.groups.map(
+			({ firstPair, lastPair, traceIds }) => ({
+				firstPair,
+				lastPair,
+				traceIds,
+			}),
+		),
 		cohorts: clockCohorts(records),
 		performanceBudgetsEvaluated: false,
 		cpuRss: {
