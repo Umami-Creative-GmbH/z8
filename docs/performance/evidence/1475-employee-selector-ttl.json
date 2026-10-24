@@ -1,589 +1,589 @@
 {
-  "source": "ac2fb1133",
-  "condition": "final isolated functional compiled Next Cache Components GET",
-  "requiredExpiryWaitMs": 301000,
-  "requests": [
-    {
-      "actor": "small-admin",
-      "dataset": null,
-      "phase": "identity",
-      "status": 200,
-      "choices": null,
-      "bytes": 790,
-      "elapsedMs": 77.3854
-    },
-    {
-      "actor": "large-admin",
-      "dataset": null,
-      "phase": "identity",
-      "status": 200,
-      "choices": null,
-      "bytes": 790,
-      "elapsedMs": 17.709999999999994
-    },
-    {
-      "actor": "small-admin",
-      "dataset": "managers",
-      "phase": "cold",
-      "status": 200,
-      "choices": 1,
-      "bytes": 342,
-      "elapsedMs": 92.62140000000002
-    },
-    {
-      "actor": "small-admin",
-      "dataset": "work-policies",
-      "phase": "cold",
-      "status": 200,
-      "choices": 1,
-      "bytes": 198,
-      "elapsedMs": 53.3809
-    },
-    {
-      "actor": "large-admin",
-      "dataset": "managers",
-      "phase": "cold",
-      "status": 200,
-      "choices": 1,
-      "bytes": 342,
-      "elapsedMs": 50.86529999999999
-    },
-    {
-      "actor": "large-admin",
-      "dataset": "work-policies",
-      "phase": "cold",
-      "status": 200,
-      "choices": 1,
-      "bytes": 198,
-      "elapsedMs": 51.51010000000002
-    },
-    {
-      "actor": "small-admin",
-      "dataset": "managers",
-      "phase": "hit",
-      "status": 200,
-      "choices": 1,
-      "bytes": 342,
-      "elapsedMs": 49.31020000000001
-    },
-    {
-      "actor": "small-admin",
-      "dataset": "work-policies",
-      "phase": "hit",
-      "status": 200,
-      "choices": 1,
-      "bytes": 198,
-      "elapsedMs": 53.27850000000001
-    },
-    {
-      "actor": "large-admin",
-      "dataset": "managers",
-      "phase": "hit",
-      "status": 200,
-      "choices": 1,
-      "bytes": 342,
-      "elapsedMs": 50.351
-    },
-    {
-      "actor": "large-admin",
-      "dataset": "work-policies",
-      "phase": "hit",
-      "status": 200,
-      "choices": 1,
-      "bytes": 198,
-      "elapsedMs": 47.42700000000002
-    },
-    {
-      "actor": "small-admin",
-      "dataset": "managers",
-      "phase": "expired",
-      "status": 200,
-      "choices": 1,
-      "bytes": 342,
-      "elapsedMs": 66.48810000001686
-    },
-    {
-      "actor": "small-admin",
-      "dataset": "work-policies",
-      "phase": "expired",
-      "status": 200,
-      "choices": 1,
-      "bytes": 198,
-      "elapsedMs": 60.209800000011455
-    },
-    {
-      "actor": "large-admin",
-      "dataset": "managers",
-      "phase": "expired",
-      "status": 200,
-      "choices": 1,
-      "bytes": 342,
-      "elapsedMs": 59.54759999999078
-    },
-    {
-      "actor": "large-admin",
-      "dataset": "work-policies",
-      "phase": "expired",
-      "status": 200,
-      "choices": 1,
-      "bytes": 198,
-      "elapsedMs": 53.85920000000624
-    }
-  ],
-  "metrics": [
-    {
-      "actor": "small-admin",
-      "dataset": null,
-      "phase": "identity",
-      "queryCount": 8,
-      "rowsRetrieved": 4,
-      "cacheHits": 0,
-      "cacheMisses": 0,
-      "observedPoolAcquisitions": 8,
-      "coverage": {
-        "observer": true,
-        "pg": true,
-        "rows": true,
-        "cache": true,
-        "eventLoop": true,
-        "rejectedBatches": 0,
-        "registration": true,
-        "closed": true,
-        "incomplete": false,
-        "unattributedNativeSpans": 0,
-        "lateSpans": 0,
-        "nativeProof": true,
-        "nativeDriverQueries": 8
-      }
-    },
-    {
-      "actor": "large-admin",
-      "dataset": null,
-      "phase": "identity",
-      "queryCount": 8,
-      "rowsRetrieved": 4,
-      "cacheHits": 0,
-      "cacheMisses": 0,
-      "observedPoolAcquisitions": 8,
-      "coverage": {
-        "observer": true,
-        "pg": true,
-        "rows": true,
-        "cache": true,
-        "eventLoop": true,
-        "rejectedBatches": 0,
-        "registration": true,
-        "closed": true,
-        "incomplete": false,
-        "unattributedNativeSpans": 0,
-        "lateSpans": 0,
-        "nativeProof": true,
-        "nativeDriverQueries": 8
-      }
-    },
-    {
-      "actor": "small-admin",
-      "dataset": "managers",
-      "phase": "cold",
-      "queryCount": 46,
-      "rowsRetrieved": 24,
-      "cacheHits": 0,
-      "cacheMisses": 1,
-      "observedPoolAcquisitions": 46,
-      "coverage": {
-        "observer": true,
-        "pg": true,
-        "rows": true,
-        "cache": true,
-        "eventLoop": true,
-        "rejectedBatches": 0,
-        "registration": true,
-        "closed": true,
-        "incomplete": false,
-        "unattributedNativeSpans": 0,
-        "lateSpans": 0,
-        "nativeProof": true,
-        "nativeDriverQueries": 46
-      }
-    },
-    {
-      "actor": "small-admin",
-      "dataset": "work-policies",
-      "phase": "cold",
-      "queryCount": 46,
-      "rowsRetrieved": 24,
-      "cacheHits": 0,
-      "cacheMisses": 1,
-      "observedPoolAcquisitions": 46,
-      "coverage": {
-        "observer": true,
-        "pg": true,
-        "rows": true,
-        "cache": true,
-        "eventLoop": true,
-        "rejectedBatches": 0,
-        "registration": true,
-        "closed": true,
-        "incomplete": false,
-        "unattributedNativeSpans": 0,
-        "lateSpans": 0,
-        "nativeProof": true,
-        "nativeDriverQueries": 46
-      }
-    },
-    {
-      "actor": "large-admin",
-      "dataset": "managers",
-      "phase": "cold",
-      "queryCount": 46,
-      "rowsRetrieved": 24,
-      "cacheHits": 0,
-      "cacheMisses": 1,
-      "observedPoolAcquisitions": 46,
-      "coverage": {
-        "observer": true,
-        "pg": true,
-        "rows": true,
-        "cache": true,
-        "eventLoop": true,
-        "rejectedBatches": 0,
-        "registration": true,
-        "closed": true,
-        "incomplete": false,
-        "unattributedNativeSpans": 0,
-        "lateSpans": 0,
-        "nativeProof": true,
-        "nativeDriverQueries": 46
-      }
-    },
-    {
-      "actor": "large-admin",
-      "dataset": "work-policies",
-      "phase": "cold",
-      "queryCount": 46,
-      "rowsRetrieved": 24,
-      "cacheHits": 0,
-      "cacheMisses": 1,
-      "observedPoolAcquisitions": 46,
-      "coverage": {
-        "observer": true,
-        "pg": true,
-        "rows": true,
-        "cache": true,
-        "eventLoop": true,
-        "rejectedBatches": 0,
-        "registration": true,
-        "closed": true,
-        "incomplete": false,
-        "unattributedNativeSpans": 0,
-        "lateSpans": 0,
-        "nativeProof": true,
-        "nativeDriverQueries": 46
-      }
-    },
-    {
-      "actor": "small-admin",
-      "dataset": "managers",
-      "phase": "hit",
-      "queryCount": 45,
-      "rowsRetrieved": 23,
-      "cacheHits": 1,
-      "cacheMisses": 0,
-      "observedPoolAcquisitions": 45,
-      "coverage": {
-        "observer": true,
-        "pg": true,
-        "rows": true,
-        "cache": true,
-        "eventLoop": true,
-        "rejectedBatches": 0,
-        "registration": true,
-        "closed": true,
-        "incomplete": false,
-        "unattributedNativeSpans": 0,
-        "lateSpans": 0,
-        "nativeProof": true,
-        "nativeDriverQueries": 45
-      }
-    },
-    {
-      "actor": "small-admin",
-      "dataset": "work-policies",
-      "phase": "hit",
-      "queryCount": 45,
-      "rowsRetrieved": 23,
-      "cacheHits": 1,
-      "cacheMisses": 0,
-      "observedPoolAcquisitions": 45,
-      "coverage": {
-        "observer": true,
-        "pg": true,
-        "rows": true,
-        "cache": true,
-        "eventLoop": true,
-        "rejectedBatches": 0,
-        "registration": true,
-        "closed": true,
-        "incomplete": false,
-        "unattributedNativeSpans": 0,
-        "lateSpans": 0,
-        "nativeProof": true,
-        "nativeDriverQueries": 45
-      }
-    },
-    {
-      "actor": "large-admin",
-      "dataset": "managers",
-      "phase": "hit",
-      "queryCount": 45,
-      "rowsRetrieved": 23,
-      "cacheHits": 1,
-      "cacheMisses": 0,
-      "observedPoolAcquisitions": 45,
-      "coverage": {
-        "observer": true,
-        "pg": true,
-        "rows": true,
-        "cache": true,
-        "eventLoop": true,
-        "rejectedBatches": 0,
-        "registration": true,
-        "closed": true,
-        "incomplete": false,
-        "unattributedNativeSpans": 0,
-        "lateSpans": 0,
-        "nativeProof": true,
-        "nativeDriverQueries": 45
-      }
-    },
-    {
-      "actor": "large-admin",
-      "dataset": "work-policies",
-      "phase": "hit",
-      "queryCount": 45,
-      "rowsRetrieved": 23,
-      "cacheHits": 1,
-      "cacheMisses": 0,
-      "observedPoolAcquisitions": 45,
-      "coverage": {
-        "observer": true,
-        "pg": true,
-        "rows": true,
-        "cache": true,
-        "eventLoop": true,
-        "rejectedBatches": 0,
-        "registration": true,
-        "closed": true,
-        "incomplete": false,
-        "unattributedNativeSpans": 0,
-        "lateSpans": 0,
-        "nativeProof": true,
-        "nativeDriverQueries": 45
-      }
-    },
-    {
-      "actor": "small-admin",
-      "dataset": "managers",
-      "phase": "expired",
-      "queryCount": 46,
-      "rowsRetrieved": 24,
-      "cacheHits": 0,
-      "cacheMisses": 1,
-      "observedPoolAcquisitions": 46,
-      "coverage": {
-        "observer": true,
-        "pg": true,
-        "rows": true,
-        "cache": true,
-        "eventLoop": true,
-        "rejectedBatches": 0,
-        "registration": true,
-        "closed": true,
-        "incomplete": false,
-        "unattributedNativeSpans": 0,
-        "lateSpans": 0,
-        "nativeProof": true,
-        "nativeDriverQueries": 46
-      }
-    },
-    {
-      "actor": "small-admin",
-      "dataset": "work-policies",
-      "phase": "expired",
-      "queryCount": 46,
-      "rowsRetrieved": 24,
-      "cacheHits": 0,
-      "cacheMisses": 1,
-      "observedPoolAcquisitions": 46,
-      "coverage": {
-        "observer": true,
-        "pg": true,
-        "rows": true,
-        "cache": true,
-        "eventLoop": true,
-        "rejectedBatches": 0,
-        "registration": true,
-        "closed": true,
-        "incomplete": false,
-        "unattributedNativeSpans": 0,
-        "lateSpans": 0,
-        "nativeProof": true,
-        "nativeDriverQueries": 46
-      }
-    },
-    {
-      "actor": "large-admin",
-      "dataset": "managers",
-      "phase": "expired",
-      "queryCount": 46,
-      "rowsRetrieved": 24,
-      "cacheHits": 0,
-      "cacheMisses": 1,
-      "observedPoolAcquisitions": 46,
-      "coverage": {
-        "observer": true,
-        "pg": true,
-        "rows": true,
-        "cache": true,
-        "eventLoop": true,
-        "rejectedBatches": 0,
-        "registration": true,
-        "closed": true,
-        "incomplete": false,
-        "unattributedNativeSpans": 0,
-        "lateSpans": 0,
-        "nativeProof": true,
-        "nativeDriverQueries": 46
-      }
-    },
-    {
-      "actor": "large-admin",
-      "dataset": "work-policies",
-      "phase": "expired",
-      "queryCount": 46,
-      "rowsRetrieved": 24,
-      "cacheHits": 0,
-      "cacheMisses": 1,
-      "observedPoolAcquisitions": 46,
-      "coverage": {
-        "observer": true,
-        "pg": true,
-        "rows": true,
-        "cache": true,
-        "eventLoop": true,
-        "rejectedBatches": 0,
-        "registration": true,
-        "closed": true,
-        "incomplete": false,
-        "unattributedNativeSpans": 0,
-        "lateSpans": 0,
-        "nativeProof": true,
-        "nativeDriverQueries": 46
-      }
-    }
-  ],
-  "nativeRunCoverage": {
-    "complete": true,
-    "expectedTraces": 14,
-    "receivedTraces": 14,
-    "driverQueries": 564,
-    "sdkQueries": 564,
-    "receivedQueries": 564,
-    "acquisitions": 564,
-    "cache": 12,
-    "unknownNativeDelta": 0,
-    "incoming": {
-      "knownHeaderKnownSpan": 14,
-      "knownHeaderOtherSpan": 0,
-      "otherHeaderKnownSpan": 0,
-      "otherHeaderOtherSpan": 3,
-      "matchingParent": 14,
-      "mismatchingParent": 0
-    },
-    "standard": {
-      "driverQueryCount": 564,
-      "nativeQueryStartedCount": 564,
-      "nativeQueryEndedCount": 564,
-      "observedQueryCount": 564,
-      "pendingNativeQueries": 0,
-      "activeTraces": 0,
-      "allReceivedTracesReconciled": true,
-      "complete": true
-    },
-    "registration": {
-      "began": true,
-      "closed": true,
-      "traceCount": 14,
-      "protocol": "z8-fixture-otlp-collector-v2"
-    },
-    "before": {
-      "driverCounter": true,
-      "driverQueries": 230,
-      "activeTraces": 0,
-      "unknown": 428,
-      "started": {
-        "queries": 230,
-        "acquisitions": 198,
-        "cache": 0
-      },
-      "ended": {
-        "queries": 230,
-        "acquisitions": 198,
-        "cache": 0
-      },
-      "incoming": {
-        "knownHeaderKnownSpan": 0,
-        "knownHeaderOtherSpan": 0,
-        "otherHeaderKnownSpan": 0,
-        "otherHeaderOtherSpan": 19,
-        "matchingParent": 0,
-        "mismatchingParent": 0
-      }
-    },
-    "after": {
-      "driverCounter": true,
-      "driverQueries": 794,
-      "activeTraces": 0,
-      "unknown": 428,
-      "started": {
-        "queries": 794,
-        "acquisitions": 762,
-        "cache": 12
-      },
-      "ended": {
-        "queries": 794,
-        "acquisitions": 762,
-        "cache": 12
-      },
-      "incoming": {
-        "knownHeaderKnownSpan": 14,
-        "knownHeaderOtherSpan": 0,
-        "otherHeaderKnownSpan": 0,
-        "otherHeaderOtherSpan": 22,
-        "matchingParent": 14,
-        "mismatchingParent": 0
-      }
-    }
-  },
-  "passed": true,
-  "protocolCorrection": {
-    "previousAttemptRetained": true,
-    "scope": "raw unmatched HTTP is diagnostic; unknown native and all exact three-way counters remain mandatory",
-    "controlOnly": {
-      "condition": "control-only register/close/counters; zero application HTTP",
-      "driverQueries": 0,
-      "sdkQueries": 0,
-      "cache": 0,
-      "acquisitions": 0,
-      "unknownNative": 0,
-      "activeTraces": 0,
-      "otherHeaderOtherSpan": 3,
-      "matchingParent": 0,
-      "controlledContexts": 1,
-      "emittedTraceRows": 0
-    }
-  },
-  "observerLifecycleVersion": "ac2fb1133 before SDK SERVER enum correction e05959749",
-  "finalReleaseNativeAcceptance": false,
-  "revalidationRequired": "Corrected observer artifacts must replay remaining native gates; these awaited GET cache observations retain exact original source/proof version."
+	"source": "ac2fb1133",
+	"condition": "final isolated functional compiled Next Cache Components GET",
+	"requiredExpiryWaitMs": 301000,
+	"requests": [
+		{
+			"actor": "small-admin",
+			"dataset": null,
+			"phase": "identity",
+			"status": 200,
+			"choices": null,
+			"bytes": 790,
+			"elapsedMs": 77.3854
+		},
+		{
+			"actor": "large-admin",
+			"dataset": null,
+			"phase": "identity",
+			"status": 200,
+			"choices": null,
+			"bytes": 790,
+			"elapsedMs": 17.709999999999994
+		},
+		{
+			"actor": "small-admin",
+			"dataset": "managers",
+			"phase": "cold",
+			"status": 200,
+			"choices": 1,
+			"bytes": 342,
+			"elapsedMs": 92.62140000000002
+		},
+		{
+			"actor": "small-admin",
+			"dataset": "work-policies",
+			"phase": "cold",
+			"status": 200,
+			"choices": 1,
+			"bytes": 198,
+			"elapsedMs": 53.3809
+		},
+		{
+			"actor": "large-admin",
+			"dataset": "managers",
+			"phase": "cold",
+			"status": 200,
+			"choices": 1,
+			"bytes": 342,
+			"elapsedMs": 50.86529999999999
+		},
+		{
+			"actor": "large-admin",
+			"dataset": "work-policies",
+			"phase": "cold",
+			"status": 200,
+			"choices": 1,
+			"bytes": 198,
+			"elapsedMs": 51.51010000000002
+		},
+		{
+			"actor": "small-admin",
+			"dataset": "managers",
+			"phase": "hit",
+			"status": 200,
+			"choices": 1,
+			"bytes": 342,
+			"elapsedMs": 49.31020000000001
+		},
+		{
+			"actor": "small-admin",
+			"dataset": "work-policies",
+			"phase": "hit",
+			"status": 200,
+			"choices": 1,
+			"bytes": 198,
+			"elapsedMs": 53.27850000000001
+		},
+		{
+			"actor": "large-admin",
+			"dataset": "managers",
+			"phase": "hit",
+			"status": 200,
+			"choices": 1,
+			"bytes": 342,
+			"elapsedMs": 50.351
+		},
+		{
+			"actor": "large-admin",
+			"dataset": "work-policies",
+			"phase": "hit",
+			"status": 200,
+			"choices": 1,
+			"bytes": 198,
+			"elapsedMs": 47.42700000000002
+		},
+		{
+			"actor": "small-admin",
+			"dataset": "managers",
+			"phase": "expired",
+			"status": 200,
+			"choices": 1,
+			"bytes": 342,
+			"elapsedMs": 66.48810000001686
+		},
+		{
+			"actor": "small-admin",
+			"dataset": "work-policies",
+			"phase": "expired",
+			"status": 200,
+			"choices": 1,
+			"bytes": 198,
+			"elapsedMs": 60.209800000011455
+		},
+		{
+			"actor": "large-admin",
+			"dataset": "managers",
+			"phase": "expired",
+			"status": 200,
+			"choices": 1,
+			"bytes": 342,
+			"elapsedMs": 59.54759999999078
+		},
+		{
+			"actor": "large-admin",
+			"dataset": "work-policies",
+			"phase": "expired",
+			"status": 200,
+			"choices": 1,
+			"bytes": 198,
+			"elapsedMs": 53.85920000000624
+		}
+	],
+	"metrics": [
+		{
+			"actor": "small-admin",
+			"dataset": null,
+			"phase": "identity",
+			"queryCount": 8,
+			"rowsRetrieved": 4,
+			"cacheHits": 0,
+			"cacheMisses": 0,
+			"observedPoolAcquisitions": 8,
+			"coverage": {
+				"observer": true,
+				"pg": true,
+				"rows": true,
+				"cache": true,
+				"eventLoop": true,
+				"rejectedBatches": 0,
+				"registration": true,
+				"closed": true,
+				"incomplete": false,
+				"unattributedNativeSpans": 0,
+				"lateSpans": 0,
+				"nativeProof": true,
+				"nativeDriverQueries": 8
+			}
+		},
+		{
+			"actor": "large-admin",
+			"dataset": null,
+			"phase": "identity",
+			"queryCount": 8,
+			"rowsRetrieved": 4,
+			"cacheHits": 0,
+			"cacheMisses": 0,
+			"observedPoolAcquisitions": 8,
+			"coverage": {
+				"observer": true,
+				"pg": true,
+				"rows": true,
+				"cache": true,
+				"eventLoop": true,
+				"rejectedBatches": 0,
+				"registration": true,
+				"closed": true,
+				"incomplete": false,
+				"unattributedNativeSpans": 0,
+				"lateSpans": 0,
+				"nativeProof": true,
+				"nativeDriverQueries": 8
+			}
+		},
+		{
+			"actor": "small-admin",
+			"dataset": "managers",
+			"phase": "cold",
+			"queryCount": 46,
+			"rowsRetrieved": 24,
+			"cacheHits": 0,
+			"cacheMisses": 1,
+			"observedPoolAcquisitions": 46,
+			"coverage": {
+				"observer": true,
+				"pg": true,
+				"rows": true,
+				"cache": true,
+				"eventLoop": true,
+				"rejectedBatches": 0,
+				"registration": true,
+				"closed": true,
+				"incomplete": false,
+				"unattributedNativeSpans": 0,
+				"lateSpans": 0,
+				"nativeProof": true,
+				"nativeDriverQueries": 46
+			}
+		},
+		{
+			"actor": "small-admin",
+			"dataset": "work-policies",
+			"phase": "cold",
+			"queryCount": 46,
+			"rowsRetrieved": 24,
+			"cacheHits": 0,
+			"cacheMisses": 1,
+			"observedPoolAcquisitions": 46,
+			"coverage": {
+				"observer": true,
+				"pg": true,
+				"rows": true,
+				"cache": true,
+				"eventLoop": true,
+				"rejectedBatches": 0,
+				"registration": true,
+				"closed": true,
+				"incomplete": false,
+				"unattributedNativeSpans": 0,
+				"lateSpans": 0,
+				"nativeProof": true,
+				"nativeDriverQueries": 46
+			}
+		},
+		{
+			"actor": "large-admin",
+			"dataset": "managers",
+			"phase": "cold",
+			"queryCount": 46,
+			"rowsRetrieved": 24,
+			"cacheHits": 0,
+			"cacheMisses": 1,
+			"observedPoolAcquisitions": 46,
+			"coverage": {
+				"observer": true,
+				"pg": true,
+				"rows": true,
+				"cache": true,
+				"eventLoop": true,
+				"rejectedBatches": 0,
+				"registration": true,
+				"closed": true,
+				"incomplete": false,
+				"unattributedNativeSpans": 0,
+				"lateSpans": 0,
+				"nativeProof": true,
+				"nativeDriverQueries": 46
+			}
+		},
+		{
+			"actor": "large-admin",
+			"dataset": "work-policies",
+			"phase": "cold",
+			"queryCount": 46,
+			"rowsRetrieved": 24,
+			"cacheHits": 0,
+			"cacheMisses": 1,
+			"observedPoolAcquisitions": 46,
+			"coverage": {
+				"observer": true,
+				"pg": true,
+				"rows": true,
+				"cache": true,
+				"eventLoop": true,
+				"rejectedBatches": 0,
+				"registration": true,
+				"closed": true,
+				"incomplete": false,
+				"unattributedNativeSpans": 0,
+				"lateSpans": 0,
+				"nativeProof": true,
+				"nativeDriverQueries": 46
+			}
+		},
+		{
+			"actor": "small-admin",
+			"dataset": "managers",
+			"phase": "hit",
+			"queryCount": 45,
+			"rowsRetrieved": 23,
+			"cacheHits": 1,
+			"cacheMisses": 0,
+			"observedPoolAcquisitions": 45,
+			"coverage": {
+				"observer": true,
+				"pg": true,
+				"rows": true,
+				"cache": true,
+				"eventLoop": true,
+				"rejectedBatches": 0,
+				"registration": true,
+				"closed": true,
+				"incomplete": false,
+				"unattributedNativeSpans": 0,
+				"lateSpans": 0,
+				"nativeProof": true,
+				"nativeDriverQueries": 45
+			}
+		},
+		{
+			"actor": "small-admin",
+			"dataset": "work-policies",
+			"phase": "hit",
+			"queryCount": 45,
+			"rowsRetrieved": 23,
+			"cacheHits": 1,
+			"cacheMisses": 0,
+			"observedPoolAcquisitions": 45,
+			"coverage": {
+				"observer": true,
+				"pg": true,
+				"rows": true,
+				"cache": true,
+				"eventLoop": true,
+				"rejectedBatches": 0,
+				"registration": true,
+				"closed": true,
+				"incomplete": false,
+				"unattributedNativeSpans": 0,
+				"lateSpans": 0,
+				"nativeProof": true,
+				"nativeDriverQueries": 45
+			}
+		},
+		{
+			"actor": "large-admin",
+			"dataset": "managers",
+			"phase": "hit",
+			"queryCount": 45,
+			"rowsRetrieved": 23,
+			"cacheHits": 1,
+			"cacheMisses": 0,
+			"observedPoolAcquisitions": 45,
+			"coverage": {
+				"observer": true,
+				"pg": true,
+				"rows": true,
+				"cache": true,
+				"eventLoop": true,
+				"rejectedBatches": 0,
+				"registration": true,
+				"closed": true,
+				"incomplete": false,
+				"unattributedNativeSpans": 0,
+				"lateSpans": 0,
+				"nativeProof": true,
+				"nativeDriverQueries": 45
+			}
+		},
+		{
+			"actor": "large-admin",
+			"dataset": "work-policies",
+			"phase": "hit",
+			"queryCount": 45,
+			"rowsRetrieved": 23,
+			"cacheHits": 1,
+			"cacheMisses": 0,
+			"observedPoolAcquisitions": 45,
+			"coverage": {
+				"observer": true,
+				"pg": true,
+				"rows": true,
+				"cache": true,
+				"eventLoop": true,
+				"rejectedBatches": 0,
+				"registration": true,
+				"closed": true,
+				"incomplete": false,
+				"unattributedNativeSpans": 0,
+				"lateSpans": 0,
+				"nativeProof": true,
+				"nativeDriverQueries": 45
+			}
+		},
+		{
+			"actor": "small-admin",
+			"dataset": "managers",
+			"phase": "expired",
+			"queryCount": 46,
+			"rowsRetrieved": 24,
+			"cacheHits": 0,
+			"cacheMisses": 1,
+			"observedPoolAcquisitions": 46,
+			"coverage": {
+				"observer": true,
+				"pg": true,
+				"rows": true,
+				"cache": true,
+				"eventLoop": true,
+				"rejectedBatches": 0,
+				"registration": true,
+				"closed": true,
+				"incomplete": false,
+				"unattributedNativeSpans": 0,
+				"lateSpans": 0,
+				"nativeProof": true,
+				"nativeDriverQueries": 46
+			}
+		},
+		{
+			"actor": "small-admin",
+			"dataset": "work-policies",
+			"phase": "expired",
+			"queryCount": 46,
+			"rowsRetrieved": 24,
+			"cacheHits": 0,
+			"cacheMisses": 1,
+			"observedPoolAcquisitions": 46,
+			"coverage": {
+				"observer": true,
+				"pg": true,
+				"rows": true,
+				"cache": true,
+				"eventLoop": true,
+				"rejectedBatches": 0,
+				"registration": true,
+				"closed": true,
+				"incomplete": false,
+				"unattributedNativeSpans": 0,
+				"lateSpans": 0,
+				"nativeProof": true,
+				"nativeDriverQueries": 46
+			}
+		},
+		{
+			"actor": "large-admin",
+			"dataset": "managers",
+			"phase": "expired",
+			"queryCount": 46,
+			"rowsRetrieved": 24,
+			"cacheHits": 0,
+			"cacheMisses": 1,
+			"observedPoolAcquisitions": 46,
+			"coverage": {
+				"observer": true,
+				"pg": true,
+				"rows": true,
+				"cache": true,
+				"eventLoop": true,
+				"rejectedBatches": 0,
+				"registration": true,
+				"closed": true,
+				"incomplete": false,
+				"unattributedNativeSpans": 0,
+				"lateSpans": 0,
+				"nativeProof": true,
+				"nativeDriverQueries": 46
+			}
+		},
+		{
+			"actor": "large-admin",
+			"dataset": "work-policies",
+			"phase": "expired",
+			"queryCount": 46,
+			"rowsRetrieved": 24,
+			"cacheHits": 0,
+			"cacheMisses": 1,
+			"observedPoolAcquisitions": 46,
+			"coverage": {
+				"observer": true,
+				"pg": true,
+				"rows": true,
+				"cache": true,
+				"eventLoop": true,
+				"rejectedBatches": 0,
+				"registration": true,
+				"closed": true,
+				"incomplete": false,
+				"unattributedNativeSpans": 0,
+				"lateSpans": 0,
+				"nativeProof": true,
+				"nativeDriverQueries": 46
+			}
+		}
+	],
+	"nativeRunCoverage": {
+		"complete": true,
+		"expectedTraces": 14,
+		"receivedTraces": 14,
+		"driverQueries": 564,
+		"sdkQueries": 564,
+		"receivedQueries": 564,
+		"acquisitions": 564,
+		"cache": 12,
+		"unknownNativeDelta": 0,
+		"incoming": {
+			"knownHeaderKnownSpan": 14,
+			"knownHeaderOtherSpan": 0,
+			"otherHeaderKnownSpan": 0,
+			"otherHeaderOtherSpan": 3,
+			"matchingParent": 14,
+			"mismatchingParent": 0
+		},
+		"standard": {
+			"driverQueryCount": 564,
+			"nativeQueryStartedCount": 564,
+			"nativeQueryEndedCount": 564,
+			"observedQueryCount": 564,
+			"pendingNativeQueries": 0,
+			"activeTraces": 0,
+			"allReceivedTracesReconciled": true,
+			"complete": true
+		},
+		"registration": {
+			"began": true,
+			"closed": true,
+			"traceCount": 14,
+			"protocol": "z8-fixture-otlp-collector-v2"
+		},
+		"before": {
+			"driverCounter": true,
+			"driverQueries": 230,
+			"activeTraces": 0,
+			"unknown": 428,
+			"started": {
+				"queries": 230,
+				"acquisitions": 198,
+				"cache": 0
+			},
+			"ended": {
+				"queries": 230,
+				"acquisitions": 198,
+				"cache": 0
+			},
+			"incoming": {
+				"knownHeaderKnownSpan": 0,
+				"knownHeaderOtherSpan": 0,
+				"otherHeaderKnownSpan": 0,
+				"otherHeaderOtherSpan": 19,
+				"matchingParent": 0,
+				"mismatchingParent": 0
+			}
+		},
+		"after": {
+			"driverCounter": true,
+			"driverQueries": 794,
+			"activeTraces": 0,
+			"unknown": 428,
+			"started": {
+				"queries": 794,
+				"acquisitions": 762,
+				"cache": 12
+			},
+			"ended": {
+				"queries": 794,
+				"acquisitions": 762,
+				"cache": 12
+			},
+			"incoming": {
+				"knownHeaderKnownSpan": 14,
+				"knownHeaderOtherSpan": 0,
+				"otherHeaderKnownSpan": 0,
+				"otherHeaderOtherSpan": 22,
+				"matchingParent": 14,
+				"mismatchingParent": 0
+			}
+		}
+	},
+	"passed": true,
+	"protocolCorrection": {
+		"previousAttemptRetained": true,
+		"scope": "raw unmatched HTTP is diagnostic; unknown native and all exact three-way counters remain mandatory",
+		"controlOnly": {
+			"condition": "control-only register/close/counters; zero application HTTP",
+			"driverQueries": 0,
+			"sdkQueries": 0,
+			"cache": 0,
+			"acquisitions": 0,
+			"unknownNative": 0,
+			"activeTraces": 0,
+			"otherHeaderOtherSpan": 3,
+			"matchingParent": 0,
+			"controlledContexts": 1,
+			"emittedTraceRows": 0
+		}
+	},
+	"observerLifecycleVersion": "ac2fb1133 before SDK SERVER enum correction e05959749",
+	"finalReleaseNativeAcceptance": false,
+	"revalidationRequired": "Corrected observer artifacts must replay remaining native gates; these awaited GET cache observations retain exact original source/proof version."
 }
