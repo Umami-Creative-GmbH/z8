@@ -7,6 +7,8 @@
  * command's transaction from the workflow. The requester must be switched off with a recorded
  * deactivation instant, and the absence must still be pending or approved and start after that
  * instant's calendar date in the organization's zone (the date `employee_left_on` reports).
+ * The backfill of employees deactivated before #1440 (#1442) leaves an unrecorded instant
+ * unrecorded; its open deactivation record's run instant stands in for it.
  * Absences spanning that day, other kinds of workflow and every other command stay out of reach.
  */
 import { sql } from "drizzle-orm";
@@ -87,21 +89,34 @@ export async function authorizeEmployeeDeactivationCancellation(input: {
 	) {
 		throw new EmployeeDeactivationCancellationRefused("command");
 	}
+	// The instant is the employee's; a backfilled deactivation whose date was not
+	// recorded (#1442) keeps none there, so its open record's run instant counts.
 	const rows = resultRows(
 		await input.dbService.db.execute(sql`
 			select a.id
 			from absence_entry a
 			join employee e
 				on e.id = a.employee_id and e.organization_id = a.organization_id
+			left join lateral (
+				select d.deactivated_at
+				from employee_deactivation d
+				where d.organization_id = e.organization_id
+					and d.employee_id = e.id
+					and d.reason = 'employee_deactivation_backfill'
+					and d.reactivated_at is null
+				order by d.created_at desc
+				limit 1
+			) backfill on e.deactivated_at is null
 			where a.organization_id = ${input.organizationId}
 				and a.id = ${workflow.sourceId}::uuid
 				and a.approval_workflow_id = ${workflow.id}::uuid
 				and a.employee_id = ${workflow.requesterEmployeeId}::uuid
 				and a.status in ('pending', 'approved')
 				and e.is_active = false
-				and e.deactivated_at is not null
+				and coalesce(e.deactivated_at, backfill.deactivated_at) is not null
 				and a.start_date > (
-					e.deactivated_at at time zone vacation_organization_timezone(e.organization_id)
+					coalesce(e.deactivated_at, backfill.deactivated_at)
+						at time zone vacation_organization_timezone(e.organization_id)
 				)::date
 			limit 2
 		`),

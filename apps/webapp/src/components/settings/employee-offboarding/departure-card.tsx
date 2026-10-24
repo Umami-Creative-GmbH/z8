@@ -145,7 +145,7 @@ function DepartureDescription({ view, locale }: { view: EmployeeOffboardingView;
 	const labels = useOffboardingLabels();
 	const { departure } = view;
 	if (view.state === "blocked") return labels.blocked(departure?.blockedReason ?? null);
-	if (view.state === "legacy_inactive" && view.deactivation) {
+	if (view.state === "legacy_inactive" && view.deactivation && !view.deactivation.dateNotRecorded) {
 		// Deactivated without a departure (#1440): the instant is recorded.
 		return t(
 			"settings.employees.offboarding.deactivatedDescription",

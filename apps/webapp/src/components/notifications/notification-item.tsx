@@ -147,6 +147,8 @@ function getNotificationStyle(type: NotificationType): {
 		case "scheduled_export_paused":
 		// A deactivation opened the person's upcoming shifts (#1440)
 		case "employee_deactivation_shifts_opened":
+		// Reports left with only a former manager (#1442)
+		case "former_employee_reports_without_manager":
 			return {
 				icon: <IconUserX className="size-4" />,
 				bgColor: "bg-amber-100 dark:bg-amber-900/30",

@@ -2010,6 +2010,13 @@
       "when": 1809446400000,
       "tag": "0286_employee_deactivation_checklist",
       "breakpoints": true
+    },
+    {
+      "idx": 287,
+      "version": "7",
+      "when": 1809532800000,
+      "tag": "0287_former_employee_reports_without_manager",
+      "breakpoints": true
     }
   ]
 }

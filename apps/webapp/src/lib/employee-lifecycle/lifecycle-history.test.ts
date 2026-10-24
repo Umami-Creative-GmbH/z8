@@ -53,6 +53,39 @@ describe("employment history: deactivations and reactivations", () => {
 		]);
 	});
 
+	it("shows a backfilled deactivation once, not again as the audit entry it was recovered from (#1442)", () => {
+		expect(
+			mergeLifecycleHistory({
+				records: [
+					{
+						kind: "employee_deactivated",
+						at: parseInstant("2026-08-03T09:00:00Z"),
+						requestId: "request-backfill",
+						deactivationId: "deactivation-backfill",
+						sourceAuditId: "audit-old",
+					},
+				],
+				audits: [
+					{
+						id: "audit-old",
+						action: "employee.deactivated",
+						at: parseInstant("2026-08-03T09:00:00Z"),
+						metadata: { actorEmail: "owner@example.com" },
+					},
+					{
+						id: "audit-older",
+						action: "employee.deactivated",
+						at: parseInstant("2026-05-01T10:00:00Z"),
+						metadata: {},
+					},
+				],
+			}),
+		).toEqual([
+			{ kind: "deactivated", at: "2026-08-03T09:00:00Z" },
+			{ kind: "deactivated", at: "2026-05-01T10:00:00Z" },
+		]);
+	});
+
 	it("keeps an audited deactivation that recorded no event (no employment period)", () => {
 		expect(
 			mergeLifecycleHistory({

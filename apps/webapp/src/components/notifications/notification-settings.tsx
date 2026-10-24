@@ -160,6 +160,7 @@ const NOTIFICATION_CATEGORIES = [
 			"team_member_removed",
 			"employee_offboarding_review",
 			"scheduled_export_paused",
+			"former_employee_reports_without_manager",
 		] as NotificationType[],
 	},
 	{
@@ -247,7 +248,8 @@ type StaticallyLabelledType =
 	| "personnel_file_document_request_decided"
 	| "personnel_file_document_request_submitted"
 	| "personnel_file_document_request_overdue"
-	| "employee_deactivation_shifts_opened";
+	| "employee_deactivation_shifts_opened"
+	| "former_employee_reports_without_manager";
 
 // Human-readable labels for the other notification types, looked up by a computed key.
 const TYPE_LABELS: Record<
@@ -573,6 +575,12 @@ function useNotificationSettingsViewModel() {
 				return t(
 					"common:notifications.preferences.types.employee_deactivation_shifts_opened",
 					"Shifts opened by a deactivation",
+				);
+			// Reports kept a former manager because no current one was left (#1442).
+			case "former_employee_reports_without_manager":
+				return t(
+					"common:notifications.preferences.types.former_employee_reports_without_manager",
+					"Employees without a current manager",
 				);
 			// A departed or deactivated deputy was cleared from an absence (#1014).
 			case "absence_deputy_unavailable":

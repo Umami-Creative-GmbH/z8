@@ -132,6 +132,8 @@ export const NOTIFICATION_TYPES = [
 	"organization_mfa_notice",
 	// A deactivation opened the person's upcoming shifts, to their planners once (#1440)
 	"employee_deactivation_shifts_opened",
+	// Reports kept a former manager because no current one was left; to org admins (#1442)
+	"former_employee_reports_without_manager",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];

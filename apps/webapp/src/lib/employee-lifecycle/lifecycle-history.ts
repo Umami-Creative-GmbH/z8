@@ -15,7 +15,8 @@ const REACTIVATED_AUDIT = "employee.reactivated";
  * Reactivate) come first; for older ones the `employee.deactivated` /
  * `employee.reactivated` audit entries, where they survive (audit rows are
  * kept 365 days). An audit entry carrying the id of a recorded event is the
- * same change and is shown once.
+ * same change and is shown once, as is the audit entry a backfilled event was
+ * recovered from (#1442, `sourceAuditId`).
  */
 
 export type LifecycleHistoryEvent = {
@@ -31,9 +32,12 @@ type LifecycleRecord = {
 	at: Instant;
 	requestId: string;
 	deactivationId: string | null;
+	/** The audit entry the #1442 backfill recovered this event's instant from. */
+	sourceAuditId?: string | null;
 };
 
 type LifecycleAudit = {
+	id?: string;
 	action: string;
 	at: Instant;
 	metadata: Record<string, unknown>;
@@ -51,6 +55,9 @@ export function mergeLifecycleHistory(input: {
 				: [],
 		),
 	);
+	const recoveredFrom = new Set(
+		input.records.flatMap((record) => (record.sourceAuditId ? [record.sourceAuditId] : [])),
+	);
 	const recordedReactivations = new Set(
 		input.records.flatMap((record) =>
 			record.kind === "employee_reactivated" ? [record.requestId] : [],
@@ -64,6 +71,7 @@ export function mergeLifecycleHistory(input: {
 		}),
 	);
 	for (const audit of input.audits) {
+		if (audit.id && recoveredFrom.has(audit.id)) continue;
 		if (audit.action === DEACTIVATED_AUDIT) {
 			const id = audit.metadata.deactivationId;
 			if (typeof id === "string" && recordedDeactivations.has(id)) continue;
@@ -112,6 +120,7 @@ export async function loadLifecycleHistory(
 		);
 	const audits = await database
 		.select({
+			id: auditLog.id,
 			action: auditLog.action,
 			timestamp: auditLog.timestamp,
 			metadata: auditLog.metadata,
@@ -135,9 +144,11 @@ export async function loadLifecycleHistory(
 				requestId: record.requestId,
 				deactivationId:
 					typeof metadata.deactivationId === "string" ? metadata.deactivationId : null,
+				sourceAuditId: typeof metadata.sourceAuditId === "string" ? metadata.sourceAuditId : null,
 			};
 		}),
 		audits: audits.map((audit) => ({
+			id: audit.id,
 			action: audit.action,
 			at: instantFromDate(new Date(audit.timestamp)),
 			metadata: parseMetadata(audit.metadata),
