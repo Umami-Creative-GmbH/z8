@@ -32,9 +32,12 @@ export class FixtureNativeCoverage {
 			unknown: number;
 			servers: number;
 			lastActivity: number;
+			driverQueries: number;
 		}
 	>();
 	private readonly totals = { started: counts(), ended: counts(), unknown: 0 };
+	private driverQueries = 0;
+	private driverCounter = false;
 	private readonly incoming = {
 		knownHeaderKnownSpan: 0,
 		knownHeaderOtherSpan: 0,
@@ -61,7 +64,19 @@ export class FixtureNativeCoverage {
 				unknown: 0,
 				servers: 0,
 				lastActivity: performance.now(),
+				driverQueries: 0,
 			});
+	}
+	enableDriverCounter() {
+		this.driverCounter = true;
+	}
+	driverQuery(traceId?: string) {
+		this.driverQueries++;
+		const state = traceId ? this.active.get(traceId) : undefined;
+		if (state) {
+			state.driverQueries++;
+			state.lastActivity = performance.now();
+		} else for (const window of this.active.values()) window.unknown++;
 	}
 	observeIncoming(
 		span: { spanContext(): { traceId: string } },
@@ -141,6 +156,9 @@ export class FixtureNativeCoverage {
 				started: state.started,
 				ended: state.ended,
 				unattributedNativeSpans: state.unknown,
+				driverQueries: state.driverQueries,
+				driverComplete:
+					this.driverCounter && state.driverQueries === state.ended.queries,
 				complete:
 					state.unknown === 0 &&
 					state.servers === 0 &&
@@ -155,6 +173,8 @@ export class FixtureNativeCoverage {
 	snapshot() {
 		return {
 			...this.totals,
+			driverQueries: this.driverQueries,
+			driverCounter: this.driverCounter,
 			incoming: this.incoming,
 			activeTraces: this.active.size,
 		};
@@ -182,6 +202,30 @@ export class FixtureNativeCoverage {
 		}
 		return false;
 	}
+}
+
+const wrappedDrivers = new WeakSet<object>();
+/** Observe real client calls while preserving every overload's callback, promise and return behavior. */
+export function installFixtureDriverCounter(
+	driver: { prototype: object },
+	coverage: FixtureNativeCoverage,
+	activeTraceId: () => string | undefined,
+) {
+	if (wrappedDrivers.has(driver.prototype))
+		throw new Error("Native driver counter already installed");
+	const descriptor = Object.getOwnPropertyDescriptor(driver.prototype, "query");
+	if (!descriptor || typeof descriptor.value !== "function")
+		throw new Error("Native query boundary unavailable");
+	const original = descriptor.value;
+	Object.defineProperty(driver.prototype, "query", {
+		...descriptor,
+		value: function (this: unknown, ...args: unknown[]) {
+			coverage.driverQuery(activeTraceId());
+			return Reflect.apply(original, this, args);
+		},
+	});
+	wrappedDrivers.add(driver.prototype);
+	coverage.enableDriverCounter();
 }
 
 /** Created only by the existing loopback fixture-observer opt-in. No app routes or database access. */
@@ -223,7 +267,10 @@ export async function startFixtureNativeControl(
 				await forceFlush();
 				proof = coverage
 					.close(traceIds)
-					.map((entry) => ({ ...entry, complete: entry.complete && drained }));
+					.map((entry) => ({
+						...entry,
+						complete: entry.complete && entry.driverComplete && drained,
+					}));
 			}
 			response.setHeader("Content-Type", "application/json");
 			response.end(

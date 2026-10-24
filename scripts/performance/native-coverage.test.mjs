@@ -103,15 +103,24 @@ const span = (
 });
 test("native lifecycle detects pending, dropped, and unowned work without storing SQL", () => {
 	const coverage = new FixtureNativeCoverage();
+	coverage.enableDriverCounter();
 	const first = "a".repeat(32),
 		second = "b".repeat(32);
 	coverage.register([first, second]);
 	coverage.onStart(span(first));
 	coverage.onEnd(span(first));
+	coverage.driverQuery(first);
 	coverage.onStart(span(second));
 	const proof = coverage.close([first, second]);
 	assert.equal(proof[0].complete, true);
 	assert.equal(proof[0].queries, 1);
+	assert.equal(proof[0].driverQueries, 1);
+	assert.equal(proof[0].driverComplete, true);
+	assert.equal(
+		proof[1].driverComplete,
+		true,
+		"No completed native query exists yet; pending state is independently incomplete",
+	);
 	assert.equal(proof[1].complete, false);
 	assert.equal(proof[1].started.queries, 1);
 	assert.equal(proof[1].ended.queries, 0);

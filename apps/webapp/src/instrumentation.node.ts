@@ -1,4 +1,4 @@
-import { SpanStatusCode } from "@opentelemetry/api";
+import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { resourceFromAttributes } from "@opentelemetry/resources";
@@ -14,6 +14,7 @@ import {
 import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
 import {
 	FixtureNativeCoverage,
+	installFixtureDriverCounter,
 	startFixtureNativeControl,
 } from "@/lib/performance-fixture-native-coverage";
 import {
@@ -163,6 +164,12 @@ export async function registerNodeRuntime() {
 
 	sdk.start();
 	if (nativeCoverage && process.env.Z8_PERFORMANCE_OBSERVER_CONTROL_FILE) {
+		const { Client } = await import("pg");
+		installFixtureDriverCounter(
+			Client,
+			nativeCoverage,
+			() => trace.getActiveSpan()?.spanContext().traceId,
+		);
 		await startFixtureNativeControl(
 			nativeCoverage,
 			() =>
