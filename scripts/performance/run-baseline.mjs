@@ -92,6 +92,17 @@ function validate(plan) {
 		fail("Include month, quarter and year ranges.");
 	for (const route of plan.routes) {
 		if (
+			route.ranges &&
+			(!Array.isArray(route.ranges) ||
+				route.ranges.length === 0 ||
+				route.ranges.some(
+					(name) => !plan.ranges.some((range) => range.name === name),
+				))
+		)
+			fail(
+				"Each per-route range must name a known range from the comparison plan.",
+			);
+		if (
 			!route.path?.startsWith("/") ||
 			!route.ready ||
 			!route.link ||
@@ -156,6 +167,8 @@ async function main() {
 			result.samples.some((sample) => sample.backend[name] === null),
 		);
 		result.gates = [];
+		if (!result.runtime?.buildVerified)
+			result.gates.push("Fixture application build identity was not verified.");
 		if (
 			result.samples.length === 0 ||
 			result.samples.some((sample) => sample.failed)
@@ -166,7 +179,9 @@ async function main() {
 		for (const condition of plan.conditions)
 			for (const range of plan.ranges)
 				for (const route of plan.routes.filter(
-					(r) => !r.roles || r.roles.includes(condition.role),
+					(r) =>
+						(!r.roles || r.roles.includes(condition.role)) &&
+						(!r.ranges || r.ranges.includes(range.name)),
 				))
 					for (const mode of [
 						"first-document",
@@ -245,7 +260,6 @@ async function main() {
 			"Provide --auth, --out and --chrome. Auth belongs in a private fixture file.",
 		);
 	const auth = JSON.parse(await readFile(option("--auth"), "utf8"));
-	const { default: puppeteer } = await import("puppeteer-core");
 	const out = option("--out");
 	await mkdir(out, { recursive: true });
 	const result = {
@@ -255,6 +269,9 @@ async function main() {
 		runtime: {
 			mode: plan.runtime.mode,
 			build: plan.runtime.build,
+			toolingBuild: plan.runtime.toolingBuild ?? null,
+			poolMax: plan.runtime.poolMax ?? null,
+			images: plan.runtime.images ?? [],
 			node: process.version,
 		},
 		hardware: {
@@ -276,6 +293,37 @@ async function main() {
 			"Network counts and transfer sizes stop at observed usable content and clock readiness; later work is outside this measurement window.",
 		],
 	};
+	try {
+		const response = await fetch(new URL("/api/app-version", plan.origin), {
+			signal: AbortSignal.timeout(10000),
+		});
+		const observed = (await response.json()).buildHash;
+		result.runtime.observedBuild = /^[a-f0-9]{7,40}$/.test(observed ?? "")
+			? observed
+			: null;
+		result.runtime.buildVerified =
+			response.ok &&
+			!!result.runtime.observedBuild &&
+			plan.runtime.build.startsWith(result.runtime.observedBuild);
+	} catch {
+		result.runtime.observedBuild = null;
+		result.runtime.buildVerified = false;
+	}
+	if (!result.runtime.buildVerified) {
+		result.gates = [
+			"Fixture application build identity is unavailable or mismatches the recorded source build.",
+		];
+		await writeFile(
+			join(out, "baseline.json"),
+			JSON.stringify(result, null, 2),
+		);
+		console.log(
+			"Baseline acceptance: unfulfilled (application build identity).",
+		);
+		process.exitCode = 1;
+		return;
+	}
+	const { default: puppeteer } = await import("puppeteer-core");
 	const browser = await puppeteer.launch({
 		executablePath: option("--chrome"),
 		headless: true,
@@ -285,7 +333,9 @@ async function main() {
 		for (const condition of plan.conditions) {
 			for (const range of plan.ranges) {
 				for (const route of plan.routes.filter(
-					(r) => !r.roles || r.roles.includes(condition.role),
+					(r) =>
+						(!r.roles || r.roles.includes(condition.role)) &&
+						(!r.ranges || r.ranges.includes(range.name)),
 				)) {
 					for (const mode of [
 						"first-document",
@@ -371,6 +421,7 @@ async function main() {
 							clockReadyMs: metric("clockReadyMs"),
 							requests: metric("requests"),
 							javascriptBytes: metric("javascriptBytes"),
+							inlineRscDecodedBytes: metric("inlineRscDecodedBytes"),
 							rscBytes: metric("rscBytes"),
 							lcpMs: metric("lcpMs"),
 							inpMs: null,
@@ -423,6 +474,7 @@ async function measure(
 		failedRequests: 0,
 		requestDurationMs: 0,
 		javascriptBytes: 0,
+		inlineRscDecodedBytes: null,
 		rscBytes: 0,
 		totalBytes: 0,
 		browserCacheHits: 0,
@@ -588,6 +640,16 @@ async function measure(
 		sample.usableContentMs = performance.now() - start;
 		sample.clockReadyMs = await clock;
 		const native = await page.evaluate(() => window.__z8Baseline);
+		if (mode === "first-document")
+			sample.inlineRscDecodedBytes = await page.evaluate(() =>
+				[...document.scripts]
+					.filter((script) => script.textContent.includes("__next_f"))
+					.reduce(
+						(bytes, script) =>
+							bytes + new TextEncoder().encode(script.textContent).length,
+						0,
+					),
+			);
 		// Document LCP is not a soft-navigation metric. Event timing is an approximation (largest observed interaction), not a complete page-lifetime INP.
 		if (mode === "first-document") sample.lcpMs = native?.lcp ?? null;
 		sample.interactionMaxMs = native?.inp ?? null;

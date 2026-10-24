@@ -385,10 +385,13 @@ async function plan(directory) {
 	const fixture = JSON.parse(
 		await readFile(join(directory, "fixture-private.json"), "utf8"),
 	);
-	const build = execFileSync("git", ["rev-parse", "HEAD"], {
+	const toolingBuild = execFileSync("git", ["rev-parse", "HEAD"], {
 		cwd: root,
 		encoding: "utf8",
 	}).trim();
+	const build = args.includes("--source-build")
+		? args[args.indexOf("--source-build") + 1]
+		: null;
 	const routes = [
 		["dashboard", "/{locale}"],
 		["time-tracking", "/{locale}/time-tracking"],
@@ -399,7 +402,15 @@ async function plan(directory) {
 	].map(([name, path]) => ({
 		name,
 		path,
-		...(name.startsWith("employee-") ? { roles: ["admin", "manager"] } : {}),
+		...(name.startsWith("employee-") ||
+		name === "analytics" ||
+		name === "reports"
+			? { roles: ["admin", "manager"] }
+			: {}),
+		ranges:
+			name === "analytics" || name === "reports"
+				? ["month", "quarter", "year"]
+				: ["default"],
 		ready: "REPLACE_WITH_USABLE_CONTENT_SELECTOR",
 		clockReady: "REPLACE_WITH_KNOWN_ENABLED_CLOCK_SELECTOR",
 		link: `a[href="${path}"]`,
@@ -443,8 +454,14 @@ async function plan(directory) {
 			journeysVerified: false,
 			organizations: fixture.organizations,
 		},
-		runtime: { mode: "production", build, images: runtime.images },
-		ranges: fixture.ranges,
+		runtime: {
+			mode: "production",
+			build,
+			toolingBuild,
+			poolMax: Number(runtime.env.POSTGRES_POOL_MAX),
+			images: runtime.images,
+		},
+		ranges: [{ name: "default", start: "", end: "" }, ...fixture.ranges],
 		conditions,
 		routes,
 	});

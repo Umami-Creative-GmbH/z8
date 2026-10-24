@@ -8,7 +8,7 @@ Run from the repository root with pnpm. Choose an absolute **private directory o
 pnpm performance:fixture prepare C:/private/z8-performance
 pnpm performance:fixture start C:/private/z8-performance --build
 # Keep the start command running. In another terminal:
-pnpm performance:fixture plan C:/private/z8-performance C:/evidence/plan.json
+pnpm performance:fixture plan C:/private/z8-performance C:/evidence/plan.json --source-build <actual-application-source-commit>
 ```
 
 `prepare` owns PostgreSQL 16, Valkey and RustFS Docker containers, binds only loopback ports, verifies the existing integration migration recovery/fresh chain, and seeds through the existing integration database gate. The existing canonical-work fixture helper supplies matching work records. No production data, Phase secrets or normal development service configuration is copied. The build/server receive generated local configuration and ordinary OS/tool settings. Private S3 uses the local fixture storage too; billing, product analytics, external tracing, email, cron and secret-store credentials are disabled. These choices are part of the comparison conditions, not evidence about deployed billing or cache behavior.
@@ -19,7 +19,7 @@ The fixture is deliberately fixed; record fixture version/build and actual conta
 
 ## Freeze and verify the comparison plan
 
-`plan` writes a draft, with explicit placeholders and unset budgets. Fill the usable-content and known-enabled-clock selectors for each route. Observe useful data or a legitimate empty state, not just a heading or skeleton. Verify the configured Link actually navigates in the app, including sidebar prerequisites. Employee settings require an authorized manager/admin actor. Use separate routes/conditions when role-specific markers differ.
+`plan` writes a draft, with explicit placeholders and unset budgets. Supply the actual application source commit used by the binary with `--source-build`; current tooling HEAD is recorded separately. The runner verifies the fixture's existing `/api/app-version` interface and keeps a missing/mismatched identity as an unfulfilled gate before sampling. Fill the usable-content and known-enabled-clock selectors for each route. Observe useful data or a legitimate empty state, not just a heading or skeleton. Verify the configured Link actually navigates in the app, including sidebar prerequisites. Employee settings require an authorized manager/admin actor. Use separate routes/conditions when role-specific markers differ.
 
 Select the stated historical range through the real UI or supported route query parameters. A range label in a JSON file does not select a date range in the app. The runner currently substitutes `{locale}`, `{employee}`, `{start}` and `{end}` in route paths. For routes without a URL range interface, supply an instrumented fixture journey that controls the real range before considering its measurements accepted; this remains an unfinished gate.
 
@@ -32,7 +32,7 @@ pnpm performance:baseline --plan C:/evidence/plan.json --validate-plan
 pnpm performance:baseline --plan C:/evidence/plan.json --auth C:/private/z8-performance/auth-private.json --chrome "C:/Program Files/Google/Chrome/Application/chrome.exe" --out C:/evidence/before
 ```
 
-Every condition/range/authorized-route records at least twenty samples of each of:
+Every condition/selected-range/authorized-route records at least twenty samples of each of the following visit modes. `routes[].ranges` selects names from the plan's `ranges` list. The generated draft uses one `default` range for Dashboard, clock and employee views, and month/quarter/year for reports and analytics. It does not multiply unrelated views by report ranges. The generated settings/report/analytics conditions initially include manager/admin actors; verify actual access before expanding them. Expected-denial journeys should be recorded separately from usable-content latency.
 
 - First document: a fresh isolated browser context with synthetic authentication.
 - Repeat Link: prime the target, open the away route, then click the actual target Link.
@@ -42,7 +42,7 @@ Every condition/range/authorized-route records at least twenty samples of each o
 
 Fresh browser storage does not imply a cold server cache. Run separately recorded concurrency levels, including a representative concurrent condition, using identical plans for predecessor/head. Concurrent contexts isolate identities; they intentionally share server/database capacity. The runner records DOM readiness with monotonic elapsed time. It is not browser paint timing. Browser-native document LCP is separate. Largest observed Event Timing duration is `interactionMaxMs`; it is **not** claimed to be a complete page-lifetime INP measurement. Missing INP stays null.
 
-Network counts, request durations and compressed transfer sizes come from Chromium's network events, stop at usable-content/clock readiness, and exclude initial priming requests. RSC is identified by its response MIME type. HTTP-cache/service-worker reuse is recorded separately. A zero transfer for a cached resource does not mean its uncompressed code size is zero. Request durations may overlap and must not be added to route latency. Raw request URLs, headers, cookies, bodies, DOM text and personal query parameters are not saved.
+Network counts, request durations and compressed transfer sizes come from Chromium's network events, stop at usable-content/clock readiness, and exclude initial priming requests. External RSC responses are identified by MIME type. First-document inline Flight scripts are counted separately as `inlineRscDecodedBytes`: decoded UTF-8 script bytes including their wrapper, not compressed transfer bytes. Do not add these different byte units. Only the numerical count leaves the page. HTTP-cache/service-worker reuse is recorded separately. A zero transfer for a cached resource does not mean its uncompressed code size is zero. Request durations may overlap and must not be added to route latency. Raw request URLs, headers, cookies, bodies, DOM text and personal query parameters are not saved.
 
 ## Backend and acceptance evidence
 

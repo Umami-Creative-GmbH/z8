@@ -155,3 +155,22 @@ test("one successful sample cannot stand in for all planned first and warm cohor
 		rmSync(folder, { recursive: true, force: true });
 	}
 });
+
+test("unknown per-route ranges cannot silently remove required cohorts", () => {
+	const folder = mkdtempSync(join(tmpdir(), "z8-baseline-range-"));
+	try {
+		const planPath = join(folder, "plan.json");
+		const plan = fixturePlan();
+		plan.routes[0].ranges = ["unknown-range"];
+		writeFileSync(planPath, JSON.stringify(plan));
+		const result = spawnSync(
+			process.execPath,
+			[runner, "--plan", planPath, "--validate-plan"],
+			{ encoding: "utf8" },
+		);
+		assert.equal(result.status, 2);
+		assert.match(result.stderr, /known range/);
+	} finally {
+		rmSync(folder, { recursive: true, force: true });
+	}
+});
