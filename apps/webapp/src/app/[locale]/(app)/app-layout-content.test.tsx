@@ -96,10 +96,19 @@ vi.mock("@/components/posthog-provider", () => ({
 	PostHogProvider: ({
 		children,
 		helpImproveProduct,
+		identityKey,
 	}: {
 		children: React.ReactNode;
 		helpImproveProduct: boolean;
-	}) => <div data-consent={String(helpImproveProduct)}>{children}</div>,
+		identityKey: string;
+	}) => (
+		<div
+			data-consent={String(helpImproveProduct)}
+			data-analytics-identity={identityKey}
+		>
+			{children}
+		</div>
+	),
 }));
 
 vi.mock("@/components/providers/organization-settings-provider", () => ({
@@ -207,8 +216,11 @@ vi.mock("@/lib/logger", () => ({
 
 vi.mock("@/lib/auth/render-context", () => ({
 	getRenderOrganizationDisplayContext: async () => ({
-		userId: "user-1", organizationId: "organization-1", employee: null,
-		organizationSettings: await mockState.getOrganizationSettings(), updatedAt: 0,
+		userId: "user-1",
+		organizationId: "organization-1",
+		employee: null,
+		organizationSettings: await mockState.getOrganizationSettings(),
+		updatedAt: 0,
 	}),
 	getRenderApprovedMembership: mockState.findMember,
 }));
@@ -312,6 +324,9 @@ describe("authenticated app layout gates", () => {
 		const { errors, html } = await serverRender("/en/time-tracking");
 		expect(errors).toEqual([]);
 		expect(html).toContain('data-consent="false"');
+		expect(html).toContain(
+			'data-analytics-identity="[&quot;user-1&quot;,&quot;organization-1&quot;]"',
+		);
 		expect(html).toContain('data-week-start="monday"');
 		expect(html).toContain('data-time-format="12h"');
 		expect(html).toContain('data-timezone="Europe/Berlin"');
@@ -327,6 +342,9 @@ describe("authenticated app layout gates", () => {
 		const { errors, html } = await serverRender("/en/time-tracking");
 		expect(errors).toEqual([]);
 		expect(html).toContain('data-consent="true"');
+		expect(html).toContain(
+			'data-analytics-identity="[&quot;user-1&quot;,null]"',
+		);
 		expect(html).toContain('data-week-start="sunday"');
 		expect(html).toContain('data-time-format="24h"');
 		expect(html).toContain('data-timezone="UTC"');
