@@ -1,12 +1,14 @@
 /** Synthetic benchmark history, using the existing disposable integration database gate. */
 import { randomBytes, randomUUID } from "node:crypto";
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { hashPassword } from "better-auth/crypto";
 import { Temporal } from "temporal-polyfill";
+import { loadEmployeeTrackingContext } from "@/lib/time-tracking/tracking-start";
 import { withCanonicalRecords } from "@/lib/time-tracking/work-records/__tests__/historical-work";
 import {
 	closeIntegrationPools,
 	integrationAdminPool,
+	integrationDbModule,
 	verifySuiteDatabase,
 } from "@/test/integration-database";
 
@@ -58,6 +60,10 @@ export async function seedPerformanceFixture() {
 		await pool.query(
 			`insert into organization (id,name,slug,created_at,timezone,demo_data_enabled) values ($1,$2,$1,now(),'Europe/Berlin',false)`,
 			[organizationId, `Performance ${size}`],
+		);
+		await pool.query(
+			`insert into organization_tracking_settings (organization_id,tracking_start_date,activated_at,activated_by,updated_by) values ($1,'2025-01-01',now(),$2,$2)`,
+			[organizationId, platformAdmin],
 		);
 		const teamIds = [randomUUID(), randomUUID()];
 		for (const [index, teamId] of teamIds.entries())
@@ -257,7 +263,8 @@ export async function seedPerformanceFixture() {
 			timezone: "Europe/Berlin",
 		});
 	}
-	return {
+	const fixture = {
+		version: 2,
 		kind: "disposable",
 		organizations,
 		actors,
@@ -267,6 +274,90 @@ export async function seedPerformanceFixture() {
 			{ name: "year", start: "2025-01-01", end: "2025-12-31" },
 		],
 	};
+	await verifyTrackingContexts(fixture);
+	return fixture;
+}
+
+type FixtureActors = {
+	kind: string;
+	actors: Record<string, { organizationId: string }>;
+};
+
+/** Verify the actual production tracking reader, rather than only the settings row's shape. */
+async function verifyTrackingContexts(fixture: FixtureActors) {
+	await verifySuiteDatabase();
+	const pool = integrationAdminPool();
+	const { db } = await integrationDbModule();
+	let active = 0;
+	if (fixture.kind !== "disposable")
+		throw new Error("Disposable fixture manifest required");
+	for (const organizationId of new Set(
+		Object.values(fixture.actors).map((actor) => actor.organizationId),
+	)) {
+		if (!/^perf-(small|large)-[a-f0-9]{12}$/.test(organizationId))
+			throw new Error("Synthetic organization identity required");
+		const employees = await pool.query<{ id: string }>(
+			`select id from employee where organization_id=$1`,
+			[organizationId],
+		);
+		for (const employee of employees.rows) {
+			const context = await loadEmployeeTrackingContext(db, {
+				organizationId,
+				employeeId: employee.id,
+			});
+			if (
+				context?.startDate !== "2025-01-01" ||
+				context.timezone !== "Europe/Berlin"
+			)
+				throw new Error(
+					"Synthetic tracking context is not active for the fixture range",
+				);
+			active++;
+		}
+	}
+	if (active !== 208)
+		throw new Error(
+			"Synthetic tracking roster size differs from the recorded fixture",
+		);
+	return active;
+}
+
+if (process.argv.includes("--upgrade-private-fixture")) {
+	const path =
+		process.argv[process.argv.indexOf("--upgrade-private-fixture") + 1];
+	if (!path) throw new Error("Private fixture manifest path required");
+	(async () => {
+		await verifySuiteDatabase();
+		const fixture = JSON.parse(await readFile(path, "utf8"));
+		if (fixture.kind !== "disposable")
+			throw new Error("Disposable fixture manifest required");
+		const pool = integrationAdminPool();
+		for (const organizationId of new Set<string>(
+			Object.values(fixture.actors as FixtureActors["actors"]).map(
+				(actor) => actor.organizationId,
+			),
+		)) {
+			if (!/^perf-(small|large)-[a-f0-9]{12}$/.test(organizationId))
+				throw new Error("Synthetic organization identity required");
+			await pool.query(
+				`insert into organization_tracking_settings (organization_id,tracking_start_date,activated_at) values ($1,'2025-01-01',now()) on conflict (organization_id) do nothing`,
+				[organizationId],
+			);
+		}
+		const active = await verifyTrackingContexts(fixture);
+		fixture.version = 2;
+		await writeFile(path, JSON.stringify(fixture, null, 2), { mode: 0o600 });
+		console.log(
+			`Verified active production tracking contexts for ${active} synthetic employees (fixture version 2).`,
+		);
+	})()
+		.catch(() => {
+			console.error(
+				"Synthetic fixture upgrade failed; acceptance remains unfulfilled.",
+			);
+			process.exitCode = 1;
+		})
+		.finally(closeIntegrationPools);
 }
 
 if (process.argv.includes("--write-private-manifest")) {
