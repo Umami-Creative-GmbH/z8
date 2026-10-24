@@ -12,6 +12,10 @@ import {
 	markAllAsRead,
 	markAsRead,
 } from "@/lib/notifications/notification-service";
+import {
+	matchesNotificationRequestScope,
+	NOTIFICATION_SCOPE_CHANGED,
+} from "@/lib/notifications/request-scope";
 
 /**
  * GET /api/notifications
@@ -21,14 +25,32 @@ export async function GET(request: NextRequest) {
 	await connection();
 	try {
 		const session = await auth.api.getSession({ headers: await headers() });
-		if (!session?.user) {
+		if (
+			!session?.user ||
+			("ssoRequired" in session && session.ssoRequired === true) ||
+			("mfaRequired" in session && !!session.mfaRequired)
+		) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
 
 		// SECURITY: Use activeOrganizationId from session to ensure org-scoped data
 		const activeOrgId = session.session?.activeOrganizationId;
 		if (!activeOrgId) {
-			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "No active organization" },
+				{ status: 400 },
+			);
+		}
+		if (
+			!matchesNotificationRequestScope(request.headers, {
+				userId: session.user.id,
+				organizationId: activeOrgId,
+			})
+		) {
+			return NextResponse.json(
+				{ error: NOTIFICATION_SCOPE_CHANGED },
+				{ status: 409 },
+			);
 		}
 
 		// Get employee record for the active organization ONLY
@@ -73,7 +95,10 @@ export async function GET(request: NextRequest) {
 		});
 	} catch (error) {
 		console.error("Error fetching notifications:", error);
-		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+		return NextResponse.json(
+			{ error: "Internal server error" },
+			{ status: 500 },
+		);
 	}
 }
 
@@ -89,14 +114,32 @@ export async function PATCH(request: NextRequest) {
 	await connection();
 	try {
 		const session = await auth.api.getSession({ headers: await headers() });
-		if (!session?.user) {
+		if (
+			!session?.user ||
+			("ssoRequired" in session && session.ssoRequired === true) ||
+			("mfaRequired" in session && !!session.mfaRequired)
+		) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
 
 		// SECURITY: Use activeOrganizationId from session to ensure org-scoped data
 		const activeOrgId = session.session?.activeOrganizationId;
 		if (!activeOrgId) {
-			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "No active organization" },
+				{ status: 400 },
+			);
+		}
+		if (
+			!matchesNotificationRequestScope(request.headers, {
+				userId: session.user.id,
+				organizationId: activeOrgId,
+			})
+		) {
+			return NextResponse.json(
+				{ error: NOTIFICATION_SCOPE_CHANGED },
+				{ status: 409 },
+			);
 		}
 
 		// Get employee record for the active organization ONLY
@@ -128,17 +171,30 @@ export async function PATCH(request: NextRequest) {
 		}
 
 		if (body.id) {
-			const updated = await markAsRead(body.id, session.user.id, organizationId);
+			const updated = await markAsRead(
+				body.id,
+				session.user.id,
+				organizationId,
+			);
 			if (!updated) {
-				return NextResponse.json({ error: "Notification not found" }, { status: 404 });
+				return NextResponse.json(
+					{ error: "Notification not found" },
+					{ status: 404 },
+				);
 			}
 			return NextResponse.json({ success: true, notification: updated });
 		}
 
-		return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+		return NextResponse.json(
+			{ error: "Invalid request body" },
+			{ status: 400 },
+		);
 	} catch (error) {
 		console.error("Error updating notification:", error);
-		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+		return NextResponse.json(
+			{ error: "Internal server error" },
+			{ status: 500 },
+		);
 	}
 }
 
@@ -154,14 +210,32 @@ export async function DELETE(request: NextRequest) {
 	await connection();
 	try {
 		const session = await auth.api.getSession({ headers: await headers() });
-		if (!session?.user) {
+		if (
+			!session?.user ||
+			("ssoRequired" in session && session.ssoRequired === true) ||
+			("mfaRequired" in session && !!session.mfaRequired)
+		) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
 
 		const body = await request.json();
 		const activeOrgId = session.session?.activeOrganizationId;
 		if (!activeOrgId) {
-			return NextResponse.json({ error: "No active organization" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "No active organization" },
+				{ status: 400 },
+			);
+		}
+		if (
+			!matchesNotificationRequestScope(request.headers, {
+				userId: session.user.id,
+				organizationId: activeOrgId,
+			})
+		) {
+			return NextResponse.json(
+				{ error: NOTIFICATION_SCOPE_CHANGED },
+				{ status: 409 },
+			);
 		}
 
 		const [emp] = await db
@@ -186,23 +260,39 @@ export async function DELETE(request: NextRequest) {
 
 		// Delete all notifications
 		if (body.deleteAll) {
-			const count = await deleteAllNotifications(session.user.id, organizationId);
+			const count = await deleteAllNotifications(
+				session.user.id,
+				organizationId,
+			);
 			return NextResponse.json({ success: true, deletedCount: count });
 		}
 
 		// Delete single notification
 		if (!body.id) {
-			return NextResponse.json({ error: "Notification ID required" }, { status: 400 });
+			return NextResponse.json(
+				{ error: "Notification ID required" },
+				{ status: 400 },
+			);
 		}
 
-		const deleted = await deleteNotification(body.id, session.user.id, organizationId);
+		const deleted = await deleteNotification(
+			body.id,
+			session.user.id,
+			organizationId,
+		);
 		if (!deleted) {
-			return NextResponse.json({ error: "Notification not found" }, { status: 404 });
+			return NextResponse.json(
+				{ error: "Notification not found" },
+				{ status: 404 },
+			);
 		}
 
 		return NextResponse.json({ success: true });
 	} catch (error) {
 		console.error("Error deleting notification:", error);
-		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+		return NextResponse.json(
+			{ error: "Internal server error" },
+			{ status: 500 },
+		);
 	}
 }
