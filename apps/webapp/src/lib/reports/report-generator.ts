@@ -9,10 +9,10 @@ import { db } from "@/db";
 import { absenceCategory, absenceEntry, employee, timeEntry, workPeriod } from "@/db/schema";
 import { clipAbsenceDayRange, countAbsenceDays } from "@/lib/absences/absence-days";
 import { loadWorkingDays } from "@/lib/absences/absence-days-resolver";
-import { dateToDB } from "@/lib/datetime/drizzle-adapter";
 import { endOfDay, format, fromJSDate, startOfDay } from "@/lib/datetime/luxon-utils";
 import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import {
+	compareInstants,
 	comparePlainDates,
 	dateFromInstant,
 	instantFromDate,
@@ -140,11 +140,11 @@ export async function generateEmployeeReport(
 
 	// Aggregate data in parallel
 	const reportRange = getReportRange(startDate, endDate, calendarRange);
-	const [periods, absences, homeOffice, expectedHours, customFields, contractTypes] =
+	const [periods, absences, homeOfficeDates, expectedHours, customFields, contractTypes] =
 		await Promise.all([
 			loadCompletedWorkPeriods(employeeId, organizationId, reportRange),
 			aggregateAbsences(employeeId, organizationId, startDate, endDate, calendarRange),
-			aggregateHomeOfficeDays(employeeId, organizationId, startDate, endDate, calendarRange),
+			loadHomeOfficeDates(employeeId, organizationId, reportRange),
 			runtime.runPromise(
 				calculateExpectedWorkHoursForEmployee(
 					employeeId,
@@ -165,6 +165,7 @@ export async function generateEmployeeReport(
 			loadCurrentContractTypes(db, { organizationId, employees: [emp] }),
 		]);
 	const workHours = aggregateWorkHoursFromPeriods(periods, reportRange);
+	const homeOffice = aggregateHomeOfficeFromPeriods(periods, homeOfficeDates, calendarRange);
 
 	// Calculate compliance metrics using schedule-based expected hours
 	const trackedMinutes =
@@ -431,10 +432,21 @@ export async function aggregateHomeOfficeDays(
 	endDate: Date,
 	calendarRange?: ReportCalendarRange,
 ): Promise<HomeOfficeData> {
-	// Convert dates to YYYY-MM-DD strings for date column comparison
-	const rangeStartStr =
-		calendarRange?.startDate ?? format(startOfDay(fromJSDate(startDate)), "yyyy-MM-dd");
-	const rangeEndStr = calendarRange?.endDate ?? format(endOfDay(fromJSDate(endDate)), "yyyy-MM-dd");
+	const reportRange = getReportRange(startDate, endDate, calendarRange);
+	const dates = await loadHomeOfficeDates(employeeId, organizationId, reportRange);
+	const periods = dates.length
+		? await loadCompletedWorkPeriods(employeeId, organizationId, reportRange)
+		: [];
+	return aggregateHomeOfficeFromPeriods(periods, dates, calendarRange);
+}
+
+async function loadHomeOfficeDates(
+	employeeId: string,
+	organizationId: string,
+	reportRange: ReportDateRange,
+): Promise<string[]> {
+	const rangeStartStr = reportRange.startDate;
+	const rangeEndStr = reportRange.endDate;
 
 	// Step 1: Get approved home office absences
 	const homeOfficeCategories = await db.query.absenceCategory.findMany({
@@ -445,11 +457,7 @@ export async function aggregateHomeOfficeDays(
 	});
 
 	if (homeOfficeCategories.length === 0) {
-		return {
-			days: 0,
-			hoursWorked: 0,
-			dateDetails: [],
-		};
+		return [];
 	}
 
 	const homeOfficeAbsences = await db.query.absenceEntry.findMany({
@@ -482,59 +490,48 @@ export async function aggregateHomeOfficeDays(
 		}
 	}
 
-	// Step 3: For each home office day, get actual hours worked (parallelized)
-	const sortedDates = Array.from(homeOfficeDates).sort();
+	return Array.from(homeOfficeDates).sort();
+}
 
-	// Fetch all work periods in parallel instead of sequential loop
+function aggregateHomeOfficeFromPeriods(
+	periods: readonly CompletedWorkPeriod[],
+	sortedDates: readonly string[],
+	calendarRange?: ReportCalendarRange,
+): HomeOfficeData {
+	// Reuse completed work already loaded for the report. Calendar reports retain
+	// their local-day elapsed allocation; legacy reports retain stored durations.
 	const reportTimezone = calendarRange?.timezone;
-	const periodResults = await Promise.all(
-		sortedDates.map(async (dateStr) => {
-			const dayRange = reportTimezone ? localDayRange(dateStr, reportTimezone) : undefined;
-			const dayStart = dayRange
-				? dateToDB(fromJSDate(dateFromInstant(dayRange.start)))!
-				: dateToDB(startOfDay(fromJSDate(new Date(dateStr))))!;
-			const dayEndExclusive = dayRange
-				? dateToDB(fromJSDate(dateFromInstant(dayRange.endExclusive)))!
-				: dateToDB(endOfDay(fromJSDate(new Date(dateStr))).plus({ milliseconds: 1 }))!;
+	const dateDetails: HomeOfficeDetail[] = sortedDates.map((dateStr) => {
+		const dayRange = localDayRange(dateStr, reportTimezone ?? "UTC");
+		const dayPeriods = periods.filter(
+			(period) =>
+				period.endTime &&
+				compareInstants(instantFromDate(period.startTime), dayRange.endExclusive) < 0 &&
+				compareInstants(instantFromDate(period.endTime), dayRange.start) > 0,
+		);
 
-			const dayPeriods = await db
-				.select()
-				.from(workPeriod)
-				.where(
-					and(
-						eq(workPeriod.employeeId, employeeId),
-						eq(workPeriod.organizationId, organizationId),
-						completedWorkPeriodCondition(),
-						isNotNull(workPeriod.durationMinutes),
-						lt(workPeriod.startTime, dayEndExclusive),
-						gt(workPeriod.endTime, dayStart),
-					),
-				);
+		// Calculate total hours for this day
+		const dayMinutes = reportTimezone
+			? dayPeriods.reduce((sum, period) => {
+					if (!period.endTime) return sum;
+					return (
+						sum +
+						resolveReportDateRange(dateStr, dateStr, reportTimezone)
+							.splitPeriod(instantFromDate(period.startTime), instantFromDate(period.endTime))
+							.reduce((minutes, piece) => minutes + piece.minutes, 0)
+					);
+				}, 0)
+			: dayPeriods.reduce((sum, period) => sum + (period.durationMinutes || 0), 0);
+		const dayHours = Math.round((dayMinutes / 60) * 100) / 100;
 
-			// Calculate total hours for this day
-			const dayMinutes = dayRange
-				? dayPeriods.reduce((sum, period) => {
-						if (!period.endTime) return sum;
-						return (
-							sum +
-							resolveReportDateRange(dateStr, dateStr, reportTimezone!)
-								.splitPeriod(instantFromDate(period.startTime), instantFromDate(period.endTime))
-								.reduce((minutes, piece) => minutes + piece.minutes, 0)
-						);
-					}, 0)
-				: dayPeriods.reduce((sum, period) => sum + (period.durationMinutes || 0), 0);
-			const dayHours = Math.round((dayMinutes / 60) * 100) / 100;
-
-			return { date: dateStr, hours: dayHours };
-		}),
-	);
+		return { date: dateStr, hours: dayHours };
+	});
 
 	// Aggregate results
-	const dateDetails: HomeOfficeDetail[] = periodResults;
-	const totalHoursWorked = periodResults.reduce((sum, result) => sum + result.hours, 0);
+	const totalHoursWorked = dateDetails.reduce((sum, result) => sum + result.hours, 0);
 
 	return {
-		days: homeOfficeDates.size,
+		days: sortedDates.length,
 		hoursWorked: Math.round(totalHoursWorked * 100) / 100,
 		dateDetails,
 	};
