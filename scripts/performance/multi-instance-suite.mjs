@@ -167,8 +167,13 @@ export async function runMultiInstanceStage(stage, directory, source) {
 					const row = await json(
 						join(directory, `replica-${replica}-metrics.json`),
 					);
+					const processControl = await json(
+						join(directory, `replica-${replica}-control-private.json`),
+					);
 					check(
-						row.sourceBuild === fixture.sourceBuild,
+						row.sourceBuild === fixture.sourceBuild &&
+							row.pid === processControl.pid &&
+							row.samplerThreadId === 0,
 						"The real replica resource observer must use the frozen build.",
 					);
 					const {
@@ -739,7 +744,7 @@ export async function runMultiInstanceStage(stage, directory, source) {
 				downgraded = true;
 				const beforeDenied = await resources();
 				check(
-					beforeDenied.b.installed,
+					beforeDenied.b.installed && beforeDenied.b.samplerThreadId === 0,
 					"Initialize B's native-get probe before using its denial counter.",
 				);
 				for (const probe of active) {

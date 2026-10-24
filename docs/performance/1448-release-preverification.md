@@ -312,4 +312,3 @@ rebuilt all 208 through the same CLI. Both used the explicit
 `2026-10-24T12:00:00Z` as-of instant, retained prior failure evidence, and left
 canonical business rows unchanged. This is separate actual database evidence
 from the three focused loader/progress tests.
-

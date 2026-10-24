@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import test from "node:test";
@@ -9,6 +10,60 @@ import { fileURLToPath } from "node:url";
 const cli = fileURLToPath(
 	new URL("./multi-instance-fixture.mjs", import.meta.url),
 );
+
+for (const changed of ["manifest", "build-id"])
+	test(`replica launch refuses a replaced ${changed} before starting an app or touching its collector`, async () => {
+		const directory = await mkdtemp(join(tmpdir(), "z8-multi-artifact-"));
+		try {
+			const app = join(directory, "app"),
+				manifest = JSON.stringify({ config: { experimental: {} } });
+			await mkdir(join(app, ".next"), { recursive: true });
+			await writeFile(
+				join(app, ".next/required-server-files.json"),
+				changed === "manifest" ? JSON.stringify({ changed: true }) : manifest,
+			);
+			await writeFile(
+				join(app, ".next/BUILD_ID"),
+				changed === "build-id" ? "unexpected-build" : "frozen-build",
+			);
+			await writeFile(
+				join(directory, "multi-private.json"),
+				JSON.stringify({
+					kind: "disposable-multi-instance-1472",
+					version: 1,
+					label: "z8-performance-multi-1472-example",
+					origin: "http://localhost:50754",
+					replicas: { a: { port: 50755 }, b: { port: 50756 } },
+					env: {
+						POSTGRES_HOST: "127.0.0.1",
+						POSTGRES_DB: "approval_workflow_repository_test_multi_example",
+					},
+					containers: [],
+					prepared: true,
+					schemaMigration: { overlapIndexReady: true },
+					artifactApp: app,
+					artifactBuildId: "frozen-build",
+					artifactManifestSha256: createHash("sha256")
+						.update(manifest)
+						.digest("hex"),
+				}),
+			);
+			const result = spawnSync(
+				process.execPath,
+				[cli, "replica", directory, "a"],
+				{ encoding: "utf8" },
+			);
+			assert.notEqual(result.status, 0);
+			assert.match(
+				await readFile(join(directory, "operator-error-private.log"), "utf8"),
+				/Compiled artifact changed after fixture preparation/,
+			);
+			assert.equal(result.stdout, "");
+		} finally {
+			assert.equal(dirname(directory), resolve(tmpdir()));
+			await rm(directory, { recursive: true, force: true });
+		}
+	});
 
 test("operator plan records two private host replicas and the actual local proxy without publishing credentials", async () => {
 	const directory = await mkdtemp(join(tmpdir(), "z8-multi-plan-"));

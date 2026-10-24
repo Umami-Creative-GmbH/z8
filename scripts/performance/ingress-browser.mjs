@@ -146,12 +146,93 @@ export async function readDashboardDom(page) {
 		const widget = document.querySelector('[data-widget-id="upcoming-shifts"]');
 		const quick = document.querySelector('[data-widget-id="quick-stats"]');
 		const box = widget?.getBoundingClientRect();
+		const rectangle = (node) => {
+			const rect = node?.getBoundingClientRect();
+			return rect
+				? { x: rect.x, y: rect.y, width: rect.width, height: rect.height }
+				: null;
+		};
 		const headerClock = [
 			...document.querySelectorAll(
 				'header [data-clock-status="ready"] button[aria-label]',
 			),
 		].find((node) => visible(node) && !node.disabled);
+		const externalScripts = new Set(
+			[...document.scripts].filter((node) => node.src).map((node) => node.src),
+		);
+		const completedScripts = new Set(
+			performance
+				.getEntriesByType("resource")
+				.filter(
+					(entry) => entry.initiatorType === "script" && entry.responseEnd > 0,
+				)
+				.map((entry) => entry.name),
+		);
+		const active = document.activeElement;
+		const focusKind =
+			active === document.body
+				? "body"
+				: active?.matches('button[aria-label="Retry Upcoming Shifts"]')
+					? "secondary-retry"
+					: active?.closest("header [data-clock-status]")
+						? "header-clock"
+						: active?.closest("header")
+							? "header-other"
+							: active?.closest('[data-widget-id="quick-stats"]')
+								? "quick-stats"
+								: active?.closest('[data-widget-id="upcoming-shifts"]')
+									? "secondary"
+									: "other";
 		return {
+			viewport: {
+				width: innerWidth,
+				height: innerHeight,
+				documentWidth: document.documentElement.scrollWidth,
+				horizontalOverflow: Math.max(
+					0,
+					document.documentElement.scrollWidth - innerWidth,
+				),
+				scrollX,
+				scrollY,
+			},
+			landmarks: {
+				header: rectangle(document.querySelector("header")),
+				main: rectangle(document.querySelector("main")),
+				quickStats: rectangle(quick),
+				secondary: rectangle(widget),
+				clock: rectangle(headerClock),
+			},
+			focus: {
+				kind: focusKind,
+				tag: active?.tagName ?? null,
+				connected: active?.isConnected === true,
+				visible: Boolean(visible(active)),
+				tabIndex: active?.tabIndex ?? null,
+				rectangle: rectangle(active),
+			},
+			busyMarkerCount:
+				widget?.querySelectorAll('[aria-busy="true"]').length ?? 0,
+			statusMarkerCount:
+				widget?.querySelectorAll('[role="status"]').length ?? 0,
+			readyState: document.readyState,
+			headerCount: document.querySelectorAll("header").length,
+			clockStates: Object.fromEntries(
+				["pending", "ready", "unavailable"].map((state) => [
+					state,
+					document.querySelectorAll(`header [data-clock-status="${state}"]`)
+						.length,
+				]),
+			),
+			scriptCount: document.scripts.length,
+			uniqueExternalScripts: externalScripts.size,
+			completedUniqueExternalScripts: [...externalScripts].filter((name) =>
+				completedScripts.has(name),
+			).length,
+			completedScriptResources: performance
+				.getEntriesByType("resource")
+				.filter(
+					(entry) => entry.initiatorType === "script" && entry.responseEnd > 0,
+				).length,
 			clockReady: Boolean(headerClock),
 			clockLabel: headerClock?.getAttribute("aria-label") ?? null,
 			usefulSibling: Boolean(
