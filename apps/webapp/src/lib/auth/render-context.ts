@@ -6,6 +6,8 @@ import { db } from "@/db";
 import { invitation, member, organization } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import type { AuthContext, UserOrganization } from "@/lib/auth-helpers";
+import { defineAbilityFor } from "@/lib/authorization";
+import { loadOrganizationPrincipalForIdentity } from "@/lib/authorization/principal-loader";
 import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { canAccessOrganization } from "@/lib/organization-mfa/organization-access";
@@ -20,6 +22,7 @@ import {
 	organizationSettingsForDisplay,
 } from "./organization-display";
 import type { OrganizationDisplayContext } from "./organization-display-context";
+import type { AuthorizedOrganizationIdentity } from "./organization-identity";
 import { getRenderSession } from "./render-session";
 
 /**
@@ -188,6 +191,44 @@ export const getRenderApprovedMembership = cache(
 	async () =>
 		(await getRenderIdentityRecords())?.activeMembership?.membership ?? null,
 );
+
+/** Internal RSC evidence only: distinguishes no employee from departed employment. */
+export const getRenderOrganizationIdentity = cache(
+	async (): Promise<AuthorizedOrganizationIdentity | null> => {
+		const context = await getRenderAuthContext();
+		if (!context) return null;
+		const records = await getRenderIdentityRecords();
+		if (!records?.activeMembership || records.activeProfile?.eligible === false)
+			return null;
+		return {
+			userId: context.user.id,
+			organizationId: records.activeMembership.organization.id,
+			membershipRole: records.activeMembership.membership.role,
+			employee: context.employee,
+		};
+	},
+);
+
+export const getRenderAbility = cache(async () => {
+	const context = await getRenderAuthContext();
+	if (!context) return null;
+	if (context.user.role === "admin" || !context.session.activeOrganizationId) {
+		return defineAbilityFor({
+			userId: context.user.id,
+			isPlatformAdmin: context.user.role === "admin",
+			activeOrganizationId: context.session.activeOrganizationId,
+			orgMembership: null,
+			employee: null,
+			permissions: { orgWide: null, byTeamId: new Map() },
+			managedEmployeeIds: [],
+			customRoles: [],
+		});
+	}
+	const identity = await getRenderOrganizationIdentity();
+	return identity
+		? defineAbilityFor(await loadOrganizationPrincipalForIdentity(db, identity))
+		: null;
+});
 
 export const getRenderSettingsAccessTier = cache(async () => {
 	const session = await getRenderSession();

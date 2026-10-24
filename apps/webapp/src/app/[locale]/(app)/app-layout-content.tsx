@@ -13,7 +13,7 @@ import { PositionConsentDialogHost } from "@/components/position-capture/positio
 import { PostHogProvider } from "@/components/posthog-provider";
 import { OrganizationSettingsProvider } from "@/components/providers/organization-settings-provider";
 import { UserPreferencesProvider } from "@/components/providers/user-preferences-provider";
-import { ServerAppSidebar } from "@/components/server-app-sidebar";
+import { ServerSidebarRegion } from "@/components/server-sidebar-region";
 import { SiteHeader } from "@/components/site-header";
 import { GetTheAppBanner } from "@/components/store-app/get-the-app-banner";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
@@ -79,19 +79,11 @@ function SiteHeaderLoading() {
 	);
 }
 
-export async function AuthenticatedAppContent({
-	children,
-	params,
-}: AuthenticatedAppContentProps) {
-	// Auth database instrumentation uses random trace IDs and must run per request.
-	await connection();
-	// Centralized auth check protects all routes in the (app) group.
-	const [{ locale }, headersList, session] = await Promise.all([
-		params,
-		headers(),
-		getRenderSession(),
-	]);
-
+async function requireAppSession(
+	session: Awaited<ReturnType<typeof getRenderSession>>,
+	headersList: Headers,
+	locale: string,
+) {
 	if (!session?.user) {
 		// Session cookie exists but is invalid - redirect to session-expired handler
 		// which properly clears cookies before redirecting to sign-in.
@@ -106,6 +98,31 @@ export async function AuthenticatedAppContent({
 		return redirectWithLocale(
 			`/mfa?organizationId=${encodeURIComponent(mfaChallenge.organizationId)}`,
 		);
+	if ("ssoRequired" in session && session.ssoRequired === true) {
+		const callbackUrl =
+			headersList.get(DOMAIN_HEADERS.PATHNAME) || `/${locale}`;
+		const query = new URLSearchParams({ callbackUrl });
+		const organizationId = session.session?.activeOrganizationId;
+		if (organizationId) query.set("organizationId", organizationId);
+		return redirectWithLocale(`/init?${query}`);
+	}
+	return session;
+}
+
+export async function AuthenticatedAppContent({
+	children,
+	params,
+}: AuthenticatedAppContentProps) {
+	// Auth database instrumentation uses random trace IDs and must run per request.
+	await connection();
+	// Centralized auth check protects all routes in the (app) group.
+	const [{ locale }, headersList, rawSession] = await Promise.all([
+		params,
+		headers(),
+		getRenderSession(),
+	]);
+
+	const session = await requireAppSession(rawSession, headersList, locale);
 	const activeOrganizationId = session.session?.activeOrganizationId;
 	// Sync DB locale preference on load (null = user hasn't set preference, respect browser/cookie)
 	const [preferences, organizationContext] = await Promise.all([
@@ -164,7 +181,7 @@ export async function AuthenticatedAppContent({
 								} as React.CSSProperties
 							}
 						>
-							<ServerAppSidebar
+							<ServerSidebarRegion
 								variant="inset"
 								showWorksCouncilNav={Boolean(activeOrganizationId)}
 							/>

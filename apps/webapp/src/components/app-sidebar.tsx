@@ -17,6 +17,7 @@ import { NavTeam } from "@/components/nav-team";
 import { NavUser } from "@/components/nav-user";
 import { OrganizationSwitcher } from "@/components/organization-switcher";
 import type { FeatureFlagState } from "@/components/settings/settings-config";
+import { SidebarCapabilityNotice } from "@/components/sidebar-capability-notice";
 import {
 	Sidebar,
 	SidebarContent,
@@ -38,6 +39,7 @@ import type { SettingsAccessTier } from "@/lib/settings-access";
 export type { NavigationCapabilities } from "@/components/app-sidebar-nav";
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
+	capabilitiesUnavailable?: boolean;
 	organizations?: UserOrganization[];
 	currentOrganization?: UserOrganization | null;
 	employeeRole?: "admin" | "manager" | "employee" | null;
@@ -102,6 +104,7 @@ function SidebarUser() {
 }
 
 export function AppSidebar({
+	capabilitiesUnavailable = false,
 	organizations = EMPTY_ORGANIZATIONS,
 	currentOrganization = null,
 	employeeRole = null,
@@ -147,6 +150,7 @@ export function AppSidebar({
 					canCreateOrganizations={canCreateOrganizations}
 				/>
 			</SidebarHeader>
+			{capabilitiesUnavailable ? <SidebarCapabilityNotice /> : null}
 			<SidebarContent>
 				<AppSearch
 					staticCommands={staticCommands}
