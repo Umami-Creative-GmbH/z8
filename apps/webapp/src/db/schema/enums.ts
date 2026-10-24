@@ -338,6 +338,8 @@ export const notificationTypeEnum = pgEnum("notification_type", [
 	// A clocking queued on an offline kiosk was refused on arrival (#1290)
 	"kiosk_command_refused",
 	"organization_mfa_notice",
+	// A deactivation opened the person's upcoming shifts, to their planners once (#1440)
+	"employee_deactivation_shifts_opened",
 ]);
 
 export const notificationChannelEnum = pgEnum("notification_channel", [
