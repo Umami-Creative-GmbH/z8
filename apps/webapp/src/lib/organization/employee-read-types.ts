@@ -2,17 +2,28 @@ import type {
 	EmployeeDetailRecord,
 	EmployeeListParams,
 	PaginatedEmployeeResponse,
-	SelectableEmployee,
 } from "@/app/[locale]/(app)/settings/employees/employee-action-types";
 import type { EmployeeEmploymentHistoryWithPeriod } from "@/app/[locale]/(app)/settings/employees/employment-history-actions";
 import type { EmployeeScheduleDetails } from "@/app/[locale]/(app)/settings/work-policies/actions";
 
 export type EmployeeReadScope = { userId: string; organizationId: string };
+/** Only the manager selector's display fields; no employment or operational detail. */
+export type EmployeeManagerChoice = {
+	id: string;
+	userId: string;
+	user: {
+		firstName: string | null;
+		lastName: string | null;
+		name: string;
+		email: string;
+		image: string | null;
+	};
+};
 export type EmployeeReadData = {
 	directory: PaginatedEmployeeResponse;
 	detail: EmployeeDetailRecord;
 	schedule: EmployeeScheduleDetails | null;
-	managers: SelectableEmployee[];
+	managers: EmployeeManagerChoice[];
 	"employment-history": EmployeeEmploymentHistoryWithPeriod[];
 	"work-policies": { id: string; name: string }[];
 };
