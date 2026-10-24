@@ -201,3 +201,15 @@ an async popup option synchronously under load; the same test passed focused.
 Both selections now await the same accessible option using findByRole, preserving
 all date, review and submitted-value assertions and existing timeout. Both focused
 cases pass. The complete bounded rerun remains the acceptance check.
+
+## Required completed-work regression gate
+
+The first exact dev-PR PostgreSQL set passed 681 cases and failed 294. Its affected
+request doubles returned only activeOrganizationId. The fresh canonical MFA/SSO
+admission correctly rejects subjects missing session id and userId. Adding those
+real session fields first repaired both vehicle-completion cases with the actual
+policy gate intact. The same correction in the 12 affected suites repairs the
+entire required set: **975 cases pass across 38 files, zero failures or skips**.
+No production admission check, transaction protocol, assertion or policy mock was
+weakened. The test fixtures still use the approved request/session seam; real
+negative MFA/SSO and revoked/lifecycle admission tests remain separate.

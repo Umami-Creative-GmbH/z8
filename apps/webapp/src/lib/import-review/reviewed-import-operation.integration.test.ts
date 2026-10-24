@@ -48,7 +48,11 @@ vi.mock("@/lib/auth", () => ({
 				harness.userId
 					? {
 							user: { id: harness.userId, role: "user" },
-							session: { activeOrganizationId: harness.organizationId },
+							session: {
+								id: `integration-${harness.userId}`,
+								userId: harness.userId,
+								activeOrganizationId: harness.organizationId,
+							},
 						}
 					: null,
 		},
