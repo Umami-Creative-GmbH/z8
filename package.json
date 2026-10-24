@@ -23,6 +23,8 @@
 		"performance:test:ingress": "node --test scripts/performance/ingress-stream-probe.test.mjs",
 		"performance:test:ingress:runtime": "node --test scripts/performance/ingress-stream.runtime.test.mjs",
 		"performance:test:runtime": "node --test scripts/performance/fixture-runtime.test.mjs",
+		"performance:test:projection": "node --test scripts/performance/projection-initialization.test.mjs",
+		"performance:test:projection:runtime": "node --test scripts/performance/fixture-projection.runtime.test.mjs",
 		"dev": "turbo dev",
 		"build": "node scripts/build.mjs",
 		"test": "pnpm node --test docker/scripts/prepare-target-runtime.test.mjs scripts/performance/run-baseline.test.mjs scripts/performance/collector.test.mjs scripts/performance/absence-indexes.test.mjs scripts/performance/mixed-load-probe.test.mjs scripts/performance/mixed-load-observation.test.mjs && turbo test --output-logs=full --log-order=stream",

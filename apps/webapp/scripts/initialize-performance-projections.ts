@@ -6,6 +6,7 @@ import {
 	integrationAdminPool,
 	verifySuiteDatabase,
 } from "@/test/integration-database";
+import { projectionFailure } from "../../../scripts/performance/projection-initialization.mjs";
 
 type Fixture = {
 	kind: string;
@@ -17,6 +18,7 @@ type Fixture = {
 
 const [manifestPath, progressPath, asOf] = process.argv.slice(2);
 let closeApplicationPool: (() => Promise<void>) | undefined;
+let failureStage = "preflight";
 async function run() {
 	if (!manifestPath || !progressPath || !asOf)
 		throw new Error(
@@ -88,6 +90,7 @@ async function run() {
 	await save();
 	try {
 		if (missing.length) {
+			failureStage = "load-work-balance-api";
 			// Import the production pool only after its configuration and both synthetic rosters passed the gate.
 			const { db } = await import("@/db");
 			closeApplicationPool = () => db.$client.end();
@@ -95,12 +98,14 @@ async function run() {
 				"@/lib/work-balance/service"
 			);
 			for (const person of missing) {
+				failureStage = "rebuild-projection";
 				await refreshEmployeeWorkBalanceFromPeriods({
 					organizationId: person.organization_id,
 					employeeId: person.id,
 					forceFullRebuild: true,
 					now: new Date(instant.epochMilliseconds),
 				});
+				failureStage = "verify-projection";
 				const row = await integrationAdminPool().query(
 					"select id from employee_work_balance where employee_id=$1 and organization_id=$2",
 					[person.id, person.organization_id],
@@ -136,7 +141,13 @@ async function run() {
 }
 
 run()
-	.catch(() => {
+	.catch(async (error) => {
+		if (progressPath)
+			await writeFile(
+				`${progressPath}.failure-private.json`,
+				JSON.stringify(projectionFailure(error, failureStage), null, 2),
+				{ mode: 0o600 },
+			);
 		console.error(
 			"Synthetic projection initialization failed; inspect only the private fixture configuration/progress.",
 		);

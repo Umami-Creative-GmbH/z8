@@ -15,6 +15,10 @@ import {
 	fixtureBrowserPermissions,
 	headerRefreshSteps,
 } from "./journey-steps.mjs";
+import {
+	preserveProjectionProgress,
+	projectionInitializationArgs,
+} from "./projection-initialization.mjs";
 import { fixtureTraceTransport } from "./trace-transport.mjs";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
@@ -344,6 +348,7 @@ async function initializeProjections(directory) {
 	const runtime = JSON.parse(
 		await readFile(join(directory, "runtime-private.json"), "utf8"),
 	);
+	await preserveProjectionProgress(directory);
 	const log = createWriteStream(
 		join(directory, "projection-initialization-private.log"),
 		{ flags: "a", mode: 0o600 },
@@ -351,14 +356,11 @@ async function initializeProjections(directory) {
 	await once(log, "open");
 	try {
 		await run(
-			[
-				"exec",
-				"tsx",
-				"scripts/initialize-performance-projections.ts",
+			projectionInitializationArgs(
 				join(directory, "fixture-private.json"),
 				join(directory, "fixture-projection-progress.json"),
 				asOf,
-			],
+			),
 			{ ...runtime.env, CI: "false" },
 			log,
 		);
