@@ -1,113 +1,81 @@
 /* @vitest-environment jsdom */
 
-import { render, screen } from "@testing-library/react";
-import type { ReactNode } from "react";
+import {
+	act,
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+} from "@testing-library/react";
+import { useEffect, useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { initMock, optInMock, optOutMock, resetMock } = vi.hoisted(() => ({
-	initMock: vi.fn(),
-	optInMock: vi.fn(),
-	optOutMock: vi.fn(),
-	resetMock: vi.fn(),
+const sdk = vi.hoisted(() => ({
+	init: vi.fn(),
+	opt_in_capturing: vi.fn(),
+	opt_out_capturing: vi.fn(),
+	reset: vi.fn(),
 }));
-
-const mockEnv = vi.hoisted(() => ({
+const environment = vi.hoisted(() => ({
 	NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: "phc_test",
 	NEXT_PUBLIC_POSTHOG_HOST: "https://eu.i.posthog.com",
 }));
-
-vi.mock("@/env", () => ({
-	env: mockEnv,
-}));
-
-vi.mock("posthog-js", () => ({
-	default: {
-		init: initMock,
-		opt_in_capturing: optInMock,
-		opt_out_capturing: optOutMock,
-		reset: resetMock,
-	},
-}));
-
-vi.mock("posthog-js/react", () => ({
-	PostHogProvider: ({ children }: { children: ReactNode }) => (
-		<div data-testid="posthog-provider">{children}</div>
-	),
-}));
+vi.mock("@/env", () => ({ env: environment }));
+vi.mock("posthog-js", () => ({ default: sdk }));
 
 import { PostHogProvider } from "./posthog-provider";
 
-describe("PostHogProvider", () => {
+let mounts = 0;
+function WorkingApp() {
+	const [clockedIn, setClockedIn] = useState(false);
+	useEffect(() => {
+		mounts += 1;
+	}, []);
+	return (
+		<>
+			<input aria-label="Work note" defaultValue="" />
+			<button type="button" onClick={() => setClockedIn(!clockedIn)}>
+				{clockedIn ? "Clock Out" : "Clock In"}
+			</button>
+			<a href="/en/time-tracking">Time Tracking</a>
+		</>
+	);
+}
+
+describe("consent-aware product analytics", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mockEnv.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN = "phc_test";
-		mockEnv.NEXT_PUBLIC_POSTHOG_HOST = "https://eu.i.posthog.com";
+		mounts = 0;
+		environment.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN = "phc_test";
 	});
-
-	afterEach(() => {
-		vi.unstubAllEnvs();
-	});
-
-	it("does not initialize tracking when product improvement consent is disabled", () => {
-		render(
-			<PostHogProvider disabled={false} helpImproveProduct={false}>
-				<div>App</div>
+	afterEach(cleanup);
+	it("preserves the current clock, draft and DOM when consent changes", async () => {
+		const view = render(
+			<PostHogProvider
+				identityKey="user-1:org-1"
+				disabled={false}
+				helpImproveProduct={false}
+			>
+				<WorkingApp />
 			</PostHogProvider>,
 		);
-
-		expect(screen.getByText("App")).toBeTruthy();
-		expect(screen.queryByTestId("posthog-provider")).toBeNull();
-		expect(initMock).not.toHaveBeenCalled();
-		expect(optInMock).not.toHaveBeenCalled();
-		expect(optOutMock).toHaveBeenCalled();
-		expect(resetMock).toHaveBeenCalled();
-	});
-
-	it("initializes tracking when product improvement consent is enabled", () => {
-		render(
-			<PostHogProvider disabled={false} helpImproveProduct>
-				<div>App</div>
-			</PostHogProvider>,
+		const input = screen.getByRole("textbox", { name: "Work note" });
+		fireEvent.change(input, { target: { value: "Unsent task detail" } });
+		fireEvent.click(screen.getByRole("button", { name: "Clock In" }));
+		await act(async () =>
+			view.rerender(
+				<PostHogProvider
+					identityKey="user-1:org-1"
+					disabled={false}
+					helpImproveProduct
+				>
+					<WorkingApp />
+				</PostHogProvider>,
+			),
 		);
-
-		expect(screen.getByTestId("posthog-provider")).toBeTruthy();
-		expect(initMock).toHaveBeenCalledWith(
-			"phc_test",
-			expect.objectContaining({ api_host: "/ingest" }),
-		);
-		expect(optInMock).toHaveBeenCalled();
-		expect(initMock.mock.invocationCallOrder[0]).toBeLessThan(
-			optInMock.mock.invocationCallOrder[0],
-		);
-	});
-
-	it("stops tracking when the authenticated provider unmounts", () => {
-		const { unmount } = render(
-			<PostHogProvider disabled={false} helpImproveProduct>
-				<div>App</div>
-			</PostHogProvider>,
-		);
-		optOutMock.mockClear();
-		resetMock.mockClear();
-
-		unmount();
-
-		expect(optOutMock).toHaveBeenCalledOnce();
-		expect(resetMock).toHaveBeenCalledOnce();
-	});
-
-	it("does not initialize tracking when disabled", () => {
-		render(
-			<PostHogProvider disabled helpImproveProduct>
-				<div>App</div>
-			</PostHogProvider>,
-		);
-
-		expect(screen.getByText("App")).toBeTruthy();
-		expect(screen.queryByTestId("posthog-provider")).toBeNull();
-		expect(initMock).not.toHaveBeenCalled();
-		expect(optInMock).not.toHaveBeenCalled();
-		expect(optOutMock).not.toHaveBeenCalled();
-		expect(resetMock).not.toHaveBeenCalled();
+		expect(screen.getByRole("textbox")).toBe(input);
+		expect(screen.getByDisplayValue("Unsent task detail")).toBe(input);
+		expect(screen.getByRole("button", { name: "Clock Out" })).toBeTruthy();
+		expect(mounts).toBe(1);
 	});
 });

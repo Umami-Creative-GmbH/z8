@@ -1,5 +1,3 @@
-import { mfaChallengeFromSession } from "@/lib/organization-mfa/http";
-import { MfaDeadlineBanner } from "@/components/organization-mfa/deadline-banner";
 import { eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
@@ -10,6 +8,7 @@ import { TrialBanner } from "@/components/billing/trial-banner";
 import { PushPermissionProvider } from "@/components/notifications/push-permission-provider";
 import { OfflineBanner } from "@/components/offline";
 import { OrganizationDeletionBanner } from "@/components/organization/organization-deletion-banner";
+import { MfaDeadlineBanner } from "@/components/organization-mfa/deadline-banner";
 import { PositionConsentDialogHost } from "@/components/position-capture/position-consent-dialog";
 import { PostHogProvider } from "@/components/posthog-provider";
 import { OrganizationSettingsProvider } from "@/components/providers/organization-settings-provider";
@@ -31,6 +30,7 @@ import { runtime } from "@/lib/effect/runtime";
 import type { BillingAccessResult } from "@/lib/effect/services/billing/billing-enforcement.service";
 import { createLogger } from "@/lib/logger";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
+import { mfaChallengeFromSession } from "@/lib/organization-mfa/http";
 import { appBannerScrollPaddingClassName } from "@/lib/store-app/app-banner";
 import { getRenderUserPreferences } from "@/lib/user-preferences/render-snapshot";
 import { DOMAIN_HEADERS } from "@/proxy";
@@ -145,6 +145,7 @@ export async function AuthenticatedAppContent({
 
 	return (
 		<PostHogProvider
+			identityKey={JSON.stringify([session.user.id, activeOrganizationId])}
 			disabled={env.NODE_ENV === "development"}
 			helpImproveProduct={helpImproveProduct}
 		>

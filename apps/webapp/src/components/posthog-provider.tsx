@@ -1,7 +1,5 @@
 "use client";
 
-import posthog from "posthog-js";
-import { PostHogProvider as PHProvider } from "posthog-js/react";
 import { useEffect } from "react";
 import { env } from "@/env";
 
@@ -9,41 +7,62 @@ type PostHogProviderProps = {
 	children: React.ReactNode;
 	disabled: boolean;
 	helpImproveProduct: boolean;
+	identityKey: string;
 };
 
-export function PostHogProvider({ children, disabled, helpImproveProduct }: PostHogProviderProps) {
+let postHogLoad: Promise<typeof import("posthog-js")> | undefined;
+function loadPostHog() {
+	// Share the module download across effect replay and consent/identity changes.
+	postHogLoad ??= import("posthog-js");
+	return postHogLoad;
+}
+
+export function PostHogProvider({
+	children,
+	disabled,
+	helpImproveProduct,
+	identityKey,
+}: PostHogProviderProps) {
 	const projectToken = env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN?.trim();
-	const isPostHogEnabled = !disabled && !!projectToken;
-
+	const enabled = !disabled && helpImproveProduct && !!projectToken;
 	useEffect(() => {
-		if (!isPostHogEnabled) {
-			return;
-		}
-
-		if (!helpImproveProduct) {
-			posthog.opt_out_capturing();
-			posthog.reset();
-			return;
-		}
-
-		posthog.init(projectToken, {
-			api_host: "/ingest",
-			ui_host: env.NEXT_PUBLIC_POSTHOG_HOST,
-			defaults: "2026-01-30",
-			capture_pageview: "history_change",
-			capture_pageleave: true,
-		});
-		posthog.opt_in_capturing();
-
+		if (!enabled || !identityKey) return;
+		let cancelled = false;
+		let stop: (() => void) | undefined;
+		void loadPostHog()
+			.then(({ default: posthog }) => {
+				if (cancelled) return;
+				stop = () => {
+					stop = undefined;
+					// Optional analytics failures must never break app cleanup or transitions.
+					try {
+						posthog.opt_out_capturing();
+					} catch {
+						/* best effort */
+					}
+					try {
+						posthog.reset();
+					} catch {
+						/* best effort */
+					}
+				};
+				posthog.init(projectToken, {
+					api_host: "/ingest",
+					ui_host: env.NEXT_PUBLIC_POSTHOG_HOST,
+					defaults: "2026-01-30",
+					capture_pageview: "history_change",
+					capture_pageleave: true,
+				});
+				posthog.opt_in_capturing();
+			})
+			.catch(() => {
+				stop?.();
+			});
 		return () => {
-			posthog.opt_out_capturing();
-			posthog.reset();
+			cancelled = true;
+			stop?.();
 		};
-	}, [helpImproveProduct, isPostHogEnabled, projectToken]);
-
-	if (!(isPostHogEnabled && helpImproveProduct)) {
-		return <>{children}</>;
-	}
-
-	return <PHProvider client={posthog}>{children}</PHProvider>;
+	}, [enabled, projectToken, identityKey]);
+	// Analytics never changes the application tree or owns its lifecycle.
+	return <>{children}</>;
 }
