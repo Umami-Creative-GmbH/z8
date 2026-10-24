@@ -8,6 +8,8 @@ import {
 	it,
 	vi,
 } from "vitest";
+import { updateEmployeeAction } from "@/app/[locale]/(app)/settings/employees/employee-mutations.actions";
+import { updateWorkPolicy } from "@/app/[locale]/(app)/settings/work-policies/actions";
 import { ORGANIZATION_CONTEXT_HEADERS } from "@/lib/auth/organization-display-context";
 import {
 	createLifecycleDatabaseFixture,
@@ -29,9 +31,12 @@ vi.mock("next/server", async (original) =>
 vi.mock("next/headers", async () =>
 	(await import("@/test/integration-harness")).nextHeaders(),
 );
-vi.mock("next/cache", async (original) =>
-	(await import("@/test/integration-harness")).nextCache(original),
-);
+vi.mock("next/cache", async (original) => ({
+	...(await (await import("@/test/integration-harness")).nextCache(original)),
+	// Vitest does not compile use-cache directives. This suite proves SQL/access,
+	// not cache reuse; native cache hit/expiry proof runs in the compiled fixture.
+	cacheLife: vi.fn(),
+}));
 vi.mock("@/lib/auth", () => ({
 	auth: {
 		api: {
@@ -59,6 +64,11 @@ vi.mock("@/db", async () =>
 		logQuery: (query) => state.queries.push(query),
 	}),
 );
+vi.mock("@/tolgee/server", async () => ({
+	getTranslate: async () =>
+		(await import("@/lib/organization/custom-fields/refusal-messages"))
+			.englishDefaults,
+}));
 
 function request(
 	dataset: string,
@@ -88,8 +98,10 @@ describe("employee GET transport over authorized PostgreSQL readers", () => {
 	let managed: SeededEmployee;
 	let unrelated: SeededEmployee;
 	let foreign: SeededEmployee;
+	let foreignOrganizationId: string;
 	let legacyAdmin: SeededEmployee;
 	const policyId = randomUUID();
+	const foreignPolicyId = randomUUID();
 	const invitationId = randomUUID();
 	const draftId = randomUUID();
 	beforeAll(async () => {
@@ -97,8 +109,9 @@ describe("employee GET transport over authorized PostgreSQL readers", () => {
 		manager = await fixture.seedEmployee();
 		managed = await fixture.seedEmployee();
 		unrelated = await fixture.seedEmployee();
+		foreignOrganizationId = await fixture.createOrganization();
 		foreign = await fixture.seedEmployee({
-			organizationId: await fixture.createOrganization(),
+			organizationId: foreignOrganizationId,
 			role: "admin",
 		});
 		await fixture.seedEmployee({ role: "admin", isActive: false });
@@ -124,6 +137,10 @@ describe("employee GET transport over authorized PostgreSQL readers", () => {
 		await fixture.pool.query(
 			`insert into work_policy (id, organization_id, name, regulation_enabled, created_by, updated_at) values ($1,$2,'Fixture policy',false,$3,now())`,
 			[policyId, fixture.organizationId, fixture.ownerUserId],
+		);
+		await fixture.pool.query(
+			`insert into work_policy (id, organization_id, name, regulation_enabled, created_by, updated_at) values ($1,$2,'Other organization policy',false,$3,now())`,
+			[foreignPolicyId, foreignOrganizationId, foreign.userId],
 		);
 		await fixture.pool.query(
 			`insert into employee_employment_history (employee_id, organization_id, employment_period_id, valid_from, contract_type, weekly_contract_minutes, review_state, created_by, updated_at) values ($1,$2,$3,'2026-01-01T00:00:00Z','fixed',2400,'confirmed',$4,now())`,
@@ -253,6 +270,226 @@ describe("employee GET transport over authorized PostgreSQL readers", () => {
 			EmployeeReadSnapshot<"work-policies">
 		>(await request("work-policies"));
 		expect(policies.data).toEqual([{ id: policyId, name: "Fixture policy" }]);
+	});
+
+	it("returns only the fields the eligible-manager selector displays", async () => {
+		state.userId = fixture.ownerUserId;
+		const response = await request(
+			"managers",
+			`employeeId=${managed.employeeId}`,
+		);
+		expect(response.status).toBe(200);
+		const { data } =
+			await parseSuperJsonResponse<EmployeeReadSnapshot<"managers">>(response);
+		expect(data.length).toBeGreaterThan(0);
+		for (const choice of data) {
+			expect(Object.keys(choice).sort()).toEqual(["id", "user", "userId"]);
+			expect(Object.keys(choice.user).sort()).toEqual([
+				"email",
+				"firstName",
+				"image",
+				"lastName",
+				"name",
+			]);
+		}
+	});
+
+	it("reads accepted manager display and policy changes immediately through the same GET callers", async () => {
+		state.userId = fixture.ownerUserId;
+		const managers = () =>
+			request("managers", `employeeId=${managed.employeeId}`).then(
+				parseSuperJsonResponse<EmployeeReadSnapshot<"managers">>,
+			);
+		expect(
+			(await managers()).data.find((person) => person.id === manager.employeeId)
+				?.user.name,
+		).toBe("Lifecycle");
+		expect(
+			(
+				await updateEmployeeAction(manager.employeeId, {
+					firstName: "Renamed",
+					lastName: "Manager",
+				})
+			).success,
+		).toBe(true);
+		expect(
+			(await managers()).data.find((person) => person.id === manager.employeeId)
+				?.user.name,
+		).toBe("Renamed Manager");
+		expect(
+			(await updateWorkPolicy(policyId, { name: "Renamed policy" })).success,
+		).toBe(true);
+		const policies = await parseSuperJsonResponse<
+			EmployeeReadSnapshot<"work-policies">
+		>(await request("work-policies"));
+		expect(policies.data).toEqual([{ id: policyId, name: "Renamed policy" }]);
+		await fixture.pool.query(
+			`update work_policy set name='Fixture policy' where id=$1 and organization_id=$2`,
+			[policyId, fixture.organizationId],
+		);
+	});
+
+	it("uses the manager's current assigned set and refuses a later privilege reduction", async () => {
+		try {
+			await fixture.pool.query(
+				`update employee set role='manager' where id=$1 and organization_id=$2`,
+				[managed.employeeId, fixture.organizationId],
+			);
+			const selected = () =>
+				request("managers", `employeeId=${unrelated.employeeId}`).then(
+					parseSuperJsonResponse<EmployeeReadSnapshot<"managers">>,
+				);
+			expect((await selected()).data.map((person) => person.id)).toEqual([
+				managed.employeeId,
+			]);
+			await fixture.pool.query(
+				`delete from employee_managers where employee_id=$1 and manager_id=$2`,
+				[managed.employeeId, manager.employeeId],
+			);
+			expect((await selected()).data).toEqual([]);
+			await fixture.pool.query(
+				`update employee set role='employee' where id=$1 and organization_id=$2`,
+				[manager.employeeId, fixture.organizationId],
+			);
+			expect(
+				(await request("managers", `employeeId=${unrelated.employeeId}`))
+					.status,
+			).toBe(403);
+		} finally {
+			await fixture.pool.query(
+				`update employee set role='employee' where id=$1 and organization_id=$2`,
+				[managed.employeeId, fixture.organizationId],
+			);
+			await fixture.pool.query(
+				`update employee set role='manager' where id=$1 and organization_id=$2`,
+				[manager.employeeId, fixture.organizationId],
+			);
+			await fixture.pool.query(
+				`insert into employee_managers (employee_id, manager_id, is_primary, assigned_by) values ($1,$2,true,$3) on conflict do nothing`,
+				[managed.employeeId, manager.employeeId, fixture.ownerUserId],
+			);
+		}
+	});
+
+	it("rechecks roster eligibility and policy deletion after external writes with unchanged update timestamps", async () => {
+		state.userId = fixture.ownerUserId;
+		const choices = () =>
+			request("managers", `employeeId=${managed.employeeId}`).then(
+				parseSuperJsonResponse<EmployeeReadSnapshot<"managers">>,
+			);
+		expect(
+			(await choices()).data.some((person) => person.id === manager.employeeId),
+		).toBe(true);
+		try {
+			await fixture.pool.query(
+				`update employee set is_active=false where id=$1 and organization_id=$2`,
+				[manager.employeeId, fixture.organizationId],
+			);
+			expect(
+				(await choices()).data.some(
+					(person) => person.id === manager.employeeId,
+				),
+			).toBe(false);
+			await fixture.pool.query(
+				`update work_policy set is_active=false where id=$1 and organization_id=$2`,
+				[policyId, fixture.organizationId],
+			);
+			expect(
+				(
+					await parseSuperJsonResponse<EmployeeReadSnapshot<"work-policies">>(
+						await request("work-policies"),
+					)
+				).data,
+			).toEqual([]);
+		} finally {
+			await fixture.pool.query(
+				`update employee set is_active=true where id=$1 and organization_id=$2`,
+				[manager.employeeId, fixture.organizationId],
+			);
+			await fixture.pool.query(
+				`update work_policy set is_active=true where id=$1 and organization_id=$2`,
+				[policyId, fixture.organizationId],
+			);
+		}
+	});
+
+	it("keeps organization switching scoped and does not change another organization's choices after a local mutation", async () => {
+		state.userId = foreign.userId;
+		state.organizationId = foreignOrganizationId;
+		const otherChoices = () =>
+			request("managers", `employeeId=${managed.employeeId}`).then(
+				parseSuperJsonResponse<EmployeeReadSnapshot<"managers">>,
+			);
+		const before = await otherChoices();
+		expect(before.data.map((person) => person.id)).toEqual([
+			foreign.employeeId,
+		]);
+		expect(
+			(
+				await parseSuperJsonResponse<EmployeeReadSnapshot<"work-policies">>(
+					await request("work-policies"),
+				)
+			).data,
+		).toEqual([{ id: foreignPolicyId, name: "Other organization policy" }]);
+		state.userId = fixture.ownerUserId;
+		state.organizationId = fixture.organizationId;
+		expect(
+			(
+				await updateEmployeeAction(manager.employeeId, {
+					firstName: "Organization A",
+				})
+			).success,
+		).toBe(true);
+		state.userId = foreign.userId;
+		state.organizationId = foreignOrganizationId;
+		expect((await otherChoices()).data).toEqual(before.data);
+		expect(
+			(
+				await request(
+					"work-policies",
+					"",
+					foreign.userId,
+					fixture.organizationId,
+				)
+			).status,
+		).toBe(409);
+	});
+
+	it("drops a newly due departure without waiting for the lifecycle worker to write employee state", async () => {
+		state.userId = fixture.ownerUserId;
+		const departureId = randomUUID();
+		await fixture.pool.query(
+			`insert into employee_departure (id, organization_id, employee_id, employment_period_id, mode, last_working_day, timezone, cutoff_at, created_by, request_id, request_fingerprint, revision, status) values ($1,$2,$3,$4,'scheduled','2026-10-24','UTC',clock_timestamp()+interval '1 second',$5,gen_random_uuid(),'selector-fixture',1,'pending')`,
+			[
+				departureId,
+				fixture.organizationId,
+				manager.employeeId,
+				manager.employmentPeriodId,
+				fixture.ownerUserId,
+			],
+		);
+		const choices = () =>
+			request("managers", `employeeId=${managed.employeeId}`).then(
+				parseSuperJsonResponse<EmployeeReadSnapshot<"managers">>,
+			);
+		try {
+			expect(
+				(await choices()).data.some(
+					(person) => person.id === manager.employeeId,
+				),
+			).toBe(true);
+			await fixture.pool.query(`select pg_sleep(1.1)`);
+			expect(
+				(await choices()).data.some(
+					(person) => person.id === manager.employeeId,
+				),
+			).toBe(false);
+		} finally {
+			await fixture.pool.query(
+				`delete from employee_departure where id=$1 and organization_id=$2`,
+				[departureId, fixture.organizationId],
+			);
+		}
 	});
 
 	it("keeps approved organization administrators without an employee profile working", async () => {

@@ -4,18 +4,18 @@ import { decodeEmployeeInvitationDraftId } from "@/app/[locale]/(app)/settings/e
 import {
 	getEmployeeAction,
 	listEmployeesAction,
-	listEmployeesForSelectAction,
 } from "@/app/[locale]/(app)/settings/employees/employee-queries.actions";
 import { listEmployeeEmploymentHistoryAction } from "@/app/[locale]/(app)/settings/employees/employment-history-actions";
-import {
-	getEmployeeEffectiveScheduleDetails,
-	getWorkPolicies,
-} from "@/app/[locale]/(app)/settings/work-policies/actions";
+import { getEmployeeEffectiveScheduleDetails } from "@/app/[locale]/(app)/settings/work-policies/actions";
 import { env } from "@/env";
 import { ORGANIZATION_CONTEXT_HEADERS } from "@/lib/auth/organization-display-context";
 import { getRequestSession } from "@/lib/auth/request-session";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 import type { ServerActionResult } from "@/lib/effect/result";
+import {
+	getEmployeeManagerChoices,
+	getEmployeeWorkPolicyChoices,
+} from "@/lib/organization/employee-detail-selectors";
 import type {
 	EmployeeReadData,
 	EmployeeReadDataset,
@@ -97,13 +97,7 @@ export async function GET(
 			if (!parsed.success) return errorResponse("Invalid employee query", 400);
 			result = await listEmployeesAction(parsed.data);
 		} else if (dataset === "work-policies") {
-			const policies = await getWorkPolicies(scope.organizationId);
-			result = policies.success
-				? {
-						success: true,
-						data: policies.data.map(({ id, name }) => ({ id, name })),
-					}
-				: policies;
+			result = await getEmployeeWorkPolicyChoices();
 		} else {
 			if (
 				!["detail", "schedule", "managers", "employment-history"].includes(
@@ -130,15 +124,7 @@ export async function GET(
 			else if (dataset === "employment-history")
 				result = await listEmployeeEmploymentHistoryAction(employeeId);
 			else {
-				const managers = await listEmployeesForSelectAction({
-					roles: ["admin", "manager"],
-					excludeIds: [employeeId],
-					limit: 1000,
-					status: "current",
-				});
-				result = managers.success
-					? { success: true, data: managers.data.employees }
-					: managers;
+				result = await getEmployeeManagerChoices(employeeId);
 			}
 		}
 		if (!(await scopeIsCurrent(scope)))
