@@ -24,6 +24,32 @@ const check = (condition, message) => {
 };
 export const multiInstanceObservationProtocol = "paired-native-observer-v2";
 
+/** Finish the authoritative cleanup reload before closing its real browser context. */
+export async function waitForMultiInstanceContextDrain(transport) {
+	const started = performance.now();
+	transport.wire.ready(started);
+	for (;;) {
+		const state = transport.wire.state(performance.now());
+		const prefetch = state.groups.prefetch;
+		if (state.mandatoryErrors > 0 || prefetch.errors > 0 || state.capped) {
+			const error = new Error(
+				"Clock cleanup finite HTTP drain failed or capped.",
+			);
+			error.cleanupProof = state;
+			throw error;
+		}
+		if (state.complete && prefetch.pending === 0) return state;
+		if (performance.now() - started >= 10000) {
+			const error = new Error(
+				"Clock cleanup finite HTTP drain exceeded its cap.",
+			);
+			error.cleanupProof = state;
+			throw error;
+		}
+		await new Promise((done) => setTimeout(done, 25));
+	}
+}
+
 /** Startup is retained, never subtracted without its exact empty-context proof. */
 export function multiInstanceTransportComplete(snapshot) {
 	const init = snapshot.browserInitialization,
