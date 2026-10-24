@@ -164,9 +164,13 @@ export async function registerNodeRuntime() {
 
 	sdk.start();
 	if (nativeCoverage && process.env.Z8_PERFORMANCE_OBSERVER_CONTROL_FILE) {
-		const { Client } = await import("pg");
+		const pg = await import("pg");
+		const connection =
+			Reflect.get(pg, "Connection") ?? Reflect.get(pg, "default")?.Connection;
+		if (typeof connection !== "function")
+			throw new Error("Native wire counter unavailable");
 		installFixtureDriverCounter(
-			Client,
+			connection,
 			nativeCoverage,
 			() => trace.getActiveSpan()?.spanContext().traceId,
 		);

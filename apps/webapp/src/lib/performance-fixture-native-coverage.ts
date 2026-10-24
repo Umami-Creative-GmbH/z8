@@ -173,6 +173,8 @@ export class FixtureNativeCoverage {
 	snapshot() {
 		return {
 			...this.totals,
+			started: { ...this.totals.started },
+			ended: { ...this.totals.ended },
 			driverQueries: this.driverQueries,
 			driverCounter: this.driverCounter,
 			incoming: this.incoming,
@@ -213,17 +215,22 @@ export function installFixtureDriverCounter(
 ) {
 	if (wrappedDrivers.has(driver.prototype))
 		throw new Error("Native driver counter already installed");
-	const descriptor = Object.getOwnPropertyDescriptor(driver.prototype, "query");
-	if (!descriptor || typeof descriptor.value !== "function")
-		throw new Error("Native query boundary unavailable");
-	const original = descriptor.value;
-	Object.defineProperty(driver.prototype, "query", {
-		...descriptor,
-		value: function (this: unknown, ...args: unknown[]) {
-			coverage.driverQuery(activeTraceId());
-			return Reflect.apply(original, this, args);
-		},
-	});
+	for (const method of ["query", "execute"]) {
+		const descriptor = Object.getOwnPropertyDescriptor(
+			driver.prototype,
+			method,
+		);
+		if (!descriptor || typeof descriptor.value !== "function")
+			throw new Error("Native wire boundary unavailable");
+		const original = descriptor.value;
+		Object.defineProperty(driver.prototype, method, {
+			...descriptor,
+			value: function (this: unknown, ...args: unknown[]) {
+				coverage.driverQuery(activeTraceId());
+				return Reflect.apply(original, this, args);
+			},
+		});
+	}
 	wrappedDrivers.add(driver.prototype);
 	coverage.enableDriverCounter();
 }
@@ -265,12 +272,10 @@ export async function startFixtureNativeControl(
 			else {
 				const drained = await coverage.drain(traceIds);
 				await forceFlush();
-				proof = coverage
-					.close(traceIds)
-					.map((entry) => ({
-						...entry,
-						complete: entry.complete && entry.driverComplete && drained,
-					}));
+				proof = coverage.close(traceIds).map((entry) => ({
+					...entry,
+					complete: entry.complete && entry.driverComplete && drained,
+				}));
 			}
 			response.setHeader("Content-Type", "application/json");
 			response.end(
