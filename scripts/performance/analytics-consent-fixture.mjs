@@ -1,6 +1,7 @@
 /** Head-only configured analytics fixture. Never changes the parity fixture. */
 import { execFileSync, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
+import { once } from "node:events";
 import { createWriteStream } from "node:fs";
 import { access, mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { join, relative, resolve, sep } from "node:path";
@@ -198,6 +199,7 @@ async function launch(directory, command) {
 	const log = createWriteStream(join(directory, `${command}-private.log`), {
 		mode: 0o600,
 	});
+	await once(log, "open");
 	const args =
 		command === "build"
 			? ["run", "build"]
