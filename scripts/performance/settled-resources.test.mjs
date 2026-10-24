@@ -96,6 +96,8 @@ test("native correlation, sample coverage and censored outcomes cannot finalize 
       closed: true,
       unattributedNativeSpans: 0,
       incomplete: false,
+      nativeProof: true,
+      lateSpans: 0,
     },
     observedQueryErrors: 0,
     observedPoolAcquisitionErrors: 0,

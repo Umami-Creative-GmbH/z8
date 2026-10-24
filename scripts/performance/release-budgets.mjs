@@ -494,7 +494,9 @@ function requireEvidence(plan, artifact, native, planHash, phase) {
       e.coverage.registration !== true ||
       e.coverage.closed !== true ||
       e.coverage.unattributedNativeSpans !== 0 ||
-      e.coverage.incomplete !== false
+      e.coverage.incomplete !== false ||
+      e.coverage.nativeProof !== true ||
+      e.coverage.lateSpans !== 0
     )
       throw Error("Native backend correlation coverage is incomplete.");
     for (const metric of backendMetrics)

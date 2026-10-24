@@ -128,7 +128,9 @@ export function settledEvidenceGates(plan, artifact, native, planSha) {
       e.coverage.registration !== true ||
       e.coverage.closed !== true ||
       e.coverage.unattributedNativeSpans !== 0 ||
-      e.coverage.incomplete !== false
+      e.coverage.incomplete !== false ||
+      e.coverage.nativeProof !== true ||
+      e.coverage.lateSpans !== 0
     )
       gates.push("Native companion coverage is incomplete.");
     if (

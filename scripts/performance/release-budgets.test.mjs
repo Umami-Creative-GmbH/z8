@@ -98,6 +98,8 @@ function fixture() {
       closed: true,
       unattributedNativeSpans: 0,
       incomplete: false,
+      nativeProof: true,
+      lateSpans: 0,
     },
     observedQueryErrors: 0,
     observedPoolAcquisitionErrors: 0,
@@ -576,4 +578,22 @@ test("artifact telemetry identity must match the registered plan protocol", () =
   f.artifact.runtime.collectorProtocol = "z8-fixture-otlp-collector-v1";
   f.saveBefore();
   assert.equal(f.derive().status, 2);
+});
+test("registered coverage still requires independent native count proof and zero late spans", () => {
+  for (const change of [
+    (e) => {
+      delete e.coverage.nativeProof;
+    },
+    (e) => {
+      e.coverage.nativeProof = false;
+    },
+    (e) => {
+      e.coverage.lateSpans = 1;
+    },
+  ]) {
+    const f = fixture();
+    change(f.backend[0]);
+    f.saveBefore();
+    assert.equal(f.derive().status, 2);
+  }
 });
