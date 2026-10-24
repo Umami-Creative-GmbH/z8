@@ -25,6 +25,7 @@ test("companion validates required inputs and sample counts before importing a b
 import {
   requireSettledEvidence,
   runCompanionCapture,
+  observeFailedJourneyWire,
   companionPolicy as settledPolicy,
   companionWireContract,
 } from "./settled-resources.mjs";
@@ -39,6 +40,7 @@ test("native correlation, sample coverage and censored outcomes cannot finalize 
       mode: "production",
       collectorProtocol: "z8-fixture-otlp-collector-v2",
       traceTransport: "context-loopback-proxy-v1",
+      browserPolicy: "isolated-profile-no-prediction-v1",
       browserPermissions: "notifications-denied-for-fixture-origin",
       build: "aaaaaaaaa",
       sourceBuild: "bbbbbbbbb",
@@ -86,7 +88,11 @@ test("native correlation, sample coverage and censored outcomes cannot finalize 
       },
     })),
   );
-  for (const s of samples) s.wireSettled = wireFixture(s);
+  for (const s of samples) {
+    s.traceTransport = initializedTransport(s.traceTransport);
+    s.browserInitialization = s.traceTransport.browserInitialization;
+    s.wireSettled = wireFixture(s);
+  }
   const artifact = {
     kind: "settled-resource-companion",
     nativeRunCoverage: {
@@ -140,6 +146,25 @@ test("native correlation, sample coverage and censored outcomes cannot finalize 
     (a) => (a.samples[0].wireSettled = null),
     (a) => (a.nativeRunCoverage.complete = false),
     (a) => delete a.nativeRunCoverage,
+    (a) => {
+      const t = a.samples[0].traceTransport;
+      t.afterInitialization.refusedRequests = 1;
+      t.afterInitialization.refusalReasons.nonLoopbackConnect = 1;
+      t.refusedRequests = 2;
+      t.refusalReasons.nonLoopbackConnect = 2;
+    },
+    (a) => {
+      const t = a.samples[0].traceTransport;
+      t.afterInitialization.upstreamFailures = 1;
+      t.upstreamFailures = 1;
+    },
+    (a) => a.samples[0].traceTransport.responseBodyBytes++,
+    (a) => {
+      a.samples[0].browserInitialization.launch.arguments = [];
+    },
+    (a) => {
+      a.samples[0].browserInitialization.capped = true;
+    },
   ]) {
     const copy = structuredClone(artifact);
     change(copy);
@@ -166,6 +191,7 @@ test("capture requires registered collector control before any runtime or browse
         browserPermissions: "notifications-denied-for-fixture-origin",
         collectorProtocol: "z8-fixture-otlp-collector-v2",
         traceTransport: "context-loopback-proxy-v1",
+        browserPolicy: "isolated-profile-no-prediction-v1",
       },
       conditions: [{ name: "admin", role: "admin" }],
       ranges: [{ name: "month" }],
@@ -275,3 +301,90 @@ function wireFixture(sample, overrides = {}) {
   wire.ready(10);
   return wire.state(1010);
 }
+
+function initializedTransport(snapshot) {
+  const reasons = {
+    unexpectedLoopback: 0,
+    nonLoopbackHttp: 0,
+    loopbackConnect: 0,
+    nonLoopbackConnect: 0,
+    malformed: 0,
+  };
+  const after = {
+    requests: snapshot.requests,
+    rewrittenRequests: snapshot.rewrittenRequests,
+    refusedRequests: 0,
+    upstreamFailures: 0,
+    responseBodyBytes: snapshot.responseBodyBytes,
+    refusalReasons: { ...reasons },
+  };
+  const init = {
+    policy: "isolated-profile-no-prediction-v1",
+    launch: {
+      policy: "isolated-profile-no-prediction-v1",
+      headless: true,
+      preferences: {
+        net: { network_prediction_options: 2 },
+        search: { suggest_enabled: false },
+        default_search_provider: { enabled: false },
+      },
+      arguments: ["--disable-features=AutofillServerCommunication"],
+      browserVersion: "Chrome/131.0",
+    },
+    emptyContext: true,
+    quietMs: 2000,
+    capMs: 10000,
+    quietObservedMs: 2000,
+    elapsedMs: 2000,
+    pending: 0,
+    requests: 0,
+    rewrittenRequests: 0,
+    refusedRequests: 1,
+    upstreamFailures: 0,
+    responseBodyBytes: 0,
+    refusalReasons: { ...reasons, nonLoopbackConnect: 1 },
+    complete: true,
+    capped: false,
+  };
+  return {
+    ...snapshot,
+    refusedRequests: 1,
+    refusalReasons: { ...init.refusalReasons },
+    browserInitialization: init,
+    afterInitialization: after,
+  };
+}
+test("failed UI can have a separately complete bounded wire observation without becoming usable", async () => {
+  const wire = createProxyWireObserver();
+  wire.begin(0);
+  const id = wire.request(
+    { traceId: "measured", headers: { "sec-fetch-dest": "script" } },
+    1,
+  );
+  wire.bytes(id, 42, 2);
+  wire.end(id, {}, 3);
+  let now = 31842;
+  const result = await observeFailedJourneyWire(wire, {
+    now: () => now,
+    pause: async () => {
+      now += 1000;
+    },
+  });
+  assert.equal(result.scope, "post-failed-journey-diagnostic");
+  assert.equal(result.complete, true);
+  assert.equal(result.bytes.javascript, 42);
+  assert.equal(result.postReadyMs, 1000);
+  const pending = createProxyWireObserver();
+  pending.begin(0);
+  pending.request({ traceId: "pending", headers: {} }, 1);
+  now = 31842;
+  const capped = await observeFailedJourneyWire(pending, {
+    now: () => now,
+    pause: async () => {
+      now += 1000;
+    },
+  });
+  assert.equal(capped.complete, false);
+  assert.equal(capped.capped, true);
+  assert.equal(capped.mandatoryPending, 1);
+});

@@ -1,0 +1,2310 @@
+{
+  "kind": "multi-instance-cache-functional-evidence-v2",
+  "status": "incomplete",
+  "runtimeAccepted": false,
+  "purpose": "finite functional correctness and telemetry, not controlled latency comparison",
+  "sourceBuild": "4d8bdb1d477cd02888565816b0fb96f85dc13b71",
+  "artifactBuildId": "build-TfctsWXpff2fKS",
+  "artifactManifestSha256": "9961b926916b8e1070000c7771777fa52404f8127d8ea87740471c9624899330",
+  "deployment": {
+    "nextVersion": "16.4.0",
+    "replicas": 2,
+    "proxy": "Docker HAProxy 2.8",
+    "origin": "http://localhost:50754",
+    "images": {
+      "postgres": "sha256:ca0bd484cb98bf4b24eb1010e73fb3fcbd6714d240fbc1a10eea5b7dbecb641d",
+      "redis": "sha256:48332870af354a799964c0012ae1194a0bf2bf894eb508f945810596dc2d8d11",
+      "storage": "sha256:8cc9801755448b71a786705ce76692c77e14936cccd87cf2fc31842e58f4d1ff",
+      "proxy": "sha256:1cb3b38bd67e1733c9f1a7c24e7e14809b23a711ae90f211a9eb0e6003d909fd"
+    },
+    "cacheBackend": "installed-default-process-memory",
+    "cacheBytesPerReplica": 52428800,
+    "isrFlushToDisk": false
+  },
+  "gates": {
+    "fillOutputs": true,
+    "pairedNativeQueryProof": true,
+    "transport": false,
+    "mutation": "pending",
+    "scopeReduction": "pending",
+    "expiry": "pending",
+    "concurrency": "pending",
+    "interactiveClock": "pending",
+    "outage": "pending",
+    "restart": "pending",
+    "backendDecision": "pending"
+  },
+  "failedFillRun": {
+    "nativeEpochs": [
+      {
+        "protocol": "paired-native-observer-v2",
+        "replicas": {
+          "a": {
+            "driverQueryCount": 1979,
+            "nativeQueryStartedCount": 1979,
+            "nativeQueryEndedCount": 1979,
+            "observedQueryCount": 1979,
+            "pendingNativeQueries": 0,
+            "activeTraces": 0,
+            "allReceivedTracesReconciled": true,
+            "complete": true
+          },
+          "b": {
+            "driverQueryCount": 1391,
+            "nativeQueryStartedCount": 1391,
+            "nativeQueryEndedCount": 1391,
+            "observedQueryCount": 1391,
+            "pendingNativeQueries": 0,
+            "activeTraces": 0,
+            "allReceivedTracesReconciled": true,
+            "complete": true
+          }
+        },
+        "combined": {
+          "driverQueryCount": 3370,
+          "nativeQueryStartedCount": 3370,
+          "nativeQueryEndedCount": 3370,
+          "observedQueryCount": 3370,
+          "pendingNativeQueries": 0,
+          "activeTraces": 0
+        },
+        "traces": 40,
+        "visits": 34,
+        "transport": "context-loopback-proxy-v1",
+        "transports": [
+          {
+            "protocol": "context-loopback-proxy-v1",
+            "requests": 201,
+            "rewrittenRequests": 201,
+            "refusedRequests": 10,
+            "upstreamFailures": 0,
+            "responseBodyBytes": 2740743
+          },
+          {
+            "protocol": "context-loopback-proxy-v1",
+            "requests": 192,
+            "rewrittenRequests": 192,
+            "refusedRequests": 10,
+            "upstreamFailures": 0,
+            "responseBodyBytes": 2748590
+          },
+          {
+            "protocol": "context-loopback-proxy-v1",
+            "requests": 201,
+            "rewrittenRequests": 201,
+            "refusedRequests": 14,
+            "upstreamFailures": 0,
+            "responseBodyBytes": 2623730
+          }
+        ],
+        "transportComplete": false,
+        "complete": false
+      }
+    ],
+    "stage": "fill",
+    "sourceBuild": "4d8bdb1d477cd02888565816b0fb96f85dc13b71",
+    "artifactBuildId": "build-TfctsWXpff2fKS",
+    "configuredCacheBytesPerReplica": 52428800,
+    "maximumConcurrentComputations": 2,
+    "resourcesBefore": {
+      "a": {
+        "replica": "a",
+        "installed": false,
+        "gets": 0,
+        "faults": 0,
+        "rss": 415846400,
+        "heapUsed": 219669728,
+        "maxRss": 505548800,
+        "maxHeapUsed": 246245928
+      },
+      "b": {
+        "replica": "b",
+        "installed": false,
+        "gets": 0,
+        "faults": 0,
+        "rss": 415842304,
+        "heapUsed": 218199496,
+        "maxRss": 506105856,
+        "maxHeapUsed": 257955768
+      }
+    },
+    "resourcesAfter": {
+      "a": {
+        "replica": "a",
+        "installed": false,
+        "gets": 0,
+        "faults": 0,
+        "rss": 1790189568,
+        "heapUsed": 1301898688,
+        "maxRss": 1877942272,
+        "maxHeapUsed": 1331666368
+      },
+      "b": {
+        "replica": "b",
+        "installed": false,
+        "gets": 0,
+        "faults": 0,
+        "rss": 993894400,
+        "heapUsed": 13081152,
+        "maxRss": 1067884544,
+        "maxHeapUsed": 15214880
+      }
+    },
+    "observations": [
+      {
+        "stage": "independent-fill",
+        "kind": "work",
+        "replica": "a",
+        "concurrency": 1,
+        "equivalent": true,
+        "summary": {
+          "success": true,
+          "employees": 200,
+          "totalHours": 417600,
+          "overtime": 0,
+          "undertime": 0
+        },
+        "elapsedMs": 4402.0712,
+        "metrics": {
+          "traceId": "7dfb386c5a905edc2bf52147abb22413",
+          "queries": 66,
+          "rows": 105615,
+          "hits": 0,
+          "misses": 1,
+          "queryDurationMs": 563.8412000000001,
+          "poolAcquisitionMs": 2.4143999999999997,
+          "eventLoopDelayMs": 888.0421000000206,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "nativeProof": true,
+            "closed": true,
+            "rejectedBatches": 0
+          },
+          "replicas": {
+            "a": [
+              {
+                "traceId": "7dfb386c5a905edc2bf52147abb22413",
+                "queryCount": 66,
+                "queryDurationMs": 563.8412000000001,
+                "rowsRetrieved": 105615,
+                "poolWaitMs": 2.4143999999999997,
+                "poolWaitDefinition": "sum of native pool acquisition durations, including connection setup",
+                "cacheHits": 0,
+                "cacheMisses": 1,
+                "cacheDefinition": "existing Next 16.4.0 native default use-cache handler get outcomes; excludes private/fetch/React/Redis caches",
+                "eventLoopDelayMs": 888.0421000000206,
+                "observedQueryErrors": 0,
+                "observedQueryCount": 66,
+                "observedPoolAcquisitions": 66,
+                "observedPoolAcquisitionErrors": 0,
+                "observedEventLoopProbes": 82,
+                "coverage": {
+                  "observer": true,
+                  "pg": true,
+                  "rows": true,
+                  "cache": true,
+                  "eventLoop": true,
+                  "rejectedBatches": 0,
+                  "registration": true,
+                  "closed": true,
+                  "incomplete": false,
+                  "unattributedNativeSpans": 0,
+                  "lateSpans": 0,
+                  "nativeProof": true,
+                  "nativeDriverQueries": 66
+                }
+              }
+            ],
+            "b": []
+          }
+        }
+      },
+      {
+        "stage": "independent-repeat",
+        "kind": "work",
+        "replica": "a",
+        "concurrency": 1,
+        "equivalent": true,
+        "summary": {
+          "success": true,
+          "employees": 200,
+          "totalHours": 417600,
+          "overtime": 0,
+          "undertime": 0
+        },
+        "elapsedMs": 302.21990000000005,
+        "metrics": {
+          "traceId": "3623910ceaecfe40cf382f525e5b08e4",
+          "queries": 12,
+          "rows": 207,
+          "hits": 1,
+          "misses": 0,
+          "queryDurationMs": 186.156,
+          "poolAcquisitionMs": 0.35350000000000004,
+          "eventLoopDelayMs": 113.01789999997709,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "nativeProof": true,
+            "closed": true,
+            "rejectedBatches": 0
+          },
+          "replicas": {
+            "a": [
+              {
+                "traceId": "3623910ceaecfe40cf382f525e5b08e4",
+                "queryCount": 12,
+                "queryDurationMs": 186.156,
+                "rowsRetrieved": 207,
+                "poolWaitMs": 0.35350000000000004,
+                "poolWaitDefinition": "sum of native pool acquisition durations, including connection setup",
+                "cacheHits": 1,
+                "cacheMisses": 0,
+                "cacheDefinition": "existing Next 16.4.0 native default use-cache handler get outcomes; excludes private/fetch/React/Redis caches",
+                "eventLoopDelayMs": 113.01789999997709,
+                "observedQueryErrors": 0,
+                "observedQueryCount": 12,
+                "observedPoolAcquisitions": 12,
+                "observedPoolAcquisitionErrors": 0,
+                "observedEventLoopProbes": 15,
+                "coverage": {
+                  "observer": true,
+                  "pg": true,
+                  "rows": true,
+                  "cache": true,
+                  "eventLoop": true,
+                  "rejectedBatches": 0,
+                  "registration": true,
+                  "closed": true,
+                  "incomplete": false,
+                  "unattributedNativeSpans": 0,
+                  "lateSpans": 0,
+                  "nativeProof": true,
+                  "nativeDriverQueries": 12
+                }
+              }
+            ],
+            "b": []
+          }
+        }
+      },
+      {
+        "stage": "independent-fill",
+        "kind": "work",
+        "replica": "b",
+        "concurrency": 1,
+        "equivalent": true,
+        "summary": {
+          "success": true,
+          "employees": 200,
+          "totalHours": 417600,
+          "overtime": 0,
+          "undertime": 0
+        },
+        "elapsedMs": 4019.4398999999976,
+        "metrics": {
+          "traceId": "684050b90fd771efb5e454ae7a2e4a6b",
+          "queries": 66,
+          "rows": 105615,
+          "hits": 0,
+          "misses": 1,
+          "queryDurationMs": 347.31850000000003,
+          "poolAcquisitionMs": 2.7781,
+          "eventLoopDelayMs": 837.5835999999545,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "nativeProof": true,
+            "closed": true,
+            "rejectedBatches": 0
+          },
+          "replicas": {
+            "a": [],
+            "b": [
+              {
+                "traceId": "684050b90fd771efb5e454ae7a2e4a6b",
+                "queryCount": 66,
+                "queryDurationMs": 347.31850000000003,
+                "rowsRetrieved": 105615,
+                "poolWaitMs": 2.7781,
+                "poolWaitDefinition": "sum of native pool acquisition durations, including connection setup",
+                "cacheHits": 0,
+                "cacheMisses": 1,
+                "cacheDefinition": "existing Next 16.4.0 native default use-cache handler get outcomes; excludes private/fetch/React/Redis caches",
+                "eventLoopDelayMs": 837.5835999999545,
+                "observedQueryErrors": 0,
+                "observedQueryCount": 66,
+                "observedPoolAcquisitions": 66,
+                "observedPoolAcquisitionErrors": 0,
+                "observedEventLoopProbes": 62,
+                "coverage": {
+                  "observer": true,
+                  "pg": true,
+                  "rows": true,
+                  "cache": true,
+                  "eventLoop": true,
+                  "rejectedBatches": 0,
+                  "registration": true,
+                  "closed": true,
+                  "incomplete": false,
+                  "unattributedNativeSpans": 0,
+                  "lateSpans": 0,
+                  "nativeProof": true,
+                  "nativeDriverQueries": 66
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "stage": "independent-repeat",
+        "kind": "work",
+        "replica": "b",
+        "concurrency": 1,
+        "equivalent": true,
+        "summary": {
+          "success": true,
+          "employees": 200,
+          "totalHours": 417600,
+          "overtime": 0,
+          "undertime": 0
+        },
+        "elapsedMs": 61.93609999999899,
+        "metrics": {
+          "traceId": "307342a0f90586ad1add5f4153547b0b",
+          "queries": 12,
+          "rows": 207,
+          "hits": 1,
+          "misses": 0,
+          "queryDurationMs": 31.0711,
+          "poolAcquisitionMs": 0.4353,
+          "eventLoopDelayMs": 13.166499999992084,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "nativeProof": true,
+            "closed": true,
+            "rejectedBatches": 0
+          },
+          "replicas": {
+            "a": [],
+            "b": [
+              {
+                "traceId": "307342a0f90586ad1add5f4153547b0b",
+                "queryCount": 12,
+                "queryDurationMs": 31.0711,
+                "rowsRetrieved": 207,
+                "poolWaitMs": 0.4353,
+                "poolWaitDefinition": "sum of native pool acquisition durations, including connection setup",
+                "cacheHits": 1,
+                "cacheMisses": 0,
+                "cacheDefinition": "existing Next 16.4.0 native default use-cache handler get outcomes; excludes private/fetch/React/Redis caches",
+                "eventLoopDelayMs": 13.166499999992084,
+                "observedQueryErrors": 0,
+                "observedQueryCount": 12,
+                "observedPoolAcquisitions": 12,
+                "observedPoolAcquisitionErrors": 0,
+                "observedEventLoopProbes": 6,
+                "coverage": {
+                  "observer": true,
+                  "pg": true,
+                  "rows": true,
+                  "cache": true,
+                  "eventLoop": true,
+                  "rejectedBatches": 0,
+                  "registration": true,
+                  "closed": true,
+                  "incomplete": false,
+                  "unattributedNativeSpans": 0,
+                  "lateSpans": 0,
+                  "nativeProof": true,
+                  "nativeDriverQueries": 12
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "stage": "effective-session-small-admin",
+        "kind": "work",
+        "replica": "a",
+        "concurrency": 1,
+        "equivalent": true,
+        "summary": {
+          "success": true,
+          "employees": 8,
+          "totalHours": 16704,
+          "overtime": 0,
+          "undertime": 0
+        },
+        "elapsedMs": 207.78930000000037,
+        "metrics": {
+          "traceId": "d230209190580dffb4b0fcb417bba887",
+          "queries": 27,
+          "rows": 4233,
+          "hits": 0,
+          "misses": 1,
+          "queryDurationMs": 30.306399999999996,
+          "poolAcquisitionMs": 0.8900999999999999,
+          "eventLoopDelayMs": 76.38969999999972,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "nativeProof": true,
+            "closed": true,
+            "rejectedBatches": 0
+          },
+          "replicas": {
+            "a": [
+              {
+                "traceId": "d230209190580dffb4b0fcb417bba887",
+                "queryCount": 27,
+                "queryDurationMs": 30.306399999999996,
+                "rowsRetrieved": 4233,
+                "poolWaitMs": 0.8900999999999999,
+                "poolWaitDefinition": "sum of native pool acquisition durations, including connection setup",
+                "cacheHits": 0,
+                "cacheMisses": 1,
+                "cacheDefinition": "existing Next 16.4.0 native default use-cache handler get outcomes; excludes private/fetch/React/Redis caches",
+                "eventLoopDelayMs": 76.38969999999972,
+                "observedQueryErrors": 0,
+                "observedQueryCount": 27,
+                "observedPoolAcquisitions": 27,
+                "observedPoolAcquisitionErrors": 0,
+                "observedEventLoopProbes": 11,
+                "coverage": {
+                  "observer": true,
+                  "pg": true,
+                  "rows": true,
+                  "cache": true,
+                  "eventLoop": true,
+                  "rejectedBatches": 0,
+                  "registration": true,
+                  "closed": true,
+                  "incomplete": false,
+                  "unattributedNativeSpans": 0,
+                  "lateSpans": 0,
+                  "nativeProof": true,
+                  "nativeDriverQueries": 27
+                }
+              }
+            ],
+            "b": []
+          }
+        }
+      },
+      {
+        "stage": "effective-session-small-admin",
+        "kind": "work",
+        "replica": "b",
+        "concurrency": 1,
+        "equivalent": true,
+        "summary": {
+          "success": true,
+          "employees": 8,
+          "totalHours": 16704,
+          "overtime": 0,
+          "undertime": 0
+        },
+        "elapsedMs": 220.04780000000028,
+        "metrics": {
+          "traceId": "64599f02c6c636eaba3ae7c1aa5461fe",
+          "queries": 27,
+          "rows": 4233,
+          "hits": 0,
+          "misses": 1,
+          "queryDurationMs": 43.154499999999985,
+          "poolAcquisitionMs": 1.0070999999999999,
+          "eventLoopDelayMs": 79.48759999999311,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "nativeProof": true,
+            "closed": true,
+            "rejectedBatches": 0
+          },
+          "replicas": {
+            "a": [],
+            "b": [
+              {
+                "traceId": "64599f02c6c636eaba3ae7c1aa5461fe",
+                "queryCount": 27,
+                "queryDurationMs": 43.154499999999985,
+                "rowsRetrieved": 4233,
+                "poolWaitMs": 1.0070999999999999,
+                "poolWaitDefinition": "sum of native pool acquisition durations, including connection setup",
+                "cacheHits": 0,
+                "cacheMisses": 1,
+                "cacheDefinition": "existing Next 16.4.0 native default use-cache handler get outcomes; excludes private/fetch/React/Redis caches",
+                "eventLoopDelayMs": 79.48759999999311,
+                "observedQueryErrors": 0,
+                "observedQueryCount": 27,
+                "observedPoolAcquisitions": 27,
+                "observedPoolAcquisitionErrors": 0,
+                "observedEventLoopProbes": 15,
+                "coverage": {
+                  "observer": true,
+                  "pg": true,
+                  "rows": true,
+                  "cache": true,
+                  "eventLoop": true,
+                  "rejectedBatches": 0,
+                  "registration": true,
+                  "closed": true,
+                  "incomplete": false,
+                  "unattributedNativeSpans": 0,
+                  "lateSpans": 0,
+                  "nativeProof": true,
+                  "nativeDriverQueries": 27
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "stage": "effective-session-large-manager",
+        "kind": "work",
+        "replica": "a",
+        "concurrency": 1,
+        "equivalent": true,
+        "summary": {
+          "success": true,
+          "employees": 99,
+          "totalHours": 206712,
+          "overtime": 0,
+          "undertime": 0
+        },
+        "elapsedMs": 2003.3066999999974,
+        "metrics": {
+          "traceId": "cba6fd3bcc10872cd84e53331535ad63",
+          "queries": 40,
+          "rows": 52283,
+          "hits": 0,
+          "misses": 1,
+          "queryDurationMs": 224.85110000000006,
+          "poolAcquisitionMs": 1.3547,
+          "eventLoopDelayMs": 553.007500000007,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "nativeProof": true,
+            "closed": true,
+            "rejectedBatches": 0
+          },
+          "replicas": {
+            "a": [
+              {
+                "traceId": "cba6fd3bcc10872cd84e53331535ad63",
+                "queryCount": 40,
+                "queryDurationMs": 224.85110000000006,
+                "rowsRetrieved": 52283,
+                "poolWaitMs": 1.3547,
+                "poolWaitDefinition": "sum of native pool acquisition durations, including connection setup",
+                "cacheHits": 0,
+                "cacheMisses": 1,
+                "cacheDefinition": "existing Next 16.4.0 native default use-cache handler get outcomes; excludes private/fetch/React/Redis caches",
+                "eventLoopDelayMs": 553.007500000007,
+                "observedQueryErrors": 0,
+                "observedQueryCount": 40,
+                "observedPoolAcquisitions": 40,
+                "observedPoolAcquisitionErrors": 0,
+                "observedEventLoopProbes": 32,
+                "coverage": {
+                  "observer": true,
+                  "pg": true,
+                  "rows": true,
+                  "cache": true,
+                  "eventLoop": true,
+                  "rejectedBatches": 0,
+                  "registration": true,
+                  "closed": true,
+                  "incomplete": false,
+                  "unattributedNativeSpans": 0,
+                  "lateSpans": 0,
+                  "nativeProof": true,
+                  "nativeDriverQueries": 40
+                }
+              }
+            ],
+            "b": []
+          }
+        }
+      },
+      {
+        "stage": "effective-session-large-manager",
+        "kind": "work",
+        "replica": "b",
+        "concurrency": 1,
+        "equivalent": true,
+        "summary": {
+          "success": true,
+          "employees": 99,
+          "totalHours": 206712,
+          "overtime": 0,
+          "undertime": 0
+        },
+        "elapsedMs": 1864.4358999999968,
+        "metrics": {
+          "traceId": "11a11ff244b1ffaf573b04ea72762b61",
+          "queries": 40,
+          "rows": 52283,
+          "hits": 0,
+          "misses": 1,
+          "queryDurationMs": 203.02499999999998,
+          "poolAcquisitionMs": 1.4553999999999998,
+          "eventLoopDelayMs": 565.5548999999883,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "nativeProof": true,
+            "closed": true,
+            "rejectedBatches": 0
+          },
+          "replicas": {
+            "a": [],
+            "b": [
+              {
+                "traceId": "11a11ff244b1ffaf573b04ea72762b61",
+                "queryCount": 40,
+                "queryDurationMs": 203.02499999999998,
+                "rowsRetrieved": 52283,
+                "poolWaitMs": 1.4553999999999998,
+                "poolWaitDefinition": "sum of native pool acquisition durations, including connection setup",
+                "cacheHits": 0,
+                "cacheMisses": 1,
+                "cacheDefinition": "existing Next 16.4.0 native default use-cache handler get outcomes; excludes private/fetch/React/Redis caches",
+                "eventLoopDelayMs": 565.5548999999883,
+                "observedQueryErrors": 0,
+                "observedQueryCount": 40,
+                "observedPoolAcquisitions": 40,
+                "observedPoolAcquisitionErrors": 0,
+                "observedEventLoopProbes": 32,
+                "coverage": {
+                  "observer": true,
+                  "pg": true,
+                  "rows": true,
+                  "cache": true,
+                  "eventLoop": true,
+                  "rejectedBatches": 0,
+                  "registration": true,
+                  "closed": true,
+                  "incomplete": false,
+                  "unattributedNativeSpans": 0,
+                  "lateSpans": 0,
+                  "nativeProof": true,
+                  "nativeDriverQueries": 40
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "stage": "effective-session-large-admin",
+        "kind": "work",
+        "replica": "a",
+        "concurrency": 1,
+        "equivalent": true,
+        "summary": {
+          "success": true,
+          "employees": 200,
+          "totalHours": 417600,
+          "overtime": 0,
+          "undertime": 0
+        },
+        "elapsedMs": 52.49600000000282,
+        "metrics": {
+          "traceId": "c14dc3f4c21b061000f863dbc87b9987",
+          "queries": 12,
+          "rows": 207,
+          "hits": 1,
+          "misses": 0,
+          "queryDurationMs": 23.692,
+          "poolAcquisitionMs": 0.36889999999999995,
+          "eventLoopDelayMs": 16.788500000024214,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "nativeProof": true,
+            "closed": true,
+            "rejectedBatches": 0
+          },
+          "replicas": {
+            "a": [
+              {
+                "traceId": "c14dc3f4c21b061000f863dbc87b9987",
+                "queryCount": 12,
+                "queryDurationMs": 23.692,
+                "rowsRetrieved": 207,
+                "poolWaitMs": 0.36889999999999995,
+                "poolWaitDefinition": "sum of native pool acquisition durations, including connection setup",
+                "cacheHits": 1,
+                "cacheMisses": 0,
+                "cacheDefinition": "existing Next 16.4.0 native default use-cache handler get outcomes; excludes private/fetch/React/Redis caches",
+                "eventLoopDelayMs": 16.788500000024214,
+                "observedQueryErrors": 0,
+                "observedQueryCount": 12,
+                "observedPoolAcquisitions": 12,
+                "observedPoolAcquisitionErrors": 0,
+                "observedEventLoopProbes": 5,
+                "coverage": {
+                  "observer": true,
+                  "pg": true,
+                  "rows": true,
+                  "cache": true,
+                  "eventLoop": true,
+                  "rejectedBatches": 0,
+                  "registration": true,
+                  "closed": true,
+                  "incomplete": false,
+                  "unattributedNativeSpans": 0,
+                  "lateSpans": 0,
+                  "nativeProof": true,
+                  "nativeDriverQueries": 12
+                }
+              }
+            ],
+            "b": []
+          }
+        }
+      },
+      {
+        "stage": "effective-session-large-admin",
+        "kind": "work",
+        "replica": "b",
+        "concurrency": 1,
+        "equivalent": true,
+        "summary": {
+          "success": true,
+          "employees": 200,
+          "totalHours": 417600,
+          "overtime": 0,
+          "undertime": 0
+        },
+        "elapsedMs": 100.66169999999693,
+        "metrics": {
+          "traceId": "50fe2be58a35a00fb1f95f54ccb94d30",
+          "queries": 12,
+          "rows": 207,
+          "hits": 1,
+          "misses": 0,
+          "queryDurationMs": 83.1917,
+          "poolAcquisitionMs": 0.49960000000000004,
+          "eventLoopDelayMs": 20.472400000027847,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "nativeProof": true,
+            "closed": true,
+            "rejectedBatches": 0
+          },
+          "replicas": {
+            "a": [],
+            "b": [
+              {
+                "traceId": "50fe2be58a35a00fb1f95f54ccb94d30",
+                "queryCount": 12,
+                "queryDurationMs": 83.1917,
+                "rowsRetrieved": 207,
+                "poolWaitMs": 0.49960000000000004,
+                "poolWaitDefinition": "sum of native pool acquisition durations, including connection setup",
+                "cacheHits": 1,
+                "cacheMisses": 0,
+                "cacheDefinition": "existing Next 16.4.0 native default use-cache handler get outcomes; excludes private/fetch/React/Redis caches",
+                "eventLoopDelayMs": 20.472400000027847,
+                "observedQueryErrors": 0,
+                "observedQueryCount": 12,
+                "observedPoolAcquisitions": 12,
+                "observedPoolAcquisitionErrors": 0,
+                "observedEventLoopProbes": 9,
+                "coverage": {
+                  "observer": true,
+                  "pg": true,
+                  "rows": true,
+                  "cache": true,
+                  "eventLoop": true,
+                  "rejectedBatches": 0,
+                  "registration": true,
+                  "closed": true,
+                  "incomplete": false,
+                  "unattributedNativeSpans": 0,
+                  "lateSpans": 0,
+                  "nativeProof": true,
+                  "nativeDriverQueries": 12
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "stage": "independent-fill",
+        "kind": "team",
+        "replica": "a",
+        "concurrency": 1,
+        "equivalent": true,
+        "summary": {
+          "success": true,
+          "employees": 200,
+          "totalHours": 417600,
+          "expected": 417600,
+          "variance": 0
+        },
+        "elapsedMs": 2588.9918000000034,
+        "metrics": {
+          "traceId": "334a737fd8f4d74bf75587ced03a83a5",
+          "queries": 66,
+          "rows": 105615,
+          "hits": 0,
+          "misses": 1,
+          "queryDurationMs": 144.64529999999996,
+          "poolAcquisitionMs": 1.8991000000000002,
+          "eventLoopDelayMs": 883.7905000000028,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "nativeProof": true,
+            "closed": true,
+            "rejectedBatches": 0
+          },
+          "replicas": {
+            "a": [
+              {
+                "traceId": "334a737fd8f4d74bf75587ced03a83a5",
+                "queryCount": 66,
+                "queryDurationMs": 144.64529999999996,
+                "rowsRetrieved": 105615,
+                "poolWaitMs": 1.8991000000000002,
+                "poolWaitDefinition": "sum of native pool acquisition durations, including connection setup",
+                "cacheHits": 0,
+                "cacheMisses": 1,
+                "cacheDefinition": "existing Next 16.4.0 native default use-cache handler get outcomes; excludes private/fetch/React/Redis caches",
+                "eventLoopDelayMs": 883.7905000000028,
+                "observedQueryErrors": 0,
+                "observedQueryCount": 66,
+                "observedPoolAcquisitions": 66,
+                "observedPoolAcquisitionErrors": 0,
+                "observedEventLoopProbes": 46,
+                "coverage": {
+                  "observer": true,
+                  "pg": true,
+                  "rows": true,
+                  "cache": true,
+                  "eventLoop": true,
+                  "rejectedBatches": 0,
+                  "registration": true,
+                  "closed": true,
+                  "incomplete": false,
+                  "unattributedNativeSpans": 0,
+                  "lateSpans": 0,
+                  "nativeProof": true,
+                  "nativeDriverQueries": 66
+                }
+              }
+            ],
+            "b": []
+          }
+        }
+      },
+      {
+        "stage": "independent-repeat",
+        "kind": "team",
+        "replica": "a",
+        "concurrency": 1,
+        "equivalent": true,
+        "summary": {
+          "success": true,
+          "employees": 200,
+          "totalHours": 417600,
+          "expected": 417600,
+          "variance": 0
+        },
+        "elapsedMs": 53.12520000000222,
+        "metrics": {
+          "traceId": "287306232a87cdaa1690ce9101fdf60c",
+          "queries": 12,
+          "rows": 207,
+          "hits": 1,
+          "misses": 0,
+          "queryDurationMs": 23.9373,
+          "poolAcquisitionMs": 0.37909999999999994,
+          "eventLoopDelayMs": 11.62579999997979,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "nativeProof": true,
+            "closed": true,
+            "rejectedBatches": 0
+          },
+          "replicas": {
+            "a": [
+              {
+                "traceId": "287306232a87cdaa1690ce9101fdf60c",
+                "queryCount": 12,
+                "queryDurationMs": 23.9373,
+                "rowsRetrieved": 207,
+                "poolWaitMs": 0.37909999999999994,
+                "poolWaitDefinition": "sum of native pool acquisition durations, including connection setup",
+                "cacheHits": 1,
+                "cacheMisses": 0,
+                "cacheDefinition": "existing Next 16.4.0 native default use-cache handler get outcomes; excludes private/fetch/React/Redis caches",
+                "eventLoopDelayMs": 11.62579999997979,
+                "observedQueryErrors": 0,
+                "observedQueryCount": 12,
+                "observedPoolAcquisitions": 12,
+                "observedPoolAcquisitionErrors": 0,
+                "observedEventLoopProbes": 5,
+                "coverage": {
+                  "observer": true,
+                  "pg": true,
+                  "rows": true,
+                  "cache": true,
+                  "eventLoop": true,
+                  "rejectedBatches": 0,
+                  "registration": true,
+                  "closed": true,
+                  "incomplete": false,
+                  "unattributedNativeSpans": 0,
+                  "lateSpans": 0,
+                  "nativeProof": true,
+                  "nativeDriverQueries": 12
+                }
+              }
+            ],
+            "b": []
+          }
+        }
+      },
+      {
+        "stage": "independent-fill",
+        "kind": "team",
+        "replica": "b",
+        "concurrency": 1,
+        "equivalent": true,
+        "summary": {
+          "success": true,
+          "employees": 200,
+          "totalHours": 417600,
+          "expected": 417600,
+          "variance": 0
+        },
+        "elapsedMs": 2476.0103000000017,
+        "metrics": {
+          "traceId": "e868d1406568a1b783ff85903a3ee7a4",
+          "queries": 66,
+          "rows": 105615,
+          "hits": 0,
+          "misses": 1,
+          "queryDurationMs": 147.7181,
+          "poolAcquisitionMs": 1.9664999999999995,
+          "eventLoopDelayMs": 918.8192999999737,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "nativeProof": true,
+            "closed": true,
+            "rejectedBatches": 0
+          },
+          "replicas": {
+            "a": [],
+            "b": [
+              {
+                "traceId": "e868d1406568a1b783ff85903a3ee7a4",
+                "queryCount": 66,
+                "queryDurationMs": 147.7181,
+                "rowsRetrieved": 105615,
+                "poolWaitMs": 1.9664999999999995,
+                "poolWaitDefinition": "sum of native pool acquisition durations, including connection setup",
+                "cacheHits": 0,
+                "cacheMisses": 1,
+                "cacheDefinition": "existing Next 16.4.0 native default use-cache handler get outcomes; excludes private/fetch/React/Redis caches",
+                "eventLoopDelayMs": 918.8192999999737,
+                "observedQueryErrors": 0,
+                "observedQueryCount": 66,
+                "observedPoolAcquisitions": 66,
+                "observedPoolAcquisitionErrors": 0,
+                "observedEventLoopProbes": 48,
+                "coverage": {
+                  "observer": true,
+                  "pg": true,
+                  "rows": true,
+                  "cache": true,
+                  "eventLoop": true,
+                  "rejectedBatches": 0,
+                  "registration": true,
+                  "closed": true,
+                  "incomplete": false,
+                  "unattributedNativeSpans": 0,
+                  "lateSpans": 0,
+                  "nativeProof": true,
+                  "nativeDriverQueries": 66
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "stage": "independent-repeat",
+        "kind": "team",
+        "replica": "b",
+        "concurrency": 1,
+        "equivalent": true,
+        "summary": {
+          "success": true,
+          "employees": 200,
+          "totalHours": 417600,
+          "expected": 417600,
+          "variance": 0
+        },
+        "elapsedMs": 69.45209999999497,
+        "metrics": {
+          "traceId": "6f336460e5a4b0a609db22a2bbb14068",
+          "queries": 12,
+          "rows": 207,
+          "hits": 1,
+          "misses": 0,
+          "queryDurationMs": 26.0564,
+          "poolAcquisitionMs": 0.34059999999999996,
+          "eventLoopDelayMs": 12.73399999999674,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "nativeProof": true,
+            "closed": true,
+            "rejectedBatches": 0
+          },
+          "replicas": {
+            "a": [],
+            "b": [
+              {
+                "traceId": "6f336460e5a4b0a609db22a2bbb14068",
+                "queryCount": 12,
+                "queryDurationMs": 26.0564,
+                "rowsRetrieved": 207,
+                "poolWaitMs": 0.34059999999999996,
+                "poolWaitDefinition": "sum of native pool acquisition durations, including connection setup",
+                "cacheHits": 1,
+                "cacheMisses": 0,
+                "cacheDefinition": "existing Next 16.4.0 native default use-cache handler get outcomes; excludes private/fetch/React/Redis caches",
+                "eventLoopDelayMs": 12.73399999999674,
+                "observedQueryErrors": 0,
+                "observedQueryCount": 12,
+                "observedPoolAcquisitions": 12,
+                "observedPoolAcquisitionErrors": 0,
+                "observedEventLoopProbes": 6,
+                "coverage": {
+                  "observer": true,
+                  "pg": true,
+                  "rows": true,
+                  "cache": true,
+                  "eventLoop": true,
+                  "rejectedBatches": 0,
+                  "registration": true,
+                  "closed": true,
+                  "incomplete": false,
+                  "unattributedNativeSpans": 0,
+                  "lateSpans": 0,
+                  "nativeProof": true,
+                  "nativeDriverQueries": 12
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "stage": "effective-session-small-admin",
+        "kind": "team",
+        "replica": "a",
+        "concurrency": 1,
+        "equivalent": true,
+        "summary": {
+          "success": true,
+          "employees": 8,
+          "totalHours": 16704,
+          "expected": 16704,
+          "variance": 0
+        },
+        "elapsedMs": 145.6226999999999,
+        "metrics": {
+          "traceId": "fb1f9d425b257d2e10937bd9a539354c",
+          "queries": 27,
+          "rows": 4233,
+          "hits": 0,
+          "misses": 1,
+          "queryDurationMs": 38.986700000000006,
+          "poolAcquisitionMs": 0.7480999999999999,
+          "eventLoopDelayMs": 43.68869999999879,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "nativeProof": true,
+            "closed": true,
+            "rejectedBatches": 0
+          },
+          "replicas": {
+            "a": [
+              {
+                "traceId": "fb1f9d425b257d2e10937bd9a539354c",
+                "queryCount": 27,
+                "queryDurationMs": 38.986700000000006,
+                "rowsRetrieved": 4233,
+                "poolWaitMs": 0.7480999999999999,
+                "poolWaitDefinition": "sum of native pool acquisition durations, including connection setup",
+                "cacheHits": 0,
+                "cacheMisses": 1,
+                "cacheDefinition": "existing Next 16.4.0 native default use-cache handler get outcomes; excludes private/fetch/React/Redis caches",
+                "eventLoopDelayMs": 43.68869999999879,
+                "observedQueryErrors": 0,
+                "observedQueryCount": 27,
+                "observedPoolAcquisitions": 27,
+                "observedPoolAcquisitionErrors": 0,
+                "observedEventLoopProbes": 13,
+                "coverage": {
+                  "observer": true,
+                  "pg": true,
+                  "rows": true,
+                  "cache": true,
+                  "eventLoop": true,
+                  "rejectedBatches": 0,
+                  "registration": true,
+                  "closed": true,
+                  "incomplete": false,
+                  "unattributedNativeSpans": 0,
+                  "lateSpans": 0,
+                  "nativeProof": true,
+                  "nativeDriverQueries": 27
+                }
+              }
+            ],
+            "b": []
+          }
+        }
+      },
+      {
+        "stage": "effective-session-small-admin",
+        "kind": "team",
+        "replica": "b",
+        "concurrency": 1,
+        "equivalent": true,
+        "summary": {
+          "success": true,
+          "employees": 8,
+          "totalHours": 16704,
+          "expected": 16704,
+          "variance": 0
+        },
+        "elapsedMs": 134.59700000000157,
+        "metrics": {
+          "traceId": "a73cc3c1ea88e6bc703b28be43e9aea9",
+          "queries": 27,
+          "rows": 4233,
+          "hits": 0,
+          "misses": 1,
+          "queryDurationMs": 26.258300000000002,
+          "poolAcquisitionMs": 0.6877000000000001,
+          "eventLoopDelayMs": 43.92009999998845,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "nativeProof": true,
+            "closed": true,
+            "rejectedBatches": 0
+          },
+          "replicas": {
+            "a": [],
+            "b": [
+              {
+                "traceId": "a73cc3c1ea88e6bc703b28be43e9aea9",
+                "queryCount": 27,
+                "queryDurationMs": 26.258300000000002,
+                "rowsRetrieved": 4233,
+                "poolWaitMs": 0.6877000000000001,
+                "poolWaitDefinition": "sum of native pool acquisition durations, including connection setup",
+                "cacheHits": 0,
+                "cacheMisses": 1,
+                "cacheDefinition": "existing Next 16.4.0 native default use-cache handler get outcomes; excludes private/fetch/React/Redis caches",
+                "eventLoopDelayMs": 43.92009999998845,
+                "observedQueryErrors": 0,
+                "observedQueryCount": 27,
+                "observedPoolAcquisitions": 27,
+                "observedPoolAcquisitionErrors": 0,
+                "observedEventLoopProbes": 11,
+                "coverage": {
+                  "observer": true,
+                  "pg": true,
+                  "rows": true,
+                  "cache": true,
+                  "eventLoop": true,
+                  "rejectedBatches": 0,
+                  "registration": true,
+                  "closed": true,
+                  "incomplete": false,
+                  "unattributedNativeSpans": 0,
+                  "lateSpans": 0,
+                  "nativeProof": true,
+                  "nativeDriverQueries": 27
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "stage": "effective-session-large-manager",
+        "kind": "team",
+        "replica": "a",
+        "concurrency": 1,
+        "equivalent": true,
+        "summary": {
+          "success": true,
+          "employees": 99,
+          "totalHours": 206712,
+          "expected": 206712,
+          "variance": 0
+        },
+        "elapsedMs": 1270.5064000000057,
+        "metrics": {
+          "traceId": "d5369811aee4076beb38877aae7cc980",
+          "queries": 40,
+          "rows": 52283,
+          "hits": 0,
+          "misses": 1,
+          "queryDurationMs": 115.9751,
+          "poolAcquisitionMs": 1.2909,
+          "eventLoopDelayMs": 411.93520000000717,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "nativeProof": true,
+            "closed": true,
+            "rejectedBatches": 0
+          },
+          "replicas": {
+            "a": [
+              {
+                "traceId": "d5369811aee4076beb38877aae7cc980",
+                "queryCount": 40,
+                "queryDurationMs": 115.9751,
+                "rowsRetrieved": 52283,
+                "poolWaitMs": 1.2909,
+                "poolWaitDefinition": "sum of native pool acquisition durations, including connection setup",
+                "cacheHits": 0,
+                "cacheMisses": 1,
+                "cacheDefinition": "existing Next 16.4.0 native default use-cache handler get outcomes; excludes private/fetch/React/Redis caches",
+                "eventLoopDelayMs": 411.93520000000717,
+                "observedQueryErrors": 0,
+                "observedQueryCount": 40,
+                "observedPoolAcquisitions": 40,
+                "observedPoolAcquisitionErrors": 0,
+                "observedEventLoopProbes": 29,
+                "coverage": {
+                  "observer": true,
+                  "pg": true,
+                  "rows": true,
+                  "cache": true,
+                  "eventLoop": true,
+                  "rejectedBatches": 0,
+                  "registration": true,
+                  "closed": true,
+                  "incomplete": false,
+                  "unattributedNativeSpans": 0,
+                  "lateSpans": 0,
+                  "nativeProof": true,
+                  "nativeDriverQueries": 40
+                }
+              }
+            ],
+            "b": []
+          }
+        }
+      },
+      {
+        "stage": "effective-session-large-manager",
+        "kind": "team",
+        "replica": "b",
+        "concurrency": 1,
+        "equivalent": true,
+        "summary": {
+          "success": true,
+          "employees": 99,
+          "totalHours": 206712,
+          "expected": 206712,
+          "variance": 0
+        },
+        "elapsedMs": 1100.4660000000003,
+        "metrics": {
+          "traceId": "399843fb56983170820b781418812113",
+          "queries": 40,
+          "rows": 52283,
+          "hits": 0,
+          "misses": 1,
+          "queryDurationMs": 86.49610000000001,
+          "poolAcquisitionMs": 1.0949,
+          "eventLoopDelayMs": 379.2584999999963,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "nativeProof": true,
+            "closed": true,
+            "rejectedBatches": 0
+          },
+          "replicas": {
+            "a": [],
+            "b": [
+              {
+                "traceId": "399843fb56983170820b781418812113",
+                "queryCount": 40,
+                "queryDurationMs": 86.49610000000001,
+                "rowsRetrieved": 52283,
+                "poolWaitMs": 1.0949,
+                "poolWaitDefinition": "sum of native pool acquisition durations, including connection setup",
+                "cacheHits": 0,
+                "cacheMisses": 1,
+                "cacheDefinition": "existing Next 16.4.0 native default use-cache handler get outcomes; excludes private/fetch/React/Redis caches",
+                "eventLoopDelayMs": 379.2584999999963,
+                "observedQueryErrors": 0,
+                "observedQueryCount": 40,
+                "observedPoolAcquisitions": 40,
+                "observedPoolAcquisitionErrors": 0,
+                "observedEventLoopProbes": 30,
+                "coverage": {
+                  "observer": true,
+                  "pg": true,
+                  "rows": true,
+                  "cache": true,
+                  "eventLoop": true,
+                  "rejectedBatches": 0,
+                  "registration": true,
+                  "closed": true,
+                  "incomplete": false,
+                  "unattributedNativeSpans": 0,
+                  "lateSpans": 0,
+                  "nativeProof": true,
+                  "nativeDriverQueries": 40
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "stage": "effective-session-large-admin",
+        "kind": "team",
+        "replica": "a",
+        "concurrency": 1,
+        "equivalent": true,
+        "summary": {
+          "success": true,
+          "employees": 200,
+          "totalHours": 417600,
+          "expected": 417600,
+          "variance": 0
+        },
+        "elapsedMs": 49.85369999999966,
+        "metrics": {
+          "traceId": "fee0ac488632967cffb056343dd4f757",
+          "queries": 12,
+          "rows": 207,
+          "hits": 1,
+          "misses": 0,
+          "queryDurationMs": 23.061799999999998,
+          "poolAcquisitionMs": 0.3406,
+          "eventLoopDelayMs": 15.503199999977369,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "nativeProof": true,
+            "closed": true,
+            "rejectedBatches": 0
+          },
+          "replicas": {
+            "a": [
+              {
+                "traceId": "fee0ac488632967cffb056343dd4f757",
+                "queryCount": 12,
+                "queryDurationMs": 23.061799999999998,
+                "rowsRetrieved": 207,
+                "poolWaitMs": 0.3406,
+                "poolWaitDefinition": "sum of native pool acquisition durations, including connection setup",
+                "cacheHits": 1,
+                "cacheMisses": 0,
+                "cacheDefinition": "existing Next 16.4.0 native default use-cache handler get outcomes; excludes private/fetch/React/Redis caches",
+                "eventLoopDelayMs": 15.503199999977369,
+                "observedQueryErrors": 0,
+                "observedQueryCount": 12,
+                "observedPoolAcquisitions": 12,
+                "observedPoolAcquisitionErrors": 0,
+                "observedEventLoopProbes": 6,
+                "coverage": {
+                  "observer": true,
+                  "pg": true,
+                  "rows": true,
+                  "cache": true,
+                  "eventLoop": true,
+                  "rejectedBatches": 0,
+                  "registration": true,
+                  "closed": true,
+                  "incomplete": false,
+                  "unattributedNativeSpans": 0,
+                  "lateSpans": 0,
+                  "nativeProof": true,
+                  "nativeDriverQueries": 12
+                }
+              }
+            ],
+            "b": []
+          }
+        }
+      },
+      {
+        "stage": "effective-session-large-admin",
+        "kind": "team",
+        "replica": "b",
+        "concurrency": 1,
+        "equivalent": true,
+        "summary": {
+          "success": true,
+          "employees": 200,
+          "totalHours": 417600,
+          "expected": 417600,
+          "variance": 0
+        },
+        "elapsedMs": 53.04820000000473,
+        "metrics": {
+          "traceId": "f82474d742469e3ce7678ded58fd4d2f",
+          "queries": 12,
+          "rows": 207,
+          "hits": 1,
+          "misses": 0,
+          "queryDurationMs": 23.0009,
+          "poolAcquisitionMs": 0.40280000000000005,
+          "eventLoopDelayMs": 17.185499999963213,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "nativeProof": true,
+            "closed": true,
+            "rejectedBatches": 0
+          },
+          "replicas": {
+            "a": [],
+            "b": [
+              {
+                "traceId": "f82474d742469e3ce7678ded58fd4d2f",
+                "queryCount": 12,
+                "queryDurationMs": 23.0009,
+                "rowsRetrieved": 207,
+                "poolWaitMs": 0.40280000000000005,
+                "poolWaitDefinition": "sum of native pool acquisition durations, including connection setup",
+                "cacheHits": 1,
+                "cacheMisses": 0,
+                "cacheDefinition": "existing Next 16.4.0 native default use-cache handler get outcomes; excludes private/fetch/React/Redis caches",
+                "eventLoopDelayMs": 17.185499999963213,
+                "observedQueryErrors": 0,
+                "observedQueryCount": 12,
+                "observedPoolAcquisitions": 12,
+                "observedPoolAcquisitionErrors": 0,
+                "observedEventLoopProbes": 5,
+                "coverage": {
+                  "observer": true,
+                  "pg": true,
+                  "rows": true,
+                  "cache": true,
+                  "eventLoop": true,
+                  "rejectedBatches": 0,
+                  "registration": true,
+                  "closed": true,
+                  "incomplete": false,
+                  "unattributedNativeSpans": 0,
+                  "lateSpans": 0,
+                  "nativeProof": true,
+                  "nativeDriverQueries": 12
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "stage": "independent-fill",
+        "kind": "overtime",
+        "replica": "a",
+        "concurrency": 1,
+        "equivalent": true,
+        "summary": {
+          "success": true,
+          "weeks": 53,
+          "seriesOvertime": 0
+        },
+        "elapsedMs": 1858.7399000000005,
+        "metrics": {
+          "traceId": "a05fb8d998c754826d4edd999ebd126a",
+          "queries": 66,
+          "rows": 53415,
+          "hits": 0,
+          "misses": 1,
+          "queryDurationMs": 132.15690000000006,
+          "poolAcquisitionMs": 1.8469,
+          "eventLoopDelayMs": 424.84779999998864,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "nativeProof": true,
+            "closed": true,
+            "rejectedBatches": 0
+          },
+          "replicas": {
+            "a": [
+              {
+                "traceId": "a05fb8d998c754826d4edd999ebd126a",
+                "queryCount": 66,
+                "queryDurationMs": 132.15690000000006,
+                "rowsRetrieved": 53415,
+                "poolWaitMs": 1.8469,
+                "poolWaitDefinition": "sum of native pool acquisition durations, including connection setup",
+                "cacheHits": 0,
+                "cacheMisses": 1,
+                "cacheDefinition": "existing Next 16.4.0 native default use-cache handler get outcomes; excludes private/fetch/React/Redis caches",
+                "eventLoopDelayMs": 424.84779999998864,
+                "observedQueryErrors": 0,
+                "observedQueryCount": 66,
+                "observedPoolAcquisitions": 66,
+                "observedPoolAcquisitionErrors": 0,
+                "observedEventLoopProbes": 41,
+                "coverage": {
+                  "observer": true,
+                  "pg": true,
+                  "rows": true,
+                  "cache": true,
+                  "eventLoop": true,
+                  "rejectedBatches": 0,
+                  "registration": true,
+                  "closed": true,
+                  "incomplete": false,
+                  "unattributedNativeSpans": 0,
+                  "lateSpans": 0,
+                  "nativeProof": true,
+                  "nativeDriverQueries": 66
+                }
+              }
+            ],
+            "b": []
+          }
+        }
+      },
+      {
+        "stage": "independent-repeat",
+        "kind": "overtime",
+        "replica": "a",
+        "concurrency": 1,
+        "equivalent": true,
+        "summary": {
+          "success": true,
+          "weeks": 53,
+          "seriesOvertime": 0
+        },
+        "elapsedMs": 48.497199999997974,
+        "metrics": {
+          "traceId": "6e5abebd1226d22b007152374f33a57b",
+          "queries": 12,
+          "rows": 207,
+          "hits": 1,
+          "misses": 0,
+          "queryDurationMs": 22.8039,
+          "poolAcquisitionMs": 0.3943,
+          "eventLoopDelayMs": 12.913200000009965,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "nativeProof": true,
+            "closed": true,
+            "rejectedBatches": 0
+          },
+          "replicas": {
+            "a": [
+              {
+                "traceId": "6e5abebd1226d22b007152374f33a57b",
+                "queryCount": 12,
+                "queryDurationMs": 22.8039,
+                "rowsRetrieved": 207,
+                "poolWaitMs": 0.3943,
+                "poolWaitDefinition": "sum of native pool acquisition durations, including connection setup",
+                "cacheHits": 1,
+                "cacheMisses": 0,
+                "cacheDefinition": "existing Next 16.4.0 native default use-cache handler get outcomes; excludes private/fetch/React/Redis caches",
+                "eventLoopDelayMs": 12.913200000009965,
+                "observedQueryErrors": 0,
+                "observedQueryCount": 12,
+                "observedPoolAcquisitions": 12,
+                "observedPoolAcquisitionErrors": 0,
+                "observedEventLoopProbes": 6,
+                "coverage": {
+                  "observer": true,
+                  "pg": true,
+                  "rows": true,
+                  "cache": true,
+                  "eventLoop": true,
+                  "rejectedBatches": 0,
+                  "registration": true,
+                  "closed": true,
+                  "incomplete": false,
+                  "unattributedNativeSpans": 0,
+                  "lateSpans": 0,
+                  "nativeProof": true,
+                  "nativeDriverQueries": 12
+                }
+              }
+            ],
+            "b": []
+          }
+        }
+      },
+      {
+        "stage": "independent-fill",
+        "kind": "overtime",
+        "replica": "b",
+        "concurrency": 1,
+        "equivalent": true,
+        "summary": {
+          "success": true,
+          "weeks": 53,
+          "seriesOvertime": 0
+        },
+        "elapsedMs": 1796.7214999999997,
+        "metrics": {
+          "traceId": "219a5060fec006bd71add0487dacff93",
+          "queries": 66,
+          "rows": 53415,
+          "hits": 0,
+          "misses": 1,
+          "queryDurationMs": 112.02759999999998,
+          "poolAcquisitionMs": 1.7445000000000004,
+          "eventLoopDelayMs": 445.50229999999283,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "nativeProof": true,
+            "closed": true,
+            "rejectedBatches": 0
+          },
+          "replicas": {
+            "a": [],
+            "b": [
+              {
+                "traceId": "219a5060fec006bd71add0487dacff93",
+                "queryCount": 66,
+                "queryDurationMs": 112.02759999999998,
+                "rowsRetrieved": 53415,
+                "poolWaitMs": 1.7445000000000004,
+                "poolWaitDefinition": "sum of native pool acquisition durations, including connection setup",
+                "cacheHits": 0,
+                "cacheMisses": 1,
+                "cacheDefinition": "existing Next 16.4.0 native default use-cache handler get outcomes; excludes private/fetch/React/Redis caches",
+                "eventLoopDelayMs": 445.50229999999283,
+                "observedQueryErrors": 0,
+                "observedQueryCount": 66,
+                "observedPoolAcquisitions": 66,
+                "observedPoolAcquisitionErrors": 0,
+                "observedEventLoopProbes": 38,
+                "coverage": {
+                  "observer": true,
+                  "pg": true,
+                  "rows": true,
+                  "cache": true,
+                  "eventLoop": true,
+                  "rejectedBatches": 0,
+                  "registration": true,
+                  "closed": true,
+                  "incomplete": false,
+                  "unattributedNativeSpans": 0,
+                  "lateSpans": 0,
+                  "nativeProof": true,
+                  "nativeDriverQueries": 66
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "stage": "independent-repeat",
+        "kind": "overtime",
+        "replica": "b",
+        "concurrency": 1,
+        "equivalent": true,
+        "summary": {
+          "success": true,
+          "weeks": 53,
+          "seriesOvertime": 0
+        },
+        "elapsedMs": 59.31590000000142,
+        "metrics": {
+          "traceId": "883a4d465e512642397e3fb89e0870cf",
+          "queries": 12,
+          "rows": 207,
+          "hits": 1,
+          "misses": 0,
+          "queryDurationMs": 27.0398,
+          "poolAcquisitionMs": 0.38310000000000005,
+          "eventLoopDelayMs": 18.696700000029523,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "nativeProof": true,
+            "closed": true,
+            "rejectedBatches": 0
+          },
+          "replicas": {
+            "a": [],
+            "b": [
+              {
+                "traceId": "883a4d465e512642397e3fb89e0870cf",
+                "queryCount": 12,
+                "queryDurationMs": 27.0398,
+                "rowsRetrieved": 207,
+                "poolWaitMs": 0.38310000000000005,
+                "poolWaitDefinition": "sum of native pool acquisition durations, including connection setup",
+                "cacheHits": 1,
+                "cacheMisses": 0,
+                "cacheDefinition": "existing Next 16.4.0 native default use-cache handler get outcomes; excludes private/fetch/React/Redis caches",
+                "eventLoopDelayMs": 18.696700000029523,
+                "observedQueryErrors": 0,
+                "observedQueryCount": 12,
+                "observedPoolAcquisitions": 12,
+                "observedPoolAcquisitionErrors": 0,
+                "observedEventLoopProbes": 6,
+                "coverage": {
+                  "observer": true,
+                  "pg": true,
+                  "rows": true,
+                  "cache": true,
+                  "eventLoop": true,
+                  "rejectedBatches": 0,
+                  "registration": true,
+                  "closed": true,
+                  "incomplete": false,
+                  "unattributedNativeSpans": 0,
+                  "lateSpans": 0,
+                  "nativeProof": true,
+                  "nativeDriverQueries": 12
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "stage": "effective-session-small-admin",
+        "kind": "overtime",
+        "replica": "a",
+        "concurrency": 1,
+        "equivalent": true,
+        "summary": {
+          "success": true,
+          "weeks": 53,
+          "seriesOvertime": 0
+        },
+        "elapsedMs": 117.7387000000017,
+        "metrics": {
+          "traceId": "6847dc8d54e08d950e622ac381e30270",
+          "queries": 27,
+          "rows": 2145,
+          "hits": 0,
+          "misses": 1,
+          "queryDurationMs": 30.9968,
+          "poolAcquisitionMs": 0.7327,
+          "eventLoopDelayMs": 39.35380000004079,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "nativeProof": true,
+            "closed": true,
+            "rejectedBatches": 0
+          },
+          "replicas": {
+            "a": [
+              {
+                "traceId": "6847dc8d54e08d950e622ac381e30270",
+                "queryCount": 27,
+                "queryDurationMs": 30.9968,
+                "rowsRetrieved": 2145,
+                "poolWaitMs": 0.7327,
+                "poolWaitDefinition": "sum of native pool acquisition durations, including connection setup",
+                "cacheHits": 0,
+                "cacheMisses": 1,
+                "cacheDefinition": "existing Next 16.4.0 native default use-cache handler get outcomes; excludes private/fetch/React/Redis caches",
+                "eventLoopDelayMs": 39.35380000004079,
+                "observedQueryErrors": 0,
+                "observedQueryCount": 27,
+                "observedPoolAcquisitions": 27,
+                "observedPoolAcquisitionErrors": 0,
+                "observedEventLoopProbes": 11,
+                "coverage": {
+                  "observer": true,
+                  "pg": true,
+                  "rows": true,
+                  "cache": true,
+                  "eventLoop": true,
+                  "rejectedBatches": 0,
+                  "registration": true,
+                  "closed": true,
+                  "incomplete": false,
+                  "unattributedNativeSpans": 0,
+                  "lateSpans": 0,
+                  "nativeProof": true,
+                  "nativeDriverQueries": 27
+                }
+              }
+            ],
+            "b": []
+          }
+        }
+      },
+      {
+        "stage": "effective-session-small-admin",
+        "kind": "overtime",
+        "replica": "b",
+        "concurrency": 1,
+        "equivalent": true,
+        "summary": {
+          "success": true,
+          "weeks": 53,
+          "seriesOvertime": 0
+        },
+        "elapsedMs": 126.86520000000019,
+        "metrics": {
+          "traceId": "91ee55f3e827529ad42ec3e540b3ca0f",
+          "queries": 27,
+          "rows": 2145,
+          "hits": 0,
+          "misses": 1,
+          "queryDurationMs": 28.576700000000006,
+          "poolAcquisitionMs": 0.7229000000000001,
+          "eventLoopDelayMs": 41.45089999999618,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "nativeProof": true,
+            "closed": true,
+            "rejectedBatches": 0
+          },
+          "replicas": {
+            "a": [],
+            "b": [
+              {
+                "traceId": "91ee55f3e827529ad42ec3e540b3ca0f",
+                "queryCount": 27,
+                "queryDurationMs": 28.576700000000006,
+                "rowsRetrieved": 2145,
+                "poolWaitMs": 0.7229000000000001,
+                "poolWaitDefinition": "sum of native pool acquisition durations, including connection setup",
+                "cacheHits": 0,
+                "cacheMisses": 1,
+                "cacheDefinition": "existing Next 16.4.0 native default use-cache handler get outcomes; excludes private/fetch/React/Redis caches",
+                "eventLoopDelayMs": 41.45089999999618,
+                "observedQueryErrors": 0,
+                "observedQueryCount": 27,
+                "observedPoolAcquisitions": 27,
+                "observedPoolAcquisitionErrors": 0,
+                "observedEventLoopProbes": 11,
+                "coverage": {
+                  "observer": true,
+                  "pg": true,
+                  "rows": true,
+                  "cache": true,
+                  "eventLoop": true,
+                  "rejectedBatches": 0,
+                  "registration": true,
+                  "closed": true,
+                  "incomplete": false,
+                  "unattributedNativeSpans": 0,
+                  "lateSpans": 0,
+                  "nativeProof": true,
+                  "nativeDriverQueries": 27
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "stage": "effective-session-large-manager",
+        "kind": "overtime",
+        "replica": "a",
+        "concurrency": 1,
+        "equivalent": true,
+        "summary": {
+          "success": true,
+          "weeks": 53,
+          "seriesOvertime": 0
+        },
+        "elapsedMs": 960.6836000000039,
+        "metrics": {
+          "traceId": "980462b160d9a8120b2ca9b4ea118e79",
+          "queries": 40,
+          "rows": 26444,
+          "hits": 0,
+          "misses": 1,
+          "queryDurationMs": 87.29020000000001,
+          "poolAcquisitionMs": 1.17,
+          "eventLoopDelayMs": 415.1652999999933,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "nativeProof": true,
+            "closed": true,
+            "rejectedBatches": 0
+          },
+          "replicas": {
+            "a": [
+              {
+                "traceId": "980462b160d9a8120b2ca9b4ea118e79",
+                "queryCount": 40,
+                "queryDurationMs": 87.29020000000001,
+                "rowsRetrieved": 26444,
+                "poolWaitMs": 1.17,
+                "poolWaitDefinition": "sum of native pool acquisition durations, including connection setup",
+                "cacheHits": 0,
+                "cacheMisses": 1,
+                "cacheDefinition": "existing Next 16.4.0 native default use-cache handler get outcomes; excludes private/fetch/React/Redis caches",
+                "eventLoopDelayMs": 415.1652999999933,
+                "observedQueryErrors": 0,
+                "observedQueryCount": 40,
+                "observedPoolAcquisitions": 40,
+                "observedPoolAcquisitionErrors": 0,
+                "observedEventLoopProbes": 25,
+                "coverage": {
+                  "observer": true,
+                  "pg": true,
+                  "rows": true,
+                  "cache": true,
+                  "eventLoop": true,
+                  "rejectedBatches": 0,
+                  "registration": true,
+                  "closed": true,
+                  "incomplete": false,
+                  "unattributedNativeSpans": 0,
+                  "lateSpans": 0,
+                  "nativeProof": true,
+                  "nativeDriverQueries": 40
+                }
+              }
+            ],
+            "b": []
+          }
+        }
+      },
+      {
+        "stage": "effective-session-large-manager",
+        "kind": "overtime",
+        "replica": "b",
+        "concurrency": 1,
+        "equivalent": true,
+        "summary": {
+          "success": true,
+          "weeks": 53,
+          "seriesOvertime": 0
+        },
+        "elapsedMs": 902.0600999999951,
+        "metrics": {
+          "traceId": "563f66ea5811a529bfde84f6045789cd",
+          "queries": 40,
+          "rows": 26444,
+          "hits": 0,
+          "misses": 1,
+          "queryDurationMs": 73.94430000000003,
+          "poolAcquisitionMs": 1.0898,
+          "eventLoopDelayMs": 344.6699999999837,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "nativeProof": true,
+            "closed": true,
+            "rejectedBatches": 0
+          },
+          "replicas": {
+            "a": [],
+            "b": [
+              {
+                "traceId": "563f66ea5811a529bfde84f6045789cd",
+                "queryCount": 40,
+                "queryDurationMs": 73.94430000000003,
+                "rowsRetrieved": 26444,
+                "poolWaitMs": 1.0898,
+                "poolWaitDefinition": "sum of native pool acquisition durations, including connection setup",
+                "cacheHits": 0,
+                "cacheMisses": 1,
+                "cacheDefinition": "existing Next 16.4.0 native default use-cache handler get outcomes; excludes private/fetch/React/Redis caches",
+                "eventLoopDelayMs": 344.6699999999837,
+                "observedQueryErrors": 0,
+                "observedQueryCount": 40,
+                "observedPoolAcquisitions": 40,
+                "observedPoolAcquisitionErrors": 0,
+                "observedEventLoopProbes": 23,
+                "coverage": {
+                  "observer": true,
+                  "pg": true,
+                  "rows": true,
+                  "cache": true,
+                  "eventLoop": true,
+                  "rejectedBatches": 0,
+                  "registration": true,
+                  "closed": true,
+                  "incomplete": false,
+                  "unattributedNativeSpans": 0,
+                  "lateSpans": 0,
+                  "nativeProof": true,
+                  "nativeDriverQueries": 40
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "stage": "effective-session-large-admin",
+        "kind": "overtime",
+        "replica": "a",
+        "concurrency": 1,
+        "equivalent": true,
+        "summary": {
+          "success": true,
+          "weeks": 53,
+          "seriesOvertime": 0
+        },
+        "elapsedMs": 48.10440000000381,
+        "metrics": {
+          "traceId": "1c510f4f3bf63512855609d3f40f3321",
+          "queries": 12,
+          "rows": 207,
+          "hits": 1,
+          "misses": 0,
+          "queryDurationMs": 23.0528,
+          "poolAcquisitionMs": 0.32239999999999996,
+          "eventLoopDelayMs": 14.258800000010524,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "nativeProof": true,
+            "closed": true,
+            "rejectedBatches": 0
+          },
+          "replicas": {
+            "a": [
+              {
+                "traceId": "1c510f4f3bf63512855609d3f40f3321",
+                "queryCount": 12,
+                "queryDurationMs": 23.0528,
+                "rowsRetrieved": 207,
+                "poolWaitMs": 0.32239999999999996,
+                "poolWaitDefinition": "sum of native pool acquisition durations, including connection setup",
+                "cacheHits": 1,
+                "cacheMisses": 0,
+                "cacheDefinition": "existing Next 16.4.0 native default use-cache handler get outcomes; excludes private/fetch/React/Redis caches",
+                "eventLoopDelayMs": 14.258800000010524,
+                "observedQueryErrors": 0,
+                "observedQueryCount": 12,
+                "observedPoolAcquisitions": 12,
+                "observedPoolAcquisitionErrors": 0,
+                "observedEventLoopProbes": 6,
+                "coverage": {
+                  "observer": true,
+                  "pg": true,
+                  "rows": true,
+                  "cache": true,
+                  "eventLoop": true,
+                  "rejectedBatches": 0,
+                  "registration": true,
+                  "closed": true,
+                  "incomplete": false,
+                  "unattributedNativeSpans": 0,
+                  "lateSpans": 0,
+                  "nativeProof": true,
+                  "nativeDriverQueries": 12
+                }
+              }
+            ],
+            "b": []
+          }
+        }
+      },
+      {
+        "stage": "effective-session-large-admin",
+        "kind": "overtime",
+        "replica": "b",
+        "concurrency": 1,
+        "equivalent": true,
+        "summary": {
+          "success": true,
+          "weeks": 53,
+          "seriesOvertime": 0
+        },
+        "elapsedMs": 49.09749999999622,
+        "metrics": {
+          "traceId": "1e8388e720e0695966fb176c84dd4ce5",
+          "queries": 12,
+          "rows": 207,
+          "hits": 1,
+          "misses": 0,
+          "queryDurationMs": 22.8158,
+          "poolAcquisitionMs": 0.36490000000000006,
+          "eventLoopDelayMs": 14.50289999996312,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "nativeProof": true,
+            "closed": true,
+            "rejectedBatches": 0
+          },
+          "replicas": {
+            "a": [],
+            "b": [
+              {
+                "traceId": "1e8388e720e0695966fb176c84dd4ce5",
+                "queryCount": 12,
+                "queryDurationMs": 22.8158,
+                "rowsRetrieved": 207,
+                "poolWaitMs": 0.36490000000000006,
+                "poolWaitDefinition": "sum of native pool acquisition durations, including connection setup",
+                "cacheHits": 1,
+                "cacheMisses": 0,
+                "cacheDefinition": "existing Next 16.4.0 native default use-cache handler get outcomes; excludes private/fetch/React/Redis caches",
+                "eventLoopDelayMs": 14.50289999996312,
+                "observedQueryErrors": 0,
+                "observedQueryCount": 12,
+                "observedPoolAcquisitions": 12,
+                "observedPoolAcquisitionErrors": 0,
+                "observedEventLoopProbes": 6,
+                "coverage": {
+                  "observer": true,
+                  "pg": true,
+                  "rows": true,
+                  "cache": true,
+                  "eventLoop": true,
+                  "rejectedBatches": 0,
+                  "registration": true,
+                  "closed": true,
+                  "incomplete": false,
+                  "unattributedNativeSpans": 0,
+                  "lateSpans": 0,
+                  "nativeProof": true,
+                  "nativeDriverQueries": 12
+                }
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "runtimeVerified": false,
+    "productionTopologyVerified": false
+  },
+  "firstEarlyAttempt": {
+    "status": "incomplete",
+    "applicationDatabaseQueries": 0,
+    "browserTransports": 0,
+    "cause": "not captured; retained separately, not a cache proof"
+  },
+  "limitations": [
+    "Transport refused 10, 10 and 14 requests; reason classification and clean rerun pending.",
+    "No unexpected destination was forwarded.",
+    "No production topology or timing benefit is established.",
+    "Pristine primary clone and original application were excluded."
+  ]
+}

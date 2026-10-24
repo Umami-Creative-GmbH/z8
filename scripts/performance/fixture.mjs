@@ -9,6 +9,7 @@ import { createServer } from "node:net";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { authenticateFixture } from "./fixture-auth.mjs";
+import { fixtureBrowserPolicy } from "./fixture-browser.mjs";
 import {
 	dashboardLayoutMutation,
 	fixtureBrowserPermissions,
@@ -680,6 +681,7 @@ async function plan(directory) {
 					? fixtureTraceTransport
 					: "page-interception-v1",
 			browserPermissions: fixtureBrowserPermissions,
+			browserPolicy: fixtureBrowserPolicy,
 			build,
 			sourceBuild,
 			toolingBuild,

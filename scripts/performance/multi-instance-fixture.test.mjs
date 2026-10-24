@@ -41,6 +41,12 @@ test("operator plan records two private host replicas and the actual local proxy
 		assert.equal(plan.proxy, "Docker HAProxy 2.8");
 		assert.equal(plan.nextCache, "per-process default Cache Components memory");
 		assert.equal(plan.productionTopologyVerified, false);
+		assert.equal(plan.independentObserverCollectors, 2);
+		assert.equal(plan.nativeProtocol, "z8-fixture-native-observer-v2");
+		assert.equal(
+			plan.migrationMethod,
+			"normal migrate-with-lock.js on owned clone only",
+		);
 		assert.equal(result.stdout.includes("never-publish-me"), false);
 		assert.equal(result.stdout.includes("POSTGRES_PASSWORD"), false);
 	} finally {

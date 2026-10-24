@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { createServer, request } from "node:http";
+import { connect } from "node:net";
 import test from "node:test";
 import { gzipSync } from "node:zlib";
 import { createFixtureTraceTransport } from "./trace-transport.mjs";
@@ -82,6 +83,13 @@ test("context transport preserves streaming, cookies, bodies and phase identity 
 			refusedRequests: 0,
 			upstreamFailures: 0,
 			responseBodyBytes: 11,
+			refusalReasons: {
+				unexpectedLoopback: 0,
+				nonLoopbackHttp: 0,
+				loopbackConnect: 0,
+				nonLoopbackConnect: 0,
+				malformed: 0,
+			},
 		});
 		const wire = transport.wire.state(performance.now() + 1001);
 		assert.equal(wire.complete, true);
@@ -202,11 +210,46 @@ test("unexpected loopback origins are refused before forwarding and explicit own
 		assert.equal(state.mandatoryErrors, 1);
 		assert.equal(state.bytes.otherFinite, 5);
 		assert.equal(transport.snapshot().refusedRequests, 1);
+		assert.equal(transport.snapshot().refusalReasons.unexpectedLoopback, 1);
 	} finally {
 		await transport.close();
 		for (const server of [app, unowned, storage]) {
 			server.closeAllConnections();
 			await new Promise((resolve) => server.close(resolve));
 		}
+	}
+});
+
+test("CONNECT refusal contains client aborts and keeps numeric reason evidence", async () => {
+	const transport = await createFixtureTraceTransport({
+		origin: "http://127.0.0.1:1",
+		getTraceId: () => "a".repeat(32),
+	});
+	try {
+		transport.wire.begin(performance.now());
+		const proxy = new URL(transport.browserContextOptions.proxyServer);
+		for (const authority of ["127.0.0.1:2", "example.invalid:443"]) {
+			await new Promise((resolve, reject) => {
+				const socket = connect(Number(proxy.port), proxy.hostname, () =>
+					socket.write(
+						`CONNECT ${authority} HTTP/1.1\r\nHost: ${authority}\r\n\r\n`,
+					),
+				);
+				socket.on("error", reject);
+				socket.once("data", () => {
+					socket.destroy();
+					resolve();
+				});
+			});
+		}
+		assert.equal(transport.snapshot().refusalReasons.loopbackConnect, 1);
+		assert.equal(transport.snapshot().refusalReasons.nonLoopbackConnect, 1);
+		assert.equal(transport.snapshot().refusedRequests, 2);
+		assert.equal(
+			transport.wire.state(performance.now() + 1001).mandatoryErrors,
+			2,
+		);
+	} finally {
+		await transport.close();
 	}
 });

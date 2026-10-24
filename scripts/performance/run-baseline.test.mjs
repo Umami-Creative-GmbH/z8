@@ -52,6 +52,23 @@ const fixturePlan = () => ({
 	})),
 });
 
+test("a diagnostic mode filter cannot reduce controlled measurement cohorts", () => {
+	const folder = mkdtempSync(join(tmpdir(), "z8-baseline-mode-"));
+	try {
+		const path = join(folder, "plan.json");
+		writeFileSync(path, JSON.stringify(fixturePlan()));
+		const result = spawnSync(
+			process.execPath,
+			[runner, "--plan", path, "--validate-plan", "--mode", "first-document"],
+			{ encoding: "utf8" },
+		);
+		assert.equal(result.status, 2);
+		assert.match(result.stderr, /only for journey verification/);
+	} finally {
+		rmSync(folder, { recursive: true, force: true });
+	}
+});
+
 test("baseline collection accepts unset release budgets while release and unknown phases cannot bypass them", () => {
 	const folder = mkdtempSync(join(tmpdir(), "z8-baseline-budget-"));
 	try {

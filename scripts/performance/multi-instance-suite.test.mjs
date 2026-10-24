@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import test from "node:test";
@@ -15,6 +15,28 @@ const head = spawnSync("git", ["rev-parse", "HEAD"], {
 async function fixture(run) {
 	const directory = await mkdtemp(join(tmpdir(), "z8-multi-suite-"));
 	try {
+		for (const [name, port] of [
+			["a", 18101],
+			["b", 18102],
+		]) {
+			const observer = join(directory, `observer-${name}`);
+			await mkdir(observer);
+			await writeFile(
+				join(observer, "native-control-private.json"),
+				JSON.stringify({
+					protocol: "z8-fixture-native-observer-v2",
+					endpoint: `http://127.0.0.1:${port + 10}`,
+				}),
+			);
+			await writeFile(
+				join(observer, "collector-control.json"),
+				JSON.stringify({
+					kind: "z8-fixture-otlp-collector-v2",
+					endpoint: `http://127.0.0.1:${port}`,
+					observerControl: join(observer, "native-control-private.json"),
+				}),
+			);
+		}
 		await writeFile(
 			join(directory, "multi-private.json"),
 			JSON.stringify({
@@ -50,6 +72,9 @@ test("finite multi-instance acceptance plan declares two computations maximum an
 		assert.equal(plan.maximumConcurrentComputations, 2);
 		assert.equal(plan.expiryWaitMs, 62000);
 		assert.equal(plan.runtimeVerified, false);
+		assert.equal(plan.independentCollectors, 2);
+		assert.equal(plan.observation, "paired-native-observer-v2");
+		assert.equal(plan.transport, "context-loopback-proxy-v1");
 		assert.equal(result.stdout.includes("private-password"), false);
 	}));
 test("suite rejects a different source pin before opening the browser or database", () =>

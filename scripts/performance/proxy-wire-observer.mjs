@@ -134,7 +134,10 @@ export function createProxyWireObserver() {
 			activity(record, at);
 		},
 		begin(at) {
-			for (const [id, record] of requests) if (record.done) requests.delete(id);
+			for (const [id, record] of requests) {
+				if (record.done) requests.delete(id);
+				else record.inherited = true;
+			}
 			started = at;
 			readyAt = undefined;
 			lastActivity = at;
