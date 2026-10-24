@@ -47,7 +47,11 @@ vi.mock("@/components/user-avatar", () => ({
 }));
 vi.mock("@/components/employee-activity-text", () => ({ EmployeeActivityText: () => null }));
 
-const { waterCommand } = vi.hoisted(() => ({ waterCommand: vi.fn() }));
+const { waterCommand, refreshRoute } = vi.hoisted(() => ({
+	waterCommand: vi.fn(),
+	refreshRoute: vi.fn(),
+}));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: refreshRoute }) }));
 vi.mock("canvas-confetti", () => ({ default: vi.fn() }));
 vi.mock("sonner", () => ({ toast: { error: vi.fn() } }));
 vi.mock("./actions", () => ({
@@ -61,8 +65,11 @@ vi.mock("@/app/[locale]/(app)/time-tracking/actions", () => ({
 }));
 vi.mock("@/app/[locale]/(app)/wellness/actions", () => ({ logWaterIntake: waterCommand }));
 
+import { HeaderRefreshButton } from "@/components/header-refresh-button";
+import { ViewRefreshProvider } from "@/components/providers/view-refresh-provider";
 import { BirthdayRemindersWidget } from "./birthday-reminders-widget";
 import type { DashboardWidgetSnapshot } from "./dashboard-types";
+import { DeferredDashboardWidget } from "./deferred-dashboard-widget";
 import { HydrationWidget } from "./hydration-widget";
 import { PresenceStatusWidget } from "./presence-status-widget";
 import { VacationBalanceWidget } from "./vacation-balance-widget";
@@ -259,4 +266,128 @@ it("hides known-disabled feature snapshots without initial reads", () => {
 	expect(screen.queryByText("Hydration")).toBeNull();
 	expect(screen.queryByText("Work location")).toBeNull();
 	expect(fetch).not.toHaveBeenCalled();
+});
+
+it("keeps an offscreen secondary widget as a keyboard-discoverable placeholder without fetching its dataset", async () => {
+	class Observer {
+		observe() {}
+		disconnect() {}
+	}
+	vi.stubGlobal("IntersectionObserver", Observer);
+	render(
+		<QueryClientProvider client={new QueryClient()}>
+			<DeferredDashboardWidget id="hydration" />
+		</QueryClientProvider>,
+	);
+	expect(screen.getByRole("button", { name: "Load Hydration" })).toBeTruthy();
+	await act(async () => {});
+	expect(fetch).not.toHaveBeenCalled();
+});
+
+it.each(["viewport", "keyboard"])(
+	"activates a secondary widget on %s intent with one scoped read and retained draft",
+	async (intent) => {
+		let notify: (entries: { isIntersecting: boolean }[]) => void = () => {};
+		class Observer {
+			constructor(callback: typeof notify) {
+				notify = callback;
+			}
+			observe() {}
+			disconnect() {}
+		}
+		vi.stubGlobal("IntersectionObserver", Observer);
+		const request = vi.fn(async () => Response.json(snapshot(hydration)));
+		vi.stubGlobal("fetch", request);
+		render(
+			<QueryClientProvider client={new QueryClient()}>
+				<input aria-label="Deferred draft" defaultValue="Unsaved" />
+				<DeferredDashboardWidget id="hydration" />
+				<VacationBalanceWidget initialSnapshot={snapshot(vacation)} />
+			</QueryClientProvider>,
+		);
+		expect(request).not.toHaveBeenCalled();
+		const button = screen.getByRole("button", { name: "Load Hydration" });
+		await act(async () => {
+			if (intent === "viewport") notify([{ isIntersecting: true }]);
+			else button.focus();
+		});
+		await screen.findByRole("button", { name: "Add 1 glass" });
+		expect(request.mock.calls.map(([url]) => url)).toEqual(["/api/dashboard/widgets/hydration"]);
+		expect((screen.getByLabelText("Deferred draft") as HTMLInputElement).value).toBe("Unsaved");
+		expect(screen.getAllByText("22.5").length).toBeGreaterThan(0);
+		if (intent === "keyboard")
+			expect(document.activeElement).toBe(screen.getByRole("region", { name: "Hydration" }));
+	},
+);
+
+it("refreshes an activated deferred dataset exactly once through its client owner while eager data waits for the RSC merge", async () => {
+	class Observer {
+		observe() {}
+		disconnect() {}
+	}
+	vi.stubGlobal("IntersectionObserver", Observer);
+	const request = vi.fn(async () => Response.json(snapshot(hydration)));
+	vi.stubGlobal("fetch", request);
+	refreshRoute.mockClear();
+	render(
+		<QueryClientProvider client={new QueryClient()}>
+			<ViewRefreshProvider>
+				<HeaderRefreshButton />
+				<input aria-label="Refresh draft" defaultValue="Unsaved" />
+				<DeferredDashboardWidget id="hydration" />
+				<VacationBalanceWidget initialSnapshot={snapshot(vacation)} />
+			</ViewRefreshProvider>
+		</QueryClientProvider>,
+	);
+	fireEvent.click(screen.getByRole("button", { name: "Load Hydration" }));
+	await screen.findByRole("button", { name: "Add 1 glass" });
+	expect(request).toHaveBeenCalledTimes(1);
+	fireEvent.click(screen.getByRole("button", { name: "Refresh data" }));
+	await waitFor(() => expect(refreshRoute).toHaveBeenCalledTimes(1));
+	expect(request.mock.calls.map(([url]) => url)).toEqual([
+		"/api/dashboard/widgets/hydration",
+		"/api/dashboard/widgets/hydration",
+	]);
+	expect((screen.getByLabelText("Refresh draft") as HTMLInputElement).value).toBe("Unsaved");
+});
+
+it("keeps an activated birthday reader local while it is held, fails and retries", async () => {
+	let notify: (entries: { isIntersecting: boolean }[]) => void = () => {};
+	class Observer {
+		constructor(callback: typeof notify) {
+			notify = callback;
+		}
+		observe() {}
+		disconnect() {}
+	}
+	vi.stubGlobal("IntersectionObserver", Observer);
+	let finish: (response: Response) => void = () => {};
+	const held = new Promise<Response>((resolve) => {
+		finish = resolve;
+	});
+	const request = vi
+		.fn()
+		.mockReturnValueOnce(held)
+		.mockResolvedValueOnce(Response.json(snapshot(birthdays)));
+	vi.stubGlobal("fetch", request);
+	render(
+		<QueryClientProvider client={new QueryClient()}>
+			<input aria-label="Birthday draft" defaultValue="Unsaved" />
+			<DeferredDashboardWidget id="birthday-reminders" />
+			<VacationBalanceWidget initialSnapshot={snapshot(vacation)} />
+		</QueryClientProvider>,
+	);
+	expect(request).not.toHaveBeenCalled();
+	await act(async () => notify([{ isIntersecting: true }]));
+	await waitFor(() => expect(request).toHaveBeenCalledTimes(1));
+	expect(screen.getAllByText("22.5").length).toBeGreaterThan(0);
+	await act(async () => finish(Response.json({ error: "Unavailable" }, { status: 503 })));
+	const retry = await screen.findByRole("button", { name: "Retry Upcoming Birthdays" });
+	fireEvent.click(retry);
+	await screen.findAllByText("Ada Lovelace");
+	expect(request.mock.calls.map(([url]) => url)).toEqual([
+		"/api/dashboard/widgets/birthday-reminders",
+		"/api/dashboard/widgets/birthday-reminders",
+	]);
+	expect((screen.getByLabelText("Birthday draft") as HTMLInputElement).value).toBe("Unsaved");
 });

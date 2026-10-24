@@ -68,7 +68,7 @@ vi.mock("@/db", async () =>
 
 import type { ServerWidgetId } from "./dashboard-types";
 
-const { readDashboardWidget } = await import("./dashboard-reads");
+const { readDashboardWidget, readDashboardLayout } = await import("./dashboard-reads");
 const { logWaterIntake } = await import("@/app/[locale]/(app)/wellness/actions");
 const { getPresenceStatus } = await import("@/app/[locale]/(app)/time-tracking/actions");
 
@@ -149,6 +149,52 @@ describe("scoped personal Dashboard snapshots", () => {
 		expect(await Response.json(snapshot).json()).toEqual(snapshot);
 		return snapshot.result.data;
 	}
+	it("delivers role and feature appropriate defaults without changing an existing explicit layout", async () => {
+		const actor = {
+			userId: subject.userId,
+			organizationId: fixture.organizationId,
+			employee: {
+				id: subject.employeeId,
+				organizationId: fixture.organizationId,
+				role: "employee" as const,
+			},
+		};
+		const employeeLayout = await readDashboardLayout(actor);
+		for (const id of ["manager-today", "team-overview", "upcoming-shifts", "hydration"])
+			expect(employeeLayout.availableWidgetIds).not.toContain(id);
+		expect(employeeLayout.availableWidgetIds).toContain("pending-approvals");
+		expect(employeeLayout.availableWidgetIds).toContain("managed-employees");
+		expect(employeeLayout.scope).toEqual({
+			userId: subject.userId,
+			organizationId: fixture.organizationId,
+		});
+		await fixture.pool.query(
+			"update user_settings set dashboard_widget_order=$2::jsonb where user_id=$1",
+			[subject.userId, JSON.stringify({ order: [], hidden: [], version: 1 })],
+		);
+		try {
+			const managerLayout = await readDashboardLayout({
+				...actor,
+				employee: { ...actor.employee, role: "manager" },
+			});
+			expect(managerLayout.availableWidgetIds).toEqual(
+				expect.arrayContaining(["manager-today", "managed-employees", "team-overview"]),
+			);
+			expect(managerLayout.availableWidgetIds).not.toContain("hydration");
+			expect(managerLayout.availableWidgetIds).not.toContain("upcoming-shifts");
+			expect(managerLayout.settings.dashboardWidgetOrder).toEqual({
+				order: [],
+				hidden: [],
+				version: 1,
+			});
+			expect(await Response.json(managerLayout).json()).toEqual(managerLayout);
+		} finally {
+			await fixture.pool.query(
+				"update user_settings set dashboard_widget_order=null where user_id=$1",
+				[subject.userId],
+			);
+		}
+	});
 	it("delivers a current-roster birthday on the organization's today even after UTC midnight differs", async () => {
 		const data = await read("birthday-reminders");
 		expect(data?.map((row) => row.id)).toEqual([birthdayId]);

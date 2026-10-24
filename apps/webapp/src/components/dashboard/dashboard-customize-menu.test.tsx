@@ -40,7 +40,31 @@ function openMenu() {
 	fireEvent.pointerDown(screen.getByRole("button", { name: "Customize dashboard" }));
 }
 
+function ControlledMenu() {
+	const [order, setOrder] = useState(visibleWidgetOrder);
+
+	return (
+		<DashboardCustomizeMenu
+			hiddenWidgets={[]}
+			onReorder={setOrder}
+			onReset={vi.fn()}
+			onVisibilityChange={vi.fn()}
+			visibleWidgetOrder={order}
+		/>
+	);
+}
+
 describe("DashboardCustomizeMenu", () => {
+	it("keeps unavailable widgets discoverable but disabled without offering stale visible choices", () => {
+		const onVisibilityChange = vi.fn();
+		renderMenu({ availableWidgetIds: ["quick-stats"], onVisibilityChange });
+		openMenu();
+		const hydration = screen.getByRole("menuitemcheckbox", { name: "Hydration" });
+		expect(hydration.getAttribute("aria-disabled")).toBe("true");
+		expect(hydration.getAttribute("aria-checked")).toBe("false");
+		fireEvent.click(hydration);
+		expect(onVisibilityChange).not.toHaveBeenCalled();
+	});
 	it("renders an icon-only accessible trigger", () => {
 		renderMenu();
 
@@ -179,20 +203,6 @@ describe("DashboardCustomizeMenu", () => {
 	});
 
 	it("keeps the menu open for repeated reorder moves", () => {
-		function ControlledMenu() {
-			const [order, setOrder] = useState(visibleWidgetOrder);
-
-			return (
-				<DashboardCustomizeMenu
-					hiddenWidgets={[]}
-					onReorder={setOrder}
-					onReset={vi.fn()}
-					onVisibilityChange={vi.fn()}
-					visibleWidgetOrder={order}
-				/>
-			);
-		}
-
 		render(<ControlledMenu />);
 
 		openMenu();

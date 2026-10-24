@@ -1,11 +1,14 @@
 /* @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { type ReactNode, Suspense } from "react";
 import { renderToReadableStream, renderToString } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { DEFAULT_WIDGET_ORDER } from "@/components/dashboard/widget-registry";
 import { queryKeys } from "@/lib/query/keys";
+import { updateWidgetOrder } from "./dashboard/actions";
+import { DashboardHeaderCustomize } from "./dashboard/dashboard-header-customize";
 
 const serverReads = vi.hoisted(() => ({
 	layout: vi.fn(),
@@ -19,7 +22,11 @@ vi.mock("@/components/dashboard/dashboard-reads", () => ({
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
-		t: (_key: string, fallback: string) => fallback,
+		t: (_key: string, fallback: string, params?: Record<string, string>) =>
+			Object.entries(params ?? {}).reduce(
+				(text, [key, value]) => text.replaceAll(`{${key}}`, value),
+				fallback,
+			),
 	}),
 }));
 
@@ -135,8 +142,6 @@ import { SectionCards } from "./section-cards";
 
 describe("SectionCards", () => {
 	it.each([
-		["birthday-reminders", "hydration", "Hydration ready", "Birthdays ready"],
-		["hydration", "birthday-reminders", "Birthdays ready", "Hydration ready"],
 		["vacation-balance", "presence-status", "Presence ready", "Vacation ready"],
 		["presence-status", "vacation-balance", "Vacation ready", "Presence ready"],
 		["upcoming-shifts", "covering-for", "Cover ready", "Shifts ready"],
@@ -226,6 +231,80 @@ describe("SectionCards", () => {
 		},
 	);
 
+	it("streams primary slots while measured secondary slots remain discoverable without a server data read", async () => {
+		const scope = { userId: "user-a", organizationId: "org-a" };
+		serverReads.layout.mockResolvedValue({
+			subject: {
+				...scope,
+				employee: { id: "employee-a", role: "manager", organizationId: "org-a" },
+			},
+			layout: {
+				scope,
+				updatedAt: Date.now(),
+				settings: {
+					dashboardWidgetOrder: {
+						order: ["quick-stats", "birthday-reminders", "hydration"],
+						hidden: [],
+						version: 1,
+					},
+				},
+			},
+		});
+		serverReads.widget.mockClear();
+		serverReads.widget.mockResolvedValue({
+			scope,
+			updatedAt: Date.now(),
+			result: { success: true, data: {} },
+		});
+		const content = await ServerSectionCards();
+		const stream = await renderToReadableStream(
+			<QueryClientProvider client={new QueryClient()}>{content}</QueryClientProvider>,
+		);
+		const markup = await new Response(stream).text();
+		expect(markup).toContain("Work hours ready");
+		expect(markup).toContain("Load Hydration");
+		expect(markup).toContain("Load Upcoming Birthdays");
+		expect(serverReads.widget.mock.calls.map(([id]) => id)).toEqual(["quick-stats"]);
+	});
+	it("keeps an omitted optional widget unchecked until enabled through customization and unmounts it when hidden", async () => {
+		class Observer {
+			observe() {}
+			disconnect() {}
+		}
+		vi.stubGlobal("IntersectionObserver", Observer);
+		const request = vi.fn();
+		vi.stubGlobal("fetch", request);
+		vi.mocked(updateWidgetOrder).mockResolvedValue({
+			success: true,
+			data: { success: true, updatedAt: Date.now() + 1 },
+		});
+		render(
+			<QueryClientProvider client={new QueryClient()}>
+				<input aria-label="Layout draft" defaultValue="Unsaved" />
+				<DashboardHeaderCustomize />
+				<SectionCards
+					initialLayout={{
+						scope: { userId: "user-a", organizationId: "org-a" },
+						updatedAt: Date.now(),
+						settings: { dashboardWidgetOrder: { order: ["quick-stats"], version: 1 } },
+					}}
+					widgetSlots={{ "quick-stats": <p>Primary hours</p> }}
+				/>
+			</QueryClientProvider>,
+		);
+		expect(screen.queryByRole("region", { name: "Hydration" })).toBeNull();
+		fireEvent.pointerDown(screen.getByRole("button", { name: "Customize dashboard" }));
+		const item = screen.getByRole("menuitemcheckbox", { name: "Hydration" });
+		expect(item.getAttribute("aria-checked")).toBe("false");
+		fireEvent.click(item);
+		await screen.findByRole("button", { name: "Load Hydration" });
+		expect(screen.getByText("Primary hours")).toBeTruthy();
+		fireEvent.click(screen.getByRole("menuitemcheckbox", { name: "Hydration" }));
+		await waitFor(() => expect(screen.queryByRole("region", { name: "Hydration" })).toBeNull());
+		expect((screen.getByLabelText("Layout draft") as HTMLInputElement).value).toBe("Unsaved");
+		expect(request).not.toHaveBeenCalled();
+		vi.unstubAllGlobals();
+	});
 	it("renders server-provided visible widget slots without a hydration or settings request prerequisite", () => {
 		const queryClient = new QueryClient({
 			defaultOptions: { queries: { retry: false } },
