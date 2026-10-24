@@ -1,0 +1,74 @@
+import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { dirname, join, resolve } from "node:path";
+import test from "node:test";
+import { fileURLToPath } from "node:url";
+
+const cli = fileURLToPath(new URL("./mixed-load-probe.mjs", import.meta.url));
+async function seedPlan(directory, origin = "http://localhost:34123") {
+	await writeFile(
+		join(directory, "runtime-private.json"),
+		JSON.stringify({
+			origin,
+			env: {
+				POSTGRES_DB: "approval_workflow_repository_test_mixed",
+				POSTGRES_POOL_MAX: "10",
+				POSTGRES_PASSWORD: "never-publish-me",
+			},
+		}),
+	);
+	await writeFile(
+		join(directory, "fixture-private.json"),
+		JSON.stringify({
+			kind: "disposable",
+			actors: Object.fromEntries(
+				["large-admin", "small-admin", "small-manager", "large-manager"].map(
+					(name) => [
+						name,
+						{ employeeId: `private-${name}`, password: "never-publish-me" },
+					],
+				),
+			),
+		}),
+	);
+}
+
+test("single-app mixed plan fixes four distinct users, twenty pairs and bounded annual readers without exposing credentials", async () => {
+	const directory = await mkdtemp(join(tmpdir(), "z8-mixed-plan-"));
+	try {
+		await seedPlan(directory);
+		const result = spawnSync(process.execPath, [cli, "plan", directory], {
+			encoding: "utf8",
+		});
+		assert.equal(result.status, 0, result.stderr);
+		const plan = JSON.parse(result.stdout);
+		assert.equal(plan.clockPairs, 20);
+		assert.equal(plan.userConcurrency, 4);
+		assert.equal(plan.poolMax, 10);
+		assert.equal(plan.analyticsCallers.length, 3);
+		assert.equal(plan.analyticsMaxRequestsPerCallerPerCommand, 100);
+		assert.equal(result.stdout.includes("never-publish-me"), false);
+		assert.equal(result.stdout.includes("private-"), false);
+	} finally {
+		assert.equal(dirname(directory), resolve(tmpdir()));
+		await rm(directory, { recursive: true, force: true });
+	}
+});
+
+test("mixed plan refuses a nonlocal origin while retaining all other valid fixture prerequisites", async () => {
+	const directory = await mkdtemp(join(tmpdir(), "z8-mixed-reject-"));
+	try {
+		await seedPlan(directory, "https://production.example.test");
+		const result = spawnSync(process.execPath, [cli, "plan", directory], {
+			encoding: "utf8",
+		});
+		assert.notEqual(result.status, 0);
+		assert.equal(result.stdout, "");
+		assert.equal(result.stderr.includes("never-publish-me"), false);
+	} finally {
+		assert.equal(dirname(directory), resolve(tmpdir()));
+		await rm(directory, { recursive: true, force: true });
+	}
+});
