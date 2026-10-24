@@ -249,6 +249,14 @@ export const queryKeys = {
 		all: ["employees"] as const,
 		organization: (orgId: string) => ["employees", orgId] as const,
 		list: <T extends object>(orgId: string, params?: T) => ["employees", orgId, params] as const,
+		scopedList: <T extends object>(userId: Id, orgId: Id, params: T) =>
+			["employees", orgId, "list", userId, params] as const,
+		detailFor: (userId: Id, orgId: Id, employeeId: string) =>
+			["employees", "detail", employeeId, userId, orgId] as const,
+		referencePolicies: (userId: Id, orgId: Id) =>
+			["employees", orgId, "work-policies", userId] as const,
+		managerChoices: (userId: Id, orgId: Id, employeeId: string) =>
+			["employees", orgId, "manager-choices", userId, employeeId] as const,
 		detail: (employeeId: string) => ["employees", "detail", employeeId] as const,
 		employmentHistory: (employeeId: string) =>
 			["employees", "detail", employeeId, "employment-history"] as const,

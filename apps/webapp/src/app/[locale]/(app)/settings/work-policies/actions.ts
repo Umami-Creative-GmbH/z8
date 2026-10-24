@@ -1940,6 +1940,7 @@ export async function getEmployeeEffectiveScheduleDetails(
 		const targetEmployee = yield* getTargetEmployee(
 			employeeId,
 			"getEmployeeEffectiveScheduleDetails:getTargetEmployee",
+			actor.organizationId,
 		);
 		yield* ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
 			message: "Insufficient permissions",
