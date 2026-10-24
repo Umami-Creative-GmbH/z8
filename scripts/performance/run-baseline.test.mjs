@@ -6,6 +6,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import { primaryProtocolIdentity } from "./protocol-fingerprints.mjs";
+const primaryProtocol = await primaryProtocolIdentity();
 
 const runner = fileURLToPath(new URL("./run-baseline.mjs", import.meta.url));
 const fixturePlan = () => ({
@@ -421,6 +423,7 @@ test("a fully observed failed predecessor is recorded while the same failure blo
 			phase,
 			protocol = plan.runtime.collectorProtocol,
 			nativeComplete = true,
+			sourceProtocol = primaryProtocol,
 		) => {
 			plan.phase = phase;
 			const bytes = JSON.stringify(plan);
@@ -429,6 +432,7 @@ test("a fully observed failed predecessor is recorded while the same failure blo
 				artifactPath,
 				JSON.stringify({
 					kind: "benchmark",
+					protocol: sourceProtocol,
 					nativeRunCoverage: { complete: nativeComplete },
 					runtime: { buildVerified: true, collectorProtocol: protocol },
 					planSha256: createHash("sha256").update(bytes).digest("hex"),
@@ -536,6 +540,13 @@ test("a fully observed failed predecessor is recorded while the same failure blo
 		}));
 		writeFileSync(backendPath, JSON.stringify(nativeBackend));
 		const nativeGood = finalize("baseline");
+		assert.equal(
+			finalize("baseline", plan.runtime.collectorProtocol, true, {
+				...primaryProtocol,
+				"browser-performance.mjs": "0".repeat(64),
+			}).command.status,
+			2,
+		);
 		assert.equal(nativeGood.command.status, 0);
 		assert.equal(
 			finalize("baseline", plan.runtime.collectorProtocol, false).command

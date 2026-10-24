@@ -4,14 +4,33 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import {
   beforeFailurePolicy,
+  eligibleOriginalAnnualFailure,
   requireSettledEvidence,
   settledWireEvidence,
 } from "./settled-resources.mjs";
+import {
+  primaryProtocolIdentity,
+  budgetProtocolIdentity,
+} from "./protocol-fingerprints.mjs";
 import {
   fixtureBrowserPolicy,
   fixtureTransportIsComplete,
 } from "./fixture-browser.mjs";
 const sha = (bytes) => createHash("sha256").update(bytes).digest("hex");
+const primaryProtocol = await primaryProtocolIdentity();
+const budgetProtocol = await budgetProtocolIdentity();
+const paintProof = JSON.parse(
+  await readFile(
+    new URL(
+      "../../docs/performance/evidence/1450-native-paint-and-link-diagnostics.json",
+      import.meta.url,
+    ),
+  ),
+);
+const paintProofSha256 =
+  "f4afd63448f06bf92a975c3140f6c9d064313ea6e8764c3e0476b8141f21c3fd";
+if (sha(JSON.stringify(paintProof)) !== paintProofSha256)
+  throw Error("Fixed raw native paint diagnostic proof changed.");
 const json = (value) => JSON.stringify(value, null, 2) + "\n";
 const p95 = (values) =>
   [...values].sort((a, b) => a - b)[Math.ceil(values.length * 0.95) - 1];
@@ -32,8 +51,18 @@ const backendMetrics = [
   "eventLoopDelayMs",
 ];
 const policy = {
-  version: 2,
+  version: 3,
   beforeResourceFailure: beforeFailurePolicy,
+  observedNativePaint: {
+    amendedAt: "2026-10-24T20:40:32Z",
+    source: "28e18381a7a41f5bc84daa53369c508ddfe9a5de",
+    proofSha256: paintProofSha256,
+    proofHashEncoding: "sha256 of UTF-8 JSON.stringify(parsed public proof)",
+    scope:
+      "native first-document paint observation independent of eligible FAILED baseline UI behavior; never successful-route readiness",
+    completeness:
+      "all planned first-document samples (minimum20) finite with completed native read and at least1actual LCP entry; no prerequisite observation",
+  },
   latency: { multiplier: 1.25, allowance: 250, floor: 500 },
   bytes: { multiplier: 1.1, allowance: 16384, floor: 16384 },
   resources: {
@@ -78,7 +107,23 @@ function cohorts(plan) {
     }
   return result;
 }
-function derive(plan, before, releaseRuntime) {
+function observedPaintComplete(samples) {
+  return (
+    samples.length >= 20 &&
+    samples.every(
+      (s) =>
+        s.mode === "first-document" &&
+        s.resourceScope === "measured-visit" &&
+        (s.backendTraceId ?? s.traceId) === s.traceId &&
+        Number.isFinite(s.lcpMs) &&
+        s.lcpMs >= 0 &&
+        s.nativePerformanceObservation?.readCompleted === true &&
+        Number.isSafeInteger(s.nativePerformanceObservation.lcpEntries) &&
+        s.nativePerformanceObservation.lcpEntries > 0,
+    )
+  );
+}
+function derive(plan, before, releaseRuntime, native) {
   const releasePlan = structuredClone(plan);
   releasePlan.phase = "release";
   Object.assign(releasePlan.runtime, releaseRuntime);
@@ -127,8 +172,29 @@ function derive(plan, before, releaseRuntime) {
       const values = samples.map((s) => s[name]);
       const unavailable = values.some((v) => !Number.isFinite(v));
       const resourceCensored = byteCensored(samples, name);
+      const completeNativePaint =
+        name === "lcpMs" &&
+        observedPaintComplete(samples) &&
+        samples.every(
+          (s) =>
+            !s.failed ||
+            (s.usableContentMs === null &&
+              eligibleOriginalAnnualFailure(
+                plan,
+                s,
+                native.find(
+                  (e) => e.traceId === (s.backendTraceId ?? s.traceId),
+                ),
+              )),
+        );
       const beforeP95 =
-        failed || unavailable || resourceCensored ? null : p95(values);
+        name === "lcpMs"
+          ? completeNativePaint
+            ? p95(values)
+            : null
+          : failed || unavailable || resourceCensored
+            ? null
+            : p95(values);
       result[name] = {
         beforeP95,
         ceiling:
@@ -140,13 +206,20 @@ function derive(plan, before, releaseRuntime) {
                 beforeP95,
                 name.endsWith("Ms") ? policy.latency : policy.bytes,
               ),
-        basis: failed
-          ? "censored-before"
-          : resourceCensored
-            ? "incomplete-before-resource-window"
-            : unavailable
-              ? "unavailable-before"
-              : "complete-before",
+        basis:
+          name === "lcpMs"
+            ? completeNativePaint
+              ? failed
+                ? "observed-native-paint-of-FAILED-baseline-behavior"
+                : "complete-observed-native-first-document-paint"
+              : "unavailable-native-first-document-observation-coverage"
+            : failed
+              ? "censored-before"
+              : resourceCensored
+                ? "incomplete-before-resource-window"
+                : unavailable
+                  ? "unavailable-before"
+                  : "complete-before",
       };
     }
     return result;
@@ -293,16 +366,22 @@ async function main() {
       budget.beforeArtifactSha256 !== sha(b.bytes) ||
       budget.beforeBackendSha256 !== sha(backend.bytes) ||
       budget.operatorSha256 !== sha(await readFile(new URL(import.meta.url))) ||
+      json(budget.sourceFingerprints) !== json(budgetProtocol) ||
       budget.releasePlanSha256 !== sha(rp.bytes)
     )
       throw Error(
         "Comparison hashes differ from the registered budget inputs.",
       );
-    const regenerated = derive(bp.value, b.value, {
-      build: rp.value.runtime.build,
-      sourceBuild: rp.value.runtime.sourceBuild,
-      toolingBuild: rp.value.runtime.toolingBuild,
-    });
+    const regenerated = derive(
+      bp.value,
+      b.value,
+      {
+        build: rp.value.runtime.build,
+        sourceBuild: rp.value.runtime.sourceBuild,
+        toolingBuild: rp.value.runtime.toolingBuild,
+      },
+      backend.value,
+    );
     if (
       json(regenerated.releasePlan) !== json(rp.value) ||
       json(regenerated.policy) !== json(budget.policy) ||
@@ -394,16 +473,22 @@ async function main() {
     throw Error(
       "Release identities must differ from original before identities.",
     );
-  const result = derive(bp.value, b.value, {
-    build: options["--release-build"],
-    sourceBuild: options["--release-source"],
-    toolingBuild: options["--release-tooling"],
-  });
+  const result = derive(
+    bp.value,
+    b.value,
+    {
+      build: options["--release-build"],
+      sourceBuild: options["--release-source"],
+      toolingBuild: options["--release-tooling"],
+    },
+    backend.value,
+  );
   const releasePlanBytes = json(result.releasePlan);
   const budget = {
     schema: 1,
     kind: "controlled-release-budgets",
     operatorSha256: sha(await readFile(new URL(import.meta.url))),
+    sourceFingerprints: budgetProtocol,
     policy: result.policy,
     beforePlanSha256: sha(bp.bytes),
     beforeArtifactSha256: sha(b.bytes),
@@ -436,6 +521,10 @@ main().catch((error) => {
 });
 
 function requireEvidence(plan, artifact, native, planHash, phase) {
+  if (json(artifact.protocol) !== json(primaryProtocol))
+    throw Error(
+      "Primary source fingerprints differ, including native browser observer helper.",
+    );
   if (artifact.nativeRunCoverage?.complete !== true)
     throw Error(
       "Whole-run wire/native/collector reconciliation is incomplete.",
@@ -607,6 +696,25 @@ function describe(samples) {
         kind: s.failureKind ?? null,
         elapsedUntilFailureMs: s.elapsedUntilFailureMs,
       })),
+    nativeFirstDocumentPaint:
+      samples[0]?.mode === "first-document"
+        ? {
+            complete: observedPaintComplete(samples),
+            samples: samples.length,
+            completedReads: samples.filter(
+              (s) => s.nativePerformanceObservation?.readCompleted === true,
+            ).length,
+            samplesWithNativeEntries: samples.filter(
+              (s) =>
+                Number.isSafeInteger(
+                  s.nativePerformanceObservation?.lcpEntries,
+                ) && s.nativePerformanceObservation.lcpEntries > 0,
+            ).length,
+            scope: failed
+              ? "observed native paint of FAILED behavior; not usable-content readiness"
+              : "observed native first-document paint",
+          }
+        : null,
   };
   for (const metric of [
     "usableContentMs",
@@ -623,8 +731,8 @@ function describe(samples) {
     ...backendMetrics,
   ]) {
     result[metric] =
-      (["usableContentMs", "clockReadyMs", "lcpMs"].includes(metric) &&
-        failed) ||
+      (["usableContentMs", "clockReadyMs"].includes(metric) && failed) ||
+      (metric === "lcpMs" && !observedPaintComplete(samples)) ||
       byteCensored(samples, metric)
         ? null
         : statistics(

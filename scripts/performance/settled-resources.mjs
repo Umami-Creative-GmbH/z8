@@ -5,6 +5,8 @@ import { readFileSync } from "node:fs";
 import { cpus, platform, release, totalmem } from "node:os";
 import { dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { companionProtocolIdentity } from "./protocol-fingerprints.mjs";
+const installedCompanionProtocol = await companionProtocolIdentity();
 import {
   fixtureBrowserPolicy,
   fixtureTransportIsComplete,
@@ -81,24 +83,19 @@ export const companionPolicy = Object.freeze({
 export function settledWireEvidence(sample) {
   return sample.failed ? sample.wireFailureDrain : sample.wireSettled;
 }
-function eligibleBeforeFailure(plan, sample, native) {
+export function eligibleOriginalAnnualFailure(plan, sample, native) {
   const route = plan.routes.find((r) => r.name === sample.route),
     condition = plan.conditions.find((c) => c.name === sample.condition),
     cause = causeProof.annualUnderlyingCause;
   return (
     plan.phase === "baseline" &&
     sample.failed === true &&
-    sample.censored === true &&
     plan.runtime.build === causeProof.originalBinarySource &&
     plan.runtime.sourceBuild === causeProof.originalBusinessSource &&
     sample.failureStage === "verify-expected-content" &&
     sample.failureKind === "timeout" &&
-    sample.measurementStarted === true &&
-    sample.prerequisiteComplete === true &&
-    sample.targetRangePrepared === true &&
     Number.isFinite(sample.elapsedUntilFailureMs) &&
     sample.elapsedUntilFailureMs >= plan.timeoutMs &&
-    sample.readyMs === null &&
     !sample.secondaryFailures?.length &&
     sample.range === "year" &&
     route?.name === "analytics" &&
@@ -112,8 +109,6 @@ function eligibleBeforeFailure(plan, sample, native) {
     plan.timeoutMs === 30000 &&
     cause.underlyingKind === "pool-acquire-timeout" &&
     cause.originalConnectionTimeoutMs === 10000 &&
-    sample.wireFailureDrain?.scope === "post-failed-journey-diagnostic" &&
-    sample.wireFailureDrain.usableContentClaim === false &&
     native?.observedQueryErrors === 0 &&
     Number.isSafeInteger(native.observedPoolAcquisitionErrors) &&
     native.observedPoolAcquisitionErrors > 0 &&
@@ -122,6 +117,18 @@ function eligibleBeforeFailure(plan, sample, native) {
     native.observedQueryCount === native.queryCount &&
     native.observedPoolAcquisitions ===
       native.observedQueryCount + native.observedPoolAcquisitionErrors
+  );
+}
+function eligibleBeforeFailure(plan, sample, native) {
+  return (
+    eligibleOriginalAnnualFailure(plan, sample, native) &&
+    sample.censored === true &&
+    sample.readyMs === null &&
+    sample.measurementStarted === true &&
+    sample.prerequisiteComplete === true &&
+    sample.targetRangePrepared === true &&
+    sample.wireFailureDrain?.scope === "post-failed-journey-diagnostic" &&
+    sample.wireFailureDrain.usableContentClaim === false
   );
 }
 /** A failure boundary is a resource observation anchor, never a usable-content timestamp. */
@@ -262,6 +269,13 @@ export function settledCohorts(plan) {
 }
 export function settledEvidenceGates(plan, artifact, native, planSha) {
   const gates = [];
+  if (
+    JSON.stringify(artifact.protocol) !==
+    JSON.stringify(installedCompanionProtocol)
+  )
+    gates.push(
+      "Companion transitive source fingerprints differ, including browser-performance.mjs.",
+    );
   if (artifact.nativeRunCoverage?.complete !== true)
     gates.push("Whole-run wire/native/collector reconciliation is incomplete.");
   if (artifact.interrupted === true || artifact.interruption != null)
@@ -448,25 +462,7 @@ export function requireSettledEvidence(plan, artifact, native, planSha) {
   }
 }
 async function protocolIdentity() {
-  const files = [
-    "settled-resources.mjs",
-    "settled-resource-observer.mjs",
-    "journey-steps.mjs",
-    "run-baseline.mjs",
-    "collector-client.mjs",
-    "trace-transport.mjs",
-    "proxy-wire-observer.mjs",
-    "fixture-browser.mjs",
-    "../../docs/performance/evidence/1450-telemetry-functional-diagnostics.json",
-  ];
-  return Object.fromEntries(
-    await Promise.all(
-      files.map(async (name) => [
-        name,
-        hash(await readFile(new URL(name, import.meta.url))),
-      ]),
-    ),
-  );
+  return companionProtocolIdentity();
 }
 export async function measureFixtureResources(
   browser,

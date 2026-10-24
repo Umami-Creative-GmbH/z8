@@ -1,4 +1,6 @@
 import { createProxyWireObserver } from "./proxy-wire-observer.mjs";
+import { companionProtocolIdentity } from "./protocol-fingerprints.mjs";
+const companionProtocol = await companionProtocolIdentity();
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { mkdtempSync, writeFileSync } from "node:fs";
@@ -95,6 +97,7 @@ test("resource eligibility distinguishes proven failed baseline behavior from mi
     s.wireSettled = wireFixture(s);
   }
   const artifact = {
+    protocol: companionProtocol,
     kind: "settled-resource-companion",
     nativeRunCoverage: {
       driverQueryCount: 40,
@@ -226,6 +229,7 @@ test("resource eligibility distinguishes proven failed baseline behavior from mi
     (a) => a.samples.pop(),
     (a) => (a.samples[0].wireSettled.capped = true),
     (a) => (a.samples[0].failed = true),
+    (a) => (a.protocol["browser-performance.mjs"] = "0".repeat(64)),
     (a) => delete a.samples[0].failed,
     (a) => delete a.samples[0].readyMs,
     (a) => (a.samples[0].wireSettled.bytes.javascript = null),

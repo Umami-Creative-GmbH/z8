@@ -3,6 +3,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { cpus, platform, release, totalmem } from "node:os";
 import { join } from "node:path";
+import { primaryProtocolIdentity } from "./protocol-fingerprints.mjs";
 import {
 	captureObservedBrowserMetrics,
 	installFixturePerformanceObservers,
@@ -298,6 +299,14 @@ async function main() {
 		const artifactPath = option("--finalize");
 		const result = JSON.parse(await readFile(artifactPath, "utf8"));
 		if (
+			plan.runtime.collectorProtocol === collectorProtocol &&
+			JSON.stringify(result.protocol) !==
+				JSON.stringify(await primaryProtocolIdentity())
+		)
+			fail(
+				"Primary protocol source fingerprints differ from capture, including browser-performance.mjs.",
+			);
+		if (
 			result.planSha256 !== createHash("sha256").update(planBytes).digest("hex")
 		)
 			fail(
@@ -518,6 +527,7 @@ async function main() {
 			? "journey-verification"
 			: "benchmark",
 		planSha256: createHash("sha256").update(planBytes).digest("hex"),
+		protocol: await primaryProtocolIdentity(),
 		runtime: {
 			mode: plan.runtime.mode,
 			collectorProtocol: plan.runtime.collectorProtocol ?? null,
