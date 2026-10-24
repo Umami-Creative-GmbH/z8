@@ -38,16 +38,22 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import type { ServerActionResult } from "@/lib/effect/result";
+import type { ReactivationChecklist } from "@/lib/employee-lifecycle/reactivation-checklist";
 import { EMPLOYEE_OFFBOARDING_RELEASE_READY } from "@/lib/employee-lifecycle/release";
 import { queryKeys } from "@/lib/query";
 import { useRequestIdentity } from "@/lib/query/use-employee-offboarding";
-import { Link } from "@/navigation";
+import { Link, useRouter } from "@/navigation";
 import {
 	DeactivationPreviewDialog,
 	type DeactivationReplacementPicks,
 	useDeactivationDialogMessages,
 } from "./deactivation-preview-dialog";
 import { EmployeeLifecycleActionError } from "./employee-lifecycle-error";
+import {
+	fetchReactivationChecklist,
+	ReactivationChecklistDialog,
+	useReactivationChecklistMessages,
+} from "./reactivation-checklist";
 
 export interface EmployeeLifecycleTarget {
 	employeeId: string;
@@ -356,6 +362,12 @@ export function EmployeeLifecycleActions({
 	// request ID per unchanged payload so a retry replays instead of acting twice.
 	const [replacementPicks, setReplacementPicks] = useState<DeactivationReplacementPicks>({});
 	const [deactivationError, setDeactivationError] = useState<string | null>(null);
+	const [reactivatedChecklist, setReactivatedChecklist] = useState<{
+		employeeName: string;
+		checklist: ReactivationChecklist;
+	} | null>(null);
+	const router = useRouter();
+	const checklistMessages = useReactivationChecklistMessages();
 	const deactivationIdentity = useRequestIdentity();
 	const dialogMessages = useDeactivationDialogMessages();
 	const mounted = useRef(true);
@@ -404,6 +416,37 @@ export function EmployeeLifecycleActions({
 		setSelection(null);
 		setReplacementPicks({});
 		setDeactivationError(null);
+	};
+
+	/**
+	 * Reactivation restores nothing (#1441): show what the deactivation ended,
+	 * to grant again on purpose. When this row is gone by now (a filtered list),
+	 * the toast links to the checklist on the employee page instead.
+	 */
+	const offerReactivationChecklist = async (reactivated: EmployeeLifecycleTarget) => {
+		const checklist = await queryClient
+			.fetchQuery({
+				queryKey: queryKeys.employees.reactivationChecklist(reactivated.employeeId),
+				queryFn: () => fetchReactivationChecklist(reactivated.employeeId),
+				staleTime: 0,
+			})
+			.catch(() => null);
+		const hasItems = checklist !== null && checklist.items.length > 0;
+		if (hasItems && mounted.current) {
+			setReactivatedChecklist({ employeeName: reactivated.displayName, checklist });
+		}
+		toast.success(
+			t("settings.employees.lifecycle.reactivateSuccess", "Employee reactivated"),
+			hasItems && !mounted.current
+				? {
+						action: {
+							label: checklistMessages.openLabel,
+							onClick: () =>
+								router.push(`/settings/employees/${reactivated.employeeId}#reactivation-checklist`),
+						},
+					}
+				: undefined,
+		);
 	};
 
 	const mutation = useMutation({
@@ -474,6 +517,11 @@ export function EmployeeLifecycleActions({
 			await Promise.all(invalidations);
 			closeDialog();
 
+			if (selected.action === "reactivate") {
+				await offerReactivationChecklist(selected.target);
+				return;
+			}
+
 			if (selected.action === "remove") {
 				onRemoved?.(selected.target.employeeId);
 				toast.success(
@@ -485,17 +533,7 @@ export function EmployeeLifecycleActions({
 				return;
 			}
 
-			toast.success(
-				selected.action === "deactivate"
-					? t(
-							"settings.employees.lifecycle.deactivateSuccess",
-							"Employee deactivated",
-						)
-					: t(
-							"settings.employees.lifecycle.reactivateSuccess",
-							"Employee reactivated",
-						),
-			);
+			toast.success(t("settings.employees.lifecycle.deactivateSuccess", "Employee deactivated"));
 		},
 		onError: (error, selected, context) => {
 			if (
@@ -544,6 +582,7 @@ export function EmployeeLifecycleActions({
 
 	if (
 		!selection &&
+		!reactivatedChecklist &&
 		(target.userId === currentUserId || (!canChangeStatus && !canRemoveAccess))
 	) {
 		return null;
@@ -616,6 +655,14 @@ export function EmployeeLifecycleActions({
 					if (!open && !mutation.isPending) closeDialog();
 				}}
 				selectedAction={selection && selection.action !== "deactivate" ? selection.action : null}
+			/>
+			<ReactivationChecklistDialog
+				open={reactivatedChecklist !== null}
+				onOpenChange={(open) => {
+					if (!open) setReactivatedChecklist(null);
+				}}
+				employeeName={reactivatedChecklist?.employeeName ?? target.displayName}
+				checklist={reactivatedChecklist?.checklist ?? null}
 			/>
 		</>
 	);

@@ -95,9 +95,13 @@ vi.mock("@/lib/logger", async (importOriginal) => {
 });
 vi.setConfig({ testTimeout: 120_000, hookTimeout: 120_000 });
 
-const { deactivateEmployeeAction, previewEmployeeDeactivationAction } = await import(
-	"@/app/[locale]/(app)/settings/employees/employee-lifecycle.actions"
-);
+const { deactivateEmployeeAction, previewEmployeeDeactivationAction, reactivateEmployeeAction } =
+	await import("@/app/[locale]/(app)/settings/employees/employee-lifecycle.actions");
+const {
+	dismissReactivationChecklistAction,
+	getReactivationChecklistAction,
+	listEmployeeLifecycleHistoryAction,
+} = await import("@/app/[locale]/(app)/settings/employees/employee-reactivation.actions");
 const { assignDepartureReplacementAction, getEmployeeOffboardingViewAction } = await import(
 	"@/app/[locale]/(app)/settings/employees/employee-offboarding.actions"
 );
@@ -129,6 +133,7 @@ const { saveExpenseOfficerGrant } = await import(
 const { shiftStoredDate } = await import("@/lib/scheduling/shift-date");
 const { loadRetentionEmployment } = await import("@/lib/personnel-file/retention-employment");
 const { retentionStart } = await import("@/lib/personnel-file/retention");
+const { findEmployeesNotOnCurrentRoster } = await import("../current-roster-guard");
 
 const ZONE = "Europe/Berlin";
 const SEEDED_AT = parseInstant("2026-10-20T08:00:00Z");
@@ -1158,6 +1163,8 @@ describe("deactivation acceptance (#1440)", () => {
 				"driving_authorization.ended",
 				"driving_authorization.ended",
 				"driving_licence.verifier_revoked",
+				// The deactivation itself carries its id since #1441 (the history shows it once).
+				"employee.deactivated",
 				"expense_officer.grant_revoked",
 				"kiosk_badge.revoked",
 				"manager.assigned",
@@ -1289,5 +1296,285 @@ describe("deactivation acceptance (#1440)", () => {
 			[seeded.keepsManager.employeeId],
 		);
 		expect(keeps.rows[0]?.is_active).toBe(true);
+	});
+
+	// ---- #1441: reactivation restores nothing, records history, offers a checklist ----
+
+	// 08:30 on Monday, 26 October 2026 in Berlin (after the switch to winter time).
+	const REACTIVATED_AT = parseInstant("2026-10-26T07:30:00Z");
+
+	/** Everything the deactivation ended, as stored. */
+	async function endedState() {
+		const one = async (text: string, values: unknown[]) =>
+			(await fixture.pool.query(text, values)).rows;
+		return {
+			managerLinks: await managerLinks(),
+			grants: await one(
+				`select id, is_active from expense_officer_grant where organization_id = $1
+				 union all select id, is_active from payroll_access_grant where organization_id = $1
+				 union all select id, is_active from personnel_file_officer_grant where organization_id = $1
+				 order by id`,
+				[fixture.organizationId],
+			),
+			verifierGrants: await one(
+				`select id, revoked_at from driving_licence_verifier_grant
+				 where organization_id = $1 and verifier_employee_id = $2 order by id`,
+				[fixture.organizationId, seeded.person.employeeId],
+			),
+			authorizations: await one(
+				`select id, state from driving_authorization where organization_id = $1 and employee_id = $2
+				 order by id`,
+				[fixture.organizationId, seeded.person.employeeId],
+			),
+			badges: await one(
+				`select id, revoked_at from employee_kiosk_badge where organization_id = $1 and employee_id = $2
+				 order by id`,
+				[fixture.organizationId, seeded.person.employeeId],
+			),
+			shareLinks: await one(
+				`select id, revoked_at from report_share_link where organization_id = $1 order by id`,
+				[fixture.organizationId],
+			),
+			shifts: await one(
+				`select id, employee_id from shift where organization_id = $1 order by id`,
+				[fixture.organizationId],
+			),
+			absences: await one(
+				`select id, status from absence_entry where organization_id = $1 and employee_id = $2 order by id`,
+				[fixture.organizationId, seeded.person.employeeId],
+			),
+			teams: await one(
+				`select team_id from team_membership where organization_id = $1 and employee_id = $2`,
+				[fixture.organizationId, seeded.person.employeeId],
+			),
+		};
+	}
+
+	it("reactivates without restoring any grant, badge, authorization, manager link, shift or absence", async () => {
+		const before = await endedState();
+		harness.now = REACTIVATED_AT.toString();
+		clockNow = REACTIVATED_AT;
+
+		const result = await reactivateEmployeeAction(seeded.person.employeeId);
+
+		expect(result).toEqual({ success: true, data: undefined });
+		expect(await endedState()).toEqual(before);
+		expect(await personState()).toEqual({ is_active: true, deactivated_at: null, team_id: null });
+		// The left-on instant is gone: they are on the current roster again.
+		const leftAt = await fixture.pool.query<{ left_at: Date | null }>(
+			`select employee_left_at(e.organization_id, e.id, e.deactivated_at, $2::timestamptz) as left_at
+			 from employee e where e.id = $1`,
+			[seeded.person.employeeId, new Date(REACTIVATED_AT.epochMilliseconds)],
+		);
+		expect(leftAt.rows[0]?.left_at).toBeNull();
+		expect(
+			await findEmployeesNotOnCurrentRoster(fixture.db, {
+				organizationId: fixture.organizationId,
+				employeeIds: [seeded.person.employeeId],
+				now: REACTIVATED_AT,
+			}),
+		).toEqual([]);
+		const ledger = await fixture.pool.query<{
+			reactivated_at: Date | null;
+			reactivated_by: string | null;
+			reactivation_request_id: string | null;
+		}>(
+			`select reactivated_at, reactivated_by, reactivation_request_id from employee_deactivation
+			 where organization_id = $1 and id = $2`,
+			[fixture.organizationId, deactivationId],
+		);
+		expect(ledger.rows[0]).toMatchObject({
+			reactivated_at: new Date(REACTIVATED_AT.epochMilliseconds),
+			reactivated_by: fixture.ownerUserId,
+			reactivation_request_id: expect.any(String),
+		});
+	});
+
+	it("stops the personnel file retention clock", async () => {
+		const employment = await loadRetentionEmployment(fixture.db, {
+			organizationId: fixture.organizationId,
+			employeeIds: [seeded.person.employeeId],
+		});
+		const periods = employment.get(seeded.person.employeeId) ?? [];
+		expect(periods).toEqual([{ status: "open", endedAt: null }]);
+		// No retention start, so no document of theirs is due.
+		expect(retentionStart({ periods, timezone: ZONE, documentDate: "2025-03-01" })).toBeNull();
+	});
+
+	it("shows the deactivation and the reactivation in the employment history, with older audited ones", async () => {
+		// A deactivation from before the events were recorded survives only in the audit log.
+		for (const [action, timestamp] of [
+			["employee.deactivated", "2026-03-02 09:15:00"],
+			["employee.reactivated", "2026-03-09 09:15:00"],
+		] as const) {
+			await fixture.pool.query(
+				`insert into audit_log (organization_id, entity_type, entity_id, action, performed_by, employee_id,
+					changes, metadata, timestamp)
+				 values ($1, 'employee', $2::text, $3, $4, $2::uuid, null, '{}', $5)`,
+				[fixture.organizationId, seeded.person.employeeId, action, fixture.ownerUserId, timestamp],
+			);
+		}
+
+		const result = await listEmployeeLifecycleHistoryAction(seeded.person.employeeId);
+
+		expect(result).toEqual({
+			success: true,
+			data: {
+				timeZone: ZONE,
+				events: [
+					{ kind: "reactivated", at: REACTIVATED_AT.toString() },
+					{ kind: "deactivated", at: AT.toString() },
+					{ kind: "reactivated", at: "2026-03-09T09:15:00Z" },
+					{ kind: "deactivated", at: "2026-03-02T09:15:00Z" },
+				],
+			},
+		});
+	});
+
+	it("offers a checklist of exactly what that deactivation ended, each linked to its settings page", async () => {
+		const result = await getReactivationChecklistAction(seeded.person.employeeId);
+		if (!result.success) throw new Error(result.error);
+		const checklist = result.data;
+		if (!checklist) throw new Error("no checklist");
+		const person = seeded.person.employeeId;
+
+		expect(checklist).toMatchObject({
+			deactivationId,
+			employeeId: person,
+			deactivatedAt: AT.toString(),
+			reactivatedAt: REACTIVATED_AT.toString(),
+			timeZone: ZONE,
+		});
+		const grants = checklist.items.filter((item) => item.kind === "grant");
+		expect(
+			checklist.items.filter((item) => item.kind !== "grant" && item.kind !== "absence"),
+		).toEqual([
+			{
+				group: "managers",
+				kind: "report_moved",
+				employeeId: seeded.orphan.employeeId,
+				name: "Rita Report",
+				newManagerName: "Anna Admin",
+				href: `/settings/employees/${seeded.orphan.employeeId}`,
+			},
+			{
+				group: "managers",
+				kind: "report_link_ended",
+				employeeId: seeded.keepsManager.employeeId,
+				name: "Kim Keeps",
+				href: `/settings/employees/${seeded.keepsManager.employeeId}`,
+			},
+			{
+				group: "managers",
+				kind: "own_manager",
+				employeeId: seeded.manager.employeeId,
+				name: "Mia Manager",
+				href: `/settings/employees/${person}`,
+			},
+			{ group: "access", kind: "kiosk_badges", count: 1, href: `/settings/employees/${person}` },
+			{
+				group: "access",
+				kind: "driving_authorizations",
+				count: 2,
+				href: `/driving-licence/checks/${person}`,
+			},
+			{
+				group: "teams",
+				kind: "team",
+				id: seeded.teamId,
+				name: "Floor team",
+				href: `/settings/teams/${seeded.teamId}`,
+			},
+			{
+				group: "shifts",
+				kind: "shift",
+				id: seeded.shifts.future,
+				date: "2026-10-27",
+				startTime: "09:00",
+				endTime: "17:00",
+				href: "/scheduling",
+			},
+			{
+				group: "shareLinks",
+				kind: "share_links",
+				count: 1,
+				href: "/settings/report-share-links",
+			},
+		]);
+		expect(grants.map((item) => item.kind === "grant" && item.grant).toSorted()).toEqual([
+			"driving_licence_verifier",
+			"expense_officer",
+			"payroll_access",
+			"personnel_file_officer",
+		]);
+		expect(
+			checklist.items
+				.filter((item) => item.kind === "absence")
+				.map((item) => (item.kind === "absence" ? [item.id, item.startDate, item.endDate] : null))
+				.toSorted(),
+		).toEqual(
+			[
+				[seeded.absences.pending, "2026-11-02", "2026-11-03"],
+				[seeded.absences.approved, "2026-11-09", "2026-11-10"],
+			].toSorted(),
+		);
+	});
+
+	it("never shows or dismisses the checklist or history of another organization's employee", async () => {
+		const otherOrganizationId = await fixture.createOrganization();
+		const otherOwner = await fixture.seedEmployee({
+			organizationId: otherOrganizationId,
+			role: "owner",
+		});
+		actAs(otherOwner.userId, otherOrganizationId);
+
+		expect(await getReactivationChecklistAction(seeded.person.employeeId)).toEqual({
+			success: true,
+			data: null,
+		});
+		await expect(
+			listEmployeeLifecycleHistoryAction(seeded.person.employeeId),
+		).resolves.toMatchObject({ success: false });
+		await dismissReactivationChecklistAction({
+			employeeId: seeded.person.employeeId,
+			deactivationId,
+		});
+
+		actAs(fixture.ownerUserId);
+		const still = await getReactivationChecklistAction(seeded.person.employeeId);
+		expect(still.success && still.data?.deactivationId).toBe(deactivationId);
+	});
+
+	it("refuses the checklist to anyone but owners and admins", async () => {
+		actAs(seeded.plainEmployee.userId);
+		await expect(getReactivationChecklistAction(seeded.person.employeeId)).resolves.toMatchObject({
+			success: false,
+		});
+		await expect(
+			dismissReactivationChecklistAction({ employeeId: seeded.person.employeeId, deactivationId }),
+		).resolves.toMatchObject({ success: false });
+	});
+
+	it("hides the checklist for every admin once one dismisses it", async () => {
+		const dismissed = await dismissReactivationChecklistAction({
+			employeeId: seeded.person.employeeId,
+			deactivationId,
+		});
+		expect(dismissed).toEqual({ success: true, data: undefined });
+
+		expect(await getReactivationChecklistAction(seeded.person.employeeId)).toEqual({
+			success: true,
+			data: null,
+		});
+		actAs(seeded.replacement.userId);
+		expect(await getReactivationChecklistAction(seeded.person.employeeId)).toEqual({
+			success: true,
+			data: null,
+		});
+		const row = await fixture.pool.query<{ checklist_dismissed_by: string | null }>(
+			`select checklist_dismissed_by from employee_deactivation where organization_id = $1 and id = $2`,
+			[fixture.organizationId, deactivationId],
+		);
+		expect(row.rows[0]?.checklist_dismissed_by).toBe(fixture.ownerUserId);
 	});
 });

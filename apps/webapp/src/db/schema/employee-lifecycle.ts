@@ -271,6 +271,11 @@ export const employeeDeactivation = pgTable(
 		reactivatedAt: timestamp("reactivated_at", { withTimezone: true }),
 		reactivatedBy: text("reactivated_by"),
 		reactivationRequestId: uuid("reactivation_request_id"),
+		/** The plan the consequences were applied from, for names (#1441 checklist). */
+		plan: jsonb("plan").$type<JsonObject>(),
+		/** The reactivation checklist was dismissed (for every org admin). */
+		checklistDismissedAt: timestamp("checklist_dismissed_at", { withTimezone: true }),
+		checklistDismissedBy: text("checklist_dismissed_by"),
 		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 	},
 	(table) => [
