@@ -4,12 +4,12 @@ import { DateTime } from "luxon";
 import {
 	absenceCategory,
 	absenceEntry,
+	type EmployeeEmploymentHistory,
 	employee,
 	employeeEmploymentHistory,
 	shift,
 	workPeriod,
 	workPolicy,
-	type EmployeeEmploymentHistory,
 } from "@/db/schema";
 import { absenceCategoryReleasesRequiredTime } from "@/lib/absences/required-time-release";
 import {
@@ -30,7 +30,7 @@ import {
 	WorkPolicyService,
 	WorkPolicyServiceLive,
 } from "@/lib/effect/services/work-policy.service";
-import { type EmploymentInterval, clipRequirementsToEmployment } from "@/lib/employee-lifecycle/employment-coverage";
+import { clipRequirementsToEmployment, type EmploymentInterval } from "@/lib/employee-lifecycle/employment-coverage";
 import { loadEmploymentCoverage } from "@/lib/employee-lifecycle/employment-periods";
 import { loadConfirmedTermsSpans } from "@/lib/employment-history/load-terms-in-force";
 import {
@@ -53,9 +53,9 @@ import {
 	applyAbsenceAdjustmentsToRequirements,
 } from "./absence-adjusted-requirements";
 import {
+	type AssignedHolidayRange,
 	applyAssignedHolidayAdjustmentsToRequirements,
 	getAssignedHolidaysForEmployee,
-	type AssignedHolidayRange,
 } from "./assigned-holidays";
 import type { DailyWorkRequirements } from "./types";
 

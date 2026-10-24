@@ -1,8 +1,8 @@
 "use server";
 
 import { Effect } from "effect";
-import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { activeOrganizationSession } from "@/lib/auth/active-organization-session";
+import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import type { DatabaseService } from "@/lib/effect/services/database.service";
 import type {
 	HydrationStats,
