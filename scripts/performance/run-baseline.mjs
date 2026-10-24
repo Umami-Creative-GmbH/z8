@@ -1159,6 +1159,12 @@ async function measure(
 		if (sample.notificationPermission !== "denied")
 			fail("Fixture notification permission was not denied.");
 		sample.clockReadyMs = await clock;
+		await captureObservedBrowserMetrics({
+			page,
+			sample,
+			measurementStarted: true,
+			mode,
+		});
 		if (mode === "first-document")
 			sample.inlineRscDecodedBytes = await page.evaluate(() =>
 				[...document.scripts]
@@ -1266,12 +1272,13 @@ async function measure(
 		}
 	} finally {
 		if (client && page && !page.isClosed() && measurementStart !== undefined) {
-			await captureObservedBrowserMetrics({
-				page,
-				sample,
-				measurementStarted: true,
-				mode,
-			});
+			if (sample.failed)
+				await captureObservedBrowserMetrics({
+					page,
+					sample,
+					measurementStarted: true,
+					mode,
+				});
 			sample.resourceWindowComplete = pendingRequests.size === 0;
 			sample.resourcePendingRequests = pendingRequests.size;
 			sample.pendingRequestsByType = {};
