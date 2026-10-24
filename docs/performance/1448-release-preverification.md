@@ -312,3 +312,33 @@ rebuilt all 208 through the same CLI. Both used the explicit
 `2026-10-24T12:00:00Z` as-of instant, retained prior failure evidence, and left
 canonical business rows unchanged. This is separate actual database evidence
 from the three focused loader/progress tests.
+
+## Employee form initial-value correction
+
+The corrected `e05959749` functional build exposed a real employee-detail form
+defect. A fresh authorized public detail response contained both names and a
+start date, and the browser's active session matched that caller. The enabled
+form fields remained empty after the document completed and an additional
+30-second readiness wait. A real submitted role edit carried empty names and
+was refused by the existing required-name validation. No role change was
+accepted, and the failure is retained separately from later verification.
+
+The form now initializes TanStack Form with the authorized employee's existing
+field mapping, also used when resetting its pristine baseline. This retains the
+same date, invitation-contract, field-validation and submit rules. Fresh scoped
+data still updates a pristine form; the existing dirty guard preserves a local
+draft. Lifecycle controls and their authorization are unchanged.
+
+The real edit-card/form first-render regression failed before the correction
+(one failure, 32 passes), then the three focused employee-detail files passed
+62 assertions. Coverage includes initial names/date before client effects,
+preservation of a typed draft, and a clean server refresh that leaves Save
+Changes disabled. Normal Next route type generation and all three TypeScript
+configurations pass after this correction and the SDK-enum observer change.
+Focused Biome passes for all three edited files. React Doctor reports no new
+diagnostics against the preceding source (one existing diagnostic matched).
+
+These source checks do not replace the required rebuilt browser acceptance:
+accepted role reduction/restoration, selector invalidation and other-tenant
+warmth, actual compiled widget-chunk failure/retry, and manual-refresh draft,
+selection and scroll preservation remain pending on the next final artifact.
