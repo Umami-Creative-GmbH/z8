@@ -9,11 +9,15 @@ import {
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { cn } from "@/lib/utils";
-import { getQuickStats } from "./actions";
+import type {
+	DashboardWidgetData,
+	DashboardWidgetSnapshot,
+} from "./dashboard-types";
 import { DashboardWidget } from "./dashboard-widget";
 import { getQuickStatsStatus } from "./quick-stats-status";
-import { useWidgetData } from "./use-widget-data";
+import { useDashboardWidget } from "./use-dashboard-widget";
 import { WidgetCard } from "./widget-card";
+import { WidgetReadError } from "./widget-read-error";
 
 function HoursLabel() {
 	const { t } = useTranslate();
@@ -23,19 +27,6 @@ function HoursLabel() {
 		</span>
 	);
 }
-
-type QuickStats = {
-	thisWeek: {
-		actual: number;
-		expected: number;
-		expectedToDate: number;
-	};
-	thisMonth: {
-		actual: number;
-		expected: number;
-		expectedToDate: number;
-	};
-};
 
 const CIRCULAR_PROGRESS_COLOR_CLASSES = {
 	blue: "stroke-blue-500",
@@ -66,11 +57,18 @@ function CircularProgress({
 }) {
 	const radius = (size - strokeWidth) / 2;
 	const circumference = 2 * Math.PI * radius;
-	const strokeDashoffset = circumference - (Math.min(progress, 100) / 100) * circumference;
+	const strokeDashoffset =
+		circumference - (Math.min(progress, 100) / 100) * circumference;
 
 	return (
 		<div className="relative inline-flex items-center justify-center">
-			<svg className="-rotate-90" width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+			<svg
+				aria-hidden="true"
+				className="-rotate-90"
+				width={size}
+				height={size}
+				viewBox={`0 0 ${size} ${size}`}
+			>
 				{/* Background circle */}
 				<circle
 					cx={size / 2}
@@ -89,7 +87,7 @@ function CircularProgress({
 					strokeWidth={strokeWidth}
 					strokeLinecap="round"
 					className={cn(
-						"transition-all duration-500 ease-out",
+						"transition-[stroke-dashoffset] duration-500 ease-out motion-reduce:transition-none",
 						CIRCULAR_PROGRESS_COLOR_CLASSES[color],
 					)}
 					style={{
@@ -114,7 +112,9 @@ function CircularProgress({
 					/>
 				)}
 			</svg>
-			<div className="absolute inset-0 flex flex-col items-center justify-center">{children}</div>
+			<div className="absolute inset-0 flex flex-col items-center justify-center">
+				{children}
+			</div>
 		</div>
 	);
 }
@@ -147,7 +147,9 @@ function StatCard({
 				color={isOnTrack ? "green" : isBehind ? "orange" : color}
 			>
 				<div className="flex flex-col items-center">
-					<span className="text-lg font-bold tabular-nums">{actual.toFixed(1)}</span>
+					<span className="text-lg font-bold tabular-nums">
+						{actual.toFixed(1)}
+					</span>
 					<HoursLabel />
 				</div>
 			</CircularProgress>
@@ -171,17 +173,17 @@ function StatCard({
 					>
 						{isOnTrack ? (
 							<>
-								<IconTrendingUp className="size-3" />
+								<IconTrendingUp className="size-3" aria-hidden="true" />
 								{t("dashboard.quick-stats.on-track", "On track")}
 							</>
 						) : isBehind ? (
 							<>
-								<IconTrendingDown className="size-3" />
+								<IconTrendingDown className="size-3" aria-hidden="true" />
 								{t("dashboard.quick-stats.behind", "Behind")}
 							</>
 						) : (
 							<>
-								<IconFlame className="size-3" />
+								<IconFlame className="size-3" aria-hidden="true" />
 								{t("dashboard.quick-stats.good-pace", "Good pace")}
 							</>
 						)}
@@ -189,59 +191,81 @@ function StatCard({
 				</div>
 
 				<p className="text-xs text-muted-foreground">
-					{t("dashboard.quick-stats.progress", "{actual}h of {expected}h ({percent}%)", {
-						actual: actual.toFixed(1),
-						expected: expected.toFixed(1),
-						percent: percentage.toFixed(0),
-					})}
+					{t(
+						"dashboard.quick-stats.progress",
+						"{actual}h of {expected}h ({percent}%)",
+						{
+							actual: actual.toFixed(1),
+							expected: expected.toFixed(1),
+							percent: percentage.toFixed(0),
+						},
+					)}
 				</p>
 			</div>
 		</div>
 	);
 }
 
-export function QuickStatsWidget() {
+export function QuickStatsWidget({
+	initialSnapshot,
+}: {
+	initialSnapshot?: DashboardWidgetSnapshot<DashboardWidgetData["quick-stats"]>;
+} = {}) {
 	const { t } = useTranslate();
 	const {
 		data: stats,
 		loading,
 		refreshing,
 		refetch,
-	} = useWidgetData<QuickStats>(getQuickStats, {
-		errorMessage: t("dashboard.quick-stats.error", "Failed to load quick stats"),
-	});
+		error,
+	} = useDashboardWidget("quick-stats", initialSnapshot);
 
-	if (!stats && !loading) return null;
+	if (!stats && !loading && !error) return null;
 
 	return (
 		<DashboardWidget id="quick-stats">
 			<WidgetCard
 				title={t("dashboard.quick-stats.title", "Time Tracking")}
-				description={t("dashboard.quick-stats.description", "Your weekly and monthly progress")}
-				icon={<IconClock className="size-4 text-blue-500" />}
+				description={t(
+					"dashboard.quick-stats.description",
+					"Your weekly and monthly progress",
+				)}
+				icon={<IconClock className="size-4 text-blue-500" aria-hidden="true" />}
 				loading={loading}
 				refreshing={refreshing}
 				onRefresh={refetch}
 			>
-				{stats && (
-					<div className="space-y-3">
-						<StatCard
-							title={t("dashboard.quick-stats.this-week", "This Week")}
-							icon={IconCalendarWeek}
-							actual={stats.thisWeek.actual}
-							expected={stats.thisWeek.expected}
-							expectedToDate={stats.thisWeek.expectedToDate}
-							color="blue"
-						/>
-						<StatCard
-							title={t("dashboard.quick-stats.this-month", "This Month")}
-							icon={IconClock}
-							actual={stats.thisMonth.actual}
-							expected={stats.thisMonth.expected}
-							expectedToDate={stats.thisMonth.expectedToDate}
-							color="purple"
-						/>
-					</div>
+				{error ? (
+					<WidgetReadError
+						title={t("dashboard.quick-stats.title", "Time Tracking")}
+						message={t(
+							"dashboard.quick-stats.error",
+							"Failed to load quick stats",
+						)}
+						retry={refetch}
+						refreshing={refreshing}
+					/>
+				) : (
+					stats && (
+						<div className="space-y-3">
+							<StatCard
+								title={t("dashboard.quick-stats.this-week", "This Week")}
+								icon={IconCalendarWeek}
+								actual={stats.thisWeek.actual}
+								expected={stats.thisWeek.expected}
+								expectedToDate={stats.thisWeek.expectedToDate}
+								color="blue"
+							/>
+							<StatCard
+								title={t("dashboard.quick-stats.this-month", "This Month")}
+								icon={IconClock}
+								actual={stats.thisMonth.actual}
+								expected={stats.thisMonth.expected}
+								expectedToDate={stats.thisMonth.expectedToDate}
+								color="purple"
+							/>
+						</div>
+					)
 				)}
 			</WidgetCard>
 		</DashboardWidget>

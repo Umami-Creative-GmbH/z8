@@ -1,10 +1,21 @@
 /* @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { ReactNode } from "react";
-import { renderToString } from "react-dom/server";
+import { type ReactNode, Suspense } from "react";
+import { renderToReadableStream, renderToString } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
+import { DEFAULT_WIDGET_ORDER } from "@/components/dashboard/widget-registry";
 import { queryKeys } from "@/lib/query/keys";
+
+const serverReads = vi.hoisted(() => ({
+	layout: vi.fn(),
+	widget: vi.fn(),
+}));
+
+vi.mock("@/components/dashboard/dashboard-reads", () => ({
+	getRenderDashboardLayout: serverReads.layout,
+	readDashboardWidget: serverReads.widget,
+}));
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
@@ -12,8 +23,19 @@ vi.mock("@tolgee/react", () => ({
 	}),
 }));
 
+vi.mock("@/hooks/use-organization", () => ({
+	useOrganization: () => ({
+		userId: "user-a",
+		organizationId: "org-a",
+		role: "manager",
+		isLoading: false,
+	}),
+}));
+
 vi.mock("@/components/dashboard/sortable-widget-grid", () => ({
-	SortableWidgetGrid: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+	SortableWidgetGrid: ({ children }: { children: ReactNode }) => (
+		<div>{children}</div>
+	),
 }));
 
 vi.mock("@/components/dashboard/dashboard-widget", () => ({
@@ -36,11 +58,15 @@ vi.mock("@/components/dashboard/hydration-widget", () => ({
 }));
 
 vi.mock("@/components/dashboard/managed-employees-widget", () => ({
-	ManagedEmployeesWidget: () => <div data-widget-id="managed-employees">hydrated widget</div>,
+	ManagedEmployeesWidget: () => (
+		<div data-widget-id="managed-employees">hydrated widget</div>
+	),
 }));
 
 vi.mock("@/components/dashboard/manager-today-widget", () => ({
-	ManagerTodayWidget: () => <div>hydrated widget</div>,
+	ManagerTodayWidget: ({ initialSnapshot }: { initialSnapshot?: unknown }) => (
+		<div>{initialSnapshot ? "Manager summary ready" : "hydrated widget"}</div>
+	),
 }));
 
 vi.mock("@/components/dashboard/pending-approvals-widget", () => ({
@@ -52,7 +78,9 @@ vi.mock("@/components/dashboard/presence-status-widget", () => ({
 }));
 
 vi.mock("@/components/dashboard/quick-stats-widget", () => ({
-	QuickStatsWidget: () => <div>hydrated widget</div>,
+	QuickStatsWidget: ({ initialSnapshot }: { initialSnapshot?: unknown }) => (
+		<div>{initialSnapshot ? "Work hours ready" : "hydrated widget"}</div>
+	),
 }));
 
 vi.mock("@/components/dashboard/recently-approved-widget", () => ({
@@ -82,9 +110,130 @@ vi.mock("@/components/dashboard/covering-for-widget", () => ({
 	CoveringForWidget: () => <div>hydrated widget</div>,
 }));
 
+import { ServerSectionCards } from "./dashboard/server-section-cards";
 import { SectionCards } from "./section-cards";
 
 describe("SectionCards", () => {
+	it.each([
+		["manager-today", "Work hours ready", "Manager summary ready"],
+		["quick-stats", "Manager summary ready", "Work hours ready"],
+	])(
+		"streams a completed sibling while %s is still pending",
+		async (heldId, readyContent, pendingContent) => {
+			const scope = { userId: "user-a", organizationId: "org-a" };
+			serverReads.layout.mockResolvedValue({
+				layout: {
+					scope,
+					settings: {
+						dashboardWidgetOrder: {
+							order: ["manager-today", "quick-stats"],
+							hidden: DEFAULT_WIDGET_ORDER.filter(
+								(id) => id !== "manager-today" && id !== "quick-stats",
+							),
+							version: 1,
+						},
+					},
+					updatedAt: Date.now(),
+				},
+				subject: {
+					...scope,
+					employee: {
+						id: "employee-a",
+						role: "manager",
+						organizationId: "org-a",
+					},
+				},
+			});
+			let finishManager: (value: unknown) => void = () => {};
+			const manager = new Promise((resolve) => {
+				finishManager = resolve;
+			});
+			const snapshot = {
+				scope,
+				result: { success: true, data: {} },
+				updatedAt: Date.now(),
+			};
+			serverReads.widget.mockImplementation((id: string) =>
+				id === heldId ? manager : Promise.resolve(snapshot),
+			);
+			const client = new QueryClient({
+				defaultOptions: { queries: { retry: false } },
+			});
+			const stream = await renderToReadableStream(
+				<QueryClientProvider client={client}>
+					<Suspense fallback={<p>Loading Dashboard</p>}>
+						<ServerSectionCards />
+					</Suspense>
+				</QueryClientProvider>,
+			);
+			const reader = stream.getReader();
+			let markup = "";
+			try {
+				while (!markup.includes(readyContent)) {
+					const next = await Promise.race([
+						reader.read(),
+						new Promise<never>((_, reject) =>
+							setTimeout(
+								() =>
+									reject(
+										new Error(
+											"Useful sibling did not stream while Manager Today was pending",
+										),
+									),
+								500,
+							),
+						),
+					]);
+					if (next.done) break;
+					markup += new TextDecoder().decode(next.value);
+				}
+				expect(markup).toContain(readyContent);
+				expect(markup).not.toContain(pendingContent);
+			} finally {
+				finishManager(snapshot);
+				while (!(await reader.read()).done) {
+					/* Drain the completed server stream. */
+				}
+			}
+		},
+	);
+
+	it("renders server-provided visible widget slots without a hydration or settings request prerequisite", () => {
+		const queryClient = new QueryClient({
+			defaultOptions: { queries: { retry: false } },
+		});
+		const markup = renderToString(
+			<QueryClientProvider client={queryClient}>
+				<SectionCards
+					initialLayout={{
+						scope: { userId: "user-a", organizationId: "org-a" },
+						settings: {
+							dashboardWidgetOrder: {
+								order: ["quick-stats", "manager-today"],
+								hidden: DEFAULT_WIDGET_ORDER.filter(
+									(id) => id !== "quick-stats" && id !== "manager-today",
+								),
+								version: 1,
+							},
+						},
+						updatedAt: 1234,
+					}}
+					widgetSlots={{
+						"manager-today": <div>Manager summary ready</div>,
+						"quick-stats": <div>Work hours ready</div>,
+					}}
+				/>
+			</QueryClientProvider>,
+		);
+
+		expect(markup).toContain("Manager summary ready");
+		expect(markup).toContain("Work hours ready");
+		expect(markup.indexOf("Work hours ready")).toBeLessThan(
+			markup.indexOf("Manager summary ready"),
+		);
+		expect(markup).not.toContain("animate-pulse");
+	});
+
 	it("keeps server markup on the skeleton while widget settings may already be cached on the client", () => {
 		const queryClient = new QueryClient({
 			defaultOptions: { queries: { retry: false } },

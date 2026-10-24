@@ -1,17 +1,23 @@
 "use client";
 
 import { IconArrowRight, IconCalendarCheck } from "@tabler/icons-react";
-import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
-import { getManagerTodaySummary } from "./actions";
+import type {
+	DashboardWidgetData,
+	DashboardWidgetSnapshot,
+} from "./dashboard-types";
 import { DashboardWidget } from "./dashboard-widget";
-import { type ManagerTodayMetricCounts, mapManagerTodaySummary } from "./manager-today-summary";
+import {
+	type ManagerTodayMetricCounts,
+	mapManagerTodaySummary,
+} from "./manager-today-summary";
+import { useDashboardWidget } from "./use-dashboard-widget";
 import { WidgetCard } from "./widget-card";
+import { WidgetReadError } from "./widget-read-error";
 
-type EmployeeRole = "admin" | "manager" | "employee";
 type MetricItem = {
 	label: string;
 	value: number;
@@ -26,19 +32,25 @@ const EMPTY_METRICS: ManagerTodayMetricCounts = {
 	allClear: true,
 };
 
-export function ManagerTodayWidget() {
+export function ManagerTodayWidget({
+	initialSnapshot,
+}: {
+	initialSnapshot?: DashboardWidgetSnapshot<
+		DashboardWidgetData["manager-today"]
+	>;
+} = {}) {
 	const { t } = useTranslate();
-	const managerTodayQuery = useQuery({
-		queryKey: ["dashboard", "manager-today", "summary"],
-		queryFn: getManagerTodaySummary,
-	});
+	const managerTodayQuery = useDashboardWidget(
+		"manager-today",
+		initialSnapshot,
+	);
 
-	const role = (managerTodayQuery.data?.role ?? null) as EmployeeRole | null;
+	const role = managerTodayQuery.role;
 	const isAuthorized = role === "admin" || role === "manager";
-	const loading = managerTodayQuery.isLoading;
+	const loading = managerTodayQuery.loading;
 	const hasError =
 		isAuthorized &&
-		(managerTodayQuery.isError ||
+		(Boolean(managerTodayQuery.error) ||
 			Boolean(managerTodayQuery.data?.error) ||
 			(!loading && !managerTodayQuery.data?.summary));
 	const metrics = managerTodayQuery.data?.summary
@@ -82,8 +94,15 @@ export function ManagerTodayWidget() {
 					"dashboard.manager-today.description",
 					"Review today before small issues affect payroll or coverage.",
 				)}
-				icon={<IconCalendarCheck className="size-4 text-blue-500" aria-hidden="true" />}
+				icon={
+					<IconCalendarCheck
+						className="size-4 text-blue-500"
+						aria-hidden="true"
+					/>
+				}
 				loading={loading}
+				refreshing={managerTodayQuery.refreshing}
+				onRefresh={managerTodayQuery.refetch}
 				action={
 					<Button variant="default" size="sm" asChild>
 						<Link href="/today">
@@ -95,29 +114,47 @@ export function ManagerTodayWidget() {
 			>
 				<div className="space-y-4">
 					{hasError ? (
-						<p className="rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-							{t("dashboard.manager-today.error", "Failed to load manager briefing counts.")}
-						</p>
+						<WidgetReadError
+							title={t("dashboard.manager-today.title", "Manager Today")}
+							message={t(
+								"dashboard.manager-today.error",
+								"Failed to load manager briefing counts.",
+							)}
+							retry={managerTodayQuery.refetch}
+							refreshing={managerTodayQuery.refreshing}
+						/>
 					) : null}
 
-					<div className="grid grid-cols-2 gap-2" data-testid="manager-today-metrics">
-						{metricItems.map((item) => (
-							<div
-								key={item.label}
-								className={cn(
-									"rounded-lg border bg-muted/25 px-3 py-2",
-									item.value > 0 && item.activeClass,
-								)}
-							>
-								<div className="text-2xl font-semibold tabular-nums leading-none">{item.value}</div>
-								<div className="mt-1 text-xs font-medium text-muted-foreground">{item.label}</div>
-							</div>
-						))}
-					</div>
+					{!hasError && (
+						<div
+							className="grid grid-cols-2 gap-2"
+							data-testid="manager-today-metrics"
+						>
+							{metricItems.map((item) => (
+								<div
+									key={item.label}
+									className={cn(
+										"rounded-lg border bg-muted/25 px-3 py-2",
+										item.value > 0 && item.activeClass,
+									)}
+								>
+									<div className="text-2xl font-semibold tabular-nums leading-none">
+										{item.value}
+									</div>
+									<div className="mt-1 text-xs font-medium text-muted-foreground">
+										{item.label}
+									</div>
+								</div>
+							))}
+						</div>
+					)}
 
 					{!hasError && metrics.allClear ? (
 						<p className="rounded-lg border border-blue-200/70 bg-blue-50/60 px-3 py-2 text-sm text-blue-950 dark:border-blue-900/50 dark:bg-blue-950/20 dark:text-blue-100">
-							{t("dashboard.manager-today.all-clear", "No manager action is flagged right now.")}
+							{t(
+								"dashboard.manager-today.all-clear",
+								"No manager action is flagged right now.",
+							)}
 						</p>
 					) : null}
 				</div>

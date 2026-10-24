@@ -27,6 +27,7 @@ async function readUserSettings(userId: string) {
 			helpImproveProduct: true,
 			onboardingComplete: true,
 			onboardingStep: true,
+			dashboardWidgetOrder: true,
 		},
 	});
 }

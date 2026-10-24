@@ -1,7 +1,8 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { ServerSectionCards } from "@/components/dashboard/server-section-cards";
 import { NoOrganizationError } from "@/components/errors/no-organization-error";
-import { SectionCards, SectionCardsSkeleton } from "@/components/section-cards";
+import { SectionCardsSkeleton } from "@/components/section-cards";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import {
 	getRenderOnboardingStatus as getOnboardingStatus,
@@ -30,7 +31,9 @@ async function DashboardPageContent() {
 
 	// Redirect if onboarding not complete
 	if (onboardingStatus && !onboardingStatus.onboardingComplete) {
-		return redirectWithLocale(getOnboardingStepPath(onboardingStatus.onboardingStep));
+		return redirectWithLocale(
+			getOnboardingStepPath(onboardingStatus.onboardingStep),
+		);
 	}
 
 	if (!hasOrganizations) {
@@ -45,7 +48,7 @@ async function DashboardPageContent() {
 		<div className="@container/main flex flex-1 flex-col gap-2">
 			<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
 				<Suspense fallback={<SectionCardsSkeleton />}>
-					<SectionCards />
+					<ServerSectionCards />
 				</Suspense>
 			</div>
 		</div>
