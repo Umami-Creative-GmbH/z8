@@ -158,6 +158,200 @@ active, and not past a due departure (the same live check as
   keeps hand-written `employee.isActive` checks from growing beyond
   `raw-employee-active-checks.json`.
 
+## Deactivation
+
+*Deactivate* (Settings → Employees and the members table, while the release
+gate is closed) has the consequences of a departure taking effect, at the
+moment of deactivation (#1440, Organization ADR 0006). It reuses the
+departure's code paths; the area modules live in
+`apps/webapp/src/lib/employee-lifecycle/deactivation/`.
+
+**Consequences**, each audited under the acting admin with
+`{ reason: "employee_deactivated", deactivationId, … }`:
+
+1. **Manager links** end in both directions. A report who keeps another current
+   manager just loses this one; that manager becomes primary when the ending
+   link was the primary one (`manager.removed`, `manager.primary_changed`). A
+   report who would be left with no current manager gets the replacement the
+   admin picked: a current admin or manager with an approved membership, never
+   the report (`manager.assigned`). A report who is a former employee just loses
+   the link (`formerReports` in the plan): no replacement is asked for, and a
+   former employee never gets a new manager.
+2. **Team memberships, the person's own project assignments and project
+   manager links** end (`team.member_removed`, `project.assignment_removed`,
+   `project.manager_removed`). A team's project assignment stays.
+3. **Approval duties** in the current stage of a pending canonical workflow are
+   captured as handover tasks under the deactivation and delivered by the worker
+   through the departure's handover: to the replacement picked for that
+   requester (only a pick the manager links validated: the requester is a report
+   who needs one and the pick is eligible), else to the stage's reviewers
+   re-resolved without the person, else they become *Approval duties need a
+   replacement* reviews. Later stages naming only the person and legacy-only
+   duties become reviews at once. Their own submitted requests stay decidable.
+   Each task and review is audited (`approval_duty.handed_over`,
+   `approval_duty.review_raised`, target `deactivation_follow_up`); transfers
+   also carry `reassignment_metadata.offboarding.deactivationId`. The
+   maintenance scan (`runEmployeeDepartureMaintenance`) delivers a
+   deactivation's tasks while the release gate is closed; departures and their
+   tasks stay behind the gate.
+4. **Shifts** starting after the instant (by their wall-clock time in the
+   organization's zone, drafts too) are unassigned and stay open
+   (`shift.unassigned`). Past and running shifts stay. The person's current
+   managers, else the organization's owners and admins, get one
+   `employee_deactivation_shifts_opened` notice with the count.
+5. **Absences** that start after the day they left (the instant as a date in
+   the organization's zone), pending or approved, are cancelled through the
+   normal cancellation path with the `employee-deactivation` system capability,
+   which frees the allowance (`absence.cancelled`). Absences spanning that day
+   are kept and listed in the preview, and so are later ones that touch a closed
+   month (`absencesInClosedMonths`): the closed month refuses the cancellation
+   until it is reopened. The deputy release (#1014) still runs. The after-commit
+   work (sick note cleanup, deputy notices) runs on the caller's database client.
+6. **Access** ends as at a departure: held expense officer, payroll access,
+   personnel file officer and driving licence verifier grants, driving
+   authorizations (also suspended ones), kiosk badges and the person's report
+   share links. `applied` records the grant ids actually revoked.
+7. **Retention**: the instant counts as the end of employment (see Personnel
+   file retention). The paid seat is released (see Billing reconciliation).
+
+**Preview.** *Deactivate* opens a dialog served by
+`previewEmployeeDeactivationAction` (`deactivation/preview.ts`): the same
+authorization and owner rules as the action, then
+`planDeactivationConsequences` (`deactivation/plan.ts`), which lists every item
+above with replacement-manager pickers. A new pick asks for the preview again.
+The preview is advisory and takes no locks; the action recomputes the plan in
+its transaction with the same predicates and refuses with
+`refusal: "replacement_required"` while a report has no eligible replacement.
+The acceptance suite (`deactivation/deactivation.integration.test.ts`) checks
+that the preview lists exactly what the server applied. The browser gets the
+plan without the planner notice's recipients (`DeactivationPreview`), which are
+other users' ids and stay on the server.
+
+**Request IDs and replay.** `deactivateEmployeeAction({ employeeId, requestId,
+replacementManagers })` records one `employee_deactivation` row per request ID
+(unique per organization) with the fingerprint, the instant, the picks, the
+applied ids (`applied`, the #1441 checklist source) and the replay result. The
+same request again returns its first result and repeats only the after-commit
+work that is safe to repeat: session revocation, seat recount, export pause,
+the planner notice and the deputy notices (both keyed, so nothing is sent
+twice) and calendar deletions. Audit rows and the self-service absence notices
+are not repeated; a deactivation reactivated since repeats nothing. The same
+request ID with other picks is refused (`refusal: "request_conflict"`). The
+history event `employee_deactivated` (`employee_departure_event`, no departure)
+is written when the employee has an employment period.
+
+**Lock order**, all in one transaction, so that the deactivation never waits
+on a guard it should already hold while another writer waits on it: the absence
+and period
+submission approval write gates (rank 2, shared, via `withAuthorizationMutation`'s
+`beforeProtection` hook), the exclusive organization configuration guard
+(rank 3, `organizationWide: true`), the user guards (rank 4) of the person,
+their reports, their own managers and the picked replacements, then the
+organization row `FOR UPDATE` (`lockLifecycleOrganization`). The plan is computed under these locks, then the
+employee is switched off with `deactivated_at = <instant>` and the areas apply
+in order: manager links, team links, approval duties, shifts, absences, access
+ends. Notices and other external effects run after the commit.
+
+**Follow-up.** The employee page shows the deactivation's handovers and reviews
+where a departure's show, with the instant in the organization's zone; reviews
+are resolved and replacements assigned the same way
+(`assignDepartureReplacementAction` accepts `deactivationId`). *Reactivate*
+restores nothing and marks the open deactivation reactivated, so its pending
+handovers stop (`employee_rehired`). It also resolves the deactivation's open
+reviews and completes its undelivered tasks as obsolete (outcome `obsolete`),
+each audited as `deactivation.follow_up_closed` with
+`{ reason: "employee_reactivated", deactivationId }`: nobody could see or
+resolve them once the person is current again. A task a worker holds at that
+moment finishes on its own. A deactivation principal that names a row it does
+not match is denied as `deactivation_mismatch`, and a deactivation that no
+longer holds as `deactivation_not_effective`.
+
+**Backfill of earlier deactivations (#1442).** Employees deactivated before
+#1440 get its consequences once, through the one-off script
+`pnpm employees:backfill-deactivations` (`apps/webapp/scripts/backfill-former-employees.ts`,
+library `deactivation/backfill.ts`; deploy steps in `deploy/README.md`). It is a
+dry run unless `--apply` is given. Both modes plan with
+`planDeactivationConsequences`, so the dry run reports exactly what the real run
+applies. It handles inactive employees with no effective or pending departure
+and no open `employee_deactivation` row.
+
+- **When they left**: `employee.deactivated_at` if already set, else the latest
+  surviving `employee.deactivated` audit entry or SCIM `leave` event
+  (`user_lifecycle_event`), unless a later `employee.reactivated` entry, SCIM
+  `join` or the start of the current employment period undid it. The recovered
+  instant is written to `employee.deactivated_at` (the trigger is not involved,
+  audited as `employee.updated` with the backfill's reason) and gets the
+  `employee_deactivated` history event. For an instant already on the employee,
+  the action's `employee.deactivated` audit entry written just after it (within
+  minutes) is matched: its admin is the actor, and the history shows the
+  deactivation once. Member removal writes no such evidence. Audit entries live
+  365 days. Without evidence the date stays *not recorded*.
+- **Consequences** apply from the run instant (user decision 2026-10-24): the
+  recovered instant is kept only as when they left (`deactivated_at`, *Former
+  since*), so no past shift is reopened and no past absence cancelled. They run
+  with `replaceManagers: false` and the reason `employee_deactivation_backfill`.
+  Audit rows are attributed to the admin whose audit entry deactivated the
+  employee, else to the organization's longest-standing current owner (or
+  admin). A report who would be left with no current manager keeps the link. The
+  deputy release is not repeated, because Deactivate has done it since #1014.
+- **Record**: one `employee_deactivation` row per employee (reason
+  `employee_deactivation_backfill`) is the idempotency marker. Its
+  `deactivated_at` is when they left: the recovered instant, else the run
+  instant, while `employee.deactivated_at` stays NULL. The reactivation
+  checklist then says the date is not recorded. The approval handover (`offboarding-authority.ts`) treats such a
+  row as effective while the employee stays off without an instant. The
+  absence cancellation capability takes the row's instant in place of the
+  missing one. The offboarding view marks the row `dateNotRecorded`.
+- **Admins told**: each organization whose reports keep only a former manager
+  gets one `former_employee_reports_without_manager` notification per current
+  owner and admin. The notification lists the reports and links to the
+  employee page (Settings → Employees when there are several). It is keyed by
+  the listed reports.
+- Each employee is applied in its own transaction, in the lock order above. An
+  absence in a closed month is kept and listed rather than failing the
+  employee. An employee that fails is listed, and the run exits non-zero. A
+  second run changes nothing.
+
+## Reactivation
+
+*Reactivate* (#1441) runs `executeReactivation`
+(`apps/webapp/src/lib/employee-lifecycle/reactivation.ts`) inside the
+lifecycle transaction: it switches the employee on (the 0283 trigger clears
+`deactivated_at`, so they are on the current roster again and the personnel
+file retention clock stops: retention reads a deactivated employee's open
+period as ended at `deactivated_at`), stamps the open `employee_deactivation` row
+with `reactivated_at`, `reactivated_by` and a server-generated
+`reactivation_request_id`, and records the history event
+`employee_reactivated` (`employee_departure_event`, no departure, metadata
+`{ deactivationId }`) when the employee has an employment period. It restores
+no grant, badge, driving authorization, manager link, team or project link,
+shift or absence; the acceptance suite asserts that.
+
+**Checklist.** The ledger row keeps the applied consequences (`applied`) and,
+since migration 0286, the plan they were applied from (`plan`, with only the
+chosen replacements among the replacement options), so a deleted absence can
+still be named. `loadReactivationChecklist` (`reactivation-checklist-store.ts`)
+returns the checklist of the employee's latest deactivation once it was
+reactivated and until an org admin dismisses it (`checklist_dismissed_at`,
+`checklist_dismissed_by`; first dismissal wins, for every admin).
+`buildReactivationChecklistItems` (`reactivation-checklist.ts`) lists exactly
+what `applied` lists and links each item to where it is granted again: reports
+and own managers to the employee pages, grants to their settings tabs, kiosk
+badges to the employee page, driving authorizations to
+`/driving-licence/checks/<id>`, teams to `/settings/teams/<id>`, projects to
+`/settings/projects`, shifts to `/scheduling`, absences to `/team/absences`,
+share links to `/settings/report-share-links`. Approval duties are not listed:
+they were handed over. The dialog after *Reactivate* and the card on the
+employee page are org-admin only (`employee-reactivation.actions.ts`).
+
+**History.** `loadLifecycleHistory` (`lifecycle-history.ts`) lists the
+`employee_deactivated` / `employee_reactivated` events plus, for older ones,
+the surviving `employee.deactivated` / `employee.reactivated` audit entries
+(kept 365 days). Those audit entries now carry `deactivationId` or
+`reactivationRequestId`, so an entry of a recorded event is shown once. The
+Contract & Work Model card shows them in the organization's zone, to everyone
+who may read the employment history.
+
 ## Access grants
 
 When the departure takes effect, the expense officer grant, the payroll access
@@ -261,7 +455,15 @@ of employment (in the organization's timezone) and the year of its document
 date. Once the category's retention period has passed, the document is listed
 as *due for deletion* and is purged only when a personnel file officer confirms.
 The open period a rehire creates stops the clock: none of the employee's
-documents is due while they are employed again. A former employee whose
+documents is due while they are employed again. A deactivation ends the
+employment the same way (#1440): while the employee stays deactivated, their
+open period counts as ended at `employee.deactivated_at`, read by the shared
+loader `lib/personnel-file/retention-employment.ts` for both the documents'
+due list and the deletion of document requests. Reactivation clears that
+instant, which stops the clock again. Someone deactivated before the instant
+was recorded (migration 0283) has no retention start until the #1442 backfill
+recovers it. Their documents are listed as *retention start unknown*, and stay
+listed there when no evidence of the date survives. A former employee whose
 employment end was never recorded (no employment period, or only a legacy
 period without an end) has no retention start: their documents are listed
 separately as *retention start unknown*, never counted by the daily reminder,
@@ -299,7 +501,8 @@ reports the deactivation; `employee_left_on(...)` gives that moment as the
 organization-local date. Read them through `readEmployeeLeftOn`,
 `employeeLeftAt`, `formerSinceDate` or `formerEmployeesAmong`; views show
 *Former since <date>*, or *date not recorded* for employees deactivated before
-0283 until the #1442 backfill recovers their date.
+0283 whose date the #1442 backfill could not recover from surviving evidence
+(see Deactivation).
 
 ## Release gate and rollback
 

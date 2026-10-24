@@ -2,7 +2,7 @@
 
 Issue [#1474](https://github.com/Umami-Creative-GmbH/z8/issues/1474), following the SQL tenant scope in [#1451](https://github.com/Umami-Creative-GmbH/z8/issues/1451).
 
-The measured decision is to add the nonunique B-tree `absenceEntry_employeeId_endDate_startDate_idx` on `(employee_id, end_date, start_date)`. It materially reduces recent large-organization reads and selective-manager work while preserving the existing reader, legacy-null organization ownership, approval statuses and calendar-day semantics. Migration `0284_absence_employee_overlap` and the schema declare this index; no reader or authorization predicate changes.
+The measured decision is to add the nonunique B-tree `absenceEntry_employeeId_endDate_startDate_idx` on `(employee_id, end_date, start_date)`. It materially reduces recent large-organization reads and selective-manager work while preserving the existing reader, legacy-null organization ownership, approval statuses and calendar-day semantics. Migration `0288_absence_employee_overlap` and the schema declare this index; no reader or authorization predicate changes.
 
 The [numeric evidence](evidence/1474-absence-indexes.json) contains every condition/phase distribution, first/last absence-access plan nodes, existing-index inventory, planner settings, index storage/build cost and write/WAL distributions. The original complete numeric artifact has SHA-256 `b0f5fc018e22abd124cf8f7053ccda9aafd01414411bc82b850546130b2d657e`; its eager-relation plans were captured by harness `74bf2a57c` at worktree commit `3c60b3af1`. The raw private diagnostic log is excluded. This is disposable PostgreSQL evidence, not a browser latency, production cardinality or release-budget claim.
 
@@ -106,7 +106,7 @@ The ending baseline exposes real drift: recent large-admin execution p50 is 5–
 
 ## Rollout and rollback
 
-Migration `0284` has journal `when=1809273600000`, greater than every preceding entry. It uses ordinary `CREATE INDEX IF NOT EXISTS` because the repository's Drizzle migration runner executes a transaction. This takes a table lock that blocks writes during construction; the 114 ms fixture build does not predict production lock duration. On a busy deployment, prebuild the same index outside a transaction before normal migrations, using an operator connection and a bounded lock wait:
+Migration `0288` has journal `when=1809619200000`, greater than every preceding entry. The unreleased index migration was renumbered when concurrent employee-deactivation work reached `dev`; that work's migrations `0284`–`0287` remain unchanged. The SQL and index name are unchanged. It uses ordinary `CREATE INDEX IF NOT EXISTS` because the repository's Drizzle migration runner executes a transaction. This takes a table lock that blocks writes during construction; the 114 ms fixture build does not predict production lock duration. On a busy deployment, prebuild the same index outside a transaction before normal migrations, using an operator connection and a bounded lock wait:
 
 ```sql
 SET lock_timeout = '5s';
@@ -126,7 +126,9 @@ Reader correctness and tenant scoping remain intact without it; performance retu
 
 ## Validation
 
-The repository's actual disposable PostgreSQL runner passed migration incident recovery, retry and the fresh full migration chain. The catalog assertion failed before the index was implemented, then passed with valid/ready/nonunique/unfiltered exact ordered keys after retrying migration `0284` inside a transaction. Both absence suites pass (five tests), covering all 24 representative public-reader conditions and the existing authenticated manager-assignment reduction/employee-denial journey. The latter fixture now seeds approved membership required by the current public analytics admission; permissions are not mocked away.
+Before base integration, the repository's actual disposable PostgreSQL runner passed migration incident recovery, retry and the fresh full migration chain. The catalog assertion failed before the index was implemented, then passed with valid/ready/nonunique/unfiltered exact ordered keys after retrying the same SQL now named `0288` inside a transaction. Both absence suites passed (five tests), covering all 24 representative public-reader conditions and the existing authenticated manager-assignment reduction/employee-denial journey. The latter fixture seeds approved membership required by the current public analytics admission; permissions are not mocked away. The merged migration chain still requires fresh-database validation.
+
+Existing private fixtures that applied the index under its pre-integration journal timestamp must not run the merged pending-migration chain: their ledger could skip the peer's earlier migration. Recreate final-head test and performance clones from the original dump through `0283`, then apply the complete merged chain. Never migrate the original before database. Historical measured hashes and plans remain unchanged.
 
 Focused TypeScript checking of the changed schema and both integration suites, route type generation, the CLI safety test, Biome checks and journal ordering checks pass. The broad app TypeScript check remains blocked by the worktree's missing generated `licenses.json` and an inherited heterogeneous-loader type error in `deferred-dashboard-widget.tsx`; these are outside the index change. No app build or browser release-budget acceptance is claimed. Full integrated checks remain the controller's gate.
 

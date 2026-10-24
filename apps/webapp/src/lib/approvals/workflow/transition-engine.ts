@@ -7,6 +7,11 @@ import type {
 	ApprovalWorkflowTransactionContext,
 } from "../domain-adapters/types";
 import { mapSequentially } from "../sequential";
+import {
+	allowsEmployeeDeactivationCancellation,
+	employeeDeactivationAdapterCapability,
+	isEmployeeDeactivationPrincipal,
+} from "./deactivation-cancellation";
 import { pinApprovalWriteGate } from "./pinned-write-gate";
 import type {
 	ApprovalCommandActorResolver,
@@ -24,6 +29,7 @@ import {
 	APPROVAL_ESCALATION_SYSTEM_ID,
 	EMPLOYEE_OFFBOARDING_SYSTEM_ID,
 	isCoveringDeputyGrant,
+	isDeactivationHandoverPrincipal,
 	isOffboardingHandoverPrincipal,
 	PERIOD_SUBMISSION_CHANGE_SYSTEM_ID,
 } from "./ports";
@@ -302,6 +308,10 @@ function allowsAuthorization(
 			request.command.type === "cancel" &&
 			request.command.reason === ABSENCE_CHANGE_OBSOLETE_REASON
 		);
+	}
+	if (isEmployeeDeactivationPrincipal(request.principal)) {
+		// The deactivation (#1440) only cancels a former employee's later absence.
+		return allowsEmployeeDeactivationCancellation(request, authorization, workflowType);
 	}
 	if (authorization === "requester") {
 		return request.principal.kind === "employee" && request.command.type === "cancel";
@@ -633,6 +643,7 @@ export function createApprovalTransitionEngine(
 				},
 				source,
 				actor,
+				...employeeDeactivationAdapterCapability(request.principal),
 			};
 			const capabilities = await reportingVersionRace(() =>
 				adapter.getTrustedCapabilities(adapterContext),
@@ -691,7 +702,9 @@ export function createApprovalTransitionEngine(
 					? {
 							// Stable lineage only; the worker lease is never recorded.
 							offboardingLineage: {
-								departureId: offboardingPrincipal.departureId,
+								...(isDeactivationHandoverPrincipal(offboardingPrincipal)
+									? { deactivationId: offboardingPrincipal.deactivationId }
+									: { departureId: offboardingPrincipal.departureId }),
 								employmentPeriodId: offboardingPrincipal.employmentPeriodId,
 								handoverTaskId: offboardingPrincipal.handoverTaskId,
 								sourceAssignmentId: offboardingPrincipal.assignmentId,

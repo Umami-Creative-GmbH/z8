@@ -363,8 +363,8 @@ export async function revokeDrivingLicenceVerifierGrantsHeldBy(
 		actorUserId: string;
 		now?: Instant;
 	},
-) {
-	await tx
+): Promise<string[]> {
+	const revoked = await tx
 		.update(drivingLicenceVerifierGrant)
 		.set({
 			revokedAt: dateFromInstant(input.now ?? systemClock.nowInstant()),
@@ -385,5 +385,7 @@ export async function revokeDrivingLicenceVerifierGrantsHeldBy(
 					: isNull(drivingLicenceVerifierGrant.employmentPeriodId),
 				isNull(drivingLicenceVerifierGrant.revokedAt),
 			),
-		);
+		)
+		.returning({ id: drivingLicenceVerifierGrant.id });
+	return revoked.map((grant) => grant.id);
 }

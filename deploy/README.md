@@ -306,6 +306,52 @@ Locally: `pnpm --dir apps/webapp personnel-files:minimise-purged-audits [--organ
   (unreadable JSON, a purge record naming no employee, or a purge record whose document still
   exists). If any are listed, the run exits non-zero. Review them and run again.
 
+### After Deploying #1440: Backfill Employees Deactivated Before It (once)
+
+Since #1440, Deactivate has the consequences of a departure. Employees deactivated before that
+release never had them. **Run once after the release**, from the worker image of the same release
+with the worker's environment, in two steps: a dry run first (the default), then the real run.
+
+```bash
+# 1. Dry run: reports per organization what it would change; changes nothing
+docker run --rm \
+  --entrypoint tsx \
+  --env-file "$PRODUCTION_WORKER_ENV_FILE" \
+  --network "$PRODUCTION_WORKER_NETWORK" \
+  "$WORKER_IMAGE" \
+  --import ./src/worker-preload.mjs scripts/backfill-former-employees.ts --json > backfill-dry-run.json
+
+# 2. After reviewing the dry run: apply it
+docker run --rm \
+  --entrypoint tsx \
+  --env-file "$PRODUCTION_WORKER_ENV_FILE" \
+  --network "$PRODUCTION_WORKER_NETWORK" \
+  "$WORKER_IMAGE" \
+  --import ./src/worker-preload.mjs scripts/backfill-former-employees.ts --apply --json > backfill-applied.json
+```
+
+Locally: `pnpm --dir apps/webapp employees:backfill-deactivations [--apply] [--organization-id <org-id>] [--json]`.
+
+- It handles employees who are inactive, were not offboarded by a departure, and have no
+  deactivation record. Employees deactivated since #1440 already have one and are skipped.
+- When they left is taken from the employee if already recorded, else from the latest surviving
+  `employee.deactivated` audit entry or SCIM leave event, unless a later reactivation, SCIM join or
+  employment start undid it. Audit entries live 365 days. Without evidence, the date stays
+  "not recorded" and the consequences apply from the moment of the run.
+- The consequences are those of #1440. Manager links end, team memberships and project links end,
+  approval duties are handed over by the worker, later shifts open, later absences are cancelled,
+  and grants, driving authorizations, kiosk badges and share links end. Each change is audited with
+  the reason `employee_deactivation_backfill`, under the admin whose audit entry deactivated the
+  employee, else under the organization's longest-standing current owner.
+- A report who would be left with no current manager keeps the link. These reports are listed in
+  the run's report, and each affected organization's current owners and admins get one
+  notification that lists them.
+- Each employee is applied in its own transaction. An interrupted run keeps its progress, and a
+  second run changes nothing.
+- An employee that cannot be backfilled is listed with the reason, and the run exits non-zero. One
+  example is an absence in a closed month. Nothing was changed for that employee. Fix the cause
+  and run again.
+
 ## Services
 
 | Service | Port | Description |

@@ -34,6 +34,7 @@ function view(overrides: Partial<EmployeeOffboardingView>): EmployeeOffboardingV
 		employmentPeriodId: "period-1",
 		state: "active",
 		departure: null,
+		deactivation: null,
 		previousEmploymentPeriodId: null,
 		membershipApproved: true,
 		followUp: { pending: 0, failed: 0, openReviews: 0 },
@@ -108,6 +109,27 @@ describe("DepartureCard", () => {
 
 		expect(handlers.onSchedule).toHaveBeenCalled();
 		expect(handlers.onCancelDeparture).toHaveBeenCalled();
+	});
+
+	it("states when a deactivated employee left, in the organization's zone (#1440)", () => {
+		renderCard(
+			view({
+				state: "legacy_inactive",
+				employmentPeriodId: null,
+				deactivation: {
+					id: "deactivation-1",
+					deactivatedAt: "2026-10-24T08:00:00Z",
+					timezone: "Europe/Berlin",
+				},
+			}),
+		);
+
+		expect(
+			screen.getByText(
+				/This employee was deactivated at Oct 24, 2026, 10:00 AM \(Europe\/Berlin\)/,
+			),
+		).toBeTruthy();
+		expect(screen.queryByText("Date not recorded")).toBeNull();
 	});
 
 	it("links work kept after the cutoff to the pages that manage it", () => {

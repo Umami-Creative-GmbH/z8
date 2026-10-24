@@ -12,6 +12,7 @@ import type {
 	ApprovalWorkflowStatus,
 	ApprovalWorkflowType,
 	ApprovalWriteGate,
+	EMPLOYEE_DEACTIVATION_SYSTEM_ID,
 	JsonObject,
 	StageActivationResolver,
 	TransactionalWorkflowRepository,
@@ -34,6 +35,8 @@ export interface ApprovalDomainAdapterContext<TSource> {
 	sourceIdentity: ApprovalSourceIdentity;
 	source: TSource;
 	actor: ApprovalEventActorIdentity;
+	/** Set when a system actor commands under the employee deactivation's capability (#1440). */
+	systemCapability?: typeof EMPLOYEE_DEACTIVATION_SYSTEM_ID;
 }
 
 export interface ApprovalDomainCapabilities {

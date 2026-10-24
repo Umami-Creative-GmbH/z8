@@ -23500,6 +23500,8 @@
 	],
 	"decision": {
 		"outcome": "add-employee-end-start-btree",
+		"migration": "0288_absence_employee_overlap",
+		"migrationWhen": 1809619200000,
 		"productionIndex": "absenceEntry_employeeId_endDate_startDate_idx",
 		"reason": "Recent large-admin gains and selective-manager buffer reductions exceed opening/ending baseline drift; preserve existing older-admin plans. Accept measured storage and additional WAL, without claiming browser or production latency."
 	},

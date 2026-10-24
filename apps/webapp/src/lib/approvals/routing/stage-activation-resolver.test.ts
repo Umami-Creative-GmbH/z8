@@ -9,7 +9,10 @@ import type {
 	JsonObject,
 	StageActivationInput,
 } from "../workflow/ports";
-import { createDatabaseStageActivationResolver } from "./stage-activation-resolver";
+import {
+	createDatabaseStageActivationResolver,
+	resolveStageReviewersWithout,
+} from "./stage-activation-resolver";
 
 const requesterId = "00000000-0000-4000-8000-000000000001";
 const managerAId = "00000000-0000-4000-8000-000000000011";
@@ -287,17 +290,10 @@ describe("createDatabaseStageActivationResolver", () => {
 
 		expect(fake.calls).toHaveLength(1);
 		const rendered = new PgDialect().sqlToQuery(fake.calls[0]);
-		// Only an explicitly named approver has a replacement lookup.
-		expect(rendered.params).toEqual([
-			"org-1",
-			"org-1",
-			"org-1",
-			"org-1",
-			stageId,
-			"org-1",
-			null,
-			"org-1",
-		]);
+		// Only an explicitly named approver has a replacement lookup (#1437 review):
+		// without one the directory is the organization's alone.
+		expect(rendered.params).toEqual(["org-1", "org-1", "org-1", "org-1"]);
+		expect(rendered.sql).not.toMatch(/employee_departure departure/);
 		expect(rendered.sql).toMatch(
 			/from employee[\s\S]*employee\.organization_id\s*=\s*\$1/,
 		);
@@ -313,6 +309,28 @@ describe("createDatabaseStageActivationResolver", () => {
 		);
 		// A due departure ends activity even before it is materialized.
 		expect(rendered.sql).toMatch(/employee_departure_denies_access\(/);
+	});
+
+	it("looks up the replacement of an explicitly named approver who left", async () => {
+		const { resolution, fake } = departedApproverInput(true);
+		await resolution;
+
+		const rendered = new PgDialect().sqlToQuery(fake.calls[0]);
+		// From a departure, or from a deactivation's pick for this requester (#1440).
+		expect(rendered.params).toEqual([
+			"org-1",
+			"org-1",
+			"org-1",
+			"org-1",
+			stageId,
+			"org-1",
+			managerAId,
+			requesterId,
+			stageId,
+			"org-1",
+			managerAId,
+			"org-1",
+		]);
 		expect(rendered.sql).toMatch(
 			/from employee_departure departure[\s\S]*departure\.organization_id\s*=\s*\$6[\s\S]*status = 'effective'/,
 		);
@@ -626,5 +644,57 @@ describe("createDatabaseStageActivationResolver", () => {
 				activationInput({ dbService: fake.dbService }),
 			),
 		);
+	});
+});
+
+describe("resolveStageReviewersWithout (#1440)", () => {
+	const leavingId = "00000000-0000-4000-8000-000000000021";
+	const directory = {
+		employees: [
+			{ id: requesterId, organizationId: "org-1", isActive: true, role: "employee" as const, teamId: null },
+			{ id: leavingId, organizationId: "org-1", isActive: true, role: "manager" as const, teamId: null },
+			{ id: managerAId, organizationId: "org-1", isActive: true, role: "manager" as const, teamId: null },
+		],
+		managerLinks: [
+			{ employeeId: requesterId, managerId: leavingId, isPrimary: true },
+			{ employeeId: requesterId, managerId: managerAId, isPrimary: false },
+		],
+		teamMemberships: [],
+		teams: [],
+	};
+	const workflow = {
+		id: workflowId,
+		organizationId: "org-1",
+		workflowType: "absence" as const,
+		sourceType: "absence_entry",
+		sourceId: "absence-1",
+		requesterEmployeeId: requesterId,
+		policyKind: "policy",
+	};
+
+	it("resolves the stage as if the employee were gone", () => {
+		expect(
+			resolveStageReviewersWithout({
+				directory,
+				employeeId: leavingId,
+				workflow,
+				resolverSnapshot: { approverType: "direct_manager", fallbackBehavior: "fail" },
+			}),
+		).toEqual([managerAId]);
+	});
+
+	it("is empty when only the employee could review and the fallback fails", () => {
+		expect(
+			resolveStageReviewersWithout({
+				directory,
+				employeeId: leavingId,
+				workflow,
+				resolverSnapshot: {
+					approverType: "specific_employee",
+					approverEmployeeId: leavingId,
+					fallbackBehavior: "fail",
+				},
+			}),
+		).toEqual([]);
 	});
 });

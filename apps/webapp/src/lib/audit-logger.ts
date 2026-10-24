@@ -149,6 +149,16 @@ export enum AuditAction {
 	DRIVING_LICENCE_INTENDED_DRIVER_SET = "driving_licence.intended_driver_set",
 	DRIVING_LICENCE_INTENDED_DRIVER_REMOVED = "driving_licence.intended_driver_removed",
 
+	// Deactivation consequences (#1440); metadata carries `{ reason, deactivationId }`
+	SHIFT_UNASSIGNED = "shift.unassigned",
+	DRIVING_AUTHORIZATION_ENDED = "driving_authorization.ended",
+	DRIVING_LICENCE_VERIFIER_REVOKED = "driving_licence.verifier_revoked",
+	// Approval duties of a deactivation (#1437 review): a handover task, a review raised
+	APPROVAL_DUTY_HANDED_OVER = "approval_duty.handed_over",
+	APPROVAL_DUTY_REVIEW_RAISED = "approval_duty.review_raised",
+	// A reactivation closes the deactivation's open reviews and obsoletes its undelivered tasks
+	DEACTIVATION_FOLLOW_UP_CLOSED = "deactivation.follow_up_closed",
+
 	// Expense Officer Grant Operations
 	EXPENSE_OFFICER_GRANT_CREATED = "expense_officer.grant_created",
 	EXPENSE_OFFICER_GRANT_CHANGED = "expense_officer.grant_changed",
@@ -449,7 +459,13 @@ export interface AuditLogEntry {
 		| "api_key"
 		| "report_share_link"
 		| "scheduled_export"
-		| "personal_data_export";
+		| "personal_data_export"
+		| "employee_manager"
+		| "shift"
+		| "driving_authorization"
+		| "driving_licence_verifier"
+		/** An `employee_departure_task` or `employee_departure_review` of a deactivation. */
+		| "deactivation_follow_up";
 	organizationId: string;
 	metadata?: Record<string, unknown>;
 	changes?: Record<string, unknown>; // Before/after changes for updates

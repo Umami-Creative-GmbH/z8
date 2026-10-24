@@ -10,11 +10,13 @@ import { BillableRateSeries } from "@/components/billable-time/billable-rate-ser
 import { CostRateSeries } from "@/components/billable-time/cost-rate-series";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { EmployeeLifecycleActions } from "@/components/organization/employee-lifecycle-actions";
+import { ReactivationChecklistCard } from "@/components/organization/reactivation-checklist";
 import { PersonnelFilePanel } from "@/components/personnel-file/personnel-file-panel";
 import { EmployeeAssignedLocationsCard } from "@/components/settings/assigned-locations/employee-assigned-locations-card";
 import { CustomFieldDraftsSection } from "@/components/settings/custom-fields/custom-field-values-section";
 import { useCustomFieldDrafts } from "@/components/settings/custom-fields/use-custom-field-drafts";
 import { EmployeeCustomRolesCard } from "@/components/settings/custom-roles/employee-custom-roles-card";
+import { EmploymentLifecycleEvents } from "@/components/settings/employee-employment-history/lifecycle-events";
 import { WageHistoryMergeNote } from "@/components/settings/employee-employment-history/wage-history-merge-note";
 import { EmployeeEmploymentHistoryCard } from "@/components/settings/employee-employment-history-card";
 import { EmployeeOffboardingSection } from "@/components/settings/employee-offboarding/employee-offboarding-section";
@@ -457,6 +459,11 @@ function EmployeeRecordSections({
 
 	return (
 		<>
+			{/* What the last deactivation ended, after Reactivate, until dismissed (#1441). */}
+			{isOrgAdmin && employee.kind === "employee" && (
+				<ReactivationChecklistCard employeeId={employeeId} />
+			)}
+
 			{isOrgAdmin && availableManagers.length > 0 && (
 				<ManagerAssignment
 					employeeId={employeeId}
@@ -594,6 +601,11 @@ function EmployeeEmploymentSections({
 				notice={
 					isOrgAdmin ? (
 						<WageHistoryMergeNote employeeId={employeeId} />
+					) : undefined
+				}
+				lifecycleEvents={
+					employee.kind === "employee" ? (
+						<EmploymentLifecycleEvents employeeId={employeeId} />
 					) : undefined
 				}
 				changeWage={

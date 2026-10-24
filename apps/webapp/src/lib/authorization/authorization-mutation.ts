@@ -42,6 +42,12 @@ export type AuthorizationMutationScope = RoutedAuthorizationScope & {
 	organizationWide?: boolean;
 	/** Scope that depends on current rows, e.g. an employee's present managers. */
 	route?: (transaction: Transaction) => Promise<RoutedAuthorizationScope>;
+	/**
+	 * Locks ranked before this protection that the writer needs later, taken
+	 * first, e.g. the approval write gates (rank 2) of a deactivation that
+	 * cancels absences (#1440). Runs again in every restarted transaction.
+	 */
+	beforeProtection?: (transaction: Transaction) => Promise<void>;
 };
 
 export class AuthorizationScopeChanged extends Error {
@@ -81,6 +87,7 @@ export async function protectAuthorizationMutation(
 	transaction: AuthorizationMutationTransaction,
 	scope: AuthorizationMutationScope,
 ): Promise<void> {
+	if (scope.beforeProtection) await scope.beforeProtection(transaction as Transaction);
 	const userIds = await resolveUsers(transaction, scope);
 	if (scope.organizationWide) {
 		await acquireExclusiveOrganizationConfigurationGuard(transaction, scope.organizationId);

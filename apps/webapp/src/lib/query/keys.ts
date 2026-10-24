@@ -263,6 +263,19 @@ export const queryKeys = {
 		/** The one-time wage history merge note (#1176). */
 		wageHistoryMergeNote: (employeeId: string) =>
 			["employees", "detail", employeeId, "wage-history-merge-note"] as const,
+		/** The re-grant checklist after Reactivate (#1441); refreshed with the detail. */
+		reactivationChecklist: (employeeId: string) =>
+			["employees", "detail", employeeId, "reactivation-checklist"] as const,
+		/** What Deactivate would change with these replacement picks (#1440); `all` without picks. */
+		deactivationPreview: {
+			all: (employeeId: string) =>
+				["employees", "detail", employeeId, "deactivation-preview"] as const,
+			withPicks: (employeeId: string, picks: Readonly<Record<string, string>>) =>
+				["employees", "detail", employeeId, "deactivation-preview", picks] as const,
+		},
+		/** Deactivations and reactivations in the employment history (#1441). */
+		lifecycleHistory: (employeeId: string) =>
+			["employees", "detail", employeeId, "lifecycle-history"] as const,
 		/** Lifecycle view; under the organization key so directory changes refresh it. */
 		offboarding: (orgId: string, employeeId: string) =>
 			["employees", orgId, "offboarding", employeeId] as const,

@@ -90,7 +90,8 @@ export type ApprovalWorkflowPrincipal =
 				| "approval-activation"
 				| typeof APPROVAL_ESCALATION_SYSTEM_ID
 				| typeof PERIOD_SUBMISSION_CHANGE_SYSTEM_ID
-				| typeof ABSENCE_CHANGE_OBSOLETE_SYSTEM_ID;
+				| typeof ABSENCE_CHANGE_OBSOLETE_SYSTEM_ID
+				| typeof EMPLOYEE_DEACTIVATION_SYSTEM_ID;
 	  }
 	| OffboardingHandoverPrincipal;
 
@@ -107,6 +108,15 @@ export const ABSENCE_CHANGE_OBSOLETE_SYSTEM_ID = "absence-change-obsolete";
 export const ABSENCE_CHANGE_OBSOLETE_REASON = "This request is obsolete. Submit a fresh request.";
 
 /**
+ * Narrow capability of the employee deactivation (#1440, Organization ADR 0006): it only cancels
+ * a pending or approved absence of a former employee that starts after the day they left, with
+ * this reason. The authorization re-reads the evidence in the command's transaction
+ * (`deactivation-cancellation.ts`); it never approves, rejects, reassigns or expires.
+ */
+export const EMPLOYEE_DEACTIVATION_SYSTEM_ID = "employee-deactivation";
+export const EMPLOYEE_DEACTIVATION_CANCEL_REASON = "Cancelled because the employee was deactivated";
+
+/**
  * Narrow departure-handover capability (#341). It carries the persisted
  * evidence the engine re-verifies in its own transaction and may only
  * reassign the exact captured pending assignment of an effective departure.
@@ -115,7 +125,7 @@ export const ABSENCE_CHANGE_OBSOLETE_REASON = "This request is obsolete. Submit 
  */
 export const EMPLOYEE_OFFBOARDING_SYSTEM_ID = "employee-offboarding";
 
-export interface OffboardingHandoverPrincipal {
+export interface DepartureHandoverPrincipal {
 	kind: "system";
 	systemId: typeof EMPLOYEE_OFFBOARDING_SYSTEM_ID;
 	departureId: string;
@@ -124,6 +134,32 @@ export interface OffboardingHandoverPrincipal {
 	handoverTaskId: string;
 	/** Current worker lease; never part of the stable command fingerprint. */
 	claimToken: string;
+}
+
+/**
+ * The same capability for a deactivation (#1440, Organization ADR 0006): the
+ * evidence is an `employee_deactivation` row that no reactivation ended
+ * instead of an effective departure.
+ */
+export interface DeactivationHandoverPrincipal {
+	kind: "system";
+	systemId: typeof EMPLOYEE_OFFBOARDING_SYSTEM_ID;
+	deactivationId: string;
+	employmentPeriodId: string;
+	assignmentId: string;
+	handoverTaskId: string;
+	/** Current worker lease; never part of the stable command fingerprint. */
+	claimToken: string;
+}
+
+export type OffboardingHandoverPrincipal =
+	| DepartureHandoverPrincipal
+	| DeactivationHandoverPrincipal;
+
+export function isDeactivationHandoverPrincipal(
+	principal: OffboardingHandoverPrincipal,
+): principal is DeactivationHandoverPrincipal {
+	return "deactivationId" in principal && typeof principal.deactivationId === "string";
 }
 
 export function isOffboardingHandoverPrincipal(

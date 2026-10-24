@@ -78,6 +78,7 @@ function activeView(employeeId: string): EmployeeOffboardingView {
 		employmentPeriodId: "period-1",
 		state: "active",
 		departure: null,
+		deactivation: null,
 		previousEmploymentPeriodId: null,
 		membershipApproved: true,
 		followUp: { pending: 0, failed: 0, openReviews: 0 },
@@ -196,6 +197,78 @@ describe("EmployeeOffboardingSection", () => {
 		expect(screen.getByText(/The employment status changed while this form was open/)).toBeTruthy();
 		expect(screen.getByTestId("departure-state").textContent).toBe("Departure effective");
 		expect(hook.scheduleDeparture).toHaveBeenCalledTimes(1);
+	});
+
+	it("lists a deactivation's follow-up and assigns its replacements under the deactivation (#1440)", async () => {
+		const user = userEvent.setup();
+		const assignReplacement = vi.fn().mockResolvedValue({ success: true, data: undefined });
+		const handoverTaskId = "44444444-4444-4444-8444-444444444444";
+		hook.useEmployeeOffboarding.mockImplementation(() => ({
+			view: {
+				...activeView(employeeA),
+				state: "legacy_inactive",
+				employmentPeriodId: null,
+				deactivation: {
+					id: "55555555-5555-4555-8555-555555555555",
+					deactivatedAt: "2026-10-24T08:00:00Z",
+					timezone: "Europe/Berlin",
+				},
+				followUp: { pending: 0, failed: 0, openReviews: 1 },
+				reviews: [
+					{
+						id: "review-1",
+						kind: "approval_handover",
+						status: "open",
+						reason: "no_replacement",
+						handoverTaskId,
+						actionUrl: `/settings/employees/${employeeA}?review=review-1`,
+					},
+				],
+				capabilities: {
+					schedule: false,
+					cancel: false,
+					offboardNow: false,
+					rehire: false,
+					resolve: true,
+				},
+			} satisfies EmployeeOffboardingView,
+			isLoading: false,
+			isMutating: false,
+			scheduleDeparture: hook.scheduleDeparture,
+			offboardNow: vi.fn(),
+			cancelDeparture: vi.fn(),
+			rehire: vi.fn(),
+			resolveReview: vi.fn(),
+			retryTask: vi.fn(),
+			assignReplacement,
+		}));
+		render(
+			<QueryClientProvider client={new QueryClient()}>
+				<EmployeeOffboardingSection
+					organizationId="org-1"
+					employeeId={employeeA}
+					highlightedReviewId={null}
+					managers={[{ id: employeeB, name: "Robin Admin" }]}
+					workPolicies={[]}
+				/>
+			</QueryClientProvider>,
+		);
+
+		const review = within(
+			screen.getByText("Approval duties need a replacement").closest("li") as HTMLElement,
+		);
+		await user.click(review.getByRole("combobox", { name: "Replacement for approvals" }));
+		await user.click(await screen.findByRole("option", { name: "Robin Admin" }));
+		await user.click(review.getByRole("button", { name: "Assign replacement" }));
+
+		await waitFor(() =>
+			expect(assignReplacement).toHaveBeenCalledWith({
+				deactivationId: "55555555-5555-4555-8555-555555555555",
+				handoverTaskId,
+				replacementEmployeeId: employeeB,
+				requestId: expect.any(String),
+			}),
+		);
 	});
 
 	it("records a final overtime payout of the whole remaining balance from the review", async () => {

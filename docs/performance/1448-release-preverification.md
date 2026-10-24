@@ -220,7 +220,8 @@ employment only in another organization (the original empty manager state).
 Both real public-caller cases pass. The application code was unchanged.
 
 The first integrated index catalog assertion correctly failed because the shared
-disposable integration database had not applied migration 0284. Its owner applied
+disposable integration database had not applied the absence-index migration
+(now named 0288 after base integration). Its owner applied
 only the pending committed migration through migrate-with-lock.js/Drizzle after
 checking the Docker label and exact loopback database. It independently verified
 one valid, ready, nonunique, nonpartial index. The original performance database
@@ -236,7 +237,8 @@ No test was skipped or disabled to repair this feature.
 
 The required completed-work set passes **975/975 cases across 38 files**. The
 remaining changed feature set, selected without overlapping those files, passes
-**245/245 cases across 23 files** after normal migration 0284. These include fresh
+**245/245 cases across 23 files** after the pre-base absence-index migration
+(the same SQL now named 0288). These include fresh
 public admission, real RSC identity, employee transport/selector and Dashboard
 readers, historical analytics and the actual absence-index catalog/reader checks.
 No PostgreSQL case skips. The earlier prerequisite and request-fixture failures
@@ -265,3 +267,24 @@ runs with complete registered native/SDK evidence, mixed public clock/analytics
 load, resource/budget evaluation and final two-axis formal review. The legacy
 mixed operator requires its separately assigned v2 registration/whole-run wire
 proof before it can support acceptance. No ticket closure or PR-ready claim.
+
+## Concurrent staging-base integration
+
+The staging base advanced from `39a08d0bb` to `ec3414d16` with the independently
+merged employee-deactivation work (#1437, PR #1449). The integrated candidate
+retains that work alongside #1448; employee detail lifecycle sections and query
+keys preserve both features. The approval boundary retains the new cancellation
+owner and the measured 6,144-file limit with its exact-capacity regression.
+
+The unreleased absence-index migration is now `0288_absence_employee_overlap`,
+after the peer's unchanged `0284`–`0287`, with journal time `1809619200000`.
+Existing private fixtures that applied its old journal entry must not run this
+merged chain. Recreate final-head clones from the original dump through `0283`
+and validate the full chain there. The original before database stays unchanged.
+
+The source-check totals above describe the earlier application pin. Full source,
+migration, type, build and semantic checks must be repeated after this base merge
+before final head measurement. Controlled before remains business source
+`39a08d0bb` with the frozen dependencies and fixture. A subsequent comparison
+against this combined head includes the concurrent deactivation changes and
+cannot establish an isolated #1448 effect.

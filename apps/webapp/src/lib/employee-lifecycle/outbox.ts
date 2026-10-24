@@ -24,6 +24,8 @@ export type DepartureTaskClaim = {
 	employeeId: string;
 	employmentPeriodId: string;
 	departureId: string | null;
+	/** Set for a deactivation's follow-up work (#1440). */
+	deactivationId?: string | null;
 	kind: DepartureTaskKind;
 	payload: Record<string, unknown>;
 	claimToken: string;
@@ -43,16 +45,26 @@ type OutboxDatabase = Pick<typeof rootDatabase, "execute">;
  */
 export function createDepartureTaskOutbox(database: OutboxDatabase) {
 	return {
-		async claimDue(now: Instant): Promise<DepartureTaskClaim[]> {
+		/**
+		 * `deactivationOnly` claims only a deactivation's follow-up work (#1440),
+		 * which is delivered while the offboarding release gate is closed.
+		 */
+		async claimDue(
+			now: Instant,
+			options: { deactivationOnly?: boolean } = {},
+		): Promise<DepartureTaskClaim[]> {
 			const claimToken = randomUUID();
 			const claimedAt = dateFromInstant(now);
 			const leaseUntil = dateFromInstant(now.add({ minutes: LEASE_MINUTES }));
+			const anchor =
+				options.deactivationOnly === true ? sql`AND deactivation_id IS NOT NULL` : sql``;
 			const result = await database.execute<{
 				id: string;
 				organization_id: string;
 				employee_id: string;
 				employment_period_id: string;
 				departure_id: string | null;
+				deactivation_id: string | null;
 				kind: DepartureTaskKind;
 				payload: Record<string, unknown>;
 				claim_token: string;
@@ -60,7 +72,7 @@ export function createDepartureTaskOutbox(database: OutboxDatabase) {
 			}>(sql`
 				WITH due AS (
 					SELECT id, organization_id FROM employee_departure_task
-					WHERE status IN ('pending', 'processing') AND available_at <= ${claimedAt}
+					WHERE status IN ('pending', 'processing') AND available_at <= ${claimedAt} ${anchor}
 					ORDER BY available_at, id
 					FOR UPDATE SKIP LOCKED
 					LIMIT ${CLAIM_LIMIT}
@@ -72,7 +84,7 @@ export function createDepartureTaskOutbox(database: OutboxDatabase) {
 				FROM due
 				WHERE task.id = due.id AND task.organization_id = due.organization_id
 				RETURNING task.id, task.organization_id, task.employee_id, task.employment_period_id,
-					task.departure_id, task.kind, task.payload, task.claim_token, task.attempt_count
+					task.departure_id, task.deactivation_id, task.kind, task.payload, task.claim_token, task.attempt_count
 			`);
 			return result.rows.map((row) => ({
 				id: row.id,
@@ -80,6 +92,7 @@ export function createDepartureTaskOutbox(database: OutboxDatabase) {
 				employeeId: row.employee_id,
 				employmentPeriodId: row.employment_period_id,
 				departureId: row.departure_id,
+				deactivationId: row.deactivation_id,
 				kind: row.kind,
 				payload: row.payload ?? {},
 				claimToken: row.claim_token,
