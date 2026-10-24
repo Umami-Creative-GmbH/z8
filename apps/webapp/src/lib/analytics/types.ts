@@ -250,6 +250,7 @@ export type WorkHoursParams = {
 export type AbsencePatternsParams = {
 	organizationId: string;
 	dateRange: DateRange;
+	scope: { role: "admin" } | { role: "manager"; managerEmployeeId: string };
 };
 
 export type ManagerEffectivenessParams = {
