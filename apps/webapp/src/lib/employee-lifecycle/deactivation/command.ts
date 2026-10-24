@@ -15,6 +15,7 @@ import {
 	releaseDeputyAssignmentsOnDeactivation,
 } from "../deputy-release";
 import { resolveCurrentEmploymentPeriod } from "../employment-periods";
+import { checklistPlanSnapshot } from "../reactivation-checklist";
 import {
 	type DeactivationLedgerEntry,
 	insertDeactivation,
@@ -221,6 +222,8 @@ export async function executeDeactivation(
 		deactivationId,
 		applied,
 		result,
+		// The names the reactivation checklist shows (#1441).
+		plan: checklistPlanSnapshot(plan),
 	});
 	if (period) {
 		// The employment history event (#1441 shows it); its period is required.

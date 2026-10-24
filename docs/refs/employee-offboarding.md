@@ -244,6 +244,45 @@ are resolved and replacements assigned the same way
 restores nothing and marks the open deactivation reactivated, so its pending
 handovers stop (`employee_rehired`).
 
+## Reactivation
+
+*Reactivate* (#1441) runs `executeReactivation`
+(`apps/webapp/src/lib/employee-lifecycle/reactivation.ts`) inside the
+lifecycle transaction: it switches the employee on (the 0283 trigger clears
+`deactivated_at`, so they are on the current roster again and the personnel
+file retention clock stops, D8), stamps the open `employee_deactivation` row
+with `reactivated_at`, `reactivated_by` and a server-generated
+`reactivation_request_id`, and records the history event
+`employee_reactivated` (`employee_departure_event`, no departure, metadata
+`{ deactivationId }`) when the employee has an employment period. It restores
+no grant, badge, driving authorization, manager link, team or project link,
+shift or absence; the acceptance suite asserts that.
+
+**Checklist.** The ledger row keeps the applied consequences (`applied`) and,
+since migration 0286, the plan they were applied from (`plan`, with only the
+chosen replacements among the replacement options), so a deleted absence can
+still be named. `loadReactivationChecklist` (`reactivation-checklist-store.ts`)
+returns the checklist of the employee's latest deactivation once it was
+reactivated and until an org admin dismisses it (`checklist_dismissed_at`,
+`checklist_dismissed_by`; first dismissal wins, for every admin).
+`buildReactivationChecklistItems` (`reactivation-checklist.ts`) lists exactly
+what `applied` lists and links each item to where it is granted again: reports
+and own managers to the employee pages, grants to their settings tabs, kiosk
+badges to the employee page, driving authorizations to
+`/driving-licence/checks/<id>`, teams to `/settings/teams/<id>`, projects to
+`/settings/projects`, shifts to `/scheduling`, absences to `/team/absences`,
+share links to `/settings/report-share-links`. Approval duties are not listed:
+they were handed over. The dialog after *Reactivate* and the card on the
+employee page are org-admin only (`employee-reactivation.actions.ts`).
+
+**History.** `loadLifecycleHistory` (`lifecycle-history.ts`) lists the
+`employee_deactivated` / `employee_reactivated` events plus, for older ones,
+the surviving `employee.deactivated` / `employee.reactivated` audit entries
+(kept 365 days). Those audit entries now carry `deactivationId` or
+`reactivationRequestId`, so an entry of a recorded event is shown once. The
+Contract & Work Model card shows them in the organization's zone, to everyone
+who may read the employment history.
+
 ## Access grants
 
 When the departure takes effect, the expense officer grant, the payroll access

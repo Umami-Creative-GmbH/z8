@@ -119,6 +119,8 @@ export type DeactivationLedgerEntry = {
 	result: Record<string, unknown> | null;
 	/** The applied consequences (`DeactivationApplied`); the #1441 checklist source. */
 	applied: Record<string, unknown> | null;
+	/** The plan applied (`DeactivationPlan`), kept for names; null when not stored. */
+	plan: Record<string, unknown> | null;
 	reactivatedAt: Instant | null;
 	reactivatedBy: string | null;
 	reactivationRequestId: string | null;
@@ -146,12 +148,16 @@ const ledgerColumns = {
 	replacementManagers: employeeDeactivation.replacementManagers,
 	result: employeeDeactivation.result,
 	applied: employeeDeactivation.applied,
+	plan: employeeDeactivation.plan,
 	reactivatedAt: employeeDeactivation.reactivatedAt,
 	reactivatedBy: employeeDeactivation.reactivatedBy,
 	reactivationRequestId: employeeDeactivation.reactivationRequestId,
 };
 
-type LedgerRow = Omit<typeof employeeDeactivation.$inferSelect, "createdAt">;
+type LedgerRow = Omit<
+	typeof employeeDeactivation.$inferSelect,
+	"createdAt" | "checklistDismissedAt" | "checklistDismissedBy"
+>;
 
 function toEntry(row: LedgerRow): DeactivationLedgerEntry {
 	return {
@@ -166,6 +172,7 @@ function toEntry(row: LedgerRow): DeactivationLedgerEntry {
 		replacementManagers: row.replacementManagers ?? {},
 		result: row.result,
 		applied: row.applied,
+		plan: row.plan,
 		reactivatedAt: row.reactivatedAt ? instantFromDate(new Date(row.reactivatedAt)) : null,
 		reactivatedBy: row.reactivatedBy,
 		reactivationRequestId: row.reactivationRequestId,
@@ -241,11 +248,17 @@ export async function recordDeactivationOutcome(
 		deactivationId: string;
 		applied: Record<string, unknown>;
 		result: Record<string, unknown>;
+		/** The plan applied, for the names the reactivation checklist shows (#1441). */
+		plan?: Record<string, unknown>;
 	},
 ): Promise<void> {
 	await tx
 		.update(employeeDeactivation)
-		.set({ applied: input.applied, result: input.result })
+		.set({
+			applied: input.applied,
+			result: input.result,
+			...(input.plan ? { plan: input.plan } : {}),
+		})
 		.where(
 			and(
 				eq(employeeDeactivation.organizationId, input.organizationId),

@@ -57,6 +57,8 @@ vi.mock("@/navigation", () => ({
 			{children}
 		</a>
 	),
+	// The lifecycle actions link a reactivation to its checklist (#1441).
+	useRouter: () => ({ push: vi.fn() }),
 }));
 
 vi.mock("./actions", async (importOriginal) => ({

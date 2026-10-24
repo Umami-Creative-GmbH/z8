@@ -20,15 +20,19 @@ import {
 
 const {
 	deactivateEmployeeMock,
+	getReactivationChecklistMock,
 	onOptimisticStatusChangeMock,
 	onRemovedMock,
 	previewEmployeeDeactivationMock,
 	reactivateEmployeeMock,
 	removeEmployeeAccessMock,
+	routerPushMock,
 	toastErrorMock,
 	toastSuccessMock,
 } = vi.hoisted(() => ({
 	deactivateEmployeeMock: vi.fn(),
+	getReactivationChecklistMock: vi.fn(),
+	routerPushMock: vi.fn(),
 	onOptimisticStatusChangeMock: vi.fn(),
 	onRemovedMock: vi.fn(),
 	previewEmployeeDeactivationMock: vi.fn(),
@@ -72,6 +76,12 @@ vi.mock("@/navigation", () => ({
 			{children}
 		</a>
 	),
+	useRouter: () => ({ push: routerPushMock }),
+}));
+
+vi.mock("@/app/[locale]/(app)/settings/employees/employee-reactivation.actions", () => ({
+	getReactivationChecklistAction: getReactivationChecklistMock,
+	dismissReactivationChecklistAction: vi.fn(),
 }));
 
 vi.mock("@/app/[locale]/(app)/settings/employees/actions", () => ({
@@ -665,6 +675,82 @@ describe("EmployeeLifecycleActions mutations", () => {
 		await waitFor(() =>
 			expect(reactivateEmployeeMock).toHaveBeenCalledWith("employee-2"),
 		);
+	});
+
+	it("shows what the deactivation ended right after reactivating, each linked to where it is granted again", async () => {
+		reactivateEmployeeMock.mockResolvedValueOnce({ success: true, data: undefined });
+		getReactivationChecklistMock.mockResolvedValueOnce({
+			success: true,
+			data: {
+				deactivationId: "deactivation-1",
+				employeeId: "employee-2",
+				deactivatedAt: "2026-10-24T08:00:00Z",
+				reactivatedAt: "2026-10-26T07:30:00Z",
+				timeZone: "Europe/Berlin",
+				items: [
+					{
+						group: "managers",
+						kind: "report_moved",
+						employeeId: REPORT,
+						name: "Rita Report",
+						newManagerName: "Anna Admin",
+						href: `/settings/employees/${REPORT}`,
+					},
+					{
+						group: "grants",
+						kind: "grant",
+						grant: "payroll_access",
+						href: "/settings/payroll-access",
+					},
+					{
+						group: "teams",
+						kind: "team",
+						id: "team-1",
+						name: "Floor team",
+						href: "/settings/teams/team-1",
+					},
+				],
+			},
+		});
+		renderActions({ target: { ...activeTarget, isActive: false } });
+		const confirmation = await openConfirmation("Reactivate");
+
+		fireEvent.click(within(confirmation).getByRole("button", { name: "Reactivate" }));
+
+		const checklist = await screen.findByRole("dialog", {
+			name: "{name} is reactivated: what to grant again",
+		});
+		expect(getReactivationChecklistMock).toHaveBeenCalledWith("employee-2");
+		expect(
+			within(checklist)
+				.getAllByRole("link")
+				.map((link) => link.getAttribute("href")),
+		).toEqual([
+			`/settings/employees/${REPORT}`,
+			"/settings/payroll-access",
+			"/settings/teams/team-1",
+		]);
+		expect(within(checklist).getByRole("region", { name: "Held grants" }).textContent).toContain(
+			"Payroll access",
+		);
+		expect(toastSuccessMock).toHaveBeenCalledWith("Employee reactivated", undefined);
+
+		fireEvent.click(within(checklist).getByRole("button", { name: "Done" }));
+		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+	});
+
+	it("only confirms a reactivation that has nothing to grant again", async () => {
+		reactivateEmployeeMock.mockResolvedValueOnce({ success: true, data: undefined });
+		getReactivationChecklistMock.mockResolvedValueOnce({ success: true, data: null });
+		renderActions({ target: { ...activeTarget, isActive: false } });
+		const confirmation = await openConfirmation("Reactivate");
+
+		fireEvent.click(within(confirmation).getByRole("button", { name: "Reactivate" }));
+
+		await waitFor(() =>
+			expect(toastSuccessMock).toHaveBeenCalledWith("Employee reactivated", undefined),
+		);
+		expect(screen.queryByRole("dialog")).toBeNull();
 	});
 
 	it("keeps the history row on removal failure and calls onRemoved only after success", async () => {
