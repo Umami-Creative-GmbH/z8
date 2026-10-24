@@ -30,7 +30,116 @@ import {
   observeFailedJourneyWire,
   companionPolicy as settledPolicy,
   companionWireContract,
+  measureFixtureResources,
 } from "./settled-resources.mjs";
+
+test("companion retains failed native close proof without making an incomplete visit eligible", async () => {
+  let registeredIds;
+  const proof = [
+    {
+      traceId: "opaque",
+      complete: false,
+      driverComplete: true,
+      started: { queries: 6 },
+      ended: { queries: 6 },
+      active: 1,
+    },
+  ];
+  const sample = await measureFixtureResources(
+    {},
+    {},
+    { runtime: {} },
+    { name: "fixture" },
+    { name: "year" },
+    { name: "analytics" },
+    "first-document",
+    0,
+    "private-control",
+    {
+      async beginCollectorVisit({ traceIds }) {
+        registeredIds = traceIds;
+        return { protocol: "z8-fixture-otlp-collector-v2", traceIds };
+      },
+      async endCollectorVisit() {
+        return {
+          protocol: "z8-fixture-otlp-collector-v2",
+          traces: registeredIds.map((traceId) => ({
+            traceId,
+            coverage: { incomplete: true, nativeProof: false },
+          })),
+          nativeCloseProof: proof,
+          nativeCloseElapsedMs: 10016.5,
+        };
+      },
+    },
+  );
+  assert.deepEqual(sample.collectorVisit.nativeCloseProof, proof);
+  assert.equal(sample.collectorVisit.nativeCloseElapsedMs, 10016.5);
+  assert.equal(sample.collectorVisit.coverage.nativeProof, false);
+  assert.equal(sample.failed, true);
+  assert.equal(sample.measurementStarted, false);
+  assert.equal(sample.readyMs, null);
+});
+
+test("companion preserves positive close evidence and represents absent evidence as unknown", async () => {
+  for (const present of [true, false]) {
+    let registeredIds;
+    const proof = [
+      {
+        traceId: "opaque",
+        complete: true,
+        driverComplete: true,
+        started: { queries: 6 },
+        ended: { queries: 6 },
+        active: 0,
+      },
+    ];
+    const sample = await measureFixtureResources(
+      {},
+      {},
+      { runtime: {} },
+      { name: "fixture" },
+      { name: "year" },
+      { name: "analytics" },
+      "first-document",
+      0,
+      "private-control",
+      {
+        async beginCollectorVisit({ traceIds }) {
+          registeredIds = traceIds;
+          return { protocol: "z8-fixture-otlp-collector-v2", traceIds };
+        },
+        async endCollectorVisit() {
+          return {
+            protocol: "z8-fixture-otlp-collector-v2",
+            traces: registeredIds.map((traceId) => ({
+              traceId,
+              coverage: { incomplete: false, nativeProof: true },
+            })),
+            ...(present
+              ? { nativeCloseProof: proof, nativeCloseElapsedMs: 703.25 }
+              : {}),
+          };
+        },
+      },
+    );
+    assert.deepEqual(
+      sample.collectorVisit.nativeCloseProof,
+      present ? proof : null,
+    );
+    assert.equal(
+      sample.collectorVisit.nativeCloseElapsedMs,
+      present ? 703.25 : null,
+    );
+    assert.equal(sample.collectorVisit.coverage.nativeProof, true);
+    assert.equal(
+      sample.failed,
+      true,
+      "Positive closure does not erase a prerequisite failure.",
+    );
+    assert.equal(sample.readyMs, null);
+  }
+});
 
 test("resource eligibility distinguishes proven failed baseline behavior from missing coverage and failing head behavior", () => {
   const plan = {

@@ -3,6 +3,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { cpus, platform, release, totalmem } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { primaryProtocolIdentity } from "./protocol-fingerprints.mjs";
 import {
 	captureObservedBrowserMetrics,
@@ -764,7 +765,7 @@ async function main() {
 	process.exitCode = 1;
 }
 
-async function measure(
+export async function measure(
 	browser,
 	auth,
 	plan,
@@ -774,13 +775,14 @@ async function measure(
 	mode,
 	iteration,
 	concurrency,
+	collector = { beginCollectorVisit, endCollectorVisit },
 ) {
 	const traceId = randomBytes(16).toString("hex");
 	const prerequisiteTraceId = randomBytes(16).toString("hex");
 	const backgroundTraceId = randomBytes(16).toString("hex");
 	const observerVisit =
 		plan.runtime.collectorProtocol === collectorProtocol
-			? await beginCollectorVisit({
+			? await collector.beginCollectorVisit({
 					control: option("--collector"),
 					traceIds: [traceId, prerequisiteTraceId, backgroundTraceId],
 				})
@@ -1343,11 +1345,16 @@ async function measure(
 		await context?.close();
 		if (observerVisit) {
 			try {
-				const observation = await endCollectorVisit(observerVisit);
+				const observation = await collector.endCollectorVisit(observerVisit);
+				sample.collector = {
+					nativeCloseProof: observation.nativeCloseProof ?? null,
+					nativeCloseElapsedMs: observation.nativeCloseElapsedMs ?? null,
+				};
 				const evidence = observation.traces.find(
 					(entry) => entry.traceId === sample.backendTraceId,
 				);
 				sample.collector = {
+					...sample.collector,
 					protocol: observation.protocol,
 					registered: true,
 					closed: true,
@@ -1383,13 +1390,18 @@ async function measure(
 	return sample;
 }
 
-main().catch((error) => {
-	console.error(
-		error instanceof SyntaxError
-			? "Invalid fixture JSON."
-			: error.code
-				? "Fixture input/runtime unavailable."
-				: error.message,
-	);
-	process.exitCode = 2;
-});
+if (
+	process.argv[1] &&
+	fileURLToPath(import.meta.url) ===
+		fileURLToPath(pathToFileURL(process.argv[1]))
+)
+	main().catch((error) => {
+		console.error(
+			error instanceof SyntaxError
+				? "Invalid fixture JSON."
+				: error.code
+					? "Fixture input/runtime unavailable."
+					: error.message,
+		);
+		process.exitCode = 2;
+	});
