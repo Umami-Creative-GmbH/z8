@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { createServer, request } from "node:http";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import test from "node:test";
@@ -11,6 +12,220 @@ import {
 } from "../../apps/webapp/src/lib/performance-fixture-native-coverage.ts";
 import * as observationModule from "./multi-instance-observation.mjs";
 import { beginMultiInstanceObservation } from "./multi-instance-observation.mjs";
+import { createFixtureTraceTransport } from "./trace-transport.mjs";
+
+test("clock cleanup waits for an actual finite HTTP response and quiet window before browser closure", async () => {
+	let release;
+	const backend = createServer((_req, res) => {
+		release = () => res.end("complete");
+		res.writeHead(200);
+		res.write("pending");
+	});
+	await new Promise((done) => backend.listen(0, "127.0.0.1", done));
+	const origin = `http://127.0.0.1:${backend.address().port}`;
+	const transport = await createFixtureTraceTransport({
+		origin,
+		getTraceId: () => "e".repeat(32),
+	});
+	try {
+		transport.wire.begin(performance.now());
+		const proxy = new URL(transport.browserContextOptions.proxyServer);
+		const response = new Promise((done, reject) => {
+			const call = request(
+				{
+					hostname: proxy.hostname,
+					port: proxy.port,
+					path: `${origin}/finite`,
+				},
+				(answer) => {
+					answer.resume();
+					answer.on("end", done);
+				},
+			);
+			call.on("error", reject);
+			call.end();
+		});
+		while (!release) await pause(10);
+		let drained = false;
+		const drain = observationModule
+			.waitForMultiInstanceContextDrain(transport)
+			.then((result) => {
+				drained = true;
+				return result;
+			});
+		await pause(1100);
+		assert.equal(
+			drained,
+			false,
+			"A quiet but incomplete response must keep cleanup open.",
+		);
+		release();
+		await response;
+		const result = await drain;
+		assert.equal(result.complete, true);
+		assert.equal(result.mandatoryPending, 0);
+		assert.equal(result.mandatoryErrors, 0);
+		assert.ok(result.quietObservedMs >= 1000);
+	} finally {
+		await transport.close();
+		backend.closeAllConnections();
+		await new Promise((done) => backend.close(done));
+	}
+});
+
+test("clock cleanup rejects real HTTP errors and caps unfinished prefetches", {
+	timeout: 20000,
+}, async () => {
+	for (const mode of ["reset", "prefetch"]) {
+		let received = false;
+		const backend = createServer((req, res) => {
+			received = true;
+			if (mode === "reset") req.socket.destroy();
+			else {
+				res.writeHead(200);
+				res.write("incomplete");
+			}
+		});
+		await new Promise((done) => backend.listen(0, "127.0.0.1", done));
+		const origin = `http://127.0.0.1:${backend.address().port}`;
+		const transport = await createFixtureTraceTransport({
+			origin,
+			getTraceId: () => "f".repeat(32),
+		});
+		try {
+			transport.wire.begin(performance.now());
+			const proxy = new URL(transport.browserContextOptions.proxyServer);
+			const call = request(
+				{
+					hostname: proxy.hostname,
+					port: proxy.port,
+					path: `${origin}/pending`,
+					headers: mode === "prefetch" ? { purpose: "prefetch" } : {},
+				},
+				(answer) => {
+					answer.resume();
+					answer.on("error", () => {});
+				},
+			);
+			call.on("error", () => {});
+			call.end();
+			while (!received) await pause(10);
+			const started = performance.now();
+			await assert.rejects(
+				observationModule.waitForMultiInstanceContextDrain(transport),
+				(error) => {
+					if (mode === "reset")
+						assert.ok(error.cleanupProof.mandatoryErrors > 0);
+					else {
+						assert.equal(error.cleanupProof.groups.prefetch.pending, 1);
+						assert.ok(performance.now() - started >= 10000);
+					}
+					return true;
+				},
+			);
+		} finally {
+			await transport.close();
+			backend.closeAllConnections();
+			await new Promise((done) => backend.close(done));
+		}
+	}
+});
+
+test("cleanup drains pending HTTP before rejecting a mandatory cancel; explicit header prefetch cancel stays separate", async () => {
+	for (const prefetch of [false, true]) {
+		let release;
+		const backend = createServer((req, res) => {
+			res.writeHead(200);
+			res.write("pending");
+			if (req.url === "/remaining") release = () => res.end("complete");
+		});
+		await new Promise((done) => backend.listen(0, "127.0.0.1", done));
+		const origin = `http://127.0.0.1:${backend.address().port}`;
+		const transport = await createFixtureTraceTransport({
+			origin,
+			getTraceId: () => "c".repeat(32),
+		});
+		try {
+			transport.wire.begin(performance.now());
+			const proxy = new URL(transport.browserContextOptions.proxyServer);
+			const canceled = new Promise((done) => {
+				const call = request(
+					{
+						hostname: proxy.hostname,
+						port: proxy.port,
+						path: `${origin}/cancel`,
+						headers: prefetch ? { purpose: "prefetch" } : {},
+					},
+					(answer) => {
+						answer.on("error", () => {});
+						answer.once("data", () => {
+							answer.destroy();
+							done();
+						});
+					},
+				);
+				call.on("error", () => {});
+				call.end();
+			});
+			await canceled;
+			const remaining = new Promise((done) => {
+				const call = request(
+					{
+						hostname: proxy.hostname,
+						port: proxy.port,
+						path: `${origin}/remaining`,
+					},
+					(answer) => {
+						answer.resume();
+						answer.on("end", done);
+						answer.on("error", () => {});
+					},
+				);
+				call.on("error", () => {});
+				call.end();
+			});
+			while (!release || transport.snapshot().downstreamCancellations === 0)
+				await pause(10);
+			let settled = false;
+			const drain = observationModule
+				.waitForMultiInstanceContextDrain(transport)
+				.then(
+					(value) => {
+						settled = true;
+						return { value };
+					},
+					(error) => {
+						settled = true;
+						return { error };
+					},
+				);
+			await pause(1100);
+			assert.equal(
+				settled,
+				false,
+				"Recorded errors must not force closure while another response remains pending.",
+			);
+			release();
+			await remaining;
+			const result = await drain;
+			if (prefetch) {
+				assert.equal(result.error, undefined);
+				assert.equal(result.value.groups.prefetch.errors, 1);
+				assert.equal(result.value.mandatoryErrors, 0);
+			} else {
+				assert.ok(result.error);
+				assert.ok(result.error.cleanupProof.mandatoryErrors > 0);
+				assert.equal(result.error.cleanupProof.mandatoryPending, 0);
+			}
+			assert.equal(transport.snapshot().upstreamFailures, 0);
+			assert.equal(transport.snapshot().downstreamCancellations, 1);
+		} finally {
+			await transport.close();
+			backend.closeAllConnections();
+			await new Promise((done) => backend.close(done));
+		}
+	}
+});
 
 test("paired acceptance distinguishes zero-app-IO startup from a late escape and refuses broken arithmetic", () => {
 	const reasons = {

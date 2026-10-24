@@ -10,6 +10,7 @@ import { readMultiInstanceFixture } from "./multi-instance-fixture.mjs";
 import {
 	beginMultiInstanceObservation,
 	multiInstanceObservationProtocol,
+	waitForMultiInstanceContextDrain,
 } from "./multi-instance-observation.mjs";
 import { openMultiInstanceAnalytics } from "./multi-instance-probe.mjs";
 
@@ -38,6 +39,19 @@ const processOutput = (...args) =>
 		windowsHide: true,
 		stdio: ["ignore", "pipe", "pipe"],
 	}).trim();
+
+async function drainAndCloseClockContext(context, diagnostic) {
+	try {
+		diagnostic.finiteDrain = await waitForMultiInstanceContextDrain(
+			context.transport,
+		);
+	} catch (error) {
+		diagnostic.finiteDrain = error.cleanupProof;
+		throw error;
+	} finally {
+		await context.close();
+	}
+}
 
 export async function multiInstanceSuitePlan(directory, source) {
 	const { fixture, publicPlan } = await ingressPlan(directory, source);
@@ -522,15 +536,16 @@ export async function runMultiInstanceStage(stage, directory, source) {
 						clock.dispose();
 					}
 				}
-				observations.push({
+				const cleanupDiagnostic = {
 					stage: "clock-context-cleanup-diagnostic",
 					traceIds: clockContext.traceIds,
 					beforeResolution,
 					beforeContextClose: clockContext.transport.wire.state(
 						performance.now(),
 					),
-				});
-				await clockContext.close();
+				};
+				observations.push(cleanupDiagnostic);
+				await drainAndCloseClockContext(clockContext, cleanupDiagnostic);
 			}
 		}
 		if (stage === "mutation") {
