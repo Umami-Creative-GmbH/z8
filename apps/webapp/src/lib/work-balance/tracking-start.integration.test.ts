@@ -363,6 +363,7 @@ describe("explicit tracking start across public balance readers", () => {
 		const analytics = await runtime.runPromise(AnalyticsService);
 		const hours = await runtime.runPromise(
 			analytics.getWorkHoursAnalytics({
+scope:{role:"admin"},
 				organizationId,
 				employeeId: subject.employeeId,
 				dateRange: {
@@ -580,6 +581,7 @@ describe("explicit tracking start across public balance readers", () => {
 		).toBe(1);
 		const hours = await runtime.runPromise(
 			analytics.getWorkHoursAnalytics({
+scope:{role:"admin"},
 				organizationId,
 				dateRange,
 				employeeId,
