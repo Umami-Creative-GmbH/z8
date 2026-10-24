@@ -57,10 +57,11 @@ describe("analytics service date boundaries", () => {
 		expect(source).toContain("minutesByEmployee.set(");
 	});
 
-	it("uses inclusive PlainDate durations and organization-scoped work-period queries", () => {
+	it("uses inclusive PlainDate durations", () => {
 		const source = readFileSync(`${SERVICES_ROOT}/analytics.service.ts`, "utf8");
 
 		expect(source).toContain("function inclusiveCalendarDays");
-		expect(source).toContain("eq(workPeriod.organizationId, organizationId)");
+		// Organization and employee SQL scope are asserted through the real range
+		// readers in team-performance-range.integration.test.ts and its siblings.
 	});
 });

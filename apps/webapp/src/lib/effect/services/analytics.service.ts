@@ -6,7 +6,7 @@
  * absence patterns, and manager effectiveness metrics.
  */
 
-import { and, eq, gt, gte, inArray, isNotNull, isNull, lt, lte, or, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, isNotNull, isNull, lte, or, sql } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import { DateTime } from "luxon";
 import {
@@ -16,7 +16,6 @@ import {
 	employeeCostCenterAssignment,
 	employeeManagers,
 	travelExpenseClaim,
-	workPeriod,
 } from "@/db/schema";
 import {
 	type ApprovalAnalyticsRow,
@@ -54,14 +53,12 @@ import { localDayRange } from "@/lib/datetime/temporal-boundaries";
 import { employeePayrollWindow } from "@/lib/payroll-allocation/protected-minutes";
 import { resolveReportDateRange } from "@/lib/reports/report-date-range";
 import {
-	sumWorkMinutesWithinTracking,
 	allocateTrackedWorkMinutes,
 } from "@/lib/work-balance/tracked-work";
 
 import { computeOvertimeDelta } from "@/lib/time-record/overtime";
 import {
 	calculateExpectedWorkHours,
-	calculateExpectedWorkHoursForEmployee,
 	calculateExpectedWorkHoursForPolicy,
 } from "@/lib/time-tracking/calculations";
 import type { DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
@@ -379,98 +376,156 @@ export class AnalyticsService extends Context.Service<
 							calendarRange.timezone,
 						);
 
-						// Get all employees in the organization (or specific team)
-						const employees = yield* dbService.query("getEmployeesForAnalytics", async () => {
-							const query = dbService.db.query.employee.findMany({
-								where: teamId
-									? and(
-											eq(employee.organizationId, organizationId),
-											eq(employee.teamId, teamId),
-											eq(employee.isActive, true),
-										)
-									: and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)),
-								with: {
-									user: true,
-									team: true,
-								},
-							});
-							return await query;
-						});
-
-						const expected = yield* Effect.promise(() =>
-							calculateExpectedWorkHours(
-								organizationId,
-								dateRange.start,
-								dateRange.end,
-								8,
-								calendarRange.timezone,
-							),
-						);
-
-						const workPeriods = yield* dbService.query(
-							"getTeamPerformanceWorkPeriods",
-							async () => {
-								const employeeIds = employees.map((item) => item.id);
-								if (employeeIds.length === 0) return [];
-								return await dbService.db.query.workPeriod.findMany({
+						const employees = yield* dbService.query(
+							"analytics.teamRoster",
+							() =>
+								dbService.db.query.employee.findMany({
 									where: and(
-										eq(workPeriod.organizationId, organizationId),
-										inArray(workPeriod.employeeId, employeeIds),
-										lt(workPeriod.startTime, new Date(dateRange.end.getTime() + 1)),
-										gt(workPeriod.endTime, dateRange.start),
-									),
-								});
-							},
-						);
-						const allocation = allocateAnalyticsWorkPeriodMinutes(workPeriods, reportRange);
-						const expectedByEmployee = new Map(
-							yield* Effect.forEach(
-								employees,
-								(employee) =>
-									Effect.gen(function* () {
-										const [expectedHours, trackedMinutes] = yield* Effect.all(
-											[
-												calculateExpectedWorkHoursForEmployee(
+										eq(employee.organizationId, organizationId),
+										eq(employee.isActive, true),
+										teamId ? eq(employee.teamId, teamId) : undefined,
+										params.scope.role === "manager"
+											? inArray(
 													employee.id,
-													organizationId,
-													dateRange.start,
-													dateRange.end,
-													calendarRange.timezone,
-												),
-												dbService.query("analytics.teamTrackedMinutes", () =>
-													sumWorkMinutesWithinTracking(dbService.db, {
-														employeeId: employee.id,
-														organizationId,
-														startDate: dateRange.start,
-														endDate: dateRange.end,
-													}),
-												),
-											],
-											{ concurrency: "unbounded" },
-										);
-										return [employee.id, { expectedHours, trackedMinutes }] as const;
-									}).pipe(withWorkPolicy),
-								{ concurrency: "unbounded" },
-							),
+													dbService.db
+														.select({ employeeId: employeeManagers.employeeId })
+														.from(employeeManagers)
+														.where(
+															eq(
+																employeeManagers.managerId,
+																params.scope.managerEmployeeId,
+															),
+														),
+												)
+											: undefined,
+									),
+									columns: {
+										id: true,
+										organizationId: true,
+										teamId: true,
+										startDate: true,
+										contractType: true,
+									},
+									with: {
+										user: { columns: { name: true, createdAt: true } },
+										userSettings: { columns: { timezone: true } },
+										organization: { columns: { timezone: true } },
+										team: { columns: { name: true } },
+									},
+								}),
 						);
-
+						if (!employees.length)
+							return { teams: [], organizationTotal: 0, dateRange };
+						// Legacy requirement adapters import the shared runtime; import after service initialization.
+						const { loadAnalyticsRangeEvidence } = yield* Effect.promise(
+							() => import("@/lib/analytics/range-evidence"),
+						);
+						const evidence = yield* loadAnalyticsRangeEvidence({
+							organizationId,
+							employees,
+							startDate: dateRange.start,
+							endDate: dateRange.end,
+							mode: "team",
+						}).pipe(withWorkPolicy);
+						const { loadCalculationExclusions } = yield* Effect.promise(
+							() => import("@/lib/calendar/holiday-service"),
+						);
+						const exclusions = yield* dbService.query(
+							"analytics.teamCalculationHolidays",
+							() =>
+								loadCalculationExclusions(
+									dbService.db,
+									organizationId,
+									dateRange.start,
+									dateRange.end,
+								),
+						);
+						const allocation = allocateAnalyticsWorkPeriodMinutes(
+							evidence.distributionPeriods,
+							reportRange,
+						);
+						const expectedByEmployee = new Map<
+							string,
+							{ expectedHours: number; trackedMinutes: number | null }
+						>();
+						for (const person of employees) {
+							const tracking = evidence.trackingByEmployee.get(person.id);
+							let expectedHours: number;
+							let trackedMinutes: number | null = null;
+							if (tracking) {
+								// Balance variance uses one employee-local protected window, not chart
+								// flooring or daily splits of stored work containing breaks.
+								const requirements =
+									evidence.requirementsByEmployee.get(person.id) ?? {};
+								expectedHours =
+									Math.round(
+										(Object.values(requirements).reduce(
+											(sum, day) => sum + day.requiredMinutes,
+											0,
+										) /
+											60) *
+											100,
+									) / 100;
+								const firstDay = plainDateAt(
+									instantFromDate(dateRange.start),
+									tracking.timezone,
+								).toString();
+								const startDate =
+									firstDay > tracking.startDate ? firstDay : tracking.startDate;
+								const throughDate = plainDateAt(
+									instantFromDate(dateRange.end),
+									tracking.timezone,
+								).toString();
+								trackedMinutes =
+									startDate > throughDate
+										? 0
+										: allocateTrackedWorkMinutes(
+												evidence.completedPeriodsByEmployee.get(person.id) ??
+													[],
+												employeePayrollWindow(
+													startDate,
+													throughDate,
+													tracking.timezone,
+												),
+											);
+							} else {
+								const expected = yield* Effect.promise(() =>
+									calculateExpectedWorkHoursForPolicy(
+										evidence.policyByEmployee.get(person.id) ?? null,
+										organizationId,
+										dateRange.start,
+										dateRange.end,
+										calendarRange.timezone,
+										exclusions,
+									),
+								);
+								expectedHours = expected.totalHours;
+							}
+							expectedByEmployee.set(person.id, {
+								expectedHours,
+								trackedMinutes,
+							});
+						}
 						const employeeHours = employees.map((emp) => {
-							const totalHours = (allocation.minutesByEmployee.get(emp.id) ?? 0) / 60;
+							const totalHours =
+								(allocation.minutesByEmployee.get(emp.id) ?? 0) / 60;
 							const tracked = expectedByEmployee.get(emp.id);
-							const employeeExpected = tracked?.expectedHours ?? expected;
+							const employeeExpected = tracked?.expectedHours ?? 0;
 							const trackedHours =
-								tracked?.trackedMinutes != null ? tracked.trackedMinutes / 60 : totalHours;
+								tracked?.trackedMinutes != null
+									? tracked.trackedMinutes / 60
+									: totalHours;
 							return {
 								employeeId: emp.id,
 								employeeName: emp.user.name || "Unknown",
 								teamId: emp.teamId,
 								teamName: emp.team?.name || "No Team",
 								totalHours,
-								expectedHours: employeeExpected.totalHours,
-								variance: trackedHours - employeeExpected.totalHours,
+								expectedHours: employeeExpected,
+								variance: trackedHours - employeeExpected,
 								percentageOfExpected:
-									employeeExpected.totalHours > 0
-										? (trackedHours / employeeExpected.totalHours) * 100
+									employeeExpected > 0
+										? (trackedHours / employeeExpected) * 100
 										: 0,
 							};
 						});
@@ -511,7 +566,8 @@ export class AnalyticsService extends Context.Service<
 							teamId: t.teamId,
 							teamName: t.teamName,
 							totalHours: Math.round(t.totalHours * 100) / 100,
-							avgHoursPerEmployee: Math.round((t.totalHours / t.employeeCount) * 100) / 100,
+							avgHoursPerEmployee:
+								Math.round((t.totalHours / t.employeeCount) * 100) / 100,
 							employeeCount: t.employeeCount,
 							employees: t.employees.map((e) => ({
 								employeeId: e.employeeId,
@@ -519,11 +575,15 @@ export class AnalyticsService extends Context.Service<
 								totalHours: Math.round(e.totalHours * 100) / 100,
 								expectedHours: Math.round(e.expectedHours * 100) / 100,
 								variance: Math.round(e.variance * 100) / 100,
-								percentageOfExpected: Math.round(e.percentageOfExpected * 100) / 100,
+								percentageOfExpected:
+									Math.round(e.percentageOfExpected * 100) / 100,
 							})),
 						}));
 
-						const organizationTotal = teams.reduce((sum, t) => sum + t.totalHours, 0);
+						const organizationTotal = teams.reduce(
+							(sum, t) => sum + t.totalHours,
+							0,
+						);
 
 						return {
 							teams,
@@ -1468,7 +1528,7 @@ export class AnalyticsService extends Context.Service<
 							employees,
 							startDate: weeks[0].start,
 							endDate: weeks[weeks.length - 1].end,
-							wholeWeekTotals: true,
+							mode: "whole-week",
 						}).pipe(withWorkPolicy);
 						const { loadCalculationExclusions } = yield* Effect.promise(
 							() => import("@/lib/calendar/holiday-service"),

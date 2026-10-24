@@ -33,10 +33,12 @@ export const loadAnalyticsRangeEvidence = Effect.fn("analytics.rangeEvidence")(
 		employees: readonly RequirementEmployee[];
 		startDate: Date;
 		endDate: Date;
-		/** Overtime preserves stored whole-week totals, including the legacy policy path. */
-		wholeWeekTotals?: boolean;
+		/** Totals consumers reuse protected periods and the existing legacy policy path. */
+		mode?: "daily" | "whole-week" | "team";
 	}) {
 		const database = yield* DatabaseService;
+		const wholeWeekTotals = input.mode === "whole-week";
+		const totalsOnly = input.mode === "team" || wholeWeekTotals;
 		const scopedEmployees = input.employees.filter(
 			(person) => person.organizationId === input.organizationId,
 		);
@@ -81,7 +83,7 @@ export const loadAnalyticsRangeEvidence = Effect.fn("analytics.rangeEvidence")(
 				}),
 			);
 			for (const [id, context] of tracking) trackingByEmployee.set(id, context);
-			const rawPeriods = input.wholeWeekTotals
+			const rawPeriods = wholeWeekTotals
 				? []
 				: yield* database.query("analytics.rangeDistributionWork", () =>
 						database.db
@@ -95,7 +97,9 @@ export const loadAnalyticsRangeEvidence = Effect.fn("analytics.rangeEvidence")(
 								and(
 									eq(workPeriod.organizationId, input.organizationId),
 									inArray(workPeriod.employeeId, employeeIds),
-									isNull(workPeriod.deletedAt),
+									input.mode === "team"
+										? completedWorkPeriodCondition()
+										: isNull(workPeriod.deletedAt),
 									lt(
 										workPeriod.startTime,
 										dateFromInstant(
@@ -139,7 +143,7 @@ export const loadAnalyticsRangeEvidence = Effect.fn("analytics.rangeEvidence")(
 					},
 				];
 			});
-			if (!windows.length && !input.wholeWeekTotals) continue;
+			if (!windows.length && !totalsOnly) continue;
 			const first = windows.length
 				? windows.reduce((left, right) =>
 						compareInstants(left.start, right.start) < 0 ? left : right,
@@ -168,9 +172,7 @@ export const loadAnalyticsRangeEvidence = Effect.fn("analytics.rangeEvidence")(
 								eq(workPeriod.organizationId, input.organizationId),
 								inArray(
 									workPeriod.employeeId,
-									input.wholeWeekTotals
-										? employeeIds
-										: windows.map((w) => w.id),
+									wholeWeekTotals ? employeeIds : windows.map((w) => w.id),
 								),
 								completedWorkPeriodCondition(),
 								isNotNull(workPeriod.endTime),
@@ -178,7 +180,7 @@ export const loadAnalyticsRangeEvidence = Effect.fn("analytics.rangeEvidence")(
 								lt(
 									workPeriod.startTime,
 									dateFromInstant(
-										input.wholeWeekTotals
+										wholeWeekTotals
 											? instantFromDate(input.endDate).add({ hours: 48 })
 											: last,
 									),
@@ -186,7 +188,7 @@ export const loadAnalyticsRangeEvidence = Effect.fn("analytics.rangeEvidence")(
 								gt(
 									workPeriod.endTime,
 									dateFromInstant(
-										input.wholeWeekTotals
+										wholeWeekTotals
 											? instantFromDate(input.startDate).subtract({ hours: 48 })
 											: first,
 									),
@@ -197,7 +199,7 @@ export const loadAnalyticsRangeEvidence = Effect.fn("analytics.rangeEvidence")(
 			const grouped = Map.groupBy(periods, (period) => period.employeeId);
 			for (const [id, values] of grouped)
 				completedPeriodsByEmployee.set(id, values);
-			if (!input.wholeWeekTotals)
+			if (!totalsOnly)
 				for (const window of windows)
 					dailyByEmployee.set(
 						window.id,
@@ -212,7 +214,7 @@ export const loadAnalyticsRangeEvidence = Effect.fn("analytics.rangeEvidence")(
 					employeeIds.includes(person.id),
 				),
 				trackingByEmployee,
-				includeLegacy: input.wholeWeekTotals,
+				includeLegacy: totalsOnly,
 			});
 			for (const [id, value] of requirements.requirements)
 				requirementsByEmployee.set(id, value);
