@@ -9,7 +9,10 @@ import type {
 	JsonObject,
 	StageActivationInput,
 } from "../workflow/ports";
-import { createDatabaseStageActivationResolver } from "./stage-activation-resolver";
+import {
+	createDatabaseStageActivationResolver,
+	resolveStageReviewersWithout,
+} from "./stage-activation-resolver";
 
 const requesterId = "00000000-0000-4000-8000-000000000001";
 const managerAId = "00000000-0000-4000-8000-000000000011";
@@ -287,12 +290,17 @@ describe("createDatabaseStageActivationResolver", () => {
 
 		expect(fake.calls).toHaveLength(1);
 		const rendered = new PgDialect().sqlToQuery(fake.calls[0]);
-		// Only an explicitly named approver has a replacement lookup.
+		// Only an explicitly named approver has a replacement lookup: from a
+		// departure, or from a deactivation's pick for this requester (#1440).
 		expect(rendered.params).toEqual([
 			"org-1",
 			"org-1",
 			"org-1",
 			"org-1",
+			stageId,
+			"org-1",
+			null,
+			requesterId,
 			stageId,
 			"org-1",
 			null,
@@ -626,5 +634,57 @@ describe("createDatabaseStageActivationResolver", () => {
 				activationInput({ dbService: fake.dbService }),
 			),
 		);
+	});
+});
+
+describe("resolveStageReviewersWithout (#1440)", () => {
+	const leavingId = "00000000-0000-4000-8000-000000000021";
+	const directory = {
+		employees: [
+			{ id: requesterId, organizationId: "org-1", isActive: true, role: "employee" as const, teamId: null },
+			{ id: leavingId, organizationId: "org-1", isActive: true, role: "manager" as const, teamId: null },
+			{ id: managerAId, organizationId: "org-1", isActive: true, role: "manager" as const, teamId: null },
+		],
+		managerLinks: [
+			{ employeeId: requesterId, managerId: leavingId, isPrimary: true },
+			{ employeeId: requesterId, managerId: managerAId, isPrimary: false },
+		],
+		teamMemberships: [],
+		teams: [],
+	};
+	const workflow = {
+		id: workflowId,
+		organizationId: "org-1",
+		workflowType: "absence" as const,
+		sourceType: "absence_entry",
+		sourceId: "absence-1",
+		requesterEmployeeId: requesterId,
+		policyKind: "policy",
+	};
+
+	it("resolves the stage as if the employee were gone", () => {
+		expect(
+			resolveStageReviewersWithout({
+				directory,
+				employeeId: leavingId,
+				workflow,
+				resolverSnapshot: { approverType: "direct_manager", fallbackBehavior: "fail" },
+			}),
+		).toEqual([managerAId]);
+	});
+
+	it("is empty when only the employee could review and the fallback fails", () => {
+		expect(
+			resolveStageReviewersWithout({
+				directory,
+				employeeId: leavingId,
+				workflow,
+				resolverSnapshot: {
+					approverType: "specific_employee",
+					approverEmployeeId: leavingId,
+					fallbackBehavior: "fail",
+				},
+			}),
+		).toEqual([]);
 	});
 });

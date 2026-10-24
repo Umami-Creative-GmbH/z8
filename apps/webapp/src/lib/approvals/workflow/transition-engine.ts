@@ -24,6 +24,7 @@ import {
 	APPROVAL_ESCALATION_SYSTEM_ID,
 	EMPLOYEE_OFFBOARDING_SYSTEM_ID,
 	isCoveringDeputyGrant,
+	isDeactivationHandoverPrincipal,
 	isOffboardingHandoverPrincipal,
 	PERIOD_SUBMISSION_CHANGE_SYSTEM_ID,
 } from "./ports";
@@ -691,7 +692,9 @@ export function createApprovalTransitionEngine(
 					? {
 							// Stable lineage only; the worker lease is never recorded.
 							offboardingLineage: {
-								departureId: offboardingPrincipal.departureId,
+								...(isDeactivationHandoverPrincipal(offboardingPrincipal)
+									? { deactivationId: offboardingPrincipal.deactivationId }
+									: { departureId: offboardingPrincipal.departureId }),
 								employmentPeriodId: offboardingPrincipal.employmentPeriodId,
 								handoverTaskId: offboardingPrincipal.handoverTaskId,
 								sourceAssignmentId: offboardingPrincipal.assignmentId,

@@ -113,13 +113,18 @@ export type ApprovalDutiesPlan = {
 		assignmentId: string;
 		workflowId: string;
 		stageId: string;
-		requesterEmployeeId: string;
+		/** Null only for a workflow recorded without a requester. */
+		requesterEmployeeId: string | null;
 		/** The requester's replacement manager, else the workflow's fallback; null → review. */
 		targetEmployeeId: string | null;
 	}>;
-	/** Later stages naming only the person, and duties that can't be transferred. */
+	/**
+	 * Later stages naming only the person (`stageId`, reason
+	 * `future_stage_without_replacement`), and legacy duties that can't be
+	 * transferred (`approvalRequestId`, no workflow, reason `legacy_authority`).
+	 */
 	reviews: Array<{
-		workflowId: string;
+		workflowId: string | null;
 		stageId: string | null;
 		approvalRequestId: string | null;
 		reason: string;

@@ -24,6 +24,8 @@ export type DepartureTaskClaim = {
 	employeeId: string;
 	employmentPeriodId: string;
 	departureId: string | null;
+	/** Set for a deactivation's follow-up work (#1440). */
+	deactivationId?: string | null;
 	kind: DepartureTaskKind;
 	payload: Record<string, unknown>;
 	claimToken: string;
@@ -53,6 +55,7 @@ export function createDepartureTaskOutbox(database: OutboxDatabase) {
 				employee_id: string;
 				employment_period_id: string;
 				departure_id: string | null;
+				deactivation_id: string | null;
 				kind: DepartureTaskKind;
 				payload: Record<string, unknown>;
 				claim_token: string;
@@ -72,7 +75,7 @@ export function createDepartureTaskOutbox(database: OutboxDatabase) {
 				FROM due
 				WHERE task.id = due.id AND task.organization_id = due.organization_id
 				RETURNING task.id, task.organization_id, task.employee_id, task.employment_period_id,
-					task.departure_id, task.kind, task.payload, task.claim_token, task.attempt_count
+					task.departure_id, task.deactivation_id, task.kind, task.payload, task.claim_token, task.attempt_count
 			`);
 			return result.rows.map((row) => ({
 				id: row.id,
@@ -80,6 +83,7 @@ export function createDepartureTaskOutbox(database: OutboxDatabase) {
 				employeeId: row.employee_id,
 				employmentPeriodId: row.employment_period_id,
 				departureId: row.departure_id,
+				deactivationId: row.deactivation_id,
 				kind: row.kind,
 				payload: row.payload ?? {},
 				claimToken: row.claim_token,

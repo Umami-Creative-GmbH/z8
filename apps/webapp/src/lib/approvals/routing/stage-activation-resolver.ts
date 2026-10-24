@@ -17,6 +17,7 @@ import type {
 import {
 	ApprovalStageActivationError,
 	type ApprovalStageResolverSnapshot,
+	type ApprovalStageReviewerDirectory,
 	resolveApprovalStageReviewers,
 } from "./approver-resolver";
 import type { ApprovalRoutingContext } from "./types";
@@ -261,28 +262,32 @@ export type ReplacementDecisionPath = (
 	},
 ) => Promise<boolean>;
 
+type DirectoryExecutor = {
+	execute(query: ReturnType<typeof sql>): Promise<unknown>;
+};
+
 /**
- * Resolves stage reviewers from the organization directory. A stage naming a
- * departed person resolves to that stage's own assigned replacement, else the
- * departure's replacement, and only while the replacement is still an
- * accessible, approved member who can decide the requester's approvals: the
- * same authority the departure handover checks before a transfer.
+ * The organization directory stage reviewers resolve from. Replacement rows
+ * are loaded only for an explicitly named approver who left: the stage's own
+ * assigned replacement, else the replacement of their latest departure or
+ * unreactivated deactivation (#1440: the one chosen for this requester), and
+ * only while the replacement is still an accessible, approved member who can
+ * decide the requester's approvals: the same authority the handover checks
+ * before a transfer.
  */
-export function createDatabaseStageActivationResolver(
-	deps: { hasDecisionPath?: ReplacementDecisionPath } = {},
-): StageActivationResolver {
-	const hasDecisionPath = deps.hasDecisionPath ?? hasApprovalDecisionPath;
-	return {
-		async resolve(input) {
-			const context = decodeRoutingContext(input.routingContext, input);
-			const stage = decodeResolverSnapshot(input.stage.resolverSnapshot);
-			const organizationId = input.organizationId;
-			// Only an explicitly named approver can be stood in for.
-			const namedApproverId =
-				stage.approverType === "specific_employee"
-					? (stage.approverEmployeeId ?? null)
-					: null;
-			const directoryResult = await input.dbService.db.execute(sql`
+export async function loadApprovalStageDirectory(
+	executor: DirectoryExecutor,
+	input: {
+		organizationId: string;
+		stageId: string;
+		requesterEmployeeId: string;
+		namedApproverId: string | null;
+		hasDecisionPath?: ReplacementDecisionPath;
+	},
+): Promise<ApprovalStageReviewerDirectory> {
+	const hasDecisionPath = input.hasDecisionPath ?? hasApprovalDecisionPath;
+	const { organizationId, namedApproverId } = input;
+	const directoryResult = await executor.execute(sql`
 				select
 					coalesce((
 						select json_agg(
@@ -346,22 +351,48 @@ export function createDatabaseStageActivationResolver(
 							)
 						)
 						from (
-							select distinct on (departure.employee_id)
-								departure.employee_id,
-								coalesce(
-									(stage_review.metadata->>'replacementEmployeeId')::uuid,
-									departure.replacement_employee_id
-								) as replacement_employee_id
-							from employee_departure departure
-							left join employee_departure_review stage_review
-								on stage_review.organization_id = departure.organization_id
-								and stage_review.departure_id = departure.id
-								and stage_review.kind = 'approval_handover'
-								and stage_review.subject_id = ${input.stage.id}::uuid
-							where departure.organization_id = ${organizationId}
-								and departure.employee_id = ${namedApproverId}::uuid
-								and departure.status = 'effective'
-							order by departure.employee_id, departure.effective_at desc
+							select distinct on (anchored.employee_id)
+								anchored.employee_id, anchored.replacement_employee_id
+							from (
+								select departure.employee_id,
+									coalesce(
+										(stage_review.metadata->>'replacementEmployeeId')::uuid,
+										departure.replacement_employee_id
+									) as replacement_employee_id,
+									departure.effective_at as anchored_at
+								from employee_departure departure
+								left join employee_departure_review stage_review
+									on stage_review.organization_id = departure.organization_id
+									and stage_review.departure_id = departure.id
+									and stage_review.kind = 'approval_handover'
+									and stage_review.subject_id = ${input.stageId}::uuid
+								where departure.organization_id = ${organizationId}
+									and departure.employee_id = ${namedApproverId}::uuid
+									and departure.status = 'effective'
+								union all
+								-- A deactivation that still holds (#1440): the replacement
+								-- chosen for this requester when the person left.
+								select deactivation.employee_id,
+									coalesce(
+										(stage_review.metadata->>'replacementEmployeeId')::uuid,
+										(deactivation.replacement_managers->>${input.requesterEmployeeId}::text)::uuid
+									) as replacement_employee_id,
+									deactivation.deactivated_at as anchored_at
+								from employee_deactivation deactivation
+								join employee deactivated
+									on deactivated.id = deactivation.employee_id
+									and deactivated.organization_id = deactivation.organization_id
+									and deactivated.is_active = false
+								left join employee_departure_review stage_review
+									on stage_review.organization_id = deactivation.organization_id
+									and stage_review.deactivation_id = deactivation.id
+									and stage_review.kind = 'approval_handover'
+									and stage_review.subject_id = ${input.stageId}::uuid
+								where deactivation.organization_id = ${organizationId}
+									and deactivation.employee_id = ${namedApproverId}::uuid
+									and deactivation.reactivated_at is null
+							) anchored
+							order by anchored.employee_id, anchored.anchored_at desc
 						) latest
 						join employee replacement
 							on replacement.id = latest.replacement_employee_id
@@ -377,22 +408,51 @@ export function createDatabaseStageActivationResolver(
 							)
 					), '[]'::json) as "departureReplacements"
 			`);
-			const directory = decodeDirectoryEnvelope(directoryResult);
-			const replacementsWithDecisionPath = async (
-				rows: DepartureReplacementRow[],
-			) => {
-				const allowed = await Promise.all(
-					rows.map((row) =>
-						hasDecisionPath(input.dbService.db as EscalationCandidateExecutor, {
-							organizationId,
-							requesterEmployeeId: context.requesterEmployeeId,
-							managerEmployeeId: row.replacementEmployeeId,
-							managerUserId: row.replacementUserId,
-						}),
-					),
-				);
-				return rows.filter((_, index) => allowed[index]);
-			};
+	const directory = decodeDirectoryEnvelope(directoryResult);
+	const replacements = decodeDepartureReplacements(directory.departureReplacements);
+	const allowed = await Promise.all(
+		replacements.map((row) =>
+			hasDecisionPath(executor as EscalationCandidateExecutor, {
+				organizationId,
+				requesterEmployeeId: input.requesterEmployeeId,
+				managerEmployeeId: row.replacementEmployeeId,
+				managerUserId: row.replacementUserId,
+			}),
+		),
+	);
+	return {
+		employees: decodeEmployees(directory.employees),
+		managerLinks: decodeManagerLinks(directory.managerLinks),
+		teamMemberships: decodeTeamMemberships(directory.teamMemberships),
+		teams: decodeTeams(directory.teams),
+		departureReplacements: replacements.filter((_, index) => allowed[index]),
+	};
+}
+
+/**
+ * Resolves stage reviewers from the organization directory. A stage naming a
+ * person who left resolves to the replacement `loadApprovalStageDirectory`
+ * finds for them.
+ */
+export function createDatabaseStageActivationResolver(
+	deps: { hasDecisionPath?: ReplacementDecisionPath } = {},
+): StageActivationResolver {
+	return {
+		async resolve(input) {
+			const context = decodeRoutingContext(input.routingContext, input);
+			const stage = decodeResolverSnapshot(input.stage.resolverSnapshot);
+			// Only an explicitly named approver can be stood in for.
+			const namedApproverId =
+				stage.approverType === "specific_employee"
+					? (stage.approverEmployeeId ?? null)
+					: null;
+			const directory = await loadApprovalStageDirectory(input.dbService.db, {
+				organizationId: input.organizationId,
+				stageId: input.stage.id,
+				requesterEmployeeId: context.requesterEmployeeId,
+				namedApproverId,
+				hasDecisionPath: deps.hasDecisionPath,
+			});
 
 			const resolution = resolveApprovalStageReviewers({
 				context,
@@ -401,15 +461,7 @@ export function createDatabaseStageActivationResolver(
 				// start-workflow writes `{ kind: "default" }` when no policy matched.
 				stageOrigin:
 					input.workflow.policySnapshot.kind === "default" ? "default_approver" : "policy",
-				directory: {
-					employees: decodeEmployees(directory.employees),
-					managerLinks: decodeManagerLinks(directory.managerLinks),
-					teamMemberships: decodeTeamMemberships(directory.teamMemberships),
-					teams: decodeTeams(directory.teams),
-					departureReplacements: await replacementsWithDecisionPath(
-						decodeDepartureReplacements(directory.departureReplacements),
-					),
-				},
+				directory,
 			});
 
 			return resolution.activationMode === "human"
@@ -431,4 +483,60 @@ export function createDatabaseStageActivationResolver(
 					};
 		},
 	};
+}
+
+/**
+ * The reviewers a pending stage would resolve to with one employee gone, as
+ * when they are deactivated (#1440, D2): that employee counts as inactive, so
+ * their manager links and explicit naming fall through to the stage's own
+ * rules and fallback. Empty when nobody else can review (a `fail` fallback,
+ * an unsupported resolver, or only the requester).
+ */
+export function resolveStageReviewersWithout(input: {
+	directory: ApprovalStageReviewerDirectory;
+	employeeId: string;
+	workflow: {
+		id: string;
+		organizationId: string;
+		workflowType: ApprovalRoutingContext["workflowType"];
+		sourceType: string;
+		sourceId: string;
+		requesterEmployeeId: string;
+		policyKind: string | null;
+	};
+	resolverSnapshot: JsonObject;
+}): string[] {
+	const directory: ApprovalStageReviewerDirectory = {
+		...input.directory,
+		employees: input.directory.employees.map((employee) =>
+			employee.id === input.employeeId ? { ...employee, isActive: false } : employee,
+		),
+	};
+	try {
+		const resolution = resolveApprovalStageReviewers({
+			// Resolution reads only the organization, workflow type and requester.
+			context: {
+				organizationId: input.workflow.organizationId,
+				workflowType: input.workflow.workflowType,
+				source: { type: input.workflow.sourceType, id: input.workflow.sourceId },
+				requesterEmployeeId: input.workflow.requesterEmployeeId,
+				teamIds: [],
+				locationId: null,
+				absenceCategoryId: null,
+				travelExpenseAmount: null,
+				overtimeRisk: null,
+				employeeGroupIds: [],
+			},
+			stage: decodeResolverSnapshot(input.resolverSnapshot),
+			requesterMode: "existing_workflow",
+			stageOrigin: input.workflow.policyKind === "default" ? "default_approver" : "policy",
+			directory,
+		});
+		return resolution.activationMode === "human"
+			? resolution.approverEmployeeIds.filter((id) => id !== input.employeeId)
+			: [];
+	} catch (error) {
+		if (error instanceof ApprovalStageActivationError) return [];
+		throw error;
+	}
 }

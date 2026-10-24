@@ -8,11 +8,13 @@ import {
 } from "@/lib/datetime/temporal-core";
 import { isCanonicalUuid } from "@/lib/validations/canonical-uuid";
 import { hasApprovalDecisionPath } from "../escalation/candidates";
-import type {
-	ApprovalCommandResult,
-	ApprovalDbService,
-	ApprovalWorkflowSnapshot,
-	OffboardingHandoverPrincipal,
+import {
+	type ApprovalCommandResult,
+	type ApprovalDbService,
+	type ApprovalWorkflowSnapshot,
+	type DepartureHandoverPrincipal,
+	isDeactivationHandoverPrincipal,
+	type OffboardingHandoverPrincipal,
 } from "./ports";
 import type { ApprovalWorkflowCommand } from "./state-machine";
 
@@ -69,10 +71,23 @@ export interface OffboardingReassignmentFacts {
 		status: "pending" | "canceled" | "blocked" | "effective";
 		cutoffAt: Instant;
 	} | null;
+	/** The deactivation a deactivation principal names (#1440). */
+	deactivation?: {
+		id: string;
+		organizationId: string;
+		employeeId: string;
+		employmentPeriodId: string | null;
+		/**
+		 * Not reactivated, and the employee is still off with the
+		 * `deactivated_at` this deactivation wrote.
+		 */
+		effective: boolean;
+	} | null;
 	task: {
 		id: string;
 		organizationId: string;
 		departureId: string | null;
+		deactivationId?: string | null;
 		employmentPeriodId: string;
 		employeeId: string;
 		kind: string;
@@ -82,7 +97,10 @@ export interface OffboardingReassignmentFacts {
 		leaseUntil: Instant;
 		payload: ApprovalHandoverTaskPayload | null;
 	} | null;
-	/** A newer employment period is open: the old departure's retries must not act. */
+	/**
+	 * A newer employment period is open (departure) or the deactivation was
+	 * reactivated: the old anchor's retries must not act.
+	 */
 	rehired: boolean;
 	target: {
 		employeeId: string;
@@ -130,20 +148,12 @@ function denied(reason: OffboardingReassignmentDenial): OffboardingReassignmentE
 export function evaluateOffboardingReassignment(
 	facts: OffboardingReassignmentFacts,
 ): OffboardingReassignmentEvaluation {
-	const { principal, command, workflow, departure, task } = facts;
+	const { principal, command, workflow, task } = facts;
 	if (command.type !== "reassign") return denied("command_not_reassign");
 	if (workflow.organizationId !== facts.organizationId) return denied("workflow_mismatch");
 
-	if (
-		!departure ||
-		departure.id !== principal.departureId ||
-		departure.organizationId !== facts.organizationId ||
-		departure.employmentPeriodId !== principal.employmentPeriodId ||
-		departure.employeeId !== command.fromEmployeeId
-	) {
-		return denied("departure_mismatch");
-	}
-	if (departure.status !== "effective") return denied("departure_not_effective");
+	const anchor = verifiedAnchor(facts, command.fromEmployeeId);
+	if (anchor.kind === "denied") return anchor;
 
 	const intent = task?.payload;
 	if (
@@ -151,9 +161,10 @@ export function evaluateOffboardingReassignment(
 		!intent ||
 		task.id !== principal.handoverTaskId ||
 		task.organizationId !== facts.organizationId ||
-		task.departureId !== departure.id ||
-		task.employmentPeriodId !== departure.employmentPeriodId ||
-		task.employeeId !== departure.employeeId ||
+		task.departureId !== anchor.departureId ||
+		(task.deactivationId ?? null) !== anchor.deactivationId ||
+		task.employmentPeriodId !== principal.employmentPeriodId ||
+		task.employeeId !== command.fromEmployeeId ||
 		task.kind !== "approval_handover" ||
 		intent.assignmentId !== principal.assignmentId ||
 		intent.workflowId !== workflow.id ||
@@ -218,6 +229,52 @@ export function evaluateOffboardingReassignment(
 		return denied("target_ineligible");
 	}
 	return { kind: "authorized" };
+}
+
+type VerifiedAnchor =
+	| { kind: "verified"; departureId: string | null; deactivationId: string | null }
+	| { kind: "denied"; reason: OffboardingReassignmentDenial };
+
+/**
+ * The persisted anchor the principal names: an effective departure, or a
+ * deactivation that still holds (#1440). A reactivated deactivation is not
+ * refused here; like a rehire it is reported after a receipt replay check.
+ */
+function verifiedAnchor(
+	facts: OffboardingReassignmentFacts,
+	fromEmployeeId: string,
+): VerifiedAnchor {
+	const { principal } = facts;
+	if (isDeactivationHandoverPrincipal(principal)) {
+		const deactivation = facts.deactivation;
+		if (
+			!deactivation ||
+			deactivation.id !== principal.deactivationId ||
+			deactivation.organizationId !== facts.organizationId ||
+			deactivation.employmentPeriodId !== principal.employmentPeriodId ||
+			deactivation.employeeId !== fromEmployeeId
+		) {
+			return { kind: "denied", reason: "departure_mismatch" };
+		}
+		if (!deactivation.effective && !facts.rehired) {
+			return { kind: "denied", reason: "departure_not_effective" };
+		}
+		return { kind: "verified", departureId: null, deactivationId: deactivation.id };
+	}
+	const departure = facts.departure;
+	if (
+		!departure ||
+		departure.id !== principal.departureId ||
+		departure.organizationId !== facts.organizationId ||
+		departure.employmentPeriodId !== principal.employmentPeriodId ||
+		departure.employeeId !== fromEmployeeId
+	) {
+		return { kind: "denied", reason: "departure_mismatch" };
+	}
+	if (departure.status !== "effective") {
+		return { kind: "denied", reason: "departure_not_effective" };
+	}
+	return { kind: "verified", departureId: departure.id, deactivationId: null };
 }
 
 /** The receipt must contain the transfer of exactly this source to this target. */
@@ -298,25 +355,56 @@ async function loadOffboardingReassignmentFacts(input: {
 	now: Instant;
 }): Promise<OffboardingReassignmentFacts> {
 	const database = input.dbService.db;
-	const [departure] = rows<{
-		id: string;
-		organization_id: string;
-		employee_id: string;
-		employment_period_id: string;
-		status: "pending" | "canceled" | "blocked" | "effective";
-		cutoff_at: Date;
-	}>(
-		await database.execute(sql`
-			SELECT id, organization_id, employee_id, employment_period_id, status, cutoff_at
-			FROM employee_departure
-			WHERE organization_id = ${input.organizationId} AND id = ${input.principal.departureId}::uuid
-			FOR SHARE
-		`),
-	);
+	const deactivationPrincipal = isDeactivationHandoverPrincipal(input.principal)
+		? input.principal
+		: null;
+	const [departure] = deactivationPrincipal
+		? []
+		: rows<{
+				id: string;
+				organization_id: string;
+				employee_id: string;
+				employment_period_id: string;
+				status: "pending" | "canceled" | "blocked" | "effective";
+				cutoff_at: Date;
+			}>(
+				await database.execute(sql`
+					SELECT id, organization_id, employee_id, employment_period_id, status, cutoff_at
+					FROM employee_departure
+					WHERE organization_id = ${input.organizationId}
+						AND id = ${(input.principal as DepartureHandoverPrincipal).departureId}::uuid
+					FOR SHARE
+				`),
+			);
+	// A reactivation stamps the row, so the share lock keeps it from ending
+	// the deactivation while this command commits.
+	const [deactivation] = deactivationPrincipal
+		? rows<{
+				id: string;
+				organization_id: string;
+				employee_id: string;
+				employment_period_id: string | null;
+				reactivated: boolean;
+				effective: boolean;
+			}>(
+				await database.execute(sql`
+					SELECT d.id, d.organization_id, d.employee_id, d.employment_period_id,
+						(d.reactivated_at IS NOT NULL OR e.is_active = true) AS reactivated,
+						(d.reactivated_at IS NULL AND e.is_active = false
+							AND e.deactivated_at IS NOT DISTINCT FROM d.deactivated_at) AS effective
+					FROM employee_deactivation d
+					JOIN employee e ON e.id = d.employee_id AND e.organization_id = d.organization_id
+					WHERE d.organization_id = ${input.organizationId}
+						AND d.id = ${deactivationPrincipal.deactivationId}::uuid
+					FOR SHARE OF d
+				`),
+			)
+		: [];
 	const [task] = rows<{
 		id: string;
 		organization_id: string;
 		departure_id: string | null;
+		deactivation_id: string | null;
 		employment_period_id: string;
 		employee_id: string;
 		kind: string;
@@ -326,8 +414,8 @@ async function loadOffboardingReassignmentFacts(input: {
 		payload: unknown;
 	}>(
 		await database.execute(sql`
-			SELECT id, organization_id, departure_id, employment_period_id, employee_id, kind, status,
-				claim_token, available_at, payload
+			SELECT id, organization_id, departure_id, deactivation_id, employment_period_id, employee_id,
+				kind, status, claim_token, available_at, payload
 			FROM employee_departure_task
 			WHERE organization_id = ${input.organizationId} AND id = ${input.principal.handoverTaskId}::uuid
 			FOR SHARE
@@ -343,7 +431,9 @@ async function loadOffboardingReassignmentFacts(input: {
 					) AS rehired
 				`),
 			)
-		: [];
+		: deactivation
+			? [{ rehired: deactivation.reactivated === true }]
+			: [];
 
 	const toEmployeeId = input.command.type === "reassign" ? input.command.toEmployeeId : null;
 	const requesterEmployeeId = input.workflow.requesterEmployeeId;
@@ -403,11 +493,21 @@ async function loadOffboardingReassignmentFacts(input: {
 					cutoffAt: instantFromDate(new Date(departure.cutoff_at)),
 				}
 			: null,
+		deactivation: deactivation
+			? {
+					id: deactivation.id,
+					organizationId: deactivation.organization_id,
+					employeeId: deactivation.employee_id,
+					employmentPeriodId: deactivation.employment_period_id,
+					effective: deactivation.effective === true,
+				}
+			: null,
 		task: task
 			? {
 					id: task.id,
 					organizationId: task.organization_id,
 					departureId: task.departure_id,
+					deactivationId: task.deactivation_id,
 					employmentPeriodId: task.employment_period_id,
 					employeeId: task.employee_id,
 					kind: task.kind,

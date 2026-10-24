@@ -10,6 +10,7 @@ import {
 import {
 	type ApprovalWorkflowCommandRequest,
 	EMPLOYEE_OFFBOARDING_SYSTEM_ID,
+	type OffboardingHandoverPrincipal,
 } from "@/lib/approvals/workflow/ports";
 import type { ApprovalWorkflowDatabase } from "@/lib/approvals/workflow/repository";
 import { createProductionApprovalWorkflowRuntime } from "@/lib/approvals/workflow/runtime";
@@ -34,6 +35,33 @@ type LifecycleRootDatabase = Pick<
 	typeof rootDatabase,
 	"transaction" | "execute" | "insert" | "update"
 >;
+
+/**
+ * What owns handover work: a departure, or a deactivation (#1440). Exactly one
+ * id is set, matching the task and review columns.
+ */
+export type HandoverAnchorRef =
+	| { departureId: string; deactivationId: null }
+	| { departureId: null; deactivationId: string };
+
+/** The anchor of a claimed task, or null when it names neither or both. */
+export function handoverAnchorOf(row: {
+	departureId: string | null;
+	deactivationId?: string | null;
+}): HandoverAnchorRef | null {
+	const deactivationId = row.deactivationId ?? null;
+	if (row.departureId && !deactivationId) {
+		return { departureId: row.departureId, deactivationId: null };
+	}
+	if (deactivationId && !row.departureId) return { departureId: null, deactivationId };
+	return null;
+}
+
+function anchorCondition(alias: string, anchor: HandoverAnchorRef) {
+	return anchor.deactivationId !== null
+		? sql`${sql.raw(alias)}.deactivation_id = ${anchor.deactivationId}::uuid`
+		: sql`${sql.raw(alias)}.departure_id = ${anchor.departureId}::uuid`;
+}
 
 /** Retries of one delivery attempt after losing the workflow version race. */
 const VERSION_CONFLICT_ATTEMPTS = 3;
@@ -121,6 +149,130 @@ export async function captureApprovalHandoverDuties(
 	`);
 }
 
+/** The duties a deactivation hands over, as its plan lists them (#1440). */
+export type DeactivationHandoverDuties = {
+	/** Current-stage assignments with the target chosen for each; null → review on delivery. */
+	handovers: ReadonlyArray<{ assignmentId: string; targetEmployeeId: string | null }>;
+	/** Waiting stages naming only the person, with no replacement. */
+	futureStageIds: readonly string[];
+	/** Pending legacy-only approval requests the person holds. */
+	legacyRequestIds: readonly string[];
+};
+
+function jsonIds(ids: readonly string[]) {
+	return sql`(SELECT value::uuid FROM jsonb_array_elements_text(${JSON.stringify(ids)}::jsonb))`;
+}
+
+/**
+ * The deactivation's counterpart of `captureApprovalHandoverDuties`, inside
+ * the deactivation transaction. It writes the same task and review rows,
+ * anchored to the deactivation, but only for the duties its plan listed and
+ * with a target per duty: the replacement chosen for that requester or the
+ * stage's reviewers without the person. Each row is written only while its
+ * duty still matches the predicate it was planned with. Delivery, reviews and
+ * their notifications then run exactly as for a departure.
+ */
+export async function captureDeactivationHandoverDuties(
+	tx: Pick<LifecycleClient, "execute">,
+	anchor: {
+		organizationId: string;
+		employeeId: string;
+		employmentPeriodId: string;
+		deactivationId: string;
+	},
+	duties: DeactivationHandoverDuties,
+): Promise<{ handoverTaskIds: string[]; reviewIds: string[] }> {
+	const handoverTaskIds: string[] = [];
+	const reviewIds: string[] = [];
+	if (duties.handovers.length > 0) {
+		const planned = JSON.stringify(
+			duties.handovers.map((duty) => ({
+				assignment_id: duty.assignmentId,
+				target: duty.targetEmployeeId,
+			})),
+		);
+		const tasks = await tx.execute<{ id: string }>(sql`
+			INSERT INTO employee_departure_task
+				(organization_id, employee_id, employment_period_id, deactivation_id, kind, dedupe_key, payload)
+			SELECT a.organization_id, ${anchor.employeeId}::uuid, ${anchor.employmentPeriodId}::uuid,
+				${anchor.deactivationId}::uuid, 'approval_handover',
+				'deactivation-handover:' || ${anchor.deactivationId} || ':' || a.id::text,
+				jsonb_build_object(
+					'workflowId', a.workflow_id, 'stageId', a.stage_id, 'assignmentId', a.id,
+					'fromEmployeeId', a.approver_employee_id,
+					'replacementEmployeeId', planned.target
+				)
+			FROM jsonb_to_recordset(${planned}::jsonb) AS planned(assignment_id uuid, target uuid)
+			JOIN approval_stage_assignment a ON a.id = planned.assignment_id
+			JOIN approval_workflow_stage s
+				ON s.id = a.stage_id AND s.organization_id = a.organization_id
+			JOIN approval_workflow w
+				ON w.id = a.workflow_id AND w.organization_id = a.organization_id
+			WHERE a.organization_id = ${anchor.organizationId}
+				AND a.approver_employee_id = ${anchor.employeeId}::uuid AND a.status = 'pending'
+				AND w.status = 'pending' AND s.status = 'pending' AND s.activation_mode = 'human'
+				AND s.stage_order = w.current_stage_order
+			ON CONFLICT DO NOTHING
+			RETURNING id
+		`);
+		handoverTaskIds.push(...tasks.rows.map((row) => row.id));
+	}
+	if (duties.futureStageIds.length > 0) {
+		const stages = await tx.execute<{ id: string }>(sql`
+			INSERT INTO employee_departure_review
+				(organization_id, employee_id, employment_period_id, deactivation_id, kind, subject_id, metadata)
+			SELECT s.organization_id, ${anchor.employeeId}::uuid, ${anchor.employmentPeriodId}::uuid,
+				${anchor.deactivationId}::uuid, 'approval_handover', s.id,
+				jsonb_build_object(
+					'reason', ${FUTURE_STAGE_REVIEW_REASON}::text, 'source', 'approval_workflow_stage',
+					'workflowId', s.workflow_id, 'stageId', s.id
+				)
+			FROM approval_workflow_stage s
+			JOIN approval_workflow w
+				ON w.id = s.workflow_id AND w.organization_id = s.organization_id
+			WHERE s.organization_id = ${anchor.organizationId}
+				AND s.id IN ${jsonIds(duties.futureStageIds)}
+				AND w.status = 'pending' AND s.status = 'waiting'
+				AND s.resolver_snapshot->>'approverType' = 'specific_employee'
+				AND s.resolver_snapshot->>'approverEmployeeId' = ${anchor.employeeId}
+				AND s.resolver_snapshot->>'fallbackBehavior' = 'fail'
+			ON CONFLICT DO NOTHING
+			RETURNING id
+		`);
+		reviewIds.push(...stages.rows.map((row) => row.id));
+	}
+	if (duties.legacyRequestIds.length > 0) {
+		const legacy = await tx.execute<{ id: string }>(sql`
+			INSERT INTO employee_departure_review
+				(organization_id, employee_id, employment_period_id, deactivation_id, kind, subject_id, metadata)
+			SELECT r.organization_id, ${anchor.employeeId}::uuid, ${anchor.employmentPeriodId}::uuid,
+				${anchor.deactivationId}::uuid, 'approval_handover', r.id,
+				jsonb_build_object(
+					'reason', 'legacy_authority', 'source', 'legacy_approval_request',
+					'approvalRequestId', r.id, 'entityType', r.entity_type, 'entityId', r.entity_id
+				)
+			FROM approval_request r
+			WHERE r.organization_id = ${anchor.organizationId}
+				AND r.id IN ${jsonIds(duties.legacyRequestIds)}
+				AND r.approver_id = ${anchor.employeeId}::uuid AND r.status = 'pending'
+				AND NOT EXISTS (
+					SELECT 1 FROM approval_workflow_stage s
+					WHERE s.organization_id = r.organization_id AND s.legacy_approval_request_id = r.id
+				)
+			ON CONFLICT DO NOTHING
+			RETURNING id
+		`);
+		reviewIds.push(...legacy.rows.map((row) => row.id));
+	}
+	if (reviewIds.length > 0) {
+		await enqueueReviewNotifications(tx, {
+			organizationId: anchor.organizationId,
+			deactivationId: anchor.deactivationId,
+		});
+	}
+	return { handoverTaskIds, reviewIds };
+}
+
 type ApprovalHandoverRuntime = Pick<
 	ReturnType<typeof createProductionApprovalWorkflowRuntime>,
 	"repository" | "transitionEngine"
@@ -183,18 +335,30 @@ export function createApprovalHandoverHandler(deps: {
 	runtime: ApprovalHandoverRuntime;
 }): DepartureTaskHandler {
 	return async (claim, context) => {
-		const departureId = claim.departureId;
+		const anchor = handoverAnchorOf(claim);
 		const intent = parseApprovalHandoverTaskPayload(claim.payload);
-		if (!departureId || !intent) {
+		if (!anchor || !intent) {
 			throw new DepartureTaskNeedsResolutionError("invalid_handover_payload");
 		}
-		const scope = {
+		const scope: HandoverScope = {
+			...anchor,
 			organizationId: claim.organizationId,
 			employeeId: claim.employeeId,
 			employmentPeriodId: claim.employmentPeriodId,
-			departureId,
 			handoverTaskId: claim.id,
 		};
+		const evidence = {
+			kind: "system",
+			systemId: EMPLOYEE_OFFBOARDING_SYSTEM_ID,
+			employmentPeriodId: claim.employmentPeriodId,
+			assignmentId: intent.assignmentId,
+			handoverTaskId: claim.id,
+			claimToken: claim.claimToken,
+		} as const;
+		const principal: OffboardingHandoverPrincipal =
+			anchor.deactivationId !== null
+				? { ...evidence, deactivationId: anchor.deactivationId }
+				: { ...evidence, departureId: anchor.departureId };
 		if (intent.replacementEmployeeId === null) {
 			await raiseHandoverReview(deps.database, scope, intent, "no_replacement");
 			throw new DepartureTaskNeedsResolutionError("no_replacement");
@@ -212,19 +376,11 @@ export function createApprovalHandoverHandler(deps: {
 				workflowId: intent.workflowId,
 				expectedVersion: snapshot.version,
 				idempotencyKey: handoverIdempotencyKey(
-					departureId,
+					anchor,
 					intent.assignmentId,
 					claim.payload.resolutionRequestId,
 				),
-				principal: {
-					kind: "system",
-					systemId: EMPLOYEE_OFFBOARDING_SYSTEM_ID,
-					departureId,
-					employmentPeriodId: claim.employmentPeriodId,
-					assignmentId: intent.assignmentId,
-					handoverTaskId: claim.id,
-					claimToken: claim.claimToken,
-				},
+				principal,
 				command: {
 					type: "reassign",
 					stageId: intent.stageId,
@@ -292,16 +448,20 @@ export function createApprovalHandoverHandler(deps: {
 }
 
 /**
- * Bound to the departure and the exact source assignment. A newly assigned
- * replacement for an unresolved task changes the target, so it gets its own
- * resolution suffix and never collides with an earlier attempt's receipt.
+ * Bound to the departure (or deactivation) and the exact source assignment. A
+ * newly assigned replacement for an unresolved task changes the target, so it
+ * gets its own resolution suffix and never collides with an earlier attempt's
+ * receipt.
  */
 function handoverIdempotencyKey(
-	departureId: string,
+	anchor: HandoverAnchorRef,
 	assignmentId: string,
 	resolutionRequestId: unknown,
 ): string {
-	const base = `offboarding:${departureId}:${assignmentId}`;
+	const base =
+		anchor.deactivationId !== null
+			? `deactivation:${anchor.deactivationId}:${assignmentId}`
+			: `offboarding:${anchor.departureId}:${assignmentId}`;
 	return isCanonicalUuid(resolutionRequestId) ? `${base}:${resolutionRequestId}` : base;
 }
 
@@ -312,11 +472,10 @@ function isVersionRace(error: unknown): boolean {
 	);
 }
 
-type HandoverScope = {
+type HandoverScope = HandoverAnchorRef & {
 	organizationId: string;
 	employeeId: string;
 	employmentPeriodId: string;
-	departureId: string;
 	handoverTaskId: string;
 };
 
@@ -342,6 +501,7 @@ async function raiseHandoverReview(
 			employeeId: scope.employeeId,
 			employmentPeriodId: scope.employmentPeriodId,
 			departureId: scope.departureId,
+			deactivationId: scope.deactivationId,
 			kind: "approval_handover",
 			subjectId: intent?.assignmentId ?? null,
 			metadata,
@@ -350,6 +510,7 @@ async function raiseHandoverReview(
 			target: [
 				employeeDepartureReview.organizationId,
 				employeeDepartureReview.departureId,
+				employeeDepartureReview.deactivationId,
 				employeeDepartureReview.kind,
 				employeeDepartureReview.subjectId,
 			],
@@ -380,7 +541,9 @@ async function resolveHandoverReview(
 		.where(
 			and(
 				eq(employeeDepartureReview.organizationId, scope.organizationId),
-				eq(employeeDepartureReview.departureId, scope.departureId),
+				scope.deactivationId !== null
+					? eq(employeeDepartureReview.deactivationId, scope.deactivationId)
+					: eq(employeeDepartureReview.departureId, scope.departureId),
 				eq(employeeDepartureReview.kind, "approval_handover"),
 				eq(employeeDepartureReview.subjectId, intent.assignmentId),
 				eq(employeeDepartureReview.status, "open"),
@@ -414,11 +577,20 @@ export type DepartureReplacementTarget =
 	| { handoverTaskId: string; reviewId?: undefined }
 	| { reviewId: string; handoverTaskId?: undefined };
 
-export type AssignDepartureReplacementInput = {
-	departureId: string;
+export type AssignDepartureReplacementInput = (
+	| { departureId: string; deactivationId?: undefined }
+	/** A deactivation's handover work (#1440). */
+	| { deactivationId: string; departureId?: undefined }
+) & {
 	replacementEmployeeId: string;
 	requestId: string;
 } & DepartureReplacementTarget;
+
+function replacementAnchor(input: AssignDepartureReplacementInput): HandoverAnchorRef {
+	return input.deactivationId !== undefined
+		? { departureId: null, deactivationId: input.deactivationId }
+		: { departureId: input.departureId, deactivationId: null };
+}
 
 type AppliedReplacement = {
 	employeeId: string;
@@ -473,13 +645,17 @@ export async function assignDepartureReplacement(
 			organizationId: actor.organizationId,
 			employeeId: applied.employeeId,
 			employmentPeriodId: applied.employmentPeriodId,
-			departureId: input.departureId,
+			departureId: input.departureId ?? null,
 			requestId: input.requestId,
 			eventIndex: 0,
 			kind: "replacement_assigned",
 			actorUserId: actor.userId,
 			occurredAt: dateFromInstant(now),
-			metadata: { ...applied.metadata, replacementEmployeeId: input.replacementEmployeeId },
+			metadata: {
+				...applied.metadata,
+				...(input.deactivationId !== undefined ? { deactivationId: input.deactivationId } : {}),
+				replacementEmployeeId: input.replacementEmployeeId,
+			},
 			requestFingerprint: fingerprint,
 			result: {},
 		});
@@ -533,9 +709,9 @@ async function retargetHandoverTask(
 		payload: unknown;
 	}>(sql`
 		SELECT employee_id, employment_period_id, status, payload
-		FROM employee_departure_task
+		FROM employee_departure_task task
 		WHERE organization_id = ${actor.organizationId} AND id = ${handoverTaskId}::uuid
-			AND departure_id = ${input.departureId}::uuid AND kind = 'approval_handover'
+			AND ${anchorCondition("task", replacementAnchor(input))} AND kind = 'approval_handover'
 		FOR UPDATE
 	`);
 	const task = tasks.rows[0];
@@ -583,9 +759,9 @@ async function assignFutureStage(
 		subject_id: string;
 	}>(sql`
 		SELECT employee_id, employment_period_id, subject_id
-		FROM employee_departure_review
+		FROM employee_departure_review review
 		WHERE organization_id = ${actor.organizationId} AND id = ${reviewId}::uuid
-			AND departure_id = ${input.departureId}::uuid AND kind = 'approval_handover'
+			AND ${anchorCondition("review", replacementAnchor(input))} AND kind = 'approval_handover'
 			AND metadata->>'reason' = ${FUTURE_STAGE_REVIEW_REASON}
 		FOR UPDATE
 	`);
