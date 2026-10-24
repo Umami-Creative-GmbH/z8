@@ -5,7 +5,7 @@ import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
 import { z } from "zod";
-import { member, organization } from "@/db/auth-schema";
+import { member } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
 import { AuditTrail } from "@/lib/audit-trail";
@@ -33,7 +33,7 @@ import {
 import { previewEmployeeDeactivation } from "@/lib/employee-lifecycle/deactivation/preview";
 import type {
 	DeactivationAfterCommit,
-	DeactivationPlan,
+	DeactivationPreview,
 	NamedEmployee,
 } from "@/lib/employee-lifecycle/deactivation/types";
 import type { ReleasedDeputyAssignments } from "@/lib/employee-lifecycle/deputy-release";
@@ -43,6 +43,7 @@ import {
 	type LifecycleTargetCheck,
 	type LifecycleTargetEmployee,
 } from "@/lib/employee-lifecycle/lifecycle-target";
+import { tryLockLifecycleOrganization } from "@/lib/employee-lifecycle/locks";
 import { executeReactivation } from "@/lib/employee-lifecycle/reactivation";
 import {
 	DeactivationRequestConflictError,
@@ -303,12 +304,9 @@ function deactivateEmployee(input: unknown) {
 							deactivationProtectionScope(command),
 							async (tx): Promise<DeactivationTransactionResult> => {
 								// All lifecycle mutations for an organization take this row lock, serializing owner safety checks.
-								const [lockedOrganization] = await tx
-									.select({ id: organization.id })
-									.from(organization)
-									.where(eq(organization.id, actor.organizationId))
-									.for("update");
-								if (!lockedOrganization) return { type: "not_found" };
+								if (!(await tryLockLifecycleOrganization(tx, actor.organizationId))) {
+									return { type: "not_found" };
+								}
 
 								const recorded = await readDeactivationByRequest(tx, {
 									organizationId: actor.organizationId,
@@ -543,12 +541,9 @@ function reactivateEmployee(employeeId: string) {
 							{ organizationId: actor.organizationId, employeeIds: [validatedEmployeeId] },
 							async (tx): Promise<ReactivationTransactionResult> => {
 								// All lifecycle mutations for an organization take this row lock, serializing owner safety checks.
-								const [lockedOrganization] = await tx
-									.select({ id: organization.id })
-									.from(organization)
-									.where(eq(organization.id, actor.organizationId))
-									.for("update");
-								if (!lockedOrganization) return { type: "not_found" };
+								if (!(await tryLockLifecycleOrganization(tx, actor.organizationId))) {
+									return { type: "not_found" };
+								}
 
 								const check = await checkLifecycleTarget(tx, {
 									organizationId: actor.organizationId,
@@ -661,7 +656,7 @@ export async function reactivateEmployeeAction(
  */
 export async function previewEmployeeDeactivationAction(
 	input: PreviewEmployeeDeactivationInput,
-): Promise<ServerActionResult<DeactivationPlan>> {
+): Promise<ServerActionResult<DeactivationPreview>> {
 	return runTracedEmployeeAction({
 		name: "previewEmployeeDeactivation",
 		logError: (error) => {

@@ -216,7 +216,6 @@ function setup(state: LifecycleState = {}) {
 		events.push("organization-locked");
 		return [{ id: organizationId }];
 	});
-	const lockWhere = vi.fn(() => ({ for: lockFor }));
 	const ownerWhere = vi.fn().mockResolvedValue(
 		state.owners ?? [
 			{ userId: actorUserId, role: "owner", employeeIsActive: true },
@@ -224,10 +223,7 @@ function setup(state: LifecycleState = {}) {
 		],
 	);
 	const leftJoin = vi.fn(() => ({ where: ownerWhere }));
-	const from = vi
-		.fn()
-		.mockImplementationOnce(() => ({ where: lockWhere }))
-		.mockImplementationOnce(() => ({ leftJoin }));
+	const from = vi.fn().mockImplementationOnce(() => ({ leftJoin }));
 	const select = vi.fn(() => ({ from }));
 	const returning = vi.fn().mockImplementation(async () => {
 		events.push("employee-updated");
@@ -243,7 +239,12 @@ function setup(state: LifecycleState = {}) {
 				employee: { findFirst: findEmployee },
 				member: { findFirst: findMember },
 			},
-			execute: vi.fn().mockResolvedValue({ rows: [{ ended: state.employmentEnded ?? false }] }),
+			// The organization row lock (`tryLockLifecycleOrganization`), else the employment check.
+			execute: vi.fn(async (query: SQL) =>
+				/FOR UPDATE/.test(new PgDialect().sqlToQuery(query).sql)
+					? { rows: await lockFor("update") }
+					: { rows: [{ ended: state.employmentEnded ?? false }] },
+			),
 			select,
 			update,
 		});
@@ -436,7 +437,7 @@ describe("employee lifecycle actions", () => {
 	});
 
 	it("looks up the target by employee and organization and deactivates exactly that request", async () => {
-		const { findEmployee } = setup();
+		const { findEmployee, dbService } = setup();
 
 		await deactivateEmployeeWithInput({
 			employeeId,
@@ -461,6 +462,8 @@ describe("employee lifecycle actions", () => {
 				replacementManagers: { [reportId]: replacementId },
 				requestFingerprint: "fingerprint",
 				at: expect.anything(),
+				// After-commit steps run on the action's own database client.
+				database: dbService.db,
 			},
 		);
 	});

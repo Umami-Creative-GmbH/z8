@@ -2,7 +2,7 @@
 
 import type { employee } from "@/db/schema";
 import type { ServerActionResult } from "@/lib/effect/result";
-import type { DeactivationPlan } from "@/lib/employee-lifecycle/deactivation/types";
+import type { DeactivationPreview } from "@/lib/employee-lifecycle/deactivation/types";
 import type { ExecuteDepartureResult } from "@/lib/employee-lifecycle/types";
 import type { CustomFieldValuesInput } from "@/lib/organization/custom-fields/value-rules";
 import type {
@@ -85,7 +85,7 @@ export async function deactivateEmployee(
 /** What Deactivate would change now, for the dialog (#1440). */
 export async function previewEmployeeDeactivation(
 	input: PreviewEmployeeDeactivationInput,
-): Promise<ServerActionResult<DeactivationPlan>> {
+): Promise<ServerActionResult<DeactivationPreview>> {
 	return previewEmployeeDeactivationAction(input);
 }
 

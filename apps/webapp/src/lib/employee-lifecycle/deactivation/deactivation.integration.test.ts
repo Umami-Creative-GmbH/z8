@@ -16,7 +16,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ApprovalWorkflowDatabase } from "@/lib/approvals/workflow/repository";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
-import type { DeactivationApplied, DeactivationPlan } from "./types";
+import type { DeactivationApplied, DeactivationPreview } from "./types";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
@@ -738,7 +738,7 @@ describe("deactivation acceptance (#1440)", () => {
 	}
 
 	/** What applying `plan` must change, derived from the plan alone. */
-	function expectedApplied(plan: DeactivationPlan, personId: string) {
+	function expectedApplied(plan: DeactivationPreview, personId: string) {
 		const links = plan.managerLinks;
 		const sortLinks = <T extends { employeeId: string; managerId: string }>(items: T[]) =>
 			items.toSorted((a, b) =>
@@ -755,6 +755,7 @@ describe("deactivation acceptance (#1440)", () => {
 						employeeId: r.employeeId,
 						managerId: personId,
 					})),
+					...links.formerReports.map((r) => ({ employeeId: r.employeeId, managerId: personId })),
 					...links.ownManagerLinks.map((l) => ({ employeeId: personId, managerId: l.employeeId })),
 				]),
 				addedLinks: sortLinks(
@@ -825,7 +826,7 @@ describe("deactivation acceptance (#1440)", () => {
 
 	// ---- the scenario, in order ----------------------------------------------
 
-	let preview: DeactivationPlan;
+	let preview: DeactivationPreview;
 	let deactivationId: string;
 	const requestId = randomUUID();
 
@@ -865,7 +866,8 @@ describe("deactivation acceptance (#1440)", () => {
 		expect(plan.refusals).toEqual(["replacement_missing"]);
 		expect(plan.teamLinks.teams).toEqual([{ teamId: seeded.teamId, name: "Floor team" }]);
 		expect(plan.shifts.shiftsToOpen.map((shift) => shift.shiftId)).toEqual([seeded.shifts.future]);
-		expect(plan.shifts.plannerRecipientUserIds).toEqual([seeded.manager.userId]);
+		// Who the planner notice goes to stays on the server (other users' ids).
+		expect(plan.shifts).not.toHaveProperty("plannerRecipientUserIds");
 		expect(plan.absences.absencesToCancel.map((item) => item.absenceId)).toEqual([
 			seeded.absences.pending,
 			seeded.absences.approved,

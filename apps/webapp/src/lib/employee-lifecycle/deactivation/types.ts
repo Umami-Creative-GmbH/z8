@@ -221,6 +221,19 @@ export type DeactivationPlan = {
 	refusals: Array<"replacement_missing" | "replacement_ineligible">;
 };
 
+/**
+ * The plan as the browser sees it (the preview dialog): without the planner
+ * notice's recipients, which are other users' ids and stay on the server.
+ */
+export type DeactivationPreview = Omit<DeactivationPlan, "shifts"> & {
+	shifts: Omit<ShiftsPlan, "plannerRecipientUserIds">;
+};
+
+export function toDeactivationPreview(plan: DeactivationPlan): DeactivationPreview {
+	const { plannerRecipientUserIds: _serverOnly, ...shifts } = plan.shifts;
+	return { ...plan, shifts };
+}
+
 export type DeactivationApplied = {
 	managerLinks: ManagerLinksApplied;
 	teamLinks: TeamLinksApplied;
