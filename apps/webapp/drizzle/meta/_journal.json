@@ -1996,6 +1996,13 @@
       "when": 1809273600000,
       "tag": "0284_employee_deactivation_shifts_opened",
       "breakpoints": true
+    },
+    {
+      "idx": 285,
+      "version": "7",
+      "when": 1809360000000,
+      "tag": "0285_employee_deactivation",
+      "breakpoints": true
     }
   ]
 }
