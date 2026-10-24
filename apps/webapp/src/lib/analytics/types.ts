@@ -234,6 +234,7 @@ export type TeamPerformanceParams = {
 	organizationId: string;
 	dateRange: DateRange;
 	teamId?: string;
+	scope: AnalyticsEmployeeScope;
 };
 
 export type VacationTrendsParams = {

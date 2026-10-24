@@ -553,7 +553,11 @@ scope:{role:"admin"},
 			timezone: "Europe/Berlin",
 		};
 		const performance = await runtime.runPromise(
-			analytics.getTeamPerformance({ organizationId, dateRange }),
+			analytics.getTeamPerformance({
+				organizationId,
+				dateRange,
+				scope: { role: "admin" },
+			}),
 		);
 		const subject = performance.teams
 			.flatMap((team) => team.employees)

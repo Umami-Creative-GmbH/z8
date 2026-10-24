@@ -94,6 +94,10 @@ export async function getTeamPerformanceData(
 			organizationId,
 			dateRange,
 			teamId,
+			scope:
+				currentEmployee.role === "admin"
+					? { role: "admin" }
+					: { role: "manager", managerEmployeeId: currentEmployee.id },
 		});
 
 		return data;
