@@ -28,6 +28,58 @@ const metrics = [
   "cacheMisses",
   "eventLoopDelayMs",
 ];
+/** Whole-run wire proof includes opening IO, every registered phase and browser shutdown. */
+export async function runCompanionCapture({
+  collector,
+  control,
+  artifact,
+  openBrowser,
+  capture,
+  checkpoint,
+}) {
+  artifact.nativeRunCoverage = { complete: false };
+  const before = await collector.readCollectorCounters(control);
+  if (
+    before.activeTraces !== 0 ||
+    before.started.queries !== before.ended.queries
+  )
+    throw Error(
+      "Native work is pending before companion capture; use a settled isolated fixture.",
+    );
+  let browser,
+    closed = false;
+  try {
+    browser = await openBrowser();
+    await capture(browser);
+  } catch (error) {
+    artifact.interrupted = true;
+    artifact.interruption = { kind: "capture-error" };
+    throw error;
+  } finally {
+    try {
+      await browser?.close();
+      closed = true;
+    } catch {
+      artifact.interrupted = true;
+      artifact.interruption = { kind: "browser-close-error" };
+    }
+    try {
+      artifact.nativeRunCoverage = await collector.reconcileCollectorRun({
+        control,
+        before,
+        traceIds: artifact.samples.flatMap((s) => [
+          s.traceId,
+          s.prerequisiteTraceId,
+          s.backgroundTraceId,
+        ]),
+      });
+    } catch {
+      artifact.nativeRunCoverage = { complete: false };
+    }
+    if (!closed) artifact.nativeRunCoverage.complete = false;
+    await checkpoint();
+  }
+}
 export function settledCohorts(plan) {
   if (!Number.isInteger(plan.samples) || plan.samples < 20)
     throw Error("At least twenty samples are required.");
@@ -82,6 +134,8 @@ export function settledCohorts(plan) {
 }
 export function settledEvidenceGates(plan, artifact, native, planSha) {
   const gates = [];
+  if (artifact.nativeRunCoverage?.complete !== true)
+    gates.push("Whole-run wire/native/collector reconciliation is incomplete.");
   if (artifact.interrupted === true || artifact.interruption != null)
     gates.push("Interrupted companion evidence cannot fulfill resource gates.");
   if (
@@ -572,7 +626,11 @@ async function main() {
       s.backend = Object.fromEntries(
         metrics.map((k) => [
           k,
-          Number.isFinite(e?.[k]) && e[k] >= 0 ? e[k] : null,
+          artifact.nativeRunCoverage?.complete === true &&
+          Number.isFinite(e?.[k]) &&
+          e[k] >= 0
+            ? e[k]
+            : null,
         ]),
       );
     }
@@ -615,17 +673,7 @@ async function main() {
   )
     throw Error("Capture requires --auth, --chrome and --out.");
   const collector = await import("./collector-client.mjs");
-  const version = await fetch(new URL("/api/app-version", plan.origin), {
-      signal: AbortSignal.timeout(10000),
-    }),
-    observed = (await version.json()).buildHash;
-  if (
-    !version.ok ||
-    !/^[a-f0-9]{7,40}$/.test(observed ?? "") ||
-    !plan.runtime.build.startsWith(observed)
-  )
-    throw Error("Actual fixture build identity differs before capture.");
-  const auth = JSON.parse(await readFile(options["--auth"]));
+  let auth;
   const artifact = {
     schema: 1,
     kind: "settled-resource-companion",
@@ -636,8 +684,8 @@ async function main() {
     runtime: {
       ...plan.runtime,
       node: process.version,
-      observedBuild: observed,
-      buildVerified: true,
+      observedBuild: null,
+      buildVerified: false,
     },
     hardware: {
       platform: platform(),
@@ -652,49 +700,71 @@ async function main() {
     evidenceComplete: false,
     resourceComplete: false,
     acceptance: "unfulfilled",
+    nativeRunCoverage: { complete: false },
   };
   await mkdir(dirname(options["--out"]), { recursive: true });
   await writeFile(options["--out"], encode(artifact), { flag: "wx" });
-  const { default: puppeteer } = await import("puppeteer-core"),
-    browser = await puppeteer.launch({
-      executablePath: options["--chrome"],
-      headless: true,
-    });
-  artifact.browser = await browser.version();
   let checkpoint = Promise.resolve();
-  try {
-    for (const c of cohorts) {
-      let index = 0;
-      await Promise.all(
-        Array.from({ length: plan.concurrency }, async () => {
-          while (index < c.count) {
-            const iteration = index++;
-            artifact.samples.push(
-              await measure(
-                browser,
-                auth,
-                plan,
-                plan.conditions.find((x) => x.name === c.condition),
-                plan.ranges.find((x) => x.name === c.range),
-                plan.routes.find((x) => x.name === c.route),
-                c.mode,
-                iteration,
-                options["--collector"],
-                collector,
-              ),
-            );
-            checkpoint = checkpoint.then(() =>
-              writeFile(options["--out"], encode(artifact)),
-            );
-            await checkpoint;
-          }
+  await runCompanionCapture({
+    collector,
+    control: options["--collector"],
+    artifact,
+    openBrowser: async () => {
+      const version = await fetch(new URL("/api/app-version", plan.origin), {
+          signal: AbortSignal.timeout(10000),
         }),
-      );
-    }
-  } finally {
-    await checkpoint;
-    await browser.close();
-  }
+        observed = (await version.json()).buildHash;
+      if (
+        !version.ok ||
+        !/^[a-f0-9]{7,40}$/.test(observed ?? "") ||
+        !plan.runtime.build.startsWith(observed)
+      )
+        throw Error("Actual fixture build identity differs before capture.");
+      artifact.runtime.observedBuild = observed;
+      artifact.runtime.buildVerified = true;
+      auth = JSON.parse(await readFile(options["--auth"]));
+      const { default: puppeteer } = await import("puppeteer-core");
+      return puppeteer.launch({
+        executablePath: options["--chrome"],
+        headless: true,
+      });
+    },
+    capture: async (browser) => {
+      artifact.browser = await browser.version();
+      for (const c of cohorts) {
+        let index = 0;
+        await Promise.all(
+          Array.from({ length: plan.concurrency }, async () => {
+            while (index < c.count) {
+              const iteration = index++;
+              artifact.samples.push(
+                await measure(
+                  browser,
+                  auth,
+                  plan,
+                  plan.conditions.find((x) => x.name === c.condition),
+                  plan.ranges.find((x) => x.name === c.range),
+                  plan.routes.find((x) => x.name === c.route),
+                  c.mode,
+                  iteration,
+                  options["--collector"],
+                  collector,
+                ),
+              );
+              checkpoint = checkpoint.then(() =>
+                writeFile(options["--out"], encode(artifact)),
+              );
+              await checkpoint;
+            }
+          }),
+        );
+      }
+    },
+    checkpoint: async () => {
+      await checkpoint;
+      await writeFile(options["--out"], encode(artifact));
+    },
+  });
   console.log(
     "Companion samples recorded. Flush native collector, then finalize.",
   );
