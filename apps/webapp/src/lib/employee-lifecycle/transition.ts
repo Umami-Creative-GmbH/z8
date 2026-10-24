@@ -146,7 +146,7 @@ export async function executeDepartureInTransaction(
 	`);
 	await closeEmploymentWindows(tx, identity, cutoffDate, nowDate);
 	await tx.execute(sql`
-		UPDATE employee SET is_active = false, updated_at = ${nowDate}
+		UPDATE employee SET is_active = false, deactivated_at = ${cutoffDate}, updated_at = ${nowDate}
 		WHERE organization_id = ${identity.organizationId} AND id = ${identity.employeeId}
 			AND is_active = true
 	`);

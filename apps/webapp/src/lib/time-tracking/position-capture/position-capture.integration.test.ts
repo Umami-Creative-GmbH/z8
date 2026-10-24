@@ -319,6 +319,8 @@ describe("position capture settings and consent on PostgreSQL", () => {
 		await pool.query("update employee set is_active = false where id = any($1::uuid[])", [
 			[ids.office, ids.manager],
 		]);
+		// As if deactivated before the instant was stored (#1439): not recorded.
+		await pool.query("update employee set deactivated_at = null where id = $1", [ids.office]);
 
 		expect(
 			await admin.setPositionCaptureAssignmentAction({
@@ -340,6 +342,9 @@ describe("position capture settings and consent on PostgreSQL", () => {
 		expect(offered.get(ids.office)).toBe(true);
 		expect(offered.has(ids.manager)).toBe(false);
 		expect(offered.get(ids.field)).toBe(false);
+		const since = new Map(data.data.employees.map((row) => [row.id, row.formerSince]));
+		expect(since.get(ids.office)).toBeNull();
+		expect(since.get(ids.field)).toBeUndefined();
 	});
 
 	async function switchOnForFieldTeam(purposeStatement = "Customer proof", retentionDays = 90) {

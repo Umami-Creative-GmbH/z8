@@ -24,9 +24,14 @@ export async function reconcileBillingSeatsForOrganization(
 	options: {
 		strict?: boolean;
 		run?: () => Promise<void>;
+		/**
+		 * Recount the local seats even while external billing is off, as the departure
+		 * `billing_sync` task and the reconciliation job do; the seat sync then skips Stripe.
+		 */
+		alsoWhenBillingDisabled?: boolean;
 	} = {},
 ) {
-	if (!BILLING_ENABLED) return;
+	if (!BILLING_ENABLED && !options.alsoWhenBillingDisabled) return;
 
 	try {
 		if (options.run) {

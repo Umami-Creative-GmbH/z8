@@ -12,6 +12,7 @@ const api = vi.hoisted(() => ({
 	toast: { success: vi.fn(), error: vi.fn() },
 }));
 vi.mock("@tolgee/react", () => ({
+	useTolgee: () => ({ getLanguage: () => "en-GB" }),
 	useTranslate: () => ({
 		t: (_key: string, fallback: string, params?: Record<string, string | number>) =>
 			Object.entries(params ?? {}).reduce(
@@ -78,6 +79,15 @@ describe("TeamMembersDialog former employees (#1438)", () => {
 		employee: { id: "d1425000-0000-4000-8000-000000000002", organizationId, teamId, position: null },
 		teamMemberships: [{ teamId }],
 		isFormerEmployee: true,
+		formerSince: "2026-10-12",
+	} as unknown as MemberWithUserAndEmployee;
+	const gus = {
+		member: { id: "m4" },
+		user: { id: "u4", name: "Gus Gone", email: "gus@example.test", image: null },
+		employee: { id: "d1425000-0000-4000-8000-000000000004", organizationId, teamId, position: null },
+		teamMemberships: [{ teamId }],
+		isFormerEmployee: true,
+		formerSince: null,
 	} as unknown as MemberWithUserAndEmployee;
 	const otto = {
 		member: { id: "m3" },
@@ -87,8 +97,8 @@ describe("TeamMembersDialog former employees (#1438)", () => {
 		isFormerEmployee: true,
 	} as unknown as MemberWithUserAndEmployee;
 
-	it("hides former members until asked for, then marks them", async () => {
-		renderDialog([dana, fern]);
+	it("hides former members until asked for, then marks them with the date they left", async () => {
+		renderDialog([dana, fern, gus]);
 
 		expect(await screen.findByText("Dana Driver")).toBeTruthy();
 		expect(screen.queryByText("Fern Former")).toBeNull();
@@ -96,8 +106,11 @@ describe("TeamMembersDialog former employees (#1438)", () => {
 
 		await userEvent.click(screen.getByRole("switch", { name: "Show former employees" }));
 
-		const row = screen.getByText("Fern Former").closest("div.flex.items-center.justify-between");
-		expect(within(row as HTMLElement).getByText("Former")).toBeTruthy();
+		const rowOf = (name: string) =>
+			screen.getByText(name).closest("div.flex.items-center.justify-between") as HTMLElement;
+		expect(within(rowOf("Fern Former")).getByText("Former since 12 Oct 2026")).toBeTruthy();
+		expect(within(rowOf("Gus Gone")).getByText("Former · date not recorded")).toBeTruthy();
+		expect(within(rowOf("Dana Driver")).queryByText(/Former/)).toBeNull();
 	});
 
 	it("never offers a former employee to add", () => {

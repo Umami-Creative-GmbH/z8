@@ -57,7 +57,9 @@ function TriggerSelection({
 					clockStatus={employee.clockStatus ?? "unknown"}
 				/>
 				<span className="truncate">{getEmployeeName(employee)}</span>
-				{isFormerSelectableEmployee(employee) && <FormerEmployeeBadge />}
+				{isFormerSelectableEmployee(employee) && (
+					<FormerEmployeeBadge since={employee.formerSince} />
+				)}
 			</div>
 		);
 	}
@@ -185,7 +187,9 @@ export function EmployeeChips({
 						clockStatus={employee.clockStatus ?? "unknown"}
 					/>
 					<span className="truncate max-w-[120px]">{getEmployeeName(employee)}</span>
-					{isFormerSelectableEmployee(employee) && <FormerEmployeeBadge />}
+					{isFormerSelectableEmployee(employee) && (
+						<FormerEmployeeBadge since={employee.formerSince} />
+					)}
 					{!disabled && (
 						<button
 							type="button"

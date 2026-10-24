@@ -10,7 +10,12 @@ import { AuthorizationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
-import { isFormerEmployee, onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
+import {
+	formerSinceDate,
+	isFormerEmployee,
+	onCurrentRoster,
+} from "@/lib/employee-lifecycle/current-roster";
+import { formerSinceField } from "@/lib/employee-lifecycle/former-since";
 import type { VehicleChangeInput } from "@/lib/organization/vehicles/vehicle-rules";
 import {
 	changeOrganizationVehicles,
@@ -29,6 +34,11 @@ export interface VehicleDriverOption {
 	isActive: boolean;
 	/** A former employee (#1438): offered only where a vehicle already has them. */
 	isFormer: boolean;
+	/**
+	 * On a former employee only: the organization-local date they left
+	 * (`YYYY-MM-DD`, #1439), null when the date isn't recorded.
+	 */
+	formerSince?: string | null;
 }
 
 export interface VehicleSettingsData {
@@ -94,6 +104,7 @@ export async function getVehicleSettings(): Promise<ServerActionResult<VehicleSe
 						id: employee.id,
 						employeeNumber: employee.employeeNumber,
 						isFormer: isFormerEmployee(employee),
+						formerSince: formerSinceDate(employee),
 						name: user.name,
 						email: user.email,
 					})
@@ -116,6 +127,7 @@ export async function getVehicleSettings(): Promise<ServerActionResult<VehicleSe
 						email: row.email,
 						isActive: !row.isFormer,
 						isFormer: row.isFormer,
+						...formerSinceField(row.isFormer, row.formerSince),
 					})),
 					teams,
 				};

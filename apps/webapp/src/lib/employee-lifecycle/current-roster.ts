@@ -37,6 +37,38 @@ export function isFormerEmployee(
 	return sql<boolean>`(NOT ${isCurrent(columns, now)})`;
 }
 
+/** The employee columns that also say when a former employee left. */
+export type LeftOnEmployeeColumns = RosterEmployeeColumns & { deactivatedAt: AnyPgColumn };
+
+/**
+ * When a former employee left (#1439), as an ISO instant in UTC: the latest
+ * departure that ended their access, or their deactivation, whichever is later.
+ * NULL for a current employee, and for a former one whose date isn't recorded.
+ */
+export function employeeLeftAt(
+	columns: LeftOnEmployeeColumns = employee,
+	now?: Instant,
+): SQL<string | null> {
+	const at = rosterCheckInstant(now);
+	return sql<
+		string | null
+	>`(CASE WHEN ${isCurrent(columns, now)} THEN NULL ELSE to_char(employee_left_at(${columns.organizationId}, ${columns.id}, ${columns.deactivatedAt}, ${at}) AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') END)`;
+}
+
+/**
+ * The same moment as the organization-local date a former employee left, as
+ * `YYYY-MM-DD`, for "Former since …" labels. NULL as for `employeeLeftAt`.
+ */
+export function formerSinceDate(
+	columns: LeftOnEmployeeColumns = employee,
+	now?: Instant,
+): SQL<string | null> {
+	const at = rosterCheckInstant(now);
+	return sql<
+		string | null
+	>`(CASE WHEN ${isCurrent(columns, now)} THEN NULL ELSE to_char(employee_left_on(${columns.organizationId}, ${columns.id}, ${columns.deactivatedAt}, ${at}), 'YYYY-MM-DD') END)`;
+}
+
 /** The instant a roster or access check is evaluated at: `now`, or the database's own now. */
 export function rosterCheckInstant(now?: Instant): SQL {
 	return now ? sql`${dateFromInstant(now)}::timestamptz` : sql`now()`;

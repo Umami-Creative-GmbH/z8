@@ -82,7 +82,9 @@ function OfficerGrantEditor({ data }: { data: PersonnelFileOfficerAdminData }) {
 	// Departed employees can be named: their personnel file stays managed.
 	const namedOptions = [
 		...officerOptions,
-		...data.departedEmployees.map((person) => toSelectableEmployee(person, { isActive: false })),
+		...data.departedEmployees.map((person) =>
+			toSelectableEmployee(person, { isActive: false, formerSince: person.formerSince }),
+		),
 	];
 
 	const form = useForm({

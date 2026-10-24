@@ -331,9 +331,12 @@ describe("vehicle use enablement on PostgreSQL", () => {
 	it("refuses a new assignment for a former employee and still switches an existing one (#1438)", async () => {
 		await switchOn();
 		await assign({ type: "employee", employeeId: ids.driver }, "expected");
-		await pool.query("update employee set is_active = false where id = any($1::uuid[])", [
-			[ids.driver, ids.office],
-		]);
+		// 22:30 UTC is already the next day in Berlin, the organization's timezone (#1439).
+		await pool.query(
+			"update employee set is_active = false, deactivated_at = '2026-09-14T22:30:00Z' where id = $1",
+			[ids.driver],
+		);
+		await pool.query("update employee set is_active = false where id = $1", [ids.office]);
 		actAs(ids.ownerUser);
 		expect(
 			await admin.setVehicleUseAssignmentAction({
@@ -350,6 +353,10 @@ describe("vehicle use enablement on PostgreSQL", () => {
 		expect(offered.get(ids.driver)).toBe(true);
 		expect(offered.has(ids.office)).toBe(false);
 		expect(offered.get(ids.manager)).toBe(false);
+		// The former one carries the organization-local date they left; current ones none.
+		const since = new Map(data.data.employees.map((row) => [row.id, row.formerSince]));
+		expect(since.get(ids.driver)).toBe("2026-09-15");
+		expect(since.get(ids.manager)).toBeUndefined();
 	});
 
 	it("audits the switch and every assignment change", async () => {

@@ -187,7 +187,7 @@ export function DrivingDetailsList({
 												<span className="flex flex-wrap items-center gap-2">
 													{row.name}
 													{row.former ? (
-														<FormerEmployeeBadge />
+														<FormerEmployeeBadge since={row.formerSince} />
 													) : null}
 												</span>
 												{row.teamName ? (

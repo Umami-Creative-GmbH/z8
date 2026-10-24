@@ -21,6 +21,7 @@ vi.mock("@tolgee/react", () => ({
 			return translated;
 		},
 	}),
+	useTolgee: () => ({ getLanguage: () => "en" }),
 }));
 
 function makeEmployee(id: string, name: string): SelectableEmployee {

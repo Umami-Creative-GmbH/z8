@@ -38,6 +38,15 @@ vi.mock("@/lib/query", () => ({
 	useEmployeeClockStatuses: () => ({ getStatus: () => "unknown" }),
 }));
 
+// The former badge translates on its own (#1439).
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({
+		t: (_key: string, fallback: string, params?: Record<string, string>) =>
+			fallback.replace(/\{(\w+)\}/g, (_match, name: string) => params?.[name] ?? ""),
+	}),
+	useTolgee: () => ({ getLanguage: () => "en" }),
+}));
+
 global.ResizeObserver = class ResizeObserver {
 	observe() {}
 	unobserve() {}
@@ -211,6 +220,19 @@ function createForm(overrides: Partial<typeof formValues> = {}) {
 describe("employee detail page sections", () => {
 	beforeEach(() => {
 		userAvatarMock.mockClear();
+	});
+
+	it("shows a former employee as former since the day they left (#1439)", () => {
+		render(
+			<EmployeeOverviewCard
+				employee={{ ...employee, isActive: false, isFormer: true, formerSince: "2026-10-12" }}
+				schedule={null}
+			/>,
+		);
+
+		expect(screen.getByText("Former since Oct 12, 2026")).toBeTruthy();
+		expect(screen.queryByText("Active")).toBeNull();
+		expect(screen.queryByText("Inactive")).toBeNull();
 	});
 
 	it("renders the detail view strings in German", () => {

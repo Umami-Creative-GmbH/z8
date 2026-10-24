@@ -17,6 +17,12 @@ export interface SelectableEmployee {
 	isActive: boolean;
 	/** Deactivated or past a due departure (#1438): the row is labelled "Former". */
 	isFormer?: boolean;
+	/**
+	 * The organization-local date a former employee left (`YYYY-MM-DD`, #1439),
+	 * `null` when it isn't recorded. Left out for current employees and for
+	 * sources that don't say, so the label stays "Former".
+	 */
+	formerSince?: string | null;
 	clockStatus?: "clocked-in" | "on-break" | "clocked-out" | "unknown";
 	teamId: string | null;
 	user: {

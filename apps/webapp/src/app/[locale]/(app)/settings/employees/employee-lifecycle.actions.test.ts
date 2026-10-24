@@ -17,6 +17,7 @@ const mocks = vi.hoisted(() => ({
 	logAudit: vi.fn(),
 	loggerWarn: vi.fn(),
 	notifyReleasedDeputyAssignments: vi.fn(),
+	reconcileBillingSeatsForOrganization: vi.fn(),
 	releaseDeputyAssignmentsOnDeactivation: vi.fn(),
 	revalidateEmployeesCache: vi.fn(),
 	revokeOrganizationActiveSessions: vi.fn(),
@@ -83,6 +84,11 @@ vi.mock("@/lib/audit-logger", async (importOriginal) => ({
 
 vi.mock("@/lib/auth/organization-session-revocation", () => ({
 	revokeOrganizationActiveSessions: mocks.revokeOrganizationActiveSessions,
+}));
+
+// The seat count itself is covered by billable-seat-count.integration.test.ts (#1439).
+vi.mock("@/lib/billing/seat-sync-trigger", () => ({
+	reconcileBillingSeatsForOrganization: mocks.reconcileBillingSeatsForOrganization,
 }));
 
 vi.mock("@/lib/logger", () => ({
@@ -228,6 +234,9 @@ function setup(state: LifecycleState = {}) {
 	);
 	mocks.logAudit.mockImplementation(async () => {
 		events.push("audit-logged");
+	});
+	mocks.reconcileBillingSeatsForOrganization.mockImplementation(async () => {
+		events.push("seats-reconciled");
 	});
 	mocks.revalidateEmployeesCache.mockImplementation(() => {
 		events.push("cache-revalidated");
@@ -572,12 +581,17 @@ describe("employee lifecycle actions", () => {
 			changes: { isActive: { from: true, to: false } },
 			timestamp: expect.any(Date),
 		});
+		expect(mocks.reconcileBillingSeatsForOrganization).toHaveBeenCalledExactlyOnceWith(
+			organizationId,
+			{ alsoWhenBillingDisabled: true },
+		);
 		expect(events).toEqual([
 			"organization-locked",
 			"employee-updated",
 			"transaction-committed",
 			"sessions-revoked",
 			"audit-logged",
+			"seats-reconciled",
 			"cache-revalidated",
 		]);
 	});
@@ -676,6 +690,7 @@ describe("employee lifecycle actions", () => {
 			"transaction-committed",
 			"sessions-revoked",
 			"audit-logged",
+			"seats-reconciled",
 			"cache-revalidated",
 		]);
 		expect(firstResult).toEqual({ success: true, data: undefined });
@@ -781,6 +796,11 @@ describe("employee lifecycle actions", () => {
 		expect(update).toHaveBeenCalledExactlyOnceWith(employee);
 		expect(updateSet).toHaveBeenCalledWith({ isActive: true });
 		expect(mocks.revokeOrganizationActiveSessions).not.toHaveBeenCalled();
+		// Reactivation takes a paid seat again (#1439).
+		expect(mocks.reconcileBillingSeatsForOrganization).toHaveBeenCalledExactlyOnceWith(
+			organizationId,
+			{ alsoWhenBillingDisabled: true },
+		);
 		expect(mocks.logAudit).toHaveBeenCalledWith({
 			action: AuditAction.EMPLOYEE_REACTIVATED,
 			actorId: actorUserId,
@@ -803,6 +823,7 @@ describe("employee lifecycle actions", () => {
 		expect(update).not.toHaveBeenCalled();
 		expect(mocks.logAudit).not.toHaveBeenCalled();
 		expect(mocks.revokeOrganizationActiveSessions).not.toHaveBeenCalled();
+		expect(mocks.reconcileBillingSeatsForOrganization).not.toHaveBeenCalled();
 	});
 
 	it("exposes lifecycle wrappers from the employee action aggregator", () => {

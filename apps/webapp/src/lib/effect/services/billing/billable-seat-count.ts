@@ -6,7 +6,7 @@ import { EMPLOYEE_OFFBOARDING_RELEASE_READY } from "@/lib/employee-lifecycle/rel
 
 type SeatCountDatabase = Pick<typeof rootDatabase, "execute">;
 
-type SeatCountOptions = { requireActiveEmployee?: boolean; now?: Instant };
+type SeatCountOptions = { requireEmployeeProfile?: boolean; now?: Instant };
 
 /** Billable seats by type (#886): kiosk seats belong to kiosk-only employees, full seats to everyone else. */
 export type SeatsByType = { full: number; kiosk: number };
@@ -16,7 +16,7 @@ export type SeatsByType = { full: number; kiosk: number };
  * `member m`, `"user" u` and `employee e`. See `countBillableSeats`.
  */
 function billableSeatsFrom(organizationId: string, options: SeatCountOptions): SQL {
-	const requireActiveEmployee = options.requireActiveEmployee ?? EMPLOYEE_OFFBOARDING_RELEASE_READY;
+	const requireEmployeeProfile = options.requireEmployeeProfile ?? EMPLOYEE_OFFBOARDING_RELEASE_READY;
 	const at = options.now ? sql`${dateFromInstant(options.now)}::timestamptz` : sql`now()`;
 	return sql`
 		FROM member m
@@ -28,25 +28,24 @@ function billableSeatsFrom(organizationId: string, options: SeatCountOptions): S
 			AND (
 				e.id IS NULL
 				OR (
-					NOT employee_employment_ended_without_rehire(m.organization_id, e.id)
+					e.is_active = true
+					AND NOT employee_employment_ended_without_rehire(m.organization_id, e.id)
 					AND NOT employee_departure_denies_access(m.organization_id, e.id, ${at})
 				)
 			)
-			AND (
-				NOT ${requireActiveEmployee}
-				OR (e.id IS NOT NULL AND e.is_active = true)
-			)
+			AND (NOT ${requireEmployeeProfile} OR e.id IS NOT NULL)
 	`;
 }
 
 /**
  * The single billable-seat definition for checkout, enforcement, subscription
- * counts and seat sync: distinct approved members, excluding demo accounts,
- * never an employee whose employment an effective departure ended, nor one
- * past the cutoff of a due departure that would take effect (a departure the
- * executor would block stays billable). Once the offboarding workflow is
- * released a seat also requires an effectively active employee profile;
- * before that, the existing member policy applies.
+ * counts and seat sync: distinct approved members, excluding demo accounts and
+ * every former employee (#1439, Organization ADR 0006): one deactivated, one
+ * whose employment an effective departure ended, and one past the cutoff of a
+ * due departure that would take effect (a departure the executor would block
+ * stays billable). This holds whether or not the offboarding workflow is
+ * released. A member without an employee profile keeps the existing member
+ * policy until the release; afterwards a seat requires an employee profile.
  *
  * Read-only: it evaluates due departures the same way access checks do and
  * never triggers billing itself.

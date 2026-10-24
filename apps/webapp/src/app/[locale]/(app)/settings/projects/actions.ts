@@ -21,13 +21,14 @@ import {
 	readProjectActiveCustomerId,
 } from "@/lib/billable-time/project-customer";
 import { type DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
-import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
-import { currentRosterAmong } from "@/lib/employee-lifecycle/current-roster-among";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
+import { formerEmployeesAmong } from "@/lib/employee-lifecycle/current-roster-among";
 import {
 	assertOnCurrentRoster,
 	ensureOnCurrentRoster,
 } from "@/lib/employee-lifecycle/current-roster-guard";
+import { formerMark } from "@/lib/employee-lifecycle/former-since";
 import { logger } from "@/lib/logger";
 import {
 	keepCustomFieldRefusal,
@@ -35,13 +36,13 @@ import {
 } from "@/lib/organization/custom-fields/form-values";
 import type { CustomFieldValuesInput } from "@/lib/organization/custom-fields/value-rules";
 import { findRecordsMissingRequiredValues } from "@/lib/organization/custom-fields/values";
-import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
 import {
 	insertProject,
 	insertProjectAssignments,
 	insertProjectManagers,
 } from "@/lib/projects/project-creation";
 import { revokeShareLinksAfterAccessChange } from "@/lib/projects/report-share/access-change";
+import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
 // The narrow module, not the work records index: this action needs nothing else of it.
 import { clearProjectMissingTasks } from "@/lib/time-tracking/work-records/project-missing-tasks";
 import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction";
@@ -110,6 +111,11 @@ export interface ProjectWithDetails {
 		 * assignment by default and marks it when shown. False for team assignments.
 		 */
 		employeeIsFormer?: boolean;
+		/**
+		 * On a former employee's assignment only: the organization-local date they
+		 * left (`YYYY-MM-DD`), null when not recorded (#1439).
+		 */
+		employeeFormerSince?: string | null;
 	}[];
 	totalHoursBooked: number;
 	/** A required custom field the viewer sees has no value (#818). */
@@ -332,9 +338,10 @@ export async function getProjects(
 
 				const typedManagers = managers as unknown as ProjectManagerWithEmployee[];
 				const typedAssignments = assignments as unknown as ProjectAssignmentWithRelations[];
-				// Assignments of former employees are hidden by default and marked when shown (#1438).
-				const currentAssigneeIds = yield* dbService.query("getProjectAssignments.currentRoster", () =>
-					currentRosterAmong(
+				// Assignments of former employees are hidden by default and marked when shown
+				// (#1438), with the date the employee left (#1439).
+				const formerAssigneeSince = yield* dbService.query("getProjectAssignments.formerAssignees", () =>
+					formerEmployeesAmong(
 						dbService.db,
 						organizationId,
 						typedAssignments.flatMap((assignment) =>
@@ -366,6 +373,10 @@ export async function getProjects(
 						continue;
 					}
 					const projectAssignments = assignmentsByProject.get(assignment.projectId) ?? [];
+					const assignee =
+						assignment.assignmentType === "employee" && assignment.employeeId
+							? formerMark(formerAssigneeSince, assignment.employeeId)
+							: { isFormer: false };
 					projectAssignments.push({
 						id: assignment.id,
 						type: assignment.assignmentType as ProjectAssignmentType,
@@ -373,10 +384,8 @@ export async function getProjects(
 						teamName: assignment.team?.name || null,
 						employeeId: assignment.employeeId,
 						employeeName: assignment.employee?.user?.name || null,
-						employeeIsFormer:
-							assignment.assignmentType === "employee" &&
-							!!assignment.employeeId &&
-							!currentAssigneeIds.has(assignment.employeeId),
+						employeeIsFormer: assignee.isFormer,
+						...("formerSince" in assignee ? { employeeFormerSince: assignee.formerSince } : {}),
 					});
 					assignmentsByProject.set(assignment.projectId, projectAssignments);
 				}

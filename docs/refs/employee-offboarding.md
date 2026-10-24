@@ -273,12 +273,33 @@ timestamps, stay until the 365-day audit-log cleanup.
 
 ## Billing reconciliation
 
-A billable seat is an approved member who is not departed (effective, or past
-the cutoff of a due departure that would take effect) and, once released, has
-an active employee profile. Departure and rehire each queue a `billing_sync`
+A billable seat is an approved member who is not a former employee (#1439):
+not deactivated, not departed (effective, or past the cutoff of a due departure
+that would take effect). This holds whether or not the release gate is open. A
+member without an employee profile counts until the release; afterwards a seat
+requires an employee profile. Departure and rehire each queue a `billing_sync`
 task that recomputes the current count and delivers it in order; an uncertain
 Stripe outcome is reconciled rather than blindly resent. Local seat counts are
 updated even when Stripe is disabled.
+
+*Deactivate* and *Reactivate* have no departure to hang a task on, so they
+reconcile the organization's seats after the commit, as member removal does
+(`reconcileBillingSeatsForOrganization`, only while billing is enabled). A
+failed delivery is logged, and the hourly billing seat reconciliation job
+settles it.
+
+## When a former employee left
+
+`employee.deactivated_at` (migration 0283) is kept by a trigger: set to the
+transaction's now when `is_active` turns false without the writer naming an
+instant, cleared when it turns true. A departure taking effect writes its own
+cutoff. `employee_left_at(...)` returns the later of the latest departure that
+ended access and `deactivated_at`, so a rehire followed by a deactivation
+reports the deactivation; `employee_left_on(...)` gives that moment as the
+organization-local date. Read them through `readEmployeeLeftOn`,
+`employeeLeftAt`, `formerSinceDate` or `formerEmployeesAmong`; views show
+*Former since <date>*, or *date not recorded* for employees deactivated before
+0283 until the #1442 backfill recovers their date.
 
 ## Release gate and rollback
 

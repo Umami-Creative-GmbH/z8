@@ -1,6 +1,10 @@
 "use client";
 
 import { IconClock, IconHome } from "@tabler/icons-react";
+import {
+	FormerEmployeeBadge,
+	isMarkedFormer,
+} from "@/components/former-employees/former-employee-ui";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -111,11 +115,12 @@ export function EmployeeOverviewCard({
 							</Badge>
 							<Badge variant="outline">{employee.invitationStatus}</Badge>
 						</div>
+					) : isMarkedFormer(employee) ? (
+						// Deactivated or past a due departure (#1438), and since when (#1439).
+						<FormerEmployeeBadge since={employee.formerSince} className="text-sm" />
 					) : (
-						<Badge variant={employee.isActive ? "default" : "secondary"}>
-							{employee.isActive
-								? t("settings.employees.detailView.statusActive", "Active")
-								: t("settings.employees.detailView.statusInactive", "Inactive")}
+						<Badge variant="default">
+							{t("settings.employees.detailView.statusActive", "Active")}
 						</Badge>
 					)}
 				</div>

@@ -7,7 +7,12 @@ import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { employee, team } from "@/db/schema";
 import { systemClock } from "@/lib/datetime/temporal-core";
-import { isFormerEmployee, onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
+import {
+	formerSinceDate,
+	isFormerEmployee,
+	onCurrentRoster,
+} from "@/lib/employee-lifecycle/current-roster";
+import { type FormerSinceField, formerSinceField } from "@/lib/employee-lifecycle/former-since";
 import { FORMER_EMPLOYEE_REFUSAL } from "@/lib/employee-lifecycle/current-roster-guard";
 import { ValidationError } from "@/lib/effect/errors";
 import { logger } from "@/lib/logger";
@@ -40,8 +45,19 @@ export interface DrivingLicenceVerifierResponsibility
 }
 type Result<T> = { success: true; data: T } | { success: false; error: string };
 export interface DrivingLicenceVerifierAdminData {
-	/** The current roster, and former employees a live grant names (`isFormer`). */
-	employees: Array<{ id: string; name: string; email: string; isFormer: boolean }>;
+	/**
+	 * The current roster, and former employees a live grant names (`isFormer`),
+	 * with the organization-local date they left on former rows only
+	 * (`formerSince`, #1439; null when the date isn't recorded).
+	 */
+	employees: Array<
+		{
+			id: string;
+			name: string;
+			email: string;
+			isFormer: boolean;
+		} & FormerSinceField
+	>;
 	teams: Array<{ id: string; name: string }>;
 	grants: DrivingLicenceVerifierGrantView[];
 	/** Calendar zone that until dates are entered and shown in. */
@@ -91,6 +107,7 @@ export async function getDrivingLicenceVerifierAdminDataAction(): Promise<
 				name: user.name,
 				email: user.email,
 				isFormer: isFormerEmployee(employee),
+				formerSince: formerSinceDate(employee),
 			})
 			.from(employee)
 			.innerJoin(user, eq(user.id, employee.userId))
@@ -107,7 +124,10 @@ export async function getDrivingLicenceVerifierAdminDataAction(): Promise<
 		return {
 			success: true,
 			data: {
-				employees,
+				employees: employees.map(({ formerSince, ...row }) => ({
+					...row,
+					...formerSinceField(row.isFormer, formerSince),
+				})),
 				teams,
 				grants: grants.map((grant) =>
 					viewDrivingLicenceVerifierGrant(grant, timezone, now),

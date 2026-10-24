@@ -1,3 +1,4 @@
+import { formerMark } from "@/lib/employee-lifecycle/former-since";
 import type { EmployeeWorkBalancePayload } from "@/lib/work-balance/types";
 
 type TeamMemberUser = {
@@ -53,6 +54,11 @@ export interface ManagedEmployee {
 	isActive: boolean;
 	/** A former employee (Organization ADR 0006), shown only on request and marked (#1438). */
 	isFormer: boolean;
+	/**
+	 * On a former employee only: the organization-local date they left
+	 * (`YYYY-MM-DD`), or null when it isn't recorded (#1439).
+	 */
+	formerSince?: string | null;
 	isPrimaryManager: boolean;
 	isCurrentUser: boolean;
 	timeBalance: EmployeeWorkBalancePayload | null;
@@ -64,8 +70,11 @@ export function buildVisibleManagedEmployees(input: {
 	currentEmployee: CurrentTeamEmployee;
 	managedRecords: ManagedEmployeeRecord[];
 	balances: Map<string, EmployeeWorkBalancePayload>;
-	/** Reports who are former employees; the viewer is always on the current roster. */
-	formerEmployeeIds?: ReadonlySet<string>;
+	/**
+	 * Reports who are former employees, with the date each left (null when not
+	 * recorded); the viewer is always on the current roster.
+	 */
+	formerSinceById?: ReadonlyMap<string, string | null>;
 }): ManagedEmployee[] {
 	const byId = new Map<string, ManagedEmployee>();
 	const toManagedEmployee = (
@@ -81,7 +90,7 @@ export function buildVisibleManagedEmployees(input: {
 		position: emp.position,
 		role: emp.role,
 		isActive: emp.isActive,
-		isFormer: !isCurrentUser && (input.formerEmployeeIds?.has(emp.id) ?? false),
+		...formerMark(isCurrentUser ? undefined : input.formerSinceById, emp.id),
 		isPrimaryManager,
 		isCurrentUser,
 		timeBalance: input.balances.get(emp.id) ?? null,
@@ -105,3 +114,4 @@ export function buildVisibleManagedEmployees(input: {
 
 	return [...byId.values()];
 }
+

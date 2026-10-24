@@ -13,6 +13,7 @@ import { completeRemovedMemberCleanup } from "@/lib/auth/member-removal-cleanup"
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import { revokeOrganizationActiveSessions } from "@/lib/auth/organization-session-revocation";
+import { reconcileBillingSeatsForOrganization } from "@/lib/billing/seat-sync-trigger";
 import {
 	AuthorizationError,
 	type DatabaseError,
@@ -409,6 +410,18 @@ function setEmployeeLifecycleState(
 								},
 							},
 							timestamp: new Date(),
+						}),
+					);
+				}
+
+				if (transactionResult.changed) {
+					// A former employee holds no paid seat (#1439); reactivation takes one again.
+					// Best effort after the commit, as for member removal (but recounting the local
+					// seats even while external billing is off, as a departure does): a failed delivery is
+					// logged, and the billing seat reconciliation job settles it.
+					yield* Effect.promise(() =>
+						reconcileBillingSeatsForOrganization(actor.organizationId, {
+							alsoWhenBillingDisabled: true,
 						}),
 					);
 				}

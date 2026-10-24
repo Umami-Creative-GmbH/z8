@@ -1,9 +1,9 @@
-import { and, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { employee } from "@/db/schema";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { isUuid } from "@/lib/validations/uuid";
-import { onCurrentRoster } from "./current-roster";
+import { formerSinceDate, isFormerEmployee, onCurrentRoster } from "./current-roster";
 
 /**
  * Which of these employees are on the organization's current roster (#1438).
@@ -28,4 +28,32 @@ export async function currentRosterAmong(
 		.from(employee)
 		.where(and(inArray(employee.id, ids), onCurrentRoster(organizationId, employee, now)));
 	return new Set(rows.map((row) => row.id));
+}
+
+/**
+ * Which of these employees of the organization are former, and the
+ * organization-local date each left (`YYYY-MM-DD`, null when not recorded), for
+ * "Former since …" marks (#1439). Current employees, ids of another
+ * organization and ids that aren't uuids are left out. One query.
+ */
+export async function formerEmployeesAmong(
+	db: Pick<DatabaseClient, "select">,
+	organizationId: string,
+	employeeIds: Iterable<string>,
+	now?: Instant,
+): Promise<Map<string, string | null>> {
+	const ids = [...new Set(employeeIds)].filter(isUuid);
+	if (ids.length === 0) return new Map();
+
+	const rows = await db
+		.select({ id: employee.id, since: formerSinceDate(employee, now) })
+		.from(employee)
+		.where(
+			and(
+				inArray(employee.id, ids),
+				eq(employee.organizationId, organizationId),
+				isFormerEmployee(employee, now),
+			),
+		);
+	return new Map(rows.map((row) => [row.id, row.since]));
 }

@@ -94,7 +94,7 @@ export function EmployeeSelectItem({
 			<div className="flex-1 min-w-0">
 				<div className="flex items-center gap-2">
 					<span className="font-medium truncate">{displayName}</span>
-					{isFormer && <FormerEmployeeBadge />}
+					{isFormer && <FormerEmployeeBadge since={employee.formerSince} />}
 				</div>
 				<div className="flex items-center gap-2 text-sm text-muted-foreground">
 					<span className="truncate">{employee.user.email}</span>

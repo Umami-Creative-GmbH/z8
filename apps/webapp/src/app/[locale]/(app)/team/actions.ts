@@ -12,7 +12,8 @@ import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/resul
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
-import { currentRosterAmong } from "@/lib/employee-lifecycle/current-roster-among";
+import { formerEmployeesAmong } from "@/lib/employee-lifecycle/current-roster-among";
+import { formerMark } from "@/lib/employee-lifecycle/former-since";
 import { getEmployeeWorkBalances } from "@/lib/work-balance/service";
 import {
 	buildVisibleManagedEmployees,
@@ -53,14 +54,17 @@ export async function getCurrentEmployee(): Promise<CurrentTeamEmployee | null> 
 	return null;
 }
 
-/** Which of the given employees of the organization are former employees (#1438). */
-async function formerEmployeeIdsAmong(
+/**
+ * Which of the given employees of the organization are former employees
+ * (#1438), as entries of id and the date each left (null when not recorded,
+ * #1439). Entries rather than a map, so they survive the calendar cache.
+ */
+async function formerEmployeesAmongEntries(
 	database: DatabaseClient,
 	organizationId: string,
 	employeeIds: string[],
-): Promise<string[]> {
-	const current = await currentRosterAmong(database, organizationId, employeeIds);
-	return employeeIds.filter((id) => !current.has(id));
+): Promise<Array<[string, string | null]>> {
+	return [...(await formerEmployeesAmong(database, organizationId, employeeIds))];
 }
 
 function getCachedCalendarManagedEmployeeRecords(
@@ -90,12 +94,12 @@ function getCachedCalendarManagedEmployeeRecords(
 				},
 			},
 		});
-		const formerEmployeeIds = await formerEmployeeIdsAmong(
+		const formerSince = await formerEmployeesAmongEntries(
 			db,
 			organizationId,
 			records.map((record) => record.employeeId),
 		);
-		return { records, formerEmployeeIds };
+		return { records, formerSince };
 	};
 	if (fresh) return load();
 	return unstable_cache(load, ["calendar-managed-employees", organizationId, managerId], {
@@ -157,11 +161,11 @@ export async function getCalendarManagedEmployees(
 			);
 		}
 
-		const { records, formerEmployeeIds } = yield* Effect.promise(() =>
+		const { records, formerSince } = yield* Effect.promise(() =>
 			getCachedCalendarManagedEmployeeRecords(currentEmp.organizationId, currentEmp.id, options?.fresh === true),
 		);
 		const typedRecords = records as unknown as ManagedEmployeeRecord[];
-		const former = new Set(formerEmployeeIds);
+		const formerSinceById = new Map(formerSince);
 		const byId = new Map<string, ManagedEmployee>();
 
 		for (const record of typedRecords) {
@@ -178,7 +182,7 @@ export async function getCalendarManagedEmployees(
 				position: recordEmployee.position,
 				role: recordEmployee.role,
 				isActive: recordEmployee.isActive,
-				isFormer: former.has(recordEmployee.id),
+				...formerMark(formerSinceById, recordEmployee.id),
 				isPrimaryManager: record.isPrimary,
 				isCurrentUser: false,
 				timeBalance: null,
@@ -258,7 +262,7 @@ export async function getManagedEmployees(
 		}
 
 		// Get all employees where current user is their manager
-		const { managedEmployeeRecords, formerEmployeeIds } = yield* dbService.query(
+		const { managedEmployeeRecords, formerSince } = yield* dbService.query(
 			"getManagedEmployees",
 			async () => {
 				const managedEmployeeRecords = await dbService.db.query.employeeManagers.findMany({
@@ -285,14 +289,14 @@ export async function getManagedEmployees(
 						},
 					},
 				});
-				const formerEmployeeIds = includeFormer
-					? await formerEmployeeIdsAmong(
+				const formerSince = includeFormer
+					? await formerEmployeesAmong(
 							dbService.db,
 							currentEmp.organizationId,
 							managedEmployeeRecords.map((record) => record.employeeId),
 						)
-					: [];
-				return { managedEmployeeRecords, formerEmployeeIds };
+					: new Map<string, string | null>();
+				return { managedEmployeeRecords, formerSince };
 			},
 		);
 
@@ -317,7 +321,7 @@ export async function getManagedEmployees(
 			currentEmployee: currentEmp as CurrentTeamEmployee,
 			managedRecords: typedManagedEmployeeRecords,
 			balances,
-			formerEmployeeIds: new Set(formerEmployeeIds),
+			formerSinceById: formerSince,
 		});
 	});
 

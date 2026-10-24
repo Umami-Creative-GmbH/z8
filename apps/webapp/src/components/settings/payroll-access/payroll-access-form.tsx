@@ -7,6 +7,7 @@ import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import type {
+	PayrollAccessDepartedEmployeeOption,
 	PayrollAccessEmployeeOption,
 	PayrollAccessGrantData,
 	PayrollAccessTeamOption,
@@ -29,7 +30,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 interface PayrollAccessFormProps {
 	employees: PayrollAccessEmployeeOption[];
 	/** Departed employees still on an active grant; only offered on the grant that names them. */
-	departedEmployees: PayrollAccessEmployeeOption[];
+	departedEmployees: PayrollAccessDepartedEmployeeOption[];
 	teams: PayrollAccessTeamOption[];
 	initialGrants: PayrollAccessGrantData[];
 }
@@ -100,7 +101,7 @@ export function PayrollAccessForm({
 	const namedEmployeeOptions = [
 		...employeeOptions,
 		...retainedDepartedEmployees.map((employee) =>
-			toSelectableEmployee(employee, { isActive: false }),
+			toSelectableEmployee(employee, { isActive: false, formerSince: employee.formerSince }),
 		),
 	];
 	const selectedDepartedNames = retainedDepartedEmployees

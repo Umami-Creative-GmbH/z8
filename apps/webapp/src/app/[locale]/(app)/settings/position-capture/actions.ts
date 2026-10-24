@@ -6,7 +6,12 @@ import { user } from "@/db/auth-schema";
 import { employee, positionCaptureAssignment, team } from "@/db/schema";
 import { canManageCurrentOrganizationSettings, getAuthContext } from "@/lib/auth-helpers";
 import { instantToCanonicalString } from "@/lib/datetime/temporal-core";
-import { isFormerEmployee, onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
+import {
+	formerSinceDate,
+	isFormerEmployee,
+	onCurrentRoster,
+} from "@/lib/employee-lifecycle/current-roster";
+import { formerSinceField } from "@/lib/employee-lifecycle/former-since";
 import { runPositionCaptureAction } from "@/lib/time-tracking/position-capture/action-runner";
 import {
 	type PositionCaptureActionResult,
@@ -48,8 +53,11 @@ export type PositionCaptureAdminData = {
 	notices: PositionNoticeVersionData[];
 	assignments: PositionCaptureAssignmentData[];
 	teams: PositionCaptureOption[];
-	/** The current roster, and former employees an assignment names (`isFormer`). */
-	employees: Array<PositionCaptureOption & { isFormer: boolean }>;
+	/**
+	 * The current roster, and former employees an assignment names (`isFormer`,
+	 * with `formerSince`: the date they left, null when not recorded, #1439).
+	 */
+	employees: Array<PositionCaptureOption & { isFormer: boolean; formerSince?: string | null }>;
 };
 
 export type SavePositionCaptureSettingsInput = {
@@ -97,6 +105,7 @@ export async function getPositionCaptureAdminDataAction(): Promise<
 					employeeNumber: employee.employeeNumber,
 					userName: user.name,
 					isFormer: isFormerEmployee(employee),
+					formerSince: formerSinceDate(employee),
 				})
 				.from(employee)
 				.innerJoin(user, eq(employee.userId, user.id))
@@ -134,6 +143,7 @@ export async function getPositionCaptureAdminDataAction(): Promise<
 				id: row.id,
 				name: row.userName?.trim() || row.employeeNumber || row.id,
 				isFormer: row.isFormer,
+				...formerSinceField(row.isFormer, row.formerSince),
 			})),
 		};
 	});

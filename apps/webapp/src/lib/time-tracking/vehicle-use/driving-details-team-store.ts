@@ -2,7 +2,8 @@ import { and, asc, eq, sql } from "drizzle-orm";
 import type { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { employee, employeeManagers, team } from "@/db/schema";
-import { isFormerEmployee } from "@/lib/employee-lifecycle/current-roster";
+import { formerSinceDate, isFormerEmployee } from "@/lib/employee-lifecycle/current-roster";
+import { formerSinceField } from "@/lib/employee-lifecycle/former-since";
 import { type MissingDrivingDetail, missingDrivingDetail } from "./driving-details-missing";
 import { listDrivingDetailsMissing } from "./driving-details-missing-store";
 
@@ -39,6 +40,11 @@ export interface TeamDrivingDetailsRow {
 	teamName: string | null;
 	/** A former employee's work: kept as what was driven, marked as former (#1438). */
 	former: boolean;
+	/**
+	 * On a former employee's work only: the organization-local date they left
+	 * (`YYYY-MM-DD`), null when not recorded (#1439).
+	 */
+	formerSince?: string | null;
 	workDay: string;
 	startedAt: string;
 	endedAt: string;
@@ -77,6 +83,7 @@ async function listScopedPeople(
 		teamId: employee.teamId,
 		teamName: team.name,
 		former: isFormerEmployee(employee),
+		formerSince: formerSinceDate(employee),
 	};
 	const conditions = eq(employee.organizationId, input.organizationId);
 	if (input.scope.kind === "all") {
@@ -154,12 +161,14 @@ export async function loadTeamDrivingDetails(
 		filters: { teamId, employeeId },
 		rows: flagged.slice(0, TEAM_DRIVING_DETAILS_LIMIT).map((work) => {
 			const person = byId.get(work.employeeId);
+			const former = person?.former ?? false;
 			return {
 				workPeriodId: work.workPeriodId,
 				employeeId: work.employeeId,
 				name: person?.name ?? work.employeeId,
 				teamName: person?.teamName ?? null,
-				former: person?.former ?? false,
+				former,
+				...formerSinceField(former, person?.formerSince),
 				workDay: work.workDay,
 				startedAt: work.startedAt,
 				endedAt: work.endedAt,
