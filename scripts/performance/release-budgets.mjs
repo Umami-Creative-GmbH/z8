@@ -404,6 +404,10 @@ main().catch((error) => {
 });
 
 function requireEvidence(plan, artifact, native, planHash, phase) {
+  if (artifact.nativeRunCoverage?.complete !== true)
+    throw Error(
+      "Whole-run wire/native/collector reconciliation is incomplete.",
+    );
   if (artifact.interrupted === true || artifact.interruption != null)
     throw Error(
       "Interrupted benchmark evidence cannot register a completed before or release comparison.",
@@ -693,6 +697,10 @@ function compare(plan, before, head, budget, native, settledComparison) {
     kind: "controlled-release-comparison",
     numericalAcceptance: gates.length ? "unfulfilled" : "fulfilled",
     releaseAcceptance: "unfulfilled",
+    nativeRunCoverage: {
+      before: before.nativeRunCoverage,
+      head: head.nativeRunCoverage,
+    },
     resourceAcceptance:
       settledComparison?.gates.length === 0 ? "fulfilled" : "unfulfilled",
     retainedPrimaryGates,
@@ -829,6 +837,10 @@ function compareSettled(before, head, limits) {
   });
   return {
     scope: limits.policy.scope,
+    nativeRunCoverage: {
+      before: before.nativeRunCoverage,
+      head: head.nativeRunCoverage,
+    },
     policy: limits.policy,
     gates,
     cohorts,

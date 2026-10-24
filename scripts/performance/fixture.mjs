@@ -14,6 +14,7 @@ import {
 	fixtureBrowserPermissions,
 	headerRefreshSteps,
 } from "./journey-steps.mjs";
+import { fixtureTraceTransport } from "./trace-transport.mjs";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const app = join(root, "apps/webapp");
@@ -673,6 +674,11 @@ async function plan(directory) {
 		runtime: {
 			mode: "production",
 			collectorProtocol: runtime.env.Z8_FIXTURE_COLLECTOR_PROTOCOL ?? null,
+			traceTransport:
+				runtime.env.Z8_FIXTURE_COLLECTOR_PROTOCOL ===
+				"z8-fixture-otlp-collector-v2"
+					? fixtureTraceTransport
+					: "page-interception-v1",
 			browserPermissions: fixtureBrowserPermissions,
 			build,
 			sourceBuild,
