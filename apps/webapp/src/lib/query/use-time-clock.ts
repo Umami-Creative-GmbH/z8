@@ -375,6 +375,16 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 						queryKey: queryKeys.workPolicies.presence.status(status.employeeId),
 					});
 				}
+				if (session?.user?.id && activeOrganizationId) {
+					void queryClient.invalidateQueries({
+						queryKey: queryKeys.dashboard.widget(
+							"presence-status",
+							session.user.id,
+							activeOrganizationId,
+						),
+						exact: true,
+					});
+				}
 			}
 		},
 	});
@@ -462,6 +472,16 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 				if (status?.employeeId) {
 					void queryClient.invalidateQueries({
 						queryKey: queryKeys.workPolicies.presence.status(status.employeeId),
+					});
+				}
+				if (session?.user?.id && activeOrganizationId) {
+					void queryClient.invalidateQueries({
+						queryKey: queryKeys.dashboard.widget(
+							"presence-status",
+							session.user.id,
+							activeOrganizationId,
+						),
+						exact: true,
 					});
 				}
 			}

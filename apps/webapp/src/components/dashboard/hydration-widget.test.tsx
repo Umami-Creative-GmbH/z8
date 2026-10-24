@@ -1,13 +1,13 @@
 /* @vitest-environment jsdom */
 
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getHydrationWidgetData } from "./actions";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { HydrationWidget } from "./hydration-widget";
 
-const { getHydrationWidgetDataMock, logWaterIntakeMock, toastErrorMock, translateMock } =
-	vi.hoisted(() => ({
-		getHydrationWidgetDataMock: vi.fn(),
+const { getHydrationFixture, logWaterIntakeMock, toastErrorMock, translateMock } = vi.hoisted(
+	() => ({
+		getHydrationFixture: vi.fn(),
 		logWaterIntakeMock: vi.fn(),
 		toastErrorMock: vi.fn(),
 		translateMock: vi.fn(
@@ -17,7 +17,8 @@ const { getHydrationWidgetDataMock, logWaterIntakeMock, toastErrorMock, translat
 					fallback,
 				),
 		),
-	}));
+	}),
+);
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
@@ -34,7 +35,12 @@ vi.mock("sonner", () => ({
 }));
 
 vi.mock("@/hooks/use-organization", () => ({
-	useOrganization: () => ({ organizationId: "org-1" }),
+	useOrganization: () => ({
+		userId: "user-1",
+		organizationId: "org-1",
+		role: "employee",
+		isLoading: false,
+	}),
 }));
 
 vi.mock("@dnd-kit/sortable", () => ({
@@ -56,10 +62,6 @@ vi.mock("@/app/[locale]/(app)/wellness/actions", () => ({
 	logWaterIntake: logWaterIntakeMock,
 }));
 
-vi.mock("./actions", () => ({
-	getHydrationWidgetData: getHydrationWidgetDataMock,
-}));
-
 const enabledHydrationData = {
 	enabled: true,
 	currentStreak: 4,
@@ -71,8 +73,19 @@ const enabledHydrationData = {
 };
 
 describe("HydrationWidget", () => {
+	afterEach(() => vi.unstubAllGlobals());
 	beforeEach(() => {
 		vi.clearAllMocks();
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async () =>
+				Response.json({
+					scope: { userId: "user-1", organizationId: "org-1" },
+					updatedAt: Date.now(),
+					result: await getHydrationFixture(),
+				}),
+			),
+		);
 		translateMock.mockImplementation(
 			(_key: string, fallback: string, params?: Record<string, string | number>) =>
 				Object.entries(params ?? {}).reduce(
@@ -83,7 +96,7 @@ describe("HydrationWidget", () => {
 	});
 
 	it("renders team streak leaderboard rows when leaders exist", async () => {
-		getHydrationWidgetDataMock.mockResolvedValue({
+		getHydrationFixture.mockResolvedValue({
 			success: true,
 			data: {
 				...enabledHydrationData,
@@ -104,7 +117,11 @@ describe("HydrationWidget", () => {
 			},
 		});
 
-		render(<HydrationWidget />);
+		render(
+			<QueryClientProvider client={new QueryClient()}>
+				<HydrationWidget />
+			</QueryClientProvider>,
+		);
 
 		const leaders = await screen.findByTestId("hydration-team-streak-leaders");
 		expect(within(leaders).getByText("Avery Stone")).toBeTruthy();
@@ -113,11 +130,11 @@ describe("HydrationWidget", () => {
 		expect(within(leaders).getByText("#2")).toBeTruthy();
 		expect(within(leaders).getByText("9 days")).toBeTruthy();
 		expect(within(leaders).getByText("7 days")).toBeTruthy();
-		expect(getHydrationWidgetData).toHaveBeenCalledTimes(1);
+		expect(fetch).toHaveBeenCalledTimes(1);
 	});
 
 	it("renders a subtle You label for the current user's leaderboard row", async () => {
-		getHydrationWidgetDataMock.mockResolvedValue({
+		getHydrationFixture.mockResolvedValue({
 			success: true,
 			data: {
 				...enabledHydrationData,
@@ -138,7 +155,11 @@ describe("HydrationWidget", () => {
 			},
 		});
 
-		render(<HydrationWidget />);
+		render(
+			<QueryClientProvider client={new QueryClient()}>
+				<HydrationWidget />
+			</QueryClientProvider>,
+		);
 
 		const blairRow = await screen.findByLabelText(
 			"Blair Kim, rank 2, streak: 7 days, current user",
@@ -163,7 +184,7 @@ describe("HydrationWidget", () => {
 				);
 			},
 		);
-		getHydrationWidgetDataMock.mockResolvedValue({
+		getHydrationFixture.mockResolvedValue({
 			success: true,
 			data: {
 				...enabledHydrationData,
@@ -178,7 +199,11 @@ describe("HydrationWidget", () => {
 			},
 		});
 
-		render(<HydrationWidget />);
+		render(
+			<QueryClientProvider client={new QueryClient()}>
+				<HydrationWidget />
+			</QueryClientProvider>,
+		);
 
 		const leaders = await screen.findByTestId("hydration-team-streak-leaders");
 		expect(within(leaders).getByText("Team-Serie")).toBeTruthy();
@@ -188,7 +213,7 @@ describe("HydrationWidget", () => {
 	});
 
 	it("does not render the team streak leaderboard when no leaders exist", async () => {
-		getHydrationWidgetDataMock.mockResolvedValue({
+		getHydrationFixture.mockResolvedValue({
 			success: true,
 			data: {
 				...enabledHydrationData,
@@ -196,14 +221,18 @@ describe("HydrationWidget", () => {
 			},
 		});
 
-		render(<HydrationWidget />);
+		render(
+			<QueryClientProvider client={new QueryClient()}>
+				<HydrationWidget />
+			</QueryClientProvider>,
+		);
 
-		await waitFor(() => expect(getHydrationWidgetDataMock).toHaveBeenCalledTimes(1));
+		await waitFor(() => expect(getHydrationFixture).toHaveBeenCalledTimes(1));
 		expect(screen.queryByTestId("hydration-team-streak-leaders")).toBeNull();
 	});
 
 	it("renders organization streak leaderboard rows below team leaders", async () => {
-		getHydrationWidgetDataMock.mockResolvedValue({
+		getHydrationFixture.mockResolvedValue({
 			success: true,
 			data: {
 				...enabledHydrationData,
@@ -232,12 +261,14 @@ describe("HydrationWidget", () => {
 			},
 		});
 
-		render(<HydrationWidget />);
+		render(
+			<QueryClientProvider client={new QueryClient()}>
+				<HydrationWidget />
+			</QueryClientProvider>,
+		);
 
 		const teamLeaders = await screen.findByTestId("hydration-team-streak-leaders");
-		const organizationLeaders = await screen.findByTestId(
-			"hydration-organization-streak-leaders",
-		);
+		const organizationLeaders = await screen.findByTestId("hydration-organization-streak-leaders");
 
 		expect(
 			teamLeaders.compareDocumentPosition(organizationLeaders) & Node.DOCUMENT_POSITION_FOLLOWING,
@@ -253,7 +284,7 @@ describe("HydrationWidget", () => {
 	});
 
 	it("renders organization streak leaders when team leaders are empty", async () => {
-		getHydrationWidgetDataMock.mockResolvedValue({
+		getHydrationFixture.mockResolvedValue({
 			success: true,
 			data: {
 				...enabledHydrationData,
@@ -269,11 +300,13 @@ describe("HydrationWidget", () => {
 			},
 		});
 
-		render(<HydrationWidget />);
-
-		const organizationLeaders = await screen.findByTestId(
-			"hydration-organization-streak-leaders",
+		render(
+			<QueryClientProvider client={new QueryClient()}>
+				<HydrationWidget />
+			</QueryClientProvider>,
 		);
+
+		const organizationLeaders = await screen.findByTestId("hydration-organization-streak-leaders");
 		expect(screen.queryByTestId("hydration-team-streak-leaders")).toBeNull();
 		expect(within(organizationLeaders).getByText("Casey Noor")).toBeTruthy();
 	});

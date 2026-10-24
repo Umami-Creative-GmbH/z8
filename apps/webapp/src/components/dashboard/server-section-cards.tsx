@@ -1,5 +1,6 @@
 import { type ReactNode, Suspense } from "react";
 import { SectionCards } from "@/components/section-cards";
+import { BirthdayRemindersWidget } from "./birthday-reminders-widget";
 import { CoveringForWidget } from "./covering-for-widget";
 import { getRenderDashboardLayout, readDashboardWidget } from "./dashboard-reads";
 import {
@@ -8,14 +9,17 @@ import {
 	isServerWidgetId,
 	type ServerWidgetId,
 } from "./dashboard-types";
+import { HydrationWidget } from "./hydration-widget";
 import { ManagedEmployeesWidget } from "./managed-employees-widget";
 import { ManagerTodayWidget } from "./manager-today-widget";
 import { PendingApprovalsWidget } from "./pending-approvals-widget";
+import { PresenceStatusWidget } from "./presence-status-widget";
 import { QuickStatsWidget } from "./quick-stats-widget";
 import { RecentlyApprovedWidget } from "./recently-approved-widget";
 import { TeamOverviewWidget } from "./team-overview-widget";
 import { UpcomingShiftsWidget } from "./upcoming-shifts-widget";
 import { UpcomingTimeOffWidget } from "./upcoming-time-off-widget";
+import { VacationBalanceWidget } from "./vacation-balance-widget";
 import { WhosOutTodayWidget } from "./whos-out-today-widget";
 import { WidgetLoading } from "./widget-loading";
 import { normalizeWidgetLayout, type WidgetId } from "./widget-registry";
@@ -29,6 +33,39 @@ async function WidgetSlot({
 }) {
 	const initialSnapshot = await snapshot;
 	switch (id) {
+		case "birthday-reminders":
+			return (
+				<BirthdayRemindersWidget
+					initialSnapshot={
+						initialSnapshot as DashboardWidgetSnapshot<DashboardWidgetData["birthday-reminders"]>
+					}
+				/>
+			);
+		case "hydration":
+			return (
+				<HydrationWidget
+					initialSnapshot={
+						initialSnapshot as DashboardWidgetSnapshot<DashboardWidgetData["hydration"]>
+					}
+				/>
+			);
+		case "vacation-balance":
+			return (
+				<VacationBalanceWidget
+					initialSnapshot={
+						initialSnapshot as DashboardWidgetSnapshot<DashboardWidgetData["vacation-balance"]>
+					}
+				/>
+			);
+		case "presence-status":
+			return (
+				<PresenceStatusWidget
+					initialSnapshot={
+						initialSnapshot as DashboardWidgetSnapshot<DashboardWidgetData["presence-status"]>
+					}
+				/>
+			);
+
 		case "upcoming-shifts":
 			return (
 				<UpcomingShiftsWidget

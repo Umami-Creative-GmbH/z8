@@ -39,12 +39,14 @@ describe("readUserPreferences", () => {
 		expect(await readUserPreferences("user-1")).toEqual(defaults);
 	});
 
-	it("selects the shared presentation and onboarding fields for the authorized user", async () => {
+	it("selects shared presentation, onboarding and hydration eligibility for the authorized user", async () => {
 		await readUserPreferences("user-1");
 		expect(state.findFirst).toHaveBeenCalledExactlyOnceWith({
 			where: { column: "userSettings.userId", value: "user-1" },
 			columns: {
 				dashboardWidgetOrder: true,
+				waterReminderEnabled: true,
+				waterReminderDailyGoal: true,
 				locale: true,
 				weekStartDay: true,
 				timeFormat: true,
@@ -75,24 +77,18 @@ describe("readUserPreferences", () => {
 		"sq",
 		"uk",
 		"ru",
-	])(
-		"preserves supported saved locale %s",
-		async (locale) => {
-			state.findFirst.mockResolvedValue({ locale });
-			expect(await readUserPreferences("user-1")).toEqual({
-				...defaults,
-				locale,
-			});
-		},
-	);
+	])("preserves supported saved locale %s", async (locale) => {
+		state.findFirst.mockResolvedValue({ locale });
+		expect(await readUserPreferences("user-1")).toEqual({
+			...defaults,
+			locale,
+		});
+	});
 
-	it.each(["", "unsupported", "EN"])(
-		"leaves invalid locale %j unset",
-		async (locale) => {
-			state.findFirst.mockResolvedValue({ locale });
-			expect((await readUserPreferences("user-1")).locale).toBeNull();
-		},
-	);
+	it.each(["", "unsupported", "EN"])("leaves invalid locale %j unset", async (locale) => {
+		state.findFirst.mockResolvedValue({ locale });
+		expect((await readUserPreferences("user-1")).locale).toBeNull();
+	});
 
 	it("normalizes invalid presentation settings and empty timezone", async () => {
 		state.findFirst.mockResolvedValue({
@@ -122,8 +118,8 @@ describe("readUserPreferences", () => {
 
 	it("reads again after a preference write and keeps another user's settings separate", async () => {
 		const rows = new Map<string, Record<string, unknown>>();
-		state.findFirst.mockImplementation(
-			({ where }: { where: { value: string } }) => rows.get(where.value),
+		state.findFirst.mockImplementation(({ where }: { where: { value: string } }) =>
+			rows.get(where.value),
 		);
 		expect(await readUserPreferences("user-1")).toEqual(defaults);
 		rows.set("user-1", { locale: "de", helpImproveProduct: false });
@@ -133,9 +129,7 @@ describe("readUserPreferences", () => {
 			helpImproveProduct: false,
 		});
 		rows.set("user-2", { helpImproveProduct: false });
-		expect((await readUserPreferences("user-2")).helpImproveProduct).toBe(
-			false,
-		);
+		expect((await readUserPreferences("user-2")).helpImproveProduct).toBe(false);
 		expect(state.findFirst).toHaveBeenCalledTimes(3);
 	});
 });
