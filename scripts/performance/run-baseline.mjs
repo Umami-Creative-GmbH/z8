@@ -3,12 +3,22 @@ import { createHash, randomBytes } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { cpus, platform, release, totalmem } from "node:os";
 import { join } from "node:path";
+import { historicalRangeSteps, performSteps } from "./journey-steps.mjs";
 
 const args = process.argv.slice(2);
 const option = (name) => args[args.indexOf(name) + 1];
 const fail = (message) => {
 	throw new Error(message);
 };
+const visitModes = [
+	"first-document",
+	"repeat-link",
+	"return-visit",
+	"manual-refresh",
+	"mutation-refresh",
+];
+const modesFor = (route) => route.modes ?? visitModes;
+const samplesFor = (plan, mode) => plan.samplesByMode?.[mode] ?? plan.samples;
 const backendMetrics = [
 	"queryCount",
 	"queryDurationMs",
@@ -19,9 +29,18 @@ const backendMetrics = [
 	"eventLoopDelayMs",
 ];
 
-function validate(plan) {
+function validate(plan, verifying = false) {
 	if (!Number.isInteger(plan.samples) || plan.samples < 20)
 		fail("Use at least twenty samples per condition and visit mode.");
+	for (const mode of visitModes)
+		if (
+			!Number.isInteger(samplesFor(plan, mode)) ||
+			samplesFor(plan, mode) <
+				(["first-document", "repeat-link"].includes(mode) ? 20 : 1)
+		)
+			fail(
+				"First and repeat visits require at least twenty samples; functional mode counts must be positive.",
+			);
 	if (
 		plan.fixture?.kind !== "disposable" ||
 		plan.runtime?.mode !== "production"
@@ -70,17 +89,18 @@ function validate(plan) {
 		)
 			fail("Every condition needs a public label, zone, locale and viewport.");
 		if (
-			!condition.budgets ||
-			![
-				"usableContentP95Ms",
-				"clockReadyP95Ms",
-				"javascriptP95Bytes",
-				"queryCountP95",
-			].every(
-				(name) =>
-					Number.isFinite(condition.budgets[name]) &&
-					condition.budgets[name] >= 0,
-			)
+			!verifying &&
+			(!condition.budgets ||
+				![
+					"usableContentP95Ms",
+					"clockReadyP95Ms",
+					"javascriptP95Bytes",
+					"queryCountP95",
+				].every(
+					(name) =>
+						Number.isFinite(condition.budgets[name]) &&
+						condition.budgets[name] >= 0,
+				))
 		)
 			fail("Record numerical budgets before running the comparison.");
 	}
@@ -91,6 +111,21 @@ function validate(plan) {
 	)
 		fail("Include month, quarter and year ranges.");
 	for (const route of plan.routes) {
+		if (
+			!Array.isArray(modesFor(route)) ||
+			!["first-document", "repeat-link"].every((mode) =>
+				modesFor(route).includes(mode),
+			) ||
+			modesFor(route).some((mode) => !visitModes.includes(mode))
+		)
+			fail(
+				"Each compared route requires first-document and repeat-link modes.",
+			);
+		if (
+			modesFor(route).includes("mutation-refresh") &&
+			!route.mutation?.reset?.length
+		)
+			fail("Mutation measurement requires an explicit restoration recipe.");
 		if (
 			route.ranges &&
 			(!Array.isArray(route.ranges) ||
@@ -106,14 +141,24 @@ function validate(plan) {
 			!route.path?.startsWith("/") ||
 			!route.ready ||
 			!route.link ||
-			!route.refresh ||
-			!route.mutation?.steps?.length ||
-			!route.mutation?.ready
+			(modesFor(route).includes("manual-refresh") &&
+				!route.refresh &&
+				!route.refreshSteps?.length) ||
+			(modesFor(route).includes("mutation-refresh") &&
+				(!route.mutation?.steps?.length || !route.mutation?.ready))
 		)
 			fail(
 				"Each route needs explicit readiness, Link, refresh and fixture mutation observations.",
 			);
 	}
+	if (
+		!visitModes.every((mode) =>
+			plan.routes.some((route) => modesFor(route).includes(mode)),
+		)
+	)
+		fail(
+			"The complete protocol must cover return visits, manual refresh and mutation refresh.",
+		);
 	const origin = new URL(plan.origin);
 	if (
 		!["http:", "https:"].includes(origin.protocol) ||
@@ -131,7 +176,17 @@ async function main() {
 	if (!args.includes("--plan") || !option("--plan"))
 		fail("A fixture plan is required (--plan path).");
 	const planBytes = await readFile(option("--plan"));
-	const plan = validate(JSON.parse(planBytes));
+	const plan = validate(
+		JSON.parse(planBytes),
+		args.includes("--verify-journeys"),
+	);
+	if (
+		(args.includes("--condition") || args.includes("--route")) &&
+		!args.includes("--verify-journeys")
+	)
+		fail(
+			"Cohort filters are permitted only for journey verification, never controlled measurement.",
+		);
 	if (args.includes("--validate-plan")) {
 		console.log(
 			"Fixture comparison plan is valid; runtime acceptance remains unfulfilled.",
@@ -167,13 +222,26 @@ async function main() {
 			result.samples.some((sample) => sample.backend[name] === null),
 		);
 		result.gates = [];
+		if (result.kind !== "benchmark")
+			result.gates.push("Journey verification is not a controlled benchmark.");
+		const releaseGates = [];
 		if (!result.runtime?.buildVerified)
 			result.gates.push("Fixture application build identity was not verified.");
+		if (result.samples.length === 0)
+			result.gates.push("Browser samples are missing.");
+		if (result.samples.some((sample) => sample.failed))
+			releaseGates.push("Observed failed browser journeys.");
+		if (result.samples.some((sample) => sample.pendingScriptRequests > 0))
+			releaseGates.push(
+				"Script transfer was incomplete at usable-content readiness.",
+			);
 		if (
-			result.samples.length === 0 ||
-			result.samples.some((sample) => sample.failed)
+			result.samples.some(
+				(sample) =>
+					sample.mode === "mutation-refresh" && sample.restored !== true,
+			)
 		)
-			result.gates.push("Missing or failed browser journeys.");
+			result.gates.push("Mutation initial-state restoration is incomplete.");
 		if (result.missingMetrics.length)
 			result.gates.push("Correlated backend metric coverage is incomplete.");
 		for (const condition of plan.conditions)
@@ -183,13 +251,7 @@ async function main() {
 						(!r.roles || r.roles.includes(condition.role)) &&
 						(!r.ranges || r.ranges.includes(range.name)),
 				))
-					for (const mode of [
-						"first-document",
-						"repeat-link",
-						"return-visit",
-						"manual-refresh",
-						"mutation-refresh",
-					]) {
+					for (const mode of modesFor(route)) {
 						const cohort = result.samples.filter(
 							(s) =>
 								s.condition === condition.name &&
@@ -198,8 +260,21 @@ async function main() {
 								s.mode === mode,
 						);
 						if (
-							new Set(cohort.map((s) => s.iteration)).size < plan.samples ||
-							cohort.some((s) => !Number.isFinite(s.usableContentMs))
+							!result.summaries.some(
+								(summary) =>
+									summary.condition === condition.name &&
+									summary.range === range.name &&
+									summary.route === route.name &&
+									summary.mode === mode,
+							)
+						)
+							result.gates.push("A required cohort summary is missing.");
+						if (
+							new Set(cohort.map((s) => s.iteration)).size <
+								samplesFor(plan, mode) ||
+							cohort.some(
+								(s) => !s.failed && !Number.isFinite(s.usableContentMs),
+							)
 						)
 							result.gates.push(
 								"A required planned cohort is missing or incomplete.",
@@ -209,7 +284,7 @@ async function main() {
 			const condition = plan.conditions.find(
 				(c) => c.name === summary.condition,
 			);
-			if (summary.samples < plan.samples || summary.failed)
+			if (summary.samples < samplesFor(plan, summary.mode))
 				result.gates.push("A compared cohort is incomplete.");
 			for (const [name, budget] of [
 				["usableContentMs", "usableContentP95Ms"],
@@ -217,7 +292,7 @@ async function main() {
 				["javascriptBytes", "javascriptP95Bytes"],
 			]) {
 				if (summary[name] && summary[name].p95 > condition.budgets[budget])
-					result.gates.push(
+					releaseGates.push(
 						`Exceeded ${budget} for ${summary.condition}/${summary.route}/${summary.mode}/${summary.range}.`,
 					);
 			}
@@ -236,7 +311,7 @@ async function main() {
 				? values[Math.ceil(values.length * 0.95) - 1]
 				: null;
 			if (summary.queryCountP95 > condition.budgets.queryCountP95)
-				result.gates.push(
+				releaseGates.push(
 					`Exceeded queryCountP95 for ${summary.condition}/${summary.route}/${summary.mode}/${summary.range}.`,
 				);
 		}
@@ -245,7 +320,20 @@ async function main() {
 			result.gates.push(
 				"Fixture range selection, mutation outcomes and readiness markers have not been verified.",
 			);
-		result.acceptance = result.gates.length === 0 ? "fulfilled" : "unfulfilled";
+		result.evidenceGates = [...new Set(result.gates)];
+		result.evidenceComplete = result.evidenceGates.length === 0;
+		result.releaseGates = [...new Set(releaseGates)];
+		result.releaseAcceptance =
+			result.evidenceComplete && releaseGates.length === 0
+				? "passed"
+				: "failed";
+		if (plan.phase !== "baseline") result.gates.push(...releaseGates);
+		result.acceptance =
+			result.gates.length === 0
+				? plan.phase === "baseline"
+					? "baseline-recorded"
+					: "fulfilled"
+				: "unfulfilled";
 		await writeFile(artifactPath, JSON.stringify(result, null, 2));
 		console.log(`Baseline acceptance: ${result.acceptance}.`);
 		process.exitCode = result.gates.length ? 1 : 0;
@@ -265,12 +353,17 @@ async function main() {
 	const result = {
 		schema: 1,
 		acceptance: "unfulfilled",
+		phase: plan.phase ?? "release",
+		kind: args.includes("--verify-journeys")
+			? "journey-verification"
+			: "benchmark",
 		planSha256: createHash("sha256").update(planBytes).digest("hex"),
 		runtime: {
 			mode: plan.runtime.mode,
 			build: plan.runtime.build,
 			sourceBuild: plan.runtime.sourceBuild ?? null,
 			buildWorkers: plan.runtime.buildWorkers ?? null,
+			observer: plan.runtime.observer ?? null,
 			redisCommandTimeoutMs: plan.runtime.redisCommandTimeoutMs ?? null,
 			toolingBuild: plan.runtime.toolingBuild ?? null,
 			poolMax: plan.runtime.poolMax ?? null,
@@ -293,7 +386,7 @@ async function main() {
 			"Fresh-context first documents have cold browser storage, not necessarily cold server/runtime caches.",
 			"LCP is browser-native for first documents. Largest observed event duration is reported separately; full page-lifetime INP is unavailable.",
 			"Backend metrics require correlated request/transaction telemetry; browser observations do not substitute for them.",
-			"Network counts and transfer sizes stop at observed usable content and clock readiness; later work is outside this measurement window.",
+			"Network counts and completed transfer sizes stop at usable-content and clock readiness; pending resource kinds are explicit, and priming/restoration requests are excluded.",
 		],
 	};
 	try {
@@ -332,25 +425,36 @@ async function main() {
 		headless: true,
 	});
 	result.browser = await browser.version();
+	let checkpoint = Promise.resolve();
 	try {
 		for (const condition of plan.conditions) {
+			if (
+				args.includes("--condition") &&
+				condition.name !== option("--condition")
+			)
+				continue;
 			for (const range of plan.ranges) {
 				for (const route of plan.routes.filter(
 					(r) =>
 						(!r.roles || r.roles.includes(condition.role)) &&
 						(!r.ranges || r.ranges.includes(range.name)),
 				)) {
-					for (const mode of [
-						"first-document",
-						"repeat-link",
-						"return-visit",
-						"manual-refresh",
-						"mutation-refresh",
-					]) {
+					if (args.includes("--route") && route.name !== option("--route"))
+						continue;
+					for (const mode of modesFor(route)) {
 						let index = 0;
+						const concurrency =
+							mode === "mutation-refresh"
+								? (route.mutation.concurrency ?? plan.concurrency)
+								: plan.concurrency;
 						await Promise.all(
-							Array.from({ length: plan.concurrency }, async () => {
-								while (index < plan.samples) {
+							Array.from({ length: concurrency }, async () => {
+								while (
+									index <
+									(args.includes("--verify-journeys")
+										? 1
+										: samplesFor(plan, mode))
+								) {
 									const iteration = index++;
 									const sample = await measure(
 										browser,
@@ -361,13 +465,17 @@ async function main() {
 										route,
 										mode,
 										iteration,
+										concurrency,
 									);
 									result.samples.push(sample);
 									// Checkpoint contains numerical evidence and fixture labels only, never cookies, URLs or response bodies.
-									await writeFile(
-										join(out, "baseline.json"),
-										JSON.stringify(result, null, 2),
+									checkpoint = checkpoint.then(() =>
+										writeFile(
+											join(out, "baseline.json"),
+											JSON.stringify(result, null, 2),
+										),
 									);
+									await checkpoint;
 								}
 							}),
 						);
@@ -380,13 +488,7 @@ async function main() {
 		for (const condition of plan.conditions)
 			for (const range of plan.ranges)
 				for (const route of plan.routes)
-					for (const mode of [
-						"first-document",
-						"repeat-link",
-						"return-visit",
-						"manual-refresh",
-						"mutation-refresh",
-					]) {
+					for (const mode of modesFor(route)) {
 						const samples = result.samples.filter(
 							(s) =>
 								s.condition === condition.name &&
@@ -418,11 +520,25 @@ async function main() {
 							range: range.name,
 							route: route.name,
 							mode,
+							concurrency: [
+								...new Set(samples.map((sample) => sample.concurrency)),
+							],
 							samples: samples.length,
 							failed: samples.filter((s) => s.failed).length,
-							usableContentMs: metric("usableContentMs"),
+							failureRate:
+								samples.filter((s) => s.failed).length / samples.length,
+							usableContentMs: samples.some((s) => s.failed)
+								? null
+								: metric("usableContentMs"),
+							successfulUsableContentMs: metric("usableContentMs"),
+							elapsedUntilFailureMs: metric("elapsedUntilFailureMs"),
+							returnedFormReadyMs: metric("returnedFormReadyMs"),
+							rangePreparationMs: metric("rangePreparationMs"),
 							clockReadyMs: metric("clockReadyMs"),
 							requests: metric("requests"),
+							failedRequests: metric("failedRequests"),
+							pendingScriptRequests: metric("pendingScriptRequests"),
+							pendingRscRequests: metric("pendingRscRequests"),
 							javascriptBytes: metric("javascriptBytes"),
 							inlineRscDecodedBytes: metric("inlineRscDecodedBytes"),
 							rscBytes: metric("rscBytes"),
@@ -451,6 +567,7 @@ async function measure(
 	route,
 	mode,
 	iteration,
+	concurrency,
 ) {
 	const context = await browser.createBrowserContext();
 	const traceId = randomBytes(16).toString("hex");
@@ -462,7 +579,7 @@ async function measure(
 		timezone: condition.timezone,
 		locale: condition.locale,
 		viewport: condition.viewport,
-		concurrency: plan.concurrency,
+		concurrency,
 		range: range.name,
 		route: route.name,
 		mode,
@@ -483,12 +600,29 @@ async function measure(
 		browserCacheHits: 0,
 		failed: false,
 		failureStage: null,
+		failureKind: null,
+		elapsedUntilFailureMs: null,
+		returnedFormReadyMs: null,
+		returnPreparationUsed: false,
+		resourceWindowComplete: null,
+		resourceObservedUntilMs: null,
+		rangePreparationMs: null,
+		restored: mode === "mutation-refresh" ? false : null,
 	};
+	let page;
+	let client;
+	const pendingRequests = new Set();
+	const requests = new Map();
+	let requestTraceId = traceId;
+	let bindings;
+	let measurementStart;
+	let stage = "authentication-context";
+	let mutationStarted = false;
 	try {
 		if (!Array.isArray(auth[condition.name]?.cookies))
 			fail("Missing private fixture authentication.");
 		await context.setCookie(...auth[condition.name].cookies);
-		const page = await context.newPage();
+		page = await context.newPage();
 		await page.setViewport(condition.viewport);
 		await page.emulateTimezone(condition.timezone);
 		await page.setExtraHTTPHeaders({ "Accept-Language": condition.locale });
@@ -518,53 +652,156 @@ async function measure(
 		});
 		const path = route.path
 			.replaceAll("{locale}", condition.locale)
-			.replaceAll("{employee}", auth[condition.name].employeeId)
+			.replaceAll(
+				"{employee}",
+				route.target === "directory-target"
+					? auth[condition.name].targetEmployeeId
+					: auth[condition.name].employeeId,
+			)
 			.replaceAll("{start}", range.start)
 			.replaceAll("{end}", range.end);
 		const url = new URL(path, plan.origin).href;
+		bindings = {
+			origin: plan.origin,
+			path,
+			locale: condition.locale,
+			employee:
+				route.target === "directory-target"
+					? auth[condition.name].targetEmployeeId
+					: auth[condition.name].employeeId,
+			employeeSearch: auth[condition.name].targetEmployeeSearch,
+			start: range.start,
+			end: range.end,
+		};
+		const verify = async () => {
+			stage = "verify-expected-content";
+			const hours = { month: 168, quarter: 512, year: 2088 }[range.name];
+			if (route.result === "employee-report")
+				await performSteps(
+					page,
+					[
+						{ card: { title: "Total Work Hours", contains: `${hours}h` } },
+						{
+							card: {
+								title: "Home Office Days",
+								contains: `${{ month: 32, quarter: 96, year: 416 }[range.name]}h worked from home`,
+							},
+						},
+					],
+					bindings,
+					plan.timeoutMs ?? 30000,
+				);
+			else if (route.result === "work-hours")
+				await performSteps(
+					page,
+					[
+						{
+							table: {
+								title: "Employee Work Hours",
+								rows:
+									route.expectedRowsByCondition?.[condition.name] ??
+									condition.employees,
+								column: 1,
+								value: `${hours.toFixed(1)}h`,
+							},
+						},
+					],
+					bindings,
+					plan.timeoutMs ?? 30000,
+				);
+			await performSteps(page, route.verify, bindings, plan.timeoutMs ?? 30000);
+		};
+		const prepare = async (verifyExpected = true) => {
+			stage = "prepare-range";
+			const started = performance.now();
+			await performSteps(
+				page,
+				route.prepare,
+				bindings,
+				plan.timeoutMs ?? 30000,
+			);
+			if (route.rangeRecipe === "fixture-2025")
+				await performSteps(
+					page,
+					historicalRangeSteps(range.name),
+					bindings,
+					plan.timeoutMs ?? 30000,
+				);
+			if (measurementStart !== undefined)
+				sample.rangePreparationMs = performance.now() - started;
+			if (route.result === "employee-report")
+				await performSteps(
+					page,
+					[
+						{
+							clickText: { selector: "button", text: "Generate Report" },
+							response: { path: "{path}", method: "POST" },
+						},
+					],
+					bindings,
+					plan.timeoutMs ?? 30000,
+				);
+			if (verifyExpected) await verify();
+		};
 		const ready = () =>
 			page.waitForSelector(route.ready, {
 				visible: true,
 				timeout: plan.timeoutMs ?? 30000,
 			});
 		const link = async (selector) => {
-			for (const prerequisite of route.navigationSteps ?? [])
-				await page.click(prerequisite);
 			await page.click(
 				selector
 					.replaceAll("{locale}", condition.locale)
-					.replaceAll("{employee}", auth[condition.name].employeeId),
+					.replaceAll("{employee}", bindings.employee),
 			);
 			await page.waitForFunction(
 				(expected) => location.pathname + location.search === expected,
 				{ timeout: plan.timeoutMs ?? 30000 },
 				path,
 			);
+			await performSteps(
+				page,
+				route.navigationAfter,
+				bindings,
+				plan.timeoutMs ?? 30000,
+			);
 		};
 		if (mode !== "first-document") {
+			stage = "prime-route";
 			await page.goto(url, { waitUntil: "domcontentloaded" });
+			await prepare(false);
 			await ready();
 		}
 		if (mode === "repeat-link" || mode === "return-visit") {
 			await page.goto(
 				new URL(
-					plan.awayPath.replaceAll("{locale}", condition.locale),
+					(route.awayPath ?? plan.awayPath).replaceAll(
+						"{locale}",
+						condition.locale,
+					),
 					plan.origin,
 				).href,
 				{ waitUntil: "domcontentloaded" },
 			);
+			await performSteps(
+				page,
+				route.navigationSteps,
+				bindings,
+				plan.timeoutMs ?? 30000,
+			);
 			await page.waitForSelector(
 				route.link
 					.replaceAll("{locale}", condition.locale)
-					.replaceAll("{employee}", auth[condition.name].employeeId),
+					.replaceAll("{employee}", bindings.employee),
 				{ timeout: plan.timeoutMs ?? 30000 },
 			);
 		}
-		const client = await page.createCDPSession();
+		client = await page.createCDPSession();
 		await client.send("Network.enable");
-		const requests = new Map();
 		client.on("Network.requestWillBeSent", (event) => {
+			if (measurementStart === undefined) return;
 			sample.requests++;
+			pendingRequests.add(event.requestId);
 			requests.set(event.requestId, {
 				start: event.timestamp,
 				type: event.type,
@@ -581,15 +818,21 @@ async function measure(
 		});
 		client.on("Network.loadingFinished", (event) => {
 			const request = requests.get(event.requestId);
-			sample.totalBytes += event.encodedDataLength;
 			if (request) {
+				pendingRequests.delete(event.requestId);
+				sample.totalBytes += event.encodedDataLength;
 				sample.requestDurationMs += (event.timestamp - request.start) * 1000;
 				if (request.type === "Script")
 					sample.javascriptBytes += event.encodedDataLength;
 				if (request.rsc) sample.rscBytes += event.encodedDataLength;
 			}
 		});
-		client.on("Network.loadingFailed", () => sample.failedRequests++);
+		client.on("Network.loadingFailed", (event) => {
+			if (requests.has(event.requestId)) {
+				pendingRequests.delete(event.requestId);
+				sample.failedRequests++;
+			}
+		});
 		await page.setRequestInterception(true);
 		page.on("request", (request) =>
 			request
@@ -598,7 +841,7 @@ async function measure(
 						? {
 								headers: {
 									...request.headers(),
-									traceparent: `00-${traceId}-${randomBytes(8).toString("hex")}-01`,
+									traceparent: `00-${requestTraceId}-${randomBytes(8).toString("hex")}-01`,
 								},
 							}
 						: {},
@@ -606,40 +849,94 @@ async function measure(
 				.catch(() => {}),
 		);
 		const start = performance.now();
+		measurementStart = start;
+		stage = "navigate";
 		const clock = route.clockReady
 			? page
 					.waitForSelector(route.clockReady, {
 						visible: true,
 						timeout: plan.timeoutMs ?? 30000,
 					})
-					.then(() => performance.now() - start)
+					.then(() => {
+						sample.clockReadyMs = performance.now() - start;
+						return sample.clockReadyMs;
+					})
 					.catch(() => null)
 			: Promise.resolve(null);
-		if (mode === "first-document")
+		if (mode === "first-document") {
 			await page.goto(url, { waitUntil: "domcontentloaded" });
-		else if (mode === "repeat-link") await link(route.link);
-		else if (mode === "return-visit")
+			await prepare();
+		} else if (mode === "repeat-link") {
+			await link(route.link);
+			await prepare();
+		} else if (mode === "return-visit") {
 			await page.goBack({ waitUntil: "domcontentloaded" });
-		else if (mode === "manual-refresh") {
-			await page.click(route.refresh);
-			await page.waitForSelector(`${route.refresh}[aria-busy="true"]`, {
-				timeout: plan.timeoutMs ?? 30000,
-			});
-			await page.waitForSelector(`${route.refresh}[aria-busy="false"]`, {
-				timeout: plan.timeoutMs ?? 30000,
-			});
-		} else {
-			for (const step of route.mutation.steps) {
-				if (step.click) await page.click(step.click);
-				else if (step.type) await page.type(step.type, step.value);
-				else fail("Unsupported fixture mutation step.");
+			if (route.returnedFormReady) {
+				await page.waitForSelector(route.returnedFormReady, {
+					visible: true,
+					timeout: plan.timeoutMs ?? 30000,
+				});
+				sample.returnedFormReadyMs = performance.now() - start;
 			}
+			if (route.returnPreparation) {
+				sample.returnPreparationUsed = true;
+				await prepare();
+			}
+		} else if (mode === "manual-refresh") {
+			stage = "manual-refresh";
+			if (route.refreshSteps)
+				await performSteps(
+					page,
+					route.refreshSteps,
+					bindings,
+					plan.timeoutMs ?? 30000,
+				);
+			else {
+				await performSteps(
+					page,
+					[
+						{
+							click: route.refresh,
+							response: route.refreshResponse ?? {
+								path: "{path}",
+								method: "ANY",
+							},
+						},
+					],
+					bindings,
+					plan.timeoutMs ?? 30000,
+				);
+				await page.waitForFunction(
+					(css) => {
+						const button = document.querySelector(css);
+						return (
+							button &&
+							!button.disabled &&
+							button.getAttribute("aria-busy") !== "true"
+						);
+					},
+					{ timeout: plan.timeoutMs ?? 30000 },
+					route.refresh,
+				);
+			}
+		} else {
+			stage = "mutation";
+			mutationStarted = true;
+			await performSteps(
+				page,
+				route.mutation.steps,
+				bindings,
+				plan.timeoutMs ?? 30000,
+			);
 			await page.waitForSelector(route.mutation.ready, {
 				visible: true,
 				timeout: plan.timeoutMs ?? 30000,
 			});
 		}
-		await ready();
+		if (mode !== "mutation-refresh") {
+			await verify();
+			await ready();
+		}
 		sample.usableContentMs = performance.now() - start;
 		sample.clockReadyMs = await clock;
 		const native = await page.evaluate(() => window.__z8Baseline);
@@ -656,10 +953,68 @@ async function measure(
 		// Document LCP is not a soft-navigation metric. Event timing is an approximation (largest observed interaction), not a complete page-lifetime INP.
 		if (mode === "first-document") sample.lcpMs = native?.lcp ?? null;
 		sample.interactionMaxMs = native?.inp ?? null;
-		await client.detach();
-	} catch {
+	} catch (error) {
 		sample.failed = true;
+		sample.failureStage = stage;
+		sample.failureKind =
+			error?.name === "TimeoutError" ? "timeout" : "journey-error";
+		sample.elapsedUntilFailureMs =
+			measurementStart === undefined
+				? null
+				: performance.now() - measurementStart;
 	} finally {
+		if (client && page && !page.isClosed()) {
+			sample.resourceWindowComplete = pendingRequests.size === 0;
+			sample.resourcePendingRequests = pendingRequests.size;
+			sample.pendingRequestsByType = {};
+			sample.pendingScriptRequests = 0;
+			sample.pendingRscRequests = 0;
+			for (const requestId of pendingRequests) {
+				const request = requests.get(requestId);
+				const type = [
+					"Document",
+					"Script",
+					"Stylesheet",
+					"XHR",
+					"Fetch",
+					"EventSource",
+					"WebSocket",
+					"Image",
+					"Font",
+				].includes(request?.type)
+					? request.type
+					: "Other";
+				sample.pendingRequestsByType[type] =
+					(sample.pendingRequestsByType[type] ?? 0) + 1;
+				if (type === "Script") sample.pendingScriptRequests++;
+				if (request?.rsc) sample.pendingRscRequests++;
+			}
+			sample.resourceObservedUntilMs =
+				measurementStart === undefined
+					? null
+					: performance.now() - measurementStart;
+			await client.detach().catch(() => {});
+		}
+		requestTraceId = randomBytes(16).toString("hex");
+		if (mutationStarted) {
+			try {
+				await performSteps(
+					page,
+					route.mutation.reset,
+					bindings,
+					plan.timeoutMs ?? 30000,
+				);
+				sample.restored = true;
+			} catch {
+				sample.failed = true;
+				sample.failureStage = "restore-original-state";
+				sample.failureKind = "restoration-error";
+				sample.elapsedUntilFailureMs =
+					measurementStart === undefined
+						? null
+						: performance.now() - measurementStart;
+			}
+		}
 		await context.close();
 	}
 	return sample;
