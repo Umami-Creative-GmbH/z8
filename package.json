@@ -9,6 +9,7 @@
 		"performance:fixture": "node scripts/performance/fixture.mjs",
 		"performance:baseline": "node scripts/performance/run-baseline.mjs",
 		"performance:test": "node --test scripts/performance/run-baseline.test.mjs",
+		"performance:test:runtime": "node --test scripts/performance/fixture-runtime.test.mjs",
 		"dev": "turbo dev",
 		"build": "node scripts/build.mjs",
 		"test": "pnpm node --test docker/scripts/prepare-target-runtime.test.mjs scripts/performance/run-baseline.test.mjs && turbo test --output-logs=full --log-order=stream",

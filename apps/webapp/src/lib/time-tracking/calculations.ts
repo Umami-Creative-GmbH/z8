@@ -200,6 +200,7 @@ export async function calculateExpectedWorkHours(
 	endDate: Date,
 	hoursPerDay: number = 8,
 	timezone?: string,
+	exclusions?: (date: Date) => boolean,
 ): Promise<WorkHoursSummary> {
 	let currentDT = fromJSDate(startDate, timezone);
 	const endDT = fromJSDate(endDate, timezone);
@@ -216,10 +217,12 @@ export async function calculateExpectedWorkHours(
 		// Skip weekends (assuming 5-day work week)
 		if (dayOfWeek !== 0 && dayOfWeek !== 6) {
 			// Check if this is a holiday
-			const shouldExclude = await shouldExcludeFromCalculations(
-				organizationId,
-				dateToDB(currentDT)!,
-			);
+			const dayDate = dateToDB(currentDT);
+			const shouldExclude = dayDate
+				? exclusions
+					? exclusions(dayDate)
+					: await shouldExcludeFromCalculations(organizationId, dayDate)
+				: false;
 
 			if (shouldExclude) {
 				excludedDays++;

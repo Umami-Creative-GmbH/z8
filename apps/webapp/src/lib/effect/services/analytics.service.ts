@@ -48,8 +48,8 @@ import { instantFromDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { resolveReportDateRange } from "@/lib/reports/report-date-range";
 import {
 	sumWorkMinutesWithinTracking,
-	readTrackedDailyWorkMinutes,
-} from "@/lib/work-balance/tracked-work";
+	} from "@/lib/work-balance/tracked-work";
+
 import { computeOvertimeDelta } from "@/lib/time-record/overtime";
 import {
 	calculateExpectedWorkHours,
@@ -686,27 +686,65 @@ export class AnalyticsService extends Context.Service<
 
 				getWorkHoursAnalytics: (params: WorkHoursParams) =>
 					Effect.gen(function* () {
-						const { organizationId, dateRange, employeeId } = params;
+						const { organizationId, dateRange, employeeId, scope } = params;
 						const calendarRange = getAnalyticsCalendarRange(dateRange);
 						const reportRange = resolveReportDateRange(
 							calendarRange.startDate,
 							calendarRange.endDate,
 							calendarRange.timezone,
 						);
-						const rangeEndExclusive = new Date(dateRange.end.getTime() + 1);
 
 						// Get employees (all or specific one)
-						const employees = yield* dbService.query("getEmployeesForWorkAnalytics", async () => {
-							return await dbService.db.query.employee.findMany({
-								where: employeeId
-									? and(eq(employee.organizationId, organizationId), eq(employee.id, employeeId))
-									: and(eq(employee.organizationId, organizationId), eq(employee.isActive, true)),
-								with: {
-									user: true,
-								},
-							});
-						});
+						const employees = yield* dbService.query(
+							"getEmployeesForWorkAnalytics",
+							async () => {
+								return await dbService.db.query.employee.findMany({
+									where: and(
+										eq(employee.organizationId, organizationId),
+										employeeId
+											? eq(employee.id, employeeId)
+											: eq(employee.isActive, true),
+										scope.role === "manager"
+											? inArray(
+													employee.id,
+													dbService.db
+														.select({ employeeId: employeeManagers.employeeId })
+														.from(employeeManagers)
+														.where(
+															eq(employeeManagers.managerId, scope.managerEmployeeId),
+														),
+												)
+											: undefined,
+									),
+									columns: {
+										id: true,
+										organizationId: true,
+										teamId: true,
+										startDate: true,
+										contractType: true,
+									},
+									with: {
+										user: { columns: { name: true, createdAt: true } },
+										userSettings: { columns: { timezone: true } },
+										organization: { columns: { timezone: true } },
+									},
+								});
+							},
+						);
 
+						const { loadCalculationExclusions } = yield* Effect.promise(
+							() => import("@/lib/calendar/holiday-service"),
+						);
+						const exclusions = yield* dbService.query(
+							"analytics.rangeCalculationHolidays",
+							() =>
+								loadCalculationExclusions(
+									dbService.db,
+									organizationId,
+									dateRange.start,
+									dateRange.end,
+								),
+						);
 						const expected = yield* Effect.promise(() =>
 							calculateExpectedWorkHours(
 								organizationId,
@@ -714,27 +752,24 @@ export class AnalyticsService extends Context.Service<
 								dateRange.end,
 								8,
 								calendarRange.timezone,
+								exclusions,
 							),
 						);
 
 						// Get daily distribution by aggregating work periods per day
-						const workPeriods = yield* dbService.query(
-							"getWorkPeriodsForDistribution",
-							async () => {
-								const employeeIds = employees.map((e) => e.id);
-								if (employeeIds.length === 0) return [];
-								return await dbService.db.query.workPeriod.findMany({
-									where: and(
-										eq(workPeriod.organizationId, organizationId),
-										inArray(workPeriod.employeeId, employeeIds),
-										isNull(workPeriod.deletedAt),
-										lt(workPeriod.startTime, rangeEndExclusive),
-										gt(workPeriod.endTime, dateRange.start),
-									),
-								});
-							},
+						const { loadAnalyticsRangeEvidence } = yield* Effect.promise(
+							() => import("@/lib/analytics/range-evidence"),
 						);
-
+						const {
+							distributionPeriods: workPeriods,
+							dailyByEmployee,
+							requirementsByEmployee,
+						} = yield* loadAnalyticsRangeEvidence({
+							organizationId,
+							employees,
+							startDate: dateRange.start,
+							endDate: dateRange.end,
+						}).pipe(withWorkPolicy);
 						const minutesByEmployee = new Map<string, number>();
 						const dailyHoursMap = new Map<string, number>();
 						const dailyMinutesByEmployee = new Map<string, Map<string, number>>();
@@ -751,8 +786,12 @@ export class AnalyticsService extends Context.Service<
 									(dailyHoursMap.get(piece.date) || 0) + piece.minutes / 60,
 								);
 								const dailyMinutes =
-									dailyMinutesByEmployee.get(wp.employeeId) ?? new Map<string, number>();
-								dailyMinutes.set(piece.date, (dailyMinutes.get(piece.date) ?? 0) + piece.minutes);
+									dailyMinutesByEmployee.get(wp.employeeId) ??
+									new Map<string, number>();
+								dailyMinutes.set(
+									piece.date,
+									(dailyMinutes.get(piece.date) ?? 0) + piece.minutes,
+								);
 								dailyMinutesByEmployee.set(wp.employeeId, dailyMinutes);
 								minutesByEmployee.set(
 									wp.employeeId,
@@ -762,44 +801,23 @@ export class AnalyticsService extends Context.Service<
 						}
 
 						const trackedByEmployee = new Map(
-							yield* Effect.forEach(
-								employees,
-								(emp) =>
-									Effect.gen(function* () {
-										const actual = yield* dbService.query("analytics.dailyTrackedMinutes", () =>
-											readTrackedDailyWorkMinutes(dbService.db, {
-												employeeId: emp.id,
-												organizationId,
-												startDate: dateRange.start,
-												endDate: dateRange.end,
-											}),
-										);
-										if (!actual) return [emp.id, null] as const;
-										const { loadDailyWorkRequirementsForEmployee } = yield* Effect.promise(
-											() => import("@/lib/calendar/work-policy-requirements"),
-										);
-										const requirements = yield* loadDailyWorkRequirementsForEmployee({
-											employeeId: emp.id,
-											organizationId,
-											startDate: dateRange.start,
-											endDate: dateRange.end,
-											timezone: actual.timezone,
-										}).pipe(withWorkPolicy);
-										const requiredMinutes = Object.values(requirements).reduce(
-											(total, day) => total + day.requiredMinutes,
-											0,
-										);
-										const actualMinutes = Object.values(actual.minutesByDate).reduce(
-											(total, minutes) => total + minutes,
-											0,
-										);
-										return [
-											emp.id,
-											{ ...actual, requirements, requiredMinutes, actualMinutes },
-										] as const;
-									}),
-								{ concurrency: "unbounded" },
-							),
+							employees.map((emp) => {
+								const actual = dailyByEmployee.get(emp.id);
+								if (!actual) return [emp.id, null] as const;
+								const requirements = requirementsByEmployee.get(emp.id) ?? {};
+								const requiredMinutes = Object.values(requirements).reduce(
+									(total, day) => total + day.requiredMinutes,
+									0,
+								);
+								const actualMinutes = Object.values(actual.minutesByDate).reduce(
+									(total, minutes) => total + minutes,
+									0,
+								);
+								return [
+									emp.id,
+									{ ...actual, requirements, requiredMinutes, actualMinutes },
+								] as const;
+							}),
 						);
 
 						const employeeData = employees.map((emp) => {
@@ -807,7 +825,8 @@ export class AnalyticsService extends Context.Service<
 							const totalHours = totalMinutes / 60;
 							const tracked = trackedByEmployee.get(emp.id);
 							const balanceActualMinutes = tracked?.actualMinutes ?? totalMinutes;
-							const requiredMinutes = tracked?.requiredMinutes ?? expected.totalMinutes;
+							const requiredMinutes =
+								tracked?.requiredMinutes ?? expected.totalMinutes;
 							const overtimeMinutes = computeOvertimeDelta({
 								actualMinutes: balanceActualMinutes,
 								expectedMinutes: requiredMinutes,
@@ -821,12 +840,22 @@ export class AnalyticsService extends Context.Service<
 								expectedHours: requiredMinutes / 60,
 								expectedMinutes: requiredMinutes,
 								overtimeMinutes,
-								undertimeHours: Math.max(0, (requiredMinutes - balanceActualMinutes) / 60),
-								avgHoursPerWeek: expected.workDays > 0 ? (totalHours / expected.workDays) * 5 : 0,
+								undertimeHours: Math.max(
+									0,
+									(requiredMinutes - balanceActualMinutes) / 60,
+								),
+								avgHoursPerWeek:
+									expected.workDays > 0 ? (totalHours / expected.workDays) * 5 : 0,
 							};
 						});
-						const totalHours = employeeData.reduce((sum, item) => sum + item.totalHours, 0);
-						const totalExpected = employeeData.reduce((sum, item) => sum + item.expectedHours, 0);
+						const totalHours = employeeData.reduce(
+							(sum, item) => sum + item.totalHours,
+							0,
+						);
+						const totalExpected = employeeData.reduce(
+							(sum, item) => sum + item.expectedHours,
+							0,
+						);
 						const totalExpectedMinutes = employeeData.reduce(
 							(sum, item) => sum + item.expectedMinutes,
 							0,
@@ -839,7 +868,10 @@ export class AnalyticsService extends Context.Service<
 							actualMinutes: balanceActualMinutes,
 							expectedMinutes: totalExpectedMinutes,
 						});
-						const undertimeHours = Math.max(0, totalExpected - balanceActualMinutes / 60);
+						const undertimeHours = Math.max(
+							0,
+							totalExpected - balanceActualMinutes / 60,
+						);
 						const avgHoursPerWeek =
 							employeeData.length > 0 ? totalHours / employeeData.length / 4 : 0;
 

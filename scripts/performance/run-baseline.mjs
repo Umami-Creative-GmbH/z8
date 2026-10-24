@@ -269,6 +269,9 @@ async function main() {
 		runtime: {
 			mode: plan.runtime.mode,
 			build: plan.runtime.build,
+			sourceBuild: plan.runtime.sourceBuild ?? null,
+			buildWorkers: plan.runtime.buildWorkers ?? null,
+			redisCommandTimeoutMs: plan.runtime.redisCommandTimeoutMs ?? null,
 			toolingBuild: plan.runtime.toolingBuild ?? null,
 			poolMax: plan.runtime.poolMax ?? null,
 			images: plan.runtime.images ?? [],
