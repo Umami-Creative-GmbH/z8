@@ -124,8 +124,9 @@ export async function acquireAbsenceCancellationGuards(
  * Preconditions, owned by the deactivation transaction:
  * - the employee is already switched off with `employee.deactivated_at = ctx.at` (the
  *   capability's authorization re-reads it);
- * - the absences are cancelled before the person's team membership ends, because the absence
- *   adapter trusts a primary team only with its membership row;
+ * - the person's primary team (`employee.team_id`) still has its membership row, or is cleared
+ *   with it as `removeTeamMembership` does: the absence adapter refuses a primary team without
+ *   its membership row;
  * - `acquireAbsenceCancellationGuards` ran at the start of the transaction, before the
  *   authorization guards and the organization row lock (lock order, see there).
  *
