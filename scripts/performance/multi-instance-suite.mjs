@@ -23,6 +23,7 @@ const stages = [
 	"interactive-clock",
 	"outage",
 	"restart",
+	"clock-diagnostic",
 ];
 const pause = (ms) => new Promise((done) => setTimeout(done, ms));
 const json = async (path) => JSON.parse(await readFile(path, "utf8"));
@@ -46,6 +47,7 @@ export async function multiInstanceSuitePlan(directory, source) {
 			sourceBuild: publicPlan.sourceBuild,
 			readers,
 			stages,
+			diagnosticOnlyStages: ["clock-diagnostic"],
 			concurrentRequestsPerReplica: 8,
 			maximumConcurrentComputations: 2,
 			expiryWaitMs: 62000,
@@ -366,13 +368,14 @@ export async function runMultiInstanceStage(stage, directory, source) {
 				}
 			}
 		}
-		if (stage === "interactive-clock") {
+		if (stage === "interactive-clock" || stage === "clock-diagnostic") {
 			// The #1475 helper owns visible control selection, single-submit writes and unknown-outcome resolution.
 			const { openPublicHeaderClock } = await import(
 				"./public-header-clock.mjs"
 			);
 			const active = [];
-			for (const kind of readers) active.push(await open(kind));
+			for (const kind of stage === "clock-diagnostic" ? ["work"] : readers)
+				active.push(await open(kind));
 			const person = actor("small-employee"),
 				primary = active[0];
 			check(
@@ -435,7 +438,9 @@ export async function runMultiInstanceStage(stage, directory, source) {
 					timeoutMs: 30000,
 				});
 				for (const probe of active)
-					for (const loaded of [false, true])
+					for (const loaded of stage === "clock-diagnostic"
+						? [true]
+						: [false, true])
 						for (const action of ["in", "out"]) {
 							const prepared = await clock.prepare(action);
 							commandTrace = randomBytes(16).toString("hex");
@@ -500,6 +505,9 @@ export async function runMultiInstanceStage(stage, directory, source) {
 							}
 						}
 			} finally {
+				const beforeResolution = clockContext.transport.wire.state(
+					performance.now(),
+				);
 				if (clock) {
 					try {
 						// Resolve an uncertain outcome first. Never retry the same write.
@@ -514,6 +522,14 @@ export async function runMultiInstanceStage(stage, directory, source) {
 						clock.dispose();
 					}
 				}
+				observations.push({
+					stage: "clock-context-cleanup-diagnostic",
+					traceIds: clockContext.traceIds,
+					beforeResolution,
+					beforeContextClose: clockContext.transport.wire.state(
+						performance.now(),
+					),
+				});
 				await clockContext.close();
 			}
 		}
@@ -965,7 +981,10 @@ export async function runMultiInstanceStage(stage, directory, source) {
 		const report = {
 			nativeEpochs,
 			stage,
-			purpose: "finite-functional-acceptance-not-controlled-timing",
+			purpose:
+				stage === "clock-diagnostic"
+					? "finite-clock-closure-diagnostic-not-acceptance"
+					: "finite-functional-acceptance-not-controlled-timing",
 			sourceBuild: publicPlan.sourceBuild,
 			artifactBuildId: fixture.artifactBuildId,
 			artifactManifestSha256: fixture.artifactManifestSha256,

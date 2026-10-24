@@ -19,7 +19,7 @@ import {
 } from "./collector-client.mjs";
 
 test("shared visit client drains native control and reconciles the real collector protocol", {
-	timeout: 10000,
+	timeout: 25000,
 }, async () => {
 	const folder = await mkdtemp(join(tmpdir(), "z8-collector-client-"));
 	const control = join(folder, "collector-private.json"),
@@ -53,6 +53,7 @@ test("shared visit client drains native control and reconciles the real collecto
 		const coverage = new FixtureNativeCoverage();
 		coverage.enableDriverCounter();
 		const traceId = "a".repeat(32);
+		let exportedTraceId = traceId;
 		let flushes = 0;
 		server = await startFixtureNativeControl(
 			coverage,
@@ -77,7 +78,7 @@ test("shared visit client drains native control and reconciles the real collecto
 										scope: { name: "@opentelemetry/instrumentation-pg" },
 										spans: [
 											{
-												traceId,
+												traceId: exportedTraceId,
 												spanId: "1".padStart(16, "0"),
 												name: "pg.query",
 												startTimeUnixNano: "1000000",
@@ -111,6 +112,9 @@ test("shared visit client drains native control and reconciles the real collecto
 		assert.equal(closed.traces[0].coverage.nativeProof, true);
 		assert.equal(closed.traces[0].coverage.nativeDriverQueries, 1);
 		assert.equal(closed.traces[0].coverage.incomplete, false);
+		assert.equal(closed.nativeCloseProof[0].complete, true);
+		assert.equal(closed.nativeCloseProof[0].driverQueries, 1);
+		assert.ok(closed.nativeCloseElapsedMs >= 500);
 		assert.equal(coverage.snapshot().activeTraces, 0);
 		assert.equal(
 			(await reconcileCollectorRun({ control, before, traceIds: [traceId] }))
@@ -132,6 +136,37 @@ test("shared visit client drains native control and reconciles the real collecto
 		);
 		assert.equal(lostLate.observedQueryCount, 1);
 		assert.equal(lostLate.driverQueryCount, 2);
+		// Balanced query counts cannot make an open SDK SERVER a complete visit.
+		exportedTraceId = "b".repeat(32);
+		const failedVisit = await beginCollectorVisit({
+			control,
+			traceIds: [exportedTraceId],
+		});
+		const heldServer = {
+			name: "held-server",
+			kind: 1,
+			spanContext: () => ({ traceId: exportedTraceId }),
+		};
+		const query = {
+			...span,
+			spanContext: () => ({ traceId: exportedTraceId }),
+		};
+		coverage.onStart(heldServer);
+		coverage.driverQuery(exportedTraceId);
+		coverage.onStart(query);
+		coverage.onEnd(query);
+		const failed = await endCollectorVisit(failedVisit);
+		assert.equal(failed.nativeCloseProof[0].complete, false);
+		assert.equal(failed.nativeCloseProof[0].driverComplete, true);
+		assert.deepEqual(
+			failed.nativeCloseProof[0].started,
+			failed.nativeCloseProof[0].ended,
+		);
+		assert.equal(failed.nativeCloseProof[0].unattributedNativeSpans, 0);
+		assert.ok(failed.nativeCloseElapsedMs >= 10000);
+		assert.equal(failed.traces[0].coverage.nativeProof, false);
+		assert.equal(failed.traces[0].coverage.incomplete, true);
+		assert.equal(failed.traces[0].coverage.nativeDriverQueries, 1);
 	} finally {
 		server?.closeAllConnections();
 		await new Promise((done) => (server ? server.close(done) : done()));

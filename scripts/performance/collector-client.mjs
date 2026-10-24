@@ -60,18 +60,21 @@ export async function beginCollectorVisit({ control, traceIds }) {
 export async function endCollectorVisit(visit) {
 	if (visit.protocol !== collectorProtocol)
 		throw new Error("Invalid observation lifecycle.");
+	const nativeCloseStarted = performance.now();
 	const { proof } = await post(
 		visit.observerEndpoint,
 		"/visits/close",
 		{ traceIds: visit.traceIds },
 		nativeProtocol,
 	);
-	return post(
+	const nativeCloseElapsedMs = performance.now() - nativeCloseStarted;
+	const result = await post(
 		visit.endpoint,
 		"/visits/close",
 		{ traceIds: visit.traceIds, proof },
 		collectorProtocol,
 	);
+	return { ...result, nativeCloseProof: proof, nativeCloseElapsedMs };
 }
 
 /** Global wire counts also cover late or unregistered work that never reaches the collector. */

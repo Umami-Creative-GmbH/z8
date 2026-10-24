@@ -1,0 +1,108 @@
+{
+  "kind": "multi-instance-cache-corrected-observer-preparation",
+  "runtimeAccepted": false,
+  "preparationOnly": true,
+  "previousSource": "ac2fb11334b2fac88144dd405e39a15bd988d29c",
+  "candidateSource": "e059597490b02c575c6e1cf64f1d83da712cff97",
+  "hashDefinition": "SHA256 of exact git blob bytes; selected cache/admission/calculation/observer components, not a transitive dependency equivalence proof.",
+  "components": {
+    "apps/webapp/src/app/[locale]/(app)/analytics/actions.ts": {
+      "previousSha256": "73afa9592f342fff64fdb7d2e0633d55fe152e95451a4354b1b698f8d84f6f03",
+      "candidateSha256": "73afa9592f342fff64fdb7d2e0633d55fe152e95451a4354b1b698f8d84f6f03",
+      "equal": true
+    },
+    "apps/webapp/src/app/[locale]/(app)/analytics/current-employee-scope.ts": {
+      "previousSha256": "902009db40713addad0251f6bb3d12c43c4d0f4d4d98fa5b95525c4ac620446e",
+      "candidateSha256": "902009db40713addad0251f6bb3d12c43c4d0f4d4d98fa5b95525c4ac620446e",
+      "equal": true
+    },
+    "apps/webapp/src/lib/analytics/recent-identity.ts": {
+      "previousSha256": "0115240cc15082f266d0ab7d96174f7052113083a39b5146134e3cb04f7957d3",
+      "candidateSha256": "0115240cc15082f266d0ab7d96174f7052113083a39b5146134e3cb04f7957d3",
+      "equal": true
+    },
+    "apps/webapp/src/lib/analytics/recent-read.ts": {
+      "previousSha256": "f687e3042d91ff4ee0e5f2dcda7dcb1e2d324dd4db50ab1fab93f761dd4205d7",
+      "candidateSha256": "f687e3042d91ff4ee0e5f2dcda7dcb1e2d324dd4db50ab1fab93f761dd4205d7",
+      "equal": true
+    },
+    "apps/webapp/src/lib/analytics/range-evidence.ts": {
+      "previousSha256": "e5295f8924822cbfc11465ff239ff43f723c7f5eb30b257cc1a75dd77bceb6b9",
+      "candidateSha256": "e5295f8924822cbfc11465ff239ff43f723c7f5eb30b257cc1a75dd77bceb6b9",
+      "equal": true
+    },
+    "apps/webapp/src/lib/effect/services/analytics.service.ts": {
+      "previousSha256": "8884f3129f1964d2b328ec970ad2a93f3db203dc235d4fbde880ddf0822a3459",
+      "candidateSha256": "8884f3129f1964d2b328ec970ad2a93f3db203dc235d4fbde880ddf0822a3459",
+      "equal": true
+    },
+    "apps/webapp/src/lib/effect/services/auth.service.ts": {
+      "previousSha256": "52f0a018ab7d1a31a21ad3f91aa7a3c34572bc2b2e0899b0356189c42bd1b9d7",
+      "candidateSha256": "52f0a018ab7d1a31a21ad3f91aa7a3c34572bc2b2e0899b0356189c42bd1b9d7",
+      "equal": true
+    },
+    "apps/webapp/src/lib/cache/tags.ts": {
+      "previousSha256": "349b6b1915442e9447054f9e693b5ab7067a68770bd59ca84317d03302ca5f10",
+      "candidateSha256": "349b6b1915442e9447054f9e693b5ab7067a68770bd59ca84317d03302ca5f10",
+      "equal": true
+    },
+    "apps/webapp/src/lib/calendar/work-policy-range-requirements.ts": {
+      "previousSha256": "346c64a94cf3623416f2f1d6f2b0dc3476d5bc8386f8a92180021ce3006d4a88",
+      "candidateSha256": "346c64a94cf3623416f2f1d6f2b0dc3476d5bc8386f8a92180021ce3006d4a88",
+      "equal": true
+    },
+    "apps/webapp/src/instrumentation.node.ts": {
+      "previousSha256": "4fc2673988dbb075d681e26f13a361186d8074d0f278c5764a8dc143a6523fea",
+      "candidateSha256": "4fc2673988dbb075d681e26f13a361186d8074d0f278c5764a8dc143a6523fea",
+      "equal": true
+    },
+    "apps/webapp/src/lib/performance-fixture-native-coverage.ts": {
+      "previousSha256": "9b07f5a8b133064b1796753bc120ea1fc2cf978e5e536cceef254ae6e5cd0c7f",
+      "candidateSha256": "b36d34f17cafff1a7b624231a64b23c007949efb942a694b0e8427a40ccf5854",
+      "equal": false
+    },
+    "apps/webapp/src/lib/performance-fixture-observer.ts": {
+      "previousSha256": "1e70e7ea5aa92390d1ea9f3b27484dc74d78748fcfc66723a07de095cd2cf24e",
+      "candidateSha256": "1e70e7ea5aa92390d1ea9f3b27484dc74d78748fcfc66723a07de095cd2cf24e",
+      "equal": true
+    }
+  },
+  "candidateArtifact": {
+    "sourceBuild": "e059597490b02c575c6e1cf64f1d83da712cff97",
+    "artifactBuildId": "build-TfctsWXpff2fKS",
+    "artifactManifestSha256": "c54fd17f2b641f13c5951796f402b6a83053930467434c45207f6ff4907778f5",
+    "ci": true,
+    "buildExitCode": 0
+  },
+  "runtimeActivityPerformed": false,
+  "observerCorrection": {
+    "sdkServerSpanKind": 1,
+    "previousIncorrectTrackedKind": 2,
+    "collectorOtlpServerKind": 2,
+    "implementation": "Use imported @opentelemetry/api SpanKind.SERVER in both onStart and onEnd; exporter wire convention unchanged.",
+    "status": "CI build passed. Fresh fixture/app/collector authentication and actual eight-stage proof remain pending."
+  },
+  "proposedStages": [
+    "fill",
+    "mutation",
+    "scope",
+    "concurrency",
+    "expiry",
+    "outage",
+    "interactive-clock",
+    "restart"
+  ],
+  "stageSelectionReason": "Concrete server-drain instrumentation gap requires all eight finite stages on corrected observer binary; prior outputs/counts remain exact-version historical observations and cannot independently establish corrected request-span drainage.",
+  "priorEvidence": [
+    "1472-multi-instance-cache.json",
+    "1472-final-source-preparation.json"
+  ],
+  "fixtureDirectory": "final-corrected-multi-runtime",
+  "runtimePrerequisites": [
+    "Parent prepares fresh normal-schema clone and marker projections; no old migration ledger promotion.",
+    "Parent retains independent A/B collectors and web processes plus owned proxy and eight synthetic sessions.",
+    "Parent grants exclusive A/B global native epochs.",
+    "Run fill first; stop on incomplete native or strict transport proof.",
+    "Parent pre-arms A-only watcher only immediately before restart stage; no agent launches retained services."
+  ]
+}
