@@ -224,6 +224,7 @@ function snapshot() {
 			eventLoopDelayMs:
 				complete && !metric.loopIncomplete ? metric.loopDelay : null,
 			observedQueryErrors: metric.queryErrors,
+			observedQueryCount: metric.queries,
 			observedPoolAcquisitions: metric.acquisitions,
 			observedPoolAcquisitionErrors: metric.acquisitionErrors,
 			observedEventLoopProbes: metric.loopSamples,
@@ -242,6 +243,7 @@ function snapshot() {
 							unattributedNativeSpans: state.unattributedNativeSpans,
 							lateSpans: state.lateSpans,
 							nativeProof: state.proofComplete,
+							nativeDriverQueries: state.nativeDriverQueries ?? null,
 						}
 					: {}),
 			},
@@ -355,6 +357,9 @@ const server = createServer(async (request, response) => {
 					const state = registered.get(value);
 					const metric = traces.get(value);
 					const proof = payload.proof?.find((entry) => entry.traceId === value);
+					state.nativeDriverQueries = Number.isSafeInteger(proof?.driverQueries)
+						? proof.driverQueries
+						: null;
 					state.proofComplete =
 						!!metric &&
 						proof?.complete === true &&
@@ -362,6 +367,8 @@ const server = createServer(async (request, response) => {
 							(key) => Number.isSafeInteger(proof[key]) && proof[key] >= 0,
 						) &&
 						proof.queries === metric.queries &&
+						proof.driverComplete === true &&
+						proof.driverQueries === proof.queries &&
 						proof.acquisitions === metric.acquisitions &&
 						proof.cache === metric.hits + metric.misses + metric.cacheErrors;
 					state.closed = true;

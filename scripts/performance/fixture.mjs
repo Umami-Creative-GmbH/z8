@@ -28,6 +28,23 @@ const save = (path, value) =>
 	writeFile(path, JSON.stringify(value, null, 2), { mode: 0o600 });
 const pause = (ms) => new Promise((done) => setTimeout(done, ms));
 const pnpm = process.env.npm_execpath;
+const collectorKinds = [
+	"z8-fixture-otlp-collector-v1",
+	"z8-fixture-otlp-collector-v2",
+];
+function configureCollector(runtime, collector) {
+	if (!collectorKinds.includes(collector.kind))
+		throw new Error("Fixture collector identity is invalid.");
+	runtime.env.Z8_FIXTURE_OTLP_ENDPOINT = collector.endpoint;
+	runtime.env.Z8_FIXTURE_COLLECTOR_PROTOCOL = collector.kind;
+	if (collector.kind === "z8-fixture-otlp-collector-v2") {
+		if (typeof collector.observerControl !== "string")
+			throw new Error("Native observer control metadata is required.");
+		runtime.env.Z8_PERFORMANCE_OBSERVER_CONTROL_FILE =
+			collector.observerControl;
+	}
+	fixtureOtlpEndpoint(runtime.env);
+}
 function fixtureOtlpEndpoint(env) {
 	if (!env.Z8_FIXTURE_OTLP_ENDPOINT) return undefined;
 	const endpoint = new URL(env.Z8_FIXTURE_OTLP_ENDPOINT);
@@ -369,10 +386,7 @@ async function checkObserver(directory) {
 		const collector = JSON.parse(
 			await readFile(args[args.indexOf("--collector") + 1], "utf8"),
 		);
-		if (collector.kind !== "z8-fixture-otlp-collector-v1")
-			throw new Error("Fixture collector identity is invalid.");
-		runtime.env.Z8_FIXTURE_OTLP_ENDPOINT = collector.endpoint;
-		fixtureOtlpEndpoint(runtime.env);
+		configureCollector(runtime, collector);
 		await save(join(directory, "runtime-private.json"), runtime);
 	}
 	await run(
@@ -430,10 +444,7 @@ async function start(directory) {
 		const collector = JSON.parse(
 			await readFile(args[args.indexOf("--collector") + 1], "utf8"),
 		);
-		if (collector.kind !== "z8-fixture-otlp-collector-v1")
-			throw new Error("Fixture collector identity is invalid.");
-		runtime.env.Z8_FIXTURE_OTLP_ENDPOINT = collector.endpoint;
-		fixtureOtlpEndpoint(runtime.env);
+		configureCollector(runtime, collector);
 		await save(join(directory, "runtime-private.json"), runtime);
 	}
 	if (runtime.env.Z8_FIXTURE_OTLP_ENDPOINT) {
@@ -441,10 +452,7 @@ async function start(directory) {
 			new URL("/health", fixtureOtlpEndpoint(runtime.env)),
 			{ signal: AbortSignal.timeout(5000) },
 		);
-		if (
-			!health.ok ||
-			(await health.json()).kind !== "z8-fixture-otlp-collector-v1"
-		)
+		if (!health.ok || !collectorKinds.includes((await health.json()).kind))
 			throw new Error("Fixture local collector is unavailable.");
 	}
 	const log = createWriteStream(join(directory, "runtime.log"), {
@@ -664,6 +672,7 @@ async function plan(directory) {
 		},
 		runtime: {
 			mode: "production",
+			collectorProtocol: runtime.env.Z8_FIXTURE_COLLECTOR_PROTOCOL ?? null,
 			browserPermissions: fixtureBrowserPermissions,
 			build,
 			sourceBuild,
@@ -671,7 +680,10 @@ async function plan(directory) {
 			buildWorkers: 2,
 			observer: {
 				enabled: !!runtime.env.Z8_FIXTURE_OTLP_ENDPOINT,
-				version: 1,
+				version: 2,
+				nativeCounter: !!runtime.env.Z8_PERFORMANCE_OBSERVER_CONTROL_FILE,
+				nativeDrainQuietMs: 500,
+				nativeDrainCapMs: 10000,
 				eventLoopProbeIntervalMs: 10,
 				retainedEventLoopProbes: 30000,
 				cacheHandler: "installed-16.4.0-native-default-in-place",

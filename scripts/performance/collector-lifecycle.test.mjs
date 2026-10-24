@@ -77,6 +77,8 @@ test("registered native coverage rejects lost or orphan work and isolates closed
 		const proof = (traceId, queries = 1, complete = true) => ({
 			traceId,
 			queries,
+			driverQueries: queries,
+			driverComplete: true,
 			acquisitions: 0,
 			cache: 0,
 			complete,
@@ -148,11 +150,31 @@ test("registered native coverage rejects lost or orphan work and isolates closed
 		);
 		await post("/visits/register", { traceIds: [fourth] });
 		await send(fourth);
-		for (let index = 0; index < 1000; index++)
-			await send((index + 100).toString(16).padStart(32, "0"));
+		for (let batch = 0; batch < 1001; batch++)
+			await post("/v1/traces", {
+				resourceSpans: [
+					{
+						scopeSpans: [
+							{
+								scope: { name: "@opentelemetry/instrumentation-pg" },
+								spans: Array.from({ length: 1000 }, (_, index) => ({
+									traceId: (batch * 1000 + index + 100)
+										.toString(16)
+										.padStart(32, "0"),
+									spanId: "1".padStart(16, "0"),
+									name: "pg.query",
+								})),
+							},
+						],
+					},
+				],
+			});
 		await post("/visits/close", { traceIds: [fourth], proof: [proof(fourth)] });
 		assert.equal((await metric(fourth)).queryCount, null);
-		assert.equal((await metric(fourth)).coverage.unattributedNativeSpans, 1000);
+		assert.equal(
+			(await metric(fourth)).coverage.unattributedNativeSpans,
+			1001000,
+		);
 		const health = await (await fetch(new URL("/health", endpoint))).json();
 		assert.equal(health.traces, 4);
 		assert.equal(health.activeTraces, 0);
