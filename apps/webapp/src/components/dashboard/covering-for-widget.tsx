@@ -3,15 +3,19 @@
 import { IconUserShare } from "@tabler/icons-react";
 import { useTolgee, useTranslate } from "@tolgee/react";
 import { Badge } from "@/components/ui/badge";
-import type { CoverDuties, CoverDuty } from "@/lib/absences/cover-duties";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
-import { getCoverDuties } from "./cover-duties-actions";
+import type { DashboardWidgetData, DashboardWidgetSnapshot } from "./dashboard-types";
 import { DashboardWidget } from "./dashboard-widget";
-import { useWidgetData } from "./use-widget-data";
+import { useDashboardWidget } from "./use-dashboard-widget";
 import { WidgetCard } from "./widget-card";
+import { WidgetReadError } from "./widget-read-error";
 
-function CategoryBadge({ category }: { category: CoverDuty["category"] }) {
+function CategoryBadge({
+	category,
+}: {
+	category: DashboardWidgetData["covering-for"]["running"][number]["category"];
+}) {
 	if (!category) return null;
 	return (
 		<Badge
@@ -32,16 +36,21 @@ function CategoryBadge({ category }: { category: CoverDuty["category"] }) {
  * "Covering for" (#1012): the absences the signed-in employee is deputy on,
  * running now or starting within 14 days. Hidden for nobody's deputy.
  */
-export function CoveringForWidget() {
+export function CoveringForWidget({
+	initialSnapshot,
+}: {
+	initialSnapshot?: DashboardWidgetSnapshot<DashboardWidgetData["covering-for"]>;
+} = {}) {
 	const { t } = useTranslate();
 	const tolgee = useTolgee(["language"]);
 	const locale = tolgee.getLanguage() || "en";
-	const { data, loading, refreshing, refetch } = useWidgetData<CoverDuties>(getCoverDuties, {
-		errorMessage: t("dashboard.covering-for.error", "Failed to load your cover duties"),
-	});
+	const { data, loading, refreshing, refetch, error, role } = useDashboardWidget(
+		"covering-for",
+		initialSnapshot,
+	);
 	const formatDate = (date: string) => formatPlainDate(parsePlainDate(date), locale, "dateMedium");
 
-	if (!loading && (!data || (data.running.length === 0 && data.upcoming.length === 0))) {
+	if (!loading && !error && data && data.running.length === 0 && data.upcoming.length === 0) {
 		return null;
 	}
 
@@ -58,7 +67,14 @@ export function CoveringForWidget() {
 				refreshing={refreshing}
 				onRefresh={refetch}
 			>
-				{data ? (
+				{error ? (
+					<WidgetReadError
+						title={t("dashboard.covering-for.title", "Covering for")}
+						message={error}
+						retry={refetch}
+						refreshing={refreshing}
+					/>
+				) : data ? (
 					<ul className="space-y-2">
 						{data.running.map((duty) => (
 							<li
@@ -71,7 +87,7 @@ export function CoveringForWidget() {
 										date: formatDate(duty.endDate),
 									})}
 								</span>
-								<CategoryBadge category={duty.category} />
+								<CategoryBadge category={data.viewerRole === role ? duty.category : null} />
 							</li>
 						))}
 						{data.upcoming.map((duty) => (
@@ -90,7 +106,7 @@ export function CoveringForWidget() {
 										},
 									)}
 								</span>
-								<CategoryBadge category={duty.category} />
+								<CategoryBadge category={data.viewerRole === role ? duty.category : null} />
 							</li>
 						))}
 					</ul>

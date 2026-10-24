@@ -1,8 +1,11 @@
 import type { DashboardWidgetOrder } from "@/db/schema";
+import type { CoverDuties } from "@/lib/absences/cover-duties";
+import type { UpcomingShifts } from "@/lib/scheduling/upcoming-shifts";
 import type {
 	ManagedEmployeesResult,
 	ManagerTodaySummaryResult,
 	TeamOverviewStats,
+	WhosOutToday,
 } from "./actions";
 import type { QuickStats } from "./quick-stats-tracking";
 
@@ -50,7 +53,21 @@ export type RecentlyApprovedData = {
 	approverEmployee: { user: { name: string | null } } | null;
 }[];
 
+export type UpcomingTimeOffData = {
+	id: string;
+	startDate: string;
+	endDate: string;
+	absenceDays: number;
+	daysUntil: number;
+	employee: { id: string; user: { id: string; name: string | null; image: string | null } };
+	category: { name: string; color: string | null };
+}[];
+
 export type DashboardWidgetData = {
+	"upcoming-shifts": UpcomingShifts;
+	"covering-for": CoverDuties & { viewerRole: "admin" | "manager" | "employee" };
+	"whos-out-today": WhosOutToday;
+	"upcoming-time-off": UpcomingTimeOffData;
 	"managed-employees": ManagedEmployeesResult;
 	"team-overview": TeamOverviewStats;
 	"pending-approvals": PendingApprovalsData;
@@ -68,6 +85,10 @@ export type DashboardWidgetSnapshot<T> = {
 };
 
 export const SERVER_WIDGET_IDS: readonly ServerWidgetId[] = [
+	"upcoming-shifts",
+	"covering-for",
+	"whos-out-today",
+	"upcoming-time-off",
 	"managed-employees",
 	"team-overview",
 	"pending-approvals",

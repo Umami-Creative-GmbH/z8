@@ -1,5 +1,6 @@
 import { type ReactNode, Suspense } from "react";
 import { SectionCards } from "@/components/section-cards";
+import { CoveringForWidget } from "./covering-for-widget";
 import { getRenderDashboardLayout, readDashboardWidget } from "./dashboard-reads";
 import {
 	type DashboardWidgetData,
@@ -13,6 +14,9 @@ import { PendingApprovalsWidget } from "./pending-approvals-widget";
 import { QuickStatsWidget } from "./quick-stats-widget";
 import { RecentlyApprovedWidget } from "./recently-approved-widget";
 import { TeamOverviewWidget } from "./team-overview-widget";
+import { UpcomingShiftsWidget } from "./upcoming-shifts-widget";
+import { UpcomingTimeOffWidget } from "./upcoming-time-off-widget";
+import { WhosOutTodayWidget } from "./whos-out-today-widget";
 import { WidgetLoading } from "./widget-loading";
 import { normalizeWidgetLayout, type WidgetId } from "./widget-registry";
 
@@ -25,6 +29,39 @@ async function WidgetSlot({
 }) {
 	const initialSnapshot = await snapshot;
 	switch (id) {
+		case "upcoming-shifts":
+			return (
+				<UpcomingShiftsWidget
+					initialSnapshot={
+						initialSnapshot as DashboardWidgetSnapshot<DashboardWidgetData["upcoming-shifts"]>
+					}
+				/>
+			);
+		case "covering-for":
+			return (
+				<CoveringForWidget
+					initialSnapshot={
+						initialSnapshot as DashboardWidgetSnapshot<DashboardWidgetData["covering-for"]>
+					}
+				/>
+			);
+		case "whos-out-today":
+			return (
+				<WhosOutTodayWidget
+					initialSnapshot={
+						initialSnapshot as DashboardWidgetSnapshot<DashboardWidgetData["whos-out-today"]>
+					}
+				/>
+			);
+		case "upcoming-time-off":
+			return (
+				<UpcomingTimeOffWidget
+					initialSnapshot={
+						initialSnapshot as DashboardWidgetSnapshot<DashboardWidgetData["upcoming-time-off"]>
+					}
+				/>
+			);
+
 		case "manager-today":
 			return (
 				<ManagerTodayWidget
