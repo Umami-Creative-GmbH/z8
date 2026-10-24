@@ -120,3 +120,18 @@ after the runtime's bounded automatic retry; a new import invocation can therefo
 start a fresh chunk request. This source inspection is **not** the required final
 compiled-browser proof. A real transient chunk failure through ingress, successful
 local retry and usable actual header/siblings remain pending after C1.
+
+## Post-capture loader type correction
+
+The production TypeScript check reproduced two TS2345 errors in the deferred
+boundary: indexing loaders inferred a union of components with incompatible
+optional snapshot props. The deferred map now declares its actual no-props
+ComponentType contract. Both implementations satisfy it without assertions;
+loading and the fresh lazy identity on explicit retry remain unchanged.
+
+Production, workflow-contract and smoke TypeScript configurations pass. Normal
+Next type generation and ignored license generation pass. The lazy rejection,
+personal widgets and combined refresh tests pass all 16 cases. File-level Biome
+and React Doctor 0.9.17 schema-3 lint report no diagnostics for the corrected
+component. Whole-feature unit, Doctor and broader quality gates are being run
+separately; compiled browser and production-build gates remain pending.
