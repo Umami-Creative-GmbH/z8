@@ -5,6 +5,16 @@ topology, shared-hit result, distributed invalidation result or resource benefit
 has been inferred from example deployment files. The user authorized a local
 Docker fixture because production is unavailable.
 
+The first final-artifact V2 fill run returned all 30 expected caller/scope
+observations. Native totals reconciled exactly on A (1,979 queries) and B (1,391),
+including all prerequisite/background work, with zero pending or active traces.
+Each work/team cold read used 66 SQL queries / 105,615 rows, each overtime cold
+read 66 / 53,415, and each warm read 12 / 207. Both nodes independently missed
+then hit. These are finite functional observations, not a timing comparison.
+The run remains **failed**: its contexts refused 10, 10 and 14 transport requests.
+No unexpected request was forwarded. The failed artifact is retained; refusal
+classification and a clean rerun are required before expanding acceptance.
+
 The configured topology is a loopback Docker HAProxy 2.8 frontend, two independent
 host Next.js 16.4.0 production processes, and separately owned Docker PostgreSQL,
 Valkey and object-storage containers. HAProxy supplies an actual server-name
@@ -50,7 +60,9 @@ by the parent/operator, not an implementer that will finish its turn.
 
 ```powershell
 pnpm --config.verifyDepsBeforeRun=false performance:multi prepare <new-private-directory> <candidate-private-directory> <original-private-directory> <compiled-app-directory> <compiled-source-commit>
-pnpm --config.verifyDepsBeforeRun=false performance:collector --port 0 --control <new-private-directory>/collector-control.json --out <new-private-directory>/backend-metrics.json
+pnpm --config.verifyDepsBeforeRun=false performance:multi migrate <new-private-directory>
+pnpm --config.verifyDepsBeforeRun=false performance:collector --port 0 --require-registration --observer-control <new-private-directory>/observer-a/native-control-private.json --control <new-private-directory>/observer-a/collector-control.json --out <new-private-directory>/observer-a/backend-metrics.json
+pnpm --config.verifyDepsBeforeRun=false performance:collector --port 0 --require-registration --observer-control <new-private-directory>/observer-b/native-control-private.json --control <new-private-directory>/observer-b/collector-control.json --out <new-private-directory>/observer-b/backend-metrics.json
 pnpm --config.verifyDepsBeforeRun=false performance:multi proxy <new-private-directory>
 pnpm --config.verifyDepsBeforeRun=false performance:multi replica <new-private-directory> a
 pnpm --config.verifyDepsBeforeRun=false performance:multi replica <new-private-directory> b
@@ -58,7 +70,7 @@ pnpm --config.verifyDepsBeforeRun=false performance:multi authenticate <new-priv
 pnpm --config.verifyDepsBeforeRun=false performance:multi:probe <new-private-directory> team
 ```
 
-The collector and replica launches run in separate retained sessions. `prepare`
+Both collectors and both replicas run in separate retained sessions. `prepare`
 uses cached images only, generates loopback ports and records image identities;
 `proxy` validates HAProxy configuration before starting it. The normal public
 origin must remain `http://localhost:50754` when borrowing this compiled artifact.
@@ -70,7 +82,7 @@ operator handling and never stops unrelated host processes.
 
 The prepared runtime harness captures a real annual analytics request from the
 UI and keeps it in memory. Replays verify the proxy's actual selected replica and
-collect native query/row/cache/pool/event-loop evidence. Notifications are denied
+collect closed V2 query/row/cache/pool/event-loop evidence. Notifications are denied
 before navigation to prevent push onboarding from intercepting controls; other
 permissions remain unchanged. The initial smoke expects an A hit, a first B miss
 and a subsequent B hit with literal 200 employees / 417,600 hours. It must be run
@@ -85,6 +97,35 @@ memory or adding the installed-version shared backend. The external fixture
 preload supplies per-replica numeric memory/get/fault observations without cache
 keys or manual framework-global initialization. No fault flag is created during
 setup. Streaming through this actual proxy is a separate #1473 gate.
+
+The original dump predates migration 0284. `migrate` verifies the actual owned
+container label, mapped port and database, then runs the established
+`scripts/migrate-with-lock.js` / Drizzle pending-migration path. It never runs the
+schema-resetting migration verifier. It checks that the absence overlap index is
+valid and ready and records the migration ledger. Replica launch requires this
+marker. The original database is never migrated by this operator. A second
+pristine fixture can be prepared and migrated into a different private directory
+without starting a proxy or app; primary timing reserves that clone separately.
+
+Legacy unregistered telemetry is not acceptance evidence. Each replica now has
+its own V2 collector and independent native-control endpoint. Before browser or
+HTTP work, the operator snapshots both native counters and registers every
+prerequisite, measured and background trace at both replicas. Same-trace rows are
+retained separately and added, rather than selecting one matching collector row.
+Closing drains native activity, forces exporter flush and reconciles registered
+counts. After every context closes, whole-run acceptance requires each node's
+driver wire calls = SDK starts = SDK ends = all received query counts, no pending
+queries/active traces, and no lost, late or unattributed work. An unused node may
+have an exact zero delta; it cannot borrow the other node's proof.
+
+Each browser context uses the shared loopback transport, including its service
+worker requests; service workers remain enabled. Only the actual fixture origin
+and the exact owned storage origin are allowed. The final artifact's advertised
+public origin is 58792, whereas this multi-instance fixture uses 50754. Accidental
+cross-origin traffic to the original app must be refused before forwarding and
+make coverage incomplete. Native database wire counts and HTTP response-body
+wire bytes are separate measurements. This cache suite makes no full JavaScript
+or Flight byte-savings claim.
 
 The expanded finite suite is prepared, with runtime acceptance still pending:
 
@@ -149,7 +190,12 @@ acquisition duration.
 seconds the parent must stop only its retained A session and launch the same
 `performance:multi replica ... a` command in a new retained session. The suite
 requires a different actual PID, unchanged frozen source/build, healthy actual A,
-a cold A read and a surviving B hit before TTL. It does not restart services
+a cold A read and a surviving B hit before TTL. Pre-restart contexts close and
+reconcile before the old native process ends. The same captured request remains
+only in RAM; a new post-restart context opens a harmless app-version document,
+avoiding an analytics UI navigation that would warm A. A new pair of counter
+snapshots proves the second epoch without subtracting a reset A counter from an
+old process's snapshot. It does not restart services
 itself. Replacing the compiled build in place is rejected by the launch digest;
 different-code rolling deployment remains a separate gate if a second compiled
 artifact is introduced. Every completed stage saves only numerical summaries,

@@ -6,6 +6,11 @@ import { createRequire } from "node:module";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { ingressPlan } from "./ingress-stream-probe.mjs";
+import { readMultiInstanceFixture } from "./multi-instance-fixture.mjs";
+import {
+	beginMultiInstanceObservation,
+	multiInstanceObservationProtocol,
+} from "./multi-instance-observation.mjs";
 import { openMultiInstanceAnalytics } from "./multi-instance-probe.mjs";
 
 const readers = ["work", "team", "overtime"];
@@ -47,6 +52,9 @@ export async function multiInstanceSuitePlan(directory, source) {
 			restartHandshakeMaximumMs: 45000,
 			cacheBytesPerReplica: 52428800,
 			clockHelper: "public-header-clock.mjs (#1475)",
+			observation: multiInstanceObservationProtocol,
+			independentCollectors: 2,
+			transport: "context-loopback-proxy-v1",
 			runtimeVerified: false,
 			productionTopologyVerified: false,
 		},
@@ -58,6 +66,7 @@ async function inputs(directory, source) {
 		f = plan.fixture;
 	check(
 		f.prepared &&
+			f.schemaMigration?.overlapIndexReady === true &&
 			f.containers.includes(f.postgres) &&
 			f.containers.includes(f.proxy),
 		"Owned fixture preparation is required.",
@@ -82,6 +91,17 @@ async function inputs(directory, source) {
 		port === String(f.env.POSTGRES_PORT),
 		"Database port does not belong to this fixture.",
 	);
+	const storagePort = processOutput(
+		"inspect",
+		"--format",
+		'{{(index (index .NetworkSettings.Ports "9000/tcp") 0).HostPort}}',
+		f.storage,
+	);
+	check(
+		new URL(f.env.S3_PUBLIC_ENDPOINT).origin ===
+			`http://127.0.0.1:${storagePort}`,
+		"Allowed object storage must belong to the owned Docker port.",
+	);
 	const text = await readFile(
 		join(f.artifactApp, ".next/required-server-files.json"),
 	);
@@ -94,20 +114,6 @@ async function inputs(directory, source) {
 	);
 	const people = await json(join(directory, "fixture-private.json"));
 	check(people.kind === "disposable", "Only synthetic actors are permitted.");
-	for (const replica of ["a", "b"]) {
-		const response = await fetch(`${f.origin}/api/app-version`, {
-			headers: { "x-z8-fixture-replica": replica },
-			signal: AbortSignal.timeout(5000),
-		});
-		const version = await response.json();
-		check(
-			response.ok &&
-				response.headers.get("x-z8-fixture-instance") === replica &&
-				/^[a-f0-9]{7,40}$/.test(version.buildHash ?? "") &&
-				publicPlanSource(plan).startsWith(version.buildHash),
-			"Actual replica build/routing did not match the frozen source.",
-		);
-	}
 	const require = createRequire(join(f.artifactApp, "package.json"));
 	const { Pool } = require("pg");
 	const pool = new Pool({
@@ -124,13 +130,24 @@ async function inputs(directory, source) {
 	return { ...plan, people, pool };
 }
 
-const publicPlanSource = (plan) => plan.publicPlan.sourceBuild;
-
 /** Stages are intentionally separate so the parent can schedule restarts and clock probes. */
 export async function runMultiInstanceStage(stage, directory, source) {
 	check(stages.includes(stage), "Choose a finite declared stage.");
 	directory = resolve(directory);
 	const { fixture, publicPlan, people, pool } = await inputs(directory, source);
+	const controls = {
+		a: join(directory, "observer-a/collector-control.json"),
+		b: join(directory, "observer-b/collector-control.json"),
+	};
+	const allowedOrigins = [
+		fixture.origin,
+		new URL(fixture.env.S3_PUBLIC_ENDPOINT).origin,
+	];
+	let observation = await beginMultiInstanceObservation({
+		controls,
+		allowedOrigins,
+	});
+	const nativeEpochs = [];
 	const probes = [],
 		observations = [];
 	const actor = (name) => people.actors[name];
@@ -138,6 +155,7 @@ export async function runMultiInstanceStage(stage, directory, source) {
 		const probe = await openMultiInstanceAnalytics(directory, {
 			kind,
 			actor: name,
+			observation,
 		});
 		probes.push(probe);
 		return probe;
@@ -150,8 +168,8 @@ export async function runMultiInstanceStage(stage, directory, source) {
 						join(directory, `replica-${replica}-metrics.json`),
 					);
 					check(
-						row.installed && row.sourceBuild === fixture.sourceBuild,
-						"The real replica observer must be installed on the frozen build.",
+						row.sourceBuild === fixture.sourceBuild,
+						"The real replica resource observer must use the frozen build.",
 					);
 					const {
 						pid: _pid,
@@ -225,8 +243,32 @@ export async function runMultiInstanceStage(stage, directory, source) {
 		for (const replica of ["a", "b"])
 			await read(probe, replica, "prepared-warm", undefined);
 	};
-	let before;
+	let before,
+		reportSaved = false;
 	try {
+		const versionTrace = randomBytes(16).toString("hex"),
+			versionVisit = await observation.beginVisit([versionTrace]);
+		try {
+			for (const replica of ["a", "b"]) {
+				const response = await fetch(`${fixture.origin}/api/app-version`, {
+					headers: {
+						"x-z8-fixture-replica": replica,
+						traceparent: `00-${versionTrace}-${randomBytes(8).toString("hex")}-01`,
+					},
+					signal: AbortSignal.timeout(5000),
+				});
+				const version = await response.json();
+				check(
+					response.ok &&
+						response.headers.get("x-z8-fixture-instance") === replica &&
+						/^[a-f0-9]{7,40}$/.test(version.buildHash ?? "") &&
+						publicPlan.sourceBuild.startsWith(version.buildHash),
+					"Actual replica build/routing did not match the frozen source.",
+				);
+			}
+		} finally {
+			await observation.endVisit(versionVisit);
+		}
 		before = await resources();
 		if (stage === "fill") {
 			for (const kind of readers) {
@@ -332,7 +374,11 @@ export async function runMultiInstanceStage(stage, directory, source) {
 				person.organizationId !== actor("large-admin").organizationId,
 				"Clock actor must be in the independent synthetic tenant.",
 			);
-			const context = await primary.browser.createBrowserContext();
+			const clockContext = await observation.createContext(
+				primary.browser,
+				fixture.origin,
+			);
+			const { context } = clockContext;
 			let clock;
 			try {
 				await context.setCookie(...primary.auth["small-employee"].cookies);
@@ -374,6 +420,7 @@ export async function runMultiInstanceStage(stage, directory, source) {
 					}
 					request.continue({ headers }).catch(() => {});
 				});
+				clockContext.background();
 				clock = await openPublicHeaderClock(page, {
 					origin: fixture.origin,
 					expectedActor: {
@@ -387,6 +434,7 @@ export async function runMultiInstanceStage(stage, directory, source) {
 						for (const action of ["in", "out"]) {
 							const prepared = await clock.prepare(action);
 							commandTrace = randomBytes(16).toString("hex");
+							const commandVisit = await observation.beginVisit([commandTrace]);
 							overlapped = false;
 							actualClockReplica = undefined;
 							if (loaded) await fresh();
@@ -412,7 +460,8 @@ export async function runMultiInstanceStage(stage, directory, source) {
 							load.catch(() => {});
 							const result = await prepared.submit();
 							const loadResults = await load;
-							const metrics = await primary.observeMetrics(commandTrace);
+							const commandClosed = await observation.endVisit(commandVisit);
+							const metrics = observation.metrics(commandClosed, commandTrace);
 							observations.push({
 								stage: loaded
 									? "real-clock-under-two-node-load"
@@ -460,7 +509,7 @@ export async function runMultiInstanceStage(stage, directory, source) {
 						clock.dispose();
 					}
 				}
-				await context.close();
+				await clockContext.close();
 			}
 		}
 		if (stage === "mutation") {
@@ -689,6 +738,10 @@ export async function runMultiInstanceStage(stage, directory, source) {
 				);
 				downgraded = true;
 				const beforeDenied = await resources();
+				check(
+					beforeDenied.b.installed,
+					"Initialize B's native-get probe before using its denial counter.",
+				);
 				for (const probe of active) {
 					const result = await read(
 						probe,
@@ -759,6 +812,10 @@ export async function runMultiInstanceStage(stage, directory, source) {
 			await warmBoth(probe);
 			const warm = await read(probe, "a", "healthy-control", "hit"),
 				state = await resources();
+			check(
+				state.a.installed && state.b.installed,
+				"Initialize both real native handlers before fault injection.",
+			);
 			const flag = join(directory, "fault-a.enabled");
 			let flagCreated = false;
 			try {
@@ -822,6 +879,14 @@ export async function runMultiInstanceStage(stage, directory, source) {
 			const probe = await open("team");
 			await fresh();
 			await warmBoth(probe);
+			const memoryRequest = probe.capturedRequest;
+			await probe.close();
+			const precedingProof = await observation.finish();
+			nativeEpochs.push(precedingProof);
+			check(
+				precedingProof.complete,
+				"Pre-restart native epoch was incomplete.",
+			);
 			const old = await json(join(directory, "replica-a-control-private.json"));
 			const ready = {
 				phase: "ready-for-parent-restart-A-only",
@@ -864,8 +929,21 @@ export async function runMultiInstanceStage(stage, directory, source) {
 				changed,
 				"Parent did not restart A with the same frozen artifact within the finite handshake window.",
 			);
-			baseline("team", await read(probe, "a", "restarted-A-cold", "miss"));
-			baseline("team", await read(probe, "b", "unrestarted-B-survives", "hit"));
+			observation = await beginMultiInstanceObservation({
+				controls,
+				allowedOrigins,
+			});
+			const restarted = await openMultiInstanceAnalytics(directory, {
+				kind: "team",
+				observation,
+				capturedRequest: memoryRequest,
+			});
+			probes.push(restarted);
+			baseline("team", await read(restarted, "a", "restarted-A-cold", "miss"));
+			baseline(
+				"team",
+				await read(restarted, "b", "unrestarted-B-survives", "hit"),
+			);
 			check(
 				performance.now() - started < 60000,
 				"Restart survival evidence exceeded TTL.",
@@ -876,19 +954,39 @@ export async function runMultiInstanceStage(stage, directory, source) {
 				runtimeVerified: true,
 			});
 		}
+		await Promise.all(probes.map((probe) => probe.close()));
+		const nativeRunCoverage = await observation.finish();
+		nativeEpochs.push(nativeRunCoverage);
 		const report = {
+			nativeEpochs,
 			stage,
+			purpose: "finite-functional-acceptance-not-controlled-timing",
 			sourceBuild: publicPlan.sourceBuild,
 			artifactBuildId: fixture.artifactBuildId,
+			artifactManifestSha256: fixture.artifactManifestSha256,
+			deployment: {
+				nextVersion: fixture.nextVersion,
+				replicas: 2,
+				proxy: "Docker HAProxy 2.8",
+				origin: fixture.origin,
+				images: fixture.images,
+				cacheBackend: "installed-default-process-memory",
+				isrFlushToDisk: false,
+			},
 			configuredCacheBytesPerReplica: publicPlan.cacheBytesPerReplica,
 			maximumConcurrentComputations: 2,
 			resourcesBefore: before,
 			resourcesAfter: await resources(),
 			observations,
-			runtimeVerified: true,
+			runtimeVerified: nativeEpochs.every((epoch) => epoch.complete),
 			productionTopologyVerified: false,
 		};
 		await save(join(directory, `multi-${stage}-metrics.json`), report);
+		reportSaved = true;
+		check(
+			report.runtimeVerified,
+			"Exact per-replica whole-run wire/SDK/received and transport proof is required.",
+		);
 		console.log(
 			JSON.stringify({
 				stage,
@@ -899,6 +997,19 @@ export async function runMultiInstanceStage(stage, directory, source) {
 		return report;
 	} finally {
 		await Promise.allSettled(probes.map((probe) => probe.close()));
+		if (!reportSaved) {
+			await observation.closeRemainingVisits();
+			const nativeRunCoverage = await observation
+				.reconcile()
+				.catch(() => ({ complete: false }));
+			await save(join(directory, `multi-${stage}-incomplete-metrics.json`), {
+				stage,
+				sourceBuild: publicPlan.sourceBuild,
+				runtimeVerified: false,
+				nativeEpochs: [...nativeEpochs, nativeRunCoverage],
+				observations,
+			});
+		}
 		await pool.end();
 	}
 }
@@ -919,7 +1030,18 @@ if (
 	process.argv[1] &&
 	import.meta.url === pathToFileURL(resolve(process.argv[1])).href
 )
-	main().catch(() => {
+	main().catch(async (error) => {
+		try {
+			const directory = resolve(process.argv[3]);
+			await readMultiInstanceFixture(directory);
+			await writeFile(
+				join(directory, "multi-operator-error-private.log"),
+				error.stack ?? "Fixture stage failed",
+				{ mode: 0o600 },
+			);
+		} catch {
+			/* Unowned inputs must not create diagnostic files. */
+		}
 		console.error(
 			"Multi-instance stage failed; raw requests, identities and records were not exported.",
 		);

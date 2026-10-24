@@ -50,6 +50,9 @@ test("finite multi-instance acceptance plan declares two computations maximum an
 		assert.equal(plan.maximumConcurrentComputations, 2);
 		assert.equal(plan.expiryWaitMs, 62000);
 		assert.equal(plan.runtimeVerified, false);
+		assert.equal(plan.independentCollectors, 2);
+		assert.equal(plan.observation, "paired-native-observer-v2");
+		assert.equal(plan.transport, "context-loopback-proxy-v1");
 		assert.equal(result.stdout.includes("private-password"), false);
 	}));
 test("suite rejects a different source pin before opening the browser or database", () =>
