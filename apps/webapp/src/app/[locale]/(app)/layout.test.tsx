@@ -19,7 +19,10 @@ describe("AppLayout", () => {
 		expect(source).not.toContain("redirect(");
 		expect(contentSource).toContain("getRenderSession()");
 		expect(contentSource).toContain("redirect(");
-		expect(contentSource).toContain("<ServerAppSidebar");
+		expect(contentSource).toContain("<ServerSidebarRegion");
+		expect(
+			readFileSync("src/components/server-sidebar-region.tsx", "utf8"),
+		).toContain("<ServerAppSidebar {...props} />");
 		expect(contentSource).toContain("{children}");
 	});
 

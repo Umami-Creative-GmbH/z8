@@ -135,3 +135,69 @@ personal widgets and combined refresh tests pass all 16 cases. File-level Biome
 and React Doctor 0.9.17 schema-3 lint report no diagnostics for the corrected
 component. Whole-feature unit, Doctor and broader quality gates are being run
 separately; compiled browser and production-build gates remain pending.
+
+## Full-check historical selection guard
+
+The full roster inventory reproduced one added raw active check in recent
+analytics identity metadata. Its shared population predicate now lives with the
+existing historical analytics service and is reused by its readers and metadata
+query. Historical active-only defaults and explicit inactive-employee work lookup
+remain unchanged; current actor admission still uses the separate fresh lifecycle
+rule. No roster-baseline exception, new module dependency, rich employee load or
+query was added. All 97 roster guards pass (raw inventory 415 ms in the red run).
+
+A real public caller/PostgreSQL regression retains work before a viewed employee's
+due departure, excludes inactive employees from the default team population and
+retains the explicit inactive employee's historical hour. All 11 recent analytics
+cases pass; the affected eight-suite admission/analytics selection passed 91 cases
+before adding that one case (overlapping coverage is not additive).
+
+The exact 6,144-file injected-write capacity test passes in 3.795 s; 6,145-file
+overflow fails closed in 2.465 s. Independent 2 MiB and 32 MiB guards pass in
+4.5 ms and 106 ms. The actual filesystem/native production owner inventory passes
+in 45.717 s. These are test durations under concurrent bounded quality checks,
+not application latency or isolated scanner benchmarks. The later neutral DTO
+adds one source; the admitted filesystem currently contains 4,124 files and
+28,229,366 bytes, including normally generated ignored licenses, below all limits.
+A final inventory rescan after all release source changes remains necessary.
+
+## Shared presentation type dependency
+
+The root Docker manifest check reproduced an introduced worker dependency on
+Zustand. The fixed original's trace matched its manifests. The new server display
+module imported its presentation type from the client store, which the repository
+tracer follows even for type-only imports. OrganizationSettingsBootstrap now lives
+in a dependency-free module consumed by both sides, with the original store type
+export retained for callers. Runtime settings and hydration semantics are unchanged;
+no unnecessary worker dependency or manifest exemption was added.
+
+All 34 Docker tracer/manifest cases and 16 store/provider cases pass. The actual
+RSC identity PostgreSQL suite passes, as does full production TypeScript. The
+changed-source Doctor regression report is schema 3, complete, with zero errors
+or warnings; scoped Biome passes. Broader source/runtime gates remain separate.
+
+## Existing source and edge-test ownership
+
+Full unit verification exposed stale expectations for the pre-extraction layout:
+embedded membership SQL, the old settings prop, direct sidebar rendering and a
+source slice that accidentally included the adjacent session helper. Those
+existing guards now follow the actual render identity/region owners, retaining
+approved membership, same-user/organization, fail-closed billing, locale redirects,
+protected children and neutral loading assertions. They remain architectural
+guards; actual RSC/PostgreSQL tests supply behavioral proof.
+
+The render-context edge test's Drizzle stub also omitted sql after the canonical
+lifecycle predicate replaced its raw active check. It now retains the real sql
+constructor and expects the canonical predicate, plus the shared preferences'
+actual allowlisted projection. All 14 render-context tests and 17 layout/banner/
+pathname tests pass. No application authorization or denial behavior changed.
+The initial full-unit run still contains its earlier failures and is not a pass;
+a final bounded complete rerun is pending after resolving its full result.
+
+The first complete two-worker unit run finished in 1,148 seconds: 19,410 passed,
+16 failed and 38 skipped across 1,816 files. Fifteen failures were the corrected
+existing render/layout guards. The remaining vacation assignment test queried
+an async popup option synchronously under load; the same test passed focused.
+Both selections now await the same accessible option using findByRole, preserving
+all date, review and submitted-value assertions and existing timeout. Both focused
+cases pass. The complete bounded rerun remains the acceptance check.

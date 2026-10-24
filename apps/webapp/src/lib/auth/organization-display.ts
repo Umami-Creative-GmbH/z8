@@ -1,6 +1,6 @@
 import type { organization } from "@/db/auth-schema";
+import type { OrganizationSettingsBootstrap } from "@/lib/auth/organization-settings-bootstrap";
 import type { UserOrganization } from "@/lib/auth-helpers";
-import type { OrganizationSettingsBootstrap } from "@/stores/organization-settings-store";
 
 type SettingsRecord = Pick<
 	typeof organization.$inferSelect,

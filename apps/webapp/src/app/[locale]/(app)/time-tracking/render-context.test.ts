@@ -40,7 +40,8 @@ vi.mock("@/db/schema", () => ({
 	},
 	userSettings: { userId: "userSettings.userId" },
 }));
-vi.mock("drizzle-orm", () => ({
+vi.mock("drizzle-orm", async (original) => ({
+	...(await original<typeof import("drizzle-orm")>()),
 	and: (...conditions: unknown[]) => ({ type: "and", conditions }),
 	eq: (column: unknown, value: unknown) => ({ type: "eq", column, value }),
 }));
@@ -89,6 +90,7 @@ vi.mock("@/components/time-tracking/weekly-summary-cards", () => ({
 	WeeklySummaryCards: () => null,
 }));
 
+import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { getCurrentEmployee } from "./actions/auth";
 import { ClockRegion, TimeTrackingPageContent } from "./regions";
 import { getTimeTrackingRenderContext } from "./render-context";
@@ -227,7 +229,7 @@ describe("getTimeTrackingRenderContext", () => {
 				conditions: [
 					{ type: "eq", column: "employee.userId", value: "user-1" },
 					{ type: "eq", column: "employee.organizationId", value: "org-1" },
-					{ type: "eq", column: "employee.isActive", value: true },
+					employeeHasOrganizationAccess(),
 				],
 			},
 		});
@@ -260,6 +262,11 @@ describe("getTimeTrackingRenderContext", () => {
 					timeFormat: true,
 					timezone: true,
 					helpImproveProduct: true,
+					onboardingComplete: true,
+					onboardingStep: true,
+					dashboardWidgetOrder: true,
+					waterReminderEnabled: true,
+					waterReminderDailyGoal: true,
 				},
 			});
 		},

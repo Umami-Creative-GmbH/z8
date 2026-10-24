@@ -45,7 +45,7 @@ describe("shared pathname consumer boundaries", () => {
 
 		const fallbackSource = source.slice(
 			source.indexOf("function SiteHeaderLoading"),
-			source.indexOf("export async function AuthenticatedAppContent"),
+			source.indexOf("\n}", source.indexOf("function SiteHeaderLoading")) + 2,
 		);
 		expect(fallbackSource).toContain("<Skeleton");
 		expect(fallbackSource).not.toMatch(

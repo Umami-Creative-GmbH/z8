@@ -1,4 +1,4 @@
-import type { OrganizationSettingsBootstrap } from "@/stores/organization-settings-store";
+import type { OrganizationSettingsBootstrap } from "@/lib/auth/organization-settings-bootstrap";
 
 export const ORGANIZATION_CONTEXT_HEADERS = {
 	user: "x-z8-context-user",
