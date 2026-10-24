@@ -4,13 +4,10 @@ import type { ReactElement } from "react";
 import { DashboardCustomizeMenu } from "@/components/dashboard/dashboard-customize-menu";
 import { useWidgetOrder } from "@/components/dashboard/use-widget-order";
 
-export function DashboardHeaderCustomize({
-	trigger,
-}: {
-	trigger?: ReactElement;
-} = {}) {
+export function DashboardHeaderCustomize({ trigger }: { trigger?: ReactElement } = {}) {
 	const {
 		visibleWidgetOrder,
+		availableWidgetIds,
 		hiddenWidgets,
 		onReorder,
 		onVisibilityChange,
@@ -26,6 +23,7 @@ export function DashboardHeaderCustomize({
 		<DashboardCustomizeMenu
 			trigger={trigger}
 			hiddenWidgets={hiddenWidgets}
+			availableWidgetIds={availableWidgetIds}
 			onReorder={onReorder}
 			onReset={resetOrder}
 			onVisibilityChange={onVisibilityChange}

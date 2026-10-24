@@ -22,8 +22,8 @@ export type WidgetId =
 	| "presence-status";
 
 /**
- * Default widget order for new users or when no preferences are set.
- * This order matches the original hardcoded layout in section-cards.tsx.
+ * Canonical catalog order. New-user and reset defaults select eligible widgets
+ * from this order; saved layouts retain their explicit visibility choices.
  */
 export const DEFAULT_WIDGET_ORDER: WidgetId[] = [
 	"manager-today",
@@ -135,7 +135,7 @@ export const WIDGET_CONFIGS: WidgetConfig[] = [
  * - Adds any new widgets that aren't in the saved order
  * - Ensures no duplicates
  */
-export function normalizeWidgetOrder(savedOrder: string[]): WidgetId[] {
+export function normalizeWidgetOrder(savedOrder: string[] = []): WidgetId[] {
 	const seen = new Set<WidgetId>();
 	const normalized: WidgetId[] = [];
 
@@ -179,25 +179,28 @@ export function normalizeHiddenWidgets(hiddenWidgets: string[] = []): WidgetId[]
 /**
  * Normalizes saved dashboard layout preferences with order and visibility state.
  */
-export function normalizeWidgetLayout(layout: DashboardWidgetOrder | null | undefined): Omit<
-	Required<DashboardWidgetOrder>,
-	"hidden" | "order" | "version"
-> & {
+export function normalizeWidgetLayout(
+	layout: DashboardWidgetOrder | null | undefined,
+	defaults: WidgetId[] = DEFAULT_WIDGET_ORDER,
+): Omit<Required<DashboardWidgetOrder>, "hidden" | "order" | "version"> & {
 	order: WidgetId[];
 	hidden: WidgetId[];
 	version: 1;
 } {
 	if (!layout) {
 		return {
-			order: normalizeWidgetOrder(DEFAULT_WIDGET_ORDER),
-			hidden: [],
+			order: normalizeWidgetOrder(defaults),
+			hidden: DEFAULT_WIDGET_ORDER.filter((id) => !defaults.includes(id)),
 			version: 1,
 		};
 	}
 
 	return {
 		order: normalizeWidgetOrder(layout.order),
-		hidden: normalizeHiddenWidgets(layout.hidden),
+		hidden: normalizeHiddenWidgets([
+			...(layout.hidden ?? []),
+			...DEFAULT_WIDGET_ORDER.filter((id) => !layout.order?.includes(id)),
+		]),
 		version: 1,
 	};
 }
@@ -230,3 +233,30 @@ export function mergeVisibleWidgetOrder(
  * This allows dynamic rendering based on the widget order.
  */
 export type WidgetRenderMap = Record<WidgetId, () => ReactNode>;
+
+/** Display eligibility never replaces authorization in a reader or command. */
+export function eligibleWidgetIds({
+	role,
+	shiftsEnabled,
+	hydrationEnabled,
+}: {
+	role?: "admin" | "manager" | "employee" | null;
+	shiftsEnabled?: boolean;
+	hydrationEnabled?: boolean;
+}): WidgetId[] {
+	if (role === null) return [];
+	// Managed Employees and Pending Approvals also use explicit manager links/grants.
+	// A plain employee role cannot establish their ineligibility.
+	return DEFAULT_WIDGET_ORDER.filter((id) => {
+		if (role === "employee" && ["manager-today", "team-overview"].includes(id)) return false;
+		if (id === "upcoming-shifts" && shiftsEnabled === false) return false;
+		if (id === "hydration" && hydrationEnabled === false) return false;
+		return true;
+	});
+}
+
+export type DeferredWidgetId = "birthday-reminders" | "hydration";
+/** Geometry measured both below the primary viewport on mobile and desktop. */
+export function isDeferredWidgetId(id: string): id is DeferredWidgetId {
+	return id === "birthday-reminders" || id === "hydration";
+}

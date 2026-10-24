@@ -22,6 +22,8 @@ export type DashboardLayoutSettings = {
 
 export type DashboardLayoutBootstrap = {
 	scope: DashboardScope;
+	/** Presentation eligibility only; every widget GET still authorizes independently. */
+	availableWidgetIds?: import("./widget-registry").WidgetId[];
 	settings: DashboardLayoutSettings;
 	updatedAt: number;
 };

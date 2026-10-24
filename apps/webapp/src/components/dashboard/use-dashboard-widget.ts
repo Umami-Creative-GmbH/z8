@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useLayoutEffect, useMemo } from "react";
+import { use, useLayoutEffect, useMemo } from "react";
 import { useOrganization } from "@/hooks/use-organization";
 import { ORGANIZATION_CONTEXT_HEADERS } from "@/lib/auth/organization-display-context";
 import { ApiError, fetchApi } from "@/lib/fetch";
@@ -12,6 +12,7 @@ import type {
 	DashboardWidgetSnapshot,
 	ServerWidgetId,
 } from "./dashboard-types";
+import { DashboardWidgetRefreshOwnerContext } from "./dashboard-widget-refresh-context";
 
 export function sameDashboardScope(left: DashboardScope, right: DashboardScope | null) {
 	return (
@@ -24,6 +25,7 @@ export function useDashboardWidget<K extends ServerWidgetId>(
 	initialSnapshot?: DashboardWidgetSnapshot<DashboardWidgetData[K]>,
 ) {
 	const organization = useOrganization();
+	const refreshOwner = use(DashboardWidgetRefreshOwnerContext);
 	const client = useQueryClient();
 	const scope =
 		organization.userId && organization.organizationId
@@ -50,7 +52,7 @@ export function useDashboardWidget<K extends ServerWidgetId>(
 		refetchOnMount: !initial,
 		retry: false,
 		refetchOnWindowFocus: false,
-		meta: { viewRefresh: "server" },
+		meta: { viewRefresh: refreshOwner },
 		queryFn: async ({ signal }) => {
 			if (!scope) throw new ApiError("Authentication required", 401);
 			const result = await fetchApi<DashboardWidgetSnapshot<DashboardWidgetData[K]>>(

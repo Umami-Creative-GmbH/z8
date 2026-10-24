@@ -1,8 +1,11 @@
 import "server-only";
 
+import { eq } from "drizzle-orm";
 import { cache } from "react";
 import { loadPresenceStatusForSubject } from "@/app/[locale]/(app)/time-tracking/actions/presence-status-read";
-import { getRenderAuthContext } from "@/lib/auth/render-context";
+import { db } from "@/db";
+import { organization } from "@/db/auth-schema";
+import { getRenderAuthContext, getRenderOrganizationSettings } from "@/lib/auth/render-context";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { runServerActionSafe } from "@/lib/effect/result";
 import { getRenderUserSettings } from "@/lib/user-preferences/render-snapshot";
@@ -35,13 +38,29 @@ import {
 	loadTeamOverviewForOrganization,
 	recentlyApprovedDto,
 } from "./team-approval-reads";
+import { eligibleWidgetIds, type WidgetId } from "./widget-registry";
 
 export async function readDashboardLayout(
-	scope: DashboardScope,
+	scope: DashboardScope & Partial<Pick<DashboardSubject, "employee">>,
+	availability?: WidgetId[],
 ): Promise<DashboardLayoutBootstrap> {
 	const settings = await getRenderUserSettings(scope.userId);
+	const flags = availability
+		? undefined
+		: await db.query.organization.findFirst({
+				where: eq(organization.id, scope.organizationId),
+				columns: { shiftsEnabled: true },
+			});
+	const availableWidgetIds =
+		availability ??
+		eligibleWidgetIds({
+			role: "employee" in scope ? (scope.employee?.role ?? null) : undefined,
+			shiftsEnabled: flags?.shiftsEnabled ?? false,
+			hydrationEnabled: settings?.waterReminderEnabled ?? false,
+		});
 	return {
-		scope,
+		scope: { userId: scope.userId, organizationId: scope.organizationId },
+		availableWidgetIds,
 		settings: { dashboardWidgetOrder: settings?.dashboardWidgetOrder ?? null },
 		updatedAt: systemClock.nowInstant().epochMilliseconds,
 	};
@@ -65,7 +84,13 @@ export const getRenderDashboardLayout = cache(async () => {
 			weekStartDay: normalizeWeekStartDay(settings?.weekStartDay),
 		},
 	};
-	return { subject, layout: await readDashboardLayout(subject) };
+	const organizationSettings = await getRenderOrganizationSettings();
+	const availability = eligibleWidgetIds({
+		role: subject.employee?.role ?? null,
+		shiftsEnabled: organizationSettings?.shiftsEnabled ?? false,
+		hydrationEnabled: subject.hydrationSettings?.waterReminderEnabled ?? false,
+	});
+	return { subject, layout: await readDashboardLayout(subject, availability) };
 });
 
 export async function readDashboardWidget<K extends ServerWidgetId>(
