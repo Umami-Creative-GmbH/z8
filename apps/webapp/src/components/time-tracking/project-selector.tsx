@@ -12,11 +12,9 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import {
-	type AssignedProject,
-	useAssignedProjects,
-} from "@/lib/query/use-assigned-projects";
+import { type AssignedProject, useAssignedProjects } from "@/lib/query/use-assigned-projects";
 import { cn } from "@/lib/utils";
+import { ClockChoiceReadError } from "./clock-choice-read-error";
 import { writeLastProjectId } from "./selection-preferences";
 
 interface ProjectSelectorProps {
@@ -44,6 +42,7 @@ interface ProjectSelectorViewProps extends ProjectSelectorProps {
 	projects: AssignedProject[];
 	isLoading: boolean;
 	isError: boolean;
+	onRetry?: () => void;
 }
 
 /**
@@ -53,7 +52,7 @@ interface ProjectSelectorViewProps extends ProjectSelectorProps {
 export function ProjectSelector({ ...props }: ProjectSelectorProps) {
 	const query = useAssignedProjects();
 
-	return <ProjectSelectorView {...props} {...query} />;
+	return <ProjectSelectorView {...props} {...query} onRetry={() => void query.refetch()} />;
 }
 
 export function ProjectSelectorView({
@@ -65,6 +64,7 @@ export function ProjectSelectorView({
 	projects,
 	isLoading,
 	isError,
+	onRetry,
 }: ProjectSelectorViewProps) {
 	const { t } = useTranslate();
 	const triggerId = useId();
@@ -85,7 +85,7 @@ export function ProjectSelectorView({
 
 	// Don't render if no projects available or error
 	if (isError) {
-		return null;
+		return <ClockChoiceReadError label={t("timeTracking.project", "Project")} retry={onRetry} />;
 	}
 
 	// Show loading state

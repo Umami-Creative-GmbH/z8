@@ -7,10 +7,7 @@ import {
 	normalizeWorkLocationType,
 	type WorkLocationType,
 } from "@/lib/time-tracking/work-location";
-import {
-	readLastProjectId,
-	readLastWorkCategoryId,
-} from "./selection-preferences";
+import { readLastProjectId, readLastWorkCategoryId } from "./selection-preferences";
 import { useAvailableWorkCategories } from "./use-available-work-categories";
 
 interface TimeClockPopoverState {
@@ -43,9 +40,7 @@ type TimeClockPopoverAction =
 
 function getInitialWorkLocationType(): WorkLocationType {
 	if (typeof window === "undefined") return "office";
-	return normalizeWorkLocationType(
-		localStorage.getItem("z8-work-location-type"),
-	);
+	return normalizeWorkLocationType(localStorage.getItem("z8-work-location-type"));
 }
 
 function createInitialState(): TimeClockPopoverState {
@@ -115,19 +110,17 @@ function timeClockPopoverReducer(
 export function useTimeClockPopoverState({
 	employeeId,
 	isClockedIn,
+	choicesEnabled = true,
 }: {
 	employeeId: string | null | undefined;
 	isClockedIn: boolean;
+	choicesEnabled?: boolean;
 }) {
-	const [uiState, dispatch] = useReducer(
-		timeClockPopoverReducer,
-		undefined,
-		createInitialState,
-	);
-	const assignedProjects = useAssignedProjects({ enabled: isClockedIn });
+	const [uiState, dispatch] = useReducer(timeClockPopoverReducer, undefined, createInitialState);
+	const assignedProjects = useAssignedProjects({ enabled: isClockedIn && choicesEnabled });
 	const availableWorkCategories = useAvailableWorkCategories(
 		employeeId ?? "",
-		isClockedIn && !!employeeId,
+		isClockedIn && choicesEnabled && !!employeeId,
 	);
 
 	useEffect(() => {
@@ -137,9 +130,7 @@ export function useTimeClockPopoverState({
 			const lastProjectId = readLastProjectId();
 			if (
 				lastProjectId &&
-				assignedProjects.projects.some(
-					(project) => project.id === lastProjectId,
-				)
+				assignedProjects.projects.some((project) => project.id === lastProjectId)
 			) {
 				dispatch({ type: "setSelectedProjectId", value: lastProjectId });
 			}
@@ -149,9 +140,7 @@ export function useTimeClockPopoverState({
 			const lastWorkCategoryId = readLastWorkCategoryId();
 			if (
 				lastWorkCategoryId &&
-				availableWorkCategories.categories.some(
-					(category) => category.id === lastWorkCategoryId,
-				)
+				availableWorkCategories.categories.some((category) => category.id === lastWorkCategoryId)
 			) {
 				dispatch({
 					type: "setSelectedWorkCategoryId",
