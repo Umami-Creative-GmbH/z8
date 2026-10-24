@@ -400,7 +400,11 @@ test("a fully observed failed predecessor is recorded while the same failure blo
 				})),
 			),
 		);
-		const finalize = (phase) => {
+		const finalize = (
+			phase,
+			protocol = plan.runtime.collectorProtocol,
+			nativeComplete = true,
+		) => {
 			plan.phase = phase;
 			const bytes = JSON.stringify(plan);
 			writeFileSync(planPath, bytes);
@@ -408,7 +412,8 @@ test("a fully observed failed predecessor is recorded while the same failure blo
 				artifactPath,
 				JSON.stringify({
 					kind: "benchmark",
-					runtime: { buildVerified: true },
+					nativeRunCoverage: { complete: nativeComplete },
+					runtime: { buildVerified: true, collectorProtocol: protocol },
 					planSha256: createHash("sha256").update(bytes).digest("hex"),
 					samples,
 					summaries,
@@ -492,6 +497,51 @@ test("a fully observed failed predecessor is recorded while the same failure blo
 		assert.equal(release.command.status, 1);
 		assert.equal(release.artifact.acceptance, "unfulfilled");
 		assert.match(release.artifact.releaseGates.join(" "), /failed browser/);
+		plan.runtime.collectorProtocol = "z8-fixture-otlp-collector-v2";
+		const nativeBackend = JSON.parse(backendBytes).map((entry) => ({
+			...entry,
+			coverage: {
+				observer: true,
+				pg: true,
+				rows: true,
+				cache: true,
+				eventLoop: true,
+				registration: true,
+				closed: true,
+				incomplete: false,
+				unattributedNativeSpans: 0,
+				rejectedBatches: 0,
+				lateSpans: 0,
+				nativeProof: true,
+				nativeDriverQueries: 1,
+				privateCanary: "PRIVATE_COVERAGE_CANARY",
+			},
+		}));
+		writeFileSync(backendPath, JSON.stringify(nativeBackend));
+		const nativeGood = finalize("baseline");
+		assert.equal(nativeGood.command.status, 0);
+		assert.equal(
+			finalize("baseline", plan.runtime.collectorProtocol, false).command
+				.status,
+			1,
+			"A lost late export blocks the complete run even when earlier trace records are individually reconciled",
+		);
+		assert.doesNotMatch(
+			readFileSync(artifactPath, "utf8"),
+			/PRIVATE_COVERAGE_CANARY/,
+		);
+		assert.equal(
+			finalize("baseline", "z8-fixture-otlp-collector-v1").command.status,
+			1,
+			"A legacy artifact cannot inherit v2 proof from a changed plan",
+		);
+		for (const entry of nativeBackend) entry.coverage.nativeProof = false;
+		writeFileSync(backendPath, JSON.stringify(nativeBackend));
+		assert.equal(
+			finalize("baseline").command.status,
+			1,
+			"Numerical metrics cannot replace independent native proof",
+		);
 	} finally {
 		rmSync(folder, { recursive: true, force: true });
 	}

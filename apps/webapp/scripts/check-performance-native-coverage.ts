@@ -78,11 +78,16 @@ async function run() {
 					() =>
 						runtime.runPromise(
 							Effect.forEach(
-								Array.from({ length: count }),
-								() =>
+								Array.from({ length: count }, (_, item) => item),
+								(item) =>
 									Effect.tryPromise(async () => {
 										const result = await pool.query(
-											"select generate_series(1, 2) as fixture_value",
+											item % 2 === 0
+												? {
+														name: "fixture_native_wire",
+														text: "select generate_series(1, 2) as fixture_value",
+													}
+												: "select generate_series(1, 2) as fixture_value",
 										);
 										assert.equal(result.rows.length, 2);
 									}),

@@ -14,6 +14,8 @@ import {
 	beginCollectorVisit,
 	collectorProtocol,
 	endCollectorVisit,
+	readCollectorCounters,
+	reconcileCollectorRun,
 } from "./collector-client.mjs";
 
 test("shared visit client drains native control and reconciles the real collector protocol", {
@@ -92,6 +94,7 @@ test("shared visit client drains native control and reconciles the real collecto
 			},
 			nativeControl,
 		);
+		const before = await readCollectorCounters(control);
 		const visit = await beginCollectorVisit({ control, traceIds: [traceId] });
 		const span = {
 			name: "pg.query",
@@ -109,6 +112,26 @@ test("shared visit client drains native control and reconciles the real collecto
 		assert.equal(closed.traces[0].coverage.nativeDriverQueries, 1);
 		assert.equal(closed.traces[0].coverage.incomplete, false);
 		assert.equal(coverage.snapshot().activeTraces, 0);
+		assert.equal(
+			(await reconcileCollectorRun({ control, before, traceIds: [traceId] }))
+				.complete,
+			true,
+		);
+		coverage.driverQuery(traceId);
+		coverage.onStart(span);
+		coverage.onEnd(span);
+		const lostLate = await reconcileCollectorRun({
+			control,
+			before,
+			traceIds: [traceId],
+		});
+		assert.equal(
+			lostLate.complete,
+			false,
+			"Late wire work remains unknown even if its entire export is lost after close",
+		);
+		assert.equal(lostLate.observedQueryCount, 1);
+		assert.equal(lostLate.driverQueryCount, 2);
 	} finally {
 		server?.closeAllConnections();
 		await new Promise((done) => (server ? server.close(done) : done()));
