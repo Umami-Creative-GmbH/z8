@@ -1,12 +1,9 @@
 /* @vitest-environment jsdom */
 
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-
-const { useWidgetDataMock } = vi.hoisted(() => ({
-	useWidgetDataMock: vi.fn(),
-}));
 
 vi.mock("@tolgee/react", () => ({
 	useTolgee: () => ({ getLanguage: () => "de" }),
@@ -37,12 +34,36 @@ vi.mock("./actions", () => ({ getWhosOutToday: vi.fn() }));
 vi.mock("./dashboard-widget", () => ({
 	DashboardWidget: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }));
-vi.mock("./use-widget-data", () => ({ useWidgetData: useWidgetDataMock }));
+vi.mock("@/hooks/use-organization", () => ({
+	useOrganization: () => ({
+		userId: "user-a",
+		organizationId: "org-a",
+		role: "employee",
+		isLoading: false,
+	}),
+}));
 vi.mock("./widget-card", () => ({
 	WidgetCard: ({ children, title }: { children: ReactNode; title: string }) => (
 		<section aria-label={title}>{children}</section>
 	),
 }));
+
+import type { DashboardWidgetData } from "./dashboard-types";
+
+let delivered: { data: DashboardWidgetData["whos-out-today"] | null; loading?: boolean };
+function setDelivery(value: typeof delivered) {
+	delivered = value;
+}
+function initialDelivery() {
+	return {
+		scope: { userId: "user-a", organizationId: "org-a" },
+		updatedAt: Date.now(),
+		result:
+			delivered.data === null
+				? { success: false as const, error: "Fixture unavailable" }
+				: { success: true as const, data: delivered.data },
+	};
+}
 
 import { WhosOutTodayWidget } from "./whos-out-today-widget";
 
@@ -52,7 +73,7 @@ describe("WhosOutTodayWidget", () => {
 	});
 
 	it("does not label a Friday absence as returning tomorrow when the next workday is Monday", () => {
-		useWidgetDataMock.mockReturnValue({
+		setDelivery({
 			data: {
 				outToday: [
 					{
@@ -75,7 +96,11 @@ describe("WhosOutTodayWidget", () => {
 			refetch: vi.fn(),
 		});
 
-		render(<WhosOutTodayWidget />);
+		render(
+			<QueryClientProvider client={new QueryClient()}>
+				<WhosOutTodayWidget initialSnapshot={initialDelivery()} />
+			</QueryClientProvider>,
+		);
 
 		expect(screen.queryByText("Returns tomorrow")).toBeNull();
 		expect(screen.queryByText("Returning Tomorrow")).toBeNull();
@@ -83,7 +108,7 @@ describe("WhosOutTodayWidget", () => {
 	});
 
 	it("formats return dates with the active UI locale", () => {
-		useWidgetDataMock.mockReturnValue({
+		setDelivery({
 			data: {
 				outToday: [
 					{
@@ -106,7 +131,11 @@ describe("WhosOutTodayWidget", () => {
 			refetch: vi.fn(),
 		});
 
-		render(<WhosOutTodayWidget />);
+		render(
+			<QueryClientProvider client={new QueryClient()}>
+				<WhosOutTodayWidget initialSnapshot={initialDelivery()} />
+			</QueryClientProvider>,
+		);
 
 		expect(screen.getByText("Until 18. Mai")).toBeTruthy();
 	});

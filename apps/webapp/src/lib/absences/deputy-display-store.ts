@@ -45,6 +45,20 @@ export async function loadDeputyViewer(
 		.limit(1);
 	if (!viewer) return null;
 
+	return loadDeputyViewerForEmployee(executor, { ...input, employee: viewer });
+}
+
+/** Internal server reader; caller owns render-local or freshly resolved employee authorization. */
+export async function loadDeputyViewerForEmployee(
+	executor: Executor,
+	input: {
+		organizationId: string;
+		userId: string;
+		employee: { id: string; role: "admin" | "manager" | "employee" };
+	},
+): Promise<DeputyViewerContext> {
+	const viewer = input.employee;
+
 	const [membership, managed] = await Promise.all([
 		executor
 			.select({ role: member.role })

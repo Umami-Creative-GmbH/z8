@@ -12,6 +12,27 @@ import {
 	verifySuiteDatabase,
 } from "@/test/integration-database";
 
+const fixtureLayout = {
+	version: 1,
+	hidden: [],
+	order: [
+		"manager-today",
+		"managed-employees",
+		"pending-approvals",
+		"team-overview",
+		"quick-stats",
+		"upcoming-shifts",
+		"presence-status",
+		"covering-for",
+		"whos-out-today",
+		"upcoming-time-off",
+		"recently-approved",
+		"birthday-reminders",
+		"hydration",
+		"vacation-balance",
+	],
+};
+
 export async function seedPerformanceFixture() {
 	await verifySuiteDatabase();
 	const pool = integrationAdminPool();
@@ -83,8 +104,8 @@ export async function seedPerformanceFixture() {
 				[userId, `Person ${index}`, email],
 			);
 			await pool.query(
-				`insert into user_settings (user_id,onboarding_complete,onboarding_completed_at,help_improve_product,timezone,week_start_day,time_format,locale,updated_at) values ($1,true,now(),false,'Europe/Berlin','monday','24h','en',now())`,
-				[userId],
+				`insert into user_settings (user_id,onboarding_complete,onboarding_completed_at,help_improve_product,timezone,week_start_day,time_format,locale,dashboard_widget_order,updated_at) values ($1,true,now(),false,'Europe/Berlin','monday','24h','en',$2::jsonb,now())`,
+				[userId, JSON.stringify(fixtureLayout)],
 			);
 			await pool.query(
 				`insert into member (id,organization_id,user_id,role,status,created_at) values ($1,$2,$3,$4,'approved',now())`,
@@ -265,6 +286,7 @@ export async function seedPerformanceFixture() {
 	}
 	const fixture = {
 		version: 2,
+		dashboardLayout: "explicit-original-v1",
 		kind: "disposable",
 		organizations,
 		actors,
@@ -343,9 +365,14 @@ if (process.argv.includes("--upgrade-private-fixture")) {
 				`insert into organization_tracking_settings (organization_id,tracking_start_date,activated_at) values ($1,'2025-01-01',now()) on conflict (organization_id) do nothing`,
 				[organizationId],
 			);
+			await pool.query(
+				`update user_settings settings set dashboard_widget_order=$2::jsonb from employee where employee.user_id=settings.user_id and employee.organization_id=$1 and settings.dashboard_widget_order is null`,
+				[organizationId, JSON.stringify(fixtureLayout)],
+			);
 		}
 		const active = await verifyTrackingContexts(fixture);
 		fixture.version = 2;
+		fixture.dashboardLayout = "explicit-original-v1";
 		await writeFile(path, JSON.stringify(fixture, null, 2), { mode: 0o600 });
 		console.log(
 			`Verified active production tracking contexts for ${active} synthetic employees (fixture version 2).`,

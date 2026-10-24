@@ -16,6 +16,12 @@ import type {
 import { loadManagerTodayForEmployee } from "./manager-today-read";
 import { loadQuickStatsForSubject } from "./quick-stats-read";
 import {
+	loadCoverDutiesForSubject,
+	loadUpcomingShiftsForEmployee,
+	loadUpcomingTimeOffForOrganization,
+	loadWhosOutForOrganization,
+} from "./schedule-absence-reads";
+import {
 	loadManagedEmployeesForEmployee,
 	loadPendingApprovalsForSubject,
 	loadRecentlyApprovedForOrganization,
@@ -67,6 +73,14 @@ export async function readDashboardWidget<K extends ServerWidgetId>(
 			throw new Error("Employee access required");
 		const result = await (async () => {
 			switch (id) {
+				case "upcoming-shifts":
+					return runServerActionSafe(loadUpcomingShiftsForEmployee(employee));
+				case "covering-for":
+					return { success: true as const, data: await loadCoverDutiesForSubject(subject) };
+				case "whos-out-today":
+					return runServerActionSafe(loadWhosOutForOrganization(subject.organizationId));
+				case "upcoming-time-off":
+					return runServerActionSafe(loadUpcomingTimeOffForOrganization(subject.organizationId));
 				case "manager-today":
 					return {
 						success: true as const,

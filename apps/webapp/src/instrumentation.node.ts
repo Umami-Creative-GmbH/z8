@@ -12,6 +12,12 @@ import {
 	ConsoleSpanExporter,
 } from "@opentelemetry/sdk-trace-base";
 import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
+import {
+	eventLoopProbeIntervalMs,
+	FixturePerformanceSpanProcessor,
+	fixtureObserverVersion,
+	observeFixturePgResponse,
+} from "@/lib/performance-fixture-observer";
 import { SetupPrivacySpanProcessor } from "@/lib/setup/telemetry";
 
 // Node.js-only startup. `instrumentation.ts` imports this module only when
@@ -61,10 +67,29 @@ export async function registerNodeRuntime() {
 		process.env.npm_lifecycle_event === "build";
 	const isDev = process.env.NODE_ENV === "development";
 	const hasRemoteOtel = !!process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
+	let localCollector = false;
+	try {
+		const endpoint = new URL(process.env.OTEL_EXPORTER_OTLP_ENDPOINT ?? "");
+		localCollector =
+			endpoint.protocol === "http:" &&
+			["127.0.0.1", "localhost", "[::1]"].includes(endpoint.hostname);
+	} catch {
+		/* no fixture collector */
+	}
+	const fixtureObserver =
+		process.env.Z8_PERFORMANCE_OBSERVER === "1" &&
+		localCollector &&
+		!isBuildTime;
 
 	const resource = resourceFromAttributes({
 		[ATTR_SERVICE_NAME]: "z8-webapp",
 		environment: process.env.NODE_ENV || "development",
+		...(fixtureObserver
+			? {
+					"z8.perf.observer.version": fixtureObserverVersion,
+					"z8.perf.event_loop.interval_ms": eventLoopProbeIntervalMs,
+				}
+			: {}),
 	});
 
 	// Determine span processors based on environment and configuration
@@ -76,17 +101,38 @@ export async function registerNodeRuntime() {
 						new OTLPTraceExporter({
 							url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
 						}),
+						fixtureObserver
+							? {
+									maxQueueSize: 20000,
+									maxExportBatchSize: 128,
+									scheduledDelayMillis: 500,
+									exportTimeoutMillis: 10000,
+								}
+							: undefined,
 					),
 				];
 
 	const sdk = new NodeSDK({
 		resource,
-		spanProcessors: spanProcessors.map(
-			(processor) => new SetupPrivacySpanProcessor(processor),
-		),
+		spanProcessors: spanProcessors
+			.map((processor) => new SetupPrivacySpanProcessor(processor))
+			.map((processor) =>
+				fixtureObserver
+					? new FixturePerformanceSpanProcessor(processor)
+					: processor,
+			),
 		instrumentations: [
 			getNodeAutoInstrumentations({
 				"@opentelemetry/instrumentation-fs": { enabled: false },
+				...(fixtureObserver
+					? {
+							"@opentelemetry/instrumentation-pg": {
+								enhancedDatabaseReporting: false,
+								ignoreConnectSpans: false,
+								responseHook: observeFixturePgResponse,
+							},
+						}
+					: {}),
 			}),
 		],
 	});

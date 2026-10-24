@@ -176,6 +176,23 @@ describe("dashboard widgets count only the current roster (#1438)", () => {
 		return settled.data;
 	}
 
+	it("delivers upcoming absence calendar dates and resolved days through JSON using the current roster", async () => {
+		const snapshot = await readDashboardWidget("upcoming-time-off", {
+			userId: fixture.ownerUserId,
+			organizationId: fixture.organizationId,
+			employee: {
+				id: fixture.ownerEmployeeId,
+				organizationId: fixture.organizationId,
+				role: "admin",
+			},
+		});
+		if (!snapshot.result.success) throw new Error(snapshot.result.error);
+		expect(snapshot.result.data?.map((row) => row.employee.id)).toEqual([current]);
+		expect(snapshot.result.data?.[0].startDate).toBe(day(5));
+		expect(snapshot.result.data?.[0].absenceDays).toEqual(expect.any(Number));
+		expect(await Response.json(snapshot).json()).toEqual(snapshot);
+	});
+
 	it("lists only current employees as out today", async () => {
 		const data = await unwrap(getWhosOutToday());
 

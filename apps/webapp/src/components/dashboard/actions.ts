@@ -9,8 +9,6 @@ import type { DashboardWidgetOrder } from "@/db/schema";
 import {
 	absenceEntry,
 	employee,
-	holiday,
-	holidayCategory,
 	hydrationStats,
 	teamMembership,
 	userSettings,
@@ -31,15 +29,8 @@ import {
 	type ServerActionResult,
 } from "@/lib/effect/result";
 import { AuthService } from "@/lib/effect/services/auth.service";
-import {
-	type DatabaseClient,
-	DatabaseService,
-} from "@/lib/effect/services/database.service";
+import { DatabaseService } from "@/lib/effect/services/database.service";
 import type { ManagedEmployee } from "@/lib/effect/services/manager.service";
-import {
-	type EffectiveWorkPolicy,
-	WorkPolicyService,
-} from "@/lib/effect/services/work-policy.service";
 import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
 import { writeUserSettings } from "@/lib/user-preferences/user-settings-mutation";
 import { currentRosterEmployeeIds } from "./current-roster-queries";
@@ -53,14 +44,14 @@ import { loadManagerTodayForEmployee } from "./manager-today-read";
 import { loadQuickStatsForSubject } from "./quick-stats-read";
 import type { QuickStats } from "./quick-stats-tracking";
 import {
+	loadUpcomingAbsencesForOrganization,
+	loadWhosOutForOrganization,
+} from "./schedule-absence-reads";
+import {
 	loadManagedEmployeesForEmployee,
 	loadRecentlyApprovedForOrganization,
 	loadTeamOverviewForOrganization,
 } from "./team-approval-reads";
-import {
-	type AbsenceRange,
-	getNextAvailableReturnDate,
-} from "./return-date-calculations";
 
 export type ManagerTodaySummaryResult = {
 	role: "admin" | "manager" | "employee" | null;
@@ -80,13 +71,6 @@ type DashboardAbsenceEmployeeRow = typeof absenceEntry.$inferSelect & {
 	employee: Pick<typeof employee.$inferSelect, "id"> & {
 		user: { name: string | null };
 	};
-};
-
-type DashboardTodayAbsenceRow = typeof absenceEntry.$inferSelect & {
-	employee: Pick<typeof employee.$inferSelect, "id"> & {
-		user: { id: string; name: string | null; image: string | null };
-	};
-	category: { name: string; color: string | null };
 };
 
 /** The caller's employee in the active organization. */
@@ -243,53 +227,9 @@ export async function getUpcomingAbsences(
 	limit: number = 5,
 ): Promise<ServerActionResult<any[]>> {
 	const effect = Effect.gen(function* () {
-		const dbService = yield* DatabaseService;
 		const currentEmployee = yield* sessionEmployee;
 
-		// Get today's date as YYYY-MM-DD string for absence date comparison
-		const todayStr = DateTime.now().toFormat("yyyy-MM-dd");
-
-		// Upcoming time off is the current roster's (#1438).
-		const orgEmployeeIds = yield* dbService.query(
-			"dashboard.upcomingAbsences.currentRoster",
-			() =>
-				currentRosterEmployeeIds(dbService.db, currentEmployee.organizationId),
-		);
-
-		// Get upcoming absences (approved, starting from today)
-		const absences = yield* dbService.query("getUpcomingAbsences", async () => {
-			if (orgEmployeeIds.length === 0) return [];
-			return await dbService.db.query.absenceEntry.findMany({
-				where: and(
-					inArray(absenceEntry.employeeId, orgEmployeeIds),
-					eq(absenceEntry.status, "approved"),
-					gte(absenceEntry.startDate, todayStr),
-				),
-				orderBy: (absenceEntry, { asc }) => [asc(absenceEntry.startDate)],
-				limit,
-				with: {
-					employee: {
-						with: {
-							user: {
-								columns: {
-									id: true,
-									name: true,
-									image: true,
-								},
-							},
-						},
-					},
-					category: {
-						columns: {
-							name: true,
-							color: true,
-						},
-					},
-				},
-			});
-		});
-
-		return absences;
+		return yield* loadUpcomingAbsencesForOrganization(currentEmployee.organizationId, limit);
 	});
 
 	return runServerActionSafe(effect);
@@ -593,41 +533,6 @@ export async function getTeamOverviewStats(): Promise<
 	return runServerActionSafe(effect);
 }
 
-/** Holidays excluded from calculations that may fall into the return-date search. */
-async function loadReturnDateHolidayRows(
-	db: DatabaseClient,
-	organizationId: string,
-	searchStart: Date,
-	searchEnd: Date,
-) {
-	return await db
-		.select({
-			startDate: holiday.startDate,
-			endDate: holiday.endDate,
-			recurrenceType: holiday.recurrenceType,
-			recurrenceRule: holiday.recurrenceRule,
-			recurrenceEndDate: holiday.recurrenceEndDate,
-		})
-		.from(holiday)
-		.innerJoin(holidayCategory, eq(holiday.categoryId, holidayCategory.id))
-		.where(
-			and(
-				eq(holiday.organizationId, organizationId),
-				eq(holiday.isActive, true),
-				eq(holidayCategory.isActive, true),
-				eq(holidayCategory.excludeFromCalculations, true),
-				or(
-					eq(holiday.recurrenceType, "yearly"),
-					and(
-						eq(holiday.recurrenceType, "none"),
-						lte(holiday.startDate, searchEnd),
-						gte(holiday.endDate, searchStart),
-					),
-				),
-			),
-		);
-}
-
 /**
  * Get who's out today
  */
@@ -653,231 +558,8 @@ export async function getWhosOutToday(): Promise<
 	ServerActionResult<WhosOutToday>
 > {
 	const effect = Effect.gen(function* () {
-		const dbService = yield* DatabaseService;
-		const workPolicyService = yield* WorkPolicyService;
 		const currentEmployee = yield* sessionEmployee;
-
-		// Get today's date as YYYY-MM-DD string
-		const todayDT = DateTime.now();
-		const todayStr = todayDT.toFormat("yyyy-MM-dd");
-		const returnSearchStart = todayDT.plus({ days: 1 }).startOf("day");
-		const returnSearchEnd = todayDT.plus({ days: 366 }).endOf("day");
-		// Who's out is the current roster's absences (#1438).
-		const orgEmployeeIds = yield* dbService.query(
-			"dashboard.whosOutToday.currentRoster",
-			() =>
-				currentRosterEmployeeIds(dbService.db, currentEmployee.organizationId),
-		);
-
-		// Get absences that overlap with today
-		const todayAbsences = yield* dbService.query(
-			"getTodayAbsences",
-			async () => {
-				if (orgEmployeeIds.length === 0) return [];
-				return await dbService.db.query.absenceEntry.findMany({
-					where: and(
-						inArray(absenceEntry.employeeId, orgEmployeeIds),
-						eq(absenceEntry.status, "approved"),
-						lte(absenceEntry.startDate, todayStr),
-						gte(absenceEntry.endDate, todayStr),
-					),
-					with: {
-						employee: {
-							with: {
-								user: {
-									columns: {
-										id: true,
-										name: true,
-										image: true,
-									},
-								},
-							},
-						},
-						category: {
-							columns: {
-								name: true,
-								color: true,
-							},
-						},
-					},
-				});
-			},
-		);
-
-		// Process absences - deduplicate by employee ID (employee may have multiple overlapping absences)
-		const outTodayMap = new Map<
-			string,
-			{
-				id: string;
-				userId: string;
-				name: string;
-				image: string | null;
-				category: string;
-				categoryColor: string | null;
-				endsToday: boolean;
-				returnsTomorrow: boolean;
-				returnDate: string;
-			}
-		>();
-
-		const returningTomorrowMap = new Map<
-			string,
-			{
-				id: string;
-				userId: string;
-				name: string;
-				image: string | null;
-				category: string;
-				categoryColor: string | null;
-				endsToday: boolean;
-				returnsTomorrow: boolean;
-				returnDate: string;
-			}
-		>();
-
-		const typedTodayAbsences =
-			todayAbsences as unknown as DashboardTodayAbsenceRow[];
-		const futureAbsences = yield* dbService.query(
-			"getReturnDateAbsences",
-			async () => {
-				if (orgEmployeeIds.length === 0) return [];
-				return await dbService.db.query.absenceEntry.findMany({
-					where: and(
-						inArray(absenceEntry.employeeId, orgEmployeeIds),
-						eq(absenceEntry.status, "approved"),
-						gte(absenceEntry.endDate, returnSearchStart.toISODate()!),
-						lte(absenceEntry.startDate, returnSearchEnd.toISODate()!),
-					),
-					columns: {
-						employeeId: true,
-						startDate: true,
-						endDate: true,
-					},
-				});
-			},
-		);
-		const absenceRangesByEmployee = new Map<string, AbsenceRange[]>();
-		for (const absence of futureAbsences) {
-			const ranges = absenceRangesByEmployee.get(absence.employeeId) ?? [];
-			ranges.push({ startDate: absence.startDate, endDate: absence.endDate });
-			absenceRangesByEmployee.set(absence.employeeId, ranges);
-		}
-
-		const holidayRows = yield* dbService.query("getReturnDateHolidays", () =>
-			loadReturnDateHolidayRows(
-				dbService.db,
-				currentEmployee.organizationId,
-				returnSearchStart.toJSDate(),
-				returnSearchEnd.toJSDate(),
-			),
-		);
-
-		const holidayDates = new Set<string>();
-		for (const holidayRow of holidayRows) {
-			if (holidayRow.recurrenceType === "yearly") {
-				if (!holidayRow.recurrenceRule) continue;
-				try {
-					const rule = JSON.parse(holidayRow.recurrenceRule) as {
-						month?: number;
-						day?: number;
-					};
-					if (!rule.month || !rule.day) continue;
-
-					for (
-						let year = returnSearchStart.year;
-						year <= returnSearchEnd.year;
-						year++
-					) {
-						const instance = DateTime.utc(year, rule.month, rule.day);
-						if (instance < returnSearchStart || instance > returnSearchEnd)
-							continue;
-						if (holidayRow.recurrenceEndDate) {
-							const recurrenceEnd = DateTime.fromJSDate(
-								holidayRow.recurrenceEndDate,
-							);
-							if (instance > recurrenceEnd) continue;
-						}
-						const dateKey = instance.toISODate();
-						if (dateKey) holidayDates.add(dateKey);
-					}
-				} catch {
-					continue;
-				}
-				continue;
-			}
-
-			let current = DateTime.fromJSDate(holidayRow.startDate).startOf("day");
-			const last = DateTime.fromJSDate(holidayRow.endDate).startOf("day");
-			while (current <= last && current <= returnSearchEnd) {
-				if (current >= returnSearchStart) {
-					const dateKey = current.toISODate();
-					if (dateKey) holidayDates.add(dateKey);
-				}
-				current = current.plus({ days: 1 });
-			}
-		}
-
-		const schedulesByEmployee = new Map<string, EffectiveWorkPolicy | null>();
-		for (const employeeId of new Set(
-			typedTodayAbsences.map((absence) => absence.employee.id),
-		)) {
-			const policy = yield* workPolicyService
-				.getEffectivePolicy(employeeId)
-				.pipe(Effect.catch(() => Effect.succeed(null)));
-			schedulesByEmployee.set(employeeId, policy);
-		}
-
-		for (const absence of typedTodayAbsences) {
-			const employeeId = absence.employee.id;
-			const endsToday = absence.endDate === todayStr;
-			const returnInfo = getNextAvailableReturnDate({
-				absenceEndDate: absence.endDate,
-				today: todayStr,
-				schedule: schedulesByEmployee.get(employeeId)?.schedule ?? null,
-				holidayDates,
-				absenceRanges: absenceRangesByEmployee.get(employeeId) ?? [],
-			});
-			const returnsTomorrow = returnInfo.returnsTomorrow;
-			const returnDate = returnInfo.returnDate;
-
-			const employeeData = {
-				id: employeeId,
-				userId: absence.employee.user.id,
-				name: absence.employee.user.name || "Unknown",
-				image: absence.employee.user.image,
-				category: absence.category.name,
-				categoryColor: absence.category.color,
-				endsToday,
-				returnsTomorrow,
-				returnDate,
-			};
-
-			// Only add if not already present (first absence wins)
-			if (!outTodayMap.has(employeeId)) {
-				outTodayMap.set(employeeId, employeeData);
-			}
-
-			if (
-				endsToday &&
-				returnsTomorrow &&
-				!returningTomorrowMap.has(employeeId)
-			) {
-				returningTomorrowMap.set(employeeId, employeeData);
-			}
-		}
-
-		const outToday = Array.from(outTodayMap.values());
-		const returningTomorrow = Array.from(returningTomorrowMap.values());
-
-		// Sort by name
-		outToday.sort((a, b) => a.name.localeCompare(b.name));
-		returningTomorrow.sort((a, b) => a.name.localeCompare(b.name));
-
-		return {
-			outToday,
-			returningTomorrow,
-			totalOut: outToday.length,
-		};
+		return yield* loadWhosOutForOrganization(currentEmployee.organizationId);
 	});
 
 	return runServerActionSafe(effect);
