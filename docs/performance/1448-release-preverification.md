@@ -85,3 +85,38 @@ leave an earlier analytics calculation in flight, and Last Year → Custom Range
 include a prior annual action in its queue. Keep those exact before/head conditions;
 their timing is a holistic journey, not isolated monthly-reader latency or proof of
 a fully settled warm data cache. Missing production/CDN access remains a limitation.
+
+## Preliminary review resolutions
+
+The preliminary Standards review at integration `025336721` found no hard
+documented-standard violation. Its P3 repeated-switch judgment is retained as
+an intentional boundary: `dashboard-reads.ts` owns production readers/DTOs used
+by GET, while `server-section-cards.tsx` owns rendering and Client Component
+references. Combining loaders and renderers into one definition table would pull
+the UI graph into the read/API module. Their shared `ServerWidgetId`/data map and
+public per-widget tests retain the contract. No speculative cross-boundary
+refactor was made for this nonblocking maintainability judgment.
+
+The preliminary Spec review found one P2: rejected deferred Hydration/Birthday
+module loading escaped Suspense and replaced the Dashboard through its enclosing
+route error boundary. Two rendered tests reproduced that loss. A widget-local
+error boundary now keeps the dimensioned region, alert and keyboard retry. An
+explicit retry constructs a new lazy identity and invokes the loader again;
+resetting an error boundary around the same rejected lazy object is insufficient.
+
+Both tests use actual React.lazy and actual widget/QueryClient rendering, with a
+controlled rejection at the imported module's export-resolution boundary. They
+keep an edited sibling input's DOM identity/value, an interactive sibling's state,
+and focus in the stable widget region. Successful retry performs one dataset GET.
+The regression suite passes 16 cases across deferred loading, existing personal
+widgets and combined refresh ownership. A deliberate mutation retaining the old
+lazy object made both recovery tests fail; restoring the new identity passes.
+No React.lazy mock, module-cache reset, whole-page refresh or route remount hides
+the rejected-promise behavior.
+
+The installed compiled Next 16.4.0 artifact uses string chunk paths for these
+dynamic imports. Its terminal browser network failure deletes the chunk resolver
+after the runtime's bounded automatic retry; a new import invocation can therefore
+start a fresh chunk request. This source inspection is **not** the required final
+compiled-browser proof. A real transient chunk failure through ingress, successful
+local retry and usable actual header/siblings remain pending after C1.
