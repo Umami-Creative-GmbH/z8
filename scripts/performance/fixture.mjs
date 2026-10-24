@@ -11,6 +11,7 @@ import { fileURLToPath } from "node:url";
 import { authenticateFixture } from "./fixture-auth.mjs";
 import {
 	dashboardLayoutMutation,
+	fixtureBrowserPermissions,
 	headerRefreshSteps,
 } from "./journey-steps.mjs";
 
@@ -663,6 +664,7 @@ async function plan(directory) {
 		},
 		runtime: {
 			mode: "production",
+			browserPermissions: fixtureBrowserPermissions,
 			build,
 			sourceBuild,
 			toolingBuild,
