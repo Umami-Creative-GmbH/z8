@@ -76,3 +76,11 @@ and cold/warm readiness/request/byte measurements through the authorized local
 replica/proxy fixture. No browser latency improvement or production deployment
 evidence is claimed from these caller and PostgreSQL tests. Ticket #1458 remains
 open until the spec-level gates and final review finish.
+
+Final checks after merging integration `67fb12c33`: 29 focused unit files / 166
+tests passed; five PostgreSQL suites / 35 cases passed; all typecheck projects
+passed. Changed-source Biome checks pass. `actions.ts` retains its two untouched
+legacy Luxon min/max warnings. React Doctor against the #1458 starting integration
+reports 93/100 with no new issues. No production build was run for this ticket.
+Catalog metadata regeneration and the whole-spec approval inventory cap fix remain
+with the parent's final implementation/review pass.
