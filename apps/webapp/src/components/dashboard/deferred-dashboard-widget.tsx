@@ -23,7 +23,10 @@ const subscribeToObserverSupport = () => () => {};
 const observerUnavailable = () => typeof IntersectionObserver === "undefined";
 const serverObserverUnavailable = () => false;
 
-const loadWidgets = {
+const loadWidgets: Record<
+	DeferredWidgetId,
+	() => Promise<{ default: ComponentType }>
+> = {
 	"birthday-reminders": () =>
 		import("./birthday-reminders-widget").then((module) => ({
 			default: module.BirthdayRemindersWidget,

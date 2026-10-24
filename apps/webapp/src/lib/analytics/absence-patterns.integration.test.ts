@@ -115,6 +115,12 @@ describe("absence-pattern reader on PostgreSQL", () => {
 				 values ($1, $1, $2, now(), now())`,
 				[userId, `${userId}@example.test`],
 			);
+			// Public analytics admission requires current approved membership.
+			await admin.query(
+				`insert into member (id, organization_id, user_id, role, status, created_at)
+				 values ($1, $2, $3, 'member', 'approved', now())`,
+				[`${userId}-member`, organizationId, userId],
+			);
 			await admin.query(
 				`insert into employee (id, user_id, organization_id, role, team_id, updated_at)
 				 values ($1, $2, $3, $4, $5, now())`,

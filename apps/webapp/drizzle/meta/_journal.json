@@ -1989,6 +1989,13 @@
       "when": 1809187200000,
       "tag": "0283_employee_deactivated_at",
       "breakpoints": true
+    },
+    {
+      "idx": 284,
+      "version": "7",
+      "when": 1809273600000,
+      "tag": "0284_absence_employee_overlap",
+      "breakpoints": true
     }
   ]
 }

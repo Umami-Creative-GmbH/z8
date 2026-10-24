@@ -1,6 +1,6 @@
 /** Public reader + the existing PostgreSQL query logger; parameters and relation payloads never leave the fixture. */
 import { createHash, randomBytes, randomUUID } from "node:crypto";
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { Effect, Layer } from "effect";
 import type { PoolClient } from "pg";
 import { Temporal } from "temporal-polyfill";
@@ -116,6 +116,15 @@ const candidates = [
 	{ label: "existing-repeat", name: null, ddl: null },
 ] as const;
 const admin = integrationAdminPool();
+const migratedIndexName = "absenceEntry_employeeId_endDate_startDate_idx";
+const migrationSql = await readFile(
+	new URL(
+		"../../../drizzle/0284_absence_employee_overlap.sql",
+		import.meta.url,
+	),
+	"utf8",
+);
+let restoreMigratedIndex = false;
 const createdIndexes = new Set<string>();
 const statements: {
 	label: string;
@@ -294,12 +303,54 @@ async function cleanup() {
 		organizations,
 	]);
 	await admin.query('delete from "user" where id like $1', [`${prefix}-%`]);
+	if (restoreMigratedIndex) {
+		await admin.query(migrationSql);
+		restoreMigratedIndex = false;
+	}
 }
 
 describe("representative scoped absence plans", () => {
 	vi.setConfig({ hookTimeout: 180000, testTimeout: 180000 });
 	beforeAll(seed);
 	afterAll(cleanup);
+
+	it("migrates a valid employee/end/start B-tree without excluding legacy organizations or statuses", async () => {
+		// The repository runner applied the real migration chain. Retry the actual
+		// migration in a transaction, as deployment does, without changing its keys.
+		const client = await admin.connect();
+		try {
+			await client.query("begin");
+			try {
+				await client.query(migrationSql);
+			} finally {
+				await client.query("rollback");
+			}
+		} finally {
+			client.release();
+		}
+		const result = await admin.query(
+			`select access.amname method, index_data.indisvalid valid,
+			 index_data.indisready ready, index_data.indisunique unique,
+			 index_data.indpred is null unfiltered,
+			 array(select attribute.attname::text from unnest(index_data.indkey) with ordinality key(attnum, ordinal)
+			 join pg_attribute attribute on attribute.attrelid=index_data.indrelid and attribute.attnum=key.attnum
+			 order by key.ordinal) columns
+			 from pg_index index_data join pg_class index_class on index_class.oid=index_data.indexrelid
+			 join pg_am access on access.oid=index_class.relam
+			 where index_data.indrelid='absence_entry'::regclass and index_class.relname=$1`,
+			[migratedIndexName],
+		);
+		expect(result.rows).toEqual([
+			{
+				method: "btree",
+				valid: true,
+				ready: true,
+				unique: false,
+				unfiltered: true,
+				columns: ["employee_id", "end_date", "start_date"],
+			},
+		]);
+	});
 
 	it("preserves public results, legacy-null ownership and selective visibility across unrelated histories", async () => {
 		for (const population of populations.filter(
@@ -382,6 +433,12 @@ describe("representative scoped absence plans", () => {
 				throw new Error(
 					"Index measurement requires an exclusive disposable fixture database",
 				);
+			// Reproduce the measured predecessor after the production migration is
+			// installed. This is only reached in the exclusive disposable database,
+			// after the migrated schema/caller assertions passed. Never drop other
+			// schema indexes; cleanup restores this exact migration even on failure.
+			restoreMigratedIndex = true;
+			await admin.query(`drop index "${migratedIndexName}"`);
 			await admin.query("create extension if not exists btree_gist");
 			const existingIndexes = (
 				await admin.query(
@@ -435,6 +492,7 @@ describe("representative scoped absence plans", () => {
 				})),
 				variants: [],
 				decision: "unreviewed",
+				baselineExcludesMigratedIndex: migratedIndexName,
 				limitations: [
 					"Warm disposable PostgreSQL measurements, not browser/production latency.",
 					"No SQL, parameters, relation payloads, personal data or tokens are retained.",
