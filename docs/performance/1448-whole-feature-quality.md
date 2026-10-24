@@ -79,8 +79,27 @@ above establishes existing formatter/lint debt; this raw aggregate does not
 attribute individual merged diagnostics. Focused Biome checks on the projection
 operator changes pass. No broad formatting or guard relaxation was applied.
 
-The merged full normal unit run (maximum two workers) and full normal
-PostgreSQL integration run (one worker, no file parallelism) are still pending.
+The merged full normal unit run passed with a maximum of two workers: 19,505
+tests passed, zero failed and 38 existing skips; 1,817 files passed and five
+existing files were skipped. It completed in 1,189.65 seconds with the normal
+i18n metadata prerequisite. The full normal PostgreSQL integration run (one
+worker, no file parallelism) exited 1: 5,628 passed, 214 failed and eight skipped.
+That original command and its raw failure evidence remain failed.
 The integration runner owns a new disposable Docker test database and normal
 full migrations, including peer `0284`–`0287` and renamed `0288`; the productionlike
 final fixtures and old colliding-ledger databases are not used for these tests.
+
+All 12 failing files supplied incomplete local authenticated-session fixtures,
+missing the session ID and subject user ID. The separate scoped-read revocation
+case failed on its initial authorized read for the same reason. Sixteen local
+fixture objects now provide `id`, `userId` and `activeOrganizationId`; no shared
+authentication helper, business reader, transaction or admission guard changed.
+
+A new normal disposable Docker run replayed the **entire 12 affected files**:
+300 passed, zero failed and one existing skipped task-booking case. All 214
+original failures are resolved by this replay. These counts overlap the first
+run and must not be added to its 5,628 passes or described as a clean full-run
+command. The normal runner removed its own fresh container after completion;
+file-local cleanup remains unchanged. All three TypeScript configurations pass
+again after the fixture edits. Focused Biome on these files retains their
+existing Windows line-ending formatter differences; no broad formatting was done.
