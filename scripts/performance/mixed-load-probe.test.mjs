@@ -44,6 +44,13 @@ test("single-app mixed plan fixes four distinct users, twenty pairs and bounded 
 		});
 		assert.equal(result.status, 0, result.stderr);
 		const plan = JSON.parse(result.stdout);
+		assert.equal(plan.version, 2);
+		assert.equal(plan.semanticTraceIdentities, 56);
+		assert.equal(plan.activeRegistrationLimit, 64);
+		assert.equal(plan.retainedIdentityLimit, 10000);
+		assert.equal(plan.collectorProtocol, "z8-fixture-otlp-collector-v2");
+		assert.equal(plan.traceTransport, "context-loopback-proxy-v1");
+		assert.equal(plan.browserPolicy, "isolated-profile-no-prediction-v1");
 		assert.equal(plan.clockPairs, 20);
 		assert.equal(plan.userConcurrency, 4);
 		assert.equal(plan.poolMax, 10);

@@ -1,7 +1,7 @@
 # Single-app mixed workload operator (#1475)
 
 **Prepared; runtime acceptance pending.** No mixed workload, fixture mutation or
-browser was run while original C1 capture was active. The two Node CLI safety
+browser was run while original C1 capture was active. The ten V2 protocol/CLI
 checks, JavaScript syntax checks and focused Biome check pass. Those checks do
 not prove actual browser control, analytics totals or native telemetry.
 
@@ -35,7 +35,8 @@ sequential requests: one in flight per caller, at most 100 requests each per
 command. They stop scheduling when the command's usable header state settles;
 in-flight reads drain before the next command. Reaching a caller's finite request
 bound before settlement fails the protocol. Actual tracked HTTP overlap at each
-clock dispatch and maximum user-request concurrency are recorded; zero overlap
+clock dispatch and maximum user-request concurrency are recorded; anything other
+than three analytics reads in flight at actual clock dispatch
 or failure to observe concurrency four fails the protocol. Background framework
 requests are not counted as extra workload users.
 
@@ -49,11 +50,11 @@ active work is refused before any write. No driving/position warning is bypassed
 
 ## Evidence
 
-Each request has a random correlation trace. Numerical records include annual
+The V2 operator registers 56 random identities before any app IO: four preparation/background contexts, forty clock commands and twelve analytics groups (three readers for each five-pair window). This stays below the 64-active registration and 10,000-retained identity limits. Analytics response observations reference their group; aggregate backend groups are stored once, never duplicated or presented as per-request measurements. Numerical records include annual
 response bytes/timing, clock response time, post-submit usable header readiness,
 popover preparation time, actual overlap, HTTP outcomes and censored failures.
 Native PostgreSQL query/row/acquisition, Cache Components hit/miss and event-loop
-metrics are collected per command before the collector's trace retention expires.
+metrics are closed and force-flushed once after all commands, finite wire settlement and browser shutdown. There is no 500 ms native drain or metrics poll between analytics reads or clock commands. The reader loop advances as soon as each real response completes. The registered collector retains these finite groups through closure.
 Missing coverage is null and fails completeness. CPU/RSS is explicitly unavailable
 unless separately recorded by the parent operator; no zero is substituted.
 
@@ -78,7 +79,7 @@ pnpm --config.verifyDepsBeforeRun=false performance:mixed run <private-fixture-d
 ```
 
 Omitting `--collector` uses that fixture's `observer-v2/collector-control.json`.
-Run original only after its C1 samples finish, or use an exact separate clone.
+Run original only after BOTH its frozen primary and settled companion captures finish, or use an explicitly authorized exact separate clone. Current-year clock writes change canonical fixture data; they must not precede those captures.
 Current-year clock writes can invalidate annual derived caches; keep that real
 effect in the observations. These are 20 clock pairs under mixed work, not 20
 first-document and 20 Link samples. Native multi-instance, delayed ingress and
@@ -104,3 +105,31 @@ The helper never retries a write or changes replica selection. #1472 can reuse i
 for its separate real clock-under-analytics control, rather than duplicate a path
 or fabricate timing from synthetic endpoints. Actual compiled execution of both
 operators remains pending.
+
+## V2 acceptance and preparation evidence
+
+Each fresh context uses the shared isolated-profile browser launcher and owned
+HTTP proxy. Empty about:blank settles for the shared two-second initialization
+before cookies, permissions or application IO. There is no request-interception
+fallback. ServiceWorker and browser traffic pass through the same strict proxy;
+later refusals, upstream failures, missing initialization, finite body loss,
+unknown redirects, observation overflow or page exceptions fail completeness.
+Prefetch and long-lived wire groups remain explicitly counted under the shared
+policy.
+
+The native epoch starts before the version check or browser launch and ends only
+after every context closes. Actual independent driver calls, SDK started/ended
+queries and collector-received queries must match exactly. Acquisition and native
+cache totals also reconcile, every registered identity must have closed complete
+proof, and missing/duplicate identities, unknown or late spans, rejected batches,
+unattributed HTTP contexts and missing numerical fields fail. Before/after
+numerical counters and registration closure are retained. Unknown values remain
+null. Registration capacity cannot silently drop a request's identity.
+
+Ten focused tests pass, including actual finite HTTP requests, real v2 collector
+and native-control processes, one exporter flush after hot reads, independent
+late driver-call loss, exact identity coverage and strict transport failures.
+A deterministic microtask test guards against adding a timer throttle between
+successful reads. These are operator protocol tests, not compiled application
+or performance acceptance. No original/head app, browser, database or live mixed
+write was exercised for this preparation checkpoint.
