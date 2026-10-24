@@ -32,7 +32,7 @@ export async function createFixtureTraceTransport({ origin, getTraceId }) {
 			delete headers["proxy-connection"];
 			delete headers["proxy-authorization"];
 			if (url.origin === origin) {
-				const traceId = getTraceId();
+				const traceId = getTraceId({headers:request.headers,method:request.method});
 				if (!/^[a-f0-9]{32}$/.test(traceId))
 					throw new Error("Missing registered context identity");
 				headers.traceparent = `00-${traceId}-${randomBytes(8).toString("hex")}-01`;
