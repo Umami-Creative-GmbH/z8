@@ -68,19 +68,37 @@ export function ViewRefreshProvider({ children }: { children: ReactNode }) {
 			await queryClient.cancelQueries({
 				predicate: (query) => query.meta?.viewRefresh === "server",
 			});
+			// Independent owners start together; a slow secondary client/custom read
+			// must not postpone server data. A navigation during cancellation wins.
+			if (window.location.href === href)
+				startTransition(() => router.refresh());
+			const clientQueries = queryClient.getQueryCache().findAll({
+				type: "active",
+				predicate: (query) => query.meta?.viewRefresh !== "server",
+			});
 			// allSettled keeps pending feedback until every visible source has finished.
 			const results = await Promise.allSettled([
-				queryClient.invalidateQueries(
-					{
-						refetchType: "active",
-						predicate: (query) => query.meta?.viewRefresh !== "server",
-					},
-					{ throwOnError: true },
-				),
+				queryClient
+					.invalidateQueries(
+						{
+							refetchType: "active",
+							predicate: (query) => query.meta?.viewRefresh !== "server",
+						},
+						{ cancelRefetch: false },
+					)
+					.then(() => {
+						// Wait for every client sibling, then report failures. Letting the
+						// combined refetch reject early would end pending feedback too soon.
+						if (clientQueries.some((query) => query.state.status === "error"))
+							throw new Error("Client data could not be refreshed");
+					}),
 				mutate(() => true),
 				...Array.from(handlers, (handler) => Promise.resolve().then(handler)),
 			]);
-			if (results.some((result) => result.status === "rejected")) {
+			if (
+				window.location.href === href &&
+				results.some((result) => result.status === "rejected")
+			) {
 				toast.error(
 					t(
 						"common.refreshDataFailed",
@@ -88,9 +106,6 @@ export function ViewRefreshProvider({ children }: { children: ReactNode }) {
 					),
 				);
 			}
-			// Next merges fresh server props while retaining client and scroll state.
-			if (window.location.href === href)
-				startTransition(() => router.refresh());
 		});
 	};
 
