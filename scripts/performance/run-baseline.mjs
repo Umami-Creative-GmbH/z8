@@ -55,6 +55,21 @@ const backendMetrics = [
 	"cacheMisses",
 	"eventLoopDelayMs",
 ];
+const coverageNames = [
+	"observer",
+	"pg",
+	"rows",
+	"cache",
+	"eventLoop",
+	"registration",
+	"closed",
+	"incomplete",
+	"unattributedNativeSpans",
+	"rejectedBatches",
+	"lateSpans",
+	"nativeProof",
+	"nativeDriverQueries",
+];
 
 function validate(plan, verifying = false) {
 	if (
@@ -270,13 +285,33 @@ async function main() {
 			);
 			const nativeComplete =
 				plan.runtime.collectorProtocol !== collectorProtocol ||
-				(evidence?.coverage?.registration === true &&
+				(result.runtime.collectorProtocol === collectorProtocol &&
+					["observer", "pg", "rows", "cache", "eventLoop"].every(
+						(name) => evidence?.coverage?.[name] === true,
+					) &&
+					evidence?.coverage?.registration === true &&
 					evidence.coverage.closed === true &&
 					evidence.coverage.incomplete === false &&
 					evidence.coverage.unattributedNativeSpans === 0 &&
 					evidence.coverage.rejectedBatches === 0 &&
+					evidence.coverage.lateSpans === 0 &&
 					evidence.coverage.nativeProof === true);
-			sample.backendCoverage = evidence?.coverage ?? null;
+			sample.backendCoverage = evidence?.coverage
+				? Object.fromEntries(
+						coverageNames.map((name) => {
+							const value = evidence.coverage[name];
+							return [
+								name,
+								typeof value === "boolean" ||
+								(typeof value === "number" &&
+									Number.isFinite(value) &&
+									value >= 0)
+									? value
+									: null,
+							];
+						}),
+					)
+				: null;
 			sample.backend = Object.fromEntries(
 				backendMetrics.map((name) => [
 					name,
