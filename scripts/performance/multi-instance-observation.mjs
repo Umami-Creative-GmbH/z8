@@ -196,15 +196,27 @@ export async function beginMultiInstanceObservation({
 			const settled = await Promise.allSettled(
 				["a", "b"].map(async (replica) => [
 					replica,
-					(await endCollectorVisit(visit.pair[replica])).traces,
+					await endCollectorVisit(visit.pair[replica]),
 				]),
 			);
 			check(
 				settled.every((row) => row.status === "fulfilled"),
 				"Both native closures must finish; coverage remains incomplete.",
 			);
-			const replicas = Object.fromEntries(settled.map((row) => row.value));
-			const result = { traceIds: visit.traceIds, replicas };
+			const closures = Object.fromEntries(settled.map((row) => row.value));
+			const replicas = Object.fromEntries(
+				Object.entries(closures).map(([replica, row]) => [replica, row.traces]),
+			);
+			const nativeClose = Object.fromEntries(
+				Object.entries(closures).map(([replica, row]) => [
+					replica,
+					{
+						proof: row.nativeCloseProof,
+						elapsedMs: row.nativeCloseElapsedMs,
+					},
+				]),
+			);
+			const result = { traceIds: visit.traceIds, replicas, nativeClose };
 			visits.push(result);
 			for (const rows of Object.values(replicas))
 				for (const row of rows)
@@ -360,6 +372,10 @@ export async function beginMultiInstanceObservation({
 			combined,
 			traces: allIds.size,
 			visits: visits.length,
+			nativeVisitClosures: visits.map(({ traceIds, nativeClose }) => ({
+				traceIds,
+				nativeClose,
+			})),
 			transport: fixtureTraceTransport,
 			transports,
 			transportComplete: transports.every(multiInstanceTransportComplete),
