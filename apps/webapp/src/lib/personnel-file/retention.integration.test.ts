@@ -102,10 +102,23 @@ const ids = {
 	eva: "e8700000-0000-4000-8000-000000000007",
 	finn: "e8700000-0000-4000-8000-000000000008",
 	gina: "e8700000-0000-4000-8000-000000000009",
+	hana: "e8700000-0000-4000-8000-00000000000a",
+	ivo: "e8700000-0000-4000-8000-00000000000b",
 	berlin: "e8701000-0000-4000-8000-000000000001",
 	munich: "e8701000-0000-4000-8000-000000000002",
 } as const;
-type Person = "owner" | "officer" | "anna" | "ben" | "carla" | "dora" | "eva" | "finn" | "gina";
+type Person =
+	| "owner"
+	| "officer"
+	| "anna"
+	| "ben"
+	| "carla"
+	| "dora"
+	| "eva"
+	| "finn"
+	| "gina"
+	| "hana"
+	| "ivo";
 const userOf = (person: Person) => `t870-${person}`;
 
 const admin = integrationAdminPool();
@@ -705,5 +718,74 @@ describe("retention start unknown (decision B)", () => {
 			documentIds: [docs.gina2010],
 		});
 		expect(current).toEqual({ success: true, data: { purged: [], skipped: [docs.gina2010] } });
+	});
+});
+
+describe("deactivation (#1440): the deactivation instant ends the employment", () => {
+	beforeAll(async () => {
+		await seedPerson("hana", "member", ids.munich);
+		await seedPerson("ivo", "member", ids.munich);
+		await employed("hana", "2020-01-01");
+		await employed("ivo", "2020-01-01");
+		// Deactivated without a departure: the open period stays open.
+		await admin.query("update employee set is_active = false, deactivated_at = $2 where id = $1", [
+			ids.hana,
+			berlin("2030-05-15T10:00").toString(),
+		]);
+		// Deactivated before migration 0283: the instant was never recorded.
+		await admin.query("update employee set is_active = false where id = $1", [ids.ivo]);
+		await admin.query("update employee set deactivated_at = null where id = $1", [ids.ivo]);
+		docs.hana2029 = await seedDocument("hana", {
+			category: "payslip",
+			title: "Payslip 2029-12 Hana",
+			documentDate: "2029-12-31",
+		});
+		docs.ivo2019 = await seedDocument("ivo", {
+			category: "payslip",
+			title: "Payslip 2019-01 Ivo",
+			documentDate: "2019-01-31",
+		});
+		await setPeriods({ payslip: 6 });
+	});
+
+	it("counts a deactivated employee's documents from the deactivation instant", async () => {
+		const before = berlin("2036-12-31T23:30");
+		const notYet = await listDueDocumentsWithDay(db, await accessOf("owner", before), before);
+		expect(notYet.documents.map((document) => document.id)).not.toContain(docs.hana2029);
+		expect(notYet.unknownStart.map((document) => document.id)).not.toContain(docs.hana2029);
+
+		const after = berlin("2037-01-01T00:30");
+		const due = await listDueDocumentsWithDay(db, await accessOf("owner", after), after);
+		expect(due.documents.find((document) => document.id === docs.hana2029)).toMatchObject({
+			employeeId: ids.hana,
+			retentionStart: "2031-01-01",
+			dueOn: "2037-01-01",
+		});
+	});
+
+	it("lists a deactivation without a recorded instant as retention start unknown", async () => {
+		const now = berlin("2037-01-01T00:30");
+		const result = await listDueDocumentsWithDay(db, await accessOf("owner", now), now);
+		expect(result.documents.map((document) => document.id)).not.toContain(docs.ivo2019);
+		expect(result.unknownStart.map((document) => document.id)).toContain(docs.ivo2019);
+	});
+
+	it("stops the clock again on reactivation", async () => {
+		await admin.query("update employee set is_active = true where id = $1", [ids.hana]);
+		try {
+			const now = berlin("2037-01-01T00:30");
+			const owner = await accessOf("owner", now);
+			const result = await listDueDocumentsWithDay(db, owner, now);
+			const listed = [...result.documents, ...result.unknownStart].map((document) => document.id);
+			expect(listed).not.toContain(docs.hana2029);
+			expect(
+				(await purgeDueDocuments(db, owner, { documentIds: [docs.hana2029] }, now)).purged,
+			).toEqual([]);
+		} finally {
+			await admin.query(
+				"update employee set is_active = false, deactivated_at = $2 where id = $1",
+				[ids.hana, berlin("2030-05-15T10:00").toString()],
+			);
+		}
 	});
 });

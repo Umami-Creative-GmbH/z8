@@ -60,6 +60,8 @@ export type EmployeeEmploymentHistoryCardProps = {
 	workPolicies?: EmploymentHistoryWorkPolicyOption[];
 	/** A one-time note at the top of the card, shown only to those who manage the terms. */
 	notice?: ReactNode;
+	/** Deactivations and reactivations (#1441), below the timeline, for every reader of the card. */
+	lifecycleEvents?: ReactNode;
 	/** "Change wage", passed only for org admins while the terms in force are hourly (#1177). */
 	changeWage?: {
 		onSubmit: (data: ChangeHourlyWage) => Promise<MutationResult>;

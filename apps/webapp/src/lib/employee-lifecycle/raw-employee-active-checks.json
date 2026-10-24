@@ -107,6 +107,7 @@
 	"lib/employee-lifecycle/deputy-release-notifications.ts": 1,
 	"lib/employee-lifecycle/employment-date-upload.ts": 1,
 	"lib/employee-lifecycle/employment-periods.ts": 1,
+	"lib/employee-lifecycle/lifecycle-target.ts": 1,
 	"lib/import-review/csv-work-import.ts": 1,
 	"lib/integrations/resolve-command-actor.ts": 1,
 	"lib/manager-daily-briefing/get-manager-daily-briefing.ts": 3,

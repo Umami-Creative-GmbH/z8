@@ -42,14 +42,19 @@ const emptyTasks: DepartureTaskDeliveryResult = {
  * Recovery scan behind the delayed per-departure jobs: materializes every due
  * departure (the jobs only make it prompt) and delivers durable follow-up
  * work. Each departure runs in its own transaction, so one failure never
- * blocks the others. Nothing runs while the release gate is closed.
+ * blocks the others. While the release gate is closed no departure runs and
+ * only a deactivation's follow-up work (#1440: approval handovers, review
+ * notices) is delivered, since deactivation is what runs behind the gate.
  */
 export async function runEmployeeDepartureMaintenanceWith(deps: {
 	released: boolean;
 	clock: Clock;
 	listDueDepartures(now: Instant): Promise<DepartureIdentity[]>;
 	executeDeparture(identity: DepartureIdentity): Promise<ExecuteDepartureResult>;
-	deliverTasks(now: Instant): Promise<DepartureTaskDeliveryResult>;
+	deliverTasks(
+		now: Instant,
+		options: { deactivationOnly: boolean },
+	): Promise<DepartureTaskDeliveryResult>;
 }): Promise<EmployeeDepartureMaintenanceResult> {
 	const result: EmployeeDepartureMaintenanceResult = {
 		released: deps.released,
@@ -57,7 +62,10 @@ export async function runEmployeeDepartureMaintenanceWith(deps: {
 		tasks: emptyTasks,
 		errors: [],
 	};
-	if (!deps.released) return result;
+	if (!deps.released) {
+		result.tasks = await deps.deliverTasks(deps.clock.nowInstant(), { deactivationOnly: true });
+		return result;
+	}
 
 	for (const identity of await deps.listDueDepartures(deps.clock.nowInstant())) {
 		result.departures.processed += 1;
@@ -79,7 +87,7 @@ export async function runEmployeeDepartureMaintenanceWith(deps: {
 		}
 	}
 
-	result.tasks = await deps.deliverTasks(deps.clock.nowInstant());
+	result.tasks = await deps.deliverTasks(deps.clock.nowInstant(), { deactivationOnly: false });
 	return result;
 }
 
@@ -111,8 +119,13 @@ export async function runEmployeeDepartureMaintenance(): Promise<EmployeeDepartu
 		clock: systemClock,
 		listDueDepartures,
 		executeDeparture: (identity) => commands.executeDeparture(identity),
-		deliverTasks: (now) =>
-			runDepartureTaskDelivery({ outbox: createDepartureTaskOutbox(db), handlers, now }),
+		deliverTasks: (now, { deactivationOnly }) =>
+			runDepartureTaskDelivery({
+				outbox: createDepartureTaskOutbox(db),
+				handlers,
+				now,
+				deactivationOnly,
+			}),
 	});
 }
 

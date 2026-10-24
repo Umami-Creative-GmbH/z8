@@ -12,12 +12,7 @@ import {
 } from "@/db/schema";
 import { employeeEmploymentPeriod } from "@/db/schema/employee-lifecycle";
 import { AuditAction } from "@/lib/audit-logger";
-import {
-	dateFromInstant,
-	type Instant,
-	instantFromDate,
-	systemClock,
-} from "@/lib/datetime/temporal-core";
+import { dateFromInstant, type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import type { PersonnelFileAccess } from "./access";
 import { managedDocumentsCondition } from "./access-store";
 import {
@@ -31,19 +26,15 @@ import {
 	purgeDocumentRequestsOfDocuments,
 } from "./document-request-purge";
 import { loadOrganizationDay } from "./organization-day";
-import {
-	type EmploymentPeriodForRetention,
-	isValidRetentionYears,
-	retentionDueDate,
-	retentionStart,
-} from "./retention";
+import { isValidRetentionYears, retentionDueDate, retentionStart } from "./retention";
+import { loadRetentionEmployment } from "./retention-employment";
 import { recomputeCertificateSkillExpiry } from "./skill-certificate-expiry";
 
 /**
  * Retention periods, the due-for-deletion list and confirmed purges (#870).
  * Whether a document is due is decided by the pure rules in `retention.ts`;
  * the queries here only narrow the candidates (categories with a period,
- * employees without an open employment period). Nothing is deleted except by
+ * employees whose employment ended, `retention-employment.ts`). Nothing is deleted except by
  * `purgeDueDocuments`, which an officer's confirmation calls.
  */
 
@@ -235,6 +226,7 @@ export async function findDueDocuments(
 			userName: user.name,
 			employeeNumber: employee.employeeNumber,
 			employeeIsActive: employee.isActive,
+			deactivatedAt: employee.deactivatedAt,
 		})
 		.from(employeeDocument)
 		.innerJoin(
@@ -250,11 +242,15 @@ export async function findDueDocuments(
 				eq(employeeDocument.organizationId, input.organizationId),
 				inArray(employeeDocument.category, categories),
 				input.condition,
-				// Candidates only: no open employment, and either a known end (an
-				// ended employment and no unknown one) or a former employee.
-				notExists(periodOf("open")),
+				// Candidates only: a known end (an ended employment and no open or
+				// unknown one) or a former employee, also one deactivated without a
+				// departure, whose open period ends at the deactivation (#1440).
 				or(
-					and(exists(periodOf("closed")), notExists(periodOf("legacy_unknown"))),
+					and(
+						notExists(periodOf("open")),
+						exists(periodOf("closed")),
+						notExists(periodOf("legacy_unknown")),
+					),
 					eq(employee.isActive, false),
 				),
 			),
@@ -262,26 +258,10 @@ export async function findDueDocuments(
 		.orderBy(asc(user.name), asc(employeeDocument.documentDate), asc(employeeDocument.id));
 	if (rows.length === 0) return empty;
 
-	const employeeIds = [...new Set(rows.map((row) => row.employeeId))];
-	const periodRows = await database
-		.select({
-			employeeId: employeeEmploymentPeriod.employeeId,
-			status: employeeEmploymentPeriod.status,
-			endedAt: employeeEmploymentPeriod.endedAt,
-		})
-		.from(employeeEmploymentPeriod)
-		.where(
-			and(
-				eq(employeeEmploymentPeriod.organizationId, input.organizationId),
-				inArray(employeeEmploymentPeriod.employeeId, employeeIds),
-			),
-		);
-	const periodsByEmployee = new Map<string, EmploymentPeriodForRetention[]>();
-	for (const row of periodRows) {
-		const list = periodsByEmployee.get(row.employeeId) ?? [];
-		list.push({ status: row.status, endedAt: row.endedAt ? instantFromDate(row.endedAt) : null });
-		periodsByEmployee.set(row.employeeId, list);
-	}
+	const periodsByEmployee = await loadRetentionEmployment(database, {
+		organizationId: input.organizationId,
+		employeeIds: [...new Set(rows.map((row) => row.employeeId))],
+	});
 
 	const result = empty;
 	for (const row of rows) {
@@ -319,7 +299,10 @@ export async function findDueDocuments(
 			});
 		} else if (
 			!row.employeeIsActive &&
-			!employmentPeriods.some((period) => period.status === "open")
+			// An open period still running after the recorded deactivation is a
+			// later employment; without a recorded instant (deactivated before
+			// migration 0283) the end of the open period is unknown (#1440).
+			(row.deactivatedAt === null || !employmentPeriods.some((period) => period.status === "open"))
 		) {
 			result.unknownStart.push(document);
 		}

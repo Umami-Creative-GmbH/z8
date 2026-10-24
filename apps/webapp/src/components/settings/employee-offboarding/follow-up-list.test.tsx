@@ -57,7 +57,7 @@ const handoverTaskId = "33333333-3333-4333-8333-333333333333";
 function renderList(overrides: Partial<FollowUpListProps> = {}) {
 	const props: FollowUpListProps = {
 		employeeId: "employee-1",
-		departureId: "departure-1",
+		anchor: { departureId: "departure-1" },
 		reviews: [
 			{
 				id: "review-clock",
@@ -188,6 +188,24 @@ describe("FollowUpList", () => {
 		expect(assignReplacement.mock.calls[0]?.[0]).toEqual({
 			departureId: "departure-1",
 			reviewId: "review-stage",
+			replacementEmployeeId: "replacement-1",
+			requestId: expect.any(String),
+		});
+	});
+
+	it("assigns a replacement for a deactivation's handover under the deactivation (#1440)", async () => {
+		const user = userEvent.setup();
+		const assignReplacement = vi.fn().mockResolvedValue({ success: true, data: undefined });
+		renderList({ assignReplacement, anchor: { deactivationId: "deactivation-1" } });
+		const handover = reviewItem("Approval duties need a replacement");
+
+		await user.click(handover.getByRole("option", { name: "Robin Admin" }));
+		await user.click(handover.getByRole("button", { name: "Assign replacement" }));
+
+		await waitFor(() => expect(assignReplacement).toHaveBeenCalledTimes(1));
+		expect(assignReplacement.mock.calls[0]?.[0]).toEqual({
+			deactivationId: "deactivation-1",
+			handoverTaskId,
 			replacementEmployeeId: "replacement-1",
 			requestId: expect.any(String),
 		});

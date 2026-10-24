@@ -34,14 +34,12 @@ const approvedEnglish = {
 	"settings.employees.draftActions.resending": "Resending invitation...",
 	"settings.employees.lifecycle.actionsLabel": "Employee actions for {name}",
 	"settings.employees.lifecycle.deactivate": "Deactivate",
-	"settings.employees.lifecycle.deactivateDescription":
-		"This suspends access to this organization and ends sessions currently using it. Employee history is retained.",
+	// Deactivate's confirmation is the preview dialog (#1440), whose keys live in
+	// `deactivation-preview-dialog.tsx`; the old title, description and status
+	// line are no longer used, and its pending label is used there.
 	"settings.employees.lifecycle.deactivateError":
 		"Failed to deactivate employee",
 	"settings.employees.lifecycle.deactivateSuccess": "Employee deactivated",
-	"settings.employees.lifecycle.deactivateTitle": "Deactivate employee?",
-	"settings.employees.lifecycle.deactivating": "Deactivating...",
-	"settings.employees.lifecycle.deactivatingStatus": "Deactivating employee",
 	"settings.employees.lifecycle.finalOwnerDeactivateGuidance":
 		"Assign and activate another approved owner before deactivating this employee.",
 	"settings.employees.lifecycle.finalOwnerRemoveGuidance":
@@ -70,7 +68,6 @@ const approvedEnglish = {
 
 const coreDescriptions = [
 	"settings.employees.draftActions.deleteDescription",
-	"settings.employees.lifecycle.deactivateDescription",
 	"settings.employees.lifecycle.finalOwnerDeactivateGuidance",
 	"settings.employees.lifecycle.finalOwnerRemoveGuidance",
 	"settings.employees.lifecycle.reactivateDescription",

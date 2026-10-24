@@ -14,21 +14,28 @@ const identity = (departureId: string, organizationId = "org-1"): DepartureIdent
 const noTasks = { claimed: 0, completed: 0, deferred: 0, failed: 0 };
 
 describe("runEmployeeDepartureMaintenanceWith", () => {
-	it("does nothing while the offboarding release gate is closed", async () => {
+	it("runs no departure while the offboarding release gate is closed, and delivers only deactivation work", async () => {
 		const listDueDepartures = vi.fn();
-		const deliverTasks = vi.fn();
+		const executeDeparture = vi.fn();
+		const deliverTasks = vi.fn().mockResolvedValue({ ...noTasks, claimed: 1, completed: 1 });
+		const now = parseInstant("2026-09-15T00:01:00Z");
 
 		const result = await runEmployeeDepartureMaintenanceWith({
 			released: false,
-			clock: { nowInstant: () => parseInstant("2026-09-15T00:01:00Z") },
+			clock: { nowInstant: () => now },
 			listDueDepartures,
-			executeDeparture: vi.fn(),
+			executeDeparture,
 			deliverTasks,
 		});
 
-		expect(result).toMatchObject({ released: false });
+		expect(result).toMatchObject({
+			released: false,
+			departures: { processed: 0 },
+			tasks: { claimed: 1, completed: 1 },
+		});
 		expect(listDueDepartures).not.toHaveBeenCalled();
-		expect(deliverTasks).not.toHaveBeenCalled();
+		expect(executeDeparture).not.toHaveBeenCalled();
+		expect(deliverTasks).toHaveBeenCalledWith(now, { deactivationOnly: true });
 	});
 
 	it("executes due departures in order, isolating failures, then delivers follow-up work", async () => {
@@ -66,6 +73,6 @@ describe("runEmployeeDepartureMaintenanceWith", () => {
 			tasks: { ...noTasks, claimed: 2, completed: 2 },
 			errors: [{ organizationId: "org-1", departureId: "b", error: "deadlock detected" }],
 		});
-		expect(deliverTasks).toHaveBeenCalledWith(now);
+		expect(deliverTasks).toHaveBeenCalledWith(now, { deactivationOnly: false });
 	});
 });
