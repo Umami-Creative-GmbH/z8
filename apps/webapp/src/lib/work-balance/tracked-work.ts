@@ -1,6 +1,7 @@
 import { and, eq, gt, isNotNull, lt } from "drizzle-orm";
 import { workPeriod } from "@/db/schema";
 import {
+	compareInstants,
 	dateFromInstant,
 	instantFromDate,
 	parsePlainDate,
@@ -94,20 +95,46 @@ export async function readTrackedDailyWorkMinutes(
 		tracking.timezone,
 	);
 	const periods = await loadTrackedWorkPeriods(client, input, window);
+	const dayWindows: Record<string, TrackingWindow> = {};
 	for (
 		let day = parsePlainDate(startDate);
 		day.toString() <= throughDate;
 		day = day.add({ days: 1 })
 	) {
-		const dayWindow = employeePayrollWindow(
-			day.toString(),
-			day.toString(),
+		const date = day.toString();
+		dayWindows[date] = employeePayrollWindow(date, date, tracking.timezone);
+		minutesByDate[date] = 0;
+	}
+	for (const period of periods) {
+		if (!period.endTime) continue;
+		const start = instantFromDate(period.startTime);
+		const end = instantFromDate(period.endTime);
+		if (compareInstants(end, start) < 0) {
+			// Retain the allocator's reconciliation failure for invalid history.
+			allocateTrackedWorkMinutes([period], window);
+			continue;
+		}
+		const periodStartDate = plainDateAt(start, tracking.timezone).toString();
+		// A positive interval ending at midnight belongs only to preceding days.
+		const lastInstant =
+			compareInstants(start, end) < 0 ? end.subtract({ nanoseconds: 1 }) : end;
+		const periodEndDate = plainDateAt(
+			lastInstant,
 			tracking.timezone,
-		);
-		minutesByDate[day.toString()] = allocateTrackedWorkMinutes(
-			periods,
-			dayWindow,
-		);
+		).toString();
+		const firstDay = periodStartDate > startDate ? periodStartDate : startDate;
+		const lastDay = periodEndDate < throughDate ? periodEndDate : throughDate;
+		for (
+			let day = parsePlainDate(firstDay);
+			day.toString() <= lastDay;
+			day = day.add({ days: 1 })
+		) {
+			const date = day.toString();
+			minutesByDate[date] += allocateTrackedWorkMinutes(
+				[period],
+				dayWindows[date],
+			);
+		}
 	}
 	return { timezone: tracking.timezone, minutesByDate };
 }
