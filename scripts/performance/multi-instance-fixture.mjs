@@ -7,7 +7,7 @@ import { createWriteStream } from "node:fs";
 import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import { createServer } from "node:net";
 import { join, resolve } from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { authenticateFixture } from "./fixture-auth.mjs";
 
 async function readOwnedManifest(directory) {
