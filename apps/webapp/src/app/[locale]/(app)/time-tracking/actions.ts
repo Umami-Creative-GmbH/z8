@@ -38,7 +38,6 @@ import {
 	type ServerActionResult,
 } from "@/lib/effect/result";
 import { runtime } from "@/lib/effect/runtime";
-import { AuthService } from "@/lib/effect/services/auth.service";
 import {
 	ChangePolicyService,
 	type EditCapability,
