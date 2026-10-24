@@ -5,6 +5,145 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import {
+	clockAdmissionDenied,
+	runIngress,
+	verifiedCancelledRead,
+} from "./ingress-stream-probe.mjs";
+
+test("passive diagnostic refuses other navigation conditions before reading a fixture", async () => {
+	await assert.rejects(
+		runIngress(
+			"absent-fixture",
+			"unused",
+			"mobile",
+			"first-document",
+			"held",
+			"small-employee",
+			"passive-cold-20s",
+		),
+		/bounded to desktop/,
+	);
+	await assert.rejects(
+		runIngress(
+			"absent-fixture",
+			"unused",
+			"desktop",
+			"repeat-link",
+			"held",
+			"small-employee",
+			"passive-cold-20s",
+		),
+		/bounded to desktop/,
+	);
+	await assert.rejects(
+		runIngress(
+			"absent-fixture",
+			"unused",
+			"desktop",
+			"first-document",
+			"held",
+			"small-employee",
+			"passive-cold-25s",
+		),
+		/bounded to desktop/,
+	);
+});
+
+test("clock denial accepts a proved fail-closed organization-selection response and rejects returned clock data", () => {
+	const allowed = { status: 200, hasEmployee: true };
+	const direct = { status: 400, noActiveOrganization: true };
+	const response = {
+		status: 400,
+		json: true,
+		errorField: true,
+		hasEmployee: false,
+		employeeIdMaterialized: false,
+		clockStateField: false,
+		activePeriodMaterialized: false,
+	};
+	assert.equal(clockAdmissionDenied(allowed, direct, response), true);
+	assert.equal(
+		clockAdmissionDenied(
+			allowed,
+			{ status: 401 },
+			{
+				...response,
+				status: 401,
+				errorField: false,
+				clockStateField: true,
+				clockedIn: false,
+			},
+		),
+		true,
+	);
+	for (const changed of [
+		{ ...response, status: 200 },
+		{ ...response, status: 500 },
+		{ ...response, hasEmployee: true },
+		{ ...response, employeeIdMaterialized: true },
+		{ ...response, clockStateField: true },
+		{ ...response, activePeriodMaterialized: true },
+	])
+		assert.equal(clockAdmissionDenied(allowed, direct, changed), false);
+	assert.equal(
+		clockAdmissionDenied({ ...allowed, status: 400 }, direct, response),
+		false,
+	);
+	assert.equal(
+		clockAdmissionDenied(
+			allowed,
+			{ ...direct, noActiveOrganization: false },
+			response,
+		),
+		false,
+	);
+});
+
+test("only an acknowledged owned Upcoming Shifts cancellation with exact observed errors and recovery permits incomplete cache outcome", () => {
+	const result = {
+		scenario: "failed",
+		cancelAcknowledged: [{ family: "upcoming-shifts", cancelled: true }],
+		failed: { secondaryFailed: true },
+		applicationPassed: true,
+		after: { secondaryComplete: true },
+	};
+	const rows = [
+		{
+			observedQueryErrors: 1,
+			coverage: { nativeProof: true, closed: true, incomplete: false },
+		},
+	];
+	assert.equal(verifiedCancelledRead(result, rows), true);
+	for (const changed of [
+		{ ...result, scenario: "held" },
+		{ ...result, cancelAcknowledged: [] },
+		{
+			...result,
+			cancelAcknowledged: [{ family: "other-shift-select", cancelled: true }],
+		},
+		{
+			...result,
+			cancelAcknowledged: [{ family: "upcoming-shifts", cancelled: false }],
+		},
+		{ ...result, applicationPassed: false },
+	])
+		assert.equal(verifiedCancelledRead(changed, rows), false);
+	assert.equal(
+		verifiedCancelledRead(result, [{ ...rows[0], observedQueryErrors: 0 }]),
+		false,
+	);
+	assert.equal(
+		verifiedCancelledRead(result, [{ ...rows[0], observedQueryErrors: 2 }]),
+		false,
+	);
+	assert.equal(
+		verifiedCancelledRead(result, [
+			{ ...rows[0], coverage: { nativeProof: false } },
+		]),
+		false,
+	);
+});
 
 const cli = fileURLToPath(
 	new URL("./ingress-stream-probe.mjs", import.meta.url),

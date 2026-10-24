@@ -3,10 +3,77 @@
 Issue [#1473](https://github.com/Umami-Creative-GmbH/z8/issues/1473), part of
 [#1448](https://github.com/Umami-Creative-GmbH/z8/issues/1448).
 
-Status: **PREPARED; runtime acceptance pending.** No ingress/browser/database
-experiment has run for this ticket. An active controlled baseline capture reserves
-the runtime window. The checks below describe the prepared operator procedure,
-not observed application performance or completed acceptance.
+Status: **Final-source local matrix attempted; acceptance remains incomplete.**
+The fourteen sequential conditions ran against source
+`ac2fb11334b2fac88144dd405e39a15bd988d29c` in the separately owned final multi-instance
+fixture. Immutable numeric attempts are summarized in
+[the ingress evidence](evidence/1473-ingress-streaming.json). No production/CDN
+deployment was available.
+
+## Final local observations
+
+The actual topology was Docker HAProxy 2.8 on loopback, two parent-owned production
+Next replicas, independent native V2 collectors, and separate fixture PostgreSQL,
+Valkey and object storage. The recorded proxy configuration has no compression or
+filter directive; the observed Next document responses were gzip compressed.
+Headers/configuration SHA, chunk counts, content arrival and exact per-node query
+proofs are retained. No proxy configuration was changed.
+
+The first sequential matrix returned four operator passes and ten failures. Both
+desktop/mobile real-Link held-read cases and both signed-out cases passed. Actual
+useful document markup arrived while the secondary query was held, but repeated
+cold document attempts left the header clock pending through the nine-second
+deadline. One later clean document attempt passed with the clock request starting
+at 6143 ms and finishing at 6181 ms before release. That retry does not resolve the
+earlier failures. Source analysis and a separately identified passive diagnostic
+belong to the app owner; no app code changed in this ticket.
+
+Both real-Link cancellation cases displayed the local error, kept Quick Stats and
+the known header clock available, and recovered through keyboard retry. A verified
+own blocked Upcoming Shifts query was cancelled and the native query error count
+was one. Its row coverage remained false, so resource acceptance remains unknown;
+functional recovery does not waive that flag. The initial failed-document case
+also missed its four-second error deadline. Neither deadline was increased.
+
+All six admission conditions reached their expected challenge without emitting
+protected document markup. The original MFA/SSO status assertion incorrectly
+required only HTTP 401/403. Additional desktop controls proved the public clock
+GET returned 200 with an employee before restriction; after restriction it returned
+400 `No active organization`, with no employee ID, clock state or active period,
+both before and after challenge navigation. This is a functional fail-closed denial,
+separate from proof of the current-organization policy reason. Negative tests reject
+200 clock data, unknown 400 reasons and 500 responses. The immutable original
+failures remain unchanged; mobile clock response/control details still need the
+same classification evidence.
+
+One mobile document failure had B's 43 wire/native-start/native-end queries but
+zero received queries at closure. It remains failed. Subsequent retained collector
+state includes a closed incomplete B row with late spans; it is not substituted
+for the failed original proof. Four accidentally overlapping diagnostic attempts
+are explicitly excluded from acceptance. The initial fourteen-case sequential
+matrix is unaffected by that operator error.
+
+Observed loading/error/completed rectangles changed height (desktop example:
+192/198/238 px). Geometry review remains open; no stable-layout or native-paint
+claim follows from these chunk and DOM observations. Parent-owned services were
+preserved and each scoped layout/feature/admission variant was restored.
+
+The optional `passive-cold-20s` diagnostic, restricted to desktop first-document
+held reads, records the original nine-second state, continues passive observation
+without keyboard/focus, then releases at twenty seconds. Only that explicit
+diagnostic extends the lock safety/idle timers to 21/25 seconds. It always retains
+`applicationPassed: false`, uses separate attempt filenames and cannot count as a
+normal matrix pass. Ordinary held/failed deadlines remain 9/4/12 seconds.
+
+The app owner's passive attempt `1792879797689-73011032` observed the real clock
+POST at 8384 ms, its HTTP 200 response at 8412 ms and the known clock ready at
+8475 ms without input. The secondary placeholder remained pending at 9107 and
+20046 ms with two blocked readers before release at 20050 ms. Useful document
+markup arrived at 3912 ms. A122 + B68 = 190 wire/native-start/native-end/received
+queries reconciled exactly and strict transport passed. This proves independence
+in that diagnostic; it does not erase the earlier nine-second failures or satisfy
+the controlled cold-clock latency comparison. No app fix or deadline relaxation
+was justified by this observation.
 
 ## V2 observation checkpoint
 
@@ -161,11 +228,11 @@ pnpm --config.verifyDepsBeforeRun=false --dir $ingressWt performance:ingress res
 ```
 
 The runtime suite fails when its operator environment is missing; it is never
-counted as passing or skipped. Three lightweight CLI safety cases have passed:
+counted as passing or skipped. Lightweight CLI safety cases have passed:
 numeric-only plan, production-origin refusal and source mismatch/pre-repair
 artifact refusal. The one-line #1472 launcher import repair passed its existing
-two CLI safety cases. Node syntax checks pass. No runtime result, buffering
-diagnosis, visual geometry claim or deployed CDN acceptance is recorded yet.
+two CLI safety cases. Node syntax checks pass. The local results above leave the
+cold-header, complete native/resource, geometry and deployed CDN gates open.
 
 If useful content fails to arrive through the proxy before release, retain that
 failed evidence. Compare the identical controlled request directly against the
