@@ -37,6 +37,7 @@ const BEN = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
 function emptyPlan(overrides: Partial<DeactivationPlan> = {}): DeactivationPlan {
 	return {
 		at: "2026-10-24T08:00:00Z",
+		timeZone: "Europe/Berlin",
 		managerLinks: {
 			reportsNeedingReplacement: [],
 			reportsKeepingAnotherManager: [],
@@ -116,6 +117,13 @@ describe("DeactivationPreviewDialog", () => {
 		await user.click(screen.getByRole("button", { name: "Deactivate" }));
 
 		await waitFor(() => expect(props.onConfirm).toHaveBeenCalledWith({ [REPORT]: BEN }));
+	});
+
+	it("states the previewed instant in the organization's zone, not the viewer's", () => {
+		renderDialog({ plan: emptyPlan({ at: "2026-10-24T08:00:00Z", timeZone: "Europe/Berlin" }) });
+
+		// 08:00 UTC is 10:00 in Berlin (summer time).
+		expect(screen.getByText(/previewed for .*10:00.*Europe\/Berlin/)).toBeTruthy();
 	});
 
 	it("refuses to confirm until every report left without a manager has a replacement", async () => {

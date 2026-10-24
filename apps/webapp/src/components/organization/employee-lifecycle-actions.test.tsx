@@ -11,6 +11,7 @@ import {
 } from "@testing-library/react";
 import type { ComponentPropsWithRef, ReactElement, ReactNode } from "react";
 import { beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
+import type { DeactivationPlan } from "@/lib/employee-lifecycle/deactivation/types";
 import { queryKeys } from "@/lib/query";
 import {
 	EmployeeLifecycleActions,
@@ -21,6 +22,7 @@ const {
 	deactivateEmployeeMock,
 	onOptimisticStatusChangeMock,
 	onRemovedMock,
+	previewEmployeeDeactivationMock,
 	reactivateEmployeeMock,
 	removeEmployeeAccessMock,
 	toastErrorMock,
@@ -29,6 +31,7 @@ const {
 	deactivateEmployeeMock: vi.fn(),
 	onOptimisticStatusChangeMock: vi.fn(),
 	onRemovedMock: vi.fn(),
+	previewEmployeeDeactivationMock: vi.fn(),
 	reactivateEmployeeMock: vi.fn(),
 	removeEmployeeAccessMock: vi.fn(),
 	toastErrorMock: vi.fn(),
@@ -49,8 +52,11 @@ vi.mock("@tolgee/react", () => ({
 						? "Localized re-invitation guidance"
 						: key === "settings.employees.lifecycle.finalOwnerRemoveGuidance"
 							? "Localized final-owner removal guidance"
-							: fallback,
+							: key === "settings.employees.lifecycle.deactivationPreview.title"
+								? `Deactivate ${params?.name}?`
+								: fallback,
 	}),
+	useTolgee: () => ({ getLanguage: () => "en" }),
 }));
 
 vi.mock("sonner", () => ({
@@ -70,9 +76,56 @@ vi.mock("@/navigation", () => ({
 
 vi.mock("@/app/[locale]/(app)/settings/employees/actions", () => ({
 	deactivateEmployee: deactivateEmployeeMock,
+	previewEmployeeDeactivation: previewEmployeeDeactivationMock,
 	reactivateEmployee: reactivateEmployeeMock,
 	removeEmployeeAccess: removeEmployeeAccessMock,
 }));
+
+const REPORT = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+const ANNA = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
+
+function previewPlan(overrides: Partial<DeactivationPlan> = {}): DeactivationPlan {
+	return {
+		at: "2026-10-24T08:00:00Z",
+		timeZone: "Europe/Berlin",
+		managerLinks: {
+			reportsNeedingReplacement: [],
+			reportsKeepingAnotherManager: [],
+			ownManagerLinks: [],
+			replacementOptions: [],
+		},
+		teamLinks: { teams: [], projectAssignments: [], projectManagerLinks: [] },
+		approvalDuties: { handovers: [], reviews: [] },
+		shifts: { shiftsToOpen: [], plannerRecipientUserIds: [] },
+		absences: { absencesToCancel: [], absencesSpanning: [] },
+		accessEnds: { grants: [], drivingAuthorizations: [], kioskBadges: [], shareLinks: [] },
+		retentionStarts: true,
+		seatReleased: true,
+		refusals: [],
+		...overrides,
+	};
+}
+
+/** A plan in which one report needs a new manager; `pick` is the one the preview was asked with. */
+function planWithReport(pick: string | null): DeactivationPlan {
+	return previewPlan({
+		managerLinks: {
+			reportsNeedingReplacement: [
+				{
+					employeeId: REPORT,
+					name: "Rita Report",
+					wasPrimary: true,
+					replacementEmployeeId: pick,
+					refusal: pick ? null : "replacement_missing",
+				},
+			],
+			reportsKeepingAnotherManager: [],
+			ownManagerLinks: [],
+			replacementOptions: [{ employeeId: ANNA, name: "Anna Admin" }],
+		},
+		refusals: pick ? [] : ["replacement_missing"],
+	});
+}
 
 const approvedMembership = {
 	id: "member-2",
@@ -140,6 +193,25 @@ async function openConfirmation(actionName: string) {
 	fireEvent.click(within(menu).getByRole("menuitem", { name: actionName }));
 	return screen.findByRole("alertdialog");
 }
+
+/** Opens Deactivate's preview dialog (#1440) and waits until its preview is loaded. */
+async function openDeactivation() {
+	const menu = await openActions();
+	fireEvent.click(within(menu).getByRole("menuitem", { name: "Deactivate" }));
+	const dialog = await screen.findByRole("dialog");
+	await waitFor(() =>
+		expect(
+			within(dialog).getByRole("button", { name: "Deactivate" }).hasAttribute("disabled"),
+		).toBe(false),
+	);
+	return dialog;
+}
+
+const deactivationCall = (employeeId: string, replacementManagers = {}) => ({
+	employeeId,
+	requestId: expect.any(String),
+	replacementManagers,
+});
 
 describe("EmployeeLifecycleActions capabilities", () => {
 	beforeEach(() => {
@@ -299,19 +371,21 @@ describe("EmployeeLifecycleActions after offboarding release", () => {
 describe("EmployeeLifecycleActions confirmations", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		previewEmployeeDeactivationMock.mockResolvedValue({ success: true, data: previewPlan() });
 	});
 
-	it("explains that deactivation suspends organization access and sessions while retaining history", async () => {
+	it("previews what deactivation changes before confirming (#1440)", async () => {
 		renderActions();
 
-		const dialog = await openConfirmation("Deactivate");
+		const dialog = await openDeactivation();
 
-		expect(within(dialog).getByText("Deactivate employee?")).toBeTruthy();
-		expect(
-			within(dialog).getByText(
-				"This suspends access to this organization and ends sessions currently using it. Employee history is retained.",
-			),
-		).toBeTruthy();
+		expect(within(dialog).getByText("Deactivate Alex Morgan?")).toBeTruthy();
+		expect(previewEmployeeDeactivationMock).toHaveBeenCalledWith({
+			employeeId: "employee-2",
+			replacementManagers: {},
+		});
+		expect(within(dialog).getByText(/Personnel file retention starts/)).toBeTruthy();
+		expect(screen.queryByRole("alertdialog")).toBeNull();
 	});
 
 	it("explains that reactivation uses the existing employee record", async () => {
@@ -362,19 +436,20 @@ describe("EmployeeLifecycleActions mutations", () => {
 			success: true,
 			data: undefined,
 		});
+		previewEmployeeDeactivationMock.mockResolvedValue({ success: true, data: previewPlan() });
 	});
 
 	it("keeps a committed deactivation inactive and invalidates scoped data when cleanup is pending", async () => {
 		const { invalidateQueries } = renderActions();
-		const dialog = await openConfirmation("Deactivate");
+		const dialog = await openDeactivation();
 
 		fireEvent.click(within(dialog).getByRole("button", { name: "Deactivate" }));
 
-		expect(onOptimisticStatusChangeMock.mock.calls).toEqual([
-			["employee-2", false],
-		]);
 		await waitFor(() =>
-			expect(deactivateEmployeeMock).toHaveBeenCalledWith("employee-2"),
+			expect(onOptimisticStatusChangeMock.mock.calls).toEqual([["employee-2", false]]),
+		);
+		await waitFor(() =>
+			expect(deactivateEmployeeMock).toHaveBeenCalledWith(deactivationCall("employee-2")),
 		);
 		await waitFor(() => {
 			expect(invalidateQueries).toHaveBeenCalledWith({
@@ -398,59 +473,123 @@ describe("EmployeeLifecycleActions mutations", () => {
 		]);
 	});
 
-	it("rolls back a thrown status failure and shows a fixed toast without the raw error", async () => {
+	it("leaves the row unchanged on a thrown failure and shows a fixed message in the dialog without the raw error", async () => {
 		deactivateEmployeeMock.mockRejectedValue(
 			new Error("secret database detail"),
 		);
 		renderActions();
-		const dialog = await openConfirmation("Deactivate");
+		const dialog = await openDeactivation();
 
 		fireEvent.click(within(dialog).getByRole("button", { name: "Deactivate" }));
 
-		await waitFor(() =>
-			expect(onOptimisticStatusChangeMock.mock.calls).toEqual([
-				["employee-2", false],
-				["employee-2", true],
-			]),
-		);
-		expect(toastErrorMock).toHaveBeenCalledWith(
+		expect((await within(dialog).findByRole("alert")).textContent).toBe(
 			"Failed to deactivate employee",
 		);
-		expect(toastErrorMock).not.toHaveBeenCalledWith(
-			expect.stringContaining("secret"),
-		);
+		expect(dialog.textContent).not.toContain("secret");
+		expect(toastErrorMock).not.toHaveBeenCalled();
+		// A deactivation changes the row only once confirmed (#1440).
+		expect(onOptimisticStatusChangeMock).not.toHaveBeenCalled();
 	});
 
-	it("uses the same rollback path for a resolved semantic failure", async () => {
+	it("leaves the row unchanged on a resolved semantic failure", async () => {
 		deactivateEmployeeMock.mockResolvedValue({
 			success: false,
 			error: "secret authorization detail",
 		});
 		renderActions();
-		const dialog = await openConfirmation("Deactivate");
+		const dialog = await openDeactivation();
 
 		fireEvent.click(within(dialog).getByRole("button", { name: "Deactivate" }));
 
-		await waitFor(() =>
-			expect(onOptimisticStatusChangeMock.mock.calls).toEqual([
-				["employee-2", false],
-				["employee-2", true],
-			]),
-		);
-		expect(toastErrorMock).toHaveBeenCalledWith(
+		expect((await within(dialog).findByRole("alert")).textContent).toBe(
 			"Failed to deactivate employee",
 		);
-		expect(toastErrorMock).not.toHaveBeenCalledWith(
-			expect.stringContaining("authorization"),
+		expect(dialog.textContent).not.toContain("authorization");
+		expect(onOptimisticStatusChangeMock).not.toHaveBeenCalled();
+	});
+
+	it("localizes the final-owner deactivation guidance in the dialog without rendering the server message", async () => {
+		deactivateEmployeeMock.mockResolvedValue({
+			success: false,
+			code: "ValidationError",
+			error: "Assign and activate another approved owner before deactivating this employee",
+		});
+		renderActions();
+		const dialog = await openDeactivation();
+
+		fireEvent.click(within(dialog).getByRole("button", { name: "Deactivate" }));
+
+		expect((await within(dialog).findByRole("alert")).textContent).toBe(
+			"Localized final-owner deactivation guidance",
+		);
+		expect(toastErrorMock).not.toHaveBeenCalled();
+	});
+
+	it("asks the preview again with each new pick and confirms with the picks", async () => {
+		previewEmployeeDeactivationMock.mockImplementation(
+			async (input: { replacementManagers: Record<string, string> }) => ({
+				success: true,
+				data: planWithReport(input.replacementManagers[REPORT] ?? null),
+			}),
+		);
+		renderActions();
+		const dialog = await openDeactivation();
+
+		fireEvent.click(within(dialog).getByRole("combobox", { name: /New manager for/ }));
+		fireEvent.click(await screen.findByRole("option", { name: "Anna Admin" }));
+
+		await waitFor(() =>
+			expect(previewEmployeeDeactivationMock).toHaveBeenLastCalledWith({
+				employeeId: "employee-2",
+				replacementManagers: { [REPORT]: ANNA },
+			}),
+		);
+		await waitFor(() =>
+			expect(
+				within(dialog).getByRole("button", { name: "Deactivate" }).hasAttribute("disabled"),
+			).toBe(false),
+		);
+		fireEvent.click(within(dialog).getByRole("button", { name: "Deactivate" }));
+
+		await waitFor(() =>
+			expect(deactivateEmployeeMock).toHaveBeenCalledWith(
+				deactivationCall("employee-2", { [REPORT]: ANNA }),
+			),
 		);
 	});
 
+	it("retries an unchanged submission with the same request ID and shows a refused pick in the dialog", async () => {
+		deactivateEmployeeMock.mockResolvedValue({
+			success: false,
+			code: "ValidationError",
+			error: "Choose a current admin or manager as the new manager of Rita Report.",
+			refusal: "replacement_required",
+		});
+		renderActions();
+		const dialog = await openDeactivation();
+		const previews = previewEmployeeDeactivationMock.mock.calls.length;
+
+		fireEvent.click(within(dialog).getByRole("button", { name: "Deactivate" }));
+		expect((await within(dialog).findByRole("alert")).textContent).toMatch(
+			/still needs an eligible new manager/,
+		);
+		// The refusal refreshes the preview, so the dialog shows the current picks' problems.
+		await waitFor(() =>
+			expect(previewEmployeeDeactivationMock.mock.calls.length).toBeGreaterThan(previews),
+		);
+		await waitFor(() =>
+			expect(
+				within(dialog).getByRole("button", { name: "Deactivate" }).hasAttribute("disabled"),
+			).toBe(false),
+		);
+		fireEvent.click(within(dialog).getByRole("button", { name: "Deactivate" }));
+
+		await waitFor(() => expect(deactivateEmployeeMock).toHaveBeenCalledTimes(2));
+		const [first, second] = deactivateEmployeeMock.mock.calls.map(([input]) => input);
+		expect(second.requestId).toBe(first.requestId);
+	});
+
 	it.each([
-		[
-			"deactivate",
-			"Assign and activate another approved owner before deactivating this employee",
-			"Localized final-owner deactivation guidance",
-		],
 		[
 			"reactivate",
 			"This employee is no longer an approved organization member. Re-invite them before reactivating.",
@@ -462,12 +601,7 @@ describe("EmployeeLifecycleActions mutations", () => {
 			"Localized final-owner removal guidance",
 		],
 	] as const)("localizes allowlisted actionable %s guidance without rendering the server message", async (action, message, localizedMessage) => {
-		const actionMock =
-			action === "deactivate"
-				? deactivateEmployeeMock
-				: action === "reactivate"
-					? reactivateEmployeeMock
-					: removeEmployeeAccessMock;
+		const actionMock = action === "reactivate" ? reactivateEmployeeMock : removeEmployeeAccessMock;
 		actionMock.mockResolvedValue({
 			success: false,
 			code: "ValidationError",
@@ -479,12 +613,7 @@ describe("EmployeeLifecycleActions mutations", () => {
 					? { ...activeTarget, isActive: false }
 					: activeTarget,
 		});
-		const label =
-			action === "deactivate"
-				? "Deactivate"
-				: action === "reactivate"
-					? "Reactivate"
-					: "Remove access";
+		const label = action === "reactivate" ? "Reactivate" : "Remove access";
 		const dialog = await openConfirmation(label);
 
 		fireEvent.click(within(dialog).getByRole("button", { name: label }));
@@ -607,7 +736,7 @@ describe("EmployeeLifecycleActions mutations", () => {
 			}),
 		);
 		renderActions();
-		const dialog = await openConfirmation("Deactivate");
+		const dialog = await openDeactivation();
 		const submit = within(dialog).getByRole("button", { name: "Deactivate" });
 
 		fireEvent.click(submit);
@@ -617,9 +746,6 @@ describe("EmployeeLifecycleActions mutations", () => {
 		expect(
 			within(dialog).getByRole("button", { name: "Deactivating..." }),
 		).toHaveProperty("disabled", true);
-		expect(
-			within(dialog).getByRole("status", { name: "Deactivating employee" }),
-		).toBeTruthy();
 
 		await act(async () => {
 			resolveDeactivate({ success: true, data: undefined });
@@ -628,7 +754,7 @@ describe("EmployeeLifecycleActions mutations", () => {
 
 	it("uses the selected target when props rerender before confirmation", async () => {
 		const { invalidateQueries, queryClient, rerender } = renderActions();
-		const dialog = await openConfirmation("Deactivate");
+		const dialog = await openDeactivation();
 		const replacementTarget = {
 			...activeTarget,
 			employeeId: "employee-9",
@@ -652,13 +778,10 @@ describe("EmployeeLifecycleActions mutations", () => {
 		fireEvent.click(within(dialog).getByRole("button", { name: "Deactivate" }));
 
 		await waitFor(() =>
-			expect(deactivateEmployeeMock).toHaveBeenCalledExactlyOnceWith(
-				"employee-2",
-			),
+			expect(deactivateEmployeeMock).toHaveBeenCalledExactlyOnceWith(deactivationCall("employee-2")),
 		);
-		expect(onOptimisticStatusChangeMock).toHaveBeenCalledWith(
-			"employee-2",
-			false,
+		await waitFor(() =>
+			expect(onOptimisticStatusChangeMock).toHaveBeenCalledWith("employee-2", false),
 		);
 		await waitFor(() =>
 			expect(invalidateQueries).toHaveBeenCalledWith({
@@ -681,7 +804,7 @@ describe("EmployeeLifecycleActions mutations", () => {
 			}),
 		);
 		const { invalidateQueries, queryClient, rerender } = renderActions();
-		const dialog = await openConfirmation("Deactivate");
+		const dialog = await openDeactivation();
 		fireEvent.click(within(dialog).getByRole("button", { name: "Deactivate" }));
 
 		rerender(
@@ -713,9 +836,10 @@ describe("EmployeeLifecycleActions mutations", () => {
 		expect(invalidateQueries).not.toHaveBeenCalledWith({
 			queryKey: queryKeys.employees.detail("employee-9"),
 		});
+		expect(onOptimisticStatusChangeMock.mock.calls).toEqual([["employee-2", false]]);
 	});
 
-	it("rolls back the selected target when props rerender during a failed request", async () => {
+	it("never changes a row when props rerender during a failed request", async () => {
 		let rejectDeactivate!: (error: Error) => void;
 		deactivateEmployeeMock.mockReturnValue(
 			new Promise((_resolve, reject) => {
@@ -723,7 +847,7 @@ describe("EmployeeLifecycleActions mutations", () => {
 			}),
 		);
 		const { queryClient, rerender } = renderActions();
-		const dialog = await openConfirmation("Deactivate");
+		const dialog = await openDeactivation();
 		fireEvent.click(within(dialog).getByRole("button", { name: "Deactivate" }));
 
 		rerender(
@@ -748,14 +872,10 @@ describe("EmployeeLifecycleActions mutations", () => {
 			rejectDeactivate(new Error("network failure"));
 		});
 
-		await waitFor(() =>
-			expect(onOptimisticStatusChangeMock.mock.calls).toEqual([
-				["employee-2", false],
-				["employee-2", true],
-			]),
+		expect((await within(dialog).findByRole("alert")).textContent).toBe(
+			"Failed to deactivate employee",
 		);
-		expect(deactivateEmployeeMock).toHaveBeenCalledExactlyOnceWith(
-			"employee-2",
-		);
+		expect(onOptimisticStatusChangeMock).not.toHaveBeenCalled();
+		expect(deactivateEmployeeMock).toHaveBeenCalledExactlyOnceWith(deactivationCall("employee-2"));
 	});
 });

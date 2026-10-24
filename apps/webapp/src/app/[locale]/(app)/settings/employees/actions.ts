@@ -2,6 +2,7 @@
 
 import type { employee } from "@/db/schema";
 import type { ServerActionResult } from "@/lib/effect/result";
+import type { DeactivationPlan } from "@/lib/employee-lifecycle/deactivation/types";
 import type { ExecuteDepartureResult } from "@/lib/employee-lifecycle/types";
 import type { CustomFieldValuesInput } from "@/lib/organization/custom-fields/value-rules";
 import type {
@@ -21,7 +22,10 @@ import type {
 	SelectableEmployee,
 } from "./employee-action-types";
 import {
+	type DeactivateEmployeeInput,
 	deactivateEmployeeAction,
+	type PreviewEmployeeDeactivationInput,
+	previewEmployeeDeactivationAction,
 	reactivateEmployeeAction,
 	removeEmployeeAccessAction,
 } from "./employee-lifecycle.actions";
@@ -71,10 +75,18 @@ export async function updateEmployee(
 	return updateEmployeeAction(employeeId, data, customFieldValues);
 }
 
+/** `{ employeeId, requestId, replacementManagers }`; a retry with the same request ID replays. */
 export async function deactivateEmployee(
-	employeeId: string,
+	input: DeactivateEmployeeInput,
 ): Promise<ServerActionResult<void>> {
-	return deactivateEmployeeAction(employeeId);
+	return deactivateEmployeeAction(input);
+}
+
+/** What Deactivate would change now, for the dialog (#1440). */
+export async function previewEmployeeDeactivation(
+	input: PreviewEmployeeDeactivationInput,
+): Promise<ServerActionResult<DeactivationPlan>> {
+	return previewEmployeeDeactivationAction(input);
 }
 
 export async function reactivateEmployee(

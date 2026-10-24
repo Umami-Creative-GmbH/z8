@@ -158,6 +158,92 @@ active, and not past a due departure (the same live check as
   keeps hand-written `employee.isActive` checks from growing beyond
   `raw-employee-active-checks.json`.
 
+## Deactivation
+
+*Deactivate* (Settings → Employees and the members table, while the release
+gate is closed) has the consequences of a departure taking effect, at the
+moment of deactivation (#1440, Organization ADR 0006). It reuses the
+departure's code paths; the area modules live in
+`apps/webapp/src/lib/employee-lifecycle/deactivation/`.
+
+**Consequences**, each audited under the acting admin with
+`{ reason: "employee_deactivated", deactivationId, … }`:
+
+1. **Manager links** end in both directions. A report who keeps another current
+   manager just loses this one; that manager becomes primary when the ending
+   link was the primary one (`manager.removed`, `manager.primary_changed`). A
+   report who would be left with no current manager gets the replacement the
+   admin picked: a current admin or manager with an approved membership, never
+   the report (`manager.assigned`).
+2. **Team memberships, the person's own project assignments and project
+   manager links** end (`team.member_removed`, `project.assignment_removed`,
+   `project.manager_removed`). A team's project assignment stays.
+3. **Approval duties** in the current stage of a pending canonical workflow are
+   captured as handover tasks under the deactivation and delivered by the worker
+   through the departure's handover: to the replacement picked for that
+   requester, else to the stage's reviewers re-resolved without the person,
+   else they become *Approval duties need a replacement* reviews. Later stages
+   naming only the person and legacy-only duties become reviews at once. Their
+   own submitted requests stay decidable. Transfers carry
+   `reassignment_metadata.offboarding.deactivationId`; there is no audit row.
+4. **Shifts** starting after the instant (by their wall-clock time in the
+   organization's zone, drafts too) are unassigned and stay open
+   (`shift.unassigned`). Past and running shifts stay. The person's current
+   managers, else the organization's owners and admins, get one
+   `employee_deactivation_shifts_opened` notice with the count.
+5. **Absences** that start after the day they left (the instant as a date in
+   the organization's zone), pending or approved, are cancelled through the
+   normal cancellation path with the `employee-deactivation` system capability,
+   which frees the allowance (`absence.cancelled`). Absences spanning that day
+   are kept and listed in the preview. The deputy release (#1014) still runs.
+6. **Access** ends as at a departure: held expense officer, payroll access,
+   personnel file officer and driving licence verifier grants, driving
+   authorizations (also suspended ones), kiosk badges and the person's report
+   share links.
+7. **Retention**: the instant counts as the end of employment (see Personnel
+   file retention). The paid seat is released (see Billing reconciliation).
+
+**Preview.** *Deactivate* opens a dialog served by
+`previewEmployeeDeactivationAction` (`deactivation/preview.ts`): the same
+authorization and owner rules as the action, then
+`planDeactivationConsequences` (`deactivation/plan.ts`), which lists every item
+above with replacement-manager pickers. A new pick asks for the preview again.
+The preview is advisory and takes no locks; the action recomputes the plan in
+its transaction with the same predicates and refuses with
+`refusal: "replacement_required"` while a report has no eligible replacement.
+The acceptance suite (`deactivation/deactivation.integration.test.ts`) checks
+that the preview lists exactly what the server applied.
+
+**Request IDs and replay.** `deactivateEmployeeAction({ employeeId, requestId,
+replacementManagers })` records one `employee_deactivation` row per request ID
+(unique per organization) with the fingerprint, the instant, the picks, the
+applied ids (`applied`, the #1441 checklist source) and the replay result. The
+same request again returns its first result and repeats only the after-commit
+work that is safe to repeat: session revocation, seat recount, export pause,
+the planner notice and the deputy notices (both keyed, so nothing is sent
+twice) and calendar deletions. Audit rows and the self-service absence notices
+are not repeated; a deactivation reactivated since repeats nothing. The same
+request ID with other picks is refused (`refusal: "request_conflict"`). The
+history event `employee_deactivated` (`employee_departure_event`, no departure)
+is written when the employee has an employment period.
+
+**Lock order** (D12), all in one transaction: the absence and period
+submission approval write gates (rank 2, shared, via `withAuthorizationMutation`'s
+`beforeProtection` hook), the exclusive organization configuration guard
+(rank 3, `organizationWide: true`), the user guards (rank 4) of the person,
+their reports, their own managers and the picked replacements, then the
+organization row `FOR UPDATE`. The plan is computed under these locks, then the
+employee is switched off with `deactivated_at = <instant>` and the areas apply
+in order: manager links, team links, approval duties, shifts, absences, access
+ends. Notices and other external effects run after the commit.
+
+**Follow-up.** The employee page shows the deactivation's handovers and reviews
+where a departure's show, with the instant in the organization's zone; reviews
+are resolved and replacements assigned the same way
+(`assignDepartureReplacementAction` accepts `deactivationId`). *Reactivate*
+restores nothing and marks the open deactivation reactivated, so its pending
+handovers stop (`employee_rehired`).
+
 ## Access grants
 
 When the departure takes effect, the expense officer grant, the payroll access

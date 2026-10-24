@@ -37,9 +37,12 @@ async function trackPending<T>(
 	}
 }
 
+/** Whose follow-up this is: a departure's, or a deactivation's (#1440). */
+export type FollowUpAnchor = { departureId: string } | { deactivationId: string };
+
 export type FollowUpListProps = {
 	employeeId: string;
-	departureId: string;
+	anchor: FollowUpAnchor;
 	reviews: EmployeeOffboardingView["reviews"];
 	failedTasks: EmployeeOffboardingView["failedTasks"];
 	canResolve: boolean;
@@ -65,7 +68,7 @@ function replacementTarget(review: Review): ReplacementTarget | null {
 }
 
 /**
- * Persistent follow-up after a departure. Every item is resolved where it
+ * Persistent follow-up after a departure or a deactivation. Every item is resolved where it
  * lives: time through the canonical correction flow, approvals through a
  * replacement, and explicit reviews with a written resolution. There is no
  * way to clear an error without resolving the underlying work.
@@ -184,7 +187,7 @@ function ReviewItem({ review, ...props }: FollowUpListProps & { review: Review }
 
 			{target && props.canResolve && (
 				<ReplacementAssignment
-					departureId={props.departureId}
+					anchor={props.anchor}
 					target={target}
 					options={props.replacementOptions}
 					assignReplacement={props.assignReplacement}
@@ -224,7 +227,7 @@ function ReviewItem({ review, ...props }: FollowUpListProps & { review: Review }
 }
 
 function ReplacementAssignment(props: {
-	departureId: string;
+	anchor: FollowUpAnchor;
 	target: ReplacementTarget;
 	options: Array<{ id: string; name: string }>;
 	assignReplacement: FollowUpListProps["assignReplacement"];
@@ -239,7 +242,7 @@ function ReplacementAssignment(props: {
 	async function assign() {
 		setError(null);
 		const intent = {
-			departureId: props.departureId,
+			...props.anchor,
 			...props.target,
 			replacementEmployeeId: replacementId,
 		};
