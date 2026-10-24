@@ -28,6 +28,19 @@ const metrics = [
   "cacheMisses",
   "eventLoopDelayMs",
 ];
+export const companionWireContract = Object.freeze({
+  protocol: "context-proxy-wire-v1",
+  byteUnits:
+    "http-response-body-bytes-before-content-decoding-excludes-headers",
+  traceTransport: "context-loopback-proxy-v1",
+});
+export const companionPolicy = Object.freeze({
+  ...settledPolicy,
+  version: 2,
+  scope:
+    "all finite page and ServiceWorker proxy response bodies from navigation start through post-readiness quiet; inherited, explicit prefetch and long-lived traffic counted separately",
+  wire: companionWireContract,
+});
 /** Whole-run wire proof includes opening IO, every registered phase and browser shutdown. */
 export async function runCompanionCapture({
   collector,
@@ -89,6 +102,7 @@ export function settledCohorts(plan) {
     plan.fixture.journeysVerified !== true ||
     plan.runtime?.mode !== "production" ||
     plan.runtime?.collectorProtocol !== "z8-fixture-otlp-collector-v2" ||
+    plan.runtime?.traceTransport !== companionWireContract.traceTransport ||
     plan.runtime.browserPermissions !== fixtureBrowserPermissions ||
     !Number.isInteger(plan.concurrency) ||
     plan.concurrency < 1
@@ -142,9 +156,10 @@ export function settledEvidenceGates(plan, artifact, native, planSha) {
     artifact.kind !== "settled-resource-companion" ||
     artifact.phase !== plan.phase ||
     artifact.planSha256 !== planSha ||
-    JSON.stringify(artifact.policy) !== JSON.stringify(settledPolicy) ||
+    JSON.stringify(artifact.policy) !== JSON.stringify(companionPolicy) ||
     !artifact.runtime?.buildVerified ||
     artifact.runtime.collectorProtocol !== plan.runtime.collectorProtocol ||
+    artifact.runtime.traceTransport !== plan.runtime.traceTransport ||
     artifact.runtime.build !== plan.runtime.build ||
     artifact.runtime.sourceBuild !== plan.runtime.sourceBuild ||
     artifact.runtime.toolingBuild !== plan.runtime.toolingBuild
@@ -171,6 +186,19 @@ export function settledEvidenceGates(plan, artifact, native, planSha) {
     if (!expected.has(key(s)) || ids.has(s.traceId) || !s.traceId)
       gates.push("Unexpected companion cohort or reused trace.");
     ids.add(s.traceId);
+    if (
+      s.traceTransport?.kind !== companionWireContract.traceTransport ||
+      s.traceTransport.refusedRequests !== 0
+    )
+      gates.push(
+        "The matching shared context trace transport is missing or refused traffic.",
+      );
+    if (
+      s.wireSettled?.protocol !== companionWireContract.protocol ||
+      s.wireSettled?.byteUnits !== companionWireContract.byteUnits ||
+      s.wireSettled?.complete !== true
+    )
+      gates.push("Complete all-context proxy wire-body evidence is missing.");
     const evidence = native.filter((e) => e.traceId === s.traceId),
       e = evidence[0];
     if (
@@ -208,24 +236,87 @@ export function requireSettledEvidence(plan, artifact, native, planSha) {
       "Require finalized, matched, complete settled-resource and native evidence.",
     );
   for (const s of artifact.samples) {
+    const wire = s.wireSettled;
     if (
       s.failed ||
       s.censored ||
-      s.settled?.complete !== true ||
-      s.settled.capped ||
-      s.settled.mandatoryErrors !== 0 ||
-      s.settled.mandatoryPending !== 0
+      s.wireSettled?.complete !== true ||
+      s.wireSettled.capped ||
+      s.wireSettled.mandatoryErrors !== 0 ||
+      s.wireSettled.mandatoryPending !== 0 ||
+      wire.censored !== false ||
+      wire.observationOverflows !== 0 ||
+      wire.unknownInheritedRedirects !== 0 ||
+      !Number.isFinite(wire.quietObservedMs) ||
+      wire.quietObservedMs < companionPolicy.quietMs ||
+      !Array.isArray(wire.byTrace)
     )
       throw Error("Settled resource cohort is failed or censored.");
     if (
       ["javascript", "document", "rsc", "otherFinite"].some(
-        (k) => !Number.isFinite(s.settled.bytes?.[k]) || s.settled.bytes[k] < 0,
+        (k) =>
+          !Number.isFinite(s.wireSettled.bytes?.[k]) ||
+          s.wireSettled.bytes[k] < 0,
       ) ||
       (s.mode === "first-document" &&
         (!Number.isFinite(s.inlineRscDecodedBytes) ||
           s.inlineRscDecodedBytes < 0))
     )
       throw Error("Settled byte evidence is missing.");
+    const groupNames = [
+      "javascript",
+      "document",
+      "rsc",
+      "otherFinite",
+      "prefetch",
+      "longLived",
+    ];
+    const countNames = [
+      "requests",
+      "completed",
+      "pending",
+      "errors",
+      "completedBytes",
+      "observedBodyBytes",
+      "inheritedRequests",
+      "inheritedCompletedBytes",
+    ];
+    for (const name of groupNames) {
+      const group = wire.groups?.[name];
+      if (
+        !group ||
+        countNames.some((k) => !Number.isSafeInteger(group[k]) || group[k] < 0)
+      )
+        throw Error("Proxy wire group coverage is missing.");
+      if (
+        ["javascript", "document", "rsc", "otherFinite"].includes(name) &&
+        (group.pending !== 0 ||
+          group.errors !== 0 ||
+          group.completedBytes !== wire.bytes[name])
+      )
+        throw Error(
+          "Mandatory proxy wire group is incomplete or differs from its byte total.",
+        );
+      for (const count of countNames)
+        if (
+          wire.byTrace.reduce(
+            (n, t) => n + (t.groups?.[name]?.[count] ?? NaN),
+            0,
+          ) !== group[count]
+        )
+          throw Error("Proxy per-trace wire groups do not reconcile.");
+    }
+    if (
+      wire.byTrace.some(
+        (t) =>
+          ![s.traceId, s.prerequisiteTraceId, s.backgroundTraceId].includes(
+            t.traceId,
+          ),
+      )
+    )
+      throw Error(
+        "Proxy wire evidence contains an unregistered context identity.",
+      );
     const e = native.find((e) => e.traceId === s.traceId);
     if (e.observedQueryErrors !== 0 || e.observedPoolAcquisitionErrors !== 0)
       throw Error("Settled backend observed errors.");
@@ -238,6 +329,8 @@ async function protocolIdentity() {
     "journey-steps.mjs",
     "run-baseline.mjs",
     "collector-client.mjs",
+    "trace-transport.mjs",
+    "proxy-wire-observer.mjs",
   ];
   return Object.fromEntries(
     await Promise.all(
@@ -265,6 +358,7 @@ async function measure(
     backgroundTraceId = randomBytes(16).toString("hex");
   const observer = createSettledObserver();
   let context,
+    transport,
     collectorVisit,
     page,
     client,
@@ -293,6 +387,7 @@ async function measure(
     clockReadyMs: null,
     inlineRscDecodedBytes: null,
     settled: null,
+    wireSettled: null,
     backend: null,
     failureStage: null,
     failureKind: null,
@@ -308,7 +403,36 @@ async function measure(
       registered: true,
       closed: false,
     };
-    context = await browser.createBrowserContext();
+    const transportApi = await import("./trace-transport.mjs");
+    if (transportApi.fixtureTraceTransport !== plan.runtime.traceTransport)
+      throw Error(
+        "Context trace transport protocol differs from the frozen plan.",
+      );
+    transport = await transportApi.createFixtureTraceTransport({
+      origin: plan.origin,
+      getTraceId: ({ headers = {} } = {}) => {
+        const explicitBackground =
+          headers["next-router-prefetch"] === "1" ||
+          /prefetch/i.test(String(headers.purpose ?? "")) ||
+          /prefetch/i.test(String(headers["sec-purpose"] ?? "")) ||
+          /text\/event-stream/i.test(String(headers.accept ?? "")) ||
+          String(headers.upgrade ?? "").toLowerCase() === "websocket";
+        return active
+          ? explicitBackground
+            ? backgroundTraceId
+            : traceId
+          : prerequisiteTraceId;
+      },
+    });
+    if (
+      !transport.wire?.begin ||
+      !transport.wire?.ready ||
+      !transport.wire?.state
+    )
+      throw Error("All-context proxy wire-body observation is unavailable.");
+    context = await browser.createBrowserContext(
+      transport.browserContextOptions,
+    );
     stage = "authentication-context";
     await prepareFixtureBrowserContext(context, plan.origin);
     if (!Array.isArray(auth[condition.name]?.cookies))
@@ -318,34 +442,6 @@ async function measure(
     await page.setViewport(condition.viewport);
     await page.emulateTimezone(condition.timezone);
     await page.setExtraHTTPHeaders({ "Accept-Language": condition.locale });
-    await page.setRequestInterception(true);
-    page.on("request", (request) => {
-      const headers = request.headers(),
-        prefetch =
-          headers["next-router-prefetch"] === "1" ||
-          /prefetch/i.test(headers.purpose ?? "") ||
-          /prefetch/i.test(headers["sec-purpose"] ?? ""),
-        longLived =
-          ["eventsource", "websocket"].includes(request.resourceType()) ||
-          /text\/event-stream/i.test(headers.accept ?? "");
-      const id = active
-        ? prefetch || longLived
-          ? backgroundTraceId
-          : traceId
-        : prerequisiteTraceId;
-      request
-        .continue(
-          new URL(request.url()).origin === plan.origin
-            ? {
-                headers: {
-                  ...headers,
-                  traceparent: `00-${id}-${randomBytes(8).toString("hex")}-01`,
-                },
-              }
-            : {},
-        )
-        .catch(() => {});
-    });
     client = await page.createCDPSession();
     await client.send("Network.enable");
     client.on("Network.requestWillBeSent", (e) =>
@@ -486,6 +582,7 @@ async function measure(
     active = true;
     started = performance.now();
     observer.begin(started);
+    transport.wire.begin(started);
     stage = "navigate";
     const clock = route.clockReady
       ? page
@@ -526,11 +623,13 @@ async function measure(
     if (s.notificationPermission !== "denied")
       throw Error("Fixture permission changed.");
     observer.ready(performance.now());
+    transport.wire.ready(performance.now());
     s.atReady = observer.state(performance.now());
+    s.wireAtReady = transport.wire.state(performance.now());
     stage = "settle-resources";
     do {
-      s.settled = observer.state(performance.now());
-      if (s.settled.complete || s.settled.capped) break;
+      s.wireSettled = transport.wire.state(performance.now());
+      if (s.wireSettled.complete || s.wireSettled.capped) break;
       await new Promise((resolve) => setTimeout(resolve, settledPolicy.pollMs));
     } while (true);
     if (mode === "first-document")
@@ -543,7 +642,8 @@ async function measure(
             0,
           ),
       );
-    s.censored = !s.settled.complete;
+    s.settled = observer.state(performance.now());
+    s.censored = !s.wireSettled.complete;
   } catch (error) {
     s.failed = true;
     s.failureStage = stage;
@@ -552,6 +652,7 @@ async function measure(
     s.elapsedUntilFailureMs =
       started === undefined ? null : performance.now() - started;
     s.settled = observer.state(performance.now());
+    s.wireSettled = transport?.wire?.state(performance.now()) ?? null;
   } finally {
     await client?.detach().catch(() => {});
     try {
@@ -581,6 +682,21 @@ async function measure(
         s.censored = true;
         s.failureStage = "collector-close";
         s.failureKind = "collector-proof-error";
+      }
+    }
+    if (transport) {
+      s.traceTransport = {
+        kind: companionWireContract.traceTransport,
+        ...transport.snapshot(),
+      };
+      s.wireAfterClose = transport.wire?.state(performance.now()) ?? null;
+      try {
+        await transport.close();
+      } catch {
+        s.failed = true;
+        s.censored = true;
+        s.failureStage = "trace-transport-close";
+        s.failureKind = "transport-error";
       }
     }
   }
@@ -641,7 +757,7 @@ async function main() {
     artifact.resourceComplete =
       artifact.evidenceComplete &&
       artifact.samples.every(
-        (s) => !s.failed && !s.censored && s.settled?.complete === true,
+        (s) => !s.failed && !s.censored && s.wireSettled?.complete === true,
       );
     artifact.resourceGates = [];
     if (artifact.resourceComplete) {
@@ -679,7 +795,7 @@ async function main() {
     kind: "settled-resource-companion",
     phase: plan.phase,
     planSha256,
-    policy: settledPolicy,
+    policy: companionPolicy,
     protocol,
     runtime: {
       ...plan.runtime,
