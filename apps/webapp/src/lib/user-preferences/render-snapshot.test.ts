@@ -44,6 +44,7 @@ describe("readUserPreferences", () => {
 		expect(state.findFirst).toHaveBeenCalledExactlyOnceWith({
 			where: { column: "userSettings.userId", value: "user-1" },
 			columns: {
+				dashboardWidgetOrder: true,
 				locale: true,
 				weekStartDay: true,
 				timeFormat: true,

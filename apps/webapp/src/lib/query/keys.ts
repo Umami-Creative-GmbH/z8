@@ -671,7 +671,12 @@ export const queryKeys = {
 	dashboard: {
 		all: ["dashboard"] as const,
 		userSettings: () => ["dashboard", "user-settings"] as const,
-		widgetOrder: () => ["dashboard", "widget-order"] as const,
+		widgetOrder: (userId?: string | null, organizationId?: string | null) =>
+			userId === undefined && organizationId === undefined
+				? (["dashboard", "widget-order"] as const)
+				: (["dashboard", "widget-order", userId ?? null, organizationId ?? null] as const),
+		widget: (id: string, userId: string | null, organizationId: string | null) =>
+			["dashboard", "widget", id, userId, organizationId] as const,
 	},
 
 	// User settings (global user preferences)
