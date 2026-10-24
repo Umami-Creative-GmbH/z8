@@ -69,20 +69,35 @@ export async function openMultiInstanceAnalytics(
 		}
 		request.continue({ headers }).catch(() => {});
 	});
-	async function metrics(id) {
+	async function metrics(id, allowCacheError) {
+		let previous;
+		let stable = 0;
 		for (let attempt = 0; attempt < 20; attempt++) {
 			await pause(250);
 			const rows = await (
 				await fetch(new URL("/metrics", control.endpoint))
 			).json();
 			const row = rows.find((item) => item.traceId === id);
-			if (row?.coverage?.pg && row.coverage.eventLoop)
+			const signature = JSON.stringify(row);
+			stable = signature === previous ? stable + 1 : 0;
+			previous = signature;
+			if (
+				stable >= 2 &&
+				row?.coverage &&
+				["observer", "pg", "rows", "eventLoop"].every(
+					(key) => row.coverage[key] === true,
+				) &&
+				(row.coverage.cache === true || allowCacheError) &&
+				row.coverage.rejectedBatches === 0 &&
+				Number.isFinite(row.poolWaitMs)
+			)
 				return {
 					traceId: id,
 					queries: row.queryCount,
 					rows: row.rowsRetrieved,
 					hits: row.cacheHits,
 					misses: row.cacheMisses,
+					queryDurationMs: row.queryDurationMs,
 					poolAcquisitionMs: row.poolWaitMs,
 					eventLoopDelayMs: row.eventLoopDelayMs,
 					coverage: row.coverage,
@@ -120,7 +135,10 @@ export async function openMultiInstanceAnalytics(
 			}
 		if (!selected || !(await response).ok() || !captured)
 			throw new Error("Actual annual UI request unavailable.");
-		async function replay(target, { concurrency = 1, cookies } = {}) {
+		async function replay(
+			target,
+			{ concurrency = 1, cookies, onResponse } = {},
+		) {
 			if (
 				!["a", "b"].includes(target) ||
 				!Number.isInteger(concurrency) ||
@@ -128,7 +146,10 @@ export async function openMultiInstanceAnalytics(
 				concurrency > 16
 			)
 				throw new Error("Invalid bounded replica request.");
-			if (cookies) await context.setCookie(...cookies);
+			if (cookies) {
+				await context.deleteCookie(...(await context.cookies()));
+				await context.setCookie(...cookies);
+			}
 			const id = trace(),
 				started = performance.now();
 			const results = await Promise.all(
@@ -170,12 +191,22 @@ export async function openMultiInstanceAnalytics(
 					),
 				),
 			);
+			onResponse?.();
 			if (results.some((result) => result.servedBy !== target))
 				throw new Error("Proxy did not serve the requested actual replica.");
 			const payload = results[0].payload,
 				data = payload.data;
 			const summary = !payload.success
-				? { success: false, code: payload.code }
+				? {
+						success: false,
+						code: payload.code,
+						denied: [
+							"AuthenticationError",
+							"AuthorizationError",
+							"NotFoundError",
+						].includes(payload.code),
+						cacheError: payload.code === "ExternalServiceError",
+					}
 				: kind === "team"
 					? {
 							success: true,
@@ -217,16 +248,18 @@ export async function openMultiInstanceAnalytics(
 						JSON.stringify(result.payload) === JSON.stringify(payload),
 				),
 				elapsedMs: performance.now() - started,
-				metrics: await metrics(id),
+				metrics: await metrics(id, summary.cacheError === true),
 			};
 		}
 		return {
+			browser,
 			page,
 			context,
 			auth,
 			fixture,
 			kind,
 			replay,
+			observeMetrics: (id) => metrics(id, false),
 			close: () => browser.close(),
 		};
 	} catch (error) {

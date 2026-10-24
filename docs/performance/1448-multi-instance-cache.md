@@ -19,9 +19,8 @@ dependency, not a shared Cache Components backend. The installed handler and
 distinguish that cache from legacy `cacheHandler` configuration. Measure current
 revision-key consistency and fill/resource costs before choosing shared storage.
 
-Both host processes borrow the same existing compiled `897b4077b` artifact from
-`wt-1467/apps/webapp`; it includes the #1467 cache core and fresh access/billing
-guards. Its actual Next build ID and required-server-files manifest digest are
+Both host processes borrow one explicitly selected compiled artifact. Its actual
+Next build ID and required-server-files manifest digest are
 recorded and checked before each launch. Application source and compiled files
 are not edited. The fixture-only runtime configuration disables
 `experimental.isrFlushToDisk` so two processes do not write ISR data into the
@@ -31,10 +30,11 @@ recommendation. A finite Docker curl check verified that host listeners bound to
 `127.0.0.1` are reachable from this machine's Docker Desktop network.
 
 Artifact path and source commit are explicit preparation inputs and frozen per
-run. The borrowed `897b4077b` artifact predates the later #1455 authenticated-layout
-SSO redirect repair. Its cache public-reader checks remain usable; protected
-layout emission and final ingress checks must use a final compiled artifact that
-includes that repair. No layout SSO-emission claim is made for the borrowed build.
+run. The original proposed `897b4077b` artifact predates the later #1455 layout SSO
+repair and #1475 admission fixes. The expanded acceptance suite deliberately
+requires a new run on the final compiled head, verifies its source ancestry, and
+checks the actual app-version response from both replicas. The old artifact is
+not a substitute for final ingress or admission acceptance.
 
 `prepare` verifies the original synthetic container's ownership label and the
 existing clone manifest, then copies its already-created pre-mutation dump. That
@@ -85,3 +85,72 @@ memory or adding the installed-version shared backend. The external fixture
 preload supplies per-replica numeric memory/get/fault observations without cache
 keys or manual framework-global initialization. No fault flag is created during
 setup. Streaming through this actual proxy is a separate #1473 gate.
+
+The expanded finite suite is prepared, with runtime acceptance still pending:
+
+```powershell
+pnpm --config.verifyDepsBeforeRun=false exec node scripts/performance/multi-instance-suite.mjs plan <new-private-directory> <final-compiled-source-commit>
+pnpm --config.verifyDepsBeforeRun=false exec node scripts/performance/multi-instance-suite.mjs fill <new-private-directory> <final-compiled-source-commit>
+pnpm --config.verifyDepsBeforeRun=false exec node scripts/performance/multi-instance-suite.mjs mutation <new-private-directory> <final-compiled-source-commit>
+pnpm --config.verifyDepsBeforeRun=false exec node scripts/performance/multi-instance-suite.mjs scope <new-private-directory> <final-compiled-source-commit>
+pnpm --config.verifyDepsBeforeRun=false exec node scripts/performance/multi-instance-suite.mjs expiry <new-private-directory> <final-compiled-source-commit>
+pnpm --config.verifyDepsBeforeRun=false exec node scripts/performance/multi-instance-suite.mjs concurrency <new-private-directory> <final-compiled-source-commit>
+pnpm --config.verifyDepsBeforeRun=false exec node scripts/performance/multi-instance-suite.mjs interactive-clock <new-private-directory> <final-compiled-source-commit>
+pnpm --config.verifyDepsBeforeRun=false exec node scripts/performance/multi-instance-suite.mjs outage <new-private-directory> <final-compiled-source-commit>
+pnpm --config.verifyDepsBeforeRun=false exec node scripts/performance/multi-instance-suite.mjs restart <new-private-directory> <final-compiled-source-commit>
+```
+
+Run stages sequentially against otherwise quiet owned services. No stage launches
+an app process. `fill` forces a new source revision without changing business
+values, proves independent A/B fills and repeats for all three readers, and reuses
+the same captured request under two organizations and an assigned manager.
+`mutation` creates a holiday through the actual API, seeds its synthetic
+organization assignment, warms both replicas, then accepts its actual DELETE on
+A. B must show the restored 417,600 expected hours before sixty seconds, and the
+other organization's entries must remain hits. Fixture setup is explicitly
+separate from the public HTTP write under test. Synthetic setup rows are removed
+in `finally`; canonical work history is never edited directly.
+
+`scope` removes one actual manager assignment, compares exact returned employee
+IDs privately on B, reduces an additive reporting grant, and downgrades the
+manager's base role. Denial must precede both native cache outcomes and observed
+handler calls. It restores the exact assignment and roles. `expiry` waits two
+real 31-second intervals per reader, then requires misses and subsequent hits on
+both replicas. Hits do not renew the lifetime.
+
+`concurrency` measures single cold and warm controls before eight simultaneous
+requests per node. The declared limit is two native computations total per
+reader, with SQL/row work no greater than one cold computation plus the additional
+seven warm admission paths per replica. No cross-process shared hit is expected.
+Numeric process snapshots report current and lifetime peak RSS/heap alongside
+the configured 50 MiB cache limit per process. They do not isolate cache bytes
+from the whole Node heap. A decision about keeping process-local memory remains
+pending actual consistency, fill and resource observations.
+
+`interactive-clock` reuses #1475's public header helper on an independent small
+tenant. For each reader it runs a real clock-in/out control pair and a pair under
+two-node cold load. It records whether analytics HTTP responses were still in
+flight when the actual clock POST dispatched, verifies B's response header, and
+requires native clock cache counts of zero. It records actual command/usable
+state timings and censored outcomes without inventing a latency percentile from
+these finite functional cases. It resolves uncertain writes before attempting
+an explicit clock-out of its own synthetic session. This stage requires the
+committed `public-header-clock.mjs` helper and final admission fixes.
+
+`outage` exclusively creates A's fault flag, requires eight bounded retryable
+errors without raw recomputation, checks healthy B and denial before the failed
+handler, and removes only its own flag before recovery. Cache outcome coverage
+can be unavailable during the injected get error; that is retained as unknown,
+with actual fault counts proving the injected boundary. Other successful reads
+require all five native coverage flags, no rejected batches and measured pool
+acquisition duration.
+
+`restart` publishes `restart-handshake.json` and a safe readiness line. Within 45
+seconds the parent must stop only its retained A session and launch the same
+`performance:multi replica ... a` command in a new retained session. The suite
+requires a different actual PID, unchanged frozen source/build, healthy actual A,
+a cold A read and a surviving B hit before TTL. It does not restart services
+itself. Replacing the compiled build in place is rejected by the launch digest;
+different-code rolling deployment remains a separate gate if a second compiled
+artifact is introduced. Every completed stage saves only numerical summaries,
+native telemetry and fixed operator labels in `multi-<stage>-metrics.json`.

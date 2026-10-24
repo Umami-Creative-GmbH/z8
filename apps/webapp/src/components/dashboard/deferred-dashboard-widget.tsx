@@ -1,24 +1,90 @@
 "use client";
 
 import { useTranslate } from "@tolgee/react";
-import { lazy, Suspense, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import {
+	Component,
+	type ComponentType,
+	type LazyExoticComponent,
+	lazy,
+	type ReactNode,
+	Suspense,
+	useEffect,
+	useRef,
+	useState,
+	useSyncExternalStore,
+} from "react";
 import { Button } from "@/components/ui/button";
 import { DashboardWidget } from "./dashboard-widget";
 import { DashboardWidgetRefreshOwnerContext } from "./dashboard-widget-refresh-context";
+import { WidgetReadError } from "./widget-read-error";
 import { type DeferredWidgetId, WIDGET_CONFIGS } from "./widget-registry";
 
 const subscribeToObserverSupport = () => () => {};
 const observerUnavailable = () => typeof IntersectionObserver === "undefined";
 const serverObserverUnavailable = () => false;
 
-const BirthdayRemindersWidget = lazy(() =>
-	import("./birthday-reminders-widget").then((module) => ({
-		default: module.BirthdayRemindersWidget,
-	})),
-);
-const HydrationWidget = lazy(() =>
-	import("./hydration-widget").then((module) => ({ default: module.HydrationWidget })),
-);
+const loadWidgets = {
+	"birthday-reminders": () =>
+		import("./birthday-reminders-widget").then((module) => ({
+			default: module.BirthdayRemindersWidget,
+		})),
+	hydration: () =>
+		import("./hydration-widget").then((module) => ({
+			default: module.HydrationWidget,
+		})),
+};
+
+type DeferredBoundaryProps = {
+	id: DeferredWidgetId;
+	title: string;
+	message: string;
+	loading: ReactNode;
+	beforeRetry: () => void;
+};
+type DeferredBoundaryState = {
+	failed: boolean;
+	widget: LazyExoticComponent<ComponentType>;
+};
+
+/** A new lazy identity on an explicit retry also discards React.lazy's rejected-promise cache. */
+class DeferredWidgetBoundary extends Component<
+	DeferredBoundaryProps,
+	DeferredBoundaryState
+> {
+	constructor(props: DeferredBoundaryProps) {
+		super(props);
+		this.state = { failed: false, widget: lazy(loadWidgets[props.id]) };
+	}
+	static getDerivedStateFromError() {
+		return { failed: true };
+	}
+	retry = () => {
+		this.props.beforeRetry();
+		this.setState({ failed: false, widget: lazy(loadWidgets[this.props.id]) });
+	};
+	render() {
+		if (this.state.failed)
+			return (
+				<DashboardWidget id={this.props.id}>
+					<div className="flex min-h-52 flex-col gap-4 rounded-xl border bg-card p-6">
+						<h2 className="font-semibold">{this.props.title}</h2>
+						<WidgetReadError
+							title={this.props.title}
+							message={this.props.message}
+							retry={this.retry}
+							refreshing={false}
+						/>
+					</div>
+				</DashboardWidget>
+			);
+		const Widget = this.state.widget;
+		return (
+			<Suspense fallback={this.props.loading}>
+				<Widget />
+			</Suspense>
+		);
+	}
+}
 
 function Placeholder({
 	id,
@@ -42,7 +108,10 @@ function Placeholder({
 				<p className="text-sm text-muted-foreground">
 					{loading
 						? t("dashboard.widgets.loading", "Loading dashboard widget…")
-						: t("dashboard.widgets.deferred", "Loads when in view. You can also load it now.")}
+						: t(
+								"dashboard.widgets.deferred",
+								"Loads when in view. You can also load it now.",
+							)}
 				</p>
 				{!loading && (
 					<Button variant="outline" onClick={activate}>
@@ -85,7 +154,13 @@ export function DeferredDashboardWidget({ id }: { id: DeferredWidgetId }) {
 		observer.observe(region.current);
 		return () => observer.disconnect();
 	}, [active]);
-	const placeholder = <Placeholder id={id} title={title} activate={activate} loading={active} />;
+	const placeholder = (
+		<Placeholder id={id} title={title} activate={activate} loading={active} />
+	);
+	const unavailable =
+		id === "hydration"
+			? t("dashboard.hydration.error", "Failed to load hydration stats")
+			: t("dashboard.birthday.error", "Failed to load upcoming birthdays");
 	return (
 		<section
 			ref={region}
@@ -98,9 +173,14 @@ export function DeferredDashboardWidget({ id }: { id: DeferredWidgetId }) {
 		>
 			{active ? (
 				<DashboardWidgetRefreshOwnerContext value="client">
-					<Suspense fallback={placeholder}>
-						{id === "hydration" ? <HydrationWidget /> : <BirthdayRemindersWidget />}
-					</Suspense>
+					<DeferredWidgetBoundary
+						key={id}
+						id={id}
+						title={title}
+						message={unavailable}
+						loading={placeholder}
+						beforeRetry={() => region.current?.focus({ preventScroll: true })}
+					/>
 				</DashboardWidgetRefreshOwnerContext>
 			) : (
 				placeholder
