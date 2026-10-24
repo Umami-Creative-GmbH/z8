@@ -90,6 +90,8 @@ export type ManagerLinksPlan = {
 export type ManagerLinksApplied = {
 	removedLinks: Array<{ employeeId: string; managerId: string }>;
 	addedLinks: Array<{ employeeId: string; managerId: string; isPrimary: boolean }>;
+	/** Remaining links made primary (`reportsKeepingAnotherManager[].newPrimaryManagerId`). */
+	promotedLinks: Array<{ employeeId: string; managerId: string }>;
 };
 
 // ---- team-links.ts (user decision 2026-10-24: end team memberships and project links) ----

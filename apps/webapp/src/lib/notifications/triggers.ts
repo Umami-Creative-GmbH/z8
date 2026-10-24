@@ -1983,3 +1983,58 @@ export async function onShiftPickupApproved(
 		);
 	}
 }
+
+const deactivationShiftsOpenedCopy = {
+	titleKey: "common:notifications.content.employeeDeactivationShiftsOpened.title",
+	titleDefault: "Shifts need someone",
+	messageKey: "common:notifications.content.employeeDeactivationShiftsOpened.message",
+	messageDefault:
+		"{employeeName} was deactivated. {shiftCount, plural, one {# upcoming shift is} other {# upcoming shifts are}} open now.",
+} as const satisfies NotificationCopy;
+
+interface DeactivationShiftsOpenedParams {
+	organizationId: string;
+	/** The `employee_deactivation` row; keys the notice so a replay never repeats it. */
+	deactivationId: string;
+	employeeName: string;
+	shiftCount: number;
+	recipientUserIds: readonly string[];
+}
+
+/**
+ * Tells the deactivated person's planners, once each, how many of their
+ * upcoming shifts became open shifts (#1440, D7). Safe to run again: the
+ * idempotency key is per deactivation and recipient. Never throws.
+ */
+export async function onDeactivationShiftsOpened(
+	params: DeactivationShiftsOpenedParams,
+): Promise<void> {
+	if (params.shiftCount <= 0) return;
+	const copy = deactivationShiftsOpenedCopy;
+	const i18nParams = { employeeName: params.employeeName, shiftCount: params.shiftCount };
+	// The stored English fallback; the ICU plural is rendered per recipient on delivery.
+	const shifts =
+		params.shiftCount === 1 ? "1 upcoming shift is" : `${params.shiftCount} upcoming shifts are`;
+	const message = `${params.employeeName} was deactivated. ${shifts} open now.`;
+	for (const userId of params.recipientUserIds) {
+		try {
+			await createNotification({
+				userId,
+				organizationId: params.organizationId,
+				type: "employee_deactivation_shifts_opened",
+				title: copy.titleDefault,
+				message,
+				entityType: "employee_deactivation",
+				entityId: params.deactivationId,
+				actionUrl: "/scheduling",
+				idempotencyKey: `deactivation-shifts:${params.deactivationId}:${userId}`,
+				metadata: { i18n: translatedContent(copy, i18nParams).i18n },
+			});
+		} catch (error) {
+			logger.error(
+				{ error, organizationId: params.organizationId, deactivationId: params.deactivationId },
+				"Failed to notify planners about shifts opened by a deactivation",
+			);
+		}
+	}
+}
