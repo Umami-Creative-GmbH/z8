@@ -90,7 +90,8 @@ export type ApprovalWorkflowPrincipal =
 				| "approval-activation"
 				| typeof APPROVAL_ESCALATION_SYSTEM_ID
 				| typeof PERIOD_SUBMISSION_CHANGE_SYSTEM_ID
-				| typeof ABSENCE_CHANGE_OBSOLETE_SYSTEM_ID;
+				| typeof ABSENCE_CHANGE_OBSOLETE_SYSTEM_ID
+				| typeof EMPLOYEE_DEACTIVATION_SYSTEM_ID;
 	  }
 	| OffboardingHandoverPrincipal;
 
@@ -105,6 +106,15 @@ export const PERIOD_SUBMISSION_CHANGE_SYSTEM_ID = "period-submission-change";
 /** Only retires a pending absence-change workflow whose proposal is obsolete. */
 export const ABSENCE_CHANGE_OBSOLETE_SYSTEM_ID = "absence-change-obsolete";
 export const ABSENCE_CHANGE_OBSOLETE_REASON = "This request is obsolete. Submit a fresh request.";
+
+/**
+ * Narrow capability of the employee deactivation (#1440, Organization ADR 0006): it only cancels
+ * a pending or approved absence of a former employee that starts after the day they left, with
+ * this reason. The authorization re-reads the evidence in the command's transaction
+ * (`deactivation-cancellation.ts`); it never approves, rejects, reassigns or expires.
+ */
+export const EMPLOYEE_DEACTIVATION_SYSTEM_ID = "employee-deactivation";
+export const EMPLOYEE_DEACTIVATION_CANCEL_REASON = "Cancelled because the employee was deactivated";
 
 /**
  * Narrow departure-handover capability (#341). It carries the persisted

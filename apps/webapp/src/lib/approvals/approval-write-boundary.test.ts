@@ -4407,7 +4407,7 @@ db.delete(approvalOutbox);`,
 
 	it("exports the complete exact temporary legacy exception map", () => {
 		expect(TEMPORARY_LEGACY_WRITE_EXCEPTIONS).toEqual({
-			"src/app/[locale]/(app)/absences/mutations.ts": {
+			"src/app/[locale]/(app)/absences/cancel-absence-core.ts": {
 				approval_chain_instance: ["update"],
 				approval_chain_stage_instance: ["update"],
 				approval_request: ["delete"],
@@ -4784,7 +4784,7 @@ export async function hiddenImport(rows: object[]) {
 			{ operation: "insert", table: "approval_request" },
 		]);
 		expect(
-			analyzeOperations("src/app/[locale]/(app)/absences/mutations.ts"),
+			analyzeOperations("src/app/[locale]/(app)/absences/cancel-absence-core.ts"),
 		).toEqual([
 			{ operation: "update", table: "approval_chain_stage_instance" },
 			{ operation: "update", table: "approval_chain_instance" },
