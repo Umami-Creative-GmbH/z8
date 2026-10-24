@@ -22,13 +22,13 @@ const budgetProtocol = await budgetProtocolIdentity();
 const paintProof = JSON.parse(
   await readFile(
     new URL(
-      "../../docs/performance/evidence/1450-native-paint-and-link-diagnostics.json",
+      "../../docs/performance/evidence/1450-observer-v4-before-proof.json",
       import.meta.url,
     ),
   ),
 );
 const paintProofSha256 =
-  "f4afd63448f06bf92a975c3140f6c9d064313ea6e8764c3e0476b8141f21c3fd";
+  "ec1f85b2a63393b2ccf41edcd99162259a33803e059bbf9cb65fbcf134cee050";
 if (sha(JSON.stringify(paintProof)) !== paintProofSha256)
   throw Error("Fixed raw native paint diagnostic proof changed.");
 const json = (value) => JSON.stringify(value, null, 2) + "\n";
@@ -51,11 +51,11 @@ const backendMetrics = [
   "eventLoopDelayMs",
 ];
 const policy = {
-  version: 3,
+  version: 4,
   beforeResourceFailure: beforeFailurePolicy,
   observedNativePaint: {
-    amendedAt: "2026-10-24T20:40:32Z",
-    source: "28e18381a7a41f5bc84daa53369c508ddfe9a5de",
+    amendedAt: "2026-10-24T22:51:03Z",
+    source: "5031575cc8c40db7d5e306ecb54c641c150c3846",
     proofSha256: paintProofSha256,
     proofHashEncoding: "sha256 of UTF-8 JSON.stringify(parsed public proof)",
     scope:
