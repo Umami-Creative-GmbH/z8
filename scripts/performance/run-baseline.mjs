@@ -11,6 +11,11 @@ import {
 	reconcileCollectorRun,
 } from "./collector-client.mjs";
 import {
+	fixtureBrowserPolicy,
+	initializeFixtureBrowserContext,
+	launchFixtureBrowser,
+} from "./fixture-browser.mjs";
+import {
 	clickVisible,
 	fixtureBrowserPermissions,
 	historicalRangeSteps,
@@ -490,6 +495,7 @@ async function main() {
 			mode: plan.runtime.mode,
 			collectorProtocol: plan.runtime.collectorProtocol ?? null,
 			traceTransport: plan.runtime.traceTransport ?? "page-interception-v1",
+			browserPolicy: plan.runtime.browserPolicy ?? null,
 			browserPermissions: fixtureBrowserPermissions,
 			build: plan.runtime.build,
 			sourceBuild: plan.runtime.sourceBuild ?? null,
@@ -563,10 +569,14 @@ async function main() {
 			"Native work is already pending before capture; use a settled isolated fixture.",
 		);
 	const { default: puppeteer } = await import("puppeteer-core");
-	const browser = await puppeteer.launch({
-		executablePath: option("--chrome"),
-		headless: true,
-	});
+	if (
+		plan.runtime.traceTransport === fixtureTraceTransport &&
+		plan.runtime.browserPolicy !== fixtureBrowserPolicy
+	)
+		fail(
+			"Frozen plan requires the shared isolated browser initialization policy.",
+		);
+	const browser = await launchFixtureBrowser(puppeteer, option("--chrome"));
 	result.browser = await browser.version();
 	let checkpoint = Promise.resolve();
 	try {
@@ -803,11 +813,19 @@ async function measure(
 		context = await browser.createBrowserContext(
 			transport?.browserContextOptions,
 		);
+		if (transport) {
+			const initialized = await initializeFixtureBrowserContext({
+				context,
+				transport,
+			});
+			page = initialized.page;
+			sample.browserInitialization = initialized.browserInitialization;
+		}
 		await prepareFixtureBrowserContext(context, plan.origin);
 		if (!Array.isArray(auth[condition.name]?.cookies))
 			fail("Missing private fixture authentication.");
 		await context.setCookie(...auth[condition.name].cookies);
-		page = await context.newPage();
+		page ??= await context.newPage();
 		await page.setViewport(condition.viewport);
 		await page.emulateTimezone(condition.timezone);
 		await page.setExtraHTTPHeaders({ "Accept-Language": condition.locale });
@@ -1279,6 +1297,14 @@ async function measure(
 				kind: fixtureTraceTransport,
 				...transport.snapshot(),
 			};
+			if (
+				sample.traceTransport.afterInitialization?.refusedRequests !== 0 ||
+				sample.traceTransport.afterInitialization?.upstreamFailures !== 0
+			) {
+				sample.failed = true;
+				sample.failureStage = "trace-transport";
+				sample.failureKind = "observation-incomplete";
+			}
 			await transport.close();
 		}
 	}
