@@ -137,7 +137,7 @@ async function creatorSeesEveryProject(client: Client, link: LinkRow): Promise<b
  * caller's transaction. False when the link was no longer live.
  */
 async function markRevoked(
-	tx: Transaction,
+	tx: Pick<Transaction, "update" | "insert">,
 	audit: AuditTrail,
 	link: LinkRow,
 	input: {
@@ -145,6 +145,8 @@ async function markRevoked(
 		revokedBy: string | null;
 		now: Temporal.Instant;
 		request?: RequestContext;
+		/** Added to the audit metadata, after the defaults. */
+		auditMetadata?: Record<string, unknown>;
 	},
 ): Promise<boolean> {
 	const [revoked] = await tx
@@ -180,11 +182,73 @@ async function markRevoked(
 			kind: link.kind,
 			projectIds: link.projectIds,
 			customerId: link.customerId,
+			...input.auditMetadata,
 		},
 		ipAddress: input.request?.ipAddress ?? null,
 		userAgent: input.request?.userAgent ?? null,
 	});
 	return true;
+}
+
+/** Which creator's links an access change ends, and when. */
+export type CreatorShareLinks = {
+	organizationId: string;
+	creatorEmployeeId: string;
+	now: Temporal.Instant;
+};
+
+function liveLinksOfCreator(input: CreatorShareLinks) {
+	return and(
+		eq(reportShareLink.organizationId, input.organizationId),
+		eq(reportShareLink.creatorEmployeeId, input.creatorEmployeeId),
+		isNull(reportShareLink.revokedAt),
+		sql`${reportShareLink.expiresAt} > ${dateFromInstant(input.now)}`,
+	);
+}
+
+/** The live links `revokeShareLinksOfCreator` would revoke, for a preview. */
+export async function liveShareLinksOfCreator(
+	client: Pick<Transaction, "select">,
+	input: CreatorShareLinks,
+): Promise<Array<{ id: string; kind: LinkRow["kind"] }>> {
+	return client
+		.select({ id: reportShareLink.id, kind: reportShareLink.kind })
+		.from(reportShareLink)
+		.where(liveLinksOfCreator(input))
+		.orderBy(reportShareLink.createdAt, reportShareLink.id);
+}
+
+/**
+ * Revokes every live link of a creator who lost all report access at once, in
+ * the caller's transaction: a deactivation (#1440, decision D6), which the
+ * sweep would otherwise only catch later. The column reason stays
+ * `creator_lost_access`; `auditMetadata` names the change (decision D5). The
+ * caller forwards the audit entries after its commit. Returns the revoked ids.
+ */
+export async function revokeShareLinksOfCreator(
+	tx: Pick<Transaction, "select" | "update" | "insert">,
+	audit: AuditTrail,
+	input: CreatorShareLinks & {
+		actorUserId: string;
+		auditMetadata: Record<string, unknown>;
+	},
+): Promise<string[]> {
+	const links = await tx
+		.select()
+		.from(reportShareLink)
+		.where(liveLinksOfCreator(input))
+		.orderBy(reportShareLink.createdAt, reportShareLink.id);
+	const revoked: string[] = [];
+	for (const link of links) {
+		const done = await markRevoked(tx, audit, link, {
+			reason: "creator_lost_access",
+			revokedBy: input.actorUserId,
+			now: input.now,
+			auditMetadata: input.auditMetadata,
+		});
+		if (done) revoked.push(link.id);
+	}
+	return revoked;
 }
 
 /**

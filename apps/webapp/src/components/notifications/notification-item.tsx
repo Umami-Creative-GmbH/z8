@@ -145,6 +145,8 @@ function getNotificationStyle(type: NotificationType): {
 		case "absence_deputy_unavailable":
 		// A schedule's owner is no longer an org admin (#988)
 		case "scheduled_export_paused":
+		// A deactivation opened the person's upcoming shifts (#1440)
+		case "employee_deactivation_shifts_opened":
 			return {
 				icon: <IconUserX className="size-4" />,
 				bgColor: "bg-amber-100 dark:bg-amber-900/30",
