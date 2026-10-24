@@ -9,7 +9,7 @@ import {
 	screen,
 	waitFor,
 } from "@testing-library/react";
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { OrganizationContextProvider } from "@/components/providers/organization-context-provider";
 import { useCustomFieldDrafts } from "@/components/settings/custom-fields/use-custom-field-drafts";
@@ -132,15 +132,17 @@ function ScopedCustomFields() {
 
 function Detail({
 	initialSnapshot,
+	accessTier = "orgAdmin",
 }: {
 	initialSnapshot: EmployeeReadSnapshot<"detail">;
+	accessTier?: "orgAdmin" | "manager";
 }) {
 	const data = useEmployee({
 		employeeId:
 			initialSnapshot.data.kind === "invitationDraft"
 				? initialSnapshot.data.encodedId
 				: initialSnapshot.data.id,
-		accessTier: "orgAdmin",
+		accessTier,
 		initialSnapshot,
 	});
 	return (
@@ -378,7 +380,7 @@ describe("employee read transport through the shared provider", () => {
 
 	it("does not paint an old user's delayed response after identity replacement", async () => {
 		let finishOld!: () => void;
-		state.fetch.mockImplementation((url: string, options: RequestInit) => {
+		state.fetch.mockImplementation((_url: string, options: RequestInit) => {
 			const userId = (options.headers as Record<string, string>)[
 				"x-z8-context-user"
 			];
@@ -464,6 +466,47 @@ describe("employee read transport through the shared provider", () => {
 		await waitFor(() => expect(state.customFields).toHaveBeenCalledTimes(2));
 		await act(async () => finishRestricted());
 		expect(screen.getByText("No visible fields")).toBeTruthy();
+	});
+
+	it("drops administrator manager choices immediately when the same viewer is reduced to manager", async () => {
+		const initialSnapshot = {
+			scope: { userId: "viewer-1", organizationId: "org-1" },
+			updatedAt: Date.now(),
+			data: { id: "person-1", kind: "employee" as const, organizationId: "org-1", user: { name: "Pat River" } },
+		};
+		state.fetch.mockImplementation(async (url: string) =>
+			Response.json({
+				scope: { userId: "viewer-1", organizationId: "org-1" },
+				updatedAt: Date.now(),
+				data: url.includes("/managers")
+					? [{ id: "manager-1", user: { name: "Administrator choice" } }]
+					: url.includes("/schedule")
+						? null
+						: [],
+			}),
+		);
+		function RoleChange() {
+			const [tier, setTier] = useState<"orgAdmin" | "manager">("orgAdmin");
+			return (
+				<>
+					<Detail
+						accessTier={tier}
+						initialSnapshot={initialSnapshot}
+					/>
+					<button type="button" onClick={() => setTier("manager")}>
+						Reduce role
+					</button>
+				</>
+			);
+		}
+		provider(<RoleChange />);
+		expect(
+			await screen.findByText("1 manager / 0 history / 0 policy"),
+		).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: "Reduce role" }));
+		expect(
+			await screen.findByText("0 manager / 0 history / 0 policy"),
+		).toBeTruthy();
 	});
 
 	it("refreshes each visible dataset once and keeps mutation refresh limited to affected detail data", async () => {

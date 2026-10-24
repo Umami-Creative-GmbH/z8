@@ -254,7 +254,7 @@ export const queryKeys = {
 		detailFor: (userId: Id, orgId: Id, employeeId: string) =>
 			["employees", "detail", employeeId, userId, orgId] as const,
 		referencePolicies: (userId: Id, orgId: Id) =>
-			["employees", orgId, "work-policies", userId] as const,
+			["work-policies", "list", orgId, "employee-choices", userId] as const,
 		managerChoices: (userId: Id, orgId: Id, employeeId: string) =>
 			["employees", orgId, "manager-choices", userId, employeeId] as const,
 		detail: (employeeId: string) => ["employees", "detail", employeeId] as const,
