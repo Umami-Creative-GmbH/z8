@@ -7,8 +7,9 @@ import type {
 import type { CacheHandler } from "next/cache";
 import { getCacheHandler } from "next/dist/server/use-cache/handlers";
 import nextPackage from "next/package.json";
+import type { FixtureNativeCoverage } from "./performance-fixture-native-coverage";
 
-export const fixtureObserverVersion = 1;
+export const fixtureObserverVersion = 2;
 export const eventLoopProbeIntervalMs = 10;
 const retainedProbes = 30000;
 const observedHandlers = new WeakSet<CacheHandler>();
@@ -67,7 +68,10 @@ export class FixturePerformanceSpanProcessor implements SpanProcessor {
 	private lastProbe = performance.now();
 	private readonly timer: ReturnType<typeof setInterval>;
 
-	constructor(private readonly delegate: SpanProcessor) {
+	constructor(
+		private readonly delegate: SpanProcessor,
+		private readonly nativeCoverage?: FixtureNativeCoverage,
+	) {
 		this.timer = setInterval(() => {
 			const now = performance.now();
 			this.delays[this.sequence % retainedProbes] = Math.max(
@@ -84,6 +88,7 @@ export class FixturePerformanceSpanProcessor implements SpanProcessor {
 		span: Parameters<SpanProcessor["onStart"]>[0],
 		parentContext: Context,
 	) {
+		this.nativeCoverage?.onStart(span);
 		if (span.kind === SpanKind.SERVER) {
 			this.windows.set(span.spanContext().spanId, this.sequence);
 			span.setAttribute("z8.perf.cache.coverage", observeNextDefaultCache());
@@ -92,6 +97,7 @@ export class FixturePerformanceSpanProcessor implements SpanProcessor {
 	}
 
 	onEnd(span: ReadableSpan) {
+		this.nativeCoverage?.onEnd(span);
 		const start = this.windows.get(span.spanContext().spanId);
 		this.windows.delete(span.spanContext().spanId);
 		if (start === undefined) {

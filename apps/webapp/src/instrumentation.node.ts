@@ -13,6 +13,10 @@ import {
 } from "@opentelemetry/sdk-trace-base";
 import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
 import {
+	FixtureNativeCoverage,
+	startFixtureNativeControl,
+} from "@/lib/performance-fixture-native-coverage";
+import {
 	eventLoopProbeIntervalMs,
 	FixturePerformanceSpanProcessor,
 	fixtureObserverVersion,
@@ -91,6 +95,11 @@ export async function registerNodeRuntime() {
 				}
 			: {}),
 	});
+	const nativeCoverage =
+		fixtureObserver && process.env.Z8_PERFORMANCE_OBSERVER_CONTROL_FILE
+			? new FixtureNativeCoverage()
+			: undefined;
+	const fixtureProcessors: FixturePerformanceSpanProcessor[] = [];
 
 	// Determine span processors based on environment and configuration
 	const spanProcessors =
@@ -118,7 +127,14 @@ export async function registerNodeRuntime() {
 			.map((processor) => new SetupPrivacySpanProcessor(processor))
 			.map((processor) =>
 				fixtureObserver
-					? new FixturePerformanceSpanProcessor(processor)
+					? (() => {
+							const observed = new FixturePerformanceSpanProcessor(
+								processor,
+								nativeCoverage,
+							);
+							fixtureProcessors.push(observed);
+							return observed;
+						})()
 					: processor,
 			),
 		instrumentations: [
@@ -138,6 +154,16 @@ export async function registerNodeRuntime() {
 	});
 
 	sdk.start();
+	if (nativeCoverage && process.env.Z8_PERFORMANCE_OBSERVER_CONTROL_FILE) {
+		await startFixtureNativeControl(
+			nativeCoverage,
+			() =>
+				Promise.all(
+					fixtureProcessors.map((processor) => processor.forceFlush()),
+				).then(() => {}),
+			process.env.Z8_PERFORMANCE_OBSERVER_CONTROL_FILE,
+		);
+	}
 
 	if (!isBuildTime) {
 		// Initialize S3 storage only for a running server, never while compiling the app.
