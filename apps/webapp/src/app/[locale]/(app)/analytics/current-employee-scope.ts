@@ -1,6 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import type { db } from "@/db";
 import { employee } from "@/db/schema";
+import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 
 type EmployeeQueryClient = {
 	query: {
@@ -23,7 +24,7 @@ export async function findAnalyticsEmployeeByUserId(
 		where: and(
 			eq(employee.userId, userId),
 			eq(employee.organizationId, activeOrganizationId),
-			eq(employee.isActive, true),
+			employeeHasOrganizationAccess(),
 		),
 	});
 }

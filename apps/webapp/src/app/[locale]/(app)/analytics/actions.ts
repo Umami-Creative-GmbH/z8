@@ -13,6 +13,7 @@
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { member } from "@/db/auth-schema";
+import { env } from "@/env";
 import {
 	loadRecentAnalyticsIdentity,
 	type RecentAnalyticsRequest,
@@ -34,6 +35,7 @@ import type {
 } from "@/lib/analytics/types";
 import {
 	AuthorizationError,
+	BillingError,
 	ExternalServiceError,
 	NotFoundError,
 } from "@/lib/effect/errors";
@@ -125,6 +127,24 @@ function checkManagerOrAdminAccess() {
 function prepareRecentAnalytics(request: RecentAnalyticsRequest) {
 	return Effect.gen(function* () {
 		const current = yield* checkManagerOrAdminAccess();
+		if (env.BILLING_ENABLED === "true") {
+			const { BillingEnforcementService, BillingServicesLive } =
+				yield* Effect.promise(() => import("@/lib/effect/services/billing"));
+			const access = yield* Effect.gen(function* () {
+				const billing = yield* BillingEnforcementService;
+				return yield* billing.checkBillingAccess(current.organizationId, {
+					createTrialIfMissing: false,
+				});
+			}).pipe(Effect.provide(BillingServicesLive));
+			if (!access.canAccess)
+				return yield* Effect.fail(
+					new BillingError({
+						message: "Billing access denied",
+						reason: access.reason ?? "subscription_required",
+						organizationId: current.organizationId,
+					}),
+				);
+		}
 		return yield* loadRecentAnalyticsIdentity(
 			{
 				id: current.id,
