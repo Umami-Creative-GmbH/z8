@@ -175,3 +175,21 @@ All 34 Docker tracer/manifest cases and 16 store/provider cases pass. The actual
 RSC identity PostgreSQL suite passes, as does full production TypeScript. The
 changed-source Doctor regression report is schema 3, complete, with zero errors
 or warnings; scoped Biome passes. Broader source/runtime gates remain separate.
+
+## Existing source and edge-test ownership
+
+Full unit verification exposed stale expectations for the pre-extraction layout:
+embedded membership SQL, the old settings prop, direct sidebar rendering and a
+source slice that accidentally included the adjacent session helper. Those
+existing guards now follow the actual render identity/region owners, retaining
+approved membership, same-user/organization, fail-closed billing, locale redirects,
+protected children and neutral loading assertions. They remain architectural
+guards; actual RSC/PostgreSQL tests supply behavioral proof.
+
+The render-context edge test's Drizzle stub also omitted sql after the canonical
+lifecycle predicate replaced its raw active check. It now retains the real sql
+constructor and expects the canonical predicate, plus the shared preferences'
+actual allowlisted projection. All 14 render-context tests and 17 layout/banner/
+pathname tests pass. No application authorization or denial behavior changed.
+The initial full-unit run still contains its earlier failures and is not a pass;
+a final bounded complete rerun is pending after resolving its full result.

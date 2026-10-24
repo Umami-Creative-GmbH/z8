@@ -137,18 +137,21 @@ describe("TrialBanner", () => {
 		);
 		expect(layoutContentSource).toContain("<TrialBanner");
 		expect(layoutContentSource).toContain('billingAccess.state === "trialing"');
-		expect(layoutContentSource).toContain(
-			'import { and, eq } from "drizzle-orm"',
-		);
+		expect(layoutContentSource).toContain('import { eq } from "drizzle-orm"');
 		expect(layoutContentSource).toContain('import { db } from "@/db"');
-		expect(layoutContentSource).toContain(
-			'import { member } from "@/db/auth-schema"',
-		);
+		expect(layoutContentSource).toContain("getRenderApprovedMembership()");
 		expect(layoutContentSource).toMatch(
 			/import \{[^}]*\bsubscription\b[^}]*\} from "@\/db\/schema"/,
 		);
-		expect(layoutContentSource).toContain("member.userId");
-		expect(layoutContentSource).toContain("member.organizationId");
+		const identitySource = readFileSync(
+			join(process.cwd(), "src/lib/auth/render-context.ts"),
+			"utf8",
+		);
+		expect(identitySource).toContain("eq(member.userId, session.user.id)");
+		expect(identitySource).toContain(
+			"entry.organization.id === activeOrganizationId",
+		);
+		expect(identitySource).toContain('entry.membership.status === "approved"');
 		expect(layoutContentSource).toContain(
 			'membershipRole === "owner" || membershipRole === "admin"',
 		);
