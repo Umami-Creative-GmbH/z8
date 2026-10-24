@@ -261,7 +261,14 @@ of employment (in the organization's timezone) and the year of its document
 date. Once the category's retention period has passed, the document is listed
 as *due for deletion* and is purged only when a personnel file officer confirms.
 The open period a rehire creates stops the clock: none of the employee's
-documents is due while they are employed again. A former employee whose
+documents is due while they are employed again. A deactivation ends the
+employment the same way (#1440): while the employee stays deactivated, their
+open period counts as ended at `employee.deactivated_at`, read by the shared
+loader `lib/personnel-file/retention-employment.ts` for both the documents'
+due list and the deletion of document requests. Reactivation clears that
+instant, which stops the clock again. Someone deactivated before the instant
+was recorded (migration 0283) has no retention start until #1442 recovers it,
+so their documents are listed as *retention start unknown*. A former employee whose
 employment end was never recorded (no employment period, or only a legacy
 period without an end) has no retention start: their documents are listed
 separately as *retention start unknown*, never counted by the daily reminder,

@@ -532,6 +532,51 @@ describe("requests without documents", () => {
 	});
 });
 
+describe("requests of a deactivated employee (#1440)", () => {
+	it("counts the retention from the deactivation instant, and reactivation stops it", async () => {
+		await retainCertificatesOneYear();
+		const deactivated = await fixture.seedEmployee();
+		const reactivated = await fixture.seedEmployee();
+		const unrecorded = await fixture.seedEmployee();
+		// Closed in 2026; the employment ends at the deactivation in 2026: due 2028-01-01.
+		const ofDeactivated = await createRequest(deactivated);
+		await cancel(ofDeactivated, "Not needed");
+		const ofReactivated = await createRequest(reactivated);
+		await cancel(ofReactivated, "Not needed");
+		const ofUnrecorded = await createRequest(unrecorded);
+		await cancel(ofUnrecorded, "Not needed");
+		// Deactivated without a departure: the open employment period stays.
+		await fixture.pool.query(
+			"update employee set is_active = false, deactivated_at = $2 where id = any($1::uuid[])",
+			[[deactivated.employeeId, reactivated.employeeId], "2026-09-14T09:30:00Z"],
+		);
+		await fixture.pool.query("update employee set is_active = true where id = $1", [
+			reactivated.employeeId,
+		]);
+		// Deactivated before the instant was recorded (migration 0283).
+		await fixture.pool.query("update employee set is_active = false where id = $1", [
+			unrecorded.employeeId,
+		]);
+		await fixture.pool.query("update employee set deactivated_at = null where id = $1", [
+			unrecorded.employeeId,
+		]);
+
+		await runDocumentRequestRetention(db, {
+			now: parseInstant("2027-12-31T22:59:00Z"),
+			organizationIds: [fixture.organizationId],
+		});
+		expect(await requestRow(ofDeactivated)).not.toBeNull();
+
+		await runDocumentRequestRetention(db, {
+			now: parseInstant("2027-12-31T23:00:00Z"),
+			organizationIds: [fixture.organizationId],
+		});
+		expect(await requestRow(ofDeactivated)).toBeNull();
+		expect(await requestRow(ofReactivated)).not.toBeNull();
+		expect(await requestRow(ofUnrecorded)).not.toBeNull();
+	});
+});
+
 /** Stores a decision notification as if it had been delivered (delivery is replaced here). */
 async function storeDecisionNotification(input: {
 	organizationId: string;
