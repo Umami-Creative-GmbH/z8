@@ -8,6 +8,42 @@ experiment has run for this ticket. An active controlled baseline capture reserv
 the runtime window. The checks below describe the prepared operator procedure,
 not observed application performance or completed acceptance.
 
+## V2 observation checkpoint
+
+The operator now uses #1472's paired native V2 lifecycle and the shared
+`isolated-profile-no-prediction-v1` browser policy. Both independent replica
+collectors/native controls must be present; legacy or reused controls are rejected
+before app I/O. Actual owned object-storage origin/port is checked before adding
+it beside the fixture origin to the strict browser transport allowlist.
+
+The common `observation.createContext` registers three IDs at **both** replicas,
+creates the service-worker-aware transport, then initializes the empty context
+before cookies, permissions or app navigation. It returns the initialized page and
+startup metadata; both ingress and cache operators reuse that API. Initialization
+requires zero app requests/body bytes, zero pending work, two seconds quiet within
+a ten-second cap, and the recorded isolated launch policy. Startup refusals remain
+recorded separately. The shared validator checks exact total = startup + after
+arithmetic for every counter/reason, and rejects every post-initialization refusal
+or upstream failure. No hostname filter, worker disablement or app-error exemption
+was added.
+
+Explicit measured reads begin/end paired visits. Context closure includes
+prerequisite, worker/background and cleanup IDs. A run can pass only after the
+independent A and B wire-query, SDK-start, SDK-end and received-query counts match,
+all received traces reconcile, and pending/active/late/unattributed work is zero.
+An unused node must have exact zero global delta. Signed-out admission can perform
+zero SQL: its registered context ID closes under the whole-run proof, without
+inventing a five-flag per-request metric for an absent PG row. The former legacy
+single-collector row lookup is removed. Every evidence write preserves an immutable
+attempt file beside the latest condition report.
+
+Four ingress CLI cases and three paired-protocol/acceptance cases pass, including
+red→green rejection of legacy controls and broken initialization arithmetic. With
+the existing multi-instance/transport checks, 16 offline cases pass. These do not
+establish actual ingress behavior. The parent-owned final artifact and functional
+topology are available, but no live matrix case ran in this checkpoint; runtime
+remains pending until the next parent-scheduled exclusive window.
+
 The user confirmed that deployed production/CDN access is unavailable and
 authorized a local Docker fixture. This experiment reuses #1472's separate owned
 PostgreSQL/Valkey/storage and actual Docker HAProxy 2.8 frontend, forwarding to two

@@ -5,6 +5,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { once } from "node:events";
 import { createWriteStream } from "node:fs";
 import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
+import { createRequire } from "node:module";
 import { createServer } from "node:net";
 import { join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -66,6 +67,9 @@ export function multiInstancePlan(fixture) {
 		isrFlushToDisk: false,
 		nextCache: "per-process default Cache Components memory",
 		productionTopologyVerified: false,
+		independentObserverCollectors: 2,
+		nativeProtocol: "z8-fixture-native-observer-v2",
+		migrationMethod: "normal migrate-with-lock.js on owned clone only",
 	};
 }
 
@@ -294,9 +298,12 @@ async function prepare(
 		...source.env,
 		NEXT_DEPLOYMENT_ID: sourceBuild,
 		POSTGRES_HOST: "127.0.0.1",
+		POSTGRES_USER: "postgres",
 		POSTGRES_PORT: port(value.postgres, 5432),
 		POSTGRES_DB: database,
 		POSTGRES_PASSWORD: secret,
+		DATABASE_URL: `postgresql://postgres:${secret}@127.0.0.1:${port(value.postgres, 5432)}/${database}`,
+		POSTGRES_SSL_MODE: "disable",
 		APPROVAL_WORKFLOW_REPOSITORY_TEST_DATABASE_URL: `postgresql://postgres:${secret}@127.0.0.1:${port(value.postgres, 5432)}/${database}`,
 		REDIS_HOST: "127.0.0.1",
 		REDIS_PORT: port(value.redis, 6379),
@@ -304,6 +311,7 @@ async function prepare(
 		REDIS_TLS: "false",
 		REDIS_COMMAND_TIMEOUT_MS: "2000",
 		S3_PUBLIC_ENDPOINT: `http://127.0.0.1:${port(value.storage, 9000)}`,
+		S3_PUBLIC_URL: `http://127.0.0.1:${port(value.storage, 9000)}/${source.env.S3_PUBLIC_BUCKET}`,
 		S3_PUBLIC_ACCESS_KEY_ID: "fixture-access",
 		S3_PUBLIC_SECRET_ACCESS_KEY: secret,
 		BILLING_ENABLED: "false",
@@ -330,6 +338,8 @@ async function prepare(
 		]),
 	);
 	value.prepared = true;
+	for (const replica of ["a", "b"])
+		await mkdir(join(directory, `observer-${replica}`), { mode: 0o700 });
 	await save(join(directory, "multi-private.json"), value);
 	await save(join(directory, "runtime-private.json"), {
 		origin: value.origin,
@@ -339,6 +349,111 @@ async function prepare(
 	await readMultiInstanceFixture(directory);
 	console.log(JSON.stringify({ prepared: true, ...multiInstancePlan(value) }));
 }
+
+/** Run the normal pending-migration path only after verifying the new clone's actual ownership. */
+async function migrateOwnedClone(directory, fixture) {
+	if (!fixture.prepared)
+		throw new Error("Restore the owned clone before migrations.");
+	for (const container of fixture.containers) owned(container, fixture.label);
+	if (
+		docker(
+			"inspect",
+			"--format",
+			'{{(index (index .NetworkSettings.Ports "5432/tcp") 0).HostPort}}',
+			fixture.postgres,
+		) !== String(fixture.env.POSTGRES_PORT)
+	)
+		throw new Error("Migration database is not the owned Docker port.");
+	const require = createRequire(join(fixture.artifactApp, "package.json")),
+		{ Pool } = require("pg");
+	const pool = new Pool({
+		host: "127.0.0.1",
+		port: Number(fixture.env.POSTGRES_PORT),
+		database: fixture.env.POSTGRES_DB,
+		user: fixture.env.POSTGRES_USER || "postgres",
+		password: fixture.env.POSTGRES_PASSWORD,
+		max: 1,
+		connectionTimeoutMillis: 5000,
+	});
+	try {
+		if (
+			(await pool.query("select current_database() as name")).rows[0].name !==
+			fixture.env.POSTGRES_DB
+		)
+			throw new Error("Actual migration database is outside the owned clone.");
+		const log = createWriteStream(
+			join(
+				directory,
+				`migration-${randomBytes(4).toString("hex")}-private.log`,
+			),
+			{ flags: "wx", mode: 0o600 },
+		);
+		await once(log, "open");
+		try {
+			const env = Object.fromEntries(
+				Object.entries({
+					...toolEnvironment(),
+					...fixture.env,
+					DATABASE_URL: `postgresql://${encodeURIComponent(fixture.env.POSTGRES_USER || "postgres")}:${encodeURIComponent(fixture.env.POSTGRES_PASSWORD)}@127.0.0.1:${fixture.env.POSTGRES_PORT}/${fixture.env.POSTGRES_DB}`,
+					NODE_OPTIONS: "",
+					DRIZZLE_MIGRATE_COMMAND: undefined,
+					POSTGRES_SSL_MODE: "disable",
+					PGOPTIONS: "-c timezone=UTC",
+					TZ: "UTC",
+				}).filter(([, value]) => value !== undefined),
+			);
+			const child = spawn(
+				process.execPath,
+				[join(fixture.artifactApp, "scripts/migrate-with-lock.js")],
+				{
+					cwd: fixture.artifactApp,
+					env,
+					stdio: ["ignore", log, log],
+					windowsHide: true,
+				},
+			);
+			const [code] = await once(child, "exit");
+			if (code !== 0)
+				throw new Error(
+					"Normal owned-clone migration failed; inspect its private log.",
+				);
+		} finally {
+			log.end();
+		}
+		const index = (
+			await pool.query(
+				"select i.indisvalid as valid,i.indisready as ready from pg_index i join pg_class c on c.oid=i.indexrelid join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relname='absenceEntry_employeeId_endDate_startDate_idx'",
+			)
+		).rows;
+		if (index.length !== 1 || !index[0].valid || !index[0].ready)
+			throw new Error(
+				"Pending absence overlap index was not installed and ready.",
+			);
+		const ledger = await pool.query(
+			"select max(created_at)::text as latest from drizzle.__drizzle_migrations",
+		);
+		fixture.schemaMigration = {
+			method: "normal migrate-with-lock.js",
+			overlapIndexReady: true,
+			ledgerLatest: ledger.rows[0].latest,
+		};
+		await save(join(directory, "multi-private.json"), fixture);
+		console.log(
+			JSON.stringify({ migratedOwnedClone: true, overlapIndexReady: true }),
+		);
+	} finally {
+		await pool.end();
+	}
+}
+
+const toolEnvironment = () =>
+	Object.fromEntries(
+		Object.entries(process.env).filter(([key]) =>
+			/^(PATH|PATHEXT|SYSTEMROOT|WINDIR|COMSPEC|TEMP|TMP|USERPROFILE|APPDATA|LOCALAPPDATA|PNPM_HOME)$/i.test(
+				key,
+			),
+		),
+	);
 
 function proxyConfiguration(fixture) {
 	return `global\n  maxconn 128\ndefaults\n  mode http\n  timeout connect 5s\n  timeout client 90s\n  timeout server 90s\nfrontend public\n  bind *:8080\n  http-request set-var(txn.replica) req.hdr(x-z8-fixture-replica)\n  http-request del-header x-z8-fixture-replica\n  http-request set-header X-Forwarded-Host %[req.hdr(host)]\n  http-request set-header X-Forwarded-Proto http\n  http-response set-header X-Z8-Fixture-Instance %[srv_name]\n  use_backend pin_a if { var(txn.replica) -m str a }\n  use_backend pin_b if { var(txn.replica) -m str b }\n  default_backend balanced\nbackend balanced\n  balance roundrobin\n  server a host.docker.internal:${fixture.replicas.a.port}\n  server b host.docker.internal:${fixture.replicas.b.port}\nbackend pin_a\n  server a host.docker.internal:${fixture.replicas.a.port}\nbackend pin_b\n  server b host.docker.internal:${fixture.replicas.b.port}\n`;
@@ -386,8 +501,13 @@ async function startProxy(directory, fixture) {
 }
 
 async function startReplica(directory, fixture, replica) {
+	directory = resolve(directory);
 	if (!fixture.prepared)
 		throw new Error("Finish fixture preparation before starting replicas.");
+	if (fixture.schemaMigration?.overlapIndexReady !== true)
+		throw new Error(
+			"Apply normal pending migrations to the owned HEAD clone before starting replicas.",
+		);
 	if (!["a", "b"].includes(replica)) throw new Error("Choose replica a or b.");
 	for (const container of fixture.containers) owned(container, fixture.label);
 	const text = await readFile(
@@ -402,7 +522,16 @@ async function startReplica(directory, fixture, replica) {
 		).trim() !== fixture.artifactBuildId
 	)
 		throw new Error("Compiled artifact changed after fixture preparation.");
-	const control = await json(join(directory, "collector-control.json"));
+	const observerDirectory = join(directory, `observer-${replica}`);
+	const control = await json(join(observerDirectory, "collector-control.json"));
+	if (
+		control.kind !== "z8-fixture-otlp-collector-v2" ||
+		resolve(control.observerControl ?? "") !==
+			resolve(observerDirectory, "native-control-private.json")
+	)
+		throw new Error(
+			"Each replica requires its own registered V2 collector and native control.",
+		);
 	const endpoint = new URL("/v1/traces", control.endpoint);
 	if (
 		!["localhost", "127.0.0.1"].includes(endpoint.hostname) ||
@@ -431,6 +560,10 @@ async function startReplica(directory, fixture, replica) {
 				"C:/Users/KaiHentschel/.swc-native-cache",
 			__NEXT_PRIVATE_STANDALONE_CONFIG: JSON.stringify(config),
 			Z8_PERFORMANCE_OBSERVER: "1",
+			Z8_PERFORMANCE_OBSERVER_CONTROL_FILE: join(
+				observerDirectory,
+				"native-control-private.json",
+			),
 			Z8_FIXTURE_OTLP_ENDPOINT: endpoint.href,
 			OTEL_EXPORTER_OTLP_ENDPOINT: endpoint.href,
 			Z8_MULTI_FIXTURE_DIRECTORY: resolve(directory),
@@ -496,6 +629,7 @@ async function main() {
 	if (command === "plan")
 		return console.log(JSON.stringify(multiInstancePlan(fixture), null, 2));
 	if (command === "proxy") return startProxy(directory, fixture);
+	if (command === "migrate") return migrateOwnedClone(directory, fixture);
 	if (command === "replica") return startReplica(directory, fixture, args[0]);
 	if (command === "authenticate") return authenticateFixture(directory);
 	if (command === "cleanup") {
@@ -507,7 +641,7 @@ async function main() {
 		);
 	}
 	throw new Error(
-		"Choose prepare, proxy, replica, authenticate, plan or cleanup.",
+		"Choose prepare, migrate, proxy, replica, authenticate, plan or cleanup.",
 	);
 }
 
