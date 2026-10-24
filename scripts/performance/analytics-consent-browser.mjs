@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { join } from "node:path";
+import { openRepresentativeChrome } from "./analytics-consent-chrome.mjs";
 import { verifyAnalyticsArtifact } from "./analytics-consent-fixture.mjs";
 
 export async function openAnalyticsConsentBrowser(
@@ -12,6 +13,7 @@ export async function openAnalyticsConsentBrowser(
 		authFile,
 		actor = "small-admin",
 		sdk = "pass",
+		browserMode = "representative-native",
 		executablePath = process.env.Z8_FIXTURE_CHROME ||
 			"C:/Program Files/Google/Chrome/Application/chrome.exe",
 	} = {},
@@ -58,20 +60,33 @@ export async function openAnalyticsConsentBrowser(
 		throw new Error("Owned synthetic actor authentication required.");
 	if (!["pass", "hold", "fail"].includes(sdk))
 		throw new Error("Unknown SDK resource mode.");
+	if (!["representative-native", "automated"].includes(browserMode))
+		throw new Error("Unknown fixture browser mode.");
 	const require = createRequire(join(fixture.artifactApp, "package.json"));
+	const native =
+		browserMode === "representative-native"
+			? await openRepresentativeChrome({
+					directory,
+					sinkOrigin: fixture.sinkOrigin,
+					executablePath,
+					puppeteer: require("puppeteer-core"),
+				})
+			: undefined;
 	// Any browser-level/background traffic that escapes page interception reaches a rejecting local proxy.
-	const browser = await require("puppeteer-core").launch({
-		executablePath,
-		headless: true,
-		args: [
-			`--proxy-server=${fixture.sinkOrigin}`,
-			"--proxy-bypass-list=localhost;127.0.0.1",
-			"--disable-quic",
-			"--disable-background-networking",
-			"--disable-component-update",
-			"--no-first-run",
-		],
-	});
+	const browser =
+		native?.browser ??
+		(await require("puppeteer-core").launch({
+			executablePath,
+			headless: true,
+			args: [
+				`--proxy-server=${fixture.sinkOrigin}`,
+				"--proxy-bypass-list=localhost;127.0.0.1",
+				"--disable-quic",
+				"--disable-background-networking",
+				"--disable-component-update",
+				"--no-first-run",
+			],
+		}));
 	try {
 		const context = await browser.createBrowserContext();
 		await context.setCookie(...auth[actor].cookies);
@@ -85,26 +100,66 @@ export async function openAnalyticsConsentBrowser(
 		await page.setBypassServiceWorker(true);
 		await page.setCacheEnabled(false);
 		const cdp = await page.createCDPSession();
+		const visibilityBeforeFocus = await page.evaluate(
+			() => document.visibilityState,
+		);
+		if (native)
+			await cdp.send("Emulation.setFocusEmulationEnabled", { enabled: true });
+		const browserIdentity = await page.evaluate(() => ({
+			userAgent: navigator.userAgent,
+			brands: navigator.userAgentData?.brands ?? [],
+			webdriver: navigator.webdriver,
+			visibilityState: document.visibilityState,
+		}));
+		browserIdentity.visibilityBeforeFocus = visibilityBeforeFocus;
+		browserIdentity.focusEmulation = Boolean(native);
+		const sdkRequire = createRequire(require.resolve("posthog-js"));
+		const { isBlockedUA } = sdkRequire("@posthog/core");
+		browserIdentity.sdkBotFiltered = Boolean(
+			browserIdentity.webdriver ||
+				isBlockedUA(browserIdentity.userAgent) ||
+				browserIdentity.brands.some((value) => isBlockedUA(value.brand)),
+		);
+		browserIdentity.mode = browserMode;
+		if (native) {
+			browserIdentity.binaryVersion = native.owner.binaryVersion;
+			browserIdentity.flags = native.owner.args.map((arg) =>
+				arg.startsWith("--user-data-dir=")
+					? "--user-data-dir=<dedicated-owned-profile>"
+					: arg,
+			);
+			if (browserIdentity.sdkBotFiltered)
+				throw new Error("Native browser still matches SDK bot conditions.");
+		}
 		await cdp.send("Network.enable");
 		await cdp.send("Performance.enable");
+		await cdp.send("Page.enable");
 		const counts = {
 			requests: 0,
 			blockedExternal: 0,
 			failedRequests: 0,
 			pageErrors: 0,
+			documentNavigations: 0,
 			sdkAttempts: 0,
 			sdkHeld: 0,
 			sdkAborted: 0,
 			sdkCompleted: 0,
 			sdkEncodedBytes: 0,
+			sdkAssetEncodedBytes: 0,
 			encodedBytes: 0,
 			ingestAttempts: 0,
 		};
 		const sdkPaths = new Set(Object.keys(report.sdkChunks));
 		const sdkRequests = new Set();
+		const sdkAssetRequests = new Set();
 		cdp.on("Network.requestWillBeSent", ({ requestId, request }) => {
 			if (sdkPaths.has(new URL(request.url).pathname))
 				sdkRequests.add(requestId);
+			if (
+				new URL(request.url).origin === fixture.origin &&
+				new URL(request.url).pathname.startsWith("/ingest/static/")
+			)
+				sdkAssetRequests.add(requestId);
 		});
 		cdp.on("Network.loadingFinished", ({ requestId, encodedDataLength }) => {
 			counts.encodedBytes += encodedDataLength;
@@ -112,12 +167,18 @@ export async function openAnalyticsConsentBrowser(
 				counts.sdkCompleted++;
 				counts.sdkEncodedBytes += encodedDataLength;
 			}
+			if (sdkAssetRequests.delete(requestId))
+				counts.sdkAssetEncodedBytes += encodedDataLength;
 		});
 		cdp.on("Network.loadingFailed", ({ requestId }) => {
 			sdkRequests.delete(requestId);
+			sdkAssetRequests.delete(requestId);
 		});
 		page.on("pageerror", () => {
 			counts.pageErrors++;
+		});
+		cdp.on("Page.frameNavigated", ({ frame }) => {
+			if (!frame.parentId) counts.documentNavigations++;
 		});
 		page.on("requestfailed", () => {
 			counts.failedRequests++;
@@ -157,6 +218,7 @@ export async function openAnalyticsConsentBrowser(
 		return {
 			page,
 			context,
+			browserIdentity,
 			fixture,
 			report,
 			async navigate(path = "/en/settings/profile") {
@@ -166,6 +228,20 @@ export async function openAnalyticsConsentBrowser(
 					waitUntil: "domcontentloaded",
 					timeout: 45000,
 				});
+				const appIdentity = await page.evaluate(() => ({
+					userAgent: navigator.userAgent,
+					brands: navigator.userAgentData?.brands ?? [],
+					webdriver: navigator.webdriver,
+					visibilityState: document.visibilityState,
+				}));
+				browserIdentity.app = appIdentity;
+				browserIdentity.appSdkBotFiltered = Boolean(
+					appIdentity.webdriver ||
+						isBlockedUA(appIdentity.userAgent) ||
+						appIdentity.brands.some((value) => isBlockedUA(value.brand)),
+				);
+				if (native && browserIdentity.appSdkBotFiltered)
+					throw new Error("Application browser matches SDK bot conditions.");
 			},
 			async releaseSdk({ fail = false } = {}) {
 				mode = fail ? "fail" : "pass";
@@ -199,10 +275,22 @@ export async function openAnalyticsConsentBrowser(
 					)) !== enabled
 				)
 					await page.locator("#profile-help-improve-product").click();
+				await page.waitForFunction(
+					(enabled) =>
+						document
+							.querySelector("#profile-help-improve-product")
+							?.getAttribute("aria-checked") === String(enabled),
+					{ polling: 100, timeout: 15000 },
+					enabled,
+				);
+				await new Promise((resolve) => setTimeout(resolve, 150));
 				const response = page.waitForResponse(
 					(response) =>
 						response.request().method() === "POST" &&
-						Boolean(response.request().headers()["next-action"]),
+						Boolean(response.request().headers()["next-action"]) &&
+						/"helpImproveProduct"\s*:/.test(
+							response.request().postData() ?? "",
+						),
 					{ timeout: 45000 },
 				);
 				await page
@@ -210,7 +298,13 @@ export async function openAnalyticsConsentBrowser(
 						'form:has(#profile-help-improve-product) button[type="submit"]',
 					)
 					.click();
-				if (!(await response).ok())
+				const submitted = await response;
+				const consentValue = /"helpImproveProduct"\s*:\s*(true|false)/.exec(
+					submitted.request().postData() ?? "",
+				)?.[1];
+				if (consentValue !== String(enabled))
+					throw new Error("Consent action serialized unexpected switch state.");
+				if (!submitted.ok())
 					throw new Error(
 						"Consent save failed; inspect privately and do not retry blindly.",
 					);
@@ -232,6 +326,10 @@ export async function openAnalyticsConsentBrowser(
 				const sinkCounts = await sink.json();
 				const allowed = [
 					"config",
+					"sdkAssets",
+					"sdkDefinitions",
+					"assetFailures",
+					"assetResponseBytes",
 					"flags",
 					"capture",
 					"recording",
@@ -239,6 +337,7 @@ export async function openAnalyticsConsentBrowser(
 					"blockedProxy",
 					"requestBytes",
 					"oversized",
+					"socketErrors",
 				];
 				if (
 					!sink.ok ||
@@ -264,10 +363,12 @@ export async function openAnalyticsConsentBrowser(
 					await request.abort("aborted").catch(() => {});
 				await context.close();
 				await browser.close();
+				if (native) await native.closeProof();
 			},
 		};
 	} catch (error) {
 		await browser.close();
+		if (native) await native.closeProof();
 		throw error;
 	}
 }
