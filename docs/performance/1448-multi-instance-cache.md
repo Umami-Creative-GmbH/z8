@@ -23,6 +23,36 @@ changes and needs its own final build and runtime release checks.
 
 ## Final artifact follow-up: prepared, runtime blocked
 
+The corrected observer build is now source
+`e059597490b02c575c6e1cf64f1d83da712cff97`, with a successful production CI build.
+Of the same 12 selected files, 11 are byte-identical to `ac2`; only native
+coverage changed, importing SDK `SpanKind.SERVER` for start/end accounting.
+[The corrected preparation record](evidence/1472-corrected-observer-preparation.json)
+contains the hashes and actual immutable artifact manifest/BUILD_ID. No runtime
+requests were made during this preparation.
+
+This concrete observer gap justifies replaying **all eight** existing finite
+stages on the new `final-corrected-multi-runtime` fixture, superseding the earlier
+three-stage proposal below. The parent must first create the fresh normal-schema
+clone, initialize projections, launch separate observers/apps and authenticate
+synthetic actors, then grant an exclusive runtime window. Run `fill`, `mutation`,
+`scope`, `concurrency`, `expiry`, `outage`, `interactive-clock`, `restart`
+sequentially, stopping on an incomplete native or transport proof. Preserve old
+reports separately; no old successful stage substitutes for corrected drainage.
+No new framework, backend or cache business changes are proposed.
+
+The parent must pre-arm the existing A-only restart watcher immediately before
+the last stage. The prepared scratch copy
+`watch-restart-corrected-owned-a.ps1` changes only the proven watcher's fixture
+directory and frozen source constants. After the new apps exist, initialize its
+handshake file with a non-ready phase before arming. It then snapshots the actual
+A PID/port, waits for a newly written ready handshake, verifies source, unchanged
+PID, owned listener and immutable Next start command, and relaunches only A using
+the same fixture CLI. The parent retains that process; B and both collectors
+remain untouched. The watcher has been syntax-checked, not executed or armed.
+
+### Earlier uncorrected artifact comparison
+
 An offline comparison of source `4d8bdb1d477cd02888565816b0fb96f85dc13b71`
 against compiled candidate `ac2fb11334b2fac88144dd405e39a15bd988d29c` found all
 12 selected cache, admission, calculation and observer files byte-identical.
@@ -31,7 +61,7 @@ SHA256 values and the candidate artifact fingerprint. This is a selected-file
 comparison, not proof that every transitive dependency or generated artifact is
 equivalent. In particular, the observer bug exists in both versions.
 
-After the application owner fixes the observer and the parent admits a new
+The earlier proposal was: after the application owner fixes the observer and the parent admits a new
 immutable build, rerun the existing `fill`, `mutation` and `scope` stages
 sequentially on the parent's `final-multi-instance-runtime` fixture. These cover
 all three real callers, independent cold/warm reads on both replicas, two

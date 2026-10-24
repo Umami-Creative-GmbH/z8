@@ -72,6 +72,7 @@ test("finite multi-instance acceptance plan declares two computations maximum an
 		assert.equal(plan.maximumConcurrentComputations, 2);
 		assert.equal(plan.expiryWaitMs, 62000);
 		assert.equal(plan.runtimeVerified, false);
+		assert.deepEqual(plan.diagnosticOnlyStages, ["clock-diagnostic"]);
 		assert.equal(plan.independentCollectors, 2);
 		assert.equal(plan.observation, "paired-native-observer-v2");
 		assert.equal(plan.transport, "context-loopback-proxy-v1");

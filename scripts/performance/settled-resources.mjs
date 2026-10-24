@@ -44,15 +44,14 @@ export const companionWireContract = Object.freeze({
   traceTransport: "context-loopback-proxy-v1",
 });
 export const beforeFailurePolicy = Object.freeze({
-  version: 1,
-  amendedAt: "2026-10-24T20:20:23Z",
+  version: 2,
+  amendedAt: "2026-10-24T22:51:03Z",
   source:
     "parent-authorized prospective amendment before controlled head capture",
-  proofSource: "f621a6013994c98bdafa79fc4a4ac84511eac25f",
-  proofPath:
-    "docs/performance/evidence/1450-telemetry-functional-diagnostics.json",
+  proofSource: "5031575cc8c40db7d5e306ecb54c641c150c3846",
+  proofPath: "docs/performance/evidence/1450-observer-v4-before-proof.json",
   proofSha256:
-    "6903cf4254772858fec412bc2daa4dd0447a2b29cef937ef396ff2d7b69a669d",
+    "ec1f85b2a63393b2ccf41edcd99162259a33803e059bbf9cb65fbcf134cee050",
   proofHashEncoding: "sha256 of UTF-8 JSON.stringify(parsed public proof)",
   cause:
     "original annual DatabaseError from pool-acquire-timeout; pool10/10000ms; zero statement errors",
@@ -62,7 +61,7 @@ export const beforeFailurePolicy = Object.freeze({
 const causeProof = JSON.parse(
   readFileSync(
     new URL(
-      "../../docs/performance/evidence/1450-telemetry-functional-diagnostics.json",
+      "../../docs/performance/evidence/1450-observer-v4-before-proof.json",
       import.meta.url,
     ),
   ),
@@ -73,7 +72,7 @@ if (hash(JSON.stringify(causeProof)) !== beforeFailurePolicy.proofSha256)
   );
 export const companionPolicy = Object.freeze({
   ...settledPolicy,
-  version: 3,
+  version: 4,
   scope:
     "all finite page and ServiceWorker proxy response bodies from navigation start through post-readiness quiet; inherited, explicit prefetch and long-lived traffic counted separately",
   wire: companionWireContract,
@@ -842,6 +841,9 @@ export async function measureFixtureResources(
     if (collectorVisit) {
       try {
         const closed = await collector.endCollectorVisit(collectorVisit);
+        s.collectorVisit.nativeCloseProof = closed.nativeCloseProof ?? null;
+        s.collectorVisit.nativeCloseElapsedMs =
+          closed.nativeCloseElapsedMs ?? null;
         if (
           closed.protocol !== "z8-fixture-otlp-collector-v2" ||
           !closed.traces?.some((e) => e.traceId === traceId)

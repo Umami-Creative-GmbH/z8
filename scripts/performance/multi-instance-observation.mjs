@@ -24,6 +24,49 @@ const check = (condition, message) => {
 };
 export const multiInstanceObservationProtocol = "paired-native-observer-v2";
 
+/** Finish the authoritative cleanup reload before closing its real browser context. */
+export async function waitForMultiInstanceContextDrain(transport) {
+	const started = performance.now();
+	transport.wire.ready(started);
+	let prefetchActivity = started,
+		previousPrefetch;
+	for (;;) {
+		const state = transport.wire.state(performance.now());
+		const prefetch = state.groups.prefetch;
+		const fingerprint = JSON.stringify(prefetch);
+		if (fingerprint !== previousPrefetch) {
+			previousPrefetch = fingerprint;
+			prefetchActivity = performance.now();
+		}
+		state.prefetchQuietObservedMs = performance.now() - prefetchActivity;
+		if (performance.now() - started >= 10000) {
+			const error = new Error(
+				"Clock cleanup finite HTTP drain exceeded its cap.",
+			);
+			error.cleanupProof = state;
+			throw error;
+		}
+		if (
+			state.mandatoryPending === 0 &&
+			prefetch.pending === 0 &&
+			state.quietObservedMs >= 1000 &&
+			state.prefetchQuietObservedMs >= 1000
+		) {
+			if (state.mandatoryErrors > 0) {
+				const error = new Error(
+					"Clock cleanup finite HTTP drain retained mandatory errors.",
+				);
+				error.cleanupProof = state;
+				throw error;
+			}
+			// Explicit-header prefetch errors stay separate under the existing wire policy.
+			// Mandatory errors above and the later native/transport reconciliation still fail.
+			return state;
+		}
+		await new Promise((done) => setTimeout(done, 25));
+	}
+}
+
 /** Startup is retained, never subtracted without its exact empty-context proof. */
 export function multiInstanceTransportComplete(snapshot) {
 	const init = snapshot.browserInitialization,
@@ -196,15 +239,27 @@ export async function beginMultiInstanceObservation({
 			const settled = await Promise.allSettled(
 				["a", "b"].map(async (replica) => [
 					replica,
-					(await endCollectorVisit(visit.pair[replica])).traces,
+					await endCollectorVisit(visit.pair[replica]),
 				]),
 			);
 			check(
 				settled.every((row) => row.status === "fulfilled"),
 				"Both native closures must finish; coverage remains incomplete.",
 			);
-			const replicas = Object.fromEntries(settled.map((row) => row.value));
-			const result = { traceIds: visit.traceIds, replicas };
+			const closures = Object.fromEntries(settled.map((row) => row.value));
+			const replicas = Object.fromEntries(
+				Object.entries(closures).map(([replica, row]) => [replica, row.traces]),
+			);
+			const nativeClose = Object.fromEntries(
+				Object.entries(closures).map(([replica, row]) => [
+					replica,
+					{
+						proof: row.nativeCloseProof,
+						elapsedMs: row.nativeCloseElapsedMs,
+					},
+				]),
+			);
+			const result = { traceIds: visit.traceIds, replicas, nativeClose };
 			visits.push(result);
 			for (const rows of Object.values(replicas))
 				for (const row of rows)
@@ -360,6 +415,10 @@ export async function beginMultiInstanceObservation({
 			combined,
 			traces: allIds.size,
 			visits: visits.length,
+			nativeVisitClosures: visits.map(({ traceIds, nativeClose }) => ({
+				traceIds,
+				nativeClose,
+			})),
 			transport: fixtureTraceTransport,
 			transports,
 			transportComplete: transports.every(multiInstanceTransportComplete),
