@@ -131,6 +131,102 @@ test("clock cleanup rejects real HTTP errors and caps unfinished prefetches", {
 	}
 });
 
+test("cleanup drains pending HTTP before rejecting a mandatory cancel; explicit header prefetch cancel stays separate", async () => {
+	for (const prefetch of [false, true]) {
+		let release;
+		const backend = createServer((req, res) => {
+			res.writeHead(200);
+			res.write("pending");
+			if (req.url === "/remaining") release = () => res.end("complete");
+		});
+		await new Promise((done) => backend.listen(0, "127.0.0.1", done));
+		const origin = `http://127.0.0.1:${backend.address().port}`;
+		const transport = await createFixtureTraceTransport({
+			origin,
+			getTraceId: () => "c".repeat(32),
+		});
+		try {
+			transport.wire.begin(performance.now());
+			const proxy = new URL(transport.browserContextOptions.proxyServer);
+			const canceled = new Promise((done) => {
+				const call = request(
+					{
+						hostname: proxy.hostname,
+						port: proxy.port,
+						path: `${origin}/cancel`,
+						headers: prefetch ? { purpose: "prefetch" } : {},
+					},
+					(answer) => {
+						answer.on("error", () => {});
+						answer.once("data", () => {
+							answer.destroy();
+							done();
+						});
+					},
+				);
+				call.on("error", () => {});
+				call.end();
+			});
+			await canceled;
+			const remaining = new Promise((done) => {
+				const call = request(
+					{
+						hostname: proxy.hostname,
+						port: proxy.port,
+						path: `${origin}/remaining`,
+					},
+					(answer) => {
+						answer.resume();
+						answer.on("end", done);
+						answer.on("error", () => {});
+					},
+				);
+				call.on("error", () => {});
+				call.end();
+			});
+			while (!release || transport.snapshot().downstreamCancellations === 0)
+				await pause(10);
+			let settled = false;
+			const drain = observationModule
+				.waitForMultiInstanceContextDrain(transport)
+				.then(
+					(value) => {
+						settled = true;
+						return { value };
+					},
+					(error) => {
+						settled = true;
+						return { error };
+					},
+				);
+			await pause(1100);
+			assert.equal(
+				settled,
+				false,
+				"Recorded errors must not force closure while another response remains pending.",
+			);
+			release();
+			await remaining;
+			const result = await drain;
+			if (prefetch) {
+				assert.equal(result.error, undefined);
+				assert.equal(result.value.groups.prefetch.errors, 1);
+				assert.equal(result.value.mandatoryErrors, 0);
+			} else {
+				assert.ok(result.error);
+				assert.ok(result.error.cleanupProof.mandatoryErrors > 0);
+				assert.equal(result.error.cleanupProof.mandatoryPending, 0);
+			}
+			assert.equal(transport.snapshot().upstreamFailures, 0);
+			assert.equal(transport.snapshot().downstreamCancellations, 1);
+		} finally {
+			await transport.close();
+			backend.closeAllConnections();
+			await new Promise((done) => backend.close(done));
+		}
+	}
+});
+
 test("paired acceptance distinguishes zero-app-IO startup from a late escape and refuses broken arithmetic", () => {
 	const reasons = {
 		unexpectedLoopback: 0,

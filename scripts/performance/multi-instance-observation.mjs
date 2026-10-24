@@ -28,23 +28,40 @@ export const multiInstanceObservationProtocol = "paired-native-observer-v2";
 export async function waitForMultiInstanceContextDrain(transport) {
 	const started = performance.now();
 	transport.wire.ready(started);
+	let prefetchActivity = started,
+		previousPrefetch;
 	for (;;) {
 		const state = transport.wire.state(performance.now());
 		const prefetch = state.groups.prefetch;
-		if (state.mandatoryErrors > 0 || prefetch.errors > 0 || state.capped) {
-			const error = new Error(
-				"Clock cleanup finite HTTP drain failed or capped.",
-			);
-			error.cleanupProof = state;
-			throw error;
+		const fingerprint = JSON.stringify(prefetch);
+		if (fingerprint !== previousPrefetch) {
+			previousPrefetch = fingerprint;
+			prefetchActivity = performance.now();
 		}
-		if (state.complete && prefetch.pending === 0) return state;
+		state.prefetchQuietObservedMs = performance.now() - prefetchActivity;
 		if (performance.now() - started >= 10000) {
 			const error = new Error(
 				"Clock cleanup finite HTTP drain exceeded its cap.",
 			);
 			error.cleanupProof = state;
 			throw error;
+		}
+		if (
+			state.mandatoryPending === 0 &&
+			prefetch.pending === 0 &&
+			state.quietObservedMs >= 1000 &&
+			state.prefetchQuietObservedMs >= 1000
+		) {
+			if (state.mandatoryErrors > 0) {
+				const error = new Error(
+					"Clock cleanup finite HTTP drain retained mandatory errors.",
+				);
+				error.cleanupProof = state;
+				throw error;
+			}
+			// Explicit-header prefetch errors stay separate under the existing wire policy.
+			// Mandatory errors above and the later native/transport reconciliation still fail.
+			return state;
 		}
 		await new Promise((done) => setTimeout(done, 25));
 	}
