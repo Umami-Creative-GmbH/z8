@@ -159,6 +159,17 @@ export type DeactivationHandoverDuties = {
 	legacyRequestIds: readonly string[];
 };
 
+/** The task and review rows a deactivation's capture wrote, for its audit entries. */
+export type CapturedDeactivationDuties = {
+	handovers: Array<{
+		taskId: string;
+		assignmentId: string;
+		workflowId: string;
+		targetEmployeeId: string | null;
+	}>;
+	reviews: Array<{ reviewId: string; subjectId: string; reason: string }>;
+};
+
 function jsonIds(ids: readonly string[]) {
 	return sql`(SELECT value::uuid FROM jsonb_array_elements_text(${JSON.stringify(ids)}::jsonb))`;
 }
@@ -181,9 +192,9 @@ export async function captureDeactivationHandoverDuties(
 		deactivationId: string;
 	},
 	duties: DeactivationHandoverDuties,
-): Promise<{ handoverTaskIds: string[]; reviewIds: string[] }> {
-	const handoverTaskIds: string[] = [];
-	const reviewIds: string[] = [];
+): Promise<CapturedDeactivationDuties> {
+	const handovers: CapturedDeactivationDuties["handovers"] = [];
+	const reviews: CapturedDeactivationDuties["reviews"] = [];
 	if (duties.handovers.length > 0) {
 		const planned = JSON.stringify(
 			duties.handovers.map((duty) => ({
@@ -191,7 +202,12 @@ export async function captureDeactivationHandoverDuties(
 				target: duty.targetEmployeeId,
 			})),
 		);
-		const tasks = await tx.execute<{ id: string }>(sql`
+		const tasks = await tx.execute<{
+			id: string;
+			assignment_id: string;
+			workflow_id: string;
+			target_employee_id: string | null;
+		}>(sql`
 			INSERT INTO employee_departure_task
 				(organization_id, employee_id, employment_period_id, deactivation_id, kind, dedupe_key, payload)
 			SELECT a.organization_id, ${anchor.employeeId}::uuid, ${anchor.employmentPeriodId}::uuid,
@@ -213,12 +229,25 @@ export async function captureDeactivationHandoverDuties(
 				AND w.status = 'pending' AND s.status = 'pending' AND s.activation_mode = 'human'
 				AND s.stage_order = w.current_stage_order
 			ON CONFLICT DO NOTHING
-			RETURNING id
+			RETURNING id, payload->>'assignmentId' AS assignment_id, payload->>'workflowId' AS workflow_id,
+				payload->>'replacementEmployeeId' AS target_employee_id
 		`);
-		handoverTaskIds.push(...tasks.rows.map((row) => row.id));
+		handovers.push(
+			...tasks.rows.map((row) => ({
+				taskId: row.id,
+				assignmentId: row.assignment_id,
+				workflowId: row.workflow_id,
+				targetEmployeeId: row.target_employee_id,
+			})),
+		);
 	}
+	type RaisedReview = { id: string; subject_id: string; reason: string };
+	const raised = (rows: RaisedReview[]) =>
+		reviews.push(
+			...rows.map((row) => ({ reviewId: row.id, subjectId: row.subject_id, reason: row.reason })),
+		);
 	if (duties.futureStageIds.length > 0) {
-		const stages = await tx.execute<{ id: string }>(sql`
+		const stages = await tx.execute<RaisedReview>(sql`
 			INSERT INTO employee_departure_review
 				(organization_id, employee_id, employment_period_id, deactivation_id, kind, subject_id, metadata)
 			SELECT s.organization_id, ${anchor.employeeId}::uuid, ${anchor.employmentPeriodId}::uuid,
@@ -237,12 +266,12 @@ export async function captureDeactivationHandoverDuties(
 				AND s.resolver_snapshot->>'approverEmployeeId' = ${anchor.employeeId}
 				AND s.resolver_snapshot->>'fallbackBehavior' = 'fail'
 			ON CONFLICT DO NOTHING
-			RETURNING id
+			RETURNING id, subject_id, metadata->>'reason' AS reason
 		`);
-		reviewIds.push(...stages.rows.map((row) => row.id));
+		raised(stages.rows);
 	}
 	if (duties.legacyRequestIds.length > 0) {
-		const legacy = await tx.execute<{ id: string }>(sql`
+		const legacy = await tx.execute<RaisedReview>(sql`
 			INSERT INTO employee_departure_review
 				(organization_id, employee_id, employment_period_id, deactivation_id, kind, subject_id, metadata)
 			SELECT r.organization_id, ${anchor.employeeId}::uuid, ${anchor.employmentPeriodId}::uuid,
@@ -260,17 +289,17 @@ export async function captureDeactivationHandoverDuties(
 					WHERE s.organization_id = r.organization_id AND s.legacy_approval_request_id = r.id
 				)
 			ON CONFLICT DO NOTHING
-			RETURNING id
+			RETURNING id, subject_id, metadata->>'reason' AS reason
 		`);
-		reviewIds.push(...legacy.rows.map((row) => row.id));
+		raised(legacy.rows);
 	}
-	if (reviewIds.length > 0) {
+	if (reviews.length > 0) {
 		await enqueueReviewNotifications(tx, {
 			organizationId: anchor.organizationId,
 			deactivationId: anchor.deactivationId,
 		});
 	}
-	return { handoverTaskIds, reviewIds };
+	return { handovers, reviews };
 }
 
 type ApprovalHandoverRuntime = Pick<

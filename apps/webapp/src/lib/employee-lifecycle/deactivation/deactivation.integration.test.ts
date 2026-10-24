@@ -1160,6 +1160,10 @@ describe("deactivation acceptance (#1440)", () => {
 			[
 				"absence.cancelled",
 				"absence.cancelled",
+				// Two current-stage duties handed over, one later stage turned into a review.
+				"approval_duty.handed_over",
+				"approval_duty.handed_over",
+				"approval_duty.review_raised",
 				"driving_authorization.ended",
 				"driving_authorization.ended",
 				"driving_licence.verifier_revoked",

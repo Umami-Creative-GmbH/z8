@@ -153,6 +153,11 @@ export enum AuditAction {
 	SHIFT_UNASSIGNED = "shift.unassigned",
 	DRIVING_AUTHORIZATION_ENDED = "driving_authorization.ended",
 	DRIVING_LICENCE_VERIFIER_REVOKED = "driving_licence.verifier_revoked",
+	// Approval duties of a deactivation (#1437 review): a handover task, a review raised
+	APPROVAL_DUTY_HANDED_OVER = "approval_duty.handed_over",
+	APPROVAL_DUTY_REVIEW_RAISED = "approval_duty.review_raised",
+	// A reactivation closes the deactivation's open reviews and obsoletes its undelivered tasks
+	DEACTIVATION_FOLLOW_UP_CLOSED = "deactivation.follow_up_closed",
 
 	// Expense Officer Grant Operations
 	EXPENSE_OFFICER_GRANT_CREATED = "expense_officer.grant_created",
@@ -458,7 +463,9 @@ export interface AuditLogEntry {
 		| "employee_manager"
 		| "shift"
 		| "driving_authorization"
-		| "driving_licence_verifier";
+		| "driving_licence_verifier"
+		/** An `employee_departure_task` or `employee_departure_review` of a deactivation. */
+		| "deactivation_follow_up";
 	organizationId: string;
 	metadata?: Record<string, unknown>;
 	changes?: Record<string, unknown>; // Before/after changes for updates

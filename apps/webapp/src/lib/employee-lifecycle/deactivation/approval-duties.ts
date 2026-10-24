@@ -6,16 +6,18 @@ import {
 } from "@/lib/approvals/routing/stage-activation-resolver";
 import type { ApprovalRoutingContext } from "@/lib/approvals/routing/types";
 import type { JsonObject } from "@/lib/approvals/workflow/ports";
+import { AuditAction } from "@/lib/audit-logger";
 import { captureDeactivationHandoverDuties } from "../approval-handover";
 import { FUTURE_STAGE_REVIEW_REASON } from "../review-reasons";
-import type {
-	ApprovalDutiesApplied,
-	ApprovalDutiesPlan,
-	AreaApplyResult,
-	DeactivationApplyContext,
-	DeactivationPlanContext,
-	DeactivationReader,
-	DeactivationWriter,
+import {
+	type ApprovalDutiesApplied,
+	type ApprovalDutiesPlan,
+	type AreaApplyResult,
+	type DeactivationApplyContext,
+	type DeactivationPlanContext,
+	type DeactivationReader,
+	type DeactivationWriter,
+	deactivationAuditMetadata,
 } from "./types";
 
 /** Reason of a legacy-only duty, as the departure's handover records it. */
@@ -182,12 +184,14 @@ export async function planApprovalDuties(
  * Captures the planned duties in the deactivation transaction as handover
  * tasks and reviews anchored to the deactivation. The worker delivers the
  * tasks after the commit through the departure's handover handler, so nothing
- * runs after commit here. No audit row is written: a transfer is recorded in
- * the approval workflow with the deactivation's lineage, and reviews are
- * durable records.
+ * runs after commit here. Each task and review is audited under the acting
+ * admin (`approval_duty.handed_over` / `approval_duty.review_raised`, target
+ * `deactivation_follow_up`); the transfer itself is recorded in the approval
+ * workflow with the deactivation's lineage. A departure's capture writes no
+ * audit row, as before.
  */
 export async function applyApprovalDuties(
-	tx: Pick<DeactivationWriter, "execute">,
+	tx: Pick<DeactivationWriter, "execute" | "insert">,
 	ctx: DeactivationApplyContext,
 	plan: ApprovalDutiesPlan,
 ): Promise<AreaApplyResult<ApprovalDutiesApplied>> {
@@ -200,7 +204,7 @@ export async function applyApprovalDuties(
 	if (!ctx.employmentPeriodId) {
 		throw new Error("Approval duties need the employment period of the deactivated employee");
 	}
-	const applied = await captureDeactivationHandoverDuties(
+	const captured = await captureDeactivationHandoverDuties(
 		tx,
 		{
 			organizationId: ctx.organizationId,
@@ -219,5 +223,43 @@ export async function applyApprovalDuties(
 			),
 		},
 	);
-	return { applied, afterCommit: [] };
+	for (const handover of captured.handovers) {
+		await ctx.audit.record(tx, {
+			organizationId: ctx.organizationId,
+			action: AuditAction.APPROVAL_DUTY_HANDED_OVER,
+			actorUserId: ctx.actorUserId,
+			targetType: "deactivation_follow_up",
+			targetId: handover.taskId,
+			employeeId: ctx.employeeId,
+			metadata: {
+				...deactivationAuditMetadata(ctx),
+				assignmentId: handover.assignmentId,
+				workflowId: handover.workflowId,
+				// Null: no target, so the worker raises a review on delivery.
+				targetEmployeeId: handover.targetEmployeeId,
+			},
+		});
+	}
+	for (const review of captured.reviews) {
+		await ctx.audit.record(tx, {
+			organizationId: ctx.organizationId,
+			action: AuditAction.APPROVAL_DUTY_REVIEW_RAISED,
+			actorUserId: ctx.actorUserId,
+			targetType: "deactivation_follow_up",
+			targetId: review.reviewId,
+			employeeId: ctx.employeeId,
+			metadata: {
+				...deactivationAuditMetadata(ctx),
+				subjectId: review.subjectId,
+				reviewReason: review.reason,
+			},
+		});
+	}
+	return {
+		applied: {
+			handoverTaskIds: captured.handovers.map((handover) => handover.taskId),
+			reviewIds: captured.reviews.map((review) => review.reviewId),
+		},
+		afterCommit: [],
+	};
 }

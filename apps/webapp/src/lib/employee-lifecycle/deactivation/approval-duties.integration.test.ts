@@ -15,6 +15,7 @@ import { createApprovalHandoverHandler, createApprovalHandoverRuntime } from "..
 import { runDepartureTaskDelivery } from "../delivery";
 import { createDepartureTaskOutbox, type DepartureTaskClaim } from "../outbox";
 import { getDeactivationFollowUp } from "../queries";
+import { executeReactivation } from "../reactivation";
 import { insertDeactivation, markDeactivationReactivated } from "../receipts";
 import {
 	absenceApprovalRuntime,
@@ -314,6 +315,42 @@ describe("deactivation approval duties", () => {
 		);
 		expect(result.afterCommit).toEqual([]);
 
+		// One audit entry per handover task and per review, under the acting admin.
+		const audits = await fixture.pool.query<{
+			action: string;
+			entity_type: string;
+			entity_id: string;
+			performed_by: string;
+			metadata: string;
+		}>(
+			`select action, entity_type, entity_id, performed_by, metadata from audit_log
+			 where organization_id = $1 and metadata::jsonb ->> 'deactivationId' = $2`,
+			[fixture.organizationId, deactivationId],
+		);
+		expect(
+			audits.rows.map((row) => [row.action, row.entity_type, row.entity_id]).toSorted(),
+		).toEqual(
+			[
+				...result.applied.handoverTaskIds.map((id) => [
+					"approval_duty.handed_over",
+					"deactivation_follow_up",
+					id,
+				]),
+				...result.applied.reviewIds.map((id) => [
+					"approval_duty.review_raised",
+					"deactivation_follow_up",
+					id,
+				]),
+			].toSorted(),
+		);
+		for (const row of audits.rows) {
+			expect(row.performed_by).toBe(fixture.ownerUserId);
+			expect(JSON.parse(row.metadata)).toMatchObject({
+				reason: "employee_deactivated",
+				deactivationId,
+			});
+		}
+
 		// Their own submitted request is untouched.
 		expect(await pendingApprovers(ownRequest.workflow)).toEqual([
 			expect.objectContaining({ approver_employee_id: approver.employeeId }),
@@ -435,6 +472,76 @@ describe("deactivation approval duties", () => {
 		expect(await pendingApprovers(duty.workflow)).toEqual([
 			expect.objectContaining({ approver_employee_id: leaving.employeeId }),
 		]);
+	});
+
+	it("closes the deactivation's open reviews and obsoletes its undelivered tasks on reactivation, audited", async () => {
+		const leaving = await fixture.seedEmployee({ role: "admin" });
+		const approver = await fixture.seedEmployee({ role: "admin" });
+		const unmanaged = await fixture.seedEmployee();
+		await seedDuty(unmanaged, leaving);
+		await seedDuty(unmanaged, approver, { ...FUTURE_STAGE, approverEmployeeId: leaving.employeeId });
+		const { deactivationId, result } = await planAndApply(leaving, {});
+		expect(result.applied.handoverTaskIds).toHaveLength(1);
+		expect(result.applied.reviewIds).toHaveLength(1);
+		const reactivatedAt = DEACTIVATED_AT.add({ hours: 2 });
+
+		const audit = new AuditTrail();
+		const reactivation = await fixture.db.transaction((tx) =>
+			executeReactivation(
+				tx,
+				{
+					organizationId: fixture.organizationId,
+					actorUserId: fixture.ownerUserId,
+					employeeId: leaving.employeeId,
+					requestId: randomUUID(),
+					at: reactivatedAt,
+				},
+				audit,
+			),
+		);
+		expect(reactivation).toMatchObject({ kind: "reactivated", deactivationIds: [deactivationId] });
+
+		expect(await reviews(deactivationId)).toEqual([
+			expect.objectContaining({ id: result.applied.reviewIds[0], status: "resolved" }),
+		]);
+		const tasks = await fixture.pool.query<{
+			id: string;
+			kind: string;
+			status: string;
+			payload: Record<string, unknown>;
+		}>(
+			`select id, kind, status, payload from employee_departure_task
+			 where organization_id = $1 and deactivation_id = $2`,
+			[fixture.organizationId, deactivationId],
+		);
+		// The handover and the review notice.
+		expect(tasks.rows.length).toBeGreaterThanOrEqual(2);
+		for (const task of tasks.rows) {
+			expect(task).toMatchObject({
+				status: "completed",
+				payload: expect.objectContaining({ outcome: "obsolete" }),
+			});
+		}
+		const audits = await fixture.pool.query<{
+			entity_id: string;
+			performed_by: string;
+			metadata: string;
+		}>(
+			`select entity_id, performed_by, metadata from audit_log
+			 where organization_id = $1 and action = 'deactivation.follow_up_closed'
+			   and metadata::jsonb ->> 'deactivationId' = $2`,
+			[fixture.organizationId, deactivationId],
+		);
+		expect(audits.rows.map((row) => row.entity_id).toSorted()).toEqual(
+			[...result.applied.reviewIds, ...tasks.rows.map((task) => task.id)].toSorted(),
+		);
+		for (const row of audits.rows) {
+			expect(row.performed_by).toBe(fixture.ownerUserId);
+			expect(JSON.parse(row.metadata)).toMatchObject({
+				reason: "employee_reactivated",
+				deactivationId,
+			});
+		}
 	});
 
 	it("never plans another organization's duties", async () => {

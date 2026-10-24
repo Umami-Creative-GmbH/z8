@@ -8,7 +8,7 @@ import { z } from "zod";
 import { member, organization } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
-import type { AuditTrail } from "@/lib/audit-trail";
+import { AuditTrail } from "@/lib/audit-trail";
 import { auth, runAuthMutation } from "@/lib/auth";
 import { completeRemovedMemberCleanup } from "@/lib/auth/member-removal-cleanup";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
@@ -89,7 +89,13 @@ const requestConflictMessage =
 type LifecycleRefusal = Exclude<LifecycleTargetCheck, { type: "change" } | { type: "unchanged" }>;
 
 type ReactivationTransactionResult =
-	| { type: "success"; changed: boolean; targetEmployee: LifecycleTargetEmployee }
+	| {
+			type: "success";
+			changed: boolean;
+			targetEmployee: LifecycleTargetEmployee;
+			/** The closed deactivation follow-up, forwarded after the commit. */
+			audit?: AuditTrail;
+	  }
 	| LifecycleRefusal;
 
 type DeactivationTransactionResult =
@@ -555,16 +561,26 @@ function reactivateEmployee(employeeId: string) {
 
 								// Restores nothing the deactivation ended (#1441); the admin
 								// re-grants from the checklist.
-								const reactivation = await executeReactivation(tx, {
-									organizationId: actor.organizationId,
-									actorUserId: actor.session.user.id,
-									employeeId: validatedEmployeeId,
-									requestId,
-									at: systemClock.nowInstant(),
-								});
+								const audit = new AuditTrail();
+								const reactivation = await executeReactivation(
+									tx,
+									{
+										organizationId: actor.organizationId,
+										actorUserId: actor.session.user.id,
+										employeeId: validatedEmployeeId,
+										requestId,
+										at: systemClock.nowInstant(),
+									},
+									audit,
+								);
 								if (reactivation.kind === "not_found") return { type: "not_found" };
 
-								return { type: "success", changed: true, targetEmployee: check.targetEmployee };
+								return {
+									type: "success",
+									changed: true,
+									targetEmployee: check.targetEmployee,
+									audit,
+								};
 							},
 							actor.dbService.db,
 						);
@@ -590,6 +606,7 @@ function reactivateEmployee(employeeId: string) {
 				}
 
 				if (transactionResult.changed) {
+					transactionResult.audit?.forwardCommitted();
 					yield* Effect.promise(() =>
 						logAudit({
 							action: AuditAction.EMPLOYEE_REACTIVATED,
