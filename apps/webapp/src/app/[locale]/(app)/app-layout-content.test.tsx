@@ -395,6 +395,23 @@ describe("authenticated app layout gates", () => {
 		expect(mockState.protectedChildRender).not.toHaveBeenCalled();
 	});
 
+	it("redirects an SSO-held identity to workspace initialization before protected children or loaders", async () => {
+		mockState.getSession.mockResolvedValue({
+			user: { id: "user-1" },
+			session: { activeOrganizationId: null },
+			ssoRequired: true,
+		});
+		const { errors } = await serverRender("/en/settings/profile");
+		expect(errors).toHaveLength(1);
+		expect(mockState.redirect).toHaveBeenCalledWith(
+			"/en/init?callbackUrl=%2Fen%2Fsettings%2Fprofile",
+		);
+		expect(mockState.protectedChildRender).not.toHaveBeenCalled();
+		expect(mockState.findUserSettings).not.toHaveBeenCalled();
+		expect(mockState.getOrganizationSettings).not.toHaveBeenCalled();
+		expect(mockState.checkBillingAccess).not.toHaveBeenCalled();
+	});
+
 	it("redirects an MFA-held identity before protected children or organization loaders", async () => {
 		mockState.getSession.mockResolvedValue({
 			user: { id: "user-1" },
