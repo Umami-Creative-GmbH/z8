@@ -64,7 +64,7 @@ const { db } = await import("@/db");
 const { DatabaseService, makeDatabaseService } = await import(
 	"@/lib/effect/services/database.service"
 );
-const { getTeamPerformanceData } = await import(
+const { getTeamPerformanceData, getWorkHoursAnalyticsData } = await import(
 	"@/app/[locale]/(app)/analytics/actions"
 );
 const range = {
@@ -310,6 +310,53 @@ describe("recent analytics authorization and dependency versions on PostgreSQL",
 		expect(
 			queries.some((text) => text.includes("with visible as materialized")),
 		).toBe(false);
+	});
+	it("preserves viewed historical work for a due departure and an explicitly selected inactive employee", async () => {
+		const person = await fixture.seedEmployee();
+		caller.userId = fixture.ownerUserId;
+		caller.organizationId = fixture.organizationId;
+		await addWork(
+			person.employeeId,
+			"2026-03-02T08:00:00Z",
+			"2026-03-02T09:00:00Z",
+			60,
+		);
+		const before = await getTeamPerformanceData(range);
+		expect(before.success).toBe(true);
+		if (!before.success) throw new Error("Historical fixture must be readable");
+		await fixture.pool.query(
+			`insert into employee_departure (organization_id,employee_id,employment_period_id,mode,last_working_day,timezone,cutoff_at,created_by,request_id,request_fingerprint,revision,status) values ($1,$2,$3,'scheduled','2026-04-01','UTC','2026-04-02T00:00:00Z',$4,gen_random_uuid(),'historical-selection',1,'pending')`,
+			[
+				fixture.organizationId,
+				person.employeeId,
+				person.employmentPeriodId,
+				fixture.ownerUserId,
+			],
+		);
+		expect(await getTeamPerformanceData(range)).toMatchObject({
+			success: true,
+			data: { organizationTotal: before.data.organizationTotal },
+		});
+		expect(
+			await getWorkHoursAnalyticsData(range, person.employeeId),
+		).toMatchObject({
+			success: true,
+			data: { summary: { totalHours: 1 } },
+		});
+		await fixture.pool.query(
+			`update employee set is_active=false where id=$1`,
+			[person.employeeId],
+		);
+		expect(await getTeamPerformanceData(range)).toMatchObject({
+			success: true,
+			data: { organizationTotal: before.data.organizationTotal - 1 },
+		});
+		expect(
+			await getWorkHoursAnalyticsData(range, person.employeeId),
+		).toMatchObject({
+			success: true,
+			data: { summary: { totalHours: 1 } },
+		});
 	});
 	async function identity(
 		employeeId = people[0],

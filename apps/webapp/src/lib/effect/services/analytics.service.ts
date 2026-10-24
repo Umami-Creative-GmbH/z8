@@ -65,6 +65,11 @@ import type { DatabaseError, NotFoundError, ValidationError } from "@/lib/effect
 import { DatabaseService } from "./database.service";
 import { WorkPolicyService } from "./work-policy.service";
 
+/** Historical analytics retain their existing active-only population, not today's roster. */
+export function activeAnalyticsEmployee() {
+	return eq(employee.isActive, true);
+}
+
 /**
  * Calculate clustering score for vacation absences (0-100)
  * Higher scores indicate more clustered (overlapping) vacation periods
@@ -382,7 +387,7 @@ export class AnalyticsService extends Context.Service<
 								dbService.db.query.employee.findMany({
 									where: and(
 										eq(employee.organizationId, organizationId),
-										eq(employee.isActive, true),
+										activeAnalyticsEmployee(),
 										teamId ? eq(employee.teamId, teamId) : undefined,
 										params.scope.role === "manager"
 											? inArray(
@@ -602,7 +607,7 @@ export class AnalyticsService extends Context.Service<
 							return await dbService.db.query.employee.findMany({
 								where: and(
 									eq(employee.organizationId, organizationId),
-									eq(employee.isActive, true),
+									activeAnalyticsEmployee(),
 								),
 								with: {
 									user: true,
@@ -769,7 +774,7 @@ export class AnalyticsService extends Context.Service<
 										eq(employee.organizationId, organizationId),
 										employeeId
 											? eq(employee.id, employeeId)
-											: eq(employee.isActive, true),
+											: activeAnalyticsEmployee(),
 										scope.role === "manager"
 											? inArray(
 													employee.id,
@@ -1478,7 +1483,7 @@ export class AnalyticsService extends Context.Service<
 								dbService.db.query.employee.findMany({
 									where: and(
 										eq(employee.organizationId, organizationId),
-										eq(employee.isActive, true),
+										activeAnalyticsEmployee(),
 										filters?.teamId
 											? eq(employee.teamId, filters.teamId)
 											: undefined,

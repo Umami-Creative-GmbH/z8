@@ -135,3 +135,28 @@ personal widgets and combined refresh tests pass all 16 cases. File-level Biome
 and React Doctor 0.9.17 schema-3 lint report no diagnostics for the corrected
 component. Whole-feature unit, Doctor and broader quality gates are being run
 separately; compiled browser and production-build gates remain pending.
+
+## Full-check historical selection guard
+
+The full roster inventory reproduced one added raw active check in recent
+analytics identity metadata. Its shared population predicate now lives with the
+existing historical analytics service and is reused by its readers and metadata
+query. Historical active-only defaults and explicit inactive-employee work lookup
+remain unchanged; current actor admission still uses the separate fresh lifecycle
+rule. No roster-baseline exception, new module dependency, rich employee load or
+query was added. All 97 roster guards pass (raw inventory 415 ms in the red run).
+
+A real public caller/PostgreSQL regression retains work before a viewed employee's
+due departure, excludes inactive employees from the default team population and
+retains the explicit inactive employee's historical hour. All 11 recent analytics
+cases pass; the affected eight-suite admission/analytics selection passed 91 cases
+before adding that one case (overlapping coverage is not additive).
+
+The exact 6,144-file injected-write capacity test passes in 3.795 s; 6,145-file
+overflow fails closed in 2.465 s. Independent 2 MiB and 32 MiB guards pass in
+4.5 ms and 106 ms. The actual filesystem/native production owner inventory passes
+in 45.717 s. These are test durations under concurrent bounded quality checks,
+not application latency or isolated scanner benchmarks. The later neutral DTO
+adds one source; the admitted filesystem currently contains 4,124 files and
+28,229,366 bytes, including normally generated ignored licenses, below all limits.
+A final inventory rescan after all release source changes remains necessary.

@@ -3,7 +3,10 @@ import "server-only";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { employee, employeeManagers } from "@/db/schema";
-import { getAnalyticsCalendarRange } from "@/lib/effect/services/analytics.service";
+import {
+	activeAnalyticsEmployee,
+	getAnalyticsCalendarRange,
+} from "@/lib/effect/services/analytics.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import type {
 	AnalyticsEmployeeScope,
@@ -75,7 +78,7 @@ export const loadRecentAnalyticsIdentity = Effect.fn(
 			.where(
 				and(
 					eq(employee.organizationId, actor.organizationId),
-					eq(employee.isActive, true),
+					activeAnalyticsEmployee(),
 					scope.role === "manager"
 						? managedBy(scope.managerEmployeeId)
 						: undefined,
