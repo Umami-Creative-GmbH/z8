@@ -1,4 +1,4 @@
-import { SpanStatusCode } from "@opentelemetry/api";
+import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { resourceFromAttributes } from "@opentelemetry/resources";
@@ -12,6 +12,11 @@ import {
 	ConsoleSpanExporter,
 } from "@opentelemetry/sdk-trace-base";
 import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
+import {
+	FixtureNativeCoverage,
+	installFixtureDriverCounter,
+	startFixtureNativeControl,
+} from "@/lib/performance-fixture-native-coverage";
 import {
 	eventLoopProbeIntervalMs,
 	FixturePerformanceSpanProcessor,
@@ -91,6 +96,11 @@ export async function registerNodeRuntime() {
 				}
 			: {}),
 	});
+	const nativeCoverage =
+		fixtureObserver && process.env.Z8_PERFORMANCE_OBSERVER_CONTROL_FILE
+			? new FixtureNativeCoverage()
+			: undefined;
+	const fixtureProcessors: FixturePerformanceSpanProcessor[] = [];
 
 	// Determine span processors based on environment and configuration
 	const spanProcessors =
@@ -118,7 +128,14 @@ export async function registerNodeRuntime() {
 			.map((processor) => new SetupPrivacySpanProcessor(processor))
 			.map((processor) =>
 				fixtureObserver
-					? new FixturePerformanceSpanProcessor(processor)
+					? (() => {
+							const observed = new FixturePerformanceSpanProcessor(
+								processor,
+								nativeCoverage,
+							);
+							fixtureProcessors.push(observed);
+							return observed;
+						})()
 					: processor,
 			),
 		instrumentations: [
@@ -126,6 +143,14 @@ export async function registerNodeRuntime() {
 				"@opentelemetry/instrumentation-fs": { enabled: false },
 				...(fixtureObserver
 					? {
+							...(nativeCoverage
+								? {
+										"@opentelemetry/instrumentation-http": {
+											requestHook: (span, request) =>
+												nativeCoverage.observeIncoming(span, request),
+										},
+									}
+								: {}),
 							"@opentelemetry/instrumentation-pg": {
 								enhancedDatabaseReporting: false,
 								ignoreConnectSpans: false,
@@ -138,6 +163,26 @@ export async function registerNodeRuntime() {
 	});
 
 	sdk.start();
+	if (nativeCoverage && process.env.Z8_PERFORMANCE_OBSERVER_CONTROL_FILE) {
+		const pg = await import("pg");
+		const connection =
+			Reflect.get(pg, "Connection") ?? Reflect.get(pg, "default")?.Connection;
+		if (typeof connection !== "function")
+			throw new Error("Native wire counter unavailable");
+		installFixtureDriverCounter(
+			connection,
+			nativeCoverage,
+			() => trace.getActiveSpan()?.spanContext().traceId,
+		);
+		await startFixtureNativeControl(
+			nativeCoverage,
+			() =>
+				Promise.all(
+					fixtureProcessors.map((processor) => processor.forceFlush()),
+				).then(() => {}),
+			process.env.Z8_PERFORMANCE_OBSERVER_CONTROL_FILE,
+		);
+	}
 
 	if (!isBuildTime) {
 		// Initialize S3 storage only for a running server, never while compiling the app.

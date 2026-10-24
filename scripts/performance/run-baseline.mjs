@@ -4,6 +4,11 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { cpus, platform, release, totalmem } from "node:os";
 import { join } from "node:path";
 import {
+	beginCollectorVisit,
+	collectorProtocol,
+	endCollectorVisit,
+} from "./collector-client.mjs";
+import {
 	clickVisible,
 	fixtureBrowserPermissions,
 	historicalRangeSteps,
@@ -263,10 +268,21 @@ async function main() {
 			const evidence = backend.find(
 				(entry) => entry.traceId === (sample.backendTraceId ?? sample.traceId),
 			);
+			const nativeComplete =
+				plan.runtime.collectorProtocol !== collectorProtocol ||
+				(evidence?.coverage?.registration === true &&
+					evidence.coverage.closed === true &&
+					evidence.coverage.incomplete === false &&
+					evidence.coverage.unattributedNativeSpans === 0 &&
+					evidence.coverage.rejectedBatches === 0 &&
+					evidence.coverage.nativeProof === true);
+			sample.backendCoverage = evidence?.coverage ?? null;
 			sample.backend = Object.fromEntries(
 				backendMetrics.map((name) => [
 					name,
-					Number.isFinite(evidence?.[name]) && evidence[name] >= 0
+					nativeComplete &&
+					Number.isFinite(evidence?.[name]) &&
+					evidence[name] >= 0
 						? evidence[name]
 						: null,
 				]),
@@ -411,6 +427,13 @@ async function main() {
 			"Provide --auth, --out and --chrome. Auth belongs in a private fixture file.",
 		);
 	const auth = JSON.parse(await readFile(option("--auth"), "utf8"));
+	if (
+		plan.runtime.collectorProtocol === collectorProtocol &&
+		!args.includes("--collector")
+	)
+		fail(
+			"The v2 fixture protocol requires --collector with private control metadata.",
+		);
 	const out = option("--out");
 	await mkdir(out, { recursive: true });
 	const result = {
@@ -423,6 +446,7 @@ async function main() {
 		planSha256: createHash("sha256").update(planBytes).digest("hex"),
 		runtime: {
 			mode: plan.runtime.mode,
+			collectorProtocol: plan.runtime.collectorProtocol ?? null,
 			browserPermissions: fixtureBrowserPermissions,
 			build: plan.runtime.build,
 			sourceBuild: plan.runtime.sourceBuild ?? null,
@@ -633,9 +657,17 @@ async function measure(
 	iteration,
 	concurrency,
 ) {
-	const context = await browser.createBrowserContext();
 	const traceId = randomBytes(16).toString("hex");
 	const prerequisiteTraceId = randomBytes(16).toString("hex");
+	const backgroundTraceId = randomBytes(16).toString("hex");
+	const observerVisit =
+		plan.runtime.collectorProtocol === collectorProtocol
+			? await beginCollectorVisit({
+					control: option("--collector"),
+					traceIds: [traceId, prerequisiteTraceId, backgroundTraceId],
+				})
+			: null;
+	const context = await browser.createBrowserContext();
 	const attemptStart = performance.now();
 	const sample = {
 		condition: condition.name,
@@ -652,6 +684,7 @@ async function measure(
 		iteration,
 		traceId,
 		prerequisiteTraceId,
+		backgroundTraceId,
 		backendTraceId: traceId,
 		resourceScope: "measured-visit",
 		censored: false,
@@ -1115,7 +1148,7 @@ async function measure(
 					: performance.now() - measurementStart;
 		}
 		await client?.detach().catch(() => {});
-		requestTraceId = randomBytes(16).toString("hex");
+		requestTraceId = backgroundTraceId;
 		if (mutationStarted) {
 			try {
 				await performSteps(
@@ -1136,6 +1169,29 @@ async function measure(
 			}
 		}
 		await context.close();
+		if (observerVisit) {
+			try {
+				const observation = await endCollectorVisit(observerVisit);
+				const evidence = observation.traces.find(
+					(entry) => entry.traceId === sample.backendTraceId,
+				);
+				sample.collector = {
+					protocol: observation.protocol,
+					registered: true,
+					closed: true,
+					coverage: evidence?.coverage ?? null,
+				};
+				if (evidence?.coverage.incomplete !== false) {
+					sample.failed = true;
+					sample.failureStage = "native-coverage";
+					sample.failureKind = "observation-incomplete";
+				}
+			} catch {
+				sample.failed = true;
+				sample.failureStage = "native-coverage";
+				sample.failureKind = "observation-incomplete";
+			}
+		}
 	}
 	return sample;
 }

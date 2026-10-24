@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => ({
 	initializeSetupOnStartup: vi.fn(async () => undefined),
 	otlpExporter: vi.fn(),
 	batchSpanProcessor: vi.fn(),
+	nativeControl: vi.fn(),
+	driverCounter: vi.fn(),
 }));
 
 vi.mock("@opentelemetry/api", () => ({
@@ -57,6 +59,11 @@ vi.mock("@/lib/health", () => ({
 vi.mock("@/lib/setup/startup", () => ({
 	initializeSetupOnStartup: mocks.initializeSetupOnStartup,
 }));
+vi.mock("@/lib/performance-fixture-native-coverage", () => ({
+	FixtureNativeCoverage: class {},
+	startFixtureNativeControl: mocks.nativeControl,
+	installFixtureDriverCounter: mocks.driverCounter,
+}));
 
 import { register } from "./instrumentation";
 
@@ -65,6 +72,34 @@ describe("instrumentation registration", () => {
 		vi.unstubAllEnvs();
 		vi.clearAllMocks();
 	});
+	it.each(["phase", "lifecycle"])(
+		"never creates fixture control files during build (%s guard)",
+		async (guard) => {
+			vi.stubEnv("NEXT_RUNTIME", "nodejs");
+			vi.stubEnv("NODE_ENV", "production");
+			vi.stubEnv(
+				"NEXT_PHASE",
+				guard === "phase" ? "phase-production-build" : "",
+			);
+			vi.stubEnv(
+				"npm_lifecycle_event",
+				guard === "lifecycle" ? "build" : "start",
+			);
+			vi.stubEnv("Z8_PERFORMANCE_OBSERVER", "1");
+			vi.stubEnv(
+				"OTEL_EXPORTER_OTLP_ENDPOINT",
+				"http://127.0.0.1:4318/v1/traces",
+			);
+			vi.stubEnv(
+				"Z8_PERFORMANCE_OBSERVER_CONTROL_FILE",
+				"must-not-be-created.json",
+			);
+			await register();
+			expect(mocks.nativeControl).not.toHaveBeenCalled();
+			expect(mocks.driverCounter).not.toHaveBeenCalled();
+			expect(mocks.initializeStorage).not.toHaveBeenCalled();
+		},
+	);
 
 	it("does not initialize external storage during a production build", async () => {
 		vi.stubEnv("NEXT_RUNTIME", "nodejs");
