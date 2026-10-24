@@ -1,0 +1,109 @@
+{
+	"schema": 1,
+	"acceptance": "unfulfilled",
+	"controlledCapture": false,
+	"rawNativePaintObservations": 1,
+	"minimumPerControlledCohort": 20,
+	"nativePaintDiagnostic": {
+		"failed": true,
+		"stage": "verify-expected-content",
+		"usableContentMs": null,
+		"clockReadyMs": 752.2498,
+		"lcpMs": 588,
+		"interactionMaxMs": 48,
+		"nativeObservation": {
+			"readCompleted": true,
+			"lcpEntries": 1,
+			"eventEntries": 6
+		},
+		"summaryLcp": {
+			"count": 1,
+			"p50": 588,
+			"p95": 588,
+			"min": 588,
+			"max": 588
+		},
+		"summaryUsable": null,
+		"global": {
+			"driverQueryCount": 4970,
+			"nativeQueryStartedCount": 4970,
+			"nativeQueryEndedCount": 4970,
+			"observedQueryCount": 4970,
+			"pendingNativeQueries": 0,
+			"activeTraces": 0,
+			"allReceivedTracesReconciled": true,
+			"complete": true
+		}
+	},
+	"linkDiagnostic": {
+		"kind": "settled-resource-diagnostic",
+		"acceptance": "unfulfilled",
+		"mode": "repeat-link",
+		"failed": true,
+		"failureStage": "verify-expected-content",
+		"elapsedUntilFailureMs": 30952.745999999996,
+		"measurementStarted": true,
+		"prerequisiteComplete": true,
+		"targetRangePrepared": true,
+		"wireFailureDrain": {
+			"complete": true,
+			"capped": false,
+			"mandatoryPending": 0,
+			"mandatoryErrors": 0,
+			"postReadyMs": 1050.7379,
+			"bytes": {
+				"javascript": 0,
+				"document": 0,
+				"rsc": 322496,
+				"otherFinite": 1981
+			}
+		},
+		"afterInitialization": {
+			"requests": 270,
+			"rewrittenRequests": 270,
+			"refusedRequests": 0,
+			"upstreamFailures": 0,
+			"downstreamCancellations": 0,
+			"upstreamConnectionErrors": 0,
+			"upstreamResponseErrors": 0,
+			"upstreamReusedSocketErrors": 0,
+			"upstreamGetErrors": 0,
+			"upstreamPostErrors": 0,
+			"upstreamOtherMethodErrors": 0,
+			"upstreamResetErrors": 0,
+			"upstreamRefusedErrors": 0,
+			"upstreamOtherErrors": 0,
+			"responseBodyBytes": 3606186,
+			"refusalReasons": {
+				"unexpectedLoopback": 0,
+				"nonLoopbackHttp": 0,
+				"loopbackConnect": 0,
+				"nonLoopbackConnect": 0,
+				"malformed": 0
+			}
+		},
+		"nativeRunCoverage": {
+			"driverQueryCount": 13502,
+			"nativeQueryStartedCount": 13502,
+			"nativeQueryEndedCount": 13502,
+			"observedQueryCount": 13502,
+			"pendingNativeQueries": 0,
+			"activeTraces": 0,
+			"allReceivedTracesReconciled": true,
+			"complete": true
+		},
+		"historicalJavaScriptFailureReproduced": false,
+		"historicalFailureCause": "unknown; original failed ledger retained"
+	},
+	"noBudgetDerivation": true,
+	"noProtocolOrBusinessChange": true,
+	"captureSources": {
+		"nativePaint": "b2cd4e652",
+		"companion": "b5b254ecdc786f633c9d68d95e62dbb922a15043",
+		"browserNativeObserverSha256": "b4c906cbdd64ee7cf8bfc50ab1da00d9f9b11fcb91ba6c6bb1cd4015357c8329"
+	},
+	"rawArtifactSha256": {
+		"observer-v3-annual-c2-native-paint-diagnostic/baseline.json": "9ab54f91c7055555b4e397d18bfdf08d77b02616b73282b596573dbd19a8e873",
+		"observer-v3-annual-c2-link-reasons-diagnostic/diagnostic.json": "61f48d31ccbbe0b3da578b81115c113983a5e0a3b5442348c3eb2a3c95fc02b5"
+	}
+}

@@ -8,7 +8,6 @@ import {
 	employeeDocumentRequestDocument,
 	employeeDocumentRequestEvent,
 } from "@/db/schema";
-import { employeeEmploymentPeriod } from "@/db/schema/employee-lifecycle";
 import {
 	comparePlainDates,
 	type Instant,
@@ -30,7 +29,8 @@ import {
 	redactDocumentRequestNotifications,
 } from "./document-request-purge";
 import { loadOrganizationDay } from "./organization-day";
-import { type EmploymentPeriodForRetention, retentionDueDate } from "./retention";
+import { retentionDueDate } from "./retention";
+import { employmentMayHaveEnded, loadRetentionEmployment } from "./retention-employment";
 import { loadRetentionPeriods, type RetentionPeriods } from "./retention-store";
 
 /**
@@ -136,19 +136,8 @@ function closedRequestsWithoutDocuments(
 							),
 						),
 				),
-				// Narrowing only: an open employment period means no retention start.
-				notExists(
-					database
-						.select({ one: sql`1` })
-						.from(employeeEmploymentPeriod)
-						.where(
-							and(
-								eq(employeeEmploymentPeriod.organizationId, input.organizationId),
-								eq(employeeEmploymentPeriod.employeeId, employeeDocumentRequest.employeeId),
-								eq(employeeEmploymentPeriod.status, "open"),
-							),
-						),
-				),
+				// Narrowing only: a running employment means no retention start.
+				employmentMayHaveEnded(input.organizationId, employeeDocumentRequest.employeeId),
 			),
 		)
 		.orderBy(asc(employeeDocumentRequest.id));
@@ -178,33 +167,6 @@ async function loadClosingInstants(
 	return closing;
 }
 
-async function loadEmploymentPeriods(
-	database: Reader,
-	input: { organizationId: string; employeeIds: readonly string[] },
-): Promise<Map<string, EmploymentPeriodForRetention[]>> {
-	const byEmployee = new Map<string, EmploymentPeriodForRetention[]>();
-	if (input.employeeIds.length === 0) return byEmployee;
-	const rows = await database
-		.select({
-			employeeId: employeeEmploymentPeriod.employeeId,
-			status: employeeEmploymentPeriod.status,
-			endedAt: employeeEmploymentPeriod.endedAt,
-		})
-		.from(employeeEmploymentPeriod)
-		.where(
-			and(
-				eq(employeeEmploymentPeriod.organizationId, input.organizationId),
-				inArray(employeeEmploymentPeriod.employeeId, [...input.employeeIds]),
-			),
-		);
-	for (const row of rows) {
-		const list = byEmployee.get(row.employeeId) ?? [];
-		list.push({ status: row.status, endedAt: row.endedAt ? instantFromDate(row.endedAt) : null });
-		byEmployee.set(row.employeeId, list);
-	}
-	return byEmployee;
-}
-
 interface RetentionContext {
 	organizationId: string;
 	timezone: string;
@@ -224,7 +186,7 @@ async function dueRequests(
 			organizationId: context.organizationId,
 			requestIds: requests.map((request) => request.id),
 		}),
-		loadEmploymentPeriods(database, {
+		loadRetentionEmployment(database, {
 			organizationId: context.organizationId,
 			employeeIds: [...new Set(requests.map((request) => request.employeeId))],
 		}),

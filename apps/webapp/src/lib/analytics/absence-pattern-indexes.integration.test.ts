@@ -119,7 +119,7 @@ const admin = integrationAdminPool();
 const migratedIndexName = "absenceEntry_employeeId_endDate_startDate_idx";
 const migrationSql = await readFile(
 	new URL(
-		"../../../drizzle/0284_absence_employee_overlap.sql",
+		"../../../drizzle/0288_absence_employee_overlap.sql",
 		import.meta.url,
 	),
 	"utf8",

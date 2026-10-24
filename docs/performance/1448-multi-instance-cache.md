@@ -111,7 +111,8 @@ preload supplies per-replica numeric memory/get/fault observations without cache
 keys or manual framework-global initialization. No fault flag is created during
 setup. Streaming through this actual proxy is a separate #1473 gate.
 
-The original dump predates migration 0284. `migrate` verifies the actual owned
+The original dump ends at migration 0283; the merged absence index is migration
+0288, after the unchanged employee-deactivation migrations 0284–0287. `migrate` verifies the actual owned
 container label, mapped port and database, then runs the established
 `scripts/migrate-with-lock.js` / Drizzle pending-migration path. It never runs the
 schema-resetting migration verifier. It checks that the absence overlap index is
@@ -119,6 +120,10 @@ valid and ready and records the migration ledger. Replica launch requires this
 marker. The original database is never migrated by this operator. A second
 pristine fixture can be prepared and migrated into a different private directory
 without starting a proxy or app; primary timing reserves that clone separately.
+Private fixtures with the pre-integration absence-index journal timestamp must
+be recreated from that original dump before applying the merged chain; their
+old ledger could skip a peer migration. Do not migrate those existing fixtures
+or the original before database.
 
 Legacy unregistered telemetry is not acceptance evidence. Each replica now has
 its own V2 collector and independent native-control endpoint. Before browser or

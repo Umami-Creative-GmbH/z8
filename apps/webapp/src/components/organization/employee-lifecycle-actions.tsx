@@ -10,7 +10,7 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import type { ComponentPropsWithRef, ReactElement } from "react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
 	deactivateEmployee,
@@ -40,7 +40,17 @@ import type { ServerActionResult } from "@/lib/effect/result";
 import { EMPLOYEE_OFFBOARDING_RELEASE_READY } from "@/lib/employee-lifecycle/release";
 import { queryKeys } from "@/lib/query";
 import { Link } from "@/navigation";
+import {
+	DeactivationPreviewDialog,
+	type DeactivationReplacementPicks,
+	useDeactivationDialogMessages,
+} from "./deactivation-preview-dialog";
 import { EmployeeLifecycleActionError } from "./employee-lifecycle-error";
+import {
+	ReactivationChecklistDialog,
+	useReactivationChecklistOffer,
+} from "./reactivation-checklist";
+import { type DeactivationSubmission, useDeactivationFlow } from "./use-deactivation-flow";
 
 export interface EmployeeLifecycleTarget {
 	employeeId: string;
@@ -77,6 +87,10 @@ type LifecycleActionSelection = {
 	organizationId: string;
 	target: EmployeeLifecycleTarget;
 };
+/** Deactivate always carries its confirmed picks and the request ID for them. */
+type LifecycleMutationInput =
+	| (LifecycleActionSelection & { action: "deactivate"; deactivation: DeactivationSubmission })
+	| (LifecycleActionSelection & { action: ConfirmedLifecycleAction });
 
 function translateLifecycleGuidance(
 	t: ReturnType<typeof useTranslate>["t"],
@@ -210,34 +224,17 @@ interface LifecycleConfirmationDialogProps {
 	isPending: boolean;
 	onConfirm(): void;
 	onOpenChange(open: boolean): void;
-	selectedAction: LifecycleAction | null;
+	/** Deactivate has its own preview dialog (#1440). */
+	selectedAction: ConfirmedLifecycleAction | null;
 }
 
+type ConfirmedLifecycleAction = Exclude<LifecycleAction, "deactivate">;
+
 function lifecycleDialogCopy(
-	action: LifecycleAction | null,
+	action: ConfirmedLifecycleAction | null,
 	t: ReturnType<typeof useTranslate>["t"],
 ) {
 	switch (action) {
-		case "deactivate":
-			return {
-				title: t(
-					"settings.employees.lifecycle.deactivateTitle",
-					"Deactivate employee?",
-				),
-				description: t(
-					"settings.employees.lifecycle.deactivateDescription",
-					"This suspends access to this organization and ends sessions currently using it. Employee history is retained.",
-				),
-				action: t("settings.employees.lifecycle.deactivate", "Deactivate"),
-				pending: t(
-					"settings.employees.lifecycle.deactivating",
-					"Deactivating...",
-				),
-				pendingStatus: t(
-					"settings.employees.lifecycle.deactivatingStatus",
-					"Deactivating employee",
-				),
-			};
 		case "reactivate":
 			return {
 				title: t(
@@ -327,6 +324,21 @@ function LifecycleConfirmationDialog({
 	);
 }
 
+/** The dialog's message for a refused deactivation. */
+function deactivationSubmitError(
+	t: ReturnType<typeof useTranslate>["t"],
+	messages: ReturnType<typeof useDeactivationDialogMessages>,
+	error: unknown,
+): string {
+	if (error instanceof EmployeeLifecycleActionError) {
+		const refusal = messages.refusal(error.refusal);
+		if (refusal) return refusal;
+		const guidance = translateLifecycleGuidance(t, error);
+		if (guidance) return guidance;
+	}
+	return t("settings.employees.lifecycle.deactivateError", "Failed to deactivate employee");
+}
+
 export function EmployeeLifecycleActions({
 	organizationId,
 	target,
@@ -343,6 +355,15 @@ export function EmployeeLifecycleActions({
 	const [selection, setSelection] = useState<LifecycleActionSelection | null>(
 		null,
 	);
+	const dialogMessages = useDeactivationDialogMessages();
+	const mounted = useRef(true);
+	useEffect(() => {
+		mounted.current = true;
+		return () => {
+			mounted.current = false;
+		};
+	}, []);
+	const reactivation = useReactivationChecklistOffer(mounted);
 	const isOwner = hasOrganizationRole(currentMemberRole, "owner");
 	const isAdmin = hasOrganizationRole(currentMemberRole, "admin");
 	const hasApprovedMembership = target.membership?.status === "approved";
@@ -351,28 +372,39 @@ export function EmployeeLifecycleActions({
 		hasApprovedMembership && (isOwner || (isAdmin && !targetIsOwner));
 	const canRemoveAccess = hasApprovedMembership && isOwner;
 
+	const deactivating = selection?.action === "deactivate" ? selection : null;
+	const deactivation = useDeactivationFlow(deactivating?.target.employeeId ?? null);
+
+	const closeDialog = () => {
+		setSelection(null);
+		deactivation.reset();
+	};
+
 	const mutation = useMutation({
-		mutationFn: ({
-			action,
-			target: selectedTarget,
-		}: LifecycleActionSelection) => {
-			switch (action) {
+		mutationFn: (input: LifecycleMutationInput) => {
+			switch (input.action) {
 				case "deactivate":
 					return requireActionSuccess(() =>
-						deactivateEmployee(selectedTarget.employeeId),
+						deactivateEmployee({
+							employeeId: input.target.employeeId,
+							requestId: input.deactivation.requestId,
+							replacementManagers: input.deactivation.replacementManagers,
+						}),
 					);
 				case "reactivate":
 					return requireActionSuccess(() =>
-						reactivateEmployee(selectedTarget.employeeId),
+						reactivateEmployee(input.target.employeeId),
 					);
 				case "remove":
 					return requireActionSuccess(() =>
-						removeEmployeeAccess(selectedTarget.employeeId),
+						removeEmployeeAccess(input.target.employeeId),
 					);
 			}
 		},
 		onMutate: ({ action, target: selectedTarget }) => {
-			if (action === "remove") {
+			// A deactivation may be refused (a pick no longer eligible), so its row changes
+			// only once the server confirmed it; the dialog stays open meanwhile (#1440).
+			if (action === "remove" || action === "deactivate") {
 				return {
 					employeeId: selectedTarget.employeeId,
 					previousIsActive: null,
@@ -389,6 +421,10 @@ export function EmployeeLifecycleActions({
 			};
 		},
 		onSuccess: async (_result, selected) => {
+			if (selected.action === "deactivate") {
+				deactivation.completed();
+				onOptimisticStatusChange?.(selected.target.employeeId, false);
+			}
 			const invalidations = [
 				queryClient.invalidateQueries({
 					queryKey: queryKeys.members.organization(selected.organizationId),
@@ -410,7 +446,15 @@ export function EmployeeLifecycleActions({
 			}
 
 			await Promise.all(invalidations);
-			setSelection(null);
+			closeDialog();
+
+			if (selected.action === "reactivate") {
+				await reactivation.offer(
+					selected.target,
+					t("settings.employees.lifecycle.reactivateSuccess", "Employee reactivated"),
+				);
+				return;
+			}
 
 			if (selected.action === "remove") {
 				onRemoved?.(selected.target.employeeId);
@@ -423,17 +467,7 @@ export function EmployeeLifecycleActions({
 				return;
 			}
 
-			toast.success(
-				selected.action === "deactivate"
-					? t(
-							"settings.employees.lifecycle.deactivateSuccess",
-							"Employee deactivated",
-						)
-					: t(
-							"settings.employees.lifecycle.reactivateSuccess",
-							"Employee reactivated",
-						),
-			);
+			toast.success(t("settings.employees.lifecycle.deactivateSuccess", "Employee deactivated"));
 		},
 		onError: (error, selected, context) => {
 			if (
@@ -446,21 +480,28 @@ export function EmployeeLifecycleActions({
 				);
 			}
 
+			if (selected.action === "deactivate") {
+				// The dialog stays open with the server's guidance and a fresh preview.
+				const message = deactivationSubmitError(t, dialogMessages, error);
+				if (!mounted.current) {
+					toast.error(message);
+					return;
+				}
+				deactivation.setSubmitError(message);
+				deactivation.refetch();
+				return;
+			}
+
 			const message =
-				selected.action === "deactivate"
+				selected.action === "reactivate"
 					? t(
-							"settings.employees.lifecycle.deactivateError",
-							"Failed to deactivate employee",
+							"settings.employees.lifecycle.reactivateError",
+							"Failed to reactivate employee",
 						)
-					: selected.action === "reactivate"
-						? t(
-								"settings.employees.lifecycle.reactivateError",
-								"Failed to reactivate employee",
-							)
-						: t(
-								"settings.employees.lifecycle.removeError",
-								"Failed to remove organization access",
-							);
+					: t(
+							"settings.employees.lifecycle.removeError",
+							"Failed to remove organization access",
+						);
 
 			const guidance =
 				error instanceof EmployeeLifecycleActionError
@@ -475,6 +516,7 @@ export function EmployeeLifecycleActions({
 
 	if (
 		!selection &&
+		!reactivation.checklist &&
 		(target.userId === currentUserId || (!canChangeStatus && !canRemoveAccess))
 	) {
 		return null;
@@ -482,10 +524,21 @@ export function EmployeeLifecycleActions({
 
 	const handleConfirm = () => {
 		if (!selection || actionLocked.current || mutation.isPending) return;
+		if (selection.action === "deactivate") return;
 		actionLocked.current = true;
-		mutation.mutate(selection);
+		mutation.mutate({ ...selection, action: selection.action });
+	};
+	const handleDeactivationConfirm = (picks: DeactivationReplacementPicks) => {
+		if (!deactivating || actionLocked.current || mutation.isPending) return;
+		actionLocked.current = true;
+		mutation.mutate({
+			...deactivating,
+			action: "deactivate",
+			deactivation: deactivation.submission(picks),
+		});
 	};
 	const selectAction = (action: LifecycleAction) => {
+		deactivation.reset();
 		setSelection({
 			action,
 			organizationId,
@@ -504,13 +557,36 @@ export function EmployeeLifecycleActions({
 				target={target}
 				trigger={trigger}
 			/>
+			<DeactivationPreviewDialog
+				open={deactivating !== null}
+				onOpenChange={(open) => {
+					if (!open && !mutation.isPending) closeDialog();
+				}}
+				employeeName={deactivating?.target.displayName ?? target.displayName}
+				plan={deactivation.plan}
+				isLoading={deactivation.isLoading}
+				loadError={deactivation.loadFailed ? dialogMessages.loadError : null}
+				onRetry={deactivation.refetch}
+				submitError={deactivation.submitError}
+				isSubmitting={mutation.isPending}
+				onReplacementsChange={deactivation.changePicks}
+				onConfirm={handleDeactivationConfirm}
+			/>
 			<LifecycleConfirmationDialog
 				isPending={mutation.isPending}
 				onConfirm={handleConfirm}
 				onOpenChange={(open) => {
-					if (!open && !mutation.isPending) setSelection(null);
+					if (!open && !mutation.isPending) closeDialog();
 				}}
-				selectedAction={selection?.action ?? null}
+				selectedAction={selection && selection.action !== "deactivate" ? selection.action : null}
+			/>
+			<ReactivationChecklistDialog
+				open={reactivation.checklist !== null}
+				onOpenChange={(open) => {
+					if (!open) reactivation.dismissDialog();
+				}}
+				employeeName={reactivation.checklist?.employeeName ?? target.displayName}
+				checklist={reactivation.checklist?.checklist ?? null}
 			/>
 		</>
 	);

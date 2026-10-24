@@ -447,6 +447,99 @@ describe("evaluateOffboardingReassignment", () => {
 	});
 });
 
+describe("evaluateOffboardingReassignment for a deactivation (#1440)", () => {
+	const deactivationId = "d0000000-0000-4000-8000-00000000000a";
+
+	function deactivationFacts(
+		overrides: Partial<OffboardingReassignmentFacts> = {},
+	): OffboardingReassignmentFacts {
+		const base = facts();
+		return {
+			...base,
+			principal: {
+				kind: "system",
+				systemId: "employee-offboarding",
+				deactivationId,
+				employmentPeriodId: ids.period,
+				assignmentId: ids.assignment,
+				handoverTaskId: ids.task,
+				claimToken: ids.claim,
+			},
+			departure: null,
+			deactivation: {
+				id: deactivationId,
+				organizationId: ids.organization,
+				employeeId: ids.departed,
+				employmentPeriodId: ids.period,
+				effective: true,
+			},
+			task: { ...base.task!, departureId: null, deactivationId },
+			...overrides,
+		};
+	}
+
+	it("authorizes the captured duty of a deactivation that still holds", () => {
+		expect(evaluateOffboardingReassignment(deactivationFacts())).toEqual({ kind: "authorized" });
+	});
+
+	it.each([
+		["missing deactivation", { deactivation: null }, "deactivation_mismatch"],
+		[
+			"deactivation organization",
+			{ deactivation: { ...deactivationFacts().deactivation!, organizationId: ids.foreign } },
+			"deactivation_mismatch",
+		],
+		[
+			"deactivated employee",
+			{ deactivation: { ...deactivationFacts().deactivation!, employeeId: ids.other } },
+			"deactivation_mismatch",
+		],
+		[
+			"deactivation period",
+			{ deactivation: { ...deactivationFacts().deactivation!, employmentPeriodId: ids.other } },
+			"deactivation_mismatch",
+		],
+		[
+			"superseded deactivation",
+			{ deactivation: { ...deactivationFacts().deactivation!, effective: false } },
+			"deactivation_not_effective",
+		],
+		[
+			"task anchored to a departure",
+			{ task: { ...deactivationFacts().task!, departureId: ids.departure, deactivationId: null } },
+			"task_mismatch",
+		],
+		[
+			"task of another deactivation",
+			{ task: { ...deactivationFacts().task!, deactivationId: ids.other } },
+			"task_mismatch",
+		],
+		[
+			"reactivated employee",
+			{
+				rehired: true,
+				deactivation: { ...deactivationFacts().deactivation!, effective: false },
+			},
+			"employee_rehired",
+		],
+	] as const)("rejects a swapped %s", (_label, override, reason) => {
+		expect(denial(deactivationFacts(override as Partial<OffboardingReassignmentFacts>))).toBe(
+			reason,
+		);
+	});
+
+	it("never lets a departure principal act on a deactivation's task", () => {
+		expect(
+			denial(
+				deactivationFacts({
+					principal: principal(),
+					departure: facts().departure,
+				}),
+			),
+		).toBe("task_mismatch");
+	});
+});
+
 describe("parseApprovalHandoverTaskPayload", () => {
 	it("accepts exactly the handover intent fields", () => {
 		expect(parseApprovalHandoverTaskPayload({ ...payload(), progress: "ignored" })).toEqual(

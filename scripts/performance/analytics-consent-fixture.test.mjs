@@ -2,13 +2,14 @@ import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { createConnection, createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import * as operator from "./analytics-consent-fixture.mjs";
 import { verifyAnalyticsArtifact } from "./analytics-consent-fixture.mjs";
-import { sinkReply } from "./analytics-consent-sink.mjs";
+import { sinkReply, startAnalyticsSink } from "./analytics-consent-sink.mjs";
 
 const cli = fileURLToPath(
 	new URL("./analytics-consent-fixture.mjs", import.meta.url),
@@ -264,6 +265,17 @@ test("sink has the installed SDK config/flags contract and discards unknown path
 	assert.equal(JSON.parse(config.body).hasFeatureFlags, false);
 	const flags = sinkReply("/flags/?v=2", "POST");
 	assert.deepEqual(JSON.parse(flags.body).featureFlags, {});
+	assert.equal(sinkReply("/flags", "POST").status, 200);
+	assert.equal(sinkReply("/e", "POST").bucket, "capture");
+	assert.equal(
+		sinkReply("/static/1.438.7/surveys.js", "GET").asset,
+		"surveys.js",
+	);
+	assert.equal(
+		sinkReply("/static/product-tours.js", "GET").asset,
+		"product-tours.js",
+	);
+	assert.equal(sinkReply("/static/9.9.9/surveys.js", "GET").status, 404);
 	assert.equal(sinkReply("/static/recorder.js", "GET").status, 404);
 	assert.equal(sinkReply("/array/phc_real_key/config", "GET").status, 404);
 	assert.equal(sinkReply("/e/", "POST").bucket, "capture");
@@ -275,6 +287,55 @@ test("count-only sink never forwards a proxy request or treats it as local SDK c
 		sinkReply("https://eu.i.posthog.com/e/", "POST").bucket,
 		"blockedProxy",
 	);
+});
+
+test("rejecting sink remains available when a browser resets a CONNECT socket", async () => {
+	const directory = await mkdtemp(join(tmpdir(), "z8-consent-connect-"));
+	const reservation = createServer();
+	await new Promise((resolve) => reservation.listen(0, "127.0.0.1", resolve));
+	const port = reservation.address().port;
+	await new Promise((resolve) => reservation.close(resolve));
+	await writeFile(
+		join(directory, "analytics-private.json"),
+		JSON.stringify({
+			kind: "disposable-consent-1470",
+			version: 1,
+			origin: "http://localhost:50112",
+			sinkOrigin: `http://127.0.0.1:${port}`,
+			env: {
+				APP_URL: "http://localhost:50112",
+				BETTER_AUTH_URL: "http://localhost:50112",
+				NEXT_PUBLIC_APP_URL: "http://localhost:50112",
+				POSTGRES_HOST: "127.0.0.1",
+				POSTGRES_DB: "approval_workflow_repository_test_fixture",
+				NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN:
+					"phc_z8_disposable_consent_1470_only",
+				NEXT_PUBLIC_POSTHOG_HOST: `http://127.0.0.1:${port}`,
+			},
+		}),
+	);
+	const sink = await startAnalyticsSink(directory);
+	try {
+		for (let attempt = 0; attempt < 16; attempt++)
+			await new Promise((resolve) => {
+				const socket = createConnection({ host: "127.0.0.1", port });
+				socket.on("error", () => {});
+				socket.once("connect", () =>
+					socket.write(
+						"CONNECT vendor.invalid:443 HTTP/1.1\r\nHost: vendor.invalid:443\r\n\r\n",
+					),
+				);
+				socket.once("data", () => socket.resetAndDestroy());
+				socket.once("close", resolve);
+				socket.setTimeout(2000, () => socket.destroy());
+			});
+		const response = await fetch(`http://127.0.0.1:${port}/__fixture_metrics`);
+		assert.equal(response.status, 200);
+		assert.equal((await response.json()).blockedProxy, 16);
+	} finally {
+		await new Promise((resolve) => sink.close(resolve));
+		await rm(directory, { recursive: true, force: true });
+	}
 });
 
 test("compiled rewrite gate catches server-side vendor delivery even when browser origins are local", async () => {

@@ -67,7 +67,7 @@ export function DepartureCard(props: DepartureCardProps) {
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="space-y-4">
-				{view.state === "legacy_inactive" && (
+				{view.state === "legacy_inactive" && !view.deactivation && (
 					<p className="text-sm text-muted-foreground">
 						{t("settings.employees.offboarding.unknownLegacyDate", "Date not recorded")}
 					</p>
@@ -145,6 +145,21 @@ function DepartureDescription({ view, locale }: { view: EmployeeOffboardingView;
 	const labels = useOffboardingLabels();
 	const { departure } = view;
 	if (view.state === "blocked") return labels.blocked(departure?.blockedReason ?? null);
+	if (view.state === "legacy_inactive" && view.deactivation && !view.deactivation.dateNotRecorded) {
+		// Deactivated without a departure (#1440): the instant is recorded.
+		return t(
+			"settings.employees.offboarding.deactivatedDescription",
+			"This employee was deactivated at {cutoff} ({timezone}). Access ended then.",
+			{
+				cutoff: formatDepartureCutoff(
+					view.deactivation.deactivatedAt,
+					view.deactivation.timezone,
+					locale,
+				),
+				timezone: view.deactivation.timezone,
+			},
+		);
+	}
 	if (view.state === "legacy_inactive") {
 		return t(
 			"settings.employees.offboarding.legacyInactive",
