@@ -4,6 +4,10 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { cpus, platform, release, totalmem } from "node:os";
 import { join } from "node:path";
 import {
+	captureObservedBrowserMetrics,
+	installFixturePerformanceObservers,
+} from "./browser-performance.mjs";
+import {
 	beginCollectorVisit,
 	collectorProtocol,
 	endCollectorVisit,
@@ -870,30 +874,7 @@ async function measure(
 					.catch(() => {}),
 			);
 		}
-		await page.evaluateOnNewDocument(() => {
-			window.__z8Baseline = { lcp: null, inp: null };
-			for (const type of ["largest-contentful-paint", "event"]) {
-				try {
-					new PerformanceObserver((list) => {
-						for (const entry of list.getEntries()) {
-							if (type === "event" && entry.interactionId)
-								window.__z8Baseline.inp = Math.max(
-									window.__z8Baseline.inp ?? 0,
-									entry.duration,
-								);
-							else if (type === "largest-contentful-paint")
-								window.__z8Baseline.lcp = entry.startTime;
-						}
-					}).observe(
-						type === "event"
-							? { type, buffered: true, durationThreshold: 16 }
-							: { type, buffered: true },
-					);
-				} catch {
-					/* unsupported entries stay null */
-				}
-			}
-		});
+		await page.evaluateOnNewDocument(installFixturePerformanceObservers);
 		const path = route.path
 			.replaceAll("{locale}", condition.locale)
 			.replaceAll(
@@ -1178,7 +1159,6 @@ async function measure(
 		if (sample.notificationPermission !== "denied")
 			fail("Fixture notification permission was not denied.");
 		sample.clockReadyMs = await clock;
-		const native = await page.evaluate(() => window.__z8Baseline);
 		if (mode === "first-document")
 			sample.inlineRscDecodedBytes = await page.evaluate(() =>
 				[...document.scripts]
@@ -1189,9 +1169,6 @@ async function measure(
 						0,
 					),
 			);
-		// Document LCP is not a soft-navigation metric. Event timing is an approximation (largest observed interaction), not a complete page-lifetime INP.
-		if (mode === "first-document") sample.lcpMs = native?.lcp ?? null;
-		sample.interactionMaxMs = native?.inp ?? null;
 	} catch (error) {
 		sample.failed = true;
 		sample.notificationPermission =
@@ -1289,6 +1266,12 @@ async function measure(
 		}
 	} finally {
 		if (client && page && !page.isClosed() && measurementStart !== undefined) {
+			await captureObservedBrowserMetrics({
+				page,
+				sample,
+				measurementStarted: true,
+				mode,
+			});
 			sample.resourceWindowComplete = pendingRequests.size === 0;
 			sample.resourcePendingRequests = pendingRequests.size;
 			sample.pendingRequestsByType = {};
