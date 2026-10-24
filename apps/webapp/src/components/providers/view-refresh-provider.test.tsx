@@ -66,6 +66,70 @@ beforeEach(() => {
 });
 
 describe("View refresh", () => {
+	it("starts server refresh while independent custom data is still pending", async () => {
+		let finish!: () => void;
+		const pending = new Promise<void>((resolve) => {
+			finish = resolve;
+		});
+		function View() {
+			useViewRefresh(() => pending);
+			return (
+				<input
+					aria-label="Pending refresh draft"
+					defaultValue="Prepared edit"
+				/>
+			);
+		}
+		setup(<View />);
+		const button = screen.getByRole("button", { name: "Refresh data" });
+		fireEvent.click(button);
+		try {
+			await waitFor(() => expect(mocks.refresh).toHaveBeenCalledTimes(1));
+			expect(button.hasAttribute("disabled")).toBe(true);
+			expect(
+				(screen.getByLabelText("Pending refresh draft") as HTMLInputElement)
+					.value,
+			).toBe("Prepared edit");
+		} finally {
+			await act(async () => finish());
+		}
+		await waitFor(() => expect(button.hasAttribute("disabled")).toBe(false));
+	});
+	it("shares an active client read instead of cancelling it and starting the same dataset again", async () => {
+		const pending: Array<(value: string) => void> = [];
+		const load = vi
+			.fn()
+			.mockResolvedValueOnce("Old status")
+			.mockImplementation(
+				() =>
+					new Promise<string>((resolve) => {
+						pending.push(resolve);
+					}),
+			);
+		function View() {
+			const status = useQuery({ queryKey: ["job-status"], queryFn: load });
+			return (
+				<>
+					<p>{status.data}</p>
+					<button type="button" onClick={() => void status.refetch()}>
+						Check job
+					</button>
+				</>
+			);
+		}
+		setup(<View />);
+		await screen.findByText("Old status");
+		fireEvent.click(screen.getByRole("button", { name: "Check job" }));
+		await waitFor(() => expect(load).toHaveBeenCalledTimes(2));
+		fireEvent.click(screen.getByRole("button", { name: "Refresh data" }));
+		await act(async () => Promise.resolve());
+		await act(async () => {
+			pending.forEach((finish) => { finish("Accepted status"); });
+		});
+		await screen.findByText("Accepted status");
+		expect(load).toHaveBeenCalledTimes(2);
+		await waitFor(() => expect(mocks.refresh).toHaveBeenCalledTimes(1));
+	});
 	it("accepts newer server props after a local retry and cancels the older pending GET without losing drafts", async () => {
 		type Snapshot = DashboardWidgetSnapshot<DashboardWidgetData["quick-stats"]>;
 		const snapshot = (hours: number, updatedAt: number): Snapshot => ({

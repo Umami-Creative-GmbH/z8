@@ -26,6 +26,7 @@ import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import { useEditSession } from "@/hooks/use-edit-session";
+import { queryKeys } from "@/lib/query/keys";
 import type { SurchargeModelWithRules } from "@/lib/surcharges/validation";
 import { surchargeModelFormSchema } from "@/lib/surcharges/validation";
 import { SurchargeRuleEditor, type SurchargeRuleFormValues } from "./surcharge-rule-editor";
@@ -78,14 +79,14 @@ export function SurchargeModelDialog({
 			},
 		},
 		onSubmit: async ({ value }) => {
-			if (isEditing) {
+			if (editingModel) {
 				updateMutation.mutate({
-					name: value.name,
-					description: value.description,
-					isActive: value.isActive,
+					modelId: editingModel.id,
+					organizationId,
+					data: { name: value.name, description: value.description, isActive: value.isActive },
 				});
 			} else {
-				createMutation.mutate(value);
+				createMutation.mutate({ organizationId, data: value });
 			}
 		},
 	});
@@ -132,19 +133,19 @@ export function SurchargeModelDialog({
 
 	// Create mutation
 	const createMutation = useMutation({
-		mutationFn: (data: {
+		mutationFn: ({ organizationId: targetOrganizationId, data }: { organizationId: string; data: {
 			name: string;
 			description: string | null;
 			rules: SurchargeRuleFormValues[];
 			isActive: boolean;
-		}) =>
+		} }) =>
 			// Cast to SurchargeModelFormData to satisfy the discriminated union type
-			createSurchargeModel(organizationId, data as Parameters<typeof createSurchargeModel>[1]),
-		onSuccess: (result) => {
+			createSurchargeModel(targetOrganizationId, data as Parameters<typeof createSurchargeModel>[1]),
+		onSuccess: (result, variables) => {
 			if (result.success) {
-				queryClient.invalidateQueries();
+				void queryClient.invalidateQueries({ queryKey: queryKeys.surcharges.models.list(variables.organizationId) });
 				toast.success(t("settings.surcharges.modelCreated", "Surcharge model created"));
-				onSuccess();
+				if (organizationId === variables.organizationId && !editingModel) onSuccess();
 			} else {
 				toast.error(
 					result.error || t("settings.surcharges.createFailed", "Failed to create model"),
@@ -158,13 +159,17 @@ export function SurchargeModelDialog({
 
 	// Update mutation
 	const updateMutation = useMutation({
-		mutationFn: (data: { name?: string; description?: string | null; isActive?: boolean }) =>
-			updateSurchargeModel(editingModel!.id, data),
-		onSuccess: (result) => {
+		mutationFn: ({ modelId, data }: { modelId: string; organizationId: string; data: { name?: string; description?: string | null; isActive?: boolean } }) =>
+			updateSurchargeModel(modelId, data),
+		onSuccess: (result, variables) => {
 			if (result.success) {
-				queryClient.invalidateQueries();
+				void Promise.all([
+					queryClient.invalidateQueries({ queryKey: queryKeys.surcharges.models.list(variables.organizationId) }),
+					queryClient.invalidateQueries({ queryKey: queryKeys.surcharges.models.detail(variables.modelId) }),
+					queryClient.invalidateQueries({ queryKey: queryKeys.surcharges.assignments.list(variables.organizationId) }),
+				]);
 				toast.success(t("settings.surcharges.modelUpdated", "Surcharge model updated"));
-				onSuccess();
+				if (organizationId === variables.organizationId && editingModel?.id === variables.modelId) onSuccess();
 			} else {
 				toast.error(
 					result.error || t("settings.surcharges.updateFailed", "Failed to update model"),

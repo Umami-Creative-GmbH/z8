@@ -1,13 +1,12 @@
 "use client";
 
 import { IconPlus } from "@tabler/icons-react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useEffectEvent, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
 	deleteSurchargeModel,
-	getSurchargeModels,
 } from "@/app/[locale]/(app)/settings/surcharges/actions";
 import {
 	AlertDialog,
@@ -22,6 +21,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { queryKeys } from "@/lib/query";
+import { surchargeModelsQuery } from "@/lib/query/surcharge-models";
 import type { SurchargeModelWithRules } from "@/lib/surcharges/validation";
 import { SurchargeAssignmentDialog } from "./surcharge-assignment-dialog";
 import { SurchargeAssignmentManager } from "./surcharge-assignment-manager";
@@ -40,8 +40,9 @@ export function SurchargeManagement({
 }: SurchargeManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
-	const [models, setModels] = useState<SurchargeModelWithRules[]>([]);
-	const [isLoading, setIsLoading] = useState(true);
+	const modelsQuery = useQuery(surchargeModelsQuery(organizationId));
+	const models = modelsQuery.data ?? [];
+	const isLoading = modelsQuery.isPending;
 	const [activeTab, setActiveTab] = useState("models");
 
 	// Dialog states
@@ -56,32 +57,6 @@ export function SurchargeManagement({
 	// Delete confirmation states
 	const [deleteModelId, setDeleteModelId] = useState<string | null>(null);
 
-	const loadData = async () => {
-		setIsLoading(true);
-
-		const modelsResult = await getSurchargeModels(organizationId).catch(
-			(error: unknown) => {
-				console.error("Failed to load surcharge data:", error);
-				return null;
-			},
-		);
-
-		if (modelsResult?.success) {
-			setModels(modelsResult.data);
-		}
-
-		setIsLoading(false);
-	};
-
-	const loadDataForEffect = useEffectEvent(async () => {
-		await loadData();
-	});
-
-	useEffect(() => {
-		const timeout = setTimeout(() => loadDataForEffect(), 0);
-		return () => clearTimeout(timeout);
-	}, []);
-
 	// Delete model mutation
 	const deleteModelMutation = useMutation({
 		mutationFn: (modelId: string) => deleteSurchargeModel(modelId),
@@ -93,7 +68,6 @@ export function SurchargeManagement({
 				toast.success(
 					t("settings.surcharges.modelDeleted", "Surcharge model deleted"),
 				);
-				loadData();
 			} else {
 				toast.error(
 					result.error ||
@@ -123,7 +97,6 @@ export function SurchargeManagement({
 	const handleModelDialogSuccess = () => {
 		setModelDialogOpen(false);
 		setEditingModel(null);
-		loadData();
 	};
 
 	const handleAssignmentDialogSuccess = () => {
@@ -138,6 +111,10 @@ export function SurchargeManagement({
 		setAssignmentType(type);
 		setAssignmentDialogOpen(true);
 	};
+	const modelError = <div role="alert" className="space-y-3 p-4">
+		<p>{t("settings.surcharges.loadFailed", "Surcharge models could not be loaded. Please try again.")}</p>
+		<Button type="button" onClick={() => void modelsQuery.refetch()} disabled={modelsQuery.isFetching}>{t("common.retry", "Try again")}</Button>
+	</div>;
 
 	if (isLoading) {
 		return (
@@ -148,9 +125,13 @@ export function SurchargeManagement({
 			</div>
 		);
 	}
+	if (modelsQuery.isError && !modelsQuery.data) {
+		return modelError;
+	}
 
 	return (
 		<div className="flex flex-1 flex-col gap-4 p-4">
+			{modelsQuery.isError ? modelError : null}
 			<div className="flex flex-col gap-2">
 				<h1 className="text-2xl font-bold">
 					{t("settings.surcharges.title", "Surcharges")}

@@ -5,7 +5,10 @@ import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { employee, project, projectManager } from "@/db/schema";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
-import { isSettingsAccessMembershipRole, resolveSettingsAccessTier } from "@/lib/settings-access";
+import {
+	isSettingsAccessMembershipRole,
+	resolveSettingsAccessTier,
+} from "@/lib/settings-access";
 
 /**
  * Who may manage a project's tasks (#872, decision 2 of #770):
@@ -47,7 +50,9 @@ export async function loadProjectTaskManager(
 		isOrgAdmin:
 			resolveSettingsAccessTier({
 				activeOrganizationId: input.organizationId,
-				membershipRole: isSettingsAccessMembershipRole(membership.role) ? membership.role : null,
+				membershipRole: isSettingsAccessMembershipRole(membership.role)
+					? membership.role
+					: null,
 				employeeRole: null,
 			}) === "orgAdmin",
 	};
@@ -71,7 +76,11 @@ function managedByCaller(manager: ProjectTaskManager, reader: Reader): SQL {
 	);
 }
 
-function manageableProjects(manager: ProjectTaskManager, reader: Reader, projectId?: string) {
+function manageableProjects(
+	manager: ProjectTaskManager,
+	reader: Reader,
+	projectId?: string,
+) {
 	return and(
 		eq(project.organizationId, manager.organizationId),
 		projectId ? eq(project.id, projectId) : undefined,
@@ -110,6 +119,14 @@ export async function managesProjectTasks(
 	return manager ? hasManageableProject(manager, reader) : false;
 }
 
+/** Internal server reuse after the current organization identity is authorized. */
+export function hasTaskManagedProject(
+	manager: ProjectTaskManager,
+	reader: Reader = db,
+) {
+	return hasManageableProject(manager, reader);
+}
+
 export type TaskManagedProject = Pick<
 	typeof project.$inferSelect,
 	"id" | "name" | "color" | "status"
@@ -121,7 +138,12 @@ export async function listProjectsWithManageableTasks(
 	reader: Reader = db,
 ): Promise<TaskManagedProject[]> {
 	return reader
-		.select({ id: project.id, name: project.name, color: project.color, status: project.status })
+		.select({
+			id: project.id,
+			name: project.name,
+			color: project.color,
+			status: project.status,
+		})
 		.from(project)
 		.where(manageableProjects(manager, reader))
 		.orderBy(asc(project.name));

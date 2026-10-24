@@ -1,7 +1,13 @@
 import "server-only";
 
-import { and, asc, eq, inArray } from "drizzle-orm";
-import { employee, employeeManagers, location, timeEntry, workPeriod } from "@/db/schema";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import {
+	employee,
+	employeeManagers,
+	location,
+	timeEntry,
+	workPeriod,
+} from "@/db/schema";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import { listActiveEmployeesAssignedToLocation } from "../assigned-locations/queries";
@@ -40,12 +46,17 @@ export async function readKioskBoard(
 /** The manager view of one location, limited to the viewer's scope. */
 export async function readLocationPresence(
 	client: WhoIsInReadClient,
-	input: { organizationId: string; locationId: string; scope: WhoIsInScope; now?: Instant },
+	input: {
+		organizationId: string;
+		locationId: string;
+		scope: WhoIsInScope;
+		now?: Instant;
+	},
 ): Promise<LocationPresenceEntry[]> {
 	if (input.scope.kind === "none") return [];
-	const assigned = (await listActiveEmployeesAssignedToLocation(client, input)).filter((person) =>
-		isInWhoIsInScope(input.scope, person.employeeId),
-	);
+	const assigned = (
+		await listActiveEmployeesAssignedToLocation(client, input)
+	).filter((person) => isInWhoIsInScope(input.scope, person.employeeId));
 	const presence = await readClockPresence(client, {
 		organizationId: input.organizationId,
 		employeeIds: assigned.map((person) => person.employeeId),
@@ -56,7 +67,12 @@ export async function readLocationPresence(
 			.filter((row) => row.state === "clocked_in")
 			.map((row) => row.workPeriodId),
 	});
-	return toLocationPresence({ assigned, presence, clockInOffsets, scope: input.scope });
+	return toLocationPresence({
+		assigned,
+		presence,
+		clockInOffsets,
+		scope: input.scope,
+	});
 }
 
 /** The UTC offset captured on each live work period's clock-in entry. */
@@ -66,7 +82,10 @@ async function readClockInOffsets(
 ): Promise<Map<string, number>> {
 	if (input.workPeriodIds.length === 0) return new Map();
 	const rows = await client
-		.select({ workPeriodId: workPeriod.id, utcOffsetMinutes: timeEntry.utcOffsetMinutes })
+		.select({
+			workPeriodId: workPeriod.id,
+			utcOffsetMinutes: timeEntry.utcOffsetMinutes,
+		})
 		.from(workPeriod)
 		.innerJoin(
 			timeEntry,
@@ -105,6 +124,24 @@ export async function listManagedEmployeeIds(
 
 export type WhoIsInLocation = { id: string; name: string };
 
+/** Navigation needs existence only; do not load or sort the location collection. */
+export async function hasWhoIsInLocations(
+	client: WhoIsInReadClient,
+	input: { organizationId: string },
+): Promise<boolean> {
+	const [row] = await client
+		.select({ present: sql<number>`1` })
+		.from(location)
+		.where(
+			and(
+				eq(location.organizationId, input.organizationId),
+				eq(location.isActive, true),
+			),
+		)
+		.limit(1);
+	return !!row;
+}
+
 /** The organization's active locations, for choosing a location in the manager view. */
 export async function listWhoIsInLocations(
 	client: WhoIsInReadClient,
@@ -113,7 +150,12 @@ export async function listWhoIsInLocations(
 	return client
 		.select({ id: location.id, name: location.name })
 		.from(location)
-		.where(and(eq(location.organizationId, input.organizationId), eq(location.isActive, true)))
+		.where(
+			and(
+				eq(location.organizationId, input.organizationId),
+				eq(location.isActive, true),
+			),
+		)
 		.orderBy(asc(location.name), asc(location.id));
 }
 
