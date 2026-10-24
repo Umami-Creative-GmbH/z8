@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 /** Label-owned local services only. No .env/Phase configuration is read or copied. */
 import { execFileSync, spawn } from "node:child_process";
-import { randomBytes } from "node:crypto";
+import { generateKeyPairSync, randomBytes } from "node:crypto";
 import { once } from "node:events";
 import { createWriteStream } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { createServer } from "node:net";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { authenticateFixture } from "./fixture-auth.mjs";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const app = join(root, "apps/webapp");
@@ -30,35 +31,41 @@ const toolEnvironment = Object.fromEntries(
 		),
 	),
 );
-const isolatedEnv = (env) => ({
-	...toolEnvironment,
-	...env,
-	TELEMETRY_ENABLED: "false",
-	BILLING_ENABLED: "false",
-	POSTHOG_API_KEY: "",
-	POSTHOG_PROJECT_ID: "",
-	NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: "",
-	NEXT_PUBLIC_POSTHOG_HOST: "",
-	OTEL_EXPORTER_OTLP_ENDPOINT: "",
-	OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: "",
-	OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: "",
-	SMTP_HOST: "",
-	SMTP_USERNAME: "",
-	SMTP_PASSWORD: "",
-	RESEND_API_KEY: "",
-	EMAIL_PROVIDER: "",
-	ENABLE_CRON_JOBS: "false",
-	VAULT_ADDR: "",
-	VAULT_TOKEN: "",
-	SCALEWAY_ACCESS_KEY: "",
-	SCALEWAY_SECRET_KEY: "",
-	S3_PRIVATE_BUCKET: env.S3_PUBLIC_BUCKET,
-	S3_PRIVATE_ACCESS_KEY_ID: env.S3_PUBLIC_ACCESS_KEY_ID,
-	S3_PRIVATE_SECRET_ACCESS_KEY: env.S3_PUBLIC_SECRET_ACCESS_KEY,
-	S3_PRIVATE_ENDPOINT: env.S3_PUBLIC_ENDPOINT,
-	S3_PRIVATE_REGION: env.S3_PUBLIC_REGION,
-	S3_PRIVATE_FORCE_PATH_STYLE: "true",
-});
+const isolatedEnv = (env) =>
+	Object.fromEntries(
+		Object.entries({
+			...toolEnvironment,
+			...env,
+			TELEMETRY_ENABLED: "false",
+			BILLING_ENABLED: "false",
+			SKIP_ENV_VALIDATION: "0",
+			REDIS_COMMAND_TIMEOUT_MS: env.REDIS_COMMAND_TIMEOUT_MS || "2000",
+			CIRCLE_NODE_TOTAL: env.CIRCLE_NODE_TOTAL || "3",
+			POSTHOG_API_KEY: "",
+			POSTHOG_PROJECT_ID: "",
+			NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: "",
+			NEXT_PUBLIC_POSTHOG_HOST: "",
+			OTEL_EXPORTER_OTLP_ENDPOINT: "",
+			OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: "",
+			OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: "",
+			SMTP_HOST: "",
+			SMTP_USERNAME: "",
+			SMTP_PASSWORD: "",
+			RESEND_API_KEY: "",
+			EMAIL_PROVIDER: "",
+			ENABLE_CRON_JOBS: "false",
+			VAULT_ADDR: "",
+			VAULT_TOKEN: "",
+			SCALEWAY_ACCESS_KEY: "",
+			SCALEWAY_SECRET_KEY: "",
+			S3_PRIVATE_BUCKET: env.S3_PUBLIC_BUCKET,
+			S3_PRIVATE_ACCESS_KEY_ID: env.S3_PUBLIC_ACCESS_KEY_ID,
+			S3_PRIVATE_SECRET_ACCESS_KEY: env.S3_PUBLIC_SECRET_ACCESS_KEY,
+			S3_PRIVATE_ENDPOINT: env.S3_PUBLIC_ENDPOINT,
+			S3_PRIVATE_REGION: env.S3_PUBLIC_REGION,
+			S3_PRIVATE_FORCE_PATH_STYLE: "true",
+		}).filter(([, value]) => value !== "" && value !== undefined),
+	);
 const run = (args, env, log) =>
 	new Promise((done, reject) => {
 		if (!pnpm) throw new Error("Run this command through pnpm.");
@@ -156,10 +163,14 @@ async function prepare(directory) {
 		const appPort = await unusedPort();
 		const origin = `http://localhost:${appPort}`;
 		const storageOrigin = `http://127.0.0.1:${port(storage, 9000)}`;
+		const vapid = generateKeyPairSync("ec", {
+			namedCurve: "prime256v1",
+		}).privateKey.export({ format: "jwk" });
 		const env = {
 			NODE_ENV: "production",
 			TZ: "UTC",
-			SKIP_ENV_VALIDATION: "1",
+			SKIP_ENV_VALIDATION: "0",
+			CIRCLE_NODE_TOTAL: "3",
 			BILLING_ENABLED: "false",
 			TELEMETRY_ENABLED: "false",
 			BETTER_AUTH_SECRET: secret,
@@ -181,6 +192,14 @@ async function prepare(directory) {
 			REDIS_HOST: "127.0.0.1",
 			REDIS_PORT: port(redis, 6379),
 			REDIS_TLS: "false",
+			REDIS_COMMAND_TIMEOUT_MS: "2000",
+			VAPID_PUBLIC_KEY: Buffer.concat([
+				Buffer.from([4]),
+				Buffer.from(vapid.x, "base64url"),
+				Buffer.from(vapid.y, "base64url"),
+			]).toString("base64url"),
+			VAPID_PRIVATE_KEY: vapid.d,
+			VAPID_SUBJECT: "mailto:fixture@example.test",
 			S3_PUBLIC_BUCKET: "performance-fixture",
 			S3_PUBLIC_ACCESS_KEY_ID: "fixture-access",
 			S3_PUBLIC_SECRET_ACCESS_KEY: secret,
@@ -263,6 +282,57 @@ async function cleanup(directory) {
 	);
 }
 
+async function checkRuntime(directory) {
+	const runtime = JSON.parse(
+		await readFile(join(directory, "runtime-private.json"), "utf8"),
+	);
+	await run(
+		["exec", "tsx", "scripts/check-performance-runtime.ts"],
+		{ ...runtime.env, CI: "false" },
+		"inherit",
+	);
+}
+
+async function upgrade(directory) {
+	const runtime = JSON.parse(
+		await readFile(join(directory, "runtime-private.json"), "utf8"),
+	);
+	const vapid = generateKeyPairSync("ec", {
+		namedCurve: "prime256v1",
+	}).privateKey.export({ format: "jwk" });
+	Object.assign(runtime.env, {
+		SKIP_ENV_VALIDATION: "0",
+		REDIS_COMMAND_TIMEOUT_MS: "2000",
+		CIRCLE_NODE_TOTAL: "3",
+	});
+	if (!runtime.env.VAPID_PUBLIC_KEY || !runtime.env.VAPID_PRIVATE_KEY)
+		Object.assign(runtime.env, {
+			VAPID_PUBLIC_KEY: Buffer.concat([
+				Buffer.from([4]),
+				Buffer.from(vapid.x, "base64url"),
+				Buffer.from(vapid.y, "base64url"),
+			]).toString("base64url"),
+			VAPID_PRIVATE_KEY: vapid.d,
+			VAPID_SUBJECT: "mailto:fixture@example.test",
+		});
+	await save(join(directory, "runtime-private.json"), runtime);
+	await run(
+		[
+			"exec",
+			"tsx",
+			"scripts/performance-fixture.ts",
+			"--upgrade-private-fixture",
+			join(directory, "fixture-private.json"),
+		],
+		runtime.env,
+		"inherit",
+	);
+	await checkRuntime(directory);
+	console.log(
+		"Fixture version 2 configuration prepared. Existing servers must be restarted deliberately to apply new runtime keys.",
+	);
+}
+
 async function start(directory) {
 	const runtime = JSON.parse(
 		await readFile(join(directory, "runtime-private.json"), "utf8"),
@@ -307,59 +377,7 @@ async function start(directory) {
 				throw new Error("Production fixture did not become ready.");
 			await pause(500);
 		}
-		const fixture = JSON.parse(
-			await readFile(join(directory, "fixture-private.json"), "utf8"),
-		);
-		const auth = {};
-		for (const [name, actor] of Object.entries(fixture.actors)) {
-			const signIn = await fetch(`${runtime.origin}/api/auth/sign-in/email`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json", Origin: runtime.origin },
-				body: JSON.stringify({ email: actor.email, password: actor.password }),
-			});
-			if (!signIn.ok) throw new Error("Synthetic fixture sign-in failed.");
-			const cookies = new Map(
-				signIn.headers.getSetCookie().map((cookie) => {
-					const first = cookie.split(";")[0];
-					const separator = first.indexOf("=");
-					return [first.slice(0, separator), first.slice(separator + 1)];
-				}),
-			);
-			const cookieHeader = [...cookies]
-				.map(([key, value]) => `${key}=${value}`)
-				.join("; ");
-			const active = await fetch(
-				`${runtime.origin}/api/auth/organization/set-active`,
-				{
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-						Origin: runtime.origin,
-						Cookie: cookieHeader,
-					},
-					body: JSON.stringify({ organizationId: actor.organizationId }),
-				},
-			);
-			if (!active.ok)
-				throw new Error("Synthetic fixture organization activation failed.");
-			for (const cookie of active.headers.getSetCookie()) {
-				const first = cookie.split(";")[0];
-				const separator = first.indexOf("=");
-				cookies.set(first.slice(0, separator), first.slice(separator + 1));
-			}
-			auth[name] = {
-				employeeId: actor.employeeId,
-				cookies: [...cookies].map(([name, value]) => ({
-					name,
-					value,
-					domain: "localhost",
-					path: "/",
-					httpOnly: true,
-					secure: false,
-				})),
-			};
-		}
-		await save(join(directory, "auth-private.json"), auth);
+		await authenticateFixture(directory);
 		console.log(
 			`Production fixture ready at ${runtime.origin}. Private authentication is prepared. Stop this command before cleanup.`,
 		);
@@ -389,8 +407,11 @@ async function plan(directory) {
 		cwd: root,
 		encoding: "utf8",
 	}).trim();
-	const build = args.includes("--source-build")
+	const sourceBuild = args.includes("--source-build")
 		? args[args.indexOf("--source-build") + 1]
+		: null;
+	const build = args.includes("--binary-build")
+		? args[args.indexOf("--binary-build") + 1]
 		: null;
 	const routes = [
 		["dashboard", "/{locale}"],
@@ -451,13 +472,19 @@ async function plan(directory) {
 		awayPath: "/{locale}/settings",
 		fixture: {
 			kind: fixture.kind,
+			version: fixture.version ?? 1,
 			journeysVerified: false,
 			organizations: fixture.organizations,
 		},
 		runtime: {
 			mode: "production",
 			build,
+			sourceBuild,
 			toolingBuild,
+			buildWorkers: 2,
+			redisCommandTimeoutMs: Number(
+				runtime.env.REDIS_COMMAND_TIMEOUT_MS || 2000,
+			),
 			poolMax: Number(runtime.env.POSTGRES_POOL_MAX),
 			images: runtime.images,
 		},
@@ -471,24 +498,42 @@ async function plan(directory) {
 }
 
 if (
-	!["prepare", "start", "cleanup", "plan"].includes(command) ||
+	![
+		"prepare",
+		"start",
+		"cleanup",
+		"plan",
+		"authenticate",
+		"check-runtime",
+		"upgrade",
+	].includes(command) ||
 	!inputDirectory
 ) {
 	console.error(
-		"Usage: pnpm performance:fixture <prepare|start|cleanup|plan> <private-directory> [--build|plan-output.json]",
+		"Usage: pnpm performance:fixture <prepare|start|cleanup|plan|authenticate|check-runtime|upgrade> <private-directory> [--build|plan-output.json]",
 	);
 	process.exitCode = 2;
 } else {
 	const directory = resolve(inputDirectory);
-	({ prepare, start, cleanup, plan })[command](directory).catch((error) => {
-		console.error(
-			error.message?.startsWith("Fixture") ||
-				error.message?.startsWith("Synthetic") ||
-				error.message?.startsWith("Production") ||
-				error.message?.startsWith("Refusing")
-				? error.message
-				: "Fixture operation failed. Inspect private local runtime.log; no credentials are printed.",
-		);
-		process.exitCode = 1;
-	});
+	({
+		prepare,
+		start,
+		cleanup,
+		plan,
+		authenticate: authenticateFixture,
+		"check-runtime": checkRuntime,
+		upgrade,
+	})
+		[command](directory)
+		.catch((error) => {
+			console.error(
+				error.message?.startsWith("Fixture") ||
+					error.message?.startsWith("Synthetic") ||
+					error.message?.startsWith("Production") ||
+					error.message?.startsWith("Refusing")
+					? error.message
+					: "Fixture operation failed. Inspect private local runtime.log; no credentials are printed.",
+			);
+			process.exitCode = 1;
+		});
 }
