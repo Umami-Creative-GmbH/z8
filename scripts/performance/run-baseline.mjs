@@ -12,6 +12,7 @@ import {
 } from "./collector-client.mjs";
 import {
 	fixtureBrowserPolicy,
+	fixtureTransportIsComplete,
 	initializeFixtureBrowserContext,
 	launchFixtureBrowser,
 } from "./fixture-browser.mjs";
@@ -83,6 +84,13 @@ const coverageNames = [
 ];
 
 function validate(plan, verifying = false) {
+	if (
+		plan.runtime?.traceTransport === fixtureTraceTransport &&
+		plan.runtime.browserPolicy !== fixtureBrowserPolicy
+	)
+		fail(
+			"Frozen plan requires the shared isolated browser initialization policy.",
+		);
 	if (
 		plan.runtime?.browserPermissions !== undefined &&
 		plan.runtime.browserPermissions !== fixtureBrowserPermissions
@@ -339,6 +347,17 @@ async function main() {
 			result.samples.some((sample) => sample.backend[name] === null),
 		);
 		result.gates = [];
+		if (
+			plan.runtime.traceTransport === fixtureTraceTransport &&
+			(result.runtime.browserPolicy !== fixtureBrowserPolicy ||
+				result.runtime.traceTransport !== fixtureTraceTransport ||
+				result.samples.some(
+					(sample) => !fixtureTransportIsComplete(sample.traceTransport),
+				))
+		)
+			result.gates.push(
+				"Complete matching browser initialization and context transport evidence is missing.",
+			);
 		if (result.kind !== "benchmark")
 			result.gates.push("Journey verification is not a controlled benchmark.");
 		const releaseGates = [];
@@ -1297,10 +1316,7 @@ async function measure(
 				kind: fixtureTraceTransport,
 				...transport.snapshot(),
 			};
-			if (
-				sample.traceTransport.afterInitialization?.refusedRequests !== 0 ||
-				sample.traceTransport.afterInitialization?.upstreamFailures !== 0
-			) {
+			if (!fixtureTransportIsComplete(sample.traceTransport)) {
 				sample.transportCoverageComplete = false;
 				if (!sample.failed) {
 					sample.failureStage = "trace-transport";

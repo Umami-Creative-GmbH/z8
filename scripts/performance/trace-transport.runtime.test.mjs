@@ -6,6 +6,7 @@ import test from "node:test";
 import { setTimeout as pause } from "node:timers/promises";
 import { gzipSync } from "node:zlib";
 import {
+	fixtureTransportIsComplete,
 	initializeFixtureBrowserContext,
 	launchFixtureBrowser,
 } from "./fixture-browser.mjs";
@@ -119,6 +120,7 @@ test("two concurrent worker contexts preserve encoded gzip bytes and agree with 
 						}),
 					);
 				assert.equal(state.complete, true);
+				assert.equal(fixtureTransportIsComplete(transport.snapshot()), true);
 				assert.equal(
 					transport.snapshot().afterInitialization.refusedRequests,
 					0,
@@ -145,6 +147,7 @@ test("two concurrent worker contexts preserve encoded gzip bytes and agree with 
 					1,
 				);
 				assert.equal(transport.wire.state(performance.now()).complete, false);
+				assert.equal(fixtureTransportIsComplete(transport.snapshot()), false);
 				assert.equal(
 					transport.wire.state(performance.now()).mandatoryErrors,
 					1,

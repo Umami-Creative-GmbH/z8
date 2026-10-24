@@ -11,6 +11,84 @@ const preferences = {
 	default_search_provider: { enabled: false },
 };
 
+/** Pure acceptance guard: retained startup evidence never cancels later errors. */
+export function fixtureTransportIsComplete(snapshot) {
+	const init = snapshot?.browserInitialization,
+		after = snapshot?.afterInitialization;
+	if (
+		!init ||
+		!after ||
+		init.policy !== fixtureBrowserPolicy ||
+		init.complete !== true ||
+		init.capped !== false ||
+		init.emptyContext !== true ||
+		init.quietMs !== 2000 ||
+		init.capMs !== 10000 ||
+		!(init.quietObservedMs >= 2000) ||
+		!(init.elapsedMs >= init.quietObservedMs && init.elapsedMs < 10000) ||
+		init.pending !== 0 ||
+		init.requests !== 0 ||
+		init.responseBodyBytes !== 0 ||
+		init.upstreamFailures !== 0 ||
+		after.refusedRequests !== 0 ||
+		after.upstreamFailures !== 0 ||
+		init.launch?.policy !== fixtureBrowserPolicy ||
+		JSON.stringify(init.launch.preferences) !== JSON.stringify(preferences) ||
+		!init.launch.arguments?.some(
+			(arg) =>
+				arg.startsWith("--disable-features=") &&
+				arg
+					.slice("--disable-features=".length)
+					.split(",")
+					.includes("AutofillServerCommunication"),
+		) ||
+		!/^Chrome\//.test(init.launch.browserVersion ?? "")
+	)
+		return false;
+	const fields = [
+		"requests",
+		"rewrittenRequests",
+		"refusedRequests",
+		"upstreamFailures",
+		"responseBodyBytes",
+	];
+	const reasons = [
+		"unexpectedLoopback",
+		"nonLoopbackHttp",
+		"loopbackConnect",
+		"nonLoopbackConnect",
+		"malformed",
+	];
+	for (const counters of [snapshot, init, after]) {
+		if (
+			fields.some(
+				(key) => !Number.isSafeInteger(counters[key]) || counters[key] < 0,
+			) ||
+			reasons.some(
+				(key) =>
+					!Number.isSafeInteger(counters.refusalReasons?.[key]) ||
+					counters.refusalReasons[key] < 0,
+			) ||
+			reasons.reduce((sum, key) => sum + counters.refusalReasons[key], 0) !==
+				counters.refusedRequests
+		)
+			return false;
+	}
+	if (
+		fields.some((key) => snapshot[key] !== init[key] + after[key]) ||
+		reasons.some(
+			(key) =>
+				snapshot.refusalReasons[key] !==
+				init.refusalReasons[key] + after.refusalReasons[key],
+		) ||
+		reasons.some(
+			(key) => key !== "nonLoopbackConnect" && init.refusalReasons[key] !== 0,
+		)
+	)
+		return false;
+	return true;
+}
+
 export async function launchFixtureBrowser(puppeteer, executablePath) {
 	const profile = await mkdtemp(join(tmpdir(), "z8-performance-chrome-"));
 	try {
