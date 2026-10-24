@@ -107,6 +107,16 @@ function fixture() {
   const artifact = {
     phase: "baseline",
     kind: "benchmark",
+    nativeRunCoverage: {
+      driverQueryCount: 275,
+      nativeQueryStartedCount: 275,
+      nativeQueryEndedCount: 275,
+      observedQueryCount: 275,
+      pendingNativeQueries: 0,
+      activeTraces: 0,
+      allReceivedTracesReconciled: true,
+      complete: true,
+    },
     planSha256: "",
     runtime: { ...plan.runtime, buildVerified: true },
     hardware: { cpu: "synthetic", cores: 1, memoryBytes: 100 },
@@ -455,6 +465,16 @@ function settledFixture(f, plan, filename) {
   const artifact = {
     schema: 1,
     kind: "settled-resource-companion",
+    nativeRunCoverage: {
+      driverQueryCount: 200,
+      nativeQueryStartedCount: 200,
+      nativeQueryEndedCount: 200,
+      observedQueryCount: 200,
+      pendingNativeQueries: 0,
+      activeTraces: 0,
+      allReceivedTracesReconciled: true,
+      complete: true,
+    },
     phase: plan.phase,
     planSha256: hash(Buffer.from(JSON.stringify(plan, null, 2) + "\n")),
     policy: settledPolicy,
@@ -596,4 +616,19 @@ test("registered coverage still requires independent native count proof and zero
     f.saveBefore();
     assert.equal(f.derive().status, 2);
   }
+});
+test("complete per-trace evidence cannot register a budget when whole-run wire reconciliation failed", () => {
+  const f = fixture();
+  f.artifact.nativeRunCoverage = {
+    driverQueryCount: 276,
+    nativeQueryStartedCount: 276,
+    nativeQueryEndedCount: 276,
+    observedQueryCount: 275,
+    pendingNativeQueries: 0,
+    activeTraces: 0,
+    allReceivedTracesReconciled: true,
+    complete: false,
+  };
+  f.saveBefore();
+  assert.equal(f.derive().status, 2);
 });

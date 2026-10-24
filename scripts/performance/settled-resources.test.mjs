@@ -21,7 +21,10 @@ test("companion validates required inputs and sample counts before importing a b
     2,
   );
 });
-import { requireSettledEvidence } from "./settled-resources.mjs";
+import {
+  requireSettledEvidence,
+  runCompanionCapture,
+} from "./settled-resources.mjs";
 import { settledPolicy } from "./settled-resource-observer.mjs";
 test("native correlation, sample coverage and censored outcomes cannot finalize a resource budget", () => {
   const plan = {
@@ -73,6 +76,16 @@ test("native correlation, sample coverage and censored outcomes cannot finalize 
   );
   const artifact = {
     kind: "settled-resource-companion",
+    nativeRunCoverage: {
+      driverQueryCount: 40,
+      nativeQueryStartedCount: 40,
+      nativeQueryEndedCount: 40,
+      observedQueryCount: 40,
+      pendingNativeQueries: 0,
+      activeTraces: 0,
+      allReceivedTracesReconciled: true,
+      complete: true,
+    },
     phase: "baseline",
     planSha256: "hash",
     policy: settledPolicy,
@@ -111,6 +124,8 @@ test("native correlation, sample coverage and censored outcomes cannot finalize 
     (a) => (a.samples[0].failed = true),
     (a) => (a.samples[0].settled.bytes.javascript = null),
     (a) => (a.finalized = false),
+    (a) => (a.nativeRunCoverage.complete = false),
+    (a) => delete a.nativeRunCoverage,
   ]) {
     const copy = structuredClone(artifact);
     change(copy);
@@ -162,4 +177,64 @@ test("capture requires registered collector control before any runtime or browse
   );
   assert.equal(r.status, 2);
   assert.match(r.stderr, /collector/i);
+});
+test("whole-run proof includes browser closure and rejects a late query whose export is entirely lost", async () => {
+  const ledger = {
+      samples: [
+        {
+          traceId: "measured",
+          prerequisiteTraceId: "prerequisite",
+          backgroundTraceId: "background",
+        },
+      ],
+    },
+    calls = [];
+  const collector = {
+    async readCollectorCounters(control) {
+      assert.equal(control, "private-control");
+      calls.push("before");
+      return {
+        activeTraces: 0,
+        started: { queries: 0 },
+        ended: { queries: 0 },
+      };
+    },
+    async reconcileCollectorRun({ control, before, traceIds }) {
+      assert.equal(control, "private-control");
+      assert.equal(before.started.queries, 0);
+      assert.deepEqual(traceIds, ["measured", "prerequisite", "background"]);
+      assert.deepEqual(calls, ["before", "open", "capture", "close"]);
+      return {
+        driverQueryCount: 2,
+        nativeQueryStartedCount: 2,
+        nativeQueryEndedCount: 2,
+        observedQueryCount: 1,
+        pendingNativeQueries: 0,
+        activeTraces: 0,
+        allReceivedTracesReconciled: true,
+        complete: false,
+      };
+    },
+  };
+  await runCompanionCapture({
+    collector,
+    control: "private-control",
+    artifact: ledger,
+    openBrowser: async () => {
+      calls.push("open");
+      return {
+        async close() {
+          calls.push("close");
+        },
+      };
+    },
+    capture: async () => {
+      calls.push("capture");
+    },
+    checkpoint: async () => {},
+  });
+  assert.equal(ledger.nativeRunCoverage.complete, false);
+  assert.equal(ledger.nativeRunCoverage.driverQueryCount, 2);
+  assert.equal(ledger.nativeRunCoverage.observedQueryCount, 1);
+  assert.equal(ledger.samples.length, 1);
 });
