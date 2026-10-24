@@ -4,6 +4,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
+import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
 import type { AuthSession, CurrentEmployee } from "./auth";
 
 export type ApprovedEmployeeContext = {
@@ -33,7 +34,7 @@ export async function resolveEmployeeContext(
 			where: and(
 				eq(employee.userId, session.user.id),
 				eq(employee.organizationId, activeOrganizationId),
-				eq(employee.isActive, true),
+					employeeHasOrganizationAccess(),
 			),
 		}),
 	]);

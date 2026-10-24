@@ -10,6 +10,11 @@ const authState = vi.hoisted(() => ({
 	getSession: vi.fn(),
 }));
 
+// This existing scope-resolution suite replaces policy/SQL adapters. Real public
+// command and lifecycle denial is covered by public-clock-admission.integration.test.ts.
+vi.mock("@/lib/organization-mfa/organization-access", () => ({ canAccessOrganization: async () => true }));
+vi.mock("@/lib/employee-lifecycle/access", () => ({ employeeHasOrganizationAccess: () => ({ type: "employee-access" }) }));
+
 vi.mock("@/db", () => ({
 	db: {
 		query: {

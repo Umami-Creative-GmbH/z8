@@ -167,6 +167,7 @@ const sourceShape0: CatalogSourceMetadata = {
 			approvals: 1,
 			fastLanes: 1,
 			sprint: 1,
+			triage: 1,
 		},
 		auth: {
 			auth: 1,
@@ -216,6 +217,7 @@ const sourceShape0: CatalogSourceMetadata = {
 		},
 		"settings/generic": {
 			settings: {
+				approvalTriage: 1,
 				assignedLocations: 1,
 				avv: 1,
 				billableTime: 1,
@@ -237,6 +239,7 @@ const sourceShape0: CatalogSourceMetadata = {
 				group: 1,
 				implementationChecklist: 1,
 				import: 1,
+				kioskBadge: 1,
 				kioskPin: 1,
 				kiosks: 1,
 				licenses: 1,

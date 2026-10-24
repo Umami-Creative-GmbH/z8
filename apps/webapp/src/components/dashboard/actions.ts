@@ -19,7 +19,7 @@ import {
 	runServerActionSafe,
 	type ServerActionResult,
 } from "@/lib/effect/result";
-import { AuthService } from "@/lib/effect/services/auth.service";
+import { activeOrganizationSession } from "@/lib/auth/active-organization-session";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import type { ManagedEmployee } from "@/lib/effect/services/manager.service";
 import { writeUserSettings } from "@/lib/user-preferences/user-settings-mutation";
@@ -66,8 +66,7 @@ type DashboardAbsenceEmployeeRow = typeof absenceEntry.$inferSelect & {
 
 /** The caller's employee in the active organization. */
 const sessionEmployee = Effect.gen(function* () {
-	const authService = yield* AuthService;
-	const session = yield* authService.getSession();
+	const session = yield* activeOrganizationSession;
 	const organizationId = session.session.activeOrganizationId;
 	const dbService = yield* DatabaseService;
 	const found = organizationId
@@ -94,8 +93,7 @@ const sessionEmployee = Effect.gen(function* () {
 
 export async function getManagerTodaySummary(): Promise<ManagerTodaySummaryResult> {
 	const effect = Effect.gen(function* () {
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
+		const session = yield* activeOrganizationSession;
 		const activeOrganizationId = session.session.activeOrganizationId;
 
 		if (!activeOrganizationId) {
@@ -175,8 +173,7 @@ export async function getManagedEmployees(): Promise<
 	ServerActionResult<ManagedEmployeesResult>
 > {
 	const effect = Effect.gen(function* () {
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
+		const session = yield* activeOrganizationSession;
 		const activeOrganizationId = session.session.activeOrganizationId;
 		const none: ManagedEmployeesResult = { isManager: false, employees: [] };
 
@@ -381,8 +378,7 @@ export async function getRecentlyApprovedRequests(
  */
 export async function getQuickStats(): Promise<ServerActionResult<QuickStats>> {
 	const effect = Effect.gen(function* () {
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
+		const session = yield* activeOrganizationSession;
 		return yield* loadQuickStatsForSubject({
 			userId: session.user.id,
 			organizationId: session.session.activeOrganizationId ?? "",
@@ -516,8 +512,7 @@ export async function getHydrationWidgetData(options?: {
 	}>
 > {
 	const effect = Effect.gen(function* () {
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
+		const session = yield* activeOrganizationSession;
 		return yield* loadHydrationForSubject(
 			{ userId: session.user.id, organizationId: session.session.activeOrganizationId ?? "" },
 			options,
@@ -535,8 +530,7 @@ export async function getUserSettings(): Promise<
 	}>
 > {
 	const effect = Effect.gen(function* () {
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
+		const session = yield* activeOrganizationSession;
 		const dbService = yield* DatabaseService;
 
 		// Get or create user settings
@@ -563,8 +557,7 @@ export async function updateWidgetOrder(
 	expectedScope?: { userId: string; organizationId: string },
 ): Promise<ServerActionResult<{ success: boolean; updatedAt: number }>> {
 	const effect = Effect.gen(function* () {
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
+		const session = yield* activeOrganizationSession;
 		const dbService = yield* DatabaseService;
 		if (
 			expectedScope &&

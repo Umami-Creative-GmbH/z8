@@ -14,6 +14,7 @@ import {
 } from "@/db/schema";
 import { getRequestSession } from "@/lib/auth/request-session";
 import { getAuthContext } from "@/lib/auth-helpers";
+import { activeOrganizationSession } from "@/lib/auth/active-organization-session";
 import { projectHasActiveCustomerSql } from "@/lib/billable-time/project-customer";
 import { getBillableTimeSettings } from "@/lib/billable-time/settings";
 import {
@@ -1284,8 +1285,7 @@ export async function getPresenceStatus(
 
 
 	const effect = Effect.gen(function* () {
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
+		const session = yield* activeOrganizationSession;
 		const dbService = yield* DatabaseService;
 
 		// Require an active organization

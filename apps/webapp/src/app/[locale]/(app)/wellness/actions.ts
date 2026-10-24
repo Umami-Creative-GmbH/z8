@@ -2,7 +2,7 @@
 
 import { Effect } from "effect";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
-import { AuthService } from "@/lib/effect/services/auth.service";
+import { activeOrganizationSession } from "@/lib/auth/active-organization-session";
 import type { DatabaseService } from "@/lib/effect/services/database.service";
 import type {
 	HydrationStats,
@@ -29,8 +29,7 @@ function buildWellnessActionEffect<T, E>(
 	operation: (context: WellnessActionContext) => Effect.Effect<T, E, DatabaseService>,
 ) {
 	return Effect.gen(function* () {
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
+		const session = yield* activeOrganizationSession;
 
 		return yield* operation({
 			userId: session.user.id,
