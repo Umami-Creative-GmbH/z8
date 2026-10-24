@@ -3,7 +3,8 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { DeactivationPlan } from "@/lib/employee-lifecycle/deactivation/types";
+import type { DeactivationPreview } from "@/lib/employee-lifecycle/deactivation/types";
+import { emptyDeactivationPreview } from "./testing/deactivation-preview.test.fixture";
 
 // Renders English defaults with their parameters, including `{count, plural, one {…} other {…}}`.
 vi.mock("@tolgee/react", () => ({
@@ -34,29 +35,9 @@ const SECOND_REPORT = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
 const ANNA = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
 const BEN = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
 
-function emptyPlan(overrides: Partial<DeactivationPlan> = {}): DeactivationPlan {
-	return {
-		at: "2026-10-24T08:00:00Z",
-		timeZone: "Europe/Berlin",
-		managerLinks: {
-			reportsNeedingReplacement: [],
-			reportsKeepingAnotherManager: [],
-			ownManagerLinks: [],
-			replacementOptions: [],
-		},
-		teamLinks: { teams: [], projectAssignments: [], projectManagerLinks: [] },
-		approvalDuties: { handovers: [], reviews: [] },
-		shifts: { shiftsToOpen: [], plannerRecipientUserIds: [] },
-		absences: { absencesToCancel: [], absencesSpanning: [] },
-		accessEnds: { grants: [], drivingAuthorizations: [], kioskBadges: [], shareLinks: [] },
-		retentionStarts: true,
-		seatReleased: true,
-		refusals: [],
-		...overrides,
-	};
-}
+const emptyPlan = emptyDeactivationPreview;
 
-function planWithReport(): DeactivationPlan {
+function planWithReport(): DeactivationPreview {
 	return emptyPlan({
 		managerLinks: {
 			reportsNeedingReplacement: [
@@ -69,6 +50,7 @@ function planWithReport(): DeactivationPlan {
 				},
 			],
 			reportsKeepingAnotherManager: [],
+			formerReports: [],
 			ownManagerLinks: [],
 			replacementOptions: [
 				{ employeeId: ANNA, name: "Anna Admin" },
@@ -243,6 +225,7 @@ describe("DeactivationPreviewDialog", () => {
 						{ employeeId: REPORT, name: "Rita Report", newPrimaryManagerId: ANNA },
 						{ employeeId: SECOND_REPORT, name: "Sam Second", newPrimaryManagerId: null },
 					],
+					formerReports: [{ employeeId: "former-report", name: "Flo Former" }],
 					ownManagerLinks: [{ employeeId: BEN, name: "Ben Manager", isPrimary: true }],
 					replacementOptions: [{ employeeId: ANNA, name: "Anna Admin" }],
 				},
@@ -250,6 +233,8 @@ describe("DeactivationPreviewDialog", () => {
 		});
 
 		const section = within(screen.getByRole("region", { name: "Manager links that end" }));
+		// A former report just loses the link; nobody is asked for.
+		expect(section.getByText("Flo Former is a former employee; the link just ends.")).toBeTruthy();
 		expect(
 			section.getByText("Rita Report keeps Anna Admin, who becomes the primary manager."),
 		).toBeTruthy();
@@ -326,7 +311,6 @@ describe("DeactivationPreviewDialog", () => {
 						{ shiftId: "shift-1", date: "2026-10-26", startTime: "08:00", endTime: "16:00" },
 						{ shiftId: "shift-2", date: "2026-10-27", startTime: "22:00", endTime: "06:00" },
 					],
-					plannerRecipientUserIds: ["planner-1"],
 				},
 			}),
 		});
@@ -370,6 +354,15 @@ describe("DeactivationPreviewDialog", () => {
 							status: "approved",
 						},
 					],
+					absencesInClosedMonths: [
+						{
+							absenceId: "absence-4",
+							categoryName: "Vacation",
+							startDate: "2026-10-29",
+							endDate: "2026-10-30",
+							status: "approved",
+						},
+					],
 				},
 			}),
 		});
@@ -380,6 +373,11 @@ describe("DeactivationPreviewDialog", () => {
 		expect(section.getByText("Training, Dec 1, 2026 (pending)")).toBeTruthy();
 		expect(section.getByText("Kept, because they have already started")).toBeTruthy();
 		expect(section.getByText("Sick leave, Oct 22 – 28, 2026 (approved)")).toBeTruthy();
+		// A closed month refuses the cancellation, so the absence is kept and said so.
+		expect(
+			section.getByText("Kept, because they touch a closed month (reopen it to cancel them)"),
+		).toBeTruthy();
+		expect(section.getByText("Vacation, Oct 29 – 30, 2026 (approved)")).toBeTruthy();
 	});
 
 	it("lists the access that ends", () => {

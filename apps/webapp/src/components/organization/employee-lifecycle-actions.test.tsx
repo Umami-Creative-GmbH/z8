@@ -11,8 +11,9 @@ import {
 } from "@testing-library/react";
 import type { ComponentPropsWithRef, ReactElement, ReactNode } from "react";
 import { beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
-import type { DeactivationPlan } from "@/lib/employee-lifecycle/deactivation/types";
+import type { DeactivationPreview } from "@/lib/employee-lifecycle/deactivation/types";
 import { queryKeys } from "@/lib/query";
+import { emptyDeactivationPreview } from "./testing/deactivation-preview.test.fixture";
 import {
 	EmployeeLifecycleActions,
 	type EmployeeLifecycleActionsProps,
@@ -94,30 +95,10 @@ vi.mock("@/app/[locale]/(app)/settings/employees/actions", () => ({
 const REPORT = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const ANNA = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
 
-function previewPlan(overrides: Partial<DeactivationPlan> = {}): DeactivationPlan {
-	return {
-		at: "2026-10-24T08:00:00Z",
-		timeZone: "Europe/Berlin",
-		managerLinks: {
-			reportsNeedingReplacement: [],
-			reportsKeepingAnotherManager: [],
-			ownManagerLinks: [],
-			replacementOptions: [],
-		},
-		teamLinks: { teams: [], projectAssignments: [], projectManagerLinks: [] },
-		approvalDuties: { handovers: [], reviews: [] },
-		shifts: { shiftsToOpen: [], plannerRecipientUserIds: [] },
-		absences: { absencesToCancel: [], absencesSpanning: [] },
-		accessEnds: { grants: [], drivingAuthorizations: [], kioskBadges: [], shareLinks: [] },
-		retentionStarts: true,
-		seatReleased: true,
-		refusals: [],
-		...overrides,
-	};
-}
+const previewPlan = emptyDeactivationPreview;
 
 /** A plan in which one report needs a new manager; `pick` is the one the preview was asked with. */
-function planWithReport(pick: string | null): DeactivationPlan {
+function planWithReport(pick: string | null): DeactivationPreview {
 	return previewPlan({
 		managerLinks: {
 			reportsNeedingReplacement: [
@@ -130,6 +111,7 @@ function planWithReport(pick: string | null): DeactivationPlan {
 				},
 			],
 			reportsKeepingAnotherManager: [],
+			formerReports: [],
 			ownManagerLinks: [],
 			replacementOptions: [{ employeeId: ANNA, name: "Anna Admin" }],
 		},
@@ -751,6 +733,32 @@ describe("EmployeeLifecycleActions mutations", () => {
 			expect(toastSuccessMock).toHaveBeenCalledWith("Employee reactivated", undefined),
 		);
 		expect(screen.queryByRole("dialog")).toBeNull();
+	});
+
+	it("says when the checklist could not be loaded and links to it on the employee page", async () => {
+		reactivateEmployeeMock.mockResolvedValueOnce({ success: true, data: undefined });
+		getReactivationChecklistMock.mockResolvedValueOnce({
+			success: false,
+			error: "Database unavailable",
+			code: "DatabaseError",
+		});
+		renderActions({ target: { ...activeTarget, isActive: false } });
+		const confirmation = await openConfirmation("Reactivate");
+
+		fireEvent.click(within(confirmation).getByRole("button", { name: "Reactivate" }));
+
+		await waitFor(() =>
+			expect(toastSuccessMock).toHaveBeenCalledWith("Employee reactivated", {
+				description: "The checklist of what to grant again could not be loaded.",
+				action: { label: "What to grant again", onClick: expect.any(Function) },
+			}),
+		);
+		expect(screen.queryByRole("dialog")).toBeNull();
+		const [, options] = toastSuccessMock.mock.calls.at(-1) ?? [];
+		options.action.onClick();
+		expect(routerPushMock).toHaveBeenCalledWith(
+			"/settings/employees/employee-2#reactivation-checklist",
+		);
 	});
 
 	it("keeps the history row on removal failure and calls onRemoved only after success", async () => {
