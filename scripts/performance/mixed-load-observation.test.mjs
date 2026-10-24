@@ -142,7 +142,8 @@ test("whole-run native proof requires driver=SDK=received and exact registered i
 		(x) => x.ended.acquisitions++,
 		(x) => x.unknown++,
 		(x) => x.activeTraces++,
-		(x) => x.incoming.otherHeaderOtherSpan++,
+		(x) => x.incoming.knownHeaderOtherSpan++,
+		(x) => x.incoming.otherHeaderKnownSpan++,
 		(x) => x.incoming.mismatchingParent++,
 	]) {
 		const bad = structuredClone(after);
@@ -354,6 +355,7 @@ test("whole mixed observation uses real v2 registration, native close/flush and 
 		);
 		assert.equal(result.nativeRunCoverage.driverQueries, 4);
 		assert.equal(result.nativeRunCoverage.receivedQueries, 4);
+		assert.equal(result.nativeRunCoverage.standard.complete, true);
 		coverage.driverQuery();
 		assert.equal(
 			reconcileMixedNative({
@@ -375,6 +377,33 @@ test("whole mixed observation uses real v2 registration, native close/flush and 
 			child.exitCode !== null ? done() : child.once("exit", done),
 		);
 		await rm(folder, { recursive: true, force: true });
+	}
+});
+
+test("control-only HTTP remains diagnostic while any unmatched native work still fails reconciliation", () => {
+	const before = counters(),
+		after = counters(3, 2, 2);
+	after.incoming.otherHeaderOtherSpan = 3;
+	assert.equal(
+		reconcileMixedNative({ before, after, rows: [row()], ids: [id(1)] })
+			.complete,
+		true,
+	);
+	for (const mutate of [
+		(value) => value.unknown++,
+		(value) => value.driverQueries++,
+		(value) => {
+			value.started.cache++;
+			value.ended.cache++;
+		},
+	]) {
+		const bad = structuredClone(after);
+		mutate(bad);
+		assert.equal(
+			reconcileMixedNative({ before, after: bad, rows: [row()], ids: [id(1)] })
+				.complete,
+			false,
+		);
 	}
 });
 

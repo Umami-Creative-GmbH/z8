@@ -4,6 +4,7 @@ import {
 	beginCollectorVisit,
 	endCollectorVisit,
 	readCollectorCounters,
+	reconcileCollectorRun,
 } from "./collector-client.mjs";
 import { fixtureTransportIsComplete } from "./fixture-browser.mjs";
 
@@ -204,12 +205,12 @@ export function reconcileMixedNative({ before, after, rows, ids }) {
 		proof.cache === sum("cacheHits") + sum("cacheMisses") &&
 		proof.unknownNativeDelta === 0 &&
 		Object.values(proof.incoming).every(integer) &&
-		[
-			"knownHeaderOtherSpan",
-			"otherHeaderKnownSpan",
-			"otherHeaderOtherSpan",
-			"mismatchingParent",
-		].every((key) => proof.incoming[key] === 0);
+		["knownHeaderOtherSpan", "otherHeaderKnownSpan", "mismatchingParent"].every(
+			(key) => proof.incoming[key] === 0,
+		);
+	// The same Node process instruments its observer-control HTTP listener too.
+	// Unregistered HTTP alone is diagnostic; unknown PG/cache/acquisition work
+	// remains a failure through native totals, driver equality and each trace's proof.
 	return proof;
 }
 export async function beginMixedObservation(control, ids) {
@@ -224,9 +225,17 @@ export async function finishMixedObservation(observation) {
 	const closed = await endCollectorVisit(observation.visit);
 	const after = await readCollectorCounters(observation.control);
 	const rows = closed.traces ?? [];
+	const standard = await reconcileCollectorRun({
+		control: observation.control,
+		before: observation.before,
+		traceIds: observation.ids,
+	});
+	const proof = reconcileMixedNative({ ...observation, after, rows });
 	return {
 		nativeRunCoverage: {
-			...reconcileMixedNative({ ...observation, after, rows }),
+			...proof,
+			complete: proof.complete && standard.complete,
+			standard,
 			registration: {
 				began: true,
 				closed: true,

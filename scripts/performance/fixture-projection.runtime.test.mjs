@@ -15,12 +15,20 @@ test("normal guarded CLI initializes missing fixture projections then preserves 
 		"A freshly prepared disposable fixture directory is required.",
 	);
 	const progressPath = join(directory, "fixture-projection-progress.json");
-	const previous = JSON.parse(await readFile(progressPath, "utf8"));
-	assert.equal(previous.total, 208);
-	assert.ok(
-		previous.rebuilt + previous.preserved < 208,
-		"First-missing proof requires incomplete initialization; existing rows must never be reset.",
-	);
+	let previous;
+	try {
+		previous = JSON.parse(await readFile(progressPath, "utf8"));
+	} catch (error) {
+		// A genuinely fresh fixture has no previous attempt to preserve.
+		if (error.code !== "ENOENT") throw error;
+	}
+	if (previous) {
+		assert.equal(previous.total, 208);
+		assert.ok(
+			previous.rebuilt + previous.preserved < 208,
+			"First-missing proof requires incomplete initialization; existing rows must never be reset.",
+		);
+	}
 	const fixture = fileURLToPath(new URL("./fixture.mjs", import.meta.url));
 	const run = () =>
 		new Promise((done) =>

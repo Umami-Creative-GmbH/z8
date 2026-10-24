@@ -122,9 +122,20 @@ after every context closes. Actual independent driver calls, SDK started/ended
 queries and collector-received queries must match exactly. Acquisition and native
 cache totals also reconcile, every registered identity must have closed complete
 proof, and missing/duplicate identities, unknown or late spans, rejected batches,
-unattributed HTTP contexts and missing numerical fields fail. Before/after
+header/span mismatches and missing numerical fields fail. Before/after
 numerical counters and registration closure are retained. Unknown values remain
 null. Registration capacity cannot silently drop a request's identity.
+
+The observer's own register/close/counter HTTP listener runs in the instrumented
+Node process. Raw `incoming.otherHeaderOtherSpan` is therefore diagnostic, not
+an unattributed native operation. A real control-only register/close/counters
+run produced three such HTTP events with zero driver queries, SDK queries,
+acquisitions, cache operations or unknown native spans. No fixed count is
+subtracted. The mixed operator now also requires the shared
+`reconcileCollectorRun` result. All exact native totals, trace closure, unknown
+native, late spans and header/span mismatch checks remain mandatory. A regression
+test first reproduced the overly strict rejection; 14 combined operator checks
+now pass, including unknown query and fully closed extra cache work refusals.
 
 Ten focused tests pass, including actual finite HTTP requests, real v2 collector
 and native-control processes, one exporter flush after hot reads, independent

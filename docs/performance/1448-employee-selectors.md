@@ -89,3 +89,48 @@ mutation, and privilege/assignment reduction after a broader entry was warm.
 Record query counts, native cache coverage and response/readiness measurements
 there. Keep #1462 open until those compiled-runtime checks and the final spec
 review pass. The source and deterministic tests alone do not close these gates.
+
+## Compiled final-fixture cache proof
+
+The immutable `ac2fb1133` production artifact was tested through real public GETs
+on the isolated final functional fixture, with an explicitly exclusive native
+epoch. Both organizations and both selector datasets showed the same pattern:
+
+| Condition | SQL statements | Returned database rows | Native hit / miss |
+| --- | ---: | ---: | ---: |
+| Cold | 46 | 24 | 0 / 1 |
+| Immediate repeat | 45 | 23 | 1 / 0 |
+| After a real 301-second wait | 46 | 24 | 0 / 1 |
+
+Choices remained equivalent in memory. Fourteen registered public requests
+(including two identity prerequisites) reconciled 564 driver calls, 564 SDK
+queries and 564 received queries, 564 acquisitions and 12 cache operations.
+All 14 incoming parents matched, with zero unknown native work or mismatched
+parents. The shared standard reconciliation and exact native checks pass.
+[Numerical evidence](evidence/1475-employee-selector-ttl.json) contains no business
+identities, action identifiers, cookies or response bodies.
+
+The first attempt's false status is retained privately: an extra validator rule
+incorrectly treated the observer's three control HTTP requests as unknown native
+work. A separate control-only lifecycle reproduced exactly those HTTP events
+with zero native work; the corrected result is saved separately and subtracts
+nothing. This establishes actual cache reuse and expiry, not browser performance.
+Accepted mutations, unrelated-organization warmth, reduced access and remaining
+compiled-browser gates still need their separate evidence.
+
+These observations use the exact `ac2fb1133` observer. A subsequent causal test
+proved its SDK server-span enum was incorrect; the isolated `e05959749` fix
+uses `SpanKind.SERVER` and keeps late child work inside an active request.
+The original artifact and its false first attempt remain retained. This table
+is evidence of the awaited GET cache behavior, not final release acceptance
+under the corrected observer. The controller owns the corrected build and
+remaining native revalidation.
+
+The old-artifact UI probe accepted an actual policy create and its owned-policy
+cleanup delete, with captured public action identity/body matches and immediate
+visible choices in organization A while organization B stayed warm. Its employee
+scope step failed an operator trace-ownership assertion, so that complete trial
+remains failed. A separate public read-only recovery verified one baseline
+active policy, zero owned test policies and the manager role restored. Policy
+rename dispatch was not established by that UI probe. No application defect or
+complete employee/scope acceptance is inferred from these failed trials.
