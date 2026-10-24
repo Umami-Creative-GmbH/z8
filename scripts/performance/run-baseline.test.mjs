@@ -7,6 +7,7 @@ import { join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { primaryProtocolIdentity } from "./protocol-fingerprints.mjs";
+import { measure } from "./run-baseline.mjs";
 const primaryProtocol = await primaryProtocolIdentity();
 
 const runner = fileURLToPath(new URL("./run-baseline.mjs", import.meta.url));
@@ -52,6 +53,121 @@ const fixturePlan = () => ({
 			reset: [{ click: "button" }],
 		},
 	})),
+});
+
+test("primary retains failed native close evidence and still rejects incomplete native coverage", async () => {
+	let registeredIds;
+	const proof = [
+		{
+			traceId: "opaque",
+			complete: false,
+			driverComplete: true,
+			started: { queries: 6 },
+			ended: { queries: 6 },
+			active: 1,
+		},
+	];
+	const sample = await measure(
+		{
+			async createBrowserContext() {
+				throw Error("Unavailable fixture browser");
+			},
+		},
+		{},
+		{ runtime: { collectorProtocol: "z8-fixture-otlp-collector-v2" } },
+		{ name: "fixture" },
+		{ name: "year" },
+		{ name: "analytics" },
+		"first-document",
+		0,
+		1,
+		{
+			async beginCollectorVisit({ traceIds }) {
+				registeredIds = traceIds;
+				return { protocol: "z8-fixture-otlp-collector-v2", traceIds };
+			},
+			async endCollectorVisit() {
+				return {
+					protocol: "z8-fixture-otlp-collector-v2",
+					traces: registeredIds.map((traceId) => ({
+						traceId,
+						coverage: { incomplete: true, nativeProof: false },
+					})),
+					nativeCloseProof: proof,
+					nativeCloseElapsedMs: 10016.5,
+				};
+			},
+		},
+	);
+	assert.deepEqual(sample.collector.nativeCloseProof, proof);
+	assert.equal(sample.collector.nativeCloseElapsedMs, 10016.5);
+	assert.equal(sample.collector.coverage.nativeProof, false);
+	assert.equal(sample.failed, true);
+	assert.equal(sample.failureStage, "native-coverage");
+	assert.equal(sample.failureKind, "observation-incomplete");
+	assert.equal(sample.usableContentMs, null);
+});
+
+test("primary preserves positive close proof and leaves absent proof and elapsed time unknown", async () => {
+	for (const present of [true, false]) {
+		let registeredIds;
+		const proof = [
+			{
+				traceId: "opaque",
+				complete: true,
+				driverComplete: true,
+				started: { queries: 6 },
+				ended: { queries: 6 },
+				active: 0,
+			},
+		];
+		const sample = await measure(
+			{
+				async createBrowserContext() {
+					throw Error("Unavailable fixture browser");
+				},
+			},
+			{},
+			{ runtime: { collectorProtocol: "z8-fixture-otlp-collector-v2" } },
+			{ name: "fixture" },
+			{ name: "year" },
+			{ name: "analytics" },
+			"first-document",
+			0,
+			1,
+			{
+				async beginCollectorVisit({ traceIds }) {
+					registeredIds = traceIds;
+					return { protocol: "z8-fixture-otlp-collector-v2", traceIds };
+				},
+				async endCollectorVisit() {
+					return {
+						protocol: "z8-fixture-otlp-collector-v2",
+						traces: registeredIds.map((traceId) => ({
+							traceId,
+							coverage: { incomplete: false, nativeProof: true },
+						})),
+						...(present
+							? { nativeCloseProof: proof, nativeCloseElapsedMs: 703.25 }
+							: {}),
+					};
+				},
+			},
+		);
+		assert.deepEqual(sample.collector.nativeCloseProof, present ? proof : null);
+		assert.equal(
+			sample.collector.nativeCloseElapsedMs,
+			present ? 703.25 : null,
+		);
+		assert.equal(sample.collector.coverage.nativeProof, true);
+		assert.equal(
+			sample.failed,
+			true,
+			"Positive closure does not erase a prerequisite failure.",
+		);
+		assert.equal(sample.failureStage, "authentication-context");
+		assert.equal(sample.usableContentMs, null);
+	}
 });
 
 test("a diagnostic mode filter cannot reduce controlled measurement cohorts", () => {

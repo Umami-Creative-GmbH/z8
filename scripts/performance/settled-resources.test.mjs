@@ -30,7 +30,116 @@ import {
   observeFailedJourneyWire,
   companionPolicy as settledPolicy,
   companionWireContract,
+  measureFixtureResources,
 } from "./settled-resources.mjs";
+
+test("companion retains failed native close proof without making an incomplete visit eligible", async () => {
+  let registeredIds;
+  const proof = [
+    {
+      traceId: "opaque",
+      complete: false,
+      driverComplete: true,
+      started: { queries: 6 },
+      ended: { queries: 6 },
+      active: 1,
+    },
+  ];
+  const sample = await measureFixtureResources(
+    {},
+    {},
+    { runtime: {} },
+    { name: "fixture" },
+    { name: "year" },
+    { name: "analytics" },
+    "first-document",
+    0,
+    "private-control",
+    {
+      async beginCollectorVisit({ traceIds }) {
+        registeredIds = traceIds;
+        return { protocol: "z8-fixture-otlp-collector-v2", traceIds };
+      },
+      async endCollectorVisit() {
+        return {
+          protocol: "z8-fixture-otlp-collector-v2",
+          traces: registeredIds.map((traceId) => ({
+            traceId,
+            coverage: { incomplete: true, nativeProof: false },
+          })),
+          nativeCloseProof: proof,
+          nativeCloseElapsedMs: 10016.5,
+        };
+      },
+    },
+  );
+  assert.deepEqual(sample.collectorVisit.nativeCloseProof, proof);
+  assert.equal(sample.collectorVisit.nativeCloseElapsedMs, 10016.5);
+  assert.equal(sample.collectorVisit.coverage.nativeProof, false);
+  assert.equal(sample.failed, true);
+  assert.equal(sample.measurementStarted, false);
+  assert.equal(sample.readyMs, null);
+});
+
+test("companion preserves positive close evidence and represents absent evidence as unknown", async () => {
+  for (const present of [true, false]) {
+    let registeredIds;
+    const proof = [
+      {
+        traceId: "opaque",
+        complete: true,
+        driverComplete: true,
+        started: { queries: 6 },
+        ended: { queries: 6 },
+        active: 0,
+      },
+    ];
+    const sample = await measureFixtureResources(
+      {},
+      {},
+      { runtime: {} },
+      { name: "fixture" },
+      { name: "year" },
+      { name: "analytics" },
+      "first-document",
+      0,
+      "private-control",
+      {
+        async beginCollectorVisit({ traceIds }) {
+          registeredIds = traceIds;
+          return { protocol: "z8-fixture-otlp-collector-v2", traceIds };
+        },
+        async endCollectorVisit() {
+          return {
+            protocol: "z8-fixture-otlp-collector-v2",
+            traces: registeredIds.map((traceId) => ({
+              traceId,
+              coverage: { incomplete: false, nativeProof: true },
+            })),
+            ...(present
+              ? { nativeCloseProof: proof, nativeCloseElapsedMs: 703.25 }
+              : {}),
+          };
+        },
+      },
+    );
+    assert.deepEqual(
+      sample.collectorVisit.nativeCloseProof,
+      present ? proof : null,
+    );
+    assert.equal(
+      sample.collectorVisit.nativeCloseElapsedMs,
+      present ? 703.25 : null,
+    );
+    assert.equal(sample.collectorVisit.coverage.nativeProof, true);
+    assert.equal(
+      sample.failed,
+      true,
+      "Positive closure does not erase a prerequisite failure.",
+    );
+    assert.equal(sample.readyMs, null);
+  }
+});
 
 test("resource eligibility distinguishes proven failed baseline behavior from missing coverage and failing head behavior", () => {
   const plan = {
@@ -147,7 +256,7 @@ test("resource eligibility distinguishes proven failed baseline behavior from mi
     failedNative = structuredClone(native);
   annualPlan.timeoutMs = 30000;
   annualPlan.runtime.poolMax = 10;
-  annualPlan.runtime.build = "d5550e35c3bd9adf584e9731ade31d6420abf545";
+  annualPlan.runtime.build = "295de0b706e439bcdaf4d2d25661ce45f02ddb61";
   annualPlan.runtime.sourceBuild = "39a08d0bbe77e00ceb5b204b9f9100ab2cfb86be";
   Object.assign(failedBefore.runtime, annualPlan.runtime);
   annualPlan.conditions[0].employees = 200;
@@ -209,6 +318,14 @@ test("resource eligibility distinguishes proven failed baseline behavior from mi
     (_p, _a, n) => n[0].observedPoolAcquisitions++,
     (_p, a) => (a.samples[0].wireFailureDrain.postReadyMs = 10001),
     (p) => (p.runtime.poolMax = 20),
+    (p, a) => {
+      p.runtime.build = "d5550e35c3bd9adf584e9731ade31d6420abf545";
+      a.runtime.build = p.runtime.build;
+    },
+    (_p, _a, n) => (n[0].coverage.registration = false),
+    (_p, _a, n) => (n[0].coverage.incomplete = true),
+    (_p, _a, n) => (n[0].coverage.nativeProof = false),
+    (_p, _a, n) => (n[0].coverage.unattributedNativeSpans = 1),
     (p, a) => {
       p.runtime.build = "ddddddddd";
       a.runtime.build = p.runtime.build;

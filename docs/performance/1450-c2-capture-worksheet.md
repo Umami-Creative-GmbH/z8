@@ -1,12 +1,16 @@
 # C2 controller worksheet — prepared, not executed
 
-**Execution hold after the corrected native SDK SERVER observer:** the original binary is being rebuilt as exact 295 while policy version 3 remains bound to d555. The plan/build pins and hashes below describe the retained earlier preparation and must be refreshed only after [new actual observer proof and a prospective binding amendment](1450-observer-v4-proof-refresh.md). The old ac2 head observer artifact also needs replacement. Do not execute freeze/capture/derive blocks using these stale pins.
+**Pending root review:** [new actual observer proof and the prospective amendment](1450-observer-v4-proof-refresh.md) now bind numerical policy 4 / companion 4 to original 295/business39; the corrected e059 head build is admitted. Root must review the refreshed unfrozen draft, new fingerprint sidecar and source before executing any freeze/capture/derive block. Old d555/ac2 build records and all diagnostic failures remain preserved.
 
-Preparation is against integration `b2c8f2591a60bfcf7135edc561ab7013f40487c2`. The mutable `before-plan-c2-DRAFT.json` now records that tooling commit. Its current byte hash is `22c1894d1ca43844f31f282c8c8b1d5a97b228c7ff5ed7b0592fc26ea3ab1847`. The adjacent `before-plan-c2-DRAFT-preparation-b2c8f2591.json` records exact primary, companion and budget source fingerprints and is explicitly **unfrozen**. No corrected full capture, freeze, actual budget derivation or controlled head timing was performed during preparation.
+The mutable `before-plan-c2-DRAFT.json` records the exact reviewed policy/tooling commit in `runtime.toolingBuild`. The new adjacent `before-plan-c2-DRAFT-preparation-observer-v4-policy4.json` records that commit, the current draft byte hash and exact primary, companion and budget source fingerprints, and is explicitly **unfrozen**. The prior b2c8f2591 preparation/hash is retained as historical evidence. No corrected full capture, freeze, actual budget derivation or controlled head timing was performed during preparation.
 
-All non-runtime fields are deeply equal to original C1, whose unchanged byte hash is `3feed7ee263c08f522bc886c8390224abdbfa67926c4ff02d0fb50f3d30dabb3`. Original binary/observer source remains `d5550e35c3bd9adf584e9731ade31d6420abf545`; original business source remains `39a08d0bbe77e00ceb5b204b9f9100ab2cfb86be`. There are 114 primary cohorts / 1380 visits: 540 first documents, 540 repeat Links, 135 return visits, 135 manual refreshes and 30 mutation refreshes. Each required first/Link cohort still has twenty samples, each declared functional cohort five. The separate companion has 54 cohorts / 1080 visits. Concurrency remains one. Notification permissions, sizes/roles, ranges, recipes, origin, pool/cache settings and fixture metadata are unchanged. This is holistic journey cost; ordinary caches can warm, `prepare(false)` can leave reads in flight, and Last Year → Custom includes prior annual work.
+After merging, refresh the preparation from the actual root checkout into a newly named report if its commit or byte fingerprints differ (including Git line-ending conversion), and update `$prep` below. Freeze checks exact executed file bytes; it must reject source drift rather than treating semantically equivalent files as an accepted hash match.
 
-Use [the fixed release policy](1448-release-budgets.md) version 3 / companion version 3. Only the exact proved original annual verification timeout can qualify as failed-before observed traffic/paint, with every native, measured-document and finite resource check satisfied. Usable/clock failure p95 stays null with the existing absolute timeout fallback. Missing one of twenty native LCP entries/read markers leaves its budget null and comparison unfulfilled. Unknown rows, native coverage, wire bytes, caps, upstream/mandatory errors or failed prerequisites are not waived. Head must pass UI and resource gates. The old interrupted C1 ledger remains diagnostic only.
+The primary and companion now retain the native close reply's `nativeCloseProof` array and `nativeCloseElapsedMs` on each sample's `collector` / `collectorVisit` record, before checking the existing collector coverage. This is diagnostic closure evidence outside the measured latency window, with numeric lifecycle counts and opaque trace identities only. The elapsed value covers the native close POST, before the collector close POST; it is not a journey percentile. Missing returned fields stay `null`. Balanced query counts do not establish complete native lifecycle coverage, and retaining a failed proof does not waive any coverage failure. The older artifacts that discarded this proof remain unchanged. The prepared sidecar predates this additive tooling change: refresh its source fingerprints only after the common tool commits and replacement head build record are ready, into a new sidecar; C2 remains unfrozen.
+
+All non-runtime fields are deeply equal to original C1, whose unchanged byte hash is `3feed7ee263c08f522bc886c8390224abdbfa67926c4ff02d0fb50f3d30dabb3`. Original binary/observer source remains `295de0b706e439bcdaf4d2d25661ce45f02ddb61`; original business source remains `39a08d0bbe77e00ceb5b204b9f9100ab2cfb86be`. There are 114 primary cohorts / 1380 visits: 540 first documents, 540 repeat Links, 135 return visits, 135 manual refreshes and 30 mutation refreshes. Each required first/Link cohort still has twenty samples, each declared functional cohort five. The separate companion has 54 cohorts / 1080 visits. Concurrency remains one. Notification permissions, sizes/roles, ranges, recipes, origin, pool/cache settings and fixture metadata are unchanged. This is holistic journey cost; ordinary caches can warm, `prepare(false)` can leave reads in flight, and Last Year → Custom includes prior annual work.
+
+Use [the fixed release policy](1448-release-budgets.md) version 4 / companion version 4. Only the exact proved original annual verification timeout can qualify as failed-before observed traffic/paint, with every native, measured-document and finite resource check satisfied. Usable/clock failure p95 stays null with the existing absolute timeout fallback. Missing one of twenty native LCP entries/read markers leaves its budget null and comparison unfulfilled. Unknown rows, native coverage, wire bytes, caps, upstream/mandatory errors or failed prerequisites are not waived. Head must pass UI and resource gates. The old interrupted C1 ledger remains diagnostic only.
 
 ## Controller release and scheduling
 
@@ -23,10 +27,10 @@ $ErrorActionPreference = 'Stop'
 $source = 'Y:/Codex/Worktrees/c412/z8'
 $scratch = 'C:/Users/KaiHentschel/.codex/visualizations/2026/10/24/01a16d49-e92f-7142-8e11-9532addefaff/spec1448'
 $draft = Join-Path $scratch 'before-plan-c2-DRAFT.json'
-$prep = Join-Path $scratch 'before-plan-c2-DRAFT-preparation-b2c8f2591.json'
+$prep = Join-Path $scratch 'before-plan-c2-DRAFT-preparation-observer-v4-policy4.json'
 $run = Join-Path $scratch 'before-c2'
 $auth = Join-Path $scratch 'performance-runtime/auth-private.json'
-$collector = Join-Path $scratch 'performance-runtime/observer-v3/collector-control.json'
+$collector = Join-Path $scratch 'performance-runtime/observer-v4/collector-control.json'
 $chrome = 'C:/Program Files/Google/Chrome/Application/chrome.exe'
 Set-Location -LiteralPath $source
 
@@ -90,7 +94,7 @@ function Export-CollectorMetrics([string] $controlPath, [string] $outputPath) {
 
 ## Original primary capture and finalization
 
-The existing original controller sessions were app `23041` / collector `30708`, origin 58792. The controller must confirm current ownership before executing; this worksheet does not infer liveness from saved files. The runner performs its normal exact build check and whole-run native reconciliation; no separate app warm-up is added.
+The existing original controller sessions were app `12464` / collector `74272`, origin 58792. The controller must confirm current ownership before executing; this worksheet does not infer liveness from saved files. The runner performs its normal exact build check and whole-run native reconciliation; no separate app warm-up is added.
 
 ```powershell
 Assert-NewOutput $primary
@@ -140,10 +144,10 @@ Inspect `behaviorComplete`, `resourceObservationBasis` and retained failures; a 
 
 ## Derive and register before any controlled head observation
 
-The existing candidate build record is `final-merged-head-build-v1/head-build.json`: successful CI/two workers, source `ac2fb11334b2fac88144dd405e39a15bd988d29c`. These inputs identify the candidate; they provide no head performance measurements. If the sole fix owner changes app source, the controller must use the new successfully verified build record and retain the old one. Do not change before identities or use candidate measurements to choose ceilings.
+The existing candidate build record is `final-observer-v2-build/head-build.json`: successful CI/two workers, source `e059597490b02c575c6e1cf64f1d83da712cff97`. These inputs identify the candidate; they provide no head performance measurements. If the sole fix owner changes app source, the controller must use the new successfully verified build record and retain the old one. Do not change before identities or use candidate measurements to choose ceilings.
 
 ```powershell
-$headBuildRecord = Get-Content -Raw -LiteralPath "$scratch/final-merged-head-build-v1/head-build.json" | ConvertFrom-Json
+$headBuildRecord = Get-Content -Raw -LiteralPath "$scratch/final-observer-v2-build/head-build.json" | ConvertFrom-Json
 if ($headBuildRecord.kind -ne 'owned-final-head-build' -or $headBuildRecord.exitCode -ne 0 -or $headBuildRecord.ci -ne $true -or $headBuildRecord.workers -ne 2) {
   throw 'No admitted successful candidate build record.'
 }
@@ -166,8 +170,9 @@ $registration = [ordered]@{
   settledSha256 = (Get-FileHash -LiteralPath $settled -Algorithm SHA256).Hash.ToLowerInvariant()
   settledNativeSha256 = (Get-FileHash -LiteralPath $settledNative -Algorithm SHA256).Hash.ToLowerInvariant()
   frozenToolingCommit = $prepared.toolingCommit
-  numericalPolicyVersion = 3
-  policySource = 'ea5097ad21b2b0c03df437c449f11e6d31acf2ea'
+  numericalPolicyVersion = 4
+  policySource = $prepared.toolingCommit
+  policyProofSource = '5031575cc8c40db7d5e306ecb54c641c150c3846'
 }
 Assert-NewOutput "$registered/controller-registration.json"
 $registration | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath "$registered/controller-registration.json" -Encoding utf8NoBOM
