@@ -31,7 +31,7 @@ No rule, inline suppression or project configuration was changed.
 
 The separate regression scan for the historical predicate and neutral settings
 DTO is complete with zero errors and warnings. The final unfiltered feature scan uses the same executable and original comparison:
-all 233 selected source files completed with no skipped checks, zero errors and
+all 237 selected source files completed with no skipped checks, zero errors and
 the same 14 warnings.
 
 ## Biome

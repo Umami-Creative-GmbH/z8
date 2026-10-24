@@ -213,3 +213,55 @@ entire required set: **975 cases pass across 38 files, zero failures or skips**.
 No production admission check, transaction protocol, assertion or policy mock was
 weakened. The test fixtures still use the approved request/session seam; real
 negative MFA/SSO and revoked/lifecycle admission tests remain separate.
+
+The remaining managed-team regression now separates an outsider with no approved
+membership (AuthorizationError) from an approved member-only administrator with
+employment only in another organization (the original empty manager state).
+Both real public-caller cases pass. The application code was unchanged.
+
+The first integrated index catalog assertion correctly failed because the shared
+disposable integration database had not applied migration 0284. Its owner applied
+only the pending committed migration through migrate-with-lock.js/Drizzle after
+checking the Docker label and exact loopback database. It independently verified
+one valid, ready, nonunique, nonpartial index. The original performance database
+was untouched. All 23 feature PostgreSQL suites are rerun against this prerequisite;
+the prior failure remains recorded and is not hidden as a skip.
+
+## Integrated source-check checkpoint
+
+The normal application test command, including its catalog metadata prerequisite,
+passes with maxWorkers 2: **19,428 tests pass, zero fail, 38 existing tests skip**;
+1,811 files pass and the same five existing files skip. Duration: 1,065 seconds.
+No test was skipped or disabled to repair this feature.
+
+The required completed-work set passes **975/975 cases across 38 files**. The
+remaining changed feature set, selected without overlapping those files, passes
+**245/245 cases across 23 files** after normal migration 0284. These include fresh
+public admission, real RSC identity, employee transport/selector and Dashboard
+readers, historical analytics and the actual absence-index catalog/reader checks.
+No PostgreSQL case skips. The earlier prerequisite and request-fixture failures
+remain in private run records.
+
+After merging integration a80c3ed50, normal Next typegen and all three TypeScript
+configurations have passed for the integrated application source. The focused
+instrumentation/roster run passes 104 cases. The final actual production write
+inventory passes in 50.600 seconds. The complete root safety prefix passes 49
+cases; newly integrated observer/budget checks pass 29, and the latest native
+attribution subset passes 15 (these Node selections overlap, so are not summed).
+The final whole-feature React Doctor error gate against 39a08d0bb completes all
+237 selected files with zero errors, the same 14 reviewed warnings and no skipped
+checks. Full-source Biome remains red on the original and feature; its baseline,
+formatter differences and reviewed named-group diagnostic are not called a pass.
+Scoped source/test checks and the introduced import fixes pass.
+
+Application source is clean at 4d8bdb1d4. The parent began its controlled CI=true
+production build from that exact pin using the real frozen dependencies. This
+agent started no application build, server, collector, browser or live benchmark.
+Subsequent changes in this checkpoint are documentation only.
+
+Runtime acceptance remains open: compiled widget network-chunk failure/local
+retry, native selector expiry and downscope, corrected controlled original/head
+runs with complete registered native/SDK evidence, mixed public clock/analytics
+load, resource/budget evaluation and final two-axis formal review. The legacy
+mixed operator requires its separately assigned v2 registration/whole-run wire
+proof before it can support acceptance. No ticket closure or PR-ready claim.
