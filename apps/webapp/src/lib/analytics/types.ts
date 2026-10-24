@@ -245,12 +245,17 @@ export type WorkHoursParams = {
 	organizationId: string;
 	dateRange: DateRange;
 	employeeId?: string;
+	scope: AnalyticsEmployeeScope;
 };
+
+export type AnalyticsEmployeeScope =
+	| { role: "admin" }
+	| { role: "manager"; managerEmployeeId: string };
 
 export type AbsencePatternsParams = {
 	organizationId: string;
 	dateRange: DateRange;
-	scope: { role: "admin" } | { role: "manager"; managerEmployeeId: string };
+	scope: AnalyticsEmployeeScope;
 };
 
 export type ManagerEffectivenessParams = {

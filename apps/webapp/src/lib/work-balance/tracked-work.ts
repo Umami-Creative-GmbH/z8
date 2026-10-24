@@ -95,6 +95,22 @@ export async function readTrackedDailyWorkMinutes(
 		tracking.timezone,
 	);
 	const periods = await loadTrackedWorkPeriods(client, input, window);
+	return allocateTrackedDailyWorkMinutes(periods, {
+		startDate,
+		throughDate,
+		timezone: tracking.timezone,
+	});
+}
+
+/** The same protected-minute allocation for completed periods already read in a range batch. */
+export function allocateTrackedDailyWorkMinutes(
+	periods: readonly TrackedWorkPeriod[],
+	input: { startDate: string; throughDate: string; timezone: string },
+): { timezone: string; minutesByDate: Record<string, number> } {
+	const { startDate, throughDate, timezone } = input;
+	const minutesByDate: Record<string, number> = {};
+	if (startDate > throughDate) return { timezone, minutesByDate };
+	const window = employeePayrollWindow(startDate, throughDate, timezone);
 	const dayWindows: Record<string, TrackingWindow> = {};
 	for (
 		let day = parsePlainDate(startDate);
@@ -102,26 +118,28 @@ export async function readTrackedDailyWorkMinutes(
 		day = day.add({ days: 1 })
 	) {
 		const date = day.toString();
-		dayWindows[date] = employeePayrollWindow(date, date, tracking.timezone);
+		dayWindows[date] = employeePayrollWindow(date, date, timezone);
 		minutesByDate[date] = 0;
 	}
 	for (const period of periods) {
 		if (!period.endTime) continue;
 		const start = instantFromDate(period.startTime);
 		const end = instantFromDate(period.endTime);
+		if (
+			compareInstants(start, window.endExclusive) >= 0 ||
+			compareInstants(end, window.start) <= 0
+		)
+			continue;
 		if (compareInstants(end, start) < 0) {
 			// Retain the allocator's reconciliation failure for invalid history.
 			allocateTrackedWorkMinutes([period], window);
 			continue;
 		}
-		const periodStartDate = plainDateAt(start, tracking.timezone).toString();
+		const periodStartDate = plainDateAt(start, timezone).toString();
 		// A positive interval ending at midnight belongs only to preceding days.
 		const lastInstant =
 			compareInstants(start, end) < 0 ? end.subtract({ nanoseconds: 1 }) : end;
-		const periodEndDate = plainDateAt(
-			lastInstant,
-			tracking.timezone,
-		).toString();
+		const periodEndDate = plainDateAt(lastInstant, timezone).toString();
 		const firstDay = periodStartDate > startDate ? periodStartDate : startDate;
 		const lastDay = periodEndDate < throughDate ? periodEndDate : throughDate;
 		for (
@@ -136,7 +154,7 @@ export async function readTrackedDailyWorkMinutes(
 			);
 		}
 	}
-	return { timezone: tracking.timezone, minutesByDate };
+	return { timezone: timezone, minutesByDate };
 }
 
 type TrackingWindow = ReturnType<typeof employeePayrollWindow>;

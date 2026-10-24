@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { organization } from "@/db/auth-schema";
 import {
 	employee,
@@ -6,7 +6,11 @@ import {
 	organizationTrackingSettings,
 	userSettings,
 } from "@/db/schema";
-import { instantFromDate, parsePlainDate, plainDateAt } from "@/lib/datetime/temporal-core";
+import {
+	instantFromDate,
+	parsePlainDate,
+	plainDateAt,
+} from "@/lib/datetime/temporal-core";
 import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import type { WorkBalanceDbClient } from "@/lib/work-balance/db-client";
 
@@ -17,13 +21,12 @@ export type EmployeeTrackingProjection = {
 	employeeTimezoneOverride?: string;
 };
 
-/** Null keeps legacy organizations on their existing calculation rules. */
-export async function loadEmployeeTrackingContext(
-	client: Pick<WorkBalanceDbClient, "select">,
-	input: { organizationId: string; employeeId: string } & EmployeeTrackingProjection,
-): Promise<{ startDate: string; timezone: string } | null> {
-	const [row] = await client
+export type EmployeeTrackingContext = { startDate: string; timezone: string };
+
+function trackingQuery(client: Pick<WorkBalanceDbClient, "select">) {
+	return client
 		.select({
+			employeeId: employee.id,
 			trackingStartDate: organizationTrackingSettings.trackingStartDate,
 			activatedAt: organizationTrackingSettings.activatedAt,
 			employmentStart: employee.startDate,
@@ -44,14 +47,53 @@ export async function loadEmployeeTrackingContext(
 			),
 		)
 		.innerJoin(organization, eq(organization.id, employee.organizationId))
-		.leftJoin(userSettings, eq(userSettings.userId, employee.userId))
+		.leftJoin(userSettings, eq(userSettings.userId, employee.userId));
+}
+
+/** One organization-scoped read for an already authorized, bounded employee batch. */
+export async function loadEmployeeTrackingContexts(
+	client: Pick<WorkBalanceDbClient, "select">,
+	input: { organizationId: string; employeeIds: readonly string[] },
+): Promise<Map<string, EmployeeTrackingContext | null>> {
+	if (input.employeeIds.length === 0) return new Map();
+	const rows = await trackingQuery(client).where(
+		and(
+			eq(employee.organizationId, input.organizationId),
+			inArray(employee.id, [...input.employeeIds]),
+		),
+	);
+	return new Map(
+		rows.map((row) => [row.employeeId, resolveTrackingContext(row, {})]),
+	);
+}
+
+/** Null keeps legacy organizations on their existing calculation rules. */
+export async function loadEmployeeTrackingContext(
+	client: Pick<WorkBalanceDbClient, "select">,
+	input: {
+		organizationId: string;
+		employeeId: string;
+	} & EmployeeTrackingProjection,
+): Promise<{ startDate: string; timezone: string } | null> {
+	const [row] = await trackingQuery(client)
 		.where(
-			and(eq(employee.organizationId, input.organizationId), eq(employee.id, input.employeeId)),
+			and(
+				eq(employee.organizationId, input.organizationId),
+				eq(employee.id, input.employeeId),
+			),
 		)
 		.limit(1);
+	return resolveTrackingContext(row, input);
+}
+
+function resolveTrackingContext(
+	row: Awaited<ReturnType<typeof trackingQuery>>[number] | undefined,
+	input: EmployeeTrackingProjection,
+): EmployeeTrackingContext | null {
 	if (!row || input.trackingStartDateOverride === null) return null;
 	const selectedStart =
-		input.trackingStartDateOverride ?? (row.activatedAt ? row.trackingStartDate : null);
+		input.trackingStartDateOverride ??
+		(row.activatedAt ? row.trackingStartDate : null);
 	if (!selectedStart) return null;
 	const timezone =
 		input.employeeTimezoneOverride ??
@@ -82,7 +124,10 @@ export async function loadEmployeeTrackingContext(
 
 export async function loadEmployeeTrackingStart(
 	client: Pick<WorkBalanceDbClient, "select">,
-	input: { organizationId: string; employeeId: string } & EmployeeTrackingProjection,
+	input: {
+		organizationId: string;
+		employeeId: string;
+	} & EmployeeTrackingProjection,
 ): Promise<string | null> {
 	return (await loadEmployeeTrackingContext(client, input))?.startDate ?? null;
 }

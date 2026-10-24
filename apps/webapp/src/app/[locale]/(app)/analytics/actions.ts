@@ -144,6 +144,10 @@ export async function getWorkHoursAnalyticsData(
 			organizationId,
 			dateRange,
 			employeeId,
+			scope:
+				currentEmployee.role === "admin"
+					? { role: "admin" }
+					: { role: "manager", managerEmployeeId: currentEmployee.id },
 		});
 
 		return data;
