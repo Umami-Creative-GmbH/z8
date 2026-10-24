@@ -150,3 +150,63 @@ test("proxy wire oracle preserves gzip and counts encoded body bytes without HTT
 		await new Promise((resolve) => backend.close(resolve));
 	}
 });
+
+test("unexpected loopback origins are refused before forwarding and explicit owned storage stays measured", async () => {
+	let unownedRequests = 0,
+		storageTrace;
+	const app = createServer((_req, res) => res.end("app"));
+	const unowned = createServer((_req, res) => {
+		unownedRequests++;
+		res.end("unowned");
+	});
+	const storage = createServer((req, res) => {
+		storageTrace = req.headers.traceparent;
+		res.end("store");
+	});
+	for (const server of [app, unowned, storage])
+		await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+	const origin = `http://127.0.0.1:${app.address().port}`,
+		other = `http://127.0.0.1:${unowned.address().port}`,
+		owned = `http://127.0.0.1:${storage.address().port}`;
+	const transport = await createFixtureTraceTransport({
+		origin,
+		getTraceId: () => "a".repeat(32),
+		allowedOrigins: [origin, owned],
+	});
+	try {
+		transport.wire.begin(performance.now());
+		const proxy = new URL(transport.browserContextOptions.proxyServer);
+		const send = (url) =>
+			new Promise((resolve, reject) => {
+				const call = request(
+					{ hostname: proxy.hostname, port: proxy.port, path: url },
+					(answer) => {
+						answer.resume();
+						answer.on("end", () => resolve(answer.statusCode));
+					},
+				);
+				call.on("error", reject);
+				call.end();
+			});
+		assert.equal(await send(other), 403);
+		assert.equal(unownedRequests, 0);
+		assert.equal(await send(owned), 200);
+		assert.equal(
+			storageTrace,
+			undefined,
+			"Additional owned origins do not receive the application trace header",
+		);
+		transport.wire.ready(performance.now());
+		const state = transport.wire.state(performance.now() + 1001);
+		assert.equal(state.complete, false);
+		assert.equal(state.mandatoryErrors, 1);
+		assert.equal(state.bytes.otherFinite, 5);
+		assert.equal(transport.snapshot().refusedRequests, 1);
+	} finally {
+		await transport.close();
+		for (const server of [app, unowned, storage]) {
+			server.closeAllConnections();
+			await new Promise((resolve) => server.close(resolve));
+		}
+	}
+});

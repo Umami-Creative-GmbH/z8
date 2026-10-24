@@ -9,10 +9,26 @@ const loopback = (url) =>
 	["localhost", "127.0.0.1", "[::1]"].includes(url.hostname) &&
 	!url.username &&
 	!url.password;
-export async function createFixtureTraceTransport({ origin, getTraceId }) {
+export async function createFixtureTraceTransport({
+	origin,
+	getTraceId,
+	allowedOrigins = [origin],
+}) {
 	const target = new URL(origin);
 	if (!loopback(target) || target.origin !== origin)
 		throw new Error("Fixture trace transport requires a loopback HTTP origin.");
+	if (
+		!Array.isArray(allowedOrigins) ||
+		!allowedOrigins.includes(origin) ||
+		allowedOrigins.some((value) => {
+			const url = new URL(value);
+			return !loopback(url) || url.origin !== value;
+		})
+	)
+		throw new Error(
+			"Trace transport requires an explicit owned loopback origin allowlist.",
+		);
+	const allowed = new Set(allowedOrigins);
 	const agent = new Agent({ keepAlive: true, maxSockets: 64 });
 	const wire = createProxyWireObserver();
 	const counts = {
@@ -36,7 +52,7 @@ export async function createFixtureTraceTransport({ origin, getTraceId }) {
 				performance.now(),
 			);
 			const url = new URL(request.url, origin);
-			if (!loopback(url)) {
+			if (!loopback(url) || !allowed.has(url.origin)) {
 				counts.refusedRequests++;
 				wire.end(wireId, { error: true }, performance.now());
 				response.writeHead(403).end();

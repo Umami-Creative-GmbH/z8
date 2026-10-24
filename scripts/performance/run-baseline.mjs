@@ -797,6 +797,7 @@ async function measure(
 		if (plan.runtime.traceTransport === fixtureTraceTransport)
 			transport = await createFixtureTraceTransport({
 				origin: plan.origin,
+				allowedOrigins: plan.runtime.traceAllowedOrigins ?? [plan.origin],
 				getTraceId: () => requestTraceId,
 			});
 		context = await browser.createBrowserContext(
