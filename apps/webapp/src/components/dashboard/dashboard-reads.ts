@@ -15,6 +15,13 @@ import type {
 } from "./dashboard-types";
 import { loadManagerTodayForEmployee } from "./manager-today-read";
 import { loadQuickStatsForSubject } from "./quick-stats-read";
+import {
+	loadManagedEmployeesForEmployee,
+	loadPendingApprovalsForSubject,
+	loadRecentlyApprovedForOrganization,
+	loadTeamOverviewForOrganization,
+	recentlyApprovedDto,
+} from "./team-approval-reads";
 
 export async function readDashboardLayout(
 	scope: DashboardScope,
@@ -48,20 +55,43 @@ export async function readDashboardWidget<K extends ServerWidgetId>(
 		organizationId: subject.organizationId,
 	};
 	try {
-		if (!subject.employee) {
+		const employee = subject.employee;
+		if (!employee && (id === "manager-today" || id === "quick-stats")) {
 			return {
 				scope,
 				result: { success: true, data: null },
 				updatedAt: systemClock.nowInstant().epochMilliseconds,
 			};
 		}
-		const result =
-			id === "manager-today"
-				? {
+		if (!employee || employee.organizationId !== subject.organizationId)
+			throw new Error("Employee access required");
+		const result = await (async () => {
+			switch (id) {
+				case "manager-today":
+					return {
 						success: true as const,
-						data: await loadManagerTodayForEmployee(subject.employee),
-					}
-				: await runServerActionSafe(loadQuickStatsForSubject(scope));
+						data: await loadManagerTodayForEmployee(employee),
+					};
+				case "quick-stats":
+					return runServerActionSafe(loadQuickStatsForSubject(scope));
+				case "managed-employees":
+					return runServerActionSafe(loadManagedEmployeesForEmployee(employee));
+				case "team-overview":
+					return employee.role === "employee"
+						? { success: true as const, data: null }
+						: runServerActionSafe(loadTeamOverviewForOrganization(subject.organizationId));
+				case "pending-approvals":
+					return { success: true as const, data: await loadPendingApprovalsForSubject(subject) };
+				case "recently-approved": {
+					const result = await runServerActionSafe(
+						loadRecentlyApprovedForOrganization(subject.organizationId),
+					);
+					return result.success
+						? { success: true as const, data: recentlyApprovedDto(result.data) }
+						: result;
+				}
+			}
+		})();
 		return {
 			scope,
 			result,

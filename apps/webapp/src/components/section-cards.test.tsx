@@ -33,9 +33,7 @@ vi.mock("@/hooks/use-organization", () => ({
 }));
 
 vi.mock("@/components/dashboard/sortable-widget-grid", () => ({
-	SortableWidgetGrid: ({ children }: { children: ReactNode }) => (
-		<div>{children}</div>
-	),
+	SortableWidgetGrid: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }));
 
 vi.mock("@/components/dashboard/dashboard-widget", () => ({
@@ -58,8 +56,8 @@ vi.mock("@/components/dashboard/hydration-widget", () => ({
 }));
 
 vi.mock("@/components/dashboard/managed-employees-widget", () => ({
-	ManagedEmployeesWidget: () => (
-		<div data-widget-id="managed-employees">hydrated widget</div>
+	ManagedEmployeesWidget: ({ initialSnapshot }: { initialSnapshot?: unknown }) => (
+		<div>{initialSnapshot ? "Reports ready" : "hydrated widget"}</div>
 	),
 }));
 
@@ -70,7 +68,9 @@ vi.mock("@/components/dashboard/manager-today-widget", () => ({
 }));
 
 vi.mock("@/components/dashboard/pending-approvals-widget", () => ({
-	PendingApprovalsWidget: () => <div>hydrated widget</div>,
+	PendingApprovalsWidget: ({ initialSnapshot }: { initialSnapshot?: unknown }) => (
+		<div>{initialSnapshot ? "Pending approvals ready" : "hydrated widget"}</div>
+	),
 }));
 
 vi.mock("@/components/dashboard/presence-status-widget", () => ({
@@ -84,11 +84,15 @@ vi.mock("@/components/dashboard/quick-stats-widget", () => ({
 }));
 
 vi.mock("@/components/dashboard/recently-approved-widget", () => ({
-	RecentlyApprovedWidget: () => <div>hydrated widget</div>,
+	RecentlyApprovedWidget: ({ initialSnapshot }: { initialSnapshot?: unknown }) => (
+		<div>{initialSnapshot ? "Recent approvals ready" : "hydrated widget"}</div>
+	),
 }));
 
 vi.mock("@/components/dashboard/team-overview-widget", () => ({
-	TeamOverviewWidget: () => <div>hydrated widget</div>,
+	TeamOverviewWidget: ({ initialSnapshot }: { initialSnapshot?: unknown }) => (
+		<div>{initialSnapshot ? "Organization ready" : "hydrated widget"}</div>
+	),
 }));
 
 vi.mock("@/components/dashboard/upcoming-shifts-widget", () => ({
@@ -115,21 +119,23 @@ import { SectionCards } from "./section-cards";
 
 describe("SectionCards", () => {
 	it.each([
-		["manager-today", "Work hours ready", "Manager summary ready"],
-		["quick-stats", "Manager summary ready", "Work hours ready"],
+		["manager-today", "quick-stats", "Work hours ready", "Manager summary ready"],
+		["quick-stats", "manager-today", "Manager summary ready", "Work hours ready"],
+		["managed-employees", "team-overview", "Organization ready", "Reports ready"],
+		["team-overview", "managed-employees", "Reports ready", "Organization ready"],
+		["pending-approvals", "recently-approved", "Recent approvals ready", "Pending approvals ready"],
+		["recently-approved", "pending-approvals", "Pending approvals ready", "Recent approvals ready"],
 	])(
 		"streams a completed sibling while %s is still pending",
-		async (heldId, readyContent, pendingContent) => {
+		async (heldId, readyId, readyContent, pendingContent) => {
 			const scope = { userId: "user-a", organizationId: "org-a" };
 			serverReads.layout.mockResolvedValue({
 				layout: {
 					scope,
 					settings: {
 						dashboardWidgetOrder: {
-							order: ["manager-today", "quick-stats"],
-							hidden: DEFAULT_WIDGET_ORDER.filter(
-								(id) => id !== "manager-today" && id !== "quick-stats",
-							),
+							order: [heldId, readyId],
+							hidden: DEFAULT_WIDGET_ORDER.filter((id) => id !== heldId && id !== readyId),
 							version: 1,
 						},
 					},
@@ -176,9 +182,7 @@ describe("SectionCards", () => {
 							setTimeout(
 								() =>
 									reject(
-										new Error(
-											"Useful sibling did not stream while Manager Today was pending",
-										),
+										new Error("Useful sibling did not stream while Manager Today was pending"),
 									),
 								500,
 							),
