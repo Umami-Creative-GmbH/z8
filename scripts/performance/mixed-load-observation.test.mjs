@@ -356,6 +356,22 @@ test("whole mixed observation uses real v2 registration, native close/flush and 
 		assert.equal(result.nativeRunCoverage.driverQueries, 4);
 		assert.equal(result.nativeRunCoverage.receivedQueries, 4);
 		assert.equal(result.nativeRunCoverage.standard.complete, true);
+		assert.deepEqual(result.nativeCloseProof, [
+			{
+				traceId,
+				queries: 4,
+				acquisitions: 4,
+				cache: 0,
+				started: { queries: 4, acquisitions: 4, cache: 0 },
+				ended: { queries: 4, acquisitions: 4, cache: 0 },
+				unattributedNativeSpans: 0,
+				driverQueries: 4,
+				driverComplete: true,
+				complete: true,
+			},
+		]);
+		assert.ok(Number.isFinite(result.nativeCloseElapsedMs));
+		assert.ok(result.nativeCloseElapsedMs >= 0);
 		coverage.driverQuery();
 		assert.equal(
 			reconcileMixedNative({
@@ -367,6 +383,30 @@ test("whole mixed observation uses real v2 registration, native close/flush and 
 			false,
 			"Even wholly lost late SDK/export work cannot hide a real driver call",
 		);
+		const failedTrace = id(8);
+		spans.length = 0;
+		spans.push({
+			traceId: failedTrace,
+			spanId: (++sequence).toString(16).padStart(16, "0"),
+			name: "test.http",
+			kind: 2,
+			startTimeUnixNano: "1000000",
+			endTimeUnixNano: "2000000",
+		});
+		const failedObservation = await beginMixedObservation(control, [
+			failedTrace,
+		]);
+		coverage.driverQuery(failedTrace);
+		const failed = await finishMixedObservation(failedObservation);
+		assert.equal(failed.nativeRunCoverage.complete, false);
+		assert.equal(failed.nativeRunCoverage.standard.complete, false);
+		assert.equal(failed.nativeCloseProof[0].driverQueries, 1);
+		assert.equal(failed.nativeCloseProof[0].queries, 0);
+		assert.equal(failed.nativeCloseProof[0].driverComplete, false);
+		assert.equal(failed.nativeCloseProof[0].complete, false);
+		assert.ok(Number.isFinite(failed.nativeCloseElapsedMs));
+		assert.equal(failed.rows[0].queryCount, null);
+		assert.equal(failed.rows[0].coverage.nativeProof, false);
 	} finally {
 		server?.closeAllConnections();
 		if (server) await new Promise((done) => server.close(done));

@@ -232,6 +232,8 @@ export async function finishMixedObservation(observation) {
 	});
 	const proof = reconcileMixedNative({ ...observation, after, rows });
 	return {
+		nativeCloseProof: closed.nativeCloseProof,
+		nativeCloseElapsedMs: closed.nativeCloseElapsedMs,
 		nativeRunCoverage: {
 			...proof,
 			complete: proof.complete && standard.complete,
