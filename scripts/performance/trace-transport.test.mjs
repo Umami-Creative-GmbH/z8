@@ -5,6 +5,163 @@ import test from "node:test";
 import { gzipSync } from "node:zlib";
 import { createFixtureTraceTransport } from "./trace-transport.mjs";
 
+const pause = (ms) => new Promise((done) => setTimeout(done, ms));
+
+test("a genuine reset on a reused GET socket stays a forwarding failure before any client cancellation", async () => {
+	let requests = 0;
+	const backend = createServer((req, res) => {
+		if (++requests === 1) res.end("complete");
+		else req.socket.destroy();
+	});
+	await new Promise((done) => backend.listen(0, "127.0.0.1", done));
+	const origin = `http://127.0.0.1:${backend.address().port}`;
+	const transport = await createFixtureTraceTransport({
+		origin,
+		getTraceId: () => "a".repeat(32),
+	});
+	try {
+		transport.wire.begin(performance.now());
+		const proxy = new URL(transport.browserContextOptions.proxyServer);
+		const send = () =>
+			new Promise((done, reject) => {
+				const call = request(
+					{
+						hostname: proxy.hostname,
+						port: proxy.port,
+						path: `${origin}/chunk.js`,
+						headers: { connection: "keep-alive" },
+					},
+					(answer) => {
+						answer.resume();
+						answer.once("end", () => done(answer.statusCode));
+					},
+				);
+				call.on("error", reject);
+				call.end();
+			});
+		assert.equal(await send(), 200);
+		await pause(0);
+		assert.equal(await send(), 502);
+		const counts = transport.snapshot();
+		assert.equal(counts.upstreamFailures, 1);
+		assert.equal(counts.upstreamConnectionErrors, 1);
+		assert.equal(counts.upstreamReusedSocketErrors, 1);
+		assert.equal(counts.upstreamGetErrors, 1);
+		assert.equal(counts.upstreamResetErrors, 1);
+		assert.equal(counts.downstreamCancellations, 0);
+		transport.wire.ready(performance.now());
+		assert.equal(
+			transport.wire.state(performance.now() + 1001).complete,
+			false,
+		);
+	} finally {
+		await transport.close();
+		backend.closeAllConnections();
+		await new Promise((done) => backend.close(done));
+	}
+});
+
+test("client cancels an incomplete upload without creating a forwarding failure; finite wire cost stays censored", async () => {
+	let received;
+	const first = new Promise((done) => {
+		received = done;
+	});
+	const backend = createServer((req, res) => {
+		req.on("error", () => {});
+		req.once("data", received);
+		req.on("aborted", () => res.destroy());
+	});
+	await new Promise((done) => backend.listen(0, "127.0.0.1", done));
+	const origin = `http://127.0.0.1:${backend.address().port}`;
+	const transport = await createFixtureTraceTransport({
+		origin,
+		getTraceId: () => "a".repeat(32),
+	});
+	try {
+		transport.wire.begin(performance.now());
+		const proxy = new URL(transport.browserContextOptions.proxyServer);
+		const call = request({
+			hostname: proxy.hostname,
+			port: proxy.port,
+			path: `${origin}/upload`,
+			method: "POST",
+		});
+		call.on("error", () => {});
+		call.write("incomplete");
+		await first;
+		call.destroy();
+		await pause(100);
+		assert.equal(transport.snapshot().upstreamFailures, 0);
+		assert.equal(transport.snapshot().downstreamCancellations, 1);
+		transport.wire.ready(performance.now());
+		const wire = transport.wire.state(performance.now() + 1001);
+		assert.equal(wire.mandatoryErrors, 1);
+		assert.equal(wire.complete, false);
+	} finally {
+		await transport.close();
+		backend.closeAllConnections();
+		await new Promise((done) => backend.close(done));
+	}
+});
+
+for (const cause of ["client", "upstream"])
+	test(`${cause} cancels a streamed response with distinct numerical causality`, {
+		timeout: 3000,
+	}, async () => {
+		let first, call;
+		const firstChunk = new Promise((done) => {
+			first = done;
+		});
+		const backend = createServer((_req, res) => {
+			res.writeHead(200, { "content-type": "application/javascript" });
+			res.write("first");
+			if (cause === "upstream") setTimeout(() => res.destroy(), 25);
+		});
+		await new Promise((done) => backend.listen(0, "127.0.0.1", done));
+		const origin = `http://127.0.0.1:${backend.address().port}`;
+		const transport = await createFixtureTraceTransport({
+			origin,
+			getTraceId: () => "a".repeat(32),
+		});
+		try {
+			transport.wire.begin(performance.now());
+			const proxy = new URL(transport.browserContextOptions.proxyServer);
+			call = request(
+				{
+					hostname: proxy.hostname,
+					port: proxy.port,
+					path: `${origin}/chunk.js`,
+				},
+				(answer) => {
+					answer.on("error", () => {});
+					answer.once("data", first);
+				},
+			);
+			call.on("error", () => {});
+			call.end();
+			await firstChunk;
+			if (cause === "client") call.destroy();
+			await pause(100);
+			assert.equal(
+				transport.snapshot().upstreamFailures,
+				cause === "upstream" ? 1 : 0,
+			);
+			assert.equal(
+				transport.snapshot().downstreamCancellations,
+				cause === "client" ? 1 : 0,
+			);
+			transport.wire.ready(performance.now());
+			const wire = transport.wire.state(performance.now() + 1001);
+			assert.equal(wire.groups.javascript.errors, 1);
+			assert.equal(wire.complete, false);
+		} finally {
+			call?.destroy();
+			await transport.close();
+			backend.closeAllConnections();
+			await new Promise((done) => backend.close(done));
+		}
+	});
+
 test("context transport preserves streaming, cookies, bodies and phase identity without retaining payloads", async () => {
 	let firstChunk;
 	const first = new Promise((resolve) => {
@@ -82,6 +239,16 @@ test("context transport preserves streaming, cookies, bodies and phase identity 
 			rewrittenRequests: 1,
 			refusedRequests: 0,
 			upstreamFailures: 0,
+			downstreamCancellations: 0,
+			upstreamConnectionErrors: 0,
+			upstreamResponseErrors: 0,
+			upstreamReusedSocketErrors: 0,
+			upstreamGetErrors: 0,
+			upstreamPostErrors: 0,
+			upstreamOtherMethodErrors: 0,
+			upstreamResetErrors: 0,
+			upstreamRefusedErrors: 0,
+			upstreamOtherErrors: 0,
 			responseBodyBytes: 11,
 			refusalReasons: {
 				unexpectedLoopback: 0,

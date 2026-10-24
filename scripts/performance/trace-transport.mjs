@@ -36,6 +36,16 @@ export async function createFixtureTraceTransport({
 		rewrittenRequests: 0,
 		refusedRequests: 0,
 		upstreamFailures: 0,
+		downstreamCancellations: 0,
+		upstreamConnectionErrors: 0,
+		upstreamResponseErrors: 0,
+		upstreamReusedSocketErrors: 0,
+		upstreamGetErrors: 0,
+		upstreamPostErrors: 0,
+		upstreamOtherMethodErrors: 0,
+		upstreamResetErrors: 0,
+		upstreamRefusedErrors: 0,
+		upstreamOtherErrors: 0,
 		responseBodyBytes: 0,
 		refusalReasons: {
 			unexpectedLoopback: 0,
@@ -76,7 +86,49 @@ export async function createFixtureTraceTransport({
 				headers.traceparent = `00-${traceId}-${randomBytes(8).toString("hex")}-01`;
 				counts.rewrittenRequests++;
 			}
-			const upstream = forward(
+			let downstreamAborted = false,
+				failureRecorded = false,
+				upstream;
+			const failed = (phase, error) => {
+				if (!downstreamAborted && !failureRecorded) {
+					failureRecorded = true;
+					counts.upstreamFailures++;
+					counts[
+						phase === "response"
+							? "upstreamResponseErrors"
+							: "upstreamConnectionErrors"
+					]++;
+					counts.upstreamReusedSocketErrors += Number(
+						upstream?.reusedSocket === true,
+					);
+					counts[
+						request.method === "GET"
+							? "upstreamGetErrors"
+							: request.method === "POST"
+								? "upstreamPostErrors"
+								: "upstreamOtherMethodErrors"
+					]++;
+					counts[
+						error?.code === "ECONNRESET"
+							? "upstreamResetErrors"
+							: error?.code === "ECONNREFUSED"
+								? "upstreamRefusedErrors"
+								: "upstreamOtherErrors"
+					]++;
+				}
+				wire.end(wireId, { error: true }, performance.now());
+			};
+			const canceled = () => {
+				// Only an observed downstream abort/close may precede this classification.
+				// A genuine upstream error already recorded is never relabeled or subtracted.
+				if (!downstreamAborted && !failureRecorded) {
+					downstreamAborted = true;
+					counts.downstreamCancellations++;
+				}
+				wire.end(wireId, { error: true }, performance.now());
+				upstream.destroy();
+			};
+			upstream = forward(
 				url,
 				{ method: request.method, headers, agent },
 				(answer) => {
@@ -97,32 +149,28 @@ export async function createFixtureTraceTransport({
 						wire.bytes(wireId, chunk.length, performance.now());
 					});
 					answer.once("end", () => wire.end(wireId, {}, performance.now()));
-					answer.once("aborted", () =>
-						wire.end(wireId, { error: true }, performance.now()),
-					);
-					answer.once("error", () =>
-						wire.end(wireId, { error: true }, performance.now()),
-					);
+					answer.once("aborted", () => {
+						failed("response");
+						response.destroy();
+					});
+					answer.once("error", (error) => {
+						failed("response", error);
+						response.destroy();
+					});
 					response.writeHead(answer.statusCode ?? 502, answer.headers);
 					answer.pipe(response);
 				},
 			);
-			let downstreamAborted = false;
-			upstream.on("error", () => {
-				if (!downstreamAborted) counts.upstreamFailures++;
-				wire.end(wireId, { error: true }, performance.now());
-				if (!response.headersSent) response.writeHead(502);
-				response.end();
-			});
-			request.on("aborted", () => {
-				wire.end(wireId, { error: true }, performance.now());
-				upstream.destroy();
-			});
-			response.on("close", () => {
-				if (!response.writableEnded) {
-					downstreamAborted = true;
-					upstream.destroy();
+			upstream.on("error", (error) => {
+				failed("connection", error);
+				if (!response.destroyed) {
+					if (!response.headersSent) response.writeHead(502);
+					response.end();
 				}
+			});
+			request.on("aborted", canceled);
+			response.on("close", () => {
+				if (!response.writableEnded) canceled();
 			});
 			request.pipe(upstream);
 		} catch {
