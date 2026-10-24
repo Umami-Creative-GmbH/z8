@@ -1,6 +1,6 @@
 # Corrected fixture telemetry diagnosis (#1450)
 
-The registered collector and shared browser transport now account for actual native SQL across page and ServiceWorker requests. Full measurement acceptance remains **unfulfilled**: the original annual Link diagnostic contains one finite JavaScript transfer error. The [numeric evidence](evidence/1450-telemetry-functional-diagnostics.json) is functional diagnosis, not a controlled timing baseline.
+The registered collector and shared browser transport now account for actual native SQL across page and ServiceWorker requests. Full measurement acceptance remains **unfulfilled** pending complete controlled cohorts and budget derivation. The [earlier numeric evidence](evidence/1450-telemetry-functional-diagnostics.json) retains one failed Link transfer; the clean single-Link follow-up below does not replace that historical result. These are functional diagnostics, not a controlled timing baseline.
 
 ## Collector and native attribution
 
@@ -20,7 +20,7 @@ The worker/form/gzip oracle used two concurrent contexts. Each observed 534 Java
 
 ## Original annual failure
 
-The unchanged original business source is `39a08d0bb`; the observer-only binary is `d5550e35c`. Annual first-document and Link visits still time out at the original expected table check. The expected 200 employees and 2088.0 hours remain unchanged, and successful UI p95 remains null for those failed cohorts.
+The unchanged original business source is `39a08d0bb`; the observer-only binary is `d5550e35c`. Annual first-document and Link visits still time out at the original expected table check. The expected 200 employees and 2088.0 hours remain unchanged, and usable-content p95 remains null for those failed cohorts.
 
 A zero-row DOM snapshot did not establish an empty API result. Actual UI-generated action requests for public bounds 2025-01-01 through 2025-12-31 returned HTTP 200 with `success: false` and fixed class `DatabaseError`. Both a Puppeteer RSC reader and an in-page cloned-response reader agreed. No action ID was forged or replayed; raw responses, employee fields, request bodies and private error messages were not retained.
 
@@ -30,6 +30,16 @@ The exact companion path reconciled 18,389 independent wire calls, native starts
 
 ## Remaining gates
 
-Preserve the interrupted C1 ledger and all failed diagnostics. The new full C2 draft preserves every non-runtime C1 field, including workload and recipes, but is not frozen. Resolve the Link transport error, implement and verify the separately authorized prospective original-only failed-behavior policy, then freeze shared source fingerprints and the new plan before fresh full captures. Integrated-head functional checks and all required head comparisons must still pass. No full C2 capture, release-budget derivation or issue completion is claimed here.
+Preserve the interrupted C1 ledger and all failed diagnostics. The new full C2 draft preserves every non-runtime C1 field, including workload and recipes, but is not frozen. Verify the prospective original-only failed-behavior policy and complete controlled resource cohorts without waiving transfer errors, then freeze shared source fingerprints and the new plan before fresh full captures. Integrated-head functional checks and all required head comparisons must still pass. No full C2 capture, release-budget derivation or issue completion is claimed here.
 
 Validation: `pnpm --config.verifyDepsBeforeRun=false performance:test` passed 30 tests. The explicit installed-Chrome worker/form/gzip runtime oracle passed outside the sandbox. A multi-window wire regression first charged 12 inherited bytes incorrectly, then passed after pending prerequisite records were marked inherited at each measurement boundary. Abort/refusal tests retain errors and prevent client cancellations from crashing the fixture process.
+
+## Native paint and current Link follow-up
+
+The primary CLI previously read its native observer only on functional success. A failed annual sample therefore had uncaptured LCP, not proven absent paint. The correction preserves the original successful-observation point and additionally reads existing native entries before closing a failed measured context. It does not wait for paint, invent a value, read an unattempted prerequisite, turn an interaction maximum into full INP, or relabel failed usable-content timing.
+
+A real CLI regression uses an owned painted HTTP document whose functional readiness selector times out. It failed with null LCP before the correction and passed afterward. Missing native entries remain null. The actual original annual first-document diagnostic retained native LCP **588 ms from one entry**, an observed interaction maximum of 48 ms and clock readiness of approximately 752 ms. Its table check still failed, usable-content p95 stayed null, and all 4,970 native wire/SDK/collector query counts reconciled. This is one raw paint observation; controlled native-paint budgets still require every actual observation in the full cohort.
+
+One subsequent exact exported annual Link diagnostic completed its failure resource drain in approximately 1.051 seconds with zero mandatory pending requests, errors, refusals after initialization, upstream errors or downstream cancellations. All new connection/response/reused-socket/method/reset reason counters were zero. Its 13,502 native wire calls, SDK starts/ends and received queries matched with no active or pending work. The failed UI and all eligibility markers remain recorded. The earlier isolated JavaScript error was not reproduced; its historical cause remains unknown and its original incomplete artifact remains unchanged.
+
+The separate [paint and Link evidence](evidence/1450-native-paint-and-link-diagnostics.json) supplements the fixed earlier cause proof without changing its bytes. Thirty-six fast tests pass, and the explicit installed-Chrome failed-UI paint regression passes. No full C2 capture, complete twenty-observation paint cohort, budget derivation or freeze is claimed by this follow-up.
