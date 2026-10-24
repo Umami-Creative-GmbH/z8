@@ -82,6 +82,8 @@ export type ManagerLinksPlan = {
 	>;
 	/** Reports who keep another current manager and just lose this one. */
 	reportsKeepingAnotherManager: Array<NamedEmployee & { newPrimaryManagerId: string | null }>;
+	/** Reports who are former employees themselves: the link ends, nobody replaces it. */
+	formerReports: NamedEmployee[];
 	/** The deactivated person's own manager links, which end. */
 	ownManagerLinks: Array<NamedEmployee & { isPrimary: boolean }>;
 	/** Current employees able to manage the reports (current roster, admin or manager). */
