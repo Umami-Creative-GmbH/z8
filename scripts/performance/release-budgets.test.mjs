@@ -583,7 +583,7 @@ function settledFixture(f, plan, filename) {
 test("finalized failed original annual traffic supplies a labeled resource budget without a successful-before latency claim", () => {
   const f = fixture();
   Object.assign(f.plan.runtime, {
-    build: "d5550e35c3bd9adf584e9731ade31d6420abf545",
+    build: "295de0b706e439bcdaf4d2d25661ce45f02ddb61",
     sourceBuild: "39a08d0bbe77e00ceb5b204b9f9100ab2cfb86be",
   });
   f.plan.conditions[0].employees = 200;
@@ -644,6 +644,7 @@ test("finalized failed original annual traffic supplies a labeled resource budge
       "browser-performance.mjs",
       "protocol-fingerprints.mjs",
       "../../docs/performance/evidence/1450-telemetry-functional-diagnostics.json",
+      "../../docs/performance/evidence/1450-observer-v4-before-proof.json",
     ].map((name) => [name, hash(readFileSync(new URL(name, import.meta.url)))]),
   );
   f.save("settled-before.json", before);
@@ -694,7 +695,28 @@ test("finalized failed original annual traffic supplies a labeled resource budge
   const budgets = JSON.parse(
     readFileSync(join(f.dir, "derived/release-budgets.json")),
   );
-  assert.equal(budgets.policy.version, 3);
+  assert.equal(budgets.policy.version, 4);
+  assert.deepEqual(budgets.policy.latency, {
+    multiplier: 1.25,
+    allowance: 250,
+    floor: 500,
+  });
+  assert.deepEqual(budgets.policy.bytes, {
+    multiplier: 1.1,
+    allowance: 16384,
+    floor: 16384,
+  });
+  assert.deepEqual(budgets.policy.resources, {
+    multiplier: 1.25,
+    floors: {
+      queryCount: 10,
+      queryDurationMs: 100,
+      rowsRetrieved: 100,
+      poolWaitMs: 25,
+      cacheMisses: 5,
+      eventLoopDelayMs: 10,
+    },
+  });
   assert.equal(budgets.cohorts[0].usableContentMs.beforeP95, null);
   assert.equal(budgets.cohorts[0].usableContentMs.ceiling, 30000);
   assert.equal(budgets.cohorts[0].lcpMs.beforeP95, 800);
