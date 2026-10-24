@@ -135,7 +135,7 @@ export const CANONICAL_WRITE_OWNERS = {
 // Remove each exact exception when its domain adapter migrates to canonical writes.
 export const TEMPORARY_LEGACY_WRITE_EXCEPTIONS = {
 	// Retain all three writes until legacy/shadow cancellation is retired.
-	"src/app/[locale]/(app)/absences/mutations.ts": {
+	"src/app/[locale]/(app)/absences/cancel-absence-core.ts": {
 		approval_chain_instance: ["update"],
 		approval_chain_stage_instance: ["update"],
 		approval_request: ["delete"],
