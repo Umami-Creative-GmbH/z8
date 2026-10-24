@@ -104,8 +104,17 @@ export async function authenticateFixture(directory) {
 		if (!active.ok)
 			throw new Error("Synthetic fixture organization activation failed.");
 		readCookies(active.headers, runtime.origin, cookies);
+		const target = name.endsWith("-manager")
+			? fixture.actors[name.replace(/-manager$/, "-restricted")]
+			: actor;
+		if (target.organizationId !== actor.organizationId)
+			throw new Error(
+				"Synthetic directory target must share the actor organization.",
+			);
 		auth[name] = {
 			employeeId: actor.employeeId,
+			targetEmployeeId: target.employeeId,
+			targetEmployeeSearch: target.email,
 			cookies: [...cookies.values()],
 		};
 		await writeFile(

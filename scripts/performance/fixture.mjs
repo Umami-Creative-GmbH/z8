@@ -9,6 +9,7 @@ import { createServer } from "node:net";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { authenticateFixture } from "./fixture-auth.mjs";
+import { dashboardLayoutMutation } from "./journey-steps.mjs";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const app = join(root, "apps/webapp");
@@ -23,6 +24,21 @@ const save = (path, value) =>
 	writeFile(path, JSON.stringify(value, null, 2), { mode: 0o600 });
 const pause = (ms) => new Promise((done) => setTimeout(done, ms));
 const pnpm = process.env.npm_execpath;
+function fixtureOtlpEndpoint(env) {
+	if (!env.Z8_FIXTURE_OTLP_ENDPOINT) return undefined;
+	const endpoint = new URL(env.Z8_FIXTURE_OTLP_ENDPOINT);
+	if (
+		endpoint.protocol !== "http:" ||
+		!["localhost", "127.0.0.1", "[::1]"].includes(endpoint.hostname) ||
+		endpoint.pathname !== "/v1/traces" ||
+		endpoint.username ||
+		endpoint.password ||
+		endpoint.search ||
+		endpoint.hash
+	)
+		throw new Error("Fixture tracing requires a local collector endpoint.");
+	return endpoint.href;
+}
 // The caller may use Phase for normal dev tooling; every service used by this fixture is overridden locally.
 const toolEnvironment = Object.fromEntries(
 	Object.entries(process.env).filter(([name]) =>
@@ -45,7 +61,8 @@ const isolatedEnv = (env) =>
 			POSTHOG_PROJECT_ID: "",
 			NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: "",
 			NEXT_PUBLIC_POSTHOG_HOST: "",
-			OTEL_EXPORTER_OTLP_ENDPOINT: "",
+			OTEL_EXPORTER_OTLP_ENDPOINT: fixtureOtlpEndpoint(env),
+			Z8_PERFORMANCE_OBSERVER: fixtureOtlpEndpoint(env) ? "1" : undefined,
 			OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: "",
 			OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: "",
 			SMTP_HOST: "",
@@ -293,6 +310,27 @@ async function checkRuntime(directory) {
 	);
 }
 
+async function checkObserver(directory) {
+	const runtime = JSON.parse(
+		await readFile(join(directory, "runtime-private.json"), "utf8"),
+	);
+	if (args.includes("--collector")) {
+		const collector = JSON.parse(
+			await readFile(args[args.indexOf("--collector") + 1], "utf8"),
+		);
+		if (collector.kind !== "z8-fixture-otlp-collector-v1")
+			throw new Error("Fixture collector identity is invalid.");
+		runtime.env.Z8_FIXTURE_OTLP_ENDPOINT = collector.endpoint;
+		fixtureOtlpEndpoint(runtime.env);
+		await save(join(directory, "runtime-private.json"), runtime);
+	}
+	await run(
+		["exec", "tsx", "scripts/check-performance-observer.ts"],
+		{ ...runtime.env, CI: "false" },
+		"inherit",
+	);
+}
+
 async function upgrade(directory) {
 	const runtime = JSON.parse(
 		await readFile(join(directory, "runtime-private.json"), "utf8"),
@@ -337,6 +375,27 @@ async function start(directory) {
 	const runtime = JSON.parse(
 		await readFile(join(directory, "runtime-private.json"), "utf8"),
 	);
+	if (args.includes("--collector")) {
+		const collector = JSON.parse(
+			await readFile(args[args.indexOf("--collector") + 1], "utf8"),
+		);
+		if (collector.kind !== "z8-fixture-otlp-collector-v1")
+			throw new Error("Fixture collector identity is invalid.");
+		runtime.env.Z8_FIXTURE_OTLP_ENDPOINT = collector.endpoint;
+		fixtureOtlpEndpoint(runtime.env);
+		await save(join(directory, "runtime-private.json"), runtime);
+	}
+	if (runtime.env.Z8_FIXTURE_OTLP_ENDPOINT) {
+		const health = await fetch(
+			new URL("/health", fixtureOtlpEndpoint(runtime.env)),
+			{ signal: AbortSignal.timeout(5000) },
+		);
+		if (
+			!health.ok ||
+			(await health.json()).kind !== "z8-fixture-otlp-collector-v1"
+		)
+			throw new Error("Fixture local collector is unavailable.");
+	}
 	const log = createWriteStream(join(directory, "runtime.log"), {
 		flags: "a",
 		mode: 0o600,
@@ -432,14 +491,79 @@ async function plan(directory) {
 			name === "analytics" || name === "reports"
 				? ["month", "quarter", "year"]
 				: ["default"],
-		ready: "REPLACE_WITH_USABLE_CONTENT_SELECTOR",
-		clockReady: "REPLACE_WITH_KNOWN_ENABLED_CLOCK_SELECTOR",
+		ready: {
+			dashboard: '[data-widget-id="quick-stats"] .tabular-nums',
+			"time-tracking": "#time-clock button:not(:disabled)::-p-text(Clock In)",
+			"employee-directory": 'table tbody tr td a[href*="/settings/employees/"]',
+			"employee-detail":
+				'[data-slot="card-title"]::-p-text(Employee Information)',
+			reports: "h3::-p-text(Export Report)",
+			analytics: '[data-slot="card-title"]::-p-text(Employee Work Hours)',
+		}[name],
+		clockReady: 'button[aria-label="Clock In"]:not(:disabled)',
+		modes:
+			name === "dashboard"
+				? [
+						"first-document",
+						"repeat-link",
+						"return-visit",
+						"manual-refresh",
+						"mutation-refresh",
+					]
+				: ["first-document", "repeat-link", "return-visit", "manual-refresh"],
 		link: `a[href="${path}"]`,
+		awayPath:
+			name === "employee-detail"
+				? "/{locale}/settings/employees"
+				: name === "analytics"
+					? "/{locale}/analytics"
+					: "/{locale}/settings",
+		...(name === "employee-detail"
+			? {
+					target: "directory-target",
+					navigationSteps: [
+						{
+							fill: 'input[aria-label="Search employees"]',
+							value: "{employeeSearch}",
+						},
+						{ wait: `a[href="${path}"]` },
+					],
+				}
+			: {
+					navigationSteps: [
+						{
+							reveal: {
+								target: `a[href="${path}"]`,
+								trigger: 'button[data-sidebar="trigger"]',
+							},
+						},
+					],
+				}),
+		navigationAfter: [{ key: "Escape" }],
 		refresh: 'button[aria-label="Refresh data"]',
-		mutation: {
-			steps: [{ click: "REPLACE_WITH_DISPOSABLE_ACCEPTED_MUTATION" }],
-			ready: "REPLACE_WITH_CHANGED_ACCEPTED_VALUE_SELECTOR",
-		},
+		...(name === "dashboard" ? { mutation: dashboardLayoutMutation } : {}),
+		...(name === "reports"
+			? {
+					returnPreparation: true,
+					returnedFormReady: 'button[aria-label="Period"]:not(:disabled)',
+					result: "employee-report",
+					rangeRecipe: "fixture-2025",
+					refreshSteps: [
+						{
+							clickText: { selector: "button", text: "Generate Report" },
+							response: { method: "POST", path: "{path}" },
+						},
+					],
+				}
+			: {}),
+		...(name === "analytics"
+			? {
+					result: "work-hours",
+					rangeRecipe: "fixture-2025",
+					returnPreparation: true,
+					returnedFormReady: 'button[aria-label="Period"]:not(:disabled)',
+				}
+			: {}),
 	}));
 	const conditions = Object.keys(fixture.actors).map((name) => {
 		const [size, role] = name.split("-");
@@ -467,12 +591,21 @@ async function plan(directory) {
 		schema: 1,
 		origin: runtime.origin,
 		samples: 20,
+		samplesByMode: {
+			"first-document": 20,
+			"repeat-link": 20,
+			"return-visit": 5,
+			"manual-refresh": 5,
+			"mutation-refresh": 5,
+		},
+		phase: "baseline",
 		concurrency: 1,
 		timeoutMs: 30000,
 		awayPath: "/{locale}/settings",
 		fixture: {
 			kind: fixture.kind,
 			version: fixture.version ?? 1,
+			dashboardLayout: fixture.dashboardLayout ?? "legacy-null",
 			journeysVerified: false,
 			organizations: fixture.organizations,
 		},
@@ -482,6 +615,17 @@ async function plan(directory) {
 			sourceBuild,
 			toolingBuild,
 			buildWorkers: 2,
+			observer: {
+				enabled: !!runtime.env.Z8_FIXTURE_OTLP_ENDPOINT,
+				version: 1,
+				eventLoopProbeIntervalMs: 10,
+				retainedEventLoopProbes: 30000,
+				cacheHandler: "installed-16.4.0-native-default-in-place",
+				cacheMaxMemoryBytes: 50 * 1024 * 1024,
+				traceQueueLimit: 20000,
+				traceBatchSize: 128,
+				traceExportDelayMs: 500,
+			},
 			redisCommandTimeoutMs: Number(
 				runtime.env.REDIS_COMMAND_TIMEOUT_MS || 2000,
 			),
@@ -493,7 +637,7 @@ async function plan(directory) {
 		routes,
 	});
 	console.log(
-		"Public comparison-plan draft written. Verify selectors/range controls/mutations and record numerical budgets before measurement.",
+		"Public comparison-plan draft written with fixture UI recipes. Verify every configured condition and record numerical budgets before measurement.",
 	);
 }
 
@@ -505,12 +649,13 @@ if (
 		"plan",
 		"authenticate",
 		"check-runtime",
+		"check-observer",
 		"upgrade",
 	].includes(command) ||
 	!inputDirectory
 ) {
 	console.error(
-		"Usage: pnpm performance:fixture <prepare|start|cleanup|plan|authenticate|check-runtime|upgrade> <private-directory> [--build|plan-output.json]",
+		"Usage: pnpm performance:fixture <prepare|start|cleanup|plan|authenticate|check-runtime|check-observer|upgrade> <private-directory> [--build|--collector control.json|plan-output.json]",
 	);
 	process.exitCode = 2;
 } else {
@@ -522,6 +667,7 @@ if (
 		plan,
 		authenticate: authenticateFixture,
 		"check-runtime": checkRuntime,
+		"check-observer": checkObserver,
 		upgrade,
 	})
 		[command](directory)

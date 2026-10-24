@@ -19,7 +19,7 @@ if (
 	env.BILLING_ENABLED !== "false" ||
 	env.TELEMETRY_ENABLED !== "false" ||
 	env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN ||
-	env.OTEL_EXPORTER_OTLP_ENDPOINT
+	(env.OTEL_EXPORTER_OTLP_ENDPOINT && !local(env.OTEL_EXPORTER_OTLP_ENDPOINT))
 )
 	throw new Error("External fixture integrations must remain disabled");
 if (process.env.CIRCLE_NODE_TOTAL !== "3")
