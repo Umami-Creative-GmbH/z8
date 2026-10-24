@@ -1,5 +1,11 @@
 import { createProxyWireObserver } from "./proxy-wire-observer.mjs";
 import {
+  primaryProtocolIdentity,
+  companionProtocolIdentity,
+} from "./protocol-fingerprints.mjs";
+const primaryProtocol = await primaryProtocolIdentity();
+const companionProtocol = await companionProtocolIdentity();
+import {
   companionPolicy as settledPolicy,
   companionWireContract,
 } from "./settled-resources.mjs";
@@ -85,6 +91,11 @@ function fixture() {
       totalBytes: 12000,
       inlineRscDecodedBytes: mode === "first-document" ? 2000 : null,
       lcpMs: mode === "first-document" ? 800 : null,
+      nativePerformanceObservation: {
+        readCompleted: true,
+        lcpEntries: mode === "first-document" ? 1 : 0,
+        eventEntries: 0,
+      },
       interactionMaxMs: null,
       restored: mode === "mutation-refresh" ? true : null,
       backend: {
@@ -123,6 +134,7 @@ function fixture() {
     observedPoolAcquisitionErrors: 0,
   }));
   const artifact = {
+    protocol: primaryProtocol,
     phase: "baseline",
     kind: "benchmark",
     nativeRunCoverage: {
@@ -193,11 +205,56 @@ test("derivation emits fresh release budgets without modifying the baseline", ()
   assert.equal(budget.cohorts[0].usableContentMs.beforeP95, 1000);
   assert.equal(budget.cohorts[0].usableContentMs.ceiling, 1250);
   assert.equal(budget.conditions.small.queryCount, 15);
+  assert.match(
+    budget.sourceFingerprints["browser-performance.mjs"],
+    /^[a-f0-9]{64}$/,
+  );
   assert.equal(
     JSON.parse(readFileSync(join(f.dir, "derived/release-plan.json"))).phase,
     "release",
   );
   assert.equal(readFileSync(join(f.dir, "before-plan.json"), "utf8"), old);
+});
+test("native paint budgets require all twenty raw first-document observations even when finite paint values were supplied", () => {
+  for (const change of [
+    (s) => {
+      s.lcpMs = null;
+    },
+    (s) => {
+      s.nativePerformanceObservation.lcpEntries = 0;
+    },
+    (s) => {
+      s.nativePerformanceObservation.readCompleted = false;
+    },
+    (s) => {
+      delete s.nativePerformanceObservation;
+    },
+    (s) => {
+      s.resourceScope = "prerequisite-failure";
+    },
+  ]) {
+    const f = fixture();
+    change(f.artifact.samples[0]);
+    f.saveBefore();
+    const derived = f.derive();
+    assert.equal(derived.status, 0, derived.stderr);
+    const b = JSON.parse(
+      readFileSync(join(f.dir, "derived/release-budgets.json")),
+    );
+    assert.equal(b.cohorts[0].lcpMs.beforeP95, null);
+    assert.equal(b.cohorts[0].lcpMs.ceiling, null);
+    const h = candidate(f);
+    assert.equal(h.compare().status, 1);
+  }
+});
+test("changed transitive primary observer fingerprints cannot register budgets", () => {
+  const f = fixture();
+  f.artifact.protocol = {
+    ...primaryProtocol,
+    "browser-performance.mjs": "0".repeat(64),
+  };
+  f.saveBefore();
+  assert.equal(f.derive().status, 2);
 });
 test("derivation refuses incomplete, changed, uncorrelated and retrospective evidence", () => {
   for (const change of [
@@ -510,7 +567,7 @@ function settledFixture(f, plan, filename) {
     phase: plan.phase,
     planSha256: hash(Buffer.from(JSON.stringify(plan, null, 2) + "\n")),
     policy: settledPolicy,
-    protocol: { operator: "fixed-synthetic" },
+    protocol: companionProtocol,
     runtime: { ...plan.runtime, buildVerified: true },
     hardware: f.artifact.hardware,
     browser: f.artifact.browser,
@@ -547,6 +604,8 @@ test("finalized failed original annual traffic supplies a labeled resource budge
     usableContentMs: null,
     clockReadyMs: null,
     elapsedUntilFailureMs: 31000,
+    failureStage: "verify-expected-content",
+    failureKind: "timeout",
   });
   Object.assign(f.backend[0], {
     observedPoolAcquisitionErrors: 69,
@@ -582,6 +641,8 @@ test("finalized failed original annual traffic supplies a labeled resource budge
       "trace-transport.mjs",
       "proxy-wire-observer.mjs",
       "fixture-browser.mjs",
+      "browser-performance.mjs",
+      "protocol-fingerprints.mjs",
       "../../docs/performance/evidence/1450-telemetry-functional-diagnostics.json",
     ].map((name) => [name, hash(readFileSync(new URL(name, import.meta.url)))]),
   );
@@ -633,9 +694,12 @@ test("finalized failed original annual traffic supplies a labeled resource budge
   const budgets = JSON.parse(
     readFileSync(join(f.dir, "derived/release-budgets.json")),
   );
-  assert.equal(budgets.policy.version, 2);
+  assert.equal(budgets.policy.version, 3);
   assert.equal(budgets.cohorts[0].usableContentMs.beforeP95, null);
   assert.equal(budgets.cohorts[0].usableContentMs.ceiling, 30000);
+  assert.equal(budgets.cohorts[0].lcpMs.beforeP95, 800);
+  assert.equal(budgets.cohorts[0].lcpMs.ceiling, 1050);
+  assert.match(budgets.cohorts[0].lcpMs.basis, /native-paint.*FAILED/);
   assert.equal(budgets.settled.cohorts[0].beforeBehavior.failed, 1);
   assert.equal(
     budgets.settled.cohorts[0].beforeBehavior.usableContentP95,
@@ -693,10 +757,11 @@ test("finalized failed original annual traffic supplies a labeled resource budge
       join(f.dir, "head-backend.json"),
     );
   const result = compare();
-  assert.equal(result.status, 1, result.stderr);
+  assert.equal(result.status, 0, result.stderr);
   const report = JSON.parse(readFileSync(join(f.dir, "comparison.json")));
   assert.equal(report.resourceAcceptance, "fulfilled");
-  assert.match(report.gates.join(" "), /lcpMs.*unavailable/);
+  assert.equal(report.cohorts[0].before.lcpMs.p95, 800);
+  assert.equal(report.cohorts[0].before.usableContentMs, null);
   assert.equal(report.settledResources.cohorts[0].beforeBehavior.failed, 1);
   assert.equal(report.settledResources.cohorts[0].headBehavior.failed, 0);
   Object.assign(headWire.samples[0], before.samples[0]);
