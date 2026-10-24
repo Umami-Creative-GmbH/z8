@@ -52,6 +52,42 @@ const fixturePlan = () => ({
 	})),
 });
 
+test("baseline collection accepts unset release budgets while release and unknown phases cannot bypass them", () => {
+	const folder = mkdtempSync(join(tmpdir(), "z8-baseline-budget-"));
+	try {
+		const path = join(folder, "plan.json");
+		const plan = { ...fixturePlan(), phase: "baseline" };
+		for (const condition of plan.conditions) delete condition.budgets;
+		const validate = () => {
+			writeFileSync(path, JSON.stringify(plan));
+			return spawnSync(
+				process.execPath,
+				[runner, "--plan", path, "--validate-plan"],
+				{ encoding: "utf8" },
+			);
+		};
+		assert.equal(
+			validate().status,
+			0,
+			"The predecessor must be measurable before head budgets are frozen.",
+		);
+		plan.phase = "release";
+		assert.equal(
+			validate().status,
+			2,
+			"A release still requires numerical budgets.",
+		);
+		plan.phase = "anything-else";
+		assert.equal(
+			validate().status,
+			2,
+			"An unknown phase must not bypass release validation.",
+		);
+	} finally {
+		rmSync(folder, { recursive: true, force: true });
+	}
+});
+
 test("the baseline command refuses an absent fixture plan before opening a browser", () => {
 	const result = spawnSync(process.execPath, [runner, "--validate-plan"], {
 		encoding: "utf8",
@@ -218,6 +254,34 @@ test("mutation measurement requires an explicit restoration recipe", () => {
 	}
 });
 
+test("route condition labels must be known and cannot silently leave a declared condition unused", () => {
+	const folder = mkdtempSync(join(tmpdir(), "z8-baseline-matrix-"));
+	try {
+		const path = join(folder, "plan.json");
+		const plan = fixturePlan();
+		const validate = () => {
+			writeFileSync(path, JSON.stringify(plan));
+			return spawnSync(
+				process.execPath,
+				[runner, "--plan", path, "--validate-plan"],
+				{ encoding: "utf8" },
+			);
+		};
+		plan.routes[0].conditions = ["unknown-label"];
+		assert.equal(validate().status, 2);
+		for (const route of plan.routes) route.conditions = ["employee"];
+		assert.equal(validate().status, 2);
+		for (const route of plan.routes) delete route.conditions;
+		assert.equal(
+			validate().status,
+			0,
+			"The default comparison cross product remains supported.",
+		);
+	} finally {
+		rmSync(folder, { recursive: true, force: true });
+	}
+});
+
 test("a fully observed failed predecessor is recorded while the same failure blocks release", () => {
 	const folder = mkdtempSync(join(tmpdir(), "z8-baseline-predecessor-"));
 	try {
@@ -232,9 +296,21 @@ test("a fully observed failed predecessor is recorded while the same failure blo
 		};
 		const samples = [];
 		const summaries = [];
+		plan.routes.forEach((route, index) => {
+			route.conditions = [
+				["employee"],
+				["employee"],
+				["manager"],
+				["manager"],
+				["restricted"],
+				["admin"],
+			][index];
+		});
 		for (const condition of plan.conditions)
 			for (const range of plan.ranges)
-				for (const route of plan.routes)
+				for (const route of plan.routes.filter((route) =>
+					route.conditions.includes(condition.name),
+				))
 					for (const mode of [
 						"first-document",
 						"repeat-link",
@@ -333,6 +409,36 @@ test("a fully observed failed predecessor is recorded while the same failure blo
 				.usableContentMs,
 			null,
 		);
+		const recordedBudgets = plan.conditions.map(
+			(condition) => condition.budgets,
+		);
+		for (const condition of plan.conditions) delete condition.budgets;
+		const unbudgeted = finalize("baseline");
+		assert.equal(unbudgeted.command.status, 0);
+		assert.equal(unbudgeted.artifact.acceptance, "baseline-recorded");
+		assert.match(
+			unbudgeted.artifact.releaseGates.join(" "),
+			/budgets have not been recorded/,
+		);
+		plan.conditions.forEach((condition, index) => {
+			condition.budgets = recordedBudgets[index];
+		});
+		writeFileSync(planPath, JSON.stringify(plan));
+		const changedArchive = spawnSync(
+			process.execPath,
+			[
+				runner,
+				"--plan",
+				planPath,
+				"--finalize",
+				artifactPath,
+				"--backend",
+				backendPath,
+			],
+			{ encoding: "utf8" },
+		);
+		assert.equal(changedArchive.status, 2);
+		assert.match(changedArchive.stderr, /plan changed after measurement/);
 		const release = finalize("release");
 		assert.equal(release.command.status, 1);
 		assert.equal(release.artifact.acceptance, "unfulfilled");

@@ -5,6 +5,69 @@ const substitute = (value, bindings) =>
 		(_, key) => bindings[key] ?? "",
 	);
 
+async function headerAction(page, action, timeout) {
+	const label = { refresh: "Refresh data", customize: "Customize dashboard" }[
+		action
+	];
+	if (!label) throw new Error("Unsupported fixture header action.");
+	const buttons =
+		'header button, [data-slot="popover-content"][aria-label="More actions"][data-open]:not([data-ending-style]) button';
+	const visible = (node, text) =>
+		node.getClientRects().length > 0 &&
+		!node.matches(":disabled,[aria-disabled='true']") &&
+		(node.getAttribute("aria-label") === text ||
+			node.textContent.trim() === text);
+	await page.waitForFunction(
+		(css, label) =>
+			[...document.querySelectorAll(css)].some(
+				(node) =>
+					node.getClientRects().length > 0 &&
+					!node.matches(":disabled") &&
+					[label, "More actions"].includes(
+						node.getAttribute("aria-label") ?? node.textContent.trim(),
+					),
+			),
+		{ timeout },
+		buttons,
+		label,
+	);
+	let candidates = await page.$$(buttons);
+	let target;
+	for (const button of candidates)
+		if (await button.evaluate(visible, label)) {
+			target = button;
+			break;
+		}
+	if (!target) {
+		for (const button of candidates)
+			if (await button.evaluate(visible, "More actions")) {
+				await button.click();
+				break;
+			}
+		await page.waitForFunction(
+			(css, label) =>
+				[...document.querySelectorAll(css)].some(
+					(node) =>
+						node.getClientRects().length > 0 &&
+						!node.matches(":disabled,[aria-disabled='true']") &&
+						(node.getAttribute("aria-label") === label ||
+							node.textContent.trim() === label),
+				),
+			{ timeout },
+			buttons,
+			label,
+		);
+		candidates = await page.$$(buttons);
+		for (const button of candidates)
+			if (await button.evaluate(visible, label)) {
+				target = button;
+				break;
+			}
+	}
+	if (!target) throw new Error("Visible fixture header action unavailable.");
+	await target.click();
+}
+
 export async function performSteps(page, steps, bindings, timeout = 30000) {
 	for (const step of steps ?? []) {
 		const selector = (value) => substitute(value, bindings);
@@ -26,7 +89,8 @@ export async function performSteps(page, steps, bindings, timeout = 30000) {
 					{ timeout },
 				)
 				.catch(() => null);
-		if (step.click) {
+		if (step.headerAction) await headerAction(page, step.headerAction, timeout);
+		else if (step.click) {
 			await page.waitForSelector(selector(step.click), {
 				visible: true,
 				timeout,
@@ -227,14 +291,26 @@ const savedLayout = [
 ];
 const quickStats =
 	'[data-testid="dashboard-widget-menu-row-quick-stats"] [role="menuitemcheckbox"]';
+export const headerRefreshSteps = [
+	{ headerAction: "refresh", response: { path: "{path}", method: "ANY" } },
+	{
+		attribute: {
+			selector: 'button[aria-label="Refresh data"]',
+			name: "aria-busy",
+			value: "false",
+		},
+	},
+	{ key: "Escape" },
+	{ absent: '[data-slot="popover-content"][aria-label="More actions"]' },
+];
 export const dashboardLayoutMutation = {
 	concurrency: 1,
 	steps: [
-		{ click: 'button[aria-label="Customize dashboard"]' },
+		{ headerAction: "customize" },
 		{ checked: { selector: quickStats, value: false, accepted: savedLayout } },
 		{ key: "Escape" },
 		{ reload: true },
-		{ click: 'button[aria-label="Customize dashboard"]' },
+		{ headerAction: "customize" },
 		{
 			attribute: { selector: quickStats, name: "aria-checked", value: "false" },
 		},
@@ -243,11 +319,11 @@ export const dashboardLayoutMutation = {
 	reset: [
 		{ key: "Escape" },
 		{ reload: true },
-		{ click: 'button[aria-label="Customize dashboard"]' },
+		{ headerAction: "customize" },
 		{ checked: { selector: quickStats, value: true, accepted: savedLayout } },
 		{ key: "Escape" },
 		{ reload: true },
-		{ click: 'button[aria-label="Customize dashboard"]' },
+		{ headerAction: "customize" },
 		{
 			attribute: { selector: quickStats, name: "aria-checked", value: "true" },
 		},
