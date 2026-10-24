@@ -346,6 +346,8 @@ const NEEDS_ADMIN_REASONS = new Set([
 	"target_ineligible",
 	"departure_mismatch",
 	"departure_not_effective",
+	"deactivation_mismatch",
+	"deactivation_not_effective",
 	"task_mismatch",
 	"workflow_mismatch",
 	"replay_lineage_mismatch",

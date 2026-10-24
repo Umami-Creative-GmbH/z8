@@ -483,26 +483,26 @@ describe("evaluateOffboardingReassignment for a deactivation (#1440)", () => {
 	});
 
 	it.each([
-		["missing deactivation", { deactivation: null }, "departure_mismatch"],
+		["missing deactivation", { deactivation: null }, "deactivation_mismatch"],
 		[
 			"deactivation organization",
 			{ deactivation: { ...deactivationFacts().deactivation!, organizationId: ids.foreign } },
-			"departure_mismatch",
+			"deactivation_mismatch",
 		],
 		[
 			"deactivated employee",
 			{ deactivation: { ...deactivationFacts().deactivation!, employeeId: ids.other } },
-			"departure_mismatch",
+			"deactivation_mismatch",
 		],
 		[
 			"deactivation period",
 			{ deactivation: { ...deactivationFacts().deactivation!, employmentPeriodId: ids.other } },
-			"departure_mismatch",
+			"deactivation_mismatch",
 		],
 		[
 			"superseded deactivation",
 			{ deactivation: { ...deactivationFacts().deactivation!, effective: false } },
-			"departure_not_effective",
+			"deactivation_not_effective",
 		],
 		[
 			"task anchored to a departure",
