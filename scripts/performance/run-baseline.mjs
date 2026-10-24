@@ -12,6 +12,7 @@ import {
 } from "./collector-client.mjs";
 import {
 	fixtureBrowserPolicy,
+	fixtureTransportIsComplete,
 	initializeFixtureBrowserContext,
 	launchFixtureBrowser,
 } from "./fixture-browser.mjs";
@@ -83,6 +84,13 @@ const coverageNames = [
 ];
 
 function validate(plan, verifying = false) {
+	if (
+		plan.runtime?.traceTransport === fixtureTraceTransport &&
+		plan.runtime.browserPolicy !== fixtureBrowserPolicy
+	)
+		fail(
+			"Frozen plan requires the shared isolated browser initialization policy.",
+		);
 	if (
 		plan.runtime?.browserPermissions !== undefined &&
 		plan.runtime.browserPermissions !== fixtureBrowserPermissions
@@ -266,12 +274,16 @@ async function main() {
 		args.includes("--verify-journeys"),
 	);
 	if (
-		(args.includes("--condition") || args.includes("--route")) &&
+		(args.includes("--condition") ||
+			args.includes("--route") ||
+			args.includes("--mode")) &&
 		!args.includes("--verify-journeys")
 	)
 		fail(
 			"Cohort filters are permitted only for journey verification, never controlled measurement.",
 		);
+	if (args.includes("--mode") && !visitModes.includes(option("--mode")))
+		fail("Use a known diagnostic visit mode.");
 	if (args.includes("--validate-plan")) {
 		console.log(
 			"Fixture comparison plan is valid; runtime acceptance remains unfulfilled.",
@@ -339,6 +351,17 @@ async function main() {
 			result.samples.some((sample) => sample.backend[name] === null),
 		);
 		result.gates = [];
+		if (
+			plan.runtime.traceTransport === fixtureTraceTransport &&
+			(result.runtime.browserPolicy !== fixtureBrowserPolicy ||
+				result.runtime.traceTransport !== fixtureTraceTransport ||
+				result.samples.some(
+					(sample) => !fixtureTransportIsComplete(sample.traceTransport),
+				))
+		)
+			result.gates.push(
+				"Complete matching browser initialization and context transport evidence is missing.",
+			);
 		if (result.kind !== "benchmark")
 			result.gates.push("Journey verification is not a controlled benchmark.");
 		const releaseGates = [];
@@ -596,6 +619,7 @@ async function main() {
 						continue;
 					for (const mode of modesFor(route)) {
 						let index = 0;
+						if (args.includes("--mode") && mode !== option("--mode")) continue;
 						const concurrency =
 							mode === "mutation-refresh"
 								? (route.mutation.concurrency ?? plan.concurrency)
@@ -1179,6 +1203,54 @@ async function measure(
 		sample.failureReadiness = error.fixtureReadiness ?? null;
 		sample.failureHeaderState = error.fixtureHeaderState ?? null;
 		sample.failureStep = error.fixtureStep ?? null;
+		if (error.fixtureAction === "table" && page && !page.isClosed())
+			sample.tableReadiness = await page
+				.evaluate(() => {
+					const headings = [
+						...document.querySelectorAll('[data-slot="card-title"]'),
+					].filter((node) => node.textContent.trim() === "Employee Work Hours");
+					const rows = headings.flatMap((node) => [
+						...(node
+							.closest('[data-slot="card"]')
+							?.querySelectorAll("tbody tr") ?? []),
+					]);
+					const cellCountHistogram = {},
+						numericHoursColumnHistogram = {};
+					let missingHoursCells = 0,
+						nonNumericHoursCells = 0;
+					for (const row of rows) {
+						const cells = row.querySelectorAll("td");
+						cellCountHistogram[cells.length] =
+							(cellCountHistogram[cells.length] ?? 0) + 1;
+						if (!cells[1]) {
+							missingHoursCells++;
+							continue;
+						}
+						const text = cells[1].textContent.trim();
+						if (!/^\d+(?:\.\d+)?h$/.test(text)) {
+							nonNumericHoursCells++;
+							continue;
+						}
+						const hours = Number(text.slice(0, -1));
+						if (Number.isFinite(hours))
+							numericHoursColumnHistogram[hours] =
+								(numericHoursColumnHistogram[hours] ?? 0) + 1;
+					}
+					return {
+						matchingTitleCount: headings.length,
+						tbodyRowCount: rows.length,
+						cellCountHistogram,
+						numericHoursColumnHistogram,
+						missingHoursCells,
+						nonNumericHoursCells,
+						skeletonCount: document.querySelectorAll('[data-slot="skeleton"]')
+							.length,
+						errorRegionCount: document.querySelectorAll(
+							'[role="alert"],[data-slot="alert"]',
+						).length,
+					};
+				})
+				.catch(() => null);
 		sample.failureKind =
 			error?.name === "TimeoutError" ? "timeout" : "journey-error";
 		sample.elapsedUntilFailureMs =
@@ -1297,14 +1369,14 @@ async function measure(
 				kind: fixtureTraceTransport,
 				...transport.snapshot(),
 			};
-			if (
-				sample.traceTransport.afterInitialization?.refusedRequests !== 0 ||
-				sample.traceTransport.afterInitialization?.upstreamFailures !== 0
-			) {
+			if (!fixtureTransportIsComplete(sample.traceTransport)) {
+				sample.transportCoverageComplete = false;
+				if (!sample.failed) {
+					sample.failureStage = "trace-transport";
+					sample.failureKind = "observation-incomplete";
+				}
 				sample.failed = true;
-				sample.failureStage = "trace-transport";
-				sample.failureKind = "observation-incomplete";
-			}
+			} else sample.transportCoverageComplete = true;
 			await transport.close();
 		}
 	}

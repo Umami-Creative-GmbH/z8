@@ -80,6 +80,7 @@ async function main() {
 			"--route",
 		].flatMap((name) => [name, option(name)]),
 	];
+	if (args.includes("--mode")) runnerArgs.push("--mode", option("--mode"));
 	const code = await new Promise((done, reject) => {
 		const child = spawn(process.execPath, runnerArgs, {
 			stdio: "inherit",
