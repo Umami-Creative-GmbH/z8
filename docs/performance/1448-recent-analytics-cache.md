@@ -199,8 +199,9 @@ warm, changing the subscription to past due returned `BillingError`, using
 11 queries / 7 rows and zero cache hits or misses. Restoring active status
 immediately reused the valid result: 13 queries / 208 rows, one hit and the
 literal 417,600 hours. The exact original subscription rows were restored under
-the existing organization configuration guard, all browser contexts closed, and
-the fixture owner resumed the normal disabled-billing launcher. The private
+the existing organization configuration guard and read back to verify exact
+equality with the backup. All browser contexts closed. The fixture owner handles
+the final return to the normal disabled-billing launcher. The private
 normal runtime configuration was never changed to enable billing.
 
 [The numerical evidence](evidence/1448-recent-analytics-cache.json) retains 170
