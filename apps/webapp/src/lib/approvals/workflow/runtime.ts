@@ -32,6 +32,10 @@ import {
 } from "../evidence/work-period-evidence";
 import { isOwnRequestDecision, ownRequestDecisionError } from "../policies/self-decision";
 import { createLegacyApprovalRowWriter } from "./compatibility-writer";
+import {
+	authorizeEmployeeDeactivationCancellation,
+	isEmployeeDeactivationPrincipal,
+} from "./deactivation-cancellation";
 import { createLegacyApprovalObservationPlanner } from "./legacy-observation-planner";
 import { createOffboardingReassignmentAuthority } from "./offboarding-authority";
 import type {
@@ -116,6 +120,10 @@ function exactApprovedMemberRow(
 export function createDatabaseApprovalCommandActorResolver(): ApprovalCommandActorResolver {
 	return {
 		async resolve(input) {
+			if (isEmployeeDeactivationPrincipal(input.principal)) {
+				// The deactivation's absence cancellation (#1440); its evidence is checked on authorize.
+				return { kind: "system", employeeId: null, userId: null };
+			}
 			if (input.principal.kind === "system") {
 				if (
 					input.principal.systemId !== "approval-expiry" &&
@@ -229,6 +237,15 @@ export function createApprovalWorkflowAuthorization(input: {
 					principal: request.principal,
 					command,
 					replay: request.replay ?? null,
+				});
+			}
+			if (isEmployeeDeactivationPrincipal(request.principal)) {
+				// Evidence re-read in this transaction (#1440); never the plain system grant.
+				return authorizeEmployeeDeactivationCancellation({
+					dbService: request.dbService,
+					organizationId: request.organizationId,
+					workflow,
+					command,
 				});
 			}
 			if (request.actor.kind === "system") return "system";

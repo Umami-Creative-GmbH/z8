@@ -24,6 +24,7 @@ vi.mock("@tolgee/react", () => ({
 				values?.[name] === undefined ? match : String(values[name]),
 			),
 	}),
+	useTolgee: () => ({ getLanguage: () => "en" }),
 }));
 
 const {
@@ -81,9 +82,28 @@ vi.mock("@/app/[locale]/(app)/settings/organizations/actions", () => ({
 
 vi.mock("@/app/[locale]/(app)/settings/employees/actions", () => ({
 	deactivateEmployee: deactivateEmployeeMock,
+	// Deactivate previews its consequences first (#1440); nothing else changes here.
+	previewEmployeeDeactivation: async () => ({
+		success: true,
+		data: (
+			await import("@/components/organization/testing/deactivation-preview.test.fixture")
+		).emptyDeactivationPreview({ retentionStarts: false, seatReleased: false }),
+	}),
 	reactivateEmployee: reactivateEmployeeMock,
 	removeEmployeeAccess: removeEmployeeAccessMock,
 }));
+
+/** Opens Deactivate's preview dialog and waits until it can be confirmed. */
+async function openDeactivationDialog() {
+	fireEvent.click(await screen.findByText("Deactivate"));
+	const dialog = await screen.findByRole("dialog");
+	await waitFor(() =>
+		expect(
+			within(dialog).getByRole("button", { name: "Deactivate" }).hasAttribute("disabled"),
+		).toBe(false),
+	);
+	return dialog;
+}
 
 vi.mock("./edit-invitation-target-team-dialog", () => ({
 	EditInvitationTargetTeamDialog: () => null,
@@ -334,22 +354,22 @@ describe("MembersTable invitation target teams", () => {
 				name: "Actions for Active Alice",
 			}),
 		);
-		fireEvent.click(await screen.findByText("Deactivate"));
-		const dialog = await screen.findByRole("alertdialog");
+		const dialog = await openDeactivationDialog();
 		fireEvent.click(within(dialog).getByRole("button", { name: "Deactivate" }));
-		await waitFor(() =>
-			expect(within(initialRow).getByText("Inactive")).toBeTruthy(),
-		);
+		// A deactivation may be refused, so the row changes only once it is confirmed (#1440).
+		await waitFor(() => expect(deactivateEmployeeMock).toHaveBeenCalledOnce());
+		expect(within(initialRow).getByText("Active")).toBeTruthy();
 		await act(async () => {
 			resolveStatus({ success: false, error: "Status failed" });
 		});
-		await waitFor(() =>
-			expect(within(initialRow).getByText("Active")).toBeTruthy(),
-		);
-		expect(deactivateEmployeeMock).toHaveBeenCalledExactlyOnceWith(
-			"employee-1",
-		);
-		expect(toastErrorMock).toHaveBeenCalledWith(
+		expect(within(initialRow).getByText("Active")).toBeTruthy();
+		expect(deactivateEmployeeMock).toHaveBeenCalledExactlyOnceWith({
+			employeeId: "employee-1",
+			requestId: expect.any(String),
+			replacementManagers: {},
+		});
+		// The preview dialog stays open with the fixed message (#1440).
+		expect((await within(dialog).findByRole("alert")).textContent).toBe(
 			"Failed to deactivate employee",
 		);
 		expect(routerRefreshMock).not.toHaveBeenCalled();
@@ -382,14 +402,15 @@ describe("MembersTable invitation target teams", () => {
 		fireEvent.click(
 			within(row).getByRole("button", { name: "Actions for Active Alice" }),
 		);
-		fireEvent.click(await screen.findByText("Deactivate"));
-		const dialog = await screen.findByRole("alertdialog");
+		const dialog = await openDeactivationDialog();
 		fireEvent.click(within(dialog).getByRole("button", { name: "Deactivate" }));
 
 		await waitFor(() =>
-			expect(deactivateEmployeeMock).toHaveBeenCalledWith("employee-1"),
+			expect(deactivateEmployeeMock).toHaveBeenCalledWith(
+				expect.objectContaining({ employeeId: "employee-1" }),
+			),
 		);
-		expect(within(row).getByText("Inactive")).toBeTruthy();
+		await waitFor(() => expect(within(row).getByText("Inactive")).toBeTruthy());
 		const secondRow = screen.getByText("Active Bob").closest("tr");
 		if (!secondRow) throw new Error("Second member row not found");
 		expect(within(secondRow).getByText("Active")).toBeTruthy();

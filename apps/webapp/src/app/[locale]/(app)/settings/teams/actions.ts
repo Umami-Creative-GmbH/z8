@@ -36,6 +36,7 @@ import {
 	runDrivingLicenceIntendedDriverWrite,
 } from "@/lib/organization/driving-licence/no-longer-intended";
 import { keepDrivingLicenceStalePreview } from "@/lib/organization/driving-licence/stale-preview";
+import { removeTeamMembership } from "@/lib/organization/team-membership-removal";
 import {
 	buildTeamSettingsSurface,
 	canUseManagerScopedTeamSettings,
@@ -306,45 +307,13 @@ async function writeTeamMemberAddition(
 
 /**
  * Removes the membership; when it was the primary team, the alphabetically first remaining
- * membership (by id) becomes the primary team, else none.
+ * membership (by id) becomes the primary team, else none (shared with the deactivation, #1440).
  */
 async function writeTeamMemberRemoval(
 	tx: TeamWriteTransaction,
 	input: { organizationId: string; teamId: string; employeeId: string },
 ) {
-	const { organizationId, teamId, employeeId } = input;
-	await tx
-		.delete(teamMembership)
-		.where(
-			and(
-				eq(teamMembership.organizationId, organizationId),
-				eq(teamMembership.teamId, teamId),
-				eq(teamMembership.employeeId, employeeId),
-			),
-		);
-
-	// Re-read under protection: the compatibility team may have moved.
-	const current = await tx.query.employee.findFirst({
-		where: and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)),
-		columns: { teamId: true },
-	});
-	if (current?.teamId !== teamId) return;
-
-	const remainingMemberships = await tx.query.teamMembership.findMany({
-		where: and(
-			eq(teamMembership.organizationId, organizationId),
-			eq(teamMembership.employeeId, employeeId),
-		),
-	});
-	const nextTeamId =
-		remainingMemberships
-			.flatMap((membership) => (membership.teamId !== teamId ? [membership.teamId] : []))
-			.toSorted()[0] ?? null;
-
-	await tx
-		.update(employee)
-		.set({ teamId: nextTeamId, updatedAt: currentTimestamp() })
-		.where(and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)));
+	await removeTeamMembership(tx, input);
 }
 
 /** Deletes a team without memberships; false when it still has members. */

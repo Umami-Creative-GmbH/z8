@@ -3403,12 +3403,12 @@ describe("approval write boundary production ownership", () => {
 	});
 
 	it("fails closed before parsing when the production file-count limit is exceeded", {
-		timeout: 15_000,
+		timeout: 30_000,
 	}, () => {
 		withApprovalWriteTree({}, (workspaceRoot) => {
 			const sourceRoot = join(workspaceRoot, "src");
 			mkdirSync(sourceRoot, { recursive: true });
-			for (let index = 0; index < 4_097; index += 1) {
+			for (let index = 0; index < 8_193; index += 1) {
 				writeFileSync(join(sourceRoot, `${index}.ts`), "");
 			}
 
@@ -3418,7 +3418,7 @@ describe("approval write boundary production ownership", () => {
 				{
 					column: 0,
 					detail:
-						"Approval write boundary production file-count limit exceeded: 4096.",
+						"Approval write boundary production file-count limit exceeded: 8192.",
 					error: "traversal",
 					kind: "error",
 					line: 0,
@@ -4407,7 +4407,7 @@ db.delete(approvalOutbox);`,
 
 	it("exports the complete exact temporary legacy exception map", () => {
 		expect(TEMPORARY_LEGACY_WRITE_EXCEPTIONS).toEqual({
-			"src/app/[locale]/(app)/absences/mutations.ts": {
+			"src/app/[locale]/(app)/absences/cancel-absence-core.ts": {
 				approval_chain_instance: ["update"],
 				approval_chain_stage_instance: ["update"],
 				approval_request: ["delete"],
@@ -4784,7 +4784,7 @@ export async function hiddenImport(rows: object[]) {
 			{ operation: "insert", table: "approval_request" },
 		]);
 		expect(
-			analyzeOperations("src/app/[locale]/(app)/absences/mutations.ts"),
+			analyzeOperations("src/app/[locale]/(app)/absences/cancel-absence-core.ts"),
 		).toEqual([
 			{ operation: "update", table: "approval_chain_stage_instance" },
 			{ operation: "update", table: "approval_chain_instance" },

@@ -6,10 +6,12 @@ import {
 	type Instant,
 	instantFromDate,
 } from "@/lib/datetime/temporal-core";
+import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { isCanonicalUuid } from "@/lib/validations/canonical-uuid";
 import { departureCutoff } from "./cutoff";
 import { countDeputyAssignmentsNotEnded } from "./deputy-release";
 import { type DepartureBlockedReason, evaluateDepartureAuthority } from "./owner-invariant";
+import { readOpenDeactivation } from "./receipts";
 import { actorMayResolveDepartureWork } from "./reviews";
 import type {
 	DeparturePreviewException,
@@ -138,6 +140,77 @@ export function publicReviewMetadata(metadata: unknown): {
 	};
 }
 
+export type LifecycleFollowUp = Pick<
+	EmployeeOffboardingView,
+	"followUp" | "failedTasks" | "reviews"
+>;
+
+/** Follow-up progress of one anchor (a departure or a deactivation) from its tasks and reviews. */
+async function loadFollowUp(
+	database: QueryDatabase,
+	input: { organizationId: string; employeeId: string; anchor: ReturnType<typeof sql> },
+): Promise<LifecycleFollowUp> {
+	const tasks = await database.execute<{ id: string; kind: string; status: string }>(sql`
+		SELECT id, kind, status FROM employee_departure_task
+		WHERE organization_id = ${input.organizationId} AND ${input.anchor}
+		ORDER BY created_at, id
+	`);
+	const reviewRows = await database.execute<{
+		id: string;
+		kind: OffboardingReviewKind;
+		status: "open" | "resolved";
+		metadata: unknown;
+	}>(sql`
+		SELECT id, kind, status, metadata FROM employee_departure_review
+		WHERE organization_id = ${input.organizationId} AND ${input.anchor}
+		ORDER BY created_at, id
+	`);
+	const failedTasks = tasks.rows
+		.filter((task) => task.status === "failed")
+		.map((task) => ({ id: task.id, kind: task.kind as OffboardingFollowUpTaskKind }));
+	const reviews = reviewRows.rows.map((review) => ({
+		id: review.id,
+		kind: review.kind,
+		status: review.status,
+		...publicReviewMetadata(review.metadata),
+		actionUrl: `/settings/employees/${input.employeeId}?review=${review.id}`,
+	}));
+	return {
+		failedTasks,
+		reviews,
+		followUp: {
+			pending: tasks.rows.filter(
+				(task) => task.status === "pending" || task.status === "processing",
+			).length,
+			failed: failedTasks.length,
+			openReviews: reviews.filter((review) => review.status === "open").length,
+		},
+	};
+}
+
+/**
+ * The follow-up work of one deactivation (#1440): its approval handover tasks
+ * and *Approval duties need a replacement* reviews, listed like a departure's.
+ * Null when the deactivation is not this employee's in this organization.
+ * Callers check the viewer's authority first.
+ */
+export async function getDeactivationFollowUp(
+	database: QueryDatabase,
+	input: { organizationId: string; employeeId: string; deactivationId: string },
+): Promise<LifecycleFollowUp | null> {
+	const owned = await database.execute(sql`
+		SELECT 1 FROM employee_deactivation
+		WHERE organization_id = ${input.organizationId} AND id = ${input.deactivationId}::uuid
+			AND employee_id = ${input.employeeId}::uuid
+	`);
+	if (owned.rows.length === 0) return null;
+	return loadFollowUp(database, {
+		organizationId: input.organizationId,
+		employeeId: input.employeeId,
+		anchor: sql`deactivation_id = ${input.deactivationId}::uuid`,
+	});
+}
+
 /**
  * The lifecycle part of the view. The work balance (#1002) is added by the
  * server action, which knows whether the viewer may record payouts.
@@ -185,8 +258,9 @@ export async function getEmployeeOffboardingView(
 		is_active: boolean;
 		membership_approved: boolean;
 		open_period_id: string | null;
+		deactivated_at_missing: boolean;
 	}>(sql`
-		SELECT e.user_id, e.is_active,
+		SELECT e.user_id, e.is_active, (e.deactivated_at IS NULL) AS deactivated_at_missing,
 			EXISTS (
 				SELECT 1 FROM member m
 				WHERE m.organization_id = e.organization_id AND m.user_id = e.user_id
@@ -250,38 +324,11 @@ export async function getEmployeeOffboardingView(
 	let futureWork = { shifts: 0, absences: 0, employmentTerms: 0 };
 	let deputyAbsences = 0;
 	if (departure) {
-		const tasks = await database.execute<{ id: string; kind: string; status: string }>(sql`
-			SELECT id, kind, status FROM employee_departure_task
-			WHERE organization_id = ${input.organizationId} AND departure_id = ${departure.id}::uuid
-			ORDER BY created_at, id
-		`);
-		const reviewRows = await database.execute<{
-			id: string;
-			kind: OffboardingReviewKind;
-			status: "open" | "resolved";
-			metadata: unknown;
-		}>(sql`
-			SELECT id, kind, status, metadata FROM employee_departure_review
-			WHERE organization_id = ${input.organizationId} AND departure_id = ${departure.id}::uuid
-			ORDER BY created_at, id
-		`);
-		failedTasks = tasks.rows
-			.filter((task) => task.status === "failed")
-			.map((task) => ({ id: task.id, kind: task.kind as OffboardingFollowUpTaskKind }));
-		reviews = reviewRows.rows.map((review) => ({
-			id: review.id,
-			kind: review.kind,
-			status: review.status,
-			...publicReviewMetadata(review.metadata),
-			actionUrl: `/settings/employees/${input.employeeId}?review=${review.id}`,
+		({ followUp, failedTasks, reviews } = await loadFollowUp(database, {
+			organizationId: input.organizationId,
+			employeeId: input.employeeId,
+			anchor: sql`departure_id = ${departure.id}::uuid`,
 		}));
-		followUp = {
-			pending: tasks.rows.filter(
-				(task) => task.status === "pending" || task.status === "processing",
-			).length,
-			failed: failedTasks.length,
-			openReviews: reviews.filter((review) => review.status === "open").length,
-		};
 		futureWork = await countFutureWork(database, {
 			organizationId: input.organizationId,
 			employeeId: input.employeeId,
@@ -295,6 +342,32 @@ export async function getEmployeeOffboardingView(
 			deputyEmployeeId: input.employeeId,
 			at: departure.cutoffAt,
 		});
+	}
+
+	// A deactivated employee without a departure: its follow-up shows where a departure's does (#1440).
+	let deactivation: EmployeeOffboardingView["deactivation"] = null;
+	if (!departure && !target.is_active) {
+		const open = await readOpenDeactivation(database, {
+			organizationId: input.organizationId,
+			employeeId: input.employeeId,
+		});
+		const deactivationFollowUp = open
+			? await getDeactivationFollowUp(database, {
+					organizationId: input.organizationId,
+					employeeId: input.employeeId,
+					deactivationId: open.id,
+				})
+			: null;
+		if (open && deactivationFollowUp) {
+			({ followUp, failedTasks, reviews } = deactivationFollowUp);
+			deactivation = {
+				id: open.id,
+				deactivatedAt: open.deactivatedAt.toString(),
+				timezone: await loadOrganizationTimezone(database, input.organizationId),
+				// A backfilled deactivation without evidence of the date (#1442).
+				...(target.deactivated_at_missing ? { dateNotRecorded: true as const } : {}),
+			};
+		}
 	}
 
 	const authority = await evaluateDepartureAuthority(database, {
@@ -321,6 +394,7 @@ export async function getEmployeeOffboardingView(
 						blockedReason: departure.blockedReason,
 					}
 				: null,
+			deactivation,
 			previousEmploymentPeriodId: derived.previousEmploymentPeriodId,
 			membershipApproved: target.membership_approved,
 			followUp,

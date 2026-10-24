@@ -462,21 +462,80 @@ export async function revokeKioskBadgesForDeparture(
 		cutoff: Instant;
 	},
 ): Promise<void> {
+	await revokeKioskBadgesOfEmploymentPeriod(tx, audit, {
+		organizationId: input.organizationId,
+		employeeId: input.employeeId,
+		employmentPeriodId: input.employmentPeriodId,
+		actorUserId: input.actorUserId,
+		cutoff: input.cutoff,
+		revokedReason: "employee_departure",
+		auditMetadata: {
+			reason: "employee_departure",
+			departureId: input.departureId,
+			employmentPeriodId: input.employmentPeriodId,
+		},
+	});
+}
+
+/** Which employee's badges an employment's end touches. */
+export type KioskBadgeEmployment = {
+	organizationId: string;
+	employeeId: string;
+	/** The period ending; null (an employee without any period) means every live badge. */
+	employmentPeriodId: string | null;
+};
+
+function liveBadgesOfEmployment(input: KioskBadgeEmployment) {
+	return and(
+		employeeBadges(input),
+		input.employmentPeriodId
+			? eq(employeeKioskBadge.employmentPeriodId, input.employmentPeriodId)
+			: undefined,
+		isNull(employeeKioskBadge.revokedAt),
+	);
+}
+
+/** The live badges `revokeKioskBadgesOfEmploymentPeriod` would revoke, for a preview. */
+export async function liveKioskBadgesOfEmploymentPeriod(
+	client: Pick<Transaction, "select">,
+	input: KioskBadgeEmployment,
+): Promise<string[]> {
+	const rows = await client
+		.select({ id: employeeKioskBadge.id })
+		.from(employeeKioskBadge)
+		.where(liveBadgesOfEmployment(input))
+		.orderBy(employeeKioskBadge.issuedAt, employeeKioskBadge.id);
+	return rows.map((row) => row.id);
+}
+
+/**
+ * Revokes the live badges of an ending employment (a departure, or a
+ * deactivation, #1440) inside the caller's transaction, each recorded as ended
+ * at the cutoff but never before it was issued, and audited under the actor
+ * with `auditMetadata`. The column reason is the lifecycle's own; a
+ * deactivation stores `revoked` and names itself in the audit metadata
+ * (decision D5). The caller forwards the entries only after its commit.
+ * Returns the revoked badge ids.
+ */
+export async function revokeKioskBadgesOfEmploymentPeriod(
+	tx: Pick<Transaction, "update" | "insert">,
+	audit: AuditTrail,
+	input: KioskBadgeEmployment & {
+		actorUserId: string;
+		cutoff: Instant;
+		revokedReason: Extract<KioskBadgeRevokedReason, "employee_departure" | "revoked">;
+		auditMetadata: Record<string, unknown>;
+	},
+): Promise<string[]> {
 	const cutoff = dateFromInstant(input.cutoff);
 	const revoked = await tx
 		.update(employeeKioskBadge)
 		.set({
 			revokedAt: sql`greatest(${employeeKioskBadge.issuedAt}, ${cutoff}::timestamptz)`,
 			revokedByUserId: input.actorUserId,
-			revokedReason: "employee_departure",
+			revokedReason: input.revokedReason,
 		})
-		.where(
-			and(
-				employeeBadges(input),
-				eq(employeeKioskBadge.employmentPeriodId, input.employmentPeriodId),
-				isNull(employeeKioskBadge.revokedAt),
-			),
-		)
+		.where(liveBadgesOfEmployment(input))
 		.returning({ id: employeeKioskBadge.id });
 	for (const badge of revoked) {
 		await auditBadge(audit, tx, AuditAction.KIOSK_BADGE_REVOKED, {
@@ -484,13 +543,10 @@ export async function revokeKioskBadgesForDeparture(
 			actorUserId: input.actorUserId,
 			employeeId: input.employeeId,
 			badgeId: badge.id,
-			metadata: {
-				reason: "employee_departure",
-				departureId: input.departureId,
-				employmentPeriodId: input.employmentPeriodId,
-			},
+			metadata: input.auditMetadata,
 		});
 	}
+	return revoked.map((badge) => badge.id);
 }
 
 /**

@@ -96,17 +96,41 @@ export async function currentRosterManagerRecipients(
 		return { userIds: [], reason: "none" };
 	}
 
-	// The alias `m` is what `memberIsAccessibleOwnerOrAdmin` reads.
-	const m = alias(member, "m");
-	const at = rosterCheckInstant(input.now);
-	const admins = keep(
-		await client
-			.select({ userId: m.userId, email: user.email })
-			.from(m)
-			.innerJoin(user, eq(user.id, m.userId))
-			.where(and(eq(m.organizationId, input.organizationId), memberIsAccessibleOwnerOrAdmin(at))),
-	);
+	const admins = await currentOrganizationAdminUserIds(client, {
+		organizationId: input.organizationId,
+		excludeUserIds: input.excludeUserIds,
+		now: input.now,
+	});
 	return admins.length > 0
 		? { userIds: admins, reason: "organization_admins" }
 		: { userIds: [], reason: "none" };
+}
+
+/**
+ * The organization's current owners and admins (approved, not linked to a
+ * former employee), without kiosk-only accounts (reserved addresses) and
+ * `excludeUserIds`. Distinct and sorted; organization-scoped. The admin
+ * fallback of manager notices, and the recipients of notices only admins can
+ * act on (#1442).
+ */
+export async function currentOrganizationAdminUserIds(
+	client: Reader,
+	input: { organizationId: string; excludeUserIds?: readonly string[]; now?: Instant },
+): Promise<string[]> {
+	const excluded = new Set(input.excludeUserIds ?? []);
+	// The alias `m` is what `memberIsAccessibleOwnerOrAdmin` reads.
+	const m = alias(member, "m");
+	const at = rosterCheckInstant(input.now);
+	const rows = await client
+		.select({ userId: m.userId, email: user.email })
+		.from(m)
+		.innerJoin(user, eq(user.id, m.userId))
+		.where(and(eq(m.organizationId, input.organizationId), memberIsAccessibleOwnerOrAdmin(at)));
+	return [
+		...new Set(
+			rows
+				.filter((row) => !excluded.has(row.userId) && !isReservedEmail(row.email))
+				.map((row) => row.userId),
+		),
+	].toSorted();
 }

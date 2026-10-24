@@ -26,10 +26,11 @@ import {
 	recordDecisionEvidence,
 } from "../evidence/store";
 import type { ApprovalDbService as ServerApprovalDbService } from "../server/types";
-import type {
-	ApprovalSourceIdentity,
-	ApprovalWorkflowSnapshot,
-	JsonObject,
+import {
+	type ApprovalSourceIdentity,
+	type ApprovalWorkflowSnapshot,
+	EMPLOYEE_DEACTIVATION_SYSTEM_ID,
+	type JsonObject,
 } from "../workflow/ports";
 import { normalizeStableData } from "../workflow/stable-data";
 import { isApprovedCancellationAuthorization } from "./registry";
@@ -165,6 +166,14 @@ function validateContext(
 	if (input.workflow.status !== input.source.status) fail();
 }
 
+function isEmployeeDeactivationCancellation(
+	input: ApprovalDomainAdapterContext<AbsenceApprovalSource>,
+): boolean {
+	return (
+		input.actor.kind === "system" && input.systemCapability === EMPLOYEE_DEACTIVATION_SYSTEM_ID
+	);
+}
+
 function finalizerActor(
 	input: ApprovalTerminalAdapterInput<AbsenceApprovalSource>,
 ) {
@@ -179,6 +188,18 @@ function finalizerActor(
 		input.finalizationCause === "activation" &&
 		input.transition.kind === "approve"
 	) {
+		return {
+			actorEmployeeId: input.source.employeeId,
+			actorUserId: input.source.requesterUserId,
+		};
+	}
+	if (
+		isEmployeeDeactivationCancellation(input) &&
+		input.finalizationCause === "command" &&
+		(input.transition.kind === "cancel_pending" || input.transition.kind === "cancel_approved")
+	) {
+		// Withdrawn on the former employee's behalf; the deactivation's own writer records the
+		// acting admin on what it deletes.
 		return {
 			actorEmployeeId: input.source.employeeId,
 			actorUserId: input.source.requesterUserId,
@@ -425,8 +446,10 @@ export function createAbsenceApprovalAdapter(
 			return {
 				canCancelAfterApproval:
 					input.source.status === "approved" &&
-					owner &&
-					comparePlainDates(parsePlainDate(input.source.startDate), today) > 0,
+					((owner && comparePlainDates(parsePlainDate(input.source.startDate), today) > 0) ||
+						// The deactivation's capability (#1440); its authorization already proved the
+						// absence starts after the day the former employee left.
+						isEmployeeDeactivationCancellation(input)),
 			};
 		},
 		async produceRoutingContext(input) {
