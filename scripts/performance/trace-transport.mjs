@@ -37,6 +37,13 @@ export async function createFixtureTraceTransport({
 		refusedRequests: 0,
 		upstreamFailures: 0,
 		responseBodyBytes: 0,
+		refusalReasons: {
+			unexpectedLoopback: 0,
+			nonLoopbackHttp: 0,
+			loopbackConnect: 0,
+			nonLoopbackConnect: 0,
+			malformed: 0,
+		},
 	};
 	const server = createServer((request, response) => {
 		let wireId;
@@ -54,6 +61,9 @@ export async function createFixtureTraceTransport({
 			const url = new URL(request.url, origin);
 			if (!loopback(url) || !allowed.has(url.origin)) {
 				counts.refusedRequests++;
+				counts.refusalReasons[
+					loopback(url) ? "unexpectedLoopback" : "nonLoopbackHttp"
+				]++;
 				wire.end(wireId, { error: true }, performance.now());
 				response.writeHead(403).end();
 				return;
@@ -117,13 +127,25 @@ export async function createFixtureTraceTransport({
 			request.pipe(upstream);
 		} catch {
 			counts.refusedRequests++;
+			counts.refusalReasons.malformed++;
 			if (wireId !== undefined)
 				wire.end(wireId, { error: true }, performance.now());
 			response.writeHead(400).end();
 		}
 	});
 	server.on("connect", (_request, socket) => {
+		socket.on("error", () => {}); // Client cancellation must not crash the owning harness.
 		counts.refusedRequests++;
+		try {
+			const destination = new URL(`https://${_request.url}`);
+			counts.refusalReasons[
+				["localhost", "127.0.0.1", "[::1]"].includes(destination.hostname)
+					? "loopbackConnect"
+					: "nonLoopbackConnect"
+			]++;
+		} catch {
+			counts.refusalReasons.malformed++;
+		}
 		try {
 			const traceId = getTraceId({
 				headers: _request.headers,
@@ -144,13 +166,50 @@ export async function createFixtureTraceTransport({
 		server.listen(0, "127.0.0.1", resolve);
 	});
 	let closed = false;
+	let initialization;
+	const snapshot = () => ({
+		...counts,
+		refusalReasons: { ...counts.refusalReasons },
+	});
 	return {
 		wire,
 		browserContextOptions: {
 			proxyServer: `http://127.0.0.1:${server.address().port}`,
 			proxyBypassList: ["<-loopback>"],
 		},
-		snapshot: () => ({ ...counts }),
+		finishBrowserInitialization(evidence) {
+			if (
+				initialization ||
+				evidence.complete !== true ||
+				evidence.requests !== 0 ||
+				evidence.responseBodyBytes !== 0
+			)
+				throw Error("Invalid or repeated empty browser initialization.");
+			initialization = structuredClone(evidence);
+			// Only completed pre-app initialization is reset; no app request may have started.
+			wire.begin(performance.now());
+		},
+		snapshot: () => {
+			const total = snapshot();
+			if (!initialization) return total;
+			return {
+				...total,
+				browserInitialization: structuredClone(initialization),
+				afterInitialization: Object.fromEntries(
+					Object.entries(total).map(([key, value]) => [
+						key,
+						key === "refusalReasons"
+							? Object.fromEntries(
+									Object.entries(value).map(([reason, count]) => [
+										reason,
+										count - initialization.refusalReasons[reason],
+									]),
+								)
+							: value - initialization[key],
+					]),
+				),
+			};
+		},
 		async close() {
 			if (closed) return;
 			closed = true;
