@@ -274,12 +274,16 @@ async function main() {
 		args.includes("--verify-journeys"),
 	);
 	if (
-		(args.includes("--condition") || args.includes("--route")) &&
+		(args.includes("--condition") ||
+			args.includes("--route") ||
+			args.includes("--mode")) &&
 		!args.includes("--verify-journeys")
 	)
 		fail(
 			"Cohort filters are permitted only for journey verification, never controlled measurement.",
 		);
+	if (args.includes("--mode") && !visitModes.includes(option("--mode")))
+		fail("Use a known diagnostic visit mode.");
 	if (args.includes("--validate-plan")) {
 		console.log(
 			"Fixture comparison plan is valid; runtime acceptance remains unfulfilled.",
@@ -615,6 +619,7 @@ async function main() {
 						continue;
 					for (const mode of modesFor(route)) {
 						let index = 0;
+						if (args.includes("--mode") && mode !== option("--mode")) continue;
 						const concurrency =
 							mode === "mutation-refresh"
 								? (route.mutation.concurrency ?? plan.concurrency)
@@ -1198,6 +1203,54 @@ async function measure(
 		sample.failureReadiness = error.fixtureReadiness ?? null;
 		sample.failureHeaderState = error.fixtureHeaderState ?? null;
 		sample.failureStep = error.fixtureStep ?? null;
+		if (error.fixtureAction === "table" && page && !page.isClosed())
+			sample.tableReadiness = await page
+				.evaluate(() => {
+					const headings = [
+						...document.querySelectorAll('[data-slot="card-title"]'),
+					].filter((node) => node.textContent.trim() === "Employee Work Hours");
+					const rows = headings.flatMap((node) => [
+						...(node
+							.closest('[data-slot="card"]')
+							?.querySelectorAll("tbody tr") ?? []),
+					]);
+					const cellCountHistogram = {},
+						numericHoursColumnHistogram = {};
+					let missingHoursCells = 0,
+						nonNumericHoursCells = 0;
+					for (const row of rows) {
+						const cells = row.querySelectorAll("td");
+						cellCountHistogram[cells.length] =
+							(cellCountHistogram[cells.length] ?? 0) + 1;
+						if (!cells[1]) {
+							missingHoursCells++;
+							continue;
+						}
+						const text = cells[1].textContent.trim();
+						if (!/^\d+(?:\.\d+)?h$/.test(text)) {
+							nonNumericHoursCells++;
+							continue;
+						}
+						const hours = Number(text.slice(0, -1));
+						if (Number.isFinite(hours))
+							numericHoursColumnHistogram[hours] =
+								(numericHoursColumnHistogram[hours] ?? 0) + 1;
+					}
+					return {
+						matchingTitleCount: headings.length,
+						tbodyRowCount: rows.length,
+						cellCountHistogram,
+						numericHoursColumnHistogram,
+						missingHoursCells,
+						nonNumericHoursCells,
+						skeletonCount: document.querySelectorAll('[data-slot="skeleton"]')
+							.length,
+						errorRegionCount: document.querySelectorAll(
+							'[role="alert"],[data-slot="alert"]',
+						).length,
+					};
+				})
+				.catch(() => null);
 		sample.failureKind =
 			error?.name === "TimeoutError" ? "timeout" : "journey-error";
 		sample.elapsedUntilFailureMs =
