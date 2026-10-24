@@ -1,239 +1,181 @@
 # Multi-instance analytics cache (#1472)
 
-The eight-stage results below are historical observations on source `4d8`.
-A later audit found that the native observer compared the SDK SERVER span kind
-against `2` (CLIENT), while the SDK value is `1`. OTLP's wire SERVER value `2` is
-separate and remains correct. The retained outputs and counts are unchanged, but
-the old successful reconciliation does not independently establish that every
-server request span drained. Corrected-observer runtime acceptance is pending;
-do not treat the old reports as final release proof.
+All eight finite stages passed on the operator-owned two-replica fixture using
+application source `e059597490b02c575c6e1cf64f1d83da712cff97`. The
+[corrected-observer evidence](evidence/1472-corrected-observer-cache.json) records
+139 observations, including one cleanup diagnostic, and 27,776 application database
+wire calls matched exactly to SDK starts, SDK ends and received query spans.
+Every accepted epoch closed on both replicas with no pending, late or unattributed
+work. This is local functional acceptance, not a controlled timing comparison.
 
-Eight finite functional stages passed on the operator-owned two-replica fixture.
-The immutable production artifact is application commit
-`4d8bdb1d477cd02888565816b0fb96f85dc13b71`. The
-[numerical evidence](evidence/1472-multi-instance-cache.json) contains 138
-observations and 28,127 application database wire calls matched exactly to SDK
-starts, SDK ends and received query spans. Earlier failed attempts remain failed.
+The user authorized a local deployment because production access was unavailable.
+Production topology/CDN, capacity, mixed-version rollout, route/clock p95 and full
+JavaScript/Flight savings remain unverified. A later employee-form fix requires
+its own build and release checks; this evidence remains pinned to `e059`.
 
-This establishes local fixture behavior. Production topology/CDN access was
-unavailable; the user explicitly authorized this local deployment. No controlled
-route/clock p95, full JavaScript/Flight byte saving or production capacity benefit
-is claimed. The later integration includes additional employee-lifecycle/schema
-changes and needs its own final build and runtime release checks.
+## Deployment and identity
 
-## Final artifact follow-up: prepared, runtime blocked
+Two independent host Next.js 16.4.0 production processes share a read-only compiled
+artifact behind owned Docker HAProxy 2.8 at `http://localhost:50754`. PostgreSQL 16,
+Valkey and object storage use separately owned Docker containers. Each web process
+keeps its ten-connection pool. Fixture-only `experimental.isrFlushToDisk=false`
+prevents shared artifact writes. The installed Cache Components handler retains
+its default 50 MiB process memory budget per replica; Valkey remains an application
+dependency, not a configured shared Next.js cache backend.
 
-The corrected observer build is now source
-`e059597490b02c575c6e1cf64f1d83da712cff97`, with a successful production CI build.
-Of the same 12 selected files, 11 are byte-identical to `ac2`; only native
-coverage changed, importing SDK `SpanKind.SERVER` for start/end accounting.
-[The corrected preparation record](evidence/1472-corrected-observer-preparation.json)
-contains the hashes and actual immutable artifact manifest/BUILD_ID. No runtime
-requests were made during this preparation.
+Each replay verifies HAProxy's actual instance response header. Source/API pin,
+required-server-files SHA256 and Next BUILD_ID are checked together; BUILD_ID is
+stable across builds and is insufficient alone. Browser traffic is allowed only
+to the fixture origin and exact owned storage origin. Original, pristine primary
+and SDK fixtures were excluded. Generated credentials, cookies, action bodies and
+employee IDs stay private or in memory.
 
-This concrete observer gap justifies replaying **all eight** existing finite
-stages on the new `final-corrected-multi-runtime` fixture, superseding the earlier
-three-stage proposal below. The parent must first create the fresh normal-schema
-clone, initialize projections, launch separate observers/apps and authenticate
-synthetic actors, then grant an exclusive runtime window. Run `fill`, `mutation`,
-`scope`, `concurrency`, `expiry`, `outage`, `interactive-clock`, `restart`
-sequentially, stopping on an incomplete native or transport proof. Preserve old
-reports separately; no old successful stage substitutes for corrected drainage.
-No new framework, backend or cache business changes are proposed.
+The corrected observer uses SDK `SpanKind.SERVER === 1` when counting active
+request spans. Serialized OTLP SERVER remains 2 in the collector. All eight stages
+were rerun on this corrected binary, rather than promoting the earlier observer's
+results. The [preparation record](evidence/1472-corrected-observer-preparation.json)
+contains source component comparisons and actual build fingerprints. Eleven of
+12 selected files match the preceding `ac2` artifact; only native coverage changed.
+This selected-file comparison does not establish transitive dependency equality.
 
-The parent must pre-arm the existing A-only restart watcher immediately before
-the last stage. The prepared scratch copy
-`watch-restart-corrected-owned-a.ps1` changes only the proven watcher's fixture
-directory and frozen source constants. After the new apps exist, initialize its
-handshake file with a non-ready phase before arming. It then snapshots the actual
-A PID/port, waits for a newly written ready handshake, verifies source, unchanged
-PID, owned listener and immutable Next start command, and relaunches only A using
-the same fixture CLI. The parent retains that process; B and both collectors
-remain untouched. The watcher has been syntax-checked, not executed or armed.
+## Actual caller results
 
-### Earlier uncorrected artifact comparison
-
-An offline comparison of source `4d8bdb1d477cd02888565816b0fb96f85dc13b71`
-against compiled candidate `ac2fb11334b2fac88144dd405e39a15bd988d29c` found all
-12 selected cache, admission, calculation and observer files byte-identical.
-[The preparation record](evidence/1472-final-source-preparation.json) stores both
-SHA256 values and the candidate artifact fingerprint. This is a selected-file
-comparison, not proof that every transitive dependency or generated artifact is
-equivalent. In particular, the observer bug exists in both versions.
-
-The earlier proposal was: after the application owner fixes the observer and the parent admits a new
-immutable build, rerun the existing `fill`, `mutation` and `scope` stages
-sequentially on the parent's `final-multi-instance-runtime` fixture. These cover
-all three real callers, independent cold/warm reads on both replicas, two
-organizations, manager scope, an accepted A write changing B before TTL,
-unrelated tenant hits, scope reduction and denial before native get. Each stage
-still requires exact independent native epochs and strict browser transport.
-Use the newly admitted full source pin, rather than silently reusing `ac2`.
-
-Historical expiry, stampede, outage, clock and restart results remain attached to
-their original source and observer. This targeted smoke will not establish a new
-eight-stage matrix or retroactively repair historical drain evidence. The parent
-must decide any additional release reruns after admitting the observer fix.
-During this preparation there were no HTTP, database or cache requests, no app
-restarts, no new services and no changes to original or pristine fixtures.
-
-## Observed deployment
-
-The fixture uses two independent host Next.js 16.4.0 production processes behind
-an owned Docker HAProxy 2.8 frontend at `http://localhost:50754`. PostgreSQL 16,
-Valkey and object storage run in separately owned Docker containers. Each web
-process retains its ten-connection database pool. Images and artifact manifest
-hashes are recorded in the evidence; generated credentials and session data are
-private. There is no CDN in this topology.
-
-HAProxy supplies the actual server-name response header. A fixture-only request
-header selects A or B and is stripped before application dispatch; unpinned
-requests use round robin. Every measured replay verifies the actual response
-header. Both processes share one read-only compiled artifact, with fixture-only
-`experimental.isrFlushToDisk=false`. The installed Cache Components handler and
-its 50 MiB default memory limit per process remain unchanged. Valkey is an
-application dependency, not a configured shared Next.js cache backend.
-
-The actual source/API pin and required-server-files SHA256 are checked in addition
-to Next BUILD_ID, which is stable across these builds and is insufficient alone.
-The artifact advertises public origin 58792; browser traffic is allowed only to
-50754 and the exact owned storage origin. No unexpected origin is forwarded.
-The pristine primary-timing clone and original application/database were excluded.
-
-## Real caller results
-
-Requests were captured from the actual annual UI controls and retained only in
-memory. The same captured public Server Actions were exercised on both replicas
-and under different effective sessions. Large-admin output was 200 employees /
-417,600 hours, manager output 99 / 206,712, and the other organization 8 / 16,704.
-Overtime contained 53 weeks with zero baseline overtime.
+Requests came from real annual UI controls and were captured only in memory.
+The large administrator returned 200 employees/417600hours, the manager 99/206712,
+and the other organization's administrator 8/16704. Overtime contained 53 weeks with
+zero baseline overtime.
 
 | Reader | Cold SQL / rows, per replica | Warm SQL / rows, per replica |
 | --- | --- | --- |
-| Work hours | 66 / 105,615 | 12 / 207 |
-| Team performance | 66 / 105,615 | 12 / 207 |
-| Overtime | 66 / 53,415 | 12 / 207 |
+| Work hours | 66 /105615 | 12 /207 |
+| Team performance | 66 /105615 | 12 /207 |
+| Overtime | 66 /53415 | 12 /207 |
 
-These are measured caller counts, including fresh admission and dependency
-metadata. They are not route latency percentiles.
+These measured counts include fresh admission and dependency metadata; they are
+not route latency percentiles.
 
-| Stage | Verified behavior |
-| --- | --- |
-| Fill | All three readers independently miss then hit on A and B; effective user, organization and manager scope remain distinct. |
-| Accepted mutation | An actual public holiday DELETE served by A changes all three B readers before TTL; the other organization's A/B entries remain hits. |
-| Scope | Manager membership changes 99 to 98 with exact returned IDs compared privately on B. Reporting-grant reduction changes the lookup; base-role reduction denies all three callers before native get. Scope and roles are restored. |
-| Expiry | Each reader waits a real 62 seconds, then misses and repeats as a hit on both nodes. Hits do not renew the lifetime. |
-| Concurrency | Eight requests per node require one computation per node: 150 SQL calls, matching one cold control plus seven warm admission paths. Results are equivalent. |
-| Outage | Eight real A get faults use 96 SQL calls / 1,656 rows, with no raw recomputation fallback. B remains healthy; unauthorized callers never reach the failed handler. Removing the flag gives an immediate A hit. |
-| Interactive clock | Twelve actual public clock-in/out commands succeed. All six loaded commands dispatch while analytics responses remain in flight; commands use zero derived-cache hits/misses. Authoritative cleanup leaves the synthetic user clocked out. |
-| Restart | A parent-owned watcher replaces only A within the fixed window. A returns a cold 66-query result while B retains its 12-query hit before TTL. Separate native epochs handle A's reset counters. |
+| Stage | Observations | Native application queries A / B |
+| --- | --- | --- |
+| Fill | 30 | 2159 /1211 |
+| Accepted mutation | 16 | 2554 /1627 |
+| Scope | 21 | 1563 /1497 |
+| Concurrency | 18 | 2475 /1554 |
+| Expiry | 18 | 2133 /1392 |
+| Outage | 7 | 823 /338 |
+| Interactive clock | 25 | 3116 /4237 |
+| Restart | 4 | pre603/416; post66/12 |
 
-Holiday/category assignment and manager/custom-role changes used explicitly
-identified synthetic fixture setup. The holiday CREATE and DELETE were actual
-accepted HTTP commands. Canonical work records were never edited directly;
-clock records were created/completed only through real public header controls.
-All fault flags were removed, and fixture role/assignment setup was restored.
+All three readers independently missed then hit on both nodes. An accepted public
+holiday DELETE served by A changed all three B readers before 60 seconds; unrelated
+organization entries remained hits on A and B. Synthetic holiday/category
+assignment was explicit fixture setup, and setup rows were removed afterward.
+Canonical work records were not rewritten directly.
 
-Clock usable-state observations were 145.56–622.42 ms for the six controls and
-171.59–2,236.89 ms for the six loaded commands. These finite cases demonstrate
-successful interaction, not a tail-latency comparison; the separate mixed-load
-release experiment remains responsible for that claim.
+Manager assignment reduction 99→98 compared actual returned IDs privately. Grant
+reduction changed the lookup. Base-role reduction denied all three callers before
+native get, then exact roles and assignments were restored. Each reader waited a
+real 62 seconds and then missed and repeated as a hit on both nodes.
+
+Eight concurrent requests per node used 150 SQL calls, matching one cold calculation
+plus seven warm admission paths. Work/team returned 107064 rows per node; overtime
+returned 54864. Results were equivalent, with one calculation per node, two total.
+
+Eight real native-get failures on A used 96 SQL calls/1656rows without raw
+recomputation. Cache outcomes stayed unknown during those errors. B retained its
+12-query hit; an unauthorized request stopped before the failed handler. Removing
+the fault flag immediately restored A's hit. Both fault flags were absent at release.
+
+The accepted clock stage completed 12 real public header commands with known
+outcomes. All six loaded commands dispatched while analytics HTTP was in flight,
+and clock commands used zero derived-cache hits/misses. Authoritative cleanup
+left the actor clocked out. Usable-state observations were 160.73–286.21ms for the
+six controls and 176.47–2315.52ms under load. These finite observations do not
+establish comparative p95. Completed synthetic clock work remains in the mutable
+fixture; the pristine timing fixture was not used.
+
+A parent-owned, pre-armed watcher replaced only A. Its new process returned a cold
+66-query/105615-row result while B retained a 12-query/207-row hit before TTL.
+Separate pre/post native epochs handled A's reset counters. No different-binary
+rolling deployment was tested.
+
+## Cleanup diagnosis and retained failures
+
+The first corrected full clock run completed 12 known successful commands but
+failed B's native closure. Its numerical report remains failed; detailed native
+close proof had not yet been retained. The operator was then changed to preserve
+that proof verbatim with elapsed time, without changing validation or forwarding.
+
+A one-pair diagnostic reproduced the failure: the authoritative cleanup reload
+returned while six finite HTTP responses remained pending. Closing the browser
+then reached the native 10-second drain cap despite balanced query/acquisition/
+cache counts and no unknown work. Balanced queries alone were insufficient.
+
+The first drain correction exposed a second operator mistake in another full run:
+an explicit prefetch error triggered immediate cleanup failure while finite
+responses were still pending. That full run also remains failed, despite all 12
+clock commands succeeding. Both original full failures and the failed diagnostic
+are retained in the evidence.
+
+The corrected operator always finishes already-started finite and explicit-header
+prefetch responses before applying errors, with one-second quiet windows and a
+fixed10-second cap. Mandatory errors and unfinished/capped work fail. Existing
+explicit prefetch errors remain separately classified; no hostname or reset-code
+ignore was added. Real HTTP tests prove the same cancellation is rejected when
+mandatory and retained separately when an explicit prefetch header identifies it.
+Both cases wait for other pending responses before cleanup continues.
+
+The causal one-pair replay then passed with three explicit prefetch errors
+retained, zero mandatory errors/pending work, and complete native/transport proof.
+The final full clock run passed with two prefetch errors retained and no pending
+prefetches. Every native request span still had to drain, and refused requests or
+upstream failures still fail. The application and observer were unchanged during
+these operator corrections.
+
+Earlier source4d8 results remain in
+[the historical evidence](evidence/1472-multi-instance-cache.json). Their numerical
+outputs/counts are preserved, but the SDK-kind error means they do not independently
+establish corrected SERVER-span drainage. They are not final release proof.
 
 ## Backend and resource decision
 
-Retain installed per-process memory for the observed topology. Fresh committed
-revision keys made writes and scope reductions effective on the other instance
-without a shared cache store or global tenant eviction. Concurrent fills were
-bounded to two computations total, one per node. A failed cache read did not
-produce a database surge, the other node remained usable, and process replacement
-recovered correctly. The evidence does not justify adding a custom Redis handler.
+Retain installed per-process memory for this observed topology. Fresh committed
+revision keys made A writes and reduced visibility effective on B without a
+shared cache store. Concurrent computation stayed bounded, a failed cache read
+produced no raw-query surge, and replacing A preserved B's warm entry. The evidence
+does not justify a custom Redis handler or repurposing worker storage.
 
-The configured default Cache Components entry budget is 50 MiB per process,
-100 MiB across these two replicas. Main-thread resource sampling observed whole
-process RSS peaks of 1,875.2 MiB on A and 1,268.9 MiB on B. RSS/heap include
-framework/worker memory and transient range processing; they do not isolate cache
-allocation or establish a production capacity budget. Early fill/mutation heap
-samples preceded worker isolation and are excluded from this resource decision.
+The configured entry budget is100 MiB across both processes. Whole-process peak
+RSS was 2081.3MiB on A and 1684.8MiB on B, including intervening diagnostics. RSS/heap
+include framework/workers and transient range processing; they do not isolate
+cache allocation or establish production capacity.
 
-The cache key includes `recent-analytics-v1`, organization, effective user/current
-visibility, normalized request parameters and committed dependency revisions.
-Authorization remains request-fresh before lookup. No authentication, clock,
-billing or operational-approval lifetime was extended. A semantics change must
-update the calculation version. There is no cross-build persisted Cache
-Components store: replacing a process starts empty. Operator tests reject a
-changed source pin, manifest digest or build ID before starting an app. The
-fixture did not run two different application binaries alongside each other;
-mixed-version rolling deployment remains unverified.
-
-## Observation and retained failures
-
-Each replica has an independent V2 collector/native control. Every prerequisite,
-measured, background and cleanup trace is registered at both nodes before I/O.
-Same-ID rows from the two collectors are retained separately and added, never
-reduced to one matching row. Closing drains native work and flushes export. Each
-accepted epoch requires exact per-node wire = SDK starts = SDK ends = all received
-query totals, zero pending queries/active traces, and no lost, late or unattributed
-work. Cache outcomes remain unknown during injected get errors; independent fault
-counters prove that boundary.
-
-The shared context proxy includes service-worker traffic; service workers stay
-enabled. A fresh owned browser profile disables search prediction/suggestions and
-Chrome Autofill server communication. Only a fresh empty `about:blank` context
-may complete the prospective two-second quiet / ten-second capped initialization,
-with zero application requests/bytes/cache warming. Startup refusals remain
-recorded separately. Every post-initialization refusal or forwarding error fails;
-total/startup/after counter arithmetic is checked.
-
-Retained failures include the early zero-query adapter attempt, the pre-policy
-fill with 10/10/14 refused requests, one mutation forwarding failure of unknown
-historical cause, inactive external-hook attempts, and the manual restart whose
-new process control appeared 54.249 seconds after ready, beyond the 45-second
-window. No failed attempt is relabeled as a pass.
-
-The external probe initially supplied the wrong argument to installed
-`isBuiltInCacheHandler`, then exposed a second issue: inherited worker preloads
-shared the PID and overwrote main-thread counters. A real worker regression
-reproduced that overwrite. The corrected probe wraps the same native handler
-object, runs only on the main thread and verifies current PID/thread ownership.
-Real HTTP tests distinguish observed downstream cancellation from genuine
-connection/response resets, including a reused GET socket. Canceled mandatory
-bodies still censor full resource cost; no error-code-only ignore or retry was
-introduced. The earlier mutation error did not recur and remains unexplained.
+Keys include `recent-analytics-v1`, organization, effective user/current visibility,
+normalized request and committed dependency revisions. Authorization remains fresh
+before lookup. Authentication, billing and operational clock lifetimes were not
+extended. Semantic changes must update the calculation version. Process memory
+has no persisted cross-build cache; actual different-source rollout remains untested.
 
 ## Reproduction and ownership
 
-All long-lived collectors, replicas and containers belong to the parent/operator.
-Keep private dumps, cookies, manifests and logs out of public artifacts. Use a new
-private directory and the exact compiled source commit:
+The parent owns all long-lived processes and containers. Use a fresh normal-schema
+fixture and immutable artifact; do not promote an old migration ledger. Keep all
+other A/B traffic out of each native epoch. From the operator worktree:
 
 ```powershell
-pnpm --config.verifyDepsBeforeRun=false performance:multi prepare <new-private> <candidate-private> <original-private> <compiled-app> <compiled-source>
-pnpm --config.verifyDepsBeforeRun=false performance:multi migrate <new-private>
-pnpm --config.verifyDepsBeforeRun=false performance:collector --port 0 --require-registration --observer-control <new-private>/observer-a/native-control-private.json --control <new-private>/observer-a/collector-control.json --out <new-private>/observer-a/backend-metrics.json
-pnpm --config.verifyDepsBeforeRun=false performance:collector --port 0 --require-registration --observer-control <new-private>/observer-b/native-control-private.json --control <new-private>/observer-b/collector-control.json --out <new-private>/observer-b/backend-metrics.json
-pnpm --config.verifyDepsBeforeRun=false performance:multi proxy <new-private>
-pnpm --config.verifyDepsBeforeRun=false performance:multi replica <new-private> a
-pnpm --config.verifyDepsBeforeRun=false performance:multi replica <new-private> b
-pnpm --config.verifyDepsBeforeRun=false performance:multi authenticate <new-private>
-pnpm --config.verifyDepsBeforeRun=false exec node scripts/performance/multi-instance-suite.mjs plan <new-private> <compiled-source>
+pnpm --config.verifyDepsBeforeRun=false exec node scripts/performance/multi-instance-suite.mjs plan <private-directory> <full-compiled-source>
 ```
 
-Run each finite stage sequentially by replacing `plan` with `fill`, `mutation`,
-`scope`, `concurrency`, `expiry`, `outage`, `interactive-clock`, then `restart`.
-Keep other requests off both replicas during each global epoch. Pre-arm the
-parent-owned restart watcher for a NEW ready handshake; it must replace only A
-within 45 seconds while B, collectors and proxy remain unchanged. Do not extend
-the test past TTL to manufacture a surviving warm hit.
+Run sequentially by replacing `plan` with `fill`, `mutation`, `scope`, `concurrency`,
+`expiry`, `outage`, `interactive-clock`, then `restart`. Stop on incomplete native
+or strict transport evidence. `clock-diagnostic` is a one-pair causal diagnostic,
+not a substitute for the full clock stage. Preserve failed reports before retry.
 
-Preparation copies only the existing guarded synthetic dump, never queries or
-redumps the original, and restores into a new owned database. Migration verifies
-actual Docker ownership/port/database and runs normal `migrate-with-lock.js` /
-Drizzle pending migrations. It never runs a schema-resetting verifier. The frozen
-4d8 fixture applied its original 0284 absence index; later integration renumbers
-that index to 0288 after other migrations. New application histories use NEW
-clones from the original dump; old frozen ledgers are not promoted. The parent
-has prepared those separate latest-source fixtures.
+Before the final restart stage, the parent initializes a non-ready handshake and
+pre-arms the verified A-only watcher. The stage writes a new ready handshake only
+after its preceding native epoch closes. The watcher checks current PID, listener,
+source and artifact command, then relaunches only A; B and collectors stay intact.
+The operator never starts a retained app process itself.
 
-Cleanup verifies every actual container label before removing only owned
-containers, and runs only after the parent stops its retained processes. Existing
-services remain available for the separate #1473 ingress checks.
+All epochs and child browser contexts were closed before releasing the fixture.
+Subsequent parent builds and runtime checks remain separate from this exact-source
+functional acceptance. No ticket was closed automatically.
