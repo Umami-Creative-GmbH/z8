@@ -6,6 +6,7 @@ import { readdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
+import { readCollectorCounters } from "./collector-client.mjs";
 import { launchFixtureBrowser } from "./fixture-browser.mjs";
 import { observeIngress, readDashboardDom } from "./ingress-browser.mjs";
 import {
@@ -596,6 +597,13 @@ export async function runIngress(
 		diagnosticOnly: passiveColdDiagnostic,
 		clockRequests: [],
 	};
+	const screenshot = async (stage) => {
+		if (process.env.Z8_INGRESS_SCREENSHOTS !== "1" || !page) return;
+		const name = `ingress-${viewport}-${mode}-${scenario}-${stage}-${Date.now()}-${randomBytes(4).toString("hex")}.png`;
+		await page.screenshot({ path: join(directory, name), fullPage: false });
+		observations.privateScreenshots ??= {};
+		observations.privateScreenshots[stage] = name;
+	};
 	const stop = () => {
 		void browser?.close().catch(() => {});
 		void holder.end().catch(() => {});
@@ -826,6 +834,7 @@ export async function runIngress(
 			"Actual useful response content was not observed through the proxy before secondary completion.",
 		);
 		observations.earlyNetwork = earlyNetwork;
+		await screenshot("loading");
 		// Keyboard opening proves the actual full SiteHeader trigger is interactive,
 		// without issuing a clock command or changing canonical work.
 		await (
@@ -840,7 +849,84 @@ export async function runIngress(
 			timeout: 3000,
 		});
 		observations.clockPopoverOpenedWithKeyboard = true;
+		await page.waitForFunction(
+			() =>
+				document.activeElement?.closest(
+					'[data-slot="popover-content"][data-open]',
+				),
+			{ timeout: 2000 },
+		);
+		observations.clockOpenFocus = (await readDashboardDom(page)).focus;
 		await page.keyboard.press("Escape");
+		const escapeClosed = await page
+			.waitForSelector('[data-slot="popover-content"][data-open]', {
+				hidden: true,
+				timeout: 500,
+			})
+			.then(
+				() => true,
+				() => false,
+			);
+		observations.clockKeyboardEscape = { autofocusClosed: escapeClosed };
+		if (!escapeClosed) {
+			observations.clockKeyboardEscape.tooltipCount = await page.evaluate(
+				() => document.querySelectorAll('[role="tooltip"]').length,
+			);
+			// Distinguish a nested location tooltip from root popover dismissal. Focus only;
+			// never activate the primary clock command during this read experiment.
+			let primaryFocused = false;
+			for (let tab = 1; tab <= 8; tab++) {
+				await page.keyboard.press("Tab");
+				primaryFocused = await page.evaluate(() =>
+					Boolean(
+						document.activeElement?.closest(
+							'[data-slot="popover-content"][data-open]',
+						) && document.activeElement.textContent.trim() === "Clock In",
+					),
+				);
+				if (primaryFocused) {
+					observations.clockKeyboardEscape.tabsToPrimary = tab;
+					break;
+				}
+			}
+			assert(
+				primaryFocused,
+				"Keyboard Tab could not reach the clock popover primary control.",
+			);
+			await page.keyboard.press("Escape");
+			observations.clockKeyboardEscape.primaryFocusClosed = await page
+				.waitForSelector('[data-slot="popover-content"][data-open]', {
+					hidden: true,
+					timeout: 1000,
+				})
+				.then(
+					() => true,
+					() => false,
+				);
+			if (!observations.clockKeyboardEscape.primaryFocusClosed) {
+				await (
+					await page.$(
+						'header [data-clock-status="ready"] button[aria-label="Clock In"]',
+					)
+				).focus();
+				await page.keyboard.press("Enter");
+				await page.waitForSelector('[data-slot="popover-content"][data-open]', {
+					hidden: true,
+					timeout: 1000,
+				});
+				observations.clockKeyboardEscape.triggerToggleClosed = true;
+			}
+		}
+		await page.waitForFunction(
+			() =>
+				document.activeElement?.closest('header [data-clock-status="ready"]'),
+			{ timeout: 1000 },
+		);
+		observations.clockEscapeFocus = (await readDashboardDom(page)).focus;
+		assert(
+			observations.clockEscapeFocus.kind === "header-clock",
+			"Closing the clock popover did not return focus to its header trigger.",
+		);
 		if (scenario === "failed") {
 			observations.cancelStartedMs = performance.now() - network.started;
 			observations.cancelAcknowledged = [];
@@ -860,6 +946,7 @@ export async function runIngress(
 			);
 			observations.errorObservedMs = performance.now() - network.started;
 			observations.failed = await readDashboardDom(page);
+			await screenshot("error");
 			assert(
 				observations.failed.usefulSibling && observations.failed.clockReady,
 				"Failed secondary read hid completed content.",
@@ -878,6 +965,7 @@ export async function runIngress(
 			await (
 				await waitVisible(page, 'button[aria-label="Retry Upcoming Shifts"]')
 			).focus();
+			observations.retryKeyboardFocus = (await readDashboardDom(page)).focus;
 			await page.keyboard.press("Enter");
 		}
 		await page.waitForFunction(
@@ -889,6 +977,11 @@ export async function runIngress(
 		);
 		await navigation;
 		observations.after = await readDashboardDom(page);
+		await screenshot("completed");
+		if (scenario === "failed") {
+			await page.keyboard.press("Tab");
+			observations.nextTabAfterRecovery = (await readDashboardDom(page)).focus;
+		}
 		observations.releasedAtMs = releasedAt;
 		observations.network = network.snapshot();
 		observations.requestCount = requestCount;
@@ -909,6 +1002,7 @@ export async function runIngress(
 		observations.failureObservedMs = network
 			? performance.now() - network.started
 			: null;
+		await screenshot("failed-acceptance").catch(() => {});
 		if (
 			!passiveColdDiagnostic &&
 			page &&
@@ -970,6 +1064,17 @@ export async function runIngress(
 		clearTimeout(timer);
 		if (release) await release().catch(() => {});
 		await holder.end().catch(() => {});
+		if (observation)
+			observations.nativeBeforeContextClose = Object.fromEntries(
+				await Promise.all(
+					["a", "b"].map(async (node) => [
+						node,
+						await readCollectorCounters(inputs.controls[node]).catch(() => ({
+							available: false,
+						})),
+					]),
+				),
+			);
 		await network?.close().catch(() => {});
 		if (observation)
 			await finishObservation(
@@ -977,6 +1082,17 @@ export async function runIngress(
 				observedContext ? [observedContext] : [],
 				measuredVisits,
 				observations,
+			);
+		if (observation)
+			observations.nativeAfterContextClose = Object.fromEntries(
+				await Promise.all(
+					["a", "b"].map(async (node) => [
+						node,
+						await readCollectorCounters(inputs.controls[node]).catch(() => ({
+							available: false,
+						})),
+					]),
+				),
 			);
 		await browser?.close().catch(() => {});
 		try {

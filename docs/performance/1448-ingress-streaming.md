@@ -53,10 +53,10 @@ for the failed original proof. Four accidentally overlapping diagnostic attempts
 are explicitly excluded from acceptance. The initial fourteen-case sequential
 matrix is unaffected by that operator error.
 
-Observed loading/error/completed rectangles changed height (desktop example:
-192/198/238 px). Geometry review remains open; no stable-layout or native-paint
-claim follows from these chunk and DOM observations. Parent-owned services were
-preserved and each scoped layout/feature/admission variant was restored.
+The initial loading/error/completed rectangles changed height (desktop example:
+192/198/238 px). Later functional captures reviewed those differences directly,
+as described below. Parent-owned services were preserved and each scoped
+layout/feature/admission variant was restored.
 
 The optional `passive-cold-20s` diagnostic, restricted to desktop first-document
 held reads, records the original nine-second state, continues passive observation
@@ -74,6 +74,48 @@ queries reconciled exactly and strict transport passed. This proves independence
 in that diagnostic; it does not erase the earlier nine-second failures or satisfy
 the controlled cold-clock latency comparison. No app fix or deadline relaxation
 was justified by this observation.
+
+## Completed local geometry, focus and mobile checks
+
+Further finite checks on the same `ac2fb11` artifact completed the mobile MFA and
+SSO cases with a positive authorized clock control, the exact fail-closed 400
+response and no protected data. Both reported complete paired counts and strict
+transport under their original observer version. The policy-selection reason
+remains distinct from the observed functional denial.
+
+Private screenshots of loading, actual query-cancellation error and completed
+content were inspected at 1280×900 and 390×844. Header/main/Quick Stats rectangles
+and the secondary card's x/y/width remained unchanged across those states, with
+zero horizontal document overflow. The desktop card heights were 192/198/238 px;
+the mobile error wrapped to 218 px between 192 px loading and 238 px completed.
+Header controls remained inside the visible header and the sibling did not move.
+This is a local two-widget layout review, not a claim of equal card heights, a
+measured native CLS score, or coverage of additional populated widget rows.
+
+The loading region exposed one busy marker and one status marker; both disappeared
+after completion. Keyboard Enter opened the real header clock without a command.
+The initial location-control focus consumed the first Escape without closing the
+root popover; one real Tab reached the primary Clock In control, and Escape then
+closed it and restored focus to the header trigger. No primary clock action was
+activated. Header focus survived an unrelated held widget completing.
+
+In both viewport sizes, the local error's Retry button was visible and focusable;
+keyboard Enter recovered the real Upcoming Shifts read. The removed retry button
+left `document.activeElement` on the body, while the next real Tab continued to the
+same secondary card's View schedule link. This records the browser's observed
+sequential focus behavior and does not claim that a removed button retains focus.
+Private screenshots are not published; evidence retains only their basenames and
+bounded rectangles/focus categories.
+
+A finite reproduction of the earlier mobile native mismatch reported A189/B0
+exact counts with zero pending work. The historical B43/0 failure remains failed.
+Investigation independently found that the old native observer used SDK span kind
+2 (CLIENT) for server draining, whereas SDK SERVER is 1. An offline probe using the
+installed SDK enum showed drain resolving while an SDK server span was still
+active. The assigned observer owner is fixing this separately; OTLP wire SERVER=2
+is a different enum and remains correct. All runtime rows here retain their old
+`ac2fb11` observer version. New observer/artifact validation is required and none of
+these old numeric proofs is retroactively upgraded by that fix.
 
 ## V2 observation checkpoint
 
@@ -232,7 +274,8 @@ counted as passing or skipped. Lightweight CLI safety cases have passed:
 numeric-only plan, production-origin refusal and source mismatch/pre-repair
 artifact refusal. The one-line #1472 launcher import repair passed its existing
 two CLI safety cases. Node syntax checks pass. The local results above leave the
-cold-header, complete native/resource, geometry and deployed CDN gates open.
+cold-header latency, complete native/resource and deployed CDN gates open. Local
+geometry/focus/mobile functional observations are complete within the scope above.
 
 If useful content fails to arrive through the proxy before release, retain that
 failed evidence. Compare the identical controlled request directly against the
