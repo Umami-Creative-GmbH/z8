@@ -22,6 +22,7 @@ import {
 } from "@/stores/organization-settings-store";
 
 export interface OrganizationContext {
+	userId: string | null;
 	organizationId: string | null;
 	employeeId: string | null;
 	role: "admin" | "manager" | "employee" | null;
@@ -110,6 +111,7 @@ function useOrganizationQuery(
 			: undefined;
 	const role = data?.employee?.role ?? null;
 	const context: OrganizationContext = {
+		userId: data?.userId ?? null,
 		organizationId: data?.employee?.organizationId ?? null,
 		employeeId: data?.employee?.employeeId ?? null,
 		role,

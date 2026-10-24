@@ -2,9 +2,15 @@
 
 import { useIsFetching } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import {
+	type ReactNode,
+	useEffect,
+	useState,
+	useSyncExternalStore,
+} from "react";
 import { BirthdayRemindersWidget } from "@/components/dashboard/birthday-reminders-widget";
 import { CoveringForWidget } from "@/components/dashboard/covering-for-widget";
+import type { DashboardLayoutBootstrap } from "@/components/dashboard/dashboard-types";
 import { HydrationWidget } from "@/components/dashboard/hydration-widget";
 import { ManagedEmployeesWidget } from "@/components/dashboard/managed-employees-widget";
 import { ManagerTodayWidget } from "@/components/dashboard/manager-today-widget";
@@ -126,10 +132,12 @@ function DashboardWidgetLayout({
 	visibleWidgetOrder,
 	onReorder,
 	resetOrder,
+	widgetSlots,
 }: {
 	visibleWidgetOrder: WidgetId[];
 	onReorder: (newOrder: WidgetId[]) => void;
 	resetOrder: () => void;
+	widgetSlots?: Partial<Record<WidgetId, ReactNode>>;
 }) {
 	const renderedWidgets = useVisibleWidgets();
 	const fetchingDashboardWidgets = useIsFetching({ queryKey: ["dashboard"] });
@@ -173,6 +181,13 @@ function DashboardWidgetLayout({
 					onReorder={onReorder}
 				>
 					{visibleWidgetOrder.map((widgetId) => {
+						if (widgetSlots?.[widgetId]) {
+							return (
+								<div key={widgetId} className="contents">
+									{widgetSlots[widgetId]}
+								</div>
+							);
+						}
 						const WidgetComponent = WIDGET_COMPONENTS[widgetId];
 						if (!WidgetComponent) return null;
 						return <WidgetComponent key={widgetId} />;
@@ -186,12 +201,18 @@ function DashboardWidgetLayout({
 	);
 }
 
-export function SectionCards() {
+export function SectionCards({
+	initialLayout,
+	widgetSlots,
+}: {
+	initialLayout?: DashboardLayoutBootstrap;
+	widgetSlots?: Partial<Record<WidgetId, ReactNode>>;
+} = {}) {
 	const { visibleWidgetOrder, onReorder, resetOrder, isLoading } =
-		useWidgetOrder();
+		useWidgetOrder(initialLayout);
 	const hasHydrated = useHasHydrated();
 
-	if (!hasHydrated || isLoading) {
+	if ((!initialLayout && !hasHydrated) || isLoading) {
 		return <SectionCardsSkeleton />;
 	}
 
@@ -201,6 +222,7 @@ export function SectionCards() {
 				onReorder={onReorder}
 				resetOrder={resetOrder}
 				visibleWidgetOrder={visibleWidgetOrder}
+				widgetSlots={widgetSlots}
 			/>
 		</WidgetVisibilityProvider>
 	);

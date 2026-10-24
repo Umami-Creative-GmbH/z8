@@ -16,7 +16,7 @@ export function DashboardHeaderCustomize({
 		onVisibilityChange,
 		resetOrder,
 		isLoading,
-	} = useWidgetOrder();
+	} = useWidgetOrder(undefined, { waitForServerLayout: true });
 
 	if (isLoading) {
 		return null;

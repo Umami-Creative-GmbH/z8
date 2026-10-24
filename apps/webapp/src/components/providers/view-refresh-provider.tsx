@@ -52,29 +52,53 @@ export function ViewRefreshProvider({ children }: { children: ReactNode }) {
 	const refresh = () => {
 		if (refreshing.current) return;
 		if (!navigator.onLine) {
-			toast.error(t("common.refreshDataFailed", "Could not refresh data. Please try again."));
+			toast.error(
+				t(
+					"common.refreshDataFailed",
+					"Could not refresh data. Please try again.",
+				),
+			);
 			return;
 		}
 		const href = window.location.href;
 		refreshing.current = true;
 		startTransition(async () => {
+			// Server-owned snapshots are refreshed by the RSC merge below. Stop local
+			// retries first so an older GET cannot replace that accepted snapshot.
+			await queryClient.cancelQueries({
+				predicate: (query) => query.meta?.viewRefresh === "server",
+			});
 			// allSettled keeps pending feedback until every visible source has finished.
 			const results = await Promise.allSettled([
-				queryClient.invalidateQueries({ refetchType: "active" }, { throwOnError: true }),
+				queryClient.invalidateQueries(
+					{
+						refetchType: "active",
+						predicate: (query) => query.meta?.viewRefresh !== "server",
+					},
+					{ throwOnError: true },
+				),
 				mutate(() => true),
 				...Array.from(handlers, (handler) => Promise.resolve().then(handler)),
 			]);
 			if (results.some((result) => result.status === "rejected")) {
-				toast.error(t("common.refreshDataFailed", "Could not refresh data. Please try again."));
+				toast.error(
+					t(
+						"common.refreshDataFailed",
+						"Could not refresh data. Please try again.",
+					),
+				);
 			}
 			// Next merges fresh server props while retaining client and scroll state.
-			if (window.location.href === href) startTransition(() => router.refresh());
+			if (window.location.href === href)
+				startTransition(() => router.refresh());
 		});
 	};
 
 	return (
 		<RefreshRegistrationContext value={register}>
-			<ViewRefreshContext value={{ refresh, isRefreshing }}>{children}</ViewRefreshContext>
+			<ViewRefreshContext value={{ refresh, isRefreshing }}>
+				{children}
+			</ViewRefreshContext>
 		</RefreshRegistrationContext>
 	);
 }
