@@ -513,3 +513,20 @@ it("does not fetch an optional vehicle list on intent when eager policy already 
 	await screen.findByText("You're currently clocked in");
 	expect(boundary.vehicles).not.toHaveBeenCalled();
 });
+
+it("does not promote a bootstrap identity into an authorized clocked-out action when fresh admission denies it", async () => {
+	boundary.status.mockResolvedValue({
+		hasEmployee: false,
+		employeeId: null,
+		isClockedIn: false,
+		activeWorkPeriod: null,
+	});
+	showClock();
+	await waitFor(() =>
+		expect(screen.queryByRole("button", { name: "Loading clock status" })).toBeNull(),
+	);
+	expect(screen.queryByRole("button", { name: "Clock In" })).toBeNull();
+	expect(screen.queryByRole("button", { name: "Clock Out" })).toBeNull();
+	expect(boundary.vehicleStatus).not.toHaveBeenCalled();
+	expect(boundary.projects).not.toHaveBeenCalled();
+});

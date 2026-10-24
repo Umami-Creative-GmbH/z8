@@ -47,11 +47,18 @@ vi.mock("@/db", async () =>
 	}),
 );
 
-import { organizationVehicle, vehicleUseAssignment, vehicleUseSetting } from "@/db/schema";
+import {
+	organizationVehicle,
+	project,
+	projectTask,
+	vehicleUseAssignment,
+	vehicleUseSetting,
+} from "@/db/schema";
 
 const { getClockVehicleUseStatus, getClockVehicleUseContext } = await import(
 	"@/app/[locale]/(app)/time-tracking/actions/clock-vehicle-use"
 );
+const { getTimeClockStatus } = await import("@/app/[locale]/(app)/time-tracking/actions");
 let fixture: LifecycleDatabaseFixture;
 let foreignOrganization: string;
 const periodId = randomUUID();
@@ -184,6 +191,12 @@ it.each(["mfa", "sso"])(
 		actor.ssoRequired = required === "sso";
 		expect(await getClockVehicleUseStatus()).toMatchObject({ success: false });
 		expect(await getClockVehicleUseContext()).toMatchObject({ success: false });
+		expect(await getTimeClockStatus()).toEqual({
+			hasEmployee: false,
+			employeeId: null,
+			isClockedIn: false,
+			activeWorkPeriod: null,
+		});
 		expect(
 			actor.queries.some((query) =>
 				/work_period|vehicle_use_setting|organization_vehicle/.test(query),
@@ -207,6 +220,12 @@ it.each(["inactive", "unapproved"])(
 		try {
 			expect(await getClockVehicleUseStatus()).toMatchObject({ success: false });
 			expect(await getClockVehicleUseContext()).toMatchObject({ success: false });
+			expect(await getTimeClockStatus()).toEqual({
+				hasEmployee: false,
+				employeeId: null,
+				isClockedIn: false,
+				activeWorkPeriod: null,
+			});
 			expect(
 				actor.queries.some((query) => /from "work_period"|from "organization_vehicle"/.test(query)),
 			).toBe(false);
@@ -221,3 +240,83 @@ it.each(["inactive", "unapproved"])(
 		}
 	},
 );
+
+it("preserves the ordinary own-work task and open-break payload in the current organization", async () => {
+	const [ownProject] = await fixture.db
+		.insert(project)
+		.values({
+			organizationId: fixture.organizationId,
+			name: "Clock project",
+			status: "active",
+			createdBy: fixture.ownerUserId,
+		})
+		.returning();
+	const [task] = await fixture.db
+		.insert(projectTask)
+		.values({
+			organizationId: fixture.organizationId,
+			projectId: ownProject.id,
+			name: "Clock task",
+			createdBy: fixture.ownerUserId,
+		})
+		.returning();
+	await fixture.pool.query(
+		"update work_period set project_id=$2,task_id=$3,break_started_at='2026-10-24T09:00:00Z',break_started_zone='Europe/Berlin',break_started_operation_id=gen_random_uuid() where id=$1",
+		[periodId, ownProject.id, task.id],
+	);
+	const foreign = await fixture.seedEmployee({ organizationId: foreignOrganization });
+	const foreignEntry = randomUUID(),
+		foreignPeriod = randomUUID();
+	await fixture.pool.query(
+		`insert into time_entry (id,employee_id,organization_id,type,timestamp,utc_offset_minutes,timezone,timezone_source,hash,created_by) values ($1::uuid,$2,$3,'clock_in','2026-10-24T08:00:00Z',0,'UTC','backfill',$1::text,$4)`,
+		[foreignEntry, foreign.employeeId, foreignOrganization, foreign.userId],
+	);
+	await fixture.pool.query(
+		`insert into work_period (id,employee_id,organization_id,clock_in_id,start_time,work_location_type,updated_at) values ($1,$2,$3,$4,'2026-10-24T08:00:00Z','office',now())`,
+		[foreignPeriod, foreign.employeeId, foreignOrganization, foreignEntry],
+	);
+	try {
+		expect(await getTimeClockStatus()).toEqual({
+			hasEmployee: true,
+			employeeId: fixture.employeeId,
+			isClockedIn: true,
+			activeWorkPeriod: {
+				id: periodId,
+				startTime: new Date("2026-10-24T08:00:00Z"),
+				currentTask: { id: task.id, name: "Clock task", state: "open", projectId: ownProject.id },
+				breakStartedAt: new Date("2026-10-24T09:00:00Z"),
+				breakStartedZone: "Europe/Berlin",
+			},
+		});
+	} finally {
+		await fixture.pool.query(
+			"update work_period set project_id=null,task_id=null,break_started_at=null,break_started_zone=null,break_started_operation_id=null where id=$1",
+			[periodId],
+		);
+	}
+});
+it("returns a genuine clocked-out payload only for an admitted employee with no live work", async () => {
+	actor.userId = fixture.ownerUserId;
+	expect(await getTimeClockStatus()).toEqual({
+		hasEmployee: true,
+		employeeId: fixture.ownerEmployeeId,
+		isClockedIn: false,
+		activeWorkPeriod: null,
+	});
+});
+it("denies a due but unmaterialized offboarding even while its employee row is still active", async () => {
+	const due = await fixture.seedEmployee();
+	await fixture.pool.query(
+		`insert into employee_departure (organization_id,employee_id,employment_period_id,mode,last_working_day,timezone,cutoff_at,created_by,request_id,request_fingerprint,revision,status) values ($1,$2,$3,'scheduled','2026-09-14','UTC','2026-09-15T00:00:00Z',$4,gen_random_uuid(),'t1469',1,'pending')`,
+		[fixture.organizationId, due.employeeId, due.employmentPeriodId, fixture.ownerUserId],
+	);
+	actor.userId = due.userId;
+	expect(await getTimeClockStatus()).toEqual({
+		hasEmployee: false,
+		employeeId: null,
+		isClockedIn: false,
+		activeWorkPeriod: null,
+	});
+	expect(await getClockVehicleUseStatus()).toMatchObject({ success: false });
+	expect(await getClockVehicleUseContext()).toMatchObject({ success: false });
+});

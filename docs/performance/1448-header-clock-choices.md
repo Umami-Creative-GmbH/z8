@@ -7,7 +7,12 @@ The compact header keeps its current clock and open-break query eager. An unknow
 status now shows a disabled Loading clock status control rather than a Clock In
 label. A failed status, including failure with a cached clocked-out value, shows
 Clock status unavailable and Retry clock status. A bootstrap employee alone is
-not treated as evidence that the employee is clocked out.
+not treated as evidence that the employee is clocked out. The eager
+getTimeClockStatus reader now obtains canonical fresh getAuthContext admission
+before returning any own-work data. MFA/SSO requirements, approved membership and
+current/offboarding access are checked. Denial retains the existing no-employee
+payload, which the header never promotes into an enabled Clock In action. The
+own-organization work, task and open-break projection is unchanged.
 
 A closed, untouched popover no longer starts assigned-project, work-category or
 full vehicle-choice reads. Opening the popover, focusing its trigger or pointing
@@ -40,11 +45,14 @@ details keep their existing omission and warning behavior. Nothing waits for
 vehicle choices before accepting a clock command. Open-break vehicle readings
 continue to use the eagerly available live attribution.
 
-Both vehicle READERS now use canonical fresh getAuthContext admission. A red
+The current-status and both vehicle READERS use canonical fresh getAuthContext admission. A red
 PostgreSQL case showed that the former basic session/employee path admitted a
 synthetic MFA/SSO-required session; both readers now deny it before reading vehicle
-data. Approved membership and current employee access are checked again. The
-clocking, live-amendment and break command implementations remain unchanged.
+data. Further RED cases showed that the former eager current-status reader
+returned work for MFA/SSO-required, unapproved and due-offboarded employees. It now
+uses the same admission decision. Approved membership and current employee access
+are checked again. The clocking, live-amendment and break command implementations
+remain unchanged.
 
 The local draft reset no longer separately invalidates vehicle context after a
 successful clock command: the clock hook already invalidates status and its
@@ -68,27 +76,31 @@ calculation or historical write path was introduced.
 - RED: pending status looked like a disabled Clock In. GREEN: it is explicitly
   unknown/loading, and failed current status has a retry without an active
   Clock In or Clock Out action. Cached clocked-out failure is covered separately.
-- Eighteen public component/provider cases cover closed/open/focus/pointer intent,
+- Nineteen public component/provider cases cover closed/open/focus/pointer intent,
   known in/out, an open break, current-status hold/error/retry, held and failed
   selectors, driving suspension advice, expected vehicle use during a held list,
   a real /api/time-clock command, shared full-clock selector requests, offline
   adopted capture and non-adopted refusal, required tasks through retry, retained
   odometer input, exactly one post-command vehicle refresh, account/organization
-  choice-cache isolation and a known off vehicle policy. Tests mock external
+  choice-cache isolation, a known off vehicle policy and denial despite a bootstrap identity. Tests mock external
   action/worker/network boundaries, not useTimeClock or the selection hooks.
-- Forty-three unit files / 487 cases pass across the time-tracking components,
+- Forty-three unit files / 488 cases pass across the time-tracking components,
   clock hooks, operational driving advice, refresh provider, browser commands and
   vehicle-use helpers. Full-clock sharing in the new suite uses its actual public
   selector components and vehicle hook; the production full-page journey remains
   a browser gate below.
-- Two PostgreSQL suites / 17 cases pass: nine new operational-reader cases and
-  eight existing vehicle/clock/warning cases. New cases use unique lifecycle
+- Three PostgreSQL suites / 27 cases pass: twelve public clock/vehicle-reader
+  cases, eight existing vehicle/clock/warning cases and seven clocking-access
+  regression cases. New cases use unique lifecycle
   fixture tenants and prove exact live/expected output, narrow JSON round trips,
   no optional choice/history SQL, foreign-organization denial, immediate off-policy
   reads without losing recorded attribution, deleted-work exclusion, MFA/SSO
-  admission and inactive/unapproved denial. No database reset or migration runs.
+  admission, inactive/unapproved denial, a due but still-active offboarding,
+  genuine admitted clocked-out state and the unchanged own-task/open-break payload
+  beside foreign work. No database reset or migration runs.
 - Phase Development typecheck passes all configured projects. Biome checks pass
-  for the fifteen changed source/test files. React Doctor delta from da773971f
+  for fifteen changed source/test files; the large legacy actions.ts passes lint
+  without unrelated whole-file formatting. React Doctor delta from da773971f
   reports 100/100 and no issues; no rule suppression or configuration change.
   The query context and local draft state are separate to keep the hook readable.
 
@@ -116,7 +128,9 @@ existing timing. Expect no getAssignedProjects, getAvailableCategoriesForEmploye
 or getClockVehicleUseContext for an untouched closed header. Assigned projects and
 categories were already absent while clocked out, so do not claim three removed
 requests for every workload. The new operational vehicle request replaces the
-former full-context request; its fresh admission work is mandatory. A full clock
+former full-context request. The eager current-status read now also includes
+canonical fresh admission work, which is mandatory and may add SQL compared with
+the former raw-session path. A full clock
 may request choices eagerly and share them with the header.
 
 Measure closed-page mobile requests, transferred chunks, main-thread work and
@@ -125,3 +139,9 @@ selectors, retry, retain chosen tasks/readings/drafts and exercise known in/out,
 break and offline controls. Verify the actual full clock alongside the header and
 the unchanged position/timezone/authorization behavior. The parent's live original
 and cache-candidate services, collectors and generated inventories were untouched.
+
+The final whole-spec security review must separately prove the existing clock
+commands' fresh MFA/SSO, approved-membership and offboarding enforcement, including
+break and queued-command paths where applicable. The ordinary write and lower-level
+clocking-access regressions passing here do not establish every command-admission
+case. This ticket changes status/read admission and does not rewrite commands.
