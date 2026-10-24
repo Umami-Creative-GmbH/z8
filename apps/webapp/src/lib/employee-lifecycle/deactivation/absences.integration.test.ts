@@ -592,7 +592,9 @@ describe("deactivation cancels later absences (#1440)", () => {
 		const plan = await planAbsences(fixture.db, ctx);
 		await systemCancel(gone);
 
-		const result = await fixture.db.transaction((tx) => applyAbsenceCancellations(tx, plan, ctx, { database: db }));
+		const result = await fixture.db.transaction((tx) =>
+			applyAbsenceCancellations(tx, plan, ctx, { database: db }),
+		);
 
 		expect(result.applied.cancelledAbsenceIds).toEqual([later]);
 		expect(result.afterCommit).toHaveLength(1);

@@ -24,10 +24,7 @@ import {
 } from "../receipts";
 import { acquireAbsenceCancellationGuards } from "./absences";
 import { applyDeactivationConsequences } from "./apply";
-import {
-	managerLinkAuthorizationEmployeeIds,
-	validatedReplacementManagers,
-} from "./manager-links";
+import { managerLinkAuthorizationEmployeeIds, validatedReplacementManagers } from "./manager-links";
 import { planDeactivationConsequences } from "./plan";
 import { type DeactivationPlannerNotice, loadPlannerNotice, sendPlannerNotice } from "./shifts";
 import type {

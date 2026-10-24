@@ -12,16 +12,12 @@ import { acquireApprovalWriteLock } from "@/lib/approvals/authority/gate";
 import { kickApprovalDelivery } from "@/lib/approvals/delivery/kick";
 import type { ApprovalWorkflowDatabase } from "@/lib/approvals/workflow/repository";
 import { AuditAction } from "@/lib/audit-logger";
-import {
-	comparePlainDates,
-	type PlainDate,
-	parsePlainDate,
-} from "@/lib/datetime/temporal-core";
+import { comparePlainDates, type PlainDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { deletePersonnelDocumentObject } from "@/lib/personnel-file/storage";
 import { runPersonnelFileCleanup } from "@/lib/personnel-file/upload-ledger";
 import { addCalendarSyncJob } from "@/lib/queue";
-import { closedRangesForEmployee } from "@/lib/time-tracking/closed-months/store";
 import { closedMonthTouchedByDays } from "@/lib/time-tracking/closed-months/rules";
+import { closedRangesForEmployee } from "@/lib/time-tracking/closed-months/store";
 import {
 	type AbsencePlanItem,
 	type AbsencesApplied,
@@ -98,8 +94,7 @@ export async function planAbsences(
 		if (!startsAfter(item.startDate, leftOn)) plan.absencesSpanning.push(item);
 		else if (closedMonthTouchedByDays(item, closedMonths) !== null) {
 			plan.absencesInClosedMonths.push(item);
-		}
-		else plan.absencesToCancel.push(item);
+		} else plan.absencesToCancel.push(item);
 	}
 	return plan;
 }

@@ -56,7 +56,8 @@ export function createDepartureTaskOutbox(database: OutboxDatabase) {
 			const claimToken = randomUUID();
 			const claimedAt = dateFromInstant(now);
 			const leaseUntil = dateFromInstant(now.add({ minutes: LEASE_MINUTES }));
-			const anchor = options.deactivationOnly === true ? sql`AND deactivation_id IS NOT NULL` : sql``;
+			const anchor =
+				options.deactivationOnly === true ? sql`AND deactivation_id IS NOT NULL` : sql``;
 			const result = await database.execute<{
 				id: string;
 				organization_id: string;

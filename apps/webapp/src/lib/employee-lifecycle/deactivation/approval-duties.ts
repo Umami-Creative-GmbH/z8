@@ -161,8 +161,7 @@ export async function planApprovalDuties(
 			// Stage activation routes a stage whose requester has a replacement to it.
 			...futureStages.rows
 				.filter(
-					(stage) =>
-						!stage.requester_employee_id || !replacements[stage.requester_employee_id],
+					(stage) => !stage.requester_employee_id || !replacements[stage.requester_employee_id],
 				)
 				.map((stage) => ({
 					workflowId: stage.workflow_id,

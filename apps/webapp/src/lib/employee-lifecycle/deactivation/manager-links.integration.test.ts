@@ -258,7 +258,11 @@ describe("deactivation ends manager links (#1440)", () => {
 			managerId: team.leaver.employeeId,
 		});
 		expect(result.applied.addedLinks).toEqual([
-			{ employeeId: team.alone.employeeId, managerId: team.replacement.employeeId, isPrimary: true },
+			{
+				employeeId: team.alone.employeeId,
+				managerId: team.replacement.employeeId,
+				isPrimary: true,
+			},
 		]);
 		expect(
 			(await links(team.organizationId)).filter(

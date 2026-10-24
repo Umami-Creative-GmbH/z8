@@ -479,7 +479,10 @@ describe("deactivation approval duties", () => {
 		const approver = await fixture.seedEmployee({ role: "admin" });
 		const unmanaged = await fixture.seedEmployee();
 		await seedDuty(unmanaged, leaving);
-		await seedDuty(unmanaged, approver, { ...FUTURE_STAGE, approverEmployeeId: leaving.employeeId });
+		await seedDuty(unmanaged, approver, {
+			...FUTURE_STAGE,
+			approverEmployeeId: leaving.employeeId,
+		});
 		const { deactivationId, result } = await planAndApply(leaving, {});
 		expect(result.applied.handoverTaskIds).toHaveLength(1);
 		expect(result.applied.reviewIds).toHaveLength(1);
