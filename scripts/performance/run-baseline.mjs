@@ -1301,10 +1301,13 @@ async function measure(
 				sample.traceTransport.afterInitialization?.refusedRequests !== 0 ||
 				sample.traceTransport.afterInitialization?.upstreamFailures !== 0
 			) {
+				sample.transportCoverageComplete = false;
+				if (!sample.failed) {
+					sample.failureStage = "trace-transport";
+					sample.failureKind = "observation-incomplete";
+				}
 				sample.failed = true;
-				sample.failureStage = "trace-transport";
-				sample.failureKind = "observation-incomplete";
-			}
+			} else sample.transportCoverageComplete = true;
 			await transport.close();
 		}
 	}
