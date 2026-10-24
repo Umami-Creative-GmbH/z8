@@ -1,14 +1,15 @@
 import { db } from "@/db";
 import { env } from "@/env";
-import { requireAbility } from "@/lib/auth-helpers";
 import {
 	getRenderAuthContext as getAuthContext,
 	getRenderSettingsAccessTier as getCurrentSettingsAccessTier,
+	getRenderAbility,
+	getRenderOrganizationIdentity,
 	getRenderUserOrganizations as getUserOrganizations,
 } from "@/lib/auth/render-context";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { canCreateOrganizationsForDeployment } from "@/lib/organization/creation-policy.server";
-import { readDrivingLicenceVisibility } from "@/lib/organization/driving-licence/visibility";
+import { readDrivingLicenceVisibilityForIdentity } from "@/lib/organization/driving-licence/visibility";
 import {
 	HIDDEN_DRIVING_LICENCE_VISIBILITY,
 	showsDrivingLicenceNavigation,
@@ -16,11 +17,11 @@ import {
 } from "@/lib/organization/driving-licence/visibility-rules";
 import { hasActivePayrollAccessGrant } from "@/lib/payroll-access/permissions";
 import { managesAnyDocuments } from "@/lib/personnel-file/access";
-import { loadCurrentPersonnelFileAccess } from "@/lib/personnel-file/current-access";
-import { managesProjectBelowManagerTier } from "@/lib/projects/project-manager-settings-access";
+import { resolvePersonnelFileAccessForIdentity } from "@/lib/personnel-file/access-store";
+import { managesProjectBelowManagerTierForIdentity } from "@/lib/projects/project-manager-settings-access";
 import { loadCollectsPeriodSubmissions } from "@/lib/time-tracking/period-submissions/settings";
-import { listWhoIsInLocations } from "@/lib/time-tracking/who-is-in/queries";
-import { loadFinanceActor } from "@/lib/travel-expenses/finance-access";
+import { hasWhoIsInLocations } from "@/lib/time-tracking/who-is-in/queries";
+import { loadFinanceActorForIdentity } from "@/lib/travel-expenses/finance-access";
 import { canViewWorksCouncilPortal } from "@/lib/works-council/permissions";
 import { AppSidebar } from "./app-sidebar";
 
@@ -68,10 +69,12 @@ export async function ServerAppSidebar({
 		managesProject,
 		authContext,
 		canCreateOrganizations,
+		capabilitiesUnavailable,
 	} = await resolveSidebarAccess(showWorksCouncilNav);
 	return (
 		<AppSidebar
 			{...props}
+			capabilitiesUnavailable={capabilitiesUnavailable}
 			organizations={organizations}
 			currentOrganization={currentOrganization}
 			employeeRole={activeEmployee?.role ?? null}
@@ -122,79 +125,106 @@ async function resolveSidebarAccess(showWorksCouncilNav: boolean) {
 			authContext?.user.role === "admin",
 	);
 	const featureFlags = getOrganizationFeatureFlags(currentOrganization);
-	let canShowWorksCouncilNav = false;
-	if (
-		showWorksCouncilNav &&
-		currentOrganization?.worksCouncilEnabled &&
-		activeOrganizationId
-	) {
-		const ability = await requireAbility();
-		canShowWorksCouncilNav = canViewWorksCouncilPortal(
-			ability,
-			activeOrganizationId,
-			activeOrganizationId,
-		);
-	}
-	let showPayrollNav = false;
-	let showFinanceNav = false;
-	if (
-		activeEmployee &&
-		activeOrganizationId &&
-		activeEmployee.organizationId === activeOrganizationId
-	) {
-		const [payrollGrant, financeActor] = await Promise.all([
-			hasActivePayrollAccessGrant({
-				organizationId: activeOrganizationId,
-				payrollEmployeeId: activeEmployee.id,
-			}),
-			loadFinanceActor(),
-		]);
-		showPayrollNav = payrollGrant;
-		// Read access: owners, admins and any active expense officer grant (#753).
-		showFinanceNav = financeActor?.canRead ?? false;
-	}
-	// Personnel files (#866): decided by the personnel file access resolver, never by roles.
-	let showPersonnelFilesNav = false;
-	if (featureFlags.personnelFilesEnabled) {
-		const personnelFileAccess = await loadCurrentPersonnelFileAccess();
-		showPersonnelFilesNav =
-			personnelFileAccess.status === "resolved" &&
-			managesAnyDocuments(personnelFileAccess.access);
-	}
-	// Period submissions (#1075): the Team section's overview, only while the active
-	// organization collects them. Members never see the Team section, so skip the read.
+	const identity = await getRenderOrganizationIdentity();
+	const hasEmployee = !!identity?.employee;
 	const canSeeTeamNavigation =
-		activeOrganizationId !== null &&
+		!!identity &&
 		(activeEmployee?.role === "admin" || activeEmployee?.role === "manager");
-	const [showPeriodSubmissionsNav, presenceLocations] = await Promise.all([
-		canSeeTeamNavigation &&
-			loadCollectsPeriodSubmissions(db, activeOrganizationId, {
-				clock: systemClock,
-			}),
-		canSeeTeamNavigation
-			? listWhoIsInLocations(db, { organizationId: activeOrganizationId })
-			: [],
+	let capabilitiesUnavailable = false;
+	const capability = <T,>(read: PromiseLike<T> | T, fallback: T): Promise<T> =>
+		Promise.resolve(read).catch(() => {
+			capabilitiesUnavailable = true;
+			return fallback;
+		});
+	const [
+		canShowWorksCouncilNav,
+		showPayrollNav,
+		financeActor,
+		personnelFileAccess,
+		showPeriodSubmissionsNav,
+		showTeamPresenceNav,
+		drivingLicenceVisibility,
+		managesProject,
+	] = await Promise.all([
+		capability(
+			showWorksCouncilNav && featureFlags.worksCouncilEnabled && identity
+				? getRenderAbility().then(
+						(ability) =>
+							!!ability &&
+							canViewWorksCouncilPortal(
+								ability,
+								identity.organizationId,
+								identity.organizationId,
+							),
+					)
+				: false,
+			false,
+		),
+		capability(
+			hasEmployee && identity?.employee
+				? hasActivePayrollAccessGrant({
+						organizationId: identity.organizationId,
+						payrollEmployeeId: identity.employee.id,
+					})
+				: false,
+			false,
+		),
+		capability(
+			hasEmployee
+				? getRenderAbility().then((ability) =>
+						loadFinanceActorForIdentity(authContext, ability),
+					)
+				: null,
+			null,
+		),
+		capability(
+			featureFlags.personnelFilesEnabled && identity
+				? resolvePersonnelFileAccessForIdentity(db, {
+						...identity,
+						selfEmployeeId: identity.employee?.id ?? null,
+					})
+				: null,
+			null,
+		),
+		capability(
+			canSeeTeamNavigation && identity
+				? loadCollectsPeriodSubmissions(db, identity.organizationId, {
+						clock: systemClock,
+					})
+				: false,
+			false,
+		),
+		capability(
+			canSeeTeamNavigation && identity
+				? hasWhoIsInLocations(db, { organizationId: identity.organizationId })
+				: false,
+			false,
+		),
+		capability(
+			identity
+				? readDrivingLicenceVisibilityForIdentity(identity)
+				: HIDDEN_DRIVING_LICENCE_VISIBILITY,
+			HIDDEN_DRIVING_LICENCE_VISIBILITY,
+		),
+		capability(
+			featureFlags.projectsEnabled && identity
+				? managesProjectBelowManagerTierForIdentity(
+						settingsAccessTier,
+						identity,
+					)
+				: false,
+			false,
+		),
 	]);
-	const showTeamPresenceNav = presenceLocations.length > 0;
-	// Driving licence (#1420): the item and the settings entry follow the visibility reader only.
-	const drivingLicenceVisibility =
-		activeOrganizationId && authContext
-			? await readDrivingLicenceVisibility({
-					organizationId: activeOrganizationId,
-					userId: authContext.user.id,
-				})
-			: HIDDEN_DRIVING_LICENCE_VISIBILITY;
-	const showDrivingLicenceNav = showsDrivingLicenceNavigation(drivingLicenceVisibility);
-	const drivingLicenceSettingsVisible = showsDrivingLicenceSettings(drivingLicenceVisibility);
-	// App search offers project managers below the manager tier their Projects view (#928).
-	const managesProject =
-		featureFlags.projectsEnabled &&
-		(await managesProjectBelowManagerTier(
-			settingsAccessTier,
-			authContext?.user.id ?? null,
-			activeOrganizationId,
-		));
-
+	const showFinanceNav = financeActor?.canRead ?? false;
+	const showPersonnelFilesNav =
+		!!personnelFileAccess && managesAnyDocuments(personnelFileAccess);
+	const showDrivingLicenceNav = showsDrivingLicenceNavigation(
+		drivingLicenceVisibility,
+	);
+	const drivingLicenceSettingsVisible = showsDrivingLicenceSettings(
+		drivingLicenceVisibility,
+	);
 	return {
 		organizations,
 		currentOrganization,
@@ -213,5 +243,6 @@ async function resolveSidebarAccess(showWorksCouncilNav: boolean) {
 		managesProject,
 		authContext,
 		canCreateOrganizations,
+		capabilitiesUnavailable,
 	};
 }
