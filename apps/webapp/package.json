@@ -31,7 +31,8 @@
     "queue:obliterate": "tsx scripts/obliterate-job-queue.ts",
     "work-records:attach-missing": "tsx --import ./src/worker-preload.mjs scripts/attach-missing-work-records.ts",
     "billing:reconcile-kiosk-seats": "tsx --import ./src/worker-preload.mjs scripts/reconcile-kiosk-seats.ts",
-    "personnel-files:minimise-purged-audits": "tsx --import ./src/worker-preload.mjs scripts/minimise-purged-document-audits.ts"
+    "personnel-files:minimise-purged-audits": "tsx --import ./src/worker-preload.mjs scripts/minimise-purged-document-audits.ts",
+    "employees:backfill-deactivations": "tsx --import ./src/worker-preload.mjs scripts/backfill-former-employees.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1149.0",

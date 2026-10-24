@@ -55,6 +55,12 @@ export interface EmployeeOffboardingView {
 		deactivatedAt: string;
 		/** The organization's zone; format the instant in it. */
 		timezone: string;
+		/**
+		 * Set when the backfill (#1442) found no evidence of when they left:
+		 * `deactivatedAt` is then the run instant its consequences applied from,
+		 * not a recorded date.
+		 */
+		dateNotRecorded?: true;
 	};
 	/** The period an effective departure ended, required to confirm a rehire. */
 	previousEmploymentPeriodId: string | null;

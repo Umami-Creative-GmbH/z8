@@ -391,7 +391,11 @@ async function loadOffboardingReassignmentFacts(input: {
 					SELECT d.id, d.organization_id, d.employee_id, d.employment_period_id,
 						(d.reactivated_at IS NOT NULL OR e.is_active = true) AS reactivated,
 						(d.reactivated_at IS NULL AND e.is_active = false
-							AND e.deactivated_at IS NOT DISTINCT FROM d.deactivated_at) AS effective
+							AND (e.deactivated_at IS NOT DISTINCT FROM d.deactivated_at
+								-- A backfilled deactivation whose date was not recorded (#1442):
+								-- the employee keeps no instant, the row keeps the run's.
+								OR (d.reason = 'employee_deactivation_backfill' AND e.deactivated_at IS NULL)))
+							AS effective
 					FROM employee_deactivation d
 					JOIN employee e ON e.id = d.employee_id AND e.organization_id = d.organization_id
 					WHERE d.organization_id = ${input.organizationId}

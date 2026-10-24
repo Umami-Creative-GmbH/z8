@@ -244,6 +244,46 @@ are resolved and replacements assigned the same way
 restores nothing and marks the open deactivation reactivated, so its pending
 handovers stop (`employee_rehired`).
 
+**Backfill of earlier deactivations (#1442).** Employees deactivated before
+#1440 get its consequences once, through the one-off script
+`pnpm employees:backfill-deactivations` (`apps/webapp/scripts/backfill-former-employees.ts`,
+library `deactivation/backfill.ts`; deploy steps in `deploy/README.md`). It is a
+dry run unless `--apply` is given. Both modes plan with
+`planDeactivationConsequences`, so the dry run reports exactly what the real run
+applies. It handles inactive employees with no effective or pending departure
+and no open `employee_deactivation` row.
+
+- **When they left**: `employee.deactivated_at` if already set, else the latest
+  surviving `employee.deactivated` audit entry or SCIM `leave` event
+  (`user_lifecycle_event`), unless a later `employee.reactivated` entry, SCIM
+  `join` or the start of the current employment period undid it. The recovered
+  instant is written to `employee.deactivated_at` (the trigger is not involved)
+  and gets the `employee_deactivated` history event. Member removal writes no
+  such evidence. Audit entries live 365 days. Without evidence the date stays
+  *not recorded*.
+- **Consequences** apply from that instant, else from the run instant, with
+  `replaceManagers: false` and the reason `employee_deactivation_backfill`.
+  Audit rows are attributed to the admin whose audit entry deactivated the
+  employee, else to the organization's longest-standing current owner (or
+  admin). A report who would be left with no current manager keeps the link. The
+  deputy release is not repeated, because Deactivate has done it since #1014.
+- **Record**: one `employee_deactivation` row per employee (reason
+  `employee_deactivation_backfill`) is the idempotency marker. Its
+  `deactivated_at` is the instant the consequences applied from. For an
+  unrecorded date this is the run instant, while `employee.deactivated_at`
+  stays NULL. The approval handover (`offboarding-authority.ts`) treats such a
+  row as effective while the employee stays off without an instant. The
+  absence cancellation capability takes the row's instant in place of the
+  missing one. The offboarding view marks the row `dateNotRecorded`.
+- **Admins told**: each organization whose reports keep only a former manager
+  gets one `former_employee_reports_without_manager` notification per current
+  owner and admin. The notification lists the reports and links to the
+  employee page (Settings → Employees when there are several). It is keyed by
+  the listed reports.
+- Each employee is applied in its own transaction, in the lock order above. An
+  employee that fails (for example, an absence in a closed month) is listed,
+  and the run exits non-zero. A second run changes nothing.
+
 ## Access grants
 
 When the departure takes effect, the expense officer grant, the payroll access
@@ -353,8 +393,9 @@ open period counts as ended at `employee.deactivated_at`, read by the shared
 loader `lib/personnel-file/retention-employment.ts` for both the documents'
 due list and the deletion of document requests. Reactivation clears that
 instant, which stops the clock again. Someone deactivated before the instant
-was recorded (migration 0283) has no retention start until #1442 recovers it,
-so their documents are listed as *retention start unknown*. A former employee whose
+was recorded (migration 0283) has no retention start until the #1442 backfill
+recovers it. Their documents are listed as *retention start unknown*, and stay
+listed there when no evidence of the date survives. A former employee whose
 employment end was never recorded (no employment period, or only a legacy
 period without an end) has no retention start: their documents are listed
 separately as *retention start unknown*, never counted by the daily reminder,
@@ -392,7 +433,8 @@ reports the deactivation; `employee_left_on(...)` gives that moment as the
 organization-local date. Read them through `readEmployeeLeftOn`,
 `employeeLeftAt`, `formerSinceDate` or `formerEmployeesAmong`; views show
 *Former since <date>*, or *date not recorded* for employees deactivated before
-0283 until the #1442 backfill recovers their date.
+0283 whose date the #1442 backfill could not recover from surviving evidence
+(see Deactivation).
 
 ## Release gate and rollback
 

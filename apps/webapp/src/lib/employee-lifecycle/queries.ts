@@ -258,8 +258,9 @@ export async function getEmployeeOffboardingView(
 		is_active: boolean;
 		membership_approved: boolean;
 		open_period_id: string | null;
+		deactivated_at_missing: boolean;
 	}>(sql`
-		SELECT e.user_id, e.is_active,
+		SELECT e.user_id, e.is_active, (e.deactivated_at IS NULL) AS deactivated_at_missing,
 			EXISTS (
 				SELECT 1 FROM member m
 				WHERE m.organization_id = e.organization_id AND m.user_id = e.user_id
@@ -366,6 +367,8 @@ export async function getEmployeeOffboardingView(
 				id: open.id,
 				deactivatedAt: open.deactivatedAt.toString(),
 				timezone: resolveOrganizationTimezone(zone.rows[0]?.timezone).timezone,
+				// A backfilled deactivation without evidence of the date (#1442).
+				...(target.deactivated_at_missing ? { dateNotRecorded: true as const } : {}),
 			};
 		}
 	}

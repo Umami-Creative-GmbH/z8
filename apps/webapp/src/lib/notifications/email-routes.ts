@@ -120,6 +120,8 @@ const NOTIFICATION_EMAIL_ROUTES: {
 	scheduled_export_paused: layout("/settings/scheduled-exports"),
 	// The planner's schedule, where the opened shifts wait for someone (#1440).
 	employee_deactivation_shifts_opened: layout("/scheduling"),
+	// Settings → Employees, where a current manager is assigned (#1442).
+	former_employee_reports_without_manager: layout("/settings/employees"),
 	// The page the export was started from; never a file link (#811).
 	personal_data_export_ready: layout(MY_DATA_PATH, EMPLOYEE_PAGES_PATH),
 	// Where the employee can request their own copy (#1166).
