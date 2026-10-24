@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import * as operator from "./analytics-consent-fixture.mjs";
 import { verifyAnalyticsArtifact } from "./analytics-consent-fixture.mjs";
 import { sinkReply } from "./analytics-consent-sink.mjs";
 
@@ -22,6 +23,42 @@ const run = (...args) =>
 				resolve({ code: error?.code ?? 0, stdout, stderr }),
 		),
 	);
+
+test("operator launches standalone pnpm executables and script entry points correctly", async () => {
+	assert.deepEqual(
+		operator.pnpmInvocation(
+			["run", "build"],
+			"C:/tools/pnpm.exe",
+			"C:/tools/node.exe",
+		),
+		{
+			file: "C:/tools/pnpm.exe",
+			args: ["--config.verifyDepsBeforeRun=false", "run", "build"],
+		},
+	);
+	assert.deepEqual(
+		operator.pnpmInvocation(["run", "build"], "/tools/pnpm.cjs", "/tools/node"),
+		{
+			file: "/tools/node",
+			args: [
+				"/tools/pnpm.cjs",
+				"--config.verifyDepsBeforeRun=false",
+				"run",
+				"build",
+			],
+		},
+	);
+	const invocation = operator.pnpmInvocation(["--version"]);
+	const version = await new Promise((resolve, reject) =>
+		execFile(
+			invocation.file,
+			invocation.args,
+			{ timeout: 5000 },
+			(error, stdout) => (error ? reject(error) : resolve(stdout.trim())),
+		),
+	);
+	assert.match(version, /^\d+\.\d+\.\d+/);
+});
 
 test("operator refuses an external sink before creating a configured variant", async () => {
 	const directory = await mkdtemp(join(tmpdir(), "z8-consent-"));
@@ -57,6 +94,7 @@ test("operator refuses an external sink before creating a configured variant", a
 });
 
 test("verified artifact admits only the fixture token, original source hashes and exact complete rewrite set", async () => {
+	const sourceCommit = "4d8bdb1d477cd02888565816b0fb96f85dc13b71";
 	const directory = await mkdtemp(join(tmpdir(), "z8-consent-"));
 	try {
 		const app = join(directory, "app");
@@ -87,7 +125,12 @@ test("verified artifact admits only the fixture token, original source hashes an
 		await writeFile(join(app, ".next/BUILD_ID"), "synthetic-build");
 		await writeFile(
 			join(app, ".next/required-server-files.json"),
-			JSON.stringify({ config: { deploymentId: "0253367" } }),
+			JSON.stringify({
+				config: {
+					deploymentId: sourceCommit,
+					env: { NEXT_PUBLIC_BUILD_HASH: "4d8bdb1" },
+				},
+			}),
 		);
 		const rewrites = {
 			beforeFiles: [],
@@ -113,7 +156,7 @@ test("verified artifact admits only the fixture token, original source hashes an
 			artifactApp: app,
 			origin: "http://localhost:50112",
 			sinkOrigin: "http://127.0.0.1:50113",
-			sourceBuild: "025336721",
+			sourceBuild: sourceCommit,
 			sourceHashes,
 			env: {
 				APP_URL: "http://localhost:50112",
@@ -124,7 +167,7 @@ test("verified artifact admits only the fixture token, original source hashes an
 				NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN:
 					"phc_z8_disposable_consent_1470_only",
 				NEXT_PUBLIC_POSTHOG_HOST: "http://127.0.0.1:50113",
-				NEXT_DEPLOYMENT_ID: "025336721",
+				NEXT_DEPLOYMENT_ID: sourceCommit,
 			},
 		};
 		await writeFile(
@@ -134,6 +177,41 @@ test("verified artifact admits only the fixture token, original source hashes an
 		assert.equal(
 			(await verifyAnalyticsArtifact(directory)).report.tokenChunks,
 			1,
+		);
+		await writeFile(
+			join(app, ".next/required-server-files.json"),
+			JSON.stringify({
+				config: {
+					deploymentId: "wrong-deployment-pin",
+					env: { NEXT_PUBLIC_BUILD_HASH: "4d8bdb1" },
+				},
+			}),
+		);
+		await assert.rejects(
+			verifyAnalyticsArtifact(directory),
+			/Wrong compiled source build/,
+		);
+		await writeFile(
+			join(app, ".next/required-server-files.json"),
+			JSON.stringify({
+				config: {
+					deploymentId: sourceCommit,
+					env: { NEXT_PUBLIC_BUILD_HASH: "wrong-public-hash" },
+				},
+			}),
+		);
+		await assert.rejects(
+			verifyAnalyticsArtifact(directory),
+			/Wrong compiled source build/,
+		);
+		await writeFile(
+			join(app, ".next/required-server-files.json"),
+			JSON.stringify({
+				config: {
+					deploymentId: sourceCommit,
+					env: { NEXT_PUBLIC_BUILD_HASH: "4d8bdb1" },
+				},
+			}),
 		);
 		fixture.env.APP_URL = "https://production.example.test";
 		await writeFile(

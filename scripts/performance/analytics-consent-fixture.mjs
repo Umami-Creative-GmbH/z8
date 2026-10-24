@@ -1,6 +1,7 @@
 /** Head-only configured analytics fixture. Never changes the parity fixture. */
 import { execFileSync, spawn } from "node:child_process";
 import { createHash } from "node:crypto";
+import { once } from "node:events";
 import { createWriteStream } from "node:fs";
 import { access, mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { join, relative, resolve, sep } from "node:path";
@@ -27,6 +28,17 @@ export function localOrigin(value) {
 }
 const json = async (path) => JSON.parse(await readFile(path, "utf8"));
 const sha = (value) => createHash("sha256").update(value).digest("hex");
+export function pnpmInvocation(
+	args,
+	pnpmPath = process.env.npm_execpath,
+	nodePath = process.execPath,
+) {
+	if (!pnpmPath) throw new Error("pnpm required.");
+	const options = ["--config.verifyDepsBeforeRun=false", ...args];
+	return /\.(?:cjs|mjs|js)$/i.test(pnpmPath)
+		? { file: nodePath, args: [pnpmPath, ...options] }
+		: { file: pnpmPath, args: options };
+}
 const sourceFiles = [
 	"src/components/posthog-provider.tsx",
 	"next.config.ts",
@@ -115,7 +127,9 @@ export async function verifyAnalyticsArtifact(directory) {
 		join(fixture.artifactApp, ".next/required-server-files.json"),
 	);
 	if (
-		required.config.deploymentId !== fixture.sourceBuild.slice(0, 7) ||
+		required.config.deploymentId !== fixture.sourceBuild ||
+		required.config.env?.NEXT_PUBLIC_BUILD_HASH !==
+			fixture.sourceBuild.slice(0, 7) ||
 		fixture.env.NEXT_DEPLOYMENT_ID !== fixture.sourceBuild
 	)
 		throw new Error("Wrong compiled source build.");
@@ -185,9 +199,10 @@ async function launch(directory, command) {
 	const log = createWriteStream(join(directory, `${command}-private.log`), {
 		mode: 0o600,
 	});
+	await once(log, "open");
 	const args =
 		command === "build"
-			? ["exec", "next", "build"]
+			? ["run", "build"]
 			: [
 					"exec",
 					"next",
@@ -197,16 +212,13 @@ async function launch(directory, command) {
 					"--port",
 					new URL(fixture.origin).port,
 				];
-	const child = spawn(
-		process.execPath,
-		[process.env.npm_execpath, "--config.verifyDepsBeforeRun=false", ...args],
-		{
-			cwd: fixture.artifactApp,
-			env: { ...tools, ...fixture.env },
-			stdio: ["ignore", log, log],
-			windowsHide: true,
-		},
-	);
+	const invocation = pnpmInvocation(args);
+	const child = spawn(invocation.file, invocation.args, {
+		cwd: fixture.artifactApp,
+		env: { ...tools, ...fixture.env },
+		stdio: ["ignore", log, log],
+		windowsHide: true,
+	});
 	if (command === "start")
 		await writeFile(
 			join(directory, "launch-private.json"),
