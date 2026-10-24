@@ -290,22 +290,10 @@ describe("createDatabaseStageActivationResolver", () => {
 
 		expect(fake.calls).toHaveLength(1);
 		const rendered = new PgDialect().sqlToQuery(fake.calls[0]);
-		// Only an explicitly named approver has a replacement lookup: from a
-		// departure, or from a deactivation's pick for this requester (#1440).
-		expect(rendered.params).toEqual([
-			"org-1",
-			"org-1",
-			"org-1",
-			"org-1",
-			stageId,
-			"org-1",
-			null,
-			requesterId,
-			stageId,
-			"org-1",
-			null,
-			"org-1",
-		]);
+		// Only an explicitly named approver has a replacement lookup (#1437 review):
+		// without one the directory is the organization's alone.
+		expect(rendered.params).toEqual(["org-1", "org-1", "org-1", "org-1"]);
+		expect(rendered.sql).not.toMatch(/employee_departure departure/);
 		expect(rendered.sql).toMatch(
 			/from employee[\s\S]*employee\.organization_id\s*=\s*\$1/,
 		);
@@ -321,6 +309,28 @@ describe("createDatabaseStageActivationResolver", () => {
 		);
 		// A due departure ends activity even before it is materialized.
 		expect(rendered.sql).toMatch(/employee_departure_denies_access\(/);
+	});
+
+	it("looks up the replacement of an explicitly named approver who left", async () => {
+		const { resolution, fake } = departedApproverInput(true);
+		await resolution;
+
+		const rendered = new PgDialect().sqlToQuery(fake.calls[0]);
+		// From a departure, or from a deactivation's pick for this requester (#1440).
+		expect(rendered.params).toEqual([
+			"org-1",
+			"org-1",
+			"org-1",
+			"org-1",
+			stageId,
+			"org-1",
+			managerAId,
+			requesterId,
+			stageId,
+			"org-1",
+			managerAId,
+			"org-1",
+		]);
 		expect(rendered.sql).toMatch(
 			/from employee_departure departure[\s\S]*departure\.organization_id\s*=\s*\$6[\s\S]*status = 'effective'/,
 		);

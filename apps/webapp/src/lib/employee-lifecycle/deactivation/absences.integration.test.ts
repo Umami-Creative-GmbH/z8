@@ -9,6 +9,7 @@ import { sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createAbsenceCancellationRuntime } from "@/app/[locale]/(app)/absences/cancel-absence-core";
+import { db } from "@/db";
 import { finalizeAbsenceTerminalInTransaction } from "@/lib/approvals/server/absence-approvals";
 import type { ApprovalDbService } from "@/lib/approvals/server/types";
 import {
@@ -311,6 +312,48 @@ describe("deactivation cancels later absences (#1440)", () => {
 		expect(plan.absencesToCancel[0]?.categoryName).toMatch(/^Vacation /);
 	});
 
+	it("keeps and lists an absence touching a closed month, so the dry run matches what is applied", async () => {
+		await setMode(fixture.organizationId, "canonical");
+		const person = await fixture.seedEmployee();
+		const at = parseInstant("2026-10-24T10:00:00Z");
+		const inClosedMonth = await seedAbsence({
+			employee: person,
+			startDate: "2026-10-29",
+			endDate: "2026-11-02",
+			status: "approved",
+		});
+		const later = await seedAbsence({
+			employee: person,
+			startDate: "2026-11-09",
+			endDate: "2026-11-10",
+			status: "approved",
+		});
+		await fixture.pool.query(
+			`with closed as (
+				insert into closed_month (organization_id, month, scope, actor_kind, closed_by)
+				values ($1, '2026-10-01', 'organization', 'user', $3) returning id
+			)
+			insert into closed_month_employee
+				(organization_id, closed_month_id, employee_id, month, range_start, range_end, timezone)
+			select $1, id, $2, '2026-10-01', '2026-09-30T22:00:00Z', '2026-10-31T23:00:00Z', 'Europe/Berlin'
+			from closed`,
+			[fixture.organizationId, person.employeeId, fixture.ownerUserId],
+		);
+		await deactivate(person, at);
+		const ctx = applyContext(person, at);
+
+		const planned = await planAbsences(fixture.db, ctx);
+		const result = await fixture.db.transaction(async (tx) => {
+			const plan = await planAbsences(tx, ctx);
+			return applyAbsenceCancellations(tx, plan, ctx, { database: db });
+		});
+
+		expect(planned.absencesToCancel.map((item) => item.absenceId)).toEqual([later]);
+		expect(planned.absencesInClosedMonths.map((item) => item.absenceId)).toEqual([inClosedMonth]);
+		expect(result.applied.cancelledAbsenceIds).toEqual([later]);
+		expect(await absenceState(inClosedMonth)).toMatchObject({ status: "approved" });
+	});
+
 	function applyContext(employee: SeededEmployee, at: Instant): DeactivationApplyContext {
 		return {
 			...planContext(employee, at),
@@ -379,7 +422,7 @@ describe("deactivation cancels later absences (#1440)", () => {
 
 		const result = await fixture.db.transaction(async (tx) => {
 			const plan = await planAbsences(tx, ctx);
-			return applyAbsenceCancellations(tx, plan, ctx);
+			return applyAbsenceCancellations(tx, plan, ctx, { database: db });
 		});
 
 		expect(result.applied.cancelledAbsenceIds).toEqual([pending, approved]);
@@ -523,7 +566,7 @@ describe("deactivation cancels later absences (#1440)", () => {
 				update employee set is_active = false, deactivated_at = ${at.toString()}::timestamptz
 				where organization_id = ${fixture.organizationId} and id = ${person.employeeId}::uuid
 			`);
-			return applyAbsenceCancellations(tx, await planAbsences(tx, ctx), ctx);
+			return applyAbsenceCancellations(tx, await planAbsences(tx, ctx), ctx, { database: db });
 		});
 
 		expect(result.applied.cancelledAbsenceIds).toEqual([later]);
@@ -549,7 +592,9 @@ describe("deactivation cancels later absences (#1440)", () => {
 		const plan = await planAbsences(fixture.db, ctx);
 		await systemCancel(gone);
 
-		const result = await fixture.db.transaction((tx) => applyAbsenceCancellations(tx, plan, ctx));
+		const result = await fixture.db.transaction((tx) =>
+			applyAbsenceCancellations(tx, plan, ctx, { database: db }),
+		);
 
 		expect(result.applied.cancelledAbsenceIds).toEqual([later]);
 		expect(result.afterCommit).toHaveLength(1);
@@ -575,7 +620,7 @@ describe("deactivation cancels later absences (#1440)", () => {
 		const ctx = applyContext(person, at);
 
 		const result = await fixture.db.transaction(async (tx) =>
-			applyAbsenceCancellations(tx, await planAbsences(tx, ctx), ctx),
+			applyAbsenceCancellations(tx, await planAbsences(tx, ctx), ctx, { database: db }),
 		);
 
 		expect(result.applied.cancelledAbsenceIds).toEqual([pending, approved]);

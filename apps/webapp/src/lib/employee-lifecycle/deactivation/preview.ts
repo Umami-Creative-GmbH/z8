@@ -4,7 +4,7 @@ import type { Instant } from "@/lib/datetime/temporal-core";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { checkLifecycleTarget } from "../lifecycle-target";
 import { planDeactivationConsequences, readCurrentEmploymentPeriodId } from "./plan";
-import type { DeactivationPlan, DeactivationReader } from "./types";
+import { type DeactivationPreview, type DeactivationReader, toDeactivationPreview } from "./types";
 
 export type DeactivationPreviewInput = {
 	organizationId: string;
@@ -16,7 +16,7 @@ export type DeactivationPreviewInput = {
 };
 
 export type DeactivationPreviewResult =
-	| { kind: "ok"; plan: DeactivationPlan }
+	| { kind: "ok"; plan: DeactivationPreview }
 	| { kind: "not_found" }
 	| { kind: "forbidden"; code: "actor_not_authorized" | "self_target" | "admin_targeting_owner" }
 	| {
@@ -72,5 +72,5 @@ export async function previewEmployeeDeactivation(
 		replacementManagers: input.replacementManagers,
 		replaceManagers: true,
 	});
-	return { kind: "ok", plan };
+	return { kind: "ok", plan: toDeactivationPreview(plan) };
 }

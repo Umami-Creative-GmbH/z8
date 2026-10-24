@@ -4,13 +4,14 @@ import { randomUUID } from "node:crypto";
 import { and, eq, inArray, isNull, type SQL, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import type { db as appDb } from "@/db";
-import { organization } from "@/db/auth-schema";
 import { employee, employeeManagers } from "@/db/schema";
+import { AuditAction } from "@/lib/audit-logger";
 import { AuditTrail } from "@/lib/audit-trail";
 import type { AuthorizationMutationScope } from "@/lib/authorization/authorization-mutation";
 import { withAuthorizationMutation } from "@/lib/authorization/authorization-mutation";
 import {
 	type Clock,
+	compareInstants,
 	dateFromInstant,
 	type Instant,
 	parseInstant,
@@ -25,6 +26,7 @@ import { currentOrganizationAdminUserIds } from "@/lib/notifications/manager-not
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { memberIsAccessibleOwnerOrAdmin } from "../authority-sql";
 import { onCurrentRoster, rosterCheckInstant } from "../current-roster";
+import { lockLifecycleOrganization } from "../locks";
 import { checklistPlanSnapshot } from "../reactivation-checklist";
 import {
 	insertDeactivation,
@@ -42,6 +44,7 @@ import type {
 	DeactivationPlan,
 	DeactivationPlanContext,
 	DeactivationReader,
+	DeactivationWriter,
 	NamedEmployee,
 } from "./types";
 
@@ -56,10 +59,13 @@ import type {
  *    unless a later reactivation, SCIM `join` or employment start undid it.
  *    Audit entries live 365 days; without evidence the date stays not recorded.
  * 2. applies #1440's consequences (`planDeactivationConsequences` /
- *    `applyDeactivationConsequences`) from that instant, else from the run
- *    instant, with `replaceManagers: false` and the reason
- *    `employee_deactivation_backfill`. Reports who would be left with no
- *    current manager keep their link.
+ *    `applyDeactivationConsequences`) from the run instant (or that instant,
+ *    were it later), with `replaceManagers: false` and the reason
+ *    `employee_deactivation_backfill`: shifts and absences change only from now
+ *    on, so nothing in the past is reopened or cancelled (user decision
+ *    2026-10-24). The recovered instant is kept only as when they left (the
+ *    left-on date, "Former since"). Reports who would be left with no current
+ *    manager keep their link.
  * 3. tells each organization's current admins, once, which reports those are.
  *
  * The dry run (default) plans with the same functions the real run applies,
@@ -90,7 +96,7 @@ export interface DeactivationBackfillEmployee {
 	/** When they left (ISO); null when no evidence survives (not recorded). */
 	leftAt: string | null;
 	leftAtSource: LeftAtSource | null;
-	/** The instant the consequences apply from: `leftAt`, else the run instant. */
+	/** The instant the consequences apply from: the run instant (or `leftAt`, were it later). */
 	consequencesFrom: string;
 	/** Who the changes are audited under. */
 	actorUserId: string;
@@ -131,12 +137,6 @@ type Candidate = {
 	deactivatedAt: Instant | null;
 };
 
-function rows<T>(result: unknown): T[] {
-	return typeof result === "object" && result !== null && "rows" in result
-		? ((result as { rows: T[] }).rows ?? [])
-		: [];
-}
-
 /** Text of a timestamptz as ISO UTC with microseconds, parseable by Temporal. */
 function isoUtc(column: SQL) {
 	return sql`to_char(${column} AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`;
@@ -166,7 +166,12 @@ async function findCandidates(
 	reader: Pick<Database, "execute">,
 	input: { organizationId: string; employeeId?: string },
 ): Promise<Candidate[]> {
-	const result = await reader.execute(sql`
+	const result = await reader.execute<{
+		employee_id: string;
+		user_id: string;
+		name: string | null;
+		deactivated_at: string | null;
+	}>(sql`
 		SELECT e.id AS employee_id, e.user_id, u.name,
 			${isoUtc(sql`e.deactivated_at`)} AS deactivated_at
 		FROM employee e
@@ -175,12 +180,7 @@ async function findCandidates(
 			${input.employeeId ? sql`AND e.id = ${input.employeeId}::uuid` : sql``}
 		ORDER BY u.name, e.id
 	`);
-	return rows<{
-		employee_id: string;
-		user_id: string;
-		name: string | null;
-		deactivated_at: string | null;
-	}>(result).map((row) => ({
+	return result.rows.map((row) => ({
 		employeeId: row.employee_id,
 		userId: row.user_id,
 		name: row.name ?? "",
@@ -189,12 +189,12 @@ async function findCandidates(
 }
 
 async function organizationsWithCandidates(database: Pick<Database, "execute">): Promise<string[]> {
-	const result = await database.execute(sql`
+	const result = await database.execute<{ organization_id: string }>(sql`
 		SELECT DISTINCT e.organization_id FROM employee e
 		WHERE ${candidatePredicate(null)}
 		ORDER BY e.organization_id
 	`);
-	return rows<{ organization_id: string }>(result).map((row) => row.organization_id);
+	return result.rows.map((row) => row.organization_id);
 }
 
 type LeftAt = {
@@ -216,7 +216,12 @@ async function recoverLeftAt(
 	input: { organizationId: string; employeeId: string },
 ): Promise<LeftAt | null> {
 	const { organizationId, employeeId } = input;
-	const result = await reader.execute(sql`
+	const result = await reader.execute<{
+		at: string;
+		source: "audit_log" | "scim";
+		actor: string | null;
+		audit_id: string | null;
+	}>(sql`
 		WITH switched_off AS (
 			SELECT (a."timestamp" AT TIME ZONE 'UTC') AS at, 'audit_log' AS source, a.performed_by AS actor,
 				a.id::text AS audit_id
@@ -252,12 +257,7 @@ async function recoverLeftAt(
 		ORDER BY o.at DESC, o.source
 		LIMIT 1
 	`);
-	const [row] = rows<{
-		at: string;
-		source: "audit_log" | "scim";
-		actor: string | null;
-		audit_id: string | null;
-	}>(result);
+	const [row] = result.rows;
 	return row
 		? {
 				at: parseInstant(row.at),
@@ -268,6 +268,84 @@ async function recoverLeftAt(
 		: null;
 }
 
+/**
+ * When they left, for an instant already on the employee (deactivated through
+ * the action after #1439, before #1440). That action wrote its
+ * `employee.deactivated` audit entry, without metadata, just after the commit;
+ * where it survives it names the admin, and the history shows the backfill's
+ * event in its place instead of both.
+ */
+async function leftAtOnEmployee(
+	reader: Pick<Database, "execute">,
+	input: { organizationId: string; employeeId: string; at: Instant },
+): Promise<LeftAt> {
+	const at = sql`${dateFromInstant(input.at)}::timestamptz`;
+	const result = await reader.execute<{ audit_id: string; actor: string }>(sql`
+		SELECT a.id::text AS audit_id, a.performed_by AS actor
+		FROM audit_log a
+		WHERE a.organization_id = ${input.organizationId}
+			AND a.entity_type = 'employee' AND a.entity_id = ${input.employeeId}::text
+			AND a.action = 'employee.deactivated'
+			AND (a."timestamp" AT TIME ZONE 'UTC') BETWEEN ${at} - interval '1 minute'
+				AND ${at} + interval '5 minutes'
+		ORDER BY abs(extract(epoch FROM (a."timestamp" AT TIME ZONE 'UTC') - ${at})), a.id
+		LIMIT 1
+	`);
+	const [match] = result.rows;
+	return {
+		at: input.at,
+		source: "employee",
+		actorUserId: match?.actor ?? null,
+		auditId: match?.audit_id ?? null,
+	};
+}
+
+/**
+ * Stores a recovered instant as when they left, audited with the backfill's
+ * reason. Only the instant: the trigger on is_active stays untouched. The
+ * caller re-read the candidate under the person's authorization guard and the
+ * organization row lock.
+ */
+async function recordLeftAt(
+	tx: DeactivationWriter,
+	audit: AuditTrail,
+	input: {
+		organizationId: string;
+		employeeId: string;
+		leftAt: LeftAt;
+		actorUserId: string;
+		deactivationId: string;
+	},
+): Promise<void> {
+	const [updated] = await tx
+		.update(employee)
+		.set({ deactivatedAt: dateFromInstant(input.leftAt.at) })
+		.where(
+			and(
+				eq(employee.organizationId, input.organizationId),
+				eq(employee.id, input.employeeId),
+				isNull(employee.deactivatedAt),
+			),
+		)
+		.returning({ id: employee.id });
+	if (!updated) return;
+	await audit.record(tx, {
+		organizationId: input.organizationId,
+		action: AuditAction.EMPLOYEE_UPDATED,
+		actorUserId: input.actorUserId,
+		targetType: "employee",
+		targetId: input.employeeId,
+		employeeId: input.employeeId,
+		changes: { deactivatedAt: { from: null, to: input.leftAt.at.toString() } },
+		metadata: {
+			reason: BACKFILL_REASON,
+			deactivationId: input.deactivationId,
+			leftAtSource: input.leftAt.source,
+			sourceAuditId: input.leftAt.auditId,
+		},
+	});
+}
+
 /** The organization's longest-standing current owner, else admin. */
 async function fallbackActorUserId(
 	reader: Pick<Database, "execute">,
@@ -276,7 +354,7 @@ async function fallbackActorUserId(
 ): Promise<string | null> {
 	// Roles are comma-separated with optional spaces, as `memberIsAccessibleOwnerOrAdmin` reads them.
 	const separator = String.raw`\s*,\s*`;
-	const result = await reader.execute(sql`
+	const result = await reader.execute<{ user_id: string }>(sql`
 		SELECT m.user_id
 		FROM member m
 		WHERE m.organization_id = ${organizationId}
@@ -285,7 +363,7 @@ async function fallbackActorUserId(
 			m.created_at, m.id
 		LIMIT 1
 	`);
-	return rows<{ user_id: string }>(result)[0]?.user_id ?? null;
+	return result.rows[0]?.user_id ?? null;
 }
 
 type Prepared = {
@@ -304,7 +382,7 @@ async function prepare(
 	const { organizationId, candidate, runAt } = input;
 	const scope = { organizationId, employeeId: candidate.employeeId };
 	const recovered = candidate.deactivatedAt
-		? { at: candidate.deactivatedAt, source: "employee" as const, actorUserId: null, auditId: null }
+		? await leftAtOnEmployee(reader, { ...scope, at: candidate.deactivatedAt })
 		: await recoverLeftAt(reader, scope);
 	const actorUserId =
 		recovered?.actorUserId ?? (await fallbackActorUserId(reader, organizationId, runAt));
@@ -313,7 +391,8 @@ async function prepare(
 	}
 	const context: DeactivationPlanContext = {
 		...scope,
-		at: recovered?.at ?? runAt,
+		// Shifts and absences change only from now on; the recovered instant is the left-on date.
+		at: recovered && compareInstants(recovered.at, runAt) > 0 ? recovered.at : runAt,
 		organizationTimeZone: await loadOrganizationTimezone(reader, organizationId),
 		employmentPeriodId: await readCurrentEmploymentPeriodId(reader, scope),
 		replacementManagers: {},
@@ -375,12 +454,7 @@ async function applyOne(
 	return withAuthorizationMutation(
 		scope,
 		async (tx): Promise<Applied> => {
-			const [locked] = await tx
-				.select({ id: organization.id })
-				.from(organization)
-				.where(eq(organization.id, organizationId))
-				.for("update");
-			if (!locked) return { kind: "skipped" };
+			await lockLifecycleOrganization(tx, organizationId);
 			const [current] = await findCandidates(tx, {
 				organizationId,
 				employeeId: candidate.employeeId,
@@ -393,21 +467,8 @@ async function applyOne(
 			});
 			if ("error" in prepared) return { kind: "failed", error: prepared.error };
 			const { context, plan, actorUserId, leftAt } = prepared;
-
-			if (leftAt && leftAt.source !== "employee") {
-				// Only the instant: the trigger on is_active stays untouched. The candidate was
-				// re-read under the person's authorization guard and the organization row lock.
-				await tx
-					.update(employee)
-					.set({ deactivatedAt: dateFromInstant(leftAt.at) })
-					.where(
-						and(
-							eq(employee.organizationId, organizationId),
-							eq(employee.id, current.employeeId),
-							isNull(employee.deactivatedAt),
-						),
-					);
-			}
+			// When they left: the recovered instant, else (not recorded) the run instant.
+			const deactivatedAt = leftAt?.at ?? input.runAt;
 
 			const requestId = randomUUID();
 			const fingerprint = requestFingerprint(
@@ -420,7 +481,7 @@ async function applyOne(
 				employeeId: current.employeeId,
 				employmentPeriodId: context.employmentPeriodId,
 				// For an unrecorded date: the run instant the consequences apply from.
-				deactivatedAt: context.at,
+				deactivatedAt,
 				createdBy: actorUserId,
 				reason: BACKFILL_REASON,
 				requestId,
@@ -428,11 +489,20 @@ async function applyOne(
 				replacementManagers: {},
 			});
 			const audit = new AuditTrail();
+			if (leftAt && leftAt.source !== "employee") {
+				await recordLeftAt(tx, audit, {
+					organizationId,
+					employeeId: current.employeeId,
+					leftAt,
+					actorUserId,
+					deactivationId,
+				});
+			}
 			const { applied, afterCommit } = await applyDeactivationConsequences(
 				tx,
 				{ ...context, actorUserId, deactivationId, reason: BACKFILL_REASON, audit },
 				plan,
-				{ clock: input.clock },
+				{ clock: input.clock, database },
 			);
 			const reportsWithoutManager = plan.managerLinks.reportsNeedingReplacement.map((report) => ({
 				employeeId: report.employeeId,
@@ -442,7 +512,7 @@ async function applyOne(
 				deactivationId,
 				employeeId: current.employeeId,
 				employeeUserId: current.userId,
-				deactivatedAt: context.at.toString(),
+				deactivatedAt: deactivatedAt.toString(),
 				plannerNotice: null,
 				releasedDeputies: null,
 				cancelledAbsenceIds: applied.absences.cancelledAbsenceIds,

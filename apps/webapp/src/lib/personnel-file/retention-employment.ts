@@ -3,7 +3,7 @@ import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import type { db as appDb } from "@/db";
 import { employee } from "@/db/schema";
 import { employeeEmploymentPeriod } from "@/db/schema/employee-lifecycle";
-import { instantFromDate } from "@/lib/datetime/temporal-core";
+import { compareInstants, instantFromDate } from "@/lib/datetime/temporal-core";
 import type { EmploymentPeriodForRetention } from "./retention";
 
 /**
@@ -54,13 +54,15 @@ export async function loadRetentionEmployment(
 		const list = byEmployee.get(row.employeeId) ?? [];
 		// Only a deactivation during the open period ends it; an older instant
 		// belongs to an earlier employment.
+		const deactivatedAt = row.deactivatedAt ? instantFromDate(row.deactivatedAt) : null;
 		const endedByDeactivation =
 			row.status === "open" &&
-			row.deactivatedAt !== null &&
-			(row.startedAt === null || row.deactivatedAt.getTime() >= row.startedAt.getTime());
+			deactivatedAt !== null &&
+			(row.startedAt === null ||
+				compareInstants(deactivatedAt, instantFromDate(row.startedAt)) >= 0);
 		list.push(
-			endedByDeactivation && row.deactivatedAt
-				? { status: "closed", endedAt: instantFromDate(row.deactivatedAt) }
+			endedByDeactivation && deactivatedAt
+				? { status: "closed", endedAt: deactivatedAt }
 				: { status: row.status, endedAt: row.endedAt ? instantFromDate(row.endedAt) : null },
 		);
 		byEmployee.set(row.employeeId, list);

@@ -12,7 +12,6 @@ import {
 	type ApprovalCommandResult,
 	type ApprovalDbService,
 	type ApprovalWorkflowSnapshot,
-	type DepartureHandoverPrincipal,
 	isDeactivationHandoverPrincipal,
 	type OffboardingHandoverPrincipal,
 } from "./ports";
@@ -118,6 +117,10 @@ export type OffboardingReassignmentDenial =
 	| "workflow_mismatch"
 	| "departure_mismatch"
 	| "departure_not_effective"
+	/** The deactivation the principal names doesn't match its persisted row (#1440). */
+	| "deactivation_mismatch"
+	/** The deactivation no longer holds: superseded, or the instant changed. */
+	| "deactivation_not_effective"
 	| "task_mismatch"
 	| "lease_not_owned"
 	| "target_mismatch"
@@ -254,10 +257,10 @@ function verifiedAnchor(
 			deactivation.employmentPeriodId !== principal.employmentPeriodId ||
 			deactivation.employeeId !== fromEmployeeId
 		) {
-			return { kind: "denied", reason: "departure_mismatch" };
+			return { kind: "denied", reason: "deactivation_mismatch" };
 		}
 		if (!deactivation.effective && !facts.rehired) {
-			return { kind: "denied", reason: "departure_not_effective" };
+			return { kind: "denied", reason: "deactivation_not_effective" };
 		}
 		return { kind: "verified", departureId: null, deactivationId: deactivation.id };
 	}
@@ -358,7 +361,10 @@ async function loadOffboardingReassignmentFacts(input: {
 	const deactivationPrincipal = isDeactivationHandoverPrincipal(input.principal)
 		? input.principal
 		: null;
-	const [departure] = deactivationPrincipal
+	const departurePrincipal = isDeactivationHandoverPrincipal(input.principal)
+		? null
+		: input.principal;
+	const [departure] = !departurePrincipal
 		? []
 		: rows<{
 				id: string;
@@ -372,7 +378,7 @@ async function loadOffboardingReassignmentFacts(input: {
 					SELECT id, organization_id, employee_id, employment_period_id, status, cutoff_at
 					FROM employee_departure
 					WHERE organization_id = ${input.organizationId}
-						AND id = ${(input.principal as DepartureHandoverPrincipal).departureId}::uuid
+						AND id = ${departurePrincipal.departureId}::uuid
 					FOR SHARE
 				`),
 			);

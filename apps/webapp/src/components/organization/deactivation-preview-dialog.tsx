@@ -4,6 +4,7 @@ import { IconAlertTriangle, IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTolgee, useTranslate } from "@tolgee/react";
 import { useEffect, useId, useRef } from "react";
+import { useTimeFormat } from "@/components/providers/user-preferences-provider";
 import { Alert } from "@/components/ui/alert";
 import { AlertDescription } from "@/components/ui/alert-description";
 import { Button } from "@/components/ui/button";
@@ -25,11 +26,12 @@ import {
 import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { parseInstant } from "@/lib/datetime/temporal-core";
-import { formatInstant, localeDefaultTimeFormat } from "@/lib/datetime/temporal-format";
+import { formatInstant } from "@/lib/datetime/temporal-format";
 import type {
-	DeactivationPlan,
+	DeactivationPreview,
 	ManagerLinksPlan,
 } from "@/lib/employee-lifecycle/deactivation/types";
+import type { TimeFormat } from "@/lib/user-preferences/time-format";
 import { DeactivationConsequences } from "./deactivation-preview-sections";
 
 /** Report employee id → the replacement manager's employee id. */
@@ -41,7 +43,7 @@ export type DeactivationPreviewDialogProps = {
 	/** The person being deactivated. */
 	employeeName: string;
 	/** The server's preview; null until it first loads. */
-	plan: DeactivationPlan | null;
+	plan: DeactivationPreview | null;
 	/** The preview is loading or recalculating for new picks. */
 	isLoading: boolean;
 	/** The preview could not be loaded. */
@@ -67,6 +69,7 @@ export function DeactivationPreviewDialog(props: DeactivationPreviewDialogProps)
 	const { t } = useTranslate();
 	const tolgee = useTolgee(["language"]);
 	const locale = tolgee.getLanguage() || "en";
+	const timeFormat = useTimeFormat();
 
 	return (
 		<Dialog
@@ -90,7 +93,7 @@ export function DeactivationPreviewDialog(props: DeactivationPreviewDialogProps)
 									"{name} becomes a former employee when you confirm (previewed for {time}, {timeZone}). Access to this organization ends, their sessions are signed out, and their history is kept. Review what else changes before you confirm.",
 									{
 										name: props.employeeName,
-										time: formatPlanInstant(props.plan, locale),
+										time: formatPlanInstant(props.plan, locale, timeFormat),
 										timeZone: props.plan.timeZone,
 									},
 								)
@@ -342,12 +345,16 @@ export function useDeactivationDialogMessages() {
 	};
 }
 
-/** The previewed instant in the organization's zone, as date and time. */
-function formatPlanInstant(plan: DeactivationPlan, locale: string): string {
+/** The previewed instant in the organization's zone, as date and time in the user's time format. */
+function formatPlanInstant(
+	plan: DeactivationPreview,
+	locale: string,
+	timeFormat: TimeFormat,
+): string {
 	try {
 		return formatInstant(
 			parseInstant(plan.at),
-			{ locale, timezone: plan.timeZone, timeFormat: localeDefaultTimeFormat(locale) },
+			{ locale, timezone: plan.timeZone, timeFormat },
 			"dateTimeMedium",
 		);
 	} catch {
@@ -355,7 +362,7 @@ function formatPlanInstant(plan: DeactivationPlan, locale: string): string {
 	}
 }
 
-function initialPicks(plan: DeactivationPlan | null): DeactivationReplacementPicks {
+function initialPicks(plan: DeactivationPreview | null): DeactivationReplacementPicks {
 	const picks: DeactivationReplacementPicks = {};
 	for (const report of plan?.managerLinks.reportsNeedingReplacement ?? []) {
 		if (report.replacementEmployeeId) picks[report.employeeId] = report.replacementEmployeeId;

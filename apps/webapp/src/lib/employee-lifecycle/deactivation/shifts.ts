@@ -168,23 +168,48 @@ export async function applyShiftsToOpen(
 			},
 		});
 	}
-	if (openedShiftIds.length === 0 || plan.plannerRecipientUserIds.length === 0) {
-		return { applied: { openedShiftIds }, afterCommit: [] };
-	}
+	const notice = await loadPlannerNotice(tx, ctx, {
+		openedShiftIds,
+		recipientUserIds: plan.plannerRecipientUserIds,
+	});
+	return {
+		applied: { openedShiftIds },
+		afterCommit: notice ? [sendPlannerNotice(ctx.organizationId, ctx.deactivationId, notice)] : [],
+	};
+}
 
-	const [person] = await tx
+/** The planners' notice of a deactivation, as its ledger stores it for a replay. */
+export type DeactivationPlannerNotice = {
+	employeeName: string;
+	shiftCount: number;
+	recipientUserIds: string[];
+};
+
+/** The notice about the opened shifts, or null when none opened or nobody is told. */
+export async function loadPlannerNotice(
+	reader: Pick<DeactivationReader, "select">,
+	ctx: Pick<DeactivationPlanContext, "organizationId" | "employeeId">,
+	input: { openedShiftIds: readonly string[]; recipientUserIds: readonly string[] },
+): Promise<DeactivationPlannerNotice | null> {
+	if (input.openedShiftIds.length === 0 || input.recipientUserIds.length === 0) return null;
+	const [person] = await reader
 		.select({ name: user.name })
 		.from(employee)
 		.innerJoin(user, eq(user.id, employee.userId))
 		.where(and(eq(employee.id, ctx.employeeId), eq(employee.organizationId, ctx.organizationId)))
 		.limit(1);
-	const notice: DeactivationAfterCommit = () =>
-		onDeactivationShiftsOpened({
-			organizationId: ctx.organizationId,
-			deactivationId: ctx.deactivationId,
-			employeeName: person?.name ?? "",
-			shiftCount: openedShiftIds.length,
-			recipientUserIds: plan.plannerRecipientUserIds,
-		});
-	return { applied: { openedShiftIds }, afterCommit: [notice] };
+	return {
+		employeeName: person?.name ?? "",
+		shiftCount: input.openedShiftIds.length,
+		recipientUserIds: [...input.recipientUserIds],
+	};
+}
+
+/** Sends the notice after the commit; keyed by the deactivation, so a repeat sends nothing new. */
+export function sendPlannerNotice(
+	organizationId: string,
+	deactivationId: string,
+	notice: DeactivationPlannerNotice,
+): DeactivationAfterCommit {
+	return () => onDeactivationShiftsOpened({ organizationId, deactivationId, ...notice });
 }

@@ -85,24 +85,9 @@ vi.mock("@/app/[locale]/(app)/settings/employees/actions", () => ({
 	// Deactivate previews its consequences first (#1440); nothing else changes here.
 	previewEmployeeDeactivation: async () => ({
 		success: true,
-		data: {
-			at: "2026-10-24T08:00:00Z",
-			timeZone: "Europe/Berlin",
-			managerLinks: {
-				reportsNeedingReplacement: [],
-				reportsKeepingAnotherManager: [],
-				ownManagerLinks: [],
-				replacementOptions: [],
-			},
-			teamLinks: { teams: [], projectAssignments: [], projectManagerLinks: [] },
-			approvalDuties: { handovers: [], reviews: [] },
-			shifts: { shiftsToOpen: [], plannerRecipientUserIds: [] },
-			absences: { absencesToCancel: [], absencesSpanning: [] },
-			accessEnds: { grants: [], drivingAuthorizations: [], kioskBadges: [], shareLinks: [] },
-			retentionStarts: false,
-			seatReleased: false,
-			refusals: [],
-		},
+		data: (
+			await import("@/components/organization/testing/deactivation-preview.test.fixture")
+		).emptyDeactivationPreview({ retentionStarts: false, seatReleased: false }),
 	}),
 	reactivateEmployee: reactivateEmployeeMock,
 	removeEmployeeAccess: removeEmployeeAccessMock,

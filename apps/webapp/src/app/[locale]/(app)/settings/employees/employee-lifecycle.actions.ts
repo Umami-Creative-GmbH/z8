@@ -5,10 +5,10 @@ import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
 import { z } from "zod";
-import { member, organization } from "@/db/auth-schema";
+import { member } from "@/db/auth-schema";
 import { employee } from "@/db/schema";
 import { AuditAction, logAudit } from "@/lib/audit-logger";
-import type { AuditTrail } from "@/lib/audit-trail";
+import { AuditTrail } from "@/lib/audit-trail";
 import { auth, runAuthMutation } from "@/lib/auth";
 import { completeRemovedMemberCleanup } from "@/lib/auth/member-removal-cleanup";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
@@ -33,7 +33,7 @@ import {
 import { previewEmployeeDeactivation } from "@/lib/employee-lifecycle/deactivation/preview";
 import type {
 	DeactivationAfterCommit,
-	DeactivationPlan,
+	DeactivationPreview,
 	NamedEmployee,
 } from "@/lib/employee-lifecycle/deactivation/types";
 import type { ReleasedDeputyAssignments } from "@/lib/employee-lifecycle/deputy-release";
@@ -43,6 +43,7 @@ import {
 	type LifecycleTargetCheck,
 	type LifecycleTargetEmployee,
 } from "@/lib/employee-lifecycle/lifecycle-target";
+import { tryLockLifecycleOrganization } from "@/lib/employee-lifecycle/locks";
 import { executeReactivation } from "@/lib/employee-lifecycle/reactivation";
 import {
 	DeactivationRequestConflictError,
@@ -89,7 +90,13 @@ const requestConflictMessage =
 type LifecycleRefusal = Exclude<LifecycleTargetCheck, { type: "change" } | { type: "unchanged" }>;
 
 type ReactivationTransactionResult =
-	| { type: "success"; changed: boolean; targetEmployee: LifecycleTargetEmployee }
+	| {
+			type: "success";
+			changed: boolean;
+			targetEmployee: LifecycleTargetEmployee;
+			/** The closed deactivation follow-up, forwarded after the commit. */
+			audit?: AuditTrail;
+	  }
 	| LifecycleRefusal;
 
 type DeactivationTransactionResult =
@@ -297,12 +304,9 @@ function deactivateEmployee(input: unknown) {
 							deactivationProtectionScope(command),
 							async (tx): Promise<DeactivationTransactionResult> => {
 								// All lifecycle mutations for an organization take this row lock, serializing owner safety checks.
-								const [lockedOrganization] = await tx
-									.select({ id: organization.id })
-									.from(organization)
-									.where(eq(organization.id, actor.organizationId))
-									.for("update");
-								if (!lockedOrganization) return { type: "not_found" };
+								if (!(await tryLockLifecycleOrganization(tx, actor.organizationId))) {
+									return { type: "not_found" };
+								}
 
 								const recorded = await readDeactivationByRequest(tx, {
 									organizationId: actor.organizationId,
@@ -344,6 +348,8 @@ function deactivateEmployee(input: unknown) {
 									...command,
 									at: systemClock.nowInstant(),
 									requestFingerprint,
+									// After-commit steps run on this action's database client.
+									database: actor.dbService.db,
 								});
 								if (execution.kind === "refused") {
 									return { type: "refused", reports: execution.reports };
@@ -535,12 +541,9 @@ function reactivateEmployee(employeeId: string) {
 							{ organizationId: actor.organizationId, employeeIds: [validatedEmployeeId] },
 							async (tx): Promise<ReactivationTransactionResult> => {
 								// All lifecycle mutations for an organization take this row lock, serializing owner safety checks.
-								const [lockedOrganization] = await tx
-									.select({ id: organization.id })
-									.from(organization)
-									.where(eq(organization.id, actor.organizationId))
-									.for("update");
-								if (!lockedOrganization) return { type: "not_found" };
+								if (!(await tryLockLifecycleOrganization(tx, actor.organizationId))) {
+									return { type: "not_found" };
+								}
 
 								const check = await checkLifecycleTarget(tx, {
 									organizationId: actor.organizationId,
@@ -555,16 +558,26 @@ function reactivateEmployee(employeeId: string) {
 
 								// Restores nothing the deactivation ended (#1441); the admin
 								// re-grants from the checklist.
-								const reactivation = await executeReactivation(tx, {
-									organizationId: actor.organizationId,
-									actorUserId: actor.session.user.id,
-									employeeId: validatedEmployeeId,
-									requestId,
-									at: systemClock.nowInstant(),
-								});
+								const audit = new AuditTrail();
+								const reactivation = await executeReactivation(
+									tx,
+									{
+										organizationId: actor.organizationId,
+										actorUserId: actor.session.user.id,
+										employeeId: validatedEmployeeId,
+										requestId,
+										at: systemClock.nowInstant(),
+									},
+									audit,
+								);
 								if (reactivation.kind === "not_found") return { type: "not_found" };
 
-								return { type: "success", changed: true, targetEmployee: check.targetEmployee };
+								return {
+									type: "success",
+									changed: true,
+									targetEmployee: check.targetEmployee,
+									audit,
+								};
 							},
 							actor.dbService.db,
 						);
@@ -590,6 +603,7 @@ function reactivateEmployee(employeeId: string) {
 				}
 
 				if (transactionResult.changed) {
+					transactionResult.audit?.forwardCommitted();
 					yield* Effect.promise(() =>
 						logAudit({
 							action: AuditAction.EMPLOYEE_REACTIVATED,
@@ -642,7 +656,7 @@ export async function reactivateEmployeeAction(
  */
 export async function previewEmployeeDeactivationAction(
 	input: PreviewEmployeeDeactivationInput,
-): Promise<ServerActionResult<DeactivationPlan>> {
+): Promise<ServerActionResult<DeactivationPreview>> {
 	return runTracedEmployeeAction({
 		name: "previewEmployeeDeactivation",
 		logError: (error) => {

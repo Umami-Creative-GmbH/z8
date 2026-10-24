@@ -23,7 +23,8 @@ import {
  * manage. A report with another current manager just loses this one (that
  * manager becomes primary when the ending link was the primary one); a report
  * left with no current manager gets the replacement the admin picked, who must
- * be a current admin or manager. `employee_managers` has no organization
+ * be a current admin or manager. A report who is a former employee just loses
+ * the link: nobody is asked for and nobody is added. `employee_managers` has no organization
  * column, so every read and write is scoped through the employees it joins.
  */
 
@@ -40,18 +41,23 @@ const managerEmployee = alias(employee, "manager_employee");
 const reportUser = alias(user, "report_user");
 const managerUser = alias(user, "manager_user");
 
-type ReportLink = { employeeId: string; name: string; isPrimary: boolean };
+type ReportLink = { employeeId: string; name: string; isPrimary: boolean; current: boolean };
 
-/** Links in which the person manages someone in the organization. */
+/**
+ * Links in which the person manages someone in the organization, and whether
+ * that report is on the current roster at `at` (a former report's link just
+ * ends: a former employee never gets a new manager).
+ */
 async function loadReportLinks(
 	reader: DeactivationReader,
-	ctx: Pick<DeactivationPlanContext, "organizationId" | "employeeId">,
+	ctx: Pick<DeactivationPlanContext, "organizationId" | "employeeId" | "at">,
 ): Promise<ReportLink[]> {
 	return reader
 		.select({
 			employeeId: employeeManagers.employeeId,
 			name: reportUser.name,
 			isPrimary: employeeManagers.isPrimary,
+			current: onCurrentRoster(ctx.organizationId, reportEmployee, ctx.at),
 		})
 		.from(employeeManagers)
 		.innerJoin(
@@ -171,10 +177,15 @@ export async function planManagerLinks(
 	const plan: ManagerLinksPlan = {
 		reportsNeedingReplacement: [],
 		reportsKeepingAnotherManager: [],
+		formerReports: [],
 		ownManagerLinks,
 		replacementOptions,
 	};
 	for (const report of reportLinks) {
+		if (!report.current) {
+			plan.formerReports.push({ employeeId: report.employeeId, name: report.name });
+			continue;
+		}
 		const others = otherManagers.filter((other) => other.employeeId === report.employeeId);
 		const current = others.filter((other) => other.current);
 		if (current.length > 0) {
@@ -206,6 +217,22 @@ export async function planManagerLinks(
 	return plan;
 }
 
+/**
+ * The replacement picks the plan validated: report → their eligible new
+ * manager. Picks for anyone else (a report who keeps another manager, a former
+ * report, someone who isn't a report) and refused picks are left out, so they
+ * never decide where an approval duty goes.
+ */
+export function validatedReplacementManagers(plan: ManagerLinksPlan): Record<string, string> {
+	return Object.fromEntries(
+		plan.reportsNeedingReplacement.flatMap((report) =>
+			report.refusal === null && report.replacementEmployeeId !== null
+				? [[report.employeeId, report.replacementEmployeeId]]
+				: [],
+		),
+	);
+}
+
 /** Employees of the organization, for scoping `employee_managers` writes. */
 function organizationEmployeeIds(writer: DeactivationWriter, organizationId: string) {
 	return writer
@@ -235,6 +262,7 @@ export async function applyManagerLinks(
 	const endingReportIds = [
 		...plan.reportsKeepingAnotherManager.map((report) => report.employeeId),
 		...replaced.map((report) => report.employeeId),
+		...plan.formerReports.map((report) => report.employeeId),
 	];
 	const ownManagerIds = plan.ownManagerLinks.map((link) => link.employeeId);
 	const inOrganization = inArray(

@@ -1,5 +1,6 @@
+import type { db as appDb } from "@/db";
 import type { AuditTrail } from "@/lib/audit-trail";
-import type { Instant } from "@/lib/datetime/temporal-core";
+import type { Clock, Instant } from "@/lib/datetime/temporal-core";
 import type { LifecycleClient } from "../types";
 
 /**
@@ -65,6 +66,16 @@ export type DeactivationWriter = LifecycleClient;
 /** Runs after the commit; must be safe to run again on a replayed request. */
 export type DeactivationAfterCommit = () => Promise<void>;
 
+/** What applying needs besides the transaction. */
+export type DeactivationApplyDependencies = {
+	clock?: Clock;
+	/**
+	 * The caller's database client (its DatabaseService's), which after-commit
+	 * steps read and write through instead of the global one.
+	 */
+	database: typeof appDb;
+};
+
 export type NamedEmployee = { employeeId: string; name: string };
 
 // ---- manager-links.ts ------------------------------------------------------
@@ -82,6 +93,8 @@ export type ManagerLinksPlan = {
 	>;
 	/** Reports who keep another current manager and just lose this one. */
 	reportsKeepingAnotherManager: Array<NamedEmployee & { newPrimaryManagerId: string | null }>;
+	/** Reports who are former employees themselves: the link ends, nobody replaces it. */
+	formerReports: NamedEmployee[];
 	/** The deactivated person's own manager links, which end. */
 	ownManagerLinks: Array<NamedEmployee & { isPrimary: boolean }>;
 	/** Current employees able to manage the reports (current roster, admin or manager). */
@@ -158,6 +171,11 @@ export type AbsencesPlan = {
 	absencesToCancel: AbsencePlanItem[];
 	/** Spanning `at`: kept and listed. */
 	absencesSpanning: AbsencePlanItem[];
+	/**
+	 * Starting after `at` but touching a closed month: kept and listed, since a
+	 * closed month refuses the cancellation until it is reopened.
+	 */
+	absencesInClosedMonths: AbsencePlanItem[];
 };
 export type AbsencesApplied = { cancelledAbsenceIds: string[] };
 
@@ -202,6 +220,19 @@ export type DeactivationPlan = {
 	seatReleased: boolean;
 	refusals: Array<"replacement_missing" | "replacement_ineligible">;
 };
+
+/**
+ * The plan as the browser sees it (the preview dialog): without the planner
+ * notice's recipients, which are other users' ids and stay on the server.
+ */
+export type DeactivationPreview = Omit<DeactivationPlan, "shifts"> & {
+	shifts: Omit<ShiftsPlan, "plannerRecipientUserIds">;
+};
+
+export function toDeactivationPreview(plan: DeactivationPlan): DeactivationPreview {
+	const { plannerRecipientUserIds: _serverOnly, ...shifts } = plan.shifts;
+	return { ...plan, shifts };
+}
 
 export type DeactivationApplied = {
 	managerLinks: ManagerLinksApplied;

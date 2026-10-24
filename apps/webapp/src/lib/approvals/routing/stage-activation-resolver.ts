@@ -273,20 +273,91 @@ type DirectoryExecutor = {
  * unreactivated deactivation (#1440: the one chosen for this requester), and
  * only while the replacement is still an accessible, approved member who can
  * decide the requester's approvals: the same authority the handover checks
- * before a transfer.
+ * before a transfer. Without a named approver the directory is the
+ * organization's alone, the same for every stage and requester.
  */
 export async function loadApprovalStageDirectory(
 	executor: DirectoryExecutor,
 	input: {
 		organizationId: string;
-		stageId: string;
-		requesterEmployeeId: string;
-		namedApproverId: string | null;
 		hasDecisionPath?: ReplacementDecisionPath;
-	},
+	} & (
+		| { namedApproverId: null }
+		| { namedApproverId: string; stageId: string; requesterEmployeeId: string }
+	),
 ): Promise<ApprovalStageReviewerDirectory> {
 	const hasDecisionPath = input.hasDecisionPath ?? hasApprovalDecisionPath;
-	const { organizationId, namedApproverId } = input;
+	const { organizationId } = input;
+	const named = input.namedApproverId === null ? null : input;
+	// Replacement rows only for an explicitly named approver who left.
+	const replacementsSql =
+		named === null
+			? sql`'[]'::json`
+			: sql`coalesce((
+				select json_agg(
+					json_build_object(
+						'employeeId', latest.employee_id,
+						'replacementEmployeeId', replacement.id,
+						'replacementUserId', replacement.user_id
+					)
+				)
+				from (
+					select distinct on (anchored.employee_id)
+						anchored.employee_id, anchored.replacement_employee_id
+					from (
+						select departure.employee_id,
+							coalesce(
+								(stage_review.metadata->>'replacementEmployeeId')::uuid,
+								departure.replacement_employee_id
+							) as replacement_employee_id,
+							departure.effective_at as anchored_at
+						from employee_departure departure
+						left join employee_departure_review stage_review
+							on stage_review.organization_id = departure.organization_id
+							and stage_review.departure_id = departure.id
+							and stage_review.kind = 'approval_handover'
+							and stage_review.subject_id = ${named.stageId}::uuid
+						where departure.organization_id = ${organizationId}
+							and departure.employee_id = ${named.namedApproverId}::uuid
+							and departure.status = 'effective'
+						union all
+						-- A deactivation that still holds (#1440): the replacement
+						-- chosen for this requester when the person left.
+						select deactivation.employee_id,
+							coalesce(
+								(stage_review.metadata->>'replacementEmployeeId')::uuid,
+								(deactivation.replacement_managers->>${named.requesterEmployeeId}::text)::uuid
+							) as replacement_employee_id,
+							deactivation.deactivated_at as anchored_at
+						from employee_deactivation deactivation
+						join employee deactivated
+							on deactivated.id = deactivation.employee_id
+							and deactivated.organization_id = deactivation.organization_id
+							and deactivated.is_active = false
+						left join employee_departure_review stage_review
+							on stage_review.organization_id = deactivation.organization_id
+							and stage_review.deactivation_id = deactivation.id
+							and stage_review.kind = 'approval_handover'
+							and stage_review.subject_id = ${named.stageId}::uuid
+						where deactivation.organization_id = ${organizationId}
+							and deactivation.employee_id = ${named.namedApproverId}::uuid
+							and deactivation.reactivated_at is null
+					) anchored
+					order by anchored.employee_id, anchored.anchored_at desc
+				) latest
+				join employee replacement
+					on replacement.id = latest.replacement_employee_id
+					and replacement.organization_id = ${organizationId}
+				where exists (
+						select 1 from member
+						where member.organization_id = replacement.organization_id
+							and member.user_id = replacement.user_id
+							and member.status = 'approved'
+					)
+					and not employee_departure_denies_access(
+						replacement.organization_id, replacement.id, now()
+					)
+				), '[]'::json)`;
 	const directoryResult = await executor.execute(sql`
 				select
 					coalesce((
@@ -342,84 +413,23 @@ export async function loadApprovalStageDirectory(
 						from team
 						where team.organization_id = ${organizationId}
 					), '[]'::json) as teams,
-					coalesce((
-						select json_agg(
-							json_build_object(
-								'employeeId', latest.employee_id,
-								'replacementEmployeeId', replacement.id,
-								'replacementUserId', replacement.user_id
-							)
-						)
-						from (
-							select distinct on (anchored.employee_id)
-								anchored.employee_id, anchored.replacement_employee_id
-							from (
-								select departure.employee_id,
-									coalesce(
-										(stage_review.metadata->>'replacementEmployeeId')::uuid,
-										departure.replacement_employee_id
-									) as replacement_employee_id,
-									departure.effective_at as anchored_at
-								from employee_departure departure
-								left join employee_departure_review stage_review
-									on stage_review.organization_id = departure.organization_id
-									and stage_review.departure_id = departure.id
-									and stage_review.kind = 'approval_handover'
-									and stage_review.subject_id = ${input.stageId}::uuid
-								where departure.organization_id = ${organizationId}
-									and departure.employee_id = ${namedApproverId}::uuid
-									and departure.status = 'effective'
-								union all
-								-- A deactivation that still holds (#1440): the replacement
-								-- chosen for this requester when the person left.
-								select deactivation.employee_id,
-									coalesce(
-										(stage_review.metadata->>'replacementEmployeeId')::uuid,
-										(deactivation.replacement_managers->>${input.requesterEmployeeId}::text)::uuid
-									) as replacement_employee_id,
-									deactivation.deactivated_at as anchored_at
-								from employee_deactivation deactivation
-								join employee deactivated
-									on deactivated.id = deactivation.employee_id
-									and deactivated.organization_id = deactivation.organization_id
-									and deactivated.is_active = false
-								left join employee_departure_review stage_review
-									on stage_review.organization_id = deactivation.organization_id
-									and stage_review.deactivation_id = deactivation.id
-									and stage_review.kind = 'approval_handover'
-									and stage_review.subject_id = ${input.stageId}::uuid
-								where deactivation.organization_id = ${organizationId}
-									and deactivation.employee_id = ${namedApproverId}::uuid
-									and deactivation.reactivated_at is null
-							) anchored
-							order by anchored.employee_id, anchored.anchored_at desc
-						) latest
-						join employee replacement
-							on replacement.id = latest.replacement_employee_id
-							and replacement.organization_id = ${organizationId}
-						where exists (
-								select 1 from member
-								where member.organization_id = replacement.organization_id
-									and member.user_id = replacement.user_id
-									and member.status = 'approved'
-							)
-							and not employee_departure_denies_access(
-								replacement.organization_id, replacement.id, now()
-							)
-					), '[]'::json) as "departureReplacements"
+					${replacementsSql} as "departureReplacements"
 			`);
 	const directory = decodeDirectoryEnvelope(directoryResult);
 	const replacements = decodeDepartureReplacements(directory.departureReplacements);
-	const allowed = await Promise.all(
-		replacements.map((row) =>
-			hasDecisionPath(executor as EscalationCandidateExecutor, {
-				organizationId,
-				requesterEmployeeId: input.requesterEmployeeId,
-				managerEmployeeId: row.replacementEmployeeId,
-				managerUserId: row.replacementUserId,
-			}),
-		),
-	);
+	const allowed =
+		named === null
+			? []
+			: await Promise.all(
+					replacements.map((row) =>
+						hasDecisionPath(executor as EscalationCandidateExecutor, {
+							organizationId,
+							requesterEmployeeId: named.requesterEmployeeId,
+							managerEmployeeId: row.replacementEmployeeId,
+							managerUserId: row.replacementUserId,
+						}),
+					),
+				);
 	return {
 		employees: decodeEmployees(directory.employees),
 		managerLinks: decodeManagerLinks(directory.managerLinks),
@@ -446,13 +456,22 @@ export function createDatabaseStageActivationResolver(
 				stage.approverType === "specific_employee"
 					? (stage.approverEmployeeId ?? null)
 					: null;
-			const directory = await loadApprovalStageDirectory(input.dbService.db, {
-				organizationId: input.organizationId,
-				stageId: input.stage.id,
-				requesterEmployeeId: context.requesterEmployeeId,
-				namedApproverId,
-				hasDecisionPath: deps.hasDecisionPath,
-			});
+			const directory = await loadApprovalStageDirectory(
+				input.dbService.db,
+				namedApproverId === null
+					? {
+							organizationId: input.organizationId,
+							namedApproverId: null,
+							hasDecisionPath: deps.hasDecisionPath,
+						}
+					: {
+							organizationId: input.organizationId,
+							stageId: input.stage.id,
+							requesterEmployeeId: context.requesterEmployeeId,
+							namedApproverId,
+							hasDecisionPath: deps.hasDecisionPath,
+						},
+			);
 
 			const resolution = resolveApprovalStageReviewers({
 				context,

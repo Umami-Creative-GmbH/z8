@@ -7,14 +7,13 @@ import {
 	IconPlayerPlay,
 	IconUserOff,
 } from "@tabler/icons-react";
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import type { ComponentPropsWithRef, ReactElement } from "react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
 	deactivateEmployee,
-	previewEmployeeDeactivation,
 	reactivateEmployee,
 	removeEmployeeAccess,
 } from "@/app/[locale]/(app)/settings/employees/actions";
@@ -38,11 +37,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import type { ServerActionResult } from "@/lib/effect/result";
-import type { ReactivationChecklist } from "@/lib/employee-lifecycle/reactivation-checklist";
 import { EMPLOYEE_OFFBOARDING_RELEASE_READY } from "@/lib/employee-lifecycle/release";
 import { queryKeys } from "@/lib/query";
-import { useRequestIdentity } from "@/lib/query/use-employee-offboarding";
-import { Link, useRouter } from "@/navigation";
+import { Link } from "@/navigation";
 import {
 	DeactivationPreviewDialog,
 	type DeactivationReplacementPicks,
@@ -50,10 +47,10 @@ import {
 } from "./deactivation-preview-dialog";
 import { EmployeeLifecycleActionError } from "./employee-lifecycle-error";
 import {
-	fetchReactivationChecklist,
 	ReactivationChecklistDialog,
-	useReactivationChecklistMessages,
+	useReactivationChecklistOffer,
 } from "./reactivation-checklist";
+import { type DeactivationSubmission, useDeactivationFlow } from "./use-deactivation-flow";
 
 export interface EmployeeLifecycleTarget {
 	employeeId: string;
@@ -90,10 +87,10 @@ type LifecycleActionSelection = {
 	organizationId: string;
 	target: EmployeeLifecycleTarget;
 };
-type LifecycleMutationInput = LifecycleActionSelection & {
-	/** Deactivate only: the confirmed picks and the request ID for this payload. */
-	deactivation?: { replacementManagers: DeactivationReplacementPicks; requestId: string };
-};
+/** Deactivate always carries its confirmed picks and the request ID for them. */
+type LifecycleMutationInput =
+	| (LifecycleActionSelection & { action: "deactivate"; deactivation: DeactivationSubmission })
+	| (LifecycleActionSelection & { action: ConfirmedLifecycleAction });
 
 function translateLifecycleGuidance(
 	t: ReturnType<typeof useTranslate>["t"],
@@ -358,17 +355,6 @@ export function EmployeeLifecycleActions({
 	const [selection, setSelection] = useState<LifecycleActionSelection | null>(
 		null,
 	);
-	// Deactivate (#1440): the picks the preview is computed with, and one
-	// request ID per unchanged payload so a retry replays instead of acting twice.
-	const [replacementPicks, setReplacementPicks] = useState<DeactivationReplacementPicks>({});
-	const [deactivationError, setDeactivationError] = useState<string | null>(null);
-	const [reactivatedChecklist, setReactivatedChecklist] = useState<{
-		employeeName: string;
-		checklist: ReactivationChecklist;
-	} | null>(null);
-	const router = useRouter();
-	const checklistMessages = useReactivationChecklistMessages();
-	const deactivationIdentity = useRequestIdentity();
 	const dialogMessages = useDeactivationDialogMessages();
 	const mounted = useRef(true);
 	useEffect(() => {
@@ -377,6 +363,7 @@ export function EmployeeLifecycleActions({
 			mounted.current = false;
 		};
 	}, []);
+	const reactivation = useReactivationChecklistOffer(mounted);
 	const isOwner = hasOrganizationRole(currentMemberRole, "owner");
 	const isAdmin = hasOrganizationRole(currentMemberRole, "admin");
 	const hasApprovedMembership = target.membership?.status === "approved";
@@ -386,87 +373,31 @@ export function EmployeeLifecycleActions({
 	const canRemoveAccess = hasApprovedMembership && isOwner;
 
 	const deactivating = selection?.action === "deactivate" ? selection : null;
-	const previewEmployeeId = deactivating?.target.employeeId ?? target.employeeId;
-	const previewKeyPrefix = [
-		...queryKeys.employees.detail(previewEmployeeId),
-		"deactivationPreview",
-	] as const;
-	const previewQuery = useQuery({
-		queryKey: [...previewKeyPrefix, replacementPicks],
-		queryFn: async () => {
-			const result = await previewEmployeeDeactivation({
-				employeeId: previewEmployeeId,
-				replacementManagers: replacementPicks,
-			});
-			if (!result.success) throw new EmployeeLifecycleActionError(result);
-			return result.data;
-		},
-		enabled: deactivating !== null,
-		// While new picks recalculate, keep showing this employee's last preview.
-		placeholderData: (previous, previousQuery) =>
-			previousQuery &&
-			JSON.stringify(previousQuery.queryKey.slice(0, -1)) === JSON.stringify(previewKeyPrefix)
-				? keepPreviousData(previous)
-				: undefined,
-		staleTime: 0,
-		retry: false,
-	});
+	const deactivation = useDeactivationFlow(deactivating?.target.employeeId ?? null);
 
 	const closeDialog = () => {
 		setSelection(null);
-		setReplacementPicks({});
-		setDeactivationError(null);
-	};
-
-	/**
-	 * Reactivation restores nothing (#1441): show what the deactivation ended,
-	 * to grant again on purpose. When this row is gone by now (a filtered list),
-	 * the toast links to the checklist on the employee page instead.
-	 */
-	const offerReactivationChecklist = async (reactivated: EmployeeLifecycleTarget) => {
-		const checklist = await queryClient
-			.fetchQuery({
-				queryKey: queryKeys.employees.reactivationChecklist(reactivated.employeeId),
-				queryFn: () => fetchReactivationChecklist(reactivated.employeeId),
-				staleTime: 0,
-			})
-			.catch(() => null);
-		const hasItems = checklist !== null && checklist.items.length > 0;
-		if (hasItems && mounted.current) {
-			setReactivatedChecklist({ employeeName: reactivated.displayName, checklist });
-		}
-		toast.success(
-			t("settings.employees.lifecycle.reactivateSuccess", "Employee reactivated"),
-			hasItems && !mounted.current
-				? {
-						action: {
-							label: checklistMessages.openLabel,
-							onClick: () =>
-								router.push(`/settings/employees/${reactivated.employeeId}#reactivation-checklist`),
-						},
-					}
-				: undefined,
-		);
+		deactivation.reset();
 	};
 
 	const mutation = useMutation({
-		mutationFn: ({ action, target: selectedTarget, deactivation }: LifecycleMutationInput) => {
-			switch (action) {
+		mutationFn: (input: LifecycleMutationInput) => {
+			switch (input.action) {
 				case "deactivate":
 					return requireActionSuccess(() =>
 						deactivateEmployee({
-							employeeId: selectedTarget.employeeId,
-							requestId: deactivation?.requestId ?? "",
-							replacementManagers: deactivation?.replacementManagers ?? {},
+							employeeId: input.target.employeeId,
+							requestId: input.deactivation.requestId,
+							replacementManagers: input.deactivation.replacementManagers,
 						}),
 					);
 				case "reactivate":
 					return requireActionSuccess(() =>
-						reactivateEmployee(selectedTarget.employeeId),
+						reactivateEmployee(input.target.employeeId),
 					);
 				case "remove":
 					return requireActionSuccess(() =>
-						removeEmployeeAccess(selectedTarget.employeeId),
+						removeEmployeeAccess(input.target.employeeId),
 					);
 			}
 		},
@@ -491,7 +422,7 @@ export function EmployeeLifecycleActions({
 		},
 		onSuccess: async (_result, selected) => {
 			if (selected.action === "deactivate") {
-				deactivationIdentity.complete();
+				deactivation.completed();
 				onOptimisticStatusChange?.(selected.target.employeeId, false);
 			}
 			const invalidations = [
@@ -518,7 +449,10 @@ export function EmployeeLifecycleActions({
 			closeDialog();
 
 			if (selected.action === "reactivate") {
-				await offerReactivationChecklist(selected.target);
+				await reactivation.offer(
+					selected.target,
+					t("settings.employees.lifecycle.reactivateSuccess", "Employee reactivated"),
+				);
 				return;
 			}
 
@@ -553,8 +487,8 @@ export function EmployeeLifecycleActions({
 					toast.error(message);
 					return;
 				}
-				setDeactivationError(message);
-				void previewQuery.refetch();
+				deactivation.setSubmitError(message);
+				deactivation.refetch();
 				return;
 			}
 
@@ -582,7 +516,7 @@ export function EmployeeLifecycleActions({
 
 	if (
 		!selection &&
-		!reactivatedChecklist &&
+		!reactivation.checklist &&
 		(target.userId === currentUserId || (!canChangeStatus && !canRemoveAccess))
 	) {
 		return null;
@@ -590,28 +524,21 @@ export function EmployeeLifecycleActions({
 
 	const handleConfirm = () => {
 		if (!selection || actionLocked.current || mutation.isPending) return;
+		if (selection.action === "deactivate") return;
 		actionLocked.current = true;
-		mutation.mutate(selection);
+		mutation.mutate({ ...selection, action: selection.action });
 	};
 	const handleDeactivationConfirm = (picks: DeactivationReplacementPicks) => {
 		if (!deactivating || actionLocked.current || mutation.isPending) return;
 		actionLocked.current = true;
-		setDeactivationError(null);
-		const payload = {
-			employeeId: deactivating.target.employeeId,
-			replacementManagers: picks,
-		};
 		mutation.mutate({
 			...deactivating,
-			deactivation: {
-				replacementManagers: picks,
-				requestId: deactivationIdentity.forPayload(payload),
-			},
+			action: "deactivate",
+			deactivation: deactivation.submission(picks),
 		});
 	};
 	const selectAction = (action: LifecycleAction) => {
-		setDeactivationError(null);
-		setReplacementPicks({});
+		deactivation.reset();
 		setSelection({
 			action,
 			organizationId,
@@ -636,16 +563,13 @@ export function EmployeeLifecycleActions({
 					if (!open && !mutation.isPending) closeDialog();
 				}}
 				employeeName={deactivating?.target.displayName ?? target.displayName}
-				plan={deactivating ? (previewQuery.data ?? null) : null}
-				isLoading={previewQuery.isFetching}
-				loadError={previewQuery.isError && !previewQuery.data ? dialogMessages.loadError : null}
-				onRetry={() => void previewQuery.refetch()}
-				submitError={deactivationError}
+				plan={deactivation.plan}
+				isLoading={deactivation.isLoading}
+				loadError={deactivation.loadFailed ? dialogMessages.loadError : null}
+				onRetry={deactivation.refetch}
+				submitError={deactivation.submitError}
 				isSubmitting={mutation.isPending}
-				onReplacementsChange={(picks) => {
-					setDeactivationError(null);
-					setReplacementPicks(picks);
-				}}
+				onReplacementsChange={deactivation.changePicks}
 				onConfirm={handleDeactivationConfirm}
 			/>
 			<LifecycleConfirmationDialog
@@ -657,12 +581,12 @@ export function EmployeeLifecycleActions({
 				selectedAction={selection && selection.action !== "deactivate" ? selection.action : null}
 			/>
 			<ReactivationChecklistDialog
-				open={reactivatedChecklist !== null}
+				open={reactivation.checklist !== null}
 				onOpenChange={(open) => {
-					if (!open) setReactivatedChecklist(null);
+					if (!open) reactivation.dismissDialog();
 				}}
-				employeeName={reactivatedChecklist?.employeeName ?? target.displayName}
-				checklist={reactivatedChecklist?.checklist ?? null}
+				employeeName={reactivation.checklist?.employeeName ?? target.displayName}
+				checklist={reactivation.checklist?.checklist ?? null}
 			/>
 		</>
 	);

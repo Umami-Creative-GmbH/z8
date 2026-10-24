@@ -26,6 +26,7 @@ function plan(): DeactivationPlan {
 			reportsKeepingAnotherManager: [
 				{ employeeId: KEEPS, name: "Kim Keeps", newPrimaryManagerId: MANAGER },
 			],
+			formerReports: [],
 			ownManagerLinks: [{ employeeId: MANAGER, name: "Mia Manager", isPrimary: true }],
 			replacementOptions: [
 				{ employeeId: REPLACEMENT, name: "Anna Admin" },
@@ -64,6 +65,7 @@ function plan(): DeactivationPlan {
 					status: "approved",
 				},
 			],
+			absencesInClosedMonths: [],
 		},
 		accessEnds: {
 			grants: [

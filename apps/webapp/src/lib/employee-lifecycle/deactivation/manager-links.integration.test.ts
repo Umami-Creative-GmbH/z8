@@ -177,6 +177,7 @@ describe("deactivation ends manager links (#1440)", () => {
 					newPrimaryManagerId: team.coManager.employeeId,
 				},
 			],
+			formerReports: [],
 			ownManagerLinks: [
 				{ employeeId: team.theirManager.employeeId, name: "Max Boss", isPrimary: true },
 			],
@@ -223,6 +224,67 @@ describe("deactivation ends manager links (#1440)", () => {
 
 		expect(plan.reportsNeedingReplacement.map((report) => report.employeeId)).toEqual([
 			team.alone.employeeId,
+		]);
+	});
+
+	it("ends the link to a former report with no replacement and no refusal, and never gives them a new manager", async () => {
+		const team = await organizationWithTeam();
+		const formerReport = await person(team.organizationId, "Flo Formerreport", {
+			isActive: false,
+		});
+		await link(formerReport, team.leaver, true);
+		// Even a pick for them (a stale one) is ignored: a former employee gets no manager.
+		const context = planContext(team.organizationId, team.leaver, {
+			[team.alone.employeeId]: team.replacement.employeeId,
+			[formerReport.employeeId]: team.replacement.employeeId,
+		});
+
+		const plan = await planManagerLinks(fixture.db, context);
+
+		expect(plan.reportsNeedingReplacement.map((report) => report.employeeId)).toEqual([
+			team.alone.employeeId,
+		]);
+		expect(plan.formerReports).toEqual([
+			{ employeeId: formerReport.employeeId, name: "Flo Formerreport" },
+		]);
+		expect(plan.reportsNeedingReplacement.every((report) => report.refusal === null)).toBe(true);
+
+		const result = await fixture.db.transaction((tx) =>
+			applyManagerLinks(tx, applyContext(context), plan),
+		);
+
+		expect(result.applied.removedLinks).toContainEqual({
+			employeeId: formerReport.employeeId,
+			managerId: team.leaver.employeeId,
+		});
+		expect(result.applied.addedLinks).toEqual([
+			{
+				employeeId: team.alone.employeeId,
+				managerId: team.replacement.employeeId,
+				isPrimary: true,
+			},
+		]);
+		expect(
+			(await links(team.organizationId)).filter(
+				(row) => row.employee_id === formerReport.employeeId,
+			),
+		).toEqual([]);
+
+		// The backfill ends it the same way instead of keeping it.
+		const backfillTeam = await organizationWithTeam();
+		const formerOfBackfill = await person(backfillTeam.organizationId, "Fay Former", {
+			isActive: false,
+		});
+		await link(formerOfBackfill, backfillTeam.leaver, true);
+		const backfillPlan = await planManagerLinks(
+			fixture.db,
+			planContext(backfillTeam.organizationId, backfillTeam.leaver, {}, false),
+		);
+		expect(backfillPlan.formerReports.map((report) => report.employeeId)).toEqual([
+			formerOfBackfill.employeeId,
+		]);
+		expect(backfillPlan.reportsNeedingReplacement.map((report) => report.employeeId)).toEqual([
+			backfillTeam.alone.employeeId,
 		]);
 	});
 

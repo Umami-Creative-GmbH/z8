@@ -1,14 +1,22 @@
 "use client";
 
-import { IconArrowRight, IconChecklist, IconLoader2, IconX } from "@tabler/icons-react";
+import {
+	IconAlertTriangle,
+	IconArrowRight,
+	IconChecklist,
+	IconLoader2,
+	IconX,
+} from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTolgee, useTranslate } from "@tolgee/react";
-import { type ReactNode, useId } from "react";
+import { type ReactNode, type RefObject, useId, useState } from "react";
 import { toast } from "sonner";
 import {
 	dismissReactivationChecklistAction,
 	getReactivationChecklistAction,
 } from "@/app/[locale]/(app)/settings/employees/employee-reactivation.actions";
+import { Alert } from "@/components/ui/alert";
+import { AlertDescription } from "@/components/ui/alert-description";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -29,7 +37,8 @@ import type {
 	ReactivationChecklistItem,
 } from "@/lib/employee-lifecycle/reactivation-checklist";
 import { queryKeys } from "@/lib/query/keys";
-import { Link } from "@/navigation";
+import { Link, useRouter } from "@/navigation";
+import { useGrantKindLabel } from "./use-grant-kind-label";
 
 /**
  * The re-grant checklist after Reactivate (#1441, Organization ADR 0006):
@@ -48,12 +57,24 @@ const GROUP_ORDER: ReactivationChecklistGroup[] = [
 	"shareLinks",
 ];
 
-/** Loads the employee's checklist; null when there is none or it was dismissed. */
+/** The checklist could not be loaded (not: there is none). */
+export class ReactivationChecklistLoadError extends Error {
+	constructor() {
+		super("reactivation_checklist_load_failed");
+		this.name = "ReactivationChecklistLoadError";
+	}
+}
+
+/**
+ * Loads the employee's checklist; null when there is none or it was dismissed.
+ * Throws `ReactivationChecklistLoadError` when it could not be loaded.
+ */
 export async function fetchReactivationChecklist(
 	employeeId: string,
 ): Promise<ReactivationChecklist | null> {
 	const result = await getReactivationChecklistAction(employeeId);
-	return result.success ? result.data : null;
+	if (!result.success) throw new ReactivationChecklistLoadError();
+	return result.data;
 }
 
 /** Copy the lifecycle actions use around the checklist. */
@@ -61,7 +82,64 @@ export function useReactivationChecklistMessages() {
 	const { t } = useTranslate();
 	return {
 		openLabel: t("settings.employees.lifecycle.reactivationChecklist.open", "What to grant again"),
+		loadError: t(
+			"settings.employees.lifecycle.reactivationChecklist.loadError",
+			"The checklist of what to grant again could not be loaded.",
+		),
 	};
+}
+
+/**
+ * Reactivation restores nothing (#1441): after Reactivate, show what the
+ * deactivation ended, to grant again on purpose. When the row that reactivated
+ * is gone by now (a filtered list), or the checklist could not be loaded, the
+ * toast links to the checklist on the employee page instead.
+ */
+export function useReactivationChecklistOffer(mounted: RefObject<boolean>) {
+	const queryClient = useQueryClient();
+	const router = useRouter();
+	const messages = useReactivationChecklistMessages();
+	const [shown, setShown] = useState<{
+		employeeName: string;
+		checklist: ReactivationChecklist;
+	} | null>(null);
+
+	/** Confirms the reactivation with `successMessage` and offers the checklist. */
+	async function offer(
+		reactivated: { employeeId: string; displayName: string },
+		successMessage: string,
+	) {
+		let checklist: ReactivationChecklist | null = null;
+		let loadFailed = false;
+		try {
+			checklist = await queryClient.fetchQuery({
+				queryKey: queryKeys.employees.reactivationChecklist(reactivated.employeeId),
+				queryFn: () => fetchReactivationChecklist(reactivated.employeeId),
+				staleTime: 0,
+			});
+		} catch {
+			loadFailed = true;
+		}
+		const hasItems = checklist !== null && checklist.items.length > 0;
+		if (checklist && hasItems && mounted.current) {
+			setShown({ employeeName: reactivated.displayName, checklist });
+		}
+		const openOnEmployeePage = {
+			label: messages.openLabel,
+			onClick: () =>
+				router.push(`/settings/employees/${reactivated.employeeId}#reactivation-checklist`),
+		};
+		toast.success(
+			successMessage,
+			loadFailed
+				? { description: messages.loadError, action: openOnEmployeePage }
+				: hasItems && !mounted.current
+					? { action: openOnEmployeePage }
+					: undefined,
+		);
+	}
+
+	return { checklist: shown, offer, dismissDialog: () => setShown(null) };
 }
 
 function useLocale() {
@@ -114,35 +192,11 @@ function useChecklistLabels() {
 		}
 	};
 
-	const grantLabel = (grant: ChecklistGrantKind | null) => {
-		switch (grant) {
-			case "expense_officer":
-				return t(
-					"settings.employees.lifecycle.deactivationPreview.grants.expenseOfficer",
-					"Travel expense officer",
-				);
-			case "payroll_access":
-				return t(
-					"settings.employees.lifecycle.deactivationPreview.grants.payrollAccess",
-					"Payroll access",
-				);
-			case "personnel_file_officer":
-				return t(
-					"settings.employees.lifecycle.deactivationPreview.grants.personnelFileOfficer",
-					"Personnel file officer",
-				);
-			case "driving_licence_verifier":
-				return t(
-					"settings.employees.lifecycle.deactivationPreview.grants.drivingLicenceVerifier",
-					"Driving licence verifier",
-				);
-			case null:
-				return t(
-					"settings.employees.lifecycle.reactivationChecklist.items.unknownGrant",
-					"A held grant",
-				);
-		}
-	};
+	const grantKindLabel = useGrantKindLabel();
+	const grantLabel = (grant: ChecklistGrantKind | null) =>
+		grant === null
+			? t("settings.employees.lifecycle.reactivationChecklist.items.unknownGrant", "A held grant")
+			: grantKindLabel(grant);
 
 	const itemLabel = (item: ReactivationChecklistItem): string => {
 		switch (item.kind) {
@@ -291,6 +345,12 @@ export function ReactivationChecklistItems({ checklist }: { checklist: Reactivat
 function useChecklistIntro(checklist: ReactivationChecklist) {
 	const { t } = useTranslate();
 	const locale = useLocale();
+	if (checklist.deactivatedAt === null) {
+		return t(
+			"settings.employees.lifecycle.reactivationChecklist.descriptionDateNotRecorded",
+			"Reactivation restored nothing. These were ended at the deactivation (its date is not recorded). Grant again only what is still needed.",
+		);
+	}
 	return t(
 		"settings.employees.lifecycle.reactivationChecklist.description",
 		"Reactivation restored nothing. These were ended at the deactivation on {deactivatedAt} ({timezone}). Grant again only what is still needed.",
@@ -366,16 +426,38 @@ function ReactivationChecklistDialogBody({
 export function ReactivationChecklistCard({ employeeId }: { employeeId: string }) {
 	const queryClient = useQueryClient();
 	const queryKey = queryKeys.employees.reactivationChecklist(employeeId);
-	const { data: checklist } = useQuery({
+	const query = useQuery({
 		queryKey,
 		queryFn: () => fetchReactivationChecklist(employeeId),
 	});
+	if (query.isError) {
+		return <ChecklistLoadError onRetry={() => void query.refetch()} retrying={query.isFetching} />;
+	}
+	const checklist = query.data;
 	if (!checklist || checklist.items.length === 0) return null;
 	return (
 		<ReactivationChecklistCardBody
 			checklist={checklist}
 			onDismissed={() => queryClient.setQueryData(queryKey, null)}
 		/>
+	);
+}
+
+/** A failed load is said, never shown as "nothing to grant again". */
+function ChecklistLoadError({ onRetry, retrying }: { onRetry(): void; retrying: boolean }) {
+	const { t } = useTranslate();
+	const { loadError } = useReactivationChecklistMessages();
+	return (
+		<Alert variant="destructive" role="alert" id="reactivation-checklist">
+			<IconAlertTriangle aria-hidden="true" />
+			<AlertDescription className="flex flex-wrap items-center justify-between gap-2">
+				<span>{loadError}</span>
+				<Button type="button" size="sm" variant="outline" onClick={onRetry} disabled={retrying}>
+					{retrying && <IconLoader2 aria-hidden="true" className="size-4 animate-spin" />}
+					{t("settings.employees.lifecycle.reactivationChecklist.retry", "Try again")}
+				</Button>
+			</AlertDescription>
+		</Alert>
 	);
 }
 
@@ -389,6 +471,10 @@ function ReactivationChecklistCardBody({
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const intro = useChecklistIntro(checklist);
+	const dismissError = t(
+		"settings.employees.lifecycle.reactivationChecklist.dismissError",
+		"The checklist could not be dismissed. Try again.",
+	);
 	const dismiss = useMutation({
 		mutationFn: () =>
 			dismissReactivationChecklistAction({
@@ -397,13 +483,13 @@ function ReactivationChecklistCardBody({
 			}),
 		onSuccess: (result) => {
 			if (!result.success) {
-				toast.error(result.error);
+				toast.error(dismissError);
 				return;
 			}
 			onDismissed();
 		},
 		onError: () => {
-			toast.error(t("common.unexpectedError", "An unexpected error occurred"));
+			toast.error(dismissError);
 		},
 	});
 

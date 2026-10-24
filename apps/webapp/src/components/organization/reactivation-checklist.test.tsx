@@ -8,11 +8,14 @@ import { EmploymentLifecycleEvents } from "@/components/settings/employee-employ
 import type { ReactivationChecklist } from "@/lib/employee-lifecycle/reactivation-checklist";
 import { ReactivationChecklistCard } from "./reactivation-checklist";
 
-const { getChecklistMock, dismissChecklistMock, listHistoryMock } = vi.hoisted(() => ({
-	getChecklistMock: vi.fn(),
-	dismissChecklistMock: vi.fn(),
-	listHistoryMock: vi.fn(),
-}));
+const { getChecklistMock, dismissChecklistMock, listHistoryMock, toastErrorMock } = vi.hoisted(
+	() => ({
+		getChecklistMock: vi.fn(),
+		dismissChecklistMock: vi.fn(),
+		listHistoryMock: vi.fn(),
+		toastErrorMock: vi.fn(),
+	}),
+);
 
 /** English defaults with their ICU placeholders filled, as Tolgee would. */
 vi.mock("@tolgee/react", () => ({
@@ -25,7 +28,7 @@ vi.mock("@tolgee/react", () => ({
 	useTolgee: () => ({ getLanguage: () => "en" }),
 }));
 
-vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
+vi.mock("sonner", () => ({ toast: { error: toastErrorMock, success: vi.fn() } }));
 
 vi.mock("@/navigation", () => ({
 	Link: ({ href, children, ...props }: { href: string; children: ReactNode }) => (
@@ -33,6 +36,7 @@ vi.mock("@/navigation", () => ({
 			{children}
 		</a>
 	),
+	useRouter: () => ({ push: vi.fn() }),
 }));
 
 vi.mock("@/app/[locale]/(app)/settings/employees/employee-reactivation.actions", () => ({
@@ -80,7 +84,10 @@ beforeEach(() => {
 	getChecklistMock.mockReset();
 	dismissChecklistMock.mockReset();
 	listHistoryMock.mockReset();
+	toastErrorMock.mockReset();
 });
+
+const failure = { success: false, error: "Database unavailable", code: "DatabaseError" };
 
 describe("reactivation checklist on the employee page", () => {
 	it("lists what the deactivation ended in the organization's zone, until dismissed", async () => {
@@ -143,5 +150,65 @@ describe("deactivations and reactivations in the employment history", () => {
 			"Deactivated on Oct 24, 2026, 10:00 AM",
 		]);
 		expect(screen.getByText("Times in Europe/Berlin.")).toBeTruthy();
+	});
+});
+
+describe("failed loads and dismissals are said, never shown as nothing (#1437 review)", () => {
+	it("says the checklist could not be loaded and loads it again on retry", async () => {
+		getChecklistMock.mockResolvedValueOnce(failure);
+		getChecklistMock.mockResolvedValueOnce({ success: true, data: checklist });
+		renderWithQueryClient(<ReactivationChecklistCard employeeId={EMPLOYEE} />);
+
+		expect((await screen.findByRole("alert")).textContent).toContain(
+			"The checklist of what to grant again could not be loaded.",
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+
+		expect(await screen.findByRole("region", { name: "Shifts that were opened" })).toBeTruthy();
+		expect(screen.queryByRole("alert")).toBeNull();
+	});
+
+	it("says a backfilled deactivation's date is not recorded", async () => {
+		getChecklistMock.mockResolvedValueOnce({
+			success: true,
+			data: { ...checklist, deactivatedAt: null },
+		});
+		renderWithQueryClient(<ReactivationChecklistCard employeeId={EMPLOYEE} />);
+
+		expect(await screen.findByText(/its date is not recorded/)).toBeTruthy();
+	});
+
+	it("shows a translated message when dismissing fails, never the server's text", async () => {
+		getChecklistMock.mockResolvedValue({ success: true, data: checklist });
+		dismissChecklistMock.mockResolvedValueOnce(failure);
+		renderWithQueryClient(<ReactivationChecklistCard employeeId={EMPLOYEE} />);
+
+		fireEvent.click(await screen.findByRole("button", { name: "Dismiss" }));
+
+		await waitFor(() =>
+			expect(toastErrorMock).toHaveBeenCalledWith(
+				"The checklist could not be dismissed. Try again.",
+			),
+		);
+		expect(JSON.stringify(toastErrorMock.mock.calls)).not.toContain("Database unavailable");
+	});
+
+	it("says the deactivations and reactivations could not be loaded, with a retry", async () => {
+		listHistoryMock.mockResolvedValueOnce(failure);
+		listHistoryMock.mockResolvedValueOnce({
+			success: true,
+			data: {
+				timeZone: "Europe/Berlin",
+				events: [{ kind: "deactivated", at: "2026-10-24T08:00:00Z" }],
+			},
+		});
+		renderWithQueryClient(<EmploymentLifecycleEvents employeeId={EMPLOYEE} />);
+
+		expect((await screen.findByRole("alert")).textContent).toContain(
+			"Deactivations and reactivations could not be loaded.",
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+
+		expect(await screen.findByText(/Deactivated on/)).toBeTruthy();
 	});
 });
