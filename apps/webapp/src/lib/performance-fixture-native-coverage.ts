@@ -1,11 +1,12 @@
 /** Independent of exporter delivery: bounded numerical accounting at the SDK span lifecycle. */
 
 import { writeFile } from "node:fs/promises";
-import { createServer, type Server } from "node:http";
+import { createServer, IncomingMessage, type Server } from "node:http";
 
 type NativeKind = "queries" | "acquisitions" | "cache";
 type NativeSpan = {
 	name: string;
+	kind?: number;
 	instrumentationScope?: { name: string };
 	spanContext(): { traceId: string };
 };
@@ -25,9 +26,23 @@ const nativeKind = (span: NativeSpan): NativeKind | undefined => {
 export class FixtureNativeCoverage {
 	private readonly active = new Map<
 		string,
-		{ started: Counts; ended: Counts; unknown: number }
+		{
+			started: Counts;
+			ended: Counts;
+			unknown: number;
+			servers: number;
+			lastActivity: number;
+		}
 	>();
 	private readonly totals = { started: counts(), ended: counts(), unknown: 0 };
+	private readonly incoming = {
+		knownHeaderKnownSpan: 0,
+		knownHeaderOtherSpan: 0,
+		otherHeaderKnownSpan: 0,
+		otherHeaderOtherSpan: 0,
+		matchingParent: 0,
+		mismatchingParent: 0,
+	};
 	register(traceIds: string[]) {
 		if (
 			!Array.isArray(traceIds) ||
@@ -44,26 +59,69 @@ export class FixtureNativeCoverage {
 				started: counts(),
 				ended: counts(),
 				unknown: 0,
+				servers: 0,
+				lastActivity: performance.now(),
 			});
 	}
+	observeIncoming(
+		span: { spanContext(): { traceId: string } },
+		request: unknown,
+	) {
+		if (!(request instanceof IncomingMessage)) return;
+		const parent = request.headers.traceparent;
+		const parentId =
+			typeof parent === "string"
+				? /^00-([a-f0-9]{32})-[a-f0-9]{16}-0[01]$/i
+						.exec(parent)?.[1]
+						?.toLowerCase()
+				: undefined;
+		const spanId = span.spanContext().traceId;
+		const headerKnown = parentId !== undefined && this.active.has(parentId);
+		const spanKnown = this.active.has(spanId);
+		this.incoming[
+			headerKnown
+				? spanKnown
+					? "knownHeaderKnownSpan"
+					: "knownHeaderOtherSpan"
+				: spanKnown
+					? "otherHeaderKnownSpan"
+					: "otherHeaderOtherSpan"
+		]++;
+		if (parentId)
+			this.incoming[
+				parentId === spanId ? "matchingParent" : "mismatchingParent"
+			]++;
+	}
 	onStart(span: NativeSpan) {
+		const state = this.active.get(span.spanContext().traceId);
+		if (span.kind === 2 && state) {
+			state.servers++;
+			state.lastActivity = performance.now();
+		}
 		const kind = nativeKind(span);
 		if (!kind) return;
 		this.totals.started[kind]++;
-		const state = this.active.get(span.spanContext().traceId);
-		if (state) state.started[kind]++;
-		else {
+		if (state) {
+			state.started[kind]++;
+			state.lastActivity = performance.now();
+		} else {
 			this.totals.unknown++;
 			for (const window of this.active.values()) window.unknown++;
 		}
 	}
 	onEnd(span: NativeSpan) {
+		const state = this.active.get(span.spanContext().traceId);
+		if (span.kind === 2 && state) {
+			state.servers--;
+			state.lastActivity = performance.now();
+		}
 		const kind = nativeKind(span);
 		if (!kind) return;
 		this.totals.ended[kind]++;
-		const state = this.active.get(span.spanContext().traceId);
-		if (state) state.ended[kind]++;
-		else for (const window of this.active.values()) window.unknown++;
+		if (state) {
+			state.ended[kind]++;
+			state.lastActivity = performance.now();
+		} else for (const window of this.active.values()) window.unknown++;
 	}
 	close(traceIds: string[]) {
 		if (
@@ -85,6 +143,7 @@ export class FixtureNativeCoverage {
 				unattributedNativeSpans: state.unknown,
 				complete:
 					state.unknown === 0 &&
+					state.servers === 0 &&
 					Object.keys(state.started).every(
 						(key) =>
 							state.started[key as NativeKind] ===
@@ -94,7 +153,34 @@ export class FixtureNativeCoverage {
 		});
 	}
 	snapshot() {
-		return { ...this.totals, activeTraces: this.active.size };
+		return {
+			...this.totals,
+			incoming: this.incoming,
+			activeTraces: this.active.size,
+		};
+	}
+	async drain(traceIds: string[]) {
+		const deadline = performance.now() + 10000;
+		while (performance.now() < deadline) {
+			if (
+				traceIds.every((traceId) => {
+					const state = this.active.get(traceId);
+					return (
+						state &&
+						state.servers === 0 &&
+						performance.now() - state.lastActivity >= 500 &&
+						Object.keys(state.started).every(
+							(key) =>
+								state.started[key as NativeKind] ===
+								state.ended[key as NativeKind],
+						)
+					);
+				})
+			)
+				return true;
+			await new Promise((resolve) => setTimeout(resolve, 25));
+		}
+		return false;
 	}
 }
 
@@ -133,8 +219,11 @@ export async function startFixtureNativeControl(
 			let proof: ReturnType<FixtureNativeCoverage["close"]> = [];
 			if (request.url === "/visits/register") coverage.register(traceIds);
 			else {
+				const drained = await coverage.drain(traceIds);
 				await forceFlush();
-				proof = coverage.close(traceIds);
+				proof = coverage
+					.close(traceIds)
+					.map((entry) => ({ ...entry, complete: entry.complete && drained }));
 			}
 			response.setHeader("Content-Type", "application/json");
 			response.end(

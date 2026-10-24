@@ -142,6 +142,14 @@ export async function registerNodeRuntime() {
 				"@opentelemetry/instrumentation-fs": { enabled: false },
 				...(fixtureObserver
 					? {
+							...(nativeCoverage
+								? {
+										"@opentelemetry/instrumentation-http": {
+											requestHook: (span, request) =>
+												nativeCoverage.observeIncoming(span, request),
+										},
+									}
+								: {}),
 							"@opentelemetry/instrumentation-pg": {
 								enhancedDatabaseReporting: false,
 								ignoreConnectSpans: false,

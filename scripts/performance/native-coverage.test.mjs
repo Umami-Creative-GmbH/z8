@@ -1,6 +1,96 @@
 import assert from "node:assert/strict";
+import { createRequire } from "node:module";
 import test from "node:test";
 import { FixtureNativeCoverage } from "../../apps/webapp/src/lib/performance-fixture-native-coverage.ts";
+
+test("installed SDK and shared Effect runtime preserve independently counted concurrent native identities", async () => {
+	const require = createRequire(
+		new URL("../../apps/webapp/package.json", import.meta.url),
+	);
+	const { NodeSDK } = require("@opentelemetry/sdk-node");
+	const {
+		InMemorySpanExporter,
+		SimpleSpanProcessor,
+	} = require("@opentelemetry/sdk-trace-base");
+	const { trace } = require("@opentelemetry/api");
+	const { Effect, ManagedRuntime, Layer } = require("effect");
+	const coverage = new FixtureNativeCoverage();
+	const exporter = new InMemorySpanExporter();
+	const delegate = new SimpleSpanProcessor(exporter);
+	const sdk = new NodeSDK({
+		spanProcessors: [
+			{
+				onStart(span, context) {
+					coverage.onStart(span);
+					delegate.onStart(span, context);
+				},
+				onEnd(span) {
+					coverage.onEnd(span);
+					delegate.onEnd(span);
+				},
+				forceFlush: () => delegate.forceFlush(),
+				shutdown: () => delegate.shutdown(),
+			},
+		],
+	});
+	sdk.start();
+	const runtime = ManagedRuntime.make(Layer.empty);
+	const ids = [];
+	try {
+		await Promise.all(
+			[3, 5].map((count) =>
+				trace
+					.getTracer("fixture-parent")
+					.startActiveSpan("fixture-visit", async (parent) => {
+						const traceId = parent.spanContext().traceId;
+						ids.push(traceId);
+						coverage.register([traceId]);
+						try {
+							await runtime.runPromise(
+								Effect.forEach(
+									Array.from({ length: count }),
+									() =>
+										Effect.tryPromise(async () => {
+											await new Promise((done) => setTimeout(done, 1));
+											const child = trace
+												.getTracer("@opentelemetry/instrumentation-pg")
+												.startSpan("pg.query");
+											assert.equal(child.spanContext().traceId, traceId);
+											child.end();
+										}),
+									{ concurrency: 2 },
+								),
+							);
+						} finally {
+							parent.end();
+						}
+					}),
+			),
+		);
+		await delegate.forceFlush();
+		const proof = coverage.close(ids);
+		assert.deepEqual(
+			proof.map(({ queries, complete }) => ({ queries, complete })),
+			[
+				{ queries: 3, complete: true },
+				{ queries: 5, complete: true },
+			],
+		);
+		assert.equal(
+			exporter
+				.getFinishedSpans()
+				.filter(
+					(span) =>
+						span.instrumentationScope.name ===
+						"@opentelemetry/instrumentation-pg",
+				).length,
+			8,
+		);
+	} finally {
+		await runtime.dispose();
+		await sdk.shutdown();
+	}
+});
 
 const span = (
 	traceId,
