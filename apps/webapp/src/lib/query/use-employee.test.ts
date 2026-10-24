@@ -1,10 +1,17 @@
 // @vitest-environment jsdom
 
-import { readFileSync } from "node:fs";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { createElement, type ReactNode } from "react";
-import { beforeEach, describe, expect, expectTypeOf, it, vi } from "vitest";
+import {
+	afterEach,
+	beforeEach,
+	describe,
+	expect,
+	expectTypeOf,
+	it,
+	vi,
+} from "vitest";
 import { queryKeys } from "./keys";
 import type { useEmployee } from "./use-employee";
 
@@ -40,6 +47,18 @@ vi.mock("@/app/[locale]/(app)/approvals/actions", () => ({
 	getCurrentEmployee: getCurrentEmployeeMock,
 }));
 
+vi.mock("@/hooks/use-organization", () => ({
+	useOrganization: () => ({
+		userId: "user-1",
+		activeOrganizationId: "org-1",
+		organizationId: "org-1",
+		employeeId: "actor-1",
+		isLoading: false,
+		error: null,
+	}),
+}));
+const fetchMock = vi.fn();
+
 vi.mock("@/app/[locale]/(app)/settings/employees/actions", () => ({
 	getEmployee: getEmployeeMock,
 	listEmployeesForSelect: listEmployeesForSelectMock,
@@ -54,7 +73,8 @@ vi.mock("@/app/[locale]/(app)/settings/employees/employment-history-client-actio
 	confirmEmployeeEmploymentHistoryAction: confirmEmploymentHistoryMock,
 	createEmployeeEmploymentHistoryAction: createEmploymentHistoryMock,
 	listEmployeeEmploymentHistoryAction: listEmploymentHistoryMock,
-}));
+	}),
+);
 
 vi.mock("@/app/[locale]/(app)/settings/work-policies/actions", () => ({
 	getEmployeeEffectiveScheduleDetails: getScheduleMock,
@@ -66,7 +86,11 @@ const employeeId = "employee-1";
 
 function createWrapper(queryClient: QueryClient) {
 	return function Wrapper({ children }: { children: ReactNode }) {
-		return createElement(QueryClientProvider, { client: queryClient }, children);
+		return createElement(
+			QueryClientProvider,
+			{ client: queryClient },
+			children,
+		);
 	};
 }
 
@@ -82,61 +106,59 @@ function createTestQueryClient() {
 function renderUseEmployee(queryClient: QueryClient) {
 	return renderHook(() => useEmployeeHook({ employeeId, enabled: false, accessTier: "orgAdmin" }), {
 		wrapper: createWrapper(queryClient),
-	});
+		},
+	);
 }
 
-function expectEmploymentHistoryInvalidated(invalidateQueriesSpy: ReturnType<typeof vi.spyOn>) {
+function expectEmploymentHistoryInvalidated(
+	invalidateQueriesSpy: ReturnType<typeof vi.spyOn>,
+) {
 	expect(invalidateQueriesSpy).toHaveBeenCalledWith({
-		queryKey: queryKeys.employees.employmentHistory(employeeId),
+		queryKey: queryKeys.employees.detailFor("user-1", "org-1", employeeId),
 	});
-	expect(invalidateQueriesSpy).toHaveBeenCalledWith({
-		queryKey: queryKeys.employees.detail(employeeId),
-	});
+	expect(invalidateQueriesSpy).toHaveBeenCalledTimes(1);
 }
+
+afterEach(() => vi.unstubAllGlobals());
 
 beforeEach(() => {
 	vi.clearAllMocks();
 	getCurrentEmployeeMock.mockResolvedValue(null);
 	getEmployeeMock.mockResolvedValue({ success: true, data: null });
 	getScheduleMock.mockResolvedValue({ success: true, data: null });
-	listEmployeesForSelectMock.mockResolvedValue({ success: true, data: { employees: [] } });
+	listEmployeesForSelectMock.mockResolvedValue({
+		success: true,
+		data: { employees: [] },
+	});
 	listEmploymentHistoryMock.mockResolvedValue({ success: true, data: [] });
-	requestWorkBalanceRecalculationMock.mockResolvedValue({ success: true, data: null });
+	requestWorkBalanceRecalculationMock.mockResolvedValue({
+		success: true,
+		data: null,
+	});
 	updateEmployeeMock.mockResolvedValue({ success: true, data: null });
-	updateEmployeeInvitationDraftMock.mockResolvedValue({ success: true, data: null });
+	updateEmployeeInvitationDraftMock.mockResolvedValue({
+		success: true,
+		data: null,
+	});
 	changeWageMock.mockResolvedValue({ success: true, data: null });
+	fetchMock.mockImplementation(async (url: string) => {
+		const dataset = new URL(url, "http://localhost").pathname.split("/").at(-1);
+		const data =
+			dataset === "detail"
+				? { id: employeeId, kind: "employee", organizationId: "org-1" }
+				: dataset === "schedule"
+					? null
+					: [];
+		return Response.json({
+			scope: { userId: "user-1", organizationId: "org-1" },
+			data,
+			updatedAt: Date.now(),
+		});
+	});
+	vi.stubGlobal("fetch", fetchMock);
 });
 
 describe("useEmployee contracts", () => {
-	it("routes invitation draft updates to the draft update server action", () => {
-		const source = readFileSync("src/lib/query/use-employee.ts", "utf8");
-		expect(source).toContain("updateEmployeeInvitationDraft");
-		expect(source).toContain('employeeQuery.data?.kind === "invitationDraft"');
-	});
-
-	it("enables real-employee-only queries only after a real employee detail loads", () => {
-		const source = readFileSync("src/lib/query/use-employee.ts", "utf8");
-		expect(source).toContain(
-			'const hasRealEmployeeDetail = employeeQuery.data?.kind === "employee"',
-		);
-		expect(source).not.toContain("enabled: enabled && hasEmployee && !isDraft");
-	});
-
-	it("does not submit accepted draft edits to the draft update action", () => {
-		const source = readFileSync("src/lib/query/use-employee.ts", "utf8");
-		expect(source).toContain("isAcceptedDraft");
-		expect(source).toContain("Edit the active employee record");
-	});
-
-	it("returns promises from guarded mutation functions", () => {
-		const source = readFileSync("src/lib/query/use-employee.ts", "utf8");
-		expect(source).toContain("mutationFn: async (data: UpsertEmploymentHistory)");
-		expect(source).toContain("mutationFn: async (historyId: string)");
-		expect(source).toContain("mutationFn: async () =>");
-		expect(source).toContain("mutationFn: async (data: ChangeHourlyWage)");
-		expect(source).toContain("mutationFn: async (input: EmployeeDetailUpdate)");
-	});
-
 	it("exposes a stable employment history query key", () => {
 		expect(queryKeys.employees.employmentHistory("employee-1")).toEqual([
 			"employees",
@@ -150,21 +172,38 @@ describe("useEmployee contracts", () => {
 		type UseEmployeeResult = ReturnType<typeof useEmployee>;
 
 		expectTypeOf<UseEmployeeResult>().toHaveProperty("employmentHistory");
-		expectTypeOf<UseEmployeeResult>().toHaveProperty("isLoadingEmploymentHistory");
+		expectTypeOf<UseEmployeeResult>().toHaveProperty(
+			"isLoadingEmploymentHistory",
+		);
 		expectTypeOf<UseEmployeeResult>().toHaveProperty("createEmploymentHistory");
-		expectTypeOf<UseEmployeeResult>().toHaveProperty("isCreatingEmploymentHistory");
-		expectTypeOf<UseEmployeeResult>().toHaveProperty("confirmEmploymentHistory");
-		expectTypeOf<UseEmployeeResult>().toHaveProperty("isConfirmingEmploymentHistory");
+		expectTypeOf<UseEmployeeResult>().toHaveProperty(
+			"isCreatingEmploymentHistory",
+		);
+		expectTypeOf<UseEmployeeResult>().toHaveProperty(
+			"confirmEmploymentHistory",
+		);
+		expectTypeOf<UseEmployeeResult>().toHaveProperty(
+			"isConfirmingEmploymentHistory",
+		);
 		expectTypeOf<UseEmployeeResult>().toHaveProperty("cancelEmploymentHistory");
-		expectTypeOf<UseEmployeeResult>().toHaveProperty("isCancelingEmploymentHistory");
-		expectTypeOf<UseEmployeeResult>().toHaveProperty("requestWorkBalanceRecalculation");
-		expectTypeOf<UseEmployeeResult>().toHaveProperty("isRequestingWorkBalanceRecalculation");
+		expectTypeOf<UseEmployeeResult>().toHaveProperty(
+			"isCancelingEmploymentHistory",
+		);
+		expectTypeOf<UseEmployeeResult>().toHaveProperty(
+			"requestWorkBalanceRecalculation",
+		);
+		expectTypeOf<UseEmployeeResult>().toHaveProperty(
+			"isRequestingWorkBalanceRecalculation",
+		);
 		expectTypeOf<UseEmployeeResult>().toHaveProperty("changeWage");
 		expectTypeOf<UseEmployeeResult>().toHaveProperty("isChangingWage");
 	});
 
 	it("invalidates employment history and employee detail after a wage change", async () => {
-		changeWageMock.mockResolvedValue({ success: true, data: { id: "history-2" } });
+		changeWageMock.mockResolvedValue({
+			success: true,
+			data: { id: "history-2" },
+		});
 		const queryClient = createTestQueryClient();
 		const invalidateQueriesSpy = vi.spyOn(queryClient, "invalidateQueries");
 		const { result } = renderUseEmployee(queryClient);
@@ -184,7 +223,10 @@ describe("useEmployee contracts", () => {
 	});
 
 	it("invalidates employment history and employee detail after successful create", async () => {
-		createEmploymentHistoryMock.mockResolvedValue({ success: true, data: { id: "history-1" } });
+		createEmploymentHistoryMock.mockResolvedValue({
+			success: true,
+			data: { id: "history-1" },
+		});
 		const queryClient = createTestQueryClient();
 		const invalidateQueriesSpy = vi.spyOn(queryClient, "invalidateQueries");
 		const { result } = renderUseEmployee(queryClient);
@@ -200,12 +242,18 @@ describe("useEmployee contracts", () => {
 			});
 		});
 
-		expect(createEmploymentHistoryMock).toHaveBeenCalledWith(employeeId, expect.any(Object));
+		expect(createEmploymentHistoryMock).toHaveBeenCalledWith(
+			employeeId,
+			expect.any(Object),
+		);
 		expectEmploymentHistoryInvalidated(invalidateQueriesSpy);
 	});
 
 	it("invalidates employment history and employee detail after successful confirm", async () => {
-		confirmEmploymentHistoryMock.mockResolvedValue({ success: true, data: { id: "history-1" } });
+		confirmEmploymentHistoryMock.mockResolvedValue({
+			success: true,
+			data: { id: "history-1" },
+		});
 		const queryClient = createTestQueryClient();
 		const invalidateQueriesSpy = vi.spyOn(queryClient, "invalidateQueries");
 		const { result } = renderUseEmployee(queryClient);
@@ -214,7 +262,10 @@ describe("useEmployee contracts", () => {
 			await result.current.confirmEmploymentHistory("history-1");
 		});
 
-		expect(confirmEmploymentHistoryMock).toHaveBeenCalledWith(employeeId, "history-1");
+		expect(confirmEmploymentHistoryMock).toHaveBeenCalledWith(
+			employeeId,
+			"history-1",
+		);
 		expectEmploymentHistoryInvalidated(invalidateQueriesSpy);
 	});
 
@@ -228,7 +279,10 @@ describe("useEmployee contracts", () => {
 			await result.current.cancelEmploymentHistory("history-1");
 		});
 
-		expect(cancelEmploymentHistoryMock).toHaveBeenCalledWith(employeeId, "history-1");
+		expect(cancelEmploymentHistoryMock).toHaveBeenCalledWith(
+			employeeId,
+			"history-1",
+		);
 		expectEmploymentHistoryInvalidated(invalidateQueriesSpy);
 	});
 
@@ -242,14 +296,19 @@ describe("useEmployee contracts", () => {
 			await result.current.requestWorkBalanceRecalculation();
 		});
 
-		expect(requestWorkBalanceRecalculationMock).toHaveBeenCalledWith(employeeId);
+		expect(requestWorkBalanceRecalculationMock).toHaveBeenCalledWith(
+			employeeId,
+		);
 		expect(invalidateQueriesSpy).toHaveBeenCalledWith({
-			queryKey: queryKeys.employees.detail(employeeId),
+			queryKey: queryKeys.employees.detailFor("user-1", "org-1", employeeId),
 		});
 	});
 
 	it("does not invalidate employment history when create returns a failed result", async () => {
-		createEmploymentHistoryMock.mockResolvedValue({ success: false, error: "Not allowed" });
+		createEmploymentHistoryMock.mockResolvedValue({
+			success: false,
+			error: "Not allowed",
+		});
 		const queryClient = createTestQueryClient();
 		const invalidateQueriesSpy = vi.spyOn(queryClient, "invalidateQueries");
 		const { result } = renderUseEmployee(queryClient);
@@ -265,12 +324,7 @@ describe("useEmployee contracts", () => {
 			});
 		});
 
-		expect(invalidateQueriesSpy).not.toHaveBeenCalledWith({
-			queryKey: queryKeys.employees.employmentHistory(employeeId),
-		});
-		expect(invalidateQueriesSpy).not.toHaveBeenCalledWith({
-			queryKey: queryKeys.employees.detail(employeeId),
-		});
+		expect(invalidateQueriesSpy).not.toHaveBeenCalled();
 	});
 
 	it("offers only managers and admins on the current roster as managers (#1438)", async () => {
@@ -284,13 +338,18 @@ describe("useEmployee contracts", () => {
 		});
 
 		await waitFor(() =>
-			expect(listEmployeesForSelectMock).toHaveBeenCalledWith(
-				expect.objectContaining({
-					roles: ["admin", "manager"],
-					excludeIds: [employeeId],
-					status: "current",
-				}),
+			expect(
+				fetchMock.mock.calls.some(([url]) =>
+					new URL(url, "http://localhost").pathname.endsWith("/managers"),
 			),
+			).toBe(true),
 		);
+		const [url] = fetchMock.mock.calls.find(([url]) =>
+			new URL(url, "http://localhost").pathname.endsWith("/managers"),
+		)!;
+		expect(
+			new URL(url, "http://localhost").searchParams.get("employeeId"),
+		).toBe(employeeId);
+		expect(listEmployeesForSelectMock).not.toHaveBeenCalled();
 	});
 });

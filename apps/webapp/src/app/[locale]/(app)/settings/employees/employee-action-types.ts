@@ -94,7 +94,21 @@ export type EmployeeInvitationDraftWithRelations = typeof employeeInvitationDraf
 };
 
 export type EmployeeDirectoryRow = EmployeeWithRelations | EmployeeInvitationDraftWithRelations;
-export type EmployeeDetailRecord = EmployeeDirectoryRow & { managers?: unknown[] };
+export type EmployeeManagerRelation = {
+	id: string;
+	isPrimary: boolean;
+	manager: {
+		id: string;
+		userId: string;
+		user: Pick<
+			typeof user.$inferSelect,
+			"firstName" | "lastName" | "name" | "email" | "image"
+		>;
+	};
+};
+export type EmployeeDetailRecord = EmployeeDirectoryRow & {
+	managers?: EmployeeManagerRelation[];
+};
 
 export interface EmployeeListParams {
 	search?: string;

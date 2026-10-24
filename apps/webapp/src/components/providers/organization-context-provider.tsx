@@ -23,6 +23,8 @@ import {
 
 export interface OrganizationContext {
 	userId: string | null;
+	/** Active display scope, including approved administrators without an employee. */
+	activeOrganizationId: string | null;
 	organizationId: string | null;
 	employeeId: string | null;
 	role: "admin" | "manager" | "employee" | null;
@@ -112,6 +114,7 @@ function useOrganizationQuery(
 	const role = data?.employee?.role ?? null;
 	const context: OrganizationContext = {
 		userId: data?.userId ?? null,
+		activeOrganizationId: data?.organizationId ?? null,
 		organizationId: data?.employee?.organizationId ?? null,
 		employeeId: data?.employee?.employeeId ?? null,
 		role,

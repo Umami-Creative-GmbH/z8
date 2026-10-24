@@ -1,5 +1,5 @@
 import { FieldApi, FormApi } from "@tanstack/react-form";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import type { EmployeeDetail } from "@/lib/query/use-employee";
 import {
 	buildEmployeeUpdatePayload,
@@ -18,9 +18,9 @@ describe("employee detail page utilities", () => {
 	});
 
 	it("formats employee dates for date inputs in UTC date-only form", () => {
-		expect(formatEmployeeDetailDateInputValue(new Date("2026-05-01T22:30:00.000Z"))).toBe(
-			"2026-05-01",
-		);
+		expect(
+			formatEmployeeDetailDateInputValue(new Date("2026-05-01T22:30:00.000Z")),
+		).toBe("2026-05-01");
 		expect(formatEmployeeDetailDateInputValue(null)).toBe("");
 		expect(formatEmployeeDetailDateInputValue(undefined)).toBe("");
 	});
@@ -77,19 +77,20 @@ describe("showEmployeeSaveRefusal", () => {
 	it("leaves other failures to the caller", () => {
 		const form = createForm();
 
-		expect(showEmployeeSaveRefusal(form as never, { error: "Failed to update employee" })).toBe(
-			false,
-		);
+		expect(
+			showEmployeeSaveRefusal(form as never, {
+				error: "Failed to update employee",
+			}),
+		).toBe(false);
 		expect(form.getFieldMeta("employeeNumber")?.errors).toEqual([]);
 	});
 });
 
 describe("syncEmployeeForm", () => {
 	function createFormMock() {
-		return {
-			reset: vi.fn(),
-			setFieldValue: vi.fn(),
-		};
+		const form = new FormApi({ defaultValues });
+		form.mount();
+		return form;
 	}
 
 	it("syncs auth user name fields into the detail form", () => {
@@ -109,32 +110,30 @@ describe("syncEmployeeForm", () => {
 			},
 		} as EmployeeDetail;
 
-		syncEmployeeForm(form as never, employee);
-
-		expect(form.reset).toHaveBeenCalledOnce();
-		expect(form.setFieldValue).toHaveBeenCalledWith("firstName", "Ada");
-		expect(form.setFieldValue).toHaveBeenCalledWith("lastName", "Lovelace");
-		expect(form.setFieldValue).toHaveBeenCalledWith("startDate", "2026-05-01");
+		syncEmployeeForm(form, employee);
+		expect(form.state.values).toMatchObject({
+			firstName: "Ada",
+			lastName: "Lovelace",
+			startDate: "2026-05-01",
+		});
+		expect(form.state.isDirty).toBe(false);
 	});
 
 	it("never loads an employee's wage or contract type into the detail form", () => {
 		const form = createFormMock();
-		syncEmployeeForm(form as never, {
+		syncEmployeeForm(form, {
 			kind: "employee",
 			contractType: "hourly",
 			user: { firstName: "Ada", lastName: "Lovelace" },
 		} as EmployeeDetail);
 
-		const fields = form.setFieldValue.mock.calls.map(([name]) => name);
-		expect(fields).not.toContain("hourlyRate");
-		expect(fields).not.toContain("contractType");
+		expect(form.state.values.hourlyRate).toBe("");
+		expect(form.state.values.contractType).toBe("fixed");
 	});
 
 	it("syncs invitation draft identity fields into the employee detail form", () => {
 		const form = createFormMock();
-		syncEmployeeForm(
-			form as never,
-			{
+		syncEmployeeForm(form, {
 				kind: "invitationDraft",
 				id: "draft-1",
 				user: {
@@ -154,12 +153,14 @@ describe("syncEmployeeForm", () => {
 				contractType: "hourly",
 				currentHourlyRate: "45.00",
 				team: null,
-			} as EmployeeDetail,
-		);
+		} as EmployeeDetail);
 
-		expect(form.setFieldValue).toHaveBeenCalledWith("firstName", "Ada");
-		expect(form.setFieldValue).toHaveBeenCalledWith("lastName", "Lovelace");
-		expect(form.setFieldValue).toHaveBeenCalledWith("role", "manager");
-		expect(form.setFieldValue).toHaveBeenCalledWith("hourlyRate", "45.00");
+		expect(form.state.values).toMatchObject({
+			firstName: "Ada",
+			lastName: "Lovelace",
+			role: "manager",
+			hourlyRate: "45.00",
+		});
+		expect(form.state.isDirty).toBe(false);
 	});
 });
