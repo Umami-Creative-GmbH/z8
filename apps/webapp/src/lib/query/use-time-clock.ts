@@ -672,6 +672,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		// Status
 		status,
 		isLoading: statusQuery.isLoading,
+		isPending: statusQuery.isPending,
 		isFetching: statusQuery.isFetching,
 		isError: statusQuery.isError,
 

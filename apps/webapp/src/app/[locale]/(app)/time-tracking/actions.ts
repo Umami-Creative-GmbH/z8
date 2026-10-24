@@ -13,6 +13,7 @@ import {
 	workPeriod,
 } from "@/db/schema";
 import { getRequestSession } from "@/lib/auth/request-session";
+import { getAuthContext } from "@/lib/auth-helpers";
 import { projectHasActiveCustomerSql } from "@/lib/billable-time/project-customer";
 import { getBillableTimeSettings } from "@/lib/billable-time/settings";
 import {
@@ -218,35 +219,9 @@ export async function getTimeClockStatus(): Promise<{
 		breakStartedZone: string | null;
 	} | null;
 }> {
-	const session = await getRequestSession();
-	if (!session?.user) {
-		return {
-			hasEmployee: false,
-			employeeId: null,
-			isClockedIn: false,
-			activeWorkPeriod: null,
-		};
-	}
-
-	const activeOrgId = session.session?.activeOrganizationId;
-	if (!activeOrgId) {
-		return {
-			hasEmployee: false,
-			employeeId: null,
-			isClockedIn: false,
-			activeWorkPeriod: null,
-		};
-	}
-
-	const emp = await db.query.employee.findFirst({
-		where: and(
-			eq(employee.userId, session.user.id),
-			eq(employee.organizationId, activeOrgId),
-			eq(employee.isActive, true),
-		),
-	});
-
-	if (!emp) {
+	const context = await getAuthContext();
+	const emp = context?.employee;
+	if (!emp || emp.organizationId !== context?.session.activeOrganizationId) {
 		return {
 			hasEmployee: false,
 			employeeId: null,
