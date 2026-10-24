@@ -4,7 +4,7 @@ import { IconCoin, IconLoader2, IconReceipt2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { use, useEffect } from "react";
+import { use, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { BillableRateSeries } from "@/components/billable-time/billable-rate-series";
 import { CostRateSeries } from "@/components/billable-time/cost-rate-series";
@@ -27,9 +27,11 @@ import { EmployeePersonalDataExportCard } from "@/components/settings/personal-d
 import { EmployeeWorkBalanceSection } from "@/components/settings/work-balance/employee-work-balance-section";
 import { EMPLOYEE_WORK_BALANCE_QUERY_KEY } from "@/components/settings/work-balance/use-employee-work-balance";
 import { WorkBalanceRecalculationCard } from "@/components/settings/work-balance-recalculation-card";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
+import type { EmployeeReadSnapshot } from "@/lib/organization/employee-read-types";
 import type { PersonnelFilePanelCapability } from "@/lib/personnel-file/panel";
 import { queryKeys } from "@/lib/query";
 import { type EmployeeDetail, useEmployee } from "@/lib/query/use-employee";
@@ -69,12 +71,25 @@ function EmployeeDetailLifecycleActions({
 		updates: Pick<EmployeeDetail, "isActive" | "membership">,
 	) => {
 		if (employee.id !== targetEmployeeId) return;
-		queryClient.setQueryData<EmployeeDetail>(
-			queryKeys.employees.detail(targetEmployeeId),
+		queryClient.setQueryData<EmployeeReadSnapshot<"detail">>(
+			queryKeys.employees.detailFor(
+				currentUserId,
+				employee.organizationId,
+				targetEmployeeId,
+			),
 			(current) =>
-				current?.kind === "employee" && current.id === targetEmployeeId
+				current?.data.kind === "employee" &&
+				current.data.id === targetEmployeeId
 					? // The former mark follows at once (#1438); the date arrives with the next read.
-						{ ...current, ...updates, isFormer: !updates.isActive, formerSince: undefined }
+						{
+							...current,
+							data: {
+								...current.data,
+								...updates,
+								isFormer: !updates.isActive,
+								formerSince: undefined,
+							},
+						}
 					: current,
 		);
 	};
@@ -122,6 +137,8 @@ export function EmployeeDetailPageClient({
 	accessTier,
 	currentUserId,
 	currentMemberRole,
+	organizationId,
+	initialSnapshot,
 	highlightedReviewId = null,
 	personnelFile = null,
 }: {
@@ -129,6 +146,8 @@ export function EmployeeDetailPageClient({
 	accessTier: SettingsAccessTier;
 	currentUserId: string;
 	currentMemberRole: string;
+	organizationId?: string;
+	initialSnapshot?: EmployeeReadSnapshot<"detail">;
 	highlightedReviewId?: string | null;
 	/** Decided on the server by the personnel file access resolver (#865). */
 	personnelFile?: PersonnelFilePanelCapability | null;
@@ -137,7 +156,13 @@ export function EmployeeDetailPageClient({
 	const { t } = useTranslate();
 	const { push } = useRouter();
 
-	const employeeData = useEmployee({ employeeId, accessTier });
+	const employeeData = useEmployee({
+		employeeId,
+		accessTier,
+		userId: currentUserId,
+		organizationId,
+		initialSnapshot,
+	});
 	const {
 		employee,
 		schedule,
@@ -153,6 +178,9 @@ export function EmployeeDetailPageClient({
 		entity: "employee",
 		recordId: employeeId,
 		enabled: employee?.kind === "employee",
+		readScope: organizationId
+			? { userId: currentUserId, organizationId }
+			: undefined,
 	});
 
 	const form = useForm({
@@ -199,14 +227,19 @@ export function EmployeeDetailPageClient({
 			}
 		},
 	});
+	const syncedEmployee = useRef<string | null>(null);
 
 	useEffect(() => {
-		if (employee) {
+		if (
+			employee &&
+			(syncedEmployee.current !== employeeId || !form.state.isDirty)
+		) {
 			syncEmployeeForm(form, employee);
+			syncedEmployee.current = employeeId;
 		}
-	}, [employee, form]);
+	}, [employee, employeeId, form]);
 
-	if (!hasEmployee && !isLoading) {
+	if (!hasEmployee && !isLoading && !employeeData.isError) {
 		return (
 			<div className="flex flex-1 items-center justify-center p-6">
 				<NoEmployeeError
@@ -219,6 +252,25 @@ export function EmployeeDetailPageClient({
 		);
 	}
 
+	if (employeeData.isError) {
+		return (
+			<div className="flex flex-1 flex-col gap-4 p-4" role="alert">
+				<p>
+					{employeeData.error?.message ||
+						t(
+							"settings.employees.detailView.loadFailed",
+							"Employee data could not be loaded",
+						)}
+				</p>
+				<Button
+					onClick={() => void employeeData.refetch()}
+					disabled={employeeData.isFetching}
+				>
+					{t("common.retry", "Try again")}
+				</Button>
+			</div>
+		);
+	}
 	if (isLoading || !employee) {
 		return (
 			<div className="flex flex-1 flex-col gap-4 p-4">
@@ -244,6 +296,32 @@ export function EmployeeDetailPageClient({
 
 	const overview = (
 		<>
+			{employeeData.readErrors &&
+			Object.values(employeeData.readErrors).some(Boolean) ? (
+				<div role="alert" className="rounded-lg border p-4">
+					<p>
+						{t(
+							"settings.employees.detailView.secondaryLoadFailed",
+							"Some employee information could not be loaded. Your edits have been kept.",
+						)}
+					</p>
+					<Button
+						variant="outline"
+						onClick={() => void employeeData.refetch()}
+						disabled={employeeData.isFetching}
+					>
+						{t("common.retry", "Try again")}
+					</Button>
+				</div>
+			) : null}
+			{employeeData.isLoadingSchedule ? (
+				<p role="status">
+					{t(
+						"settings.employees.detailView.loadingSchedule",
+						"Loading work schedule…",
+					)}
+				</p>
+			) : null}
 			<div className="grid gap-4 lg:grid-cols-3">
 				<EmployeeOverviewCard employee={employee} schedule={schedule} t={t} />
 				{canEditDraftDetails && (

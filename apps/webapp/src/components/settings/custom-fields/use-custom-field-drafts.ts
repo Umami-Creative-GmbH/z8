@@ -26,6 +26,8 @@ export function useCustomFieldDrafts(input: {
 	/** null = a record being created. */
 	recordId: string | null;
 	enabled: boolean;
+	/** Scope viewer-dependent record sections when the caller has server context. */
+	readScope?: { userId: string; organizationId: string };
 	/** The dialog's open change; closing drops unsaved drafts. */
 	onOpenChange?: (open: boolean) => void;
 	/** Called after a successful save, once drafts are dropped and sections refreshed. */
@@ -33,7 +35,13 @@ export function useCustomFieldDrafts(input: {
 }) {
 	const queryClient = useQueryClient();
 	const { data: section = null } = useQuery({
-		queryKey: queryKeys.customFields.section(input.entity, input.recordId),
+		queryKey: input.readScope
+			? [
+					...queryKeys.customFields.section(input.entity, input.recordId),
+					input.readScope.userId,
+					input.readScope.organizationId,
+				]
+			: queryKeys.customFields.section(input.entity, input.recordId),
 		queryFn: async () => {
 			const result = await getCustomFieldSection({
 				entity: input.entity,
@@ -75,7 +83,10 @@ export function useCustomFieldDrafts(input: {
 			for (const field of section.fields) {
 				const edited = historyDrafts[field.id];
 				if (!field.tracked || !field.editable || !edited) continue;
-				const history = customFieldHistoryChangesOf(section.history[field.id] ?? [], edited);
+				const history = customFieldHistoryChangesOf(
+					section.history[field.id] ?? [],
+					edited,
+				);
 				if (history.length > 0) values[field.id] = { history };
 			}
 			return values;
@@ -86,7 +97,9 @@ export function useCustomFieldDrafts(input: {
 		},
 		handleSaved: () => {
 			reset();
-			void queryClient.invalidateQueries({ queryKey: queryKeys.customFields.all });
+			void queryClient.invalidateQueries({
+				queryKey: queryKeys.customFields.all,
+			});
 			input.onSaved?.();
 		},
 	};
