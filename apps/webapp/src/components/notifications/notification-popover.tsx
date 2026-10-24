@@ -4,7 +4,11 @@ import { IconChecks, IconSettings, IconTrash } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import {
 	Sheet,
@@ -34,6 +38,8 @@ export function NotificationPopover({ children }: NotificationPopoverProps) {
 		notifications,
 		unreadCount,
 		isLoading,
+		isError,
+		refresh,
 		markAsRead,
 		markAllAsRead,
 		deleteNotification,
@@ -84,7 +90,9 @@ export function NotificationPopover({ children }: NotificationPopoverProps) {
 			{/* Below the status bar in the top sheet; the inset is 0 in the desktop popover (#846). */}
 			<div className="mt-[var(--sheet-inset-top,0px)] flex items-center justify-between px-4 py-3">
 				<div className="flex items-center gap-2">
-					<h3 className="font-semibold">{t("common:notifications.title", "Notifications")}</h3>
+					<h3 className="font-semibold">
+						{t("common:notifications.title", "Notifications")}
+					</h3>
 					{unreadCount > 0 && (
 						<span className="rounded-full bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground">
 							{unreadCount > 99
@@ -102,8 +110,14 @@ export function NotificationPopover({ children }: NotificationPopoverProps) {
 							className="size-8"
 							onClick={handleMarkAllAsRead}
 							disabled={isMarkingAllRead}
-							aria-label={t("common:notifications.actions.markAllRead", "Mark all read")}
-							title={t("common:notifications.actions.markAllRead", "Mark all read")}
+							aria-label={t(
+								"common:notifications.actions.markAllRead",
+								"Mark all read",
+							)}
+							title={t(
+								"common:notifications.actions.markAllRead",
+								"Mark all read",
+							)}
 						>
 							<IconChecks className="size-4" />
 						</Button>
@@ -115,21 +129,39 @@ export function NotificationPopover({ children }: NotificationPopoverProps) {
 							className="size-8 text-muted-foreground hover:text-destructive"
 							onClick={handleDeleteAll}
 							disabled={isDeletingAll}
-							aria-label={t("common:notifications.actions.deleteAll", "Delete all")}
+							aria-label={t(
+								"common:notifications.actions.deleteAll",
+								"Delete all",
+							)}
 							title={t("common:notifications.actions.deleteAll", "Delete all")}
 						>
 							<IconTrash className="size-4" />
 						</Button>
 					)}
-					<Button size="icon" variant="ghost" className="size-8" asChild onClick={handleClose}>
+					<Button
+						size="icon"
+						variant="ghost"
+						className="size-8"
+						asChild
+						onClick={handleClose}
+					>
 						<Link
 							href="/settings/notifications"
-							aria-label={t("common:notifications.actions.settings", "Notification settings")}
-							title={t("common:notifications.actions.settings", "Notification settings")}
+							aria-label={t(
+								"common:notifications.actions.settings",
+								"Notification settings",
+							)}
+							title={t(
+								"common:notifications.actions.settings",
+								"Notification settings",
+							)}
 						>
 							<IconSettings className="size-4" />
 							<span className="sr-only">
-								{t("common:notifications.actions.settings", "Notification settings")}
+								{t(
+									"common:notifications.actions.settings",
+									"Notification settings",
+								)}
 							</span>
 						</Link>
 					</Button>
@@ -138,21 +170,48 @@ export function NotificationPopover({ children }: NotificationPopoverProps) {
 
 			<Separator />
 
-			<NotificationList
-				notifications={notifications}
-				isLoading={isLoading}
-				onMarkAsRead={handleMarkAsRead}
-				onDelete={handleDelete}
-				onClose={handleClose}
-			/>
+			{isError ? (
+				<div role="alert" className="space-y-3 p-4 text-sm">
+					<p>
+						{t(
+							"common:notifications.error.title",
+							"Could not load notifications",
+						)}
+					</p>
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						onClick={() => void refresh()}
+					>
+						{t("common:common.retry", "Retry")}
+					</Button>
+				</div>
+			) : (
+				<NotificationList
+					notifications={notifications}
+					isLoading={isLoading}
+					onMarkAsRead={handleMarkAsRead}
+					onDelete={handleDelete}
+					onClose={handleClose}
+				/>
+			)}
 
 			{notifications.length > 0 && (
 				<>
 					<Separator />
 					<div className="p-2">
-						<Button variant="ghost" className="w-full text-sm" asChild onClick={handleClose}>
+						<Button
+							variant="ghost"
+							className="w-full text-sm"
+							asChild
+							onClick={handleClose}
+						>
 							<Link href="/notifications">
-								{t("common:notifications.actions.viewAll", "View all notifications")}
+								{t(
+									"common:notifications.actions.viewAll",
+									"View all notifications",
+								)}
 							</Link>
 						</Button>
 					</div>
