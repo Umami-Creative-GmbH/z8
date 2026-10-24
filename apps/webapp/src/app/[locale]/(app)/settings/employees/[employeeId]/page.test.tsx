@@ -51,7 +51,7 @@ describe("EmployeeDetailPage actor membership", () => {
 		});
 		mockState.getEmployee.mockResolvedValue({
 			success: true,
-			data: { id: "employee-1" },
+			data: { id: "employee-1", organizationId: "org-1" },
 		});
 	});
 
@@ -83,6 +83,12 @@ describe("EmployeeDetailPage actor membership", () => {
 		expect(detailPage.props).toMatchObject({
 			currentUserId: "user-1",
 			currentMemberRole: "owner",
+			organizationId: "org-1",
+			initialSnapshot: {
+				scope: { userId: "user-1", organizationId: "org-1" },
+				data: { id: "employee-1" },
+				updatedAt: expect.any(Number),
+			},
 		});
 	});
 
@@ -95,23 +101,34 @@ describe("EmployeeDetailPage actor membership", () => {
 		};
 		mockState.loadPersonnelFilePanelCapability.mockResolvedValue(capability);
 
-		const page = EmployeeDetailPage({ params: Promise.resolve({ employeeId: "employee-1" }) });
+		const page = EmployeeDetailPage({
+			params: Promise.resolve({ employeeId: "employee-1" }),
+		});
 		const contentElement = getContentElement(page);
 		const detailPage = await contentElement.type(contentElement.props);
 
-		expect(mockState.loadPersonnelFilePanelCapability).toHaveBeenCalledWith("employee-1");
+		expect(mockState.loadPersonnelFilePanelCapability).toHaveBeenCalledWith(
+			"employee-1",
+		);
 		expect(detailPage.props.personnelFile).toEqual(capability);
 	});
 
 	it("passes no personnel file panel to managers the resolver refuses", async () => {
-		mockState.getCurrentApprovedMembership.mockResolvedValue({ role: "member" });
+		mockState.getCurrentApprovedMembership.mockResolvedValue({
+			role: "member",
+		});
 		mockState.getCurrentSettingsRouteContext.mockResolvedValue({
-			authContext: { user: { id: "user-1" }, session: { activeOrganizationId: "org-1" } },
+			authContext: {
+				user: { id: "user-1" },
+				session: { activeOrganizationId: "org-1" },
+			},
 			accessTier: "manager",
 		});
 		mockState.loadPersonnelFilePanelCapability.mockResolvedValue(null);
 
-		const page = EmployeeDetailPage({ params: Promise.resolve({ employeeId: "employee-1" }) });
+		const page = EmployeeDetailPage({
+			params: Promise.resolve({ employeeId: "employee-1" }),
+		});
 		const contentElement = getContentElement(page);
 		const detailPage = await contentElement.type(contentElement.props);
 

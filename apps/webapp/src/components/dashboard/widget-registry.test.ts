@@ -45,10 +45,10 @@ describe("dashboard widget registry", () => {
 		]);
 	});
 
-	it("normalizes missing hidden widgets to an empty list", () => {
+	it("keeps omitted optional widgets hidden when older layouts have no hidden list", () => {
 		expect(normalizeWidgetLayout({ order: ["quick-stats"], version: 1 })).toEqual({
 			order: normalizeWidgetOrder(["quick-stats"]),
-			hidden: [],
+			hidden: DEFAULT_WIDGET_ORDER.filter((id) => id !== "quick-stats"),
 			version: 1,
 		});
 	});
@@ -74,12 +74,16 @@ describe("dashboard widget registry", () => {
 			}),
 		).toEqual({
 			order: normalizeWidgetOrder(["quick-stats"]),
-			hidden: ["quick-stats", "presence-status"],
+			hidden: [
+				"quick-stats",
+				"presence-status",
+				...DEFAULT_WIDGET_ORDER.filter((id) => id !== "quick-stats" && id !== "presence-status"),
+			],
 			version: 1,
 		});
 	});
 
-	it("keeps new widgets visible by default", () => {
+	it("keeps newly available widgets hidden on explicit layouts", () => {
 		const layout = normalizeWidgetLayout({
 			order: ["quick-stats"],
 			hidden: ["quick-stats"],
@@ -87,8 +91,8 @@ describe("dashboard widget registry", () => {
 		});
 
 		expect(layout.order).toEqual(normalizeWidgetOrder(["quick-stats"]));
-		expect(layout.hidden).toEqual(["quick-stats"]);
-		expect(layout.order.filter((id) => !layout.hidden.includes(id))).toContain("manager-today");
+		expect(layout.hidden).toContain("quick-stats");
+		expect(layout.order.filter((id) => !layout.hidden.includes(id))).not.toContain("manager-today");
 	});
 
 	it("merges reordered visible widgets without moving hidden widget slots", () => {

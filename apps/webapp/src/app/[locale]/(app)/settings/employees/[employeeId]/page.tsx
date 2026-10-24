@@ -2,15 +2,20 @@ import { Suspense } from "react";
 import { SettingsContentLoading } from "@/components/shells/settings-content-loading";
 import { getCurrentSettingsRouteContext } from "@/lib/auth-helpers";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
+import type { EmployeeReadScope } from "@/lib/organization/employee-read-types";
 import { loadPersonnelFilePanelCapability } from "@/lib/personnel-file/panel";
 import { isCanonicalUuid } from "@/lib/validations/canonical-uuid";
-import { getEmployee } from "../actions";
+import { type EmployeeDetailRecord, getEmployee } from "../actions";
 import { getCurrentApprovedMembership } from "../current-approved-membership";
 import { EmployeeDetailPageClient } from "./employee-detail-page-client";
 
 interface EmployeeDetailPageProps {
 	params: Promise<{ employeeId: string }>;
 	searchParams?: Promise<{ review?: string | string[] }>;
+}
+
+function snapshotDetail(scope: EmployeeReadScope, data: EmployeeDetailRecord) {
+	return { scope, data, updatedAt: Date.now() };
 }
 
 export default function EmployeeDetailPage(props: EmployeeDetailPageProps) {
@@ -60,7 +65,7 @@ async function EmployeeDetailPageContent({
 		loadPersonnelFilePanelCapability(employeeId),
 	]);
 
-	if (!employeeResult.success) {
+	if (!employeeResult.success || employeeResult.data.organizationId !== organizationId) {
 		return redirectWithLocale("/settings/employees");
 	}
 
@@ -69,6 +74,11 @@ async function EmployeeDetailPageContent({
 			params={Promise.resolve({ employeeId })}
 			accessTier={settingsRouteContext.accessTier}
 			currentUserId={currentUserId}
+			organizationId={organizationId}
+			initialSnapshot={snapshotDetail(
+				{ userId: currentUserId, organizationId },
+				employeeResult.data,
+			)}
 			currentMemberRole={currentMember.role}
 			highlightedReviewId={highlightedReviewId}
 			personnelFile={personnelFile}

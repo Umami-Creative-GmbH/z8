@@ -8,17 +8,21 @@ import {
 	isServerWidgetId,
 	type ServerWidgetId,
 } from "./dashboard-types";
+import { DeferredDashboardWidget } from "./deferred-dashboard-widget";
+
 import { ManagedEmployeesWidget } from "./managed-employees-widget";
 import { ManagerTodayWidget } from "./manager-today-widget";
 import { PendingApprovalsWidget } from "./pending-approvals-widget";
+import { PresenceStatusWidget } from "./presence-status-widget";
 import { QuickStatsWidget } from "./quick-stats-widget";
 import { RecentlyApprovedWidget } from "./recently-approved-widget";
 import { TeamOverviewWidget } from "./team-overview-widget";
 import { UpcomingShiftsWidget } from "./upcoming-shifts-widget";
 import { UpcomingTimeOffWidget } from "./upcoming-time-off-widget";
+import { VacationBalanceWidget } from "./vacation-balance-widget";
 import { WhosOutTodayWidget } from "./whos-out-today-widget";
 import { WidgetLoading } from "./widget-loading";
-import { normalizeWidgetLayout, type WidgetId } from "./widget-registry";
+import { isDeferredWidgetId, normalizeWidgetLayout, type WidgetId } from "./widget-registry";
 
 async function WidgetSlot({
 	id,
@@ -29,6 +33,26 @@ async function WidgetSlot({
 }) {
 	const initialSnapshot = await snapshot;
 	switch (id) {
+		case "birthday-reminders":
+		case "hydration":
+			return <DeferredDashboardWidget id={id} />;
+		case "vacation-balance":
+			return (
+				<VacationBalanceWidget
+					initialSnapshot={
+						initialSnapshot as DashboardWidgetSnapshot<DashboardWidgetData["vacation-balance"]>
+					}
+				/>
+			);
+		case "presence-status":
+			return (
+				<PresenceStatusWidget
+					initialSnapshot={
+						initialSnapshot as DashboardWidgetSnapshot<DashboardWidgetData["presence-status"]>
+					}
+				/>
+			);
+
 		case "upcoming-shifts":
 			return (
 				<UpcomingShiftsWidget
@@ -116,10 +140,21 @@ async function WidgetSlot({
 export async function ServerSectionCards() {
 	const bootstrap = await getRenderDashboardLayout();
 	if (!bootstrap) return null;
-	const layout = normalizeWidgetLayout(bootstrap.layout.settings.dashboardWidgetOrder);
+	const layout = normalizeWidgetLayout(
+		bootstrap.layout.settings.dashboardWidgetOrder,
+		bootstrap.layout.availableWidgetIds,
+	);
 	const slots: Partial<Record<WidgetId, ReactNode>> = {};
+	const available = bootstrap.layout.availableWidgetIds
+		? new Set(bootstrap.layout.availableWidgetIds)
+		: null;
+	const hidden = new Set(layout.hidden);
 	for (const id of layout.order) {
-		if (layout.hidden.includes(id) || !isServerWidgetId(id)) continue;
+		if (hidden.has(id) || (available && !available.has(id)) || !isServerWidgetId(id)) continue;
+		if (isDeferredWidgetId(id)) {
+			slots[id] = <DeferredDashboardWidget id={id} />;
+			continue;
+		}
 		// Start each authorized read now. A slow region never becomes another's prerequisite.
 		const snapshot = readDashboardWidget(id, bootstrap.subject);
 		slots[id] = (
