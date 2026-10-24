@@ -272,10 +272,7 @@ export type OvertimeBurnDownParams = {
 		costCenterId?: string;
 		managerId?: string;
 	};
-	scope?: {
-		role: "admin" | "manager";
-		managerEmployeeId?: string;
-	};
+	scope: AnalyticsEmployeeScope;
 };
 
 /**
