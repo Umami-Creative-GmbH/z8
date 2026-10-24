@@ -19,6 +19,7 @@ import {
 	organizationForDisplay,
 	organizationSettingsForDisplay,
 } from "./organization-display";
+import type { OrganizationDisplayContext } from "./organization-display-context";
 import { getRenderSession } from "./render-session";
 
 /**
@@ -161,6 +162,27 @@ export const getRenderOrganizationSettings = cache(async () => {
 		? organizationSettingsForDisplay(records.activeMembership.organization)
 		: null;
 });
+
+/** Explicit allowlist for client presentation; never serialize the auth context. */
+export const getRenderOrganizationDisplayContext = cache(
+	async (): Promise<OrganizationDisplayContext | null> => {
+		const context = await getRenderAuthContext();
+		if (!context) return null;
+		return {
+			userId: context.user.id,
+			organizationId: context.session.activeOrganizationId,
+			employee: context.employee
+				? {
+						employeeId: context.employee.id,
+						organizationId: context.employee.organizationId,
+						role: context.employee.role,
+					}
+				: null,
+			organizationSettings: await getRenderOrganizationSettings(),
+			updatedAt: systemClock.nowInstant().epochMilliseconds,
+		};
+	},
+);
 
 export const getRenderApprovedMembership = cache(
 	async () =>

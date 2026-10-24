@@ -206,7 +206,10 @@ vi.mock("@/lib/logger", () => ({
 }));
 
 vi.mock("@/lib/auth/render-context", () => ({
-	getRenderOrganizationSettings: mockState.getOrganizationSettings,
+	getRenderOrganizationDisplayContext: async () => ({
+		userId: "user-1", organizationId: "organization-1", employee: null,
+		organizationSettings: await mockState.getOrganizationSettings(), updatedAt: 0,
+	}),
 	getRenderApprovedMembership: mockState.findMember,
 }));
 

@@ -62,7 +62,7 @@ import {
 	getRenderSettingsAccessTier as getCurrentSettingsAccessTier,
 	getRenderOnboardingStatus as getOnboardingStatus,
 	getRenderPendingInvitationId as getPendingInvitationId,
-	getRenderOrganizationSettings,
+	getRenderOrganizationDisplayContext,
 	getRenderUserOrganizations as getUserOrganizations,
 } from "./render-context";
 import { getRenderSession } from "./render-session";
@@ -134,14 +134,15 @@ const other: Subject = {
 async function LayoutIdentity() {
 	const session = await getRenderSession();
 	if (!session?.user) return createElement("p", null, "signed out");
-	const [preferences, settings] = await Promise.all([
+	const [preferences, display] = await Promise.all([
 		getRenderUserPreferences(session.user.id),
-		getRenderOrganizationSettings(),
+		getRenderOrganizationDisplayContext(),
 	]);
 	return createElement("section", {
 		"data-layout-user": session.user.id,
 		"data-timezone": preferences.timezone,
-		"data-settings-org": settings?.organizationId ?? "none",
+		"data-settings-org": display?.organizationSettings?.organizationId ?? "none",
+		"data-display": JSON.stringify(display),
 	});
 }
 
@@ -268,6 +269,17 @@ describe("render-local authenticated identity", () => {
 				query.includes('from "user_settings"'),
 			),
 		).toHaveLength(1);
+	});
+
+	it("projects only display identity and settings into the client bootstrap", async () => {
+		const output = await render(subject);
+		expect(output).toContain("employeeId");
+		expect(output).toContain("organizationSettings");
+		expect(output).toContain("updatedAt");
+		expect(output).not.toContain(subject.session.id);
+		expect(output).not.toContain(subject.user.email);
+		expect(output).not.toContain(subject.user.name);
+		expect(boundary.reads).toBe(1);
 	});
 
 	it("isolates concurrent organizations and reevaluates a later signed-out request", async () => {

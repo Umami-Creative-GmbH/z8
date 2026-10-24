@@ -24,7 +24,7 @@ import { subscription } from "@/db/schema";
 import { env } from "@/env";
 import {
 	getRenderApprovedMembership,
-	getRenderOrganizationSettings,
+	getRenderOrganizationDisplayContext,
 } from "@/lib/auth/render-context";
 import { getRenderSession } from "@/lib/auth/render-session";
 import { runtime } from "@/lib/effect/runtime";
@@ -108,9 +108,9 @@ export async function AuthenticatedAppContent({
 		);
 	const activeOrganizationId = session.session?.activeOrganizationId;
 	// Sync DB locale preference on load (null = user hasn't set preference, respect browser/cookie)
-	const [preferences, organizationSettings] = await Promise.all([
+	const [preferences, organizationContext] = await Promise.all([
 		getRenderUserPreferences(session.user.id),
-		getRenderOrganizationSettings(),
+		getRenderOrganizationDisplayContext(),
 	]);
 	const {
 		locale: dbLocale,
@@ -154,7 +154,7 @@ export async function AuthenticatedAppContent({
 					timeFormat={timeFormat}
 					timezone={timezone}
 				>
-					<OrganizationSettingsProvider initialSettings={organizationSettings}>
+					<OrganizationSettingsProvider initialContext={organizationContext}>
 						<SidebarProvider
 							style={
 								{

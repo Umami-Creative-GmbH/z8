@@ -14,6 +14,11 @@ import type { StaffingShiftInput } from "@/lib/scheduling/staffing/types";
 type Id = string | null | undefined;
 
 export const queryKeys = {
+	organizationContext: {
+		all: ["organization-context"] as const,
+		current: (userId: Id, organizationId: Id) =>
+			["organization-context", userId, organizationId] as const,
+	},
 	// Organizations
 	organizations: {
 		all: ["organizations"] as const,

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ORGANIZATION_CONTEXT_HEADERS } from "@/lib/auth/organization-display-context";
 import { getAuthContext } from "@/lib/auth-helpers";
 import { getOrganizationSettings } from "@/lib/organization-settings";
 
@@ -7,16 +8,34 @@ import { getOrganizationSettings } from "@/lib/organization-settings";
  * Returns the current user's authentication and employee context
  * Used by client components to get organization and role information
  */
-export async function GET() {
+export async function GET(request: Request) {
 	try {
 		const context = await getAuthContext();
 
 		if (!context) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
+		const expectedUser = request.headers.get(ORGANIZATION_CONTEXT_HEADERS.user);
+		const expectedOrganization = request.headers.get(
+			ORGANIZATION_CONTEXT_HEADERS.organization,
+		);
+		if (
+			(expectedUser !== null && expectedUser !== context.user.id) ||
+			(expectedOrganization !== null &&
+				expectedOrganization !== (context.session.activeOrganizationId ?? ""))
+		) {
+			return NextResponse.json(
+				{ error: "Organization context changed. Refresh to continue." },
+				{ status: 409 },
+			);
+		}
 
-		const orgId = context.session.activeOrganizationId || context.employee?.organizationId;
-		const organizationSettings = await getOrganizationSettings(orgId, context.user.id);
+		const orgId =
+			context.session.activeOrganizationId || context.employee?.organizationId;
+		const organizationSettings = await getOrganizationSettings(
+			orgId,
+			context.user.id,
+		);
 
 		return NextResponse.json({
 			user: {
@@ -43,6 +62,9 @@ export async function GET() {
 			throw error;
 		}
 		console.error("Error getting auth context:", error);
-		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+		return NextResponse.json(
+			{ error: "Internal server error" },
+			{ status: 500 },
+		);
 	}
 }
