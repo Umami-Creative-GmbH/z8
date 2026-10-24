@@ -841,6 +841,9 @@ export async function measureFixtureResources(
     if (collectorVisit) {
       try {
         const closed = await collector.endCollectorVisit(collectorVisit);
+        s.collectorVisit.nativeCloseProof = closed.nativeCloseProof ?? null;
+        s.collectorVisit.nativeCloseElapsedMs =
+          closed.nativeCloseElapsedMs ?? null;
         if (
           closed.protocol !== "z8-fixture-otlp-collector-v2" ||
           !closed.traces?.some((e) => e.traceId === traceId)
