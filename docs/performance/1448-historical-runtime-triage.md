@@ -55,3 +55,36 @@ No fresh-auth boundary was removed and no framework rejection was suppressed.
 Actual request behavior and whether the document adapters should propagate this
 framework control flow remain a bounded follow-up before final runtime signoff,
 particularly after the pending concurrent-development integration and rebuild.
+
+The merged `ac2fb1133` CI build also exited successfully. Its actual retained
+log contains 76 cancellation log lines: 38 My Documents and 38 requested-document
+entries. Nested error formatting repeats the message, yielding 152 literal
+`During prerendering` occurrences; these are not 152 distinct failures. Every
+matching line names `connection()`, with zero other current-time abort lines.
+This confirms the same cancellation logging path on the merged source. It
+remains noisy build output, not evidence of a failed production request, and
+does not justify suppressing errors or weakening fresh authentication.
+
+## Cold streamed clock diagnostic
+
+The final `ac2fb1133` two-instance fixture retained its three failing
+nine-second cold-document observations and one successful observation. The
+deadline was a probe limit, not a prospectively derived clock latency budget.
+A separate passive diagnostic held the actual secondary query for 20.05 seconds,
+with no keyboard, focus or status probe: the actual clock action dispatched at
+8.384 seconds, returned HTTP 200 at 8.412 seconds, and the clock became ready at
+8.475 seconds. Useful markup arrived at 3.912 seconds. The secondary remained
+pending at both the nine-second observation and 20.046 seconds before release.
+All 190 driver/SDK/received queries reconciled and strict transport completed.
+
+That diagnostic deliberately remains `passed: false` and
+`applicationPassed: false`; it does not reclassify earlier deadline failures.
+It demonstrates clock independence from that held secondary read, with cold
+latency still subject to controlled before/head measurement. No structural
+queue/hydration fix or acceptance deadline increase was made.
+
+The keyboard check was also qualified by layer ownership: Escape from the
+autofocused Office control can consume a nested tooltip layer. Focusing the
+actual primary Clock In control without activating it, then pressing Escape,
+closes the root popover and returns focus to the header trigger. The first
+failed assertions remain retained; no general popover defect was established.
