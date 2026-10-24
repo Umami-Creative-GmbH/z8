@@ -5,36 +5,29 @@ import {
 	createElement,
 	type ReactNode,
 	use,
-	useState,
 	useLayoutEffect,
+	useState,
 } from "react";
 import { useStore } from "zustand";
 import { createStore, type StoreApi } from "zustand/vanilla";
+import type { OrganizationSettingsBootstrap } from "@/lib/auth/organization-settings-bootstrap";
 
-export interface OrganizationSettings {
-	organizationId: string | null;
-	shiftsEnabled: boolean;
-	projectsEnabled: boolean;
-	surchargesEnabled: boolean;
-	demoDataEnabled: boolean;
-	worksCouncilEnabled: boolean;
-	/** Billable Time module (#897); never true while projects are off. */
-	billableTimeEnabled: boolean;
-	personnelFilesEnabled: boolean;
-	timezone: string;
-	deletedAt: string | null;
+export type { OrganizationSettingsBootstrap } from "@/lib/auth/organization-settings-bootstrap";
+
+export interface OrganizationSettings extends OrganizationSettingsBootstrap {
 	isHydrated: boolean;
 }
 
-export type OrganizationSettingsBootstrap = Omit<OrganizationSettings, "isHydrated">;
-
 interface OrganizationSettingsActions {
-	setSettings: (settings: Partial<Omit<OrganizationSettings, "isHydrated">>) => void;
+	setSettings: (
+		settings: Partial<Omit<OrganizationSettings, "isHydrated">>,
+	) => void;
 	hydrate: (settings: Omit<OrganizationSettings, "isHydrated">) => void;
 	reset: () => void;
 }
 
-export type OrganizationSettingsStore = OrganizationSettings & OrganizationSettingsActions;
+export type OrganizationSettingsStore = OrganizationSettings &
+	OrganizationSettingsActions;
 
 const initialState: OrganizationSettings = {
 	organizationId: null,
@@ -50,7 +43,9 @@ const initialState: OrganizationSettings = {
 	isHydrated: false,
 };
 
-function createOrganizationSettingsStore(initialSettings?: OrganizationSettingsBootstrap | null) {
+function createOrganizationSettingsStore(
+	initialSettings?: OrganizationSettingsBootstrap | null,
+) {
 	return createStore<OrganizationSettingsStore>((set) => ({
 		...initialState,
 		...(initialSettings ?? {}),
@@ -84,42 +79,59 @@ export function OrganizationSettingsStoreProvider({
 	children: ReactNode;
 	initialSettings?: OrganizationSettingsBootstrap | null;
 }) {
-	const [store] = useState(() => createOrganizationSettingsStore(initialSettings));
+	const [store] = useState(() =>
+		createOrganizationSettingsStore(initialSettings),
+	);
 	useLayoutEffect(() => {
 		if (initialSettings) store.getState().hydrate(initialSettings);
 	}, [store, initialSettings]);
 
-	return createElement(OrganizationSettingsStoreContext.Provider, { value: store }, children);
+	return createElement(
+		OrganizationSettingsStoreContext.Provider,
+		{ value: store },
+		children,
+	);
 }
 
 function useOrganizationSettingsStore(): OrganizationSettingsStore;
-function useOrganizationSettingsStore<T>(selector: (state: OrganizationSettingsStore) => T): T;
+function useOrganizationSettingsStore<T>(
+	selector: (state: OrganizationSettingsStore) => T,
+): T;
 function useOrganizationSettingsStore<T>(
 	selector?: (state: OrganizationSettingsStore) => T,
 ): T | OrganizationSettingsStore {
 	const store = use(OrganizationSettingsStoreContext) ?? defaultStore;
-	const resolvedSelector: (state: OrganizationSettingsStore) => T | OrganizationSettingsStore =
-		selector ?? ((state) => state);
+	const resolvedSelector: (
+		state: OrganizationSettingsStore,
+	) => T | OrganizationSettingsStore = selector ?? ((state) => state);
 	return useStore(store, resolvedSelector);
 }
 
-export const useOrganizationSettings = Object.assign(useOrganizationSettingsStore, {
-	getState: defaultStore.getState,
-	setState: defaultStore.setState,
-	subscribe: defaultStore.subscribe,
-});
+export const useOrganizationSettings = Object.assign(
+	useOrganizationSettingsStore,
+	{
+		getState: defaultStore.getState,
+		setState: defaultStore.setState,
+		subscribe: defaultStore.subscribe,
+	},
+);
 
 // Selector hooks for specific settings
-export const useProjectsEnabled = () => useOrganizationSettings((state) => state.projectsEnabled);
-export const useShiftsEnabled = () => useOrganizationSettings((state) => state.shiftsEnabled);
+export const useProjectsEnabled = () =>
+	useOrganizationSettings((state) => state.projectsEnabled);
+export const useShiftsEnabled = () =>
+	useOrganizationSettings((state) => state.shiftsEnabled);
 export const useSurchargesEnabled = () =>
 	useOrganizationSettings((state) => state.surchargesEnabled);
-export const useDemoDataEnabled = () => useOrganizationSettings((state) => state.demoDataEnabled);
+export const useDemoDataEnabled = () =>
+	useOrganizationSettings((state) => state.demoDataEnabled);
 export const useWorksCouncilEnabled = () =>
 	useOrganizationSettings((state) => state.worksCouncilEnabled);
 export const useBillableTimeEnabled = () =>
 	useOrganizationSettings((state) => state.billableTimeEnabled);
 export const usePersonnelFilesEnabled = () =>
 	useOrganizationSettings((state) => state.personnelFilesEnabled);
-export const useOrganizationTimezone = () => useOrganizationSettings((state) => state.timezone);
-export const useOrganizationDeletedAt = () => useOrganizationSettings((state) => state.deletedAt);
+export const useOrganizationTimezone = () =>
+	useOrganizationSettings((state) => state.timezone);
+export const useOrganizationDeletedAt = () =>
+	useOrganizationSettings((state) => state.deletedAt);

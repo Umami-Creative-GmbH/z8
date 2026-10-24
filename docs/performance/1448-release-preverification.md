@@ -160,3 +160,18 @@ not application latency or isolated scanner benchmarks. The later neutral DTO
 adds one source; the admitted filesystem currently contains 4,124 files and
 28,229,366 bytes, including normally generated ignored licenses, below all limits.
 A final inventory rescan after all release source changes remains necessary.
+
+## Shared presentation type dependency
+
+The root Docker manifest check reproduced an introduced worker dependency on
+Zustand. The fixed original's trace matched its manifests. The new server display
+module imported its presentation type from the client store, which the repository
+tracer follows even for type-only imports. OrganizationSettingsBootstrap now lives
+in a dependency-free module consumed by both sides, with the original store type
+export retained for callers. Runtime settings and hydration semantics are unchanged;
+no unnecessary worker dependency or manifest exemption was added.
+
+All 34 Docker tracer/manifest cases and 16 store/provider cases pass. The actual
+RSC identity PostgreSQL suite passes, as does full production TypeScript. The
+changed-source Doctor regression report is schema 3, complete, with zero errors
+or warnings; scoped Biome passes. Broader source/runtime gates remain separate.

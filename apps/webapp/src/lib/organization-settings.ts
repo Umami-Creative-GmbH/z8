@@ -4,9 +4,9 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { member, organization } from "@/db/auth-schema";
 import { organizationSettingsForDisplay } from "@/lib/auth/organization-display";
-import type { OrganizationSettingsBootstrap } from "@/stores/organization-settings-store";
+import type { OrganizationSettingsBootstrap } from "@/lib/auth/organization-settings-bootstrap";
 
-export type { OrganizationSettingsBootstrap } from "@/stores/organization-settings-store";
+export type { OrganizationSettingsBootstrap } from "@/lib/auth/organization-settings-bootstrap";
 
 export async function getOrganizationSettings(
 	organizationId: string | null | undefined,
