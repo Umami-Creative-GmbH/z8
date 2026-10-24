@@ -5,7 +5,7 @@ import { employeeEmploymentPeriod } from "@/db/schema";
 import { planAbsences } from "./absences";
 import { planAccessEnds } from "./access-ends";
 import { planApprovalDuties } from "./approval-duties";
-import { planManagerLinks } from "./manager-links";
+import { planManagerLinks, validatedReplacementManagers } from "./manager-links";
 import { planShiftsToOpen } from "./shifts";
 import { planTeamLinks } from "./team-links";
 import type { DeactivationPlan, DeactivationPlanContext, DeactivationReader } from "./types";
@@ -28,7 +28,11 @@ export async function planDeactivationConsequences(
 ): Promise<DeactivationPlan> {
 	const managerLinks = await planManagerLinks(reader, ctx);
 	const teamLinks = await planTeamLinks(reader, ctx);
-	const approvalDuties = await planApprovalDuties(reader, ctx);
+	const approvalDuties = await planApprovalDuties(
+		reader,
+		ctx,
+		validatedReplacementManagers(managerLinks),
+	);
 	const shifts = await planShiftsToOpen(reader, ctx);
 	const absences = await planAbsences(reader, ctx);
 	const accessEnds = await planAccessEnds(reader, ctx);

@@ -25,7 +25,10 @@ import {
 } from "../receipts";
 import { acquireAbsenceCancellationGuards } from "./absences";
 import { applyDeactivationConsequences } from "./apply";
-import { managerLinkAuthorizationEmployeeIds } from "./manager-links";
+import {
+	managerLinkAuthorizationEmployeeIds,
+	validatedReplacementManagers,
+} from "./manager-links";
 import { planDeactivationConsequences } from "./plan";
 import type {
 	DeactivationAfterCommit,
@@ -172,7 +175,8 @@ export async function executeDeactivation(
 		reason: "employee_deactivated",
 		requestId: command.requestId,
 		requestFingerprint: command.requestFingerprint,
-		replacementManagers: command.replacementManagers,
+		// Only the validated picks: stage activation routes later stages by them.
+		replacementManagers: validatedReplacementManagers(plan.managerLinks),
 	});
 
 	const audit = new AuditTrail();

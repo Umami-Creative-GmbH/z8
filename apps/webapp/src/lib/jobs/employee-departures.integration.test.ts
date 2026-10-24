@@ -80,7 +80,7 @@ describe("employee departure maintenance with the release gate closed", () => {
 			replacementManagers: {},
 			replaceManagers: true,
 		};
-		const plan = await planApprovalDuties(fixture.db, context);
+		const plan = await planApprovalDuties(fixture.db, context, {});
 		return fixture.db.transaction(async (tx) => {
 			const { id } = await insertDeactivation(tx, {
 				organizationId: fixture.organizationId,

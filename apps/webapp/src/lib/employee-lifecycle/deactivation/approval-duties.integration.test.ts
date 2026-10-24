@@ -28,6 +28,7 @@ import {
 	type SeededEmployee,
 } from "../testing/database.test.fixture";
 import { applyApprovalDuties, planApprovalDuties } from "./approval-duties";
+import { planDeactivationConsequences } from "./plan";
 import type { ApprovalDutiesPlan, DeactivationPlanContext } from "./types";
 
 const SUBMITTED_AT = parseInstant("2026-10-20T08:00:00Z");
@@ -137,7 +138,7 @@ describe("deactivation approval duties", () => {
 	) {
 		now = DEACTIVATED_AT;
 		const context = planContext(leaving, replacementManagers);
-		const plan = await planApprovalDuties(fixture.db, context);
+		const plan = await planApprovalDuties(fixture.db, context, replacementManagers);
 		const deactivationId = await deactivate(leaving, replacementManagers);
 		const result = await fixture.db.transaction((tx) =>
 			applyApprovalDuties(
@@ -375,6 +376,32 @@ describe("deactivation approval duties", () => {
 		expect(followUp?.followUp.openReviews).toBe(3);
 	});
 
+	it("uses only replacement picks the manager links validated; a stale pick falls back", async () => {
+		const leaving = await fixture.seedEmployee({ role: "admin" });
+		const otherManager = await fixture.seedEmployee({ role: "admin" });
+		const stalePick = await fixture.seedEmployee({ role: "admin" });
+		const keepsManager = await fixture.seedEmployee();
+		const notAReport = await fixture.seedEmployee();
+		await link(keepsManager, leaving, true);
+		await link(keepsManager, otherManager, false);
+		const keepsManagerDuty = await seedDuty(keepsManager, leaving);
+		const notAReportDuty = await seedDuty(notAReport, leaving);
+
+		// Picks for a report who keeps another manager and for a requester who
+		// isn't their report: neither is a validated replacement.
+		const plan = await planDeactivationConsequences(
+			fixture.db,
+			planContext(leaving, {
+				[keepsManager.employeeId]: stalePick.employeeId,
+				[notAReport.employeeId]: stalePick.employeeId,
+			}),
+		);
+
+		const targets = byAssignment(plan.approvalDuties);
+		expect(targets[keepsManagerDuty.assignments[0] as string]).toBe(otherManager.employeeId);
+		expect(targets[notAReportDuty.assignments[0] as string]).not.toBe(stalePick.employeeId);
+	});
+
 	it("stops handing over once the person is reactivated", async () => {
 		const leaving = await fixture.seedEmployee({ role: "admin" });
 		const otherManager = await fixture.seedEmployee({ role: "admin" });
@@ -426,7 +453,7 @@ describe("deactivation approval duties", () => {
 				leaving.employeeId,
 			],
 		);
-		const plan = await planApprovalDuties(fixture.db, planContext(leaving, {}));
+		const plan = await planApprovalDuties(fixture.db, planContext(leaving, {}), {});
 		expect(plan).toEqual({ handovers: [], reviews: [] });
 	});
 });

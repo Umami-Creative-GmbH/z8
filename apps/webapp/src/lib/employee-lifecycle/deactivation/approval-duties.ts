@@ -49,10 +49,15 @@ type CurrentStageDuty = {
  * - a pending legacy-only approval request becomes a review.
  *
  * Requests the person submitted are not duties and stay decidable. Read-only.
+ *
+ * `replacements` are only the picks the manager links validated
+ * (`validatedReplacementManagers`): a pick for a requester who keeps another
+ * manager, or who isn't the person's report, never decides a target.
  */
 export async function planApprovalDuties(
 	reader: Pick<DeactivationReader, "execute">,
 	ctx: DeactivationPlanContext,
+	replacements: Readonly<Record<string, string>>,
 ): Promise<ApprovalDutiesPlan> {
 	const duties = await reader.execute<CurrentStageDuty>(sql`
 		SELECT a.id AS assignment_id, a.workflow_id, a.stage_id, w.requester_employee_id,
@@ -76,19 +81,18 @@ export async function planApprovalDuties(
 		ORDER BY w.submitted_at, a.id
 	`);
 
+	// The organization's directory, the same for every duty: the person's own
+	// replacement is the requester's validated pick, already consulted.
 	let directory: ApprovalStageReviewerDirectory | null = null;
 	const handovers: ApprovalDutiesPlan["handovers"] = [];
 	for (const duty of duties.rows) {
 		const requesterEmployeeId = duty.requester_employee_id;
 		let targetEmployeeId: string | null = null;
 		if (requesterEmployeeId) {
-			targetEmployeeId = ctx.replacementManagers[requesterEmployeeId] ?? null;
+			targetEmployeeId = replacements[requesterEmployeeId] ?? null;
 			if (targetEmployeeId === null) {
 				directory ??= await loadApprovalStageDirectory(reader, {
 					organizationId: ctx.organizationId,
-					stageId: duty.stage_id,
-					requesterEmployeeId,
-					// The person's own replacement is the requester's pick, already consulted.
 					namedApproverId: null,
 				});
 				const reviewers = resolveStageReviewersWithout({
@@ -156,7 +160,7 @@ export async function planApprovalDuties(
 			...futureStages.rows
 				.filter(
 					(stage) =>
-						!stage.requester_employee_id || !ctx.replacementManagers[stage.requester_employee_id],
+						!stage.requester_employee_id || !replacements[stage.requester_employee_id],
 				)
 				.map((stage) => ({
 					workflowId: stage.workflow_id,
