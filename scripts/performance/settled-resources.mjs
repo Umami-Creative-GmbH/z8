@@ -5,6 +5,12 @@ import { cpus, platform, release, totalmem } from "node:os";
 import { dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import {
+  fixtureBrowserPolicy,
+  fixtureTransportIsComplete,
+  initializeFixtureBrowserContext,
+  launchFixtureBrowser,
+} from "./fixture-browser.mjs";
+import {
   clickVisible,
   fixtureBrowserPermissions,
   historicalRangeSteps,
@@ -41,6 +47,36 @@ export const companionPolicy = Object.freeze({
     "all finite page and ServiceWorker proxy response bodies from navigation start through post-readiness quiet; inherited, explicit prefetch and long-lived traffic counted separately",
   wire: companionWireContract,
 });
+/** A failure boundary is a resource observation anchor, never a usable-content timestamp. */
+export async function observeFailedJourneyWire(
+  wire,
+  {
+    now = () => performance.now(),
+    pause = () =>
+      new Promise((done) => setTimeout(done, companionPolicy.pollMs)),
+  } = {},
+) {
+  const start = now();
+  wire.ready(start);
+  do {
+    const at = now(),
+      state = wire.state(at);
+    if (
+      state.complete ||
+      state.capped ||
+      at - start >= companionPolicy.postReadyCapMs
+    )
+      return {
+        ...state,
+        ...(!state.complete && at - start >= companionPolicy.postReadyCapMs
+          ? { complete: false, censored: true, capped: true }
+          : {}),
+        scope: "post-failed-journey-diagnostic",
+        usableContentClaim: false,
+      };
+    await pause();
+  } while (true);
+}
 /** Whole-run wire proof includes opening IO, every registered phase and browser shutdown. */
 export async function runCompanionCapture({
   collector,
@@ -103,6 +139,7 @@ export function settledCohorts(plan) {
     plan.runtime?.mode !== "production" ||
     plan.runtime?.collectorProtocol !== "z8-fixture-otlp-collector-v2" ||
     plan.runtime?.traceTransport !== companionWireContract.traceTransport ||
+    plan.runtime?.browserPolicy !== fixtureBrowserPolicy ||
     plan.runtime.browserPermissions !== fixtureBrowserPermissions ||
     !Number.isInteger(plan.concurrency) ||
     plan.concurrency < 1
@@ -160,6 +197,7 @@ export function settledEvidenceGates(plan, artifact, native, planSha) {
     !artifact.runtime?.buildVerified ||
     artifact.runtime.collectorProtocol !== plan.runtime.collectorProtocol ||
     artifact.runtime.traceTransport !== plan.runtime.traceTransport ||
+    artifact.runtime.browserPolicy !== plan.runtime.browserPolicy ||
     artifact.runtime.build !== plan.runtime.build ||
     artifact.runtime.sourceBuild !== plan.runtime.sourceBuild ||
     artifact.runtime.toolingBuild !== plan.runtime.toolingBuild
@@ -188,7 +226,9 @@ export function settledEvidenceGates(plan, artifact, native, planSha) {
     ids.add(s.traceId);
     if (
       s.traceTransport?.kind !== companionWireContract.traceTransport ||
-      s.traceTransport.refusedRequests !== 0
+      !fixtureTransportIsComplete(s.traceTransport) ||
+      JSON.stringify(s.browserInitialization) !==
+        JSON.stringify(s.traceTransport?.browserInitialization)
     )
       gates.push(
         "The matching shared context trace transport is missing or refused traffic.",
@@ -331,6 +371,7 @@ async function protocolIdentity() {
     "collector-client.mjs",
     "trace-transport.mjs",
     "proxy-wire-observer.mjs",
+    "fixture-browser.mjs",
   ];
   return Object.fromEntries(
     await Promise.all(
@@ -341,7 +382,7 @@ async function protocolIdentity() {
     ),
   );
 }
-async function measure(
+export async function measureFixtureResources(
   browser,
   auth,
   plan,
@@ -392,6 +433,18 @@ async function measure(
     failureStage: null,
     failureKind: null,
   };
+  const cleanupFailure = (failureStage, failureKind) => {
+    s.failed = true;
+    s.censored = true;
+    if (s.failureStage)
+      (s.secondaryFailures ??= []).push({ failureStage, failureKind });
+    else {
+      s.failureStage = failureStage;
+      s.failureKind = failureKind;
+      s.elapsedUntilFailureMs =
+        started === undefined ? null : performance.now() - started;
+    }
+  };
   try {
     stage = "collector-registration";
     collectorVisit = await collector.beginCollectorVisit({
@@ -433,12 +486,14 @@ async function measure(
     context = await browser.createBrowserContext(
       transport.browserContextOptions,
     );
+    stage = "empty-browser-initialization";
+    ({ page, browserInitialization: s.browserInitialization } =
+      await initializeFixtureBrowserContext({ context, transport }));
     stage = "authentication-context";
     await prepareFixtureBrowserContext(context, plan.origin);
     if (!Array.isArray(auth[condition.name]?.cookies))
       throw Error("Missing fixture authentication.");
     await context.setCookie(...auth[condition.name].cookies);
-    page = await context.newPage();
     await page.setViewport(condition.viewport);
     await page.emulateTimezone(condition.timezone);
     await page.setExtraHTTPHeaders({ "Accept-Language": condition.locale });
@@ -646,6 +701,7 @@ async function measure(
     s.censored = !s.wireSettled.complete;
   } catch (error) {
     s.failed = true;
+    s.censored = true;
     s.failureStage = stage;
     s.failureKind =
       error?.name === "TimeoutError" ? "timeout" : "journey-error";
@@ -653,15 +709,28 @@ async function measure(
       started === undefined ? null : performance.now() - started;
     s.settled = observer.state(performance.now());
     s.wireSettled = transport?.wire?.state(performance.now()) ?? null;
+    if (started !== undefined && transport?.wire) {
+      try {
+        s.wireFailureDrain = await observeFailedJourneyWire(transport.wire);
+      } catch {
+        s.wireFailureDrain = {
+          scope: "post-failed-journey-diagnostic",
+          usableContentClaim: false,
+          complete: false,
+          censored: true,
+        };
+        (s.secondaryFailures ??= []).push({
+          failureStage: "failure-resource-observation",
+          failureKind: "observation-error",
+        });
+      }
+    }
   } finally {
     await client?.detach().catch(() => {});
     try {
       await context?.close();
     } catch {
-      s.failed = true;
-      s.censored = true;
-      s.failureStage = "close-browser-context";
-      s.failureKind = "browser-close-error";
+      cleanupFailure("close-browser-context", "browser-close-error");
     }
     if (collectorVisit) {
       try {
@@ -678,10 +747,7 @@ async function measure(
         s.collectorVisit.coverage =
           closed.traces?.find((e) => e.traceId === traceId)?.coverage ?? null;
       } catch {
-        s.failed = true;
-        s.censored = true;
-        s.failureStage = "collector-close";
-        s.failureKind = "collector-proof-error";
+        cleanupFailure("collector-close", "collector-proof-error");
       }
     }
     if (transport) {
@@ -693,10 +759,7 @@ async function measure(
       try {
         await transport.close();
       } catch {
-        s.failed = true;
-        s.censored = true;
-        s.failureStage = "trace-transport-close";
-        s.failureKind = "transport-error";
+        cleanupFailure("trace-transport-close", "transport-error");
       }
     }
   }
@@ -840,10 +903,7 @@ async function main() {
       artifact.runtime.buildVerified = true;
       auth = JSON.parse(await readFile(options["--auth"]));
       const { default: puppeteer } = await import("puppeteer-core");
-      return puppeteer.launch({
-        executablePath: options["--chrome"],
-        headless: true,
-      });
+      return launchFixtureBrowser(puppeteer, options["--chrome"]);
     },
     capture: async (browser) => {
       artifact.browser = await browser.version();
@@ -854,7 +914,7 @@ async function main() {
             while (index < c.count) {
               const iteration = index++;
               artifact.samples.push(
-                await measure(
+                await measureFixtureResources(
                   browser,
                   auth,
                   plan,
