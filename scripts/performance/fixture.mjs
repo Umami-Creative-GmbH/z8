@@ -9,7 +9,10 @@ import { createServer } from "node:net";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { authenticateFixture } from "./fixture-auth.mjs";
-import { dashboardLayoutMutation } from "./journey-steps.mjs";
+import {
+	dashboardLayoutMutation,
+	headerRefreshSteps,
+} from "./journey-steps.mjs";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const app = join(root, "apps/webapp");
@@ -310,6 +313,53 @@ async function checkRuntime(directory) {
 	);
 }
 
+async function initializeProjections(directory) {
+	const asOf = args.includes("--as-of")
+		? args[args.indexOf("--as-of") + 1]
+		: undefined;
+	if (!asOf)
+		throw new Error(
+			"Fixture projection initialization requires --as-of <explicit-instant>.",
+		);
+	const runtime = JSON.parse(
+		await readFile(join(directory, "runtime-private.json"), "utf8"),
+	);
+	const log = createWriteStream(
+		join(directory, "projection-initialization-private.log"),
+		{ flags: "a", mode: 0o600 },
+	);
+	await once(log, "open");
+	try {
+		await run(
+			[
+				"exec",
+				"tsx",
+				"scripts/initialize-performance-projections.ts",
+				join(directory, "fixture-private.json"),
+				join(directory, "fixture-projection-progress.json"),
+				asOf,
+			],
+			{ ...runtime.env, CI: "false" },
+			log,
+		);
+	} finally {
+		log.end();
+	}
+	const progress = JSON.parse(
+		await readFile(join(directory, "fixture-projection-progress.json"), "utf8"),
+	);
+	if (
+		progress.status !== "complete" ||
+		![progress.total, progress.preserved, progress.rebuilt].every(
+			(value) => Number.isSafeInteger(value) && value >= 0,
+		)
+	)
+		throw new Error("Synthetic projection progress is incomplete.");
+	console.log(
+		`Synthetic projections ready: ${progress.total} total, ${progress.preserved} preserved, ${progress.rebuilt} rebuilt.`,
+	);
+}
+
 async function checkObserver(directory) {
 	const runtime = JSON.parse(
 		await readFile(join(directory, "runtime-private.json"), "utf8"),
@@ -541,6 +591,7 @@ async function plan(directory) {
 				}),
 		navigationAfter: [{ key: "Escape" }],
 		refresh: 'button[aria-label="Refresh data"]',
+		refreshSteps: headerRefreshSteps,
 		...(name === "dashboard" ? { mutation: dashboardLayoutMutation } : {}),
 		...(name === "reports"
 			? {
@@ -606,6 +657,7 @@ async function plan(directory) {
 			kind: fixture.kind,
 			version: fixture.version ?? 1,
 			dashboardLayout: fixture.dashboardLayout ?? "legacy-null",
+			projectionInitialization: fixture.projectionInitialization ?? null,
 			journeysVerified: false,
 			organizations: fixture.organizations,
 		},
@@ -650,12 +702,13 @@ if (
 		"authenticate",
 		"check-runtime",
 		"check-observer",
+		"initialize-projections",
 		"upgrade",
 	].includes(command) ||
 	!inputDirectory
 ) {
 	console.error(
-		"Usage: pnpm performance:fixture <prepare|start|cleanup|plan|authenticate|check-runtime|check-observer|upgrade> <private-directory> [--build|--collector control.json|plan-output.json]",
+		"Usage: pnpm performance:fixture <prepare|start|cleanup|plan|authenticate|check-runtime|check-observer|initialize-projections|upgrade> <private-directory> [--build|--collector control.json|--as-of instant|plan-output.json]",
 	);
 	process.exitCode = 2;
 } else {
@@ -668,6 +721,7 @@ if (
 		authenticate: authenticateFixture,
 		"check-runtime": checkRuntime,
 		"check-observer": checkObserver,
+		"initialize-projections": initializeProjections,
 		upgrade,
 	})
 		[command](directory)

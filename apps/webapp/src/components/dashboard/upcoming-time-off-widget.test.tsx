@@ -1,12 +1,9 @@
 /* @vitest-environment jsdom */
 
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-const { useWidgetDataMock } = vi.hoisted(() => ({
-	useWidgetDataMock: vi.fn(),
-}));
 
 vi.mock("@tolgee/react", () => ({
 	useTolgee: () => ({ getLanguage: () => "de" }),
@@ -36,12 +33,36 @@ vi.mock("./actions", () => ({ getUpcomingAbsences: vi.fn() }));
 vi.mock("./dashboard-widget", () => ({
 	DashboardWidget: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }));
-vi.mock("./use-widget-data", () => ({ useWidgetData: useWidgetDataMock }));
+vi.mock("@/hooks/use-organization", () => ({
+	useOrganization: () => ({
+		userId: "user-a",
+		organizationId: "org-a",
+		role: "employee",
+		isLoading: false,
+	}),
+}));
 vi.mock("./widget-card", () => ({
 	WidgetCard: ({ children, title }: { children: ReactNode; title: string }) => (
 		<section aria-label={title}>{children}</section>
 	),
 }));
+
+import type { DashboardWidgetData } from "./dashboard-types";
+
+let delivered: { data: DashboardWidgetData["upcoming-time-off"] | null; loading?: boolean };
+function setDelivery(value: typeof delivered) {
+	delivered = value;
+}
+function initialDelivery() {
+	return {
+		scope: { userId: "user-a", organizationId: "org-a" },
+		updatedAt: Date.now(),
+		result:
+			delivered.data === null
+				? { success: false as const, error: "Fixture unavailable" }
+				: { success: true as const, data: delivered.data },
+	};
+}
 
 import { UpcomingTimeOffWidget } from "./upcoming-time-off-widget";
 
@@ -49,12 +70,14 @@ describe("UpcomingTimeOffWidget", () => {
 	beforeEach(() => {
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date(2026, 4, 13, 12));
-		useWidgetDataMock.mockReturnValue({
+		setDelivery({
 			data: [
 				{
 					id: "absence-1",
-					startDate: new Date(Date.UTC(2026, 4, 15)),
-					endDate: new Date(Date.UTC(2026, 4, 15)),
+					absenceDays: 1,
+					daysUntil: 2,
+					startDate: "2026-05-15",
+					endDate: "2026-05-15",
 					employee: {
 						id: "employee-1",
 						user: { id: "user-1", name: "Ada Lovelace", image: null },
@@ -73,8 +96,12 @@ describe("UpcomingTimeOffWidget", () => {
 		vi.clearAllMocks();
 	});
 
-	it("labels a date two calendar days away as two days instead of tomorrow", () => {
-		render(<UpcomingTimeOffWidget />);
+	it("uses the employee-local server day marker instead of recalculating it in the browser", () => {
+		render(
+			<QueryClientProvider client={new QueryClient()}>
+				<UpcomingTimeOffWidget initialSnapshot={initialDelivery()} />
+			</QueryClientProvider>,
+		);
 
 		expect(screen.getByText("2")).toBeTruthy();
 		expect(screen.getByText("days")).toBeTruthy();
@@ -82,12 +109,14 @@ describe("UpcomingTimeOffWidget", () => {
 	});
 
 	it("formats absence dates with the active UI locale", () => {
-		useWidgetDataMock.mockReturnValue({
+		setDelivery({
 			data: [
 				{
 					id: "absence-1",
-					startDate: new Date(Date.UTC(2026, 4, 15)),
-					endDate: new Date(Date.UTC(2026, 4, 16)),
+					absenceDays: 1,
+					daysUntil: 2,
+					startDate: "2026-05-15",
+					endDate: "2026-05-16",
 					employee: {
 						id: "employee-1",
 						user: { id: "user-1", name: "Ada Lovelace", image: null },
@@ -100,7 +129,11 @@ describe("UpcomingTimeOffWidget", () => {
 			refetch: vi.fn(),
 		});
 
-		render(<UpcomingTimeOffWidget />);
+		render(
+			<QueryClientProvider client={new QueryClient()}>
+				<UpcomingTimeOffWidget initialSnapshot={initialDelivery()} />
+			</QueryClientProvider>,
+		);
 
 		expect(screen.getByText("15. Mai - 16. Mai")).toBeTruthy();
 	});

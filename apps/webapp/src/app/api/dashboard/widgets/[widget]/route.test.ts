@@ -71,6 +71,14 @@ describe("Dashboard widget GET", () => {
 	it.each([
 		"manager-today",
 		"quick-stats",
+		"upcoming-shifts",
+		"covering-for",
+		"whos-out-today",
+		"upcoming-time-off",
+		"birthday-reminders",
+		"hydration",
+		"vacation-balance",
+		"presence-status",
 		"managed-employees",
 		"team-overview",
 		"pending-approvals",
@@ -100,7 +108,20 @@ describe("Dashboard widget GET", () => {
 		expect(boundary.read).not.toHaveBeenCalled();
 	});
 
-	it.each(["managed-employees", "team-overview", "pending-approvals", "recently-approved"])(
+	it.each([
+		"upcoming-shifts",
+		"covering-for",
+		"whos-out-today",
+		"upcoming-time-off",
+		"birthday-reminders",
+		"hydration",
+		"vacation-balance",
+		"presence-status",
+		"managed-employees",
+		"team-overview",
+		"pending-approvals",
+		"recently-approved",
+	])(
 		"denies signed-out or held identities and missing eligible employee access for %s",
 		async (widget) => {
 			boundary.auth.mockResolvedValueOnce(null);
@@ -144,33 +165,43 @@ describe("Dashboard widget GET", () => {
 		expect(boundary.read).not.toHaveBeenCalled();
 	});
 
-	it.each(["managed-employees", "team-overview", "pending-approvals", "recently-approved"])(
-		"does not queue an independent GET behind pending %s",
-		async (widget) => {
-			let finish: () => void = () => {};
-			const pending = new Promise<void>((resolve) => {
-				finish = resolve;
-			});
-			boundary.read.mockImplementation(async (id: string) => {
-				if (id === widget) await pending;
-				return { scope, updatedAt: 1234, result: { success: true, data: null } };
-			});
-			const manager = GET(request(), {
-				params: Promise.resolve({ widget }),
-			});
-			try {
-				const quick = await Promise.race([
-					GET(request(), { params: Promise.resolve({ widget: "quick-stats" }) }),
-					new Promise<never>((_, reject) =>
-						setTimeout(() => reject(new Error("Independent GET was queued")), 500),
-					),
-				]);
-				expect(quick.status).toBe(200);
-				expect(boundary.auth).toHaveBeenCalledTimes(2);
-			} finally {
-				finish();
-				await manager;
-			}
-		},
-	);
+	it.each([
+		"upcoming-shifts",
+		"covering-for",
+		"whos-out-today",
+		"upcoming-time-off",
+		"birthday-reminders",
+		"hydration",
+		"vacation-balance",
+		"presence-status",
+		"managed-employees",
+		"team-overview",
+		"pending-approvals",
+		"recently-approved",
+	])("does not queue an independent GET behind pending %s", async (widget) => {
+		let finish: () => void = () => {};
+		const pending = new Promise<void>((resolve) => {
+			finish = resolve;
+		});
+		boundary.read.mockImplementation(async (id: string) => {
+			if (id === widget) await pending;
+			return { scope, updatedAt: 1234, result: { success: true, data: null } };
+		});
+		const manager = GET(request(), {
+			params: Promise.resolve({ widget }),
+		});
+		try {
+			const quick = await Promise.race([
+				GET(request(), { params: Promise.resolve({ widget: "quick-stats" }) }),
+				new Promise<never>((_, reject) =>
+					setTimeout(() => reject(new Error("Independent GET was queued")), 500),
+				),
+			]);
+			expect(quick.status).toBe(200);
+			expect(boundary.auth).toHaveBeenCalledTimes(2);
+		} finally {
+			finish();
+			await manager;
+		}
+	});
 });

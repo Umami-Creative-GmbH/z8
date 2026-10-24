@@ -19,6 +19,21 @@ const visitModes = [
 ];
 const modesFor = (route) => route.modes ?? visitModes;
 const samplesFor = (plan, mode) => plan.samplesByMode?.[mode] ?? plan.samples;
+const routeIncludes = (route, condition) =>
+	(!route.roles || route.roles.includes(condition.role)) &&
+	(!route.conditions || route.conditions.includes(condition.name));
+const budgetNames = [
+	"usableContentP95Ms",
+	"clockReadyP95Ms",
+	"javascriptP95Bytes",
+	"queryCountP95",
+];
+const budgetsRecorded = (condition) =>
+	budgetNames.every(
+		(name) =>
+			Number.isFinite(condition.budgets?.[name]) &&
+			condition.budgets[name] >= 0,
+	);
 const backendMetrics = [
 	"queryCount",
 	"queryDurationMs",
@@ -30,6 +45,8 @@ const backendMetrics = [
 ];
 
 function validate(plan, verifying = false) {
+	if (plan.phase !== undefined && !["baseline", "release"].includes(plan.phase))
+		fail("Use the baseline or release phase.");
 	if (!Number.isInteger(plan.samples) || plan.samples < 20)
 		fail("Use at least twenty samples per condition and visit mode.");
 	for (const mode of visitModes)
@@ -52,6 +69,11 @@ function validate(plan, verifying = false) {
 		fail("Record positive concurrency.");
 	if (!Array.isArray(plan.conditions) || plan.conditions.length === 0)
 		fail("At least one comparison condition is required.");
+	if (
+		new Set(plan.conditions.map((condition) => condition.name)).size !==
+		plan.conditions.length
+	)
+		fail("Comparison condition labels must be unique.");
 	const roles = new Set(plan.conditions.map((c) => c.role));
 	if (
 		!["employee", "manager", "admin", "restricted"].every((role) =>
@@ -88,21 +110,18 @@ function validate(plan, verifying = false) {
 			!condition.viewport?.height
 		)
 			fail("Every condition needs a public label, zone, locale and viewport.");
+		if (!verifying && plan.phase !== "baseline" && !budgetsRecorded(condition))
+			fail("Record numerical budgets before running the release comparison.");
 		if (
-			!verifying &&
-			(!condition.budgets ||
-				![
-					"usableContentP95Ms",
-					"clockReadyP95Ms",
-					"javascriptP95Bytes",
-					"queryCountP95",
-				].every(
-					(name) =>
-						Number.isFinite(condition.budgets[name]) &&
-						condition.budgets[name] >= 0,
-				))
+			plan.phase === "baseline" &&
+			budgetNames.some(
+				(name) =>
+					condition.budgets?.[name] != null &&
+					(!Number.isFinite(condition.budgets[name]) ||
+						condition.budgets[name] < 0),
+			)
 		)
-			fail("Record numerical budgets before running the comparison.");
+			fail("Baseline budgets must be unset or nonnegative numerical values.");
 	}
 	if (
 		!["month", "quarter", "year"].every((range) =>
@@ -111,6 +130,20 @@ function validate(plan, verifying = false) {
 	)
 		fail("Include month, quarter and year ranges.");
 	for (const route of plan.routes) {
+		if (
+			route.conditions &&
+			(!Array.isArray(route.conditions) ||
+				route.conditions.length === 0 ||
+				route.conditions.some(
+					(name) =>
+						!plan.conditions.some((condition) => condition.name === name),
+				))
+		)
+			fail("Each route condition must name a known comparison label.");
+		if (!plan.conditions.some((condition) => routeIncludes(route, condition)))
+			fail(
+				"Every required route must select at least one comparison condition.",
+			);
 		if (
 			!Array.isArray(modesFor(route)) ||
 			!["first-document", "repeat-link"].every((mode) =>
@@ -151,6 +184,13 @@ function validate(plan, verifying = false) {
 				"Each route needs explicit readiness, Link, refresh and fixture mutation observations.",
 			);
 	}
+	if (
+		plan.conditions.some(
+			(condition) =>
+				!plan.routes.some((route) => routeIncludes(route, condition)),
+		)
+	)
+		fail("Every declared comparison condition must be used by a route.");
 	if (
 		!visitModes.every((mode) =>
 			plan.routes.some((route) => modesFor(route).includes(mode)),
@@ -225,6 +265,8 @@ async function main() {
 		if (result.kind !== "benchmark")
 			result.gates.push("Journey verification is not a controlled benchmark.");
 		const releaseGates = [];
+		if (plan.conditions.some((condition) => !budgetsRecorded(condition)))
+			releaseGates.push("Release budgets have not been recorded.");
 		if (!result.runtime?.buildVerified)
 			result.gates.push("Fixture application build identity was not verified.");
 		if (result.samples.length === 0)
@@ -248,7 +290,7 @@ async function main() {
 			for (const range of plan.ranges)
 				for (const route of plan.routes.filter(
 					(r) =>
-						(!r.roles || r.roles.includes(condition.role)) &&
+						routeIncludes(r, condition) &&
 						(!r.ranges || r.ranges.includes(range.name)),
 				))
 					for (const mode of modesFor(route)) {
@@ -291,7 +333,11 @@ async function main() {
 				["clockReadyMs", "clockReadyP95Ms"],
 				["javascriptBytes", "javascriptP95Bytes"],
 			]) {
-				if (summary[name] && summary[name].p95 > condition.budgets[budget])
+				if (
+					summary[name] &&
+					Number.isFinite(condition.budgets?.[budget]) &&
+					summary[name].p95 > condition.budgets[budget]
+				)
 					releaseGates.push(
 						`Exceeded ${budget} for ${summary.condition}/${summary.route}/${summary.mode}/${summary.range}.`,
 					);
@@ -310,7 +356,10 @@ async function main() {
 			summary.queryCountP95 = values.length
 				? values[Math.ceil(values.length * 0.95) - 1]
 				: null;
-			if (summary.queryCountP95 > condition.budgets.queryCountP95)
+			if (
+				Number.isFinite(condition.budgets?.queryCountP95) &&
+				summary.queryCountP95 > condition.budgets.queryCountP95
+			)
 				releaseGates.push(
 					`Exceeded queryCountP95 for ${summary.condition}/${summary.route}/${summary.mode}/${summary.range}.`,
 				);
@@ -436,7 +485,7 @@ async function main() {
 			for (const range of plan.ranges) {
 				for (const route of plan.routes.filter(
 					(r) =>
-						(!r.roles || r.roles.includes(condition.role)) &&
+						routeIncludes(r, condition) &&
 						(!r.ranges || r.ranges.includes(range.name)),
 				)) {
 					if (args.includes("--route") && route.name !== option("--route"))

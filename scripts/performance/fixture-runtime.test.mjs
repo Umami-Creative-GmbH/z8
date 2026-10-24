@@ -6,7 +6,39 @@ import { join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import puppeteer from "puppeteer-core";
-import { dashboardLayoutMutation, performSteps } from "./journey-steps.mjs";
+import {
+	dashboardLayoutMutation,
+	headerRefreshSteps,
+	performSteps,
+} from "./journey-steps.mjs";
+
+test("fixture projection initialization preserves all 208 existing employee projections", {
+	timeout: 30000,
+}, async () => {
+	const directory = process.env.Z8_PERFORMANCE_RUNTIME_DIRECTORY;
+	assert.ok(directory, "Real disposable fixture directory required.");
+	const fixture = fileURLToPath(new URL("./fixture.mjs", import.meta.url));
+	const result = await new Promise((done) =>
+		execFile(
+			process.execPath,
+			[
+				fixture,
+				"initialize-projections",
+				directory,
+				"--as-of",
+				"2026-10-24T12:00:00Z",
+			],
+			{ timeout: 25000 },
+			(error, stdout) => done({ code: error?.code ?? 0, stdout }),
+		),
+	);
+	assert.equal(
+		result.code,
+		0,
+		"The guarded real projection initialization command must succeed.",
+	);
+	assert.match(result.stdout, /208 total, 208 preserved, 0 rebuilt/);
+});
 
 test("synthetic actors authenticate through Better Auth and retain usable production clock controls", {
 	timeout: 240000,
@@ -90,7 +122,7 @@ test("synthetic actors authenticate through Better Auth and retain usable produc
 	}
 });
 
-test("Dashboard preference mutation survives reload and restores its accepted original layout", {
+test("Dashboard refresh and persisted layout restoration work at 390px and 1280px", {
 	timeout: 120000,
 }, async () => {
 	const directory = process.env.Z8_PERFORMANCE_RUNTIME_DIRECTORY;
@@ -107,24 +139,39 @@ test("Dashboard preference mutation survives reload and restores its accepted or
 	);
 	const browser = await puppeteer.launch({ executablePath, headless: true });
 	try {
-		const context = await browser.createBrowserContext();
-		await context.setCookie(...auth["small-admin"].cookies);
-		const page = await context.newPage();
-		await page.goto(new URL("/en", runtime.origin).href, {
-			waitUntil: "domcontentloaded",
-		});
-		const bindings = { origin: runtime.origin, path: "/en", locale: "en" };
-		try {
-			await performSteps(page, dashboardLayoutMutation.steps, bindings, 45000);
-			await page.waitForSelector(dashboardLayoutMutation.ready, {
+		for (const width of [390, 1280]) {
+			const context = await browser.createBrowserContext();
+			await context.setCookie(...auth["small-admin"].cookies);
+			const page = await context.newPage();
+			await page.setViewport({ width, height: 900 });
+			await page.goto(new URL("/en", runtime.origin).href, {
+				waitUntil: "domcontentloaded",
+			});
+			const bindings = { origin: runtime.origin, path: "/en", locale: "en" };
+			await performSteps(page, headerRefreshSteps, bindings, 10000);
+			try {
+				await performSteps(
+					page,
+					dashboardLayoutMutation.steps,
+					bindings,
+					10000,
+				);
+				await page.waitForSelector(dashboardLayoutMutation.ready, {
+					visible: true,
+				});
+			} finally {
+				await performSteps(
+					page,
+					dashboardLayoutMutation.reset,
+					bindings,
+					10000,
+				);
+			}
+			await page.waitForSelector('[data-widget-id="quick-stats"]', {
 				visible: true,
 			});
-		} finally {
-			await performSteps(page, dashboardLayoutMutation.reset, bindings, 45000);
+			await context.close();
 		}
-		await page.waitForSelector('[data-widget-id="quick-stats"]', {
-			visible: true,
-		});
 	} finally {
 		await browser.close();
 	}
