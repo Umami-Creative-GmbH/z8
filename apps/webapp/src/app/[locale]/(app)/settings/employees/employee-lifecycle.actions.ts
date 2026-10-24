@@ -350,6 +350,8 @@ function deactivateEmployee(input: unknown) {
 									...command,
 									at: systemClock.nowInstant(),
 									requestFingerprint,
+									// After-commit steps run on this action's database client.
+									database: actor.dbService.db,
 								});
 								if (execution.kind === "refused") {
 									return { type: "refused", reports: execution.reports };

@@ -1,5 +1,6 @@
+import type { db as appDb } from "@/db";
 import type { AuditTrail } from "@/lib/audit-trail";
-import type { Instant } from "@/lib/datetime/temporal-core";
+import type { Clock, Instant } from "@/lib/datetime/temporal-core";
 import type { LifecycleClient } from "../types";
 
 /**
@@ -64,6 +65,16 @@ export type DeactivationWriter = LifecycleClient;
 
 /** Runs after the commit; must be safe to run again on a replayed request. */
 export type DeactivationAfterCommit = () => Promise<void>;
+
+/** What applying needs besides the transaction. */
+export type DeactivationApplyDependencies = {
+	clock?: Clock;
+	/**
+	 * The caller's database client (its DatabaseService's), which after-commit
+	 * steps read and write through instead of the global one.
+	 */
+	database: typeof appDb;
+};
 
 export type NamedEmployee = { employeeId: string; name: string };
 
@@ -160,6 +171,11 @@ export type AbsencesPlan = {
 	absencesToCancel: AbsencePlanItem[];
 	/** Spanning `at`: kept and listed. */
 	absencesSpanning: AbsencePlanItem[];
+	/**
+	 * Starting after `at` but touching a closed month: kept and listed, since a
+	 * closed month refuses the cancellation until it is reopened.
+	 */
+	absencesInClosedMonths: AbsencePlanItem[];
 };
 export type AbsencesApplied = { cancelledAbsenceIds: string[] };
 

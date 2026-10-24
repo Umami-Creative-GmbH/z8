@@ -33,6 +33,7 @@ import { planDeactivationConsequences } from "./plan";
 import type {
 	DeactivationAfterCommit,
 	DeactivationApplied,
+	DeactivationApplyDependencies,
 	DeactivationPlan,
 	DeactivationWriter,
 	NamedEmployee,
@@ -132,7 +133,8 @@ export type DeactivationExecution =
  */
 export async function executeDeactivation(
 	tx: DeactivationWriter,
-	command: DeactivationCommand & { at: Instant; requestFingerprint: string; clock?: Clock },
+	command: DeactivationCommand &
+		DeactivationApplyDependencies & { at: Instant; requestFingerprint: string },
 ): Promise<DeactivationExecution> {
 	const scope = { organizationId: command.organizationId, employeeId: command.employeeId };
 	const period = await resolveCurrentEmploymentPeriod(tx, scope);
@@ -190,7 +192,7 @@ export async function executeDeactivation(
 			audit,
 		},
 		plan,
-		{ clock: command.clock },
+		{ clock: command.clock, database: command.database },
 	);
 
 	// The deactivated employee stops being anyone's deputy (#1014).

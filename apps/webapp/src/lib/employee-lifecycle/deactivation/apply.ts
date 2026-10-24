@@ -1,6 +1,5 @@
 import "server-only";
 
-import type { Clock } from "@/lib/datetime/temporal-core";
 import { applyAbsenceCancellations } from "./absences";
 import { applyAccessEnds } from "./access-ends";
 import { applyApprovalDuties } from "./approval-duties";
@@ -11,6 +10,7 @@ import type {
 	DeactivationAfterCommit,
 	DeactivationApplied,
 	DeactivationApplyContext,
+	DeactivationApplyDependencies,
 	DeactivationPlan,
 	DeactivationWriter,
 } from "./types";
@@ -28,7 +28,7 @@ export async function applyDeactivationConsequences(
 	tx: DeactivationWriter,
 	ctx: DeactivationApplyContext,
 	plan: DeactivationPlan,
-	dependencies: { clock?: Clock } = {},
+	dependencies: DeactivationApplyDependencies,
 ): Promise<{ applied: DeactivationApplied; afterCommit: DeactivationAfterCommit[] }> {
 	const managerLinks = await applyManagerLinks(tx, ctx, plan.managerLinks);
 	const teamLinks = await applyTeamLinks(tx, ctx, plan.teamLinks);

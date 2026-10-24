@@ -5,7 +5,7 @@ import {
 	createAbsenceCancellationRuntime,
 	failAbsenceCancellation,
 } from "@/app/[locale]/(app)/absences/cancel-absence-core";
-import { db } from "@/db";
+import type { db as appDb } from "@/db";
 import { absenceCategory, absenceEntry } from "@/db/schema";
 import { notifyAbsenceDeputies } from "@/lib/absences/deputy-notifier";
 import { acquireApprovalWriteLock } from "@/lib/approvals/authority/gate";
@@ -22,12 +22,15 @@ import {
 import { deletePersonnelDocumentObject } from "@/lib/personnel-file/storage";
 import { runPersonnelFileCleanup } from "@/lib/personnel-file/upload-ledger";
 import { addCalendarSyncJob } from "@/lib/queue";
+import { closedRangesForEmployee } from "@/lib/time-tracking/closed-months/store";
+import { closedMonthTouchedByDays } from "@/lib/time-tracking/closed-months/rules";
 import {
 	type AbsencePlanItem,
 	type AbsencesApplied,
 	type AbsencesPlan,
 	type AreaApplyResult,
 	type DeactivationApplyContext,
+	type DeactivationApplyDependencies,
 	type DeactivationPlanContext,
 	type DeactivationReader,
 	type DeactivationWriter,
@@ -47,8 +50,10 @@ export function deactivationLeftOn(
 
 /**
  * The person's pending and approved absences that start after the day they
- * left (cancelled) and that span it (kept, listed). Ended absences are not
- * touched and not listed.
+ * left (cancelled) and that span it (kept, listed). One that starts later but
+ * touches a closed month is kept and listed too: the cancellation would be
+ * refused, so planning it would fail the deactivation (and the backfill) on
+ * every run. Ended absences are not touched and not listed.
  */
 export async function planAbsences(
 	reader: DeactivationReader,
@@ -80,12 +85,23 @@ export async function planAbsences(
 			),
 		)
 		.orderBy(asc(absenceEntry.startDate), asc(absenceEntry.id));
-	const plan: AbsencesPlan = { absencesToCancel: [], absencesSpanning: [] };
+	const closedMonths =
+		rows.length === 0
+			? []
+			: (await closedRangesForEmployee(reader, ctx)).map((range) => range.month);
+	const plan: AbsencesPlan = {
+		absencesToCancel: [],
+		absencesSpanning: [],
+		absencesInClosedMonths: [],
+	};
 	for (const row of rows) {
 		if (row.status !== "pending" && row.status !== "approved") continue;
 		const item: AbsencePlanItem = { ...row, status: row.status };
-		if (startsAfter(item.startDate, leftOn)) plan.absencesToCancel.push(item);
-		else plan.absencesSpanning.push(item);
+		if (!startsAfter(item.startDate, leftOn)) plan.absencesSpanning.push(item);
+		else if (closedMonthTouchedByDays(item, closedMonths) !== null) {
+			plan.absencesInClosedMonths.push(item);
+		}
+		else plan.absencesToCancel.push(item);
 	}
 	return plan;
 }
@@ -140,7 +156,7 @@ export async function applyAbsenceCancellations(
 	tx: DeactivationWriter,
 	plan: AbsencesPlan,
 	ctx: DeactivationApplyContext,
-	dependencies: { clock?: Clock } = {},
+	dependencies: DeactivationApplyDependencies,
 ): Promise<AreaApplyResult<AbsencesApplied>> {
 	const leftOn = deactivationLeftOn(ctx);
 	const cancelledAbsenceIds: string[] = [];
@@ -200,12 +216,18 @@ export async function applyAbsenceCancellations(
 	return {
 		applied: { cancelledAbsenceIds },
 		afterCommit:
-			committed.length === 0 ? [] : [() => afterAbsencesCancelled(ctx.organizationId, committed)],
+			committed.length === 0
+				? []
+				: [() => afterAbsencesCancelled(dependencies.database, ctx.organizationId, committed)],
 	};
 }
 
-/** What the employee's own cancellation does after its commit, minus the self-service notice. */
+/**
+ * What the employee's own cancellation does after its commit, minus the
+ * self-service notice, on the caller's database client.
+ */
 async function afterAbsencesCancelled(
+	database: typeof appDb,
 	organizationId: string,
 	committed: Array<{ cancelled: CancelledAbsence; deletedSickNoteIds: string[] }>,
 ): Promise<void> {
@@ -214,7 +236,7 @@ async function afterAbsencesCancelled(
 	}
 	for (const { cancelled, deletedSickNoteIds } of committed) {
 		for (const documentId of deletedSickNoteIds) {
-			await runPersonnelFileCleanup(db, {
+			await runPersonnelFileCleanup(database, {
 				deleteObject: deletePersonnelDocumentObject,
 				only: { documentId, organizationId },
 			}).catch(() => undefined);
@@ -226,7 +248,7 @@ async function afterAbsencesCancelled(
 			action: "delete",
 		}).catch(() => undefined);
 	}
-	await notifyAbsenceDeputies(db, {
+	await notifyAbsenceDeputies(database, {
 		organizationId,
 		events: committed.map(({ cancelled: { absence } }) => ({
 			kind: "cancelled" as const,
