@@ -14,6 +14,8 @@ then hit. These are finite functional observations, not a timing comparison.
 The run remains **failed**: its contexts refused 10, 10 and 14 transport requests.
 No unexpected request was forwarded. The failed artifact is retained; refusal
 classification and a clean rerun are required before expanding acceptance.
+The [numerical partial evidence](evidence/1472-multi-instance-cache.json) retains
+the failed overall status alongside the valid caller/native observations.
 
 The configured topology is a loopback Docker HAProxy 2.8 frontend, two independent
 host Next.js 16.4.0 production processes, and separately owned Docker PostgreSQL,
