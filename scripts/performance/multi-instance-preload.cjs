@@ -47,8 +47,10 @@ const timer = setInterval(() => {
 		const memory = process.memoryUsage();
 		maxRss = Math.max(maxRss, memory.rss);
 		maxHeapUsed = Math.max(maxHeapUsed, memory.heapUsed);
+		const destination = path.join(directory, `replica-${replica}-metrics.json`);
+		const temporary = `${destination}.${process.pid}.tmp`;
 		fs.writeFileSync(
-			path.join(directory, `replica-${replica}-metrics.json`),
+			temporary,
 			JSON.stringify({
 				pid: process.pid,
 				replica,
@@ -63,6 +65,7 @@ const timer = setInterval(() => {
 				backend: "installed-default-process-memory",
 			}),
 		);
+		fs.renameSync(temporary, destination);
 	} catch {
 		/* Retry bootstrap observation without initializing framework globals. */
 	}
