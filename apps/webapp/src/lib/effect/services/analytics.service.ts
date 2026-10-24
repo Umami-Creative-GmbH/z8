@@ -887,13 +887,34 @@ export class AnalyticsService extends Context.Service<
 
 				getAbsencePatterns: (params: AbsencePatternsParams) =>
 					Effect.gen(function* () {
-						const { organizationId, dateRange } = params;
+						const { organizationId, dateRange, scope } = params;
 						const calendarRange = getAnalyticsCalendarRange(dateRange);
 
-						// Get all absences in date range
+						// Scope via the employee owner, including legacy absence rows whose
+						// organization_id is null, before loading personal relations.
 						const absences = yield* dbService.query("getAbsencesForPatterns", async () => {
 							return await dbService.db.query.absenceEntry.findMany({
 								where: and(
+									inArray(
+										absenceEntry.employeeId,
+										dbService.db
+											.select({ id: employee.id })
+											.from(employee)
+											.where(
+												and(
+													eq(employee.organizationId, organizationId),
+													scope.role === "manager"
+														? inArray(
+																employee.id,
+																dbService.db
+																	.select({ employeeId: employeeManagers.employeeId })
+																	.from(employeeManagers)
+																	.where(eq(employeeManagers.managerId, scope.managerEmployeeId)),
+															)
+														: undefined,
+												),
+											),
+									),
 									lte(absenceEntry.startDate, calendarRange.endDate),
 									gte(absenceEntry.endDate, calendarRange.startDate),
 								),
@@ -909,7 +930,7 @@ export class AnalyticsService extends Context.Service<
 							});
 						});
 
-						// Filter absences to only those belonging to employees in this organization
+						// Supplement the SQL tenant boundary before aggregation.
 						const orgAbsences = absences.flatMap((absence) =>
 							absence.employee.organizationId === organizationId
 								? [clipAbsenceToCalendarRange(absence, calendarRange)]

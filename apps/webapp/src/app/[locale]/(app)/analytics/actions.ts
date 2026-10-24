@@ -168,6 +168,10 @@ export async function getAbsencePatternsData(
 		const data = yield* analyticsService.getAbsencePatterns({
 			organizationId,
 			dateRange,
+			scope:
+				currentEmployee.role === "admin"
+					? { role: "admin" }
+					: { role: "manager", managerEmployeeId: currentEmployee.id },
 		});
 
 		return data;
