@@ -77,9 +77,18 @@ Date-based business rules; snapshot freshness uses the shared Temporal clock.
 - The original PostgreSQL suite exercises the extracted calculation through both
   the action and snapshot seam, saved layout projection, JSON-safe DTOs and tenant
   isolation. All seven cases pass on the approved disposable database.
-- Dashboard/refresh unit selection: 24 files, 108 tests passed. The existing
-  Cache Components route contract: 198 tests passed. Typecheck passed before the
-  final formatting and is repeated for handoff.
+- Final Dashboard, shared context/preferences, refresh and Cache Components route
+  selection: 27 files, 346 tests passed after merging integration `d184a816e`.
+  All seven PostgreSQL cases and all repository typecheck projects passed again
+  after that merge. The database suite also verifies a replaced-scope layout
+  mutation is refused without changing the saved settings.
+- Focused Biome checks pass, retaining existing `any` and non-null warnings from
+  the legacy actions/calculation code. React Doctor reports 93/100 with only the
+  existing organization-context provider complexity warning. This ticket adds
+  only the user ID display field to that provider and no control-flow branches.
+  The new loading and retry surfaces use accessible status/alert text and labeled
+  buttons; the circular progress decoration is hidden from assistive technology
+  and its transition honors reduced motion.
 
 These are caller, render, transport and PostgreSQL proofs. They do not measure
 cold/warm browser paint, transferred bytes, request arrival through ingress or
