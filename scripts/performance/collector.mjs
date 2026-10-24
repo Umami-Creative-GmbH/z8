@@ -1,7 +1,7 @@
 #!/usr/bin/env node
+import { rename, writeFile } from "node:fs/promises";
 /** Loopback OTLP/JSON observation. Raw span payloads are discarded; only allowlisted numerical evidence persists. */
 import { createServer } from "node:http";
-import { writeFile, rename } from "node:fs/promises";
 import { gunzipSync } from "node:zlib";
 
 const args = process.argv.slice(2);
@@ -9,6 +9,13 @@ const option = (name) => args[args.indexOf(name) + 1];
 const output = option("--out");
 const control = option("--control");
 const port = Number(args.includes("--port") ? option("--port") : 0);
+const registeredOnly = args.includes("--require-registration");
+const observerControl = args.includes("--observer-control")
+	? option("--observer-control")
+	: null;
+const protocol = registeredOnly
+	? "z8-fixture-otlp-collector-v2"
+	: "z8-fixture-otlp-collector-v1";
 if (!output || !control || !Number.isInteger(port) || port < 0 || port > 65535)
 	throw new Error(
 		"Provide collector --out, --control and a valid local --port.",
@@ -17,6 +24,11 @@ const bodyLimit = 8 * 1024 * 1024;
 const traces = new Map();
 let rejectedBatches = 0;
 let driverObserved = false;
+const registered = new Map();
+let unattributedNativeSpans = 0;
+const markActive = (field) => {
+	for (const state of registered.values()) if (!state.closed) state[field]++;
+};
 
 const id = (value, bytes) => {
 	if (typeof value !== "string") return null;
@@ -65,6 +77,29 @@ function accept(payload) {
 				const traceId = id(span.traceId, 16);
 				const spanId = id(span.spanId, 8);
 				if (!traceId || !spanId) continue;
+				const scopeName =
+					scope.scope?.name ?? scope.instrumentationLibrary?.name;
+				const query =
+					scopeName === "@opentelemetry/instrumentation-pg" &&
+					span.name?.startsWith("pg.query");
+				const acquisition =
+					scopeName === "@opentelemetry/instrumentation-pg" &&
+					span.name === "pg-pool.connect";
+				const cache =
+					scopeName === "z8-fixture-cache" && span.name === "fixture.cache.get";
+				const server = span.kind === 2 || span.kind === "SPAN_KIND_SERVER";
+				if (!query && !acquisition && !cache && !server) continue;
+				if (registeredOnly && !registered.has(traceId)) {
+					if (query || acquisition || cache) {
+						unattributedNativeSpans++;
+						markActive("unattributedNativeSpans");
+					}
+					continue;
+				}
+				if (registered.get(traceId)?.closed) {
+					registered.get(traceId).lateSpans++;
+					continue;
+				}
 				if (!traces.has(traceId)) {
 					if (traces.size >= 100000)
 						throw new Error("Collector trace capacity exceeded");
@@ -103,21 +138,9 @@ function accept(payload) {
 						attributes(resource.resource?.attributes).get(
 							"z8.perf.observer.version",
 						),
-					) === 1;
-				const scopeName =
-					scope.scope?.name ?? scope.instrumentationLibrary?.name;
+					) >= (registeredOnly ? 2 : 1);
 				const attr = attributes(span.attributes);
 				const duration = milliseconds(span);
-				const query =
-					scopeName === "@opentelemetry/instrumentation-pg" &&
-					span.name?.startsWith("pg.query");
-				const acquisition =
-					scopeName === "@opentelemetry/instrumentation-pg" &&
-					span.name === "pg-pool.connect";
-				const cache =
-					scopeName === "z8-fixture-cache" && span.name === "fixture.cache.get";
-				const server = span.kind === 2 || span.kind === "SPAN_KIND_SERVER";
-				if (!query && !acquisition && !cache && !server) continue;
 				if (metric.seen.has(spanId)) continue;
 				if (metric.seen.size >= 100000) {
 					metric.incomplete = true;
@@ -163,9 +186,20 @@ function accept(payload) {
 
 function snapshot() {
 	return [...traces].map(([traceId, metric]) => {
-		const complete = !metric.incomplete && rejectedBatches === 0;
+		const state = registered.get(traceId);
+		const complete =
+			!metric.incomplete &&
+			(registeredOnly
+				? state?.closed &&
+					state.proofComplete &&
+					state.rejectedBatches === 0 &&
+					state.unattributedNativeSpans === 0 &&
+					state.lateSpans === 0
+				: rejectedBatches === 0);
 		const pgKnown =
-			complete && (metric.queries > 0 || (metric.observer && driverObserved));
+			complete &&
+			(metric.queries > 0 ||
+				(metric.observer && (driverObserved || state?.proofComplete)));
 		const cacheKnown =
 			complete &&
 			metric.cacheKnown &&
@@ -190,6 +224,7 @@ function snapshot() {
 			eventLoopDelayMs:
 				complete && !metric.loopIncomplete ? metric.loopDelay : null,
 			observedQueryErrors: metric.queryErrors,
+			observedQueryCount: metric.queries,
 			observedPoolAcquisitions: metric.acquisitions,
 			observedPoolAcquisitionErrors: metric.acquisitionErrors,
 			observedEventLoopProbes: metric.loopSamples,
@@ -199,7 +234,18 @@ function snapshot() {
 				rows: pgKnown && metric.rowsKnown,
 				cache: cacheKnown,
 				eventLoop: metric.loopSamples > 0 && !metric.loopIncomplete,
-				rejectedBatches,
+				rejectedBatches: state?.rejectedBatches ?? rejectedBatches,
+				...(registeredOnly
+					? {
+							registration: true,
+							closed: state.closed,
+							incomplete: !complete,
+							unattributedNativeSpans: state.unattributedNativeSpans,
+							lateSpans: state.lateSpans,
+							nativeProof: state.proofComplete,
+							nativeDriverQueries: state.nativeDriverQueries ?? null,
+						}
+					: {}),
 			},
 		};
 	});
@@ -228,14 +274,26 @@ const server = createServer(async (request, response) => {
 			response.setHeader("Content-Type", "application/json");
 			response.end(
 				JSON.stringify({
-					kind: "z8-fixture-otlp-collector-v1",
+					kind: protocol,
 					traces: traces.size,
 					rejectedBatches,
+					registeredTraces: registered.size,
+					activeTraces: [...registered.values()].filter(
+						(state) => !state.closed,
+					).length,
+					retainedSpanIds: [...traces.values()].reduce(
+						(sum, metric) => sum + metric.seen.size,
+						0,
+					),
+					unattributedNativeSpans,
 				}),
 			);
 			return;
 		}
-		if (request.method !== "POST" || request.url !== "/v1/traces") {
+		if (
+			request.method !== "POST" ||
+			!["/v1/traces", "/visits/register", "/visits/close"].includes(request.url)
+		) {
 			response.writeHead(404);
 			response.end();
 			return;
@@ -260,11 +318,85 @@ const server = createServer(async (request, response) => {
 			request.headers["content-encoding"] !== "identity"
 		)
 			throw new Error("Unsupported encoding");
-		accept(JSON.parse(buffer.toString("utf8")));
+		const payload = JSON.parse(buffer.toString("utf8"));
+		if (request.url !== "/v1/traces") {
+			if (
+				!registeredOnly ||
+				!Array.isArray(payload.traceIds) ||
+				payload.traceIds.length === 0 ||
+				payload.traceIds.length > 64 ||
+				payload.traceIds.some((value) => id(value, 16) !== value) ||
+				new Set(payload.traceIds).size !== payload.traceIds.length
+			)
+				throw new Error("Invalid registration");
+			if (request.url === "/visits/register") {
+				if (
+					registered.size + payload.traceIds.length > 10000 ||
+					[...registered.values()].filter((state) => !state.closed).length +
+						payload.traceIds.length >
+						64 ||
+					payload.traceIds.some((value) => registered.has(value))
+				)
+					throw new Error("Registration capacity or identity conflict");
+				for (const value of payload.traceIds)
+					registered.set(value, {
+						closed: false,
+						proofComplete: false,
+						rejectedBatches: 0,
+						unattributedNativeSpans: 0,
+						lateSpans: 0,
+					});
+			} else {
+				if (
+					payload.traceIds.some(
+						(value) => !registered.has(value) || registered.get(value).closed,
+					)
+				)
+					throw new Error("Unknown or closed visit");
+				for (const value of payload.traceIds) {
+					const state = registered.get(value);
+					const metric = traces.get(value);
+					const proof = payload.proof?.find((entry) => entry.traceId === value);
+					state.nativeDriverQueries = Number.isSafeInteger(proof?.driverQueries)
+						? proof.driverQueries
+						: null;
+					state.proofComplete =
+						!!metric &&
+						proof?.complete === true &&
+						["queries", "acquisitions", "cache"].every(
+							(key) => Number.isSafeInteger(proof[key]) && proof[key] >= 0,
+						) &&
+						proof.queries === metric.queries &&
+						proof.driverComplete === true &&
+						proof.driverQueries === proof.queries &&
+						proof.acquisitions === metric.acquisitions &&
+						proof.cache === metric.hits + metric.misses + metric.cacheErrors;
+					state.closed = true;
+					metric?.seen.clear();
+				}
+			}
+			response.setHeader("Content-Type", "application/json");
+			response.end(
+				JSON.stringify({
+					protocol,
+					traces:
+						request.url === "/visits/close"
+							? snapshot().filter((entry) =>
+									payload.traceIds.includes(entry.traceId),
+								)
+							: [],
+				}),
+			);
+			return;
+		}
+		accept(payload);
 		response.setHeader("Content-Type", "application/json");
 		response.end("{}");
 	} catch {
-		rejectedBatches++;
+		if (request.url === "/v1/traces") {
+			rejectedBatches++;
+			markActive("rejectedBatches");
+		}
 		response.writeHead(400);
 		response.end("Invalid OTLP batch");
 	}
@@ -276,9 +408,10 @@ const endpoint = `http://127.0.0.1:${server.address().port}/v1/traces`;
 await writeFile(
 	control,
 	JSON.stringify({
-		kind: "z8-fixture-otlp-collector-v1",
+		kind: protocol,
 		pid: process.pid,
 		endpoint,
+		...(registeredOnly ? { observerControl } : {}),
 	}),
 	{ flag: "wx", mode: 0o600 },
 );
