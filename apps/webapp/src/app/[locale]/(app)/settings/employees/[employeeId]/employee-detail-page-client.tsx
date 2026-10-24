@@ -47,6 +47,7 @@ import {
 	EmployeeOverviewCard,
 } from "./page-sections";
 import {
+	buildEmployeeDetailFormValues,
 	buildEmployeeUpdatePayload,
 	defaultFormValues,
 	focusFirstInvalidEmployeeDetailField,
@@ -186,7 +187,9 @@ export function EmployeeDetailPageClient({
 	});
 
 	const form = useForm({
-		defaultValues: defaultFormValues,
+		defaultValues: employee
+			? buildEmployeeDetailFormValues(employee)
+			: defaultFormValues,
 		onSubmitInvalid: ({ formApi }) =>
 			focusFirstInvalidEmployeeDetailField(formApi),
 		onSubmit: async ({ value }) => {
@@ -331,7 +334,10 @@ export function EmployeeDetailPageClient({
 						form={form}
 						canEditManagerFields={canManageEmployeeDetails}
 						canEditOrgAdminFields={accessTier === "orgAdmin"}
-					personnelNumberManagedByScim={employee.kind === "employee" && employee.personnelNumberManagedByScim}
+						personnelNumberManagedByScim={
+							employee.kind === "employee" &&
+							employee.personnelNumberManagedByScim
+						}
 						contract={
 							employee.kind === "invitationDraft"
 								? { kind: "draft" }

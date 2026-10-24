@@ -109,7 +109,9 @@ export function focusFirstInvalidEmployeeDetailField(
 		"employeeNumber",
 	] as const) {
 		if (formApi.getFieldMeta(fieldName)?.errors.length) {
-			document.querySelector<HTMLInputElement>(`input[name="${fieldName}"]`)?.focus();
+			document
+				.querySelector<HTMLInputElement>(`input[name="${fieldName}"]`)
+				?.focus();
 			break;
 		}
 	}
@@ -124,7 +126,11 @@ export function showEmployeeSaveRefusal(
 	form: Pick<EmployeeDetailFormApi, "setFieldMeta">,
 	result: { error: string; refusal?: string },
 ): boolean {
-	if (result.refusal !== PERSONNEL_NUMBER_TAKEN && result.refusal !== "personnel_number_managed_by_idp") return false;
+	if (
+		result.refusal !== PERSONNEL_NUMBER_TAKEN &&
+		result.refusal !== "personnel_number_managed_by_idp"
+	)
+		return false;
 	form.setFieldMeta("employeeNumber", (meta) => ({
 		...meta,
 		errorMap: { ...meta.errorMap, onSubmit: result.error },
@@ -132,13 +138,10 @@ export function showEmployeeSaveRefusal(
 	return true;
 }
 
-export function syncEmployeeForm(
-	form: Pick<EmployeeDetailFormApi, "reset">,
+export function buildEmployeeDetailFormValues(
 	employee: EmployeeDetail,
-) {
-	// Reset the baseline to the received values. Populating via setFieldValue
-	// marks untouched fields dirty, which would prevent a later safe refresh.
-	form.reset({
+): EmployeeDetailFormValues {
+	return {
 		...defaultFormValues,
 		firstName: employee.user.firstName || "",
 		lastName: employee.user.lastName || "",
@@ -157,5 +160,14 @@ export function syncEmployeeForm(
 			employee.kind === "invitationDraft"
 				? employee.currentHourlyRate || ""
 				: "",
-	});
-	}
+	};
+}
+
+export function syncEmployeeForm(
+	form: Pick<EmployeeDetailFormApi, "reset">,
+	employee: EmployeeDetail,
+) {
+	// Reset the baseline to the received values. Populating via setFieldValue
+	// marks untouched fields dirty, which would prevent a later safe refresh.
+	form.reset(buildEmployeeDetailFormValues(employee));
+}
