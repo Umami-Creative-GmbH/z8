@@ -312,6 +312,7 @@ export async function calculateExpectedWorkHoursForPolicy(
 	startDate: Date,
 	endDate: Date,
 	timezone: string,
+	exclusions?: (date: Date) => boolean,
 ): Promise<ExpectedWorkHoursSummary> {
 	let currentDT = fromJSDate(startDate, timezone);
 	const endDT = fromJSDate(endDate, timezone);
@@ -330,10 +331,12 @@ export async function calculateExpectedWorkHoursForPolicy(
 			const hoursForDay = getExpectedHoursForDay(policy, luxonWeekday);
 
 			// Check if this is a holiday
-			const shouldExclude = await shouldExcludeFromCalculations(
-				organizationId,
-				dateToDB(currentDT)!,
-			);
+			const dayDate = dateToDB(currentDT);
+			const shouldExclude = dayDate
+				? exclusions
+					? exclusions(dayDate)
+					: await shouldExcludeFromCalculations(organizationId, dayDate)
+				: false;
 
 			if (shouldExclude) {
 				excludedDays++;

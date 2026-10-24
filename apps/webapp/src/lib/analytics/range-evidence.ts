@@ -15,6 +15,7 @@ import {
 	plainDateAt,
 } from "@/lib/datetime/temporal-core";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import type { EffectiveWorkPolicy } from "@/lib/effect/services/work-policy.service";
 import { employeePayrollWindow } from "@/lib/payroll-allocation/protected-minutes";
 import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
 import {
@@ -32,6 +33,8 @@ export const loadAnalyticsRangeEvidence = Effect.fn("analytics.rangeEvidence")(
 		employees: readonly RequirementEmployee[];
 		startDate: Date;
 		endDate: Date;
+		/** Overtime preserves stored whole-week totals, including the legacy policy path. */
+		wholeWeekTotals?: boolean;
 	}) {
 		const database = yield* DatabaseService;
 		const scopedEmployees = input.employees.filter(
@@ -47,6 +50,16 @@ export const loadAnalyticsRangeEvidence = Effect.fn("analytics.rangeEvidence")(
 			ReturnType<typeof allocateTrackedDailyWorkMinutes>
 		>();
 		const requirementsByEmployee = new Map<string, DailyWorkRequirements>();
+		const policyByEmployee = new Map<string, EffectiveWorkPolicy | null>();
+		const completedPeriodsByEmployee = new Map<
+			string,
+			{
+				employeeId: string;
+				startTime: Date;
+				endTime: Date | null;
+				durationMinutes: number | null;
+			}[]
+		>();
 		const distributionPeriods: {
 			employeeId: string;
 			startTime: Date;
@@ -68,31 +81,31 @@ export const loadAnalyticsRangeEvidence = Effect.fn("analytics.rangeEvidence")(
 				}),
 			);
 			for (const [id, context] of tracking) trackingByEmployee.set(id, context);
-			const rawPeriods = yield* database.query(
-				"analytics.rangeDistributionWork",
-				() =>
-					database.db
-						.select({
-							employeeId: workPeriod.employeeId,
-							startTime: workPeriod.startTime,
-							endTime: workPeriod.endTime,
-						})
-						.from(workPeriod)
-						.where(
-							and(
-								eq(workPeriod.organizationId, input.organizationId),
-								inArray(workPeriod.employeeId, employeeIds),
-								isNull(workPeriod.deletedAt),
-								lt(
-									workPeriod.startTime,
-									dateFromInstant(
-										instantFromDate(input.endDate).add({ milliseconds: 1 }),
+			const rawPeriods = input.wholeWeekTotals
+				? []
+				: yield* database.query("analytics.rangeDistributionWork", () =>
+						database.db
+							.select({
+								employeeId: workPeriod.employeeId,
+								startTime: workPeriod.startTime,
+								endTime: workPeriod.endTime,
+							})
+							.from(workPeriod)
+							.where(
+								and(
+									eq(workPeriod.organizationId, input.organizationId),
+									inArray(workPeriod.employeeId, employeeIds),
+									isNull(workPeriod.deletedAt),
+									lt(
+										workPeriod.startTime,
+										dateFromInstant(
+											instantFromDate(input.endDate).add({ milliseconds: 1 }),
+										),
 									),
+									gt(workPeriod.endTime, input.startDate),
 								),
-								gt(workPeriod.endTime, input.startDate),
 							),
-						),
-			);
+					);
 			distributionPeriods.push(...rawPeriods);
 			const windows = employeeIds.flatMap((id) => {
 				const context = tracking.get(id);
@@ -126,15 +139,19 @@ export const loadAnalyticsRangeEvidence = Effect.fn("analytics.rangeEvidence")(
 					},
 				];
 			});
-			if (!windows.length) continue;
-			const first = windows.reduce((left, right) =>
-				compareInstants(left.start, right.start) < 0 ? left : right,
-			).start;
-			const last = windows.reduce((left, right) =>
-				compareInstants(left.endExclusive, right.endExclusive) > 0
-					? left
-					: right,
-			).endExclusive;
+			if (!windows.length && !input.wholeWeekTotals) continue;
+			const first = windows.length
+				? windows.reduce((left, right) =>
+						compareInstants(left.start, right.start) < 0 ? left : right,
+					).start
+				: instantFromDate(input.startDate);
+			const last = windows.length
+				? windows.reduce((left, right) =>
+						compareInstants(left.endExclusive, right.endExclusive) > 0
+							? left
+							: right,
+					).endExclusive
+				: instantFromDate(input.endDate).add({ milliseconds: 1 });
 			const periods = yield* database.query(
 				"analytics.rangeCompletedWork",
 				() =>
@@ -151,37 +168,64 @@ export const loadAnalyticsRangeEvidence = Effect.fn("analytics.rangeEvidence")(
 								eq(workPeriod.organizationId, input.organizationId),
 								inArray(
 									workPeriod.employeeId,
-									windows.map((w) => w.id),
+									input.wholeWeekTotals
+										? employeeIds
+										: windows.map((w) => w.id),
 								),
 								completedWorkPeriodCondition(),
 								isNotNull(workPeriod.endTime),
 								isNotNull(workPeriod.durationMinutes),
-								lt(workPeriod.startTime, dateFromInstant(last)),
-								gt(workPeriod.endTime, dateFromInstant(first)),
+								lt(
+									workPeriod.startTime,
+									dateFromInstant(
+										input.wholeWeekTotals
+											? instantFromDate(input.endDate).add({ hours: 48 })
+											: last,
+									),
+								),
+								gt(
+									workPeriod.endTime,
+									dateFromInstant(
+										input.wholeWeekTotals
+											? instantFromDate(input.startDate).subtract({ hours: 48 })
+											: first,
+									),
+								),
 							),
 						),
 			);
 			const grouped = Map.groupBy(periods, (period) => period.employeeId);
-			for (const window of windows)
-				dailyByEmployee.set(
-					window.id,
-					allocateTrackedDailyWorkMinutes(grouped.get(window.id) ?? [], window),
-				);
+			for (const [id, values] of grouped)
+				completedPeriodsByEmployee.set(id, values);
+			if (!input.wholeWeekTotals)
+				for (const window of windows)
+					dailyByEmployee.set(
+						window.id,
+						allocateTrackedDailyWorkMinutes(
+							grouped.get(window.id) ?? [],
+							window,
+						),
+					);
 			const requirements = yield* loadDailyWorkRequirementsForEmployees({
 				...input,
 				employees: scopedEmployees.filter((person) =>
 					employeeIds.includes(person.id),
 				),
 				trackingByEmployee,
+				includeLegacy: input.wholeWeekTotals,
 			});
-			for (const [id, value] of requirements)
+			for (const [id, value] of requirements.requirements)
 				requirementsByEmployee.set(id, value);
+			for (const [id, value] of requirements.policyByEmployee)
+				policyByEmployee.set(id, value);
 		}
 		return {
 			trackingByEmployee,
 			dailyByEmployee,
 			requirementsByEmployee,
 			distributionPeriods,
+			completedPeriodsByEmployee,
+			policyByEmployee,
 		};
 	},
 );

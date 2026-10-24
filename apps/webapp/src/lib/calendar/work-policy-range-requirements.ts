@@ -61,16 +61,21 @@ export const loadDailyWorkRequirementsForEmployees = Effect.fn(
 	startDate: Date;
 	endDate: Date;
 	trackingByEmployee: ReadonlyMap<string, EmployeeTrackingContext | null>;
+	includeLegacy?: boolean;
 }) {
 	const database = yield* DatabaseService;
 	const people = input.employees.filter(
 		(person) =>
 			person.organizationId === input.organizationId &&
-			input.trackingByEmployee.get(person.id),
+			(input.includeLegacy || input.trackingByEmployee.get(person.id)),
 	);
 	const result = new Map<string, DailyWorkRequirements>();
+	const policyByEmployee = new Map<
+		string,
+		ReturnType<typeof mapPolicyToEffective> | null
+	>();
 	const scopedIds = people.map((row) => row.id);
-	if (!scopedIds.length) return result;
+	if (!scopedIds.length) return { requirements: result, policyByEmployee };
 	const start = instantFromDate(input.startDate),
 		end = instantFromDate(input.endDate);
 	const earliest = plainDateAt(start.subtract({ hours: 48 }), "UTC").toString();
@@ -238,11 +243,6 @@ export const loadDailyWorkRequirementsForEmployees = Effect.fn(
 	const shiftsByEmployee = Map.groupBy(shifts, (row) => row.employeeId);
 	for (const person of people) {
 		const tracking = input.trackingByEmployee.get(person.id);
-		if (!tracking) continue;
-		const range = {
-			from: plainDateAt(start, tracking.timezone),
-			toExclusive: plainDateAt(end, tracking.timezone).add({ days: 1 }),
-		};
 		// Same precedence as the scoped WorkPolicyService: employee, team, then organization;
 		// the already ordered candidates skip inactive or foreign policies at each level.
 		const fallback =
@@ -262,6 +262,12 @@ export const loadDailyWorkRequirementsForEmployees = Effect.fn(
 						return policy ? [policy] : [];
 					}),
 			)[0] ?? null;
+		policyByEmployee.set(person.id, fallback);
+		if (!tracking) continue;
+		const range = {
+			from: plainDateAt(start, tracking.timezone),
+			toExclusive: plainDateAt(end, tracking.timezone).add({ days: 1 }),
+		};
 		const requirements = yield* loadDailyWorkRequirementsForEmployee(
 			{
 				organizationId: input.organizationId,
@@ -298,5 +304,5 @@ export const loadDailyWorkRequirementsForEmployees = Effect.fn(
 		);
 		result.set(person.id, requirements);
 	}
-	return result;
+	return { requirements: result, policyByEmployee };
 });

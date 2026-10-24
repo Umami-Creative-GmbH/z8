@@ -189,7 +189,7 @@ function loadTrackedWorkPeriods(
 		);
 }
 
-function allocateTrackedWorkMinutes(
+export function allocateTrackedWorkMinutes(
 	periods: readonly TrackedWorkPeriod[],
 	window: TrackingWindow,
 ): number {
