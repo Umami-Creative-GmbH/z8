@@ -6,6 +6,7 @@ import {
 	IconPlayerPause,
 	IconPlayerPlay,
 	IconPlayerStop,
+	IconRefresh,
 	IconX,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
@@ -19,37 +20,23 @@ import {
 } from "@/components/offline/offline-capture-actions";
 import { useUserTimezone } from "@/components/providers/user-preferences-provider";
 import { Button } from "@/components/ui/button";
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 import {
 	type BookedProjectTask,
 	projectTaskRefusalMessage,
 } from "@/lib/projects/project-task-model";
 import { isTaskRequirementActive } from "@/lib/projects/task-requirement";
-import { useElapsedTimer, useTimeClock } from "@/lib/query";
 import type { AssignedProject } from "@/lib/query/use-assigned-projects";
-import {
-	namedTaskId,
-	taskIdToSend,
-} from "@/lib/time-tracking/task-attribution";
+import { useElapsedTimer, useTimeClock } from "@/lib/query/use-time-clock";
+import { namedTaskId, taskIdToSend } from "@/lib/time-tracking/task-attribution";
 import { formatDurationWithSeconds } from "@/lib/time-tracking/time-utils";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
-import {
-	getTimeFormatDateTimeOptions,
-	type TimeFormat,
-} from "@/lib/user-preferences/time-format";
+import { getTimeFormatDateTimeOptions, type TimeFormat } from "@/lib/user-preferences/time-format";
 import { showAppendReviewRequiredToast } from "./append-review-toast";
 import { billableChoice } from "./billable-choice";
 import { BillableWorkSwitch } from "./billable-work-switch";
-import {
-	BreakConnectionNote,
-	OnBreakActions,
-	StartBreakButton,
-} from "./break-in-progress-actions";
+import { BreakConnectionNote, OnBreakActions, StartBreakButton } from "./break-in-progress-actions";
 import { breakInProgressHandlers } from "./break-in-progress-handlers";
 import { BreakInProgressNotice } from "./break-in-progress-notice";
 import { toastClockCommandError } from "./clock-command-error-toast";
@@ -97,30 +84,19 @@ function ClockOutNotesView({
 				{t("timeTracking.clockedOutSuccess", "You've clocked out!")}
 			</div>
 			<div className="text-sm text-muted-foreground">
-				{t(
-					"timeTracking.addNotePrompt",
-					"Add a note about your work (optional)",
-				)}
+				{t("timeTracking.addNotePrompt", "Add a note about your work (optional)")}
 			</div>
 			<Textarea
 				name="notes"
 				autoComplete="off"
-				placeholder={t(
-					"timeTracking.notesPlaceholder",
-					"What did you work on?",
-				)}
+				placeholder={t("timeTracking.notesPlaceholder", "What did you work on?")}
 				value={notesText}
 				onChange={(event) => onNotesChange(event.target.value)}
 				rows={3}
 				className="resize-none"
 			/>
 			<div className="flex gap-2">
-				<Button
-					size="sm"
-					onClick={onSave}
-					disabled={isUpdatingNotes}
-					className="flex-1"
-				>
+				<Button size="sm" onClick={onSave} disabled={isUpdatingNotes} className="flex-1">
 					{isUpdatingNotes ? (
 						<IconLoader2 className="size-4 animate-spin" />
 					) : (
@@ -128,12 +104,7 @@ function ClockOutNotesView({
 					)}
 					{t("common.save", "Save")}
 				</Button>
-				<Button
-					size="sm"
-					variant="outline"
-					onClick={onDismiss}
-					disabled={isUpdatingNotes}
-				>
+				<Button size="sm" variant="outline" onClick={onDismiss} disabled={isUpdatingNotes}>
 					<IconX className="size-4" />
 					{t("common.skip", "Skip")}
 				</Button>
@@ -167,6 +138,7 @@ interface ClockControlsViewProps {
 	projects: AssignedProject[];
 	projectsIsError: boolean;
 	projectsIsLoading: boolean;
+	onProjectsRetry: () => void;
 	selectedProjectId: string | undefined;
 	selectedTaskId: string | undefined;
 	/** The running work's task (#874), shown while its project is chosen. */
@@ -177,6 +149,7 @@ interface ClockControlsViewProps {
 	workCategories: WorkCategory[];
 	workCategoriesIsError: boolean;
 	workCategoriesIsLoading: boolean;
+	onWorkCategoriesRetry: () => void;
 	workLocationType: WorkLocationType;
 	/** Vehicle use asked at this clock event (#1122). */
 	vehicleUse: ClockVehicleUseState;
@@ -234,12 +207,14 @@ function ClockBookingChoices({
 	projects,
 	projectsIsError,
 	projectsIsLoading,
+	onProjectsRetry,
 	selectedProjectId,
 	selectedTaskId,
 	selectedWorkCategoryId,
 	workCategories,
 	workCategoriesIsError,
 	workCategoriesIsLoading,
+	onWorkCategoriesRetry,
 }: Pick<
 	ClockControlsViewProps,
 	| "billable"
@@ -254,12 +229,14 @@ function ClockBookingChoices({
 	| "projects"
 	| "projectsIsError"
 	| "projectsIsLoading"
+	| "onProjectsRetry"
 	| "selectedProjectId"
 	| "selectedTaskId"
 	| "selectedWorkCategoryId"
 	| "workCategories"
 	| "workCategoriesIsError"
 	| "workCategoriesIsLoading"
+	| "onWorkCategoriesRetry"
 >) {
 	return (
 		<>
@@ -270,20 +247,19 @@ function ClockBookingChoices({
 				projects={projects}
 				isLoading={projectsIsLoading}
 				isError={projectsIsError}
+				onRetry={onProjectsRetry}
 			/>
 			{/* Server and frozen clock-outs carry a task; the legacy review queue keeps the project only. */}
-			{captureMode !== "local-review" &&
-				!projectsIsLoading &&
-				!projectsIsError && (
-					<TaskSelectorView
-						projectId={selectedProjectId}
-						projects={projects}
-						value={selectedTaskId}
-						onValueChange={onTaskChange}
-						currentTask={currentTask}
-						disabled={isMutating}
-					/>
-				)}
+			{captureMode !== "local-review" && !projectsIsLoading && !projectsIsError && (
+				<TaskSelectorView
+					projectId={selectedProjectId}
+					projects={projects}
+					value={selectedTaskId}
+					onValueChange={onTaskChange}
+					currentTask={currentTask}
+					disabled={isMutating}
+				/>
+			)}
 			<BillableWorkSwitch
 				choice={billableChoice({
 					project: projects.find((project) => project.id === selectedProjectId),
@@ -301,6 +277,7 @@ function ClockBookingChoices({
 					categories={workCategories}
 					isLoading={workCategoriesIsLoading}
 					isError={workCategoriesIsError}
+					onRetry={onWorkCategoriesRetry}
 				/>
 			)}
 		</>
@@ -353,11 +330,7 @@ function ClockControlsView(props: ClockControlsViewProps) {
 			)}
 			{showBookingChoices && <ClockBookingChoices {...props} />}
 			{(!isClockedIn || isLocalCapture) && (
-				<WorkLocationSelector
-					value={workLocationType}
-					onChange={onWorkLocationChange}
-					t={t}
-				/>
+				<WorkLocationSelector value={workLocationType} onChange={onWorkLocationChange} t={t} />
 			)}
 			<ClockVehicleUseField {...props} />
 			<DrivingAuthorizationAdvisory />
@@ -368,15 +341,13 @@ function ClockControlsView(props: ClockControlsViewProps) {
 	);
 }
 
-function useTimeClockPopoverController({
-	timeFormat = "24h",
-}: {
-	timeFormat?: TimeFormat;
-}) {
+function useTimeClockPopoverController({ timeFormat = "24h" }: { timeFormat?: TimeFormat }) {
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const timezone = useUserTimezone();
 	const [open, setOpen] = useState(false);
+	const [choicesIntent, setChoicesIntent] = useState(false);
+	const choicesEnabled = open || choicesIntent;
 	const timeFormatter = Intl.DateTimeFormat(locale, {
 		...getTimeFormatDateTimeOptions(timeFormat),
 		timeZone: timezone,
@@ -388,6 +359,10 @@ function useTimeClockPopoverController({
 		isClockedIn,
 		activeWorkPeriod,
 		isLoading,
+		isPending,
+		isError,
+		isFetching,
+		refetchStatus,
 		clockIn,
 		clockOut,
 		addBreak,
@@ -404,9 +379,10 @@ function useTimeClockPopoverController({
 		captureMode,
 		connectionRequired,
 	} = useTimeClock();
-	const { uiState, dispatch, assignedProjects, availableWorkCategories } =
-		useTimeClockPopoverState({ employeeId, isClockedIn });
-	const vehicleUse = useClockVehicleUse({ enabled: hasEmployee });
+	const { uiState, dispatch, assignedProjects, availableWorkCategories } = useTimeClockPopoverState(
+		{ employeeId, isClockedIn, choicesEnabled },
+	);
+	const vehicleUse = useClockVehicleUse({ enabled: hasEmployee, choicesEnabled });
 	const handleAddBreak = useQuickBreakHandler(addBreak, t, vehicleUse);
 	const { handleStartBreak, handleResumeBreak } = breakInProgressHandlers(
 		{ startBreak, resumeBreak },
@@ -416,16 +392,12 @@ function useTimeClockPopoverController({
 
 	// The running work's task shows while its project is chosen and no other choice
 	// was made; the clock-out then keeps it (#874).
-	const currentTask = isClockedIn
-		? (activeWorkPeriod?.currentTask ?? null)
-		: null;
+	const currentTask = isClockedIn ? (activeWorkPeriod?.currentTask ?? null) : null;
 	const followsCurrentTask =
 		uiState.selectedTaskId === undefined &&
 		currentTask !== null &&
 		currentTask.projectId === uiState.selectedProjectId;
-	const shownTaskId = followsCurrentTask
-		? currentTask?.id
-		: (uiState.selectedTaskId ?? undefined);
+	const shownTaskId = followsCurrentTask ? currentTask?.id : (uiState.selectedTaskId ?? undefined);
 	// A project with an active task requirement holds a server clock-out until a
 	// task is chosen or kept (#884); the server refusal stays the backstop. A
 	// clock-out saved on this device is accepted without one, and so is a break.
@@ -450,9 +422,7 @@ function useTimeClockPopoverController({
 		const vehicle = vehicleUse.clockIn;
 		const result = await clockIn({
 			workLocationType: uiState.workLocationType,
-			...(vehicle.ok && vehicle.vehicleUse
-				? { vehicleUse: vehicle.vehicleUse }
-				: {}),
+			...(vehicle.ok && vehicle.vehicleUse ? { vehicleUse: vehicle.vehicleUse } : {}),
 		});
 
 		if (result.success) {
@@ -464,24 +434,16 @@ function useTimeClockPopoverController({
 
 			// Saved on this device, not confirmed on the server
 			if (!showSavedClockToast(result, "clock_in", t)) {
-				toast.success(
-					t("timeTracking.clockInSuccess", "Clocked in successfully"),
-				);
+				toast.success(t("timeTracking.clockInSuccess", "Clocked in successfully"));
 			}
 			setOpen(false);
 		} else if (!showAppendReviewRequiredToast(result, t)) {
-			const holidayName =
-				"holidayName" in result ? result.holidayName : undefined;
+			const holidayName = "holidayName" in result ? result.holidayName : undefined;
 			const errorMessage = holidayName
-				? t(
-						"timeTracking.errors.holidayBlockedClockIn",
-						"Cannot clock in on {holidayName}",
-						{
-							holidayName,
-						},
-					)
-				: result.error ||
-					t("timeTracking.errors.clockInFailed", "Failed to clock in");
+				? t("timeTracking.errors.holidayBlockedClockIn", "Cannot clock in on {holidayName}", {
+						holidayName,
+					})
+				: result.error || t("timeTracking.errors.clockInFailed", "Failed to clock in");
 
 			toastClockCommandError(result, errorMessage, {
 				description: holidayName
@@ -515,9 +477,7 @@ function useTimeClockPopoverController({
 			// The legacy review queue carries no task (#874), so it shows no task picker.
 			...(captureMode !== "local-review" ? namedTaskId(taskId) : {}),
 			...(uiState.billable === undefined ? {} : { billable: uiState.billable }),
-			...(vehicle.ok && vehicle.vehicleUse
-				? { vehicleUse: vehicle.vehicleUse }
-				: {}),
+			...(vehicle.ok && vehicle.vehicleUse ? { vehicleUse: vehicle.vehicleUse } : {}),
 		});
 
 		if (result.success) {
@@ -530,9 +490,7 @@ function useTimeClockPopoverController({
 				return;
 			}
 
-			toast.success(
-				t("timeTracking.clockOutSuccess", "Clocked out successfully"),
-			);
+			toast.success(t("timeTracking.clockOutSuccess", "Clocked out successfully"));
 			// Reset selections after successful clock out
 			dispatch({ type: "resetClockOutSelections" });
 			// Show notes input and store the entry ID for patching (only for non-queued)
@@ -542,25 +500,16 @@ function useTimeClockPopoverController({
 				setOpen(false);
 			}
 		} else {
-			const holidayName =
-				"holidayName" in result ? result.holidayName : undefined;
+			const holidayName = "holidayName" in result ? result.holidayName : undefined;
 			// A refused task names its stable reason (#873), worded here.
 			const taskRefusal = projectTaskRefusalMessage(
-				"code" in result && typeof result.code === "string"
-					? result.code
-					: null,
+				"code" in result && typeof result.code === "string" ? result.code : null,
 			);
-			const taskMessage = taskRefusal
-				? t(taskRefusal[0], taskRefusal[1])
-				: null;
+			const taskMessage = taskRefusal ? t(taskRefusal[0], taskRefusal[1]) : null;
 			const errorMessage = holidayName
-				? t(
-						"timeTracking.errors.holidayBlocked",
-						"Cannot clock out on {holidayName}",
-						{
-							holidayName,
-						},
-					)
+				? t("timeTracking.errors.holidayBlocked", "Cannot clock out on {holidayName}", {
+						holidayName,
+					})
 				: taskMessage ||
 					result.error ||
 					t("timeTracking.errors.clockOutFailed", "Failed to clock out");
@@ -591,10 +540,7 @@ function useTimeClockPopoverController({
 		if (result.success) {
 			toast.success(t("timeTracking.notesSaved", "Notes saved"));
 		} else {
-			toast.error(
-				result.error ||
-					t("timeTracking.errors.notesSaveFailed", "Failed to save notes"),
-			);
+			toast.error(result.error || t("timeTracking.errors.notesSaveFailed", "Failed to save notes"));
 		}
 
 		dispatch({ type: "closeNotesInput" });
@@ -609,10 +555,16 @@ function useTimeClockPopoverController({
 	// Don't render if still loading initial state
 	return {
 		isLoading,
+		isPending,
+		isError,
+		isFetching,
+		refetchStatus,
 		t,
 		hasEmployee,
 		open,
 		setOpen,
+		setChoicesIntent,
+		choicesIntent,
 		isClockedIn,
 		elapsedSeconds,
 		uiState,
@@ -646,16 +598,20 @@ function useTimeClockPopoverController({
 	};
 }
 
-type TimeClockPopoverController = ReturnType<
-	typeof useTimeClockPopoverController
->;
+type TimeClockPopoverController = ReturnType<typeof useTimeClockPopoverController>;
 
 function TimeClockLoadingButton({ t }: { t: Translate }) {
 	return (
-		<Button aria-label={t("header.clock-in", "Clock In")} size="sm" disabled>
-			<IconLoader2 className="size-4 animate-spin" />
+		<Button
+			aria-label={t("timeTracking.clockStatus.loading", "Loading clock status")}
+			aria-busy="true"
+			data-clock-status="pending"
+			size="sm"
+			disabled
+		>
+			<IconLoader2 aria-hidden="true" className="size-4 animate-spin motion-reduce:animate-none" />
 			<span className="hidden sm:inline">
-				{t("header.clock-in", "Clock In")}
+				{t("timeTracking.clockStatus.loading", "Loading clock status")}
 			</span>
 		</Button>
 	);
@@ -760,23 +716,16 @@ function TimeClockPopoverPanel({
 			isClockingOut={isClockingOut}
 			isMutating={isMutating}
 			onClockAction={isClockedIn ? handleClockOut : handleClockIn}
-			onProjectChange={(value) =>
-				dispatch({ type: "setSelectedProjectId", value })
-			}
+			onProjectChange={(value) => dispatch({ type: "setSelectedProjectId", value })}
 			billable={uiState.billable}
 			onBillableChange={(value) => dispatch({ type: "setBillable", value })}
-			onTaskChange={(value) =>
-				dispatch({ type: "setSelectedTaskId", value: value ?? null })
-			}
-			onWorkCategoryChange={(value) =>
-				dispatch({ type: "setSelectedWorkCategoryId", value })
-			}
-			onWorkLocationChange={(value) =>
-				dispatch({ type: "setWorkLocationType", value })
-			}
+			onTaskChange={(value) => dispatch({ type: "setSelectedTaskId", value: value ?? null })}
+			onWorkCategoryChange={(value) => dispatch({ type: "setSelectedWorkCategoryId", value })}
+			onWorkLocationChange={(value) => dispatch({ type: "setWorkLocationType", value })}
 			projects={assignedProjects.projects}
 			projectsIsError={assignedProjects.isError}
 			projectsIsLoading={assignedProjects.isLoading}
+			onProjectsRetry={() => void assignedProjects.refetch()}
 			selectedProjectId={uiState.selectedProjectId}
 			selectedTaskId={shownTaskId}
 			currentTask={currentTask}
@@ -786,6 +735,7 @@ function TimeClockPopoverPanel({
 			workCategories={availableWorkCategories.categories}
 			workCategoriesIsError={availableWorkCategories.isError}
 			workCategoriesIsLoading={availableWorkCategories.isLoading}
+			onWorkCategoriesRetry={() => void availableWorkCategories.refetch()}
 			workLocationType={uiState.workLocationType}
 			vehicleUse={vehicleUse}
 			clockOutNeedsTask={clockOutNeedsTask}
@@ -798,18 +748,20 @@ function TimeClockPopoverPanel({
 	);
 }
 
-export function TimeClockPopover({
-	timeFormat = "24h",
-}: {
-	timeFormat?: TimeFormat;
-}) {
+export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeFormat }) {
 	const controller = useTimeClockPopoverController({ timeFormat });
 	const {
 		isLoading,
+		isPending,
+		isError,
+		isFetching,
+		refetchStatus,
 		t,
 		hasEmployee,
 		open,
 		setOpen,
+		setChoicesIntent,
+		choicesIntent,
 		isClockedIn,
 		elapsedSeconds,
 		isMutating,
@@ -818,7 +770,28 @@ export function TimeClockPopover({
 		vehicleUse,
 		isOnBreak,
 	} = controller;
-	if (isLoading) {
+	if (isError) {
+		return (
+			<div role="alert" className="flex items-center gap-2" data-clock-status="unavailable">
+				<span className="sr-only text-sm text-muted-foreground sm:not-sr-only">
+					{t("timeTracking.clockStatus.unavailable", "Clock status unavailable")}
+				</span>
+				<Button
+					size="icon"
+					className="size-8"
+					variant="outline"
+					aria-label={t("timeTracking.clockStatus.retry", "Retry clock status")}
+					title={t("timeTracking.clockStatus.unavailable", "Clock status unavailable")}
+					aria-busy={isFetching}
+					disabled={isFetching}
+					onClick={() => void refetchStatus()}
+				>
+					<IconRefresh aria-hidden="true" className="size-4" />
+				</Button>
+			</div>
+		);
+	}
+	if (isLoading || isPending) {
 		return <TimeClockLoadingButton t={t} />;
 	}
 
@@ -834,11 +807,25 @@ export function TimeClockPopover({
 			: t("header.clock-in", "Clock In");
 
 	return (
-		<div className="flex items-center gap-2">
-			<Popover open={open} onOpenChange={setOpen}>
+		<div
+			className="flex items-center gap-2"
+			data-clock-status="ready"
+			data-clock-choices={open ? "open" : choicesIntent ? "intent" : "deferred"}
+		>
+			<Popover
+				open={open}
+				onOpenChange={(nextOpen) => {
+					setOpen(nextOpen);
+					setChoicesIntent(false);
+				}}
+			>
 				<PopoverTrigger asChild>
 					<Button
 						aria-label={triggerLabel}
+						onPointerEnter={() => controller.setChoicesIntent(true)}
+						onPointerLeave={() => controller.setChoicesIntent(false)}
+						onFocus={() => controller.setChoicesIntent(true)}
+						onBlur={() => controller.setChoicesIntent(false)}
 						size="sm"
 						variant={isClockedIn ? "destructive" : "default"}
 						className={isClockedIn ? "rounded-r-none" : undefined}
@@ -853,10 +840,7 @@ export function TimeClockPopover({
 				</PopoverTrigger>
 				<PopoverContent className="w-72" align="end">
 					<div className="flex flex-col gap-3">
-						<TimeClockPopoverPanel
-							controller={controller}
-							timeFormat={timeFormat}
-						/>
+						<TimeClockPopoverPanel controller={controller} timeFormat={timeFormat} />
 					</div>
 				</PopoverContent>
 			</Popover>
@@ -870,11 +854,7 @@ export function TimeClockPopover({
 					buttonClassName="-ml-2 h-8 rounded-l-none border-l-0 px-2.5"
 					iconOnly
 				>
-					<BreakVehicleReading
-						state={vehicleUse}
-						disabled={isAddingBreak}
-						t={t}
-					/>
+					<BreakVehicleReading state={vehicleUse} disabled={isAddingBreak} t={t} />
 				</QuickBreakPopover>
 			) : null}
 		</div>

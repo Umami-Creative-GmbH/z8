@@ -4,11 +4,13 @@ import { and, eq, isNull } from "drizzle-orm";
 import * as z from "zod";
 import { db } from "@/db";
 import { workPeriod } from "@/db/schema";
+import { getAuthContext } from "@/lib/auth-helpers";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { describeAmendmentFailure } from "@/lib/time-tracking/amend-completed-work";
 import { loadWorkVehicleUseFormContext } from "@/lib/time-tracking/vehicle-use/form-context";
 import { changeLiveWorkVehicleUse } from "@/lib/time-tracking/vehicle-use/live-vehicle-use";
+import { resolveVehicleUseMode } from "@/lib/time-tracking/vehicle-use/resolver";
 import {
 	buildWorkVehicleUse,
 	organizationVehicleIdOf,
@@ -36,9 +38,9 @@ export type ClockVehicleUseContext = WorkVehicleUseFormContext & {
 export async function getClockVehicleUseContext(): Promise<
 	ServerActionResult<ClockVehicleUseContext>
 > {
-	const session = await getCurrentSession();
-	if (!session?.user) return { success: false, error: "Not authenticated" };
-	const currentEmployee = await getCurrentEmployee();
+	const context = await getAuthContext();
+	if (!context) return { success: false, error: "Not authenticated" };
+	const currentEmployee = context.employee;
 	if (!currentEmployee) return { success: false, error: "Employee profile not found" };
 	try {
 		const { organizationId, id: employeeId } = currentEmployee;
@@ -71,6 +73,51 @@ export async function getClockVehicleUseContext(): Promise<
 		};
 	} catch (error) {
 		logger.error({ error }, "Failed to load clock vehicle use");
+		return { success: false, error: "Failed to load vehicle use" };
+	}
+}
+
+/** Operational mode and live attribution stay eager; no optional choices or reading history. */
+export async function getClockVehicleUseStatus(): Promise<
+	ServerActionResult<Pick<ClockVehicleUseContext, "mode" | "live">>
+> {
+	const context = await getAuthContext();
+	if (!context) return { success: false, error: "Not authenticated" };
+	const subject = context.employee;
+	if (!subject) return { success: false, error: "Employee profile not found" };
+	try {
+		const { organizationId, id: employeeId } = subject;
+		const [period] = await db
+			.select({
+				id: workPeriod.id,
+				vehicleKind: workPeriod.vehicleKind,
+				vehicleId: workPeriod.vehicleId,
+				odometerStartKm: workPeriod.odometerStartKm,
+				odometerEndKm: workPeriod.odometerEndKm,
+				drivenDistanceKm: workPeriod.drivenDistanceKm,
+			})
+			.from(workPeriod)
+			.where(
+				and(
+					eq(workPeriod.organizationId, organizationId),
+					eq(workPeriod.employeeId, employeeId),
+					isNull(workPeriod.endTime),
+					isNull(workPeriod.deletedAt),
+				),
+			)
+			.limit(1);
+		const mode = await resolveVehicleUseMode(db, { organizationId, employeeId });
+		return {
+			success: true,
+			data: {
+				mode,
+				live: period
+					? { workPeriodId: period.id, vehicleUse: vehicleUseFromColumns(period) }
+					: null,
+			},
+		};
+	} catch (error) {
+		logger.error({ error }, "Failed to load operational clock vehicle use");
 		return { success: false, error: "Failed to load vehicle use" };
 	}
 }

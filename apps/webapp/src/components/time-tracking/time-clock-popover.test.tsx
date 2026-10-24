@@ -52,7 +52,7 @@ function getPopoverClockButton(name: "Clock In" | "Clock Out"): HTMLElement {
 	return button;
 }
 
-vi.mock("@/lib/query", () => ({
+vi.mock("@/lib/query/use-time-clock", () => ({
 	useElapsedTimer: () => useElapsedTimerMock(),
 	useTimeClock: () => ({
 		hasEmployee: true,
@@ -89,11 +89,7 @@ vi.mock("@/lib/query/use-assigned-projects", () => ({
 vi.mock("@tolgee/react", () => ({
 	useTolgee: () => ({ getLanguage: () => "en" }),
 	useTranslate: () => ({
-		t: (
-			_key: string,
-			fallback: string,
-			values?: Record<string, string | number>,
-		) => {
+		t: (_key: string, fallback: string, values?: Record<string, string | number>) => {
 			if (!values) return fallback;
 			return Object.entries(values).reduce(
 				(text, [key, value]) => text.replace(`{${key}}`, String(value)),
@@ -195,8 +191,7 @@ describe("TimeClockPopover", () => {
 		const refused = {
 			success: false,
 			code: "connection_required",
-			error:
-				"Clocking needs a connection in this organization. Reconnect and try again.",
+			error: "Clocking needs a connection in this organization. Reconnect and try again.",
 		};
 
 		it("shows the needs-a-connection outcome inline, not as an error toast", async () => {
@@ -301,9 +296,7 @@ describe("TimeClockPopover", () => {
 			expect(
 				(screen.getByRole("button", { name: "Start break" }) as HTMLButtonElement).disabled,
 			).toBe(true);
-			expect(
-				screen.getByText("Starting or resuming a break needs a connection."),
-			).toBeTruthy();
+			expect(screen.getByText("Starting or resuming a break needs a connection.")).toBeTruthy();
 		});
 	});
 
@@ -322,26 +315,18 @@ describe("TimeClockPopover", () => {
 		render(<TimeClockPopover />);
 		fireEvent.click(screen.getByRole("button", { name: "Clock In" }));
 		fireEvent.click(screen.getByRole("radio", { name: "Remote" }));
-		fireEvent.click(
-			screen.getByRole("button", { name: "Save clock-in for review" }),
-		);
-		await waitFor(() =>
-			expect(clockInMock).toHaveBeenCalledWith({ workLocationType: "remote" }),
-		);
+		fireEvent.click(screen.getByRole("button", { name: "Save clock-in for review" }));
+		await waitFor(() => expect(clockInMock).toHaveBeenCalledWith({ workLocationType: "remote" }));
 		await waitFor(() =>
 			expect(toastMocks.info).toHaveBeenCalledWith(
 				expect.stringContaining("not confirmed on the server"),
 			),
 		);
 		await waitFor(() =>
-			expect(
-				screen.queryByRole("button", { name: "Save clock-in for review" }),
-			).toBeNull(),
+			expect(screen.queryByRole("button", { name: "Save clock-in for review" })).toBeNull(),
 		);
 		fireEvent.click(screen.getByRole("button", { name: "Clock In" }));
-		fireEvent.click(
-			screen.getByRole("button", { name: "Save clock-out for review" }),
-		);
+		fireEvent.click(screen.getByRole("button", { name: "Save clock-out for review" }));
 		await waitFor(() => expect(clockOutMock).toHaveBeenCalledOnce());
 		expect(toastMocks.success).not.toHaveBeenCalled();
 	});
@@ -354,9 +339,7 @@ describe("TimeClockPopover", () => {
 		fireEvent.click(mobileTrigger);
 		fireEvent.click(getPopoverClockButton("Clock In"));
 
-		await waitFor(() =>
-			expect(clockInMock).toHaveBeenCalledWith({ workLocationType: "office" }),
-		);
+		await waitFor(() => expect(clockInMock).toHaveBeenCalledWith({ workLocationType: "office" }));
 	});
 
 	it("explains a clock-in held for time history review without server details", async () => {
@@ -389,9 +372,7 @@ describe("TimeClockPopover", () => {
 		fireEvent.click(screen.getByRole("radio", { name: "Remote" }));
 		fireEvent.click(getPopoverClockButton("Clock In"));
 
-		await waitFor(() =>
-			expect(clockInMock).toHaveBeenCalledWith({ workLocationType: "remote" }),
-		);
+		await waitFor(() => expect(clockInMock).toHaveBeenCalledWith({ workLocationType: "remote" }));
 	});
 
 	it("shows an icon-only quick break trigger next to the header clock-out button while clocked in", () => {
@@ -421,9 +402,7 @@ describe("TimeClockPopover", () => {
 		});
 		fireEvent.click(screen.getByRole("button", { name: "Apply" }));
 
-		await waitFor(() =>
-			expect(addBreakMock).toHaveBeenCalledWith({ breakMinutes: 15 }),
-		);
+		await waitFor(() => expect(addBreakMock).toHaveBeenCalledWith({ breakMinutes: 15 }));
 	});
 
 	it("does not show the header quick break trigger while clocked out", () => {
@@ -458,9 +437,7 @@ describe("TimeClockPopover", () => {
 	describe("billable toggle (#900)", () => {
 		function clockOutWithStoredProject(project: Record<string, unknown>) {
 			localStorageData = { "z8-last-project-id": "project-1" };
-			projectsMock = [
-				{ id: "project-1", name: "Project One", tasks: [], ...project },
-			];
+			projectsMock = [{ id: "project-1", name: "Project One", tasks: [], ...project }];
 			isClockedInMock = true;
 			activeWorkPeriodMock = { startTime: "2026-05-18T08:00:00.000Z" };
 			clockOutMock.mockResolvedValue({ success: true, queued: true });
@@ -492,9 +469,7 @@ describe("TimeClockPopover", () => {
 			await screen.findByRole("switch", { name: "Billable" });
 			fireEvent.click(getPopoverClockButton("Clock Out"));
 
-			await waitFor(() =>
-				expect(clockOutMock).toHaveBeenCalledWith({ projectId: "project-1" }),
-			);
+			await waitFor(() => expect(clockOutMock).toHaveBeenCalledWith({ projectId: "project-1" }));
 		});
 
 		it("disables the toggle for a project without a customer", async () => {
@@ -502,18 +477,15 @@ describe("TimeClockPopover", () => {
 			clockOutWithStoredProject({ hasCustomer: false, billableDefault: false });
 
 			const toggle = await screen.findByRole("switch", { name: "Billable" });
-			expect(
-				toggle.getAttribute("aria-disabled") ??
-					String(toggle.hasAttribute("disabled")),
-			).toBe("true");
+			expect(toggle.getAttribute("aria-disabled") ?? String(toggle.hasAttribute("disabled"))).toBe(
+				"true",
+			);
 		});
 
 		it("hides the toggle while Billable Time is off", async () => {
 			clockOutWithStoredProject({ hasCustomer: true, billableDefault: true });
 
-			await waitFor(() =>
-				expect(getPopoverClockButton("Clock Out")).toBeTruthy(),
-			);
+			await waitFor(() => expect(getPopoverClockButton("Clock Out")).toBeTruthy());
 			expect(screen.queryByRole("switch", { name: "Billable" })).toBeNull();
 		});
 	});
@@ -550,9 +522,7 @@ describe("TimeClockPopover", () => {
 			fireEvent.click(screen.getByRole("button", { name: /Clock Out/ }));
 
 			await chooseTask("Design");
-			fireEvent.click(
-				screen.getByRole("button", { name: "Choose Project Two" }),
-			);
+			fireEvent.click(screen.getByRole("button", { name: "Choose Project Two" }));
 			expect(screen.queryByRole("combobox", { name: "Task" })).toBeNull();
 			fireEvent.click(getPopoverClockButton("Clock Out"));
 
