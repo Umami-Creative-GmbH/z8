@@ -43,6 +43,7 @@ vi.mock("@/lib/billing/guard", async () =>
 );
 
 const { getManagedEmployees } = await import("./actions");
+const { readDashboardWidget } = await import("./dashboard-reads");
 const { runtime } = await import("@/lib/effect/runtime");
 const { ManagerService } = await import("@/lib/effect/services/manager.service");
 
@@ -128,7 +129,13 @@ describe("Your team lists only the caller's reports in the active organization (
 			 (organization_id, employee_id, employment_period_id, mode, last_working_day, timezone,
 			  cutoff_at, created_by, request_id, request_fingerprint, revision, status)
 			 values ($1, $2, $3, 'scheduled', '2026-09-14', 'UTC', $4, $5, gen_random_uuid(), 'test', 1, 'pending')`,
-			[organizationA, target.employeeId, target.employmentPeriodId, PAST_CUTOFF, fixture.ownerUserId],
+			[
+				organizationA,
+				target.employeeId,
+				target.employmentPeriodId,
+				PAST_CUTOFF,
+				fixture.ownerUserId,
+			],
 		);
 	}
 
@@ -185,6 +192,18 @@ describe("Your team lists only the caller's reports in the active organization (
 		if (!result.success) throw new Error(String(result.error));
 		return result.data;
 	}
+
+	it("delivers the current manager roster through the JSON snapshot seam without another authentication read", async () => {
+		harness.userId = null;
+		const snapshot = await readDashboardWidget("managed-employees", {
+			userId: managerUserId,
+			organizationId: organizationA,
+			employee: { id: managerInA, organizationId: organizationA, role: "manager" },
+		});
+		if (!snapshot.result.success) throw new Error(snapshot.result.error);
+		expect(snapshot.result.data?.employees.map((employee) => employee.id)).toEqual([reportInA]);
+		expect(await Response.json(snapshot).json()).toEqual(snapshot);
+	});
 
 	it("lists the caller's reports in the active organization only", async () => {
 		const data = await load();

@@ -68,54 +68,64 @@ beforeEach(() => {
 });
 
 describe("Dashboard widget GET", () => {
-	it("derives the read subject from fresh authorization, ignoring requested tenant input", async () => {
-		const response = await GET(request(), {
-			params: Promise.resolve({ widget: "manager-today" }),
-		});
-		expect(response.status).toBe(200);
-		expect(response.headers.get("cache-control")).toContain("no-store");
-		expect((await response.json()).result.data.summary.openApprovals).toBe(5);
-		expect(boundary.auth).toHaveBeenCalledTimes(1);
-		expect(boundary.read).toHaveBeenCalledWith("manager-today", subject);
-	});
+	it.each([
+		"manager-today",
+		"quick-stats",
+		"managed-employees",
+		"team-overview",
+		"pending-approvals",
+		"recently-approved",
+	])(
+		"derives the %s subject from fresh authorization, ignoring requested tenant input",
+		async (widget) => {
+			const response = await GET(request(), {
+				params: Promise.resolve({ widget }),
+			});
+			expect(response.status).toBe(200);
+			expect(response.headers.get("cache-control")).toContain("no-store");
+			expect((await response.json()).result.data.summary.openApprovals).toBe(5);
+			expect(boundary.auth).toHaveBeenCalledTimes(1);
+			expect(boundary.read).toHaveBeenCalledWith(widget, subject);
+		},
+	);
 
 	it.each([
 		["other-user", "org-a"],
 		["user-a", "other-org"],
-	])(
-		"rejects a replaced scope before reading widget data",
-		async (userId, organizationId) => {
-			const response = await GET(request(userId, organizationId), {
-				params: Promise.resolve({ widget: "quick-stats" }),
+	])("rejects a replaced scope before reading widget data", async (userId, organizationId) => {
+		const response = await GET(request(userId, organizationId), {
+			params: Promise.resolve({ widget: "quick-stats" }),
+		});
+		expect(response.status).toBe(409);
+		expect(boundary.read).not.toHaveBeenCalled();
+	});
+
+	it.each(["managed-employees", "team-overview", "pending-approvals", "recently-approved"])(
+		"denies signed-out or held identities and missing eligible employee access for %s",
+		async (widget) => {
+			boundary.auth.mockResolvedValueOnce(null);
+			expect(
+				(
+					await GET(request(), {
+						params: Promise.resolve({ widget }),
+					})
+				).status,
+			).toBe(401);
+			boundary.auth.mockResolvedValueOnce({
+				user: { id: scope.userId },
+				session: { activeOrganizationId: scope.organizationId },
+				employee: null,
 			});
-			expect(response.status).toBe(409);
+			expect(
+				(
+					await GET(request(), {
+						params: Promise.resolve({ widget }),
+					})
+				).status,
+			).toBe(403);
 			expect(boundary.read).not.toHaveBeenCalled();
 		},
 	);
-
-	it("denies signed-out or held identities and missing eligible employee access", async () => {
-		boundary.auth.mockResolvedValueOnce(null);
-		expect(
-			(
-				await GET(request(), {
-					params: Promise.resolve({ widget: "quick-stats" }),
-				})
-			).status,
-		).toBe(401);
-		boundary.auth.mockResolvedValueOnce({
-			user: { id: scope.userId },
-			session: { activeOrganizationId: scope.organizationId },
-			employee: null,
-		});
-		expect(
-			(
-				await GET(request(), {
-					params: Promise.resolve({ widget: "quick-stats" }),
-				})
-			).status,
-		).toBe(403);
-		expect(boundary.read).not.toHaveBeenCalled();
-	});
 
 	it("keeps enabled billing enforcement fresh and fails closed", async () => {
 		boundary.billingEnabled = "true";
@@ -134,33 +144,33 @@ describe("Dashboard widget GET", () => {
 		expect(boundary.read).not.toHaveBeenCalled();
 	});
 
-	it("does not queue an independent GET behind a pending widget", async () => {
-		let finish: () => void = () => {};
-		const pending = new Promise<void>((resolve) => {
-			finish = resolve;
-		});
-		boundary.read.mockImplementation(async (id: string) => {
-			if (id === "manager-today") await pending;
-			return { scope, updatedAt: 1234, result: { success: true, data: null } };
-		});
-		const manager = GET(request(), {
-			params: Promise.resolve({ widget: "manager-today" }),
-		});
-		try {
-			const quick = await Promise.race([
-				GET(request(), { params: Promise.resolve({ widget: "quick-stats" }) }),
-				new Promise<never>((_, reject) =>
-					setTimeout(
-						() => reject(new Error("Independent GET was queued")),
-						500,
+	it.each(["managed-employees", "team-overview", "pending-approvals", "recently-approved"])(
+		"does not queue an independent GET behind pending %s",
+		async (widget) => {
+			let finish: () => void = () => {};
+			const pending = new Promise<void>((resolve) => {
+				finish = resolve;
+			});
+			boundary.read.mockImplementation(async (id: string) => {
+				if (id === widget) await pending;
+				return { scope, updatedAt: 1234, result: { success: true, data: null } };
+			});
+			const manager = GET(request(), {
+				params: Promise.resolve({ widget }),
+			});
+			try {
+				const quick = await Promise.race([
+					GET(request(), { params: Promise.resolve({ widget: "quick-stats" }) }),
+					new Promise<never>((_, reject) =>
+						setTimeout(() => reject(new Error("Independent GET was queued")), 500),
 					),
-				),
-			]);
-			expect(quick.status).toBe(200);
-			expect(boundary.auth).toHaveBeenCalledTimes(2);
-		} finally {
-			finish();
-			await manager;
-		}
-	});
+				]);
+				expect(quick.status).toBe(200);
+				expect(boundary.auth).toHaveBeenCalledTimes(2);
+			} finally {
+				finish();
+				await manager;
+			}
+		},
+	);
 });

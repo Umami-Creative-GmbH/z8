@@ -53,6 +53,8 @@ vi.mock("@/lib/billing/guard", async () =>
 const { getTeamCalendarData, getTeamOverviewStats, getUpcomingAbsences, getWhosOutToday } =
 	await import("./actions");
 
+const { readDashboardWidget } = await import("./dashboard-reads");
+
 /** A departure cutoff in the past, so that a pending departure is due. */
 const PAST_CUTOFF = "2026-09-15T00:00:00Z";
 
@@ -205,6 +207,21 @@ describe("dashboard widgets count only the current roster (#1438)", () => {
 		);
 		// Starts after today: only the current roster.
 		expect(await onDate(day(5))).toEqual(new Set([current]));
+	});
+
+	it("delivers the approved current-roster statistics through the server snapshot seam", async () => {
+		const snapshot = await readDashboardWidget("team-overview", {
+			userId: fixture.ownerUserId,
+			organizationId: fixture.organizationId,
+			employee: {
+				id: fixture.ownerEmployeeId,
+				organizationId: fixture.organizationId,
+				role: "admin",
+			},
+		});
+		if (!snapshot.result.success) throw new Error(snapshot.result.error);
+		expect(snapshot.result.data).toEqual({ currentEmployees: 2, teamsCount: 0, avgWorkHours: 30 });
+		expect(await Response.json(snapshot).json()).toEqual(snapshot);
 	});
 
 	it("counts and averages the current roster only", async () => {

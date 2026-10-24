@@ -316,6 +316,18 @@ export async function getPendingApprovals(): Promise<{
 		return { absenceApprovals: [], timeCorrectionApprovals: [] };
 	}
 
+	return loadPendingApprovalsForEmployee(currentEmployee);
+}
+
+/** Internal server reader: the caller owns render-local or freshly resolved authorization. */
+export async function loadPendingApprovalsForEmployee(currentEmployee: {
+	id: string;
+	userId: string;
+	organizationId: string;
+}): Promise<{
+	absenceApprovals: ApprovalWithAbsence[];
+	timeCorrectionApprovals: ApprovalWithTimeCorrection[];
+}> {
 	const pendingRequests = (await db.query.approvalRequest.findMany({
 		where: and(
 			eq(approvalRequest.organizationId, currentEmployee.organizationId),
