@@ -1,5 +1,13 @@
 # Multi-instance analytics cache (#1472)
 
+The eight-stage results below are historical observations on source `4d8`.
+A later audit found that the native observer compared the SDK SERVER span kind
+against `2` (CLIENT), while the SDK value is `1`. OTLP's wire SERVER value `2` is
+separate and remains correct. The retained outputs and counts are unchanged, but
+the old successful reconciliation does not independently establish that every
+server request span drained. Corrected-observer runtime acceptance is pending;
+do not treat the old reports as final release proof.
+
 Eight finite functional stages passed on the operator-owned two-replica fixture.
 The immutable production artifact is application commit
 `4d8bdb1d477cd02888565816b0fb96f85dc13b71`. The
@@ -12,6 +20,32 @@ unavailable; the user explicitly authorized this local deployment. No controlled
 route/clock p95, full JavaScript/Flight byte saving or production capacity benefit
 is claimed. The later integration includes additional employee-lifecycle/schema
 changes and needs its own final build and runtime release checks.
+
+## Final artifact follow-up: prepared, runtime blocked
+
+An offline comparison of source `4d8bdb1d477cd02888565816b0fb96f85dc13b71`
+against compiled candidate `ac2fb11334b2fac88144dd405e39a15bd988d29c` found all
+12 selected cache, admission, calculation and observer files byte-identical.
+[The preparation record](evidence/1472-final-source-preparation.json) stores both
+SHA256 values and the candidate artifact fingerprint. This is a selected-file
+comparison, not proof that every transitive dependency or generated artifact is
+equivalent. In particular, the observer bug exists in both versions.
+
+After the application owner fixes the observer and the parent admits a new
+immutable build, rerun the existing `fill`, `mutation` and `scope` stages
+sequentially on the parent's `final-multi-instance-runtime` fixture. These cover
+all three real callers, independent cold/warm reads on both replicas, two
+organizations, manager scope, an accepted A write changing B before TTL,
+unrelated tenant hits, scope reduction and denial before native get. Each stage
+still requires exact independent native epochs and strict browser transport.
+Use the newly admitted full source pin, rather than silently reusing `ac2`.
+
+Historical expiry, stampede, outage, clock and restart results remain attached to
+their original source and observer. This targeted smoke will not establish a new
+eight-stage matrix or retroactively repair historical drain evidence. The parent
+must decide any additional release reruns after admitting the observer fix.
+During this preparation there were no HTTP, database or cache requests, no app
+restarts, no new services and no changes to original or pristine fixtures.
 
 ## Observed deployment
 
