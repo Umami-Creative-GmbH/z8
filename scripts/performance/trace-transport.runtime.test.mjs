@@ -28,7 +28,7 @@ test("two concurrent worker contexts preserve encoded gzip bytes and agree with 
 		`self.addEventListener('install',e=>e.waitUntil(self.skipWaiting()));self.addEventListener('activate',e=>e.waitUntil(self.clients.claim()));self.addEventListener('message',e=>e.waitUntil(fetch('/compressed-script.js').then(r=>r.text()).then(t=>{if(t.length!==${plain.length})throw Error('length');e.source.postMessage('complete');})));`,
 	);
 	const html = Buffer.from(
-		`<!doctype html><link rel="icon" href="data:,"><script>navigator.serviceWorker.addEventListener('message',e=>{if(e.data==='complete')window.complete=true;});(async()=>{await navigator.serviceWorker.register('/sw.js');await navigator.serviceWorker.ready;if(!navigator.serviceWorker.controller)await new Promise(r=>navigator.serviceWorker.addEventListener('controllerchange',r,{once:true}));navigator.serviceWorker.controller.postMessage('fetch');})();</script>`,
+		`<!doctype html><link rel="icon" href="data:,"><form><input name="name" autocomplete="name"><input name="address" autocomplete="street-address"><input name="postal" autocomplete="postal-code"><input name="email" autocomplete="email"></form><script>navigator.serviceWorker.addEventListener('message',e=>{if(e.data==='complete')window.complete=true;});(async()=>{await navigator.serviceWorker.register('/sw.js');await navigator.serviceWorker.ready;if(!navigator.serviceWorker.controller)await new Promise(r=>navigator.serviceWorker.addEventListener('controllerchange',r,{once:true}));navigator.serviceWorker.controller.postMessage('fetch');})();</script>`,
 	);
 	const ids = ["a".repeat(32), "b".repeat(32)];
 	const oracle = ids.map(() => ({

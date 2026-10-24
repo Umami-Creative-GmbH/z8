@@ -23,6 +23,7 @@ export async function launchFixtureBrowser(puppeteer, executablePath) {
 			executablePath,
 			headless: true,
 			userDataDir: profile,
+			args: ["--disable-features=AutofillServerCommunication"],
 		});
 		browser.fixtureLaunchPolicy = {
 			policy: fixtureBrowserPolicy,
