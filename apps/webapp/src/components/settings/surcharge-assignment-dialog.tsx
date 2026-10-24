@@ -7,7 +7,6 @@ import { useTranslate } from "@tolgee/react";
 import { toast } from "sonner";
 import {
 	createSurchargeAssignment,
-	getSurchargeModels,
 	getTeamsForAssignment,
 } from "@/app/[locale]/(app)/settings/surcharges/actions";
 import { EmployeeSingleSelect } from "@/components/employee-select";
@@ -31,6 +30,7 @@ import {
 import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { queryKeys } from "@/lib/query";
+import { surchargeModelsQuery } from "@/lib/query/surcharge-models";
 
 interface SurchargeAssignmentDialogProps {
 	open: boolean;
@@ -52,8 +52,7 @@ export function SurchargeAssignmentDialog({
 
 	// Fetch models
 	const modelsQuery = useQuery({
-		queryKey: ["surcharge-models", organizationId],
-		queryFn: () => getSurchargeModels(organizationId),
+		...surchargeModelsQuery(organizationId),
 		enabled: open,
 	});
 
@@ -126,9 +125,7 @@ export function SurchargeAssignmentDialog({
 		},
 	});
 
-	const activeModels = modelsQuery.data?.success
-		? modelsQuery.data.data.filter((m) => m.isActive)
-		: [];
+	const activeModels = (modelsQuery.data ?? []).filter((model) => model.isActive);
 	const teams = teamsQuery.data?.success ? teamsQuery.data.data : [];
 
 	const getDialogTitle = () => {
@@ -179,6 +176,10 @@ export function SurchargeAssignmentDialog({
 					className="flex min-h-0 flex-1 flex-col"
 				>
 					<ActionPanelBody className="space-y-4">
+						{modelsQuery.isError ? <div role="alert" className="space-y-2">
+							<p>{t("settings.surcharges.loadFailed", "Surcharge models could not be loaded. Please try again.")}</p>
+							<Button type="button" variant="outline" onClick={() => void modelsQuery.refetch()} disabled={modelsQuery.isFetching}>{t("common.retry", "Try again")}</Button>
+						</div> : null}
 						{/* Model Selection */}
 						<form.Field name="modelId">
 							{(field) => (
