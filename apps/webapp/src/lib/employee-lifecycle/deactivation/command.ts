@@ -1,12 +1,11 @@
 import "server-only";
 
 import { and, eq } from "drizzle-orm";
-import { user } from "@/db/auth-schema";
+import { z } from "zod";
 import { employee } from "@/db/schema";
 import { AuditTrail } from "@/lib/audit-trail";
 import type { AuthorizationMutationScope } from "@/lib/authorization/authorization-mutation";
-import { type Clock, dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
-import { onDeactivationShiftsOpened } from "@/lib/notifications/triggers";
+import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
 import { addCalendarSyncJob } from "@/lib/queue";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import {
@@ -30,6 +29,7 @@ import {
 	validatedReplacementManagers,
 } from "./manager-links";
 import { planDeactivationConsequences } from "./plan";
+import { type DeactivationPlannerNotice, loadPlannerNotice, sendPlannerNotice } from "./shifts";
 import type {
 	DeactivationAfterCommit,
 	DeactivationApplied,
@@ -98,7 +98,7 @@ export type DeactivationResult = {
 	employeeUserId: string;
 	deactivatedAt: string;
 	/** The planner notice, keyed by the deactivation, so sending it again sends nothing new. */
-	plannerNotice: { employeeName: string; shiftCount: number; recipientUserIds: string[] } | null;
+	plannerNotice: DeactivationPlannerNotice | null;
 	/** Absences the person stopped covering as deputy; their notices are keyed by `eventKey`. */
 	releasedDeputies: { eventKey: string; assignments: DeputyAssignment[] } | null;
 	cancelledAbsenceIds: string[];
@@ -203,15 +203,10 @@ export async function executeDeactivation(
 		reason: "employee_deactivated",
 	});
 
-	const shiftCount = applied.shifts.openedShiftIds.length;
-	const plannerNotice =
-		shiftCount > 0 && plan.shifts.plannerRecipientUserIds.length > 0
-			? {
-					employeeName: await employeeName(tx, person.userId),
-					shiftCount,
-					recipientUserIds: plan.shifts.plannerRecipientUserIds,
-				}
-			: null;
+	const plannerNotice = await loadPlannerNotice(tx, scope, {
+		openedShiftIds: applied.shifts.openedShiftIds,
+		recipientUserIds: plan.shifts.plannerRecipientUserIds,
+	});
 	const result: DeactivationResult = {
 		deactivationId,
 		employeeId: command.employeeId,
@@ -260,11 +255,6 @@ export async function executeDeactivation(
 	};
 }
 
-async function employeeName(tx: DeactivationWriter, userId: string): Promise<string> {
-	const [row] = await tx.select({ name: user.name }).from(user).where(eq(user.id, userId)).limit(1);
-	return row?.name ?? "";
-}
-
 /**
  * The after-commit work of a deactivation, rebuilt from its ledger row for a
  * replayed request: the steps that are safe to run again (the planner notice
@@ -278,20 +268,15 @@ export function rebuildDeactivationAfterCommit(entry: DeactivationLedgerEntry): 
 	afterCommit: DeactivationAfterCommit[];
 	releasedDeputies: ReleasedDeputyAssignments | null;
 } {
-	const result = (entry.result as DeactivationResult | null) ?? null;
+	const parsed = deactivationResultSchema.safeParse(entry.result);
+	const result = parsed.success ? parsed.data : null;
 	if (!result || entry.reactivatedAt !== null) {
 		return { result, afterCommit: [], releasedDeputies: null };
 	}
 	const afterCommit: DeactivationAfterCommit[] = [];
 	const { plannerNotice } = result;
 	if (plannerNotice) {
-		afterCommit.push(() =>
-			onDeactivationShiftsOpened({
-				organizationId: entry.organizationId,
-				deactivationId: entry.id,
-				...plannerNotice,
-			}),
-		);
+		afterCommit.push(sendPlannerNotice(entry.organizationId, entry.id, plannerNotice));
 	}
 	if (result.cancelledAbsenceIds.length > 0) {
 		afterCommit.push(async () => {
@@ -317,3 +302,32 @@ export function rebuildDeactivationAfterCommit(entry: DeactivationLedgerEntry): 
 			: null,
 	};
 }
+
+/** A ledger row's stored result, validated before a replay reads it. */
+const deactivationResultSchema: z.ZodType<DeactivationResult> = z.object({
+	deactivationId: z.string(),
+	employeeId: z.string(),
+	employeeUserId: z.string(),
+	deactivatedAt: z.string(),
+	plannerNotice: z
+		.object({
+			employeeName: z.string(),
+			shiftCount: z.number(),
+			recipientUserIds: z.array(z.string()),
+		})
+		.nullable(),
+	releasedDeputies: z
+		.object({
+			eventKey: z.string(),
+			assignments: z.array(
+				z.object({
+					absenceId: z.string(),
+					absentEmployeeId: z.string(),
+					startDate: z.string(),
+					endDate: z.string(),
+				}),
+			),
+		})
+		.nullable(),
+	cancelledAbsenceIds: z.array(z.string()),
+});

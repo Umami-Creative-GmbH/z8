@@ -6,7 +6,7 @@ import {
 	type Instant,
 	instantFromDate,
 } from "@/lib/datetime/temporal-core";
-import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
+import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { isCanonicalUuid } from "@/lib/validations/canonical-uuid";
 import { departureCutoff } from "./cutoff";
 import { countDeputyAssignmentsNotEnded } from "./deputy-release";
@@ -360,13 +360,10 @@ export async function getEmployeeOffboardingView(
 			: null;
 		if (open && deactivationFollowUp) {
 			({ followUp, failedTasks, reviews } = deactivationFollowUp);
-			const zone = await database.execute<{ timezone: string | null }>(sql`
-				SELECT timezone FROM organization WHERE id = ${input.organizationId}
-			`);
 			deactivation = {
 				id: open.id,
 				deactivatedAt: open.deactivatedAt.toString(),
-				timezone: resolveOrganizationTimezone(zone.rows[0]?.timezone).timezone,
+				timezone: await loadOrganizationTimezone(database, input.organizationId),
 				// A backfilled deactivation without evidence of the date (#1442).
 				...(target.deactivated_at_missing ? { dateNotRecorded: true as const } : {}),
 			};

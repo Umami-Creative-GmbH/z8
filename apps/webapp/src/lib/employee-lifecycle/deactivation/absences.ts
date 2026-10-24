@@ -10,11 +10,9 @@ import { absenceCategory, absenceEntry } from "@/db/schema";
 import { notifyAbsenceDeputies } from "@/lib/absences/deputy-notifier";
 import { acquireApprovalWriteLock } from "@/lib/approvals/authority/gate";
 import { kickApprovalDelivery } from "@/lib/approvals/delivery/kick";
-import type { ApprovalDbService } from "@/lib/approvals/workflow/ports";
 import type { ApprovalWorkflowDatabase } from "@/lib/approvals/workflow/repository";
 import { AuditAction } from "@/lib/audit-logger";
 import {
-	type Clock,
 	comparePlainDates,
 	type PlainDate,
 	parsePlainDate,
@@ -125,7 +123,7 @@ export async function acquireAbsenceCancellationGuards(
 	tx: DeactivationWriter,
 	organizationId: string,
 ): Promise<void> {
-	const dbService = { db: tx as unknown as ApprovalDbService["db"] };
+	const dbService = { db: tx };
 	await acquireApprovalWriteLock(dbService, { organizationId, workflowType: "absence" });
 	await acquireApprovalWriteLock(dbService, {
 		organizationId,
@@ -177,6 +175,7 @@ export async function applyAbsenceCancellations(
 		if (!current) continue;
 		const actor = { kind: "employee_deactivation", actorUserId: ctx.actorUserId } as const;
 		const cancellation = createAbsenceCancellationRuntime({
+			// The approval runtime's database type is the root client; the transaction serves it.
 			db: tx as unknown as ApprovalWorkflowDatabase,
 			actor,
 			// The capability is the only grant; no employee manages anything here.
