@@ -115,3 +115,24 @@ test("unknown finite traffic, ambiguous inherited redirects, errors and observat
 	assert.equal(state.groups.otherFinite.requests, 10000);
 	assert.equal(state.complete, false);
 });
+test("pending prerequisite work remains inherited across empty-context and measured begins", () => {
+	const observer = createProxyWireObserver();
+	observer.begin(0);
+	const id = observer.request({ traceId: "a".repeat(32), headers: {} }, 10);
+	observer.response(
+		id,
+		{ mimeType: "application/javascript", status: 200 },
+		11,
+	);
+	observer.bytes(id, 7, 12);
+	observer.begin(20);
+	observer.ready(21);
+	assert.equal(observer.state(22).mandatoryPending, 1);
+	observer.bytes(id, 5, 23);
+	observer.end(id, {}, 24);
+	const state = observer.state(1025);
+	assert.equal(state.complete, true);
+	assert.equal(state.bytes.javascript, 0);
+	assert.equal(state.groups.javascript.inheritedRequests, 1);
+	assert.equal(state.groups.javascript.inheritedCompletedBytes, 12);
+});
