@@ -3,7 +3,14 @@ import { createHash, randomBytes } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { cpus, platform, release, totalmem } from "node:os";
 import { join } from "node:path";
-import { historicalRangeSteps, performSteps } from "./journey-steps.mjs";
+import {
+	clickVisible,
+	fixtureBrowserPermissions,
+	historicalRangeSteps,
+	performSteps,
+	prepareFixtureBrowserContext,
+	waitVisible,
+} from "./journey-steps.mjs";
 
 const args = process.argv.slice(2);
 const option = (name) => args[args.indexOf(name) + 1];
@@ -45,6 +52,13 @@ const backendMetrics = [
 ];
 
 function validate(plan, verifying = false) {
+	if (
+		plan.runtime?.browserPermissions !== undefined &&
+		plan.runtime.browserPermissions !== fixtureBrowserPermissions
+	)
+		fail(
+			"Fixture browser permission policy differs from the installed runner.",
+		);
 	if (plan.phase !== undefined && !["baseline", "release"].includes(plan.phase))
 		fail("Use the baseline or release phase.");
 	if (!Number.isInteger(plan.samples) || plan.samples < 20)
@@ -247,7 +261,7 @@ async function main() {
 			: [];
 		for (const sample of result.samples) {
 			const evidence = backend.find(
-				(entry) => entry.traceId === sample.traceId,
+				(entry) => entry.traceId === (sample.backendTraceId ?? sample.traceId),
 			);
 			sample.backend = Object.fromEntries(
 				backendMetrics.map((name) => [
@@ -409,6 +423,7 @@ async function main() {
 		planSha256: createHash("sha256").update(planBytes).digest("hex"),
 		runtime: {
 			mode: plan.runtime.mode,
+			browserPermissions: fixtureBrowserPermissions,
 			build: plan.runtime.build,
 			sourceBuild: plan.runtime.sourceBuild ?? null,
 			buildWorkers: plan.runtime.buildWorkers ?? null,
@@ -620,6 +635,8 @@ async function measure(
 ) {
 	const context = await browser.createBrowserContext();
 	const traceId = randomBytes(16).toString("hex");
+	const prerequisiteTraceId = randomBytes(16).toString("hex");
+	const attemptStart = performance.now();
 	const sample = {
 		condition: condition.name,
 		role: condition.role,
@@ -634,6 +651,11 @@ async function measure(
 		mode,
 		iteration,
 		traceId,
+		prerequisiteTraceId,
+		backendTraceId: traceId,
+		resourceScope: "measured-visit",
+		censored: false,
+		notApplicableBrowserMetrics: [],
 		usableContentMs: null,
 		clockReadyMs: null,
 		lcpMs: null,
@@ -662,12 +684,13 @@ async function measure(
 	let client;
 	const pendingRequests = new Set();
 	const requests = new Map();
-	let requestTraceId = traceId;
+	let requestTraceId = prerequisiteTraceId;
 	let bindings;
 	let measurementStart;
 	let stage = "authentication-context";
 	let mutationStarted = false;
 	try {
+		await prepareFixtureBrowserContext(context, plan.origin);
 		if (!Array.isArray(auth[condition.name]?.cookies))
 			fail("Missing private fixture authentication.");
 		await context.setCookie(...auth[condition.name].cookies);
@@ -675,6 +698,21 @@ async function measure(
 		await page.setViewport(condition.viewport);
 		await page.emulateTimezone(condition.timezone);
 		await page.setExtraHTTPHeaders({ "Accept-Language": condition.locale });
+		await page.setRequestInterception(true);
+		page.on("request", (request) =>
+			request
+				.continue(
+					new URL(request.url()).origin === plan.origin
+						? {
+								headers: {
+									...request.headers(),
+									traceparent: `00-${requestTraceId}-${randomBytes(8).toString("hex")}-01`,
+								},
+							}
+						: {},
+				)
+				.catch(() => {}),
+		);
 		await page.evaluateOnNewDocument(() => {
 			window.__z8Baseline = { lcp: null, inp: null };
 			for (const type of ["largest-contentful-paint", "event"]) {
@@ -798,10 +836,12 @@ async function measure(
 				timeout: plan.timeoutMs ?? 30000,
 			});
 		const link = async (selector) => {
-			await page.click(
+			await clickVisible(
+				page,
 				selector
 					.replaceAll("{locale}", condition.locale)
 					.replaceAll("{employee}", bindings.employee),
+				plan.timeoutMs ?? 30000,
 			);
 			await page.waitForFunction(
 				(expected) => location.pathname + location.search === expected,
@@ -822,6 +862,7 @@ async function measure(
 			await ready();
 		}
 		if (mode === "repeat-link" || mode === "return-visit") {
+			stage = "prepare-away-navigation";
 			await page.goto(
 				new URL(
 					(route.awayPath ?? plan.awayPath).replaceAll(
@@ -838,11 +879,12 @@ async function measure(
 				bindings,
 				plan.timeoutMs ?? 30000,
 			);
-			await page.waitForSelector(
+			await waitVisible(
+				page,
 				route.link
 					.replaceAll("{locale}", condition.locale)
 					.replaceAll("{employee}", bindings.employee),
-				{ timeout: plan.timeoutMs ?? 30000 },
+				plan.timeoutMs ?? 30000,
 			);
 		}
 		client = await page.createCDPSession();
@@ -882,21 +924,7 @@ async function measure(
 				sample.failedRequests++;
 			}
 		});
-		await page.setRequestInterception(true);
-		page.on("request", (request) =>
-			request
-				.continue(
-					new URL(request.url()).origin === plan.origin
-						? {
-								headers: {
-									...request.headers(),
-									traceparent: `00-${requestTraceId}-${randomBytes(8).toString("hex")}-01`,
-								},
-							}
-						: {},
-				)
-				.catch(() => {}),
-		);
+		requestTraceId = traceId;
 		const start = performance.now();
 		measurementStart = start;
 		stage = "navigate";
@@ -987,6 +1015,11 @@ async function measure(
 			await ready();
 		}
 		sample.usableContentMs = performance.now() - start;
+		sample.notificationPermission = await page.evaluate(
+			() => Notification.permission,
+		);
+		if (sample.notificationPermission !== "denied")
+			fail("Fixture notification permission was not denied.");
 		sample.clockReadyMs = await clock;
 		const native = await page.evaluate(() => window.__z8Baseline);
 		if (mode === "first-document")
@@ -1004,15 +1037,53 @@ async function measure(
 		sample.interactionMaxMs = native?.inp ?? null;
 	} catch (error) {
 		sample.failed = true;
+		sample.notificationPermission =
+			page && !page.isClosed()
+				? await page.evaluate(() => Notification.permission).catch(() => null)
+				: null;
 		sample.failureStage = stage;
+		sample.failureAction = error.fixtureAction ?? null;
+		sample.failureReadiness = error.fixtureReadiness ?? null;
+		sample.failureHeaderState = error.fixtureHeaderState ?? null;
+		sample.failureStep = error.fixtureStep ?? null;
 		sample.failureKind =
 			error?.name === "TimeoutError" ? "timeout" : "journey-error";
 		sample.elapsedUntilFailureMs =
 			measurementStart === undefined
-				? null
+				? performance.now() - attemptStart
 				: performance.now() - measurementStart;
+		if (measurementStart === undefined) {
+			sample.censored = true;
+			sample.resourceScope = "prerequisite-failure";
+			sample.backendTraceId = prerequisiteTraceId;
+			sample.notApplicableBrowserMetrics = [
+				"usableContentMs",
+				"clockReadyMs",
+				"lcpMs",
+				"interactionMaxMs",
+				"requests",
+				"failedRequests",
+				"requestDurationMs",
+				"javascriptBytes",
+				"inlineRscDecodedBytes",
+				"rscBytes",
+				"totalBytes",
+				"browserCacheHits",
+			];
+			for (const name of [
+				"requests",
+				"failedRequests",
+				"requestDurationMs",
+				"javascriptBytes",
+				"inlineRscDecodedBytes",
+				"rscBytes",
+				"totalBytes",
+				"browserCacheHits",
+			])
+				sample[name] = null;
+		}
 	} finally {
-		if (client && page && !page.isClosed()) {
+		if (client && page && !page.isClosed() && measurementStart !== undefined) {
 			sample.resourceWindowComplete = pendingRequests.size === 0;
 			sample.resourcePendingRequests = pendingRequests.size;
 			sample.pendingRequestsByType = {};
@@ -1042,8 +1113,8 @@ async function measure(
 				measurementStart === undefined
 					? null
 					: performance.now() - measurementStart;
-			await client.detach().catch(() => {});
 		}
+		await client?.detach().catch(() => {});
 		requestTraceId = randomBytes(16).toString("hex");
 		if (mutationStarted) {
 			try {

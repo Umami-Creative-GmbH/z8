@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
 	getClockVehicleUseContext: vi.fn(),
+	getClockVehicleUseStatus: vi.fn(),
 	changeLiveVehicleUse: vi.fn(),
 	checkVehicleUseWarnings: vi.fn(),
 	toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn() },
@@ -16,6 +17,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("next-intl", () => ({ useLocale: () => "en" }));
 vi.mock("@/app/[locale]/(app)/time-tracking/actions/clock-vehicle-use", () => ({
 	getClockVehicleUseContext: mocks.getClockVehicleUseContext,
+	getClockVehicleUseStatus: mocks.getClockVehicleUseStatus,
 	changeLiveVehicleUse: mocks.changeLiveVehicleUse,
 }));
 vi.mock("@/app/[locale]/(app)/time-tracking/actions/vehicle-use-warnings", () => ({
@@ -29,6 +31,13 @@ import {
 	ClockOutVehicleUse,
 	useClockVehicleUse,
 } from "./clock-vehicle-use";
+
+vi.mock("@/lib/auth-client", () => ({
+	useSession: () => ({
+		data: { user: { id: "user-a" }, session: { activeOrganizationId: "org-a" } },
+		isPending: false,
+	}),
+}));
 
 const t = ((_key: string, fallback: string, params?: Record<string, unknown>) =>
 	fallback.replace(/\{(\w+)\}/g, (_match, name: string) => String(params?.[name] ?? ""))) as never;
@@ -88,6 +97,12 @@ const sent = () => JSON.parse(screen.getByTestId("sent").textContent ?? "{}");
 describe("vehicle use at the web clock (#1122)", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		mocks.getClockVehicleUseStatus.mockImplementation(async () => {
+			const result = await mocks.getClockVehicleUseContext();
+			return result.success
+				? { success: true, data: { mode: result.data.mode, live: result.data.live } }
+				: result;
+		});
 		mocks.checkVehicleUseWarnings.mockResolvedValue({ success: true, data: { warnings: [] } });
 	});
 	afterEach(cleanup);

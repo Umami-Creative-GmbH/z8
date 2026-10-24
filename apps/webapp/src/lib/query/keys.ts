@@ -254,7 +254,7 @@ export const queryKeys = {
 		detailFor: (userId: Id, orgId: Id, employeeId: string) =>
 			["employees", "detail", employeeId, userId, orgId] as const,
 		referencePolicies: (userId: Id, orgId: Id) =>
-			["employees", orgId, "work-policies", userId] as const,
+			["work-policies", "list", orgId, "employee-choices", userId] as const,
 		managerChoices: (userId: Id, orgId: Id, employeeId: string) =>
 			["employees", orgId, "manager-choices", userId, employeeId] as const,
 		detail: (employeeId: string) => ["employees", "detail", employeeId] as const,
@@ -370,7 +370,10 @@ export const queryKeys = {
 		 * pre-fill and the live work's vehicle use. Under `status`, so every clock
 		 * status refresh also refreshes it.
 		 */
-		vehicleUse: () => ["time-clock", "status", "vehicle-use"] as const,
+		vehicleUse: (userId?: Id, organizationId?: Id) =>
+			["time-clock", "status", "vehicle-use", userId, organizationId] as const,
+		vehicleUseStatus: (userId?: Id, organizationId?: Id) =>
+			["time-clock", "status", "vehicle-use-operational", userId, organizationId] as const,
 	},
 
 	// Position stamps on a work period's detail (#831); never the positions themselves
@@ -422,13 +425,7 @@ export const queryKeys = {
 				: (["notifications", "list", options] as const),
 		unreadCount: (organizationId?: string | null, userId?: string | null) =>
 			userId !== undefined
-				? ([
-						"notifications",
-						"inbox",
-						userId,
-						organizationId,
-						"unread-count",
-					] as const)
+				? (["notifications", "inbox", userId, organizationId, "unread-count"] as const)
 				: organizationId
 					? (["notifications", "unread-count", organizationId] as const)
 					: (["notifications", "unread-count"] as const),
@@ -541,7 +538,7 @@ export const queryKeys = {
 		list: <T extends object>(orgId: string, params?: T) =>
 			["projects", "list", orgId, params] as const,
 		detail: (projectId: string) => ["projects", "detail", projectId] as const,
-		assignable: (orgId: string) => ["projects", "assignable", orgId] as const,
+		assignable: (orgId: string, userId?: Id) => ["projects", "assignable", orgId, userId] as const,
 		teamSelection: (orgId: string) => ["projects", "teamSelection", orgId] as const,
 		employeeSelection: (orgId: string) => ["projects", "employeeSelection", orgId] as const,
 		tasks: (projectId: string) => ["projects", "tasks", projectId] as const,
@@ -706,7 +703,8 @@ export const queryKeys = {
 		// Org-level categories list
 		orgList: (orgId: string) => ["work-categories", "org", orgId] as const,
 		// Categories available to an employee (resolved through assignment hierarchy)
-		available: (employeeId: string) => ["work-categories", "available", employeeId] as const,
+		available: (employeeId: string, organizationId?: Id, userId?: Id) =>
+			["work-categories", "available", employeeId, organizationId, userId] as const,
 	},
 
 	// Work category set assignments (org/team/employee)

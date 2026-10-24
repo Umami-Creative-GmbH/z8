@@ -156,11 +156,11 @@ export function useEmployee(options: UseEmployeeOptions) {
 		retry: false,
 	});
 	const managersQuery = useQuery({
-		queryKey: queryKeys.employees.managerChoices(
+		queryKey: [...queryKeys.employees.managerChoices(
 			userId,
 			organizationId,
 			employeeId,
-		),
+		), accessTier],
 		queryFn: async ({ signal }) => {
 			if (!scope) throw new ApiError("Employee context is unavailable", 401);
 			return (
@@ -169,6 +169,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 		},
 		enabled: canLoadEmployeeDetails && accessTier === "orgAdmin",
 		staleTime: 60_000,
+		refetchOnMount: "always",
 		retry: false,
 	});
 
@@ -198,6 +199,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 		},
 		enabled: canLoadEmployee && !isDraft,
 		staleTime: 60_000,
+		refetchOnMount: "always",
 		retry: false,
 	});
 	const invalidateDetail = () =>
@@ -303,7 +305,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 					organizationId,
 					employeeId,
 				),
-				exact: true,
+				exact: false,
 			}),
 			queryClient.invalidateQueries({
 				queryKey: queryKeys.employees.referencePolicies(userId, organizationId),
@@ -327,7 +329,7 @@ export function useEmployee(options: UseEmployeeOptions) {
 				? (scheduleQuery.data ?? null)
 				: null,
 		availableManagers:
-			canLoadEmployeeDetails && !managersQuery.isError
+			canLoadEmployeeDetails && accessTier === "orgAdmin" && !managersQuery.isError
 				? (managersQuery.data ?? [])
 				: [],
 		employmentHistory:
