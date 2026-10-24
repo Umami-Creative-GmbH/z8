@@ -168,4 +168,27 @@ describe("follow-up schemas", () => {
 		).toBe(false);
 		expect(assignDepartureReplacementSchema.safeParse(stage).success).toBe(false);
 	});
+
+	it("accepts a deactivation's follow-up as the anchor, but never both anchors (#1440)", () => {
+		const target = { handoverTaskId: uuid, replacementEmployeeId: uuid, requestId: uuid };
+		expect(
+			assignDepartureReplacementSchema.safeParse({ ...target, deactivationId: uuid }).success,
+		).toBe(true);
+		const { handoverTaskId: _task, ...review } = target;
+		expect(
+			assignDepartureReplacementSchema.safeParse({
+				...review,
+				reviewId: uuid,
+				deactivationId: uuid,
+			}).success,
+		).toBe(true);
+		expect(
+			assignDepartureReplacementSchema.safeParse({
+				...target,
+				deactivationId: uuid,
+				departureId: uuid,
+			}).success,
+		).toBe(false);
+		expect(assignDepartureReplacementSchema.safeParse(target).success).toBe(false);
+	});
 });

@@ -3,7 +3,7 @@
 import { readFileSync } from "node:fs";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type React from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { EmployeeWithRelations } from "./actions";
@@ -18,6 +18,7 @@ vi.mock("@tolgee/react", () => ({
 				values?.[name] === undefined ? match : String(values[name]),
 			),
 	}),
+	useTolgee: () => ({ getLanguage: () => "en" }),
 }));
 
 vi.mock("@/components/user-avatar", () => ({
@@ -60,7 +61,29 @@ vi.mock("@/navigation", () => ({
 
 vi.mock("./actions", async (importOriginal) => ({
 	...(await importOriginal<typeof import("./actions")>()),
-	deactivateEmployee: vi.fn(),
+	deactivateEmployee: vi.fn(async () => ({ success: true, data: undefined })),
+	// Deactivate previews its consequences first (#1440).
+	previewEmployeeDeactivation: vi.fn(async () => ({
+		success: true,
+		data: {
+			at: "2026-10-24T08:00:00Z",
+			timeZone: "Europe/Berlin",
+			managerLinks: {
+				reportsNeedingReplacement: [],
+				reportsKeepingAnotherManager: [],
+				ownManagerLinks: [],
+				replacementOptions: [],
+			},
+			teamLinks: { teams: [], projectAssignments: [], projectManagerLinks: [] },
+			approvalDuties: { handovers: [], reviews: [] },
+			shifts: { shiftsToOpen: [], plannerRecipientUserIds: [] },
+			absences: { absencesToCancel: [], absencesSpanning: [] },
+			accessEnds: { grants: [], drivingAuthorizations: [], kioskBadges: [], shareLinks: [] },
+			retentionStarts: true,
+			seatReleased: true,
+			refusals: [],
+		},
+	})),
 	reactivateEmployee: vi.fn(),
 	removeEmployeeAccess: vi.fn(),
 }));
@@ -410,9 +433,12 @@ describe("employee directory columns", () => {
 		fireEvent.click(
 			await screen.findByRole("menuitem", { name: "Deactivate" }),
 		);
-		fireEvent.click(await screen.findByRole("button", { name: "Deactivate" }));
+		const dialog = await screen.findByRole("dialog");
+		const confirm = within(dialog).getByRole("button", { name: "Deactivate" });
+		await waitFor(() => expect(confirm.hasAttribute("disabled")).toBe(false));
+		fireEvent.click(confirm);
 
-		expect(onOptimisticStatusChange).toHaveBeenCalledWith("emp_1", false);
+		await waitFor(() => expect(onOptimisticStatusChange).toHaveBeenCalledWith("emp_1", false));
 	});
 
 	it("offers draft as an employee status filter", () => {

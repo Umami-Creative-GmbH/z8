@@ -186,7 +186,10 @@ export type AccessEndsApplied = {
 // ---- composed (plan.ts / apply.ts / preview.ts) -----------------------------
 
 export type DeactivationPlan = {
+	/** The deactivation instant (ISO); the preview's is the moment it was computed. */
 	at: string;
+	/** The organization's IANA zone, for showing `at` and the plan's dates. */
+	timeZone: string;
 	managerLinks: ManagerLinksPlan;
 	teamLinks: TeamLinksPlan;
 	approvalDuties: ApprovalDutiesPlan;

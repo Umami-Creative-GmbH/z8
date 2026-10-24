@@ -25,10 +25,13 @@ function getGuidanceTranslationKey(
 
 export class EmployeeLifecycleActionError extends Error {
 	readonly guidanceTranslationKey: EmployeeLifecycleGuidanceTranslationKey | null;
+	/** The server's machine-readable refusal, e.g. `replacement_required` (#1440). */
+	readonly refusal: string | null;
 
 	constructor(result: Exclude<ServerActionResult<void>, { success: true }>) {
 		super("Employee lifecycle action failed");
 		this.name = "EmployeeLifecycleActionError";
 		this.guidanceTranslationKey = getGuidanceTranslationKey(result);
+		this.refusal = result.refusal ?? null;
 	}
 }

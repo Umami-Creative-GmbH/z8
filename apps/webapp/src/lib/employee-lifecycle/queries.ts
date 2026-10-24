@@ -6,10 +6,12 @@ import {
 	type Instant,
 	instantFromDate,
 } from "@/lib/datetime/temporal-core";
+import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
 import { isCanonicalUuid } from "@/lib/validations/canonical-uuid";
 import { departureCutoff } from "./cutoff";
 import { countDeputyAssignmentsNotEnded } from "./deputy-release";
 import { type DepartureBlockedReason, evaluateDepartureAuthority } from "./owner-invariant";
+import { readOpenDeactivation } from "./receipts";
 import { actorMayResolveDepartureWork } from "./reviews";
 import type {
 	DeparturePreviewException,
@@ -341,6 +343,33 @@ export async function getEmployeeOffboardingView(
 		});
 	}
 
+	// A deactivated employee without a departure: its follow-up shows where a departure's does (#1440).
+	let deactivation: EmployeeOffboardingView["deactivation"] = null;
+	if (!departure && !target.is_active) {
+		const open = await readOpenDeactivation(database, {
+			organizationId: input.organizationId,
+			employeeId: input.employeeId,
+		});
+		const deactivationFollowUp = open
+			? await getDeactivationFollowUp(database, {
+					organizationId: input.organizationId,
+					employeeId: input.employeeId,
+					deactivationId: open.id,
+				})
+			: null;
+		if (open && deactivationFollowUp) {
+			({ followUp, failedTasks, reviews } = deactivationFollowUp);
+			const zone = await database.execute<{ timezone: string | null }>(sql`
+				SELECT timezone FROM organization WHERE id = ${input.organizationId}
+			`);
+			deactivation = {
+				id: open.id,
+				deactivatedAt: open.deactivatedAt.toString(),
+				timezone: resolveOrganizationTimezone(zone.rows[0]?.timezone).timezone,
+			};
+		}
+	}
+
 	const authority = await evaluateDepartureAuthority(database, {
 		organizationId: input.organizationId,
 		targetUserId: target.user_id,
@@ -365,6 +394,7 @@ export async function getEmployeeOffboardingView(
 						blockedReason: departure.blockedReason,
 					}
 				: null,
+			deactivation,
 			previousEmploymentPeriodId: derived.previousEmploymentPeriodId,
 			membershipApproved: target.membership_approved,
 			followUp,

@@ -105,19 +105,30 @@ When an employee leaves:
     Open the row's actions menu, or the employee's profile, and choose **Deactivate**
   </Step>
   <Step>
+    Review what changes. If someone they manage would be left without a manager, choose a new manager for them (a current admin or manager)
+  </Step>
+  <Step>
     Confirm
   </Step>
 </Steps>
 
 Only owners and admins can deactivate, and the employee's details form doesn't change whether someone is active.
 
+Before you confirm, the dialog lists everything the deactivation changes. Z8 checks it again when you confirm: if a new manager you chose can no longer manage the report, the dialog says so and you can choose someone else. Confirming twice, for example after a lost connection, never deactivates twice.
+
 <Callout type="warn" title="What happens when deactivated">
-- Employee loses system access
-- Cannot submit new requests
+- Employee loses system access and is signed out
 - They become a **former employee**: they no longer appear where Z8 shows who works here now, and are shown as *Former since* the day you deactivated them
+- **Managers**: the people they managed keep their other manager, or get the new manager you chose. Their own manager links end
+- **Teams and projects**: they leave their teams, their own project assignments and their project manager roles
+- **Approvals**: requests waiting for their decision move to the new manager you chose for that person, or to the next approver the workflow finds. Anything that can't move appears on their employee page under *Needs review*
+- **Shifts**: upcoming shifts become open shifts, and their manager gets one notice. Past shifts and a shift already running stay
+- **Absences**: pending and approved absences after their last day are cancelled, which frees the allowance. An absence running over their last day stays. They stop covering other people's absences as deputy
+- **Access**: expense officer, payroll access, personnel file officer and driving licence verifier roles end, driving authorizations end, kiosk badges and their report share links stop working
+- Personnel file retention counts from the day you deactivated them
 - They stop counting as a paid seat
 - Historical data remains intact
-- Can be reactivated later if needed; **Reactivate** counts them as a seat again
+- Can be reactivated later if needed; **Reactivate** counts them as a seat again, but restores none of the above
 </Callout>
 
 ### Current and former employees

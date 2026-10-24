@@ -45,6 +45,17 @@ export interface EmployeeOffboardingView {
 		replacementEmployeeId: string | null;
 		blockedReason: string | null;
 	};
+	/**
+	 * The employee's open deactivation (#1440), shown when no departure is: its
+	 * follow-up (handovers, reviews) is listed and resolved like a departure's.
+	 */
+	deactivation: null | {
+		id: string;
+		/** ISO instant. */
+		deactivatedAt: string;
+		/** The organization's zone; format the instant in it. */
+		timezone: string;
+	};
 	/** The period an effective departure ended, required to confirm a rehire. */
 	previousEmploymentPeriodId: string | null;
 	/** Rehire needs approved membership; otherwise re-invite first. */

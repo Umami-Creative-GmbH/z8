@@ -2,7 +2,7 @@
 
 import { IconAlertTriangle, IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
-import { useTranslate } from "@tolgee/react";
+import { useTolgee, useTranslate } from "@tolgee/react";
 import { useEffect, useId, useRef } from "react";
 import { Alert } from "@/components/ui/alert";
 import { AlertDescription } from "@/components/ui/alert-description";
@@ -24,6 +24,8 @@ import {
 } from "@/components/ui/select";
 import { TFormControl, TFormItem, TFormLabel, TFormMessage } from "@/components/ui/tanstack-form";
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
+import { parseInstant } from "@/lib/datetime/temporal-core";
+import { formatInstant, localeDefaultTimeFormat } from "@/lib/datetime/temporal-format";
 import type {
 	DeactivationPlan,
 	ManagerLinksPlan,
@@ -63,6 +65,8 @@ type ReportNeedingReplacement = ManagerLinksPlan["reportsNeedingReplacement"][nu
  */
 export function DeactivationPreviewDialog(props: DeactivationPreviewDialogProps) {
 	const { t } = useTranslate();
+	const tolgee = useTolgee(["language"]);
+	const locale = tolgee.getLanguage() || "en";
 
 	return (
 		<Dialog
@@ -80,11 +84,21 @@ export function DeactivationPreviewDialog(props: DeactivationPreviewDialogProps)
 						})}
 					</DialogTitle>
 					<DialogDescription>
-						{t(
-							"settings.employees.lifecycle.deactivationPreview.description",
-							"{name} becomes a former employee now. Access to this organization ends, their sessions are signed out, and their history is kept. Review what else changes before you confirm.",
-							{ name: props.employeeName },
-						)}
+						{props.plan
+							? t(
+									"settings.employees.lifecycle.deactivationPreview.descriptionAt",
+									"{name} becomes a former employee when you confirm (previewed for {time}, {timeZone}). Access to this organization ends, their sessions are signed out, and their history is kept. Review what else changes before you confirm.",
+									{
+										name: props.employeeName,
+										time: formatPlanInstant(props.plan, locale),
+										timeZone: props.plan.timeZone,
+									},
+								)
+							: t(
+									"settings.employees.lifecycle.deactivationPreview.description",
+									"{name} becomes a former employee now. Access to this organization ends, their sessions are signed out, and their history is kept. Review what else changes before you confirm.",
+									{ name: props.employeeName },
+								)}
 					</DialogDescription>
 				</DialogHeader>
 				<DeactivationPreviewForm {...props} />
@@ -294,6 +308,50 @@ function DeactivationPreviewForm(props: DeactivationPreviewDialogProps) {
 					"The chosen manager can no longer manage {name}. Choose someone else.",
 					{ name: report.name },
 				);
+	}
+}
+
+/**
+ * Copy the parent shows in the dialog for its own failures: a preview that did
+ * not load, and the server's machine-readable refusals of the submit (#1440).
+ */
+export function useDeactivationDialogMessages() {
+	const { t } = useTranslate();
+	return {
+		loadError: t(
+			"settings.employees.lifecycle.deactivationPreview.loadError",
+			"The preview could not be loaded.",
+		),
+		/** Null for a refusal the dialog has no copy for. */
+		refusal(code: string | null): string | null {
+			switch (code) {
+				case "replacement_required":
+					return t(
+						"settings.employees.lifecycle.deactivationPreview.replacementRefused",
+						"A report still needs an eligible new manager. The preview was updated; check the choices and confirm again.",
+					);
+				case "request_conflict":
+					return t(
+						"settings.employees.lifecycle.deactivationPreview.requestConflict",
+						"This deactivation was already submitted with different choices. Check the preview and confirm again.",
+					);
+				default:
+					return null;
+			}
+		},
+	};
+}
+
+/** The previewed instant in the organization's zone, as date and time. */
+function formatPlanInstant(plan: DeactivationPlan, locale: string): string {
+	try {
+		return formatInstant(
+			parseInstant(plan.at),
+			{ locale, timezone: plan.timeZone, timeFormat: localeDefaultTimeFormat(locale) },
+			"dateTimeMedium",
+		);
+	} catch {
+		return plan.at;
 	}
 }
 

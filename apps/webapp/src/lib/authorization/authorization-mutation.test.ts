@@ -60,6 +60,22 @@ describe("protectAuthorizationMutation", () => {
 		]);
 	});
 
+	it("takes earlier-ranked locks of the writer before any protection (#1440)", async () => {
+		const { transaction, events } = fakeTransaction(() => ({}));
+
+		await protectAuthorizationMutation(transaction as never, {
+			organizationId: "org-1",
+			organizationWide: true,
+			userIds: ["user-a"],
+			beforeProtection: async (tx) => {
+				expect(tx).toBe(transaction);
+				events.push("approval write gates");
+			},
+		});
+
+		expect(events).toEqual(["approval write gates", org("org-1"), user("user-a")]);
+	});
+
 	it("takes only user protection for a user-scoped mutation", async () => {
 		const { transaction, events } = fakeTransaction(() => ({}));
 
