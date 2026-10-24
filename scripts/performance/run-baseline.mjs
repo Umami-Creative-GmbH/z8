@@ -18,6 +18,10 @@ import {
 	prepareFixtureBrowserContext,
 	waitVisible,
 } from "./journey-steps.mjs";
+import {
+	createFixtureTraceTransport,
+	fixtureTraceTransport,
+} from "./trace-transport.mjs";
 
 const args = process.argv.slice(2);
 const option = (name) => args[args.indexOf(name) + 1];
@@ -485,6 +489,7 @@ async function main() {
 		runtime: {
 			mode: plan.runtime.mode,
 			collectorProtocol: plan.runtime.collectorProtocol ?? null,
+			traceTransport: plan.runtime.traceTransport ?? "page-interception-v1",
 			browserPermissions: fixtureBrowserPermissions,
 			build: plan.runtime.build,
 			sourceBuild: plan.runtime.sourceBuild ?? null,
@@ -732,7 +737,8 @@ async function measure(
 					traceIds: [traceId, prerequisiteTraceId, backgroundTraceId],
 				})
 			: null;
-	const context = await browser.createBrowserContext();
+	let context;
+	let transport;
 	const attemptStart = performance.now();
 	const sample = {
 		condition: condition.name,
@@ -788,6 +794,14 @@ async function measure(
 	let stage = "authentication-context";
 	let mutationStarted = false;
 	try {
+		if (plan.runtime.traceTransport === fixtureTraceTransport)
+			transport = await createFixtureTraceTransport({
+				origin: plan.origin,
+				getTraceId: () => requestTraceId,
+			});
+		context = await browser.createBrowserContext(
+			transport?.browserContextOptions,
+		);
 		await prepareFixtureBrowserContext(context, plan.origin);
 		if (!Array.isArray(auth[condition.name]?.cookies))
 			fail("Missing private fixture authentication.");
@@ -796,21 +810,23 @@ async function measure(
 		await page.setViewport(condition.viewport);
 		await page.emulateTimezone(condition.timezone);
 		await page.setExtraHTTPHeaders({ "Accept-Language": condition.locale });
-		await page.setRequestInterception(true);
-		page.on("request", (request) =>
-			request
-				.continue(
-					new URL(request.url()).origin === plan.origin
-						? {
-								headers: {
-									...request.headers(),
-									traceparent: `00-${requestTraceId}-${randomBytes(8).toString("hex")}-01`,
-								},
-							}
-						: {},
-				)
-				.catch(() => {}),
-		);
+		if (!transport) {
+			await page.setRequestInterception(true);
+			page.on("request", (request) =>
+				request
+					.continue(
+						new URL(request.url()).origin === plan.origin
+							? {
+									headers: {
+										...request.headers(),
+										traceparent: `00-${requestTraceId}-${randomBytes(8).toString("hex")}-01`,
+									},
+								}
+							: {},
+					)
+					.catch(() => {}),
+			);
+		}
 		await page.evaluateOnNewDocument(() => {
 			window.__z8Baseline = { lcp: null, inp: null };
 			for (const type of ["largest-contentful-paint", "event"]) {
@@ -1233,7 +1249,7 @@ async function measure(
 						: performance.now() - measurementStart;
 			}
 		}
-		await context.close();
+		await context?.close();
 		if (observerVisit) {
 			try {
 				const observation = await endCollectorVisit(observerVisit);
@@ -1256,6 +1272,13 @@ async function measure(
 				sample.failureStage = "native-coverage";
 				sample.failureKind = "observation-incomplete";
 			}
+		}
+		if (transport) {
+			sample.traceTransport = {
+				kind: fixtureTraceTransport,
+				...transport.snapshot(),
+			};
+			await transport.close();
 		}
 	}
 	return sample;
