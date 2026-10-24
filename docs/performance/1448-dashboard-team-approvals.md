@@ -78,9 +78,8 @@ baseline inheritance, not inheritance from the whole spec's original baseline.
 The parent must resolve the scan before completing #1448; this ticket does not
 widen or bypass its safety limits. No approval writer moved or changed here.
 
-Final focused checks: 26 unit files / 147 tests passed; the three PostgreSQL
-suites passed (with the active-organization action case added to final validation).
-All typecheck projects passed before integration merge. Changed-source Biome
-checks pass; the two untouched legacy Luxon min/max warnings in `actions.ts`
-remain. React Doctor against the #1457 integration base reports 93/100 with no new
-issues. Final post-merge results are recorded in the implementer handoff.
+Final checks after merging integration `88fa39d35`: 26 unit files / 147 tests
+passed; three PostgreSQL suites / 29 cases passed. All typecheck projects passed.
+Changed-source Biome checks pass; the two untouched legacy Luxon min/max warnings
+in `actions.ts` remain. React Doctor against the #1457 integration base reports
+93/100 with no new issues. No production build was run for this ticket.

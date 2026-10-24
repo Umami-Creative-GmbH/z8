@@ -128,7 +128,9 @@ export function RecentlyApprovedWidget({
 						refreshing={refreshing}
 					/>
 				) : !requests?.length ? (
-					<p>{t("dashboard.recently-approved.empty", "No recently approved requests")}</p>
+					<p role="status">
+						{t("dashboard.recently-approved.empty", "No recently approved requests")}
+					</p>
 				) : (
 					<div className="space-y-3">
 						{/* Success Summary */}

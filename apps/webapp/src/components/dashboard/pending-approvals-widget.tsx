@@ -150,7 +150,7 @@ export function PendingApprovalsWidget({
 							refreshing={refreshing}
 						/>
 					) : totalPending === 0 ? (
-						<p>{t("dashboard.pending-approvals.empty", "No pending approvals")}</p>
+						<p role="status">{t("dashboard.pending-approvals.empty", "No pending approvals")}</p>
 					) : (
 						<>
 							{/* Urgency Banner */}
