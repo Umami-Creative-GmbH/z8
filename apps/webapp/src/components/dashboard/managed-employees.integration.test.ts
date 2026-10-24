@@ -1,5 +1,13 @@
 import { randomUUID } from "node:crypto";
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	afterAll,
+	beforeAll,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	vi,
+} from "vitest";
 import {
 	createLifecycleDatabaseFixture,
 	type LifecycleDatabaseFixture,
@@ -10,7 +18,9 @@ const harness = vi.hoisted(() => ({
 	organizationId: null as string | null,
 }));
 
-vi.mock("next/headers", async () => (await import("@/test/integration-harness")).nextHeaders());
+vi.mock("next/headers", async () =>
+	(await import("@/test/integration-harness")).nextHeaders(),
+);
 
 vi.mock("next/server", async (importOriginal) =>
 	(await import("@/test/integration-harness")).nextServer(importOriginal),
@@ -45,7 +55,9 @@ vi.mock("@/lib/billing/guard", async () =>
 const { getManagedEmployees } = await import("./actions");
 const { readDashboardWidget } = await import("./dashboard-reads");
 const { runtime } = await import("@/lib/effect/runtime");
-const { ManagerService } = await import("@/lib/effect/services/manager.service");
+const { ManagerService } = await import(
+	"@/lib/effect/services/manager.service"
+);
 
 /** A departure cutoff in the past, so that a pending departure is due (#1438). */
 const PAST_CUTOFF = "2026-09-15T00:00:00Z";
@@ -87,7 +99,8 @@ describe("Your team lists only the caller's reports in the active organization (
 		await setRole(managerInB, "manager");
 
 		reportInA = (await fixture.seedEmployee()).employeeId;
-		reportInB = (await fixture.seedEmployee({ organizationId: organizationB })).employeeId;
+		reportInB = (await fixture.seedEmployee({ organizationId: organizationB }))
+			.employeeId;
 
 		const otherManager = await fixture.seedEmployee();
 		otherManagerUserId = otherManager.userId;
@@ -111,19 +124,24 @@ describe("Your team lists only the caller's reports in the active organization (
 
 		// Former employees (#1438): a deactivated report, a report whose departure
 		// is due, and a deactivated manager whose current report stays linked.
-		deactivatedReportInA = (await fixture.seedEmployee({ isActive: false })).employeeId;
+		deactivatedReportInA = (await fixture.seedEmployee({ isActive: false }))
+			.employeeId;
 		const departed = await fixture.seedEmployee();
 		departedReportInA = departed.employeeId;
 		await dueDeparture(departed);
 		await link(deactivatedReportInA, managerInA);
 		await link(departedReportInA, managerInA);
-		formerManagerInA = (await fixture.seedEmployee({ isActive: false })).employeeId;
+		formerManagerInA = (await fixture.seedEmployee({ isActive: false }))
+			.employeeId;
 		await setRole(formerManagerInA, "manager");
 		reportOfFormerManagerInA = (await fixture.seedEmployee()).employeeId;
 		await link(reportOfFormerManagerInA, formerManagerInA);
 	});
 
-	async function dueDeparture(target: { employeeId: string; employmentPeriodId: string }) {
+	async function dueDeparture(target: {
+		employeeId: string;
+		employmentPeriodId: string;
+	}) {
 		await fixture.pool.query(
 			`insert into employee_departure
 			 (organization_id, employee_id, employment_period_id, mode, last_working_day, timezone,
@@ -175,8 +193,14 @@ describe("Your team lists only the caller's reports in the active organization (
 		return employeeId;
 	}
 
-	async function setRole(employeeId: string, role: "manager" | "admin" | "employee") {
-		await fixture.pool.query(`update employee set role = $1 where id = $2`, [role, employeeId]);
+	async function setRole(
+		employeeId: string,
+		role: "manager" | "admin" | "employee",
+	) {
+		await fixture.pool.query(`update employee set role = $1 where id = $2`, [
+			role,
+			employeeId,
+		]);
 	}
 
 	async function link(employeeId: string, managerId: string) {
@@ -198,10 +222,16 @@ describe("Your team lists only the caller's reports in the active organization (
 		const snapshot = await readDashboardWidget("managed-employees", {
 			userId: managerUserId,
 			organizationId: organizationA,
-			employee: { id: managerInA, organizationId: organizationA, role: "manager" },
+			employee: {
+				id: managerInA,
+				organizationId: organizationA,
+				role: "manager",
+			},
 		});
 		if (!snapshot.result.success) throw new Error(snapshot.result.error);
-		expect(snapshot.result.data?.employees.map((employee) => employee.id)).toEqual([reportInA]);
+		expect(
+			snapshot.result.data?.employees.map((employee) => employee.id),
+		).toEqual([reportInA]);
 		expect(await Response.json(snapshot).json()).toEqual(snapshot);
 	});
 
@@ -221,10 +251,16 @@ describe("Your team lists only the caller's reports in the active organization (
 	});
 
 	it("ignores a forged manager id and lists only the caller's own reports", async () => {
-		for (const forged of [otherManagerInA, managerInB, { managerId: otherManagerInA }]) {
+		for (const forged of [
+			otherManagerInA,
+			managerInB,
+			{ managerId: otherManagerInA },
+		]) {
 			const result = await callWithForgedArguments(forged);
 			if (!result.success) throw new Error(String(result.error));
-			expect(result.data.employees.map((employee) => employee.id)).toEqual([reportInA]);
+			expect(result.data.employees.map((employee) => employee.id)).toEqual([
+				reportInA,
+			]);
 		}
 	});
 
@@ -233,11 +269,33 @@ describe("Your team lists only the caller's reports in the active organization (
 
 		const data = await load();
 
-		expect(data.employees.map((employee) => employee.id)).toEqual([otherReportInA]);
+		expect(data.employees.map((employee) => employee.id)).toEqual([
+			otherReportInA,
+		]);
 	});
 
-	it("returns nothing to a caller without an employee in the active organization", async () => {
-		const outsider = await fixture.seedEmployee({ organizationId: organizationB });
+	it("denies an outsider without approved membership in the active organization", async () => {
+		const outsider = await fixture.seedEmployee({
+			organizationId: organizationB,
+		});
+		harness.userId = outsider.userId;
+		harness.organizationId = organizationA;
+
+		expect(await getManagedEmployees()).toMatchObject({
+			success: false,
+			code: "AuthorizationError",
+		});
+	});
+
+	it("keeps empty state for an approved member-only admin without an employee in the active organization", async () => {
+		const outsider = await fixture.seedEmployee({
+			organizationId: organizationB,
+		});
+		await fixture.pool.query(
+			`insert into member (id, organization_id, user_id, role, status, created_at)
+			 values ($1, $2, $3, 'admin', 'approved', now())`,
+			[randomUUID(), organizationA, outsider.userId],
+		);
 		harness.userId = outsider.userId;
 		harness.organizationId = organizationA;
 
@@ -269,22 +327,28 @@ describe("Your team lists only the caller's reports in the active organization (
 	});
 
 	it("lists no reports for a manager who is a former employee (#1438)", async () => {
-		expect(await serviceReports(formerManagerInA, organizationA, "current")).toEqual([]);
+		expect(
+			await serviceReports(formerManagerInA, organizationA, "current"),
+		).toEqual([]);
 	});
 
 	it("keeps every link for manager authority, former employees included (#1438)", async () => {
 		expect(await serviceReports(managerInA, organizationA, "all")).toEqual(
 			[reportInA, deactivatedReportInA, departedReportInA].toSorted(),
 		);
-		expect(await serviceReports(formerManagerInA, organizationA, "all")).toEqual([
-			reportOfFormerManagerInA,
-		]);
+		expect(
+			await serviceReports(formerManagerInA, organizationA, "all"),
+		).toEqual([reportOfFormerManagerInA]);
 	});
 
 	it("keeps both roster readings inside the organization (#1438)", async () => {
-		expect(await serviceReports(managerInA, organizationB, "current")).toEqual([]);
+		expect(await serviceReports(managerInA, organizationB, "current")).toEqual(
+			[],
+		);
 		expect(await serviceReports(managerInA, organizationB, "all")).toEqual([]);
-		expect(await serviceReports(managerInB, organizationB, "current")).toEqual([reportInB]);
+		expect(await serviceReports(managerInB, organizationB, "current")).toEqual([
+			reportInB,
+		]);
 	});
 
 	it("returns only the fields the widget renders", async () => {

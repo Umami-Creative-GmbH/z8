@@ -213,3 +213,16 @@ entire required set: **975 cases pass across 38 files, zero failures or skips**.
 No production admission check, transaction protocol, assertion or policy mock was
 weakened. The test fixtures still use the approved request/session seam; real
 negative MFA/SSO and revoked/lifecycle admission tests remain separate.
+
+The remaining managed-team regression now separates an outsider with no approved
+membership (AuthorizationError) from an approved member-only administrator with
+employment only in another organization (the original empty manager state).
+Both real public-caller cases pass. The application code was unchanged.
+
+The first integrated index catalog assertion correctly failed because the shared
+disposable integration database had not applied migration 0284. Its owner applied
+only the pending committed migration through migrate-with-lock.js/Drizzle after
+checking the Docker label and exact loopback database. It independently verified
+one valid, ready, nonunique, nonpartial index. The original performance database
+was untouched. All 23 feature PostgreSQL suites are rerun against this prerequisite;
+the prior failure remains recorded and is not hidden as a skip.
