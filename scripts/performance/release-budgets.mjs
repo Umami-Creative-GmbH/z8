@@ -2,7 +2,11 @@
 import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { requireSettledEvidence } from "./settled-resources.mjs";
+import {
+  beforeFailurePolicy,
+  requireSettledEvidence,
+  settledWireEvidence,
+} from "./settled-resources.mjs";
 import {
   fixtureBrowserPolicy,
   fixtureTransportIsComplete,
@@ -28,7 +32,8 @@ const backendMetrics = [
   "eventLoopDelayMs",
 ];
 const policy = {
-  version: 1,
+  version: 2,
+  beforeResourceFailure: beforeFailurePolicy,
   latency: { multiplier: 1.25, allowance: 250, floor: 500 },
   bytes: { multiplier: 1.1, allowance: 16384, floor: 16384 },
   resources: {
@@ -796,10 +801,41 @@ function byteCensored(samples, metric) {
 function settledByteValue(sample, metric) {
   return metric === "inlineRscDecodedBytes"
     ? sample.inlineRscDecodedBytes
-    : sample.wireSettled.bytes[metric];
+    : settledWireEvidence(sample).bytes[metric];
+}
+function settledBehavior(samples, native = []) {
+  return {
+    failed: samples.filter((s) => s.failed).length,
+    censored: samples.filter((s) => s.censored).length,
+    usableContentP95: samples.some((s) => s.failed || s.censored)
+      ? null
+      : (statistics(samples.map((s) => s.readyMs))?.p95 ?? null),
+    resourceObservationBasis: samples.some((s) => s.failed)
+      ? beforeFailurePolicy.resourceClaim
+      : "complete observed traffic for successful behavior",
+    failures: samples
+      .filter((s) => s.failed)
+      .map((s) => ({
+        iteration: s.iteration,
+        stage: s.failureStage,
+        kind: s.failureKind,
+        elapsedUntilFailureMs: s.elapsedUntilFailureMs,
+        measurementStarted: s.measurementStarted,
+        prerequisiteComplete: s.prerequisiteComplete,
+        targetRangePrepared: s.targetRangePrepared,
+        cause: beforeFailurePolicy.cause,
+        proofSha256: beforeFailurePolicy.proofSha256,
+        observedQueryErrors: native.find((e) => e.traceId === s.traceId)
+          ?.observedQueryErrors,
+        observedPoolAcquisitionErrors: native.find(
+          (e) => e.traceId === s.traceId,
+        )?.observedPoolAcquisitionErrors,
+      })),
+  };
 }
 function deriveSettled(artifact, bytes, nativeBytes) {
-  const keys = [...new Set(artifact.samples.map(key))];
+  const keys = [...new Set(artifact.samples.map(key))],
+    native = JSON.parse(nativeBytes);
   return {
     beforeArtifactSha256: sha(bytes),
     beforeBackendSha256: sha(nativeBytes),
@@ -821,6 +857,7 @@ function deriveSettled(artifact, bytes, nativeBytes) {
       return {
         key: cohort,
         samples: samples.length,
+        beforeBehavior: settledBehavior(samples, native),
         metrics: Object.fromEntries(
           metrics.map((metric) => {
             const measured = p95(
@@ -872,18 +909,20 @@ function compareSettled(before, head, limits) {
     return {
       key: c.key,
       samples: samples.length,
+      beforeBehavior: c.beforeBehavior,
+      headBehavior: settledBehavior(samples),
       metrics,
       beforeBackground: old.map((s) => ({
         iteration: s.iteration,
-        prefetch: s.wireSettled.groups.prefetch,
-        longLived: s.wireSettled.groups.longLived,
-        byTrace: s.wireSettled.byTrace,
+        prefetch: settledWireEvidence(s).groups.prefetch,
+        longLived: settledWireEvidence(s).groups.longLived,
+        byTrace: settledWireEvidence(s).byTrace,
       })),
       headBackground: samples.map((s) => ({
         iteration: s.iteration,
-        prefetch: s.wireSettled.groups.prefetch,
-        longLived: s.wireSettled.groups.longLived,
-        byTrace: s.wireSettled.byTrace,
+        prefetch: settledWireEvidence(s).groups.prefetch,
+        longLived: settledWireEvidence(s).groups.longLived,
+        byTrace: settledWireEvidence(s).byTrace,
       })),
       cdpObservations: {
         scope:

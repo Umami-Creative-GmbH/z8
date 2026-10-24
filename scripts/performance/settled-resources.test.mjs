@@ -30,7 +30,7 @@ import {
   companionWireContract,
 } from "./settled-resources.mjs";
 
-test("native correlation, sample coverage and censored outcomes cannot finalize a resource budget", () => {
+test("resource eligibility distinguishes proven failed baseline behavior from missing coverage and failing head behavior", () => {
   const plan = {
     phase: "baseline",
     samples: 20,
@@ -68,6 +68,7 @@ test("native correlation, sample coverage and censored outcomes cannot finalize 
       iteration,
       traceId: `${mode}-${iteration}`,
       failed: false,
+      readyMs: 1000,
       traceTransport: {
         kind: "context-loopback-proxy-v1",
         requests: 4,
@@ -137,10 +138,96 @@ test("native correlation, sample coverage and censored outcomes cannot finalize 
   assert.doesNotThrow(() =>
     requireSettledEvidence(plan, artifact, native, "hash"),
   );
+  // The original annual pool saturation is failed behavior with observable traffic.
+  const annualPlan = structuredClone(plan),
+    failedBefore = structuredClone(artifact),
+    failedNative = structuredClone(native);
+  annualPlan.timeoutMs = 30000;
+  annualPlan.runtime.poolMax = 10;
+  annualPlan.runtime.build = "d5550e35c3bd9adf584e9731ade31d6420abf545";
+  annualPlan.runtime.sourceBuild = "39a08d0bbe77e00ceb5b204b9f9100ab2cfb86be";
+  Object.assign(failedBefore.runtime, annualPlan.runtime);
+  annualPlan.conditions[0].employees = 200;
+  annualPlan.ranges = [{ name: "year" }];
+  Object.assign(annualPlan.routes[0], {
+    name: "analytics",
+    result: "work-hours",
+    rangeRecipe: "fixture-2025",
+  });
+  for (const s of failedBefore.samples) {
+    s.range = "year";
+    s.route = "analytics";
+  }
+  const failed = failedBefore.samples[0];
+  Object.assign(failed, {
+    failed: true,
+    censored: true,
+    failureStage: "verify-expected-content",
+    failureKind: "timeout",
+    elapsedUntilFailureMs: 31000,
+    measurementStarted: true,
+    prerequisiteComplete: true,
+    targetRangePrepared: true,
+    readyMs: null,
+    wireFailureDrain: {
+      ...structuredClone(failed.wireSettled),
+      scope: "post-failed-journey-diagnostic",
+      usableContentClaim: false,
+    },
+    wireSettled: null,
+  });
+  failedNative[0].observedPoolAcquisitionErrors = 69;
+  failedNative[0].observedPoolAcquisitions = 70;
+  failedNative[0].observedQueryCount = 1;
+  assert.doesNotThrow(() =>
+    requireSettledEvidence(annualPlan, failedBefore, failedNative, "hash"),
+  );
+  assert.equal(failed.readyMs, null);
+  assert.equal(failed.failed, true);
+  for (const change of [
+    (p, a) => {
+      p.phase = "release";
+      a.phase = "release";
+    },
+    (_p, a) => (a.samples[0].prerequisiteComplete = false),
+    (_p, a) => (a.samples[0].measurementStarted = false),
+    (_p, a) => (a.samples[0].targetRangePrepared = false),
+    (_p, a) => (a.samples[0].failureStage = "prepare-range"),
+    (_p, a) => (a.samples[0].failureKind = "journey-error"),
+    (_p, a) => (a.samples[0].wireFailureDrain.capped = true),
+    (_p, a) => (a.samples[0].wireFailureDrain.mandatoryErrors = 1),
+    (_p, a) => (a.samples[0].wireFailureDrain.bytes.javascript = null),
+    (_p, a) =>
+      (a.samples[0].secondaryFailures = [{ failureStage: "collector-close" }]),
+    (_p, _a, n) => (n[0].observedQueryErrors = 1),
+    (_p, _a, n) => (n[0].observedPoolAcquisitionErrors = 0),
+    (_p, _a, n) => delete n[0].observedPoolAcquisitionErrors,
+    (_p, _a, n) => delete n[0].observedPoolAcquisitions,
+    (_p, _a, n) => n[0].observedPoolAcquisitions++,
+    (_p, a) => (a.samples[0].wireFailureDrain.postReadyMs = 10001),
+    (p) => (p.runtime.poolMax = 20),
+    (p, a) => {
+      p.runtime.build = "ddddddddd";
+      a.runtime.build = p.runtime.build;
+    },
+    (p, a) => {
+      p.runtime.sourceBuild = "eeeeeeeee";
+      a.runtime.sourceBuild = p.runtime.sourceBuild;
+    },
+    (_p, a) => (a.policy.beforeFailure.proofSha256 = "0".repeat(64)),
+  ]) {
+    const p = structuredClone(annualPlan),
+      a = structuredClone(failedBefore),
+      n = structuredClone(failedNative);
+    change(p, a, n);
+    assert.throws(() => requireSettledEvidence(p, a, n, "hash"));
+  }
   for (const change of [
     (a) => a.samples.pop(),
     (a) => (a.samples[0].wireSettled.capped = true),
     (a) => (a.samples[0].failed = true),
+    (a) => delete a.samples[0].failed,
+    (a) => delete a.samples[0].readyMs,
     (a) => (a.samples[0].wireSettled.bytes.javascript = null),
     (a) => (a.finalized = false),
     (a) => (a.samples[0].wireSettled = null),
