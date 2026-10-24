@@ -9,7 +9,100 @@ import {
 	FixtureNativeCoverage,
 	startFixtureNativeControl,
 } from "../../apps/webapp/src/lib/performance-fixture-native-coverage.ts";
+import * as observationModule from "./multi-instance-observation.mjs";
 import { beginMultiInstanceObservation } from "./multi-instance-observation.mjs";
+
+test("paired acceptance distinguishes zero-app-IO startup from a late escape and refuses broken arithmetic", () => {
+	const reasons = {
+		unexpectedLoopback: 0,
+		nonLoopbackHttp: 0,
+		loopbackConnect: 0,
+		nonLoopbackConnect: 3,
+		malformed: 0,
+	};
+	const startup = {
+		policy: "isolated-profile-no-prediction-v1",
+		launch: { policy: "isolated-profile-no-prediction-v1", headless: true },
+		emptyContext: true,
+		quietMs: 2000,
+		capMs: 10000,
+		quietObservedMs: 2010,
+		elapsedMs: 2500,
+		capped: false,
+		pending: 0,
+		complete: true,
+		requests: 0,
+		rewrittenRequests: 0,
+		responseBodyBytes: 0,
+		refusedRequests: 3,
+		upstreamFailures: 0,
+		refusalReasons: reasons,
+	};
+	const snapshot = {
+		requests: 2,
+		rewrittenRequests: 2,
+		responseBodyBytes: 33,
+		refusedRequests: 3,
+		upstreamFailures: 0,
+		refusalReasons: reasons,
+		browserInitialization: startup,
+		afterInitialization: {
+			requests: 2,
+			rewrittenRequests: 2,
+			responseBodyBytes: 33,
+			refusedRequests: 0,
+			upstreamFailures: 0,
+			refusalReasons: { ...reasons, nonLoopbackConnect: 0 },
+		},
+	};
+	assert.equal(
+		typeof observationModule.multiInstanceTransportComplete,
+		"function",
+	);
+	assert.equal(
+		observationModule.multiInstanceTransportComplete(snapshot),
+		true,
+	);
+	assert.equal(
+		observationModule.multiInstanceTransportComplete({
+			...snapshot,
+			responseBodyBytes: 34,
+		}),
+		false,
+	);
+	const escaped = structuredClone(snapshot);
+	escaped.refusedRequests = 4;
+	escaped.refusalReasons.nonLoopbackConnect = 4;
+	escaped.afterInitialization.refusedRequests = 1;
+	escaped.afterInitialization.refusalReasons.nonLoopbackConnect = 1;
+	assert.equal(
+		observationModule.multiInstanceTransportComplete(escaped),
+		false,
+	);
+	const appDuringInit = structuredClone(snapshot);
+	appDuringInit.browserInitialization.requests = 1;
+	assert.equal(
+		observationModule.multiInstanceTransportComplete(appDuringInit),
+		false,
+	);
+	const capped = structuredClone(snapshot);
+	capped.browserInitialization.capped = true;
+	assert.equal(observationModule.multiInstanceTransportComplete(capped), false);
+	const missingClock = structuredClone(snapshot);
+	delete missingClock.browserInitialization.quietObservedMs;
+	assert.equal(
+		observationModule.multiInstanceTransportComplete(missingClock),
+		false,
+	);
+	assert.equal(
+		observationModule.multiInstanceTransportComplete({
+			requests: 2,
+			refusedRequests: 0,
+			upstreamFailures: 0,
+		}),
+		false,
+	);
+});
 
 const pause = (ms) => new Promise((done) => setTimeout(done, ms));
 

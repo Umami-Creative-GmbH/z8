@@ -389,7 +389,7 @@ export async function runMultiInstanceStage(stage, directory, source) {
 					origin: fixture.origin,
 					browserContextId: context.id,
 				});
-				const page = await context.newPage();
+				const page = clockContext.page;
 				await page.setViewport({ width: 1280, height: 900 });
 				await page.emulateTimezone("Europe/Berlin");
 				let commandTrace,

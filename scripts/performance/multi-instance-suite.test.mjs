@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import test from "node:test";
@@ -15,6 +15,28 @@ const head = spawnSync("git", ["rev-parse", "HEAD"], {
 async function fixture(run) {
 	const directory = await mkdtemp(join(tmpdir(), "z8-multi-suite-"));
 	try {
+		for (const [name, port] of [
+			["a", 18101],
+			["b", 18102],
+		]) {
+			const observer = join(directory, `observer-${name}`);
+			await mkdir(observer);
+			await writeFile(
+				join(observer, "native-control-private.json"),
+				JSON.stringify({
+					protocol: "z8-fixture-native-observer-v2",
+					endpoint: `http://127.0.0.1:${port + 10}`,
+				}),
+			);
+			await writeFile(
+				join(observer, "collector-control.json"),
+				JSON.stringify({
+					kind: "z8-fixture-otlp-collector-v2",
+					endpoint: `http://127.0.0.1:${port}`,
+					observerControl: join(observer, "native-control-private.json"),
+				}),
+			);
+		}
 		await writeFile(
 			join(directory, "multi-private.json"),
 			JSON.stringify({

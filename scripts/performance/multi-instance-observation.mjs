@@ -10,6 +10,10 @@ import {
 	reconcileCollectorRun,
 } from "./collector-client.mjs";
 import {
+	fixtureBrowserPolicy,
+	initializeFixtureBrowserContext,
+} from "./fixture-browser.mjs";
+import {
 	createFixtureTraceTransport,
 	fixtureTraceTransport,
 } from "./trace-transport.mjs";
@@ -19,6 +23,81 @@ const check = (condition, message) => {
 	if (!condition) throw new Error(message);
 };
 export const multiInstanceObservationProtocol = "paired-native-observer-v2";
+
+/** Startup is retained, never subtracted without its exact empty-context proof. */
+export function multiInstanceTransportComplete(snapshot) {
+	const init = snapshot.browserInitialization,
+		after = snapshot.afterInitialization;
+	if (
+		!Number.isFinite(init?.quietObservedMs) ||
+		!Number.isFinite(init?.elapsedMs) ||
+		init.elapsedMs < init.quietObservedMs
+	)
+		return false;
+	if (
+		!init ||
+		!after ||
+		init.policy !== fixtureBrowserPolicy ||
+		init.launch?.policy !== fixtureBrowserPolicy ||
+		init.launch.headless !== true ||
+		init.complete !== true ||
+		init.capped !== false ||
+		init.emptyContext !== true ||
+		init.pending !== 0 ||
+		init.quietMs !== 2000 ||
+		init.capMs !== 10000 ||
+		init.quietObservedMs < 2000 ||
+		init.elapsedMs >= 10000 ||
+		init.requests !== 0 ||
+		init.rewrittenRequests !== 0 ||
+		init.responseBodyBytes !== 0 ||
+		init.upstreamFailures !== 0 ||
+		after.refusedRequests !== 0 ||
+		after.upstreamFailures !== 0
+	)
+		return false;
+	const keys = [
+		"requests",
+		"rewrittenRequests",
+		"refusedRequests",
+		"upstreamFailures",
+		"responseBodyBytes",
+	];
+	for (const key of keys)
+		if (
+			![snapshot[key], init[key], after[key]].every(
+				(value) => Number.isSafeInteger(value) && value >= 0,
+			) ||
+			snapshot[key] !== init[key] + after[key]
+		)
+			return false;
+	const reasons = [
+		"unexpectedLoopback",
+		"nonLoopbackHttp",
+		"loopbackConnect",
+		"nonLoopbackConnect",
+		"malformed",
+	];
+	for (const reason of reasons) {
+		const values = [
+			snapshot.refusalReasons?.[reason],
+			init.refusalReasons?.[reason],
+			after.refusalReasons?.[reason],
+		];
+		if (
+			!values.every((value) => Number.isSafeInteger(value) && value >= 0) ||
+			values[0] !== values[1] + values[2] ||
+			values[2] !== 0 ||
+			(reason !== "nonLoopbackConnect" && values[1] !== 0)
+		)
+			return false;
+	}
+	return [snapshot, init, after].every(
+		(row) =>
+			row.refusedRequests ===
+			reasons.reduce((sum, key) => sum + row.refusalReasons[key], 0),
+	);
+}
 
 export async function beginMultiInstanceObservation({
 	controls,
@@ -191,7 +270,8 @@ export async function beginMultiInstanceObservation({
 		const visit = await beginVisit(traceIds);
 		let current = traceIds[0],
 			context,
-			transport;
+			transport,
+			initialized;
 		try {
 			transport = await createFixtureTraceTransport({
 				origin,
@@ -206,14 +286,26 @@ export async function beginMultiInstanceObservation({
 			context = await browser.createBrowserContext(
 				transport.browserContextOptions,
 			);
+			initialized = await initializeFixtureBrowserContext({
+				context,
+				transport,
+			});
 		} catch (error) {
+			await context?.close().catch(() => {});
 			await transport?.close();
+			if (transport)
+				transports.push({
+					protocol: fixtureTraceTransport,
+					...transport.snapshot(),
+				});
 			await endVisit(visit);
 			throw error;
 		}
 		let closed = false;
 		return {
 			context,
+			page: initialized.page,
+			browserInitialization: initialized.browserInitialization,
 			traceIds,
 			transport,
 			background: () => {
@@ -226,9 +318,14 @@ export async function beginMultiInstanceObservation({
 					await context.close();
 					await endVisit(visit);
 				} finally {
-					const snapshot = transport.snapshot();
-					transports.push({ protocol: fixtureTraceTransport, ...snapshot });
-					await transport.close();
+					try {
+						await transport.close();
+					} finally {
+						transports.push({
+							protocol: fixtureTraceTransport,
+							...transport.snapshot(),
+						});
+					}
 				}
 			},
 		};
@@ -265,16 +362,12 @@ export async function beginMultiInstanceObservation({
 			visits: visits.length,
 			transport: fixtureTraceTransport,
 			transports,
-			transportComplete: transports.every(
-				(row) => row.refusedRequests === 0 && row.upstreamFailures === 0,
-			),
+			transportComplete: transports.every(multiInstanceTransportComplete),
 			complete:
 				activeVisits.size === 0 &&
 				replicas.a.complete &&
 				replicas.b.complete &&
-				transports.every(
-					(row) => row.refusedRequests === 0 && row.upstreamFailures === 0,
-				),
+				transports.every(multiInstanceTransportComplete),
 		};
 	}
 	return {

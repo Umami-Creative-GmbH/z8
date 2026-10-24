@@ -48,6 +48,18 @@ test("real local ingress releases useful Dashboard content and full header clock
 					),
 				);
 				assert.equal(evidence.nativePaintMeasured, false);
+				assert.equal(
+					evidence.nativeProof.protocol,
+					"paired-native-observer-v2",
+				);
+				assert.equal(evidence.nativeProof.complete, true);
+				assert.equal(evidence.nativeProof.transportComplete, true);
+				for (const proof of Object.values(evidence.nativeProof.replicas)) {
+					assert.equal(proof.complete, true);
+					assert.equal(proof.driverQueryCount, proof.nativeQueryStartedCount);
+					assert.equal(proof.driverQueryCount, proof.nativeQueryEndedCount);
+					assert.equal(proof.driverQueryCount, proof.observedQueryCount);
+				}
 			}
 		}
 		for (const scenario of ["signed-out", "mfa", "sso"]) {
@@ -65,6 +77,8 @@ test("real local ingress releases useful Dashboard content and full header clock
 			);
 			assert.equal(evidence.protectedContentEmitted, false);
 			assert.equal(evidence.clockStatusDenied, true);
+			assert.equal(evidence.nativeProof.complete, true);
+			assert.equal(evidence.nativeProof.transportComplete, true);
 		}
 	}
 });

@@ -5,6 +5,17 @@ topology, shared-hit result, distributed invalidation result or resource benefit
 has been inferred from example deployment files. The user authorized a local
 Docker fixture because production is unavailable.
 
+The subsequent shared browser-policy adapter is prepared and offline-tested, but
+has not rerun the failed fill. `observation.createContext` now performs the shared
+empty-context initialization before any cookies, permissions or app I/O and returns
+`page` plus `browserInitialization`. Cache and ingress consumers both use
+`launchFixtureBrowser` and that returned page. One common transport validator requires
+the exact recorded launch/quiet/cap/zero-app-I/O startup proof and exact
+total = startup + after counter arithmetic; every post-initialization refusal or
+upstream failure still fails. The old failed artifacts and `runtimeAccepted:false`
+remain unchanged. A fresh actual fill with strict whole-run proof is required
+before expanding runtime stages or making a cache-backend decision.
+
 The first final-artifact V2 fill run returned all 30 expected caller/scope
 observations. Native totals reconciled exactly on A (1,979 queries) and B (1,391),
 including all prerequisite/background work, with zero pending or active traces.

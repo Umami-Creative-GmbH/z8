@@ -4,6 +4,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
+import { launchFixtureBrowser } from "./fixture-browser.mjs";
 import { readMultiInstanceFixture } from "./multi-instance-fixture.mjs";
 import { beginMultiInstanceObservation } from "./multi-instance-observation.mjs";
 
@@ -32,12 +33,11 @@ export async function openMultiInstanceAnalytics(
 	if (!["a", "b"].includes(replica))
 		throw new Error("Choose a real fixture replica.");
 	const pathname = `/en/analytics/${{ team: "team-performance", work: "work-hours", overtime: "overtime-burn-down" }[kind]}`;
-	const browser = await puppeteer.launch({
-		executablePath:
-			process.env.Z8_FIXTURE_CHROME ||
+	const browser = await launchFixtureBrowser(
+		puppeteer,
+		process.env.Z8_FIXTURE_CHROME ||
 			"C:/Program Files/Google/Chrome/Application/chrome.exe",
-		headless: true,
-	});
+	);
 	const observedContext = await observation.createContext(
 		browser,
 		fixture.origin,
@@ -51,7 +51,7 @@ export async function openMultiInstanceAnalytics(
 		origin: fixture.origin,
 		browserContextId: context.id,
 	});
-	const page = await context.newPage();
+	const page = observedContext.page;
 	await page.setViewport({ width: 1280, height: 900 });
 	await page.emulateTimezone("Europe/Berlin");
 	let captured = capturedRequest;
