@@ -219,8 +219,9 @@ export async function revokePayrollAccessGrant(
 
 /**
  * Revokes the active grant the employee holds, if any, recording `auditMetadata` on the
- * audit entry. Offboarding (#750) calls it inside the departure's transaction. Grants
- * that only name the employee in their scope stay as they are.
+ * audit entry, and returns its id (null when they held none). Offboarding (#750) calls it
+ * inside the departure's transaction. Grants that only name the employee in their scope
+ * stay as they are.
  */
 export async function revokePayrollAccessGrantHeldBy(
 	tx: PayrollAccessTransaction,
@@ -230,7 +231,7 @@ export async function revokePayrollAccessGrantHeldBy(
 		payrollEmployeeId: string;
 		auditMetadata: Record<string, unknown>;
 	},
-): Promise<void> {
+): Promise<string | null> {
 	const { organizationId, actorUserId } = input;
 	const [grant] = await tx
 		.select({
@@ -248,9 +249,10 @@ export async function revokePayrollAccessGrantHeldBy(
 		)
 		.limit(1)
 		.for("update");
-	if (!grant) return;
+	if (!grant) return null;
 
 	await revokeLockedGrant(tx, { organizationId, actorUserId, grant, metadata: input.auditMetadata });
+	return grant.id;
 }
 
 async function revokeLockedGrant(

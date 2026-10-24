@@ -139,37 +139,42 @@ export async function applyAccessEnds(
 		{ trail: ctx.audit, metadata: deactivationAuditMetadata(ctx) },
 	);
 
-	const grantIds: string[] = [];
-	const ofKind = (kind: GrantKind) =>
-		plan.grants.filter((grant) => grant.kind === kind).map((grant) => grant.grantId);
+	// The ids each revocation actually ended (null: nothing was live any more).
+	const revoked: Array<string | null> = [];
 	if (planned.has("expense_officer")) {
-		await revokeExpenseOfficerGrantHeldBy(tx, {
-			organizationId: ctx.organizationId,
-			actorUserId: ctx.actorUserId,
-			officerEmployeeId: ctx.employeeId,
-			auditMetadata,
-		});
-		grantIds.push(...ofKind("expense_officer"));
+		revoked.push(
+			await revokeExpenseOfficerGrantHeldBy(tx, {
+				organizationId: ctx.organizationId,
+				actorUserId: ctx.actorUserId,
+				officerEmployeeId: ctx.employeeId,
+				auditMetadata,
+			}),
+		);
 	}
 	if (planned.has("payroll_access")) {
-		await revokePayrollAccessGrantHeldBy(tx, {
-			organizationId: ctx.organizationId,
-			actorUserId: ctx.actorUserId,
-			payrollEmployeeId: ctx.employeeId,
-			auditMetadata,
-		});
-		grantIds.push(...ofKind("payroll_access"));
+		revoked.push(
+			await revokePayrollAccessGrantHeldBy(tx, {
+				organizationId: ctx.organizationId,
+				actorUserId: ctx.actorUserId,
+				payrollEmployeeId: ctx.employeeId,
+				auditMetadata,
+			}),
+		);
 	}
 	if (planned.has("personnel_file_officer")) {
-		await revokePersonnelFileOfficerGrantHeldBy(tx, {
-			organizationId: ctx.organizationId,
-			actorUserId: ctx.actorUserId,
-			officerEmployeeId: ctx.employeeId,
-			auditMetadata,
-		});
-		grantIds.push(...ofKind("personnel_file_officer"));
+		revoked.push(
+			await revokePersonnelFileOfficerGrantHeldBy(tx, {
+				organizationId: ctx.organizationId,
+				actorUserId: ctx.actorUserId,
+				officerEmployeeId: ctx.employeeId,
+				auditMetadata,
+			}),
+		);
 	}
-	grantIds.push(...driving.revokedVerifierGrantIds);
+	const grantIds = [
+		...revoked.filter((id): id is string => id !== null),
+		...driving.revokedVerifierGrantIds,
+	];
 
 	const kioskBadgeIds =
 		plan.kioskBadges.length === 0
