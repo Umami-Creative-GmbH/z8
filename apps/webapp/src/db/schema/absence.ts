@@ -141,6 +141,12 @@ export const absenceEntry = pgTable(
 	},
 	(table) => [
 		index("absenceEntry_employeeId_idx").on(table.employeeId),
+		// #1474: employee-owned overlap reads, including legacy-null organizations.
+		index("absenceEntry_employeeId_endDate_startDate_idx").on(
+			table.employeeId,
+			table.endDate,
+			table.startDate,
+		),
 		index("absenceEntry_startDate_idx").on(table.startDate),
 		index("absenceEntry_status_idx").on(table.status),
 		index("absenceEntry_org_canonicalRecordId_idx").on(
