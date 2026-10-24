@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { createHash, randomBytes } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { readFileSync } from "node:fs";
 import { cpus, platform, release, totalmem } from "node:os";
 import { dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -40,13 +41,89 @@ export const companionWireContract = Object.freeze({
     "http-response-body-bytes-before-content-decoding-excludes-headers",
   traceTransport: "context-loopback-proxy-v1",
 });
+export const beforeFailurePolicy = Object.freeze({
+  version: 1,
+  amendedAt: "2026-10-24T20:20:23Z",
+  source:
+    "parent-authorized prospective amendment before controlled head capture",
+  proofSource: "f621a6013994c98bdafa79fc4a4ac84511eac25f",
+  proofPath:
+    "docs/performance/evidence/1450-telemetry-functional-diagnostics.json",
+  proofSha256:
+    "6903cf4254772858fec412bc2daa4dd0447a2b29cef937ef396ff2d7b69a669d",
+  proofHashEncoding: "sha256 of UTF-8 JSON.stringify(parsed public proof)",
+  cause:
+    "original annual DatabaseError from pool-acquire-timeout; pool10/10000ms; zero statement errors",
+  resourceClaim:
+    "complete observed traffic for FAILED baseline behavior; not successful-before-route cost",
+});
+const causeProof = JSON.parse(
+  readFileSync(
+    new URL(
+      "../../docs/performance/evidence/1450-telemetry-functional-diagnostics.json",
+      import.meta.url,
+    ),
+  ),
+);
+if (hash(JSON.stringify(causeProof)) !== beforeFailurePolicy.proofSha256)
+  throw Error(
+    "The fixed before failure cause proof changed; review a new prospective policy before capture.",
+  );
 export const companionPolicy = Object.freeze({
   ...settledPolicy,
-  version: 2,
+  version: 3,
   scope:
     "all finite page and ServiceWorker proxy response bodies from navigation start through post-readiness quiet; inherited, explicit prefetch and long-lived traffic counted separately",
   wire: companionWireContract,
+  beforeFailure: beforeFailurePolicy,
 });
+/** Select a resource observation without changing failed UI or its timing ledger. */
+export function settledWireEvidence(sample) {
+  return sample.failed ? sample.wireFailureDrain : sample.wireSettled;
+}
+function eligibleBeforeFailure(plan, sample, native) {
+  const route = plan.routes.find((r) => r.name === sample.route),
+    condition = plan.conditions.find((c) => c.name === sample.condition),
+    cause = causeProof.annualUnderlyingCause;
+  return (
+    plan.phase === "baseline" &&
+    sample.failed === true &&
+    sample.censored === true &&
+    plan.runtime.build === causeProof.originalBinarySource &&
+    plan.runtime.sourceBuild === causeProof.originalBusinessSource &&
+    sample.failureStage === "verify-expected-content" &&
+    sample.failureKind === "timeout" &&
+    sample.measurementStarted === true &&
+    sample.prerequisiteComplete === true &&
+    sample.targetRangePrepared === true &&
+    Number.isFinite(sample.elapsedUntilFailureMs) &&
+    sample.elapsedUntilFailureMs >= plan.timeoutMs &&
+    sample.readyMs === null &&
+    !sample.secondaryFailures?.length &&
+    sample.range === "year" &&
+    route?.name === "analytics" &&
+    route.result === "work-hours" &&
+    route.rangeRecipe === "fixture-2025" &&
+    condition?.role === "admin" &&
+    condition.employees === 200 &&
+    (route.expectedRowsByCondition?.[condition.name] ?? condition.employees) ===
+      200 &&
+    plan.runtime.poolMax === 10 &&
+    plan.timeoutMs === 30000 &&
+    cause.underlyingKind === "pool-acquire-timeout" &&
+    cause.originalConnectionTimeoutMs === 10000 &&
+    sample.wireFailureDrain?.scope === "post-failed-journey-diagnostic" &&
+    sample.wireFailureDrain.usableContentClaim === false &&
+    native?.observedQueryErrors === 0 &&
+    Number.isSafeInteger(native.observedPoolAcquisitionErrors) &&
+    native.observedPoolAcquisitionErrors > 0 &&
+    Number.isSafeInteger(native.observedPoolAcquisitions) &&
+    Number.isSafeInteger(native.observedQueryCount) &&
+    native.observedQueryCount === native.queryCount &&
+    native.observedPoolAcquisitions ===
+      native.observedQueryCount + native.observedPoolAcquisitionErrors
+  );
+}
 /** A failure boundary is a resource observation anchor, never a usable-content timestamp. */
 export async function observeFailedJourneyWire(
   wire,
@@ -234,9 +311,9 @@ export function settledEvidenceGates(plan, artifact, native, planSha) {
         "The matching shared context trace transport is missing or refused traffic.",
       );
     if (
-      s.wireSettled?.protocol !== companionWireContract.protocol ||
-      s.wireSettled?.byteUnits !== companionWireContract.byteUnits ||
-      s.wireSettled?.complete !== true
+      settledWireEvidence(s)?.protocol !== companionWireContract.protocol ||
+      settledWireEvidence(s)?.byteUnits !== companionWireContract.byteUnits ||
+      settledWireEvidence(s)?.complete !== true
     )
       gates.push("Complete all-context proxy wire-body evidence is missing.");
     const evidence = native.filter((e) => e.traceId === s.traceId),
@@ -276,27 +353,33 @@ export function requireSettledEvidence(plan, artifact, native, planSha) {
       "Require finalized, matched, complete settled-resource and native evidence.",
     );
   for (const s of artifact.samples) {
-    const wire = s.wireSettled;
+    const wire = settledWireEvidence(s),
+      e = native.find((e) => e.traceId === s.traceId),
+      knownBeforeFailure = eligibleBeforeFailure(plan, s, e);
     if (
-      s.failed ||
-      s.censored ||
-      s.wireSettled?.complete !== true ||
-      s.wireSettled.capped ||
-      s.wireSettled.mandatoryErrors !== 0 ||
-      s.wireSettled.mandatoryPending !== 0 ||
+      (!knownBeforeFailure &&
+        (s.failed !== false ||
+          s.censored !== false ||
+          !Number.isFinite(s.readyMs) ||
+          s.readyMs < 0)) ||
+      wire?.complete !== true ||
+      wire.capped !== false ||
+      wire.mandatoryErrors !== 0 ||
+      wire.mandatoryPending !== 0 ||
       wire.censored !== false ||
       wire.observationOverflows !== 0 ||
       wire.unknownInheritedRedirects !== 0 ||
       !Number.isFinite(wire.quietObservedMs) ||
       wire.quietObservedMs < companionPolicy.quietMs ||
+      !Number.isFinite(wire.postReadyMs) ||
+      wire.postReadyMs < companionPolicy.quietMs ||
+      wire.postReadyMs > companionPolicy.postReadyCapMs ||
       !Array.isArray(wire.byTrace)
     )
       throw Error("Settled resource cohort is failed or censored.");
     if (
       ["javascript", "document", "rsc", "otherFinite"].some(
-        (k) =>
-          !Number.isFinite(s.wireSettled.bytes?.[k]) ||
-          s.wireSettled.bytes[k] < 0,
+        (k) => !Number.isFinite(wire.bytes?.[k]) || wire.bytes[k] < 0,
       ) ||
       (s.mode === "first-document" &&
         (!Number.isFinite(s.inlineRscDecodedBytes) ||
@@ -357,8 +440,10 @@ export function requireSettledEvidence(plan, artifact, native, planSha) {
       throw Error(
         "Proxy wire evidence contains an unregistered context identity.",
       );
-    const e = native.find((e) => e.traceId === s.traceId);
-    if (e.observedQueryErrors !== 0 || e.observedPoolAcquisitionErrors !== 0)
+    if (
+      e.observedQueryErrors !== 0 ||
+      (!knownBeforeFailure && e.observedPoolAcquisitionErrors !== 0)
+    )
       throw Error("Settled backend observed errors.");
   }
 }
@@ -372,6 +457,7 @@ async function protocolIdentity() {
     "trace-transport.mjs",
     "proxy-wire-observer.mjs",
     "fixture-browser.mjs",
+    "../../docs/performance/evidence/1450-telemetry-functional-diagnostics.json",
   ];
   return Object.fromEntries(
     await Promise.all(
@@ -429,6 +515,9 @@ export async function measureFixtureResources(
     inlineRscDecodedBytes: null,
     settled: null,
     wireSettled: null,
+    measurementStarted: false,
+    prerequisiteComplete: false,
+    targetRangePrepared: false,
     backend: null,
     failureStage: null,
     failureKind: null,
@@ -602,6 +691,7 @@ export async function measureFixtureResources(
           bindings,
           plan.timeoutMs,
         );
+      if (active) s.targetRangePrepared = true;
       if (verifyExpected) await verify();
     };
     const ready = () =>
@@ -634,7 +724,9 @@ export async function measureFixtureResources(
         plan.timeoutMs,
       );
     }
+    s.prerequisiteComplete = true;
     active = true;
+    s.measurementStarted = true;
     started = performance.now();
     observer.begin(started);
     transport.wire.begin(started);
@@ -723,6 +815,25 @@ export async function measureFixtureResources(
           failureStage: "failure-resource-observation",
           failureKind: "observation-error",
         });
+      }
+      if (mode === "first-document") {
+        try {
+          s.inlineRscDecodedBytes = await page.evaluate(() =>
+            [...document.scripts]
+              .filter((script) => script.textContent.includes("__next_f"))
+              .reduce(
+                (n, script) =>
+                  n + new TextEncoder().encode(script.textContent).length,
+                0,
+              ),
+          );
+        } catch {
+          s.inlineRscDecodedBytes = null;
+          (s.secondaryFailures ??= []).push({
+            failureStage: "failure-inline-observation",
+            failureKind: "observation-error",
+          });
+        }
       }
     }
   } finally {
@@ -817,11 +928,10 @@ async function main() {
     artifact.finalized = true;
     artifact.evidenceComplete = artifact.gates.length === 0;
     artifact.nativeSha256 = hash(await readFile(options["--backend"]));
-    artifact.resourceComplete =
-      artifact.evidenceComplete &&
-      artifact.samples.every(
-        (s) => !s.failed && !s.censored && s.wireSettled?.complete === true,
-      );
+    artifact.behaviorComplete = artifact.samples.every(
+      (s) => !s.failed && !s.censored,
+    );
+    artifact.resourceComplete = artifact.evidenceComplete;
     artifact.resourceGates = [];
     if (artifact.resourceComplete) {
       try {
@@ -836,6 +946,11 @@ async function main() {
       artifact.resourceGates.push(
         "A required cohort is failed, censored, capped or lacks complete evidence.",
       );
+    artifact.resourceObservationBasis = !artifact.resourceComplete
+      ? "unfulfilled resource observation; no complete cost claim"
+      : artifact.behaviorComplete
+        ? "complete observed traffic for successful behavior"
+        : beforeFailurePolicy.resourceClaim;
     artifact.acceptance = artifact.resourceComplete
       ? "settled-resources-recorded"
       : "unfulfilled";
