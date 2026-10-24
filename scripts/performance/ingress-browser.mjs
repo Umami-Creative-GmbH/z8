@@ -151,7 +151,37 @@ export async function readDashboardDom(page) {
 				'header [data-clock-status="ready"] button[aria-label]',
 			),
 		].find((node) => visible(node) && !node.disabled);
+		const externalScripts = new Set(
+			[...document.scripts].filter((node) => node.src).map((node) => node.src),
+		);
+		const completedScripts = new Set(
+			performance
+				.getEntriesByType("resource")
+				.filter(
+					(entry) => entry.initiatorType === "script" && entry.responseEnd > 0,
+				)
+				.map((entry) => entry.name),
+		);
 		return {
+			readyState: document.readyState,
+			headerCount: document.querySelectorAll("header").length,
+			clockStates: Object.fromEntries(
+				["pending", "ready", "unavailable"].map((state) => [
+					state,
+					document.querySelectorAll(`header [data-clock-status="${state}"]`)
+						.length,
+				]),
+			),
+			scriptCount: document.scripts.length,
+			uniqueExternalScripts: externalScripts.size,
+			completedUniqueExternalScripts: [...externalScripts].filter((name) =>
+				completedScripts.has(name),
+			).length,
+			completedScriptResources: performance
+				.getEntriesByType("resource")
+				.filter(
+					(entry) => entry.initiatorType === "script" && entry.responseEnd > 0,
+				).length,
 			clockReady: Boolean(headerClock),
 			clockLabel: headerClock?.getAttribute("aria-label") ?? null,
 			usefulSibling: Boolean(
