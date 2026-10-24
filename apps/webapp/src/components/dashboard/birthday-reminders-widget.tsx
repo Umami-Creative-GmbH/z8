@@ -6,22 +6,14 @@ import { Badge } from "@/components/ui/badge";
 import { type EmployeeClockStatus, UserAvatar } from "@/components/user-avatar";
 import { useEmployeeClockStatuses } from "@/lib/query";
 import { cn } from "@/lib/utils";
-import { getUpcomingBirthdays } from "./actions";
+import type { DashboardWidgetData, DashboardWidgetSnapshot } from "./dashboard-types";
 import { DashboardWidget } from "./dashboard-widget";
 import { formatDashboardDate } from "./format-dashboard-date";
-import { useWidgetData } from "./use-widget-data";
+import { useDashboardWidget } from "./use-dashboard-widget";
 import { WidgetCard } from "./widget-card";
+import { WidgetReadError } from "./widget-read-error";
 
-type UpcomingBirthday = {
-	id: string;
-	userId: string;
-	image: string | null;
-	user: {
-		name: string | null;
-	};
-	birthday: Date;
-	nextBirthday: Date;
-	daysUntil: number;
+type UpcomingBirthday = DashboardWidgetData["birthday-reminders"][number] & {
 	clockStatus?: EmployeeClockStatus;
 };
 
@@ -44,7 +36,7 @@ function BirthdayCard({ birthday, isToday }: { birthday: UpcomingBirthday; isTod
 	return (
 		<div
 			className={cn(
-				"relative flex items-center gap-3 rounded-xl p-3 transition-all",
+				"relative flex items-center gap-3 rounded-xl p-3 transition-colors motion-reduce:transition-none",
 				isToday
 					? "bg-gradient-to-r from-pink-50 via-purple-50 to-indigo-50 dark:from-pink-950/30 dark:via-purple-950/30 dark:to-indigo-950/30 border border-pink-200/50 dark:border-pink-800/30"
 					: "border bg-card hover:bg-accent/50",
@@ -54,7 +46,7 @@ function BirthdayCard({ birthday, isToday }: { birthday: UpcomingBirthday; isTod
 			{isToday && (
 				<>
 					<div className="absolute -top-1 -right-1">
-						<IconSparkles className="size-4 text-amber-400 animate-pulse" />
+						<IconSparkles className="size-4 text-amber-400 animate-pulse motion-reduce:animate-none" />
 					</div>
 					<div className="absolute -bottom-1 -left-1">
 						<IconConfetti className="size-3 text-pink-400" />
@@ -89,7 +81,7 @@ function BirthdayCard({ birthday, isToday }: { birthday: UpcomingBirthday; isTod
 					{name}
 				</div>
 				<div className="text-xs text-muted-foreground">
-					{formatDashboardDate(new Date(birthday.nextBirthday), locale)}
+					{formatDashboardDate(birthday.nextBirthday, locale)}
 				</div>
 			</div>
 
@@ -124,17 +116,24 @@ function TodaysCelebration({ count }: { count: number }) {
 							: t("dashboard.birthday.birthday", "birthday"),
 				})}
 			</span>
-			<IconSparkles className="ml-auto size-4 animate-pulse" />
+			<IconSparkles className="ml-auto size-4 animate-pulse motion-reduce:animate-none" />
 		</div>
 	);
 }
 
-export function BirthdayRemindersWidget() {
+export function BirthdayRemindersWidget({
+	initialSnapshot,
+}: {
+	initialSnapshot?: DashboardWidgetSnapshot<DashboardWidgetData["birthday-reminders"]>;
+} = {}) {
 	const { t } = useTranslate();
-	const { data: birthdays, loading } = useWidgetData<UpcomingBirthday[]>(
-		() => getUpcomingBirthdays(30),
-		{ errorMessage: t("dashboard.birthday.error", "Failed to load upcoming birthdays") },
-	);
+	const {
+		data: birthdays,
+		loading,
+		refreshing,
+		refetch,
+		error,
+	} = useDashboardWidget("birthday-reminders", initialSnapshot);
 	const presence = useEmployeeClockStatuses(birthdays?.map((birthday) => birthday.id) ?? [], {
 		polling: false,
 	});
@@ -143,7 +142,7 @@ export function BirthdayRemindersWidget() {
 		clockStatus: presence.getStatus(birthday.id),
 	}));
 
-	if (!loading && (!birthdays || birthdays.length === 0)) return null;
+	if (!loading && !error && birthdays?.length === 0) return null;
 
 	const todayBirthdays = birthdaysWithPresence?.filter((b) => b.daysUntil === 0) ?? [];
 	const upcomingBirthdays = birthdaysWithPresence?.filter((b) => b.daysUntil > 0).slice(0, 5) ?? [];
@@ -172,35 +171,46 @@ export function BirthdayRemindersWidget() {
 				}
 				icon={<IconCake className="size-4 text-pink-500" />}
 				loading={loading}
+				refreshing={refreshing}
+				onRefresh={refetch}
 			>
-				{birthdaysWithPresence && (
-					<div className="space-y-3">
-						{/* Today's celebration banner */}
-						{todayBirthdays.length > 0 && <TodaysCelebration count={todayBirthdays.length} />}
+				{error ? (
+					<WidgetReadError
+						title={t("dashboard.birthday.title", "Upcoming Birthdays")}
+						message={error}
+						retry={refetch}
+						refreshing={refreshing}
+					/>
+				) : (
+					birthdaysWithPresence && (
+						<div className="space-y-3">
+							{/* Today's celebration banner */}
+							{todayBirthdays.length > 0 && <TodaysCelebration count={todayBirthdays.length} />}
 
-						{/* Birthday list */}
-						<div className="space-y-2">
-							{displayBirthdays.map((birthday) => (
-								<BirthdayCard
-									key={birthday.id}
-									birthday={birthday}
-									isToday={birthday.daysUntil === 0}
-								/>
-							))}
-						</div>
-
-						{/* More indicator */}
-						{birthdaysWithPresence.length > 5 + todayBirthdays.length && (
-							<div className="flex items-center justify-center gap-2 rounded-lg bg-muted/50 py-2 text-xs text-muted-foreground">
-								<IconGift className="size-3" />
-								<span>
-									{t("dashboard.birthday.more-celebrations", "+{count} more celebrations", {
-										count: birthdaysWithPresence.length - 5 - todayBirthdays.length,
-									})}
-								</span>
+							{/* Birthday list */}
+							<div className="space-y-2">
+								{displayBirthdays.map((birthday) => (
+									<BirthdayCard
+										key={birthday.id}
+										birthday={birthday}
+										isToday={birthday.daysUntil === 0}
+									/>
+								))}
 							</div>
-						)}
-					</div>
+
+							{/* More indicator */}
+							{birthdaysWithPresence.length > 5 + todayBirthdays.length && (
+								<div className="flex items-center justify-center gap-2 rounded-lg bg-muted/50 py-2 text-xs text-muted-foreground">
+									<IconGift className="size-3" />
+									<span>
+										{t("dashboard.birthday.more-celebrations", "+{count} more celebrations", {
+											count: birthdaysWithPresence.length - 5 - todayBirthdays.length,
+										})}
+									</span>
+								</div>
+							)}
+						</div>
+					)
 				)}
 			</WidgetCard>
 		</DashboardWidget>

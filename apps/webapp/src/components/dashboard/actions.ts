@@ -1,28 +1,19 @@
 "use server";
 
-import { and, eq, gte, inArray, isNotNull, lte, or, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, lte, or } from "drizzle-orm";
 import { Effect } from "effect";
 import { DateTime } from "luxon";
-import { unstable_cache } from "next/cache";
-import { organization, user } from "@/db/auth-schema";
+import { organization } from "@/db/auth-schema";
 import type { DashboardWidgetOrder } from "@/db/schema";
 import {
 	absenceEntry,
 	employee,
-	hydrationStats,
-	teamMembership,
 	userSettings,
-	waterIntakeLog,
 } from "@/db/schema";
 import type { VacationBalanceConfiguration } from "@/lib/absences/types";
-import { getEnhancedVacationBalanceResult } from "@/lib/absences/vacation.service";
 import { todayCalendarDateKey } from "@/lib/calendar/date-keys";
-import { currentTimestamp, dateFromDB } from "@/lib/datetime/drizzle-adapter";
-import {
-	calendarYearAt,
-	instantFromDate,
-	systemClock,
-} from "@/lib/datetime/temporal-core";
+import { currentTimestamp } from "@/lib/datetime/drizzle-adapter";
+import { systemClock } from "@/lib/datetime/temporal-core";
 import { AuthorizationError, NotFoundError } from "@/lib/effect/errors";
 import {
 	runServerActionSafe,
@@ -31,15 +22,15 @@ import {
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import type { ManagedEmployee } from "@/lib/effect/services/manager.service";
-import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
 import { writeUserSettings } from "@/lib/user-preferences/user-settings-mutation";
 import { currentRosterEmployeeIds } from "./current-roster-queries";
+import type { TeamStreakLeader } from "./hydration-team-streak-leaders";
+import type { BirthdayRemindersData } from "./dashboard-types";
 import {
-	buildTeamStreakLeaders,
-	collectUniqueTeamIds,
-	type TeamStreakLeader,
-} from "./hydration-team-streak-leaders";
-import { createHydrationTeamStreakLeadersCacheConfig } from "./hydration-team-streak-leaders-query";
+	loadBirthdayRemindersForOrganization,
+	loadHydrationForSubject,
+	loadVacationBalanceForEmployee,
+} from "./personal-widget-reads";
 import { loadManagerTodayForEmployee } from "./manager-today-read";
 import { loadQuickStatsForSubject } from "./quick-stats-read";
 import type { QuickStats } from "./quick-stats-tracking";
@@ -404,110 +395,11 @@ export async function getQuickStats(): Promise<ServerActionResult<QuickStats>> {
  */
 export async function getUpcomingBirthdays(
 	days: number = 30,
-): Promise<ServerActionResult<any[]>> {
+): Promise<ServerActionResult<BirthdayRemindersData>> {
 	const effect = Effect.gen(function* () {
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
-		const dbService = yield* DatabaseService;
-
-		// Get current employee
-		const currentEmployee = yield* dbService
-			.query("getCurrentEmployee", async () => {
-				return await dbService.db.query.employee.findFirst({
-					where: eq(employee.userId, session.user.id),
-				});
-			})
-			.pipe(
-				Effect.flatMap((emp) =>
-					emp
-						? Effect.succeed(emp)
-						: Effect.fail(
-								new NotFoundError({
-									message: "Employee profile not found",
-									entityType: "employee",
-								}),
-							),
-				),
-			);
-
-		// Get all employees with birthdays
-		const employees = yield* dbService.query(
-			"getEmployeesWithBirthdays",
-			async () => {
-				return await dbService.db.query.employee.findMany({
-					where: and(
-						onCurrentRoster(currentEmployee.organizationId),
-						sql`${employee.birthday} IS NOT NULL`,
-					),
-					with: {
-						user: {
-							columns: {
-								id: true,
-								name: true,
-								image: true,
-							},
-						},
-					},
-				});
-			},
-		);
-
-		const now = currentTimestamp();
-		const upcomingBirthdays: any[] = [];
-
-		for (const emp of employees) {
-			if (!emp.birthday) continue;
-
-			const birthdayDT = dateFromDB(emp.birthday);
-			if (!birthdayDT) continue;
-
-			const nowDT = dateFromDB(now);
-			if (!nowDT) continue;
-
-			const thisYearBirthdayDT = DateTime.utc(
-				nowDT.year,
-				birthdayDT.month,
-				birthdayDT.day,
-			);
-			const thisYearBirthday = thisYearBirthdayDT.toJSDate();
-
-			// Check if birthday already passed this year
-			let nextBirthdayDT = thisYearBirthdayDT;
-			if (thisYearBirthday < now) {
-				nextBirthdayDT = DateTime.utc(
-					nowDT.year + 1,
-					birthdayDT.month,
-					birthdayDT.day,
-				);
-			}
-			const nextBirthday = nextBirthdayDT.toJSDate();
-
-			const todayStartDT = DateTime.fromJSDate(now).startOf("day");
-			const daysUntil = Math.floor(
-				nextBirthdayDT.diff(todayStartDT, "days").days,
-			);
-
-			if (daysUntil >= 0 && daysUntil <= days) {
-				upcomingBirthdays.push({
-					id: emp.id,
-					userId: emp.user.id,
-					image: emp.user.image,
-					user: {
-						name: emp.user.name,
-					},
-					birthday: emp.birthday,
-					nextBirthday,
-					daysUntil,
-				});
-			}
-		}
-
-		// Sort by next birthday date
-		upcomingBirthdays.sort((a, b) => a.daysUntil - b.daysUntil);
-
-		return upcomingBirthdays;
+		const currentEmployee = yield* sessionEmployee;
+		return yield* loadBirthdayRemindersForOrganization(currentEmployee.organizationId, days);
 	});
-
 	return runServerActionSafe(effect);
 }
 
@@ -597,78 +489,12 @@ export async function getVacationBalanceResult(): Promise<
 	}>
 > {
 	const effect = Effect.gen(function* () {
-		const authService = yield* AuthService;
-		const session = yield* authService.getSession();
-		const dbService = yield* DatabaseService;
-		const activeOrganizationId = session.session.activeOrganizationId;
-
-		// Get current employee
-		const currentEmployee = yield* dbService
-			.query("getCurrentEmployee", async () => {
-				return await dbService.db.query.employee.findFirst({
-					where: and(
-						eq(employee.userId, session.user.id),
-						eq(employee.organizationId, activeOrganizationId ?? ""),
-					),
-				});
-			})
-			.pipe(
-				Effect.flatMap((emp) =>
-					emp
-						? Effect.succeed(emp)
-						: Effect.fail(
-								new NotFoundError({
-									message: "Employee profile not found",
-									entityType: "employee",
-								}),
-							),
-				),
-			);
-
-		const org = yield* dbService.query(
-			"getVacationBalanceOrganizationTimezone",
-			async () => {
-				return await dbService.db.query.organization.findFirst({
-					where: eq(organization.id, currentEmployee.organizationId),
-					columns: { timezone: true },
-				});
-			},
-		);
-		const timezone = org?.timezone || "UTC";
-		const currentYear = calendarYearAt(
-			instantFromDate(currentTimestamp()),
-			timezone,
-		);
-
-		const { balance, configuration } = yield* dbService.query(
-			"getVacationBalance:balance",
-			() =>
-				getEnhancedVacationBalanceResult({
-					employeeId: currentEmployee.id,
-					organizationId: currentEmployee.organizationId,
-					year: currentYear,
-					timezone,
-				}),
-		);
-		return {
-			year: currentYear,
-			configuration,
-			balance: balance
-				? {
-						totalDays: balance.totalDays,
-						usedDays: balance.usedDays,
-						previouslyTakenDays: balance.previouslyTakenDays,
-						pendingDays: balance.pendingDays,
-						remainingDays: balance.remainingDays,
-						carryoverDays: balance.carryoverDays ?? 0,
-						carryoverExpiryDate: balance.carryoverExpiryDate ?? null,
-						carryoverExpiryDaysRemaining: balance.carryoverExpiryDaysRemaining,
-						hasCarryover: (balance.carryoverDays ?? 0) > 0,
-					}
-				: null,
-		};
+		const currentEmployee = yield* sessionEmployee;
+		return yield* loadVacationBalanceForEmployee({
+			employee: currentEmployee,
+			organizationId: currentEmployee.organizationId,
+		});
 	});
-
 	return runServerActionSafe(effect);
 }
 
@@ -692,226 +518,11 @@ export async function getHydrationWidgetData(options?: {
 	const effect = Effect.gen(function* () {
 		const authService = yield* AuthService;
 		const session = yield* authService.getSession();
-		const dbService = yield* DatabaseService;
-
-		// Get user's water reminder settings from userSettings
-		const settings = yield* dbService.query(
-			"getWaterReminderSettings",
-			async () => {
-				return dbService.db.query.userSettings.findFirst({
-					where: eq(userSettings.userId, session.user.id),
-				});
-			},
+		return yield* loadHydrationForSubject(
+			{ userId: session.user.id, organizationId: session.session.activeOrganizationId ?? "" },
+			options,
 		);
-
-		// If not enabled, return early with enabled: false
-		if (!settings?.waterReminderEnabled) {
-			return {
-				enabled: false,
-				currentStreak: 0,
-				longestStreak: 0,
-				todayIntake: 0,
-				dailyGoal: 8,
-				goalProgress: 0,
-				teamStreakLeaders: [],
-				organizationStreakLeaders: [],
-			};
-		}
-
-		const dailyGoal = settings.waterReminderDailyGoal ?? 8;
-
-		// Get hydration stats
-		const stats = yield* dbService.query("getHydrationStats", async () => {
-			return dbService.db.query.hydrationStats.findFirst({
-				where: eq(hydrationStats.userId, session.user.id),
-			});
-		});
-
-		// Get today's intake using Luxon for date boundaries
-		const todayStart = DateTime.now().startOf("day").toJSDate();
-		const todayEnd = DateTime.now().endOf("day").toJSDate();
-
-		const todayIntakeResult = yield* dbService.query(
-			"getTodayIntake",
-			async () => {
-				return dbService.db
-					.select({
-						total: sql<number>`COALESCE(SUM(${waterIntakeLog.amount}), 0)::int`,
-					})
-					.from(waterIntakeLog)
-					.where(
-						and(
-							eq(waterIntakeLog.userId, session.user.id),
-							gte(waterIntakeLog.loggedAt, todayStart),
-							lte(waterIntakeLog.loggedAt, todayEnd),
-						),
-					);
-			},
-		);
-
-		const todayIntake = todayIntakeResult[0]?.total ?? 0;
-		const goalProgress = Math.min(
-			100,
-			Math.round((todayIntake / dailyGoal) * 100),
-		);
-		const activeOrganizationId = session.session.activeOrganizationId;
-
-		const teamStreakLeaders = yield* dbService
-			.query("dashboard.getHydrationTeamStreakLeaders", async () => {
-				if (!activeOrganizationId) {
-					return [];
-				}
-
-				const currentEmployee = await dbService.db.query.employee.findFirst({
-					where: and(
-						eq(employee.userId, session.user.id),
-						onCurrentRoster(activeOrganizationId),
-					),
-					columns: {
-						id: true,
-						teamId: true,
-					},
-				});
-
-				if (!currentEmployee) {
-					return [];
-				}
-
-				const memberships = await dbService.db.query.teamMembership.findMany({
-					where: and(
-						eq(teamMembership.organizationId, activeOrganizationId),
-						eq(teamMembership.employeeId, currentEmployee.id),
-					),
-					columns: {
-						teamId: true,
-					},
-				});
-
-				const teamIds = collectUniqueTeamIds(
-					currentEmployee.teamId,
-					memberships,
-				);
-
-				if (teamIds.length === 0) {
-					return [];
-				}
-
-				const cacheConfig = createHydrationTeamStreakLeadersCacheConfig({
-					organizationId: activeOrganizationId,
-					currentEmployeeId: currentEmployee.id,
-					teamIds,
-				});
-				const sortedTeamIds = teamIds.toSorted();
-
-				const load = async () => {
-					const candidates = await dbService.db
-						.select({
-							employeeId: employee.id,
-							userId: employee.userId,
-							userName: user.name,
-							currentStreak: hydrationStats.currentStreak,
-						})
-						.from(employee)
-						.innerJoin(user, eq(employee.userId, user.id))
-						.leftJoin(
-							hydrationStats,
-							eq(hydrationStats.userId, employee.userId),
-						)
-						.leftJoin(
-							teamMembership,
-							and(
-								eq(teamMembership.employeeId, employee.id),
-								eq(teamMembership.organizationId, activeOrganizationId),
-								inArray(teamMembership.teamId, sortedTeamIds),
-							),
-						)
-						.where(
-							and(
-								onCurrentRoster(activeOrganizationId),
-								or(
-									inArray(employee.teamId, sortedTeamIds),
-									isNotNull(teamMembership.id),
-								),
-							),
-						);
-
-					return buildTeamStreakLeaders(
-						candidates.map((candidate) => ({
-							employeeId: candidate.employeeId,
-							userId: candidate.userId,
-							displayName: candidate.userName || "Team member",
-							currentStreak: candidate.currentStreak,
-						})),
-						session.user.id,
-						{ limit: 5, minimumParticipants: 2 },
-					);
-				};
-				if (options?.fresh === true) return load();
-				return unstable_cache(
-					load,
-					cacheConfig.keyParts,
-					cacheConfig.options,
-				)();
-			})
-			.pipe(Effect.catch(() => Effect.succeed([])));
-
-		const organizationStreakLeaders = yield* dbService
-			.query("dashboard.getHydrationOrganizationStreakLeaders", async () => {
-				if (!activeOrganizationId) {
-					return [];
-				}
-
-				const currentEmployee = await dbService.db.query.employee.findFirst({
-					where: and(
-						eq(employee.userId, session.user.id),
-						onCurrentRoster(activeOrganizationId),
-					),
-					columns: {
-						id: true,
-					},
-				});
-
-				if (!currentEmployee) {
-					return [];
-				}
-
-				const candidates = await dbService.db
-					.select({
-						employeeId: employee.id,
-						userId: employee.userId,
-						userName: user.name,
-						currentStreak: hydrationStats.currentStreak,
-					})
-					.from(employee)
-					.innerJoin(user, eq(employee.userId, user.id))
-					.leftJoin(hydrationStats, eq(hydrationStats.userId, employee.userId))
-					.where(and(onCurrentRoster(activeOrganizationId)));
-
-				return buildTeamStreakLeaders(
-					candidates.map((candidate) => ({
-						employeeId: candidate.employeeId,
-						userId: candidate.userId,
-						displayName: candidate.userName || "Team member",
-						currentStreak: candidate.currentStreak,
-					})),
-					session.user.id,
-					{ limit: 5 },
-				);
-			})
-			.pipe(Effect.catch(() => Effect.succeed([])));
-
-		return {
-			enabled: true,
-			currentStreak: stats?.currentStreak ?? 0,
-			longestStreak: stats?.longestStreak ?? 0,
-			todayIntake,
-			dailyGoal,
-			goalProgress,
-			teamStreakLeaders,
-			organizationStreakLeaders,
-		};
 	});
-
 	return runServerActionSafe(effect);
 }
 

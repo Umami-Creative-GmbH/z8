@@ -28,6 +28,8 @@ async function readUserSettings(userId: string) {
 			onboardingComplete: true,
 			onboardingStep: true,
 			dashboardWidgetOrder: true,
+			waterReminderEnabled: true,
+			waterReminderDailyGoal: true,
 		},
 	});
 }
@@ -38,10 +40,7 @@ function preferencesFromSettings(
 	settings: Awaited<ReturnType<typeof readUserSettings>>,
 ): RenderUserPreferences {
 	return {
-		locale:
-			settings?.locale && ALL_LANGUAGES.includes(settings.locale)
-				? settings.locale
-				: null,
+		locale: settings?.locale && ALL_LANGUAGES.includes(settings.locale) ? settings.locale : null,
 		weekStartDay: normalizeWeekStartDay(settings?.weekStartDay),
 		timeFormat: normalizeTimeFormat(settings?.timeFormat),
 		timezone: settings?.timezone || "UTC",
@@ -49,9 +48,7 @@ function preferencesFromSettings(
 	};
 }
 
-export async function readUserPreferences(
-	userId: string,
-): Promise<RenderUserPreferences> {
+export async function readUserPreferences(userId: string): Promise<RenderUserPreferences> {
 	return preferencesFromSettings(await readUserSettings(userId));
 }
 

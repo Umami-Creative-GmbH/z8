@@ -48,11 +48,15 @@ vi.mock("@/components/dashboard/actions", () => ({
 }));
 
 vi.mock("@/components/dashboard/birthday-reminders-widget", () => ({
-	BirthdayRemindersWidget: () => <div>hydrated widget</div>,
+	BirthdayRemindersWidget: ({ initialSnapshot }: { initialSnapshot?: unknown }) => (
+		<div>{initialSnapshot ? "Birthdays ready" : "hydrated widget"}</div>
+	),
 }));
 
 vi.mock("@/components/dashboard/hydration-widget", () => ({
-	HydrationWidget: () => <div>hydrated widget</div>,
+	HydrationWidget: ({ initialSnapshot }: { initialSnapshot?: unknown }) => (
+		<div>{initialSnapshot ? "Hydration ready" : "hydrated widget"}</div>
+	),
 }));
 
 vi.mock("@/components/dashboard/managed-employees-widget", () => ({
@@ -74,7 +78,9 @@ vi.mock("@/components/dashboard/pending-approvals-widget", () => ({
 }));
 
 vi.mock("@/components/dashboard/presence-status-widget", () => ({
-	PresenceStatusWidget: () => <div>hydrated widget</div>,
+	PresenceStatusWidget: ({ initialSnapshot }: { initialSnapshot?: unknown }) => (
+		<div>{initialSnapshot ? "Presence ready" : "hydrated widget"}</div>
+	),
 }));
 
 vi.mock("@/components/dashboard/quick-stats-widget", () => ({
@@ -108,7 +114,9 @@ vi.mock("@/components/dashboard/upcoming-time-off-widget", () => ({
 }));
 
 vi.mock("@/components/dashboard/vacation-balance-widget", () => ({
-	VacationBalanceWidget: () => <div>hydrated widget</div>,
+	VacationBalanceWidget: ({ initialSnapshot }: { initialSnapshot?: unknown }) => (
+		<div>{initialSnapshot ? "Vacation ready" : "hydrated widget"}</div>
+	),
 }));
 
 vi.mock("@/components/dashboard/whos-out-today-widget", () => ({
@@ -127,6 +135,10 @@ import { SectionCards } from "./section-cards";
 
 describe("SectionCards", () => {
 	it.each([
+		["birthday-reminders", "hydration", "Hydration ready", "Birthdays ready"],
+		["hydration", "birthday-reminders", "Birthdays ready", "Hydration ready"],
+		["vacation-balance", "presence-status", "Presence ready", "Vacation ready"],
+		["presence-status", "vacation-balance", "Vacation ready", "Presence ready"],
 		["upcoming-shifts", "covering-for", "Cover ready", "Shifts ready"],
 		["covering-for", "upcoming-shifts", "Shifts ready", "Cover ready"],
 		["whos-out-today", "upcoming-time-off", "Time off ready", "Out today ready"],

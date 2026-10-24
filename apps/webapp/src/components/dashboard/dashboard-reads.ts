@@ -1,10 +1,12 @@
 import "server-only";
 
 import { cache } from "react";
+import { loadPresenceStatusForSubject } from "@/app/[locale]/(app)/time-tracking/actions/presence-status-read";
 import { getRenderAuthContext } from "@/lib/auth/render-context";
 import { systemClock } from "@/lib/datetime/temporal-core";
 import { runServerActionSafe } from "@/lib/effect/result";
 import { getRenderUserSettings } from "@/lib/user-preferences/render-snapshot";
+import { normalizeWeekStartDay } from "@/lib/user-preferences/week-start";
 import type {
 	DashboardLayoutBootstrap,
 	DashboardScope,
@@ -14,6 +16,11 @@ import type {
 	ServerWidgetId,
 } from "./dashboard-types";
 import { loadManagerTodayForEmployee } from "./manager-today-read";
+import {
+	loadBirthdayRemindersForOrganization,
+	loadHydrationForSubject,
+	loadVacationBalanceForEmployee,
+} from "./personal-widget-reads";
 import { loadQuickStatsForSubject } from "./quick-stats-read";
 import {
 	loadCoverDutiesForSubject,
@@ -44,10 +51,19 @@ export const getRenderDashboardLayout = cache(async () => {
 	const context = await getRenderAuthContext();
 	const organizationId = context?.session.activeOrganizationId;
 	if (!context || !organizationId) return null;
+	const settings = await getRenderUserSettings(context.user.id);
 	const subject: DashboardSubject = {
 		userId: context.user.id,
 		organizationId,
 		employee: context.employee,
+		hydrationSettings: {
+			waterReminderEnabled: settings?.waterReminderEnabled ?? false,
+			waterReminderDailyGoal: settings?.waterReminderDailyGoal ?? 8,
+		},
+		preferences: {
+			timezone: settings?.timezone || "UTC",
+			weekStartDay: normalizeWeekStartDay(settings?.weekStartDay),
+		},
 	};
 	return { subject, layout: await readDashboardLayout(subject) };
 });
@@ -73,6 +89,39 @@ export async function readDashboardWidget<K extends ServerWidgetId>(
 			throw new Error("Employee access required");
 		const result = await (async () => {
 			switch (id) {
+				case "birthday-reminders":
+					return runServerActionSafe(loadBirthdayRemindersForOrganization(subject.organizationId));
+				case "hydration":
+					return runServerActionSafe(loadHydrationForSubject(subject, { fresh: true }));
+				case "presence-status":
+					return runServerActionSafe(
+						loadPresenceStatusForSubject({
+							userId: subject.userId,
+							organizationId: subject.organizationId,
+							employeeId: employee.id,
+							preferences: subject.preferences,
+						}),
+					);
+				case "vacation-balance": {
+					const result = await runServerActionSafe(
+						loadVacationBalanceForEmployee({ organizationId: subject.organizationId, employee }),
+					);
+					return result.success
+						? {
+								success: true as const,
+								data: {
+									...result.data,
+									balance: result.data.balance
+										? {
+												...result.data.balance,
+												carryoverExpiryDate:
+													result.data.balance.carryoverExpiryDate?.toISOString() ?? null,
+											}
+										: null,
+								},
+							}
+						: result;
+				}
 				case "upcoming-shifts":
 					return runServerActionSafe(loadUpcomingShiftsForEmployee(employee));
 				case "covering-for":
