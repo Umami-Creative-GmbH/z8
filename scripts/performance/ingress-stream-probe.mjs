@@ -6,6 +6,7 @@ import { readFile, unlink, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
+import { launchFixtureBrowser } from "./fixture-browser.mjs";
 import { observeIngress, readDashboardDom } from "./ingress-browser.mjs";
 import {
 	clickVisible,
@@ -13,6 +14,10 @@ import {
 	waitVisible,
 } from "./journey-steps.mjs";
 import { readMultiInstanceFixture } from "./multi-instance-fixture.mjs";
+import {
+	beginMultiInstanceObservation,
+	multiInstanceObservationProtocol,
+} from "./multi-instance-observation.mjs";
 
 const json = async (path) => JSON.parse(await readFile(path, "utf8"));
 const save = (path, value, exclusive = false) =>
@@ -21,6 +26,14 @@ const save = (path, value, exclusive = false) =>
 		flag: exclusive ? "wx" : "w",
 	});
 const pause = (ms) => new Promise((done) => setTimeout(done, ms));
+async function saveIngressEvidence(path, value) {
+	const immutable = path.replace(
+		/\.json$/,
+		`-${Date.now()}-${randomBytes(4).toString("hex")}.json`,
+	);
+	await save(immutable, value, true);
+	await save(path, value);
+}
 const processOutput = (program, args) =>
 	execFileSync(program, args, {
 		encoding: "utf8",
@@ -73,12 +86,51 @@ export async function ingressPlan(directory, expectedSource) {
 		"db51c13fa3583b11d5701e12231fa3cb3285698c",
 		source,
 	);
+	const controls = Object.fromEntries(
+		["a", "b"].map((replica) => [
+			replica,
+			join(resolve(directory), `observer-${replica}`, "collector-control.json"),
+		]),
+	);
+	const manifests = await Promise.all(
+		Object.values(controls).map(async (path) => {
+			const collector = await json(path);
+			assert(
+				collector.kind === "z8-fixture-otlp-collector-v2" &&
+					collector.observerControl,
+				"Ingress requires two registered V2 collectors.",
+			);
+			const native = await json(collector.observerControl);
+			assert(
+				native.protocol === "z8-fixture-native-observer-v2",
+				"Ingress requires native V2 controls.",
+			);
+			for (const endpoint of [collector.endpoint, native.endpoint]) {
+				const url = new URL(endpoint);
+				assert(
+					url.protocol === "http:" &&
+						["localhost", "127.0.0.1"].includes(url.hostname),
+					"Collector/native controls must be loopback-only.",
+				);
+			}
+			return { collector, native };
+		}),
+	);
+	assert(
+		manifests[0].collector.endpoint !== manifests[1].collector.endpoint &&
+			manifests[0].native.endpoint !== manifests[1].native.endpoint &&
+			resolve(manifests[0].collector.observerControl) !==
+				resolve(manifests[1].collector.observerControl),
+		"Ingress requires independent per-replica collector/native controls.",
+	);
 	return {
 		fixture,
+		controls,
 		publicPlan: {
 			sourceBuild: source,
 			proxy: "Docker HAProxy 2.8",
 			holdTable: "shift",
+			observationProtocol: multiInstanceObservationProtocol,
 			maximumHoldMs: 12000,
 			runtimeVerified: false,
 			productionTopologyVerified: false,
@@ -88,14 +140,17 @@ export async function ingressPlan(directory, expectedSource) {
 }
 
 async function runtimeInputs(directory, source, actor) {
-	const { fixture, publicPlan } = await ingressPlan(directory, source);
+	const { fixture, publicPlan, controls } = await ingressPlan(
+		directory,
+		source,
+	);
 	assert(
 		fixture.prepared &&
 			fixture.containers.includes(fixture.postgres) &&
 			fixture.containers.includes(fixture.proxy),
 		"Prepare the owned multi-instance fixture before runtime verification.",
 	);
-	for (const container of [fixture.postgres, fixture.proxy]) {
+	for (const container of [fixture.postgres, fixture.proxy, fixture.storage]) {
 		assert(
 			processOutput("docker", [
 				"inspect",
@@ -115,6 +170,22 @@ async function runtimeInputs(directory, source, actor) {
 	assert(
 		mappedPort === String(fixture.env.POSTGRES_PORT),
 		"The configured database is not the owned Docker port.",
+	);
+	const storagePort = processOutput("docker", [
+		"inspect",
+		"--format",
+		'{{(index (index .NetworkSettings.Ports "9000/tcp") 0).HostPort}}',
+		fixture.storage,
+	]);
+	const storageOrigin = new URL(fixture.env.S3_PUBLIC_ENDPOINT);
+	assert(
+		storageOrigin.protocol === "http:" &&
+			storageOrigin.hostname === "127.0.0.1" &&
+			storageOrigin.port === storagePort &&
+			!storageOrigin.username &&
+			!storageOrigin.password &&
+			storageOrigin.pathname === "/",
+		"Only this fixture's exact owned S3 origin is allowed.",
 	);
 	const manifest = await readFile(
 		join(fixture.artifactApp, ".next/required-server-files.json"),
@@ -173,6 +244,8 @@ async function runtimeInputs(directory, source, actor) {
 		);
 		return {
 			fixture,
+			controls,
+			allowedOrigins: [fixture.origin, storageOrigin.origin],
 			publicPlan,
 			auth: auth[actor],
 			subject: { ...subject, userId: row.user_id },
@@ -347,34 +420,37 @@ async function waitBlocked(admin, holderPid, deadline) {
 	);
 }
 
-async function readNativeMetrics(directory, traceId) {
-	const control = await json(join(directory, "collector-control.json"));
-	const endpoint = new URL("/metrics", control.endpoint);
-	assert(
-		endpoint.protocol === "http:" &&
-			["localhost", "127.0.0.1"].includes(endpoint.hostname),
-		"The observer collector must be loopback-only.",
-	);
-	for (let attempt = 0; attempt < 20; attempt++) {
-		const rows = await (
-			await fetch(endpoint, { signal: AbortSignal.timeout(2000) })
-		).json();
-		const row = rows.find((value) => value.traceId === traceId);
-		if (row?.coverage?.pg && row.coverage.eventLoop)
-			return {
-				queryCount: row.queryCount,
-				rowsRetrieved: row.rowsRetrieved,
-				poolWaitMs: row.poolWaitMs,
-				cacheHits: row.cacheHits,
-				cacheMisses: row.cacheMisses,
-				eventLoopDelayMs: row.eventLoopDelayMs,
-				coverage: row.coverage,
-			};
-		await pause(100);
+async function finishObservation(observation, contexts, visits, result) {
+	let failures = 0;
+	for (const context of contexts)
+		try {
+			await context.close();
+		} catch {
+			failures++;
+		}
+	result.backend = [];
+	for (const visit of visits)
+		try {
+			const closed = await observation.endVisit(visit);
+			for (const id of visit.traceIds)
+				result.backend.push(observation.metrics(closed, id));
+		} catch {
+			failures++;
+		}
+	try {
+		await observation.closeRemainingVisits();
+		result.nativeProof = await observation.finish();
+	} catch {
+		failures++;
+		result.nativeProof = await observation
+			.reconcile()
+			.catch(() => ({ complete: false }));
 	}
-	throw new Error(
-		"Complete native request telemetry was not observed for the actual browser journey.",
-	);
+	result.observationClosureFailures = failures;
+	result.passed =
+		result.applicationPassed === true &&
+		failures === 0 &&
+		result.nativeProof.complete === true;
 }
 
 /** Only called explicitly by the parent after its runtime capture window is free. */
@@ -397,7 +473,14 @@ export async function runIngress(
 	const { Client } = require("pg");
 	const holder = new Client(inputs.connection);
 	holder.on("error", () => {});
-	let browser, context, network, timer, navigation;
+	let browser,
+		context,
+		observedContext,
+		observation,
+		network,
+		timer,
+		navigation;
+	const measuredVisits = [];
 	let releasedAt = null,
 		lockStarted = null,
 		release;
@@ -421,19 +504,24 @@ export async function runIngress(
 	process.once("SIGINT", stop);
 	process.once("SIGTERM", stop);
 	try {
+		observation = await beginMultiInstanceObservation({
+			controls: inputs.controls,
+			allowedOrigins: inputs.allowedOrigins,
+		});
 		await enableVariant(inputs, directory, () => {
 			variantTouched = true;
 		});
-		browser = await require("puppeteer-core").launch({
-			executablePath:
-				process.env.Z8_FIXTURE_CHROME ||
+		browser = await launchFixtureBrowser(
+			require("puppeteer-core"),
+			process.env.Z8_FIXTURE_CHROME ||
 				"C:/Program Files/Google/Chrome/Application/chrome.exe",
-			headless: true,
-		});
-		context = await browser.createBrowserContext();
+		);
+		observedContext = await observation.createContext(browser, fixture.origin);
+		context = observedContext.context;
+		observations.browserInitialization = observedContext.browserInitialization;
 		await prepareFixtureBrowserContext(context, fixture.origin);
 		await context.setCookie(...inputs.auth.cookies);
-		const page = await context.newPage();
+		const page = observedContext.page;
 		await page.setViewport(
 			viewport === "desktop"
 				? { width: 1280, height: 900 }
@@ -443,6 +531,7 @@ export async function runIngress(
 		await page.setCacheEnabled(false);
 		await page.setRequestInterception(true);
 		const trace = randomBytes(16).toString("hex");
+		let measuredTrace = null;
 		let requestCount = 0;
 		page.on("request", (request) => {
 			const headers = { ...request.headers() };
@@ -457,7 +546,8 @@ export async function runIngress(
 					return;
 				}
 				headers["x-z8-fixture-replica"] = "a";
-				headers.traceparent = `00-${trace}-${randomBytes(8).toString("hex")}-01`;
+				if (measuredTrace)
+					headers.traceparent = `00-${measuredTrace}-${randomBytes(8).toString("hex")}-01`;
 			}
 			void request.continue({ headers }).catch(() => {});
 		});
@@ -471,6 +561,9 @@ export async function runIngress(
 				'header [data-clock-status="ready"] button[aria-label]',
 			);
 		}
+		observedContext.background();
+		measuredVisits.push(await observation.beginVisit([trace]));
+		measuredTrace = trace;
 		network = await observeIngress(page, fixture.origin, mode);
 		await holder.connect();
 		await holder.query("begin");
@@ -620,16 +713,15 @@ export async function runIngress(
 		observations.releasedAtMs = releasedAt;
 		observations.network = network.snapshot();
 		observations.requestCount = requestCount;
-		observations.backend = await readNativeMetrics(directory, trace);
-		observations.passed =
+		measuredTrace = null;
+		observations.applicationPassed =
 			observations.after.secondaryComplete &&
 			observations.after.usefulSibling &&
 			observations.after.clockReady;
 		assert(
-			observations.passed,
+			observations.applicationPassed,
 			"The released or retried secondary read did not recover alongside the successful sibling and clock.",
 		);
-		return observations;
 	} finally {
 		process.off("SIGINT", stop);
 		process.off("SIGTERM", stop);
@@ -637,10 +729,16 @@ export async function runIngress(
 		if (release) await release().catch(() => {});
 		await holder.end().catch(() => {});
 		await network?.close().catch(() => {});
-		await context?.close().catch(() => {});
+		if (observation)
+			await finishObservation(
+				observation,
+				observedContext ? [observedContext] : [],
+				measuredVisits,
+				observations,
+			);
 		await browser?.close().catch(() => {});
 		try {
-			await save(
+			await saveIngressEvidence(
 				join(directory, `ingress-${viewport}-${mode}-${scenario}.json`),
 				observations,
 			);
@@ -653,6 +751,11 @@ export async function runIngress(
 			}
 		}
 	}
+	assert(
+		observations.passed,
+		"Ingress V2 native or strict transport proof did not reconcile.",
+	);
+	return observations;
 }
 
 /** Exercise real admission policy, not a fake session or browser response. */
@@ -670,8 +773,10 @@ export async function runAdmission(
 	);
 	const inputs = await runtimeInputs(directory, source, actor);
 	let browser,
-		network,
+		observation,
 		touched = false;
+	const observedContexts = [],
+		measuredVisits = [];
 	const result = {
 		scenario,
 		viewport,
@@ -687,19 +792,27 @@ export async function runAdmission(
 	process.once("SIGINT", stop);
 	process.once("SIGTERM", stop);
 	try {
+		observation = await beginMultiInstanceObservation({
+			controls: inputs.controls,
+			allowedOrigins: inputs.allowedOrigins,
+		});
 		await enableVariant(inputs, directory, () => {
 			touched = true;
 		});
-		browser = await inputs.require("puppeteer-core").launch({
-			executablePath:
-				process.env.Z8_FIXTURE_CHROME ||
+		browser = await launchFixtureBrowser(
+			inputs.require("puppeteer-core"),
+			process.env.Z8_FIXTURE_CHROME ||
 				"C:/Program Files/Google/Chrome/Application/chrome.exe",
-			headless: true,
-		});
-		const control = await browser.createBrowserContext();
+		);
+		const observedControl = await observation.createContext(
+			browser,
+			inputs.fixture.origin,
+		);
+		observedContexts.push(observedControl);
+		const control = observedControl.context;
 		await prepareFixtureBrowserContext(control, inputs.fixture.origin);
 		await control.setCookie(...inputs.auth.cookies);
-		const allowed = await control.newPage();
+		const allowed = observedControl.page;
 		await allowed.setExtraHTTPHeaders({ "x-z8-fixture-replica": "a" });
 		await allowed.goto(`${inputs.fixture.origin}/en`, {
 			waitUntil: "domcontentloaded",
@@ -713,7 +826,8 @@ export async function runAdmission(
 			(await readDashboardDom(allowed)).protectedContent,
 			"The allowed control did not exercise the actual protected application.",
 		);
-		await control.close();
+		observedControl.background();
+		await observedControl.close();
 		const { admin, subject } = inputs;
 		const path = join(directory, "ingress-variant-private.json");
 		const backup = await json(path);
@@ -762,11 +876,16 @@ export async function runAdmission(
 				[subject.organizationId, subject.userId],
 			);
 		}
-		const context = await browser.createBrowserContext();
+		const observedDenied = await observation.createContext(
+			browser,
+			inputs.fixture.origin,
+		);
+		observedContexts.push(observedDenied);
+		const context = observedDenied.context;
 		await prepareFixtureBrowserContext(context, inputs.fixture.origin);
 		if (scenario !== "signed-out")
 			await context.setCookie(...inputs.auth.cookies);
-		const page = await context.newPage();
+		const page = observedDenied.page;
 		await page.setViewport(
 			viewport === "desktop"
 				? { width: 1280, height: 900 }
@@ -776,7 +895,15 @@ export async function runAdmission(
 		// Inspect a real protected document response before following its redirect.
 		// Chrome may omit redirect bodies from responseReceived; native fetch keeps
 		// this denial check independent of that browser diagnostic limitation.
-		const headers = { "x-z8-fixture-replica": "a" };
+		// This context's measured ID is already registered at both native controls.
+		// A signed-out denial may legitimately perform no SQL and emit no PG row;
+		// its acceptance is the paired closure + exact whole-run oracle, not an
+		// invented per-request five-flag metric for a zero-query response.
+		const nodeTrace = observedDenied.traceIds[1];
+		const headers = {
+			"x-z8-fixture-replica": "a",
+			traceparent: `00-${nodeTrace}-${randomBytes(8).toString("hex")}-01`,
+		};
 		if (scenario !== "signed-out")
 			headers.Cookie = inputs.auth.cookies
 				.map((cookie) => `${cookie.name}=${cookie.value}`)
@@ -822,22 +949,27 @@ export async function runAdmission(
 			return { status: response.status };
 		});
 		result.clockStatusDenied = [401, 403].includes(deniedClock.status);
-		result.passed =
+		result.applicationPassed =
 			!result.protectedContentEmitted &&
 			result.redirected &&
 			result.clockStatusDenied;
 		assert(
-			result.passed,
+			result.applicationPassed,
 			"Denied admission emitted protected data or enabled the clock.",
 		);
-		return result;
 	} finally {
 		process.off("SIGINT", stop);
 		process.off("SIGTERM", stop);
-		await network?.close().catch(() => {});
+		if (observation)
+			await finishObservation(
+				observation,
+				observedContexts,
+				measuredVisits,
+				result,
+			);
 		await browser?.close().catch(() => {});
 		try {
-			await save(
+			await saveIngressEvidence(
 				join(directory, `ingress-admission-${viewport}-${scenario}.json`),
 				result,
 			);
@@ -849,6 +981,11 @@ export async function runAdmission(
 			}
 		}
 	}
+	assert(
+		result.passed,
+		"Admission V2 native or strict transport proof did not reconcile.",
+	);
+	return result;
 }
 
 async function main() {

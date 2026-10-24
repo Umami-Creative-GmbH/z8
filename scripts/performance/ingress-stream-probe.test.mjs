@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import test from "node:test";
@@ -14,6 +14,28 @@ const source = "ba667c89f8c47634183518af5c02dd460892c930";
 async function fixtureTest(run) {
 	const directory = await mkdtemp(join(tmpdir(), "z8-ingress-plan-"));
 	try {
+		for (const [name, port] of [
+			["a", 18101],
+			["b", 18102],
+		]) {
+			const path = join(directory, `observer-${name}`);
+			await mkdir(path);
+			await writeFile(
+				join(path, "native-control-private.json"),
+				JSON.stringify({
+					protocol: "z8-fixture-native-observer-v2",
+					endpoint: `http://127.0.0.1:${port + 10}`,
+				}),
+			);
+			await writeFile(
+				join(path, "collector-control.json"),
+				JSON.stringify({
+					kind: "z8-fixture-otlp-collector-v2",
+					endpoint: `http://127.0.0.1:${port}`,
+					observerControl: join(path, "native-control-private.json"),
+				}),
+			);
+		}
 		await writeFile(
 			join(directory, "multi-private.json"),
 			JSON.stringify({
@@ -56,6 +78,30 @@ test("operator can inspect a bounded local streaming plan without starting servi
 		assert.equal(plan.cdnVerified, false);
 		assert.equal(result.stdout.includes("never-expose-ingress-secret"), false);
 		assert.equal(result.stdout.includes("POSTGRES_PASSWORD"), false);
+	}));
+
+test("ingress refuses legacy single-collector coverage and shared per-replica controls before app IO", () =>
+	fixtureTest(async (directory) => {
+		const path = join(directory, "observer-b", "collector-control.json");
+		const original = JSON.parse(await readFile(path, "utf8"));
+		for (const value of [
+			{ ...original, kind: "z8-fixture-otlp-collector-v1" },
+			JSON.parse(
+				await readFile(
+					join(directory, "observer-a", "collector-control.json"),
+					"utf8",
+				),
+			),
+		]) {
+			await writeFile(path, JSON.stringify(value));
+			const result = spawnSync(
+				process.execPath,
+				[cli, "plan", directory, source],
+				{ encoding: "utf8" },
+			);
+			assert.notEqual(result.status, 0);
+			assert.equal(result.stdout, "");
+		}
 	}));
 
 test("runtime command rejects a production origin without using its service credentials", () =>

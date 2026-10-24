@@ -3,6 +3,10 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { requireSettledEvidence } from "./settled-resources.mjs";
+import {
+  fixtureBrowserPolicy,
+  fixtureTransportIsComplete,
+} from "./fixture-browser.mjs";
 const sha = (bytes) => createHash("sha256").update(bytes).digest("hex");
 const json = (value) => JSON.stringify(value, null, 2) + "\n";
 const p95 = (values) =>
@@ -450,6 +454,7 @@ function requireEvidence(plan, artifact, native, planHash, phase) {
     plan.runtime?.mode !== "production" ||
     plan.runtime?.collectorProtocol !== "z8-fixture-otlp-collector-v2" ||
     plan.runtime?.traceTransport !== "context-loopback-proxy-v1" ||
+    plan.runtime?.browserPolicy !== fixtureBrowserPolicy ||
     !Number.isFinite(plan.timeoutMs) ||
     plan.timeoutMs <= 0
   )
@@ -471,6 +476,7 @@ function requireEvidence(plan, artifact, native, planHash, phase) {
     !artifact.runtime?.buildVerified ||
     artifact.runtime.collectorProtocol !== plan.runtime.collectorProtocol ||
     artifact.runtime.traceTransport !== plan.runtime.traceTransport ||
+    artifact.runtime.browserPolicy !== plan.runtime.browserPolicy ||
     artifact.runtime.build !== plan.runtime.build ||
     artifact.runtime.sourceBuild !== plan.runtime.sourceBuild ||
     artifact.runtime.toolingBuild !== plan.runtime.toolingBuild
@@ -507,6 +513,14 @@ function requireEvidence(plan, artifact, native, planHash, phase) {
     seen.add(key(c));
   }
   for (const s of artifact.samples) {
+    if (
+      !fixtureTransportIsComplete(s.traceTransport) ||
+      JSON.stringify(s.browserInitialization) !==
+        JSON.stringify(s.traceTransport?.browserInitialization)
+    )
+      throw Error(
+        "Complete empty-context browser initialization and post-initialization transport proof are required.",
+      );
     if (!seen.has(key(s))) throw Error("Unexpected cohort in artifact.");
     const id = s.backendTraceId ?? s.traceId;
     if (!id || traceIds.has(id))
