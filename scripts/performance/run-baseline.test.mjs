@@ -254,6 +254,24 @@ test("mutation measurement requires an explicit restoration recipe", () => {
 	}
 });
 
+test("a declared browser permission policy cannot differ from the actual fixture protocol", () => {
+	const folder = mkdtempSync(join(tmpdir(), "z8-baseline-permissions-"));
+	try {
+		const path = join(folder, "plan.json");
+		const plan = fixturePlan();
+		plan.runtime.browserPermissions = "all-denied";
+		writeFileSync(path, JSON.stringify(plan));
+		const result = spawnSync(
+			process.execPath,
+			[runner, "--plan", path, "--validate-plan"],
+			{ encoding: "utf8" },
+		);
+		assert.equal(result.status, 2);
+	} finally {
+		rmSync(folder, { recursive: true, force: true });
+	}
+});
+
 test("route condition labels must be known and cannot silently leave a declared condition unused", () => {
 	const folder = mkdtempSync(join(tmpdir(), "z8-baseline-matrix-"));
 	try {
@@ -333,6 +351,20 @@ test("a fully observed failed predecessor is recorded while the same failure blo
 								mode,
 								iteration,
 								traceId: samples.length.toString(16).padStart(32, "0"),
+								...(failed
+									? {
+											backendTraceId: (samples.length + 100000)
+												.toString(16)
+												.padStart(32, "0"),
+											prerequisiteTraceId: (samples.length + 100000)
+												.toString(16)
+												.padStart(32, "0"),
+											resourceScope: "prerequisite-failure",
+											censored: true,
+											requests: null,
+											javascriptBytes: null,
+										}
+									: {}),
 								failed,
 								usableContentMs: failed ? null : 10,
 								failureStage: failed ? "verify-results" : null,
@@ -357,7 +389,7 @@ test("a fully observed failed predecessor is recorded while the same failure blo
 			backendPath,
 			JSON.stringify(
 				samples.map((sample) => ({
-					traceId: sample.traceId,
+					traceId: sample.backendTraceId ?? sample.traceId,
 					queryCount: 1,
 					queryDurationMs: 2,
 					rowsRetrieved: 3,
@@ -404,6 +436,23 @@ test("a fully observed failed predecessor is recorded while the same failure blo
 		assert.equal(predecessor.command.status, 0);
 		assert.equal(predecessor.artifact.acceptance, "baseline-recorded");
 		assert.equal(predecessor.artifact.releaseAcceptance, "failed");
+		assert.equal(
+			predecessor.artifact.samples.find((sample) => sample.censored).requests,
+			null,
+		);
+		const backendBytes = readFileSync(backendPath);
+		writeFileSync(backendPath, "[]");
+		const missingPrerequisites = finalize("baseline");
+		assert.equal(
+			missingPrerequisites.command.status,
+			1,
+			"Censored readiness does not excuse missing actual prerequisite backend evidence.",
+		);
+		assert.match(
+			missingPrerequisites.artifact.evidenceGates.join(" "),
+			/Correlated backend/,
+		);
+		writeFileSync(backendPath, backendBytes);
 		assert.equal(
 			predecessor.artifact.summaries.find((summary) => summary.failed > 0)
 				.usableContentMs,
