@@ -49,3 +49,38 @@ contains rank, name and streak text, with no form controls; converting it into a
 fieldset would invent a form-control grouping. Its existing accessible named
 group is retained. Formatter/baseline diagnostics remain explicitly reported;
 there is no repository-wide formatting rewrite or lint suppression.
+
+## Merged staging-base revalidation
+
+The final validation branch merges staging `ec3414d16` through `9df093b14` and
+the prepared mixed-load operator through `a8ddf67eb`. Projection setup tooling is
+fixed at `ac2fb1133`; the parent-owned CI build uses that exact pin. Its actual
+fresh-fixture cold and hot initialization proof is recorded in
+[release preverification](1448-release-preverification.md#fresh-merged-fixture-projection-initialization).
+The original compiled worktree remains intact.
+
+Normal license generation and i18n metadata preparation passed. Normal
+`pnpm --dir apps/webapp run typecheck` passed both before and after the setup
+script change: Next route type generation and all three TypeScript
+configurations. The complete React Doctor PR-scope scan against `ec3414d16`
+reports schema 3, `ok: true`, 237 analyzed/scanned files, no skipped checks,
+zero errors and the same 14 reviewed warnings. No suppression was added.
+
+The focused current-roster, relocated approval owner, inventory and capacity
+guards passed 102 assertions, with zero failures. Its deliberate test-name
+filter excludes 295 unrelated assertions; that count is not a full-suite pass.
+The combined mixed-load and projection operator regression run passed 13 tests
+with no skips. The three new projection loader/progress checks are also included
+in the normal root and performance test prefixes.
+
+The merged full `biome ci src` run exits 1 with 6,806 errors, 941 warnings and
+nine informational diagnostics. It is not clean. The historical original scan
+above establishes existing formatter/lint debt; this raw aggregate does not
+attribute individual merged diagnostics. Focused Biome checks on the projection
+operator changes pass. No broad formatting or guard relaxation was applied.
+
+The merged full normal unit run (maximum two workers) and full normal
+PostgreSQL integration run (one worker, no file parallelism) are still pending.
+The integration runner owns a new disposable Docker test database and normal
+full migrations, including peer `0284`–`0287` and renamed `0288`; the productionlike
+final fixtures and old colliding-ledger databases are not used for these tests.

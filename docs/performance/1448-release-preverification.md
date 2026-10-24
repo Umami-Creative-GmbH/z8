@@ -288,7 +288,8 @@ before final head measurement. Controlled before remains business source
 `39a08d0bb` with the frozen dependencies and fixture. A subsequent comparison
 against this combined head includes the concurrent deactivation changes and
 cannot establish an isolated #1448 effect.
-# Fresh merged-fixture projection initialization
+
+## Fresh merged-fixture projection initialization
 
 The first-missing CLI branch now uses the repository's normal `tsx --tsconfig
 ./tsconfig.json --import ./src/worker-preload.mjs` server loader. A real installed
@@ -304,6 +305,11 @@ to its private directory and run `pnpm performance:test:projection:runtime`. Thi
 explicit acceptance test requires a real first-missing rebuild, verifies 208 total
 projections, then reruns the normal CLI and requires 208 preserved and zero rebuilt.
 It refuses an already complete fixture; never delete projections to manufacture
-this condition. Actual fresh-fixture acceptance remains pending the parent-owned
-run; the focused loader test does not claim that database proof.
+this condition. The parent-owned acceptance passed on the fresh final functional
+fixture at operator commit `ac2fb1133`: 208 rebuilt on the first run, then 208
+preserved and zero rebuilt on retry. The fresh final primary fixture separately
+rebuilt all 208 through the same CLI. Both used the explicit
+`2026-10-24T12:00:00Z` as-of instant, retained prior failure evidence, and left
+canonical business rows unchanged. This is separate actual database evidence
+from the three focused loader/progress tests.
 
