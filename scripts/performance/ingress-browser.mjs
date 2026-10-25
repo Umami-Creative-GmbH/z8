@@ -316,10 +316,32 @@ export async function waitForAdmissionDom(
 	const started = now();
 	let attempts = 0,
 		documentNotReadySnapshots = 0,
+		navigationContextTransitions = 0,
 		lastDomSnapshot = { documentReady: false, protectedContent: null };
 	while (now() < deadline) {
-		lastDomSnapshot = await readDashboardDom(page);
 		attempts++;
+		try {
+			lastDomSnapshot = await readDashboardDom(page);
+		} catch (error) {
+			if (
+				error?.name !== "Error" ||
+				error.message !==
+					"Execution context was destroyed, most likely because of a navigation." ||
+				typeof page.isClosed !== "function" ||
+				page.isClosed() !== false ||
+				typeof page.mainFrame !== "function" ||
+				page.mainFrame()?.detached !== false
+			)
+				throw error;
+			navigationContextTransitions++;
+			lastDomSnapshot = {
+				documentReady: false,
+				protectedContent: null,
+				pathname: null,
+				readyState: null,
+				documentTransition: true,
+			};
+		}
 		if (!lastDomSnapshot.documentReady) documentNotReadySnapshots++;
 		if (
 			now() < deadline &&
@@ -332,6 +354,7 @@ export async function waitForAdmissionDom(
 				admissionObservation: {
 					attempts,
 					documentNotReadySnapshots,
+					navigationContextTransitions,
 					elapsedMs: now() - started,
 				},
 			};
@@ -344,6 +367,7 @@ export async function waitForAdmissionDom(
 	error.admissionObservation = {
 		attempts,
 		documentNotReadySnapshots,
+		navigationContextTransitions,
 		elapsedMs: now() - started,
 	};
 	throw error;
