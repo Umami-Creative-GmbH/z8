@@ -1,0 +1,849 @@
+{
+  "version": 1,
+  "kind": "compiled-final-functional-browser-proof",
+  "source": "31d67bbcb95ec8cf6d25d363c04c9f9a47570f0a",
+  "observer": "SDK SERVER=1; additive fixed technical server/drain diagnostics; unchanged accounting and completion rules",
+  "condition": "Exclusive disposable functional app; isolated fresh Chrome profiles and empty two-second browser initialization; notifications denied; normal ServiceWorker active; all HTTP/native work registered. Functional checks, not timing capture or release-budget evidence.",
+  "normalDashboard": [
+    {
+      "case": 1,
+      "readOnly": true,
+      "pageErrors": 0,
+      "nativeCloseElapsedMs": 2.7039000000004307,
+      "nativeCloseProof": [
+        {
+          "queries": 867,
+          "acquisitions": 867,
+          "cache": 7,
+          "started": {
+            "queries": 867,
+            "acquisitions": 867,
+            "cache": 7
+          },
+          "ended": {
+            "queries": 867,
+            "acquisitions": 867,
+            "cache": 7
+          },
+          "unattributedNativeSpans": 0,
+          "driverQueries": 867,
+          "driverComplete": true,
+          "complete": true,
+          "serverBalance": 0,
+          "serverStarted": 263,
+          "serverEnded": 263,
+          "serverScopes": {
+            "http": {
+              "started": 154,
+              "ended": 154
+            },
+            "next": {
+              "started": 109,
+              "ended": 109
+            },
+            "other": {
+              "started": 0,
+              "ended": 0
+            }
+          },
+          "lastActivityAgeMs": 2958.6826999999903,
+          "drained": true,
+          "drainElapsedMs": 0.08779999999387655
+        }
+      ],
+      "standard": {
+        "driverQueryCount": 867,
+        "nativeQueryStartedCount": 867,
+        "nativeQueryEndedCount": 867,
+        "observedQueryCount": 867,
+        "pendingNativeQueries": 0,
+        "activeTraces": 0,
+        "allReceivedTracesReconciled": true,
+        "complete": true
+      },
+      "nativeDelta": {
+        "driver": 867,
+        "queries": 867,
+        "unknown": 0
+      },
+      "beforeContextClose": {
+        "groups": {
+          "javascript": {
+            "requests": 88,
+            "completed": 88,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 1188526,
+            "observedBodyBytes": 1188526,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          },
+          "document": {
+            "requests": 2,
+            "completed": 2,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 367894,
+            "observedBodyBytes": 367894,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          },
+          "rsc": {
+            "requests": 9,
+            "completed": 9,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 233908,
+            "observedBodyBytes": 233908,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          },
+          "otherFinite": {
+            "requests": 36,
+            "completed": 36,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 130161,
+            "observedBodyBytes": 130161,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          },
+          "prefetch": {
+            "requests": 17,
+            "completed": 17,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 223674,
+            "observedBodyBytes": 223674,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          },
+          "longLived": {
+            "requests": 0,
+            "completed": 0,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 0,
+            "observedBodyBytes": 0,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          }
+        },
+        "quietObservedMs": 1040.4620999999997,
+        "allFiniteAndPrefetchPending": 0,
+        "upstreamFailures": 0,
+        "downstreamCancellations": 0
+      }
+    },
+    {
+      "case": 2,
+      "readOnly": true,
+      "pageErrors": 0,
+      "nativeCloseElapsedMs": 2.8919999999998254,
+      "nativeCloseProof": [
+        {
+          "queries": 867,
+          "acquisitions": 867,
+          "cache": 7,
+          "started": {
+            "queries": 867,
+            "acquisitions": 867,
+            "cache": 7
+          },
+          "ended": {
+            "queries": 867,
+            "acquisitions": 867,
+            "cache": 7
+          },
+          "unattributedNativeSpans": 0,
+          "driverQueries": 867,
+          "driverComplete": true,
+          "complete": true,
+          "serverBalance": 0,
+          "serverStarted": 263,
+          "serverEnded": 263,
+          "serverScopes": {
+            "http": {
+              "started": 154,
+              "ended": 154
+            },
+            "next": {
+              "started": 109,
+              "ended": 109
+            },
+            "other": {
+              "started": 0,
+              "ended": 0
+            }
+          },
+          "lastActivityAgeMs": 2885.929600000003,
+          "drained": true,
+          "drainElapsedMs": 0.009200000000419095
+        }
+      ],
+      "standard": {
+        "driverQueryCount": 867,
+        "nativeQueryStartedCount": 867,
+        "nativeQueryEndedCount": 867,
+        "observedQueryCount": 867,
+        "pendingNativeQueries": 0,
+        "activeTraces": 0,
+        "allReceivedTracesReconciled": true,
+        "complete": true
+      },
+      "nativeDelta": {
+        "driver": 867,
+        "queries": 867,
+        "unknown": 0
+      },
+      "beforeContextClose": {
+        "groups": {
+          "javascript": {
+            "requests": 88,
+            "completed": 88,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 1188526,
+            "observedBodyBytes": 1188526,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          },
+          "document": {
+            "requests": 2,
+            "completed": 2,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 368409,
+            "observedBodyBytes": 368409,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          },
+          "rsc": {
+            "requests": 9,
+            "completed": 9,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 233909,
+            "observedBodyBytes": 233909,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          },
+          "otherFinite": {
+            "requests": 36,
+            "completed": 36,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 130161,
+            "observedBodyBytes": 130161,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          },
+          "prefetch": {
+            "requests": 17,
+            "completed": 17,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 223674,
+            "observedBodyBytes": 223674,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          },
+          "longLived": {
+            "requests": 0,
+            "completed": 0,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 0,
+            "observedBodyBytes": 0,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          }
+        },
+        "quietObservedMs": 1037.2365,
+        "allFiniteAndPrefetchPending": 0,
+        "upstreamFailures": 0,
+        "downstreamCancellations": 0
+      }
+    },
+    {
+      "case": 3,
+      "readOnly": true,
+      "pageErrors": 0,
+      "nativeCloseElapsedMs": 2.5801000000001295,
+      "nativeCloseProof": [
+        {
+          "queries": 867,
+          "acquisitions": 867,
+          "cache": 7,
+          "started": {
+            "queries": 867,
+            "acquisitions": 867,
+            "cache": 7
+          },
+          "ended": {
+            "queries": 867,
+            "acquisitions": 867,
+            "cache": 7
+          },
+          "unattributedNativeSpans": 0,
+          "driverQueries": 867,
+          "driverComplete": true,
+          "complete": true,
+          "serverBalance": 0,
+          "serverStarted": 263,
+          "serverEnded": 263,
+          "serverScopes": {
+            "http": {
+              "started": 154,
+              "ended": 154
+            },
+            "next": {
+              "started": 109,
+              "ended": 109
+            },
+            "other": {
+              "started": 0,
+              "ended": 0
+            }
+          },
+          "lastActivityAgeMs": 2712.492400000003,
+          "drained": true,
+          "drainElapsedMs": 0.009200000000419095
+        }
+      ],
+      "standard": {
+        "driverQueryCount": 867,
+        "nativeQueryStartedCount": 867,
+        "nativeQueryEndedCount": 867,
+        "observedQueryCount": 867,
+        "pendingNativeQueries": 0,
+        "activeTraces": 0,
+        "allReceivedTracesReconciled": true,
+        "complete": true
+      },
+      "nativeDelta": {
+        "driver": 867,
+        "queries": 867,
+        "unknown": 0
+      },
+      "beforeContextClose": {
+        "groups": {
+          "javascript": {
+            "requests": 88,
+            "completed": 88,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 1188526,
+            "observedBodyBytes": 1188526,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          },
+          "document": {
+            "requests": 2,
+            "completed": 2,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 367185,
+            "observedBodyBytes": 367185,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          },
+          "rsc": {
+            "requests": 9,
+            "completed": 9,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 233907,
+            "observedBodyBytes": 233907,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          },
+          "otherFinite": {
+            "requests": 36,
+            "completed": 36,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 130161,
+            "observedBodyBytes": 130161,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          },
+          "prefetch": {
+            "requests": 17,
+            "completed": 17,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 223674,
+            "observedBodyBytes": 223674,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          },
+          "longLived": {
+            "requests": 0,
+            "completed": 0,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 0,
+            "observedBodyBytes": 0,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          }
+        },
+        "quietObservedMs": 1036.4144999999999,
+        "allFiniteAndPrefetchPending": 0,
+        "upstreamFailures": 0,
+        "downstreamCancellations": 0
+      }
+    }
+  ],
+  "terminalChunk": {
+    "passed": true,
+    "pageErrors": 0,
+    "strictTransport": true,
+    "mainDocument": {
+      "requests": 1,
+      "responses": 1,
+      "commits": 1,
+      "sameDocumentTransitions": 1,
+      "loaders": 1
+    },
+    "nativeCloseElapsedMs": 2.5463999999992666,
+    "nativeCloseProof": [
+      {
+        "queries": 826,
+        "acquisitions": 826,
+        "cache": 10,
+        "started": {
+          "queries": 826,
+          "acquisitions": 826,
+          "cache": 10
+        },
+        "ended": {
+          "queries": 826,
+          "acquisitions": 826,
+          "cache": 10
+        },
+        "unattributedNativeSpans": 0,
+        "driverQueries": 826,
+        "driverComplete": true,
+        "complete": true,
+        "serverBalance": 0,
+        "serverStarted": 325,
+        "serverEnded": 325,
+        "serverScopes": {
+          "http": {
+            "started": 180,
+            "ended": 180
+          },
+          "next": {
+            "started": 145,
+            "ended": 145
+          },
+          "other": {
+            "started": 0,
+            "ended": 0
+          }
+        },
+        "lastActivityAgeMs": 4538.921799999982,
+        "drained": true,
+        "drainElapsedMs": 0.02059999998891726
+      }
+    ],
+    "native": {
+      "complete": true,
+      "driverQueries": 826,
+      "sdkQueries": 826,
+      "receivedQueries": 826,
+      "acquisitions": 826,
+      "cache": 10,
+      "unknownNativeDelta": 0,
+      "incoming": {
+        "knownHeaderKnownSpan": 180,
+        "knownHeaderOtherSpan": 0,
+        "otherHeaderKnownSpan": 0,
+        "otherHeaderOtherSpan": 3,
+        "matchingParent": 180,
+        "mismatchingParent": 0
+      },
+      "standard": {
+        "driverQueryCount": 826,
+        "nativeQueryStartedCount": 826,
+        "nativeQueryEndedCount": 826,
+        "observedQueryCount": 826,
+        "pendingNativeQueries": 0,
+        "activeTraces": 0,
+        "allReceivedTracesReconciled": true,
+        "complete": true
+      }
+    },
+    "beforeContextClose": [
+      {
+        "groups": {
+          "javascript": {
+            "requests": 96,
+            "completed": 96,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 1250396,
+            "observedBodyBytes": 1250396,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          },
+          "document": {
+            "requests": 2,
+            "completed": 2,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 367672,
+            "observedBodyBytes": 367672,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          },
+          "rsc": {
+            "requests": 12,
+            "completed": 12,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 414765,
+            "observedBodyBytes": 414765,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          },
+          "otherFinite": {
+            "requests": 37,
+            "completed": 37,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 130314,
+            "observedBodyBytes": 130314,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          },
+          "prefetch": {
+            "requests": 32,
+            "completed": 32,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 548903,
+            "observedBodyBytes": 548903,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          },
+          "longLived": {
+            "requests": 0,
+            "completed": 0,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 0,
+            "observedBodyBytes": 0,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          }
+        },
+        "quietObservedMs": 2078.8491999999997,
+        "mandatoryPending": 0,
+        "mandatoryErrors": 0
+      }
+    ],
+    "before": {
+      "state": "deferred",
+      "hasError": false
+    },
+    "compiledRuntime": {
+      "sha256": "b5f9b5199b99ab6c141f4540f0b7d0fe803c4ecf6956849ecb6e59d3d439272e",
+      "automaticRetryBudget": 1,
+      "sourceBudgetMatched": true
+    },
+    "serviceWorker": {
+      "controlled": true,
+      "registrations": 1,
+      "targetInCache": false
+    },
+    "chunkNetwork": {
+      "requests": 3,
+      "requestKinds": [
+        {
+          "queryPresent": true,
+          "resourceType": "Script"
+        },
+        {
+          "queryPresent": true,
+          "resourceType": "Script"
+        },
+        {
+          "queryPresent": true,
+          "resourceType": "Script"
+        }
+      ],
+      "failed": 2,
+      "responses": [
+        {
+          "status": 200,
+          "fromDiskCache": false,
+          "fromServiceWorker": false
+        }
+      ],
+      "finished": 1,
+      "encodedBytes": 3787
+    },
+    "timeOrder": true,
+    "localError": {
+      "insideFailedRegion": true,
+      "headerSame": true,
+      "clockReady": true,
+      "quickSame": true,
+      "timeOriginSame": true
+    },
+    "recovered": {
+      "errorAbsent": true,
+      "headerSame": true,
+      "quickSame": true,
+      "timeOriginSame": true
+    },
+    "widgetRead": {
+      "status": 200,
+      "success": true,
+      "rows": 0
+    },
+    "mainDocumentBeforeFault": {
+      "requests": 1,
+      "responses": 1,
+      "commits": 1,
+      "sameDocumentTransitions": 1,
+      "loaders": 1
+    },
+    "condition": "Only initial and one automatic retry of the exact birthday Script pathname (including deployment query) fail. Every later request is allowed unchanged; actual user local Retry triggers third uncached HTTP200. No other asset, API or worker fault."
+  },
+  "employeeRefresh": {
+    "passed": true,
+    "pageErrors": 0,
+    "strictTransport": true,
+    "mainDocument": {
+      "requests": 1,
+      "responses": 1,
+      "commits": 1,
+      "sameDocumentTransitions": 2,
+      "loaders": 1
+    },
+    "nativeCloseElapsedMs": 2.813000000001921,
+    "nativeCloseProof": [
+      {
+        "queries": 1699,
+        "acquisitions": 1699,
+        "cache": 37,
+        "started": {
+          "queries": 1699,
+          "acquisitions": 1699,
+          "cache": 37
+        },
+        "ended": {
+          "queries": 1699,
+          "acquisitions": 1699,
+          "cache": 37
+        },
+        "unattributedNativeSpans": 0,
+        "driverQueries": 1699,
+        "driverComplete": true,
+        "complete": true,
+        "serverBalance": 0,
+        "serverStarted": 693,
+        "serverEnded": 693,
+        "serverScopes": {
+          "http": {
+            "started": 322,
+            "ended": 322
+          },
+          "next": {
+            "started": 371,
+            "ended": 371
+          },
+          "other": {
+            "started": 0,
+            "ended": 0
+          }
+        },
+        "lastActivityAgeMs": 4600.527199999953,
+        "drained": true,
+        "drainElapsedMs": 0.04740000003948808
+      }
+    ],
+    "native": {
+      "complete": true,
+      "driverQueries": 1699,
+      "sdkQueries": 1699,
+      "receivedQueries": 1699,
+      "acquisitions": 1699,
+      "cache": 37,
+      "unknownNativeDelta": 0,
+      "incoming": {
+        "knownHeaderKnownSpan": 322,
+        "knownHeaderOtherSpan": 0,
+        "otherHeaderKnownSpan": 0,
+        "otherHeaderOtherSpan": 3,
+        "matchingParent": 322,
+        "mismatchingParent": 0
+      },
+      "standard": {
+        "driverQueryCount": 1699,
+        "nativeQueryStartedCount": 1699,
+        "nativeQueryEndedCount": 1699,
+        "observedQueryCount": 1699,
+        "pendingNativeQueries": 0,
+        "activeTraces": 0,
+        "allReceivedTracesReconciled": true,
+        "complete": true
+      }
+    },
+    "beforeContextClose": [
+      {
+        "groups": {
+          "javascript": {
+            "requests": 125,
+            "completed": 125,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 1732930,
+            "observedBodyBytes": 1732930,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          },
+          "document": {
+            "requests": 2,
+            "completed": 2,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 657002,
+            "observedBodyBytes": 657002,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          },
+          "rsc": {
+            "requests": 69,
+            "completed": 69,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 2310913,
+            "observedBodyBytes": 2310913,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          },
+          "otherFinite": {
+            "requests": 39,
+            "completed": 39,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 134211,
+            "observedBodyBytes": 134211,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          },
+          "prefetch": {
+            "requests": 86,
+            "completed": 86,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 1419749,
+            "observedBodyBytes": 1419749,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          },
+          "longLived": {
+            "requests": 0,
+            "completed": 0,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 0,
+            "observedBodyBytes": 0,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          }
+        },
+        "quietObservedMs": 2073.0603999999985,
+        "mandatoryPending": 0,
+        "mandatoryErrors": 0
+      }
+    ],
+    "refreshCounts": {
+      "rsc": 1,
+      "document": 0,
+      "datasets": {
+        "detail": 0,
+        "schedule": 1,
+        "managers": 1,
+        "employment-history": 1,
+        "work-policies": 1
+      }
+    },
+    "preservation": {
+      "sameInput": true,
+      "draft": true,
+      "selectedOther": true,
+      "scrollPositive": true,
+      "scrollDelta": 0,
+      "timeOriginSame": true
+    },
+    "mainDocumentBeforeRefresh": {
+      "requests": 1,
+      "responses": 1,
+      "commits": 1,
+      "sameDocumentTransitions": 1,
+      "loaders": 1
+    },
+    "condition": "One real header Refresh data action with unsaved position and Gender selection. No save or canonical business mutation."
+  },
+  "historicalFailures": {
+    "retained": true,
+    "eeeReact418": "Observed on normal uninjected Dashboard and reproduced through real Header hydrateRoot cache ordering; old trials remain failed.",
+    "eeeManualNativeCap": "Actual1699 balanced queries/driver with incomplete native close after10018ms. Old source lacked server/drained fields; cause remains unknown. This later successful run does not retroactively repair or explain it.",
+    "frameEventOracle": "Earlier framenavigated count included one same-document event. Retained failed artifact; corrected oracle uses actual main-frame Document requests/responses/commits/loaders and unchanged time origin."
+  },
+  "limits": [
+    "Three fresh normal Dashboard cases are a bounded functional check, not a statistical claim about all hydration schedules.",
+    "Accepted selector mutations/scope/other-tenant warmth have separately qualified eee compiled evidence; backend behavior was unchanged by the header fix.",
+    "The real301-second cache-expiry behavior remains qualified prior-ac2 evidence.",
+    "Controlled before/final measurements, mixed load, budgets and final reviews remain separate gates."
+  ],
+  "selectorWriteEvidenceQualification": {
+    "measuredSource": "eee1fc6501e290a17705fb4edb0db41e91d29b30",
+    "currentSource": "31d67bbcb95ec8cf6d25d363c04c9f9a47570f0a",
+    "verifiedGitBlobs": [
+      {
+        "path": "apps/webapp/src/lib/organization/employee-detail-selectors.ts",
+        "measured": "4ad67a3fec93aefb527f8d232fdc09de40e5b561",
+        "current": "4ad67a3fec93aefb527f8d232fdc09de40e5b561",
+        "identical": true
+      },
+      {
+        "path": "apps/webapp/src/app/api/settings/employees/read/[dataset]/route.ts",
+        "measured": "cd0a8088831550a6352918cb08c4c665e761a341",
+        "current": "cd0a8088831550a6352918cb08c4c665e761a341",
+        "identical": true
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/settings/employees/employee-mutations.actions.ts",
+        "measured": "45b52600d47050ee9b58c219cd3056ddcdb01caf",
+        "current": "45b52600d47050ee9b58c219cd3056ddcdb01caf",
+        "identical": true
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/settings/work-policies/actions.ts",
+        "measured": "b040efee648f9947bc068cc4e56093ca67dd8574",
+        "current": "b040efee648f9947bc068cc4e56093ca67dd8574",
+        "identical": true
+      },
+      {
+        "path": "apps/webapp/src/lib/effect/services/auth.service.ts",
+        "measured": "b121062759286847d8a4fe3f212996044598758f",
+        "current": "b121062759286847d8a4fe3f212996044598758f",
+        "identical": true
+      }
+    ],
+    "observer": "The eee accepted-write cases already use corrected SDK SERVER classification; only additive diagnostic fields are absent. No rerun is represented here."
+  },
+  "cacheExpiryQualification": {
+    "measuredSource": "ac2fb11334b2fac88144dd405e39a15bd988d29c",
+    "elapsedSeconds": 301,
+    "scope": "Real awaited GET hit/miss/expiry behavior from retained prior artifact; not recast as final native acceptance under corrected SDK server accounting.",
+    "selectorReaderBlobIdentical": true
+  }
+}

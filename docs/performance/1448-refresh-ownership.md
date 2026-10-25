@@ -97,3 +97,12 @@ finite and prefetch wire group was already empty before context close. The old
 proof did not expose server balance or the drained result, so the remaining
 cause is not inferred or waived. Additive server/drain diagnostics and a rebuilt
 artifact are required before this observation becomes final acceptance.
+
+A separate compiled `31d67bbcb` trial now passes the full functional, transport
+and native checks; its [numeric record](evidence/1475-31d-functional-browser.json)
+preserves the earlier failure. The same one-RSC/four-GET ownership, zero extra
+detail GET, dirty values, selection, input node, zero-pixel scroll change and
+unchanged main document/loader all pass. All 1,699 queries, acquisitions and 37
+cache operations reconcile. Server starts/ends are 693/693 (HTTP 322/322,
+Next 371/371), balance is zero and native drainage completes. The older cap's
+cause remains unknown; no observer accounting or completion rule was changed.
