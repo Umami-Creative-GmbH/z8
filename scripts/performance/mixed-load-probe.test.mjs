@@ -7,6 +7,77 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 import * as mixedProbe from "./mixed-load-probe.mjs";
 
+test("mixed annual preparation registers the actual response before keyboard selection commits", async () => {
+	const events = [],
+		keys = [];
+	let reads = 0,
+		predicate,
+		resolveResponse;
+	const response = {
+		request: () => ({
+			headers: () => ({ "next-action": "test-action" }),
+			postData: () => '["2025-01-01"]',
+		}),
+		url: () => "http://localhost/en/analytics/work-hours",
+	};
+	const trigger = {
+		isVisible: async () => true,
+		evaluate: async () =>
+			++reads === 1
+				? true
+				: reads === 2
+					? { role: "combobox", popup: "listbox", open: "false" }
+					: true,
+		focus: async () => events.push("focus"),
+	};
+	const page = {
+		$$: async () => [trigger],
+		evaluate: async () => ["Last Month", "Current Month", "Last Year"],
+		waitForFunction: async () => {},
+		waitForResponse: (match) => {
+			events.push("registered");
+			predicate = match;
+			return new Promise((done) => {
+				resolveResponse = done;
+			});
+		},
+		keyboard: {
+			press: async (key) => {
+				keys.push(key);
+				if (key === "Enter") {
+					assert.equal(events[0], "registered");
+					assert.equal(predicate(response), true);
+					events.push("committed");
+					resolveResponse(response);
+				}
+			},
+		},
+	};
+	assert.equal(
+		await mixedProbe.selectAnnualAnalyticsPeriod(
+			page,
+			"/en/analytics/work-hours",
+		),
+		response,
+	);
+	assert.deepEqual(events, ["registered", "focus", "committed"]);
+	assert.equal(keys.filter((key) => key === "Enter").length, 1);
+	assert.equal(
+		predicate({ ...response, url: () => "http://localhost/en/other" }),
+		false,
+	);
+	assert.equal(
+		predicate({
+			...response,
+			request: () => ({
+				headers: () => ({}),
+				postData: () => '["2025-01-01"]',
+			}),
+		}),
+		undefined,
+	);
+});
+
 test("mixed source identity accepts the API seven-character hash only as a prefix of the recorded source", () => {
 	const source = "456d28b2da4437662ae8f625a1df6756bff031fe";
 	assert.equal(typeof mixedProbe.mixedSourceMatches, "function");
