@@ -6,6 +6,11 @@ import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { primaryProtocolIdentity } from "./protocol-fingerprints.mjs";
 import {
+	closePrimaryContext,
+	nativeCleanupPolicy,
+	primaryCleanupComplete,
+} from "./primary-context-cleanup.mjs";
+import {
 	captureObservedBrowserMetrics,
 	installFixturePerformanceObservers,
 } from "./browser-performance.mjs";
@@ -90,6 +95,11 @@ const coverageNames = [
 ];
 
 function validate(plan, verifying = false) {
+	if (
+		plan.runtime?.traceTransport === fixtureTraceTransport &&
+		plan.runtime.nativeCleanupPolicy !== nativeCleanupPolicy
+	)
+		fail("Frozen plan requires the post-snapshot native cleanup policy.");
 	if (
 		plan.runtime?.traceTransport === fixtureTraceTransport &&
 		plan.runtime.browserPolicy !== fixtureBrowserPolicy
@@ -367,6 +377,16 @@ async function main() {
 		result.gates = [];
 		if (
 			plan.runtime.traceTransport === fixtureTraceTransport &&
+			(result.runtime.nativeCleanupPolicy !== nativeCleanupPolicy ||
+				result.samples.some(
+					(sample) => !primaryCleanupComplete(sample.nativeCleanup),
+				))
+		)
+			result.gates.push(
+				"Post-snapshot finite HTTP cleanup evidence is incomplete.",
+			);
+		if (
+			plan.runtime.traceTransport === fixtureTraceTransport &&
 			(result.runtime.browserPolicy !== fixtureBrowserPolicy ||
 				result.runtime.traceTransport !== fixtureTraceTransport ||
 				result.samples.some(
@@ -534,6 +554,7 @@ async function main() {
 			collectorProtocol: plan.runtime.collectorProtocol ?? null,
 			traceTransport: plan.runtime.traceTransport ?? "page-interception-v1",
 			browserPolicy: plan.runtime.browserPolicy ?? null,
+			nativeCleanupPolicy: plan.runtime.nativeCleanupPolicy ?? null,
 			browserPermissions: fixtureBrowserPermissions,
 			build: plan.runtime.build,
 			sourceBuild: plan.runtime.sourceBuild ?? null,
@@ -1342,7 +1363,7 @@ export async function measure(
 						: performance.now() - measurementStart;
 			}
 		}
-		await context?.close();
+		await closePrimaryContext({ context, transport, sample });
 		if (observerVisit) {
 			try {
 				const observation = await collector.endCollectorVisit(observerVisit);

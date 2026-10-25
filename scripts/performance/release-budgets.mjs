@@ -3,6 +3,10 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import {
+  nativeCleanupPolicy,
+  primaryCleanupComplete,
+} from "./primary-context-cleanup.mjs";
+import {
   beforeFailurePolicy,
   eligibleOriginalAnnualFailure,
   requireSettledEvidence,
@@ -549,6 +553,7 @@ function requireEvidence(plan, artifact, native, planHash, phase) {
     plan.runtime?.collectorProtocol !== "z8-fixture-otlp-collector-v2" ||
     plan.runtime?.traceTransport !== "context-loopback-proxy-v1" ||
     plan.runtime?.browserPolicy !== fixtureBrowserPolicy ||
+    plan.runtime?.nativeCleanupPolicy !== nativeCleanupPolicy ||
     !Number.isFinite(plan.timeoutMs) ||
     plan.timeoutMs <= 0
   )
@@ -571,6 +576,7 @@ function requireEvidence(plan, artifact, native, planHash, phase) {
     artifact.runtime.collectorProtocol !== plan.runtime.collectorProtocol ||
     artifact.runtime.traceTransport !== plan.runtime.traceTransport ||
     artifact.runtime.browserPolicy !== plan.runtime.browserPolicy ||
+    artifact.runtime.nativeCleanupPolicy !== plan.runtime.nativeCleanupPolicy ||
     artifact.runtime.build !== plan.runtime.build ||
     artifact.runtime.sourceBuild !== plan.runtime.sourceBuild ||
     artifact.runtime.toolingBuild !== plan.runtime.toolingBuild
@@ -607,6 +613,10 @@ function requireEvidence(plan, artifact, native, planHash, phase) {
     seen.add(key(c));
   }
   for (const s of artifact.samples) {
+    if (!primaryCleanupComplete(s.nativeCleanup))
+      throw Error(
+        "Complete post-snapshot finite HTTP cleanup proof is required.",
+      );
     if (
       !fixtureTransportIsComplete(s.traceTransport) ||
       JSON.stringify(s.browserInitialization) !==
