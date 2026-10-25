@@ -592,16 +592,18 @@ async function plan(directory) {
 						{ wait: `a[href="${path}"]` },
 					],
 				}
-			: {
-					navigationSteps: [
-						{
-							reveal: {
-								target: `a[href="${path}"]`,
-								trigger: 'button[data-sidebar="trigger"]',
+			: name === "employee-directory"
+				? { navigationSteps: [{ wait: `a[href="${path}"]` }] }
+				: {
+						navigationSteps: [
+							{
+								reveal: {
+									target: `a[href="${path}"]`,
+									trigger: 'button[data-sidebar="trigger"]',
+								},
 							},
-						},
-					],
-				}),
+						],
+					}),
 		navigationAfter: [{ key: "Escape" }],
 		refresh: 'button[aria-label="Refresh data"]',
 		refreshSteps: headerRefreshSteps,
