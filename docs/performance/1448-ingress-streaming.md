@@ -52,8 +52,11 @@ predicate was not relaxed. This is a functional recovery pass, not complete faul
 resource evidence or a normal cost-budget pass. Every scoped variant was restored.
 
 [Numeric preflight evidence](evidence/1475-de0-ingress-preflight.json) retains the
-earlier separate outcomes. The two-tab scoped-read browser case, controlled
-performance/budget gates and deployed production/CDN verification remain open.
+earlier separate outcomes. A subsequent two-tab scoped-read trial passed its
+actual response/cache/retry assertions and native accounting, but its cleanup
+lost the transport snapshot; that overall failed trial leaves strict browser-race
+transport acceptance open. See [the qualified observation](evidence/1475-de0-two-tab-scope.json).
+Controlled performance/budget gates and deployed production/CDN verification remain open.
 Old `ac2` and `31d` proofs keep their original source qualification.
 
 ## Final local observations
