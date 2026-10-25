@@ -17,6 +17,21 @@ import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 import test from "node:test";
 const hash = (bytes) => createHash("sha256").update(bytes).digest("hex");
+function cleanupFixture() {
+  const wire = createProxyWireObserver();
+  wire.begin(0);
+  wire.ready(0);
+  return {
+    ...wire.state(1000),
+    policy: "post-snapshot-finite-prefetch-quiet-v1",
+    scope: "post-snapshot-context-cleanup",
+    usableContentClaim: false,
+    quietMs: 1000,
+    capMs: 10000,
+    elapsedMs: 1000,
+    prefetchQuietObservedMs: 1000,
+  };
+}
 function fixture() {
   const dir = mkdtempSync(join(tmpdir(), "z8-release-budget-"));
   const plan = {
@@ -37,6 +52,7 @@ function fixture() {
       collectorProtocol: "z8-fixture-otlp-collector-v2",
       traceTransport: "context-loopback-proxy-v1",
       browserPolicy: "isolated-profile-no-prediction-v1",
+      nativeCleanupPolicy: "post-snapshot-finite-prefetch-quiet-v1",
       browserPermissions: "notifications-denied-for-fixture-origin",
       build: "aaaaaaaaa",
       sourceBuild: "bbbbbbbbb",
@@ -68,6 +84,7 @@ function fixture() {
       traceId: `trace-${mode}-${i}`,
       backendTraceId: `trace-${mode}-${i}`,
       failed: false,
+      nativeCleanup: cleanupFixture(),
       traceTransport: {
         kind: "context-loopback-proxy-v1",
         requests: 4,
@@ -214,6 +231,21 @@ test("derivation emits fresh release budgets without modifying the baseline", ()
     "release",
   );
   assert.equal(readFileSync(join(f.dir, "before-plan.json"), "utf8"), old);
+});
+
+test("unfinalized, missing or capped native cleanup cannot register a numerical budget", () => {
+  for (const change of [
+    (s) => delete s.nativeCleanup,
+    (s) => (s.nativeCleanup.complete = false),
+    (s) => (s.nativeCleanup.capped = true),
+    (s) => (s.nativeCleanup.mandatoryErrors = 1),
+    (s) => delete s.nativeCleanup.prefetchQuietObservedMs,
+  ]) {
+    const f = fixture();
+    change(f.artifact.samples[0]);
+    f.saveBefore();
+    assert.equal(f.derive().status, 2);
+  }
 });
 test("native paint budgets require all twenty raw first-document observations even when finite paint values were supplied", () => {
   for (const change of [
@@ -637,6 +669,7 @@ test("finalized failed original annual traffic supplies a labeled resource budge
       "settled-resource-observer.mjs",
       "journey-steps.mjs",
       "run-baseline.mjs",
+      "primary-context-cleanup.mjs",
       "collector-client.mjs",
       "trace-transport.mjs",
       "proxy-wire-observer.mjs",
