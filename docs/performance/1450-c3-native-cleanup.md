@@ -1,4 +1,6 @@
-# Primary native cleanup correction — finite proof pending
+# Primary native cleanup correction — two finite diagnostics verified
+
+The controller subsequently ran both prepared diagnostics against the unchanged original 295 binary and fresh v5 native/collector epoch. The [numeric public evidence](evidence/1450-primary-cleanup-functional.json) retains the source artifact hashes and all three native closure counts without URLs, bodies or identities. First document: cleanup complete in 1835.027 ms, native close 3.862 ms, all three proofs complete, global driver/SDK/export counts exactly 1122. Repeat Link: cleanup complete in 1348.328 ms, native close 2.770 ms, all three proofs complete, global counts exactly 1700. Both have zero pending native work and active traces, pass strict transport, and retain **incomplete original resource windows with nine/eight pending CDP requests**. These are one visit per mode, not full-matrix or twenty-observation evidence, and do not identify every historical incomplete SERVER cause or guarantee future closure. The [separate C3 controller worksheet](1450-c3-capture-worksheet.md) uses a new unfrozen plan and output directory.
 
 The immutable C2 ledger stopped after 49 visits / 11 native-coverage failures. Its first failed small-admin dashboard visit retained nine pending CDP requests, an incomplete resource window, usable content 649.889 ms / native LCP 516 ms / clock 559.088 ms, and a native close cap of 10013.448 ms. All three native close proofs were incomplete despite balanced queries, acquisitions and cache counts and complete driver accounting. Earlier successful closures also retained pending CDP requests; this evidence supports testing a closure gap but does not establish the exact unfinished SERVER cause. C2 remains interrupted diagnostic evidence; never finalize or derive from it.
 
@@ -10,7 +12,7 @@ The focused regression uses an actual loopback HTTP response and a real `BasicTr
 
 ## Controller-only finite diagnostic
 
-These commands are prepared, not executed by the preparation agent. The controller must confirm its fresh v5 collector/native epoch and unchanged original 295 app are ready. Both runs use one existing journey via the normal `--verify-journeys` operator. They are diagnostics, not twenty-sample evidence or a frozen C3 pass. Use new outputs and preserve every failure.
+The controller executed the corresponding commands using the separately prepared `before-c3-native-cleanup-764de702-DIAGNOSTIC.json`; the preparation agent made no fixture requests. The block below remains a recipe for a new diagnostic, not permission to overwrite the completed outputs. Both runs use one existing journey via the normal `--verify-journeys` operator. They are diagnostics, not twenty-sample evidence or a frozen C3 pass. Use new outputs and preserve every failure.
 
 ```powershell
 $ErrorActionPreference = 'Stop'
@@ -42,4 +44,4 @@ foreach ($mode in @('first-document', 'repeat-link')) {
 
 Review the separate cleanup snapshot, all three raw native close proofs and close elapsed time, global driver/start/end/export reconciliation, transport totals, and the **unchanged partial primary resource flags**. A complete cleanup snapshot cannot relabel primary CDP bytes as full cost. No blanket downstream cancellation waiver applies. If native closure still caps despite finite completion, retain that result and investigate the remaining lifecycle cause.
 
-Only after finite actual proof may the controller prepare a new C3 plan/sidecar with the runtime condition and new tooling hashes. Keep every non-runtime field equal to original C1: 114 primary cohorts / 1380 visits and 54 companion cohorts / 1080 visits, with twenty first documents and twenty repeat Links per required cohort and five functional visits. The C2 source, plan, preparation reports, raw ledgers and interruption remain immutable. No C3 freeze, budget derivation or head capture is authorized by this diagnostic worksheet.
+The actual finite proof permits preparing the separate C3 draft/sidecar with the runtime condition and new tooling hashes. Every non-runtime field remains equal to original C1: 114 primary cohorts / 1380 visits and 54 companion cohorts / 1080 visits, with twenty first documents and twenty repeat Links per required cohort and five functional visits. The C2 source, plan, preparation reports, raw ledgers and interruption remain immutable. No C3 freeze, budget derivation or head capture was performed during this preparation.

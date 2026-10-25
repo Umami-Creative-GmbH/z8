@@ -1,0 +1,337 @@
+{
+  "schema": 1,
+  "kind": "primary-cleanup-functional-diagnostic",
+  "acceptance": "unfulfilled",
+  "controlledCapture": false,
+  "budgetsDerived": false,
+  "nativeCleanupPolicy": "post-snapshot-finite-prefetch-quiet-v1",
+  "binary": "295de0b706e439bcdaf4d2d25661ce45f02ddb61",
+  "businessSource": "39a08d0bbe77e00ceb5b204b9f9100ab2cfb86be",
+  "measuredToolingSource": "764de702d0fd92fe31be96f8a8a2c35e75a778c4",
+  "integratedSource": "f47e7ff0ad3f737864368faa30e5444e19d8fc1e",
+  "interruptedC2": {
+    "samples": 49,
+    "failures": 11,
+    "interruptionSha256": "4072350c5a39de8815cce51ccccad739c568c96f9b06a6a4724e766a26a6d915",
+    "eligibleForBudgetDerivation": false
+  },
+  "records": [
+    {
+      "artifact": "observer-v5-primary-cleanup-first-document-diagnostic/baseline.json",
+      "artifactSha256": "ddc5bf421b918dcb76ec29ce131b21beb39485502b3eea42d4797c966ef8f815",
+      "kind": "journey-verification",
+      "samples": 1,
+      "mode": "first-document",
+      "condition": "small-admin",
+      "route": "dashboard",
+      "range": "default",
+      "failed": false,
+      "usableContentMs": 2268.4778,
+      "clockReadyMs": 2070.0017000000003,
+      "lcpMs": 2080,
+      "originalResourceSnapshot": {
+        "complete": false,
+        "pending": 9,
+        "pendingScriptRequests": 0,
+        "pendingRscRequests": 0,
+        "javascriptBytes": 963403,
+        "rscBytes": 6147,
+        "totalBytes": 1236325
+      },
+      "separateCleanup": {
+        "policy": "post-snapshot-finite-prefetch-quiet-v1",
+        "scope": "post-snapshot-context-cleanup",
+        "complete": true,
+        "capped": false,
+        "mandatoryPending": 0,
+        "mandatoryErrors": 0,
+        "quietObservedMs": 1000.4658,
+        "prefetchQuietObservedMs": 1283.6255999999994,
+        "elapsedMs": 1835.0267999999996,
+        "groups": {
+          "javascript": {
+            "requests": 67,
+            "completed": 67,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 967493,
+            "observedBodyBytes": 967493,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          },
+          "document": {
+            "requests": 2,
+            "completed": 2,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 354121,
+            "observedBodyBytes": 354121,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          },
+          "rsc": {
+            "requests": 19,
+            "completed": 19,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 3345,
+            "observedBodyBytes": 3345,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          },
+          "otherFinite": {
+            "requests": 45,
+            "completed": 45,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 133376,
+            "observedBodyBytes": 133376,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          },
+          "prefetch": {
+            "requests": 3,
+            "completed": 3,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 48784,
+            "observedBodyBytes": 48784,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          },
+          "longLived": {
+            "requests": 0,
+            "completed": 0,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 0,
+            "observedBodyBytes": 0,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          }
+        }
+      },
+      "nativeCloseElapsedMs": 3.8618999999998778,
+      "nativeCloseProof": [
+        {
+          "complete": true,
+          "driverComplete": true,
+          "started": {
+            "queries": 383,
+            "acquisitions": 383,
+            "cache": 1
+          },
+          "ended": {
+            "queries": 383,
+            "acquisitions": 383,
+            "cache": 1
+          },
+          "unattributedNativeSpans": 0
+        },
+        {
+          "complete": true,
+          "driverComplete": true,
+          "started": {
+            "queries": 0,
+            "acquisitions": 0,
+            "cache": 0
+          },
+          "ended": {
+            "queries": 0,
+            "acquisitions": 0,
+            "cache": 0
+          },
+          "unattributedNativeSpans": 0
+        },
+        {
+          "complete": true,
+          "driverComplete": true,
+          "started": {
+            "queries": 739,
+            "acquisitions": 739,
+            "cache": 0
+          },
+          "ended": {
+            "queries": 739,
+            "acquisitions": 739,
+            "cache": 0
+          },
+          "unattributedNativeSpans": 0
+        }
+      ],
+      "strictTransportComplete": true,
+      "nativeRunCoverage": {
+        "driverQueryCount": 1122,
+        "nativeQueryStartedCount": 1122,
+        "nativeQueryEndedCount": 1122,
+        "observedQueryCount": 1122,
+        "pendingNativeQueries": 0,
+        "activeTraces": 0,
+        "allReceivedTracesReconciled": true,
+        "complete": true
+      }
+    },
+    {
+      "artifact": "observer-v5-primary-cleanup-repeat-link-diagnostic/baseline.json",
+      "artifactSha256": "6e04a0e34f30272f2578436ef98f30242c366a04bfe577a29c1f96849cfb1879",
+      "kind": "journey-verification",
+      "samples": 1,
+      "mode": "repeat-link",
+      "condition": "small-admin",
+      "route": "dashboard",
+      "range": "default",
+      "failed": false,
+      "usableContentMs": 886.098,
+      "clockReadyMs": 2.9625999999998385,
+      "lcpMs": null,
+      "originalResourceSnapshot": {
+        "complete": false,
+        "pending": 8,
+        "pendingScriptRequests": 0,
+        "pendingRscRequests": 0,
+        "javascriptBytes": 0,
+        "rscBytes": 78932,
+        "totalBytes": 82306
+      },
+      "separateCleanup": {
+        "policy": "post-snapshot-finite-prefetch-quiet-v1",
+        "scope": "post-snapshot-context-cleanup",
+        "complete": true,
+        "capped": false,
+        "mandatoryPending": 0,
+        "mandatoryErrors": 0,
+        "quietObservedMs": 1004.9659999999994,
+        "prefetchQuietObservedMs": 1261.8714,
+        "elapsedMs": 1348.3283000000001,
+        "groups": {
+          "javascript": {
+            "requests": 74,
+            "completed": 74,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 975364,
+            "observedBodyBytes": 975364,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          },
+          "document": {
+            "requests": 3,
+            "completed": 3,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 608606,
+            "observedBodyBytes": 608606,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          },
+          "rsc": {
+            "requests": 28,
+            "completed": 28,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 271286,
+            "observedBodyBytes": 271286,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          },
+          "otherFinite": {
+            "requests": 65,
+            "completed": 65,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 138329,
+            "observedBodyBytes": 138329,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          },
+          "prefetch": {
+            "requests": 18,
+            "completed": 18,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 101623,
+            "observedBodyBytes": 101623,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          },
+          "longLived": {
+            "requests": 0,
+            "completed": 0,
+            "pending": 0,
+            "errors": 0,
+            "completedBytes": 0,
+            "observedBodyBytes": 0,
+            "inheritedRequests": 0,
+            "inheritedCompletedBytes": 0
+          }
+        }
+      },
+      "nativeCloseElapsedMs": 2.7700999999997293,
+      "nativeCloseProof": [
+        {
+          "complete": true,
+          "driverComplete": true,
+          "started": {
+            "queries": 395,
+            "acquisitions": 395,
+            "cache": 1
+          },
+          "ended": {
+            "queries": 395,
+            "acquisitions": 395,
+            "cache": 1
+          },
+          "unattributedNativeSpans": 0
+        },
+        {
+          "complete": true,
+          "driverComplete": true,
+          "started": {
+            "queries": 1054,
+            "acquisitions": 1054,
+            "cache": 3
+          },
+          "ended": {
+            "queries": 1054,
+            "acquisitions": 1054,
+            "cache": 3
+          },
+          "unattributedNativeSpans": 0
+        },
+        {
+          "complete": true,
+          "driverComplete": true,
+          "started": {
+            "queries": 251,
+            "acquisitions": 251,
+            "cache": 0
+          },
+          "ended": {
+            "queries": 251,
+            "acquisitions": 251,
+            "cache": 0
+          },
+          "unattributedNativeSpans": 0
+        }
+      ],
+      "strictTransportComplete": true,
+      "nativeRunCoverage": {
+        "driverQueryCount": 1700,
+        "nativeQueryStartedCount": 1700,
+        "nativeQueryEndedCount": 1700,
+        "observedQueryCount": 1700,
+        "pendingNativeQueries": 0,
+        "activeTraces": 0,
+        "allReceivedTracesReconciled": true,
+        "complete": true
+      }
+    }
+  ],
+  "limits": [
+    "One first-document and one repeat-Link diagnostic only; no twenty-sample or full-matrix claim.",
+    "Actual finite HTTP/native closure succeeds under the new cleanup policy; this does not establish every historical incomplete SERVER cause or guarantee future closure.",
+    "Primary resource windows remain incomplete lower-bound observations. Cleanup bytes are separate and never substituted into recorded primary byte fields.",
+    "Repeat-Link LCP is not applicable; its null value is retained.",
+    "No numerical policy, threshold, failure-eligibility or original application/native-accounting change."
+  ]
+}
