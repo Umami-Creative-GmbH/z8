@@ -11,10 +11,250 @@ import {
 	FixtureNativeCoverage,
 	startFixtureNativeControl,
 } from "../../apps/webapp/src/lib/performance-fixture-native-coverage.ts";
+import { createAdmissionResponseWitness } from "./admission-response-witness.mjs";
 import * as observationModule from "./multi-instance-observation.mjs";
 import { beginMultiInstanceObservation } from "./multi-instance-observation.mjs";
 import { createProxyWireObserver } from "./proxy-wire-observer.mjs";
 import { createFixtureTraceTransport } from "./trace-transport.mjs";
+
+test("one declared real clock denial retains raw HTTP error and completes paired cleanup", async () => {
+	const id = "a".repeat(32),
+		backend = createServer((_req, res) => {
+			res.writeHead(401, { "content-type": "application/json" });
+			res.end('{"hasEmployee":false}');
+		});
+	await new Promise((done) => backend.listen(0, "127.0.0.1", done));
+	const origin = `http://127.0.0.1:${backend.address().port}`;
+	const transport = await createFixtureTraceTransport({
+		origin,
+		getTraceId: () => id,
+	});
+	const expectedAdmissionResponse = createAdmissionResponseWitness({
+		origin,
+		traceIds: [id, "b".repeat(32), "c".repeat(32)],
+		scenario: "signed-out",
+	});
+	let snapshot,
+		closed = false,
+		nativeClosed = false;
+	try {
+		transport.wire.begin(performance.now());
+		const proxy = new URL(transport.browserContextOptions.proxyServer);
+		await new Promise((done, reject) => {
+			const call = request(
+				{
+					hostname: proxy.hostname,
+					port: proxy.port,
+					path: `${origin}/api/time-entries/status`,
+					headers: { host: new URL(origin).host },
+				},
+				(res) => {
+					res.resume();
+					res.once("end", done);
+					res.once("error", reject);
+				},
+			);
+			call.once("error", reject);
+			call.end();
+		});
+		expectedAdmissionResponse.confirm({
+			response: {
+				status: 401,
+				json: true,
+				redirected: false,
+				hasEmployee: false,
+				employeeIdMaterialized: false,
+				clockedIn: false,
+				activePeriodMaterialized: false,
+			},
+			clockStatusDenied: true,
+			protectedContentEmitted: false,
+		});
+		await observationModule.closeMultiInstanceContext({
+			context: {
+				async close() {
+					closed = true;
+				},
+			},
+			transport,
+			expectedAdmissionResponse,
+			closeVisit: async () => {
+				nativeClosed = true;
+			},
+			recordSnapshot: (value) => {
+				snapshot = value;
+			},
+		});
+		assert.equal(closed, true);
+		assert.equal(nativeClosed, true);
+		assert.equal(snapshot.nativeCleanup.mandatoryErrors, 1);
+		assert.equal(snapshot.nativeCleanup.groups.otherFinite.errors, 1);
+		assert.equal(
+			snapshot.nativeCleanup.complete,
+			false,
+			"Raw zero-error proof is retained unchanged.",
+		);
+		assert.equal(snapshot.admissionResponse.matches, 1);
+		for (const changed of [
+			{ ...snapshot.admissionResponse, unknown: 1 },
+			{ ...snapshot.admissionResponse, responses: undefined },
+			{
+				...snapshot.admissionResponse,
+				responses: [
+					{ ...snapshot.admissionResponse.responses[0], aborted: true },
+				],
+			},
+		])
+			assert.equal(
+				observationModule.pairedContextCleanupComplete({
+					...snapshot,
+					admissionResponse: changed,
+				}),
+				false,
+			);
+		assert.equal(snapshot.expectedAdmissionDenial.complete, true);
+		assert.equal(snapshot.expectedAdmissionDenial.rawCleanupComplete, false);
+		assert.equal(
+			observationModule.pairedContextCleanupComplete({
+				...snapshot,
+				nativeCleanup: { ...snapshot.nativeCleanup, capped: true },
+			}),
+			false,
+		);
+		assert.equal(
+			observationModule.pairedContextCleanupComplete({
+				...snapshot,
+				nativeCleanup: { ...snapshot.nativeCleanup, mandatoryErrors: 2 },
+			}),
+			false,
+		);
+		assert.equal(
+			observationModule.pairedContextCleanupComplete(snapshot),
+			true,
+		);
+	} finally {
+		expectedAdmissionResponse.close();
+		await transport.close();
+		backend.closeAllConnections();
+		await new Promise((done) => backend.close(done));
+	}
+});
+
+test("declared admission cannot cover a wrong response, extra error, duplicate, missing acknowledgement or protected data", async (t) => {
+	for (const mode of [
+		"500",
+		"wrong-route",
+		"wrong-method",
+		"query",
+		"duplicate",
+		"extra-error",
+		"no-ack",
+		"leak",
+		"unknown-payload",
+	])
+		await t.test(mode, async () => {
+			const id = "a".repeat(32),
+				backend = createServer((req, res) => {
+					res.writeHead(mode === "500" || req.url === "/extra" ? 500 : 401, {
+						"content-type": "application/json",
+					});
+					res.end("{}");
+				});
+			await new Promise((done) => backend.listen(0, "127.0.0.1", done));
+			const origin = `http://127.0.0.1:${backend.address().port}`;
+			const transport = await createFixtureTraceTransport({
+				origin,
+				getTraceId: () => id,
+			});
+			const expectedAdmissionResponse = createAdmissionResponseWitness({
+				origin,
+				traceIds: [id, "b".repeat(32), "c".repeat(32)],
+				scenario: "signed-out",
+			});
+			let snapshot,
+				closed = false,
+				nativeClosed = false;
+			try {
+				transport.wire.begin(performance.now());
+				const proxy = new URL(transport.browserContextOptions.proxyServer);
+				const call = (path) =>
+					new Promise((done, reject) => {
+						const req = request(
+							{
+								hostname: proxy.hostname,
+								port: proxy.port,
+								path: origin + path,
+								method: mode === "wrong-method" ? "POST" : "GET",
+								headers: { host: new URL(origin).host },
+							},
+							(res) => {
+								res.resume();
+								res.once("end", done);
+								res.once("error", reject);
+							},
+						);
+						req.once("error", reject);
+						req.end();
+					});
+				const path =
+					mode === "wrong-route"
+						? "/wrong"
+						: mode === "query"
+							? "/api/time-entries/status?other=1"
+							: "/api/time-entries/status";
+				await call(path);
+				if (mode === "duplicate") await call(path);
+				if (mode === "extra-error") await call("/extra");
+				const confirm = () =>
+					expectedAdmissionResponse.confirm({
+						response: {
+							status: mode === "500" ? 500 : 401,
+							json: true,
+							redirected: false,
+							hasEmployee: mode === "leak",
+							employeeIdMaterialized: false,
+							clockedIn: false,
+							activePeriodMaterialized:
+								mode === "unknown-payload" ? undefined : false,
+						},
+						clockStatusDenied: true,
+						protectedContentEmitted: false,
+					});
+				if (["500", "leak", "unknown-payload"].includes(mode))
+					assert.throws(confirm);
+				else if (mode !== "no-ack") confirm();
+				await assert.rejects(
+					observationModule.closeMultiInstanceContext({
+						context: {
+							async close() {
+								closed = true;
+							},
+						},
+						transport,
+						expectedAdmissionResponse,
+						closeVisit: async () => {
+							nativeClosed = true;
+						},
+						recordSnapshot: (value) => {
+							snapshot = value;
+						},
+					}),
+				);
+				assert.equal(closed, true);
+				assert.equal(nativeClosed, true);
+				assert.equal(
+					observationModule.pairedContextCleanupComplete(snapshot),
+					false,
+				);
+				assert.ok(snapshot.nativeCleanup.mandatoryErrors > 0);
+			} finally {
+				expectedAdmissionResponse.close();
+				await transport.close();
+				backend.closeAllConnections();
+				await new Promise((done) => backend.close(done));
+			}
+		});
+});
 
 test("clock cleanup waits for an actual finite HTTP response and quiet window before browser closure", async () => {
 	let release;

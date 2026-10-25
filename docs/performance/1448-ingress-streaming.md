@@ -365,3 +365,22 @@ One new signed-out reproduction must exercise the actual negative context before
 a new full fourteen-condition replay can establish acceptance for this cleanup
 condition. Deliberately cancelled SQL still has unknown row cost where the
 driver emitted no returned-row fact; its raw resource failure is retained.
+
+The subsequent signed-out reproduction reached the actual denied context, emitted
+no protected content and closed all native SERVER spans. It retained a real clock
+GET 401 and one corresponding HTTP error, so its zero-error cleanup correctly
+remained false. That attempt is still a raw failure, not a clean full-cost sample.
+
+Admission now declares one browser `GET /api/time-entries/status` response before
+issuing it: 401 for signed-out; 400 for MFA/SSO, matching the four qualified DE0
+controls' fail-closed organization-selection response. A bounded passive witness
+must observe this context's registered forwarded request, exact method/path/status,
+JSON response and complete end without an abort or transport error. Only after
+the existing real denial and no-protected-data assertions may it acknowledge that
+response. A separately labelled `expectedAdmissionDenial` predicate can then
+accept exactly that one error. Raw cleanup completion, censoring, mandatory error
+and group counters remain unchanged and visible. Missing/duplicate/unknown proof,
+any additional error, wrong route/method/status, protected data or cap still fails.
+Positive controls have no declaration. Primary, companion and normal numeric
+measurement modules and their zero-error predicates are unchanged. New runtime
+proof is prospective; neither prior failed attempt is relabelled by this change.
