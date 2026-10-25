@@ -592,7 +592,7 @@ async function plan(directory) {
 						{ wait: `a[href="${path}"]` },
 					],
 				}
-			: name === "employee-directory"
+			: name === "employee-directory" || name === "analytics"
 				? { navigationSteps: [{ wait: `a[href="${path}"]` }] }
 				: {
 						navigationSteps: [
