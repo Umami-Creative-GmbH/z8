@@ -3,6 +3,10 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import {
+  operatorReloadQuiescencePolicy,
+  operatorReloadQuiescenceComplete,
+} from "./operator-reload-quiescence.mjs";
+import {
   prerequisiteQuiescencePolicy,
   prerequisiteQuiescenceComplete,
 } from "./prerequisite-quiescence.mjs";
@@ -59,7 +63,16 @@ const backendMetrics = [
   "eventLoopDelayMs",
 ];
 const policy = {
-  version: 5,
+  version: 6,
+  operatorForcedReload: {
+    amendedAt: "2026-10-25T02:05:16Z",
+    condition: operatorReloadQuiescencePolicy,
+    scope:
+      "only explicit mutation/reset reloads; mutation quiet stays inside existing measured timer, restoration quiet after fixed snapshots",
+    quietMs: 1000,
+    technicalCap:
+      "existing plan.timeoutMs; no numerical factor or timeout-budget change",
+  },
   prerequisitePreparation: {
     amendedAt: "2026-10-25T01:24:42Z",
     condition: prerequisiteQuiescencePolicy,
@@ -567,6 +580,8 @@ function requireEvidence(plan, artifact, native, planHash, phase) {
     plan.runtime?.traceTransport !== "context-loopback-proxy-v1" ||
     plan.runtime?.browserPolicy !== fixtureBrowserPolicy ||
     plan.runtime?.nativeCleanupPolicy !== nativeCleanupPolicy ||
+    plan.runtime?.operatorReloadQuiescencePolicy !==
+      operatorReloadQuiescencePolicy ||
     plan.runtime?.prerequisiteQuiescencePolicy !==
       prerequisiteQuiescencePolicy ||
     !Number.isFinite(plan.timeoutMs) ||
@@ -592,6 +607,8 @@ function requireEvidence(plan, artifact, native, planHash, phase) {
     artifact.runtime.traceTransport !== plan.runtime.traceTransport ||
     artifact.runtime.browserPolicy !== plan.runtime.browserPolicy ||
     artifact.runtime.nativeCleanupPolicy !== plan.runtime.nativeCleanupPolicy ||
+    artifact.runtime.operatorReloadQuiescencePolicy !==
+      plan.runtime.operatorReloadQuiescencePolicy ||
     artifact.runtime.prerequisiteQuiescencePolicy !==
       plan.runtime.prerequisiteQuiescencePolicy ||
     artifact.runtime.build !== plan.runtime.build ||
@@ -630,6 +647,8 @@ function requireEvidence(plan, artifact, native, planHash, phase) {
     seen.add(key(c));
   }
   for (const s of artifact.samples) {
+    if (!operatorReloadQuiescenceComplete(plan, s))
+      throw Error("Complete operator mutation/reset reload proof is required.");
     if (!prerequisiteQuiescenceComplete(s, plan.timeoutMs))
       throw Error(
         "Complete unmeasured prerequisite transfer proof is required.",

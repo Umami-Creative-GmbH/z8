@@ -6,6 +6,11 @@ import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { primaryProtocolIdentity } from "./protocol-fingerprints.mjs";
 import {
+	beforeOperatorReload,
+	operatorReloadQuiescencePolicy,
+	operatorReloadQuiescenceComplete,
+} from "./operator-reload-quiescence.mjs";
+import {
 	awaitPrerequisiteQuiescence,
 	prerequisiteQuiescencePolicy,
 	prerequisiteQuiescenceComplete,
@@ -100,6 +105,14 @@ const coverageNames = [
 ];
 
 function validate(plan, verifying = false) {
+	if (
+		plan.runtime?.traceTransport === fixtureTraceTransport &&
+		plan.runtime.operatorReloadQuiescencePolicy !==
+			operatorReloadQuiescencePolicy
+	)
+		fail(
+			"Frozen plan requires the operator mutation reload transfer condition.",
+		);
 	if (
 		plan.runtime?.traceTransport === fixtureTraceTransport &&
 		plan.runtime.prerequisiteQuiescencePolicy !== prerequisiteQuiescencePolicy
@@ -387,6 +400,15 @@ async function main() {
 		result.gates = [];
 		if (
 			plan.runtime.traceTransport === fixtureTraceTransport &&
+			(result.runtime.operatorReloadQuiescencePolicy !==
+				operatorReloadQuiescencePolicy ||
+				result.samples.some(
+					(sample) => !operatorReloadQuiescenceComplete(plan, sample),
+				))
+		)
+			result.gates.push("Operator mutation/reset reload proof is incomplete.");
+		if (
+			plan.runtime.traceTransport === fixtureTraceTransport &&
 			(result.runtime.prerequisiteQuiescencePolicy !==
 				prerequisiteQuiescencePolicy ||
 				result.samples.some(
@@ -579,6 +601,8 @@ async function main() {
 			nativeCleanupPolicy: plan.runtime.nativeCleanupPolicy ?? null,
 			prerequisiteQuiescencePolicy:
 				plan.runtime.prerequisiteQuiescencePolicy ?? null,
+			operatorReloadQuiescencePolicy:
+				plan.runtime.operatorReloadQuiescencePolicy ?? null,
 			browserPermissions: fixtureBrowserPermissions,
 			build: plan.runtime.build,
 			sourceBuild: plan.runtime.sourceBuild ?? null,
@@ -854,6 +878,7 @@ export async function measure(
 		backendTraceId: traceId,
 		resourceScope: "measured-visit",
 		prerequisiteQuiescence: [],
+		operatorReloadQuiescence: [],
 		censored: false,
 		notApplicableBrowserMetrics: [],
 		usableContentMs: null,
@@ -889,6 +914,19 @@ export async function measure(
 	let measurementStart;
 	let stage = "authentication-context";
 	let mutationStarted = false;
+	const reloadHooks = (phase) =>
+		transport
+			? {
+					beforeReload: ({ stepIndex }) =>
+						beforeOperatorReload({
+							transport,
+							sample,
+							phase,
+							stepIndex,
+							timeoutMs: plan.timeoutMs ?? 30000,
+						}),
+				}
+			: {};
 	try {
 		if (plan.runtime.traceTransport === fixtureTraceTransport)
 			transport = await createFixtureTraceTransport({
@@ -1213,6 +1251,7 @@ export async function measure(
 				route.mutation.steps,
 				bindings,
 				plan.timeoutMs ?? 30000,
+				reloadHooks("measured-mutation"),
 			);
 			await page.waitForSelector(route.mutation.ready, {
 				visible: true,
@@ -1389,6 +1428,7 @@ export async function measure(
 					route.mutation.reset,
 					bindings,
 					plan.timeoutMs ?? 30000,
+					reloadHooks("unmeasured-restoration"),
 				);
 				sample.restored = true;
 			} catch {

@@ -73,6 +73,7 @@ function fixture() {
       browserPolicy: "isolated-profile-no-prediction-v1",
       nativeCleanupPolicy: "post-snapshot-finite-prefetch-quiet-v1",
       prerequisiteQuiescencePolicy: "settled-prerequisite-transfers-v1",
+      operatorReloadQuiescencePolicy: "operator-reload-transfer-quiescence-v1",
       browserPermissions: "notifications-denied-for-fixture-origin",
       build: "aaaaaaaaa",
       sourceBuild: "bbbbbbbbb",
@@ -106,6 +107,7 @@ function fixture() {
       failed: false,
       nativeCleanup: cleanupFixture(),
       prerequisiteQuiescence: prerequisiteFixture(mode),
+      operatorReloadQuiescence: [],
       traceTransport: {
         kind: "context-loopback-proxy-v1",
         requests: 4,
@@ -281,6 +283,13 @@ test("missing warm prerequisite phases and errors cannot register a numerical bu
     f.saveBefore();
     assert.equal(f.derive().status, 2);
   }
+});
+
+test("unknown operator reload applicability cannot register a numerical budget", () => {
+  const f = fixture();
+  delete f.artifact.samples[0].operatorReloadQuiescence;
+  f.saveBefore();
+  assert.equal(f.derive().status, 2);
 });
 test("native paint budgets require all twenty raw first-document observations even when finite paint values were supplied", () => {
   for (const change of [
@@ -706,6 +715,7 @@ test("finalized failed original annual traffic supplies a labeled resource budge
       "run-baseline.mjs",
       "primary-context-cleanup.mjs",
       "prerequisite-quiescence.mjs",
+      "operator-reload-quiescence.mjs",
       "collector-client.mjs",
       "trace-transport.mjs",
       "proxy-wire-observer.mjs",
@@ -764,7 +774,7 @@ test("finalized failed original annual traffic supplies a labeled resource budge
   const budgets = JSON.parse(
     readFileSync(join(f.dir, "derived/release-budgets.json")),
   );
-  assert.equal(budgets.policy.version, 5);
+  assert.equal(budgets.policy.version, 6);
   assert.deepEqual(budgets.policy.latency, {
     multiplier: 1.25,
     allowance: 250,

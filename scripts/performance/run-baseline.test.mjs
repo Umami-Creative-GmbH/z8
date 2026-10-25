@@ -206,7 +206,13 @@ test("context-proxy plans require the prospective post-snapshot native cleanup p
 		};
 		assert.equal(validate().status, 2);
 		plan.runtime.nativeCleanupPolicy = "post-snapshot-finite-prefetch-quiet-v1";
+		plan.runtime.operatorReloadQuiescencePolicy =
+			"operator-reload-transfer-quiescence-v1";
 		assert.equal(validate().status, 0);
+		delete plan.runtime.operatorReloadQuiescencePolicy;
+		assert.equal(validate().status, 2);
+		plan.runtime.operatorReloadQuiescencePolicy =
+			"operator-reload-transfer-quiescence-v1";
 		delete plan.runtime.prerequisiteQuiescencePolicy;
 		assert.equal(validate().status, 2);
 	} finally {
