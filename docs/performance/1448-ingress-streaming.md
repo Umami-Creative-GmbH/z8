@@ -3,7 +3,22 @@
 Issue [#1473](https://github.com/Umami-Creative-GmbH/z8/issues/1473), part of
 [#1448](https://github.com/Umami-Creative-GmbH/z8/issues/1448).
 
-Status: **Corrected-source local functional/native matrix complete; cancelled-query row costs remain unknown.**
+Status: **Patched D5 local matrix: 14 functional/native/transport passes; 10 full-resource passes and 4 intentional-fault resource failures with unknown row costs.**
+
+The final versioned [D5 evidence](evidence/1475-d5-patched-ingress-v1.json) records
+the completed fourteen-condition replay on compiled
+`d5a2dd7de883a41473a9207282f971c06bc99bf6`, with the maintained Next 16.4 stream
+completion patch and operator `25fb0196c6b81b02a1be3289855c2604a31aa228`.
+All 28 paired visits, 56 per-replica closures and 136 SERVER closure proofs passed
+exact native and strict transport reconciliation. Ten declared admission HTTP
+errors remain in the raw proofs; their exact functional classification does not
+change normal performance zero-error gates. SSO verifies denial with a deliberately
+missing provider, not successful SSO. The four cancelled-query resource results
+remain raw failures; no returned-row costs were filled with zero. Immutable raw
+versions are bound by timestamps and SHA256 digests in the export. These finite
+functional cases do not establish controlled performance budgets or production/CDN
+behavior. Earlier attempts below retain their original source qualification.
+
 The historical fourteen sequential conditions ran against source
 `ac2fb11334b2fac88144dd405e39a15bd988d29c` in the separately owned final multi-instance
 fixture. Immutable numeric attempts are summarized in
@@ -434,5 +449,6 @@ already declared clock denial. Raw errors, censoring and cleanup completion stay
 unchanged. Additional responses, unexpected keys/URLs/statuses, duplicates,
 another context, unknown UI and expired deadlines still fail. Positive controls,
 normal numeric gates, the provider fixture and application code are unchanged.
-The new source requires a normal SSO reproduction and distinct full matrix;
-earlier strict failures and diagnostic-only runs remain retained as such.
+The normal SSO reproduction and distinct full matrix subsequently completed in
+the D5 evidence above. Earlier strict failures and diagnostic-only runs remain
+retained as such; controlled performance and production/CDN gates remain separate.
