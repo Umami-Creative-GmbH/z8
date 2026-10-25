@@ -659,7 +659,7 @@ function settledFixture(f, plan, filename) {
 test("finalized failed original annual traffic supplies a labeled resource budget without a successful-before latency claim", () => {
   const f = fixture();
   Object.assign(f.plan.runtime, {
-    build: "295de0b706e439bcdaf4d2d25661ce45f02ddb61",
+    build: "456d28b2da4437662ae8f625a1df6756bff031fe",
     sourceBuild: "39a08d0bbe77e00ceb5b204b9f9100ab2cfb86be",
   });
   f.plan.conditions[0].employees = 200;
@@ -724,6 +724,7 @@ test("finalized failed original annual traffic supplies a labeled resource budge
       "protocol-fingerprints.mjs",
       "../../docs/performance/evidence/1450-telemetry-functional-diagnostics.json",
       "../../docs/performance/evidence/1450-observer-v4-before-proof.json",
+      "../../docs/performance/evidence/1450-observer-v8-before-proof.json",
     ].map((name) => [name, hash(readFileSync(new URL(name, import.meta.url)))]),
   );
   f.save("settled-before.json", before);
@@ -774,7 +775,7 @@ test("finalized failed original annual traffic supplies a labeled resource budge
   const budgets = JSON.parse(
     readFileSync(join(f.dir, "derived/release-budgets.json")),
   );
-  assert.equal(budgets.policy.version, 6);
+  assert.equal(budgets.policy.version, 7);
   assert.deepEqual(budgets.policy.latency, {
     multiplier: 1.25,
     allowance: 250,

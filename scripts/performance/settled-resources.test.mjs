@@ -260,7 +260,7 @@ test("resource eligibility distinguishes proven failed baseline behavior from mi
     failedNative = structuredClone(native);
   annualPlan.timeoutMs = 30000;
   annualPlan.runtime.poolMax = 10;
-  annualPlan.runtime.build = "295de0b706e439bcdaf4d2d25661ce45f02ddb61";
+  annualPlan.runtime.build = "456d28b2da4437662ae8f625a1df6756bff031fe";
   annualPlan.runtime.sourceBuild = "39a08d0bbe77e00ceb5b204b9f9100ab2cfb86be";
   Object.assign(failedBefore.runtime, annualPlan.runtime);
   annualPlan.conditions[0].employees = 200;
@@ -326,10 +326,17 @@ test("resource eligibility distinguishes proven failed baseline behavior from mi
       p.runtime.build = "d5550e35c3bd9adf584e9731ade31d6420abf545";
       a.runtime.build = p.runtime.build;
     },
+    (p, a) => {
+      p.runtime.build = "295de0b706e439bcdaf4d2d25661ce45f02ddb61";
+      a.runtime.build = p.runtime.build;
+    },
     (_p, _a, n) => (n[0].coverage.registration = false),
     (_p, _a, n) => (n[0].coverage.incomplete = true),
     (_p, _a, n) => (n[0].coverage.nativeProof = false),
     (_p, _a, n) => (n[0].coverage.unattributedNativeSpans = 1),
+    ...["observer", "pg", "rows", "cache", "eventLoop"].map(
+      (flag) => (_p, _a, n) => (n[0].coverage[flag] = null),
+    ),
     (p, a) => {
       p.runtime.build = "ddddddddd";
       a.runtime.build = p.runtime.build;
