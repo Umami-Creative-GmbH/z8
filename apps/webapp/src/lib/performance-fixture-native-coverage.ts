@@ -18,6 +18,86 @@ type NativeSpan = {
 	spanContext(): { traceId: string; spanId?: string };
 };
 const serverWitnessLimit = 128;
+type IncomingSpan = { spanContext(): { traceId: string; spanId?: string } };
+type IncomingHttpRecord = {
+	httpSpanId: string;
+	remoteParentSpanId: string;
+	method: string;
+	pathSha256: string | null;
+	explicitPrefetch: boolean;
+};
+const incomingHttpState = () => ({
+	records: new Map<string, IncomingHttpRecord>(),
+	overflow: 0,
+	missingSpanIds: 0,
+	duplicateSpanIds: 0,
+	invalidPathnames: 0,
+	readErrors: 0,
+	rejected: {
+		missingOrMalformedParent: 0,
+		unknownHeaderTrace: 0,
+		traceMismatch: 0,
+	},
+});
+function recordIncomingHttp(
+	state: ReturnType<typeof incomingHttpState>,
+	span: IncomingSpan,
+	request: IncomingMessage,
+	traceId: string,
+	headerKnown: boolean,
+) {
+	const parent =
+		typeof request.headers.traceparent === "string"
+			? /^00-([a-f0-9]{32})-([a-f0-9]{16})-0[01]$/i.exec(
+					request.headers.traceparent,
+				)
+			: null;
+	if (!parent) {
+		state.rejected.missingOrMalformedParent++;
+		return;
+	}
+	if (!headerKnown) {
+		state.rejected.unknownHeaderTrace++;
+		return;
+	}
+	if (parent[1].toLowerCase() !== traceId) {
+		state.rejected.traceMismatch++;
+		return;
+	}
+	const spanId = witnessId(span);
+	if (!spanId) {
+		state.missingSpanIds++;
+		return;
+	}
+	if (state.records.has(spanId)) {
+		state.duplicateSpanIds++;
+		return;
+	}
+	if (state.records.size >= serverWitnessLimit) {
+		state.overflow++;
+		return;
+	}
+	const pathname = safely(
+		() => new URL(request.url ?? "", "http://fixture.invalid").pathname,
+	);
+	if (pathname === null) state.invalidPathnames++;
+	state.records.set(spanId, {
+		httpSpanId: spanId,
+		remoteParentSpanId: parent[2].toLowerCase(),
+		method:
+			typeof request.method === "string" &&
+			["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"].includes(
+				request.method,
+			)
+				? request.method
+				: "OTHER",
+		pathSha256: technicalHash(pathname),
+		explicitPrefetch:
+			request.headers["next-router-prefetch"] === "1" ||
+			/prefetch/i.test(String(request.headers.purpose ?? "")) ||
+			/prefetch/i.test(String(request.headers["sec-purpose"] ?? "")),
+	});
+}
 const safely = <T>(read: () => T): T | null => {
 	try {
 		return read();
@@ -47,7 +127,7 @@ type ServerWitnessState = {
 	duplicateStarts: number;
 	unmatchedEnds: number;
 };
-const witnessId = (span: NativeSpan) => {
+const witnessId = (span: Pick<NativeSpan, "spanContext">) => {
 	const value = safely(() => span.spanContext().spanId);
 	return typeof value === "string" && /^[a-f0-9]{16}$/.test(value)
 		? value
@@ -153,6 +233,7 @@ export class FixtureNativeCoverage {
 			serverEnded: number;
 			serverScopes: ReturnType<typeof serverScopes>;
 			serverWitnesses: ServerWitnessState;
+			incomingHttp: ReturnType<typeof incomingHttpState>;
 			lastActivity: number;
 			driverQueries: number;
 		}
@@ -195,6 +276,7 @@ export class FixtureNativeCoverage {
 					duplicateStarts: 0,
 					unmatchedEnds: 0,
 				},
+				incomingHttp: incomingHttpState(),
 				lastActivity: performance.now(),
 				driverQueries: 0,
 			});
@@ -210,10 +292,7 @@ export class FixtureNativeCoverage {
 			state.lastActivity = performance.now();
 		} else for (const window of this.active.values()) window.unknown++;
 	}
-	observeIncoming(
-		span: { spanContext(): { traceId: string } },
-		request: unknown,
-	) {
+	observeIncoming(span: IncomingSpan, request: unknown) {
 		if (!(request instanceof IncomingMessage)) return;
 		const parent = request.headers.traceparent;
 		const parentId =
@@ -238,6 +317,20 @@ export class FixtureNativeCoverage {
 			this.incoming[
 				parentId === spanId ? "matchingParent" : "mismatchingParent"
 			]++;
+		const state = this.active.get(spanId);
+		if (
+			state &&
+			safely(() =>
+				recordIncomingHttp(
+					state.incomingHttp,
+					span,
+					request,
+					spanId,
+					headerKnown,
+				),
+			) === null
+		)
+			state.incomingHttp.readErrors++;
 	}
 	onStart(span: NativeSpan) {
 		const state = this.active.get(span.spanContext().traceId);
@@ -315,6 +408,11 @@ export class FixtureNativeCoverage {
 				serverEnded: state.serverEnded,
 				serverScopes: state.serverScopes,
 				serverWitnesses: serverWitnessProof(state.serverWitnesses),
+				incomingHttp: {
+					...state.incomingHttp,
+					limit: serverWitnessLimit,
+					records: [...state.incomingHttp.records.values()],
+				},
 				lastActivityAgeMs: performance.now() - state.lastActivity,
 			};
 		});
