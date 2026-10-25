@@ -134,3 +134,36 @@ remains failed. A separate public read-only recovery verified one baseline
 active policy, zero owned test policies and the manager role restored. Policy
 rename dispatch was not established by that UI probe. No application defect or
 complete employee/scope acceptance is inferred from these failed trials.
+
+## Corrected-observer accepted writes
+
+The compiled `eee1fc650` functional fixture now has separate successful role and
+policy cases in [the numeric evidence](evidence/1475-eee-functional-selector-writes.json).
+Both use the SDK `SERVER = 1` correction, fresh authorization and the common
+whole-run validator. The functional operator briefly pauses only the actual
+submitted POST to learn its unchanged body/action identity before the context
+proxy assigns its trace; it changes no request fields. This interception is
+absent from timing captures.
+
+The real form's initial names/date match its authorized public DTO. Accepted
+manager-to-employee and restoration commands each execute 29 queries and zero
+cache operations. The affected organization's manager choices miss immediately
+after each write; the other organization remains a hit. The downscoped actor's
+previously warmed manager and policy readers both return HTTP 403 with zero
+cache operations. Restoration returns the same complete display DTO. All 17
+registered traces reconcile: 2,963 driver/SDK/received queries, zero unknown
+native delta, no page errors and clean transport.
+
+Accepted policy create/delete execute 40/38 queries respectively and zero cache
+operations. The affected policy choices miss after each accepted write while
+the other organization's choices remain hits. All 15 registered traces
+reconcile: 1,553 queries, zero unknown native delta and clean transport. Both
+cases drain all finite and prefetch work before context closure and retain the
+actual native-close proof. The manager role and one baseline policy are restored;
+no owned test policy remains. No canonical time records change.
+
+The earlier combined 27-trace batch remains failed; its paired native-close
+failure cannot be retrospectively explained by these separate successful cases.
+The first accepted update also normalized the synthetic user's display name
+from its existing structured names; its first full-DTO comparison failure is
+retained. No validation, authentication or application behavior was relaxed.

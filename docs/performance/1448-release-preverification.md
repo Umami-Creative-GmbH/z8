@@ -342,3 +342,62 @@ These source checks do not replace the required rebuilt browser acceptance:
 accepted role reduction/restoration, selector invalidation and other-tenant
 warmth, actual compiled widget-chunk failure/retry, and manual-refresh draft,
 selection and scroll preservation remain pending on the next final artifact.
+
+## Optional header selective hydration
+
+A normal, uninjected Dashboard document on `eee1fc650` reproduced React error
+418 at 812 milliseconds, before any deferred-widget activation. The real
+`DashboardHeaderCustomize`/QueryClient hydration regression identified a concrete
+ordering defect: the server renders an empty header control while waiting for
+the body layout, but a streamed sibling can populate that shared query before
+the header hydrates. The first client tree then inserts the Customize button
+where the server emitted nothing, causing a recoverable HTML mismatch.
+
+Only that optional control now uses a stable empty server snapshot. It reads the
+existing shared layout after its own hydration; its hooks remain unconditional.
+The clock, sibling regions and layout readers gain no dependency or request.
+This does not opt the header out of SSR or suppress hydration errors. The real
+hydrateRoot regression fails before the correction and passes for both layout
+arrival orders afterward, preserving the existing clock node. The three focused
+layout/customization files pass 22 tests, with zero new React Doctor diagnostics.
+
+The real terminal chunk-failure cases separately observed two failed requests
+for the same compiled birthday chunk, a local widget alert, and actual user
+Retry followed by a third uncached HTTP 200 response (3,787 encoded bytes) and
+successful public widget GET. Header, ready clock, Quick Stats and time origin
+survived. The installed Turbopack runtime retries once itself; failing just its
+first request therefore tested automatic recovery, not the local Retry control.
+The target query suffix and actual Script requests are recorded privately; no
+other asset, API or worker is faulted, and the active ServiceWorker did not cache
+the target or serve its successful response.
+
+These chunk trials remain separately retained overall failures: an initial
+oracle counted same-document frame events as reloads; the corrected CDP oracle
+proved one main document and one same-document transition, but another trial
+observed the independent React 418. A prior terminal trial had zero page errors.
+They are not combined into a fabricated fully passing run. Repeat the finite
+case on the corrected compiled header artifact.
+
+## Native closure diagnostics checkpoint
+
+The incomplete refresh proof above motivates additive private observer fields:
+server balance, server starts/ends, fixed HTTP/Next/other technical scope counts,
+last-activity age, drained result and drain elapsed time. No span name, URL,
+payload or new business identifier is retained. SDK span classification,
+10-second cap, 500-millisecond quiet interval, query/acquisition/cache counts,
+driver comparison and completion expressions are unchanged.
+
+The SDK-enum fixture and real private control-server tests fail before these
+fields exist, then pass with exact positive counts and an actual open Next
+server still rejected after the unchanged ten-second cap. These are structural
+span fixtures with the installed SDK enum, not SDK-provider-created spans.
+The instrumentation/privacy set passes 16 assertions. The 12 operator checks
+retain successful and failed close proofs, compare every previous accounting
+field unchanged, and leave unknown query metrics null on rejected coverage.
+Normal Next typegen and all three TypeScript configurations pass after both
+the header correction and diagnostic addition; focused Biome passes.
+
+The parent owns the final-only CI build at `31d67bbcb`. Rebuilt no-418 Dashboard,
+terminal chunk/local Retry and refresh native-drain diagnosis remain pending.
+The original before artifact is unchanged. No PR-ready or closure claim follows
+from this source checkpoint.
