@@ -6,6 +6,11 @@ import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { primaryProtocolIdentity } from "./protocol-fingerprints.mjs";
 import {
+	awaitPrerequisiteQuiescence,
+	prerequisiteQuiescencePolicy,
+	prerequisiteQuiescenceComplete,
+} from "./prerequisite-quiescence.mjs";
+import {
 	closePrimaryContext,
 	nativeCleanupPolicy,
 	primaryCleanupComplete,
@@ -95,6 +100,11 @@ const coverageNames = [
 ];
 
 function validate(plan, verifying = false) {
+	if (
+		plan.runtime?.traceTransport === fixtureTraceTransport &&
+		plan.runtime.prerequisiteQuiescencePolicy !== prerequisiteQuiescencePolicy
+	)
+		fail("Frozen plan requires the settled prerequisite transfer condition.");
 	if (
 		plan.runtime?.traceTransport === fixtureTraceTransport &&
 		plan.runtime.nativeCleanupPolicy !== nativeCleanupPolicy
@@ -377,6 +387,18 @@ async function main() {
 		result.gates = [];
 		if (
 			plan.runtime.traceTransport === fixtureTraceTransport &&
+			(result.runtime.prerequisiteQuiescencePolicy !==
+				prerequisiteQuiescencePolicy ||
+				result.samples.some(
+					(sample) =>
+						!prerequisiteQuiescenceComplete(sample, plan.timeoutMs ?? 30000),
+				))
+		)
+			result.gates.push(
+				"Unmeasured prerequisite transfer proof is incomplete.",
+			);
+		if (
+			plan.runtime.traceTransport === fixtureTraceTransport &&
 			(result.runtime.nativeCleanupPolicy !== nativeCleanupPolicy ||
 				result.samples.some(
 					(sample) => !primaryCleanupComplete(sample.nativeCleanup),
@@ -555,6 +577,8 @@ async function main() {
 			traceTransport: plan.runtime.traceTransport ?? "page-interception-v1",
 			browserPolicy: plan.runtime.browserPolicy ?? null,
 			nativeCleanupPolicy: plan.runtime.nativeCleanupPolicy ?? null,
+			prerequisiteQuiescencePolicy:
+				plan.runtime.prerequisiteQuiescencePolicy ?? null,
 			browserPermissions: fixtureBrowserPermissions,
 			build: plan.runtime.build,
 			sourceBuild: plan.runtime.sourceBuild ?? null,
@@ -829,6 +853,7 @@ export async function measure(
 		backgroundTraceId,
 		backendTraceId: traceId,
 		resourceScope: "measured-visit",
+		prerequisiteQuiescence: [],
 		censored: false,
 		notApplicableBrowserMetrics: [],
 		usableContentMs: null,
@@ -1006,6 +1031,16 @@ export async function measure(
 				visible: true,
 				timeout: plan.timeoutMs ?? 30000,
 			});
+		const quiesce = async (phase) => {
+			if (!transport) return;
+			stage = `prerequisite-quiescence-${phase}`;
+			await awaitPrerequisiteQuiescence({
+				transport,
+				sample,
+				phase,
+				timeoutMs: plan.timeoutMs ?? 30000,
+			});
+		};
 		const link = async (selector) => {
 			await clickVisible(
 				page,
@@ -1031,6 +1066,7 @@ export async function measure(
 			await page.goto(url, { waitUntil: "domcontentloaded" });
 			await prepare(false);
 			await ready();
+			await quiesce("primed-target");
 		}
 		if (mode === "repeat-link" || mode === "return-visit") {
 			stage = "prepare-away-navigation";
@@ -1057,6 +1093,7 @@ export async function measure(
 					.replaceAll("{employee}", bindings.employee),
 				plan.timeoutMs ?? 30000,
 			);
+			await quiesce("away-navigation");
 		}
 		client = await page.createCDPSession();
 		await client.send("Network.enable");
@@ -1098,6 +1135,7 @@ export async function measure(
 		requestTraceId = traceId;
 		const start = performance.now();
 		measurementStart = start;
+		transport?.wire.begin(start);
 		stage = "navigate";
 		const clock = route.clockReady
 			? page

@@ -6,6 +6,11 @@ import { cpus, platform, release, totalmem } from "node:os";
 import { dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { companionProtocolIdentity } from "./protocol-fingerprints.mjs";
+import {
+  awaitPrerequisiteQuiescence,
+  prerequisiteQuiescencePolicy,
+  prerequisiteQuiescenceComplete,
+} from "./prerequisite-quiescence.mjs";
 const installedCompanionProtocol = await companionProtocolIdentity();
 import {
   fixtureBrowserPolicy,
@@ -72,7 +77,8 @@ if (hash(JSON.stringify(causeProof)) !== beforeFailurePolicy.proofSha256)
   );
 export const companionPolicy = Object.freeze({
   ...settledPolicy,
-  version: 4,
+  version: 5,
+  prerequisiteQuiescencePolicy,
   scope:
     "all finite page and ServiceWorker proxy response bodies from navigation start through post-readiness quiet; inherited, explicit prefetch and long-lived traffic counted separately",
   wire: companionWireContract,
@@ -223,6 +229,8 @@ export function settledCohorts(plan) {
     plan.runtime?.collectorProtocol !== "z8-fixture-otlp-collector-v2" ||
     plan.runtime?.traceTransport !== companionWireContract.traceTransport ||
     plan.runtime?.browserPolicy !== fixtureBrowserPolicy ||
+    plan.runtime?.prerequisiteQuiescencePolicy !==
+      prerequisiteQuiescencePolicy ||
     plan.runtime.browserPermissions !== fixtureBrowserPermissions ||
     !Number.isInteger(plan.concurrency) ||
     plan.concurrency < 1
@@ -288,6 +296,8 @@ export function settledEvidenceGates(plan, artifact, native, planSha) {
     artifact.runtime.collectorProtocol !== plan.runtime.collectorProtocol ||
     artifact.runtime.traceTransport !== plan.runtime.traceTransport ||
     artifact.runtime.browserPolicy !== plan.runtime.browserPolicy ||
+    artifact.runtime.prerequisiteQuiescencePolicy !==
+      plan.runtime.prerequisiteQuiescencePolicy ||
     artifact.runtime.build !== plan.runtime.build ||
     artifact.runtime.sourceBuild !== plan.runtime.sourceBuild ||
     artifact.runtime.toolingBuild !== plan.runtime.toolingBuild
@@ -311,6 +321,8 @@ export function settledEvidenceGates(plan, artifact, native, planSha) {
       gates.push("Companion cohort sample coverage is incomplete.");
   }
   for (const s of artifact.samples) {
+    if (!prerequisiteQuiescenceComplete(s, plan.timeoutMs ?? 30000))
+      gates.push("Unmeasured prerequisite transfer proof is incomplete.");
     if (!expected.has(key(s)) || ids.has(s.traceId) || !s.traceId)
       gates.push("Unexpected companion cohort or reused trace.");
     ids.add(s.traceId);
@@ -513,6 +525,7 @@ export async function measureFixtureResources(
     measurementStarted: false,
     prerequisiteComplete: false,
     targetRangePrepared: false,
+    prerequisiteQuiescence: [],
     backend: null,
     failureStage: null,
     failureKind: null,
@@ -699,6 +712,13 @@ export async function measureFixtureResources(
       await page.goto(url, { waitUntil: "domcontentloaded" });
       await prepare(false);
       await ready();
+      stage = "prerequisite-quiescence-primed-target";
+      await awaitPrerequisiteQuiescence({
+        transport,
+        sample: s,
+        phase: "primed-target",
+        timeoutMs: plan.timeoutMs ?? 30000,
+      });
       stage = "prepare-away-navigation";
       await page.goto(
         new URL(
@@ -718,6 +738,13 @@ export async function measureFixtureResources(
           .replaceAll("{employee}", employee),
         plan.timeoutMs,
       );
+      stage = "prerequisite-quiescence-away-navigation";
+      await awaitPrerequisiteQuiescence({
+        transport,
+        sample: s,
+        phase: "away-navigation",
+        timeoutMs: plan.timeoutMs ?? 30000,
+      });
     }
     s.prerequisiteComplete = true;
     active = true;

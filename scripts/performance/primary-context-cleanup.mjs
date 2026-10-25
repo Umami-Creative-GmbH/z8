@@ -4,7 +4,7 @@ import {
   proxyWireByteUnits,
 } from "./proxy-wire-observer.mjs";
 export const nativeCleanupPolicy = "post-snapshot-finite-prefetch-quiet-v1";
-const knownWire = (state) =>
+export const knownTransferWire = (state) =>
   state?.protocol === proxyWireProtocol &&
   state.byteUnits === proxyWireByteUnits &&
   [
@@ -33,7 +33,7 @@ const knownWire = (state) =>
   });
 export function primaryCleanupComplete(proof) {
   return (
-    knownWire(proof) &&
+    knownTransferWire(proof) &&
     proof?.policy === nativeCleanupPolicy &&
     proof.scope === "post-snapshot-context-cleanup" &&
     proof.usableContentClaim === false &&
@@ -59,8 +59,16 @@ const pause = (ms) => new Promise((done) => setTimeout(done, ms));
 /** Same finite + explicit-prefetch drain ordering as the clock cleanup operator. */
 export async function waitForPrimaryContextDrain(
   transport,
-  { now = () => performance.now(), sleep = pause } = {},
+  {
+    now = () => performance.now(),
+    sleep = pause,
+    capMs = 10000,
+    policy = nativeCleanupPolicy,
+    scope = "post-snapshot-context-cleanup",
+  } = {},
 ) {
+  if (!Number.isFinite(capMs) || capMs < 1000)
+    throw Error("Finite transfer quiet needs a bounded cap.");
   const started = now();
   transport.wire.ready(started);
   let prefetchActivity = started,
@@ -76,11 +84,11 @@ export async function waitForPrimaryContextDrain(
     }
     const proof = {
       ...state,
-      policy: nativeCleanupPolicy,
-      scope: "post-snapshot-context-cleanup",
+      policy,
+      scope,
       usableContentClaim: false,
       quietMs: 1000,
-      capMs: 10000,
+      capMs,
       elapsedMs: at - started,
       prefetchQuietObservedMs: at - prefetchActivity,
     };
@@ -94,7 +102,7 @@ export async function waitForPrimaryContextDrain(
       };
       throw error;
     };
-    if (at - started >= 10000)
+    if (at - started >= capMs)
       fail("Primary finite HTTP cleanup exceeded its cap.", true);
     if (
       state.mandatoryPending === 0 &&
@@ -103,8 +111,9 @@ export async function waitForPrimaryContextDrain(
       proof.prefetchQuietObservedMs >= 1000
     ) {
       if (
-        !knownWire(state) ||
-        state.complete !== true ||
+        !knownTransferWire(state) ||
+        typeof state.complete !== "boolean" ||
+        typeof state.capped !== "boolean" ||
         state.mandatoryErrors !== 0 ||
         state.observationOverflows !== 0 ||
         state.unknownInheritedRedirects !== 0
@@ -112,7 +121,14 @@ export async function waitForPrimaryContextDrain(
         fail(
           "Primary finite HTTP cleanup retained errors or unknown observation.",
         );
-      return proof;
+      return {
+        ...proof,
+        wireWindowComplete: state.complete,
+        wireWindowCapped: state.capped,
+        complete: true,
+        censored: false,
+        capped: false,
+      };
     }
     await sleep(25);
   }

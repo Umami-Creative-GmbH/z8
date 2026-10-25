@@ -194,6 +194,8 @@ test("context-proxy plans require the prospective post-snapshot native cleanup p
 			plan = fixturePlan();
 		plan.runtime.traceTransport = "context-loopback-proxy-v1";
 		plan.runtime.browserPolicy = "isolated-profile-no-prediction-v1";
+		plan.runtime.prerequisiteQuiescencePolicy =
+			"settled-prerequisite-transfers-v1";
 		const validate = () => {
 			writeFileSync(path, JSON.stringify(plan));
 			return spawnSync(
@@ -205,6 +207,8 @@ test("context-proxy plans require the prospective post-snapshot native cleanup p
 		assert.equal(validate().status, 2);
 		plan.runtime.nativeCleanupPolicy = "post-snapshot-finite-prefetch-quiet-v1";
 		assert.equal(validate().status, 0);
+		delete plan.runtime.prerequisiteQuiescencePolicy;
+		assert.equal(validate().status, 2);
 	} finally {
 		rmSync(folder, { recursive: true, force: true });
 	}

@@ -32,6 +32,25 @@ function cleanupFixture() {
     prefetchQuietObservedMs: 1000,
   };
 }
+function prerequisiteFixture(mode) {
+  const phases =
+    mode === "first-document"
+      ? []
+      : [
+          "primed-target",
+          ...(["repeat-link", "return-visit"].includes(mode)
+            ? ["away-navigation"]
+            : []),
+        ];
+  return phases.map((phase) => ({
+    ...cleanupFixture(),
+    phase,
+    policy: "settled-prerequisite-transfers-v1",
+    scope: "unmeasured-prerequisite-transfers",
+    measurementStarted: false,
+    capMs: 30000,
+  }));
+}
 function fixture() {
   const dir = mkdtempSync(join(tmpdir(), "z8-release-budget-"));
   const plan = {
@@ -53,6 +72,7 @@ function fixture() {
       traceTransport: "context-loopback-proxy-v1",
       browserPolicy: "isolated-profile-no-prediction-v1",
       nativeCleanupPolicy: "post-snapshot-finite-prefetch-quiet-v1",
+      prerequisiteQuiescencePolicy: "settled-prerequisite-transfers-v1",
       browserPermissions: "notifications-denied-for-fixture-origin",
       build: "aaaaaaaaa",
       sourceBuild: "bbbbbbbbb",
@@ -85,6 +105,7 @@ function fixture() {
       backendTraceId: `trace-${mode}-${i}`,
       failed: false,
       nativeCleanup: cleanupFixture(),
+      prerequisiteQuiescence: prerequisiteFixture(mode),
       traceTransport: {
         kind: "context-loopback-proxy-v1",
         requests: 4,
@@ -243,6 +264,20 @@ test("unfinalized, missing or capped native cleanup cannot register a numerical 
   ]) {
     const f = fixture();
     change(f.artifact.samples[0]);
+    f.saveBefore();
+    assert.equal(f.derive().status, 2);
+  }
+});
+
+test("missing warm prerequisite phases and errors cannot register a numerical budget", () => {
+  for (const change of [
+    (s) => delete s.prerequisiteQuiescence,
+    (s) => s.prerequisiteQuiescence.pop(),
+    (s) => (s.prerequisiteQuiescence[0].mandatoryErrors = 1),
+    (s) => (s.prerequisiteQuiescence[0].capped = true),
+  ]) {
+    const f = fixture();
+    change(f.artifact.samples.find((s) => s.mode === "repeat-link"));
     f.saveBefore();
     assert.equal(f.derive().status, 2);
   }
@@ -670,6 +705,7 @@ test("finalized failed original annual traffic supplies a labeled resource budge
       "journey-steps.mjs",
       "run-baseline.mjs",
       "primary-context-cleanup.mjs",
+      "prerequisite-quiescence.mjs",
       "collector-client.mjs",
       "trace-transport.mjs",
       "proxy-wire-observer.mjs",
@@ -728,7 +764,7 @@ test("finalized failed original annual traffic supplies a labeled resource budge
   const budgets = JSON.parse(
     readFileSync(join(f.dir, "derived/release-budgets.json")),
   );
-  assert.equal(budgets.policy.version, 4);
+  assert.equal(budgets.policy.version, 5);
   assert.deepEqual(budgets.policy.latency, {
     multiplier: 1.25,
     allowance: 250,
