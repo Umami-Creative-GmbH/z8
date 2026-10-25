@@ -1,3 +1,20 @@
+/** Remove complete and unfinished comments without backtracking over streamed React markers. */
+function withoutHtmlComments(html) {
+	const parts = [];
+	let position = 0;
+	for (;;) {
+		const opening = html.indexOf("<!--", position);
+		if (opening === -1) {
+			parts.push(html.slice(position));
+			return parts.join("");
+		}
+		parts.push(html.slice(position, opening));
+		const closing = html.indexOf("-->", opening + 4);
+		if (closing === -1) return parts.join("");
+		position = closing + 3;
+	}
+}
+
 /** Chrome's actual response stream and rendered DOM. None of this is a paint metric. */
 export async function observeIngress(page, origin, mode) {
 	const session = await page.createCDPSession();
@@ -83,15 +100,15 @@ export async function observeIngress(page, origin, mode) {
 		const content =
 			mode === "repeat-link"
 				? row.text
-				: row.text
-						.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
-						.replace(/<script\b[^>]*>[\s\S]*$/gi, "");
+				: withoutHtmlComments(
+						row.text
+							.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
+							.replace(/<script\b[^>]*>[\s\S]*$/gi, ""),
+					);
 		if (
 			mode === "repeat-link"
 				? /"thisWeek":/.test(content)
-				: />\s*(?:<!--[\s\S]*?-->\s*)*This Week(?:<!--[\s\S]*?-->\s*)*<\//.test(
-						content,
-					)
+				: />\s*This Week\s*<\//.test(content)
 		)
 			row.usefulContentMs ??= performance.now() - started;
 		if (/data-widget-id=|data-clock-status=|"initialSnapshot":/.test(content))

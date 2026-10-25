@@ -3,12 +3,58 @@
 Issue [#1473](https://github.com/Umami-Creative-GmbH/z8/issues/1473), part of
 [#1448](https://github.com/Umami-Creative-GmbH/z8/issues/1448).
 
-Status: **Final-source local matrix attempted; acceptance remains incomplete.**
-The fourteen sequential conditions ran against source
+Status: **Corrected-source local functional/native matrix complete; cancelled-query row costs remain unknown.**
+The historical fourteen sequential conditions ran against source
 `ac2fb11334b2fac88144dd405e39a15bd988d29c` in the separately owned final multi-instance
 fixture. Immutable numeric attempts are summarized in
 [the ingress evidence](evidence/1473-ingress-streaming.json). No production/CDN
 deployment was available.
+
+## Corrected-source preflight
+
+The fixed-parser protocol subsequently completed all fourteen desktop/mobile,
+first-document/real-Link held/failure and signed-out/MFA/SSO conditions on compiled
+`de0b1a128b384196c7c93ac69cd5324e8d0cbbd8`. Every condition passed its functional,
+native SQL/server lifecycle and strict transport checks. All ten non-fault
+conditions passed complete resource coverage. The four intentional-fault cases
+preserve failed raw resource results and unknown cancelled-query row costs; exact
+owned cancellation acknowledgments match all observed query errors across the
+registered measured/background scopes. No row costs or ordinary resource flags
+were substituted. Layout/focus screenshots and each restored variant are retained.
+[The numeric matrix](evidence/1475-de0-ingress-matrix.json) records these separate
+outcomes; these finite functional counts are not controlled performance budgets.
+
+The initial corrected-source preflight used two desktop first-document conditions on compiled
+`de0b1a128b384196c7c93ac69cd5324e8d0cbbd8`, through the same corrected owned proxy
+and database with fresh independent collectors. The held case passed: useful
+content and the known interactive clock appeared while the real secondary query
+was blocked, then the secondary completed. A300 + B75 = 375 driver/native-start/
+native-end/received queries reconciled, with strict transport and no pending work.
+
+The first normal failure attempt timed out waiting for a local alert. An additive
+diagnostic observed that alert about 11 ms after cancellation and almost six
+seconds before safety release, while Node observations were delayed. A bounded
+test through the real CDP observer exposed exponential comment-regex backtracking
+on 258 bytes of valid consecutive React comments. The observer now scans comments
+with monotonic indices after its existing script exclusion. All 13 canonical
+ingress tests pass, including genuine visible markup and script/comment rejection.
+The exact historical document payload was not retained, so that historical pause
+is consistent with the source defect rather than retrospectively proven. Both
+failed attempts remain unchanged; no application code, deadline or cap changed.
+
+One subsequent normal failure case displayed the local error 32 ms after
+cancellation, preserved the clock and Quick Stats, and recovered through actual
+keyboard Retry. A448 + B268 = 716 queries and all server lifecycles reconciled;
+strict transport passed. Its raw overall resource result remains failed: the two
+acknowledged cancellations produced one measured and one background query error,
+and their returned row costs remain unknown. The existing per-trace cancellation
+predicate was not relaxed. This is a functional recovery pass, not complete fault
+resource evidence or a normal cost-budget pass. Every scoped variant was restored.
+
+[Numeric preflight evidence](evidence/1475-de0-ingress-preflight.json) retains the
+earlier separate outcomes. The two-tab scoped-read browser case, controlled
+performance/budget gates and deployed production/CDN verification remain open.
+Old `ac2` and `31d` proofs keep their original source qualification.
 
 ## Final local observations
 

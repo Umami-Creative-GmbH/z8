@@ -10,6 +10,11 @@ import { readCollectorCounters } from "./collector-client.mjs";
 import { launchFixtureBrowser } from "./fixture-browser.mjs";
 import { observeIngress, readDashboardDom } from "./ingress-browser.mjs";
 import {
+	ingressFailureAlertSelector,
+	installIngressFailureTimeline,
+	readIngressFailureTimeline,
+} from "./ingress-failure-timeline.mjs";
+import {
 	clickVisible,
 	prepareFixtureBrowserContext,
 	waitVisible,
@@ -550,12 +555,14 @@ export async function runIngress(
 	diagnostic = null,
 ) {
 	const passiveColdDiagnostic = diagnostic === "passive-cold-20s";
+	const failedAlertDiagnostic = diagnostic === "failed-alert-timeline";
 	assert(
 		diagnostic === null ||
 			(passiveColdDiagnostic &&
 				viewport === "desktop" &&
 				mode === "first-document" &&
-				scenario === "held"),
+					scenario === "held") ||
+			(failedAlertDiagnostic && viewport === "desktop" && mode === "first-document" && scenario === "failed"),
 		"The passive diagnostic is bounded to desktop first-document held reads.",
 	);
 	assert(
@@ -583,6 +590,7 @@ export async function runIngress(
 		lockStarted = null,
 		release;
 	let variantTouched = false;
+	let diagnosticPolling, stopDiagnosticPolling = false;
 	const observations = {
 		scenario,
 		viewport,
@@ -594,7 +602,7 @@ export async function runIngress(
 		prefetchSuppressed: true,
 		browserCacheDisabled: true,
 		passed: false,
-		diagnosticOnly: passiveColdDiagnostic,
+		diagnosticOnly: passiveColdDiagnostic || failedAlertDiagnostic,
 		clockRequests: [],
 	};
 	const screenshot = async (stage) => {
@@ -636,6 +644,7 @@ export async function runIngress(
 				: { width: 390, height: 844, isMobile: true, hasTouch: true },
 		);
 		await page.emulateTimezone("Europe/Berlin");
+		if (failedAlertDiagnostic) await page.evaluateOnNewDocument(installIngressFailureTimeline);
 		await page.setCacheEnabled(false);
 		await page.setRequestInterception(true);
 		const trace = randomBytes(16).toString("hex");
@@ -695,6 +704,7 @@ export async function runIngress(
 		measuredVisits.push(await observation.beginVisit([trace]));
 		measuredTrace = trace;
 		network = await observeIngress(page, fixture.origin, mode);
+		if (failedAlertDiagnostic) observations.nodeClockAnchor = { epochMs: Date.now(), elapsedMs: performance.now() - network.started };
 		await holder.connect();
 		await holder.query("begin");
 		await holder.query("set local lock_timeout='2s'");
@@ -708,15 +718,17 @@ export async function runIngress(
 		const holderPid = (await holder.query("select pg_backend_pid() as pid"))
 			.rows[0].pid;
 		let releasePromise;
-		release = () =>
+		release = (reason = "explicit") =>
 			(releasePromise ??= (async () => {
+				if (failedAlertDiagnostic) observations.releaseWitness = { reason, startedMs: performance.now() - network.started };
 				await holder.query("rollback");
 				releasedAt = performance.now() - network.started;
+				if (failedAlertDiagnostic) observations.releaseWitness.completedMs = releasedAt;
 			})());
 		// Safety release remains armed even if navigation, telemetry or DOM polling fails.
 		timer = setTimeout(
 			() => {
-				void release().catch(() => {});
+				void release("safety").catch(() => {});
 			},
 			passiveColdDiagnostic ? 21000 : 12000,
 		);
@@ -938,10 +950,35 @@ export async function runIngress(
 				observations.cancelAcknowledged.push({
 					family: waiter.family,
 					cancelled: cancelled.rows[0].cancelled === true,
+					...(failedAlertDiagnostic ? { acknowledgedMs: performance.now() - network.started } : {}),
 				});
 			}
+			if (failedAlertDiagnostic) {
+				observations.postCancelWaiters = [];
+				diagnosticPolling = (async () => {
+					for (let count = 0; count < 32 && !stopDiagnosticPolling; count++) {
+						try {
+							const rows = await blockedReaders(admin, holderPid);
+							observations.postCancelWaiters.push({ observedMs: performance.now() - network.started,
+								upcoming: rows.filter((row) => row.family === "upcoming-shifts").length,
+								other: rows.filter((row) => row.family !== "upcoming-shifts").length, released: releasedAt !== null });
+						} catch { observations.waiterWitnessFailed = true; break; }
+						await pause(250);
+					}
+				})();
+				observations.normalAlertWaitStartedMs = performance.now() - network.started;
+				observations.normalFourSecondAlertObserved = await page.waitForSelector(ingressFailureAlertSelector, { timeout: 4000 }).then(() => true, () => false);
+				observations.normalAlertWaitFinishedMs = performance.now() - network.started;
+				observations.normalFourSecondDom = await readDashboardDom(page);
+				observations.applicationPassed = false;
+				// Passive tail only: the original twelve-second safety release remains armed.
+				await pause(Math.max(0, Math.min(8000, lockStarted + 14000 - performance.now())));
+				observations.alertTimeline = await page.evaluate(readIngressFailureTimeline);
+				observations.passiveTailDom = await readDashboardDom(page);
+				throw new Error("Failed-alert diagnostic complete; no application acceptance or retry claimed.");
+			}
 			await page.waitForSelector(
-				'[data-widget-id="upcoming-shifts"] [role="alert"]',
+				ingressFailureAlertSelector,
 				{ timeout: 4000 },
 			);
 			observations.errorObservedMs = performance.now() - network.started;
@@ -1059,6 +1096,8 @@ export async function runIngress(
 		}
 		throw error;
 	} finally {
+		stopDiagnosticPolling = true;
+		await diagnosticPolling?.catch(() => {});
 		process.off("SIGINT", stop);
 		process.off("SIGTERM", stop);
 		clearTimeout(timer);
@@ -1099,7 +1138,7 @@ export async function runIngress(
 			await saveIngressEvidence(
 				join(
 					directory,
-					`ingress-${viewport}-${mode}-${scenario}${passiveColdDiagnostic ? "-passive-cold-diagnostic" : ""}.json`,
+					`ingress-${viewport}-${mode}-${scenario}${passiveColdDiagnostic ? "-passive-cold-diagnostic" : failedAlertDiagnostic ? "-failed-alert-diagnostic" : ""}.json`,
 				),
 				observations,
 			);

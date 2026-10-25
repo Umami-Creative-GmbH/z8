@@ -20,7 +20,7 @@
 		"performance:multi:probe": "node scripts/performance/multi-instance-probe.mjs",
 		"performance:test:multi": "node --test scripts/performance/multi-instance-fixture.test.mjs",
 		"performance:ingress": "node scripts/performance/ingress-stream-probe.mjs",
-		"performance:test:ingress": "node --test scripts/performance/ingress-stream-probe.test.mjs",
+		"performance:test:ingress": "node --test scripts/performance/ingress-stream-probe.test.mjs scripts/performance/ingress-browser.test.mjs",
 		"performance:test:ingress:runtime": "node --test scripts/performance/ingress-stream.runtime.test.mjs",
 		"performance:test:runtime": "node --test scripts/performance/fixture-runtime.test.mjs",
 		"performance:test:projection": "node --test scripts/performance/projection-initialization.test.mjs",
