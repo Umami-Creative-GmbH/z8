@@ -7,7 +7,7 @@ import { createWriteStream } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { createServer } from "node:net";
 import { join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { authenticateFixture } from "./fixture-auth.mjs";
 import { fixtureBrowserPolicy } from "./fixture-browser.mjs";
 import { cleanObservationPolicy } from "./clean-evidence.mjs";
@@ -39,6 +39,22 @@ const collectorKinds = [
 	"z8-fixture-otlp-collector-v1",
 	"z8-fixture-otlp-collector-v2",
 ];
+export async function requireMatchingFixtureDeployment(
+	runtime,
+	requiredFile = join(app, ".next/required-server-files.json"),
+) {
+	const configured = runtime?.env?.NEXT_DEPLOYMENT_ID;
+	if (typeof configured !== "string" || !configured)
+		throw new Error(
+			"Fixture runtime deployment identity is required before startup.",
+		);
+	const required = JSON.parse(await readFile(requiredFile, "utf8"));
+	const compiled = required?.config?.deploymentId;
+	if (typeof compiled !== "string" || !compiled || configured !== compiled)
+		throw new Error(
+			"Fixture runtime deployment identity differs from the compiled artifact. Align the owned runtime before startup.",
+		);
+}
 function configureCollector(runtime, collector) {
 	if (!collectorKinds.includes(collector.kind))
 		throw new Error("Fixture collector identity is invalid.");
@@ -139,6 +155,13 @@ async function unusedPort() {
 }
 
 async function prepare(directory) {
+	const deploymentId = execFileSync("git", ["rev-parse", "HEAD"], {
+		cwd: root,
+		encoding: "utf8",
+		stdio: ["ignore", "pipe", "pipe"],
+	}).trim();
+	if (!/^[a-f0-9]{40}$/.test(deploymentId))
+		throw new Error("Fixture preparation requires the actual full source identity.");
 	await mkdir(directory, { recursive: true, mode: 0o700 });
 	const suffix = randomBytes(6).toString("hex");
 	const secret = randomBytes(32).toString("hex");
@@ -213,6 +236,7 @@ async function prepare(directory) {
 		}).privateKey.export({ format: "jwk" });
 		const env = {
 			NODE_ENV: "production",
+			NEXT_DEPLOYMENT_ID: deploymentId,
 			TZ: "UTC",
 			SKIP_ENV_VALIDATION: "0",
 			CIRCLE_NODE_TOTAL: "3",
@@ -445,6 +469,14 @@ async function start(directory) {
 	const runtime = JSON.parse(
 		await readFile(join(directory, "runtime-private.json"), "utf8"),
 	);
+	if (!args.includes("--build")) await requireMatchingFixtureDeployment(runtime);
+	else if (
+		typeof runtime.env?.NEXT_DEPLOYMENT_ID !== "string" ||
+		!runtime.env.NEXT_DEPLOYMENT_ID
+	)
+		throw new Error(
+			"Fixture runtime deployment identity is required before startup.",
+		);
 	if (args.includes("--collector")) {
 		const collector = JSON.parse(
 			await readFile(args[args.indexOf("--collector") + 1], "utf8"),
@@ -465,8 +497,10 @@ async function start(directory) {
 		mode: 0o600,
 	});
 	await once(log, "open");
-	if (args.includes("--build"))
+	if (args.includes("--build")) {
 		await run(["run", "build"], { ...runtime.env, CI: "true" }, log);
+		await requireMatchingFixtureDeployment(runtime);
+	}
 	await readFile(join(app, ".next/BUILD_ID")); // no dev server or implicit fallback
 	const child = spawn(
 		process.execPath,
@@ -721,25 +755,28 @@ async function plan(directory) {
 	);
 }
 
+const executingCli =
+	process.argv[1] &&
+	import.meta.url === pathToFileURL(resolve(process.argv[1])).href;
+const knownCommands = [
+	"prepare",
+	"start",
+	"cleanup",
+	"plan",
+	"authenticate",
+	"check-runtime",
+	"check-observer",
+	"initialize-projections",
+	"upgrade",
+];
 if (
-	![
-		"prepare",
-		"start",
-		"cleanup",
-		"plan",
-		"authenticate",
-		"check-runtime",
-		"check-observer",
-		"initialize-projections",
-		"upgrade",
-	].includes(command) ||
-	!inputDirectory
+	executingCli && (!knownCommands.includes(command) || !inputDirectory)
 ) {
 	console.error(
 		"Usage: pnpm performance:fixture <prepare|start|cleanup|plan|authenticate|check-runtime|check-observer|initialize-projections|upgrade> <private-directory> [--build|--collector control.json|--as-of instant|plan-output.json]",
 	);
 	process.exitCode = 2;
-} else {
+} else if (executingCli) {
 	const directory = resolve(inputDirectory);
 	({
 		prepare,

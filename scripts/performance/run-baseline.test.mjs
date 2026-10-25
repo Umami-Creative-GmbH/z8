@@ -12,6 +12,48 @@ import { nextStreamCompletionPatch } from "./next-stream-completion-patch.mjs";
 import { primaryProtocolIdentity } from "./protocol-fingerprints.mjs";
 import { measure } from "./run-baseline.mjs";
 
+test("fixture startup checks the actual temporary compiled manifest and never repairs stale identity", async () => {
+	const fixture = await import("./fixture.mjs");
+	assert.equal(typeof fixture.requireMatchingFixtureDeployment, "function");
+	const folder = mkdtempSync(join(tmpdir(), "z8-fixture-startup-"));
+	try {
+		const path = join(folder, "required-server-files.json");
+		const original = "63904fb66849eea186e4e7af359cbbd1bfb8e6f5";
+		const optimized = "744012906b6511aa5d73ebadf47fcff3f8eff74f";
+		const stale = "bda468856728844f8172f6832c4deb9ad34a3bb0";
+		for (const deploymentId of [original, optimized]) {
+			writeFileSync(path, JSON.stringify({ config: { deploymentId } }));
+			await assert.doesNotReject(fixture.requireMatchingFixtureDeployment({ env: { NEXT_DEPLOYMENT_ID: deploymentId } }, path));
+			const runtime = { env: { NEXT_DEPLOYMENT_ID: stale, NEXT_PUBLIC_BUILD_HASH: deploymentId.slice(0, 7) } };
+			await assert.rejects(fixture.requireMatchingFixtureDeployment(runtime, path), /Fixture.*deployment/i);
+			assert.equal(runtime.env.NEXT_DEPLOYMENT_ID, stale, "Known mismatches must never be silently healed.");
+		}
+		writeFileSync(path, JSON.stringify({ config: {} }));
+		await assert.rejects(fixture.requireMatchingFixtureDeployment({ env: { NEXT_DEPLOYMENT_ID: original } }, path), /Fixture.*deployment/i);
+	} finally {
+		assert.ok(folder.startsWith(join(tmpdir(), "z8-fixture-startup-")));
+		rmSync(folder, { recursive: true, force: true });
+	}
+});
+
+test("fixture startup rejects missing identity before collector health or process startup", () => {
+	const folder = mkdtempSync(join(tmpdir(), "z8-fixture-startup-"));
+	try {
+		const runtimePath = join(folder, "runtime-private.json");
+		const bytes = JSON.stringify({ env: { Z8_FIXTURE_OTLP_ENDPOINT: "http://127.0.0.1:9/v1/traces", PRIVATE_CANARY: "never-print-this" } });
+		writeFileSync(runtimePath, bytes);
+		const fixture = fileURLToPath(new URL("./fixture.mjs", import.meta.url));
+		const result = spawnSync(process.execPath, [fixture, "start", folder], { encoding: "utf8", timeout: 2000 });
+		assert.equal(result.status, 1, "A missing deployment must fail immediately, before any startup IO.");
+		assert.match(result.stderr, /Fixture.*deployment/i);
+		assert.doesNotMatch(result.stderr, /never-print-this|127\.0\.0\.1/);
+		assert.equal(readFileSync(runtimePath, "utf8"), bytes);
+	} finally {
+		assert.ok(folder.startsWith(join(tmpdir(), "z8-fixture-startup-")));
+		rmSync(folder, { recursive: true, force: true });
+	}
+});
+
 function sidebarFixture(states) {
 	const calls = [];
 	const trigger = {

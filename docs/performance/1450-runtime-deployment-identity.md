@@ -1,0 +1,11 @@
+# Runtime deployment identity
+
+Copied fixture environments retained an older `NEXT_DEPLOYMENT_ID` after the binaries were rebuilt. Next's production configuration loader takes that environment value, while the compiled client has the newer identity. Its navigation mismatch protection can fall back to a document navigation despite an HTTP200 RSC response.
+
+The retained Link diagnostic observed a script-triggered document navigation followed by cancellation of its nonprefetch RSC request. Aligning only the owned runtime deployment ID with the compiled manifest removed the mandatory cancellation and semantic unknown in a normal Link check. The exact earlier client/header values were not retained; the source audit and aligned counterfactual support the diagnosis. See the [versioned numeric evidence](evidence/1450-runtime-deployment-alignment-v1.json).
+
+Fixture startup now reads the actual `required-server-files.json` deployment ID and rejects missing or mismatched runtime configuration before collector health checks or process startup. An explicit build is checked immediately afterward. New fixtures record the current full Git source once; existing mismatches are never silently repaired. The seven-character app-version endpoint alone cannot prove this alignment.
+
+Four subsequent UI/native/resource/semantic checks passed, but an independent fresh-log audit found two Next current-time prerender errors missed by the old database-only classifier. That run is not a clean baseline. A later matching-family stack witness identified a batch-export timer inheriting Next prerender context; the [common exporter isolation](1450-export-context-isolation.md) still requires rebuilt runtime validation. Complete clean original/optimized captures remain required. No application optimization, workload change or error exception is introduced by the identity guard.
+
+The startup regression uses real temporary compiled manifests and the public CLI: mismatches remain unchanged, matching original/optimized identities pass, and missing identity fails before collector health or process startup. Both regressions failed before the guard and passed afterward; the existing 34-test finite runner suite passes.
