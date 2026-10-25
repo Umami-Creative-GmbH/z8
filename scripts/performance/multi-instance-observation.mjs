@@ -14,6 +14,10 @@ import {
 	initializeFixtureBrowserContext,
 } from "./fixture-browser.mjs";
 import {
+	primaryCleanupComplete,
+	waitForPrimaryContextDrain,
+} from "./primary-context-cleanup.mjs";
+import {
 	createFixtureTraceTransport,
 	fixtureTraceTransport,
 } from "./trace-transport.mjs";
@@ -23,6 +27,50 @@ const check = (condition, message) => {
 	if (!condition) throw new Error(message);
 };
 export const multiInstanceObservationProtocol = "paired-native-observer-v2";
+
+/** Shared context closure; all cleanup outcomes must retain their transport proof. */
+export async function closeMultiInstanceContext({
+	context,
+	transport,
+	closeVisit,
+	recordSnapshot,
+}) {
+	let nativeCleanup;
+	const failures = [];
+	try {
+		nativeCleanup = await waitForPrimaryContextDrain(transport);
+	} catch (error) {
+		nativeCleanup = error.cleanupProof;
+		failures.push(error);
+	}
+	// A failed cleanup is still a failed visit, but must not strand either native registration.
+	for (const close of [
+		() => context.close(),
+		closeVisit,
+		() => transport.close(),
+	]) {
+		try {
+			await close();
+		} catch (error) {
+			failures.push(error);
+		}
+	}
+	try {
+		recordSnapshot({ ...transport.snapshot(), nativeCleanup });
+	} catch (error) {
+		failures.push(error);
+	}
+	if (failures.length === 1) throw failures[0];
+	if (failures.length > 1) {
+		const error = new AggregateError(
+			failures,
+			"Paired context cleanup and closure failed.",
+		);
+		error.cleanupProof = nativeCleanup;
+		throw error;
+	}
+	return nativeCleanup;
+}
 
 /** Each allocated browser context must retain its own final transport snapshot. */
 export function multiInstanceTransportCoverage(contexts, transports) {
@@ -95,6 +143,7 @@ export async function waitForMultiInstanceContextDrain(transport) {
 
 /** Startup is retained, never subtracted without its exact empty-context proof. */
 export function multiInstanceTransportComplete(snapshot) {
+	if (!primaryCleanupComplete(snapshot.nativeCleanup)) return false;
 	const init = snapshot.browserInitialization,
 		after = snapshot.afterInitialization;
 	if (
@@ -401,20 +450,17 @@ export async function beginMultiInstanceObservation({
 			async close() {
 				if (closed) return;
 				closed = true;
-				try {
-					await context.close();
-					await endVisit(visit);
-				} finally {
-					try {
-						await transport.close();
-					} finally {
+				await closeMultiInstanceContext({
+					context,
+					transport,
+					closeVisit: () => endVisit(visit),
+					recordSnapshot: (snapshot) =>
 						transports.push({
 							contextId,
 							protocol: fixtureTraceTransport,
-							...transport.snapshot(),
-						});
-					}
-				}
+							...snapshot,
+						}),
+				});
 			},
 		};
 	}

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { createServer, request } from "node:http";
+import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import test from "node:test";
@@ -12,6 +13,7 @@ import {
 } from "../../apps/webapp/src/lib/performance-fixture-native-coverage.ts";
 import * as observationModule from "./multi-instance-observation.mjs";
 import { beginMultiInstanceObservation } from "./multi-instance-observation.mjs";
+import { createProxyWireObserver } from "./proxy-wire-observer.mjs";
 import { createFixtureTraceTransport } from "./trace-transport.mjs";
 
 test("clock cleanup waits for an actual finite HTTP response and quiet window before browser closure", async () => {
@@ -254,6 +256,19 @@ test("paired acceptance distinguishes zero-app-IO startup from a late escape and
 		refusalReasons: reasons,
 	};
 	const snapshot = {
+		nativeCleanup: {
+			...createProxyWireObserver().state(2000),
+			policy: "post-snapshot-finite-prefetch-quiet-v1",
+			scope: "post-snapshot-context-cleanup",
+			usableContentClaim: false,
+			complete: true,
+			capped: false,
+			quietMs: 1000,
+			capMs: 10000,
+			elapsedMs: 2000,
+			quietObservedMs: 1000,
+			prefetchQuietObservedMs: 1000,
+		},
 		requests: 2,
 		rewrittenRequests: 2,
 		responseBodyBytes: 33,
@@ -277,6 +292,20 @@ test("paired acceptance distinguishes zero-app-IO startup from a late escape and
 	assert.equal(
 		observationModule.multiInstanceTransportComplete(snapshot),
 		true,
+	);
+	assert.equal(
+		observationModule.multiInstanceTransportComplete({
+			...snapshot,
+			nativeCleanup: undefined,
+		}),
+		false,
+	);
+	assert.equal(
+		observationModule.multiInstanceTransportComplete({
+			...snapshot,
+			nativeCleanup: { ...snapshot.nativeCleanup, complete: false },
+		}),
+		false,
 	);
 	assert.equal(
 		observationModule.multiInstanceTransportComplete({
@@ -555,5 +584,301 @@ test("paired V2 lifecycle adds both replicas' same-trace evidence and detects gl
 		}
 		assert.equal(dirname(directory), resolve(tmpdir()));
 		await rm(directory, { recursive: true, force: true });
+	}
+});
+
+const requireSdk = createRequire(
+	new URL("../../apps/webapp/package.json", import.meta.url),
+);
+const { BasicTracerProvider } = requireSdk("@opentelemetry/sdk-trace-base");
+const { SpanKind, ROOT_CONTEXT, trace } = requireSdk("@opentelemetry/api");
+test("paired context closes after pending HTTP finishes and a real SDK SERVER span ends, preserving fixed snapshots", async () => {
+	const id = "d".repeat(32),
+		coverage = new FixtureNativeCoverage();
+	coverage.register([id]);
+	coverage.enableDriverCounter();
+	const provider = new BasicTracerProvider({
+		spanProcessors: [
+			{
+				onStart: (span) => coverage.onStart(span),
+				onEnd: (span) => coverage.onEnd(span),
+				forceFlush: async () => {},
+				shutdown: async () => {},
+			},
+		],
+	});
+	const tracer = provider.getTracer("@opentelemetry/instrumentation-http");
+	let release,
+		finished = false;
+	const backend = createServer((_req, res) => {
+		const span = tracer.startSpan(
+			"fixed-http-fixture",
+			{ kind: SpanKind.SERVER },
+			trace.setSpanContext(ROOT_CONTEXT, {
+				traceId: id,
+				spanId: "1".repeat(16),
+				traceFlags: 1,
+			}),
+		);
+		res.on("finish", () => {
+			span.end();
+			finished = true;
+		});
+		res.writeHead(200, { "content-type": "application/javascript" });
+		res.write("early");
+		release = () => res.end("late");
+	});
+	await new Promise((done) => backend.listen(0, "127.0.0.1", done));
+	const origin = `http://127.0.0.1:${backend.address().port}`;
+	const transport = await createFixtureTraceTransport({
+		origin,
+		getTraceId: () => id,
+	});
+	try {
+		transport.wire.begin(performance.now());
+		const proxy = new URL(transport.browserContextOptions.proxyServer);
+		const response = new Promise((done, reject) => {
+			const call = request(
+				{
+					hostname: proxy.hostname,
+					port: proxy.port,
+					path: `${origin}/finite`,
+				},
+				(answer) => {
+					answer.resume();
+					answer.on("end", done);
+					answer.on("error", reject);
+				},
+			);
+			call.on("error", reject);
+			call.end();
+		});
+		response.catch(() => {});
+		while (!release) await pause(5);
+		const sample = {
+			usableContentMs: 42,
+			lcpMs: 30,
+			clockReadyMs: 40,
+			javascriptBytes: 5,
+			totalBytes: 5,
+			resourceWindowComplete: false,
+			resourcePendingRequests: 1,
+			pendingScriptRequests: 1,
+		};
+		const fixed = structuredClone(sample);
+		let closed = false;
+		let snapshot,
+			nativeClosed = false;
+		const closing = observationModule.closeMultiInstanceContext({
+			closeVisit: async () => {
+				nativeClosed = await coverage.drain([id]);
+				assert.equal(nativeClosed, true);
+			},
+			recordSnapshot: (value) => {
+				snapshot = value;
+			},
+			context: {
+				async close() {
+					closed = true;
+				},
+			},
+			transport,
+			sample,
+		});
+		closing.catch(() => {});
+		await pause(1100);
+		assert.equal(
+			closed,
+			false,
+			"Readiness must not close an unfinished finite response.",
+		);
+		assert.equal(finished, false);
+		release();
+		await response;
+		await closing;
+		assert.equal(closed, true);
+		assert.equal(finished, true);
+		assert.deepEqual(
+			Object.fromEntries(Object.keys(fixed).map((k) => [k, sample[k]])),
+			fixed,
+		);
+		assert.equal(snapshot.nativeCleanup.complete, true);
+		assert.equal(nativeClosed, true);
+		assert.equal(snapshot.nativeCleanup.groups.javascript.completedBytes, 9);
+		assert.equal(coverage.close([id])[0].complete, true);
+	} finally {
+		await transport.close();
+		backend.closeAllConnections();
+		await new Promise((done) => backend.close(done));
+		await provider.shutdown();
+	}
+});
+
+test("paired closure drains remaining real HTTP before failing a mandatory error; explicit prefetch errors stay separate", async () => {
+	for (const prefetch of [false, true]) {
+		let release;
+		const backend = createServer((req, res) => {
+			if (req.url === "/error") {
+				res.writeHead(500);
+				res.end("failed");
+			} else {
+				res.writeHead(200);
+				res.write("pending");
+				release = () => res.end("done");
+			}
+		});
+		await new Promise((done) => backend.listen(0, "127.0.0.1", done));
+		const origin = `http://127.0.0.1:${backend.address().port}`;
+		const transport = await createFixtureTraceTransport({
+			origin,
+			getTraceId: () => "c".repeat(32),
+		});
+		try {
+			transport.wire.begin(performance.now());
+			const proxy = new URL(transport.browserContextOptions.proxyServer);
+			const call = (path, headers = {}) =>
+				new Promise((done, reject) => {
+					const req = request(
+						{
+							hostname: proxy.hostname,
+							port: proxy.port,
+							path: origin + path,
+							headers,
+						},
+						(res) => {
+							res.resume();
+							res.on("end", done);
+							res.on("error", reject);
+						},
+					);
+					req.on("error", reject);
+					req.end();
+				});
+			await call("/error", prefetch ? { purpose: "prefetch" } : {});
+			const pending = call("/pending");
+			pending.catch(() => {});
+			while (!release) await pause(5);
+			const context = {
+				closed: false,
+				async close() {
+					this.closed = true;
+				},
+			};
+			let snapshot,
+				nativeClosed = false;
+			const closing = observationModule
+				.closeMultiInstanceContext({
+					context,
+					transport,
+					closeVisit: async () => {
+						nativeClosed = true;
+					},
+					recordSnapshot: (value) => {
+						snapshot = value;
+					},
+				})
+				.then(
+					() => ({}),
+					(error) => ({ error }),
+				);
+			await pause(1100);
+			assert.equal(
+				context.closed,
+				false,
+				"Even recorded errors cannot skip the pending-response drain.",
+			);
+			release();
+			await pending;
+			const result = await closing;
+			assert.equal(Boolean(result.error), !prefetch);
+			assert.equal(nativeClosed, true);
+			assert.equal(context.closed, true);
+			assert.equal(snapshot.nativeCleanup.complete, prefetch);
+
+			assert.equal(snapshot.nativeCleanup.mandatoryPending, 0);
+			assert.equal(
+				snapshot.nativeCleanup.groups.prefetch.errors,
+				prefetch ? 1 : 0,
+			);
+			assert.equal(snapshot.nativeCleanup.mandatoryErrors, prefetch ? 0 : 1);
+		} finally {
+			await transport.close();
+			backend.closeAllConnections();
+			await new Promise((done) => backend.close(done));
+		}
+	}
+});
+
+test("an unfinished actual HTTP prefetch caps paired closure and stays a failed observation", {
+	timeout: 15000,
+}, async () => {
+	let received = false;
+	const backend = createServer((_req, res) => {
+		received = true;
+		res.writeHead(200);
+		res.write("pending");
+	});
+	await new Promise((done) => backend.listen(0, "127.0.0.1", done));
+	const origin = `http://127.0.0.1:${backend.address().port}`;
+	const transport = await createFixtureTraceTransport({
+		origin,
+		getTraceId: () => "b".repeat(32),
+	});
+	try {
+		transport.wire.begin(performance.now());
+		const proxy = new URL(transport.browserContextOptions.proxyServer);
+		const req = request(
+			{
+				hostname: proxy.hostname,
+				port: proxy.port,
+				path: `${origin}/pending`,
+				headers: { "next-router-prefetch": "1" },
+			},
+			(res) => {
+				res.resume();
+				res.on("error", () => {});
+			},
+		);
+		req.on("error", () => {});
+		req.end();
+		while (!received) await pause(5);
+		const context = {
+			closed: false,
+			async close() {
+				this.closed = true;
+			},
+		};
+		let snapshot,
+			nativeClosed = false;
+		await assert.rejects(
+			observationModule.closeMultiInstanceContext({
+				context,
+				transport,
+				closeVisit: async () => {
+					nativeClosed = true;
+					throw Error("retained-native-error");
+				},
+				recordSnapshot: (value) => {
+					snapshot = value;
+				},
+			}),
+			(error) => {
+				assert.ok(error instanceof AggregateError);
+				assert.equal(error.errors.length, 2);
+				assert.equal(error.errors[1].message, "retained-native-error");
+				return true;
+			},
+		);
+		assert.equal(nativeClosed, true);
+		assert.equal(context.closed, true);
+
+		assert.equal(snapshot.nativeCleanup.capped, true);
+		assert.equal(snapshot.nativeCleanup.groups.prefetch.pending, 1);
+		assert.equal(snapshot.nativeCleanup.mandatoryPending, 0);
+		assert.ok(snapshot.nativeCleanup.elapsedMs >= 10000);
+	} finally {
+		await transport.close();
+		backend.closeAllConnections();
+		await new Promise((done) => backend.close(done));
 	}
 });
