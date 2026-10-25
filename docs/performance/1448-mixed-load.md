@@ -170,6 +170,18 @@ operators remains pending.
 
 ## V2 acceptance and preparation evidence
 
+The separate file-only mixed-clock budget operator now uses policy metadata8,
+with the unchanged nearest-rank clock-ready ceiling
+`ceil(max(beforeP95 * 1.25, beforeP95 + 250ms, 500ms))`. Both independent run
+contexts must declare the canonical five-field `conditions.nextStreamCompletionPatch`
+from the [common validator](../../scripts/performance/next-stream-completion-patch.mjs).
+Missing fields, aliases, different hashes and equal unknown objects fail before
+derivation/comparison. The registration binds that validator's exact source hash
+separately from the eight measuring modules and the budget operator's own hash;
+HEAD must retain the same complete conditions and prospective source transition.
+No actual mixed observation or budget registration is claimed by this preparation.
+Analytics volume/query/cache observations remain descriptive, with no new gate.
+
 Each fresh context uses the shared isolated-profile browser launcher and owned
 HTTP proxy. Empty about:blank settles for the shared two-second initialization
 before cookies, permissions or application IO. There is no request-interception

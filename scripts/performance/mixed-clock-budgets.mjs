@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
+import { isNextStreamCompletionPatch } from "./next-stream-completion-patch.mjs";
 import {
 	clockObservationIsComplete,
 	mixedTransportIsComplete,
@@ -20,7 +21,7 @@ export const mixedProtocolFiles = [
 	"proxy-wire-observer.mjs",
 ];
 const policy = {
-	version: 7,
+	version: 8,
 	latency: { multiplier: 1.25, allowanceMs: 250, floorMs: 500 },
 };
 const actors = ["large-admin", "small-admin", "small-manager", "large-manager"];
@@ -39,6 +40,12 @@ const canonical = (value) =>
 			: row,
 	);
 const digest = (value) => createHash("sha256").update(value).digest("hex");
+// Transitive validator bytes are bound separately from the eight measuring modules.
+const conditionValidatorSha256 = digest(
+	await readFile(
+		new URL("./next-stream-completion-patch.mjs", import.meta.url),
+	),
+);
 const sha = (value) =>
 	typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
 const fullBuild = (value) =>
@@ -87,6 +94,10 @@ function validateProtocol(protocol) {
 	);
 }
 function validateConditions(value) {
+	check(
+		isNextStreamCompletionPatch(value?.nextStreamCompletionPatch),
+		"common Next patch",
+	);
 	check(
 		value &&
 			value.topology === "single app" &&
@@ -468,6 +479,7 @@ export function deriveMixedClockBudgets(input) {
 		protocolSha256,
 		protocolFiles: { ...protocol.files },
 		operatorSha256,
+		conditionValidatorSha256,
 		expectedBeforeBuild,
 		expectedHeadBuild,
 		conditionsSha256: digest(canonical(beforeContext.conditions)),
@@ -517,6 +529,7 @@ export function compareMixedClockBudgets(input) {
 			budgets.beforeSha256 === beforeSha256 &&
 			budgets.protocolSha256 === protocolSha256 &&
 			budgets.operatorSha256 === operatorSha256 &&
+			budgets.conditionValidatorSha256 === conditionValidatorSha256 &&
 			same(budgets.protocolFiles, protocol.files),
 		"unchanged registration/source protocol",
 	);
