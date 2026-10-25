@@ -1,5 +1,7 @@
 # C5: exact DE0 test-only source qualification
 
+Historical qualification for C5, which subsequently froze and was interrupted/invalidated at159 samples/one native cap. The [current worksheet](1450-c5-capture-worksheet.md) supersedes the preparation status below. This exact test/package certificate does not authorize a new observer build, plan, freeze or derivation.
+
 The admitted DE0 production build remains fixed: source `de0b1a128b384196c7c93ac69cd5324e8d0cbbd8`, CI record SHA256 `5e0bd9767b1d5d124e0c5204a006332ed0e693c6e99dfcbca043bf34099f6cde`, compiled required-manifest SHA256 `876c31b0d96fb2123be97c8767fd28d1058981a4822ff55d30e93ccc451a1ac3`. A post-build ingress diagnostic adds a component test, not production code. The existing broad `apps/webapp/src` byte guard would reject it, so ROOT authorized exactly two nonproduction differences:
 
 | Qualified input | Exact Git blob |

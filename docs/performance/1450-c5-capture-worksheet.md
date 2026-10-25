@@ -1,8 +1,16 @@
-# C5 controller worksheet — unfrozen actual-root preparation
+# C5 controller worksheet — frozen, interrupted and invalid
 
-**Qualified preparation complete, not frozen:** actual clean ROOT `884398dd3a7808feddaa2962c5c16b50796381de` now includes the ingress witness/parser/evidence and the owner admitted all three normal post-test TypeScript checks. The [exact DE0 qualification](1450-c5-de0-test-qualification.md) permits only the approved test blob and package test-command edit. Normal offline preparation recorded the certificate, unchanged production inputs and all three current source maps in a NEW sidecar. The older b73 sidecar remains immutable history; only the mutable draft's runtime tooling pin changed. ROOT's exclusive compiled-scope probe/cleanup and quiet-window release remain required. No freeze has occurred.
+**C5 actually froze at `2026-10-25T04:15:25.690Z` and its full original primary started at 04:17:55Z. ROOT interrupted it at 04:36:02Z after 159 samples / one native-coverage failure; all five completed mutations restored.** The failed employee-detail return visit retained balanced SQL538/acquisitions538/cache1, but Next SERVER started58/ended57 and native closure hit its fixed ten-second cap. Mandatory cleanup and strict transport passed; the cause remains UNKNOWN. Frozen source, plan, raw ledger and controller interruption are immutable invalid diagnostic evidence. **Do not finalize, derive, resume or rerun this attempt.**
 
-ROOT's admitted head CI completed successfully at `2026-10-25T02:58:23.067Z`: source `de0b1a128b384196c7c93ac69cd5324e8d0cbbd8`, CI true/two workers, started `2026-10-25T02:48:08.675Z`, exit zero. Production modules, configuration, build/dependency/lock/workspace inputs remain identical under the narrow certificate. No freeze, runtime admission or capture has run. No app findings may remain unresolved when ROOT releases capture.
+The additive open-SERVER witness is integrated at `9f2fab7bc8f1ee328b0c61865d58185ed6490a1c` (`12b393eff8214dc0f966e878f8248290aba3965c`, original diagnostic port `ca005fe24e282c268156801d7cf7cbd70b1fa0f2`). Its first matching bounded six-visit diagnostic passed with12079 exact queries/max native close3.476ms, without reproducing the older failure. [The numeric note/evidence](1450-c5-open-next-diagnostic.md) retains all54 passive CDP aborts—46 POST/200 and8 GET/200—separately from zero owned-forward HTTP errors/aborts and strict transport. No causal fix, harmless-abort or new full-baseline claim is made. The prospective aged condition waits until at least05:13Z, with actual route cache profile unknown and no result recorded here.
+
+Policy7's exact456/business39 binding and all numerical rules remain unchanged. Diagnostic ca005 does not rebind that exception. Full original companion/mixed, budget derivation/registration, controlled HEAD timings and final release gates remain unfulfilled. No new plan/freeze is authorized by this document.
+
+## Historical C5 preparation and commands — audit only
+
+Everything below records the earlier qualified preparation, not an executable recovery procedure. The exact DE0 certificate/source maps and command blocks are preserved for audit; do not rerun them against the existing frozen/invalid C5 directory. A future controlled attempt requires ROOT's causal/source qualification decision and separately reviewed inputs.
+
+ROOT's admitted DE0 head CI completed at `2026-10-25T02:58:23.067Z`, CI true/two workers/exit zero. The C5 preparation pin was `884398dd3a7808feddaa2962c5c16b50796381de`, with the exact test/package qualification. Its source maps remain unchanged in9f2; this does not repair incomplete runtime evidence.
 
 Original binary is exact `456d28b2da4437662ae8f625a1df6756bff031fe`, business source `39a08d0bbe77e00ceb5b204b9f9100ab2cfb86be`. [Policy7 and fresh original evidence](1450-observer-v8-proof-refresh.md) preserve all factors/floors and strict HEAD gates. The C5 execution condition retains settled warm prerequisites and adds quiet **inside** the existing measured mutation timer before its forced reload; restoration waits follow fixed snapshots. This is not identical execution to C1–C4. Primary CDP partial flags stay partial; complete body-byte gates require the matched companion. Optional prefetch errors are separate; mandatory errors/caps/unknowns/native inconsistency still fail.
 
@@ -21,13 +29,14 @@ The mutable `before-plan-c5-DRAFT.json` changes runtime only. Its non-runtime fi
 | Successful DE0 head CI record | `5e0bd9767b1d5d124e0c5204a006332ed0e693c6e99dfcbca043bf34099f6cde` |
 | Actual compiled required-server-files manifest | `876c31b0d96fb2123be97c8767fd28d1058981a4822ff55d30e93ccc451a1ac3` |
 
-The helper files are narrow controller-only operators; earlier frozen outputs are untouched. Node syntax and three worksheet PowerShell blocks parsed successfully. The prior b73 report retains SHA256 `ad01331d57f09291255b7b84a5126610a60a8067ee5a1addcb5e57eabd1eba94` and is not the active qualified input. Freeze/admission remain unexecuted and `before-c5` is absent. ROOT admitted the actual full-DE0 manifest; its hash was also checked from disk. The shared BUILD_ID is insufficient to identify the new artifact. Reserve multi-hour windows; historical C1 sums are recorded intervals rather than wall time/ETA, and the new setup/measured quiet adds work. Never shrink counts or relax gates for scheduling.
+The helper files were narrow controller-only operators; earlier frozen outputs remain untouched. Node syntax and three worksheet PowerShell blocks parsed successfully. The prior b73 report retains SHA256 `ad01331d57f09291255b7b84a5126610a60a8067ee5a1addcb5e57eabd1eba94`. ROOT subsequently executed freeze/admission; `before-c5` exists and is immutable/invalid. The shared BUILD_ID is insufficient to identify an artifact. Historical C1 interval sums are not wall time/ETA; never shrink counts or relax gates for scheduling.
 
-## Reviewed inputs; ROOT releases freeze after functional gates
+## Historical reviewed inputs — do not rerun
 
 Run from the actual clean integrated checkout, never the preparation agent's line endings. The actual-root sidecar below is already prepared; do not overwrite it. File-based admission avoids the Windows pnpm multiline `node -e` argument bug.
 
 ```powershell
+# HISTORICAL ONLY: C5 is already frozen/invalid. Do not execute this block.
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $false
 $source = 'Y:/Codex/Worktrees/c412/z8'
@@ -47,9 +56,10 @@ if ((Get-FileHash -LiteralPath $prep -Algorithm SHA256).Hash.ToLowerInvariant() 
 # STOP: ROOT reviews actual draft/sidecar hashes, head record and all three maps before freeze.
 ```
 
-## ROOT-only freeze, file admission and original captures
+## Historical freeze/capture commands — invalid attempt
 
 ```powershell
+# HISTORICAL ONLY: preserve the existing C5 attempt; do not execute this block.
 pnpm --config.verifyDepsBeforeRun=false node "$scratch/freeze-c5-after-controller-release.mjs" --execute-freeze $source $scratch $prep $run
 if ($LASTEXITCODE -ne 0) { throw 'Freeze failed; preserve partial outputs.' }
 $plan = Join-Path $run 'before-plan-c5.json'
@@ -102,9 +112,10 @@ if ($finalizeExit -ne 0 -or $final.evidenceComplete -ne $true -or $final.resourc
 
 Capture exit **1** is expected for an unfinalized ledger; each finalizer must exit **0** with complete native/resource proof. Keep all raw failures, null usable percentiles, actual native paint/read coverage, per-trace close proof/elapsed time, prerequisite/reload/cleanup and transport counters. A complete failed-before resource observation qualifies only under exact456/business39 policy7; HEAD always requires all UI/resource gates. Original mixed writes follow **both** complete original captures. Ingress, mixed load, quality and final review remain separate release gates.
 
-## Derive and register before controlled head timing
+## Historical derivation block — disabled by invalid before evidence
 
 ```powershell
+# HISTORICAL ONLY: interrupted C5 cannot derive or register budgets.
 $headBuildRecord = Get-Content -Raw -LiteralPath $headRecord | ConvertFrom-Json
 if ((Get-FileHash -LiteralPath $headRecord -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expectedHeadRecordSha256) { throw 'Admitted CI record changed.' }
 $prepared = Get-Content -Raw -LiteralPath "$run/preparation.json" | ConvertFrom-Json
