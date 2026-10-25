@@ -3,6 +3,9 @@ import { readFile } from "node:fs/promises";
 
 const primaryFiles = [
   "run-baseline.mjs",
+  "primary-context-cleanup.mjs",
+  "prerequisite-quiescence.mjs",
+  "operator-reload-quiescence.mjs",
   "browser-performance.mjs",
   "journey-steps.mjs",
   "collector-client.mjs",
@@ -30,6 +33,9 @@ export const companionProtocolIdentity = () =>
     "settled-resource-observer.mjs",
     "journey-steps.mjs",
     "run-baseline.mjs",
+    "primary-context-cleanup.mjs",
+    "prerequisite-quiescence.mjs",
+    "operator-reload-quiescence.mjs",
     "collector-client.mjs",
     "trace-transport.mjs",
     "proxy-wire-observer.mjs",

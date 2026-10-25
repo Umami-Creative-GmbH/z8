@@ -152,6 +152,8 @@ test("resource eligibility distinguishes proven failed baseline behavior from mi
       collectorProtocol: "z8-fixture-otlp-collector-v2",
       traceTransport: "context-loopback-proxy-v1",
       browserPolicy: "isolated-profile-no-prediction-v1",
+      prerequisiteQuiescencePolicy: "settled-prerequisite-transfers-v1",
+      operatorReloadQuiescencePolicy: "operator-reload-transfer-quiescence-v1",
       browserPermissions: "notifications-denied-for-fixture-origin",
       build: "aaaaaaaaa",
       sourceBuild: "bbbbbbbbb",
@@ -176,6 +178,8 @@ test("resource eligibility distinguishes proven failed baseline behavior from mi
       route: "reports",
       range: "month",
       mode,
+      prerequisiteQuiescence: prerequisiteFixture(mode),
+      operatorReloadQuiescence: [],
       iteration,
       traceId: `${mode}-${iteration}`,
       failed: false,
@@ -400,6 +404,9 @@ test("capture requires registered collector control before any runtime or browse
         collectorProtocol: "z8-fixture-otlp-collector-v2",
         traceTransport: "context-loopback-proxy-v1",
         browserPolicy: "isolated-profile-no-prediction-v1",
+        prerequisiteQuiescencePolicy: "settled-prerequisite-transfers-v1",
+        operatorReloadQuiescencePolicy:
+          "operator-reload-transfer-quiescence-v1",
       },
       conditions: [{ name: "admin", role: "admin" }],
       ranges: [{ name: "month" }],
@@ -508,6 +515,25 @@ function wireFixture(sample, overrides = {}) {
   }
   wire.ready(10);
   return wire.state(1010);
+}
+function prerequisiteFixture(mode) {
+  const wire = createProxyWireObserver();
+  wire.begin(0);
+  wire.ready(0);
+  return (
+    mode === "first-document" ? [] : ["primed-target", "away-navigation"]
+  ).map((phase) => ({
+    ...wire.state(1000),
+    phase,
+    policy: "settled-prerequisite-transfers-v1",
+    scope: "unmeasured-prerequisite-transfers",
+    measurementStarted: false,
+    usableContentClaim: false,
+    quietMs: 1000,
+    capMs: 30000,
+    elapsedMs: 1000,
+    prefetchQuietObservedMs: 1000,
+  }));
 }
 
 function initializedTransport(snapshot) {

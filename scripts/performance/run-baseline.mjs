@@ -6,6 +6,21 @@ import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { primaryProtocolIdentity } from "./protocol-fingerprints.mjs";
 import {
+	beforeOperatorReload,
+	operatorReloadQuiescencePolicy,
+	operatorReloadQuiescenceComplete,
+} from "./operator-reload-quiescence.mjs";
+import {
+	awaitPrerequisiteQuiescence,
+	prerequisiteQuiescencePolicy,
+	prerequisiteQuiescenceComplete,
+} from "./prerequisite-quiescence.mjs";
+import {
+	closePrimaryContext,
+	nativeCleanupPolicy,
+	primaryCleanupComplete,
+} from "./primary-context-cleanup.mjs";
+import {
 	captureObservedBrowserMetrics,
 	installFixturePerformanceObservers,
 } from "./browser-performance.mjs";
@@ -90,6 +105,24 @@ const coverageNames = [
 ];
 
 function validate(plan, verifying = false) {
+	if (
+		plan.runtime?.traceTransport === fixtureTraceTransport &&
+		plan.runtime.operatorReloadQuiescencePolicy !==
+			operatorReloadQuiescencePolicy
+	)
+		fail(
+			"Frozen plan requires the operator mutation reload transfer condition.",
+		);
+	if (
+		plan.runtime?.traceTransport === fixtureTraceTransport &&
+		plan.runtime.prerequisiteQuiescencePolicy !== prerequisiteQuiescencePolicy
+	)
+		fail("Frozen plan requires the settled prerequisite transfer condition.");
+	if (
+		plan.runtime?.traceTransport === fixtureTraceTransport &&
+		plan.runtime.nativeCleanupPolicy !== nativeCleanupPolicy
+	)
+		fail("Frozen plan requires the post-snapshot native cleanup policy.");
 	if (
 		plan.runtime?.traceTransport === fixtureTraceTransport &&
 		plan.runtime.browserPolicy !== fixtureBrowserPolicy
@@ -367,6 +400,37 @@ async function main() {
 		result.gates = [];
 		if (
 			plan.runtime.traceTransport === fixtureTraceTransport &&
+			(result.runtime.operatorReloadQuiescencePolicy !==
+				operatorReloadQuiescencePolicy ||
+				result.samples.some(
+					(sample) => !operatorReloadQuiescenceComplete(plan, sample),
+				))
+		)
+			result.gates.push("Operator mutation/reset reload proof is incomplete.");
+		if (
+			plan.runtime.traceTransport === fixtureTraceTransport &&
+			(result.runtime.prerequisiteQuiescencePolicy !==
+				prerequisiteQuiescencePolicy ||
+				result.samples.some(
+					(sample) =>
+						!prerequisiteQuiescenceComplete(sample, plan.timeoutMs ?? 30000),
+				))
+		)
+			result.gates.push(
+				"Unmeasured prerequisite transfer proof is incomplete.",
+			);
+		if (
+			plan.runtime.traceTransport === fixtureTraceTransport &&
+			(result.runtime.nativeCleanupPolicy !== nativeCleanupPolicy ||
+				result.samples.some(
+					(sample) => !primaryCleanupComplete(sample.nativeCleanup),
+				))
+		)
+			result.gates.push(
+				"Post-snapshot finite HTTP cleanup evidence is incomplete.",
+			);
+		if (
+			plan.runtime.traceTransport === fixtureTraceTransport &&
 			(result.runtime.browserPolicy !== fixtureBrowserPolicy ||
 				result.runtime.traceTransport !== fixtureTraceTransport ||
 				result.samples.some(
@@ -534,6 +598,11 @@ async function main() {
 			collectorProtocol: plan.runtime.collectorProtocol ?? null,
 			traceTransport: plan.runtime.traceTransport ?? "page-interception-v1",
 			browserPolicy: plan.runtime.browserPolicy ?? null,
+			nativeCleanupPolicy: plan.runtime.nativeCleanupPolicy ?? null,
+			prerequisiteQuiescencePolicy:
+				plan.runtime.prerequisiteQuiescencePolicy ?? null,
+			operatorReloadQuiescencePolicy:
+				plan.runtime.operatorReloadQuiescencePolicy ?? null,
 			browserPermissions: fixtureBrowserPermissions,
 			build: plan.runtime.build,
 			sourceBuild: plan.runtime.sourceBuild ?? null,
@@ -808,6 +877,8 @@ export async function measure(
 		backgroundTraceId,
 		backendTraceId: traceId,
 		resourceScope: "measured-visit",
+		prerequisiteQuiescence: [],
+		operatorReloadQuiescence: [],
 		censored: false,
 		notApplicableBrowserMetrics: [],
 		usableContentMs: null,
@@ -843,6 +914,19 @@ export async function measure(
 	let measurementStart;
 	let stage = "authentication-context";
 	let mutationStarted = false;
+	const reloadHooks = (phase) =>
+		transport
+			? {
+					beforeReload: ({ stepIndex }) =>
+						beforeOperatorReload({
+							transport,
+							sample,
+							phase,
+							stepIndex,
+							timeoutMs: plan.timeoutMs ?? 30000,
+						}),
+				}
+			: {};
 	try {
 		if (plan.runtime.traceTransport === fixtureTraceTransport)
 			transport = await createFixtureTraceTransport({
@@ -985,6 +1069,16 @@ export async function measure(
 				visible: true,
 				timeout: plan.timeoutMs ?? 30000,
 			});
+		const quiesce = async (phase) => {
+			if (!transport) return;
+			stage = `prerequisite-quiescence-${phase}`;
+			await awaitPrerequisiteQuiescence({
+				transport,
+				sample,
+				phase,
+				timeoutMs: plan.timeoutMs ?? 30000,
+			});
+		};
 		const link = async (selector) => {
 			await clickVisible(
 				page,
@@ -1010,6 +1104,7 @@ export async function measure(
 			await page.goto(url, { waitUntil: "domcontentloaded" });
 			await prepare(false);
 			await ready();
+			await quiesce("primed-target");
 		}
 		if (mode === "repeat-link" || mode === "return-visit") {
 			stage = "prepare-away-navigation";
@@ -1036,6 +1131,7 @@ export async function measure(
 					.replaceAll("{employee}", bindings.employee),
 				plan.timeoutMs ?? 30000,
 			);
+			await quiesce("away-navigation");
 		}
 		client = await page.createCDPSession();
 		await client.send("Network.enable");
@@ -1077,6 +1173,7 @@ export async function measure(
 		requestTraceId = traceId;
 		const start = performance.now();
 		measurementStart = start;
+		transport?.wire.begin(start);
 		stage = "navigate";
 		const clock = route.clockReady
 			? page
@@ -1154,6 +1251,7 @@ export async function measure(
 				route.mutation.steps,
 				bindings,
 				plan.timeoutMs ?? 30000,
+				reloadHooks("measured-mutation"),
 			);
 			await page.waitForSelector(route.mutation.ready, {
 				visible: true,
@@ -1330,6 +1428,7 @@ export async function measure(
 					route.mutation.reset,
 					bindings,
 					plan.timeoutMs ?? 30000,
+					reloadHooks("unmeasured-restoration"),
 				);
 				sample.restored = true;
 			} catch {
@@ -1342,7 +1441,7 @@ export async function measure(
 						: performance.now() - measurementStart;
 			}
 		}
-		await context?.close();
+		await closePrimaryContext({ context, transport, sample });
 		if (observerVisit) {
 			try {
 				const observation = await collector.endCollectorVisit(observerVisit);

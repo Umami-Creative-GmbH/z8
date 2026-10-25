@@ -187,6 +187,39 @@ test("a diagnostic mode filter cannot reduce controlled measurement cohorts", ()
 	}
 });
 
+test("context-proxy plans require the prospective post-snapshot native cleanup policy", () => {
+	const folder = mkdtempSync(join(tmpdir(), "z8-cleanup-plan-"));
+	try {
+		const path = join(folder, "plan.json"),
+			plan = fixturePlan();
+		plan.runtime.traceTransport = "context-loopback-proxy-v1";
+		plan.runtime.browserPolicy = "isolated-profile-no-prediction-v1";
+		plan.runtime.prerequisiteQuiescencePolicy =
+			"settled-prerequisite-transfers-v1";
+		const validate = () => {
+			writeFileSync(path, JSON.stringify(plan));
+			return spawnSync(
+				process.execPath,
+				[runner, "--plan", path, "--validate-plan"],
+				{ encoding: "utf8" },
+			);
+		};
+		assert.equal(validate().status, 2);
+		plan.runtime.nativeCleanupPolicy = "post-snapshot-finite-prefetch-quiet-v1";
+		plan.runtime.operatorReloadQuiescencePolicy =
+			"operator-reload-transfer-quiescence-v1";
+		assert.equal(validate().status, 0);
+		delete plan.runtime.operatorReloadQuiescencePolicy;
+		assert.equal(validate().status, 2);
+		plan.runtime.operatorReloadQuiescencePolicy =
+			"operator-reload-transfer-quiescence-v1";
+		delete plan.runtime.prerequisiteQuiescencePolicy;
+		assert.equal(validate().status, 2);
+	} finally {
+		rmSync(folder, { recursive: true, force: true });
+	}
+});
+
 test("baseline collection accepts unset release budgets while release and unknown phases cannot bypass them", () => {
 	const folder = mkdtempSync(join(tmpdir(), "z8-baseline-budget-"));
 	try {
