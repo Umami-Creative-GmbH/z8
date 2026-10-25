@@ -89,6 +89,98 @@ export async function clickVisible(page, selector, timeout = 30000) {
 	throw error;
 }
 
+/** Select a historical Period through its public keyboard UI while layout changes. */
+export async function selectPeriodPreset(page, label, timeout = 30000) {
+	const deadline = performance.now() + timeout;
+	const selector = 'button[aria-label="Period"]:not(:disabled)';
+	const remaining = () => {
+		const value = deadline - performance.now();
+		if (value <= 0) {
+			const error = Error("Period selection deadline exceeded.");
+			error.name = "TimeoutError";
+			throw error;
+		}
+		return value;
+	};
+	const trigger = await waitVisible(page, selector, remaining());
+	const control = await trigger.evaluate((node) => ({
+		role: node.getAttribute("role"),
+		popup: node.getAttribute("aria-haspopup"),
+		open: node.getAttribute("aria-expanded"),
+	}));
+	if (
+		control.role !== "combobox" ||
+		control.popup !== "listbox" ||
+		!["true", "false"].includes(control.open)
+	)
+		throw Error("Unknown Period select state.");
+	remaining();
+	await trigger.focus();
+	if (
+		!(await trigger.evaluate(
+			(node) => node === node.ownerDocument.activeElement,
+		))
+	)
+		throw Error("Period control did not receive keyboard focus.");
+	remaining();
+	// ArrowDown opens a closed list or navigates an open one; it does not toggle it closed.
+	await page.keyboard.press("ArrowDown");
+	await page.waitForFunction(
+		(css) => {
+			const trigger = document.querySelector(css);
+			const active = document.activeElement?.closest('[role="option"]');
+			return (
+				trigger?.getAttribute("aria-expanded") === "true" &&
+				active?.getClientRects().length > 0
+			);
+		},
+		{ timeout: remaining() },
+		selector,
+	);
+	const labels = await page.evaluate(() =>
+		[...document.querySelectorAll('[role="option"]')]
+			.filter(
+				(node) =>
+					node.getClientRects().length > 0 &&
+					getComputedStyle(node).visibility !== "hidden" &&
+					!node.matches(':disabled,[aria-disabled="true"],[data-disabled]'),
+			)
+			.map((node) => node.textContent.trim()),
+	);
+	const index = labels.indexOf(label);
+	if (index < 0 || labels.filter((value) => value === label).length !== 1)
+		throw Error("Intended Period option is missing or ambiguous.");
+	const focused = (expected) =>
+		page.waitForFunction(
+			(text) => {
+				const active = document.activeElement?.closest('[role="option"]');
+				return (
+					active?.getClientRects().length > 0 &&
+					active.hasAttribute("data-highlighted") &&
+					active.textContent.trim() === text
+				);
+			},
+			{ timeout: remaining() },
+			expected,
+		);
+	remaining();
+	await page.keyboard.press("Home");
+	await focused(labels[0]);
+	for (let position = 1; position <= index; position++) {
+		remaining();
+		await page.keyboard.press("ArrowDown");
+		await focused(labels[position]);
+	}
+	remaining();
+	await page.keyboard.press("Enter");
+	await page.waitForFunction(
+		(css, text) => document.querySelector(css)?.textContent.trim() === text,
+		{ timeout: remaining() },
+		selector,
+		label,
+	);
+}
+
 async function headerAction(page, action, timeout) {
 	const label = { refresh: "Refresh data", customize: "Customize dashboard" }[
 		action
@@ -215,7 +307,9 @@ export async function performSteps(
 						{ timeout },
 					)
 					.catch(() => null);
-			if (step.headerAction)
+			if (step.periodPreset)
+				await selectPeriodPreset(page, selector(step.periodPreset), timeout);
+			else if (step.headerAction)
 				await headerAction(page, step.headerAction, timeout);
 			else if (step.click) {
 				await clickVisible(page, selector(step.click), timeout);
@@ -416,6 +510,7 @@ export async function performSteps(
 					.catch(() => null);
 			error.fixtureAction ??=
 				[
+					"periodPreset",
 					"headerAction",
 					"click",
 					"clickText",
@@ -443,8 +538,7 @@ export async function performSteps(
 export function historicalRangeSteps(name) {
 	if (!["month", "quarter", "year"].includes(name)) return [];
 	const choose = (text) => [
-		{ click: 'button[aria-label="Period"]:not(:disabled)' },
-		{ clickText: { selector: '[role="option"]', text } },
+		{ periodPreset: text },
 		{ absent: '[data-slot="select-content"]' },
 	];
 	const steps = choose("Last Year");

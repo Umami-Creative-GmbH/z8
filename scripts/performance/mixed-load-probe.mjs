@@ -11,7 +11,10 @@ import {
 	initializeFixtureBrowserContext,
 	launchFixtureBrowser,
 } from "./fixture-browser.mjs";
-import { prepareFixtureBrowserContext, waitVisible } from "./journey-steps.mjs";
+import {
+	prepareFixtureBrowserContext,
+	selectPeriodPreset,
+} from "./journey-steps.mjs";
 import {
 	beginMixedObservation,
 	clockObservationIsComplete,
@@ -256,6 +259,20 @@ async function verifyActor(page, expected) {
 		);
 }
 
+/** Register the annual caller before its keyboard UI commit, outside the mixed clock workload. */
+export async function selectAnnualAnalyticsPeriod(page, path, timeout = 30000) {
+	const response = page.waitForResponse(
+		(value) =>
+			value.request().headers()["next-action"] &&
+			value.request().postData()?.includes("2025-01-01") &&
+			new URL(value.url()).pathname === path,
+		{ timeout },
+	);
+	response.catch(() => {});
+	await selectPeriodPreset(page, "Last Year", timeout);
+	return response;
+}
+
 async function captureAnalytics(
 	browser,
 	auth,
@@ -300,30 +317,7 @@ async function captureAnalytics(
 		timeout,
 	});
 	await verifyActor(page, expectedActor);
-	await (
-		await waitVisible(page, 'button[aria-label="Period"]', timeout)
-	).click();
-	await page.waitForSelector('[role="option"]', { timeout });
-	const response = page.waitForResponse(
-		(value) =>
-			value.request().headers()["next-action"] &&
-			value.request().postData()?.includes("2025-01-01") &&
-			new URL(value.url()).pathname === reader.path,
-		{ timeout },
-	);
-	response.catch(() => {});
-	let selected = false;
-	for (const option of await page.$$('[role="option"]'))
-		if (
-			await option.evaluate((node) => node.textContent.trim() === "Last Year")
-		) {
-			await option.click();
-			selected = true;
-			break;
-		}
-	if (!selected)
-		throw new Error("Actual public annual period option unavailable.");
-	const annual = await response;
+	const annual = await selectAnnualAnalyticsPeriod(page, reader.path, timeout);
 	const payload = publicResult(await annual.text());
 	if (
 		!annual.ok() ||

@@ -6,10 +6,152 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import * as journeySteps from "./journey-steps.mjs";
 import { clickVisible } from "./journey-steps.mjs";
 import { nextStreamCompletionPatch } from "./next-stream-completion-patch.mjs";
 import { primaryProtocolIdentity } from "./protocol-fingerprints.mjs";
 import { measure } from "./run-baseline.mjs";
+
+function periodFixture({
+	open = "false",
+	labels = ["Last Month", "Current Month", "Last Year"],
+	failWait = 0,
+} = {}) {
+	const keys = [];
+	let reads = 0,
+		waits = 0;
+	const failure = Error("Observable focus or selection did not match.");
+	const trigger = {
+		isVisible: async () => true,
+		evaluate: async () =>
+			++reads === 1
+				? true
+				: reads === 2
+					? { role: "combobox", popup: "listbox", open }
+					: true,
+		focus: async () => keys.push("focus"),
+	};
+	return {
+		keys,
+		failure,
+		trigger,
+		page: {
+			$$: async () => [trigger],
+			evaluate: async () => labels,
+			keyboard: { press: async (key) => keys.push(key) },
+			waitForFunction: async (_fn, options) => {
+				assert.ok(options.timeout > 0 && options.timeout <= 30000);
+				if (++waits === failWait) throw failure;
+			},
+		},
+	};
+}
+
+test("Period keyboard operation uses actual option order for closed and already-open controls", async () => {
+	for (const open of ["false", "true"]) {
+		const fixture = periodFixture({ open });
+		await journeySteps.selectPeriodPreset(fixture.page, "Last Year");
+		assert.deepEqual(fixture.keys, [
+			"focus",
+			"ArrowDown",
+			"Home",
+			"ArrowDown",
+			"ArrowDown",
+			"Enter",
+		]);
+	}
+	const fixture = periodFixture({
+		labels: ["Last Month", "Custom Range", "Last Year"],
+	});
+	await journeySteps.selectPeriodPreset(fixture.page, "Custom Range");
+	assert.deepEqual(fixture.keys, [
+		"focus",
+		"ArrowDown",
+		"Home",
+		"ArrowDown",
+		"Enter",
+	]);
+});
+
+test("Period unknown state, duplicate options and wrong observed highlight reject before committing", async () => {
+	for (const options of [
+		{ open: null },
+		{ labels: ["Current Month"] },
+		{ labels: ["Last Year", "Last Year"] },
+		{ failWait: 2 },
+	]) {
+		const fixture = periodFixture(options);
+		await assert.rejects(
+			journeySteps.selectPeriodPreset(fixture.page, "Last Year"),
+		);
+		assert.equal(fixture.keys.includes("Enter"), false);
+	}
+});
+
+test("Period operation never repeats Enter when accepted selection cannot be verified", async () => {
+	const fixture = periodFixture({ failWait: 5 });
+	await assert.rejects(
+		journeySteps.selectPeriodPreset(fixture.page, "Last Year"),
+		(error) => error === fixture.failure,
+	);
+	assert.equal(fixture.keys.filter((key) => key === "Enter").length, 1);
+});
+
+test("Period operation retains the original absolute deadline before focusing or sending input", async () => {
+	const fixture = periodFixture();
+	fixture.trigger.isVisible = async () => {
+		await new Promise((done) => setTimeout(done, 15));
+		return true;
+	};
+	await assert.rejects(
+		journeySteps.selectPeriodPreset(fixture.page, "Last Year", 5),
+		{ name: "TimeoutError" },
+	);
+	assert.deepEqual(fixture.keys, []);
+});
+
+test("historical presets use keyboard selection while quarter calendar dates and order remain unchanged", () => {
+	assert.deepEqual(journeySteps.historicalRangeSteps("year"), [
+		{ periodPreset: "Last Year" },
+		{ absent: '[data-slot="select-content"]' },
+	]);
+	const steps = journeySteps.historicalRangeSteps("quarter");
+	assert.deepEqual(steps.slice(0, 4), [
+		{ periodPreset: "Last Year" },
+		{ absent: '[data-slot="select-content"]' },
+		{ periodPreset: "Custom Range" },
+		{ absent: '[data-slot="select-content"]' },
+	]);
+	assert.deepEqual(steps.slice(4), [
+		{ wait: '[data-slot="calendar"]' },
+		{ click: '[data-slot="calendar"] button[aria-label*="Next"]' },
+		{ wait: 'button[data-day="2025-03-31"]' },
+		{ click: 'button[data-day="2025-03-31"]' },
+		{ key: "Escape" },
+		{ absent: '[data-slot="calendar"]' },
+		{ text: { selector: "button", value: "Jan 1, 2025 - Mar 31, 2025" } },
+	]);
+});
+
+test("normal step execution dispatches the Period operation and retains the existing popup-close check", async () => {
+	const fixture = periodFixture(),
+		closed = [];
+	fixture.page.waitForSelector = async (css, options) =>
+		closed.push({ css, options });
+	await journeySteps.performSteps(
+		fixture.page,
+		journeySteps.historicalRangeSteps("year"),
+		{},
+		30000,
+	);
+	assert.equal(fixture.keys.filter((key) => key === "Enter").length, 1);
+	assert.deepEqual(closed, [
+		{
+			css: '[data-slot="select-content"]',
+			options: { hidden: true, timeout: 30000 },
+		},
+	]);
+});
 
 test("trusted click scrolls an offscreen target before testing the actual pointer", async () => {
 	const calls = [];
