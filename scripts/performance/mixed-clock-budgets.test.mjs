@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import test from "node:test";
 import * as budgets from "./mixed-clock-budgets.mjs";
+import { nextStreamCompletionPatch } from "./next-stream-completion-patch.mjs";
 
 const BEFORE = "456d28b2da4437662ae8f625a1df6756bff031fe";
 const HEAD = "de0b1a128b384196c7c93ac69cd5324e8d0cbbd8";
@@ -241,6 +242,7 @@ function fixture(build = BEFORE) {
 }
 function inputs() {
 	const conditions = {
+		nextStreamCompletionPatch: structuredClone(nextStreamCompletionPatch),
 		topology: "single app",
 		actors,
 		poolMax: 10,
@@ -295,10 +297,12 @@ function inputs() {
 		},
 	};
 }
-test("complete mixed cohorts derive policy7 nearest-rank limits and compare only clock-ready p95", () => {
+test("complete mixed cohorts derive policy8 nearest-rank limits and compare only clock-ready p95", () => {
 	const input = inputs(),
 		original = structuredClone(input);
 	const budget = budgets.deriveMixedClockBudgets(input);
+	assert.equal(budget.policy.version, 8);
+	assert.match(budget.conditionValidatorSha256, /^[a-f0-9]{64}$/);
 	assert.deepEqual(input, original);
 	assert.deepEqual(budget.clock.in, {
 		samples: 20,
@@ -337,6 +341,26 @@ test("complete mixed cohorts derive policy7 nearest-rank limits and compare only
 		(row) => row.family === "clock" && row.action === "out" && row.pair === 20,
 	).clockReadyMs = 3000;
 	assert.equal(budgets.compareMixedClockBudgets(options).passed, false);
+});
+test("mixed before conditions require the exact common patch, never equal unknowns or an alias", () => {
+	for (const mutate of [
+		(c) => delete c.nextStreamCompletionPatch,
+		(c) => (c.nextStreamCompletionPatch = null),
+		(c) => (c.nextStreamCompletionPatch.patchSha256 = hash),
+		(c) => (c.nextStreamCompletionPatch.esmSha256 = hash),
+		(c) => (c.nextStreamCompletionPatch.extra = true),
+		(c) => {
+			c.nextStreamLifecycle = c.nextStreamCompletionPatch;
+			delete c.nextStreamCompletionPatch;
+		},
+	]) {
+		const input = inputs();
+		mutate(input.beforeContext.conditions);
+		assert.throws(
+			() => budgets.deriveMixedClockBudgets(input),
+			/common Next patch/,
+		);
+	}
 });
 test("incomplete, duplicate, censored or replaced commands never produce a finite budget", () => {
 	for (const mutate of [
@@ -469,11 +493,14 @@ test("changed registration, sources, protocol or independent head context cannot
 		},
 	};
 	for (const mutate of [
+		(x) => delete x.headContext.conditions.nextStreamCompletionPatch,
+		(x) =>
+			(x.headContext.conditions.nextStreamCompletionPatch.cjsSha256 = hash),
+		(x) => (x.budgets.conditionValidatorSha256 = hash),
 		(x) => (x.expectedBudgetSha256 = "b".repeat(64)),
 		(x) => (x.beforeSha256 = "b".repeat(64)),
 		(x) => (x.protocolSha256 = "b".repeat(64)),
 		(x) => (x.operatorSha256 = "b".repeat(64)),
-		(x) => (x.protocol.files["mixed-load-probe.mjs"] = "b".repeat(64)),
 		(x) => x.budgets.clock.in.ceilingMs++,
 		(x) => x.budgets.policy.version++,
 		(x) => (x.headContext.fullBuild = BEFORE),
@@ -490,6 +517,20 @@ test("changed registration, sources, protocol or independent head context cannot
 		mutate(bad);
 		assert.throws(() => budgets.compareMixedClockBudgets(bad));
 	}
+	for (const file of budgets.mixedProtocolFiles) {
+		const bad = structuredClone(sample);
+		bad.protocol.files[file] = "b".repeat(64);
+		assert.throws(() => budgets.compareMixedClockBudgets(bad));
+	}
+	const unknown = structuredClone(sample);
+	unknown.headContext.conditions.nextStreamCompletionPatch = { unknown: true };
+	unknown.budgets.conditionsSha256 = createHash("sha256")
+		.update("unknown")
+		.digest("hex");
+	assert.throws(
+		() => budgets.compareMixedClockBudgets(unknown),
+		/common Next patch/,
+	);
 });
 
 test("more completed analytics responses alone adds descriptive volume without a regression threshold", () => {
