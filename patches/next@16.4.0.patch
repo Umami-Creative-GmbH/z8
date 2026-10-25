@@ -1,0 +1,42 @@
+diff --git a/dist/esm/server/pipe-readable.js b/dist/esm/server/pipe-readable.js
+index 0bd95e9c23ccda692bffb2227c4f6da7b4dbd334..3c15d8e74d6c1724e44dcbebfbdd1c8b2007efde 100644
+--- a/dist/esm/server/pipe-readable.js
++++ b/dist/esm/server/pipe-readable.js
+@@ -20,6 +20,7 @@ function createWriterFromResponse(res, waitUntilForEnd, clientComponentLoadTrack
+     res.once('close', ()=>{
+         res.off('drain', onDrain);
+         drained.resolve();
++        finished.resolve();
+     });
+     // Create a promise that will resolve once the response has finished. See
+     // https://nodejs.org/api/http.html#event-finish_1
+@@ -80,7 +81,7 @@ function createWriterFromResponse(res, waitUntilForEnd, clientComponentLoadTrack
+             if (waitUntilForEnd) {
+                 await waitUntilForEnd;
+             }
+-            if (res.writableFinished) return;
++            if (res.destroyed || res.writableFinished) return;
+             res.end();
+             return finished.promise;
+         }
+diff --git a/dist/server/pipe-readable.js b/dist/server/pipe-readable.js
+index a622f5e22d857d5edaf571e2577ba2caf58ed8e4..15531672d84ec0242e437ab28fa83f21f149ee8b 100644
+--- a/dist/server/pipe-readable.js
++++ b/dist/server/pipe-readable.js
+@@ -46,6 +46,7 @@ function createWriterFromResponse(res, waitUntilForEnd, clientComponentLoadTrack
+     res.once('close', ()=>{
+         res.off('drain', onDrain);
+         drained.resolve();
++        finished.resolve();
+     });
+     // Create a promise that will resolve once the response has finished. See
+     // https://nodejs.org/api/http.html#event-finish_1
+@@ -106,7 +107,7 @@ function createWriterFromResponse(res, waitUntilForEnd, clientComponentLoadTrack
+             if (waitUntilForEnd) {
+                 await waitUntilForEnd;
+             }
+-            if (res.writableFinished) return;
++            if (res.destroyed || res.writableFinished) return;
+             res.end();
+             return finished.promise;
+         }
