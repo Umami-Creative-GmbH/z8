@@ -1,0 +1,65 @@
+{
+  "schema": 1,
+  "kind": "local-fixture-runtime-deployment-alignment",
+  "toolingSource": "f264b9b4befc77b2cd67180938da276952f1a246",
+  "compiledSources": {
+    "original": "63904fb66849eea186e4e7af359cbbd1bfb8e6f5",
+    "optimized": "744012906b6511aa5d73ebadf47fcff3f8eff74f"
+  },
+  "correction": {
+    "scope": "owned local runtime NEXT_DEPLOYMENT_ID only; no business data, application, dependency or workload change",
+    "runtimeMatchesCompiledManifest": true,
+    "publicVersionAloneWasInsufficient": true
+  },
+  "beforeAlignment": {
+    "oneLinkRawSha256": "c59ac1b3b3127fdb3466be6563d170989c433aaf3ee8eadb0e4106c564c62467",
+    "mandatoryRscErrors": 1,
+    "downstreamCancellations": 1,
+    "semanticUnknown": 1,
+    "namedWorkHoursActionsSuccessful": 10,
+    "nativeGlobalComplete": true,
+    "outcome": "failed; retained unchanged",
+    "exactClientServerNavigationIdComparison": "not retained"
+  },
+  "afterAlignmentOneLink": {
+    "rawSha256": "d4b957e1f8118d779606832ea93f514c2a01c328c02b4ac3c3a3f65e64c2cd9e",
+    "operatorExitCode": 0,
+    "uiPassed": true,
+    "mandatoryErrors": 0,
+    "downstreamCancellations": 0,
+    "semanticUnknown": 0,
+    "semanticComplete": true,
+    "namedWorkHoursActionsSuccessful": 10,
+    "nativeQueriesReconciled": 36873,
+    "nativeGlobalComplete": true,
+    "freshLogBytes": 0
+  },
+  "afterAlignmentFourJourneys": {
+    "rawSha256": "3789ddee3ca6330b9b80db392970fba473dd11324b7458ce19350fde18f5061e",
+    "operatorExitCode": 0,
+    "journeys": 4,
+    "uiPassed": 4,
+    "mandatoryErrors": 0,
+    "downstreamCancellations": 0,
+    "semanticUnknown": 0,
+    "semanticComplete": true,
+    "nativeQueriesReconciled": 79359,
+    "nativeGlobalComplete": true,
+    "independentFreshLogAudit": {
+      "nextCurrentTimePrerenderErrors": 2,
+      "oldFiveDatabaseClassCountersMissedTheseErrors": true,
+      "cleanBaselineFulfilled": false,
+      "callerCause": {
+        "laterMatchingFamilyWitness": "OTLP batch-export timer inherited a prerender runtime context",
+        "stackProofSha256": "7db193c62b4dd7a78c7c9b52af648887d3cdc00ed48be905520759b61f22cbf4",
+        "commonObserverFixCommit": "4bbe817f4047fe53677e3e65ddbee9b0c501532f",
+        "rebuiltRuntimeValidation": "pending"
+      }
+    }
+  },
+  "limitations": [
+    "Local diagnostic counterfactual only; no controlled cohort, numerical budget or production/CDN acceptance.",
+    "The four-journey raw operator passed its narrower log classifier; the independent server-error audit rejects clean-baseline acceptance.",
+    "All original and optimized release evidence must still be clean under the approved observation condition."
+  ]
+}
