@@ -471,3 +471,28 @@ of the three owned membership/employee/employment-period records. No canonical
 time data or sessions were written by setup/cleanup. Eight normal fixture actors
 were authenticated again, owned Chrome processes were zero, and the runtime
 window was closed. No repeat or application change followed this failed trial.
+
+The subsequent isolated tool correction requires exactly one final transport
+snapshot per allocated browser context, matched by a unique context identity.
+Missing, duplicate, unexpected and failed-initialization evidence fails even
+when native queries balance; Node-only observations with zero contexts and zero
+snapshots remain valid. The existing local-control tests reproduce the missing
+snapshot failure and pass with the guard. All seven observation-file tests pass;
+the added actual failed-initialization path also passes its focused replay.
+No native accounting, deadlines, application code or package commands changed.
+
+One separately authorized [closure-verification attempt](evidence/1475-de0-two-tab-scope-closure.json)
+again passed the actual response, cache and keyboard Retry assertions. It retained
+one snapshot for one context, with complete native/strict transport accounting
+and known query rows. The overall result remains failed: the ordinary cleanup
+drain rejected one mandatory `otherFinite` HTTP error with zero pending requests,
+no cap and over one second of quiet. This is an actual retained drain rejection,
+not a TypeError or a missing snapshot; its exact request/status was not recorded.
+It is not waived or attributed to the scope denial without further evidence.
+The three new owned rows were removed, the actor returned to the original
+organization, eight normal actors were authenticated and owned Chrome was zero.
+
+A file-only audit finds actual transport snapshots in all fourteen earlier
+ingress cases: one in each streaming case and two in each admission case. Those
+raw results retain their original observer source; the new invariant does not
+retroactively upgrade their protocol or alter intentional-cancellation row costs.
