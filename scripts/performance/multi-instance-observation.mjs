@@ -3,6 +3,10 @@ import { randomBytes } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import {
+	admissionResponseComplete,
+	createAdmissionResponseWitness,
+} from "./admission-response-witness.mjs";
+import {
 	beginCollectorVisit,
 	collectorProtocol,
 	endCollectorVisit,
@@ -28,20 +32,49 @@ const check = (condition, message) => {
 };
 export const multiInstanceObservationProtocol = "paired-native-observer-v2";
 
+/** Functional denial only: retain the raw error and require its exact response witness. */
+export function pairedContextCleanupComplete(snapshot) {
+	const raw = snapshot.nativeCleanup,
+		expected = snapshot.admissionResponse;
+	if (!expected) return primaryCleanupComplete(raw);
+	if (
+		!admissionResponseComplete(expected) ||
+		raw?.complete !== false ||
+		raw.mandatoryErrors !== 1 ||
+		raw.groups?.otherFinite?.errors !== 1 ||
+		Object.values(raw.groups ?? {}).reduce(
+			(sum, row) => sum + row.errors,
+			0,
+		) !== 1
+	)
+		return false;
+	// This is a separate semantic predicate, not a mutation of the retained zero-error proof.
+	return primaryCleanupComplete({ ...raw, complete: true, mandatoryErrors: 0 });
+}
+
 /** Shared context closure; all cleanup outcomes must retain their transport proof. */
 export async function closeMultiInstanceContext({
 	context,
 	transport,
 	closeVisit,
 	recordSnapshot,
+	expectedAdmissionResponse,
 }) {
 	let nativeCleanup;
+	let cleanupFailure;
 	const failures = [];
 	try {
 		nativeCleanup = await waitForPrimaryContextDrain(transport);
 	} catch (error) {
 		nativeCleanup = error.cleanupProof;
-		failures.push(error);
+		cleanupFailure = error;
+		if (
+			!pairedContextCleanupComplete({
+				nativeCleanup,
+				admissionResponse: expectedAdmissionResponse?.snapshot(),
+			})
+		)
+			failures.push(error);
 	}
 	// A failed cleanup is still a failed visit, but must not strand either native registration.
 	for (const close of [
@@ -56,7 +89,27 @@ export async function closeMultiInstanceContext({
 		}
 	}
 	try {
-		recordSnapshot({ ...transport.snapshot(), nativeCleanup });
+		expectedAdmissionResponse?.close();
+		const snapshot = {
+			...transport.snapshot(),
+			nativeCleanup,
+			...(expectedAdmissionResponse
+				? { admissionResponse: expectedAdmissionResponse.snapshot() }
+				: {}),
+		};
+		if (expectedAdmissionResponse)
+			snapshot.expectedAdmissionDenial = {
+				complete: pairedContextCleanupComplete(snapshot),
+				rawCleanupComplete: nativeCleanup?.complete,
+				rawMandatoryErrors: nativeCleanup?.mandatoryErrors,
+				declaredResponseCount: snapshot.admissionResponse.expected.count,
+			};
+		if (!pairedContextCleanupComplete(snapshot) && failures.length === 0)
+			failures.push(
+				cleanupFailure ??
+					Error("Paired cleanup response evidence is incomplete."),
+			);
+		recordSnapshot(snapshot);
 	} catch (error) {
 		failures.push(error);
 	}
@@ -143,7 +196,7 @@ export async function waitForMultiInstanceContextDrain(transport) {
 
 /** Startup is retained, never subtracted without its exact empty-context proof. */
 export function multiInstanceTransportComplete(snapshot) {
-	if (!primaryCleanupComplete(snapshot.nativeCleanup)) return false;
+	if (!pairedContextCleanupComplete(snapshot)) return false;
 	const init = snapshot.browserInitialization,
 		after = snapshot.afterInitialization;
 	if (
@@ -437,13 +490,26 @@ export async function beginMultiInstanceObservation({
 			await endVisit(visit);
 			throw error;
 		}
-		let closed = false;
+		let closed = false,
+			expectedAdmissionResponse;
 		return {
 			context,
 			page: initialized.page,
 			browserInitialization: initialized.browserInitialization,
 			traceIds,
 			transport,
+			expectClockAdmissionResponse(scenario) {
+				check(
+					!closed && !expectedAdmissionResponse,
+					"Declare the admission response exactly once before its browser request.",
+				);
+				expectedAdmissionResponse = createAdmissionResponseWitness({
+					origin,
+					traceIds,
+					scenario,
+				});
+				return expectedAdmissionResponse;
+			},
 			background: () => {
 				current = traceIds[2];
 			},
@@ -453,6 +519,7 @@ export async function beginMultiInstanceObservation({
 				await closeMultiInstanceContext({
 					context,
 					transport,
+					expectedAdmissionResponse,
 					closeVisit: () => endVisit(visit),
 					recordSnapshot: (snapshot) =>
 						transports.push({

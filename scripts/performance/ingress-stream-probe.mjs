@@ -1378,6 +1378,8 @@ export async function runAdmission(
 			!expectedPath || new URL(page.url()).pathname === expectedPath,
 			"Admission did not reach its expected challenge.",
 		);
+		const expectedClockResponse =
+			observedDenied.expectClockAdmissionResponse(scenario);
 		const deniedClock = await page.evaluate(async () => {
 			const response = await fetch("/api/time-entries/status", {
 				cache: "no-store",
@@ -1417,6 +1419,11 @@ export async function runAdmission(
 			result.applicationPassed,
 			"Denied admission emitted protected data or enabled the clock.",
 		);
+		expectedClockResponse.confirm({
+			response: deniedClock,
+			clockStatusDenied: result.clockStatusDenied,
+			protectedContentEmitted: result.protectedContentEmitted,
+		});
 	} finally {
 		process.off("SIGINT", stop);
 		process.off("SIGTERM", stop);
