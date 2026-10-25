@@ -39,7 +39,9 @@ export async function waitVisible(page, selector, timeout = 30000) {
 }
 
 export async function clickVisible(page, selector, timeout = 30000) {
-	await (await waitVisible(page, selector, timeout))
+	await (
+		await waitVisible(page, selector, timeout)
+	)
 		.asLocator()
 		.setTimeout(timeout)
 		.click();
@@ -143,7 +145,13 @@ async function headerAction(page, action, timeout) {
 	}
 }
 
-export async function performSteps(page, steps, bindings, timeout = 30000) {
+export async function performSteps(
+	page,
+	steps,
+	bindings,
+	timeout = 30000,
+	hooks = {},
+) {
 	for (const [index, step] of (steps ?? []).entries()) {
 		try {
 			const selector = (value) => substitute(value, bindings);
@@ -232,9 +240,11 @@ export async function performSteps(page, steps, bindings, timeout = 30000) {
 			else if (step.select)
 				await page.select(selector(step.select), selector(step.value));
 			else if (step.key) await page.keyboard.press(step.key);
-			else if (step.reload)
+			else if (step.reload) {
+				if (hooks.beforeReload) await hooks.beforeReload({ stepIndex: index });
 				await page.reload({ waitUntil: "domcontentloaded", timeout });
-			else if (step.wait) await waitVisible(page, selector(step.wait), timeout);
+			} else if (step.wait)
+				await waitVisible(page, selector(step.wait), timeout);
 			else if (step.absent)
 				await page.waitForSelector(selector(step.absent), {
 					hidden: true,
@@ -272,7 +282,13 @@ export async function performSteps(page, steps, bindings, timeout = 30000) {
 				) {
 					await page.click(css);
 					if (step.checked.accepted)
-						await performSteps(page, step.checked.accepted, bindings, timeout);
+						await performSteps(
+							page,
+							step.checked.accepted,
+							bindings,
+							timeout,
+							hooks,
+						);
 				}
 				await performSteps(
 					page,
@@ -287,6 +303,7 @@ export async function performSteps(page, steps, bindings, timeout = 30000) {
 					],
 					bindings,
 					timeout,
+					hooks,
 				);
 			} else if (step.card)
 				await page.waitForFunction(
