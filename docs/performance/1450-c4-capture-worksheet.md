@@ -100,7 +100,7 @@ $final = Get-Content -Raw -LiteralPath $settled | ConvertFrom-Json
 if ($finalizeExit -ne 0 -or $final.evidenceComplete -ne $true -or $final.resourceComplete -ne $true) { throw 'Companion resources/native/eligibility remain unfulfilled.' }
 ```
 
-Preserve `behaviorComplete`, failure stages/causes, null UI percentiles, raw native close proofs and elapsed times, cleanup caps/errors, and separate CDP/wire scopes. All twenty real native LCP entries/read markers are required per first-document cohort; an unknown value stays unfulfilled. The full-byte gate uses only matched complete companion proxy body units and native/transport proof. The workload remains holistic journey cost, including Last Year → Custom and potentially inflight `prepare(false)` reads, with ordinary runtime cache warming.
+Preserve `behaviorComplete`, failure stages/causes, null UI percentiles, raw native close proofs and elapsed times, cleanup caps/errors, and separate CDP/wire scopes. All twenty real native LCP entries/read markers are required per first-document cohort; an unknown value stays unfulfilled. The full-byte gate uses only matched complete companion proxy body units and native/transport proof. Last Year → Custom and `prepare(false)` recipe steps are retained; C4 settles unmeasured warm transfers before the target transition. Measured holistic journey cost includes the actual target-range work, with ordinary runtime cache warming.
 
 ## Derive and register before any controlled head timing
 
