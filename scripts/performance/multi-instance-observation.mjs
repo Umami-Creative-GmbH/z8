@@ -22,6 +22,10 @@ import {
 	waitForPrimaryContextDrain,
 } from "./primary-context-cleanup.mjs";
 import {
+	createSsoAdmissionResponseWitness,
+	ssoAdmissionResponsesComplete,
+} from "./sso-admission-response-witness.mjs";
+import {
 	createFixtureTraceTransport,
 	fixtureTraceTransport,
 } from "./trace-transport.mjs";
@@ -35,17 +39,25 @@ export const multiInstanceObservationProtocol = "paired-native-observer-v2";
 /** Functional denial only: retain the raw error and require its exact response witness. */
 export function pairedContextCleanupComplete(snapshot) {
 	const raw = snapshot.nativeCleanup,
-		expected = snapshot.admissionResponse;
-	if (!expected) return primaryCleanupComplete(raw);
+		expected = snapshot.admissionResponse,
+		sso = snapshot.ssoAdmissionResponses;
+	if (!expected) return !sso && primaryCleanupComplete(raw);
+	if (
+		expected.scenario === "sso"
+			? !ssoAdmissionResponsesComplete(sso, snapshot.contextId)
+			: Boolean(sso)
+	)
+		return false;
+	const expectedErrors = sso ? 3 : 1;
 	if (
 		!admissionResponseComplete(expected) ||
 		raw?.complete !== false ||
-		raw.mandatoryErrors !== 1 ||
-		raw.groups?.otherFinite?.errors !== 1 ||
+		raw.mandatoryErrors !== expectedErrors ||
+		raw.groups?.otherFinite?.errors !== expectedErrors ||
 		Object.values(raw.groups ?? {}).reduce(
 			(sum, row) => sum + row.errors,
 			0,
-		) !== 1
+		) !== expectedErrors
 	)
 		return false;
 	// This is a separate semantic predicate, not a mutation of the retained zero-error proof.
@@ -54,11 +66,13 @@ export function pairedContextCleanupComplete(snapshot) {
 
 /** Shared context closure; all cleanup outcomes must retain their transport proof. */
 export async function closeMultiInstanceContext({
+	contextId,
 	context,
 	transport,
 	closeVisit,
 	recordSnapshot,
 	expectedAdmissionResponse,
+	ssoAdmissionResponses,
 }) {
 	let nativeCleanup;
 	let cleanupFailure;
@@ -68,14 +82,22 @@ export async function closeMultiInstanceContext({
 	} catch (error) {
 		nativeCleanup = error.cleanupProof;
 		cleanupFailure = error;
-		if (
-			!pairedContextCleanupComplete({
-				nativeCleanup,
-				admissionResponse: expectedAdmissionResponse?.snapshot(),
-			})
-		)
-			failures.push(error);
 	}
+	try {
+		await ssoAdmissionResponses?.confirmAfterCleanup();
+	} catch (error) {
+		failures.push(error);
+	}
+	if (
+		cleanupFailure &&
+		!pairedContextCleanupComplete({
+			contextId,
+			nativeCleanup,
+			admissionResponse: expectedAdmissionResponse?.snapshot(),
+			ssoAdmissionResponses: ssoAdmissionResponses?.snapshot(),
+		})
+	)
+		failures.push(cleanupFailure);
 	// A failed cleanup is still a failed visit, but must not strand either native registration.
 	for (const close of [
 		() => context.close(),
@@ -90,11 +112,16 @@ export async function closeMultiInstanceContext({
 	}
 	try {
 		expectedAdmissionResponse?.close();
+		ssoAdmissionResponses?.close();
 		const snapshot = {
+			...(contextId ? { contextId } : {}),
 			...transport.snapshot(),
 			nativeCleanup,
 			...(expectedAdmissionResponse
 				? { admissionResponse: expectedAdmissionResponse.snapshot() }
+				: {}),
+			...(ssoAdmissionResponses
+				? { ssoAdmissionResponses: ssoAdmissionResponses.snapshot() }
 				: {}),
 		};
 		if (expectedAdmissionResponse)
@@ -102,7 +129,10 @@ export async function closeMultiInstanceContext({
 				complete: pairedContextCleanupComplete(snapshot),
 				rawCleanupComplete: nativeCleanup?.complete,
 				rawMandatoryErrors: nativeCleanup?.mandatoryErrors,
-				declaredResponseCount: snapshot.admissionResponse.expected.count,
+				declaredResponseCount:
+					snapshot.admissionResponse.expected.count +
+					(ssoAdmissionResponses ? 2 : 0),
+				missingProviderSso: Boolean(ssoAdmissionResponses),
 			};
 		if (!pairedContextCleanupComplete(snapshot) && failures.length === 0)
 			failures.push(
@@ -491,13 +521,27 @@ export async function beginMultiInstanceObservation({
 			throw error;
 		}
 		let closed = false,
-			expectedAdmissionResponse;
+			expectedAdmissionResponse,
+			ssoAdmissionResponses;
 		return {
 			context,
 			page: initialized.page,
 			browserInitialization: initialized.browserInitialization,
 			traceIds,
 			transport,
+			expectMissingProviderSsoResponses() {
+				check(
+					!closed && !ssoAdmissionResponses,
+					"Declare the missing-provider SSO pair once before navigation.",
+				);
+				ssoAdmissionResponses = createSsoAdmissionResponseWitness({
+					origin,
+					traceIds,
+					contextId,
+					page: initialized.page,
+				});
+				return ssoAdmissionResponses;
+			},
 			expectClockAdmissionResponse(scenario) {
 				check(
 					!closed && !expectedAdmissionResponse,
@@ -517,9 +561,11 @@ export async function beginMultiInstanceObservation({
 				if (closed) return;
 				closed = true;
 				await closeMultiInstanceContext({
+					contextId,
 					context,
 					transport,
 					expectedAdmissionResponse,
+					ssoAdmissionResponses,
 					closeVisit: () => endVisit(visit),
 					recordSnapshot: (snapshot) =>
 						transports.push({
