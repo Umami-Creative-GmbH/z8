@@ -321,6 +321,32 @@ test("paired acceptance distinguishes zero-app-IO startup from a late escape and
 
 const pause = (ms) => new Promise((done) => setTimeout(done, ms));
 
+test("transport context coverage rejects missing, duplicate, unexpected and failed-init snapshots", () => {
+	const context = { contextId: "context-a", initialized: true };
+	const snapshot = { contextId: "context-a" };
+	const coverage = observationModule.multiInstanceTransportCoverage;
+	assert.equal(typeof coverage, "function");
+	assert.equal(
+		coverage([], []).complete,
+		true,
+		"Node-only observations remain valid.",
+	);
+	assert.equal(coverage([context], []).complete, false);
+	assert.equal(coverage([context], [snapshot]).complete, true);
+	assert.equal(coverage([context], [snapshot, snapshot]).complete, false);
+	assert.equal(coverage([context, context], [snapshot]).complete, false);
+	assert.equal(coverage([context], [{ contextId: "other" }]).complete, false);
+	assert.equal(coverage([], [snapshot]).complete, false);
+	assert.equal(
+		coverage([{ ...context, initialized: false }], [snapshot]).complete,
+		false,
+	);
+	assert.equal(
+		coverage([{ ...context, initialized: false }], []).complete,
+		false,
+	);
+});
+
 test("two replica labels cannot reuse one collector or native-control endpoint", async () => {
 	const directory = await mkdtemp(join(tmpdir(), "z8-multi-reused-control-"));
 	try {
@@ -462,6 +488,57 @@ test("paired V2 lifecycle adds both replicas' same-trace evidence and detects gl
 		assert.equal(proof.complete, true);
 		assert.equal(proof.combined.driverQueryCount, 3);
 		assert.equal(proof.combined.observedQueryCount, 3);
+		const browser = {
+			fixtureLaunchPolicy: {
+				policy: "isolated-profile-no-prediction-v1",
+				headless: true,
+			},
+			async createBrowserContext() {
+				return {
+					browser: () => browser,
+					pages: async () => [],
+					newPage: async () => ({ url: () => "about:blank" }),
+					close: async () => {},
+				};
+			},
+		};
+		const context = await observation.createContext(
+			browser,
+			"http://127.0.0.1:9",
+		);
+		await observation.closeRemainingVisits();
+		const missingSnapshot = await observation.reconcile();
+		await assert.rejects(context.close(), /exactly once/);
+		assert.equal(missingSnapshot.combined.pendingNativeQueries, 0);
+		assert.equal(
+			missingSnapshot.transportComplete,
+			false,
+			"Balanced native work cannot replace a missing browser transport.",
+		);
+		assert.equal(missingSnapshot.complete, false);
+		const recorded = await observation.reconcile();
+		assert.equal(recorded.transportComplete, true);
+		assert.equal(recorded.transportCoverage.expectedContexts, 1);
+		assert.equal(recorded.transportCoverage.observedSnapshots, 1);
+		assert.equal(recorded.transportCoverage.uniqueSnapshots, 1);
+		await assert.rejects(
+			observation.createContext(
+				{
+					createBrowserContext: async () => ({
+						browser: () => browser,
+						pages: async () => ["not empty"],
+						close: async () => {},
+					}),
+				},
+				"http://127.0.0.1:9",
+			),
+			/empty fresh context/,
+		);
+		const failedInit = await observation.reconcile();
+		assert.equal(failedInit.transportCoverage.expectedContexts, 2);
+		assert.equal(failedInit.transportCoverage.observedSnapshots, 2);
+		assert.equal(failedInit.transportCoverage.initializationFailures, 1);
+		assert.equal(failedInit.transportComplete, false);
 		// This deliberately never exports; the whole-run oracle must still detect it.
 		nodes.b.coverage.driverQuery();
 		const invalid = await observation.reconcile();

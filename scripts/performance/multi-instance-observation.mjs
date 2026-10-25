@@ -24,6 +24,32 @@ const check = (condition, message) => {
 };
 export const multiInstanceObservationProtocol = "paired-native-observer-v2";
 
+/** Each allocated browser context must retain its own final transport snapshot. */
+export function multiInstanceTransportCoverage(contexts, transports) {
+	const expected = new Set(contexts.map((row) => row.contextId));
+	const observed = new Set(transports.map((row) => row.contextId));
+	const missing = [...expected].filter((id) => !observed.has(id)).length;
+	const unexpected = [...observed].filter((id) => !expected.has(id)).length;
+	const initializationFailures = contexts.filter(
+		(row) => !row.initialized,
+	).length;
+	return {
+		expectedContexts: contexts.length,
+		observedSnapshots: transports.length,
+		uniqueSnapshots: observed.size,
+		missing,
+		unexpected,
+		initializationFailures,
+		complete:
+			expected.size === contexts.length &&
+			observed.size === transports.length &&
+			!observed.has(undefined) &&
+			missing === 0 &&
+			unexpected === 0 &&
+			initializationFailures === 0,
+	};
+}
+
 /** Finish the authoritative cleanup reload before closing its real browser context. */
 export async function waitForMultiInstanceContextDrain(transport) {
 	const started = performance.now();
@@ -208,7 +234,8 @@ export async function beginMultiInstanceObservation({
 		activeIds = new Set(),
 		activeVisits = new Set();
 	const visits = [],
-		transports = [];
+		transports = [],
+		transportContexts = [];
 	async function beginVisit(traceIds) {
 		check(
 			traceIds.length > 0 && traceIds.every((id) => !allIds.has(id)),
@@ -319,6 +346,7 @@ export async function beginMultiInstanceObservation({
 		};
 	}
 	async function createContext(browser, origin) {
+		const contextId = randomBytes(16).toString("hex");
 		const traceIds = Array.from({ length: 3 }, () =>
 			randomBytes(16).toString("hex"),
 		);
@@ -341,15 +369,19 @@ export async function beginMultiInstanceObservation({
 			context = await browser.createBrowserContext(
 				transport.browserContextOptions,
 			);
+			const contextProof = { contextId, initialized: false };
+			transportContexts.push(contextProof);
 			initialized = await initializeFixtureBrowserContext({
 				context,
 				transport,
 			});
+			contextProof.initialized = true;
 		} catch (error) {
 			await context?.close().catch(() => {});
 			await transport?.close();
 			if (transport)
 				transports.push({
+					contextId,
 					protocol: fixtureTraceTransport,
 					...transport.snapshot(),
 				});
@@ -377,6 +409,7 @@ export async function beginMultiInstanceObservation({
 						await transport.close();
 					} finally {
 						transports.push({
+							contextId,
 							protocol: fixtureTraceTransport,
 							...transport.snapshot(),
 						});
@@ -409,6 +442,13 @@ export async function beginMultiInstanceObservation({
 		const combined = Object.fromEntries(
 			fields.map((key) => [key, replicas.a[key] + replicas.b[key]]),
 		);
+		const transportCoverage = multiInstanceTransportCoverage(
+			transportContexts,
+			transports,
+		);
+		const transportComplete =
+			transportCoverage.complete &&
+			transports.every(multiInstanceTransportComplete);
 		return {
 			protocol: multiInstanceObservationProtocol,
 			replicas,
@@ -421,12 +461,14 @@ export async function beginMultiInstanceObservation({
 			})),
 			transport: fixtureTraceTransport,
 			transports,
-			transportComplete: transports.every(multiInstanceTransportComplete),
+			transportContexts,
+			transportCoverage,
+			transportComplete,
 			complete:
 				activeVisits.size === 0 &&
 				replicas.a.complete &&
 				replicas.b.complete &&
-				transports.every(multiInstanceTransportComplete),
+				transportComplete,
 		};
 	}
 	return {

@@ -1,0 +1,47 @@
+{
+  "sourceBuild": "de0b1a128b384196c7c93ac69cd5324e8d0cbbd8",
+  "kind": "normal-dashboard-clock-wire-smoke",
+  "overallPassed": false,
+  "operationalReadObservation": "expected-success-not-observed-before-bounded-wait",
+  "knownClockOpen": "not-attempted-after-prerequisite-failure",
+  "httpStatusErrors": 0,
+  "pageRequestFailed": 4,
+  "pageFailureEnums": [
+    "net::ERR_ABORTED"
+  ],
+  "cleanupDrain": {
+    "complete": true,
+    "mandatoryPending": 0,
+    "mandatoryErrors": 0,
+    "capped": false,
+    "quietObservedMs": 1029.100400000003
+  },
+  "native": {
+    "driverQueryCount": 734,
+    "nativeQueryStartedCount": 734,
+    "nativeQueryEndedCount": 734,
+    "observedQueryCount": 734,
+    "pendingNativeQueries": 0,
+    "activeTraces": 0
+  },
+  "serverStarted": 250,
+  "serverEnded": 250,
+  "serverBalance": 0,
+  "allNativeDrained": true,
+  "knownRowsAndNoQueryErrors": true,
+  "transportCoverage": {
+    "expectedContexts": 1,
+    "observedSnapshots": 1,
+    "uniqueSnapshots": 1,
+    "missing": 0,
+    "unexpected": 0,
+    "initializationFailures": 0,
+    "complete": true
+  },
+  "strictTransportComplete": true,
+  "originalOrganizationVerified": true,
+  "organizationSwitches": 0,
+  "seededRecords": 0,
+  "clockCommands": 0,
+  "ownedChromeRemaining": 0
+}
