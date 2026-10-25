@@ -2,13 +2,14 @@
   "schema": 1,
   "sourceBuild": "de0b1a128b384196c7c93ac69cd5324e8d0cbbd8",
   "artifactManifestSha256": "876c31b0d96fb2123be97c8767fd28d1058981a4822ff55d30e93ccc451a1ac3",
-  "parserCommit": "98af9f8352a601a79ddb794fe71c11976d2617f4",
-  "diagnosticCommit": "1f2322082e8972868341527659aec402260b276c",
+  "parserCorrectionCommit": "98af9f8352a601a79ddb794fe71c11976d2617f4",
+  "diagnosticWitnessCommit": "1f2322082e8972868341527659aec402260b276c",
   "controlledPerformanceEvidence": false,
   "fullFourteenConditionMatrixComplete": false,
   "productionTopologyVerified": false,
   "cdnVerified": false,
   "held": {
+    "operatorParser": "original-regex-before-correction",
     "viewport": "desktop",
     "mode": "first-document",
     "passed": true,
@@ -63,6 +64,7 @@
     }
   },
   "failed": {
+    "operatorParserCommit": "98af9f8352a601a79ddb794fe71c11976d2617f4",
     "viewport": "desktop",
     "mode": "first-document",
     "rawOverallPassed": false,
