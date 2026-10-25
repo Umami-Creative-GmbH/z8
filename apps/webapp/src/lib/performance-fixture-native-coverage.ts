@@ -13,6 +13,18 @@ type NativeSpan = {
 };
 type Counts = Record<NativeKind, number>;
 const counts = (): Counts => ({ queries: 0, acquisitions: 0, cache: 0 });
+const serverScopes = () => ({
+	http: { started: 0, ended: 0 },
+	next: { started: 0, ended: 0 },
+	other: { started: 0, ended: 0 },
+});
+const serverScope = (
+	span: NativeSpan,
+): keyof ReturnType<typeof serverScopes> => {
+	if (span.instrumentationScope?.name === "@opentelemetry/instrumentation-http")
+		return "http";
+	return span.instrumentationScope?.name === "next.js" ? "next" : "other";
+};
 const nativeKind = (span: NativeSpan): NativeKind | undefined => {
 	if (span.instrumentationScope?.name === "@opentelemetry/instrumentation-pg") {
 		if (span.name.startsWith("pg.query")) return "queries";
@@ -32,6 +44,9 @@ export class FixtureNativeCoverage {
 			ended: Counts;
 			unknown: number;
 			servers: number;
+			serverStarted: number;
+			serverEnded: number;
+			serverScopes: ReturnType<typeof serverScopes>;
 			lastActivity: number;
 			driverQueries: number;
 		}
@@ -64,6 +79,9 @@ export class FixtureNativeCoverage {
 				ended: counts(),
 				unknown: 0,
 				servers: 0,
+				serverStarted: 0,
+				serverEnded: 0,
+				serverScopes: serverScopes(),
 				lastActivity: performance.now(),
 				driverQueries: 0,
 			});
@@ -112,6 +130,8 @@ export class FixtureNativeCoverage {
 		const state = this.active.get(span.spanContext().traceId);
 		if (span.kind === SpanKind.SERVER && state) {
 			state.servers++;
+			state.serverStarted++;
+			state.serverScopes[serverScope(span)].started++;
 			state.lastActivity = performance.now();
 		}
 		const kind = nativeKind(span);
@@ -129,6 +149,8 @@ export class FixtureNativeCoverage {
 		const state = this.active.get(span.spanContext().traceId);
 		if (span.kind === SpanKind.SERVER && state) {
 			state.servers--;
+			state.serverEnded++;
+			state.serverScopes[serverScope(span)].ended++;
 			state.lastActivity = performance.now();
 		}
 		const kind = nativeKind(span);
@@ -168,6 +190,11 @@ export class FixtureNativeCoverage {
 							state.started[key as NativeKind] ===
 							state.ended[key as NativeKind],
 					),
+				serverBalance: state.servers,
+				serverStarted: state.serverStarted,
+				serverEnded: state.serverEnded,
+				serverScopes: state.serverScopes,
+				lastActivityAgeMs: performance.now() - state.lastActivity,
 			};
 		});
 	}
@@ -271,10 +298,14 @@ export async function startFixtureNativeControl(
 			let proof: ReturnType<FixtureNativeCoverage["close"]> = [];
 			if (request.url === "/visits/register") coverage.register(traceIds);
 			else {
+				const drainStarted = performance.now();
 				const drained = await coverage.drain(traceIds);
+				const drainElapsedMs = performance.now() - drainStarted;
 				await forceFlush();
 				proof = coverage.close(traceIds).map((entry) => ({
 					...entry,
+					drained,
+					drainElapsedMs,
 					complete: entry.complete && entry.driverComplete && drained,
 				}));
 			}

@@ -356,20 +356,44 @@ test("whole mixed observation uses real v2 registration, native close/flush and 
 		assert.equal(result.nativeRunCoverage.driverQueries, 4);
 		assert.equal(result.nativeRunCoverage.receivedQueries, 4);
 		assert.equal(result.nativeRunCoverage.standard.complete, true);
-		assert.deepEqual(result.nativeCloseProof, [
-			{
-				traceId,
-				queries: 4,
-				acquisitions: 4,
-				cache: 0,
-				started: { queries: 4, acquisitions: 4, cache: 0 },
-				ended: { queries: 4, acquisitions: 4, cache: 0 },
-				unattributedNativeSpans: 0,
-				driverQueries: 4,
-				driverComplete: true,
-				complete: true,
-			},
-		]);
+		const {
+			serverBalance,
+			serverStarted,
+			serverEnded,
+			serverScopes,
+			lastActivityAgeMs,
+			drained,
+			drainElapsedMs,
+			...accounting
+		} = result.nativeCloseProof[0];
+		assert.deepEqual(
+			[accounting],
+			[
+				{
+					traceId,
+					queries: 4,
+					acquisitions: 4,
+					cache: 0,
+					started: { queries: 4, acquisitions: 4, cache: 0 },
+					ended: { queries: 4, acquisitions: 4, cache: 0 },
+					unattributedNativeSpans: 0,
+					driverQueries: 4,
+					driverComplete: true,
+					complete: true,
+				},
+			],
+		);
+		assert.equal(serverBalance, 0);
+		assert.equal(serverStarted, 0);
+		assert.equal(serverEnded, 0);
+		assert.deepEqual(serverScopes, {
+			http: { started: 0, ended: 0 },
+			next: { started: 0, ended: 0 },
+			other: { started: 0, ended: 0 },
+		});
+		assert.ok(lastActivityAgeMs >= 500);
+		assert.equal(drained, true);
+		assert.ok(Number.isFinite(drainElapsedMs) && drainElapsedMs >= 0);
 		assert.ok(Number.isFinite(result.nativeCloseElapsedMs));
 		assert.ok(result.nativeCloseElapsedMs >= 0);
 		coverage.driverQuery();
@@ -404,6 +428,8 @@ test("whole mixed observation uses real v2 registration, native close/flush and 
 		assert.equal(failed.nativeCloseProof[0].queries, 0);
 		assert.equal(failed.nativeCloseProof[0].driverComplete, false);
 		assert.equal(failed.nativeCloseProof[0].complete, false);
+		assert.equal(failed.nativeCloseProof[0].drained, true);
+		assert.equal(failed.nativeCloseProof[0].serverBalance, 0);
 		assert.ok(Number.isFinite(failed.nativeCloseElapsedMs));
 		assert.equal(failed.rows[0].queryCount, null);
 		assert.equal(failed.rows[0].coverage.nativeProof, false);
