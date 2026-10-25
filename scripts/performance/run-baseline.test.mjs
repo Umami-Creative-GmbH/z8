@@ -12,6 +12,94 @@ import { nextStreamCompletionPatch } from "./next-stream-completion-patch.mjs";
 import { primaryProtocolIdentity } from "./protocol-fingerprints.mjs";
 import { measure } from "./run-baseline.mjs";
 
+function sidebarFixture(states) {
+	const calls = [];
+	const trigger = {
+		isVisible: async () => true,
+		isIntersectingViewport: async () => true,
+		evaluate: async () => true,
+		clickablePoint: async () => ({ x: 1, y: 2 }),
+		hover: async () => {},
+		asLocator: () => ({
+			setTimeout() {
+				return this;
+			},
+			click: async () => calls.push("click"),
+		}),
+	};
+	return {
+		calls,
+		page: {
+			$$: async (selector) =>
+				selector === 'button[data-sidebar="trigger"]' ? [trigger] : [],
+			waitForFunction: async (_predicate, options, input) => {
+				assert.ok(options.timeout > 0 && options.timeout <= 30000);
+				assert.equal(input.target, 'a[href="/en"]');
+				calls.push(input.requireOpen ? "wait-open" : "wait-ready");
+				const state = states.shift();
+				if (state instanceof Error) throw state;
+				return { jsonValue: async () => state, dispose: async () => {} };
+			},
+		},
+	};
+}
+const sidebarReveal = [
+	{
+		reveal: {
+			target: 'a[href="/{locale}"]',
+			trigger: 'button[data-sidebar="trigger"]',
+		},
+	},
+];
+
+test("Sidebar reveal waits for a delayed target in an already-open responsive sidebar without toggling", async () => {
+	const fixture = sidebarFixture([{ state: "open" }]);
+	await journeySteps.performSteps(
+		fixture.page,
+		sidebarReveal,
+		{ locale: "en" },
+		100,
+	);
+	assert.deepEqual(fixture.calls, ["wait-ready"]);
+});
+
+test("Sidebar reveal opens a known closed responsive sidebar once and requires its open target", async () => {
+	const fixture = sidebarFixture([{ state: "closed" }, { state: "open" }]);
+	await journeySteps.performSteps(fixture.page, sidebarReveal, {
+		locale: "en",
+	});
+	assert.deepEqual(fixture.calls, ["wait-ready", "click", "wait-open"]);
+});
+
+test("Sidebar reveal rejects unknown state and never repeats input after final readiness fails", async () => {
+	const unknown = sidebarFixture([null]);
+	await assert.rejects(
+		journeySteps.performSteps(unknown.page, sidebarReveal, { locale: "en" }),
+		/Unknown Sidebar/,
+	);
+	assert.deepEqual(unknown.calls, ["wait-ready"]);
+	for (const name of ["TimeoutError", "ProtocolError"]) {
+		const failure = Object.assign(Error("Original readiness failure"), {
+			name,
+		});
+		const fixture = sidebarFixture([{ state: "closed" }, failure]);
+		await assert.rejects(
+			journeySteps.performSteps(fixture.page, sidebarReveal, { locale: "en" }),
+			(error) => error === failure,
+		);
+		assert.deepEqual(fixture.calls, ["wait-ready", "click", "wait-open"]);
+	}
+});
+
+test("Sidebar reveal retains its absolute deadline before reading or dispatching input", async () => {
+	const fixture = sidebarFixture([{ state: "closed" }]);
+	await assert.rejects(
+		journeySteps.performSteps(fixture.page, sidebarReveal, { locale: "en" }, 0),
+		{ name: "TimeoutError" },
+	);
+	assert.deepEqual(fixture.calls, []);
+});
+
 function periodFixture({
 	open = "false",
 	labels = ["Last Month", "Current Month", "Last Year"],

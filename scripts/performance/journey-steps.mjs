@@ -89,6 +89,106 @@ export async function clickVisible(page, selector, timeout = 30000) {
 	throw error;
 }
 
+/** Resolve the responsive branch before deciding whether the global sidebar needs opening. */
+function sidebarRevealReadiness({ target, trigger, requireOpen }) {
+	const visible = (node) =>
+		Boolean(node?.getClientRects().length) &&
+		getComputedStyle(node).display !== "none" &&
+		getComputedStyle(node).visibility !== "hidden";
+	const triggers = [...document.querySelectorAll(trigger)].filter(
+		(node) =>
+			visible(node) && !node.matches(':disabled,[aria-disabled="true"]'),
+	);
+	if (
+		!document.body ||
+		!document.querySelector('[data-slot="sidebar-wrapper"]') ||
+		triggers.length !== 1
+	)
+		return false;
+	const desktop = [
+		...document.querySelectorAll(
+			'[data-slot="sidebar"][data-state]:not([data-mobile="true"])',
+		),
+	];
+	let state;
+	if (matchMedia("(max-width:767px)").matches) {
+		// The CSS-hidden server desktop branch does not establish mobile readiness.
+		if (desktop.length) return false;
+		const sheets = [
+			...document.querySelectorAll(
+				'[data-mobile="true"][data-sidebar="sidebar"],[data-mobile="true"][data-slot="sidebar"]',
+			),
+		];
+		if (sheets.length > 1) return false;
+		if (!sheets.length) state = "closed";
+		else {
+			const sheet = sheets[0];
+			if (sheet.getAttribute("data-sheet-open") === "false") return false;
+			if (
+				sheet.getAttribute("data-state") === "open" ||
+				sheet.getAttribute("data-sheet-open") === "true" ||
+				sheet.hasAttribute("data-open")
+			)
+				state = "open";
+			else return false;
+		}
+	} else {
+		const roots = desktop.filter(
+			(node) => visible(node) && node.getBoundingClientRect().height > 0,
+		);
+		if (roots.length !== 1) return false;
+		const value = roots[0].getAttribute("data-state");
+		if (value === "expanded") state = "open";
+		else if (value === "collapsed") state = "closed";
+		else return false;
+	}
+	if (state === "closed") return requireOpen ? false : { state };
+	return [...document.querySelectorAll(target)].some(
+		(node) =>
+			visible(node) && !node.matches(':disabled,[aria-disabled="true"]'),
+	)
+		? { state: "open" }
+		: false;
+}
+
+/** Wait for an open sidebar or open a known closed one with one trusted click. */
+export async function ensureSidebarRevealed(
+	page,
+	target,
+	trigger,
+	timeout = 30000,
+) {
+	const deadline = performance.now() + timeout;
+	const remaining = () => {
+		const ms = deadline - performance.now();
+		if (ms <= 0) {
+			const error = Error("Sidebar reveal deadline exceeded.");
+			error.name = "TimeoutError";
+			throw error;
+		}
+		return ms;
+	};
+	const read = async (requireOpen) => {
+		const handle = await page.waitForFunction(
+			sidebarRevealReadiness,
+			{ timeout: remaining() },
+			{ target, trigger, requireOpen },
+		);
+		try {
+			return await handle.jsonValue();
+		} finally {
+			await handle.dispose();
+		}
+	};
+	const initial = await read(false);
+	if (initial?.state === "open") return;
+	if (initial?.state !== "closed") throw Error("Unknown Sidebar reveal state.");
+	await clickVisible(page, trigger, remaining());
+	const opened = await read(true);
+	if (opened?.state !== "open")
+		throw Error("Sidebar did not become known open.");
+}
+
 /** Select a historical Period through its public keyboard UI while layout changes. */
 export async function selectPeriodPreset(page, label, timeout = 30000) {
 	const deadline = performance.now() + timeout;
@@ -342,15 +442,24 @@ export async function performSteps(
 						break;
 					}
 			} else if (step.reveal) {
-				let visible = false;
-				for (const target of await page.$$(selector(step.reveal.target)))
-					if (await target.isVisible()) {
-						visible = true;
-						break;
+				if (step.reveal.trigger === 'button[data-sidebar="trigger"]') {
+					await ensureSidebarRevealed(
+						page,
+						selector(step.reveal.target),
+						selector(step.reveal.trigger),
+						timeout,
+					);
+				} else {
+					let visible = false;
+					for (const target of await page.$$(selector(step.reveal.target)))
+						if (await target.isVisible()) {
+							visible = true;
+							break;
+						}
+					if (!visible) {
+						await clickVisible(page, selector(step.reveal.trigger), timeout);
+						await waitVisible(page, selector(step.reveal.target), timeout);
 					}
-				if (!visible) {
-					await clickVisible(page, selector(step.reveal.trigger), timeout);
-					await waitVisible(page, selector(step.reveal.target), timeout);
 				}
 			} else if (step.fill) {
 				const css = selector(step.fill);
