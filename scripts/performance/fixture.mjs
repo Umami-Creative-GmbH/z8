@@ -10,6 +10,7 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { authenticateFixture } from "./fixture-auth.mjs";
 import { fixtureBrowserPolicy } from "./fixture-browser.mjs";
+import { cleanObservationPolicy } from "./clean-evidence.mjs";
 import {
 	dashboardLayoutMutation,
 	fixtureBrowserPermissions,
@@ -666,7 +667,7 @@ async function plan(directory) {
 		},
 		phase: "baseline",
 		concurrency: 1,
-		timeoutMs: 30000,
+		timeoutMs: cleanObservationPolicy.originalTimeoutMs,
 		awayPath: "/{locale}/settings",
 		fixture: {
 			kind: fixture.kind,
@@ -708,6 +709,7 @@ async function plan(directory) {
 				runtime.env.REDIS_COMMAND_TIMEOUT_MS || 2000,
 			),
 			poolMax: Number(runtime.env.POSTGRES_POOL_MAX),
+			poolAcquisitionTimeoutMs: Number(runtime.env.POSTGRES_POOL_ACQUISITION_TIMEOUT_MS || "10000"),
 			images: runtime.images,
 		},
 		ranges: [{ name: "default", start: "", end: "" }, ...fixture.ranges],

@@ -462,7 +462,7 @@ test("all six generated prerequisites preserve own-page links and genuine global
 				analytics: "/{locale}/analytics",
 			},
 		);
-		assert.equal(plan.timeoutMs, 30000);
+		assert.equal(plan.timeoutMs, 90000);
 		assert.equal(plan.samples, 20);
 		assert.equal(plan.routes.length, 6);
 	} finally {
@@ -684,6 +684,10 @@ test("context-proxy plans require the prospective post-snapshot native cleanup p
 		const path = join(folder, "plan.json"),
 			plan = fixturePlan();
 		plan.runtime.traceTransport = "context-loopback-proxy-v1";
+		plan.phase = "baseline";
+		plan.timeoutMs = 90000;
+		plan.runtime.poolMax = 10;
+		plan.runtime.poolAcquisitionTimeoutMs = 60000;
 		plan.runtime.browserPolicy = "isolated-profile-no-prediction-v1";
 		plan.runtime.prerequisiteQuiescencePolicy =
 			"settled-prerequisite-transfers-v1";
@@ -959,7 +963,7 @@ test("route condition labels must be known and cannot silently leave a declared 
 	}
 });
 
-test("a fully observed failed predecessor is recorded while the same failure blocks release", () => {
+test("fully observed failed journeys cannot finalize either baseline or release evidence", () => {
 	const folder = mkdtempSync(join(tmpdir(), "z8-baseline-predecessor-"));
 	try {
 		const plan = {
@@ -1104,8 +1108,9 @@ test("a fully observed failed predecessor is recorded while the same failure blo
 			};
 		};
 		const predecessor = finalize("baseline");
-		assert.equal(predecessor.command.status, 0);
-		assert.equal(predecessor.artifact.acceptance, "baseline-recorded");
+		assert.equal(predecessor.command.status, 1);
+		assert.equal(predecessor.artifact.acceptance, "unfulfilled");
+		assert.equal(predecessor.artifact.evidenceComplete, false);
 		assert.equal(predecessor.artifact.releaseAcceptance, "failed");
 		const missingCommonRuntime = finalize(
 			"baseline",
@@ -1147,8 +1152,8 @@ test("a fully observed failed predecessor is recorded while the same failure blo
 		);
 		for (const condition of plan.conditions) delete condition.budgets;
 		const unbudgeted = finalize("baseline");
-		assert.equal(unbudgeted.command.status, 0);
-		assert.equal(unbudgeted.artifact.acceptance, "baseline-recorded");
+		assert.equal(unbudgeted.command.status, 1);
+		assert.equal(unbudgeted.artifact.acceptance, "unfulfilled");
 		assert.match(
 			unbudgeted.artifact.releaseGates.join(" "),
 			/budgets have not been recorded/,
@@ -1205,7 +1210,7 @@ test("a fully observed failed predecessor is recorded while the same failure blo
 			}).command.status,
 			2,
 		);
-		assert.equal(nativeGood.command.status, 0);
+		assert.equal(nativeGood.command.status, 1, "Complete native coverage does not make failed original journeys eligible.");
 		assert.equal(
 			finalize("baseline", plan.runtime.collectorProtocol, false).command
 				.status,

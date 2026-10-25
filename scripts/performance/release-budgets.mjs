@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { createHash } from "node:crypto";
+import { cleanEvidenceGates, cleanEvidencePolicy, cleanObservationPolicy } from "./clean-evidence.mjs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import {
@@ -19,8 +20,6 @@ import {
   primaryCleanupComplete,
 } from "./primary-context-cleanup.mjs";
 import {
-  beforeFailurePolicy,
-  eligibleOriginalAnnualFailure,
   requireSettledEvidence,
   settledWireEvidence,
 } from "./settled-resources.mjs";
@@ -67,7 +66,7 @@ const backendMetrics = [
   "eventLoopDelayMs",
 ];
 const policy = {
-  version: 8,
+  version: 9,
   nextStreamCompletionPatch,
   originalObserverProof: {
     amendedAt: "2026-10-25T09:24:58Z",
@@ -95,14 +94,14 @@ const policy = {
     scope:
       "warm target and away navigation transfers settle before leaving preparation; old C1/C2/C3 allowed inflight preparation",
   },
-  beforeResourceFailure: beforeFailurePolicy,
+  cleanEvidence: cleanEvidencePolicy,
   observedNativePaint: {
     amendedAt: "2026-10-25T09:24:58Z",
     source: "67362fef1dab6bb22e0aa9060ab699fbbe8f0609",
     proofSha256: paintProofSha256,
     proofHashEncoding: "sha256 of UTF-8 JSON.stringify(parsed public proof)",
     scope:
-      "native first-document paint observation independent of eligible FAILED baseline UI behavior; never successful-route readiness",
+      "native first-document paint from clean successful original journeys; all planned observations remain required",
     completeness:
       "all planned first-document samples (minimum20) finite with completed native read and at least1actual LCP entry; no prerequisite observation",
   },
@@ -119,7 +118,7 @@ const policy = {
       eventLoopDelayMs: 10,
     },
   },
-  failedCohort: "absolute plan.timeoutMs; no finite before usable-content p95",
+  failedCohort: "ineligible; no timeout or successful-subset fallback budget",
   resourceScope:
     "condition-wide maximum full-request telemetry; no claimed per-cohort reduction",
 };
@@ -167,8 +166,11 @@ function observedPaintComplete(samples) {
   );
 }
 function derive(plan, before, releaseRuntime, native) {
+  const clean = cleanEvidenceGates(plan, before, native);
+  if (clean.length) throw Error(clean.join(" "));
   const releasePlan = structuredClone(plan);
   releasePlan.phase = "release";
+  releasePlan.timeoutMs = cleanObservationPolicy.optimizedTimeoutMs;
   Object.assign(releasePlan.runtime, releaseRuntime);
   const conditions = {};
   for (const condition of plan.conditions) {
@@ -215,21 +217,7 @@ function derive(plan, before, releaseRuntime, native) {
       const values = samples.map((s) => s[name]);
       const unavailable = values.some((v) => !Number.isFinite(v));
       const resourceCensored = byteCensored(samples, name);
-      const completeNativePaint =
-        name === "lcpMs" &&
-        observedPaintComplete(samples) &&
-        samples.every(
-          (s) =>
-            !s.failed ||
-            (s.usableContentMs === null &&
-              eligibleOriginalAnnualFailure(
-                plan,
-                s,
-                native.find(
-                  (e) => e.traceId === (s.backendTraceId ?? s.traceId),
-                ),
-              )),
-        );
+      const completeNativePaint = name === "lcpMs" && observedPaintComplete(samples) && samples.every((s) => s.failed === false && s.censored === false);
       const beforeP95 =
         name === "lcpMs"
           ? completeNativePaint
@@ -242,19 +230,14 @@ function derive(plan, before, releaseRuntime, native) {
         beforeP95,
         ceiling:
           beforeP95 === null
-            ? failed && ["usableContentMs", "clockReadyMs"].includes(name)
-              ? plan.timeoutMs
-              : null
-            : ceiling(
-                beforeP95,
-                name.endsWith("Ms") ? policy.latency : policy.bytes,
-              ),
+            ? null
+            : name.endsWith("Ms")
+              ? Math.min(cleanObservationPolicy.optimizedTimeoutMs, ceiling(beforeP95, policy.latency))
+              : ceiling(beforeP95, policy.bytes),
         basis:
           name === "lcpMs"
             ? completeNativePaint
-              ? failed
-                ? "observed-native-paint-of-FAILED-baseline-behavior"
-                : "complete-observed-native-first-document-paint"
+              ? "complete-observed-native-first-document-paint"
               : "unavailable-native-first-document-observation-coverage"
             : failed
               ? "censored-before"
@@ -564,6 +547,8 @@ main().catch((error) => {
 });
 
 function requireEvidence(plan, artifact, native, planHash, phase) {
+  const clean = cleanEvidenceGates(plan, artifact, native);
+  if (clean.length) throw Error(clean.join(" "));
   if (json(artifact.protocol) !== json(primaryProtocol))
     throw Error(
       "Primary source fingerprints differ, including native browser observer helper.",
@@ -986,7 +971,7 @@ function settledBehavior(samples, native = []) {
       ? null
       : (statistics(samples.map((s) => s.readyMs))?.p95 ?? null),
     resourceObservationBasis: samples.some((s) => s.failed)
-      ? beforeFailurePolicy.resourceClaim
+      ? "failed diagnostic traffic; never eligible baseline cost"
       : "complete observed traffic for successful behavior",
     failures: samples
       .filter((s) => s.failed)
@@ -998,8 +983,6 @@ function settledBehavior(samples, native = []) {
         measurementStarted: s.measurementStarted,
         prerequisiteComplete: s.prerequisiteComplete,
         targetRangePrepared: s.targetRangePrepared,
-        cause: beforeFailurePolicy.cause,
-        proofSha256: beforeFailurePolicy.proofSha256,
         observedQueryErrors: native.find((e) => e.traceId === s.traceId)
           ?.observedQueryErrors,
         observedPoolAcquisitionErrors: native.find(

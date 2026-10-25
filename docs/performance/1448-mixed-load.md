@@ -29,7 +29,9 @@ rule. Only clock-ready p95 has a threshold. Analytics volume/response time/decod
 UTF-8 bytes, command preparation/response timing and backend groups counted once
 are descriptive; more completed analytics requests alone is not a regression.
 
-Before use, snapshot the eight measuring files named by the module into one
+The user-approved observation condition requires explicit `--phase baseline` (90 seconds) or `--phase release` (30 seconds), with pool 10 and acquisition timeout 60 seconds for both. Each independent context records `phase`, `observationTimeoutMs`, and the common `poolAcquisitionTimeoutMs`/observation policy. Clock ceilings remain bounded by 30 seconds; numerical factors and native/transport caps stay unchanged.
+
+Before use, snapshot the ten measuring files named by the module into one
 `{ "schema": 1, "files": { "filename.mjs": "SHA256", ... } }` manifest.
 The command verifies those exact local bytes and retains its own module hash.
 The same snapshot executes both runs. Record a separate actual context for each
@@ -170,14 +172,14 @@ operators remains pending.
 
 ## V2 acceptance and preparation evidence
 
-The separate file-only mixed-clock budget operator now uses policy metadata8,
+The separate file-only mixed-clock budget operator now uses policy metadata9,
 with the unchanged nearest-rank clock-ready ceiling
 `ceil(max(beforeP95 * 1.25, beforeP95 + 250ms, 500ms))`. Both independent run
 contexts must declare the canonical five-field `conditions.nextStreamCompletionPatch`
 from the [common validator](../../scripts/performance/next-stream-completion-patch.mjs).
 Missing fields, aliases, different hashes and equal unknown objects fail before
 derivation/comparison. The registration binds that validator's exact source hash
-separately from the eight measuring modules and the budget operator's own hash;
+separately from the ten measuring modules and the budget operator's own hash;
 HEAD must retain the same complete conditions and prospective source transition.
 No actual mixed observation or budget registration is claimed by this preparation.
 Analytics volume/query/cache observations remain descriptive, with no new gate.

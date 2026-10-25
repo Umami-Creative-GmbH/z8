@@ -1,5 +1,6 @@
 /** Actual authenticated header UI. The caller owns Page/auth/replica/trace interception. */
 import { waitVisible } from "./journey-steps.mjs";
+import { observationTimeoutMs } from "./clean-evidence.mjs";
 
 const pause = (ms) => new Promise((done) => setTimeout(done, ms));
 function resultFrom(text) {
@@ -35,7 +36,7 @@ async function verifyActor(page, expected) {
 /** No invented command bodies, action IDs, hidden clicks or automatic write retries. */
 export async function openPublicHeaderClock(
 	page,
-	{ origin, expectedActor, timeoutMs = 30000 },
+	{ origin, expectedActor, phase = "release", timeoutMs = observationTimeoutMs(phase) },
 ) {
 	const url = new URL(origin);
 	if (
@@ -50,7 +51,8 @@ export async function openPublicHeaderClock(
 		!expectedActor.organizationId ||
 		!Number.isFinite(timeoutMs) ||
 		timeoutMs < 1 ||
-		timeoutMs > 30000
+		observationTimeoutMs(phase) === undefined ||
+		timeoutMs > observationTimeoutMs(phase)
 	)
 		throw new Error(
 			"An authenticated loopback fixture and bounded timeout are required.",

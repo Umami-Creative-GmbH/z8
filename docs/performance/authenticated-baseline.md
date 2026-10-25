@@ -2,6 +2,8 @@
 
 The runner and disposable local services support spec #1448 / ticket #1450. A successful setup or unit test is not a completed performance baseline. The ticket stays open until the production browser journeys, recorded budgets and correlated backend evidence pass together.
 
+The active [clean-evidence condition](1450-clean-original-observation.md) supersedes historical failed-before eligibility below. Both original and optimized runs must be successful and error free; retained failures are diagnostics only. Original observations use 90 seconds and optimized observations 30 seconds, with shared pool 10/acquisition timeout 60 seconds. New exact bindings and complete actual runs remain required.
+
 Run from the repository root with pnpm. Choose an absolute **private directory outside the repository** for generated service credentials, synthetic account credentials, browser cookies and the runtime log. Publish only the reviewed comparison plan and numerical `baseline.json` artifact. Do not publish `*-private.json`, `services.json` or `runtime.log`.
 
 ```powershell

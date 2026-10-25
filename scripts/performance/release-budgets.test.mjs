@@ -1,4 +1,5 @@
 import { createProxyWireObserver } from "./proxy-wire-observer.mjs";
+import { createActionResultObserver } from "./action-result-observer.mjs";
 import { nextStreamCompletionPatch } from "./next-stream-completion-patch.mjs";
 import {
   primaryProtocolIdentity,
@@ -18,6 +19,12 @@ import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 import test from "node:test";
 const hash = (bytes) => createHash("sha256").update(bytes).digest("hex");
+function registerEmptyScopes(sample, field) {
+  sample.prerequisiteTraceId = `${sample.traceId}-prerequisite`;
+  sample.backgroundTraceId = `${sample.traceId}-background`;
+  const zero = { queries: 0, acquisitions: 0, cache: 0 };
+  sample[field] = { registered: true, closed: true, nativeCloseProof: [sample.prerequisiteTraceId, sample.backgroundTraceId].map((traceId) => ({ traceId, ...zero, started: zero, ended: zero, driverQueries: 0, driverComplete: true, complete: true, drained: true })) };
+}
 function cleanupFixture() {
   const wire = createProxyWireObserver();
   wire.begin(0);
@@ -49,7 +56,7 @@ function prerequisiteFixture(mode) {
     policy: "settled-prerequisite-transfers-v1",
     scope: "unmeasured-prerequisite-transfers",
     measurementStarted: false,
-    capMs: 30000,
+    capMs: 90000,
   }));
 }
 function fixture() {
@@ -65,7 +72,7 @@ function fixture() {
       "mutation-refresh": 5,
     },
     concurrency: 1,
-    timeoutMs: 30000,
+    timeoutMs: 90000,
     fixture: { kind: "disposable", journeysVerified: true },
     runtime: {
       mode: "production",
@@ -81,6 +88,7 @@ function fixture() {
       sourceBuild: "bbbbbbbbb",
       toolingBuild: "ccccccccc",
       poolMax: 10,
+      poolAcquisitionTimeoutMs: 60000,
     },
     conditions: [
       { name: "small", role: "admin", organization: "small", employees: 8 },
@@ -152,6 +160,7 @@ function fixture() {
     })),
   );
   for (const s of samples) {
+    registerEmptyScopes(s, "collector");
     s.traceTransport = initializedTransport(s.traceTransport);
     s.browserInitialization = s.traceTransport.browserInitialization;
   }
@@ -244,6 +253,14 @@ test("derivation emits fresh release budgets without modifying the baseline", ()
   const budget = JSON.parse(
     readFileSync(join(f.dir, "derived/release-budgets.json")),
   );
+  assert.equal(budget.policy.version, 9);
+  assert.deepEqual(budget.policy.latency, { multiplier: 1.25, allowance: 250, floor: 500 });
+  assert.deepEqual(budget.policy.bytes, { multiplier: 1.1, allowance: 16384, floor: 16384 });
+  assert.deepEqual(budget.policy.resources, {
+    multiplier: 1.25,
+    floors: { queryCount: 10, queryDurationMs: 100, rowsRetrieved: 100, poolWaitMs: 25, cacheMisses: 5, eventLoopDelayMs: 10 },
+  });
+  assert.equal(JSON.parse(readFileSync(join(f.dir, "derived/release-plan.json"))).timeoutMs, 30000);
   assert.equal(budget.cohorts[0].usableContentMs.beforeP95, 1000);
   assert.equal(budget.cohorts[0].usableContentMs.ceiling, 1250);
   assert.equal(budget.conditions.small.queryCount, 15);
@@ -308,6 +325,18 @@ test("common Next stream patch is mandatory and matched for derivation and head 
   );
 });
 
+test("a clean longer original observation cannot relax the optimized thirty-second ceiling", () => {
+  const f = fixture();
+  for (const s of f.artifact.samples) s.usableContentMs = 40000;
+  f.saveBefore();
+  const run = f.derive();
+  assert.equal(run.status, 0, run.stderr);
+  const budget = JSON.parse(readFileSync(join(f.dir, "derived/release-budgets.json")));
+  assert.equal(budget.cohorts[0].usableContentMs.beforeP95, 40000);
+  assert.equal(budget.cohorts[0].usableContentMs.ceiling, 30000);
+  assert.equal(JSON.parse(readFileSync(join(f.dir, "derived/release-plan.json"))).timeoutMs, 30000);
+});
+
 test("unfinalized, missing or capped native cleanup cannot register a numerical budget", () => {
   for (const change of [
     (s) => delete s.nativeCleanup,
@@ -321,6 +350,22 @@ test("unfinalized, missing or capped native cleanup cannot register a numerical 
     f.saveBefore();
     assert.equal(f.derive().status, 2);
   }
+});
+
+test("successful UI cannot register budgets with failed prerequisite or cleanup backend work", () => {
+  for (const scope of ["prerequisiteTraceId", "backgroundTraceId"])
+    for (const field of ["observedQueryErrors", "observedPoolAcquisitionErrors"]) {
+      const f = fixture();
+      f.backend.push({
+        traceId: f.artifact.samples[0][scope],
+        coverage: { registration: true, closed: true, nativeProof: true, incomplete: false },
+        observedQueryErrors: 0,
+        observedPoolAcquisitionErrors: 0,
+        [field]: 1,
+      });
+      f.saveBefore();
+      assert.equal(f.derive().status, 2, `${scope} ${field}`);
+    }
 });
 
 test("missing warm prerequisite phases and errors cannot register a numerical budget", () => {
@@ -425,7 +470,7 @@ test("derivation refuses incomplete, changed, uncorrelated and retrospective evi
   f.save("before.json", f.artifact);
   assert.equal(f.derive().status, 2);
 });
-test("failed before cohorts retain failure counts and an absolute timeout instead of successful-only latency", () => {
+test("failed before cohorts cannot register a timeout fallback budget", () => {
   const f = fixture();
   Object.assign(f.artifact.samples[0], {
     failed: true,
@@ -442,18 +487,8 @@ test("failed before cohorts retain failure counts and an absolute timeout instea
   });
   f.saveBefore();
   const run = f.derive();
-  assert.equal(run.status, 0, run.stderr);
-  const budget = JSON.parse(
-    readFileSync(join(f.dir, "derived/release-budgets.json")),
-  );
-  assert.equal(budget.cohorts[0].failed, 1);
-  assert.equal(budget.cohorts[0].censored, 1);
-  assert.deepEqual(budget.cohorts[0].usableContentMs, {
-    beforeP95: null,
-    ceiling: 30000,
-    basis: "censored-before",
-  });
-  assert.equal(budget.cohorts[0].javascriptBytes.ceiling, null);
+  assert.equal(run.status, 2, run.stderr);
+  assert.match(run.stderr, /clean|failed|censored/i);
 });
 function candidate(f) {
   const plan = JSON.parse(
@@ -465,6 +500,8 @@ function candidate(f) {
     readFileSync(join(f.dir, "derived/release-plan.json")),
   );
   artifact.runtime = { ...plan.runtime, buildVerified: true };
+  for (const s of artifact.samples)
+    for (const proof of s.prerequisiteQuiescence) proof.capMs = plan.timeoutMs;
   artifact.acceptance = "fulfilled";
   f.save("head.json", artifact);
   f.save("head-backend.json", f.backend);
@@ -506,25 +543,19 @@ test("comparison records all cohorts and reports fulfilled numerical gates with 
   assert.equal(report.cohorts[0].head.usableContentMs.p95, 1000);
   assert.match(report.limitations.join(" "), /INP/);
 });
-test("comparison retains failures, pending scripts and latency regressions as unfulfilled gates", () => {
-  for (const change of [
-    (h) => {
+test("comparison retains numerical regressions and rejects failed or unrestored HEAD evidence", () => {
+  for (const [expectedExit, change] of [
+    [1, (h) => {
       h.artifact.samples[0].usableContentMs = 5000;
       h.artifact.samples[1].usableContentMs = 5000;
-    },
-    (h) => {
-      h.artifact.samples[0].pendingScriptRequests = 1;
-    },
-    (h) => {
+    }],
+    [1, (h) => { h.artifact.samples[0].pendingScriptRequests = 1; }],
+    [2, (h) => {
       h.artifact.samples[0].failed = true;
       h.artifact.samples[0].elapsedUntilFailureMs = 30000;
-    },
-    (h) => {
-      h.artifact.samples[0].javascriptBytes = null;
-    },
-    (h) => {
-      h.artifact.samples[50].restored = false;
-    },
+    }],
+    [1, (h) => { h.artifact.samples[0].javascriptBytes = null; }],
+    [2, (h) => { h.artifact.samples[50].restored = false; }],
   ]) {
     const f = fixture();
     assert.equal(f.derive().status, 0);
@@ -532,10 +563,13 @@ test("comparison retains failures, pending scripts and latency regressions as un
     change(h);
     f.save("head.json", h.artifact);
     const run = h.compare();
-    assert.equal(run.status, 1, run.stderr);
-    const report = JSON.parse(readFileSync(join(f.dir, "comparison.json")));
-    assert.equal(report.numericalAcceptance, "unfulfilled");
-    assert.ok(report.gates.length > 0);
+    assert.equal(run.status, expectedExit, run.stderr);
+    if (expectedExit === 2) assert.match(run.stderr, /clean/i);
+    else {
+      const report = JSON.parse(readFileSync(join(f.dir, "comparison.json")));
+      assert.equal(report.numericalAcceptance, "unfulfilled");
+      assert.ok(report.gates.length > 0);
+    }
   }
 });
 test("comparison rejects changed budgets, missing iterations and mismatched native coverage", () => {
@@ -675,6 +709,7 @@ function settledFixture(f, plan, filename) {
       inlineRscDecodedBytes: s.mode === "first-document" ? 2000 : null,
     }));
   for (const s of samples) {
+    for (const proof of s.prerequisiteQuiescence) proof.capMs = plan.timeoutMs;
     s.traceTransport = initializedTransport(s.traceTransport);
     s.browserInitialization = s.traceTransport.browserInitialization;
     s.wireSettled = wireFixture(s);
@@ -708,7 +743,7 @@ function settledFixture(f, plan, filename) {
   f.save(filename, artifact);
   return artifact;
 }
-test("finalized failed original annual traffic supplies a labeled resource budget without a successful-before latency claim", () => {
+test("failed original annual traffic cannot derive latency or resource budgets", () => {
   const f = fixture();
   Object.assign(f.plan.runtime, {
     build: "bda468856728844f8172f6832c4deb9ad34a3bb0",
@@ -741,188 +776,9 @@ test("finalized failed original annual traffic supplies a labeled resource budge
     observedQueryCount: 5,
   });
   f.saveBefore();
-  const before = settledFixture(f, f.plan, "settled-before.json");
-  Object.assign(before.samples[0], {
-    failed: true,
-    censored: true,
-    readyMs: null,
-    elapsedUntilFailureMs: 31000,
-    failureStage: "verify-expected-content",
-    failureKind: "timeout",
-    measurementStarted: true,
-    prerequisiteComplete: true,
-    targetRangePrepared: true,
-    wireFailureDrain: {
-      ...structuredClone(before.samples[0].wireSettled),
-      scope: "post-failed-journey-diagnostic",
-      usableContentClaim: false,
-    },
-    wireSettled: null,
-  });
-  before.protocol = Object.fromEntries(
-    [
-      "settled-resources.mjs",
-      "settled-resource-observer.mjs",
-      "journey-steps.mjs",
-      "run-baseline.mjs",
-      "next-stream-completion-patch.mjs",
-      "primary-context-cleanup.mjs",
-      "prerequisite-quiescence.mjs",
-      "operator-reload-quiescence.mjs",
-      "collector-client.mjs",
-      "trace-transport.mjs",
-      "proxy-wire-observer.mjs",
-      "fixture-browser.mjs",
-      "browser-performance.mjs",
-      "protocol-fingerprints.mjs",
-      "../../docs/performance/evidence/1450-telemetry-functional-diagnostics.json",
-      "../../docs/performance/evidence/1450-observer-v4-before-proof.json",
-      "../../docs/performance/evidence/1450-observer-v8-before-proof.json",
-      "../../docs/performance/evidence/1450-next-stream-fixed-before-proof.json",
-    ].map((name) => [name, hash(readFileSync(new URL(name, import.meta.url)))]),
-  );
-  f.save("settled-before.json", before);
-  const final = spawnSync(
-    process.execPath,
-    [
-      "scripts/performance/settled-resources.mjs",
-      "finalize",
-      "--plan",
-      join(f.dir, "before-plan.json"),
-      "--artifact",
-      join(f.dir, "settled-before.json"),
-      "--backend",
-      join(f.dir, "backend.json"),
-    ],
-    { encoding: "utf8" },
-  );
-  assert.equal(final.status, 0, final.stderr);
-  const recorded = JSON.parse(readFileSync(join(f.dir, "settled-before.json")));
-  assert.equal(recorded.resourceComplete, true);
-  assert.equal(recorded.behaviorComplete, false);
-  assert.equal(recorded.samples[0].failed, true);
-  const beforeArgs = [
-    "--before-settled",
-    join(f.dir, "settled-before.json"),
-    "--before-settled-backend",
-    join(f.dir, "backend.json"),
-  ];
-  const derive = f.run(
-    "derive",
-    "--before-plan",
-    join(f.dir, "before-plan.json"),
-    "--before",
-    join(f.dir, "before.json"),
-    "--backend",
-    join(f.dir, "backend.json"),
-    "--release-build",
-    "ddddddddd",
-    "--release-source",
-    "eeeeeeeee",
-    "--release-tooling",
-    "fffffffff",
-    "--out",
-    join(f.dir, "derived"),
-    ...beforeArgs,
-  );
-  assert.equal(derive.status, 0, derive.stderr);
-  const budgets = JSON.parse(
-    readFileSync(join(f.dir, "derived/release-budgets.json")),
-  );
-  assert.equal(budgets.policy.version, 8);
-  assert.deepEqual(budgets.policy.latency, {
-    multiplier: 1.25,
-    allowance: 250,
-    floor: 500,
-  });
-  assert.deepEqual(budgets.policy.bytes, {
-    multiplier: 1.1,
-    allowance: 16384,
-    floor: 16384,
-  });
-  assert.deepEqual(budgets.policy.resources, {
-    multiplier: 1.25,
-    floors: {
-      queryCount: 10,
-      queryDurationMs: 100,
-      rowsRetrieved: 100,
-      poolWaitMs: 25,
-      cacheMisses: 5,
-      eventLoopDelayMs: 10,
-    },
-  });
-  assert.equal(budgets.cohorts[0].usableContentMs.beforeP95, null);
-  assert.equal(budgets.cohorts[0].usableContentMs.ceiling, 30000);
-  assert.equal(budgets.cohorts[0].lcpMs.beforeP95, 800);
-  assert.equal(budgets.cohorts[0].lcpMs.ceiling, 1050);
-  assert.match(budgets.cohorts[0].lcpMs.basis, /native-paint.*FAILED/);
-  assert.equal(budgets.settled.cohorts[0].beforeBehavior.failed, 1);
-  assert.equal(
-    budgets.settled.cohorts[0].beforeBehavior.usableContentP95,
-    null,
-  );
-  assert.match(
-    budgets.settled.cohorts[0].beforeBehavior.resourceObservationBasis,
-    /FAILED baseline/,
-  );
-  assert.equal(
-    budgets.settled.cohorts[0].beforeBehavior.failures[0]
-      .observedPoolAcquisitionErrors,
-    69,
-  );
-  assert.equal(budgets.settled.cohorts[0].metrics.javascript.beforeP95, 10000);
-  assert.equal(budgets.settled.cohorts[0].metrics.javascript.ceiling, 26384);
-  const h = candidate(f);
-  Object.assign(h.artifact.samples[0], {
-    failed: false,
-    censored: false,
-    usableContentMs: 1000,
-    clockReadyMs: 100,
-  });
-  f.save("head.json", h.artifact);
-  const headNative = structuredClone(f.backend);
-  headNative[0].observedPoolAcquisitionErrors = 0;
-  f.save("head-backend.json", headNative);
-  const headWire = settledFixture(f, h.plan, "settled-head.json");
-  headWire.protocol = before.protocol;
-  headWire.nativeSha256 = hash(readFileSync(join(f.dir, "head-backend.json")));
-  f.save("settled-head.json", headWire);
-  const compare = () =>
-    f.run(
-      "compare",
-      "--before-plan",
-      join(f.dir, "before-plan.json"),
-      "--before",
-      join(f.dir, "before.json"),
-      "--backend",
-      join(f.dir, "backend.json"),
-      "--plan",
-      join(f.dir, "derived/release-plan.json"),
-      "--budgets",
-      join(f.dir, "derived/release-budgets.json"),
-      "--head",
-      join(f.dir, "head.json"),
-      "--head-backend",
-      join(f.dir, "head-backend.json"),
-      "--out",
-      join(f.dir, "comparison.json"),
-      ...beforeArgs,
-      "--head-settled",
-      join(f.dir, "settled-head.json"),
-      "--head-settled-backend",
-      join(f.dir, "head-backend.json"),
-    );
-  const result = compare();
-  assert.equal(result.status, 0, result.stderr);
-  const report = JSON.parse(readFileSync(join(f.dir, "comparison.json")));
-  assert.equal(report.resourceAcceptance, "fulfilled");
-  assert.equal(report.cohorts[0].before.lcpMs.p95, 800);
-  assert.equal(report.cohorts[0].before.usableContentMs, null);
-  assert.equal(report.settledResources.cohorts[0].beforeBehavior.failed, 1);
-  assert.equal(report.settledResources.cohorts[0].headBehavior.failed, 0);
-  Object.assign(headWire.samples[0], before.samples[0]);
-  f.save("settled-head.json", headWire);
-  assert.equal(compare().status, 2);
+  const derived = f.derive();
+  assert.equal(derived.status, 2, derived.stdout + derived.stderr);
+  assert.match(derived.stderr, /clean|failed|censored/i);
 });
 test("matched complete companion resolves full-byte gates without relabeling pending primary bytes as passed", () => {
   const f = fixture();
@@ -1186,6 +1042,7 @@ test("main finalizer CDP overage remains diagnostic when censored before bytes h
     })),
   );
   assert.equal(f.artifact.samples.length, 330);
+  for (const s of f.artifact.samples) registerEmptyScopes(s, "collector");
   f.artifact.nativeRunCoverage = {
     driverQueryCount: 1650,
     nativeQueryStartedCount: 1650,
@@ -1367,6 +1224,7 @@ function initializedTransport(snapshot) {
   };
   return {
     ...snapshot,
+    applicationEvidence: createActionResultObserver().snapshot(),
     refusedRequests: 1,
     refusalReasons: { ...init.refusalReasons },
     browserInitialization: init,

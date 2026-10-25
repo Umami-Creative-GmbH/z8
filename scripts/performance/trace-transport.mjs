@@ -1,7 +1,8 @@
-/** Per-browser-context causal transport, including ServiceWorker traffic. Never inspects or saves payloads. */
+/** Context transport including workers; bounded compiled-action semantics stay in RAM, never in evidence. */
 import { randomBytes } from "node:crypto";
 import { Agent, createServer, request as forward } from "node:http";
 import { createProxyWireObserver } from "./proxy-wire-observer.mjs";
+import { createActionResultObserver } from "./action-result-observer.mjs";
 
 export const fixtureTraceTransport = "context-loopback-proxy-v1";
 const loopback = (url) =>
@@ -31,6 +32,7 @@ export async function createFixtureTraceTransport({
 	const allowed = new Set(allowedOrigins);
 	const agent = new Agent({ keepAlive: true, maxSockets: 64 });
 	const wire = createProxyWireObserver();
+	const application = createActionResultObserver();
 	const counts = {
 		requests: 0,
 		rewrittenRequests: 0,
@@ -56,7 +58,7 @@ export async function createFixtureTraceTransport({
 		},
 	};
 	const server = createServer((request, response) => {
-		let wireId;
+		let wireId, applicationId;
 		try {
 			const traceId = getTraceId({
 				headers: request.headers,
@@ -79,6 +81,7 @@ export async function createFixtureTraceTransport({
 				return;
 			}
 			counts.requests++;
+			applicationId = application.request({ traceId, method: request.method, headers: request.headers, applicationOrigin: url.origin === origin, compiledAsset: url.origin === origin && /^\/_next\/static\/chunks\/[\w./-]+\.js$/.test(url.pathname) });
 			const headers = { ...request.headers };
 			delete headers["proxy-connection"];
 			delete headers["proxy-authorization"];
@@ -90,6 +93,7 @@ export async function createFixtureTraceTransport({
 				failureRecorded = false,
 				upstream;
 			const failed = (phase, error) => {
+				application.abort(applicationId);
 				if (!downstreamAborted && !failureRecorded) {
 					failureRecorded = true;
 					counts.upstreamFailures++;
@@ -119,6 +123,7 @@ export async function createFixtureTraceTransport({
 				wire.end(wireId, { error: true }, performance.now());
 			};
 			const canceled = () => {
+				application.abort(applicationId);
 				// Only an observed downstream abort/close may precede this classification.
 				// A genuine upstream error already recorded is never relabeled or subtracted.
 				if (!downstreamAborted && !failureRecorded) {
@@ -132,6 +137,7 @@ export async function createFixtureTraceTransport({
 				url,
 				{ method: request.method, headers, agent },
 				(answer) => {
+					application.response(applicationId, { mimeType: answer.headers["content-type"], encoding: answer.headers["content-encoding"], status: answer.statusCode });
 					wire.response(
 						wireId,
 						{
@@ -145,10 +151,11 @@ export async function createFixtureTraceTransport({
 						performance.now(),
 					);
 					answer.on("data", (chunk) => {
+						application.bytes(applicationId, chunk);
 						counts.responseBodyBytes += chunk.length;
 						wire.bytes(wireId, chunk.length, performance.now());
 					});
-					answer.once("end", () => wire.end(wireId, {}, performance.now()));
+					answer.once("end", () => { wire.end(wireId, {}, performance.now()); application.end(applicationId); });
 					answer.once("aborted", () => {
 						failed("response");
 						response.destroy();
@@ -239,9 +246,10 @@ export async function createFixtureTraceTransport({
 		},
 		snapshot: () => {
 			const total = snapshot();
-			if (!initialization) return total;
+			if (!initialization) return { ...total, applicationEvidence: application.snapshot() };
 			return {
 				...total,
+				applicationEvidence: application.snapshot(),
 				browserInitialization: structuredClone(initialization),
 				afterInitialization: Object.fromEntries(
 					Object.entries(total).map(([key, value]) => [

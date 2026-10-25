@@ -4,6 +4,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { isNextStreamCompletionPatch } from "./next-stream-completion-patch.mjs";
+import { cleanApplicationEvidence, cleanObservationPolicy, observationTimeoutMs } from "./clean-evidence.mjs";
 import {
 	clockObservationIsComplete,
 	mixedTransportIsComplete,
@@ -18,10 +19,13 @@ export const mixedProtocolFiles = [
 	"fixture-browser.mjs",
 	"journey-steps.mjs",
 	"trace-transport.mjs",
+	"action-result-observer.mjs",
+	"clean-evidence.mjs",
 	"proxy-wire-observer.mjs",
 ];
 const policy = {
-	version: 8,
+	version: 9,
+	observation: cleanObservationPolicy,
 	latency: { multiplier: 1.25, allowanceMs: 250, floorMs: 500 },
 };
 const actors = ["large-admin", "small-admin", "small-manager", "large-manager"];
@@ -40,7 +44,7 @@ const canonical = (value) =>
 			: row,
 	);
 const digest = (value) => createHash("sha256").update(value).digest("hex");
-// Transitive validator bytes are bound separately from the eight measuring modules.
+// Transitive validator bytes are bound separately from the measuring modules.
 const conditionValidatorSha256 = digest(
 	await readFile(
 		new URL("./next-stream-completion-patch.mjs", import.meta.url),
@@ -90,7 +94,7 @@ function validateProtocol(protocol) {
 				[...mixedProtocolFiles].sort(),
 			) &&
 			Object.values(protocol.files).every(sha),
-		"eight measuring source hashes",
+		"ten measuring source hashes",
 	);
 }
 function validateConditions(value) {
@@ -103,6 +107,8 @@ function validateConditions(value) {
 			value.topology === "single app" &&
 			same(value.actors, actors) &&
 			value.poolMax === 10 &&
+			value.poolAcquisitionTimeoutMs === cleanObservationPolicy.sharedPoolAcquisitionTimeoutMs &&
+			same(value.observation, cleanObservationPolicy) &&
 			value.clockPairs === 20 &&
 			value.annualYear === 2025 &&
 			value.analyticsMaxRequestsPerCallerPerCommand === 100 &&
@@ -143,11 +149,13 @@ function validateConditions(value) {
 		"actual fixture context",
 	);
 }
-function validateContext(context, artifactSha, build, protocolSha) {
+function validateContext(context, artifactSha, build, protocolSha, phase) {
 	check(
 		context?.schema === 1 &&
 			context.mixedArtifactSha256 === artifactSha &&
 			context.fullBuild === build &&
+			context.phase === phase &&
+			context.observationTimeoutMs === observationTimeoutMs(phase) &&
 			context.protocolSha256 === protocolSha,
 		"independent artifact/source/protocol context",
 	);
@@ -169,7 +177,7 @@ function validateRecordedBrowser(run, context) {
 }
 
 /** Validate every record and every registered native group, never a selected success subset. */
-export function validateMixedClockRun(run, build) {
+export function validateMixedClockRun(run, build, phase = "baseline") {
 	check(
 		fullBuild(build) &&
 			run?.sourceCommit === build &&
@@ -192,7 +200,10 @@ export function validateMixedClockRun(run, build) {
 			run.clockPairs === 20 &&
 			run.clockActor === actors[3] &&
 			run.analyticsMaxRequestsPerCallerPerCommand === 100 &&
-			run.requestTimeoutMs === 30000,
+			run.phase === phase &&
+			observationTimeoutMs(phase) !== undefined &&
+			run.requestTimeoutMs === observationTimeoutMs(phase) &&
+			run.poolAcquisitionTimeoutMs === cleanObservationPolicy.sharedPoolAcquisitionTimeoutMs,
 		"operator protocol",
 	);
 	check(
@@ -245,7 +256,7 @@ export function validateMixedClockRun(run, build) {
 	check(
 		run.transports?.length === 4 &&
 			same(run.transports.map((row) => row.actor).sort(), [...actors].sort()) &&
-			run.transports.every(mixedTransportIsComplete),
+			run.transports.every((row) => mixedTransportIsComplete(row) && cleanApplicationEvidence(row.traceTransport.applicationEvidence)),
 		"four closed strict transports",
 	);
 	check(
@@ -462,6 +473,7 @@ export function deriveMixedClockBudgets(input) {
 		beforeSha256,
 		expectedBeforeBuild,
 		protocolSha256,
+		"baseline",
 	);
 	check(
 		isoTime(registeredAt) > isoTime(beforeContext.finishedAt),
@@ -490,9 +502,9 @@ export function deriveMixedClockBudgets(input) {
 					samples: 20,
 					beforeP50Ms: values.p50Ms,
 					beforeP95Ms: values.p95Ms,
-					ceilingMs: Math.ceil(
+					ceilingMs: Math.min(cleanObservationPolicy.optimizedTimeoutMs, Math.ceil(
 						Math.max(values.p95Ms * 1.25, values.p95Ms + 250, 500),
-					),
+					)),
 				},
 			]),
 		),
@@ -545,6 +557,7 @@ export function compareMixedClockBudgets(input) {
 		headSha256,
 		budgets.expectedHeadBuild,
 		protocolSha256,
+		"release",
 	);
 	check(
 		digest(canonical(headContext.conditions)) === budgets.conditionsSha256 &&
@@ -559,7 +572,7 @@ export function compareMixedClockBudgets(input) {
 		"head run completed before comparison",
 	);
 	const original = validateMixedClockRun(before, budgets.expectedBeforeBuild),
-		current = validateMixedClockRun(head, budgets.expectedHeadBuild);
+		current = validateMixedClockRun(head, budgets.expectedHeadBuild, "release");
 	validateRecordedBrowser(head, headContext);
 	const clock = Object.fromEntries(
 		["in", "out"].map((action) => {
@@ -570,9 +583,9 @@ export function compareMixedClockBudgets(input) {
 					samples: 20,
 					beforeP50Ms: baseline.p50Ms,
 					beforeP95Ms: baseline.p95Ms,
-					ceilingMs: Math.ceil(
+					ceilingMs: Math.min(cleanObservationPolicy.optimizedTimeoutMs, Math.ceil(
 						Math.max(baseline.p95Ms * 1.25, baseline.p95Ms + 250, 500),
-					),
+					)),
 				}),
 				"recomputed registered clock ceiling",
 			);
@@ -669,7 +682,7 @@ export async function runMixedBudgetCommand(args) {
 		check(
 			digest(await readFile(new URL(name, import.meta.url))) ===
 				protocol.value.files[name],
-			"actual eight-module snapshot",
+			"actual ten-module snapshot",
 		);
 	const operatorSha256 = digest(await readFile(new URL(import.meta.url)));
 	let result;

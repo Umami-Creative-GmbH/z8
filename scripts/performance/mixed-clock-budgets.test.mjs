@@ -6,6 +6,8 @@ import { dirname, join, resolve } from "node:path";
 import test from "node:test";
 import * as budgets from "./mixed-clock-budgets.mjs";
 import { nextStreamCompletionPatch } from "./next-stream-completion-patch.mjs";
+import { cleanObservationPolicy } from "./clean-evidence.mjs";
+import { createActionResultObserver } from "./action-result-observer.mjs";
 
 const BEFORE = "456d28b2da4437662ae8f625a1df6756bff031fe";
 const HEAD = "de0b1a128b384196c7c93ac69cd5324e8d0cbbd8";
@@ -31,6 +33,7 @@ function transport(actor) {
 		actor,
 		traceTransport: {
 			...counts(),
+			applicationEvidence: createActionResultObserver().snapshot(),
 			browserInitialization: {
 				...counts(),
 				policy: "isolated-profile-no-prediction-v1",
@@ -160,6 +163,7 @@ function fixture(build = BEFORE) {
 		}
 	return {
 		version: 2,
+		phase: build === BEFORE ? "baseline" : "release",
 		topology: "single app",
 		collectorProtocol: "z8-fixture-otlp-collector-v2",
 		traceTransport: "context-loopback-proxy-v1",
@@ -169,6 +173,7 @@ function fixture(build = BEFORE) {
 		retainedIdentityLimit: 10000,
 		userConcurrency: 4,
 		poolMax: 10,
+		poolAcquisitionTimeoutMs: 60000,
 		clockPairs: 20,
 		clockActor: actors[3],
 		analyticsCallers: ["work", "team", "overtime"].map((kind, n) => ({
@@ -177,7 +182,7 @@ function fixture(build = BEFORE) {
 			range: "annual 2025",
 		})),
 		analyticsMaxRequestsPerCallerPerCommand: 100,
-		requestTimeoutMs: 30000,
+		requestTimeoutMs: build === BEFORE ? 90000 : 30000,
 		sourceCommit: build,
 		liveVersion: build.slice(0, 7),
 		success: true,
@@ -246,6 +251,8 @@ function inputs() {
 		topology: "single app",
 		actors,
 		poolMax: 10,
+		poolAcquisitionTimeoutMs: 60000,
+		observation: cleanObservationPolicy,
 		clockPairs: 20,
 		annualYear: 2025,
 		analyticsMaxRequestsPerCallerPerCommand: 100,
@@ -290,6 +297,8 @@ function inputs() {
 			schema: 1,
 			mixedArtifactSha256: hash,
 			fullBuild: BEFORE,
+			phase: "baseline",
+			observationTimeoutMs: 90000,
 			protocolSha256: hash,
 			startedAt: "2026-10-25T00:00:00.000Z",
 			finishedAt: "2026-10-25T00:30:00.000Z",
@@ -297,11 +306,11 @@ function inputs() {
 		},
 	};
 }
-test("complete mixed cohorts derive policy8 nearest-rank limits and compare only clock-ready p95", () => {
+test("complete mixed cohorts derive policy9 nearest-rank limits and compare only clock-ready p95", () => {
 	const input = inputs(),
 		original = structuredClone(input);
 	const budget = budgets.deriveMixedClockBudgets(input);
-	assert.equal(budget.policy.version, 8);
+	assert.equal(budget.policy.version, 9);
 	assert.match(budget.conditionValidatorSha256, /^[a-f0-9]{64}$/);
 	assert.deepEqual(input, original);
 	assert.deepEqual(budget.clock.in, {
@@ -328,6 +337,8 @@ test("complete mixed cohorts derive policy8 nearest-rank limits and compare only
 		headContext: {
 			...input.beforeContext,
 			fullBuild: HEAD,
+			phase: "release",
+			observationTimeoutMs: 30000,
 			firstControlledHeadStartedAt: "2026-10-25T02:00:00.000Z",
 			startedAt: "2026-10-25T02:00:00.000Z",
 			finishedAt: "2026-10-25T03:00:00.000Z",
@@ -361,6 +372,15 @@ test("mixed before conditions require the exact common patch, never equal unknow
 			/common Next patch/,
 		);
 	}
+});
+
+test("longer clean original clock observations cannot raise optimized clock ceilings above thirty seconds", () => {
+	const input = inputs();
+	for (const row of input.before.records.filter((row) => row.family === "clock")) row.clockReadyMs = 40000;
+	const budget = budgets.deriveMixedClockBudgets(input);
+	assert.equal(budget.clock.in.beforeP95Ms, 40000);
+	assert.equal(budget.clock.in.ceilingMs, 30000);
+	assert.equal(budget.clock.out.ceilingMs, 30000);
 });
 test("incomplete, duplicate, censored or replaced commands never produce a finite budget", () => {
 	for (const mutate of [
@@ -443,6 +463,12 @@ test("context, source and prospective registration are mandatory rather than inf
 		(i) => delete i.beforeContext.conditions.hardware,
 		(i) => (i.registeredAt = "2026-10-24T00:00:00.000Z"),
 		(i) => (i.protocol.files.extra = hash),
+		(i) => delete i.protocol.files["action-result-observer.mjs"],
+		(i) => delete i.protocol.files["clean-evidence.mjs"],
+		(i) => (i.before.requestTimeoutMs = 30000),
+		(i) => (i.before.phase = "release"),
+		(i) => (i.before.poolAcquisitionTimeoutMs = 10000),
+		(i) => (i.beforeContext.conditions.poolAcquisitionTimeoutMs = 10000),
 	]) {
 		const input = inputs();
 		mutate(input);
@@ -487,6 +513,8 @@ test("changed registration, sources, protocol or independent head context cannot
 		headContext: {
 			...input.beforeContext,
 			fullBuild: HEAD,
+			phase: "release",
+			observationTimeoutMs: 30000,
 			firstControlledHeadStartedAt: "2026-10-25T02:00:00.000Z",
 			startedAt: "2026-10-25T02:00:00.000Z",
 			finishedAt: "2026-10-25T03:00:00.000Z",
@@ -556,6 +584,8 @@ test("more completed analytics responses alone adds descriptive volume without a
 		headContext: {
 			...input.beforeContext,
 			fullBuild: HEAD,
+			phase: "release",
+			observationTimeoutMs: 30000,
 			firstControlledHeadStartedAt: "2026-10-25T02:00:00.000Z",
 			startedAt: "2026-10-25T02:00:00.000Z",
 			finishedAt: "2026-10-25T03:00:00.000Z",
@@ -623,6 +653,8 @@ test("actual file commands bind protocol bytes, registration SHA and independent
 			encode({
 				...input.beforeContext,
 				fullBuild: HEAD,
+			phase: "release",
+			observationTimeoutMs: 30000,
 				mixedArtifactSha256: sha(head),
 				protocolSha256: sha(protocol),
 				firstControlledHeadStartedAt: new Date(start).toISOString(),
