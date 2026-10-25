@@ -12,9 +12,9 @@ import {
 	userSettings,
 	workPeriod,
 } from "@/db/schema";
+import { activeOrganizationSession } from "@/lib/auth/active-organization-session";
 import { getRequestSession } from "@/lib/auth/request-session";
 import { getAuthContext } from "@/lib/auth-helpers";
-import { activeOrganizationSession } from "@/lib/auth/active-organization-session";
 import { projectHasActiveCustomerSql } from "@/lib/billable-time/project-customer";
 import { getBillableTimeSettings } from "@/lib/billable-time/settings";
 import {
@@ -50,15 +50,21 @@ import { listOpenTasksByProject } from "@/lib/projects/project-tasks";
 import { completedWorkPeriodCondition } from "@/lib/reports/completed-work";
 import { describeAmendmentFailure } from "@/lib/time-tracking/amend-completed-work";
 import { breakDueStatus } from "@/lib/time-tracking/break-due";
+import {
+	CLOCK_READ_SCOPE_CHANGED,
+	type ClockReadScope,
+	matchesClockReadScope,
+} from "@/lib/time-tracking/clock-read-scope";
+import { localizeMonthClosed } from "@/lib/time-tracking/closed-months/refusal-message";
 import { readComplianceTotals } from "@/lib/time-tracking/compliance-totals";
 import { readEffectiveWorkPolicyAt } from "@/lib/time-tracking/effective-work-policy";
 import type { ManualTimeEntryCommand } from "@/lib/time-tracking/manual-command";
-import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 import {
 	PROJECT_TASK_INELIGIBILITY_MESSAGES,
 	projectTaskIneligibility,
 } from "@/lib/time-tracking/project-eligibility";
 import { namedTaskId } from "@/lib/time-tracking/task-attribution";
+import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 import {
 	changeWorkPeriodBillability,
 	changeWorkPeriodProject,
@@ -67,31 +73,25 @@ import { getEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import {
 	type AddBreakActionContext,
 	addBreakToActiveSession as addBreakToActiveSessionAction,
+	type BreakActionContext,
 	clockIn as clockInAction,
 	clockOut as clockOutAction,
 	createManualTimeEntry as createManualTimeEntryModular,
 	type ResumeBreakActionContext,
 	resumeBreakInProgress as resumeBreakInProgressAction,
-	type BreakActionContext,
 	startBreakInProgress as startBreakInProgressAction,
 } from "./actions/clocking";
 import {
 	editSameDayTimeEntry as editModularSameDayTimeEntry,
 	requestTimeCorrectionEffect as requestModularTimeCorrectionEffect,
 } from "./actions/corrections";
-import { loadPresenceStatusForSubject } from "./actions/presence-status-read";
-import type { PresenceStatusSummary } from "./actions/presence-status";
-import { getActiveWorkPeriod } from "./actions/queries";
-import { splitOwnWorkPeriod } from "./actions/work-period-split";
 import {
 	createManualTimeEntryFromCommand,
 	lookupManualTimeEntryCommand,
 } from "./actions/manual-command-submission";
-import {
-	MANUAL_ENTRY_CONTEXT_MISMATCH,
-	MANUAL_ENTRY_EMPLOYEE_NOT_FOUND,
-	MANUAL_ENTRY_NOT_AUTHENTICATED,
-} from "./actions/types";
+import type { PresenceStatusSummary } from "./actions/presence-status";
+import { loadPresenceStatusForSubject } from "./actions/presence-status-read";
+import { getActiveWorkPeriod } from "./actions/queries";
 import type {
 	BrowserTimezoneContext,
 	ClockOutActionContext,
@@ -102,7 +102,12 @@ import type {
 	CorrectionRequest as ModularCorrectionRequest,
 	SameDayEditRequest as ModularSameDayEditRequest,
 } from "./actions/types";
-import { localizeMonthClosed } from "@/lib/time-tracking/closed-months/refusal-message";
+import {
+	MANUAL_ENTRY_CONTEXT_MISMATCH,
+	MANUAL_ENTRY_EMPLOYEE_NOT_FOUND,
+	MANUAL_ENTRY_NOT_AUTHENTICATED,
+} from "./actions/types";
+import { splitOwnWorkPeriod } from "./actions/work-period-split";
 
 /** The calendar's break; the Clocking module checks billing like every other break. */
 export async function addBreakToActiveSession(
@@ -691,18 +696,25 @@ export interface AssignedProject {
  * - Are in bookable status (planned, active, paused)
  * - The employee is assigned to (directly or via team)
  */
-export async function getAssignedProjects(): Promise<
-	ServerActionResult<AssignedProject[]>
-> {
-	const session = await getRequestSession();
-	if (!session?.user) {
+export async function getAssignedProjects(
+	expectedScope?: ClockReadScope,
+): Promise<ServerActionResult<AssignedProject[]>> {
+	const context = await getAuthContext();
+	if (!context) {
 		return { success: false, error: "Not authenticated" };
 	}
 
-	const emp = await getCurrentEmployee();
+	const emp = context.employee;
 	if (!emp) {
 		return { success: false, error: "Employee profile not found" };
 	}
+	if (
+		!matchesClockReadScope(expectedScope, {
+			userId: context.user.id,
+			organizationId: emp.organizationId,
+		})
+	)
+		return { success: false, error: CLOCK_READ_SCOPE_CHANGED };
 
 	try {
 		// Bookable statuses
