@@ -384,3 +384,18 @@ any additional error, wrong route/method/status, protected data or cap still fai
 Positive controls have no declaration. Primary, companion and normal numeric
 measurement modules and their zero-error predicates are unchanged. New runtime
 proof is prospective; neither prior failed attempt is relabelled by this change.
+
+A later MFA attempt closed all native work and transport cleanly but read the
+redirect document between roots, before its DOM assertion or denial witness was
+armed. Its missing root caused an observer exception; protected-content and
+application results remain unknown. The DOM observer now reports missing root
+or body as `documentReady: false` and protected content/width as unknown. Admission
+passively waits for a rooted, parsed challenge within the same 45-second deadline
+that started before navigation. Path and protected-content presence come from
+one browser evaluation; the wait cannot renew the navigation timeout. Real DOM
+tests reproduce the old null-root exception, preserve unknown for absent body,
+confirm the settled challenge/actual protected marker and reject deadline expiry.
+All sixteen focused ingress observer/CLI cases pass. Streaming 9/4/12-second
+conditions, application code, authentication, native accounting and dependencies
+are unchanged. One actual MFA reproduction and a distinct full matrix remain
+prospective; this fix does not upgrade any failed attempt.

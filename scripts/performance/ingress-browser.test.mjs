@@ -1,8 +1,130 @@
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
+import { createRequire } from "node:module";
 import test from "node:test";
+import { runInContext } from "node:vm";
 import { Worker } from "node:worker_threads";
-import { observeIngress } from "./ingress-browser.mjs";
+import * as browserModule from "./ingress-browser.mjs";
+import { observeIngress, readDashboardDom } from "./ingress-browser.mjs";
+
+const require = createRequire(
+	new URL("../../apps/webapp/package.json", import.meta.url),
+);
+const { JSDOM } = require("jsdom");
+function realDomPage(getDom) {
+	return {
+		evaluate: async (fn) => {
+			const dom = getDom();
+			dom.window.performance.getEntriesByType = () => [];
+			return runInContext(`(${fn.toString()})()`, dom.getInternalVMContext());
+		},
+	};
+}
+test("an actual missing document root stays unknown rather than proving no protected content", async () => {
+	const dom = new JSDOM("<html><body></body></html>", {
+		url: "http://localhost:50754/en/mfa",
+		runScripts: "outside-only",
+	});
+	dom.window.document.documentElement.remove();
+	try {
+		const value = await readDashboardDom(realDomPage(() => dom));
+		assert.equal(value.documentReady, false);
+		assert.equal(value.protectedContent, null);
+		assert.equal(value.viewport.documentWidth, null);
+		assert.equal(value.pathname, "/en/mfa");
+	} finally {
+		dom.window.close();
+	}
+	const noBody = new JSDOM("<html><body></body></html>", {
+		url: "http://localhost:50754/en/mfa",
+		runScripts: "outside-only",
+	});
+	noBody.window.document.body.remove();
+	try {
+		const value = await readDashboardDom(realDomPage(() => noBody));
+		assert.equal(value.documentReady, false);
+		assert.equal(value.protectedContent, null);
+	} finally {
+		noBody.window.close();
+	}
+});
+test("admission waits for a rooted challenge and reads its path and protected markup atomically", async () => {
+	const empty = new JSDOM("", {
+		url: "http://localhost:50754/en",
+		runScripts: "outside-only",
+	});
+	empty.window.document.documentElement.remove();
+	const wrong = new JSDOM("<body><main></main></body>", {
+		url: "http://localhost:50754/en",
+		runScripts: "outside-only",
+	});
+	const ready = new JSDOM("<body><main>Challenge</main></body>", {
+		url: "http://localhost:50754/en/mfa",
+		runScripts: "outside-only",
+	});
+	let dom = empty,
+		at = 40,
+		sleeps = 0;
+	try {
+		const value = await browserModule.waitForAdmissionDom(
+			realDomPage(() => dom),
+			{
+				expectedPath: "/en/mfa",
+				deadline: 100,
+				now: () => at,
+				sleep: async (ms) => {
+					at += ms;
+					dom = ++sleeps === 1 ? wrong : ready;
+					await Promise.resolve();
+				},
+			},
+		);
+		assert.equal(value.documentReady, true);
+		assert.equal(value.pathname, "/en/mfa");
+		assert.equal(value.protectedContent, false);
+		assert.ok(value.admissionObservation.attempts >= 3);
+		assert.ok(at < 100);
+		ready.window.document.body.innerHTML =
+			'<header data-clock-status="ready"></header><div data-widget-id="quick-stats"></div>';
+		assert.equal(
+			(await readDashboardDom(realDomPage(() => ready))).protectedContent,
+			true,
+		);
+	} finally {
+		for (const item of [empty, wrong, ready]) item.window.close();
+	}
+});
+test("admission root/path wait cannot renew an exhausted navigation deadline", async () => {
+	const dom = new JSDOM("", {
+		url: "http://localhost:50754/en",
+		runScripts: "outside-only",
+	});
+	dom.window.document.documentElement.remove();
+	let at = 44000;
+	try {
+		await assert.rejects(
+			browserModule.waitForAdmissionDom(
+				realDomPage(() => dom),
+				{
+					expectedPath: "/en/mfa",
+					deadline: 45000,
+					now: () => at,
+					sleep: async (ms) => {
+						at += ms;
+					},
+				},
+			),
+			(error) => {
+				assert.equal(error.lastDomSnapshot.documentReady, false);
+				assert.equal(error.lastDomSnapshot.protectedContent, null);
+				assert.equal(at, 45000);
+				return true;
+			},
+		);
+	} finally {
+		dom.window.close();
+	}
+});
 
 async function bufferedDocument(html) {
 	const session = new EventEmitter();

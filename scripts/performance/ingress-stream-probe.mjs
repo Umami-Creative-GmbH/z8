@@ -8,7 +8,7 @@ import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { readCollectorCounters } from "./collector-client.mjs";
 import { launchFixtureBrowser } from "./fixture-browser.mjs";
-import { observeIngress, readDashboardDom } from "./ingress-browser.mjs";
+import { observeIngress, readDashboardDom, waitForAdmissionDom } from "./ingress-browser.mjs";
 import {
 	ingressFailureAlertSelector,
 	installIngressFailureTimeline,
@@ -1363,19 +1363,40 @@ export async function runAdmission(
 			protectedContentSeen:
 				/data-widget-id=|data-clock-status=|"initialSnapshot":/.test(body),
 		};
+		const admissionNavigationDeadline = performance.now() + 45000;
 		await page.goto(`${inputs.fixture.origin}/en`, {
 			waitUntil: "domcontentloaded",
-			timeout: 45000,
+			timeout: Math.max(1, admissionNavigationDeadline - performance.now()),
 		});
-		await pause(250);
-		const dom = await readDashboardDom(page);
+		const expectedPath =
+			scenario === "mfa"
+				? "/en/mfa"
+				: scenario === "sso"
+					? "/en/init"
+					: "/en/sign-in";
+		let dom;
+		try {
+			dom = await waitForAdmissionDom(page, {
+				expectedPath,
+				deadline: admissionNavigationDeadline,
+			});
+		} catch (error) {
+			result.admissionDom = error.lastDomSnapshot;
+			result.admissionDomObservation = error.admissionObservation;
+			throw error;
+		}
+		result.admissionDom = {
+			documentReady: dom.documentReady,
+			pathname: dom.pathname,
+			readyState: dom.readyState,
+			protectedContent: dom.protectedContent,
+		};
+		result.admissionDomObservation = dom.admissionObservation;
 		result.protectedContentEmitted =
 			dom.protectedContent || result.document.protectedContentSeen;
-		result.redirected = new URL(page.url()).pathname !== "/en";
-		const expectedPath =
-			scenario === "mfa" ? "/en/mfa" : scenario === "sso" ? "/en/init" : null;
+		result.redirected = dom.pathname !== "/en";
 		assert(
-			!expectedPath || new URL(page.url()).pathname === expectedPath,
+			dom.documentReady === true && dom.pathname === expectedPath,
 			"Admission did not reach its expected challenge.",
 		);
 		const expectedClockResponse =
