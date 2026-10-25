@@ -496,3 +496,16 @@ A file-only audit finds actual transport snapshots in all fourteen earlier
 ingress cases: one in each streaming case and two in each admission case. Those
 raw results retain their original observer source; the new invariant does not
 retroactively upgrade their protocol or alter intentional-cancellation row costs.
+
+One separately authorized [ordinary Dashboard wire smoke](evidence/1475-de0-normal-clock-wire.json)
+made no organization switch or fixture write. It drained with zero mandatory
+errors, zero pending work, no cap and no observed HTTP status at or above 400.
+All 734 queries reconciled with known rows and complete native/context transport
+evidence. Four page-level `net::ERR_ABORTED` fetch events remain recorded alongside
+the zero-mandatory-error wire result. The overall smoke remains failed: its
+expected operational-action success was not observed before the bounded wait,
+so it did not reach the clock-open assertion. Passive action details were not
+retained, preventing a causal classification of that missing observation. This
+does not establish a normal asset/API defect or a complete ordinary-clock smoke.
+No repeat or application fix followed. The browser closed, the original
+organization was verified, and the exclusive runtime window ended.
