@@ -1,8 +1,10 @@
 # C2 controller worksheet — prepared, not executed
 
-**Pending root review:** [new actual observer proof and the prospective amendment](1450-observer-v4-proof-refresh.md) bind numerical policy 4 / companion 4 to original 295/business39. The admitted candidate now includes the employee-form initialization fix: source `eee1fc6501e290a17705fb4edb0db41e91d29b30`, successful CI/two workers in `final-employee-form-build-v1/head-build.json`. The controller must finish the finite functional checks and resolve any new app finding before executing any freeze/capture/derive block. Old build records and diagnostic failures remain preserved.
+**Pending controller release:** [new actual observer proof and the prospective amendment](1450-observer-v4-proof-refresh.md) bind numerical policy 4 / companion 4 to original 295/business39. The admitted candidate includes the employee-form initialization and dashboard-header hydration fixes: source `31d67bbcb95ec8cf6d25d363c04c9f9a47570f0a`, successful CI/two workers in `final-header-hydration-build-v1/head-build.json`. The controller must confirm the final identity epoch release and quiet window before executing any freeze/capture/derive block. Old build records and diagnostic failures remain preserved.
 
 The mutable `before-plan-c2-DRAFT.json` records actual clean root `25696a562f2b140246929dc63b020799009961d6` in `runtime.toolingBuild`. The adjacent **`before-plan-c2-DRAFT-preparation-root25696-native-close.json`** records that commit, the current draft byte hash and all exact primary, companion and budget source fingerprints, and is explicitly **unfrozen**. Prior preparation reports remain historical evidence. No corrected full capture, freeze, actual budget derivation or controlled head timing was performed during preparation.
+
+Final offline review against clean root `279142bb5a8e496d613bf46b2bd88ca6fc8a87ac` confirmed that all three complete fingerprint maps still match this sidecar byte for byte and that the pinned tooling commit remains its ancestor. The plan, sidecar and tooling pin therefore remain unchanged. The freeze helper is unexecuted and the new `before-c2` directory does not exist.
 
 The offline refresh ran against the actual root checkout with its current file bytes. Reviewed SHA-256 values are:
 
@@ -10,7 +12,7 @@ The offline refresh ran against the actual root checkout with its current file b
 | ------------------------------ | ------------------------------------------------------------------ |
 | Mutable C2 draft               | `0f31cd2b54fb73110816524bc147da9e1ec1b38b8041cdaf882577d80a0d17d3` |
 | New preparation sidecar        | `4f3535e3b5b292ac97dec541ef514b8283d02d0932bcf578d5b52894ad19e3bc` |
-| Candidate head build record    | `0534a37871dc166f82acf3902333b0110802b3464ff42d7575de2d1f9218522d` |
+| Candidate head build record    | `5056162573403c3b206f0b76d79c83d0e3d62f7a683d39e324d31ad87aabcccf` |
 | Primary runner source          | `4045d08edc5250101db30f35901042873edeb50dd04d406b61c1cff90b12660b` |
 | Settled companion source       | `8add4f9a7bb902b74711323061bd015b40ea1540fa105967075afcb3280d9983` |
 | Shared collector client source | `aa4052d34a037c9001cacef1e0f7cfd17570551d6d0cd30bffdd190a59830565` |
@@ -155,11 +157,11 @@ Inspect `behaviorComplete`, `resourceObservationBasis` and retained failures; a 
 
 ## Derive and register before any controlled head observation
 
-The admitted candidate build record is `final-employee-form-build-v1/head-build.json`: successful CI/two workers, source `eee1fc6501e290a17705fb4edb0db41e91d29b30`, finished `2026-10-24T23:30:31.030Z`. These inputs identify the candidate; they provide no controlled head performance measurements. The observer accounting is unchanged from e059; this build adds the employee-form initialization fix. If the sole fix owner changes app source again, the controller must use the new successfully verified build record and retain the old one. Do not change before identities or use candidate measurements to choose ceilings.
+The admitted candidate build record is `final-header-hydration-build-v1/head-build.json`: successful CI/two workers, source `31d67bbcb95ec8cf6d25d363c04c9f9a47570f0a`, finished `2026-10-25T00:24:01.379Z`. These inputs identify the candidate; they provide no controlled head performance measurements. Observer accounting is unchanged from e059; the candidate includes the employee-form initialization and dashboard-header hydration fixes. If the sole fix owner changes app source again, the controller must use the new successfully verified build record and retain the old one. Do not change before identities or use candidate measurements to choose ceilings.
 
 ```powershell
-$headBuildRecord = Get-Content -Raw -LiteralPath "$scratch/final-employee-form-build-v1/head-build.json" | ConvertFrom-Json
-if ($headBuildRecord.kind -ne 'owned-final-head-build' -or $headBuildRecord.exitCode -ne 0 -or $headBuildRecord.ci -ne $true -or $headBuildRecord.workers -ne 2 -or $headBuildRecord.source -ne 'eee1fc6501e290a17705fb4edb0db41e91d29b30') {
+$headBuildRecord = Get-Content -Raw -LiteralPath "$scratch/final-header-hydration-build-v1/head-build.json" | ConvertFrom-Json
+if ($headBuildRecord.kind -ne 'owned-final-head-build' -or $headBuildRecord.exitCode -ne 0 -or $headBuildRecord.ci -ne $true -or $headBuildRecord.workers -ne 2 -or $headBuildRecord.source -ne '31d67bbcb95ec8cf6d25d363c04c9f9a47570f0a') {
   throw 'No admitted successful candidate build record.'
 }
 $releaseBuild = [string]$headBuildRecord.source
