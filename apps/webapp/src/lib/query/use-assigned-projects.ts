@@ -6,6 +6,7 @@ import {
 	getAssignedProjects,
 } from "@/app/[locale]/(app)/time-tracking/actions";
 import { useSession } from "@/lib/auth-client";
+import { CLOCK_READ_SCOPE_CHANGED } from "@/lib/time-tracking/clock-read-scope";
 import { queryKeys } from "./keys";
 
 const EMPTY_PROJECTS: AssignedProject[] = [];
@@ -33,7 +34,9 @@ export function useAssignedProjects(options: UseAssignedProjectsOptions = {}) {
 	const query = useQuery({
 		queryKey: queryKeys.projects.assignable(scope.organizationId ?? "", scope.userId),
 		queryFn: async () => {
-			const result = await getAssignedProjects();
+			const { userId, organizationId } = scope;
+			if (!userId || !organizationId) throw new Error(CLOCK_READ_SCOPE_CHANGED);
+			const result = await getAssignedProjects({ userId, organizationId });
 			if (!result.success) throw new Error(result.error);
 			return result.data ?? [];
 		},
