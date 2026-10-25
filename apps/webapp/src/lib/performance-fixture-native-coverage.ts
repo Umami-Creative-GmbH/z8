@@ -1,5 +1,6 @@
-/** Independent of exporter delivery: bounded numerical accounting at the SDK span lifecycle. */
+/** Independent SDK accounting with bounded, redacted witnesses for open SERVER spans. */
 
+import { createHash } from "node:crypto";
 import { writeFile } from "node:fs/promises";
 import { createServer, IncomingMessage, type Server } from "node:http";
 import { SpanKind } from "@opentelemetry/api";
@@ -9,8 +10,112 @@ type NativeSpan = {
 	name: string;
 	kind?: number;
 	instrumentationScope?: { name: string };
-	spanContext(): { traceId: string };
+	attributes?: Readonly<Record<string, unknown>>;
+	parentSpanContext?: { spanId: string };
+	parentSpanId?: string;
+	ended?: boolean;
+	isRecording?(): boolean;
+	spanContext(): { traceId: string; spanId?: string };
 };
+const serverWitnessLimit = 128;
+const safely = <T>(read: () => T): T | null => {
+	try {
+		return read();
+	} catch {
+		return null;
+	}
+};
+const technicalHash = (value: unknown) =>
+	typeof value === "string"
+		? createHash("sha256").update(value).digest("hex")
+		: null;
+type ServerWitness = {
+	span: NativeSpan;
+	spanId: string;
+	parentSpanId: string | null;
+	scope: "http" | "next" | "other" | null;
+	nameSha256: string | null;
+	nextSpanType: "BaseServer.handleRequest" | null;
+	nextSpanTypeSha256: string | null;
+	startedAt: number;
+	onEndObserved: boolean;
+};
+type ServerWitnessState = {
+	open: Map<string, ServerWitness>;
+	overflow: number;
+	missingIds: number;
+	duplicateStarts: number;
+	unmatchedEnds: number;
+};
+const witnessId = (span: NativeSpan) => {
+	const value = safely(() => span.spanContext().spanId);
+	return typeof value === "string" && /^[a-f0-9]{16}$/.test(value)
+		? value
+		: null;
+};
+function startServerWitness(state: ServerWitnessState, span: NativeSpan) {
+	const spanId = witnessId(span);
+	if (!spanId) {
+		state.missingIds++;
+		return;
+	}
+	if (state.open.has(spanId)) {
+		state.duplicateStarts++;
+		return;
+	}
+	if (state.open.size >= serverWitnessLimit) {
+		state.overflow++;
+		return;
+	}
+	const parent = safely(
+		() => span.parentSpanContext?.spanId ?? span.parentSpanId,
+	);
+	const type = safely(() => span.attributes?.["next.span_type"]);
+	state.open.set(spanId, {
+		span,
+		spanId,
+		parentSpanId:
+			typeof parent === "string" && /^[a-f0-9]{16}$/.test(parent)
+				? parent
+				: null,
+		scope: safely(() => serverScope(span)),
+		nameSha256: technicalHash(safely(() => span.name)),
+		nextSpanType: type === "BaseServer.handleRequest" ? type : null,
+		nextSpanTypeSha256: technicalHash(type),
+		startedAt: performance.now(),
+		onEndObserved: false,
+	});
+}
+function endServerWitness(state: ServerWitnessState, span: NativeSpan) {
+	const spanId = witnessId(span),
+		witness = spanId ? state.open.get(spanId) : undefined;
+	if (safely(() => span.kind) === SpanKind.SERVER) {
+		if (spanId && witness) state.open.delete(spanId);
+		else state.unmatchedEnds++;
+	} else if (witness) witness.onEndObserved = true;
+}
+function serverWitnessProof(state: ServerWitnessState) {
+	return {
+		limit: serverWitnessLimit,
+		overflow: state.overflow,
+		missingIds: state.missingIds,
+		duplicateStarts: state.duplicateStarts,
+		unmatchedEnds: state.unmatchedEnds,
+		open: [...state.open.values()].map(({ span, startedAt, ...witness }) => {
+			const ended = safely(() => span.ended),
+				recording = safely(() => span.isRecording?.()),
+				kind = safely(() => span.kind);
+			return {
+				...witness,
+				ageMs: performance.now() - startedAt,
+				kind: typeof kind === "number" ? kind : null,
+				sdkEnded: typeof ended === "boolean" ? ended : null,
+				recording: typeof recording === "boolean" ? recording : null,
+				nameAtCloseSha256: technicalHash(safely(() => span.name)),
+			};
+		}),
+	};
+}
 type Counts = Record<NativeKind, number>;
 const counts = (): Counts => ({ queries: 0, acquisitions: 0, cache: 0 });
 const serverScopes = () => ({
@@ -47,6 +152,7 @@ export class FixtureNativeCoverage {
 			serverStarted: number;
 			serverEnded: number;
 			serverScopes: ReturnType<typeof serverScopes>;
+			serverWitnesses: ServerWitnessState;
 			lastActivity: number;
 			driverQueries: number;
 		}
@@ -82,6 +188,13 @@ export class FixtureNativeCoverage {
 				serverStarted: 0,
 				serverEnded: 0,
 				serverScopes: serverScopes(),
+				serverWitnesses: {
+					open: new Map(),
+					overflow: 0,
+					missingIds: 0,
+					duplicateStarts: 0,
+					unmatchedEnds: 0,
+				},
 				lastActivity: performance.now(),
 				driverQueries: 0,
 			});
@@ -133,6 +246,7 @@ export class FixtureNativeCoverage {
 			state.serverStarted++;
 			state.serverScopes[serverScope(span)].started++;
 			state.lastActivity = performance.now();
+			startServerWitness(state.serverWitnesses, span);
 		}
 		const kind = nativeKind(span);
 		if (!kind) return;
@@ -153,6 +267,12 @@ export class FixtureNativeCoverage {
 			state.serverScopes[serverScope(span)].ended++;
 			state.lastActivity = performance.now();
 		}
+		if (
+			state &&
+			(state.serverWitnesses.open.size > 0 ||
+				safely(() => span.kind) === SpanKind.SERVER)
+		)
+			endServerWitness(state.serverWitnesses, span);
 		const kind = nativeKind(span);
 		if (!kind) return;
 		this.totals.ended[kind]++;
@@ -194,6 +314,7 @@ export class FixtureNativeCoverage {
 				serverStarted: state.serverStarted,
 				serverEnded: state.serverEnded,
 				serverScopes: state.serverScopes,
+				serverWitnesses: serverWitnessProof(state.serverWitnesses),
 				lastActivityAgeMs: performance.now() - state.lastActivity,
 			};
 		});
