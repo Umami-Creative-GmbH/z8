@@ -12,6 +12,7 @@ import {
 	ConsoleSpanExporter,
 } from "@opentelemetry/sdk-trace-base";
 import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
+import { isolateFixtureExporter } from "@/lib/performance-fixture-export-scope";
 import {
 	FixtureNativeCoverage,
 	installFixtureDriverCounter,
@@ -108,9 +109,15 @@ export async function registerNodeRuntime() {
 			? [new ExceptionOnlySpanProcessor()]
 			: [
 					new BatchSpanProcessor(
-						new OTLPTraceExporter({
-							url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
-						}),
+						fixtureObserver
+							? isolateFixtureExporter(
+									new OTLPTraceExporter({
+										url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
+									}),
+								)
+							: new OTLPTraceExporter({
+									url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
+								}),
 						fixtureObserver
 							? {
 									maxQueueSize: 20000,
