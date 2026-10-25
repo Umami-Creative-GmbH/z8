@@ -1,26 +1,27 @@
 # C5 controller worksheet — unfrozen actual-root preparation
 
-**Post-preparation qualification pending:** the ingress witness adds one exact app test and one exact package test-command edit after the b73 preparation. The [narrow DE0 source qualification](1450-c5-de0-test-qualification.md) preserves production checks. Keep the reviewed b73 draft/sidecar unchanged as history; after the actual main merge and owner type-check admission, run normal preparation into a NEW sidecar. The updated freeze helper intentionally rejects the old sidecar because it lacks that certificate. The hashes and fixed-pin command blocks below describe the earlier preparation and must be refreshed to the new reviewed sidecar before execution. No freeze has occurred.
+**Qualified preparation complete, not frozen:** actual clean ROOT `884398dd3a7808feddaa2962c5c16b50796381de` now includes the ingress witness/parser/evidence and the owner admitted all three normal post-test TypeScript checks. The [exact DE0 qualification](1450-c5-de0-test-qualification.md) permits only the approved test blob and package test-command edit. Normal offline preparation recorded the certificate, unchanged production inputs and all three current source maps in a NEW sidecar. The older b73 sidecar remains immutable history; only the mutable draft's runtime tooling pin changed. ROOT's exclusive compiled-scope probe/cleanup and quiet-window release remain required. No freeze has occurred.
 
-**Prepared, not frozen.** ROOT's new head CI completed successfully at `2026-10-25T02:58:23.067Z`: source `de0b1a128b384196c7c93ac69cd5324e8d0cbbd8`, CI true/two workers, started `2026-10-25T02:48:08.675Z`, exit zero. The offline helper then prepared the draft/NEW sidecar from actual clean integrated ROOT `b73e0fd631aa2546e5576271833dabaf13339a1c`, checking the exact record and all three source maps. No freeze, runtime admission or capture has run. ROOT must finish its scope/ingress runtime gates and release an exclusive quiet window; no app findings may remain unresolved.
+ROOT's admitted head CI completed successfully at `2026-10-25T02:58:23.067Z`: source `de0b1a128b384196c7c93ac69cd5324e8d0cbbd8`, CI true/two workers, started `2026-10-25T02:48:08.675Z`, exit zero. Production modules, configuration, build/dependency/lock/workspace inputs remain identical under the narrow certificate. No freeze, runtime admission or capture has run. No app findings may remain unresolved when ROOT releases capture.
 
 Original binary is exact `456d28b2da4437662ae8f625a1df6756bff031fe`, business source `39a08d0bbe77e00ceb5b204b9f9100ab2cfb86be`. [Policy7 and fresh original evidence](1450-observer-v8-proof-refresh.md) preserve all factors/floors and strict HEAD gates. The C5 execution condition retains settled warm prerequisites and adds quiet **inside** the existing measured mutation timer before its forced reload; restoration waits follow fixed snapshots. This is not identical execution to C1–C4. Primary CDP partial flags stay partial; complete body-byte gates require the matched companion. Optional prefetch errors are separate; mandatory errors/caps/unknowns/native inconsistency still fail.
 
 The six-visit456 mutation diagnostic passed/restored all six, 21566 exact global queries. Earlier295 passed five and failed the large native cap; its cause remains UNKNOWN. Optional prefetch errors differed (four versus zero); additive SERVER diagnostics and the green456 run do not demonstrate a causal repair. All C1/C2/C3/C4 frozen plans, modules, raw/interrupted evidence and old proof bytes remain immutable. C5 uses NEW paths only.
 
-The mutable `before-plan-c5-DRAFT.json` changes runtime only. Its non-runtime fields deeply equal original C1 SHA256 `3feed7ee263c08f522bc886c8390224abdbfa67926c4ff02d0fb50f3d30dabb3`: **114 / 1380 primary**, **54 / 1080 companion**, concurrency one, twenty fresh-context first documents/twenty repeat Links and five functional samples where declared. The preparation helper checked these counts and all three actual integrated source fingerprint maps. It updates only `runtime.toolingBuild`; it refuses pending/failed DE0 CI or changed app source. The freeze helper rechecks the record, source maps and ancestor pin. Doc-only integrations can leave the pin as an ancestor when every measuring byte still matches.
+The mutable `before-plan-c5-DRAFT.json` changes runtime only. Its non-runtime fields deeply equal original C1 SHA256 `3feed7ee263c08f522bc886c8390224abdbfa67926c4ff02d0fb50f3d30dabb3`: **114 / 1380 primary**, **54 / 1080 companion**, concurrency one, twenty fresh-context first documents/twenty repeat Links and five functional samples where declared. The preparation helper checked these counts and all three actual integrated source fingerprint maps. It updates only `runtime.toolingBuild`; it refuses changed DE0 CI/production inputs or any test/package difference beyond the exact qualified blobs. Freeze rechecks the certificate/module hash, record, source maps and ancestor pin. Doc-only integrations can leave the pin as an ancestor when every measuring byte and qualification still match.
 
 | Reviewed input | SHA256 |
 | --- | --- |
-| C5 draft | `cf0656f9bf8a498d642258769e21bcf056af31eaeea33c068244f36877adeae5` |
-| `before-plan-c5-DRAFT-preparation-root-b73e0fd631aa2546e5576271833dabaf13339a1c-policy7.json` | `ad01331d57f09291255b7b84a5126610a60a8067ee5a1addcb5e57eabd1eba94` |
-| `prepare-c5-draft.mjs` | `185e2f4580a9f0463990b50179286d2d6d4a197226d910cc3e10463b3720d807` |
-| `freeze-c5-after-controller-release.mjs` | `04ed4282fcbac61b81a8a4cfa3d1f90f026158b45b8f94e2f07a5909886dfbb6` |
+| C5 draft | `63870f53e4fdd850f2ea662faf17f0c6261d1a650146e46d5b552e4bd3885bdc` |
+| `before-plan-c5-DRAFT-preparation-root-884398dd3a7808feddaa2962c5c16b50796381de-policy7-qualified-test.json` | `ad9e2cd0b380c25a02526e6b64d1da2698f67734a87b26d47bd0b67e29139f03` |
+| `c5-de0-nonproduction-qualification.mjs` | `26dc7b38f50e52224f2c7258ccfe567a8c4c7023e118c5dd307dc22d588cb150` |
+| `prepare-c5-draft.mjs` | `c36b71d0fddc28d0313d08b33ee72ef9a49789a6ef6bb2284f1e2abb2cd5762e` |
+| `freeze-c5-after-controller-release.mjs` | `e2a583ffb4f914150bea66397edb5dc9b66cfda9be0dc769e55894f5b4847a13` |
 | `controller-admission-c5.mjs` | `9a18f30f30f156c2b8930a96301fa1e66e55ac4747eadb7709ea51e84579b8c1` |
 | Successful DE0 head CI record | `5e0bd9767b1d5d124e0c5204a006332ed0e693c6e99dfcbca043bf34099f6cde` |
 | Actual compiled required-server-files manifest | `876c31b0d96fb2123be97c8767fd28d1058981a4822ff55d30e93ccc451a1ac3` |
 
-The helper files are new narrow copies; earlier helpers/frozen outputs are untouched. Node syntax and three worksheet PowerShell blocks parsed successfully. Offline preparation initially rejected a copied checksum literal before creating any output; that literal was corrected and the successful normal preparation retained the exact unchanged C1 hash. Freeze/admission remain unexecuted and `before-c5` is absent. ROOT admitted the actual full-DE0 manifest; its hash was also checked from disk. The shared BUILD_ID is insufficient to identify the new artifact. Reserve multi-hour windows; historical C1 sums are recorded intervals rather than wall time/ETA, and the new setup/measured quiet adds work. Never shrink counts or relax gates for scheduling.
+The helper files are narrow controller-only operators; earlier frozen outputs are untouched. Node syntax and three worksheet PowerShell blocks parsed successfully. The prior b73 report retains SHA256 `ad01331d57f09291255b7b84a5126610a60a8067ee5a1addcb5e57eabd1eba94` and is not the active qualified input. Freeze/admission remain unexecuted and `before-c5` is absent. ROOT admitted the actual full-DE0 manifest; its hash was also checked from disk. The shared BUILD_ID is insufficient to identify the new artifact. Reserve multi-hour windows; historical C1 sums are recorded intervals rather than wall time/ETA, and the new setup/measured quiet adds work. Never shrink counts or relax gates for scheduling.
 
 ## Reviewed inputs; ROOT releases freeze after functional gates
 
@@ -35,12 +36,12 @@ $expectedHeadRecordSha256 = '5e0bd9767b1d5d124e0c5204a006332ed0e693c6e99dfcbca04
 $headRecord = Join-Path $scratch 'final-scope-binding-build-v1/head-build.json'
 if ((Get-FileHash -LiteralPath $headRecord -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expectedHeadRecordSha256) { throw 'Head CI admission pending or record changed.' }
 Set-Location -LiteralPath $source
-$prep = Join-Path $scratch 'before-plan-c5-DRAFT-preparation-root-b73e0fd631aa2546e5576271833dabaf13339a1c-policy7.json'
+$prep = Join-Path $scratch 'before-plan-c5-DRAFT-preparation-root-884398dd3a7808feddaa2962c5c16b50796381de-policy7-qualified-test.json'
 $run = Join-Path $scratch 'before-c5'
 $auth = Join-Path $scratch 'performance-runtime/auth-private.json'
 $collector = Join-Path $scratch 'performance-runtime/observer-v8/collector-control.json'
 $chrome = 'C:/Program Files/Google/Chrome/Application/chrome.exe'
-if ((Get-FileHash -LiteralPath $prep -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'ad01331d57f09291255b7b84a5126610a60a8067ee5a1addcb5e57eabd1eba94') { throw 'Reviewed preparation changed.' }
+if ((Get-FileHash -LiteralPath $prep -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'ad9e2cd0b380c25a02526e6b64d1da2698f67734a87b26d47bd0b67e29139f03') { throw 'Reviewed preparation changed.' }
 # Only on measuring-byte drift: run prepare-c5-draft.mjs into a NEW explicitly named sidecar, then review new hashes.
 # pnpm --config.verifyDepsBeforeRun=false node "$scratch/prepare-c5-draft.mjs" $source $scratch "$scratch/before-plan-c5-DRAFT-preparation-NEWPIN.json" before-plan-c5-DRAFT.json
 # STOP: ROOT reviews actual draft/sidecar hashes, head record and all three maps before freeze.

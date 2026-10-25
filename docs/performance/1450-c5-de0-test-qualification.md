@@ -20,9 +20,9 @@ The scratch module `c5-de0-nonproduction-qualification.mjs` checks this exact te
 | `prepare-c5-draft.mjs` | `c36b71d0fddc28d0313d08b33ee72ef9a49789a6ef6bb2284f1e2abb2cd5762e` |
 | `freeze-c5-after-controller-release.mjs` | `e2a583ffb4f914150bea66397edb5dc9b66cfda9be0dc769e55894f5b4847a13` |
 
-The actual b90 tree passed offline qualification. Twelve synthetic negative checks reject another app test, production source, configuration, lock/package input, changed qualified blobs, build/package-manager edits, extra production reference and missing exclusions. Syntax checks passed. These are source gates; they do not waive unknown rows, native/resource failures, runtime acceptance or remaining ingress cases. Identity still owns admission of the normal three TypeScript checks after the added test; no full Next rebuild is required solely for these exact qualified nonproduction changes.
+The actual b90 tree passed offline qualification, then ROOT merged the audited changes into clean `884398dd3a7808feddaa2962c5c16b50796381de` and admitted the owner's normal three post-test TypeScript checks. Normal offline preparation from that actual root passed the exact certificate and all three controlled source maps. Twelve synthetic negative checks reject another app test, production source, configuration, lock/package input, changed qualified blobs, build/package-manager edits, extra production reference and missing exclusions. Syntax checks passed. These are source gates; they do not waive unknown rows, native/resource failures or runtime acceptance. No full Next rebuild is required solely for these exact qualified nonproduction changes.
 
-The original C5 draft `cf0656...` and b73 sidecar `ad0133...` remain untouched. Do not generate the new report until ROOT merges the audited ingress commits and reviews actual integrated hashes. From that clean actual root, use the existing normal preparation path with a NEW report:
+The b73 sidecar `ad0133...` remains unchanged. ROOT authorized refreshing the mutable draft's runtime tooling pin only: its new SHA256 is `63870f53e4fdd850f2ea662faf17f0c6261d1a650146e46d5b552e4bd3885bdc`; exact C1 non-runtime equality and 114/1380 + 54/1080 counts passed. The NEW active report `before-plan-c5-DRAFT-preparation-root-884398dd3a7808feddaa2962c5c16b50796381de-policy7-qualified-test.json` has SHA256 `ad9e2cd0b380c25a02526e6b64d1da2698f67734a87b26d47bd0b67e29139f03`. Do not rerun over it. Only on later measuring/qualification drift, use normal preparation into another explicitly NEW report and review again:
 
 ```powershell
 $source = 'Y:/Codex/Worktrees/c412/z8'
@@ -35,4 +35,4 @@ if ($LASTEXITCODE -ne 0) { throw 'Qualification/preparation failed; preserve exi
 # STOP for ROOT review of new plan/sidecar/certificate/maps and runtime-gate release. No freeze here.
 ```
 
-No new sidecar, runtime IO, freeze, capture, budget derivation or controlled head timing was performed by this qualification preparation. Original456/business39 failure binding, policy7 numerical factors, full C1 workload and strict native/resource gates are unchanged.
+The qualified sidecar was prepared offline; no runtime IO, admission, freeze, capture, budget derivation or controlled head timing was performed. Original456/business39 failure binding, policy7 numerical factors, full C1 workload and strict native/resource gates are unchanged. ROOT's remaining exclusive scope-probe cleanup and quiet-window release precede any freeze.
