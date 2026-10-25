@@ -1364,6 +1364,10 @@ export async function runAdmission(
 				/data-widget-id=|data-clock-status=|"initialSnapshot":/.test(body),
 		};
 		const admissionNavigationDeadline = performance.now() + 45000;
+		const ssoResponses =
+			scenario === "sso"
+				? observedDenied.expectMissingProviderSsoResponses()
+				: null;
 		await page.goto(`${inputs.fixture.origin}/en`, {
 			waitUntil: "domcontentloaded",
 			timeout: Math.max(1, admissionNavigationDeadline - performance.now()),
@@ -1444,6 +1448,11 @@ export async function runAdmission(
 			response: deniedClock,
 			clockStatusDenied: result.clockStatusDenied,
 			protectedContentEmitted: result.protectedContentEmitted,
+		});
+		ssoResponses?.acknowledge({
+			clockStatusDenied: result.clockStatusDenied,
+			protectedContentEmitted: result.protectedContentEmitted,
+			deadline: admissionNavigationDeadline,
 		});
 	} finally {
 		process.off("SIGINT", stop);

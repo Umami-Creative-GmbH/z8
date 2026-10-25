@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
+import { EventEmitter } from "node:events";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { createServer, request } from "node:http";
 import { createRequire } from "node:module";
@@ -7,6 +8,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import { runInContext } from "node:vm";
 import {
 	FixtureNativeCoverage,
 	startFixtureNativeControl,
@@ -15,7 +17,205 @@ import { createAdmissionResponseWitness } from "./admission-response-witness.mjs
 import * as observationModule from "./multi-instance-observation.mjs";
 import { beginMultiInstanceObservation } from "./multi-instance-observation.mjs";
 import { createProxyWireObserver } from "./proxy-wire-observer.mjs";
+import { createSsoAdmissionResponseWitness } from "./sso-admission-response-witness.mjs";
 import { createFixtureTraceTransport } from "./trace-transport.mjs";
+
+async function ssoResponseFixture(mode = "valid") {
+	const bodies = {
+		"/api/organizations/switch": {
+			code: "SSO_REQUIRED",
+			error:
+				"Sign in with your organization's SSO provider to access this organization",
+		},
+		"/api/organizations/sso": {
+			error:
+				"SSO sign-in could not be started. Try again or contact your organization administrator.",
+		},
+		"/api/time-entries/status": { error: "No active organization" },
+	};
+	const page = new EventEmitter(),
+		id = "a".repeat(32),
+		contextId = "d".repeat(32);
+	const { JSDOM } = createRequire(
+		new URL("../../apps/webapp/package.json", import.meta.url),
+	)("jsdom");
+	const dom = new JSDOM(
+		mode === "not-blocked"
+			? "<body></body>"
+			: '<body><div data-testid="init-organization-picker"><p role="alert">SSO sign-in could not be started. Try again or contact your organization administrator.</p></div></body>',
+		{ url: "http://localhost:50754/en/init", runScripts: "outside-only" },
+	);
+	page.evaluate = async (fn) => {
+		if (mode === "navigation")
+			throw Error(
+				"Execution context was destroyed, most likely because of a navigation.",
+			);
+		if (mode === "hang") return new Promise(() => {});
+		return runInContext(`(${fn.toString()})()`, dom.getInternalVMContext());
+	};
+	const backend = createServer((req, res) => {
+		let body = bodies[req.url] ?? { error: "unexpected" };
+		if (mode === "wrong-body" && req.url === "/api/organizations/sso")
+			body = { ...body, url: "protected" };
+		if (mode === "extra-field" && req.url === "/api/organizations/sso")
+			body = { ...body, unexpected: true };
+		if (mode === "oversized" && req.url === "/api/organizations/sso")
+			body = { error: "x".repeat(4097) };
+		if (mode === "success" && req.url === "/api/organizations/sso")
+			body = { url: "https://idp.example/sign-in" };
+		res.writeHead(
+			req.url === "/api/time-entries/status"
+				? 400
+				: mode === "success" && req.url === "/api/organizations/sso"
+					? 200
+					: mode === "wrong-status"
+						? 500
+						: 403,
+			{ "content-type": "application/json" },
+		);
+		res.end(JSON.stringify(body));
+	});
+	await new Promise((done) => backend.listen(0, "127.0.0.1", done));
+	const origin = `http://127.0.0.1:${backend.address().port}`;
+	const transport = await createFixtureTraceTransport({
+		origin,
+		getTraceId: () => id,
+	});
+	const input = { origin, traceIds: [id, "b".repeat(32), "c".repeat(32)] };
+	const expectedAdmissionResponse = createAdmissionResponseWitness({
+		...input,
+		scenario: "sso",
+	});
+	const ssoAdmissionResponses = createSsoAdmissionResponseWitness({
+		...input,
+		contextId,
+		page,
+	});
+	let snapshot,
+		closed = false,
+		nativeClosed = false;
+	try {
+		transport.wire.begin(performance.now());
+		const proxy = new URL(transport.browserContextOptions.proxyServer);
+		const call = async (path, method = "POST") => {
+			const data = await new Promise((done, reject) => {
+				const req = request(
+					{
+						hostname: proxy.hostname,
+						port: proxy.port,
+						path: origin + path,
+						method,
+						headers: { host: new URL(origin).host },
+					},
+					(res) => {
+						const chunks = [];
+						res.on("data", (c) => chunks.push(c));
+						res.on("end", () =>
+							done({ status: res.statusCode, bytes: Buffer.concat(chunks) }),
+						);
+						res.on("error", reject);
+					},
+				);
+				req.on("error", reject);
+				req.end();
+			});
+			page.emit("response", {
+				url: () => origin + path,
+				request: () => ({ method: () => method }),
+				status: () => data.status,
+				headers: () => ({ "content-type": "application/json" }),
+				buffer: async () =>
+					mode === "pending" ? new Promise(() => {}) : data.bytes,
+			});
+		};
+		await call("/api/organizations/switch");
+		await call("/api/organizations/sso");
+		if (mode === "duplicate") await call("/api/organizations/sso");
+		if (mode === "extra") await call("/extra");
+		await call("/api/time-entries/status", "GET");
+		expectedAdmissionResponse.confirm({
+			response: {
+				status: 400,
+				json: true,
+				redirected: false,
+				hasEmployee: false,
+				employeeIdMaterialized: false,
+				clockedIn: false,
+				activePeriodMaterialized: false,
+			},
+			clockStatusDenied: true,
+			protectedContentEmitted: false,
+		});
+		ssoAdmissionResponses.acknowledge({
+			clockStatusDenied: true,
+			protectedContentEmitted: false,
+			deadline:
+				performance.now() +
+				(mode === "expired" ? 100 : mode === "hang" ? 1500 : 45000),
+		});
+		const close = () =>
+			observationModule.closeMultiInstanceContext({
+				contextId: mode === "wrong-context" ? "e".repeat(32) : contextId,
+				context: {
+					async close() {
+						closed = true;
+					},
+				},
+				transport,
+				expectedAdmissionResponse,
+				ssoAdmissionResponses,
+				closeVisit: async () => {
+					nativeClosed = true;
+				},
+				recordSnapshot: (value) => {
+					snapshot = value;
+				},
+			});
+		if (mode === "valid") await close();
+		else await assert.rejects(close);
+		assert.equal(closed, true);
+		assert.equal(nativeClosed, true);
+		return snapshot;
+	} finally {
+		dom.window.close();
+		ssoAdmissionResponses.close();
+		expectedAdmissionResponse.close();
+		await transport.close();
+		backend.closeAllConnections();
+		await new Promise((done) => backend.close(done));
+	}
+}
+test("exact missing-provider SSO pair retains three raw errors and requires all unique public shapes", async () => {
+	const snapshot = await ssoResponseFixture();
+	assert.equal(snapshot.nativeCleanup.mandatoryErrors, 3);
+	assert.equal(snapshot.nativeCleanup.complete, false);
+	assert.equal(snapshot.expectedAdmissionDenial.complete, true);
+	assert.equal(observationModule.pairedContextCleanupComplete(snapshot), true);
+});
+test("missing-provider SSO never covers wrong/extra/duplicate bodies, successful SSO URL, unknown UI or another context", async (t) => {
+	for (const mode of [
+		"wrong-body",
+		"success",
+		"extra-field",
+		"extra",
+		"duplicate",
+		"not-blocked",
+		"wrong-context",
+		"wrong-status",
+		"oversized",
+		"pending",
+		"navigation",
+		"expired",
+		"hang",
+	])
+		await t.test(mode, async () => {
+			const snapshot = await ssoResponseFixture(mode);
+			assert.equal(
+				observationModule.pairedContextCleanupComplete(snapshot),
+				false,
+			);
+		});
+});
 
 test("one declared real clock denial retains raw HTTP error and completes paired cleanup", async () => {
 	const id = "a".repeat(32),

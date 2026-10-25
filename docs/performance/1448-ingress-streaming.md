@@ -411,3 +411,28 @@ the captured evaluation error at the public page boundary, then read a real DOM
 challenge; all twenty-four focused observer/CLI cases pass. This is observation
 of a redirect lifecycle, not a retry of application UI or authorization. The
 actual new MFA and matrix proof remain pending, with prior errors preserved.
+
+The actual missing-provider SSO diagnostic then identified three complete JSON
+errors in the denied browser context: the explicit clock GET 400, organization
+switch POST 403 with exactly `SSO_REQUIRED` and its fixed public message, and SSO
+start POST 403 with exactly its fixed public error. Cached browser response
+diagnostics confirmed the two POST shapes at 107 and 99 bytes, without protected
+fields or a redirect URL. The fixture deliberately clears its provider ID. The
+initializer automatically tries to activate the organization, receives the SSO
+requirement, then cannot start an unavailable provider and displays its error
+picker. This proves fail-closed admission with a missing IdP; it does not prove
+successful SSO or a production identity-provider integration.
+
+Only this fixture condition now predeclares those two exact POST responses before
+navigation. Both registered forward responses and bounded cached JSON shapes
+must match once each in the same denied context. After the existing finite HTTP
+cleanup, one atomic read must confirm the actual `/en/init` error picker and no
+protected markup within the remaining original navigation deadline. Body reads
+must already be complete: pending/unknown data is rejected, not waited out. The
+separate admission predicate requires precisely three raw errors, including the
+already declared clock denial. Raw errors, censoring and cleanup completion stay
+unchanged. Additional responses, unexpected keys/URLs/statuses, duplicates,
+another context, unknown UI and expired deadlines still fail. Positive controls,
+normal numeric gates, the provider fixture and application code are unchanged.
+The new source requires a normal SSO reproduction and distinct full matrix;
+earlier strict failures and diagnostic-only runs remain retained as such.
