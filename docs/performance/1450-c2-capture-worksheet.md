@@ -1,12 +1,23 @@
 # C2 controller worksheet — prepared, not executed
 
-**Pending root review:** [new actual observer proof and the prospective amendment](1450-observer-v4-proof-refresh.md) now bind numerical policy 4 / companion 4 to original 295/business39; the corrected e059 head build is admitted. Root must review the refreshed unfrozen draft, new fingerprint sidecar and source before executing any freeze/capture/derive block. Old d555/ac2 build records and all diagnostic failures remain preserved.
+**Pending root review:** [new actual observer proof and the prospective amendment](1450-observer-v4-proof-refresh.md) bind numerical policy 4 / companion 4 to original 295/business39. The admitted candidate now includes the employee-form initialization fix: source `eee1fc6501e290a17705fb4edb0db41e91d29b30`, successful CI/two workers in `final-employee-form-build-v1/head-build.json`. The controller must finish the finite functional checks and resolve any new app finding before executing any freeze/capture/derive block. Old build records and diagnostic failures remain preserved.
 
-The mutable `before-plan-c2-DRAFT.json` records the exact reviewed policy/tooling commit in `runtime.toolingBuild`. The new adjacent `before-plan-c2-DRAFT-preparation-observer-v4-policy4.json` records that commit, the current draft byte hash and exact primary, companion and budget source fingerprints, and is explicitly **unfrozen**. The prior b2c8f2591 preparation/hash is retained as historical evidence. No corrected full capture, freeze, actual budget derivation or controlled head timing was performed during preparation.
+The mutable `before-plan-c2-DRAFT.json` records actual clean root `25696a562f2b140246929dc63b020799009961d6` in `runtime.toolingBuild`. The adjacent **`before-plan-c2-DRAFT-preparation-root25696-native-close.json`** records that commit, the current draft byte hash and all exact primary, companion and budget source fingerprints, and is explicitly **unfrozen**. Prior preparation reports remain historical evidence. No corrected full capture, freeze, actual budget derivation or controlled head timing was performed during preparation.
+
+The offline refresh ran against the actual root checkout with its current file bytes. Reviewed SHA-256 values are:
+
+| Input                          | SHA-256                                                            |
+| ------------------------------ | ------------------------------------------------------------------ |
+| Mutable C2 draft               | `0f31cd2b54fb73110816524bc147da9e1ec1b38b8041cdaf882577d80a0d17d3` |
+| New preparation sidecar        | `4f3535e3b5b292ac97dec541ef514b8283d02d0932bcf578d5b52894ad19e3bc` |
+| Candidate head build record    | `0534a37871dc166f82acf3902333b0110802b3464ff42d7575de2d1f9218522d` |
+| Primary runner source          | `4045d08edc5250101db30f35901042873edeb50dd04d406b61c1cff90b12660b` |
+| Settled companion source       | `8add4f9a7bb902b74711323061bd015b40ea1540fa105967075afcb3280d9983` |
+| Shared collector client source | `aa4052d34a037c9001cacef1e0f7cfd17570551d6d0cd30bffdd190a59830565` |
 
 After merging, refresh the preparation from the actual root checkout into a newly named report if its commit or byte fingerprints differ (including Git line-ending conversion), and update `$prep` below. Freeze checks exact executed file bytes; it must reject source drift rather than treating semantically equivalent files as an accepted hash match.
 
-The primary and companion now retain the native close reply's `nativeCloseProof` array and `nativeCloseElapsedMs` on each sample's `collector` / `collectorVisit` record, before checking the existing collector coverage. This is diagnostic closure evidence outside the measured latency window, with numeric lifecycle counts and opaque trace identities only. The elapsed value covers the native close POST, before the collector close POST; it is not a journey percentile. Missing returned fields stay `null`. Balanced query counts do not establish complete native lifecycle coverage, and retaining a failed proof does not waive any coverage failure. The older artifacts that discarded this proof remain unchanged. The prepared sidecar predates this additive tooling change: refresh its source fingerprints only after the common tool commits and replacement head build record are ready, into a new sidecar; C2 remains unfrozen.
+The primary and companion retain the native close reply's `nativeCloseProof` array and `nativeCloseElapsedMs` on each sample's `collector` / `collectorVisit` record, before checking the existing collector coverage. This is diagnostic closure evidence outside the measured latency window, with numeric lifecycle counts and opaque trace identities only. The elapsed value covers the native close POST, before the collector close POST; it is not a journey percentile. Missing returned fields stay `null`. Balanced query counts do not establish complete native lifecycle coverage, and retaining a failed proof does not waive any coverage failure. The new sidecar includes these additive source changes. Older artifacts that discarded this proof remain unchanged; C2 remains unfrozen.
 
 All non-runtime fields are deeply equal to original C1, whose unchanged byte hash is `3feed7ee263c08f522bc886c8390224abdbfa67926c4ff02d0fb50f3d30dabb3`. Original binary/observer source remains `295de0b706e439bcdaf4d2d25661ce45f02ddb61`; original business source remains `39a08d0bbe77e00ceb5b204b9f9100ab2cfb86be`. There are 114 primary cohorts / 1380 visits: 540 first documents, 540 repeat Links, 135 return visits, 135 manual refreshes and 30 mutation refreshes. Each required first/Link cohort still has twenty samples, each declared functional cohort five. The separate companion has 54 cohorts / 1080 visits. Concurrency remains one. Notification permissions, sizes/roles, ranges, recipes, origin, pool/cache settings and fixture metadata are unchanged. This is holistic journey cost; ordinary caches can warm, `prepare(false)` can leave reads in flight, and Last Year → Custom includes prior annual work.
 
@@ -27,7 +38,7 @@ $ErrorActionPreference = 'Stop'
 $source = 'Y:/Codex/Worktrees/c412/z8'
 $scratch = 'C:/Users/KaiHentschel/.codex/visualizations/2026/10/24/01a16d49-e92f-7142-8e11-9532addefaff/spec1448'
 $draft = Join-Path $scratch 'before-plan-c2-DRAFT.json'
-$prep = Join-Path $scratch 'before-plan-c2-DRAFT-preparation-observer-v4-policy4.json'
+$prep = Join-Path $scratch 'before-plan-c2-DRAFT-preparation-root25696-native-close.json'
 $run = Join-Path $scratch 'before-c2'
 $auth = Join-Path $scratch 'performance-runtime/auth-private.json'
 $collector = Join-Path $scratch 'performance-runtime/observer-v4/collector-control.json'
@@ -94,14 +105,14 @@ function Export-CollectorMetrics([string] $controlPath, [string] $outputPath) {
 
 ## Original primary capture and finalization
 
-The existing original controller sessions were app `12464` / collector `74272`, origin 58792. The controller must confirm current ownership before executing; this worksheet does not infer liveness from saved files. The runner performs its normal exact build check and whole-run native reconciliation; no separate app warm-up is added.
+The existing original controller sessions were app `12464` / collector `74272`, origin 58792. The controller must confirm current ownership before executing; this worksheet does not infer liveness from saved files. The runner performs its normal exact build check and whole-run native reconciliation; no separate app warm-up is added. Primary capture exits 1 after saving the unfinalized ledger, including a complete baseline pass; only the later finalizer can record accepted baseline evidence.
 
 ```powershell
 Assert-NewOutput $primary
 pnpm --config.verifyDepsBeforeRun=false node "$tools/run-baseline.mjs" --plan $plan --auth $auth --chrome $chrome --collector $collector --out $primary *> "$run/primary-capture-private.log"
 $primaryExit = $LASTEXITCODE
 $raw = Get-Content -Raw -LiteralPath $before | ConvertFrom-Json
-if ($primaryExit -ne 0 -or $raw.samples.Count -ne 1380 -or $raw.nativeRunCoverage.complete -ne $true) {
+if ($primaryExit -ne 1 -or $raw.samples.Count -ne 1380 -or $raw.nativeRunCoverage.complete -ne $true) {
   throw 'Primary capture incomplete. Preserve all samples; do not finalize/derive a passing result.'
 }
 Assert-NewOutput "$primary/baseline.raw.json"
@@ -144,11 +155,11 @@ Inspect `behaviorComplete`, `resourceObservationBasis` and retained failures; a 
 
 ## Derive and register before any controlled head observation
 
-The existing candidate build record is `final-observer-v2-build/head-build.json`: successful CI/two workers, source `e059597490b02c575c6e1cf64f1d83da712cff97`. These inputs identify the candidate; they provide no head performance measurements. If the sole fix owner changes app source, the controller must use the new successfully verified build record and retain the old one. Do not change before identities or use candidate measurements to choose ceilings.
+The admitted candidate build record is `final-employee-form-build-v1/head-build.json`: successful CI/two workers, source `eee1fc6501e290a17705fb4edb0db41e91d29b30`, finished `2026-10-24T23:30:31.030Z`. These inputs identify the candidate; they provide no controlled head performance measurements. The observer accounting is unchanged from e059; this build adds the employee-form initialization fix. If the sole fix owner changes app source again, the controller must use the new successfully verified build record and retain the old one. Do not change before identities or use candidate measurements to choose ceilings.
 
 ```powershell
-$headBuildRecord = Get-Content -Raw -LiteralPath "$scratch/final-observer-v2-build/head-build.json" | ConvertFrom-Json
-if ($headBuildRecord.kind -ne 'owned-final-head-build' -or $headBuildRecord.exitCode -ne 0 -or $headBuildRecord.ci -ne $true -or $headBuildRecord.workers -ne 2) {
+$headBuildRecord = Get-Content -Raw -LiteralPath "$scratch/final-employee-form-build-v1/head-build.json" | ConvertFrom-Json
+if ($headBuildRecord.kind -ne 'owned-final-head-build' -or $headBuildRecord.exitCode -ne 0 -or $headBuildRecord.ci -ne $true -or $headBuildRecord.workers -ne 2 -or $headBuildRecord.source -ne 'eee1fc6501e290a17705fb4edb0db41e91d29b30') {
   throw 'No admitted successful candidate build record.'
 }
 $releaseBuild = [string]$headBuildRecord.source
