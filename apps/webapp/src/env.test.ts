@@ -13,6 +13,7 @@ const baseEnv = {
 };
 
 const operationalEnvDefaults = {
+	POSTGRES_POOL_ACQUISITION_TIMEOUT_MS: "10000",
 	QUEUE_HEALTH_TIMEOUT_MS: "1000",
 	QUEUE_JOB_ATTEMPTS: "3",
 	QUEUE_JOB_BACKOFF_DELAY_MS: "1000",
@@ -48,6 +49,7 @@ const operationalEnvDefaults = {
 } as const;
 
 const operationalEnvOverrides = {
+	POSTGRES_POOL_ACQUISITION_TIMEOUT_MS: "60000",
 	QUEUE_HEALTH_TIMEOUT_MS: "1100",
 	QUEUE_JOB_ATTEMPTS: "4",
 	QUEUE_JOB_BACKOFF_DELAY_MS: "1200",
