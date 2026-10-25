@@ -156,6 +156,28 @@ export async function observeIngress(page, origin, mode) {
 
 export async function readDashboardDom(page) {
 	return page.evaluate(() => {
+		const pathname = location.pathname;
+		if (!document.documentElement || !document.body)
+			return {
+				documentReady: false,
+				pathname,
+				readyState: document.readyState,
+				protectedContent: null,
+				clockReady: null,
+				usefulSibling: null,
+				secondaryPending: null,
+				secondaryComplete: null,
+				secondaryFailed: null,
+				geometry: null,
+				viewport: {
+					width: innerWidth,
+					height: innerHeight,
+					documentWidth: null,
+					horizontalOverflow: null,
+					scrollX,
+					scrollY,
+				},
+			};
 		const visible = (node) =>
 			node &&
 			node.getClientRects().length > 0 &&
@@ -201,6 +223,8 @@ export async function readDashboardDom(page) {
 									? "secondary"
 									: "other";
 		return {
+			documentReady: true,
+			pathname,
 			viewport: {
 				width: innerWidth,
 				height: innerHeight,
@@ -270,4 +294,57 @@ export async function readDashboardDom(page) {
 			),
 		};
 	});
+}
+
+/** Passive admission observation inside the caller's existing navigation deadline. */
+export async function waitForAdmissionDom(
+	page,
+	{
+		expectedPath,
+		deadline,
+		now = () => performance.now(),
+		sleep = (ms) => new Promise((done) => setTimeout(done, ms)),
+	},
+) {
+	if (
+		!["/en/sign-in", "/en/mfa", "/en/init"].includes(expectedPath) ||
+		!Number.isFinite(deadline)
+	)
+		throw Error(
+			"Admission DOM observation requires its declared challenge and navigation deadline.",
+		);
+	const started = now();
+	let attempts = 0,
+		documentNotReadySnapshots = 0,
+		lastDomSnapshot = { documentReady: false, protectedContent: null };
+	while (now() < deadline) {
+		lastDomSnapshot = await readDashboardDom(page);
+		attempts++;
+		if (!lastDomSnapshot.documentReady) documentNotReadySnapshots++;
+		if (
+			now() < deadline &&
+			lastDomSnapshot.documentReady === true &&
+			["interactive", "complete"].includes(lastDomSnapshot.readyState) &&
+			lastDomSnapshot.pathname === expectedPath
+		)
+			return {
+				...lastDomSnapshot,
+				admissionObservation: {
+					attempts,
+					documentNotReadySnapshots,
+					elapsedMs: now() - started,
+				},
+			};
+		if (now() < deadline) await sleep(Math.min(25, deadline - now()));
+	}
+	const error = Error(
+		"Admission document did not settle at its challenge within the existing navigation deadline.",
+	);
+	error.lastDomSnapshot = lastDomSnapshot;
+	error.admissionObservation = {
+		attempts,
+		documentNotReadySnapshots,
+		elapsedMs: now() - started,
+	};
+	throw error;
 }
