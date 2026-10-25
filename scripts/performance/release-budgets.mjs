@@ -3,6 +3,10 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import {
+  nextStreamCompletionPatch,
+  matchingNextStreamCompletionPatch,
+} from "./next-stream-completion-patch.mjs";
+import {
   operatorReloadQuiescencePolicy,
   operatorReloadQuiescenceComplete,
 } from "./operator-reload-quiescence.mjs";
@@ -34,13 +38,13 @@ const budgetProtocol = await budgetProtocolIdentity();
 const paintProof = JSON.parse(
   await readFile(
     new URL(
-      "../../docs/performance/evidence/1450-observer-v8-before-proof.json",
+      "../../docs/performance/evidence/1450-next-stream-fixed-before-proof.json",
       import.meta.url,
     ),
   ),
 );
 const paintProofSha256 =
-  "bb422fdb9e48b59631f942e358d4396c2e494a2a5f6b8345dcb1dff794f4c613";
+  "b9931f415342ecc2c09e6576779f3b0f384ea571fdc7741d26aa9a2f8f09fbe3";
 if (sha(JSON.stringify(paintProof)) !== paintProofSha256)
   throw Error("Fixed raw native paint diagnostic proof changed.");
 const json = (value) => JSON.stringify(value, null, 2) + "\n";
@@ -63,12 +67,13 @@ const backendMetrics = [
   "eventLoopDelayMs",
 ];
 const policy = {
-  version: 7,
+  version: 8,
+  nextStreamCompletionPatch,
   originalObserverProof: {
-    amendedAt: "2026-10-25T02:50:12Z",
+    amendedAt: "2026-10-25T09:24:58Z",
     scope:
-      "exact original456/business39; additive SERVER diagnostics only; no accounting or numerical change",
-    proofSource: "4a617985a8758f67f5d888d0b65ef02af04e1c8b",
+      "exact originalBDA/business39 under the identical maintained Next patch condition; no accounting or numerical change",
+    proofSource: "67362fef1dab6bb22e0aa9060ab699fbbe8f0609",
     proofSha256: paintProofSha256,
     historical295Cap: "UNKNOWN; no causal fix claim",
   },
@@ -92,8 +97,8 @@ const policy = {
   },
   beforeResourceFailure: beforeFailurePolicy,
   observedNativePaint: {
-    amendedAt: "2026-10-25T02:50:12Z",
-    source: "4a617985a8758f67f5d888d0b65ef02af04e1c8b",
+    amendedAt: "2026-10-25T09:24:58Z",
+    source: "67362fef1dab6bb22e0aa9060ab699fbbe8f0609",
     proofSha256: paintProofSha256,
     proofHashEncoding: "sha256 of UTF-8 JSON.stringify(parsed public proof)",
     scope:
@@ -592,6 +597,10 @@ function requireEvidence(plan, artifact, native, planHash, phase) {
       operatorReloadQuiescencePolicy ||
     plan.runtime?.prerequisiteQuiescencePolicy !==
       prerequisiteQuiescencePolicy ||
+    !matchingNextStreamCompletionPatch(
+      plan.runtime?.nextStreamCompletionPatch,
+      artifact.runtime?.nextStreamCompletionPatch,
+    ) ||
     !Number.isFinite(plan.timeoutMs) ||
     plan.timeoutMs <= 0
   )

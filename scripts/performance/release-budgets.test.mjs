@@ -1,4 +1,5 @@
 import { createProxyWireObserver } from "./proxy-wire-observer.mjs";
+import { nextStreamCompletionPatch } from "./next-stream-completion-patch.mjs";
 import {
   primaryProtocolIdentity,
   companionProtocolIdentity,
@@ -74,6 +75,7 @@ function fixture() {
       nativeCleanupPolicy: "post-snapshot-finite-prefetch-quiet-v1",
       prerequisiteQuiescencePolicy: "settled-prerequisite-transfers-v1",
       operatorReloadQuiescencePolicy: "operator-reload-transfer-quiescence-v1",
+      nextStreamCompletionPatch: structuredClone(nextStreamCompletionPatch),
       browserPermissions: "notifications-denied-for-fixture-origin",
       build: "aaaaaaaaa",
       sourceBuild: "bbbbbbbbb",
@@ -254,6 +256,56 @@ test("derivation emits fresh release budgets without modifying the baseline", ()
     "release",
   );
   assert.equal(readFileSync(join(f.dir, "before-plan.json"), "utf8"), old);
+});
+
+test("common Next stream patch is mandatory and matched for derivation and head comparison", () => {
+  for (const change of [
+    (p, a) => {
+      delete p.runtime.nextStreamCompletionPatch;
+      delete a.runtime.nextStreamCompletionPatch;
+    },
+    (_p, a) => delete a.runtime.nextStreamCompletionPatch,
+    (p, a) => {
+      p.runtime.nextStreamCompletionPatch.lockSha256 = "0".repeat(64);
+      a.runtime.nextStreamCompletionPatch = structuredClone(
+        p.runtime.nextStreamCompletionPatch,
+      );
+    },
+    (_p, a) => (a.runtime.nextStreamCompletionPatch.cjsSha256 = "0".repeat(64)),
+  ]) {
+    const f = fixture();
+    change(f.plan, f.artifact);
+    f.saveBefore();
+    assert.equal(
+      f.derive().status,
+      2,
+      "Missing, changed or mismatched common runtime must reject before evidence.",
+    );
+  }
+  const f = fixture();
+  assert.equal(f.derive().status, 0);
+  const h = candidate(f);
+  assert.deepEqual(
+    h.plan.runtime.nextStreamCompletionPatch,
+    nextStreamCompletionPatch,
+  );
+  delete h.artifact.runtime.nextStreamCompletionPatch;
+  f.save("head.json", h.artifact);
+  assert.equal(
+    h.compare().status,
+    2,
+    "HEAD cannot omit the registered common runtime.",
+  );
+  h.artifact.runtime.nextStreamCompletionPatch = {
+    ...nextStreamCompletionPatch,
+    esmSha256: "0".repeat(64),
+  };
+  f.save("head.json", h.artifact);
+  assert.equal(
+    h.compare().status,
+    2,
+    "HEAD cannot change a registered patch hash.",
+  );
 });
 
 test("unfinalized, missing or capped native cleanup cannot register a numerical budget", () => {
@@ -659,7 +711,7 @@ function settledFixture(f, plan, filename) {
 test("finalized failed original annual traffic supplies a labeled resource budget without a successful-before latency claim", () => {
   const f = fixture();
   Object.assign(f.plan.runtime, {
-    build: "456d28b2da4437662ae8f625a1df6756bff031fe",
+    build: "bda468856728844f8172f6832c4deb9ad34a3bb0",
     sourceBuild: "39a08d0bbe77e00ceb5b204b9f9100ab2cfb86be",
   });
   f.plan.conditions[0].employees = 200;
@@ -713,6 +765,7 @@ test("finalized failed original annual traffic supplies a labeled resource budge
       "settled-resource-observer.mjs",
       "journey-steps.mjs",
       "run-baseline.mjs",
+      "next-stream-completion-patch.mjs",
       "primary-context-cleanup.mjs",
       "prerequisite-quiescence.mjs",
       "operator-reload-quiescence.mjs",
@@ -725,6 +778,7 @@ test("finalized failed original annual traffic supplies a labeled resource budge
       "../../docs/performance/evidence/1450-telemetry-functional-diagnostics.json",
       "../../docs/performance/evidence/1450-observer-v4-before-proof.json",
       "../../docs/performance/evidence/1450-observer-v8-before-proof.json",
+      "../../docs/performance/evidence/1450-next-stream-fixed-before-proof.json",
     ].map((name) => [name, hash(readFileSync(new URL(name, import.meta.url)))]),
   );
   f.save("settled-before.json", before);
@@ -775,7 +829,7 @@ test("finalized failed original annual traffic supplies a labeled resource budge
   const budgets = JSON.parse(
     readFileSync(join(f.dir, "derived/release-budgets.json")),
   );
-  assert.equal(budgets.policy.version, 7);
+  assert.equal(budgets.policy.version, 8);
   assert.deepEqual(budgets.policy.latency, {
     multiplier: 1.25,
     allowance: 250,

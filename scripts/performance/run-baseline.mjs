@@ -6,6 +6,10 @@ import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { primaryProtocolIdentity } from "./protocol-fingerprints.mjs";
 import {
+	isNextStreamCompletionPatch,
+	matchingNextStreamCompletionPatch,
+} from "./next-stream-completion-patch.mjs";
+import {
 	beforeOperatorReload,
 	operatorReloadQuiescencePolicy,
 	operatorReloadQuiescenceComplete,
@@ -141,6 +145,8 @@ function validate(plan, verifying = false) {
 		fail("Use the baseline or release phase.");
 	if (!Number.isInteger(plan.samples) || plan.samples < 20)
 		fail("Use at least twenty samples per condition and visit mode.");
+	if (!isNextStreamCompletionPatch(plan.runtime?.nextStreamCompletionPatch))
+		fail("Require the admitted common Next stream completion patch.");
 	for (const mode of visitModes)
 		if (
 			!Number.isInteger(samplesFor(plan, mode)) ||
@@ -399,6 +405,15 @@ async function main() {
 		);
 		result.gates = [];
 		if (
+			!matchingNextStreamCompletionPatch(
+				plan.runtime.nextStreamCompletionPatch,
+				result.runtime?.nextStreamCompletionPatch,
+			)
+		)
+			result.gates.push(
+				"Common Next stream completion patch is missing or differs from the plan.",
+			);
+		if (
 			plan.runtime.traceTransport === fixtureTraceTransport &&
 			(result.runtime.operatorReloadQuiescencePolicy !==
 				operatorReloadQuiescencePolicy ||
@@ -603,6 +618,7 @@ async function main() {
 				plan.runtime.prerequisiteQuiescencePolicy ?? null,
 			operatorReloadQuiescencePolicy:
 				plan.runtime.operatorReloadQuiescencePolicy ?? null,
+			nextStreamCompletionPatch: { ...plan.runtime.nextStreamCompletionPatch },
 			browserPermissions: fixtureBrowserPermissions,
 			build: plan.runtime.build,
 			sourceBuild: plan.runtime.sourceBuild ?? null,
