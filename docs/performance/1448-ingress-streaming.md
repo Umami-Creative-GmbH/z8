@@ -399,3 +399,15 @@ All sixteen focused ingress observer/CLI cases pass. Streaming 9/4/12-second
 conditions, application code, authentication, native accounting and dependencies
 are unchanged. One actual MFA reproduction and a distinct full matrix remain
 prospective; this fix does not upgrade any failed attempt.
+
+The next actual MFA attempt retained complete native/transport cleanup but hit
+Puppeteer's exact navigation-context-destroyed exception during that passive
+read. The observer now tolerates only that observed message while the page is
+open and its main frame is explicitly attached. It records transition count and
+an unknown document snapshot, consuming the same absolute deadline. Closed pages,
+detached/unknown frames, arbitrary or merely similar errors still fail at once;
+repeated recognized transitions expire without renewing the budget. Tests inject
+the captured evaluation error at the public page boundary, then read a real DOM
+challenge; all twenty-four focused observer/CLI cases pass. This is observation
+of a redirect lifecycle, not a retry of application UI or authorization. The
+actual new MFA and matrix proof remain pending, with prior errors preserved.

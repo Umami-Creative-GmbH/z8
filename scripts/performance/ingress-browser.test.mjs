@@ -126,6 +126,117 @@ test("admission root/path wait cannot renew an exhausted navigation deadline", a
 	}
 });
 
+const navigationMessage =
+	"Execution context was destroyed, most likely because of a navigation.";
+test("only the observed open-main-frame navigation exception can precede a real settled challenge", async () => {
+	const dom = new JSDOM("<body><main>Challenge</main></body>", {
+		url: "http://localhost:50754/en/mfa",
+		runScripts: "outside-only",
+	});
+	const real = realDomPage(() => dom);
+	let calls = 0,
+		at = 0;
+	const page = {
+		isClosed: () => false,
+		mainFrame: () => ({ detached: false }),
+		evaluate: async (fn) => {
+			if (++calls === 1) throw Error(navigationMessage);
+			return real.evaluate(fn);
+		},
+	};
+	try {
+		const value = await browserModule.waitForAdmissionDom(page, {
+			expectedPath: "/en/mfa",
+			deadline: 100,
+			now: () => at,
+			sleep: async (ms) => {
+				at += ms;
+				await Promise.resolve();
+			},
+		});
+		assert.equal(value.documentReady, true);
+		assert.equal(value.protectedContent, false);
+		assert.equal(value.admissionObservation.navigationContextTransitions, 1);
+		assert.equal(calls, 2);
+	} finally {
+		dom.window.close();
+	}
+});
+test("closed pages, detached or unknown frames and arbitrary exceptions cannot be retried as navigation", async (t) => {
+	for (const mode of [
+		"closed",
+		"detached",
+		"unknown-frame",
+		"arbitrary",
+		"similar-message",
+	])
+		await t.test(mode, async () => {
+			const error = Error(
+				mode === "arbitrary"
+					? "Unexpected DOM failure"
+					: mode === "similar-message"
+						? "Execution context was destroyed"
+						: navigationMessage,
+			);
+			let calls = 0,
+				sleeps = 0;
+			const page = {
+				isClosed: () => mode === "closed",
+				mainFrame: () =>
+					mode === "unknown-frame" ? null : { detached: mode === "detached" },
+				evaluate: async () => {
+					calls++;
+					throw error;
+				},
+			};
+			await assert.rejects(
+				browserModule.waitForAdmissionDom(page, {
+					expectedPath: "/en/mfa",
+					deadline: 100,
+					now: () => 0,
+					sleep: async () => {
+						sleeps++;
+					},
+				}),
+				(value) => value === error,
+			);
+			assert.equal(calls, 1);
+			assert.equal(sleeps, 0);
+		});
+});
+test("repeated observed navigation transitions stay unknown and exhaust the original deadline", async () => {
+	let at = 40,
+		calls = 0;
+	const page = {
+		isClosed: () => false,
+		mainFrame: () => ({ detached: false }),
+		evaluate: async () => {
+			calls++;
+			throw Error(navigationMessage);
+		},
+	};
+	await assert.rejects(
+		browserModule.waitForAdmissionDom(page, {
+			expectedPath: "/en/mfa",
+			deadline: 100,
+			now: () => at,
+			sleep: async (ms) => {
+				at += ms;
+			},
+		}),
+		(error) => {
+			assert.equal(error.lastDomSnapshot.documentReady, false);
+			assert.equal(error.lastDomSnapshot.protectedContent, null);
+			assert.equal(
+				error.admissionObservation.navigationContextTransitions,
+				calls,
+			);
+			assert.equal(at, 100);
+			return true;
+		},
+	);
+});
+
 async function bufferedDocument(html) {
 	const session = new EventEmitter();
 	session.detach = async () => {};
