@@ -304,7 +304,7 @@ test("recognized detachment is retried only before the first actual click", asyn
 	);
 	assert.deepEqual(calls, ["click", "failed-click"]);
 });
-test("only directory's generated prerequisite waits instead of opening the unrelated global drawer", () => {
+test("all six generated prerequisites preserve own-page links and genuine global navigation", () => {
 	const folder = mkdtempSync(join(tmpdir(), "z8-directory-recipe-")),
 		out = join(folder, "draft.json");
 	try {
@@ -338,8 +338,11 @@ test("only directory's generated prerequisite waits instead of opening the unrel
 		assert.equal(result.status, 0);
 		const plan = JSON.parse(readFileSync(out));
 		const directory = plan.routes.find((r) => r.name === "employee-directory"),
-			detail = plan.routes.find((r) => r.name === "employee-detail");
+			detail = plan.routes.find((r) => r.name === "employee-detail"),
+			analytics = plan.routes.find((r) => r.name === "analytics");
 		assert.deepEqual(directory.navigationSteps, [{ wait: directory.link }]);
+		assert.deepEqual(analytics.navigationSteps, [{ wait: analytics.link }]);
+		assert.equal(analytics.link, 'a[href="/{locale}/analytics/work-hours"]');
 		assert.deepEqual(detail.navigationSteps, [
 			{
 				fill: 'input[aria-label="Search employees"]',
@@ -347,8 +350,8 @@ test("only directory's generated prerequisite waits instead of opening the unrel
 			},
 			{ wait: detail.link },
 		]);
-		for (const route of plan.routes.filter(
-			(r) => !r.name.startsWith("employee-"),
+		for (const route of plan.routes.filter((r) =>
+			["dashboard", "time-tracking", "reports"].includes(r.name),
 		))
 			assert.deepEqual(route.navigationSteps, [
 				{
@@ -358,6 +361,19 @@ test("only directory's generated prerequisite waits instead of opening the unrel
 					},
 				},
 			]);
+		assert.deepEqual(
+			Object.fromEntries(
+				plan.routes.map((route) => [route.name, route.awayPath]),
+			),
+			{
+				dashboard: "/{locale}/settings",
+				"time-tracking": "/{locale}/settings",
+				"employee-directory": "/{locale}/settings",
+				"employee-detail": "/{locale}/settings/employees",
+				reports: "/{locale}/settings",
+				analytics: "/{locale}/analytics",
+			},
+		);
 		assert.equal(plan.timeoutMs, 30000);
 		assert.equal(plan.samples, 20);
 		assert.equal(plan.routes.length, 6);
