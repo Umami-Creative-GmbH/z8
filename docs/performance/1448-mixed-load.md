@@ -15,6 +15,58 @@ isolated source/CLI tests pass without fixture access. All three frozen C5
 fingerprint maps and production inputs remain unchanged. This correction requires
 a new mixed-tool snapshot before use; no earlier run is retroactively validated.
 
+## Prospective mixed-clock budgets
+
+`mixed-clock-budgets.mjs` is file-only preparation. No mixed numerical budget is
+registered until a complete actual original run exists. A failed annual
+preparation or fewer than twenty complete in/out pairs produces no finite budget.
+The operator validates all forty commands, all 56 unique native identities,
+balanced/drained SERVER proofs, all five resource categories, four complete
+transports and the actual three-reader/four-user overlap before deriving anything.
+It recomputes nearest-rank p50/p95 from every clock record. Each action's ceiling
+is `ceil(max(beforeP95 * 1.25, beforeP95 + 250, 500))`, the existing policy7 latency
+rule. Only clock-ready p95 has a threshold. Analytics volume/response time/decoded
+UTF-8 bytes, command preparation/response timing and backend groups counted once
+are descriptive; more completed analytics requests alone is not a regression.
+
+Before use, snapshot the eight measuring files named by the module into one
+`{ "schema": 1, "files": { "filename.mjs": "SHA256", ... } }` manifest.
+The command verifies those exact local bytes and retains its own module hash.
+The same snapshot executes both runs. Record a separate actual context for each
+run with `schema: 1`, `mixedArtifactSha256`, `fullBuild`, `protocolSha256`, UTC
+`startedAt`/`finishedAt`, and `conditions`. The head context also records
+`firstControlledHeadStartedAt`, the earliest controlled head primary, companion
+or mixed start. Registration must precede that timestamp. Existing disclosed
+functional observations do not become controlled timing samples.
+
+The identical public `conditions` projection contains `topology: "single app"`,
+the four actor labels in the order below, `poolMax: 10`, `clockPairs: 20`,
+`annualYear: 2025`, `analyticsMaxRequestsPerCallerPerCommand: 100`,
+`telemetryDrain: "once-after-condition"`, `viewport: {width:1280,height:900}`,
+`timezone: "Europe/Berlin"`, `locale: "en"`, `origin: "http://localhost:58792"`
+and `cacheWarming: "annual-public-preparation-complete"`. Record actual
+`browser` and `node` versions; `hardware` with `platform`, `arch`, `cpuModel`,
+`logicalCpus`, `memoryBytes`; and `fixture` with `version`, `populations: [8,200]`,
+`rangeStart`, `rangeEnd`. Browser version must match each captured transport's
+launch record. Root records hardware/Node/fixture facts for each actual run;
+copying the original context is not proof of head parity. Tokens, real actor IDs,
+emails, request headers and protected results do not belong in this projection.
+
+```powershell
+pnpm --config.verifyDepsBeforeRun=false exec node scripts/performance/mixed-clock-budgets.mjs derive --before ORIGINAL_MIXED.json --protocol MIXED_PROTOCOL.json --before-context ORIGINAL_CONTEXT.json --expected-before-build FULL_ORIGINAL_COMMIT --expected-head-build FULL_HEAD_COMMIT --out NEW_MIXED_BUDGET.json
+
+# Retain/register this output's exact SHA and UTC timestamp before any controlled head timing.
+pnpm --config.verifyDepsBeforeRun=false exec node scripts/performance/mixed-clock-budgets.mjs compare --budgets NEW_MIXED_BUDGET.json --budget-sha256 REGISTERED_BUDGET_SHA --before ORIGINAL_MIXED.json --head HEAD_MIXED.json --protocol MIXED_PROTOCOL.json --head-context HEAD_CONTEXT.json --out NEW_MIXED_COMPARISON.json
+```
+
+Both full build pins are explicit and different; each run's seven-character API
+value may match only its corresponding full pin. Comparison binds the original
+artifact, independent head context, registered budget SHA, exact protocol and
+conditions. Unknown/duplicate CLI options and existing output paths are refused.
+Regressions stay in the comparison and return failure. Eight focused synthetic
+tests cover admission, tampering, complete cohorts, unchanged inputs and the real
+file-command path. They do not supply runtime observations or a registered budget.
+
 ## Fixed condition
 
 The operator uses the existing disposable fixture, fixed pool 10, desktop
