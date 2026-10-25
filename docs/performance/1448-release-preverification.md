@@ -445,3 +445,29 @@ The functional window is closed: owned Chrome contexts and native registrations
 are zero. The controller independently retained final v6 counters/metrics and
 stopped the exact owned functional application. No further runtime or source
 change follows this documentation checkpoint.
+
+## Compiled captured-scope browser observation at de0
+
+One functional-only, two-tab trial used a legitimate temporary membership and
+employee in the other disposable fixture organization. The original organization
+read succeeded. CDP then paused the actual compiled operational vehicle read with
+its captured original scope; another tab publicly switched organization and
+successfully read its new employee and vehicle status. Continuing the original
+request without changing its body, headers or URL returned ScopeChanged without
+data. The actual QueryClient original-scope entry held an error and no data.
+Its visible local Retry succeeded after publicly switching back.
+
+[The numeric observation](evidence/1475-de0-two-tab-scope.json) retains an overall
+failed result despite those passing behavior assertions. All 2,102 driver,
+native-start, native-end and received queries matched, with known rows, no query
+errors, zero pending work and all 486 server spans ended. The harness's final
+cleanup-drain catch lost its cause and prevented transport-snapshot collection.
+The aggregate transport boolean over zero snapshots is vacuous and is not
+accepted as strict transport evidence. Transport acceptance therefore remains
+unknown; no complete browser-race gate or application defect is claimed.
+
+The actor was verified back in the original organization before exact removal
+of the three owned membership/employee/employment-period records. No canonical
+time data or sessions were written by setup/cleanup. Eight normal fixture actors
+were authenticated again, owned Chrome processes were zero, and the runtime
+window was closed. No repeat or application change followed this failed trial.
