@@ -28,6 +28,17 @@ import {
 } from "./trace-transport.mjs";
 
 const timeout = 30000;
+
+/** Match the recorded source against the public, possibly abbreviated build hash. */
+export function mixedSourceMatches(sourceCommit, liveVersion) {
+	return (
+		typeof sourceCommit === "string" &&
+		/^[a-f0-9]{9,40}$/.test(sourceCommit) &&
+		typeof liveVersion === "string" &&
+		/^[a-f0-9]{7,40}$/.test(liveVersion) &&
+		sourceCommit.startsWith(liveVersion)
+	);
+}
 const analytics = [
 	{ kind: "work", actor: "large-admin", path: "/en/analytics/work-hours" },
 	{
@@ -425,14 +436,7 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId) {
 			signal: AbortSignal.timeout(5000),
 		});
 		liveVersion = version.ok ? (await version.json()).buildHash : null;
-		if (
-			typeof liveVersion !== "string" ||
-			!/^[a-f0-9]{9,40}$/.test(liveVersion) ||
-			!(
-				sourceCommit.startsWith(liveVersion) ||
-				liveVersion.startsWith(sourceCommit)
-			)
-		)
+		if (!mixedSourceMatches(sourceCommit, liveVersion))
 			throw Error("Live app source differs from the pin");
 		const require = createRequire(join(artifactApp, "package.json"));
 		browser = await launchFixtureBrowser(

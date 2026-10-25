@@ -5,6 +5,16 @@ browser was run while original C1 capture was active. The ten V2 protocol/CLI
 checks, JavaScript syntax checks and focused Biome check pass. Those checks do
 not prove actual browser control, analytics totals or native telemetry.
 
+The prospective mixed operator now accepts the API's seven-character build hash
+as a prefix of its recorded source pin, matching normal capture semantics. Next's
+build configuration truncates an explicitly provided deployment hash to seven
+characters; the version API returns that configured value. Recorded mixed source
+pins still require 9–40 lowercase hexadecimal characters. Mismatches, malformed
+hashes and a live identity longer than its recorded pin are rejected. The four
+isolated source/CLI tests pass without fixture access. All three frozen C5
+fingerprint maps and production inputs remain unchanged. This correction requires
+a new mixed-tool snapshot before use; no earlier run is retroactively validated.
+
 ## Fixed condition
 
 The operator uses the existing disposable fixture, fixed pool 10, desktop

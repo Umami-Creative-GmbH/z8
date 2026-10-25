@@ -5,6 +5,56 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import * as mixedProbe from "./mixed-load-probe.mjs";
+
+test("mixed source identity accepts the API seven-character hash only as a prefix of the recorded source", () => {
+	const source = "456d28b2da4437662ae8f625a1df6756bff031fe";
+	assert.equal(typeof mixedProbe.mixedSourceMatches, "function");
+	for (const size of [7, 9, 40])
+		assert.equal(
+			mixedProbe.mixedSourceMatches(source, source.slice(0, size)),
+			true,
+		);
+	assert.equal(
+		mixedProbe.mixedSourceMatches(
+			"de0b1a128b384196c7c93ac69cd5324e8d0cbbd8",
+			"de0b1a1",
+		),
+		true,
+	);
+	assert.equal(
+		mixedProbe.mixedSourceMatches(source.slice(0, 9), source.slice(0, 7)),
+		true,
+	);
+});
+
+test("mixed source identity rejects mismatches, malformed hashes and a live hash longer than its pin", () => {
+	const source = "456d28b2da4437662ae8f625a1df6756bff031fe";
+	assert.equal(typeof mixedProbe.mixedSourceMatches, "function");
+	for (const observed of [
+		"456d28",
+		"456d28b-extra",
+		"development",
+		"DE0B1A1",
+		"de0b1a1",
+		`${source}0`,
+		null,
+		456,
+	])
+		assert.equal(mixedProbe.mixedSourceMatches(source, observed), false);
+	for (const pin of [
+		source.slice(0, 7),
+		`${source}0`,
+		"development",
+		null,
+		456,
+	])
+		assert.equal(mixedProbe.mixedSourceMatches(pin, source.slice(0, 7)), false);
+	assert.equal(
+		mixedProbe.mixedSourceMatches(source.slice(0, 9), source),
+		false,
+	);
+});
 
 const cli = fileURLToPath(new URL("./mixed-load-probe.mjs", import.meta.url));
 async function seedPlan(directory, origin = "http://localhost:34123") {
