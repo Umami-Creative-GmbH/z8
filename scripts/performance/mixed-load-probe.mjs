@@ -30,7 +30,7 @@ import {
 	fixtureTraceTransport,
 } from "./trace-transport.mjs";
 
-const timeout = 30000;
+import { cleanApplicationEvidence, cleanObservationPolicy, observationTimeoutMs } from "./clean-evidence.mjs";
 
 /** Match the recorded source against the public, possibly abbreviated build hash. */
 export function mixedSourceMatches(sourceCommit, liveVersion) {
@@ -85,6 +85,7 @@ async function readFixture(directory) {
 		fixture.kind !== "disposable" ||
 		!/^approval_workflow_repository_test_/.test(runtime.env?.POSTGRES_DB) ||
 		Number(runtime.env?.POSTGRES_POOL_MAX) !== 10 ||
+		Number(runtime.env?.POSTGRES_POOL_ACQUISITION_TIMEOUT_MS) !== cleanObservationPolicy.sharedPoolAcquisitionTimeoutMs ||
 		actors.some((actor) => !fixture.actors?.[actor]?.employeeId) ||
 		new Set(actors.map((actor) => fixture.actors[actor].employeeId)).size !== 4
 	)
@@ -94,9 +95,10 @@ async function readFixture(directory) {
 	return { runtime, fixture, origin };
 }
 
-function plan() {
+function plan(phase) {
 	return {
 		version: 2,
+		phase,
 		topology: "single app",
 		collectorProtocol,
 		traceTransport: fixtureTraceTransport,
@@ -110,6 +112,7 @@ function plan() {
 			"once after all commands, browser shutdown and finite wire drain; never between reads",
 		userConcurrency: 4,
 		poolMax: 10,
+		poolAcquisitionTimeoutMs: cleanObservationPolicy.sharedPoolAcquisitionTimeoutMs,
 		clockPairs: 20,
 		clockActor,
 		analyticsCallers: analytics.map(({ kind, actor }) => ({
@@ -118,7 +121,7 @@ function plan() {
 			range: "annual 2025",
 		})),
 		analyticsMaxRequestsPerCallerPerCommand: 100,
-		requestTimeoutMs: timeout,
+		requestTimeoutMs: observationTimeoutMs(phase),
 		preparation:
 			"actual annual UI requests complete before measured mixed work; caches may be warm",
 		requestCapture: "actual UI action identifiers and bodies, RAM only",
@@ -281,6 +284,7 @@ async function captureAnalytics(
 	expectedActor,
 	traceSource,
 	created,
+	timeout,
 ) {
 	const opened = await openPage(
 		browser,
@@ -361,7 +365,8 @@ function clockCohorts(records) {
 	);
 }
 
-async function run(directory, artifactApp, sourceCommit, collectorPath, runId) {
+async function run(directory, artifactApp, sourceCommit, collectorPath, runId, phase) {
+	const timeout = observationTimeoutMs(phase);
 	const { origin, fixture } = await readFixture(directory),
 		auth = await json(join(directory, "auth-private.json"));
 	const control =
@@ -449,6 +454,7 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId) {
 				fixture.actors[reader.actor],
 				{ ids: traces.ids, current: () => traces.preparation[index] },
 				created,
+				timeout,
 			);
 			item.page.on("request", (request) => {
 				const value = request.headers().traceparent?.split("-")[1];
@@ -476,6 +482,8 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId) {
 		controls = await openPublicHeaderClock(clock.page, {
 			origin,
 			expectedActor: fixture.actors[clockActor],
+			timeoutMs: timeout,
+			phase,
 		});
 		stage = "commands";
 		async function command(action, pair, cleanup = false) {
@@ -522,7 +530,7 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId) {
 												headers: input.headers,
 												body: input.body,
 												credentials: "same-origin",
-												signal: AbortSignal.timeout(30000),
+												signal: AbortSignal.timeout(input.timeoutMs),
 											});
 											return {
 												status: response.status,
@@ -531,6 +539,7 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId) {
 										},
 										{
 											...captured,
+											timeoutMs: timeout,
 											headers: {
 												...captured.headers,
 												traceparent: traceparent(requestId),
@@ -732,7 +741,7 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId) {
 		}
 	}
 	const completeTransport =
-		transports.length === 4 && transports.every(mixedTransportIsComplete);
+		transports.length === 4 && transports.every((row) => mixedTransportIsComplete(row) && cleanApplicationEvidence(row.traceTransport.applicationEvidence));
 	const completeCoverage =
 		nativeRunCoverage.complete === true &&
 		completeTransport &&
@@ -743,7 +752,7 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId) {
 		failureStage ||= "mixed-load-concurrency";
 	}
 	const report = {
-		...plan(),
+		...plan(phase),
 		runId,
 		sourceCommit,
 		liveVersion,
@@ -808,9 +817,12 @@ async function main() {
 			"Use mixed-load-probe plan <private-directory> or run <private-directory> <artifact-app> <source-commit> --allow-fixture-writes.",
 		);
 	const directory = resolve(inputDirectory);
+	const argv = process.argv.slice(2), phaseIndex = argv.indexOf("--phase"), phase = argv[phaseIndex + 1];
+	if (phaseIndex < 0 || argv.filter((value) => value === "--phase").length !== 1 || observationTimeoutMs(phase) === undefined)
+		throw Error("An explicit baseline or release observation phase is required.");
 	await readFixture(directory);
 	if (command === "plan") {
-		console.log(JSON.stringify(plan()));
+		console.log(JSON.stringify(plan(phase)));
 		return;
 	}
 	if (!artifactApp || !flags.includes("--allow-fixture-writes"))
@@ -828,13 +840,14 @@ async function main() {
 			sourceCommit,
 			collectorIndex >= 0 ? resolve(flags[collectorIndex + 1]) : undefined,
 			runId,
+			phase,
 		);
 	} catch {
 		await writeFile(
 			join(directory, `mixed-load-${runId}.json`),
 			JSON.stringify(
 				{
-					...plan(),
+					...plan(phase),
 					runId,
 					sourceCommit: /^[a-f0-9]{9,40}$/.test(sourceCommit ?? "")
 						? sourceCommit

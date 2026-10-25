@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { createHash, randomBytes } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { readFileSync } from "node:fs";
+import { cleanEvidenceGates, cleanEvidencePolicy, cleanObservationMatches } from "./clean-evidence.mjs";
 import { cpus, platform, release, totalmem } from "node:os";
 import { dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -57,100 +57,20 @@ export const companionWireContract = Object.freeze({
     "http-response-body-bytes-before-content-decoding-excludes-headers",
   traceTransport: "context-loopback-proxy-v1",
 });
-export const beforeFailurePolicy = Object.freeze({
-  version: 4,
-  amendedAt: "2026-10-25T09:24:58Z",
-  source:
-    "parent-authorized prospective amendment before controlled head capture",
-  proofSource: "67362fef1dab6bb22e0aa9060ab699fbbe8f0609",
-  proofPath:
-    "docs/performance/evidence/1450-next-stream-fixed-before-proof.json",
-  proofSha256:
-    "b9931f415342ecc2c09e6576779f3b0f384ea571fdc7741d26aa9a2f8f09fbe3",
-  proofHashEncoding: "sha256 of UTF-8 JSON.stringify(parsed public proof)",
-  cause:
-    "original annual DatabaseError from pool-acquire-timeout; pool10/10000ms; zero statement errors",
-  resourceClaim:
-    "complete observed traffic for FAILED baseline behavior; not successful-before-route cost",
-});
-const causeProof = JSON.parse(
-  readFileSync(
-    new URL(
-      "../../docs/performance/evidence/1450-next-stream-fixed-before-proof.json",
-      import.meta.url,
-    ),
-  ),
-);
-if (hash(JSON.stringify(causeProof)) !== beforeFailurePolicy.proofSha256)
-  throw Error(
-    "The fixed before failure cause proof changed; review a new prospective policy before capture.",
-  );
 export const companionPolicy = Object.freeze({
   ...settledPolicy,
-  version: 8,
+  version: 9,
   nextStreamCompletionPatch,
   operatorReloadQuiescencePolicy,
   prerequisiteQuiescencePolicy,
   scope:
     "all finite page and ServiceWorker proxy response bodies from navigation start through post-readiness quiet; inherited, explicit prefetch and long-lived traffic counted separately",
   wire: companionWireContract,
-  beforeFailure: beforeFailurePolicy,
+  cleanEvidence: cleanEvidencePolicy,
 });
 /** Select a resource observation without changing failed UI or its timing ledger. */
 export function settledWireEvidence(sample) {
   return sample.failed ? sample.wireFailureDrain : sample.wireSettled;
-}
-export function eligibleOriginalAnnualFailure(plan, sample, native) {
-  const route = plan.routes.find((r) => r.name === sample.route),
-    condition = plan.conditions.find((c) => c.name === sample.condition),
-    cause = causeProof.annualUnderlyingCause;
-  return (
-    plan.phase === "baseline" &&
-    sample.failed === true &&
-    plan.runtime.build === causeProof.originalBinarySource &&
-    plan.runtime.sourceBuild === causeProof.originalBusinessSource &&
-    matchingNextStreamCompletionPatch(
-      causeProof.nextStreamCompletionPatch,
-      plan.runtime.nextStreamCompletionPatch,
-    ) &&
-    sample.failureStage === "verify-expected-content" &&
-    sample.failureKind === "timeout" &&
-    Number.isFinite(sample.elapsedUntilFailureMs) &&
-    sample.elapsedUntilFailureMs >= plan.timeoutMs &&
-    !sample.secondaryFailures?.length &&
-    sample.range === "year" &&
-    route?.name === "analytics" &&
-    route.result === "work-hours" &&
-    route.rangeRecipe === "fixture-2025" &&
-    condition?.role === "admin" &&
-    condition.employees === 200 &&
-    (route.expectedRowsByCondition?.[condition.name] ?? condition.employees) ===
-      200 &&
-    plan.runtime.poolMax === 10 &&
-    plan.timeoutMs === 30000 &&
-    cause.underlyingKind === "pool-acquire-timeout" &&
-    cause.originalConnectionTimeoutMs === 10000 &&
-    native?.observedQueryErrors === 0 &&
-    Number.isSafeInteger(native.observedPoolAcquisitionErrors) &&
-    native.observedPoolAcquisitionErrors > 0 &&
-    Number.isSafeInteger(native.observedPoolAcquisitions) &&
-    Number.isSafeInteger(native.observedQueryCount) &&
-    native.observedQueryCount === native.queryCount &&
-    native.observedPoolAcquisitions ===
-      native.observedQueryCount + native.observedPoolAcquisitionErrors
-  );
-}
-function eligibleBeforeFailure(plan, sample, native) {
-  return (
-    eligibleOriginalAnnualFailure(plan, sample, native) &&
-    sample.censored === true &&
-    sample.readyMs === null &&
-    sample.measurementStarted === true &&
-    sample.prerequisiteComplete === true &&
-    sample.targetRangePrepared === true &&
-    sample.wireFailureDrain?.scope === "post-failed-journey-diagnostic" &&
-    sample.wireFailureDrain.usableContentClaim === false
-  );
 }
 /** A failure boundary is a resource observation anchor, never a usable-content timestamp. */
 export async function observeFailedJourneyWire(
@@ -235,6 +155,7 @@ export async function runCompanionCapture({
   }
 }
 export function settledCohorts(plan) {
+  if (!cleanObservationMatches(plan)) throw Error("Require the approved clean original/optimized observation windows and common pool timeout.");
   if (!Number.isInteger(plan.samples) || plan.samples < 20)
     throw Error("At least twenty samples are required.");
   if (
@@ -294,7 +215,7 @@ export function settledCohorts(plan) {
   return result;
 }
 export function settledEvidenceGates(plan, artifact, native, planSha) {
-  const gates = [];
+  const gates = cleanEvidenceGates(plan, artifact, native, "readyMs");
   if (
     JSON.stringify(artifact.protocol) !==
     JSON.stringify(installedCompanionProtocol)
@@ -406,14 +327,12 @@ export function requireSettledEvidence(plan, artifact, native, planSha) {
     );
   for (const s of artifact.samples) {
     const wire = settledWireEvidence(s),
-      e = native.find((e) => e.traceId === s.traceId),
-      knownBeforeFailure = eligibleBeforeFailure(plan, s, e);
+      e = native.find((e) => e.traceId === s.traceId);
     if (
-      (!knownBeforeFailure &&
-        (s.failed !== false ||
-          s.censored !== false ||
-          !Number.isFinite(s.readyMs) ||
-          s.readyMs < 0)) ||
+      s.failed !== false ||
+      s.censored !== false ||
+      !Number.isFinite(s.readyMs) ||
+      s.readyMs < 0 ||
       wire?.complete !== true ||
       wire.capped !== false ||
       wire.mandatoryErrors !== 0 ||
@@ -494,7 +413,7 @@ export function requireSettledEvidence(plan, artifact, native, planSha) {
       );
     if (
       e.observedQueryErrors !== 0 ||
-      (!knownBeforeFailure && e.observedPoolAcquisitionErrors !== 0)
+      e.observedPoolAcquisitionErrors !== 0
     )
       throw Error("Settled backend observed errors.");
   }
@@ -1001,9 +920,7 @@ async function main() {
       );
     artifact.resourceObservationBasis = !artifact.resourceComplete
       ? "unfulfilled resource observation; no complete cost claim"
-      : artifact.behaviorComplete
-        ? "complete observed traffic for successful behavior"
-        : beforeFailurePolicy.resourceClaim;
+      : "complete observed traffic for successful behavior";
     artifact.acceptance = artifact.resourceComplete
       ? "settled-resources-recorded"
       : "unfulfilled";

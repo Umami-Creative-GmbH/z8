@@ -1,4 +1,5 @@
 import { createProxyWireObserver } from "./proxy-wire-observer.mjs";
+import { createActionResultObserver } from "./action-result-observer.mjs";
 import { nextStreamCompletionPatch } from "./next-stream-completion-patch.mjs";
 import { companionProtocolIdentity } from "./protocol-fingerprints.mjs";
 const companionProtocol = await companionProtocolIdentity();
@@ -8,6 +9,12 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import test from "node:test";
+function registerEmptyScopes(sample, field) {
+  sample.prerequisiteTraceId = `${sample.traceId}-prerequisite`;
+  sample.backgroundTraceId = `${sample.traceId}-background`;
+  const zero = { queries: 0, acquisitions: 0, cache: 0 };
+  sample[field] = { registered: true, closed: true, nativeCloseProof: [sample.prerequisiteTraceId, sample.backgroundTraceId].map((traceId) => ({ traceId, ...zero, started: zero, ended: zero, driverQueries: 0, driverComplete: true, complete: true, drained: true })) };
+}
 test("companion validates required inputs and sample counts before importing a browser runtime", () => {
   const dir = mkdtempSync(join(tmpdir(), "z8-settled-"));
   const plan = join(dir, "plan.json");
@@ -142,9 +149,10 @@ test("companion preserves positive close evidence and represents absent evidence
   }
 });
 
-test("resource eligibility distinguishes proven failed baseline behavior from missing coverage and failing head behavior", () => {
+test("resource eligibility rejects failed original and HEAD behavior even with complete observed traffic", () => {
   const plan = {
     phase: "baseline",
+    timeoutMs: 90000,
     samples: 20,
     concurrency: 1,
     fixture: { kind: "disposable", journeysVerified: true },
@@ -157,6 +165,8 @@ test("resource eligibility distinguishes proven failed baseline behavior from mi
       operatorReloadQuiescencePolicy: "operator-reload-transfer-quiescence-v1",
       nextStreamCompletionPatch: structuredClone(nextStreamCompletionPatch),
       browserPermissions: "notifications-denied-for-fixture-origin",
+      poolMax: 10,
+      poolAcquisitionTimeoutMs: 60000,
       build: "aaaaaaaaa",
       sourceBuild: "bbbbbbbbb",
       toolingBuild: "ccccccccc",
@@ -207,6 +217,7 @@ test("resource eligibility distinguishes proven failed baseline behavior from mi
     })),
   );
   for (const s of samples) {
+    registerEmptyScopes(s, "collectorVisit");
     s.traceTransport = initializedTransport(s.traceTransport);
     s.browserInitialization = s.traceTransport.browserInitialization;
     s.wireSettled = wireFixture(s);
@@ -260,7 +271,7 @@ test("resource eligibility distinguishes proven failed baseline behavior from mi
   const annualPlan = structuredClone(plan),
     failedBefore = structuredClone(artifact),
     failedNative = structuredClone(native);
-  annualPlan.timeoutMs = 30000;
+  annualPlan.timeoutMs = 90000;
   annualPlan.runtime.poolMax = 10;
   annualPlan.runtime.build = "bda468856728844f8172f6832c4deb9ad34a3bb0";
   annualPlan.runtime.sourceBuild = "39a08d0bbe77e00ceb5b204b9f9100ab2cfb86be";
@@ -297,86 +308,19 @@ test("resource eligibility distinguishes proven failed baseline behavior from mi
   failedNative[0].observedPoolAcquisitionErrors = 69;
   failedNative[0].observedPoolAcquisitions = 70;
   failedNative[0].observedQueryCount = 1;
-  assert.doesNotThrow(() =>
+  assert.throws(() =>
     requireSettledEvidence(annualPlan, failedBefore, failedNative, "hash"),
   );
   assert.equal(failed.readyMs, null);
   assert.equal(failed.failed, true);
-  for (const change of [
-    (p, a) => {
-      p.phase = "release";
-      a.phase = "release";
-    },
-    (_p, a) => (a.samples[0].prerequisiteComplete = false),
-    (_p, a) => (a.samples[0].measurementStarted = false),
-    (_p, a) => (a.samples[0].targetRangePrepared = false),
-    (_p, a) => (a.samples[0].failureStage = "prepare-range"),
-    (_p, a) => (a.samples[0].failureKind = "journey-error"),
-    (_p, a) => (a.samples[0].wireFailureDrain.capped = true),
-    (_p, a) => (a.samples[0].wireFailureDrain.mandatoryErrors = 1),
-    (_p, a) => (a.samples[0].wireFailureDrain.bytes.javascript = null),
-    (_p, a) =>
-      (a.samples[0].secondaryFailures = [{ failureStage: "collector-close" }]),
-    (_p, _a, n) => (n[0].observedQueryErrors = 1),
-    (_p, _a, n) => (n[0].observedPoolAcquisitionErrors = 0),
-    (_p, _a, n) => delete n[0].observedPoolAcquisitionErrors,
-    (_p, _a, n) => delete n[0].observedPoolAcquisitions,
-    (_p, _a, n) => n[0].observedPoolAcquisitions++,
-    (_p, a) => (a.samples[0].wireFailureDrain.postReadyMs = 10001),
-    (p) => (p.runtime.poolMax = 20),
-    (p, a) => {
-      p.runtime.build = "d5550e35c3bd9adf584e9731ade31d6420abf545";
-      a.runtime.build = p.runtime.build;
-    },
-    (p, a) => {
-      p.runtime.build = "295de0b706e439bcdaf4d2d25661ce45f02ddb61";
-      a.runtime.build = p.runtime.build;
-    },
-    (p, a) => {
-      p.runtime.build = "456d28b2da4437662ae8f625a1df6756bff031fe";
-      a.runtime.build = p.runtime.build;
-    },
-    (p, a) => {
-      delete p.runtime.nextStreamCompletionPatch;
-      delete a.runtime.nextStreamCompletionPatch;
-    },
-    (_p, a) => delete a.runtime.nextStreamCompletionPatch,
-    (p, a) => {
-      p.runtime.nextStreamCompletionPatch.patchSha256 = "0".repeat(64);
-      a.runtime.nextStreamCompletionPatch = structuredClone(
-        p.runtime.nextStreamCompletionPatch,
-      );
-    },
-    (_p, a) => (a.runtime.nextStreamCompletionPatch.esmSha256 = "0".repeat(64)),
-    (_p, _a, n) => (n[0].coverage.registration = false),
-    (_p, _a, n) => (n[0].coverage.incomplete = true),
-    (_p, _a, n) => (n[0].coverage.nativeProof = false),
-    (_p, _a, n) => (n[0].coverage.unattributedNativeSpans = 1),
-    ...["observer", "pg", "rows", "cache", "eventLoop"].map(
-      (flag) => (_p, _a, n) => (n[0].coverage[flag] = null),
-    ),
-    (p, a) => {
-      p.runtime.build = "ddddddddd";
-      a.runtime.build = p.runtime.build;
-    },
-    (p, a) => {
-      p.runtime.sourceBuild = "eeeeeeeee";
-      a.runtime.sourceBuild = p.runtime.sourceBuild;
-    },
-    (_p, a) => (a.policy.beforeFailure.proofSha256 = "0".repeat(64)),
-  ]) {
-    const p = structuredClone(annualPlan),
-      a = structuredClone(failedBefore),
-      n = structuredClone(failedNative);
-    change(p, a, n);
-    assert.throws(() => requireSettledEvidence(p, a, n, "hash"));
-  }
   for (const change of [
     (a) => delete a.runtime.nextStreamCompletionPatch,
     (a) => (a.runtime.nextStreamCompletionPatch.lockSha256 = "0".repeat(64)),
     (a) => a.samples.pop(),
     (a) => (a.samples[0].wireSettled.capped = true),
     (a) => (a.samples[0].failed = true),
+	(a) => { const proof = a.samples[0].traceTransport.applicationEvidence; proof.observed = 1; proof.failures = 1; },
+	(a) => delete a.samples[0].traceTransport.applicationEvidence,
     (a) => (a.protocol["browser-performance.mjs"] = "0".repeat(64)),
     (a) => delete a.samples[0].failed,
     (a) => delete a.samples[0].readyMs,
@@ -414,6 +358,10 @@ test("resource eligibility distinguishes proven failed baseline behavior from mi
   assert.throws(() =>
     requireSettledEvidence(plan, artifact, incomplete, "hash"),
   );
+	for (const scope of ["prerequisiteTraceId", "backgroundTraceId"]) {
+		const failedScope = { traceId: samples[0][scope], coverage: { registration: true, closed: true, nativeProof: true, incomplete: false }, observedQueryErrors: 0, observedPoolAcquisitionErrors: 1 };
+		assert.throws(() => requireSettledEvidence(plan, artifact, [...native, failedScope], "hash"));
+	}
 });
 test("capture requires registered collector control before any runtime or browser request", () => {
   const dir = mkdtempSync(join(tmpdir(), "z8-settled-control-")),
@@ -422,6 +370,7 @@ test("capture requires registered collector control before any runtime or browse
     path,
     JSON.stringify({
       phase: "baseline",
+      timeoutMs: 90000,
       samples: 20,
       concurrency: 1,
       fixture: { kind: "disposable", journeysVerified: true },
@@ -430,6 +379,8 @@ test("capture requires registered collector control before any runtime or browse
         browserPermissions: "notifications-denied-for-fixture-origin",
         collectorProtocol: "z8-fixture-otlp-collector-v2",
         traceTransport: "context-loopback-proxy-v1",
+        poolMax: 10,
+        poolAcquisitionTimeoutMs: 60000,
         browserPolicy: "isolated-profile-no-prediction-v1",
         prerequisiteQuiescencePolicy: "settled-prerequisite-transfers-v1",
         operatorReloadQuiescencePolicy:
@@ -558,7 +509,7 @@ function prerequisiteFixture(mode) {
     measurementStarted: false,
     usableContentClaim: false,
     quietMs: 1000,
-    capMs: 30000,
+    capMs: 90000,
     elapsedMs: 1000,
     prefetchQuietObservedMs: 1000,
   }));
@@ -610,6 +561,7 @@ function initializedTransport(snapshot) {
   };
   return {
     ...snapshot,
+    applicationEvidence: createActionResultObserver().snapshot(),
     refusedRequests: 1,
     refusalReasons: { ...init.refusalReasons },
     browserInitialization: init,

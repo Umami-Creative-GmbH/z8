@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { cleanEvidenceGates, cleanEvidencePolicy, cleanObservationMatches } from "./clean-evidence.mjs";
 import { createHash, randomBytes } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { cpus, platform, release, totalmem } from "node:os";
@@ -109,6 +110,7 @@ const coverageNames = [
 ];
 
 function validate(plan, verifying = false) {
+	if (!cleanObservationMatches(plan)) throw Error("Require the approved clean original/optimized observation windows and common pool timeout.");
 	if (
 		plan.runtime?.traceTransport === fixtureTraceTransport &&
 		plan.runtime.operatorReloadQuiescencePolicy !==
@@ -403,7 +405,8 @@ async function main() {
 		result.missingMetrics = backendMetrics.filter((name) =>
 			result.samples.some((sample) => sample.backend[name] === null),
 		);
-		result.gates = [];
+		result.gates = cleanEvidenceGates(plan, result, backend);
+		result.evidencePolicy = cleanEvidencePolicy;
 		if (
 			!matchingNextStreamCompletionPatch(
 				plan.runtime.nextStreamCompletionPatch,
@@ -600,6 +603,7 @@ async function main() {
 	const out = option("--out");
 	await mkdir(out, { recursive: true });
 	const result = {
+		evidencePolicy: cleanEvidencePolicy,
 		schema: 1,
 		acceptance: "unfulfilled",
 		phase: plan.phase ?? "release",
@@ -627,6 +631,7 @@ async function main() {
 			redisCommandTimeoutMs: plan.runtime.redisCommandTimeoutMs ?? null,
 			toolingBuild: plan.runtime.toolingBuild ?? null,
 			poolMax: plan.runtime.poolMax ?? null,
+			poolAcquisitionTimeoutMs: plan.runtime.poolAcquisitionTimeoutMs ?? null,
 			images: plan.runtime.images ?? [],
 			node: process.version,
 		},

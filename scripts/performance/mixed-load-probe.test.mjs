@@ -6,6 +6,7 @@ import { dirname, join, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import * as mixedProbe from "./mixed-load-probe.mjs";
+import { openPublicHeaderClock } from "./public-header-clock.mjs";
 
 test("mixed annual preparation registers the actual response before keyboard selection commits", async () => {
 	const events = [],
@@ -128,6 +129,18 @@ test("mixed source identity rejects mismatches, malformed hashes and a live hash
 });
 
 const cli = fileURLToPath(new URL("./mixed-load-probe.mjs", import.meta.url));
+
+test("original header observation accepts ninety seconds only with explicit baseline phase", async () => {
+	const seen = [];
+	const page = { on() {}, off() {}, async goto(_url, options) { seen.push(options.timeout); throw Error("HTTP seam reached"); } };
+	const options = { origin: "http://localhost:58792", expectedActor: { email: "fixture@example.test", organizationId: "fixture" }, timeoutMs: 90000 };
+	await assert.rejects(openPublicHeaderClock(page, options), /bounded timeout/);
+	assert.deepEqual(seen, []);
+	await assert.rejects(openPublicHeaderClock(page, { ...options, phase: "baseline" }), /HTTP seam reached/);
+	assert.deepEqual(seen, [90000]);
+	for (const phase of ["unknown", "toString", "constructor"])
+		await assert.rejects(openPublicHeaderClock(page, { ...options, phase }), /bounded timeout/);
+});
 async function seedPlan(directory, origin = "http://localhost:34123") {
 	await writeFile(
 		join(directory, "runtime-private.json"),
@@ -136,6 +149,7 @@ async function seedPlan(directory, origin = "http://localhost:34123") {
 			env: {
 				POSTGRES_DB: "approval_workflow_repository_test_mixed",
 				POSTGRES_POOL_MAX: "10",
+				POSTGRES_POOL_ACQUISITION_TIMEOUT_MS: "60000",
 				POSTGRES_PASSWORD: "never-publish-me",
 			},
 		}),
@@ -160,7 +174,7 @@ test("single-app mixed plan fixes four distinct users, twenty pairs and bounded 
 	const directory = await mkdtemp(join(tmpdir(), "z8-mixed-plan-"));
 	try {
 		await seedPlan(directory);
-		const result = spawnSync(process.execPath, [cli, "plan", directory], {
+		const result = spawnSync(process.execPath, [cli, "plan", directory, "--phase", "baseline"], {
 			encoding: "utf8",
 		});
 		assert.equal(result.status, 0, result.stderr);
@@ -175,10 +189,18 @@ test("single-app mixed plan fixes four distinct users, twenty pairs and bounded 
 		assert.equal(plan.clockPairs, 20);
 		assert.equal(plan.userConcurrency, 4);
 		assert.equal(plan.poolMax, 10);
+		assert.equal(plan.poolAcquisitionTimeoutMs, 60000);
+		assert.equal(plan.phase, "baseline");
+		assert.equal(plan.requestTimeoutMs, 90000);
 		assert.equal(plan.analyticsCallers.length, 3);
 		assert.equal(plan.analyticsMaxRequestsPerCallerPerCommand, 100);
 		assert.equal(result.stdout.includes("never-publish-me"), false);
 		assert.equal(result.stdout.includes("private-"), false);
+		const optimized = spawnSync(process.execPath, [cli, "plan", directory, "--phase", "release"], { encoding: "utf8" });
+		assert.equal(optimized.status, 0, optimized.stderr);
+		assert.equal(JSON.parse(optimized.stdout).requestTimeoutMs, 30000);
+		for (const args of [[], ["--phase", "unknown"], ["--phase", "baseline", "--phase", "release"]])
+			assert.notEqual(spawnSync(process.execPath, [cli, "plan", directory, ...args], { encoding: "utf8" }).status, 0);
 	} finally {
 		assert.equal(dirname(directory), resolve(tmpdir()));
 		await rm(directory, { recursive: true, force: true });
@@ -189,7 +211,7 @@ test("mixed plan refuses a nonlocal origin while retaining all other valid fixtu
 	const directory = await mkdtemp(join(tmpdir(), "z8-mixed-reject-"));
 	try {
 		await seedPlan(directory, "https://production.example.test");
-		const result = spawnSync(process.execPath, [cli, "plan", directory], {
+		const result = spawnSync(process.execPath, [cli, "plan", directory, "--phase", "baseline"], {
 			encoding: "utf8",
 		});
 		assert.notEqual(result.status, 0);
