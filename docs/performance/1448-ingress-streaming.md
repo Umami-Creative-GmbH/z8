@@ -333,3 +333,35 @@ changing anything. A minimal fixture fix requires a causal reproduction and
 repeat validation. Example ingress annotations are not evidence or a remedy for
 an unobserved deployed problem. #1473 remains open until runtime and parent review
 gates are fulfilled; deployed production/CDN access remains explicitly unavailable.
+
+## Paired browser cleanup after the patched Next build
+
+The first D5 replay retained four successful desktop streaming conditions and a
+failed signed-out attempt. That attempt stopped while closing its authorized
+control: clock HTTP 200 with an employee was confirmed, but the negative context
+had not run. Its protected-content result remains unknown. The raw native proof
+retains one open Next SERVER and seven downstream cancellations; SQL counts were
+balanced. This is not an authorization leak or proof that the Next stream patch
+failed. The exact unfinished GET route remains unidentified.
+
+The paired context operator previously closed the browser before waiting for
+already-started finite responses. Its close path now uses the existing
+`post-snapshot-finite-prefetch-quiet-v1` cleanup: finite responses and explicit
+prefetches must finish, followed by one second of quiet, within the unchanged
+ten-second cap. Readiness, DOM, geometry and resource snapshots precede cleanup.
+Each final transport snapshot retains its cleanup proof, and incomplete or
+missing cleanup rejects whole-run acceptance. Cleanup failure still attempts
+browser closure, both native closures and transport snapshot retention; multiple
+errors remain separate causes rather than replacing the first failure.
+
+The focused regression failed on the former premature close and passes with a
+real HTTP response and naturally completed SDK SERVER span. The same test file
+also rejects a real mandatory HTTP error and an unfinished prefetch at the
+unchanged ten-second cap, while retaining closure attempts and native errors.
+All ten focused cases pass. No application, dependency, Next patch, native
+accounting or measurement deadline changed. Existing replay attempts remain
+qualified by their original operator; they are not upgraded by this source fix.
+One new signed-out reproduction must exercise the actual negative context before
+a new full fourteen-condition replay can establish acceptance for this cleanup
+condition. Deliberately cancelled SQL still has unknown row cost where the
+driver emitted no returned-row fact; its raw resource failure is retained.
