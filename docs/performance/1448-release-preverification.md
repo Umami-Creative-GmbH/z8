@@ -401,3 +401,47 @@ The parent owns the final-only CI build at `31d67bbcb`. Rebuilt no-418 Dashboard
 terminal chunk/local Retry and refresh native-drain diagnosis remain pending.
 The original before artifact is unchanged. No PR-ready or closure claim follows
 from this source checkpoint.
+
+## Compiled functional acceptance at 31d
+
+The corrected `31d67bbcb` artifact passes the bounded functional cases in
+[the numeric browser proof](evidence/1475-31d-functional-browser.json).
+Three fresh-browser, uninjected Dashboard documents report zero page errors,
+including no React 418. Each whole run reconciles 867 queries, with all 263
+server spans ended (154 HTTP and 109 Next), zero server balance and successful
+native drainage. These totals include authorized prerequisites and browser
+prefetch; they are not isolated Dashboard reader costs or timing budgets.
+
+The terminal compiled-chunk case passes in one complete trial: two observed
+failures of the same exact Script, a local widget alert, actual user Retry,
+and a third uncached HTTP 200 response containing 3,787 encoded bytes. Its
+public widget GET succeeds with an empty birthday list, so the recovered empty
+region is valid. The active ServiceWorker neither caches nor serves the target.
+Header, ready clock, Quick Stats and time origin remain unchanged. CDP records
+one main-frame document response/commit and one loader before and after the
+fault/retry; the separate same-document transition is retained. There are zero
+page errors. All 826 driver/SDK/received queries and all 325 server starts/ends
+reconcile, with clean transport and native completion.
+
+The employee refresh case also passes as one complete trial: one RSC request,
+zero duplicate detail GETs, and one GET per auxiliary dataset. Draft, selection,
+input identity and scroll survive. Its 1,699 queries and acquisitions and 37
+cache operations reconcile; all 693 servers end (322 HTTP, 371 Next), server
+balance is zero, last-activity age is 4,600 milliseconds and `drained` is true.
+Native close takes 2.81 milliseconds. There are no page or transport errors.
+These are diagnostic closure values, not user-response performance results.
+
+The prior `eee1fc650` refresh cap remains failed with unknown cause; the new
+successful run does not retrospectively explain it or imply an accounting fix.
+The earlier zero-error positives and all failed trials remain retained. The
+accepted role/policy cases retain their measured `eee1fc650` source qualification;
+the current proof verifies identical Git blobs for the selector, public route,
+canonical mutations and authentication service. The real 301-second expiry
+observation remains qualified `ac2fb1133` awaited-GET behavior under its older
+observer, not a relabeled final native run. Controlled performance, mixed load,
+budgets and final formal reviews remain separate gates.
+
+The functional window is closed: owned Chrome contexts and native registrations
+are zero. The controller independently retained final v6 counters/metrics and
+stopped the exact owned functional application. No further runtime or source
+change follows this documentation checkpoint.
