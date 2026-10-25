@@ -1,4 +1,5 @@
 import { createProxyWireObserver } from "./proxy-wire-observer.mjs";
+import { nextStreamCompletionPatch } from "./next-stream-completion-patch.mjs";
 import { companionProtocolIdentity } from "./protocol-fingerprints.mjs";
 const companionProtocol = await companionProtocolIdentity();
 import assert from "node:assert/strict";
@@ -154,6 +155,7 @@ test("resource eligibility distinguishes proven failed baseline behavior from mi
       browserPolicy: "isolated-profile-no-prediction-v1",
       prerequisiteQuiescencePolicy: "settled-prerequisite-transfers-v1",
       operatorReloadQuiescencePolicy: "operator-reload-transfer-quiescence-v1",
+      nextStreamCompletionPatch: structuredClone(nextStreamCompletionPatch),
       browserPermissions: "notifications-denied-for-fixture-origin",
       build: "aaaaaaaaa",
       sourceBuild: "bbbbbbbbb",
@@ -260,7 +262,7 @@ test("resource eligibility distinguishes proven failed baseline behavior from mi
     failedNative = structuredClone(native);
   annualPlan.timeoutMs = 30000;
   annualPlan.runtime.poolMax = 10;
-  annualPlan.runtime.build = "456d28b2da4437662ae8f625a1df6756bff031fe";
+  annualPlan.runtime.build = "bda468856728844f8172f6832c4deb9ad34a3bb0";
   annualPlan.runtime.sourceBuild = "39a08d0bbe77e00ceb5b204b9f9100ab2cfb86be";
   Object.assign(failedBefore.runtime, annualPlan.runtime);
   annualPlan.conditions[0].employees = 200;
@@ -330,6 +332,22 @@ test("resource eligibility distinguishes proven failed baseline behavior from mi
       p.runtime.build = "295de0b706e439bcdaf4d2d25661ce45f02ddb61";
       a.runtime.build = p.runtime.build;
     },
+    (p, a) => {
+      p.runtime.build = "456d28b2da4437662ae8f625a1df6756bff031fe";
+      a.runtime.build = p.runtime.build;
+    },
+    (p, a) => {
+      delete p.runtime.nextStreamCompletionPatch;
+      delete a.runtime.nextStreamCompletionPatch;
+    },
+    (_p, a) => delete a.runtime.nextStreamCompletionPatch,
+    (p, a) => {
+      p.runtime.nextStreamCompletionPatch.patchSha256 = "0".repeat(64);
+      a.runtime.nextStreamCompletionPatch = structuredClone(
+        p.runtime.nextStreamCompletionPatch,
+      );
+    },
+    (_p, a) => (a.runtime.nextStreamCompletionPatch.esmSha256 = "0".repeat(64)),
     (_p, _a, n) => (n[0].coverage.registration = false),
     (_p, _a, n) => (n[0].coverage.incomplete = true),
     (_p, _a, n) => (n[0].coverage.nativeProof = false),
@@ -354,6 +372,8 @@ test("resource eligibility distinguishes proven failed baseline behavior from mi
     assert.throws(() => requireSettledEvidence(p, a, n, "hash"));
   }
   for (const change of [
+    (a) => delete a.runtime.nextStreamCompletionPatch,
+    (a) => (a.runtime.nextStreamCompletionPatch.lockSha256 = "0".repeat(64)),
     (a) => a.samples.pop(),
     (a) => (a.samples[0].wireSettled.capped = true),
     (a) => (a.samples[0].failed = true),
@@ -414,6 +434,7 @@ test("capture requires registered collector control before any runtime or browse
         prerequisiteQuiescencePolicy: "settled-prerequisite-transfers-v1",
         operatorReloadQuiescencePolicy:
           "operator-reload-transfer-quiescence-v1",
+        nextStreamCompletionPatch: structuredClone(nextStreamCompletionPatch),
       },
       conditions: [{ name: "admin", role: "admin" }],
       ranges: [{ name: "month" }],

@@ -7,6 +7,11 @@ import { dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { companionProtocolIdentity } from "./protocol-fingerprints.mjs";
 import {
+  nextStreamCompletionPatch,
+  isNextStreamCompletionPatch,
+  matchingNextStreamCompletionPatch,
+} from "./next-stream-completion-patch.mjs";
+import {
   operatorReloadQuiescencePolicy,
   operatorReloadQuiescenceComplete,
 } from "./operator-reload-quiescence.mjs";
@@ -53,14 +58,15 @@ export const companionWireContract = Object.freeze({
   traceTransport: "context-loopback-proxy-v1",
 });
 export const beforeFailurePolicy = Object.freeze({
-  version: 3,
-  amendedAt: "2026-10-25T02:50:12Z",
+  version: 4,
+  amendedAt: "2026-10-25T09:24:58Z",
   source:
     "parent-authorized prospective amendment before controlled head capture",
-  proofSource: "4a617985a8758f67f5d888d0b65ef02af04e1c8b",
-  proofPath: "docs/performance/evidence/1450-observer-v8-before-proof.json",
+  proofSource: "67362fef1dab6bb22e0aa9060ab699fbbe8f0609",
+  proofPath:
+    "docs/performance/evidence/1450-next-stream-fixed-before-proof.json",
   proofSha256:
-    "bb422fdb9e48b59631f942e358d4396c2e494a2a5f6b8345dcb1dff794f4c613",
+    "b9931f415342ecc2c09e6576779f3b0f384ea571fdc7741d26aa9a2f8f09fbe3",
   proofHashEncoding: "sha256 of UTF-8 JSON.stringify(parsed public proof)",
   cause:
     "original annual DatabaseError from pool-acquire-timeout; pool10/10000ms; zero statement errors",
@@ -70,7 +76,7 @@ export const beforeFailurePolicy = Object.freeze({
 const causeProof = JSON.parse(
   readFileSync(
     new URL(
-      "../../docs/performance/evidence/1450-observer-v8-before-proof.json",
+      "../../docs/performance/evidence/1450-next-stream-fixed-before-proof.json",
       import.meta.url,
     ),
   ),
@@ -81,7 +87,8 @@ if (hash(JSON.stringify(causeProof)) !== beforeFailurePolicy.proofSha256)
   );
 export const companionPolicy = Object.freeze({
   ...settledPolicy,
-  version: 7,
+  version: 8,
+  nextStreamCompletionPatch,
   operatorReloadQuiescencePolicy,
   prerequisiteQuiescencePolicy,
   scope:
@@ -102,6 +109,10 @@ export function eligibleOriginalAnnualFailure(plan, sample, native) {
     sample.failed === true &&
     plan.runtime.build === causeProof.originalBinarySource &&
     plan.runtime.sourceBuild === causeProof.originalBusinessSource &&
+    matchingNextStreamCompletionPatch(
+      causeProof.nextStreamCompletionPatch,
+      plan.runtime.nextStreamCompletionPatch,
+    ) &&
     sample.failureStage === "verify-expected-content" &&
     sample.failureKind === "timeout" &&
     Number.isFinite(sample.elapsedUntilFailureMs) &&
@@ -238,6 +249,7 @@ export function settledCohorts(plan) {
       prerequisiteQuiescencePolicy ||
     plan.runtime?.operatorReloadQuiescencePolicy !==
       operatorReloadQuiescencePolicy ||
+    !isNextStreamCompletionPatch(plan.runtime?.nextStreamCompletionPatch) ||
     plan.runtime.browserPermissions !== fixtureBrowserPermissions ||
     !Number.isInteger(plan.concurrency) ||
     plan.concurrency < 1
@@ -307,6 +319,10 @@ export function settledEvidenceGates(plan, artifact, native, planSha) {
       plan.runtime.prerequisiteQuiescencePolicy ||
     artifact.runtime.operatorReloadQuiescencePolicy !==
       plan.runtime.operatorReloadQuiescencePolicy ||
+    !matchingNextStreamCompletionPatch(
+      plan.runtime.nextStreamCompletionPatch,
+      artifact.runtime.nextStreamCompletionPatch,
+    ) ||
     artifact.runtime.build !== plan.runtime.build ||
     artifact.runtime.sourceBuild !== plan.runtime.sourceBuild ||
     artifact.runtime.toolingBuild !== plan.runtime.toolingBuild

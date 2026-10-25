@@ -8,6 +8,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { primaryProtocolIdentity } from "./protocol-fingerprints.mjs";
 import { measure } from "./run-baseline.mjs";
+import { nextStreamCompletionPatch } from "./next-stream-completion-patch.mjs";
 const primaryProtocol = await primaryProtocolIdentity();
 
 const runner = fileURLToPath(new URL("./run-baseline.mjs", import.meta.url));
@@ -15,7 +16,11 @@ const fixturePlan = () => ({
 	samples: 20,
 	concurrency: 1,
 	fixture: { kind: "disposable", journeysVerified: true },
-	runtime: { mode: "production", build: "39a08d0bb" },
+	runtime: {
+		mode: "production",
+		build: "39a08d0bb",
+		nextStreamCompletionPatch: structuredClone(nextStreamCompletionPatch),
+	},
 	origin: "http://localhost:34123",
 	ranges: ["month", "quarter", "year"].map((name) => ({ name })),
 	conditions: ["employee", "manager", "admin", "restricted"].map((role, i) => ({
@@ -53,6 +58,32 @@ const fixturePlan = () => ({
 			reset: [{ click: "button" }],
 		},
 	})),
+});
+
+test("primary plan rejects absent, unknown or changed common Next stream patch", () => {
+	const folder = mkdtempSync(join(tmpdir(), "z8-common-next-"));
+	const path = join(folder, "plan.json");
+	for (const change of [
+		(p) => delete p.runtime.nextStreamCompletionPatch,
+		(p) => (p.runtime.nextStreamCompletionPatch = null),
+		(p) => (p.runtime.nextStreamCompletionPatch.cjsSha256 = "0".repeat(64)),
+		(p) => (p.runtime.nextStreamCompletionPatch.extra = true),
+		(p) => {
+			p.runtime.nextStreamLifecycle = p.runtime.nextStreamCompletionPatch;
+			delete p.runtime.nextStreamCompletionPatch;
+		},
+	]) {
+		const plan = fixturePlan();
+		change(plan);
+		writeFileSync(path, JSON.stringify(plan));
+		const result = spawnSync(
+			process.execPath,
+			[runner, "--plan", path, "--validate-plan"],
+			{ encoding: "utf8" },
+		);
+		assert.equal(result.status, 2);
+		assert.match(result.stderr, /Next.*patch|common.*runtime/i);
+	}
 });
 
 test("primary retains failed native close evidence and still rejects incomplete native coverage", async () => {
@@ -573,6 +604,7 @@ test("a fully observed failed predecessor is recorded while the same failure blo
 			protocol = plan.runtime.collectorProtocol,
 			nativeComplete = true,
 			sourceProtocol = primaryProtocol,
+			runtimePatch = nextStreamCompletionPatch,
 		) => {
 			plan.phase = phase;
 			const bytes = JSON.stringify(plan);
@@ -583,7 +615,11 @@ test("a fully observed failed predecessor is recorded while the same failure blo
 					kind: "benchmark",
 					protocol: sourceProtocol,
 					nativeRunCoverage: { complete: nativeComplete },
-					runtime: { buildVerified: true, collectorProtocol: protocol },
+					runtime: {
+						buildVerified: true,
+						collectorProtocol: protocol,
+						nextStreamCompletionPatch: structuredClone(runtimePatch),
+					},
 					planSha256: createHash("sha256").update(bytes).digest("hex"),
 					samples,
 					summaries,
@@ -611,6 +647,19 @@ test("a fully observed failed predecessor is recorded while the same failure blo
 		assert.equal(predecessor.command.status, 0);
 		assert.equal(predecessor.artifact.acceptance, "baseline-recorded");
 		assert.equal(predecessor.artifact.releaseAcceptance, "failed");
+		const missingCommonRuntime = finalize(
+			"baseline",
+			undefined,
+			true,
+			primaryProtocol,
+			null,
+		);
+		assert.equal(missingCommonRuntime.command.status, 1);
+		assert.equal(missingCommonRuntime.artifact.evidenceComplete, false);
+		assert.match(
+			missingCommonRuntime.artifact.evidenceGates.join(" "),
+			/Next.*patch/,
+		);
 		assert.equal(
 			predecessor.artifact.samples.find((sample) => sample.censored).requests,
 			null,
