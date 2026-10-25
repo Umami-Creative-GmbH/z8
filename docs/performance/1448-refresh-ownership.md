@@ -79,3 +79,21 @@ employee save/manual-refresh/partial-failure/navigation journeys still need
 request and query evidence from that gate. No runtime service, fixture data,
 collector, original baseline or candidate environment was changed here. Keep
 #1471 open until those checks and the final spec review pass.
+
+## Compiled employee refresh observation
+
+On compiled `eee1fc650`, one actual header refresh issued one RSC request,
+zero extra detail GETs and exactly one GET for each of schedule, manager
+choices, employment history and policy choices. The typed position, unsaved
+Gender selection and input node identity survived. Inner scroll position changed
+by zero pixels. CDP counted one main-frame document response/commit and one
+loader both before and after refresh; performance time origin stayed unchanged.
+There were zero page errors and strict transport completed.
+
+The overall trial remains **failed** on native closure. All 1,699 driver and SDK
+queries and acquisitions balanced, with 37 cache operations and zero unknown
+work, but the native proof returned incomplete after 10,018 milliseconds. Every
+finite and prefetch wire group was already empty before context close. The old
+proof did not expose server balance or the drained result, so the remaining
+cause is not inferred or waived. Additive server/drain diagnostics and a rebuilt
+artifact are required before this observation becomes final acceptance.
