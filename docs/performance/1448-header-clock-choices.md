@@ -68,6 +68,36 @@ transport and browser-timezone/event-offset capture were not rewritten. Existing
 frozen/offline/position/break tests run with this change. No new date/time business
 calculation or historical write path was introduced.
 
+## Captured account and organization
+
+The vehicle status, vehicle choices and assigned-project hooks send the account
+and organization captured in their query keys. Each public reader compares that
+expectation with fresh server admission before loading protected work or choices.
+If another tab switches the shared session while this tab still displays the old
+organization, the delayed read fails locally instead of caching the new
+organization's data under the old key. The expectation never selects a tenant or
+grants access. The assigned-project action uses the existing canonical
+getAuthContext admission, including approved membership, employee eligibility and
+MFA/SSO checks; its project, task and booked-hours queries are unchanged.
+
+Existing argument-less action callers retain fresh current-scope reads. A supplied
+incomplete or mismatched expectation is rejected. Current operational reads remain
+eager and optional choices keep their intent-driven timing and local retry.
+
+The review regression uses real QueryClient/hooks and the actual public action
+exports, with admission held while a separate simulated tab changes the server
+session. It covers same-user organization changes, account changes within the same
+organization, both changes, valid reads in either organization, signed-out and
+revoked admission, malformed expectations and argument-less compatibility. The
+race was red before the public checks and green afterward, with no protected read
+or cached response on mismatch. Twelve new cases and 31 adjacent cases pass; all
+three normal TypeScript configurations pass. React Doctor reports no new issues
+across all six changed files with no skipped checks. Scoped Biome lint reports no
+errors and three existing non-null warnings in unrelated public-action paths;
+legacy whole-file formatting was not rewritten. Compiled runtime verification of
+this source change remains a parent gate; earlier build evidence keeps its
+recorded source version.
+
 ## Verification evidence
 
 - RED: the actual closed TimeClockPopover with real useTimeClock and QueryClient

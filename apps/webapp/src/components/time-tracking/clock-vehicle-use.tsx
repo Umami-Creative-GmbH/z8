@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useSession } from "@/lib/auth-client";
 import { queryKeys } from "@/lib/query/keys";
+import { CLOCK_READ_SCOPE_CHANGED } from "@/lib/time-tracking/clock-read-scope";
 import type { WorkVehicleUse } from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
 import { isWorkVehicleUseRefusalCode } from "@/lib/time-tracking/vehicle-use/work-vehicle-use-refusals";
 import { ClockChoiceReadError } from "./clock-choice-read-error";
@@ -63,7 +64,9 @@ function useClockVehicleContext(enabled: boolean, choicesEnabled: boolean) {
 	const operational = useQuery({
 		queryKey: operationalKey,
 		queryFn: async () => {
-			const result = await getClockVehicleUseStatus();
+			const { userId, organizationId } = scope;
+			if (!userId || !organizationId) throw new Error(CLOCK_READ_SCOPE_CHANGED);
+			const result = await getClockVehicleUseStatus({ userId, organizationId });
 			if (!result.success) throw new Error(result.error);
 			return result.data;
 		},
@@ -77,7 +80,12 @@ function useClockVehicleContext(enabled: boolean, choicesEnabled: boolean) {
 	const query = useQuery({
 		queryKey: choicesKey,
 		queryFn: async (): Promise<ClockVehicleUseContext> => {
-			const result = await getClockVehicleUseContext();
+			const { userId, organizationId } = scope;
+			if (!userId || !organizationId) throw new Error(CLOCK_READ_SCOPE_CHANGED);
+			const result = await getClockVehicleUseContext({
+				userId,
+				organizationId,
+			});
 			if (!result.success) throw new Error(result.error);
 			return result.data;
 		},

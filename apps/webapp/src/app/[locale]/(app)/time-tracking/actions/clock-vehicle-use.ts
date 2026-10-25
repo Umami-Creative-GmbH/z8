@@ -8,6 +8,11 @@ import { getAuthContext } from "@/lib/auth-helpers";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { describeAmendmentFailure } from "@/lib/time-tracking/amend-completed-work";
+import {
+	CLOCK_READ_SCOPE_CHANGED,
+	type ClockReadScope,
+	matchesClockReadScope,
+} from "@/lib/time-tracking/clock-read-scope";
 import { loadWorkVehicleUseFormContext } from "@/lib/time-tracking/vehicle-use/form-context";
 import { changeLiveWorkVehicleUse } from "@/lib/time-tracking/vehicle-use/live-vehicle-use";
 import { resolveVehicleUseMode } from "@/lib/time-tracking/vehicle-use/resolver";
@@ -35,13 +40,20 @@ export type ClockVehicleUseContext = WorkVehicleUseFormContext & {
 };
 
 /** The signed-in employee's vehicle use for the clock, in their active organization. */
-export async function getClockVehicleUseContext(): Promise<
-	ServerActionResult<ClockVehicleUseContext>
-> {
+export async function getClockVehicleUseContext(
+	expectedScope?: ClockReadScope,
+): Promise<ServerActionResult<ClockVehicleUseContext>> {
 	const context = await getAuthContext();
 	if (!context) return { success: false, error: "Not authenticated" };
 	const currentEmployee = context.employee;
 	if (!currentEmployee) return { success: false, error: "Employee profile not found" };
+	if (
+		!matchesClockReadScope(expectedScope, {
+			userId: context.user.id,
+			organizationId: currentEmployee.organizationId,
+		})
+	)
+		return { success: false, error: CLOCK_READ_SCOPE_CHANGED };
 	try {
 		const { organizationId, id: employeeId } = currentEmployee;
 		const [period] = await db
@@ -78,13 +90,20 @@ export async function getClockVehicleUseContext(): Promise<
 }
 
 /** Operational mode and live attribution stay eager; no optional choices or reading history. */
-export async function getClockVehicleUseStatus(): Promise<
-	ServerActionResult<Pick<ClockVehicleUseContext, "mode" | "live">>
-> {
+export async function getClockVehicleUseStatus(
+	expectedScope?: ClockReadScope,
+): Promise<ServerActionResult<Pick<ClockVehicleUseContext, "mode" | "live">>> {
 	const context = await getAuthContext();
 	if (!context) return { success: false, error: "Not authenticated" };
 	const subject = context.employee;
 	if (!subject) return { success: false, error: "Employee profile not found" };
+	if (
+		!matchesClockReadScope(expectedScope, {
+			userId: context.user.id,
+			organizationId: subject.organizationId,
+		})
+	)
+		return { success: false, error: CLOCK_READ_SCOPE_CHANGED };
 	try {
 		const { organizationId, id: employeeId } = subject;
 		const [period] = await db
