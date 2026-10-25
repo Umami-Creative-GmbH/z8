@@ -39,12 +39,54 @@ export async function waitVisible(page, selector, timeout = 30000) {
 }
 
 export async function clickVisible(page, selector, timeout = 30000) {
-	await (
-		await waitVisible(page, selector, timeout)
-	)
-		.asLocator()
-		.setTimeout(timeout)
-		.click();
+	const deadline = performance.now() + timeout;
+	const unavailable = (error) =>
+		[
+			"Node is either not clickable or not an Element",
+			"Node is detached from document",
+		].includes(error?.message);
+	const receivesPointer = async (element) => {
+		const point = await element.clickablePoint();
+		return element.evaluate((node, { x, y }) => {
+			const hit = node.ownerDocument.elementFromPoint(x, y);
+			return hit === node || node.contains(hit);
+		}, point);
+	};
+	do {
+		for (const element of await page.$$(selector)) {
+			try {
+				if (
+					!(await element.isVisible()) ||
+					!(await element.evaluate(
+						(node) => !node.matches(":disabled,[aria-disabled='true']"),
+					))
+				)
+					continue;
+				if (!(await element.isIntersectingViewport({ threshold: 1 })))
+					await element.scrollIntoView();
+				if (!(await receivesPointer(element))) continue;
+				await element.hover();
+				if (!(await receivesPointer(element))) continue;
+			} catch (error) {
+				if (unavailable(error)) continue;
+				throw error;
+			}
+			const remaining = deadline - performance.now();
+			if (remaining <= 0) break;
+			// Once dispatched, a real click failure propagates; navigation is never retried.
+			await element.asLocator().setTimeout(remaining).click();
+			return;
+		}
+		if (performance.now() < deadline)
+			await new Promise((done) =>
+				setTimeout(done, Math.min(16, deadline - performance.now())),
+			);
+	} while (performance.now() < deadline);
+	const error = Error(
+		"Pointer-receiving fixture target did not become available.",
+	);
+	error.name = "TimeoutError";
+	throw error;
 }
 
 async function headerAction(page, action, timeout) {

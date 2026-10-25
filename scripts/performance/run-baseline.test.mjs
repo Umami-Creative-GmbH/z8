@@ -6,9 +6,223 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import { clickVisible } from "./journey-steps.mjs";
+import { nextStreamCompletionPatch } from "./next-stream-completion-patch.mjs";
 import { primaryProtocolIdentity } from "./protocol-fingerprints.mjs";
 import { measure } from "./run-baseline.mjs";
-import { nextStreamCompletionPatch } from "./next-stream-completion-patch.mjs";
+
+test("trusted click scrolls an offscreen target before testing the actual pointer", async () => {
+	const calls = [];
+	let scrolled = false;
+	const element = {
+		isVisible: async () => true,
+		isIntersectingViewport: async () => scrolled,
+		scrollIntoView: async () => {
+			scrolled = true;
+			calls.push("scroll");
+		},
+		evaluate: async (_fn, point) => (point ? scrolled : true),
+		clickablePoint: async () => ({ x: 1, y: 2 }),
+		hover: async () => calls.push("hover"),
+		asLocator: () => ({
+			setTimeout() {
+				return this;
+			},
+			async click() {
+				calls.push("click");
+			},
+		}),
+	};
+	await clickVisible({ $$: async () => [element] }, "a", 40);
+	assert.deepEqual(calls, ["scroll", "hover", "click"]);
+});
+
+test("trusted click selects a pointer-receiving duplicate and revalidates after hover", async () => {
+	const calls = [];
+	const element = (name, hit) => ({
+		isVisible: async () => true,
+		isIntersectingViewport: async () => true,
+		evaluate: async (_fn, point) => (point ? hit() : true),
+		clickablePoint: async () => ({ x: 1, y: 2 }),
+		hover: async () => calls.push(`${name}-hover`),
+		asLocator: () => ({
+			setTimeout(ms) {
+				assert.ok(ms > 0 && ms <= 1000);
+				return this;
+			},
+			async click() {
+				calls.push(`${name}-click`);
+			},
+		}),
+	});
+	await clickVisible(
+		{
+			$$: async () => [
+				element("clipped", () => false),
+				element("intended", () => true),
+			],
+		},
+		"a",
+		1000,
+	);
+	assert.deepEqual(calls, ["intended-hover", "intended-click"]);
+});
+test("hover occlusion cannot cause a wrong click or renew the original deadline", async () => {
+	let hovered = false,
+		clicks = 0;
+	const element = {
+		isVisible: async () => true,
+		isIntersectingViewport: async () => true,
+		evaluate: async (_fn, point) => (point ? !hovered : true),
+		clickablePoint: async () => ({ x: 1, y: 2 }),
+		hover: async () => {
+			hovered = true;
+		},
+		asLocator: () => ({
+			setTimeout() {
+				return this;
+			},
+			async click() {
+				clicks++;
+			},
+		}),
+	};
+	await assert.rejects(clickVisible({ $$: async () => [element] }, "a", 40), {
+		name: "TimeoutError",
+	});
+	assert.equal(clicks, 0);
+});
+test("arbitrary pointer protocol failures and the first actual click failure propagate without another click", async () => {
+	for (const at of ["point", "click"]) {
+		const error = Error("protocol failure"),
+			calls = [];
+		const element = {
+			isVisible: async () => true,
+			isIntersectingViewport: async () => true,
+			evaluate: async () => true,
+			clickablePoint: async () => {
+				if (at === "point") throw error;
+				return { x: 1, y: 2 };
+			},
+			hover: async () => {},
+			asLocator: () => ({
+				setTimeout() {
+					return this;
+				},
+				async click() {
+					calls.push("click");
+					throw error;
+				},
+			}),
+		};
+		await assert.rejects(
+			clickVisible({ $$: async () => [element] }, "a", 1000),
+			(value) => value === error,
+		);
+		assert.equal(calls.length, at === "click" ? 1 : 0);
+	}
+});
+test("recognized detachment is retried only before the first actual click", async () => {
+	const calls = [],
+		error = Error("Node is detached from document");
+	const element = () => ({
+		isVisible: async () => true,
+		isIntersectingViewport: async () => true,
+		evaluate: async () => true,
+		clickablePoint: async () => ({ x: 1, y: 2 }),
+		hover: async () => {},
+		asLocator: () => ({
+			setTimeout() {
+				return this;
+			},
+			async click() {
+				calls.push("click");
+			},
+		}),
+	});
+	const stale = element();
+	stale.hover = async () => {
+		throw error;
+	};
+	await clickVisible({ $$: async () => [stale, element()] }, "a", 1000);
+	assert.deepEqual(calls, ["click"]);
+	const target = element();
+	target.asLocator = () => ({
+		setTimeout() {
+			return this;
+		},
+		async click() {
+			calls.push("failed-click");
+			throw error;
+		},
+	});
+	await assert.rejects(
+		clickVisible({ $$: async () => [target, element()] }, "a", 1000),
+		(value) => value === error,
+	);
+	assert.deepEqual(calls, ["click", "failed-click"]);
+});
+test("only directory's generated prerequisite waits instead of opening the unrelated global drawer", () => {
+	const folder = mkdtempSync(join(tmpdir(), "z8-directory-recipe-")),
+		out = join(folder, "draft.json");
+	try {
+		writeFileSync(
+			join(folder, "runtime-private.json"),
+			JSON.stringify({
+				origin: "http://localhost:34123",
+				env: { POSTGRES_POOL_MAX: 10 },
+				images: [],
+			}),
+		);
+		writeFileSync(
+			join(folder, "fixture-private.json"),
+			JSON.stringify({
+				kind: "disposable",
+				actors: { "small-admin": {} },
+				organizations: [{ label: "small", employees: 8 }],
+				ranges: [],
+			}),
+		);
+		const result = spawnSync(
+			process.execPath,
+			[
+				fileURLToPath(new URL("./fixture.mjs", import.meta.url)),
+				"plan",
+				folder,
+				out,
+			],
+			{ encoding: "utf8" },
+		);
+		assert.equal(result.status, 0);
+		const plan = JSON.parse(readFileSync(out));
+		const directory = plan.routes.find((r) => r.name === "employee-directory"),
+			detail = plan.routes.find((r) => r.name === "employee-detail");
+		assert.deepEqual(directory.navigationSteps, [{ wait: directory.link }]);
+		assert.deepEqual(detail.navigationSteps, [
+			{
+				fill: 'input[aria-label="Search employees"]',
+				value: "{employeeSearch}",
+			},
+			{ wait: detail.link },
+		]);
+		for (const route of plan.routes.filter(
+			(r) => !r.name.startsWith("employee-"),
+		))
+			assert.deepEqual(route.navigationSteps, [
+				{
+					reveal: {
+						target: route.link,
+						trigger: 'button[data-sidebar="trigger"]',
+					},
+				},
+			]);
+		assert.equal(plan.timeoutMs, 30000);
+		assert.equal(plan.samples, 20);
+		assert.equal(plan.routes.length, 6);
+	} finally {
+		rmSync(folder, { recursive: true, force: true });
+	}
+});
 const primaryProtocol = await primaryProtocolIdentity();
 
 const runner = fileURLToPath(new URL("./run-baseline.mjs", import.meta.url));

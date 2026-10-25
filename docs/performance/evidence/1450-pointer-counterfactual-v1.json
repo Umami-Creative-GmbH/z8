@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "kind": "synthetic-trusted-pointer-counterfactual",
+  "diagnosticOnly": true,
+  "actualC6CauseProved": false,
+  "privateResultSha256": "b95dbfa3273c9131b6e4d5e2025365492ef31bb3438daedafc00bf71ac6816b5",
+  "oldHelperSha256": "4444c71033b8f61c3e982a72bbe658689ce2fe79f6d0eee02cffa15725e92fae",
+  "privateCandidateSha256": "0684a1c113a876fb7ef7d6380c57d4261594ed033285efb70a0351833feeb22b",
+  "actualJourneys": 7,
+  "propertiesEstablished": 7,
+  "oldControlIntendedTrustedClicks": 1,
+  "oldClippedTimeoutsWithoutTargetRequest": 1,
+  "oldHoverWrongTrustedClicksAndServerRequests": 1,
+  "oldDelayedDrawerWrongTrustedClicksAndServerRequests": 1,
+  "candidateIntendedTrustedClicksAndServerRequests": 3,
+  "domClicks": 0,
+  "navigationRetries": 0,
+  "normalTimeoutMs": 30000,
+  "shippedHelperBrowserValidation": "pending",
+  "shippedOffscreenControl": "pending",
+  "targetedApplicationReplay": "pending",
+  "fullCaptureAcceptance": "unfulfilled"
+}
