@@ -1,8 +1,159 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
+import { createServer, IncomingMessage, request } from "node:http";
 import { createRequire } from "node:module";
+import { Socket } from "node:net";
 import test from "node:test";
 import { FixtureNativeCoverage } from "../../apps/webapp/src/lib/performance-fixture-native-coverage.ts";
+
+test("HTTP mapping bridges an actual SDK Next parent through a real IncomingMessage to the forward parent", async () => {
+	const require = createRequire(
+		new URL("../../apps/webapp/package.json", import.meta.url),
+	);
+	const { BasicTracerProvider } = require("@opentelemetry/sdk-trace-base"),
+		{
+			trace,
+			ROOT_CONTEXT,
+			SpanKind,
+			TraceFlags,
+		} = require("@opentelemetry/api");
+	const coverage = new FixtureNativeCoverage(),
+		traceId = "7".repeat(32),
+		remoteParent = "8".repeat(16);
+	coverage.register([traceId]);
+	const provider = new BasicTracerProvider({
+		spanProcessors: [
+			{
+				onStart: (span) => coverage.onStart(span),
+				onEnd: (span) => coverage.onEnd(span),
+				forceFlush: async () => {},
+				shutdown: async () => {},
+			},
+		],
+	});
+	let next, httpSpanId;
+	const server = createServer((incoming, response) => {
+		const parent = trace.setSpanContext(ROOT_CONTEXT, {
+			traceId,
+			spanId: remoteParent,
+			traceFlags: TraceFlags.SAMPLED,
+			isRemote: true,
+		});
+		const http = provider
+			.getTracer("@opentelemetry/instrumentation-http")
+			.startSpan("GET", { kind: SpanKind.SERVER }, parent);
+		httpSpanId = http.spanContext().spanId;
+		coverage.observeIncoming(http, incoming);
+		next = provider
+			.getTracer("next.js")
+			.startSpan(
+				"GET",
+				{
+					kind: SpanKind.SERVER,
+					attributes: { "next.span_type": "BaseServer.handleRequest" },
+				},
+				trace.setSpan(ROOT_CONTEXT, http),
+			);
+		http.end();
+		response.end("unchanged");
+	});
+	await new Promise((done) => server.listen(0, "127.0.0.1", done));
+	try {
+		await new Promise((done, reject) => {
+			const call = request(
+				`http://127.0.0.1:${server.address().port}/en/settings/employees/private-person?token=private-secret`,
+				{
+					headers: {
+						traceparent: `00-${traceId}-${remoteParent}-01`,
+						purpose: "prefetch",
+					},
+				},
+				(response) => {
+					response.resume();
+					response.once("end", done);
+				},
+			);
+			call.once("error", reject);
+			call.end();
+		});
+		const proof = coverage.close([traceId])[0],
+			mapping = proof.incomingHttp.records[0],
+			orphan = proof.serverWitnesses.open[0];
+		assert.equal(proof.complete, false);
+		assert.equal(proof.serverBalance, 1);
+		assert.equal(mapping.httpSpanId, httpSpanId);
+		assert.equal(orphan.parentSpanId, mapping.httpSpanId);
+		assert.equal(mapping.remoteParentSpanId, remoteParent);
+		assert.equal(mapping.method, "GET");
+		assert.equal(mapping.explicitPrefetch, true);
+		assert.equal(
+			mapping.pathSha256,
+			createHash("sha256")
+				.update("/en/settings/employees/private-person")
+				.digest("hex"),
+		);
+		assert.equal(proof.incomingHttp.overflow, 0);
+		assert.equal(proof.incomingHttp.missingSpanIds, 0);
+		for (const value of [
+			"private-person",
+			"private-secret",
+			"traceparent",
+			"purpose",
+			"unchanged",
+		])
+			assert.equal(JSON.stringify(proof).includes(value), false);
+	} finally {
+		next?.end();
+		server.closeAllConnections();
+		await new Promise((done) => server.close(done));
+		await provider.shutdown();
+	}
+});
+
+test("HTTP mapping is bounded and rejects missing, unknown or mismatching parents without inventing links", () => {
+	const coverage = new FixtureNativeCoverage(),
+		first = "9".repeat(32),
+		second = "a".repeat(32),
+		remote = "b".repeat(16);
+	coverage.register([first, second]);
+	const incoming = (header) => {
+		const message = new IncomingMessage(new Socket());
+		message.method = "GET";
+		message.url = "/en/settings/employees?token=private-secret";
+		message.headers = header ? { traceparent: header } : {};
+		return message;
+	};
+	const span = (id, traceId = first) => ({
+		spanContext: () => ({
+			traceId,
+			spanId: id?.toString(16).padStart(16, "0"),
+		}),
+	});
+	for (let id = 1; id <= 129; id++)
+		coverage.observeIncoming(span(id), incoming(`00-${first}-${remote}-01`));
+	coverage.observeIncoming(span(1), incoming(`00-${first}-${remote}-01`));
+	coverage.observeIncoming(span(), incoming(`00-${first}-${remote}-01`));
+	coverage.observeIncoming(span(130), incoming());
+	coverage.observeIncoming(
+		span(131),
+		incoming(`00-${"c".repeat(32)}-${remote}-01`),
+	);
+	coverage.observeIncoming(span(132), incoming(`00-${second}-${remote}-01`));
+	const proof = coverage.close([first])[0],
+		mapping = proof.incomingHttp;
+	assert.equal(mapping.limit, 128);
+	assert.equal(mapping.records.length, 128);
+	assert.equal(mapping.overflow, 1);
+	assert.equal(mapping.duplicateSpanIds, 1);
+	assert.equal(mapping.missingSpanIds, 1);
+	assert.deepEqual(mapping.rejected, {
+		missingOrMalformedParent: 1,
+		unknownHeaderTrace: 1,
+		traceMismatch: 1,
+	});
+	assert.equal(JSON.stringify(proof).includes("private-secret"), false);
+	assert.equal(coverage.snapshot().incoming.mismatchingParent, 2);
+});
 
 test("SERVER witnesses identify an actual SDK-created open Next span without changing completion", async () => {
 	const require = createRequire(
