@@ -5,6 +5,7 @@ import { Pool } from "pg";
 import { env } from "@/env";
 import { createLogger } from "@/lib/logger";
 import * as authSchema from "./auth-schema";
+import { getPostgresPoolAcquisitionTimeout } from "./postgres-pool-config";
 import { getPostgresSslConfig } from "./postgres-ssl";
 import { configurePostgresUtcTypes, withUtcPostgresSession } from "./postgres-utc";
 import * as schema from "./schema";
@@ -42,7 +43,7 @@ function createPool(): Pool {
 				max: parseInt(env.POSTGRES_POOL_MAX || "10", 10),
 				min: parseInt(env.POSTGRES_POOL_MIN || "2", 10),
 				idleTimeoutMillis: 30000, // 30 seconds - connections return to pool faster
-				connectionTimeoutMillis: 10000, // 10 seconds - more generous timeout for high load
+				connectionTimeoutMillis: getPostgresPoolAcquisitionTimeout(env),
 			}),
 		),
 	);
