@@ -3,6 +3,10 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import {
+  prerequisiteQuiescencePolicy,
+  prerequisiteQuiescenceComplete,
+} from "./prerequisite-quiescence.mjs";
+import {
   nativeCleanupPolicy,
   primaryCleanupComplete,
 } from "./primary-context-cleanup.mjs";
@@ -55,7 +59,16 @@ const backendMetrics = [
   "eventLoopDelayMs",
 ];
 const policy = {
-  version: 4,
+  version: 5,
+  prerequisitePreparation: {
+    amendedAt: "2026-10-25T01:24:42Z",
+    condition: prerequisiteQuiescencePolicy,
+    quietMs: 1000,
+    technicalCap:
+      "existing plan.timeoutMs; setup-only, not a measured latency budget",
+    scope:
+      "warm target and away navigation transfers settle before leaving preparation; old C1/C2/C3 allowed inflight preparation",
+  },
   beforeResourceFailure: beforeFailurePolicy,
   observedNativePaint: {
     amendedAt: "2026-10-24T22:51:03Z",
@@ -554,6 +567,8 @@ function requireEvidence(plan, artifact, native, planHash, phase) {
     plan.runtime?.traceTransport !== "context-loopback-proxy-v1" ||
     plan.runtime?.browserPolicy !== fixtureBrowserPolicy ||
     plan.runtime?.nativeCleanupPolicy !== nativeCleanupPolicy ||
+    plan.runtime?.prerequisiteQuiescencePolicy !==
+      prerequisiteQuiescencePolicy ||
     !Number.isFinite(plan.timeoutMs) ||
     plan.timeoutMs <= 0
   )
@@ -577,6 +592,8 @@ function requireEvidence(plan, artifact, native, planHash, phase) {
     artifact.runtime.traceTransport !== plan.runtime.traceTransport ||
     artifact.runtime.browserPolicy !== plan.runtime.browserPolicy ||
     artifact.runtime.nativeCleanupPolicy !== plan.runtime.nativeCleanupPolicy ||
+    artifact.runtime.prerequisiteQuiescencePolicy !==
+      plan.runtime.prerequisiteQuiescencePolicy ||
     artifact.runtime.build !== plan.runtime.build ||
     artifact.runtime.sourceBuild !== plan.runtime.sourceBuild ||
     artifact.runtime.toolingBuild !== plan.runtime.toolingBuild
@@ -613,6 +630,10 @@ function requireEvidence(plan, artifact, native, planHash, phase) {
     seen.add(key(c));
   }
   for (const s of artifact.samples) {
+    if (!prerequisiteQuiescenceComplete(s, plan.timeoutMs))
+      throw Error(
+        "Complete unmeasured prerequisite transfer proof is required.",
+      );
     if (!primaryCleanupComplete(s.nativeCleanup))
       throw Error(
         "Complete post-snapshot finite HTTP cleanup proof is required.",
