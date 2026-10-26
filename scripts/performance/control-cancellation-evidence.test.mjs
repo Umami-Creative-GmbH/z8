@@ -449,6 +449,22 @@ test("outlined paths anchor only same-model materialized containers and retain e
 	])assert.equal(inspectRequiredFlightBody(body(reference,rows),{cachedNavigations:true}).complete,false);
 });
 
+test("outlined limits identify the existing depth or shared-work guard without retaining data", () => {
+	const encode=eager=>Buffer.from('~0:{"q":"","i":false,"t":{"t":{"s":"en","d":{"r":"$1:leaf","p":true,"v":null}}}}\n1:'+JSON.stringify({leaf:"PRIVATE_VALUE",eager})+'\n');
+	const inspect=eager=>inspectRequiredFlightBody(encode(eager),{cachedNavigations:true});
+	let deep=null;for(let index=0;index<70;index++)deep={next:deep};
+	const depth=inspect(deep);
+	assert.equal(depth.complete,false);assert.equal(depth.pathLimitObservation.guard,"existing-recursion-depth");
+	assert.equal(depth.pathLimitObservation.observedDepth,65);assert.equal(depth.pathLimitObservation.depthCap,64);
+	assert.equal(depth.pathLimitObservation.phase,"eager-parent");assert.ok(depth.pathLimitObservation.jsonDepthInParent>50);
+	const inner=encode(deep),outer=Buffer.concat([Buffer.from('0:{"q":"","i":false,"t":{"t":{"s":"en","d":{"r":"KNOWN_MAIN","p":false,"v":null}}},"p":"$1"}\n1:R\n1:o'+inner.length.toString(16)+','),inner,Buffer.from('1:C\n')]);
+	assert.equal(inspectRequiredFlightBody(outer,{cachedNavigations:true}).embeddedPathLimitObservation.guard,"existing-recursion-depth");
+	const work=inspect(Array(100001).fill(null));
+	assert.equal(work.complete,false);assert.equal(work.pathLimitObservation.guard,"shared-model-work");
+	assert.equal(work.pathLimitObservation.sharedModelSteps,100001);assert.equal(work.pathLimitObservation.modelCap,100000);
+	assert.doesNotMatch(JSON.stringify([depth,work]),/PRIVATE_VALUE/);
+});
+
 test("supported hints and framed text never mistake text containing E for a Flight error", () => {
 	const bytes = Buffer.from(
 		'#:HL["/technical.css","style"]\n0:{"b":"b","t":{"t":{"s":"","d":{"r":["$1","$$literal","$undefined"]}}}}\n1:T6,2:E{}\n',

@@ -208,25 +208,38 @@ function inspectFlightBody(
 	)
 		return unknown("unsupported-root");
 	const plainPath = /^\$(0|[1-9a-f][a-f0-9]{0,12}):/;
-	let pathLimit = false, pathFailure = null;
+	let pathLimit = false, pathFailure = null, pathLimitObservation = null, eagerParentCalls = 0, outlinedCalls = 0, eagerUniqueObjects = 0, repeatedEagerObjects = 0;
+	const eagerObjectsObserved = new WeakSet();
 	const notePathFailure = reason => { pathFailure ??= reason; return false; };
 	const unknownPath = reason => { notePathFailure(reason); return {known:false}; };
-	const pathStep = depth => {
-		if (depth > 64 || ++budget.models > 100000) { pathLimit = true; return notePathFailure("depth-or-model-limit"); }
+	const pathStep = (depth, phase, context = {}) => {
+		const guard = depth > 64 ? "existing-recursion-depth" : ++budget.models > 100000 ? "shared-model-work" : null;
+		if (guard) {
+			pathLimit = true;
+			pathLimitObservation ??= {guard,phase,observedDepth:depth,depthCap:64,sharedModelSteps:budget.models,modelCap:100000,
+				localModelSteps:budget.models-modelBudgetAtStart,eagerParentCalls,outlinedCalls,eagerUniqueObjects,repeatedEagerObjects,
+				activeOutlinedPaths:activePaths.size,...context};
+			return notePathFailure("depth-or-model-limit");
+		}
 		return true;
 	};
 	const elementTuple = value => Array.isArray(value) && value[0] === "$";
 	// Materialized JSON parents must not be blocked by an eager sibling. Lazy/promise values
 	// remain wrappers here; following a path through one is a separate, stricter operation.
-	const eagerParent = (value, forceElement, seen = new Set(), depth = 0) => {
-		if (!pathStep(depth)) return false;
+	const eagerParent = (value, forceElement, seen = new Set(), depth = 0, referenceEdges = 0, jsonDepth = 0) => {
+		eagerParentCalls++;
+		if (value && typeof value === "object") {
+			if (eagerObjectsObserved.has(value)) repeatedEagerObjects++;
+			else { eagerObjectsObserved.add(value); eagerUniqueObjects++; }
+		}
+		if (!pathStep(depth,"eager-parent",{referenceEdgesInParent:referenceEdges,jsonDepthInParent:jsonDepth})) return false;
 		if (typeof value === "string") {
 			if (/^\$(?:L|@)[a-f0-9]+$/.test(value)) return canonicalFlightId(value.slice(2)) || notePathFailure("noncanonical-eager-reference");
 			if (/^\$[QWi][a-f0-9]+$/.test(value)) {
 				const id=value.slice(2),record=records.get(id);
 				if (!record || record.tag !== null || record.stream || !Array.isArray(record.value) || (value[1] === "Q" && !record.value.every(pair=>Array.isArray(pair)&&pair.length===2))) return notePathFailure("unsupported-eager-collection");
 				if (seen.has(id)) return true;
-				return eagerParent(record.value,false,new Set([...seen,id]),depth + 1);
+				return eagerParent(record.value,false,new Set([...seen,id]),depth + 1,referenceEdges + 1,0);
 			}
 			if (/^\$[a-f0-9]+$/.test(value)) {
 				const id = value.slice(1), record = records.get(id);
@@ -234,11 +247,11 @@ function inspectFlightBody(
 				if (record.tag === "I") return notePathFailure("eager-import-model");
 				if (record.tag === "T" || record.stream) return true;
 				if (seen.has(id)) return (record.value && typeof record.value === "object" && [...seen].filter(item=>typeof item === "string").length === 1) || notePathFailure("eager-cross-record-or-alias-cycle");
-				return eagerParent(record.value, forceElement, new Set([...seen,id]), depth + 1);
+				return eagerParent(record.value, forceElement, new Set([...seen,id]), depth + 1,referenceEdges + 1,0);
 			}
 			if (plainPath.test(value)) {
 				const selected = outlined(value, depth + 1, seen);
-				return selected.known && eagerParent(selected.value,forceElement,seen,depth + 1);
+				return selected.known && eagerParent(selected.value,forceElement,seen,depth + 1,referenceEdges + 1,0);
 			}
 			return !value.startsWith("$") || value.startsWith("$$") || ["$","$undefined","$NaN","$Infinity","$-Infinity","$-0"].includes(value) || /^\$[SD]/.test(value) || notePathFailure("unsupported-eager-reference");
 		}
@@ -250,13 +263,14 @@ function inspectFlightBody(
 		const containers = new Set([...seen,value]);
 		return Object.keys(value).filter(key=>key!=="__proto__").every(key=> {
 			const descriptor=Object.getOwnPropertyDescriptor(value,key);
-			return descriptor && Object.hasOwn(descriptor,"value") && eagerParent(descriptor.value,false,containers,depth + 1);
+			return descriptor && Object.hasOwn(descriptor,"value") && eagerParent(descriptor.value,false,containers,depth + 1,referenceEdges,jsonDepth + 1);
 		});
 	};
 	const activePaths = new Map();
 	const outlined = (reference, depth = 0, trail = new Set()) => {
+		outlinedCalls++;
 		if (depth === 0) pathFailure = null;
-		if (!pathStep(depth)) return {known:false};
+		if (!pathStep(depth,"outlined-entry")) return {known:false};
 		if (!plainPath.test(reference) || reference.length > 2048) return unknownPath("unsupported-reference-shape");
 		const active = activePaths.get(reference);
 		if (active) {
@@ -275,7 +289,7 @@ function inspectFlightBody(
 			for (const key of keys) {
 				const aliases = new Set();
 				while (typeof value === "string" && /^\$(?:L)?[a-f0-9]+$/.test(value)) {
-					if (!pathStep(depth + aliases.size)) return {known:false};
+					if (!pathStep(depth + aliases.size,"path-alias",{referenceEdgesInStep:aliases.size})) return {known:false};
 					if (aliases.has(value)) return unknownPath("path-alias-cycle");
 					aliases.add(value);
 					originId = value.replace(/^\$L?/,""); state.modelIds.add(originId);
@@ -448,6 +462,7 @@ function inspectFlightBody(
 			embeddedFallbackElementTypeKind: embeddedRuntimePrefetch.fallbackElementTypeKind ?? null,
 			embeddedFallbackPropsKind: embeddedRuntimePrefetch.fallbackPropsKind ?? null,
 			embeddedPathFailure: embeddedRuntimePrefetch.pathFailure ?? null,
+			embeddedPathLimitObservation: embeddedRuntimePrefetch.pathLimitObservation ?? null,
 		});
 	}
 	const shellScope = requestKind === "runtime-shell" || (requestKind === "embedded-runtime-prefetch" && isPartial);
@@ -538,6 +553,7 @@ function inspectFlightBody(
 			if (!selected.known) return unknown("unsupported-model-reference", {
 				modelReference:{prefix:"plain",length:value.length,form:"outlined-path",pathKeyKinds:value.slice(1).split(":").slice(1,33).map(key=>["props","children","fallback","type","key","ref"].includes(key)?key:key===""?"empty":/^(0|[1-9][0-9]*)$/.test(key)?"index":"other")},
 				semanticRole:role,pathFailure:pathFailure ?? (pathLimit?"depth-or-model-limit":"unavailable-own-data"),marker,isPartial,requestKind,
+				...(pathLimitObservation ? {pathLimitObservation} : {}),
 			});
 			queue.push({value:selected.value,role,fallbackReferences});
 		} else if (
