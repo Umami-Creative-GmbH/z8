@@ -123,6 +123,44 @@ function inspectFlightBody(
 	} = {}, budget, depth,
 ) {
 	const modelBudgetAtStart = budget.models;
+	// Observation only: retain fixed aggregates, never the RAM-only dependency keys.
+	const costPhases=Object.fromEntries(["eager-parent","outlined-entry","path-alias","completed-parent","segment-tree","route-tree","semantic-loop"].map(site=>[site,{site,work:0,depthWork:Array(65).fill(0),unknownDepthWork:0}]));
+	const candidateCosts=new Map(),costCandidates=[],dependencyObjects=new WeakMap(),dependencyOrdinals=new WeakMap(),dependencyOrigins=new Map();
+	const dependencyCosts={calls:0,first:0,repeatedSameContext:0,repeatedDifferentContext:0,unknownContext:0,contexts:0,identityOverflow:0,contextOverflow:0,
+		activeSameOwner:0,activeDifferentOwner:0,activeOwnerUnknown:0,parentCertificateUses:0,parentCertificateWithSeen:0,parentCertificateWithActive:0,parentCertificateWithoutSeenOrActive:0};
+	let dependencyOrdinalCount=0,chargedWork=0;
+	const reasonBits={seenId:1,seenContainer:2,activeAnchor:4,elementSkip:8,opaque:16,removedField:32,parentCertificate:64};
+	const chargeModel=(site,atDepth=null)=>{const result=++budget.models,row=costPhases[site];chargedWork++;row.work++;if(Number.isInteger(atDepth)&&atDepth>=0&&atDepth<=64)row.depthWork[atDepth]++;else row.unknownDepthWork++;return result;};
+	const dependencyOrdinal=value=>{
+		if(typeof value!=="string" && (!value || typeof value!=="object"))return null;
+		const table=typeof value==="string"?dependencyOrigins:dependencyOrdinals;
+		if(table.has(value))return table.get(value);
+		if(dependencyOrdinalCount>=4096){dependencyCosts.identityOverflow++;return null;}
+		const ordinal=++dependencyOrdinalCount;table.set(value,ordinal);return ordinal;
+	};
+	const noteDependencyContext=(value,originId,forceElement,seen,atDepth)=>{
+		dependencyCosts.calls++;
+		if(seen.size>64 || activePaths.size>64 || parentCheckDepths.length>64){dependencyCosts.unknownContext++;return;}
+		const origin=originId===null?0:dependencyOrdinal(originId),seenIds=[...seen].map(dependencyOrdinal),pathIds=[...activePaths.values()].map(dependencyOrdinal),scopeIds=parentCheckDepths.map(dependencyOrdinal);
+		if(origin===null || [...seenIds,...pathIds,...scopeIds].includes(null)){dependencyCosts.unknownContext++;return;}
+		const key=JSON.stringify([atDepth,seenIds.sort((a,b)=>a-b),pathIds,scopeIds]);
+		let origins=dependencyObjects.get(value),forces=origins?.get(origin),contexts=forces?.get(forceElement===true);
+		if(contexts?.has(key)){dependencyCosts.repeatedSameContext++;return;}
+		if(contexts?.size)dependencyCosts.repeatedDifferentContext++;
+		else dependencyCosts.first++;
+		if(dependencyCosts.contexts>=1024){dependencyCosts.contextOverflow++;dependencyCosts.unknownContext++;return;}
+		if(!origins)dependencyObjects.set(value,origins=new Map());if(!forces)origins.set(origin,forces=new Map());if(!contexts)forces.set(forceElement===true,contexts=new Set());
+		contexts.add(key);dependencyCosts.contexts++;
+	};
+	const recordCandidateCost=(candidate,ready,span)=>{
+		let row=candidateCosts.get(candidate.reasonMask);if(!row)candidateCosts.set(candidate.reasonMask,row={reasonMask:candidate.reasonMask,count:0,ready:0,work:0,maxWork:0,maxSpan:0});
+		const work=budget.models-candidate.start;row.count++;row.ready+=ready?1:0;row.work+=work;row.maxWork=Math.max(row.maxWork,work);row.maxSpan=Math.max(row.maxSpan,span);
+	};
+	const modelCostSnapshot=()=>({protocol:"bounded-model-cost-observation-v1",inspectionDepth:depth,chargedWork,sharedModelSteps:budget.models,localModelSteps:budget.models-modelBudgetAtStart,
+		embeddedWork:budget.models-modelBudgetAtStart-chargedWork,phases:structuredClone(Object.values(costPhases)),dependencies:{...dependencyCosts},
+		candidates:structuredClone([...candidateCosts.values()].sort((a,b)=>a.reasonMask-b.reasonMask)),
+		activeCandidates:costCandidates.map(candidate=>({reasonMask:candidate.reasonMask,work:budget.models-candidate.start,span:candidate.scope.maxDepth-candidate.depth})),
+		truncated:dependencyCosts.identityOverflow>0 || dependencyCosts.contextOverflow>0 || dependencyCosts.unknownContext>0});
 	const unknown = (reason, diagnostic = {}) => ({
 		complete: false,
 		reason,
@@ -304,19 +342,26 @@ function inspectFlightBody(
 		literalHits:0,literalHitsWithClosedCertificate:0,literalHitsWithUsableClosedCertificate:0,
 		publishedLiteralEligible:0,publishedNonLiteralEligible:0,publishedWithWrappers:0,nonLiteralHits:0,wrapperHits:0,
 		borrowReasons:{seenId:0,seenContainer:0,activeAnchor:0,elementSkip:0,opaque:0,removedField:0,parentCertificate:0}};
-	const borrowReadiness = reason => { borrowEpoch++; closedEagerMemo.borrowReasons[reason]++; };
+	const borrowReadiness = (reason,owner=null) => {
+		borrowEpoch++;closedEagerMemo.borrowReasons[reason]++;
+		for(const candidate of costCandidates)candidate.reasonMask|=reasonBits[reason];
+		if(reason==="seenContainer" || reason==="activeAnchor"){
+			const current=[...activePaths.values()].at(-1);
+			if(!owner || !current)dependencyCosts.activeOwnerUnknown++;else dependencyCosts[owner===current?"activeSameOwner":"activeDifferentOwner"]++;
+		}
+	};
 	const includeDepth = depth => { for (const scope of parentCheckDepths) scope.maxDepth=Math.max(scope.maxDepth,depth); };
 	let parentMemoChecks=0,parentMemoHits=0,parentMemoAbsent=0,parentMemoNonStandalone=0,parentMemoDepthExcluded=0,parentMemoKnownExcluded=0,parentMemoReady=0,parentMemoPublished=0;
 	const notePathFailure = reason => { pathFailure ??= reason; return false; };
 	const unknownPath = reason => { notePathFailure(reason); return {known:false}; };
 	const pathStep = (depth, phase, context = {}) => {
 		includeDepth(depth);
-		const guard = depth > 64 ? "existing-recursion-depth" : ++budget.models > 100000 ? "shared-model-work" : null;
+		const guard = depth > 64 ? "existing-recursion-depth" : chargeModel(phase,depth) > 100000 ? "shared-model-work" : null;
 		if (guard) {
 			pathLimit = true;
 			pathLimitObservation ??= {guard,phase,observedDepth:depth,depthCap:64,sharedModelSteps:budget.models,modelCap:100000,
 				localModelSteps:budget.models-modelBudgetAtStart,eagerParentCalls,outlinedCalls,eagerUniqueObjects,repeatedEagerObjects,
-				activeOutlinedPaths:activePaths.size,...context,parentMemoChecks,parentMemoHits,parentMemoAbsent,parentMemoNonStandalone,parentMemoDepthExcluded,parentMemoKnownExcluded,parentMemoReady,parentMemoPublished,closedEagerMemo:structuredClone(closedEagerMemo)};
+				activeOutlinedPaths:activePaths.size,...context,parentMemoChecks,parentMemoHits,parentMemoAbsent,parentMemoNonStandalone,parentMemoDepthExcluded,parentMemoKnownExcluded,parentMemoReady,parentMemoPublished,closedEagerMemo:structuredClone(closedEagerMemo),modelCostObservation:modelCostSnapshot()};
 			return notePathFailure("depth-or-model-limit");
 		}
 		return true;
@@ -327,6 +372,7 @@ function inspectFlightBody(
 	const eagerParent = (value, forceElement, seen = new Set(), depth = 0, referenceEdges = 0, jsonDepth = 0, originId = null) => {
 		eagerParentCalls++;
 		if (value && typeof value === "object") {
+			noteDependencyContext(value,originId,forceElement,seen,depth);
 			if (eagerObjectsObserved.has(value)) repeatedEagerObjects++;
 			else { eagerObjectsObserved.add(value); eagerUniqueObjects++; }
 		}
@@ -337,6 +383,7 @@ function inspectFlightBody(
 				if (!canonicalFlightId(value.slice(2))) return notePathFailure("noncanonical-eager-reference");
 				// This completes the old wrapper-shape predicate, not its target or role.
 				canonicalWrapperEpoch++; closedEagerMemo.canonicalWrapperChecks++;
+				for(const candidate of costCandidates)candidate.reasonMask|=128;
 				return true;
 			}
 			if (/^\$[QWi][a-f0-9]+$/.test(value)) {
@@ -364,7 +411,7 @@ function inspectFlightBody(
 		if (binaryValues.has(value) || opaqueText.has(value)) { referenceSensitiveEpoch++; borrowReadiness("opaque"); return notePathFailure("eager-binary-or-text-value"); }
 		if (elementTuple(value) && !forceElement) { referenceSensitiveEpoch++; borrowReadiness("elementSkip"); return true; }
 		if (elementTuple(value) && value.length !== 4) return notePathFailure("malformed-eager-element");
-		if (seen.has(value)) { referenceSensitiveEpoch++; borrowReadiness("seenContainer"); return true; }
+		if (seen.has(value)) { referenceSensitiveEpoch++; borrowReadiness("seenContainer",costCandidates.findLast(candidate=>candidate.value===value)?.owner); return true; }
 		const literal = literalParentChecks.get(value)?.get(forceElement===true);
 		if (literal && depth + literal.depthSpan <= 64) {
 			closedEagerMemo.literalHits++;
@@ -381,7 +428,7 @@ function inspectFlightBody(
 		if (certificate && depth + certificate.depthSpan <= 64) {
 			closedEagerMemo.hits++;
 			if(!certificate.literalEligible)closedEagerMemo.nonLiteralHits++;
-			if(certificate.containsCanonicalWrappers){canonicalWrapperEpoch++;closedEagerMemo.wrapperHits++;}
+			if(certificate.containsCanonicalWrappers){canonicalWrapperEpoch++;closedEagerMemo.wrapperHits++;for(const candidate of costCandidates)candidate.reasonMask|=128;}
 			// A reference-bearing closed hit must not become a reference-free literal proof.
 			referenceSensitiveEpoch++;
 			includeDepth(depth+certificate.depthSpan);
@@ -391,6 +438,7 @@ function inspectFlightBody(
 		const candidateEpoch = borrowEpoch, candidateWrapperEpoch = canonicalWrapperEpoch;
 		closedEagerMemo.candidates++;
 		const eligibility = referenceSensitiveEpoch, scope = {maxDepth:depth};
+		const costCandidate={value,owner:[...activePaths.values()].at(-1),reasonMask:0,start:budget.models,depth,scope};costCandidates.push(costCandidate);
 		if (Object.hasOwn(value,"__proto__")) { referenceSensitiveEpoch++; borrowReadiness("removedField"); }
 		const containers = new Set([...seen,value]);
 		parentCheckDepths.push(scope);
@@ -398,7 +446,7 @@ function inspectFlightBody(
 		try { ready = Object.keys(value).filter(key=>key!=="__proto__").every(key=> {
 			const descriptor=Object.getOwnPropertyDescriptor(value,key);
 			return descriptor && Object.hasOwn(descriptor,"value") && eagerParent(descriptor.value,false,containers,depth + 1,referenceEdges,jsonDepth + 1,originId);
-		}); } finally { parentCheckDepths.pop(); }
+		}); } finally { parentCheckDepths.pop();costCandidates.pop();recordCandidateCost(costCandidate,ready,scope.maxDepth-depth); }
 		if (ready) closedEagerMemo.closures++;
 		const containsCanonicalWrappers=canonicalWrapperEpoch!==candidateWrapperEpoch;
 		if(containsCanonicalWrappers){
@@ -439,7 +487,7 @@ function inspectFlightBody(
 		if (active) {
 			const ids = [...trail].filter(item=>typeof item === "string");
 			if (active.checking && active.anchorKnown && active.modelIds.size === 1 && ids.length > 0 && ids.every(id=>id===active.rootId)) {
-				borrowReadiness("activeAnchor");
+				borrowReadiness("activeAnchor",active);
 				return {known:true,value:active.target,originId:active.originId,modelIds:active.modelIds};
 			}
 			return unknownPath(active.checking && active.anchorKnown ? "unsupported-cross-record-cycle" : "outlined-reference-cycle");
@@ -501,6 +549,10 @@ function inspectFlightBody(
 				if (!standalone) { parentMemoNonStandalone++; if(available?.forceElement===true && entryDepth+available.depthSpan<=64)parentMemoKnownExcluded++; }
 				const completed = standalone && available;
 				if (completed?.forceElement === true && entryDepth + completed.depthSpan <= 64) {
+					dependencyCosts.parentCertificateUses++;
+					if(completed.observedDependencyMask&3)dependencyCosts.parentCertificateWithSeen++;
+					if(completed.observedDependencyMask&4)dependencyCosts.parentCertificateWithActive++;
+					if(!(completed.observedDependencyMask&7))dependencyCosts.parentCertificateWithoutSeenOrActive++;
 					parentMemoHits++;
 					if (!pathStep(entryDepth,"completed-parent")) return false;
 					includeDepth(entryDepth+completed.depthSpan);
@@ -513,16 +565,17 @@ function inspectFlightBody(
 				// Cross-model/alias contexts keep their independent validation and cycle guards.
 				const inherited = [...trail].every(item=>typeof item !== "string" || item === parent.originId) ? trail : [];
 				const scope = {maxDepth:entryDepth}; parentCheckDepths.push(scope);
+				const dependencyBefore={...closedEagerMemo.borrowReasons};
 				let ready;
 				try { ready = eagerParent(parent.value,true,new Set([...inherited,parent.originId]),entryDepth,0,0,parent.originId); }
 				finally { parentCheckDepths.pop(); }
-				if (ready && standalone) { parentMemoReady++; pendingParentChecks.push({parent,depthSpan:scope.maxDepth-entryDepth}); }
+				if (ready && standalone) { parentMemoReady++;const observedDependencyMask=Object.entries(reasonBits).reduce((mask,[reason,bit])=>mask|(closedEagerMemo.borrowReasons[reason]>dependencyBefore[reason]?bit:0),0);pendingParentChecks.push({parent,depthSpan:scope.maxDepth-entryDepth,observedDependencyMask}); }
 				return ready;
 			})) return {known:false};
-			for (const {parent,depthSpan} of pendingParentChecks) {
+			for (const {parent,depthSpan,observedDependencyMask} of pendingParentChecks) {
 				let byOrigin = completedParentChecks.get(parent.value);
 				if (!byOrigin) completedParentChecks.set(parent.value,byOrigin = new Map());
-				byOrigin.set(parent.originId,{forceElement:true,depthSpan});
+				byOrigin.set(parent.originId,{forceElement:true,depthSpan,observedDependencyMask});
 				parentMemoPublished++;
 			}
 			return {known:true,value,originId,modelIds:state.modelIds};
@@ -622,7 +675,7 @@ function inspectFlightBody(
 		let node = ordinary(transport.t), key = "";
 		const isHead = binding.requestKeySha256 === bodySha256(Buffer.from("/_head"));
 		try { while (true) {
-			if (++budget.models > 100000 || seen.size >= 4096 || !node || typeof node !== "object" || Array.isArray(node) || seen.has(node) ||
+			if (chargeModel("segment-tree") > 100000 || seen.size >= 4096 || !node || typeof node !== "object" || Array.isArray(node) || seen.has(node) ||
 				Object.keys(node).some(field=>!["s","h","c","d"].includes(field)) || part(node.s) === null ||
 				(Object.hasOwn(node,"h") && (!Number.isSafeInteger(node.h) || node.h < 0))) return unknown("unsupported-segment-spine");
 			if (seen.size === 0 && ordinary(node.s) !== "") return unknown("unanchored-segment-spine");
@@ -684,7 +737,7 @@ function inspectFlightBody(
 				nameKind:kind(object?ordinary(object.n):undefined),valueKind:kind(object?ordinary(object.k):undefined),siblingsKind:kind(object?ordinary(object.s):undefined),unknownFields:object?Object.keys(object).filter(key=>!["n","t","k","s"].includes(key)).length:0};
 		};
 		while (queue.length) {
-			if (++nodes > 4096 || ++budget.models > 100000) return unknown("tree-limit");
+			if (++nodes > 4096 || chargeModel("route-tree") > 100000) return unknown("tree-limit");
 			const entry=queue.pop(),node = ordinary(entry.raw);
 			if (
 				!node ||
@@ -781,7 +834,7 @@ function inspectFlightBody(
 			bodySha256: bodySha256(bytes),
 			serverErrors: 0,
 			explicitActionFailure: false,
-			protocolRows: recordCount, modelSteps: budget.models - modelBudgetAtStart, embeddedRuntimePrefetch: null,
+			protocolRows: recordCount, modelSteps: budget.models - modelBudgetAtStart, embeddedRuntimePrefetch: null,modelCostObservation:modelCostSnapshot(),
 		};
 	}
 	let embeddedRuntimePrefetch = null;
@@ -836,9 +889,9 @@ function inspectFlightBody(
 	const modelLimitObservation=(site,guard,objectKeyCount=null)=>({protocol:"bounded-model-limit-observation-v1",site,guard,modelCap:100000,depthCap:64,
 		sharedModelSteps:budget.models,localModelSteps:budget.models-modelBudgetAtStart,inspected,queueLength:queue.length,objectKeyCount,visitedStates:visited.size,recordCount,
 		recursionLevel:depth,embeddedModelSteps:embeddedRuntimePrefetch?.modelSteps ?? 0,eagerParentCalls,outlinedCalls,eagerUniqueObjects,repeatedEagerObjects,activeOutlinedPaths:activePaths.size,
-		parentMemoChecks,parentMemoHits,parentMemoAbsent,parentMemoNonStandalone,parentMemoDepthExcluded,parentMemoKnownExcluded,parentMemoReady,parentMemoPublished,closedEagerMemo:structuredClone(closedEagerMemo)});
+		parentMemoChecks,parentMemoHits,parentMemoAbsent,parentMemoNonStandalone,parentMemoDepthExcluded,parentMemoKnownExcluded,parentMemoReady,parentMemoPublished,closedEagerMemo:structuredClone(closedEagerMemo),modelCostObservation:modelCostSnapshot()});
 	while (queue.length) {
-		if (++inspected > 100000 || ++budget.models > 100000) return unknown("model-limit",{modelLimitObservation:modelLimitObservation("semantic-loop",inspected>100000?"local-inspected-work":"shared-model-work")});
+		if (++inspected > 100000 || chargeModel("semantic-loop") > 100000) return unknown("model-limit",{modelLimitObservation:modelLimitObservation("semantic-loop",inspected>100000?"local-inspected-work":"shared-model-work")});
 		const { value, role, fallbackReferences, directEmbeddedOutput, fromTypedOutput, outputArrival, outputParentArrival, rArrayOutput, insideRArray } = queue.pop();
 		if (value && typeof value === "object" && binaryValues.has(value)) return unknown("unsupported-binary-role");
 		if (shellScope && role === "fallback-output" && (
@@ -1028,7 +1081,7 @@ function inspectFlightBody(
 		requiredStage:"segment-prefetch-representation",...segmentClaims,
 		postponedCacheOutputs,postponedOutputReferences,knownSuspenseBoundaries,knownEmptyFallbacks,representedComponentFallbacks,
 		boundaryBytes:body.length,decodedBytes:bytes.length,bodySha256:bodySha256(bytes),serverErrors:0,explicitActionFailure:false,
-		protocolRows:recordCount,modelSteps:budget.models-modelBudgetAtStart,embeddedRuntimePrefetch:null,
+		protocolRows:recordCount,modelSteps:budget.models-modelBudgetAtStart,embeddedRuntimePrefetch:null,modelCostObservation:modelCostSnapshot(),
 	};
 	if (!action) {
 		const transport = resolve(root.t),
@@ -1266,7 +1319,7 @@ function inspectFlightBody(
 		bodySha256: bodySha256(bytes),
 		serverErrors: 0,
 		explicitActionFailure: false,
-		protocolRows: recordCount, modelSteps: budget.models - modelBudgetAtStart - (embeddedRuntimePrefetch?.modelSteps ?? 0), embeddedRuntimePrefetch,closedEagerMemo:structuredClone(closedEagerMemo),
+		protocolRows: recordCount, modelSteps: budget.models - modelBudgetAtStart - (embeddedRuntimePrefetch?.modelSteps ?? 0), embeddedRuntimePrefetch,closedEagerMemo:structuredClone(closedEagerMemo),modelCostObservation:modelCostSnapshot(),
 	};
 }
 
