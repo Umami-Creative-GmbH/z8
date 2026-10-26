@@ -324,6 +324,11 @@ function inspectFlightBody(
 			serverErrors: embeddedRuntimePrefetch.serverErrors ?? 0, explicitActionFailure: embeddedRuntimePrefetch.explicitActionFailure === true,
 			embeddedReason: embeddedRuntimePrefetch.reason, embeddedFramingStage: embeddedRuntimePrefetch.framingStage ?? null,
 			embeddedRecordOffset: embeddedRuntimePrefetch.recordOffset ?? null, embeddedTagByte: embeddedRuntimePrefetch.tagByte ?? null,
+			embeddedModelReference: embeddedRuntimePrefetch.modelReference ?? null,
+			embeddedSemanticRole: embeddedRuntimePrefetch.semanticRole ?? null,
+			embeddedMarker: embeddedRuntimePrefetch.marker ?? null, embeddedIsPartial: embeddedRuntimePrefetch.isPartial ?? null,
+			embeddedRequestKind: embeddedRuntimePrefetch.requestKind ?? null,
+			embeddedDecodedBytes: embeddedRuntimePrefetch.decodedBytes ?? null, embeddedBodySha256: embeddedRuntimePrefetch.bodySha256 ?? null,
 		});
 	}
 	const shellScope = requestKind === "runtime-shell" || (requestKind === "embedded-runtime-prefetch" && isPartial);
