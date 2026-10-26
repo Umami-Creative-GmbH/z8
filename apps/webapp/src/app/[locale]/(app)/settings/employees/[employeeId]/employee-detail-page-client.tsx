@@ -481,11 +481,13 @@ function EmployeeRecordSections({
 
 			{isOrgAdmin && <EmployeeAssignedLocationsCard employeeId={employeeId} />}
 
-			<EmployeeCustomRolesCard
-				employeeId={employeeId}
-				organizationId={employee.organizationId}
-				isAdmin={isOrgAdmin}
-			/>
+			{isOrgAdmin && (
+				<EmployeeCustomRolesCard
+					employeeId={employeeId}
+					organizationId={employee.organizationId}
+					isAdmin={isOrgAdmin}
+				/>
+			)}
 
 			<EmployeeSkillsCard
 				employeeId={employeeId}

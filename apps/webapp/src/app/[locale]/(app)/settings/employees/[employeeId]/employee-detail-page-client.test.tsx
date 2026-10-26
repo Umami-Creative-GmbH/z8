@@ -157,7 +157,19 @@ vi.mock("@/components/organization/employee-lifecycle-actions", () => ({
 vi.mock(
 	"@/components/settings/custom-roles/employee-custom-roles-card",
 	() => ({
-		EmployeeCustomRolesCard: () => null,
+		EmployeeCustomRolesCard: ({
+			employeeId,
+			organizationId,
+			isAdmin,
+		}: {
+			employeeId: string;
+			organizationId: string;
+			isAdmin: boolean;
+		}) => (
+			<section aria-label="Custom roles">
+				Custom roles for {employeeId} in {organizationId}: {isAdmin ? "admin" : "read-only"}
+			</section>
+		),
 	}),
 );
 const employmentHistoryCardProps = vi.hoisted(() => ({
@@ -340,6 +352,29 @@ function renderDetail({
 		),
 	};
 }
+
+describe("employee detail admin-only custom roles (#1475)", () => {
+	beforeEach(() => vi.clearAllMocks());
+
+	it.each(["manager", "member"] as const)(
+		"does not mount the custom roles card for a %s viewer",
+		async (accessTier) => {
+			renderDetail({ accessTier, currentMemberRole: "member" });
+			expect(await screen.findByText("Alex Morgan")).toBeTruthy();
+			expect(screen.queryByText(/Custom roles for/)).toBeNull();
+		},
+	);
+
+	it.each(["admin", "owner"])(
+		"mounts the custom roles card with the employee scope for an org %s",
+		async (currentMemberRole) => {
+			renderDetail({ accessTier: "orgAdmin", currentMemberRole });
+			expect(
+				(await screen.findByRole("region", { name: "Custom roles" })).textContent,
+			).toBe("Custom roles for employee-2 in org-1: admin");
+		},
+	);
+});
 
 describe("employee detail wage history merge note (#1176)", () => {
 	beforeEach(() => vi.clearAllMocks());
