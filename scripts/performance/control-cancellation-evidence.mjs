@@ -324,7 +324,13 @@ function inspectFlightBody(
 			// same-model target can anchor a self-cycle; a reference string is never an anchor.
 			state.checking = true; state.target = value; state.originId = originId;
 			state.anchorKnown = value !== undefined && (typeof value !== "string" || !value.startsWith("$") || value.startsWith("$$"));
-			if (!parents.every(parent=>eagerParent(parent.value,true,new Set([parent.originId]),depth + 1))) return {known:false};
+			if (!parents.every(parent=> {
+				// Reuse only a SAME-model materialized parent's active traversal. Its enclosing
+				// validation still has to finish every sibling before this result can escape.
+				// Cross-model/alias contexts keep their independent validation and cycle guards.
+				const inherited = [...trail].every(item=>typeof item !== "string" || item === parent.originId) ? trail : [];
+				return eagerParent(parent.value,true,new Set([...inherited,parent.originId]),depth + 1);
+			})) return {known:false};
 			return {known:true,value,originId,modelIds:state.modelIds};
 		} finally { activePaths.delete(reference); }
 	};

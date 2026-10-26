@@ -449,6 +449,22 @@ test("outlined paths anchor only same-model materialized containers and retain e
 	])assert.equal(inspectRequiredFlightBody(body(reference,rows),{cachedNavigations:true}).complete,false);
 });
 
+test("shallow same-model outlined parents discharge all eager siblings without recursively restarting them", () => {
+	const body = (paths, tailFirst, missing = false) => {
+		let tail = "KNOWN"; for (let index=0;index<8;index++) tail={child:tail};
+		const model={}; if(tailFirst)model.tail=tail;
+		for(let index=paths-1;index>=0;index--)model[`a${index}`]={leaf:"KNOWN",back:`$1:a${Math.max(0,index-1)}`};
+		if(!tailFirst)model.tail=tail;
+		if(missing)model.unfulfilled="$8";
+		return Buffer.from('~0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:{r:`$1:a${paths-1}:leaf`,p:true,v:null}}}})+'\n1:'+JSON.stringify(model)+'\n');
+	};
+	// The exact six row sets fulfill in the installed production decoder (source audit v3).
+	for(const tailFirst of [false,true])for(const paths of [8,9,10]){
+		assert.equal(inspectRequiredFlightBody(body(paths,tailFirst),{cachedNavigations:true}).complete,true);
+		assert.equal(inspectRequiredFlightBody(body(paths,tailFirst,true),{cachedNavigations:true}).complete,false,"An active ancestor is provisional until its final eager sibling succeeds.");
+	}
+});
+
 test("outlined limits identify the existing depth or shared-work guard without retaining data", () => {
 	const encode=eager=>Buffer.from('~0:{"q":"","i":false,"t":{"t":{"s":"en","d":{"r":"$1:leaf","p":true,"v":null}}}}\n1:'+JSON.stringify({leaf:"PRIVATE_VALUE",eager})+'\n');
 	const inspect=eager=>inspectRequiredFlightBody(encode(eager),{cachedNavigations:true});
