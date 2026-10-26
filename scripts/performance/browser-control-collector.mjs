@@ -9,6 +9,7 @@ import {
 	controlCancellationPolicy,
 	inspectRequiredFlightBody,
 	knownBrowserControlMetadata,
+	knownNativePublicSources,
 } from "./control-cancellation-evidence.mjs";
 import { createProxyHeaderCensus } from "./proxy-header-census.mjs";
 
@@ -199,8 +200,12 @@ export async function readBrowserControlBinding({ plan, manifestPath }) {
 		typeof manifest.config?.experimental?.cachedNavigations !== "boolean" ||
 		manifest.config.experimental.cachedNavigations !== metadata.compiledCachedNavigations)
 		throw Error("Compiled app manifest differs from the qualified browser control metadata.");
-	const binding = Object.freeze({ ...metadata, compiledBuild: plan.runtime.build, manifestVerified: true, browserVerified: false,
-		servingPublicSources: await readNativePublicSources(manifestPath) });
+	const servingPublicSources=await readNativePublicSources(manifestPath);
+	if (metadata.nativePublicSources && (!knownNativePublicSources(metadata.nativePublicSources,plan.runtime.build,metadata.compiledManifestSha256) ||
+		!servingPublicSources.servingRootKnown || !servingPublicSources.files.every((row,index)=>row.known === true &&
+			row.file === metadata.nativePublicSources.files[index].file && row.bytes === metadata.nativePublicSources.files[index].bytes && row.sha256 === metadata.nativePublicSources.files[index].sha256)))
+		throw Error("Serving public sources differ from the independently qualified compiled source.");
+	const binding = Object.freeze({ ...metadata, compiledBuild: plan.runtime.build, manifestVerified: true, browserVerified: false,servingPublicSources });
 	nativeManifestLocators.set(binding,manifestPath);
 	return binding;
 }

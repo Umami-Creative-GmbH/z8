@@ -8,7 +8,17 @@ import {
 	classifyControlCancellations,
 	chromiumSWRRevision,
 	cleanBrowserFailureEvidence,
+	knownNativePublicSources,
 } from "./control-cancellation-evidence.mjs";
+
+test("Native public-source authority binds exact reviewed paths, compiled source and manifest without an eligibility flag",()=>{
+	const source={protocol:"qualified-serving-worker-sources-v1",compiledBuild:"b".repeat(40),compiledManifestSha256:"c".repeat(64),
+		files:["sw.js","lib/offline-queue-db.js","lib/sync-service.js","lib/clock-command-dispatch.js"].map(file=>({file,bytes:12,sha256:"d".repeat(64),gitBlob:"e".repeat(40)}))};
+	assert.equal(knownNativePublicSources(source,"b".repeat(40),"c".repeat(64)),true);
+	for(const mutate of [s=>s.compiledBuild="a".repeat(40),s=>s.compiledManifestSha256="a".repeat(64),s=>s.files.pop(),s=>s.files[0].file="unreviewed.js",s=>delete s.files[0].gitBlob,s=>s.files[0].bytes=4*1024*1024+1,s=>s.eligible=true]){
+		const invalid=structuredClone(source);mutate(invalid);assert.equal(knownNativePublicSources(invalid,"b".repeat(40),"c".repeat(64)),false);
+	}
+});
 
 const segmentDigest = value => createHash("sha256").update(value).digest("hex");
 const segmentBinding = key => ({method:"GET",status:200,flight:true,rsc:true,prefetch:true,postponed:true,

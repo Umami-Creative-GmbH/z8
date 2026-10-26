@@ -14,16 +14,39 @@ export const bodySha256 = (bytes) =>
 const binaryByteWidths = Object.freeze({ A: 1, O: 1, o: 1, b: 1, U: 1, S: 2, s: 2, L: 4, l: 4, G: 4, g: 8, M: 8, m: 8, V: 1 });
 const canonicalFlightId = id => /^(0|[1-9a-f][a-f0-9]{0,12})$/.test(id) && Number.isSafeInteger(Number.parseInt(id,16));
 
+export const nativePublicPaths = Object.freeze(["sw.js","lib/offline-queue-db.js","lib/sync-service.js","lib/clock-command-dispatch.js"]);
+const exactDataKeys = (value, keys) => value && [Object.prototype,null].includes(Object.getPrototypeOf(value)) &&
+	Reflect.ownKeys(value).length === keys.length && keys.every(key=>Object.hasOwn(Object.getOwnPropertyDescriptor(value,key) ?? {},"value"));
+/** Reviewed expected source inputs, never inferred from whichever files happen to be served. */
+export function knownNativePublicSources(source, compiledBuild, compiledManifestSha256) {
+	try {
+		if (!exactDataKeys(source,["protocol","compiledBuild","compiledManifestSha256","files"]) || source.protocol !== "qualified-serving-worker-sources-v1" ||
+			!/^[a-f0-9]{40}$/.test(compiledBuild ?? "") || !/^[a-f0-9]{64}$/.test(compiledManifestSha256 ?? "") ||
+			source.compiledBuild !== compiledBuild || source.compiledManifestSha256 !== compiledManifestSha256 || !Array.isArray(source.files) || source.files.length !== 4) return false;
+		for(let index=0;index<4;index++) {
+			const descriptor=Object.getOwnPropertyDescriptor(source.files,String(index));
+			if (!descriptor || !Object.hasOwn(descriptor,"value")) return false;
+			const row=descriptor.value;
+			if (!exactDataKeys(row,["file","bytes","sha256","gitBlob"]) || row.file !== nativePublicPaths[index] ||
+				!Number.isSafeInteger(row.bytes) || row.bytes <= 0 || row.bytes > controlCancellationPolicy.encodedLimit ||
+				!/^[a-f0-9]{64}$/.test(row.sha256 ?? "") || !/^[a-f0-9]{40}$/.test(row.gitBlob ?? "")) return false;
+		}
+		return true;
+	} catch {return false;}
+}
+
 export function knownBrowserControlMetadata(metadata) {
 	return Boolean(metadata && JSON.stringify(metadata.policy) === JSON.stringify(controlCancellationPolicy) &&
 		metadata.browserRevision === chromiumSWRRevision && typeof metadata.compiledCachedNavigations === "boolean" &&
-		typeof metadata.compiledManifestSha256 === "string" && /^[a-f0-9]{64}$/.test(metadata.compiledManifestSha256));
+		typeof metadata.compiledManifestSha256 === "string" && /^[a-f0-9]{64}$/.test(metadata.compiledManifestSha256) &&
+		(!Object.hasOwn(metadata,"nativePublicSources") || knownNativePublicSources(metadata.nativePublicSources,metadata.nativePublicSources?.compiledBuild,metadata.compiledManifestSha256)));
 }
 
 export function matchingBrowserControlBinding(runtime, binding) {
 	const expected = runtime?.browserControl;
 	return knownBrowserControlMetadata(expected) && knownBrowserControlMetadata(binding) &&
 		["browserRevision", "compiledCachedNavigations", "compiledManifestSha256"].every((key) => binding[key] === expected[key]) &&
+		JSON.stringify(binding.nativePublicSources) === JSON.stringify(expected.nativePublicSources) &&
 		binding.compiledBuild === runtime.build && binding.manifestVerified === true && binding.browserVerified === true;
 }
 

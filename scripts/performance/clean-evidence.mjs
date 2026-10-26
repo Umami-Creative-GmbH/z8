@@ -184,6 +184,8 @@ export function cleanEvidenceGates(
 		return ["Clean evidence requires browser samples."];
 	if (plan.runtime?.traceTransport === "context-loopback-proxy-v1" && !matchingBrowserControlBinding(plan.runtime, artifact.runtime?.browserControl))
 		gates.push("Clean evidence requires the actual matching compiled manifest and browser revision admission.");
+	if (plan.runtime?.browserControlMetadataFileSha256 !== undefined && artifact.runtime?.browserControlMetadataFileSha256 !== plan.runtime.browserControlMetadataFileSha256)
+		gates.push("Clean evidence requires the independently supplied release browser-control metadata identity.");
 	if (
 		!cleanObservationMatches(plan) ||
 		(plan.runtime?.traceTransport === "context-loopback-proxy-v1" &&

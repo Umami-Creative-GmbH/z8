@@ -171,6 +171,8 @@ function derive(plan, before, releaseRuntime, native) {
   const clean = cleanEvidenceGates(plan, before, native);
   if (clean.length) throw Error(clean.join(" "));
   if (!knownBrowserControlMetadata(releaseRuntime.browserControl) ||
+    !/^[a-f0-9]{64}$/.test(releaseRuntime.browserControlMetadataFileSha256 ?? "") ||
+    Object.hasOwn(releaseRuntime.browserControl,"nativePublicSources") !== Object.hasOwn(plan.runtime.browserControl ?? {},"nativePublicSources") ||
     ["browserRevision", "compiledCachedNavigations"].some((key) => releaseRuntime.browserControl[key] !== plan.runtime.browserControl?.[key]))
     throw Error("Release browser control method differs from the clean original.");
   const releasePlan = structuredClone(plan);
@@ -325,6 +327,7 @@ async function main() {
           "--release-source",
           "--release-tooling",
           "--release-app-manifest",
+          "--release-browser-control",
           "--out",
         ]
       : [
@@ -412,6 +415,7 @@ async function main() {
         sourceBuild: rp.value.runtime.sourceBuild,
         toolingBuild: rp.value.runtime.toolingBuild,
         browserControl: rp.value.runtime.browserControl,
+        browserControlMetadataFileSha256: rp.value.runtime.browserControlMetadataFileSha256,
       },
       backend.value,
     );
@@ -506,6 +510,11 @@ async function main() {
     throw Error(
       "Release identities must differ from original before identities.",
     );
+  if (!options["--release-app-manifest"] || !options["--release-browser-control"])
+    throw Error("Require --release-app-manifest and independently qualified --release-browser-control.");
+  const releaseBrowserControlBytes = await readFile(options["--release-browser-control"]);
+  const releaseBrowserControl = JSON.parse(releaseBrowserControlBytes.toString("utf8"));
+  await readBrowserControlBinding({plan:{runtime:{build:options["--release-build"],browserControl:releaseBrowserControl}},manifestPath:options["--release-app-manifest"]});
   const result = derive(
     bp.value,
     b.value,
@@ -513,14 +522,8 @@ async function main() {
       build: options["--release-build"],
       sourceBuild: options["--release-source"],
       toolingBuild: options["--release-tooling"],
-      browserControl: await (async () => {
-        if (!options["--release-app-manifest"]) throw Error("Missing --release-app-manifest.");
-        const bytes = await readFile(options["--release-app-manifest"]);
-        const metadata = { ...bp.value.runtime.browserControl, compiledManifestSha256: sha(bytes) };
-        await readBrowserControlBinding({ plan: { runtime: { build: options["--release-build"], browserControl: metadata } },
-          manifestPath: options["--release-app-manifest"] });
-        return metadata;
-      })(),
+      browserControlMetadataFileSha256: sha(releaseBrowserControlBytes),
+      browserControl: releaseBrowserControl,
     },
     backend.value,
   );

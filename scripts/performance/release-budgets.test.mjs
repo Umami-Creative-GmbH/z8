@@ -223,6 +223,7 @@ function fixture() {
   };
   saveBefore();
   save("release-manifest.json", { config: { deploymentId: "d".repeat(40), experimental: { cachedNavigations: true } } });
+  save("release-browser-control.json", {...testBrowserMetadata(),compiledManifestSha256:hash(readFileSync(join(dir,"release-manifest.json")))});
   const run = (...args) =>
     spawnSync(
       process.execPath,
@@ -242,6 +243,8 @@ function fixture() {
       "d".repeat(40),
       "--release-app-manifest",
       join(dir, "release-manifest.json"),
+      "--release-browser-control",
+      join(dir, "release-browser-control.json"),
       "--release-source",
       "eeeeeeeee",
       "--release-tooling",
@@ -279,6 +282,22 @@ test("derivation emits fresh release budgets without modifying the baseline", ()
     "release",
   );
   assert.equal(readFileSync(join(f.dir, "before-plan.json"), "utf8"), old);
+});
+
+test("derive binds an independently supplied HEAD browser-control file and rejects ORIGINAL authority reuse",()=>{
+  const f=fixture();
+  const metadataBytes=readFileSync(join(f.dir,"release-browser-control.json"));
+  assert.equal(f.derive().status,0);
+  const release=JSON.parse(readFileSync(join(f.dir,"derived/release-plan.json")));
+  assert.equal(release.runtime.browserControlMetadataFileSha256,hash(metadataBytes));
+  assert.deepEqual(release.runtime.browserControl,JSON.parse(metadataBytes));
+  assert.notEqual(release.runtime.browserControl.compiledManifestSha256,f.plan.runtime.browserControl.compiledManifestSha256);
+  f.save("release-browser-control.json",f.plan.runtime.browserControl);
+  assert.equal(f.derive().status,2,"ORIGINAL manifest authority is never rewritten into HEAD authority");
+  const missing=f.run("derive","--before-plan",join(f.dir,"before-plan.json"),"--before",join(f.dir,"before.json"),"--backend",join(f.dir,"backend.json"),
+    "--release-build","d".repeat(40),"--release-app-manifest",join(f.dir,"release-manifest.json"),"--release-source","eeeeeeeee","--release-tooling","fffffffff","--out",join(f.dir,"missing-control"));
+  assert.equal(missing.status,2);
+  assert.match(missing.stderr,/release-browser-control/);
 });
 
 test("before derivation rejects positive or unknown raw browser failures", () => {
@@ -651,6 +670,8 @@ test("derive refuses candidate inputs and unknown options rather than consuming 
     "d".repeat(40),
     "--release-app-manifest",
     join(f.dir, "release-manifest.json"),
+    "--release-browser-control",
+    join(f.dir, "release-browser-control.json"),
     "--release-source",
     "eeeeeeeee",
     "--release-tooling",
@@ -845,6 +866,8 @@ test("matched complete companion resolves full-byte gates without relabeling pen
     "d".repeat(40),
     "--release-app-manifest",
     join(f.dir, "release-manifest.json"),
+    "--release-browser-control",
+    join(f.dir, "release-browser-control.json"),
     "--release-source",
     "eeeeeeeee",
     "--release-tooling",
@@ -978,6 +1001,8 @@ test("full byte ceilings use proxy body units while primary CDP budgets keep the
     "d".repeat(40),
     "--release-app-manifest",
     join(f.dir, "release-manifest.json"),
+    "--release-browser-control",
+    join(f.dir, "release-browser-control.json"),
     "--release-source",
     "eeeeeeeee",
     "--release-tooling",
@@ -1139,6 +1164,8 @@ test("main finalizer CDP overage remains diagnostic when censored before bytes h
     "d".repeat(40),
     "--release-app-manifest",
     join(f.dir, "release-manifest.json"),
+    "--release-browser-control",
+    join(f.dir, "release-browser-control.json"),
     "--release-source",
     "eeeeeeeee",
     "--release-tooling",

@@ -360,6 +360,26 @@ test("normal admission binds the actual manifest before IO and actual browser re
 	} finally { await rm(dir, { recursive: true, force: true }); }
 });
 
+test("Native pre-IO public binding uses reviewed expected files rather than qualifying the current directory",async()=>{
+	const dir=await mkdtemp(join(tmpdir(),"z8-native-authority-"));
+	try{
+		await mkdir(join(dir,".next"));await mkdir(join(dir,"public/lib"),{recursive:true});
+		const files=["sw.js","lib/offline-queue-db.js","lib/sync-service.js","lib/clock-command-dispatch.js"];
+		for(const file of files)await writeFile(join(dir,"public",file),"reviewed-synthetic");
+		const build="b".repeat(40),manifest=Buffer.from(JSON.stringify({config:{deploymentId:build,experimental:{cachedNavigations:true}}}));
+		const manifestPath=join(dir,".next/required-server-files.json");await writeFile(manifestPath,manifest);
+		const manifestSha=createHash("sha256").update(manifest).digest("hex");
+		const nativePublicSources={protocol:"qualified-serving-worker-sources-v1",compiledBuild:build,compiledManifestSha256:manifestSha,
+			files:files.map(file=>({file,bytes:18,sha256:createHash("sha256").update("reviewed-synthetic").digest("hex"),gitBlob:"d".repeat(40)}))};
+		const plan={runtime:{build,browserControl:{policy:controlCancellationPolicy,browserRevision:chromiumSWRRevision,compiledCachedNavigations:true,compiledManifestSha256:manifestSha,nativePublicSources}}};
+		assert.deepEqual((await readBrowserControlBinding({plan,manifestPath})).nativePublicSources,nativePublicSources);
+		await writeFile(join(dir,"public/sw.js"),"changed-synthetic");
+		await assert.rejects(readBrowserControlBinding({plan,manifestPath}),/independently qualified/);
+		const wrong=structuredClone(plan);wrong.runtime.browserControl.nativePublicSources.compiledBuild="a".repeat(40);
+		await assert.rejects(readBrowserControlBinding({plan:wrong,manifestPath}));
+	}finally{await rm(dir,{recursive:true,force:true});}
+});
+
 test("header provenance isolates only the technical document token and preserves semantic header differences", () => {
 	const initial = controlRequestIdentity(contextId, url, "GET", headers);
 	const nextDocument = controlRequestIdentity(contextId, url, "GET", {
