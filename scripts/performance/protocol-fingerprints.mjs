@@ -71,3 +71,11 @@ export const budgetProtocolIdentity = () =>
     "../../docs/performance/evidence/1450-observer-v8-before-proof.json",
     "../../docs/performance/evidence/1450-next-stream-fixed-before-proof.json",
   ]);
+
+export const mixedProtocolFiles = [
+  "mixed-load-probe.mjs", "mixed-load-observation.mjs", "public-header-clock.mjs",
+  "collector-client.mjs", "fixture-browser.mjs", "journey-steps.mjs", "trace-transport.mjs",
+  "action-result-observer.mjs", "clean-evidence.mjs", "control-cancellation-evidence.mjs",
+  "browser-control-collector.mjs", "proxy-header-census.mjs", "proxy-wire-observer.mjs", "protocol-fingerprints.mjs",
+];
+export const mixedProtocolIdentity = () => fingerprints(mixedProtocolFiles);

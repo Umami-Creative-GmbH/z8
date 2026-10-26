@@ -837,7 +837,7 @@ function compare(plan, before, head, budget, native, settledComparison) {
       gates.push(`${key(c)}: missing or pending script coverage.`);
     if (!settledComparison && current.some((s) => s.pendingRscRequests !== 0))
       gates.push(`${key(c)}: missing or pending external RSC coverage.`);
-    if (current.some((s) => !cleanBrowserVisitEvidence(s)))
+    if (current.some((s) => !cleanBrowserVisitEvidence(s,{runtime:plan.runtime,protocolSources:head.protocol,origin:plan.origin})))
       gates.push(`${key(c)}: missing or failed browser requests.`);
     if (
       c.mode === "mutation-refresh" &&

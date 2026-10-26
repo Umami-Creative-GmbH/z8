@@ -372,6 +372,28 @@ test("complete mixed cohorts derive policy9 nearest-rank limits and compare only
 	).clockReadyMs = 3000;
 	assert.equal(budgets.compareMixedClockBudgets(options).passed, false);
 });
+
+test("mixed Native authority preserves independently registered original origin and distinct phase public bindings",()=>{
+	const input=inputs();
+	const publicSources=build=>({protocol:"qualified-serving-worker-sources-v1",compiledBuild:build,compiledManifestSha256:metadataFor(build).compiledManifestSha256,
+		files:["sw.js","lib/offline-queue-db.js","lib/sync-service.js","lib/clock-command-dispatch.js"].map(file=>({file,bytes:12,sha256:hash,gitBlob:"b".repeat(40)}))});
+	input.beforeContext.conditions.browserControl.nativePublicSources=publicSources(BEFORE);
+	input.before.browserControl.nativePublicSources=publicSources(BEFORE);
+	input.expectedHeadBrowserControl.nativePublicSources=publicSources(HEAD);
+	const budget=budgets.deriveMixedClockBudgets(input);
+	assert.equal(budget.expectedOrigin,input.beforeContext.conditions.origin);
+	const head=fixture(HEAD);head.browserControl.nativePublicSources=publicSources(HEAD);
+	const options={budgets:budget,budgetSha256:hash,expectedBudgetSha256:hash,before:input.before,beforeSha256:hash,head,headSha256:hash,protocol:input.protocol,protocolSha256:hash,operatorSha256:hash,
+		headContextSha256:hash,observedAt:"2026-10-25T04:00:00.000Z",headContext:{...input.beforeContext,fullBuild:HEAD,conditions:{...input.beforeContext.conditions,browserControl:input.expectedHeadBrowserControl,browserControlMetadataFileSha256:input.expectedHeadBrowserControlFileSha256},
+			phase:"release",observationTimeoutMs:30000,firstControlledHeadStartedAt:"2026-10-25T02:00:00.000Z",startedAt:"2026-10-25T02:00:00.000Z",finishedAt:"2026-10-25T03:00:00.000Z"}};
+	assert.equal(budgets.compareMixedClockBudgets(options).passed,true);
+	const foreign=structuredClone(options);foreign.headContext.conditions.origin="http://localhost:9999";
+	assert.throws(()=>budgets.compareMixedClockBudgets(foreign));
+	const wrongOriginal=structuredClone(options);wrongOriginal.budgets.expectedOrigin="http://localhost:9999";
+	assert.throws(()=>budgets.compareMixedClockBudgets(wrongOriginal));
+	const unregistered=structuredClone(input);unregistered.beforeContext.conditions.origin="http://localhost:9999";
+	assert.throws(()=>budgets.deriveMixedClockBudgets(unregistered));
+});
 test("mixed before conditions require the exact common patch, never equal unknowns or an alias", () => {
 	for (const mutate of [
 		(c) => delete c.nextStreamCompletionPatch,

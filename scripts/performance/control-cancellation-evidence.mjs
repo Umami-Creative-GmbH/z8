@@ -1,14 +1,16 @@
 /** Proofs are prospective; a canceled request is never a successful payload. */
 import { createHash } from "node:crypto";
+import { validateProxyHeaderCensus } from "./proxy-header-census.mjs";
 export const controlCancellationPolicy = Object.freeze({
-	version: 1,
-	protocol: "positively-proven-protocol-controls-v1",
+	version: 2,
+	protocol: "positively-proven-protocol-controls-v2",
 	encodedLimit: 4 * 1024 * 1024,
 	decodedLimit: 8 * 1024 * 1024,
 	retainedLimit: 32 * 1024 * 1024,
 	recordLimit: 10000,
 });
 export const chromiumSWRRevision = "1d17a2e2ee147bb7d6ae2ab6abdb3a2510c17775";
+export const controlIdentityHeaders = Object.freeze(["rsc","next-router-prefetch","next-router-segment-prefetch","next-router-state-tree","next-url","next-action","accept","accept-encoding","accept-language","cookie","authorization","x-z8-fixture-document-generation"]);
 export const bodySha256 = (bytes) =>
 	createHash("sha256").update(bytes).digest("hex");
 const binaryByteWidths = Object.freeze({ A: 1, O: 1, o: 1, b: 1, U: 1, S: 2, s: 2, L: 4, l: 4, G: 4, g: 8, M: 8, m: 8, V: 1 });
@@ -47,6 +49,8 @@ export function matchingBrowserControlBinding(runtime, binding) {
 	return knownBrowserControlMetadata(expected) && knownBrowserControlMetadata(binding) &&
 		["browserRevision", "compiledCachedNavigations", "compiledManifestSha256"].every((key) => binding[key] === expected[key]) &&
 		JSON.stringify(binding.nativePublicSources) === JSON.stringify(expected.nativePublicSources) &&
+		(!expected.nativePublicSources || knownNativePublicSources(expected.nativePublicSources,runtime.build,expected.compiledManifestSha256)) &&
+		(!binding.nativePublicSources || knownNativePublicSources(binding.nativePublicSources,binding.compiledBuild,binding.compiledManifestSha256)) &&
 		binding.compiledBuild === runtime.build && binding.manifestVerified === true && binding.browserVerified === true;
 }
 
@@ -1209,6 +1213,9 @@ const bodyReceipt = (row) => {
 		"action",
 		"requiredStage",
 		"treeNodes",
+		"partialNodes",
+		"completeNodes",
+		"segmentBinding",
 		"representedOutputs",
 		"postponedOutputReferences",
 		"postponedComponentReferences",
@@ -1249,7 +1256,23 @@ const requestReceipt = (row) => ({
 		"traceId",
 		"loaderId",
 		"fullUrlSha256",
+		"requestOriginSha256",
 		"requestHeadersSha256",
+		"headerFieldSha256",
+		"initialHeaderIdentity",
+		"extraHeaderIdentity",
+		"requestHeadersKnown",
+		"requestHeaderSnapshotKnown",
+		"responseHeaderSnapshotKnown",
+		"initialSegmentResponse",
+		"responseDeploymentSha256",
+		"postponed",
+		"vary",
+		"transportBodyReceipt",
+		"bodyReadbackReceipt",
+		"rsc",
+		"purposeHeaderPresent",
+		"secPurposeHeaderPresent",
 		"documentGeneration",
 		"method",
 		"requestKind",
@@ -1269,6 +1292,7 @@ const requestReceipt = (row) => ({
 		"bodyReadbackComplete",
 		"ambiguousRedirect",
 		"httpErrorObserved",
+		"observedProtocolError",
 		"upstreamError",
 		"complete",
 		"staleWhileRevalidateSeconds",
@@ -1293,6 +1317,137 @@ const requestReceipt = (row) => ({
 		: {}),
 });
 
+const knownNativeContext = context => {
+	try {
+		const binding=context?.binding,env=context?.environment,principal=context?.principalEpoch,census=context?.headerCensus,lifetime=context?.headerLifetime;
+		if(context?.protocol !== "qualified-known-extra-native-context-v1" || typeof context.contextId !== "string" || !context.contextId || !digest(context.originSha256) ||
+			!knownBrowserControlMetadata(binding) || binding.browserVerified !== true || binding.manifestVerified !== true ||
+			!knownNativePublicSources(binding.nativePublicSources,binding.compiledBuild,binding.compiledManifestSha256) ||
+			!context.protocolSources || Object.keys(context.protocolSources).length > 64 || Object.entries(context.protocolSources).some(([file,sha])=>file.length > 256 || !digest(sha)) ||
+			!["run-baseline.mjs","settled-resources.mjs","mixed-load-probe.mjs"].includes(context.operatorFile) ||
+			![context.operatorFile,"browser-control-collector.mjs","fixture-browser.mjs","trace-transport.mjs","action-result-observer.mjs","proxy-header-census.mjs"].every(file=>digest(context.protocolSources?.[file]))) return false;
+		const errors=context.protocolErrors;
+		if(errors?.protocol !== "positive-flight-error-observations-v1" || errors.contextId !== context.contextId || errors.installed !== true || errors.scopeClosed !== true ||
+			errors.observed !== 0 || errors.overflow !== 0 || !Array.isArray(errors.records) || errors.records.length !== 0) return false;
+		const actualFiles = value => value?.protocol === "serving-public-worker-source-metadata-v1" && value.servingRootKnown === true && Array.isArray(value.files) && value.files.length === 4 &&
+			value.files.every((row,index)=>row.known === true && row.reason === null && row.file === binding.nativePublicSources.files[index].file && row.bytes === binding.nativePublicSources.files[index].bytes && row.sha256 === binding.nativePublicSources.files[index].sha256);
+		if(env?.protocol !== "native-cache-environment-metadata-v1" || env.contextId !== context.contextId || !actualFiles(env.servingPublicSources)) return false;
+		const launch=env.nativeLaunchMetadata;
+		if(launch?.protocol !== "owned-native-launch-metadata-v1" || launch.processKnown !== true || launch.fixturePolicy !== "isolated-profile-no-prediction-v1" || launch.argumentsKnown !== true ||
+			!digest(launch.argumentsSha256) || launch.argumentsSha256 !== launch.recordedArgumentsSha256 || launch.argumentsMatchRecorded !== true ||
+			!Array.isArray(launch.argumentKeys) || launch.argumentKeys.length > 1024 || launch.argumentKeys.some(value=>typeof value!=="string" || value.length>128) || !launch.argumentKeys.includes("--disable-extensions") ||
+			launch.profileArgumentCount !== 1 || !digest(launch.profileArgumentSha256) || launch.profileArgumentSha256 !== launch.recordedProfileDirectorySha256 || launch.profileArgumentMatchesRecorded !== true ||
+			launch.executable?.known !== true || !digest(launch.executable.sha256) || !Number.isSafeInteger(launch.executable.bytes) || launch.executable.bytes <= 0 || launch.executable.bytes > 1024*1024*1024 ||
+			!Array.isArray(launch.observerSources) || launch.observerSources.length !== 2 || !["browser-control-collector.mjs","fixture-browser.mjs"].every(file=>{
+				const rows=launch.observerSources.filter(row=>row.file===file);return rows.length===1 && rows[0].known===true && rows[0].sha256===context.protocolSources[file];})) return false;
+		const workers=env.workerTargets;
+		if(workers?.protocol !== "owned-context-worker-target-metadata-v1" || workers.contextId !== context.contextId || workers.contextJoinKnown !== true || !digest(workers.contextIdentitySha256) ||
+			workers.installed !== true || workers.scopeClosed !== true || workers.errors !== 0 || workers.overflow !== 0 || !Array.isArray(workers.events) || workers.events.length === 0 || workers.events.length > 256 ||
+			workers.events.some(row=>!["page","service_worker"].includes(row.type) || row.urlKnown !== true || !digest(row.urlSha256) ||
+				(row.type === "service_worker" ? row.ownedWorkerScript !== true || row.originMatches !== true : row.originMatches !== true && row.urlSha256 !== bodySha256(Buffer.from("about:blank"))))) return false;
+		const end=env.endRead,controller=end?.controller;
+		const ownedWorker = value=>value?.present === true && value.known === true && value.ownedScript === true && value.state === "activated" && digest(value.scriptUrlSha256);
+		if(end?.protocol !== "native-environment-end-readonly-v1" || end.timedOut !== false || end.pendingOperations !== 0 || end.readErrors !== 0 || !actualFiles(end.publicSourceRecheck) ||
+			controller?.available !== true || controller.secureContext !== true || controller.originMatches !== true || controller.controllerIdentityStable !== true ||
+			!ownedWorker(controller.controllerBefore) || !ownedWorker(controller.controllerAfter) || controller.controllerBefore.scriptUrlSha256 !== controller.controllerAfter.scriptUrlSha256 ||
+			controller.registrationCount !== 1 || controller.registrationOverflow !== 0 || !Array.isArray(controller.registrations) || controller.registrations.length !== 1) return false;
+		const registration=controller.registrations[0];
+		if(registration.scopeKnown !== true || !digest(registration.scopeSha256) || registration.ownedRootScope !== true || !ownedWorker(registration.active) ||
+			registration.active.scriptUrlSha256 !== controller.controllerAfter.scriptUrlSha256 || ![registration.waiting,registration.installing].every(value=>value?.present === false && value.known === true)) return false;
+		if(!digest(context.workerScriptSha256) || !digest(context.rootScopeSha256) || registration.scopeSha256!==context.rootScopeSha256 || controller.controllerBefore.scriptUrlSha256!==context.workerScriptSha256 ||
+			workers.events.some(row=>!["initial","created","changed","destroyed"].includes(row.event) || !Number.isSafeInteger(row.targetOrdinal) || row.targetOrdinal<=0 || row.type==="service_worker" && row.urlSha256!==context.workerScriptSha256)) return false;
+		if(principal?.protocol !== "actual-browser-cookie-boundaries-v1" || principal.contextId !== context.contextId || principal.scopeClosed !== true ||
+			!["observedSetCookieResponses","unknownResponseHeaders","readErrors","pendingReads","observationErrors","overflow"].every(key=>principal[key]===0) ||
+			![principal.before,principal.after].every(row=>row?.known === true && row.cookieCount===1 && digest(row.sha256) && row.cookieAttributes?.originKnown === true &&
+				row.cookieAttributes.httpOnlyKnown === true && row.cookieAttributes.allHttpOnly === true && row.cookieAttributes.singleOwnedRootHttpOnlyCookie === true && digest(row.cookieAttributes.singleCookieHeaderSha256)) ||
+			principal.before.sha256 !== principal.after.sha256 || principal.before.cookieAttributes.singleCookieHeaderSha256 !== principal.after.cookieAttributes.singleCookieHeaderSha256) return false;
+		if(!validateProxyHeaderCensus(census,{contextId:context.contextId}) || census.closed !== true || census.counts.accepted <= 0 || census.counts.knownHeaders !== census.counts.accepted ||
+			census.requests.some((row,index)=>Number(row.requestId.split(".")[1]) !== index+1) ||
+			!["pending","unknownHeaders","terminalBeforeHeaders","setCookieResponses","setCookieLines","errors","duplicates","missing","late","overflow"].every(key=>census.counts[key]===0) ||
+			lifetime?.protocol !== "owned-context-upstream-header-lifetime-v1" || lifetime.contextId !== context.contextId) return false;
+		const installation=lifetime.installation,closure=lifetime.closure;
+		return installation?.protocol === lifetime.protocol && /^[a-f0-9]{32}$/.test(installation.proxyInstanceId ?? "") && installation.originSha256 === context.originSha256 &&
+			installation.acceptedRequestsAtInstall === 0 && Array.isArray(installation.allowedOriginSha256) && installation.allowedOriginSha256.length > 0 && installation.allowedOriginSha256.length <= 32 &&
+			installation.allowedOriginSha256.every(digest) && new Set(installation.allowedOriginSha256).size === installation.allowedOriginSha256.length && installation.allowedOriginSha256.includes(context.originSha256) &&
+			closure?.serverClosed === true && closure.acceptedRequests === census.counts.accepted && closure.upstreamRequests === census.counts.accepted && closure.closedUpstreams === census.counts.accepted && closure.pendingUpstreams === 0;
+	}catch{return false;}
+};
+
+const nativeContextDigest = context => {
+	try {const bytes=Buffer.from(JSON.stringify(context));return bytes.length<=controlCancellationPolicy.encodedLimit ? bodySha256(bytes) : null;}
+	catch{return null;}
+};
+
+const goodNativeSegmentBody = (row,context) => {
+	const proof=row?.bodyProof,binding=proof?.segmentBinding,compiled=context.binding;
+	const response=row.initialSegmentResponse ?? row;
+	return proof?.protocol === "bounded-required-flight-v1" && proof.complete === true && proof.requiredStage === "segment-prefetch-representation" && proof.requestKind === "segment-prefetch" &&
+		proof.action === false && proof.marker === "unmarked-segment-prefetch" && proof.renderableOutputClaim === false && proof.serverErrors === 0 && proof.explicitActionFailure === false && proof.embeddedRuntimePrefetch === null &&
+		Number.isSafeInteger(proof.decodedBytes) && proof.decodedBytes > 0 && proof.decodedBytes <= controlCancellationPolicy.decodedLimit && proof.boundaryBytes === proof.decodedBytes && digest(proof.bodySha256) &&
+		Number.isSafeInteger(proof.treeNodes) && proof.treeNodes > 0 && proof.treeNodes <= 4096 && Number.isSafeInteger(proof.partialNodes) && proof.partialNodes >= 0 && Number.isSafeInteger(proof.completeNodes) && proof.completeNodes >= 0 &&
+		proof.partialNodes + proof.completeNodes > 0 && proof.partialNodes + proof.completeNodes <= proof.treeNodes+1 && proof.isPartial === (proof.partialNodes > 0) &&
+		proof.knownEmptyFallbacks <= proof.knownSuspenseBoundaries && (proof.postponedOutputReferences === 0 || proof.knownSuspenseBoundaries > 0) &&
+		(proof.partialNodes > 0 || proof.postponedCacheOutputs + proof.postponedOutputReferences + proof.representedComponentFallbacks === 0) &&
+		Number.isSafeInteger(proof.protocolRows) && proof.protocolRows > 0 && proof.protocolRows <= 4096 && Number.isSafeInteger(proof.modelSteps) && proof.modelSteps > 0 && proof.modelSteps <= 100000 &&
+		["postponedCacheOutputs","postponedOutputReferences","knownSuspenseBoundaries","knownEmptyFallbacks","representedComponentFallbacks"].every(key=>Number.isSafeInteger(proof[key]) && proof[key] >= 0 && proof[key] <= 100000) &&
+		binding?.method === "GET" && binding.status === 200 && ["flight","rsc","prefetch","postponed","manifestVerified"].every(key=>binding[key]===true) &&
+		row.method === "GET" && row.rsc === true && row.prefetch === true && row.action === false && response.flight === true && response.postponed === true && row.status === 200 &&
+		binding.requestHeadersSha256 === row.requestHeadersSha256 && digest(binding.requestKeySha256) && binding.requestKeySha256 === row.headerFieldSha256?.["next-router-segment-prefetch"] && binding.derivedRequestKeySha256 === binding.requestKeySha256 &&
+		binding.compiledBuild === compiled.compiledBuild && binding.compiledManifestSha256 === compiled.compiledManifestSha256 && binding.expectedDeploymentSha256 === bodySha256(Buffer.from(compiled.compiledBuild)) &&
+		binding.responseDeploymentSha256 === response.responseDeploymentSha256 && binding.actualDeploymentSha256 === (binding.responseDeploymentSha256 ?? binding.bodyBuildSha256) && binding.actualDeploymentSha256 === binding.expectedDeploymentSha256 &&
+		binding.deploymentSource === (binding.responseDeploymentSha256 === null ? "body" : "response-header");
+};
+
+function nativeKnownExtraProof(failure,packet,responses,proxy,context,browserRevision) {
+	try {
+	if(browserRevision !== chromiumSWRRevision || !knownNativeContext(context) || !nativeContextDigest(context) || failure.contextId !== context.contextId || failure.requestHeadersKnown !== true ||
+		failure.type !== "Other" || failure.initiator !== "other" || failure.initiatorStackKnownAbsent !== true || failure.priority !== "VeryLow" ||
+		failure.requestKind !== "segment-prefetch" || failure.method !== "GET" || failure.status !== 200 || failure.action !== false || failure.rsc !== true || failure.prefetch !== true ||
+		failure.purposeHeaderPresent !== false || failure.secPurposeHeaderPresent !== false || failure.requestOriginSha256 !== context.originSha256 ||
+		!packet || failure.proxyResponseId !== packet.id || !sameRequest(failure,packet) || packet.requestOriginSha256 !== context.originSha256 || packet.complete !== true || packet.canceled !== false || packet.upstreamError !== false ||
+		!goodNativeSegmentBody(packet,context)) return null;
+	const initial=failure.initialHeaderIdentity,extra=failure.extraHeaderIdentity;
+	if(initial?.requestHeaderSnapshotKnown !== true || extra?.requestHeaderSnapshotKnown !== true || extra.requestHeadersSha256 !== failure.requestHeadersSha256 ||
+		initial.purposeHeaderPresent !== false || initial.secPurposeHeaderPresent !== false || initial.documentGeneration !== failure.documentGeneration) return null;
+	const knownHeaders = row=>row?.requestHeaderSnapshotKnown === true && row.headerFieldSha256 && Object.keys(row.headerFieldSha256).length === controlIdentityHeaders.length &&
+		controlIdentityHeaders.every(key=>Object.hasOwn(row.headerFieldSha256,key) && (row.headerFieldSha256[key]===null || digest(row.headerFieldSha256[key])));
+	if(![initial,extra,failure,packet].every(knownHeaders) || !controlIdentityHeaders.every(key=>extra.headerFieldSha256[key]===failure.headerFieldSha256[key] && extra.headerFieldSha256[key]===packet.headerFieldSha256[key]) ||
+		failure.headerFieldSha256.rsc!==bodySha256(Buffer.from("1")) || failure.headerFieldSha256["next-router-prefetch"]!==bodySha256(Buffer.from("1")) || failure.headerFieldSha256["next-action"]!==null ||
+		controlIdentityHeaders.filter(key=>!["accept","accept-encoding","cookie"].includes(key)).some(key=>initial.headerFieldSha256[key]!==extra.headerFieldSha256[key]) ||
+		extra.headerFieldSha256.accept !== (initial.headerFieldSha256.accept ?? bodySha256(Buffer.from("*/*")))) return null;
+	const cachedMatches=responses.filter(row=>row.contextId===failure.contextId && row.method==="GET" && row.requestKind==="segment-prefetch" && row.fullUrlSha256===failure.fullUrlSha256 &&
+		row.loaderId===failure.loaderId && typeof row.loaderId==="string" && row.loaderId.length>0 && row.type==="Fetch" && row.fromDiskCache===true && row.fromServiceWorker===false && row.loadingFinished===true &&
+		Number.isFinite(row.finishedAt) && Number.isFinite(failure.startedAt) && row.finishedAt < failure.startedAt && row.initialHeaderIdentity?.requestHeaderSnapshotKnown===true &&
+		row.initialHeaderIdentity.requestHeadersSha256===initial.requestHeadersSha256 && row.initialHeaderIdentity.documentGeneration===initial.documentGeneration);
+	if(cachedMatches.length!==1) return null;
+	const cached=cachedMatches[0];
+	if(!knownHeaders(cached.initialHeaderIdentity) || !controlIdentityHeaders.every(key=>cached.initialHeaderIdentity.headerFieldSha256[key]===initial.headerFieldSha256[key])) return null;
+	const origins=proxy.filter(row=>row.id===cached.proxyResponseId && row.contextId===failure.contextId && row.fullUrlSha256===cached.fullUrlSha256 && row.method==="GET" && row.requestKind==="segment-prefetch");
+	if(origins.length!==1) return null;
+	const origin=origins[0],read=cached.bodyReadbackReceipt;
+	if(!knownHeaders(origin)) return null;
+	if(![cached,origin,packet].every(row=>Number.isSafeInteger(row.staleWhileRevalidateSeconds) && row.staleWhileRevalidateSeconds>0)) return null;
+	if(origin.id===packet.id || origin.requestOriginSha256 !== context.originSha256 || origin.complete!==true || origin.canceled!==false || origin.upstreamError!==false || !goodNativeSegmentBody(origin,context) || !goodNativeSegmentBody(cached,context) ||
+		cached.requestOriginSha256!==context.originSha256 || cached.bodyReadbackComplete!==true || read?.available!==true || ![true,false].includes(read.base64Encoded) ||
+		read.decodedBytes!==cached.bodyProof.decodedBytes || read.bodySha256!==cached.bodyProof.bodySha256 ||
+		(read.base64Encoded===false && (read.utf16CodeUnitLength!==read.decodedBytes || read.observedDataLengthAtReadback!==read.decodedBytes || read.responseContentType?.headerKnown!==true || read.responseContentType.mime!=="text/x-component" || read.responseContentType.charset!=="absent"))) return null;
+	for(const row of [origin,packet]) if(row.transportBodyReceipt?.protocol!=="proxy-natural-eof-decoded-bytes-v1" || row.transportBodyReceipt.naturalEOF!==true ||
+		row.transportBodyReceipt.bodySha256!==cached.bodyProof.bodySha256 || row.transportBodyReceipt.decodedBytes!==cached.bodyProof.decodedBytes || row.bodyProof.bodySha256!==cached.bodyProof.bodySha256 || row.bodyProof.decodedBytes!==cached.bodyProof.decodedBytes) return null;
+	const fields=origin.vary?.fields;
+	if(!Array.isArray(fields) || !["rsc","next-router-prefetch","next-router-segment-prefetch"].every(field=>fields.includes(field)) || new Set(fields).size!==fields.length ||
+		![cached,origin,packet].every(row=>row.vary?.known===true && row.vary.star===false && row.vary.unknownFields===0 && JSON.stringify(row.vary.fields)===JSON.stringify(fields))) return null;
+	for(const field of [...fields,"cookie","authorization"]){
+		if(![origin,packet].every(row=>row.requestHeaderSnapshotKnown===true && Object.hasOwn(row.headerFieldSha256 ?? {},field)) || origin.headerFieldSha256[field]!==packet.headerFieldSha256[field]) return null;
+	}
+	if(origin.headerFieldSha256.cookie!==context.principalEpoch.before.cookieAttributes.singleCookieHeaderSha256 || origin.headerFieldSha256.authorization!==null ||
+		context.headerCensus.requests.findIndex(row=>row.requestId===origin.id) >= context.headerCensus.requests.findIndex(row=>row.requestId===packet.id) ||
+		![origin,packet].every(row=>context.headerCensus.requests.filter(entry=>entry.requestId===row.id && entry.observation==="headers").length===1) ||
+		[cached,origin,packet,failure].some(row=>row.observedProtocolError?.serverErrors>0 || row.observedProtocolError?.explicitActionFailure===true || row.bodyProof?.serverErrors>0 || row.bodyProof?.explicitActionFailure===true || row.httpErrorObserved===true || row.status>=400)) return null;
+	return {failure:requestReceipt(failure),packet:requestReceipt(packet),cached:requestReceipt(cached),origin:requestReceipt(origin),browserRevision,proxyCandidates:1,cachedCandidates:1,originCandidates:1,
+		nativeContextSha256:nativeContextDigest(context)};
+	}catch{return null;}
+}
+
 /** Input records are emitted by the owned passive collector, never inferred from labels alone. */
 export function classifyControlCancellations({
 	failures = [],
@@ -1300,6 +1455,7 @@ export function classifyControlCancellations({
 	proxy = [],
 	coverage,
 	browserRevision,
+	nativeContext,
 	scope = "measured",
 }) {
 	const records = [],
@@ -1382,6 +1538,10 @@ export function classifyControlCancellations({
 						proxyCandidates: 1,
 					};
 				}
+				if(outcome==="unknown"){
+					const nativeProof=nativeKnownExtraProof(failure,packet,responses,proxy,nativeContext,browserRevision);
+					if(nativeProof){outcome="protocol-control";reason="qualified-cached-flight-native-revalidation";proof=nativeProof;}
+				}
 			}
 		}
 		if (outcome === "real-failure") realFailures++;
@@ -1404,6 +1564,7 @@ export function classifyControlCancellations({
 		provenControls,
 		complete,
 		coverage: { ...coverage },
+		...(nativeContext ? {nativeContext} : {}),
 		records,
 	};
 }
@@ -1438,7 +1599,7 @@ function browserFailureEvidenceMatches(evidence, rawFailedRequests, scope, requi
 				(requireClean && row.outcome !== "protocol-control") ||
 				!["protocol-control", "real-failure", "unknown"].includes(row.outcome) ||
 				(row.outcome === "protocol-control" && ![
-					"complete-cached-flight-native-revalidation",
+					"qualified-cached-flight-native-revalidation",
 					"completed-flight-late-terminal-cancel",
 				].includes(row.reason)),
 		)
@@ -1454,15 +1615,17 @@ function browserFailureEvidenceMatches(evidence, rawFailedRequests, scope, requi
 			!proof ||
 			proof.proxyCandidates !== 1 ||
 			proof.failure?.requestId !== row.requestId ||
-			(row.reason === "complete-cached-flight-native-revalidation" &&
-				proof.cachedCandidates !== 1)
+			(row.reason === "qualified-cached-flight-native-revalidation" &&
+				(proof.cachedCandidates !== 1 || proof.originCandidates !== 1 || !evidence.nativeContext ||
+					proof.nativeContextSha256 !== nativeContextDigest(evidence.nativeContext)))
 		)
 			return false;
 		const verified = classifyControlCancellations({
 			failures: [proof.failure],
-			proxy: [proof.packet],
+			proxy: proof.origin ? [proof.origin,proof.packet] : [proof.packet],
 			responses: proof.cached ? [proof.cached] : [],
 			browserRevision: proof.browserRevision,
+			nativeContext:evidence.nativeContext,
 			coverage: evidence.coverage,
 		});
 		if (
@@ -1482,6 +1645,22 @@ function browserFailureEvidenceMatches(evidence, rawFailedRequests, scope, requi
 
 export function cleanBrowserFailureEvidence(evidence, rawFailedRequests) {
 	return browserFailureEvidenceMatches(evidence, rawFailedRequests, "measured", true);
+}
+
+/** Native source authority comes from the registered runtime and operator closure, not the receipt itself. */
+export function nativeEvidenceAuthorityMatches(evidence,runtime,protocolSources,origin) {
+	for(const classified of [evidence?.measured,evidence?.allPhase]) {
+		if(!Array.isArray(classified?.records) || !classified.records.some(row=>row.reason === "qualified-cached-flight-native-revalidation" && row.outcome === "protocol-control")) continue;
+		const context=classified.nativeContext;
+		if(typeof origin!=="string" || !knownNativeContext(context) || context.originSha256!==bodySha256(Buffer.from(origin)) || !matchingBrowserControlBinding(runtime,context.binding) || !protocolSources ||
+			Object.keys(protocolSources).length !== Object.keys(context.protocolSources).length ||
+			Object.entries(protocolSources).some(([file,sha])=>!digest(sha) || context.protocolSources[file] !== sha)) return false;
+		const scriptSha=bodySha256(Buffer.from(origin+"/sw.js")),controller=context.environment.endRead.controller;
+		if(context.workerScriptSha256!==scriptSha || context.rootScopeSha256!==bodySha256(Buffer.from(origin+"/")) || [controller.controllerBefore,controller.controllerAfter,...controller.registrations.map(row=>row.active)].some(row=>row.scriptUrlSha256!==scriptSha) ||
+			controller.registrations.some(row=>row.scopeSha256!==bodySha256(Buffer.from(origin+"/"))) ||
+			context.environment.workerTargets.events.some(row=>row.type==="service_worker" && row.urlSha256!==scriptSha)) return false;
+	}
+	return true;
 }
 
 /** Coverage is distinct from acceptance: unproven optional all-phase failures stay visible. */

@@ -751,7 +751,7 @@ async function main() {
 										mode,
 										iteration,
 										concurrency,
-										{ beginCollectorVisit, endCollectorVisit, browserControlBinding },
+										{ beginCollectorVisit, endCollectorVisit, browserControlBinding,protocolSources:result.protocol },
 									),
 							checkpoint: async (sample) => {
 									result.samples.push(sample);
@@ -1003,7 +1003,7 @@ export async function measure(
 					headers: { "Accept-Language": condition.locale }, contextId: traceId,
 					browserRevision: collector.browserControlBinding.browserRevision,
 					compiledCachedNavigations: collector.browserControlBinding.compiledCachedNavigations,
-					environmentBinding: collector.browserControlBinding });
+					environmentBinding: collector.browserControlBinding,protocolSources:collector.protocolSources,operatorFile:"run-baseline.mjs" });
 			if (!["beginMeasurement", "endMeasurement", "recordMeasuredFailure", "close", "snapshot"].every((key) => typeof observation?.[key] === "function"))
 				throw Error("Incomplete prospective browser observation interface.");
 			browserObservation = observation;
@@ -1545,7 +1545,7 @@ export async function measure(
 	}
 	if (transport) {
 		sample.requiredObservationGates = cleanEvidenceGates(plan, {
-			runtime: { ...plan.runtime, browserControl: collector.browserControlBinding }, samples: [sample],
+			runtime: { ...plan.runtime, browserControl: collector.browserControlBinding }, protocol:collector.protocolSources,samples: [sample],
 		}, nativeObservationRows).concat(cleanMeasuredCostGates(sample, nativeObservationRows));
 		if (sample.requiredObservationGates.length) recordFinalizationFailure("required-observation", "observation-incomplete");
 	}

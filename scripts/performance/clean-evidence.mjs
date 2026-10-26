@@ -1,6 +1,6 @@
 /** Acceptance is identical before and after: failed observations remain diagnostic evidence only. */
 import { actionResultPolicy } from "./action-result-observer.mjs";
-import { cleanBrowserFailureEvidence, completeAllPhaseBrowserObservation, controlCancellationPolicy, matchingBrowserControlBinding } from "./control-cancellation-evidence.mjs";
+import { cleanBrowserFailureEvidence, completeAllPhaseBrowserObservation, controlCancellationPolicy, matchingBrowserControlBinding, nativeEvidenceAuthorityMatches } from "./control-cancellation-evidence.mjs";
 
 export const cleanObservationPolicy = Object.freeze({
 	version: 1,
@@ -82,12 +82,13 @@ export function cleanApplicationEvidence(application) {
 	);
 }
 
-export function cleanBrowserVisitEvidence(sample) {
+export function cleanBrowserVisitEvidence(sample,authority) {
 	const id = sample.backendTraceId ?? sample.traceId;
-	return cleanBrowserContextEvidence(id, sample.browserControlEvidence, sample.failedRequests);
+	return cleanBrowserContextEvidence(id, sample.browserControlEvidence, sample.failedRequests,authority);
 }
 
-export function cleanBrowserContextEvidence(id, evidence, rawFailedRequests) {
+export function cleanBrowserContextEvidence(id, evidence, rawFailedRequests,authority) {
+	if(!nativeEvidenceAuthorityMatches(evidence,authority?.runtime,authority?.protocolSources,authority?.origin)) return false;
 	const errors = evidence?.protocolErrors;
 	if (errors?.protocol !== "positive-flight-error-observations-v1" || errors.contextId !== id || errors.installed !== true || errors.scopeClosed !== true ||
 		errors.observed !== 0 || errors.overflow !== 0 || !Array.isArray(errors.records) || errors.records.length !== 0) return false;
@@ -103,9 +104,9 @@ export function cleanBrowserContextEvidence(id, evidence, rawFailedRequests) {
 }
 
 /** Available at context closure, before whole-run backend export; no fake native rows. */
-export function cleanVisitObservationGates(plan, sample) {
+export function cleanVisitObservationGates(plan, sample,protocolSources) {
 	const gates = [];
-	if (!cleanBrowserVisitEvidence(sample)) gates.push("Clean browser request proof is required for this visit.");
+	if (!cleanBrowserVisitEvidence(sample,{runtime:plan.runtime,protocolSources,origin:plan.origin})) gates.push("Clean browser request proof is required for this visit.");
 	const application = sample.traceTransport?.applicationEvidence ?? sample.applicationEvidence;
 	if (plan.runtime?.traceTransport === "context-loopback-proxy-v1" || application !== undefined) {
 		if (!cleanApplicationEvidence(application)) gates.push("Complete zero-error known application-contract observations are required for this visit.");
@@ -198,7 +199,7 @@ export function cleanEvidenceGates(
 		);
 	const seen = new Set();
 	for (const sample of artifact.samples) {
-		if (!cleanBrowserVisitEvidence(sample))
+		if (!cleanBrowserVisitEvidence(sample,{runtime:plan.runtime,protocolSources:artifact.protocol,origin:plan.origin}))
 			gates.push(
 				"Clean original and HEAD evidence requires complete browser request proofs with zero required or unknown measured failures.",
 			);
