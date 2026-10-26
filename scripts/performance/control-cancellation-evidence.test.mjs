@@ -1376,3 +1376,83 @@ test("model-limit diagnostics identify queue width and local loop work without c
 		assert.equal(Object.values(facts).some(value=>typeof value==="string" && /PRIVATE|\$[a-f0-9]/.test(value)),false);
 	}
 });
+
+test("independently closed eager models reuse nested ordinary references within the unchanged work budget", () => {
+	const repeated={leaf:"KNOWN"};for(let index=0;index<90;index++)repeated[`field${index}`]="$3";
+	const parent={leaf:"KNOWN",items:Array(1600).fill("$2")};
+	const bytes=Buffer.from('~0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:{r:"$1:leaf",p:true,v:null}}}})+'\n1:'+JSON.stringify(parent)+'\n2:'+JSON.stringify(repeated)+'\n3:"KNOWN"\n');
+	const result=inspectRequiredFlightBody(bytes,{cachedNavigations:true});
+	assert.equal(result.complete,true,JSON.stringify(result));
+	assert.ok(result.closedEagerMemo.hits>1000);
+	assert.ok(result.closedEagerMemo.published>0);
+	assert.ok(result.modelSteps<100000);
+	assert.doesNotMatch(JSON.stringify(result.closedEagerMemo),/KNOWN|field|\$[a-f0-9]/);
+});
+
+const closedMemoBody=(r,rows)=>Buffer.from('~0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:{r,p:true,v:null}}}})+'\n'+rows);
+
+test("closed eager certificates include completed acyclic outlined parents and preserve actual model origins", () => {
+	const repeated={leaf:"KNOWN"};for(let index=0;index<70;index++)repeated[`field${index}`]="$3:leaf";
+	const parent={leaf:"KNOWN",items:Array(1200).fill("$2")};
+	const result=inspectRequiredFlightBody(closedMemoBody("$1:leaf",'1:'+JSON.stringify(parent)+'\n2:'+JSON.stringify(repeated)+'\n3:{"leaf":"KNOWN","alias":"$4"}\n4:{"value":"KNOWN"}\n'),{cachedNavigations:true});
+	assert.equal(result.complete,true,JSON.stringify(result));assert.ok(result.closedEagerMemo.hits>1000);
+	for(const references of [["$2:leaf","$1:leaf"],["$1:leaf","$2:leaf"]]) {
+		assert.equal(inspectRequiredFlightBody(closedMemoBody(references,'1:{"leaf":"KNOWN","other":"$3"}\n2:"$1"\n3:{"value":"KNOWN"}\n'),{cachedNavigations:true}).complete,true,"An alias retains the actual model origin, not the alias record ID.");
+		assert.equal(inspectRequiredFlightBody(closedMemoBody(references,'1:{"leaf":"KNOWN","self":"$2"}\n2:"$1"\n'),{cachedNavigations:true}).complete,false,"Cross-model alias cycles cannot consume an unrelated completed certificate.");
+	}
+});
+
+test("provisional outlined anchors cannot publish closed children before late siblings in either order", () => {
+	for(const reverse of [false,true])for(const warmFirst of [false,true]) {
+		const entries=[["a",{leaf:"KNOWN",back:"$1:b"}],["b",{leaf:"KNOWN",back:"$1:a"}],["last","$8"]];if(reverse)entries.reverse();
+		const parent=Object.fromEntries(entries),refs=warmFirst?["$1:a:leaf","$1:b:leaf"]:["$1:b:leaf","$1:a:leaf"];
+		assert.equal(inspectRequiredFlightBody(closedMemoBody(refs,'1:'+JSON.stringify(parent)+'\n'),{cachedNavigations:true}).complete,false);
+		const ordinary={leaf:"KNOWN",self:"$1"};if(reverse){ordinary.self="$1";ordinary.leaf="KNOWN";}
+		const positive=inspectRequiredFlightBody(closedMemoBody("$1:leaf",'1:'+JSON.stringify(ordinary)+'\n'),{cachedNavigations:true});
+		assert.equal(positive.complete,true);assert.ok(positive.closedEagerMemo.borrowReasons.seenId>0);
+	}
+	const anchored=inspectRequiredFlightBody(closedMemoBody("$1:nested:back:back:value",'1:{"nested":{"value":"KNOWN","back":"$1:nested"}}\n'),{cachedNavigations:true});
+	assert.equal(anchored.complete,true);assert.ok(anchored.closedEagerMemo.borrowReasons.activeAnchor>0);assert.equal(anchored.closedEagerMemo.published,0);
+});
+
+test("closed eager hits compose their full depth through every warmed ancestor and still charge actual work", () => {
+	const inspect=(nest,warm)=>{
+		let deep="$4";for(let index=0;index<20;index++)deep={next:deep};
+		let child="$2";for(let index=0;index<nest;index++)child={next:child};
+		return inspectRequiredFlightBody(closedMemoBody(warm?["$3:leaf","$2:leaf","$1:leaf"]:["$3:leaf"],
+			'1:'+JSON.stringify({leaf:"KNOWN",deep})+'\n2:{"leaf":"KNOWN","child":"$1"}\n3:'+JSON.stringify({leaf:"KNOWN",child})+'\n4:"KNOWN"\n'),{cachedNavigations:true});
+	};
+	for(const warm of [false,true]) {
+		const valid=inspect(37,warm);assert.equal(valid.complete,true,JSON.stringify(valid));
+		if(warm)assert.ok(valid.closedEagerMemo.hits>0);
+		const invalid=inspect(38,warm);assert.equal(invalid.complete,false);assert.equal(invalid.pathLimitObservation.observedDepth,65);assert.equal(invalid.pathLimitObservation.guard,"existing-recursion-depth");
+	}
+	const repeated=inspectRequiredFlightBody(closedMemoBody("$1:leaf",'1:'+JSON.stringify({leaf:"KNOWN",many:Array(60000).fill("$2")})+'\n2:{"value":"$3"}\n3:"KNOWN"\n'),{cachedNavigations:true});
+	assert.equal(repeated.complete,false);assert.equal(repeated.pathLimitObservation.sharedModelSteps,100001);assert.ok(repeated.pathLimitObservation.closedEagerMemo.hits>1000);
+	const unique=inspectRequiredFlightBody(closedMemoBody("$1:leaf",'1:'+JSON.stringify({leaf:"KNOWN",many:Array.from({length:100001},()=>({value:0}))})+'\n'),{cachedNavigations:true});
+	assert.equal(unique.complete,false);assert.equal(unique.pathLimitObservation.sharedModelSteps,100001);
+});
+
+test("structural certificates never replace forced elements, required roles, opaque provenance or sticky errors", () => {
+	for(const reverse of [false,true]) {
+		const refs=["$1:leaf","$1:element:props:leaf"];if(reverse)refs.reverse();
+		assert.equal(inspectRequiredFlightBody(closedMemoBody(refs,'1:{"leaf":"KNOWN","element":["$","span",null,{"leaf":"KNOWN","missing":"$8"}]}\n'),{cachedNavigations:true}).complete,false);
+		for(const required of [["$","$L9",null,{}],["$","$Sreact.suspense",null,{fallback:"$L9",children:"KNOWN"}],"$Q2","$W2","$i2"]) {
+			const values=["$1:leaf",required];if(reverse)values.reverse();
+			assert.equal(inspectRequiredFlightBody(closedMemoBody(values,'1:{"leaf":"KNOWN","child":"$3"}\n2:[["key","$L9"]]\n3:{"value":"KNOWN"}\n'),{cachedNavigations:true}).complete,false);
+		}
+	}
+	for(const [reference,rows] of [
+		["$1:leaf",'1:{"leaf":"KNOWN","bad":"$8"}\n'],
+		["$1:leaf",'1:{"leaf":"KNOWN","bad":"$2"}\n2:I["module",[],"Export"]\n'],
+		["$1:leaf",'1:{"leaf":"KNOWN","bad":"$2"}\n2:o1,x'],
+		["$1:other:leaf",'1:{"leaf":"KNOWN","other":"$2"}\n2:T1,x'],
+		["$1:__proto__:leaf",'1:{"leaf":"KNOWN","__proto__":{"leaf":"KNOWN"}}\n'],
+		["$1:removed:leaf",'1:{"leaf":"KNOWN","removed":"$undefined"}\n'],
+	]) assert.equal(inspectRequiredFlightBody(closedMemoBody(reference,rows),{cachedNavigations:true}).complete,false);
+	const opaque=inspectRequiredFlightBody(closedMemoBody("$1:leaf",'1:{"leaf":"KNOWN","text":"$2"}\n2:T1,x'),{cachedNavigations:true});
+	assert.equal(opaque.complete,true);assert.ok(opaque.closedEagerMemo.borrowReasons.opaque>0);assert.equal(opaque.closedEagerMemo.published,0);
+	const ready=closedMemoBody(["$1:leaf","$1:leaf"],'1:{"leaf":"KNOWN","child":"$2"}\n2:{"value":"KNOWN"}\n');
+	assert.equal(inspectRequiredFlightBody(Buffer.concat([ready,Buffer.from('9:E{"digest":"PRIVATE"}\n')]),{cachedNavigations:true}).reason,"flight-server-error");
+	assert.equal(inspectRequiredFlightBody(Buffer.from('0:{"a":"$1:result"}\n1:{"result":{"success":false,"error":"PRIVATE"}}\n'),{action:true}).explicitActionFailure,true);
+});

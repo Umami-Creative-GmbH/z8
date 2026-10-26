@@ -245,17 +245,23 @@ function inspectFlightBody(
 	const completedParentChecks = new WeakMap(), parentCheckDepths = [];
 	const literalParentChecks = new WeakMap();
 	let referenceSensitiveEpoch = 0;
+	// These body-local certificates prove structural readiness only, never a semantic role.
+	const closedEagerChecks = new WeakMap();
+	let borrowEpoch = 0;
+	const closedEagerMemo = {candidates:0,closures:0,dependencyFree:0,published:0,hits:0,depthExcluded:0,originExcluded:0,capacityExcluded:0,borrowReasons:{seenId:0,seenContainer:0,activeAnchor:0,lazySkip:0,elementSkip:0,opaque:0,removedField:0,parentCertificate:0}};
+	const borrowReadiness = reason => { borrowEpoch++; closedEagerMemo.borrowReasons[reason]++; };
+	const includeDepth = depth => { for (const scope of parentCheckDepths) scope.maxDepth=Math.max(scope.maxDepth,depth); };
 	let parentMemoChecks=0,parentMemoHits=0,parentMemoAbsent=0,parentMemoNonStandalone=0,parentMemoDepthExcluded=0,parentMemoKnownExcluded=0,parentMemoReady=0,parentMemoPublished=0;
 	const notePathFailure = reason => { pathFailure ??= reason; return false; };
 	const unknownPath = reason => { notePathFailure(reason); return {known:false}; };
 	const pathStep = (depth, phase, context = {}) => {
-		for (const scope of parentCheckDepths) scope.maxDepth = Math.max(scope.maxDepth,depth);
+		includeDepth(depth);
 		const guard = depth > 64 ? "existing-recursion-depth" : ++budget.models > 100000 ? "shared-model-work" : null;
 		if (guard) {
 			pathLimit = true;
 			pathLimitObservation ??= {guard,phase,observedDepth:depth,depthCap:64,sharedModelSteps:budget.models,modelCap:100000,
 				localModelSteps:budget.models-modelBudgetAtStart,eagerParentCalls,outlinedCalls,eagerUniqueObjects,repeatedEagerObjects,
-				activeOutlinedPaths:activePaths.size,...context,parentMemoChecks,parentMemoHits,parentMemoAbsent,parentMemoNonStandalone,parentMemoDepthExcluded,parentMemoKnownExcluded,parentMemoReady,parentMemoPublished};
+				activeOutlinedPaths:activePaths.size,...context,parentMemoChecks,parentMemoHits,parentMemoAbsent,parentMemoNonStandalone,parentMemoDepthExcluded,parentMemoKnownExcluded,parentMemoReady,parentMemoPublished,closedEagerMemo:structuredClone(closedEagerMemo)};
 			return notePathFailure("depth-or-model-limit");
 		}
 		return true;
@@ -263,7 +269,7 @@ function inspectFlightBody(
 	const elementTuple = value => Array.isArray(value) && value[0] === "$";
 	// Materialized JSON parents must not be blocked by an eager sibling. Lazy/promise values
 	// remain wrappers here; following a path through one is a separate, stricter operation.
-	const eagerParent = (value, forceElement, seen = new Set(), depth = 0, referenceEdges = 0, jsonDepth = 0) => {
+	const eagerParent = (value, forceElement, seen = new Set(), depth = 0, referenceEdges = 0, jsonDepth = 0, originId = null) => {
 		eagerParentCalls++;
 		if (value && typeof value === "object") {
 			if (eagerObjectsObserved.has(value)) repeatedEagerObjects++;
@@ -272,48 +278,73 @@ function inspectFlightBody(
 		if (!pathStep(depth,"eager-parent",{referenceEdgesInParent:referenceEdges,jsonDepthInParent:jsonDepth})) return false;
 		if (typeof value === "string") {
 			if (value.startsWith("$")) referenceSensitiveEpoch++;
-			if (/^\$(?:L|@)[a-f0-9]+$/.test(value)) return canonicalFlightId(value.slice(2)) || notePathFailure("noncanonical-eager-reference");
+			if (/^\$(?:L|@)[a-f0-9]+$/.test(value)) { borrowReadiness("lazySkip"); return canonicalFlightId(value.slice(2)) || notePathFailure("noncanonical-eager-reference"); }
 			if (/^\$[QWi][a-f0-9]+$/.test(value)) {
 				const id=value.slice(2),record=records.get(id);
 				if (!record || record.tag !== null || record.stream || !Array.isArray(record.value) || (value[1] === "Q" && !record.value.every(pair=>Array.isArray(pair)&&pair.length===2))) return notePathFailure("unsupported-eager-collection");
-				if (seen.has(id)) return true;
-				return eagerParent(record.value,false,new Set([...seen,id]),depth + 1,referenceEdges + 1,0);
+				if (seen.has(id)) { borrowReadiness("seenId"); return true; }
+				return eagerParent(record.value,false,new Set([...seen,id]),depth + 1,referenceEdges + 1,0,id);
 			}
 			if (/^\$[a-f0-9]+$/.test(value)) {
 				const id = value.slice(1), record = records.get(id);
 				if (!record) return notePathFailure("missing-eager-model");
 				if (record.tag === "I") return notePathFailure("eager-import-model");
-				if (record.tag === "T" || record.stream) return true;
-				if (seen.has(id)) return (record.value && typeof record.value === "object" && [...seen].filter(item=>typeof item === "string").length === 1) || notePathFailure("eager-cross-record-or-alias-cycle");
-				return eagerParent(record.value, forceElement, new Set([...seen,id]), depth + 1,referenceEdges + 1,0);
+				if (record.tag === "T" || record.stream) { borrowReadiness("opaque"); return true; }
+				if (seen.has(id)) { borrowReadiness("seenId"); return (record.value && typeof record.value === "object" && [...seen].filter(item=>typeof item === "string").length === 1) || notePathFailure("eager-cross-record-or-alias-cycle"); }
+				return eagerParent(record.value, forceElement, new Set([...seen,id]), depth + 1,referenceEdges + 1,0,id);
 			}
 			if (plainPath.test(value)) {
 				const selected = outlined(value, depth + 1, seen);
-				return selected.known && eagerParent(selected.value,forceElement,seen,depth + 1,referenceEdges + 1,0);
+				return selected.known && eagerParent(selected.value,forceElement,seen,depth + 1,referenceEdges + 1,0,selected.originId);
 			}
+			if (value === "$undefined") borrowReadiness("removedField");
 			return !value.startsWith("$") || value.startsWith("$$") || ["$","$undefined","$NaN","$Infinity","$-Infinity","$-0"].includes(value) || /^\$[SD]/.test(value) || notePathFailure("unsupported-eager-reference");
 		}
 		if (!value || typeof value !== "object") return true;
-		if (binaryValues.has(value) || opaqueText.has(value)) { referenceSensitiveEpoch++; return notePathFailure("eager-binary-or-text-value"); }
-		if (elementTuple(value) && !forceElement) { referenceSensitiveEpoch++; return true; }
+		if (binaryValues.has(value) || opaqueText.has(value)) { referenceSensitiveEpoch++; borrowReadiness("opaque"); return notePathFailure("eager-binary-or-text-value"); }
+		if (elementTuple(value) && !forceElement) { referenceSensitiveEpoch++; borrowReadiness("elementSkip"); return true; }
 		if (elementTuple(value) && value.length !== 4) return notePathFailure("malformed-eager-element");
-		if (seen.has(value)) { referenceSensitiveEpoch++; return true; }
+		if (seen.has(value)) { referenceSensitiveEpoch++; borrowReadiness("seenContainer"); return true; }
 		const literal = literalParentChecks.get(value)?.get(forceElement===true);
 		if (literal && depth + literal.depthSpan <= 64) {
 			// A closed reference-free subtree is context independent, but its full height
 			// still belongs to EVERY ancestor certificate that consumes this lookup.
-			for (const scope of parentCheckDepths) scope.maxDepth=Math.max(scope.maxDepth,depth+literal.depthSpan);
+			includeDepth(depth+literal.depthSpan);
 			return true;
 		}
+		const origin = records.get(originId), originKnown = typeof originId === "string" && origin?.tag === null && !origin.stream;
+		const certificate = originKnown && closedEagerChecks.get(value)?.get(originId)?.get(forceElement===true);
+		if (certificate && depth + certificate.depthSpan <= 64) {
+			closedEagerMemo.hits++;
+			// A reference-bearing closed hit must not become a reference-free literal proof.
+			referenceSensitiveEpoch++;
+			includeDepth(depth+certificate.depthSpan);
+			return true;
+		}
+		if (certificate) closedEagerMemo.depthExcluded++;
+		const candidateEpoch = borrowEpoch;
+		closedEagerMemo.candidates++;
 		const eligibility = referenceSensitiveEpoch, scope = {maxDepth:depth};
-		if (Object.hasOwn(value,"__proto__")) referenceSensitiveEpoch++;
+		if (Object.hasOwn(value,"__proto__")) { referenceSensitiveEpoch++; borrowReadiness("removedField"); }
 		const containers = new Set([...seen,value]);
 		parentCheckDepths.push(scope);
 		let ready;
 		try { ready = Object.keys(value).filter(key=>key!=="__proto__").every(key=> {
 			const descriptor=Object.getOwnPropertyDescriptor(value,key);
-			return descriptor && Object.hasOwn(descriptor,"value") && eagerParent(descriptor.value,false,containers,depth + 1,referenceEdges,jsonDepth + 1);
+			return descriptor && Object.hasOwn(descriptor,"value") && eagerParent(descriptor.value,false,containers,depth + 1,referenceEdges,jsonDepth + 1,originId);
 		}); } finally { parentCheckDepths.pop(); }
+		if (ready) closedEagerMemo.closures++;
+		if (ready && borrowEpoch === candidateEpoch) {
+			closedEagerMemo.dependencyFree++;
+			if (!originKnown) closedEagerMemo.originExcluded++;
+			else if (closedEagerMemo.published >= 100000) closedEagerMemo.capacityExcluded++;
+			else {
+				let byOrigin = closedEagerChecks.get(value); if (!byOrigin) closedEagerChecks.set(value,byOrigin=new Map());
+				let byForce = byOrigin.get(originId); if (!byForce) byOrigin.set(originId,byForce=new Map());
+				if (!byForce.has(forceElement===true)) closedEagerMemo.published++;
+				byForce.set(forceElement===true,{depthSpan:scope.maxDepth-depth});
+			}
+		}
 		if (ready && referenceSensitiveEpoch === eligibility) {
 			let byForce = literalParentChecks.get(value);
 			if (!byForce) literalParentChecks.set(value,byForce=new Map());
@@ -330,8 +361,10 @@ function inspectFlightBody(
 		const active = activePaths.get(reference);
 		if (active) {
 			const ids = [...trail].filter(item=>typeof item === "string");
-			if (active.checking && active.anchorKnown && active.modelIds.size === 1 && ids.length > 0 && ids.every(id=>id===active.rootId))
+			if (active.checking && active.anchorKnown && active.modelIds.size === 1 && ids.length > 0 && ids.every(id=>id===active.rootId)) {
+				borrowReadiness("activeAnchor");
 				return {known:true,value:active.target,originId:active.originId,modelIds:active.modelIds};
+			}
 			return unknownPath(active.checking && active.anchorKnown ? "unsupported-cross-record-cycle" : "outlined-reference-cycle");
 		}
 		const [id,...keys] = reference.slice(1).split(":");
@@ -392,7 +425,10 @@ function inspectFlightBody(
 				const completed = standalone && available;
 				if (completed?.forceElement === true && entryDepth + completed.depthSpan <= 64) {
 					parentMemoHits++;
-					return pathStep(entryDepth,"completed-parent");
+					if (!pathStep(entryDepth,"completed-parent")) return false;
+					includeDepth(entryDepth+completed.depthSpan);
+					borrowReadiness("parentCertificate");
+					return true;
 				}
 				if(completed?.forceElement===true && entryDepth+completed.depthSpan>64)parentMemoDepthExcluded++;
 				// Reuse only a SAME-model materialized parent's active traversal. Its enclosing
@@ -401,7 +437,7 @@ function inspectFlightBody(
 				const inherited = [...trail].every(item=>typeof item !== "string" || item === parent.originId) ? trail : [];
 				const scope = {maxDepth:entryDepth}; parentCheckDepths.push(scope);
 				let ready;
-				try { ready = eagerParent(parent.value,true,new Set([...inherited,parent.originId]),entryDepth); }
+				try { ready = eagerParent(parent.value,true,new Set([...inherited,parent.originId]),entryDepth,0,0,parent.originId); }
 				finally { parentCheckDepths.pop(); }
 				if (ready && standalone) { parentMemoReady++; pendingParentChecks.push({parent,depthSpan:scope.maxDepth-entryDepth}); }
 				return ready;
@@ -699,7 +735,7 @@ function inspectFlightBody(
 	const modelLimitObservation=(site,guard,objectKeyCount=null)=>({protocol:"bounded-model-limit-observation-v1",site,guard,modelCap:100000,depthCap:64,
 		sharedModelSteps:budget.models,localModelSteps:budget.models-modelBudgetAtStart,inspected,queueLength:queue.length,objectKeyCount,visitedStates:visited.size,recordCount,
 		recursionLevel:depth,embeddedModelSteps:embeddedRuntimePrefetch?.modelSteps ?? 0,eagerParentCalls,outlinedCalls,eagerUniqueObjects,repeatedEagerObjects,activeOutlinedPaths:activePaths.size,
-		parentMemoChecks,parentMemoHits,parentMemoAbsent,parentMemoNonStandalone,parentMemoDepthExcluded,parentMemoKnownExcluded,parentMemoReady,parentMemoPublished});
+		parentMemoChecks,parentMemoHits,parentMemoAbsent,parentMemoNonStandalone,parentMemoDepthExcluded,parentMemoKnownExcluded,parentMemoReady,parentMemoPublished,closedEagerMemo:structuredClone(closedEagerMemo)});
 	while (queue.length) {
 		if (++inspected > 100000 || ++budget.models > 100000) return unknown("model-limit",{modelLimitObservation:modelLimitObservation("semantic-loop",inspected>100000?"local-inspected-work":"shared-model-work")});
 		const { value, role, fallbackReferences, directEmbeddedOutput, fromTypedOutput, outputArrival, outputParentArrival, rArrayOutput, insideRArray } = queue.pop();
@@ -1118,7 +1154,7 @@ function inspectFlightBody(
 		bodySha256: bodySha256(bytes),
 		serverErrors: 0,
 		explicitActionFailure: false,
-		protocolRows: recordCount, modelSteps: budget.models - modelBudgetAtStart - (embeddedRuntimePrefetch?.modelSteps ?? 0), embeddedRuntimePrefetch,
+		protocolRows: recordCount, modelSteps: budget.models - modelBudgetAtStart - (embeddedRuntimePrefetch?.modelSteps ?? 0), embeddedRuntimePrefetch,closedEagerMemo:structuredClone(closedEagerMemo),
 	};
 }
 
