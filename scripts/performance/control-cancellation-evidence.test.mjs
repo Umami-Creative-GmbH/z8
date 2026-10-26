@@ -500,6 +500,10 @@ test("a complete represented navigation patch needs typed outputs and all depend
 			'"r":"$dead"',
 		),
 		body.replace(
+			'"r":["$","div",null,{"children":"private-rendered-value"}]',
+			'"r":"$5"',
+		) + "5:null\n",
+		body.replace(
 			'"d":{"r":["$","div",null,{"children":"private-rendered-value"}],"p":true,"v":null}',
 			'"d":{"r":null,"p":true,"v":null}',
 		),

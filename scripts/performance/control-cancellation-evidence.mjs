@@ -442,7 +442,16 @@ export function inspectRequiredFlightBody(
 				(Object.hasOwn(data, "s") && !iterableHasType(data.s, staleTime))
 			)
 				return false;
-			if (data.r !== null && data.r !== "$undefined") representedOutputs++;
+			const output = resolve(data.r);
+			const textOutput =
+				typeof data.r === "string" &&
+				/^\$@?[a-f0-9]+$/.test(data.r) &&
+				records.get(data.r.replace(/^\$@?/, ""))?.tag === "T";
+			if (
+				textOutput ||
+				(output !== null && output !== undefined && output !== "$undefined")
+			)
+				representedOutputs++;
 			return true;
 		};
 		if (
