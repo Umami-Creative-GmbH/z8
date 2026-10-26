@@ -1456,3 +1456,103 @@ test("structural certificates never replace forced elements, required roles, opa
 	assert.equal(inspectRequiredFlightBody(Buffer.concat([ready,Buffer.from('9:E{"digest":"PRIVATE"}\n')]),{cachedNavigations:true}).reason,"flight-server-error");
 	assert.equal(inspectRequiredFlightBody(Buffer.from('0:{"a":"$1:result"}\n1:{"result":{"success":false,"error":"PRIVATE"}}\n'),{action:true}).explicitActionFailure,true);
 });
+
+test("canonical wrapper shape checks can reuse a closed structural parent without fulfilling its targets", () => {
+	const repeated={leaf:"KNOWN",lazy:"$L9",promise:"$@a"};for(let index=0;index<90;index++)repeated[`field${index}`]="$3";
+	const body=closedMemoBody("$1:leaf",'1:'+JSON.stringify({leaf:"KNOWN",items:Array(1600).fill("$2")})+'\n2:'+JSON.stringify(repeated)+'\n3:"KNOWN"\n');
+	const result=inspectRequiredFlightBody(body,{cachedNavigations:true});
+	assert.equal(result.complete,true,JSON.stringify(result));
+	assert.ok(result.closedEagerMemo.canonicalWrapperChecks>0);assert.ok(result.closedEagerMemo.wrapperHits>1000);
+	assert.ok(result.closedEagerMemo.publishedWithWrappers>0);assert.ok(result.closedEagerMemo.publishedNonLiteralEligible>0);
+	assert.ok(result.modelSteps<100000);
+});
+
+test("warmed canonical wrappers never discharge required targets or grant promise cache-hole permission", () => {
+	for(const wrapper of ["$L9","$@9"])for(const reverse of [false,true]) {
+		const rows='1:'+JSON.stringify({leaf:"KNOWN",deferred:wrapper})+'\n';
+		for(const required of ["$1:deferred",["$","$1:deferred",null,{}],["$","$Sreact.suspense",null,{fallback:"$1:deferred",children:"KNOWN"}],["$","div",null,{title:"$1:deferred"}],"$Q2","$W2","$i2"]) {
+			const refs=["$1:leaf",required];if(reverse)refs.reverse();
+			const result=inspectRequiredFlightBody(closedMemoBody(refs,rows+'2:[["key","$1:deferred"]]\n'),{cachedNavigations:true});
+			assert.equal(result.complete,false,"Every required role still checks the target after structural warming.");
+		}
+		const root={q:"$1:deferred",i:false,t:{t:{s:"en",d:{r:"$1:leaf",p:true,v:null}}}};
+		assert.equal(inspectRequiredFlightBody(Buffer.from('~0:'+JSON.stringify(root)+'\n'+rows),{cachedNavigations:true}).complete,false);
+		assert.equal(inspectRequiredFlightBody(closedMemoBody("$1:deferred:value",rows+'9:{"value":"KNOWN"}\n'),{cachedNavigations:true}).complete,wrapper==="$L9","L own paths still dereference real models; promise paths never unwrap.");
+		const refs=["$1:leaf","$1:deferred"];if(reverse)refs.reverse();
+		const shell=inspectRequiredFlightBody(closedMemoBody(refs,rows),{cachedNavigations:true,requestKind:"runtime-shell"});
+		assert.equal(shell.complete,wrapper==="$L9");
+		if(shell.complete){assert.equal(shell.renderableOutputClaim,false);assert.ok(shell.postponedCacheOutputs>0);}
+		assert.equal(inspectRequiredFlightBody(Buffer.from(closedMemoBody(refs,rows).toString().replace(/^~/,'#')),{cachedNavigations:true}).complete,false);
+	}
+});
+
+test("canonical shape readiness preserves target-state and malformed-reference decisions", () => {
+	for(const wrapper of ["$L9","$@9"])for(const rows of ['', '9:{"value":"KNOWN"}\n', '9:I["module",[],"Export"]\n', '9:R\n9:C\n']) {
+		const body=closedMemoBody(["$1:leaf","$1:leaf"],'1:'+JSON.stringify({leaf:"KNOWN",deferred:wrapper})+'\n'+rows);
+		assert.equal(inspectRequiredFlightBody(body,{cachedNavigations:true}).complete,true,"Selecting a known scalar never claimed wrapper-target fulfillment.");
+		const inner=Buffer.concat([body,Buffer.from('a:E{"digest":"PRIVATE"}\n')]);
+		assert.equal(inspectRequiredFlightBody(inner,{cachedNavigations:true}).reason,"flight-server-error");
+		const outer=Buffer.concat([Buffer.from('0:{"q":"","i":false,"t":{"t":{"s":"en","d":{"r":"MAIN","p":false,"v":null}}},"p":"$1"}\n1:R\n1:o'+inner.length.toString(16)+','),inner,Buffer.from('1:C\n')]);
+		assert.equal(inspectRequiredFlightBody(outer,{cachedNavigations:true}).embeddedReason,"flight-server-error");
+	}
+	for(const wrapper of ["$L00","$@00","$L20000000000000","$@20000000000000","$L","$@","$L9:value","$@9:value","$Z9"]) {
+		assert.equal(inspectRequiredFlightBody(closedMemoBody("$1:leaf",'1:'+JSON.stringify({leaf:"KNOWN",deferred:wrapper})+'\n'),{cachedNavigations:true}).complete,false);
+	}
+	for(const literal of ["$$L00","$$@9:value"]) {
+		const result=inspectRequiredFlightBody(closedMemoBody("$1:leaf",'1:'+JSON.stringify({leaf:"KNOWN",literal})+'\n'),{cachedNavigations:true});
+		assert.equal(result.complete,true);assert.equal(result.closedEagerMemo.canonicalWrapperChecks,0);
+	}
+	for(const wrapper of ["$L9","$@9"]) {
+		const rows='1:'+JSON.stringify({leaf:"KNOWN",deferred:wrapper,result:{success:false,error:"PRIVATE"}})+'\n';
+		assert.equal(inspectRequiredFlightBody(Buffer.from('0:{"a":"$1:result"}\n'+rows),{action:true}).explicitActionFailure,true);
+	}
+});
+
+test("canonical wrapper observation does not erase any genuine borrow or late eager failure", () => {
+	for(const reverse of [false,true])for(const wrapper of ["$L9","$@9"]) {
+		for(const [name,value,extra] of [["self","$1",""],["element",["$","span",null,{bad:"$8"}],""],["removed","$undefined",""],["__proto__",{ignored:"KNOWN"},""],["text","$2",'2:T1,x']]) {
+			const entries=[["leaf","KNOWN"],["deferred",wrapper],[name,value]];if(reverse)entries.reverse();
+			const result=inspectRequiredFlightBody(closedMemoBody("$1:leaf",'1:'+JSON.stringify(Object.fromEntries(entries))+'\n'+extra),{cachedNavigations:true});
+			assert.equal(result.complete,true,JSON.stringify(result));
+			assert.equal(result.closedEagerMemo.publishedWithWrappers,0);
+			assert.ok(result.closedEagerMemo.wrapperBorrowCandidates>0);
+		}
+		const entries=[["a",{leaf:"KNOWN",back:"$1:b",deferred:wrapper}],["b",{leaf:"KNOWN",back:"$1:a"}],["last","$8"]];if(reverse)entries.reverse();
+		for(const refs of [["$1:a:leaf","$1:b:leaf"],["$1:b:leaf","$1:a:leaf"]])assert.equal(inspectRequiredFlightBody(closedMemoBody(refs,'1:'+JSON.stringify(Object.fromEntries(entries))+'\n'),{cachedNavigations:true}).complete,false);
+		assert.equal(inspectRequiredFlightBody(closedMemoBody("$1:leaf",'1:'+JSON.stringify({leaf:"KNOWN",deferred:wrapper,last:"$8"})+'\n'),{cachedNavigations:true}).complete,false);
+	}
+	for(const wrapper of ["$L9","$@9"]) {
+		const anchored=inspectRequiredFlightBody(closedMemoBody("$1:nested:back:back:leaf",'1:'+JSON.stringify({nested:{leaf:"KNOWN",back:"$1:nested",deferred:wrapper}})+'\n'),{cachedNavigations:true});
+		assert.equal(anchored.complete,true);assert.ok(anchored.closedEagerMemo.borrowReasons.activeAnchor>0);assert.equal(anchored.closedEagerMemo.publishedWithWrappers,0);
+	}
+});
+
+test("wrapper-bearing certificates compose depth64 and reject cold or warmed depth65 and charged work100001", () => {
+	const inspect=(nest,warm)=>{
+		let deep="$L9";for(let index=0;index<20;index++)deep={next:deep};
+		let child="$2";for(let index=0;index<nest;index++)child={next:child};
+		return inspectRequiredFlightBody(closedMemoBody(warm?["$3:leaf","$2:leaf","$1:leaf"]:["$3:leaf"],
+			'1:'+JSON.stringify({leaf:"KNOWN",deep})+'\n2:{"leaf":"KNOWN","child":"$1"}\n3:'+JSON.stringify({leaf:"KNOWN",child})+'\n'),{cachedNavigations:true});
+	};
+	for(const warm of [false,true]) {
+		const valid=inspect(38,warm);assert.equal(valid.complete,true,JSON.stringify(valid));if(warm)assert.ok(valid.closedEagerMemo.wrapperHits>0);
+		const invalid=inspect(39,warm);assert.equal(invalid.complete,false);assert.equal(invalid.pathLimitObservation.observedDepth,65);
+		if(warm)assert.ok(invalid.pathLimitObservation.closedEagerMemo.depthExcluded>0);
+	}
+	for(const repeated of [false,true]) {
+		const many=repeated?Array(60000).fill("$2"):Array.from({length:60000},()=>({deferred:"$L9"}));
+		const result=inspectRequiredFlightBody(closedMemoBody("$1:leaf",'1:'+JSON.stringify({leaf:"KNOWN",many})+'\n2:{"deferred":"$L9"}\n'),{cachedNavigations:true});
+		assert.equal(result.complete,false);assert.equal(result.pathLimitObservation.sharedModelSteps,100001);
+		if(repeated)assert.ok(result.pathLimitObservation.closedEagerMemo.wrapperHits>1000);
+	}
+});
+
+test("memo diagnostics distinguish literal-first overlap from nonliteral wrapper reuse without retaining identities", () => {
+	const result=inspectRequiredFlightBody(closedMemoBody("$1:leaf",'1:'+JSON.stringify({leaf:"KNOWN",many:Array(100).fill("$2")})+'\n2:{"value":"KNOWN"}\n'),{cachedNavigations:true});
+	const counters=result.closedEagerMemo;
+	assert.equal(result.complete,true);assert.ok(counters.literalHits>0);assert.ok(counters.literalHitsWithUsableClosedCertificate>0);
+	assert.ok(counters.literalHitsWithUsableClosedCertificate<=counters.literalHitsWithClosedCertificate);assert.ok(counters.literalHitsWithClosedCertificate<=counters.literalHits);
+	assert.equal(counters.publishedLiteralEligible+counters.publishedNonLiteralEligible,counters.published);
+	assert.ok(counters.publishedWithWrappers<=counters.publishedNonLiteralEligible);assert.ok(counters.wrapperOnlyClosures<=counters.closures);
+	assert.doesNotMatch(JSON.stringify(counters),/KNOWN|\$[a-f0-9]/);
+});

@@ -247,8 +247,12 @@ function inspectFlightBody(
 	let referenceSensitiveEpoch = 0;
 	// These body-local certificates prove structural readiness only, never a semantic role.
 	const closedEagerChecks = new WeakMap();
-	let borrowEpoch = 0;
-	const closedEagerMemo = {candidates:0,closures:0,dependencyFree:0,published:0,hits:0,depthExcluded:0,originExcluded:0,capacityExcluded:0,borrowReasons:{seenId:0,seenContainer:0,activeAnchor:0,lazySkip:0,elementSkip:0,opaque:0,removedField:0,parentCertificate:0}};
+	let borrowEpoch = 0, canonicalWrapperEpoch = 0;
+	const closedEagerMemo = {candidates:0,closures:0,dependencyFree:0,published:0,hits:0,depthExcluded:0,originExcluded:0,capacityExcluded:0,
+		canonicalWrapperChecks:0,wrapperOnlyClosures:0,wrapperBorrowCandidates:0,wrapperOnlyFailedCandidates:0,
+		literalHits:0,literalHitsWithClosedCertificate:0,literalHitsWithUsableClosedCertificate:0,
+		publishedLiteralEligible:0,publishedNonLiteralEligible:0,publishedWithWrappers:0,nonLiteralHits:0,wrapperHits:0,
+		borrowReasons:{seenId:0,seenContainer:0,activeAnchor:0,elementSkip:0,opaque:0,removedField:0,parentCertificate:0}};
 	const borrowReadiness = reason => { borrowEpoch++; closedEagerMemo.borrowReasons[reason]++; };
 	const includeDepth = depth => { for (const scope of parentCheckDepths) scope.maxDepth=Math.max(scope.maxDepth,depth); };
 	let parentMemoChecks=0,parentMemoHits=0,parentMemoAbsent=0,parentMemoNonStandalone=0,parentMemoDepthExcluded=0,parentMemoKnownExcluded=0,parentMemoReady=0,parentMemoPublished=0;
@@ -278,7 +282,12 @@ function inspectFlightBody(
 		if (!pathStep(depth,"eager-parent",{referenceEdgesInParent:referenceEdges,jsonDepthInParent:jsonDepth})) return false;
 		if (typeof value === "string") {
 			if (value.startsWith("$")) referenceSensitiveEpoch++;
-			if (/^\$(?:L|@)[a-f0-9]+$/.test(value)) { borrowReadiness("lazySkip"); return canonicalFlightId(value.slice(2)) || notePathFailure("noncanonical-eager-reference"); }
+			if (/^\$(?:L|@)[a-f0-9]+$/.test(value)) {
+				if (!canonicalFlightId(value.slice(2))) return notePathFailure("noncanonical-eager-reference");
+				// This completes the old wrapper-shape predicate, not its target or role.
+				canonicalWrapperEpoch++; closedEagerMemo.canonicalWrapperChecks++;
+				return true;
+			}
 			if (/^\$[QWi][a-f0-9]+$/.test(value)) {
 				const id=value.slice(2),record=records.get(id);
 				if (!record || record.tag !== null || record.stream || !Array.isArray(record.value) || (value[1] === "Q" && !record.value.every(pair=>Array.isArray(pair)&&pair.length===2))) return notePathFailure("unsupported-eager-collection");
@@ -307,6 +316,10 @@ function inspectFlightBody(
 		if (seen.has(value)) { referenceSensitiveEpoch++; borrowReadiness("seenContainer"); return true; }
 		const literal = literalParentChecks.get(value)?.get(forceElement===true);
 		if (literal && depth + literal.depthSpan <= 64) {
+			closedEagerMemo.literalHits++;
+			const origin=records.get(originId),closed=typeof originId==="string" && origin?.tag===null && !origin.stream && closedEagerChecks.get(value)?.get(originId)?.get(forceElement===true);
+			if(closed)closedEagerMemo.literalHitsWithClosedCertificate++;
+			if(closed && depth+closed.depthSpan<=64)closedEagerMemo.literalHitsWithUsableClosedCertificate++;
 			// A closed reference-free subtree is context independent, but its full height
 			// still belongs to EVERY ancestor certificate that consumes this lookup.
 			includeDepth(depth+literal.depthSpan);
@@ -316,13 +329,15 @@ function inspectFlightBody(
 		const certificate = originKnown && closedEagerChecks.get(value)?.get(originId)?.get(forceElement===true);
 		if (certificate && depth + certificate.depthSpan <= 64) {
 			closedEagerMemo.hits++;
+			if(!certificate.literalEligible)closedEagerMemo.nonLiteralHits++;
+			if(certificate.containsCanonicalWrappers){canonicalWrapperEpoch++;closedEagerMemo.wrapperHits++;}
 			// A reference-bearing closed hit must not become a reference-free literal proof.
 			referenceSensitiveEpoch++;
 			includeDepth(depth+certificate.depthSpan);
 			return true;
 		}
 		if (certificate) closedEagerMemo.depthExcluded++;
-		const candidateEpoch = borrowEpoch;
+		const candidateEpoch = borrowEpoch, candidateWrapperEpoch = canonicalWrapperEpoch;
 		closedEagerMemo.candidates++;
 		const eligibility = referenceSensitiveEpoch, scope = {maxDepth:depth};
 		if (Object.hasOwn(value,"__proto__")) { referenceSensitiveEpoch++; borrowReadiness("removedField"); }
@@ -334,6 +349,12 @@ function inspectFlightBody(
 			return descriptor && Object.hasOwn(descriptor,"value") && eagerParent(descriptor.value,false,containers,depth + 1,referenceEdges,jsonDepth + 1,originId);
 		}); } finally { parentCheckDepths.pop(); }
 		if (ready) closedEagerMemo.closures++;
+		const containsCanonicalWrappers=canonicalWrapperEpoch!==candidateWrapperEpoch;
+		if(containsCanonicalWrappers){
+			if(borrowEpoch!==candidateEpoch)closedEagerMemo.wrapperBorrowCandidates++;
+			else if(ready)closedEagerMemo.wrapperOnlyClosures++;
+			else closedEagerMemo.wrapperOnlyFailedCandidates++;
+		}
 		if (ready && borrowEpoch === candidateEpoch) {
 			closedEagerMemo.dependencyFree++;
 			if (!originKnown) closedEagerMemo.originExcluded++;
@@ -341,8 +362,13 @@ function inspectFlightBody(
 			else {
 				let byOrigin = closedEagerChecks.get(value); if (!byOrigin) closedEagerChecks.set(value,byOrigin=new Map());
 				let byForce = byOrigin.get(originId); if (!byForce) byOrigin.set(originId,byForce=new Map());
-				if (!byForce.has(forceElement===true)) closedEagerMemo.published++;
-				byForce.set(forceElement===true,{depthSpan:scope.maxDepth-depth});
+				const literalEligible=referenceSensitiveEpoch===eligibility;
+				if (!byForce.has(forceElement===true)) {
+					closedEagerMemo.published++;
+					closedEagerMemo[literalEligible?"publishedLiteralEligible":"publishedNonLiteralEligible"]++;
+					if(containsCanonicalWrappers)closedEagerMemo.publishedWithWrappers++;
+				}
+				byForce.set(forceElement===true,{depthSpan:scope.maxDepth-depth,literalEligible,containsCanonicalWrappers});
 			}
 		}
 		if (ready && referenceSensitiveEpoch === eligibility) {
