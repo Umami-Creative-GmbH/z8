@@ -7,6 +7,7 @@ import {setImmediate as tick} from "node:timers/promises";
 import {createProxyHeaderCensus} from "./proxy-header-census.mjs";
 import {primaryProtocolIdentity} from "./protocol-fingerprints.mjs";
 import {cleanBrowserContextEvidence} from "./clean-evidence.mjs";
+import {projectCachedCdpText} from "./cdp-cached-text-projection.mjs";
 
 const sha=value=>createHash("sha256").update(value).digest("hex");
 const protocol=await primaryProtocolIdentity();
@@ -57,6 +58,59 @@ function fixture({applicationIds=[1,2],originalApplicationId=1,currentApplicatio
         controller:{available:true,secureContext:true,originMatches:true,controllerIdentityStable:true,controllerBefore:worker,controllerAfter:worker,registrationCount:1,registrationOverflow:0,registrations:[{scopeKnown:true,scopeSha256:sha(origin+"/"),ownedRootScope:true,active:worker,waiting:absent,installing:absent}]}}}};
   return {input:{failures:[failure],responses:[cached],proxy:[original,current],nativeContext,browserRevision:chromiumSWRRevision,coverage:{installed:true,scopeClosed:true,missing:0,overflow:0,errors:0,pendingBodies:0}},bytes,io:{origin,url,initial,wire,response,originalHeaders,originalId,currentId,principal}};
 }
+
+function projectionFixture(){
+  const result=fixture(),{input}=result;
+  const original=Buffer.from(result.bytes.toString("utf8").replace("known","é"));
+  const readback=original.toString("latin1"),readbackBytes=Buffer.from(readback);
+  for(const packet of input.proxy){
+    packet.bodyProof=inspectRequiredFlightBody(original,{requestKind:"segment-prefetch",segmentBinding:packet.bodyProof.segmentBinding});
+    packet.transportBodyReceipt={protocol:"proxy-natural-eof-decoded-bytes-v1",naturalEOF:true,decodedBytes:original.length,bodySha256:sha(original),cdpTextProjection:{available:true,...projectCachedCdpText(original)}};
+  }
+  const cached=input.responses[0];cached.ambiguousRedirect=false;cached.failed=false;
+  cached.bodyProof={complete:false,reason:"unsupported-record"};
+  cached.bodyReadbackReceipt={...cached.bodyReadbackReceipt,decodedBytes:readbackBytes.length,bodySha256:sha(readbackBytes),utf16CodeUnitLength:readback.length,observedDataLengthAtReadback:original.length,terminal:"finished",
+    effectiveCdpResponse:{protocol:"cdp-effective-response-decoder-metadata-v1",provenance:"Network.responseReceived",mimeKnown:true,mime:"text/x-component",charsetKnown:true,charset:"empty"}};
+  cached.browserDataLedger={protocol:"cached-browser-data-ledger-v1",requestObserved:true,responseEvents:1,finishedEvents:1,failedEvents:0,dataEvents:1,dataAfterTerminal:0,dataBeforeResponse:0,responseAfterTerminal:0,terminalBeforeResponse:0,invalidData:false,observedDataLength:original.length};
+  return {...result,original,readbackBytes};
+}
+
+test("Native forward-image equality keeps original Flight proof distinct from unknown CDP text parsing",()=>{
+  const {input,original}=projectionFixture(),result=classifyControlCancellations(input);
+  assert.equal(result.provenControls,1,JSON.stringify(result.records));
+  assert.equal(result.records[0].proof.byteCorrespondence.kind,"windows-1252-forward-image");
+  assert.equal(result.records[0].proof.cached.bodyProof.complete,false);
+  assert.equal(result.records[0].proof.origin.bodyProof.complete,true);
+  assert.equal(result.records[0].proof.byteCorrespondence.originalBytes,original.length);
+  assert.equal(cleanBrowserFailureEvidence(JSON.parse(JSON.stringify(result)),1),true);
+  const tampered=JSON.parse(JSON.stringify(result));tampered.records[0].proof.byteCorrespondence.kind="exact";
+  assert.equal(cleanBrowserFailureEvidence(tampered,1),false);
+});
+
+test("Native forward-image proof rejects missing decoder, final data, original protocol or byte correspondence premises",()=>{
+  const cases=[
+    i=>delete i.responses[0].browserDataLedger,i=>i.responses[0].browserDataLedger.invalidData=true,
+    i=>i.responses[0].browserDataLedger.dataAfterTerminal=1,i=>i.responses[0].browserDataLedger.finishedEvents=2,
+    i=>i.responses[0].browserDataLedger.dataBeforeResponse=1,i=>i.responses[0].browserDataLedger.responseAfterTerminal=1,i=>i.responses[0].browserDataLedger.terminalBeforeResponse=1,
+    i=>i.responses[0].browserDataLedger.failedEvents=1,i=>i.responses[0].browserDataLedger.responseEvents=2,
+    i=>i.responses[0].browserDataLedger.observedDataLength++,i=>i.responses[0].browserDataLedger.requestObserved=false,
+    i=>i.responses[0].failed=true,i=>i.responses[0].ambiguousRedirect=true,
+    i=>i.responses[0].bodyReadbackReceipt.observedDataLengthAtReadback++,i=>i.responses[0].bodyReadbackReceipt.terminal="failed",
+    i=>i.responses[0].bodyReadbackReceipt.base64Encoded=true,i=>i.responses[0].bodyReadbackReceipt.utf16CodeUnitLength++,
+    i=>delete i.responses[0].bodyReadbackReceipt.effectiveCdpResponse,i=>i.responses[0].bodyReadbackReceipt.effectiveCdpResponse.charset="utf-8",
+    i=>i.responses[0].responseContentType.charset="utf-8",i=>i.responses[0].responseContentType.mime="other",i=>i.responses[0].bodyReadbackReceipt.responseContentType.headerKnown=false,
+    i=>i.responses[0].bodyReadbackReceipt.effectiveCdpResponse.charsetKnown=false,i=>i.responses[0].bodyReadbackReceipt.effectiveCdpResponse.mime="other",
+    i=>i.proxy[0].transportBodyReceipt.cdpTextProjection.sourceRevision="0".repeat(40),i=>i.proxy[0].transportBodyReceipt.cdpTextProjection.mappingSha256="0".repeat(64),
+    i=>i.proxy[0].transportBodyReceipt.cdpTextProjection.outputCodeUnits++,i=>i.proxy[1].transportBodyReceipt.cdpTextProjection.utf8Sha256="0".repeat(64),
+    i=>i.proxy[0].bodyProof.complete=false,i=>i.proxy[0].bodyProof.serverErrors=1,i=>i.responses[0].observedProtocolError={serverErrors:1,explicitActionFailure:false},
+    i=>i.responses[0].bodyProof.bodySha256="0".repeat(64),i=>i.responses[0].bodyProof.decodedBytes=1,
+    i=>i.responses[0].bodyProof={complete:false,explicitActionFailure:true},i=>i.responses[0].initialSegmentResponse={...i.responses[0],responseHeaderSnapshotKnown:false},
+  ];
+  for(let index=0;index<cases.length;index++){
+    const {input}=projectionFixture();cases[index](input);
+    assert.equal(classifyControlCancellations(input).provenControls,0,String(index));
+  }
+});
 
 test("known-Extra Native control requires a complete source/principal/variant/ancestor/exact-byte certificate",()=>{
   const {input}=fixture();
@@ -161,16 +215,17 @@ test("genuine browser/HTTP/protocol failures are never relabeled as Native contr
 });
 
 test("actual collector APIs carry CORE authority and exact-byte joins after transport closure",async()=>{
-  const {input,bytes,io}=fixture(),ctx=input.nativeContext;
+ for(const mode of ["exact","projection"]){
+  const setup=mode==="exact"?fixture():projectionFixture(),{input,io}=setup,bytes=setup.original ?? setup.bytes,ctx=input.nativeContext;
   const proxy=createProxyControlCollector({contextId:ctx.contextId,compiledCachedNavigations:true,compiledBinding:ctx.binding});
   proxy.installed(ctx.headerLifetime.installation);
   const collector=createBrowserControlCollector({contextId:ctx.contextId,origin:io.origin,browserRevision:chromiumSWRRevision,compiledCachedNavigations:true,compiledBinding:ctx.binding,
     protocolSources:protocol,operatorFile:"run-baseline.mjs",principalEpoch:io.principal,environmentObservation:()=>ctx.environment,proxyObservation:proxy.snapshot,
-    readBody:async id=>{if(id!=="cached")throw Error("Synthetic native response body unavailable");return{body:bytes.toString(),base64Encoded:false};}});
+    readBody:async id=>{if(id!=="cached")throw Error("Synthetic native response body unavailable");return{body:mode==="exact"?bytes.toString():bytes.toString("latin1"),base64Encoded:false};}});
   collector.installed();
   const request=(id,type,timestamp)=>({requestId:id,loaderId:"loader",timestamp,type,initiator:{type:type==="Fetch"?"script":"other"},request:{url:io.url,method:"GET",headers:io.initial,initialPriority:"VeryLow"}});
   proxy.request(io.originalId,{url:io.url,method:"GET",headers:io.originalHeaders,traceId:"a".repeat(32)});proxy.response(io.originalId,{status:200,headers:io.response});proxy.bytes(io.originalId,bytes);proxy.end(io.originalId);
-  collector.request(request("cached","Fetch",1));collector.response({requestId:"cached",response:{status:200,headers:{...io.response,[controlResponseHeader]:io.originalId},fromDiskCache:true,fromServiceWorker:false}});
+  collector.request(request("cached","Fetch",1));collector.response({requestId:"cached",response:{status:200,headers:{...io.response,[controlResponseHeader]:io.originalId},fromDiskCache:true,fromServiceWorker:false,mimeType:"text/x-component",charset:""}});
   collector.data({requestId:"cached",dataLength:bytes.length});collector.finished({requestId:"cached",timestamp:2});await tick();await tick();
   collector.beginMeasurement();
   proxy.request(io.currentId,{url:io.url,method:"GET",headers:io.wire,traceId:"a".repeat(32)});proxy.response(io.currentId,{status:200,headers:io.response});proxy.bytes(io.currentId,bytes);proxy.end(io.currentId);
@@ -180,5 +235,13 @@ test("actual collector APIs carry CORE authority and exact-byte joins after tran
   const result=collector.snapshot();
   assert.equal(result.measured.provenControls,1,JSON.stringify(result.diagnostics.failures));
   assert.equal(result.measured.unknownFailures,0);
+  assert.equal(result.measured.records[0].proof.byteCorrespondence.kind,mode==="exact"?"exact":"windows-1252-forward-image");
   assert.equal(cleanBrowserContextEvidence(ctx.contextId,JSON.parse(JSON.stringify(result)),1,{runtime:{build:ctx.binding.compiledBuild,browserControl:ctx.binding},protocolSources:protocol,origin:io.origin}),true);
+  if(mode==="projection"){
+    collector.data({requestId:"cached",dataLength:0});const after=collector.snapshot();
+    assert.equal(after.measured.provenControls,0,"later actual data invalidates the formerly complete correspondence");
+    assert.equal(after.measured.rawFailedRequests,1);
+    assert.equal(after.bodyReceipts.find(row=>row.requestId==="cached").bodyReadbackReceipt.observedDataLengthAtReadback,bytes.length);
+  }
+ }
 });

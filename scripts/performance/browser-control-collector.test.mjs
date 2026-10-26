@@ -767,6 +767,45 @@ test("effective CDP decoder metadata requires bounded own data properties withou
 	assert.equal(reads,0);
 });
 
+test("cached final data ledger retains late, invalid and contradictory events after readback",async()=>{
+	for(const mode of ["late","invalid","duplicate-finish","failed","second-response"]){
+		const collector=createBrowserControlCollector({contextId,origin,readBody:async()=>({body,base64Encoded:false})});collector.installed();
+		const response={status:200,headers:responseHeaders,fromDiskCache:true,mimeType:"text/x-component",charset:""};
+		collector.request({requestId:"1",loaderId:"loader",type:"Fetch",timestamp:1,request:{url,method:"GET",headers}});
+		collector.response({requestId:"1",response});collector.data({requestId:"1",dataLength:Buffer.byteLength(body)});collector.finished({requestId:"1",timestamp:2});await tick();
+		const initial=collector.snapshot().bodyReceipts[0];
+		assert.equal(initial.browserDataLedger.observedDataLength,Buffer.byteLength(body));
+		if(mode==="late") collector.data({requestId:"1",dataLength:0});
+		if(mode==="invalid") collector.data({requestId:"1",dataLength:-1});
+		if(mode==="duplicate-finish") collector.finished({requestId:"1",timestamp:3});
+		if(mode==="failed") collector.failed({requestId:"1",errorText:"net::ERR_ABORTED",canceled:true});
+		if(mode==="second-response") collector.response({requestId:"1",response});
+		const after=collector.snapshot().bodyReceipts[0];
+		assert.equal(after.bodyReadbackReceipt.observedDataLengthAtReadback,initial.bodyReadbackReceipt.observedDataLengthAtReadback,"the old readback count is preserved, not silently repaired");
+		if(mode==="late") assert.equal(after.browserDataLedger.dataAfterTerminal,1);
+		if(mode==="invalid") assert.equal(after.browserDataLedger.invalidData,true);
+		if(mode==="duplicate-finish") assert.equal(after.browserDataLedger.finishedEvents,2);
+		if(mode==="failed") assert.equal(after.browserDataLedger.failedEvents,1);
+		if(mode==="second-response") assert.equal(after.browserDataLedger.responseEvents,2);
+		if(mode==="second-response") assert.equal(after.browserDataLedger.responseAfterTerminal,1);
+	}
+});
+
+test("cached data ledger records response and terminal ordering independently of event totals",async()=>{
+	for(const terminalFirst of [false,true]){
+		const collector=createBrowserControlCollector({contextId,origin,readBody:async()=>({body,base64Encoded:false})});collector.installed();
+		collector.request({requestId:"1",loaderId:"loader",type:"Fetch",timestamp:1,request:{url,method:"GET",headers}});
+		collector.data({requestId:"1",dataLength:Buffer.byteLength(body)});
+		if(terminalFirst) collector.finished({requestId:"1",timestamp:2});
+		collector.response({requestId:"1",response:{status:200,headers:responseHeaders,fromDiskCache:true,mimeType:"text/x-component",charset:""}});
+		if(terminalFirst) collector.failed({requestId:"1",errorText:"net::ERR_ABORTED",canceled:true});
+		else collector.finished({requestId:"1",timestamp:2});
+		await tick();const ledger=collector.snapshot().bodyReceipts[0].browserDataLedger;
+		assert.equal(ledger.dataBeforeResponse,1);assert.equal(ledger.responseEvents,1);assert.equal(ledger.finishedEvents,1);
+		assert.equal(ledger.responseAfterTerminal,terminalFirst?1:0);assert.equal(ledger.terminalBeforeResponse,terminalFirst?1:0);
+	}
+});
+
 test("installation preserves navigation arguments/results/errors and adds only declared identity metadata", async () => {
 	let cookieReads = 0;
 	const session = new EventEmitter(),
