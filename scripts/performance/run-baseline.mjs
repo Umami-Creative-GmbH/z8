@@ -631,6 +631,7 @@ async function main() {
 			nextStreamCompletionPatch: { ...plan.runtime.nextStreamCompletionPatch },
 			browserPermissions: fixtureBrowserPermissions,
 			build: plan.runtime.build,
+			browserControlMetadataFileSha256: plan.runtime.browserControlMetadataFileSha256 ?? null,
 			sourceBuild: plan.runtime.sourceBuild ?? null,
 			buildWorkers: plan.runtime.buildWorkers ?? null,
 			observer: plan.runtime.observer ?? null,
