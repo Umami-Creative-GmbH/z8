@@ -923,11 +923,12 @@ export function classifyControlCancellations({
 			if (
 				failure.bodyProof?.explicitActionFailure === true ||
 				failure.bodyProof?.serverErrors > 0 ||
+			failure.observedProtocolError?.explicitActionFailure === true || failure.observedProtocolError?.serverErrors > 0 ||
 				(packet &&
 					(packet.status >= 400 ||
 						packet.upstreamError === true ||
 						packet.bodyProof?.explicitActionFailure === true ||
-						packet.bodyProof?.serverErrors > 0))
+					packet.bodyProof?.serverErrors > 0 || packet.observedProtocolError?.explicitActionFailure === true || packet.observedProtocolError?.serverErrors > 0))
 			) {
 				outcome = "real-failure";
 				reason = "server-or-application-error";

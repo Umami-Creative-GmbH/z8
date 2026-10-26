@@ -5,6 +5,7 @@ import { mkdtemp, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
+import { cleanBrowserContextEvidence } from "./clean-evidence.mjs";
 import { setImmediate as tick } from "node:timers/promises";
 import {
 	chromiumSWRRevision,
@@ -689,4 +690,42 @@ test("passive stream bytes survive canceled getBody and prove only exact natural
 			mode === "late-ack" ? "scope-ended" : "failed",
 		);
 	}
+});
+
+test("positive protocol errors survive independent UNKNOWN reads in either completion order", async () => {
+	for (const order of ["stream-first", "readback-first"])
+		for (const kind of ["server-error", "action-failure", "unknown-only"]) {
+			const bytes = Buffer.from(kind === "server-error" ? '0:E{"digest":"PRIVATE_CANARY"}\n' :
+				kind === "action-failure" ? '0:{"a":{"success":false,"error":"PRIVATE_CANARY"}}\n' : '0:{"t":INVALID_STREAM}\n');
+			let acknowledge, resolveRead;
+			const collector = createBrowserControlCollector({ contextId, origin, browserRevision: chromiumSWRRevision, compiledCachedNavigations: false,
+				proxyObservation: () => ({ rows: [], installed: true, errors: 0, overflow: 0, pendingBodies: 0 }),
+				readBody: () => new Promise((resolve) => { resolveRead = resolve; }),
+				readStream: () => new Promise((resolve) => { acknowledge = resolve; }) });
+			collector.installed();
+			const request = event("optional", 1);
+			if (kind === "action-failure") { request.request.method = "POST"; request.request.headers = { ...headers, "next-action": "b".repeat(40) }; }
+			collector.request(request);
+			collector.requestExtra({ requestId: "optional", headers: request.request.headers });
+			collector.response({ requestId: "optional", response: { status: 200, headers: responseHeaders } });
+			collector.data({ requestId: "optional", dataLength: bytes.length });
+			collector.failed({ requestId: "optional", errorText: "net::ERR_ABORTED", canceled: true });
+			await tick();
+			const unknownRead = { body: '0:{"t":INVALID_READBACK}\n', base64Encoded: false };
+			if (order === "stream-first") { acknowledge({ bufferedData: bytes.toString("base64") }); await tick(); resolveRead(unknownRead); }
+			else { resolveRead(unknownRead); await tick(); acknowledge({ bufferedData: bytes.toString("base64") }); }
+			await tick();
+			collector.beginMeasurement(); collector.endMeasurement(); collector.endScope();
+			const proof = collector.snapshot();
+			assert.equal(proof.measured.rawFailedRequests, 0);
+			assert.equal(proof.allPhase.coverage.pendingBodies, 0);
+			assert.equal(proof.protocolErrors.observed, kind === "unknown-only" ? 0 : 1, order + kind);
+			assert.equal(proof.allPhase.realFailures, kind === "unknown-only" ? 0 : 1, order + kind);
+			assert.equal(cleanBrowserContextEvidence(contextId, proof, 0), kind === "unknown-only", order + kind);
+			if (kind !== "unknown-only") {
+				assert.equal(proof.protocolErrors.records[0].capture, "passive-stream");
+				assert.equal(proof.protocolErrors.records[0].bodySha256, createHash("sha256").update(bytes).digest("hex"));
+			}
+			assert.doesNotMatch(JSON.stringify(proof), /PRIVATE_CANARY/);
+		}
 });
