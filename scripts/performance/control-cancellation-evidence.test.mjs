@@ -779,6 +779,18 @@ test("typed patch rejection retains the first fixed guard and safe field kinds w
 	assert.doesNotMatch(JSON.stringify([direct,inspectRequiredFlightBody(outer,{cachedNavigations:true})]),/PRIVATE_QUERY|PRIVATE_OUTPUT|\$undefined/);
 });
 
+test("rejected typed iterable diagnostics distinguish reference, opener and already-inspected yield kinds", () => {
+	const body=(reference,rows)=>Buffer.from('~0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:{r:"KNOWN",p:true,v:reference}}}})+'\n'+rows);
+	const text="PRIVATE_PARAM";
+	const proof=inspectRequiredFlightBody(body("$1",'1:X\n1:T'+Buffer.byteLength(text).toString(16)+','+text+'1:C\n'),{cachedNavigations:true});
+	assert.equal(proof.complete,false);assert.equal(proof.patchDataObservation.failure,"vary-stream");
+	assert.deepEqual(proof.patchDataObservation.iterable,{referenceForm:"model-reference",targetKnown:true,targetTag:"X",stream:true,closed:true,yieldCount:1,firstRejectedYield:{rawKind:"framed-text",resolvedKind:"framed-text"}});
+	const alias=inspectRequiredFlightBody(body("$1:stream",'1:{"stream":"$2"}\n2:X\n2:C\n'),{cachedNavigations:true});
+	assert.equal(alias.complete,false);assert.equal(alias.patchDataObservation.iterable.referenceForm,"outlined-path");
+	assert.equal(alias.patchDataObservation.iterable.targetKnown,false,"No new resolution is performed for diagnostic purposes.");
+	assert.doesNotMatch(JSON.stringify([proof,alias]),/PRIVATE_PARAM|\$1|\$2/);
+});
+
 test("unresolved lazy dependencies retain bounded technical provenance without exposing the reference", () => {
 	for (const [reference, prefix, form] of [["$Labcdef", "L", "lazy-reference"], ["$@abcdef", "@", "promise-reference"], ["$abcdef", "plain", "model-reference"]]) {
 		const body = Buffer.from(`~0:{"t":{"t":{"s":"","d":{"r":"${reference}"}}}}\n`);
