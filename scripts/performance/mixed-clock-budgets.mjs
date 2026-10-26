@@ -33,6 +33,9 @@ const policy = {
 	observation: cleanObservationPolicy,
 	latency: { multiplier: 1.25, allowanceMs: 250, floorMs: 500 },
 };
+export function getMixedClockBudgetPolicyVersion() {
+	return policy.version;
+}
 const actors = ["large-admin", "small-admin", "small-manager", "large-manager"];
 const kinds = ["work", "team", "overtime"];
 const check = (value, field) => {
