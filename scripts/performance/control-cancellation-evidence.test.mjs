@@ -747,6 +747,38 @@ test("actual /_tree header contract proves a complete structure-only tree with r
 		);
 });
 
+test("typed patch rejection retains the first fixed guard and safe field kinds without changing its verdict", () => {
+	const root={q:"PRIVATE_QUERY",i:false,t:{t:{s:"en",d:{r:"PRIVATE_OUTPUT",p:true,v:null}}}};
+	const encode=root=>Buffer.from('~0:'+JSON.stringify(root)+'\n');
+	const invalid=structuredClone(root);invalid.t.t.d.p="$undefined";
+	const direct=inspectRequiredFlightBody(encode(invalid),{cachedNavigations:true});
+	assert.equal(direct.complete,false);assert.equal(direct.reason,"unsupported-navigation-patch-data");
+	assert.equal(direct.patchDataObservation.location,"node-data");
+	assert.equal(direct.patchDataObservation.failure,"partiality-type");
+	assert.equal(direct.patchDataObservation.fieldKinds.p,"undefined-sentinel");
+	assert.deepEqual(direct.patchDataObservation.present,{r:true,p:true,v:true,s:false,t:false,h:false,q:false,i:false,S:false,n:false});
+	for(const [mutate,location,failure]of [
+		[value=>delete value.t.t.d.r,"node-data","missing-output"],
+		[value=>delete value.t.t.d.v,"node-data","missing-vary"],
+		[value=>value.t.t.d.privateKey=true,"node-data","data-fields"],
+		[value=>value.t.t.d.v="$undefined","node-data","vary-stream"],
+		[value=>value.t.t.d.s="$undefined","node-data","stale-stream"],
+		[value=>value.t.h="$undefined","head-data","data-shape"],
+		[value=>value.t.other=true,"transport","transport-fields"],
+		[value=>value.r="$undefined","root-vary","vary-stream"],
+		[value=>value.s="$undefined","root-stale","stale-stream"],
+		[value=>{value.t.t.h="$undefined";value.t.t.d.p="$undefined";},"node-hints","hints-integer"],
+	]){
+		const value=structuredClone(root);mutate(value);const result=inspectRequiredFlightBody(encode(value),{cachedNavigations:true});
+		assert.equal(result.complete,false);assert.equal(result.reason,"unsupported-navigation-patch-data");
+		assert.equal(result.patchDataObservation.location,location);assert.equal(result.patchDataObservation.failure,failure);
+		assert.doesNotMatch(JSON.stringify(result),/privateKey|PRIVATE_QUERY|PRIVATE_OUTPUT/);
+	}
+	const inner=encode(invalid),outer=Buffer.concat([Buffer.from('0:{"q":"","i":false,"t":{"t":{"s":"en","d":{"r":"MAIN","p":false,"v":null}}},"p":"$1"}\n1:R\n1:o'+inner.length.toString(16)+','),inner,Buffer.from('1:C\n')]);
+	assert.deepEqual(inspectRequiredFlightBody(outer,{cachedNavigations:true}).embeddedPatchDataObservation,direct.patchDataObservation);
+	assert.doesNotMatch(JSON.stringify([direct,inspectRequiredFlightBody(outer,{cachedNavigations:true})]),/PRIVATE_QUERY|PRIVATE_OUTPUT|\$undefined/);
+});
+
 test("unresolved lazy dependencies retain bounded technical provenance without exposing the reference", () => {
 	for (const [reference, prefix, form] of [["$Labcdef", "L", "lazy-reference"], ["$@abcdef", "@", "promise-reference"], ["$abcdef", "plain", "model-reference"]]) {
 		const body = Buffer.from(`~0:{"t":{"t":{"s":"","d":{"r":"${reference}"}}}}\n`);
