@@ -88,6 +88,9 @@ export function cleanBrowserVisitEvidence(sample) {
 }
 
 export function cleanBrowserContextEvidence(id, evidence, rawFailedRequests) {
+	const errors = evidence?.protocolErrors;
+	if (errors?.protocol !== "positive-flight-error-observations-v1" || errors.contextId !== id || errors.installed !== true || errors.scopeClosed !== true ||
+		errors.observed !== 0 || errors.overflow !== 0 || !Array.isArray(errors.records) || errors.records.length !== 0) return false;
 	if (!id || evidence?.contextId !== id ||
 		!cleanBrowserFailureEvidence(evidence.measured, rawFailedRequests) ||
 		!completeAllPhaseBrowserObservation(evidence.allPhase) || evidence.allPhase.realFailures !== 0) return false;

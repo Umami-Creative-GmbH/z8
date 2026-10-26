@@ -11,6 +11,7 @@ export const controlCancellationPolicy = Object.freeze({
 export const chromiumSWRRevision = "1d17a2e2ee147bb7d6ae2ab6abdb3a2510c17775";
 export const bodySha256 = (bytes) =>
 	createHash("sha256").update(bytes).digest("hex");
+const binaryByteWidths = Object.freeze({ A: 1, O: 1, o: 1, b: 1, U: 1, S: 2, s: 2, L: 4, l: 4, G: 4, g: 8, M: 8, m: 8, V: 1 });
 
 export function knownBrowserControlMetadata(metadata) {
 	return Boolean(metadata && JSON.stringify(metadata.policy) === JSON.stringify(controlCancellationPolicy) &&
@@ -26,28 +27,33 @@ export function matchingBrowserControlBinding(runtime, binding) {
 }
 
 export function inspectRequiredFlightBody(
+	bytes, options = {},
+) {
+	return inspectFlightBody(bytes, options, { decoded: 0, rows: 0, models: 0 }, 0);
+}
+
+function inspectFlightBody(
 	bytes,
 	{
 		action = false,
 		cachedNavigations,
 		requestKind = action ? "action" : "navigation",
-	} = {},
+	} = {}, budget, depth,
 ) {
 	const unknown = (reason, diagnostic = {}) => ({
 		complete: false,
 		reason,
 		...diagnostic,
 	});
-	if (
-		!["action", "navigation", "route-tree", "runtime-shell"].includes(requestKind) ||
-		action !== (requestKind === "action")
-	)
-		return unknown("unsupported-request-contract");
+	const supportedContract = ["action", "navigation", "route-tree", "runtime-shell", "embedded-runtime-prefetch"].includes(requestKind) &&
+		(requestKind !== "embedded-runtime-prefetch" || depth === 1) && action === (requestKind === "action");
 	if (
 		!Buffer.isBuffer(bytes) ||
 		bytes.length > controlCancellationPolicy.decodedLimit
 	)
 		return unknown("bounded-body-unavailable");
+	budget.decoded += bytes.length;
+	if (budget.decoded > controlCancellationPolicy.decodedLimit) return unknown("aggregate-decoded-limit");
 	const marker =
 		bytes[0] === 35
 			? "complete"
@@ -58,25 +64,26 @@ export function inspectRequiredFlightBody(
 					: typeof cachedNavigations === "boolean"
 						? "unmarked-navigation"
 						: null;
-	if (!marker) return unknown("unsupported-marker");
 	const isPartial =
 		marker === "partial" ||
 		(marker === "unmarked-navigation" && cachedNavigations);
-	const body = marker.startsWith("unmarked-") ? bytes : bytes.subarray(1),
+	const markerBytes = [35, 126].includes(bytes[0]) ? 1 : 0;
+	const body = markerBytes ? bytes.subarray(1) : bytes,
 		records = new Map();
 	const utf8 = new TextDecoder("utf-8", { fatal: true });
 	const opaqueText = new WeakSet();
+	const binaryValues = new WeakMap();
 	let offset = 0,
 		serverErrors = 0,
-		recordCount = 0, framingStage = "record", framingOffset = 0, framingTagByte = null;
+		recordCount = 0, framingStage = "record", framingOffset = 0, framingTagByte = null, binaryAlignmentInvalid = false;
 	const decode = (bytes) => { framingStage = "utf8"; return utf8.decode(bytes); };
 	const parse = (text) => { framingStage = "json"; return JSON.parse(text); };
 	try {
 		while (offset < body.length) {
 			framingStage = "record";
-			framingOffset = offset + (marker.startsWith("unmarked-") ? 0 : 1);
+			framingOffset = offset + markerBytes;
 			framingTagByte = null;
-			if (++recordCount > 4096) return unknown("record-limit");
+			if (++recordCount > 4096 || ++budget.rows > 4096) return unknown("record-limit");
 			if (
 				body[offset] === 58 &&
 				body[offset + 1] === 72 &&
@@ -89,7 +96,7 @@ export function inspectRequiredFlightBody(
 				offset = end + 1;
 				continue;
 			}
-			const recordOffset = offset + (marker.startsWith("unmarked-") ? 0 : 1);
+			const recordOffset = offset + markerBytes;
 			const colon = body.indexOf(58, offset);
 			const id = body.subarray(offset, colon).toString();
 			if (colon < offset || !/^[a-f0-9]+$/.test(id))
@@ -99,18 +106,25 @@ export function inspectRequiredFlightBody(
 				value;
 			const tagByte = body[start];
 			framingTagByte = tagByte ?? null;
-			const tag = /^[A-Z#rx]$/.test(String.fromCharCode(tagByte))
+			const tag = (Object.hasOwn(binaryByteWidths, String.fromCharCode(tagByte)) || /^[A-Z#rx]$/.test(String.fromCharCode(tagByte)))
 				? String.fromCharCode(body[start++])
 				: null;
-			if (tag === "T") {
+			const binary = Object.hasOwn(binaryByteWidths, tag);
+			if (tag === "T" || binary) {
 				const comma = body.indexOf(44, start),
 					length = body.subarray(start, comma).toString();
-				if (comma < start || !/^[a-f0-9]+$/.test(length))
+				if (comma < start || !/^[a-f0-9]{1,8}$/.test(length))
 					return unknown("invalid-text-length");
+				if (Number.parseInt(length, 16) > controlCancellationPolicy.decodedLimit) return unknown("binary-length-limit");
 				end = comma + 1 + Number.parseInt(length, 16);
 				if (!Number.isSafeInteger(end) || end > body.length)
 					return unknown("incomplete-text");
-				value = decode(body.subarray(comma + 1, end));
+				if (tag === "T") value = decode(body.subarray(comma + 1, end));
+				else {
+					value = {};
+					binaryValues.set(value, { bytes: body.subarray(comma + 1, end), tag });
+					if (Number.parseInt(length, 16) % binaryByteWidths[tag] !== 0) binaryAlignmentInvalid = true;
+				}
 			} else {
 				end = body.indexOf(10, start);
 				if (
@@ -143,10 +157,10 @@ export function inspectRequiredFlightBody(
 				if (
 					!previous.stream ||
 					previous.closed ||
-					![null, "T", "C", "E"].includes(tag)
+					(![null, "T", "C", "E"].includes(tag) && !binary)
 				)
 					return unknown("invalid-stream-record");
-				if (previous.tag === "r" && tag !== "C" && tag !== "E")
+				if (previous.tag === "r" && !["C", "E"].includes(tag) && !binary)
 					return unknown("unsupported-byte-stream-value");
 				if (tag === "C") {
 					previous.closed = true;
@@ -177,6 +191,9 @@ export function inspectRequiredFlightBody(
 	}
 	if (serverErrors)
 		return { complete: false, reason: "flight-server-error", serverErrors };
+	if (!supportedContract) return unknown("unsupported-request-contract");
+	if (!marker) return unknown("unsupported-marker");
+	if (binaryAlignmentInvalid) return unknown("invalid-binary-alignment");
 	if ([...records.values()].some((record) => record.stream && !record.closed))
 		return unknown("unclosed-stream");
 	const root = records.get("0")?.value;
@@ -217,7 +234,7 @@ export function inspectRequiredFlightBody(
 			visited = new Set();
 		let nodes = 0;
 		while (queue.length) {
-			if (++nodes > 4096) return unknown("tree-limit");
+			if (++nodes > 4096 || ++budget.models > 100000) return unknown("tree-limit");
 			const node = resolve(queue.pop());
 			if (
 				!node ||
@@ -283,18 +300,43 @@ export function inspectRequiredFlightBody(
 			bodySha256: bodySha256(bytes),
 			serverErrors: 0,
 			explicitActionFailure: false,
+			protocolRows: recordCount, modelSteps: nodes, embeddedRuntimePrefetch: null,
 		};
 	}
-	const shellScope = requestKind === "runtime-shell";
-	if (shellScope && (marker !== "partial" || Object.hasOwn(root, "l") || Object.hasOwn(root, "a")))
+	let embeddedRuntimePrefetch = null;
+	if (!action && Object.hasOwn(root, "p")) {
+		if (depth !== 0 || requestKind !== "navigation") return unknown("embedded-prefetch-depth-or-contract");
+		if (typeof root.p !== "string" || !/^\$[a-f0-9]+$/.test(root.p)) return unknown("unsupported-embedded-prefetch-stream");
+		const stream = records.get(root.p.slice(1));
+		if (!stream?.stream || !stream.closed || !["R", "r"].includes(stream.tag)) return unknown("incomplete-embedded-prefetch-stream");
+		const chunks = [];
+		let length = 0;
+		for (const value of stream.value) {
+			const binary = binaryValues.get(value);
+			if (!binary || binary.tag !== (stream.tag === "R" ? "o" : "b")) return unknown("unsupported-embedded-prefetch-value");
+			length += binary.bytes.length; chunks.push(binary.bytes);
+		}
+		if (!length || budget.decoded + length > controlCancellationPolicy.decodedLimit) return unknown("aggregate-decoded-limit");
+		const inner = Buffer.concat(chunks, length);
+		if (![35, 126].includes(inner[0])) return unknown("unsupported-embedded-prefetch-marker");
+		embeddedRuntimePrefetch = inspectFlightBody(inner, { cachedNavigations, requestKind: "embedded-runtime-prefetch" }, budget, depth + 1);
+		if (!embeddedRuntimePrefetch.complete) return unknown("embedded-runtime-prefetch-incomplete", {
+			serverErrors: embeddedRuntimePrefetch.serverErrors ?? 0, explicitActionFailure: embeddedRuntimePrefetch.explicitActionFailure === true,
+			embeddedReason: embeddedRuntimePrefetch.reason, embeddedFramingStage: embeddedRuntimePrefetch.framingStage ?? null,
+			embeddedRecordOffset: embeddedRuntimePrefetch.recordOffset ?? null, embeddedTagByte: embeddedRuntimePrefetch.tagByte ?? null,
+		});
+	}
+	const shellScope = requestKind === "runtime-shell" || (requestKind === "embedded-runtime-prefetch" && isPartial);
+	if (requestKind === "runtime-shell" && (marker !== "partial" || Object.hasOwn(root, "l") || Object.hasOwn(root, "a")))
 		return unknown("unsupported-runtime-shell-metadata");
 	// Roles follow exact transport edges; another required path to the same model stays required.
 	const queue = [{ value: root, role: "root" }],
 		visited = new Set();
 	let inspected = 0, postponedOutputReferences = 0, knownSuspenseBoundaries = 0;
 	while (queue.length) {
-		if (++inspected > 100000) return unknown("model-limit");
+		if (++inspected > 100000 || ++budget.models > 100000) return unknown("model-limit");
 		const { value, role, fallbackReferences } = queue.pop();
+		if (value && typeof value === "object" && binaryValues.has(value)) return unknown("unsupported-binary-role");
 		if (shellScope && role === "fallback-output" && (
 			(value && typeof value === "object" && !Array.isArray(value)) ||
 			(typeof value === "string" && /^\$[SD]/.test(value))))
@@ -404,6 +446,7 @@ export function inspectRequiredFlightBody(
 				continue;
 			}
 			for (const [key, item] of Object.entries(value)) {
+				if (role === "root" && key === "p" && embeddedRuntimePrefetch) continue;
 				let nextRole = "required";
 				if (shellScope && role === "root" && key === "t") nextRole = "transport";
 				else if (shellScope && role === "transport" && key === "t") nextRole = "tree";
@@ -471,7 +514,7 @@ export function inspectRequiredFlightBody(
 		for (const key of ["l", "a"]) {
 			if (
 				Object.hasOwn(root, key) &&
-				!(key === "a" && root[key] === null) &&
+				!(key === "a" && resolve(root[key]) === null) &&
 				boundary(root[key]) === null
 			)
 				return unknown("unsupported-boundary-metadata");
@@ -481,9 +524,8 @@ export function inspectRequiredFlightBody(
 		patchClaims = null;
 	if (
 		isPartial &&
-		["navigation", "runtime-shell"].includes(requestKind) &&
-		!Object.hasOwn(root, "l") &&
-		!Object.hasOwn(root, "a")
+		((requestKind === "embedded-runtime-prefetch") ||
+			(["navigation", "runtime-shell"].includes(requestKind) && !Object.hasOwn(root, "l") && !Object.hasOwn(root, "a")))
 	) {
 		// Main Flight consumption is independent of the optional static/shell cache clones.
 		// This proves only the represented SPA patch, retaining response-level partiality.
@@ -611,7 +653,7 @@ export function inspectRequiredFlightBody(
 			return unknown("missing-represented-navigation-output");
 		patchClaims = { representedOutputs, treeNodes: seen.size,
 			...(shellScope ? { postponedOutputReferences, knownSuspenseBoundaries } : {}) };
-		requiredStage = shellScope ? "runtime-shell-output" : "navigation-patch";
+		requiredStage = requestKind === "embedded-runtime-prefetch" ? "embedded-runtime-prefetch-output" : shellScope ? "runtime-shell-output" : "navigation-patch";
 	} else if (isPartial) {
 		const staticBytes = boundary(root.l),
 			shellBytes = boundary(root.a);
@@ -642,6 +684,7 @@ export function inspectRequiredFlightBody(
 		bodySha256: bodySha256(bytes),
 		serverErrors: 0,
 		explicitActionFailure: false,
+		protocolRows: recordCount, modelSteps: inspected, embeddedRuntimePrefetch,
 	};
 }
 
@@ -661,7 +704,7 @@ const sameRequest = (a, b) =>
 		(key) =>
 			typeof a[key] === "string" && a[key].length > 0 && a[key] === b[key],
 	);
-const goodBody = (proof) => {
+const goodBody = (proof, depth = 0) => {
 	if (
 		proof?.complete !== true ||
 		!digest(proof.bodySha256) ||
@@ -678,6 +721,13 @@ const goodBody = (proof) => {
 		proof.boundaryBytes > proof.decodedBytes
 	)
 		return false;
+	if (!Number.isSafeInteger(proof.protocolRows) || proof.protocolRows <= 0 || proof.protocolRows > 4096 ||
+		!Number.isSafeInteger(proof.modelSteps) || proof.modelSteps <= 0 || proof.modelSteps > 100000 ||
+		!Object.hasOwn(proof, "embeddedRuntimePrefetch") || depth > 1 || (proof.requestKind === "embedded-runtime-prefetch" && depth !== 1)) return false;
+	const embedded = proof.embeddedRuntimePrefetch;
+	if (embedded !== null && (depth !== 0 || proof.requestKind !== "navigation" || embedded?.requestKind !== "embedded-runtime-prefetch" || !goodBody(embedded, depth + 1) ||
+		proof.decodedBytes + embedded.decodedBytes > controlCancellationPolicy.decodedLimit || proof.protocolRows + embedded.protocolRows > 4096 ||
+		proof.modelSteps + embedded.modelSteps > 100000)) return false;
 	if (proof.marker === "complete") {
 		if (proof.isPartial) return false;
 	} else if (proof.marker === "partial") {
@@ -700,8 +750,9 @@ const goodBody = (proof) => {
 			proof.treeNodes > 0 &&
 			proof.treeNodes <= 4096
 		);
-	if (proof.requiredStage === "runtime-shell-output")
-		return proof.requestKind === "runtime-shell" && !proof.action && proof.marker === "partial" && proof.isPartial &&
+	if (["runtime-shell-output", "embedded-runtime-prefetch-output"].includes(proof.requiredStage))
+		return proof.requestKind === (proof.requiredStage === "runtime-shell-output" ? "runtime-shell" : "embedded-runtime-prefetch") &&
+			!proof.action && proof.marker === "partial" && proof.isPartial &&
 			Number.isSafeInteger(proof.treeNodes) && proof.treeNodes > 0 && proof.treeNodes <= 4096 &&
 			Number.isSafeInteger(proof.representedOutputs) && proof.representedOutputs > 0 && proof.representedOutputs <= proof.treeNodes + 1 &&
 			Number.isSafeInteger(proof.postponedOutputReferences) && proof.postponedOutputReferences >= 0 && proof.postponedOutputReferences <= 100000 &&
@@ -709,7 +760,7 @@ const goodBody = (proof) => {
 			(proof.postponedOutputReferences === 0 || proof.knownSuspenseBoundaries > 0);
 	if (
 		proof.action !== (proof.requestKind === "action") ||
-		!["action", "navigation"].includes(proof.requestKind)
+		!["action", "navigation", "embedded-runtime-prefetch"].includes(proof.requestKind)
 	)
 		return false;
 	if (proof.requiredStage === "navigation-patch")
@@ -724,6 +775,7 @@ const goodBody = (proof) => {
 			proof.representedOutputs > 0 &&
 			proof.representedOutputs <= proof.treeNodes + 1
 		);
+	if (proof.requestKind === "embedded-runtime-prefetch") return proof.requiredStage === "full" && !proof.isPartial;
 	return proof.requiredStage === "full"
 		? !proof.isPartial
 		: ["static", "shell"].includes(proof.requiredStage) && proof.isPartial;
@@ -734,8 +786,8 @@ const pick = (row, keys) =>
 			.filter((key) => row?.[key] !== undefined)
 			.map((key) => [key, row[key]]),
 	);
-const bodyReceipt = (row) =>
-	pick(row, [
+const bodyReceipt = (row) => {
+	const proof = pick(row, [
 		"protocol",
 		"complete",
 		"requestKind",
@@ -748,12 +800,17 @@ const bodyReceipt = (row) =>
 		"representedOutputs",
 		"postponedOutputReferences",
 		"knownSuspenseBoundaries",
+		"protocolRows",
+		"modelSteps",
 		"boundaryBytes",
 		"decodedBytes",
 		"bodySha256",
 		"serverErrors",
 		"explicitActionFailure",
 	]);
+	if (Object.hasOwn(row, "embeddedRuntimePrefetch")) proof.embeddedRuntimePrefetch = row.embeddedRuntimePrefetch === null ? null : bodyReceipt(row.embeddedRuntimePrefetch);
+	return proof;
+};
 const receivedBody = (row) =>
 	row.bodyReadbackComplete === true ||
 	(row.streamReceipt?.protocol === "passive-network-copy-v1" &&
@@ -866,11 +923,12 @@ export function classifyControlCancellations({
 			if (
 				failure.bodyProof?.explicitActionFailure === true ||
 				failure.bodyProof?.serverErrors > 0 ||
+			failure.observedProtocolError?.explicitActionFailure === true || failure.observedProtocolError?.serverErrors > 0 ||
 				(packet &&
 					(packet.status >= 400 ||
 						packet.upstreamError === true ||
 						packet.bodyProof?.explicitActionFailure === true ||
-						packet.bodyProof?.serverErrors > 0))
+					packet.bodyProof?.serverErrors > 0 || packet.observedProtocolError?.explicitActionFailure === true || packet.observedProtocolError?.serverErrors > 0))
 			) {
 				outcome = "real-failure";
 				reason = "server-or-application-error";

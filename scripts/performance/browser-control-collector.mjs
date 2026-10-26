@@ -18,6 +18,25 @@ const shaChunks = (chunks) => {
 	for (const chunk of chunks) hash.update(chunk);
 	return hash.digest("hex");
 };
+const hasProtocolError = (proof) => proof?.serverErrors > 0 || proof?.explicitActionFailure === true;
+const protocolErrorFact = (proof, capture, bodySha256) => ({
+	capture,
+	serverErrors: Number.isSafeInteger(proof.serverErrors) && proof.serverErrors > 0 ? proof.serverErrors : 0,
+	explicitActionFailure: proof.explicitActionFailure === true,
+	reason: ["flight-server-error", "embedded-runtime-prefetch-incomplete", "explicit-root-action-failure"].includes(proof.reason) ? proof.reason : "observed-protocol-error",
+	bodySha256: /^[a-f0-9]{64}$/.test(bodySha256 ?? "") ? bodySha256 : null,
+});
+const assignBodyProof = (row, proof, capture, bodySha256) => {
+	row.bodyProof = proof;
+	if (!hasProtocolError(proof)) return;
+	const fact = protocolErrorFact(proof, capture, bodySha256);
+	row.observedProtocolError = { serverErrors: Math.max(row.observedProtocolError?.serverErrors ?? 0, fact.serverErrors),
+		explicitActionFailure: row.observedProtocolError?.explicitActionFailure === true || fact.explicitActionFailure };
+	const history = row.protocolErrorObservations ??= [];
+	if (history.some((prior) => JSON.stringify(prior) === JSON.stringify(fact))) return;
+	if (history.length >= 2) { row.protocolErrorObservationOverflow = (row.protocolErrorObservationOverflow ?? 0) + 1; return; }
+	history.push(fact);
+};
 
 /** Read the compiled source boundary before app/control/browser IO; never infer a missing flag. */
 export async function readBrowserControlBinding({ plan, manifestPath }) {
@@ -293,11 +312,11 @@ export function createBrowserControlCollector({
 					);
 					row.bodyReadbackReceipt = { available: true, decodedBytes: bytes.length, bodySha256: sha(bytes),
 						terminal: row.failed ? "failed" : row.loadingFinished ? "finished" : "pending", naturalEOFClaim: false };
-					row.bodyProof = inspectRequiredFlightBody(bytes, {
+					assignBodyProof(row, inspectRequiredFlightBody(bytes, {
 						action: row.action,
 						cachedNavigations: compiledCachedNavigations,
 						requestKind: row.requestKind,
-					});
+					}), "cdp-readback", row.bodyReadbackReceipt.bodySha256);
 					row.bodyReadbackComplete = true;
 				} catch {
 					if (!row.streamReceipt?.captureComplete)
@@ -327,12 +346,12 @@ export function createBrowserControlCollector({
 			observedDataLength: stream.observed,
 			reason: stream.reason ?? (captureComplete ? null : "byte-coverage-gap"),
 		};
-		if (captureComplete && !row.bodyReadbackComplete)
-			row.bodyProof = inspectRequiredFlightBody(Buffer.concat(stream.chunks), {
+		if (captureComplete)
+			assignBodyProof(row, inspectRequiredFlightBody(Buffer.concat(stream.chunks), {
 				action: row.action,
 				cachedNavigations: compiledCachedNavigations,
 				requestKind: row.requestKind,
-			});
+			}), "passive-stream", row.streamReceipt.capturedBodySha256);
 		retained -= stream.bytes;
 		streamRetained -= stream.bytes;
 		stream.chunks = [];
@@ -450,6 +469,14 @@ export function createBrowserControlCollector({
 			pendingBodies: pending.size + queue.length + proxy.pendingBodies,
 		};
 		const data = { responses, proxy: proxy.rows, coverage, browserRevision };
+		const sources = [...rows().map((row) => ({ source: "browser", row })), ...proxy.rows.map((row) => ({ source: "proxy", row }))];
+		const protocolErrorRecords = sources.flatMap(({ source, row }) => {
+			const history = row.protocolErrorObservations ?? (hasProtocolError(row.bodyProof) ? [protocolErrorFact(row.bodyProof, "latest-proof",
+				row.transportBodyReceipt?.bodySha256 ?? row.bodyReadbackReceipt?.bodySha256 ?? row.streamReceipt?.capturedBodySha256)] : []);
+			return history.map((fact) => ({ source, contextId: row.contextId, requestId: row.requestId ?? row.id,
+				proxyResponseId: row.proxyResponseId ?? (source === "proxy" ? row.id : null), ...fact }));
+		});
+		const protocolErrorOverflow = sources.reduce((total, { row }) => total + (row.protocolErrorObservationOverflow ?? 0), 0);
 		const measuredRows = measuredFailureIds.map((id) =>
 			requests.get(id)?.failed
 				? requests.get(id)
@@ -473,6 +500,9 @@ export function createBrowserControlCollector({
 		});
 		return {
 			contextId,
+			protocolErrors: { protocol: "positive-flight-error-observations-v1", contextId, installed: coverage.installed, scopeClosed: closed,
+				observed: protocolErrorRecords.length, overflow: protocolErrorOverflow + Math.max(0, protocolErrorRecords.length - controlCancellationPolicy.recordLimit),
+				records: protocolErrorRecords.slice(0, controlCancellationPolicy.recordLimit) },
 			principalEpoch: principalEpoch.snapshot(),
 			rawMeasuredFailedRequests,
 			diagnostics: {
@@ -979,11 +1009,11 @@ export function createProxyControlCollector({
 						throw Error("Unsupported encoding");
 					row.transportBodyReceipt = { protocol: "proxy-natural-eof-decoded-bytes-v1", naturalEOF: true,
 						decodedBytes: bytes.length, bodySha256: sha(bytes) };
-					row.bodyProof = inspectRequiredFlightBody(bytes, {
+					assignBodyProof(row, inspectRequiredFlightBody(bytes, {
 						action: row.action,
 						cachedNavigations: compiledCachedNavigations,
 						requestKind: row.requestKind,
-					});
+					}), "proxy-natural-eof", row.transportBodyReceipt.bodySha256);
 				} catch {
 					row.bodyProof = { complete: false, reason: "proxy-body-unavailable" };
 				} finally {

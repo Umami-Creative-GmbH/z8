@@ -16,6 +16,6 @@ export function testBrowserEvidence(contextId, controlled = false) {
     browserRevision: chromiumSWRRevision,
     coverage: { installed: true, scopeClosed: true, missing: 0, overflow: 0, errors: 0, pendingBodies: 0 },
   };
-  return { contextId, measured: classifyControlCancellations(input),
+  return { contextId, protocolErrors: { protocol: "positive-flight-error-observations-v1", contextId, installed: true, scopeClosed: true, observed: 0, overflow: 0, records: [] }, measured: classifyControlCancellations(input),
     allPhase: classifyControlCancellations({ ...input, scope: "all-phase-semantic-correlation" }) };
 }

@@ -4,10 +4,13 @@ import {
 	cleanEvidenceGates,
 	cleanObservationMatches,
 	cleanVisitObservationGates,
+	cleanBrowserContextEvidence,
 	cleanMeasuredCostGates,
 	runCleanVisitWorkers,
 } from "./clean-evidence.mjs";
 import { createActionResultObserver } from "./action-result-observer.mjs";
+import { createBrowserControlCollector, createProxyControlCollector } from "./browser-control-collector.mjs";
+import { setImmediate as tick } from "node:timers/promises";
 import { classifyControlCancellations, inspectRequiredFlightBody, chromiumSWRRevision, controlCancellationPolicy } from "./control-cancellation-evidence.mjs";
 
 const ids = ["measured", "prerequisite", "background"];
@@ -23,7 +26,7 @@ const browserEvidence = (controlled = false) => {
 	const input = { failures: controlled ? [failure] : [], proxy: controlled ? [packet] : [],
 		browserRevision: chromiumSWRRevision,
 		coverage: { installed: true, scopeClosed: true, missing: 0, overflow: 0, errors: 0, pendingBodies: 0 } };
-	return { contextId: ids[0], measured: classifyControlCancellations(input),
+	return { contextId: ids[0], protocolErrors: { protocol: "positive-flight-error-observations-v1", contextId: ids[0], installed: true, scopeClosed: true, observed: 0, overflow: 0, records: [] }, measured: classifyControlCancellations(input),
 		allPhase: classifyControlCancellations({ ...input, scope: "all-phase-semantic-correlation" }) };
 };
 const sample = () => ({
@@ -91,6 +94,9 @@ test("both phases accept only positively recomputed controls while retaining the
 			(v) => { v.browserControlEvidence.contextId = "another-context"; },
 			(v) => { v.browserControlEvidence.measured.records[0].proof.packet.bodyProof.explicitActionFailure = true; },
 			(v) => { v.browserControlEvidence.measured.unknownFailures = 1; },
+			(v) => { delete v.browserControlEvidence.protocolErrors; },
+			(v) => { v.browserControlEvidence.protocolErrors.observed = 1; },
+			(v) => { v.browserControlEvidence.protocolErrors.records.push({ source: "proxy" }); },
 		]) {
 			const bad = structuredClone(s); change(bad);
 			assert.ok(gates(bad, rows(), phase).some((gate) => /browser/i.test(gate)));
@@ -109,6 +115,44 @@ test("the per-visit gate blocks required semantic unknown without rewriting its 
 	assert.ok(cleanVisitObservationGates(plan, { ...sample(), applicationEvidence: raw }).some((gate) => /application/i.test(gate)));
 	assert.equal(raw.unknown, 1);
 	assert.equal(raw.complete, false);
+});
+
+test("a completed response with nested Flight E blocks even without a browser loading failure", async () => {
+	const proxy = createProxyControlCollector({ contextId: ids[0], compiledCachedNavigations: false });
+	proxy.installed();
+	const browser = createBrowserControlCollector({ contextId: ids[0], origin: "http://localhost", browserRevision: chromiumSWRRevision, proxyObservation: proxy.snapshot });
+	browser.installed(); browser.beginMeasurement(); browser.endMeasurement();
+	const inner = Buffer.from('#0:E{"digest":"PRIVATE_CANARY"}\n');
+	const bytes = Buffer.concat([Buffer.from(`0:{"q":"","i":false,"t":{"t":{"s":"en"}},"p":"$1"}\n1:R\n1:o${inner.length.toString(16)},`), inner, Buffer.from('1:C\n')]);
+	proxy.request("packet", { url: "http://localhost/en", method: "GET", headers: { RSC: "1" }, traceId: ids[0] });
+	proxy.response("packet", { status: 200, headers: { "content-type": "text/x-component" } });
+	proxy.bytes("packet", bytes); proxy.end("packet");
+	await tick(); browser.endScope();
+	assert.equal(proxy.snapshot().rows[0].bodyProof.serverErrors, 1);
+	const evidence = browser.snapshot();
+	assert.equal(evidence.measured.rawFailedRequests, 0);
+	assert.equal(cleanBrowserContextEvidence(ids[0], evidence, 0), false);
+	assert.equal(evidence.protocolErrors.observed, 1);
+	assert.equal(evidence.protocolErrors.records[0].source, "proxy");
+	for (const phase of ["baseline", "release"])
+		assert.ok(gates({ ...sample(), browserControlEvidence: evidence }, rows(), phase).some((gate) => /browser request proofs/i.test(gate)));
+	assert.doesNotMatch(JSON.stringify(evidence), /PRIVATE_CANARY/);
+});
+
+test("zero browser failures cannot default a missing or malformed positive-error observer to zero", () => {
+	for (const change of [
+		(v) => { delete v.protocolErrors; },
+		(v) => { v.protocolErrors.observed = undefined; },
+		(v) => { v.protocolErrors.observed = null; },
+		(v) => { v.protocolErrors.observed = "0"; },
+		(v) => { v.protocolErrors.scopeClosed = false; },
+		(v) => { v.protocolErrors.installed = false; },
+		(v) => { v.protocolErrors.contextId = "wrong-context"; },
+		(v) => { v.protocolErrors.overflow = 1; },
+	]) {
+		const evidence = browserEvidence(); change(evidence);
+		assert.equal(cleanBrowserContextEvidence(ids[0], evidence, 0), false);
+	}
 });
 
 test("capture checkpoints the bad visit and joins in-flight cleanup before it stops scheduling", async () => {
