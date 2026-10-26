@@ -483,6 +483,32 @@ test("completed standalone outlined parents reuse structural readiness without s
 	]) assert.equal(inspectRequiredFlightBody(project(refs,rows),{cachedNavigations:true}).complete,false,"A completed parent cannot grant forceElement, type, alias or cross-record readiness to a later projection.");
 });
 
+test("reference-free JSON readiness reuses complete literal subtrees without discharging reference-bearing ancestors", () => {
+	const literal={leaf:"KNOWN"};for(let index=0;index<200;index++)literal[`key${index}`]="KNOWN";
+	const parent={leaf:"KNOWN",literal};for(let index=0;index<600;index++)parent[`alias${index}`]="$1:literal:leaf";
+	const encode=parent=>Buffer.from('~0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:{r:"$1:leaf",p:true,v:null}}}})+'\n1:'+JSON.stringify(parent)+'\n');
+	assert.equal(inspectRequiredFlightBody(encode(parent),{cachedNavigations:true}).complete,true);
+	assert.equal(inspectRequiredFlightBody(encode({...parent,last:"$8"}),{cachedNavigations:true}).complete,false,"A completed literal child cannot certify its reference-bearing parent.");
+});
+
+test("reference-free cache depth spans compose through warmed ancestors at the same 64/65 boundary", () => {
+	const inspect=(nest,warm)=>{
+		let literal="KNOWN";for(let index=0;index<20;index++)literal={next:literal};
+		let child="$1";for(let index=0;index<nest;index++)child={next:child};
+		const bytes=Buffer.from('~0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:{r:warm?["$3:leaf","$2:leaf","$1:leaf"]:["$3:leaf"],p:true,v:null}}}})+'\n1:'+JSON.stringify({leaf:"KNOWN",deep:literal})+'\n2:{"leaf":"KNOWN","child":"$1"}\n3:'+JSON.stringify({leaf:"KNOWN",child})+'\n');
+		return inspectRequiredFlightBody(bytes,{cachedNavigations:true});
+	};
+	for(const warm of [false,true]){
+		assert.equal(inspect(40,warm).complete,true);
+		const limit=inspect(41,warm);assert.equal(limit.complete,false);
+		assert.equal(limit.pathLimitObservation.guard,"existing-recursion-depth");assert.equal(limit.pathLimitObservation.observedDepth,65);
+	}
+	const body=(r,rows)=>Buffer.from('~0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:{r,p:true,v:null}}}})+'\n'+rows);
+	const skipped='1:{"leaf":"KNOWN","element":["$","span",null,{"leaf":"KNOWN","required":"$8"}]}\n';
+	for(const refs of [["$1:leaf","$1:element:props:leaf"],["$1:element:props:leaf","$1:leaf"]])
+		assert.equal(inspectRequiredFlightBody(body(refs,skipped),{cachedNavigations:true}).complete,false,"An uninspected element tuple never certifies its containing JSON as reference free.");
+});
+
 test("outlined limits identify the existing depth or shared-work guard without retaining data", () => {
 	const encode=eager=>Buffer.from('~0:{"q":"","i":false,"t":{"t":{"s":"en","d":{"r":"$1:leaf","p":true,"v":null}}}}\n1:'+JSON.stringify({leaf:"PRIVATE_VALUE",eager})+'\n');
 	const inspect=eager=>inspectRequiredFlightBody(encode(eager),{cachedNavigations:true});
