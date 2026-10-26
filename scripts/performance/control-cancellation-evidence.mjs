@@ -747,7 +747,7 @@ function inspectFlightBody(
 			action: false,
 			requiredStage: "route-tree-structure",
 			treeNodes: nodes,
-			metadataPages,renderableOutputClaim:false,routeReadiness,
+			metadataPages,renderableOutputClaim:false,routeNullNodes:nullNodes,routeReadiness,
 			routeTreeBinding:{...Object.fromEntries(["method","status","flight","rsc","prefetch","postponed","manifestVerified","requestHeadersSha256","requestKeySha256","responseDeploymentSha256","compiledBuild","compiledManifestSha256",...(nullNodes?["requestUrlSha256","requestOriginSha256","ambiguousRedirect"]:[])].map(key=>[key,binding[key]])),
 				derivedRequestKeySha256:bodySha256(Buffer.from("/_tree")),bodyBuildSha256,expectedDeploymentSha256,actualDeploymentSha256,deploymentSource:binding.responseDeploymentSha256===null?"body":"response-header"},
 			boundaryBytes: body.length,
@@ -1305,7 +1305,10 @@ const goodBody = (proof, depth = 0,allowNullRoute=false) => {
 	} else return false;
 	if (proof.requiredStage === "route-tree-structure") {
 		const binding=proof.routeTreeBinding;
-		if(!Object.hasOwn(proof,"routeReadiness") || proof.routeReadiness!==null && (!allowNullRoute || !knownRouteReadiness(proof.routeReadiness,binding,proof.bodySha256,proof.treeNodes,proof.metadataPages)))return false;
+		if(!Number.isSafeInteger(proof.routeNullNodes) || proof.routeNullNodes<0 || proof.routeNullNodes>proof.treeNodes || !Object.hasOwn(proof,"routeReadiness"))return false;
+		if(proof.routeNullNodes>0){
+			if(!allowNullRoute || proof.routeReadiness?.nullNodes!==proof.routeNullNodes || !knownRouteReadiness(proof.routeReadiness,binding,proof.bodySha256,proof.treeNodes,proof.metadataPages))return false;
+		}else if(proof.routeReadiness!==null || ["requestUrlSha256","requestOriginSha256","ambiguousRedirect"].some(key=>Object.hasOwn(binding ?? {},key)))return false;
 		return (
 			proof.requestKind === "route-tree" &&
 			!proof.action && proof.marker==="unmarked-route-tree" && proof.isPartial===false && proof.renderableOutputClaim===false &&
@@ -1382,6 +1385,7 @@ const bodyReceipt = (row) => {
 		"treeNodes",
 		"metadataPages",
 		"routeTreeBinding",
+		"routeNullNodes",
 		"routeReadiness",
 		"partialNodes",
 		"completeNodes",

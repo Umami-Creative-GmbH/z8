@@ -119,6 +119,30 @@ test("ordinary d/null route readiness uses source-bound canonical scalar facts a
   assert.equal(JSON.stringify(result).includes('"locale"'),false);
 });
 
+test("nullable route inspection cannot downgrade missing readiness to the concrete route contract",()=>{
+  const valid=classifyControlCancellations(routeNullFixture().input);
+  assert.equal(valid.provenControls,1);
+  for(const key of ["origin","packet","cached"]){
+    assert.ok(valid.records[0].proof[key],key);
+    for(const mutate of [p=>p.routeReadiness=null,p=>delete p.routeReadiness,p=>delete p.routeNullNodes,p=>p.routeNullNodes=0,p=>p.routeNullNodes=-1,p=>p.routeNullNodes="1",p=>p.routeNullNodes=null,p=>p.routeNullNodes=2,
+      p=>{p.routeReadiness=null;p.routeNullNodes=0;}]){
+      const bad=structuredClone(valid);mutate(bad.records[0].proof[key].bodyProof);
+      assert.equal(cleanBrowserFailureEvidence(bad,1),false,key);
+    }
+  }
+  for(const mutate of [p=>p.routeReadiness=null,p=>delete p.routeReadiness,p=>delete p.routeNullNodes,p=>p.routeNullNodes=0,p=>p.routeNullNodes=-1,p=>p.routeNullNodes="1",p=>p.routeNullNodes=null,p=>p.routeNullNodes=2,
+    p=>{p.routeReadiness=null;p.routeNullNodes=0;}]){
+    const {input}=routeNullFixture();
+    for(const row of [...input.proxy,input.responses[0]]){mutate(row.bodyProof);row.pathSourceFacts=null;}
+    assert.equal(classifyControlCancellations(input).provenControls,0);
+  }
+  const concrete=classifyControlCancellations(routeTreeFixture().input);
+  assert.equal(concrete.provenControls,1);
+  assert.equal(concrete.records[0].proof.origin.bodyProof.routeNullNodes,0);
+  const missing=structuredClone(concrete);delete missing.records[0].proof.origin.bodyProof.routeNullNodes;
+  assert.equal(cleanBrowserFailureEvidence(missing,1),false);
+});
+
 test("nullable route walk uses each branch position and cannot borrow page, alias or encoder readiness",()=>{
   const dynamic={n:"PRIVATE_NAME",t:"d",k:null,s:[]},page={s:"__PAGE__"};
   const body=tree=>'0:'+JSON.stringify({t:{t:tree}})+'\n';
