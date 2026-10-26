@@ -133,7 +133,7 @@ export async function waitForPrimaryContextDrain(
     await sleep(25);
   }
 }
-export async function closePrimaryContext({ context, transport, sample }) {
+export async function closePrimaryContext({ context, transport, sample, beforeClose }) {
   if (transport) {
     try {
       sample.nativeCleanup = await waitForPrimaryContextDrain(transport);
@@ -157,5 +157,7 @@ export async function closePrimaryContext({ context, transport, sample }) {
       }
     }
   }
-  await context?.close();
+  if (beforeClose) {
+    try { await beforeClose(); } finally { await context?.close(); }
+  } else await context?.close();
 }

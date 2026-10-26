@@ -33,6 +33,14 @@ export async function createFixtureTraceTransport({
 	const agent = new Agent({ keepAlive: true, maxSockets: 64 });
 	const wire = createProxyWireObserver();
 	const application = createActionResultObserver();
+	let controlObserver, controlObserverErrors = 0;
+	const control = (method, ...args) => {
+		try { controlObserver?.[method](...args); }
+		catch {
+			controlObserverErrors++;
+			try { controlObserver?.observerError(); } catch {}
+		}
+	};
 	const counts = {
 		requests: 0,
 		rewrittenRequests: 0,
@@ -58,7 +66,7 @@ export async function createFixtureTraceTransport({
 		},
 	};
 	const server = createServer((request, response) => {
-		let wireId, applicationId;
+		let wireId, applicationId, controlId;
 		try {
 			const traceId = getTraceId({
 				headers: request.headers,
@@ -82,6 +90,10 @@ export async function createFixtureTraceTransport({
 			}
 			counts.requests++;
 			applicationId = application.request({ traceId, method: request.method, headers: request.headers, applicationOrigin: url.origin === origin, compiledAsset: url.origin === origin && /^\/_next\/static\/chunks\/[\w./-]+\.js$/.test(url.pathname) });
+			if (controlObserver && Number.isSafeInteger(applicationId) && applicationId > 0) {
+				controlId = `${traceId}.${applicationId}`;
+				control("request", controlId, { traceId, url: url.href, method: request.method, headers: request.headers });
+			}
 			const headers = { ...request.headers };
 			delete headers["proxy-connection"];
 			delete headers["proxy-authorization"];
@@ -93,8 +105,9 @@ export async function createFixtureTraceTransport({
 				failureRecorded = false,
 				upstream;
 			const failed = (phase, error) => {
-				application.abort(applicationId);
+				application.abort(applicationId, "upstream-failure");
 				if (!downstreamAborted && !failureRecorded) {
+					control("failure", controlId);
 					failureRecorded = true;
 					counts.upstreamFailures++;
 					counts[
@@ -123,10 +136,11 @@ export async function createFixtureTraceTransport({
 				wire.end(wireId, { error: true }, performance.now());
 			};
 			const canceled = () => {
-				application.abort(applicationId);
+				application.abort(applicationId, "downstream-cancellation");
 				// Only an observed downstream abort/close may precede this classification.
 				// A genuine upstream error already recorded is never relabeled or subtracted.
 				if (!downstreamAborted && !failureRecorded) {
+					control("cancel", controlId);
 					downstreamAborted = true;
 					counts.downstreamCancellations++;
 				}
@@ -137,6 +151,7 @@ export async function createFixtureTraceTransport({
 				url,
 				{ method: request.method, headers, agent },
 				(answer) => {
+					control("response", controlId, { status: answer.statusCode, headers: answer.headers });
 					application.response(applicationId, { mimeType: answer.headers["content-type"], encoding: answer.headers["content-encoding"], status: answer.statusCode });
 					wire.response(
 						wireId,
@@ -151,11 +166,12 @@ export async function createFixtureTraceTransport({
 						performance.now(),
 					);
 					answer.on("data", (chunk) => {
+						control("bytes", controlId, chunk);
 						application.bytes(applicationId, chunk);
 						counts.responseBodyBytes += chunk.length;
 						wire.bytes(wireId, chunk.length, performance.now());
 					});
-					answer.once("end", () => { wire.end(wireId, {}, performance.now()); application.end(applicationId); });
+					answer.once("end", () => { wire.end(wireId, {}, performance.now()); application.end(applicationId); control("end", controlId); });
 					answer.once("aborted", () => {
 						failed("response");
 						response.destroy();
@@ -164,7 +180,12 @@ export async function createFixtureTraceTransport({
 						failed("response", error);
 						response.destroy();
 					});
-					response.writeHead(answer.statusCode ?? 502, answer.headers);
+					let forwardedHeaders = answer.headers;
+					if (controlId) {
+						if (answer.headers["x-z8-fixture-response-id"] !== undefined) control("observerError");
+						else forwardedHeaders = { ...answer.headers, "x-z8-fixture-response-id": controlId };
+					}
+					response.writeHead(answer.statusCode ?? 502, forwardedHeaders);
 					answer.pipe(response);
 				},
 			);
@@ -228,6 +249,14 @@ export async function createFixtureTraceTransport({
 	});
 	return {
 		wire,
+		setControlCancellationObserver(observer) {
+			if (controlObserver || counts.requests !== 0 ||
+				!["installed", "request", "response", "bytes", "end", "cancel", "failure", "observerError"].every((key) => typeof observer?.[key] === "function"))
+				throw Error("Protocol control observation requires one pre-request owned observer.");
+			controlObserver = observer;
+			control("installed");
+			return () => controlObserverErrors;
+		},
 		browserContextOptions: {
 			proxyServer: `http://127.0.0.1:${server.address().port}`,
 			proxyBypassList: ["<-loopback>"],

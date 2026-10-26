@@ -1,5 +1,6 @@
 import { createProxyWireObserver } from "./proxy-wire-observer.mjs";
 import { createActionResultObserver } from "./action-result-observer.mjs";
+import { testBrowserEvidence, testBrowserMetadata, testBrowserBinding } from "./control-cancellation-test-fixtures.mjs";
 import { nextStreamCompletionPatch } from "./next-stream-completion-patch.mjs";
 import {
   primaryProtocolIdentity,
@@ -20,6 +21,7 @@ import { spawnSync } from "node:child_process";
 import test from "node:test";
 const hash = (bytes) => createHash("sha256").update(bytes).digest("hex");
 function registerEmptyScopes(sample, field) {
+  sample.browserControlEvidence = testBrowserEvidence(sample.traceId);
   sample.prerequisiteTraceId = `${sample.traceId}-prerequisite`;
   sample.backgroundTraceId = `${sample.traceId}-background`;
   const zero = { queries: 0, acquisitions: 0, cache: 0 };
@@ -84,7 +86,8 @@ function fixture() {
       operatorReloadQuiescencePolicy: "operator-reload-transfer-quiescence-v1",
       nextStreamCompletionPatch: structuredClone(nextStreamCompletionPatch),
       browserPermissions: "notifications-denied-for-fixture-origin",
-      build: "aaaaaaaaa",
+      build: "a".repeat(40),
+      browserControl: testBrowserMetadata(),
       sourceBuild: "bbbbbbbbb",
       toolingBuild: "ccccccccc",
       poolMax: 10,
@@ -199,7 +202,7 @@ function fixture() {
       complete: true,
     },
     planSha256: "",
-    runtime: { ...plan.runtime, buildVerified: true },
+    runtime: { ...plan.runtime, browserControl: testBrowserBinding(plan.runtime.build), buildVerified: true },
     hardware: { cpu: "synthetic", cores: 1, memoryBytes: 100 },
     browser: "Synthetic browser",
     samples,
@@ -219,6 +222,7 @@ function fixture() {
     save("backend.json", backend);
   };
   saveBefore();
+  save("release-manifest.json", { config: { deploymentId: "d".repeat(40), experimental: { cachedNavigations: true } } });
   const run = (...args) =>
     spawnSync(
       process.execPath,
@@ -235,7 +239,9 @@ function fixture() {
       "--backend",
       join(dir, "backend.json"),
       "--release-build",
-      "ddddddddd",
+      "d".repeat(40),
+      "--release-app-manifest",
+      join(dir, "release-manifest.json"),
       "--release-source",
       "eeeeeeeee",
       "--release-tooling",
@@ -282,7 +288,7 @@ test("before derivation rejects positive or unknown raw browser failures", () =>
     f.saveBefore();
     const derived = f.derive();
     assert.equal(derived.status, 2, derived.stdout + derived.stderr);
-    assert.match(derived.stderr, /failed browser requests/i);
+    assert.match(derived.stderr, /complete browser request proofs/i);
   }
   f.artifact.samples[0].failedRequests = 0;
   f.saveBefore();
@@ -513,7 +519,7 @@ function candidate(f) {
   artifact.planSha256 = hash(
     readFileSync(join(f.dir, "derived/release-plan.json")),
   );
-  artifact.runtime = { ...plan.runtime, buildVerified: true };
+  artifact.runtime = { ...plan.runtime, browserControl: { ...plan.runtime.browserControl, compiledBuild: plan.runtime.build, manifestVerified: true, browserVerified: true }, buildVerified: true };
   for (const s of artifact.samples)
     for (const proof of s.prerequisiteQuiescence) proof.capMs = plan.timeoutMs;
   artifact.acceptance = "fulfilled";
@@ -556,6 +562,21 @@ test("comparison records all cohorts and reports fulfilled numerical gates with 
   assert.equal(report.cohorts.length, 5);
   assert.equal(report.cohorts[0].head.usableContentMs.p95, 1000);
   assert.match(report.limitations.join(" "), /INP/);
+});
+
+test("before derivation and independent HEAD comparison accept proven controls without hiding raw counts", () => {
+  const f = fixture();
+  f.artifact.samples[0].failedRequests = 1;
+  f.artifact.samples[0].browserControlEvidence = testBrowserEvidence(f.artifact.samples[0].traceId, true);
+  f.saveBefore();
+  assert.equal(f.derive().status, 0);
+  const h = candidate(f);
+  const result = h.compare();
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  assert.equal(h.artifact.samples[0].failedRequests, 1);
+  delete h.artifact.samples[0].browserControlEvidence;
+  f.save("head.json", h.artifact);
+  assert.notEqual(h.compare().status, 0);
 });
 test("comparison retains numerical regressions and rejects failed or unrestored HEAD evidence", () => {
   for (const [expectedExit, change] of [
@@ -627,7 +648,9 @@ test("derive refuses candidate inputs and unknown options rather than consuming 
     "--backend",
     join(f.dir, "backend.json"),
     "--release-build",
-    "ddddddddd",
+    "d".repeat(40),
+    "--release-app-manifest",
+    join(f.dir, "release-manifest.json"),
     "--release-source",
     "eeeeeeeee",
     "--release-tooling",
@@ -745,7 +768,7 @@ function settledFixture(f, plan, filename) {
     planSha256: hash(Buffer.from(JSON.stringify(plan, null, 2) + "\n")),
     policy: settledPolicy,
     protocol: companionProtocol,
-    runtime: { ...plan.runtime, buildVerified: true },
+    runtime: { ...plan.runtime, buildVerified: true, browserControl: testBrowserBinding(plan.runtime.build, plan.runtime.browserControl) },
     hardware: f.artifact.hardware,
     browser: f.artifact.browser,
     samples,
@@ -819,7 +842,9 @@ test("matched complete companion resolves full-byte gates without relabeling pen
     "--backend",
     join(f.dir, "backend.json"),
     "--release-build",
-    "ddddddddd",
+    "d".repeat(40),
+    "--release-app-manifest",
+    join(f.dir, "release-manifest.json"),
     "--release-source",
     "eeeeeeeee",
     "--release-tooling",
@@ -950,7 +975,9 @@ test("full byte ceilings use proxy body units while primary CDP budgets keep the
     "--backend",
     join(f.dir, "backend.json"),
     "--release-build",
-    "ddddddddd",
+    "d".repeat(40),
+    "--release-app-manifest",
+    join(f.dir, "release-manifest.json"),
     "--release-source",
     "eeeeeeeee",
     "--release-tooling",
@@ -1109,7 +1136,9 @@ test("main finalizer CDP overage remains diagnostic when censored before bytes h
     "derive",
     ...originalArgs,
     "--release-build",
-    "ddddddddd",
+    "d".repeat(40),
+    "--release-app-manifest",
+    join(f.dir, "release-manifest.json"),
     "--release-source",
     "eeeeeeeee",
     "--release-tooling",

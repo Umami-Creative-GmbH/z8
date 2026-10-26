@@ -1,6 +1,7 @@
 import { createProxyWireObserver } from "./proxy-wire-observer.mjs";
 import { createActionResultObserver } from "./action-result-observer.mjs";
 import { nextStreamCompletionPatch } from "./next-stream-completion-patch.mjs";
+import { testBrowserMetadata, testBrowserBinding, testBrowserEvidence } from "./control-cancellation-test-fixtures.mjs";
 import { companionProtocolIdentity } from "./protocol-fingerprints.mjs";
 const companionProtocol = await companionProtocolIdentity();
 import assert from "node:assert/strict";
@@ -10,6 +11,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import test from "node:test";
 function registerEmptyScopes(sample, field) {
+  sample.browserControlEvidence = testBrowserEvidence(sample.traceId);
   sample.prerequisiteTraceId = `${sample.traceId}-prerequisite`;
   sample.backgroundTraceId = `${sample.traceId}-background`;
   const zero = { queries: 0, acquisitions: 0, cache: 0 };
@@ -40,6 +42,13 @@ import {
   companionWireContract,
   measureFixtureResources,
 } from "./settled-resources.mjs";
+
+test("controlled companion rejects missing browser pins before any collector IO", async () => {
+  let calls = 0;
+  await assert.rejects(measureFixtureResources({}, {}, { runtime: { traceTransport: "context-loopback-proxy-v1" } },
+    {}, {}, {}, "first-document", 0, "private-control", { beginCollectorVisit: async () => { calls++; throw Error("not reached"); } }), /browser.*control|control.*browser/i);
+  assert.equal(calls, 0);
+});
 
 test("companion retains failed native close proof without making an incomplete visit eligible", async () => {
   let registeredIds;
@@ -170,6 +179,7 @@ test("resource eligibility rejects failed original and HEAD behavior even with c
       build: "aaaaaaaaa",
       sourceBuild: "bbbbbbbbb",
       toolingBuild: "ccccccccc",
+      browserControl: testBrowserMetadata(),
     },
     conditions: [{ name: "admin", role: "admin" }],
     ranges: [{ name: "month" }],
@@ -239,7 +249,7 @@ test("resource eligibility rejects failed original and HEAD behavior even with c
     phase: "baseline",
     planSha256: "hash",
     policy: settledPolicy,
-    runtime: { ...plan.runtime, buildVerified: true },
+    runtime: { ...plan.runtime, buildVerified: true, browserControl: testBrowserBinding(plan.runtime.build) },
     samples,
     finalized: true,
     evidenceComplete: true,
@@ -389,6 +399,7 @@ test("capture requires registered collector control before any runtime or browse
       fixture: { kind: "disposable", journeysVerified: true },
       runtime: {
         mode: "production",
+        browserControl: testBrowserMetadata(),
         browserPermissions: "notifications-denied-for-fixture-origin",
         collectorProtocol: "z8-fixture-otlp-collector-v2",
         traceTransport: "context-loopback-proxy-v1",

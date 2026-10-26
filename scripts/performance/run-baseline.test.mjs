@@ -11,6 +11,7 @@ import { clickVisible } from "./journey-steps.mjs";
 import { nextStreamCompletionPatch } from "./next-stream-completion-patch.mjs";
 import { primaryProtocolIdentity } from "./protocol-fingerprints.mjs";
 import { measure } from "./run-baseline.mjs";
+import { testBrowserMetadata, testBrowserEvidence } from "./control-cancellation-test-fixtures.mjs";
 
 test("fixture startup checks the actual temporary compiled manifest and never repairs stale identity", async () => {
 	const fixture = await import("./fixture.mjs");
@@ -588,6 +589,14 @@ test("primary plan rejects absent, unknown or changed common Next stream patch",
 	}
 });
 
+test("controlled primary admission rejects missing browser pins before any collector or context IO", async () => {
+	let calls = 0;
+	await assert.rejects(measure({ createBrowserContext: async () => { calls++; } }, {},
+		{ runtime: { traceTransport: "context-loopback-proxy-v1" } }, {}, {}, {}, "first-document", 0, 1,
+		{ beginCollectorVisit: async () => { calls++; } }), /browser.*control|control.*browser/i);
+	assert.equal(calls, 0);
+});
+
 test("primary retains the original sanitized failure when native close is incomplete", async () => {
 	let registeredIds;
 	const proof = [
@@ -647,6 +656,7 @@ test("primary retains the original sanitized failure when native close is incomp
 for (const mutationFails of [true, false]) {
 	test(`primary retains ${mutationFails ? "the mutation timeout" : "the first restoration failure"} through native close errors`, async (t) => {
 		let now = 0, reloads = 0, closed = 0, detached = 0;
+		const callbacks = {}, observedIds = [], observationOrder = [];
 		t.mock.method(performance, "now", () => now);
 		const page = {
 			setViewport: async () => {},
@@ -661,11 +671,19 @@ for (const mutationFails of [true, false]) {
 			evaluate: async () => "denied",
 			createCDPSession: async () => ({
 				send: async () => {},
-				on() {},
+				on(name, callback) {
+					callbacks[name] = callback;
+					if (name === "Network.requestWillBeSent") callback({ requestId: "inherited", timestamp: 0 });
+				},
 				detach: async () => { detached++; },
 			}),
 			reload: async () => {
 				now = ++reloads === 1 ? 10 : 100;
+				if (reloads === 1) {
+					callbacks["Network.requestWillBeSent"]({ requestId: "measured", timestamp: 1 });
+					callbacks["Network.loadingFailed"]({ requestId: "inherited" });
+					callbacks["Network.loadingFailed"]({ requestId: "measured" });
+				}
 				if (reloads === 1 && !mutationFails) return;
 				throw Object.assign(Error("PRIVATE_CANARY_DO_NOT_PERSIST"), {
 					name: reloads === 1 ? "TimeoutError" : "Error",
@@ -699,6 +717,17 @@ for (const mutationFails of [true, false]) {
 			},
 			"mutation-refresh", 0, 1,
 			{
+				observeBrowser: async ({ page: actual, headers }) => {
+					assert.equal(actual, page);
+					assert.deepEqual(headers, { "Accept-Language": "en" });
+					return {
+						beginMeasurement: () => observationOrder.push("begin"),
+						endMeasurement: () => observationOrder.push("end"),
+						recordMeasuredFailure: (id) => observedIds.push(id),
+						close: async () => observationOrder.push("close"),
+						snapshot: () => ({ observed: observedIds.length }),
+					};
+				},
 				beginCollectorVisit: async () => ({}),
 				endCollectorVisit: async () => { throw Error("PRIVATE_NATIVE_CANARY"); },
 			},
@@ -719,6 +748,10 @@ for (const mutationFails of [true, false]) {
 		]);
 		assert.equal(closed, 1);
 		assert.equal(detached, 1);
+		assert.equal(sample.failedRequests, 1);
+		assert.deepEqual(observedIds, ["measured"]);
+		assert.deepEqual(observationOrder, ["begin", "end", "close"]);
+		assert.deepEqual(sample.browserControlEvidence, { observed: 1 });
 		assert.doesNotMatch(JSON.stringify(sample), /PRIVATE_.*CANARY|TimeoutError|stack/);
 	});
 }
@@ -813,6 +846,7 @@ test("context-proxy plans require the prospective post-snapshot native cleanup p
 		plan.runtime.poolMax = 10;
 		plan.runtime.poolAcquisitionTimeoutMs = 60000;
 		plan.runtime.browserPolicy = "isolated-profile-no-prediction-v1";
+		plan.runtime.browserControl = testBrowserMetadata();
 		plan.runtime.prerequisiteQuiescencePolicy =
 			"settled-prerequisite-transfers-v1";
 		const validate = () => {
@@ -941,7 +975,7 @@ test("finalization retains raw browser failures and rejects them in both phases"
 				writeFileSync(planPath, bytes);
 				writeFileSync(artifactPath, JSON.stringify({
 					planSha256: createHash("sha256").update(bytes).digest("hex"),
-					samples: [{ traceId: "a".repeat(32), failed: false, censored: false, failedRequests }],
+					samples: [{ traceId: "a".repeat(32), failed: false, censored: false, failedRequests, browserControlEvidence: testBrowserEvidence("a".repeat(32)) }],
 					summaries: [],
 				}));
 				const command = spawnSync(process.execPath, [runner, "--plan", planPath, "--finalize", artifactPath], { encoding: "utf8" });
@@ -949,7 +983,7 @@ test("finalization retains raw browser failures and rejects them in both phases"
 				const artifact = JSON.parse(readFileSync(artifactPath));
 				assert.equal(artifact.evidenceComplete, false);
 				assert.equal(artifact.samples[0].failedRequests, failedRequests);
-				assert.equal(artifact.evidenceGates.some((gate) => /failed browser requests/i.test(gate)), failedRequests !== 0);
+				assert.equal(artifact.evidenceGates.some((gate) => /complete browser request proofs/i.test(gate)), failedRequests !== 0);
 			}
 	} finally {
 		rmSync(folder, { recursive: true, force: true });

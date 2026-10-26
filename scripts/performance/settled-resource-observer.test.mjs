@@ -1,5 +1,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+
+test("browser failure IDs are emitted only at the unchanged measured raw increment", () => {
+	const ids = [], observer = createSettledObserver({ onMeasuredFailure: (id) => ids.push(id) });
+	observer.request({ requestId: "inherited", type: "Fetch", request: { headers: {} } }, 0);
+	observer.begin(1);
+	observer.request({ requestId: "measured", type: "Fetch", request: { headers: {} } }, 2);
+	observer.failed({ requestId: "inherited" }, 3);
+	observer.failed({ requestId: "measured" }, 4);
+	assert.equal(observer.state(5).failedRequests, 1);
+	assert.deepEqual(ids, ["measured"]);
+});
 import {
   createSettledObserver,
   settledPolicy,

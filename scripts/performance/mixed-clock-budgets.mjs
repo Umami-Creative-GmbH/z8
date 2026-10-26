@@ -4,7 +4,9 @@ import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { isNextStreamCompletionPatch } from "./next-stream-completion-patch.mjs";
-import { cleanApplicationEvidence, cleanObservationPolicy, observationTimeoutMs } from "./clean-evidence.mjs";
+import { cleanApplicationEvidence, cleanObservationPolicy, observationTimeoutMs, cleanEvidencePolicy, cleanBrowserContextEvidence } from "./clean-evidence.mjs";
+import { knownBrowserControlMetadata, matchingBrowserControlBinding } from "./control-cancellation-evidence.mjs";
+import { mixedBrowserWorkScope, readBrowserControlBinding } from "./browser-control-collector.mjs";
 import {
 	clockObservationIsComplete,
 	mixedTransportIsComplete,
@@ -21,10 +23,13 @@ export const mixedProtocolFiles = [
 	"trace-transport.mjs",
 	"action-result-observer.mjs",
 	"clean-evidence.mjs",
+	"control-cancellation-evidence.mjs",
+	"browser-control-collector.mjs",
 	"proxy-wire-observer.mjs",
 ];
 const policy = {
 	version: 9,
+	cleanEvidence: cleanEvidencePolicy,
 	observation: cleanObservationPolicy,
 	latency: { multiplier: 1.25, allowanceMs: 250, floorMs: 500 },
 };
@@ -64,6 +69,12 @@ const isoTime = (value) => {
 	return Date.parse(value);
 };
 const same = (a, b) => canonical(a) === canonical(b);
+const commonConditions = (conditions) => {
+	const result = structuredClone(conditions);
+	delete result.browserControlMetadataFileSha256;
+	if (result.browserControl) delete result.browserControl.compiledManifestSha256;
+	return result;
+};
 const distribution = (values) => {
 	check(values.length && values.every(finite), "finite distribution");
 	const ordered = [...values].sort((a, b) => a - b);
@@ -94,10 +105,11 @@ function validateProtocol(protocol) {
 				[...mixedProtocolFiles].sort(),
 			) &&
 			Object.values(protocol.files).every(sha),
-		"ten measuring source hashes",
+		"twelve measuring source hashes",
 	);
 }
 function validateConditions(value) {
+	check(knownBrowserControlMetadata(value?.browserControl) && sha(value.browserControlMetadataFileSha256), "actual browser control metadata and file identity");
 	check(
 		isNextStreamCompletionPatch(value?.nextStreamCompletionPatch),
 		"common Next patch",
@@ -166,6 +178,9 @@ function validateContext(context, artifactSha, build, protocolSha, phase) {
 	validateConditions(context.conditions);
 }
 function validateRecordedBrowser(run, context) {
+	check(matchingBrowserControlBinding({ build: context.fullBuild, browserControl: context.conditions.browserControl }, run.browserControl) &&
+		run.browserControlMetadataFileSha256 === context.conditions.browserControlMetadataFileSha256,
+		"actual compiled/browser control admission matches context");
 	check(
 		run.transports.every(
 			(row) =>
@@ -178,6 +193,9 @@ function validateRecordedBrowser(run, context) {
 
 /** Validate every record and every registered native group, never a selected success subset. */
 export function validateMixedClockRun(run, build, phase = "baseline") {
+	check(same(run?.cleanEvidencePolicy, cleanEvidencePolicy) && run.browserFailureScope === mixedBrowserWorkScope &&
+		matchingBrowserControlBinding({ build, browserControl: run.browserControl }, run.browserControl) && sha(run.browserControlMetadataFileSha256),
+		"qualified browser control run metadata");
 	check(
 		fullBuild(build) &&
 			run?.sourceCommit === build &&
@@ -256,7 +274,9 @@ export function validateMixedClockRun(run, build, phase = "baseline") {
 	check(
 		run.transports?.length === 4 &&
 			same(run.transports.map((row) => row.actor).sort(), [...actors].sort()) &&
-			run.transports.every((row) => mixedTransportIsComplete(row) && cleanApplicationEvidence(row.traceTransport.applicationEvidence)),
+			run.transports.every((row) => mixedTransportIsComplete(row) && cleanApplicationEvidence(row.traceTransport.applicationEvidence) &&
+				row.browserFailureScope === mixedBrowserWorkScope && cleanBrowserContextEvidence(row.contextId, row.browserControlEvidence, row.rawBrowserFailedRequests)) &&
+			new Set(run.transports.map((row) => row.contextId)).size === 4,
 		"four closed strict transports",
 	);
 	check(
@@ -319,6 +339,7 @@ export function validateMixedClockRun(run, build, phase = "baseline") {
 		"all fifty-six native identities",
 	);
 	const ids = rows.map((row) => row.traceId);
+	check(run.transports.every((row) => ids.includes(row.contextId)), "browser work contexts are registered native identities");
 	check(
 		ids.every((value) => /^[a-f0-9]{32}$/.test(value)) &&
 			new Set(ids).size === 56 &&
@@ -452,6 +473,8 @@ export function deriveMixedClockBudgets(input) {
 		protocolSha256,
 		expectedBeforeBuild,
 		expectedHeadBuild,
+		expectedHeadBrowserControl,
+		expectedHeadBrowserControlFileSha256,
 		operatorSha256,
 		registeredAt,
 	} = input;
@@ -475,6 +498,9 @@ export function deriveMixedClockBudgets(input) {
 		protocolSha256,
 		"baseline",
 	);
+	check(knownBrowserControlMetadata(expectedHeadBrowserControl) && sha(expectedHeadBrowserControlFileSha256) &&
+		["browserRevision", "compiledCachedNavigations"].every((key) => expectedHeadBrowserControl[key] === beforeContext.conditions.browserControl[key]),
+		"independently pinned common head browser control method");
 	check(
 		isoTime(registeredAt) > isoTime(beforeContext.finishedAt),
 		"registration after complete original",
@@ -494,7 +520,11 @@ export function deriveMixedClockBudgets(input) {
 		conditionValidatorSha256,
 		expectedBeforeBuild,
 		expectedHeadBuild,
-		conditionsSha256: digest(canonical(beforeContext.conditions)),
+		expectedBeforeBrowserControl: beforeContext.conditions.browserControl,
+		expectedBeforeBrowserControlFileSha256: beforeContext.conditions.browserControlMetadataFileSha256,
+		expectedHeadBrowserControl,
+		expectedHeadBrowserControlFileSha256,
+		conditionsSha256: digest(canonical(commonConditions(beforeContext.conditions))),
 		clock: Object.fromEntries(
 			Object.entries(summary.clock).map(([action, values]) => [
 				action,
@@ -560,7 +590,12 @@ export function compareMixedClockBudgets(input) {
 		"release",
 	);
 	check(
-		digest(canonical(headContext.conditions)) === budgets.conditionsSha256 &&
+		same(headContext.conditions.browserControl, budgets.expectedHeadBrowserControl) &&
+			headContext.conditions.browserControlMetadataFileSha256 === budgets.expectedHeadBrowserControlFileSha256 &&
+			same(before.browserControl.policy, budgets.expectedBeforeBrowserControl?.policy) &&
+			matchingBrowserControlBinding({ build: budgets.expectedBeforeBuild, browserControl: budgets.expectedBeforeBrowserControl }, before.browserControl) &&
+			before.browserControlMetadataFileSha256 === budgets.expectedBeforeBrowserControlFileSha256 &&
+			digest(canonical(commonConditions(headContext.conditions))) === budgets.conditionsSha256 &&
 			isoTime(headContext.firstControlledHeadStartedAt) >
 				isoTime(budgets.registeredAt) &&
 			isoTime(headContext.startedAt) >=
@@ -627,6 +662,8 @@ const options = {
 		"before-context",
 		"expected-before-build",
 		"expected-head-build",
+		"head-app-manifest",
+		"head-browser-control",
 		"out",
 	],
 	compare: [
@@ -682,12 +719,15 @@ export async function runMixedBudgetCommand(args) {
 		check(
 			digest(await readFile(new URL(name, import.meta.url))) ===
 				protocol.value.files[name],
-			"actual ten-module snapshot",
+			"actual twelve-module snapshot",
 		);
 	const operatorSha256 = digest(await readFile(new URL(import.meta.url)));
 	let result;
 	if (flags.command === "derive") {
 		const context = await load(flags["before-context"]);
+		const headControl = await load(flags["head-browser-control"]);
+		await readBrowserControlBinding({ plan: { runtime: { build: flags["expected-head-build"], browserControl: headControl.value } },
+			manifestPath: flags["head-app-manifest"] });
 		result = deriveMixedClockBudgets({
 			before: before.value,
 			beforeSha256: before.sha256,
@@ -698,6 +738,8 @@ export async function runMixedBudgetCommand(args) {
 			operatorSha256,
 			expectedBeforeBuild: flags["expected-before-build"],
 			expectedHeadBuild: flags["expected-head-build"],
+			expectedHeadBrowserControl: headControl.value,
+			expectedHeadBrowserControlFileSha256: headControl.sha256,
 			registeredAt: new Date().toISOString(),
 		});
 	} else {
