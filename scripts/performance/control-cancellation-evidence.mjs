@@ -211,6 +211,8 @@ function inspectFlightBody(
 	let pathLimit = false, pathFailure = null, pathLimitObservation = null, eagerParentCalls = 0, outlinedCalls = 0, eagerUniqueObjects = 0, repeatedEagerObjects = 0;
 	const eagerObjectsObserved = new WeakSet();
 	const completedParentChecks = new WeakMap(), parentCheckDepths = [];
+	const literalParentChecks = new WeakMap();
+	let referenceSensitiveEpoch = 0;
 	let parentMemoChecks=0,parentMemoHits=0,parentMemoAbsent=0,parentMemoNonStandalone=0,parentMemoDepthExcluded=0,parentMemoKnownExcluded=0,parentMemoReady=0,parentMemoPublished=0;
 	const notePathFailure = reason => { pathFailure ??= reason; return false; };
 	const unknownPath = reason => { notePathFailure(reason); return {known:false}; };
@@ -237,6 +239,7 @@ function inspectFlightBody(
 		}
 		if (!pathStep(depth,"eager-parent",{referenceEdgesInParent:referenceEdges,jsonDepthInParent:jsonDepth})) return false;
 		if (typeof value === "string") {
+			if (value.startsWith("$")) referenceSensitiveEpoch++;
 			if (/^\$(?:L|@)[a-f0-9]+$/.test(value)) return canonicalFlightId(value.slice(2)) || notePathFailure("noncanonical-eager-reference");
 			if (/^\$[QWi][a-f0-9]+$/.test(value)) {
 				const id=value.slice(2),record=records.get(id);
@@ -259,15 +262,32 @@ function inspectFlightBody(
 			return !value.startsWith("$") || value.startsWith("$$") || ["$","$undefined","$NaN","$Infinity","$-Infinity","$-0"].includes(value) || /^\$[SD]/.test(value) || notePathFailure("unsupported-eager-reference");
 		}
 		if (!value || typeof value !== "object") return true;
-		if (binaryValues.has(value) || opaqueText.has(value)) return notePathFailure("eager-binary-or-text-value");
-		if (elementTuple(value) && !forceElement) return true;
+		if (binaryValues.has(value) || opaqueText.has(value)) { referenceSensitiveEpoch++; return notePathFailure("eager-binary-or-text-value"); }
+		if (elementTuple(value) && !forceElement) { referenceSensitiveEpoch++; return true; }
 		if (elementTuple(value) && value.length !== 4) return notePathFailure("malformed-eager-element");
-		if (seen.has(value)) return true;
+		if (seen.has(value)) { referenceSensitiveEpoch++; return true; }
+		const literal = literalParentChecks.get(value)?.get(forceElement===true);
+		if (literal && depth + literal.depthSpan <= 64) {
+			// A closed reference-free subtree is context independent, but its full height
+			// still belongs to EVERY ancestor certificate that consumes this lookup.
+			for (const scope of parentCheckDepths) scope.maxDepth=Math.max(scope.maxDepth,depth+literal.depthSpan);
+			return true;
+		}
+		const eligibility = referenceSensitiveEpoch, scope = {maxDepth:depth};
+		if (Object.hasOwn(value,"__proto__")) referenceSensitiveEpoch++;
 		const containers = new Set([...seen,value]);
-		return Object.keys(value).filter(key=>key!=="__proto__").every(key=> {
+		parentCheckDepths.push(scope);
+		let ready;
+		try { ready = Object.keys(value).filter(key=>key!=="__proto__").every(key=> {
 			const descriptor=Object.getOwnPropertyDescriptor(value,key);
 			return descriptor && Object.hasOwn(descriptor,"value") && eagerParent(descriptor.value,false,containers,depth + 1,referenceEdges,jsonDepth + 1);
-		});
+		}); } finally { parentCheckDepths.pop(); }
+		if (ready && referenceSensitiveEpoch === eligibility) {
+			let byForce = literalParentChecks.get(value);
+			if (!byForce) literalParentChecks.set(value,byForce=new Map());
+			byForce.set(forceElement===true,{depthSpan:scope.maxDepth-depth});
+		}
+		return ready;
 	};
 	const activePaths = new Map();
 	const outlined = (reference, depth = 0, trail = new Set()) => {
