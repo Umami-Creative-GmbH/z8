@@ -332,12 +332,13 @@ function inspectFlightBody(
 		});
 	}
 	const shellScope = requestKind === "runtime-shell" || (requestKind === "embedded-runtime-prefetch" && isPartial);
+	const embeddedPartialScope = requestKind === "embedded-runtime-prefetch" && marker === "partial";
 	if (requestKind === "runtime-shell" && (marker !== "partial" || Object.hasOwn(root, "l") || Object.hasOwn(root, "a")))
 		return unknown("unsupported-runtime-shell-metadata");
 	// Roles follow exact transport edges; another required path to the same model stays required.
 	const queue = [{ value: root, role: "root" }],
 		visited = new Set();
-	let inspected = 0, postponedOutputReferences = 0, knownSuspenseBoundaries = 0;
+	let inspected = 0, postponedOutputReferences = 0, knownSuspenseBoundaries = 0, postponedComponentReferences = 0;
 	while (queue.length) {
 		if (++inspected > 100000 || ++budget.models > 100000) return unknown("model-limit");
 		const { value, role, fallbackReferences } = queue.pop();
@@ -392,6 +393,12 @@ function inspectFlightBody(
 				postponedOutputReferences++;
 				continue;
 			}
+			// The detached partial p cache representation stores component props without rendering them.
+			// This never grants the main graph, component type, fallback, or eager references a missing dependency.
+			if (!records.has(id) && embeddedPartialScope && role === "component-data" && value[1] === "L") {
+				postponedComponentReferences++;
+				continue;
+			}
 			if (!records.has(id)) return unknown("unresolved-model-reference", {
 				modelReference: { prefix: value[1] === "L" ? "L" : value[1] === "@" ? "@" : "plain",
 					form: value[1] === "L" ? "lazy-reference" : value[1] === "@" ? "promise-reference" : "model-reference", length: value.length },
@@ -429,7 +436,7 @@ function inspectFlightBody(
 			});
 		} else if (value && typeof value === "object" && !opaqueText.has(value)) {
 			if (Object.keys(value).length + queue.length > 100000) return unknown("model-limit");
-			const output = ["output", "suspended-output", "fallback-output"].includes(role);
+			const output = ["output", "suspended-output", "fallback-output"].includes(role) || (embeddedPartialScope && role === "component-data");
 			if (shellScope && output && Array.isArray(value) && value[0] === "$" && value.length !== 4)
 				return unknown("unsupported-runtime-shell-output");
 			if (shellScope && output && Array.isArray(value) && value.length === 4 && value[0] === "$") {
@@ -657,8 +664,9 @@ function inspectFlightBody(
 		if (representedOutputs === 0)
 			return unknown("missing-represented-navigation-output");
 		patchClaims = { representedOutputs, treeNodes: seen.size,
-			...(shellScope ? { postponedOutputReferences, knownSuspenseBoundaries } : {}) };
-		requiredStage = requestKind === "embedded-runtime-prefetch" ? "embedded-runtime-prefetch-output" : shellScope ? "runtime-shell-output" : "navigation-patch";
+			...(shellScope ? { postponedOutputReferences, knownSuspenseBoundaries } : {}),
+			...(postponedComponentReferences ? { postponedComponentReferences, renderableOutputClaim: false } : {}) };
+		requiredStage = postponedComponentReferences ? "embedded-partial-prefetch-representation" : requestKind === "embedded-runtime-prefetch" ? "embedded-runtime-prefetch-output" : shellScope ? "runtime-shell-output" : "navigation-patch";
 	} else if (isPartial) {
 		const staticBytes = boundary(root.l),
 			shellBytes = boundary(root.a);
@@ -729,6 +737,8 @@ const goodBody = (proof, depth = 0) => {
 	if (!Number.isSafeInteger(proof.protocolRows) || proof.protocolRows <= 0 || proof.protocolRows > 4096 ||
 		!Number.isSafeInteger(proof.modelSteps) || proof.modelSteps <= 0 || proof.modelSteps > 100000 ||
 		!Object.hasOwn(proof, "embeddedRuntimePrefetch") || depth > 1 || (proof.requestKind === "embedded-runtime-prefetch" && depth !== 1)) return false;
+	if ((Object.hasOwn(proof, "postponedComponentReferences") || Object.hasOwn(proof, "renderableOutputClaim")) &&
+		proof.requiredStage !== "embedded-partial-prefetch-representation") return false;
 	const embedded = proof.embeddedRuntimePrefetch;
 	if (embedded !== null && (depth !== 0 || proof.requestKind !== "navigation" || embedded?.requestKind !== "embedded-runtime-prefetch" || !goodBody(embedded, depth + 1) ||
 		proof.decodedBytes + embedded.decodedBytes > controlCancellationPolicy.decodedLimit || proof.protocolRows + embedded.protocolRows > 4096 ||
@@ -755,14 +765,16 @@ const goodBody = (proof, depth = 0) => {
 			proof.treeNodes > 0 &&
 			proof.treeNodes <= 4096
 		);
-	if (["runtime-shell-output", "embedded-runtime-prefetch-output"].includes(proof.requiredStage))
+	if (["runtime-shell-output", "embedded-runtime-prefetch-output", "embedded-partial-prefetch-representation"].includes(proof.requiredStage))
 		return proof.requestKind === (proof.requiredStage === "runtime-shell-output" ? "runtime-shell" : "embedded-runtime-prefetch") &&
 			!proof.action && proof.marker === "partial" && proof.isPartial &&
 			Number.isSafeInteger(proof.treeNodes) && proof.treeNodes > 0 && proof.treeNodes <= 4096 &&
 			Number.isSafeInteger(proof.representedOutputs) && proof.representedOutputs > 0 && proof.representedOutputs <= proof.treeNodes + 1 &&
 			Number.isSafeInteger(proof.postponedOutputReferences) && proof.postponedOutputReferences >= 0 && proof.postponedOutputReferences <= 100000 &&
 			Number.isSafeInteger(proof.knownSuspenseBoundaries) && proof.knownSuspenseBoundaries >= 0 && proof.knownSuspenseBoundaries <= 100000 &&
-			(proof.postponedOutputReferences === 0 || proof.knownSuspenseBoundaries > 0);
+			(proof.postponedOutputReferences === 0 || proof.knownSuspenseBoundaries > 0) &&
+			(proof.requiredStage !== "embedded-partial-prefetch-representation" ||
+				(proof.renderableOutputClaim === false && Number.isSafeInteger(proof.postponedComponentReferences) && proof.postponedComponentReferences > 0 && proof.postponedComponentReferences <= 100000));
 	if (
 		proof.action !== (proof.requestKind === "action") ||
 		!["action", "navigation", "embedded-runtime-prefetch"].includes(proof.requestKind)
@@ -804,6 +816,8 @@ const bodyReceipt = (row) => {
 		"treeNodes",
 		"representedOutputs",
 		"postponedOutputReferences",
+		"postponedComponentReferences",
+		"renderableOutputClaim",
 		"knownSuspenseBoundaries",
 		"protocolRows",
 		"modelSteps",
