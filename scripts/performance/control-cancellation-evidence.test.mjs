@@ -396,6 +396,12 @@ test("supported hints and framed text never mistake text containing E for a Flig
 	assert.equal(inspectRequiredFlightBody(bytes).complete, true);
 });
 
+test("a resource hint dispatch does not fulfill an outlined model dependency", () => {
+	const body = Buffer.from('0:{"a":"$1"}\n1:HL["/technical.css","style"]\n');
+	assert.equal(inspectRequiredFlightBody(body, { action: true }).complete, false);
+	assert.equal(inspectRequiredFlightBody(Buffer.from('0:{"a":null}\n1:HL["/technical.css","style"]\n'), { action: true }).complete, true);
+});
+
 test("serialized measured receipts require exact raw partition, scope and complete coverage", () => {
 	const proof = testBrowserEvidence("context", true).measured;
 	assert.equal(cleanBrowserFailureEvidence(proof, 1), true);
@@ -614,4 +620,59 @@ test("unresolved lazy dependencies retain bounded technical provenance without e
 		assert.match(result.bodySha256, /^[a-f0-9]{64}$/);
 		assert.doesNotMatch(JSON.stringify(result), /abcdef/);
 	}
+});
+
+test("runtime-shell scope permits only postponed lazy output beneath a known Suspense fallback", () => {
+	const body = '~0:{"q":"","i":false,"t":{"t":{"s":"","c":"$Q1"}}}\n1:[["children","$2"]]\n2:{"s":"en","d":{"r":"$3","p":true,"v":null}}\n3:["$","$Sreact.suspense",null,{"fallback":["$","span",null,{"children":"KNOWN_FALLBACK"}],"children":"$Ldead"}]\n';
+	const options = { requestKind: "runtime-shell", cachedNavigations: true };
+	const proof = inspectRequiredFlightBody(Buffer.from(body), options);
+	assert.equal(proof.complete, true);
+	assert.equal(proof.requiredStage, "runtime-shell-output");
+	assert.equal(proof.isPartial, true);
+	assert.equal(proof.postponedOutputReferences, 1);
+	assert.equal(proof.knownSuspenseBoundaries, 1);
+	const aliasedFallback = body.replace('["$","span",null,{"children":"KNOWN_FALLBACK"}]', '"$4"') + '4:["$","span",null,{"children":"KNOWN_FALLBACK"}]\n';
+	assert.equal(inspectRequiredFlightBody(Buffer.from(aliasedFallback), options).complete, true);
+	assert.equal(proof.representedOutputs, 1);
+	assert.doesNotMatch(JSON.stringify(proof), /KNOWN_FALLBACK|dead/);
+	const input = cancellationFixture();
+	Object.assign(input.failures[0], { requestKind: "runtime-shell", bodyProof: proof, bodyReadbackComplete: true });
+	Object.assign(input.proxy[0], { requestKind: "runtime-shell", bodyProof: proof, complete: true, canceled: false });
+	const receipt = classifyControlCancellations(input);
+	assert.equal(cleanBrowserFailureEvidence(receipt, 1), true);
+	const corrupted = structuredClone(receipt);
+	corrupted.records[0].proof.failure.bodyProof.knownSuspenseBoundaries = 0;
+	assert.equal(cleanBrowserFailureEvidence(corrupted, 1), false);
+	for (const invalid of [
+		body.replace('"children":"$Ldead"', '"children":"$dead"'),
+		body.replace('"children":"$Ldead"', '"children":"$@dead"'),
+		body.replace('"fallback":["$","span",null,{"children":"KNOWN_FALLBACK"}]', '"fallback":"$dead"'),
+		body.replace('"fallback":["$","span",null,{"children":"KNOWN_FALLBACK"}]', '"fallback":"$Ldead"'),
+		body.replace('"fallback":["$","span",null,{"children":"KNOWN_FALLBACK"}]', '"fallback":"$0"'),
+		body.replace('"fallback":["$","span",null,{"children":"KNOWN_FALLBACK"}]', '"fallback":{"private":"not-renderable"}'),
+		body.replace('"$Sreact.suspense"', '"section"'),
+		body.replace('"$Sreact.suspense"', '"$Ldead"'),
+		body.replace('"children":"$Ldead"', '"children":"$Ldead","required":"$Ldead"'),
+		body.replace('"q":""', '"q":"","required":"$3"'),
+		body.replace('"q":""', '"q":"","required":"$2"'),
+		body.replace('"q":""', '"q":"","required":"$0"'),
+		body.replace('["$","span",null,{"children":"KNOWN_FALLBACK"}]', '["$","span",null]'),
+		body.replace('["$","span",null,{"children":"KNOWN_FALLBACK"}]', '"$4"') + '4:["$","span",null,{"children":"$4"}]\n',
+		body.replace('["$","span",null,{"children":"KNOWN_FALLBACK"}]', '"$4"') + '4:I["module",[],"export"]\n',
+		body.replace('["$","span",null,{"children":"KNOWN_FALLBACK"}]', '"$Q4"') + '4:[["key",{"notReactOutput":true}]]\n',
+		body.replace('["$","span",null,{"children":"KNOWN_FALLBACK"}]', '"$W4"') + '4:[{"notReactOutput":true}]\n',
+		body.replace('["$","span",null,{"children":"KNOWN_FALLBACK"}]', '"$i4"') + '4:[{"notReactOutput":true}]\n',
+		body.replace('"c":"$Q1"', '"c":"$Qdead"'),
+		body.replace('"v":null', '"v":"$dead"'),
+		body.replace('"p":true', '"p":"true"'),
+		body.replace('"r":"$3"', '"r":"$dead"'),
+		body.replace('"children":"$Ldead"', '"children":["$","$4",null,{"children":"$Ldead"}]') + '4:I["module",[],"export"]\n',
+		body + 'dead:E{"digest":"PRIVATE"}\n',
+		body.replace(/^~/, '#'),
+	]) assert.equal(inspectRequiredFlightBody(Buffer.from(invalid), options).complete, false);
+	assert.equal(inspectRequiredFlightBody(Buffer.from(body), { cachedNavigations: true }).complete, false,
+		"A normal navigation cannot acquire shell-only permissions from a partial marker.");
+	const missingType = inspectRequiredFlightBody(Buffer.from(body.replace('"$Sreact.suspense"', '"$Ldead"')), options);
+	assert.equal(missingType.semanticRole, "element-type");
+	assert.doesNotMatch(JSON.stringify(missingType), /dead|KNOWN_FALLBACK/);
 });

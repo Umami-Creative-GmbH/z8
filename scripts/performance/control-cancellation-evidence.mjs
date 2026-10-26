@@ -39,7 +39,7 @@ export function inspectRequiredFlightBody(
 		...diagnostic,
 	});
 	if (
-		!["action", "navigation", "route-tree"].includes(requestKind) ||
+		!["action", "navigation", "route-tree", "runtime-shell"].includes(requestKind) ||
 		action !== (requestKind === "action")
 	)
 		return unknown("unsupported-request-contract");
@@ -125,6 +125,11 @@ export function inspectRequiredFlightBody(
 			}
 			if (serverErrors)
 				return { complete: false, reason: "flight-server-error", serverErrors };
+			if (tag === "H") {
+				// React dispatches the hint without creating or fulfilling its numeric chunk.
+				offset = end;
+				continue;
+			}
 			const previous = records.get(id);
 			if (previous) {
 				// React's fulfilled stream chunk accepts repeated model/T rows only until C.
@@ -273,12 +278,20 @@ export function inspectRequiredFlightBody(
 			explicitActionFailure: false,
 		};
 	}
-	const queue = [root],
+	const shellScope = requestKind === "runtime-shell";
+	if (shellScope && (marker !== "partial" || Object.hasOwn(root, "l") || Object.hasOwn(root, "a")))
+		return unknown("unsupported-runtime-shell-metadata");
+	// Roles follow exact transport edges; another required path to the same model stays required.
+	const queue = [{ value: root, role: "root" }],
 		visited = new Set();
-	let inspected = 0;
+	let inspected = 0, postponedOutputReferences = 0, knownSuspenseBoundaries = 0;
 	while (queue.length) {
 		if (++inspected > 100000) return unknown("model-limit");
-		const value = queue.pop();
+		const { value, role, fallbackReferences } = queue.pop();
+		if (shellScope && role === "fallback-output" && (
+			(value && typeof value === "object" && !Array.isArray(value)) ||
+			(typeof value === "string" && /^\$[SD]/.test(value))))
+			return unknown("unknown-runtime-shell-fallback");
 		if (
 			typeof value === "string" &&
 			value.startsWith("$S") &&
@@ -295,6 +308,7 @@ export function inspectRequiredFlightBody(
 			// External Flight Date boundary; accept only the canonical serializer form.
 			continue;
 		} else if (typeof value === "string" && /^\$[QWi][a-f0-9]+$/.test(value)) {
+			if (shellScope && role === "fallback-output") return unknown("unsupported-runtime-shell-fallback-kind");
 			// The installed decoder constructs these only from an outlined iterable model.
 			const id = value.slice(2),
 				record = records.get(id);
@@ -308,24 +322,35 @@ export function inspectRequiredFlightBody(
 					!model.every((pair) => Array.isArray(pair) && pair.length === 2))
 			)
 				return unknown("unsupported-outlined-collection");
-			if (!visited.has(id)) {
-				visited.add(id);
-				queue.push(model);
+			const modelRole = shellScope && role === "tree-map" && value[1] === "Q" ? "tree-map-model" : "required";
+			if (!visited.has(`${modelRole}:${id}`)) {
+				visited.add(`${modelRole}:${id}`);
+				queue.push({ value: model, role: modelRole, fallbackReferences });
 			}
 		} else if (
 			typeof value === "string" &&
 			/^\$(?:@|L)?[a-f0-9]+$/.test(value)
 		) {
 			const id = value.replace(/^\$(?:@|L)?/, "");
+			if (role === "fallback-output" && (fallbackReferences?.has(id) || fallbackReferences?.size >= 64))
+				return unknown("cyclic-runtime-shell-fallback");
+			if (!records.has(id) && shellScope && role === "suspended-output" && value[1] === "L") {
+				postponedOutputReferences++;
+				continue;
+			}
 			if (!records.has(id)) return unknown("unresolved-model-reference", {
 				modelReference: { prefix: value[1] === "L" ? "L" : value[1] === "@" ? "@" : "plain",
 					form: value[1] === "L" ? "lazy-reference" : value[1] === "@" ? "promise-reference" : "model-reference", length: value.length },
+				semanticRole: role,
 				marker, isPartial, requestKind, decodedBytes: bytes.length, bodySha256: bodySha256(bytes),
 			});
-			if (!visited.has(id)) {
-				visited.add(id);
+			if (!visited.has(`${role}:${id}`)) {
+				visited.add(`${role}:${id}`);
 				const record = records.get(id);
-				if (record.tag !== "T") queue.push(record.value);
+				if (shellScope && role === "fallback-output" && record.tag !== null && record.tag !== "T")
+					return unknown("unsupported-runtime-shell-fallback-kind");
+				if (record.tag !== "T") queue.push({ value: record.value, role,
+					fallbackReferences: role === "fallback-output" ? new Set([...(fallbackReferences ?? []), id]) : fallbackReferences });
 			}
 		} else if (
 			typeof value === "string" &&
@@ -349,9 +374,46 @@ export function inspectRequiredFlightBody(
 				},
 			});
 		} else if (value && typeof value === "object" && !opaqueText.has(value)) {
-			const values = Object.values(value);
-			if (values.length + queue.length > 100000) return unknown("model-limit");
-			for (const item of values) queue.push(item);
+			if (Object.keys(value).length + queue.length > 100000) return unknown("model-limit");
+			const output = ["output", "suspended-output", "fallback-output"].includes(role);
+			if (shellScope && output && Array.isArray(value) && value[0] === "$" && value.length !== 4)
+				return unknown("unsupported-runtime-shell-output");
+			if (shellScope && output && Array.isArray(value) && value.length === 4 && value[0] === "$") {
+				const type = resolve(value[1]), props = resolve(value[3]);
+				const suspense = type === "$Sreact.suspense";
+				const known = suspense || type === "$Sreact.fragment" || (typeof type === "string" && type.length > 0 && !type.startsWith("$"));
+				if (known) {
+					if (!props || typeof props !== "object" || Array.isArray(props) || (suspense && !Object.hasOwn(props, "fallback")))
+						return unknown("unknown-runtime-shell-fallback");
+					if (suspense) knownSuspenseBoundaries++;
+					queue.push({ value: value[1], role: "element-type", fallbackReferences }, { value: value[2], role: "element-key", fallbackReferences },
+						{ value: value[3], role: role === "fallback-output" ? "fallback-host-props" : suspense ? "suspense-props" : role === "suspended-output" ? "suspended-host-props" : "host-props", fallbackReferences });
+					continue;
+				}
+				if (role === "fallback-output") return unknown("unknown-runtime-shell-fallback");
+				// Unknown component props may interpret children as ordinary required data.
+				for (let index = value.length - 1; index >= 0; index--)
+					queue.push({ value: value[index], role: index === 1 ? "element-type" : index === 3 ? "component-data" : "required", fallbackReferences });
+				continue;
+			}
+			for (const [key, item] of Object.entries(value)) {
+				let nextRole = "required";
+				if (shellScope && role === "root" && key === "t") nextRole = "transport";
+				else if (shellScope && role === "transport" && key === "t") nextRole = "tree";
+				else if (shellScope && role === "transport" && key === "h") nextRole = "data";
+				else if (shellScope && role === "tree" && key === "d") nextRole = "data";
+				else if (shellScope && role === "tree" && key === "c") nextRole = "tree-map";
+				else if (shellScope && role === "tree-map-model" && Array.isArray(value)) nextRole = "tree-map-pair";
+				else if (shellScope && role === "tree-map-pair" && Array.isArray(value) && key === "1") nextRole = "tree";
+				else if (shellScope && role === "data" && key === "r") nextRole = "output";
+				else if (shellScope && key === "fallback" && role === "suspense-props") nextRole = "fallback-output";
+				else if (shellScope && ["children", "fallback"].includes(key) && role === "fallback-host-props") nextRole = "fallback-output";
+				else if (shellScope && key === "children" && ["suspense-props", "suspended-host-props"].includes(role)) nextRole = "suspended-output";
+				else if (shellScope && key === "children" && role === "host-props") nextRole = "output";
+				else if (shellScope && output && Array.isArray(value)) nextRole = role;
+				else if (shellScope && role === "component-data") nextRole = role;
+				queue.push({ value: item, role: nextRole, fallbackReferences });
+			}
 		}
 	}
 	if (!action) {
@@ -412,7 +474,7 @@ export function inspectRequiredFlightBody(
 		patchClaims = null;
 	if (
 		isPartial &&
-		requestKind === "navigation" &&
+		["navigation", "runtime-shell"].includes(requestKind) &&
 		!Object.hasOwn(root, "l") &&
 		!Object.hasOwn(root, "a")
 	) {
@@ -540,8 +602,9 @@ export function inspectRequiredFlightBody(
 		}
 		if (representedOutputs === 0)
 			return unknown("missing-represented-navigation-output");
-		patchClaims = { representedOutputs, treeNodes: seen.size };
-		requiredStage = "navigation-patch";
+		patchClaims = { representedOutputs, treeNodes: seen.size,
+			...(shellScope ? { postponedOutputReferences, knownSuspenseBoundaries } : {}) };
+		requiredStage = shellScope ? "runtime-shell-output" : "navigation-patch";
 	} else if (isPartial) {
 		const staticBytes = boundary(root.l),
 			shellBytes = boundary(root.a);
@@ -630,6 +693,13 @@ const goodBody = (proof) => {
 			proof.treeNodes > 0 &&
 			proof.treeNodes <= 4096
 		);
+	if (proof.requiredStage === "runtime-shell-output")
+		return proof.requestKind === "runtime-shell" && !proof.action && proof.marker === "partial" && proof.isPartial &&
+			Number.isSafeInteger(proof.treeNodes) && proof.treeNodes > 0 && proof.treeNodes <= 4096 &&
+			Number.isSafeInteger(proof.representedOutputs) && proof.representedOutputs > 0 && proof.representedOutputs <= proof.treeNodes + 1 &&
+			Number.isSafeInteger(proof.postponedOutputReferences) && proof.postponedOutputReferences >= 0 && proof.postponedOutputReferences <= 100000 &&
+			Number.isSafeInteger(proof.knownSuspenseBoundaries) && proof.knownSuspenseBoundaries >= 0 && proof.knownSuspenseBoundaries <= 100000 &&
+			(proof.postponedOutputReferences === 0 || proof.knownSuspenseBoundaries > 0);
 	if (
 		proof.action !== (proof.requestKind === "action") ||
 		!["action", "navigation"].includes(proof.requestKind)
@@ -669,6 +739,8 @@ const bodyReceipt = (row) =>
 		"requiredStage",
 		"treeNodes",
 		"representedOutputs",
+		"postponedOutputReferences",
+		"knownSuspenseBoundaries",
 		"boundaryBytes",
 		"decodedBytes",
 		"bodySha256",

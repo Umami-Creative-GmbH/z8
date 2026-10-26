@@ -62,7 +62,7 @@ export function controlRequestIdentity(contextId, url, method, headers) {
 	const requestKind = action
 		? "action"
 		: h["next-router-segment-prefetch"] === undefined
-			? "navigation"
+			? h["rsc"] === "1" && h["next-router-prefetch"] === "3" ? "runtime-shell" : "navigation"
 			: h["next-router-segment-prefetch"] === "/_tree"
 				? "route-tree"
 				: "segment-prefetch";
