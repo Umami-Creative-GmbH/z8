@@ -75,6 +75,37 @@ function projectionFixture(){
   return {...result,original,readbackBytes};
 }
 
+function routeTreeFixture(){
+  const result=fixture(),{input,io}=result;
+  for(const source of [io.initial,io.wire,io.originalHeaders])source["next-router-segment-prefetch"]="/_tree";
+  const identity=source=>controlRequestIdentity(input.nativeContext.contextId,io.url,"GET",source);
+  const bytes=Buffer.from('0:{"t":{"t":{"s":"","c":"$Q2"}}}\n2:[["children",{"s":"__PAGE__"}],["modal",{"s":"__PAGE__"}]]\n');
+  const binding=input.proxy[0].bodyProof.segmentBinding;
+  const proof=source=>inspectRequiredFlightBody(bytes,{requestKind:"route-tree",routeTreeBinding:{...binding,requestHeadersSha256:identity(source).requestHeadersSha256,requestKeySha256:sha("/_tree")}});
+  for(const [packet,source] of [[input.proxy[0],io.originalHeaders],[input.proxy[1],io.wire]]){
+    Object.assign(packet,identity(source));packet.bodyProof=proof(source);
+    packet.transportBodyReceipt={protocol:"proxy-natural-eof-decoded-bytes-v1",naturalEOF:true,decodedBytes:bytes.length,bodySha256:sha(bytes)};
+  }
+  const cached=input.responses[0];Object.assign(cached,identity(io.initial));cached.initialHeaderIdentity=identity(io.initial);cached.bodyProof=proof(io.initial);
+  cached.bodyReadbackReceipt={...cached.bodyReadbackReceipt,decodedBytes:bytes.length,bodySha256:sha(bytes),utf16CodeUnitLength:bytes.length,observedDataLengthAtReadback:bytes.length};
+  Object.assign(input.failures[0],identity(io.wire));input.failures[0].initialHeaderIdentity=identity(io.initial);input.failures[0].extraHeaderIdentity=identity(io.wire);
+  return {...result,bytes};
+}
+
+test("dedicated route-tree Native control binds the fixed request and fully buffered branching structure",()=>{
+  const {input}=routeTreeFixture(),result=classifyControlCancellations(input);
+  assert.equal(result.provenControls,1,JSON.stringify({records:result.records,bodies:input.proxy.map(row=>row.bodyProof)}));
+  assert.equal(result.records[0].proof.origin.bodyProof.requiredStage,"route-tree-structure");
+  assert.equal(result.records[0].proof.origin.bodyProof.metadataPages,2);
+  assert.equal(cleanBrowserFailureEvidence(JSON.parse(JSON.stringify(result)),1),true);
+  for(const mutate of [i=>i.failures[0].requestHeadersKnown=false,i=>i.proxy[1].canceled=true,i=>i.proxy[0].complete=false,
+    i=>i.proxy[0].bodyProof.routeTreeBinding.requestKeySha256=sha("/_head"),i=>i.proxy[1].bodyProof.routeTreeBinding.compiledBuild="a".repeat(40),
+    i=>i.responses[0].bodyProof.metadataPages=0,i=>i.responses[0].bodyProof.routeTreeBinding.responseDeploymentSha256="0".repeat(64),
+    i=>i.responses[0].bodyReadbackReceipt.bodySha256="0".repeat(64),i=>i.proxy[0].bodyProof.serverErrors=1]){
+    const bad=routeTreeFixture().input;mutate(bad);assert.equal(classifyControlCancellations(bad).provenControls,0);
+  }
+});
+
 test("Native forward-image equality keeps original Flight proof distinct from unknown CDP text parsing",()=>{
   const {input,original}=projectionFixture(),result=classifyControlCancellations(input);
   assert.equal(result.provenControls,1,JSON.stringify(result.records));
@@ -215,13 +246,13 @@ test("genuine browser/HTTP/protocol failures are never relabeled as Native contr
 });
 
 test("actual collector APIs carry CORE authority and exact-byte joins after transport closure",async()=>{
- for(const mode of ["exact","projection"]){
-  const setup=mode==="exact"?fixture():projectionFixture(),{input,io}=setup,bytes=setup.original ?? setup.bytes,ctx=input.nativeContext;
+ for(const mode of ["exact","projection","route-tree"]){
+  const setup=mode==="exact"?fixture():mode==="projection"?projectionFixture():routeTreeFixture(),{input,io}=setup,bytes=setup.original ?? setup.bytes,ctx=input.nativeContext;
   const proxy=createProxyControlCollector({contextId:ctx.contextId,compiledCachedNavigations:true,compiledBinding:ctx.binding});
   proxy.installed(ctx.headerLifetime.installation);
   const collector=createBrowserControlCollector({contextId:ctx.contextId,origin:io.origin,browserRevision:chromiumSWRRevision,compiledCachedNavigations:true,compiledBinding:ctx.binding,
     protocolSources:protocol,operatorFile:"run-baseline.mjs",principalEpoch:io.principal,environmentObservation:()=>ctx.environment,proxyObservation:proxy.snapshot,
-    readBody:async id=>{if(id!=="cached")throw Error("Synthetic native response body unavailable");return{body:mode==="exact"?bytes.toString():bytes.toString("latin1"),base64Encoded:false};}});
+    readBody:async id=>{if(id!=="cached")throw Error("Synthetic native response body unavailable");return{body:mode==="projection"?bytes.toString("latin1"):bytes.toString(),base64Encoded:false};}});
   collector.installed();
   const request=(id,type,timestamp)=>({requestId:id,loaderId:"loader",timestamp,type,initiator:{type:type==="Fetch"?"script":"other"},request:{url:io.url,method:"GET",headers:io.initial,initialPriority:"VeryLow"}});
   proxy.request(io.originalId,{url:io.url,method:"GET",headers:io.originalHeaders,traceId:"a".repeat(32)});proxy.response(io.originalId,{status:200,headers:io.response});proxy.bytes(io.originalId,bytes);proxy.end(io.originalId);
@@ -235,7 +266,7 @@ test("actual collector APIs carry CORE authority and exact-byte joins after tran
   const result=collector.snapshot();
   assert.equal(result.measured.provenControls,1,JSON.stringify(result.diagnostics.failures));
   assert.equal(result.measured.unknownFailures,0);
-  assert.equal(result.measured.records[0].proof.byteCorrespondence.kind,mode==="exact"?"exact":"windows-1252-forward-image");
+  assert.equal(result.measured.records[0].proof.byteCorrespondence.kind,mode==="projection"?"windows-1252-forward-image":"exact");
   assert.equal(cleanBrowserContextEvidence(ctx.contextId,JSON.parse(JSON.stringify(result)),1,{runtime:{build:ctx.binding.compiledBuild,browserControl:ctx.binding},protocolSources:protocol,origin:io.origin}),true);
   if(mode==="projection"){
     collector.data({requestId:"cached",dataLength:0});const after=collector.snapshot();

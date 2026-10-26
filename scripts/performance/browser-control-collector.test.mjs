@@ -806,6 +806,20 @@ test("cached data ledger records response and terminal ordering independently of
 	}
 });
 
+test("failure diagnostics retain actual bounded CDP error and canceled provenance without raw text",()=>{
+	for(const [errorText,canceled,expected] of [
+		["net::ERR_ABORTED",false,{errorKnown:true,errorEnum:"net::ERR_ABORTED",canceledKnown:true,canceled:false}],
+		["PRIVATE_RAW_FAILURE",true,{errorKnown:false,errorEnum:"other",canceledKnown:true,canceled:true}],
+		[undefined,undefined,{errorKnown:false,errorEnum:"unknown",canceledKnown:false,canceled:null}],
+	]){
+		const collector=createBrowserControlCollector({contextId,origin});collector.installed();
+		collector.request({requestId:"1",loaderId:"loader",type:"Stylesheet",timestamp:1,request:{url,method:"GET",headers}});
+		collector.failed({requestId:"1",errorText,canceled});
+		assert.deepEqual(collector.snapshot().diagnostics.failures[0].failureEvent,{known:true,events:1,...expected});
+		assert.equal(JSON.stringify(collector.snapshot()).includes("PRIVATE_RAW_FAILURE"),false);
+	}
+});
+
 test("installation preserves navigation arguments/results/errors and adds only declared identity metadata", async () => {
 	let cookieReads = 0;
 	const session = new EventEmitter(),

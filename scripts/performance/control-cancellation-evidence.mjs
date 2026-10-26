@@ -67,6 +67,7 @@ function inspectFlightBody(
 		action = false,
 		cachedNavigations,
 		segmentBinding,
+		routeTreeBinding,
 		requestKind = action ? "action" : "navigation",
 	} = {}, budget, depth,
 ) {
@@ -77,6 +78,7 @@ function inspectFlightBody(
 		...diagnostic,
 	});
 	const segmentContract = requestKind === "segment-prefetch";
+	const routeTreeContract = requestKind === "route-tree";
 	const supportedContract = ["action", "navigation", "route-tree", "runtime-shell", "embedded-runtime-prefetch", "segment-prefetch"].includes(requestKind) &&
 		(requestKind !== "embedded-runtime-prefetch" || depth === 1) && action === (requestKind === "action");
 	if (
@@ -93,7 +95,7 @@ function inspectFlightBody(
 				? "partial"
 				: action
 					? "unmarked-action"
-					: segmentContract ? "unmarked-segment-prefetch" : typeof cachedNavigations === "boolean"
+					: segmentContract ? "unmarked-segment-prefetch" : routeTreeContract ? "unmarked-route-tree" : typeof cachedNavigations === "boolean"
 						? "unmarked-navigation"
 						: null;
 	const isPartial =
@@ -429,7 +431,6 @@ function inspectFlightBody(
 		return value;
 	};
 	let segmentClaims = null, segmentOutputs = [];
-	if (segmentContract) {
 		// Required transport models must be ordinary JSON, not the raw metadata of
 		// an import/text/binary/stream chunk. Preserve this distinction through
 		// aliases and own paths; output module imports are handled separately.
@@ -448,6 +449,7 @@ function inspectFlightBody(
 			}
 			return raw && typeof raw === "object" && (opaqueText.has(raw) || binaryValues.has(raw)) ? undefined : raw;
 		};
+	if (segmentContract) {
 		// collect-segment-data's full-buffer contract is not a navigation response.
 		// Its staged Promise<void> is local to each bundled node; pending siblings
 		// never grant a complete node permission to omit an output dependency.
@@ -536,11 +538,17 @@ function inspectFlightBody(
 	if (requestKind === "route-tree") {
 		// The exact /_tree consumer buffers the WHOLE response, then reads structure only.
 		// Other endpoint contracts and arbitrary pending data are not covered by this branch.
-		if (
-			Object.keys(root).some((key) => !["b", "t", "S", "q", "i"].includes(key))
-		)
-			return unknown("unsupported-tree-metadata");
-		const transport = resolve(root.t);
+		const binding=routeTreeBinding;
+		if(records.get("0")?.tag!==null || records.get("0")?.stream || marker!=="unmarked-route-tree" || !binding || binding.method!=="GET" || binding.status!==200 ||
+			!["flight","rsc","prefetch","manifestVerified"].every(key=>binding[key]===true) || typeof binding.postponed!=="boolean" ||
+			!digest(binding.requestHeadersSha256) || binding.requestKeySha256!==bodySha256(Buffer.from("/_tree")) || !digest(binding.compiledManifestSha256) || !/^[a-f0-9]{40}$/.test(binding.compiledBuild ?? "")) return unknown("unqualified-route-tree-request");
+		const build=Object.hasOwn(root,"b")?ordinary(root.b):null;
+		if(Object.hasOwn(root,"b") && (typeof build!=="string" || build.startsWith("$")&&!build.startsWith("$$"))) return unknown("unsupported-tree-build-model");
+		const bodyBuildSha256=typeof build==="string"?bodySha256(Buffer.from(build.startsWith("$$")?build.slice(1):build)):null;
+		const expectedDeploymentSha256=bodySha256(Buffer.from(binding.compiledBuild)),actualDeploymentSha256=binding.responseDeploymentSha256 ?? bodyBuildSha256;
+		if(actualDeploymentSha256!==expectedDeploymentSha256 || binding.responseDeploymentSha256!==null&&!digest(binding.responseDeploymentSha256)) return unknown("route-tree-deployment-mismatch");
+		if(Object.keys(root).some(key=>!["b","t"].includes(key))) return unknown("unsupported-tree-metadata");
+		const transport = ordinary(root.t);
 		if (
 			!transport ||
 			typeof transport !== "object" ||
@@ -550,10 +558,10 @@ function inspectFlightBody(
 			return unknown("unsupported-tree-transport");
 		const queue = [transport.t],
 			visited = new Set();
-		let nodes = 0;
+		let nodes = 0,metadataPages=0;
 		while (queue.length) {
 			if (++nodes > 4096 || ++budget.models > 100000) return unknown("tree-limit");
-			const node = resolve(queue.pop());
+			const node = ordinary(queue.pop());
 			if (
 				!node ||
 				typeof node !== "object" ||
@@ -563,46 +571,53 @@ function inspectFlightBody(
 			)
 				return unknown("unresolved-tree-structure");
 			visited.add(node);
-			const segment = resolve(node.s);
+			const segment = ordinary(node.s);
+			if(nodes===1 && segment!=="") return unknown("unanchored-route-tree");
 			if (typeof segment === "string") {
 				if (segment.startsWith("$") && !segment.startsWith("$$"))
 					return unknown("unsupported-tree-segment");
+				if(segment==="__PAGE__") metadataPages++;
 			} else if (
 				!segment ||
 				typeof segment !== "object" ||
 				Array.isArray(segment) ||
-				typeof segment.n !== "string" ||
-				typeof segment.t !== "string" ||
-				!(segment.k === null || typeof segment.k === "string") ||
+				Object.keys(segment).some(key=>!["n","t","k","s"].includes(key)) ||
+				typeof ordinary(segment.n) !== "string" || ordinary(segment.n).startsWith("$")&&!ordinary(segment.n).startsWith("$$") ||
+				!["c","ci(..)(..)","ci(.)","ci(..)","ci(...)","oc","d","di(..)(..)","di(.)","di(..)","di(...)"].includes(ordinary(segment.t)) ||
+				!(typeof ordinary(segment.k) === "string" && (!ordinary(segment.k).startsWith("$") || ordinary(segment.k).startsWith("$$"))) ||
 				!(
-					segment.s === null ||
-					(Array.isArray(segment.s) &&
-						segment.s.every((value) => typeof value === "string"))
+					ordinary(segment.s) === null ||
+					(Array.isArray(ordinary(segment.s)) &&
+						ordinary(segment.s).every((value) => typeof ordinary(value) === "string" && (!ordinary(value).startsWith("$") || ordinary(value).startsWith("$$"))))
 				)
 			)
 				return unknown("unsupported-tree-segment");
-			if (node.h !== undefined && (!Number.isSafeInteger(node.h) || node.h < 0))
+			if (node.h !== undefined && (!Number.isSafeInteger(ordinary(node.h)) || ordinary(node.h) < 0))
 				return unknown("unsupported-tree-hints");
 			if (node.c !== undefined) {
 				if (typeof node.c !== "string" || !/^\$Q[a-f0-9]+$/.test(node.c))
 					return unknown("unsupported-tree-map");
-				const children = records.get(node.c.slice(2))?.value;
+				const childRecord=records.get(node.c.slice(2));
+				if(!childRecord || childRecord.tag!==null || childRecord.stream) return unknown("unsupported-tree-map-model");
+				const children = ordinary(childRecord.value);
 				if (!Array.isArray(children) || children.length > 4096)
 					return unknown("unresolved-tree-structure");
 				const slots = new Set();
-				for (const pair of children) {
+				for (const rawPair of children) {
+					const pair=ordinary(rawPair);
 					if (
 						!Array.isArray(pair) ||
 						pair.length !== 2 ||
-						typeof pair[0] !== "string" ||
-						slots.has(pair[0])
+						typeof ordinary(pair[0]) !== "string" || ordinary(pair[0]).startsWith("$")&&!ordinary(pair[0]).startsWith("$$") ||
+						slots.has(ordinary(pair[0]))
 					)
 						return unknown("unsupported-tree-map");
-					slots.add(pair[0]);
+					slots.add(ordinary(pair[0]));
 					queue.push(pair[1]);
 				}
 			}
 		}
+		if(metadataPages===0) return unknown("missing-route-tree-metadata-page");
 		return {
 			protocol: "bounded-required-flight-v1",
 			complete: true,
@@ -613,6 +628,9 @@ function inspectFlightBody(
 			action: false,
 			requiredStage: "route-tree-structure",
 			treeNodes: nodes,
+			metadataPages,renderableOutputClaim:false,
+			routeTreeBinding:{...Object.fromEntries(["method","status","flight","rsc","prefetch","postponed","manifestVerified","requestHeadersSha256","requestKeySha256","responseDeploymentSha256","compiledBuild","compiledManifestSha256"].map(key=>[key,binding[key]])),
+				derivedRequestKeySha256:bodySha256(Buffer.from("/_tree")),bodyBuildSha256,expectedDeploymentSha256,actualDeploymentSha256,deploymentSource:binding.responseDeploymentSha256===null?"body":"response-header"},
 			boundaryBytes: body.length,
 			decodedBytes: bytes.length,
 			bodySha256: bodySha256(bytes),
@@ -1128,7 +1146,8 @@ const goodBody = (proof, depth = 0) => {
 		!Number.isSafeInteger(proof.modelSteps) || proof.modelSteps <= 0 || proof.modelSteps > 100000 ||
 		!Object.hasOwn(proof, "embeddedRuntimePrefetch") || depth > 1 || (proof.requestKind === "embedded-runtime-prefetch" && depth !== 1)) return false;
 	if ((Object.hasOwn(proof, "postponedComponentReferences") || Object.hasOwn(proof, "representedComponentFallbacks") || Object.hasOwn(proof, "postponedDirectOutputs") || Object.hasOwn(proof, "postponedArrayOutputs") || Object.hasOwn(proof, "postponedCacheOutputs") || Object.hasOwn(proof, "renderableOutputClaim")) &&
-		!["embedded-partial-prefetch-representation","runtime-shell-cache-representation"].includes(proof.requiredStage)) return false;
+		!["embedded-partial-prefetch-representation","runtime-shell-cache-representation"].includes(proof.requiredStage) &&
+		!(proof.requiredStage==="route-tree-structure" && proof.renderableOutputClaim===false && !["postponedComponentReferences","representedComponentFallbacks","postponedDirectOutputs","postponedArrayOutputs","postponedCacheOutputs"].some(key=>Object.hasOwn(proof,key)))) return false;
 	const embedded = proof.embeddedRuntimePrefetch;
 	if (embedded !== null && (depth !== 0 || proof.requestKind !== "navigation" || embedded?.requestKind !== "embedded-runtime-prefetch" || !goodBody(embedded, depth + 1) ||
 		proof.decodedBytes + embedded.decodedBytes > controlCancellationPolicy.decodedLimit || proof.protocolRows + embedded.protocolRows > 4096 ||
@@ -1139,6 +1158,8 @@ const goodBody = (proof, depth = 0) => {
 		if (!proof.isPartial) return false;
 	} else if (proof.marker === "unmarked-action") {
 		if (!proof.action || proof.isPartial) return false;
+	} else if (proof.marker === "unmarked-route-tree") {
+		if(proof.action || proof.isPartial || proof.requestKind!=="route-tree") return false;
 	} else if (proof.marker === "unmarked-navigation") {
 		if (
 			proof.action ||
@@ -1147,14 +1168,22 @@ const goodBody = (proof, depth = 0) => {
 		)
 			return false;
 	} else return false;
-	if (proof.requiredStage === "route-tree-structure")
+	if (proof.requiredStage === "route-tree-structure") {
+		const binding=proof.routeTreeBinding;
 		return (
 			proof.requestKind === "route-tree" &&
-			!proof.action &&
+			!proof.action && proof.marker==="unmarked-route-tree" && proof.isPartial===false && proof.renderableOutputClaim===false &&
+			Number.isSafeInteger(proof.metadataPages) && proof.metadataPages>0 && proof.metadataPages<=proof.treeNodes &&
+			binding?.method==="GET" && binding.status===200 && ["flight","rsc","prefetch","manifestVerified"].every(key=>binding[key]===true) && typeof binding.postponed==="boolean" &&
+			digest(binding.requestHeadersSha256) && digest(binding.compiledManifestSha256) && /^[a-f0-9]{40}$/.test(binding.compiledBuild ?? "") &&
+			binding.requestKeySha256===bodySha256(Buffer.from("/_tree")) && binding.derivedRequestKeySha256===binding.requestKeySha256 &&
+			binding.expectedDeploymentSha256===bodySha256(Buffer.from(binding.compiledBuild)) && binding.actualDeploymentSha256===binding.expectedDeploymentSha256 &&
+			(binding.responseDeploymentSha256===null || digest(binding.responseDeploymentSha256)) && binding.actualDeploymentSha256===(binding.responseDeploymentSha256 ?? binding.bodyBuildSha256) && binding.deploymentSource===(binding.responseDeploymentSha256===null?"body":"response-header") &&
 			Number.isSafeInteger(proof.treeNodes) &&
 			proof.treeNodes > 0 &&
 			proof.treeNodes <= 4096
 		);
+	}
 	if (["runtime-shell-output", "runtime-shell-cache-representation", "embedded-runtime-prefetch-output", "embedded-partial-prefetch-representation"].includes(proof.requiredStage))
 		return proof.requestKind === (["runtime-shell-output","runtime-shell-cache-representation"].includes(proof.requiredStage) ? "runtime-shell" : "embedded-runtime-prefetch") &&
 			!proof.action && proof.marker === "partial" && proof.isPartial &&
@@ -1215,6 +1244,8 @@ const bodyReceipt = (row) => {
 		"action",
 		"requiredStage",
 		"treeNodes",
+		"metadataPages",
+		"routeTreeBinding",
 		"partialNodes",
 		"completeNodes",
 		"segmentBinding",
@@ -1382,9 +1413,19 @@ const nativeContextDigest = context => {
 	catch{return null;}
 };
 
-const goodNativeSegmentBody = (row,context) => {
+const goodNativePrefetchBody = (row,context) => {
 	const proof=row?.bodyProof,binding=proof?.segmentBinding,compiled=context.binding;
 	const response=row.initialSegmentResponse ?? row;
+	if(proof?.requestKind==="route-tree"){
+		const route=proof.routeTreeBinding;
+		return goodBody(proof) && route?.method==="GET" && route.status===200 && ["flight","rsc","prefetch","manifestVerified"].every(key=>route[key]===true) && typeof route.postponed==="boolean" &&
+			row.requestKind==="route-tree" && row.requestHeaderSnapshotKnown===true && row.method==="GET" && row.status===200 && row.rsc===true && row.prefetch===true && row.action===false &&
+			response.responseHeaderSnapshotKnown===true && response.status===200 && response.flight===true && response.postponed===route.postponed &&
+			route.requestHeadersSha256===row.requestHeadersSha256 && route.requestKeySha256===row.headerFieldSha256?.["next-router-segment-prefetch"] &&
+			route.compiledBuild===compiled.compiledBuild && route.compiledManifestSha256===compiled.compiledManifestSha256 && route.expectedDeploymentSha256===bodySha256(Buffer.from(compiled.compiledBuild)) &&
+			route.responseDeploymentSha256===response.responseDeploymentSha256 && route.actualDeploymentSha256===(route.responseDeploymentSha256 ?? route.bodyBuildSha256) && route.actualDeploymentSha256===route.expectedDeploymentSha256 &&
+			route.deploymentSource===(route.responseDeploymentSha256===null?"body":"response-header");
+	}
 	return proof?.protocol === "bounded-required-flight-v1" && proof.complete === true && proof.requiredStage === "segment-prefetch-representation" && proof.requestKind === "segment-prefetch" &&
 		proof.action === false && proof.marker === "unmarked-segment-prefetch" && proof.renderableOutputClaim === false && proof.serverErrors === 0 && proof.explicitActionFailure === false && proof.embeddedRuntimePrefetch === null &&
 		Number.isSafeInteger(proof.decodedBytes) && proof.decodedBytes > 0 && proof.decodedBytes <= controlCancellationPolicy.decodedLimit && proof.boundaryBytes === proof.decodedBytes && digest(proof.bodySha256) &&
@@ -1411,10 +1452,10 @@ const nativeCachedBytes = (cached,origin,packet,context) => {
 	for(const row of [origin,packet]) if(row.transportBodyReceipt?.protocol!=="proxy-natural-eof-decoded-bytes-v1" || row.transportBodyReceipt.naturalEOF!==true ||
 		row.transportBodyReceipt.bodySha256!==hash || row.transportBodyReceipt.decodedBytes!==bytes || row.bodyProof.bodySha256!==hash || row.bodyProof.decodedBytes!==bytes) return null;
 	const base={protocol:"cached-native-byte-correspondence-v1",originalBytes:bytes,originalSha256:hash,readbackBytes:read.decodedBytes,readbackSha256:read.bodySha256};
-	if(goodNativeSegmentBody(cached,context) && read.decodedBytes===cached.bodyProof.decodedBytes && read.bodySha256===cached.bodyProof.bodySha256 && read.decodedBytes===bytes && read.bodySha256===hash &&
+	if(goodNativePrefetchBody(cached,context) && read.decodedBytes===cached.bodyProof.decodedBytes && read.bodySha256===cached.bodyProof.bodySha256 && read.decodedBytes===bytes && read.bodySha256===hash &&
 		(read.base64Encoded===true || (read.utf16CodeUnitLength===read.decodedBytes && read.observedDataLengthAtReadback===read.decodedBytes && read.responseContentType?.headerKnown===true && read.responseContentType.mime==="text/x-component" && read.responseContentType.charset==="absent"))) return {...base,kind:"exact"};
 	const ledger=cached.browserDataLedger,effective=read.effectiveCdpResponse,response=cached.initialSegmentResponse ?? cached;
-	if(read.base64Encoded!==false || read.terminal!=="finished" || cached.failed!==false || cached.ambiguousRedirect!==false ||
+	if(cached.requestKind!=="segment-prefetch" || read.base64Encoded!==false || read.terminal!=="finished" || cached.failed!==false || cached.ambiguousRedirect!==false ||
 		ledger?.protocol!=="cached-browser-data-ledger-v1" || ledger.requestObserved!==true || ledger.responseEvents!==1 || ledger.finishedEvents!==1 || ledger.failedEvents!==0 ||
 		!Number.isSafeInteger(ledger.dataEvents) || ledger.dataEvents<=0 || ledger.dataAfterTerminal!==0 || ledger.dataBeforeResponse!==0 || ledger.responseAfterTerminal!==0 || ledger.terminalBeforeResponse!==0 || ledger.invalidData!==false || ledger.observedDataLength!==bytes ||
 		read.observedDataLengthAtReadback!==bytes || read.utf16CodeUnitLength!==bytes ||
@@ -1434,10 +1475,10 @@ function nativeKnownExtraProof(failure,packet,responses,proxy,context,browserRev
 	try {
 	if(browserRevision !== chromiumSWRRevision || !knownNativeContext(context) || !nativeContextDigest(context) || failure.contextId !== context.contextId || failure.requestHeadersKnown !== true ||
 		failure.type !== "Other" || failure.initiator !== "other" || failure.initiatorStackKnownAbsent !== true || failure.priority !== "VeryLow" ||
-		failure.requestKind !== "segment-prefetch" || failure.method !== "GET" || failure.status !== 200 || failure.action !== false || failure.rsc !== true || failure.prefetch !== true ||
+		!["segment-prefetch","route-tree"].includes(failure.requestKind) || failure.method !== "GET" || failure.status !== 200 || failure.action !== false || failure.rsc !== true || failure.prefetch !== true ||
 		failure.purposeHeaderPresent !== false || failure.secPurposeHeaderPresent !== false || failure.requestOriginSha256 !== context.originSha256 ||
 		!packet || failure.proxyResponseId !== packet.id || !sameRequest(failure,packet) || packet.requestOriginSha256 !== context.originSha256 || packet.complete !== true || packet.canceled !== false || packet.upstreamError !== false ||
-		!goodNativeSegmentBody(packet,context)) return null;
+		!goodNativePrefetchBody(packet,context)) return null;
 	const initial=failure.initialHeaderIdentity,extra=failure.extraHeaderIdentity;
 	if(initial?.requestHeaderSnapshotKnown !== true || extra?.requestHeaderSnapshotKnown !== true || extra.requestHeadersSha256 !== failure.requestHeadersSha256 ||
 		initial.purposeHeaderPresent !== false || initial.secPurposeHeaderPresent !== false || extra.purposeHeaderPresent !== false || extra.secPurposeHeaderPresent !== false || initial.documentGeneration !== failure.documentGeneration) return null;
@@ -1447,19 +1488,19 @@ function nativeKnownExtraProof(failure,packet,responses,proxy,context,browserRev
 		failure.headerFieldSha256.rsc!==bodySha256(Buffer.from("1")) || failure.headerFieldSha256["next-router-prefetch"]!==bodySha256(Buffer.from("1")) || failure.headerFieldSha256["next-action"]!==null ||
 		controlIdentityHeaders.filter(key=>!["accept","accept-encoding","cookie"].includes(key)).some(key=>initial.headerFieldSha256[key]!==extra.headerFieldSha256[key]) ||
 		extra.headerFieldSha256.accept !== (initial.headerFieldSha256.accept ?? bodySha256(Buffer.from("*/*")))) return null;
-	const cachedMatches=responses.filter(row=>row.contextId===failure.contextId && row.method==="GET" && row.requestKind==="segment-prefetch" && row.fullUrlSha256===failure.fullUrlSha256 &&
+	const cachedMatches=responses.filter(row=>row.contextId===failure.contextId && row.method==="GET" && row.requestKind===failure.requestKind && row.fullUrlSha256===failure.fullUrlSha256 &&
 		row.loaderId===failure.loaderId && typeof row.loaderId==="string" && row.loaderId.length>0 && row.type==="Fetch" && row.fromDiskCache===true && row.fromServiceWorker===false && row.loadingFinished===true &&
 		Number.isFinite(row.finishedAt) && Number.isFinite(failure.startedAt) && row.finishedAt < failure.startedAt && row.initialHeaderIdentity?.requestHeaderSnapshotKnown===true &&
 		row.initialHeaderIdentity.requestHeadersSha256===initial.requestHeadersSha256 && row.initialHeaderIdentity.documentGeneration===initial.documentGeneration);
 	if(cachedMatches.length!==1) return null;
 	const cached=cachedMatches[0];
 	if(!knownHeaders(cached.initialHeaderIdentity) || !controlIdentityHeaders.every(key=>cached.initialHeaderIdentity.headerFieldSha256[key]===initial.headerFieldSha256[key])) return null;
-	const origins=proxy.filter(row=>row.id===cached.proxyResponseId && row.contextId===failure.contextId && row.fullUrlSha256===cached.fullUrlSha256 && row.method==="GET" && row.requestKind==="segment-prefetch");
+	const origins=proxy.filter(row=>row.id===cached.proxyResponseId && row.contextId===failure.contextId && row.fullUrlSha256===cached.fullUrlSha256 && row.method==="GET" && row.requestKind===failure.requestKind);
 	if(origins.length!==1) return null;
 	const origin=origins[0];
 	if(!knownHeaders(origin)) return null;
 	if(![cached,origin,packet].every(row=>Number.isSafeInteger(row.staleWhileRevalidateSeconds) && row.staleWhileRevalidateSeconds>0)) return null;
-	if(origin.id===packet.id || origin.requestOriginSha256 !== context.originSha256 || origin.complete!==true || origin.canceled!==false || origin.upstreamError!==false || !goodNativeSegmentBody(origin,context) || cached.requestOriginSha256!==context.originSha256) return null;
+	if(origin.id===packet.id || origin.requestOriginSha256 !== context.originSha256 || origin.complete!==true || origin.canceled!==false || origin.upstreamError!==false || !goodNativePrefetchBody(origin,context) || cached.requestOriginSha256!==context.originSha256) return null;
 	const byteCorrespondence=nativeCachedBytes(cached,origin,packet,context);
 	if(!byteCorrespondence) return null;
 	const fields=origin.vary?.fields;

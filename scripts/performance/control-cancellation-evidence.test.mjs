@@ -873,18 +873,19 @@ test("semantic abort identity preserves raw unknown and distinguishes genuine up
 
 test("actual /_tree header contract proves a complete structure-only tree with resolved Map children", () => {
 	const body = Buffer.from(
-		'0:{"t":{"t":"$1"}}\n1:{"s":"","c":"$Q2"}\n2:[["children","$3"]]\n3:{"s":"en"}\n',
+		'0:{"t":{"t":"$1"}}\n1:{"s":"","c":"$Q2"}\n2:[["children","$3"]]\n3:{"s":"__PAGE__"}\n',
 	);
 	const proof = inspectRequiredFlightBody(body, {
 		requestKind: "route-tree",
 		cachedNavigations: true,
+		routeTreeBinding:segmentBinding("/_tree"),
 	});
 	assert.equal(proof.complete, true);
 	assert.equal(proof.requiredStage, "route-tree-structure");
 	assert.equal(
 		proof.isPartial,
-		true,
-		"The response does not become a complete route payload.",
+		false,
+		"This is complete structure-only representation, not a full route payload.",
 	);
 	assert.equal(
 		inspectRequiredFlightBody(body, {
@@ -895,16 +896,40 @@ test("actual /_tree header contract proves a complete structure-only tree with r
 	);
 	for (const invalid of [
 		body.toString().replace('2:[["children","$3"]]\n', ""),
-		body.toString().replace('{"s":"en"}', '{"s":false}'),
+		body.toString().replace('{"s":"__PAGE__"}', '{"s":false}'),
 		`${body}4:E{"digest":"PRIVATE"}\n`,
 	])
 		assert.equal(
 			inspectRequiredFlightBody(Buffer.from(invalid), {
 				requestKind: "route-tree",
 				cachedNavigations: true,
+				routeTreeBinding:segmentBinding("/_tree"),
 			}).complete,
 			false,
 		);
+});
+
+test("route-tree required structure and phase binding cannot be supplied by import, text or stream metadata",()=>{
+	const body='0:{"t":"$7"}\n7:{"t":"$1"}\n1:{"s":"","c":"$Q2"}\n2:[["children","$3"],["modal",{"s":"__PAGE__"}]]\n3:{"s":"__PAGE__"}\n';
+	const options={requestKind:"route-tree",routeTreeBinding:segmentBinding("/_tree")};
+	const inspect=(text,binding=options.routeTreeBinding)=>inspectRequiredFlightBody(Buffer.from(text),{...options,routeTreeBinding:binding});
+	assert.equal(inspect(body).complete,true);
+	for(const invalid of [
+		body.replace('0:{','0:I{'),body.replace('7:{','7:I{'),body.replace('1:{','1:I{'),body.replace('2:[[','2:I[['),body.replace('3:{','3:I{'),
+		body.replace('2:[[','2:X\n2:[['),body.replace('"s":"__PAGE__"','"s":"$4"')+'4:T8,__PAGE__',
+		body.replaceAll('__PAGE__','layout'),body.replace('"s":"","c"','"s":"unanchored","c"'),body.replace('"s":"","c"','"s":"","d":{},"c"'),
+		body.replace('3:{"s":"__PAGE__"}','3:{"s":{"n":"id","t":"d","k":null,"s":null}}'),
+		body.replace('3:{"s":"__PAGE__"}','3:{"s":{"n":"id","t":"unknown","k":"known","s":null}}'),
+		body.replace('0:{"t"','0:{"n":true,"t"'),body+'8:E{"digest":"synthetic"}\n',body.replace('2:[["children"','2:[["$missing"'),
+	]) assert.equal(inspect(invalid).complete,false,invalid);
+	for(const key of ["method","status","flight","rsc","prefetch","postponed","requestHeadersSha256","requestKeySha256","responseDeploymentSha256","compiledBuild","compiledManifestSha256","manifestVerified"]){
+		const binding={...options.routeTreeBinding};delete binding[key];assert.equal(inspect(body,binding).complete,false,key);
+	}
+	assert.equal(inspect(body,segmentBinding("/_index")).complete,false);
+	const bodyBuild=body.replace('0:{','0:{"b":"'+"b".repeat(40)+'",');
+	assert.equal(inspect(bodyBuild,{...options.routeTreeBinding,responseDeploymentSha256:null}).complete,true);
+	assert.equal(inspect(bodyBuild.replace('"b":"'+'b'.repeat(40),'"b":"'+'c'.repeat(40)),{...options.routeTreeBinding,responseDeploymentSha256:null}).complete,false);
+	assert.equal(inspect(bodyBuild.replace('"b":"'+'b'.repeat(40),'"b":"'+'c'.repeat(40))).complete,true,"actual deployment header has source precedence over body b");
 });
 
 test("typed patch rejection retains the first fixed guard and safe field kinds without changing its verdict", () => {
