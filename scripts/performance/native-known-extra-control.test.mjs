@@ -94,6 +94,12 @@ test("Native proof cannot use NoExtra, missing source authority, body mismatches
     i=>i.proxy[1].complete=false,i=>i.proxy[1].canceled=true,i=>i.nativeContext.headerCensus.closed=false,i=>i.nativeContext.principalEpoch.after.sha256="0".repeat(64)]){
     const {input}=fixture();mutate(input);const result=classifyControlCancellations(input);assert.equal(result.provenControls,0);assert.equal(result.unknownFailures,1);
   }
+  for(const source of ["initialHeaderIdentity","extraHeaderIdentity"]){
+    for(const [field,value] of [["rsc",false],["prefetch",false],["action",true],["purposeHeaderPresent",true],["secPurposeHeaderPresent",true]]){
+      const {input}=fixture();input.failures[0][source][field]=value;
+      assert.equal(classifyControlCancellations(input).provenControls,0,source+":"+field);
+    }
+  }
 });
 
 test("Native serialized controls require external runtime and frozen protocol authority at finalization",()=>{

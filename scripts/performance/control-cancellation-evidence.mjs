@@ -1409,7 +1409,7 @@ function nativeKnownExtraProof(failure,packet,responses,proxy,context,browserRev
 	const initial=failure.initialHeaderIdentity,extra=failure.extraHeaderIdentity;
 	if(initial?.requestHeaderSnapshotKnown !== true || extra?.requestHeaderSnapshotKnown !== true || extra.requestHeadersSha256 !== failure.requestHeadersSha256 ||
 		initial.purposeHeaderPresent !== false || initial.secPurposeHeaderPresent !== false || extra.purposeHeaderPresent !== false || extra.secPurposeHeaderPresent !== false || initial.documentGeneration !== failure.documentGeneration) return null;
-	const knownHeaders = row=>row?.requestHeaderSnapshotKnown === true && row.headerFieldSha256 && Object.keys(row.headerFieldSha256).length === controlIdentityHeaders.length &&
+	const knownHeaders = row=>row?.requestHeaderSnapshotKnown === true && row.rsc === true && row.prefetch === true && row.action === false && row.purposeHeaderPresent === false && row.secPurposeHeaderPresent === false && row.headerFieldSha256 && Object.keys(row.headerFieldSha256).length === controlIdentityHeaders.length &&
 		controlIdentityHeaders.every(key=>Object.hasOwn(row.headerFieldSha256,key) && (row.headerFieldSha256[key]===null || digest(row.headerFieldSha256[key])));
 	if(![initial,extra,failure,packet].every(knownHeaders) || !controlIdentityHeaders.every(key=>extra.headerFieldSha256[key]===failure.headerFieldSha256[key] && extra.headerFieldSha256[key]===packet.headerFieldSha256[key]) ||
 		failure.headerFieldSha256.rsc!==bodySha256(Buffer.from("1")) || failure.headerFieldSha256["next-router-prefetch"]!==bodySha256(Buffer.from("1")) || failure.headerFieldSha256["next-action"]!==null ||
