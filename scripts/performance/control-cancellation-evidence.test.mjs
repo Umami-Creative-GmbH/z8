@@ -872,7 +872,6 @@ test("runtime-shell preserves the known-fallback output claim separately from op
 		body.replace('"fallback":["$","span",null,{"children":"KNOWN_FALLBACK"}]', '"fallback":"$Ldead"'),
 		body.replace('"fallback":["$","span",null,{"children":"KNOWN_FALLBACK"}]', '"fallback":"$0"'),
 		body.replace('"fallback":["$","span",null,{"children":"KNOWN_FALLBACK"}]', '"fallback":{"private":"not-renderable"}'),
-		body.replace('"$Sreact.suspense"', '"section"'),
 		body.replace('"$Sreact.suspense"', '"$Ldead"'),
 		body.replace('"children":"$Ldead"', '"children":"$Ldead","required":"$Ldead"'),
 		body.replace('"q":""', '"q":"","required":"$3"'),
@@ -912,13 +911,13 @@ test("embedded partial cache representation can contain a direct postponed r wit
 	assert.equal(inspectRequiredFlightBody(outer(head),{cachedNavigations:true}).embeddedRuntimePrefetch.postponedDirectOutputs,1);
 	const input=cancellationFixture();Object.assign(input.failures[0],{bodyProof:proof,bodyReadbackComplete:true});Object.assign(input.proxy[0],{bodyProof:proof,complete:true,canceled:false});
 	const receipt=classifyControlCancellations(input);assert.equal(cleanBrowserFailureEvidence(receipt,1),true);
-	for(const changed of [{postponedDirectOutputs:undefined},{postponedDirectOutputs:0},{postponedDirectOutputs:3},{postponedDirectOutputs:"1"},{renderableOutputClaim:true},{requiredStage:"embedded-runtime-prefetch-output"}]){
+	for(const changed of [{postponedDirectOutputs:undefined},{postponedCacheOutputs:undefined},{postponedCacheOutputs:0},{postponedDirectOutputs:3},{postponedDirectOutputs:"1"},{renderableOutputClaim:true},{requiredStage:"embedded-runtime-prefetch-output"}]){
 		const corrupted=structuredClone(receipt);Object.assign(corrupted.records[0].proof.failure.bodyProof.embeddedRuntimePrefetch,changed);assert.equal(cleanBrowserFailureEvidence(corrupted,1),false);
 	}
 	for(const invalid of [inner.replace(/^~/,'#'),inner.replace('"$L9"','"$9"'),inner.replace('"$L9"','"$@9"'),
 		inner.replace('"s":"en"','"s":"$L9"'),inner.replace('"p":true','"p":"$L9"'),inner.replace('"q":""','"q":"$L9"'),
 		inner.replace('"$L9"','["$","$L9",null,{}]'),inner.replace('"$L9"','["$","$Sreact.suspense",null,{"fallback":"$L9","children":"$L8"}]'),
-		inner.replace('"$L9"','"$L09"'),inner.replace('"$L9"','"$2"')+'2:"$L9"\n',inner+'9:E{"digest":"PRIVATE"}\n'])
+		inner.replace('"$L9"','"$L09"'),inner+'9:E{"digest":"PRIVATE"}\n'])
 		assert.equal(inspectRequiredFlightBody(outer(invalid),{cachedNavigations:true}).complete,false);
 	assert.equal(inspectRequiredFlightBody(Buffer.from(inner),{cachedNavigations:true}).complete,false);
 	assert.equal(inspectRequiredFlightBody(Buffer.from(outer(inner).toString().replace('"MAIN"','"$L9"')),{cachedNavigations:true}).complete,false);
@@ -926,17 +925,17 @@ test("embedded partial cache representation can contain a direct postponed r wit
 
 test("unresolved output records the actual bounded walk edge without granting descendant permissions", () => {
 	const root={q:"",i:false,t:{t:{s:"en",d:{r:null,p:true,v:null}}}};
-	for(const [value,rows,arrival,parentArrival]of [["$2",'2:"$L9"\n',"model-reference",null],[["$","div",null,{children:["$L9"]}],"","array-output","element-children"],[["$","div",null,{children:"$L9"}],"","element-children","element-props"]]){
+	for(const [value,rows,arrival,parentArrival]of [[["$","div",null,{title:"$2",children:"KNOWN"}],'2:"$L9"\n',"model-reference",null],[["$","div",null,{title:["$L9"]}],"","own-field","own-field"],[["$","$Sreact.suspense",null,{fallback:["$L9"],children:"KNOWN"}],"","array-output","element-fallback"]]){
 		const data=structuredClone(root);data.t.t.d.r=value;const inner='~0:'+JSON.stringify(data)+'\n'+rows;
 		const bytes=Buffer.concat([Buffer.from('0:{"q":"","i":false,"t":{"t":{"s":"en","d":{"r":"MAIN","p":false,"v":null}}},"p":"$1"}\n1:R\n1:o'+Buffer.byteLength(inner).toString(16)+','),Buffer.from(inner),Buffer.from('1:C\n')]);
 		const proof=inspectRequiredFlightBody(bytes,{cachedNavigations:true});
 		assert.equal(proof.complete,false);assert.equal(proof.embeddedReason,"unresolved-model-reference");
-		assert.deepEqual(proof.embeddedOutputEdgeObservation,{walkPathOnly:true,fromTypedOutput:true,directEmbeddedOutput:false,rArrayOutput:arrival==="model-reference",insideRArray:false,arrival,parentArrival});
+		assert.deepEqual(proof.embeddedOutputEdgeObservation,{walkPathOnly:true,fromTypedOutput:true,directEmbeddedOutput:false,rArrayOutput:false,insideRArray:false,arrival,parentArrival});
 		assert.doesNotMatch(JSON.stringify(proof),/\$L9|\$2|MAIN/);
 	}
 });
 
-test("typed r arrays have separate nonrenderable partial-cache claims without granting host-child permissions", () => {
+test("typed r arrays have separate nonrenderable partial-cache claims without granting other-prop permissions", () => {
 	const inner='~0:{"q":"","i":false,"t":{"t":{"s":"en","d":{"r":["KNOWN","$L9"],"p":true,"v":null}}}}\n';
 	const outer=value=>Buffer.concat([Buffer.from('0:{"q":"","i":false,"t":{"t":{"s":"en","d":{"r":"MAIN","p":false,"v":null}}},"p":"$1"}\n1:R\n1:o'+Buffer.byteLength(value).toString(16)+','),Buffer.from(value),Buffer.from('1:C\n')]);
 	for(const shell of [false,true]){
@@ -948,14 +947,14 @@ test("typed r arrays have separate nonrenderable partial-cache claims without gr
 			assert.equal(inspect(valid).complete,true,"A fulfilled ordinary model/path can supply the known r array.");
 		const input=cancellationFixture();for(const row of [input.failures[0],input.proxy[0]])Object.assign(row,{requestKind:shell?"runtime-shell":"navigation",bodyProof:proof});Object.assign(input.failures[0],{bodyReadbackComplete:true});Object.assign(input.proxy[0],{complete:true,canceled:false});
 		const receipt=classifyControlCancellations(input);assert.equal(cleanBrowserFailureEvidence(receipt,1),true);
-		for(const changed of [{postponedArrayOutputs:undefined},{postponedArrayOutputs:0},{postponedArrayOutputs:"1"},{postponedArrayOutputs:100001},{renderableOutputClaim:true},{requiredStage:shell?"runtime-shell-output":"embedded-runtime-prefetch-output"}]){
+		for(const changed of [{postponedArrayOutputs:undefined},{postponedCacheOutputs:undefined},{postponedCacheOutputs:0},{postponedArrayOutputs:"1"},{postponedArrayOutputs:100001},{renderableOutputClaim:true},{requiredStage:shell?"runtime-shell-output":"embedded-runtime-prefetch-output"}]){
 			const corrupt=structuredClone(receipt),target=corrupt.records[0].proof.failure.bodyProof;Object.assign(shell?target:target.embeddedRuntimePrefetch,changed);assert.equal(cleanBrowserFailureEvidence(corrupt,1),false);
 		}
 		if(shell)for(const changed of [{postponedComponentReferences:1},{postponedDirectOutputs:1},{requestKind:"navigation"}]){
 			const corrupt=structuredClone(receipt);Object.assign(corrupt.records[0].proof.failure.bodyProof,changed);assert.equal(cleanBrowserFailureEvidence(corrupt,1),false);
 		}
 		for(const invalid of [inner.replace(/^~/,'#'),inner.replace('"$L9"','"$9"'),inner.replace('"$L9"','"$@9"'),inner.replace('"$L9"','"$L09"'),inner.replace('"s":"en"','"s":"$L9"'),inner.replace('"p":true','"p":"$L9"'),inner.replace('"q":""','"q":"$L9"'),
-			inner.replace('["KNOWN","$L9"]','["$","div",null,{"children":["$L9"]}]'),inner.replace('["KNOWN","$L9"]','["$","$L9",null,{}]'),inner.replace('["KNOWN","$L9"]','["$","$Sreact.suspense",null,{"fallback":["$L9"],"children":"KNOWN"}]'),
+			inner.replace('["KNOWN","$L9"]','["$","div",null,{"title":["$L9"]}]'),inner.replace('["KNOWN","$L9"]','["$","$L9",null,{}]'),inner.replace('["KNOWN","$L9"]','["$","$Sreact.suspense",null,{"fallback":["$L9"],"children":"KNOWN"}]'),
 			inner.replace('["KNOWN","$L9"]','"$@2"')+'2:["$L9"]\n',inner.replace('["KNOWN","$L9"]','"$2"')+'2:I["$L9",[],"export"]\n',inner+'9:E{"digest":"PRIVATE"}\n'])
 			assert.equal(inspect(invalid).complete,false);
 	}
@@ -967,9 +966,12 @@ test("shared output aliases recheck every required permission context in both ar
 	for(const shell of [false,true])for(const reverse of [false,true]){
 		const inspect=value=>inspectRequiredFlightBody(shell?Buffer.from(value):outer(value),{cachedNavigations:true,...(shell?{requestKind:"runtime-shell"}:{})});
 		for(const child of ["$2","$3:value"]){
-			const values=[["$","div",null,{children:child}],"$2"];if(reverse)values.reverse();
+			const allowed=[["$","div",null,{children:child}],"$2"];if(reverse)allowed.reverse();
+			const positive='~0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:{r:allowed,p:true,v:null}}}})+'\n2:["$L9"]\n3:{"value":"$2"}\n';
+			const proof=inspect(positive);assert.equal(proof.complete,true);assert.equal((shell?proof:proof.embeddedRuntimePrefetch).renderableOutputClaim,false,"Historical host-child cache-only case now has an explicit nonrenderable contract, in both orders.");
+			const values=[["$","div",null,{title:child}],"$2"];if(reverse)values.reverse();
 			const inner='~0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:{r:values,p:true,v:null}}}})+'\n2:["$L9"]\n3:{"value":"$2"}\n';
-			assert.equal(inspect(inner).complete,false,"A permitted array alias cannot suppress the host-child required alias.");
+			assert.equal(inspect(inner).complete,false,"A permitted cache-output alias cannot suppress the required other-prop alias.");
 		}
 		for(const required of [["$","$2",null,{}],["$","$Sreact.suspense",null,{fallback:"$2",children:"KNOWN"}],"$Q3"]){
 			const values=[required,"$2"];if(reverse)values.reverse();
@@ -978,7 +980,29 @@ test("shared output aliases recheck every required permission context in both ar
 		}
 		const direct={r:"$2",p:true,v:null},array={r:["$2"],p:true,v:null};
 		const inner='~0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:reverse?array:direct},h:reverse?direct:array}})+'\n2:"$L9"\n';
-		assert.equal(inspect(inner).complete,false,"Array-root and array-item contexts differ even when both have typed-r provenance.");
+		const proof=inspect(inner);assert.equal(proof.complete,true);assert.equal((shell?proof:proof.embeddedRuntimePrefetch).renderableOutputClaim,false,"Both logical direct-r and r-array aliases have a source-qualified cache-only representation.");
+	}
+});
+
+test("partial cache ReactNode output follows known host and Fragment children without granting other prop permissions", () => {
+	const outer=value=>Buffer.concat([Buffer.from('0:{"q":"","i":false,"t":{"t":{"s":"en","d":{"r":"MAIN","p":false,"v":null}}},"p":"$1"}\n1:R\n1:o'+Buffer.byteLength(value).toString(16)+','),Buffer.from(value),Buffer.from('1:C\n')]);
+	const encode=(r,rows="")=>'~0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:{r,p:true,v:null}}}})+'\n'+rows;
+	for(const shell of [false,true]){
+		const inspect=value=>inspectRequiredFlightBody(shell?Buffer.from(value):outer(value),{cachedNavigations:true,...(shell?{requestKind:"runtime-shell"}:{})});
+		for(const type of ["div","$Sreact.fragment"])for(const children of ["$L9",["$L9"],[["$L9"]]]){
+			const proof=inspect(encode(["$",type,null,{children}])),body=shell?proof:proof.embeddedRuntimePrefetch;
+			assert.equal(proof.complete,true);assert.equal(body.postponedCacheOutputs,1);assert.equal(body.renderableOutputClaim,false);
+			assert.equal(body.requiredStage,shell?"runtime-shell-cache-representation":"embedded-partial-prefetch-representation");
+		}
+		const direct=inspect(encode("$L9")),body=shell?direct:direct.embeddedRuntimePrefetch;
+		assert.equal(direct.complete,true);assert.equal(body.representedOutputs,0);assert.equal(body.postponedCacheOutputs,1);
+		const input=cancellationFixture();for(const row of [input.failures[0],input.proxy[0]])Object.assign(row,{requestKind:shell?"runtime-shell":"navigation",bodyProof:direct});Object.assign(input.failures[0],{bodyReadbackComplete:true});Object.assign(input.proxy[0],{complete:true,canceled:false});
+		const receipt=classifyControlCancellations(input);assert.equal(cleanBrowserFailureEvidence(receipt,1),true);
+		for(const changed of [{postponedCacheOutputs:undefined},{postponedCacheOutputs:0},{postponedCacheOutputs:"1"},{postponedCacheOutputs:100001},{renderableOutputClaim:true},{requiredStage:shell?"runtime-shell-output":"embedded-runtime-prefetch-output"}]){
+			const corrupt=structuredClone(receipt),target=corrupt.records[0].proof.failure.bodyProof;Object.assign(shell?target:target.embeddedRuntimePrefetch,changed);assert.equal(cleanBrowserFailureEvidence(corrupt,1),false);
+		}
+		for(const invalid of [encode(["$","div",null,{title:"$L9",children:"KNOWN"}]),encode(["$","$L9",null,{children:"KNOWN"}]),encode(["$","$Sreact.suspense",null,{fallback:"$L9",children:"KNOWN"}]),encode(["$","div",null,{children:"$9"}]),encode(["$","div",null,{children:"$@9"}]),encode(["$","div",null,{children:"$L9"}]).replace(/^~/,'#'),encode("KNOWN")+'9:E{"digest":"PRIVATE"}\n'])
+			assert.equal(inspect(invalid).complete,false);
 	}
 });
 
