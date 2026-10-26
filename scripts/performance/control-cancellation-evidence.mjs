@@ -68,9 +68,14 @@ export function inspectRequiredFlightBody(
 	const opaqueText = new WeakSet();
 	let offset = 0,
 		serverErrors = 0,
-		recordCount = 0;
+		recordCount = 0, framingStage = "record", framingOffset = 0, framingTagByte = null;
+	const decode = (bytes) => { framingStage = "utf8"; return utf8.decode(bytes); };
+	const parse = (text) => { framingStage = "json"; return JSON.parse(text); };
 	try {
 		while (offset < body.length) {
+			framingStage = "record";
+			framingOffset = offset + (marker.startsWith("unmarked-") ? 0 : 1);
+			framingTagByte = null;
 			if (++recordCount > 4096) return unknown("record-limit");
 			if (
 				body[offset] === 58 &&
@@ -79,7 +84,8 @@ export function inspectRequiredFlightBody(
 			) {
 				const end = body.indexOf(10, offset);
 				if (end < offset) return unknown("incomplete-hint");
-				JSON.parse(utf8.decode(body.subarray(offset + 3, end)));
+				framingTagByte = 72;
+				parse(decode(body.subarray(offset + 3, end)));
 				offset = end + 1;
 				continue;
 			}
@@ -92,6 +98,7 @@ export function inspectRequiredFlightBody(
 				end,
 				value;
 			const tagByte = body[start];
+			framingTagByte = tagByte ?? null;
 			const tag = /^[A-Z#rx]$/.test(String.fromCharCode(tagByte))
 				? String.fromCharCode(body[start++])
 				: null;
@@ -103,7 +110,7 @@ export function inspectRequiredFlightBody(
 				end = comma + 1 + Number.parseInt(length, 16);
 				if (!Number.isSafeInteger(end) || end > body.length)
 					return unknown("incomplete-text");
-				value = utf8.decode(body.subarray(comma + 1, end));
+				value = decode(body.subarray(comma + 1, end));
 			} else {
 				end = body.indexOf(10, start);
 				if (
@@ -111,15 +118,15 @@ export function inspectRequiredFlightBody(
 					![null, "I", "H", "E", "X", "x", "R", "r", "C"].includes(tag)
 				)
 					return unknown("unsupported-record", { tagByte, recordOffset });
-				const text = utf8.decode(body.subarray(start, end));
+				const text = decode(body.subarray(start, end));
 				if (["X", "x", "R", "r"].includes(tag)) {
 					if (text !== "") return unknown("invalid-stream-opener");
 				} else if (tag === "C" && text === "") value = "$undefined";
 				else if (tag === "H") {
 					if (!/^[DCLmSXM]/.test(text))
 						return unknown("unsupported-record", { tagByte, recordOffset });
-					value = JSON.parse(text.slice(1));
-				} else value = JSON.parse(text);
+					value = parse(text.slice(1));
+				} else value = parse(text);
 				end++;
 				if (tag === "E") serverErrors++;
 			}
@@ -166,7 +173,7 @@ export function inspectRequiredFlightBody(
 			offset = end;
 		}
 	} catch {
-		return unknown("invalid-record");
+		return unknown("invalid-record", { framingStage, recordOffset: framingOffset, tagByte: framingTagByte });
 	}
 	if (serverErrors)
 		return { complete: false, reason: "flight-server-error", serverErrors };
