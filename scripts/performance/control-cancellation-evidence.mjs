@@ -495,15 +495,19 @@ function inspectFlightBody(
 	}
 	const shellScope = requestKind === "runtime-shell" || (requestKind === "embedded-runtime-prefetch" && isPartial);
 	const embeddedPartialScope = requestKind === "embedded-runtime-prefetch" && marker === "partial";
+	const partialCacheScope = embeddedPartialScope || (requestKind === "runtime-shell" && marker === "partial");
 	if (requestKind === "runtime-shell" && (marker !== "partial" || Object.hasOwn(root, "l") || Object.hasOwn(root, "a")))
 		return unknown("unsupported-runtime-shell-metadata");
 	// Roles follow exact transport edges; another required path to the same model stays required.
 	const queue = [{ value: root, role: "root" }],
 		visited = new Set();
-	let inspected = 0, postponedOutputReferences = 0, knownSuspenseBoundaries = 0, knownEmptyFallbacks = 0, postponedComponentReferences = 0, representedComponentFallbacks = 0, postponedDirectOutputs = 0;
+	// Structural parent readiness is independent; semantic visits must retain every
+	// permission bit so a permitted alias cannot discharge a required incoming edge.
+	const semanticVisitKey = (role,id,array=false,inside=false,direct=false) => `${role}:${id}:${array===true?1:0}:${inside===true?1:0}:${direct===true?1:0}`;
+	let inspected = 0, postponedOutputReferences = 0, knownSuspenseBoundaries = 0, knownEmptyFallbacks = 0, postponedComponentReferences = 0, representedComponentFallbacks = 0, postponedDirectOutputs = 0, postponedArrayOutputs = 0;
 	while (queue.length) {
 		if (++inspected > 100000 || ++budget.models > 100000) return unknown("model-limit");
-		const { value, role, fallbackReferences, directEmbeddedOutput, fromTypedOutput, outputArrival } = queue.pop();
+		const { value, role, fallbackReferences, directEmbeddedOutput, fromTypedOutput, outputArrival, rArrayOutput, insideRArray } = queue.pop();
 		if (value && typeof value === "object" && binaryValues.has(value)) return unknown("unsupported-binary-role");
 		if (shellScope && role === "fallback-output" && (
 			(value && typeof value === "object" && !Array.isArray(value)) ||
@@ -541,8 +545,9 @@ function inspectFlightBody(
 			)
 				return unknown("unsupported-outlined-collection");
 			const modelRole = shellScope && role === "tree-map" && value[1] === "Q" ? "tree-map-model" : "required";
-			if (!visited.has(`${modelRole}:${id}`)) {
-				visited.add(`${modelRole}:${id}`);
+			const visit = semanticVisitKey(modelRole,id);
+			if (!visited.has(visit)) {
+				visited.add(visit);
 				queue.push({ value: model, role: modelRole, fallbackReferences, fromTypedOutput, outputArrival:"collection-reference" });
 			}
 		} else if (
@@ -568,6 +573,10 @@ function inspectFlightBody(
 				postponedDirectOutputs++;
 				continue;
 			}
+			if (!records.has(id) && partialCacheScope && rArrayOutput === true && insideRArray === true && role === "output" && value[1] === "L" && canonicalFlightId(id)) {
+				postponedArrayOutputs++;
+				continue;
+			}
 			if (!records.has(id)) return unknown("unresolved-model-reference", {
 				modelReference: { prefix: value[1] === "L" ? "L" : value[1] === "@" ? "@" : "plain",
 					form: value[1] === "L" ? "lazy-reference" : value[1] === "@" ? "promise-reference" : "model-reference", length: value.length },
@@ -575,12 +584,14 @@ function inspectFlightBody(
 				outputEdgeObservation:{walkPathOnly:true,fromTypedOutput:fromTypedOutput===true,directEmbeddedOutput:directEmbeddedOutput===true,arrival:outputArrival ?? "root-or-required"},
 				marker, isPartial, requestKind, decodedBytes: bytes.length, bodySha256: bodySha256(bytes),
 			});
-			if (!visited.has(`${role}:${id}`)) {
-				visited.add(`${role}:${id}`);
+			const visit = semanticVisitKey(role,id,rArrayOutput,insideRArray,directEmbeddedOutput);
+			if (!visited.has(visit)) {
+				visited.add(visit);
 				const record = records.get(id);
 				if (shellScope && role === "fallback-output" && record.tag !== null && record.tag !== "T")
 					return unknown("unsupported-runtime-shell-fallback-kind");
 				if (record.tag !== "T") queue.push({ value: record.value, role, fromTypedOutput, outputArrival:"model-reference",
+					rArrayOutput:rArrayOutput===true && value[1]!=="@" && record.tag===null && !record.stream,insideRArray,
 					fallbackReferences: role === "fallback-output" ? new Set([...(fallbackReferences ?? []), id]) : fallbackReferences });
 			}
 		} else if (typeof value === "string" && plainPath.test(value)) {
@@ -590,7 +601,7 @@ function inspectFlightBody(
 				semanticRole:role,pathFailure:pathFailure ?? (pathLimit?"depth-or-model-limit":"unavailable-own-data"),marker,isPartial,requestKind,
 				...(pathLimitObservation ? {pathLimitObservation} : {}),
 			});
-			queue.push({value:selected.value,role,fallbackReferences,fromTypedOutput,outputArrival:"outlined-reference"});
+			queue.push({value:selected.value,role,fallbackReferences,fromTypedOutput,outputArrival:"outlined-reference",rArrayOutput,insideRArray});
 		} else if (
 			typeof value === "string" &&
 			value.startsWith("$") &&
@@ -640,7 +651,7 @@ function inspectFlightBody(
 					const knownModule = module?.tag === "I" && Array.isArray(metadata) && [3,4].includes(metadata.length) &&
 						(typeof metadata[0] === "string" || (Number.isSafeInteger(metadata[0]) && metadata[0] >= 0)) &&
 						Array.isArray(metadata[1]) && metadata[1].every(chunk=>typeof chunk === "string") && typeof metadata[2] === "string" && (metadata.length === 3 || metadata[3] === 1);
-					if (embeddedPartialScope && knownModule && props && typeof props === "object" && !Array.isArray(props)) {
+					if (partialCacheScope && knownModule && props && typeof props === "object" && !Array.isArray(props)) {
 						// The cache stores this fulfilled element/props representation; it does not render the imported component.
 						representedComponentFallbacks++;
 						queue.push({value:value[1],role:"element-type",fromTypedOutput,outputArrival:"element-type"},{value:value[2],role:"element-key",fromTypedOutput,outputArrival:"element-key"},{value:value[3],role:"required",fromTypedOutput,outputArrival:"element-props"});
@@ -673,6 +684,8 @@ function inspectFlightBody(
 				else if (shellScope && output && Array.isArray(value)) nextRole = role;
 				else if (shellScope && role === "component-data") nextRole = role;
 				queue.push({ value: item, role: nextRole, fallbackReferences, directEmbeddedOutput: embeddedPartialScope && role === "data" && key === "r",
+					rArrayOutput:(partialCacheScope && role==="data" && key==="r") || (rArrayOutput===true && role==="output" && Array.isArray(value) && !elementTuple(value)),
+					insideRArray:rArrayOutput===true && role==="output" && Array.isArray(value) && !elementTuple(value),
 					fromTypedOutput:fromTypedOutput===true || (role==="data" && key==="r"),
 					outputArrival:role==="data" && key==="r" ? "typed-data-r" : Array.isArray(value) && output ? "array-output" : key==="children" && ["host-props","suspense-props","suspended-host-props","fallback-host-props"].includes(role) ? "element-children" : key==="fallback" && role==="suspense-props" ? "element-fallback" : "own-field" });
 			}
@@ -871,8 +884,8 @@ function inspectFlightBody(
 			return unknown("missing-represented-navigation-output");
 		patchClaims = { representedOutputs, treeNodes: seen.size,
 			...(shellScope ? { postponedOutputReferences, knownSuspenseBoundaries, knownEmptyFallbacks } : {}),
-			...(postponedComponentReferences || representedComponentFallbacks || postponedDirectOutputs ? { postponedComponentReferences, representedComponentFallbacks, postponedDirectOutputs, renderableOutputClaim: false } : {}) };
-		requiredStage = postponedComponentReferences || representedComponentFallbacks || postponedDirectOutputs ? "embedded-partial-prefetch-representation" : requestKind === "embedded-runtime-prefetch" ? "embedded-runtime-prefetch-output" : shellScope ? "runtime-shell-output" : "navigation-patch";
+			...(postponedComponentReferences || representedComponentFallbacks || postponedDirectOutputs || postponedArrayOutputs ? { postponedComponentReferences, representedComponentFallbacks, postponedDirectOutputs, postponedArrayOutputs, renderableOutputClaim: false } : {}) };
+		requiredStage = postponedComponentReferences || representedComponentFallbacks || postponedDirectOutputs || postponedArrayOutputs ? requestKind === "runtime-shell" ? "runtime-shell-cache-representation" : "embedded-partial-prefetch-representation" : requestKind === "embedded-runtime-prefetch" ? "embedded-runtime-prefetch-output" : shellScope ? "runtime-shell-output" : "navigation-patch";
 	} else if (isPartial) {
 		const staticBytes = boundary(root.l),
 			shellBytes = boundary(root.a);
@@ -943,8 +956,8 @@ const goodBody = (proof, depth = 0) => {
 	if (!Number.isSafeInteger(proof.protocolRows) || proof.protocolRows <= 0 || proof.protocolRows > 4096 ||
 		!Number.isSafeInteger(proof.modelSteps) || proof.modelSteps <= 0 || proof.modelSteps > 100000 ||
 		!Object.hasOwn(proof, "embeddedRuntimePrefetch") || depth > 1 || (proof.requestKind === "embedded-runtime-prefetch" && depth !== 1)) return false;
-	if ((Object.hasOwn(proof, "postponedComponentReferences") || Object.hasOwn(proof, "representedComponentFallbacks") || Object.hasOwn(proof, "postponedDirectOutputs") || Object.hasOwn(proof, "renderableOutputClaim")) &&
-		proof.requiredStage !== "embedded-partial-prefetch-representation") return false;
+	if ((Object.hasOwn(proof, "postponedComponentReferences") || Object.hasOwn(proof, "representedComponentFallbacks") || Object.hasOwn(proof, "postponedDirectOutputs") || Object.hasOwn(proof, "postponedArrayOutputs") || Object.hasOwn(proof, "renderableOutputClaim")) &&
+		!["embedded-partial-prefetch-representation","runtime-shell-cache-representation"].includes(proof.requiredStage)) return false;
 	const embedded = proof.embeddedRuntimePrefetch;
 	if (embedded !== null && (depth !== 0 || proof.requestKind !== "navigation" || embedded?.requestKind !== "embedded-runtime-prefetch" || !goodBody(embedded, depth + 1) ||
 		proof.decodedBytes + embedded.decodedBytes > controlCancellationPolicy.decodedLimit || proof.protocolRows + embedded.protocolRows > 4096 ||
@@ -971,8 +984,8 @@ const goodBody = (proof, depth = 0) => {
 			proof.treeNodes > 0 &&
 			proof.treeNodes <= 4096
 		);
-	if (["runtime-shell-output", "embedded-runtime-prefetch-output", "embedded-partial-prefetch-representation"].includes(proof.requiredStage))
-		return proof.requestKind === (proof.requiredStage === "runtime-shell-output" ? "runtime-shell" : "embedded-runtime-prefetch") &&
+	if (["runtime-shell-output", "runtime-shell-cache-representation", "embedded-runtime-prefetch-output", "embedded-partial-prefetch-representation"].includes(proof.requiredStage))
+		return proof.requestKind === (["runtime-shell-output","runtime-shell-cache-representation"].includes(proof.requiredStage) ? "runtime-shell" : "embedded-runtime-prefetch") &&
 			!proof.action && proof.marker === "partial" && proof.isPartial &&
 			Number.isSafeInteger(proof.treeNodes) && proof.treeNodes > 0 && proof.treeNodes <= 4096 &&
 			Number.isSafeInteger(proof.representedOutputs) && proof.representedOutputs >= (proof.requiredStage === "embedded-partial-prefetch-representation" ? 0 : 1) && proof.representedOutputs <= proof.treeNodes + 1 &&
@@ -980,13 +993,15 @@ const goodBody = (proof, depth = 0) => {
 			Number.isSafeInteger(proof.knownSuspenseBoundaries) && proof.knownSuspenseBoundaries >= 0 && proof.knownSuspenseBoundaries <= 100000 &&
 			Number.isSafeInteger(proof.knownEmptyFallbacks) && proof.knownEmptyFallbacks >= 0 && proof.knownEmptyFallbacks <= proof.knownSuspenseBoundaries &&
 			(proof.postponedOutputReferences === 0 || proof.knownSuspenseBoundaries > 0) &&
-			(proof.requiredStage !== "embedded-partial-prefetch-representation" ||
+			(!["embedded-partial-prefetch-representation","runtime-shell-cache-representation"].includes(proof.requiredStage) ||
 				(proof.renderableOutputClaim === false && Number.isSafeInteger(proof.postponedComponentReferences) && proof.postponedComponentReferences >= 0 && proof.postponedComponentReferences <= 100000 &&
 				Number.isSafeInteger(proof.representedComponentFallbacks) && proof.representedComponentFallbacks >= 0 && proof.representedComponentFallbacks <= 100000 &&
 				Number.isSafeInteger(proof.postponedDirectOutputs) && proof.postponedDirectOutputs >= 0 && proof.postponedDirectOutputs <= proof.treeNodes + 1 &&
+				Number.isSafeInteger(proof.postponedArrayOutputs) && proof.postponedArrayOutputs >= 0 && proof.postponedArrayOutputs <= 100000 &&
+				(proof.requiredStage !== "runtime-shell-cache-representation" || (proof.postponedComponentReferences === 0 && proof.postponedDirectOutputs === 0)) &&
 				proof.postponedDirectOutputs + proof.representedOutputs > 0 && proof.postponedDirectOutputs + proof.representedOutputs <= proof.treeNodes + 1 &&
-				proof.postponedComponentReferences + proof.representedComponentFallbacks + proof.postponedDirectOutputs > 0 &&
-				proof.postponedComponentReferences + proof.representedComponentFallbacks + proof.postponedDirectOutputs <= proof.modelSteps));
+				proof.postponedComponentReferences + proof.representedComponentFallbacks + proof.postponedDirectOutputs + proof.postponedArrayOutputs > 0 &&
+				proof.postponedComponentReferences + proof.representedComponentFallbacks + proof.postponedDirectOutputs + proof.postponedArrayOutputs <= proof.modelSteps));
 	if (
 		proof.action !== (proof.requestKind === "action") ||
 		!["action", "navigation", "embedded-runtime-prefetch"].includes(proof.requestKind)
@@ -1031,6 +1046,7 @@ const bodyReceipt = (row) => {
 		"postponedComponentReferences",
 		"representedComponentFallbacks",
 		"postponedDirectOutputs",
+		"postponedArrayOutputs",
 		"renderableOutputClaim",
 		"knownSuspenseBoundaries",
 		"knownEmptyFallbacks",
