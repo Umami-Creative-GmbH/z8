@@ -489,6 +489,7 @@ function inspectFlightBody(
 			embeddedFallbackPropsKind: embeddedRuntimePrefetch.fallbackPropsKind ?? null,
 			embeddedPathFailure: embeddedRuntimePrefetch.pathFailure ?? null,
 			embeddedPathLimitObservation: embeddedRuntimePrefetch.pathLimitObservation ?? null,
+			embeddedPatchDataObservation: embeddedRuntimePrefetch.patchDataObservation ?? null,
 		});
 	}
 	const shellScope = requestKind === "runtime-shell" || (requestKind === "embedded-runtime-prefetch" && isPartial);
@@ -723,13 +724,24 @@ function inspectFlightBody(
 	) {
 		// Main Flight consumption is independent of the optional static/shell cache clones.
 		// This proves only the represented SPA patch, retaining response-level partiality.
+		const valueKind = value => value === undefined ? "absent" : value === null ? "null" : Array.isArray(value) ? "array" :
+			value === "$undefined" ? "undefined-sentinel" : typeof value === "string" && /^\$@/.test(value) ? "promise-reference" :
+			typeof value === "string" && /^\$L/.test(value) ? "lazy-reference" : typeof value === "string" && /^\$(?!\$)/.test(value) ? "reference" : typeof value;
+		const patchObservation = (location,failure,raw,...resolved) => {
+			const value = resolved.length ? resolved[0] : raw;
+			const fields = ["r","p","v","s","t","h","q","i","S","n"];
+			const descriptors = Object.fromEntries(fields.map(key=>[key,value && typeof value === "object" ? Object.getOwnPropertyDescriptor(value,key) : undefined]));
+			return {location,failure,rawKind:valueKind(raw),valueKind:valueKind(value),
+				present:Object.fromEntries(fields.map(key=>[key,descriptors[key] !== undefined])),
+				fieldKinds:Object.fromEntries(fields.map(key=>[key,valueKind(descriptors[key]?.value)]))};
+		};
 		if (
 			typeof root.q !== "string" ||
 			typeof root.i !== "boolean" ||
 			(Object.hasOwn(root, "S") && typeof root.S !== "boolean") ||
 			Object.hasOwn(root, "n")
 		)
-			return unknown("unsupported-navigation-patch-root");
+			return unknown("unsupported-navigation-patch-root", {patchDataObservation:patchObservation("root",typeof root.q !== "string" ? "query-type" : typeof root.i !== "boolean" ? "interception-type" : Object.hasOwn(root,"S") && typeof root.S !== "boolean" ? "static-flag-type" : "disallowed-root-field",root)});
 		const transport = resolve(root.t),
 			nodes = [transport.t],
 			seen = new Set();
@@ -750,20 +762,14 @@ function inspectFlightBody(
 				(!value.startsWith("$") || value.startsWith("$$")));
 		const staleTime = (value) =>
 			typeof value === "number" && Number.isFinite(value) && value >= 0;
+		let dataFailure = null;
 		const dataIsTyped = (raw) => {
 			const data = resolve(raw);
-			if (
-				!data ||
-				typeof data !== "object" ||
-				Array.isArray(data) ||
-				!Object.hasOwn(data, "r") ||
-				typeof data.p !== "boolean" ||
-				!Object.hasOwn(data, "v") ||
-				Object.keys(data).some((key) => !["r", "p", "v", "s"].includes(key)) ||
-				(data.v !== null && !iterableHasType(data.v, varyId)) ||
-				(Object.hasOwn(data, "s") && !iterableHasType(data.s, staleTime))
-			)
-				return false;
+			const failure = !data || typeof data !== "object" || Array.isArray(data) ? "data-shape" :
+				!Object.hasOwn(data,"r") ? "missing-output" : typeof data.p !== "boolean" ? "partiality-type" :
+				!Object.hasOwn(data,"v") ? "missing-vary" : Object.keys(data).some(key=>!["r","p","v","s"].includes(key)) ? "data-fields" :
+				data.v !== null && !iterableHasType(data.v,varyId) ? "vary-stream" : Object.hasOwn(data,"s") && !iterableHasType(data.s,staleTime) ? "stale-stream" : null;
+			if (failure) { dataFailure = {failure,raw,data}; return false; }
 			const output = resolve(data.r);
 			const textOutput =
 				typeof data.r === "string" &&
@@ -776,15 +782,14 @@ function inspectFlightBody(
 				representedOutputs++;
 			return true;
 		};
-		if (
-			Object.keys(transport).some((key) => !["t", "h"].includes(key)) ||
-			(Object.hasOwn(transport, "h") && !dataIsTyped(transport.h)) ||
-			(Object.hasOwn(root, "r") &&
-				root.r !== null &&
-				!iterableHasType(root.r, varyId)) ||
-			(Object.hasOwn(root, "s") && !iterableHasType(root.s, staleTime))
-		)
-			return unknown("unsupported-navigation-patch-data");
+		if (Object.keys(transport).some(key=>!["t","h"].includes(key)))
+			return unknown("unsupported-navigation-patch-data", {patchDataObservation:patchObservation("transport","transport-fields",transport)});
+		if (Object.hasOwn(transport,"h") && !dataIsTyped(transport.h))
+			return unknown("unsupported-navigation-patch-data", {patchDataObservation:patchObservation("head-data",dataFailure.failure,dataFailure.raw,dataFailure.data)});
+		if (Object.hasOwn(root,"r") && root.r !== null && !iterableHasType(root.r,varyId))
+			return unknown("unsupported-navigation-patch-data", {patchDataObservation:patchObservation("root-vary","vary-stream",root.r)});
+		if (Object.hasOwn(root,"s") && !iterableHasType(root.s,staleTime))
+			return unknown("unsupported-navigation-patch-data", {patchDataObservation:patchObservation("root-stale","stale-stream",root.s)});
 		while (nodes.length) {
 			const node = resolve(nodes.pop());
 			if (
@@ -817,12 +822,10 @@ function inspectFlightBody(
 						)
 			)
 				return unknown("unsupported-navigation-patch-segment");
-			if (
-				(node.h !== undefined &&
-					(!Number.isSafeInteger(node.h) || node.h < 0)) ||
-				(Object.hasOwn(node, "d") && !dataIsTyped(node.d))
-			)
-				return unknown("unsupported-navigation-patch-data");
+			if (node.h !== undefined && (!Number.isSafeInteger(node.h) || node.h < 0))
+				return unknown("unsupported-navigation-patch-data", {patchDataObservation:patchObservation("node-hints","hints-integer",node.h)});
+			if (Object.hasOwn(node,"d") && !dataIsTyped(node.d))
+				return unknown("unsupported-navigation-patch-data", {patchDataObservation:patchObservation("node-data",dataFailure.failure,dataFailure.raw,dataFailure.data)});
 			if (node.c !== undefined) {
 				if (typeof node.c !== "string" || !/^\$Q[a-f0-9]+$/.test(node.c))
 					return unknown("unsupported-navigation-patch-map");
