@@ -813,6 +813,23 @@ function settledFixture(f, plan, filename) {
   f.save(filename, artifact);
   return artifact;
 }
+test("journey diagnostic companion cannot derive budgets even with full-count clean evidence", () => {
+  const f = fixture();
+  const diagnostic = settledFixture(f, f.plan, "settled-diagnostic.json");
+  diagnostic.kind = "settled-resource-journey-verification";
+  diagnostic.diagnosticOnly = true;
+  f.save("settled-diagnostic.json", diagnostic);
+  const result = f.run("derive", "--before-plan", join(f.dir, "before-plan.json"),
+    "--before", join(f.dir, "before.json"), "--backend", join(f.dir, "backend.json"),
+    "--release-build", "d".repeat(40), "--release-app-manifest", join(f.dir, "release-manifest.json"),
+    "--release-browser-control", join(f.dir, "release-browser-control.json"),
+    "--release-source", "eeeeeeeee", "--release-tooling", "fffffffff",
+    "--before-settled", join(f.dir, "settled-diagnostic.json"),
+    "--before-settled-backend", join(f.dir, "backend.json"), "--out", join(f.dir, "derived"));
+  assert.equal(result.status, 2, result.stdout + result.stderr);
+  assert.match(result.stderr, /diagnostic/i);
+});
+
 test("failed original annual traffic cannot derive latency or resource budgets", () => {
   const f = fixture();
   Object.assign(f.plan.runtime, {

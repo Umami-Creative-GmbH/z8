@@ -218,6 +218,22 @@ export function settledCohorts(plan) {
     throw Error("Settled cohort matrix must be nonempty and unique.");
   return result;
 }
+/** Validate the normal plan unchanged before selecting diagnostic visit counts. */
+export function companionCaptureConfiguration(
+  plan,
+  { verifyJourneys = false } = {},
+) {
+  const cohorts = settledCohorts(plan);
+  return {
+    kind: verifyJourneys
+      ? "settled-resource-journey-verification"
+      : "settled-resource-companion",
+    diagnosticOnly: verifyJourneys,
+    cohorts: verifyJourneys
+      ? cohorts.map((cohort) => ({ ...cohort, count: 1 }))
+      : cohorts,
+  };
+}
 export function settledEvidenceGates(plan, artifact, native, planSha) {
   const gates = cleanEvidenceGates(plan, artifact, native, "readyMs");
   if (
@@ -233,6 +249,7 @@ export function settledEvidenceGates(plan, artifact, native, planSha) {
     gates.push("Interrupted companion evidence cannot fulfill resource gates.");
   if (
     artifact.kind !== "settled-resource-companion" ||
+    (Object.hasOwn(artifact, "diagnosticOnly") && artifact.diagnosticOnly !== false) ||
     artifact.phase !== plan.phase ||
     artifact.planSha256 !== planSha ||
     JSON.stringify(artifact.policy) !== JSON.stringify(companionPolicy) ||
@@ -319,6 +336,7 @@ export function settledEvidenceGates(plan, artifact, native, planSha) {
   return [...new Set(gates)];
 }
 export function requireSettledEvidence(plan, artifact, native, planSha) {
+  requireNumericCompanionArtifact(artifact);
   const gates = settledEvidenceGates(plan, artifact, native, planSha);
   if (
     !artifact.finalized ||
@@ -884,30 +902,51 @@ export async function measureFixtureResources(
   }
   return s;
 }
-async function main() {
-  const args = process.argv.slice(2),
-    command = args.shift(),
+function requireNumericCompanionArtifact(artifact) {
+  if (
+    artifact.kind === "settled-resource-journey-verification" ||
+    (Object.hasOwn(artifact, "diagnosticOnly") && artifact.diagnosticOnly !== false)
+  )
+    throw Error("Journey diagnostic artifacts cannot be finalized or supply numerical resource budgets.");
+}
+export function parseCompanionCommand(args) {
+  const [command, ...values] = args,
     options = {};
+  if (!["capture", "finalize"].includes(command))
+    throw Error("Use capture or finalize.");
   const allowed =
     command === "capture"
       ? ["--plan", "--auth", "--chrome", "--out", "--collector", "--app-manifest"]
       : ["--plan", "--artifact", "--backend"];
-  for (let i = 0; i < args.length; i += 2) {
+  for (let i = 0; i < values.length; i++) {
+    const name = values[i];
+    if (command === "capture" && name === "--verify-journeys") {
+      if (options[name]) throw Error("Duplicate --verify-journeys.");
+      options[name] = true;
+      continue;
+    }
     if (
-      !allowed.includes(args[i]) ||
-      !args[i + 1] ||
-      args[i + 1].startsWith("--") ||
-      options[args[i]]
+      !allowed.includes(name) ||
+      !values[i + 1] ||
+      values[i + 1].startsWith("--") ||
+      options[name]
     )
       throw Error(
         "Use documented nonduplicate option/value pairs; cohort filtering is forbidden.",
       );
-    options[args[i]] = args[i + 1];
+    options[name] = values[++i];
   }
+  return { command, options };
+}
+async function main() {
+  const { command, options } = parseCompanionCommand(process.argv.slice(2));
   if (!options["--plan"]) throw Error("Missing --plan.");
   const bytes = await readFile(options["--plan"]),
     plan = JSON.parse(bytes),
-    cohorts = settledCohorts(plan),
+    configuration = companionCaptureConfiguration(plan, {
+      verifyJourneys: options["--verify-journeys"] === true,
+    }),
+    cohorts = configuration.cohorts,
     planSha256 = hash(bytes);
   if (command === "capture" && !options["--collector"])
     throw Error("Capture requires registered --collector control.");
@@ -915,8 +954,9 @@ async function main() {
   if (command === "finalize") {
     if (!options["--artifact"] || !options["--backend"])
       throw Error("Require artifact and flushed native backend evidence.");
-    const artifact = JSON.parse(await readFile(options["--artifact"])),
-      native = JSON.parse(await readFile(options["--backend"]));
+    const artifact = JSON.parse(await readFile(options["--artifact"]));
+    requireNumericCompanionArtifact(artifact);
+    const native = JSON.parse(await readFile(options["--backend"]));
     if (JSON.stringify(artifact.protocol) !== JSON.stringify(protocol))
       throw Error("Companion protocol changed after capture.");
     for (const s of artifact.samples) {
@@ -977,7 +1017,8 @@ async function main() {
   let auth;
   const artifact = {
     schema: 1,
-    kind: "settled-resource-companion",
+    kind: configuration.kind,
+    diagnosticOnly: configuration.diagnosticOnly,
     phase: plan.phase,
     planSha256,
     policy: companionPolicy,
@@ -1064,7 +1105,9 @@ async function main() {
     },
   });
   console.log(
-    "Companion samples recorded. Flush native collector, then finalize.",
+    configuration.diagnosticOnly
+      ? "Companion journey diagnostics recorded; numerical acceptance remains unfulfilled and finalization is forbidden."
+      : "Companion samples recorded. Flush native collector, then finalize.",
   );
   process.exitCode = 1;
 }

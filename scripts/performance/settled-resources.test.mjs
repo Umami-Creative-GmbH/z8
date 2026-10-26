@@ -36,6 +36,7 @@ test("companion validates required inputs and sample counts before importing a b
 });
 import {
   requireSettledEvidence,
+  settledEvidenceGates,
   runCompanionCapture,
   observeFailedJourneyWire,
   companionPolicy as settledPolicy,
@@ -278,6 +279,14 @@ test("resource eligibility rejects failed original and HEAD behavior even with c
   assert.doesNotThrow(() =>
     requireSettledEvidence(plan, artifact, native, "hash"),
   );
+  const explicitNormal = { ...artifact, diagnosticOnly: false };
+  assert.doesNotThrow(() => requireSettledEvidence(plan, explicitNormal, native, "hash"));
+  assert.deepEqual(settledEvidenceGates(plan, explicitNormal, native, "hash"), []);
+  for (const diagnosticOnly of [true, "true", 1, null, undefined, {}, []]) {
+    const malformed = { ...artifact, diagnosticOnly };
+    assert.ok(settledEvidenceGates(plan, malformed, native, "hash").includes("Companion plan, policy or actual build identity differs."));
+    assert.throws(() => requireSettledEvidence(plan, malformed, native, "hash"), /diagnostic/i);
+  }
   for (const phase of ["baseline", "release"])
     for (const failedRequests of [1, undefined, null, "0", 0.5]) {
       const candidatePlan = { ...plan, phase, timeoutMs: phase === "baseline" ? 90000 : 30000 };
