@@ -657,6 +657,17 @@ test("unresolved lazy dependencies retain bounded technical provenance without e
 test("runtime-shell scope permits only postponed lazy output beneath a known Suspense fallback", () => {
 	const body = '~0:{"q":"","i":false,"t":{"t":{"s":"","c":"$Q1"}}}\n1:[["children","$2"]]\n2:{"s":"en","d":{"r":"$3","p":true,"v":null}}\n3:["$","$Sreact.suspense",null,{"fallback":["$","span",null,{"children":"KNOWN_FALLBACK"}],"children":"$Ldead"}]\n';
 	const options = { requestKind: "runtime-shell", cachedNavigations: true };
+	const componentFallback = body.replace('["$","span",null,{"children":"KNOWN_FALLBACK"}]', '["$","$4",null,{"data":null}]')+'4:I["PRIVATE_MODULE",[],"PRIVATE_EXPORT"]\n';
+	const componentUnknown = inspectRequiredFlightBody(Buffer.from(componentFallback), options);
+	assert.equal(componentUnknown.complete, false);
+	assert.equal(componentUnknown.reason, "unknown-runtime-shell-fallback");
+	assert.equal(componentUnknown.fallbackKind, "component-element");
+	assert.equal(componentUnknown.fallbackElementTypeKind, "module-record");
+	assert.equal(componentUnknown.fallbackPropsKind, "object");
+	const objectUnknown = inspectRequiredFlightBody(Buffer.from(body.replace('["$","span",null,{"children":"KNOWN_FALLBACK"}]','{"private":"PRIVATE_VALUE"}')), options);
+	assert.equal(objectUnknown.fallbackKind, "non-renderable-value");
+	assert.equal(objectUnknown.fallbackValueKind, "object");
+	assert.doesNotMatch(JSON.stringify([componentUnknown,objectUnknown]), /PRIVATE|KNOWN_FALLBACK|dead/);
 	const proof = inspectRequiredFlightBody(Buffer.from(body), options);
 	assert.equal(proof.complete, true);
 	assert.equal(proof.requiredStage, "runtime-shell-output");
@@ -775,6 +786,14 @@ test("embedded runtime prefetch has exact binary framing, explicit stream close 
 	assert.equal(partial.complete, true);
 	assert.equal(partial.embeddedRuntimePrefetch.requiredStage, "embedded-runtime-prefetch-output");
 	assert.equal(partial.embeddedRuntimePrefetch.postponedOutputReferences, 1);
+	const componentFallback = Buffer.from(partialInner.toString().replace('["$","span",null,{"children":"KNOWN_FALLBACK"}]', '["$","$4",null,{"data":null}]')+'4:I["PRIVATE_MODULE",[],"PRIVATE_EXPORT"]\n');
+	const fallbackUnknown = inspectRequiredFlightBody(outer(componentFallback), { cachedNavigations: true });
+	assert.equal(fallbackUnknown.complete, false);
+	assert.equal(fallbackUnknown.embeddedReason, "unknown-runtime-shell-fallback");
+	assert.equal(fallbackUnknown.embeddedFallbackKind, "component-element");
+	assert.equal(fallbackUnknown.embeddedFallbackElementTypeKind, "module-record");
+	assert.equal(fallbackUnknown.embeddedFallbackPropsKind, "object");
+	assert.doesNotMatch(JSON.stringify(fallbackUnknown), /PRIVATE|KNOWN_FALLBACK|dead/);
 	const missingInner = Buffer.from('#0:{"q":"","i":false,"t":{"t":{"s":"en","d":{"r":"$Ldead","p":false,"v":null}}}}\n');
 	const missing = inspectRequiredFlightBody(outer(missingInner), { cachedNavigations: true });
 	assert.equal(missing.complete, false);

@@ -329,6 +329,10 @@ function inspectFlightBody(
 			embeddedMarker: embeddedRuntimePrefetch.marker ?? null, embeddedIsPartial: embeddedRuntimePrefetch.isPartial ?? null,
 			embeddedRequestKind: embeddedRuntimePrefetch.requestKind ?? null,
 			embeddedDecodedBytes: embeddedRuntimePrefetch.decodedBytes ?? null, embeddedBodySha256: embeddedRuntimePrefetch.bodySha256 ?? null,
+			embeddedFallbackKind: embeddedRuntimePrefetch.fallbackKind ?? null,
+			embeddedFallbackValueKind: embeddedRuntimePrefetch.fallbackValueKind ?? null,
+			embeddedFallbackElementTypeKind: embeddedRuntimePrefetch.fallbackElementTypeKind ?? null,
+			embeddedFallbackPropsKind: embeddedRuntimePrefetch.fallbackPropsKind ?? null,
 		});
 	}
 	const shellScope = requestKind === "runtime-shell" || (requestKind === "embedded-runtime-prefetch" && isPartial);
@@ -346,7 +350,8 @@ function inspectFlightBody(
 		if (shellScope && role === "fallback-output" && (
 			(value && typeof value === "object" && !Array.isArray(value)) ||
 			(typeof value === "string" && /^\$[SD]/.test(value))))
-			return unknown("unknown-runtime-shell-fallback");
+			return unknown("unknown-runtime-shell-fallback", { fallbackKind: "non-renderable-value",
+				fallbackValueKind: typeof value === "object" ? "object" : value[1] === "S" ? "symbol" : "date" });
 		if (
 			typeof value === "string" &&
 			value.startsWith("$S") &&
@@ -445,13 +450,19 @@ function inspectFlightBody(
 				const known = suspense || type === "$Sreact.fragment" || (typeof type === "string" && type.length > 0 && !type.startsWith("$"));
 				if (known) {
 					if (!props || typeof props !== "object" || Array.isArray(props) || (suspense && !Object.hasOwn(props, "fallback")))
-						return unknown("unknown-runtime-shell-fallback");
+						return unknown("unknown-runtime-shell-fallback", { fallbackKind: props && typeof props === "object" && !Array.isArray(props) ? "missing-suspense-fallback" : "invalid-element-props",
+							fallbackPropsKind: props === null ? "null" : props === undefined ? "unresolved" : Array.isArray(props) ? "array" : typeof props === "object" ? "object" : "scalar" });
 					if (suspense) knownSuspenseBoundaries++;
 					queue.push({ value: value[1], role: "element-type", fallbackReferences }, { value: value[2], role: "element-key", fallbackReferences },
 						{ value: value[3], role: role === "fallback-output" ? "fallback-host-props" : suspense ? "suspense-props" : role === "suspended-output" ? "suspended-host-props" : "host-props", fallbackReferences });
 					continue;
 				}
-				if (role === "fallback-output") return unknown("unknown-runtime-shell-fallback");
+				if (role === "fallback-output") {
+					const id = typeof value[1] === "string" ? /^\$(?:L)?([a-f0-9]+)$/.exec(value[1])?.[1] : null;
+					return unknown("unknown-runtime-shell-fallback", { fallbackKind: "component-element",
+						fallbackElementTypeKind: id && records.get(id)?.tag === "I" ? "module-record" : type === undefined ? "unresolved" : Array.isArray(type) ? "array" : type && typeof type === "object" ? "object" : "other",
+						fallbackPropsKind: props === null ? "null" : props === undefined ? "unresolved" : Array.isArray(props) ? "array" : typeof props === "object" ? "object" : "scalar" });
+				}
 				// Unknown component props may interpret children as ordinary required data.
 				for (let index = value.length - 1; index >= 0; index--)
 					queue.push({ value: value[index], role: index === 1 ? "element-type" : index === 3 ? "component-data" : "required", fallbackReferences });
