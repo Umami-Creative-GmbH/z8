@@ -402,6 +402,21 @@ test("a resource hint dispatch does not fulfill an outlined model dependency", (
 	assert.equal(inspectRequiredFlightBody(Buffer.from('0:{"a":null}\n1:HL["/technical.css","style"]\n'), { action: true }).complete, true);
 });
 
+test("framing failures expose only fixed parsing stage, offset and first tag byte", () => {
+	const prefix = Buffer.from('0:{"a":null}\n');
+	const utf8 = inspectRequiredFlightBody(Buffer.concat([prefix, Buffer.from('1:T1,'), Buffer.from([255])]), { action: true });
+	assert.equal(utf8.complete, false);
+	assert.equal(utf8.reason, "invalid-record");
+	assert.equal(utf8.framingStage, "utf8");
+	assert.equal(utf8.recordOffset, prefix.length);
+	assert.equal(utf8.tagByte, 84);
+	const json = inspectRequiredFlightBody(Buffer.from('0:{"a":PRIVATE_VALUE}\n'), { action: true });
+	assert.equal(json.framingStage, "json");
+	assert.equal(json.recordOffset, 0);
+	assert.equal(json.tagByte, 123);
+	assert.doesNotMatch(JSON.stringify(json), /PRIVATE_VALUE|SyntaxError|stack|message/);
+});
+
 test("serialized measured receipts require exact raw partition, scope and complete coverage", () => {
 	const proof = testBrowserEvidence("context", true).measured;
 	assert.equal(cleanBrowserFailureEvidence(proof, 1), true);
