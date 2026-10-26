@@ -499,10 +499,10 @@ function inspectFlightBody(
 	// Roles follow exact transport edges; another required path to the same model stays required.
 	const queue = [{ value: root, role: "root" }],
 		visited = new Set();
-	let inspected = 0, postponedOutputReferences = 0, knownSuspenseBoundaries = 0, knownEmptyFallbacks = 0, postponedComponentReferences = 0, representedComponentFallbacks = 0;
+	let inspected = 0, postponedOutputReferences = 0, knownSuspenseBoundaries = 0, knownEmptyFallbacks = 0, postponedComponentReferences = 0, representedComponentFallbacks = 0, postponedDirectOutputs = 0;
 	while (queue.length) {
 		if (++inspected > 100000 || ++budget.models > 100000) return unknown("model-limit");
-		const { value, role, fallbackReferences } = queue.pop();
+		const { value, role, fallbackReferences, directEmbeddedOutput } = queue.pop();
 		if (value && typeof value === "object" && binaryValues.has(value)) return unknown("unsupported-binary-role");
 		if (shellScope && role === "fallback-output" && (
 			(value && typeof value === "object" && !Array.isArray(value)) ||
@@ -559,6 +559,12 @@ function inspectFlightBody(
 			// This never grants the main graph, component type, fallback, or eager references a missing dependency.
 			if (!records.has(id) && embeddedPartialScope && role === "component-data" && value[1] === "L") {
 				postponedComponentReferences++;
+				continue;
+			}
+			// The partial p cache stores a direct lazy r wrapper without forcing it.
+			// This flag is set only on the exact data.r edge, never on its descendants.
+			if (!records.has(id) && embeddedPartialScope && directEmbeddedOutput === true && role === "output" && value[1] === "L" && canonicalFlightId(id)) {
+				postponedDirectOutputs++;
 				continue;
 			}
 			if (!records.has(id)) return unknown("unresolved-model-reference", {
@@ -664,7 +670,7 @@ function inspectFlightBody(
 				else if (shellScope && key === "children" && role === "host-props") nextRole = "output";
 				else if (shellScope && output && Array.isArray(value)) nextRole = role;
 				else if (shellScope && role === "component-data") nextRole = role;
-				queue.push({ value: item, role: nextRole, fallbackReferences });
+				queue.push({ value: item, role: nextRole, fallbackReferences, directEmbeddedOutput: embeddedPartialScope && role === "data" && key === "r" });
 			}
 		}
 	}
@@ -784,9 +790,11 @@ function inspectFlightBody(
 				typeof data.r === "string" &&
 				/^\$@?[a-f0-9]+$/.test(data.r) &&
 				records.get(data.r.replace(/^\$@?/, ""))?.tag === "T";
+			const directLazy = typeof data.r === "string" && /^\$L([a-f0-9]+)$/.exec(data.r);
+			const postponedDirect = embeddedPartialScope && directLazy && canonicalFlightId(directLazy[1]) && !records.has(directLazy[1]);
 			if (
-				textOutput ||
-				(output !== null && output !== undefined && output !== "$undefined")
+				!postponedDirect && (textOutput ||
+				(output !== null && output !== undefined && output !== "$undefined"))
 			)
 				representedOutputs++;
 			return true;
@@ -855,12 +863,12 @@ function inspectFlightBody(
 				}
 			}
 		}
-		if (representedOutputs === 0)
+		if (representedOutputs === 0 && postponedDirectOutputs === 0)
 			return unknown("missing-represented-navigation-output");
 		patchClaims = { representedOutputs, treeNodes: seen.size,
 			...(shellScope ? { postponedOutputReferences, knownSuspenseBoundaries, knownEmptyFallbacks } : {}),
-			...(postponedComponentReferences || representedComponentFallbacks ? { postponedComponentReferences, representedComponentFallbacks, renderableOutputClaim: false } : {}) };
-		requiredStage = postponedComponentReferences || representedComponentFallbacks ? "embedded-partial-prefetch-representation" : requestKind === "embedded-runtime-prefetch" ? "embedded-runtime-prefetch-output" : shellScope ? "runtime-shell-output" : "navigation-patch";
+			...(postponedComponentReferences || representedComponentFallbacks || postponedDirectOutputs ? { postponedComponentReferences, representedComponentFallbacks, postponedDirectOutputs, renderableOutputClaim: false } : {}) };
+		requiredStage = postponedComponentReferences || representedComponentFallbacks || postponedDirectOutputs ? "embedded-partial-prefetch-representation" : requestKind === "embedded-runtime-prefetch" ? "embedded-runtime-prefetch-output" : shellScope ? "runtime-shell-output" : "navigation-patch";
 	} else if (isPartial) {
 		const staticBytes = boundary(root.l),
 			shellBytes = boundary(root.a);
@@ -931,7 +939,7 @@ const goodBody = (proof, depth = 0) => {
 	if (!Number.isSafeInteger(proof.protocolRows) || proof.protocolRows <= 0 || proof.protocolRows > 4096 ||
 		!Number.isSafeInteger(proof.modelSteps) || proof.modelSteps <= 0 || proof.modelSteps > 100000 ||
 		!Object.hasOwn(proof, "embeddedRuntimePrefetch") || depth > 1 || (proof.requestKind === "embedded-runtime-prefetch" && depth !== 1)) return false;
-	if ((Object.hasOwn(proof, "postponedComponentReferences") || Object.hasOwn(proof, "representedComponentFallbacks") || Object.hasOwn(proof, "renderableOutputClaim")) &&
+	if ((Object.hasOwn(proof, "postponedComponentReferences") || Object.hasOwn(proof, "representedComponentFallbacks") || Object.hasOwn(proof, "postponedDirectOutputs") || Object.hasOwn(proof, "renderableOutputClaim")) &&
 		proof.requiredStage !== "embedded-partial-prefetch-representation") return false;
 	const embedded = proof.embeddedRuntimePrefetch;
 	if (embedded !== null && (depth !== 0 || proof.requestKind !== "navigation" || embedded?.requestKind !== "embedded-runtime-prefetch" || !goodBody(embedded, depth + 1) ||
@@ -963,7 +971,7 @@ const goodBody = (proof, depth = 0) => {
 		return proof.requestKind === (proof.requiredStage === "runtime-shell-output" ? "runtime-shell" : "embedded-runtime-prefetch") &&
 			!proof.action && proof.marker === "partial" && proof.isPartial &&
 			Number.isSafeInteger(proof.treeNodes) && proof.treeNodes > 0 && proof.treeNodes <= 4096 &&
-			Number.isSafeInteger(proof.representedOutputs) && proof.representedOutputs > 0 && proof.representedOutputs <= proof.treeNodes + 1 &&
+			Number.isSafeInteger(proof.representedOutputs) && proof.representedOutputs >= (proof.requiredStage === "embedded-partial-prefetch-representation" ? 0 : 1) && proof.representedOutputs <= proof.treeNodes + 1 &&
 			Number.isSafeInteger(proof.postponedOutputReferences) && proof.postponedOutputReferences >= 0 && proof.postponedOutputReferences <= 100000 &&
 			Number.isSafeInteger(proof.knownSuspenseBoundaries) && proof.knownSuspenseBoundaries >= 0 && proof.knownSuspenseBoundaries <= 100000 &&
 			Number.isSafeInteger(proof.knownEmptyFallbacks) && proof.knownEmptyFallbacks >= 0 && proof.knownEmptyFallbacks <= proof.knownSuspenseBoundaries &&
@@ -971,8 +979,10 @@ const goodBody = (proof, depth = 0) => {
 			(proof.requiredStage !== "embedded-partial-prefetch-representation" ||
 				(proof.renderableOutputClaim === false && Number.isSafeInteger(proof.postponedComponentReferences) && proof.postponedComponentReferences >= 0 && proof.postponedComponentReferences <= 100000 &&
 				Number.isSafeInteger(proof.representedComponentFallbacks) && proof.representedComponentFallbacks >= 0 && proof.representedComponentFallbacks <= 100000 &&
-				proof.postponedComponentReferences + proof.representedComponentFallbacks > 0 &&
-				proof.postponedComponentReferences + proof.representedComponentFallbacks <= proof.modelSteps));
+				Number.isSafeInteger(proof.postponedDirectOutputs) && proof.postponedDirectOutputs >= 0 && proof.postponedDirectOutputs <= proof.treeNodes + 1 &&
+				proof.postponedDirectOutputs + proof.representedOutputs > 0 && proof.postponedDirectOutputs + proof.representedOutputs <= proof.treeNodes + 1 &&
+				proof.postponedComponentReferences + proof.representedComponentFallbacks + proof.postponedDirectOutputs > 0 &&
+				proof.postponedComponentReferences + proof.representedComponentFallbacks + proof.postponedDirectOutputs <= proof.modelSteps));
 	if (
 		proof.action !== (proof.requestKind === "action") ||
 		!["action", "navigation", "embedded-runtime-prefetch"].includes(proof.requestKind)
@@ -1016,6 +1026,7 @@ const bodyReceipt = (row) => {
 		"postponedOutputReferences",
 		"postponedComponentReferences",
 		"representedComponentFallbacks",
+		"postponedDirectOutputs",
 		"renderableOutputClaim",
 		"knownSuspenseBoundaries",
 		"knownEmptyFallbacks",

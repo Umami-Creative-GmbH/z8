@@ -900,6 +900,31 @@ test("runtime-shell scope permits only postponed lazy output beneath a known Sus
 	assert.doesNotMatch(JSON.stringify(missingType), /dead|KNOWN_FALLBACK/);
 });
 
+test("embedded partial cache representation can contain a direct postponed r with no concrete output claim", () => {
+	const inner='~0:{"q":"","i":false,"t":{"t":{"s":"en","d":{"r":"$L9","p":true,"v":null}}}}\n';
+	const outer=value=>Buffer.concat([Buffer.from('0:{"q":"","i":false,"t":{"t":{"s":"en","d":{"r":"MAIN","p":false,"v":null}}},"p":"$1"}\n1:R\n1:o'+Buffer.byteLength(value).toString(16)+','),Buffer.from(value),Buffer.from('1:C\n')]);
+	const proof=inspectRequiredFlightBody(outer(inner),{cachedNavigations:true});
+	assert.equal(proof.complete,true);
+	assert.equal(proof.embeddedRuntimePrefetch.requiredStage,"embedded-partial-prefetch-representation");
+	assert.equal(proof.embeddedRuntimePrefetch.postponedDirectOutputs,1);
+	assert.equal(proof.embeddedRuntimePrefetch.representedOutputs,0);
+	assert.equal(proof.embeddedRuntimePrefetch.renderableOutputClaim,false);
+	const head='~0:{"q":"","i":false,"t":{"t":{"s":"en"},"h":{"r":"$L9","p":true,"v":null}}}\n';
+	assert.equal(inspectRequiredFlightBody(outer(head),{cachedNavigations:true}).embeddedRuntimePrefetch.postponedDirectOutputs,1);
+	const input=cancellationFixture();Object.assign(input.failures[0],{bodyProof:proof,bodyReadbackComplete:true});Object.assign(input.proxy[0],{bodyProof:proof,complete:true,canceled:false});
+	const receipt=classifyControlCancellations(input);assert.equal(cleanBrowserFailureEvidence(receipt,1),true);
+	for(const changed of [{postponedDirectOutputs:undefined},{postponedDirectOutputs:0},{postponedDirectOutputs:3},{postponedDirectOutputs:"1"},{renderableOutputClaim:true},{requiredStage:"embedded-runtime-prefetch-output"}]){
+		const corrupted=structuredClone(receipt);Object.assign(corrupted.records[0].proof.failure.bodyProof.embeddedRuntimePrefetch,changed);assert.equal(cleanBrowserFailureEvidence(corrupted,1),false);
+	}
+	for(const invalid of [inner.replace(/^~/,'#'),inner.replace('"$L9"','"$9"'),inner.replace('"$L9"','"$@9"'),inner.replace('"$L9"','["$L9"]'),
+		inner.replace('"s":"en"','"s":"$L9"'),inner.replace('"p":true','"p":"$L9"'),inner.replace('"q":""','"q":"$L9"'),
+		inner.replace('"$L9"','["$","$L9",null,{}]'),inner.replace('"$L9"','["$","$Sreact.suspense",null,{"fallback":"$L9","children":"$L8"}]'),
+		inner.replace('"$L9"','"$L09"'),inner.replace('"$L9"','"$2"')+'2:"$L9"\n',inner+'9:E{"digest":"PRIVATE"}\n'])
+		assert.equal(inspectRequiredFlightBody(outer(invalid),{cachedNavigations:true}).complete,false);
+	assert.equal(inspectRequiredFlightBody(Buffer.from(inner),{cachedNavigations:true}).complete,false);
+	assert.equal(inspectRequiredFlightBody(Buffer.from(outer(inner).toString().replace('"MAIN"','"$L9"')),{cachedNavigations:true}).complete,false);
+});
+
 test("embedded partial prefetch represents postponed component props without claiming renderable output", () => {
 	const inner = '~4:I["synthetic",[],"Component"]\n0:{"q":"","i":false,"t":{"t":{"s":"en","d":{"r":["$","$4",null,{"data":"$L9"}],"p":true,"v":null}}}}\n';
 	const outer = (value) => Buffer.concat([
