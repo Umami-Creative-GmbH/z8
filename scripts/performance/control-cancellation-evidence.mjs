@@ -1,6 +1,7 @@
 /** Proofs are prospective; a canceled request is never a successful payload. */
 import { createHash } from "node:crypto";
 import { validateProxyHeaderCensus } from "./proxy-header-census.mjs";
+import {cachedCdpTextProjectionProtocol,cachedCdpTextSourceRevision,cachedCdpTextMappingSha256} from "./cdp-cached-text-projection.mjs";
 export const controlCancellationPolicy = Object.freeze({
 	version: 2,
 	protocol: "positively-proven-protocol-controls-v2",
@@ -1206,6 +1207,7 @@ const bodyReceipt = (row) => {
 	const proof = pick(row, [
 		"protocol",
 		"complete",
+		"reason",
 		"requestKind",
 		"marker",
 		"isPartial",
@@ -1264,12 +1266,14 @@ const requestReceipt = (row) => ({
 		"requestHeadersKnown",
 		"requestHeaderSnapshotKnown",
 		"responseHeaderSnapshotKnown",
+		"responseContentType",
 		"initialSegmentResponse",
 		"responseDeploymentSha256",
 		"postponed",
 		"vary",
 		"transportBodyReceipt",
 		"bodyReadbackReceipt",
+		"browserDataLedger",
 		"rsc",
 		"purposeHeaderPresent",
 		"secPurposeHeaderPresent",
@@ -1325,7 +1329,7 @@ const knownNativeContext = context => {
 			!knownNativePublicSources(binding.nativePublicSources,binding.compiledBuild,binding.compiledManifestSha256) ||
 			!context.protocolSources || Object.keys(context.protocolSources).length > 64 || Object.entries(context.protocolSources).some(([file,sha])=>file.length > 256 || !digest(sha)) ||
 			!["run-baseline.mjs","settled-resources.mjs","mixed-load-probe.mjs"].includes(context.operatorFile) ||
-			![context.operatorFile,"browser-control-collector.mjs","fixture-browser.mjs","trace-transport.mjs","action-result-observer.mjs","proxy-header-census.mjs"].every(file=>digest(context.protocolSources?.[file]))) return false;
+			![context.operatorFile,"browser-control-collector.mjs","fixture-browser.mjs","trace-transport.mjs","action-result-observer.mjs","proxy-header-census.mjs","cdp-cached-text-projection.mjs"].every(file=>digest(context.protocolSources?.[file]))) return false;
 		const errors=context.protocolErrors;
 		if(errors?.protocol !== "positive-flight-error-observations-v1" || errors.contextId !== context.contextId || errors.installed !== true || errors.scopeClosed !== true ||
 			errors.observed !== 0 || errors.overflow !== 0 || !Array.isArray(errors.records) || errors.records.length !== 0) return false;
@@ -1398,6 +1402,34 @@ const goodNativeSegmentBody = (row,context) => {
 		binding.deploymentSource === (binding.responseDeploymentSha256 === null ? "body" : "response-header");
 };
 
+const nativeCachedBytes = (cached,origin,packet,context) => {
+	const read=cached.bodyReadbackReceipt,proof=origin.bodyProof,bytes=proof.decodedBytes,hash=proof.bodySha256;
+	if(cached.bodyReadbackComplete!==true || read?.available!==true || ![true,false].includes(read.base64Encoded) ||
+		!Number.isSafeInteger(read.decodedBytes) || read.decodedBytes<=0 || read.decodedBytes>controlCancellationPolicy.decodedLimit || !digest(read.bodySha256)) return null;
+	if((cached.bodyProof?.bodySha256!==undefined && cached.bodyProof.bodySha256!==read.bodySha256) ||
+		(cached.bodyProof?.decodedBytes!==undefined && cached.bodyProof.decodedBytes!==read.decodedBytes)) return null;
+	for(const row of [origin,packet]) if(row.transportBodyReceipt?.protocol!=="proxy-natural-eof-decoded-bytes-v1" || row.transportBodyReceipt.naturalEOF!==true ||
+		row.transportBodyReceipt.bodySha256!==hash || row.transportBodyReceipt.decodedBytes!==bytes || row.bodyProof.bodySha256!==hash || row.bodyProof.decodedBytes!==bytes) return null;
+	const base={protocol:"cached-native-byte-correspondence-v1",originalBytes:bytes,originalSha256:hash,readbackBytes:read.decodedBytes,readbackSha256:read.bodySha256};
+	if(goodNativeSegmentBody(cached,context) && read.decodedBytes===cached.bodyProof.decodedBytes && read.bodySha256===cached.bodyProof.bodySha256 && read.decodedBytes===bytes && read.bodySha256===hash &&
+		(read.base64Encoded===true || (read.utf16CodeUnitLength===read.decodedBytes && read.observedDataLengthAtReadback===read.decodedBytes && read.responseContentType?.headerKnown===true && read.responseContentType.mime==="text/x-component" && read.responseContentType.charset==="absent"))) return {...base,kind:"exact"};
+	const ledger=cached.browserDataLedger,effective=read.effectiveCdpResponse,response=cached.initialSegmentResponse ?? cached;
+	if(read.base64Encoded!==false || read.terminal!=="finished" || cached.failed!==false || cached.ambiguousRedirect!==false ||
+		ledger?.protocol!=="cached-browser-data-ledger-v1" || ledger.requestObserved!==true || ledger.responseEvents!==1 || ledger.finishedEvents!==1 || ledger.failedEvents!==0 ||
+		!Number.isSafeInteger(ledger.dataEvents) || ledger.dataEvents<=0 || ledger.dataAfterTerminal!==0 || ledger.dataBeforeResponse!==0 || ledger.responseAfterTerminal!==0 || ledger.terminalBeforeResponse!==0 || ledger.invalidData!==false || ledger.observedDataLength!==bytes ||
+		read.observedDataLengthAtReadback!==bytes || read.utf16CodeUnitLength!==bytes ||
+		effective?.protocol!=="cdp-effective-response-decoder-metadata-v1" || effective.provenance!=="Network.responseReceived" || effective.mimeKnown!==true || effective.mime!=="text/x-component" || effective.charsetKnown!==true || effective.charset!=="empty" ||
+		![response.responseContentType,read.responseContentType].every(row=>row?.headerKnown===true && row.mime==="text/x-component" && row.charset==="absent") ||
+		cached.requestHeaderSnapshotKnown!==true || response.responseHeaderSnapshotKnown!==true || response.status!==200 || cached.status!==200 || response.flight!==true || response.postponed!==true ||
+		cached.method!=="GET" || cached.action!==false || cached.rsc!==true || cached.prefetch!==true ||
+		cached.headerFieldSha256?.["next-router-segment-prefetch"]!==proof.segmentBinding.requestKeySha256 || response.responseDeploymentSha256!==bodySha256(Buffer.from(context.binding.compiledBuild))) return null;
+	const keys=["protocol","sourceRevision","mappingSha256","originalBytes","originalSha256","outputCodeUnits","utf8Bytes","utf8Sha256"];
+	const projected=origin.transportBodyReceipt.cdpTextProjection,current=packet.transportBodyReceipt.cdpTextProjection;
+	if(![projected,current].every(row=>row?.available===true && Object.keys(row).length===keys.length+1 && row.protocol===cachedCdpTextProjectionProtocol && row.sourceRevision===cachedCdpTextSourceRevision && row.sourceRevision===chromiumSWRRevision &&
+		row.mappingSha256===cachedCdpTextMappingSha256 && row.originalBytes===bytes && row.originalSha256===hash && row.outputCodeUnits===bytes && row.utf8Bytes===read.decodedBytes && row.utf8Sha256===read.bodySha256)) return null;
+	return {...base,kind:"windows-1252-forward-image",projection:Object.fromEntries(keys.map(key=>[key,projected[key]]))};
+};
+
 function nativeKnownExtraProof(failure,packet,responses,proxy,context,browserRevision) {
 	try {
 	if(browserRevision !== chromiumSWRRevision || !knownNativeContext(context) || !nativeContextDigest(context) || failure.contextId !== context.contextId || failure.requestHeadersKnown !== true ||
@@ -1424,15 +1456,12 @@ function nativeKnownExtraProof(failure,packet,responses,proxy,context,browserRev
 	if(!knownHeaders(cached.initialHeaderIdentity) || !controlIdentityHeaders.every(key=>cached.initialHeaderIdentity.headerFieldSha256[key]===initial.headerFieldSha256[key])) return null;
 	const origins=proxy.filter(row=>row.id===cached.proxyResponseId && row.contextId===failure.contextId && row.fullUrlSha256===cached.fullUrlSha256 && row.method==="GET" && row.requestKind==="segment-prefetch");
 	if(origins.length!==1) return null;
-	const origin=origins[0],read=cached.bodyReadbackReceipt;
+	const origin=origins[0];
 	if(!knownHeaders(origin)) return null;
 	if(![cached,origin,packet].every(row=>Number.isSafeInteger(row.staleWhileRevalidateSeconds) && row.staleWhileRevalidateSeconds>0)) return null;
-	if(origin.id===packet.id || origin.requestOriginSha256 !== context.originSha256 || origin.complete!==true || origin.canceled!==false || origin.upstreamError!==false || !goodNativeSegmentBody(origin,context) || !goodNativeSegmentBody(cached,context) ||
-		cached.requestOriginSha256!==context.originSha256 || cached.bodyReadbackComplete!==true || read?.available!==true || ![true,false].includes(read.base64Encoded) ||
-		read.decodedBytes!==cached.bodyProof.decodedBytes || read.bodySha256!==cached.bodyProof.bodySha256 ||
-		(read.base64Encoded===false && (read.utf16CodeUnitLength!==read.decodedBytes || read.observedDataLengthAtReadback!==read.decodedBytes || read.responseContentType?.headerKnown!==true || read.responseContentType.mime!=="text/x-component" || read.responseContentType.charset!=="absent"))) return null;
-	for(const row of [origin,packet]) if(row.transportBodyReceipt?.protocol!=="proxy-natural-eof-decoded-bytes-v1" || row.transportBodyReceipt.naturalEOF!==true ||
-		row.transportBodyReceipt.bodySha256!==cached.bodyProof.bodySha256 || row.transportBodyReceipt.decodedBytes!==cached.bodyProof.decodedBytes || row.bodyProof.bodySha256!==cached.bodyProof.bodySha256 || row.bodyProof.decodedBytes!==cached.bodyProof.decodedBytes) return null;
+	if(origin.id===packet.id || origin.requestOriginSha256 !== context.originSha256 || origin.complete!==true || origin.canceled!==false || origin.upstreamError!==false || !goodNativeSegmentBody(origin,context) || cached.requestOriginSha256!==context.originSha256) return null;
+	const byteCorrespondence=nativeCachedBytes(cached,origin,packet,context);
+	if(!byteCorrespondence) return null;
 	const fields=origin.vary?.fields;
 	if(!Array.isArray(fields) || !["rsc","next-router-prefetch","next-router-segment-prefetch"].every(field=>fields.includes(field)) || new Set(fields).size!==fields.length ||
 		![cached,origin,packet].every(row=>row.vary?.known===true && row.vary.star===false && row.vary.unknownFields===0 && JSON.stringify(row.vary.fields)===JSON.stringify(fields))) return null;
@@ -1444,7 +1473,7 @@ function nativeKnownExtraProof(failure,packet,responses,proxy,context,browserRev
 		![origin,packet].every(row=>context.headerCensus.requests.filter(entry=>entry.requestId===row.id && entry.observation==="headers").length===1) ||
 		[cached,origin,packet,failure].some(row=>row.observedProtocolError?.serverErrors>0 || row.observedProtocolError?.explicitActionFailure===true || row.bodyProof?.serverErrors>0 || row.bodyProof?.explicitActionFailure===true || row.httpErrorObserved===true || row.status>=400)) return null;
 	return {failure:requestReceipt(failure),packet:requestReceipt(packet),cached:requestReceipt(cached),origin:requestReceipt(origin),browserRevision,proxyCandidates:1,cachedCandidates:1,originCandidates:1,
-		nativeContextSha256:nativeContextDigest(context)};
+		nativeContextSha256:nativeContextDigest(context),byteCorrespondence};
 	}catch{return null;}
 }
 
@@ -1630,7 +1659,7 @@ function browserFailureEvidenceMatches(evidence, rawFailedRequests, scope, requi
 		});
 		if (
 			verified.provenControls !== 1 ||
-			verified.records[0].reason !== row.reason
+			verified.records[0].reason !== row.reason || (row.reason === "qualified-cached-flight-native-revalidation" && JSON.stringify(verified.records[0].proof.byteCorrespondence)!==JSON.stringify(proof.byteCorrespondence))
 		)
 			return false;
 	}

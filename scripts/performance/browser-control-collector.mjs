@@ -679,6 +679,8 @@ export function createBrowserControlCollector({
 			).length,
 			pendingBodies: pending.size + queue.length + proxy.pendingBodies,
 		};
+		for(const row of rows()) row.browserDataLedger={protocol:"cached-browser-data-ledger-v1",requestObserved:true,responseEvents:row.responseEvents,finishedEvents:row.finishedEvents,failedEvents:row.failedEvents,
+			dataEvents:row.dataEvents,dataAfterTerminal:row.dataAfterTerminal,dataBeforeResponse:row.dataBeforeResponse,responseAfterTerminal:row.responseAfterTerminal,terminalBeforeResponse:row.terminalBeforeResponse,invalidData:row.observedDataLengthInvalid===true,observedDataLength:row.observedDataLength};
 		const sources = [...rows().map((row) => ({ source: "browser", row })), ...proxy.rows.map((row) => ({ source: "proxy", row }))];
 		const protocolErrorRecords = sources.flatMap(({ source, row }) => {
 			const history = row.protocolErrorObservations ?? (hasProtocolError(row.bodyProof) ? [protocolErrorFact(row.bodyProof, "latest-proof",
@@ -869,6 +871,7 @@ export function createBrowserControlCollector({
 					action: row.action,
 					bodyReadbackComplete: row.bodyReadbackComplete === true,
 					bodyReadbackReceipt: row.bodyReadbackReceipt ?? null,
+					browserDataLedger:row.browserDataLedger,
 					streamReceipt: row.streamReceipt ?? null,
 					bodyProof: row.bodyProof ?? null,
 				})),
@@ -939,6 +942,7 @@ export function createBrowserControlCollector({
 				applicationOrigin: new URL(event.request.url).origin === origin,
 				ambiguousRedirect: previous !== undefined,
 				observedInMeasurement: measurementStarted && !measurementClosed,
+				responseEvents:0,finishedEvents:0,failedEvents:0,dataEvents:0,dataAfterTerminal:0,dataBeforeResponse:0,responseAfterTerminal:0,terminalBeforeResponse:0,observedDataLength:0,
 			};
 			row.initialHeaderIdentity = headerIdentity(event.request.headers);
 			requests.set(event.requestId, row);
@@ -966,6 +970,8 @@ export function createBrowserControlCollector({
 				missingEvent("responseBeforeRequest");
 				return;
 			}
+			row.responseEvents++;
+			if(row.loadingFinished || row.failed) row.responseAfterTerminal++;
 			Object.assign(
 				row,
 				controlResponseMetadata(event.response.headers, event.response.status),
@@ -1008,6 +1014,8 @@ export function createBrowserControlCollector({
 				missingEvent("finishedBeforeRequest");
 				return;
 			}
+			row.finishedEvents++;
+			if(row.responseEvents===0) row.terminalBeforeResponse++;
 			row.loadingFinished = true;
 			row.failed ??= false;
 			row.finishedAt = event.timestamp;
@@ -1023,6 +1031,8 @@ export function createBrowserControlCollector({
 				missingEvent("failedBeforeRequest");
 				return;
 			}
+			row.failedEvents++;
+			if(row.responseEvents===0) row.terminalBeforeResponse++;
 			if (captureContextFailures && !measurementClosed && row.observedInMeasurement) recordMeasuredFailure(event.requestId);
 			if (row.failed) {
 				errors++;
@@ -1043,6 +1053,9 @@ export function createBrowserControlCollector({
 				missingEvent("dataBeforeRequest");
 				return;
 			}
+			row.dataEvents++;
+			if(row.responseEvents===0) row.dataBeforeResponse++;
+			if(row.loadingFinished || row.failed) row.dataAfterTerminal++;
 			if (!Number.isSafeInteger(event.dataLength) || event.dataLength < 0) {
 				row.observedDataLengthInvalid = true;
 				if (row.stream) row.stream.reason = "invalid-data-length";
