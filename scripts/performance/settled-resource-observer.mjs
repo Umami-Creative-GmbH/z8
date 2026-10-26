@@ -31,6 +31,7 @@ export function createSettledObserver() {
     redirects = [];
   let started,
     readyAt,
+    failedRequests = null,
     lastActivity = 0;
   const eventAt = (at) => {
     lastActivity = Math.max(lastActivity, at);
@@ -56,6 +57,7 @@ export function createSettledObserver() {
           group,
           done: false,
           error: false,
+          observedAfterStart: started !== undefined,
           bytes: null,
           inherited:
             started === undefined ||
@@ -101,6 +103,7 @@ export function createSettledObserver() {
     failed(event, at) {
       const r = requests.get(event.requestId);
       if (!r) return;
+      if (r.observedAfterStart) failedRequests++;
       r.done = true;
       r.error = true;
       if (!["prefetch", "longLived"].includes(r.group)) eventAt(at);
@@ -109,6 +112,7 @@ export function createSettledObserver() {
       for (const [id, r] of requests) if (r.done) requests.delete(id);
       redirects.length = 0;
       started = at;
+      failedRequests = 0;
       lastActivity = at;
     },
     ready(at) {
@@ -168,6 +172,7 @@ export function createSettledObserver() {
           readyAt + settledPolicy.postReadyCapMs &&
         at - lastActivity >= settledPolicy.quietMs;
       return {
+        failedRequests,
         complete,
         capped: capped && !complete,
         censored: !complete,

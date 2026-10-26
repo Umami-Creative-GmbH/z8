@@ -195,6 +195,7 @@ test("resource eligibility rejects failed original and HEAD behavior even with c
       iteration,
       traceId: `${mode}-${iteration}`,
       failed: false,
+      failedRequests: 0,
       readyMs: 1000,
       traceTransport: {
         kind: "context-loopback-proxy-v1",
@@ -267,6 +268,18 @@ test("resource eligibility rejects failed original and HEAD behavior even with c
   assert.doesNotThrow(() =>
     requireSettledEvidence(plan, artifact, native, "hash"),
   );
+  for (const phase of ["baseline", "release"])
+    for (const failedRequests of [1, undefined, null, "0", 0.5]) {
+      const candidatePlan = { ...plan, phase, timeoutMs: phase === "baseline" ? 90000 : 30000 };
+      const candidate = structuredClone(artifact);
+      candidate.phase = phase;
+      for (const sample of candidate.samples)
+        for (const proof of sample.prerequisiteQuiescence)
+          proof.capMs = candidatePlan.timeoutMs;
+      assert.doesNotThrow(() => requireSettledEvidence(candidatePlan, candidate, native, "hash"));
+      candidate.samples[0].failedRequests = failedRequests;
+      assert.throws(() => requireSettledEvidence(candidatePlan, candidate, native, "hash"), /complete settled-resource/i);
+    }
   // The original annual pool saturation is failed behavior with observable traffic.
   const annualPlan = structuredClone(plan),
     failedBefore = structuredClone(artifact),

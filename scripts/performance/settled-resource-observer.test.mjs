@@ -4,6 +4,25 @@ import {
   createSettledObserver,
   settledPolicy,
 } from "./settled-resource-observer.mjs";
+
+test("raw loading failures count every measured CDP failure including prefetch", () => {
+  const observer = createSettledObserver();
+  assert.equal(observer.state(0).failedRequests, null);
+  observer.request({ requestId: "old", type: "Script" }, 0);
+  observer.begin(1);
+  assert.equal(observer.state(1).failedRequests, 0);
+  observer.failed({ requestId: "old" }, 2);
+  observer.failed({ requestId: "unknown" }, 2);
+  assert.equal(observer.state(2).failedRequests, 0);
+  observer.request({ requestId: "prefetch", type: "Fetch", request: { headers: { "next-router-prefetch": "1" } } }, 3);
+  observer.failed({ requestId: "prefetch", canceled: true, errorText: "net::ERR_ABORTED" }, 4);
+  assert.equal(observer.state(4).failedRequests, 1);
+  observer.request({ requestId: "script", type: "Script" }, 5);
+  observer.failed({ requestId: "script" }, 6);
+  assert.equal(observer.state(6).failedRequests, 2);
+  observer.begin(7);
+  assert.equal(observer.state(7).failedRequests, 0);
+});
 test("settling drains mandatory finite traffic and separates explicit prefetch and long-lived traffic", () => {
   const o = createSettledObserver();
   o.begin(0);

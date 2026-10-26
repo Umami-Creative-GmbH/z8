@@ -275,6 +275,20 @@ test("derivation emits fresh release budgets without modifying the baseline", ()
   assert.equal(readFileSync(join(f.dir, "before-plan.json"), "utf8"), old);
 });
 
+test("before derivation rejects positive or unknown raw browser failures", () => {
+  const f = fixture();
+  for (const failedRequests of [1, undefined, null, "0", 0.5]) {
+    f.artifact.samples[0].failedRequests = failedRequests;
+    f.saveBefore();
+    const derived = f.derive();
+    assert.equal(derived.status, 2, derived.stdout + derived.stderr);
+    assert.match(derived.stderr, /failed browser requests/i);
+  }
+  f.artifact.samples[0].failedRequests = 0;
+  f.saveBefore();
+  assert.equal(f.derive().status, 0);
+});
+
 test("common Next stream patch is mandatory and matched for derivation and head comparison", () => {
   for (const change of [
     (p, a) => {
