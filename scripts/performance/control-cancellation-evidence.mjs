@@ -757,6 +757,9 @@ function inspectFlightBody(
 				yieldCount:record?.stream && ["X","x"].includes(record.tag) ? record.value.length-(record.closed?1:0) : null,firstRejectedYield:null};
 			if (!direct || !record?.stream || !record.closed || !["X","x"].includes(record.tag)) { iterableFailure=observation; return false; }
 			for (const item of record.value.slice(0,-1)) {
+				// React emits stream strings as T rows. Only this branded, literal Vary-param
+				// yield is a string here; never resolve its contents or coerce stale-time data.
+				if (accepts === varyId && item && typeof item === "object" && opaqueText.has(item) && typeof item.textValue === "string") continue;
 				const value = resolve(item);
 				if (!accepts(value)) { observation.firstRejectedYield={rawKind:valueKind(item),resolvedKind:valueKind(value)}; iterableFailure=observation; return false; }
 			}
