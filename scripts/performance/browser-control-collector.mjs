@@ -11,6 +11,8 @@ import {
 	knownBrowserControlMetadata,
 	knownNativePublicSources,
 	controlIdentityHeaders,
+	canonicalRouteScalarFacts,
+	routePathSourceDigest,
 } from "./control-cancellation-evidence.mjs";
 import { createProxyHeaderCensus } from "./proxy-header-census.mjs";
 import { projectCachedCdpText } from "./cdp-cached-text-projection.mjs";
@@ -19,6 +21,7 @@ export const controlResponseHeader = "x-z8-fixture-response-id";
 export const controlDocumentHeader = "x-z8-fixture-document-generation";
 export const mixedBrowserWorkScope = "all-mixed-context-work-before-first-app-io-through-finite-settlement-v1";
 const sha = (value) => createHash("sha256").update(value).digest("hex");
+const scalarFactBytes=facts=>facts?.known===true?Buffer.byteLength(JSON.stringify(facts))+1024:0;
 const ownData=(object,key)=>{
 	try{const field=object && typeof object==="object"?Object.getOwnPropertyDescriptor(object,key):null;return field && Object.hasOwn(field,"value")?{present:true,value:field.value}:{present:field!==undefined && field!==null,unknown:field!==undefined && field!==null};}catch{return {present:false,unknown:true};}
 };
@@ -34,7 +37,7 @@ export function compiledRoutingSourceFacts(config,manifestSha256){
 		basePathOwnKnown:baseKnown,basePathEmpty:baseKnown?base.value==="":null,basePathBytes:baseKnown?Buffer.byteLength(base.value):null,basePathSha256:baseKnown?sha(base.value):null,
 		outputFieldPresent:output.present,outputKnown,output:outputKnown?(output.present?output.value:"absent"):"unknown"};
 }
-const routingURLFacts=(raw,compiled,origin,provenance)=>{
+const routingURLFacts=(raw,compiled,origin,provenance,collectScalars=false)=>{
 	let url;try{if(boundedText(raw))url=new URL(raw);}catch{}
 	const actual={known:Boolean(url && ["http:","https:"].includes(url.protocol) && !url.username && !url.password),provenance,bytes:boundedText(raw)?Buffer.byteLength(raw):null,sha256:boundedText(raw)?sha(raw):null,originSha256:url?sha(url.origin):null,originMatches:url&&typeof origin==="string"?url.origin===origin:null};
 	let fallback={known:false,reason:"unknown-response-url",pathnameSha256:null,pathnameBytes:null,partsCount:null,searchSha256:null,searchBytes:null};
@@ -44,6 +47,7 @@ const routingURLFacts=(raw,compiled,origin,provenance)=>{
 	if(compiled.basePathEmpty!==true)return {actual,fallback:{...fallback,reason:"unsupported-nonempty-base-path"}};
 	try{url.searchParams.delete("_rsc");const search=normalizeRoutingSearch(url.search);
 		fallback={known:true,reason:null,pathnameSha256:sha(url.pathname),pathnameBytes:Buffer.byteLength(url.pathname),partsCount:url.pathname.split("/").filter(Boolean).length,searchSha256:sha(search),searchBytes:Buffer.byteLength(search)};
+		if(collectScalars)fallback.scalarKeys=canonicalRouteScalarFacts(url.pathname);
 	}catch{fallback={...fallback,reason:"unsupported-search-normalization"};}
 	return {actual,fallback};
 };
@@ -70,12 +74,12 @@ const rewriteSourceFacts=headers=>{
 };
 
 /** Source observations only; an unknown routing mode never selects a guessed pathname. */
-export function renderedPathSourceFacts({response,compiledRouting,origin,requestURLFacts}={}){
+export function renderedPathSourceFacts({response,compiledRouting,origin,requestURLFacts,collectScalars=false,responseOrdinal=null,observerSourceSha256=null}={}){
 	const urlField=ownData(response,"url"),headersField=ownData(response,"headers");
-	const urlFacts=requestURLFacts ?? routingURLFacts(!urlField.unknown && urlField.present?urlField.value:undefined,compiledRouting,origin,"Network.responseReceived.url");
+	const urlFacts=requestURLFacts ?? routingURLFacts(!urlField.unknown && urlField.present?urlField.value:undefined,compiledRouting,origin,"Network.responseReceived.url",collectScalars);
 	const rewrite=rewriteSourceFacts(!headersField.unknown && headersField.present?headersField.value:null),facts=rewrite.facts;
 	const status=ownData(response,"status"),statusKnown=!status.unknown && status.present && Number.isSafeInteger(status.value) && status.value>=100 && status.value<=599;
-	const result={protocol:"rendered-path-source-facts-v1",sourceKnown:urlFacts.actual.known && facts.snapshotKnown && compiledRouting?.basePathOwnKnown===true && compiledRouting.outputKnown===true,
+	const result={protocol:"rendered-path-source-facts-v1",responseOrdinal,observerSourceSha256,sourceKnown:urlFacts.actual.known && facts.snapshotKnown && compiledRouting?.basePathOwnKnown===true && compiledRouting.outputKnown===true,
 		responseStatusKnown:statusKnown,responseStatus:statusKnown?status.value:null,compiledRouting:compiledRouting ?? null,url:urlFacts.actual,rewrite:facts,rendered:{known:false,reason:"unknown-rewrite-header-snapshot",pathnameSource:null,pathnameSha256:null,pathnameBytes:null,partsCount:null,searchSource:null,searchSha256:null,searchBytes:null}};
 	if(!facts.snapshotKnown || !facts.path.known || !facts.query.known)return result;
 	try{let path,search;const rendered=result.rendered;
@@ -85,6 +89,7 @@ export function renderedPathSourceFacts({response,compiledRouting,origin,request
 		if(facts.query.present){const normalized=normalizeRoutingSearch(rewrite.query);search={searchSha256:sha(normalized),searchBytes:Buffer.byteLength(normalized)};rendered.searchSource="rewrite-header";}
 		else{if(!urlFacts.fallback.known)return {...result,rendered:{...rendered,reason:urlFacts.fallback.reason}};search=urlFacts.fallback;rendered.searchSource=urlFacts.actual.provenance==="Network.responseReceived.url"?"response-url":"owned-proxy-request-url-no-follow";}
 		Object.assign(rendered,{known:true,reason:null,...Object.fromEntries(["pathnameSha256","pathnameBytes","partsCount"].map(key=>[key,path[key]])),...Object.fromEntries(["searchSha256","searchBytes"].map(key=>[key,search[key]]))});
+		if(collectScalars && !facts.path.present && !facts.query.present && urlFacts.fallback.scalarKeys)result.scalarKeys={...urlFacts.fallback.scalarKeys,sourceSha256:routePathSourceDigest(result)};
 	}catch{result.rendered.reason="unsupported-search-normalization";}
 	return result;
 }
@@ -98,21 +103,26 @@ const shaChunks = (chunks) => {
 	return hash.digest("hex");
 };
 const hasProtocolError = (proof) => proof?.serverErrors > 0 || proof?.explicitActionFailure === true;
-const protocolErrorFact = (proof, capture, bodySha256) => ({
+const protocolErrorFact = (proof, capture, bodySha256,row) => ({
 	capture,
 	serverErrors: Number.isSafeInteger(proof.serverErrors) && proof.serverErrors > 0 ? proof.serverErrors : 0,
 	explicitActionFailure: proof.explicitActionFailure === true,
 	reason: ["flight-server-error", "embedded-runtime-prefetch-incomplete", "explicit-root-action-failure"].includes(proof.reason) ? proof.reason : "observed-protocol-error",
 	bodySha256: /^[a-f0-9]{64}$/.test(bodySha256 ?? "") ? bodySha256 : null,
+	requestKind:["action","navigation","route-tree","segment-prefetch","runtime-shell","embedded-runtime-prefetch"].includes(row?.requestKind)?row.requestKind:"unknown",
+	actionKnown:row?.requestHeaderSnapshotKnown===true && typeof row.action==="boolean",action:row?.requestHeaderSnapshotKnown===true && typeof row.action==="boolean"?row.action:null,
+	nextActionHeader:{known:row?.requestHeaderSnapshotKnown===true && Object.hasOwn(row.headerFieldSha256 ?? {},"next-action"),sha256:row?.requestHeaderSnapshotKnown===true?row.headerFieldSha256?.["next-action"] ?? null:null,
+		provenance:row?.id?"owned-proxy-request":row?.extraHeaderIdentity?.requestHeaderSnapshotKnown===true?"request-extra-info":row?.initialHeaderIdentity?.requestHeaderSnapshotKnown===true?"initial-request-event":"unknown"},
+	returnedError:proof.returnedError?.known===true && Number.isSafeInteger(proof.returnedError.utf8Bytes) && proof.returnedError.utf8Bytes>=0 && proof.returnedError.utf8Bytes<=controlCancellationPolicy.decodedLimit && /^[a-f0-9]{64}$/.test(proof.returnedError.sha256 ?? "")?{known:true,utf8Bytes:proof.returnedError.utf8Bytes,sha256:proof.returnedError.sha256}:{known:false,utf8Bytes:null,sha256:null},
 });
 const assignBodyProof = (row, proof, capture, bodySha256) => {
 	row.bodyProof = proof;
 	if (!hasProtocolError(proof)) return;
-	const fact = protocolErrorFact(proof, capture, bodySha256);
+	const fact = protocolErrorFact(proof, capture, bodySha256,row);
 	row.observedProtocolError = { serverErrors: Math.max(row.observedProtocolError?.serverErrors ?? 0, fact.serverErrors),
 		explicitActionFailure: row.observedProtocolError?.explicitActionFailure === true || fact.explicitActionFailure };
 	const history = row.protocolErrorObservations ??= [];
-	if (history.some((prior) => JSON.stringify(prior) === JSON.stringify(fact))) return;
+	if (history.some((prior) => ["capture","serverErrors","explicitActionFailure","reason","bodySha256"].every(key=>prior[key]===fact[key]))) return;
 	if (history.length >= 2) { row.protocolErrorObservationOverflow = (row.protocolErrorObservationOverflow ?? 0) + 1; return; }
 	history.push(fact);
 };
@@ -495,7 +505,7 @@ function bodyInspectionOptions(row, compiledCachedNavigations, compiledBinding) 
 			manifestVerified:knownBrowserControlMetadata(compiledBinding) && compiledBinding?.manifestVerified === true &&
 				row.requestHeaderSnapshotKnown === true && response.responseHeaderSnapshotKnown === true,
 		};
-		if(row.requestKind==="route-tree") options.routeTreeBinding=row.segmentRequestBinding;
+		if(row.requestKind==="route-tree") options.routeTreeBinding={...row.segmentRequestBinding,pathSourceFacts:row.pathSourceFacts,requestUrlSha256:row.fullUrlSha256,requestOriginSha256:row.requestOriginSha256,ambiguousRedirect:row.id?false:row.ambiguousRedirect};
 		else options.segmentBinding = row.segmentRequestBinding;
 	}
 	return options;
@@ -758,7 +768,7 @@ export function createBrowserControlCollector({
 		const sources = [...rows().map((row) => ({ source: "browser", row })), ...proxy.rows.map((row) => ({ source: "proxy", row }))];
 		const protocolErrorRecords = sources.flatMap(({ source, row }) => {
 			const history = row.protocolErrorObservations ?? (hasProtocolError(row.bodyProof) ? [protocolErrorFact(row.bodyProof, "latest-proof",
-				row.transportBodyReceipt?.bodySha256 ?? row.bodyReadbackReceipt?.bodySha256 ?? row.streamReceipt?.capturedBodySha256)] : []);
+				row.transportBodyReceipt?.bodySha256 ?? row.bodyReadbackReceipt?.bodySha256 ?? row.streamReceipt?.capturedBodySha256,row)] : []);
 			return history.map((fact) => ({ source, contextId: row.contextId, requestId: row.requestId ?? row.id,
 				proxyResponseId: row.proxyResponseId ?? (source === "proxy" ? row.id : null), ...fact }));
 		});
@@ -1059,7 +1069,12 @@ export function createBrowserControlCollector({
 			);
 			row.initialResponseVary = row.vary;
 			row.initialSegmentResponse = controlResponseMetadata(event.response.headers,event.response.status);
-			row.pathSourceFacts=renderedPathSourceFacts({response:event.response,compiledRouting:compiledRoutingForBinding(compiledBinding),origin});
+			if(!row.pathSourceFacts){
+				row.pathSourceFacts=renderedPathSourceFacts({response:event.response,compiledRouting:compiledRoutingForBinding(compiledBinding),origin,collectScalars:row.requestKind==="route-tree" && row.rsc && row.prefetch,responseOrdinal:row.responseEvents,observerSourceSha256:protocolSources?.["browser-control-collector.mjs"] ?? null});
+				const scalarBytes=scalarFactBytes(row.pathSourceFacts.scalarKeys);
+				if(retained+scalarBytes>controlCancellationPolicy.retainedLimit){overflow++;row.pathSourceFacts.scalarKeys={known:false,reason:"scalar-retention-limit"};}
+				else retained+=scalarBytes;
+			}
 			const mimeField=Object.getOwnPropertyDescriptor(event.response,"mimeType"),charsetField=Object.getOwnPropertyDescriptor(event.response,"charset");
 			const mime=mimeField && Object.hasOwn(mimeField,"value") && typeof mimeField.value === "string" && mimeField.value.length<=128 ? mimeField.value.toLowerCase() : null;
 			const charset=charsetField && Object.hasOwn(charsetField,"value") && typeof charsetField.value === "string" && charsetField.value.length<=64 ? charsetField.value.toLowerCase() : null;
@@ -1176,6 +1191,7 @@ export async function installBrowserControlCollector({
 	let workerObservation, endMetadata = null;
 	const proxy = createProxyControlCollector({
 		origin,
+		protocolSources,
 		contextId,
 		compiledCachedNavigations,
 		compiledBinding:environmentBinding,
@@ -1267,6 +1283,7 @@ export async function installBrowserControlCollector({
 export function createProxyControlCollector({
 	contextId,
 	origin,
+	protocolSources,
 	compiledCachedNavigations,
 	compiledBinding,
 }) {
@@ -1307,14 +1324,20 @@ export function createProxyControlCollector({
 				overflow++;
 				return;
 			}
+			const identity=controlRequestIdentity(contextId,url,method,headers);
+			const urlFacts=routingURLFacts(url,compiledRoutingForBinding(compiledBinding),origin,"owned-proxy-request-url-no-follow",identity.requestKind==="route-tree" && identity.rsc && identity.prefetch);
+			const scalarBytes=scalarFactBytes(urlFacts.fallback.scalarKeys);
+			if(retained+scalarBytes>controlCancellationPolicy.retainedLimit){overflow++;urlFacts.fallback.scalarKeys={known:false,reason:"scalar-retention-limit"};}
+			else retained+=scalarBytes;
 			requests.set(id, {
-				...controlRequestIdentity(contextId, url, method, headers),
-				requestURLFacts:routingURLFacts(url,compiledRoutingForBinding(compiledBinding),origin,"owned-proxy-request-url-no-follow"),
+				...identity,
+				requestURLFacts:urlFacts,
 				id,
 				traceId,
 				upstreamError: false,
 				canceled: false,
 				complete: false,
+				responseEvents:0,
 				chunks: [],
 				retainedBytes: 0,
 			});
@@ -1327,7 +1350,8 @@ export function createProxyControlCollector({
 				return;
 			}
 			Object.assign(row, controlResponseMetadata(headers, status));
-			row.pathSourceFacts=renderedPathSourceFacts({response:{headers,status},compiledRouting:compiledRoutingForBinding(compiledBinding),origin,requestURLFacts:row.requestURLFacts});
+			row.responseEvents++;
+			row.pathSourceFacts ??= renderedPathSourceFacts({response:{headers,status},compiledRouting:compiledRoutingForBinding(compiledBinding),origin,requestURLFacts:row.requestURLFacts,collectScalars:row.requestKind==="route-tree" && row.rsc && row.prefetch,responseOrdinal:row.responseEvents,observerSourceSha256:protocolSources?.["browser-control-collector.mjs"] ?? null});
 			row.encoding = lowerHeaders(headers)["content-encoding"] ?? "identity";
 		},
 		bytes(id, chunk) {

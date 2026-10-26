@@ -14,6 +14,57 @@ export const chromiumSWRRevision = "d0c02bfad08ec92a6ffcf989e53cd995e6381a4c";
 export const controlIdentityHeaders = Object.freeze(["rsc","next-router-prefetch","next-router-segment-prefetch","next-router-state-tree","next-url","next-action","accept","accept-encoding","accept-language","cookie","authorization","x-z8-fixture-document-generation"]);
 export const bodySha256 = (bytes) =>
 	createHash("sha256").update(bytes).digest("hex");
+export const routePathSourceDigest = facts=>{
+	try{const {scalarKeys,...source}=facts;const bytes=Buffer.from(JSON.stringify(source));return bytes.length<=controlCancellationPolicy.encodedLimit?bodySha256(bytes):null;}catch{return null;}
+};
+/** Immediate callback math; the returned certificate contains no pathname or scalar value. */
+export function canonicalRouteScalarFacts(pathname){
+	const unknown=reason=>({protocol:"canonical-route-scalar-facts-v1",known:false,reason,partCount:null,pathnameSha256:null,partsSha256:null,parts:[]});
+	if(typeof pathname!=="string" || Buffer.byteLength(pathname)>controlCancellationPolicy.encodedLimit)return unknown("unsupported-path-input");
+	const parts=pathname.split("/").filter(Boolean);if(parts.length>64)return unknown("bounded-path-part-count");
+	try{const facts=parts.map((part,index)=>{const scalar=encodeURIComponent(decodeURIComponent(part));if(!part || !scalar)throw Error("Empty scalar");
+		return {index,partPresent:true,canonicalizationKnown:true,partBytes:Buffer.byteLength(part),scalarBytes:Buffer.byteLength(scalar),scalarSha256:bodySha256(Buffer.from(scalar))};});
+		return {protocol:"canonical-route-scalar-facts-v1",known:true,reason:null,partCount:parts.length,pathnameSha256:bodySha256(Buffer.from(pathname)),partsSha256:bodySha256(Buffer.from(JSON.stringify(facts))),parts:facts};
+	}catch{return unknown("unsupported-scalar-canonicalization");}
+}
+const knownNullPathSource=(facts,binding)=>{
+	try{const route=facts?.compiledRouting,rendered=facts?.rendered,keys=facts?.scalarKeys,url=facts?.url,empty=bodySha256(Buffer.alloc(0));
+		if(facts?.protocol!=="rendered-path-source-facts-v1" || facts.sourceKnown!==true || facts.responseOrdinal!==1 || facts.responseStatusKnown!==true || facts.responseStatus!==200 || !digest(facts.observerSourceSha256) ||
+			url?.known!==true || !["Network.responseReceived.url","owned-proxy-request-url-no-follow"].includes(url.provenance) || url.originMatches!==true || url.sha256!==binding.requestUrlSha256 || url.originSha256!==binding.requestOriginSha256 || !digest(url.sha256) || !digest(url.originSha256) || binding.ambiguousRedirect!==false ||
+			route?.protocol!=="compiled-routing-source-facts-v1" || route.compiledManifestSha256!==binding.compiledManifestSha256 || route.basePathOwnKnown!==true || route.basePathEmpty!==true || route.basePathBytes!==0 || route.basePathSha256!==empty || route.outputKnown!==true ||
+			!((route.outputFieldPresent===false && route.output==="absent") || (route.outputFieldPresent===true && route.output==="standalone")) ||
+			facts.rewrite?.snapshotKnown!==true || ![facts.rewrite.path,facts.rewrite.query].every(row=>row?.known===true && row.present===false && row.bytes===null && row.sha256===null) ||
+			rendered?.known!==true || rendered.reason!==null || !digest(rendered.pathnameSha256) || !Number.isSafeInteger(rendered.pathnameBytes) || rendered.pathnameBytes<=0 || rendered.searchBytes!==0 || rendered.searchSha256!==empty ||
+			rendered.pathnameSource!==(url.provenance==="Network.responseReceived.url"?"response-url":"owned-proxy-request-url-no-follow") || rendered.searchSource!==rendered.pathnameSource ||
+			keys?.protocol!=="canonical-route-scalar-facts-v1" || keys.known!==true || keys.reason!==null || keys.sourceSha256!==routePathSourceDigest(facts) || keys.pathnameSha256!==rendered.pathnameSha256 ||
+			!Number.isSafeInteger(keys.partCount) || keys.partCount<=0 || keys.partCount>64 || keys.partCount!==rendered.partsCount || !Array.isArray(keys.parts) || keys.parts.length!==keys.partCount ||
+			keys.parts.some((row,index)=>Object.keys(row).length!==6 || row.index!==index || row.partPresent!==true || row.canonicalizationKnown!==true || !Number.isSafeInteger(row.partBytes) || row.partBytes<=0 || row.partBytes>controlCancellationPolicy.encodedLimit || !Number.isSafeInteger(row.scalarBytes) || row.scalarBytes<=0 || row.scalarBytes>controlCancellationPolicy.encodedLimit || !digest(row.scalarSha256)) ||
+			keys.partsSha256!==bodySha256(Buffer.from(JSON.stringify(keys.parts))))return false;
+		return true;
+	}catch{return false;}
+};
+const knownRouteReadiness=(readiness,binding,bodyHash,treeNodes,metadataPages)=>{
+	try{if(readiness?.protocol!=="null-d-route-readiness-v1" || readiness.bodySha256!==bodyHash || !knownNullPathSource(readiness.pathSourceFacts,binding) || !Number.isSafeInteger(readiness.nullNodes) || readiness.nullNodes<=0 || readiness.metadataPages!==metadataPages ||
+		!Array.isArray(readiness.nodes) || readiness.nodes.length!==treeNodes || readiness.nodes.length>4096 || readiness.walkSha256!==bodySha256(Buffer.from(JSON.stringify(readiness.nodes))))return false;
+		let nullNodes=0,pages=0;const depth=[];const slots=new Map();
+		for(let index=0;index<readiness.nodes.length;index++){
+			const row=readiness.nodes[index],parent=readiness.nodes[row.parentOrdinal-1];
+			if(row.ordinal!==index+1 || !digest(row.descriptorSha256) || !digest(row.segmentEncodingSha256) || !digest(row.slotEncodingSha256))return false;
+			if(index===0){if(row.kind!=="root" || row.parentOrdinal!==0 || row.partIndex!==0 || row.nextIndex!==0 || row.scalar!==null)return false;depth.push(0);continue;}
+			if(!parent || row.parentOrdinal>=row.ordinal || !Number.isSafeInteger(row.parentOrdinal) || row.parentOrdinal<=0 || row.partIndex!==parent.nextIndex ||
+				!["static-visible","page","group","default","not-found","dynamic-concrete-d","dynamic-null-d"].includes(row.kind))return false;
+			depth.push(depth[row.parentOrdinal-1]+1);if(depth[index]>64)return false;
+			const visible=["static-visible","dynamic-concrete-d","dynamic-null-d"].includes(row.kind);
+			if(row.nextIndex!==row.partIndex+(visible?1:0))return false;
+			const seen=slots.get(row.parentOrdinal) ?? new Set();if(seen.has(row.slotEncodingSha256))return false;seen.add(row.slotEncodingSha256);slots.set(row.parentOrdinal,seen);
+			if(row.kind==="page")pages++;
+			if(row.kind==="dynamic-null-d"){
+				const scalar=readiness.pathSourceFacts.scalarKeys.parts[row.partIndex];if(!scalar || row.scalar?.index!==row.partIndex || row.scalar.bytes!==scalar.scalarBytes || row.scalar.sha256!==scalar.scalarSha256)return false;nullNodes++;
+			}else if(row.scalar!==null)return false;
+		}
+		return nullNodes===readiness.nullNodes && pages===metadataPages;
+	}catch{return false;}
+};
 const binaryByteWidths = Object.freeze({ A: 1, O: 1, o: 1, b: 1, U: 1, S: 2, s: 2, L: 4, l: 4, G: 4, g: 8, M: 8, m: 8, V: 1 });
 const canonicalFlightId = id => /^(0|[1-9a-f][a-f0-9]{0,12})$/.test(id) && Number.isSafeInteger(Number.parseInt(id,16));
 
@@ -618,9 +669,12 @@ function inspectFlightBody(
 			Object.keys(transport).some((key) => key !== "t")
 		)
 			return unknown("unsupported-tree-transport");
-		const queue = [transport.t],
+		const queue = [{raw:transport.t,parentOrdinal:0,partIndex:0,slotEncodingSha256:bodySha256(Buffer.alloc(0))}],
 			visited = new Set();
-		let nodes = 0,metadataPages=0;
+		let nodes = 0,metadataPages=0,nullNodes=0,unsupportedNullContext=false;
+		const walk=[];
+		const literal=value=>value.startsWith("$$")?value.slice(1):value;
+		const encode=value=>/^[a-zA-Z0-9\-_@]+$/.test(value)?value:"!"+btoa(value).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
 		const segmentObservation=(raw,value)=>{
 			const kind=item=>item===undefined?"unresolved":item===null?"null":Array.isArray(item)?"array":typeof item;
 			const record=typeof raw==="string" && /^\$[a-f0-9]+$/.test(raw)?records.get(raw.slice(1)):null;
@@ -631,7 +685,7 @@ function inspectFlightBody(
 		};
 		while (queue.length) {
 			if (++nodes > 4096 || ++budget.models > 100000) return unknown("tree-limit");
-			const node = ordinary(queue.pop());
+			const entry=queue.pop(),node = ordinary(entry.raw);
 			if (
 				!node ||
 				typeof node !== "object" ||
@@ -654,7 +708,7 @@ function inspectFlightBody(
 				Object.keys(segment).some(key=>!["n","t","k","s"].includes(key)) ||
 				typeof ordinary(segment.n) !== "string" || ordinary(segment.n).startsWith("$")&&!ordinary(segment.n).startsWith("$$") ||
 				!["c","ci(..)(..)","ci(.)","ci(..)","ci(...)","oc","d","di(..)(..)","di(.)","di(..)","di(...)"].includes(ordinary(segment.t)) ||
-				!(typeof ordinary(segment.k) === "string" && (!ordinary(segment.k).startsWith("$") || ordinary(segment.k).startsWith("$$"))) ||
+				!((typeof ordinary(segment.k) === "string" && (!ordinary(segment.k).startsWith("$") || ordinary(segment.k).startsWith("$$"))) || ordinary(segment.k)===null && ordinary(segment.t)==="d") ||
 				!(
 					ordinary(segment.s) === null ||
 					(Array.isArray(ordinary(segment.s)) &&
@@ -662,6 +716,24 @@ function inspectFlightBody(
 				)
 			)
 				return unknown("unsupported-tree-segment",{routeTreeSegmentObservation:segmentObservation(node.s,segment)});
+			let kind,segmentPart,scalar=null;
+			try{
+				if(typeof segment==="string"){
+					const text=literal(segment);kind=nodes===1?"root":text==="__PAGE__"?"page":text==="__DEFAULT__"?"default":text==="/_not-found"?"not-found":text==="" || text[0]==="("&&text.endsWith(")")?"group":"static-visible";
+					if(["(.)","(..)","(...)"].some(prefix=>text.startsWith(prefix)))unsupportedNullContext=true;
+					segmentPart=nodes===1?"":encode(text==="/_not-found"?"_not-found":text);
+				}else{
+					const type=ordinary(segment.t);segmentPart="$"+type+"$"+encode(literal(ordinary(segment.n)));
+					if(type!=="d")unsupportedNullContext=true;
+					if(ordinary(segment.k)===null){
+						if(!knownNullPathSource(binding.pathSourceFacts,binding))return unknown("unqualified-route-scalar-source",{routeTreeSegmentObservation:segmentObservation(node.s,segment)});
+						const part=binding.pathSourceFacts.scalarKeys.parts[entry.partIndex];if(!part)return unknown("missing-route-scalar-part",{routeTreeSegmentObservation:segmentObservation(node.s,segment)});
+						scalar={index:entry.partIndex,bytes:part.scalarBytes,sha256:part.scalarSha256};nullNodes++;kind="dynamic-null-d";
+					}else kind=type==="d"?"dynamic-concrete-d":"dynamic-other";
+				}
+			}catch{return unknown("unsupported-route-key-encoding");}
+			const nextIndex=entry.parentOrdinal===0?0:entry.partIndex+(["static-visible","dynamic-null-d","dynamic-concrete-d","dynamic-other"].includes(kind)?1:0);
+			walk.push({ordinal:nodes,parentOrdinal:entry.parentOrdinal,partIndex:entry.partIndex,nextIndex,kind,descriptorSha256:bodySha256(Buffer.from(JSON.stringify(segment))),segmentEncodingSha256:bodySha256(Buffer.from(segmentPart)),slotEncodingSha256:entry.slotEncodingSha256,scalar});
 			if (node.h !== undefined && (!Number.isSafeInteger(ordinary(node.h)) || ordinary(node.h) < 0))
 				return unknown("unsupported-tree-hints");
 			if (node.c !== undefined) {
@@ -683,11 +755,14 @@ function inspectFlightBody(
 					)
 						return unknown("unsupported-tree-map");
 					slots.add(ordinary(pair[0]));
-					queue.push(pair[1]);
+					let slotEncodingSha256;try{const slot=literal(ordinary(pair[0]));slotEncodingSha256=bodySha256(Buffer.from(slot==="children"?"":"@"+encode(slot)+"/"));}catch{return unknown("unsupported-route-key-encoding");}
+					queue.push({raw:pair[1],parentOrdinal:nodes,partIndex:nextIndex,slotEncodingSha256});
 				}
 			}
 		}
 		if(metadataPages===0) return unknown("missing-route-tree-metadata-page");
+		const routeReadiness=nullNodes?{protocol:"null-d-route-readiness-v1",bodySha256:bodySha256(bytes),pathSourceFacts:binding.pathSourceFacts,nullNodes,metadataPages,nodes:walk,walkSha256:bodySha256(Buffer.from(JSON.stringify(walk)))}:null;
+		if(routeReadiness && (unsupportedNullContext || !knownRouteReadiness(routeReadiness,binding,bodySha256(bytes),nodes,metadataPages)))return unknown("unsupported-route-null-context");
 		return {
 			protocol: "bounded-required-flight-v1",
 			complete: true,
@@ -698,8 +773,8 @@ function inspectFlightBody(
 			action: false,
 			requiredStage: "route-tree-structure",
 			treeNodes: nodes,
-			metadataPages,renderableOutputClaim:false,
-			routeTreeBinding:{...Object.fromEntries(["method","status","flight","rsc","prefetch","postponed","manifestVerified","requestHeadersSha256","requestKeySha256","responseDeploymentSha256","compiledBuild","compiledManifestSha256"].map(key=>[key,binding[key]])),
+			metadataPages,renderableOutputClaim:false,routeNullNodes:nullNodes,routeReadiness,
+			routeTreeBinding:{...Object.fromEntries(["method","status","flight","rsc","prefetch","postponed","manifestVerified","requestHeadersSha256","requestKeySha256","responseDeploymentSha256","compiledBuild","compiledManifestSha256",...(nullNodes?["requestUrlSha256","requestOriginSha256","ambiguousRedirect"]:[])].map(key=>[key,binding[key]])),
 				derivedRequestKeySha256:bodySha256(Buffer.from("/_tree")),bodyBuildSha256,expectedDeploymentSha256,actualDeploymentSha256,deploymentSource:binding.responseDeploymentSha256===null?"body":"response-header"},
 			boundaryBytes: body.length,
 			decodedBytes: bytes.length,
@@ -976,11 +1051,22 @@ function inspectFlightBody(
 		const result = resolve(root.a);
 		if (result === undefined) return unknown("unresolved-action-result");
 		if (result?.success === false && typeof result.error === "string")
+		{
+			let value=result.error,text=null;const seen=new Set();
+			while(typeof value==="string" && /^\$[a-f0-9]+$/.test(value) && !seen.has(value) && seen.size<8){
+				seen.add(value);const record=records.get(value.slice(1));
+				if(record?.tag==="T" && !record.stream && typeof record.value==="string"){text=record.value;break;}
+				if(!record || record.tag!==null || record.stream){value=null;break;}value=record.value;
+			}
+			if(text===null && typeof value==="string" && (!value.startsWith("$") || value.startsWith("$$")))text=value.startsWith("$$")?value.slice(1):value;
+			const bytes=typeof text==="string"?Buffer.from(text):null;
 			return {
 				complete: false,
 				reason: "explicit-root-action-failure",
 				explicitActionFailure: true,
+				returnedError:bytes && bytes.length<=controlCancellationPolicy.decodedLimit?{known:true,utf8Bytes:bytes.length,sha256:bodySha256(bytes)}:{known:false,utf8Bytes:null,sha256:null},
 			};
+		}
 	}
 	const boundary = (value) => {
 		const seen = new Set();
@@ -1200,7 +1286,7 @@ const sameRequest = (a, b) =>
 		(key) =>
 			typeof a[key] === "string" && a[key].length > 0 && a[key] === b[key],
 	);
-const goodBody = (proof, depth = 0) => {
+const goodBody = (proof, depth = 0,allowNullRoute=false) => {
 	if (
 		proof?.complete !== true ||
 		!digest(proof.bodySha256) ||
@@ -1245,6 +1331,10 @@ const goodBody = (proof, depth = 0) => {
 	} else return false;
 	if (proof.requiredStage === "route-tree-structure") {
 		const binding=proof.routeTreeBinding;
+		if(!Number.isSafeInteger(proof.routeNullNodes) || proof.routeNullNodes<0 || proof.routeNullNodes>proof.treeNodes || !Object.hasOwn(proof,"routeReadiness"))return false;
+		if(proof.routeNullNodes>0){
+			if(!allowNullRoute || proof.routeReadiness?.nullNodes!==proof.routeNullNodes || !knownRouteReadiness(proof.routeReadiness,binding,proof.bodySha256,proof.treeNodes,proof.metadataPages))return false;
+		}else if(proof.routeReadiness!==null || ["requestUrlSha256","requestOriginSha256","ambiguousRedirect"].some(key=>Object.hasOwn(binding ?? {},key)))return false;
 		return (
 			proof.requestKind === "route-tree" &&
 			!proof.action && proof.marker==="unmarked-route-tree" && proof.isPartial===false && proof.renderableOutputClaim===false &&
@@ -1321,6 +1411,8 @@ const bodyReceipt = (row) => {
 		"treeNodes",
 		"metadataPages",
 		"routeTreeBinding",
+		"routeNullNodes",
+		"routeReadiness",
 		"partialNodes",
 		"completeNodes",
 		"segmentBinding",
@@ -1436,7 +1528,7 @@ const knownNativeContext = context => {
 			!knownNativePublicSources(binding.nativePublicSources,binding.compiledBuild,binding.compiledManifestSha256) ||
 			!context.protocolSources || Object.keys(context.protocolSources).length > 64 || Object.entries(context.protocolSources).some(([file,sha])=>file.length > 256 || !digest(sha)) ||
 			!["run-baseline.mjs","settled-resources.mjs","mixed-load-probe.mjs"].includes(context.operatorFile) ||
-			![context.operatorFile,"browser-control-collector.mjs","fixture-browser.mjs","trace-transport.mjs","action-result-observer.mjs","proxy-header-census.mjs","cdp-cached-text-projection.mjs"].every(file=>digest(context.protocolSources?.[file]))) return false;
+			![context.operatorFile,"control-cancellation-evidence.mjs","browser-control-collector.mjs","fixture-browser.mjs","trace-transport.mjs","action-result-observer.mjs","proxy-header-census.mjs","cdp-cached-text-projection.mjs"].every(file=>digest(context.protocolSources?.[file]))) return false;
 		const errors=context.protocolErrors;
 		if(errors?.protocol !== "positive-flight-error-observations-v1" || errors.contextId !== context.contextId || errors.installed !== true || errors.scopeClosed !== true ||
 			errors.observed !== 0 || errors.overflow !== 0 || !Array.isArray(errors.records) || errors.records.length !== 0) return false;
@@ -1494,7 +1586,13 @@ const goodNativePrefetchBody = (row,context) => {
 	const response=row.initialSegmentResponse ?? row;
 	if(proof?.requestKind==="route-tree"){
 		const route=proof.routeTreeBinding;
-		return goodBody(proof) && route?.method==="GET" && route.status===200 && ["flight","rsc","prefetch","manifestVerified"].every(key=>route[key]===true) && typeof route.postponed==="boolean" &&
+		if(proof.routeReadiness!==null){
+			const facts=proof.routeReadiness?.pathSourceFacts;
+			if(!facts || JSON.stringify(facts)!==JSON.stringify(row.pathSourceFacts) || facts.observerSourceSha256!==context.protocolSources["browser-control-collector.mjs"] || route?.requestUrlSha256!==row.fullUrlSha256 || route.requestOriginSha256!==context.originSha256 || route.ambiguousRedirect!==false)return false;
+			if(row.id){if(facts.url.provenance!=="owned-proxy-request-url-no-follow")return false;}
+			else{const ledger=row.browserDataLedger;if(facts.url.provenance!=="Network.responseReceived.url" || row.ambiguousRedirect!==false || row.failed!==false || ledger?.protocol!=="cached-browser-data-ledger-v1" || ledger.requestObserved!==true || ledger.responseEvents!==1 || ledger.finishedEvents!==1 || ledger.failedEvents!==0 || ledger.invalidData!==false || ledger.dataAfterTerminal!==0 || ledger.dataBeforeResponse!==0 || ledger.responseAfterTerminal!==0 || ledger.terminalBeforeResponse!==0)return false;}
+		}
+		return goodBody(proof,0,true) && route?.method==="GET" && route.status===200 && ["flight","rsc","prefetch","manifestVerified"].every(key=>route[key]===true) && typeof route.postponed==="boolean" &&
 			row.requestKind==="route-tree" && row.requestHeaderSnapshotKnown===true && row.method==="GET" && row.status===200 && row.rsc===true && row.prefetch===true && row.action===false &&
 			response.responseHeaderSnapshotKnown===true && response.status===200 && response.flight===true && response.postponed===route.postponed &&
 			route.requestHeadersSha256===row.requestHeadersSha256 && route.requestKeySha256===row.headerFieldSha256?.["next-router-segment-prefetch"] &&

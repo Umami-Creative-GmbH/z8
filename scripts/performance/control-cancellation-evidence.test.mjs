@@ -417,8 +417,16 @@ test("unnamed POST late termination needs exact complete browser/proxy bodies an
 			value.proxy[0].bodyProof = { ...proof, bodySha256: "d".repeat(64) };
 			assert.equal(classifyControlCancellations(value).provenControls, 0);
 		}
-		assert.doesNotMatch(JSON.stringify(proof), /PRIVATE|unrelated|42/);
+		assert.doesNotMatch(JSON.stringify(proof), /PRIVATE|unrelated/);
+		assert.equal(Object.values(proof).includes(42),false,"The unrelated business number is not retained; hashes may contain its digits.");
 	}
+});
+
+test("returned action-error metadata hashes a parser-branded text string literally",()=>{
+	const proof=inspectRequiredFlightBody(Buffer.from('0:{"a":{"success":false,"error":"$1"}}\n1:T2,$2'),{action:true});
+	assert.equal(proof.explicitActionFailure,true);
+	assert.deepEqual(proof.returnedError,{known:true,utf8Bytes:2,sha256:createHash("sha256").update("$2").digest("hex")});
+	assert.equal(JSON.stringify(proof).includes('"$2"'),false);
 });
 
 test("cached HTTP completion cannot hide unresolved required Flight dependencies", () => {
@@ -937,7 +945,7 @@ test("first rejected route segment exposes fixed kinds and provenance without ad
 	const body=segment=>'0:{"t":{"t":{"s":"","c":"$Q1"}}}\n1:[["children",{"s":'+JSON.stringify(segment)+'}]]\n';
 	const omitted={n:"PRIVATE_NAME",t:"d",k:null,s:null};
 	const proof=inspectRequiredFlightBody(Buffer.from(body(omitted)),options);
-	assert.equal(proof.complete,false);assert.equal(proof.reason,"unsupported-tree-segment");
+	assert.equal(proof.complete,false);assert.equal(proof.reason,"unqualified-route-scalar-source");
 	assert.deepEqual(proof.routeTreeSegmentObservation,{nodeOrdinal:2,rawKind:"object",resolvedKind:"object",provenance:"inline",paramType:"d",nameKind:"string",valueKind:"null",siblingsKind:"null",unknownFields:0});
 	assert.equal(JSON.stringify(proof).includes("PRIVATE_NAME"),false);
 	const wrong=inspectRequiredFlightBody(Buffer.from(body({...omitted,t:"PRIVATE_TYPE",k:false})),options);

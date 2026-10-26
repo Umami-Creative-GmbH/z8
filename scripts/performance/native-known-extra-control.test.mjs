@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {createHash} from "node:crypto";
 import {classifyControlCancellations,cleanBrowserFailureEvidence,inspectRequiredFlightBody,controlCancellationPolicy,chromiumSWRRevision} from "./control-cancellation-evidence.mjs";
-import {controlRequestIdentity,controlResponseMetadata,createPrincipalEpochObserver,createProxyControlCollector,createBrowserControlCollector,controlResponseHeader} from "./browser-control-collector.mjs";
+import {controlRequestIdentity,controlResponseMetadata,createPrincipalEpochObserver,createProxyControlCollector,createBrowserControlCollector,controlResponseHeader,renderedPathSourceFacts,compiledRoutingSourceFacts} from "./browser-control-collector.mjs";
 import {setImmediate as tick} from "node:timers/promises";
 import {createProxyHeaderCensus} from "./proxy-header-census.mjs";
 import {primaryProtocolIdentity} from "./protocol-fingerprints.mjs";
@@ -91,6 +91,87 @@ function routeTreeFixture(){
   Object.assign(input.failures[0],identity(io.wire));input.failures[0].initialHeaderIdentity=identity(io.initial);input.failures[0].extraHeaderIdentity=identity(io.wire);
   return {...result,bytes};
 }
+
+function routeNullFixture({pathname="/en",bodyText}={}){
+  const setup=routeTreeFixture(),{input,io}=setup,compiled=input.nativeContext.binding;
+  io.url=io.origin+pathname+"?_rsc=synthetic";
+  const identity=source=>controlRequestIdentity(input.nativeContext.contextId,io.url,"GET",source);
+  Object.assign(input.failures[0],identity(io.wire));input.failures[0].initialHeaderIdentity=identity(io.initial);input.failures[0].extraHeaderIdentity=identity(io.wire);
+  const bytes=Buffer.from(bodyText ?? '0:{"t":{"t":{"s":"","c":"$Q2"}}}\n2:[["children",{"s":{"n":"locale","t":"d","k":null,"s":[]},"c":"$Q3"}]]\n3:[["children",{"s":"__PAGE__"}]]\n');
+  for(const row of [...input.proxy,input.responses[0]]){
+    Object.assign(row,identity(row.id===io.originalId?io.originalHeaders:row.id?io.wire:io.initial));if(!row.id)row.initialHeaderIdentity=identity(io.initial);
+    const facts=renderedPathSourceFacts({response:{url:io.url,status:200,headers:io.response},compiledRouting:compiledRoutingSourceFacts({basePath:"",output:"standalone"},compiled.compiledManifestSha256),origin:io.origin,collectScalars:true,responseOrdinal:1,observerSourceSha256:protocol["browser-control-collector.mjs"]});
+    if(row.id){facts.url.provenance="owned-proxy-request-url-no-follow";facts.rendered.pathnameSource="owned-proxy-request-url-no-follow";facts.rendered.searchSource="owned-proxy-request-url-no-follow";if(facts.scalarKeys){const {scalarKeys,...source}=facts;scalarKeys.sourceSha256=sha(JSON.stringify(source));}}
+    row.pathSourceFacts=facts;
+    row.bodyProof=inspectRequiredFlightBody(bytes,{requestKind:"route-tree",routeTreeBinding:{...row.bodyProof.routeTreeBinding,pathSourceFacts:facts,requestUrlSha256:row.fullUrlSha256,requestOriginSha256:row.requestOriginSha256,ambiguousRedirect:false}});
+    if(row.id)row.transportBodyReceipt={protocol:"proxy-natural-eof-decoded-bytes-v1",naturalEOF:true,decodedBytes:bytes.length,bodySha256:sha(bytes)};
+    else{row.bodyReadbackReceipt={...row.bodyReadbackReceipt,decodedBytes:bytes.length,bodySha256:sha(bytes),utf16CodeUnitLength:bytes.length,observedDataLengthAtReadback:bytes.length};row.ambiguousRedirect=false;row.failed=false;row.browserDataLedger={protocol:"cached-browser-data-ledger-v1",requestObserved:true,responseEvents:1,finishedEvents:1,failedEvents:0,dataEvents:1,dataAfterTerminal:0,dataBeforeResponse:0,responseAfterTerminal:0,terminalBeforeResponse:0,invalidData:false,observedDataLength:bytes.length};}
+  }
+  return {...setup,bytes};
+}
+
+test("ordinary d/null route readiness uses source-bound canonical scalar facts and a complete branch-index walk",()=>{
+  const {input}=routeNullFixture(),result=classifyControlCancellations(input);
+  assert.equal(result.provenControls,1,JSON.stringify(result.records));
+  const readiness=result.records[0].proof.origin.bodyProof.routeReadiness;
+  assert.equal(readiness.nullNodes,1);assert.equal(readiness.metadataPages,1);assert.equal(readiness.nodes[1].partIndex,0);
+  assert.equal(cleanBrowserFailureEvidence(JSON.parse(JSON.stringify(result)),1),true);
+  assert.equal(JSON.stringify(result).includes('"locale"'),false);
+});
+
+test("nullable route inspection cannot downgrade missing readiness to the concrete route contract",()=>{
+  const valid=classifyControlCancellations(routeNullFixture().input);
+  assert.equal(valid.provenControls,1);
+  for(const key of ["origin","packet","cached"]){
+    assert.ok(valid.records[0].proof[key],key);
+    for(const mutate of [p=>p.routeReadiness=null,p=>delete p.routeReadiness,p=>delete p.routeNullNodes,p=>p.routeNullNodes=0,p=>p.routeNullNodes=-1,p=>p.routeNullNodes="1",p=>p.routeNullNodes=null,p=>p.routeNullNodes=2,
+      p=>{p.routeReadiness=null;p.routeNullNodes=0;}]){
+      const bad=structuredClone(valid);mutate(bad.records[0].proof[key].bodyProof);
+      assert.equal(cleanBrowserFailureEvidence(bad,1),false,key);
+    }
+  }
+  for(const mutate of [p=>p.routeReadiness=null,p=>delete p.routeReadiness,p=>delete p.routeNullNodes,p=>p.routeNullNodes=0,p=>p.routeNullNodes=-1,p=>p.routeNullNodes="1",p=>p.routeNullNodes=null,p=>p.routeNullNodes=2,
+    p=>{p.routeReadiness=null;p.routeNullNodes=0;}]){
+    const {input}=routeNullFixture();
+    for(const row of [...input.proxy,input.responses[0]]){mutate(row.bodyProof);row.pathSourceFacts=null;}
+    assert.equal(classifyControlCancellations(input).provenControls,0);
+  }
+  const concrete=classifyControlCancellations(routeTreeFixture().input);
+  assert.equal(concrete.provenControls,1);
+  assert.equal(concrete.records[0].proof.origin.bodyProof.routeNullNodes,0);
+  const missing=structuredClone(concrete);delete missing.records[0].proof.origin.bodyProof.routeNullNodes;
+  assert.equal(cleanBrowserFailureEvidence(missing,1),false);
+});
+
+test("nullable route walk uses each branch position and cannot borrow page, alias or encoder readiness",()=>{
+  const dynamic={n:"PRIVATE_NAME",t:"d",k:null,s:[]},page={s:"__PAGE__"};
+  const body=tree=>'0:'+JSON.stringify({t:{t:tree}})+'\n';
+  const node=(s,child)=>({s,c:"$Q"+child});
+  const examples=[
+    {pathname:"/en",bodyText:body(node("",1))+'1:[["children",'+JSON.stringify(node("(group)",2))+']]\n2:[["children",'+JSON.stringify(node(dynamic,3))+']]\n3:[["children",'+JSON.stringify(page)+']]\n',index:0},
+    {pathname:"/fixed/en",bodyText:body(node("",1))+'1:[["children",'+JSON.stringify(node("fixed",2))+']]\n2:[["children",'+JSON.stringify(node(dynamic,3))+']]\n3:[["children",'+JSON.stringify(page)+']]\n',index:1},
+    {pathname:"/fixed/en",bodyText:body(node("",1))+'1:[["children",'+JSON.stringify(node({...dynamic,k:"fixed"},2))+']]\n2:[["children",'+JSON.stringify(node(dynamic,3))+']]\n3:[["children",'+JSON.stringify(page)+']]\n',index:1},
+  ];
+  for(const example of examples){const {input}=routeNullFixture(example),result=classifyControlCancellations(input);assert.equal(result.provenControls,1,JSON.stringify(input.proxy[0].bodyProof));
+    const walk=result.records[0].proof.origin.bodyProof.routeReadiness;assert.equal(walk.nodes.find(row=>row.kind==="dynamic-null-d").partIndex,example.index);assert.equal(cleanBrowserFailureEvidence(JSON.parse(JSON.stringify(result)),1),true);}
+  const alias=body(node("",1))+'1:[["children",'+JSON.stringify(node("fixed",2))+'],["modal",{"s":"$4","c":"$Q3"}]]\n2:[["children",{"s":"$4","c":"$Q5"}]]\n3:[["children",'+JSON.stringify(page)+']]\n5:[["children",'+JSON.stringify(page)+']]\n4:'+JSON.stringify(dynamic)+'\n';
+  assert.equal(classifyControlCancellations(routeNullFixture({pathname:"/one/two",bodyText:alias}).input).provenControls,1);
+  assert.equal(classifyControlCancellations(routeNullFixture({pathname:"/one",bodyText:alias}).input).provenControls,0,"an early alias/page cannot hide a missing later branch part");
+  for(const changed of ["/","/%E0%A4%A"]){assert.equal(classifyControlCancellations(routeNullFixture({pathname:changed}).input).provenControls,0);}
+  for(const bodyText of [alias.replace('"modal"','"💥"'),alias.replace('"PRIVATE_NAME"','"💥"'),alias.replace('"t":"d"','"t":"di(.)"'),alias.replace('"fixed"','"(..)fixed"')])assert.equal(classifyControlCancellations(routeNullFixture({pathname:"/one/two",bodyText}).input).provenControls,0);
+});
+
+test("nullable route source and serialized walk premises are mandatory, not copied resolution booleans",()=>{
+  const cases=[row=>delete row.pathSourceFacts.scalarKeys,row=>row.pathSourceFacts.url.sha256="0".repeat(64),row=>row.pathSourceFacts.observerSourceSha256="0".repeat(64),
+    row=>row.pathSourceFacts.rewrite.path.present=true,row=>row.pathSourceFacts.compiledRouting.basePathEmpty=false,row=>row.pathSourceFacts.compiledRouting.output="export",row=>row.pathSourceFacts.rendered.searchBytes=1,
+    row=>row.pathSourceFacts.scalarKeys.parts[0].canonicalizationKnown=false,row=>row.pathSourceFacts.scalarKeys.parts[0].scalarSha256="0".repeat(64),row=>row.pathSourceFacts.compiledRouting.compiledManifestSha256="0".repeat(64)];
+  for(const mutate of cases){const {input}=routeNullFixture();mutate(input.proxy[0]);assert.equal(classifyControlCancellations(input).provenControls,0);}
+  const {input}=routeNullFixture(),result=classifyControlCancellations(input);
+  for(const mutate of [r=>r.nodes[1].partIndex=1,r=>r.nodes[1].nextIndex=0,r=>r.nodes[2].parentOrdinal=1,r=>r.nodes[1].scalar.sha256="0".repeat(64),r=>r.nullNodes=2]){
+    const bad=JSON.parse(JSON.stringify(result)),readiness=bad.records[0].proof.origin.bodyProof.routeReadiness;mutate(readiness);readiness.walkSha256=sha(JSON.stringify(readiness.nodes));
+    assert.equal(cleanBrowserFailureEvidence(bad,1),false);
+  }
+});
 
 test("dedicated route-tree Native control binds the fixed request and fully buffered branching structure",()=>{
   const {input}=routeTreeFixture(),result=classifyControlCancellations(input);
