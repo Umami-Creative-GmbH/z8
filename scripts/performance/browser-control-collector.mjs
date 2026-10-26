@@ -1,6 +1,8 @@
 /** Passive all-phase identity/body receipts. No app requests, payloads, URLs or header values are emitted. */
 import { createHash } from "node:crypto";
-import { readFile } from "node:fs/promises";
+import { createReadStream } from "node:fs";
+import { readFile, stat } from "node:fs/promises";
+import { basename, dirname, resolve } from "node:path";
 import { brotliDecompressSync, gunzipSync, inflateSync } from "node:zlib";
 import {
 	classifyControlCancellations,
@@ -38,6 +40,97 @@ const assignBodyProof = (row, proof, capture, bodySha256) => {
 	history.push(fact);
 };
 
+const nativeFileMetadata = async (path, limit) => {
+	try {
+		const before = await stat(path, { bigint: true });
+		if (!before.isFile() || before.size > BigInt(limit)) return { known: false, bytes: null, sha256: null, reason: "file-limit-or-kind" };
+		const hash = createHash("sha256"); let bytes = 0;
+		for await (const chunk of createReadStream(path, { highWaterMark: 65536 })) {
+			bytes += chunk.length;
+			if (bytes > limit) return { known: false, bytes: null, sha256: null, reason: "file-limit-or-kind" };
+			hash.update(chunk);
+		}
+		const after = await stat(path, { bigint: true });
+		if (["dev", "ino", "size", "mtimeNs"].some(key => before[key] !== after[key]) || BigInt(bytes) !== after.size)
+			return { known: false, bytes: null, sha256: null, reason: "file-changed" };
+		return { known: true, bytes, sha256: hash.digest("hex"), reason: null };
+	} catch { return { known: false, bytes: null, sha256: null, reason: "file-unavailable" }; }
+};
+
+/** Actual serving public bytes are separate from the compiled manifest; no worker is fetched. */
+export async function readNativePublicSources(manifestPath) {
+	const servingRootKnown = typeof manifestPath === "string" && basename(manifestPath) === "required-server-files.json" && basename(dirname(manifestPath)) === ".next";
+	const files = ["sw.js", "lib/offline-queue-db.js", "lib/sync-service.js", "lib/clock-command-dispatch.js"];
+	return { protocol: "serving-public-worker-source-metadata-v1", servingRootKnown,
+		files: await Promise.all(files.map(async file => ({ file, ...(servingRootKnown ? await nativeFileMetadata(resolve(dirname(manifestPath), "../public", file), controlCancellationPolicy.encodedLimit) :
+			{ known: false, bytes: null, sha256: null, reason: "unqualified-manifest-location" }) }))) };
+}
+
+/** Files and arguments from the actual owned child; metadata alone is not a producer certificate. */
+export async function captureNativeLaunchMetadata(browser) {
+	let child;
+	try { child = browser.process?.(); } catch {}
+	const argumentList = child?.spawnargs?.slice(1), recorded = browser.fixtureLaunchPolicy?.arguments;
+	const valid = args => {
+		if (!Array.isArray(args) || args.length > 1024) return false;
+		let bytes = 2;
+		for (const arg of args) {
+			if (typeof arg !== "string" || Buffer.byteLength(arg) > 65536) return false;
+			bytes += Buffer.byteLength(JSON.stringify(arg)) + 1;
+			if (bytes > controlCancellationPolicy.encodedLimit) return false;
+		}
+		return true;
+	};
+	const argumentsKnown = valid(argumentList), recordedKnown = valid(recorded);
+	const normalized = argumentsKnown ? argumentList.filter(arg => !arg.startsWith("--user-data-dir=") && !arg.startsWith("--remote-debugging-port=")) : null;
+	const profiles = argumentsKnown ? argumentList.filter(arg => arg.startsWith("--user-data-dir=")) : [];
+	const profileArgumentSha256 = profiles.length === 1 ? sha(profiles[0].slice("--user-data-dir=".length)) : null;
+	return { protocol: "owned-native-launch-metadata-v1", processKnown: typeof child?.spawnfile === "string" && argumentsKnown,
+		fixturePolicy: browser.fixtureLaunchPolicy?.policy === "isolated-profile-no-prediction-v1" ? browser.fixtureLaunchPolicy.policy : "unknown", argumentsKnown,
+		argumentsSha256: normalized ? sha(JSON.stringify(normalized)) : null,
+		argumentsMatchRecorded: argumentsKnown && recordedKnown ? JSON.stringify(normalized) === JSON.stringify(recorded) : null,
+		argumentKeys: normalized?.map(arg => /^--[a-z0-9-]+(?:=|$)/.test(arg) ? arg.split("=")[0] : "positional") ?? null,
+		profileArgumentCount: argumentsKnown ? profiles.length : null, profileArgumentSha256,
+		profileArgumentMatchesRecorded: profileArgumentSha256 && typeof browser.fixtureLaunchPolicy?.profileDirectorySha256 === "string" ? profileArgumentSha256 === browser.fixtureLaunchPolicy.profileDirectorySha256 : null,
+		executable: await nativeFileMetadata(child?.spawnfile, 1024 * 1024 * 1024),
+		observerSources: await Promise.all(["browser-control-collector.mjs", "fixture-browser.mjs"].map(async file => ({ file,
+			...await nativeFileMetadata(new URL(file, import.meta.url), controlCancellationPolicy.encodedLimit) }))) };
+}
+
+/** Passive existing Puppeteer target-manager events; no discovery command or worker request. */
+export function createNativeWorkerObserver({ browser, context, contextId, origin }) {
+	let errors = 0, overflow = 0, scopeClosed = false, installed = false, contextJoinKnown = false, contextIdentitySha256 = null;
+	const events = [], identities = new Map(), listeners = new Map();
+	try { contextJoinKnown = context.browser() === browser && typeof context.id === "string" && context.id.length > 0;
+		if (contextJoinKnown) contextIdentitySha256 = sha(context.id); } catch { errors++; }
+	const record = (target, event) => {
+		if (scopeClosed) return;
+		try {
+			if (target.browserContext() !== context) return;
+			if (events.length >= 256) { overflow++; return; }
+			if (!identities.has(target)) identities.set(target, identities.size + 1);
+			const rawType = target.type(), type = ["page", "service_worker", "shared_worker", "other", "background_page", "webview", "tab"].includes(rawType) ? rawType : "unknown";
+			const rawUrl = target.url(); let url;
+			try { url = new URL(rawUrl); } catch {}
+			events.push({ targetOrdinal: identities.get(target), event, type, urlKnown: Boolean(url), urlSha256: url ? sha(url.href) : null,
+				originMatches: url ? url.origin === origin : null,
+				ownedWorkerScript: type === "service_worker" && url ? url.href === `${origin}/sw.js` : null });
+		} catch { errors++; }
+	};
+	try {
+		for (const [name,event] of [["targetcreated","created"],["targetchanged","changed"],["targetdestroyed","destroyed"]]) {
+			const listener = target => record(target,event); browser.on(name,listener); listeners.set(name,listener);
+		}
+		for (const target of browser.targets()) record(target,"initial");
+		installed = true;
+	} catch { errors++; }
+	return {
+		close() { scopeClosed = true; for (const [name,listener] of listeners) try { browser.off(name,listener); } catch { errors++; } listeners.clear(); },
+		snapshot: () => ({ protocol: "owned-context-worker-target-metadata-v1", contextId, contextJoinKnown, contextIdentitySha256, installed, scopeClosed,
+			enumerationBasis: "existing-puppeteer-target-manager", controllerObservation: "not-collected", errors, overflow, events: events.map(row=>({...row})) }),
+	};
+}
+
 /** Read the compiled source boundary before app/control/browser IO; never infer a missing flag. */
 export async function readBrowserControlBinding({ plan, manifestPath }) {
 	const metadata = plan.runtime?.browserControl;
@@ -51,7 +144,8 @@ export async function readBrowserControlBinding({ plan, manifestPath }) {
 		typeof manifest.config?.experimental?.cachedNavigations !== "boolean" ||
 		manifest.config.experimental.cachedNavigations !== metadata.compiledCachedNavigations)
 		throw Error("Compiled app manifest differs from the qualified browser control metadata.");
-	return Object.freeze({ ...metadata, compiledBuild: plan.runtime.build, manifestVerified: true, browserVerified: false });
+	return Object.freeze({ ...metadata, compiledBuild: plan.runtime.build, manifestVerified: true, browserVerified: false,
+		servingPublicSources: await readNativePublicSources(manifestPath) });
 }
 
 /** One actual startup command, before visits; no app requests and no browser-revision default. */
@@ -63,7 +157,7 @@ export async function verifyBrowserControlBrowser(browser, binding) {
 		const actual = await session.send("Browser.getVersion");
 		if (actual.revision?.replace(/^@/, "") !== binding.browserRevision)
 			throw Error("Actual browser revision differs from qualified protocol control source.");
-		return Object.freeze({ ...binding, browserVerified: true });
+		return Object.freeze({ ...binding, browserVerified: true, nativeLaunchMetadata: await captureNativeLaunchMetadata(browser) });
 	} finally { await session.detach(); }
 }
 const selectedHeaders = [
@@ -253,6 +347,7 @@ export function createBrowserControlCollector({
 	readStream,
 	captureContextFailures = false,
 	principalEpoch = createPrincipalEpochObserver(contextId, { origin }),
+	environmentObservation = () => null,
 	proxyObservation = () => ({
 		rows: [],
 		installed: false,
@@ -533,6 +628,7 @@ export function createBrowserControlCollector({
 				observed: protocolErrorRecords.length, overflow: protocolErrorOverflow + Math.max(0, protocolErrorRecords.length - controlCancellationPolicy.recordLimit),
 				records: protocolErrorRecords.slice(0, controlCancellationPolicy.recordLimit) },
 			principalEpoch: principalEpoch.snapshot(),
+			nativeEnvironment: environmentObservation(),
 			rawMeasuredFailedRequests,
 			diagnostics: {
 				earlyResponseExtra: {
@@ -873,9 +969,11 @@ export async function installBrowserControlCollector({
 	browserRevision,
 	compiledCachedNavigations,
 	captureContextFailures = false,
+	environmentBinding,
 }) {
 	const session = await page.createCDPSession();
 	const principalEpoch = createPrincipalEpochObserver(contextId, { origin });
+	let workerObservation;
 	const proxy = createProxyControlCollector({
 		contextId,
 		compiledCachedNavigations,
@@ -892,6 +990,11 @@ export async function installBrowserControlCollector({
 		compiledCachedNavigations,
 		captureContextFailures,
 		principalEpoch,
+		environmentObservation: () => ({ protocol: "native-cache-environment-metadata-v1", contextId,
+			servingPublicSources: environmentBinding?.servingPublicSources ?? null,
+			nativeLaunchMetadata: environmentBinding?.nativeLaunchMetadata ?? null,
+			workerTargets: workerObservation?.snapshot() ?? null,
+			publicSourceRecheck: "not-collected", acceptanceClaim: "none" }),
 		proxyObservation,
 		readBody: (requestId) =>
 			session.send("Network.getResponseBody", { requestId }),
@@ -917,6 +1020,9 @@ export async function installBrowserControlCollector({
 		});
 	await session.send("Network.enable");
 	await capturePrincipalBoundary({ context, observer: principalEpoch, stage: "start", deadlineMs: performance.now() + 10000 });
+	let browser;
+	try { browser = context.browser?.(); } catch {}
+	workerObservation = createNativeWorkerObserver({ browser, context, contextId, origin });
 	let generation = 0;
 	const originals = new Map();
 	for (const method of ["goto", "reload", "goBack"]) {
@@ -939,6 +1045,7 @@ export async function installBrowserControlCollector({
 		async close({ deadlineMs } = {}) {
 			try { await capturePrincipalBoundary({ context, observer: principalEpoch, stage: "end", deadlineMs }); }
 			finally {
+				workerObservation.close();
 				collector.endScope();
 				for (const [method, original] of originals) page[method] = original;
 				await session.detach();

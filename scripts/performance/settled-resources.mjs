@@ -557,7 +557,8 @@ export async function measureFixtureResources(
     browserObservation = await installBrowserControlCollector({ page, context, transport, origin: plan.origin,
       headers: { "Accept-Language": condition.locale }, contextId: traceId,
       browserRevision: collector.browserControlBinding.browserRevision,
-      compiledCachedNavigations: collector.browserControlBinding.compiledCachedNavigations });
+      compiledCachedNavigations: collector.browserControlBinding.compiledCachedNavigations,
+      environmentBinding: collector.browserControlBinding });
     client = await page.createCDPSession();
     await client.send("Network.enable");
     client.on("Network.requestWillBeSent", (e) =>
