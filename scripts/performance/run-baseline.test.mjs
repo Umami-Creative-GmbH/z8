@@ -849,6 +849,31 @@ test("finalizing browser observations without backend evidence keeps the accepta
 	}
 });
 
+test("finalization retains raw browser failures and rejects them in both phases", () => {
+	const folder = mkdtempSync(join(tmpdir(), "z8-browser-error-gate-"));
+	try {
+		const planPath = join(folder, "plan.json"), artifactPath = join(folder, "baseline.json");
+		for (const phase of ["baseline", "release"])
+			for (const failedRequests of [1, undefined, null, "0", 0.5, 0]) {
+				const bytes = JSON.stringify({ ...fixturePlan(), phase });
+				writeFileSync(planPath, bytes);
+				writeFileSync(artifactPath, JSON.stringify({
+					planSha256: createHash("sha256").update(bytes).digest("hex"),
+					samples: [{ traceId: "a".repeat(32), failed: false, censored: false, failedRequests }],
+					summaries: [],
+				}));
+				const command = spawnSync(process.execPath, [runner, "--plan", planPath, "--finalize", artifactPath], { encoding: "utf8" });
+				assert.equal(command.status, 1, "Incomplete cohorts remain rejected independently.");
+				const artifact = JSON.parse(readFileSync(artifactPath));
+				assert.equal(artifact.evidenceComplete, false);
+				assert.equal(artifact.samples[0].failedRequests, failedRequests);
+				assert.equal(artifact.evidenceGates.some((gate) => /failed browser requests/i.test(gate)), failedRequests !== 0);
+			}
+	} finally {
+		rmSync(folder, { recursive: true, force: true });
+	}
+});
+
 test("one successful sample cannot stand in for all planned first and warm cohorts", () => {
 	const folder = mkdtempSync(join(tmpdir(), "z8-baseline-cohort-"));
 	try {

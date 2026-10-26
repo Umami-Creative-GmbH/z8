@@ -15,6 +15,7 @@ const sample = () => ({
 	route: "dashboard",
 	mode: "first-document",
 	failed: false,
+	failedRequests: 0,
 	censored: false,
 	usableContentMs: 100,
 	clockReadyMs: 50,
@@ -37,6 +38,15 @@ const gates = (s = sample(), native = rows(), phase = "baseline") =>
 test("clean successful evidence stays eligible in both phases", () => {
 	for (const phase of ["baseline", "release"])
 		assert.deepEqual(gates(sample(), rows(), phase), []);
+});
+
+test("both phases require a known zero browser loading-failure count", () => {
+	for (const failedRequests of [1, undefined, null, "0", NaN, -1, 0.5])
+		for (const phase of ["baseline", "release"])
+			assert.match(
+				gates({ ...sample(), failedRequests }, rows(), phase).join(" "),
+				/browser.*request/i,
+			);
 });
 
 test("only the approved original and optimized windows share the positive acquisition timeout", () => {

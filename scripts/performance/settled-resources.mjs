@@ -462,6 +462,7 @@ export async function measureFixtureResources(
     prerequisiteTraceId,
     backgroundTraceId,
     failed: false,
+    failedRequests: null,
     censored: true,
     readyMs: null,
     clockReadyMs: null,
@@ -807,6 +808,7 @@ export async function measureFixtureResources(
     }
   } finally {
     await client?.detach().catch(() => {});
+    s.failedRequests = observer.state(performance.now()).failedRequests;
     try {
       await context?.close();
     } catch {

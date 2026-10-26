@@ -10,11 +10,12 @@ export const cleanObservationPolicy = Object.freeze({
 });
 
 export const cleanEvidencePolicy = Object.freeze({
-	version: 1,
+	version: 2,
 	baseline: "clean-required",
 	release: "clean-required",
 	backendScope: "every registered visit, prerequisite and cleanup identity",
 	failedCohortBudget: "forbidden",
+	browserFailures: "known zero loading failures; no cancellation exclusions",
 	applicationScope: actionResultPolicy.scope,
 	observation: cleanObservationPolicy,
 });
@@ -124,6 +125,10 @@ export function cleanEvidenceGates(
 		);
 	const seen = new Set();
 	for (const sample of artifact.samples) {
+		if (sample.failedRequests !== 0)
+			gates.push(
+				"Clean original and HEAD evidence requires known zero failed browser requests.",
+			);
 		const window =
 			plan.runtime?.traceTransport === "context-loopback-proxy-v1"
 				? observationTimeoutMs(plan.phase)
