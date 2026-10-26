@@ -376,18 +376,21 @@ test("browser and no-follow proxy retain independent routing source digests whil
 	await writeFile(manifestPath,bytes);
 	const compiledBinding=await readBrowserControlBinding({manifestPath,plan:{runtime:{build,browserControl:{policy:controlCancellationPolicy,browserRevision:chromiumSWRRevision,compiledCachedNavigations:true,compiledManifestSha256:createHash("sha256").update(bytes).digest("hex")}}}});
 	const actualUrl=origin+"/en/PRIVATE_PATH?_rsc=PRIVATE_MARKER&a=PRIVATE_QUERY+b&a=c&2=z";
+	const routeHeaders={...headers,"next-router-segment-prefetch":"/_tree"},protocolSources=await primaryProtocolIdentity();
 	const expectedSearch="?2=z&a=PRIVATE_QUERY%20b&a=c",hash=value=>createHash("sha256").update(value).digest("hex");
-	const collector=createBrowserControlCollector({contextId,origin,compiledBinding,readBody:async()=>({body,base64Encoded:false})});collector.installed();
-	collector.request({requestId:"1",loaderId:"loader",type:"Fetch",timestamp:1,request:{url:actualUrl,method:"GET",headers}});
+	const collector=createBrowserControlCollector({contextId,origin,compiledBinding,protocolSources,readBody:async()=>({body,base64Encoded:false})});collector.installed();
+	collector.request({requestId:"1",loaderId:"loader",type:"Fetch",timestamp:1,request:{url:actualUrl,method:"GET",headers:routeHeaders}});
 	collector.response({requestId:"1",response:{url:actualUrl,status:200,headers:responseHeaders,fromDiskCache:true,mimeType:"text/x-component",charset:""}});collector.finished({requestId:"1",timestamp:2});await tick();
 	const facts=collector.snapshot().bodyReceipts[0].pathSourceFacts;
 	assert.equal(facts.rendered.known,true);assert.equal(facts.rendered.pathnameSha256,hash("/en/PRIVATE_PATH"));assert.equal(facts.rendered.searchSha256,hash(expectedSearch));
 	assert.equal(facts.rendered.partsCount,2);assert.equal(facts.url.provenance,"Network.responseReceived.url");
-	const proxy=createProxyControlCollector({contextId,origin,compiledBinding});proxy.installed();
-	proxy.request("1",{url:actualUrl,method:"GET",headers,traceId:"a".repeat(32)});proxy.response("1",{status:200,headers:responseHeaders});
+	assert.equal(facts.scalarKeys.known,true);assert.equal(facts.scalarKeys.parts[1].scalarSha256,hash("PRIVATE_PATH"));
+	const proxy=createProxyControlCollector({contextId,origin,compiledBinding,protocolSources});proxy.installed();
+	proxy.request("1",{url:actualUrl,method:"GET",headers:routeHeaders,traceId:"a".repeat(32)});proxy.response("1",{status:200,headers:responseHeaders});
 	const forwarded=proxy.snapshot().rows[0].pathSourceFacts;
 	assert.equal(forwarded.rendered.pathnameSha256,facts.rendered.pathnameSha256);assert.equal(forwarded.url.provenance,"owned-proxy-request-url-no-follow");
 	assert.equal(forwarded.url.originMatches,true);
+	assert.equal(forwarded.scalarKeys.parts[1].scalarSha256,facts.scalarKeys.parts[1].scalarSha256);
 	assert.doesNotMatch(JSON.stringify({facts,forwarded}),/PRIVATE_PATH|PRIVATE_QUERY|PRIVATE_MARKER/);
 	}finally{assert.equal(dir.startsWith(join(tmpdir(),"z8-routing-source-")),true);await rm(dir,{recursive:true,force:true});}
 });
@@ -867,6 +870,21 @@ test("failure diagnostics retain actual bounded CDP error and canceled provenanc
 		assert.deepEqual(collector.snapshot().diagnostics.failures[0].failureEvent,{known:true,events:1,...expected});
 		assert.equal(JSON.stringify(collector.snapshot()).includes("PRIVATE_RAW_FAILURE"),false);
 	}
+});
+
+test("positive action errors retain only header and returned-string digests while staying strict",async()=>{
+	const actionId="PRIVATE_ACTION_ID",message="PRIVATE_RETURNED_ERROR",id="a".repeat(32)+".1",hash=value=>createHash("sha256").update(value).digest("hex");
+	const proxy=createProxyControlCollector({contextId});proxy.installed();
+	proxy.request(id,{url,method:"POST",headers:{...headers,"next-action":actionId},traceId:"a".repeat(32)});
+	proxy.response(id,{status:200,headers:responseHeaders});proxy.bytes(id,Buffer.from('0:'+JSON.stringify({a:{success:false,error:message}})+'\n'));proxy.end(id);await tick();
+	const collector=createBrowserControlCollector({contextId,origin,proxyObservation:proxy.snapshot});collector.installed();collector.endScope();
+	const result=collector.snapshot(),record=result.protocolErrors.records[0];
+	assert.equal(result.protocolErrors.observed,1);assert.equal(record.explicitActionFailure,true);
+	assert.equal(record.requestKind,"action");assert.equal(record.actionKnown,true);assert.equal(record.action,true);
+	assert.deepEqual(record.nextActionHeader,{known:true,sha256:hash(actionId),provenance:"owned-proxy-request"});
+	assert.deepEqual(record.returnedError,{known:true,utf8Bytes:Buffer.byteLength(message),sha256:hash(message)});
+	assert.equal(cleanBrowserContextEvidence(contextId,result,0),false);
+	assert.doesNotMatch(JSON.stringify(result),/PRIVATE_ACTION_ID|PRIVATE_RETURNED_ERROR/);
 });
 
 test("installation preserves navigation arguments/results/errors and adds only declared identity metadata", async () => {
