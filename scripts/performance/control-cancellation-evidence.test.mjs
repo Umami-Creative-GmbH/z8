@@ -8,6 +8,82 @@ import {
 	cleanBrowserFailureEvidence,
 } from "./control-cancellation-evidence.mjs";
 
+test("closed Flight iterable and readable rows fulfill repeated values without accepting an unfinished stream", () => {
+	for (const tag of ["X", "x", "R"]) {
+		const body = `0:{"a":"$1"}\n1:${tag}\n1:{"value":"$2"}\n2:null\n1:C\n`;
+		assert.equal(
+			inspectRequiredFlightBody(Buffer.from(body), { action: true }).complete,
+			true,
+			tag,
+		);
+		for (const invalid of [
+			body.replace("1:C\n", ""),
+			body + "1:null\n",
+			body + "1:C\n",
+			body.replace("1:C\n", "1:X\n1:C\n"),
+			body.replace("2:null\n", ""),
+			body.replace("1:C\n", '1:E{"digest":"private"}\n'),
+		])
+			assert.equal(
+				inspectRequiredFlightBody(Buffer.from(invalid), { action: true })
+					.complete,
+				false,
+			);
+	}
+	assert.equal(
+		inspectRequiredFlightBody(Buffer.from('0:{"a":null}\n0:{"a":null}\n'), {
+			action: true,
+		}).complete,
+		false,
+	);
+});
+
+test("stream text stays opaque, iterable final values resolve, and unsupported tags expose only technical offsets", () => {
+	const text = '$dead\\n1:E{"private":"not a row"}';
+	const body = `0:{"a":"$1"}\n1:X\n1:T${Buffer.byteLength(text).toString(16)},${text}1:C"$2"\n2:null\n`;
+	assert.equal(
+		inspectRequiredFlightBody(Buffer.from(body), { action: true }).complete,
+		true,
+	);
+	assert.equal(
+		inspectRequiredFlightBody(Buffer.from(body.replace("2:null\n", "")), {
+			action: true,
+		}).complete,
+		false,
+	);
+	assert.equal(
+		inspectRequiredFlightBody(Buffer.from('0:{"a":"$1"}\n1:r\n1:C\n'), {
+			action: true,
+		}).complete,
+		true,
+	);
+	assert.equal(
+		inspectRequiredFlightBody(
+			Buffer.from('0:{"a":"$1"}\n1:r\n1:"bytes"\n1:C\n'),
+			{ action: true },
+		).complete,
+		false,
+	);
+	assert.equal(
+		inspectRequiredFlightBody(
+			Buffer.from('0:{"a":null}\n0:E{"digest":"private"}\n'),
+			{ action: true },
+		).reason,
+		"flight-server-error",
+	);
+	const unsupported = inspectRequiredFlightBody(
+		Buffer.from('0:{"a":null}\n1:Z{"private":"payload"}\n'),
+		{ action: true },
+	);
+	assert.deepEqual(unsupported, {
+		complete: false,
+		reason: "unsupported-record",
+		tagByte: 90,
+		recordOffset: 13,
+	});
+	assert.doesNotMatch(JSON.stringify(unsupported), /payload|private/);
+});
+
 test("a complete marked Flight representation proves its required payload without retaining values", () => {
 	const proof = inspectRequiredFlightBody(
 		Buffer.from('#0:{"b":"build","t":{"t":{"s":""}},"l":0,"a":0}\n'),

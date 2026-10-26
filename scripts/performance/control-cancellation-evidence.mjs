@@ -20,7 +20,11 @@ export function inspectRequiredFlightBody(
 		requestKind = action ? "action" : "navigation",
 	} = {},
 ) {
-	const unknown = (reason) => ({ complete: false, reason });
+	const unknown = (reason, diagnostic = {}) => ({
+		complete: false,
+		reason,
+		...diagnostic,
+	});
 	if (
 		!["action", "navigation", "route-tree"].includes(requestKind) ||
 		action !== (requestKind === "action")
@@ -48,6 +52,7 @@ export function inspectRequiredFlightBody(
 	const body = marker.startsWith("unmarked-") ? bytes : bytes.subarray(1),
 		records = new Map();
 	const utf8 = new TextDecoder("utf-8", { fatal: true });
+	const opaqueText = new WeakSet();
 	let offset = 0,
 		serverErrors = 0,
 		recordCount = 0;
@@ -65,14 +70,16 @@ export function inspectRequiredFlightBody(
 				offset = end + 1;
 				continue;
 			}
+			const recordOffset = offset + (marker.startsWith("unmarked-") ? 0 : 1);
 			const colon = body.indexOf(58, offset);
 			const id = body.subarray(offset, colon).toString();
-			if (colon < offset || !/^[a-f0-9]+$/.test(id) || records.has(id))
+			if (colon < offset || !/^[a-f0-9]+$/.test(id))
 				return unknown("invalid-record");
 			let start = colon + 1,
 				end,
 				value;
-			const tag = /^[A-Z]$/.test(String.fromCharCode(body[start]))
+			const tagByte = body[start];
+			const tag = /^[A-Z#rx]$/.test(String.fromCharCode(tagByte))
 				? String.fromCharCode(body[start++])
 				: null;
 			if (tag === "T") {
@@ -83,16 +90,61 @@ export function inspectRequiredFlightBody(
 				end = comma + 1 + Number.parseInt(length, 16);
 				if (!Number.isSafeInteger(end) || end > body.length)
 					return unknown("incomplete-text");
-				utf8.decode(body.subarray(comma + 1, end));
+				value = utf8.decode(body.subarray(comma + 1, end));
 			} else {
 				end = body.indexOf(10, start);
-				if (end < start || ![null, "I", "H", "D", "E"].includes(tag))
-					return unknown("unsupported-record");
-				value = JSON.parse(utf8.decode(body.subarray(start, end)));
+				if (
+					end < start ||
+					![null, "I", "H", "E", "X", "x", "R", "r", "C"].includes(tag)
+				)
+					return unknown("unsupported-record", { tagByte, recordOffset });
+				const text = utf8.decode(body.subarray(start, end));
+				if (["X", "x", "R", "r"].includes(tag)) {
+					if (text !== "") return unknown("invalid-stream-opener");
+				} else if (tag === "C" && text === "") value = "$undefined";
+				else if (tag === "H") {
+					if (!/^[DCLmSXM]/.test(text))
+						return unknown("unsupported-record", { tagByte, recordOffset });
+					value = JSON.parse(text.slice(1));
+				} else value = JSON.parse(text);
 				end++;
 				if (tag === "E") serverErrors++;
 			}
-			records.set(id, { value, tag, end });
+			if (serverErrors)
+				return { complete: false, reason: "flight-server-error", serverErrors };
+			const previous = records.get(id);
+			if (previous) {
+				// React's fulfilled stream chunk accepts repeated model/T rows only until C.
+				if (
+					!previous.stream ||
+					previous.closed ||
+					![null, "T", "C", "E"].includes(tag)
+				)
+					return unknown("invalid-stream-record");
+				if (previous.tag === "r" && tag !== "C" && tag !== "E")
+					return unknown("unsupported-byte-stream-value");
+				if (tag === "C") {
+					previous.closed = true;
+					if (["X", "x"].includes(previous.tag)) previous.value.push(value);
+				} else if (tag !== "E") {
+					if (tag === "T") {
+						const text = { textValue: value };
+						opaqueText.add(text);
+						previous.value.push(text);
+					} else previous.value.push(value);
+				}
+				previous.end = end;
+			} else {
+				if (tag === "C") return unknown("invalid-stream-record");
+				const stream = ["X", "x", "R", "r"].includes(tag);
+				records.set(id, {
+					value: stream ? [] : value,
+					tag,
+					end,
+					stream,
+					closed: false,
+				});
+			}
 			offset = end;
 		}
 	} catch {
@@ -100,6 +152,8 @@ export function inspectRequiredFlightBody(
 	}
 	if (serverErrors)
 		return { complete: false, reason: "flight-server-error", serverErrors };
+	if ([...records.values()].some((record) => record.stream && !record.closed))
+		return unknown("unclosed-stream");
 	const root = records.get("0")?.value;
 	if (
 		!root ||
@@ -217,7 +271,8 @@ export function inspectRequiredFlightBody(
 			if (!records.has(id)) return unknown("unresolved-model-reference");
 			if (!visited.has(id)) {
 				visited.add(id);
-				queue.push(records.get(id).value);
+				const record = records.get(id);
+				if (record.tag !== "T") queue.push(record.value);
 			}
 		} else if (
 			typeof value === "string" &&
@@ -228,7 +283,7 @@ export function inspectRequiredFlightBody(
 			)
 		) {
 			return unknown("unsupported-model-reference");
-		} else if (value && typeof value === "object") {
+		} else if (value && typeof value === "object" && !opaqueText.has(value)) {
 			const values = Object.values(value);
 			if (values.length + queue.length > 100000) return unknown("model-limit");
 			for (const item of values) queue.push(item);
