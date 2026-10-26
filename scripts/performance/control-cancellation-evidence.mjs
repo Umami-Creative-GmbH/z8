@@ -507,7 +507,7 @@ function inspectFlightBody(
 	let inspected = 0, postponedOutputReferences = 0, knownSuspenseBoundaries = 0, knownEmptyFallbacks = 0, postponedComponentReferences = 0, representedComponentFallbacks = 0, postponedDirectOutputs = 0, postponedArrayOutputs = 0;
 	while (queue.length) {
 		if (++inspected > 100000 || ++budget.models > 100000) return unknown("model-limit");
-		const { value, role, fallbackReferences, directEmbeddedOutput, fromTypedOutput, outputArrival, rArrayOutput, insideRArray } = queue.pop();
+		const { value, role, fallbackReferences, directEmbeddedOutput, fromTypedOutput, outputArrival, outputParentArrival, rArrayOutput, insideRArray } = queue.pop();
 		if (value && typeof value === "object" && binaryValues.has(value)) return unknown("unsupported-binary-role");
 		if (shellScope && role === "fallback-output" && (
 			(value && typeof value === "object" && !Array.isArray(value)) ||
@@ -581,7 +581,7 @@ function inspectFlightBody(
 				modelReference: { prefix: value[1] === "L" ? "L" : value[1] === "@" ? "@" : "plain",
 					form: value[1] === "L" ? "lazy-reference" : value[1] === "@" ? "promise-reference" : "model-reference", length: value.length },
 				semanticRole: role,
-				outputEdgeObservation:{walkPathOnly:true,fromTypedOutput:fromTypedOutput===true,directEmbeddedOutput:directEmbeddedOutput===true,arrival:outputArrival ?? "root-or-required"},
+				outputEdgeObservation:{walkPathOnly:true,fromTypedOutput:fromTypedOutput===true,directEmbeddedOutput:directEmbeddedOutput===true,rArrayOutput:rArrayOutput===true,insideRArray:insideRArray===true,arrival:outputArrival ?? "root-or-required",parentArrival:outputParentArrival ?? null},
 				marker, isPartial, requestKind, decodedBytes: bytes.length, bodySha256: bodySha256(bytes),
 			});
 			const visit = semanticVisitKey(role,id,rArrayOutput,insideRArray,directEmbeddedOutput);
@@ -687,6 +687,7 @@ function inspectFlightBody(
 					rArrayOutput:(partialCacheScope && role==="data" && key==="r") || (rArrayOutput===true && role==="output" && Array.isArray(value) && !elementTuple(value)),
 					insideRArray:rArrayOutput===true && role==="output" && Array.isArray(value) && !elementTuple(value),
 					fromTypedOutput:fromTypedOutput===true || (role==="data" && key==="r"),
+					outputParentArrival:outputArrival ?? "root-or-required",
 					outputArrival:role==="data" && key==="r" ? "typed-data-r" : Array.isArray(value) && output ? "array-output" : key==="children" && ["host-props","suspense-props","suspended-host-props","fallback-host-props"].includes(role) ? "element-children" : key==="fallback" && role==="suspense-props" ? "element-fallback" : "own-field" });
 			}
 		}
