@@ -1,6 +1,6 @@
 # Cached CDP text forward projection
 
-`scripts/performance/cdp-cached-text-projection.mjs` is pure, unwired diagnostic math. It forward-projects bounded original bytes using the Windows-1252 byte-to-code-unit table at Chromium revision `d0c02bfad08ec92a6ffcf989e53cd995e6381a4c`. It does not decode or reconstruct browser bytes and does not prove browser/cache/Native eligibility.
+`scripts/performance/cdp-cached-text-projection.mjs` is pure diagnostic math observed at naturally completed proxy bodies. It forward-projects bounded original bytes using the Windows-1252 byte-to-code-unit table at Chromium revision `d0c02bfad08ec92a6ffcf989e53cd995e6381a4c`. It does not decode or reconstruct browser bytes and does not prove browser/cache/Native eligibility.
 
 `projectCachedCdpText(originalBuffer)` returns only:
 
@@ -24,3 +24,5 @@ Before using a projection match as equality evidence, a caller must independentl
 ```powershell
 pnpm --config.verifyDepsBeforeRun=false node --test scripts/performance/cdp-cached-text-projection.test.mjs
 ```
+
+The collector records this bounded forward projection under transportBodyReceipt.cdpTextProjection only after actual proxy EOF and decoding, before discarding the original bytes. Unsupported BOMs or projection limits produce an explicit unavailable reason. The helper retains no body or projected string, adds no reads or waits, and does not alter framing or cancellation verdicts. All four operator source closures include the helper. Existing independent CDP code-unit length, dataLength and readback mode remain separate. The actual effective CDP response MIME and charset have their own known flags, fixed enums and Network.responseReceived provenance, distinct from parsed HTTP Content-Type headers. Missing or unsupported effective decoder metadata remains unknown; the projection alone is not a browser byte proof.
