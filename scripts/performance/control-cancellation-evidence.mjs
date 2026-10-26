@@ -211,6 +211,7 @@ function inspectFlightBody(
 	let pathLimit = false, pathFailure = null, pathLimitObservation = null, eagerParentCalls = 0, outlinedCalls = 0, eagerUniqueObjects = 0, repeatedEagerObjects = 0;
 	const eagerObjectsObserved = new WeakSet();
 	const completedParentChecks = new WeakMap(), parentCheckDepths = [];
+	let parentMemoChecks=0,parentMemoHits=0,parentMemoAbsent=0,parentMemoNonStandalone=0,parentMemoDepthExcluded=0,parentMemoKnownExcluded=0,parentMemoReady=0,parentMemoPublished=0;
 	const notePathFailure = reason => { pathFailure ??= reason; return false; };
 	const unknownPath = reason => { notePathFailure(reason); return {known:false}; };
 	const pathStep = (depth, phase, context = {}) => {
@@ -220,7 +221,7 @@ function inspectFlightBody(
 			pathLimit = true;
 			pathLimitObservation ??= {guard,phase,observedDepth:depth,depthCap:64,sharedModelSteps:budget.models,modelCap:100000,
 				localModelSteps:budget.models-modelBudgetAtStart,eagerParentCalls,outlinedCalls,eagerUniqueObjects,repeatedEagerObjects,
-				activeOutlinedPaths:activePaths.size,...context};
+				activeOutlinedPaths:activePaths.size,...context,parentMemoChecks,parentMemoHits,parentMemoAbsent,parentMemoNonStandalone,parentMemoDepthExcluded,parentMemoKnownExcluded,parentMemoReady,parentMemoPublished};
 			return notePathFailure("depth-or-model-limit");
 		}
 		return true;
@@ -332,9 +333,16 @@ function inspectFlightBody(
 			const pendingParentChecks = [];
 			if (!parents.every(parent=> {
 				const entryDepth = depth + 1;
-				const completed = standalone && completedParentChecks.get(parent.value)?.get(parent.originId);
-				if (completed?.forceElement === true && entryDepth + completed.depthSpan <= 64)
+				const available = completedParentChecks.get(parent.value)?.get(parent.originId);
+				parentMemoChecks++;
+				if (!available) parentMemoAbsent++;
+				if (!standalone) { parentMemoNonStandalone++; if(available?.forceElement===true && entryDepth+available.depthSpan<=64)parentMemoKnownExcluded++; }
+				const completed = standalone && available;
+				if (completed?.forceElement === true && entryDepth + completed.depthSpan <= 64) {
+					parentMemoHits++;
 					return pathStep(entryDepth,"completed-parent");
+				}
+				if(completed?.forceElement===true && entryDepth+completed.depthSpan>64)parentMemoDepthExcluded++;
 				// Reuse only a SAME-model materialized parent's active traversal. Its enclosing
 				// validation still has to finish every sibling before this result can escape.
 				// Cross-model/alias contexts keep their independent validation and cycle guards.
@@ -343,13 +351,14 @@ function inspectFlightBody(
 				let ready;
 				try { ready = eagerParent(parent.value,true,new Set([...inherited,parent.originId]),entryDepth); }
 				finally { parentCheckDepths.pop(); }
-				if (ready && standalone) pendingParentChecks.push({parent,depthSpan:scope.maxDepth-entryDepth});
+				if (ready && standalone) { parentMemoReady++; pendingParentChecks.push({parent,depthSpan:scope.maxDepth-entryDepth}); }
 				return ready;
 			})) return {known:false};
 			for (const {parent,depthSpan} of pendingParentChecks) {
 				let byOrigin = completedParentChecks.get(parent.value);
 				if (!byOrigin) completedParentChecks.set(parent.value,byOrigin = new Map());
 				byOrigin.set(parent.originId,{forceElement:true,depthSpan});
+				parentMemoPublished++;
 			}
 			return {known:true,value,originId,modelIds:state.modelIds};
 		} finally { activePaths.delete(reference); }
