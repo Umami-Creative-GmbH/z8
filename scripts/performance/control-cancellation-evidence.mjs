@@ -679,6 +679,7 @@ function inspectFlightBody(
 			embeddedFallbackPropsKind: embeddedRuntimePrefetch.fallbackPropsKind ?? null,
 			embeddedPathFailure: embeddedRuntimePrefetch.pathFailure ?? null,
 			embeddedPathLimitObservation: embeddedRuntimePrefetch.pathLimitObservation ?? null,
+			embeddedModelLimitObservation:embeddedRuntimePrefetch.modelLimitObservation ?? null,
 			embeddedPatchDataObservation: embeddedRuntimePrefetch.patchDataObservation ?? null,
 			embeddedOutputEdgeObservation: embeddedRuntimePrefetch.outputEdgeObservation ?? null,
 		});
@@ -695,8 +696,12 @@ function inspectFlightBody(
 	// permission bit so a permitted alias cannot discharge a required incoming edge.
 	const semanticVisitKey = (role,id,array=false,inside=false,direct=false) => `${role}:${id}:${array===true?1:0}:${inside===true?1:0}:${direct===true?1:0}`;
 	let inspected = 0, postponedOutputReferences = 0, knownSuspenseBoundaries = 0, knownEmptyFallbacks = 0, postponedComponentReferences = 0, representedComponentFallbacks = 0, postponedDirectOutputs = 0, postponedArrayOutputs = 0, postponedCacheOutputs = 0;
+	const modelLimitObservation=(site,guard,objectKeyCount=null)=>({protocol:"bounded-model-limit-observation-v1",site,guard,modelCap:100000,depthCap:64,
+		sharedModelSteps:budget.models,localModelSteps:budget.models-modelBudgetAtStart,inspected,queueLength:queue.length,objectKeyCount,visitedStates:visited.size,recordCount,
+		recursionLevel:depth,embeddedModelSteps:embeddedRuntimePrefetch?.modelSteps ?? 0,eagerParentCalls,outlinedCalls,eagerUniqueObjects,repeatedEagerObjects,activeOutlinedPaths:activePaths.size,
+		parentMemoChecks,parentMemoHits,parentMemoAbsent,parentMemoNonStandalone,parentMemoDepthExcluded,parentMemoKnownExcluded,parentMemoReady,parentMemoPublished});
 	while (queue.length) {
-		if (++inspected > 100000 || ++budget.models > 100000) return unknown("model-limit");
+		if (++inspected > 100000 || ++budget.models > 100000) return unknown("model-limit",{modelLimitObservation:modelLimitObservation("semantic-loop",inspected>100000?"local-inspected-work":"shared-model-work")});
 		const { value, role, fallbackReferences, directEmbeddedOutput, fromTypedOutput, outputArrival, outputParentArrival, rArrayOutput, insideRArray } = queue.pop();
 		if (value && typeof value === "object" && binaryValues.has(value)) return unknown("unsupported-binary-role");
 		if (shellScope && role === "fallback-output" && (
@@ -812,7 +817,7 @@ function inspectFlightBody(
 				},
 			});
 		} else if (value && typeof value === "object" && !opaqueText.has(value)) {
-			if (Object.keys(value).length + queue.length > 100000) return unknown("model-limit");
+			if (Object.keys(value).length + queue.length > 100000) return unknown("model-limit",{modelLimitObservation:modelLimitObservation("semantic-queue-size","queue-width",Object.keys(value).length)});
 			const output = ["output", "cache-output", "suspended-output", "fallback-output"].includes(role) || (embeddedPartialScope && role === "component-data");
 			if (shellScope && output && Array.isArray(value) && value[0] === "$" && value.length !== 4)
 				return unknown("unsupported-runtime-shell-output");

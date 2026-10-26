@@ -1354,4 +1354,25 @@ test("embedded runtime prefetch has exact binary framing, explicit stream close 
 	const modelInner = Buffer.from(inner.toString().replace('"KNOWN_INNER"', JSON.stringify(manyModels)));
 	const modelOuter = Buffer.from(outer(modelInner).toString().replace('"KNOWN_MAIN"', JSON.stringify(manyModels)));
 	assert.equal(inspectRequiredFlightBody(modelOuter, { cachedNavigations: true }).reason, "model-limit", "Model traversal cap is shared.");
+	const sharedLimit=inspectRequiredFlightBody(modelOuter,{cachedNavigations:true}).modelLimitObservation;
+	assert.equal(sharedLimit.site,"semantic-loop");assert.equal(sharedLimit.guard,"shared-model-work");
+	assert.equal(sharedLimit.sharedModelSteps,100001);assert.equal(sharedLimit.modelCap,100000);assert.ok(sharedLimit.embeddedModelSteps>0);
+	assert.ok(sharedLimit.inspected<=100000);assert.ok(sharedLimit.queueLength>0);
+});
+
+test("model-limit diagnostics identify queue width and local loop work without changing either guard",()=>{
+	const encode=value=>Buffer.from('#0:'+JSON.stringify({t:{t:{s:"en",d:{r:value,p:false,v:null}}}})+'\n');
+	const wide=inspectRequiredFlightBody(encode(Array(100001).fill(null)));
+	assert.equal(wide.complete,false);assert.equal(wide.reason,"model-limit");
+	assert.equal(wide.modelLimitObservation.site,"semantic-queue-size");assert.equal(wide.modelLimitObservation.objectKeyCount,100001);
+	assert.ok(wide.modelLimitObservation.sharedModelSteps<100000);
+	let branch=null;for(let i=0;i<17;i++)branch={left:branch,right:branch};
+	const local=inspectRequiredFlightBody(encode(branch));
+	assert.equal(local.complete,false);assert.equal(local.reason,"model-limit");
+	assert.equal(local.modelLimitObservation.guard,"local-inspected-work");assert.equal(local.modelLimitObservation.inspected,100001);assert.equal(local.modelLimitObservation.sharedModelSteps,100000);
+	for(const facts of [wide.modelLimitObservation,local.modelLimitObservation]){
+		assert.equal(facts.depthCap,64);assert.equal(facts.modelCap,100000);assert.equal(facts.embeddedModelSteps,0);
+		assert.ok(Number.isSafeInteger(facts.parentMemoChecks));assert.ok(Number.isSafeInteger(facts.eagerUniqueObjects));
+		assert.equal(Object.values(facts).some(value=>typeof value==="string" && /PRIVATE|\$[a-f0-9]/.test(value)),false);
+	}
 });
