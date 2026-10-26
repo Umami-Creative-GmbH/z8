@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { createHash } from "node:crypto";
 import { createActionResultObserver } from "./action-result-observer.mjs";
 import { testBrowserEvidence } from "./control-cancellation-test-fixtures.mjs";
 import {
@@ -417,6 +418,22 @@ test("framing failures expose only fixed parsing stage, offset and first tag byt
 	assert.doesNotMatch(JSON.stringify(json), /PRIVATE_VALUE|SyntaxError|stack|message/);
 });
 
+test("genuine Flight E is observed before unsupported endpoint or binary role semantics", () => {
+	for (const requestKind of ["segment-prefetch", "head-prefetch", "navigation"]) {
+		for (const marker of ["", "~", "#"]) {
+			const error = inspectRequiredFlightBody(Buffer.from(`${marker}0:E{"digest":"PRIVATE"}\n`), { requestKind });
+			assert.equal(error.serverErrors, 1);
+			assert.equal(error.complete, false);
+		}
+	}
+	for (const tag of ["o", "b", "A", "O", "U", "S", "s", "L", "l", "G", "g", "M", "m", "V"]) {
+		const bytes = Buffer.concat([Buffer.from('0:{"a":"$1"}\n1:' + tag + '8,'), Buffer.alloc(8), Buffer.from('2:E{"digest":"PRIVATE"}\n')]);
+		const proof = inspectRequiredFlightBody(bytes, { action: true });
+		assert.equal(proof.serverErrors, 1, tag);
+		assert.doesNotMatch(JSON.stringify(proof), /PRIVATE/);
+	}
+});
+
 test("serialized measured receipts require exact raw partition, scope and complete coverage", () => {
 	const proof = testBrowserEvidence("context", true).measured;
 	assert.equal(cleanBrowserFailureEvidence(proof, 1), true);
@@ -690,4 +707,61 @@ test("runtime-shell scope permits only postponed lazy output beneath a known Sus
 	const missingType = inspectRequiredFlightBody(Buffer.from(body.replace('"$Sreact.suspense"', '"$Ldead"')), options);
 	assert.equal(missingType.semanticRole, "element-type");
 	assert.doesNotMatch(JSON.stringify(missingType), /dead|KNOWN_FALLBACK/);
+});
+
+test("embedded runtime prefetch has exact binary framing, explicit stream close and its own required Flight graph", () => {
+	const inner = Buffer.from('#0:{"q":"","i":false,"t":{"t":{"s":"en","d":{"r":"KNOWN_INNER","p":false,"v":null}}}}\n');
+	const outer = (data, stream = "R", tag = "o", close = true, declared = data.length.toString(16)) => Buffer.concat([
+		Buffer.from(`0:{"q":"","i":false,"t":{"t":{"s":"en","d":{"r":"KNOWN_MAIN","p":true,"v":null}}},"p":"$1"}\n1:${stream}\n1:${tag}${declared},`),
+		data, Buffer.from(close ? '1:C\n' : ''),
+	]);
+	for (const [stream, tag] of [["R", "o"], ["r", "b"]]) {
+		const proof = inspectRequiredFlightBody(outer(inner, stream, tag), { cachedNavigations: true });
+		assert.equal(proof.complete, true);
+		assert.equal(proof.embeddedRuntimePrefetch.complete, true);
+		assert.equal(proof.embeddedRuntimePrefetch.requestKind, "embedded-runtime-prefetch");
+		assert.equal(proof.embeddedRuntimePrefetch.bodySha256, createHash("sha256").update(inner).digest("hex"));
+		assert.doesNotMatch(JSON.stringify(proof), /KNOWN_MAIN|KNOWN_INNER/);
+		const evidence = cancellationFixture();
+		Object.assign(evidence.failures[0], { bodyProof: proof, bodyReadbackComplete: true });
+		Object.assign(evidence.proxy[0], { bodyProof: proof, complete: true, canceled: false });
+		const receipt = classifyControlCancellations(evidence);
+		assert.equal(cleanBrowserFailureEvidence(receipt, 1), true);
+		const corrupt = structuredClone(receipt);
+		corrupt.records[0].proof.failure.bodyProof.embeddedRuntimePrefetch.serverErrors = 1;
+		assert.equal(cleanBrowserFailureEvidence(corrupt, 1), false);
+	}
+	const partialInner = Buffer.from('~0:{"q":"","i":false,"a":"$@2","t":{"t":{"s":"en","d":{"r":["$","$Sreact.suspense",null,{"fallback":["$","span",null,{"children":"KNOWN_FALLBACK"}],"children":"$Ldead"}],"p":true,"v":null}}}}\n2:null\n');
+	const partial = inspectRequiredFlightBody(outer(partialInner), { cachedNavigations: true });
+	assert.equal(partial.complete, true);
+	assert.equal(partial.embeddedRuntimePrefetch.requiredStage, "embedded-runtime-prefetch-output");
+	assert.equal(partial.embeddedRuntimePrefetch.postponedOutputReferences, 1);
+	assert.equal(inspectRequiredFlightBody(outer(Buffer.from(partialInner.toString().replace(/^~/, '#'))), { cachedNavigations: true }).complete, false);
+	for (const invalid of [
+		outer(inner, "R", "o", false),
+		outer(inner, "R", "o", true, (inner.length + 1).toString(16)),
+		outer(inner.subarray(0, inner.length - 1), "R", "o", false, inner.length.toString(16)),
+		outer(Buffer.from('0:E{"digest":"PRIVATE"}\n')),
+		outer(Buffer.from('#0:{"t":{"t":"$dead"}}\n')),
+		outer(inner, "X", "o"),
+		outer(inner, "r", "o"),
+		outer(inner, "R", "b"),
+		Buffer.from(outer(inner).toString().replace('"p":"$1"', '"required":"$1"')),
+		Buffer.from(outer(inner).toString().replace('"KNOWN_MAIN"', '"$Ldead"')),
+		outer(Buffer.from('PRIVATE_NOT_FLIGHT')),
+		outer(Buffer.from('abc'), "r", "b", false, "800001"),
+	]) assert.equal(inspectRequiredFlightBody(invalid, { cachedNavigations: true }).complete, false);
+	assert.equal(inspectRequiredFlightBody(inner, { requestKind: "embedded-runtime-prefetch", cachedNavigations: true }).complete, false,
+		"The private inner contract cannot be selected by an unrelated public request.");
+	const deep = inspectRequiredFlightBody(outer(Buffer.concat([Buffer.from('#'), outer(inner)])), { cachedNavigations: true });
+	assert.equal(deep.complete, false, "Nested p depth cannot multiply work limits.");
+	assert.equal(deep.embeddedReason, "embedded-prefetch-depth-or-contract");
+	const lotsOfRows = Buffer.concat([inner, Buffer.from(Array.from({ length: 4093 }, (_, i) => `${(i + 10000).toString(16)}:null\n`).join(''))]);
+	assert.equal(inspectRequiredFlightBody(outer(lotsOfRows), { cachedNavigations: true }).embeddedReason, "record-limit", "Protocol row cap is shared by outer and inner bodies.");
+	const largeInner = Buffer.from(inner.toString().replace('KNOWN_INNER', 'x'.repeat(4 * 1024 * 1024 + 1)));
+	assert.equal(inspectRequiredFlightBody(outer(largeInner), { cachedNavigations: true }).reason, "aggregate-decoded-limit", "The decoded budget is shared, not renewed per recursion.");
+	const manyModels = Array(50000).fill(null);
+	const modelInner = Buffer.from(inner.toString().replace('"KNOWN_INNER"', JSON.stringify(manyModels)));
+	const modelOuter = Buffer.from(outer(modelInner).toString().replace('"KNOWN_MAIN"', JSON.stringify(manyModels)));
+	assert.equal(inspectRequiredFlightBody(modelOuter, { cachedNavigations: true }).reason, "model-limit", "Model traversal cap is shared.");
 });

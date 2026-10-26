@@ -450,6 +450,13 @@ export function createBrowserControlCollector({
 			pendingBodies: pending.size + queue.length + proxy.pendingBodies,
 		};
 		const data = { responses, proxy: proxy.rows, coverage, browserRevision };
+		const protocolErrorRecords = [...rows().map((row) => ({ source: "browser", row })), ...proxy.rows.map((row) => ({ source: "proxy", row }))]
+			.filter(({ row }) => row.bodyProof?.serverErrors > 0 || row.bodyProof?.explicitActionFailure === true)
+			.map(({ source, row }) => ({ source, contextId: row.contextId, requestId: row.requestId ?? row.id,
+				proxyResponseId: row.proxyResponseId ?? (source === "proxy" ? row.id : null),
+				serverErrors: row.bodyProof.serverErrors ?? 0, explicitActionFailure: row.bodyProof.explicitActionFailure === true,
+				reason: ["flight-server-error", "embedded-runtime-prefetch-incomplete", "explicit-root-action-failure"].includes(row.bodyProof.reason) ? row.bodyProof.reason : "observed-protocol-error",
+				bodySha256: row.transportBodyReceipt?.bodySha256 ?? row.bodyReadbackReceipt?.bodySha256 ?? row.streamReceipt?.capturedBodySha256 ?? null }));
 		const measuredRows = measuredFailureIds.map((id) =>
 			requests.get(id)?.failed
 				? requests.get(id)
@@ -473,6 +480,9 @@ export function createBrowserControlCollector({
 		});
 		return {
 			contextId,
+			protocolErrors: { protocol: "positive-flight-error-observations-v1", contextId, installed: coverage.installed, scopeClosed: closed,
+				observed: protocolErrorRecords.length, overflow: Math.max(0, protocolErrorRecords.length - controlCancellationPolicy.recordLimit),
+				records: protocolErrorRecords.slice(0, controlCancellationPolicy.recordLimit) },
 			principalEpoch: principalEpoch.snapshot(),
 			rawMeasuredFailedRequests,
 			diagnostics: {
