@@ -465,6 +465,24 @@ test("shallow same-model outlined parents discharge all eager siblings without r
 	}
 });
 
+test("completed standalone outlined parents reuse structural readiness without skipping required roles or late siblings", () => {
+	const encode=(parent,rows="")=>Buffer.from('~0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:{r:Array(450).fill("$1:leaf"),p:true,v:null}}}})+'\n1:'+JSON.stringify(parent)+'\n'+rows);
+	const parent={leaf:"KNOWN",self:"$1"};for(let index=0;index<80;index++)parent[`p${index}`]="$1:leaf";
+	assert.equal(inspectRequiredFlightBody(encode(parent),{cachedNavigations:true}).complete,true,"The installed decoder fulfills all 450 projections of this same-model parent.");
+	assert.equal(inspectRequiredFlightBody(encode({...parent,last:"$8"}),{cachedNavigations:true}).complete,false);
+	assert.equal(inspectRequiredFlightBody(encode(parent,'8:E{"digest":"PRIVATE"}\n'),{cachedNavigations:true}).complete,false);
+	const represented=parent=>Buffer.from('~0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:{r:["$1:leaf","$1:required"],p:true,v:null}}}})+'\n1:'+JSON.stringify(parent)+'\n');
+	for(const required of ["$8","$@8","$L8",["$","$L8",null,{}]])
+		assert.equal(inspectRequiredFlightBody(represented({leaf:"KNOWN",required}),{cachedNavigations:true}).complete,false,"Parent readiness cannot discharge an independent required output/type reference.");
+	const project=(refs,rows)=>Buffer.from('~0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:{r:refs,p:true,v:null}}}})+'\n'+rows);
+	for(const [refs,rows] of [
+		[["$1:leaf","$1:element:props:leaf"],'1:{"leaf":"KNOWN","element":["$","span",null,{"leaf":"KNOWN","bad":"$8"}]}\n'],
+		[["$1:leaf","$1:element:type"],'1:{"leaf":"KNOWN","element":["$","$L8",null,{}]}\n'],
+		[["$1:leaf","$1:element:props:cycle"],'1:{"leaf":"KNOWN","element":["$","span",null,{"cycle":"$2:back"}]}\n2:{"back":"$1:element:props:cycle"}\n'],
+		[["$1:leaf","$2:props:self:value"],'1:{"leaf":"KNOWN"}\n2:["$","span",null,"$3"]\n3:{"value":"KNOWN","self":"$2:props"}\n'],
+	]) assert.equal(inspectRequiredFlightBody(project(refs,rows),{cachedNavigations:true}).complete,false,"A completed parent cannot grant forceElement, type, alias or cross-record readiness to a later projection.");
+});
+
 test("outlined limits identify the existing depth or shared-work guard without retaining data", () => {
 	const encode=eager=>Buffer.from('~0:{"q":"","i":false,"t":{"t":{"s":"en","d":{"r":"$1:leaf","p":true,"v":null}}}}\n1:'+JSON.stringify({leaf:"PRIVATE_VALUE",eager})+'\n');
 	const inspect=eager=>inspectRequiredFlightBody(encode(eager),{cachedNavigations:true});
