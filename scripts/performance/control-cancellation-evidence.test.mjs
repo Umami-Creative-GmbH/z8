@@ -669,11 +669,18 @@ test("runtime-shell scope permits only postponed lazy output beneath a known Sus
 	assert.equal(objectUnknown.fallbackValueKind, "object");
 	assert.doesNotMatch(JSON.stringify([componentUnknown,objectUnknown]), /PRIVATE|KNOWN_FALLBACK|dead/);
 	const proof = inspectRequiredFlightBody(Buffer.from(body), options);
+	for (const [fallback, emptyCount] of [[null,1],["$undefined",1],["omitted",1]]) {
+		const changed = fallback === "omitted" ? body.replace('"fallback":["$","span",null,{"children":"KNOWN_FALLBACK"}],','') : body.replace('["$","span",null,{"children":"KNOWN_FALLBACK"}]',JSON.stringify(fallback));
+		const empty = inspectRequiredFlightBody(Buffer.from(changed), options);
+		assert.equal(empty.complete,true);
+		assert.equal(empty.knownEmptyFallbacks,emptyCount);
+	}
 	assert.equal(proof.complete, true);
 	assert.equal(proof.requiredStage, "runtime-shell-output");
 	assert.equal(proof.isPartial, true);
 	assert.equal(proof.postponedOutputReferences, 1);
 	assert.equal(proof.knownSuspenseBoundaries, 1);
+	assert.equal(proof.knownEmptyFallbacks, 0);
 	const aliasedFallback = body.replace('["$","span",null,{"children":"KNOWN_FALLBACK"}]', '"$4"') + '4:["$","span",null,{"children":"KNOWN_FALLBACK"}]\n';
 	assert.equal(inspectRequiredFlightBody(Buffer.from(aliasedFallback), options).complete, true);
 	assert.equal(proof.representedOutputs, 1);
@@ -686,6 +693,11 @@ test("runtime-shell scope permits only postponed lazy output beneath a known Sus
 	const corrupted = structuredClone(receipt);
 	corrupted.records[0].proof.failure.bodyProof.knownSuspenseBoundaries = 0;
 	assert.equal(cleanBrowserFailureEvidence(corrupted, 1), false);
+	for (const count of [undefined, -1, 2]) {
+		const badEmptyCount = structuredClone(receipt);
+		badEmptyCount.records[0].proof.failure.bodyProof.knownEmptyFallbacks = count;
+		assert.equal(cleanBrowserFailureEvidence(badEmptyCount,1),false);
+	}
 	for (const invalid of [
 		body.replace('"children":"$Ldead"', '"children":"$dead"'),
 		body.replace('"children":"$Ldead"', '"children":"$@dead"'),
@@ -786,6 +798,9 @@ test("embedded runtime prefetch has exact binary framing, explicit stream close 
 	assert.equal(partial.complete, true);
 	assert.equal(partial.embeddedRuntimePrefetch.requiredStage, "embedded-runtime-prefetch-output");
 	assert.equal(partial.embeddedRuntimePrefetch.postponedOutputReferences, 1);
+	const omitted = inspectRequiredFlightBody(outer(Buffer.from(partialInner.toString().replace('"fallback":["$","span",null,{"children":"KNOWN_FALLBACK"}],',''))), { cachedNavigations: true });
+	assert.equal(omitted.complete,true);
+	assert.equal(omitted.embeddedRuntimePrefetch.knownEmptyFallbacks,1);
 	const componentFallback = Buffer.from(partialInner.toString().replace('["$","span",null,{"children":"KNOWN_FALLBACK"}]', '["$","$4",null,{"data":null}]')+'4:I["PRIVATE_MODULE",[],"PRIVATE_EXPORT"]\n');
 	const fallbackUnknown = inspectRequiredFlightBody(outer(componentFallback), { cachedNavigations: true });
 	assert.equal(fallbackUnknown.complete, false);

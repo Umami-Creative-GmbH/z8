@@ -342,7 +342,7 @@ function inspectFlightBody(
 	// Roles follow exact transport edges; another required path to the same model stays required.
 	const queue = [{ value: root, role: "root" }],
 		visited = new Set();
-	let inspected = 0, postponedOutputReferences = 0, knownSuspenseBoundaries = 0, postponedComponentReferences = 0;
+	let inspected = 0, postponedOutputReferences = 0, knownSuspenseBoundaries = 0, knownEmptyFallbacks = 0, postponedComponentReferences = 0;
 	while (queue.length) {
 		if (++inspected > 100000 || ++budget.models > 100000) return unknown("model-limit");
 		const { value, role, fallbackReferences } = queue.pop();
@@ -449,10 +449,14 @@ function inspectFlightBody(
 				const suspense = type === "$Sreact.suspense";
 				const known = suspense || type === "$Sreact.fragment" || (typeof type === "string" && type.length > 0 && !type.startsWith("$"));
 				if (known) {
-					if (!props || typeof props !== "object" || Array.isArray(props) || (suspense && !Object.hasOwn(props, "fallback")))
-						return unknown("unknown-runtime-shell-fallback", { fallbackKind: props && typeof props === "object" && !Array.isArray(props) ? "missing-suspense-fallback" : "invalid-element-props",
+					if (!props || typeof props !== "object" || Array.isArray(props))
+						return unknown("unknown-runtime-shell-fallback", { fallbackKind: "invalid-element-props",
 							fallbackPropsKind: props === null ? "null" : props === undefined ? "unresolved" : Array.isArray(props) ? "array" : typeof props === "object" ? "object" : "scalar" });
-					if (suspense) knownSuspenseBoundaries++;
+					if (suspense) {
+						knownSuspenseBoundaries++;
+						// React's optional fallback prop is a known empty fallback, never a missing model row.
+						if (!Object.hasOwn(props, "fallback") || props.fallback === null || props.fallback === "$undefined") knownEmptyFallbacks++;
+					}
 					queue.push({ value: value[1], role: "element-type", fallbackReferences }, { value: value[2], role: "element-key", fallbackReferences },
 						{ value: value[3], role: role === "fallback-output" ? "fallback-host-props" : suspense ? "suspense-props" : role === "suspended-output" ? "suspended-host-props" : "host-props", fallbackReferences });
 					continue;
@@ -675,7 +679,7 @@ function inspectFlightBody(
 		if (representedOutputs === 0)
 			return unknown("missing-represented-navigation-output");
 		patchClaims = { representedOutputs, treeNodes: seen.size,
-			...(shellScope ? { postponedOutputReferences, knownSuspenseBoundaries } : {}),
+			...(shellScope ? { postponedOutputReferences, knownSuspenseBoundaries, knownEmptyFallbacks } : {}),
 			...(postponedComponentReferences ? { postponedComponentReferences, renderableOutputClaim: false } : {}) };
 		requiredStage = postponedComponentReferences ? "embedded-partial-prefetch-representation" : requestKind === "embedded-runtime-prefetch" ? "embedded-runtime-prefetch-output" : shellScope ? "runtime-shell-output" : "navigation-patch";
 	} else if (isPartial) {
@@ -783,6 +787,7 @@ const goodBody = (proof, depth = 0) => {
 			Number.isSafeInteger(proof.representedOutputs) && proof.representedOutputs > 0 && proof.representedOutputs <= proof.treeNodes + 1 &&
 			Number.isSafeInteger(proof.postponedOutputReferences) && proof.postponedOutputReferences >= 0 && proof.postponedOutputReferences <= 100000 &&
 			Number.isSafeInteger(proof.knownSuspenseBoundaries) && proof.knownSuspenseBoundaries >= 0 && proof.knownSuspenseBoundaries <= 100000 &&
+			Number.isSafeInteger(proof.knownEmptyFallbacks) && proof.knownEmptyFallbacks >= 0 && proof.knownEmptyFallbacks <= proof.knownSuspenseBoundaries &&
 			(proof.postponedOutputReferences === 0 || proof.knownSuspenseBoundaries > 0) &&
 			(proof.requiredStage !== "embedded-partial-prefetch-representation" ||
 				(proof.renderableOutputClaim === false && Number.isSafeInteger(proof.postponedComponentReferences) && proof.postponedComponentReferences > 0 && proof.postponedComponentReferences <= 100000));
@@ -830,6 +835,7 @@ const bodyReceipt = (row) => {
 		"postponedComponentReferences",
 		"renderableOutputClaim",
 		"knownSuspenseBoundaries",
+		"knownEmptyFallbacks",
 		"protocolRows",
 		"modelSteps",
 		"boundaryBytes",
