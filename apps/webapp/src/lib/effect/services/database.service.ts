@@ -1,5 +1,6 @@
 import { trace } from "@opentelemetry/api";
 import { Context, Effect, Layer } from "effect";
+import { unstable_rethrow } from "next/navigation";
 import { db } from "@/db";
 import { DatabaseError } from "../errors";
 
@@ -33,6 +34,7 @@ const query: DatabaseQuery = (name, fn) =>
 					span.setStatus({ code: 1 }); // OK
 					return result;
 				} catch (error) {
+					unstable_rethrow(error);
 					span.recordException(error as Error);
 					span.setStatus({ code: 2, message: String(error) }); // ERROR
 					throw error;
@@ -41,12 +43,14 @@ const query: DatabaseQuery = (name, fn) =>
 				}
 			});
 		},
-		catch: (error) =>
-			new DatabaseError({
+		catch: (error) => {
+			unstable_rethrow(error);
+			return new DatabaseError({
 				message: `Database query failed: ${name}`,
 				operation: name,
 				cause: error,
-			}),
+			});
+		},
 	});
 
 /**
