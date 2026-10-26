@@ -210,9 +210,11 @@ function inspectFlightBody(
 	const plainPath = /^\$(0|[1-9a-f][a-f0-9]{0,12}):/;
 	let pathLimit = false, pathFailure = null, pathLimitObservation = null, eagerParentCalls = 0, outlinedCalls = 0, eagerUniqueObjects = 0, repeatedEagerObjects = 0;
 	const eagerObjectsObserved = new WeakSet();
+	const completedParentChecks = new WeakMap(), parentCheckDepths = [];
 	const notePathFailure = reason => { pathFailure ??= reason; return false; };
 	const unknownPath = reason => { notePathFailure(reason); return {known:false}; };
 	const pathStep = (depth, phase, context = {}) => {
+		for (const scope of parentCheckDepths) scope.maxDepth = Math.max(scope.maxDepth,depth);
 		const guard = depth > 64 ? "existing-recursion-depth" : ++budget.models > 100000 ? "shared-model-work" : null;
 		if (guard) {
 			pathLimit = true;
@@ -324,13 +326,31 @@ function inspectFlightBody(
 			// same-model target can anchor a self-cycle; a reference string is never an anchor.
 			state.checking = true; state.target = value; state.originId = originId;
 			state.anchorKnown = value !== undefined && (typeof value !== "string" || !value.startsWith("$") || value.startsWith("$$"));
+			// A standalone same-model check has no unfinished enclosing parent to borrow from.
+			// Publish its certificates only after the ENTIRE parent list has succeeded.
+			const standalone = trail.size === 0 && activePaths.size === 1 && state.modelIds.size === 1 && parents.every(parent=>parent.originId===id);
+			const pendingParentChecks = [];
 			if (!parents.every(parent=> {
+				const entryDepth = depth + 1;
+				const completed = standalone && completedParentChecks.get(parent.value)?.get(parent.originId);
+				if (completed?.forceElement === true && entryDepth + completed.depthSpan <= 64)
+					return pathStep(entryDepth,"completed-parent");
 				// Reuse only a SAME-model materialized parent's active traversal. Its enclosing
 				// validation still has to finish every sibling before this result can escape.
 				// Cross-model/alias contexts keep their independent validation and cycle guards.
 				const inherited = [...trail].every(item=>typeof item !== "string" || item === parent.originId) ? trail : [];
-				return eagerParent(parent.value,true,new Set([...inherited,parent.originId]),depth + 1);
+				const scope = {maxDepth:entryDepth}; parentCheckDepths.push(scope);
+				let ready;
+				try { ready = eagerParent(parent.value,true,new Set([...inherited,parent.originId]),entryDepth); }
+				finally { parentCheckDepths.pop(); }
+				if (ready && standalone) pendingParentChecks.push({parent,depthSpan:scope.maxDepth-entryDepth});
+				return ready;
 			})) return {known:false};
+			for (const {parent,depthSpan} of pendingParentChecks) {
+				let byOrigin = completedParentChecks.get(parent.value);
+				if (!byOrigin) completedParentChecks.set(parent.value,byOrigin = new Map());
+				byOrigin.set(parent.originId,{forceElement:true,depthSpan});
+			}
 			return {known:true,value,originId,modelIds:state.modelIds};
 		} finally { activePaths.delete(reference); }
 	};
