@@ -647,6 +647,7 @@ test("primary retains the original sanitized failure when native close is incomp
 for (const mutationFails of [true, false]) {
 	test(`primary retains ${mutationFails ? "the mutation timeout" : "the first restoration failure"} through native close errors`, async (t) => {
 		let now = 0, reloads = 0, closed = 0, detached = 0;
+		const callbacks = {}, observedIds = [], observationOrder = [];
 		t.mock.method(performance, "now", () => now);
 		const page = {
 			setViewport: async () => {},
@@ -661,11 +662,19 @@ for (const mutationFails of [true, false]) {
 			evaluate: async () => "denied",
 			createCDPSession: async () => ({
 				send: async () => {},
-				on() {},
+				on(name, callback) {
+					callbacks[name] = callback;
+					if (name === "Network.requestWillBeSent") callback({ requestId: "inherited", timestamp: 0 });
+				},
 				detach: async () => { detached++; },
 			}),
 			reload: async () => {
 				now = ++reloads === 1 ? 10 : 100;
+				if (reloads === 1) {
+					callbacks["Network.requestWillBeSent"]({ requestId: "measured", timestamp: 1 });
+					callbacks["Network.loadingFailed"]({ requestId: "inherited" });
+					callbacks["Network.loadingFailed"]({ requestId: "measured" });
+				}
 				if (reloads === 1 && !mutationFails) return;
 				throw Object.assign(Error("PRIVATE_CANARY_DO_NOT_PERSIST"), {
 					name: reloads === 1 ? "TimeoutError" : "Error",
@@ -699,6 +708,17 @@ for (const mutationFails of [true, false]) {
 			},
 			"mutation-refresh", 0, 1,
 			{
+				observeBrowser: async ({ page: actual, headers }) => {
+					assert.equal(actual, page);
+					assert.deepEqual(headers, { "Accept-Language": "en" });
+					return {
+						beginMeasurement: () => observationOrder.push("begin"),
+						endMeasurement: () => observationOrder.push("end"),
+						recordMeasuredFailure: (id) => observedIds.push(id),
+						close: async () => observationOrder.push("close"),
+						snapshot: () => ({ observed: observedIds.length }),
+					};
+				},
 				beginCollectorVisit: async () => ({}),
 				endCollectorVisit: async () => { throw Error("PRIVATE_NATIVE_CANARY"); },
 			},
@@ -719,6 +739,10 @@ for (const mutationFails of [true, false]) {
 		]);
 		assert.equal(closed, 1);
 		assert.equal(detached, 1);
+		assert.equal(sample.failedRequests, 1);
+		assert.deepEqual(observedIds, ["measured"]);
+		assert.deepEqual(observationOrder, ["begin", "end", "close"]);
+		assert.deepEqual(sample.browserControlEvidence, { observed: 1 });
 		assert.doesNotMatch(JSON.stringify(sample), /PRIVATE_.*CANARY|TimeoutError|stack/);
 	});
 }

@@ -155,6 +155,7 @@ export function createActionResultObserver(limits = actionResultPolicy) {
 			throw Error("Invalid bounded application observer limit.");
 	const requests = new Map(),
 		registry = new Map(),
+		aborts = [],
 		contracts = {},
 		byTrace = new Map(),
 		totals = counters();
@@ -325,17 +326,27 @@ export function createActionResultObserver(limits = actionResultPolicy) {
 				}
 			});
 		},
-		abort(id) {
+		abort(id, cause = "unknown") {
 			const row = requests.get(id);
 			if (!row || row.done) return;
 			row.done = true;
-			if (semantic(row)) add(row, "unknown");
+			if (semantic(row)) {
+				add(row, "unknown");
+				aborts.push({
+					id: row.id, traceId: row.traceId,
+					cause: ["downstream-cancellation", "upstream-failure"].includes(cause) ? cause : "unknown",
+					action: Boolean(row.actionId || row.malformedAction), flight: row.flight === true,
+					knownContract: registry.get(row.actionId) ?? null,
+					status: row.status ?? null,
+				});
+			}
 			discard(row);
 		},
 		snapshot() {
 			return {
 				policy: actionResultPolicy,
 				...totals,
+				aborts: structuredClone(aborts),
 				pending:
 					pending +
 					[...requests.values()].filter((row) => semantic(row) && !row.done)

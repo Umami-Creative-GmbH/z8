@@ -879,6 +879,7 @@ export async function measure(
 			: null;
 	let context;
 	let transport;
+	let browserObservation;
 	const attemptStart = performance.now();
 	const sample = {
 		condition: condition.name,
@@ -935,6 +936,11 @@ export async function measure(
 			sample.failureKind = failureKind;
 		}
 	};
+	const observeBrowser = (method, ...args) => {
+		if (!browserObservation) return;
+		try { browserObservation[method](...args); }
+		catch { recordFinalizationFailure("browser-control-observation", "observation-incomplete"); }
+	};
 	let page;
 	let client;
 	const pendingRequests = new Set();
@@ -983,6 +989,12 @@ export async function measure(
 		await page.setViewport(condition.viewport);
 		await page.emulateTimezone(condition.timezone);
 		await page.setExtraHTTPHeaders({ "Accept-Language": condition.locale });
+		if (collector.observeBrowser) {
+			const observation = await collector.observeBrowser({ page, context, transport, origin: plan.origin, headers: { "Accept-Language": condition.locale } });
+			if (!["beginMeasurement", "endMeasurement", "recordMeasuredFailure", "close", "snapshot"].every((key) => typeof observation?.[key] === "function"))
+				throw Error("Incomplete prospective browser observation interface.");
+			browserObservation = observation;
+		}
 		if (!transport) {
 			await page.setRequestInterception(true);
 			page.on("request", (request) =>
@@ -1198,11 +1210,13 @@ export async function measure(
 			if (requests.has(event.requestId)) {
 				pendingRequests.delete(event.requestId);
 				sample.failedRequests++;
+				observeBrowser("recordMeasuredFailure", event.requestId);
 			}
 		});
 		requestTraceId = traceId;
 		const start = performance.now();
 		measurementStart = start;
+		observeBrowser("beginMeasurement");
 		transport?.wire.begin(start);
 		stage = "navigate";
 		const clock = route.clockReady
@@ -1450,6 +1464,7 @@ export async function measure(
 					: performance.now() - measurementStart;
 		}
 		await client?.detach().catch(() => {});
+		observeBrowser("endMeasurement");
 		requestTraceId = backgroundTraceId;
 		if (mutationStarted) {
 			try {
@@ -1470,7 +1485,10 @@ export async function measure(
 				recordFinalizationFailure("restore-original-state", "restoration-error");
 			}
 		}
-		await closePrimaryContext({ context, transport, sample });
+		await closePrimaryContext({ context, transport, sample, beforeClose: browserObservation ? async () => {
+			try { await browserObservation.close(); }
+			catch { recordFinalizationFailure("browser-control-observation", "observation-incomplete"); }
+		} : undefined });
 		if (observerVisit) {
 			try {
 				const observation = await collector.endCollectorVisit(observerVisit);
@@ -1505,6 +1523,10 @@ export async function measure(
 				recordFinalizationFailure("trace-transport", "observation-incomplete");
 			} else sample.transportCoverageComplete = true;
 			await transport.close();
+		}
+		if (browserObservation) {
+			try { sample.browserControlEvidence = browserObservation.snapshot(); }
+			catch { recordFinalizationFailure("browser-control-observation", "observation-incomplete"); }
 		}
 	}
 	return sample;
