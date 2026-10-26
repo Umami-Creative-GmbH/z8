@@ -87,6 +87,8 @@ test("Native census chronology uses context application IDs independently of lex
 test("Native proof cannot use NoExtra, missing source authority, body mismatches or an incomplete current wire",()=>{
   for(const mutate of [i=>delete i.nativeContext,i=>delete i.nativeContext.binding.nativePublicSources,i=>i.failures[0].requestHeadersKnown=false,
     i=>i.responses.push(structuredClone(i.responses[0])),i=>i.proxy.push(structuredClone(i.proxy[0])),i=>i.responses[0].bodyReadbackReceipt.bodySha256="0".repeat(64),
+    i=>i.proxy[0].responseHeaderSnapshotKnown=false,i=>i.proxy[1].responseHeaderSnapshotKnown=false,
+    i=>i.responses[0].responseHeaderSnapshotKnown=false,i=>i.responses[0].initialSegmentResponse={...i.responses[0],responseHeaderSnapshotKnown:false},
     i=>i.proxy[1].complete=false,i=>i.proxy[1].canceled=true,i=>i.nativeContext.headerCensus.closed=false,i=>i.nativeContext.principalEpoch.after.sha256="0".repeat(64)]){
     const {input}=fixture();mutate(input);const result=classifyControlCancellations(input);assert.equal(result.provenControls,0);assert.equal(result.unknownFailures,1);
   }
