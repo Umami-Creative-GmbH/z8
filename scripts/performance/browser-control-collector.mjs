@@ -98,6 +98,11 @@ export function createBrowserControlCollector({
 	const limited = () =>
 		requests.size + extra.size >= controlCancellationPolicy.recordLimit;
 	const rows = () => [...requests.values()];
+	const missingFamilies = {
+		duplicateRequest: 0, responseBeforeRequest: 0, responseExtraBeforeRequest: 0,
+		dataBeforeRequest: 0, finishedBeforeRequest: 0, failedBeforeRequest: 0,
+	};
+	const missingEvent = (family) => { missing++; missingFamilies[family]++; };
 	const processBodies = () => {
 		while (
 			pending.size < 1 &&
@@ -294,6 +299,47 @@ export function createBrowserControlCollector({
 				coverage.missing + measuredRows.filter((row) => !row.failed).length,
 		};
 		return {
+			diagnostics: {
+				missingFamilies: { ...missingFamilies,
+					failedRequestHeadersUnknown: failures.filter((row) => !row.requestHeadersKnown).length,
+					measuredFailureNotObserved: measuredRows.filter((row) => !row.failed).length,
+				},
+				failures: failures.map((row) => {
+					const candidates = proxy.rows.filter((candidate) =>
+						candidate.contextId === row.contextId && candidate.method === row.method &&
+						candidate.fullUrlSha256 === row.fullUrlSha256);
+					const cached = responses.filter((candidate) => candidate.fromDiskCache &&
+						candidate.fullUrlSha256 === row.fullUrlSha256 && candidate.method === row.method);
+					return {
+						requestId: row.requestId, type: row.type, method: row.method,
+						requestKind: row.requestKind, action: row.action, flight: row.flight,
+						prefetch: row.prefetch, status: row.status ?? null,
+						requestHeadersKnown: row.requestHeadersKnown === true,
+						documentGeneration: row.documentGeneration,
+						fullUrlSha256: row.fullUrlSha256, requestHeadersSha256: row.requestHeadersSha256,
+						proxyResponseId: row.proxyResponseId ?? null,
+						fromDiskCache: row.fromDiskCache === true,
+						loaderId: row.loaderId,
+						cachedCandidates: {
+							sameUrlMethod: cached.length,
+							sameLoader: cached.filter((candidate) => candidate.loaderId === row.loaderId).length,
+							fullIdentity: cached.filter((candidate) => candidate.requestHeadersSha256 === row.requestHeadersSha256 &&
+								candidate.documentGeneration === row.documentGeneration).length,
+							completeBody: cached.filter((candidate) => candidate.bodyProof?.complete === true).length,
+							bodyProofReasons: [...new Set(cached.map((candidate) => candidate.bodyProof?.reason ?? "not-read"))].slice(0, 16),
+						},
+						bodyProofReason: row.bodyProof?.reason ?? null,
+						proxyCandidates: {
+							sameUrlMethod: candidates.length,
+							fullIdentity: candidates.filter((candidate) =>
+								candidate.requestHeadersSha256 === row.requestHeadersSha256 &&
+								candidate.documentGeneration === row.documentGeneration).length,
+							responseId: candidates.filter((candidate) => row.proxyResponseId &&
+								candidate.id === row.proxyResponseId).length,
+						},
+					};
+				}),
+			},
 			measured: classifyControlCancellations({
 				...data,
 				coverage: measuredCoverage,
@@ -367,7 +413,7 @@ export function createBrowserControlCollector({
 			}
 			const previous = requests.get(event.requestId);
 			if (previous && !event.redirectResponse) {
-				missing++;
+				missingEvent("duplicateRequest");
 				return;
 			}
 			const row = {
@@ -405,7 +451,7 @@ export function createBrowserControlCollector({
 		response(event) {
 			const row = requests.get(event.requestId);
 			if (!row) {
-				missing++;
+				missingEvent("responseBeforeRequest");
 				return;
 			}
 			Object.assign(
@@ -421,7 +467,7 @@ export function createBrowserControlCollector({
 		responseExtra(event) {
 			const row = requests.get(event.requestId);
 			if (!row) {
-				missing++;
+				missingEvent("responseExtraBeforeRequest");
 				return;
 			}
 			const metadata = controlResponseMetadata(event.headers, event.statusCode);
@@ -433,7 +479,7 @@ export function createBrowserControlCollector({
 		finished(event) {
 			const row = requests.get(event.requestId);
 			if (!row) {
-				missing++;
+				missingEvent("finishedBeforeRequest");
 				return;
 			}
 			row.loadingFinished = true;
@@ -448,7 +494,7 @@ export function createBrowserControlCollector({
 		failed(event) {
 			const row = requests.get(event.requestId);
 			if (!row) {
-				missing++;
+				missingEvent("failedBeforeRequest");
 				return;
 			}
 			if (row.failed) {
@@ -467,7 +513,7 @@ export function createBrowserControlCollector({
 		data(event) {
 			const row = requests.get(event.requestId);
 			if (!row) {
-				missing++;
+				missingEvent("dataBeforeRequest");
 				return;
 			}
 			if (!Number.isSafeInteger(event.dataLength) || event.dataLength < 0) {

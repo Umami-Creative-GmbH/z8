@@ -34,6 +34,44 @@ const event = (requestId, timestamp, type = "Fetch") => ({
 	request: { url, method: "GET", headers, initialPriority: "VeryLow" },
 });
 
+test("safe diagnostics identify missing event families without changing blocking coverage", async () => {
+	const collector = createBrowserControlCollector({ contextId, origin,
+		readBody: async () => { throw Error("PRIVATE_BODY_ERROR"); },
+		proxyObservation: () => ({ installed: true, rows: [], errors: 0, overflow: 0, pendingBodies: 0 }),
+	});
+	collector.installed();
+	collector.beginMeasurement();
+	collector.request(event("unknown", 1, "Other"));
+	collector.request(event("unknown", 2));
+	collector.response({ requestId: "missing-response", response: {} });
+	collector.responseExtra({ requestId: "missing-extra" });
+	collector.data({ requestId: "missing-data" });
+	collector.finished({ requestId: "missing-finish" });
+	collector.failed({ requestId: "missing-failure" });
+	collector.recordMeasuredFailure("unknown");
+	collector.failed({ requestId: "unknown", errorText: "net::ERR_ABORTED", canceled: true });
+	collector.endMeasurement();
+	collector.endScope();
+	await tick(); await tick();
+	const result = collector.snapshot();
+	assert.equal(result.measured.complete, false);
+	assert.equal(result.measured.rawFailedRequests, 1);
+	assert.equal(result.measured.unknownFailures, 1);
+	assert.equal(result.measured.coverage.missing, 7);
+	assert.deepEqual(result.diagnostics.missingFamilies, {
+		duplicateRequest: 1, responseBeforeRequest: 1, responseExtraBeforeRequest: 1,
+		dataBeforeRequest: 1, finishedBeforeRequest: 1, failedBeforeRequest: 1,
+		failedRequestHeadersUnknown: 1, measuredFailureNotObserved: 0,
+	});
+	const row = result.diagnostics.failures[0];
+	assert.equal(row.type, "Other");
+	assert.equal(row.method, "GET");
+	assert.equal(row.requestHeadersKnown, false);
+	assert.equal(row.bodyProofReason, "cdp-body-unavailable");
+	assert.equal(row.proxyCandidates.sameUrlMethod, 0);
+	assert.doesNotMatch(JSON.stringify(result), /PRIVATE_|localhost|Accept-Language|next-router-prefetch/);
+});
+
 test("actual CDP/body and proxy events produce a control proof without publishing payload or header values", async () => {
 	const proxy = createProxyControlCollector({ contextId });
 	proxy.installed();
