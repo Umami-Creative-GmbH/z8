@@ -779,11 +779,26 @@ test("typed patch rejection retains the first fixed guard and safe field kinds w
 	assert.doesNotMatch(JSON.stringify([direct,inspectRequiredFlightBody(outer,{cachedNavigations:true})]),/PRIVATE_QUERY|PRIVATE_OUTPUT|\$undefined/);
 });
 
+test("typed Vary streams read branded framed text as literal strings only at the Vary edge", () => {
+	const root={q:"",i:false,r:"$1",t:{t:{s:"en",d:{r:"KNOWN",p:true,v:"$1"}}}};
+	const encode=(rows,value=root)=>Buffer.from('~0:'+JSON.stringify(value)+'\n'+rows);
+	const rows='1:X\n'+["locale","$2",'2:E{"digest":"PRIVATE_LITERAL"}',"0"].map(text=>'1:T'+Buffer.byteLength(text).toString(16)+','+text).join('')+'1:0\n1:C\n';
+	const proof=inspectRequiredFlightBody(encode(rows),{cachedNavigations:true});
+	assert.equal(proof.complete,true);assert.equal(proof.serverErrors,0);
+	const inner=encode(rows),outer=Buffer.concat([Buffer.from('0:{"q":"","i":false,"t":{"t":{"s":"en","d":{"r":"MAIN","p":false,"v":null}}},"p":"$3"}\n3:R\n3:o'+inner.length.toString(16)+','),inner,Buffer.from('3:C\n')]);
+	assert.equal(inspectRequiredFlightBody(outer,{cachedNavigations:true}).complete,true);
+	for(const invalid of ['1:X\n1:{"textValue":"locale"}\n1:C\n','1:X\n1:1\n1:C\n','1:X\n1:"$2"\n1:C\n',rows.replace('1:C\n',''),rows+'2:E{"digest":"PRIVATE_ERROR"}\n'])
+		assert.equal(inspectRequiredFlightBody(encode(invalid),{cachedNavigations:true}).complete,false);
+	const stale=structuredClone(root);stale.r=null;stale.t.t.d.v=null;stale.t.t.d.s="$1";
+	assert.equal(inspectRequiredFlightBody(encode('1:X\n1:T1,01:C\n',stale),{cachedNavigations:true}).complete,false,"A framed numeric-looking string never becomes a stale-time number.");
+	assert.doesNotMatch(JSON.stringify(proof),/locale|PRIVATE_LITERAL|\$2/);
+});
+
 test("rejected typed iterable diagnostics distinguish reference, opener and already-inspected yield kinds", () => {
-	const body=(reference,rows)=>Buffer.from('~0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:{r:"KNOWN",p:true,v:reference}}}})+'\n'+rows);
+	const body=(reference,rows)=>Buffer.from('~0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:{r:"KNOWN",p:true,v:null,s:reference}}}})+'\n'+rows);
 	const text="PRIVATE_PARAM";
 	const proof=inspectRequiredFlightBody(body("$1",'1:X\n1:T'+Buffer.byteLength(text).toString(16)+','+text+'1:C\n'),{cachedNavigations:true});
-	assert.equal(proof.complete,false);assert.equal(proof.patchDataObservation.failure,"vary-stream");
+	assert.equal(proof.complete,false);assert.equal(proof.patchDataObservation.failure,"stale-stream");
 	assert.deepEqual(proof.patchDataObservation.iterable,{referenceForm:"model-reference",targetKnown:true,targetTag:"X",stream:true,closed:true,yieldCount:1,firstRejectedYield:{rawKind:"framed-text",resolvedKind:"framed-text"}});
 	const alias=inspectRequiredFlightBody(body("$1:stream",'1:{"stream":"$2"}\n2:X\n2:C\n'),{cachedNavigations:true});
 	assert.equal(alias.complete,false);assert.equal(alias.patchDataObservation.iterable.referenceForm,"outlined-path");
