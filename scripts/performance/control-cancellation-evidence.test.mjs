@@ -925,6 +925,18 @@ test("embedded partial cache representation can contain a direct postponed r wit
 	assert.equal(inspectRequiredFlightBody(Buffer.from(outer(inner).toString().replace('"MAIN"','"$L9"')),{cachedNavigations:true}).complete,false);
 });
 
+test("unresolved output records the actual bounded walk edge without granting descendant permissions", () => {
+	const root={q:"",i:false,t:{t:{s:"en",d:{r:null,p:true,v:null}}}};
+	for(const [value,rows,arrival]of [["$2",'2:"$L9"\n',"model-reference"],[["$L9"],"","array-output"],[["$","div",null,{children:"$L9"}],"","element-children"]]){
+		const data=structuredClone(root);data.t.t.d.r=value;const inner='~0:'+JSON.stringify(data)+'\n'+rows;
+		const bytes=Buffer.concat([Buffer.from('0:{"q":"","i":false,"t":{"t":{"s":"en","d":{"r":"MAIN","p":false,"v":null}}},"p":"$1"}\n1:R\n1:o'+Buffer.byteLength(inner).toString(16)+','),Buffer.from(inner),Buffer.from('1:C\n')]);
+		const proof=inspectRequiredFlightBody(bytes,{cachedNavigations:true});
+		assert.equal(proof.complete,false);assert.equal(proof.embeddedReason,"unresolved-model-reference");
+		assert.deepEqual(proof.embeddedOutputEdgeObservation,{walkPathOnly:true,fromTypedOutput:true,directEmbeddedOutput:false,arrival});
+		assert.doesNotMatch(JSON.stringify(proof),/\$L9|\$2|MAIN/);
+	}
+});
+
 test("embedded partial prefetch represents postponed component props without claiming renderable output", () => {
 	const inner = '~4:I["synthetic",[],"Component"]\n0:{"q":"","i":false,"t":{"t":{"s":"en","d":{"r":["$","$4",null,{"data":"$L9"}],"p":true,"v":null}}}}\n';
 	const outer = (value) => Buffer.concat([

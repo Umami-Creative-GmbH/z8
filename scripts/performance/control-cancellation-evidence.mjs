@@ -490,6 +490,7 @@ function inspectFlightBody(
 			embeddedPathFailure: embeddedRuntimePrefetch.pathFailure ?? null,
 			embeddedPathLimitObservation: embeddedRuntimePrefetch.pathLimitObservation ?? null,
 			embeddedPatchDataObservation: embeddedRuntimePrefetch.patchDataObservation ?? null,
+			embeddedOutputEdgeObservation: embeddedRuntimePrefetch.outputEdgeObservation ?? null,
 		});
 	}
 	const shellScope = requestKind === "runtime-shell" || (requestKind === "embedded-runtime-prefetch" && isPartial);
@@ -502,7 +503,7 @@ function inspectFlightBody(
 	let inspected = 0, postponedOutputReferences = 0, knownSuspenseBoundaries = 0, knownEmptyFallbacks = 0, postponedComponentReferences = 0, representedComponentFallbacks = 0, postponedDirectOutputs = 0;
 	while (queue.length) {
 		if (++inspected > 100000 || ++budget.models > 100000) return unknown("model-limit");
-		const { value, role, fallbackReferences, directEmbeddedOutput } = queue.pop();
+		const { value, role, fallbackReferences, directEmbeddedOutput, fromTypedOutput, outputArrival } = queue.pop();
 		if (value && typeof value === "object" && binaryValues.has(value)) return unknown("unsupported-binary-role");
 		if (shellScope && role === "fallback-output" && (
 			(value && typeof value === "object" && !Array.isArray(value)) ||
@@ -542,7 +543,7 @@ function inspectFlightBody(
 			const modelRole = shellScope && role === "tree-map" && value[1] === "Q" ? "tree-map-model" : "required";
 			if (!visited.has(`${modelRole}:${id}`)) {
 				visited.add(`${modelRole}:${id}`);
-				queue.push({ value: model, role: modelRole, fallbackReferences });
+				queue.push({ value: model, role: modelRole, fallbackReferences, fromTypedOutput, outputArrival:"collection-reference" });
 			}
 		} else if (
 			typeof value === "string" &&
@@ -571,6 +572,7 @@ function inspectFlightBody(
 				modelReference: { prefix: value[1] === "L" ? "L" : value[1] === "@" ? "@" : "plain",
 					form: value[1] === "L" ? "lazy-reference" : value[1] === "@" ? "promise-reference" : "model-reference", length: value.length },
 				semanticRole: role,
+				outputEdgeObservation:{walkPathOnly:true,fromTypedOutput:fromTypedOutput===true,directEmbeddedOutput:directEmbeddedOutput===true,arrival:outputArrival ?? "root-or-required"},
 				marker, isPartial, requestKind, decodedBytes: bytes.length, bodySha256: bodySha256(bytes),
 			});
 			if (!visited.has(`${role}:${id}`)) {
@@ -578,7 +580,7 @@ function inspectFlightBody(
 				const record = records.get(id);
 				if (shellScope && role === "fallback-output" && record.tag !== null && record.tag !== "T")
 					return unknown("unsupported-runtime-shell-fallback-kind");
-				if (record.tag !== "T") queue.push({ value: record.value, role,
+				if (record.tag !== "T") queue.push({ value: record.value, role, fromTypedOutput, outputArrival:"model-reference",
 					fallbackReferences: role === "fallback-output" ? new Set([...(fallbackReferences ?? []), id]) : fallbackReferences });
 			}
 		} else if (typeof value === "string" && plainPath.test(value)) {
@@ -588,7 +590,7 @@ function inspectFlightBody(
 				semanticRole:role,pathFailure:pathFailure ?? (pathLimit?"depth-or-model-limit":"unavailable-own-data"),marker,isPartial,requestKind,
 				...(pathLimitObservation ? {pathLimitObservation} : {}),
 			});
-			queue.push({value:selected.value,role,fallbackReferences});
+			queue.push({value:selected.value,role,fallbackReferences,fromTypedOutput,outputArrival:"outlined-reference"});
 		} else if (
 			typeof value === "string" &&
 			value.startsWith("$") &&
@@ -628,8 +630,8 @@ function inspectFlightBody(
 						// React's optional fallback prop is a known empty fallback, never a missing model row.
 						if (!Object.hasOwn(props, "fallback") || props.fallback === null || props.fallback === "$undefined") knownEmptyFallbacks++;
 					}
-					queue.push({ value: value[1], role: "element-type", fallbackReferences }, { value: value[2], role: "element-key", fallbackReferences },
-						{ value: value[3], role: role === "fallback-output" ? "fallback-host-props" : suspense ? "suspense-props" : role === "suspended-output" ? "suspended-host-props" : "host-props", fallbackReferences });
+					queue.push({ value: value[1], role: "element-type", fallbackReferences, fromTypedOutput, outputArrival:"element-type" }, { value: value[2], role: "element-key", fallbackReferences, fromTypedOutput, outputArrival:"element-key" },
+						{ value: value[3], role: role === "fallback-output" ? "fallback-host-props" : suspense ? "suspense-props" : role === "suspended-output" ? "suspended-host-props" : "host-props", fallbackReferences, fromTypedOutput, outputArrival:"element-props" });
 					continue;
 				}
 				if (role === "fallback-output") {
@@ -641,7 +643,7 @@ function inspectFlightBody(
 					if (embeddedPartialScope && knownModule && props && typeof props === "object" && !Array.isArray(props)) {
 						// The cache stores this fulfilled element/props representation; it does not render the imported component.
 						representedComponentFallbacks++;
-						queue.push({value:value[1],role:"element-type"},{value:value[2],role:"element-key"},{value:value[3],role:"required"});
+						queue.push({value:value[1],role:"element-type",fromTypedOutput,outputArrival:"element-type"},{value:value[2],role:"element-key",fromTypedOutput,outputArrival:"element-key"},{value:value[3],role:"required",fromTypedOutput,outputArrival:"element-props"});
 						continue;
 					}
 					return unknown("unknown-runtime-shell-fallback", { fallbackKind: "component-element",
@@ -650,7 +652,7 @@ function inspectFlightBody(
 				}
 				// Unknown component props may interpret children as ordinary required data.
 				for (let index = value.length - 1; index >= 0; index--)
-					queue.push({ value: value[index], role: index === 1 ? "element-type" : index === 3 ? "component-data" : "required", fallbackReferences });
+					queue.push({ value: value[index], role: index === 1 ? "element-type" : index === 3 ? "component-data" : "required", fallbackReferences,fromTypedOutput,outputArrival:index===1?"element-type":index===3?"element-props":"element-field" });
 				continue;
 			}
 			for (const [key, item] of Object.entries(value)) {
@@ -670,7 +672,9 @@ function inspectFlightBody(
 				else if (shellScope && key === "children" && role === "host-props") nextRole = "output";
 				else if (shellScope && output && Array.isArray(value)) nextRole = role;
 				else if (shellScope && role === "component-data") nextRole = role;
-				queue.push({ value: item, role: nextRole, fallbackReferences, directEmbeddedOutput: embeddedPartialScope && role === "data" && key === "r" });
+				queue.push({ value: item, role: nextRole, fallbackReferences, directEmbeddedOutput: embeddedPartialScope && role === "data" && key === "r",
+					fromTypedOutput:fromTypedOutput===true || (role==="data" && key==="r"),
+					outputArrival:role==="data" && key==="r" ? "typed-data-r" : Array.isArray(value) && output ? "array-output" : key==="children" && ["host-props","suspense-props","suspended-host-props","fallback-host-props"].includes(role) ? "element-children" : key==="fallback" && role==="suspense-props" ? "element-fallback" : "own-field" });
 			}
 		}
 	}
