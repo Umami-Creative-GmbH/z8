@@ -501,6 +501,9 @@ function inspectFlightBody(
 	// Roles follow exact transport edges; another required path to the same model stays required.
 	const queue = [{ value: root, role: "root" }],
 		visited = new Set();
+	// Structural parent readiness is independent; semantic visits must retain every
+	// permission bit so a permitted alias cannot discharge a required incoming edge.
+	const semanticVisitKey = (role,id,array=false,inside=false,direct=false) => `${role}:${id}:${array===true?1:0}:${inside===true?1:0}:${direct===true?1:0}`;
 	let inspected = 0, postponedOutputReferences = 0, knownSuspenseBoundaries = 0, knownEmptyFallbacks = 0, postponedComponentReferences = 0, representedComponentFallbacks = 0, postponedDirectOutputs = 0, postponedArrayOutputs = 0;
 	while (queue.length) {
 		if (++inspected > 100000 || ++budget.models > 100000) return unknown("model-limit");
@@ -542,8 +545,9 @@ function inspectFlightBody(
 			)
 				return unknown("unsupported-outlined-collection");
 			const modelRole = shellScope && role === "tree-map" && value[1] === "Q" ? "tree-map-model" : "required";
-			if (!visited.has(`${modelRole}:${id}`)) {
-				visited.add(`${modelRole}:${id}`);
+			const visit = semanticVisitKey(modelRole,id);
+			if (!visited.has(visit)) {
+				visited.add(visit);
 				queue.push({ value: model, role: modelRole, fallbackReferences, fromTypedOutput, outputArrival:"collection-reference" });
 			}
 		} else if (
@@ -580,8 +584,9 @@ function inspectFlightBody(
 				outputEdgeObservation:{walkPathOnly:true,fromTypedOutput:fromTypedOutput===true,directEmbeddedOutput:directEmbeddedOutput===true,arrival:outputArrival ?? "root-or-required"},
 				marker, isPartial, requestKind, decodedBytes: bytes.length, bodySha256: bodySha256(bytes),
 			});
-			if (!visited.has(`${role}:${id}`)) {
-				visited.add(`${role}:${id}`);
+			const visit = semanticVisitKey(role,id,rArrayOutput,insideRArray,directEmbeddedOutput);
+			if (!visited.has(visit)) {
+				visited.add(visit);
 				const record = records.get(id);
 				if (shellScope && role === "fallback-output" && record.tag !== null && record.tag !== "T")
 					return unknown("unsupported-runtime-shell-fallback-kind");

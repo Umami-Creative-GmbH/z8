@@ -962,6 +962,26 @@ test("typed r arrays have separate nonrenderable partial-cache claims without gr
 	assert.equal(inspectRequiredFlightBody(Buffer.from(inner),{cachedNavigations:true}).complete,false,"Ordinary main output gains no array-hole permission.");
 });
 
+test("shared output aliases recheck every required permission context in both array orders", () => {
+	const outer=value=>Buffer.concat([Buffer.from('0:{"q":"","i":false,"t":{"t":{"s":"en","d":{"r":"MAIN","p":false,"v":null}}},"p":"$1"}\n1:R\n1:o'+Buffer.byteLength(value).toString(16)+','),Buffer.from(value),Buffer.from('1:C\n')]);
+	for(const shell of [false,true])for(const reverse of [false,true]){
+		const inspect=value=>inspectRequiredFlightBody(shell?Buffer.from(value):outer(value),{cachedNavigations:true,...(shell?{requestKind:"runtime-shell"}:{})});
+		for(const child of ["$2","$3:value"]){
+			const values=[["$","div",null,{children:child}],"$2"];if(reverse)values.reverse();
+			const inner='~0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:{r:values,p:true,v:null}}}})+'\n2:["$L9"]\n3:{"value":"$2"}\n';
+			assert.equal(inspect(inner).complete,false,"A permitted array alias cannot suppress the host-child required alias.");
+		}
+		for(const required of [["$","$2",null,{}],["$","$Sreact.suspense",null,{fallback:"$2",children:"KNOWN"}],"$Q3"]){
+			const values=[required,"$2"];if(reverse)values.reverse();
+			const inner='~0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:{r:values,p:true,v:null}}}})+'\n2:["$L9"]\n3:[["key","$2"]]\n';
+			assert.equal(inspect(inner).complete,false,"A shared type, fallback or collection remains required after the output alias.");
+		}
+		const direct={r:"$2",p:true,v:null},array={r:["$2"],p:true,v:null};
+		const inner='~0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:reverse?array:direct},h:reverse?direct:array}})+'\n2:"$L9"\n';
+		assert.equal(inspect(inner).complete,false,"Array-root and array-item contexts differ even when both have typed-r provenance.");
+	}
+});
+
 test("embedded partial prefetch represents postponed component props without claiming renderable output", () => {
 	const inner = '~4:I["synthetic",[],"Component"]\n0:{"q":"","i":false,"t":{"t":{"s":"en","d":{"r":["$","$4",null,{"data":"$L9"}],"p":true,"v":null}}}}\n';
 	const outer = (value) => Buffer.concat([
