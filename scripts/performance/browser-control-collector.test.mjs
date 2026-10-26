@@ -752,6 +752,21 @@ test("CDP effective response MIME and charset remain distinct from the HTTP Cont
 	}
 });
 
+test("effective CDP decoder metadata requires bounded own data properties without invoking getters",async()=>{
+	let reads=0;
+	const inherited=Object.create({mimeType:"text/x-component",charset:""});
+	const accessors=Object.defineProperties({},{mimeType:{get(){reads++;return "text/x-component";}},charset:{get(){reads++;return "";}}});
+	for(const response of [inherited,accessors,{}, {mimeType:undefined,charset:undefined}, {mimeType:"x".repeat(129),charset:"x".repeat(65)}]){
+		response.status=200;response.headers=responseHeaders;response.fromDiskCache=true;
+		const collector=createBrowserControlCollector({contextId,origin,readBody:async()=>({body,base64Encoded:false})});collector.installed();
+		collector.request({requestId:"1",loaderId:"loader",type:"Fetch",timestamp:1,request:{url,method:"GET",headers}});
+		collector.response({requestId:"1",response});collector.finished({requestId:"1",timestamp:2});await tick();
+		assert.deepEqual(collector.snapshot().bodyReceipts[0].bodyReadbackReceipt.effectiveCdpResponse,
+			{protocol:"cdp-effective-response-decoder-metadata-v1",provenance:"Network.responseReceived",mimeKnown:false,mime:null,charsetKnown:false,charset:null});
+	}
+	assert.equal(reads,0);
+});
+
 test("installation preserves navigation arguments/results/errors and adds only declared identity metadata", async () => {
 	let cookieReads = 0;
 	const session = new EventEmitter(),

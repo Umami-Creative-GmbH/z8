@@ -976,8 +976,9 @@ export function createBrowserControlCollector({
 			);
 			row.initialResponseVary = row.vary;
 			row.initialSegmentResponse = controlResponseMetadata(event.response.headers,event.response.status);
-			const mime=typeof event.response.mimeType === "string" && event.response.mimeType.length<=128 ? event.response.mimeType.toLowerCase() : null;
-			const charset=typeof event.response.charset === "string" && event.response.charset.length<=64 ? event.response.charset.toLowerCase() : null;
+			const mimeField=Object.getOwnPropertyDescriptor(event.response,"mimeType"),charsetField=Object.getOwnPropertyDescriptor(event.response,"charset");
+			const mime=mimeField && Object.hasOwn(mimeField,"value") && typeof mimeField.value === "string" && mimeField.value.length<=128 ? mimeField.value.toLowerCase() : null;
+			const charset=charsetField && Object.hasOwn(charsetField,"value") && typeof charsetField.value === "string" && charsetField.value.length<=64 ? charsetField.value.toLowerCase() : null;
 			row.effectiveCdpResponse={protocol:"cdp-effective-response-decoder-metadata-v1",provenance:"Network.responseReceived",
 				mimeKnown:mime!==null,mime:mime===null?null:mime==="text/x-component"?mime:"other",charsetKnown:charset!==null,
 				charset:charset===null?null:charset===""?"empty":["utf-8","utf8","iso-8859-1","latin1","us-ascii","windows-1252","utf-16le","utf-16be"].includes(charset)?charset:"other"};
