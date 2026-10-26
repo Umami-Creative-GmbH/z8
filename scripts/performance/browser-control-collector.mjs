@@ -10,6 +10,7 @@ import {
 	inspectRequiredFlightBody,
 	knownBrowserControlMetadata,
 } from "./control-cancellation-evidence.mjs";
+import { createProxyHeaderCensus } from "./proxy-header-census.mjs";
 
 export const controlResponseHeader = "x-z8-fixture-response-id";
 export const controlDocumentHeader = "x-z8-fixture-document-generation";
@@ -524,6 +525,8 @@ export function createBrowserControlCollector({
 						result.base64Encoded ? "base64" : "utf8",
 					);
 					row.bodyReadbackReceipt = { available: true, base64Encoded:typeof result.base64Encoded === "boolean" ? result.base64Encoded : null,
+						utf16CodeUnitLength:result.base64Encoded === false ? result.body.length : null,
+						observedDataLengthAtReadback:row.loadingFinished === true && Number.isSafeInteger(row.observedDataLength) ? row.observedDataLength : null,
 						responseContentType:row.initialSegmentResponse?.responseContentType ?? row.responseContentType ?? null, decodedBytes: bytes.length, bodySha256: sha(bytes),
 						terminal: row.failed ? "failed" : row.loadingFinished ? "finished" : "pending", naturalEOFClaim: false };
 					assignBodyProof(row, inspectRequiredFlightBody(bytes, bodyInspectionOptions(row,compiledCachedNavigations,compiledBinding)), "cdp-readback", row.bodyReadbackReceipt.bodySha256);
@@ -707,6 +710,8 @@ export function createBrowserControlCollector({
 		});
 		return {
 			contextId,
+			proxyHeaderCensus: proxy.headerCensus ?? null,
+			proxyHeaderLifetime: proxy.headerLifetime ?? null,
 			protocolErrors: { protocol: "positive-flight-error-observations-v1", contextId, installed: coverage.installed, scopeClosed: closed,
 				observed: protocolErrorRecords.length, overflow: protocolErrorOverflow + Math.max(0, protocolErrorRecords.length - controlCancellationPolicy.recordLimit),
 				records: protocolErrorRecords.slice(0, controlCancellationPolicy.recordLimit) },
@@ -1151,6 +1156,8 @@ export function createProxyControlCollector({
 	compiledBinding,
 }) {
 	const requests = new Map();
+	const headerCensus = createProxyHeaderCensus({contextId});
+	let transportInstallation = null, transportClosure = null;
 	let installed = false,
 		retained = 0,
 		errors = 0,
@@ -1162,13 +1169,22 @@ export function createProxyControlCollector({
 		row.chunks = [];
 	};
 	return {
-		installed() {
+		installed(binding) {
 			installed = true;
+			if (binding) transportInstallation = {
+				protocol:binding.protocol === "owned-context-upstream-header-lifetime-v1" ? binding.protocol : null,
+				proxyInstanceId:/^[a-f0-9]{32}$/.test(binding.proxyInstanceId ?? "") ? binding.proxyInstanceId : null,
+				originSha256:/^[a-f0-9]{64}$/.test(binding.originSha256 ?? "") ? binding.originSha256 : null,
+				allowedOriginSha256:Array.isArray(binding.allowedOriginSha256) && binding.allowedOriginSha256.length <= 32 && binding.allowedOriginSha256.every(value=>/^[a-f0-9]{64}$/.test(value)) ? [...binding.allowedOriginSha256] : null,
+				acceptedRequestsAtInstall:binding.acceptedRequestsAtInstall === 0 ? 0 : null,
+			};
 		},
 		observerError() {
 			errors++;
+			headerCensus.observerError();
 		},
 		request(id, { url, method, headers, traceId }) {
+			headerCensus.accepted(id);
 			if (
 				requests.size >= controlCancellationPolicy.recordLimit ||
 				requests.has(id)
@@ -1188,6 +1204,7 @@ export function createProxyControlCollector({
 			});
 		},
 		response(id, { status, headers }) {
+			headerCensus.headers(id,headers);
 			const row = requests.get(id);
 			if (!row) {
 				errors++;
@@ -1263,9 +1280,24 @@ export function createProxyControlCollector({
 			row.upstreamError = true;
 			release(row);
 		},
+		upstreamClosedBeforeHeaders(id, fact) {
+			headerCensus.terminalBeforeHeaders(id,fact);
+		},
+		transportClosed(fact) {
+			if (transportClosure !== null) headerCensus.observerError();
+			const count = value=>Number.isSafeInteger(value) && value >= 0 ? value : null;
+			transportClosure ??= {serverClosed:fact?.serverClosed === true,acceptedRequests:count(fact?.acceptedRequests),
+				upstreamRequests:count(fact?.upstreamRequests),closedUpstreams:count(fact?.closedUpstreams),pendingUpstreams:count(fact?.pendingUpstreams)};
+			if (transportClosure.serverClosed && transportClosure.acceptedRequests === headerCensus.snapshot().counts.accepted &&
+				transportClosure.upstreamRequests !== null && transportClosure.upstreamRequests === transportClosure.acceptedRequests &&
+				transportClosure.closedUpstreams === transportClosure.upstreamRequests && transportClosure.pendingUpstreams === 0) headerCensus.close();
+			else headerCensus.observerError();
+		},
 		snapshot() {
 			return {
 				installed,
+				headerCensus:headerCensus.snapshot(),
+				headerLifetime:{protocol:"owned-context-upstream-header-lifetime-v1",contextId,installation:transportInstallation,closure:transportClosure},
 				errors,
 				overflow,
 				pendingBodies,
