@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
+import { runInNewContext } from "node:vm";
 import test from "node:test";
 import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -20,6 +21,7 @@ import {
 	readNativePublicSources,
 	captureNativeLaunchMetadata,
 	createNativeWorkerObserver,
+	captureNativeEndMetadata,
 	readBrowserControlBinding,
 	verifyBrowserControlBrowser,
 	createBrowserControlCollector,
@@ -234,6 +236,31 @@ test("native worker metadata follows only actual owned-context target events and
 	assert.doesNotMatch(JSON.stringify(evidence),/PRIVATE_CONTEXT|private.invalid|\/sw.js/);
 	const broken=createNativeWorkerObserver({browser:{},context,contextId,origin});
 	assert.ok(broken.snapshot().errors>0); broken.close();
+});
+
+test("native end metadata reads controller registrations and public bytes within the caller deadline", async () => {
+	const dir=await mkdtemp(join(tmpdir(),"z8-native-end-"));
+	try {
+		await mkdir(join(dir,".next"));await mkdir(join(dir,"public/lib"),{recursive:true});
+		for(const file of ["sw.js","lib/offline-queue-db.js","lib/sync-service.js","lib/clock-command-dispatch.js"])await writeFile(join(dir,"public",file),"SYNTHETIC");
+		const build="c".repeat(40),bytes=Buffer.from(JSON.stringify({config:{deploymentId:build,experimental:{cachedNavigations:true}}})),manifestPath=join(dir,".next/required-server-files.json");await writeFile(manifestPath,bytes);
+		const binding=await readBrowserControlBinding({manifestPath,plan:{runtime:{build,browserControl:{policy:controlCancellationPolicy,browserRevision:chromiumSWRRevision,compiledCachedNavigations:true,compiledManifestSha256:createHash("sha256").update(bytes).digest("hex")}}}});
+		let queries=0;const worker={scriptURL:`${origin}/sw.js`,state:"activated"};
+		const page={evaluate:async fn=>runInNewContext(`(${fn.toString()})()`,{navigator:{serviceWorker:{controller:worker,getRegistrations:async()=>{queries++;return[{scope:`${origin}/`,active:worker,waiting:null,installing:null}];},get ready(){throw Error("Must not await ready");}}},location:{origin},isSecureContext:true})};
+		const result=await captureNativeEndMetadata({page,binding,origin,deadlineMs:performance.now()+10000});
+		assert.equal(queries,1);assert.equal(result.timedOut,false);assert.equal(result.pendingOperations,0);
+		assert.equal(result.controller.originMatches,true);assert.equal(result.controller.controllerAfter.ownedScript,true);
+		assert.equal(result.controller.registrations[0].ownedRootScope,true);
+		assert.equal(result.publicSourceRecheck.files[0].sha256,binding.servingPublicSources.files[0].sha256);
+		assert.equal(result.publicSourcesMatch,true);
+		await writeFile(join(dir,"public/sw.js"),"CHANGED_SYNTHETIC");
+		assert.equal((await captureNativeEndMetadata({page,binding,origin,deadlineMs:performance.now()+10000})).publicSourcesMatch,false);
+		const expired=await captureNativeEndMetadata({page:{evaluate:()=>{throw Error("No late evaluation");}},binding,origin,deadlineMs:performance.now()-1});
+		assert.equal(expired.timedOut,true);assert.equal(expired.pendingOperations,0);assert.equal(expired.controller,null);
+		assert.doesNotMatch(JSON.stringify(result),/\/sw.js|z8-native-end-/);
+		const hung=await captureNativeEndMetadata({page:{evaluate:()=>new Promise(()=>{})},binding,origin,deadlineMs:performance.now()+10});
+		assert.equal(hung.timedOut,true);assert.ok(hung.pendingOperations>0);assert.equal(hung.controller,null);
+	} finally {await rm(dir,{recursive:true,force:true});}
 });
 
 test("normal admission binds the actual manifest before IO and actual browser revision without a mode default", async () => {
