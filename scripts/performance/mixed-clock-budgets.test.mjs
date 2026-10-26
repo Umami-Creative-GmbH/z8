@@ -327,6 +327,7 @@ test("complete mixed cohorts derive policy9 nearest-rank limits and compare only
 		original = structuredClone(input);
 	const budget = budgets.deriveMixedClockBudgets(input);
 	assert.equal(budget.policy.version, 9);
+	assert.equal(budgets.getMixedClockBudgetPolicyVersion(), budget.policy.version);
 	assert.match(budget.conditionValidatorSha256, /^[a-f0-9]{64}$/);
 	assert.deepEqual(input, original);
 	assert.deepEqual(budget.clock.in, {
