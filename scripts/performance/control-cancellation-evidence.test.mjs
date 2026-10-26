@@ -422,6 +422,13 @@ test("unnamed POST late termination needs exact complete browser/proxy bodies an
 	}
 });
 
+test("returned action-error metadata hashes a parser-branded text string literally",()=>{
+	const proof=inspectRequiredFlightBody(Buffer.from('0:{"a":{"success":false,"error":"$1"}}\n1:T2,$2'),{action:true});
+	assert.equal(proof.explicitActionFailure,true);
+	assert.deepEqual(proof.returnedError,{known:true,utf8Bytes:2,sha256:createHash("sha256").update("$2").digest("hex")});
+	assert.equal(JSON.stringify(proof).includes('"$2"'),false);
+});
+
 test("cached HTTP completion cannot hide unresolved required Flight dependencies", () => {
 	const proof = inspectRequiredFlightBody(
 		Buffer.from('#0:{"b":"build","t":{"t":{"s":"$@4"}}}\n'),

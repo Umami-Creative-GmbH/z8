@@ -1026,7 +1026,13 @@ function inspectFlightBody(
 		if (result === undefined) return unknown("unresolved-action-result");
 		if (result?.success === false && typeof result.error === "string")
 		{
-			const resolved=resolve(result.error),text=resolved && typeof resolved==="object" && opaqueText.has(resolved)?resolved.textValue:typeof resolved==="string" && (!resolved.startsWith("$") || resolved.startsWith("$$"))?(resolved.startsWith("$$")?resolved.slice(1):resolved):null;
+			let value=result.error,text=null;const seen=new Set();
+			while(typeof value==="string" && /^\$[a-f0-9]+$/.test(value) && !seen.has(value) && seen.size<8){
+				seen.add(value);const record=records.get(value.slice(1));
+				if(record?.tag==="T" && !record.stream && typeof record.value==="string"){text=record.value;break;}
+				if(!record || record.tag!==null || record.stream){value=null;break;}value=record.value;
+			}
+			if(text===null && typeof value==="string" && (!value.startsWith("$") || value.startsWith("$$")))text=value.startsWith("$$")?value.slice(1):value;
 			const bytes=typeof text==="string"?Buffer.from(text):null;
 			return {
 				complete: false,
