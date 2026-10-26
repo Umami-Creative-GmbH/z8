@@ -45,6 +45,13 @@ const event = (requestId, timestamp, type = "Fetch") => ({
 	request: { url, method: "GET", headers, initialPriority: "VeryLow" },
 });
 
+test("runtime-shell contract is selected only from the actual header3 without a segment subtype", () => {
+	const runtime = controlRequestIdentity(contextId, url, "GET", { RSC: "1", "next-router-prefetch": "3" });
+	assert.equal(runtime.requestKind, "runtime-shell");
+	assert.equal(controlRequestIdentity(contextId, url, "GET", { RSC: "1", "next-router-prefetch": "2" }).requestKind, "navigation");
+	assert.equal(controlRequestIdentity(contextId, url, "GET", { RSC: "1", "next-router-prefetch": "3", "next-router-segment-prefetch": "/_tree" }).requestKind, "route-tree");
+});
+
 test("normal admission binds the actual manifest before IO and actual browser revision without a mode default", async () => {
 	const dir = await mkdtemp(join(tmpdir(), "z8-browser-admission-"));
 	try {
