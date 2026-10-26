@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import test from "node:test";
+import { mkdtemp, writeFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { createHash } from "node:crypto";
 import { setImmediate as tick } from "node:timers/promises";
 import {
 	chromiumSWRRevision,
@@ -8,12 +12,15 @@ import {
 } from "./control-cancellation-evidence.mjs";
 import {
 	controlRequestIdentity,
+	readBrowserControlBinding,
+	verifyBrowserControlBrowser,
 	createBrowserControlCollector,
 	createProxyControlCollector,
 	installBrowserControlCollector,
 	controlDocumentHeader,
 	controlResponseHeader,
 } from "./browser-control-collector.mjs";
+import { controlCancellationPolicy } from "./control-cancellation-evidence.mjs";
 
 const origin = "http://localhost:1234",
 	url = `${origin}/en?_rsc=PRIVATE_QUERY`,
@@ -36,6 +43,34 @@ const event = (requestId, timestamp, type = "Fetch") => ({
 	type,
 	initiator: { type: type === "Other" ? "other" : "script" },
 	request: { url, method: "GET", headers, initialPriority: "VeryLow" },
+});
+
+test("normal admission binds the actual manifest before IO and actual browser revision without a mode default", async () => {
+	const dir = await mkdtemp(join(tmpdir(), "z8-browser-admission-"));
+	try {
+		const manifestPath = join(dir, "required-server-files.json"), build = "c".repeat(40);
+		const bytes = Buffer.from(JSON.stringify({ config: { deploymentId: build, experimental: { cachedNavigations: true } } }));
+		await writeFile(manifestPath, bytes);
+		const browserControl = { policy: controlCancellationPolicy, browserRevision: chromiumSWRRevision,
+			compiledCachedNavigations: true, compiledManifestSha256: createHash("sha256").update(bytes).digest("hex") };
+		const plan = { runtime: { build, browserControl } };
+		const binding = await readBrowserControlBinding({ plan, manifestPath });
+		assert.equal(binding.manifestVerified, true);
+		let detach = 0;
+		const browser = { target: () => ({ createCDPSession: async () => ({
+			send: async (method) => { assert.equal(method, "Browser.getVersion"); return { revision: `@${chromiumSWRRevision}` }; },
+			detach: async () => { detach++; },
+		}) }) };
+		assert.equal((await verifyBrowserControlBrowser(browser, binding)).browserVerified, true);
+		assert.equal(detach, 1);
+		for (const change of [
+			{ ...plan, runtime: { ...plan.runtime, build: "d".repeat(40) } },
+			{ ...plan, runtime: { ...plan.runtime, browserControl: { ...browserControl, compiledCachedNavigations: false } } },
+			{ ...plan, runtime: { ...plan.runtime, browserControl: undefined } },
+		]) await assert.rejects(readBrowserControlBinding({ plan: change, manifestPath }));
+		await writeFile(manifestPath, JSON.stringify({ config: { deploymentId: build, experimental: {} } }));
+		await assert.rejects(readBrowserControlBinding({ plan, manifestPath }));
+	} finally { await rm(dir, { recursive: true, force: true }); }
 });
 
 test("header provenance isolates only the technical document token and preserves semantic header differences", () => {
@@ -170,6 +205,21 @@ test("measured cancellation without positive request identity remains unknown de
 	assert.equal(cleanBrowserFailureEvidence(result.measured, 1), false);
 });
 
+test("mixed context-work raw failures use actual post-start request IDs without changing default operator membership", () => {
+	for (const captureContextFailures of [false, true]) {
+		const collector = createBrowserControlCollector({ contextId, origin, captureContextFailures,
+			proxyObservation: () => ({ installed: true, rows: [], errors: 0, overflow: 0, pendingBodies: 0 }) });
+		collector.installed(); collector.request(event("inherited", 0)); collector.beginMeasurement();
+		collector.request(event("measured", 1));
+		collector.failed({ requestId: "inherited", errorText: "net::ERR_ABORTED", canceled: true });
+		collector.failed({ requestId: "measured", errorText: "net::ERR_ABORTED", canceled: true });
+		collector.endMeasurement(); collector.request(event("later", 2));
+		collector.failed({ requestId: "later", errorText: "net::ERR_ABORTED", canceled: true }); collector.endScope();
+		assert.equal(collector.snapshot().rawMeasuredFailedRequests, captureContextFailures ? 1 : 0);
+		assert.equal(collector.snapshot().measured.rawFailedRequests, captureContextFailures ? 1 : 0);
+	}
+});
+
 test("early response ExtraInfo joins its exact later request while orphan and conflicting metadata stay blocking", async () => {
 	const make = () =>
 		createBrowserControlCollector({
@@ -220,7 +270,7 @@ test("early response ExtraInfo joins its exact later request while orphan and co
 	}
 });
 
-test("actual CDP/body and proxy events produce a control proof without publishing payload or header values", async () => {
+test("actual cache and proxy events retain unknowns without publishing payload or header values", async () => {
 	const proxy = createProxyControlCollector({ contextId });
 	proxy.installed();
 	const collector = createBrowserControlCollector({
@@ -281,11 +331,11 @@ test("actual CDP/body and proxy events produce a control proof without publishin
 	const proof = collector.snapshot();
 	assert.equal(proof.measured.complete, true);
 	assert.equal(proof.measured.rawFailedRequests, 1);
-	assert.equal(proof.measured.provenControls, 1);
-	assert.equal(proof.measured.unknownFailures, 0);
-	assert.equal(cleanBrowserFailureEvidence(proof.measured, 1), true);
+	assert.equal(proof.measured.provenControls, 0);
+	assert.equal(proof.measured.unknownFailures, 1);
+	assert.equal(cleanBrowserFailureEvidence(proof.measured, 1), false);
 	assert.equal(proof.allPhase.rawFailedRequests, 2);
-	assert.equal(proof.allPhase.unknownFailures, 1);
+	assert.equal(proof.allPhase.unknownFailures, 2);
 	assert.equal(proof.allPhase.complete, true);
 	assert.equal(
 		proof.diagnostics.missingFamilies.failedRequestHeadersUnknown,

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /** Finite single-app operator. Actual requests, cookies and protected results stay in RAM. */
-import { randomBytes } from "node:crypto";
+import { randomBytes, createHash } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { join, resolve } from "node:path";
@@ -30,7 +30,8 @@ import {
 	fixtureTraceTransport,
 } from "./trace-transport.mjs";
 
-import { cleanApplicationEvidence, cleanObservationPolicy, observationTimeoutMs } from "./clean-evidence.mjs";
+import { cleanApplicationEvidence, cleanObservationPolicy, observationTimeoutMs, cleanBrowserContextEvidence, cleanEvidencePolicy } from "./clean-evidence.mjs";
+import { installBrowserControlCollector, readBrowserControlBinding, verifyBrowserControlBrowser, mixedBrowserWorkScope } from "./browser-control-collector.mjs";
 
 /** Match the recorded source against the public, possibly abbreviated build hash. */
 export function mixedSourceMatches(sourceCommit, liveVersion) {
@@ -98,6 +99,8 @@ async function readFixture(directory) {
 function plan(phase) {
 	return {
 		version: 2,
+		cleanEvidencePolicy,
+		browserFailureScope: mixedBrowserWorkScope,
 		phase,
 		topology: "single app",
 		collectorProtocol,
@@ -208,7 +211,7 @@ function analyticsSummary(kind, payload) {
 	};
 }
 
-async function openPage(browser, auth, origin, actor, traceSource, created) {
+async function openPage(browser, auth, origin, actor, traceSource, created, browserControlBinding) {
 	const transport = await createFixtureTraceTransport({
 		origin,
 		getTraceId: ({ headers }) => {
@@ -225,7 +228,8 @@ async function openPage(browser, auth, origin, actor, traceSource, created) {
 		);
 		const { page, browserInitialization } =
 			await initializeFixtureBrowserContext({ context, transport });
-		const opened = { context, page, transport, browserInitialization, actor };
+		const contextId = traceSource.current();
+		const opened = { context, page, transport, browserInitialization, actor, contextId };
 		created(opened);
 		if (!Array.isArray(auth[actor]?.cookies))
 			throw Error("Fixture authentication is missing");
@@ -233,6 +237,10 @@ async function openPage(browser, auth, origin, actor, traceSource, created) {
 		await prepareFixtureBrowserContext(context, origin);
 		await page.setViewport({ width: 1280, height: 900 });
 		await page.emulateTimezone("Europe/Berlin");
+		opened.browserObservation = await installBrowserControlCollector({ page, context, transport, origin, headers: {}, contextId,
+			browserRevision: browserControlBinding.browserRevision, compiledCachedNavigations: browserControlBinding.compiledCachedNavigations,
+			captureContextFailures: true });
+		opened.browserObservation.beginMeasurement();
 		return opened;
 	} catch (error) {
 		await context?.close().catch(() => {});
@@ -285,6 +293,7 @@ async function captureAnalytics(
 	traceSource,
 	created,
 	timeout,
+	browserControlBinding,
 ) {
 	const opened = await openPage(
 		browser,
@@ -293,6 +302,7 @@ async function captureAnalytics(
 		reader.actor,
 		traceSource,
 		created,
+		browserControlBinding,
 	);
 	const { page } = opened;
 	let captured;
@@ -365,8 +375,12 @@ function clockCohorts(records) {
 	);
 }
 
-async function run(directory, artifactApp, sourceCommit, collectorPath, runId, phase) {
+async function run(directory, artifactApp, sourceCommit, collectorPath, runId, phase, manifestPath, browserControlPath) {
 	const timeout = observationTimeoutMs(phase);
+	if (!browserControlPath) throw Error("Explicit browser control metadata file is required.");
+	const metadataBytes = await readFile(browserControlPath);
+	let browserControlBinding = await readBrowserControlBinding({ plan: { runtime: { build: sourceCommit,
+		browserControl: JSON.parse(metadataBytes.toString("utf8")) } }, manifestPath });
 	const { origin, fixture } = await readFixture(directory),
 		auth = await json(join(directory, "auth-private.json"));
 	const control =
@@ -426,6 +440,16 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 		opened.push(item);
 		item.page.on("pageerror", () => pageErrors++);
 	};
+	const requireCleanWork = () => {
+		for (const item of opened) {
+			const evidence = item.browserObservation?.snapshot();
+			const application = item.transport.snapshot().applicationEvidence;
+			if (!evidence || evidence.measured.unknownFailures || evidence.allPhase.realFailures ||
+				["missing", "errors", "overflow"].some((key) => evidence.measured.coverage[key] !== 0) ||
+				["failures", "serverErrors", "unknown", "httpErrors", "overflows", "decodeFailures", "registryConflicts"].some((key) => application?.[key] !== 0))
+				throw Error("Required mixed browser or application observation is not clean.");
+		}
+	};
 	try {
 		// One bounded registration precedes version checks, all four browser contexts and cleanup IO.
 		observation = await beginMixedObservation(control, traces.ids);
@@ -443,6 +467,7 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 			process.env.Z8_FIXTURE_CHROME ||
 				"C:/Program Files/Google/Chrome/Application/chrome.exe",
 		);
+		browserControlBinding = await verifyBrowserControlBrowser(browser, browserControlBinding);
 		stage = "capture";
 		const readers = [];
 		for (const [index, reader] of analytics.entries()) {
@@ -455,7 +480,9 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 				{ ids: traces.ids, current: () => traces.preparation[index] },
 				created,
 				timeout,
+				browserControlBinding,
 			);
+			requireCleanWork();
 			item.page.on("request", (request) => {
 				const value = request.headers().traceparent?.split("-")[1];
 				if (traces.groups.some((group) => group.traceIds.includes(value))) {
@@ -478,6 +505,7 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 			clockActor,
 			{ ids: traces.ids, current: () => uiTrace },
 			created,
+			browserControlBinding,
 		);
 		controls = await openPublicHeaderClock(clock.page, {
 			origin,
@@ -487,6 +515,7 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 		});
 		stage = "commands";
 		async function command(action, pair, cleanup = false) {
+			if (!cleanup) requireCleanWork();
 			const id = cleanup ? traces.preparation[3] : traces.clock(pair, action);
 			uiTrace = id;
 			const preparationStart = performance.now();
@@ -517,7 +546,11 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 				: readers.map(({ page, captured, reader }, index) =>
 						runMixedReader({
 							limit: 100,
-							stopped: () => done,
+						stopped: () => {
+							if (done) return true;
+							try { requireCleanWork(); return false; }
+							catch { stopped = true; done = true; failureStage ||= "required-observation"; return true; }
+						},
 							read: async () => {
 								const requestId = traces.analytics(pair, index),
 									started = performance.now();
@@ -614,6 +647,7 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 					await pause(1);
 				if (!cleanup && (analyticsActive < 3 || done))
 					throw Error("Independent readers never dispatched concurrently");
+				if (!cleanup) requireCleanWork();
 				result = await prepared.submit();
 				if (result.success && !clockObservationIsComplete(result))
 					result = { ...result, success: false, censored: true };
@@ -703,6 +737,10 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 			stopped = true;
 			failureStage ||= "wire-settlement";
 		}
+		for (const item of opened) {
+			try { item.browserObservation?.endMeasurement(); await item.browserObservation?.close(); }
+			catch { stopped = true; failureStage ||= "browser-control-close"; }
+		}
 		try {
 			await browser?.close();
 			browserClosed = !!browser;
@@ -715,6 +753,10 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 				await item.transport.close();
 				transports.push({
 					actor: item.actor,
+					contextId: item.contextId,
+					browserFailureScope: mixedBrowserWorkScope,
+					browserControlEvidence: item.browserObservation?.snapshot() ?? null,
+					rawBrowserFailedRequests: item.browserObservation?.snapshot().rawMeasuredFailedRequests ?? null,
 					traceTransport: {
 						kind: fixtureTraceTransport,
 						...item.transport.snapshot(),
@@ -741,7 +783,8 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 		}
 	}
 	const completeTransport =
-		transports.length === 4 && transports.every((row) => mixedTransportIsComplete(row) && cleanApplicationEvidence(row.traceTransport.applicationEvidence));
+		transports.length === 4 && transports.every((row) => mixedTransportIsComplete(row) && cleanApplicationEvidence(row.traceTransport.applicationEvidence) &&
+			cleanBrowserContextEvidence(row.contextId, row.browserControlEvidence, row.rawBrowserFailedRequests));
 	const completeCoverage =
 		nativeRunCoverage.complete === true &&
 		completeTransport &&
@@ -753,6 +796,8 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 	}
 	const report = {
 		...plan(phase),
+		browserControl: browserControlBinding,
+		browserControlMetadataFileSha256: createHash("sha256").update(metadataBytes).digest("hex"),
 		runId,
 		sourceCommit,
 		liveVersion,
@@ -832,6 +877,9 @@ async function main() {
 	const collectorIndex = flags.indexOf("--collector");
 	if (collectorIndex >= 0 && !flags[collectorIndex + 1])
 		throw new Error("Collector control path missing.");
+	for (const name of ["--app-manifest", "--browser-control"])
+		if (flags.filter((flag) => flag === name).length !== 1 || !flags[flags.indexOf(name) + 1] || flags[flags.indexOf(name) + 1].startsWith("--"))
+			throw Error("Exactly one app manifest and browser control metadata file are required.");
 	const runId = trace();
 	try {
 		await run(
@@ -841,6 +889,8 @@ async function main() {
 			collectorIndex >= 0 ? resolve(flags[collectorIndex + 1]) : undefined,
 			runId,
 			phase,
+			flags.includes("--app-manifest") ? resolve(flags[flags.indexOf("--app-manifest") + 1]) : undefined,
+			flags.includes("--browser-control") ? resolve(flags[flags.indexOf("--browser-control") + 1]) : undefined,
 		);
 	} catch {
 		await writeFile(

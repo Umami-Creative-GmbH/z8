@@ -12,6 +12,19 @@ export const chromiumSWRRevision = "1d17a2e2ee147bb7d6ae2ab6abdb3a2510c17775";
 export const bodySha256 = (bytes) =>
 	createHash("sha256").update(bytes).digest("hex");
 
+export function knownBrowserControlMetadata(metadata) {
+	return Boolean(metadata && JSON.stringify(metadata.policy) === JSON.stringify(controlCancellationPolicy) &&
+		metadata.browserRevision === chromiumSWRRevision && typeof metadata.compiledCachedNavigations === "boolean" &&
+		typeof metadata.compiledManifestSha256 === "string" && /^[a-f0-9]{64}$/.test(metadata.compiledManifestSha256));
+}
+
+export function matchingBrowserControlBinding(runtime, binding) {
+	const expected = runtime?.browserControl;
+	return knownBrowserControlMetadata(expected) && knownBrowserControlMetadata(binding) &&
+		["browserRevision", "compiledCachedNavigations", "compiledManifestSha256"].every((key) => binding[key] === expected[key]) &&
+		binding.compiledBuild === runtime.build && binding.manifestVerified === true && binding.browserVerified === true;
+}
+
 export function inspectRequiredFlightBody(
 	bytes,
 	{
@@ -304,7 +317,11 @@ export function inspectRequiredFlightBody(
 			/^\$(?:@|L)?[a-f0-9]+$/.test(value)
 		) {
 			const id = value.replace(/^\$(?:@|L)?/, "");
-			if (!records.has(id)) return unknown("unresolved-model-reference");
+			if (!records.has(id)) return unknown("unresolved-model-reference", {
+				modelReference: { prefix: value[1] === "L" ? "L" : value[1] === "@" ? "@" : "plain",
+					form: value[1] === "L" ? "lazy-reference" : value[1] === "@" ? "promise-reference" : "model-reference", length: value.length },
+				marker, isPartial, requestKind, decodedBytes: bytes.length, bodySha256: bodySha256(bytes),
+			});
 			if (!visited.has(id)) {
 				visited.add(id);
 				const record = records.get(id);
@@ -808,54 +825,6 @@ export function classifyControlCancellations({
 						browserRevision,
 						proxyCandidates: 1,
 					};
-				} else if (
-					browserRevision === chromiumSWRRevision &&
-					packet.canceled === true &&
-					packet.action === false &&
-					failure.action === false &&
-					packet.flight === true &&
-					failure.method === "GET" &&
-					failure.prefetch === true &&
-					failure.type === "Other" &&
-					failure.initiator === "other" &&
-					failure.initiatorStackKnownAbsent === true &&
-					failure.priority === "VeryLow" &&
-					packet.staleWhileRevalidateSeconds > 0
-				) {
-					const cached = responses.filter(
-						(row) =>
-							sameRequest(failure, row) &&
-							row.requestId !== failure.requestId &&
-							row.loaderId === failure.loaderId &&
-							row.fromDiskCache === true &&
-							row.fromServiceWorker === false &&
-							row.ambiguousRedirect !== true &&
-							row.httpErrorObserved !== true &&
-							row.status === 200 &&
-							row.loadingFinished === true &&
-							row.failed === false &&
-							row.staleWhileRevalidateSeconds > 0 &&
-							receivedBody(row) &&
-							Number.isFinite(row.finishedAt) &&
-							row.finishedAt <= failure.startedAt &&
-							row.action === false &&
-							row.flight === true &&
-							goodBody(row.bodyProof) &&
-							row.bodyProof.action === false &&
-							row.bodyProof.requestKind === row.requestKind,
-					);
-					if (cached.length === 1) {
-						outcome = "protocol-control";
-						reason = "complete-cached-flight-native-revalidation";
-						proof = {
-							failure: requestReceipt(failure),
-							packet: requestReceipt(packet),
-							cached: requestReceipt(cached[0]),
-							browserRevision,
-							proxyCandidates: 1,
-							cachedCandidates: 1,
-						};
-					}
 				}
 			}
 		}
@@ -884,13 +853,13 @@ export function classifyControlCancellations({
 }
 
 /** Serialized receipts do not default missing counts/coverage to a successful zero. */
-export function cleanBrowserFailureEvidence(evidence, rawFailedRequests) {
+function browserFailureEvidenceMatches(evidence, rawFailedRequests, scope, requireClean) {
 	if (
 		!evidence ||
 		evidence.protocol !== controlCancellationPolicy.protocol ||
 		JSON.stringify(evidence.policy) !==
 			JSON.stringify(controlCancellationPolicy) ||
-		evidence.scope !== "measured" ||
+		evidence.scope !== scope ||
 		evidence.complete !== true ||
 		!Number.isSafeInteger(rawFailedRequests) ||
 		rawFailedRequests < 0 ||
@@ -898,8 +867,7 @@ export function cleanBrowserFailureEvidence(evidence, rawFailedRequests) {
 		["realFailures", "unknownFailures", "provenControls"].some(
 			(key) => !Number.isSafeInteger(evidence[key]) || evidence[key] < 0,
 		) ||
-		evidence.realFailures !== 0 ||
-		evidence.unknownFailures !== 0 ||
+		(requireClean && (evidence.realFailures !== 0 || evidence.unknownFailures !== 0)) ||
 		evidence.rawFailedRequests !==
 			evidence.realFailures +
 				evidence.unknownFailures +
@@ -911,15 +879,20 @@ export function cleanBrowserFailureEvidence(evidence, rawFailedRequests) {
 		evidence.records.some(
 			(row) =>
 				!row.requestId ||
-				row.outcome !== "protocol-control" ||
-				![
+				(requireClean && row.outcome !== "protocol-control") ||
+				!["protocol-control", "real-failure", "unknown"].includes(row.outcome) ||
+				(row.outcome === "protocol-control" && ![
 					"complete-cached-flight-native-revalidation",
 					"completed-flight-late-terminal-cancel",
-				].includes(row.reason),
+				].includes(row.reason)),
 		)
 	)
 		return false;
+	if (evidence.provenControls !== evidence.records.filter((row) => row.outcome === "protocol-control").length ||
+		evidence.unknownFailures !== evidence.records.filter((row) => row.outcome === "unknown").length ||
+		evidence.realFailures !== evidence.records.filter((row) => row.outcome === "real-failure").length) return false;
 	for (const row of evidence.records) {
+		if (row.outcome !== "protocol-control") continue;
 		const proof = row.proof;
 		if (
 			!proof ||
@@ -949,4 +922,13 @@ export function cleanBrowserFailureEvidence(evidence, rawFailedRequests) {
 			(key) => evidence.coverage[key] === 0,
 		)
 	);
+}
+
+export function cleanBrowserFailureEvidence(evidence, rawFailedRequests) {
+	return browserFailureEvidenceMatches(evidence, rawFailedRequests, "measured", true);
+}
+
+/** Coverage is distinct from acceptance: unproven optional all-phase failures stay visible. */
+export function completeAllPhaseBrowserObservation(evidence) {
+	return browserFailureEvidenceMatches(evidence, evidence?.rawFailedRequests, "all-phase-semantic-correlation", false);
 }

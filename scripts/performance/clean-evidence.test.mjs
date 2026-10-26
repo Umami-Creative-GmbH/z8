@@ -3,11 +3,29 @@ import test from "node:test";
 import {
 	cleanEvidenceGates,
 	cleanObservationMatches,
+	cleanVisitObservationGates,
+	cleanMeasuredCostGates,
+	runCleanVisitWorkers,
 } from "./clean-evidence.mjs";
 import { createActionResultObserver } from "./action-result-observer.mjs";
+import { classifyControlCancellations, inspectRequiredFlightBody, chromiumSWRRevision, controlCancellationPolicy } from "./control-cancellation-evidence.mjs";
 
 const ids = ["measured", "prerequisite", "background"];
 const plan = { routes: [{ name: "dashboard", clockReady: "button" }] };
+const browserEvidence = (controlled = false) => {
+	const identity = { contextId: ids[0], method: "POST", requestKind: "action", fullUrlSha256: "a".repeat(64),
+		requestHeadersSha256: "b".repeat(64), documentGeneration: "context:1" };
+	const bodyProof = inspectRequiredFlightBody(Buffer.from('0:{"a":{"success":true}}\n'), { action: true });
+	const failure = { ...identity, requestId: "request", error: "net::ERR_ABORTED", canceled: true,
+		status: 200, proxyResponseId: "packet", action: true, bodyReadbackComplete: true, bodyProof };
+	const packet = { ...identity, id: "packet", status: 200, flight: true, action: true, complete: true,
+		canceled: false, upstreamError: false, bodyProof };
+	const input = { failures: controlled ? [failure] : [], proxy: controlled ? [packet] : [],
+		browserRevision: chromiumSWRRevision,
+		coverage: { installed: true, scopeClosed: true, missing: 0, overflow: 0, errors: 0, pendingBodies: 0 } };
+	return { contextId: ids[0], measured: classifyControlCancellations(input),
+		allPhase: classifyControlCancellations({ ...input, scope: "all-phase-semantic-correlation" }) };
+};
 const sample = () => ({
 	traceId: ids[0],
 	prerequisiteTraceId: ids[1],
@@ -16,6 +34,7 @@ const sample = () => ({
 	mode: "first-document",
 	failed: false,
 	failedRequests: 0,
+	browserControlEvidence: browserEvidence(),
 	censored: false,
 	usableContentMs: 100,
 	clockReadyMs: 50,
@@ -35,9 +54,76 @@ const rows = () =>
 const gates = (s = sample(), native = rows(), phase = "baseline") =>
 	cleanEvidenceGates({ ...plan, phase }, { samples: [s] }, native);
 
+test("per-visit measured costs fail fast on missing, duplicate, unknown or nonfinite actual native rows", () => {
+	const measured = { ...rows()[0], queryCount: 1, queryDurationMs: 2, rowsRetrieved: 3, poolWaitMs: 4,
+		cacheHits: 0, cacheMisses: 1, eventLoopDelayMs: 2,
+		coverage: { ...rows()[0].coverage, observer: true, pg: true, rows: true, cache: true, eventLoop: true,
+			unattributedNativeSpans: 0, rejectedBatches: 0, lateSpans: 0 } };
+	assert.deepEqual(cleanMeasuredCostGates(sample(), [measured, rows()[1]]), []);
+	for (const native of [[], [measured, measured], ...["eventLoopDelayMs", "poolWaitMs", "rowsRetrieved"].map((key) => [{ ...measured, [key]: null }]),
+		[{ ...measured, coverage: { ...measured.coverage, eventLoop: false } }]])
+		assert.ok(cleanMeasuredCostGates(sample(), native).length);
+	assert.equal(rows()[1].eventLoopDelayMs, undefined, "No metric is fabricated for unrelated empty scopes.");
+});
+
 test("clean successful evidence stays eligible in both phases", () => {
 	for (const phase of ["baseline", "release"])
 		assert.deepEqual(gates(sample(), rows(), phase), []);
+});
+
+test("both phases accept only positively recomputed controls while retaining their raw browser count", () => {
+	for (const phase of ["baseline", "release"]) {
+		const s = { ...sample(), failedRequests: 1, browserControlEvidence: browserEvidence(true) };
+		assert.deepEqual(gates(s, rows(), phase), []);
+		assert.equal(s.failedRequests, 1);
+		const unrelated = structuredClone(s);
+		unrelated.browserControlEvidence.allPhase.rawFailedRequests++;
+		unrelated.browserControlEvidence.allPhase.unknownFailures++;
+		unrelated.browserControlEvidence.allPhase.records.push({ requestId: "outside-measured", outcome: "unknown", reason: "unproven-cancellation" });
+		assert.deepEqual(gates(unrelated, rows(), phase), []);
+		const genuine = structuredClone(unrelated);
+		genuine.browserControlEvidence.allPhase.unknownFailures--;
+		genuine.browserControlEvidence.allPhase.realFailures++;
+		genuine.browserControlEvidence.allPhase.records[1] = { requestId: "outside-measured", outcome: "real-failure", reason: "browser-or-http-error" };
+		assert.ok(gates(genuine, rows(), phase).some((gate) => /browser/i.test(gate)));
+		for (const change of [
+			(v) => { delete v.browserControlEvidence; },
+			(v) => { v.browserControlEvidence.contextId = "another-context"; },
+			(v) => { v.browserControlEvidence.measured.records[0].proof.packet.bodyProof.explicitActionFailure = true; },
+			(v) => { v.browserControlEvidence.measured.unknownFailures = 1; },
+		]) {
+			const bad = structuredClone(s); change(bad);
+			assert.ok(gates(bad, rows(), phase).some((gate) => /browser/i.test(gate)));
+		}
+		assert.ok(gates({ ...sample(), browserControlEvidence: undefined }, rows(), phase).some((gate) => /browser/i.test(gate)));
+	}
+});
+
+test("the per-visit gate blocks required semantic unknown without rewriting its raw observation", () => {
+	const observer = createActionResultObserver();
+	const id = observer.request({ traceId: ids[0], method: "GET", headers: {}, applicationOrigin: true });
+	observer.response(id, { mimeType: "text/x-component", encoding: "identity", status: 200 });
+	observer.abort(id, "downstream-cancellation");
+	const raw = observer.snapshot();
+	assert.equal(raw.unknown, 1);
+	assert.ok(cleanVisitObservationGates(plan, { ...sample(), applicationEvidence: raw }).some((gate) => /application/i.test(gate)));
+	assert.equal(raw.unknown, 1);
+	assert.equal(raw.complete, false);
+});
+
+test("capture checkpoints the bad visit and joins in-flight cleanup before it stops scheduling", async () => {
+	const calls = [], saved = [];
+	let finishFirst;
+	const first = new Promise((resolve) => { finishFirst = resolve; });
+	const running = runCleanVisitWorkers({ count: 5, concurrency: 2,
+		measure: async (index) => { calls.push(index); if (index === 0) await first;
+			return { failed: index === 1, censored: false, cleanupComplete: true }; },
+		checkpoint: async (sample) => { saved.push(sample); if (sample.failed) finishFirst(); },
+	});
+	await assert.rejects(running, /strict.*visit/i);
+	assert.deepEqual(calls, [0, 1]);
+	assert.equal(saved.length, 2);
+	assert.ok(saved.every((sample) => sample.cleanupComplete));
 });
 
 test("both phases require a known zero browser loading-failure count", () => {
@@ -105,31 +191,38 @@ test("recorded original and HEAD readiness cannot exceed their declared observat
 			traceTransport: "context-loopback-proxy-v1",
 			poolMax: 10,
 			poolAcquisitionTimeoutMs: 60000,
+			build: "c".repeat(40),
+			browserControl: { policy: controlCancellationPolicy, browserRevision: chromiumSWRRevision,
+				compiledCachedNavigations: true, compiledManifestSha256: "d".repeat(64) },
 		};
+		const actualRuntime = { ...runtime, browserControl: { ...runtime.browserControl,
+			compiledBuild: runtime.build, manifestVerified: true, browserVerified: true } };
 		const s = {
 			...sample(),
 			applicationEvidence: createActionResultObserver().snapshot(),
 		};
 		const p = { ...plan, phase, timeoutMs, runtime };
 		assert.deepEqual(
-			cleanEvidenceGates(p, { runtime, samples: [s] }, rows()),
+			cleanEvidenceGates(p, { runtime: actualRuntime, samples: [s] }, rows()),
 			[],
 		);
 		for (const field of ["usableContentMs", "clockReadyMs"])
 			assert.ok(
 				cleanEvidenceGates(
 					p,
-					{ runtime, samples: [{ ...s, [field]: timeoutMs + 1 }] },
+					{ runtime: actualRuntime, samples: [{ ...s, [field]: timeoutMs + 1 }] },
 					rows(),
 				).length > 0,
 			);
 		assert.ok(
 			cleanEvidenceGates(
 				p,
-				{ runtime: { ...runtime, poolMax: 20 }, samples: [s] },
+				{ runtime: { ...actualRuntime, poolMax: 20 }, samples: [s] },
 				rows(),
 			).length > 0,
 		);
+		for (const change of [{ browserVerified: false }, { manifestVerified: false }, { compiledCachedNavigations: false }, { compiledBuild: "e".repeat(40) }])
+			assert.ok(cleanEvidenceGates(p, { runtime: { ...actualRuntime, browserControl: { ...actualRuntime.browserControl, ...change } }, samples: [s] }, rows()).some((gate) => /manifest|browser revision/i.test(gate)));
 	}
 });
 test("successful UI cannot hide errors in measured prerequisite or cleanup scopes", () => {

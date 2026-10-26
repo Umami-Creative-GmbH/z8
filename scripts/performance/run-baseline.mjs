@@ -1,5 +1,7 @@
 #!/usr/bin/env node
-import { cleanEvidenceGates, cleanEvidencePolicy, cleanObservationMatches } from "./clean-evidence.mjs";
+import { cleanEvidenceGates, cleanEvidencePolicy, cleanObservationMatches, cleanMeasuredCostGates, runCleanVisitWorkers } from "./clean-evidence.mjs";
+import { knownBrowserControlMetadata, matchingBrowserControlBinding } from "./control-cancellation-evidence.mjs";
+import { readBrowserControlBinding, verifyBrowserControlBrowser, installBrowserControlCollector } from "./browser-control-collector.mjs";
 import { createHash, randomBytes } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { cpus, platform, release, totalmem } from "node:os";
@@ -111,6 +113,8 @@ const coverageNames = [
 
 function validate(plan, verifying = false) {
 	if (!cleanObservationMatches(plan)) throw Error("Require the approved clean original/optimized observation windows and common pool timeout.");
+	if (plan.runtime?.traceTransport === fixtureTraceTransport && !knownBrowserControlMetadata(plan.runtime.browserControl))
+		throw Error("Require qualified browser control runtime metadata.");
 	if (
 		plan.runtime?.traceTransport === fixtureTraceTransport &&
 		plan.runtime.operatorReloadQuiescencePolicy !==
@@ -592,6 +596,8 @@ async function main() {
 		fail(
 			"Provide --auth, --out and --chrome. Auth belongs in a private fixture file.",
 		);
+	let browserControlBinding = plan.runtime.traceTransport === fixtureTraceTransport ?
+		await readBrowserControlBinding({ plan, manifestPath: option("--app-manifest") }) : undefined;
 	const auth = JSON.parse(await readFile(option("--auth"), "utf8"));
 	if (
 		plan.runtime.collectorProtocol === collectorProtocol &&
@@ -708,6 +714,10 @@ async function main() {
 	result.browser = await browser.version();
 	let checkpoint = Promise.resolve();
 	try {
+		if (browserControlBinding) {
+			browserControlBinding = await verifyBrowserControlBrowser(browser, browserControlBinding);
+			result.runtime.browserControl = browserControlBinding;
+		}
 		for (const condition of plan.conditions) {
 			if (
 				args.includes("--condition") &&
@@ -723,22 +733,14 @@ async function main() {
 					if (args.includes("--route") && route.name !== option("--route"))
 						continue;
 					for (const mode of modesFor(route)) {
-						let index = 0;
 						if (args.includes("--mode") && mode !== option("--mode")) continue;
 						const concurrency =
 							mode === "mutation-refresh"
 								? (route.mutation.concurrency ?? plan.concurrency)
 								: plan.concurrency;
-						await Promise.all(
-							Array.from({ length: concurrency }, async () => {
-								while (
-									index <
-									(args.includes("--verify-journeys")
-										? 1
-										: samplesFor(plan, mode))
-								) {
-									const iteration = index++;
-									const sample = await measure(
+						await runCleanVisitWorkers({
+							count: args.includes("--verify-journeys") ? 1 : samplesFor(plan, mode), concurrency,
+							measure: (iteration) => measure(
 										browser,
 										auth,
 										plan,
@@ -748,7 +750,9 @@ async function main() {
 										mode,
 										iteration,
 										concurrency,
-									);
+										{ beginCollectorVisit, endCollectorVisit, browserControlBinding },
+									),
+							checkpoint: async (sample) => {
 									result.samples.push(sample);
 									// Checkpoint contains numerical evidence and fixture labels only, never cookies, URLs or response bodies.
 									checkpoint = checkpoint.then(() =>
@@ -758,9 +762,8 @@ async function main() {
 										),
 									);
 									await checkpoint;
-								}
-							}),
-						);
+							},
+						});
 					}
 				}
 			}
@@ -867,6 +870,8 @@ export async function measure(
 	concurrency,
 	collector = { beginCollectorVisit, endCollectorVisit },
 ) {
+	if (plan.runtime?.traceTransport === fixtureTraceTransport && !matchingBrowserControlBinding(plan.runtime, collector.browserControlBinding))
+		throw Error("Controlled primary browser control admission is missing or mismatched.");
 	const traceId = randomBytes(16).toString("hex");
 	const prerequisiteTraceId = randomBytes(16).toString("hex");
 	const backgroundTraceId = randomBytes(16).toString("hex");
@@ -880,6 +885,7 @@ export async function measure(
 	let context;
 	let transport;
 	let browserObservation;
+	let nativeObservationRows;
 	const attemptStart = performance.now();
 	const sample = {
 		condition: condition.name,
@@ -989,8 +995,13 @@ export async function measure(
 		await page.setViewport(condition.viewport);
 		await page.emulateTimezone(condition.timezone);
 		await page.setExtraHTTPHeaders({ "Accept-Language": condition.locale });
-		if (collector.observeBrowser) {
-			const observation = await collector.observeBrowser({ page, context, transport, origin: plan.origin, headers: { "Accept-Language": condition.locale } });
+		if (collector.observeBrowser || transport) {
+			const observation = collector.observeBrowser ?
+				await collector.observeBrowser({ page, context, transport, origin: plan.origin, headers: { "Accept-Language": condition.locale } }) :
+				await installBrowserControlCollector({ page, context, transport, origin: plan.origin,
+					headers: { "Accept-Language": condition.locale }, contextId: traceId,
+					browserRevision: collector.browserControlBinding.browserRevision,
+					compiledCachedNavigations: collector.browserControlBinding.compiledCachedNavigations });
 			if (!["beginMeasurement", "endMeasurement", "recordMeasuredFailure", "close", "snapshot"].every((key) => typeof observation?.[key] === "function"))
 				throw Error("Incomplete prospective browser observation interface.");
 			browserObservation = observation;
@@ -1492,6 +1503,7 @@ export async function measure(
 		if (observerVisit) {
 			try {
 				const observation = await collector.endCollectorVisit(observerVisit);
+				nativeObservationRows = observation.traces;
 				sample.collector = {
 					nativeCloseProof: observation.nativeCloseProof ?? null,
 					nativeCloseElapsedMs: observation.nativeCloseElapsedMs ?? null,
@@ -1528,6 +1540,12 @@ export async function measure(
 			try { sample.browserControlEvidence = browserObservation.snapshot(); }
 			catch { recordFinalizationFailure("browser-control-observation", "observation-incomplete"); }
 		}
+	}
+	if (transport) {
+		sample.requiredObservationGates = cleanEvidenceGates(plan, {
+			runtime: { ...plan.runtime, browserControl: collector.browserControlBinding }, samples: [sample],
+		}, nativeObservationRows).concat(cleanMeasuredCostGates(sample, nativeObservationRows));
+		if (sample.requiredObservationGates.length) recordFinalizationFailure("required-observation", "observation-incomplete");
 	}
 	return sample;
 }

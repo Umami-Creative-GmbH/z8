@@ -4,6 +4,8 @@ import { readFile } from "node:fs/promises";
 const primaryFiles = [
   "run-baseline.mjs",
   "clean-evidence.mjs",
+  "control-cancellation-evidence.mjs",
+  "browser-control-collector.mjs",
   "action-result-observer.mjs",
   "next-stream-completion-patch.mjs",
   "primary-context-cleanup.mjs",
@@ -34,6 +36,8 @@ export const companionProtocolIdentity = () =>
   fingerprints([
     "settled-resources.mjs",
     "clean-evidence.mjs",
+    "control-cancellation-evidence.mjs",
+    "browser-control-collector.mjs",
     "action-result-observer.mjs",
     "settled-resource-observer.mjs",
     "journey-steps.mjs",

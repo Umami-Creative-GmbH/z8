@@ -6,7 +6,9 @@ import { dirname, join, resolve } from "node:path";
 import test from "node:test";
 import * as budgets from "./mixed-clock-budgets.mjs";
 import { nextStreamCompletionPatch } from "./next-stream-completion-patch.mjs";
-import { cleanObservationPolicy } from "./clean-evidence.mjs";
+import { cleanObservationPolicy, cleanEvidencePolicy } from "./clean-evidence.mjs";
+import { testBrowserEvidence, testBrowserMetadata, testBrowserBinding } from "./control-cancellation-test-fixtures.mjs";
+import { mixedBrowserWorkScope } from "./browser-control-collector.mjs";
 import { createActionResultObserver } from "./action-result-observer.mjs";
 
 const BEFORE = "456d28b2da4437662ae8f625a1df6756bff031fe";
@@ -14,6 +16,8 @@ const HEAD = "de0b1a128b384196c7c93ac69cd5324e8d0cbbd8";
 const hash = "a".repeat(64);
 const id = (n) => n.toString(16).padStart(32, "0");
 const actors = ["large-admin", "small-admin", "small-manager", "large-manager"];
+const metadataFor = (build) => ({ ...testBrowserMetadata(), compiledManifestSha256: (build === HEAD ? "e" : "d").repeat(64) });
+const metadataFileHash = (build) => (build === HEAD ? "f" : "c").repeat(64);
 function transport(actor) {
 	const counts = () => ({
 		requests: 0,
@@ -31,6 +35,10 @@ function transport(actor) {
 	});
 	return {
 		actor,
+		contextId: id(actors.indexOf(actor) + 1),
+		rawBrowserFailedRequests: 0,
+		browserControlEvidence: testBrowserEvidence(id(actors.indexOf(actor) + 1)),
+		browserFailureScope: mixedBrowserWorkScope,
 		traceTransport: {
 			...counts(),
 			applicationEvidence: createActionResultObserver().snapshot(),
@@ -184,6 +192,10 @@ function fixture(build = BEFORE) {
 		analyticsMaxRequestsPerCallerPerCommand: 100,
 		requestTimeoutMs: build === BEFORE ? 90000 : 30000,
 		sourceCommit: build,
+		cleanEvidencePolicy,
+		browserFailureScope: mixedBrowserWorkScope,
+		browserControl: { ...testBrowserBinding(build), ...metadataFor(build) },
+		browserControlMetadataFileSha256: metadataFileHash(build),
 		liveVersion: build.slice(0, 7),
 		success: true,
 		pairsCompleted: 20,
@@ -247,6 +259,8 @@ function fixture(build = BEFORE) {
 }
 function inputs() {
 	const conditions = {
+		browserControl: metadataFor(BEFORE),
+		browserControlMetadataFileSha256: metadataFileHash(BEFORE),
 		nextStreamCompletionPatch: structuredClone(nextStreamCompletionPatch),
 		topology: "single app",
 		actors,
@@ -292,6 +306,8 @@ function inputs() {
 		operatorSha256: hash,
 		expectedBeforeBuild: BEFORE,
 		expectedHeadBuild: HEAD,
+		expectedHeadBrowserControl: metadataFor(HEAD),
+		expectedHeadBrowserControlFileSha256: metadataFileHash(HEAD),
 		registeredAt: "2026-10-25T01:00:00.000Z",
 		beforeContext: {
 			schema: 1,
@@ -337,6 +353,8 @@ test("complete mixed cohorts derive policy9 nearest-rank limits and compare only
 		headContext: {
 			...input.beforeContext,
 			fullBuild: HEAD,
+			conditions: { ...input.beforeContext.conditions, browserControl: input.expectedHeadBrowserControl,
+				browserControlMetadataFileSha256: input.expectedHeadBrowserControlFileSha256 },
 			phase: "release",
 			observationTimeoutMs: 30000,
 			firstControlledHeadStartedAt: "2026-10-25T02:00:00.000Z",
@@ -371,6 +389,18 @@ test("mixed before conditions require the exact common patch, never equal unknow
 			() => budgets.deriveMixedClockBudgets(input),
 			/common Next patch/,
 		);
+	}
+});
+
+test("mixed independent derivation requires actual per-context browser proof even when raw is zero", () => {
+	for (const mutate of [
+		(run) => delete run.transports[0].browserControlEvidence,
+		(run) => run.transports[0].contextId = "wrong-context",
+		(run) => run.transports[0].rawBrowserFailedRequests = null,
+		(run) => run.browserControl.browserVerified = false,
+	]) {
+		const input = inputs(); mutate(input.before);
+		assert.throws(() => budgets.deriveMixedClockBudgets(input));
 	}
 });
 
@@ -421,6 +451,7 @@ test("native, server, metric, transport, overlap and analytics failures remain s
 		(r) => r.backendGroups.push(r.backendGroups[0]),
 		(r) => r.nativeRunCoverage.after.unknown++,
 		(r) => r.transports.pop(),
+		(r) => { r.transports[0].contextId = id(9999); r.transports[0].browserControlEvidence = testBrowserEvidence(id(9999)); },
 		(r) => r.transports[0].wire.mandatoryErrors++,
 		(r) => r.transports[0].traceTransport.browserInitialization.requests++,
 		(r) => (r.records[0].analyticsInflightAtCommandStart = 2),
@@ -513,6 +544,8 @@ test("changed registration, sources, protocol or independent head context cannot
 		headContext: {
 			...input.beforeContext,
 			fullBuild: HEAD,
+			conditions: { ...input.beforeContext.conditions, browserControl: input.expectedHeadBrowserControl,
+				browserControlMetadataFileSha256: input.expectedHeadBrowserControlFileSha256 },
 			phase: "release",
 			observationTimeoutMs: 30000,
 			firstControlledHeadStartedAt: "2026-10-25T02:00:00.000Z",
@@ -584,6 +617,8 @@ test("more completed analytics responses alone adds descriptive volume without a
 		headContext: {
 			...input.beforeContext,
 			fullBuild: HEAD,
+			conditions: { ...input.beforeContext.conditions, browserControl: input.expectedHeadBrowserControl,
+				browserControlMetadataFileSha256: input.expectedHeadBrowserControlFileSha256 },
 			phase: "release",
 			observationTimeoutMs: 30000,
 			firstControlledHeadStartedAt: "2026-10-25T02:00:00.000Z",
@@ -601,9 +636,15 @@ test("actual file commands bind protocol bytes, registration SHA and independent
 	const encode = (value) => `${JSON.stringify(value, null, 2)}\n`,
 		sha = (value) => createHash("sha256").update(value).digest("hex");
 	try {
-		const input = inputs(),
-			before = encode(input.before),
-			head = encode(fixture(HEAD));
+		const input = inputs();
+		const headManifest = encode({ config: { deploymentId: HEAD, experimental: { cachedNavigations: true } } });
+		input.expectedHeadBrowserControl = { ...metadataFor(HEAD), compiledManifestSha256: sha(headManifest) };
+		const headMetadata = encode(input.expectedHeadBrowserControl);
+		input.expectedHeadBrowserControlFileSha256 = sha(headMetadata);
+		const headValue = fixture(HEAD);
+		headValue.browserControl = { ...testBrowserBinding(HEAD), ...input.expectedHeadBrowserControl };
+		headValue.browserControlMetadataFileSha256 = input.expectedHeadBrowserControlFileSha256;
+		const before = encode(input.before), head = encode(headValue);
 		const protocol = encode({
 			schema: 1,
 			files: Object.fromEntries(
@@ -628,6 +669,8 @@ test("actual file commands bind protocol bytes, registration SHA and independent
 			"head.json": head,
 			"protocol.json": protocol,
 			"before-context.json": beforeContext,
+			"head-manifest.json": headManifest,
+			"head-browser-control.json": headMetadata,
 		}))
 			await writeFile(join(folder, name), value);
 		await budgets.runMixedBudgetCommand([
@@ -642,6 +685,10 @@ test("actual file commands bind protocol bytes, registration SHA and independent
 			BEFORE,
 			"--expected-head-build",
 			HEAD,
+			"--head-app-manifest",
+			join(folder, "head-manifest.json"),
+			"--head-browser-control",
+			join(folder, "head-browser-control.json"),
 			"--out",
 			join(folder, "budgets.json"),
 		]);
@@ -653,6 +700,8 @@ test("actual file commands bind protocol bytes, registration SHA and independent
 			encode({
 				...input.beforeContext,
 				fullBuild: HEAD,
+				conditions: { ...input.beforeContext.conditions, browserControl: input.expectedHeadBrowserControl,
+					browserControlMetadataFileSha256: input.expectedHeadBrowserControlFileSha256 },
 			phase: "release",
 			observationTimeoutMs: 30000,
 				mixedArtifactSha256: sha(head),

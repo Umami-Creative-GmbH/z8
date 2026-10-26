@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 import { createHash, randomBytes } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { cleanEvidenceGates, cleanEvidencePolicy, cleanObservationMatches } from "./clean-evidence.mjs";
+import { cleanEvidenceGates, cleanEvidencePolicy, cleanObservationMatches, cleanMeasuredCostGates, runCleanVisitWorkers } from "./clean-evidence.mjs";
+import { knownBrowserControlMetadata, matchingBrowserControlBinding } from "./control-cancellation-evidence.mjs";
+import { readBrowserControlBinding, verifyBrowserControlBrowser, installBrowserControlCollector } from "./browser-control-collector.mjs";
 import { cpus, platform, release, totalmem } from "node:os";
 import { dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -156,6 +158,8 @@ export async function runCompanionCapture({
 }
 export function settledCohorts(plan) {
   if (!cleanObservationMatches(plan)) throw Error("Require the approved clean original/optimized observation windows and common pool timeout.");
+  if (plan.runtime?.traceTransport === companionWireContract.traceTransport && !knownBrowserControlMetadata(plan.runtime.browserControl))
+    throw Error("Require qualified browser control runtime metadata.");
   if (!Number.isInteger(plan.samples) || plan.samples < 20)
     throw Error("At least twenty samples are required.");
   if (
@@ -433,10 +437,18 @@ export async function measureFixtureResources(
   collectorControl,
   collector,
 ) {
+  if (plan.runtime?.traceTransport === companionWireContract.traceTransport && !matchingBrowserControlBinding(plan.runtime, collector.browserControlBinding))
+    throw Error("Controlled companion browser control admission is missing or mismatched.");
   const traceId = randomBytes(16).toString("hex"),
     prerequisiteTraceId = randomBytes(16).toString("hex"),
     backgroundTraceId = randomBytes(16).toString("hex");
-  const observer = createSettledObserver();
+  let browserObservation, nativeObservationRows;
+  const observeBrowser = (method, ...args) => {
+    if (!browserObservation) return;
+    try { browserObservation[method](...args); }
+    catch { cleanupFailure("browser-control-observation", "observation-incomplete"); }
+  };
+  const observer = createSettledObserver({ onMeasuredFailure: (id) => observeBrowser("recordMeasuredFailure", id) });
   let context,
     transport,
     collectorVisit,
@@ -542,6 +554,10 @@ export async function measureFixtureResources(
     await page.setViewport(condition.viewport);
     await page.emulateTimezone(condition.timezone);
     await page.setExtraHTTPHeaders({ "Accept-Language": condition.locale });
+    browserObservation = await installBrowserControlCollector({ page, context, transport, origin: plan.origin,
+      headers: { "Accept-Language": condition.locale }, contextId: traceId,
+      browserRevision: collector.browserControlBinding.browserRevision,
+      compiledCachedNavigations: collector.browserControlBinding.compiledCachedNavigations });
     client = await page.createCDPSession();
     await client.send("Network.enable");
     client.on("Network.requestWillBeSent", (e) =>
@@ -699,6 +715,7 @@ export async function measureFixtureResources(
     s.measurementStarted = true;
     started = performance.now();
     observer.begin(started);
+    observeBrowser("beginMeasurement");
     transport.wire.begin(started);
     stage = "navigate";
     const clock = route.clockReady
@@ -808,7 +825,10 @@ export async function measureFixtureResources(
     }
   } finally {
     await client?.detach().catch(() => {});
+    observeBrowser("endMeasurement");
     s.failedRequests = observer.state(performance.now()).failedRequests;
+    try { await browserObservation?.close(); }
+    catch { cleanupFailure("browser-control-observation", "observation-incomplete"); }
     try {
       await context?.close();
     } catch {
@@ -817,6 +837,7 @@ export async function measureFixtureResources(
     if (collectorVisit) {
       try {
         const closed = await collector.endCollectorVisit(collectorVisit);
+        nativeObservationRows = closed.traces;
         s.collectorVisit.nativeCloseProof = closed.nativeCloseProof ?? null;
         s.collectorVisit.nativeCloseElapsedMs =
           closed.nativeCloseElapsedMs ?? null;
@@ -847,6 +868,16 @@ export async function measureFixtureResources(
         cleanupFailure("trace-transport-close", "transport-error");
       }
     }
+    if (browserObservation) {
+      try { s.browserControlEvidence = browserObservation.snapshot(); }
+      catch { cleanupFailure("browser-control-observation", "observation-incomplete"); }
+    }
+  }
+  if (transport) {
+    s.requiredObservationGates = cleanEvidenceGates(plan, {
+      runtime: { ...plan.runtime, browserControl: collector.browserControlBinding }, samples: [s],
+    }, nativeObservationRows, "readyMs").concat(cleanMeasuredCostGates(s, nativeObservationRows));
+    if (s.requiredObservationGates.length) cleanupFailure("required-observation", "observation-incomplete");
   }
   return s;
 }
@@ -856,7 +887,7 @@ async function main() {
     options = {};
   const allowed =
     command === "capture"
-      ? ["--plan", "--auth", "--chrome", "--out", "--collector"]
+      ? ["--plan", "--auth", "--chrome", "--out", "--collector", "--app-manifest"]
       : ["--plan", "--artifact", "--backend"];
   for (let i = 0; i < args.length; i += 2) {
     if (
@@ -939,6 +970,7 @@ async function main() {
   )
     throw Error("Capture requires --auth, --chrome and --out.");
   const collector = await import("./collector-client.mjs");
+  let browserControlBinding = await readBrowserControlBinding({ plan, manifestPath: options["--app-manifest"] });
   let auth;
   const artifact = {
     schema: 1,
@@ -990,18 +1022,18 @@ async function main() {
       artifact.runtime.buildVerified = true;
       auth = JSON.parse(await readFile(options["--auth"]));
       const { default: puppeteer } = await import("puppeteer-core");
-      return launchFixtureBrowser(puppeteer, options["--chrome"]);
+      const browser = await launchFixtureBrowser(puppeteer, options["--chrome"]);
+      try {
+        browserControlBinding = await verifyBrowserControlBrowser(browser, browserControlBinding);
+        artifact.runtime.browserControl = browserControlBinding;
+        return browser;
+      } catch (error) { await browser.close(); throw error; }
     },
     capture: async (browser) => {
       artifact.browser = await browser.version();
       for (const c of cohorts) {
-        let index = 0;
-        await Promise.all(
-          Array.from({ length: plan.concurrency }, async () => {
-            while (index < c.count) {
-              const iteration = index++;
-              artifact.samples.push(
-                await measureFixtureResources(
+        await runCleanVisitWorkers({ count: c.count, concurrency: plan.concurrency,
+          measure: (iteration) => measureFixtureResources(
                   browser,
                   auth,
                   plan,
@@ -1011,16 +1043,16 @@ async function main() {
                   c.mode,
                   iteration,
                   options["--collector"],
-                  collector,
+                  { ...collector, browserControlBinding },
                 ),
-              );
+          checkpoint: async (sample) => {
+              artifact.samples.push(sample);
               checkpoint = checkpoint.then(() =>
                 writeFile(options["--out"], encode(artifact)),
               );
               await checkpoint;
-            }
-          }),
-        );
+          },
+        });
       }
     },
     checkpoint: async () => {

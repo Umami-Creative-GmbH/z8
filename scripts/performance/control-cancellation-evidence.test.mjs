@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createActionResultObserver } from "./action-result-observer.mjs";
+import { testBrowserEvidence } from "./control-cancellation-test-fixtures.mjs";
 import {
 	inspectRequiredFlightBody,
 	classifyControlCancellations,
@@ -181,13 +182,13 @@ function cancellationFixture() {
 	};
 }
 
-test("exact cached required Flight proof separates a native control while raw cancellation remains one", () => {
+test("prototype cache evidence stays unknown without semantic Vary and stable principal proof", () => {
 	const proof = classifyControlCancellations(cancellationFixture());
 	assert.equal(proof.complete, true);
 	assert.equal(proof.rawFailedRequests, 1);
-	assert.equal(proof.provenControls, 1);
+	assert.equal(proof.provenControls, 0);
 	assert.equal(proof.realFailures, 0);
-	assert.equal(proof.unknownFailures, 0);
+	assert.equal(proof.unknownFailures, 1);
 });
 
 test("cache shape, aborted/prefetch labels or ambiguous identity alone cannot exempt a failure", () => {
@@ -396,7 +397,7 @@ test("supported hints and framed text never mistake text containing E for a Flig
 });
 
 test("serialized measured receipts require exact raw partition, scope and complete coverage", () => {
-	const proof = classifyControlCancellations(cancellationFixture());
+	const proof = testBrowserEvidence("context", true).measured;
 	assert.equal(cleanBrowserFailureEvidence(proof, 1), true);
 	assert.equal(cleanBrowserFailureEvidence(proof, 0), false);
 	for (const change of [
@@ -597,4 +598,20 @@ test("actual /_tree header contract proves a complete structure-only tree with r
 			}).complete,
 			false,
 		);
+});
+
+test("unresolved lazy dependencies retain bounded technical provenance without exposing the reference", () => {
+	for (const [reference, prefix, form] of [["$Labcdef", "L", "lazy-reference"], ["$@abcdef", "@", "promise-reference"], ["$abcdef", "plain", "model-reference"]]) {
+		const body = Buffer.from(`~0:{"t":{"t":{"s":"","d":{"r":"${reference}"}}}}\n`);
+		const result = inspectRequiredFlightBody(body, { cachedNavigations: true });
+		assert.equal(result.complete, false);
+		assert.equal(result.reason, "unresolved-model-reference");
+		assert.deepEqual(result.modelReference, { prefix, form, length: reference.length });
+		assert.equal(result.marker, "partial");
+		assert.equal(result.isPartial, true);
+		assert.equal(result.requestKind, "navigation");
+		assert.equal(result.decodedBytes, body.length);
+		assert.match(result.bodySha256, /^[a-f0-9]{64}$/);
+		assert.doesNotMatch(JSON.stringify(result), /abcdef/);
+	}
 });

@@ -26,13 +26,14 @@ const groupFor = (type, headers = {}) => {
   if (h.rsc === "1") return "rsc";
   return "otherFinite";
 };
-export function createSettledObserver() {
+export function createSettledObserver({ onMeasuredFailure } = {}) {
   const requests = new Map(),
     redirects = [];
   let started,
     readyAt,
     failedRequests = null,
-    lastActivity = 0;
+    lastActivity = 0,
+    observationErrors = 0;
   const eventAt = (at) => {
     lastActivity = Math.max(lastActivity, at);
   };
@@ -103,7 +104,10 @@ export function createSettledObserver() {
     failed(event, at) {
       const r = requests.get(event.requestId);
       if (!r) return;
-      if (r.observedAfterStart) failedRequests++;
+      if (r.observedAfterStart) {
+        failedRequests++;
+        try { onMeasuredFailure?.(event.requestId); } catch { observationErrors++; }
+      }
       r.done = true;
       r.error = true;
       if (!["prefetch", "longLived"].includes(r.group)) eventAt(at);
@@ -165,6 +169,7 @@ export function createSettledObserver() {
       const capped =
         readyAt !== undefined && at - readyAt >= settledPolicy.postReadyCapMs;
       const complete =
+        observationErrors === 0 &&
         readyAt !== undefined &&
         pending === 0 &&
         errors === 0 &&
@@ -173,6 +178,7 @@ export function createSettledObserver() {
         at - lastActivity >= settledPolicy.quietMs;
       return {
         failedRequests,
+        observationErrors,
         complete,
         capped: capped && !complete,
         censored: !complete,

@@ -1,15 +1,47 @@
 /** Passive all-phase identity/body receipts. No app requests, payloads, URLs or header values are emitted. */
 import { createHash } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import { brotliDecompressSync, gunzipSync, inflateSync } from "node:zlib";
 import {
 	classifyControlCancellations,
 	controlCancellationPolicy,
 	inspectRequiredFlightBody,
+	knownBrowserControlMetadata,
 } from "./control-cancellation-evidence.mjs";
 
 export const controlResponseHeader = "x-z8-fixture-response-id";
 export const controlDocumentHeader = "x-z8-fixture-document-generation";
+export const mixedBrowserWorkScope = "all-mixed-context-work-before-first-app-io-through-finite-settlement-v1";
 const sha = (value) => createHash("sha256").update(value).digest("hex");
+
+/** Read the compiled source boundary before app/control/browser IO; never infer a missing flag. */
+export async function readBrowserControlBinding({ plan, manifestPath }) {
+	const metadata = plan.runtime?.browserControl;
+	if (!knownBrowserControlMetadata(metadata) || !/^[a-f0-9]{40}$/.test(plan.runtime?.build ?? "") || !manifestPath)
+		throw Error("Missing qualified browser control runtime metadata or app manifest.");
+	const bytes = await readFile(manifestPath);
+	let manifest;
+	try { manifest = JSON.parse(bytes.toString("utf8")); }
+	catch { throw Error("Compiled app manifest is unavailable or malformed."); }
+	if (sha(bytes) !== metadata.compiledManifestSha256 || manifest.config?.deploymentId !== plan.runtime.build ||
+		typeof manifest.config?.experimental?.cachedNavigations !== "boolean" ||
+		manifest.config.experimental.cachedNavigations !== metadata.compiledCachedNavigations)
+		throw Error("Compiled app manifest differs from the qualified browser control metadata.");
+	return Object.freeze({ ...metadata, compiledBuild: plan.runtime.build, manifestVerified: true, browserVerified: false });
+}
+
+/** One actual startup command, before visits; no app requests and no browser-revision default. */
+export async function verifyBrowserControlBrowser(browser, binding) {
+	if (!knownBrowserControlMetadata(binding) || binding.manifestVerified !== true)
+		throw Error("Browser control manifest admission is missing.");
+	const session = await browser.target().createCDPSession();
+	try {
+		const actual = await session.send("Browser.getVersion");
+		if (actual.revision?.replace(/^@/, "") !== binding.browserRevision)
+			throw Error("Actual browser revision differs from qualified protocol control source.");
+		return Object.freeze({ ...binding, browserVerified: true });
+	} finally { await session.detach(); }
+}
 const selectedHeaders = [
 	"rsc",
 	"next-router-prefetch",
@@ -88,6 +120,7 @@ export function createBrowserControlCollector({
 	compiledCachedNavigations,
 	readBody,
 	readStream,
+	captureContextFailures = false,
 	proxyObservation = () => ({
 		rows: [],
 		installed: false,
@@ -110,11 +143,18 @@ export function createBrowserControlCollector({
 		missing = 0,
 		retained = 0,
 		streamRetained = 0,
-		joinedResponseExtras = 0;
+		joinedResponseExtras = 0,
+		rawMeasuredFailedRequests = 0;
 	const limited = () =>
 		requests.size + extra.size + responseExtras.size >=
 		controlCancellationPolicy.recordLimit;
 	const rows = () => [...requests.values()];
+	const recordMeasuredFailure = (requestId) => {
+		rawMeasuredFailedRequests++;
+		if (!measurementStarted || measurementClosed) errors++;
+		if (measuredFailureIds.length >= controlCancellationPolicy.recordLimit) { overflow++; return; }
+		measuredFailureIds.push(requestId);
+	};
 	const missingFamilies = {
 		duplicateRequest: 0,
 		responseBeforeRequest: 0,
@@ -342,6 +382,8 @@ export function createBrowserControlCollector({
 			headerFieldSha256: row.headerFieldSha256,
 		});
 		return {
+			contextId,
+			rawMeasuredFailedRequests,
 			diagnostics: {
 				earlyResponseExtra: {
 					joined: joinedResponseExtras,
@@ -488,15 +530,7 @@ export function createBrowserControlCollector({
 		endMeasurement() {
 			measurementClosed = measurementStarted;
 		},
-		recordMeasuredFailure(requestId) {
-			if (!measurementStarted || measurementClosed) errors++;
-			if (measuredFailureIds.length >= controlCancellationPolicy.recordLimit) {
-				overflow++;
-				return;
-			}
-			// Called ONLY at the existing raw failedRequests increment; no cross-session timing inference.
-			measuredFailureIds.push(requestId);
-		},
+		recordMeasuredFailure,
 		endScope() {
 			closed = true;
 			for (const row of rows())
@@ -547,6 +581,7 @@ export function createBrowserControlCollector({
 					event.initiator.stack === undefined,
 				applicationOrigin: new URL(event.request.url).origin === origin,
 				ambiguousRedirect: previous !== undefined,
+				observedInMeasurement: measurementStarted && !measurementClosed,
 			};
 			row.initialHeaderIdentity = headerIdentity(event.request.headers);
 			requests.set(event.requestId, row);
@@ -621,6 +656,7 @@ export function createBrowserControlCollector({
 				missingEvent("failedBeforeRequest");
 				return;
 			}
+			if (captureContextFailures && !measurementClosed && row.observedInMeasurement) recordMeasuredFailure(event.requestId);
 			if (row.failed) {
 				errors++;
 				return;
@@ -668,6 +704,7 @@ export async function installBrowserControlCollector({
 	contextId,
 	browserRevision,
 	compiledCachedNavigations,
+	captureContextFailures = false,
 }) {
 	const session = await page.createCDPSession();
 	const proxy = createProxyControlCollector({
@@ -684,6 +721,7 @@ export async function installBrowserControlCollector({
 		origin,
 		browserRevision,
 		compiledCachedNavigations,
+		captureContextFailures,
 		proxyObservation,
 		readBody: (requestId) =>
 			session.send("Network.getResponseBody", { requestId }),

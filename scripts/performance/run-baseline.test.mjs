@@ -11,6 +11,7 @@ import { clickVisible } from "./journey-steps.mjs";
 import { nextStreamCompletionPatch } from "./next-stream-completion-patch.mjs";
 import { primaryProtocolIdentity } from "./protocol-fingerprints.mjs";
 import { measure } from "./run-baseline.mjs";
+import { testBrowserMetadata, testBrowserEvidence } from "./control-cancellation-test-fixtures.mjs";
 
 test("fixture startup checks the actual temporary compiled manifest and never repairs stale identity", async () => {
 	const fixture = await import("./fixture.mjs");
@@ -588,6 +589,14 @@ test("primary plan rejects absent, unknown or changed common Next stream patch",
 	}
 });
 
+test("controlled primary admission rejects missing browser pins before any collector or context IO", async () => {
+	let calls = 0;
+	await assert.rejects(measure({ createBrowserContext: async () => { calls++; } }, {},
+		{ runtime: { traceTransport: "context-loopback-proxy-v1" } }, {}, {}, {}, "first-document", 0, 1,
+		{ beginCollectorVisit: async () => { calls++; } }), /browser.*control|control.*browser/i);
+	assert.equal(calls, 0);
+});
+
 test("primary retains the original sanitized failure when native close is incomplete", async () => {
 	let registeredIds;
 	const proof = [
@@ -837,6 +846,7 @@ test("context-proxy plans require the prospective post-snapshot native cleanup p
 		plan.runtime.poolMax = 10;
 		plan.runtime.poolAcquisitionTimeoutMs = 60000;
 		plan.runtime.browserPolicy = "isolated-profile-no-prediction-v1";
+		plan.runtime.browserControl = testBrowserMetadata();
 		plan.runtime.prerequisiteQuiescencePolicy =
 			"settled-prerequisite-transfers-v1";
 		const validate = () => {
@@ -965,7 +975,7 @@ test("finalization retains raw browser failures and rejects them in both phases"
 				writeFileSync(planPath, bytes);
 				writeFileSync(artifactPath, JSON.stringify({
 					planSha256: createHash("sha256").update(bytes).digest("hex"),
-					samples: [{ traceId: "a".repeat(32), failed: false, censored: false, failedRequests }],
+					samples: [{ traceId: "a".repeat(32), failed: false, censored: false, failedRequests, browserControlEvidence: testBrowserEvidence("a".repeat(32)) }],
 					summaries: [],
 				}));
 				const command = spawnSync(process.execPath, [runner, "--plan", planPath, "--finalize", artifactPath], { encoding: "utf8" });
@@ -973,7 +983,7 @@ test("finalization retains raw browser failures and rejects them in both phases"
 				const artifact = JSON.parse(readFileSync(artifactPath));
 				assert.equal(artifact.evidenceComplete, false);
 				assert.equal(artifact.samples[0].failedRequests, failedRequests);
-				assert.equal(artifact.evidenceGates.some((gate) => /failed browser requests/i.test(gate)), failedRequests !== 0);
+				assert.equal(artifact.evidenceGates.some((gate) => /complete browser request proofs/i.test(gate)), failedRequests !== 0);
 			}
 	} finally {
 		rmSync(folder, { recursive: true, force: true });

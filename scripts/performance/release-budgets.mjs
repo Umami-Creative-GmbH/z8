@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 import { createHash } from "node:crypto";
-import { cleanEvidenceGates, cleanEvidencePolicy, cleanObservationPolicy } from "./clean-evidence.mjs";
+import { cleanEvidenceGates, cleanEvidencePolicy, cleanObservationPolicy, cleanBrowserVisitEvidence } from "./clean-evidence.mjs";
+import { readBrowserControlBinding } from "./browser-control-collector.mjs";
+import { knownBrowserControlMetadata } from "./control-cancellation-evidence.mjs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import {
@@ -168,6 +170,9 @@ function observedPaintComplete(samples) {
 function derive(plan, before, releaseRuntime, native) {
   const clean = cleanEvidenceGates(plan, before, native);
   if (clean.length) throw Error(clean.join(" "));
+  if (!knownBrowserControlMetadata(releaseRuntime.browserControl) ||
+    ["browserRevision", "compiledCachedNavigations"].some((key) => releaseRuntime.browserControl[key] !== plan.runtime.browserControl?.[key]))
+    throw Error("Release browser control method differs from the clean original.");
   const releasePlan = structuredClone(plan);
   releasePlan.phase = "release";
   releasePlan.timeoutMs = cleanObservationPolicy.optimizedTimeoutMs;
@@ -319,6 +324,7 @@ async function main() {
           "--release-build",
           "--release-source",
           "--release-tooling",
+          "--release-app-manifest",
           "--out",
         ]
       : [
@@ -405,6 +411,7 @@ async function main() {
         build: rp.value.runtime.build,
         sourceBuild: rp.value.runtime.sourceBuild,
         toolingBuild: rp.value.runtime.toolingBuild,
+        browserControl: rp.value.runtime.browserControl,
       },
       backend.value,
     );
@@ -506,6 +513,14 @@ async function main() {
       build: options["--release-build"],
       sourceBuild: options["--release-source"],
       toolingBuild: options["--release-tooling"],
+      browserControl: await (async () => {
+        if (!options["--release-app-manifest"]) throw Error("Missing --release-app-manifest.");
+        const bytes = await readFile(options["--release-app-manifest"]);
+        const metadata = { ...bp.value.runtime.browserControl, compiledManifestSha256: sha(bytes) };
+        await readBrowserControlBinding({ plan: { runtime: { build: options["--release-build"], browserControl: metadata } },
+          manifestPath: options["--release-app-manifest"] });
+        return metadata;
+      })(),
     },
     backend.value,
   );
@@ -819,7 +834,7 @@ function compare(plan, before, head, budget, native, settledComparison) {
       gates.push(`${key(c)}: missing or pending script coverage.`);
     if (!settledComparison && current.some((s) => s.pendingRscRequests !== 0))
       gates.push(`${key(c)}: missing or pending external RSC coverage.`);
-    if (current.some((s) => s.failedRequests !== 0))
+    if (current.some((s) => !cleanBrowserVisitEvidence(s)))
       gates.push(`${key(c)}: missing or failed browser requests.`);
     if (
       c.mode === "mutation-refresh" &&
