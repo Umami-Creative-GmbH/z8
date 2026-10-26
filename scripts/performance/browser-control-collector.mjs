@@ -41,6 +41,20 @@ export function controlRequestIdentity(contextId, url, method, headers) {
 		requestHeadersSha256: sha(
 			JSON.stringify(selectedHeaders.map((key) => [key, h[key] ?? null])),
 		),
+		// Diagnostic comparison only: full browser/proxy identity still includes this token.
+		withoutTechnicalDocumentSha256: sha(
+			JSON.stringify(
+				selectedHeaders
+					.filter((key) => key !== controlDocumentHeader)
+					.map((key) => [key, h[key] ?? null]),
+			),
+		),
+		headerFieldSha256: Object.fromEntries(
+			selectedHeaders.map((key) => [
+				key,
+				h[key] === undefined ? null : sha(h[key]),
+			]),
+		),
 		documentGeneration: h[controlDocumentHeader] ?? null,
 		action,
 		requestKind,
@@ -99,10 +113,17 @@ export function createBrowserControlCollector({
 		requests.size + extra.size >= controlCancellationPolicy.recordLimit;
 	const rows = () => [...requests.values()];
 	const missingFamilies = {
-		duplicateRequest: 0, responseBeforeRequest: 0, responseExtraBeforeRequest: 0,
-		dataBeforeRequest: 0, finishedBeforeRequest: 0, failedBeforeRequest: 0,
+		duplicateRequest: 0,
+		responseBeforeRequest: 0,
+		responseExtraBeforeRequest: 0,
+		dataBeforeRequest: 0,
+		finishedBeforeRequest: 0,
+		failedBeforeRequest: 0,
 	};
-	const missingEvent = (family) => { missing++; missingFamilies[family]++; };
+	const missingEvent = (family) => {
+		missing++;
+		missingFamilies[family]++;
+	};
 	const processBodies = () => {
 		while (
 			pending.size < 1 &&
@@ -269,6 +290,7 @@ export function createBrowserControlCollector({
 		return identity;
 	};
 	const applyExtra = (row, identity) => {
+		row.extraHeaderIdentity = identity;
 		Object.assign(row, identity);
 		row.requestHeadersKnown = true;
 	};
@@ -298,44 +320,114 @@ export function createBrowserControlCollector({
 			missing:
 				coverage.missing + measuredRows.filter((row) => !row.failed).length,
 		};
+		const headerProvenance = (row) => ({
+			documentGeneration: row.documentGeneration,
+			requestHeadersSha256: row.requestHeadersSha256,
+			withoutTechnicalDocumentSha256: row.withoutTechnicalDocumentSha256,
+			headerFieldSha256: row.headerFieldSha256,
+		});
 		return {
 			diagnostics: {
-				missingFamilies: { ...missingFamilies,
-					failedRequestHeadersUnknown: failures.filter((row) => !row.requestHeadersKnown).length,
-					measuredFailureNotObserved: measuredRows.filter((row) => !row.failed).length,
+				missingFamilies: {
+					...missingFamilies,
+					failedRequestHeadersUnknown: failures.filter(
+						(row) => !row.requestHeadersKnown,
+					).length,
+					measuredFailureNotObserved: measuredRows.filter((row) => !row.failed)
+						.length,
 				},
 				failures: failures.map((row) => {
-					const candidates = proxy.rows.filter((candidate) =>
-						candidate.contextId === row.contextId && candidate.method === row.method &&
-						candidate.fullUrlSha256 === row.fullUrlSha256);
-					const cached = responses.filter((candidate) => candidate.fromDiskCache &&
-						candidate.fullUrlSha256 === row.fullUrlSha256 && candidate.method === row.method);
+					const candidates = proxy.rows.filter(
+						(candidate) =>
+							candidate.contextId === row.contextId &&
+							candidate.method === row.method &&
+							candidate.fullUrlSha256 === row.fullUrlSha256,
+					);
+					const cached = responses.filter(
+						(candidate) =>
+							candidate.fromDiskCache &&
+							candidate.fullUrlSha256 === row.fullUrlSha256 &&
+							candidate.method === row.method,
+					);
+					const selectedPackets = row.proxyResponseId
+						? candidates.filter(
+								(candidate) => candidate.id === row.proxyResponseId,
+							)
+						: candidates;
 					return {
-						requestId: row.requestId, type: row.type, method: row.method,
-						requestKind: row.requestKind, action: row.action, flight: row.flight,
-						prefetch: row.prefetch, status: row.status ?? null,
+						requestId: row.requestId,
+						type: row.type,
+						method: row.method,
+						requestKind: row.requestKind,
+						action: row.action,
+						flight: row.flight,
+						prefetch: row.prefetch,
+						status: row.status ?? null,
 						requestHeadersKnown: row.requestHeadersKnown === true,
+						headerKnowledgeSource:
+							row.requestHeadersKnown === true
+								? "request-extra-info"
+								: "initial-event-only",
+						initialHeaderIdentity: row.initialHeaderIdentity
+							? headerProvenance(row.initialHeaderIdentity)
+							: null,
+						extraHeaderIdentity: row.extraHeaderIdentity
+							? headerProvenance(row.extraHeaderIdentity)
+							: null,
 						documentGeneration: row.documentGeneration,
-						fullUrlSha256: row.fullUrlSha256, requestHeadersSha256: row.requestHeadersSha256,
+						fullUrlSha256: row.fullUrlSha256,
+						requestHeadersSha256: row.requestHeadersSha256,
 						proxyResponseId: row.proxyResponseId ?? null,
 						fromDiskCache: row.fromDiskCache === true,
 						loaderId: row.loaderId,
 						cachedCandidates: {
+							selected: cached.slice(0, 8).map((candidate) => ({
+								requestId: candidate.requestId,
+								loaderId: candidate.loaderId,
+								...headerProvenance(candidate),
+								bodyProofReason: candidate.bodyProof?.reason ?? null,
+								bodyComplete: candidate.bodyProof?.complete === true,
+							})),
+							selectedTruncated: cached.length > 8,
 							sameUrlMethod: cached.length,
-							sameLoader: cached.filter((candidate) => candidate.loaderId === row.loaderId).length,
-							fullIdentity: cached.filter((candidate) => candidate.requestHeadersSha256 === row.requestHeadersSha256 &&
-								candidate.documentGeneration === row.documentGeneration).length,
-							completeBody: cached.filter((candidate) => candidate.bodyProof?.complete === true).length,
-							bodyProofReasons: [...new Set(cached.map((candidate) => candidate.bodyProof?.reason ?? "not-read"))].slice(0, 16),
+							sameLoader: cached.filter(
+								(candidate) => candidate.loaderId === row.loaderId,
+							).length,
+							fullIdentity: cached.filter(
+								(candidate) =>
+									candidate.requestHeadersSha256 === row.requestHeadersSha256 &&
+									candidate.documentGeneration === row.documentGeneration,
+							).length,
+							completeBody: cached.filter(
+								(candidate) => candidate.bodyProof?.complete === true,
+							).length,
+							bodyProofReasons: [
+								...new Set(
+									cached.map(
+										(candidate) => candidate.bodyProof?.reason ?? "not-read",
+									),
+								),
+							].slice(0, 16),
 						},
 						bodyProofReason: row.bodyProof?.reason ?? null,
 						proxyCandidates: {
+							selected: selectedPackets.slice(0, 8).map((candidate) => ({
+								id: candidate.id,
+								...headerProvenance(candidate),
+								complete: candidate.complete,
+								canceled: candidate.canceled,
+							})),
+							selectedTruncated: selectedPackets.length > 8,
 							sameUrlMethod: candidates.length,
-							fullIdentity: candidates.filter((candidate) =>
-								candidate.requestHeadersSha256 === row.requestHeadersSha256 &&
-								candidate.documentGeneration === row.documentGeneration).length,
-							responseId: candidates.filter((candidate) => row.proxyResponseId &&
-								candidate.id === row.proxyResponseId).length,
+							fullIdentity: candidates.filter(
+								(candidate) =>
+									candidate.requestHeadersSha256 === row.requestHeadersSha256 &&
+									candidate.documentGeneration === row.documentGeneration,
+							).length,
+							responseId: candidates.filter(
+								(candidate) =>
+									row.proxyResponseId && candidate.id === row.proxyResponseId,
+							).length,
 						},
 					};
 				}),
@@ -435,6 +527,7 @@ export function createBrowserControlCollector({
 				applicationOrigin: new URL(event.request.url).origin === origin,
 				ambiguousRedirect: previous !== undefined,
 			};
+			row.initialHeaderIdentity = headerIdentity(event.request.headers);
 			requests.set(event.requestId, row);
 			if (extra.has(event.requestId)) {
 				applyExtra(row, extra.get(event.requestId));

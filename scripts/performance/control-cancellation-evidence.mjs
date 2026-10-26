@@ -266,8 +266,29 @@ export function inspectRequiredFlightBody(
 	while (queue.length) {
 		if (++inspected > 100000) return unknown("model-limit");
 		const value = queue.pop();
-		if (typeof value === "string" && /^\$(?:@|L|F)?[a-f0-9]+$/.test(value)) {
-			const id = value.replace(/^\$(?:@|L|F)?/, "");
+		if (typeof value === "string" && /^\$[QWi][a-f0-9]+$/.test(value)) {
+			// The installed decoder constructs these only from an outlined iterable model.
+			const id = value.slice(2),
+				record = records.get(id);
+			const model = resolve(record?.value);
+			if (
+				!record ||
+				record.stream ||
+				record.tag !== null ||
+				!Array.isArray(model) ||
+				(value[1] === "Q" &&
+					!model.every((pair) => Array.isArray(pair) && pair.length === 2))
+			)
+				return unknown("unsupported-outlined-collection");
+			if (!visited.has(id)) {
+				visited.add(id);
+				queue.push(model);
+			}
+		} else if (
+			typeof value === "string" &&
+			/^\$(?:@|L)?[a-f0-9]+$/.test(value)
+		) {
+			const id = value.replace(/^\$(?:@|L)?/, "");
 			if (!records.has(id)) return unknown("unresolved-model-reference");
 			if (!visited.has(id)) {
 				visited.add(id);
@@ -282,7 +303,19 @@ export function inspectRequiredFlightBody(
 				value,
 			)
 		) {
-			return unknown("unsupported-model-reference");
+			return unknown("unsupported-model-reference", {
+				modelReference: {
+					prefix: "QWiKBDnShTL@FINuZwH-".includes(value[1])
+						? value[1]
+						: "other",
+					length: value.length,
+					form: /^\$[a-f0-9]+:/.test(value)
+						? "outlined-path"
+						: /^\$[A-Za-z@-][a-f0-9]+:/.test(value)
+							? "typed-outlined-path"
+							: "other",
+				},
+			});
 		} else if (value && typeof value === "object" && !opaqueText.has(value)) {
 			const values = Object.values(value);
 			if (values.length + queue.length > 100000) return unknown("model-limit");
@@ -298,7 +331,9 @@ export function inspectRequiredFlightBody(
 			!tree ||
 			typeof tree !== "object" ||
 			!(
-				typeof resolve(tree.s) === "string" ||
+				(typeof resolve(tree.s) === "string" &&
+					(!resolve(tree.s).startsWith("$") ||
+						resolve(tree.s).startsWith("$$"))) ||
 				(resolve(tree.s) && typeof resolve(tree.s) === "object")
 			)
 		)

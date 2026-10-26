@@ -4,6 +4,7 @@ import test from "node:test";
 import { setImmediate as tick } from "node:timers/promises";
 import { chromiumSWRRevision } from "./control-cancellation-evidence.mjs";
 import {
+	controlRequestIdentity,
 	createBrowserControlCollector,
 	createProxyControlCollector,
 	installBrowserControlCollector,
@@ -34,10 +35,49 @@ const event = (requestId, timestamp, type = "Fetch") => ({
 	request: { url, method: "GET", headers, initialPriority: "VeryLow" },
 });
 
+test("header provenance isolates only the technical document token and preserves semantic header differences", () => {
+	const initial = controlRequestIdentity(contextId, url, "GET", headers);
+	const nextDocument = controlRequestIdentity(contextId, url, "GET", {
+		...headers,
+		[controlDocumentHeader]: "context:2",
+	});
+	assert.notEqual(
+		initial.requestHeadersSha256,
+		nextDocument.requestHeadersSha256,
+	);
+	assert.equal(
+		initial.withoutTechnicalDocumentSha256,
+		nextDocument.withoutTechnicalDocumentSha256,
+	);
+	assert.notEqual(
+		initial.headerFieldSha256[controlDocumentHeader],
+		nextDocument.headerFieldSha256[controlDocumentHeader],
+	);
+	const changedSemantic = controlRequestIdentity(contextId, url, "GET", {
+		...headers,
+		"next-router-state-tree": "PRIVATE_ROUTER_STATE",
+	});
+	assert.notEqual(
+		initial.withoutTechnicalDocumentSha256,
+		changedSemantic.withoutTechnicalDocumentSha256,
+	);
+	assert.doesNotMatch(JSON.stringify(changedSemantic), /PRIVATE_ROUTER_STATE/);
+});
+
 test("safe diagnostics identify missing event families without changing blocking coverage", async () => {
-	const collector = createBrowserControlCollector({ contextId, origin,
-		readBody: async () => { throw Error("PRIVATE_BODY_ERROR"); },
-		proxyObservation: () => ({ installed: true, rows: [], errors: 0, overflow: 0, pendingBodies: 0 }),
+	const collector = createBrowserControlCollector({
+		contextId,
+		origin,
+		readBody: async () => {
+			throw Error("PRIVATE_BODY_ERROR");
+		},
+		proxyObservation: () => ({
+			installed: true,
+			rows: [],
+			errors: 0,
+			overflow: 0,
+			pendingBodies: 0,
+		}),
 	});
 	collector.installed();
 	collector.beginMeasurement();
@@ -49,19 +89,29 @@ test("safe diagnostics identify missing event families without changing blocking
 	collector.finished({ requestId: "missing-finish" });
 	collector.failed({ requestId: "missing-failure" });
 	collector.recordMeasuredFailure("unknown");
-	collector.failed({ requestId: "unknown", errorText: "net::ERR_ABORTED", canceled: true });
+	collector.failed({
+		requestId: "unknown",
+		errorText: "net::ERR_ABORTED",
+		canceled: true,
+	});
 	collector.endMeasurement();
 	collector.endScope();
-	await tick(); await tick();
+	await tick();
+	await tick();
 	const result = collector.snapshot();
 	assert.equal(result.measured.complete, false);
 	assert.equal(result.measured.rawFailedRequests, 1);
 	assert.equal(result.measured.unknownFailures, 1);
 	assert.equal(result.measured.coverage.missing, 7);
 	assert.deepEqual(result.diagnostics.missingFamilies, {
-		duplicateRequest: 1, responseBeforeRequest: 1, responseExtraBeforeRequest: 1,
-		dataBeforeRequest: 1, finishedBeforeRequest: 1, failedBeforeRequest: 1,
-		failedRequestHeadersUnknown: 1, measuredFailureNotObserved: 0,
+		duplicateRequest: 1,
+		responseBeforeRequest: 1,
+		responseExtraBeforeRequest: 1,
+		dataBeforeRequest: 1,
+		finishedBeforeRequest: 1,
+		failedBeforeRequest: 1,
+		failedRequestHeadersUnknown: 1,
+		measuredFailureNotObserved: 0,
 	});
 	const row = result.diagnostics.failures[0];
 	assert.equal(row.type, "Other");
@@ -69,7 +119,15 @@ test("safe diagnostics identify missing event families without changing blocking
 	assert.equal(row.requestHeadersKnown, false);
 	assert.equal(row.bodyProofReason, "cdp-body-unavailable");
 	assert.equal(row.proxyCandidates.sameUrlMethod, 0);
-	assert.doesNotMatch(JSON.stringify(result), /PRIVATE_|localhost|Accept-Language|next-router-prefetch/);
+	assert.doesNotMatch(
+		JSON.stringify(result),
+		/PRIVATE_|localhost|Accept-Language/,
+	);
+	assert.ok(
+		Object.values(row.initialHeaderIdentity.headerFieldSha256).every(
+			(value) => value === null || /^[a-f0-9]{64}$/.test(value),
+		),
+	);
 });
 
 test("actual CDP/body and proxy events produce a control proof without publishing payload or header values", async () => {

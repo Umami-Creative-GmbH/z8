@@ -298,6 +298,60 @@ test("cached HTTP completion cannot hide unresolved required Flight dependencies
 	assert.equal(proof.reason, "unresolved-model-reference");
 });
 
+test("outlined Map Set and array iterator dependencies require their actual typed backing rows", () => {
+	for (const [prefix, model] of [
+		["Q", '[["key","$2"]]'],
+		["W", '["$2"]'],
+		["i", '["$2"]'],
+	]) {
+		const body = `0:{"a":{"value":"$${prefix}1"}}\n1:${model}\n2:null\n`;
+		assert.equal(
+			inspectRequiredFlightBody(Buffer.from(body), { action: true }).complete,
+			true,
+			prefix,
+		);
+		for (const invalid of [
+			body.replace("2:null\n", ""),
+			body.replace(`1:${model}`, "1:{}"),
+			body.replace("$2", "$dead"),
+		])
+			assert.equal(
+				inspectRequiredFlightBody(Buffer.from(invalid), { action: true })
+					.complete,
+				false,
+			);
+	}
+	assert.equal(
+		inspectRequiredFlightBody(Buffer.from('0:{"a":"$Q1"}\n1:[[]]\n'), {
+			action: true,
+		}).complete,
+		false,
+	);
+});
+
+test("unsupported reference diagnostics retain a fixed prefix and shape without model paths or values", () => {
+	const proof = inspectRequiredFlightBody(
+		Buffer.from('0:{"a":"$K1:private-organization-value"}\n1:{}\n'),
+		{ action: true },
+	);
+	assert.deepEqual(proof, {
+		complete: false,
+		reason: "unsupported-model-reference",
+		modelReference: {
+			prefix: "K",
+			length: 30,
+			form: "typed-outlined-path",
+		},
+	});
+	assert.doesNotMatch(JSON.stringify(proof), /organization|private|value|\$K1/);
+	assert.equal(
+		inspectRequiredFlightBody(Buffer.from('0:{"a":"$F1"}\n1:null\n'), {
+			action: true,
+		}).complete,
+		false,
+	);
+});
+
 test("unsupported model reference forms and malformed UTF8 remain unknown", () => {
 	for (const reference of ["$1:path", "$Q1", "$W1", "$K1", "$unknown"]) {
 		assert.equal(
