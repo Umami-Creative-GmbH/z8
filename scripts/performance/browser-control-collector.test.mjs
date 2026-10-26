@@ -6,6 +6,7 @@ import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
+import { gzipSync } from "node:zlib";
 import { cleanBrowserContextEvidence } from "./clean-evidence.mjs";
 import { setImmediate as tick } from "node:timers/promises";
 import {
@@ -32,6 +33,7 @@ import {
 } from "./browser-control-collector.mjs";
 import { controlCancellationPolicy } from "./control-cancellation-evidence.mjs";
 import { validateProxyHeaderCensus } from "./proxy-header-census.mjs";
+import { projectCachedCdpText } from "./cdp-cached-text-projection.mjs";
 import { primaryProtocolIdentity, companionProtocolIdentity, budgetProtocolIdentity } from "./protocol-fingerprints.mjs";
 import { mixedProtocolFiles } from "./mixed-clock-budgets.mjs";
 
@@ -78,6 +80,8 @@ test("every protocol source closure binds the newly wired proxy header census",a
 	const maps=await Promise.all([primaryProtocolIdentity(),companionProtocolIdentity(),budgetProtocolIdentity()]);
 	for(const map of maps) assert.match(map["proxy-header-census.mjs"],/^[a-f0-9]{64}$/);
 	assert.equal(mixedProtocolFiles.filter(name=>name==="proxy-header-census.mjs").length,1);
+	for(const map of maps) assert.match(map["cdp-cached-text-projection.mjs"],/^[a-f0-9]{64}$/);
+	assert.equal(mixedProtocolFiles.filter(name=>name==="cdp-cached-text-projection.mjs").length,1);
 });
 
 test("incomplete transport closure never fabricates a closed census or removes pending header facts",()=>{
@@ -702,6 +706,50 @@ test("proxy EOF does not hold forwarding for decoding and genuine upstream error
 	assert.equal(proxy.snapshot().rows[0].bodyProof.complete, true);
 	proxy.failure("1");
 	assert.equal(proxy.snapshot().rows[0].upstreamError, true);
+});
+
+test("proxy natural EOF retains bounded forward text projection metadata without changing protocol claims", async()=>{
+	for(const original of [Buffer.from(body),Buffer.from([0x80,0x81,0x91,0xa0])]){
+		const proxy=createProxyControlCollector({contextId});proxy.installed();
+		proxy.request("1",{url,method:"GET",headers,traceId:"a".repeat(32)});
+		proxy.response("1",{status:200,headers:{...responseHeaders,"content-encoding":"gzip"}});
+		proxy.bytes("1",gzipSync(original));proxy.end("1");
+		assert.equal(proxy.snapshot().rows[0].transportBodyReceipt,undefined,"no synchronous forwarding delay");
+		await tick();const row=proxy.snapshot().rows[0];
+		assert.deepEqual(row.transportBodyReceipt.cdpTextProjection,{available:true,...projectCachedCdpText(original)});
+		assert.equal(row.transportBodyReceipt.decodedBytes,original.length);
+		assert.equal(row.transportBodyReceipt.bodySha256,createHash("sha256").update(original).digest("hex"));
+		assert.equal(proxy.snapshot().pendingBodies,0);
+		assert.equal(Object.hasOwn(row.transportBodyReceipt.cdpTextProjection,"body"),false);
+	}
+	const proxy=createProxyControlCollector({contextId});proxy.installed();
+	proxy.request("1",{url,method:"GET",headers,traceId:"a".repeat(32)});
+	proxy.response("1",{status:200,headers:responseHeaders});proxy.bytes("1",Buffer.from([0xef,0xbb,0xbf,...Buffer.from(body)]));proxy.end("1");
+	await tick();const row=proxy.snapshot().rows[0];
+	assert.deepEqual(row.transportBodyReceipt.cdpTextProjection,{available:false,reason:"unsupported-bom-prefix"});
+	assert.equal(row.transportBodyReceipt.naturalEOF,true,"unsupported math does not erase observed EOF");
+	assert.equal(row.bodyProof.complete,false,"metadata does not invent a supported protocol body");
+	proxy.request("2",{url,method:"GET",headers,traceId:"a".repeat(32)});proxy.response("2",{status:200,headers:responseHeaders});proxy.bytes("2",Buffer.from(body));proxy.cancel("2");
+	assert.equal(proxy.snapshot().rows[1].transportBodyReceipt,undefined,"no projection or EOF claim for canceled upstream bodies");
+});
+
+test("CDP effective response MIME and charset remain distinct from the HTTP Content-Type header",async()=>{
+	for(const [actual,expected] of [
+		[{}, {mimeKnown:false,mime:null,charsetKnown:false,charset:null}],
+		[{mimeType:"text/x-component",charset:""},{mimeKnown:true,mime:"text/x-component",charsetKnown:true,charset:"empty"}],
+		[{mimeType:"text/x-component",charset:"UTF-8"},{mimeKnown:true,mime:"text/x-component",charsetKnown:true,charset:"utf-8"}],
+		[{mimeType:"application/PRIVATE",charset:"PRIVATE"},{mimeKnown:true,mime:"other",charsetKnown:true,charset:"other"}],
+	]){
+		const collector=createBrowserControlCollector({contextId,origin,readBody:async()=>({body,base64Encoded:false})});collector.installed();
+		collector.request({requestId:"1",loaderId:"loader",type:"Fetch",timestamp:1,request:{url,method:"GET",headers}});
+		collector.response({requestId:"1",response:{status:200,headers:responseHeaders,fromDiskCache:true,...actual}});
+		collector.data({requestId:"1",dataLength:Buffer.byteLength(body)});
+		collector.finished({requestId:"1",timestamp:2});await tick();
+		const receipt=collector.snapshot().bodyReceipts[0].bodyReadbackReceipt;
+		assert.deepEqual(receipt.effectiveCdpResponse,{protocol:"cdp-effective-response-decoder-metadata-v1",provenance:"Network.responseReceived",...expected});
+		assert.equal(receipt.responseContentType.charset,"absent","the raw header does not acquire the CDP fallback charset");
+		assert.equal(JSON.stringify(receipt).includes("PRIVATE"),false);
+	}
 });
 
 test("installation preserves navigation arguments/results/errors and adds only declared identity metadata", async () => {

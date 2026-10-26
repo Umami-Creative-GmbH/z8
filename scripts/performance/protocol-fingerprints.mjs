@@ -7,6 +7,7 @@ const primaryFiles = [
   "control-cancellation-evidence.mjs",
   "browser-control-collector.mjs",
   "proxy-header-census.mjs",
+  "cdp-cached-text-projection.mjs",
   "action-result-observer.mjs",
   "next-stream-completion-patch.mjs",
   "primary-context-cleanup.mjs",
@@ -40,6 +41,7 @@ export const companionProtocolIdentity = () =>
     "control-cancellation-evidence.mjs",
     "browser-control-collector.mjs",
     "proxy-header-census.mjs",
+    "cdp-cached-text-projection.mjs",
     "action-result-observer.mjs",
     "settled-resource-observer.mjs",
     "journey-steps.mjs",
@@ -76,6 +78,6 @@ export const mixedProtocolFiles = [
   "mixed-load-probe.mjs", "mixed-load-observation.mjs", "public-header-clock.mjs",
   "collector-client.mjs", "fixture-browser.mjs", "journey-steps.mjs", "trace-transport.mjs",
   "action-result-observer.mjs", "clean-evidence.mjs", "control-cancellation-evidence.mjs",
-  "browser-control-collector.mjs", "proxy-header-census.mjs", "proxy-wire-observer.mjs", "protocol-fingerprints.mjs",
+  "browser-control-collector.mjs", "proxy-header-census.mjs", "cdp-cached-text-projection.mjs", "proxy-wire-observer.mjs", "protocol-fingerprints.mjs",
 ];
 export const mixedProtocolIdentity = () => fingerprints(mixedProtocolFiles);

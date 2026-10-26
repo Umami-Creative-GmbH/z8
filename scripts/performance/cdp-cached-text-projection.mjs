@@ -1,4 +1,4 @@
-/** Unwired forward math only; this does not prove a browser decoder path or byte equality. */
+/** Forward observation math only; this does not prove a browser decoder path or byte equality. */
 import { createHash } from "node:crypto";
 
 export const cachedCdpTextProjectionProtocol =

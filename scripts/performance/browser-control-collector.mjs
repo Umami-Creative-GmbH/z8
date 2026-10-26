@@ -13,6 +13,7 @@ import {
 	controlIdentityHeaders,
 } from "./control-cancellation-evidence.mjs";
 import { createProxyHeaderCensus } from "./proxy-header-census.mjs";
+import { projectCachedCdpText } from "./cdp-cached-text-projection.mjs";
 
 export const controlResponseHeader = "x-z8-fixture-response-id";
 export const controlDocumentHeader = "x-z8-fixture-document-generation";
@@ -528,7 +529,7 @@ export function createBrowserControlCollector({
 					row.bodyReadbackReceipt = { available: true, base64Encoded:typeof result.base64Encoded === "boolean" ? result.base64Encoded : null,
 						utf16CodeUnitLength:result.base64Encoded === false ? result.body.length : null,
 						observedDataLengthAtReadback:row.loadingFinished === true && row.observedDataLengthInvalid !== true && Number.isSafeInteger(row.observedDataLength) ? row.observedDataLength : null,
-						responseContentType:row.initialSegmentResponse?.responseContentType ?? row.responseContentType ?? null, decodedBytes: bytes.length, bodySha256: sha(bytes),
+						responseContentType:row.initialSegmentResponse?.responseContentType ?? row.responseContentType ?? null, effectiveCdpResponse:row.effectiveCdpResponse ?? null, decodedBytes: bytes.length, bodySha256: sha(bytes),
 						terminal: row.failed ? "failed" : row.loadingFinished ? "finished" : "pending", naturalEOFClaim: false };
 					assignBodyProof(row, inspectRequiredFlightBody(bytes, bodyInspectionOptions(row,compiledCachedNavigations,compiledBinding)), "cdp-readback", row.bodyReadbackReceipt.bodySha256);
 					row.bodyReadbackComplete = true;
@@ -975,6 +976,11 @@ export function createBrowserControlCollector({
 			);
 			row.initialResponseVary = row.vary;
 			row.initialSegmentResponse = controlResponseMetadata(event.response.headers,event.response.status);
+			const mime=typeof event.response.mimeType === "string" && event.response.mimeType.length<=128 ? event.response.mimeType.toLowerCase() : null;
+			const charset=typeof event.response.charset === "string" && event.response.charset.length<=64 ? event.response.charset.toLowerCase() : null;
+			row.effectiveCdpResponse={protocol:"cdp-effective-response-decoder-metadata-v1",provenance:"Network.responseReceived",
+				mimeKnown:mime!==null,mime:mime===null?null:mime==="text/x-component"?mime:"other",charsetKnown:charset!==null,
+				charset:charset===null?null:charset===""?"empty":["utf-8","utf8","iso-8859-1","latin1","us-ascii","windows-1252","utf-16le","utf-16be"].includes(charset)?charset:"other"};
 			startStream(row);
 		},
 		responseExtra(event) {
@@ -1269,6 +1275,12 @@ export function createProxyControlCollector({
 						throw Error("Unsupported encoding");
 					row.transportBodyReceipt = { protocol: "proxy-natural-eof-decoded-bytes-v1", naturalEOF: true,
 						decodedBytes: bytes.length, bodySha256: sha(bytes) };
+					try {
+						row.transportBodyReceipt.cdpTextProjection = {available:true,...projectCachedCdpText(bytes)};
+					} catch(error) {
+						const reason=["unsupported-original-buffer","original-byte-limit","unsupported-bom-prefix","projected-byte-limit"].includes(error?.message) ? error.message : "projection-unavailable";
+						row.transportBodyReceipt.cdpTextProjection = {available:false,reason};
+					}
 					assignBodyProof(row, inspectRequiredFlightBody(bytes, bodyInspectionOptions(row,compiledCachedNavigations,compiledBinding)), "proxy-natural-eof", row.transportBodyReceipt.bodySha256);
 				} catch {
 					row.bodyProof = { complete: false, reason: "proxy-body-unavailable" };
