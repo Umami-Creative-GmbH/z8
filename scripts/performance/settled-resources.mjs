@@ -249,7 +249,7 @@ export function settledEvidenceGates(plan, artifact, native, planSha) {
     gates.push("Interrupted companion evidence cannot fulfill resource gates.");
   if (
     artifact.kind !== "settled-resource-companion" ||
-    artifact.diagnosticOnly === true ||
+    (Object.hasOwn(artifact, "diagnosticOnly") && artifact.diagnosticOnly !== false) ||
     artifact.phase !== plan.phase ||
     artifact.planSha256 !== planSha ||
     JSON.stringify(artifact.policy) !== JSON.stringify(companionPolicy) ||
@@ -905,7 +905,7 @@ export async function measureFixtureResources(
 function requireNumericCompanionArtifact(artifact) {
   if (
     artifact.kind === "settled-resource-journey-verification" ||
-    artifact.diagnosticOnly === true
+    (Object.hasOwn(artifact, "diagnosticOnly") && artifact.diagnosticOnly !== false)
   )
     throw Error("Journey diagnostic artifacts cannot be finalized or supply numerical resource budgets.");
 }

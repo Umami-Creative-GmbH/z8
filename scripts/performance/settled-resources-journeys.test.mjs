@@ -52,6 +52,7 @@ test("diagnostic artifacts cannot be finalized or supply budget evidence even af
     { kind: "settled-resource-journey-verification", diagnosticOnly: true },
     { kind: "settled-resource-journey-verification", diagnosticOnly: false },
     { kind: "settled-resource-companion", diagnosticOnly: true },
+    ...["true", 1, null, {}, []].map(diagnosticOnly => ({ kind: "settled-resource-companion", diagnosticOnly })),
   ]) {
     Object.assign(artifact, { samples: [], finalized: true, evidenceComplete: true, resourceComplete: true });
     assert.throws(() => companion.requireSettledEvidence(plan, artifact, [], "hash"), /diagnostic/i);
