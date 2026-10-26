@@ -11,6 +11,12 @@ import {cleanBrowserContextEvidence} from "./clean-evidence.mjs";
 const sha=value=>createHash("sha256").update(value).digest("hex");
 const protocol=await primaryProtocolIdentity();
 
+test("Native controls bind only the independently qualified current Chromium revision",()=>{
+  assert.equal(chromiumSWRRevision,"d0c02bfad08ec92a6ffcf989e53cd995e6381a4c");
+  const {input}=fixture();input.browserRevision="1d17a2e2ee147bb7d6ae2ab6abdb3a2510c17775";
+  assert.equal(classifyControlCancellations(input).provenControls,0,"historical revision is not an alternative accepted pin");
+});
+
 // Entirely synthetic observations, produced through the real parser/identity/census APIs.
 // This fixture never reads private capture data and makes no runtime claim.
 function fixture({applicationIds=[1,2],originalApplicationId=1,currentApplicationId=2,mixedTraces=false}={}) {

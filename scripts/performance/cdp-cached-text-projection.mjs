@@ -4,7 +4,7 @@ import { createHash } from "node:crypto";
 export const cachedCdpTextProjectionProtocol =
 	"cached-cdp-text-forward-projection-v1";
 export const cachedCdpTextSourceRevision =
-	"1d17a2e2ee147bb7d6ae2ab6abdb3a2510c17775";
+	"d0c02bfad08ec92a6ffcf989e53cd995e6381a4c";
 export const cachedCdpTextByteLimit = 8 * 1024 * 1024;
 const hash = (bytes) => createHash("sha256").update(bytes).digest("hex");
 // Exact pinned TextCodecLatin1 kTable entries for 80–9F; all other bytes map to themselves.

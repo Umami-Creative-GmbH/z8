@@ -9,7 +9,7 @@ export const controlCancellationPolicy = Object.freeze({
 	retainedLimit: 32 * 1024 * 1024,
 	recordLimit: 10000,
 });
-export const chromiumSWRRevision = "1d17a2e2ee147bb7d6ae2ab6abdb3a2510c17775";
+export const chromiumSWRRevision = "d0c02bfad08ec92a6ffcf989e53cd995e6381a4c";
 export const controlIdentityHeaders = Object.freeze(["rsc","next-router-prefetch","next-router-segment-prefetch","next-router-state-tree","next-url","next-action","accept","accept-encoding","accept-language","cookie","authorization","x-z8-fixture-document-generation"]);
 export const bodySha256 = (bytes) =>
 	createHash("sha256").update(bytes).digest("hex");
