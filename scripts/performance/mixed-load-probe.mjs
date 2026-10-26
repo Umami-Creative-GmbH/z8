@@ -239,7 +239,7 @@ async function openPage(browser, auth, origin, actor, traceSource, created, brow
 		await page.emulateTimezone("Europe/Berlin");
 		opened.browserObservation = await installBrowserControlCollector({ page, context, transport, origin, headers: {}, contextId,
 			browserRevision: browserControlBinding.browserRevision, compiledCachedNavigations: browserControlBinding.compiledCachedNavigations,
-			captureContextFailures: true });
+			captureContextFailures: true, environmentBinding: browserControlBinding });
 		opened.browserObservation.beginMeasurement();
 		return opened;
 	} catch (error) {

@@ -1,5 +1,6 @@
 /** Only the fresh profile owned by this launch is configured; app network requests remain observable. */
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { setTimeout as pause } from "node:timers/promises";
@@ -105,6 +106,7 @@ export async function launchFixtureBrowser(puppeteer, executablePath) {
 		});
 		browser.fixtureLaunchPolicy = {
 			policy: fixtureBrowserPolicy,
+			profileDirectorySha256: createHash("sha256").update(profile).digest("hex"),
 			headless: true,
 			preferences: structuredClone(preferences),
 			arguments: browser

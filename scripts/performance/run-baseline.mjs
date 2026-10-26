@@ -1001,7 +1001,8 @@ export async function measure(
 				await installBrowserControlCollector({ page, context, transport, origin: plan.origin,
 					headers: { "Accept-Language": condition.locale }, contextId: traceId,
 					browserRevision: collector.browserControlBinding.browserRevision,
-					compiledCachedNavigations: collector.browserControlBinding.compiledCachedNavigations });
+					compiledCachedNavigations: collector.browserControlBinding.compiledCachedNavigations,
+					environmentBinding: collector.browserControlBinding });
 			if (!["beginMeasurement", "endMeasurement", "recordMeasuredFailure", "close", "snapshot"].every((key) => typeof observation?.[key] === "function"))
 				throw Error("Incomplete prospective browser observation interface.");
 			browserObservation = observation;

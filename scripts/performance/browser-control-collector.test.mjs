@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import test from "node:test";
-import { mkdtemp, writeFile, rm } from "node:fs/promises";
+import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
@@ -17,6 +17,9 @@ import {
 	createPrincipalEpochObserver,
 	capturePrincipalBoundary,
 	cachedOriginWireEvidence,
+	readNativePublicSources,
+	captureNativeLaunchMetadata,
+	createNativeWorkerObserver,
 	readBrowserControlBinding,
 	verifyBrowserControlBrowser,
 	createBrowserControlCollector,
@@ -172,6 +175,65 @@ test("cached origin evidence joins an exact response ID plus context method and 
 	assert.equal(cachedOriginWireEvidence(cached, Array(9).fill(packet)).selectedTruncated, true);
 	assert.equal(cachedOriginWireEvidence(cached, Array(9).fill(packet)).selected.length, 8);
 	assert.doesNotMatch(JSON.stringify(proof), /PRIVATE_COOKIE|PRIVATE_VALUE|PRIVATE_BODY/);
+});
+
+test("native environment metadata hashes serving public files and keeps missing sources unknown", async () => {
+	const dir = await mkdtemp(join(tmpdir(), "z8-native-public-"));
+	try {
+		await mkdir(join(dir,".next")); await mkdir(join(dir,"public/lib"), {recursive:true});
+		const files=["sw.js","lib/offline-queue-db.js","lib/sync-service.js","lib/clock-command-dispatch.js"];
+		for (const file of files) await writeFile(join(dir,"public",file), "SYNTHETIC_SOURCE");
+		const manifestPath=join(dir,".next/required-server-files.json");
+		const first=await readNativePublicSources(manifestPath);
+		assert.equal(first.files.length,4);
+		assert.ok(first.files.every(row=>row.known&&row.bytes===16&&row.sha256===createHash("sha256").update("SYNTHETIC_SOURCE").digest("hex")));
+		await rm(join(dir,"public/sw.js"));
+		const missing=await readNativePublicSources(manifestPath);
+		assert.equal(missing.files[0].known,false);
+		assert.equal(missing.files[0].sha256,null);
+		await writeFile(join(dir,"public/sw.js"),Buffer.alloc(controlCancellationPolicy.encodedLimit+1));
+		assert.equal((await readNativePublicSources(manifestPath)).files[0].known,false);
+		assert.equal((await readNativePublicSources(join(dir,"wrong.json"))).servingRootKnown,false);
+		assert.doesNotMatch(JSON.stringify(missing), /SYNTHETIC_SOURCE|z8-native-public-/);
+	} finally { await rm(dir,{recursive:true,force:true}); }
+});
+
+test("native launch metadata hashes the actual executable and preserves missing process knowledge", async () => {
+	const dir=await mkdtemp(join(tmpdir(),"z8-native-launch-"));
+	try {
+		const executable=join(dir,"synthetic.exe"); await writeFile(executable,"SYNTHETIC_EXECUTABLE");
+		const browser={process:()=>({spawnfile:executable,spawnargs:[executable,"--disable-extensions","--user-data-dir=PRIVATE_PROFILE","--remote-debugging-port=0"]}),
+			fixtureLaunchPolicy:{policy:"isolated-profile-no-prediction-v1",arguments:["--disable-extensions"],profileDirectorySha256:createHash("sha256").update("PRIVATE_PROFILE").digest("hex")}};
+		const metadata=await captureNativeLaunchMetadata(browser);
+		assert.equal(metadata.processKnown,true); assert.equal(metadata.argumentsMatchRecorded,true);
+		assert.equal(metadata.profileArgumentMatchesRecorded,true);
+		assert.equal(metadata.executable.sha256,createHash("sha256").update("SYNTHETIC_EXECUTABLE").digest("hex"));
+		assert.equal((await captureNativeLaunchMetadata({})).processKnown,false);
+		assert.doesNotMatch(JSON.stringify(metadata),/PRIVATE_PROFILE|synthetic.exe|SYNTHETIC_EXECUTABLE/);
+	} finally { await rm(dir,{recursive:true,force:true}); }
+});
+
+test("native worker metadata follows only actual owned-context target events and closes listeners", () => {
+	const browser=new EventEmitter(); const context={id:"PRIVATE_CONTEXT",browser:()=>browser};
+	const page={type:()=>"page",url:()=>"about:blank",browserContext:()=>context};
+	const worker={type:()=>"service_worker",url:()=>`${origin}/sw.js`,browserContext:()=>context};
+	const foreign={type:()=>"service_worker",url:()=>"https://private.invalid/worker.js",browserContext:()=>({})};
+	browser.targets=()=>[page,foreign];
+	const observer=createNativeWorkerObserver({browser,context,contextId,origin});
+	browser.emit("targetcreated",worker); browser.emit("targetchanged",worker); browser.emit("targetdestroyed",worker);
+	observer.close();
+	const evidence=observer.snapshot();
+	assert.equal(evidence.contextJoinKnown,true);assert.equal(evidence.scopeClosed,true);
+	assert.equal(evidence.events.length,4);assert.equal(evidence.errors,0);
+	assert.equal(evidence.events[1].ownedWorkerScript,true);
+	assert.equal(evidence.events[3].event,"destroyed");
+	assert.equal(browser.listenerCount("targetcreated"),0);
+	const capped=createNativeWorkerObserver({browser,context,contextId,origin});
+	for(let index=0;index<260;index++)browser.emit("targetchanged",worker);
+	assert.equal(capped.snapshot().events.length,256);assert.ok(capped.snapshot().overflow>0);capped.close();
+	assert.doesNotMatch(JSON.stringify(evidence),/PRIVATE_CONTEXT|private.invalid|\/sw.js/);
+	const broken=createNativeWorkerObserver({browser:{},context,contextId,origin});
+	assert.ok(broken.snapshot().errors>0); broken.close();
 });
 
 test("normal admission binds the actual manifest before IO and actual browser revision without a mode default", async () => {
