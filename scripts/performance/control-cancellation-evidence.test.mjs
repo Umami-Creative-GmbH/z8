@@ -771,6 +771,30 @@ test("embedded partial prefetch represents postponed component props without cla
 	assert.equal(inspectRequiredFlightBody(Buffer.from(outer(inner).toString().replace('"KNOWN_MAIN"','"$L9"')), { cachedNavigations: true }).complete, false);
 });
 
+test("embedded partial prefetch represents a fulfilled module-element fallback without claiming its rendering", () => {
+	const fallback='["$","$4",null,{"data":{"known":true}}]';
+	const inner='~4:I["synthetic",[],"Component"]\n0:{"q":"","i":false,"t":{"t":{"s":"en","d":{"r":["$","$Sreact.suspense",null,{"fallback":'+fallback+',"children":"$L9"}],"p":true,"v":null}}}}\n';
+	const outer=value=>Buffer.concat([Buffer.from('0:{"q":"","i":false,"t":{"t":{"s":"en","d":{"r":"KNOWN_MAIN","p":false,"v":null}}},"p":"$1"}\n1:R\n1:o'+Buffer.byteLength(value).toString(16)+','),Buffer.from(value),Buffer.from('1:C\n')]);
+	const proof=inspectRequiredFlightBody(outer(inner),{cachedNavigations:true});
+	assert.equal(proof.complete,true);
+	assert.equal(proof.embeddedRuntimePrefetch.requiredStage,"embedded-partial-prefetch-representation");
+	assert.equal(proof.embeddedRuntimePrefetch.representedComponentFallbacks,1);
+	assert.equal(proof.embeddedRuntimePrefetch.postponedComponentReferences,0);
+	assert.equal(proof.embeddedRuntimePrefetch.renderableOutputClaim,false);
+	for(const valid of [inner.replace('"$","$4"','"$","$L4"'),inner.replace('{"data":{"known":true}}','"$5"')+'5:{"data":{"known":true}}\n'])
+		assert.equal(inspectRequiredFlightBody(outer(valid),{cachedNavigations:true}).complete,true);
+	const input=cancellationFixture();Object.assign(input.failures[0],{bodyProof:proof,bodyReadbackComplete:true});Object.assign(input.proxy[0],{bodyProof:proof,complete:true,canceled:false});
+	const receipt=classifyControlCancellations(input);assert.equal(cleanBrowserFailureEvidence(receipt,1),true);
+	for(const changed of [{representedComponentFallbacks:undefined},{representedComponentFallbacks:0},{representedComponentFallbacks:100000},{renderableOutputClaim:true},{requiredStage:"embedded-runtime-prefetch-output"}]){
+		const corrupted=structuredClone(receipt);Object.assign(corrupted.records[0].proof.failure.bodyProof.embeddedRuntimePrefetch,changed);assert.equal(cleanBrowserFailureEvidence(corrupted,1),false);
+	}
+	for(const invalid of [inner.replace(/^~/,'#'),inner.replace(fallback,'"$4"'),inner.replace(fallback,'["$","$L8",null,{}]'),
+		inner.replace(fallback,'["$","$4",null,{"data":"$L8"}]'),inner.replace(fallback,'["$","$4",null,{"data":"$@8"}]'),inner.replace(fallback,'["$","$4",null,{"data":"$8"}]'),
+		inner.replace(fallback,'["$","$4",null,null]'),inner.replace(fallback,'["$","$4","$L8",{}]'),inner.replace('I["synthetic",[],"Component"]','I["synthetic"]'),inner+'8:E{"digest":"PRIVATE"}\n'])
+		assert.equal(inspectRequiredFlightBody(outer(invalid),{cachedNavigations:true}).complete,false);
+	assert.equal(inspectRequiredFlightBody(Buffer.from(inner),{requestKind:"runtime-shell",cachedNavigations:true}).complete,false,"A cache representation does not prove a renderable shell.");
+});
+
 test("embedded runtime prefetch has exact binary framing, explicit stream close and its own required Flight graph", () => {
 	const inner = Buffer.from('#0:{"q":"","i":false,"t":{"t":{"s":"en","d":{"r":"KNOWN_INNER","p":false,"v":null}}}}\n');
 	const outer = (data, stream = "R", tag = "o", close = true, declared = data.length.toString(16)) => Buffer.concat([
@@ -801,7 +825,7 @@ test("embedded runtime prefetch has exact binary framing, explicit stream close 
 	const omitted = inspectRequiredFlightBody(outer(Buffer.from(partialInner.toString().replace('"fallback":["$","span",null,{"children":"KNOWN_FALLBACK"}],',''))), { cachedNavigations: true });
 	assert.equal(omitted.complete,true);
 	assert.equal(omitted.embeddedRuntimePrefetch.knownEmptyFallbacks,1);
-	const componentFallback = Buffer.from(partialInner.toString().replace('["$","span",null,{"children":"KNOWN_FALLBACK"}]', '["$","$4",null,{"data":null}]')+'4:I["PRIVATE_MODULE",[],"PRIVATE_EXPORT"]\n');
+	const componentFallback = Buffer.from(partialInner.toString().replace('["$","span",null,{"children":"KNOWN_FALLBACK"}]', '["$","$4",null,{"data":null}]')+'4:I["PRIVATE_MODULE"]\n');
 	const fallbackUnknown = inspectRequiredFlightBody(outer(componentFallback), { cachedNavigations: true });
 	assert.equal(fallbackUnknown.complete, false);
 	assert.equal(fallbackUnknown.embeddedReason, "unknown-runtime-shell-fallback");
