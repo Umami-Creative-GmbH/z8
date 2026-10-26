@@ -103,3 +103,40 @@ command. The normal runner removed its own fresh container after completion;
 file-local cleanup remains unchanged. All three TypeScript configurations pass
 again after the fixture edits. Focused Biome on these files retains their
 existing Windows line-ending formatter differences; no broad formatting was done.
+
+## Production-input quality refresh
+
+The later refresh at integration `6e034d5346ec1253a790314546b7fe6401294af2`
+uses the same production inputs as compiled application
+`b287acdc272cf0ef8f6a208ca288fade8f150166`. Subsequent observer-only changes
+retain that application qualification; their pure harness tests are separate.
+
+The quiet full unit replay passed **19,541 tests, zero failed and 38 existing
+skips**, across 1,823 passed files and five skipped files. It used two workers,
+completed in 951.40 seconds, and ran with browser and integration work stopped.
+Test code and timeouts were unchanged. The preceding full attempt remains a
+failed run: 19,540 passed and one unchanged source scanner exceeded its existing
+five-second timeout. The scanner separately passed in 447 ms; neither replay
+erases that recorded failure.
+
+The fresh full PostgreSQL command remains **failed**: 5,707 passed, 135 failed
+and eight skipped, across 482 passed files, two failed files and one skipped
+file. The failures are in `work-period-approvals.integration.test.ts` and
+`legacy-time-bound-approval.integration.test.ts`, whose inspected source is
+unchanged from the original and staging comparison. The inherited raw-pool UTC
+options shadow the intended statement timeout. One query was cancelled after
+more than 29 minutes so the failed run could clean up; no deadlock or clean
+full-suite result is claimed. Its owned disposable container was removed.
+
+Retained raw-log SHA-256 identities:
+
+| Run | SHA-256 |
+| --- | --- |
+| Quiet full unit replay | `99e452b068974f87761efb93796a635047c4662550bb88c9eff39be6d6969d57` |
+| Earlier failed unit run | `e38eebc882e9e9d2edc4fb5abb489a544af1329c22b13942701d00a72e0e777f` |
+| Full PostgreSQL command | `278246876e24e96fbdc3936a01f4b06981626b9ee6137098c7bd65a27dd2f022` |
+
+The combined quality receipt has SHA-256
+`9f4451f68d670b46f2c418688072d57cb3d27f7606069299125d0b74715e14fc`.
+Controlled original/optimized performance acceptance remains a separate,
+unfulfilled gate; these source checks and retained failures do not supply it.
