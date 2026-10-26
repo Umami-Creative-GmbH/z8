@@ -402,16 +402,37 @@ function inspectFlightBody(
 	};
 	let segmentClaims = null, segmentOutputs = [];
 	if (segmentContract) {
+		// Required transport models must be ordinary JSON, not the raw metadata of
+		// an import/text/binary/stream chunk. Preserve this distinction through
+		// aliases and own paths; output module imports are handled separately.
+		const ordinary = raw => {
+			const seen = new Set();
+			while (typeof raw === "string" && (/^\$[a-f0-9]+$/.test(raw) || plainPath.test(raw))) {
+				if (seen.has(raw) || seen.size >= 8) return undefined;
+				seen.add(raw);
+				if (plainPath.test(raw)) {
+					const selected = outlined(raw); if (!selected.known) return undefined; raw = selected.value;
+				} else {
+					const record = records.get(raw.slice(1));
+					if (!record || record.tag !== null || record.stream) return undefined;
+					raw = record.value;
+				}
+			}
+			return raw && typeof raw === "object" && (opaqueText.has(raw) || binaryValues.has(raw)) ? undefined : raw;
+		};
 		// collect-segment-data's full-buffer contract is not a navigation response.
 		// Its staged Promise<void> is local to each bundled node; pending siblings
 		// never grant a complete node permission to omit an output dependency.
 		const binding = segmentBinding;
-		if (marker !== "unmarked-segment-prefetch" || !binding || binding.method !== "GET" || binding.status !== 200 ||
+		if (records.get("0")?.tag !== null || records.get("0")?.stream || marker !== "unmarked-segment-prefetch" || !binding || binding.method !== "GET" || binding.status !== 200 ||
 			!["flight","rsc","prefetch","postponed","manifestVerified"].every(key=>binding[key] === true) ||
 			!digest(binding.requestKeySha256) || !digest(binding.requestHeadersSha256) || !digest(binding.compiledManifestSha256) || !/^[a-f0-9]{40}$/.test(binding.compiledBuild ?? ""))
 			return unknown("unqualified-segment-request");
+		const bodyBuild = Object.hasOwn(root,"b") ? ordinary(root.b) : null;
+		if (Object.hasOwn(root,"b") && (typeof bodyBuild !== "string" || bodyBuild.startsWith("$") && !bodyBuild.startsWith("$$"))) return unknown("unsupported-segment-build-model");
+		const bodyBuildSha256 = typeof bodyBuild === "string" ? bodySha256(Buffer.from(bodyBuild.startsWith("$$") ? bodyBuild.slice(1) : bodyBuild)) : null;
 		const expectedDeployment = bodySha256(Buffer.from(binding.compiledBuild));
-		const actualDeployment = binding.responseDeploymentSha256 ?? (typeof root.b === "string" ? bodySha256(Buffer.from(root.b)) : null);
+		const actualDeployment = binding.responseDeploymentSha256 ?? bodyBuildSha256;
 		if (actualDeployment !== expectedDeployment || (binding.responseDeploymentSha256 !== null && !digest(binding.responseDeploymentSha256)))
 			return unknown("segment-deployment-mismatch");
 		if (Object.keys(root).some(key=>!["b","t","a","u","r","f"].includes(key)) || (Object.hasOwn(root,"f") && root.f !== true))
@@ -424,14 +445,14 @@ function inspectFlightBody(
 		const iterable = (raw, vary) => {
 			const record = typeof raw === "string" && /^\$[a-f0-9]+$/.test(raw) ? records.get(raw.slice(1)) : null;
 			return Boolean(record?.stream && record.closed && ["X","x"].includes(record.tag) && record.value.at(-1) === "$undefined" && record.value.slice(0,-1).every(item=>{
-				const value = vary && item && typeof item === "object" && opaqueText.has(item) ? item.textValue : resolve(item);
+				const value = vary && item && typeof item === "object" && opaqueText.has(item) ? item.textValue : ordinary(item);
 				return vary ? value === 0 || (typeof value === "string" && (!value.startsWith("$") || value.startsWith("$$")) || (item && typeof item === "object" && opaqueText.has(item) && typeof value === "string")) : typeof value === "number" && Number.isFinite(value) && value >= 0;
 			}));
 		};
 		if (Object.hasOwn(root,"r") && root.r !== null && !iterable(root.r,true)) return unknown("unsupported-segment-root-vary");
 		let partialNodes = 0, completeNodes = 0;
 		const data = raw => {
-			const value = resolve(raw);
+			const value = ordinary(raw);
 			if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).some(key=>!["r","p","v","s"].includes(key)) ||
 				!["r","p","v","s"].every(key=>Object.hasOwn(value,key)) || !/^\$@(0|[1-9a-f][a-f0-9]{0,12})$/.test(value.p ?? "") ||
 				(value.v !== null && !iterable(value.v,true)) || !iterable(value.s,false)) return false;
@@ -442,12 +463,12 @@ function inspectFlightBody(
 			segmentOutputs.push({value:value.r,role:partial?"cache-output":"required",fromTypedOutput:true,outputArrival:"typed-data-r"});
 			return true;
 		};
-		const transport = resolve(root.t);
+		const transport = ordinary(root.t);
 		if (!transport || typeof transport !== "object" || Array.isArray(transport) || Object.keys(transport).some(key=>!["t","h"].includes(key))) return unknown("unsupported-segment-transport");
 		const seen = new Set();
 		const encode = value => /^[a-zA-Z0-9\-_@]+$/.test(value) ? value : "!"+btoa(value).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
 		const part = raw => {
-			const value = resolve(raw);
+			const value = ordinary(raw);
 			if (typeof value === "string" && (!value.startsWith("$") || value.startsWith("$$"))) return encode(value === "/_not-found" ? "_not-found" : value.startsWith("$$") ? value.slice(1) : value);
 			const literal = item=>typeof item === "string" && (!item.startsWith("$") || item.startsWith("$$"));
 			if (!value || typeof value !== "object" || Array.isArray(value) || Object.keys(value).some(key=>!["n","t","k","s"].includes(key)) ||
@@ -455,20 +476,22 @@ function inspectFlightBody(
 				!(value.s === null || Array.isArray(value.s) && value.s.every(literal))) return null;
 			return "$"+value.t+"$"+encode(value.n);
 		};
-		let node = resolve(transport.t), key = "";
+		let node = ordinary(transport.t), key = "";
 		const isHead = binding.requestKeySha256 === bodySha256(Buffer.from("/_head"));
 		try { while (true) {
 			if (++budget.models > 100000 || seen.size >= 4096 || !node || typeof node !== "object" || Array.isArray(node) || seen.has(node) ||
 				Object.keys(node).some(field=>!["s","h","c","d"].includes(field)) || part(node.s) === null ||
 				(Object.hasOwn(node,"h") && (!Number.isSafeInteger(node.h) || node.h < 0))) return unknown("unsupported-segment-spine");
-			if (seen.size === 0 && resolve(node.s) !== "") return unknown("unanchored-segment-spine");
+			if (seen.size === 0 && ordinary(node.s) !== "") return unknown("unanchored-segment-spine");
 			seen.add(node);
 			if (Object.hasOwn(node,"d") && (isHead || !data(node.d))) return unknown("unsupported-segment-data");
 			if (!Object.hasOwn(node,"c")) { if (!isHead && !Object.hasOwn(node,"d")) return unknown("missing-terminal-segment-data"); break; }
 			if (isHead || typeof node.c !== "string" || !/^\$Q[a-f0-9]+$/.test(node.c)) return unknown("unsupported-segment-map");
-			const children = resolve(records.get(node.c.slice(2))?.value);
+			const childRecord = records.get(node.c.slice(2));
+			if (!childRecord || childRecord.tag !== null || childRecord.stream) return unknown("unsupported-segment-map-model");
+			const children = ordinary(childRecord.value);
 			if (!Array.isArray(children) || children.length !== 1 || !Array.isArray(children[0]) || children[0].length !== 2 || typeof children[0][0] !== "string") return unknown("unsupported-segment-map");
-			const child = resolve(children[0][1]), childPart = child && part(child.s);
+			const child = ordinary(children[0][1]), childPart = child && part(child.s);
 			if (childPart === null || childPart === undefined) return unknown("unsupported-segment-identity");
 			key += "/"+(children[0][0] === "children" ? childPart : "@"+encode(children[0][0])+"/"+childPart);
 			node = child;
@@ -479,7 +502,7 @@ function inspectFlightBody(
 		if (derivedRequestKeySha256 !== binding.requestKeySha256) return unknown("segment-request-key-mismatch");
 		segmentClaims = {treeNodes:seen.size,partialNodes,completeNodes,renderableOutputClaim:false,
 			segmentBinding:{...Object.fromEntries(["method","status","flight","rsc","prefetch","postponed","manifestVerified","requestHeadersSha256","requestKeySha256","responseDeploymentSha256","compiledBuild","compiledManifestSha256"].filter(key=>Object.hasOwn(binding,key)).map(key=>[key,binding[key]])),
-				derivedRequestKeySha256,bodyBuildSha256:typeof root.b === "string" ? bodySha256(Buffer.from(root.b)) : null,expectedDeploymentSha256:expectedDeployment,actualDeploymentSha256:actualDeployment,
+				derivedRequestKeySha256,bodyBuildSha256,expectedDeploymentSha256:expectedDeployment,actualDeploymentSha256:actualDeployment,
 				deploymentSource:binding.responseDeploymentSha256 === null ? "body" : "response-header"}};
 	}
 	if (requestKind === "route-tree") {

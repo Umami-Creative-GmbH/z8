@@ -97,6 +97,38 @@ test("segment shape and staged metadata are producer-qualified rather than gener
 	assert.equal(inspectRequiredFlightBody(Buffer.from(head.replace('"s":""','"s":"","d":{"r":null}')),{...options,segmentBinding:segmentBinding("/_head")}).complete,false);
 });
 
+test("segment required structure never obtains object or scalar values from import, text, binary, or stream records",()=>{
+	const source=segmentBody({pending:false,output:null}).toString();
+	const options={requestKind:"segment-prefetch",segmentBinding:segmentBinding("/page")};
+	for(const text of [source.replace("0:{","0:I{"),source.replace("2:[[","2:I[["),
+		source.replace('"t":{"s":"","c":"$Q2"}','"t":"$7"')+'7:I{"s":"","c":"$Q2"}\n']) {
+		assert.equal(inspectRequiredFlightBody(Buffer.from(text),options).complete,false);
+	}
+	for(const field of ["transport","tree","child","data","segment","vary-yield","stale-yield"]) for(const tag of ["I",""]) {
+		const data={r:null,p:"$@3",v:null,s:"$4"},child={s:"page",d:data},tree={s:"",c:"$Q2"},transport={t:tree};
+		const root={t:transport,a:"$@5",u:"$@6"};
+		const children=[["children",child]];
+		let value, yielded=60;
+		if(field==="transport"){value=transport;root.t="$a";}
+		if(field==="tree"){value=tree;transport.t="$a";}
+		if(field==="child"){value=child;children[0][1]="$a";}
+		if(field==="data"){value=data;child.d="$a";}
+		if(field==="segment"){value="page";child.s="$a";}
+		if(field==="vary-yield"){data.v="$4";value=0;yielded="$a";}
+		if(field==="stale-yield"){value=60;yielded="$a";}
+		const text=`0:${JSON.stringify(root)}\n2:${JSON.stringify(children)}\n3:"$undefined"\n4:X\n4:${JSON.stringify(yielded)}\n4:C\n5:null\n6:false\na:${tag}${JSON.stringify(value)}\n`;
+		assert.equal(inspectRequiredFlightBody(Buffer.from(text),options).complete,tag==="",`${field}/${tag || "ordinary"}`);
+	}
+	const map=JSON.parse(source.split("\n").find(line=>line.startsWith("2:")).slice(2));
+	for(const encoded of [`2:R\n2:${JSON.stringify(map[0])}\n2:C\n`,`2:T${Buffer.byteLength(JSON.stringify(map)).toString(16)},${JSON.stringify(map)}`,`2:o${Buffer.byteLength(JSON.stringify(map)).toString(16)},${JSON.stringify(map)}`])
+		assert.equal(inspectRequiredFlightBody(Buffer.from(source.replace(/^2:.*\n/m,encoded)),options).complete,false);
+	const aliased=source.replace('"t":{"s":"","c":"$Q2"}','"t":"$a:tree"')+'a:{"tree":"$b"}\nb:I{"s":"","c":"$Q2"}\n';
+	assert.equal(inspectRequiredFlightBody(Buffer.from(aliased),options).complete,false,"ordinary path target cannot alias an import");
+	assert.equal(inspectRequiredFlightBody(Buffer.from(aliased.replace('b:I','b:')),options).complete,true);
+	assert.equal(inspectRequiredFlightBody(Buffer.from(source.replace('0:{','0:{"b":"$a",')+'a:I"build"\n'),options).complete,false);
+	assert.equal(inspectRequiredFlightBody(Buffer.from(source.replace('0:{','0:{"b":"$a",')+'a:"build"\n'),options).complete,true,"header precedence still applies to a known ordinary body build");
+});
+
 test("closed Flight iterable and readable rows fulfill repeated values without accepting an unfinished stream", () => {
 	for (const tag of ["X", "x", "R"]) {
 		const body = `0:{"a":"$1"}\n1:${tag}\n1:{"value":"$2"}\n2:null\n1:C\n`;

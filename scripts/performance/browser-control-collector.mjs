@@ -371,6 +371,12 @@ export function cachedOriginWireEvidence(candidate, packets) {
 }
 export function controlResponseMetadata(headers, status) {
 	const h = lowerHeaders(headers);
+	const contentType = h["content-type"];
+	const mime = typeof contentType === "string" ? contentType.split(";",1)[0].trim().toLowerCase() : null;
+	const charsetMatches = typeof contentType === "string" ? [...contentType.matchAll(/;\s*charset\s*=\s*(?:"([^"]*)"|([^;\s]*))/gi)] : [];
+	const charset = charsetMatches.length === 1 ? (charsetMatches[0][1] ?? charsetMatches[0][2]).toLowerCase() : null;
+	const responseContentType = { headerKnown: typeof contentType === "string", mime: mime === null ? null : mime === "text/x-component" ? mime : "other",
+		charset: charsetMatches.length > 1 ? "ambiguous" : charset === null ? "absent" : ["utf-8","utf8","iso-8859-1","latin1","us-ascii","windows-1252","utf-16le","utf-16be"].includes(charset) ? charset : "other" };
 	const varyValue = h.vary;
 	const boundedVary = headers !== undefined && headers !== null && typeof headers === "object" && !Array.isArray(headers) &&
 		(varyValue === undefined || varyValue.length <= 1024);
@@ -386,6 +392,7 @@ export function controlResponseMetadata(headers, status) {
 	return {
 		status,
 		vary,
+		responseContentType,
 		responseHeaderSnapshotKnown: Boolean(headers && typeof headers === "object" && !Array.isArray(headers) && Object.values(headers).every(value=>typeof value === "string")),
 		postponed: h["x-nextjs-postponed"] === "2",
 		responseDeploymentSha256: typeof h["x-nextjs-deployment-id"] === "string" ? sha(h["x-nextjs-deployment-id"]) : null,
@@ -516,7 +523,8 @@ export function createBrowserControlCollector({
 						result.body,
 						result.base64Encoded ? "base64" : "utf8",
 					);
-					row.bodyReadbackReceipt = { available: true, decodedBytes: bytes.length, bodySha256: sha(bytes),
+					row.bodyReadbackReceipt = { available: true, base64Encoded:typeof result.base64Encoded === "boolean" ? result.base64Encoded : null,
+						responseContentType:row.initialSegmentResponse?.responseContentType ?? row.responseContentType ?? null, decodedBytes: bytes.length, bodySha256: sha(bytes),
 						terminal: row.failed ? "failed" : row.loadingFinished ? "finished" : "pending", naturalEOFClaim: false };
 					assignBodyProof(row, inspectRequiredFlightBody(bytes, bodyInspectionOptions(row,compiledCachedNavigations,compiledBinding)), "cdp-readback", row.bodyReadbackReceipt.bodySha256);
 					row.bodyReadbackComplete = true;

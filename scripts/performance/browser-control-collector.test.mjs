@@ -55,6 +55,15 @@ const event = (requestId, timestamp, type = "Fetch") => ({
 	request: { url, method: "GET", headers, initialPriority: "VeryLow" },
 });
 
+test("response encoding diagnostics retain only actual allowlisted MIME/charset facts",()=>{
+	for(const [value,charset] of [["text/x-component","absent"],["text/x-component; charset=utf-8","utf-8"],['text/x-component; charset="ISO-8859-1"',"iso-8859-1"],["text/x-component; charset=private-value","other"],["text/x-component; charset=utf-8; charset=latin1","ambiguous"]]){
+		const facts=controlResponseMetadata({"content-type":value},200).responseContentType;
+		assert.deepEqual(facts,{headerKnown:true,mime:"text/x-component",charset});
+		assert.doesNotMatch(JSON.stringify(facts),/private-value/);
+	}
+	assert.deepEqual(controlResponseMetadata({},200).responseContentType,{headerKnown:false,mime:null,charset:"absent"});
+});
+
 test("runtime-shell contract is selected only from the actual header3 without a segment subtype", () => {
 	const runtime = controlRequestIdentity(contextId, url, "GET", { RSC: "1", "next-router-prefetch": "3" });
 	assert.equal(runtime.requestKind, "runtime-shell");
@@ -726,7 +735,10 @@ test("segment readers receive actual request/response facts and the verified com
 		collector.request({...event("1",1),request:{...event("1",1).request,headers:actualRequest}});
 		collector.response({requestId:"1",response:{status:200,headers:actualResponse,fromDiskCache:true}});
 		collector.finished({requestId:"1",timestamp:2});collector.endScope();await tick();await tick();
-		const browser=collector.snapshot().bodyReceipts[0].bodyProof, forwarded=proxy.snapshot().rows[0].bodyProof;
+		const receipt=collector.snapshot().bodyReceipts[0];
+		const browser=receipt.bodyProof, forwarded=proxy.snapshot().rows[0].bodyProof;
+		assert.equal(receipt.bodyReadbackReceipt.base64Encoded,false);
+		assert.deepEqual(receipt.bodyReadbackReceipt.responseContentType,{headerKnown:true,mime:"text/x-component",charset:"absent"});
 		assert.deepEqual(browser,forwarded,missing);
 		assert.equal(browser.complete,missing===null,missing);
 		if(missing===null){
