@@ -208,9 +208,11 @@ function inspectFlightBody(
 	)
 		return unknown("unsupported-root");
 	const plainPath = /^\$(0|[1-9a-f][a-f0-9]{0,12}):/;
-	let pathLimit = false;
+	let pathLimit = false, pathFailure = null;
+	const notePathFailure = reason => { pathFailure ??= reason; return false; };
+	const unknownPath = reason => { notePathFailure(reason); return {known:false}; };
 	const pathStep = depth => {
-		if (depth > 64 || ++budget.models > 100000) { pathLimit = true; return false; }
+		if (depth > 64 || ++budget.models > 100000) { pathLimit = true; return notePathFailure("depth-or-model-limit"); }
 		return true;
 	};
 	const elementTuple = value => Array.isArray(value) && value[0] === "$";
@@ -219,30 +221,31 @@ function inspectFlightBody(
 	const eagerParent = (value, forceElement, seen = new Set(), depth = 0) => {
 		if (!pathStep(depth)) return false;
 		if (typeof value === "string") {
-			if (/^\$(?:L|@)[a-f0-9]+$/.test(value)) return canonicalFlightId(value.slice(2));
+			if (/^\$(?:L|@)[a-f0-9]+$/.test(value)) return canonicalFlightId(value.slice(2)) || notePathFailure("noncanonical-eager-reference");
 			if (/^\$[QWi][a-f0-9]+$/.test(value)) {
 				const id=value.slice(2),record=records.get(id);
-				if (!record || record.tag !== null || record.stream || !Array.isArray(record.value) || (value[1] === "Q" && !record.value.every(pair=>Array.isArray(pair)&&pair.length===2))) return false;
+				if (!record || record.tag !== null || record.stream || !Array.isArray(record.value) || (value[1] === "Q" && !record.value.every(pair=>Array.isArray(pair)&&pair.length===2))) return notePathFailure("unsupported-eager-collection");
 				if (seen.has(id)) return true;
 				return eagerParent(record.value,false,new Set([...seen,id]),depth + 1);
 			}
 			if (/^\$[a-f0-9]+$/.test(value)) {
 				const id = value.slice(1), record = records.get(id);
-				if (!record || record.tag === "I") return false;
+				if (!record) return notePathFailure("missing-eager-model");
+				if (record.tag === "I") return notePathFailure("eager-import-model");
 				if (record.tag === "T" || record.stream) return true;
-				if (seen.has(id)) return record.value && typeof record.value === "object";
+				if (seen.has(id)) return (record.value && typeof record.value === "object") || notePathFailure("eager-alias-cycle");
 				return eagerParent(record.value, forceElement, new Set([...seen,id]), depth + 1);
 			}
 			if (plainPath.test(value)) {
 				const selected = outlined(value, depth + 1);
 				return selected.known && eagerParent(selected.value,forceElement,seen,depth + 1);
 			}
-			return !value.startsWith("$") || value.startsWith("$$") || ["$","$undefined","$NaN","$Infinity","$-Infinity","$-0"].includes(value) || /^\$[SD]/.test(value);
+			return !value.startsWith("$") || value.startsWith("$$") || ["$","$undefined","$NaN","$Infinity","$-Infinity","$-0"].includes(value) || /^\$[SD]/.test(value) || notePathFailure("unsupported-eager-reference");
 		}
 		if (!value || typeof value !== "object") return true;
-		if (binaryValues.has(value) || opaqueText.has(value)) return false;
+		if (binaryValues.has(value) || opaqueText.has(value)) return notePathFailure("eager-binary-or-text-value");
 		if (elementTuple(value) && !forceElement) return true;
-		if (elementTuple(value) && value.length !== 4) return false;
+		if (elementTuple(value) && value.length !== 4) return notePathFailure("malformed-eager-element");
 		return Object.keys(value).filter(key=>key!=="__proto__").every(key=> {
 			const descriptor=Object.getOwnPropertyDescriptor(value,key);
 			return descriptor && Object.hasOwn(descriptor,"value") && eagerParent(descriptor.value,false,seen,depth + 1);
@@ -250,32 +253,44 @@ function inspectFlightBody(
 	};
 	const activePaths = new Set();
 	const outlined = (reference, depth = 0) => {
-		if (!pathStep(depth) || !plainPath.test(reference) || reference.length > 2048 || activePaths.has(reference)) return {known:false};
+		if (depth === 0) pathFailure = null;
+		if (!pathStep(depth)) return {known:false};
+		if (!plainPath.test(reference) || reference.length > 2048) return unknownPath("unsupported-reference-shape");
+		if (activePaths.has(reference)) return unknownPath("outlined-reference-cycle");
 		const [id,...keys] = reference.slice(1).split(":");
-		if (!Number.isSafeInteger(Number.parseInt(id,16)) || keys.length > 32 || keys.some(key=>key.length>128)) return {known:false};
+		if (!Number.isSafeInteger(Number.parseInt(id,16)) || keys.length > 32 || keys.some(key=>key.length>128)) return unknownPath("path-component-limit");
 		activePaths.add(reference);
 		try {
 			let value = `$${id}`;
 			for (const key of keys) {
 				const aliases = new Set();
 				while (typeof value === "string" && /^\$(?:L)?[a-f0-9]+$/.test(value)) {
-					if (!pathStep(depth + aliases.size) || aliases.has(value)) return {known:false};
+					if (!pathStep(depth + aliases.size)) return {known:false};
+					if (aliases.has(value)) return unknownPath("path-alias-cycle");
 					aliases.add(value);
 					const record = records.get(value.replace(/^\$L?/,""));
-					if (!record || record.tag !== null || record.stream) return {known:false};
+					if (!record) return unknownPath("missing-path-model");
+					if (record.tag === "I") return unknownPath("path-import-model");
+					if (record.tag !== null || record.stream) return unknownPath("unsupported-path-model-kind");
 					value = record.value;
 				}
 				if (typeof value === "string" && plainPath.test(value)) {
 					const selected = outlined(value,depth + 1); if (!selected.known) return selected; value = selected.value;
 				}
-				if (!value || typeof value !== "object" || binaryValues.has(value) || opaqueText.has(value) || !eagerParent(value,true,new Set(),depth + 1)) return {known:false};
+				if (typeof value === "string" && /^\$@/.test(value)) return unknownPath("path-promise-not-unwrapped");
+				if (!value || typeof value !== "object") return unknownPath("non-object-projection");
+				if (binaryValues.has(value) || opaqueText.has(value)) return unknownPath("binary-or-text-projection");
+				if (!eagerParent(value,true,new Set(),depth + 1)) return {known:false};
 				if (elementTuple(value)) {
-					if (!["type","key","props","ref"].includes(key)) return {known:false};
+					if (!["type","key","props","ref"].includes(key)) return unknownPath("missing-element-own-property");
 					value = key === "ref" ? null : value[{type:1,key:2,props:3}[key]];
 				} else {
-					if (key === "__proto__" || ![Object.prototype,Array.prototype].includes(Object.getPrototypeOf(value))) return {known:false};
+					if (key === "__proto__") return unknownPath("removed-proto-property");
+					if (![Object.prototype,Array.prototype].includes(Object.getPrototypeOf(value))) return unknownPath("unsupported-parent-prototype");
 					const descriptor = Object.getOwnPropertyDescriptor(value,key);
-					if (!descriptor || !Object.hasOwn(descriptor,"value") || (!Array.isArray(value) && descriptor.value === "$undefined")) return {known:false};
+					if (!descriptor) return unknownPath("missing-own-property");
+					if (!Object.hasOwn(descriptor,"value")) return unknownPath("non-data-own-property");
+					if (!Array.isArray(value) && descriptor.value === "$undefined") return unknownPath("removed-undefined-property");
 					value = descriptor.value;
 				}
 			}
@@ -415,6 +430,7 @@ function inspectFlightBody(
 			embeddedFallbackValueKind: embeddedRuntimePrefetch.fallbackValueKind ?? null,
 			embeddedFallbackElementTypeKind: embeddedRuntimePrefetch.fallbackElementTypeKind ?? null,
 			embeddedFallbackPropsKind: embeddedRuntimePrefetch.fallbackPropsKind ?? null,
+			embeddedPathFailure: embeddedRuntimePrefetch.pathFailure ?? null,
 		});
 	}
 	const shellScope = requestKind === "runtime-shell" || (requestKind === "embedded-runtime-prefetch" && isPartial);
@@ -504,7 +520,7 @@ function inspectFlightBody(
 			const selected = outlined(value);
 			if (!selected.known) return unknown("unsupported-model-reference", {
 				modelReference:{prefix:"plain",length:value.length,form:"outlined-path",pathKeyKinds:value.slice(1).split(":").slice(1,33).map(key=>["props","children","fallback","type","key","ref"].includes(key)?key:key===""?"empty":/^(0|[1-9][0-9]*)$/.test(key)?"index":"other")},
-				semanticRole:role,pathFailure:pathLimit?"model-limit":"unavailable-own-data",marker,isPartial,requestKind,
+				semanticRole:role,pathFailure:pathFailure ?? (pathLimit?"depth-or-model-limit":"unavailable-own-data"),marker,isPartial,requestKind,
 			});
 			queue.push({value:selected.value,role,fallbackReferences});
 		} else if (

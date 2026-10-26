@@ -419,6 +419,9 @@ test("plain outlined paths project decoded element props through fulfilled own d
 	assert.equal(inspectRequiredFlightBody(shell("$1:value","KNOWN_CHILD"),{cachedNavigations:true,requestKind:"runtime-shell"}).complete,false);
 	const diagnostic=inspectRequiredFlightBody(body('$1:private-organization-value','1:{}\n'),{cachedNavigations:true});
 	assert.deepEqual(diagnostic.modelReference.pathKeyKinds,["other"]);
+	assert.equal(diagnostic.pathFailure,"missing-own-property");
+	assert.equal(inspectRequiredFlightBody(body('$1:leaf','1:{"leaf":"KNOWN_OUTPUT","sibling":"$8"}\n'),{cachedNavigations:true}).pathFailure,"missing-eager-model");
+	assert.equal(inspectRequiredFlightBody(body('$1:export','1:I["PRIVATE_MODULE",[],"export"]\n'),{cachedNavigations:true}).pathFailure,"path-import-model");
 	assert.doesNotMatch(JSON.stringify(diagnostic),/private|organization|\$1/);
 	assert.equal(inspectRequiredFlightBody(body('$1:'+Array(33).fill('self').join(':'),'1:{"self":"$1"}\n'),{cachedNavigations:true}).complete,false);
 	for(const result of ['{"success":false,"error":"PRIVATE_ERROR"}','"$2"']){
@@ -784,6 +787,9 @@ test("embedded partial prefetch represents postponed component props without cla
 	assert.equal(proof.embeddedRuntimePrefetch.requiredStage, "embedded-partial-prefetch-representation");
 	assert.equal(proof.embeddedRuntimePrefetch.postponedComponentReferences, 1);
 	assert.equal(proof.embeddedRuntimePrefetch.renderableOutputClaim, false);
+	const pathUnknown=inspectRequiredFlightBody(outer(inner.replace('"$L9"','"$5:PRIVATE_KEY"')+'5:{}\n'),{cachedNavigations:true});
+	assert.equal(pathUnknown.complete,false);assert.equal(pathUnknown.embeddedPathFailure,"missing-own-property");
+	assert.doesNotMatch(JSON.stringify(pathUnknown),/PRIVATE_KEY/);
 	const evidence = cancellationFixture();
 	Object.assign(evidence.failures[0], { bodyProof: proof, bodyReadbackComplete: true });
 	Object.assign(evidence.proxy[0], { bodyProof: proof, complete: true, canceled: false });
