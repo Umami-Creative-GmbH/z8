@@ -15,6 +15,8 @@ export const controlResponseHeader = "x-z8-fixture-response-id";
 export const controlDocumentHeader = "x-z8-fixture-document-generation";
 export const mixedBrowserWorkScope = "all-mixed-context-work-before-first-app-io-through-finite-settlement-v1";
 const sha = (value) => createHash("sha256").update(value).digest("hex");
+// Private file locator only; all actual source/hash observations are serialized, not stored here.
+const nativeManifestLocators = new WeakMap();
 const shaChunks = (chunks) => {
 	const hash = createHash("sha256");
 	for (const chunk of chunks) hash.update(chunk);
@@ -131,6 +133,58 @@ export function createNativeWorkerObserver({ browser, context, contextId, origin
 	};
 }
 
+/** Read-only browser metadata and local source recheck; shares the caller's existing deadline. */
+export async function captureNativeEndMetadata({ page, binding, origin, deadlineMs }) {
+	const started = performance.now(), remaining = deadlineMs - started;
+	if (!Number.isFinite(remaining) || remaining <= 0 || remaining > 10000)
+		return { protocol: "native-environment-end-readonly-v1", timedOut: remaining <= 0, reason: "invalid-or-expired-deadline", pendingOperations: 0, readErrors: 0, controller: null, publicSourceRecheck: null, publicSourcesMatch: null };
+	let pendingOperations = 2, readErrors = 0, controller = null, publicSourceRecheck = null, timer;
+	const workerMetadata = raw => {
+		const url = value => { try { return typeof value === "string" && value.length <= 2048 ? new URL(value) : null; } catch { return null; } };
+		const worker = value => {
+			if (value === null) return { present: false, known: true };
+			const script = url(value?.scriptURL), stateKnown = ["installing","installed","activating","activated","redundant"].includes(value?.state);
+			return { present: value ? true : null, known: Boolean(script) && stateKnown, scriptUrlSha256: script ? sha(script.href) : null,
+				ownedScript: script ? script.href === `${origin}/sw.js` : null, state: stateKnown ? value.state : "unknown" };
+		};
+		if (raw?.available !== true) return { available: false, known: false };
+		const registrations = Array.isArray(raw.registrations) && raw.registrations.length <= 32 ? raw.registrations.map(registration => {
+			const scope = url(registration?.scope);
+			return { scopeKnown: Boolean(scope), scopeSha256: scope ? sha(scope.href) : null, ownedRootScope: scope ? scope.href === `${origin}/` : null,
+				active: worker(registration?.active), waiting: worker(registration?.waiting), installing: worker(registration?.installing) };
+		}) : null;
+		return { available: true, secureContext: raw.secureContext === true, originMatches: raw.origin === origin,
+			controllerIdentityStable: typeof raw.controllerIdentityStable === "boolean" ? raw.controllerIdentityStable : null,
+			controllerBefore: worker(raw.controllerBefore), controllerAfter: worker(raw.controllerAfter),
+			registrationCount: Number.isSafeInteger(raw.registrationCount) && raw.registrationCount >= 0 ? raw.registrationCount : null,
+			registrationOverflow: Number.isSafeInteger(raw.registrationOverflow) && raw.registrationOverflow >= 0 ? raw.registrationOverflow : null, registrations };
+	};
+	const tasks = [Promise.resolve().then(async () => {
+		const raw = await page.evaluate(async () => {
+			const serviceWorker = globalThis.navigator?.serviceWorker;
+			if (!serviceWorker || typeof serviceWorker.getRegistrations !== "function") return { available: false };
+			const describe = worker => worker === null ? null : { scriptURL: worker?.scriptURL, state: worker?.state };
+			const before = serviceWorker.controller, beforeMetadata = describe(before), registrations = await serviceWorker.getRegistrations(), after = serviceWorker.controller;
+			return { available: true, secureContext: globalThis.isSecureContext === true, origin: globalThis.location?.origin,
+				controllerBefore: beforeMetadata, controllerAfter: describe(after), controllerIdentityStable: before === after,
+				registrationCount: Array.isArray(registrations) ? registrations.length : null,
+				registrationOverflow: Array.isArray(registrations) ? Math.max(0,registrations.length - 32) : null,
+				registrations: Array.isArray(registrations) && registrations.length <= 32 ? registrations.map(registration => ({scope:registration.scope,active:describe(registration.active),waiting:describe(registration.waiting),installing:describe(registration.installing)})) : null };
+		});
+		controller = workerMetadata(raw);
+	}), Promise.resolve().then(async () => {
+		const locator = binding && nativeManifestLocators.get(binding);
+		publicSourceRecheck = locator ? await readNativePublicSources(locator) : { protocol: "serving-public-worker-source-metadata-v1", servingRootKnown: false, files: null, reason: "missing-bound-serving-root" };
+	})].map(task => task.catch(() => { readErrors++; }).finally(() => { pendingOperations--; }));
+	try { await Promise.race([Promise.all(tasks),new Promise(resolve=>{timer=setTimeout(resolve,remaining);})]); }
+	finally { clearTimeout(timer); }
+	const before = binding?.servingPublicSources, after = publicSourceRecheck;
+	const sourcesKnown = before?.files?.length === 4 && after?.files?.length === 4 && [...before.files,...after.files].every(file=>file.known===true);
+	return { protocol: "native-environment-end-readonly-v1", timedOut: pendingOperations > 0 || performance.now() > deadlineMs,
+		deadlineBudgetMs: remaining, elapsedMs: performance.now() - started, pendingOperations, readErrors, controller, publicSourceRecheck,
+		publicSourcesMatch: sourcesKnown ? JSON.stringify(before) === JSON.stringify(after) : null };
+}
+
 /** Read the compiled source boundary before app/control/browser IO; never infer a missing flag. */
 export async function readBrowserControlBinding({ plan, manifestPath }) {
 	const metadata = plan.runtime?.browserControl;
@@ -144,8 +198,10 @@ export async function readBrowserControlBinding({ plan, manifestPath }) {
 		typeof manifest.config?.experimental?.cachedNavigations !== "boolean" ||
 		manifest.config.experimental.cachedNavigations !== metadata.compiledCachedNavigations)
 		throw Error("Compiled app manifest differs from the qualified browser control metadata.");
-	return Object.freeze({ ...metadata, compiledBuild: plan.runtime.build, manifestVerified: true, browserVerified: false,
+	const binding = Object.freeze({ ...metadata, compiledBuild: plan.runtime.build, manifestVerified: true, browserVerified: false,
 		servingPublicSources: await readNativePublicSources(manifestPath) });
+	nativeManifestLocators.set(binding,manifestPath);
+	return binding;
 }
 
 /** One actual startup command, before visits; no app requests and no browser-revision default. */
@@ -157,7 +213,9 @@ export async function verifyBrowserControlBrowser(browser, binding) {
 		const actual = await session.send("Browser.getVersion");
 		if (actual.revision?.replace(/^@/, "") !== binding.browserRevision)
 			throw Error("Actual browser revision differs from qualified protocol control source.");
-		return Object.freeze({ ...binding, browserVerified: true, nativeLaunchMetadata: await captureNativeLaunchMetadata(browser) });
+		const verified = Object.freeze({ ...binding, browserVerified: true, nativeLaunchMetadata: await captureNativeLaunchMetadata(browser) });
+		if (nativeManifestLocators.has(binding)) nativeManifestLocators.set(verified,nativeManifestLocators.get(binding));
+		return verified;
 	} finally { await session.detach(); }
 }
 const selectedHeaders = [
@@ -973,7 +1031,7 @@ export async function installBrowserControlCollector({
 }) {
 	const session = await page.createCDPSession();
 	const principalEpoch = createPrincipalEpochObserver(contextId, { origin });
-	let workerObservation;
+	let workerObservation, endMetadata = null;
 	const proxy = createProxyControlCollector({
 		contextId,
 		compiledCachedNavigations,
@@ -994,7 +1052,8 @@ export async function installBrowserControlCollector({
 			servingPublicSources: environmentBinding?.servingPublicSources ?? null,
 			nativeLaunchMetadata: environmentBinding?.nativeLaunchMetadata ?? null,
 			workerTargets: workerObservation?.snapshot() ?? null,
-			publicSourceRecheck: "not-collected", acceptanceClaim: "none" }),
+			controllerObservation: endMetadata ? "read-only-end-snapshot" : "not-collected",
+			publicSourceRecheck: endMetadata?.publicSourceRecheck ?? "not-collected", endRead: endMetadata, acceptanceClaim: "none" }),
 		proxyObservation,
 		readBody: (requestId) =>
 			session.send("Network.getResponseBody", { requestId }),
@@ -1043,7 +1102,10 @@ export async function installBrowserControlCollector({
 	return {
 		...collector,
 		async close({ deadlineMs } = {}) {
-			try { await capturePrincipalBoundary({ context, observer: principalEpoch, stage: "end", deadlineMs }); }
+			try {
+				await capturePrincipalBoundary({ context, observer: principalEpoch, stage: "end", deadlineMs });
+				endMetadata = await captureNativeEndMetadata({ page, binding: environmentBinding, origin, deadlineMs });
+			}
 			finally {
 				workerObservation.close();
 				collector.endScope();
