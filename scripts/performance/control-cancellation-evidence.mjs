@@ -559,6 +559,14 @@ function inspectFlightBody(
 		const queue = [transport.t],
 			visited = new Set();
 		let nodes = 0,metadataPages=0;
+		const segmentObservation=(raw,value)=>{
+			const kind=item=>item===undefined?"unresolved":item===null?"null":Array.isArray(item)?"array":typeof item;
+			const record=typeof raw==="string" && /^\$[a-f0-9]+$/.test(raw)?records.get(raw.slice(1)):null;
+			const provenance=record?record.stream?"stream":record.tag==="I"?"import":record.tag==="T"?"framed-text":record.tag===null?"ordinary-model":"tagged-model":typeof raw==="string" && plainPath.test(raw)?"outlined-path":typeof raw==="string" && raw.startsWith("$")&&!raw.startsWith("$$")?"unresolved-reference":"inline";
+			const object=value && typeof value==="object" && !Array.isArray(value)?value:null,type=object?ordinary(object.t):undefined;
+			return {nodeOrdinal:nodes,rawKind:kind(raw),resolvedKind:kind(value),provenance,paramType:type===undefined?null:["c","ci(..)(..)","ci(.)","ci(..)","ci(...)","oc","d","di(..)(..)","di(.)","di(..)","di(...)"].includes(type)?type:"other",
+				nameKind:kind(object?ordinary(object.n):undefined),valueKind:kind(object?ordinary(object.k):undefined),siblingsKind:kind(object?ordinary(object.s):undefined),unknownFields:object?Object.keys(object).filter(key=>!["n","t","k","s"].includes(key)).length:0};
+		};
 		while (queue.length) {
 			if (++nodes > 4096 || ++budget.models > 100000) return unknown("tree-limit");
 			const node = ordinary(queue.pop());
@@ -575,7 +583,7 @@ function inspectFlightBody(
 			if(nodes===1 && segment!=="") return unknown("unanchored-route-tree");
 			if (typeof segment === "string") {
 				if (segment.startsWith("$") && !segment.startsWith("$$"))
-					return unknown("unsupported-tree-segment");
+					return unknown("unsupported-tree-segment",{routeTreeSegmentObservation:segmentObservation(node.s,segment)});
 				if(segment==="__PAGE__") metadataPages++;
 			} else if (
 				!segment ||
@@ -591,7 +599,7 @@ function inspectFlightBody(
 						ordinary(segment.s).every((value) => typeof ordinary(value) === "string" && (!ordinary(value).startsWith("$") || ordinary(value).startsWith("$$"))))
 				)
 			)
-				return unknown("unsupported-tree-segment");
+				return unknown("unsupported-tree-segment",{routeTreeSegmentObservation:segmentObservation(node.s,segment)});
 			if (node.h !== undefined && (!Number.isSafeInteger(ordinary(node.h)) || ordinary(node.h) < 0))
 				return unknown("unsupported-tree-hints");
 			if (node.c !== undefined) {
@@ -1298,6 +1306,7 @@ const requestReceipt = (row) => ({
 		"requestHeaderSnapshotKnown",
 		"responseHeaderSnapshotKnown",
 		"responseContentType",
+		"pathSourceFacts",
 		"initialSegmentResponse",
 		"responseDeploymentSha256",
 		"postponed",
