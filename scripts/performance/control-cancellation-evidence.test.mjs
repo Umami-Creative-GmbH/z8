@@ -736,6 +736,18 @@ test("embedded runtime prefetch has exact binary framing, explicit stream close 
 	assert.equal(partial.complete, true);
 	assert.equal(partial.embeddedRuntimePrefetch.requiredStage, "embedded-runtime-prefetch-output");
 	assert.equal(partial.embeddedRuntimePrefetch.postponedOutputReferences, 1);
+	const missingInner = Buffer.from('#0:{"q":"","i":false,"t":{"t":{"s":"en","d":{"r":"$Ldead","p":false,"v":null}}}}\n');
+	const missing = inspectRequiredFlightBody(outer(missingInner), { cachedNavigations: true });
+	assert.equal(missing.complete, false);
+	assert.equal(missing.embeddedReason, "unresolved-model-reference");
+	assert.deepEqual(missing.embeddedModelReference, { prefix: "L", form: "lazy-reference", length: 6 });
+	assert.equal(missing.embeddedSemanticRole, "required");
+	assert.equal(missing.embeddedMarker, "complete");
+	assert.equal(missing.embeddedIsPartial, false);
+	assert.equal(missing.embeddedRequestKind, "embedded-runtime-prefetch");
+	assert.equal(missing.embeddedDecodedBytes, missingInner.length);
+	assert.equal(missing.embeddedBodySha256, createHash("sha256").update(missingInner).digest("hex"));
+	assert.doesNotMatch(JSON.stringify(missing), /dead|KNOWN_MAIN/);
 	assert.equal(inspectRequiredFlightBody(outer(Buffer.from(partialInner.toString().replace(/^~/, '#'))), { cachedNavigations: true }).complete, false);
 	for (const invalid of [
 		outer(inner, "R", "o", false),
