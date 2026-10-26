@@ -233,11 +233,11 @@ function inspectFlightBody(
 				if (!record) return notePathFailure("missing-eager-model");
 				if (record.tag === "I") return notePathFailure("eager-import-model");
 				if (record.tag === "T" || record.stream) return true;
-				if (seen.has(id)) return (record.value && typeof record.value === "object") || notePathFailure("eager-alias-cycle");
+				if (seen.has(id)) return (record.value && typeof record.value === "object" && [...seen].filter(item=>typeof item === "string").length === 1) || notePathFailure("eager-cross-record-or-alias-cycle");
 				return eagerParent(record.value, forceElement, new Set([...seen,id]), depth + 1);
 			}
 			if (plainPath.test(value)) {
-				const selected = outlined(value, depth + 1);
+				const selected = outlined(value, depth + 1, seen);
 				return selected.known && eagerParent(selected.value,forceElement,seen,depth + 1);
 			}
 			return !value.startsWith("$") || value.startsWith("$$") || ["$","$undefined","$NaN","$Infinity","$-Infinity","$-0"].includes(value) || /^\$[SD]/.test(value) || notePathFailure("unsupported-eager-reference");
@@ -246,41 +246,53 @@ function inspectFlightBody(
 		if (binaryValues.has(value) || opaqueText.has(value)) return notePathFailure("eager-binary-or-text-value");
 		if (elementTuple(value) && !forceElement) return true;
 		if (elementTuple(value) && value.length !== 4) return notePathFailure("malformed-eager-element");
+		if (seen.has(value)) return true;
+		const containers = new Set([...seen,value]);
 		return Object.keys(value).filter(key=>key!=="__proto__").every(key=> {
 			const descriptor=Object.getOwnPropertyDescriptor(value,key);
-			return descriptor && Object.hasOwn(descriptor,"value") && eagerParent(descriptor.value,false,seen,depth + 1);
+			return descriptor && Object.hasOwn(descriptor,"value") && eagerParent(descriptor.value,false,containers,depth + 1);
 		});
 	};
-	const activePaths = new Set();
-	const outlined = (reference, depth = 0) => {
+	const activePaths = new Map();
+	const outlined = (reference, depth = 0, trail = new Set()) => {
 		if (depth === 0) pathFailure = null;
 		if (!pathStep(depth)) return {known:false};
 		if (!plainPath.test(reference) || reference.length > 2048) return unknownPath("unsupported-reference-shape");
-		if (activePaths.has(reference)) return unknownPath("outlined-reference-cycle");
+		const active = activePaths.get(reference);
+		if (active) {
+			const ids = [...trail].filter(item=>typeof item === "string");
+			if (active.checking && active.anchorKnown && active.modelIds.size === 1 && ids.length > 0 && ids.every(id=>id===active.rootId))
+				return {known:true,value:active.target,originId:active.originId,modelIds:active.modelIds};
+			return unknownPath(active.checking && active.anchorKnown ? "unsupported-cross-record-cycle" : "outlined-reference-cycle");
+		}
 		const [id,...keys] = reference.slice(1).split(":");
 		if (!Number.isSafeInteger(Number.parseInt(id,16)) || keys.length > 32 || keys.some(key=>key.length>128)) return unknownPath("path-component-limit");
-		activePaths.add(reference);
+		const state = {rootId:id,modelIds:new Set(),checking:false,anchorKnown:false};
+		activePaths.set(reference,state);
 		try {
-			let value = `$${id}`;
+			let value = `$${id}`, originId = id;
+			const parents = [];
 			for (const key of keys) {
 				const aliases = new Set();
 				while (typeof value === "string" && /^\$(?:L)?[a-f0-9]+$/.test(value)) {
 					if (!pathStep(depth + aliases.size)) return {known:false};
 					if (aliases.has(value)) return unknownPath("path-alias-cycle");
 					aliases.add(value);
-					const record = records.get(value.replace(/^\$L?/,""));
+					originId = value.replace(/^\$L?/,""); state.modelIds.add(originId);
+					const record = records.get(originId);
 					if (!record) return unknownPath("missing-path-model");
 					if (record.tag === "I") return unknownPath("path-import-model");
 					if (record.tag !== null || record.stream) return unknownPath("unsupported-path-model-kind");
 					value = record.value;
 				}
 				if (typeof value === "string" && plainPath.test(value)) {
-					const selected = outlined(value,depth + 1); if (!selected.known) return selected; value = selected.value;
+					const selected = outlined(value,depth + 1,new Set([...trail,...state.modelIds])); if (!selected.known) return selected; value = selected.value;
+					originId = selected.originId; for (const modelId of selected.modelIds) state.modelIds.add(modelId);
 				}
 				if (typeof value === "string" && /^\$@/.test(value)) return unknownPath("path-promise-not-unwrapped");
 				if (!value || typeof value !== "object") return unknownPath("non-object-projection");
 				if (binaryValues.has(value) || opaqueText.has(value)) return unknownPath("binary-or-text-projection");
-				if (!eagerParent(value,true,new Set(),depth + 1)) return {known:false};
+				parents.push({value,originId});
 				if (elementTuple(value)) {
 					if (!["type","key","props","ref"].includes(key)) return unknownPath("missing-element-own-property");
 					value = key === "ref" ? null : value[{type:1,key:2,props:3}[key]];
@@ -294,7 +306,12 @@ function inspectFlightBody(
 					value = descriptor.value;
 				}
 			}
-			return {known:true,value};
+			// Locate the actual own-data target before validating its parents. Only a materialized
+			// same-model target can anchor a self-cycle; a reference string is never an anchor.
+			state.checking = true; state.target = value; state.originId = originId;
+			state.anchorKnown = value !== undefined && (typeof value !== "string" || !value.startsWith("$") || value.startsWith("$$"));
+			if (!parents.every(parent=>eagerParent(parent.value,true,new Set([parent.originId]),depth + 1))) return {known:false};
+			return {known:true,value,originId,modelIds:state.modelIds};
 		} finally { activePaths.delete(reference); }
 	};
 	const resolve = (value) => {

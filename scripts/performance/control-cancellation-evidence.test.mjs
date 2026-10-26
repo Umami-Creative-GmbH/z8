@@ -434,6 +434,21 @@ test("plain outlined paths project decoded element props through fulfilled own d
 	assert.equal(inspectRequiredFlightBody(Buffer.from('0:{"a":"$1"}\n1:"$1"\n'),{action:true}).complete,false);
 });
 
+test("outlined paths anchor only same-model materialized containers and retain eager cycle failures", () => {
+	const body=(reference,rows)=>Buffer.from('~0:{"q":"","i":false,"t":{"t":{"s":"en","d":{"r":'+JSON.stringify(reference)+',"p":true,"v":null}}}}\n'+rows);
+	for(const [reference,rows]of [
+		['$1:props:self:value','1:["$","span",null,{"value":"KNOWN","self":"$1:props"}]\n'],
+		['$1:nested:back:back:value','1:{"nested":{"value":"KNOWN","back":"$1:nested"}}\n'],
+	])assert.equal(inspectRequiredFlightBody(body(reference,rows),{cachedNavigations:true}).complete,true);
+	for(const[reference,rows]of [
+		['$1:next:back:value','1:{"value":"KNOWN","next":"$2"}\n2:{"back":"$1"}\n'],
+		['$1:self:value','1:"$2"\n2:{"value":"KNOWN","self":"$1"}\n'],
+		['$1:x','1:{"x":"$2:x"}\n2:{"x":"$1:x"}\n'],
+		['$1:props:self:value','1:["$","span",null,{"value":"KNOWN","self":"$1:props","eager":"$8"}]\n'],
+		['$1:props:self:value','1:["$","span",null,"$2"]\n2:{"value":"KNOWN","self":"$1:props"}\n'],
+	])assert.equal(inspectRequiredFlightBody(body(reference,rows),{cachedNavigations:true}).complete,false);
+});
+
 test("supported hints and framed text never mistake text containing E for a Flight error", () => {
 	const bytes = Buffer.from(
 		'#:HL["/technical.css","style"]\n0:{"b":"b","t":{"t":{"s":"","d":{"r":["$1","$$literal","$undefined"]}}}}\n1:T6,2:E{}\n',
