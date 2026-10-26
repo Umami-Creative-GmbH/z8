@@ -16,6 +16,7 @@ import {
 	controlResponseMetadata,
 	createPrincipalEpochObserver,
 	capturePrincipalBoundary,
+	cachedOriginWireEvidence,
 	readBrowserControlBinding,
 	verifyBrowserControlBrowser,
 	createBrowserControlCollector,
@@ -123,6 +124,54 @@ test("cookie capture delegates actual context reads once and cannot renew an exp
 	assert.equal(observer.snapshot().after.known, false);
 	assert.equal(observer.snapshot().matchesAtBoundaries, null);
 	assert.equal(observer.snapshot().pendingReads, 0);
+});
+
+test("single owned HttpOnly root cookie facts bind an actual wire hash without retaining its value", () => {
+	const cookie = { name: "session", domain: "localhost", path: "/", value: "PRIVATE_COOKIE", httpOnly: true };
+	const observer = createPrincipalEpochObserver(contextId, { origin });
+	observer.start([cookie]); observer.end([{ ...cookie, expires: 50 }]);
+	const attributes = observer.snapshot().before.cookieAttributes;
+	assert.equal(attributes.httpOnlyKnown, true);
+	assert.equal(attributes.allHttpOnly, true);
+	assert.equal(attributes.singleOwnedRootHttpOnlyCookie, true);
+	assert.equal(attributes.singleCookieHeaderSha256, createHash("sha256").update("session=PRIVATE_COOKIE").digest("hex"));
+	for (const [options, changed] of [[{}, cookie], [{ origin }, { ...cookie, httpOnly: undefined }]]) {
+		const unknown = createPrincipalEpochObserver(contextId, options); unknown.start([changed]);
+		assert.equal(unknown.snapshot().before.cookieAttributes.singleOwnedRootHttpOnlyCookie, null);
+		assert.equal(unknown.snapshot().before.cookieAttributes.singleCookieHeaderSha256, null);
+	}
+	for (const changed of [{ ...cookie, httpOnly: false }, { ...cookie, path: "/other" }, { ...cookie, domain: "other.localhost" }]) {
+		const other = createPrincipalEpochObserver(contextId, { origin }); other.start([changed]);
+		assert.equal(other.snapshot().before.cookieAttributes.singleOwnedRootHttpOnlyCookie, false);
+		assert.equal(other.snapshot().before.cookieAttributes.singleCookieHeaderSha256, null);
+	}
+	assert.doesNotMatch(JSON.stringify(observer.snapshot()), /PRIVATE_COOKIE|session=/);
+});
+
+test("cached origin evidence joins an exact response ID plus context method and full query identity", () => {
+	const identity = controlRequestIdentity(contextId, url, "GET", { ...headers, Cookie: "PRIVATE_COOKIE" });
+	assert.equal(identity.requestHeaderSnapshotKnown, true);
+	assert.equal(controlRequestIdentity(contextId, url, "GET", undefined).requestHeaderSnapshotKnown, false);
+	assert.equal(controlRequestIdentity(contextId, url, "GET", { RSC: 1 }).requestHeaderSnapshotKnown, false);
+	const cached = { ...identity, proxyResponseId: "wire-origin" };
+	const packet = { ...identity, id: "wire-origin", complete: true, canceled: false, upstreamError: false,
+		transportBodyReceipt: { protocol: "proxy-natural-eof-decoded-bytes-v1", naturalEOF: true, decodedBytes: 20, bodySha256: "a".repeat(64) },
+		vary: controlResponseMetadata({ vary: "RSC, Accept-Encoding" }, 200).vary, PRIVATE_BODY: "PRIVATE_VALUE" };
+	const proof = cachedOriginWireEvidence(cached, [packet]);
+	assert.equal(proof.responseIdMatches, 1);
+	assert.equal(proof.exactRequestMatches, 1);
+	assert.equal(proof.selected[0].transportBodyReceipt.bodySha256, "a".repeat(64));
+	assert.equal(cachedOriginWireEvidence(cached, [{ ...packet, fullUrlSha256: "b".repeat(64) }]).exactRequestMatches, 0);
+	assert.equal(cachedOriginWireEvidence(cached, [{ ...packet, contextId: "other" }]).exactRequestMatches, 0);
+	assert.equal(cachedOriginWireEvidence(cached, [{ ...packet, method: "POST" }]).exactRequestMatches, 0);
+	assert.equal(cachedOriginWireEvidence(cached, [packet, packet]).responseIdMatches, 2);
+	const missing = cachedOriginWireEvidence(cached, [{ ...identity, id: "wire-origin" }]).selected[0];
+	assert.equal(missing.complete, null);
+	assert.equal(missing.canceled, null);
+	assert.equal(missing.upstreamError, null);
+	assert.equal(cachedOriginWireEvidence(cached, Array(9).fill(packet)).selectedTruncated, true);
+	assert.equal(cachedOriginWireEvidence(cached, Array(9).fill(packet)).selected.length, 8);
+	assert.doesNotMatch(JSON.stringify(proof), /PRIVATE_COOKIE|PRIVATE_VALUE|PRIVATE_BODY/);
 });
 
 test("normal admission binds the actual manifest before IO and actual browser revision without a mode default", async () => {
