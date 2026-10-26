@@ -18,7 +18,7 @@ test("ASCII projection retains only bounded byte counts and technical digests", 
 	assert.equal(proof.utf8Sha256, proof.originalSha256);
 	assert.equal(
 		proof.sourceRevision,
-		"1d17a2e2ee147bb7d6ae2ab6abdb3a2510c17775",
+		"d0c02bfad08ec92a6ffcf989e53cd995e6381a4c",
 	);
 	assert.equal(Object.hasOwn(proof, "eligible"), false);
 	assert.equal(Object.hasOwn(proof, "body"), false);
