@@ -926,12 +926,12 @@ test("embedded partial cache representation can contain a direct postponed r wit
 
 test("unresolved output records the actual bounded walk edge without granting descendant permissions", () => {
 	const root={q:"",i:false,t:{t:{s:"en",d:{r:null,p:true,v:null}}}};
-	for(const [value,rows,arrival]of [["$2",'2:"$L9"\n',"model-reference"],[["$","div",null,{children:["$L9"]}],"","array-output"],[["$","div",null,{children:"$L9"}],"","element-children"]]){
+	for(const [value,rows,arrival,parentArrival]of [["$2",'2:"$L9"\n',"model-reference",null],[["$","div",null,{children:["$L9"]}],"","array-output","element-children"],[["$","div",null,{children:"$L9"}],"","element-children","element-props"]]){
 		const data=structuredClone(root);data.t.t.d.r=value;const inner='~0:'+JSON.stringify(data)+'\n'+rows;
 		const bytes=Buffer.concat([Buffer.from('0:{"q":"","i":false,"t":{"t":{"s":"en","d":{"r":"MAIN","p":false,"v":null}}},"p":"$1"}\n1:R\n1:o'+Buffer.byteLength(inner).toString(16)+','),Buffer.from(inner),Buffer.from('1:C\n')]);
 		const proof=inspectRequiredFlightBody(bytes,{cachedNavigations:true});
 		assert.equal(proof.complete,false);assert.equal(proof.embeddedReason,"unresolved-model-reference");
-		assert.deepEqual(proof.embeddedOutputEdgeObservation,{walkPathOnly:true,fromTypedOutput:true,directEmbeddedOutput:false,arrival});
+		assert.deepEqual(proof.embeddedOutputEdgeObservation,{walkPathOnly:true,fromTypedOutput:true,directEmbeddedOutput:false,rArrayOutput:arrival==="model-reference",insideRArray:false,arrival,parentArrival});
 		assert.doesNotMatch(JSON.stringify(proof),/\$L9|\$2|MAIN/);
 	}
 });
