@@ -86,7 +86,9 @@ const lowerHeaders = (headers = {}) =>
 	);
 
 /** Cookie values live only in the actual browser snapshot and temporary hashing input. */
-export function createPrincipalEpochObserver(contextId) {
+export function createPrincipalEpochObserver(contextId, { origin } = {}) {
+	let originHost;
+	try { originHost = new URL(origin).hostname.replace(/^\[|\]$/g, ""); } catch {}
 	let before, after, scopeClosed = false, readErrors = 0, pendingReads = 0, observationErrors = 0, overflow = 0, unknownResponseHeaders = 0;
 	const setCookies = new Map();
 	const unknown = () => ({ known: false, cookieCount: null, sha256: null });
@@ -97,7 +99,14 @@ export function createPrincipalEpochObserver(contextId) {
 		if (new Set(rows.map((row) => JSON.stringify(row.slice(0, 3)))).size !== rows.length) return unknown();
 		const bytes = JSON.stringify(rows);
 		if (Buffer.byteLength(bytes) > controlCancellationPolicy.encodedLimit) return unknown();
-		return { known: true, cookieCount: rows.length, sha256: sha(bytes) };
+		const httpOnlyKnown = cookies.every((cookie) => typeof cookie.httpOnly === "boolean");
+		const single = cookies[0];
+		const singleOwnedRootHttpOnlyCookie = !originHost || !httpOnlyKnown ? null : cookies.length === 1 && single.httpOnly === true && single.path === "/" &&
+			single.domain.toLowerCase().replace(/^\./, "") === originHost && /^[!#$%&'*+\-.^_\x60|~0-9A-Za-z]+$/.test(single.name) &&
+			single.value.length > 0 && /^[\x21\x23-\x2b\x2d-\x3a\x3c-\x5b\x5d-\x7e]*$/.test(single.value);
+		return { known: true, cookieCount: rows.length, sha256: sha(bytes), cookieAttributes: { originKnown: Boolean(originHost), httpOnlyKnown,
+			allHttpOnly: httpOnlyKnown ? cookies.every((cookie) => cookie.httpOnly) : null, singleOwnedRootHttpOnlyCookie,
+			singleCookieHeaderSha256: singleOwnedRootHttpOnlyCookie === true ? sha(`${single.name}=${single.value}`) : null } };
 	};
 	return {
 		readStarted() { pendingReads++; },
@@ -162,6 +171,7 @@ export function controlRequestIdentity(contextId, url, method, headers) {
 				: "segment-prefetch";
 	return {
 		contextId,
+		requestHeaderSnapshotKnown: Boolean(headers && typeof headers === "object" && !Array.isArray(headers) && Object.values(headers).every((value) => value === undefined || typeof value === "string")),
 		method,
 		fullUrlSha256: sha(url),
 		requestHeadersSha256: sha(
@@ -187,6 +197,24 @@ export function controlRequestIdentity(contextId, url, method, headers) {
 		prefetch: h["next-router-prefetch"] === "1",
 		flight: h.rsc === "1",
 	};
+}
+
+/** Exact response-ID ancestry facts only. Identity gaps never become a cache-control verdict. */
+export function cachedOriginWireEvidence(candidate, packets) {
+	const matches = typeof candidate.proxyResponseId === "string" && candidate.proxyResponseId ? packets.filter((packet) => packet.id === candidate.proxyResponseId) : [];
+	const identityKnown = typeof candidate.contextId === "string" && candidate.contextId.length > 0 && ["GET", "POST", "HEAD"].includes(candidate.method) && /^[a-f0-9]{64}$/.test(candidate.fullUrlSha256 ?? "");
+	const exact = identityKnown ? matches.filter((packet) => packet.contextId === candidate.contextId && packet.method === candidate.method && packet.fullUrlSha256 === candidate.fullUrlSha256) : [];
+	return { responseIdMatches: matches.length, candidateIdentityKnown: identityKnown, exactRequestMatches: exact.length, selectedTruncated: matches.length > 8,
+		selected: matches.slice(0, 8).map((packet) => ({ id: packet.id, contextId: packet.contextId, method: packet.method,
+			fullUrlSha256: packet.fullUrlSha256, requestHeadersSha256: packet.requestHeadersSha256,
+			headerFieldSha256: packet.headerFieldSha256, documentGeneration: packet.documentGeneration,
+			requestHeaderSnapshotKnown: packet.requestHeaderSnapshotKnown, vary: packet.vary ?? null,
+			complete: typeof packet.complete === "boolean" ? packet.complete : null,
+			canceled: typeof packet.canceled === "boolean" ? packet.canceled : null,
+			upstreamError: typeof packet.upstreamError === "boolean" ? packet.upstreamError : null,
+			transportBodyReceipt: packet.transportBodyReceipt ?? null, bodyProof: packet.bodyProof ? { complete: typeof packet.bodyProof.complete === "boolean" ? packet.bodyProof.complete : null,
+				requestKind: packet.bodyProof.requestKind ?? null, requiredStage: packet.bodyProof.requiredStage ?? null,
+				bodySha256: packet.bodyProof.bodySha256 ?? null } : null })) };
 }
 export function controlResponseMetadata(headers, status) {
 	const h = lowerHeaders(headers);
@@ -224,7 +252,7 @@ export function createBrowserControlCollector({
 	readBody,
 	readStream,
 	captureContextFailures = false,
-	principalEpoch = createPrincipalEpochObserver(contextId),
+	principalEpoch = createPrincipalEpochObserver(contextId, { origin }),
 	proxyObservation = () => ({
 		rows: [],
 		installed: false,
@@ -493,6 +521,7 @@ export function createBrowserControlCollector({
 				coverage.missing + measuredRows.filter((row) => !row.failed).length,
 		};
 		const headerProvenance = (row) => ({
+			requestHeaderSnapshotKnown: row.requestHeaderSnapshotKnown === true,
 			documentGeneration: row.documentGeneration,
 			requestHeadersSha256: row.requestHeadersSha256,
 			withoutTechnicalDocumentSha256: row.withoutTechnicalDocumentSha256,
@@ -577,6 +606,9 @@ export function createBrowserControlCollector({
 								proxyResponseId: candidate.proxyResponseId ?? null,
 								vary: candidate.vary ?? null,
 								bodyReadbackReceipt: candidate.bodyReadbackReceipt ?? null,
+								initialHeaderIdentity: candidate.initialHeaderIdentity ? headerProvenance(candidate.initialHeaderIdentity) : null,
+								extraHeaderIdentity: candidate.extraHeaderIdentity ? headerProvenance(candidate.extraHeaderIdentity) : null,
+								originWire: cachedOriginWireEvidence(candidate, proxy.rows),
 							})),
 							selectedTruncated: cached.length > 8,
 							sameUrlMethod: cached.length,
@@ -843,7 +875,7 @@ export async function installBrowserControlCollector({
 	captureContextFailures = false,
 }) {
 	const session = await page.createCDPSession();
-	const principalEpoch = createPrincipalEpochObserver(contextId);
+	const principalEpoch = createPrincipalEpochObserver(contextId, { origin });
 	const proxy = createProxyControlCollector({
 		contextId,
 		compiledCachedNavigations,
