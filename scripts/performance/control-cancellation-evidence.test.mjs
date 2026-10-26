@@ -1564,3 +1564,60 @@ test("memo diagnostics distinguish literal-first overlap from nonliteral wrapper
 	assert.ok(counters.publishedWithWrappers<=counters.publishedNonLiteralEligible);assert.ok(counters.wrapperOnlyClosures<=counters.closures);
 	assert.doesNotMatch(JSON.stringify(counters),/KNOWN|\$[a-f0-9]/);
 });
+
+test("model cost diagnostics account for existing charged sites without retaining dependency identities", () => {
+	const result=inspectRequiredFlightBody(closedMemoBody(["$1:leaf","$1:leaf"],'1:{"leaf":"PRIVATE_VALUE","self":"$1","deferred":"$L9"}\n'),{cachedNavigations:true});
+	assert.equal(result.complete,true);
+	const cost=result.modelCostObservation;
+	assert.equal(cost.protocol,"bounded-model-cost-observation-v1");
+	assert.equal(cost.chargedWork,result.modelSteps);
+	assert.equal(cost.phases.reduce((sum,row)=>sum+row.work,0),cost.chargedWork);
+	assert.ok(cost.candidates.some(row=>row.reasonMask>0 && row.work>0));
+	assert.ok(cost.dependencies.calls>0);
+	assert.doesNotMatch(JSON.stringify(cost),/PRIVATE_VALUE|\$1|leaf|self|deferred/);
+});
+
+test("cost observations separate embedded work, current guard work and unfinished candidate costs",()=>{
+	const inner=closedMemoBody("KNOWN",''),outer=Buffer.concat([Buffer.from('0:{"q":"","i":false,"t":{"t":{"s":"en","d":{"r":"MAIN","p":false,"v":null}}},"p":"$1"}\n1:R\n1:o'+inner.length.toString(16)+','),inner,Buffer.from('1:C\n')]);
+	const complete=inspectRequiredFlightBody(outer,{cachedNavigations:true});
+	assert.equal(complete.complete,true);
+	assert.equal(complete.modelCostObservation.inspectionDepth,0);
+	assert.equal(complete.embeddedRuntimePrefetch.modelCostObservation.inspectionDepth,1);
+	assert.equal(complete.modelCostObservation.embeddedWork,complete.embeddedRuntimePrefetch.modelSteps);
+	assert.equal(complete.modelCostObservation.chargedWork,complete.modelSteps);
+	assert.equal(complete.modelCostObservation.chargedWork+complete.modelCostObservation.embeddedWork,complete.modelCostObservation.localModelSteps);
+	let deep=null;for(let index=0;index<64;index++)deep={next:deep};
+	const limited=inspectRequiredFlightBody(closedMemoBody("$1:leaf",'1:'+JSON.stringify({leaf:"KNOWN",deep})+'\n'),{cachedNavigations:true});
+	assert.equal(limited.complete,false);assert.equal(limited.pathLimitObservation.observedDepth,65);
+	const cost=limited.pathLimitObservation.modelCostObservation;
+	assert.equal(cost.chargedWork,limited.pathLimitObservation.localModelSteps,"The depth guard does not manufacture an additional model charge.");
+	assert.ok(cost.activeCandidates.length>0);assert.ok(cost.activeCandidates.every(row=>row.span<=65 && row.work>=0));
+	assert.equal(cost.phases.reduce((sum,row)=>sum+row.work,0),cost.chargedWork);
+});
+
+test("candidate masks distinguish wrapper plus real borrow costs and bounded dependency-context truncation",()=>{
+	const result=inspectRequiredFlightBody(closedMemoBody(["$1:leaf","$1:leaf"],'1:{"leaf":"KNOWN","lazy":"$L9","self":"$1"}\n'),{cachedNavigations:true});
+	assert.equal(result.complete,true);
+	const cost=result.modelCostObservation;
+	assert.ok(cost.candidates.some(row=>(row.reasonMask&128)!==0 && (row.reasonMask&1)!==0 && row.ready>0 && row.work>0));
+	assert.ok(cost.dependencies.parentCertificateUses>0);
+	assert.ok(cost.dependencies.parentCertificateWithSeen>0);
+	const many=Array.from({length:1500},()=>({value:"KNOWN"}));
+	const bounded=inspectRequiredFlightBody(closedMemoBody("$1:leaf",'1:'+JSON.stringify({leaf:"KNOWN",many})+'\n'),{cachedNavigations:true});
+	assert.equal(bounded.complete,true);assert.equal(bounded.modelCostObservation.dependencies.contexts,1024);
+	assert.equal(bounded.modelCostObservation.truncated,true);assert.ok(bounded.modelCostObservation.dependencies.contextOverflow>0);
+	assert.ok(bounded.modelCostObservation.candidates.length<=256);
+	assert.ok(bounded.modelCostObservation.phases.every(row=>row.depthWork.length===65 && row.depthWork.reduce((sum,n)=>sum+n,0)+row.unknownDepthWork===row.work));
+	assert.doesNotMatch(JSON.stringify(bounded.modelCostObservation),/KNOWN|many|leaf|\$1/);
+});
+
+test("dependency cost census distinguishes exact repeated contexts from new active owners",()=>{
+	const bytes=closedMemoBody(["$1:leaf","$1:leaf"],'1:{"leaf":"KNOWN","many":["$2","$2","$2"]}\n2:{"value":"KNOWN"}\n');
+	const result=inspectRequiredFlightBody(bytes,{cachedNavigations:true});assert.equal(result.complete,true);
+	assert.ok(result.modelCostObservation.dependencies.repeatedSameContext>0);
+	const anchor=inspectRequiredFlightBody(closedMemoBody("$1:nested:back:back:leaf",'1:{"nested":{"leaf":"KNOWN","back":"$1:nested"}}\n'),{cachedNavigations:true});
+	assert.equal(anchor.complete,true);
+	assert.ok(anchor.modelCostObservation.dependencies.repeatedDifferentContext>0);
+	assert.ok(anchor.modelCostObservation.dependencies.activeSameOwner+anchor.modelCostObservation.dependencies.activeDifferentOwner>0);
+	assert.equal(anchor.closedEagerMemo.published,0,"Counting an active dependency never makes its conditional result publishable.");
+});
