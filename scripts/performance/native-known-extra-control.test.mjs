@@ -89,6 +89,8 @@ test("Native proof cannot use NoExtra, missing source authority, body mismatches
     i=>i.responses.push(structuredClone(i.responses[0])),i=>i.proxy.push(structuredClone(i.proxy[0])),i=>i.responses[0].bodyReadbackReceipt.bodySha256="0".repeat(64),
     i=>i.proxy[0].responseHeaderSnapshotKnown=false,i=>i.proxy[1].responseHeaderSnapshotKnown=false,
     i=>i.responses[0].responseHeaderSnapshotKnown=false,i=>i.responses[0].initialSegmentResponse={...i.responses[0],responseHeaderSnapshotKnown:false},
+    i=>i.responses[0].initialSegmentResponse={...i.responses[0],status:500},i=>i.responses[0].requestHeaderSnapshotKnown=false,
+    i=>i.failures[0].extraHeaderIdentity.purposeHeaderPresent=true,i=>i.failures[0].extraHeaderIdentity.secPurposeHeaderPresent=true,
     i=>i.proxy[1].complete=false,i=>i.proxy[1].canceled=true,i=>i.nativeContext.headerCensus.closed=false,i=>i.nativeContext.principalEpoch.after.sha256="0".repeat(64)]){
     const {input}=fixture();mutate(input);const result=classifyControlCancellations(input);assert.equal(result.provenControls,0);assert.equal(result.unknownFailures,1);
   }

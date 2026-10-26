@@ -1391,7 +1391,7 @@ const goodNativeSegmentBody = (row,context) => {
 		Number.isSafeInteger(proof.protocolRows) && proof.protocolRows > 0 && proof.protocolRows <= 4096 && Number.isSafeInteger(proof.modelSteps) && proof.modelSteps > 0 && proof.modelSteps <= 100000 &&
 		["postponedCacheOutputs","postponedOutputReferences","knownSuspenseBoundaries","knownEmptyFallbacks","representedComponentFallbacks"].every(key=>Number.isSafeInteger(proof[key]) && proof[key] >= 0 && proof[key] <= 100000) &&
 		binding?.method === "GET" && binding.status === 200 && ["flight","rsc","prefetch","postponed","manifestVerified"].every(key=>binding[key]===true) &&
-		row.method === "GET" && row.rsc === true && row.prefetch === true && row.action === false && response.responseHeaderSnapshotKnown === true && response.flight === true && response.postponed === true && row.status === 200 &&
+		row.requestHeaderSnapshotKnown === true && row.method === "GET" && row.rsc === true && row.prefetch === true && row.action === false && response.responseHeaderSnapshotKnown === true && response.flight === true && response.postponed === true && response.status === 200 && row.status === 200 &&
 		binding.requestHeadersSha256 === row.requestHeadersSha256 && digest(binding.requestKeySha256) && binding.requestKeySha256 === row.headerFieldSha256?.["next-router-segment-prefetch"] && binding.derivedRequestKeySha256 === binding.requestKeySha256 &&
 		binding.compiledBuild === compiled.compiledBuild && binding.compiledManifestSha256 === compiled.compiledManifestSha256 && binding.expectedDeploymentSha256 === bodySha256(Buffer.from(compiled.compiledBuild)) &&
 		binding.responseDeploymentSha256 === response.responseDeploymentSha256 && binding.actualDeploymentSha256 === (binding.responseDeploymentSha256 ?? binding.bodyBuildSha256) && binding.actualDeploymentSha256 === binding.expectedDeploymentSha256 &&
@@ -1408,7 +1408,7 @@ function nativeKnownExtraProof(failure,packet,responses,proxy,context,browserRev
 		!goodNativeSegmentBody(packet,context)) return null;
 	const initial=failure.initialHeaderIdentity,extra=failure.extraHeaderIdentity;
 	if(initial?.requestHeaderSnapshotKnown !== true || extra?.requestHeaderSnapshotKnown !== true || extra.requestHeadersSha256 !== failure.requestHeadersSha256 ||
-		initial.purposeHeaderPresent !== false || initial.secPurposeHeaderPresent !== false || initial.documentGeneration !== failure.documentGeneration) return null;
+		initial.purposeHeaderPresent !== false || initial.secPurposeHeaderPresent !== false || extra.purposeHeaderPresent !== false || extra.secPurposeHeaderPresent !== false || initial.documentGeneration !== failure.documentGeneration) return null;
 	const knownHeaders = row=>row?.requestHeaderSnapshotKnown === true && row.headerFieldSha256 && Object.keys(row.headerFieldSha256).length === controlIdentityHeaders.length &&
 		controlIdentityHeaders.every(key=>Object.hasOwn(row.headerFieldSha256,key) && (row.headerFieldSha256[key]===null || digest(row.headerFieldSha256[key])));
 	if(![initial,extra,failure,packet].every(knownHeaders) || !controlIdentityHeaders.every(key=>extra.headerFieldSha256[key]===failure.headerFieldSha256[key] && extra.headerFieldSha256[key]===packet.headerFieldSha256[key]) ||
