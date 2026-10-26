@@ -558,7 +558,7 @@ export async function measureFixtureResources(
       headers: { "Accept-Language": condition.locale }, contextId: traceId,
       browserRevision: collector.browserControlBinding.browserRevision,
       compiledCachedNavigations: collector.browserControlBinding.compiledCachedNavigations,
-      environmentBinding: collector.browserControlBinding });
+      environmentBinding: collector.browserControlBinding,protocolSources:collector.protocolSources,operatorFile:"settled-resources.mjs" });
     client = await page.createCDPSession();
     await client.send("Network.enable");
     client.on("Network.requestWillBeSent", (e) =>
@@ -878,7 +878,7 @@ export async function measureFixtureResources(
   }
   if (transport) {
     s.requiredObservationGates = cleanEvidenceGates(plan, {
-      runtime: { ...plan.runtime, browserControl: collector.browserControlBinding }, samples: [s],
+      runtime: { ...plan.runtime, browserControl: collector.browserControlBinding },protocol:collector.protocolSources,samples: [s],
     }, nativeObservationRows, "readyMs").concat(cleanMeasuredCostGates(s, nativeObservationRows));
     if (s.requiredObservationGates.length) cleanupFailure("required-observation", "observation-incomplete");
   }
@@ -1046,7 +1046,7 @@ async function main() {
                   c.mode,
                   iteration,
                   options["--collector"],
-                  { ...collector, browserControlBinding },
+                  { ...collector, browserControlBinding,protocolSources:protocol },
                 ),
           checkpoint: async (sample) => {
               artifact.samples.push(sample);

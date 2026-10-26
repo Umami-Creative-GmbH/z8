@@ -300,6 +300,18 @@ test("derive binds an independently supplied HEAD browser-control file and rejec
   assert.match(missing.stderr,/release-browser-control/);
 });
 
+test("derive rejects deleted HEAD Native qualification when ORIGINAL method has qualified Native sources",()=>{
+  const f=fixture();
+  const nativePublicSources={protocol:"qualified-serving-worker-sources-v1",compiledBuild:f.plan.runtime.build,compiledManifestSha256:f.plan.runtime.browserControl.compiledManifestSha256,
+    files:["sw.js","lib/offline-queue-db.js","lib/sync-service.js","lib/clock-command-dispatch.js"].map(file=>({file,bytes:12,sha256:"a".repeat(64),gitBlob:"b".repeat(40)}))};
+  f.plan.runtime.browserControl.nativePublicSources=nativePublicSources;
+  f.artifact.runtime.browserControl.nativePublicSources=structuredClone(nativePublicSources);
+  f.saveBefore();
+  const result=f.derive();
+  assert.equal(result.status,2);
+  assert.match(result.stderr,/browser control method/);
+});
+
 test("before derivation rejects positive or unknown raw browser failures", () => {
   const f = fixture();
   for (const failedRequests of [1, undefined, null, "0", 0.5]) {

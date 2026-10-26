@@ -10,6 +10,7 @@ import {
 	inspectRequiredFlightBody,
 	knownBrowserControlMetadata,
 	knownNativePublicSources,
+	controlIdentityHeaders,
 } from "./control-cancellation-evidence.mjs";
 import { createProxyHeaderCensus } from "./proxy-header-census.mjs";
 
@@ -92,9 +93,11 @@ export async function captureNativeLaunchMetadata(browser) {
 	return { protocol: "owned-native-launch-metadata-v1", processKnown: typeof child?.spawnfile === "string" && argumentsKnown,
 		fixturePolicy: browser.fixtureLaunchPolicy?.policy === "isolated-profile-no-prediction-v1" ? browser.fixtureLaunchPolicy.policy : "unknown", argumentsKnown,
 		argumentsSha256: normalized ? sha(JSON.stringify(normalized)) : null,
+		recordedArgumentsSha256: recordedKnown ? sha(JSON.stringify(recorded)) : null,
 		argumentsMatchRecorded: argumentsKnown && recordedKnown ? JSON.stringify(normalized) === JSON.stringify(recorded) : null,
 		argumentKeys: normalized?.map(arg => /^--[a-z0-9-]+(?:=|$)/.test(arg) ? arg.split("=")[0] : "positional") ?? null,
 		profileArgumentCount: argumentsKnown ? profiles.length : null, profileArgumentSha256,
+		recordedProfileDirectorySha256: /^[a-f0-9]{64}$/.test(browser.fixtureLaunchPolicy?.profileDirectorySha256 ?? "") ? browser.fixtureLaunchPolicy.profileDirectorySha256 : null,
 		profileArgumentMatchesRecorded: profileArgumentSha256 && typeof browser.fixtureLaunchPolicy?.profileDirectorySha256 === "string" ? profileArgumentSha256 === browser.fixtureLaunchPolicy.profileDirectorySha256 : null,
 		executable: await nativeFileMetadata(child?.spawnfile, 1024 * 1024 * 1024),
 		observerSources: await Promise.all(["browser-control-collector.mjs", "fixture-browser.mjs"].map(async file => ({ file,
@@ -224,20 +227,7 @@ export async function verifyBrowserControlBrowser(browser, binding) {
 		return verified;
 	} finally { await session.detach(); }
 }
-const selectedHeaders = [
-	"rsc",
-	"next-router-prefetch",
-	"next-router-segment-prefetch",
-	"next-router-state-tree",
-	"next-url",
-	"next-action",
-	"accept",
-	"accept-encoding",
-	"accept-language",
-	"cookie",
-	"authorization",
-	controlDocumentHeader,
-];
+const selectedHeaders = controlIdentityHeaders;
 const lowerHeaders = (headers = {}) =>
 	Object.fromEntries(
 		Object.entries(headers).map(([k, v]) => [k.toLowerCase(), String(v)]),
@@ -319,6 +309,7 @@ export async function capturePrincipalBoundary({ context, observer, stage, deadl
 }
 export function controlRequestIdentity(contextId, url, method, headers) {
 	const h = lowerHeaders(headers);
+	let requestOriginSha256=null;try{requestOriginSha256=sha(new URL(url).origin);}catch{}
 	const action = h["next-action"] !== undefined;
 	const requestKind = action
 		? "action"
@@ -332,6 +323,7 @@ export function controlRequestIdentity(contextId, url, method, headers) {
 		requestHeaderSnapshotKnown: Boolean(headers && typeof headers === "object" && !Array.isArray(headers) && Object.values(headers).every((value) => value === undefined || typeof value === "string")),
 		method,
 		fullUrlSha256: sha(url),
+		requestOriginSha256,
 		requestHeadersSha256: sha(
 			JSON.stringify(selectedHeaders.map((key) => [key, h[key] ?? null])),
 		),
@@ -353,6 +345,8 @@ export function controlRequestIdentity(contextId, url, method, headers) {
 		action,
 		requestKind,
 		rsc: h.rsc === "1",
+		purposeHeaderPresent:h.purpose !== undefined,
+		secPurposeHeaderPresent:h["sec-purpose"] !== undefined,
 		prefetch: h["next-router-prefetch"] === "1",
 		flight: h.rsc === "1",
 	};
@@ -439,6 +433,8 @@ export function createBrowserControlCollector({
 	browserRevision,
 	compiledCachedNavigations,
 	compiledBinding,
+	protocolSources,
+	operatorFile,
 	readBody,
 	readStream,
 	captureContextFailures = false,
@@ -531,7 +527,7 @@ export function createBrowserControlCollector({
 					);
 					row.bodyReadbackReceipt = { available: true, base64Encoded:typeof result.base64Encoded === "boolean" ? result.base64Encoded : null,
 						utf16CodeUnitLength:result.base64Encoded === false ? result.body.length : null,
-						observedDataLengthAtReadback:row.loadingFinished === true && Number.isSafeInteger(row.observedDataLength) ? row.observedDataLength : null,
+						observedDataLengthAtReadback:row.loadingFinished === true && row.observedDataLengthInvalid !== true && Number.isSafeInteger(row.observedDataLength) ? row.observedDataLength : null,
 						responseContentType:row.initialSegmentResponse?.responseContentType ?? row.responseContentType ?? null, decodedBytes: bytes.length, bodySha256: sha(bytes),
 						terminal: row.failed ? "failed" : row.loadingFinished ? "finished" : "pending", naturalEOFClaim: false };
 					assignBodyProof(row, inspectRequiredFlightBody(bytes, bodyInspectionOptions(row,compiledCachedNavigations,compiledBinding)), "cdp-readback", row.bodyReadbackReceipt.bodySha256);
@@ -646,7 +642,7 @@ export function createBrowserControlCollector({
 		processBodies();
 	};
 	const headerIdentity = (headers) => {
-		const { fullUrlSha256, method, ...identity } = controlRequestIdentity(
+		const { fullUrlSha256, method, requestOriginSha256, ...identity } = controlRequestIdentity(
 			contextId,
 			"",
 			"",
@@ -682,7 +678,6 @@ export function createBrowserControlCollector({
 			).length,
 			pendingBodies: pending.size + queue.length + proxy.pendingBodies,
 		};
-		const data = { responses, proxy: proxy.rows, coverage, browserRevision };
 		const sources = [...rows().map((row) => ({ source: "browser", row })), ...proxy.rows.map((row) => ({ source: "proxy", row }))];
 		const protocolErrorRecords = sources.flatMap(({ source, row }) => {
 			const history = row.protocolErrorObservations ?? (hasProtocolError(row.bodyProof) ? [protocolErrorFact(row.bodyProof, "latest-proof",
@@ -691,6 +686,14 @@ export function createBrowserControlCollector({
 				proxyResponseId: row.proxyResponseId ?? (source === "proxy" ? row.id : null), ...fact }));
 		});
 		const protocolErrorOverflow = sources.reduce((total, { row }) => total + (row.protocolErrorObservationOverflow ?? 0), 0);
+		const protocolErrors={protocol:"positive-flight-error-observations-v1",contextId,installed:coverage.installed,scopeClosed:closed,
+			observed:protocolErrorRecords.length,overflow:protocolErrorOverflow+Math.max(0,protocolErrorRecords.length-controlCancellationPolicy.recordLimit),records:protocolErrorRecords.slice(0,controlCancellationPolicy.recordLimit)};
+		const environment=environmentObservation(),principal=principalEpoch.snapshot();
+		const nativeContext={protocol:"qualified-known-extra-native-context-v1",contextId,originSha256:sha(origin),workerScriptSha256:sha(origin+"/sw.js"),rootScopeSha256:sha(origin+"/"),
+			binding:compiledBinding ? Object.fromEntries(["policy","browserRevision","compiledBuild","compiledManifestSha256","compiledCachedNavigations","manifestVerified","browserVerified","nativePublicSources"].filter(key=>Object.hasOwn(compiledBinding,key)).map(key=>[key,compiledBinding[key]])) : null,
+			protocolSources:protocolSources ?? null,operatorFile:operatorFile ?? null,principalEpoch:principal,headerCensus:proxy.headerCensus ?? null,headerLifetime:proxy.headerLifetime ?? null,
+			protocolErrors,environment};
+		const data = { responses, proxy: proxy.rows, coverage, browserRevision,nativeContext };
 		const measuredRows = measuredFailureIds.map((id) =>
 			requests.get(id)?.failed
 				? requests.get(id)
@@ -720,8 +723,8 @@ export function createBrowserControlCollector({
 			protocolErrors: { protocol: "positive-flight-error-observations-v1", contextId, installed: coverage.installed, scopeClosed: closed,
 				observed: protocolErrorRecords.length, overflow: protocolErrorOverflow + Math.max(0, protocolErrorRecords.length - controlCancellationPolicy.recordLimit),
 				records: protocolErrorRecords.slice(0, controlCancellationPolicy.recordLimit) },
-			principalEpoch: principalEpoch.snapshot(),
-			nativeEnvironment: environmentObservation(),
+			principalEpoch: principal,
+			nativeEnvironment: environment,
 			rawMeasuredFailedRequests,
 			diagnostics: {
 				earlyResponseExtra: {
@@ -1034,6 +1037,7 @@ export function createBrowserControlCollector({
 				return;
 			}
 			if (!Number.isSafeInteger(event.dataLength) || event.dataLength < 0) {
+				row.observedDataLengthInvalid = true;
 				if (row.stream) row.stream.reason = "invalid-data-length";
 				return;
 			}
@@ -1064,6 +1068,8 @@ export async function installBrowserControlCollector({
 	compiledCachedNavigations,
 	captureContextFailures = false,
 	environmentBinding,
+	protocolSources,
+	operatorFile,
 }) {
 	const session = await page.createCDPSession();
 	const principalEpoch = createPrincipalEpochObserver(contextId, { origin });
@@ -1085,6 +1091,8 @@ export async function installBrowserControlCollector({
 		compiledCachedNavigations,
 		compiledBinding:environmentBinding,
 		captureContextFailures,
+		protocolSources,
+		operatorFile,
 		principalEpoch,
 		environmentObservation: () => ({ protocol: "native-cache-environment-metadata-v1", contextId,
 			servingPublicSources: environmentBinding?.servingPublicSources ?? null,

@@ -32,6 +32,7 @@ import {
 
 import { cleanApplicationEvidence, cleanObservationPolicy, observationTimeoutMs, cleanBrowserContextEvidence, cleanEvidencePolicy } from "./clean-evidence.mjs";
 import { installBrowserControlCollector, readBrowserControlBinding, verifyBrowserControlBrowser, mixedBrowserWorkScope } from "./browser-control-collector.mjs";
+import { mixedProtocolIdentity } from "./protocol-fingerprints.mjs";
 
 /** Match the recorded source against the public, possibly abbreviated build hash. */
 export function mixedSourceMatches(sourceCommit, liveVersion) {
@@ -211,7 +212,7 @@ function analyticsSummary(kind, payload) {
 	};
 }
 
-async function openPage(browser, auth, origin, actor, traceSource, created, browserControlBinding) {
+async function openPage(browser, auth, origin, actor, traceSource, created, browserControlBinding,protocolSources) {
 	const transport = await createFixtureTraceTransport({
 		origin,
 		getTraceId: ({ headers }) => {
@@ -239,7 +240,7 @@ async function openPage(browser, auth, origin, actor, traceSource, created, brow
 		await page.emulateTimezone("Europe/Berlin");
 		opened.browserObservation = await installBrowserControlCollector({ page, context, transport, origin, headers: {}, contextId,
 			browserRevision: browserControlBinding.browserRevision, compiledCachedNavigations: browserControlBinding.compiledCachedNavigations,
-			captureContextFailures: true, environmentBinding: browserControlBinding });
+			captureContextFailures: true, environmentBinding: browserControlBinding,protocolSources,operatorFile:"mixed-load-probe.mjs" });
 		opened.browserObservation.beginMeasurement();
 		return opened;
 	} catch (error) {
@@ -294,6 +295,7 @@ async function captureAnalytics(
 	created,
 	timeout,
 	browserControlBinding,
+	protocolSources,
 ) {
 	const opened = await openPage(
 		browser,
@@ -303,6 +305,7 @@ async function captureAnalytics(
 		traceSource,
 		created,
 		browserControlBinding,
+		protocolSources,
 	);
 	const { page } = opened;
 	let captured;
@@ -377,6 +380,7 @@ function clockCohorts(records) {
 
 async function run(directory, artifactApp, sourceCommit, collectorPath, runId, phase, manifestPath, browserControlPath) {
 	const timeout = observationTimeoutMs(phase);
+	const protocolSources=await mixedProtocolIdentity();
 	if (!browserControlPath) throw Error("Explicit browser control metadata file is required.");
 	const metadataBytes = await readFile(browserControlPath);
 	let browserControlBinding = await readBrowserControlBinding({ plan: { runtime: { build: sourceCommit,
@@ -481,6 +485,7 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 				created,
 				timeout,
 				browserControlBinding,
+				protocolSources,
 			);
 			requireCleanWork();
 			item.page.on("request", (request) => {
@@ -506,6 +511,7 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 			{ ids: traces.ids, current: () => uiTrace },
 			created,
 			browserControlBinding,
+			protocolSources,
 		);
 		controls = await openPublicHeaderClock(clock.page, {
 			origin,
@@ -787,7 +793,7 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 	}
 	const completeTransport =
 		transports.length === 4 && transports.every((row) => mixedTransportIsComplete(row) && cleanApplicationEvidence(row.traceTransport.applicationEvidence) &&
-			cleanBrowserContextEvidence(row.contextId, row.browserControlEvidence, row.rawBrowserFailedRequests));
+			cleanBrowserContextEvidence(row.contextId, row.browserControlEvidence, row.rawBrowserFailedRequests,{runtime:{build:sourceCommit,browserControl:browserControlBinding},protocolSources,origin}));
 	const completeCoverage =
 		nativeRunCoverage.complete === true &&
 		completeTransport &&
@@ -800,6 +806,7 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 	const report = {
 		...plan(phase),
 		browserControl: browserControlBinding,
+		protocolSources,
 		browserControlMetadataFileSha256: createHash("sha256").update(metadataBytes).digest("hex"),
 		runId,
 		sourceCommit,

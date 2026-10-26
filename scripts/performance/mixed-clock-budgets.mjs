@@ -5,7 +5,7 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { isNextStreamCompletionPatch } from "./next-stream-completion-patch.mjs";
 import { cleanApplicationEvidence, cleanObservationPolicy, observationTimeoutMs, cleanEvidencePolicy, cleanBrowserContextEvidence } from "./clean-evidence.mjs";
-import { knownBrowserControlMetadata, matchingBrowserControlBinding } from "./control-cancellation-evidence.mjs";
+import { knownBrowserControlMetadata, matchingBrowserControlBinding,knownNativePublicSources } from "./control-cancellation-evidence.mjs";
 import { mixedBrowserWorkScope, readBrowserControlBinding } from "./browser-control-collector.mjs";
 import {
 	clockObservationIsComplete,
@@ -13,21 +13,8 @@ import {
 	reconcileMixedNative,
 } from "./mixed-load-observation.mjs";
 
-export const mixedProtocolFiles = [
-	"mixed-load-probe.mjs",
-	"mixed-load-observation.mjs",
-	"public-header-clock.mjs",
-	"collector-client.mjs",
-	"fixture-browser.mjs",
-	"journey-steps.mjs",
-	"trace-transport.mjs",
-	"action-result-observer.mjs",
-	"clean-evidence.mjs",
-	"control-cancellation-evidence.mjs",
-	"browser-control-collector.mjs",
-	"proxy-header-census.mjs",
-	"proxy-wire-observer.mjs",
-];
+import { mixedProtocolFiles } from "./protocol-fingerprints.mjs";
+export { mixedProtocolFiles } from "./protocol-fingerprints.mjs";
 const policy = {
 	version: 9,
 	cleanEvidence: cleanEvidencePolicy,
@@ -77,6 +64,10 @@ const commonConditions = (conditions) => {
 	const result = structuredClone(conditions);
 	delete result.browserControlMetadataFileSha256;
 	if (result.browserControl) delete result.browserControl.compiledManifestSha256;
+	if (result.browserControl?.nativePublicSources) {
+		delete result.browserControl.nativePublicSources.compiledBuild;
+		delete result.browserControl.nativePublicSources.compiledManifestSha256;
+	}
 	return result;
 };
 const distribution = (values) => {
@@ -109,7 +100,7 @@ function validateProtocol(protocol) {
 				[...mixedProtocolFiles].sort(),
 			) &&
 			Object.values(protocol.files).every(sha),
-		"twelve measuring source hashes",
+		"complete measuring source hashes",
 	);
 }
 function validateConditions(value) {
@@ -196,7 +187,7 @@ function validateRecordedBrowser(run, context) {
 }
 
 /** Validate every record and every registered native group, never a selected success subset. */
-export function validateMixedClockRun(run, build, phase = "baseline") {
+export function validateMixedClockRun(run, build, phase = "baseline",authority) {
 	check(same(run?.cleanEvidencePolicy, cleanEvidencePolicy) && run.browserFailureScope === mixedBrowserWorkScope &&
 		matchingBrowserControlBinding({ build, browserControl: run.browserControl }, run.browserControl) && sha(run.browserControlMetadataFileSha256),
 		"qualified browser control run metadata");
@@ -279,7 +270,7 @@ export function validateMixedClockRun(run, build, phase = "baseline") {
 		run.transports?.length === 4 &&
 			same(run.transports.map((row) => row.actor).sort(), [...actors].sort()) &&
 			run.transports.every((row) => mixedTransportIsComplete(row) && cleanApplicationEvidence(row.traceTransport.applicationEvidence) &&
-				row.browserFailureScope === mixedBrowserWorkScope && cleanBrowserContextEvidence(row.contextId, row.browserControlEvidence, row.rawBrowserFailedRequests)) &&
+				row.browserFailureScope === mixedBrowserWorkScope && cleanBrowserContextEvidence(row.contextId, row.browserControlEvidence, row.rawBrowserFailedRequests,authority)) &&
 			new Set(run.transports.map((row) => row.contextId)).size === 4,
 		"four closed strict transports",
 	);
@@ -503,13 +494,15 @@ export function deriveMixedClockBudgets(input) {
 		"baseline",
 	);
 	check(knownBrowserControlMetadata(expectedHeadBrowserControl) && sha(expectedHeadBrowserControlFileSha256) &&
+		Object.hasOwn(expectedHeadBrowserControl,"nativePublicSources") === Object.hasOwn(beforeContext.conditions.browserControl,"nativePublicSources") &&
+		(!expectedHeadBrowserControl.nativePublicSources || knownNativePublicSources(expectedHeadBrowserControl.nativePublicSources,expectedHeadBuild,expectedHeadBrowserControl.compiledManifestSha256)) &&
 		["browserRevision", "compiledCachedNavigations"].every((key) => expectedHeadBrowserControl[key] === beforeContext.conditions.browserControl[key]),
 		"independently pinned common head browser control method");
 	check(
 		isoTime(registeredAt) > isoTime(beforeContext.finishedAt),
 		"registration after complete original",
 	);
-	const summary = validateMixedClockRun(before, expectedBeforeBuild);
+	const summary = validateMixedClockRun(before, expectedBeforeBuild,"baseline",{runtime:{build:expectedBeforeBuild,browserControl:beforeContext.conditions.browserControl},protocolSources:protocol.files,origin:beforeContext.conditions.origin});
 	validateRecordedBrowser(before, beforeContext);
 	return {
 		schema: 1,
@@ -524,6 +517,7 @@ export function deriveMixedClockBudgets(input) {
 		conditionValidatorSha256,
 		expectedBeforeBuild,
 		expectedHeadBuild,
+		expectedOrigin:beforeContext.conditions.origin,
 		expectedBeforeBrowserControl: beforeContext.conditions.browserControl,
 		expectedBeforeBrowserControlFileSha256: beforeContext.conditions.browserControlMetadataFileSha256,
 		expectedHeadBrowserControl,
@@ -595,6 +589,7 @@ export function compareMixedClockBudgets(input) {
 	);
 	check(
 		same(headContext.conditions.browserControl, budgets.expectedHeadBrowserControl) &&
+			headContext.conditions.origin === budgets.expectedOrigin &&
 			headContext.conditions.browserControlMetadataFileSha256 === budgets.expectedHeadBrowserControlFileSha256 &&
 			same(before.browserControl.policy, budgets.expectedBeforeBrowserControl?.policy) &&
 			matchingBrowserControlBinding({ build: budgets.expectedBeforeBuild, browserControl: budgets.expectedBeforeBrowserControl }, before.browserControl) &&
@@ -610,8 +605,8 @@ export function compareMixedClockBudgets(input) {
 		isoTime(headContext.finishedAt) <= isoTime(observedAt),
 		"head run completed before comparison",
 	);
-	const original = validateMixedClockRun(before, budgets.expectedBeforeBuild),
-		current = validateMixedClockRun(head, budgets.expectedHeadBuild, "release");
+	const original = validateMixedClockRun(before, budgets.expectedBeforeBuild,"baseline",{runtime:{build:budgets.expectedBeforeBuild,browserControl:budgets.expectedBeforeBrowserControl},protocolSources:protocol.files,origin:budgets.expectedOrigin}),
+		current = validateMixedClockRun(head, budgets.expectedHeadBuild, "release",{runtime:{build:budgets.expectedHeadBuild,browserControl:budgets.expectedHeadBrowserControl},protocolSources:protocol.files,origin:budgets.expectedOrigin});
 	validateRecordedBrowser(head, headContext);
 	const clock = Object.fromEntries(
 		["in", "out"].map((action) => {
