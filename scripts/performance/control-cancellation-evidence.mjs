@@ -724,7 +724,8 @@ function inspectFlightBody(
 	) {
 		// Main Flight consumption is independent of the optional static/shell cache clones.
 		// This proves only the represented SPA patch, retaining response-level partiality.
-		const valueKind = value => value === undefined ? "absent" : value === null ? "null" : Array.isArray(value) ? "array" :
+		let iterableFailure = null;
+		const valueKind = value => value === undefined ? "absent" : value === null ? "null" : value && typeof value === "object" && opaqueText.has(value) ? "framed-text" : Array.isArray(value) ? "array" :
 			value === "$undefined" ? "undefined-sentinel" : typeof value === "string" && /^\$@/.test(value) ? "promise-reference" :
 			typeof value === "string" && /^\$L/.test(value) ? "lazy-reference" : typeof value === "string" && /^\$(?!\$)/.test(value) ? "reference" : typeof value;
 		const patchObservation = (location,failure,raw,...resolved) => {
@@ -733,7 +734,8 @@ function inspectFlightBody(
 			const descriptors = Object.fromEntries(fields.map(key=>[key,value && typeof value === "object" ? Object.getOwnPropertyDescriptor(value,key) : undefined]));
 			return {location,failure,rawKind:valueKind(raw),valueKind:valueKind(value),
 				present:Object.fromEntries(fields.map(key=>[key,descriptors[key] !== undefined])),
-				fieldKinds:Object.fromEntries(fields.map(key=>[key,valueKind(descriptors[key]?.value)]))};
+				fieldKinds:Object.fromEntries(fields.map(key=>[key,valueKind(descriptors[key]?.value)])),
+				...(["vary-stream","stale-stream"].includes(failure) && iterableFailure ? {iterable:iterableFailure} : {})};
 		};
 		if (
 			typeof root.q !== "string" ||
@@ -747,14 +749,18 @@ function inspectFlightBody(
 			seen = new Set();
 		let representedOutputs = 0;
 		const iterableHasType = (raw, accepts) => {
-			if (typeof raw !== "string" || !/^\$[a-f0-9]+$/.test(raw)) return false;
-			const record = records.get(raw.slice(1));
-			return (
-				record?.stream &&
-				record.closed &&
-				["X", "x"].includes(record.tag) &&
-				record.value.slice(0, -1).every((item) => accepts(resolve(item)))
-			);
+			iterableFailure = null;
+			const direct = typeof raw === "string" && /^\$[a-f0-9]+$/.test(raw);
+			const record = direct ? records.get(raw.slice(1)) : undefined;
+			const observation = {referenceForm:direct ? "model-reference" : typeof raw === "string" && plainPath.test(raw) ? "outlined-path" : "other",
+				targetKnown:record !== undefined,targetTag:record?.tag ?? null,stream:record ? record.stream : null,closed:record ? record.closed : null,
+				yieldCount:record?.stream && ["X","x"].includes(record.tag) ? record.value.length-(record.closed?1:0) : null,firstRejectedYield:null};
+			if (!direct || !record?.stream || !record.closed || !["X","x"].includes(record.tag)) { iterableFailure=observation; return false; }
+			for (const item of record.value.slice(0,-1)) {
+				const value = resolve(item);
+				if (!accepts(value)) { observation.firstRejectedYield={rawKind:valueKind(item),resolvedKind:valueKind(value)}; iterableFailure=observation; return false; }
+			}
+			return true;
 		};
 		const varyId = (value) =>
 			value === 0 ||
