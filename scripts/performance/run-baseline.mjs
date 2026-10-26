@@ -1496,8 +1496,8 @@ export async function measure(
 				recordFinalizationFailure("restore-original-state", "restoration-error");
 			}
 		}
-		await closePrimaryContext({ context, transport, sample, beforeClose: browserObservation ? async () => {
-			try { await browserObservation.close(); }
+		await closePrimaryContext({ context, transport, sample, beforeClose: browserObservation ? async ({ deadlineMs }) => {
+			try { await browserObservation.close({ deadlineMs }); }
 			catch { recordFinalizationFailure("browser-control-observation", "observation-incomplete"); }
 		} : undefined });
 		if (observerVisit) {

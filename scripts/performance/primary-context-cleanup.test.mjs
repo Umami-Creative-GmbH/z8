@@ -16,6 +16,14 @@ const { BasicTracerProvider } = require("@opentelemetry/sdk-trace-base");
 const { SpanKind, ROOT_CONTEXT, trace } = require("@opentelemetry/api");
 const pause = (ms) => new Promise((done) => setTimeout(done, ms));
 
+test("context observer receives the existing absolute cleanup deadline before context close", async (t) => {
+  t.mock.method(performance, "now", () => 100);
+  const calls = [];
+  await closePrimaryContext({ sample: {}, context: { close: async () => calls.push("close") },
+    beforeClose: async ({ deadlineMs }) => { assert.equal(deadlineMs, 10100); calls.push("metadata"); } });
+  assert.deepEqual(calls, ["metadata", "close"]);
+});
+
 test("primary closes after pending HTTP finishes and a real SDK SERVER span ends, preserving fixed snapshots", async () => {
   const id = "d".repeat(32),
     coverage = new FixtureNativeCoverage();

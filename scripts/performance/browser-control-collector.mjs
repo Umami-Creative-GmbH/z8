@@ -13,6 +13,11 @@ export const controlResponseHeader = "x-z8-fixture-response-id";
 export const controlDocumentHeader = "x-z8-fixture-document-generation";
 export const mixedBrowserWorkScope = "all-mixed-context-work-before-first-app-io-through-finite-settlement-v1";
 const sha = (value) => createHash("sha256").update(value).digest("hex");
+const shaChunks = (chunks) => {
+	const hash = createHash("sha256");
+	for (const chunk of chunks) hash.update(chunk);
+	return hash.digest("hex");
+};
 
 /** Read the compiled source boundary before app/control/browser IO; never infer a missing flag. */
 export async function readBrowserControlBinding({ plan, manifestPath }) {
@@ -47,15 +52,85 @@ const selectedHeaders = [
 	"next-router-prefetch",
 	"next-router-segment-prefetch",
 	"next-router-state-tree",
+	"next-url",
 	"next-action",
 	"accept",
+	"accept-encoding",
 	"accept-language",
+	"cookie",
+	"authorization",
 	controlDocumentHeader,
 ];
 const lowerHeaders = (headers = {}) =>
 	Object.fromEntries(
 		Object.entries(headers).map(([k, v]) => [k.toLowerCase(), String(v)]),
 	);
+
+/** Cookie values live only in the actual browser snapshot and temporary hashing input. */
+export function createPrincipalEpochObserver(contextId) {
+	let before, after, scopeClosed = false, readErrors = 0, pendingReads = 0, observationErrors = 0, overflow = 0, unknownResponseHeaders = 0;
+	const setCookies = new Map();
+	const unknown = () => ({ known: false, cookieCount: null, sha256: null });
+	const snapshotCookies = (cookies) => {
+		if (!Array.isArray(cookies) || cookies.length > controlCancellationPolicy.recordLimit || cookies.some((cookie) =>
+			!cookie || ["name", "domain", "path", "value"].some((key) => typeof cookie[key] !== "string") || cookie.partitionKey !== undefined)) return unknown();
+		const rows = cookies.map(({ name, domain, path, value }) => [name, domain, path, value]).sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
+		if (new Set(rows.map((row) => JSON.stringify(row.slice(0, 3)))).size !== rows.length) return unknown();
+		const bytes = JSON.stringify(rows);
+		if (Buffer.byteLength(bytes) > controlCancellationPolicy.encodedLimit) return unknown();
+		return { known: true, cookieCount: rows.length, sha256: sha(bytes) };
+	};
+	return {
+		readStarted() { pendingReads++; },
+		readFinished() { pendingReads--; },
+		start(cookies) {
+			if (before) { observationErrors++; return; }
+			before = snapshotCookies(cookies);
+		},
+		end(cookies) {
+			if (scopeClosed) { observationErrors++; return; }
+			after = snapshotCookies(cookies); scopeClosed = true;
+		},
+		readFailure(stage) {
+			readErrors++;
+			if (stage === "start" && !before) before = unknown();
+			else if (stage === "end" && !scopeClosed) { after = unknown(); scopeClosed = true; }
+			else observationErrors++;
+		},
+		response(requestId, headers) {
+			if (!headers || typeof headers !== "object" || Array.isArray(headers)) { unknownResponseHeaders++; return; }
+			const value = lowerHeaders(headers)["set-cookie"];
+			if (value === undefined) return;
+			if (typeof requestId !== "string" || setCookies.size >= controlCancellationPolicy.recordLimit) { overflow++; return; }
+			const digest = sha(value);
+			if (setCookies.has(requestId) && setCookies.get(requestId) !== digest) observationErrors++;
+			setCookies.set(requestId, digest);
+		},
+		snapshot() {
+			const actualBefore = before ?? unknown(), actualAfter = after ?? unknown();
+			return { protocol: "actual-browser-cookie-boundaries-v1", contextId, before: { ...actualBefore }, after: { ...actualAfter },
+				matchesAtBoundaries: actualBefore.known && actualAfter.known ? actualBefore.sha256 === actualAfter.sha256 : null,
+				scopeClosed, observedSetCookieResponses: setCookies.size, unknownResponseHeaders, readErrors, pendingReads, observationErrors, overflow,
+				stablePrincipalClaim: false };
+		},
+	};
+}
+
+/** A metadata read only: never waits past the caller's existing off-critical deadline. */
+export async function capturePrincipalBoundary({ context, observer, stage, deadlineMs }) {
+	const remaining = deadlineMs - performance.now();
+	if (!["start", "end"].includes(stage) || !Number.isFinite(remaining) || remaining <= 0 || remaining > 10000 || typeof context?.cookies !== "function") {
+		observer.readFailure(stage); return;
+	}
+	let timer;
+	observer.readStarted();
+	const actual = Promise.resolve().then(() => context.cookies()).finally(() => observer.readFinished());
+	try {
+		const cookies = await Promise.race([actual, new Promise((_, reject) => { timer = setTimeout(() => reject(Error("Cookie metadata deadline elapsed.")), remaining); })]);
+		observer[stage](cookies);
+	} catch { observer.readFailure(stage); }
+	finally { clearTimeout(timer); }
+}
 export function controlRequestIdentity(contextId, url, method, headers) {
 	const h = lowerHeaders(headers);
 	const action = h["next-action"] !== undefined;
@@ -96,12 +171,21 @@ export function controlRequestIdentity(contextId, url, method, headers) {
 }
 export function controlResponseMetadata(headers, status) {
 	const h = lowerHeaders(headers);
+	const varyValue = h.vary;
+	const boundedVary = headers !== undefined && headers !== null && typeof headers === "object" && !Array.isArray(headers) &&
+		(varyValue === undefined || varyValue.length <= 1024);
+	const varyFields = boundedVary && varyValue !== undefined ? varyValue.split(",").map((field) => field.trim().toLowerCase()) : [];
+	const unknownVaryFields = varyFields.filter((field) => !selectedHeaders.includes(field));
+	const vary = { known: boundedVary && unknownVaryFields.length === 0,
+		fields: [...new Set(varyFields.filter((field) => selectedHeaders.includes(field)))].sort(),
+		star: varyFields.includes("*"), unknownFields: boundedVary ? unknownVaryFields.length : null };
 	const swr = /(?:^|,)\s*stale-while-revalidate\s*=\s*(\d+)\s*(?:,|$)/i.exec(
 		h["cache-control"] ?? "",
 	);
 	const seconds = swr ? Number(swr[1]) : null;
 	return {
 		status,
+		vary,
 		flight: /^text\/x-component(?:;|$)/i.test(h["content-type"] ?? ""),
 		staleWhileRevalidateSeconds: Number.isSafeInteger(seconds) ? seconds : null,
 		proxyResponseId: /^[a-f0-9]{32}\.[1-9]\d{0,9}$/.test(
@@ -121,6 +205,7 @@ export function createBrowserControlCollector({
 	readBody,
 	readStream,
 	captureContextFailures = false,
+	principalEpoch = createPrincipalEpochObserver(contextId),
 	proxyObservation = () => ({
 		rows: [],
 		installed: false,
@@ -206,6 +291,8 @@ export function createBrowserControlCollector({
 						result.body,
 						result.base64Encoded ? "base64" : "utf8",
 					);
+					row.bodyReadbackReceipt = { available: true, decodedBytes: bytes.length, bodySha256: sha(bytes),
+						terminal: row.failed ? "failed" : row.loadingFinished ? "finished" : "pending", naturalEOFClaim: false };
 					row.bodyProof = inspectRequiredFlightBody(bytes, {
 						action: row.action,
 						cachedNavigations: compiledCachedNavigations,
@@ -233,8 +320,10 @@ export function createBrowserControlCollector({
 			protocol: "passive-network-copy-v1",
 			sourceRevision: browserRevision,
 			captureComplete,
+			byteCoverageExact: captureComplete,
 			terminal: stream.terminal,
 			capturedBytes: stream.bytes,
+			capturedBodySha256: shaChunks(stream.chunks),
 			observedDataLength: stream.observed,
 			reason: stream.reason ?? (captureComplete ? null : "byte-coverage-gap"),
 		};
@@ -338,9 +427,10 @@ export function createBrowserControlCollector({
 		row.requestHeadersKnown = true;
 	};
 	const applyResponseExtra = (row, metadata) => {
+		row.extraResponseVary = metadata.vary;
 		if (row.status !== undefined)
 			metadata = { ...metadata, status: row.status };
-		Object.assign(row, metadata);
+		Object.assign(row, metadata, { vary: row.initialResponseVary ?? metadata.vary });
 	};
 	const snapshot = () => {
 		const failures = rows().filter((row) => row.failed),
@@ -383,6 +473,7 @@ export function createBrowserControlCollector({
 		});
 		return {
 			contextId,
+			principalEpoch: principalEpoch.snapshot(),
 			rawMeasuredFailedRequests,
 			diagnostics: {
 				earlyResponseExtra: {
@@ -427,6 +518,9 @@ export function createBrowserControlCollector({
 						prefetch: row.prefetch,
 						status: row.status ?? null,
 						requestHeadersKnown: row.requestHeadersKnown === true,
+						vary: row.vary ?? null,
+						initialResponseVary: row.initialResponseVary ?? null,
+						extraResponseVary: row.extraResponseVary ?? null,
 						headerKnowledgeSource:
 							row.requestHeadersKnown === true
 								? "request-extra-info"
@@ -450,6 +544,9 @@ export function createBrowserControlCollector({
 								...headerProvenance(candidate),
 								bodyProofReason: candidate.bodyProof?.reason ?? null,
 								bodyComplete: candidate.bodyProof?.complete === true,
+								proxyResponseId: candidate.proxyResponseId ?? null,
+								vary: candidate.vary ?? null,
+								bodyReadbackReceipt: candidate.bodyReadbackReceipt ?? null,
 							})),
 							selectedTruncated: cached.length > 8,
 							sameUrlMethod: cached.length,
@@ -479,6 +576,8 @@ export function createBrowserControlCollector({
 								...headerProvenance(candidate),
 								complete: candidate.complete,
 								canceled: candidate.canceled,
+								vary: candidate.vary ?? null,
+								transportBodyReceipt: candidate.transportBodyReceipt ?? null,
 							})),
 							selectedTruncated: selectedPackets.length > 8,
 							sameUrlMethod: candidates.length,
@@ -514,6 +613,7 @@ export function createBrowserControlCollector({
 					failed: row.failed === true,
 					action: row.action,
 					bodyReadbackComplete: row.bodyReadbackComplete === true,
+					bodyReadbackReceipt: row.bodyReadbackReceipt ?? null,
 					streamReceipt: row.streamReceipt ?? null,
 					bodyProof: row.bodyProof ?? null,
 				})),
@@ -540,8 +640,10 @@ export function createBrowserControlCollector({
 						protocol: "passive-network-copy-v1",
 						sourceRevision: browserRevision,
 						captureComplete: false,
+						byteCoverageExact: false,
 						terminal: "scope-ended",
 						capturedBytes: row.stream.bytes,
+						capturedBodySha256: shaChunks(row.stream.chunks),
 						observedDataLength: row.stream.observed,
 						reason: "scope-ended-before-terminal",
 					};
@@ -603,6 +705,7 @@ export function createBrowserControlCollector({
 			else overflow++;
 		},
 		response(event) {
+			principalEpoch.response(event.requestId, event.response.headers);
 			const row = requests.get(event.requestId);
 			if (!row) {
 				missingEvent("responseBeforeRequest");
@@ -616,9 +719,11 @@ export function createBrowserControlCollector({
 					fromServiceWorker: event.response.fromServiceWorker === true,
 				},
 			);
+			row.initialResponseVary = row.vary;
 			startStream(row);
 		},
 		responseExtra(event) {
+			principalEpoch.response(event.requestId, event.headers);
 			const row = requests.get(event.requestId);
 			const metadata = {
 				...controlResponseMetadata(event.headers, event.statusCode),
@@ -698,6 +803,7 @@ export function createBrowserControlCollector({
 /** Optional prospective installation; callers retain their normal measurement boundaries. */
 export async function installBrowserControlCollector({
 	page,
+	context,
 	transport,
 	origin,
 	headers,
@@ -707,6 +813,7 @@ export async function installBrowserControlCollector({
 	captureContextFailures = false,
 }) {
 	const session = await page.createCDPSession();
+	const principalEpoch = createPrincipalEpochObserver(contextId);
 	const proxy = createProxyControlCollector({
 		contextId,
 		compiledCachedNavigations,
@@ -722,6 +829,7 @@ export async function installBrowserControlCollector({
 		browserRevision,
 		compiledCachedNavigations,
 		captureContextFailures,
+		principalEpoch,
 		proxyObservation,
 		readBody: (requestId) =>
 			session.send("Network.getResponseBody", { requestId }),
@@ -746,6 +854,7 @@ export async function installBrowserControlCollector({
 			}
 		});
 	await session.send("Network.enable");
+	await capturePrincipalBoundary({ context, observer: principalEpoch, stage: "start", deadlineMs: performance.now() + 10000 });
 	let generation = 0;
 	const originals = new Map();
 	for (const method of ["goto", "reload", "goBack"]) {
@@ -765,10 +874,13 @@ export async function installBrowserControlCollector({
 	collector.installed();
 	return {
 		...collector,
-		async close() {
-			collector.endScope();
-			for (const [method, original] of originals) page[method] = original;
-			await session.detach();
+		async close({ deadlineMs } = {}) {
+			try { await capturePrincipalBoundary({ context, observer: principalEpoch, stage: "end", deadlineMs }); }
+			finally {
+				collector.endScope();
+				for (const [method, original] of originals) page[method] = original;
+				await session.detach();
+			}
 		},
 	};
 }
@@ -865,6 +977,8 @@ export function createProxyControlCollector({
 						bytes = inflateSync(bytes, options);
 					else if (!["", "identity"].includes(row.encoding))
 						throw Error("Unsupported encoding");
+					row.transportBodyReceipt = { protocol: "proxy-natural-eof-decoded-bytes-v1", naturalEOF: true,
+						decodedBytes: bytes.length, bodySha256: sha(bytes) };
 					row.bodyProof = inspectRequiredFlightBody(bytes, {
 						action: row.action,
 						cachedNavigations: compiledCachedNavigations,

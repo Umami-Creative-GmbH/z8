@@ -12,6 +12,9 @@ import {
 } from "./control-cancellation-evidence.mjs";
 import {
 	controlRequestIdentity,
+	controlResponseMetadata,
+	createPrincipalEpochObserver,
+	capturePrincipalBoundary,
 	readBrowserControlBinding,
 	verifyBrowserControlBrowser,
 	createBrowserControlCollector,
@@ -50,6 +53,75 @@ test("runtime-shell contract is selected only from the actual header3 without a 
 	assert.equal(runtime.requestKind, "runtime-shell");
 	assert.equal(controlRequestIdentity(contextId, url, "GET", { RSC: "1", "next-router-prefetch": "2" }).requestKind, "navigation");
 	assert.equal(controlRequestIdentity(contextId, url, "GET", { RSC: "1", "next-router-prefetch": "3", "next-router-segment-prefetch": "/_tree" }).requestKind, "route-tree");
+});
+
+test("request identity retains semantic NextUrl, encoding and principal dimensions without raw values", () => {
+	const base = { ...headers, "next-url": "/PRIVATE_PATH", "accept-encoding": "gzip", Cookie: "PRIVATE_COOKIE", Authorization: "PRIVATE_AUTH" };
+	const original = controlRequestIdentity(contextId, url, "GET", base);
+	for (const field of ["next-url", "accept-encoding", "Cookie", "Authorization"]) {
+		const changed = controlRequestIdentity(contextId, url, "GET", { ...base, [field]: "PRIVATE_CHANGED" });
+		assert.notEqual(original.requestHeadersSha256, changed.requestHeadersSha256, field);
+		assert.notEqual(original.withoutTechnicalDocumentSha256, changed.withoutTechnicalDocumentSha256, field);
+	}
+	assert.doesNotMatch(JSON.stringify(original), /PRIVATE_PATH|PRIVATE_COOKIE|PRIVATE_AUTH/);
+});
+
+test("response Vary is bounded technical knowledge, not a generic cache exemption", () => {
+	const known = controlResponseMetadata({ Vary: "RSC, Next-Router-Prefetch, Next-URL, Accept-Encoding" }, 200).vary;
+	assert.deepEqual(known, { known: true, fields: ["accept-encoding", "next-router-prefetch", "next-url", "rsc"], star: false, unknownFields: 0 });
+	assert.equal(controlResponseMetadata({}, 200).vary.known, true);
+	for (const value of ["*", "PRIVATE_UNKNOWN_HEADER", "rsc," + "x".repeat(1024)]) {
+		const metadata = controlResponseMetadata({ Vary: value }, 200);
+		assert.equal(metadata.vary.known, false);
+		assert.doesNotMatch(JSON.stringify(metadata), /PRIVATE_UNKNOWN_HEADER|xxx/);
+	}
+	assert.equal(controlResponseMetadata(undefined, 200).vary.known, false);
+});
+
+test("principal metadata records actual boundary cookie equality while retaining SetCookie uncertainty", () => {
+	const cookie = { name: "session", domain: "localhost", path: "/", value: "PRIVATE_COOKIE", expires: 10 };
+	const observer = createPrincipalEpochObserver(contextId);
+	observer.start([cookie]);
+	observer.response("response", { "Set-Cookie": "session=PRIVATE_COOKIE; Max-Age=30" });
+	observer.response("response", { "set-cookie": "session=PRIVATE_COOKIE; Max-Age=30" });
+	observer.end([{ ...cookie, expires: 50 }]);
+	const proof = observer.snapshot();
+	assert.equal(proof.matchesAtBoundaries, true);
+	assert.equal(proof.before.cookieCount, 1);
+	assert.equal(proof.observedSetCookieResponses, 1);
+	assert.equal(proof.scopeClosed, true);
+	assert.equal(proof.stablePrincipalClaim, false, "Boundary equality alone does not prove no intermediate change.");
+	assert.doesNotMatch(JSON.stringify(proof), /PRIVATE_COOKIE|session=|Max-Age/);
+	const changed = createPrincipalEpochObserver(contextId);
+	changed.start([cookie]); changed.end([{ ...cookie, value: "PRIVATE_CHANGED" }]);
+	assert.equal(changed.snapshot().matchesAtBoundaries, false);
+});
+
+test("missing, malformed or partitioned cookie snapshots stay explicitly unknown", () => {
+	for (const cookies of [undefined, [{ name: "session" }], [{ name: "session", domain: "localhost", path: "/", value: "PRIVATE", partitionKey: {} }]]) {
+		const observer = createPrincipalEpochObserver(contextId);
+		observer.start(cookies); observer.end([]);
+		assert.equal(observer.snapshot().before.known, false);
+		assert.equal(observer.snapshot().matchesAtBoundaries, null);
+	}
+	const observer = createPrincipalEpochObserver(contextId);
+	observer.start([]); observer.readFailure("end");
+	assert.equal(observer.snapshot().after.known, false);
+	assert.equal(observer.snapshot().readErrors, 1);
+	assert.equal(observer.snapshot().matchesAtBoundaries, null);
+});
+
+test("cookie capture delegates actual context reads once and cannot renew an expired cleanup deadline", async () => {
+	let calls = 0;
+	const context = { async cookies() { calls++; return [{ name: "session", domain: "localhost", path: "/", value: "PRIVATE" }]; } };
+	const observer = createPrincipalEpochObserver(contextId);
+	await capturePrincipalBoundary({ context, observer, stage: "start", deadlineMs: performance.now() + 1000 });
+	await capturePrincipalBoundary({ context, observer, stage: "end", deadlineMs: performance.now() - 1 });
+	assert.equal(calls, 1);
+	assert.equal(observer.snapshot().before.known, true);
+	assert.equal(observer.snapshot().after.known, false);
+	assert.equal(observer.snapshot().matchesAtBoundaries, null);
+	assert.equal(observer.snapshot().pendingReads, 0);
 });
 
 test("normal admission binds the actual manifest before IO and actual browser revision without a mode default", async () => {
@@ -405,6 +477,7 @@ test("proxy EOF does not hold forwarding for decoding and genuine upstream error
 });
 
 test("installation preserves navigation arguments/results/errors and adds only declared identity metadata", async () => {
+	let cookieReads = 0;
 	const session = new EventEmitter(),
 		calls = [],
 		error = Error("original-error");
@@ -431,6 +504,7 @@ test("installation preserves navigation arguments/results/errors and adds only d
 	};
 	const observer = await installBrowserControlCollector({
 		page,
+		context: { async cookies() { cookieReads++; return [{ name: "session", domain: "localhost", path: "/", value: "PRIVATE_COOKIE" }]; } },
 		transport,
 		origin,
 		headers: { "Accept-Language": "en" },
@@ -444,8 +518,11 @@ test("installation preserves navigation arguments/results/errors and adds only d
 		2,
 	);
 	assert.equal(calls[1][1].headers["Accept-Language"], "en");
-	await observer.close();
+	await observer.close({ deadlineMs: performance.now() + 1000 });
 	assert.equal(page.goto, goto);
+	assert.equal(cookieReads, 2);
+	assert.equal(observer.snapshot().principalEpoch.matchesAtBoundaries, true);
+	assert.equal(observer.snapshot().principalEpoch.stablePrincipalClaim, false);
 });
 
 test("the actual compiled unmarked fallback is passed identically to browser and proxy readers", async () => {
@@ -521,10 +598,10 @@ test("measured selection uses the actual raw listener ID list rather than all-ph
 });
 
 test("passive stream bytes survive canceled getBody and prove only exact naturally completed proxy protocol", async () => {
-	for (const mode of ["exact", "gap", "different-proxy-body", "late-ack"]) {
+	for (const mode of ["exact", "gap", "different-proxy-body", "late-ack", "unsupported-flight"]) {
 		const actionHeaders = { ...headers, "next-action": "b".repeat(40) };
 		const bytes = Buffer.from(
-			'0:{"a":"$@1","q":"","i":false}\n1:{"result":true}\n',
+			mode === "unsupported-flight" ? '0:{"a":PRIVATE_INVALID}\n' : '0:{"a":"$@1","q":"","i":false}\n1:{"result":true}\n',
 		);
 		const prefix = bytes.subarray(0, 13),
 			tail = bytes.subarray(13);
@@ -599,6 +676,14 @@ test("passive stream bytes survive canceled getBody and prove only exact natural
 		assert.equal(proof.measured.provenControls, mode === "exact" ? 1 : 0);
 		assert.equal(proof.measured.unknownFailures, mode === "exact" ? 0 : 1);
 		assert.equal(proof.bodyReceipts[0].bodyReadbackComplete, false);
+		if (["exact", "unsupported-flight"].includes(mode)) {
+			const stream = proof.bodyReceipts[0].streamReceipt;
+			assert.equal(stream.byteCoverageExact, true);
+			assert.equal(stream.capturedBodySha256, createHash("sha256").update(bytes).digest("hex"));
+			assert.equal(proxy.snapshot().rows[0].transportBodyReceipt.bodySha256, stream.capturedBodySha256);
+			assert.equal(proxy.snapshot().rows[0].transportBodyReceipt.naturalEOF, true);
+			if (mode === "unsupported-flight") assert.equal(proof.bodyReceipts[0].bodyProof.reason, "invalid-record");
+		}
 		assert.equal(
 			proof.bodyReceipts[0].streamReceipt.terminal,
 			mode === "late-ack" ? "scope-ended" : "failed",
