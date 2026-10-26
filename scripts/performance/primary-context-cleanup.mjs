@@ -134,6 +134,7 @@ export async function waitForPrimaryContextDrain(
   }
 }
 export async function closePrimaryContext({ context, transport, sample, beforeClose }) {
+  const deadlineMs = performance.now() + 10000;
   if (transport) {
     try {
       sample.nativeCleanup = await waitForPrimaryContextDrain(transport);
@@ -158,6 +159,6 @@ export async function closePrimaryContext({ context, transport, sample, beforeCl
     }
   }
   if (beforeClose) {
-    try { await beforeClose(); } finally { await context?.close(); }
+    try { await beforeClose({ deadlineMs }); } finally { await context?.close(); }
   } else await context?.close();
 }

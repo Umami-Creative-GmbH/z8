@@ -731,14 +731,17 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 		cleanupRequired ||= ownedLive;
 	} finally {
 		controls?.dispose();
+		let principalDeadlineMs;
 		try {
-			await settleMixedTransports(opened);
+			await settleMixedTransports(opened, { now: () => {
+				const at = performance.now(); principalDeadlineMs ??= at + 10000; return at;
+			} });
 		} catch {
 			stopped = true;
 			failureStage ||= "wire-settlement";
 		}
 		for (const item of opened) {
-			try { item.browserObservation?.endMeasurement(); await item.browserObservation?.close(); }
+			try { item.browserObservation?.endMeasurement(); await item.browserObservation?.close({ deadlineMs: principalDeadlineMs }); }
 			catch { stopped = true; failureStage ||= "browser-control-close"; }
 		}
 		try {

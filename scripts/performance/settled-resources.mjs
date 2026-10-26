@@ -442,7 +442,7 @@ export async function measureFixtureResources(
   const traceId = randomBytes(16).toString("hex"),
     prerequisiteTraceId = randomBytes(16).toString("hex"),
     backgroundTraceId = randomBytes(16).toString("hex");
-  let browserObservation, nativeObservationRows;
+  let browserObservation, nativeObservationRows, principalDeadlineMs;
   const observeBrowser = (method, ...args) => {
     if (!browserObservation) return;
     try { browserObservation[method](...args); }
@@ -757,7 +757,9 @@ export async function measureFixtureResources(
     if (s.notificationPermission !== "denied")
       throw Error("Fixture permission changed.");
     observer.ready(performance.now());
-    transport.wire.ready(performance.now());
+    const wireReadyAt = performance.now();
+    transport.wire.ready(wireReadyAt);
+    principalDeadlineMs = wireReadyAt + 10000;
     s.atReady = observer.state(performance.now());
     s.wireAtReady = transport.wire.state(performance.now());
     stage = "settle-resources";
@@ -827,7 +829,7 @@ export async function measureFixtureResources(
     await client?.detach().catch(() => {});
     observeBrowser("endMeasurement");
     s.failedRequests = observer.state(performance.now()).failedRequests;
-    try { await browserObservation?.close(); }
+    try { await browserObservation?.close({ deadlineMs: principalDeadlineMs }); }
     catch { cleanupFailure("browser-control-observation", "observation-incomplete"); }
     try {
       await context?.close();
