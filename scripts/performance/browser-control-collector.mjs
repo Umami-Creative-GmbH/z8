@@ -97,6 +97,7 @@ export function createBrowserControlCollector({
 }) {
 	const requests = new Map(),
 		extra = new Map(),
+		responseExtras = new Map(),
 		pending = new Set(),
 		queue = [],
 		measuredFailureIds = [];
@@ -108,9 +109,11 @@ export function createBrowserControlCollector({
 		overflow = 0,
 		missing = 0,
 		retained = 0,
-		streamRetained = 0;
+		streamRetained = 0,
+		joinedResponseExtras = 0;
 	const limited = () =>
-		requests.size + extra.size >= controlCancellationPolicy.recordLimit;
+		requests.size + extra.size + responseExtras.size >=
+		controlCancellationPolicy.recordLimit;
 	const rows = () => [...requests.values()];
 	const missingFamilies = {
 		duplicateRequest: 0,
@@ -294,6 +297,11 @@ export function createBrowserControlCollector({
 		Object.assign(row, identity);
 		row.requestHeadersKnown = true;
 	};
+	const applyResponseExtra = (row, metadata) => {
+		if (row.status !== undefined)
+			metadata = { ...metadata, status: row.status };
+		Object.assign(row, metadata);
+	};
 	const snapshot = () => {
 		const failures = rows().filter((row) => row.failed),
 			responses = rows().filter((row) => row.loadingFinished);
@@ -305,7 +313,7 @@ export function createBrowserControlCollector({
 			overflow: overflow + proxy.overflow,
 			// ExtraInfo is optional by CDP contract, not an event-loss census.
 			// Missing positive request identity still leaves that failure UNKNOWN.
-			missing,
+			missing: missing + responseExtras.size,
 			optionalRequestExtraInfoAbsent: failures.filter(
 				(row) => !row.requestHeadersKnown,
 			).length,
@@ -335,8 +343,14 @@ export function createBrowserControlCollector({
 		});
 		return {
 			diagnostics: {
+				earlyResponseExtra: {
+					joined: joinedResponseExtras,
+					orphan: responseExtras.size,
+				},
 				missingFamilies: {
 					...missingFamilies,
+					responseExtraBeforeRequest:
+						missingFamilies.responseExtraBeforeRequest + responseExtras.size,
 					failedRequestHeadersUnknown: failures.filter(
 						(row) => !row.requestHeadersKnown,
 					).length,
@@ -540,6 +554,11 @@ export function createBrowserControlCollector({
 				applyExtra(row, extra.get(event.requestId));
 				extra.delete(event.requestId);
 			}
+			if (responseExtras.has(event.requestId)) {
+				applyResponseExtra(row, responseExtras.get(event.requestId));
+				responseExtras.delete(event.requestId);
+				joinedResponseExtras++;
+			}
 		},
 		requestExtra(event) {
 			const row = requests.get(event.requestId);
@@ -566,15 +585,20 @@ export function createBrowserControlCollector({
 		},
 		responseExtra(event) {
 			const row = requests.get(event.requestId);
+			const metadata = {
+				...controlResponseMetadata(event.headers, event.statusCode),
+				httpErrorObserved: event.statusCode >= 400,
+			};
 			if (!row) {
-				missingEvent("responseExtraBeforeRequest");
+				if (responseExtras.has(event.requestId)) {
+					errors++;
+					responseExtras.get(event.requestId).httpErrorObserved ||=
+						metadata.httpErrorObserved;
+				} else if (limited()) overflow++;
+				else responseExtras.set(event.requestId, metadata);
 				return;
 			}
-			const metadata = controlResponseMetadata(event.headers, event.statusCode);
-			if (row.status !== undefined) metadata.status = row.status;
-			Object.assign(row, metadata, {
-				httpErrorObserved: event.statusCode >= 400,
-			});
+			applyResponseExtra(row, metadata);
 		},
 		finished(event) {
 			const row = requests.get(event.requestId);

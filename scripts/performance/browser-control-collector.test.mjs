@@ -170,6 +170,56 @@ test("measured cancellation without positive request identity remains unknown de
 	assert.equal(cleanBrowserFailureEvidence(result.measured, 1), false);
 });
 
+test("early response ExtraInfo joins its exact later request while orphan and conflicting metadata stay blocking", async () => {
+	const make = () =>
+		createBrowserControlCollector({
+			contextId,
+			origin,
+			readBody: async () => {
+				throw Error("unavailable");
+			},
+			proxyObservation: () => ({
+				installed: true,
+				rows: [],
+				errors: 0,
+				overflow: 0,
+				pendingBodies: 0,
+			}),
+		});
+	for (const mode of ["joined", "orphan", "conflict"]) {
+		const collector = make();
+		collector.installed();
+		collector.beginMeasurement();
+		const extra = {
+			requestId: "same-id",
+			statusCode: 200,
+			headers: responseHeaders,
+		};
+		collector.responseExtra(extra);
+		if (mode === "conflict")
+			collector.responseExtra({ ...extra, statusCode: 500 });
+		if (mode !== "orphan") collector.request(event("same-id", 1));
+		collector.endMeasurement();
+		collector.endScope();
+		await tick();
+		const result = collector.snapshot();
+		assert.equal(result.measured.coverage.missing, mode === "orphan" ? 1 : 0);
+		assert.equal(result.measured.coverage.errors, mode === "conflict" ? 1 : 0);
+		assert.equal(
+			result.diagnostics.earlyResponseExtra.joined,
+			mode === "orphan" ? 0 : 1,
+		);
+		assert.equal(
+			result.diagnostics.earlyResponseExtra.orphan,
+			mode === "orphan" ? 1 : 0,
+		);
+		assert.equal(
+			cleanBrowserFailureEvidence(result.measured, 0),
+			mode === "joined",
+		);
+	}
+});
+
 test("actual CDP/body and proxy events produce a control proof without publishing payload or header values", async () => {
 	const proxy = createProxyControlCollector({ contextId });
 	proxy.installed();
