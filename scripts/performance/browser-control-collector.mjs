@@ -303,8 +303,12 @@ export function createBrowserControlCollector({
 			scopeClosed: closed,
 			errors: errors + proxy.errors,
 			overflow: overflow + proxy.overflow,
-			missing:
-				missing + failures.filter((row) => !row.requestHeadersKnown).length,
+			// ExtraInfo is optional by CDP contract, not an event-loss census.
+			// Missing positive request identity still leaves that failure UNKNOWN.
+			missing,
+			optionalRequestExtraInfoAbsent: failures.filter(
+				(row) => !row.requestHeadersKnown,
+			).length,
 			pendingBodies: pending.size + queue.length + proxy.pendingBodies,
 		};
 		const data = { responses, proxy: proxy.rows, coverage, browserRevision };
@@ -317,6 +321,9 @@ export function createBrowserControlCollector({
 			...coverage,
 			installed: coverage.installed && measurementStarted,
 			scopeClosed: coverage.scopeClosed && measurementClosed,
+			optionalRequestExtraInfoAbsent: measuredRows.filter(
+				(row) => row.failed && !row.requestHeadersKnown,
+			).length,
 			missing:
 				coverage.missing + measuredRows.filter((row) => !row.failed).length,
 		};

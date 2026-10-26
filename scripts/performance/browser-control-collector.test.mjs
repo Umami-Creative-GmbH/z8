@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import test from "node:test";
 import { setImmediate as tick } from "node:timers/promises";
-import { chromiumSWRRevision } from "./control-cancellation-evidence.mjs";
+import {
+	chromiumSWRRevision,
+	cleanBrowserFailureEvidence,
+} from "./control-cancellation-evidence.mjs";
 import {
 	controlRequestIdentity,
 	createBrowserControlCollector,
@@ -64,7 +67,7 @@ test("header provenance isolates only the technical document token and preserves
 	assert.doesNotMatch(JSON.stringify(changedSemantic), /PRIVATE_ROUTER_STATE/);
 });
 
-test("safe diagnostics identify missing event families without changing blocking coverage", async () => {
+test("missing event families remain blocking and optional header-event absence is separately recorded", async () => {
 	const collector = createBrowserControlCollector({
 		contextId,
 		origin,
@@ -102,7 +105,8 @@ test("safe diagnostics identify missing event families without changing blocking
 	assert.equal(result.measured.complete, false);
 	assert.equal(result.measured.rawFailedRequests, 1);
 	assert.equal(result.measured.unknownFailures, 1);
-	assert.equal(result.measured.coverage.missing, 7);
+	assert.equal(result.measured.coverage.missing, 6);
+	assert.equal(result.measured.coverage.optionalRequestExtraInfoAbsent, 1);
 	assert.deepEqual(result.diagnostics.missingFamilies, {
 		duplicateRequest: 1,
 		responseBeforeRequest: 1,
@@ -128,6 +132,42 @@ test("safe diagnostics identify missing event families without changing blocking
 			(value) => value === null || /^[a-f0-9]{64}$/.test(value),
 		),
 	);
+});
+
+test("measured cancellation without positive request identity remains unknown despite complete event observation", async () => {
+	const collector = createBrowserControlCollector({
+		contextId,
+		origin,
+		readBody: async () => {
+			throw Error("unavailable");
+		},
+		proxyObservation: () => ({
+			installed: true,
+			rows: [],
+			errors: 0,
+			overflow: 0,
+			pendingBodies: 0,
+		}),
+	});
+	collector.installed();
+	collector.beginMeasurement();
+	collector.request(event("required-unknown", 1, "Other"));
+	collector.recordMeasuredFailure("required-unknown");
+	collector.failed({
+		requestId: "required-unknown",
+		errorText: "net::ERR_ABORTED",
+		canceled: true,
+	});
+	collector.endMeasurement();
+	collector.endScope();
+	await tick();
+	await tick();
+	const result = collector.snapshot();
+	assert.equal(result.measured.coverage.missing, 0);
+	assert.equal(result.measured.coverage.optionalRequestExtraInfoAbsent, 1);
+	assert.equal(result.measured.unknownFailures, 1);
+	assert.equal(result.measured.provenControls, 0);
+	assert.equal(cleanBrowserFailureEvidence(result.measured, 1), false);
 });
 
 test("actual CDP/body and proxy events produce a control proof without publishing payload or header values", async () => {
@@ -176,6 +216,15 @@ test("actual CDP/body and proxy events produce a control proof without publishin
 		canceled: true,
 	});
 	collector.endMeasurement();
+	// An unrelated all-phase failure without optional ExtraInfo is retained outside raw membership.
+	const outside = event("outside-measured", 4, "Other");
+	outside.request.url = `${origin}/outside-measured`;
+	collector.request(outside);
+	collector.failed({
+		requestId: "outside-measured",
+		errorText: "net::ERR_ABORTED",
+		canceled: true,
+	});
 	collector.endScope();
 	await tick();
 	await tick();
@@ -184,6 +233,14 @@ test("actual CDP/body and proxy events produce a control proof without publishin
 	assert.equal(proof.measured.rawFailedRequests, 1);
 	assert.equal(proof.measured.provenControls, 1);
 	assert.equal(proof.measured.unknownFailures, 0);
+	assert.equal(cleanBrowserFailureEvidence(proof.measured, 1), true);
+	assert.equal(proof.allPhase.rawFailedRequests, 2);
+	assert.equal(proof.allPhase.unknownFailures, 1);
+	assert.equal(proof.allPhase.complete, true);
+	assert.equal(
+		proof.diagnostics.missingFamilies.failedRequestHeadersUnknown,
+		1,
+	);
 	assert.equal(
 		proof.bodyReceipts.find((row) => row.requestId === "background").bodyProof
 			.complete,
