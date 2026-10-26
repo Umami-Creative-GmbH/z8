@@ -709,6 +709,45 @@ test("runtime-shell scope permits only postponed lazy output beneath a known Sus
 	assert.doesNotMatch(JSON.stringify(missingType), /dead|KNOWN_FALLBACK/);
 });
 
+test("embedded partial prefetch represents postponed component props without claiming renderable output", () => {
+	const inner = '~4:I["synthetic",[],"Component"]\n0:{"q":"","i":false,"t":{"t":{"s":"en","d":{"r":["$","$4",null,{"data":"$L9"}],"p":true,"v":null}}}}\n';
+	const outer = (value) => Buffer.concat([
+		Buffer.from('0:{"q":"","i":false,"t":{"t":{"s":"en","d":{"r":"KNOWN_MAIN","p":false,"v":null}}},"p":"$1"}\n1:R\n1:o'+Buffer.byteLength(value).toString(16)+','),
+		Buffer.from(value), Buffer.from('1:C\n'),
+	]);
+	const proof = inspectRequiredFlightBody(outer(inner), { cachedNavigations: true });
+	assert.equal(proof.complete, true);
+	assert.equal(proof.embeddedRuntimePrefetch.requiredStage, "embedded-partial-prefetch-representation");
+	assert.equal(proof.embeddedRuntimePrefetch.postponedComponentReferences, 1);
+	assert.equal(proof.embeddedRuntimePrefetch.renderableOutputClaim, false);
+	const evidence = cancellationFixture();
+	Object.assign(evidence.failures[0], { bodyProof: proof, bodyReadbackComplete: true });
+	Object.assign(evidence.proxy[0], { bodyProof: proof, complete: true, canceled: false });
+	const receipt = classifyControlCancellations(evidence);
+	assert.equal(cleanBrowserFailureEvidence(receipt, 1), true);
+	for (const changed of [{ renderableOutputClaim: true }, { postponedComponentReferences: 0 }, { requestKind: "navigation" }, { requiredStage: "embedded-runtime-prefetch-output" }]) {
+		const corrupt = structuredClone(receipt);
+		Object.assign(corrupt.records[0].proof.failure.bodyProof.embeddedRuntimePrefetch, changed);
+		assert.equal(cleanBrowserFailureEvidence(corrupt, 1), false);
+	}
+	for (const invalid of [
+		inner.replace(/^~/, '#'),
+		inner.replace('"data":"$L9"', '"data":"$9"'),
+		inner.replace('"data":"$L9"', '"data":"$@9"'),
+		inner.replace('"$","$4"', '"$","$L9"'),
+		inner.replace('"s":"en"', '"s":"$L9"'),
+		inner.replace('"p":true', '"p":"$L9"'),
+		inner.replace('"q":""', '"q":"$L9"'),
+		inner.replace('"q":""', '"q":"","required":"$L9"'),
+		inner.replace('"data":"$L9"', '"data":["$","$L9",null,{}]'),
+		inner.replace('"data":"$L9"', '"data":["$","$Sreact.suspense",null,{"fallback":"$L9","children":"$L8"}]'),
+		inner+'9:E{"digest":"SYNTHETIC_ERROR"}\n',
+	]) assert.equal(inspectRequiredFlightBody(outer(invalid), { cachedNavigations: true }).complete, false);
+	assert.equal(inspectRequiredFlightBody(Buffer.from(inner), { cachedNavigations: true }).complete, false,
+		"An ordinary main response cannot opt into the detached embedded claim.");
+	assert.equal(inspectRequiredFlightBody(Buffer.from(outer(inner).toString().replace('"KNOWN_MAIN"','"$L9"')), { cachedNavigations: true }).complete, false);
+});
+
 test("embedded runtime prefetch has exact binary framing, explicit stream close and its own required Flight graph", () => {
 	const inner = Buffer.from('#0:{"q":"","i":false,"t":{"t":{"s":"en","d":{"r":"KNOWN_INNER","p":false,"v":null}}}}\n');
 	const outer = (data, stream = "R", tag = "o", close = true, declared = data.length.toString(16)) => Buffer.concat([
