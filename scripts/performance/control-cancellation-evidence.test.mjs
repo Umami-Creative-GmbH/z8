@@ -491,11 +491,16 @@ test("outlined limits identify the existing depth or shared-work guard without r
 	assert.equal(depth.complete,false);assert.equal(depth.pathLimitObservation.guard,"existing-recursion-depth");
 	assert.equal(depth.pathLimitObservation.observedDepth,65);assert.equal(depth.pathLimitObservation.depthCap,64);
 	assert.equal(depth.pathLimitObservation.phase,"eager-parent");assert.ok(depth.pathLimitObservation.jsonDepthInParent>50);
+	assert.ok(depth.pathLimitObservation.parentMemoChecks>0);assert.ok(depth.pathLimitObservation.parentMemoAbsent>0);
+	assert.equal(depth.pathLimitObservation.parentMemoPublished,0);assert.equal(depth.pathLimitObservation.parentMemoHits,0);
 	const inner=encode(deep),outer=Buffer.concat([Buffer.from('0:{"q":"","i":false,"t":{"t":{"s":"en","d":{"r":"KNOWN_MAIN","p":false,"v":null}}},"p":"$1"}\n1:R\n1:o'+inner.length.toString(16)+','),inner,Buffer.from('1:C\n')]);
 	assert.equal(inspectRequiredFlightBody(outer,{cachedNavigations:true}).embeddedPathLimitObservation.guard,"existing-recursion-depth");
 	const work=inspect(Array(100001).fill(null));
 	assert.equal(work.complete,false);assert.equal(work.pathLimitObservation.guard,"shared-model-work");
 	assert.equal(work.pathLimitObservation.sharedModelSteps,100001);assert.equal(work.pathLimitObservation.modelCap,100000);
+	const warmed=Buffer.from('~0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:{r:["$2:leaf","$1:leaf","$1:leaf"],p:true,v:null}}}})+'\n1:{"leaf":"KNOWN"}\n2:'+JSON.stringify({leaf:"KNOWN",deep})+'\n');
+	const warmedLimit=inspectRequiredFlightBody(warmed,{cachedNavigations:true});
+	assert.ok(warmedLimit.pathLimitObservation.parentMemoHits>0);assert.ok(warmedLimit.pathLimitObservation.parentMemoPublished>0);
 	assert.doesNotMatch(JSON.stringify([depth,work]),/PRIVATE_VALUE/);
 });
 
