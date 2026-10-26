@@ -390,6 +390,47 @@ test("unsupported model reference forms and malformed UTF8 remain unknown", () =
 	assert.equal(inspectRequiredFlightBody(bytes).complete, false);
 });
 
+test("plain outlined paths project decoded element props through fulfilled own data only", () => {
+	const body=(reference,rows)=>Buffer.from('~0:{"q":"","i":false,"t":{"t":{"s":"en","d":{"r":'+JSON.stringify(reference)+',"p":true,"v":null}}}}\n'+rows);
+	const rows='1:["$","div",null,{"children":{"leaf":"KNOWN_OUTPUT"}}]\n';
+	assert.equal(inspectRequiredFlightBody(body('$1:props:children:leaf',rows),{cachedNavigations:true}).complete,true);
+	for(const [reference,models] of [
+		['$1:props:children:leaf','1:"$2"\n2:["$","div",null,{"children":{"leaf":"KNOWN_OUTPUT"}}]\n'],
+		['$1:0:leaf','1:[{"leaf":"KNOWN_OUTPUT"}]\n'],
+		['$1:length','1:[1,2]\n'],
+		['$1:child:leaf','1:{"child":"$L2"}\n2:{"leaf":"KNOWN_OUTPUT"}\n'],
+		['$1:self:leaf','1:{"self":"$1","leaf":"KNOWN_OUTPUT"}\n'],
+		['$1::leaf','1:{"":{"leaf":"KNOWN_OUTPUT"}}\n'],
+		['$1:prototype','1:{"prototype":"KNOWN_OUTPUT"}\n'],
+		['$1:leaf','1:{"leaf":"KNOWN_OUTPUT","sibling":"$Q2"}\n2:[]\n'],
+	])assert.equal(inspectRequiredFlightBody(body(reference,models),{cachedNavigations:true}).complete,true);
+	for(const [reference,models] of [
+		['$1:3:children:leaf',rows],['$1:props:constructor',rows],['$1:props:missing',rows],
+		['$1:props:__proto__','1:["$","div",null,{"__proto__":"KNOWN_OUTPUT"}]\n'],
+		['$1:leaf','1:{"leaf":"$undefined"}\n'],['$1:leaf','1:{"leaf":"KNOWN_OUTPUT","sibling":"$8"}\n'],
+		['$1:child:leaf','1:{"child":"$L8"}\n'],['$1:child:leaf','1:{"child":"$@2"}\n2:{"leaf":"KNOWN_OUTPUT"}\n'],
+		['$1:export','1:I["PRIVATE_MODULE",[],"export"]\n'],['$1:leaf','1:"$2"\n2:"$1"\n'],
+		['$01:leaf','01:{"leaf":"KNOWN_OUTPUT"}\n'],['$Q1:leaf','1:{"leaf":[]}\n'],
+		['$1:leaf','1:"$01"\n01:{"leaf":"KNOWN_OUTPUT"}\n'],
+	])assert.equal(inspectRequiredFlightBody(body(reference,models),{cachedNavigations:true}).complete,false);
+	assert.equal(inspectRequiredFlightBody(body('$1:props:children:leaf',rows+'8:E{"digest":"PRIVATE_ERROR"}\n'),{cachedNavigations:true}).complete,false);
+	const shell=(fallback,child)=>Buffer.from('~0:{"q":"","i":false,"t":{"t":{"s":"en","d":{"r":["$","$Sreact.suspense",null,{"fallback":'+JSON.stringify(fallback)+',"children":'+JSON.stringify(child)+'}],"p":true,"v":null}}}}\n1:{"value":"$L8"}\n');
+	assert.equal(inspectRequiredFlightBody(shell("KNOWN_FALLBACK","$1:value"),{cachedNavigations:true,requestKind:"runtime-shell"}).complete,true);
+	assert.equal(inspectRequiredFlightBody(shell("$1:value","KNOWN_CHILD"),{cachedNavigations:true,requestKind:"runtime-shell"}).complete,false);
+	const diagnostic=inspectRequiredFlightBody(body('$1:private-organization-value','1:{}\n'),{cachedNavigations:true});
+	assert.deepEqual(diagnostic.modelReference.pathKeyKinds,["other"]);
+	assert.doesNotMatch(JSON.stringify(diagnostic),/private|organization|\$1/);
+	assert.equal(inspectRequiredFlightBody(body('$1:'+Array(33).fill('self').join(':'),'1:{"self":"$1"}\n'),{cachedNavigations:true}).complete,false);
+	for(const result of ['{"success":false,"error":"PRIVATE_ERROR"}','"$2"']){
+		const failure=inspectRequiredFlightBody(Buffer.from('0:{"a":"$1:result"}\n1:{"result":'+result+'}\n2:{"success":false,"error":"PRIVATE_ERROR"}\n'),{action:true});
+		assert.equal(failure.complete,false);
+		assert.equal(failure.explicitActionFailure,true);
+	}
+	const text=inspectRequiredFlightBody(Buffer.from('0:{"a":"$1"}\n1:T2,$22:{"success":false,"error":"PRIVATE_ERROR"}\n'),{action:true});
+	assert.equal(text.complete,true);assert.equal(text.explicitActionFailure,false,"Opaque T text cannot become a model reference to an unreturned failure.");
+	assert.equal(inspectRequiredFlightBody(Buffer.from('0:{"a":"$1"}\n1:"$1"\n'),{action:true}).complete,false);
+});
+
 test("supported hints and framed text never mistake text containing E for a Flight error", () => {
 	const bytes = Buffer.from(
 		'#:HL["/technical.css","style"]\n0:{"b":"b","t":{"t":{"s":"","d":{"r":["$1","$$literal","$undefined"]}}}}\n1:T6,2:E{}\n',

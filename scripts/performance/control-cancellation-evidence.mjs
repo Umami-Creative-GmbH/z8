@@ -12,6 +12,7 @@ export const chromiumSWRRevision = "1d17a2e2ee147bb7d6ae2ab6abdb3a2510c17775";
 export const bodySha256 = (bytes) =>
 	createHash("sha256").update(bytes).digest("hex");
 const binaryByteWidths = Object.freeze({ A: 1, O: 1, o: 1, b: 1, U: 1, S: 2, s: 2, L: 4, l: 4, G: 4, g: 8, M: 8, m: 8, V: 1 });
+const canonicalFlightId = id => /^(0|[1-9a-f][a-f0-9]{0,12})$/.test(id) && Number.isSafeInteger(Number.parseInt(id,16));
 
 export function knownBrowserControlMetadata(metadata) {
 	return Boolean(metadata && JSON.stringify(metadata.policy) === JSON.stringify(controlCancellationPolicy) &&
@@ -40,6 +41,7 @@ function inspectFlightBody(
 		requestKind = action ? "action" : "navigation",
 	} = {}, budget, depth,
 ) {
+	const modelBudgetAtStart = budget.models;
 	const unknown = (reason, diagnostic = {}) => ({
 		complete: false,
 		reason,
@@ -99,7 +101,7 @@ function inspectFlightBody(
 			const recordOffset = offset + markerBytes;
 			const colon = body.indexOf(58, offset);
 			const id = body.subarray(offset, colon).toString();
-			if (colon < offset || !/^[a-f0-9]+$/.test(id))
+			if (colon < offset || !canonicalFlightId(id))
 				return unknown("invalid-record");
 			let start = colon + 1,
 				end,
@@ -205,13 +207,93 @@ function inspectFlightBody(
 		(action ? !Object.hasOwn(root, "a") : !Object.hasOwn(root, "t"))
 	)
 		return unknown("unsupported-root");
+	const plainPath = /^\$(0|[1-9a-f][a-f0-9]{0,12}):/;
+	let pathLimit = false;
+	const pathStep = depth => {
+		if (depth > 64 || ++budget.models > 100000) { pathLimit = true; return false; }
+		return true;
+	};
+	const elementTuple = value => Array.isArray(value) && value[0] === "$";
+	// Materialized JSON parents must not be blocked by an eager sibling. Lazy/promise values
+	// remain wrappers here; following a path through one is a separate, stricter operation.
+	const eagerParent = (value, forceElement, seen = new Set(), depth = 0) => {
+		if (!pathStep(depth)) return false;
+		if (typeof value === "string") {
+			if (/^\$(?:L|@)[a-f0-9]+$/.test(value)) return canonicalFlightId(value.slice(2));
+			if (/^\$[QWi][a-f0-9]+$/.test(value)) {
+				const id=value.slice(2),record=records.get(id);
+				if (!record || record.tag !== null || record.stream || !Array.isArray(record.value) || (value[1] === "Q" && !record.value.every(pair=>Array.isArray(pair)&&pair.length===2))) return false;
+				if (seen.has(id)) return true;
+				return eagerParent(record.value,false,new Set([...seen,id]),depth + 1);
+			}
+			if (/^\$[a-f0-9]+$/.test(value)) {
+				const id = value.slice(1), record = records.get(id);
+				if (!record || record.tag === "I") return false;
+				if (record.tag === "T" || record.stream) return true;
+				if (seen.has(id)) return record.value && typeof record.value === "object";
+				return eagerParent(record.value, forceElement, new Set([...seen,id]), depth + 1);
+			}
+			if (plainPath.test(value)) {
+				const selected = outlined(value, depth + 1);
+				return selected.known && eagerParent(selected.value,forceElement,seen,depth + 1);
+			}
+			return !value.startsWith("$") || value.startsWith("$$") || ["$","$undefined","$NaN","$Infinity","$-Infinity","$-0"].includes(value) || /^\$[SD]/.test(value);
+		}
+		if (!value || typeof value !== "object") return true;
+		if (binaryValues.has(value) || opaqueText.has(value)) return false;
+		if (elementTuple(value) && !forceElement) return true;
+		if (elementTuple(value) && value.length !== 4) return false;
+		return Object.keys(value).filter(key=>key!=="__proto__").every(key=> {
+			const descriptor=Object.getOwnPropertyDescriptor(value,key);
+			return descriptor && Object.hasOwn(descriptor,"value") && eagerParent(descriptor.value,false,seen,depth + 1);
+		});
+	};
+	const activePaths = new Set();
+	const outlined = (reference, depth = 0) => {
+		if (!pathStep(depth) || !plainPath.test(reference) || reference.length > 2048 || activePaths.has(reference)) return {known:false};
+		const [id,...keys] = reference.slice(1).split(":");
+		if (!Number.isSafeInteger(Number.parseInt(id,16)) || keys.length > 32 || keys.some(key=>key.length>128)) return {known:false};
+		activePaths.add(reference);
+		try {
+			let value = `$${id}`;
+			for (const key of keys) {
+				const aliases = new Set();
+				while (typeof value === "string" && /^\$(?:L)?[a-f0-9]+$/.test(value)) {
+					if (!pathStep(depth + aliases.size) || aliases.has(value)) return {known:false};
+					aliases.add(value);
+					const record = records.get(value.replace(/^\$L?/,""));
+					if (!record || record.tag !== null || record.stream) return {known:false};
+					value = record.value;
+				}
+				if (typeof value === "string" && plainPath.test(value)) {
+					const selected = outlined(value,depth + 1); if (!selected.known) return selected; value = selected.value;
+				}
+				if (!value || typeof value !== "object" || binaryValues.has(value) || opaqueText.has(value) || !eagerParent(value,true,new Set(),depth + 1)) return {known:false};
+				if (elementTuple(value)) {
+					if (!["type","key","props","ref"].includes(key)) return {known:false};
+					value = key === "ref" ? null : value[{type:1,key:2,props:3}[key]];
+				} else {
+					if (key === "__proto__" || ![Object.prototype,Array.prototype].includes(Object.getPrototypeOf(value))) return {known:false};
+					const descriptor = Object.getOwnPropertyDescriptor(value,key);
+					if (!descriptor || !Object.hasOwn(descriptor,"value") || (!Array.isArray(value) && descriptor.value === "$undefined")) return {known:false};
+					value = descriptor.value;
+				}
+			}
+			return {known:true,value};
+		} finally { activePaths.delete(reference); }
+	};
 	const resolve = (value) => {
 		const seen = new Set();
-		while (typeof value === "string" && /^\$@?[a-f0-9]+$/.test(value)) {
-			const id = value.replace(/^\$@?/, "");
-			if (seen.has(id) || seen.size >= 8) return undefined;
-			seen.add(id);
-			value = records.get(id)?.value;
+		while (typeof value === "string" && (/^\$@?[a-f0-9]+$/.test(value) || plainPath.test(value))) {
+			if (seen.has(value) || seen.size >= 8) return undefined;
+			seen.add(value);
+			if (plainPath.test(value)) {
+				const selected = outlined(value); if (!selected.known) return undefined; value = selected.value;
+			} else {
+				const record = records.get(value.replace(/^\$@?/, ""));
+				if (record?.tag === "T") return record.value;
+				value = record?.value;
+			}
 		}
 		return value;
 	};
@@ -300,7 +382,7 @@ function inspectFlightBody(
 			bodySha256: bodySha256(bytes),
 			serverErrors: 0,
 			explicitActionFailure: false,
-			protocolRows: recordCount, modelSteps: nodes, embeddedRuntimePrefetch: null,
+			protocolRows: recordCount, modelSteps: budget.models - modelBudgetAtStart, embeddedRuntimePrefetch: null,
 		};
 	}
 	let embeddedRuntimePrefetch = null;
@@ -418,6 +500,13 @@ function inspectFlightBody(
 				if (record.tag !== "T") queue.push({ value: record.value, role,
 					fallbackReferences: role === "fallback-output" ? new Set([...(fallbackReferences ?? []), id]) : fallbackReferences });
 			}
+		} else if (typeof value === "string" && plainPath.test(value)) {
+			const selected = outlined(value);
+			if (!selected.known) return unknown("unsupported-model-reference", {
+				modelReference:{prefix:"plain",length:value.length,form:"outlined-path",pathKeyKinds:value.slice(1).split(":").slice(1,33).map(key=>["props","children","fallback","type","key","ref"].includes(key)?key:key===""?"empty":/^(0|[1-9][0-9]*)$/.test(key)?"index":"other")},
+				semanticRole:role,pathFailure:pathLimit?"model-limit":"unavailable-own-data",marker,isPartial,requestKind,
+			});
+			queue.push({value:selected.value,role,fallbackReferences});
 		} else if (
 			typeof value === "string" &&
 			value.startsWith("$") &&
@@ -521,15 +610,8 @@ function inspectFlightBody(
 			return unknown("unsupported-navigation-transport");
 	}
 	if (action) {
-		let result = root.a;
-		const seen = new Set();
-		while (typeof result === "string" && /^\$@?[a-f0-9]+$/.test(result)) {
-			const id = result.replace(/^\$@?/, "");
-			if (seen.has(id) || seen.size >= 8)
-				return unknown("unresolved-action-result");
-			seen.add(id);
-			result = records.get(id)?.value;
-		}
+		const result = resolve(root.a);
+		if (result === undefined) return unknown("unresolved-action-result");
 		if (result?.success === false && typeof result.error === "string")
 			return {
 				complete: false,
@@ -722,7 +804,7 @@ function inspectFlightBody(
 		bodySha256: bodySha256(bytes),
 		serverErrors: 0,
 		explicitActionFailure: false,
-		protocolRows: recordCount, modelSteps: inspected, embeddedRuntimePrefetch,
+		protocolRows: recordCount, modelSteps: budget.models - modelBudgetAtStart - (embeddedRuntimePrefetch?.modelSteps ?? 0), embeddedRuntimePrefetch,
 	};
 }
 
