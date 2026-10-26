@@ -10,6 +10,125 @@ import {
 	cleanBrowserFailureEvidence,
 } from "./control-cancellation-evidence.mjs";
 
+const segmentDigest = value => createHash("sha256").update(value).digest("hex");
+const segmentBinding = key => ({method:"GET",status:200,flight:true,rsc:true,prefetch:true,postponed:true,
+	requestHeadersSha256:"d".repeat(64),requestKeySha256:segmentDigest(key),responseDeploymentSha256:segmentDigest("b".repeat(40)),
+	compiledBuild:"b".repeat(40),compiledManifestSha256:"c".repeat(64),manifestVerified:true});
+function segmentBody({head=false,pending=true,key="page",output="$L9",rows=""}={}) {
+	const data={r:output,p:"$@3",v:null,s:"$4"};
+	const terminal={s:key,d:data};
+	const root={t:head?{t:{s:""},h:data}:{t:{s:"",c:"$Q2"}},a:"$@5",u:"$@6"};
+	return Buffer.from(`0:${JSON.stringify(root)}\n${head?"":`2:${JSON.stringify([["children",terminal]])}\n`}4:X\n4:60\n4:C\n5:null\n6:false\n${pending?"":'3:"$undefined"\n'}${rows}`);
+}
+test("segment/head full-buffer claims bind the actual request key and deployment, without rendering partial outputs",()=>{
+	for(const head of [false,true]) {
+		const key=head?"/_head":"/page", bytes=segmentBody({head});
+		const proof=inspectRequiredFlightBody(bytes,{requestKind:"segment-prefetch",segmentBinding:segmentBinding(key)});
+		assert.equal(proof.complete,true,JSON.stringify(proof));
+		assert.equal(proof.requiredStage,"segment-prefetch-representation");
+		assert.equal(proof.renderableOutputClaim,false);
+		assert.equal(proof.segmentBinding.derivedRequestKeySha256,segmentDigest(key));
+		assert.equal(proof.partialNodes,1);
+		for(const field of ["method","status","flight","rsc","prefetch","postponed","requestHeadersSha256","requestKeySha256","compiledBuild","compiledManifestSha256","manifestVerified"]){
+			const binding=segmentBinding(key); delete binding[field];
+			assert.equal(inspectRequiredFlightBody(bytes,{requestKind:"segment-prefetch",segmentBinding:binding}).complete,false,field);
+		}
+		assert.equal(inspectRequiredFlightBody(bytes,{requestKind:"segment-prefetch",segmentBinding:segmentBinding("/wrong")}).complete,false);
+		assert.equal(inspectRequiredFlightBody(segmentBody({head,pending:false}),{requestKind:"segment-prefetch",segmentBinding:segmentBinding(key)}).complete,false,"fulfilled p does not permit missing output");
+		assert.equal(inspectRequiredFlightBody(Buffer.concat([bytes,Buffer.from('a:E{"digest":"synthetic"}\n')]),{requestKind:"segment-prefetch",segmentBinding:segmentBinding(key)}).serverErrors,1);
+	}
+});
+
+test("segment staged partiality cannot leak across shared complete output aliases in either node order",()=>{
+	for(const alias of ["$8","$a:out"]) for(const completeHead of [false,true]) {
+		const staged = p => ({r:alias,p,v:null,s:"$4"});
+		const root={t:{t:{s:"",d:staged(completeHead?"$@7":"$@3")},h:staged(completeHead?"$@3":"$@7")},a:"$@5",u:"$@6"};
+		const bytes=Buffer.from(`0:${JSON.stringify(root)}\n3:"$undefined"\n4:X\n4:60\n4:C\n5:null\n6:false\n8:["$L9"]\na:{"out":"$8"}\n`);
+		assert.equal(inspectRequiredFlightBody(bytes,{requestKind:"segment-prefetch",segmentBinding:segmentBinding("/_index")}).complete,false,`${alias}/${completeHead}`);
+		assert.equal(inspectRequiredFlightBody(Buffer.concat([bytes,Buffer.from('9:null\n')]),{requestKind:"segment-prefetch",segmentBinding:segmentBinding("/_index")}).complete,true);
+	}
+});
+
+test("segment deployment uses actual response-header precedence and keys follow the encoder's child/slot identity",()=>{
+	const options=key=>({requestKind:"segment-prefetch",segmentBinding:segmentBinding(key)});
+	const withBodyBuild=Buffer.from(segmentBody({pending:false,output:null}).toString().replace('0:{','0:{"b":"different-build",'));
+	assert.equal(inspectRequiredFlightBody(withBodyBuild,options("/page")).complete,true);
+	const bodyBuild=Buffer.from(withBodyBuild.toString().replace("different-build","b".repeat(40)));
+	const absent=options("/page"); absent.segmentBinding.responseDeploymentSha256=null;
+	assert.equal(inspectRequiredFlightBody(bodyBuild,absent).complete,true);
+	assert.equal(inspectRequiredFlightBody(withBodyBuild,absent).complete,false);
+	assert.equal(inspectRequiredFlightBody(segmentBody({pending:false,output:null}),absent).complete,false);
+	const dynamic={n:"employee",t:"d",k:null,s:["arbitrary-value"]};
+	const body=Buffer.from(segmentBody({key:dynamic,pending:false,output:null}).toString().replace('[["children",','[["modal",'));
+	assert.equal(inspectRequiredFlightBody(body,options("/@modal/$d$employee")).complete,true);
+	assert.equal(inspectRequiredFlightBody(body,options("/@Modal/$d$employee")).complete,false);
+	for(const invalid of [body.toString().replace('"p":"$@3"','"p":true'),body.toString().replace('6:false','6:null'),body.toString().replace('5:null','5:"$L9"')])
+		assert.equal(inspectRequiredFlightBody(Buffer.from(invalid),options("/@modal/$d$employee")).complete,false);
+});
+
+test("typed segment completion is diagnostic and cannot admit a native cancellation or a serialized control",()=>{
+	const bodyProof=inspectRequiredFlightBody(segmentBody(),{requestKind:"segment-prefetch",segmentBinding:segmentBinding("/page")});
+	assert.equal(bodyProof.complete,true);
+	const historical=testBrowserEvidence("context",true).measured.records[0].proof;
+	const failure={...historical.failure,method:"GET",action:false,requestKind:"segment-prefetch",bodyProof};
+	const packet={...historical.packet,method:"GET",action:false,requestKind:"segment-prefetch",bodyProof};
+	const evidence=classifyControlCancellations({failures:[failure],proxy:[packet],browserRevision:chromiumSWRRevision,
+		coverage:{installed:true,scopeClosed:true,missing:0,overflow:0,errors:0,pendingBodies:0}});
+	assert.equal(evidence.unknownFailures,1);
+	assert.equal(evidence.provenControls,0);
+	const forged=testBrowserEvidence("context",true).measured;
+	forged.records[0].proof.failure=failure;forged.records[0].proof.packet=packet;
+	assert.equal(cleanBrowserFailureEvidence(forged,1),false);
+});
+
+test("segment shape and staged metadata are producer-qualified rather than generic full HTTP bodies",()=>{
+	const source=segmentBody({pending:false,output:null}).toString();
+	const options={requestKind:"segment-prefetch",segmentBinding:segmentBinding("/page")};
+	for(const text of ["#"+source,"~"+source,
+		source.replace('"s":"","c"','"s":"different-root","c"'),
+		source.replace('"d":','"unsupported":'),source.replace('"s":"$4"','"s":null'),
+		source.replace('3:"$undefined"','3:null'),source.replace('5:null','5:I["module",[],"export"]'),
+		source.replace('6:false','6:I["module",[],"export"]'),source.replace('4:C','4:C"$dead"'),
+		source.replace('"p":"$@3"','"p":"$@03"'),source.replace('"t":{"t"','"t":{"unsupported":null,"t"')])
+		assert.equal(inspectRequiredFlightBody(Buffer.from(text),options).complete,false);
+	for(const [key,encoded] of [["a/b","/!YS9i"],["/_not-found","/_not-found"],["ABC","/ABC"],["abc","/abc"]])
+		assert.equal(inspectRequiredFlightBody(segmentBody({key,pending:false,output:null}),{...options,segmentBinding:segmentBinding(encoded)}).complete,true,key);
+	const head=segmentBody({head:true,pending:false,output:null}).toString();
+	assert.equal(inspectRequiredFlightBody(Buffer.from(head.replace('"s":""','"s":"","d":{"r":null}')),{...options,segmentBinding:segmentBinding("/_head")}).complete,false);
+});
+
+test("segment required structure never obtains object or scalar values from import, text, binary, or stream records",()=>{
+	const source=segmentBody({pending:false,output:null}).toString();
+	const options={requestKind:"segment-prefetch",segmentBinding:segmentBinding("/page")};
+	for(const text of [source.replace("0:{","0:I{"),source.replace("2:[[","2:I[["),
+		source.replace('"t":{"s":"","c":"$Q2"}','"t":"$7"')+'7:I{"s":"","c":"$Q2"}\n']) {
+		assert.equal(inspectRequiredFlightBody(Buffer.from(text),options).complete,false);
+	}
+	for(const field of ["transport","tree","child","data","segment","vary-yield","stale-yield"]) for(const tag of ["I",""]) {
+		const data={r:null,p:"$@3",v:null,s:"$4"},child={s:"page",d:data},tree={s:"",c:"$Q2"},transport={t:tree};
+		const root={t:transport,a:"$@5",u:"$@6"};
+		const children=[["children",child]];
+		let value, yielded=60;
+		if(field==="transport"){value=transport;root.t="$a";}
+		if(field==="tree"){value=tree;transport.t="$a";}
+		if(field==="child"){value=child;children[0][1]="$a";}
+		if(field==="data"){value=data;child.d="$a";}
+		if(field==="segment"){value="page";child.s="$a";}
+		if(field==="vary-yield"){data.v="$4";value=0;yielded="$a";}
+		if(field==="stale-yield"){value=60;yielded="$a";}
+		const text=`0:${JSON.stringify(root)}\n2:${JSON.stringify(children)}\n3:"$undefined"\n4:X\n4:${JSON.stringify(yielded)}\n4:C\n5:null\n6:false\na:${tag}${JSON.stringify(value)}\n`;
+		assert.equal(inspectRequiredFlightBody(Buffer.from(text),options).complete,tag==="",`${field}/${tag || "ordinary"}`);
+	}
+	const map=JSON.parse(source.split("\n").find(line=>line.startsWith("2:")).slice(2));
+	for(const encoded of [`2:R\n2:${JSON.stringify(map[0])}\n2:C\n`,`2:T${Buffer.byteLength(JSON.stringify(map)).toString(16)},${JSON.stringify(map)}`,`2:o${Buffer.byteLength(JSON.stringify(map)).toString(16)},${JSON.stringify(map)}`])
+		assert.equal(inspectRequiredFlightBody(Buffer.from(source.replace(/^2:.*\n/m,encoded)),options).complete,false);
+	const aliased=source.replace('"t":{"s":"","c":"$Q2"}','"t":"$a:tree"')+'a:{"tree":"$b"}\nb:I{"s":"","c":"$Q2"}\n';
+	assert.equal(inspectRequiredFlightBody(Buffer.from(aliased),options).complete,false,"ordinary path target cannot alias an import");
+	assert.equal(inspectRequiredFlightBody(Buffer.from(aliased.replace('b:I','b:')),options).complete,true);
+	assert.equal(inspectRequiredFlightBody(Buffer.from(source.replace('0:{','0:{"b":"$a",')+'a:I"build"\n'),options).complete,false);
+	assert.equal(inspectRequiredFlightBody(Buffer.from(source.replace('0:{','0:{"b":"$a",')+'a:"build"\n'),options).complete,true,"header precedence still applies to a known ordinary body build");
+});
+
 test("closed Flight iterable and readable rows fulfill repeated values without accepting an unfinished stream", () => {
 	for (const tag of ["X", "x", "R"]) {
 		const body = `0:{"a":"$1"}\n1:${tag}\n1:{"value":"$2"}\n2:null\n1:C\n`;

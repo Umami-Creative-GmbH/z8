@@ -55,6 +55,15 @@ const event = (requestId, timestamp, type = "Fetch") => ({
 	request: { url, method: "GET", headers, initialPriority: "VeryLow" },
 });
 
+test("response encoding diagnostics retain only actual allowlisted MIME/charset facts",()=>{
+	for(const [value,charset] of [["text/x-component","absent"],["text/x-component; charset=utf-8","utf-8"],['text/x-component; charset="ISO-8859-1"',"iso-8859-1"],["text/x-component; charset=private-value","other"],["text/x-component; charset=utf-8; charset=latin1","ambiguous"]]){
+		const facts=controlResponseMetadata({"content-type":value},200).responseContentType;
+		assert.deepEqual(facts,{headerKnown:true,mime:"text/x-component",charset});
+		assert.doesNotMatch(JSON.stringify(facts),/private-value/);
+	}
+	assert.deepEqual(controlResponseMetadata({},200).responseContentType,{headerKnown:false,mime:null,charset:"absent"});
+});
+
 test("runtime-shell contract is selected only from the actual header3 without a segment subtype", () => {
 	const runtime = controlRequestIdentity(contextId, url, "GET", { RSC: "1", "next-router-prefetch": "3" });
 	assert.equal(runtime.requestKind, "runtime-shell");
@@ -705,6 +714,37 @@ test("the actual compiled unmarked fallback is passed identically to browser and
 		const forwarded = proxy.snapshot().rows[0].bodyProof;
 		assert.equal(browser.complete, compiledCachedNavigations === false);
 		assert.deepEqual(browser, forwarded);
+	}
+});
+
+test("segment readers receive actual request/response facts and the verified compiled deployment binding", async()=>{
+	const compiledBinding={policy:controlCancellationPolicy,browserRevision:chromiumSWRRevision,compiledCachedNavigations:true,
+		compiledManifestSha256:"c".repeat(64),compiledBuild:"b".repeat(40),manifestVerified:true};
+	const staged='0:{"t":{"t":{"s":"","d":{"r":null,"p":"$@3","v":null,"s":"$4"}}},"a":"$@5","u":"$@6"}\n3:"$undefined"\n4:X\n4:60\n4:C\n5:null\n6:false\n';
+	const requestHeaders={...headers,"next-router-segment-prefetch":"/_index"};
+	const segmentHeaders={...responseHeaders,"x-nextjs-postponed":"2","x-nextjs-deployment-id":compiledBinding.compiledBuild};
+	for(const missing of [null,"compiledBinding","x-nextjs-postponed","x-nextjs-deployment-id","RSC","next-router-prefetch","next-router-segment-prefetch"]){
+		const actualRequest={...requestHeaders},actualResponse={...segmentHeaders};
+		delete actualRequest[missing]; delete actualResponse[missing];
+		const options={contextId,compiledCachedNavigations:true,compiledBinding:missing==="compiledBinding"?undefined:compiledBinding};
+		const proxy=createProxyControlCollector(options); proxy.installed();
+		const collector=createBrowserControlCollector({...options,origin,proxyObservation:proxy.snapshot,
+			readBody:async()=>({body:staged,base64Encoded:false})}); collector.installed();
+		proxy.request("1",{url,method:"GET",headers:actualRequest,traceId:"a".repeat(32)});
+		proxy.response("1",{status:200,headers:actualResponse});proxy.bytes("1",Buffer.from(staged));proxy.end("1");
+		collector.request({...event("1",1),request:{...event("1",1).request,headers:actualRequest}});
+		collector.response({requestId:"1",response:{status:200,headers:actualResponse,fromDiskCache:true}});
+		collector.finished({requestId:"1",timestamp:2});collector.endScope();await tick();await tick();
+		const receipt=collector.snapshot().bodyReceipts[0];
+		const browser=receipt.bodyProof, forwarded=proxy.snapshot().rows[0].bodyProof;
+		assert.equal(receipt.bodyReadbackReceipt.base64Encoded,false);
+		assert.deepEqual(receipt.bodyReadbackReceipt.responseContentType,{headerKnown:true,mime:"text/x-component",charset:"absent"});
+		assert.deepEqual(browser,forwarded,missing);
+		assert.equal(browser.complete,missing===null,missing);
+		if(missing===null){
+			assert.equal(browser.segmentBinding.expectedDeploymentSha256,createHash("sha256").update(compiledBinding.compiledBuild).digest("hex"));
+			assert.equal(browser.segmentBinding.requestKeySha256,controlRequestIdentity(contextId,url,"GET",actualRequest).headerFieldSha256["next-router-segment-prefetch"]);
+		}
 	}
 });
 
