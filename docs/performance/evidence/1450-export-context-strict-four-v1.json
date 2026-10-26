@@ -1,0 +1,78 @@
+{
+  "schema": 1,
+  "kind": "local-fixture-export-context-strict-four-diagnostic",
+  "toolingSource": "0a407bb0c5a29164369348cd7f2d4a9c1b0466fc",
+  "commonFixCommit": "4bbe817f4047fe53677e3e65ddbee9b0c501532f",
+  "compiledSources": {
+    "original": "4d028bba3b43aa2bc7ffb33b0e8b7ba3f4e4876d",
+    "optimized": "60a17108522a62be4fe91c40ba218810a72c3269"
+  },
+  "commonProvenanceSha256": "0d41f6f7c88f427ecf802b48a82e797bd85061d4a6a60cae70133a64da56ffdf",
+  "builds": {
+    "originalCiSha256": "d6665b5980d038d6711bde4f40a9711c6412408400af2e46aa03549a4e1dd200",
+    "originalManifestSha256": "2d90add4fa6475e85324cb3c90ca41e9b9f663b83164ba346bb9f2f697471a5f",
+    "optimizedCiSha256": "f6848ef54a106439bd3d0aa0b1f57d07f6637468917df9962454fc2356c58f71",
+    "optimizedManifestSha256": "f0416feb01b6376eab437ca1dd7494a687816e020f45b155d6a072a5e35b0145"
+  },
+  "counterfactual": {
+    "actualCallerStackSha256": "7db193c62b4dd7a78c7c9b52af648887d3cdc00ed48be905520759b61f22cbf4",
+    "actualCaller": "OTLP retry transport Date.now reached from a batch-export timer inside Next prerender-runtime",
+    "realSdkTimerRegression": "failed with inherited render context; passed with startup exporter isolation",
+    "testsPassed": 2,
+    "otelSuppressionParentBaggageAndSpanIdentityPreserved": true,
+    "unchangedBatchCallbackReceiverReturnErrorsFlushShutdown": true
+  },
+  "historicalEvidence": {
+    "narrowFourRawSha256": "3789ddee3ca6330b9b80db392970fba473dd11324b7458ce19350fde18f5061e",
+    "narrowFourIndependentPrerenderErrors": 2,
+    "narrowFourCleanAcceptance": false,
+    "firstClockProbeRawSha256": "ca885462c00c2766664b3c3d324b9666104eb0d9c5a214008cb1b4e2ef8dcb58",
+    "firstClockProbeValid": false,
+    "firstClockProbeReason": "diagnostic worker output collision; no application-cause inference",
+    "correctedClockProbeRawSha256": "62b903f3df412ead2146cae8431a83a588233b2f7c076aa3c40bef73246ace9f",
+    "correctedClockProbePurpose": "caller-stack diagnosis only"
+  },
+  "rebuiltOriginalDiagnostic": {
+    "rawSha256": "6f8eae280f401354af4e8e984f2cf8c8f1f791ad8a91cd4e61a059d9b1acd392",
+    "operatorExitCode": 0,
+    "diagnosticComplete": true,
+    "cases": [
+      "large-admin/month/first-document",
+      "large-admin/month/repeat-link",
+      "large-admin/year/first-document",
+      "large-admin/year/repeat-link"
+    ],
+    "journeys": 4,
+    "uiPassed": 4,
+    "measuredFiveMetricsKnown": true,
+    "everyRegisteredScopeQueryAndAcquisitionErrors": 0,
+    "semanticComplete": true,
+    "semanticUnknown": 0,
+    "mandatoryWireErrors": 0,
+    "downstreamCancellations": 0,
+    "nativeFirstDocumentPaintObserved": 2,
+    "nativeQueriesReconciled": 79359,
+    "pendingNativeQueries": 0,
+    "activeTraces": 0,
+    "nativeGlobalComplete": true,
+    "businessMutations": 0
+  },
+  "strictFreshLog": {
+    "classifierSha256": "52a5792a4d4a8b748518adc91802ac77e14170c088a11b0c34cab0c1839a5b91",
+    "protocol": "strict-fresh-server-log-v1",
+    "perVisitIntervals": 4,
+    "wholeStartByte": 20493,
+    "wholeEndByte": 20493,
+    "wholeObservedBytes": 0,
+    "knownCounterFamilies": 11,
+    "everyPerVisitAndWholeCounter": 0,
+    "unknownNonemptyLines": 0,
+    "overflow": false,
+    "clean": true
+  },
+  "limitations": [
+    "Bounded original diagnostic only; optimized runtime cases and full original/optimized captures remain required.",
+    "Identical common observer builds passed CI; this proof is not a numerical budget, full baseline or release acceptance.",
+    "Historical failed and invalid evidence remains unchanged; no production or CDN claim."
+  ]
+}

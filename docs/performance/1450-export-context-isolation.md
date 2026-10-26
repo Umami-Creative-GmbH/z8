@@ -6,4 +6,8 @@ The fixture exporter now creates an async resource during instrumentation startu
 
 The real SDK batch timer and HTTP transport regression failed with inherited render context and passed with isolation. It verifies one actual export, unchanged span identity, and preserved OpenTelemetry suppression/context. A separate contract test checks callback, return, error and lifecycle identity. Both tests, lint and the normal Next type generation plus all three TypeScript configurations passed.
 
-This common observer change requires identical original and optimized builds. Actual rebuilt runtime checks, strict server-log evidence and complete clean captures remain pending; no performance or release acceptance is claimed here.
+The identical original and optimized observer builds passed CI. A [four-case rebuilt-original diagnostic](evidence/1450-export-context-strict-four-v1.json) then passed month/year first-document and Link journeys through the normal runner: four correct UIs, complete semantic and wire evidence, zero query/acquisition errors in every registered scope, and 79,359 reconciled native queries with no active traces or pending queries. Both first-document cases observed native paint. All four fresh-log intervals and the whole interval were empty and passed the expanded eleven-counter classifier, including unknown-line rejection.
+
+The earlier four-case operator result remains unqualified because its narrower classifier missed two actual prerender errors. The first clock probe remains invalid because its diagnostic output collided across workers; the corrected probe supplied the actual exporter caller stack. These artifacts remain unchanged.
+
+This validates the common fix in a bounded original-runtime diagnostic. Optimized runtime checks and complete clean original/optimized captures remain required; no numerical budget, full-baseline, production/CDN or release acceptance is claimed here.
