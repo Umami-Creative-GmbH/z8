@@ -1362,7 +1362,7 @@ const knownNativeContext = context => {
 				row.cookieAttributes.httpOnlyKnown === true && row.cookieAttributes.allHttpOnly === true && row.cookieAttributes.singleOwnedRootHttpOnlyCookie === true && digest(row.cookieAttributes.singleCookieHeaderSha256)) ||
 			principal.before.sha256 !== principal.after.sha256 || principal.before.cookieAttributes.singleCookieHeaderSha256 !== principal.after.cookieAttributes.singleCookieHeaderSha256) return false;
 		if(!validateProxyHeaderCensus(census,{contextId:context.contextId}) || census.closed !== true || census.counts.accepted <= 0 || census.counts.knownHeaders !== census.counts.accepted ||
-			census.requests.some((row,index)=>Number(row.requestId.split(".")[1]) !== index+1) ||
+			census.requests.map(row=>Number(row.requestId.split(".")[1])).sort((a,b)=>a-b).some((id,index)=>id !== index+1) ||
 			!["pending","unknownHeaders","terminalBeforeHeaders","setCookieResponses","setCookieLines","errors","duplicates","missing","late","overflow"].every(key=>census.counts[key]===0) ||
 			lifetime?.protocol !== "owned-context-upstream-header-lifetime-v1" || lifetime.contextId !== context.contextId) return false;
 		const installation=lifetime.installation,closure=lifetime.closure;
@@ -1440,7 +1440,7 @@ function nativeKnownExtraProof(failure,packet,responses,proxy,context,browserRev
 		if(![origin,packet].every(row=>row.requestHeaderSnapshotKnown===true && Object.hasOwn(row.headerFieldSha256 ?? {},field)) || origin.headerFieldSha256[field]!==packet.headerFieldSha256[field]) return null;
 	}
 	if(origin.headerFieldSha256.cookie!==context.principalEpoch.before.cookieAttributes.singleCookieHeaderSha256 || origin.headerFieldSha256.authorization!==null ||
-		context.headerCensus.requests.findIndex(row=>row.requestId===origin.id) >= context.headerCensus.requests.findIndex(row=>row.requestId===packet.id) ||
+		Number(origin.id.split(".")[1]) >= Number(packet.id.split(".")[1]) ||
 		![origin,packet].every(row=>context.headerCensus.requests.filter(entry=>entry.requestId===row.id && entry.observation==="headers").length===1) ||
 		[cached,origin,packet,failure].some(row=>row.observedProtocolError?.serverErrors>0 || row.observedProtocolError?.explicitActionFailure===true || row.bodyProof?.serverErrors>0 || row.bodyProof?.explicitActionFailure===true || row.httpErrorObserved===true || row.status>=400)) return null;
 	return {failure:requestReceipt(failure),packet:requestReceipt(packet),cached:requestReceipt(cached),origin:requestReceipt(origin),browserRevision,proxyCandidates:1,cachedCandidates:1,originCandidates:1,

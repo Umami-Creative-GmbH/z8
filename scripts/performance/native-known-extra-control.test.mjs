@@ -13,7 +13,7 @@ const protocol=await primaryProtocolIdentity();
 
 // Entirely synthetic observations, produced through the real parser/identity/census APIs.
 // This fixture never reads private capture data and makes no runtime claim.
-function fixture() {
+function fixture({applicationIds=[1,2],originalApplicationId=1,currentApplicationId=2,mixedTraces=false}={}) {
   const contextId="synthetic-context",origin="http://localhost:1234",url=origin+"/en?_rsc=synthetic",build="b".repeat(40);
   const files=["sw.js","lib/offline-queue-db.js","lib/sync-service.js","lib/clock-command-dispatch.js"].map(file=>({file,bytes:12,sha256:sha(file),gitBlob:"d".repeat(40)}));
   const binding={policy:controlCancellationPolicy,browserRevision:chromiumSWRRevision,compiledBuild:build,compiledManifestSha256:"c".repeat(64),compiledCachedNavigations:true,manifestVerified:true,browserVerified:true,
@@ -25,9 +25,10 @@ function fixture() {
   const bytes=Buffer.from('0:{"t":{"t":{"s":"","c":"$Q2"}},"a":"$@5","u":"$@6"}\n2:[["children",{"s":"page","d":{"r":["$","span",null,{"children":"known"}],"p":"$@3","v":null,"s":"$4"}}]]\n3:"$undefined"\n4:X\n4:60\n4:C\n5:null\n6:false\n');
   const proof=headers=>inspectRequiredFlightBody(bytes,{requestKind:"segment-prefetch",segmentBinding:{method:"GET",status:200,flight:true,rsc:true,prefetch:true,postponed:true,requestHeadersSha256:identity(headers).requestHeadersSha256,
     requestKeySha256:sha("/page"),responseDeploymentSha256:sha(build),compiledBuild:build,compiledManifestSha256:binding.compiledManifestSha256,manifestVerified:true}});
-  const originalId="a".repeat(32)+".1",currentId="a".repeat(32)+".2";
+  const requestId=id=>(mixedTraces && id%2===0?"b":"a").repeat(32)+"."+id;
+  const originalId=requestId(originalApplicationId),currentId=requestId(currentApplicationId);
   const originalHeaders={...wire,"x-z8-fixture-document-generation":contextId+":1"};
-  const packet=(id,headers)=>({...identity(headers),...controlResponseMetadata(response,200),id,traceId:"a".repeat(32),complete:true,canceled:false,upstreamError:false,
+  const packet=(id,headers)=>({...identity(headers),...controlResponseMetadata(response,200),id,traceId:id.split(".")[0],complete:true,canceled:false,upstreamError:false,
     bodyProof:proof(headers),transportBodyReceipt:{protocol:"proxy-natural-eof-decoded-bytes-v1",naturalEOF:true,decodedBytes:bytes.length,bodySha256:sha(bytes)}});
   const original=packet(originalId,originalHeaders),current=packet(currentId,wire);
   const cached={...identity(initial),...controlResponseMetadata(response,200),requestId:"cached",loaderId:"loader",type:"Fetch",startedAt:1,finishedAt:2,loadingFinished:true,fromDiskCache:true,fromServiceWorker:false,
@@ -37,11 +38,11 @@ function fixture() {
     requestHeadersKnown:true,initialHeaderIdentity:identity(initial),extraHeaderIdentity:identity(wire),proxyResponseId:currentId,error:"net::ERR_ABORTED",canceled:true};
   const principal=createPrincipalEpochObserver(contextId,{origin});
   const cookies=[{name:"session",value:"synthetic",domain:"localhost",path:"/",httpOnly:true}];principal.start(cookies);principal.end(cookies);
-  const census=createProxyHeaderCensus({contextId});for(const id of [originalId,currentId]){census.accepted(id);census.headers(id,response);}census.close();
+  const census=createProxyHeaderCensus({contextId});for(const appId of applicationIds){const id=requestId(appId);census.accepted(id);census.headers(id,response);}census.close();
   const publicSources={protocol:"serving-public-worker-source-metadata-v1",servingRootKnown:true,files:files.map(({gitBlob,...row})=>({...row,known:true,reason:null}))};
   const worker={present:true,known:true,ownedScript:true,state:"activated",scriptUrlSha256:sha(origin+"/sw.js")},absent={present:false,known:true};
   const nativeContext={protocol:"qualified-known-extra-native-context-v1",contextId,originSha256:sha(origin),workerScriptSha256:sha(origin+"/sw.js"),rootScopeSha256:sha(origin+"/"),binding,protocolSources:protocol,operatorFile:"run-baseline.mjs",principalEpoch:principal.snapshot(),headerCensus:census.snapshot(),
-    headerLifetime:{protocol:"owned-context-upstream-header-lifetime-v1",contextId,installation:{protocol:"owned-context-upstream-header-lifetime-v1",proxyInstanceId:"f".repeat(32),originSha256:sha(origin),allowedOriginSha256:[sha(origin)],acceptedRequestsAtInstall:0},closure:{serverClosed:true,acceptedRequests:2,upstreamRequests:2,closedUpstreams:2,pendingUpstreams:0}},
+    headerLifetime:{protocol:"owned-context-upstream-header-lifetime-v1",contextId,installation:{protocol:"owned-context-upstream-header-lifetime-v1",proxyInstanceId:"f".repeat(32),originSha256:sha(origin),allowedOriginSha256:[sha(origin)],acceptedRequestsAtInstall:0},closure:{serverClosed:true,acceptedRequests:applicationIds.length,upstreamRequests:applicationIds.length,closedUpstreams:applicationIds.length,pendingUpstreams:0}},
     protocolErrors:{protocol:"positive-flight-error-observations-v1",contextId,installed:true,scopeClosed:true,observed:0,overflow:0,records:[]},
     environment:{protocol:"native-cache-environment-metadata-v1",contextId,servingPublicSources:publicSources,
       nativeLaunchMetadata:{protocol:"owned-native-launch-metadata-v1",processKnown:true,fixturePolicy:"isolated-profile-no-prediction-v1",argumentsKnown:true,argumentsSha256:"5".repeat(64),recordedArgumentsSha256:"5".repeat(64),argumentsMatchRecorded:true,argumentKeys:["--disable-extensions","--headless","--disable-features"],profileArgumentCount:1,profileArgumentSha256:"6".repeat(64),recordedProfileDirectorySha256:"6".repeat(64),profileArgumentMatchesRecorded:true,executable:{known:true,bytes:12,sha256:"7".repeat(64),reason:null},observerSources:["browser-control-collector.mjs","fixture-browser.mjs"].map(file=>({file,known:true,bytes:12,sha256:protocol[file],reason:null}))},
@@ -58,6 +59,29 @@ test("known-Extra Native control requires a complete source/principal/variant/an
   assert.equal(result.unknownFailures,0);
   assert.equal(result.records[0].reason,"qualified-cached-flight-native-revalidation");
   assert.equal(cleanBrowserFailureEvidence(JSON.parse(JSON.stringify(result)),1),true);
+});
+
+test("Native census chronology uses context application IDs independently of lexical trace serialization",()=>{
+  const applicationIds=Array.from({length:12},(_,i)=>i+1);
+  for(const mixedTraces of [false,true]){
+    const {input}=fixture({applicationIds,originalApplicationId:2,currentApplicationId:11,mixedTraces});
+    const result=classifyControlCancellations(input);
+    assert.equal(result.provenControls,1,JSON.stringify(result.records));
+    assert.equal(cleanBrowserFailureEvidence(JSON.parse(JSON.stringify(result)),1),true);
+    const reverse=fixture({applicationIds,originalApplicationId:11,currentApplicationId:2,mixedTraces}).input;
+    assert.equal(classifyControlCancellations(reverse).provenControls,0,"a later origin cannot precede the current wire");
+  }
+  const gap=fixture({applicationIds:[1,2,4],originalApplicationId:1,currentApplicationId:2}).input;
+  assert.equal(classifyControlCancellations(gap).provenControls,0,"context census must retain numeric continuity");
+  const {input,io}=fixture({applicationIds,mixedTraces:true,originalApplicationId:2,currentApplicationId:11});
+  const census=createProxyHeaderCensus({contextId:input.nativeContext.contextId});
+  for(let id=1;id<=12;id++){
+    const number=id===12?11:id;
+    const requestId=(id%2===0?"b":"a").repeat(32)+"."+number;
+    census.accepted(requestId);census.headers(requestId,io.response);
+  }
+  census.close();input.nativeContext.headerCensus=census.snapshot();
+  assert.equal(classifyControlCancellations(input).provenControls,0,"different traces cannot duplicate a context application ID");
 });
 
 test("Native proof cannot use NoExtra, missing source authority, body mismatches or an incomplete current wire",()=>{
