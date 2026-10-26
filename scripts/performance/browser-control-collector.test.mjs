@@ -24,6 +24,9 @@ import {
 	createNativeWorkerObserver,
 	captureNativeEndMetadata,
 	readBrowserControlBinding,
+	compiledRoutingSourceFacts,
+	compiledRoutingForBinding,
+	renderedPathSourceFacts,
 	verifyBrowserControlBrowser,
 	createBrowserControlCollector,
 	createProxyControlCollector,
@@ -340,13 +343,15 @@ test("normal admission binds the actual manifest before IO and actual browser re
 	const dir = await mkdtemp(join(tmpdir(), "z8-browser-admission-"));
 	try {
 		const manifestPath = join(dir, "required-server-files.json"), build = "c".repeat(40);
-		const bytes = Buffer.from(JSON.stringify({ config: { deploymentId: build, experimental: { cachedNavigations: true } } }));
+		const bytes = Buffer.from(JSON.stringify({ config: { deploymentId: build, basePath:"",output:"standalone",experimental: { cachedNavigations: true } } }));
 		await writeFile(manifestPath, bytes);
 		const browserControl = { policy: controlCancellationPolicy, browserRevision: chromiumSWRRevision,
 			compiledCachedNavigations: true, compiledManifestSha256: createHash("sha256").update(bytes).digest("hex") };
 		const plan = { runtime: { build, browserControl } };
 		const binding = await readBrowserControlBinding({ plan, manifestPath });
 		assert.equal(binding.manifestVerified, true);
+		assert.deepEqual(compiledRoutingForBinding(binding),compiledRoutingSourceFacts({basePath:"",output:"standalone"},browserControl.compiledManifestSha256));
+		assert.equal(Object.hasOwn(binding,"compiledRoutingSourceFacts"),false,"phase manifest facts must not enter common browser-control metadata");
 		let detach = 0;
 		const browser = { target: () => ({ createCDPSession: async () => ({
 			send: async (method) => { assert.equal(method, "Browser.getVersion"); return { revision: `@${chromiumSWRRevision}` }; },
@@ -362,6 +367,50 @@ test("normal admission binds the actual manifest before IO and actual browser re
 		await writeFile(manifestPath, JSON.stringify({ config: { deploymentId: build, experimental: {} } }));
 		await assert.rejects(readBrowserControlBinding({ plan, manifestPath }));
 	} finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test("browser and no-follow proxy retain independent routing source digests while raw values are discarded",async()=>{
+	const dir=await mkdtemp(join(tmpdir(),"z8-routing-source-"));
+	try{
+	const manifestPath=join(dir,"required-server-files.json"),build="b".repeat(40),bytes=Buffer.from(JSON.stringify({config:{deploymentId:build,basePath:"",output:"standalone",experimental:{cachedNavigations:true}}}));
+	await writeFile(manifestPath,bytes);
+	const compiledBinding=await readBrowserControlBinding({manifestPath,plan:{runtime:{build,browserControl:{policy:controlCancellationPolicy,browserRevision:chromiumSWRRevision,compiledCachedNavigations:true,compiledManifestSha256:createHash("sha256").update(bytes).digest("hex")}}}});
+	const actualUrl=origin+"/en/PRIVATE_PATH?_rsc=PRIVATE_MARKER&a=PRIVATE_QUERY+b&a=c&2=z";
+	const expectedSearch="?2=z&a=PRIVATE_QUERY%20b&a=c",hash=value=>createHash("sha256").update(value).digest("hex");
+	const collector=createBrowserControlCollector({contextId,origin,compiledBinding,readBody:async()=>({body,base64Encoded:false})});collector.installed();
+	collector.request({requestId:"1",loaderId:"loader",type:"Fetch",timestamp:1,request:{url:actualUrl,method:"GET",headers}});
+	collector.response({requestId:"1",response:{url:actualUrl,status:200,headers:responseHeaders,fromDiskCache:true,mimeType:"text/x-component",charset:""}});collector.finished({requestId:"1",timestamp:2});await tick();
+	const facts=collector.snapshot().bodyReceipts[0].pathSourceFacts;
+	assert.equal(facts.rendered.known,true);assert.equal(facts.rendered.pathnameSha256,hash("/en/PRIVATE_PATH"));assert.equal(facts.rendered.searchSha256,hash(expectedSearch));
+	assert.equal(facts.rendered.partsCount,2);assert.equal(facts.url.provenance,"Network.responseReceived.url");
+	const proxy=createProxyControlCollector({contextId,origin,compiledBinding});proxy.installed();
+	proxy.request("1",{url:actualUrl,method:"GET",headers,traceId:"a".repeat(32)});proxy.response("1",{status:200,headers:responseHeaders});
+	const forwarded=proxy.snapshot().rows[0].pathSourceFacts;
+	assert.equal(forwarded.rendered.pathnameSha256,facts.rendered.pathnameSha256);assert.equal(forwarded.url.provenance,"owned-proxy-request-url-no-follow");
+	assert.equal(forwarded.url.originMatches,true);
+	assert.doesNotMatch(JSON.stringify({facts,forwarded}),/PRIVATE_PATH|PRIVATE_QUERY|PRIVATE_MARKER/);
+	}finally{assert.equal(dir.startsWith(join(tmpdir(),"z8-routing-source-")),true);await rm(dir,{recursive:true,force:true});}
+});
+
+test("routing metadata honors own rewrite presence and retains unknown malformed source facts",()=>{
+	const compiledRouting=compiledRoutingSourceFacts({basePath:"",output:"standalone"},"c".repeat(64)),hash=value=>createHash("sha256").update(value).digest("hex");
+	const response={url:origin+"/en/original?_rsc=private&x=one+two",headers:{"X-Nextjs-Rewritten-Path":"/rewritten/value","X-Nextjs-Rewritten-Query":"q=a+b&q=c&2=z"}};
+	const facts=renderedPathSourceFacts({response,compiledRouting,origin});
+	assert.equal(facts.rendered.pathnameSource,"rewrite-header");assert.equal(facts.rendered.pathnameSha256,hash("/rewritten/value"));assert.equal(facts.rendered.searchSha256,hash("?2=z&q=a%20b&q=c"));
+	const emptyQuery=renderedPathSourceFacts({response:{...response,headers:{"x-nextjs-rewritten-query":""}},compiledRouting,origin});
+	assert.equal(emptyQuery.rewrite.query.present,true);assert.equal(emptyQuery.rendered.searchSha256,hash(""));assert.equal(emptyQuery.rendered.searchSource,"rewrite-header");
+	assert.equal(renderedPathSourceFacts({response:{...response,headers:{"x-nextjs-rewritten-path":""}},compiledRouting,origin}).rendered.known,false,"present empty path does not select URL fallback");
+	let reads=0;const getter=Object.defineProperty({},"x-nextjs-rewritten-path",{get(){reads++;return "/private";}});
+	for(const headers of [undefined,Object.create({"x-nextjs-rewritten-path":"/private"}),getter,{"X-Nextjs-Rewritten-Path":"/one","x-nextjs-rewritten-path":"/two"},{"x-nextjs-rewritten-query":"x".repeat(2049)}]){
+		assert.equal(renderedPathSourceFacts({response:{...response,headers},compiledRouting,origin}).rendered.known,false);
+	}
+	assert.equal(reads,0);
+	const getterURL=Object.defineProperty({headers:{}},"url",{get(){reads++;return response.url;}});
+	assert.equal(renderedPathSourceFacts({response:getterURL,compiledRouting,origin}).url.known,false);assert.equal(reads,0);
+	const getterConfig=Object.defineProperty({},"basePath",{get(){reads++;return "";}});
+	assert.equal(compiledRoutingSourceFacts(getterConfig,"c".repeat(64)).basePathOwnKnown,false);assert.equal(reads,0);
+	for(const config of [{},{basePath:"/app"},{basePath:"",output:"export"}])assert.equal(renderedPathSourceFacts({response:{url:response.url,headers:{}},compiledRouting:compiledRoutingSourceFacts(config,"c".repeat(64)),origin}).rendered.known,false);
+	const inherited=Object.assign(Object.create({url:response.url}),{headers:{}});assert.equal(renderedPathSourceFacts({response:inherited,compiledRouting,origin}).url.known,false);
 });
 
 test("Native pre-IO public binding uses reviewed expected files rather than qualifying the current directory",async()=>{
