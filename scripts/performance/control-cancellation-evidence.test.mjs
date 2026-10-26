@@ -932,6 +932,21 @@ test("route-tree required structure and phase binding cannot be supplied by impo
 	assert.equal(inspect(bodyBuild.replace('"b":"'+'b'.repeat(40),'"b":"'+'c'.repeat(40))).complete,true,"actual deployment header has source precedence over body b");
 });
 
+test("first rejected route segment exposes fixed kinds and provenance without admitting null dynamic values",()=>{
+	const options={requestKind:"route-tree",routeTreeBinding:segmentBinding("/_tree")};
+	const body=segment=>'0:{"t":{"t":{"s":"","c":"$Q1"}}}\n1:[["children",{"s":'+JSON.stringify(segment)+'}]]\n';
+	const omitted={n:"PRIVATE_NAME",t:"d",k:null,s:null};
+	const proof=inspectRequiredFlightBody(Buffer.from(body(omitted)),options);
+	assert.equal(proof.complete,false);assert.equal(proof.reason,"unsupported-tree-segment");
+	assert.deepEqual(proof.routeTreeSegmentObservation,{nodeOrdinal:2,rawKind:"object",resolvedKind:"object",provenance:"inline",paramType:"d",nameKind:"string",valueKind:"null",siblingsKind:"null",unknownFields:0});
+	assert.equal(JSON.stringify(proof).includes("PRIVATE_NAME"),false);
+	const wrong=inspectRequiredFlightBody(Buffer.from(body({...omitted,t:"PRIVATE_TYPE",k:false})),options);
+	assert.equal(wrong.routeTreeSegmentObservation.paramType,"other");assert.equal(wrong.routeTreeSegmentObservation.valueKind,"boolean");
+	assert.equal(JSON.stringify(wrong).includes("PRIVATE_TYPE"),false);
+	const tagged=inspectRequiredFlightBody(Buffer.from(body("$2")+'2:I'+JSON.stringify(omitted)+'\n'),options);
+	assert.equal(tagged.complete,false);assert.equal(tagged.routeTreeSegmentObservation.provenance,"import");assert.equal(tagged.routeTreeSegmentObservation.resolvedKind,"unresolved");
+});
+
 test("typed patch rejection retains the first fixed guard and safe field kinds without changing its verdict", () => {
 	const root={q:"PRIVATE_QUERY",i:false,t:{t:{s:"en",d:{r:"PRIVATE_OUTPUT",p:true,v:null}}}};
 	const encode=root=>Buffer.from('~0:'+JSON.stringify(root)+'\n');

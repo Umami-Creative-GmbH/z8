@@ -19,8 +19,79 @@ export const controlResponseHeader = "x-z8-fixture-response-id";
 export const controlDocumentHeader = "x-z8-fixture-document-generation";
 export const mixedBrowserWorkScope = "all-mixed-context-work-before-first-app-io-through-finite-settlement-v1";
 const sha = (value) => createHash("sha256").update(value).digest("hex");
+const ownData=(object,key)=>{
+	try{const field=object && typeof object==="object"?Object.getOwnPropertyDescriptor(object,key):null;return field && Object.hasOwn(field,"value")?{present:true,value:field.value}:{present:field!==undefined && field!==null,unknown:field!==undefined && field!==null};}catch{return {present:false,unknown:true};}
+};
+const boundedText=value=>typeof value==="string" && Buffer.byteLength(value)<=2048;
+
+/** Digests actual verified-manifest routing fields; no raw routing strings survive. */
+export function compiledRoutingSourceFacts(config,manifestSha256){
+	const base=ownData(config,"basePath"),output=ownData(config,"output");
+	const configKnown=config && typeof config==="object" && [Object.prototype,null].includes(Object.getPrototypeOf(config)) && /^[a-f0-9]{64}$/.test(manifestSha256 ?? "");
+	const baseKnown=Boolean(configKnown && base.present && !base.unknown && boundedText(base.value));
+	const outputKnown=Boolean(configKnown && !output.unknown && (!output.present || ["export","standalone"].includes(output.value)));
+	return {protocol:"compiled-routing-source-facts-v1",compiledManifestSha256:manifestSha256,
+		basePathOwnKnown:baseKnown,basePathEmpty:baseKnown?base.value==="":null,basePathBytes:baseKnown?Buffer.byteLength(base.value):null,basePathSha256:baseKnown?sha(base.value):null,
+		outputFieldPresent:output.present,outputKnown,output:outputKnown?(output.present?output.value:"absent"):"unknown"};
+}
+const routingURLFacts=(raw,compiled,origin,provenance)=>{
+	let url;try{if(boundedText(raw))url=new URL(raw);}catch{}
+	const actual={known:Boolean(url && ["http:","https:"].includes(url.protocol) && !url.username && !url.password),provenance,bytes:boundedText(raw)?Buffer.byteLength(raw):null,sha256:boundedText(raw)?sha(raw):null,originSha256:url?sha(url.origin):null,originMatches:url&&typeof origin==="string"?url.origin===origin:null};
+	let fallback={known:false,reason:"unknown-response-url",pathnameSha256:null,pathnameBytes:null,partsCount:null,searchSha256:null,searchBytes:null};
+	if(!actual.known)return {actual,fallback};
+	if(compiled?.protocol!=="compiled-routing-source-facts-v1" || compiled.basePathOwnKnown!==true || compiled.outputKnown!==true)return {actual,fallback:{...fallback,reason:"unknown-compiled-routing"}};
+	if(compiled.output==="export")return {actual,fallback:{...fallback,reason:"unsupported-export-routing"}};
+	if(compiled.basePathEmpty!==true)return {actual,fallback:{...fallback,reason:"unsupported-nonempty-base-path"}};
+	try{url.searchParams.delete("_rsc");const search=normalizeRoutingSearch(url.search);
+		fallback={known:true,reason:null,pathnameSha256:sha(url.pathname),pathnameBytes:Buffer.byteLength(url.pathname),partsCount:url.pathname.split("/").filter(Boolean).length,searchSha256:sha(search),searchBytes:Buffer.byteLength(search)};
+	}catch{fallback={...fallback,reason:"unsupported-search-normalization"};}
+	return {actual,fallback};
+};
+const normalizeRoutingSearch=raw=>{
+	const grouped=Object.create(null);
+	for(const [key,value] of new URLSearchParams(raw)){
+		if(Object.hasOwn(Object.prototype,key))throw Error("Unsupported query key");
+		(grouped[key] ??= []).push(value);
+	}
+	const pairs=[];for(const key of Object.keys(grouped))for(const value of grouped[key])pairs.push(encodeURIComponent(key)+"="+encodeURIComponent(value));
+	return pairs.length?"?"+pairs.join("&"):"";
+};
+const rewriteSourceFacts=headers=>{
+	const unknown={snapshotKnown:false,path:{known:false,present:null,bytes:null,sha256:null},query:{known:false,present:null,bytes:null,sha256:null}};
+	if(!headers || typeof headers!=="object" || ![Object.prototype,null].includes(Object.getPrototypeOf(headers)))return {facts:unknown};
+	const values=new Map();let bytes=0;
+	try{const keys=Reflect.ownKeys(headers);if(keys.length>256)return {facts:unknown};
+		for(const key of keys){if(typeof key!=="string" || key.length>256)return {facts:unknown};const field=ownData(headers,key);
+			if(field.unknown || !field.present || typeof field.value!=="string")return {facts:unknown};
+			bytes+=Buffer.byteLength(key)+Buffer.byteLength(field.value);if(bytes>65536 || values.has(key.toLowerCase()))return {facts:unknown};values.set(key.toLowerCase(),field.value);}
+	}catch{return {facts:unknown};}
+	const get=key=>{const present=values.has(key),value=values.get(key);return {known:!present || boundedText(value),present,bytes:present&&boundedText(value)?Buffer.byteLength(value):null,sha256:present&&boundedText(value)?sha(value):null};};
+	return {facts:{snapshotKnown:true,path:get("x-nextjs-rewritten-path"),query:get("x-nextjs-rewritten-query")},path:values.get("x-nextjs-rewritten-path"),query:values.get("x-nextjs-rewritten-query")};
+};
+
+/** Source observations only; an unknown routing mode never selects a guessed pathname. */
+export function renderedPathSourceFacts({response,compiledRouting,origin,requestURLFacts}={}){
+	const urlField=ownData(response,"url"),headersField=ownData(response,"headers");
+	const urlFacts=requestURLFacts ?? routingURLFacts(!urlField.unknown && urlField.present?urlField.value:undefined,compiledRouting,origin,"Network.responseReceived.url");
+	const rewrite=rewriteSourceFacts(!headersField.unknown && headersField.present?headersField.value:null),facts=rewrite.facts;
+	const status=ownData(response,"status"),statusKnown=!status.unknown && status.present && Number.isSafeInteger(status.value) && status.value>=100 && status.value<=599;
+	const result={protocol:"rendered-path-source-facts-v1",sourceKnown:urlFacts.actual.known && facts.snapshotKnown && compiledRouting?.basePathOwnKnown===true && compiledRouting.outputKnown===true,
+		responseStatusKnown:statusKnown,responseStatus:statusKnown?status.value:null,compiledRouting:compiledRouting ?? null,url:urlFacts.actual,rewrite:facts,rendered:{known:false,reason:"unknown-rewrite-header-snapshot",pathnameSource:null,pathnameSha256:null,pathnameBytes:null,partsCount:null,searchSource:null,searchSha256:null,searchBytes:null}};
+	if(!facts.snapshotKnown || !facts.path.known || !facts.query.known)return result;
+	try{let path,search;const rendered=result.rendered;
+		if(facts.path.present){if(!rewrite.path || !rewrite.path.startsWith("/") || /[?#\r\n]/.test(rewrite.path))return {...result,rendered:{...rendered,reason:"unsupported-rewritten-path"}};
+			path={pathnameSha256:sha(rewrite.path),pathnameBytes:Buffer.byteLength(rewrite.path),partsCount:rewrite.path.split("/").filter(Boolean).length};rendered.pathnameSource="rewrite-header";
+		}else{if(!urlFacts.fallback.known)return {...result,rendered:{...rendered,reason:urlFacts.fallback.reason}};path=urlFacts.fallback;rendered.pathnameSource=urlFacts.actual.provenance==="Network.responseReceived.url"?"response-url":"owned-proxy-request-url-no-follow";}
+		if(facts.query.present){const normalized=normalizeRoutingSearch(rewrite.query);search={searchSha256:sha(normalized),searchBytes:Buffer.byteLength(normalized)};rendered.searchSource="rewrite-header";}
+		else{if(!urlFacts.fallback.known)return {...result,rendered:{...rendered,reason:urlFacts.fallback.reason}};search=urlFacts.fallback;rendered.searchSource=urlFacts.actual.provenance==="Network.responseReceived.url"?"response-url":"owned-proxy-request-url-no-follow";}
+		Object.assign(rendered,{known:true,reason:null,...Object.fromEntries(["pathnameSha256","pathnameBytes","partsCount"].map(key=>[key,path[key]])),...Object.fromEntries(["searchSha256","searchBytes"].map(key=>[key,search[key]]))});
+	}catch{result.rendered.reason="unsupported-search-normalization";}
+	return result;
+}
 // Private file locator only; all actual source/hash observations are serialized, not stored here.
 const nativeManifestLocators = new WeakMap();
+const compiledRoutingSources = new WeakMap();
+export const compiledRoutingForBinding = binding=>compiledRoutingSources.get(binding) ?? null;
 const shaChunks = (chunks) => {
 	const hash = createHash("sha256");
 	for (const chunk of chunks) hash.update(chunk);
@@ -210,6 +281,7 @@ export async function readBrowserControlBinding({ plan, manifestPath }) {
 			row.file === metadata.nativePublicSources.files[index].file && row.bytes === metadata.nativePublicSources.files[index].bytes && row.sha256 === metadata.nativePublicSources.files[index].sha256)))
 		throw Error("Serving public sources differ from the independently qualified compiled source.");
 	const binding = Object.freeze({ ...metadata, compiledBuild: plan.runtime.build, manifestVerified: true, browserVerified: false,servingPublicSources });
+	compiledRoutingSources.set(binding,Object.freeze(compiledRoutingSourceFacts(manifest.config,sha(bytes))));
 	nativeManifestLocators.set(binding,manifestPath);
 	return binding;
 }
@@ -225,6 +297,7 @@ export async function verifyBrowserControlBrowser(browser, binding) {
 			throw Error("Actual browser revision differs from qualified protocol control source.");
 		const verified = Object.freeze({ ...binding, browserVerified: true, nativeLaunchMetadata: await captureNativeLaunchMetadata(browser) });
 		if (nativeManifestLocators.has(binding)) nativeManifestLocators.set(verified,nativeManifestLocators.get(binding));
+		if(compiledRoutingSources.has(binding))compiledRoutingSources.set(verified,compiledRoutingSources.get(binding));
 		return verified;
 	} finally { await session.detach(); }
 }
@@ -837,6 +910,7 @@ export function createBrowserControlCollector({
 								canceled: candidate.canceled,
 								vary: candidate.vary ?? null,
 								transportBodyReceipt: candidate.transportBodyReceipt ?? null,
+								pathSourceFacts:candidate.pathSourceFacts ?? null,
 							})),
 							selectedTruncated: selectedPackets.length > 8,
 							sameUrlMethod: candidates.length,
@@ -873,6 +947,7 @@ export function createBrowserControlCollector({
 					action: row.action,
 					bodyReadbackComplete: row.bodyReadbackComplete === true,
 					bodyReadbackReceipt: row.bodyReadbackReceipt ?? null,
+					pathSourceFacts:row.pathSourceFacts ?? null,
 					browserDataLedger:row.browserDataLedger,
 					streamReceipt: row.streamReceipt ?? null,
 					bodyProof: row.bodyProof ?? null,
@@ -984,6 +1059,7 @@ export function createBrowserControlCollector({
 			);
 			row.initialResponseVary = row.vary;
 			row.initialSegmentResponse = controlResponseMetadata(event.response.headers,event.response.status);
+			row.pathSourceFacts=renderedPathSourceFacts({response:event.response,compiledRouting:compiledRoutingForBinding(compiledBinding),origin});
 			const mimeField=Object.getOwnPropertyDescriptor(event.response,"mimeType"),charsetField=Object.getOwnPropertyDescriptor(event.response,"charset");
 			const mime=mimeField && Object.hasOwn(mimeField,"value") && typeof mimeField.value === "string" && mimeField.value.length<=128 ? mimeField.value.toLowerCase() : null;
 			const charset=charsetField && Object.hasOwn(charsetField,"value") && typeof charsetField.value === "string" && charsetField.value.length<=64 ? charsetField.value.toLowerCase() : null;
@@ -1099,6 +1175,7 @@ export async function installBrowserControlCollector({
 	const principalEpoch = createPrincipalEpochObserver(contextId, { origin });
 	let workerObservation, endMetadata = null;
 	const proxy = createProxyControlCollector({
+		origin,
 		contextId,
 		compiledCachedNavigations,
 		compiledBinding:environmentBinding,
@@ -1189,6 +1266,7 @@ export async function installBrowserControlCollector({
 /** Same actual bytes as forwarding; no replay, clone, response hold, or public payload retention. */
 export function createProxyControlCollector({
 	contextId,
+	origin,
 	compiledCachedNavigations,
 	compiledBinding,
 }) {
@@ -1231,6 +1309,7 @@ export function createProxyControlCollector({
 			}
 			requests.set(id, {
 				...controlRequestIdentity(contextId, url, method, headers),
+				requestURLFacts:routingURLFacts(url,compiledRoutingForBinding(compiledBinding),origin,"owned-proxy-request-url-no-follow"),
 				id,
 				traceId,
 				upstreamError: false,
@@ -1248,6 +1327,7 @@ export function createProxyControlCollector({
 				return;
 			}
 			Object.assign(row, controlResponseMetadata(headers, status));
+			row.pathSourceFacts=renderedPathSourceFacts({response:{headers,status},compiledRouting:compiledRoutingForBinding(compiledBinding),origin,requestURLFacts:row.requestURLFacts});
 			row.encoding = lowerHeaders(headers)["content-encoding"] ?? "identity";
 		},
 		bytes(id, chunk) {
