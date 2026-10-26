@@ -1,5 +1,5 @@
 /** Context transport including workers; bounded compiled-action semantics stay in RAM, never in evidence. */
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { Agent, createServer, request as forward } from "node:http";
 import { createProxyWireObserver } from "./proxy-wire-observer.mjs";
 import { createActionResultObserver } from "./action-result-observer.mjs";
@@ -34,6 +34,13 @@ export async function createFixtureTraceTransport({
 	const wire = createProxyWireObserver();
 	const application = createActionResultObserver();
 	let controlObserver, controlObserverErrors = 0;
+	const proxyInstanceId = randomBytes(16).toString("hex");
+	let upstreamRequests = 0, closedUpstreams = 0, serverClosed = false, controlLifetimeClosed = false;
+	const finishControlLifetime = () => {
+		if (!serverClosed || upstreamRequests !== closedUpstreams || controlLifetimeClosed) return;
+		controlLifetimeClosed = true;
+		control("transportClosed",{serverClosed:true,acceptedRequests:counts.requests,upstreamRequests,closedUpstreams,pendingUpstreams:0});
+	};
 	const control = (method, ...args) => {
 		try { controlObserver?.[method](...args); }
 		catch {
@@ -94,6 +101,7 @@ export async function createFixtureTraceTransport({
 				controlId = `${traceId}.${applicationId}`;
 				control("request", controlId, { traceId, url: url.href, method: request.method, headers: request.headers });
 			}
+			else if (controlObserver) control("observerError");
 			const headers = { ...request.headers };
 			delete headers["proxy-connection"];
 			delete headers["proxy-authorization"];
@@ -101,7 +109,7 @@ export async function createFixtureTraceTransport({
 				headers.traceparent = `00-${traceId}-${randomBytes(8).toString("hex")}-01`;
 				counts.rewrittenRequests++;
 			}
-			let downstreamAborted = false,
+			let downstreamAborted = false, headersReceived = false,
 				failureRecorded = false,
 				upstream;
 			const failed = (phase, error) => {
@@ -151,6 +159,7 @@ export async function createFixtureTraceTransport({
 				url,
 				{ method: request.method, headers, agent },
 				(answer) => {
+					headersReceived = true;
 					control("response", controlId, { status: answer.statusCode, headers: answer.headers });
 					application.response(applicationId, { mimeType: answer.headers["content-type"], encoding: answer.headers["content-encoding"], status: answer.statusCode });
 					wire.response(
@@ -189,6 +198,12 @@ export async function createFixtureTraceTransport({
 					answer.pipe(response);
 				},
 			);
+			upstreamRequests++;
+			upstream.once("close",()=>{
+				closedUpstreams++;
+				if (!headersReceived) control("upstreamClosedBeforeHeaders",controlId,{upstreamClosed:true,headersReceived:false});
+				finishControlLifetime();
+			});
 			upstream.on("error", (error) => {
 				failed("connection", error);
 				if (!response.destroyed) {
@@ -251,10 +266,12 @@ export async function createFixtureTraceTransport({
 		wire,
 		setControlCancellationObserver(observer) {
 			if (controlObserver || counts.requests !== 0 ||
-				!["installed", "request", "response", "bytes", "end", "cancel", "failure", "observerError"].every((key) => typeof observer?.[key] === "function"))
+				!["installed", "request", "response", "bytes", "end", "cancel", "failure", "observerError", "upstreamClosedBeforeHeaders", "transportClosed"].every((key) => typeof observer?.[key] === "function"))
 				throw Error("Protocol control observation requires one pre-request owned observer.");
 			controlObserver = observer;
-			control("installed");
+			const sha = value=>createHash("sha256").update(value).digest("hex");
+			control("installed",{protocol:"owned-context-upstream-header-lifetime-v1",proxyInstanceId,originSha256:sha(origin),
+				allowedOriginSha256:[...allowed].map(sha).sort(),acceptedRequestsAtInstall:counts.requests});
 			return () => controlObserverErrors;
 		},
 		browserContextOptions: {
@@ -301,6 +318,8 @@ export async function createFixtureTraceTransport({
 			agent.destroy();
 			server.closeAllConnections();
 			await new Promise((resolve) => server.close(resolve));
+			serverClosed = true;
+			finishControlLifetime();
 		},
 	};
 }

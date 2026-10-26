@@ -25,6 +25,7 @@ export const mixedProtocolFiles = [
 	"clean-evidence.mjs",
 	"control-cancellation-evidence.mjs",
 	"browser-control-collector.mjs",
+	"proxy-header-census.mjs",
 	"proxy-wire-observer.mjs",
 ];
 const policy = {

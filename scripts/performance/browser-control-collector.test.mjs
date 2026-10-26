@@ -31,6 +31,9 @@ import {
 	controlResponseHeader,
 } from "./browser-control-collector.mjs";
 import { controlCancellationPolicy } from "./control-cancellation-evidence.mjs";
+import { validateProxyHeaderCensus } from "./proxy-header-census.mjs";
+import { primaryProtocolIdentity, companionProtocolIdentity, budgetProtocolIdentity } from "./protocol-fingerprints.mjs";
+import { mixedProtocolFiles } from "./mixed-clock-budgets.mjs";
 
 const origin = "http://localhost:1234",
 	url = `${origin}/en?_rsc=PRIVATE_QUERY`,
@@ -45,6 +48,63 @@ const responseHeaders = {
 	"content-type": "text/x-component",
 	"cache-control": "s-maxage=100, stale-while-revalidate=200",
 };
+
+test("proxy header census survives semantic scope end and closes only with actual transport lifetime facts",()=>{
+	const proxy=createProxyControlCollector({contextId});proxy.installed();
+	const collector=createBrowserControlCollector({contextId,origin,proxyObservation:proxy.snapshot});collector.installed();
+	const id=n=>"a".repeat(32)+"."+n;
+	for(const n of [1,2,3]) proxy.request(id(n),{url:n===2?"http://localhost:4321/worker":url,method:"GET",headers:{},traceId:"a".repeat(32)});
+	proxy.response(id(1),{status:200,headers:{"content-type":"text/plain"}});
+	proxy.cancel(id(3));
+	collector.endScope();
+	let proof=proxy.snapshot().headerCensus;
+	assert.equal(validateProxyHeaderCensus(proof,{contextId}),true);
+	assert.equal(proof.closed,false);
+	assert.equal(proof.counts.pending,2,"downstream cancel does not prove an upstream no-header terminal");
+	proxy.response(id(2),{status:200,headers:{"set-cookie":["private-value"],"content-type":"text/plain"}});
+	proxy.upstreamClosedBeforeHeaders(id(3),{upstreamClosed:true,headersReceived:false});
+	proxy.transportClosed({serverClosed:true,acceptedRequests:3,upstreamRequests:3,closedUpstreams:3,pendingUpstreams:0});
+	proof=proxy.snapshot().headerCensus;
+	assert.equal(validateProxyHeaderCensus(proof,{contextId}),true);
+	assert.equal(proof.closed,true);assert.equal(proof.counts.pending,0);assert.equal(proof.counts.setCookieResponses,1);
+	assert.equal(proof.counts.terminalBeforeHeaders,1);
+	assert.equal(collector.snapshot().proxyHeaderCensus.closed,true,"browser semantic closure does not close the transport census early");
+	assert.doesNotMatch(JSON.stringify(proxy.snapshot()),/private-value/);
+	proxy.response(id(3),{status:200,headers:{}});
+	assert.equal(proxy.snapshot().headerCensus.counts.late,1,"late header facts remain sticky after closure");
+});
+
+test("every protocol source closure binds the newly wired proxy header census",async()=>{
+	const maps=await Promise.all([primaryProtocolIdentity(),companionProtocolIdentity(),budgetProtocolIdentity()]);
+	for(const map of maps) assert.match(map["proxy-header-census.mjs"],/^[a-f0-9]{64}$/);
+	assert.equal(mixedProtocolFiles.filter(name=>name==="proxy-header-census.mjs").length,1);
+});
+
+test("incomplete transport closure never fabricates a closed census or removes pending header facts",()=>{
+	const proxy=createProxyControlCollector({contextId});proxy.installed();
+	const id="a".repeat(32)+".1";
+	proxy.request(id,{url,method:"GET",headers:{},traceId:"a".repeat(32)});
+	proxy.cancel(id);
+	proxy.transportClosed({serverClosed:true,acceptedRequests:1,upstreamRequests:1,closedUpstreams:0,pendingUpstreams:1});
+	const snapshot=proxy.snapshot();
+	assert.equal(snapshot.headerCensus.closed,false);
+	assert.equal(snapshot.headerCensus.counts.pending,1);
+	assert.equal(snapshot.headerCensus.counts.errors,1);
+	assert.equal(validateProxyHeaderCensus(snapshot.headerCensus,{contextId}),true,"well-formed adverse facts are not eligibility");
+});
+
+test("text readback metadata keeps actual UTF16 length and an independent finished CDP dataLength sum",async()=>{
+	const body='0:{"a":"€"}\n';
+	const collector=createBrowserControlCollector({contextId,origin,readBody:async()=>({body,base64Encoded:false})});collector.installed();
+	collector.request({...event("encoded",1),request:{url,method:"POST",headers:{"next-action":"technical-action"}}});
+	collector.response({requestId:"encoded",response:{status:200,headers:responseHeaders,fromDiskCache:true}});
+	collector.data({requestId:"encoded",dataLength:7});collector.data({requestId:"encoded",dataLength:10});
+	collector.finished({requestId:"encoded",timestamp:2});collector.endScope();await tick();await tick();
+	const receipt=collector.snapshot().bodyReceipts[0].bodyReadbackReceipt;
+	assert.equal(receipt.utf16CodeUnitLength,body.length);
+	assert.equal(receipt.observedDataLengthAtReadback,17);
+	assert.notEqual(receipt.observedDataLengthAtReadback,receipt.decodedBytes);
+});
 const body = '#0:{"b":"PRIVATE_BUILD","t":{"t":{"s":""}}}\n';
 const event = (requestId, timestamp, type = "Fetch") => ({
 	requestId,
