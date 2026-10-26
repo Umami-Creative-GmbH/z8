@@ -266,7 +266,22 @@ export function inspectRequiredFlightBody(
 	while (queue.length) {
 		if (++inspected > 100000) return unknown("model-limit");
 		const value = queue.pop();
-		if (typeof value === "string" && /^\$[QWi][a-f0-9]+$/.test(value)) {
+		if (
+			typeof value === "string" &&
+			value.startsWith("$S") &&
+			value.length > 2
+		) {
+			// Symbol.for creates a scalar, not an outlined model dependency.
+			continue;
+		} else if (
+			typeof value === "string" &&
+			value.startsWith("$D") &&
+			Number.isFinite(Date.parse(value.slice(2))) &&
+			new Date(value.slice(2)).toISOString() === value.slice(2)
+		) {
+			// External Flight Date boundary; accept only the canonical serializer form.
+			continue;
+		} else if (typeof value === "string" && /^\$[QWi][a-f0-9]+$/.test(value)) {
 			// The installed decoder constructs these only from an outlined iterable model.
 			const id = value.slice(2),
 				record = records.get(id);
@@ -376,8 +391,132 @@ export function inspectRequiredFlightBody(
 				return unknown("unsupported-boundary-metadata");
 		}
 	let requiredStage = "full",
-		boundaryBytes = body.length;
-	if (isPartial) {
+		boundaryBytes = body.length,
+		patchClaims = null;
+	if (
+		isPartial &&
+		requestKind === "navigation" &&
+		!Object.hasOwn(root, "l") &&
+		!Object.hasOwn(root, "a")
+	) {
+		// Main Flight consumption is independent of the optional static/shell cache clones.
+		// This proves only the represented SPA patch, retaining response-level partiality.
+		if (
+			typeof root.q !== "string" ||
+			typeof root.i !== "boolean" ||
+			(Object.hasOwn(root, "S") && typeof root.S !== "boolean") ||
+			Object.hasOwn(root, "n")
+		)
+			return unknown("unsupported-navigation-patch-root");
+		const transport = resolve(root.t),
+			nodes = [transport.t],
+			seen = new Set();
+		let representedOutputs = 0;
+		const iterableHasType = (raw, accepts) => {
+			if (typeof raw !== "string" || !/^\$[a-f0-9]+$/.test(raw)) return false;
+			const record = records.get(raw.slice(1));
+			return (
+				record?.stream &&
+				record.closed &&
+				["X", "x"].includes(record.tag) &&
+				record.value.slice(0, -1).every((item) => accepts(resolve(item)))
+			);
+		};
+		const varyId = (value) =>
+			value === 0 ||
+			(typeof value === "string" &&
+				(!value.startsWith("$") || value.startsWith("$$")));
+		const staleTime = (value) =>
+			typeof value === "number" && Number.isFinite(value) && value >= 0;
+		const dataIsTyped = (raw) => {
+			const data = resolve(raw);
+			if (
+				!data ||
+				typeof data !== "object" ||
+				Array.isArray(data) ||
+				!Object.hasOwn(data, "r") ||
+				typeof data.p !== "boolean" ||
+				!Object.hasOwn(data, "v") ||
+				Object.keys(data).some((key) => !["r", "p", "v", "s"].includes(key)) ||
+				(data.v !== null && !iterableHasType(data.v, varyId)) ||
+				(Object.hasOwn(data, "s") && !iterableHasType(data.s, staleTime))
+			)
+				return false;
+			if (data.r !== null && data.r !== "$undefined") representedOutputs++;
+			return true;
+		};
+		if (
+			Object.keys(transport).some((key) => !["t", "h"].includes(key)) ||
+			(Object.hasOwn(transport, "h") && !dataIsTyped(transport.h)) ||
+			(Object.hasOwn(root, "r") &&
+				root.r !== null &&
+				!iterableHasType(root.r, varyId)) ||
+			(Object.hasOwn(root, "s") && !iterableHasType(root.s, staleTime))
+		)
+			return unknown("unsupported-navigation-patch-data");
+		while (nodes.length) {
+			const node = resolve(nodes.pop());
+			if (
+				!node ||
+				typeof node !== "object" ||
+				Array.isArray(node) ||
+				seen.has(node) ||
+				seen.size >= 4096 ||
+				Object.keys(node).some((key) => !["s", "h", "c", "d"].includes(key))
+			)
+				return unknown("unsupported-navigation-patch-tree");
+			seen.add(node);
+			const segment = resolve(node.s);
+			if (
+				typeof segment === "string"
+					? segment.startsWith("$") && !segment.startsWith("$$")
+					: !segment ||
+						typeof segment !== "object" ||
+						Array.isArray(segment) ||
+						Object.keys(segment).some(
+							(key) => !["n", "t", "k", "s"].includes(key),
+						) ||
+						typeof segment.n !== "string" ||
+						typeof segment.t !== "string" ||
+						!(segment.k === null || typeof segment.k === "string") ||
+						!(
+							segment.s === null ||
+							(Array.isArray(segment.s) &&
+								segment.s.every((part) => typeof part === "string"))
+						)
+			)
+				return unknown("unsupported-navigation-patch-segment");
+			if (
+				(node.h !== undefined &&
+					(!Number.isSafeInteger(node.h) || node.h < 0)) ||
+				(Object.hasOwn(node, "d") && !dataIsTyped(node.d))
+			)
+				return unknown("unsupported-navigation-patch-data");
+			if (node.c !== undefined) {
+				if (typeof node.c !== "string" || !/^\$Q[a-f0-9]+$/.test(node.c))
+					return unknown("unsupported-navigation-patch-map");
+				const children = resolve(records.get(node.c.slice(2))?.value);
+				if (!Array.isArray(children))
+					return unknown("unresolved-navigation-patch-map");
+				const slots = new Set();
+				for (const pair of children) {
+					if (
+						!Array.isArray(pair) ||
+						pair.length !== 2 ||
+						typeof pair[0] !== "string" ||
+						slots.has(pair[0])
+					)
+						return unknown("unsupported-navigation-patch-map");
+					slots.add(pair[0]);
+					nodes.push(pair[1]);
+				}
+			}
+		}
+		if (representedOutputs === 0)
+			return unknown("missing-represented-navigation-output");
+		patchClaims = { representedOutputs, treeNodes: seen.size };
+		requiredStage = "navigation-patch";
+	} else if (isPartial) {
 		const staticBytes = boundary(root.l),
 			shellBytes = boundary(root.a);
 		if (staticBytes === null && shellBytes === null)
@@ -401,6 +540,7 @@ export function inspectRequiredFlightBody(
 		...(marker === "unmarked-navigation" ? { cachedNavigations } : {}),
 		action,
 		requiredStage,
+		...(patchClaims ?? {}),
 		boundaryBytes,
 		decodedBytes: bytes.length,
 		bodySha256: bodySha256(bytes),
@@ -469,6 +609,18 @@ const goodBody = (proof) => {
 		!["action", "navigation"].includes(proof.requestKind)
 	)
 		return false;
+	if (proof.requiredStage === "navigation-patch")
+		return (
+			proof.requestKind === "navigation" &&
+			!proof.action &&
+			proof.isPartial &&
+			Number.isSafeInteger(proof.treeNodes) &&
+			proof.treeNodes > 0 &&
+			proof.treeNodes <= 4096 &&
+			Number.isSafeInteger(proof.representedOutputs) &&
+			proof.representedOutputs > 0 &&
+			proof.representedOutputs <= proof.treeNodes + 1
+		);
 	return proof.requiredStage === "full"
 		? !proof.isPartial
 		: ["static", "shell"].includes(proof.requiredStage) && proof.isPartial;
@@ -490,6 +642,7 @@ const bodyReceipt = (row) =>
 		"action",
 		"requiredStage",
 		"treeNodes",
+		"representedOutputs",
 		"boundaryBytes",
 		"decodedBytes",
 		"bodySha256",

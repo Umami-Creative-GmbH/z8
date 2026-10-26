@@ -352,6 +352,25 @@ test("unsupported reference diagnostics retain a fixed prefix and shape without 
 	);
 });
 
+test("Flight symbol and canonical Date scalars do not invent model dependencies", () => {
+	const body =
+		'0:{"a":{"type":"$Sreact.fragment","when":"$D2025-01-01T00:00:00.000Z"}}\n';
+	assert.equal(
+		inspectRequiredFlightBody(Buffer.from(body), { action: true }).complete,
+		true,
+	);
+	for (const invalid of [
+		body.replace("$Sreact.fragment", "$S"),
+		body.replace("2025-01-01", "2025-02-31"),
+		body.replace("$D2025-01-01T00:00:00.000Z", "$Dprivate-value"),
+	])
+		assert.equal(
+			inspectRequiredFlightBody(Buffer.from(invalid), { action: true })
+				.complete,
+			false,
+		);
+});
+
 test("unsupported model reference forms and malformed UTF8 remain unknown", () => {
 	for (const reference of ["$1:path", "$Q1", "$W1", "$K1", "$unknown"]) {
 		assert.equal(
@@ -446,6 +465,58 @@ test("unmarked navigation requires the actual compiled default and partial bound
 		}).isPartial,
 		false,
 	);
+});
+
+test("a complete represented navigation patch needs typed outputs and all dependencies, without inventing a static boundary", () => {
+	const body =
+		'0:{"q":"","i":false,"t":{"t":{"s":"","c":"$Q1"}},"r":"$2","s":"$4"}\n1:[["children","$3"]]\n2:X\n2:C\n3:{"s":"en","d":{"r":["$","div",null,{"children":"private-rendered-value"}],"p":true,"v":null}}\n4:X\n4:300\n4:C\n';
+	const proof = inspectRequiredFlightBody(Buffer.from(body), {
+		cachedNavigations: true,
+	});
+	assert.equal(proof.complete, true);
+	assert.equal(proof.requiredStage, "navigation-patch");
+	assert.equal(proof.isPartial, true);
+	assert.equal(proof.representedOutputs, 1);
+	assert.equal(proof.treeNodes, 2);
+	assert.doesNotMatch(JSON.stringify(proof), /private-rendered|children|div/);
+	const evidence = cancellationFixture();
+	evidence.failures[0].bodyProof = proof;
+	evidence.failures[0].bodyReadbackComplete = true;
+	evidence.proxy[0].bodyProof = proof;
+	evidence.proxy[0].complete = true;
+	evidence.proxy[0].canceled = false;
+	const receipt = classifyControlCancellations(evidence);
+	assert.equal(cleanBrowserFailureEvidence(receipt, 1), true);
+	assert.equal(receipt.rawFailedRequests, 1);
+	const tampered = structuredClone(receipt);
+	tampered.records[0].proof.failure.bodyProof.representedOutputs = 0;
+	assert.equal(cleanBrowserFailureEvidence(tampered, 1), false);
+	for (const invalid of [
+		body.replace('"p":true', '"p":"true"'),
+		body.replace('"c":"$Q1"', '"c":{}'),
+		body.replace('[["children","$3"]]', '[[42,"$3"]]'),
+		body.replace(
+			'"r":["$","div",null,{"children":"private-rendered-value"}]',
+			'"r":"$dead"',
+		),
+		body.replace(
+			'"d":{"r":["$","div",null,{"children":"private-rendered-value"}],"p":true,"v":null}',
+			'"d":{"r":null,"p":true,"v":null}',
+		),
+		body.replace("4:C\n", ""),
+		body.replace('"i":false', '"i":"false"'),
+		body.replace('"v":null', '"v":{}'),
+		body.replace('"r":"$2"', '"r":{}'),
+		body.replace("4:300", '4:"not-a-number"'),
+		body.replace('"s":"en"', '"s":{"n":"id","t":"d","k":null,"s":false}'),
+		body.replace('"q":""', '"q":[],"n":"/private"'),
+	])
+		assert.equal(
+			inspectRequiredFlightBody(Buffer.from(invalid), {
+				cachedNavigations: true,
+			}).complete,
+			false,
+		);
 });
 
 test("semantic abort identity preserves raw unknown and distinguishes genuine upstream failures", () => {
