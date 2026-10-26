@@ -1,0 +1,80 @@
+{
+  "schema": 1,
+  "kind": "local-common-next-control-flow-strict-five-diagnostic",
+  "toolingSource": "9c41fbb4a99e5db946cd6b0877e6000a537c51ef",
+  "commonFixCommit": "b287acdc272cf0ef8f6a208ca288fade8f150166",
+  "compiledSources": {
+    "original": "bfdf2d573052eb485d2a6b9bd75896f98882baeb",
+    "optimized": "b287acdc272cf0ef8f6a208ca288fade8f150166"
+  },
+  "commonSevenFileProvenanceSha256": "aa59f2dc749ed535f46ce51987f6efb4f92841c5fa0e5c6ad679b85b9c6a1075",
+  "builds": {
+    "originalCiSha256": "34acb938396ed571886c66933415dd7cede4dda6aaf4ccb82a5048ddf68be147",
+    "originalManifestSha256": "8cd0fc10a5288431c5b7afbc4f3d36273f965d6ff4d5b4a54bebe33a21201e64",
+    "optimizedCiSha256": "8d3fad98394ae2cb8cc64bcebd83c094990d397d98dbbff42f895cc4431ccd3e",
+    "optimizedManifestSha256": "7a20f3899c61b36783b9fdd73ae44a9bb2263197966d692ab43a321d6102da85"
+  },
+  "beforeFix": {
+    "actualSdkWitnessSha256": "97f9e6ac044885d3cbdad59a95775142ba79e17eaabc8015de6c7a650ae9b9ba",
+    "oneLinkRawSha256": "fcf148fbc0edf9952e597c0aaf1dd127c148d8bf3b0ae51d66070302f5ca4d85",
+    "actualNextHangingPromiseExceptions": 2,
+    "mappedAuthenticationErrors": 2,
+    "sameTraceCorrelationKnown": true,
+    "prerenderRuntimeConnectionCancellationKnown": true,
+    "sessionReadValid": true,
+    "oneLinkAccepted": false,
+    "interruptedC11RawSha256": "e901e4e2609b0d8f9317aff445985c3a117e4824bc5f20fa4c182cce0c330c69",
+    "interruptedC11CheckpointedVisits": 20,
+    "interruptedC11FullAcceptance": false,
+    "interruptedC11ExactRequestIdentities": "not retained"
+  },
+  "rebuiltOriginalDiagnostic": {
+    "rawSha256": "b09deaf719458cf57461158f379015040923f8c42999327a895dc49a58dc0fe9",
+    "operatorExitCode": 0,
+    "diagnosticComplete": true,
+    "cases": [
+      "small-admin/dashboard/default/repeat-link",
+      "large-admin/analytics/month/first-document",
+      "large-admin/analytics/month/repeat-link",
+      "large-admin/analytics/year/first-document",
+      "large-admin/analytics/year/repeat-link"
+    ],
+    "journeys": 5,
+    "uiPassed": 5,
+    "existingAuthenticationBytesUnchangedBeforeAndAfter": true,
+    "reauthenticationInvoked": false,
+    "diagnosticPreload": false,
+    "measuringAdapter": false,
+    "measuredFiveMetricsKnown": true,
+    "everyRegisteredScopeQueryAndAcquisitionErrors": 0,
+    "semanticComplete": true,
+    "semanticUnknown": 0,
+    "semanticFailures": 0,
+    "mandatoryWireErrors": 0,
+    "downstreamCancellations": 0,
+    "nativeFirstDocumentPaintObserved": 2,
+    "nativeQueriesReconciled": 81350,
+    "pendingNativeQueries": 0,
+    "activeTraces": 0,
+    "nativeGlobalComplete": true,
+    "businessMutations": 0
+  },
+  "strictFreshLog": {
+    "classifierSha256": "a12162fb4c6edda6552821818a12ce4f40abc84b037ade3771c422c73b129e46",
+    "protocol": "strict-fresh-server-log-v1",
+    "perVisitIntervals": 5,
+    "wholeStartByte": 21138,
+    "wholeEndByte": 21138,
+    "wholeObservedBytes": 0,
+    "knownCounterFamilies": 11,
+    "everyPerVisitAndWholeCounter": 0,
+    "unknownNonemptyLines": 0,
+    "overflow": false,
+    "clean": true
+  },
+  "limitations": [
+    "Bounded original diagnostic only; full clean original and optimized captures remain required.",
+    "No numerical budget, full-baseline, production/CDN or release acceptance.",
+    "C11 and earlier failing diagnostics remain unchanged and ineligible; no cookie values or authentication hashes are published."
+  ]
+}
