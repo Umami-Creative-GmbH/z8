@@ -346,6 +346,7 @@ export function controlRequestIdentity(contextId, url, method, headers) {
 		documentGeneration: h[controlDocumentHeader] ?? null,
 		action,
 		requestKind,
+		rsc: h.rsc === "1",
 		prefetch: h["next-router-prefetch"] === "1",
 		flight: h.rsc === "1",
 	};
@@ -385,6 +386,9 @@ export function controlResponseMetadata(headers, status) {
 	return {
 		status,
 		vary,
+		responseHeaderSnapshotKnown: Boolean(headers && typeof headers === "object" && !Array.isArray(headers) && Object.values(headers).every(value=>typeof value === "string")),
+		postponed: h["x-nextjs-postponed"] === "2",
+		responseDeploymentSha256: typeof h["x-nextjs-deployment-id"] === "string" ? sha(h["x-nextjs-deployment-id"]) : null,
 		flight: /^text\/x-component(?:;|$)/i.test(h["content-type"] ?? ""),
 		staleWhileRevalidateSeconds: Number.isSafeInteger(seconds) ? seconds : null,
 		proxyResponseId: /^[a-f0-9]{32}\.[1-9]\d{0,9}$/.test(
@@ -395,12 +399,33 @@ export function controlResponseMetadata(headers, status) {
 	};
 }
 
+// These are actual observation inputs, not a verdict or a default deployment ID.
+// The body inspector derives the key and rechecks Next's header-before-body rule.
+function bodyInspectionOptions(row, compiledCachedNavigations, compiledBinding) {
+	const options = {action:row.action,cachedNavigations:compiledCachedNavigations,requestKind:row.requestKind};
+	if (row.requestKind === "segment-prefetch") {
+		const response = row.initialSegmentResponse ?? row;
+		row.segmentRequestBinding = {
+			method:row.method,status:row.status,flight:response.flight === true,rsc:row.rsc === true,prefetch:row.prefetch === true,
+			postponed:response.postponed === true,requestHeadersSha256:row.requestHeadersSha256,
+			requestKeySha256:row.headerFieldSha256?.["next-router-segment-prefetch"] ?? null,
+			responseDeploymentSha256:response.responseDeploymentSha256 ?? null,
+			compiledBuild:compiledBinding?.compiledBuild ?? null,compiledManifestSha256:compiledBinding?.compiledManifestSha256 ?? null,
+			manifestVerified:knownBrowserControlMetadata(compiledBinding) && compiledBinding?.manifestVerified === true &&
+				row.requestHeaderSnapshotKnown === true && response.responseHeaderSnapshotKnown === true,
+		};
+		options.segmentBinding = row.segmentRequestBinding;
+	}
+	return options;
+}
+
 /** readBody is the existing session's Network.getResponseBody; proxyRecords is owned transport data. */
 export function createBrowserControlCollector({
 	contextId,
 	origin,
 	browserRevision,
 	compiledCachedNavigations,
+	compiledBinding,
 	readBody,
 	readStream,
 	captureContextFailures = false,
@@ -493,11 +518,7 @@ export function createBrowserControlCollector({
 					);
 					row.bodyReadbackReceipt = { available: true, decodedBytes: bytes.length, bodySha256: sha(bytes),
 						terminal: row.failed ? "failed" : row.loadingFinished ? "finished" : "pending", naturalEOFClaim: false };
-					assignBodyProof(row, inspectRequiredFlightBody(bytes, {
-						action: row.action,
-						cachedNavigations: compiledCachedNavigations,
-						requestKind: row.requestKind,
-					}), "cdp-readback", row.bodyReadbackReceipt.bodySha256);
+					assignBodyProof(row, inspectRequiredFlightBody(bytes, bodyInspectionOptions(row,compiledCachedNavigations,compiledBinding)), "cdp-readback", row.bodyReadbackReceipt.bodySha256);
 					row.bodyReadbackComplete = true;
 				} catch {
 					if (!row.streamReceipt?.captureComplete)
@@ -528,11 +549,7 @@ export function createBrowserControlCollector({
 			reason: stream.reason ?? (captureComplete ? null : "byte-coverage-gap"),
 		};
 		if (captureComplete)
-			assignBodyProof(row, inspectRequiredFlightBody(Buffer.concat(stream.chunks), {
-				action: row.action,
-				cachedNavigations: compiledCachedNavigations,
-				requestKind: row.requestKind,
-			}), "passive-stream", row.streamReceipt.capturedBodySha256);
+			assignBodyProof(row, inspectRequiredFlightBody(Buffer.concat(stream.chunks), bodyInspectionOptions(row,compiledCachedNavigations,compiledBinding)), "passive-stream", row.streamReceipt.capturedBodySha256);
 		retained -= stream.bytes;
 		streamRetained -= stream.bytes;
 		stream.chunks = [];
@@ -936,6 +953,7 @@ export function createBrowserControlCollector({
 				},
 			);
 			row.initialResponseVary = row.vary;
+			row.initialSegmentResponse = controlResponseMetadata(event.response.headers,event.response.status);
 			startStream(row);
 		},
 		responseExtra(event) {
@@ -1035,6 +1053,7 @@ export async function installBrowserControlCollector({
 	const proxy = createProxyControlCollector({
 		contextId,
 		compiledCachedNavigations,
+		compiledBinding:environmentBinding,
 	});
 	const transportErrors = transport.setControlCancellationObserver(proxy);
 	const proxyObservation = () => {
@@ -1046,6 +1065,7 @@ export async function installBrowserControlCollector({
 		origin,
 		browserRevision,
 		compiledCachedNavigations,
+		compiledBinding:environmentBinding,
 		captureContextFailures,
 		principalEpoch,
 		environmentObservation: () => ({ protocol: "native-cache-environment-metadata-v1", contextId,
@@ -1120,6 +1140,7 @@ export async function installBrowserControlCollector({
 export function createProxyControlCollector({
 	contextId,
 	compiledCachedNavigations,
+	compiledBinding,
 }) {
 	const requests = new Map();
 	let installed = false,
@@ -1210,11 +1231,7 @@ export function createProxyControlCollector({
 						throw Error("Unsupported encoding");
 					row.transportBodyReceipt = { protocol: "proxy-natural-eof-decoded-bytes-v1", naturalEOF: true,
 						decodedBytes: bytes.length, bodySha256: sha(bytes) };
-					assignBodyProof(row, inspectRequiredFlightBody(bytes, {
-						action: row.action,
-						cachedNavigations: compiledCachedNavigations,
-						requestKind: row.requestKind,
-					}), "proxy-natural-eof", row.transportBodyReceipt.bodySha256);
+					assignBodyProof(row, inspectRequiredFlightBody(bytes, bodyInspectionOptions(row,compiledCachedNavigations,compiledBinding)), "proxy-natural-eof", row.transportBodyReceipt.bodySha256);
 				} catch {
 					row.bodyProof = { complete: false, reason: "proxy-body-unavailable" };
 				} finally {
