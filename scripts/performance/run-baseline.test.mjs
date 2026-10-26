@@ -588,7 +588,7 @@ test("primary plan rejects absent, unknown or changed common Next stream patch",
 	}
 });
 
-test("primary retains failed native close evidence and still rejects incomplete native coverage", async () => {
+test("primary retains the original sanitized failure when native close is incomplete", async () => {
 	let registeredIds;
 	const proof = [
 		{
@@ -603,7 +603,7 @@ test("primary retains failed native close evidence and still rejects incomplete 
 	const sample = await measure(
 		{
 			async createBrowserContext() {
-				throw Error("Unavailable fixture browser");
+				throw Object.assign(Error("PRIVATE_CANARY_DO_NOT_PERSIST"), { name: "TimeoutError" });
 			},
 		},
 		{},
@@ -636,10 +636,92 @@ test("primary retains failed native close evidence and still rejects incomplete 
 	assert.equal(sample.collector.nativeCloseElapsedMs, 10016.5);
 	assert.equal(sample.collector.coverage.nativeProof, false);
 	assert.equal(sample.failed, true);
-	assert.equal(sample.failureStage, "native-coverage");
-	assert.equal(sample.failureKind, "observation-incomplete");
+	assert.equal(sample.failureStage, "authentication-context");
+	assert.equal(sample.failureKind, "timeout");
+	assert.deepEqual(sample.secondaryFailures, [{ failureStage: "native-coverage", failureKind: "observation-incomplete" }]);
+	assert.ok(Number.isFinite(sample.elapsedUntilFailureMs));
+	assert.doesNotMatch(JSON.stringify(sample), /PRIVATE_CANARY_DO_NOT_PERSIST|TimeoutError|stack/);
 	assert.equal(sample.usableContentMs, null);
 });
+
+for (const mutationFails of [true, false]) {
+	test(`primary retains ${mutationFails ? "the mutation timeout" : "the first restoration failure"} through native close errors`, async (t) => {
+		let now = 0, reloads = 0, closed = 0, detached = 0;
+		t.mock.method(performance, "now", () => now);
+		const page = {
+			setViewport: async () => {},
+			emulateTimezone: async () => {},
+			setExtraHTTPHeaders: async () => {},
+			setRequestInterception: async () => {},
+			on() {},
+			evaluateOnNewDocument: async () => {},
+			goto: async () => {},
+			waitForSelector: async () => {},
+			isClosed: () => false,
+			evaluate: async () => "denied",
+			createCDPSession: async () => ({
+				send: async () => {},
+				on() {},
+				detach: async () => { detached++; },
+			}),
+			reload: async () => {
+				now = ++reloads === 1 ? 10 : 100;
+				if (reloads === 1 && !mutationFails) return;
+				throw Object.assign(Error("PRIVATE_CANARY_DO_NOT_PERSIST"), {
+					name: reloads === 1 ? "TimeoutError" : "Error",
+				});
+			},
+		};
+		const sample = await measure(
+			{
+				createBrowserContext: async () => ({
+					id: "isolated",
+					setPermission: async () => {},
+					setCookie: async () => {},
+					newPage: async () => page,
+					close: async () => { closed++; },
+				}),
+			},
+			{ fixture: { cookies: [] } },
+			{
+				origin: "http://localhost",
+				runtime: { collectorProtocol: "z8-fixture-otlp-collector-v2" },
+			},
+			{ name: "fixture", locale: "en" },
+			{ name: "default" },
+			{
+				name: "dashboard",
+				path: "/en",
+				mutation: {
+					steps: [{ reload: true }],
+					reset: [{ reload: true }],
+				},
+			},
+			"mutation-refresh", 0, 1,
+			{
+				beginCollectorVisit: async () => ({}),
+				endCollectorVisit: async () => { throw Error("PRIVATE_NATIVE_CANARY"); },
+			},
+		);
+		assert.equal(sample.failed, true);
+		assert.equal(sample.restored, false);
+		assert.equal(sample.failureStage, mutationFails ? "mutation" : "restore-original-state");
+		assert.equal(sample.failureKind, mutationFails ? "timeout" : "restoration-error");
+		assert.equal(sample.failureAction, mutationFails ? "reload" : undefined);
+		assert.equal(sample.failureStep, mutationFails ? 0 : undefined);
+		assert.equal(sample.elapsedUntilFailureMs, mutationFails ? 10 : 100);
+		assert.deepEqual(sample.secondaryFailures, [
+			...(mutationFails ? [{
+				failureStage: "restore-original-state",
+				failureKind: "restoration-error",
+			}] : []),
+			{ failureStage: "native-coverage", failureKind: "observation-incomplete" },
+		]);
+		assert.equal(closed, 1);
+		assert.equal(detached, 1);
+		assert.doesNotMatch(JSON.stringify(sample), /PRIVATE_.*CANARY|TimeoutError|stack/);
+	});
+}
 
 test("primary preserves positive close proof and leaves absent proof and elapsed time unknown", async () => {
 	for (const present of [true, false]) {
