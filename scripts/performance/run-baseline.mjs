@@ -926,6 +926,15 @@ export async function measure(
 		rangePreparationMs: null,
 		restored: mode === "mutation-refresh" ? false : null,
 	};
+	const recordFinalizationFailure = (failureStage, failureKind) => {
+		if (sample.failed) {
+			(sample.secondaryFailures ??= []).push({ failureStage, failureKind });
+		} else {
+			sample.failed = true;
+			sample.failureStage = failureStage;
+			sample.failureKind = failureKind;
+		}
+	};
 	let page;
 	let client;
 	const pendingRequests = new Set();
@@ -1453,13 +1462,12 @@ export async function measure(
 				);
 				sample.restored = true;
 			} catch {
-				sample.failed = true;
-				sample.failureStage = "restore-original-state";
-				sample.failureKind = "restoration-error";
-				sample.elapsedUntilFailureMs =
-					measurementStart === undefined
-						? null
-						: performance.now() - measurementStart;
+				if (!sample.failed)
+					sample.elapsedUntilFailureMs =
+						measurementStart === undefined
+							? null
+							: performance.now() - measurementStart;
+				recordFinalizationFailure("restore-original-state", "restoration-error");
 			}
 		}
 		await closePrimaryContext({ context, transport, sample });
@@ -1481,14 +1489,10 @@ export async function measure(
 					coverage: evidence?.coverage ?? null,
 				};
 				if (evidence?.coverage.incomplete !== false) {
-					sample.failed = true;
-					sample.failureStage = "native-coverage";
-					sample.failureKind = "observation-incomplete";
+					recordFinalizationFailure("native-coverage", "observation-incomplete");
 				}
 			} catch {
-				sample.failed = true;
-				sample.failureStage = "native-coverage";
-				sample.failureKind = "observation-incomplete";
+				recordFinalizationFailure("native-coverage", "observation-incomplete");
 			}
 		}
 		if (transport) {
@@ -1498,11 +1502,7 @@ export async function measure(
 			};
 			if (!fixtureTransportIsComplete(sample.traceTransport)) {
 				sample.transportCoverageComplete = false;
-				if (!sample.failed) {
-					sample.failureStage = "trace-transport";
-					sample.failureKind = "observation-incomplete";
-				}
-				sample.failed = true;
+				recordFinalizationFailure("trace-transport", "observation-incomplete");
 			} else sample.transportCoverageComplete = true;
 			await transport.close();
 		}
