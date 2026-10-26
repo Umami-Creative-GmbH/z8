@@ -411,7 +411,7 @@ export function controlResponseMetadata(headers, status) {
 // The body inspector derives the key and rechecks Next's header-before-body rule.
 function bodyInspectionOptions(row, compiledCachedNavigations, compiledBinding) {
 	const options = {action:row.action,cachedNavigations:compiledCachedNavigations,requestKind:row.requestKind};
-	if (row.requestKind === "segment-prefetch") {
+	if (["segment-prefetch","route-tree"].includes(row.requestKind)) {
 		const response = row.initialSegmentResponse ?? row;
 		row.segmentRequestBinding = {
 			method:row.method,status:row.status,flight:response.flight === true,rsc:row.rsc === true,prefetch:row.prefetch === true,
@@ -422,7 +422,8 @@ function bodyInspectionOptions(row, compiledCachedNavigations, compiledBinding) 
 			manifestVerified:knownBrowserControlMetadata(compiledBinding) && compiledBinding?.manifestVerified === true &&
 				row.requestHeaderSnapshotKnown === true && response.responseHeaderSnapshotKnown === true,
 		};
-		options.segmentBinding = row.segmentRequestBinding;
+		if(row.requestKind==="route-tree") options.routeTreeBinding=row.segmentRequestBinding;
+		else options.segmentBinding = row.segmentRequestBinding;
 	}
 	return options;
 }
@@ -767,6 +768,7 @@ export function createBrowserControlCollector({
 						type: row.type,
 						method: row.method,
 						requestKind: row.requestKind,
+						failureEvent:{known:row.failureEventMetadata!==undefined,events:row.failedEvents,...(row.failureEventMetadata ?? {errorKnown:false,errorEnum:"unknown",canceledKnown:false,canceled:null})},
 						action: row.action,
 						flight: row.flight,
 						prefetch: row.prefetch,
@@ -1032,6 +1034,8 @@ export function createBrowserControlCollector({
 				return;
 			}
 			row.failedEvents++;
+			const knownError=typeof event.errorText==="string" && event.errorText.length<=64 && /^net::ERR_[A-Z_]+$/.test(event.errorText);
+			row.failureEventMetadata ??= {errorKnown:knownError,errorEnum:knownError?event.errorText:event.errorText===undefined?"unknown":"other",canceledKnown:typeof event.canceled==="boolean",canceled:typeof event.canceled==="boolean"?event.canceled:null};
 			if(row.responseEvents===0) row.terminalBeforeResponse++;
 			if (captureContextFailures && !measurementClosed && row.observedInMeasurement) recordMeasuredFailure(event.requestId);
 			if (row.failed) {
