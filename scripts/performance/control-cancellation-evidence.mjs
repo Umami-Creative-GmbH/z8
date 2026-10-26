@@ -125,6 +125,11 @@ export function inspectRequiredFlightBody(
 			}
 			if (serverErrors)
 				return { complete: false, reason: "flight-server-error", serverErrors };
+			if (tag === "H") {
+				// React dispatches the hint without creating or fulfilling its numeric chunk.
+				offset = end;
+				continue;
+			}
 			const previous = records.get(id);
 			if (previous) {
 				// React's fulfilled stream chunk accepts repeated model/T rows only until C.
@@ -303,6 +308,7 @@ export function inspectRequiredFlightBody(
 			// External Flight Date boundary; accept only the canonical serializer form.
 			continue;
 		} else if (typeof value === "string" && /^\$[QWi][a-f0-9]+$/.test(value)) {
+			if (shellScope && role === "fallback-output") return unknown("unsupported-runtime-shell-fallback-kind");
 			// The installed decoder constructs these only from an outlined iterable model.
 			const id = value.slice(2),
 				record = records.get(id);
@@ -341,6 +347,8 @@ export function inspectRequiredFlightBody(
 			if (!visited.has(`${role}:${id}`)) {
 				visited.add(`${role}:${id}`);
 				const record = records.get(id);
+				if (shellScope && role === "fallback-output" && record.tag !== null && record.tag !== "T")
+					return unknown("unsupported-runtime-shell-fallback-kind");
 				if (record.tag !== "T") queue.push({ value: record.value, role,
 					fallbackReferences: role === "fallback-output" ? new Set([...(fallbackReferences ?? []), id]) : fallbackReferences });
 			}

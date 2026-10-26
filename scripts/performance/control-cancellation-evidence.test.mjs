@@ -396,6 +396,12 @@ test("supported hints and framed text never mistake text containing E for a Flig
 	assert.equal(inspectRequiredFlightBody(bytes).complete, true);
 });
 
+test("a resource hint dispatch does not fulfill an outlined model dependency", () => {
+	const body = Buffer.from('0:{"a":"$1"}\n1:HL["/technical.css","style"]\n');
+	assert.equal(inspectRequiredFlightBody(body, { action: true }).complete, false);
+	assert.equal(inspectRequiredFlightBody(Buffer.from('0:{"a":null}\n1:HL["/technical.css","style"]\n'), { action: true }).complete, true);
+});
+
 test("serialized measured receipts require exact raw partition, scope and complete coverage", () => {
 	const proof = testBrowserEvidence("context", true).measured;
 	assert.equal(cleanBrowserFailureEvidence(proof, 1), true);
@@ -625,6 +631,8 @@ test("runtime-shell scope permits only postponed lazy output beneath a known Sus
 	assert.equal(proof.isPartial, true);
 	assert.equal(proof.postponedOutputReferences, 1);
 	assert.equal(proof.knownSuspenseBoundaries, 1);
+	const aliasedFallback = body.replace('["$","span",null,{"children":"KNOWN_FALLBACK"}]', '"$4"') + '4:["$","span",null,{"children":"KNOWN_FALLBACK"}]\n';
+	assert.equal(inspectRequiredFlightBody(Buffer.from(aliasedFallback), options).complete, true);
 	assert.equal(proof.representedOutputs, 1);
 	assert.doesNotMatch(JSON.stringify(proof), /KNOWN_FALLBACK|dead/);
 	const input = cancellationFixture();
@@ -650,6 +658,10 @@ test("runtime-shell scope permits only postponed lazy output beneath a known Sus
 		body.replace('"q":""', '"q":"","required":"$0"'),
 		body.replace('["$","span",null,{"children":"KNOWN_FALLBACK"}]', '["$","span",null]'),
 		body.replace('["$","span",null,{"children":"KNOWN_FALLBACK"}]', '"$4"') + '4:["$","span",null,{"children":"$4"}]\n',
+		body.replace('["$","span",null,{"children":"KNOWN_FALLBACK"}]', '"$4"') + '4:I["module",[],"export"]\n',
+		body.replace('["$","span",null,{"children":"KNOWN_FALLBACK"}]', '"$Q4"') + '4:[["key",{"notReactOutput":true}]]\n',
+		body.replace('["$","span",null,{"children":"KNOWN_FALLBACK"}]', '"$W4"') + '4:[{"notReactOutput":true}]\n',
+		body.replace('["$","span",null,{"children":"KNOWN_FALLBACK"}]', '"$i4"') + '4:[{"notReactOutput":true}]\n',
 		body.replace('"c":"$Q1"', '"c":"$Qdead"'),
 		body.replace('"v":null', '"v":"$dead"'),
 		body.replace('"p":true', '"p":"true"'),
