@@ -105,6 +105,7 @@ function plan(phase) {
 		cleanEvidencePolicy,
 		nativeProgressPolicy:mixedNativeProgressPolicy,
 		browserFailureScope: mixedBrowserWorkScope,
+		browserCondition:mixedBrowserCondition,
 		phase,
 		topology: "single app",
 		collectorProtocol,
@@ -215,6 +216,18 @@ function analyticsSummary(kind, payload) {
 	};
 }
 
+export const mixedBrowserCondition=Object.freeze({viewport:Object.freeze({width:1280,height:900}),timezone:"Europe/Berlin",locale:"en"});
+
+/** The same declared condition reaches actual browser requests and navigation's collector header delegate. */
+export async function installMixedPageObservation({page,condition,...observation},install=installBrowserControlCollector){
+ if(typeof condition?.locale!=="string" || !/^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/.test(condition.locale))throw Error("Known mixed browser locale is required before app IO.");
+ const headers={"Accept-Language":condition.locale};
+ await page.setViewport(condition.viewport);
+ await page.emulateTimezone(condition.timezone);
+ await page.setExtraHTTPHeaders(headers);
+ return install({...observation,page,headers});
+}
+
 async function openPage(browser, auth, origin, actor, traceSource, created, browserControlBinding,protocolSources) {
 	const transport = await createFixtureTraceTransport({
 		origin,
@@ -239,9 +252,7 @@ async function openPage(browser, auth, origin, actor, traceSource, created, brow
 			throw Error("Fixture authentication is missing");
 		await context.setCookie(...auth[actor].cookies);
 		await prepareFixtureBrowserContext(context, origin);
-		await page.setViewport({ width: 1280, height: 900 });
-		await page.emulateTimezone("Europe/Berlin");
-		opened.browserObservation = await installBrowserControlCollector({ page, context, transport, origin, headers: {}, contextId,
+		opened.browserObservation = await installMixedPageObservation({ page, context, transport, origin, condition:mixedBrowserCondition, contextId,
 			browserRevision: browserControlBinding.browserRevision, compiledCachedNavigations: browserControlBinding.compiledCachedNavigations,
 			captureContextFailures: true, environmentBinding: browserControlBinding,protocolSources,operatorFile:"mixed-load-probe.mjs" });
 		opened.browserObservation.beginMeasurement();
