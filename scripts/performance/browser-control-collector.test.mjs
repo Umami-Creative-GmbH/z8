@@ -1170,3 +1170,31 @@ test("positive protocol errors survive independent UNKNOWN reads in either compl
 			assert.doesNotMatch(JSON.stringify(proof), /PRIVATE_CANARY/);
 		}
 });
+
+test("mixed document acknowledgments use the actual unique CDP context and bracket document/loader/generation",async()=>{
+ const api=await import("./browser-control-collector.mjs");
+ const session=new EventEmitter();const calls=[];let changed=false,generation=4;
+ const frame=()=>({frameTree:{frame:{id:"frame",loaderId:changed?"new-loader":"loader",url:"http://localhost:1234/en"}}});
+ const worker={scriptURL:"http://localhost:1234/sw.js",state:"activated"};
+ session.send=async(method,args)=>{calls.push({method,args});if(method==="Runtime.enable")session.emit("Runtime.executionContextCreated",{context:{id:1,uniqueId:"actual-unique",auxData:{isDefault:true,frameId:"frame"}}});if(method==="Page.getFrameTree")return frame();if(method==="Runtime.evaluate")return {result:{value:{available:true,secureContext:true,origin:"http://localhost:1234",documentIdentityStable:true,controllerIdentityStable:true,controllerBefore:worker,controllerAfter:worker,registrationCount:1,registrationOverflow:0,registrations:[{scope:"http://localhost:1234/",active:worker,waiting:null,installing:null}]}}};return {};};
+ const principal=createPrincipalEpochObserver("ctx",{origin:"http://localhost:1234"});const cookies=[{name:"session",value:"synthetic",domain:"localhost",path:"/",httpOnly:true}];principal.start(cookies);
+ const tracker=await api.createMixedDocumentAcknowledgment({session,contextId:"ctx",origin:"http://localhost:1234",generation:()=>generation});
+ session.emit("Network.requestWillBeSent",{requestId:"doc",type:"Document",frameId:"frame",loaderId:"loader",request:{url:"http://localhost:1234/en",headers:{"x-z8-fixture-document-generation":"ctx:4"}}});
+ const read=()=>tracker.read({checkpointOrdinal:1,deadlineMs:performance.now()+100,principalEpoch:principal,readCookies:async()=>cookies,readSources:async()=>({technical:true})});
+ const good=await read();assert.equal(good.readErrors,0);assert.equal(good.pendingOperations,0);assert.equal(good.document.executionContextUniqueId,"actual-unique");assert.equal(good.document.documentGeneration,4);assert.equal(good.controller.controllerIdentityStable,true);
+ assert.equal(calls.find(c=>c.method==="Runtime.evaluate").args.uniqueContextId,"actual-unique");assert.equal(principal.snapshot().scopeClosed,false);
+ // Missing/changed actual ownership cannot fall back to another context or to timestamps.
+ generation=5;const bad=await tracker.read({checkpointOrdinal:2,deadlineMs:performance.now()+100,principalEpoch:principal,readCookies:async()=>cookies,readSources:async()=>({})});assert.equal(bad.document,null);assert.equal(bad.readErrors,1);
+ tracker.close();
+});
+
+test("mixed document acknowledgments retain pending/read-error facts across timeout and navigation",async()=>{
+ const api=await import("./browser-control-collector.mjs");const session=new EventEmitter();let resolveCookie;
+ session.send=async(method)=>{if(method==="Runtime.enable")session.emit("Runtime.executionContextCreated",{context:{id:1,uniqueId:"unique",auxData:{isDefault:true,frameId:"frame"}}});if(method==="Page.getFrameTree")return {frameTree:{frame:{id:"frame",loaderId:"loader",url:"http://localhost:1234/en"}}};if(method==="Runtime.evaluate"){session.emit("Runtime.executionContextDestroyed",{executionContextId:1});return {result:{value:{available:false}}};}return {};};
+ const tracker=await api.createMixedDocumentAcknowledgment({session,contextId:"ctx",origin:"http://localhost:1234",generation:()=>1});
+ session.emit("Network.requestWillBeSent",{requestId:"doc",type:"Document",frameId:"frame",loaderId:"loader",request:{url:"http://localhost:1234/en",headers:{"x-z8-fixture-document-generation":"ctx:1"}}});
+ const principal=createPrincipalEpochObserver("ctx",{origin:"http://localhost:1234"});principal.start([]);
+ const ack=await tracker.read({checkpointOrdinal:1,deadlineMs:performance.now()+10,principalEpoch:principal,readCookies:()=>new Promise(resolve=>{resolveCookie=resolve;}),readSources:async()=>({})});
+ assert.equal(ack.timedOut,true);assert.equal(ack.pendingOperations,1);assert.equal(ack.readErrors,1);assert.equal(ack.document,null);assert.equal(principal.snapshot().pendingReads,1);
+ resolveCookie([]);await tick();assert.equal(ack.pendingOperations,1,"late completion does not rewrite a sealed failed receipt");assert.equal(principal.snapshot().pendingReads,0);tracker.close();
+});

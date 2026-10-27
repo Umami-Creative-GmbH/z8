@@ -333,3 +333,77 @@ export function validateProxyHeaderCensus(proof, { contextId } = {}) {
 		return false;
 	}
 }
+
+export const proxyHeaderPrefixProtocol = "owned-proxy-open-header-prefix-v1";
+const lifecycleProtocol = "owned-proxy-upstream-header-cut-v1";
+const shaKnown = value => typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
+const whole = value => Number.isSafeInteger(value) && value >= 0;
+const exactDataKeys = (value, names) => value && [Object.prototype,null].includes(Object.getPrototypeOf(value)) && Reflect.ownKeys(value).length===names.length && names.every(name=>Object.hasOwn(Object.getOwnPropertyDescriptor(value,name) ?? {},"value"));
+const lifecycleFields = ["acceptedOrdinal","upstreamCreatedOrdinal","headersReceivedOrdinal","headersForwardedOrdinal","upstreamClosedOrdinal"];
+const lifecycleFacts = state => {
+ const requests=[...state.requests.values()].map(row=>({...row})).sort((a,b)=>a.requestId<b.requestId?-1:1);
+ const facts={protocol:lifecycleProtocol,proxyInstanceId:state.proxyInstanceId,originSha256:state.originSha256,allowedOriginSha256:[...state.allowedOriginSha256],closed:state.closed,eventOrdinal:state.eventOrdinal,errors:state.errors,overflow:state.overflow,requests,
+ acceptedRequests:requests.length,upstreamRequests:requests.filter(row=>row.upstreamCreatedOrdinal!==null).length,closedUpstreams:requests.filter(row=>row.upstreamClosedOrdinal!==null).length};
+ return {...facts,pendingUpstreams:facts.upstreamRequests-facts.closedUpstreams};
+};
+/** Source-adjacent lifecycle facts only. An open upstream is never represented as a finished request. */
+export function createProxyHeaderLifecycle({proxyInstanceId,originSha256,allowedOriginSha256}) {
+ if(!/^[a-f0-9]{32}$/.test(proxyInstanceId ?? "") || !shaKnown(originSha256) || !Array.isArray(allowedOriginSha256) || allowedOriginSha256.length<1 || allowedOriginSha256.length>32 || !allowedOriginSha256.every(shaKnown) || new Set(allowedOriginSha256).size!==allowedOriginSha256.length || !allowedOriginSha256.includes(originSha256))throw Error("Known owned proxy origins are required.");
+ const state={proxyInstanceId,originSha256,allowedOriginSha256:[...allowedOriginSha256].sort(),closed:false,eventOrdinal:0,errors:0,overflow:0,requests:new Map()};
+ const record=(id,key)=>{
+  const row=state.requests.get(id);
+  if(state.closed || !requestKnown(id) || !row || row[key]!==null || key!=="upstreamCreatedOrdinal" && row.upstreamCreatedOrdinal===null || key==="headersForwardedOrdinal" && (row.headersReceivedOrdinal===null || row.upstreamClosedOrdinal!==null) || key==="headersReceivedOrdinal" && row.upstreamClosedOrdinal!==null){state.errors++;return;}
+  row[key]=++state.eventOrdinal;
+ };
+ return {
+  accepted(requestId,requestOriginSha256){
+   if(state.closed || !requestKnown(requestId) || state.requests.has(requestId) || !state.allowedOriginSha256.includes(requestOriginSha256)){state.errors++;return;}
+   if(state.requests.size===proxyHeaderCensusLimit){state.overflow++;return;}
+   state.requests.set(requestId,{requestId,originSha256:requestOriginSha256,acceptedOrdinal:++state.eventOrdinal,upstreamCreatedOrdinal:null,headersReceivedOrdinal:null,headersForwardedOrdinal:null,upstreamClosedOrdinal:null});
+  },
+  upstreamCreated:id=>record(id,"upstreamCreatedOrdinal"),
+  headersReceived:id=>record(id,"headersReceivedOrdinal"),
+  headersForwarded:id=>record(id,"headersForwardedOrdinal"),
+  upstreamClosed:id=>record(id,"upstreamClosedOrdinal"),
+  observerError(){state.errors++;},
+  close(){if(state.closed)state.errors++;state.closed=true;},
+  snapshot(){return lifecycleFacts(state);},
+ };
+}
+/** Immutable vector cut; this neither closes the census nor promises future headers are clean. */
+export function proxyHeaderPrefix(census,lifecycle) {
+ const facts={protocol:proxyHeaderPrefixProtocol,census:structuredClone(census),lifecycle:structuredClone(lifecycle)};
+ return {...facts,prefixSha256:digest(JSON.stringify(facts))};
+}
+/** Recomputes open facts and their membership/order; callers separately require zero error/Set-Cookie counts. */
+export function validateProxyHeaderPrefix(proof,{contextId}={}) {
+ try {
+  if(!exactDataKeys(proof,["protocol","census","lifecycle","prefixSha256"]) || proof.protocol!==proxyHeaderPrefixProtocol || !shaKnown(proof.prefixSha256) || !validateProxyHeaderCensus(proof.census,{contextId}) || proof.census.closed!==false)return false;
+  const life=proof.lifecycle;
+  if(!validateProxyHeaderLifecycle(life) || life.closed!==false || life.requests.length!==proof.census.requests.length)return false;
+  const requests=new Map(life.requests.map(row=>[row.requestId,row]));
+  for(const row of proof.census.requests){
+   const source=requests.get(row.requestId);if(!source)return false;
+   if(row.observation==="pending" && (source.headersReceivedOrdinal!==null || source.headersForwardedOrdinal!==null || source.upstreamClosedOrdinal!==null) || ["headers","unknown-headers"].includes(row.observation) && source.headersReceivedOrdinal===null || row.observation==="terminal-before-headers" && (source.headersReceivedOrdinal!==null || source.headersForwardedOrdinal!==null || source.upstreamClosedOrdinal===null))return false;
+  }
+  return proof.prefixSha256===digest(JSON.stringify({protocol:proof.protocol,census:proof.census,lifecycle:life}));
+ }catch{return false;}
+}
+
+/** Validates technical lifecycle facts, independently of an open-prefix or Native authority claim. */
+export function validateProxyHeaderLifecycle(life){
+ try{
+  if(!exactDataKeys(life,["protocol","proxyInstanceId","originSha256","allowedOriginSha256","closed","eventOrdinal","errors","overflow","requests","acceptedRequests","upstreamRequests","closedUpstreams","pendingUpstreams"]) || life.protocol!==lifecycleProtocol || !/^[a-f0-9]{32}$/.test(life.proxyInstanceId ?? "") || !shaKnown(life.originSha256) || typeof life.closed!=="boolean" || !["eventOrdinal","errors","overflow","acceptedRequests","upstreamRequests","closedUpstreams","pendingUpstreams"].every(key=>whole(life[key])) || !Array.isArray(life.requests) || life.requests.length>proxyHeaderCensusLimit || !Array.isArray(life.allowedOriginSha256) || life.allowedOriginSha256.length<1 || life.allowedOriginSha256.length>32 || !life.allowedOriginSha256.every(shaKnown) || new Set(life.allowedOriginSha256).size!==life.allowedOriginSha256.length || !life.allowedOriginSha256.includes(life.originSha256))return false;
+  const events=[], requests=new Map();
+  for(const row of life.requests){
+   if(!exactDataKeys(row,["requestId","originSha256",...lifecycleFields]) || !requestKnown(row.requestId) || requests.has(row.requestId) || !life.allowedOriginSha256.includes(row.originSha256) || !Number.isSafeInteger(row.acceptedOrdinal) || row.acceptedOrdinal<1)return false;
+   for(const field of lifecycleFields){const n=row[field];if(n!==null){if(!Number.isSafeInteger(n)||n<1||n>life.eventOrdinal)return false;events.push(n);}}
+   if(row.upstreamCreatedOrdinal!==null && row.upstreamCreatedOrdinal<=row.acceptedOrdinal || [row.headersReceivedOrdinal,row.headersForwardedOrdinal,row.upstreamClosedOrdinal].some(n=>n!==null && (row.upstreamCreatedOrdinal===null || n<=row.upstreamCreatedOrdinal)) || row.headersForwardedOrdinal!==null && (row.headersReceivedOrdinal===null || row.headersForwardedOrdinal<=row.headersReceivedOrdinal) || row.upstreamClosedOrdinal!==null && row.headersReceivedOrdinal!==null && row.upstreamClosedOrdinal<=row.headersReceivedOrdinal || row.upstreamClosedOrdinal!==null && row.headersForwardedOrdinal!==null && row.upstreamClosedOrdinal<=row.headersForwardedOrdinal)return false;
+   requests.set(row.requestId,row);
+  }
+  if(events.length!==life.eventOrdinal || events.sort((a,b)=>a-b).some((n,i)=>n!==i+1) || life.requests.map(row=>Number(row.requestId.split(".")[1])).sort((a,b)=>a-b).some((n,i)=>n!==i+1))return false;
+  const expected=lifecycleFacts({...life,requests});
+  if(JSON.stringify(expected)!==JSON.stringify(life))return false;
+  return true;
+ }catch{return false;}
+}

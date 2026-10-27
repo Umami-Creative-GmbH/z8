@@ -5,7 +5,7 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { isNextStreamCompletionPatch } from "./next-stream-completion-patch.mjs";
 import { cleanApplicationEvidence, cleanObservationPolicy, observationTimeoutMs, cleanEvidencePolicy, cleanBrowserContextEvidence } from "./clean-evidence.mjs";
-import { knownBrowserControlMetadata, matchingBrowserControlBinding,knownNativePublicSources } from "./control-cancellation-evidence.mjs";
+import { mixedNativeProgressPolicy, knownBrowserControlMetadata, matchingBrowserControlBinding,knownNativePublicSources } from "./control-cancellation-evidence.mjs";
 import { mixedBrowserWorkScope, readBrowserControlBinding } from "./browser-control-collector.mjs";
 import {
 	clockObservationIsComplete,
@@ -188,7 +188,7 @@ function validateRecordedBrowser(run, context) {
 
 /** Validate every record and every registered native group, never a selected success subset. */
 export function validateMixedClockRun(run, build, phase = "baseline",authority) {
-	check(same(run?.cleanEvidencePolicy, cleanEvidencePolicy) && run.browserFailureScope === mixedBrowserWorkScope &&
+	check(same(run?.nativeProgressPolicy,mixedNativeProgressPolicy) && same(run?.cleanEvidencePolicy, cleanEvidencePolicy) && run.browserFailureScope === mixedBrowserWorkScope &&
 		matchingBrowserControlBinding({ build, browserControl: run.browserControl }, run.browserControl) && sha(run.browserControlMetadataFileSha256),
 		"qualified browser control run metadata");
 	check(
@@ -269,7 +269,7 @@ export function validateMixedClockRun(run, build, phase = "baseline",authority) 
 	check(
 		run.transports?.length === 4 &&
 			same(run.transports.map((row) => row.actor).sort(), [...actors].sort()) &&
-			run.transports.every((row) => mixedTransportIsComplete(row) && cleanApplicationEvidence(row.traceTransport.applicationEvidence) &&
+			run.transports.every((row) => row.browserControlEvidence?.mixedProgress?.protocol === "mixed-native-progress-observations-v1" && mixedTransportIsComplete(row) && cleanApplicationEvidence(row.traceTransport.applicationEvidence) &&
 				row.browserFailureScope === mixedBrowserWorkScope && cleanBrowserContextEvidence(row.contextId, row.browserControlEvidence, row.rawBrowserFailedRequests,authority)) &&
 			new Set(run.transports.map((row) => row.contextId)).size === 4,
 		"four closed strict transports",

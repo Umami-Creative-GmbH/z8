@@ -22,6 +22,7 @@ import {
 	finishMixedObservation,
 	mixedTransportIsComplete,
 	runMixedReader,
+	requireCleanMixedProgress,
 	settleMixedTransports,
 } from "./mixed-load-observation.mjs";
 import { openPublicHeaderClock } from "./public-header-clock.mjs";
@@ -32,6 +33,7 @@ import {
 
 import { cleanApplicationEvidence, cleanObservationPolicy, observationTimeoutMs, cleanBrowserContextEvidence, cleanEvidencePolicy } from "./clean-evidence.mjs";
 import { installBrowserControlCollector, readBrowserControlBinding, verifyBrowserControlBrowser, mixedBrowserWorkScope } from "./browser-control-collector.mjs";
+import { mixedNativeProgressPolicy } from "./control-cancellation-evidence.mjs";
 import { mixedProtocolIdentity } from "./protocol-fingerprints.mjs";
 
 /** Match the recorded source against the public, possibly abbreviated build hash. */
@@ -101,6 +103,7 @@ function plan(phase) {
 	return {
 		version: 2,
 		cleanEvidencePolicy,
+		nativeProgressPolicy:mixedNativeProgressPolicy,
 		browserFailureScope: mixedBrowserWorkScope,
 		phase,
 		topology: "single app",
@@ -444,16 +447,8 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 		opened.push(item);
 		item.page.on("pageerror", () => pageErrors++);
 	};
-	const requireCleanWork = () => {
-		for (const item of opened) {
-			const evidence = item.browserObservation?.snapshot();
-			const application = item.transport.snapshot().applicationEvidence;
-			if (!evidence || evidence.measured.unknownFailures || evidence.allPhase.realFailures ||
-				["missing", "errors", "overflow"].some((key) => evidence.measured.coverage[key] !== 0) ||
-				["failures", "serverErrors", "unknown", "httpErrors", "overflows", "decodeFailures", "registryConflicts"].some((key) => application?.[key] !== 0))
-				throw Error("Required mixed browser or application observation is not clean.");
-		}
-	};
+	const requireCleanWork=options=>requireCleanMixedProgress({opened,pageErrors:()=>pageErrors,...options});
+
 	try {
 		// One bounded registration precedes version checks, all four browser contexts and cleanup IO.
 		observation = await beginMixedObservation(control, traces.ids);
@@ -487,7 +482,7 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 				browserControlBinding,
 				protocolSources,
 			);
-			requireCleanWork();
+			await requireCleanWork();
 			item.page.on("request", (request) => {
 				const value = request.headers().traceparent?.split("-")[1];
 				if (traces.groups.some((group) => group.traceIds.includes(value))) {
@@ -521,7 +516,7 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 		});
 		stage = "commands";
 		async function command(action, pair, cleanup = false) {
-			if (!cleanup) requireCleanWork();
+			if (!cleanup) await requireCleanWork();
 			const id = cleanup ? traces.preparation[3] : traces.clock(pair, action);
 			uiTrace = id;
 			const preparationStart = performance.now();
@@ -546,15 +541,15 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 			}
 			const headerPrepareMs = performance.now() - preparationStart;
 			let done = false,
-				overlap = null;
+				overlap = null, observerOperationDeadline = null;
 			const workers = cleanup
 				? []
 				: readers.map(({ page, captured, reader }, index) =>
 						runMixedReader({
 							limit: 100,
-						stopped: () => {
+						stopped: async () => {
 							if (done) return true;
-							try { requireCleanWork(); return false; }
+							try { await requireCleanWork({operationDeadlineMs:observerOperationDeadline}); return done; }
 							catch { stopped = true; done = true; failureStage ||= "required-observation"; return true; }
 						},
 							read: async () => {
@@ -642,8 +637,9 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 			};
 			clock.page.on("request", observe);
 			try {
-				// Await real dispatch, not synthetic latency. This does not pause any reader's hot loop.
+				// Await real dispatch under the original overlap deadline; guards may acknowledge metadata.
 				const deadline = performance.now() + timeout;
+				observerOperationDeadline=deadline;
 				while (
 					!cleanup &&
 					analyticsActive < 3 &&
@@ -653,7 +649,7 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 					await pause(1);
 				if (!cleanup && (analyticsActive < 3 || done))
 					throw Error("Independent readers never dispatched concurrently");
-				if (!cleanup) requireCleanWork();
+				if (!cleanup) { await requireCleanWork({operationDeadlineMs:deadline}); if(analyticsActive<3 || done)throw Error("Independent reader overlap ended during observation acknowledgment."); }
 				result = await prepared.submit();
 				if (result.success && !clockObservationIsComplete(result))
 					result = { ...result, success: false, censored: true };
@@ -792,7 +788,7 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 		}
 	}
 	const completeTransport =
-		transports.length === 4 && transports.every((row) => mixedTransportIsComplete(row) && cleanApplicationEvidence(row.traceTransport.applicationEvidence) &&
+		transports.length === 4 && transports.every((row) => row.browserControlEvidence?.mixedProgress?.protocol === "mixed-native-progress-observations-v1" && mixedTransportIsComplete(row) && cleanApplicationEvidence(row.traceTransport.applicationEvidence) &&
 			cleanBrowserContextEvidence(row.contextId, row.browserControlEvidence, row.rawBrowserFailedRequests,{runtime:{build:sourceCommit,browserControl:browserControlBinding},protocolSources,origin}));
 	const completeCoverage =
 		nativeRunCoverage.complete === true &&

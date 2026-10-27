@@ -197,3 +197,38 @@ test("Set-Cookie presence is retained as bounded hashed facts, never raw values"
 	);
 	assert.equal(validateProxyHeaderCensus(proof, { contextId }), true);
 });
+
+test("open header prefixes retain actual no-forward states and cannot satisfy the final census schema", async () => {
+ const api = await import("./proxy-header-census.mjs");
+ const life = api.createProxyHeaderLifecycle({proxyInstanceId:"c".repeat(32),originSha256:"d".repeat(64),allowedOriginSha256:["d".repeat(64)]});
+ const census = createProxyHeaderCensus({contextId});
+ for (const number of [1,2,3]) { life.accepted(id(number),"d".repeat(64)); census.accepted(id(number)); life.upstreamCreated(id(number)); }
+ life.headersReceived(id(1)); census.headers(id(1),{}); life.headersForwarded(id(1));
+ life.upstreamClosed(id(1)); life.upstreamClosed(id(3)); census.terminalBeforeHeaders(id(3),{upstreamClosed:true,headersReceived:false});
+ const prefix=api.proxyHeaderPrefix(census.snapshot(),life.snapshot());
+ assert.equal(api.validateProxyHeaderPrefix(prefix,{contextId}),true);
+ assert.equal(prefix.census.closed,false);
+ assert.equal(prefix.lifecycle.pendingUpstreams,1);
+ assert.equal(prefix.lifecycle.requests[1].headersForwardedOrdinal,null);
+ assert.equal(validateProxyHeaderCensus(prefix,{contextId}),false);
+ for(const edit of [p=>p.lifecycle.requests[1].headersForwardedOrdinal=1,p=>p.lifecycle.closedUpstreams++,p=>p.lifecycle.requests.pop(),p=>p.census.closed=true,p=>p.lifecycle.proxyInstanceId="x",p=>p.lifecycle.requests[0].originSha256="e".repeat(64)]) {
+  const p=structuredClone(prefix);edit(p);
+  assert.equal(api.validateProxyHeaderPrefix(p,{contextId}),false);
+ }
+ // A later header, including Set-Cookie, creates a new immutable cut and cannot repair/rewrite an older cut.
+ life.headersReceived(id(2)); census.headers(id(2),{"set-cookie":"synthetic=value"}); life.headersForwarded(id(2));
+ assert.equal(prefix.census.counts.setCookieLines,0);
+ const later=api.proxyHeaderPrefix(census.snapshot(),life.snapshot());
+ assert.equal(api.validateProxyHeaderPrefix(later,{contextId}),true);
+ assert.equal(later.census.counts.setCookieLines,1);
+});
+
+test("open header lifecycle is sticky on duplicate/missing/order/overflow/late loss",async()=>{
+ const api=await import("./proxy-header-census.mjs");
+ const make=()=>api.createProxyHeaderLifecycle({proxyInstanceId:"c".repeat(32),originSha256:"d".repeat(64),allowedOriginSha256:["d".repeat(64)]});
+ for(const bad of [life=>life.headersReceived(id(1)),life=>{life.accepted(id(1),"d".repeat(64));life.headersForwarded(id(1));},life=>{life.accepted(id(1),"d".repeat(64));life.accepted(id(1),"d".repeat(64));},life=>{life.accepted(id(1),"e".repeat(64));},life=>{life.close();life.accepted(id(1),"d".repeat(64));}]) {
+  const life=make();bad(life);assert.ok(life.snapshot().errors>0);
+ }
+ const life=make();for(let n=1;n<=proxyHeaderCensusLimit+1;n++)life.accepted(id(n),"d".repeat(64));
+ assert.equal(life.snapshot().requests.length,proxyHeaderCensusLimit);assert.equal(life.snapshot().overflow,1);
+});

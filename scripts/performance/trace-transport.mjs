@@ -3,6 +3,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { Agent, createServer, request as forward } from "node:http";
 import { createProxyWireObserver } from "./proxy-wire-observer.mjs";
 import { createActionResultObserver } from "./action-result-observer.mjs";
+import { createProxyHeaderLifecycle } from "./proxy-header-census.mjs";
 
 export const fixtureTraceTransport = "context-loopback-proxy-v1";
 const loopback = (url) =>
@@ -35,16 +36,19 @@ export async function createFixtureTraceTransport({
 	const application = createActionResultObserver();
 	let controlObserver, controlObserverErrors = 0;
 	const proxyInstanceId = randomBytes(16).toString("hex");
+	let headerLifecycle=null;
 	let upstreamRequests = 0, closedUpstreams = 0, serverClosed = false, controlLifetimeClosed = false;
 	const finishControlLifetime = () => {
 		if (!serverClosed || upstreamRequests !== closedUpstreams || controlLifetimeClosed) return;
 		controlLifetimeClosed = true;
+		headerLifecycle?.close();
 		control("transportClosed",{serverClosed:true,acceptedRequests:counts.requests,upstreamRequests,closedUpstreams,pendingUpstreams:0});
 	};
 	const control = (method, ...args) => {
 		try { controlObserver?.[method](...args); }
 		catch {
 			controlObserverErrors++;
+			headerLifecycle?.observerError();
 			try { controlObserver?.observerError(); } catch {}
 		}
 	};
@@ -99,6 +103,7 @@ export async function createFixtureTraceTransport({
 			applicationId = application.request({ traceId, method: request.method, headers: request.headers, applicationOrigin: url.origin === origin, compiledAsset: url.origin === origin && /^\/_next\/static\/chunks\/[\w./-]+\.js$/.test(url.pathname) });
 			if (controlObserver && Number.isSafeInteger(applicationId) && applicationId > 0) {
 				controlId = `${traceId}.${applicationId}`;
+				headerLifecycle?.accepted(controlId,createHash("sha256").update(url.origin).digest("hex"));
 				control("request", controlId, { traceId, url: url.href, method: request.method, headers: request.headers });
 			}
 			else if (controlObserver) control("observerError");
@@ -160,6 +165,7 @@ export async function createFixtureTraceTransport({
 				{ method: request.method, headers, agent },
 				(answer) => {
 					headersReceived = true;
+					if(controlId)headerLifecycle?.headersReceived(controlId);
 					control("response", controlId, { status: answer.statusCode, headers: answer.headers });
 					application.response(applicationId, { mimeType: answer.headers["content-type"], encoding: answer.headers["content-encoding"], status: answer.statusCode });
 					wire.response(
@@ -195,12 +201,16 @@ export async function createFixtureTraceTransport({
 						else forwardedHeaders = { ...answer.headers, "x-z8-fixture-response-id": controlId };
 					}
 					response.writeHead(answer.statusCode ?? 502, forwardedHeaders);
+					// Upstream headers were observed synchronously before this actual forwarding call.
+					if(controlId)headerLifecycle?.headersForwarded(controlId);
 					answer.pipe(response);
 				},
 			);
 			upstreamRequests++;
+			if(controlId)headerLifecycle?.upstreamCreated(controlId);
 			upstream.once("close",()=>{
 				closedUpstreams++;
+				if(controlId)headerLifecycle?.upstreamClosed(controlId);
 				if (!headersReceived) control("upstreamClosedBeforeHeaders",controlId,{upstreamClosed:true,headersReceived:false});
 				finishControlLifetime();
 			});
@@ -264,10 +274,14 @@ export async function createFixtureTraceTransport({
 	});
 	return {
 		wire,
-		setControlCancellationObserver(observer) {
+		controlHeaderCut:()=>headerLifecycle?.snapshot() ?? null,
+		setControlCancellationObserver(observer,{captureHeaderPrefixes=false}={}) {
+			if(typeof captureHeaderPrefixes!=="boolean")throw Error("Known proxy header-prefix scope is required.");
+
 			if (controlObserver || counts.requests !== 0 ||
 				!["installed", "request", "response", "bytes", "end", "cancel", "failure", "observerError", "upstreamClosedBeforeHeaders", "transportClosed"].every((key) => typeof observer?.[key] === "function"))
 				throw Error("Protocol control observation requires one pre-request owned observer.");
+			if(captureHeaderPrefixes)headerLifecycle=createProxyHeaderLifecycle({proxyInstanceId,originSha256:createHash("sha256").update(origin).digest("hex"),allowedOriginSha256:[...allowed].map(value=>createHash("sha256").update(value).digest("hex")).sort()});
 			controlObserver = observer;
 			const sha = value=>createHash("sha256").update(value).digest("hex");
 			control("installed",{protocol:"owned-context-upstream-header-lifetime-v1",proxyInstanceId,originSha256:sha(origin),

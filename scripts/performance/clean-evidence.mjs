@@ -1,6 +1,8 @@
 /** Acceptance is identical before and after: failed observations remain diagnostic evidence only. */
+import { createHash } from "node:crypto";
+const mixedOriginDigest=origin=>typeof origin==="string"?createHash("sha256").update(origin).digest("hex"):null;
 import { actionResultPolicy } from "./action-result-observer.mjs";
-import { cleanBrowserFailureEvidence, completeAllPhaseBrowserObservation, controlCancellationPolicy, matchingBrowserControlBinding, nativeEvidenceAuthorityMatches } from "./control-cancellation-evidence.mjs";
+import { validateMixedProgressObservations, cleanBrowserFailureEvidence, completeAllPhaseBrowserObservation, controlCancellationPolicy, matchingBrowserControlBinding, nativeEvidenceAuthorityMatches } from "./control-cancellation-evidence.mjs";
 
 export const cleanObservationPolicy = Object.freeze({
 	version: 1,
@@ -89,6 +91,11 @@ export function cleanBrowserVisitEvidence(sample,authority) {
 
 export function cleanBrowserContextEvidence(id, evidence, rawFailedRequests,authority) {
 	if(!nativeEvidenceAuthorityMatches(evidence,authority?.runtime,authority?.protocolSources,authority?.origin)) return false;
+	if(evidence?.mixedProgress!==undefined){
+  const context=evidence.measured?.nativeContext;
+  if(!authority?.runtime || !matchingBrowserControlBinding(authority.runtime,context?.binding) || context.operatorFile!=="mixed-load-probe.mjs" || context.originSha256!==mixedOriginDigest(authority.origin) || JSON.stringify(context.protocolSources)!==JSON.stringify(authority.protocolSources) || !validateMixedProgressObservations(evidence.mixedProgress,context,{failureIds:evidence.allPhase?.records?.map(row=>row.requestId),nativeFailureIds:evidence.allPhase?.records?.filter(row=>row.reason==="qualified-cached-flight-native-revalidation").map(row=>row.requestId),browserEventOrdinal:evidence.browserEventOrdinal,headerLifecycle:evidence.proxyHeaderLifecycle,documentJournal:evidence.mixedDocumentJournal}))return false;
+ }
+
 	const errors = evidence?.protocolErrors;
 	if (errors?.protocol !== "positive-flight-error-observations-v1" || errors.contextId !== id || errors.installed !== true || errors.scopeClosed !== true ||
 		errors.observed !== 0 || errors.overflow !== 0 || !Array.isArray(errors.records) || errors.records.length !== 0) return false;

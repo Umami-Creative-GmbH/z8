@@ -1,4 +1,4 @@
-/** Finite semantic windows and whole-run proof; no telemetry awaits in the reader loop. */
+/** Finite semantic windows; read-only acknowledgments run only at existing stop guards. */
 import { randomBytes } from "node:crypto";
 import {
 	beginCollectorVisit,
@@ -53,7 +53,7 @@ export async function runMixedReader({ limit, stopped, read, observe }) {
 	if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100)
 		throw Error("Invalid mixed reader bound");
 	let count = 0;
-	while (count < limit && !stopped()) {
+	while (count < limit && !(await stopped())) {
 		let value;
 		try {
 			value = await read();
@@ -64,7 +64,7 @@ export async function runMixedReader({ limit, stopped, read, observe }) {
 		observe(value);
 		if (!value.success) return { count, failed: true, boundReached: false };
 	}
-	return { count, failed: false, boundReached: count === limit && !stopped() };
+	return { count, failed: false, boundReached: count === limit && !(await stopped()) };
 }
 const integer = (value) => Number.isSafeInteger(value) && value >= 0;
 const number = (value) => Number.isFinite(value) && value >= 0;
@@ -306,3 +306,17 @@ export function mixedTransportIsComplete({ traceTransport, wire }) {
 		wire.censored === false
 	);
 }
+
+/** Actual mixed guard; read-only metadata has no recipe or business-IO callback. */
+export async function requireCleanMixedProgress({opened,pageErrors,operationDeadlineMs=null}) {
+  const required=()=>{
+   if(pageErrors()!==0)throw Error("Mixed page observation is not clean.");
+   for(const item of opened){
+    const evidence=item.browserObservation?.snapshot(),application=item.transport.snapshot().applicationEvidence;
+    if(!evidence || evidence.allPhase.realFailures || ["missing","errors","overflow"].some(key=>evidence.measured.coverage[key]!==0) || ["failures","serverErrors","unknown","httpErrors","overflows","decodeFailures","registryConflicts"].some(key=>application?.[key]!==0))throw Error("Required mixed browser or application observation is not clean.");
+   }
+  };
+  required();
+  const current=[...opened],tokens=await Promise.all(current.map(item=>item.browserObservation.acknowledgeMixedProgress({operationDeadlineMs})));
+  required();for(let index=0;index<current.length;index++)current[index].browserObservation.confirmMixedProgress(tokens[index]);required();
+ }
