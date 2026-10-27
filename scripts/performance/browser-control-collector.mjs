@@ -2190,7 +2190,7 @@ export function createMixedProgressAcknowledgments({input,application,acknowledg
  };
  const diagnose=state=>{if(diagnosticAttempted)return;diagnosticAttempted=true;try{if(bytes()+diagnosticCharge>controlCancellationPolicy.retainedLimit || checks.length+prefixes.length>=controlCancellationPolicy.recordLimit){overflow++;return;}const row=keep(()=>failureDiagnostic(state));if(Buffer.byteLength(JSON.stringify(row))*8+2048>diagnosticCharge){drop(row);overflow++;return;}firstFailure=row;}catch{overflow++;}};
  const observation=stage=>({stage,subreason:"entry",cut:null,cutStage:null,application:null,candidateDiagnostic:null,ownedCuts:new Set(),ownedCandidates:new Set(),closeFailed:false,predicates:{applicationKnown:null,candidateKnown:null,authorityKnown:null,journalsKnown:null,protocolObservedZero:null,protocolOverflowZero:null,authorityMatches:null,returnJournalsKnown:null}});
- const disposeState=state=>{state.cut=null;for(const cut of state.ownedCuts){state.ownedCuts.delete(cut);technicalOwner?.releaseCut(cut);}for(const candidate of state.ownedCandidates){state.ownedCandidates.delete(candidate);drop(candidate);}};
+ const disposeState=state=>{state.cut=null;state.beginResult=null;state.endResult=null;for(const cut of state.ownedCuts){state.ownedCuts.delete(cut);technicalOwner?.releaseCut(cut);}for(const candidate of state.ownedCandidates){state.ownedCandidates.delete(candidate);drop(candidate);}};
  const seen=(state,key,value)=>{state.predicates[key]=Boolean(value);return value;};
  const live=state=>{
   if(closed)throw Error("Mixed progress observation is closed.");
@@ -2213,21 +2213,21 @@ export function createMixedProgressAcknowledgments({input,application,acknowledg
    const state=observation("check-live");
    activeChecks.add(state);
    try{
-    const {cut:begin,candidate}=live(state);
+    state.beginResult=live(state);state.endResult=state.beginResult;
     state.stage="check-record-limit";state.subreason="record-limit";
     if(guardChecks>=controlCancellationPolicy.recordLimit){overflow++;throw Error("Mixed guard bound exceeded.");}
-    const ordinal=++guardChecks;let receipt=null,end=begin;
-    if(candidate.cores.length!==0){
+    const ordinal=++guardChecks;let receipt=null;
+    if(state.beginResult.candidate.cores.length!==0){
      const checkpointOrdinal=++attempted;
      const observerDeadline=performance.now()+mixedNativeProgressPolicy.observerCeilingMs;
      const deadlineMs=operationDeadlineMs===null?observerDeadline:Math.min(observerDeadline,operationDeadlineMs);
      state.stage="acknowledge";state.subreason="acknowledge";const acknowledgment=await acknowledge({checkpointOrdinal,deadlineMs});
      state.stage="ack-identity";state.subreason="ack-identity";
      if(acknowledgment?.checkpointOrdinal!==checkpointOrdinal || acknowledgment.deadlineMs!==deadlineMs)throw Error("Mixed acknowledgment used another read or deadline.");
-     state.stage="check-after-ack-live";end=live(state).cut;state.stage="create-prefix";state.subreason="prefix";receipt=keep(()=>createMixedNativePrefix({checkpointOrdinal,begin,end,acknowledgment,headerPrefix:end.nativeContext.headerPrefix,operationDeadlineMs,returnedAtMs:performance.now()}));prefixes.push(receipt);
+     state.stage="check-after-ack-live";state.endResult=live(state);state.stage="create-prefix";state.subreason="prefix";receipt=keep(()=>createMixedNativePrefix({checkpointOrdinal,begin:state.beginResult.cut,end:state.endResult.cut,acknowledgment,headerPrefix:state.endResult.cut.nativeContext.headerPrefix,operationDeadlineMs,returnedAtMs:performance.now()}));prefixes.push(receipt);
     }
-    const check=keep(()=>({ordinal,begin:mixedNativeProgressVector(begin),returned:null,checkpointOrdinal:receipt?.checkpointOrdinal ?? null,prefixSha256:receipt?.prefixSha256 ?? null}));checks.push(check);state.stage="retain-check";state.subreason="retention";retained();
-    state.stage="issue-token";state.subreason="token";const token=keep(()=>Object.freeze({ordinal,contextId,authoritySha256,failureIds:Object.freeze(progressFailureIdsForCollector(end))}));const tokenBegin=technicalOwner?keep(()=>({nativeContext:begin.nativeContext})):begin;tokens.set(token,{check,begin:tokenBegin,receipt});return token;
+    const check=keep(()=>({ordinal,begin:mixedNativeProgressVector(state.beginResult.cut),returned:null,checkpointOrdinal:receipt?.checkpointOrdinal ?? null,prefixSha256:receipt?.prefixSha256 ?? null}));checks.push(check);state.stage="retain-check";state.subreason="retention";retained();
+    state.stage="issue-token";state.subreason="token";const token=keep(()=>Object.freeze({ordinal,contextId,authoritySha256,failureIds:Object.freeze(progressFailureIdsForCollector(state.endResult.cut))}));const tokenBegin=technicalOwner?keep(()=>({nativeContext:state.beginResult.cut.nativeContext})):state.beginResult.cut;tokens.set(token,{check,begin:tokenBegin,receipt});return token;
    }catch(error){if(!state.closeFailed)failed++;diagnose(state);throw error;}
    finally{activeChecks.delete(state);disposeState(state);}
   },
