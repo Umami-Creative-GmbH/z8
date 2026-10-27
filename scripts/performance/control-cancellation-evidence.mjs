@@ -1,6 +1,6 @@
 /** Proofs are prospective; a canceled request is never a successful payload. */
 import { createHash } from "node:crypto";
-import { validateProxyHeaderCensus } from "./proxy-header-census.mjs";
+import { validateProxyHeaderCensus, validateProxyHeaderPrefix, validateProxyHeaderLifecycle } from "./proxy-header-census.mjs";
 import {cachedCdpTextProjectionProtocol,cachedCdpTextSourceRevision,cachedCdpTextMappingSha256} from "./cdp-cached-text-projection.mjs";
 export const controlCancellationPolicy = Object.freeze({
 	version: 2,
@@ -1562,6 +1562,7 @@ const requestReceipt = (row) => ({
 	...pick(row, [
 		"contextId",
 		"requestId",
+		"failedEventOrdinal",
 		"id",
 		"traceId",
 		"loaderId",
@@ -1686,6 +1687,112 @@ const knownNativeContext = context => {
 	}catch{return false;}
 };
 
+/** Open authority is independently checked; no closed/end-read fields are manufactured. */
+const knownProgressReadHistory=principal=>{
+ const reads=principal?.progressReads;
+ if(!Number.isSafeInteger(principal?.pendingReads) || principal.pendingReads<0 || reads?.protocol!=="owned-read-only-principal-operations-v1" || !Number.isSafeInteger(reads.started) || reads.started<0 || reads.started>controlCancellationPolicy.recordLimit || !Number.isSafeInteger(reads.finished) || reads.finished<0 || reads.finished>reads.started || !Array.isArray(reads.records) || reads.records.length!==reads.started || !Array.isArray(reads.pending) || reads.pending.length!==principal.pendingReads || reads.started-reads.finished!==principal.pendingReads)return false;
+ const ids=new Set(),starts=[],ends=[],pending=[];
+ for(const row of reads.records){
+  if(Object.keys(row).length!==6 || !Number.isSafeInteger(row.acknowledgmentOrdinal) || row.acknowledgmentOrdinal<1 || row.acknowledgmentOrdinal>controlCancellationPolicy.recordLimit || ids.has(row.acknowledgmentOrdinal) || row.kind!=="read-only-context-cookies-v1" || !Number.isSafeInteger(row.startedOrdinal) || row.startedOrdinal<1 || row.error!==false)return false;
+  ids.add(row.acknowledgmentOrdinal);starts.push(row.startedOrdinal);
+  if(row.finishedOrdinal===null){if(row.snapshotSha256!==null)return false;pending.push({acknowledgmentOrdinal:row.acknowledgmentOrdinal,kind:row.kind});}
+  else{if(!Number.isSafeInteger(row.finishedOrdinal) || row.finishedOrdinal<1 || !digest(row.snapshotSha256))return false;ends.push(row.finishedOrdinal);}
+ }
+ return starts.sort((a,b)=>a-b).every((n,i)=>n===i+1) && ends.length===reads.finished && ends.sort((a,b)=>a-b).every((n,i)=>n===i+1) && JSON.stringify(pending.sort((a,b)=>a.acknowledgmentOrdinal-b.acknowledgmentOrdinal))===JSON.stringify(reads.pending);
+};
+export const knownMixedOpenJournals = context => {
+ const headerPrefix=context?.headerPrefix;
+	try {
+		const binding=context?.binding,env=context?.environment,principal=context?.principalEpoch,census=context?.headerCensus,lifetime=context?.headerLifetime;
+		if(context?.protocol !== "qualified-known-extra-native-context-v1" || typeof context.contextId !== "string" || !context.contextId || !digest(context.originSha256) ||
+			!knownBrowserControlMetadata(binding) || binding.browserVerified !== true || binding.manifestVerified !== true ||
+			!knownNativePublicSources(binding.nativePublicSources,binding.compiledBuild,binding.compiledManifestSha256) ||
+			!context.protocolSources || Object.keys(context.protocolSources).length > 64 || Object.entries(context.protocolSources).some(([file,sha])=>file.length > 256 || !digest(sha)) ||
+			context.operatorFile!=="mixed-load-probe.mjs" ||
+			![context.operatorFile,"control-cancellation-evidence.mjs","browser-control-collector.mjs","fixture-browser.mjs","trace-transport.mjs","action-result-observer.mjs","proxy-header-census.mjs","cdp-cached-text-projection.mjs"].every(file=>digest(context.protocolSources?.[file]))) return false;
+		const errors=context.protocolErrors;
+		if(errors?.protocol !== "positive-flight-error-observations-v1" || errors.contextId !== context.contextId || errors.installed !== true || errors.scopeClosed !== false ||
+			errors.observed !== 0 || errors.overflow !== 0 || !Array.isArray(errors.records) || errors.records.length !== 0) return false;
+		const actualFiles = value => value?.protocol === "serving-public-worker-source-metadata-v1" && value.servingRootKnown === true && Array.isArray(value.files) && value.files.length === 4 &&
+			value.files.every((row,index)=>row.known === true && row.reason === null && row.file === binding.nativePublicSources.files[index].file && row.bytes === binding.nativePublicSources.files[index].bytes && row.sha256 === binding.nativePublicSources.files[index].sha256);
+		if(env?.protocol !== "native-cache-environment-metadata-v1" || env.contextId !== context.contextId || !actualFiles(env.servingPublicSources)) return false;
+		const launch=env.nativeLaunchMetadata;
+		if(launch?.protocol !== "owned-native-launch-metadata-v1" || launch.processKnown !== true || launch.fixturePolicy !== "isolated-profile-no-prediction-v1" || launch.argumentsKnown !== true ||
+			!digest(launch.argumentsSha256) || launch.argumentsSha256 !== launch.recordedArgumentsSha256 || launch.argumentsMatchRecorded !== true ||
+			!Array.isArray(launch.argumentKeys) || launch.argumentKeys.length > 1024 || launch.argumentKeys.some(value=>typeof value!=="string" || value.length>128) || !launch.argumentKeys.includes("--disable-extensions") ||
+			launch.profileArgumentCount !== 1 || !digest(launch.profileArgumentSha256) || launch.profileArgumentSha256 !== launch.recordedProfileDirectorySha256 || launch.profileArgumentMatchesRecorded !== true ||
+			launch.executable?.known !== true || !digest(launch.executable.sha256) || !Number.isSafeInteger(launch.executable.bytes) || launch.executable.bytes <= 0 || launch.executable.bytes > 1024*1024*1024 ||
+			!Array.isArray(launch.observerSources) || launch.observerSources.length !== 2 || !["browser-control-collector.mjs","fixture-browser.mjs"].every(file=>{
+				const rows=launch.observerSources.filter(row=>row.file===file);return rows.length===1 && rows[0].known===true && rows[0].sha256===context.protocolSources[file];})) return false;
+		const workers=env.workerTargets;
+		if(workers?.protocol !== "owned-context-worker-target-metadata-v1" || workers.contextId !== context.contextId || workers.contextJoinKnown !== true || !digest(workers.contextIdentitySha256) ||
+			workers.installed !== true || workers.scopeClosed !== false || workers.errors !== 0 || workers.overflow !== 0 || !Array.isArray(workers.events) || workers.events.length === 0 || workers.events.length > 256 ||
+			workers.events.some(row=>!["page","service_worker"].includes(row.type) || row.urlKnown !== true || !digest(row.urlSha256) ||
+				(row.type === "service_worker" ? row.ownedWorkerScript !== true || row.originMatches !== true : row.originMatches !== true && row.urlSha256 !== bodySha256(Buffer.from("about:blank"))))) return false;
+  if(!digest(context.workerScriptSha256) || !digest(context.rootScopeSha256) || workers.events.some(row=>!["initial","created","changed","destroyed"].includes(row.event) || !Number.isSafeInteger(row.targetOrdinal) || row.targetOrdinal<=0 || row.type==="service_worker" && row.urlSha256!==context.workerScriptSha256) || !knownMixedDocumentJournal(context.documentJournal) || context.documentJournal.closed!==false || context.documentJournal.contextId!==context.contextId)return false;
+  if(principal?.protocol!=="actual-browser-cookie-boundaries-v1" || principal.contextId!==context.contextId || principal.scopeClosed!==false || !["observedSetCookieResponses","unknownResponseHeaders","readErrors","observationErrors","overflow"].every(key=>principal[key]===0) || !knownProgressReadHistory(principal))return false;
+  if(!validateProxyHeaderPrefix(headerPrefix,{contextId:context.contextId}) || JSON.stringify(census)!==JSON.stringify(headerPrefix.census) || !["unknownHeaders","setCookieResponses","setCookieLines","errors","duplicates","missing","late","overflow"].every(key=>census.counts[key]===0) || headerPrefix.lifecycle.errors!==0 || headerPrefix.lifecycle.overflow!==0 || headerPrefix.lifecycle.upstreamRequests!==census.counts.accepted || lifetime?.protocol!=="owned-context-upstream-header-lifetime-v1" || lifetime.contextId!==context.contextId || lifetime.closure!==null)return false;
+  const installation=lifetime.installation,life=headerPrefix.lifecycle;
+  return installation?.protocol===lifetime.protocol && installation.proxyInstanceId===life.proxyInstanceId && installation.originSha256===context.originSha256 && life.originSha256===context.originSha256 && installation.acceptedRequestsAtInstall===0 && JSON.stringify(installation.allowedOriginSha256)===JSON.stringify(life.allowedOriginSha256);
+ }catch{return false;}
+};
+export const sameMixedReturnJournals=(begin,current)=>knownMixedOpenJournals(current) && sameHeaderJournalPrefix(begin.headerPrefix.lifecycle,current.headerPrefix.lifecycle) && samePrincipalJournalPrefix(begin.principalEpoch,current.principalEpoch) && JSON.stringify(current.documentJournal)===JSON.stringify(begin.documentJournal) && Array.isArray(begin.environment?.workerTargets?.events) && JSON.stringify(current.environment.workerTargets.events.slice(0,begin.environment.workerTargets.events.length))===JSON.stringify(begin.environment.workerTargets.events);
+
+const knownMixedPrefixAuthority = (context,ack,headerPrefix) => {
+	try {
+		const binding=context?.binding,env=context?.environment,principal=context?.principalEpoch,census=context?.headerCensus,lifetime=context?.headerLifetime;
+		if(context?.protocol !== "qualified-known-extra-native-context-v1" || typeof context.contextId !== "string" || !context.contextId || !digest(context.originSha256) ||
+			!knownBrowserControlMetadata(binding) || binding.browserVerified !== true || binding.manifestVerified !== true ||
+			!knownNativePublicSources(binding.nativePublicSources,binding.compiledBuild,binding.compiledManifestSha256) ||
+			!context.protocolSources || Object.keys(context.protocolSources).length > 64 || Object.entries(context.protocolSources).some(([file,sha])=>file.length > 256 || !digest(sha)) ||
+			context.operatorFile!=="mixed-load-probe.mjs" ||
+			![context.operatorFile,"control-cancellation-evidence.mjs","browser-control-collector.mjs","fixture-browser.mjs","trace-transport.mjs","action-result-observer.mjs","proxy-header-census.mjs","cdp-cached-text-projection.mjs"].every(file=>digest(context.protocolSources?.[file]))) return false;
+		const errors=context.protocolErrors;
+		if(errors?.protocol !== "positive-flight-error-observations-v1" || errors.contextId !== context.contextId || errors.installed !== true || errors.scopeClosed !== false ||
+			errors.observed !== 0 || errors.overflow !== 0 || !Array.isArray(errors.records) || errors.records.length !== 0) return false;
+		const actualFiles = value => value?.protocol === "serving-public-worker-source-metadata-v1" && value.servingRootKnown === true && Array.isArray(value.files) && value.files.length === 4 &&
+			value.files.every((row,index)=>row.known === true && row.reason === null && row.file === binding.nativePublicSources.files[index].file && row.bytes === binding.nativePublicSources.files[index].bytes && row.sha256 === binding.nativePublicSources.files[index].sha256);
+		if(env?.protocol !== "native-cache-environment-metadata-v1" || env.contextId !== context.contextId || !actualFiles(env.servingPublicSources)) return false;
+		const launch=env.nativeLaunchMetadata;
+		if(launch?.protocol !== "owned-native-launch-metadata-v1" || launch.processKnown !== true || launch.fixturePolicy !== "isolated-profile-no-prediction-v1" || launch.argumentsKnown !== true ||
+			!digest(launch.argumentsSha256) || launch.argumentsSha256 !== launch.recordedArgumentsSha256 || launch.argumentsMatchRecorded !== true ||
+			!Array.isArray(launch.argumentKeys) || launch.argumentKeys.length > 1024 || launch.argumentKeys.some(value=>typeof value!=="string" || value.length>128) || !launch.argumentKeys.includes("--disable-extensions") ||
+			launch.profileArgumentCount !== 1 || !digest(launch.profileArgumentSha256) || launch.profileArgumentSha256 !== launch.recordedProfileDirectorySha256 || launch.profileArgumentMatchesRecorded !== true ||
+			launch.executable?.known !== true || !digest(launch.executable.sha256) || !Number.isSafeInteger(launch.executable.bytes) || launch.executable.bytes <= 0 || launch.executable.bytes > 1024*1024*1024 ||
+			!Array.isArray(launch.observerSources) || launch.observerSources.length !== 2 || !["browser-control-collector.mjs","fixture-browser.mjs"].every(file=>{
+				const rows=launch.observerSources.filter(row=>row.file===file);return rows.length===1 && rows[0].known===true && rows[0].sha256===context.protocolSources[file];})) return false;
+		const workers=env.workerTargets;
+		if(workers?.protocol !== "owned-context-worker-target-metadata-v1" || workers.contextId !== context.contextId || workers.contextJoinKnown !== true || !digest(workers.contextIdentitySha256) ||
+			workers.installed !== true || workers.scopeClosed !== false || workers.errors !== 0 || workers.overflow !== 0 || !Array.isArray(workers.events) || workers.events.length === 0 || workers.events.length > 256 ||
+			workers.events.some(row=>!["page","service_worker"].includes(row.type) || row.urlKnown !== true || !digest(row.urlSha256) ||
+				(row.type === "service_worker" ? row.ownedWorkerScript !== true || row.originMatches !== true : row.originMatches !== true && row.urlSha256 !== bodySha256(Buffer.from("about:blank"))))) return false;
+		const end=ack,controller=end?.controller;
+		const ownedWorker = value=>value?.present === true && value.known === true && value.ownedScript === true && value.state === "activated" && digest(value.scriptUrlSha256);
+		if(end?.protocol !== "native-environment-progress-readonly-v1" || end.timedOut !== false || end.pendingOperations !== 0 || end.readErrors !== 0 || !actualFiles(end.publicSourceRecheck) ||
+			controller?.available !== true || controller.secureContext !== true || controller.originMatches !== true || controller.controllerIdentityStable !== true ||
+			!ownedWorker(controller.controllerBefore) || !ownedWorker(controller.controllerAfter) || controller.controllerBefore.scriptUrlSha256 !== controller.controllerAfter.scriptUrlSha256 ||
+			controller.registrationCount !== 1 || controller.registrationOverflow !== 0 || !Array.isArray(controller.registrations) || controller.registrations.length !== 1) return false;
+		const registration=controller.registrations[0];
+		if(registration.scopeKnown !== true || !digest(registration.scopeSha256) || registration.ownedRootScope !== true || !ownedWorker(registration.active) ||
+			registration.active.scriptUrlSha256 !== controller.controllerAfter.scriptUrlSha256 || ![registration.waiting,registration.installing].every(value=>value?.present === false && value.known === true)) return false;
+		if(!digest(context.workerScriptSha256) || !digest(context.rootScopeSha256) || registration.scopeSha256!==context.rootScopeSha256 || controller.controllerBefore.scriptUrlSha256!==context.workerScriptSha256 ||
+			workers.events.some(row=>!["initial","created","changed","destroyed"].includes(row.event) || !Number.isSafeInteger(row.targetOrdinal) || row.targetOrdinal<=0 || row.type==="service_worker" && row.urlSha256!==context.workerScriptSha256)) return false;
+		if(principal?.protocol !== "actual-browser-cookie-boundaries-v1" || principal.contextId !== context.contextId || principal.scopeClosed !== false ||
+			!["observedSetCookieResponses","unknownResponseHeaders","readErrors","observationErrors","overflow"].every(key=>principal[key]===0) ||
+			!knownProgressReadHistory(principal) ||
+			![principal.before,ack.principalRead].every(row=>row?.known === true && row.cookieCount===1 && digest(row.sha256) && row.cookieAttributes?.originKnown === true &&
+				row.cookieAttributes.httpOnlyKnown === true && row.cookieAttributes.allHttpOnly === true && row.cookieAttributes.singleOwnedRootHttpOnlyCookie === true && digest(row.cookieAttributes.singleCookieHeaderSha256)) ||
+			principal.before.sha256 !== ack.principalRead.sha256 || principal.before.cookieAttributes.singleCookieHeaderSha256 !== ack.principalRead.cookieAttributes.singleCookieHeaderSha256) return false;
+		if(!validateProxyHeaderPrefix(headerPrefix,{contextId:context.contextId}) || JSON.stringify(census)!==JSON.stringify(headerPrefix.census) || census.counts.accepted<=0 ||
+   !["unknownHeaders","setCookieResponses","setCookieLines","errors","duplicates","missing","late","overflow"].every(key=>census.counts[key]===0) ||
+   headerPrefix.lifecycle.errors!==0 || headerPrefix.lifecycle.overflow!==0 || headerPrefix.lifecycle.upstreamRequests!==census.counts.accepted ||
+   lifetime?.protocol!=="owned-context-upstream-header-lifetime-v1" || lifetime.contextId!==context.contextId || lifetime.closure!==null)return false;
+  const installation=lifetime.installation,life=headerPrefix.lifecycle;
+  return installation?.protocol===lifetime.protocol && installation.proxyInstanceId===life.proxyInstanceId && installation.originSha256===context.originSha256 && life.originSha256===context.originSha256 &&
+   installation.acceptedRequestsAtInstall===0 && JSON.stringify(installation.allowedOriginSha256)===JSON.stringify(life.allowedOriginSha256);
+ }catch{return false;}
+};
+
 const nativeContextDigest = context => {
 	try {const bytes=Buffer.from(JSON.stringify(context));return bytes.length<=controlCancellationPolicy.encodedLimit ? bodySha256(bytes) : null;}
 	catch{return null;}
@@ -1755,9 +1862,9 @@ const nativeCachedBytes = (cached,origin,packet,context) => {
 	return {...base,kind:"windows-1252-forward-image",projection:Object.fromEntries(keys.map(key=>[key,projected[key]]))};
 };
 
-function nativeKnownExtraProof(failure,packet,responses,proxy,context,browserRevision) {
+function nativeKnownExtraRequestCore(failure,packet,responses,proxy,context,browserRevision) {
 	try {
-	if(browserRevision !== chromiumSWRRevision || !knownNativeContext(context) || !nativeContextDigest(context) || failure.contextId !== context.contextId || failure.requestHeadersKnown !== true ||
+	if(browserRevision !== chromiumSWRRevision || failure.contextId !== context.contextId || failure.requestHeadersKnown !== true ||
 		failure.type !== "Other" || failure.initiator !== "other" || failure.initiatorStackKnownAbsent !== true || failure.priority !== "VeryLow" ||
 		!["segment-prefetch","route-tree"].includes(failure.requestKind) || failure.method !== "GET" || failure.status !== 200 || failure.action !== false || failure.rsc !== true || failure.prefetch !== true ||
 		failure.purposeHeaderPresent !== false || failure.secPurposeHeaderPresent !== false || failure.requestOriginSha256 !== context.originSha256 ||
@@ -1798,8 +1905,21 @@ function nativeKnownExtraProof(failure,packet,responses,proxy,context,browserRev
 		![origin,packet].every(row=>context.headerCensus.requests.filter(entry=>entry.requestId===row.id && entry.observation==="headers").length===1) ||
 		[cached,origin,packet,failure].some(row=>row.observedProtocolError?.serverErrors>0 || row.observedProtocolError?.explicitActionFailure===true || row.bodyProof?.serverErrors>0 || row.bodyProof?.explicitActionFailure===true || row.httpErrorObserved===true || row.status>=400)) return null;
 	return {failure:requestReceipt(failure),packet:requestReceipt(packet),cached:requestReceipt(cached),origin:requestReceipt(origin),browserRevision,proxyCandidates:1,cachedCandidates:1,originCandidates:1,
-		nativeContextSha256:nativeContextDigest(context),byteCorrespondence};
+		byteCorrespondence};
 	}catch{return null;}
+}
+
+function nativeKnownExtraProof(failure,packet,responses,proxy,context,browserRevision) {
+ if(!knownNativeContext(context) || !nativeContextDigest(context))return null;
+ const core=nativeKnownExtraRequestCore(failure,packet,responses,proxy,context,browserRevision);
+ if(!core)return null;
+ const {byteCorrespondence,...facts}=core;
+ return {...facts,nativeContextSha256:nativeContextDigest(context),byteCorrespondence};
+}
+
+/** Bounded technical inputs only; payload chunks and raw header values never enter a prefix. */
+export function mixedNativeProgressInput({failures,responses,proxy,nativeContext,coverage,browserRevision,browserEventOrdinal}) {
+ return structuredClone({failures:failures.map(requestReceipt),responses:(failures.length?responses:[]).map(requestReceipt),proxy:(failures.length?proxy:[]).map(requestReceipt),nativeContext,coverage,browserRevision,browserEventOrdinal});
 }
 
 /** Input records are emitted by the owned passive collector, never inferred from labels alone. */
@@ -2021,3 +2141,140 @@ export function nativeEvidenceAuthorityMatches(evidence,runtime,protocolSources,
 export function completeAllPhaseBrowserObservation(evidence) {
 	return browserFailureEvidenceMatches(evidence, evidence?.rawFailedRequests, "all-phase-semantic-correlation", false);
 }
+
+export const mixedNativeProgressPolicy=Object.freeze({version:1,prefixProtocol:"acknowledged-mixed-native-prefix-v1",ledgerProtocol:"mixed-native-progress-observations-v1",failureOccurrenceProtocol:"actual-browser-failed-occurrence-census-v1",observerCeilingMs:10000,guardScope:"existing-mixed-stop-guards-only"});
+const mixedPrefixProtocol=mixedNativeProgressPolicy.prefixProtocol;
+const safeTechnicalId=value=>typeof value==="string" && /^[A-Za-z0-9._:-]{1,256}$/.test(value);
+const progressFailureIds=input=>input.failures.map(row=>row.requestId).sort();
+/** Cheap request-local prerequisite. It grants no Native authority and never admits incomplete current packets. */
+export function mixedNativePrefixCandidates(input) {
+ try {
+  if(!input || Object.keys(input).length!==7 || !["failures","responses","proxy","nativeContext","coverage","browserRevision","browserEventOrdinal"].every(key=>Object.hasOwn(Object.getOwnPropertyDescriptor(input,key) ?? {},"value")) || ![input.failures,input.responses,input.proxy].every(rows=>Array.isArray(rows) && rows.length<=controlCancellationPolicy.recordLimit) || input.coverage?.installed!==true || input.coverage.scopeClosed!==false || !["missing","errors","overflow"].every(key=>input.coverage[key]===0) || !Number.isSafeInteger(input.browserEventOrdinal) || input.browserEventOrdinal<0 || input.failures.length>0 && !nativeContextDigest(input))return null;
+  const ids=progressFailureIds(input);if(input.failures.some(row=>!Number.isSafeInteger(row.failedEventOrdinal) || row.failedEventOrdinal<1 || row.failedEventOrdinal>input.browserEventOrdinal) || !ids.every(safeTechnicalId) || new Set(ids).size!==ids.length)return null;
+  const ordinary=classifyControlCancellations(input),cores=[];
+  for(let i=0;i<input.failures.length;i++){
+   const failure=input.failures[i],record=ordinary.records[i];
+   if(record.outcome==="real-failure")return null;
+   if(record.outcome==="protocol-control")continue;
+   if(failure.error!=="net::ERR_ABORTED" || failure.canceled!==true || failure.ambiguousRedirect===true || failure.httpErrorObserved===true)return null;
+   const matches=input.proxy.filter(row=>sameRequest(failure,row) && failure.proxyResponseId===row.id);
+   if(matches.length!==1)return null;
+   const core=nativeKnownExtraRequestCore(failure,matches[0],input.responses,input.proxy,input.nativeContext,input.browserRevision);
+   if(!core)return null;cores.push(core);
+  }
+  return {failureIds:ids,cores};
+ }catch{return null;}
+}
+
+/** A positive acknowledged prefix stays separately typed; the final closed validator never consumes it. */
+export function createMixedNativePrefix({checkpointOrdinal,begin,end,acknowledgment,headerPrefix,operationDeadlineMs=null,returnedAtMs}) {
+ const facts=structuredClone({protocol:mixedPrefixProtocol,checkpointOrdinal,operationDeadlineMs,begin,end,acknowledgment,headerPrefix,returnedAtMs});
+ const receipt={...facts,prefixSha256:bodySha256(Buffer.from(JSON.stringify(facts)))};
+ if(!validateMixedNativePrefix(receipt))throw Error("Mixed Native prefix is not positively acknowledged.");
+ return receipt;
+}
+export function validateMixedNativePrefix(receipt) {
+ try {
+  const names=["protocol","checkpointOrdinal","operationDeadlineMs","begin","end","acknowledgment","headerPrefix","returnedAtMs","prefixSha256"];
+  if(!receipt || Reflect.ownKeys(receipt).length!==names.length || !names.every(key=>Object.hasOwn(Object.getOwnPropertyDescriptor(receipt,key) ?? {},"value")) || receipt.protocol!==mixedPrefixProtocol || !Number.isSafeInteger(receipt.checkpointOrdinal) || receipt.checkpointOrdinal<1 || receipt.checkpointOrdinal>controlCancellationPolicy.recordLimit || !digest(receipt.prefixSha256) || !nativeContextDigest(receipt))return false;
+  const {begin,end,acknowledgment:ack,headerPrefix,operationDeadlineMs,returnedAtMs}=receipt;
+  const first=mixedNativePrefixCandidates(begin),last=mixedNativePrefixCandidates(end);
+  if(!first || !last || first.cores.length===0 || JSON.stringify(first)!==JSON.stringify(last) || begin.nativeContext.contextId!==end.nativeContext.contextId || end.browserEventOrdinal<begin.browserEventOrdinal)return false;
+  const start=begin.nativeContext,finish=end.nativeContext;
+  if(start.protocol!==finish.protocol || start.contextId!==finish.contextId || start.originSha256!==finish.originSha256 || start.workerScriptSha256!==finish.workerScriptSha256 || start.rootScopeSha256!==finish.rootScopeSha256 || start.operatorFile!==finish.operatorFile || JSON.stringify(start.binding)!==JSON.stringify(finish.binding) || JSON.stringify(start.protocolSources)!==JSON.stringify(finish.protocolSources) || JSON.stringify(start.principalEpoch.before)!==JSON.stringify(finish.principalEpoch.before))return false;
+  const beforeWorkers=start.environment?.workerTargets,afterWorkers=finish.environment?.workerTargets;
+  if(!Array.isArray(beforeWorkers?.events) || !Array.isArray(afterWorkers?.events) || afterWorkers.events.length<beforeWorkers.events.length || JSON.stringify(afterWorkers.events.slice(0,beforeWorkers.events.length))!==JSON.stringify(beforeWorkers.events))return false;
+  if(ack?.protocol!=="native-environment-progress-readonly-v1" || ack.contextId!==finish.contextId || ack.checkpointOrdinal!==receipt.checkpointOrdinal || ack.timedOut!==false || ack.pendingOperations!==0 || ack.readErrors!==0 || !Number.isFinite(ack.startedAtMs) || !Number.isFinite(ack.finishedAtMs) || ack.finishedAtMs<ack.startedAtMs || ack.elapsedMs!==ack.finishedAtMs-ack.startedAtMs || !Number.isFinite(ack.deadlineMs) || !Number.isFinite(ack.deadlineBudgetMs) || ack.deadlineBudgetMs<=0 || ack.deadlineBudgetMs>10000 || ack.deadlineMs-ack.startedAtMs!==ack.deadlineBudgetMs || ack.finishedAtMs>ack.deadlineMs || operationDeadlineMs!==null && (!Number.isFinite(operationDeadlineMs) || ack.deadlineMs>operationDeadlineMs))return false;
+  const beforeReads=start.principalEpoch?.progressReads,afterReads=finish.principalEpoch?.progressReads,ownRead=ack.principalReadOperation;
+  if(!knownProgressReadHistory(start.principalEpoch) || !knownProgressReadHistory(finish.principalEpoch) || beforeReads.records.some(row=>row.acknowledgmentOrdinal===receipt.checkpointOrdinal) || !ownRead || ownRead.acknowledgmentOrdinal!==receipt.checkpointOrdinal || ownRead.snapshotSha256!==ack.principalRead?.sha256 || ownRead.error!==false || ownRead.finishedOrdinal===null || afterReads.records.filter(row=>JSON.stringify(row)===JSON.stringify(ownRead)).length!==1 || beforeReads.started>afterReads.started || beforeReads.finished>afterReads.finished || beforeReads.records.some(row=>{const match=afterReads.records.find(next=>next.acknowledgmentOrdinal===row.acknowledgmentOrdinal);return !match || row.startedOrdinal!==match.startedOrdinal || row.kind!==match.kind || row.finishedOrdinal!==null && JSON.stringify(row)!==JSON.stringify(match);}))return false;
+  if(!Number.isFinite(returnedAtMs) || returnedAtMs<ack.finishedAtMs || returnedAtMs>ack.deadlineMs || !sameMixedReturnJournals(start,finish))return false;
+  const document=ack.document;
+  if(document?.protocol!=="actual-cdp-document-acknowledgment-v1" || document.contextId!==finish.contextId || !knownMixedDocumentJournal(document.sourceJournal,document) || ![document.frameId,document.loaderId,document.executionContextUniqueId].every(safeTechnicalId) || !Number.isSafeInteger(document.documentGeneration) || document.documentGeneration<1 || document.actualDocumentIdentityStable!==true || document.originSha256!==finish.originSha256 || !["executionEventOrdinalBefore","executionEventOrdinalAfter","documentEventOrdinalBefore","documentEventOrdinalAfter"].every(key=>Number.isSafeInteger(document[key]) && document[key]>=0) || document.executionEventOrdinalBefore!==document.executionEventOrdinalAfter || document.documentEventOrdinalBefore!==document.documentEventOrdinalAfter)return false;
+  if(JSON.stringify(document.sourceJournal)!==JSON.stringify(start.documentJournal) || JSON.stringify(document.sourceJournal)!==JSON.stringify(finish.documentJournal))return false;
+  if(!knownMixedPrefixAuthority(start,ack,start.headerPrefix) || !knownMixedPrefixAuthority(finish,ack,headerPrefix) || !sameHeaderJournalPrefix(start.headerPrefix.lifecycle,headerPrefix.lifecycle))return false;
+  const {prefixSha256,...facts}=receipt;
+  return prefixSha256===bodySha256(Buffer.from(JSON.stringify(facts)));
+ }catch{return false;}
+}
+/** Stable external authority digest; closure/cursor facts are deliberately separate. */
+export const mixedNativeAuthorityDigest=context=>nativeContextDigest(context && Object.fromEntries(["contextId","originSha256","workerScriptSha256","rootScopeSha256","binding","protocolSources","operatorFile"].map(key=>[key,context[key]])));
+export function mixedNativeProgressVector(input){
+ const c=input.nativeContext,p=c.principalEpoch,w=c.environment?.workerTargets,h=c.headerPrefix?.lifecycle;
+ return {browserEventOrdinal:input.browserEventOrdinal,headerEventOrdinal:h?.eventOrdinal,workerEventCount:w?.events?.length,principalProgressStarted:p.progressReads?.started ?? 0,principalProgressFinished:p.progressReads?.finished ?? 0,failureIds:progressFailureIds(input)};
+}
+const sameHeaderJournalPrefix=(prefix,final)=>{
+ if(!final || final.errors!==0 || final.overflow!==0 || prefix.proxyInstanceId!==final.proxyInstanceId || prefix.originSha256!==final.originSha256 || JSON.stringify(prefix.allowedOriginSha256)!==JSON.stringify(final.allowedOriginSha256) || prefix.eventOrdinal>final.eventOrdinal)return false;
+ const expected=final.requests.filter(row=>row.acceptedOrdinal<=prefix.eventOrdinal).map(row=>Object.fromEntries(Object.entries(row).map(([key,value])=>[key,key.endsWith("Ordinal") && value>prefix.eventOrdinal?null:value])));
+ return JSON.stringify(prefix.requests)===JSON.stringify(expected);
+};
+const samePrincipalJournalPrefix=(past,final)=>knownProgressReadHistory(past) && knownProgressReadHistory(final) && past.contextId===final.contextId && JSON.stringify(past.before)===JSON.stringify(final.before) && past.progressReads.started<=final.progressReads.started && past.progressReads.finished<=final.progressReads.finished && past.progressReads.records.every(row=>{
+ const match=final.progressReads.records.find(value=>value.acknowledgmentOrdinal===row.acknowledgmentOrdinal);
+ return match && match.startedOrdinal===row.startedOrdinal && match.kind===row.kind && (row.finishedOrdinal!==null?JSON.stringify(row)===JSON.stringify(match):match.finishedOrdinal===null || match.finishedOrdinal>past.progressReads.finished);
+});
+/** Prefix replay is additional evidence. Final lifetime/browser/native checks remain independently required. */
+export function validateMixedProgressObservations(progress,context,finalInputs) {
+ try {
+  const names=["protocol","contextId","authoritySha256","guardChecks","attempted","failed","overflow","retainedBytes","checks","prefixes"];
+  if(!progress || Object.keys(progress).length!==names.length || !names.every(key=>Object.hasOwn(Object.getOwnPropertyDescriptor(progress,key) ?? {},"value")) || progress.protocol!=="mixed-native-progress-observations-v1" || progress.contextId!==context?.contextId || progress.authoritySha256!==mixedNativeAuthorityDigest(context) || !Number.isSafeInteger(progress.guardChecks) || progress.guardChecks<1 || progress.guardChecks>controlCancellationPolicy.recordLimit || !Number.isSafeInteger(progress.attempted) || progress.attempted<0 || progress.attempted>progress.guardChecks || progress.failed!==0 || progress.overflow!==0 || !Number.isSafeInteger(progress.retainedBytes) || progress.retainedBytes<0 || progress.retainedBytes>controlCancellationPolicy.retainedLimit || !Array.isArray(progress.prefixes) || progress.prefixes.length!==progress.attempted || !Array.isArray(progress.checks) || progress.checks.length!==progress.guardChecks || !Array.isArray(finalInputs?.failureIds) || !knownMixedDocumentJournal(finalInputs.documentJournal) || finalInputs.documentJournal.closed!==true || finalInputs.documentJournal.contextId!==context.contextId || !Array.isArray(finalInputs.nativeFailureIds) || !Number.isSafeInteger(finalInputs.browserEventOrdinal) || !validateProxyHeaderLifecycle(finalInputs.headerLifecycle) || finalInputs.headerLifecycle.closed!==true || finalInputs.headerLifecycle.pendingUpstreams!==0 || finalInputs.headerLifecycle.acceptedRequests!==finalInputs.headerLifecycle.upstreamRequests || finalInputs.headerLifecycle.closedUpstreams!==finalInputs.headerLifecycle.upstreamRequests || context.principalEpoch?.scopeClosed!==true || context.principalEpoch.pendingReads!==0 || context.environment?.workerTargets?.scopeClosed!==true || finalInputs.headerLifecycle.errors!==0 || finalInputs.headerLifecycle.overflow!==0)return false;
+  if(!knownMixedFailureOccurrences(finalInputs.failureOccurrences,context.contextId,finalInputs.browserEventOrdinal,finalInputs.failureIds))return false;
+  const occurrences=new Map(finalInputs.failureOccurrences.records.map(row=>[row.requestId,row.eventOrdinal])),finalIds=new Set(finalInputs.failureIds),used=new Set();let previousStart=-1;
+  const vector=(v)=>v && Object.keys(v).length===6 && ["browserEventOrdinal","headerEventOrdinal","workerEventCount","principalProgressStarted","principalProgressFinished"].every(key=>Number.isSafeInteger(v[key]) && v[key]>=0) && v.principalProgressFinished<=v.principalProgressStarted && v.browserEventOrdinal<=finalInputs.browserEventOrdinal && v.headerEventOrdinal<=finalInputs.headerLifecycle.eventOrdinal && v.workerEventCount<=context.environment.workerTargets.events.length && Array.isArray(v.failureIds) && new Set(v.failureIds).size===v.failureIds.length && v.failureIds.every(id=>safeTechnicalId(id) && finalIds.has(id)) && JSON.stringify(v.failureIds)===JSON.stringify(finalInputs.failureOccurrences.records.filter(row=>row.eventOrdinal<=v.browserEventOrdinal).map(row=>row.requestId).sort());
+  for(let index=0;index<progress.checks.length;index++){
+   const check=progress.checks[index];
+   if(Object.keys(check).length!==5 || check.ordinal!==index+1 || !vector(check.begin) || !vector(check.returned) || check.begin.browserEventOrdinal<previousStart || ["browserEventOrdinal","headerEventOrdinal","workerEventCount","principalProgressStarted","principalProgressFinished"].some(key=>check.returned[key]<check.begin[key]) || JSON.stringify(check.begin.failureIds)!==JSON.stringify(check.returned.failureIds))return false;
+   previousStart=check.begin.browserEventOrdinal;
+   if(check.prefixSha256===null){if(check.checkpointOrdinal!==null || check.returned.failureIds.some(id=>finalInputs.nativeFailureIds.includes(id)))return false;}
+   else{const matches=progress.prefixes.filter(row=>row.prefixSha256===check.prefixSha256 && row.checkpointOrdinal===check.checkpointOrdinal);if(matches.length!==1 || used.has(check.prefixSha256))return false;used.add(check.prefixSha256);const prefix=matches[0];if(JSON.stringify(check.begin)!==JSON.stringify(mixedNativeProgressVector(prefix.begin)) || JSON.stringify(check.returned)!==JSON.stringify(mixedNativeProgressVector(prefix.end)))return false;}
+  }
+  for(let index=0;index<progress.prefixes.length;index++){
+   const prefix=progress.prefixes[index];if([prefix?.begin,prefix?.end].some(cut=>!Array.isArray(cut?.failures) || cut.failures.some(row=>occurrences.get(row.requestId)!==row.failedEventOrdinal)))return false;if(prefix.checkpointOrdinal!==index+1 || !validateMixedNativePrefix(prefix) || mixedNativeAuthorityDigest(prefix.end.nativeContext)!==progress.authoritySha256 || !sameHeaderJournalPrefix(prefix.headerPrefix.lifecycle,finalInputs.headerLifecycle) || !sameHeaderJournalPrefix(prefix.begin.nativeContext.headerPrefix.lifecycle,finalInputs.headerLifecycle) || !samePrincipalJournalPrefix(prefix.begin.nativeContext.principalEpoch,context.principalEpoch) || !samePrincipalJournalPrefix(prefix.end.nativeContext.principalEpoch,context.principalEpoch) || !used.has(prefix.prefixSha256))return false;
+   const source=prefix.acknowledgment.document.sourceJournal,final=finalInputs.documentJournal;
+   if(JSON.stringify(final.executionEvents.slice(0,source.executionEventOrdinal))!==JSON.stringify(source.executionEvents) || JSON.stringify(final.documents.slice(0,source.documentEventOrdinal))!==JSON.stringify(source.documents))return false;
+   const past=prefix.end.nativeContext.environment.workerTargets.events;
+   if(JSON.stringify(context.environment.workerTargets.events.slice(0,past.length))!==JSON.stringify(past))return false;
+  }
+  return progress.retainedBytes===Buffer.byteLength(JSON.stringify(progress.checks))+progress.prefixes.reduce((n,prefix)=>n+Buffer.byteLength(JSON.stringify(prefix)),0);
+ }catch{return false;}
+}
+
+/** Replays only observed technical Runtime/Document facts; no payload, time-nearness or private page identity. */
+export function knownMixedDocumentJournal(journal,document) {
+ try{
+  if(!journal || Object.keys(journal).length!==11 || journal.protocol!=="actual-cdp-document-journal-v1" || !safeTechnicalId(journal.contextId) || journal.installed!==true || !Number.isSafeInteger(journal.currentGeneration) || journal.currentGeneration<0 || typeof journal.closed!=="boolean" || journal.errors!==0 || journal.overflow!==0 || !Array.isArray(journal.executionEvents) || !Array.isArray(journal.documents) || journal.executionEvents.length+ journal.documents.length>controlCancellationPolicy.recordLimit || journal.executionEventOrdinal!==journal.executionEvents.length || journal.documentEventOrdinal!==journal.documents.length)return false;
+  const contexts=new Map(),unique=new Set();
+  for(let index=0;index<journal.executionEvents.length;index++){
+   const event=journal.executionEvents[index];if(event.ordinal!==index+1)return false;
+   if(event.event==="created"){
+    if(Object.keys(event).length!==6 || !Number.isSafeInteger(event.executionContextId) || event.executionContextId<=0 || !safeTechnicalId(event.uniqueId) || !safeTechnicalId(event.frameId) || typeof event.isDefault!=="boolean" || contexts.has(event.executionContextId) || unique.has(event.uniqueId))return false;
+    contexts.set(event.executionContextId,event);unique.add(event.uniqueId);
+   }else if(event.event==="destroyed"){
+    if(Object.keys(event).length!==3 || !contexts.delete(event.executionContextId))return false;
+   }else if(event.event==="cleared"){
+    if(Object.keys(event).length!==2)return false;contexts.clear();
+   }else return false;
+  }
+  for(let index=0;index<journal.documents.length;index++){
+   const row=journal.documents[index];if(Object.keys(row).length!==6 || row.ordinal!==index+1 || ![row.requestId,row.frameId,row.loaderId].every(safeTechnicalId) || !digest(row.originSha256) || typeof row.documentGeneration!=="string" || !row.documentGeneration.startsWith(journal.contextId+":"))return false;
+   const generation=row.documentGeneration.slice(journal.contextId.length+1);if(!/^[1-9][0-9]*$/.test(generation) || !Number.isSafeInteger(Number(generation)))return false;
+  }
+  if(!document)return true;
+  if(journal.closed!==false || document.contextId!==journal.contextId || document.executionEventOrdinalAfter!==journal.executionEventOrdinal || document.documentEventOrdinalAfter!==journal.documentEventOrdinal || document.documentGeneration!==journal.currentGeneration)return false;
+  const execution=contexts.get(document.executionContextId),defaults=[...contexts.values()].filter(row=>row.isDefault && row.frameId===document.frameId),docs=journal.documents.filter(row=>row.frameId===document.frameId && row.loaderId===document.loaderId);
+  return execution?.isDefault===true && execution.uniqueId===document.executionContextUniqueId && execution.frameId===document.frameId && defaults.length===1 && docs.length===1 && docs[0].requestId===document.documentRequestId && docs[0].originSha256===document.originSha256 && docs[0].documentGeneration===document.contextId+":"+document.documentGeneration;
+ }catch{return false;}
+}
+
+/** CORE chronology from actual loadingFailed callbacks, not request start time or nearest-time inference. */
+export function mixedFailureOccurrenceCensus({contextId,scopeClosed,browserEventOrdinal,records}){
+ const facts={protocol:"actual-browser-failed-occurrence-census-v1",contextId,scopeClosed,browserEventOrdinal,records:records.map(row=>({...row})).sort((a,b)=>a.requestId<b.requestId?-1:a.requestId>b.requestId?1:0)};
+ return {...facts,censusSha256:bodySha256(Buffer.from(JSON.stringify(facts)))};
+}
+const knownMixedFailureOccurrences=(proof,contextId,browserEventOrdinal,ids)=>{
+ try{
+  if(!proof || Object.keys(proof).length!==6 || proof.protocol!=="actual-browser-failed-occurrence-census-v1" || proof.contextId!==contextId || proof.scopeClosed!==true || proof.browserEventOrdinal!==browserEventOrdinal || !Number.isSafeInteger(browserEventOrdinal) || browserEventOrdinal<0 || !Array.isArray(proof.records) || proof.records.length>controlCancellationPolicy.recordLimit || !digest(proof.censusSha256))return false;
+  const seen=new Set(),ordinals=new Set();
+  for(const row of proof.records){if(Object.keys(row).length!==3 || !safeTechnicalId(row.requestId) || seen.has(row.requestId) || !Number.isSafeInteger(row.eventOrdinal) || row.eventOrdinal<1 || row.eventOrdinal>browserEventOrdinal || ordinals.has(row.eventOrdinal) || row.failedEvents!==1)return false;seen.add(row.requestId);ordinals.add(row.eventOrdinal);}
+  const {censusSha256,...facts}=proof;
+  return censusSha256===bodySha256(Buffer.from(JSON.stringify(facts))) && JSON.stringify([...seen].sort())===JSON.stringify([...ids].sort());
+ }catch{return false;}
+};

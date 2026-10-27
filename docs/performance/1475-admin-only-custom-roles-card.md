@@ -30,3 +30,9 @@ This only prevents an unauthorized component mount and its automatic query. It a
 The existing employee-detail React suite now renders a visible boundary stub for this card. Manager/member tests assert it is absent from the DOM, including hidden content; admin/owner tests assert it mounts with the original employee/organization scope and admin prop. Before the production hunk, both nonadmin tests failed and both admin controls passed. After it, all38 tests in the existing suite passed. These are rendered component tests, not source-string assertions or real server requests.
 
 The proposed hunk is applied only to the owned feature branch for concrete review. **The original source/binary has not been changed.** Root will request explicit approval before applying the same correction to original business source, rebuilding both fixtures and performing fresh strict checks. Old failures remain preserved. Full clean baseline and performance acceptance remain unfulfilled.
+
+## Optimized build checkpoint
+
+The optimized `05cd9e40c38a3dd8c49d41a621999543a9a64e17` CI build passed: 3,263 pages, approximately 438s total and 27s TypeScript. The build record SHA256 is `7385aad6364e6ad801e4e846e63f086d90e3892b05482f6b64dd3e1ca1be0f24`; required manifest SHA256 is `698e2d7436f8b6f835ebff1e0f2d5e34897924e79a536c9023eca4dfe00a7314`. The original and optimized four public source files still match the qualified source set `56f3ec331084d91e18861e328f0d95dd3c3587c75c02a5920a563dca69c1e86b`, recorded in receipt `40e3d9df523f392f02662464c9d996af8270e6adfe05e1ffe963b8e37e52f911`.
+
+Shared-original approval is still pending and the guard has not been ported to the original. This build result establishes neither fresh runtime verification nor performance acceptance.

@@ -9,6 +9,9 @@ import { nextStreamCompletionPatch } from "./next-stream-completion-patch.mjs";
 import { cleanObservationPolicy, cleanEvidencePolicy } from "./clean-evidence.mjs";
 import { testBrowserEvidence, testBrowserMetadata, testBrowserBinding } from "./control-cancellation-test-fixtures.mjs";
 import { mixedBrowserWorkScope } from "./browser-control-collector.mjs";
+import { mixedFailureOccurrenceCensus, mixedNativeProgressPolicy, mixedNativeAuthorityDigest, mixedNativeProgressVector } from "./control-cancellation-evidence.mjs";
+import { createPrincipalEpochObserver } from "./browser-control-collector.mjs";
+import { createProxyHeaderCensus,createProxyHeaderLifecycle,proxyHeaderPrefix } from "./proxy-header-census.mjs";
 import { createActionResultObserver } from "./action-result-observer.mjs";
 
 const BEFORE = "456d28b2da4437662ae8f625a1df6756bff031fe";
@@ -18,7 +21,7 @@ const id = (n) => n.toString(16).padStart(32, "0");
 const actors = ["large-admin", "small-admin", "small-manager", "large-manager"];
 const metadataFor = (build) => ({ ...testBrowserMetadata(), compiledManifestSha256: (build === HEAD ? "e" : "d").repeat(64) });
 const metadataFileHash = (build) => (build === HEAD ? "f" : "c").repeat(64);
-function transport(actor) {
+function transport(actor,build) {
 	const counts = () => ({
 		requests: 0,
 		rewrittenRequests: 0,
@@ -37,7 +40,7 @@ function transport(actor) {
 		actor,
 		contextId: id(actors.indexOf(actor) + 1),
 		rawBrowserFailedRequests: 0,
-		browserControlEvidence: testBrowserEvidence(id(actors.indexOf(actor) + 1)),
+		browserControlEvidence: fastMixedEvidence(id(actors.indexOf(actor) + 1),build),
 		browserFailureScope: mixedBrowserWorkScope,
 		traceTransport: {
 			...counts(),
@@ -78,6 +81,18 @@ function transport(actor) {
 		},
 	};
 }
+// Entirely synthetic zero-failure fast-guard cuts, independent of any actual capture.
+function fastMixedEvidence(contextId,build,files=Object.fromEntries(budgets.mixedProtocolFiles.map(name=>[name,hash])),metadata=metadataFor(build)){
+ const origin="http://localhost:58792",sha=value=>createHash("sha256").update(value).digest("hex"),evidence=testBrowserEvidence(contextId),principal=createPrincipalEpochObserver(contextId,{origin});
+ principal.start([{name:"session",value:"synthetic",domain:"localhost",path:"/",httpOnly:true}]);
+ const census=createProxyHeaderCensus({contextId}),life=createProxyHeaderLifecycle({proxyInstanceId:"f".repeat(32),originSha256:sha(origin),allowedOriginSha256:[sha(origin)]});
+ const context={protocol:"qualified-known-extra-native-context-v1",contextId,originSha256:sha(origin),workerScriptSha256:sha(origin+"/sw.js"),rootScopeSha256:sha(origin+"/"),operatorFile:"mixed-load-probe.mjs",binding:testBrowserBinding(build,metadata),protocolSources:files,principalEpoch:principal.snapshot(),headerCensus:census.snapshot(),headerPrefix:proxyHeaderPrefix(census.snapshot(),life.snapshot()),environment:{workerTargets:{events:[]}}};
+ const vector=mixedNativeProgressVector({nativeContext:context,browserEventOrdinal:0,failures:[]});
+ const checks=[{ordinal:1,begin:vector,returned:structuredClone(vector),checkpointOrdinal:null,prefixSha256:null}];
+ evidence.mixedProgress={protocol:"mixed-native-progress-observations-v1",contextId,authoritySha256:mixedNativeAuthorityDigest(context),guardChecks:1,attempted:0,failed:0,overflow:0,retainedBytes:Buffer.byteLength(JSON.stringify(checks)),checks,prefixes:[]};
+ life.close();census.close();principal.end([{name:"session",value:"synthetic",domain:"localhost",path:"/",httpOnly:true}]);context.principalEpoch=principal.snapshot();context.environment.workerTargets.scopeClosed=true;context.headerCensus=census.snapshot();delete context.headerPrefix;evidence.measured.nativeContext=context;evidence.allPhase.nativeContext=structuredClone(context);evidence.browserEventOrdinal=0;evidence.proxyHeaderLifecycle=life.snapshot();evidence.browserFailureOccurrences=mixedFailureOccurrenceCensus({contextId,scopeClosed:true,browserEventOrdinal:0,records:[]});evidence.mixedDocumentJournal={protocol:"actual-cdp-document-journal-v1",contextId,installed:true,currentGeneration:1,executionEventOrdinal:1,documentEventOrdinal:1,errors:0,overflow:0,closed:true,executionEvents:[{ordinal:1,event:"created",executionContextId:1,uniqueId:"unique",frameId:"frame",isDefault:true}],documents:[{ordinal:1,requestId:"doc",frameId:"frame",loaderId:"loader",originSha256:sha(origin),documentGeneration:contextId+":1"}]};return evidence;
+}
+function refreshProgress(run,files=Object.fromEntries(budgets.mixedProtocolFiles.map(name=>[name,hash]))){for(const row of run.transports)row.browserControlEvidence=fastMixedEvidence(row.contextId,run.sourceCommit,files,run.browserControl);}
 function fixture(build = BEFORE) {
 	const incoming = {
 		knownHeaderKnownSpan: 0,
@@ -193,6 +208,7 @@ function fixture(build = BEFORE) {
 		requestTimeoutMs: build === BEFORE ? 90000 : 30000,
 		sourceCommit: build,
 		cleanEvidencePolicy,
+		nativeProgressPolicy:mixedNativeProgressPolicy,
 		browserFailureScope: mixedBrowserWorkScope,
 		browserControl: { ...testBrowserBinding(build), ...metadataFor(build) },
 		browserControlMetadataFileSha256: metadataFileHash(build),
@@ -207,7 +223,7 @@ function fixture(build = BEFORE) {
 		browserClosed: true,
 		pageErrors: 0,
 		userMaxInflight: 4,
-		transports: actors.map(transport),
+		transports: actors.map(actor=>transport(actor,build)),
 		backendGroups,
 		analyticsWindows: windows,
 		records,
@@ -380,9 +396,10 @@ test("mixed Native authority preserves independently registered original origin 
 	input.beforeContext.conditions.browserControl.nativePublicSources=publicSources(BEFORE);
 	input.before.browserControl.nativePublicSources=publicSources(BEFORE);
 	input.expectedHeadBrowserControl.nativePublicSources=publicSources(HEAD);
+	refreshProgress(input.before);
 	const budget=budgets.deriveMixedClockBudgets(input);
 	assert.equal(budget.expectedOrigin,input.beforeContext.conditions.origin);
-	const head=fixture(HEAD);head.browserControl.nativePublicSources=publicSources(HEAD);
+	const head=fixture(HEAD);head.browserControl.nativePublicSources=publicSources(HEAD);refreshProgress(head);
 	const options={budgets:budget,budgetSha256:hash,expectedBudgetSha256:hash,before:input.before,beforeSha256:hash,head,headSha256:hash,protocol:input.protocol,protocolSha256:hash,operatorSha256:hash,
 		headContextSha256:hash,observedAt:"2026-10-25T04:00:00.000Z",headContext:{...input.beforeContext,fullBuild:HEAD,conditions:{...input.beforeContext.conditions,browserControl:input.expectedHeadBrowserControl,browserControlMetadataFileSha256:input.expectedHeadBrowserControlFileSha256},
 			phase:"release",observationTimeoutMs:30000,firstControlledHeadStartedAt:"2026-10-25T02:00:00.000Z",startedAt:"2026-10-25T02:00:00.000Z",finishedAt:"2026-10-25T03:00:00.000Z"}};
@@ -667,7 +684,7 @@ test("actual file commands bind protocol bytes, registration SHA and independent
 		const headValue = fixture(HEAD);
 		headValue.browserControl = { ...testBrowserBinding(HEAD), ...input.expectedHeadBrowserControl };
 		headValue.browserControlMetadataFileSha256 = input.expectedHeadBrowserControlFileSha256;
-		const before = encode(input.before), head = encode(headValue);
+
 		const protocol = encode({
 			schema: 1,
 			files: Object.fromEntries(
@@ -679,6 +696,8 @@ test("actual file commands bind protocol bytes, registration SHA and independent
 				),
 			),
 		});
+		refreshProgress(input.before,JSON.parse(protocol).files);refreshProgress(headValue,JSON.parse(protocol).files);
+		const before = encode(input.before), head = encode(headValue);
 		const now = Date.now();
 		const beforeContext = encode({
 			...input.beforeContext,
@@ -772,4 +791,11 @@ test("actual file commands bind protocol bytes, registration SHA and independent
 		assert.equal(dirname(folder), resolve(tmpdir()));
 		await rm(folder, { recursive: true, force: true });
 	}
+});
+
+
+test("mixed derivation requires bound fast-guard ledgers in all four contexts",()=>{
+ for(const mutate of [r=>delete r.transports[0].browserControlEvidence.browserFailureOccurrences,r=>r.transports[0].browserControlEvidence.browserFailureOccurrences.contextId="another",r=>r.transports[0].browserControlEvidence.browserFailureOccurrences.censusSha256="0".repeat(64),r=>delete r.nativeProgressPolicy,r=>r.nativeProgressPolicy={...r.nativeProgressPolicy,observerCeilingMs:11000},r=>delete r.transports[0].browserControlEvidence.mixedDocumentJournal,r=>r.transports[0].browserControlEvidence.mixedDocumentJournal.closed=false,r=>delete r.transports[0].browserControlEvidence.mixedProgress,r=>r.transports[0].browserControlEvidence.mixedProgress=null,r=>r.transports[0].browserControlEvidence.mixedProgress.guardChecks=0,r=>r.transports[0].browserControlEvidence.mixedProgress.checks.pop(),r=>r.transports[0].browserControlEvidence.mixedProgress=r.transports[1].browserControlEvidence.mixedProgress,r=>r.transports[0].browserControlEvidence.mixedProgress.authoritySha256="0".repeat(64),r=>r.transports[0].browserControlEvidence.measured.nativeContext.protocolSources={},r=>r.transports[0].browserControlEvidence.mixedProgress.checks[0].returned.failureIds.push("new-unknown")]){
+  const input=inputs();mutate(input.before);assert.throws(()=>budgets.deriveMixedClockBudgets(input),/four closed strict transports|qualified browser control run metadata/);
+ }
 });

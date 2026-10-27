@@ -8,6 +8,29 @@ import {
 } from "./mixed-load-observation.mjs";
 
 const id = (n) => n.toString(16).padStart(32, "0");
+test("acknowledged stop guards are awaited at reader entry and at the finite bound", async () => {
+	let entryResolve, boundResolve, boundEnteredResolve;
+	const entry = new Promise(resolve => { entryResolve = resolve; });
+	const bound = new Promise(resolve => { boundResolve = resolve; });
+	const boundEntered = new Promise(resolve => { boundEnteredResolve = resolve; });
+	let reads=0, guards=0, settled=false;
+	const running=runMixedReader({limit:1,stopped:()=>{guards++;if(guards===1)return entry;boundEnteredResolve();return bound;},
+		read:async()=>{reads++;return {success:true};},observe:()=>{}});
+	running.then(()=>{settled=true;});
+	await Promise.resolve();assert.equal(reads,0);assert.equal(settled,false);
+	entryResolve(false);
+	await boundEntered;assert.equal(reads,1);assert.equal(settled,false);
+	boundResolve(true);
+	assert.deepEqual(await running,{count:1,failed:false,boundReached:false});assert.equal(guards,2);
+});
+
+test("acknowledged stop guard rejection starts no new read and the hundred-read bound is unchanged", async () => {
+	let reads=0;
+	await assert.rejects(runMixedReader({limit:100,stopped:async()=>{throw Error("unknown prefix");},read:async()=>{reads++;return {success:true};},observe:()=>{}}),/unknown prefix/);
+	assert.equal(reads,0);
+	const result=await runMixedReader({limit:100,stopped:async()=>false,read:async()=>{reads++;return {success:true};},observe:()=>{}});
+	assert.deepEqual(result,{count:100,failed:false,boundReached:true});assert.equal(reads,100);
+});
 test("semantic mixed identities bound the entire twenty-pair condition below the real active-registration cap", () => {
 	let n = 0;
 	const plan = createMixedTracePlan(() => id(++n));
@@ -589,4 +612,15 @@ test("clock success cannot replace missing response/readiness observations with 
 		clockObservationIsComplete({ ...value, commandResponseMs: 30 }),
 		false,
 	);
+});
+
+test("mixed guard orchestration awaits every context then rejects errors appearing during the other acknowledgment",async()=>{
+ const {requireCleanMixedProgress}=await import("./mixed-load-observation.mjs");
+ const app=()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0});
+ let unknown=0,pageErrors=0,release,confirmed=0,settled=false,expectedDeadline=42;
+ const item=hold=>({transport:{snapshot:()=>({applicationEvidence:{...app(),unknown}})},browserObservation:{snapshot:()=>({measured:{coverage:{missing:0,errors:0,overflow:0}},allPhase:{realFailures:0}}),acknowledgeMixedProgress:async({operationDeadlineMs})=>{assert.equal(operationDeadlineMs,expectedDeadline);if(hold)await new Promise(resolve=>{release=resolve;});return {technical:"token"};},confirmMixedProgress:()=>{confirmed++;}}});
+ const opened=[item(false),item(true)];
+ const running=requireCleanMixedProgress({opened,pageErrors:()=>pageErrors,operationDeadlineMs:42});running.then(()=>{settled=true;},()=>{settled=true;});await Promise.resolve();assert.equal(settled,false);assert.equal(confirmed,0);unknown=1;release();await assert.rejects(running,/not clean/);assert.equal(confirmed,0);
+ unknown=0;expectedDeadline=null;opened.pop();await requireCleanMixedProgress({opened,pageErrors:()=>pageErrors});assert.equal(confirmed,1);
+ pageErrors=1;await assert.rejects(requireCleanMixedProgress({opened,pageErrors:()=>pageErrors}));assert.equal(confirmed,1);
 });

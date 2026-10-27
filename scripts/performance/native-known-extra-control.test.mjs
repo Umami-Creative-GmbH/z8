@@ -41,7 +41,7 @@ function fixture({applicationIds=[1,2],originalApplicationId=1,currentApplicatio
   const cached={...identity(initial),...controlResponseMetadata(response,200),requestId:"cached",loaderId:"loader",type:"Fetch",startedAt:1,finishedAt:2,loadingFinished:true,fromDiskCache:true,fromServiceWorker:false,
     initialHeaderIdentity:identity(initial),proxyResponseId:originalId,bodyReadbackComplete:true,bodyProof:proof(initial),
     bodyReadbackReceipt:{available:true,base64Encoded:false,utf16CodeUnitLength:bytes.length,observedDataLengthAtReadback:bytes.length,decodedBytes:bytes.length,bodySha256:sha(bytes),responseContentType:{headerKnown:true,mime:"text/x-component",charset:"absent"}}};
-  const failure={...identity(wire),...controlResponseMetadata(response,200),requestId:"native",loaderId:"loader",type:"Other",initiator:"other",initiatorStackKnownAbsent:true,priority:"VeryLow",startedAt:3,
+  const failure={...identity(wire),...controlResponseMetadata(response,200),requestId:"native",failedEventOrdinal:9,loaderId:"loader",type:"Other",initiator:"other",initiatorStackKnownAbsent:true,priority:"VeryLow",startedAt:3,
     requestHeadersKnown:true,initialHeaderIdentity:identity(initial),extraHeaderIdentity:identity(wire),proxyResponseId:currentId,error:"net::ERR_ABORTED",canceled:true};
   const principal=createPrincipalEpochObserver(contextId,{origin});
   const cookies=[{name:"session",value:"synthetic",domain:"localhost",path:"/",httpOnly:true}];principal.start(cookies);principal.end(cookies);
@@ -356,4 +356,147 @@ test("actual collector APIs carry CORE authority and exact-byte joins after tran
     assert.equal(after.bodyReceipts.find(row=>row.requestId==="cached").bodyReadbackReceipt.observedDataLengthAtReadback,bytes.length);
   }
  }
+});
+
+async function openPrefixFixture(){
+ const api=await import("./control-cancellation-evidence.mjs");
+ const censusApi=await import("./proxy-header-census.mjs");
+ const {input,io}=fixture();
+ const final=classifyControlCancellations(input);assert.equal(final.provenControls,1);
+ const closedContext=structuredClone(input.nativeContext),context=input.nativeContext;
+ context.operatorFile="mixed-load-probe.mjs";context.protocolSources={...context.protocolSources,"mixed-load-probe.mjs":sha("synthetic-mixed-source")};
+ context.protocolErrors.scopeClosed=false;context.environment.workerTargets.scopeClosed=false;
+ const principal=createPrincipalEpochObserver(context.contextId,{origin:io.origin}),cookies=[{name:"session",value:"synthetic",domain:"localhost",path:"/",httpOnly:true}];principal.start(cookies);context.principalEpoch=principal.snapshot();
+ context.environment.endRead=null;context.headerLifetime.closure=null;
+ const census=createProxyHeaderCensus({contextId:context.contextId}),life=censusApi.createProxyHeaderLifecycle({proxyInstanceId:"f".repeat(32),originSha256:context.originSha256,allowedOriginSha256:[context.originSha256]});
+ for(let n=1;n<=2;n++){const rid="a".repeat(32)+"."+n;census.accepted(rid);life.accepted(rid,context.originSha256);life.upstreamCreated(rid);life.headersReceived(rid);census.headers(rid,io.response);life.headersForwarded(rid);life.upstreamClosed(rid);}
+ context.headerCensus=census.snapshot();context.headerPrefix=censusApi.proxyHeaderPrefix(census.snapshot(),life.snapshot());
+ context.documentJournal={protocol:"actual-cdp-document-journal-v1",contextId:context.contextId,installed:true,currentGeneration:4,executionEventOrdinal:1,documentEventOrdinal:1,errors:0,overflow:0,closed:false,executionEvents:[{ordinal:1,event:"created",executionContextId:1,uniqueId:"actual-context-unique",frameId:"frame",isDefault:true}],documents:[{ordinal:1,requestId:"document",frameId:"frame",loaderId:"loader",originSha256:context.originSha256,documentGeneration:context.contextId+":4"}]};
+ input.coverage.scopeClosed=false;input.browserEventOrdinal=12;
+ const begin=api.mixedNativeProgressInput(input);principal.progressStarted(1);const principalRead=principal.progressFinished(1,cookies);context.principalEpoch=principal.snapshot();
+ const ack={...closedContext.environment.endRead,protocol:"native-environment-progress-readonly-v1",contextId:context.contextId,checkpointOrdinal:1,principalRead,principalReadOperation:principal.progressOperation(1),startedAtMs:100,finishedAtMs:101,elapsedMs:1,deadlineMs:110,deadlineBudgetMs:10,
+ document:{protocol:"actual-cdp-document-acknowledgment-v1",contextId:context.contextId,frameId:"frame",loaderId:"loader",executionContextUniqueId:"actual-context-unique",executionContextId:1,documentRequestId:"document",documentGeneration:4,actualDocumentIdentityStable:true,originSha256:context.originSha256,executionEventOrdinalBefore:1,executionEventOrdinalAfter:1,documentEventOrdinalBefore:1,documentEventOrdinalAfter:1}};
+ ack.document.sourceJournal=structuredClone(context.documentJournal);
+ const end=api.mixedNativeProgressInput(input);
+ return {api,censusApi,input,io,closedContext,context,begin,end,ack,life};
+}
+
+test("acknowledged Native prefixes recompute the natural-EOF core but never satisfy final closed evidence",async()=>{
+ const {api,input,closedContext,context,begin,end,ack}=await openPrefixFixture();
+ const receipt=api.createMixedNativePrefix({checkpointOrdinal:1,begin,end,acknowledgment:ack,headerPrefix:context.headerPrefix,returnedAtMs:101});
+ assert.equal(api.validateMixedNativePrefix(JSON.parse(JSON.stringify(receipt))),true);
+ assert.equal(classifyControlCancellations(input).provenControls,0,"open authority never passes final Native proof");
+ assert.equal(cleanBrowserFailureEvidence(receipt,1),false);
+ for(const mutate of [r=>delete r.acknowledgment.principalReadOperation,r=>r.acknowledgment.principalReadOperation.acknowledgmentOrdinal=2,r=>r.end.failures.push({...r.end.failures[0],requestId:"new-failure"}),r=>r.end.proxy[1].complete=false,r=>r.end.proxy[1].canceled=true,r=>r.end.proxy[1].bodyProof.serverErrors=1,r=>r.acknowledgment.principalRead.sha256="0".repeat(64),r=>r.acknowledgment.controller.controllerIdentityStable=false,r=>r.acknowledgment.document.executionEventOrdinalAfter++,r=>r.acknowledgment.document.actualDocumentIdentityStable=false,r=>r.acknowledgment.document.contextId="foreign",r=>r.acknowledgment.readErrors=1,r=>r.acknowledgment.pendingOperations=1,r=>r.acknowledgment.publicSourceRecheck.files[0].sha256="0".repeat(64),r=>r.end.protocolSources={},r=>r.end.nativeContext.protocolErrors.observed=1,r=>r.headerPrefix.census.counts.setCookieLines=1,r=>r.end.nativeContext.environment.workerTargets.events.push({type:"shared_worker"})]){
+  const bad=structuredClone(receipt);mutate(bad);const {prefixSha256,...facts}=bad;bad.prefixSha256=sha(JSON.stringify(facts));assert.equal(api.validateMixedNativePrefix(bad),false);
+ }
+ assert.equal(classifyControlCancellations({...input,nativeContext:closedContext,coverage:{...input.coverage,scopeClosed:true}}).provenControls,1,"the unchanged final authority still admits the synthetic closed positive");
+});
+
+test("progress cookie reads carry bounded read-only ownership without closing the principal epoch",()=>{
+ const observer=createPrincipalEpochObserver("ctx",{origin:"http://localhost:1234"});
+ const cookies=[{name:"session",value:"synthetic",domain:"localhost",path:"/",httpOnly:true}];observer.start(cookies);
+ observer.progressStarted(1);observer.progressStarted(2);
+ const own=observer.progressFinished(1,cookies),cut=observer.snapshot();
+ assert.equal(own.known,true);assert.equal(cut.scopeClosed,false);assert.equal(cut.after.known,false);
+ assert.equal(cut.pendingReads,1);assert.deepEqual(cut.progressReads.pending,[{acknowledgmentOrdinal:2,kind:"read-only-context-cookies-v1"}]);
+ assert.equal(cut.progressReads.started-cut.progressReads.finished,1);
+ observer.progressFailed(2);assert.equal(observer.snapshot().readErrors,1);assert.equal(observer.snapshot().pendingReads,0);
+ observer.progressStarted(1);assert.equal(observer.snapshot().observationErrors,1,"an acknowledgment cannot reuse another read's ownership");
+ observer.end(cookies);assert.equal(observer.snapshot().scopeClosed,true);
+});
+
+test("mixed progress acknowledgments stop on genuine or incomplete work before metadata and seal exact return IDs",async()=>{
+ const {createMixedProgressAcknowledgments}=await import("./browser-control-collector.mjs");
+ const {api,begin,end,ack,life}=await openPrefixFixture();
+ const application=()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0});
+ let current=structuredClone(begin),reads=0;
+ const acquire=async({checkpointOrdinal,deadlineMs})=>{reads++;current.nativeContext.principalEpoch=structuredClone(end.nativeContext.principalEpoch);const startedAtMs=performance.now(),finishedAtMs=startedAtMs+0.01;return {...structuredClone(ack),checkpointOrdinal,startedAtMs,finishedAtMs,elapsedMs:finishedAtMs-startedAtMs,deadlineMs,deadlineBudgetMs:deadlineMs-startedAtMs};};
+ const observer=createMixedProgressAcknowledgments({input:()=>structuredClone(current),application,acknowledge:acquire});
+ const token=await observer.check();assert.equal(observer.confirm(token),true);assert.equal(reads,1);
+ life.close();const finalInputs={failureIds:["native"],nativeFailureIds:["native"],browserEventOrdinal:12,failureOccurrences:api.mixedFailureOccurrenceCensus({contextId:begin.nativeContext.contextId,scopeClosed:true,browserEventOrdinal:12,records:[{requestId:"native",eventOrdinal:9,failedEvents:1}]}),headerLifecycle:life.snapshot(),documentJournal:{...structuredClone(ack.document.sourceJournal),closed:true}};
+ const finalContext=structuredClone(current.nativeContext);finalContext.principalEpoch.scopeClosed=true;finalContext.environment.workerTargets.scopeClosed=true;
+ assert.equal(api.validateMixedProgressObservations(observer.snapshot(),finalContext,finalInputs),true);
+ for(const edit of [v=>delete v.checks,v=>v.checks.pop(),v=>v.contextId="another-context",v=>v.checks[0].prefixSha256=null,v=>v.prefixes.pop(),v=>v.checks[0].returned.headerEventOrdinal=999,v=>v.authoritySha256="0".repeat(64)]){const bad=structuredClone(observer.snapshot());edit(bad);assert.equal(api.validateMixedProgressObservations(bad,finalContext,finalInputs),false); }
+ const ownPending=structuredClone(observer.snapshot().prefixes[0]);
+ const parallel=createPrincipalEpochObserver(begin.nativeContext.contextId,{origin:"http://localhost:1234"}),cookies=[{name:"session",value:"synthetic",domain:"localhost",path:"/",httpOnly:true}];parallel.start(cookies);parallel.progressStarted(2);ownPending.begin.nativeContext.principalEpoch=parallel.snapshot();parallel.progressStarted(1);ownPending.acknowledgment.principalRead=parallel.progressFinished(1,cookies);ownPending.acknowledgment.principalReadOperation=parallel.progressOperation(1);ownPending.end.nativeContext.principalEpoch=parallel.snapshot();
+ const rehash=p=>{const {prefixSha256,...facts}=p;p.prefixSha256=sha(JSON.stringify(facts));};rehash(ownPending);assert.equal(api.validateMixedNativePrefix(ownPending),true,"other explicitly owned read-only cookie reads need no mutex");
+ for(const edit of [p=>p.end.nativeContext.principalEpoch.progressReads.pending[0].acknowledgmentOrdinal=1,p=>delete p.end.nativeContext.principalEpoch.progressReads,p=>p.end.nativeContext.principalEpoch.progressReads.pending[0].kind="unknown",p=>p.acknowledgment.pendingOperations=1]){const bad=structuredClone(ownPending);edit(bad);rehash(bad);assert.equal(api.validateMixedNativePrefix(bad),false);}
+ current=structuredClone(begin);const race=createMixedProgressAcknowledgments({input:()=>structuredClone(current),application,acknowledge:acquire});const beforeNewFailure=await race.check();current.failures.push({...current.failures[0],requestId:"new-id"});assert.throws(()=>race.confirm(beforeNewFailure),/New mixed/);assert.equal(race.snapshot().failed,1);
+ for(const edit of [v=>v.proxy[1].complete=false,v=>v.proxy[1].canceled=true,v=>v.failures[0].error="net::ERR_FAILED",v=>v.proxy[1].bodyProof.serverErrors=1]){
+  const v=structuredClone(begin);edit(v);let calls=0;const o=createMixedProgressAcknowledgments({input:()=>v,application,acknowledge:async()=>{calls++;return ack;}});await assert.rejects(o.check());assert.equal(calls,0);
+ }
+ let calls=0;const unknown=createMixedProgressAcknowledgments({input:()=>begin,application:()=>({...application(),unknown:1}),acknowledge:async()=>{calls++;return ack;}});await assert.rejects(unknown.check());assert.equal(calls,0);
+ const changed=createMixedProgressAcknowledgments({input:()=>structuredClone(current),application,acknowledge:async args=>{current.failures.push({...current.failures[0],requestId:"late-id"});return acquire(args);}});
+ current=structuredClone(begin);await assert.rejects(changed.check());assert.equal(changed.snapshot().failed,1);
+});
+
+test("live mixed guard tokens cannot be copied or borrowed even for zero-failure fast guards",async()=>{
+ const {createMixedProgressAcknowledgments}=await import("./browser-control-collector.mjs"),{begin}=await openPrefixFixture();
+ const input=structuredClone(begin);input.failures=[];input.responses=[];input.proxy=[];
+ const application=()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0});
+ const one=createMixedProgressAcknowledgments({input:()=>input,application,acknowledge:()=>assert.fail("no Native candidate may read metadata")});
+ const token=await one.check();assert.throws(()=>one.confirm({...token}),/acknowledgment/);
+ const other=createMixedProgressAcknowledgments({input:()=>input,application,acknowledge:()=>assert.fail("fast guard")});
+ const own=await other.check();assert.throws(()=>other.confirm(token),/acknowledgment/);assert.equal(other.snapshot().failed,1);assert.equal(own.contextId,input.nativeContext.contextId);
+});
+
+test("acknowledged document fields must join their observed Runtime/Document source records",async()=>{
+ const {api,begin,end,ack,context}=await openPrefixFixture();
+ const receipt=api.createMixedNativePrefix({checkpointOrdinal:1,begin,end,acknowledgment:ack,headerPrefix:context.headerPrefix,returnedAtMs:101});
+ const bad=structuredClone(receipt);bad.acknowledgment.document.loaderId="another-loader";const {prefixSha256,...facts}=bad;bad.prefixSha256=sha(JSON.stringify(facts));assert.equal(api.validateMixedNativePrefix(bad),false);
+});
+
+test("return cuts reject invalid worker and document authority observed while another context is awaiting",async()=>{
+ const {createMixedProgressAcknowledgments}=await import("./browser-control-collector.mjs");
+ for(const mutate of [v=>v.nativeContext.environment.workerTargets.events.push({type:"service_worker",event:"created",targetOrdinal:3,urlKnown:true,urlSha256:"f".repeat(64),ownedWorkerScript:false,originMatches:false}),v=>v.nativeContext.environment.workerTargets.errors++,v=>v.nativeContext.environment.workerTargets.scopeClosed=true,v=>v.nativeContext.documentJournal.currentGeneration++,v=>v.nativeContext.documentJournal.documents[0].loaderId="new-loader",v=>v.nativeContext.documentJournal.executionEvents[0].uniqueId="another-context",v=>v.nativeContext.environment.servingPublicSources.files[0].sha256="0".repeat(64),v=>v.nativeContext.principalEpoch.progressReads.records[0].snapshotSha256="0".repeat(64)]){
+  const {begin,end,ack}=await openPrefixFixture();let current=structuredClone(begin);
+  const app=()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0});
+  const observer=createMixedProgressAcknowledgments({input:()=>structuredClone(current),application:app,acknowledge:async({checkpointOrdinal,deadlineMs})=>{current.nativeContext.principalEpoch=structuredClone(end.nativeContext.principalEpoch);const startedAtMs=performance.now(),finishedAtMs=startedAtMs+0.01;return {...structuredClone(ack),checkpointOrdinal,startedAtMs,finishedAtMs,elapsedMs:finishedAtMs-startedAtMs,deadlineMs,deadlineBudgetMs:deadlineMs-startedAtMs};}});
+  const token=await observer.check();mutate(current);assert.throws(()=>observer.confirm(token));assert.equal(observer.snapshot().failed,1);
+ }
+});
+
+test("final failure occurrences reject erased same-cut Native guards but preserve genuinely later closed controls",async()=>{
+ const {createMixedProgressAcknowledgments}=await import("./browser-control-collector.mjs"),{api,begin,end,ack,life}=await openPrefixFixture();
+ const current=structuredClone(begin);current.failures=[];
+ const app=()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0});
+ const observer=createMixedProgressAcknowledgments({input:()=>structuredClone(current),application:app,acknowledge:()=>assert.fail("fast guard must not read")});const token=await observer.check();observer.confirm(token);life.close();
+ const context=structuredClone(end.nativeContext);context.principalEpoch.scopeClosed=true;context.environment.workerTargets.scopeClosed=true;
+ const makeCensus=(eventOrdinal,last)=>{const facts={protocol:"actual-browser-failed-occurrence-census-v1",contextId:context.contextId,scopeClosed:true,browserEventOrdinal:last,records:[{requestId:"native",eventOrdinal,failedEvents:1}]};return {...facts,censusSha256:sha(JSON.stringify(facts))};};
+ const inputs={failureIds:["native"],nativeFailureIds:["native"],browserEventOrdinal:12,headerLifecycle:life.snapshot(),documentJournal:{...structuredClone(ack.document.sourceJournal),closed:true},failureOccurrences:makeCensus(9,12)};
+ assert.equal(api.validateMixedProgressObservations(observer.snapshot(),context,inputs),false,"Same-cut failure absence cannot be explained as a later arrival.");
+ inputs.browserEventOrdinal=13;inputs.failureOccurrences=makeCensus(13,13);
+ assert.equal(api.validateMixedProgressObservations(observer.snapshot(),context,inputs),true,"A genuinely later failure still depends on the independent final closed validator.");
+});
+
+async function replayFixtureAfterReturn(){
+ const {createMixedProgressAcknowledgments}=await import("./browser-control-collector.mjs"),{api,begin,end,ack,life,io}=await openPrefixFixture();let current=structuredClone(begin);
+ const app=()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0});
+ const observer=createMixedProgressAcknowledgments({input:()=>structuredClone(current),application:app,acknowledge:async({checkpointOrdinal,deadlineMs})=>{current.nativeContext.principalEpoch=structuredClone(end.nativeContext.principalEpoch);const at=performance.now();return {...structuredClone(ack),checkpointOrdinal,startedAtMs:at,finishedAtMs:at,elapsedMs:0,deadlineMs,deadlineBudgetMs:deadlineMs-at};}});
+ const token=await observer.check();observer.confirm(token);
+ // These are explicitly later source facts, so all monotone vector dimensions have room for an invalid moved cut.
+ const third="a".repeat(32)+".3";life.accepted(third,begin.nativeContext.originSha256);life.upstreamCreated(third);life.headersReceived(third);life.headersForwarded(third);life.upstreamClosed(third);life.close();
+ const context=structuredClone(current.nativeContext);context.principalEpoch.scopeClosed=true;context.environment.workerTargets.scopeClosed=true;context.environment.workerTargets.events.push({...context.environment.workerTargets.events[0],event:"changed"});
+ const history=context.principalEpoch.progressReads;history.started=2;history.finished=2;history.records.push({...history.records[0],acknowledgmentOrdinal:2,startedOrdinal:2,finishedOrdinal:2});
+ const inputs={failureIds:["native"],nativeFailureIds:["native"],browserEventOrdinal:13,headerLifecycle:life.snapshot(),documentJournal:{...structuredClone(ack.document.sourceJournal),closed:true},failureOccurrences:api.mixedFailureOccurrenceCensus({contextId:context.contextId,scopeClosed:true,browserEventOrdinal:13,records:[{requestId:"native",eventOrdinal:9,failedEvents:1}]})};
+ const ledger=observer.snapshot();assert.equal(api.validateMixedProgressObservations(ledger,context,inputs),true);
+ return {api,ledger,context,inputs};
+}
+
+test("a Native returned vector is exactly its sealed end across every component",async()=>{
+ const {api,ledger,context,inputs}=await replayFixtureAfterReturn();
+ for(const edit of [v=>v.browserEventOrdinal=13,v=>v.headerEventOrdinal++,v=>v.workerEventCount++,v=>v.principalProgressStarted++,v=>v.principalProgressFinished=0,v=>v.failureIds=[]]){
+  const moved=structuredClone(ledger);edit(moved.checks[0].returned);moved.retainedBytes=Buffer.byteLength(JSON.stringify(moved.checks))+moved.prefixes.reduce((n,p)=>n+Buffer.byteLength(JSON.stringify(p)),0);
+  assert.equal(api.validateMixedProgressObservations(moved,context,inputs),false,"A final-valid later cut is not the actual sealed return cut.");
+ }
+});
+
+test("every retained prefix failure row agrees with the CORE loadingFailed occurrence",async()=>{
+ const {api,ledger,context,inputs}=await replayFixtureAfterReturn();
+ const forged=structuredClone(ledger),prefix=forged.prefixes[0];
+ prefix.begin.failures[0].failedEventOrdinal=8;prefix.end.failures[0].failedEventOrdinal=8;
+ const {prefixSha256,...facts}=prefix;prefix.prefixSha256=sha(JSON.stringify(facts));forged.checks[0].prefixSha256=prefix.prefixSha256;forged.retainedBytes=Buffer.byteLength(JSON.stringify(forged.checks))+forged.prefixes.reduce((n,p)=>n+Buffer.byteLength(JSON.stringify(p)),0);
+ assert.equal(api.validateMixedNativePrefix(prefix),true,"The isolated row chronology is internally plausible before the independent census join.");
+ assert.equal(api.validateMixedProgressObservations(forged,context,inputs),false,"Same-context same-ID records cannot disagree with the observed callback census.");
 });
