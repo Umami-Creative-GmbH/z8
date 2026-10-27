@@ -1,7 +1,7 @@
 /** Proofs are prospective; a canceled request is never a successful payload. */
 import { createHash } from "node:crypto";
 import { types as utilTypes } from "node:util";
-import {mixedOwnedFilter,mixedOwnedOperation,mixedOwnedProjectedValue,mixedOwnedJSONString,mixedOwnedUTF8,mixedOwnedRows,mixedOwnedArray,mixedOwnedClone,mixedOwnedClone as structuredClone,mixedTechnicalCandidateDigest,mixedTechnicalRepresentation} from "./mixed-technical-gzip.mjs";
+import {mixedOwnedIndexWork,mixedOwnedMap,mixedOwnedSlice,mixedOwnedFilter,mixedOwnedOperation,mixedOwnedProjectedValue,mixedOwnedJSONString,mixedOwnedUTF8,mixedOwnedRows,mixedOwnedArray,mixedOwnedClone,mixedOwnedClone as structuredClone,mixedTechnicalCandidateDigest,mixedTechnicalRepresentation} from "./mixed-technical-gzip.mjs";
 import { validateProxyHeaderCensus, validateProxyHeaderPrefix, validateProxyHeaderLifecycle } from "./proxy-header-census.mjs";
 import {cachedCdpTextProjectionProtocol,cachedCdpTextSourceRevision,cachedCdpTextMappingSha256} from "./cdp-cached-text-projection.mjs";
 import { resolveOriginalTeamTemporaryReference, closeOriginalTeamBodyInspection, originalTeamBodyObservation, validateOriginalTeamTemporaryValues, validateOriginalTeamBodyUseCoverage, knownTemporaryValueObservation, knownOriginalTeamSourceConfiguration, knownOriginalTeamHeaderJoin } from "./team-temporary-value-authority.mjs";
@@ -1800,7 +1800,7 @@ const requestReceiptKeys = [
 		"failed",
 	];
 const requestReceiptStorageKeys=[...requestReceiptKeys,"bodyProof","streamReceipt"];
-const requestReceipt = (row) => mixedOwnedProjectedValue(row,()=>({
+const requestReceiptValue = (row) => ({
 	...pick(row, requestReceiptKeys),
 	...(row?.bodyProof ? { bodyProof: bodyReceipt(row.bodyProof) } : {}),
 	...(row?.streamReceipt
@@ -1816,7 +1816,8 @@ const requestReceipt = (row) => mixedOwnedProjectedValue(row,()=>({
 				]),
 			}
 		: {}),
-}),{keys:requestReceiptStorageKeys,extraBytes:8192});
+});
+const requestReceipt=row=>mixedOwnedProjectedValue(row,()=>requestReceiptValue(row),{keys:requestReceiptStorageKeys,extraBytes:8192});
 
 const knownNativeContext = context => {return mixedOwnedOperation(()=>{
 	try {
@@ -1863,7 +1864,7 @@ const knownNativeContext = context => {return mixedOwnedOperation(()=>{
 				row.cookieAttributes.httpOnlyKnown === true && row.cookieAttributes.allHttpOnly === true && row.cookieAttributes.singleOwnedRootHttpOnlyCookie === true && digest(row.cookieAttributes.singleCookieHeaderSha256)) ||
 			principal.before.sha256 !== principal.after.sha256 || principal.before.cookieAttributes.singleCookieHeaderSha256 !== principal.after.cookieAttributes.singleCookieHeaderSha256) return false;
 		if(!validateProxyHeaderCensus(census,{contextId:context.contextId}) || census.closed !== true || census.counts.accepted <= 0 || census.counts.knownHeaders !== census.counts.accepted ||
-			census.requests.map(row=>Number(row.requestId.split(".")[1])).sort((a,b)=>a-b).some((id,index)=>id !== index+1) ||
+			mixedOwnedMap(census.requests,row=>Number(row.requestId.split(".")[1])).sort((a,b)=>a-b).some((id,index)=>id !== index+1) ||
 			!["pending","unknownHeaders","terminalBeforeHeaders","setCookieResponses","setCookieLines","errors","duplicates","missing","late","overflow"].every(key=>census.counts[key]===0) ||
 			lifetime?.protocol !== "owned-context-upstream-header-lifetime-v1" || lifetime.contextId !== context.contextId) return false;
 		const installation=lifetime.installation,closure=lifetime.closure;
@@ -1879,6 +1880,7 @@ const knownNativeContext = context => {return mixedOwnedOperation(()=>{
 const knownProgressReadHistory=principal=>{
  const reads=principal?.progressReads;
  if(!Number.isSafeInteger(principal?.pendingReads) || principal.pendingReads<0 || reads?.protocol!=="owned-read-only-principal-operations-v1" || !Number.isSafeInteger(reads.started) || reads.started<0 || reads.started>controlCancellationPolicy.recordLimit || !Number.isSafeInteger(reads.finished) || reads.finished<0 || reads.finished>reads.started || !Array.isArray(reads.records) || reads.records.length!==reads.started || !Array.isArray(reads.pending) || reads.pending.length!==principal.pendingReads || reads.started-reads.finished!==principal.pendingReads)return false;
+ mixedOwnedIndexWork(reads.records.length);
  const ids=new Set(),starts=[],ends=[],pending=[];
  for(const row of reads.records){
   if(Object.keys(row).length!==6 || !Number.isSafeInteger(row.acknowledgmentOrdinal) || row.acknowledgmentOrdinal<1 || row.acknowledgmentOrdinal>controlCancellationPolicy.recordLimit || ids.has(row.acknowledgmentOrdinal) || row.kind!=="read-only-context-cookies-v1" || !Number.isSafeInteger(row.startedOrdinal) || row.startedOrdinal<1 || row.error!==false)return false;
@@ -1924,7 +1926,7 @@ export const knownMixedOpenJournals = context => {
   return installation?.protocol===lifetime.protocol && installation.proxyInstanceId===life.proxyInstanceId && installation.originSha256===context.originSha256 && life.originSha256===context.originSha256 && installation.acceptedRequestsAtInstall===0 && mixedOwnedJSONString(installation.allowedOriginSha256)===mixedOwnedJSONString(life.allowedOriginSha256);
  }catch{return false;}
 };
-export const sameMixedReturnJournals=(begin,current)=>knownMixedOpenJournals(current) && sameHeaderJournalPrefix(begin.headerPrefix.lifecycle,current.headerPrefix.lifecycle) && samePrincipalJournalPrefix(begin.principalEpoch,current.principalEpoch) && mixedOwnedJSONString(current.documentJournal)===mixedOwnedJSONString(begin.documentJournal) && Array.isArray(begin.environment?.workerTargets?.events) && mixedOwnedJSONString(current.environment.workerTargets.events.slice(0,begin.environment.workerTargets.events.length))===mixedOwnedJSONString(begin.environment.workerTargets.events);
+export const sameMixedReturnJournals=(begin,current)=>knownMixedOpenJournals(current) && sameHeaderJournalPrefix(begin.headerPrefix.lifecycle,current.headerPrefix.lifecycle) && samePrincipalJournalPrefix(begin.principalEpoch,current.principalEpoch) && mixedOwnedJSONString(current.documentJournal)===mixedOwnedJSONString(begin.documentJournal) && Array.isArray(begin.environment?.workerTargets?.events) && mixedOwnedJSONString(mixedOwnedSlice(current.environment.workerTargets.events,0,begin.environment.workerTargets.events.length))===mixedOwnedJSONString(begin.environment.workerTargets.events);
 
 const knownMixedPrefixAuthority = (context,ack,headerPrefix) => {
 	try {
@@ -2054,7 +2056,7 @@ const nativeCachedBytes = (cached,origin,packet,context) => {
 	const projected=origin.transportBodyReceipt.cdpTextProjection,current=packet.transportBodyReceipt.cdpTextProjection;
 	if(![projected,current].every(row=>row?.available===true && Object.keys(row).length===keys.length+1 && row.protocol===cachedCdpTextProjectionProtocol && row.sourceRevision===cachedCdpTextSourceRevision && row.sourceRevision===chromiumSWRRevision &&
 		row.mappingSha256===cachedCdpTextMappingSha256 && row.originalBytes===bytes && row.originalSha256===hash && row.outputCodeUnits===bytes && row.utf8Bytes===read.decodedBytes && row.utf8Sha256===read.bodySha256)) return null;
-	return {...base,kind:"windows-1252-forward-image",projection:Object.fromEntries(keys.map(key=>[key,projected[key]]))};
+	return {...base,kind:"windows-1252-forward-image",projection:Object.fromEntries(mixedOwnedMap(keys,key=>[key,projected[key]]))};
 };
 
 function nativeKnownExtraRequestCore(failure,packet,responses,proxy,context,browserRevision) {return mixedOwnedOperation(()=>{
@@ -2115,8 +2117,8 @@ function nativeKnownExtraProof(failure,packet,responses,proxy,context,browserRev
 
 /** Bounded technical inputs only; payload chunks and raw header values never enter a prefix. */
 export function mixedNativeProgressInput({failures,responses,proxy,nativeContext,coverage,browserRevision,browserEventOrdinal},{copy=true,browserLedger=null}={}) {
- const keys=requestReceiptStorageKeys,browserReceipt=browserLedger?row=>requestReceipt({...row,browserDataLedger:browserLedger(row)}):requestReceipt;
- const projected={failures:mixedOwnedRows(()=>failures,browserReceipt,{keys,extraBytesPerRow:browserLedger?8192:0}),responses:mixedOwnedRows(()=>failures.length?responses:[],browserReceipt,{keys,extraBytesPerRow:browserLedger?8192:0}),proxy:mixedOwnedRows(()=>failures.length?proxy:[],requestReceipt,{keys}),nativeContext,coverage,browserRevision,browserEventOrdinal};
+ const keys=requestReceiptStorageKeys,browserReceipt=browserLedger?row=>requestReceiptValue({...row,browserDataLedger:browserLedger(row)}):requestReceiptValue;
+ const projected={failures:mixedOwnedRows(()=>failures,browserReceipt,{keys,extraBytesPerRow:8192}),responses:mixedOwnedRows(()=>failures.length?responses:[],browserReceipt,{keys,extraBytesPerRow:8192}),proxy:mixedOwnedRows(()=>failures.length?proxy:[],requestReceiptValue,{keys,extraBytesPerRow:8192}),nativeContext,coverage,browserRevision,browserEventOrdinal};
  return copy?mixedOwnedClone(projected):projected;
 }
 
@@ -2130,7 +2132,7 @@ export function knownTeamAnnualSelectedRequest({browser,packet,projection,source
 		if(originURL.origin!==origin || originURL.protocol!=="http:" || !["localhost","127.0.0.1","[::1]"].includes(originURL.hostname) || bodySha256(mixedOwnedUTF8(origin))!==context?.originSha256 ||
 			selection?.locale!=="en" || selection.armFullUrlSha256!==expectedUrl || selection.fullUrlSha256!==expectedUrl || browser?.fullUrlSha256!==expectedUrl || packet?.fullUrlSha256!==expectedUrl ||
 			!knownMixedDocumentJournal(past,document) || past.executionEvents.length+past.documents.length>128 || !knownMixedDocumentJournal(current) || current.contextId!==context.contextId || current.closed!==principal?.scopeClosed ||
-			mixedOwnedJSONString(current.executionEvents.slice(0,past.executionEvents.length))!==mixedOwnedJSONString(past.executionEvents) || mixedOwnedJSONString(current.documents.slice(0,past.documents.length))!==mixedOwnedJSONString(past.documents) ||
+			mixedOwnedJSONString(mixedOwnedSlice(current.executionEvents,0,past.executionEvents.length))!==mixedOwnedJSONString(past.executionEvents) || mixedOwnedJSONString(mixedOwnedSlice(current.documents,0,past.documents.length))!==mixedOwnedJSONString(past.documents) ||
 			document.contextId!==context.contextId || document.originSha256!==context.originSha256 || browser.frameId!==document.frameId || browser.loaderId!==document.loaderId ||
 			browser.documentGeneration!==document.contextId+":"+document.documentGeneration || packet.documentGeneration!==browser.documentGeneration ||
 			[browser.initialHeaderIdentity,browser.extraHeaderIdentity].some(identity=>identity?.documentGeneration!==browser.documentGeneration) ||
@@ -2350,7 +2352,7 @@ function browserFailureEvidenceMatches(evidence, rawFailedRequests, scope, requi
 				evidence.provenControls ||
 		!Array.isArray(evidence.records) ||
 		evidence.records.length !== rawFailedRequests ||
-		new Set(evidence.records.map((row) => row.requestId)).size !==
+		new Set(mixedOwnedMap(evidence.records,(row) => row.requestId)).size !==
 			rawFailedRequests ||
 		evidence.records.some(
 			(row) =>
@@ -2430,7 +2432,7 @@ export function completeAllPhaseBrowserObservation(evidence) {
 export const mixedNativeProgressPolicy=Object.freeze({version:1,prefixProtocol:"acknowledged-mixed-native-prefix-v1",ledgerProtocol:"mixed-native-progress-observations-v1",candidateRepresentationProtocol:mixedTechnicalRepresentation.protocol,failureOccurrenceProtocol:"actual-browser-failed-occurrence-census-v1",observerCeilingMs:10000,guardScope:"existing-mixed-stop-guards-only"});
 const mixedPrefixProtocol=mixedNativeProgressPolicy.prefixProtocol;
 const safeTechnicalId=value=>typeof value==="string" && /^[A-Za-z0-9._:-]{1,256}$/.test(value);
-const progressFailureIds=input=>mixedOwnedArray(input.failures.length,()=>input.failures.map(row=>row.requestId).sort(),{bytesPerEntry:16});
+const progressFailureIds=input=>mixedOwnedArray(input.failures.length,()=>mixedOwnedMap(input.failures,row=>row.requestId).sort(),{bytesPerEntry:16});
 /** Cheap request-local prerequisite. It grants no Native authority and never admits incomplete current packets. */
 export function mixedNativePrefixCandidates(input,onReject) {
  let serialization=null;
@@ -2483,7 +2485,7 @@ export function validateMixedNativePrefix(receipt) {
   const start=begin.nativeContext,finish=end.nativeContext;
   if(start.protocol!==finish.protocol || start.contextId!==finish.contextId || start.originSha256!==finish.originSha256 || start.workerScriptSha256!==finish.workerScriptSha256 || start.rootScopeSha256!==finish.rootScopeSha256 || start.operatorFile!==finish.operatorFile || mixedOwnedJSONString(start.binding)!==mixedOwnedJSONString(finish.binding) || mixedOwnedJSONString(start.protocolSources)!==mixedOwnedJSONString(finish.protocolSources) || mixedOwnedJSONString(start.principalEpoch.before)!==mixedOwnedJSONString(finish.principalEpoch.before))return false;
   const beforeWorkers=start.environment?.workerTargets,afterWorkers=finish.environment?.workerTargets;
-  if(!Array.isArray(beforeWorkers?.events) || !Array.isArray(afterWorkers?.events) || afterWorkers.events.length<beforeWorkers.events.length || mixedOwnedJSONString(afterWorkers.events.slice(0,beforeWorkers.events.length))!==mixedOwnedJSONString(beforeWorkers.events))return false;
+  if(!Array.isArray(beforeWorkers?.events) || !Array.isArray(afterWorkers?.events) || afterWorkers.events.length<beforeWorkers.events.length || mixedOwnedJSONString(mixedOwnedSlice(afterWorkers.events,0,beforeWorkers.events.length))!==mixedOwnedJSONString(beforeWorkers.events))return false;
   if(ack?.protocol!=="native-environment-progress-readonly-v1" || ack.contextId!==finish.contextId || ack.checkpointOrdinal!==receipt.checkpointOrdinal || ack.timedOut!==false || ack.pendingOperations!==0 || ack.readErrors!==0 || !Number.isFinite(ack.startedAtMs) || !Number.isFinite(ack.finishedAtMs) || ack.finishedAtMs<ack.startedAtMs || ack.elapsedMs!==ack.finishedAtMs-ack.startedAtMs || !Number.isFinite(ack.deadlineMs) || !Number.isFinite(ack.deadlineBudgetMs) || ack.deadlineBudgetMs<=0 || ack.deadlineBudgetMs>10000 || ack.deadlineMs-ack.startedAtMs!==ack.deadlineBudgetMs || ack.finishedAtMs>ack.deadlineMs || operationDeadlineMs!==null && (!Number.isFinite(operationDeadlineMs) || ack.deadlineMs>operationDeadlineMs))return false;
   const beforeReads=start.principalEpoch?.progressReads,afterReads=finish.principalEpoch?.progressReads,ownRead=ack.principalReadOperation;
   if(!knownProgressReadHistory(start.principalEpoch) || !knownProgressReadHistory(finish.principalEpoch) || beforeReads.records.some(row=>row.acknowledgmentOrdinal===receipt.checkpointOrdinal) || !ownRead || ownRead.acknowledgmentOrdinal!==receipt.checkpointOrdinal || ownRead.snapshotSha256!==ack.principalRead?.sha256 || ownRead.error!==false || ownRead.finishedOrdinal===null || mixedOwnedFilter(afterReads.records,row=>mixedOwnedJSONString(row)===mixedOwnedJSONString(ownRead)).length!==1 || beforeReads.started>afterReads.started || beforeReads.finished>afterReads.finished || beforeReads.records.some(row=>{const match=afterReads.records.find(next=>next.acknowledgmentOrdinal===row.acknowledgmentOrdinal);return !match || row.startedOrdinal!==match.startedOrdinal || row.kind!==match.kind || row.finishedOrdinal!==null && mixedOwnedJSONString(row)!==mixedOwnedJSONString(match);}))return false;
@@ -2504,7 +2506,7 @@ export function mixedNativeProgressVector(input){
 }
 const sameHeaderJournalPrefix=(prefix,final)=>{
  if(!final || final.errors!==0 || final.overflow!==0 || prefix.proxyInstanceId!==final.proxyInstanceId || prefix.originSha256!==final.originSha256 || mixedOwnedJSONString(prefix.allowedOriginSha256)!==mixedOwnedJSONString(final.allowedOriginSha256) || prefix.eventOrdinal>final.eventOrdinal)return false;
- const expected=mixedOwnedFilter(final.requests,row=>row.acceptedOrdinal<=prefix.eventOrdinal).map(row=>Object.fromEntries(Object.entries(row).map(([key,value])=>[key,key.endsWith("Ordinal") && value>prefix.eventOrdinal?null:value])));
+ const matching=mixedOwnedFilter(final.requests,row=>row.acceptedOrdinal<=prefix.eventOrdinal),expected=mixedOwnedRows(()=>matching,row=>Object.fromEntries(Object.entries(row).map(([key,value])=>[key,key.endsWith("Ordinal") && value>prefix.eventOrdinal?null:value])),{extraBytesPerRow:1024});
  return mixedOwnedJSONString(prefix.requests)===mixedOwnedJSONString(expected);
 };
 const samePrincipalJournalPrefix=(past,final)=>knownProgressReadHistory(past) && knownProgressReadHistory(final) && past.contextId===final.contextId && mixedOwnedJSONString(past.before)===mixedOwnedJSONString(final.before) && past.progressReads.started<=final.progressReads.started && past.progressReads.finished<=final.progressReads.finished && past.progressReads.records.every(row=>{
@@ -2517,7 +2519,7 @@ export function validateMixedProgressObservations(progress,context,finalInputs) 
   const names=["protocol","candidateRepresentationProtocol","contextId","authoritySha256","guardChecks","attempted","failed","overflow","retainedBytes","checks","prefixes"];
   if(!progress || Object.keys(progress).length!==names.length || !names.every(key=>Object.hasOwn(Object.getOwnPropertyDescriptor(progress,key) ?? {},"value")) || progress.protocol!=="mixed-native-progress-observations-v1" || progress.candidateRepresentationProtocol!==mixedNativeProgressPolicy.candidateRepresentationProtocol || progress.contextId!==context?.contextId || progress.authoritySha256!==mixedNativeAuthorityDigest(context) || !Number.isSafeInteger(progress.guardChecks) || progress.guardChecks<1 || progress.guardChecks>controlCancellationPolicy.recordLimit || !Number.isSafeInteger(progress.attempted) || progress.attempted<0 || progress.attempted>progress.guardChecks || progress.failed!==0 || progress.overflow!==0 || !Number.isSafeInteger(progress.retainedBytes) || progress.retainedBytes<0 || progress.retainedBytes>controlCancellationPolicy.retainedLimit || !Array.isArray(progress.prefixes) || progress.prefixes.length!==progress.attempted || !Array.isArray(progress.checks) || progress.checks.length!==progress.guardChecks || !Array.isArray(finalInputs?.failureIds) || !knownMixedDocumentJournal(finalInputs.documentJournal) || finalInputs.documentJournal.closed!==true || finalInputs.documentJournal.contextId!==context.contextId || !Array.isArray(finalInputs.nativeFailureIds) || !Number.isSafeInteger(finalInputs.browserEventOrdinal) || !validateProxyHeaderLifecycle(finalInputs.headerLifecycle) || finalInputs.headerLifecycle.closed!==true || finalInputs.headerLifecycle.pendingUpstreams!==0 || finalInputs.headerLifecycle.acceptedRequests!==finalInputs.headerLifecycle.upstreamRequests || finalInputs.headerLifecycle.closedUpstreams!==finalInputs.headerLifecycle.upstreamRequests || context.principalEpoch?.scopeClosed!==true || context.principalEpoch.pendingReads!==0 || context.environment?.workerTargets?.scopeClosed!==true || finalInputs.headerLifecycle.errors!==0 || finalInputs.headerLifecycle.overflow!==0)return false;
   if(!knownMixedFailureOccurrences(finalInputs.failureOccurrences,context.contextId,finalInputs.browserEventOrdinal,finalInputs.failureIds))return false;
-  const occurrences=new Map(finalInputs.failureOccurrences.records.map(row=>[row.requestId,row.eventOrdinal])),finalIds=new Set(finalInputs.failureIds),used=new Set();let previousStart=-1;
+  const occurrences=new Map(mixedOwnedMap(finalInputs.failureOccurrences.records,row=>[row.requestId,row.eventOrdinal])),finalIds=new Set(finalInputs.failureIds),used=new Set();let previousStart=-1;
   const vector=(v)=>v && Object.keys(v).length===6 && ["browserEventOrdinal","headerEventOrdinal","workerEventCount","principalProgressStarted","principalProgressFinished"].every(key=>Number.isSafeInteger(v[key]) && v[key]>=0) && v.principalProgressFinished<=v.principalProgressStarted && v.browserEventOrdinal<=finalInputs.browserEventOrdinal && v.headerEventOrdinal<=finalInputs.headerLifecycle.eventOrdinal && v.workerEventCount<=context.environment.workerTargets.events.length && Array.isArray(v.failureIds) && new Set(v.failureIds).size===v.failureIds.length && v.failureIds.every(id=>safeTechnicalId(id) && finalIds.has(id)) && mixedOwnedJSONString(v.failureIds)===mixedOwnedJSONString(mixedOwnedFilter(finalInputs.failureOccurrences.records,row=>row.eventOrdinal<=v.browserEventOrdinal).map(row=>row.requestId).sort());
   for(let index=0;index<progress.checks.length;index++){
    const check=progress.checks[index];
@@ -2529,9 +2531,9 @@ export function validateMixedProgressObservations(progress,context,finalInputs) 
   for(let index=0;index<progress.prefixes.length;index++){
    const prefix=progress.prefixes[index];if([prefix?.begin,prefix?.end].some(cut=>!Array.isArray(cut?.failures) || cut.failures.some(row=>occurrences.get(row.requestId)!==row.failedEventOrdinal)))return false;if(prefix.checkpointOrdinal!==index+1 || !validateMixedNativePrefix(prefix) || mixedNativeAuthorityDigest(prefix.end.nativeContext)!==progress.authoritySha256 || !sameHeaderJournalPrefix(prefix.headerPrefix.lifecycle,finalInputs.headerLifecycle) || !sameHeaderJournalPrefix(prefix.begin.nativeContext.headerPrefix.lifecycle,finalInputs.headerLifecycle) || !samePrincipalJournalPrefix(prefix.begin.nativeContext.principalEpoch,context.principalEpoch) || !samePrincipalJournalPrefix(prefix.end.nativeContext.principalEpoch,context.principalEpoch) || !used.has(prefix.prefixSha256))return false;
    const source=prefix.acknowledgment.document.sourceJournal,final=finalInputs.documentJournal;
-   if(mixedOwnedJSONString(final.executionEvents.slice(0,source.executionEventOrdinal))!==mixedOwnedJSONString(source.executionEvents) || mixedOwnedJSONString(final.documents.slice(0,source.documentEventOrdinal))!==mixedOwnedJSONString(source.documents))return false;
+   if(mixedOwnedJSONString(mixedOwnedSlice(final.executionEvents,0,source.executionEventOrdinal))!==mixedOwnedJSONString(source.executionEvents) || mixedOwnedJSONString(mixedOwnedSlice(final.documents,0,source.documentEventOrdinal))!==mixedOwnedJSONString(source.documents))return false;
    const past=prefix.end.nativeContext.environment.workerTargets.events;
-   if(mixedOwnedJSONString(context.environment.workerTargets.events.slice(0,past.length))!==mixedOwnedJSONString(past))return false;
+   if(mixedOwnedJSONString(mixedOwnedSlice(context.environment.workerTargets.events,0,past.length))!==mixedOwnedJSONString(past))return false;
   }
   return progress.retainedBytes===Buffer.byteLength(mixedOwnedJSONString(progress.checks))+progress.prefixes.reduce((n,prefix)=>n+Buffer.byteLength(mixedOwnedJSONString(prefix)),0);
  }catch{return false;}
@@ -2541,6 +2543,7 @@ export function validateMixedProgressObservations(progress,context,finalInputs) 
 export function knownMixedDocumentJournal(journal,document) {
  try{
   if(!journal || Object.keys(journal).length!==11 || journal.protocol!=="actual-cdp-document-journal-v1" || !safeTechnicalId(journal.contextId) || journal.installed!==true || !Number.isSafeInteger(journal.currentGeneration) || journal.currentGeneration<0 || typeof journal.closed!=="boolean" || journal.errors!==0 || journal.overflow!==0 || !Array.isArray(journal.executionEvents) || !Array.isArray(journal.documents) || journal.executionEvents.length+ journal.documents.length>controlCancellationPolicy.recordLimit || journal.executionEventOrdinal!==journal.executionEvents.length || journal.documentEventOrdinal!==journal.documents.length)return false;
+  mixedOwnedIndexWork(journal.executionEvents.length+ journal.documents.length);
   const contexts=new Map(),unique=new Set();
   for(let index=0;index<journal.executionEvents.length;index++){
    const event=journal.executionEvents[index];if(event.ordinal!==index+1)return false;
@@ -2555,7 +2558,7 @@ export function knownMixedDocumentJournal(journal,document) {
   }
   for(let index=0;index<journal.documents.length;index++){
    const row=journal.documents[index];if(Object.keys(row).length!==6 || row.ordinal!==index+1 || ![row.requestId,row.frameId,row.loaderId].every(safeTechnicalId) || !digest(row.originSha256) || typeof row.documentGeneration!=="string" || !row.documentGeneration.startsWith(journal.contextId+":"))return false;
-   const generation=row.documentGeneration.slice(journal.contextId.length+1);if(!/^[1-9][0-9]*$/.test(generation) || !Number.isSafeInteger(Number(generation)))return false;
+   const generation=mixedOwnedSlice(row.documentGeneration,journal.contextId.length+1);if(!/^[1-9][0-9]*$/.test(generation) || !Number.isSafeInteger(Number(generation)))return false;
   }
   if(!document)return true;
   if(journal.closed!==false || document.contextId!==journal.contextId || document.executionEventOrdinalAfter!==journal.executionEventOrdinal || document.documentEventOrdinalAfter!==journal.documentEventOrdinal || document.documentGeneration!==journal.currentGeneration)return false;
@@ -2566,12 +2569,13 @@ export function knownMixedDocumentJournal(journal,document) {
 
 /** CORE chronology from actual loadingFailed callbacks, not request start time or nearest-time inference. */
 export function mixedFailureOccurrenceCensus({contextId,scopeClosed,browserEventOrdinal,records}){
- const facts={protocol:"actual-browser-failed-occurrence-census-v1",contextId,scopeClosed,browserEventOrdinal,records:records.map(row=>({...row})).sort((a,b)=>a.requestId<b.requestId?-1:a.requestId>b.requestId?1:0)};
+ const facts={protocol:"actual-browser-failed-occurrence-census-v1",contextId,scopeClosed,browserEventOrdinal,records:mixedOwnedMap(records,row=>({...row})).sort((a,b)=>a.requestId<b.requestId?-1:a.requestId>b.requestId?1:0)};
  return {...facts,censusSha256:bodySha256(mixedOwnedUTF8(mixedOwnedJSONString(facts)))};
 }
 const knownMixedFailureOccurrences=(proof,contextId,browserEventOrdinal,ids)=>{
  try{
   if(!proof || Object.keys(proof).length!==6 || proof.protocol!=="actual-browser-failed-occurrence-census-v1" || proof.contextId!==contextId || proof.scopeClosed!==true || proof.browserEventOrdinal!==browserEventOrdinal || !Number.isSafeInteger(browserEventOrdinal) || browserEventOrdinal<0 || !Array.isArray(proof.records) || proof.records.length>controlCancellationPolicy.recordLimit || !digest(proof.censusSha256))return false;
+  mixedOwnedIndexWork(proof.records.length);
   const seen=new Set(),ordinals=new Set();
   for(const row of proof.records){if(Object.keys(row).length!==3 || !safeTechnicalId(row.requestId) || seen.has(row.requestId) || !Number.isSafeInteger(row.eventOrdinal) || row.eventOrdinal<1 || row.eventOrdinal>browserEventOrdinal || ordinals.has(row.eventOrdinal) || row.failedEvents!==1)return false;seen.add(row.requestId);ordinals.add(row.eventOrdinal);}
   const {censusSha256,...facts}=proof;

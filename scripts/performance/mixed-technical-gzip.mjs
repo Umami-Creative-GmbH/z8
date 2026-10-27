@@ -190,7 +190,11 @@ export function mixedOwnedProjectedValue(source,construct,{keys=null,omit=null,e
  try{const value=construct();bind(lease,value);return value;}catch{lease.release();throw bad();}
 }
 /** A filter creates an index/reference vector; source rows keep their existing leases. */
-export function mixedOwnedFilter(source,predicate){return mixedOwnedArray(source.length,()=>source.filter(predicate));}
+export function mixedOwnedFilter(source,predicate){return construction?mixedOwnedArray(source.length,()=>source.filter(predicate)):source.filter(predicate);}
+export function mixedOwnedMap(source,project){return construction?mixedOwnedArray(source.length,()=>source.map(project),{bytesPerEntry:128}):source.map(project);}
+export function mixedOwnedSlice(source,...args){return construction?mixedOwnedArray(source.length,()=>source.slice(...args)):source.slice(...args);}
+/** Per source row: bounded identifier splitting plus Map/Set and ordinal/index slots. */
+export function mixedOwnedIndexWork(count){if(construction)mixedOwnedArray(count,()=>null,{bytesPerEntry:256});}
 export function mixedOwnedHashInput(value){return construction&&typeof value==='string'?mixedOwnedUTF8(value):value;}
 export function mixedOwnedFreeze(value){
  must(construction!==null);const workspace=collect(charge(construction.state,vectorBase,'immutable-snapshot-key-vectors')),ancestors=new Set();let nodes=0;

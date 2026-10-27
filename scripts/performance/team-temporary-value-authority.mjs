@@ -1034,7 +1034,7 @@ function knownRequestAuthority(authority,boundary) {
 		}
 		const finalJournal=readInfo.documentJournal,pastJournal=proof.acknowledgment.document.sourceJournal,workers=environment.workerTargets,pastWorkers=proof.workers,principal=context.principalEpoch;
 		if(!knownTeamDocumentJournal(finalJournal,request.contextId) || finalJournal?.contextId!==request.contextId || finalJournal.errors!==0 || finalJournal.overflow!==0 || !Array.isArray(finalJournal.documents) || !Array.isArray(finalJournal.executionEvents) ||
-			!sameJSON(finalJournal.documents.slice(0,pastJournal.documents.length),pastJournal.documents) || !sameJSON(finalJournal.executionEvents.slice(0,pastJournal.executionEvents.length),pastJournal.executionEvents) ||
+			!sameJSON(mixedOwnedSlice(finalJournal.documents,0,pastJournal.documents.length),pastJournal.documents) || !sameJSON(mixedOwnedSlice(finalJournal.executionEvents,0,pastJournal.executionEvents.length),pastJournal.executionEvents) ||
 			!knownOriginalTeamWorkerExtension(pastWorkers,workers,cut.workerScriptSha256) ||
 			principal?.before?.sha256!==cut.principalSha256 || !["observedSetCookieResponses","unknownResponseHeaders","readErrors","pendingReads","observationErrors","overflow"].every(key=>principal[key]===0) ||
 			principal.scopeClosed && (principal.after?.known!==true || principal.after.sha256!==cut.principalSha256))return false;
@@ -1146,7 +1146,7 @@ export function createTeamReplayDispatchJournal({ contextId, origin, reserve, re
 		inspectionDeadline(id){const row=proxies.get(id);return !closed && row?row.observerDeadlineMs:null;},
 		close() { if (closed) return; closed = true; if (rows.some(row => !row.returned)) errors++; },
 		snapshot() { return { protocol: "team-replay-dispatch-observations-v1", contextId, sourceBound: false, acceptanceClaim: "none", closed, errors, overflow, unretainedArms, budgetKnown,
-			retainedBytes: budgetKnown ? retained : null, pendingDispatches: mixedOwnedFilter(rows,row => !row.returned).length, rows: mixedOwnedArray(rows.length,()=>rows.map(row => deepFreeze(structuredClone(safeRow(row)))),{bytesPerEntry:8192,records:rows.length}) }; },
+			retainedBytes: budgetKnown ? retained : null, pendingDispatches: mixedOwnedFilter(rows,row => !row.returned).length, rows: mixedOwnedArray(rows.length,()=>mixedOwnedMap(rows,row => deepFreeze(structuredClone(safeRow(row)))),{bytesPerEntry:8192,records:rows.length}) }; },
 	});
 	dispatchJournals.set(api, { owner, contextId, proxies });
 	return api;
@@ -1248,4 +1248,4 @@ export function validateOriginalTeamBodyUseCoverage(context,bodies) {
   return bodies.every(entry=>uses.has((entry.row.id ?? entry.row.proxyResponseId)+":"+entry.row.bodyProof?.bodySha256));
  }catch{return false;}
 }
-import {mixedOwnedFilter,mixedOwnedOperation,mixedOwnedJSONString,mixedOwnedHashInput,mixedOwnedClone as structuredClone,mixedOwnedRows,mixedOwnedArray} from "./mixed-technical-gzip.mjs";
+import {mixedOwnedIndexWork,mixedOwnedMap,mixedOwnedSlice,mixedOwnedFilter,mixedOwnedOperation,mixedOwnedJSONString,mixedOwnedHashInput,mixedOwnedClone as structuredClone,mixedOwnedRows,mixedOwnedArray} from "./mixed-technical-gzip.mjs";
