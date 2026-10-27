@@ -2,7 +2,7 @@
 import { classifyControlCancellations, inspectRequiredFlightBody, chromiumSWRRevision, controlCancellationPolicy } from "./control-cancellation-evidence.mjs";
 
 import { createHash } from "node:crypto";
-import { temporaryValueObservation, openOriginalTeamBodyInspection, closeOriginalTeamBodyInspection, originalTeamBodyObservation } from "./team-temporary-value-authority.mjs";
+import { createTeamTemporaryValueStore, temporaryValueObservation, openOriginalTeamBodyInspection, closeOriginalTeamBodyInspection, originalTeamBodyObservation } from "./team-temporary-value-authority.mjs";
 
 export const testBrowserMetadata = () => ({ policy: structuredClone(controlCancellationPolicy), browserRevision: chromiumSWRRevision,
   compiledCachedNavigations: true, compiledManifestSha256: "d".repeat(64), temporaryValueObservation: structuredClone(temporaryValueObservation), originalTeamSource: null });
@@ -25,4 +25,10 @@ export function testBrowserEvidence(contextId, controlled = false) {
   };
   return { contextId, protocolErrors: { protocol: "positive-flight-error-observations-v1", contextId, installed: true, scopeClosed: true, observed: 0, overflow: 0, records: [] }, measured: classifyControlCancellations(input),
     allPhase: classifyControlCancellations({ ...input, scope: "all-phase-semantic-correlation" }) };
+}
+
+/** Actual empty store construction, never a private value/source capability. */
+export function testEmptyTemporaryValues(contextId) {
+ const store=createTeamTemporaryValueStore({contextId,reserve:()=>true,release:()=>{}});store.close();
+ return {store:store.snapshot(),manualDispatch:null,sourceCuts:null,bodyUses:{protocol:"actual-body-value-observations-v1",contextId,observed:0,records:[]}};
 }

@@ -4,6 +4,7 @@ import { open } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { basename, dirname, join, resolve } from "node:path";
 import { readInertDateRangeRequestValue, forgetInertDateRangeRequestValue } from "./inert-date-range-request.mjs";
+import { validateProxyHeaderCensus, validateProxyHeaderPrefix } from "./proxy-header-census.mjs";
 
 const sha = value => createHash("sha256").update(value).digest("hex");
 const digest = value => typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
@@ -26,6 +27,163 @@ export const originalTeamTemporaryProfiles = deepFreeze([
     "buildRecordSha256": "34acb938396ed571886c66933415dd7cede4dda6aaf4ccb82a5048ddf68be147",
     "registrySha256": "301a1afee35124ef83695e842e4d1fe2402d06da38964e0f0def9c4c66741f30",
     "actionHeaderSha256": "355ec2d858094c87d7c3ef4b72d291185893ee976b865ce2916bd10922204884",
+    "appFiles": [
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/analytics/page.tsx",
+        "gitBlob": "b081db8a3018bdcb34932d8eab0d7b9f380c02b8",
+        "canonicalLfSha256": "54253fff67a4e10b1b9eb4b43e11ddfdd746de51224e4fa472b7b88d3d759793"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/analytics/team-performance/page.tsx",
+        "gitBlob": "f7458cf92f0ef2db6304439088ea9173dcb61985",
+        "canonicalLfSha256": "69edc9b5a312b33906d6d606f947fb0d03647db64359ac0e42a4acb79b0bed91"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/analytics/actions.ts",
+        "gitBlob": "9f281b436e86d9555f4562990d87b98ad7519407",
+        "canonicalLfSha256": "ca8984fd0f173866eed151ecd037d1b36ee7ed869cd328bcea8689f976099472"
+      },
+      {
+        "path": "apps/webapp/src/lib/effect/services/analytics.service.ts",
+        "gitBlob": "aa5bb31705ecb9ac423f729fcc79b57efa045573",
+        "canonicalLfSha256": "a2b868807eb10691dcd4b7f90583ed7076ed5e2312e3cdac8fea6df11bd8ef38"
+      },
+      {
+        "path": "apps/webapp/src/lib/effect/result.ts",
+        "gitBlob": "5c8cc57d829d33f0019ddb76820632c0dcde6e28",
+        "canonicalLfSha256": "ac91c4720ac557fae05a5555df97b65a92af8b25c9750a0f5f4617ce6cb6f57a"
+      },
+      {
+        "path": "apps/webapp/src/lib/analytics/date-ranges.ts",
+        "gitBlob": "930365fe7bd9ce19530dfe1b702a048dfd0fca7c",
+        "canonicalLfSha256": "095a81ae8f4e87f2f640baa489d487d6dff6465613444d192dffdfe2c2190c1f"
+      },
+      {
+        "path": "apps/webapp/src/lib/analytics/types.ts",
+        "gitBlob": "67644543cb2527464c9a4d788917c7286e5a9ef2",
+        "canonicalLfSha256": "dad4e4d3c3d23d22f23132ff9b6b8abd4456df8d52310ba0f6d89e795ab9a34d"
+      },
+      {
+        "path": "apps/webapp/src/components/analytics/date-range-picker.tsx",
+        "gitBlob": "423d198408a8f68fb8fc771f862b18824be9d8d3",
+        "canonicalLfSha256": "9863f2737fef10ce71ee6b0f4bfcbe5b4677ed1fbc244fee95433e83b0d70bf0"
+      },
+      {
+        "path": "apps/webapp/src/components/reports/date-range-picker.tsx",
+        "gitBlob": "18c2db57eb55af1e990fda2a8c84afa2c0645317",
+        "canonicalLfSha256": "a344338209c40c0bade3fb8b55314c36815ccf547278b2bab584c0ee528d7d7b"
+      },
+      {
+        "path": "apps/webapp/src/lib/reports/date-ranges.ts",
+        "gitBlob": "14c82432031f4a1bc2cf98b89151e959433501ba",
+        "canonicalLfSha256": "0ab5c18bfa3e6a9c221875c90c5481c96108579c33f552a741a5a624e06f00a4"
+      },
+      {
+        "path": "apps/webapp/src/lib/reports/report-date-range.ts",
+        "gitBlob": "7be5b52e66e4e7b2969e49c01d776baf5ea4ab8e",
+        "canonicalLfSha256": "a35fa98350fb716ef89d9b726af28bf4e330cd29cff8e222dbe11eb7e999187e"
+      },
+      {
+        "path": "apps/webapp/src/lib/reports/types.ts",
+        "gitBlob": "535752e061571025d8121116627bb539f66eb2db",
+        "canonicalLfSha256": "2d5c79753dab7987ff92ba70cbb09f557998bc25c80574d03cb188ad49e9f651"
+      },
+      {
+        "path": "apps/webapp/src/lib/datetime/temporal-core.ts",
+        "gitBlob": "965c40a9034a3643e185bcaf5d631d530186dd25",
+        "canonicalLfSha256": "340864dae1f59706b4d3eb59227e0f83136b3f8bb22a8bb84f15b3ef38608226"
+      },
+      {
+        "path": "apps/webapp/src/lib/timezone/validation.ts",
+        "gitBlob": "cc66071cd8d223cb7feea53edb1288636f5847b3",
+        "canonicalLfSha256": "630dd41244f4bcf5c2833d9cc7a2c1dec0811c2bc5ebbbbe1b02d26c28b54b7d"
+      }
+    ],
+    "frameworkFiles": [
+      {
+        "path": "next/package.json",
+        "bytes": 3188,
+        "sha256": "440efba874450dc997b2c3bf9efa4c3c4835abbc40d65442e94a7c69f4bad031"
+      },
+      {
+        "path": "next/dist/client/app-call-server.js",
+        "bytes": 1538,
+        "sha256": "f0e9fc00ebb81a3b264c9a4e34b4e6d984dae3055cbea15e2e10f7e3f55997fe"
+      },
+      {
+        "path": "next/dist/client/sequential-call-server.js",
+        "bytes": 1859,
+        "sha256": "fb04a49cedc4706c7449c7087255b2027fc7893e79d70c709e14d67e516e95e2"
+      },
+      {
+        "path": "next/dist/client/components/use-action-queue.js",
+        "bytes": 5940,
+        "sha256": "b0495a960d3312966950b78399676dedece7c646ba84fa2543142a3744e1e2ba"
+      },
+      {
+        "path": "next/dist/client/components/app-router-instance.js",
+        "bytes": 11229,
+        "sha256": "679a2c335d4a849eb14c997d80ddd356fbd7789f50c0777ceabd0525d1e77807"
+      },
+      {
+        "path": "next/dist/client/components/router-reducer/router-reducer.js",
+        "bytes": 2630,
+        "sha256": "22b9b831dbaeda84ae94020ad23ff298435a936132136925b6f0a5a3062b6d4d"
+      },
+      {
+        "path": "next/dist/client/components/router-reducer/reducers/server-action-reducer.js",
+        "bytes": 20696,
+        "sha256": "45d9f7de636d847174881f3005082d5bce90399c745fba2dc3fd4ea402832950"
+      },
+      {
+        "path": "next/dist/shared/lib/server-reference-info.js",
+        "bytes": 2130,
+        "sha256": "f2d96534f7dcf77c1f951112f3b4bde9728e36a1a6425928cf8b7f4b4a5cf9de"
+      },
+      {
+        "path": "next/dist/server/app-render/action-handler.js",
+        "bytes": 60411,
+        "sha256": "f60960b2a15f7ec07e37e9d745ffd185763519d1693e41f39010782ccaf910cc"
+      },
+      {
+        "path": "next/dist/compiled/react-server-dom-webpack/client.browser.js",
+        "bytes": 254,
+        "sha256": "4225884493381174db42ea47deef8b52ec41e358e63b49acd4929fe2f97f7a69"
+      },
+      {
+        "path": "next/dist/compiled/react-server-dom-webpack/client.node.js",
+        "bytes": 248,
+        "sha256": "704a07592993924515710e08c9365e8d6b49d96df54166b869f0210d004b8685"
+      },
+      {
+        "path": "next/dist/compiled/react-server-dom-webpack/server.node.js",
+        "bytes": 849,
+        "sha256": "218c48074fc0737329d0db31603fa0194d659f980b12c1920c88aa644e07d906"
+      },
+      {
+        "path": "next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.production.js",
+        "bytes": 66327,
+        "sha256": "538d7566cd8471ce95b60c3204131e862c92e76f663d16e079b1b559a0b99fd7"
+      },
+      {
+        "path": "next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.node.production.js",
+        "bytes": 78295,
+        "sha256": "163f82ee5a33e3616f6e3561ee932baaa8240a97e37470aa8ac6d18dd37b3255"
+      },
+      {
+        "path": "next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-server.node.production.js",
+        "bytes": 134763,
+        "sha256": "5f7c1756783d12f6145dd368ae29a2d4831b4f0b3727786cb4fe3a00e7c121e1"
+      }
+    ]
+  },
+  {
+    "id": "original-team-admin-guard-4b-v1",
+    "binarySource": "4b911c1788b1f8b41d893c38fb6d0c644c41ec1c",
+    "manifestSha256": "510d800e5d84a9a7859b5e59cb5187c25ac45891a910a63411f64a2bd6154e0d",
+    "buildRecordSha256": "d4f596b441757de46ffda618d524ba50196772b10183877c8fbba0a2481736f0",
+    "registrySha256": "b49e57fec2744af0088fc45bf263c8cf16872a9fb5b23efb64dc1e0f77c12bcd",
+    "actionHeaderSha256": "2afdd2c7f1a1f2a9c5722394d5f55b9971b7b350c86100f5c85fbda9b7c0f126",
     "appFiles": [
       {
         "path": "apps/webapp/src/app/[locale]/(app)/analytics/page.tsx",
@@ -254,7 +412,7 @@ export function createTeamTemporaryValueStore({ contextId, reserve, release }) {
 	if (typeof contextId !== "string" || !/^[A-Za-z0-9:_.-]{1,256}$/.test(contextId) || typeof reserve !== "function" || typeof release !== "function")
 		throw Error("Known bounded temporary-value storage ownership is required.");
 	const limits = teamTemporaryValueStoreLimits, records = new Map(), owner = {};
-	let closed = false, errors = 0, overflow = 0, unavailable = 0, payloadBytes = 0, metadataBytes = 0, pendingConsumers = 0, budgetKnown = true;
+	let closed = false, errors = 0, overflow = 0, unavailable = 0, payloadBytes = 0, metadataBytes = 0, pendingConsumers = 0, budgetKnown = true, usedBodyCount = 0;
 	const forgetUnowned = descriptor => { if (!descriptorOwners.has(descriptor)) forgetInertDateRangeRequestValue(descriptor); };
 	const releaseRecord = record => {
 		if (record.releaseAttempted || record.pending) { errors++; return false; }
@@ -293,7 +451,7 @@ export function createTeamTemporaryValueStore({ contextId, reserve, release }) {
 				try { release(bytes); payloadBytes -= limits.payloadReservation; metadataBytes -= limits.metadataReservation; } catch { errors++; budgetKnown = false; }
 				return null;
 			}
-			const record = { id, contextId, descriptor, projection, requestFacts, typeFacts: projection.facts, pending: 0, released: false, releaseAttempted: false, valueForgotten: false, releaseUnknown: false };
+			const record = { id, contextId, descriptor, projection, requestFacts, typeFacts: projection.facts, pending: 0, released: false, releaseAttempted: false, valueForgotten: false, releaseUnknown: false, everUsed:false, usedBodies:new Map() };
 			const handle = Object.freeze({ protocol: "private-unqualified-team-request-value-v1", contextId, id });
 			records.set(id, record); descriptorOwners.set(descriptor, owner); valueHandles.set(handle, { owner, record });
 			return handle;
@@ -325,10 +483,18 @@ export function createTeamTemporaryValueStore({ contextId, reserve, release }) {
 		snapshot() { return {
 			protocol: "bounded-unqualified-team-values-v1", contextId, sourceBound: false, acceptanceClaim: "none", closed, budgetKnown,
 			errors, overflow, unavailable, pendingConsumers, payloadRetainedBytes: budgetKnown ? payloadBytes : null, metadataRetainedBytes: budgetKnown ? metadataBytes : null,
-			rows: [...records.values()].map(({ id, requestFacts, typeFacts, pending, released, valueForgotten, releaseUnknown }) => ({ id, requestFacts, typeFacts, pendingConsumers: pending, released, valueForgotten, releaseUnknown })),
+			usage:{protocol:"actual-private-value-use-census-v1",contextId,observed:usedBodyCount},
+            rows: [...records.values()].map(({ id, requestFacts, typeFacts, pending, released, valueForgotten, releaseUnknown,everUsed,usedBodies }) => ({ id, requestFacts, typeFacts, pendingConsumers: pending, released, valueForgotten, releaseUnknown,everUsed,usedBodies:[...usedBodies.values()] })),
 		}; },
 	});
-	valueStores.set(api, { owner, contextId, recordFor });
+	valueStores.set(api, { owner, contextId, recordFor,observeUse(handle,bodySha256,decodedBytes,bindingSha256){
+		const record=recordFor(handle);if(!record || record.releaseAttempted || !digest(bodySha256) || !digest(bindingSha256)){errors++;return false;}
+		const prior=record.usedBodies.get(bodySha256),fact={bodySha256,decodedBytes,bindingSha256};if(prior){if(!sameJSON(prior,fact)){errors++;return false;}return true;}
+		if(usedBodyCount>=10000 || payloadBytes+metadataBytes+2048>limits.retainedBytes){overflow++;return false;}
+		let answer;try{answer=reserve(2048);}catch{errors++;budgetKnown=false;return false;}
+		if(answer!==true){if(answer===false)overflow++;else{errors++;budgetKnown=false;}return false;}
+		metadataBytes+=2048;record.everUsed=true;record.usedBodies.set(bodySha256,Object.freeze(fact));usedBodyCount++;return true;
+	} });
 	return api;
 }
 
@@ -377,9 +543,30 @@ function knownTeamPrincipalHistory(principal,ack) {
   const own=ack?.principalReadOperation;
   return starts.sort((a,b)=>a-b).every((value,index)=>value===index+1) && ends.sort((a,b)=>a-b).every((value,index)=>value===index+1) && own?.acknowledgmentOrdinal===ack.checkpointOrdinal && own.snapshotSha256===ack.principalRead?.sha256 && history.records.filter(record=>sameJSON(record,own)).length===1;
  }catch{return false;}
+}function knownTeamDocumentJournal(journal,contextId) {
+ try {
+  if(journal?.protocol!=="actual-cdp-document-journal-v1" || journal.contextId!==contextId || journal.installed!==true || typeof journal.closed!=="boolean" || journal.errors!==0 || journal.overflow!==0 ||
+   !Number.isSafeInteger(journal.currentGeneration) || journal.currentGeneration<0 || !Array.isArray(journal.documents) || !Array.isArray(journal.executionEvents) || journal.documents.length+journal.executionEvents.length>10000 ||
+   journal.documentEventOrdinal!==journal.documents.length || journal.executionEventOrdinal!==journal.executionEvents.length)return false;
+  const contexts=new Map();
+  for(const [index,event]of journal.executionEvents.entries()) {
+   if(event.ordinal!==index+1)return false;
+   if(event.event==="cleared"){if(!ownData(event,["ordinal","event"]))return false;contexts.clear();}
+   else if(event.event==="destroyed"){if(!ownData(event,["ordinal","event","executionContextId"]) || !contexts.delete(event.executionContextId))return false;}
+   else if(event.event==="created"){
+    if(!ownData(event,["ordinal","event","executionContextId","uniqueId","frameId","isDefault"]) || !Number.isSafeInteger(event.executionContextId) || contexts.has(event.executionContextId) || ![event.uniqueId,event.frameId].every(technicalId) || typeof event.isDefault!=="boolean")return false;
+    contexts.set(event.executionContextId,event);
+   }else return false;
+  }
+  return journal.documents.every((document,index)=>{
+   if(!ownData(document,["ordinal","requestId","frameId","loaderId","originSha256","documentGeneration"]) || document.ordinal!==index+1 || ![document.requestId,document.frameId,document.loaderId,document.documentGeneration].every(technicalId) || !digest(document.originSha256))return false;
+   const prefix=contextId+":";if(!document.documentGeneration.startsWith(prefix))return false;const number=Number(document.documentGeneration.slice(prefix.length));
+   return Number.isSafeInteger(number) && number>=1 && number<=journal.currentGeneration && document.documentGeneration===prefix+number;
+  });
+ }catch{return false;}
 }function knownTeamDocumentCut(journal,document) {
 	try {
-		if(journal?.protocol!=="actual-cdp-document-journal-v1" || journal.contextId!==document.contextId || journal.installed!==true || journal.closed!==false || journal.errors!==0 || journal.overflow!==0 ||
+		if(!knownTeamDocumentJournal(journal,document.contextId) || journal?.protocol!=="actual-cdp-document-journal-v1" || journal.contextId!==document.contextId || journal.installed!==true || journal.closed!==false || journal.errors!==0 || journal.overflow!==0 ||
 			journal.currentGeneration!==document.documentGeneration || !Array.isArray(journal.documents) || !Array.isArray(journal.executionEvents) || journal.documents.length+journal.executionEvents.length>10000 ||
 			journal.documentEventOrdinal!==journal.documents.length || journal.executionEventOrdinal!==journal.executionEvents.length || journal.documentEventOrdinal!==document.documentEventOrdinalAfter || journal.executionEventOrdinal!==document.executionEventOrdinalAfter)return false;
 		const contexts=new Map();
@@ -405,7 +592,7 @@ function replayOriginalTeamUIProducerCut({source,operator,acknowledgment,princip
             operator.protocol!=="closed-team-operator-source-v1" || !["run-baseline.mjs","settled-resources.mjs","mixed-load-probe.mjs"].includes(operator.operatorFile) || !digest(operator.planSha256) || operator.executablePlanSteps!==false || operator.manualReplayHeader!==teamReplayHeader ||
             !operator.protocolSources || ![operator.operatorFile,"browser-control-collector.mjs","team-temporary-value-authority.mjs","inert-date-range-request.mjs","journey-steps.mjs","trace-transport.mjs"].every(file=>digest(operator.protocolSources[file])) || !knownTemporaryValueObservation(binding?.temporaryValueObservation) ||
 			binding.manifestVerified!==true || binding.browserVerified!==true || binding.compiledBuild!==source.binarySource || binding.compiledManifestSha256!==source.manifestSha256 || !knownOriginalTeamSourceConfiguration(binding.originalTeamSource,source.binarySource,source.manifestSha256) || binding.originalTeamSource===null ||
-			ack?.protocol!=="native-environment-progress-readonly-v1" || ack.timedOut!==false || ack.pendingOperations!==0 || ack.readErrors!==0 ||
+			ack?.protocol!=="native-environment-progress-readonly-v1" || ack.sourceSubsetExceeded===true || ack.timedOut!==false || ack.pendingOperations!==0 || ack.readErrors!==0 ||
 			!Number.isSafeInteger(ack.checkpointOrdinal) || ack.checkpointOrdinal<1 || ack.checkpointOrdinal>10000 ||
             ![ack.startedAtMs,ack.finishedAtMs,ack.deadlineMs,ack.deadlineBudgetMs,ack.elapsedMs].every(Number.isFinite) || ack.startedAtMs>ack.finishedAtMs || ack.elapsedMs!==ack.finishedAtMs-ack.startedAtMs || ack.deadlineMs-ack.startedAtMs!==ack.deadlineBudgetMs || ack.deadlineBudgetMs<=0 || ack.deadlineBudgetMs>10000 || ack.finishedAtMs>ack.deadlineMs ||
 			doc?.protocol!=="actual-cdp-document-acknowledgment-v1" || doc.actualDocumentIdentityStable!==true || ![doc.contextId,doc.frameId,doc.loaderId,doc.executionContextUniqueId,doc.documentRequestId].every(technicalId) ||
@@ -427,7 +614,7 @@ function replayOriginalTeamUIProducerCut({source,operator,acknowledgment,princip
 			![registration.waiting,registration.installing].every(row=>row?.present===false && row.known===true))return null;
 		const facts=deepFreeze({protocol:"observed-team-ui-source-cut-v1",contextId:doc.contextId,originSha256:doc.originSha256,frameId:doc.frameId,loaderId:doc.loaderId,
 			documentGeneration:doc.contextId+":"+doc.documentGeneration,executionContextUniqueId:doc.executionContextUniqueId,documentRequestId:doc.documentRequestId,
-			checkpointOrdinal:ack.checkpointOrdinal,documentJournalSha256:sha(JSON.stringify(documentJournal)),principalSha256:principal.before.sha256,workerJournalSha256:sha(JSON.stringify(workers)),
+			checkpointOrdinal:ack.checkpointOrdinal,documentJournalSha256:sha(JSON.stringify(documentJournal)),principalSha256:principal.before.sha256,cookieHeaderSha256:principal.before.cookieAttributes.singleCookieHeaderSha256,workerJournalSha256:sha(JSON.stringify(workers)),
 			controllerSha256:sha(JSON.stringify(controller)),publicSourceSha256:sha(JSON.stringify(ack.publicSourceRecheck)),operatorSourceSha256:sha(JSON.stringify(operator)),operatorFile:operator.operatorFile});
 		return facts;
 	} catch { return null; }
@@ -446,9 +633,9 @@ const sourceCaptureHandles=new WeakMap();
 /** Actual callback order, not timestamps. Missing earlier cuts remain recorded missing. */
 export function createTeamSourceCutJournal({contextId,reserve}) {
 	if(!technicalId(contextId) || typeof reserve!=="function")throw Error("Known team source observation ownership is required.");
-	const owner={},rows=[],issued=new WeakMap();let closed=false,errors=0,overflow=0,budgetKnown=true,retainedBytes=0;
+	const owner={},rows=[],occurrences=new Set(),issued=new WeakMap();let closed=false,errors=0,overflow=0,budgetKnown=true,retainedBytes=0;
 	const append=(kind,id,cut)=>{
-		if(closed || !technicalId(id) || !["issued","proxy-request","browser-request"].includes(kind)){errors++;return null;}
+		if(closed || !technicalId(id) || !["issued","proxy-request","browser-request"].includes(kind) || occurrences.has(kind+":"+id)){errors++;return null;}
 		if(rows.length>=10000 || retainedBytes+4096>33554432){overflow++;return null;}
 		let answer;try{answer=reserve(4096);}catch{errors++;budgetKnown=false;return null;}
 		if(answer!==true){if(answer===false)overflow++;else{errors++;budgetKnown=false;}return null;}
@@ -456,7 +643,7 @@ export function createTeamSourceCutJournal({contextId,reserve}) {
         const held=cut && uiProducerCuts.get(cut),prior=cut && issued.get(cut);
 		if(held && held.facts.contextId!==contextId || kind==="issued" && (!held || prior)){errors++;return null;}
 		const row=Object.freeze({ordinal:rows.length+1,kind,id,sourceCutOrdinal:kind==="issued"?rows.length+1:prior ?? null,sourceCutSha256:held?sha(JSON.stringify(held.facts)):null});
-		rows.push(row);if(kind==="issued")issued.set(cut,row.ordinal);
+		rows.push(row);occurrences.add(kind+":"+id);if(kind==="issued")issued.set(cut,row.ordinal);
 		const handle=Object.freeze({protocol:"private-team-source-occurrence-v1"});sourceCaptureHandles.set(handle,{owner,contextId,known:()=>errors===0 && overflow===0 && budgetKnown && !closed,cut:prior || kind==="issued"?cut:null,facts:row});return handle;
 	};
 	return Object.freeze({issued(cut){return append("issued",String(uiProducerCuts.get(cut)?.facts.checkpointOrdinal ?? "unknown"),cut);},capture(kind,id,cut){return append(kind,id,cut);},
@@ -468,11 +655,11 @@ export function bindOriginalTeamRequestValue(input) {
 		const first=sourceCaptureHandles.get(proxyCut),second=sourceCaptureHandles.get(browserCut);
         const source=qualifications.get(qualification),stored=valueStores.get(store),record=stored?.recordFor(handle),cut=uiProducerCuts.get(first?.cut);
 		if(!source || !record || record.released || !record.projection || !first || !second || !first.known() || !second.known() || first.owner!==second.owner || first.cut!==second.cut || first.facts.kind!=="proxy-request" || second.facts.kind!=="browser-request" || first.facts.id!==record.id || second.facts.id!==request?.requestId || cut?.qualification!==qualification || stored.contextId!==cut.facts.contextId ||
-			!ownData(request,["contextId","proxyResponseId","requestId","traceId","method","fullUrlSha256","requestHeadersSha256","requestOriginSha256","documentGeneration","frameId","loaderId","actionHeaderSha256","requestBodySha256","encodedBytes","actualEOF","replayHeaderSha256"]) ||
+			!ownData(request,["contextId","proxyResponseId","requestId","traceId","method","fullUrlSha256","requestHeadersSha256","requestOriginSha256","documentGeneration","frameId","loaderId","actionHeaderSha256","requestBodySha256","encodedBytes","actualEOF","replayHeaderSha256","cookieHeaderSha256"]) ||
 			request.contextId!==stored.contextId || request.proxyResponseId!==record.id || request.method!=="POST" || !technicalId(request.requestId) || !/^[a-f0-9]{32}$/.test(request.traceId ?? "") ||
 			![request.fullUrlSha256,request.requestHeadersSha256,request.requestOriginSha256,request.requestBodySha256].every(digest) || request.requestOriginSha256!==cut.facts.originSha256 ||
 			request.documentGeneration!==cut.facts.documentGeneration || request.frameId!==cut.facts.frameId || request.loaderId!==cut.facts.loaderId || request.actionHeaderSha256!==source.actionHeaderSha256 ||
-			request.actualEOF!==true || request.encodedBytes!==record.requestFacts.encodedBytes || request.requestBodySha256!==record.requestFacts.bodySha256)return null;
+			request.cookieHeaderSha256!==cut.facts.cookieHeaderSha256 || request.actualEOF!==true || request.encodedBytes!==record.requestFacts.encodedBytes || request.requestBodySha256!==record.requestFacts.bodySha256)return null;
 		const occurrences={issuedOrdinal:first.facts.sourceCutOrdinal,proxy:first.facts,browser:second.facts};
         let producer={kind:"qualified-ui",sourceCut:cut.facts,manualDispatch:null,occurrences};
 		if(request.replayHeaderSha256!==null) {
@@ -484,7 +671,7 @@ export function bindOriginalTeamRequestValue(input) {
 		}
 		const facts=deepFreeze({protocol:"original-team-request-value-authority-v1",source:{profileId:source.profileId,binarySource:source.binarySource,sourceFactsSha256:qualification.sourceFactsSha256},
 			request:{...request},producer,requestFacts:record.requestFacts,typeFacts:record.typeFacts});
-		const authority=Object.freeze({protocol:"private-original-team-request-authority-v1"});requestAuthorities.set(authority,{qualification,store,handle,record,facts});return authority;
+		const authority=Object.freeze({protocol:"private-original-team-request-authority-v1"});requestAuthorities.set(authority,{qualification,store,handle,record,facts,captures:[first,second]});return authority;
 	} catch { return null; }
 }
 export function originalTeamRequestAuthorityFacts(authority) {const held=requestAuthorities.get(authority);return held?structuredClone(held.facts):null;}
@@ -498,11 +685,11 @@ export function openOriginalTeamBodyInspection(input) {
 		bodyInspections.set(inspection, { bodySha256: input.bodySha256, decodedBytes: input.decodedBytes, closed: false,
 			lookupAttempted: false, valueUsed: false, bindingSha256: null, qualification: null, resolved: null, store: null, consumer: null });
 		const authority=requestAuthorities.get(input.requestAuthority);
-		if(authority && authority.record.projection && !authority.record.releaseAttempted) {
+		if(authority && authority.captures.every(capture=>capture.known()) && authority.record.projection && !authority.record.releaseAttempted) {
 			const consumer=authority.store.beginInspection(authority.handle);
 			if(consumer) {
 				const receipt=deepFreeze({protocol:"original-team-temporary-value-binding-v1",requestAuthority:authority.facts,bodySha256:input.bodySha256,decodedBytes:input.decodedBytes,temporaryKeySha256:sha("$T0:0")});
-				Object.assign(bodyInspections.get(inspection),{qualification:authority.qualification,store:authority.store,consumer,resolved:Object.freeze({value:authority.record.projection.value,receipt})});
+				Object.assign(bodyInspections.get(inspection),{qualification:authority.qualification,store:authority.store,handle:authority.handle,captures:authority.captures,consumer,resolved:Object.freeze({value:authority.record.projection.value,receipt})});
 			}
 		}
 		return inspection;
@@ -515,8 +702,10 @@ export function resolveOriginalTeamTemporaryReference(inspection, token, boundar
 		if (!held || held.closed || boundary?.action !== true || boundary.requestKind !== "action" ||
 			boundary.bodySha256 !== held.bodySha256 || boundary.decodedBytes !== held.decodedBytes) return null;
 		held.lookupAttempted = true;
-		if (!isOriginalTeamSourceQualification(held.qualification) || token !== "$T0:0" || held.resolved === null) return null;
-		held.valueUsed = true; held.bindingSha256 = sha(JSON.stringify(held.resolved.receipt));
+		if (!isOriginalTeamSourceQualification(held.qualification) || !held.captures?.every(capture=>capture.known()) || token !== "$T0:0" || held.resolved === null) return null;
+		const bindingSha256=sha(JSON.stringify(held.resolved.receipt));
+        if(!valueStores.get(held.store)?.observeUse(held.handle,held.bodySha256,held.decodedBytes,bindingSha256))return null;
+        held.valueUsed = true; held.bindingSha256 = bindingSha256;
 		return held.resolved;
 	} catch { return null; }
 }
@@ -524,7 +713,7 @@ export function closeOriginalTeamBodyInspection(inspection) {
 	const held = inspection !== null && typeof inspection === "object" ? bodyInspections.get(inspection) : null;
 	if (!held || held.closed) return false;
 	held.closed = true;
-	const store=held.store,consumer=held.consumer;held.resolved=null;held.store=null;held.consumer=null;held.qualification=null;
+	const store=held.store,consumer=held.consumer;held.resolved=null;held.store=null;held.handle=null;held.captures=null;held.consumer=null;held.qualification=null;
 	return store === null ? true : store.finishInspection(consumer);
 }
 /** Available only after this actual capability closes; contains no private value or token. */
@@ -548,10 +737,10 @@ function knownRequestAuthority(authority,boundary) {
 			![request.proxyResponseId,request.requestId,request.documentGeneration,request.frameId,request.loaderId].every(technicalId) || !/^[a-f0-9]{32}$/.test(request.traceId ?? "") ||
 			![request.fullUrlSha256,request.requestHeadersSha256,request.requestOriginSha256,request.requestBodySha256].every(digest) ||
 			!Number.isSafeInteger(request.encodedBytes) || request.encodedBytes<1 || request.encodedBytes>16384 || request.replayHeaderSha256!==null && !digest(request.replayHeaderSha256) ||
-			!row || !sameJSON(row.temporaryRequestAuthority,authority) || row.contextId!==request.contextId || row.method!==request.method || row.action!==true || row.requestKind!=="action" ||
+			!row || !sameJSON(row.temporaryRequestAuthority,authority) || row.contextId!==request.contextId || row.requestHeaderSnapshotKnown!==true || row.method!==request.method || row.action!==true || row.requestKind!=="action" ||
 			row.fullUrlSha256!==request.fullUrlSha256 || row.requestHeadersSha256!==request.requestHeadersSha256 || row.documentGeneration!==request.documentGeneration || row.traceId!==request.traceId || row.requestOriginSha256!==request.requestOriginSha256 ||
-			(row.id!==undefined ? row.id!==request.proxyResponseId : row.proxyResponseId!==request.proxyResponseId || row.requestId!==request.requestId || row.frameId!==request.frameId || row.loaderId!==request.loaderId) ||
-			row.headerFieldSha256?.["next-action"]!==profile.actionHeaderSha256 || row.headerFieldSha256?.[teamReplayHeader]!==request.replayHeaderSha256)return false;
+			(row.id!==undefined ? row.requestId!==undefined || row.id!==request.proxyResponseId : row.requestHeadersKnown!==true || row.initialHeaderIdentity?.requestHeaderSnapshotKnown!==true || row.extraHeaderIdentity?.requestHeaderSnapshotKnown!==true || row.initialHeaderIdentity.requestHeadersSha256!==request.requestHeadersSha256 || row.extraHeaderIdentity.requestHeadersSha256!==request.requestHeadersSha256 || row.proxyResponseId!==request.proxyResponseId || row.requestId!==request.requestId || row.frameId!==request.frameId || row.loaderId!==request.loaderId) ||
+			row.headerFieldSha256?.cookie!==request.cookieHeaderSha256 || row.headerFieldSha256?.["next-action"]!==profile.actionHeaderSha256 || row.headerFieldSha256?.[teamReplayHeader]!==request.replayHeaderSha256)return false;
 		const actualEOF=row.requestBodyFacts;
         if(!ownData(actualEOF,["protocol","proxyResponseId","actualEOF","encodedBytes","bodySha256"]) || actualEOF.protocol!=="owned-proxy-request-eof-v1" || actualEOF.proxyResponseId!==request.proxyResponseId || actualEOF.actualEOF!==true || actualEOF.encodedBytes!==request.encodedBytes || actualEOF.bodySha256!==request.requestBodySha256)return false;
         const syntax=authority.requestFacts;
@@ -566,9 +755,11 @@ function knownRequestAuthority(authority,boundary) {
 		const cut=producer.sourceCut,records=readInfo.records.filter(record=>record.checkpointOrdinal===cut?.checkpointOrdinal),occurrences=producer.occurrences,journal=values?.sourceCuts;
 		if(journal?.protocol!=="team-source-occurrence-journal-v1" || journal.contextId!==request.contextId || journal.errors!==0 || journal.overflow!==0 || journal.budgetKnown!==true || journal.closed!==readInfo.scopeClosed ||
 			!Array.isArray(journal.records) || journal.records.length>10000 || !ownData(occurrences,["issuedOrdinal","proxy","browser"]))return false;
-		for(const [index,entry]of journal.records.entries()) {
-			if(!ownData(entry,["ordinal","kind","id","sourceCutOrdinal","sourceCutSha256"]) || entry.ordinal!==index+1 || !["issued","proxy-request","browser-request"].includes(entry.kind) || !technicalId(entry.id) ||
-				entry.sourceCutSha256!==null && !digest(entry.sourceCutSha256) || entry.sourceCutOrdinal!==null && (!Number.isSafeInteger(entry.sourceCutOrdinal) || entry.sourceCutOrdinal<1 || entry.sourceCutOrdinal>entry.ordinal || journal.records[entry.sourceCutOrdinal-1]?.kind!=="issued" || journal.records[entry.sourceCutOrdinal-1].sourceCutSha256!==entry.sourceCutSha256))return false;
+		const occurrenceKeys=new Set();
+        for(const [index,entry]of journal.records.entries()) {
+			if(!ownData(entry,["ordinal","kind","id","sourceCutOrdinal","sourceCutSha256"]) || entry.ordinal!==index+1 || occurrenceKeys.has(entry.kind+":"+entry.id) || !["issued","proxy-request","browser-request"].includes(entry.kind) || !technicalId(entry.id) ||
+				entry.sourceCutSha256!==null && !digest(entry.sourceCutSha256) || entry.sourceCutOrdinal!==null && (!Number.isSafeInteger(entry.sourceCutOrdinal) || entry.sourceCutOrdinal<1 || entry.sourceCutOrdinal>entry.ordinal || journal.records[entry.sourceCutOrdinal-1]?.kind!=="issued" || journal.records[entry.sourceCutOrdinal-1].sourceCutSha256!==entry.sourceCutSha256) || entry.kind==="issued" && entry.sourceCutOrdinal!==entry.ordinal)return false;
+            occurrenceKeys.add(entry.kind+":"+entry.id);
 		}
 		const issued=journal.records[occurrences.issuedOrdinal-1];
 		if(issued?.kind!=="issued" || issued.id!==String(cut?.checkpointOrdinal) || issued.sourceCutSha256!==sha(JSON.stringify(cut)) ||
@@ -579,11 +770,22 @@ function knownRequestAuthority(authority,boundary) {
         if(!Number.isFinite(proof.eventObservedAtMs) || proof.observerDeadlineMs!==proof.eventObservedAtMs+10000 || proof.acknowledgment?.deadlineMs!==proof.observerDeadlineMs || proof.acknowledgment.startedAtMs<proof.eventObservedAtMs)return false;
         const recomputed=replayOriginalTeamUIProducerCut({source:expectedOriginalSourceFacts(profile),operator:readInfo.operatorSource,acknowledgment:proof.acknowledgment,
 			principal:proof.principal,workers:proof.workers,binding,documentJournal:proof.acknowledgment?.document?.sourceJournal});
-		if(!recomputed || !sameJSON(recomputed,cut) || cut.contextId!==request.contextId || cut.originSha256!==request.requestOriginSha256 || cut.frameId!==request.frameId || cut.loaderId!==request.loaderId || cut.documentGeneration!==request.documentGeneration)return false;
+		if(!recomputed || !sameJSON(recomputed,cut) || cut.contextId!==request.contextId || cut.originSha256!==request.requestOriginSha256 || cut.frameId!==request.frameId || cut.loaderId!==request.loaderId || cut.documentGeneration!==request.documentGeneration || request.cookieHeaderSha256!==cut.cookieHeaderSha256)return false;
+		const census=context.headerCensus,lifetime=context.headerLifetime;
+		if(!validateProxyHeaderCensus(census,{contextId:request.contextId}) || !["unknownHeaders","setCookieResponses","setCookieLines","errors","duplicates","missing","late","overflow"].every(key=>census.counts[key]===0) ||
+			lifetime?.protocol!=="owned-context-upstream-header-lifetime-v1" || lifetime.contextId!==request.contextId || lifetime.installation?.protocol!==lifetime.protocol ||
+			lifetime.installation.originSha256!==request.requestOriginSha256 || lifetime.installation.acceptedRequestsAtInstall!==0 || !Array.isArray(lifetime.installation.allowedOriginSha256) || !lifetime.installation.allowedOriginSha256.includes(request.requestOriginSha256))return false;
+		if(context.principalEpoch.scopeClosed) {
+			const closure=lifetime.closure;
+			if(census.closed!==true || census.counts.pending!==0 || census.counts.terminalBeforeHeaders!==0 || census.counts.knownHeaders!==census.counts.accepted || closure?.serverClosed!==true || closure.acceptedRequests!==census.counts.accepted || closure.upstreamRequests!==census.counts.accepted || closure.closedUpstreams!==census.counts.accepted || closure.pendingUpstreams!==0)return false;
+		}else {
+			const prefix=context.headerPrefix;
+			if(!validateProxyHeaderPrefix(prefix,{contextId:request.contextId}) || !sameJSON(prefix.census,census) || prefix.lifecycle.errors!==0 || prefix.lifecycle.overflow!==0 || prefix.lifecycle.upstreamRequests!==census.counts.accepted || lifetime.closure!==null || prefix.lifecycle.proxyInstanceId!==lifetime.installation.proxyInstanceId || prefix.lifecycle.originSha256!==request.requestOriginSha256 || !sameJSON(prefix.lifecycle.allowedOriginSha256,lifetime.installation.allowedOriginSha256))return false;
+		}
 		const finalJournal=readInfo.documentJournal,pastJournal=proof.acknowledgment.document.sourceJournal,workers=environment.workerTargets,pastWorkers=proof.workers,principal=context.principalEpoch;
-		if(finalJournal?.contextId!==request.contextId || finalJournal.errors!==0 || finalJournal.overflow!==0 || !Array.isArray(finalJournal.documents) || !Array.isArray(finalJournal.executionEvents) ||
+		if(!knownTeamDocumentJournal(finalJournal,request.contextId) || finalJournal?.contextId!==request.contextId || finalJournal.errors!==0 || finalJournal.overflow!==0 || !Array.isArray(finalJournal.documents) || !Array.isArray(finalJournal.executionEvents) ||
 			!sameJSON(finalJournal.documents.slice(0,pastJournal.documents.length),pastJournal.documents) || !sameJSON(finalJournal.executionEvents.slice(0,pastJournal.executionEvents.length),pastJournal.executionEvents) ||
-			!Array.isArray(workers?.events) || !sameJSON(workers.events.slice(0,pastWorkers.events.length),pastWorkers.events) || workers.errors!==0 || workers.overflow!==0 ||
+			workers?.protocol!=="owned-context-worker-target-metadata-v1" || workers.contextId!==request.contextId || !Array.isArray(workers?.events) || !sameJSON(workers.events.slice(0,pastWorkers.events.length),pastWorkers.events) || workers.errors!==0 || workers.overflow!==0 ||
 			workers.events.some(event=>!["page","service_worker"].includes(event.type) || event.urlKnown!==true || event.type==="service_worker" && (event.ownedWorkerScript!==true || event.originMatches!==true)) ||
 			principal?.before?.sha256!==cut.principalSha256 || !["observedSetCookieResponses","unknownResponseHeaders","readErrors","pendingReads","observationErrors","overflow"].every(key=>principal[key]===0) ||
 			principal.scopeClosed && (principal.after?.known!==true || principal.after.sha256!==cut.principalSha256))return false;
@@ -597,7 +799,7 @@ function knownRequestAuthority(authority,boundary) {
 				!["ordinal","traceId","nonceSha256","urlSha256","actionHeaderSha256","encodedBytes","bodySha256","proxyId"].every(key=>actual[0][key]===manual[key]) || !sameJSON(actual[0].requestEOF,manual.requestEOF) || !sameJSON(actual[0].browser,manual.browser) || principal.scopeClosed && (journal.closed!==true || actual[0].returned!==true || actual[0].returnedError!==false || journal.pendingDispatches!==0))return false;
 		}
 		const store=values?.store,selected=store?.rows?.filter(item=>item.id===request.proxyResponseId);
-		return store?.errors===0 && store.overflow===0 && store.unavailable===0 && store.budgetKnown===true && Array.isArray(selected) && selected.length===1 &&
+		return store?.protocol==="bounded-unqualified-team-values-v1" && store.contextId===request.contextId && store.sourceBound===false && store.acceptanceClaim==="none" && store.errors===0 && store.overflow===0 && store.unavailable===0 && store.budgetKnown===true && Array.isArray(selected) && selected.length===1 &&
 			sameJSON(selected[0].requestFacts,syntax) && sameJSON(selected[0].typeFacts,authority.typeFacts) && (!principal.scopeClosed || store.closed===true && store.pendingConsumers===0 && selected[0].pendingConsumers===0 && selected[0].valueForgotten===true && selected[0].released===true && finalJournal.closed===true && finalJournal.installed===true && Number.isSafeInteger(finalJournal.currentGeneration) && finalJournal.currentGeneration>=pastJournal.currentGeneration && workers.scopeClosed===true && workers.contextJoinKnown===true && workers.installed===true);
 	} catch { return false; }
 }
@@ -764,4 +966,33 @@ export async function readOriginalTeamSourceQualification(input) {
 		qualifications.set(qualification, facts);
 		return qualification;
 	} catch { throw Error("Original team temporary source qualification unavailable."); }
+}
+
+/** Mandatory independent kernel latch and observer census; deleting both body lists cannot erase a real private use. */
+export function validateOriginalTeamBodyUseCoverage(context,bodies) {
+ try {
+  if(!Array.isArray(bodies) || bodies.length>10000)return false;
+  if(context===undefined || context===null)return bodies.length===0;
+  if(!knownTemporaryValueObservation(context.binding?.temporaryValueObservation))return false;
+  const values=context.environment?.temporaryValues,store=values?.store,census=values?.bodyUses;
+  if(store?.protocol!=="bounded-unqualified-team-values-v1" || store.contextId!==context.contextId || store.errors!==0 || store.overflow!==0 || store.unavailable!==0 || store.budgetKnown!==true ||
+   store.usage?.protocol!=="actual-private-value-use-census-v1" || store.usage.contextId!==context.contextId || !Number.isSafeInteger(store.usage.observed) || store.usage.observed<0 || store.usage.observed>10000 ||
+   !Array.isArray(store.rows) || store.rows.length>10000 || census?.protocol!=="actual-body-value-observations-v1" || census.contextId!==context.contextId || !Number.isSafeInteger(census.observed) || census.observed<0 || census.observed>10000 || !Array.isArray(census.records) || census.records.length!==census.observed)return false;
+  const uses=new Map();
+  for(const row of store.rows){
+   if(typeof row.everUsed!=="boolean" || !Array.isArray(row.usedBodies) || row.usedBodies.length>10000 || row.everUsed!==(row.usedBodies.length>0))return false;
+   for(const use of row.usedBodies){
+    const key=row.id+":"+use.bodySha256;if(uses.has(key) || !ownData(use,["bodySha256","decodedBytes","bindingSha256"]) || !digest(use.bodySha256) || !digest(use.bindingSha256) || !Number.isSafeInteger(use.decodedBytes) || use.decodedBytes<1 || use.decodedBytes>8388608)return false;
+    uses.set(key,{proxyResponseId:row.id,...use});
+   }
+  }
+  if(uses.size!==store.usage.observed || uses.size!==census.observed)return false;
+  const seen=new Set();
+  for(const use of census.records){
+   const key=use.proxyResponseId+":"+use.bodySha256;
+   if(seen.has(key) || !sameJSON(uses.get(key),use) || !bodies.some(entry=>(entry.row.id ?? entry.row.proxyResponseId)===use.proxyResponseId && entry.row.bodyProof?.bodySha256===use.bodySha256 && entry.row.temporaryValueObservation?.bindingSha256===use.bindingSha256))return false;
+   seen.add(key);
+  }
+  return bodies.every(entry=>uses.has((entry.row.id ?? entry.row.proxyResponseId)+":"+entry.row.bodyProof?.bodySha256));
+ }catch{return false;}
 }

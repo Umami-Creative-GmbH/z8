@@ -414,7 +414,7 @@ const sourceFacts = () => {
 };
 
 test("original temporary source facts identify the one reviewed baseline without becoming a live qualification", () => {
-	assert.equal(originalTeamTemporaryProfiles.length, 1);
+	assert.equal(originalTeamTemporaryProfiles.length, 2);
 	const facts = sourceFacts();
 	assert.equal(knownOriginalTeamSourceFacts(facts), true);
 	assert.equal(isOriginalTeamSourceQualification(facts), false);
@@ -735,4 +735,19 @@ test("source occurrence observations retain missing prior cuts and the existing 
  assert.equal(retained,33554432);assert.equal(journal.snapshot().records.length,8192);assert.equal(journal.snapshot().overflow,1);
  journal.close();assert.equal(journal.capture("browser-request","late",null),null);assert.equal(journal.snapshot().errors,1);
  assert.equal(JSON.stringify(journal.snapshot()).includes("PRIVATE"),false);
+});
+
+test("source occurrence ownership never replaces an earlier missing cut under the same actual request",async()=>{
+ const {createTeamSourceCutJournal}=await import("./team-temporary-value-authority.mjs");const journal=createTeamSourceCutJournal({contextId:"first-request",reserve:()=>true});
+ assert.ok(journal.capture("proxy-request","same",null));const first=journal.snapshot().records[0];
+ assert.equal(journal.capture("proxy-request","same",null),null);assert.deepEqual(journal.snapshot().records,[first]);assert.equal(journal.snapshot().errors,1);
+ assert.ok(journal.capture("browser-request","browser",null));assert.equal(journal.capture("browser-request","browser",null),null);assert.equal(journal.snapshot().errors,2);
+});
+test("typed body-use coverage rejects deleted observers and independent ever-used latch downgrades",async()=>{
+ const {validateOriginalTeamBodyUseCoverage,temporaryValueObservation}=await import("./team-temporary-value-authority.mjs");
+ const use={bodySha256:"a".repeat(64),decodedBytes:32,bindingSha256:"b".repeat(64)},id="c".repeat(32)+".1",contextId="use-context";
+ const values={store:{protocol:"bounded-unqualified-team-values-v1",contextId,errors:0,overflow:0,unavailable:0,budgetKnown:true,usage:{protocol:"actual-private-value-use-census-v1",contextId,observed:1},rows:[{id,everUsed:true,usedBodies:[use]}]},bodyUses:{protocol:"actual-body-value-observations-v1",contextId,observed:1,records:[{proxyResponseId:id,...use}]}};
+ const context={contextId,binding:{temporaryValueObservation},environment:{temporaryValues:values}},bodies=[{source:"proxy",row:{id,bodyProof:{bodySha256:use.bodySha256},temporaryValueObservation:{bindingSha256:use.bindingSha256}}}];
+ assert.equal(validateOriginalTeamBodyUseCoverage(context,bodies),true);
+ for(const mutate of [value=>delete value.bodyUses,value=>value.bodyUses={...value.bodyUses,observed:0,records:[]},value=>delete value.store.usage,value=>delete value.store.rows[0].everUsed,value=>value.store.rows[0].usedBodies=[]]){const changed=structuredClone(context);mutate(changed.environment.temporaryValues);assert.equal(validateOriginalTeamBodyUseCoverage(changed,[]),false);}
 });

@@ -1,3 +1,4 @@
+import {testBrowserBinding,testEmptyTemporaryValues} from "./control-cancellation-test-fixtures.mjs";
 import { temporaryValueObservation } from "./team-temporary-value-authority.mjs";
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
@@ -67,7 +68,7 @@ test("proxy header census survives semantic scope end and closes only with actua
 	assert.equal(validateProxyHeaderCensus(proof,{contextId}),true);
 	assert.equal(proof.closed,false);
 	assert.equal(proof.counts.pending,2,"downstream cancel does not prove an upstream no-header terminal");
-	proxy.response(id(2),{status:200,headers:{"set-cookie":["private-value"],"content-type":"text/plain"}});
+	proxy.response(id(2),{status:200,headers:{"set-cookie":["__PRIVATE_COOKIE_SECRET_1475__"],"content-type":"text/plain"}});
 	proxy.upstreamClosedBeforeHeaders(id(3),{upstreamClosed:true,headersReceived:false});
 	proxy.transportClosed({serverClosed:true,acceptedRequests:3,upstreamRequests:3,closedUpstreams:3,pendingUpstreams:0});
 	proof=proxy.snapshot().headerCensus;
@@ -75,7 +76,7 @@ test("proxy header census survives semantic scope end and closes only with actua
 	assert.equal(proof.closed,true);assert.equal(proof.counts.pending,0);assert.equal(proof.counts.setCookieResponses,1);
 	assert.equal(proof.counts.terminalBeforeHeaders,1);
 	assert.equal(collector.snapshot().proxyHeaderCensus.closed,true,"browser semantic closure does not close the transport census early");
-	assert.doesNotMatch(JSON.stringify(proxy.snapshot()),/private-value/);
+	assert.doesNotMatch(JSON.stringify(proxy.snapshot()),/__PRIVATE_COOKIE_SECRET_1475__/);
 	proxy.response(id(3),{status:200,headers:{}});
 	assert.equal(proxy.snapshot().headerCensus.counts.late,1,"late header facts remain sticky after closure");
 });
@@ -127,7 +128,7 @@ test("response encoding diagnostics retain only actual allowlisted MIME/charset 
 	for(const [value,charset] of [["text/x-component","absent"],["text/x-component; charset=utf-8","utf-8"],['text/x-component; charset="ISO-8859-1"',"iso-8859-1"],["text/x-component; charset=private-value","other"],["text/x-component; charset=utf-8; charset=latin1","ambiguous"]]){
 		const facts=controlResponseMetadata({"content-type":value},200).responseContentType;
 		assert.deepEqual(facts,{headerKnown:true,mime:"text/x-component",charset});
-		assert.doesNotMatch(JSON.stringify(facts),/private-value/);
+		assert.doesNotMatch(JSON.stringify(facts),/__PRIVATE_COOKIE_SECRET_1475__/);
 	}
 	assert.deepEqual(controlResponseMetadata({},200).responseContentType,{headerKnown:false,mime:null,charset:"absent"});
 });
@@ -588,6 +589,7 @@ test("early response ExtraInfo joins its exact later request while orphan and co
 	const make = () =>
 		createBrowserControlCollector({
 			contextId,
+            compiledBinding:testBrowserBinding("b".repeat(40)),environmentObservation:()=>({temporaryValues:testEmptyTemporaryValues(contextId)}),
 			origin,
 			readBody: async () => {
 				throw Error("unavailable");
@@ -639,6 +641,7 @@ test("actual cache and proxy events retain unknowns without publishing payload o
 	proxy.installed();
 	const collector = createBrowserControlCollector({
 		contextId,
+        compiledBinding:testBrowserBinding("b".repeat(40)),environmentObservation:()=>({temporaryValues:testEmptyTemporaryValues(contextId)}),
 		origin,
 		browserRevision: chromiumSWRRevision,
 		proxyObservation: proxy.snapshot,
@@ -1140,7 +1143,7 @@ test("positive protocol errors survive independent UNKNOWN reads in either compl
 			const bytes = Buffer.from(kind === "server-error" ? '0:E{"digest":"PRIVATE_CANARY"}\n' :
 				kind === "action-failure" ? '0:{"a":{"success":false,"error":"PRIVATE_CANARY"}}\n' : '0:{"t":INVALID_STREAM}\n');
 			let acknowledge, resolveRead;
-			const collector = createBrowserControlCollector({ contextId, origin, browserRevision: chromiumSWRRevision, compiledCachedNavigations: false,
+			const collector = createBrowserControlCollector({ contextId, origin,compiledBinding:testBrowserBinding("b".repeat(40)),environmentObservation:()=>({temporaryValues:testEmptyTemporaryValues(contextId)}), browserRevision: chromiumSWRRevision, compiledCachedNavigations: false,
 				proxyObservation: () => ({ rows: [], installed: true, errors: 0, overflow: 0, pendingBodies: 0 }),
 				readBody: () => new Promise((resolve) => { resolveRead = resolve; }),
 				readStream: () => new Promise((resolve) => { acknowledge = resolve; }) });
@@ -1362,19 +1365,19 @@ test("request-shape rejected duplicate target records uncertainty without rewrit
 
 test("source scheduler retains actual events during a pending read without backfilling the old request cut", async () => {
  const {createTeamSourceReadScheduler}=await import("./browser-control-collector.mjs");
- let token=null,releaseFirst,reads=0,retained=0;const accepted=[],deadlines=[];
+ const makeToken=id=>({contextId:"source",documentRequestId:id,frameId:"frame",loaderId:"loader",executionContextUniqueId:"context",documentGeneration:1,executionEventOrdinal:1,documentEventOrdinal:1});let token=null,releaseFirst,reads=0,retained=0;const accepted=[],deadlines=[];
  const scheduler=createTeamSourceReadScheduler({ready:()=>token,reserve:bytes=>{retained+=bytes;return true;},release:bytes=>{retained-=bytes;},
-  async read(actual,deadline){reads++;deadlines.push(deadline);if(reads===1)await new Promise(resolve=>{releaseFirst=resolve;});return {record:{checkpointOrdinal:reads,issuedCut:{event:actual.event}},cut:actual,failed:false};},accept:cut=>{accepted.push(cut.event);return true;}});
+  async read(actual,deadline){reads++;deadlines.push(deadline);if(reads===1)await new Promise(resolve=>{releaseFirst=resolve;});return {record:{checkpointOrdinal:reads,issuedCut:{event:actual.documentRequestId}},cut:actual,failed:false};},accept:cut=>{accepted.push(cut.documentRequestId);return true;}});
  assert.equal(scheduler.event(),false);await tick();assert.equal(reads,0);
- token={event:"document-one-default"};assert.equal(scheduler.event(),true);await tick();assert.equal(reads,1);
- token={event:"document-two-default"};assert.equal(scheduler.event(),true);assert.equal(scheduler.snapshot().pending,2);releaseFirst();
+ token=makeToken("document-one-default");assert.equal(scheduler.event(),true);await tick();assert.equal(reads,1);
+ token=makeToken("document-two-default");assert.equal(scheduler.event(),true);assert.equal(scheduler.snapshot().pending,2);releaseFirst();
  await tick();await tick();assert.equal(reads,2);assert.deepEqual(accepted,["document-two-default"]);assert.equal(scheduler.snapshot().records[0].issuedCut,null);assert.equal(scheduler.snapshot().unavailable,1);assert.equal(scheduler.snapshot().errors,0);
  assert.ok(deadlines.every(value=>Number.isFinite(value)));assert.ok(deadlines[1]>=deadlines[0]);assert.equal(scheduler.snapshot().pending,0);assert.ok(retained>0);
  scheduler.close();assert.equal(scheduler.snapshot().scopeClosed,true);
 });
 test("source scheduler keeps stable read failures and unfinished close explicit", async () => {
  const {createTeamSourceReadScheduler}=await import("./browser-control-collector.mjs");let resolveRead;
- const scheduler=createTeamSourceReadScheduler({ready:()=>({event:"known-default"}),reserve:()=>true,release:()=>{},read:()=>new Promise(resolve=>{resolveRead=resolve;}),accept:()=>{throw Error("must not accept");}});
+ const scheduler=createTeamSourceReadScheduler({ready:()=>({contextId:"source",documentRequestId:"known-default",frameId:"frame",loaderId:"loader",executionContextUniqueId:"context",documentGeneration:1,executionEventOrdinal:1,documentEventOrdinal:1}),reserve:()=>true,release:()=>{},read:()=>new Promise(resolve=>{resolveRead=resolve;}),accept:()=>{throw Error("must not accept");}});
  scheduler.event();await tick();scheduler.close();assert.equal(scheduler.snapshot().pending,1);assert.equal(scheduler.snapshot().errors,1);
  resolveRead({record:{issuedCut:null},cut:null,failed:true});await tick();assert.equal(scheduler.snapshot().pending,0);assert.equal(scheduler.snapshot().errors,2);assert.equal(scheduler.snapshot().scopeClosed,true);
 });
@@ -1386,4 +1389,13 @@ test("source readiness requires the actual new default context rather than the p
  assert.equal(observer.sourceReady(),null);
  session.emit("Runtime.executionContextDestroyed",{executionContextId:1});session.emit("Runtime.executionContextCreated",{context:{id:2,uniqueId:"actual-context",auxData:{frameId:"main-frame",isDefault:true}}});
  assert.equal(observer.sourceReady().executionContextUniqueId,"actual-context");assert.equal(observer.sourceReady().documentRequestId,"doc-one");assert.ok(events>=2);observer.close();
+});
+
+test("source subset guards run before source snapshots while default mixed history retains its actual full bounds",async()=>{
+ const session=new EventEmitter();session.send=async()=>({});let generation=0;
+ const {createMixedDocumentAcknowledgment}=await import("./browser-control-collector.mjs");
+ const observer=await createMixedDocumentAcknowledgment({session,contextId:"bounded-source",origin,generation:()=>generation});
+ for(let index=1;index<=129;index++){generation=index;session.emit("Network.requestWillBeSent",{type:"Document",requestId:"doc-"+index,frameId:"frame",loaderId:"loader-"+index,request:{url:origin+"/en",method:"GET",headers:{[controlDocumentHeader]:"bounded-source:"+index}}});}
+ session.emit("Runtime.executionContextCreated",{context:{id:1,uniqueId:"context",auxData:{frameId:"frame",isDefault:true}}});
+ assert.equal(observer.sourceReady(),null);assert.equal(observer.sourceSnapshot(),null);assert.equal(observer.snapshot().documents.length,129);assert.equal(observer.snapshot().overflow,0);observer.close();
 });

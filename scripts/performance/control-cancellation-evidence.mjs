@@ -2,7 +2,7 @@
 import { createHash } from "node:crypto";
 import { validateProxyHeaderCensus, validateProxyHeaderPrefix, validateProxyHeaderLifecycle } from "./proxy-header-census.mjs";
 import {cachedCdpTextProjectionProtocol,cachedCdpTextSourceRevision,cachedCdpTextMappingSha256} from "./cdp-cached-text-projection.mjs";
-import { resolveOriginalTeamTemporaryReference, closeOriginalTeamBodyInspection, validateOriginalTeamTemporaryValues, knownTemporaryValueObservation, knownOriginalTeamSourceConfiguration } from "./team-temporary-value-authority.mjs";
+import { resolveOriginalTeamTemporaryReference, closeOriginalTeamBodyInspection, validateOriginalTeamTemporaryValues, validateOriginalTeamBodyUseCoverage, knownTemporaryValueObservation, knownOriginalTeamSourceConfiguration } from "./team-temporary-value-authority.mjs";
 export const controlCancellationPolicy = Object.freeze({
 	version: 2,
 	protocol: "positively-proven-protocol-controls-v2",
@@ -2068,7 +2068,7 @@ export function classifyControlCancellations({
 			(key) => coverage[key] === 0,
 		) &&
 		failures.length <= controlCancellationPolicy.recordLimit && temporaryValueBodies.length <= controlCancellationPolicy.recordLimit &&
-        temporaryValueBodies.every(({row})=>goodBody(row.bodyProof) && validateOriginalTeamTemporaryValues(row.bodyProof.temporaryValues,{bodySha256:row.bodyProof.bodySha256,decodedBytes:row.bodyProof.decodedBytes,request:row,context:nativeContext}));
+        validateOriginalTeamBodyUseCoverage(nativeContext,temporaryValueBodies) && temporaryValueBodies.every(({row})=>goodBody(row.bodyProof) && validateOriginalTeamTemporaryValues(row.bodyProof.temporaryValues,{bodySha256:row.bodyProof.bodySha256,decodedBytes:row.bodyProof.decodedBytes,request:row,context:nativeContext}));
 	for (const failure of failures) {
 		const key = `${failure.contextId}:${failure.requestId}`;
 		if (!failure.requestId || seen.has(key)) complete = false;
@@ -2182,8 +2182,7 @@ function browserFailureEvidenceMatches(evidence, rawFailedRequests, scope, requi
 		!Array.isArray(evidence.temporaryValueBodies) || evidence.temporaryValueBodies.length>controlCancellationPolicy.recordLimit ||
 		evidence.temporaryValueBodies.some(entry=>!["browser","proxy"].includes(entry?.source) || !goodBody(entry.row?.bodyProof) ||
 			!validateOriginalTeamTemporaryValues(entry.row.bodyProof.temporaryValues,{bodySha256:entry.row.bodyProof.bodySha256,decodedBytes:entry.row.bodyProof.decodedBytes,request:entry.row,context:evidence.nativeContext})) ||
-		(evidence.nativeContext?.environment?.temporaryValues?.bodyUses ?? []).some(use=>!evidence.temporaryValueBodies.some(entry=>
-			(entry.row.id ?? entry.row.proxyResponseId)===use.proxyResponseId && entry.row.bodyProof?.bodySha256===use.bodySha256 && entry.row.temporaryValueObservation?.bindingSha256===use.bindingSha256)) ||
+		!validateOriginalTeamBodyUseCoverage(evidence.nativeContext,evidence.temporaryValueBodies) ||
 		evidence.complete !== true ||
 		!Number.isSafeInteger(rawFailedRequests) ||
 		rawFailedRequests < 0 ||

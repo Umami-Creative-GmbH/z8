@@ -416,6 +416,9 @@ export function createPrincipalEpochObserver(contextId, { origin } = {}) {
    for(let ordinal=controlCancellationPolicy.recordLimit;ordinal>=1;ordinal--)if(!progressReadIds.has(ordinal))return ordinal;
    overflow++;return null;
   },
+  sourceState(){return {before:before?{...before}:unknown(),scopeClosed,observedSetCookieResponses:setCookies.size,unknownResponseHeaders,readErrors,pendingReads,observationErrors,overflow};},
+  sourceHistoryWithinLimit(){return progressReadHistory.size<=128;},
+  sourceSnapshot(){return progressReadHistory.size<=128?this.snapshot():null;},
   progressStarted(acknowledgmentOrdinal){
    if(scopeClosed || !Number.isSafeInteger(acknowledgmentOrdinal) || acknowledgmentOrdinal<1 || acknowledgmentOrdinal>controlCancellationPolicy.recordLimit || progressReadIds.has(acknowledgmentOrdinal) || progressReadIds.size>=controlCancellationPolicy.recordLimit){observationErrors++;return false;}
    progressReadIds.add(acknowledgmentOrdinal);const row={acknowledgmentOrdinal,kind:"read-only-context-cookies-v1",startedOrdinal:++progressReadsStarted,finishedOrdinal:null,snapshotSha256:null,error:false};progressReads.set(acknowledgmentOrdinal,row);progressReadHistory.set(acknowledgmentOrdinal,row);pendingReads++;return true;
@@ -882,7 +885,7 @@ export function createBrowserControlCollector({
 		const environment=environmentObservation(),principal=principalEpoch.snapshot();
 		const nativeContext={protocol:"qualified-known-extra-native-context-v1",contextId,originSha256:sha(origin),workerScriptSha256:sha(origin+"/sw.js"),rootScopeSha256:sha(origin+"/"),
 			binding:compiledBinding ? Object.fromEntries(["policy","browserRevision","compiledBuild","compiledManifestSha256","compiledCachedNavigations","manifestVerified","browserVerified","nativePublicSources","temporaryValueObservation","originalTeamSource"].filter(key=>Object.hasOwn(compiledBinding,key)).map(key=>[key,compiledBinding[key]])) : null,
-			protocolSources:protocolSources ?? null,operatorFile:operatorFile ?? null,principalEpoch:principal,headerCensus:proxy.headerCensus ?? null,headerLifetime:proxy.headerLifetime ?? null,
+			protocolSources:protocolSources ?? null,operatorFile:operatorFile ?? null,principalEpoch:principal,headerCensus:proxy.headerCensus ?? null,headerLifetime:proxy.headerLifetime ?? null,headerPrefix:proxy.headerPrefix ?? null,
 			protocolErrors,environment};
 		const data = { responses, proxy: proxy.rows, coverage, browserRevision,nativeContext };
 		progressInput={...data,failures,browserEventOrdinal,nativeContext:{...nativeContext,headerPrefix:proxy.headerPrefix ?? null}};
@@ -1292,7 +1295,8 @@ export function createBrowserControlCollector({
 
 /** Observer-only event queue. Each actual token keeps its first deadline; it never waits or retries business work. */
 export function createTeamSourceReadScheduler({ready,read,accept,reserve,release}) {
- const queue=[],records=[],seen=new Set();let closed=false,running=false,scheduled=false,errors=0,overflow=0,unavailable=0,eventOrdinal=0;
+ const queue=[],records=[],seen=new Set();let closed=false,running=false,scheduled=false,errors=0,overflow=0,unavailable=0,eventOrdinal=0,eventRetainedBytes=0;
+ const tokenKnown=token=>token && Object.keys(token).length===8 && ["contextId","documentRequestId","frameId","loaderId","executionContextUniqueId"].every(key=>typeof token[key]==="string" && /^[A-Za-z0-9:_.-]{1,256}$/.test(token[key])) && ["documentGeneration","executionEventOrdinal","documentEventOrdinal"].every(key=>Number.isSafeInteger(token[key]) && token[key]>=1 && token[key]<=10000);
  const retain=(record,reserved)=>{const charge=Buffer.byteLength(JSON.stringify(record))*8+2048;if(charge>reserved){overflow++;release(reserved);return false;}records.push(record);release(reserved-charge);return true;};
  const pump=()=>{if(closed || running || scheduled || queue.length===0)return;scheduled=true;queueMicrotask(async()=>{
   scheduled=false;if(closed || running || queue.length===0)return;
@@ -1311,10 +1315,12 @@ export function createTeamSourceReadScheduler({ready,read,accept,reserve,release
   finally{running=false;pump();}
  });};
  return Object.freeze({event(){
-  if(closed){errors++;return false;}const token=ready();if(!token)return false;const key=JSON.stringify(token);if(seen.has(key))return false;
-  if(seen.size>=controlCancellationPolicy.recordLimit || records.length+queue.length>=controlCancellationPolicy.recordLimit || !reserve(2048)){overflow++;return false;}
+  if(closed){errors++;return false;}const token=ready();if(!token)return false;if(!tokenKnown(token)){errors++;return false;}
+  if(!reserve(32768)){overflow++;return false;}const key=JSON.stringify(token);if(seen.has(key)){release(32768);return false;}
+  if(seen.size>=controlCancellationPolicy.recordLimit || records.length+queue.length>=controlCancellationPolicy.recordLimit){overflow++;release(32768);return false;}
+  eventRetainedBytes+=32768;
   const observedAtMs=performance.now();seen.add(key);queue.push({ordinal:++eventOrdinal,token:structuredClone(token),observedAtMs,deadlineMs:observedAtMs+10000});pump();return true;
- },close(){closed=true;if(running || queue.length)errors++;},snapshot(){return {protocol:"actual-team-source-read-journal-v1",scopeClosed:closed,pending:Number(running)+queue.length,errors,overflow,unavailable,records:structuredClone(records)};}});
+ },close(){closed=true;if(running || queue.length)errors++;},status(){return {scopeClosed:closed,pending:Number(running)+queue.length,errors,overflow,unavailable,eventRetainedBytes};},snapshot(){return {protocol:"actual-team-source-read-journal-v1",scopeClosed:closed,pending:Number(running)+queue.length,errors,overflow,unavailable,eventRetainedBytes,records:structuredClone(records)};}});
 }
 /** Optional prospective installation; callers retain their normal measurement boundaries. */
 export async function installBrowserControlCollector({
@@ -1338,8 +1344,9 @@ export async function installBrowserControlCollector({
 	const operatorQualification=qualification?await readOriginalTeamOperatorQualification({qualification,operatorFile,protocolSources,plan:originalTeamPlans.get(environmentBinding)}):null;
 	let teamCut=null,teamScheduler;
 	const currentTeamCut=()=>{
-		const state=teamScheduler?.snapshot();if(!teamCut || !state || state.scopeClosed || state.errors || state.overflow || !documentAcknowledgment)return null;
-		const facts=originalTeamUIProducerCutFacts(teamCut),principal=principalEpoch.snapshot(),workers=workerObservation?.snapshot(),journal=documentAcknowledgment.snapshot();
+		const state=teamScheduler?.status();if(!teamCut || !state || state.scopeClosed || state.errors || state.overflow || !documentAcknowledgment)return null;
+		if(!documentAcknowledgment.sourceReady())return null;
+        const facts=originalTeamUIProducerCutFacts(teamCut),principal=principalEpoch.sourceState(),workers=workerObservation?.snapshot(),journal=documentAcknowledgment.sourceSnapshot();
 		if(!facts || facts.documentJournalSha256!==sha(JSON.stringify(journal)) || facts.workerJournalSha256!==sha(JSON.stringify(workers)) || principal.before?.sha256!==facts.principalSha256 ||
 			!["observedSetCookieResponses","unknownResponseHeaders","readErrors","pendingReads","observationErrors","overflow"].every(key=>principal[key]===0))return null;
 		return teamCut;
@@ -1357,13 +1364,13 @@ export async function installBrowserControlCollector({
 		reserve:bytes=>proxy.reserveTemporaryObservation(bytes),release:bytes=>proxy.releaseTemporaryObservation(bytes),
 		accept:cut=>{if(!proxy.issueTeamCut(cut))return false;teamCut=cut;return true;},
 		read:async(token,deadlineMs)=>{
-			const journal=documentAcknowledgment.snapshot();
-			if(journal.documents.length+journal.executionEvents.length>128)return {record:{unavailable:"source-journal-subset-limit",issuedCut:null},cut:null,failed:false};
+			const journal=documentAcknowledgment.sourceSnapshot();
+			if(!journal || !principalEpoch.sourceHistoryWithinLimit())return {record:{unavailable:"source-journal-subset-limit",issuedCut:null},cut:null,failed:false};
 			const checkpointOrdinal=principalEpoch.nextTemporaryReadOrdinal();
 			if(checkpointOrdinal===null)return {record:{unavailable:"source-principal-record-limit",issuedCut:null},cut:null,failed:true};
-			const ack=await documentAcknowledgment.read({checkpointOrdinal,deadlineMs,principalEpoch,readCookies:()=>context.cookies(),readSources:async()=>{const path=nativeManifestLocators.get(environmentBinding);return path?readNativePublicSources(path):null;}});
-			const principal=principalEpoch.snapshot(),workers=workerObservation.snapshot();
-			const cut=createOriginalTeamUIProducerCut({qualification,operatorQualification,acknowledgment:ack,principal,workers,binding:environmentBinding,documentJournal:documentAcknowledgment.snapshot()});
+			const ack=await documentAcknowledgment.read({checkpointOrdinal,deadlineMs,principalEpoch,sourceSubsetLimit:128,readCookies:()=>context.cookies(),readSources:async()=>{const path=nativeManifestLocators.get(environmentBinding);return path?readNativePublicSources(path):null;}});
+			const principal=principalEpoch.sourceSnapshot(),workers=workerObservation.snapshot();
+			const cut=createOriginalTeamUIProducerCut({qualification,operatorQualification,acknowledgment:ack,principal,workers,binding:environmentBinding,documentJournal:documentAcknowledgment.sourceSnapshot()});
 			return {record:{checkpointOrdinal,acknowledgment:ack,principal,workers,issuedCut:cut?originalTeamUIProducerCutFacts(cut):null},cut,failed:ack.timedOut!==false || ack.pendingOperations!==0 || ack.readErrors!==0};
 		}});
 	const transportErrors = transport.setControlCancellationObserver(proxy,{captureHeaderPrefixes:captureContextFailures || knownTemporaryValueObservation(environmentBinding?.temporaryValueObservation)});
@@ -1526,13 +1533,13 @@ export function createProxyControlCollector({
 		const id=row.id ?? row.proxyResponseId,packet=requests.get(id),browser=row.requestId?row:browserRows.get(id),handle=requestHandles.get(id);
 		let authority=requestAuthorities.get(id) ?? null;
         if(packet && browser){browser.requestBodyFacts=packet.requestBodyFacts;browser.traceId=packet.traceId;}
-		if(packet && browser && handle && browser.requestHeadersKnown===true && browser.initialHeaderIdentity?.requestHeadersSha256===packet.requestHeadersSha256 &&
+		if(packet && browser && handle && packet.requestHeaderSnapshotKnown===true && browser.requestHeaderSnapshotKnown===true && browser.initialHeaderIdentity?.requestHeaderSnapshotKnown===true && browser.extraHeaderIdentity?.requestHeaderSnapshotKnown===true && browser.requestHeadersKnown===true && browser.initialHeaderIdentity?.requestHeadersSha256===packet.requestHeadersSha256 &&
 			browser.extraHeaderIdentity?.requestHeadersSha256===packet.requestHeadersSha256 && browser.fullUrlSha256===packet.fullUrlSha256 && browser.documentGeneration===packet.documentGeneration &&
 			browser.action===true && browser.ambiguousRedirect===false && browser.requestOriginSha256===packet.requestOriginSha256) {
 			const request={contextId,proxyResponseId:id,requestId:browser.requestId,traceId:packet.traceId,method:packet.method,fullUrlSha256:packet.fullUrlSha256,
 				requestHeadersSha256:packet.requestHeadersSha256,requestOriginSha256:packet.requestOriginSha256,documentGeneration:packet.documentGeneration,frameId:browser.frameId,loaderId:browser.loaderId,
 				actionHeaderSha256:packet.headerFieldSha256["next-action"],requestBodySha256:shapeRows.get(id)?.bodySha256,encodedBytes:shapeRows.get(id)?.bytes,actualEOF:shapeRows.get(id)?.requestEOF===true,
-				replayHeaderSha256:packet.headerFieldSha256[teamReplayHeader] ?? null};
+				replayHeaderSha256:packet.headerFieldSha256[teamReplayHeader] ?? null,cookieHeaderSha256:packet.headerFieldSha256.cookie};
 			if(request.replayHeaderSha256!==null)teamDispatch?.browserRequest({proxyId:id,contextId,requestId:browser.requestId,method:browser.method,traceId:browser.incomingTraceId,
 				urlSha256:browser.fullUrlSha256,actionHeaderSha256:browser.headerFieldSha256["next-action"],initialHeadersKnown:browser.initialHeaderIdentity?.requestHeaderSnapshotKnown===true,extraHeadersKnown:browser.extraHeaderIdentity?.requestHeaderSnapshotKnown===true,
 				initialReplaySha256:browser.initialHeaderIdentity?.headerFieldSha256?.[teamReplayHeader],extraReplaySha256:browser.extraHeaderIdentity?.headerFieldSha256?.[teamReplayHeader],frameId:browser.frameId,loaderId:browser.loaderId,documentGeneration:browser.documentGeneration});
@@ -1785,7 +1792,7 @@ export function createProxyControlCollector({
 		snapshot() {
 			return {
 				installed,
-                temporaryValues:{condition:temporaryValueObservation,store:teamStore.snapshot(),manualDispatch:teamDispatch?.snapshot() ?? null,sourceCuts:sourceCuts.snapshot(),bodyUses:[...bodyUses.values()]},
+                temporaryValues:{condition:temporaryValueObservation,store:teamStore.snapshot(),manualDispatch:teamDispatch?.snapshot() ?? null,sourceCuts:sourceCuts.snapshot(),bodyUses:{protocol:"actual-body-value-observations-v1",contextId,observed:bodyUses.size,records:[...bodyUses.values()]}},
 				...(shapeConfiguration?{requestShapeDiagnostics:shapeSnapshot()}:{}),
 				headerCensus:headerCensus.snapshot(),
 				headerLifetime:{protocol:"owned-context-upstream-header-lifetime-v1",contextId,installation:transportInstallation,closure:transportClosure},
@@ -1828,18 +1835,19 @@ export async function createMixedDocumentAcknowledgment({session,contextId,origi
  const snapshot=()=>structuredClone({protocol:"actual-cdp-document-journal-v1",contextId,installed,currentGeneration:generation(),executionEventOrdinal,documentEventOrdinal,errors,overflow,closed,executionEvents,documents});
  return {
   snapshot,
+  sourceSnapshot(){return documents.length+executionEvents.length<=128?snapshot():null;},
   sourceReady(){
-   if(closed || errors || overflow || generation()<1)return null;
+   if(closed || errors || overflow || generation()<1 || documents.length+executionEvents.length>128)return null;
    const docs=documents.filter(row=>row.documentGeneration===contextId+":"+generation());if(docs.length!==1)return null;const doc=docs[0];
    const defaults=[...contexts.values()].filter(row=>row.isDefault && row.frameId===doc.frameId && contextDocuments.get(row.id)===doc.ordinal);if(defaults.length!==1)return null;
    return {contextId,documentRequestId:doc.requestId,frameId:doc.frameId,loaderId:doc.loaderId,executionContextUniqueId:defaults[0].uniqueId,documentGeneration:generation(),executionEventOrdinal,documentEventOrdinal};
   },
   close(){closed=true;for(const [name,listener]of listeners)session.off(name,listener);},
-  async read({checkpointOrdinal,deadlineMs,principalEpoch,readCookies,readSources}){
+  async read({checkpointOrdinal,deadlineMs,principalEpoch,readCookies,readSources,sourceSubsetLimit}){
    const startedAtMs=performance.now(),deadlineBudgetMs=deadlineMs-startedAtMs;
    let pendingOperations=0,readErrors=0,document=null,controller=null,principalRead=null,principalReadOperation=null,publicSourceRecheck=null,timer;
-   const result=()=>{const finishedAtMs=performance.now();return structuredClone({protocol:"native-environment-progress-readonly-v1",contextId,checkpointOrdinal,startedAtMs,finishedAtMs,deadlineMs,deadlineBudgetMs,elapsedMs:finishedAtMs-startedAtMs,timedOut:pendingOperations>0 || finishedAtMs>deadlineMs,pendingOperations,readErrors,document:document?{...document,sourceJournal:snapshot()}:null,controller,principalRead,principalReadOperation,publicSourceRecheck});};
-   if(closed || errors || overflow || !Number.isFinite(deadlineBudgetMs) || deadlineBudgetMs<=0 || deadlineBudgetMs>10000 || !principalEpoch.progressStarted(checkpointOrdinal)){readErrors++;return result();}
+   const result=()=>{const finishedAtMs=performance.now();return structuredClone({protocol:"native-environment-progress-readonly-v1",contextId,checkpointOrdinal,startedAtMs,finishedAtMs,deadlineMs,deadlineBudgetMs,elapsedMs:finishedAtMs-startedAtMs,timedOut:pendingOperations>0 || finishedAtMs>deadlineMs,pendingOperations,readErrors,document:document?{...document,sourceJournal:sourceSubsetLimit===128?(documents.length+executionEvents.length<=128?snapshot():null):snapshot()}:null,sourceSubsetExceeded:sourceSubsetLimit===128 && documents.length+executionEvents.length>128,controller,principalRead,principalReadOperation,publicSourceRecheck});};
+   if(sourceSubsetLimit!==undefined && sourceSubsetLimit!==128 || sourceSubsetLimit===128 && documents.length+executionEvents.length>128 || closed || errors || overflow || !Number.isFinite(deadlineBudgetMs) || deadlineBudgetMs<=0 || deadlineBudgetMs>10000 || !principalEpoch.progressStarted(checkpointOrdinal)){readErrors++;return result();}
    const track=task=>{pendingOperations++;return Promise.resolve().then(task).catch(()=>{readErrors++;}).finally(()=>{pendingOperations--;});};
    const tasks=[track(async()=>{
     const executionBefore=executionEventOrdinal,documentBefore=documentEventOrdinal;
