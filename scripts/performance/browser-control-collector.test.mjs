@@ -1874,3 +1874,28 @@ test("retained cut records share the actual proxy allowance and closing never re
  assert.equal(proxy.reserveTemporaryRecords(6002),false);proxy.releaseTemporaryRecords(3999);assert.equal(proxy.reserveTemporaryRecords(10000),true);proxy.releaseTemporaryRecords(10000);owner.releaseCut(cut);owner.close();
  assert.equal(proxy.reserveTemporaryObservation(33554432),true);proxy.releaseTemporaryObservation(33554432);
 });
+
+test("pending read views keep the real proxy reservation through close until their async finally",async()=>{
+ const {createMixedTechnicalOwner}=await import("./mixed-technical-gzip.mjs"),proxy=createProxyControlCollector({contextId,origin});proxy.installed();
+ const owner=createMixedTechnicalOwner({contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords}),read=owner.openRead();let finish;
+ const pending=(async()=>{const view=read.keep(()=>({frameId:"frame",metadata:"x".repeat(100000)}));try{await new Promise(resolve=>{finish=resolve;});return view.frameId;}finally{read.finish();}})();
+ owner.close();assert.equal(owner.stats().pendingReads,1);assert.ok(owner.stats().retainedBytes>100000);assert.equal(proxy.reserveTemporaryObservation(33554432),false);
+ finish();assert.equal(await pending,"frame");assert.equal(owner.stats().pendingReads,0);assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);read.finish();assert.equal(proxy.reserveTemporaryObservation(33554432),true);proxy.releaseTemporaryObservation(33554432);
+});
+
+test("owned document ACK charges frame and result lifetimes through success and late readonly completion",async()=>{
+ const {createMixedDocumentAcknowledgment}=await import("./browser-control-collector.mjs"),{createMixedTechnicalOwner}=await import("./mixed-technical-gzip.mjs");
+ for(const late of [false,true]){
+  const id="owned-ack",proxy=createProxyControlCollector({contextId:id,origin});proxy.installed();const owner=createMixedTechnicalOwner({contextId:id,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords}),session=new EventEmitter();let finish,frames=0,evaluations=0,cookieReads=0,sourceReads=0;
+  const metadata={result:{value:{available:true,secureContext:true,origin,documentIdentityStable:true,controllerIdentityStable:true,controllerBefore:null,controllerAfter:null,registrationCount:0,registrationOverflow:0,registrations:[]}}};
+  session.send=async(method)=>{if(method==="Runtime.enable")session.emit("Runtime.executionContextCreated",{context:{id:1,uniqueId:"owned-unique",auxData:{isDefault:true,frameId:"frame"}}});if(method==="Page.getFrameTree"){frames++;return {frameTree:{frame:{id:"frame",loaderId:"loader",url:origin+"/en"}}};}if(method==="Runtime.evaluate"){evaluations++;return late?new Promise(resolve=>{finish=resolve;}):metadata;}return {};};
+  const journal=await createMixedDocumentAcknowledgment({session,contextId:id,origin,generation:()=>1});session.emit("Network.requestWillBeSent",{requestId:"doc",type:"Document",frameId:"frame",loaderId:"loader",request:{url:origin+"/en",headers:{[controlDocumentHeader]:id+":1"}}});
+  const principal=createPrincipalEpochObserver(id,{origin});principal.start([]);
+  const result=await journal.read({technicalOwner:owner,checkpointOrdinal:1,deadlineMs:performance.now()+(late?10:1000),principalEpoch:principal,readCookies:async()=>{cookieReads++;return [];},readSources:async()=>{sourceReads++;return {known:true};}});
+  assert.equal(evaluations,1);assert.equal(cookieReads,1);assert.equal(sourceReads,1);assert.equal(result.timedOut,late);assert.equal(owner.stats().pendingConsumers,1);
+  if(!late){assert.equal(result.readErrors,0);assert.equal(frames,3);assert.equal(owner.stats().pendingReads,0);}
+  owner.close();owner.releaseEvidence(result);
+  if(late){assert.equal(owner.stats().pendingReads,1);assert.ok(owner.stats().retainedBytes>0);assert.equal(proxy.reserveTemporaryObservation(33554432),false);finish(metadata);await tick();await tick();}
+  assert.equal(owner.stats().pendingReads,0);assert.equal(owner.stats().pendingConsumers,0);assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);journal.close();
+ }
+});

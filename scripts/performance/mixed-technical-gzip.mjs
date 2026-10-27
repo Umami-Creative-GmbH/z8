@@ -69,6 +69,7 @@ const typedCollections=Object.freeze({
  'bounded-unqualified-team-values-v1':['rows'],'team-source-occurrence-journal-v1':['records'],'team-replay-dispatch-observations-v1':['rows'],
  'actual-body-value-observations-v1':['records'],'positive-flight-error-observations-v1':['records'],
  'actual-browser-failed-occurrence-census-v1':['records'],'mixed-native-progress-observations-v1':[],
+ 'serving-public-worker-source-metadata-v1':['files'],'owned-native-launch-metadata-v1':['observerSources'],
 });
 function tokens(value,emit,projection=null){
  const ancestors=new Set();let slots=0,nodes=0,rootReceiptRows=0,typedRecords=0;
@@ -89,8 +90,11 @@ function tokens(value,emit,projection=null){
   const keys=Reflect.ownKeys(v);must(keys.length<=10001&&keys.every(k=>typeof k==='string'));
   if(!array){const protocol=Object.getOwnPropertyDescriptor(v,'protocol')?.value;
    if(protocol==='acknowledged-mixed-native-prefix-v1'||protocol==='mixed-first-failure-diagnostic-v1')typedRecords++;
+   if(['actual-cdp-document-acknowledgment-v1','native-environment-progress-readonly-v1','native-environment-end-readonly-v1','owned-native-launch-metadata-v1'].includes(protocol))typedRecords++;
+   if(protocol==='native-environment-progress-readonly-v1'||protocol==='native-environment-end-readonly-v1'){const controller=Object.getOwnPropertyDescriptor(v,'controller')?.value,rows=ownData(controller,'registrations');if(!types.isProxy(rows)&&Array.isArray(rows))typedRecords+=rows.length;}
    if(keys.length===5&&['ordinal','begin','returned','checkpointOrdinal','prefixSha256'].every(key=>Object.hasOwn(v,key)))typedRecords++;
    if(keys.length===4&&['ordinal','contextId','authoritySha256','failureIds'].every(key=>Object.hasOwn(v,key)))typedRecords++;
+   if(keys.length===6&&(['frameId','loaderId','executionContextUniqueId','executionContextId','documentRequestId','documentGeneration'].every(key=>Object.hasOwn(v,key))||ownData(v,'kind')==='read-only-context-cookies-v1'))typedRecords++;
    must(typedRecords<=limits.records);
   }
   ancestors.add(v);emit(array?'[':'{');let count=0;
@@ -192,9 +196,9 @@ export function createMixedTechnicalOwner(options){
  qualified();
  const contextId=ownData(options,'contextId'),reserve=ownData(options,'reserve'),release=ownData(options,'release'),reserveRecords=ownData(options,'reserveRecords'),releaseRecords=ownData(options,'releaseRecords');
  must(typeof contextId==='string'&&/^[A-Za-z0-9_.:-]{1,256}$/.test(contextId)&&[reserve,release,reserveRecords,releaseRecords].every(value=>typeof value==='function'&&!types.isProxy(value)));
- const owner=createBoundedOwner({reserve,release,reserveRecords,releaseRecords}),cuts=new Map(),evidence=new Map(),outputs=new Set();let closed=false;
+ const owner=createBoundedOwner({reserve,release,reserveRecords,releaseRecords}),cuts=new Map(),evidence=new Map(),outputs=new Set(),reads=new Set();let closed=false,allocatingRead=null,pendingExport=false;
  const state=states.get(owner);
- return Object.freeze({
+ const api=Object.freeze({
   capture(construct){
    must(!closed&&typeof construct==='function'&&construction===null);let lease,view=null,copy=null;
    const frame={state,leases:[]};const shell=charge(state,131072,'snapshot-fixed-constructor-shells');frame.leases.push(shell);construction=frame;
@@ -212,7 +216,7 @@ export function createMixedTechnicalOwner(options){
   },
   retainEvidence(construct){
    must(!closed&&typeof construct==='function'&&construction===null);const frame={state,leases:[]};frame.leases.push(charge(state,131072,'evidence-fixed-shells'));construction=frame;let result=null,lease=null;
-   try{result=construct();if(result===null||result===undefined)return result;must(typeof result==='object'&&!types.isProxy(result));const m=measure(result,state,null,limits.owner);lease=charge(state,m.bytes+2048,'retained-technical-evidence-and-private-control',m.typedRecords);bind(lease,result);must(!evidence.has(result));evidence.set(result,lease);lease=null;return result;}
+   try{result=construct();if(result===null||result===undefined)return result;must(typeof result==='object'&&!types.isProxy(result));const m=measure(result,state,null,limits.owner);lease=charge(state,m.bytes+2048,'retained-technical-evidence-and-private-control',m.typedRecords);bind(lease,result);must(!evidence.has(result));evidence.set(result,lease);leases.get(lease).pendingConsumer=pendingExport;if(allocatingRead){leases.get(lease).readScope=allocatingRead;allocatingRead.values.add(result);}lease=null;return result;}
    catch(error){result=null;lease?.release();throw error;}
    finally{construction=null;for(const ownedLease of frame.leases.reverse())ownedLease.release();}
   },
@@ -221,11 +225,21 @@ export function createMixedTechnicalOwner(options){
    const frame={state,leases:[charge(state,131072,'technical-operation-shells')]};construction=frame;
    try{return construct();}finally{construction=null;for(const ownedLease of frame.leases.reverse())ownedLease.release();}
   },
-  releaseEvidence(value){const lease=evidence.get(value);if(lease){evidence.delete(value);lease.release();}},
+  openRead(){
+   must(!closed);const control=charge(state,131072,'pending-read-fixed-constructors-and-control',1),scope={active:true,values:new Set()};reads.add(scope);
+   return Object.freeze({
+    keep(construct){must(scope.active);const previous=allocatingRead;allocatingRead=scope;try{return api.retainEvidence(construct);}finally{allocatingRead=previous;}},
+    run(construct){must(scope.active);return api.run(construct);},
+    finish(){if(!scope.active)return;scope.active=false;for(const value of scope.values){scope.values.delete(value);api.releaseEvidence(value);}reads.delete(scope);control.release();},
+   });
+  },
+  retainReadResult(construct){const previous=pendingExport;pendingExport=true;try{return api.retainEvidence(construct);}finally{pendingExport=previous;}},
+  releaseEvidence(value){const lease=evidence.get(value);if(lease){must(!leases.get(lease).readScope?.active);evidence.delete(value);lease.release();}},
   releaseCut(value){const lease=cuts.get(value);if(lease){cuts.delete(value);cutLeases.delete(value);lease.release();}},
-  close(){if(closed)return;closed=true;for(const packed of outputs){outputs.delete(packed);packed.release();}for(const [value,lease]of cuts){cuts.delete(value);cutLeases.delete(value);lease.release();}for(const [value,lease]of evidence){evidence.delete(value);lease.release();}},
-  stats(){const snapshot=owner.snapshot();return {retainedBytes:snapshot.used,peakBytes:snapshot.peak,retainedRecords:state.records,liveCuts:cuts.size,closed};},
+  close(){if(closed)return;closed=true;for(const packed of outputs){outputs.delete(packed);packed.release();}for(const [value,lease]of cuts){cuts.delete(value);cutLeases.delete(value);lease.release();}for(const [value,lease]of evidence){const held=leases.get(lease);if(held.readScope?.active||held.pendingConsumer)continue;evidence.delete(value);lease.release();}},
+  stats(){const snapshot=owner.snapshot();let pendingConsumers=0;for(const lease of evidence.values())if(leases.get(lease).pendingConsumer)pendingConsumers++;return {retainedBytes:snapshot.used,peakBytes:snapshot.peak,retainedRecords:state.records,liveCuts:cuts.size,pendingReads:reads.size,pendingConsumers,closed};},
  });
+ return api;
 }
 
 /** Same representation check for a private live cut or a separately bounded replay operation. */
