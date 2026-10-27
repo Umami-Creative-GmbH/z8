@@ -29,7 +29,7 @@ import { projectCachedCdpText } from "./cdp-cached-text-projection.mjs";
 import { readLegacyClockReadinessSource } from "./legacy-clock-readiness.mjs";
 import { parseInertDateRangeRequest } from "./inert-date-range-request.mjs";
 import { temporaryValueObservation, knownTemporaryValueObservation, knownOriginalTeamSourceConfiguration, readOriginalTeamSourceQualification,
- readOriginalTeamOperatorQualification, createTeamTemporaryValueStore, createTeamReplayDispatchJournal, teamReplayHeader, createOriginalTeamUIProducerCut,
+ readOriginalTeamOperatorQualification, createTeamSourceCutJournal, createTeamTemporaryValueStore, createTeamReplayDispatchJournal, teamReplayHeader, createOriginalTeamUIProducerCut,
  originalTeamSourceFacts, originalTeamOperatorSourceFacts, originalTeamUIProducerCutFacts, bindOriginalTeamRequestValue, originalTeamRequestAuthorityFacts, openOriginalTeamBodyInspection, closeOriginalTeamBodyInspection, originalTeamBodyObservation } from "./team-temporary-value-authority.mjs";
 
 export const controlResponseHeader = "x-z8-fixture-response-id";
@@ -588,7 +588,7 @@ function inspectCollectedFlightBody(row, bytes, compiledCachedNavigations, compi
 		options.temporaryValueInspection=inspection;
 	}
 	try { return inspectRequiredFlightBody(bytes,options); }
-	finally { if(inspection) { closeOriginalTeamBodyInspection(inspection);row.temporaryValueObservation=originalTeamBodyObservation(inspection); } }
+	finally { if(inspection) { closeOriginalTeamBodyInspection(inspection);row.temporaryValueObservation=originalTeamBodyObservation(inspection);inspectionFor?.observed?.(row,row.temporaryValueObservation); } }
 }
 function bodyInspectionOptions(row, compiledCachedNavigations, compiledBinding) {
 	const options = {action:row.action,cachedNavigations:compiledCachedNavigations,requestKind:row.requestKind};
@@ -721,6 +721,7 @@ export function createBrowserControlCollector({
 					if (!row.streamReceipt?.captureComplete)
 						row.bodyProof = { complete: false, reason: "cdp-body-unavailable" };
 				} finally {
+					row.bodyReadSettled=true;temporaryRequestObserved?.(row,"body-settled");
 					retained -= controlCancellationPolicy.decodedLimit;
 					pending.delete(task);
 					processBodies();
@@ -1289,6 +1290,32 @@ export function createBrowserControlCollector({
 	};
 }
 
+/** Observer-only event queue. Each actual token keeps its first deadline; it never waits or retries business work. */
+export function createTeamSourceReadScheduler({ready,read,accept,reserve,release}) {
+ const queue=[],records=[],seen=new Set();let closed=false,running=false,scheduled=false,errors=0,overflow=0,unavailable=0,eventOrdinal=0;
+ const retain=(record,reserved)=>{const charge=Buffer.byteLength(JSON.stringify(record))*8+2048;if(charge>reserved){overflow++;release(reserved);return false;}records.push(record);release(reserved-charge);return true;};
+ const pump=()=>{if(closed || running || scheduled || queue.length===0)return;scheduled=true;queueMicrotask(async()=>{
+  scheduled=false;if(closed || running || queue.length===0)return;
+  const event=queue.shift();
+  if(JSON.stringify(ready())!==JSON.stringify(event.token) || performance.now()>=event.deadlineMs){unavailable++;records.push({eventOrdinal:event.ordinal,sourceEvent:event.token,unavailable:"source-event-obsolete-or-expired",issuedCut:null});pump();return;}
+  if(!reserve(controlCancellationPolicy.decodedLimit)){overflow++;records.push({eventOrdinal:event.ordinal,sourceEvent:event.token,unavailable:"source-read-reservation",issuedCut:null});pump();return;}
+  running=true;
+  try {
+   const result=await read(event.token,event.deadlineMs),current=!closed && JSON.stringify(ready())===JSON.stringify(event.token);
+   const record={eventOrdinal:event.ordinal,sourceEvent:event.token,eventObservedAtMs:event.observedAtMs,observerDeadlineMs:event.deadlineMs,...result.record,issuedCut:current?result.record.issuedCut:null};
+   if(!current)unavailable++;if(result.failed===true)errors++;
+   if(retain(record,controlCancellationPolicy.decodedLimit)) {
+    if(current && result.cut && accept(result.cut)!==true){errors++;record.issuedCut=null;}
+   }
+  }catch{errors++;release(controlCancellationPolicy.decodedLimit);}
+  finally{running=false;pump();}
+ });};
+ return Object.freeze({event(){
+  if(closed){errors++;return false;}const token=ready();if(!token)return false;const key=JSON.stringify(token);if(seen.has(key))return false;
+  if(seen.size>=controlCancellationPolicy.recordLimit || records.length+queue.length>=controlCancellationPolicy.recordLimit || !reserve(2048)){overflow++;return false;}
+  const observedAtMs=performance.now();seen.add(key);queue.push({ordinal:++eventOrdinal,token:structuredClone(token),observedAtMs,deadlineMs:observedAtMs+10000});pump();return true;
+ },close(){closed=true;if(running || queue.length)errors++;},snapshot(){return {protocol:"actual-team-source-read-journal-v1",scopeClosed:closed,pending:Number(running)+queue.length,errors,overflow,unavailable,records:structuredClone(records)};}});
+}
 /** Optional prospective installation; callers retain their normal measurement boundaries. */
 export async function installBrowserControlCollector({
 	page,
@@ -1309,40 +1336,15 @@ export async function installBrowserControlCollector({
 	let workerObservation, endMetadata = null, generation = 0, documentAcknowledgment;
 	const qualification=originalTeamBindings.get(environmentBinding);
 	const operatorQualification=qualification?await readOriginalTeamOperatorQualification({qualification,operatorFile,protocolSources,plan:originalTeamPlans.get(environmentBinding)}):null;
-	let teamCut=null,teamReadPending=0,teamReadErrors=0,teamReadOverflow=0,teamReadScheduled=false;
-	const teamReadRecords=[];
+	let teamCut=null,teamScheduler;
 	const currentTeamCut=()=>{
-		if(!teamCut || teamReadErrors || teamReadOverflow || !documentAcknowledgment)return null;
+		const state=teamScheduler?.snapshot();if(!teamCut || !state || state.scopeClosed || state.errors || state.overflow || !documentAcknowledgment)return null;
 		const facts=originalTeamUIProducerCutFacts(teamCut),principal=principalEpoch.snapshot(),workers=workerObservation?.snapshot(),journal=documentAcknowledgment.snapshot();
 		if(!facts || facts.documentJournalSha256!==sha(JSON.stringify(journal)) || facts.workerJournalSha256!==sha(JSON.stringify(workers)) || principal.before?.sha256!==facts.principalSha256 ||
 			!["observedSetCookieResponses","unknownResponseHeaders","readErrors","pendingReads","observationErrors","overflow"].every(key=>principal[key]===0))return null;
 		return teamCut;
 	};
-	const scheduleTeamRead=()=>{
-		if(!qualification || teamReadScheduled || teamReadPending || generation<1 || !documentAcknowledgment || !workerObservation)return;
-		teamReadScheduled=true;
-		queueMicrotask(()=>{
-			teamReadScheduled=false;
-			if(teamReadRecords.length>=controlCancellationPolicy.recordLimit){teamReadOverflow++;return;}
-            const journal=documentAcknowledgment.snapshot();
-            if(journal.documents.length+journal.executionEvents.length>128){teamReadOverflow++;return;}
-            if(!proxy.reserveTemporaryObservation(controlCancellationPolicy.decodedLimit)){teamReadOverflow++;return;}
-			const checkpointOrdinal=principalEpoch.nextTemporaryReadOrdinal();
-			if(checkpointOrdinal===null){teamReadOverflow++;proxy.releaseTemporaryObservation(controlCancellationPolicy.decodedLimit);return;}
-			teamReadPending++;
-			const deadlineMs=performance.now()+10000;
-			Promise.resolve(documentAcknowledgment.read({checkpointOrdinal,deadlineMs,principalEpoch,readCookies:()=>context.cookies(),readSources:async()=>{const path=nativeManifestLocators.get(environmentBinding);return path?readNativePublicSources(path):null;}}))
-				.then(ack=>{
-					const cut=createOriginalTeamUIProducerCut({qualification,operatorQualification,acknowledgment:ack,principal:principalEpoch.snapshot(),workers:workerObservation.snapshot(),binding:environmentBinding,documentJournal:documentAcknowledgment.snapshot()});
-					teamCut=cut;
-					const record={checkpointOrdinal,acknowledgment:ack,principal:principalEpoch.snapshot(),workers:workerObservation.snapshot(),issuedCut:cut?originalTeamUIProducerCutFacts(cut):null};
-					const charge=Buffer.byteLength(JSON.stringify(record))*8+2048;
-					if(charge>controlCancellationPolicy.decodedLimit){teamReadOverflow++;teamCut=null;proxy.releaseTemporaryObservation(controlCancellationPolicy.decodedLimit);}
-					else{teamReadRecords.push(record);proxy.releaseTemporaryObservation(controlCancellationPolicy.decodedLimit-charge);}
-				},()=>{teamReadErrors++;teamCut=null;proxy.releaseTemporaryObservation(controlCancellationPolicy.decodedLimit);})
-				.finally(()=>{teamReadPending--;});
-		});
-	};
+	const scheduleTeamRead=()=>{if(knownTemporaryValueObservation(environmentBinding?.temporaryValueObservation))teamScheduler?.event();};
 	const proxy = createProxyControlCollector({
 		currentTeamCut,
 	origin,
@@ -1351,11 +1353,25 @@ export async function installBrowserControlCollector({
 		compiledCachedNavigations,
 		compiledBinding:environmentBinding,
 	});
+	teamScheduler=createTeamSourceReadScheduler({ready:()=>knownTemporaryValueObservation(environmentBinding?.temporaryValueObservation) && generation>=1?documentAcknowledgment?.sourceReady() ?? null:null,
+		reserve:bytes=>proxy.reserveTemporaryObservation(bytes),release:bytes=>proxy.releaseTemporaryObservation(bytes),
+		accept:cut=>{if(!proxy.issueTeamCut(cut))return false;teamCut=cut;return true;},
+		read:async(token,deadlineMs)=>{
+			const journal=documentAcknowledgment.snapshot();
+			if(journal.documents.length+journal.executionEvents.length>128)return {record:{unavailable:"source-journal-subset-limit",issuedCut:null},cut:null,failed:false};
+			const checkpointOrdinal=principalEpoch.nextTemporaryReadOrdinal();
+			if(checkpointOrdinal===null)return {record:{unavailable:"source-principal-record-limit",issuedCut:null},cut:null,failed:true};
+			const ack=await documentAcknowledgment.read({checkpointOrdinal,deadlineMs,principalEpoch,readCookies:()=>context.cookies(),readSources:async()=>{const path=nativeManifestLocators.get(environmentBinding);return path?readNativePublicSources(path):null;}});
+			const principal=principalEpoch.snapshot(),workers=workerObservation.snapshot();
+			const cut=createOriginalTeamUIProducerCut({qualification,operatorQualification,acknowledgment:ack,principal,workers,binding:environmentBinding,documentJournal:documentAcknowledgment.snapshot()});
+			return {record:{checkpointOrdinal,acknowledgment:ack,principal,workers,issuedCut:cut?originalTeamUIProducerCutFacts(cut):null},cut,failed:ack.timedOut!==false || ack.pendingOperations!==0 || ack.readErrors!==0};
+		}});
 	const transportErrors = transport.setControlCancellationObserver(proxy,{captureHeaderPrefixes:captureContextFailures || knownTemporaryValueObservation(environmentBinding?.temporaryValueObservation)});
 	const proxyObservation = () => {
 		const proof = proxy.snapshot();
 		const cut=typeof transport.controlHeaderCut==="function"?transport.controlHeaderCut():null;
-		return { ...proof, errors: proof.errors + transportErrors(),headerPrefix:cut?proxyHeaderPrefix(proof.headerCensus,cut):null,headerLifecycle:cut };
+		const sourceRead=teamScheduler.snapshot();
+        return { ...proof, errors: proof.errors + transportErrors()+sourceRead.errors,overflow:proof.overflow+sourceRead.overflow,headerPrefix:cut?proxyHeaderPrefix(proof.headerCensus,cut):null,headerLifecycle:cut };
 	};
 	const collector = createBrowserControlCollector({
 		contextId,
@@ -1373,7 +1389,7 @@ export async function installBrowserControlCollector({
 			servingPublicSources: environmentBinding?.servingPublicSources ?? null,
 			nativeLaunchMetadata: environmentBinding?.nativeLaunchMetadata ?? null,
 			workerTargets: workerObservation?.snapshot() ?? null,
-            temporaryValueSourceReads:{protocol:"actual-team-source-read-journal-v1",scopeClosed:documentAcknowledgment?.snapshot().closed ?? false,pending:teamReadPending,errors:teamReadErrors,overflow:teamReadOverflow,operatorSource:originalTeamOperatorSourceFacts(operatorQualification),records:teamReadRecords,documentJournal:documentAcknowledgment?.snapshot() ?? null},
+            temporaryValueSourceReads:{...teamScheduler.snapshot(),operatorSource:originalTeamOperatorSourceFacts(operatorQualification),documentJournal:documentAcknowledgment?.snapshot() ?? null},
             temporaryValues:proxy.snapshot().temporaryValues,
 			controllerObservation: endMetadata ? "read-only-end-snapshot" : "not-collected",
 			publicSourceRecheck: endMetadata?.publicSourceRecheck ?? "not-collected", endRead: endMetadata, acceptanceClaim: "none" }),
@@ -1431,14 +1447,15 @@ export async function installBrowserControlCollector({
         finishTeamReplay(handle,facts){return proxy.finishTeamReplay(handle,facts);},
   acknowledgeMixedProgress(options){if(!progress)throw Error("Mixed progress observation was not installed before app IO.");return progress.check(options);},
   confirmMixedProgress(token){if(!progress)throw Error("Mixed progress observation is unavailable.");return progress.confirm(token);},
-  snapshot(){return {...collector.snapshot(),temporaryValueSourceReads:{protocol:"actual-team-source-read-journal-v1",pending:teamReadPending,errors:teamReadErrors,overflow:teamReadOverflow,records:structuredClone(teamReadRecords)},...(progress?{mixedProgress:progress.snapshot(),mixedDocumentJournal:documentAcknowledgment.snapshot()}:{})};},
+  snapshot(){return {...collector.snapshot(),temporaryValueSourceReads:teamScheduler.snapshot(),...(progress?{mixedProgress:progress.snapshot(),mixedDocumentJournal:documentAcknowledgment.snapshot()}:{})};},
 		async close({ deadlineMs } = {}) {
 			try {
 				await capturePrincipalBoundary({ context, observer: principalEpoch, stage: "end", deadlineMs });
 				endMetadata = await captureNativeEndMetadata({ page, binding: environmentBinding, origin, deadlineMs });
 			}
 			finally {
-				documentAcknowledgment?.close();
+				teamScheduler.close();
+                documentAcknowledgment?.close();
                 proxy.closeTeamValues();
 				workerObservation.close();
 				collector.endScope();
@@ -1502,11 +1519,13 @@ export function createProxyControlCollector({
 	const releaseTeam=bytes=>{if(!Number.isSafeInteger(bytes)||bytes<0||bytes>retained)throw Error("Temporary value reservation mismatch.");retained-=bytes;};
 	const teamStore=createTeamTemporaryValueStore({contextId,reserve:reserveTeam,release:releaseTeam});
 	const teamDispatch=knownTemporaryValueObservation(compiledBinding?.temporaryValueObservation)?createTeamReplayDispatchJournal({contextId,origin,reserve:reserveTeam,release:releaseTeam}):null;
-	const requestHandles=new Map(),proxyCuts=new Map(),browserRows=new Map(),browserCuts=new WeakMap();
+	const sourceCuts=createTeamSourceCutJournal({contextId,reserve:reserveTeam});
+    const requestHandles=new Map(),proxyCuts=new Map(),browserRows=new Map(),browserCuts=new WeakMap(),requestAuthorities=new Map(),bodyUses=new Map();
 	let teamClosed=false;
 	const temporaryInspectionFor=(row,bodySha256,decodedBytes)=>{
 		const id=row.id ?? row.proxyResponseId,packet=requests.get(id),browser=row.requestId?row:browserRows.get(id),handle=requestHandles.get(id);
-		let authority=null;
+		let authority=requestAuthorities.get(id) ?? null;
+        if(packet && browser){browser.requestBodyFacts=packet.requestBodyFacts;browser.traceId=packet.traceId;}
 		if(packet && browser && handle && browser.requestHeadersKnown===true && browser.initialHeaderIdentity?.requestHeadersSha256===packet.requestHeadersSha256 &&
 			browser.extraHeaderIdentity?.requestHeadersSha256===packet.requestHeadersSha256 && browser.fullUrlSha256===packet.fullUrlSha256 && browser.documentGeneration===packet.documentGeneration &&
 			browser.action===true && browser.ambiguousRedirect===false && browser.requestOriginSha256===packet.requestOriginSha256) {
@@ -1517,11 +1536,23 @@ export function createProxyControlCollector({
 			if(request.replayHeaderSha256!==null)teamDispatch?.browserRequest({proxyId:id,contextId,requestId:browser.requestId,method:browser.method,traceId:browser.incomingTraceId,
 				urlSha256:browser.fullUrlSha256,actionHeaderSha256:browser.headerFieldSha256["next-action"],initialHeadersKnown:browser.initialHeaderIdentity?.requestHeaderSnapshotKnown===true,extraHeadersKnown:browser.extraHeaderIdentity?.requestHeaderSnapshotKnown===true,
 				initialReplaySha256:browser.initialHeaderIdentity?.headerFieldSha256?.[teamReplayHeader],extraReplaySha256:browser.extraHeaderIdentity?.headerFieldSha256?.[teamReplayHeader],frameId:browser.frameId,loaderId:browser.loaderId,documentGeneration:browser.documentGeneration});
-			authority=bindOriginalTeamRequestValue({qualification,store:teamStore,handle,request,proxyCut:proxyCuts.get(id),browserCut:browserCuts.get(browser),dispatchJournal:teamDispatch});
-			if(authority){const facts=originalTeamRequestAuthorityFacts(authority);row.temporaryRequestAuthority=facts;packet.temporaryRequestAuthority=facts;browser.temporaryRequestAuthority=facts;}
+			authority ??= bindOriginalTeamRequestValue({qualification,store:teamStore,handle,request,proxyCut:proxyCuts.get(id),browserCut:browserCuts.get(browser),dispatchJournal:teamDispatch});
+			if(authority){requestAuthorities.set(id,authority);const facts=originalTeamRequestAuthorityFacts(authority);row.temporaryRequestAuthority=facts;packet.temporaryRequestAuthority=facts;browser.temporaryRequestAuthority=facts;}
 		}
 		return openOriginalTeamBodyInspection({bodySha256,decodedBytes,requestAuthority:authority});
 	};
+	const retireValue=id=>{
+		const packet=requests.get(id),browser=browserRows.get(id),handle=requestHandles.get(id);
+		if(!handle || !packet || !browser || packet.valueRetired || !packet.proxyInspectionSettled || browser.bodyReadSettled!==true || browser.stream && browser.stream.finalized!==true)return;
+		packet.valueRetired=true;if(!teamStore.release(handle))errors++;
+	};
+	Object.defineProperty(temporaryInspectionFor,"observed",{value:(row,observation)=>{
+		if(observation?.valueUsed!==true)return;
+		const id=row.id ?? row.proxyResponseId,key=id+":"+observation.bodySha256,prior=bodyUses.get(key);
+		const fact={proxyResponseId:id,bodySha256:observation.bodySha256,decodedBytes:observation.decodedBytes,bindingSha256:observation.bindingSha256};
+		if(prior){if(JSON.stringify(prior)!==JSON.stringify(fact))errors++;return;}
+		if(bodyUses.size>=controlCancellationPolicy.recordLimit || !reserveTeam(2048)){overflow++;return;}bodyUses.set(key,Object.freeze(fact));
+	}});
 	if(Object.hasOwn(compiledBinding ?? {},"requestShapeDiagnostic") && (!shapeConfiguration || JSON.stringify(shapeConfiguration)!==JSON.stringify(compiledBinding.requestShapeDiagnostic)))
 		throw Error("Request-shape diagnostic requires the actual verified source binding.");
 	let shapeErrors=0,shapeOverflow=0,shapeClosed=false,shapePendingParses=0,shapeSelected=0,shapeUnretainedSelections=0;
@@ -1538,17 +1569,19 @@ export function createProxyControlCollector({
 		row.chunks = [];
 	};
 	return {
-		reserveTemporaryObservation(bytes){return reserveTeam(bytes);},
+		issueTeamCut(cut){return sourceCuts.issued(cut)!==null;},
+        reserveTemporaryObservation(bytes){return reserveTeam(bytes);},
         releaseTemporaryObservation(bytes){releaseTeam(bytes);},
         armTeamReplay(input){return teamDispatch?.arm(input) ?? null;},
 		teamReplayHeaders(handle){return teamDispatch?.headers(handle) ?? null;},
 		finishTeamReplay(handle,facts){return teamDispatch?.finished(handle,facts) ?? false;},
 		temporaryInspectionFor,
 		observeTeamBrowserRequest(row,kind){
-			if(kind==="request")browserCuts.set(row,currentTeamCut());
+			if(kind==="body-settled")retireValue(row.proxyResponseId);
+            if(kind==="request" && (sourceFacts && row.headerFieldSha256?.["next-action"]===sourceFacts.actionHeaderSha256 || row.headerFieldSha256?.[teamReplayHeader]))browserCuts.set(row,sourceCuts.capture("browser-request",row.requestId,currentTeamCut()));
 			if(row.proxyResponseId){const prior=browserRows.get(row.proxyResponseId);if(prior && prior!==row){errors++;return;}browserRows.set(row.proxyResponseId,row);}
 		},
-		closeTeamValues(){if(teamClosed)return;teamClosed=true;teamDispatch?.close();teamStore.close();},
+		closeTeamValues(){if(teamClosed)return;teamClosed=true;teamDispatch?.close();sourceCuts.close();teamStore.close();},
 		installed(binding) {
 			installed = true;
 			if (binding) transportInstallation = {
@@ -1576,9 +1609,10 @@ export function createProxyControlCollector({
 				return;
 			}
 			const identity=controlRequestIdentity(contextId,url,method,headers);
-            proxyCuts.set(id,observedTeamCut);
+            
             const replayNonce=lowerHeaders(headers)[teamReplayHeader];
             const ownedReplay=replayNonce!==undefined && teamDispatch?teamDispatch.proxyRequest({id,traceId,method,url,action:lowerHeaders(headers)["next-action"],nonce:replayNonce}):false;
+            if(ownedReplay || sourceFacts && identity.headerFieldSha256["next-action"]===sourceFacts.actionHeaderSha256)proxyCuts.set(id,sourceCuts.capture("proxy-request",id,observedTeamCut));
 			const urlFacts=routingURLFacts(url,compiledRoutingForBinding(compiledBinding),origin,"owned-proxy-request-url-no-follow",identity.requestKind==="route-tree" && identity.rsc && identity.prefetch);
 			const scalarBytes=scalarFactBytes(urlFacts.fallback.scalarKeys);
 			if(retained+scalarBytes>controlCancellationPolicy.retainedLimit){overflow++;urlFacts.fallback.scalarKeys={known:false,reason:"scalar-retention-limit"};}
@@ -1624,6 +1658,7 @@ export function createProxyControlCollector({
 			row.requestEOF=true;row.terminal="end";
 			if(row.unavailable){row.shape={known:false,jsonParsed:false,reason:"request-unavailable"};shapeRelease(row);return;}
 			row.bodySha256=row.hash.digest("hex");
+            const packet=requests.get(id);if(packet)packet.requestBodyFacts=Object.freeze({protocol:"owned-proxy-request-eof-v1",proxyResponseId:id,actualEOF:true,encodedBytes:row.bytes,bodySha256:row.bodySha256});
 			if(row.contentType!=="text/plain" || row.charset!=="utf-8" || row.contentEncoding!=="identity"){
 				row.shape={known:false,jsonParsed:false,reason:"unsupported-request-encoding"};shapeRelease(row);return;
 			}
@@ -1710,6 +1745,7 @@ export function createProxyControlCollector({
 				} catch {
 					row.bodyProof = { complete: false, reason: "proxy-body-unavailable" };
 				} finally {
+					row.proxyInspectionSettled=true;retireValue(id);
 					release(row);
 					pendingBodies--;
 				}
@@ -1749,7 +1785,7 @@ export function createProxyControlCollector({
 		snapshot() {
 			return {
 				installed,
-                temporaryValues:{condition:temporaryValueObservation,store:teamStore.snapshot(),manualDispatch:teamDispatch?.snapshot() ?? null},
+                temporaryValues:{condition:temporaryValueObservation,store:teamStore.snapshot(),manualDispatch:teamDispatch?.snapshot() ?? null,sourceCuts:sourceCuts.snapshot(),bodyUses:[...bodyUses.values()]},
 				...(shapeConfiguration?{requestShapeDiagnostics:shapeSnapshot()}:{}),
 				headerCensus:headerCensus.snapshot(),
 				headerLifetime:{protocol:"owned-context-upstream-header-lifetime-v1",contextId,installation:transportInstallation,closure:transportClosure},
@@ -1767,10 +1803,10 @@ export function createProxyControlCollector({
 const progressTechnicalId=value=>typeof value==="string" && /^[A-Za-z0-9._:-]{1,256}$/.test(value);
 /** Mixed only: actual public CDP identities, never private Puppeteer fields or temporal joins. */
 export async function createMixedDocumentAcknowledgment({session,contextId,origin,generation,onSourceEvent}) {
- const contexts=new Map(),documents=[],executionEvents=[];let executionEventOrdinal=0,documentEventOrdinal=0,errors=0,overflow=0,closed=false,installed=false;
+ const contexts=new Map(),contextDocuments=new Map(),documents=[],executionEvents=[];let executionEventOrdinal=0,documentEventOrdinal=0,errors=0,overflow=0,closed=false,installed=false;
  const listeners=new Map();
  const on=(name,read)=>{const listener=value=>{if(closed){errors++;return;}try{read(value);}catch{errors++;}};session.on(name,listener);listeners.set(name,listener);};
- on("Runtime.executionContextCreated",({context})=>{executionEventOrdinal++;if(!Number.isSafeInteger(context?.id) || !progressTechnicalId(context.uniqueId) || typeof context.auxData?.isDefault!=="boolean" || !progressTechnicalId(context.auxData.frameId)){errors++;return;}if(documents.length+executionEvents.length>=controlCancellationPolicy.recordLimit || contexts.has(context.id)){overflow++;return;}contexts.set(context.id,{id:context.id,uniqueId:context.uniqueId,frameId:context.auxData.frameId,isDefault:context.auxData.isDefault});executionEvents.push({ordinal:executionEventOrdinal,event:"created",executionContextId:context.id,uniqueId:context.uniqueId,frameId:context.auxData.frameId,isDefault:context.auxData.isDefault});if(context.auxData.isDefault)onSourceEvent?.();});
+ on("Runtime.executionContextCreated",({context})=>{executionEventOrdinal++;if(!Number.isSafeInteger(context?.id) || !progressTechnicalId(context.uniqueId) || typeof context.auxData?.isDefault!=="boolean" || !progressTechnicalId(context.auxData.frameId)){errors++;return;}if(documents.length+executionEvents.length>=controlCancellationPolicy.recordLimit || contexts.has(context.id)){overflow++;return;}contexts.set(context.id,{id:context.id,uniqueId:context.uniqueId,frameId:context.auxData.frameId,isDefault:context.auxData.isDefault});contextDocuments.set(context.id,documentEventOrdinal);executionEvents.push({ordinal:executionEventOrdinal,event:"created",executionContextId:context.id,uniqueId:context.uniqueId,frameId:context.auxData.frameId,isDefault:context.auxData.isDefault});if(context.auxData.isDefault)onSourceEvent?.();});
  on("Runtime.executionContextDestroyed",event=>{executionEventOrdinal++;if(!contexts.delete(event.executionContextId))errors++;if(documents.length+executionEvents.length>=controlCancellationPolicy.recordLimit){overflow++;return;}executionEvents.push({ordinal:executionEventOrdinal,event:"destroyed",executionContextId:event.executionContextId});});
  on("Runtime.executionContextsCleared",()=>{executionEventOrdinal++;contexts.clear();if(documents.length+executionEvents.length>=controlCancellationPolicy.recordLimit){overflow++;return;}executionEvents.push({ordinal:executionEventOrdinal,event:"cleared"});});
  on("Network.requestWillBeSent",event=>{
@@ -1792,6 +1828,12 @@ export async function createMixedDocumentAcknowledgment({session,contextId,origi
  const snapshot=()=>structuredClone({protocol:"actual-cdp-document-journal-v1",contextId,installed,currentGeneration:generation(),executionEventOrdinal,documentEventOrdinal,errors,overflow,closed,executionEvents,documents});
  return {
   snapshot,
+  sourceReady(){
+   if(closed || errors || overflow || generation()<1)return null;
+   const docs=documents.filter(row=>row.documentGeneration===contextId+":"+generation());if(docs.length!==1)return null;const doc=docs[0];
+   const defaults=[...contexts.values()].filter(row=>row.isDefault && row.frameId===doc.frameId && contextDocuments.get(row.id)===doc.ordinal);if(defaults.length!==1)return null;
+   return {contextId,documentRequestId:doc.requestId,frameId:doc.frameId,loaderId:doc.loaderId,executionContextUniqueId:defaults[0].uniqueId,documentGeneration:generation(),executionEventOrdinal,documentEventOrdinal};
+  },
   close(){closed=true;for(const [name,listener]of listeners)session.off(name,listener);},
   async read({checkpointOrdinal,deadlineMs,principalEpoch,readCookies,readSources}){
    const startedAtMs=performance.now(),deadlineBudgetMs=deadlineMs-startedAtMs;

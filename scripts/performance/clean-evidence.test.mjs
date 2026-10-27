@@ -1,3 +1,4 @@
+import { testBrowserEvidence, testBrowserMetadata } from "./control-cancellation-test-fixtures.mjs";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import test from "node:test";
@@ -16,20 +17,7 @@ import { classifyControlCancellations, inspectRequiredFlightBody, chromiumSWRRev
 
 const ids = ["measured", "prerequisite", "background"];
 const plan = { routes: [{ name: "dashboard", clockReady: "button" }] };
-const browserEvidence = (controlled = false) => {
-	const identity = { contextId: ids[0], method: "POST", requestKind: "action", fullUrlSha256: "a".repeat(64),
-		requestHeadersSha256: "b".repeat(64), documentGeneration: "context:1" };
-	const bodyProof = inspectRequiredFlightBody(Buffer.from('0:{"a":{"success":true}}\n'), { action: true });
-	const failure = { ...identity, requestId: "request", error: "net::ERR_ABORTED", canceled: true,
-		status: 200, proxyResponseId: "packet", action: true, bodyReadbackComplete: true, bodyProof };
-	const packet = { ...identity, id: "packet", status: 200, flight: true, action: true, complete: true,
-		canceled: false, upstreamError: false, bodyProof };
-	const input = { failures: controlled ? [failure] : [], proxy: controlled ? [packet] : [],
-		browserRevision: chromiumSWRRevision,
-		coverage: { installed: true, scopeClosed: true, missing: 0, overflow: 0, errors: 0, pendingBodies: 0 } };
-	return { contextId: ids[0], protocolErrors: { protocol: "positive-flight-error-observations-v1", contextId: ids[0], installed: true, scopeClosed: true, observed: 0, overflow: 0, records: [] }, measured: classifyControlCancellations(input),
-		allPhase: classifyControlCancellations({ ...input, scope: "all-phase-semantic-correlation" }) };
-};
+const browserEvidence = (controlled = false) => testBrowserEvidence(ids[0], controlled);
 const sample = () => ({
 	traceId: ids[0],
 	prerequisiteTraceId: ids[1],
@@ -237,8 +225,7 @@ test("recorded original and HEAD readiness cannot exceed their declared observat
 			poolMax: 10,
 			poolAcquisitionTimeoutMs: 60000,
 			build: "c".repeat(40),
-			browserControl: { policy: controlCancellationPolicy, browserRevision: chromiumSWRRevision,
-				compiledCachedNavigations: true, compiledManifestSha256: "d".repeat(64) },
+			browserControl: testBrowserMetadata(),
 		};
 		const actualRuntime = { ...runtime, browserControl: { ...runtime.browserControl,
 			compiledBuild: runtime.build, manifestVerified: true, browserVerified: true } };
@@ -735,4 +722,17 @@ test("temporary request issuance rejects receipt copies and unqualified producer
 	assert.equal(originalTeamBodyObservation(inspection).valueUsed, false);
 	store.close();
 	assert.equal(pool.retained(), 2048);
+});
+
+test("source occurrence observations retain missing prior cuts and the existing record and byte limits", async () => {
+ const {createTeamSourceCutJournal,bindOriginalTeamRequestValue}=await import("./team-temporary-value-authority.mjs");let retained=0;
+ const journal=createTeamSourceCutJournal({contextId:"source-journal",reserve:bytes=>{retained+=bytes;return true;}});
+ const captured=journal.capture("proxy-request","request-one",null);assert.ok(captured);
+ assert.deepEqual(journal.snapshot().records,[{ordinal:1,kind:"proxy-request",id:"request-one",sourceCutOrdinal:null,sourceCutSha256:null}]);
+ assert.equal(bindOriginalTeamRequestValue({proxyCut:captured,browserCut:{...captured}}),null);
+ for(let index=1;index<8192;index++)assert.ok(journal.capture("browser-request","request-"+index,null));
+ assert.equal(journal.capture("browser-request","over-limit",null),null);
+ assert.equal(retained,33554432);assert.equal(journal.snapshot().records.length,8192);assert.equal(journal.snapshot().overflow,1);
+ journal.close();assert.equal(journal.capture("browser-request","late",null),null);assert.equal(journal.snapshot().errors,1);
+ assert.equal(JSON.stringify(journal.snapshot()).includes("PRIVATE"),false);
 });

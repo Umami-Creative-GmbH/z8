@@ -1359,3 +1359,31 @@ test("request-shape rejected duplicate target records uncertainty without rewrit
   const closed=p.snapshot().requestShapeDiagnostics;assert.equal(closed.unretainedSelections,1);assert.equal(closed.pendingRequests,null);assert.equal(closed.complete,false);assert.equal(closed.sharedProxyRetainedBytes,2048);
  }finally{await rm(f.directory,{recursive:true,force:true});}
 });
+
+test("source scheduler retains actual events during a pending read without backfilling the old request cut", async () => {
+ const {createTeamSourceReadScheduler}=await import("./browser-control-collector.mjs");
+ let token=null,releaseFirst,reads=0,retained=0;const accepted=[],deadlines=[];
+ const scheduler=createTeamSourceReadScheduler({ready:()=>token,reserve:bytes=>{retained+=bytes;return true;},release:bytes=>{retained-=bytes;},
+  async read(actual,deadline){reads++;deadlines.push(deadline);if(reads===1)await new Promise(resolve=>{releaseFirst=resolve;});return {record:{checkpointOrdinal:reads,issuedCut:{event:actual.event}},cut:actual,failed:false};},accept:cut=>{accepted.push(cut.event);return true;}});
+ assert.equal(scheduler.event(),false);await tick();assert.equal(reads,0);
+ token={event:"document-one-default"};assert.equal(scheduler.event(),true);await tick();assert.equal(reads,1);
+ token={event:"document-two-default"};assert.equal(scheduler.event(),true);assert.equal(scheduler.snapshot().pending,2);releaseFirst();
+ await tick();await tick();assert.equal(reads,2);assert.deepEqual(accepted,["document-two-default"]);assert.equal(scheduler.snapshot().records[0].issuedCut,null);assert.equal(scheduler.snapshot().unavailable,1);assert.equal(scheduler.snapshot().errors,0);
+ assert.ok(deadlines.every(value=>Number.isFinite(value)));assert.ok(deadlines[1]>=deadlines[0]);assert.equal(scheduler.snapshot().pending,0);assert.ok(retained>0);
+ scheduler.close();assert.equal(scheduler.snapshot().scopeClosed,true);
+});
+test("source scheduler keeps stable read failures and unfinished close explicit", async () => {
+ const {createTeamSourceReadScheduler}=await import("./browser-control-collector.mjs");let resolveRead;
+ const scheduler=createTeamSourceReadScheduler({ready:()=>({event:"known-default"}),reserve:()=>true,release:()=>{},read:()=>new Promise(resolve=>{resolveRead=resolve;}),accept:()=>{throw Error("must not accept");}});
+ scheduler.event();await tick();scheduler.close();assert.equal(scheduler.snapshot().pending,1);assert.equal(scheduler.snapshot().errors,1);
+ resolveRead({record:{issuedCut:null},cut:null,failed:true});await tick();assert.equal(scheduler.snapshot().pending,0);assert.equal(scheduler.snapshot().errors,2);assert.equal(scheduler.snapshot().scopeClosed,true);
+});
+test("source readiness requires the actual new default context rather than the previous document's context", async () => {
+ const {createMixedDocumentAcknowledgment}=await import("./browser-control-collector.mjs");const session=new EventEmitter();session.send=async()=>({});let generation=0,events=0;
+ const observer=await createMixedDocumentAcknowledgment({session,contextId:"ready-context",origin,generation:()=>generation,onSourceEvent:()=>{events++;}});
+ session.emit("Runtime.executionContextCreated",{context:{id:1,uniqueId:"blank-context",auxData:{frameId:"main-frame",isDefault:true}}});assert.equal(observer.sourceReady(),null);
+ generation=1;session.emit("Network.requestWillBeSent",{type:"Document",requestId:"doc-one",frameId:"main-frame",loaderId:"loader-one",request:{url:origin+"/en",method:"GET",headers:{[controlDocumentHeader]:"ready-context:1"}}});
+ assert.equal(observer.sourceReady(),null);
+ session.emit("Runtime.executionContextDestroyed",{executionContextId:1});session.emit("Runtime.executionContextCreated",{context:{id:2,uniqueId:"actual-context",auxData:{frameId:"main-frame",isDefault:true}}});
+ assert.equal(observer.sourceReady().executionContextUniqueId,"actual-context");assert.equal(observer.sourceReady().documentRequestId,"doc-one");assert.ok(events>=2);observer.close();
+});

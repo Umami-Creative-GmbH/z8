@@ -1703,6 +1703,7 @@ const requestReceipt = (row) => ({
 		"bodyReadbackReceipt",
 		"temporaryValueObservation",
 		"temporaryRequestAuthority",
+        "requestBodyFacts",
 		"browserDataLedger",
 		"rsc",
 		"purposeHeaderPresent",
@@ -2052,6 +2053,9 @@ export function classifyControlCancellations({
 	nativeContext,
 	scope = "measured",
 }) {
+	const temporaryValueBodies=[...responses.map(row=>({source:"browser",row})),...failures.map(row=>({source:"browser",row})),...proxy.map(row=>({source:"proxy",row}))]
+		.filter(({row})=>row.bodyProof?.action===true && row.bodyProof?.temporaryValues?.binding!==null && row.bodyProof?.temporaryValues?.binding!==undefined)
+		.map(({source,row})=>({source,row:requestReceipt(row)}));
 	const records = [],
 		seen = new Set();
 	let realFailures = 0,
@@ -2063,7 +2067,8 @@ export function classifyControlCancellations({
 		["missing", "overflow", "errors", "pendingBodies"].every(
 			(key) => coverage[key] === 0,
 		) &&
-		failures.length <= controlCancellationPolicy.recordLimit;
+		failures.length <= controlCancellationPolicy.recordLimit && temporaryValueBodies.length <= controlCancellationPolicy.recordLimit &&
+        temporaryValueBodies.every(({row})=>goodBody(row.bodyProof) && validateOriginalTeamTemporaryValues(row.bodyProof.temporaryValues,{bodySha256:row.bodyProof.bodySha256,decodedBytes:row.bodyProof.decodedBytes,request:row,context:nativeContext}));
 	for (const failure of failures) {
 		const key = `${failure.contextId}:${failure.requestId}`;
 		if (!failure.requestId || seen.has(key)) complete = false;
@@ -2114,8 +2119,8 @@ export function classifyControlCancellations({
 					packet.flight === true &&
 					goodBody(failure.bodyProof) &&
 					goodBody(packet.bodyProof) &&
-					(!failure.bodyProof.action || validateOriginalTeamTemporaryValues(failure.bodyProof.temporaryValues,{bodySha256:failure.bodyProof.bodySha256,decodedBytes:failure.bodyProof.decodedBytes,request:failure})) &&
-					(!packet.bodyProof.action || validateOriginalTeamTemporaryValues(packet.bodyProof.temporaryValues,{bodySha256:packet.bodyProof.bodySha256,decodedBytes:packet.bodyProof.decodedBytes,request:packet})) &&
+					(!failure.bodyProof.action || validateOriginalTeamTemporaryValues(failure.bodyProof.temporaryValues,{bodySha256:failure.bodyProof.bodySha256,decodedBytes:failure.bodyProof.decodedBytes,request:failure,context:nativeContext})) &&
+					(!packet.bodyProof.action || validateOriginalTeamTemporaryValues(packet.bodyProof.temporaryValues,{bodySha256:packet.bodyProof.bodySha256,decodedBytes:packet.bodyProof.decodedBytes,request:packet,context:nativeContext})) &&
 					receivedBody(failure) &&
 					failure.action === packet.action &&
 					failure.bodyProof.action === failure.action &&
@@ -2155,6 +2160,7 @@ export function classifyControlCancellations({
 		policy: controlCancellationPolicy,
 		scope,
 		rawFailedRequests: failures.length,
+        temporaryValueBodies,
 		realFailures,
 		unknownFailures,
 		provenControls,
@@ -2173,6 +2179,11 @@ function browserFailureEvidenceMatches(evidence, rawFailedRequests, scope, requi
 		JSON.stringify(evidence.policy) !==
 			JSON.stringify(controlCancellationPolicy) ||
 		evidence.scope !== scope ||
+		!Array.isArray(evidence.temporaryValueBodies) || evidence.temporaryValueBodies.length>controlCancellationPolicy.recordLimit ||
+		evidence.temporaryValueBodies.some(entry=>!["browser","proxy"].includes(entry?.source) || !goodBody(entry.row?.bodyProof) ||
+			!validateOriginalTeamTemporaryValues(entry.row.bodyProof.temporaryValues,{bodySha256:entry.row.bodyProof.bodySha256,decodedBytes:entry.row.bodyProof.decodedBytes,request:entry.row,context:evidence.nativeContext})) ||
+		(evidence.nativeContext?.environment?.temporaryValues?.bodyUses ?? []).some(use=>!evidence.temporaryValueBodies.some(entry=>
+			(entry.row.id ?? entry.row.proxyResponseId)===use.proxyResponseId && entry.row.bodyProof?.bodySha256===use.bodySha256 && entry.row.temporaryValueObservation?.bindingSha256===use.bindingSha256)) ||
 		evidence.complete !== true ||
 		!Number.isSafeInteger(rawFailedRequests) ||
 		rawFailedRequests < 0 ||

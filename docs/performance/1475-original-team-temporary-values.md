@@ -43,4 +43,40 @@ pnpm --config.verifyDepsBeforeRun=false node --test scripts/performance/clean-ev
 
 All application/framework/binary inputs, old failed artifacts, control/numerical
 policies, resource limits, recipes, sample counts and deadlines are unchanged by
-this unwired core. Root owns any later real browser/HTTP/DB verification.
+this prospective observer. Root owns every real browser/HTTP/DB verification.
+
+The shared `temporaryValueObservation` condition is mandatory in both phases.
+Both install the actual document/default-context journal and the same read-only
+source observations. HEAD explicitly declares `originalTeamSource: null`; its
+T family is unsupported. The Original profile is independently read from the
+actual CI record, compiled manifest/registry and exact source closure before app
+IO. An approved future guard build still needs a separate explicit profile.
+
+Each manual team dispatch arms one private nonce before its existing evaluate.
+Only the new `x-z8-fixture-replay-id` header is added; no extra request, wait,
+retry, interception or recipe step is introduced. Proxy acceptance, actual request
+EOF and CDP Initial/Extra headers must join the same nonce and request. Public
+facts contain hashes and counts, never nonce/body values.
+
+A source acknowledgment can authorize only later actual request observations.
+The bounded occurrence journal records issuance, proxy acceptance and browser
+request callbacks in their actual order. A later acknowledgment cannot fill a
+missing earlier cut. Pending actual source events are queued with their first
+10-second observer deadline; stale events stay unavailable. No business deadline
+is renewed. Known-none/unowned controllers remain unsupported. The first subset
+requires an owned activated controller and exact public/source/principal facts.
+
+Source-cut duplicate graph work is restricted to at most128 document/execution
+journal rows with an8MiB reservation in the existing32MiB pool; larger cuts stay
+UNKNOWN. The ordinary10000-record,4MiB encoded,8MiB decoded,32MiB retained,
+100000-model-node and depth64 gates remain unchanged. Every current manual call
+and both phases use the same condition. Payload release waits for actual proxy
+and scheduled browser inspectors; Stage1 values and projections are deleted
+before their reservation is released.
+
+Complete action bodies retain a mandatory `temporaryValues` section and actual
+kernel body-use observation. Positive T bodies are replayed even without a raw
+browser failure. Only exact `$T0:0` can resolve; it re-enters the unchanged
+`required` role, typed checks, global E scan, queue and work guards. Structural
+lookup and semantic-use counts are distinct. Erasing a binding/count/receipt,
+copying a cut, mismatching a request or losing final lifetime facts rejects.
