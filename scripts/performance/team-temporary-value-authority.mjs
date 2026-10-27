@@ -653,7 +653,7 @@ export function createTeamTemporaryValueStore({ contextId, reserve, release }) {
 			protocol: "bounded-unqualified-team-values-v1", contextId, sourceBound: false, acceptanceClaim: "none", closed, budgetKnown,
 			errors, overflow, unavailable, pendingConsumers, payloadRetainedBytes: budgetKnown ? payloadBytes : null, metadataRetainedBytes: budgetKnown ? metadataBytes : null,
 			usage:{protocol:"actual-private-value-use-census-v1",contextId,observed:usedBodyCount},
-            rows: [...records.values()].map(({ id, requestFacts, typeFacts, pending, released, valueForgotten, releaseUnknown,everUsed,usedBodies }) => ({ id, requestFacts, typeFacts, pendingConsumers: pending, released, valueForgotten, releaseUnknown,everUsed,usedBodies:[...usedBodies.values()] })),
+            rows: mixedOwnedArray(records.size,()=>[...records.values()].map(({ id, requestFacts, typeFacts, pending, released, valueForgotten, releaseUnknown,everUsed,usedBodies }) => ({ id, requestFacts, typeFacts, pendingConsumers: pending, released, valueForgotten, releaseUnknown,everUsed,usedBodies:mixedOwnedRows(()=>usedBodies.values(),row=>row) })),{bytesPerEntry:8192,records:records.size}),
 		}; },
 	});
 	valueStores.set(api, { owner, contextId, recordFor,observeUse(handle,bodySha256,decodedBytes,bindingSha256){
@@ -885,7 +885,7 @@ export function createTeamSourceCutJournal({contextId,reserve}) {
 		const handle=Object.freeze({protocol:"private-team-source-occurrence-v1"});sourceCaptureHandles.set(handle,{owner,contextId,known:()=>errors===0 && overflow===0 && budgetKnown && !closed,cut:prior || kind==="issued"?cut:null,facts:row});return handle;
 	};
 	return Object.freeze({issued(cut){return append("issued",String(uiProducerCuts.get(cut)?.facts.checkpointOrdinal ?? "unknown"),cut);},capture(kind,id,cut,pageRoute=null){return append(kind,id,cut,pageRoute);},
-		close(){closed=true;},snapshot(){return {protocol:"team-source-occurrence-journal-v1",contextId,closed,errors,overflow,budgetKnown,retainedBytes:budgetKnown?retainedBytes:null,records:rows.map(row=>({...row}))};}});
+		close(){closed=true;},snapshot(){return {protocol:"team-source-occurrence-journal-v1",contextId,closed,errors,overflow,budgetKnown,retainedBytes:budgetKnown?retainedBytes:null,records:mixedOwnedRows(()=>rows,row=>({...row}))};}});
 }/** Require the actual same cut at proxy acceptance and browser request observation, not a later read. */
 export function bindOriginalTeamRequestValue(input) {
 	try {
@@ -1146,7 +1146,7 @@ export function createTeamReplayDispatchJournal({ contextId, origin, reserve, re
 		inspectionDeadline(id){const row=proxies.get(id);return !closed && row?row.observerDeadlineMs:null;},
 		close() { if (closed) return; closed = true; if (rows.some(row => !row.returned)) errors++; },
 		snapshot() { return { protocol: "team-replay-dispatch-observations-v1", contextId, sourceBound: false, acceptanceClaim: "none", closed, errors, overflow, unretainedArms, budgetKnown,
-			retainedBytes: budgetKnown ? retained : null, pendingDispatches: rows.filter(row => !row.returned).length, rows: rows.map(row => deepFreeze(structuredClone(safeRow(row)))) }; },
+			retainedBytes: budgetKnown ? retained : null, pendingDispatches: rows.filter(row => !row.returned).length, rows: mixedOwnedArray(rows.length,()=>rows.map(row => deepFreeze(structuredClone(safeRow(row)))),{bytesPerEntry:8192,records:rows.length}) }; },
 	});
 	dispatchJournals.set(api, { owner, contextId, proxies });
 	return api;
@@ -1248,3 +1248,4 @@ export function validateOriginalTeamBodyUseCoverage(context,bodies) {
   return bodies.every(entry=>uses.has((entry.row.id ?? entry.row.proxyResponseId)+":"+entry.row.bodyProof?.bodySha256));
  }catch{return false;}
 }
+import {mixedOwnedClone as structuredClone,mixedOwnedRows,mixedOwnedArray} from "./mixed-technical-gzip.mjs";

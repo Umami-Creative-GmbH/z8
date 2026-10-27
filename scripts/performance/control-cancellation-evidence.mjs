@@ -1,6 +1,7 @@
 /** Proofs are prospective; a canceled request is never a successful payload. */
 import { createHash } from "node:crypto";
 import { types as utilTypes } from "node:util";
+import {mixedOwnedRows,mixedOwnedClone} from "./mixed-technical-gzip.mjs";
 import { validateProxyHeaderCensus, validateProxyHeaderPrefix, validateProxyHeaderLifecycle } from "./proxy-header-census.mjs";
 import {cachedCdpTextProjectionProtocol,cachedCdpTextSourceRevision,cachedCdpTextMappingSha256} from "./cdp-cached-text-projection.mjs";
 import { resolveOriginalTeamTemporaryReference, closeOriginalTeamBodyInspection, originalTeamBodyObservation, validateOriginalTeamTemporaryValues, validateOriginalTeamBodyUseCoverage, knownTemporaryValueObservation, knownOriginalTeamSourceConfiguration, knownOriginalTeamHeaderJoin } from "./team-temporary-value-authority.mjs";
@@ -1736,8 +1737,7 @@ const receivedBody = (row) =>
 		row.streamReceipt.capturedBytes === row.streamReceipt.observedDataLength &&
 		row.streamReceipt.capturedBytes === row.bodyProof?.decodedBytes &&
 		row.streamReceipt.reason === null);
-const requestReceipt = (row) => ({
-	...pick(row, [
+const requestReceiptKeys = [
 		"contextId",
 		"requestId",
 		"failedEventOrdinal",
@@ -1798,7 +1798,9 @@ const requestReceipt = (row) => ({
 		"fromServiceWorker",
 		"loadingFinished",
 		"failed",
-	]),
+	];
+const requestReceipt = (row) => ({
+	...pick(row, requestReceiptKeys),
 	...(row?.bodyProof ? { bodyProof: bodyReceipt(row.bodyProof) } : {}),
 	...(row?.streamReceipt
 		? {
@@ -2108,8 +2110,9 @@ function nativeKnownExtraProof(failure,packet,responses,proxy,context,browserRev
 }
 
 /** Bounded technical inputs only; payload chunks and raw header values never enter a prefix. */
-export function mixedNativeProgressInput({failures,responses,proxy,nativeContext,coverage,browserRevision,browserEventOrdinal}) {
- return structuredClone({failures:failures.map(requestReceipt),responses:(failures.length?responses:[]).map(requestReceipt),proxy:(failures.length?proxy:[]).map(requestReceipt),nativeContext,coverage,browserRevision,browserEventOrdinal});
+export function mixedNativeProgressInput({failures,responses,proxy,nativeContext,coverage,browserRevision,browserEventOrdinal},{copy=true}={}) {
+ const keys=[...requestReceiptKeys,"bodyProof","streamReceipt"],projected={failures:mixedOwnedRows(()=>failures,requestReceipt,{keys}),responses:mixedOwnedRows(()=>failures.length?responses:[],requestReceipt,{keys}),proxy:mixedOwnedRows(()=>failures.length?proxy:[],requestReceipt,{keys}),nativeContext,coverage,browserRevision,browserEventOrdinal};
+ return copy?mixedOwnedClone(projected):projected;
 }
 
 /** Same request-local control predicate as the classifier; no lifetime closure is manufactured. */

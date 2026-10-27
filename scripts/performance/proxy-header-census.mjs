@@ -1,11 +1,12 @@
 /** Pure observations of one owned proxy's upstream response headers; no cookie/native eligibility claim. */
 import { createHash } from "node:crypto";
+import {mixedOwnedClone as structuredClone,mixedOwnedRows,mixedOwnedArray,mixedOwnedJSONString,mixedOwnedHashInput} from "./mixed-technical-gzip.mjs";
 
 export const proxyHeaderCensusProtocol =
 	"owned-proxy-upstream-header-census-v1";
 export const proxyHeaderCensusLimit = 10000;
 export const proxyHeaderSnapshotByteLimit = 65536;
-const digest = (value) => createHash("sha256").update(value).digest("hex");
+const digest = (value) => createHash("sha256").update(mixedOwnedHashInput(value)).digest("hex");
 const contextKnown = (value) =>
 	typeof value === "string" && /^[a-zA-Z0-9_-]{1,128}$/.test(value);
 const requestKnown = (value) =>
@@ -108,18 +109,17 @@ const snapshot = (contextId, closed, requests, faults, unretainedFaults) => {
 		contextId,
 		limit: proxyHeaderCensusLimit,
 		closed,
-		requests: requests
-			.map((row) => ({ ...row }))
+		requests: mixedOwnedRows(()=>requests,(row) => ({ ...row }))
 			.sort((a, b) =>
 				a.requestId < b.requestId ? -1 : a.requestId > b.requestId ? 1 : 0,
 			),
-		faults: faults.map((fault) => ({ ...fault })),
+		faults: mixedOwnedRows(()=>faults,(fault) => ({ ...fault })),
 		unretainedFaults: { ...unretainedFaults },
 	};
 	return {
 		...facts,
 		counts: summarize(facts.requests, facts.faults, facts.unretainedFaults),
-		censusSha256: digest(JSON.stringify(facts)),
+		censusSha256: digest(mixedOwnedJSONString(facts)),
 	};
 };
 
@@ -341,7 +341,7 @@ const whole = value => Number.isSafeInteger(value) && value >= 0;
 const exactDataKeys = (value, names) => value && [Object.prototype,null].includes(Object.getPrototypeOf(value)) && Reflect.ownKeys(value).length===names.length && names.every(name=>Object.hasOwn(Object.getOwnPropertyDescriptor(value,name) ?? {},"value"));
 const lifecycleFields = ["acceptedOrdinal","upstreamCreatedOrdinal","headersReceivedOrdinal","headersForwardedOrdinal","upstreamClosedOrdinal"];
 const lifecycleFacts = state => {
- const requests=[...state.requests.values()].map(row=>({...row})).sort((a,b)=>a.requestId<b.requestId?-1:1);
+ const requests=mixedOwnedRows(()=>state.requests.values(),row=>({...row})).sort((a,b)=>a.requestId<b.requestId?-1:1);
  const facts={protocol:lifecycleProtocol,proxyInstanceId:state.proxyInstanceId,originSha256:state.originSha256,allowedOriginSha256:[...state.allowedOriginSha256],closed:state.closed,eventOrdinal:state.eventOrdinal,errors:state.errors,overflow:state.overflow,requests,
  acceptedRequests:requests.length,upstreamRequests:requests.filter(row=>row.upstreamCreatedOrdinal!==null).length,closedUpstreams:requests.filter(row=>row.upstreamClosedOrdinal!==null).length};
  return {...facts,pendingUpstreams:facts.upstreamRequests-facts.closedUpstreams};
@@ -373,7 +373,7 @@ export function createProxyHeaderLifecycle({proxyInstanceId,originSha256,allowed
 /** Immutable vector cut; this neither closes the census nor promises future headers are clean. */
 export function proxyHeaderPrefix(census,lifecycle) {
  const facts={protocol:proxyHeaderPrefixProtocol,census:structuredClone(census),lifecycle:structuredClone(lifecycle)};
- return {...facts,prefixSha256:digest(JSON.stringify(facts))};
+ return {...facts,prefixSha256:digest(mixedOwnedJSONString(facts))};
 }
 /** Recomputes open facts and their membership/order; callers separately require zero error/Set-Cookie counts. */
 export function validateProxyHeaderPrefix(proof,{contextId}={}) {

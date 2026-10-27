@@ -367,7 +367,7 @@ export function createNativeWorkerObserver({ browser, context, contextId, origin
 	return {
 		close() { scopeClosed = true; for (const [name,listener] of listeners) try { browser.off(name,listener); } catch { errors++; } listeners.clear(); },
 		snapshot: () => ({ protocol: "owned-context-worker-target-metadata-v1", contextId, contextJoinKnown, contextIdentitySha256, installed, scopeClosed,
-			enumerationBasis: "existing-puppeteer-target-manager", controllerObservation: "not-collected", errors, overflow, events: events.map(row=>({...row})) }),
+			enumerationBasis: "existing-puppeteer-target-manager", controllerObservation: "not-collected", errors, overflow, events: mixedOwnedRows(()=>events,row=>({...row})) }),
 	};
 }
 
@@ -587,7 +587,7 @@ export function createPrincipalEpochObserver(contextId, { origin } = {}) {
 			return { protocol: "actual-browser-cookie-boundaries-v1", contextId, before: { ...actualBefore }, after: { ...actualAfter },
 				matchesAtBoundaries: actualBefore.known && actualAfter.known ? actualBefore.sha256 === actualAfter.sha256 : null,
 				scopeClosed, observedSetCookieResponses: setCookies.size, unknownResponseHeaders, readErrors, pendingReads, observationErrors, overflow,
-				stablePrincipalClaim: false,progressReads:{protocol:"owned-read-only-principal-operations-v1",started:progressReadsStarted,finished:progressReadsFinished,pending:[...progressReads.values()].map(({acknowledgmentOrdinal,kind})=>({acknowledgmentOrdinal,kind})).sort((a,b)=>a.acknowledgmentOrdinal-b.acknowledgmentOrdinal),records:[...progressReadHistory.values()].map(row=>({...row})).sort((a,b)=>a.acknowledgmentOrdinal-b.acknowledgmentOrdinal)} };
+				stablePrincipalClaim: false,progressReads:{protocol:"owned-read-only-principal-operations-v1",started:progressReadsStarted,finished:progressReadsFinished,pending:mixedOwnedRows(()=>progressReads.values(),({acknowledgmentOrdinal,kind})=>({acknowledgmentOrdinal,kind})).sort((a,b)=>a.acknowledgmentOrdinal-b.acknowledgmentOrdinal),records:mixedOwnedRows(()=>progressReadHistory.values(),row=>({...row})).sort((a,b)=>a.acknowledgmentOrdinal-b.acknowledgmentOrdinal)} };
 		},
 	};
 }
@@ -782,7 +782,7 @@ export function createBrowserControlCollector({
 	const limited = () =>
 		requests.size + extra.size + responseExtras.size >=
 		controlCancellationPolicy.recordLimit;
-	const rows = () => [...requests.values()];
+	const rows = () => mixedOwnedArray(requests.size,()=>[...requests.values()]);
 	const recordMeasuredFailure = (requestId) => {
 		rawMeasuredFailedRequests++;
 		if (!measurementStarted || measurementClosed) errors++;
@@ -980,7 +980,7 @@ export function createBrowserControlCollector({
         temporaryRequestObserved?.(row,"response");
 	};
 	let browserEventOrdinal=0,progressInput;
-	const snapshot = () => {
+	const snapshot = ({progressOnly=false}={}) => {
 		const failures = rows().filter((row) => row.failed),
 			responses = rows().filter((row) => row.loadingFinished);
 		const proxy = proxyObservation();
@@ -1016,6 +1016,7 @@ export function createBrowserControlCollector({
 			protocolErrors,environment};
 		const data = { responses, proxy: proxy.rows, coverage, browserRevision,nativeContext };
 		progressInput={...data,failures,browserEventOrdinal,nativeContext:{...nativeContext,headerPrefix:proxy.headerPrefix ?? null}};
+		if(progressOnly)return progressInput;
 		const measuredRows = measuredFailureIds.map((id) =>
 			requests.get(id)?.failed
 				? requests.get(id)
@@ -1214,7 +1215,10 @@ export function createBrowserControlCollector({
 			measurementClosed = measurementStarted;
 		},
 		recordMeasuredFailure,
-		progressInput(){snapshot();return mixedNativeProgressInput(progressInput);},
+		progressInput({owner=null,documentJournal=null}={}){
+			if(!owner){snapshot();return mixedNativeProgressInput(progressInput);}
+			return owner.capture(()=>{const view=snapshot({progressOnly:true});progressInput=null;if(documentJournal)view.nativeContext.documentJournal=documentJournal();return mixedNativeProgressInput(view,{copy:false});});
+		},
 		annualContext(){snapshot();return progressInput.nativeContext;},
 		endScope() {
 			closed = true;
@@ -2048,8 +2052,8 @@ export function createProxyControlCollector({
 				errors,
 				overflow,
 				pendingBodies,
-				rows: [...requests.values()].map(
-					({ chunks, retainedBytes, encoding, inspectionTask, inspectionJob, ...proof }) => ({ ...proof,...(inspectionJob?{inspectionJob:Object.freeze({...inspectionJob})}:{}) }),
+				rows: mixedOwnedRows(()=>requests.values(),
+					({ chunks, retainedBytes, encoding, inspectionTask, inspectionJob, ...proof }) => ({ ...proof,...(inspectionJob?{inspectionJob:Object.freeze({...inspectionJob})}:{}) }),{omit:["chunks","retainedBytes","encoding","inspectionTask"]},
 				),
 			};
 		},
@@ -2229,3 +2233,4 @@ export function createMixedProgressAcknowledgments({input,application,acknowledg
  };
 }
 const progressFailureIdsForCollector=input=>input.failures.map(row=>row.requestId).sort();
+import {mixedOwnedClone as structuredClone,mixedOwnedRows,mixedOwnedArray,mixedOwnedJSONString,mixedOwnedUTF8} from "./mixed-technical-gzip.mjs";
