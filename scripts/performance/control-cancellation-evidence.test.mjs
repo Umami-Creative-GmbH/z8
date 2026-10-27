@@ -1604,7 +1604,8 @@ test("candidate masks distinguish wrapper plus real borrow costs and bounded dep
 	assert.ok(cost.dependencies.parentCertificateWithSeen>0);
 	const many=Array.from({length:1500},()=>({value:"KNOWN"}));
 	const bounded=inspectRequiredFlightBody(closedMemoBody("$1:leaf",'1:'+JSON.stringify({leaf:"KNOWN",many})+'\n'),{cachedNavigations:true});
-	assert.equal(bounded.complete,true);assert.equal(bounded.modelCostObservation.dependencies.contexts,1024);
+	assert.equal(bounded.complete,true);assert.equal(bounded.modelCostObservation.sharedDiagnosticContexts,1024);
+	assert.equal(bounded.modelCostObservation.dependencies.contexts+bounded.modelCostObservation.semanticObligations.contexts,1024);
 	assert.equal(bounded.modelCostObservation.truncated,true);assert.ok(bounded.modelCostObservation.dependencies.contextOverflow>0);
 	assert.ok(bounded.modelCostObservation.candidates.length<=256);
 	assert.ok(bounded.modelCostObservation.phases.every(row=>row.depthWork.length===65 && row.depthWork.reduce((sum,n)=>sum+n,0)+row.unknownDepthWork===row.work));
@@ -1660,4 +1661,69 @@ test("an incomplete child keeps its existing failure wrapper without fabricating
  assert.equal(limit.recursionLevel,1);assert.equal(limit.guard,"queue-width");
  assert.equal(limit.embeddedModelCostObservation,null);assert.equal(limit.modelCostObservation.embeddedWork,0);
  assert.equal(limit.modelCostObservation.inspectionDepth,1);
+});
+
+test("semantic census observes exact objects under full incoming obligations without changing visits",()=>{
+	const encode=r=>Buffer.from('#0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:{r,p:false,v:null}}}})+'\n1:{"nested":{"known":"KNOWN"}}\n');
+	const repeated=inspectRequiredFlightBody(encode(["$1:nested","$1:nested"]),{cachedNavigations:true});
+	assert.equal(repeated.complete,true);
+	const census=repeated.modelCostObservation.semanticObligations;
+	assert.equal(census.protocol,"bounded-semantic-obligation-observation-v1");assert.ok(census.repeatedExact>0);
+	assert.equal(census.accountedWork,repeated.modelCostObservation.chargedWork);
+	const distinct=inspectRequiredFlightBody(encode([{known:"KNOWN"},{known:"KNOWN"}]),{cachedNavigations:true});
+	assert.equal(distinct.complete,true);assert.equal(distinct.modelCostObservation.semanticObligations.repeatedExact,0);
+	assert.doesNotMatch(JSON.stringify(census),/KNOWN|nested|\$1/);
+});
+
+test("semantic snapshot projects active return prefixes and distinguishes both no-pop guard charges",()=>{
+	const encode=r=>Buffer.from('#0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:{r,p:false,v:null}}}})+'\n');
+	let deep=null;for(let index=0;index<64;index++)deep={next:deep};
+	const depth=inspectRequiredFlightBody(Buffer.concat([encode("$1:leaf"),Buffer.from('1:'+JSON.stringify({leaf:"KNOWN",deep})+'\n')]),{cachedNavigations:true});
+	const pathCost=depth.pathLimitObservation.modelCostObservation;
+	assert.equal(depth.pathLimitObservation.observedDepth,65);assert.equal(pathCost.semanticObligations.activeIteration,true);
+	assert.ok(pathCost.semanticObligations.activePopWork>0);assert.equal(pathCost.semanticObligations.accountedWork,pathCost.chargedWork);
+	const wide=inspectRequiredFlightBody(encode(Array(100001).fill(null)),{cachedNavigations:true}).modelLimitObservation.modelCostObservation;
+	assert.equal(wide.semanticObligations.activeIteration,true);assert.equal(wide.semanticObligations.activePopWork,1);assert.equal(wide.semanticObligations.guardOnlyWork,0);assert.equal(wide.semanticObligations.accountedWork,wide.chargedWork);
+	let branch=null;for(let index=0;index<17;index++)branch={left:branch,right:branch};
+	const local=inspectRequiredFlightBody(encode(branch),{cachedNavigations:true}).modelLimitObservation;
+	assert.equal(local.guard,"local-inspected-work");assert.equal(local.sharedModelSteps,100000);assert.equal(local.modelCostObservation.semanticObligations.activeIteration,false);
+	assert.equal(local.modelCostObservation.semanticObligations.guardOnlyWork,0);assert.equal(local.modelCostObservation.semanticObligations.accountedWork,100000);
+	const many=Array(50000).fill(null),inner=encode(many),outer=Buffer.concat([Buffer.from('0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:{r:many,p:false,v:null}}},p:"$1"})+'\n1:R\n1:o'+inner.length.toString(16)+','),inner,Buffer.from('1:C\n')]);
+	const shared=inspectRequiredFlightBody(outer,{cachedNavigations:true}).modelLimitObservation;
+	assert.equal(shared.sharedModelSteps,100001);assert.equal(shared.modelCostObservation.semanticObligations.activeIteration,false);assert.equal(shared.modelCostObservation.semanticObligations.guardOnlyWork,1);
+	for(const cost of [pathCost,wide,local.modelCostObservation,shared.modelCostObservation,shared.embeddedModelCostObservation]){
+		const census=cost.semanticObligations;assert.equal(census.accountedWork,cost.chargedWork);
+		assert.equal(census.buckets.reduce((sum,row)=>sum+row.work,0),census.committedPopWork+census.activePopWork);
+		assert.ok(cost.sharedDiagnosticContexts<=1024);assert.ok(cost.sharedDiagnosticIdentities<=4096);
+	}
+});
+
+test("semantic full keys keep required role flags and exact fallback ancestry distinct",()=>{
+	const encode=(r,rows)=>Buffer.from('~0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:{r,p:true,v:null}}}})+'\n'+rows);
+	const options={cachedNavigations:true,requestKind:"runtime-shell"};
+	for(const reverse of [false,true]){
+		const r=[["$","div",null,{children:"$2",title:"$2"}],"$2"];if(reverse)r.reverse();
+		assert.equal(inspectRequiredFlightBody(encode(r,'2:["$L9"]\n'),options).complete,false,"Observing a permitted alias never discharges a required prop.");
+	}
+	const suspense=fallback=>["$","$Sreact.suspense",null,{fallback,children:"KNOWN"}];
+	const flagRoot={q:"",i:false,t:{t:{s:"en",d:{r:"$2:nested",p:true,v:null}},h:{r:["$2:nested"],p:true,v:null}}};
+	const flags=inspectRequiredFlightBody(Buffer.from('~0:'+JSON.stringify(flagRoot)+'\n2:{"nested":["KNOWN"]}\n'),options);
+	assert.equal(flags.complete,true,JSON.stringify(flags));assert.ok(flags.modelCostObservation.semanticObligations.sameValueDifferentObligation>0,"The same outlined array inside and outside an r-array has different obligations.");
+	const ancestry=inspectRequiredFlightBody(encode([suspense("$1"),suspense("$2")],'1:["$","div",null,{"children":"$3:nested"}]\n2:["$","div",null,{"children":"$3:nested"}]\n3:{"nested":["KNOWN"]}\n'),options);
+	assert.equal(ancestry.complete,true,JSON.stringify(ancestry));assert.ok(ancestry.modelCostObservation.semanticObligations.sameValueDifferentObligation>0,"Equal-sized different fallback ancestry sets cannot match.");
+});
+
+test("semantic census keeps unknown resolved provenance and shared overflow explicit without skipping required post-work",()=>{
+	const encode=(s,r,rows="")=>Buffer.from('#0:'+JSON.stringify({q:"",i:false,t:{t:{s,d:{r,p:false,v:null}}}})+'\n'+rows);
+	const alias=inspectRequiredFlightBody(encode("en","$Q2",'2:"$3"\n3:[["key","KNOWN"]]\n'),{cachedNavigations:true});
+	assert.equal(alias.complete,true);assert.ok(alias.modelCostObservation.semanticObligations.unknown>0,"A resolve without an actual origin trace cannot invent collection provenance.");
+	const post=inspectRequiredFlightBody(encode("$1:leaf","KNOWN",'1:{"leaf":"en"}\n'),{cachedNavigations:true});
+	assert.equal(post.complete,true);assert.ok(post.modelCostObservation.semanticObligations.postWork>0);
+	assert.equal(post.modelCostObservation.semanticObligations.accountedWork,post.modelCostObservation.chargedWork);
+	const overflow=inspectRequiredFlightBody(encode("en",Array.from({length:5000},()=>({known:"KNOWN"}))),{cachedNavigations:true});
+	assert.equal(overflow.complete,true);const cost=overflow.modelCostObservation;
+	assert.equal(cost.sharedDiagnosticIdentities,4096);assert.equal(cost.sharedDiagnosticContexts,1024);
+	assert.equal(cost.dependencies.contexts+cost.semanticObligations.contexts,1024);
+	assert.equal(cost.semanticObligations.truncated,true);assert.ok(cost.semanticObligations.unknown>0);assert.ok(cost.semanticObligations.overflow>0);
+	assert.equal(cost.semanticObligations.accountedWork,cost.chargedWork);assert.doesNotMatch(JSON.stringify(cost.semanticObligations),/KNOWN|\$[a-f0-9]/);
 });
