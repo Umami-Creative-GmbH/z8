@@ -1,5 +1,6 @@
 /** Proofs are prospective; a canceled request is never a successful payload. */
 import { createHash } from "node:crypto";
+import { types as utilTypes } from "node:util";
 import { validateProxyHeaderCensus, validateProxyHeaderPrefix, validateProxyHeaderLifecycle } from "./proxy-header-census.mjs";
 import {cachedCdpTextProjectionProtocol,cachedCdpTextSourceRevision,cachedCdpTextMappingSha256} from "./cdp-cached-text-projection.mjs";
 import { resolveOriginalTeamTemporaryReference, closeOriginalTeamBodyInspection, originalTeamBodyObservation, validateOriginalTeamTemporaryValues, validateOriginalTeamBodyUseCoverage, knownTemporaryValueObservation, knownOriginalTeamSourceConfiguration, knownOriginalTeamHeaderJoin } from "./team-temporary-value-authority.mjs";
@@ -18,10 +19,13 @@ export const bodySha256 = (bytes) =>
 const annualTeamProjections=new WeakMap();
 export function openTeamAnnualProjection(input) {
 	try {if(!input || Object.keys(input).length!==2 || !/^[a-f0-9]{64}$/.test(input.bodySha256 ?? "") || !Number.isSafeInteger(input.decodedBytes) || input.decodedBytes<1 || input.decodedBytes>controlCancellationPolicy.decodedLimit)return null;
-	 const cap=Object.freeze({protocol:"private-team-annual-projection-v1"});annualTeamProjections.set(cap,{...input,started:false,closed:false,taken:false,candidate:null,result:null});return cap;
+	 const cap=Object.freeze({protocol:"private-team-annual-projection-v1"});annualTeamProjections.set(cap,{...input,started:false,closed:false,taken:false,candidate:null,result:null,outcome:"opened"});return cap;
 	}catch{return null;}
 }
-export function takeTeamAnnualProjection(cap){const held=annualTeamProjections.get(cap);if(!held || held.closed || held.taken || !held.result)return null;held.taken=true;return held.result;}
+export function takeTeamAnnualProjection(cap,diagnostic){const held=annualTeamProjections.get(cap);
+	// An internal fixed own-data sink only. Invalid sinks never change take semantics.
+	try{const field=diagnostic && !utilTypes.isProxy(diagnostic) && Object.getOwnPropertyDescriptor(diagnostic,"outcome");if(held && field && Object.hasOwn(field,"value") && field.writable===true && [Object.prototype,null].includes(Object.getPrototypeOf(diagnostic)))Object.defineProperty(diagnostic,"outcome",{...field,value:held.outcome});}catch{}
+	if(!held || held.closed || held.taken || !held.result)return null;held.taken=true;return held.result;}
 export function closeTeamAnnualProjection(cap){const held=annualTeamProjections.get(cap);if(!held || held.closed)return false;held.closed=true;held.candidate=null;held.result=null;annualTeamProjections.delete(cap);return true;}
 export function teamAnnualProofCore(proof,temporaryBindingSha256) {
 	return {protocol:proof?.protocol,complete:proof?.complete,action:proof?.action,requestKind:proof?.requestKind,requiredStage:proof?.requiredStage,bodySha256:proof?.bodySha256,decodedBytes:proof?.decodedBytes,modelSteps:proof?.modelSteps,serverErrors:proof?.serverErrors,explicitActionFailure:proof?.explicitActionFailure,temporaryBindingSha256};
@@ -141,7 +145,7 @@ export function inspectRequiredFlightBody(
 		projection.started=true;
 		try{const decoder=new TextDecoder("utf-8",{fatal:true});for(let offset=0;offset<bytes.length;offset+=4096)decoder.decode(bytes.subarray(offset,offset+4096),{stream:true});decoder.decode();projectionValid=true;}catch{}
 	}
-	if(projection && !projectionValid){projection.result=null;projection.candidate=null;}
+	if(projection && !projectionValid){projection.result=null;projection.candidate=null;projection.outcome="boundary-or-utf8";}
 	try { proof = inspectFlightBody(bytes, {...options,teamAnnualProjection:projectionValid?options.teamAnnualProjection:undefined}, { decoded: 0, rows: 0, models: 0 }, 0); }
 	finally {
 		if (inspection !== null && !closeOriginalTeamBodyInspection(inspection) && proof) {
@@ -152,7 +156,10 @@ export function inspectRequiredFlightBody(
 	if(projectionValid && proof?.complete===true && projection.candidate) {
 		const temporaryBindingSha256=inspection?originalTeamBodyObservation(inspection)?.bindingSha256 ?? null:null;
 		projection.result=Object.freeze({protocol:"team-annual-scalar-projection-v1",bodySha256:projection.bodySha256,decodedBytes:projection.decodedBytes,...projection.candidate,fatalUtf8:true,temporaryBindingSha256,proofCoreSha256:bodySha256(Buffer.from(JSON.stringify(teamAnnualProofCore(proof,temporaryBindingSha256))))});
+		projection.outcome="published";
 	}
+	else if(projectionValid && proof?.complete!==true)projection.outcome="ordinary-incomplete";
+	else if(projectionValid && projection.outcome==="opened")projection.outcome="not-reached";
 	return proof;
 }
 
@@ -1507,7 +1514,7 @@ function inspectFlightBody(
 			return unknown("incomplete-required-boundary");
 	}
 	if(teamAnnualProjection!==undefined && action && depth===0) {
-		const projection=annualTeamProjections.get(teamAnnualProjection);let projectionSteps=0;
+		const projection=annualTeamProjections.get(teamAnnualProjection);let projectionSteps=0;if(projection)projection.outcome="projecting";
 		const step=atDepth=>{projectionSteps++;if(!pathStep(atDepth,"path-alias"))throw Error("projection-work-limit");};
 		const read=(raw,atDepth)=>{
 			step(atDepth);const seen=new Set();
@@ -1524,8 +1531,10 @@ function inspectFlightBody(
 			const result=read(root.a,1);if(field(result,"success",2)!==true)throw Error("projection-action-result");
 			const data=field(result,"data",2),teams=field(data,"teams",3),hours=field(data,"organizationTotal",3);if(!Array.isArray(teams) || teams.length>100000 || !Number.isFinite(hours))throw Error("projection-summary-type");
 			let employees=0;for(let index=0;index<teams.length;index++){step(4);const descriptor=Object.getOwnPropertyDescriptor(teams,String(index));if(!descriptor || !Object.hasOwn(descriptor,"value"))throw Error("projection-array-hole");const count=field(descriptor.value,"employeeCount",5);if(!Number.isSafeInteger(count) || count<0 || !Number.isSafeInteger(employees+count))throw Error("projection-count-type");employees+=count;}
-			if(projection)projection.candidate={employees,hours,projectionSteps};
-		}catch {if(pathLimit || budget.models>100000)return unknown("model-limit");}
+			if(projection){projection.candidate={employees,hours,projectionSteps};projection.outcome="candidate";}
+		}catch(error) {
+			if(projection){const message=Object.getOwnPropertyDescriptor(error ?? {},"message")?.value,reasons={"projection-root-provenance":"root-kind","projection-record-kind":"record-kind","projection-reference-unavailable":"reference","projection-opaque-value":"opaque","projection-object-unavailable":"object","projection-own-field-unavailable":"own-field","projection-action-result":"action-result","projection-summary-type":"summary-type","projection-array-hole":"array-hole","projection-count-type":"count-type","projection-work-limit":"work-limit"};projection.outcome=Object.hasOwn(reasons,message)?reasons[message]:"projector-unavailable";}
+			if(pathLimit || budget.models>100000)return unknown("model-limit");}
 	}
 	return {
 		protocol: "bounded-required-flight-v1",

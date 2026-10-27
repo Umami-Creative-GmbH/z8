@@ -1,0 +1,11 @@
+# Selected TEAM proxy inspection diagnostic
+
+This prospective diagnostic records why the selected TEAM response has no scalar projection. It changes no Flight verdict, cancellation family, golden, request, retry, timer, deadline, sample count or numerical gate. Historical failed captures remain failed.
+
+Only an armed, active, unconsumed annual selector creates an inspection record at the existing proxy EOF callback. The record observes the existing skip, decode, single eligibility call, open, ordinary inspection, take, catch and settlement branches. It contains fixed enums, nullable booleans, decoded length and hashes. A proof reason is hashed; raw values, bodies, URLs, headers and exception messages are absent. The private projector records its fixed rejection/publication outcome without another decode. Invalid, accessor or Proxy sinks cannot run code or alter the original take result.
+
+The actual selected response join copies only that packet's primitive record into the existing diagnostic. Missing or pre-EOF records stay null. The copy is detached and frozen, including on failed close; live snapshots expose no diagnostic. The existing first-failure stage remains sticky and the diagnostic grants no authority.
+
+Each record reserves8192 bytes from the existing32MiB pool before allocation. Its charge remains while the request map owns the record, including after selector close; the existing record limit is unchanged. The selected copy is covered by the existing32KiB arm and16KiB failed-close reservation. The tested maximum subrecord is477 serialized bytes (5864 bytes under the conservative bytes×8+2048 formula), and the complete stressed final diagnostic is13560 bytes under that formula. Successful close still retains the existing1MiB CORE; unarmed close retains0. No new module, private-helper change or source-closure entry is required.
+
+Pure tests exercise successful publication, ordinary-proof and fixed-projection rejection, empty open, ineligible rows, bounded/non-Flight skips, decoding failure, selected-versus-other rows, missing pre-EOF records, active-only allocation, retained charges, privacy and hostile sinks. Root owns any real HTTP/browser verification. This patch makes no claim about the cause of a historical absent projection or prospective feasibility.
