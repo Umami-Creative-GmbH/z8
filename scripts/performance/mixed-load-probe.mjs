@@ -419,7 +419,7 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 	if (!browserControlPath) throw Error("Explicit browser control metadata file is required.");
 	const metadataBytes = await readFile(browserControlPath);
 	const { origin, fixture } = await readFixture(directory);
-	let browserControlBinding = await readBrowserControlBinding({ plan: { origin,phase,runtime: { build: sourceCommit,
+	let browserControlBinding = await readBrowserControlBinding({ plan: { origin,phase,conditions:[{locale:mixedBrowserCondition.locale}],routes:analytics.map(({path})=>({path})),runtime: { build: sourceCommit,
 		browserControl: JSON.parse(metadataBytes.toString("utf8")) } }, manifestPath });
 	const auth = await json(join(directory, "auth-private.json"));
 	const control =

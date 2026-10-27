@@ -10,6 +10,17 @@ const sha = value => createHash("sha256").update(value).digest("hex");
 const digest = value => typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
 const rangeFields = Object.freeze(["start", "end", "startDate", "endDate", "timezone"]);
 export const teamReplayHeader = "x-z8-fixture-replay-id";
+// Exact shared identity fields; the registered test checks parity with controlIdentityHeaders.
+const teamHeaderFields = Object.freeze(["rsc","next-router-prefetch","next-router-segment-prefetch","next-router-state-tree","next-url","next-action","accept","accept-encoding","accept-language","cookie","authorization","x-z8-fixture-document-generation",teamReplayHeader]);
+/** Initial is preserved; only positively absent browser-added fields can differ from actual wire headers. */
+export function knownOriginalTeamHeaderJoin(initial,extra,wire,cookieHeaderSha256) {
+ try {
+  const known=row=>row?.requestHeaderSnapshotKnown===true && digest(row.requestHeadersSha256) && ownData(row.headerFieldSha256,teamHeaderFields) && teamHeaderFields.every(key=>row.headerFieldSha256[key]===null || digest(row.headerFieldSha256[key]));
+  return digest(cookieHeaderSha256) && [initial,extra,wire].every(known) && extra.requestHeadersSha256===wire.requestHeadersSha256 &&
+   wire.headerFieldSha256.cookie===cookieHeaderSha256 && teamHeaderFields.every(key=>extra.headerFieldSha256[key]===wire.headerFieldSha256[key] &&
+    (initial.headerFieldSha256[key]===extra.headerFieldSha256[key] || ["cookie","accept-encoding"].includes(key) && initial.headerFieldSha256[key]===null && digest(extra.headerFieldSha256[key])));
+ }catch{return false;}
+}
 export const temporaryValueObservation = Object.freeze({ protocol: "original-team-temporary-value-observation-v1", replayHeader: teamReplayHeader, documentJournal: "actual-cdp-document-journal-v1" });
 const deepFreeze = value => {
 	if (value && typeof value === "object") {
@@ -501,6 +512,43 @@ export function createTeamTemporaryValueStore({ contextId, reserve, release }) {
 const dispatchJournals = new WeakMap(), dispatchHandles = new WeakMap();
 const operatorQualifications = new WeakMap(), uiProducerCuts = new WeakMap(), requestAuthorities = new WeakMap();
 const technicalId = value => typeof value === "string" && /^[A-Za-z0-9:_.-]{1,256}$/.test(value);
+const teamLocale=value=>typeof value==="string" && value.length<=64 && /^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/.test(value);
+/** Explicit page fields only; unresolved entity templates and non-page/static paths stay unsupported. */
+export function originalTeamPageRouteContract(plan) {
+ try {
+  const origin=new URL(plan.origin);
+  if(origin.protocol!=="http:" || !["localhost","127.0.0.1","[::1]"].includes(origin.hostname) || origin.origin!==plan.origin || !Array.isArray(plan.conditions) || plan.conditions.length<1 || plan.conditions.length>32 || !plan.conditions.every(row=>teamLocale(row.locale)) || !Array.isArray(plan.routes) || plan.routes.length<1 || plan.routes.length>64)return null;
+  const locales=[...new Set(plan.conditions.map(row=>row.locale))].sort(),destinations=[],seen=new Set();
+  for(const locale of locales)for(const template of ["/{locale}/analytics","/{locale}/analytics/team-performance",...plan.routes.flatMap(row=>[row.path,row.awayPath])]) {
+   if(typeof template!=="string" || template.length>2048)continue;
+   const path=template.replaceAll("{locale}",locale);
+   if(path.length>2048 || !/^\/[A-Za-z0-9_-]+(?:\/[A-Za-z0-9_-]+)*$/.test(path) || !(path==="/"+locale || path.startsWith("/"+locale+"/")) || path.split("/")[2]==="api")continue;
+   const url=new URL(path,origin);if(url.origin!==origin.origin || url.pathname!==path || url.search || url.hash)continue;
+   const urlSha256=sha(url.href);if(seen.has(urlSha256))continue;if(destinations.length>=128)return null;
+   seen.add(urlSha256);destinations.push({locale,fullUrlSha256:urlSha256,pathnameSha256:sha(path)});
+  }
+  return deepFreeze({protocol:"source-qualified-team-page-routes-v1",originSha256:sha(origin.origin),workerScriptSha256:sha(new URL("/sw.js",origin).href),rootScopeSha256:sha(new URL("/",origin).href),locales,destinations:destinations.sort((a,b)=>a.fullUrlSha256.localeCompare(b.fullUrlSha256))});
+ }catch{return null;}
+}
+function knownTeamPageRoutes(routes) {
+ return ownData(routes,["protocol","originSha256","workerScriptSha256","rootScopeSha256","locales","destinations"]) && routes.protocol==="source-qualified-team-page-routes-v1" && [routes.originSha256,routes.workerScriptSha256,routes.rootScopeSha256].every(digest) && Array.isArray(routes.locales) && routes.locales.length>=1 && routes.locales.length<=32 && routes.locales.every(teamLocale) && new Set(routes.locales).size===routes.locales.length &&
+  Array.isArray(routes.destinations) && routes.destinations.length>=2 && routes.destinations.length<=128 && new Set(routes.destinations.map(row=>row.fullUrlSha256)).size===routes.destinations.length && routes.destinations.every(row=>ownData(row,["locale","fullUrlSha256","pathnameSha256"]) && routes.locales.includes(row.locale) && digest(row.fullUrlSha256) && digest(row.pathnameSha256));
+}
+/** Hash-only route facts are not caller identity, source authority, or a request capability. */
+export function originalTeamRequestRouteFacts(operator,row) {
+ try {
+  const routes=operator?.pageRoutes;if(!knownTeamPageRoutes(routes) || row?.type!=="Fetch" || row.method!=="POST" || row.requestHeaderSnapshotKnown!==true || row.requestOriginSha256!==routes.originSha256)return null;
+  const matches=routes.destinations.filter(route=>route.fullUrlSha256===row.fullUrlSha256 && row.headerFieldSha256?.["accept-language"]===sha(route.locale));if(matches.length!==1)return null;
+  return Object.freeze({protocol:"observed-team-page-fetch-v1",resourceType:"Fetch",originSha256:routes.originSha256,...matches[0],routeContractSha256:sha(JSON.stringify(routes))});
+ }catch{return null;}
+}
+export function knownOriginalTeamRequestRoute(facts,operator,row) {
+ try {
+  const expected=originalTeamRequestRouteFacts(operator,row);
+  return ownData(facts,["protocol","resourceType","originSha256","locale","fullUrlSha256","pathnameSha256","routeContractSha256"]) && expected!==null && sameJSON(facts,expected);
+ }catch{return false;}
+}
+const knownTeamRequestRouteShape=facts=>ownData(facts,["protocol","resourceType","originSha256","locale","fullUrlSha256","pathnameSha256","routeContractSha256"]) && facts.protocol==="observed-team-page-fetch-v1" && facts.resourceType==="Fetch" && teamLocale(facts.locale) && [facts.originSha256,facts.fullUrlSha256,facts.pathnameSha256,facts.routeContractSha256].every(digest);
 /** File/plan qualification does not issue a request value. Every manual producer is in the frozen graph. */
 export async function readOriginalTeamOperatorQualification(input) {
 	try {
@@ -522,13 +570,44 @@ export async function readOriginalTeamOperatorQualification(input) {
 				queue.push({value:child,depth:depth+1});
 			}
 		}
-		const facts=deepFreeze({protocol:"closed-team-operator-source-v1",operatorFile,protocolSources:{...protocolSources},planSha256:sha(text),executablePlanSteps:false,manualReplayHeader:teamReplayHeader});
+		const pageRoutes=originalTeamPageRouteContract(plan);if(!pageRoutes)throw Error();
+		const facts=deepFreeze({protocol:"closed-team-operator-source-v1",operatorFile,protocolSources:{...protocolSources},planSha256:sha(text),executablePlanSteps:false,manualReplayHeader:teamReplayHeader,pageRoutes});
+		if(Buffer.byteLength(JSON.stringify(facts))*8+2048>128*8192)throw Error();
 		const result=Object.freeze({protocol:"private-team-operator-source-v1"}); operatorQualifications.set(result,{qualification,facts});return result;
 	} catch { throw Error("Original team operator source qualification unavailable."); }
 }
-const sourcePublicKnown = (sources, expected) => sources?.protocol === "serving-public-worker-source-metadata-v1" && sources.servingRootKnown===true &&
+const teamPublicSources = Object.freeze([
+ ["sw.js",26047,"4eb0acd7bfb93d668e073baf69304af8f91f54f9dc82664ded7530866ae8bc7a"],
+ ["lib/offline-queue-db.js",18409,"a285a69270bb8c65b96b102277a24c49da8ede440ab009b7ecff5495de7bfbc1"],
+ ["lib/sync-service.js",1385,"f8bfd4a69ebaf3f43e33ffeb4858523d0afd3f3988c52fc82cda6cae7f810a05"],
+ ["lib/clock-command-dispatch.js",13604,"663be8d36271e9c6c0c1efd5e4188994e1e49e40bcd70f7f432526ede7014c07"],
+]);
+const sourcePublicKnown = (sources, expected) => sources?.protocol === "serving-public-worker-source-metadata-v1" && sources.servingRootKnown===true && expected?.protocol==="qualified-serving-worker-sources-v1" &&
 	Array.isArray(sources.files) && sources.files.length===4 && Array.isArray(expected?.files) && expected.files.length===4 &&
-	sources.files.every((row,index)=>row.known===true && row.reason===null && row.file===expected.files[index].file && row.bytes===expected.files[index].bytes && row.sha256===expected.files[index].sha256);
+	sources.files.every((row,index)=>row.known===true && row.reason===null && row.file===expected.files[index].file && row.bytes===expected.files[index].bytes && row.sha256===expected.files[index].sha256 && row.file===teamPublicSources[index][0] && row.bytes===teamPublicSources[index][1] && row.sha256===teamPublicSources[index][2]);
+/** Source noninterference only. This never attests continuous controller state or closes a scope. */
+export function knownOriginalTeamWorkerExtension(past,current,workerScriptSha256) {
+ try {
+  const known=workers=>workers?.protocol==="owned-context-worker-target-metadata-v1" && technicalId(workers.contextId) && workers.contextJoinKnown===true && digest(workers.contextIdentitySha256) && workers.installed===true && typeof workers.scopeClosed==="boolean" && workers.errors===0 && workers.overflow===0 &&
+   workers.enumerationBasis==="existing-puppeteer-target-manager" && workers.controllerObservation==="not-collected" && Array.isArray(workers.events) && workers.events.length>=1 && workers.events.length<=256 && workers.events.every(row=>
+    ownData(row,["targetOrdinal","event","type","urlKnown","urlSha256","originMatches","ownedWorkerScript"]) && Number.isSafeInteger(row.targetOrdinal) && row.targetOrdinal>=1 && row.targetOrdinal<=256 && ["initial","created","changed","destroyed"].includes(row.event) && row.urlKnown===true && digest(row.urlSha256) &&
+    (row.type==="page" ? row.ownedWorkerScript===null && (row.originMatches===true || row.originMatches===false && row.urlSha256===sha("about:blank")) : row.type==="service_worker" && row.ownedWorkerScript===true && row.originMatches===true && row.urlSha256===workerScriptSha256));
+  return digest(workerScriptSha256) && known(past) && known(current) && past.scopeClosed===false && past.contextId===current.contextId && past.contextIdentitySha256===current.contextIdentitySha256 &&
+   current.events.length>=past.events.length && sameJSON(current.events.slice(0,past.events.length),past.events);
+ }catch{return false;}
+}
+/** Disjoint positive observation regimes; unknown controller/registration facts have no regime. */
+export function originalTeamControllerRegime(controller,workers,workerScriptSha256,rootScopeSha256) {
+ try {
+  if(!knownOriginalTeamWorkerExtension(workers,workers,workerScriptSha256) || workers.scopeClosed!==false || controller?.available!==true || controller.secureContext!==true || controller.originMatches!==true || controller.controllerIdentityStable!==true || controller.registrationOverflow!==0 || !Array.isArray(controller.registrations))return null;
+  const none=row=>ownData(row,["present","known"]) && row.present===false && row.known===true;
+  if(none(controller.controllerBefore) && none(controller.controllerAfter) && controller.registrationCount===0 && controller.registrations.length===0 && workers.events.every(row=>row.type==="page"))return "known-uncontrolled-page-only";
+  const owned=row=>row?.present===true && row.known===true && row.ownedScript===true && row.state==="activated" && row.scriptUrlSha256===workerScriptSha256;
+  if(!owned(controller.controllerBefore) || !owned(controller.controllerAfter) || controller.registrationCount!==1 || controller.registrations.length!==1)return null;
+  const registration=controller.registrations[0];
+  return registration.scopeKnown===true && registration.ownedRootScope===true && digest(registration.scopeSha256) && (rootScopeSha256===undefined || registration.scopeSha256===rootScopeSha256) && owned(registration.active) && none(registration.waiting) && none(registration.installing)?"owned-activated":null;
+ }catch{return null;}
+}
 function knownTeamPrincipalHistory(principal,ack) {
  try {
   const history=principal?.progressReads;
@@ -588,7 +667,7 @@ function knownTeamPrincipalHistory(principal,ack) {
 function replayOriginalTeamUIProducerCut({source,operator,acknowledgment,principal,workers,binding,documentJournal}) {
 	try {
 		const ack=acknowledgment,doc=ack?.document,controller=ack?.controller;
-		if(!knownOriginalTeamSourceFacts(source) || !ownData(operator,["protocol","operatorFile","protocolSources","planSha256","executablePlanSteps","manualReplayHeader"]) ||
+		if(!knownOriginalTeamSourceFacts(source) || !ownData(operator,["protocol","operatorFile","protocolSources","planSha256","executablePlanSteps","manualReplayHeader","pageRoutes"]) || !knownTeamPageRoutes(operator.pageRoutes) || operator.pageRoutes.originSha256!==doc?.originSha256 ||
             operator.protocol!=="closed-team-operator-source-v1" || !["run-baseline.mjs","settled-resources.mjs","mixed-load-probe.mjs"].includes(operator.operatorFile) || !digest(operator.planSha256) || operator.executablePlanSteps!==false || operator.manualReplayHeader!==teamReplayHeader ||
             !operator.protocolSources || ![operator.operatorFile,"browser-control-collector.mjs","team-temporary-value-authority.mjs","inert-date-range-request.mjs","journey-steps.mjs","trace-transport.mjs"].every(file=>digest(operator.protocolSources[file])) || !knownTemporaryValueObservation(binding?.temporaryValueObservation) ||
 			binding.manifestVerified!==true || binding.browserVerified!==true || binding.compiledBuild!==source.binarySource || binding.compiledManifestSha256!==source.manifestSha256 || !knownOriginalTeamSourceConfiguration(binding.originalTeamSource,source.binarySource,source.manifestSha256) || binding.originalTeamSource===null ||
@@ -606,16 +685,12 @@ function replayOriginalTeamUIProducerCut({source,operator,acknowledgment,princip
 			workers?.protocol!=="owned-context-worker-target-metadata-v1" || workers.contextId!==doc.contextId || workers.contextJoinKnown!==true || workers.installed!==true || workers.scopeClosed!==false || workers.errors!==0 || workers.overflow!==0 ||
 			!Array.isArray(workers.events) || workers.events.length<1 || workers.events.length>256 || workers.events.some(row=>!["page","service_worker"].includes(row.type) || row.urlKnown!==true || !digest(row.urlSha256) || (row.type==="service_worker" ? row.ownedWorkerScript!==true || row.originMatches!==true : row.originMatches!==true && row.urlSha256!==sha("about:blank"))) ||
 			!sourcePublicKnown(ack.publicSourceRecheck,binding.nativePublicSources))return null;
-		const owned = row=>row?.present===true && row.known===true && row.ownedScript===true && row.state==="activated" && digest(row.scriptUrlSha256);
-		if(controller?.available!==true || controller.secureContext!==true || controller.originMatches!==true || controller.controllerIdentityStable!==true || !owned(controller.controllerBefore) || !owned(controller.controllerAfter) ||
-			controller.controllerBefore.scriptUrlSha256!==controller.controllerAfter.scriptUrlSha256 || workers.events.some(row=>row.type==="service_worker" && row.urlSha256!==controller.controllerAfter.scriptUrlSha256) || controller.registrationCount!==1 || controller.registrationOverflow!==0 || !Array.isArray(controller.registrations) || controller.registrations.length!==1)return null;
-		const registration=controller.registrations[0];
-		if(registration.scopeKnown!==true || registration.ownedRootScope!==true || !digest(registration.scopeSha256) || !owned(registration.active) || registration.active.scriptUrlSha256!==controller.controllerAfter.scriptUrlSha256 ||
-			![registration.waiting,registration.installing].every(row=>row?.present===false && row.known===true))return null;
+		const expectedWorker=operator.pageRoutes.workerScriptSha256;
+		const controllerRegime=originalTeamControllerRegime(controller,workers,expectedWorker,operator.pageRoutes.rootScopeSha256);if(!controllerRegime)return null;
 		const facts=deepFreeze({protocol:"observed-team-ui-source-cut-v1",contextId:doc.contextId,originSha256:doc.originSha256,frameId:doc.frameId,loaderId:doc.loaderId,
 			documentGeneration:doc.contextId+":"+doc.documentGeneration,executionContextUniqueId:doc.executionContextUniqueId,documentRequestId:doc.documentRequestId,
 			checkpointOrdinal:ack.checkpointOrdinal,documentJournalSha256:sha(JSON.stringify(documentJournal)),principalSha256:principal.before.sha256,cookieHeaderSha256:principal.before.cookieAttributes.singleCookieHeaderSha256,workerJournalSha256:sha(JSON.stringify(workers)),
-			controllerSha256:sha(JSON.stringify(controller)),publicSourceSha256:sha(JSON.stringify(ack.publicSourceRecheck)),operatorSourceSha256:sha(JSON.stringify(operator)),operatorFile:operator.operatorFile});
+			controllerSha256:sha(JSON.stringify(controller)),controllerRegime,workerScriptSha256:expectedWorker,routeContractSha256:sha(JSON.stringify(operator.pageRoutes)),publicSourceSha256:sha(JSON.stringify(ack.publicSourceRecheck)),operatorSourceSha256:sha(JSON.stringify(operator)),operatorFile:operator.operatorFile});
 		return facts;
 	} catch { return null; }
 }
@@ -624,42 +699,48 @@ export function createOriginalTeamUIProducerCut(input) {
 		const qualification=input.qualification,operatorQualification=input.operatorQualification,operator=operatorQualifications.get(operatorQualification),source=qualifications.get(qualification);
 		if(!source || operator?.qualification!==qualification)return null;
 		const facts=replayOriginalTeamUIProducerCut({...input,source,operator:operator.facts});if(!facts)return null;
-		const result=Object.freeze({protocol:"private-team-ui-source-cut-v1"});uiProducerCuts.set(result,{qualification,operatorQualification,facts});return result;
+		const result=Object.freeze({protocol:"private-team-ui-source-cut-v1"});uiProducerCuts.set(result,{qualification,operatorQualification,facts,workers:input.workers});return result;
 	} catch { return null; }
 }
-export function originalTeamOperatorSourceFacts(qualification) {const held=operatorQualifications.get(qualification);return held?structuredClone(held.facts):null;}
+// One immutable fact graph per qualification; observers do not independently copy its route table.
+export function originalTeamOperatorSourceFacts(qualification) {const held=operatorQualifications.get(qualification);return held?held.facts:null;}
 export function originalTeamUIProducerCutFacts(cut) { const held=uiProducerCuts.get(cut);return held?structuredClone(held.facts):null; }
+export function originalTeamUIProducerWorkerExtension(cut,workers) {
+ try {const held=uiProducerCuts.get(cut);return Boolean(held && sha(JSON.stringify(held.workers))===held.facts.workerJournalSha256 && knownOriginalTeamWorkerExtension(held.workers,workers,held.facts.workerScriptSha256));}catch{return false;}
+}
 const sourceCaptureHandles=new WeakMap();
 /** Actual callback order, not timestamps. Missing earlier cuts remain recorded missing. */
 export function createTeamSourceCutJournal({contextId,reserve}) {
 	if(!technicalId(contextId) || typeof reserve!=="function")throw Error("Known team source observation ownership is required.");
 	const owner={},rows=[],occurrences=new Set(),issued=new WeakMap();let closed=false,errors=0,overflow=0,budgetKnown=true,retainedBytes=0;
-	const append=(kind,id,cut)=>{
-		if(closed || !technicalId(id) || !["issued","proxy-request","browser-request"].includes(kind) || occurrences.has(kind+":"+id)){errors++;return null;}
-		if(rows.length>=10000 || retainedBytes+4096>33554432){overflow++;return null;}
-		let answer;try{answer=reserve(4096);}catch{errors++;budgetKnown=false;return null;}
+	const append=(kind,id,cut,pageRoute=null)=>{
+		if(closed || !technicalId(id) || !["issued","proxy-request","browser-request"].includes(kind) || occurrences.has(kind+":"+id) || pageRoute!==null && (kind!=="browser-request" || !knownTeamRequestRouteShape(pageRoute))){errors++;return null;}
+		const charge=pageRoute===null?4096:8192;
+		if(rows.length>=10000 || retainedBytes+charge>33554432){overflow++;return null;}
+		let answer;try{answer=reserve(charge);}catch{errors++;budgetKnown=false;return null;}
 		if(answer!==true){if(answer===false)overflow++;else{errors++;budgetKnown=false;}return null;}
-		retainedBytes+=4096;
+		retainedBytes+=charge;
         const held=cut && uiProducerCuts.get(cut),prior=cut && issued.get(cut);
 		if(held && held.facts.contextId!==contextId || kind==="issued" && (!held || prior)){errors++;return null;}
-		const row=Object.freeze({ordinal:rows.length+1,kind,id,sourceCutOrdinal:kind==="issued"?rows.length+1:prior ?? null,sourceCutSha256:held?sha(JSON.stringify(held.facts)):null});
+		const row=Object.freeze({ordinal:rows.length+1,kind,id,sourceCutOrdinal:kind==="issued"?rows.length+1:prior ?? null,sourceCutSha256:held?sha(JSON.stringify(held.facts)):null,pageRoute:pageRoute===null?null:Object.freeze({...pageRoute})});
 		rows.push(row);occurrences.add(kind+":"+id);if(kind==="issued")issued.set(cut,row.ordinal);
 		const handle=Object.freeze({protocol:"private-team-source-occurrence-v1"});sourceCaptureHandles.set(handle,{owner,contextId,known:()=>errors===0 && overflow===0 && budgetKnown && !closed,cut:prior || kind==="issued"?cut:null,facts:row});return handle;
 	};
-	return Object.freeze({issued(cut){return append("issued",String(uiProducerCuts.get(cut)?.facts.checkpointOrdinal ?? "unknown"),cut);},capture(kind,id,cut){return append(kind,id,cut);},
+	return Object.freeze({issued(cut){return append("issued",String(uiProducerCuts.get(cut)?.facts.checkpointOrdinal ?? "unknown"),cut);},capture(kind,id,cut,pageRoute=null){return append(kind,id,cut,pageRoute);},
 		close(){closed=true;},snapshot(){return {protocol:"team-source-occurrence-journal-v1",contextId,closed,errors,overflow,budgetKnown,retainedBytes:budgetKnown?retainedBytes:null,records:rows.map(row=>({...row}))};}});
 }/** Require the actual same cut at proxy acceptance and browser request observation, not a later read. */
 export function bindOriginalTeamRequestValue(input) {
 	try {
-		const {qualification,store,handle,request,proxyCut,browserCut,dispatchJournal}=input;
+		const {qualification,store,handle,request,proxyCut,browserCut,dispatchJournal,wire}=input;
 		const first=sourceCaptureHandles.get(proxyCut),second=sourceCaptureHandles.get(browserCut);
         const source=qualifications.get(qualification),stored=valueStores.get(store),record=stored?.recordFor(handle),cut=uiProducerCuts.get(first?.cut);
 		if(!source || !record || record.released || !record.projection || !first || !second || !first.known() || !second.known() || first.owner!==second.owner || first.cut!==second.cut || first.facts.kind!=="proxy-request" || second.facts.kind!=="browser-request" || first.facts.id!==record.id || second.facts.id!==request?.requestId || cut?.qualification!==qualification || stored.contextId!==cut.facts.contextId ||
-			!ownData(request,["contextId","proxyResponseId","requestId","traceId","method","fullUrlSha256","requestHeadersSha256","requestOriginSha256","documentGeneration","frameId","loaderId","actionHeaderSha256","requestBodySha256","encodedBytes","actualEOF","replayHeaderSha256","cookieHeaderSha256"]) ||
+			!ownData(request,["contextId","proxyResponseId","requestId","traceId","method","fullUrlSha256","requestHeadersSha256","requestOriginSha256","documentGeneration","frameId","loaderId","actionHeaderSha256","requestBodySha256","encodedBytes","actualEOF","replayHeaderSha256","cookieHeaderSha256","pageRoute","headerEvidence"]) ||
 			request.contextId!==stored.contextId || request.proxyResponseId!==record.id || request.method!=="POST" || !technicalId(request.requestId) || !/^[a-f0-9]{32}$/.test(request.traceId ?? "") ||
 			![request.fullUrlSha256,request.requestHeadersSha256,request.requestOriginSha256,request.requestBodySha256].every(digest) || request.requestOriginSha256!==cut.facts.originSha256 ||
 			request.documentGeneration!==cut.facts.documentGeneration || request.frameId!==cut.facts.frameId || request.loaderId!==cut.facts.loaderId || request.actionHeaderSha256!==source.actionHeaderSha256 ||
-			request.cookieHeaderSha256!==cut.facts.cookieHeaderSha256 || request.actualEOF!==true || request.encodedBytes!==record.requestFacts.encodedBytes || request.requestBodySha256!==record.requestFacts.bodySha256)return null;
+			request.cookieHeaderSha256!==cut.facts.cookieHeaderSha256 || request.actualEOF!==true || request.encodedBytes!==record.requestFacts.encodedBytes || request.requestBodySha256!==record.requestFacts.bodySha256 || !ownData(request.headerEvidence,["initial","extra"]) || !knownOriginalTeamHeaderJoin(request.headerEvidence.initial,request.headerEvidence.extra,wire,request.cookieHeaderSha256) || wire.requestHeadersSha256!==request.requestHeadersSha256 || !sameJSON(request.pageRoute,second.facts.pageRoute) ||
+			!knownOriginalTeamRequestRoute(request.pageRoute,operatorQualifications.get(cut.operatorQualification)?.facts,{type:"Fetch",method:request.method,requestHeaderSnapshotKnown:true,requestOriginSha256:request.requestOriginSha256,fullUrlSha256:request.fullUrlSha256,headerFieldSha256:{"accept-language":sha(request.pageRoute?.locale ?? "")}}))return null;
 		const occurrences={issuedOrdinal:first.facts.sourceCutOrdinal,proxy:first.facts,browser:second.facts};
         let producer={kind:"qualified-ui",sourceCut:cut.facts,manualDispatch:null,occurrences};
 		if(request.replayHeaderSha256!==null) {
@@ -739,7 +820,9 @@ function knownRequestAuthority(authority,boundary) {
 			!Number.isSafeInteger(request.encodedBytes) || request.encodedBytes<1 || request.encodedBytes>16384 || request.replayHeaderSha256!==null && !digest(request.replayHeaderSha256) ||
 			!row || !sameJSON(row.temporaryRequestAuthority,authority) || row.contextId!==request.contextId || row.requestHeaderSnapshotKnown!==true || row.method!==request.method || row.action!==true || row.requestKind!=="action" ||
 			row.fullUrlSha256!==request.fullUrlSha256 || row.requestHeadersSha256!==request.requestHeadersSha256 || row.documentGeneration!==request.documentGeneration || row.traceId!==request.traceId || row.requestOriginSha256!==request.requestOriginSha256 ||
-			(row.id!==undefined ? row.requestId!==undefined || row.id!==request.proxyResponseId : row.requestHeadersKnown!==true || row.initialHeaderIdentity?.requestHeaderSnapshotKnown!==true || row.extraHeaderIdentity?.requestHeaderSnapshotKnown!==true || row.initialHeaderIdentity.requestHeadersSha256!==request.requestHeadersSha256 || row.extraHeaderIdentity.requestHeadersSha256!==request.requestHeadersSha256 || row.proxyResponseId!==request.proxyResponseId || row.requestId!==request.requestId || row.frameId!==request.frameId || row.loaderId!==request.loaderId) ||
+			!ownData(request.headerEvidence,["initial","extra"]) || !knownOriginalTeamHeaderJoin(request.headerEvidence.initial,request.headerEvidence.extra,row,request.cookieHeaderSha256) ||
+			(row.id!==undefined ? row.requestId!==undefined || row.id!==request.proxyResponseId : row.requestHeadersKnown!==true || row.ambiguousRedirect!==false || row.type!=="Fetch" || !knownOriginalTeamHeaderJoin(row.initialHeaderIdentity,row.extraHeaderIdentity,row,request.cookieHeaderSha256) ||
+             !["requestHeaderSnapshotKnown","requestHeadersSha256","headerFieldSha256"].every(key=>sameJSON(request.headerEvidence.initial[key],row.initialHeaderIdentity[key]) && sameJSON(request.headerEvidence.extra[key],row.extraHeaderIdentity[key])) || row.proxyResponseId!==request.proxyResponseId || row.requestId!==request.requestId || row.frameId!==request.frameId || row.loaderId!==request.loaderId) ||
 			row.headerFieldSha256?.cookie!==request.cookieHeaderSha256 || row.headerFieldSha256?.["next-action"]!==profile.actionHeaderSha256 || row.headerFieldSha256?.[teamReplayHeader]!==request.replayHeaderSha256)return false;
 		const actualEOF=row.requestBodyFacts;
         if(!ownData(actualEOF,["protocol","proxyResponseId","actualEOF","encodedBytes","bodySha256"]) || actualEOF.protocol!=="owned-proxy-request-eof-v1" || actualEOF.proxyResponseId!==request.proxyResponseId || actualEOF.actualEOF!==true || actualEOF.encodedBytes!==request.encodedBytes || actualEOF.bodySha256!==request.requestBodySha256)return false;
@@ -757,14 +840,15 @@ function knownRequestAuthority(authority,boundary) {
 			!Array.isArray(journal.records) || journal.records.length>10000 || !ownData(occurrences,["issuedOrdinal","proxy","browser"]))return false;
 		const occurrenceKeys=new Set();
         for(const [index,entry]of journal.records.entries()) {
-			if(!ownData(entry,["ordinal","kind","id","sourceCutOrdinal","sourceCutSha256"]) || entry.ordinal!==index+1 || occurrenceKeys.has(entry.kind+":"+entry.id) || !["issued","proxy-request","browser-request"].includes(entry.kind) || !technicalId(entry.id) ||
+			if(!ownData(entry,["ordinal","kind","id","sourceCutOrdinal","sourceCutSha256","pageRoute"]) || entry.ordinal!==index+1 || occurrenceKeys.has(entry.kind+":"+entry.id) || !["issued","proxy-request","browser-request"].includes(entry.kind) || !technicalId(entry.id) || entry.pageRoute!==null && (entry.kind!=="browser-request" || !knownTeamRequestRouteShape(entry.pageRoute)) ||
 				entry.sourceCutSha256!==null && !digest(entry.sourceCutSha256) || entry.sourceCutOrdinal!==null && (!Number.isSafeInteger(entry.sourceCutOrdinal) || entry.sourceCutOrdinal<1 || entry.sourceCutOrdinal>entry.ordinal || journal.records[entry.sourceCutOrdinal-1]?.kind!=="issued" || journal.records[entry.sourceCutOrdinal-1].sourceCutSha256!==entry.sourceCutSha256) || entry.kind==="issued" && entry.sourceCutOrdinal!==entry.ordinal)return false;
             occurrenceKeys.add(entry.kind+":"+entry.id);
 		}
 		const issued=journal.records[occurrences.issuedOrdinal-1];
 		if(issued?.kind!=="issued" || issued.id!==String(cut?.checkpointOrdinal) || issued.sourceCutSha256!==sha(JSON.stringify(cut)) ||
 			![occurrences.proxy,occurrences.browser].every(entry=>sameJSON(journal.records[entry?.ordinal-1],entry) && entry.sourceCutOrdinal===issued.ordinal && entry.ordinal>issued.ordinal) ||
-			occurrences.proxy.kind!=="proxy-request" || occurrences.proxy.id!==request.proxyResponseId || occurrences.browser.kind!=="browser-request" || occurrences.browser.id!==request.requestId)return false;
+			occurrences.proxy.kind!=="proxy-request" || occurrences.proxy.id!==request.proxyResponseId || occurrences.browser.kind!=="browser-request" || occurrences.browser.id!==request.requestId || !sameJSON(occurrences.browser.pageRoute,request.pageRoute) ||
+            !knownOriginalTeamRequestRoute(request.pageRoute,readInfo.operatorSource,{...row,type:row.id!==undefined?request.pageRoute?.resourceType:row.type}))return false;
 		if(records.length!==1 || !sameJSON(records[0].issuedCut,cut) || readInfo.operatorSource?.operatorFile!==context.operatorFile || !sameJSON(readInfo.operatorSource.protocolSources,context.protocolSources))return false;
 		const proof=records[0];
         if(!Number.isFinite(proof.eventObservedAtMs) || proof.observerDeadlineMs!==proof.eventObservedAtMs+10000 || proof.acknowledgment?.deadlineMs!==proof.observerDeadlineMs || proof.acknowledgment.startedAtMs<proof.eventObservedAtMs)return false;
@@ -793,8 +877,7 @@ function knownRequestAuthority(authority,boundary) {
 		const finalJournal=readInfo.documentJournal,pastJournal=proof.acknowledgment.document.sourceJournal,workers=environment.workerTargets,pastWorkers=proof.workers,principal=context.principalEpoch;
 		if(!knownTeamDocumentJournal(finalJournal,request.contextId) || finalJournal?.contextId!==request.contextId || finalJournal.errors!==0 || finalJournal.overflow!==0 || !Array.isArray(finalJournal.documents) || !Array.isArray(finalJournal.executionEvents) ||
 			!sameJSON(finalJournal.documents.slice(0,pastJournal.documents.length),pastJournal.documents) || !sameJSON(finalJournal.executionEvents.slice(0,pastJournal.executionEvents.length),pastJournal.executionEvents) ||
-			workers?.protocol!=="owned-context-worker-target-metadata-v1" || workers.contextId!==request.contextId || !Array.isArray(workers?.events) || !sameJSON(workers.events.slice(0,pastWorkers.events.length),pastWorkers.events) || workers.errors!==0 || workers.overflow!==0 ||
-			workers.events.some(event=>!["page","service_worker"].includes(event.type) || event.urlKnown!==true || event.type==="service_worker" && (event.ownedWorkerScript!==true || event.originMatches!==true)) ||
+			!knownOriginalTeamWorkerExtension(pastWorkers,workers,cut.workerScriptSha256) ||
 			principal?.before?.sha256!==cut.principalSha256 || !["observedSetCookieResponses","unknownResponseHeaders","readErrors","pendingReads","observationErrors","overflow"].every(key=>principal[key]===0) ||
 			principal.scopeClosed && (principal.after?.known!==true || principal.after.sha256!==cut.principalSha256))return false;
 		if(producer.kind==="qualified-ui") {if(request.replayHeaderSha256!==null || producer.manualDispatch!==null)return false;}
