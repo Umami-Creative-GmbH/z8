@@ -222,3 +222,20 @@ test("mixed plan refuses a nonlocal origin while retaining all other valid fixtu
 		await rm(directory, { recursive: true, force: true });
 	}
 });
+
+test("mixed page locale reaches actual page headers and collector before navigation for every actor",async()=>{
+ const actors=["large-admin","small-admin","small-manager","large-manager"];
+ for(const actor of actors)for(const locale of ["en","de","fr"]){
+  const events=[],context={actor},transport={actor},page={setViewport:async value=>events.push(["viewport",value]),emulateTimezone:async value=>events.push(["timezone",value]),setExtraHTTPHeaders:async value=>events.push(["page-headers",{...value}]),goto:async()=>events.push(["navigate"])};
+  const installed={technical:actor};const result=await mixedProbe.installMixedPageObservation({page,context,transport,origin:"http://localhost:58792",condition:{...mixedProbe.mixedBrowserCondition,locale},contextId:actor+"-context",captureContextFailures:true},async options=>{events.push(["install",{...options.headers}]);assert.equal(options.page,page);assert.equal(options.context,context);assert.equal(options.transport,transport);assert.equal(options.contextId,actor+"-context");assert.equal(options.captureContextFailures,true);return installed;});
+  assert.equal(result,installed);await page.goto();
+  assert.deepEqual(events,[["viewport",{width:1280,height:900}],["timezone","Europe/Berlin"],["page-headers",{"Accept-Language":locale}],["install",{"Accept-Language":locale}],["navigate"]]);
+ }
+});
+
+test("mixed page locale waits for header setup and fails before installer on unknown locale",async()=>{
+ let release,installed=0;const page={setViewport:async()=>{},emulateTimezone:async()=>{},setExtraHTTPHeaders:()=>new Promise(resolve=>{release=resolve;})};
+ const running=mixedProbe.installMixedPageObservation({page,condition:mixedProbe.mixedBrowserCondition},async options=>{installed++;assert.deepEqual(options.headers,{"Accept-Language":"en"});});
+ await Promise.resolve();await Promise.resolve();await Promise.resolve();assert.equal(installed,0);release();await running;assert.equal(installed,1);
+ for(const locale of [undefined,null,"","en\r\nX-Test:bad"]){let calls=0;await assert.rejects(mixedProbe.installMixedPageObservation({page:{setViewport:async()=>{calls++;}},condition:{...mixedProbe.mixedBrowserCondition,locale}},async()=>{calls++;}));assert.equal(calls,0);}
+});
