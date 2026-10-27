@@ -1676,3 +1676,60 @@ test('context snapshots preserve the exact phase clock and request certificates 
 	observed.legacyClockReadiness.review.sha256='changed';observed.requestShapeDiagnostic.actionRegistrySha256='changed';
 	assert.equal(binding.legacyClockReadiness.review.sha256,'a'.repeat(64));assert.equal(binding.requestShapeDiagnostic.actionRegistrySha256,'b'.repeat(64));
 });
+
+test('selected proxy inspection diagnostic observes the existing EOF publication and keeps both owned charges',async()=>{
+	const f=await annualProxyFixture();try {
+		const row=f.proxy.snapshot().rows[0],inspection=row.annualInspection;
+		assert.equal(inspection.stage,'settled');assert.equal(inspection.eligible,true);assert.equal(inspection.opened,true);assert.equal(inspection.proofComplete,true);assert.equal(inspection.projection,true);assert.equal(inspection.outcome,'published');assert.equal(inspection.eof,true);assert.equal(inspection.sha256,row.transportBodyReceipt.bodySha256);assert.equal(inspection.bytes,row.transportBodyReceipt.decodedBytes);
+		assert.equal(f.proxy.snapshot().annualInspectionRetainedBytes,8192);
+		const result=await f.proxy.readAnnualTeam(f.handle,f.response);f.proxy.closeTeamValues();
+		assert.deepEqual(result.annualDiagnostic.inspection,{...inspection,actionHeaderMatches:true,urlMatches:true});assert.notEqual(result.annualDiagnostic.inspection,inspection);assert.ok(Object.isFrozen(result.annualDiagnostic.inspection));assert.equal(f.proxy.annualTeamSnapshot().retainedBytes,1048576);assert.equal(f.proxy.snapshot().annualInspectionRetainedBytes,8192,'the request map still owns its fixed row after the selector closes');
+		assert.doesNotMatch(JSON.stringify(inspection),/PRIVATE|localhost|teams|organizationTotal/);
+	}finally{f.proxy.closeTeamValues();}
+});
+
+test('proxy inspection records every existing EOF exit only while the annual selector is active',async()=>{
+	for(const mode of ['unarmed','not-flight-action','bounded','decode','ineligible','empty','ordinary','summary']){
+		const source=testBrowserBinding('c'.repeat(40)).teamAnnualAction,p=createProxyControlCollector({contextId,origin,annualSource:source}),id='a'.repeat(32)+'.1';p.installed();
+		if(mode!=='unarmed')assert.ok(p.armAnnualTeam({path:'/en/analytics/team-performance',timeoutMs:1000}));
+		const target=origin+(mode==='ineligible'?'/en/not-team':'/en/analytics/team-performance');
+		p.request(id,{url:target,method:'POST',headers:mode==='not-flight-action'?{}:{'next-action':'40'+'a'.repeat(40)},traceId:'a'.repeat(32)});
+		p.response(id,{status:200,headers:{'content-type':mode==='not-flight-action'?'text/plain':'text/x-component',...(mode==='decode'?{'content-encoding':'gzip'}:{})}});
+		assert.equal(p.snapshot().rows[0].annualInspection,undefined,'pre-EOF has no manufactured outcome');
+		const body=mode==='bounded'?Buffer.alloc(controlCancellationPolicy.encodedLimit+1):mode==='empty'?Buffer.alloc(0):Buffer.from(mode==='ordinary'?'0:{"a":"$9"}\n':mode==='summary'?'0:{"a":{"success":true,"data":{"teams":[],"organizationTotal":"PRIVATE"}}}\n':'0:{"a":1}\n');
+		p.bytes(id,body);p.end(id);await tick();
+		const row=p.snapshot().rows[0],d=row.annualInspection;
+		if(mode==='unarmed'){assert.equal(d,undefined);assert.equal(p.snapshot().annualInspectionRetainedBytes,0);}
+		else {
+			assert.equal(d.stage,'settled');assert.equal(p.snapshot().annualInspectionRetainedBytes,8192);assert.ok(Object.isFrozen(d));
+			if(['not-flight-action','bounded'].includes(mode)){assert.equal(d.skip,mode);assert.equal(d.eligible,null);assert.equal(d.eof,null);}
+			else if(mode==='decode'){assert.equal(d.catchStage,'decode');assert.equal(d.proofComplete,false);assert.equal(d.proofReasonSha256,segmentHash('proxy-body-unavailable'));}
+			else if(mode==='ineligible'){assert.equal(d.eligible,false);assert.equal(d.opened,null);assert.equal(d.projection,false);}
+			else if(mode==='empty'){assert.equal(d.eligible,true);assert.equal(d.opened,false);assert.equal(d.bytes,0);assert.equal(d.projection,false);}
+			else if(mode==='ordinary'){assert.equal(d.opened,true);assert.equal(d.proofComplete,false);assert.equal(d.outcome,'ordinary-incomplete');assert.equal(d.projection,false);}
+			else {assert.equal(d.proofComplete,true);assert.equal(d.outcome,'summary-type');assert.equal(d.projection,false);}
+			assert.doesNotMatch(JSON.stringify(d),/PRIVATE|localhost|organizationTotal/);
+		}
+		p.closeTeamValues();assert.equal(p.snapshot().annualInspectionRetainedBytes,mode==='unarmed'?0:8192);
+	}
+});
+
+test('selected inspection is detached from other rows and its complete maximum stays in the existing reservation',async()=>{
+	const f=await annualProxyFixture();try{
+		const id='a'.repeat(32)+'.2',headers=f.response.request().headers(),target=origin+'/en/analytics/team-performance';
+		f.proxy.request(id,{url:target,method:'POST',headers,traceId:'a'.repeat(32)});f.proxy.response(id,{status:200,headers:{'content-type':'text/x-component'}});f.proxy.bytes(id,Buffer.from('0:{"a":{"success":true,"data":{"teams":[],"organizationTotal":"PRIVATE"}}}\n'));f.proxy.end(id);await tick();
+		const result=await f.proxy.readAnnualTeam(f.handle,f.response);assert.equal(result.annualDiagnostic.packetOrdinal,1);assert.equal(result.annualDiagnostic.inspection.outcome,'published');assert.equal(f.proxy.snapshot().rows[1].annualInspection.outcome,'summary-type');
+		const maximum=structuredClone(result.annualDiagnostic);for(const key of ['candidateProxyIdSha256','selectedProxyIdSha256','selectedBrowserIdSha256'])maximum[key]='f'.repeat(64);for(const key of ['armRequestOrdinal','candidateResponses','recordedResponses','readCalls','packetOrdinal','requestBodyBytes','status','redirects'])maximum[key]=Number.MAX_VALUE;maximum.stage='response-document';maximum.firstFailureSite='response';maximum.firstFailureStage='response-identity';
+		maximum.inspection={stage:'settled',skip:'not-flight-action',eligible:false,opened:false,proofComplete:false,proofReasonSha256:'f'.repeat(64),projection:false,outcome:'projector-unavailable',eof:false,bytes:Number.MAX_VALUE,sha256:'f'.repeat(64),bounded:false,flight:false,action:false,actionHeaderMatches:false,urlMatches:false,catchStage:'eligible'};
+		const subBytes=Buffer.byteLength(JSON.stringify(maximum.inspection)),charged=Buffer.byteLength(JSON.stringify(maximum))*8+2048;assert.ok(subBytes<=800);assert.ok(subBytes*8+2048<=8192);assert.ok(charged<=16384,`full maximum diagnostic ${charged}`);console.log(JSON.stringify({selectedInspectionMaximumBytes:subBytes,fullDiagnosticMaximumChargedBytes:charged,rowReservation:8192,closedDiagnosticReservation:16384}));
+		f.proxy.closeTeamValues();assert.ok(Object.isFrozen(f.proxy.annualTeamSnapshot().diagnostic.inspection));assert.equal(f.proxy.snapshot().annualInspectionRetainedBytes,16384);
+	}finally{f.proxy.closeTeamValues();}
+});
+
+test('failed selected projection retains only its frozen diagnostic copy and no post-close row is allocated',async()=>{
+	const f=await annualProxyFixture({bodyText:'0:{"a":{"success":true,"data":{"teams":[],"organizationTotal":"PRIVATE"}}}\n'});try{
+		await assert.rejects(f.proxy.readAnnualTeam(f.handle,f.response));f.proxy.closeTeamValues();const state=f.proxy.annualTeamSnapshot(),d=state.diagnostic;
+		assert.equal(d.firstFailureStage,'notify-candidate');assert.equal(d.inspection.outcome,'summary-type');assert.equal(d.inspection.proofComplete,true);assert.equal(d.inspection.projection,false);assert.equal(d.coreReturned,null);assert.ok(Object.isFrozen(d.inspection));assert.equal(state.retainedBytes,16384);assert.equal(f.proxy.snapshot().annualInspectionRetainedBytes,8192);
+		const id='a'.repeat(32)+'.2';f.proxy.request(id,{url:origin+'/en/analytics/team-performance',method:'POST',headers:f.response.request().headers(),traceId:'a'.repeat(32)});f.proxy.response(id,{status:200,headers:{'content-type':'text/x-component'}});f.proxy.bytes(id,Buffer.from('0:{"a":1}\n'));f.proxy.end(id);await tick();assert.equal(f.proxy.snapshot().rows[1].annualInspection,undefined);assert.equal(f.proxy.snapshot().annualInspectionRetainedBytes,8192);assert.equal(f.proxy.annualTeamSnapshot().diagnostic,d);assert.doesNotMatch(JSON.stringify(d),/PRIVATE|localhost/);
+	}finally{f.proxy.closeTeamValues();}
+});

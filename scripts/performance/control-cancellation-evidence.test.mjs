@@ -2075,3 +2075,23 @@ test('team projection requires ordinary nonstream row0 without changing the gene
   assert.equal(api.takeTeamAnnualProjection(cap),null,tag);assert.equal(proof.complete,before.complete,tag);api.closeTeamAnnualProjection(cap);
  }
 });
+
+test('private team projection diagnostic distinguishes ordinary and selected-field rejection without changing take results',async()=>{
+	const api=await import('./control-cancellation-evidence.mjs');
+	for(const [body,outcome,complete] of [
+		['0:{"a":{"success":true,"data":{"teams":[{"employeeCount":8}],"organizationTotal":16704}}}\n','published',true],
+		['0:{"a":{"success":true,"data":{"teams":[],"organizationTotal":"PRIVATE_NUMBER"}}}\n','summary-type',true],
+		['0:I{"a":{"success":true,"data":{"teams":[],"organizationTotal":1}}}\n','root-kind',true],
+		['0:{"a":{"success":true,"data":{"teams":[],"organizationTotal":"$9"}}}\n','ordinary-incomplete',false],
+	]){
+		const bytes=Buffer.from(body),cap=api.openTeamAnnualProjection({bodySha256:segmentDigest(bytes),decodedBytes:bytes.length}),proof=api.inspectRequiredFlightBody(bytes,{action:true,teamAnnualProjection:cap}),diagnostic={outcome:null};
+		const result=api.takeTeamAnnualProjection(cap,diagnostic);assert.equal(proof.complete,complete);assert.equal(diagnostic.outcome,outcome);assert.equal(Boolean(result),outcome==='published');assert.doesNotMatch(JSON.stringify(diagnostic),/PRIVATE|teams|organizationTotal/);api.closeTeamAnnualProjection(cap);
+	}
+	for(const sink of [null,Object.freeze({outcome:null}),{get outcome(){throw Error('PRIVATE_GETTER');}},new Proxy({},{getOwnPropertyDescriptor(){throw Error('PRIVATE_PROXY');}})]){
+		const bytes=Buffer.from('0:{"a":{"success":true,"data":{"teams":[],"organizationTotal":0}}}\n'),cap=api.openTeamAnnualProjection({bodySha256:segmentDigest(bytes),decodedBytes:bytes.length});api.inspectRequiredFlightBody(bytes,{action:true,teamAnnualProjection:cap});assert.equal(api.takeTeamAnnualProjection(cap,sink).hours,0);api.closeTeamAnnualProjection(cap);
+	}
+	let accessorCalls=0;const bytes=Buffer.from('0:{"a":{"success":true,"data":{"teams":[],"organizationTotal":0}}}\n'),cap=api.openTeamAnnualProjection({bodySha256:segmentDigest(bytes),decodedBytes:bytes.length});api.inspectRequiredFlightBody(bytes,{action:true,teamAnnualProjection:cap});assert.equal(api.takeTeamAnnualProjection(cap,{get outcome(){accessorCalls++;return null;},set outcome(_){accessorCalls++;}}).hours,0);assert.equal(accessorCalls,0);api.closeTeamAnnualProjection(cap);
+	const guarded=api.openTeamAnnualProjection({bodySha256:segmentDigest(bytes),decodedBytes:bytes.length});api.inspectRequiredFlightBody(bytes,{action:true,teamAnnualProjection:guarded});let traps=0;
+	const hostile=new Proxy({outcome:null},{getOwnPropertyDescriptor(){traps++;api.closeTeamAnnualProjection(guarded);return {value:null,writable:true,enumerable:true,configurable:true};},getPrototypeOf(){traps++;return Object.prototype;},defineProperty(){traps++;return true;}});
+	assert.equal(api.takeTeamAnnualProjection(guarded,hostile)?.hours,0,'a diagnostic cannot close or change the original take result');assert.equal(traps,0);api.closeTeamAnnualProjection(guarded);
+});

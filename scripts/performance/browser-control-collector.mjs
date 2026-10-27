@@ -144,6 +144,7 @@ export function createTeamAnnualResponseSelection({contextId,origin,source,reser
 		try{
 			const {held,selected}=waiter,packet=packetFor(selected.proxyResponseId),browser=browserFor(selected.proxyResponseId);
 			diagnostic.packetKnown=Boolean(packet);diagnostic.browserKnown=Boolean(browser);diagnostic.selectedBrowserIdSha256=technicalHash(browser?.requestId);diagnostic.packetOrdinal=Number.isSafeInteger(packet?.annualRequestOrdinal)?packet.annualRequestOrdinal:null;diagnostic.projectionKnown=packet?Boolean(packet.teamAnnualProjection):null;
+			diagnostic.inspection=packet?.annualInspection?Object.freeze({...packet.annualInspection,actionHeaderMatches:packet.headerFieldSha256?.["next-action"]===source.actionHeaderSha256,urlMatches:packet.fullUrlSha256===held.urlSha256}):null;
 			if(closed || errors || overflow || performance.now()>held.deadlineMs)throw safeError();
 			mark("notify-wait");
 			if(!packet || !browser || !packet.proxyInspectionSettled || !browser.loadingFinished && !browser.failed || browser.failed===true && browser.bodyReadSettled!==true)return;
@@ -169,9 +170,10 @@ export function createTeamAnnualResponseSelection({contextId,origin,source,reser
 			if(closed || active || !knownTeamAnnualActionSource(source,source?.compiledBuild,source?.compiledManifestSha256) || input?.path!=="/en/analytics/team-performance" || !Number.isFinite(input.timeoutMs) || input.timeoutMs<=0 || input.timeoutMs>90000 || !charge(32768))return null;
 			const startedAtMs=performance.now(),handle=Object.freeze({protocol:"private-annual-team-selection-v1"});
 			active={startedAtMs,deadlineMs:startedAtMs+input.timeoutMs,requestOrdinal:requestCount(),urlSha256:sha(new URL(input.path,origin).href),consumed:false};armed=true;handles.set(handle,active);
-			diagnostic={protocol:"annual-team-read-diagnostic-v1",stage:"armed",firstFailureSite:null,firstFailureStage:null,armRequestOrdinal:Number.isSafeInteger(active.requestOrdinal)?active.requestOrdinal:null,candidateResponses:0,recordedResponses:0,readCalls:0,candidateProxyIdSha256:null,selectedProxyIdSha256:null,selectedBrowserIdSha256:null,handleKnown:null,responseKnown:null,status:null,redirects:null,frameMatches:null,requestBodyKnown:null,requestBodyBytes:null,documentKnown:null,packetKnown:null,browserKnown:null,packetOrdinal:null,projectionKnown:null,documentReady:null,coreReturned:null};return handle;
+			diagnostic={protocol:"annual-team-read-diagnostic-v1",stage:"armed",firstFailureSite:null,firstFailureStage:null,armRequestOrdinal:Number.isSafeInteger(active.requestOrdinal)?active.requestOrdinal:null,candidateResponses:0,recordedResponses:0,readCalls:0,candidateProxyIdSha256:null,selectedProxyIdSha256:null,selectedBrowserIdSha256:null,handleKnown:null,responseKnown:null,status:null,redirects:null,frameMatches:null,requestBodyKnown:null,requestBodyBytes:null,documentKnown:null,packetKnown:null,browserKnown:null,packetOrdinal:null,projectionKnown:null,documentReady:null,coreReturned:null,inspection:null};return handle;
 		}catch{errors++;return null;}},
 		eligible(row){return !closed && active && !active.consumed && performance.now()<=active.deadlineMs && row.annualRequestOrdinal>active.requestOrdinal && row.fullUrlSha256===active.urlSha256 && row.action===true && row.headerFieldSha256?.["next-action"]===source.actionHeaderSha256;},
+		inspectionActive(){return Boolean(active && !closed && !active.consumed);},
 		response(response){
 			if(!active || closed || active.consumed)return;
 			let transient=false,headerReservation=false,documentReservation=false;
@@ -1663,6 +1665,7 @@ export function createProxyControlCollector({
 		errors = 0,
 		overflow = 0,
 		pendingBodies = 0;
+	let annualInspectionRetainedBytes=0;
 	const qualification=originalTeamBindings.get(compiledBinding),sourceFacts=originalTeamSourceFacts(qualification);
 	const shapeConfiguration=requestShapeBindings.get(compiledBinding) ?? (sourceFacts?{protocol:"original-team-request-observation-v1",actionHeaderSha256:sourceFacts.actionHeaderSha256}:annualSource?{protocol:"annual-team-request-observation-v1",actionHeaderSha256:annualSource.actionHeaderSha256}:null),shapeRows=new Map();
 	const reserveTeam=bytes=>{if(!Number.isSafeInteger(bytes)||bytes<0||retained+bytes>controlCancellationPolicy.retainedLimit)return false;retained+=bytes;return true;};
@@ -1882,8 +1885,14 @@ export function createProxyControlCollector({
 			pendingBodies++;
 			// Do not hold response forwarding/EOF open for proof parsing.
 			setImmediate(() => {
+				let inspection=null;
 				try {
-					if ((!row.flight && !row.action) || row.bounded) return;
+					if(annual?.inspectionActive()){
+						if(reserveTeam(8192)){annualInspectionRetainedBytes+=8192;inspection=row.annualInspection={stage:"entered",skip:null,eligible:null,opened:null,proofComplete:null,proofReasonSha256:null,projection:null,outcome:null,eof:null,bytes:null,sha256:null,bounded:row.bounded===true,flight:row.flight===true,action:row.action===true,actionHeaderMatches:null,urlMatches:null,catchStage:null};}
+						else overflow++;
+					}
+					if ((!row.flight && !row.action) || row.bounded) {if(inspection)inspection.skip=row.bounded?"bounded":"not-flight-action";return;}
+					if(inspection)inspection.stage="decode";
 					let bytes = Buffer.concat(row.chunks);
 					const options = {
 						maxOutputLength: controlCancellationPolicy.decodedLimit,
@@ -1897,6 +1906,7 @@ export function createProxyControlCollector({
 						throw Error("Unsupported encoding");
 					row.transportBodyReceipt = { protocol: "proxy-natural-eof-decoded-bytes-v1", naturalEOF: true,
 						decodedBytes: bytes.length, bodySha256: sha(bytes) };
+					if(inspection){inspection.eof=true;inspection.bytes=bytes.length;inspection.sha256=row.transportBodyReceipt.bodySha256;}
 					try {
 						row.transportBodyReceipt.cdpTextProjection = {available:true,...projectCachedCdpText(bytes)};
 					} catch(error) {
@@ -1904,18 +1914,27 @@ export function createProxyControlCollector({
 						row.transportBodyReceipt.cdpTextProjection = {available:false,reason};
 					}
 					let projection=null;
-					if(annual?.eligible(row)){
+					if(inspection)inspection.stage="eligible";
+					const eligible=annual?.eligible(row);if(inspection)inspection.eligible=eligible===true;
+					if(eligible){
 						// Scratch UTF-8 decoding plus scalar/hash receipt only; no second body pool.
 						if(!reserveTeam(65536)){overflow++;throw Error("Annual projection reservation unavailable.");}
+						if(inspection)inspection.stage="open";
 						projection=openTeamAnnualProjection({bodySha256:row.transportBodyReceipt.bodySha256,decodedBytes:bytes.length});
+						if(inspection)inspection.opened=Boolean(projection);
 					}
 					try {
+						if(inspection)inspection.stage="inspect";
 						assignBodyProof(row, inspectCollectedFlightBody(row,bytes,compiledCachedNavigations,compiledBinding,temporaryInspectionFor,projection), "proxy-natural-eof", row.transportBodyReceipt.bodySha256);
-						if(projection)row.teamAnnualProjection=takeTeamAnnualProjection(projection);
+						if(inspection){inspection.proofComplete=row.bodyProof?.complete===true;inspection.proofReasonSha256=typeof row.bodyProof?.reason==="string"?sha(row.bodyProof.reason):null;inspection.stage="take";}
+						if(projection)row.teamAnnualProjection=takeTeamAnnualProjection(projection,inspection);
+						if(inspection)inspection.projection=Boolean(row.teamAnnualProjection);
 					}finally{if(projection)closeTeamAnnualProjection(projection);}
 				} catch {
+					if(inspection)inspection.catchStage=inspection.stage;
 					row.bodyProof = { complete: false, reason: "proxy-body-unavailable" };
 				} finally {
+					if(inspection){inspection.stage="settled";if(inspection.catchStage!==null){inspection.proofComplete=false;inspection.proofReasonSha256=sha("proxy-body-unavailable");}Object.freeze(inspection);}
 					row.proxyInspectionSettled=true;retireValue(id);
 					annual?.notify();
 					release(row);
@@ -1960,6 +1979,7 @@ export function createProxyControlCollector({
                 temporaryValues:{condition:temporaryValueObservation,store:teamStore.snapshot(),manualDispatch:teamDispatch?.snapshot() ?? null,sourceCuts:sourceCuts.snapshot(),bodyUses:{protocol:"actual-body-value-observations-v1",contextId,observed:bodyUses.size,records:[...bodyUses.values()]}},
 				...(shapeConfiguration?{requestShapeDiagnostics:shapeSnapshot()}:{}),
 				headerCensus:headerCensus.snapshot(),
+				annualInspectionRetainedBytes,
 				headerLifetime:{protocol:"owned-context-upstream-header-lifetime-v1",contextId,installation:transportInstallation,closure:transportClosure},
 				errors,
 				overflow,
