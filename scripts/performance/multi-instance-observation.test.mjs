@@ -670,6 +670,7 @@ test("cleanup drains pending HTTP before rejecting a mandatory cancel; explicit 
 });
 
 test("paired acceptance distinguishes zero-app-IO startup from a late escape and refuses broken arithmetic", () => {
+	const upstreamSocketPolicy = { protocol: "no-idle-upstream-sockets-v1", keepAlive: false, maxSockets: 64, retries: 0 };
 	const reasons = {
 		unexpectedLoopback: 0,
 		nonLoopbackHttp: 0,
@@ -678,6 +679,7 @@ test("paired acceptance distinguishes zero-app-IO startup from a late escape and
 		malformed: 0,
 	};
 	const startup = {
+		upstreamSocketPolicy: { ...upstreamSocketPolicy },
 		policy: "isolated-profile-no-prediction-v1",
 		launch: { policy: "isolated-profile-no-prediction-v1", headless: true },
 		emptyContext: true,
@@ -696,6 +698,7 @@ test("paired acceptance distinguishes zero-app-IO startup from a late escape and
 		refusalReasons: reasons,
 	};
 	const snapshot = {
+		upstreamSocketPolicy,
 		nativeCleanup: {
 			...createProxyWireObserver().state(2000),
 			policy: "post-snapshot-finite-prefetch-quiet-v1",
@@ -733,6 +736,18 @@ test("paired acceptance distinguishes zero-app-IO startup from a late escape and
 		observationModule.multiInstanceTransportComplete(snapshot),
 		true,
 	);
+	for (const select of [value => value, value => value.browserInitialization]) {
+		for (const mutate of [
+			value => delete value.upstreamSocketPolicy,
+			value => { value.upstreamSocketPolicy.keepAlive = true; },
+			value => { value.upstreamSocketPolicy.maxSockets = 65; },
+			value => { value.upstreamSocketPolicy.retries = 1; },
+		]) {
+			const changed = structuredClone(snapshot);
+			mutate(select(changed));
+			assert.equal(observationModule.multiInstanceTransportComplete(changed), false);
+		}
+	}
 	assert.equal(
 		observationModule.multiInstanceTransportComplete({
 			...snapshot,

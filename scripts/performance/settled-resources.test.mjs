@@ -355,6 +355,10 @@ test("resource eligibility rejects failed original and HEAD behavior even with c
     (a) => (a.samples[0].failed = true),
 	(a) => { const proof = a.samples[0].traceTransport.applicationEvidence; proof.observed = 1; proof.failures = 1; },
 	(a) => delete a.samples[0].traceTransport.applicationEvidence,
+    (a) => delete a.samples[0].traceTransport.upstreamSocketPolicy,
+    (a) => (a.samples[0].traceTransport.upstreamSocketPolicy.keepAlive = true),
+    (a) => (a.samples[0].traceTransport.browserInitialization.upstreamSocketPolicy.maxSockets = 65),
+    (a) => (a.samples[0].traceTransport.upstreamSocketPolicy.retries = 1),
     (a) => (a.protocol["browser-performance.mjs"] = "0".repeat(64)),
     (a) => delete a.samples[0].failed,
     (a) => delete a.samples[0].readyMs,
@@ -551,6 +555,7 @@ function prerequisiteFixture(mode) {
 }
 
 function initializedTransport(snapshot) {
+  const upstreamSocketPolicy = { protocol: "no-idle-upstream-sockets-v1", keepAlive: false, maxSockets: 64, retries: 0 };
   const reasons = {
     unexpectedLoopback: 0,
     nonLoopbackHttp: 0,
@@ -567,6 +572,7 @@ function initializedTransport(snapshot) {
     refusalReasons: { ...reasons },
   };
   const init = {
+    upstreamSocketPolicy: { ...upstreamSocketPolicy },
     policy: "isolated-profile-no-prediction-v1",
     launch: {
       policy: "isolated-profile-no-prediction-v1",
@@ -596,6 +602,7 @@ function initializedTransport(snapshot) {
   };
   return {
     ...snapshot,
+    upstreamSocketPolicy,
     applicationEvidence: createActionResultObserver().snapshot(),
     refusedRequests: 1,
     refusalReasons: { ...init.refusalReasons },

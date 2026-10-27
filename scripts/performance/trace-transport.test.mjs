@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { spawnSync } from "node:child_process";
 import { EventEmitter } from "node:events";
 import assert from "node:assert/strict";
 import { createServer, request } from "node:http";
@@ -9,7 +10,111 @@ import { tapOwnedRequestBody, createFixtureTraceTransport } from "./trace-transp
 
 const pause = (ms) => new Promise((done) => setTimeout(done, ms));
 
-test("a genuine reset on a reused GET socket stays a forwarding failure before any client cancellation", async () => {
+test("upstream socket policy mock removes idle retention and never retries a failed POST", () => {
+	const child = spawnSync(process.execPath, ["--input-type=module", "-"], {
+		encoding: "utf8",
+		input: `
+import assert from 'node:assert/strict';
+import http from 'node:http';
+import {EventEmitter} from 'node:events';
+import {syncBuiltinESMExports} from 'node:module';
+let handler, agent, calls=0, upstream, piped;
+class FakeAgent {constructor(options){this.options=options;agent=this;} destroy(){this.destroyed=true;}}
+class FakeServer extends EventEmitter {listen(port,host,done){queueMicrotask(done);} address(){return {port:12345};} closeAllConnections(){} close(done){done();}}
+http.Agent=FakeAgent;
+http.createServer=callback=>{handler=callback;return new FakeServer();};
+http.request=(url,options)=>{calls++;assert.equal(options.agent,agent);upstream=new EventEmitter();upstream.reusedSocket=true;upstream.destroy=()=>{};return upstream;};
+syncBuiltinESMExports();
+const {createFixtureTraceTransport}=await import(${JSON.stringify(new URL("./trace-transport.mjs", import.meta.url).href)});
+const transport=await createFixtureTraceTransport({origin:'http://127.0.0.1:58792',getTraceId:()=> 'a'.repeat(32)});
+assert.deepEqual(agent.options,{keepAlive:false,maxSockets:64});
+const expected={protocol:'no-idle-upstream-sockets-v1',keepAlive:false,maxSockets:64,retries:0};
+assert.deepEqual(transport.snapshot().upstreamSocketPolicy,expected);
+const changed=transport.snapshot();changed.upstreamSocketPolicy.keepAlive=true;
+assert.deepEqual(transport.snapshot().upstreamSocketPolicy,expected);
+const initial={...transport.snapshot(),complete:true};
+const missing=structuredClone(initial);delete missing.upstreamSocketPolicy;
+assert.throws(()=>transport.finishBrowserInitialization(missing),/Invalid/);
+transport.finishBrowserInitialization(initial);
+assert.deepEqual(transport.snapshot().browserInitialization.upstreamSocketPolicy,expected);
+assert.equal(Object.hasOwn(transport.snapshot().afterInitialization,'upstreamSocketPolicy'),false);
+assert.equal(Object.values(transport.snapshot().afterInitialization).some(value=>typeof value==='number' && !Number.isFinite(value)),false);
+const request=new EventEmitter();request.headers={host:'127.0.0.1:58792',origin:'http://127.0.0.1:58792','content-type':'application/json'};request.method='POST';request.url='http://127.0.0.1:58792/action';request.pipe=value=>{piped=value;return value;};
+const response=new EventEmitter();response.destroyed=false;response.headersSent=false;response.writeHead=status=>{response.status=status;response.headersSent=true;return response;};response.end=()=>{response.writableEnded=true;};
+handler(request,response);assert.equal(piped,upstream);
+upstream.emit('error',Object.assign(new Error('synthetic reset'),{code:'ECONNRESET'}));
+upstream.emit('error',Object.assign(new Error('same failure'),{code:'ECONNRESET'}));upstream.emit('close');
+assert.equal(calls,1);assert.equal(response.status,502);
+const facts=transport.snapshot();
+for(const key of ['upstreamFailures','upstreamConnectionErrors','upstreamReusedSocketErrors','upstreamPostErrors','upstreamResetErrors'])assert.equal(facts[key],1,key);
+assert.equal(facts.downstreamCancellations,0);
+await transport.close();assert.equal(agent.destroyed,true);
+`,
+	});
+	assert.equal(child.status, 0, child.stderr);
+});
+
+// Root owns this real socket regression; agent verification selects only mock/pure cases.
+test("upstream socket policy real loopback closes idle POST connections without changing forwarding or retrying reset", { timeout: 5000 }, async () => {
+	const upload = Buffer.from("synthetic-body-\u00e9"), bodies = [], sockets = [];
+	let firstClosed, requestCount = 0;
+	const closed = new Promise(done => { firstClosed = done; });
+	const backend = createServer((req, res) => {
+		requestCount++;
+		sockets.push(req.socket);
+		if (requestCount === 1) req.socket.once("close", firstClosed);
+		assert.equal(req.headers.host, new URL(origin).host);
+		assert.equal(req.headers.origin, origin);
+		assert.equal(req.headers["accept-language"], "en");
+		assert.equal(req.headers.connection, "keep-alive");
+		const chunks = [];
+		req.on("data", chunk => chunks.push(chunk));
+		req.once("end", () => {
+			bodies.push(Buffer.concat(chunks));
+			if (requestCount === 3) req.socket.destroy();
+			else { res.writeHead(201, { "content-type": "application/octet-stream", "x-technical-test": "preserved" }); res.end(upload); }
+		});
+	});
+	await new Promise(done => backend.listen(0, "127.0.0.1", done));
+	const origin = `http://127.0.0.1:${backend.address().port}`;
+	const transport = await createFixtureTraceTransport({ origin, getTraceId: () => "a".repeat(32) });
+	try {
+		const proxy = new URL(transport.browserContextOptions.proxyServer);
+		const send = () => new Promise((done, reject) => {
+			const call = request({ hostname: proxy.hostname, port: proxy.port, path: origin + "/action", method: "POST", headers: { host: new URL(origin).host, origin, "accept-language": "en", connection: "keep-alive", "content-type": "application/octet-stream" } }, response => {
+				const chunks = [];
+				response.on("data", chunk => chunks.push(chunk));
+				response.once("end", () => done({ status: response.statusCode, technicalHeader: response.headers["x-technical-test"], body: Buffer.concat(chunks) }));
+			});
+			call.on("error", reject);
+			call.end(upload);
+		});
+		const first = await send();
+		assert.deepEqual(first, { status: 201, technicalHeader: "preserved", body: upload });
+		await closed; // Actual upstream close, no arbitrary idle-delay assumption.
+		const second = await send();
+		assert.deepEqual(second, first);
+		assert.notEqual(sockets[0], sockets[1]);
+		const reset = await send();
+		assert.equal(reset.status, 502);
+		assert.equal(requestCount, 3, "A failed POST is not retried.");
+		assert.deepEqual(bodies, [upload, upload, upload]);
+		const facts = transport.snapshot();
+		assert.equal(facts.requests, 3);
+		assert.equal(facts.upstreamFailures, 1);
+		assert.equal(facts.upstreamConnectionErrors, 1);
+		assert.equal(facts.upstreamPostErrors, 1);
+		assert.equal(facts.upstreamResetErrors, 1);
+		assert.equal(facts.upstreamReusedSocketErrors, 0);
+		assert.equal(facts.downstreamCancellations, 0);
+	} finally {
+		await transport.close();
+		backend.closeAllConnections();
+		await new Promise(done => backend.close(done));
+	}
+});
+
+test("a genuine reset on a fresh GET socket stays a forwarding failure before any client cancellation", async () => {
 	let requests = 0;
 	const backend = createServer((req, res) => {
 		if (++requests === 1) res.end("complete");
@@ -47,7 +152,7 @@ test("a genuine reset on a reused GET socket stays a forwarding failure before a
 		const counts = transport.snapshot();
 		assert.equal(counts.upstreamFailures, 1);
 		assert.equal(counts.upstreamConnectionErrors, 1);
-		assert.equal(counts.upstreamReusedSocketErrors, 1);
+		assert.equal(counts.upstreamReusedSocketErrors, 0);
 		assert.equal(counts.upstreamGetErrors, 1);
 		assert.equal(counts.upstreamResetErrors, 1);
 		assert.equal(counts.downstreamCancellations, 0);
@@ -241,6 +346,7 @@ test("context transport preserves streaming, cookies, bodies and phase identity 
 		assert.equal(applicationEvidence.outOfScope, 1);
 		assert.equal(applicationEvidence.failures, 0);
 		assert.deepEqual(transportCounts, {
+			upstreamSocketPolicy: { protocol: "no-idle-upstream-sockets-v1", keepAlive: false, maxSockets: 64, retries: 0 },
 			requests: 1,
 			rewrittenRequests: 1,
 			refusedRequests: 0,

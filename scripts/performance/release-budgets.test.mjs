@@ -326,6 +326,26 @@ test("before derivation rejects positive or unknown raw browser failures", () =>
   assert.equal(f.derive().status, 0);
 });
 
+test("primary budgets reject absent or changed upstream socket policy in original and HEAD evidence", () => {
+  for (const change of [
+    (s) => delete s.traceTransport.upstreamSocketPolicy,
+    (s) => (s.traceTransport.upstreamSocketPolicy.keepAlive = true),
+    (s) => (s.traceTransport.browserInitialization.upstreamSocketPolicy.maxSockets = 65),
+    (s) => (s.traceTransport.upstreamSocketPolicy.retries = 1),
+  ]) {
+    const before = fixture();
+    change(before.artifact.samples[0]);
+    before.saveBefore();
+    assert.equal(before.derive().status, 2);
+    const original = fixture();
+    assert.equal(original.derive().status, 0);
+    const head = candidate(original);
+    change(head.artifact.samples[0]);
+    original.save("head.json", head.artifact);
+    assert.equal(head.compare().status, 2);
+  }
+});
+
 test("common Next stream patch is mandatory and matched for derivation and head comparison", () => {
   for (const change of [
     (p, a) => {
@@ -1278,6 +1298,7 @@ test("main finalizer CDP overage remains diagnostic when censored before bytes h
 });
 
 function initializedTransport(snapshot) {
+  const upstreamSocketPolicy = { protocol: "no-idle-upstream-sockets-v1", keepAlive: false, maxSockets: 64, retries: 0 };
   const reasons = {
     unexpectedLoopback: 0,
     nonLoopbackHttp: 0,
@@ -1294,6 +1315,7 @@ function initializedTransport(snapshot) {
     refusalReasons: { ...reasons },
   };
   const init = {
+    upstreamSocketPolicy: { ...upstreamSocketPolicy },
     policy: "isolated-profile-no-prediction-v1",
     launch: {
       policy: "isolated-profile-no-prediction-v1",
@@ -1323,6 +1345,7 @@ function initializedTransport(snapshot) {
   };
   return {
     ...snapshot,
+    upstreamSocketPolicy,
     applicationEvidence: createActionResultObserver().snapshot(),
     refusedRequests: 1,
     refusalReasons: { ...init.refusalReasons },
