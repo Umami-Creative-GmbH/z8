@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import { runInNewContext } from "node:vm";
 import test from "node:test";
-import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
+import { mkdtemp, mkdir, writeFile, rm, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { createHash } from "node:crypto";
@@ -1720,8 +1720,9 @@ test('selected inspection is detached from other rows and its complete maximum s
 		f.proxy.request(id,{url:target,method:'POST',headers,traceId:'a'.repeat(32)});f.proxy.response(id,{status:200,headers:{'content-type':'text/x-component'}});f.proxy.bytes(id,Buffer.from('0:{"a":{"success":true,"data":{"teams":[],"organizationTotal":"PRIVATE"}}}\n'));f.proxy.end(id);await tick();
 		const result=await f.proxy.readAnnualTeam(f.handle,f.response);assert.equal(result.annualDiagnostic.packetOrdinal,1);assert.equal(result.annualDiagnostic.inspection.outcome,'published');assert.equal(f.proxy.snapshot().rows[1].annualInspection.outcome,'summary-type');
 		const maximum=structuredClone(result.annualDiagnostic);for(const key of ['candidateProxyIdSha256','selectedProxyIdSha256','selectedBrowserIdSha256'])maximum[key]='f'.repeat(64);for(const key of ['armRequestOrdinal','candidateResponses','recordedResponses','readCalls','packetOrdinal','requestBodyBytes','status','redirects'])maximum[key]=Number.MAX_VALUE;maximum.stage='response-document';maximum.firstFailureSite='response';maximum.firstFailureStage='response-identity';
-		maximum.inspection={stage:'settled',skip:'not-flight-action',eligible:false,opened:false,proofComplete:false,proofReasonSha256:'f'.repeat(64),projection:false,outcome:'projector-unavailable',eof:false,bytes:Number.MAX_VALUE,sha256:'f'.repeat(64),bounded:false,flight:false,action:false,actionHeaderMatches:false,urlMatches:false,catchStage:'eligible'};
-		const subBytes=Buffer.byteLength(JSON.stringify(maximum.inspection)),charged=Buffer.byteLength(JSON.stringify(maximum))*8+2048;assert.ok(subBytes<=800);assert.ok(subBytes*8+2048<=8192);assert.ok(charged<=16384,`full maximum diagnostic ${charged}`);console.log(JSON.stringify({selectedInspectionMaximumBytes:subBytes,fullDiagnosticMaximumChargedBytes:charged,rowReservation:8192,closedDiagnosticReservation:16384}));
+		maximum.inspection={stage:'settled',skip:'not-flight-action',eligible:false,opened:false,proofComplete:false,proofReasonSha256:'f'.repeat(64),projection:false,outcome:'projector-unavailable',eof:false,bytes:Number.MAX_VALUE,sha256:'f'.repeat(64),bounded:false,flight:false,action:false,actionHeaderMatches:false,urlMatches:false,catchStage:'eligible',prefix:'plain',form:'typed-outlined-path',length:controlCancellationPolicy.decodedLimit,tokenSha256:'f'.repeat(64),role:'suspended-host-props',pathFailure:'eager-cross-record-or-alias-cycle',lookupAttempted:false,valueUsed:false,authorityStage:'header-snapshot'};
+		const rowMaximum={...maximum.inspection};delete rowMaximum.actionHeaderMatches;delete rowMaximum.urlMatches;
+		const subBytes=Buffer.byteLength(JSON.stringify(maximum.inspection)),rowCharged=Buffer.byteLength(JSON.stringify(rowMaximum))*8+2048,charged=Buffer.byteLength(JSON.stringify(maximum))*8+2048;assert.ok(subBytes<=800);assert.ok(rowCharged<=8192);assert.ok(charged<=16384,`full maximum diagnostic ${charged}`);console.log(JSON.stringify({selectedInspectionMaximumBytes:subBytes,rowMaximumChargedBytes:rowCharged,fullDiagnosticMaximumChargedBytes:charged,rowReservation:8192,closedDiagnosticReservation:16384}));
 		f.proxy.closeTeamValues();assert.ok(Object.isFrozen(f.proxy.annualTeamSnapshot().diagnostic.inspection));assert.equal(f.proxy.snapshot().annualInspectionRetainedBytes,16384);
 	}finally{f.proxy.closeTeamValues();}
 });
@@ -1732,4 +1733,33 @@ test('failed selected projection retains only its frozen diagnostic copy and no 
 		assert.equal(d.firstFailureStage,'notify-candidate');assert.equal(d.inspection.outcome,'summary-type');assert.equal(d.inspection.proofComplete,true);assert.equal(d.inspection.projection,false);assert.equal(d.coreReturned,null);assert.ok(Object.isFrozen(d.inspection));assert.equal(state.retainedBytes,16384);assert.equal(f.proxy.snapshot().annualInspectionRetainedBytes,8192);
 		const id='a'.repeat(32)+'.2';f.proxy.request(id,{url:origin+'/en/analytics/team-performance',method:'POST',headers:f.response.request().headers(),traceId:'a'.repeat(32)});f.proxy.response(id,{status:200,headers:{'content-type':'text/x-component'}});f.proxy.bytes(id,Buffer.from('0:{"a":1}\n'));f.proxy.end(id);await tick();assert.equal(f.proxy.snapshot().rows[1].annualInspection,undefined);assert.equal(f.proxy.snapshot().annualInspectionRetainedBytes,8192);assert.equal(f.proxy.annualTeamSnapshot().diagnostic,d);assert.doesNotMatch(JSON.stringify(d),/PRIVATE|localhost/);
 	}finally{f.proxy.closeTeamValues();}
+});
+
+test('selected reference diagnostic preserves only the actual rejected token facts and temporary observation',async()=>{
+	const f=await annualProxyFixture({bodyText:'0:{"a":{"success":true,"data":{"teams":[],"organizationTotal":1,"private":"$T0:0"}}}\n'});try{
+		await assert.rejects(f.proxy.readAnnualTeam(f.handle,f.response));f.proxy.closeTeamValues();const d=f.proxy.annualTeamSnapshot().diagnostic.inspection;
+		assert.equal(d.prefix,'T');assert.equal(d.form,'typed-outlined-path');assert.equal(d.length,5);assert.equal(d.tokenSha256,segmentHash('$T0:0'));assert.equal(d.role,'required');assert.equal(d.lookupAttempted,true);assert.equal(d.valueUsed,false);assert.equal(d.authorityStage,'handle');assert.equal(d.proofComplete,false);assert.equal(d.outcome,'ordinary-incomplete');assert.doesNotMatch(JSON.stringify(d),/\$T0:0|private|employeeCount|localhost/);assert.ok(Object.isFrozen(d));
+	}finally{f.proxy.closeTeamValues();}
+});
+
+test('selected plain-path diagnostic retains the existing role and fixed failure while late inspection leaves EOF frozen',async()=>{
+	const f=await annualProxyFixture({bodyText:'0:{"a":{"success":true,"data":{"teams":[],"organizationTotal":1,"private":"$9:missing"}}}\n'});try{
+		const row=f.proxy.snapshot().rows[0],before=JSON.stringify(row.annualInspection),api=await import('./team-temporary-value-authority.mjs');
+		const cap=f.proxy.temporaryInspectionFor({id:f.id},row.transportBodyReceipt.bodySha256,row.transportBodyReceipt.decodedBytes);assert.ok(cap);assert.equal(api.closeOriginalTeamBodyInspection(cap),true);assert.equal(JSON.stringify(row.annualInspection),before,'late CDP inspection cannot mutate or throw on the frozen EOF diagnostic');
+		await assert.rejects(f.proxy.readAnnualTeam(f.handle,f.response));f.proxy.closeTeamValues();const d=f.proxy.annualTeamSnapshot().diagnostic.inspection;assert.equal(d.prefix,'plain');assert.equal(d.form,'outlined-path');assert.equal(d.role,'required');assert.equal(d.pathFailure,'missing-path-model');assert.equal(d.tokenSha256,null);assert.equal(d.lookupAttempted,false);assert.equal(d.valueUsed,false);assert.doesNotMatch(JSON.stringify(d),/\$9:missing|private|localhost/);
+	}finally{f.proxy.closeTeamValues();}
+});
+
+test('authority diagnostic wrappers preserve actual short-circuit operands and the original call order',async()=>{
+	// Source-preservation seam only: controlled Node boundaries observe this exact closure.
+	// These objects grant no real private qualification, request or body authority.
+	const source=await readFile(new URL('./browser-control-collector.mjs',import.meta.url),'utf8'),start=source.indexOf('const temporaryInspectionFor='),end=source.indexOf('\n\tconst retireValue=',start),expression=source.slice(start+'const temporaryInspectionFor='.length,end).trim().replace(/;$/,'');
+	for(const mode of ['browser','handle','header-snapshot','headers-ready','header-join','header-hash','url-hash','document','action','redirect','origin','reservation','bind-rejected','bound','cached','frozen']){
+		const calls=[],id='a'.repeat(32)+'.1',authority={},inspection={authorityStage:null},packet={annualInspection:inspection,requestBodyFacts:{},traceId:'a'.repeat(32),requestHeadersSha256:'headers',fullUrlSha256:'url',documentGeneration:'doc',requestOriginSha256:'origin',headerFieldSha256:{cookie:'cookie','next-action':'action'}},browser={requestId:'browser',requestHeaderSnapshotKnown:true,requestHeadersKnown:true,initialHeaderIdentity:{},extraHeaderIdentity:{},requestHeadersSha256:'headers',fullUrlSha256:'url',documentGeneration:'doc',action:true,ambiguousRedirect:false,requestOriginSha256:'origin'},authorities=new Map();
+		const mutate={'header-snapshot':['requestHeaderSnapshotKnown',false],'headers-ready':['requestHeadersKnown',false],'header-hash':['requestHeadersSha256','foreign'],'url-hash':['fullUrlSha256','foreign'],document:['documentGeneration','foreign'],action:['action',false],redirect:['ambiguousRedirect',true],origin:['requestOriginSha256','foreign']}[mode];if(mutate)browser[mutate[0]]=mutate[1];if(mode==='frozen')Object.freeze(inspection);if(mode==='cached')authorities.set(id,authority);
+		const env={requests:new Map([[id,packet]]),browserRows:new Map(mode==='browser'?[]:[[id,browser]]),requestHandles:new Map(mode==='handle'?[]:[[id,{}]]),requestAuthorities:authorities,knownOriginalTeamHeaderJoin:()=>{calls.push('headerJoin');return mode==='header-join'?false:{original:'truthy'};},reserveTeam:()=>{calls.push('reserve');return mode!=='reservation';},releaseTeam:()=>calls.push('release'),overflow:0,openOriginalTeamBodyInspection:input=>{calls.push('open');return input;},originalTeamRequestRouteFacts:()=>null,operatorSource:null,shapeRows:new Map(),teamReplayHeader:'replay',teamDispatch:null,bindOriginalTeamRequestValue:()=>{calls.push('bind');return ['bound','frozen'].includes(mode)?authority:null;},originalTeamRequestAuthorityFacts:()=>{calls.push('facts');return {};},qualification:null,teamStore:null,proxyCuts:new Map(),browserCuts:new WeakMap(),contextId};
+		const inspect=runInNewContext('('+expression+')',env),result=inspect({id},'a'.repeat(64),1);
+		const expected=['browser','handle','header-snapshot','headers-ready'].includes(mode)?['open']:['header-join','header-hash','url-hash','document','action','redirect','origin'].includes(mode)?['headerJoin','open']:mode==='reservation'?['headerJoin','reserve','open']:mode==='bind-rejected'?['headerJoin','reserve','bind','release','open']:mode==='cached'?['facts','open']:['headerJoin','reserve','bind','facts','open'];
+		assert.deepEqual(calls,expected,mode);assert.equal(inspection.authorityStage,mode==='frozen'?null:mode,mode);if(['bound','cached','frozen'].includes(mode))assert.equal(result.requestAuthority,authority,mode);
+	}
 });

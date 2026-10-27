@@ -1678,13 +1678,14 @@ export function createProxyControlCollector({
 	let teamClosed=false;
 	const temporaryInspectionFor=(row,bodySha256,decodedBytes)=>{
 		const id=row.id ?? row.proxyResponseId,packet=requests.get(id),browser=row.requestId?row:browserRows.get(id),handle=requestHandles.get(id);
+		const inspection=packet?.annualInspection,observe=(stage,value)=>{if(inspection && !Object.isFrozen(inspection))inspection.authorityStage=stage;return value;};
 		let authority=requestAuthorities.get(id) ?? null;
         if(packet && browser){browser.requestBodyFacts=packet.requestBodyFacts;browser.traceId=packet.traceId;}
-		if(!authority && packet && browser && handle && browser.requestHeaderSnapshotKnown===true && browser.requestHeadersKnown===true && knownOriginalTeamHeaderJoin(browser.initialHeaderIdentity,browser.extraHeaderIdentity,packet,packet.headerFieldSha256.cookie) &&
-			browser.requestHeadersSha256===packet.requestHeadersSha256 && browser.fullUrlSha256===packet.fullUrlSha256 && browser.documentGeneration===packet.documentGeneration &&
-			browser.action===true && browser.ambiguousRedirect===false && browser.requestOriginSha256===packet.requestOriginSha256) {
+		if(observe("uncached",!authority) && observe("packet",packet) && observe("browser",browser) && observe("handle",handle) && observe("header-snapshot",browser.requestHeaderSnapshotKnown===true) && observe("headers-ready",browser.requestHeadersKnown===true) && observe("header-join",knownOriginalTeamHeaderJoin(browser.initialHeaderIdentity,browser.extraHeaderIdentity,packet,packet.headerFieldSha256.cookie)) &&
+			observe("header-hash",browser.requestHeadersSha256===packet.requestHeadersSha256) && observe("url-hash",browser.fullUrlSha256===packet.fullUrlSha256) && observe("document",browser.documentGeneration===packet.documentGeneration) &&
+			observe("action",browser.action===true) && observe("redirect",browser.ambiguousRedirect===false) && observe("origin",browser.requestOriginSha256===packet.requestOriginSha256)) {
 			// The new hash-only header/route receipts use the same pool, before copying either receipt.
-			if(!reserveTeam(32768)){overflow++;return openOriginalTeamBodyInspection({bodySha256,decodedBytes});}
+			if(!observe("reservation",reserveTeam(32768))){overflow++;return openOriginalTeamBodyInspection({bodySha256,decodedBytes});}
 			const headerReceipt=value=>Object.fromEntries(["requestHeaderSnapshotKnown","requestHeadersSha256","headerFieldSha256"].map(key=>[key,key==="headerFieldSha256"?{...value[key]}:value[key]]));
 			const request={contextId,proxyResponseId:id,requestId:browser.requestId,traceId:packet.traceId,method:packet.method,fullUrlSha256:packet.fullUrlSha256,
 				requestHeadersSha256:packet.requestHeadersSha256,requestOriginSha256:packet.requestOriginSha256,documentGeneration:packet.documentGeneration,frameId:browser.frameId,loaderId:browser.loaderId,
@@ -1694,9 +1695,10 @@ export function createProxyControlCollector({
 				urlSha256:browser.fullUrlSha256,actionHeaderSha256:browser.headerFieldSha256["next-action"],initialHeadersKnown:browser.initialHeaderIdentity?.requestHeaderSnapshotKnown===true,extraHeadersKnown:browser.extraHeaderIdentity?.requestHeaderSnapshotKnown===true,
 				initialReplaySha256:browser.initialHeaderIdentity?.headerFieldSha256?.[teamReplayHeader],extraReplaySha256:browser.extraHeaderIdentity?.headerFieldSha256?.[teamReplayHeader],frameId:browser.frameId,loaderId:browser.loaderId,documentGeneration:browser.documentGeneration});
 			authority=bindOriginalTeamRequestValue({qualification,store:teamStore,handle,request,proxyCut:proxyCuts.get(id),browserCut:browserCuts.get(browser),dispatchJournal:teamDispatch,wire:packet});
+			observe(authority?"bound":"bind-rejected",authority);
 			if(!authority)releaseTeam(32768);
 			if(authority){requestAuthorities.set(id,authority);const facts=originalTeamRequestAuthorityFacts(authority);row.temporaryRequestAuthority=facts;packet.temporaryRequestAuthority=facts;browser.temporaryRequestAuthority=facts;}
-		}else if(authority)row.temporaryRequestAuthority=originalTeamRequestAuthorityFacts(authority);
+		}else if(authority){observe("cached",authority);row.temporaryRequestAuthority=originalTeamRequestAuthorityFacts(authority);}
 		return openOriginalTeamBodyInspection({bodySha256,decodedBytes,requestAuthority:authority});
 	};
 	const retireValue=id=>{
@@ -1888,7 +1890,7 @@ export function createProxyControlCollector({
 				let inspection=null;
 				try {
 					if(annual?.inspectionActive()){
-						if(reserveTeam(8192)){annualInspectionRetainedBytes+=8192;inspection=row.annualInspection={stage:"entered",skip:null,eligible:null,opened:null,proofComplete:null,proofReasonSha256:null,projection:null,outcome:null,eof:null,bytes:null,sha256:null,bounded:row.bounded===true,flight:row.flight===true,action:row.action===true,actionHeaderMatches:null,urlMatches:null,catchStage:null};}
+						if(reserveTeam(8192)){annualInspectionRetainedBytes+=8192;inspection=row.annualInspection={stage:"entered",skip:null,eligible:null,opened:null,proofComplete:null,proofReasonSha256:null,projection:null,outcome:null,eof:null,bytes:null,sha256:null,bounded:row.bounded===true,flight:row.flight===true,action:row.action===true,catchStage:null,prefix:null,form:null,length:null,tokenSha256:null,role:null,pathFailure:null,lookupAttempted:null,valueUsed:null,authorityStage:null};}
 						else overflow++;
 					}
 					if ((!row.flight && !row.action) || row.bounded) {if(inspection)inspection.skip=row.bounded?"bounded":"not-flight-action";return;}
@@ -1926,6 +1928,16 @@ export function createProxyControlCollector({
 					try {
 						if(inspection)inspection.stage="inspect";
 						assignBodyProof(row, inspectCollectedFlightBody(row,bytes,compiledCachedNavigations,compiledBinding,temporaryInspectionFor,projection), "proxy-natural-eof", row.transportBodyReceipt.bodySha256);
+						if(inspection){
+							const proof=row.bodyProof,reference=proof?.modelReference,prefix=reference?.prefix,role=reference?.semanticRole ?? proof?.semanticRole,observation=row.temporaryValueObservation;
+							inspection.prefix=["plain","other",..."QWiKBDnShTL@FINuZwH-"].includes(prefix)?prefix:null;
+							inspection.form=["outlined-path","typed-outlined-path","other"].includes(reference?.form)?reference.form:null;
+							inspection.length=Number.isSafeInteger(reference?.length) && reference.length>=0 && reference.length<=controlCancellationPolicy.decodedLimit?reference.length:null;
+							inspection.tokenSha256=/^[a-f0-9]{64}$/.test(reference?.tokenSha256 ?? "")?reference.tokenSha256:null;
+							inspection.role=["root","required","transport","tree","data","tree-map","tree-map-model","tree-map-pair","output","cache-output","suspended-output","fallback-output","component-data","element-type","element-key","host-props","cache-host-props","fallback-host-props","suspense-props","suspended-host-props"].includes(role)?role:null;
+							inspection.pathFailure=["depth-or-model-limit","unsupported-eager-reference","noncanonical-eager-reference","unsupported-eager-collection","missing-eager-model","eager-import-model","eager-cross-record-or-alias-cycle","eager-binary-or-text-value","malformed-eager-element","unsupported-reference-shape","unsupported-cross-record-cycle","outlined-reference-cycle","path-component-limit","path-alias-cycle","missing-path-model","path-import-model","unsupported-path-model-kind","path-promise-not-unwrapped","unsupported-path-temporary-value","non-object-projection","binary-or-text-projection","missing-element-own-property","removed-proto-property","unsupported-parent-prototype","missing-own-property","non-data-own-property","removed-undefined-property","unavailable-own-data"].includes(proof?.pathFailure)?proof.pathFailure:null;
+							inspection.lookupAttempted=typeof observation?.lookupAttempted==="boolean"?observation.lookupAttempted:null;inspection.valueUsed=typeof observation?.valueUsed==="boolean"?observation.valueUsed:null;
+						}
 						if(inspection){inspection.proofComplete=row.bodyProof?.complete===true;inspection.proofReasonSha256=typeof row.bodyProof?.reason==="string"?sha(row.bodyProof.reason):null;inspection.stage="take";}
 						if(projection)row.teamAnnualProjection=takeTeamAnnualProjection(projection,inspection);
 						if(inspection)inspection.projection=Boolean(row.teamAnnualProjection);
