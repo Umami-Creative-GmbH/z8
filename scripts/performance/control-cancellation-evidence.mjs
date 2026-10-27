@@ -1,7 +1,7 @@
 /** Proofs are prospective; a canceled request is never a successful payload. */
 import { createHash } from "node:crypto";
 import { types as utilTypes } from "node:util";
-import {mixedOwnedRows,mixedOwnedArray,mixedOwnedClone,mixedOwnedClone as structuredClone,mixedTechnicalCandidateDigest,mixedTechnicalRepresentation} from "./mixed-technical-gzip.mjs";
+import {mixedOwnedFilter,mixedOwnedOperation,mixedOwnedProjectedValue,mixedOwnedJSONString,mixedOwnedUTF8,mixedOwnedRows,mixedOwnedArray,mixedOwnedClone,mixedOwnedClone as structuredClone,mixedTechnicalCandidateDigest,mixedTechnicalRepresentation} from "./mixed-technical-gzip.mjs";
 import { validateProxyHeaderCensus, validateProxyHeaderPrefix, validateProxyHeaderLifecycle } from "./proxy-header-census.mjs";
 import {cachedCdpTextProjectionProtocol,cachedCdpTextSourceRevision,cachedCdpTextMappingSha256} from "./cdp-cached-text-projection.mjs";
 import { resolveOriginalTeamTemporaryReference, closeOriginalTeamBodyInspection, originalTeamBodyObservation, validateOriginalTeamTemporaryValues, validateOriginalTeamBodyUseCoverage, knownTemporaryValueObservation, knownOriginalTeamSourceConfiguration, knownOriginalTeamHeaderJoin } from "./team-temporary-value-authority.mjs";
@@ -1799,7 +1799,8 @@ const requestReceiptKeys = [
 		"loadingFinished",
 		"failed",
 	];
-const requestReceipt = (row) => ({
+const requestReceiptStorageKeys=[...requestReceiptKeys,"bodyProof","streamReceipt"];
+const requestReceipt = (row) => mixedOwnedProjectedValue(row,()=>({
 	...pick(row, requestReceiptKeys),
 	...(row?.bodyProof ? { bodyProof: bodyReceipt(row.bodyProof) } : {}),
 	...(row?.streamReceipt
@@ -1815,9 +1816,9 @@ const requestReceipt = (row) => ({
 				]),
 			}
 		: {}),
-});
+}),{keys:requestReceiptStorageKeys,extraBytes:8192});
 
-const knownNativeContext = context => {
+const knownNativeContext = context => {return mixedOwnedOperation(()=>{
 	try {
 		const binding=context?.binding,env=context?.environment,principal=context?.principalEpoch,census=context?.headerCensus,lifetime=context?.headerLifetime;
 		if(context?.protocol !== "qualified-known-extra-native-context-v1" || typeof context.contextId !== "string" || !context.contextId || !digest(context.originSha256) ||
@@ -1839,12 +1840,12 @@ const knownNativeContext = context => {
 			launch.profileArgumentCount !== 1 || !digest(launch.profileArgumentSha256) || launch.profileArgumentSha256 !== launch.recordedProfileDirectorySha256 || launch.profileArgumentMatchesRecorded !== true ||
 			launch.executable?.known !== true || !digest(launch.executable.sha256) || !Number.isSafeInteger(launch.executable.bytes) || launch.executable.bytes <= 0 || launch.executable.bytes > 1024*1024*1024 ||
 			!Array.isArray(launch.observerSources) || launch.observerSources.length !== 2 || !["browser-control-collector.mjs","fixture-browser.mjs"].every(file=>{
-				const rows=launch.observerSources.filter(row=>row.file===file);return rows.length===1 && rows[0].known===true && rows[0].sha256===context.protocolSources[file];})) return false;
+				const rows=mixedOwnedFilter(launch.observerSources,row=>row.file===file);return rows.length===1 && rows[0].known===true && rows[0].sha256===context.protocolSources[file];})) return false;
 		const workers=env.workerTargets;
 		if(workers?.protocol !== "owned-context-worker-target-metadata-v1" || workers.contextId !== context.contextId || workers.contextJoinKnown !== true || !digest(workers.contextIdentitySha256) ||
 			workers.installed !== true || workers.scopeClosed !== true || workers.errors !== 0 || workers.overflow !== 0 || !Array.isArray(workers.events) || workers.events.length === 0 || workers.events.length > 256 ||
 			workers.events.some(row=>!["page","service_worker"].includes(row.type) || row.urlKnown !== true || !digest(row.urlSha256) ||
-				(row.type === "service_worker" ? row.ownedWorkerScript !== true || row.originMatches !== true : row.originMatches !== true && row.urlSha256 !== bodySha256(Buffer.from("about:blank"))))) return false;
+				(row.type === "service_worker" ? row.ownedWorkerScript !== true || row.originMatches !== true : row.originMatches !== true && row.urlSha256 !== bodySha256(mixedOwnedUTF8("about:blank"))))) return false;
 		const end=env.endRead,controller=end?.controller;
 		const ownedWorker = value=>value?.present === true && value.known === true && value.ownedScript === true && value.state === "activated" && digest(value.scriptUrlSha256);
 		if(end?.protocol !== "native-environment-end-readonly-v1" || end.timedOut !== false || end.pendingOperations !== 0 || end.readErrors !== 0 || !actualFiles(end.publicSourceRecheck) ||
@@ -1871,7 +1872,8 @@ const knownNativeContext = context => {
 			installation.allowedOriginSha256.every(digest) && new Set(installation.allowedOriginSha256).size === installation.allowedOriginSha256.length && installation.allowedOriginSha256.includes(context.originSha256) &&
 			closure?.serverClosed === true && closure.acceptedRequests === census.counts.accepted && closure.upstreamRequests === census.counts.accepted && closure.closedUpstreams === census.counts.accepted && closure.pendingUpstreams === 0;
 	}catch{return false;}
-};
+
+},{retainResult:false});};
 
 /** Open authority is independently checked; no closed/end-read fields are manufactured. */
 const knownProgressReadHistory=principal=>{
@@ -1884,7 +1886,7 @@ const knownProgressReadHistory=principal=>{
   if(row.finishedOrdinal===null){if(row.snapshotSha256!==null)return false;pending.push({acknowledgmentOrdinal:row.acknowledgmentOrdinal,kind:row.kind});}
   else{if(!Number.isSafeInteger(row.finishedOrdinal) || row.finishedOrdinal<1 || !digest(row.snapshotSha256))return false;ends.push(row.finishedOrdinal);}
  }
- return starts.sort((a,b)=>a-b).every((n,i)=>n===i+1) && ends.length===reads.finished && ends.sort((a,b)=>a-b).every((n,i)=>n===i+1) && JSON.stringify(pending.sort((a,b)=>a.acknowledgmentOrdinal-b.acknowledgmentOrdinal))===JSON.stringify(reads.pending);
+ return starts.sort((a,b)=>a-b).every((n,i)=>n===i+1) && ends.length===reads.finished && ends.sort((a,b)=>a-b).every((n,i)=>n===i+1) && mixedOwnedJSONString(pending.sort((a,b)=>a.acknowledgmentOrdinal-b.acknowledgmentOrdinal))===mixedOwnedJSONString(reads.pending);
 };
 export const knownMixedOpenJournals = context => {
  const headerPrefix=context?.headerPrefix;
@@ -1909,20 +1911,20 @@ export const knownMixedOpenJournals = context => {
 			launch.profileArgumentCount !== 1 || !digest(launch.profileArgumentSha256) || launch.profileArgumentSha256 !== launch.recordedProfileDirectorySha256 || launch.profileArgumentMatchesRecorded !== true ||
 			launch.executable?.known !== true || !digest(launch.executable.sha256) || !Number.isSafeInteger(launch.executable.bytes) || launch.executable.bytes <= 0 || launch.executable.bytes > 1024*1024*1024 ||
 			!Array.isArray(launch.observerSources) || launch.observerSources.length !== 2 || !["browser-control-collector.mjs","fixture-browser.mjs"].every(file=>{
-				const rows=launch.observerSources.filter(row=>row.file===file);return rows.length===1 && rows[0].known===true && rows[0].sha256===context.protocolSources[file];})) return false;
+				const rows=mixedOwnedFilter(launch.observerSources,row=>row.file===file);return rows.length===1 && rows[0].known===true && rows[0].sha256===context.protocolSources[file];})) return false;
 		const workers=env.workerTargets;
 		if(workers?.protocol !== "owned-context-worker-target-metadata-v1" || workers.contextId !== context.contextId || workers.contextJoinKnown !== true || !digest(workers.contextIdentitySha256) ||
 			workers.installed !== true || workers.scopeClosed !== false || workers.errors !== 0 || workers.overflow !== 0 || !Array.isArray(workers.events) || workers.events.length === 0 || workers.events.length > 256 ||
 			workers.events.some(row=>!["page","service_worker"].includes(row.type) || row.urlKnown !== true || !digest(row.urlSha256) ||
-				(row.type === "service_worker" ? row.ownedWorkerScript !== true || row.originMatches !== true : row.originMatches !== true && row.urlSha256 !== bodySha256(Buffer.from("about:blank"))))) return false;
+				(row.type === "service_worker" ? row.ownedWorkerScript !== true || row.originMatches !== true : row.originMatches !== true && row.urlSha256 !== bodySha256(mixedOwnedUTF8("about:blank"))))) return false;
   if(!digest(context.workerScriptSha256) || !digest(context.rootScopeSha256) || workers.events.some(row=>!["initial","created","changed","destroyed"].includes(row.event) || !Number.isSafeInteger(row.targetOrdinal) || row.targetOrdinal<=0 || row.type==="service_worker" && row.urlSha256!==context.workerScriptSha256) || !knownMixedDocumentJournal(context.documentJournal) || context.documentJournal.closed!==false || context.documentJournal.contextId!==context.contextId)return false;
   if(principal?.protocol!=="actual-browser-cookie-boundaries-v1" || principal.contextId!==context.contextId || principal.scopeClosed!==false || !["observedSetCookieResponses","unknownResponseHeaders","readErrors","observationErrors","overflow"].every(key=>principal[key]===0) || !knownProgressReadHistory(principal))return false;
-  if(!validateProxyHeaderPrefix(headerPrefix,{contextId:context.contextId}) || JSON.stringify(census)!==JSON.stringify(headerPrefix.census) || !["unknownHeaders","setCookieResponses","setCookieLines","errors","duplicates","missing","late","overflow"].every(key=>census.counts[key]===0) || headerPrefix.lifecycle.errors!==0 || headerPrefix.lifecycle.overflow!==0 || headerPrefix.lifecycle.upstreamRequests!==census.counts.accepted || lifetime?.protocol!=="owned-context-upstream-header-lifetime-v1" || lifetime.contextId!==context.contextId || lifetime.closure!==null)return false;
+  if(!validateProxyHeaderPrefix(headerPrefix,{contextId:context.contextId}) || mixedOwnedJSONString(census)!==mixedOwnedJSONString(headerPrefix.census) || !["unknownHeaders","setCookieResponses","setCookieLines","errors","duplicates","missing","late","overflow"].every(key=>census.counts[key]===0) || headerPrefix.lifecycle.errors!==0 || headerPrefix.lifecycle.overflow!==0 || headerPrefix.lifecycle.upstreamRequests!==census.counts.accepted || lifetime?.protocol!=="owned-context-upstream-header-lifetime-v1" || lifetime.contextId!==context.contextId || lifetime.closure!==null)return false;
   const installation=lifetime.installation,life=headerPrefix.lifecycle;
-  return installation?.protocol===lifetime.protocol && installation.proxyInstanceId===life.proxyInstanceId && installation.originSha256===context.originSha256 && life.originSha256===context.originSha256 && installation.acceptedRequestsAtInstall===0 && JSON.stringify(installation.allowedOriginSha256)===JSON.stringify(life.allowedOriginSha256);
+  return installation?.protocol===lifetime.protocol && installation.proxyInstanceId===life.proxyInstanceId && installation.originSha256===context.originSha256 && life.originSha256===context.originSha256 && installation.acceptedRequestsAtInstall===0 && mixedOwnedJSONString(installation.allowedOriginSha256)===mixedOwnedJSONString(life.allowedOriginSha256);
  }catch{return false;}
 };
-export const sameMixedReturnJournals=(begin,current)=>knownMixedOpenJournals(current) && sameHeaderJournalPrefix(begin.headerPrefix.lifecycle,current.headerPrefix.lifecycle) && samePrincipalJournalPrefix(begin.principalEpoch,current.principalEpoch) && JSON.stringify(current.documentJournal)===JSON.stringify(begin.documentJournal) && Array.isArray(begin.environment?.workerTargets?.events) && JSON.stringify(current.environment.workerTargets.events.slice(0,begin.environment.workerTargets.events.length))===JSON.stringify(begin.environment.workerTargets.events);
+export const sameMixedReturnJournals=(begin,current)=>knownMixedOpenJournals(current) && sameHeaderJournalPrefix(begin.headerPrefix.lifecycle,current.headerPrefix.lifecycle) && samePrincipalJournalPrefix(begin.principalEpoch,current.principalEpoch) && mixedOwnedJSONString(current.documentJournal)===mixedOwnedJSONString(begin.documentJournal) && Array.isArray(begin.environment?.workerTargets?.events) && mixedOwnedJSONString(current.environment.workerTargets.events.slice(0,begin.environment.workerTargets.events.length))===mixedOwnedJSONString(begin.environment.workerTargets.events);
 
 const knownMixedPrefixAuthority = (context,ack,headerPrefix) => {
 	try {
@@ -1946,12 +1948,12 @@ const knownMixedPrefixAuthority = (context,ack,headerPrefix) => {
 			launch.profileArgumentCount !== 1 || !digest(launch.profileArgumentSha256) || launch.profileArgumentSha256 !== launch.recordedProfileDirectorySha256 || launch.profileArgumentMatchesRecorded !== true ||
 			launch.executable?.known !== true || !digest(launch.executable.sha256) || !Number.isSafeInteger(launch.executable.bytes) || launch.executable.bytes <= 0 || launch.executable.bytes > 1024*1024*1024 ||
 			!Array.isArray(launch.observerSources) || launch.observerSources.length !== 2 || !["browser-control-collector.mjs","fixture-browser.mjs"].every(file=>{
-				const rows=launch.observerSources.filter(row=>row.file===file);return rows.length===1 && rows[0].known===true && rows[0].sha256===context.protocolSources[file];})) return false;
+				const rows=mixedOwnedFilter(launch.observerSources,row=>row.file===file);return rows.length===1 && rows[0].known===true && rows[0].sha256===context.protocolSources[file];})) return false;
 		const workers=env.workerTargets;
 		if(workers?.protocol !== "owned-context-worker-target-metadata-v1" || workers.contextId !== context.contextId || workers.contextJoinKnown !== true || !digest(workers.contextIdentitySha256) ||
 			workers.installed !== true || workers.scopeClosed !== false || workers.errors !== 0 || workers.overflow !== 0 || !Array.isArray(workers.events) || workers.events.length === 0 || workers.events.length > 256 ||
 			workers.events.some(row=>!["page","service_worker"].includes(row.type) || row.urlKnown !== true || !digest(row.urlSha256) ||
-				(row.type === "service_worker" ? row.ownedWorkerScript !== true || row.originMatches !== true : row.originMatches !== true && row.urlSha256 !== bodySha256(Buffer.from("about:blank"))))) return false;
+				(row.type === "service_worker" ? row.ownedWorkerScript !== true || row.originMatches !== true : row.originMatches !== true && row.urlSha256 !== bodySha256(mixedOwnedUTF8("about:blank"))))) return false;
 		const end=ack,controller=end?.controller;
 		const ownedWorker = value=>value?.present === true && value.known === true && value.ownedScript === true && value.state === "activated" && digest(value.scriptUrlSha256);
 		if(end?.protocol !== "native-environment-progress-readonly-v1" || end.timedOut !== false || end.pendingOperations !== 0 || end.readErrors !== 0 || !actualFiles(end.publicSourceRecheck) ||
@@ -1969,26 +1971,27 @@ const knownMixedPrefixAuthority = (context,ack,headerPrefix) => {
 			![principal.before,ack.principalRead].every(row=>row?.known === true && row.cookieCount===1 && digest(row.sha256) && row.cookieAttributes?.originKnown === true &&
 				row.cookieAttributes.httpOnlyKnown === true && row.cookieAttributes.allHttpOnly === true && row.cookieAttributes.singleOwnedRootHttpOnlyCookie === true && digest(row.cookieAttributes.singleCookieHeaderSha256)) ||
 			principal.before.sha256 !== ack.principalRead.sha256 || principal.before.cookieAttributes.singleCookieHeaderSha256 !== ack.principalRead.cookieAttributes.singleCookieHeaderSha256) return false;
-		if(!validateProxyHeaderPrefix(headerPrefix,{contextId:context.contextId}) || JSON.stringify(census)!==JSON.stringify(headerPrefix.census) || census.counts.accepted<=0 ||
+		if(!validateProxyHeaderPrefix(headerPrefix,{contextId:context.contextId}) || mixedOwnedJSONString(census)!==mixedOwnedJSONString(headerPrefix.census) || census.counts.accepted<=0 ||
    !["unknownHeaders","setCookieResponses","setCookieLines","errors","duplicates","missing","late","overflow"].every(key=>census.counts[key]===0) ||
    headerPrefix.lifecycle.errors!==0 || headerPrefix.lifecycle.overflow!==0 || headerPrefix.lifecycle.upstreamRequests!==census.counts.accepted ||
    lifetime?.protocol!=="owned-context-upstream-header-lifetime-v1" || lifetime.contextId!==context.contextId || lifetime.closure!==null)return false;
   const installation=lifetime.installation,life=headerPrefix.lifecycle;
   return installation?.protocol===lifetime.protocol && installation.proxyInstanceId===life.proxyInstanceId && installation.originSha256===context.originSha256 && life.originSha256===context.originSha256 &&
-   installation.acceptedRequestsAtInstall===0 && JSON.stringify(installation.allowedOriginSha256)===JSON.stringify(life.allowedOriginSha256);
+   installation.acceptedRequestsAtInstall===0 && mixedOwnedJSONString(installation.allowedOriginSha256)===mixedOwnedJSONString(life.allowedOriginSha256);
  }catch{return false;}
 };
 
-const nativeContextDigest = (context,onObserved) => {
+const nativeContextDigest = (context,onObserved) => {return mixedOwnedOperation(()=>{
  let serialized=false,encodedBytes=null,withinLimit=null,stage="stringify";
  const report=outcome=>{try{if(!utilTypes.isProxy(onObserved) && typeof onObserved==="function")onObserved({serialized,encodedBytes,withinLimit,outcome});}catch{}};
  try {
-  const text=JSON.stringify(context);serialized=true;stage="encode";
-  const bytes=Buffer.from(text);encodedBytes=bytes.length;withinLimit=encodedBytes<=controlCancellationPolicy.encodedLimit;
+  const text=mixedOwnedJSONString(context,value=>JSON.stringify(value));serialized=true;stage="encode";
+  const bytes=mixedOwnedUTF8(text,value=>Buffer.from(value));encodedBytes=bytes.length;withinLimit=encodedBytes<=controlCancellationPolicy.encodedLimit;
   if(!withinLimit){report("over-limit");return null;}
   stage="hash";const digest=bodySha256(bytes);report("complete");return digest;
  }catch{report(stage==="stringify"?"stringify-error":stage==="encode"?"encode-error":"hash-error");return null;}
-};
+
+},{retainResult:false});};
 
 const goodNativePrefetchBody = (row,context) => {
 	const proof=row?.bodyProof,binding=proof?.segmentBinding,compiled=context.binding;
@@ -1997,7 +2000,7 @@ const goodNativePrefetchBody = (row,context) => {
 		const route=proof.routeTreeBinding;
 		if(proof.routeReadiness!==null){
 			const facts=proof.routeReadiness?.pathSourceFacts;
-			if(!facts || JSON.stringify(facts)!==JSON.stringify(row.pathSourceFacts) || facts.observerSourceSha256!==context.protocolSources["browser-control-collector.mjs"] || route?.requestUrlSha256!==row.fullUrlSha256 || route.requestOriginSha256!==context.originSha256 || route.ambiguousRedirect!==false)return false;
+			if(!facts || mixedOwnedJSONString(facts)!==mixedOwnedJSONString(row.pathSourceFacts) || facts.observerSourceSha256!==context.protocolSources["browser-control-collector.mjs"] || route?.requestUrlSha256!==row.fullUrlSha256 || route.requestOriginSha256!==context.originSha256 || route.ambiguousRedirect!==false)return false;
 			if(row.id){if(facts.url.provenance!=="owned-proxy-request-url-no-follow")return false;}
 			else{const ledger=row.browserDataLedger;if(facts.url.provenance!=="Network.responseReceived.url" || row.ambiguousRedirect!==false || row.failed!==false || ledger?.protocol!=="cached-browser-data-ledger-v1" || ledger.requestObserved!==true || ledger.responseEvents!==1 || ledger.finishedEvents!==1 || ledger.failedEvents!==0 || ledger.invalidData!==false || ledger.dataAfterTerminal!==0 || ledger.dataBeforeResponse!==0 || ledger.responseAfterTerminal!==0 || ledger.terminalBeforeResponse!==0)return false;}
 		}
@@ -2005,7 +2008,7 @@ const goodNativePrefetchBody = (row,context) => {
 			row.requestKind==="route-tree" && row.requestHeaderSnapshotKnown===true && row.method==="GET" && row.status===200 && row.rsc===true && row.prefetch===true && row.action===false &&
 			response.responseHeaderSnapshotKnown===true && response.status===200 && response.flight===true && response.postponed===route.postponed &&
 			route.requestHeadersSha256===row.requestHeadersSha256 && route.requestKeySha256===row.headerFieldSha256?.["next-router-segment-prefetch"] &&
-			route.compiledBuild===compiled.compiledBuild && route.compiledManifestSha256===compiled.compiledManifestSha256 && route.expectedDeploymentSha256===bodySha256(Buffer.from(compiled.compiledBuild)) &&
+			route.compiledBuild===compiled.compiledBuild && route.compiledManifestSha256===compiled.compiledManifestSha256 && route.expectedDeploymentSha256===bodySha256(mixedOwnedUTF8(compiled.compiledBuild)) &&
 			route.responseDeploymentSha256===response.responseDeploymentSha256 && route.actualDeploymentSha256===(route.responseDeploymentSha256 ?? route.bodyBuildSha256) && route.actualDeploymentSha256===route.expectedDeploymentSha256 &&
 			route.deploymentSource===(route.responseDeploymentSha256===null?"body":"response-header");
 	}
@@ -2021,7 +2024,7 @@ const goodNativePrefetchBody = (row,context) => {
 		binding?.method === "GET" && binding.status === 200 && ["flight","rsc","prefetch","postponed","manifestVerified"].every(key=>binding[key]===true) &&
 		row.requestHeaderSnapshotKnown === true && row.method === "GET" && row.rsc === true && row.prefetch === true && row.action === false && response.responseHeaderSnapshotKnown === true && response.flight === true && response.postponed === true && response.status === 200 && row.status === 200 &&
 		binding.requestHeadersSha256 === row.requestHeadersSha256 && digest(binding.requestKeySha256) && binding.requestKeySha256 === row.headerFieldSha256?.["next-router-segment-prefetch"] && binding.derivedRequestKeySha256 === binding.requestKeySha256 &&
-		binding.compiledBuild === compiled.compiledBuild && binding.compiledManifestSha256 === compiled.compiledManifestSha256 && binding.expectedDeploymentSha256 === bodySha256(Buffer.from(compiled.compiledBuild)) &&
+		binding.compiledBuild === compiled.compiledBuild && binding.compiledManifestSha256 === compiled.compiledManifestSha256 && binding.expectedDeploymentSha256 === bodySha256(mixedOwnedUTF8(compiled.compiledBuild)) &&
 		binding.responseDeploymentSha256 === response.responseDeploymentSha256 && binding.actualDeploymentSha256 === (binding.responseDeploymentSha256 ?? binding.bodyBuildSha256) && binding.actualDeploymentSha256 === binding.expectedDeploymentSha256 &&
 		binding.deploymentSource === (binding.responseDeploymentSha256 === null ? "body" : "response-header");
 };
@@ -2046,7 +2049,7 @@ const nativeCachedBytes = (cached,origin,packet,context) => {
 		![response.responseContentType,read.responseContentType].every(row=>row?.headerKnown===true && row.mime==="text/x-component" && row.charset==="absent") ||
 		cached.requestHeaderSnapshotKnown!==true || response.responseHeaderSnapshotKnown!==true || response.status!==200 || cached.status!==200 || response.flight!==true || response.postponed!==true ||
 		cached.method!=="GET" || cached.action!==false || cached.rsc!==true || cached.prefetch!==true ||
-		cached.headerFieldSha256?.["next-router-segment-prefetch"]!==proof.segmentBinding.requestKeySha256 || response.responseDeploymentSha256!==bodySha256(Buffer.from(context.binding.compiledBuild))) return null;
+		cached.headerFieldSha256?.["next-router-segment-prefetch"]!==proof.segmentBinding.requestKeySha256 || response.responseDeploymentSha256!==bodySha256(mixedOwnedUTF8(context.binding.compiledBuild))) return null;
 	const keys=["protocol","sourceRevision","mappingSha256","originalBytes","originalSha256","outputCodeUnits","utf8Bytes","utf8Sha256"];
 	const projected=origin.transportBodyReceipt.cdpTextProjection,current=packet.transportBodyReceipt.cdpTextProjection;
 	if(![projected,current].every(row=>row?.available===true && Object.keys(row).length===keys.length+1 && row.protocol===cachedCdpTextProjectionProtocol && row.sourceRevision===cachedCdpTextSourceRevision && row.sourceRevision===chromiumSWRRevision &&
@@ -2054,7 +2057,7 @@ const nativeCachedBytes = (cached,origin,packet,context) => {
 	return {...base,kind:"windows-1252-forward-image",projection:Object.fromEntries(keys.map(key=>[key,projected[key]]))};
 };
 
-function nativeKnownExtraRequestCore(failure,packet,responses,proxy,context,browserRevision) {
+function nativeKnownExtraRequestCore(failure,packet,responses,proxy,context,browserRevision) {return mixedOwnedOperation(()=>{
 	try {
 	if(browserRevision !== chromiumSWRRevision || failure.contextId !== context.contextId || failure.requestHeadersKnown !== true ||
 		failure.type !== "Other" || failure.initiator !== "other" || failure.initiatorStackKnownAbsent !== true || failure.priority !== "VeryLow" ||
@@ -2068,17 +2071,17 @@ function nativeKnownExtraRequestCore(failure,packet,responses,proxy,context,brow
 	const knownHeaders = row=>row?.requestHeaderSnapshotKnown === true && row.rsc === true && row.prefetch === true && row.action === false && row.purposeHeaderPresent === false && row.secPurposeHeaderPresent === false && row.headerFieldSha256 && Object.keys(row.headerFieldSha256).length === controlIdentityHeaders.length &&
 		controlIdentityHeaders.every(key=>Object.hasOwn(row.headerFieldSha256,key) && (row.headerFieldSha256[key]===null || digest(row.headerFieldSha256[key])));
 	if(![initial,extra,failure,packet].every(knownHeaders) || !controlIdentityHeaders.every(key=>extra.headerFieldSha256[key]===failure.headerFieldSha256[key] && extra.headerFieldSha256[key]===packet.headerFieldSha256[key]) ||
-		failure.headerFieldSha256.rsc!==bodySha256(Buffer.from("1")) || failure.headerFieldSha256["next-router-prefetch"]!==bodySha256(Buffer.from("1")) || failure.headerFieldSha256["next-action"]!==null ||
-		controlIdentityHeaders.filter(key=>!["accept","accept-encoding","cookie"].includes(key)).some(key=>initial.headerFieldSha256[key]!==extra.headerFieldSha256[key]) ||
-		extra.headerFieldSha256.accept !== (initial.headerFieldSha256.accept ?? bodySha256(Buffer.from("*/*")))) return null;
-	const cachedMatches=responses.filter(row=>row.contextId===failure.contextId && row.method==="GET" && row.requestKind===failure.requestKind && row.fullUrlSha256===failure.fullUrlSha256 &&
+		failure.headerFieldSha256.rsc!==bodySha256(mixedOwnedUTF8("1")) || failure.headerFieldSha256["next-router-prefetch"]!==bodySha256(mixedOwnedUTF8("1")) || failure.headerFieldSha256["next-action"]!==null ||
+		mixedOwnedFilter(controlIdentityHeaders,key=>!["accept","accept-encoding","cookie"].includes(key)).some(key=>initial.headerFieldSha256[key]!==extra.headerFieldSha256[key]) ||
+		extra.headerFieldSha256.accept !== (initial.headerFieldSha256.accept ?? bodySha256(mixedOwnedUTF8("*/*")))) return null;
+	const cachedMatches=mixedOwnedArray(responses.length,()=>mixedOwnedFilter(responses,row=>row.contextId===failure.contextId && row.method==="GET" && row.requestKind===failure.requestKind && row.fullUrlSha256===failure.fullUrlSha256 &&
 		row.loaderId===failure.loaderId && typeof row.loaderId==="string" && row.loaderId.length>0 && row.type==="Fetch" && row.fromDiskCache===true && row.fromServiceWorker===false && row.loadingFinished===true &&
 		Number.isFinite(row.finishedAt) && Number.isFinite(failure.startedAt) && row.finishedAt < failure.startedAt && row.initialHeaderIdentity?.requestHeaderSnapshotKnown===true &&
-		row.initialHeaderIdentity.requestHeadersSha256===initial.requestHeadersSha256 && row.initialHeaderIdentity.documentGeneration===initial.documentGeneration);
+		row.initialHeaderIdentity.requestHeadersSha256===initial.requestHeadersSha256 && row.initialHeaderIdentity.documentGeneration===initial.documentGeneration));
 	if(cachedMatches.length!==1) return null;
 	const cached=cachedMatches[0];
 	if(!knownHeaders(cached.initialHeaderIdentity) || !controlIdentityHeaders.every(key=>cached.initialHeaderIdentity.headerFieldSha256[key]===initial.headerFieldSha256[key])) return null;
-	const origins=proxy.filter(row=>row.id===cached.proxyResponseId && row.contextId===failure.contextId && row.fullUrlSha256===cached.fullUrlSha256 && row.method==="GET" && row.requestKind===failure.requestKind);
+	const origins=mixedOwnedArray(proxy.length,()=>mixedOwnedFilter(proxy,row=>row.id===cached.proxyResponseId && row.contextId===failure.contextId && row.fullUrlSha256===cached.fullUrlSha256 && row.method==="GET" && row.requestKind===failure.requestKind));
 	if(origins.length!==1) return null;
 	const origin=origins[0];
 	if(!knownHeaders(origin)) return null;
@@ -2088,18 +2091,19 @@ function nativeKnownExtraRequestCore(failure,packet,responses,proxy,context,brow
 	if(!byteCorrespondence) return null;
 	const fields=origin.vary?.fields;
 	if(!Array.isArray(fields) || !["rsc","next-router-prefetch","next-router-segment-prefetch"].every(field=>fields.includes(field)) || new Set(fields).size!==fields.length ||
-		![cached,origin,packet].every(row=>row.vary?.known===true && row.vary.star===false && row.vary.unknownFields===0 && JSON.stringify(row.vary.fields)===JSON.stringify(fields))) return null;
+		![cached,origin,packet].every(row=>row.vary?.known===true && row.vary.star===false && row.vary.unknownFields===0 && mixedOwnedJSONString(row.vary.fields)===mixedOwnedJSONString(fields))) return null;
 	for(const field of [...fields,"cookie","authorization"]){
 		if(![origin,packet].every(row=>row.requestHeaderSnapshotKnown===true && Object.hasOwn(row.headerFieldSha256 ?? {},field)) || origin.headerFieldSha256[field]!==packet.headerFieldSha256[field]) return null;
 	}
 	if(origin.headerFieldSha256.cookie!==context.principalEpoch.before.cookieAttributes.singleCookieHeaderSha256 || origin.headerFieldSha256.authorization!==null ||
 		Number(origin.id.split(".")[1]) >= Number(packet.id.split(".")[1]) ||
-		![origin,packet].every(row=>context.headerCensus.requests.filter(entry=>entry.requestId===row.id && entry.observation==="headers").length===1) ||
+		![origin,packet].every(row=>mixedOwnedFilter(context.headerCensus.requests,entry=>entry.requestId===row.id && entry.observation==="headers").length===1) ||
 		[cached,origin,packet,failure].some(row=>row.observedProtocolError?.serverErrors>0 || row.observedProtocolError?.explicitActionFailure===true || row.bodyProof?.serverErrors>0 || row.bodyProof?.explicitActionFailure===true || row.httpErrorObserved===true || row.status>=400)) return null;
 	return {failure:requestReceipt(failure),packet:requestReceipt(packet),cached:requestReceipt(cached),origin:requestReceipt(origin),browserRevision,proxyCandidates:1,cachedCandidates:1,originCandidates:1,
 		byteCorrespondence};
 	}catch{return null;}
-}
+
+},{retainResult:true});}
 
 function nativeKnownExtraProof(failure,packet,responses,proxy,context,browserRevision) {
  if(!knownNativeContext(context) || !nativeContextDigest(context))return null;
@@ -2111,7 +2115,7 @@ function nativeKnownExtraProof(failure,packet,responses,proxy,context,browserRev
 
 /** Bounded technical inputs only; payload chunks and raw header values never enter a prefix. */
 export function mixedNativeProgressInput({failures,responses,proxy,nativeContext,coverage,browserRevision,browserEventOrdinal},{copy=true,browserLedger=null}={}) {
- const keys=[...requestReceiptKeys,"bodyProof","streamReceipt"],browserReceipt=browserLedger?row=>requestReceipt({...row,browserDataLedger:browserLedger(row)}):requestReceipt;
+ const keys=requestReceiptStorageKeys,browserReceipt=browserLedger?row=>requestReceipt({...row,browserDataLedger:browserLedger(row)}):requestReceipt;
  const projected={failures:mixedOwnedRows(()=>failures,browserReceipt,{keys,extraBytesPerRow:browserLedger?8192:0}),responses:mixedOwnedRows(()=>failures.length?responses:[],browserReceipt,{keys,extraBytesPerRow:browserLedger?8192:0}),proxy:mixedOwnedRows(()=>failures.length?proxy:[],requestReceipt,{keys}),nativeContext,coverage,browserRevision,browserEventOrdinal};
  return copy?mixedOwnedClone(projected):projected;
 }
@@ -2121,23 +2125,23 @@ export function knownTeamAnnualSelectedRequest({browser,packet,projection,source
 	try {
 		const principal=context?.principalEpoch;
 		const census=context?.headerCensus,headers=census?.requests?.filter(row=>row.requestId===packet?.id);
-		const originURL=new URL(origin),expectedUrl=bodySha256(Buffer.from(new URL('/en/analytics/team-performance',origin).href));
+		const originURL=new URL(origin),expectedUrl=bodySha256(mixedOwnedUTF8(new URL('/en/analytics/team-performance',origin).href));
 		const document=selection?.document?.document,past=selection?.document?.journal,current=context?.environment?.temporaryValueSourceReads?.documentJournal;
-		if(originURL.origin!==origin || originURL.protocol!=="http:" || !["localhost","127.0.0.1","[::1]"].includes(originURL.hostname) || bodySha256(Buffer.from(origin))!==context?.originSha256 ||
+		if(originURL.origin!==origin || originURL.protocol!=="http:" || !["localhost","127.0.0.1","[::1]"].includes(originURL.hostname) || bodySha256(mixedOwnedUTF8(origin))!==context?.originSha256 ||
 			selection?.locale!=="en" || selection.armFullUrlSha256!==expectedUrl || selection.fullUrlSha256!==expectedUrl || browser?.fullUrlSha256!==expectedUrl || packet?.fullUrlSha256!==expectedUrl ||
 			!knownMixedDocumentJournal(past,document) || past.executionEvents.length+past.documents.length>128 || !knownMixedDocumentJournal(current) || current.contextId!==context.contextId || current.closed!==principal?.scopeClosed ||
-			JSON.stringify(current.executionEvents.slice(0,past.executionEvents.length))!==JSON.stringify(past.executionEvents) || JSON.stringify(current.documents.slice(0,past.documents.length))!==JSON.stringify(past.documents) ||
+			mixedOwnedJSONString(current.executionEvents.slice(0,past.executionEvents.length))!==mixedOwnedJSONString(past.executionEvents) || mixedOwnedJSONString(current.documents.slice(0,past.documents.length))!==mixedOwnedJSONString(past.documents) ||
 			document.contextId!==context.contextId || document.originSha256!==context.originSha256 || browser.frameId!==document.frameId || browser.loaderId!==document.loaderId ||
 			browser.documentGeneration!==document.contextId+":"+document.documentGeneration || packet.documentGeneration!==browser.documentGeneration ||
 			[browser.initialHeaderIdentity,browser.extraHeaderIdentity].some(identity=>identity?.documentGeneration!==browser.documentGeneration) ||
-			[browser,browser.initialHeaderIdentity,browser.extraHeaderIdentity,packet].some(identity=>identity?.headerFieldSha256?.["x-z8-fixture-document-generation"]!==bodySha256(Buffer.from(browser.documentGeneration))))return false;
+			[browser,browser.initialHeaderIdentity,browser.extraHeaderIdentity,packet].some(identity=>identity?.headerFieldSha256?.["x-z8-fixture-document-generation"]!==bodySha256(mixedOwnedUTF8(browser.documentGeneration))))return false;
 		if(!knownTeamAnnualActionSource(source,context?.binding?.compiledBuild,context?.binding?.compiledManifestSha256) ||
 			!validateProxyHeaderCensus(census,{contextId:context.contextId}) || census.closed!==principal?.scopeClosed || headers?.length!==1 || headers[0].observation!=="headers" || headers[0].setCookieLines!==0 || headers[0].setCookieSha256!==null ||
 			!["unknownHeaders","setCookieResponses","setCookieLines","errors","duplicates","missing","late","overflow"].every(key=>census.counts[key]===0) || principal?.scopeClosed===true && census.counts.pending!==0 ||
 			principal?.before?.known!==true || principal.before.cookieAttributes?.singleOwnedRootHttpOnlyCookie!==true || !["observedSetCookieResponses","unknownResponseHeaders","readErrors","pendingReads","observationErrors","overflow"].every(key=>principal[key]===0) ||
 			!digest(principal.before.sha256) || principal.scopeClosed===true && (principal.after?.known!==true || !digest(principal.after.sha256) || principal.after.sha256!==principal.before.sha256 || principal.matchesAtBoundaries!==true) ||
 			!knownOriginalTeamHeaderJoin(browser.initialHeaderIdentity,browser.extraHeaderIdentity,packet,principal.before.cookieAttributes.singleCookieHeaderSha256) ||
-			JSON.stringify(source)!==JSON.stringify(context.binding.teamAnnualAction) || !sameRequest(browser,packet) || browser.contextId!==context.contextId ||
+			mixedOwnedJSONString(source)!==mixedOwnedJSONString(context.binding.teamAnnualAction) || !sameRequest(browser,packet) || browser.contextId!==context.contextId ||
 			browser.type!=="Fetch" || browser.method!=="POST" || packet.method!=="POST" || browser.action!==true || packet.action!==true || browser.ambiguousRedirect!==false || browser.proxyResponseId!==packet.id ||
 			!browser.requestId || !browser.frameId || !browser.loaderId || browser.requestOriginSha256!==context.originSha256 || packet.requestOriginSha256!==context.originSha256 ||
 			browser.status!==200 || packet.status!==200 || browser.httpErrorObserved===true || browser.observedProtocolError?.serverErrors>0 || browser.observedProtocolError?.explicitActionFailure===true ||
@@ -2151,8 +2155,8 @@ export function knownTeamAnnualSelectedRequest({browser,packet,projection,source
 			!goodBody(packet.bodyProof) || packet.bodyProof.action!==true || !validateOriginalTeamTemporaryValues(packet.bodyProof.temporaryValues,{bodySha256:packet.bodyProof.bodySha256,decodedBytes:packet.bodyProof.decodedBytes,request:packet,context}) ||
 			packet.transportBodyReceipt?.naturalEOF!==true || packet.transportBodyReceipt.bodySha256!==packet.bodyProof.bodySha256 || packet.transportBodyReceipt.decodedBytes!==packet.bodyProof.decodedBytes ||
 			projection?.protocol!=="team-annual-scalar-projection-v1" || projection.fatalUtf8!==true || projection.bodySha256!==packet.bodyProof.bodySha256 || projection.decodedBytes!==packet.bodyProof.decodedBytes ||
-			JSON.stringify(projection)!==JSON.stringify(packet.teamAnnualProjection) || projection.temporaryBindingSha256!==(packet.temporaryValueObservation?.bindingSha256 ?? null) ||
-			projection.proofCoreSha256!==bodySha256(Buffer.from(JSON.stringify(teamAnnualProofCore(packet.bodyProof,projection.temporaryBindingSha256)))) ||
+			mixedOwnedJSONString(projection)!==mixedOwnedJSONString(packet.teamAnnualProjection) || projection.temporaryBindingSha256!==(packet.temporaryValueObservation?.bindingSha256 ?? null) ||
+			projection.proofCoreSha256!==bodySha256(mixedOwnedUTF8(mixedOwnedJSONString(teamAnnualProofCore(packet.bodyProof,projection.temporaryBindingSha256)))) ||
 			!Number.isSafeInteger(projection.employees) || projection.employees<0 || !Number.isFinite(projection.hours) || !Number.isSafeInteger(projection.projectionSteps) || projection.projectionSteps<=0 || !Number.isSafeInteger(packet.bodyProof.modelSteps) || projection.projectionSteps>packet.bodyProof.modelSteps || packet.bodyProof.modelSteps>100000 ||
 			selection?.protocol!=="actual-response-object-selection-v1" || selection.contextId!==browser.contextId || selection.proxyResponseId!==packet.id || selection.status!==200 || selection.mainFrame!==true ||
 			!Number.isSafeInteger(selection.requestOrdinalAtArm) || selection.requestOrdinalAtArm<0 || !Number.isSafeInteger(packet.annualRequestOrdinal) || packet.annualRequestOrdinal<=selection.requestOrdinalAtArm || packet.annualRequestOrdinal>controlCancellationPolicy.recordLimit ||
@@ -2183,7 +2187,7 @@ export function validateMixedTeamAnnualGolden(run,origin) {
 			if(annual?.protocol!=="annual-team-selection-observation-v1" || annual.contextId!==transport.contextId || annual.closed!==true || !["errors","overflow","pending"].every(key=>annual[key]===0))return false;
 			if(transport.actor==="small-admin"){
 				selected++;
-				if(annual.armed!==true || annual.consumed!==true || annual.retainedBytes!==1048576 || JSON.stringify(annual.receipt)!==JSON.stringify(run.annualTeamGolden) ||
+				if(annual.armed!==true || annual.consumed!==true || annual.retainedBytes!==1048576 || mixedOwnedJSONString(annual.receipt)!==mixedOwnedJSONString(run.annualTeamGolden) ||
 					context?.contextId!==transport.contextId || !matchingBrowserControlBinding({build:run.sourceCommit,browserControl:run.browserControl},context.binding) ||
 					!validateTeamAnnualGoldenReceipt(annual.receipt,context,origin) || annual.receipt.projection.employees!==8 || annual.receipt.projection.hours!==16704)return false;
 			}else if(annual.armed!==false || annual.consumed!==false || annual.receipt!==null || annual.retainedBytes!==0)return false;
@@ -2202,10 +2206,10 @@ export function classifyControlCancellations({
 	nativeContext,
 	scope = "measured",
 }) {
-	const temporaryValueBodies=[...responses.map(row=>({source:"browser",row})),...failures.map(row=>({source:"browser",row})),...proxy.map(row=>({source:"proxy",row}))]
+	const temporaryValueBodies=mixedOwnedArray(responses.length+failures.length+proxy.length,()=>[...responses.map(row=>({source:"browser",row})),...failures.map(row=>({source:"browser",row})),...proxy.map(row=>({source:"proxy",row}))]
 		.filter(({row})=>row.bodyProof?.action===true && row.bodyProof?.temporaryValues?.binding!==null && row.bodyProof?.temporaryValues?.binding!==undefined)
-		.map(({source,row})=>({source,row:requestReceipt(row)}));
-	const records = [],
+		.map(({source,row})=>({source,row:requestReceipt(row)})),{bytesPerEntry:256});
+	const records = mixedOwnedArray(failures.length,()=>[],{bytesPerEntry:2048,records:failures.length}),
 		seen = new Set();
 	let realFailures = 0,
 		unknownFailures = 0,
@@ -2237,11 +2241,11 @@ export function classifyControlCancellations({
 			failure.error === "net::ERR_ABORTED" &&
 			failure.canceled === true
 		) {
-			const matches = proxy.filter(
+			const matches = mixedOwnedArray(proxy.length,()=>mixedOwnedFilter(proxy,
 				(row) =>
 					sameRequest(failure, row) &&
 					(!failure.proxyResponseId || failure.proxyResponseId === row.id),
-			);
+			));
 			const packet = matches.length === 1 ? matches[0] : null;
 			if (
 				failure.bodyProof?.explicitActionFailure === true ||
@@ -2325,8 +2329,8 @@ function browserFailureEvidenceMatches(evidence, rawFailedRequests, scope, requi
 	if (
 		!evidence ||
 		evidence.protocol !== controlCancellationPolicy.protocol ||
-		JSON.stringify(evidence.policy) !==
-			JSON.stringify(controlCancellationPolicy) ||
+		mixedOwnedJSONString(evidence.policy) !==
+			mixedOwnedJSONString(controlCancellationPolicy) ||
 		evidence.scope !== scope ||
 		!Array.isArray(evidence.temporaryValueBodies) || evidence.temporaryValueBodies.length>controlCancellationPolicy.recordLimit ||
 		evidence.temporaryValueBodies.some(entry=>!["browser","proxy"].includes(entry?.source) || !goodBody(entry.row?.bodyProof) ||
@@ -2360,9 +2364,9 @@ function browserFailureEvidenceMatches(evidence, rawFailedRequests, scope, requi
 		)
 	)
 		return false;
-	if (evidence.provenControls !== evidence.records.filter((row) => row.outcome === "protocol-control").length ||
-		evidence.unknownFailures !== evidence.records.filter((row) => row.outcome === "unknown").length ||
-		evidence.realFailures !== evidence.records.filter((row) => row.outcome === "real-failure").length) return false;
+	if (evidence.provenControls !== mixedOwnedFilter(evidence.records,(row) => row.outcome === "protocol-control").length ||
+		evidence.unknownFailures !== mixedOwnedFilter(evidence.records,(row) => row.outcome === "unknown").length ||
+		evidence.realFailures !== mixedOwnedFilter(evidence.records,(row) => row.outcome === "real-failure").length) return false;
 	for (const row of evidence.records) {
 		if (row.outcome !== "protocol-control") continue;
 		const proof = row.proof;
@@ -2385,7 +2389,7 @@ function browserFailureEvidenceMatches(evidence, rawFailedRequests, scope, requi
 		});
 		if (
 			verified.provenControls !== 1 ||
-			verified.records[0].reason !== row.reason || (row.reason === "qualified-cached-flight-native-revalidation" && JSON.stringify(verified.records[0].proof.byteCorrespondence)!==JSON.stringify(proof.byteCorrespondence))
+			verified.records[0].reason !== row.reason || (row.reason === "qualified-cached-flight-native-revalidation" && mixedOwnedJSONString(verified.records[0].proof.byteCorrespondence)!==mixedOwnedJSONString(proof.byteCorrespondence))
 		)
 			return false;
 	}
@@ -2407,12 +2411,12 @@ export function nativeEvidenceAuthorityMatches(evidence,runtime,protocolSources,
 	for(const classified of [evidence?.measured,evidence?.allPhase]) {
 		if(!Array.isArray(classified?.records) || !classified.records.some(row=>row.reason === "qualified-cached-flight-native-revalidation" && row.outcome === "protocol-control")) continue;
 		const context=classified.nativeContext;
-		if(typeof origin!=="string" || !knownNativeContext(context) || context.originSha256!==bodySha256(Buffer.from(origin)) || !matchingBrowserControlBinding(runtime,context.binding) || !protocolSources ||
+		if(typeof origin!=="string" || !knownNativeContext(context) || context.originSha256!==bodySha256(mixedOwnedUTF8(origin)) || !matchingBrowserControlBinding(runtime,context.binding) || !protocolSources ||
 			Object.keys(protocolSources).length !== Object.keys(context.protocolSources).length ||
 			Object.entries(protocolSources).some(([file,sha])=>!digest(sha) || context.protocolSources[file] !== sha)) return false;
-		const scriptSha=bodySha256(Buffer.from(origin+"/sw.js")),controller=context.environment.endRead.controller;
-		if(context.workerScriptSha256!==scriptSha || context.rootScopeSha256!==bodySha256(Buffer.from(origin+"/")) || [controller.controllerBefore,controller.controllerAfter,...controller.registrations.map(row=>row.active)].some(row=>row.scriptUrlSha256!==scriptSha) ||
-			controller.registrations.some(row=>row.scopeSha256!==bodySha256(Buffer.from(origin+"/"))) ||
+		const scriptSha=bodySha256(mixedOwnedUTF8(origin+"/sw.js")),controller=context.environment.endRead.controller;
+		if(context.workerScriptSha256!==scriptSha || context.rootScopeSha256!==bodySha256(mixedOwnedUTF8(origin+"/")) || [controller.controllerBefore,controller.controllerAfter,...controller.registrations.map(row=>row.active)].some(row=>row.scriptUrlSha256!==scriptSha) ||
+			controller.registrations.some(row=>row.scopeSha256!==bodySha256(mixedOwnedUTF8(origin+"/"))) ||
 			context.environment.workerTargets.events.some(row=>row.type==="service_worker" && row.urlSha256!==scriptSha)) return false;
 	}
 	return true;
@@ -2435,7 +2439,7 @@ export function mixedNativePrefixCandidates(input,onReject) {
   try{
    if(utilTypes.isProxy(onReject) || typeof onReject!=="function")return null;
    const own=(value,key)=>value && typeof value==="object" && !utilTypes.isProxy(value)?Object.getOwnPropertyDescriptor(value,key)?.value:undefined;
-   const hashed=value=>typeof value==="string" && value.length<=4096?bodySha256(Buffer.from(value)):null;
+   const hashed=value=>typeof value==="string" && value.length<=4096?bodySha256(mixedOwnedUTF8(value)):null;
    const packet=own(matches,"0"),proof=own(packet,"bodyProof"),outcome=own(record,"outcome"),reason=own(record,"reason");
    onReject({site,serialization,failureIndex,failureIdSha256:hashed(own(failure,"requestId")),failureProxyIdSha256:hashed(own(failure,"proxyResponseId")),
     strictMatchCount:Number.isSafeInteger(matchCount)&&matchCount>=0?matchCount:null,ordinaryOutcome:["unknown","real-failure","protocol-control"].includes(outcome)?outcome:null,
@@ -2447,13 +2451,13 @@ export function mixedNativePrefixCandidates(input,onReject) {
  try {
   if(!input || Object.keys(input).length!==7 || !["failures","responses","proxy","nativeContext","coverage","browserRevision","browserEventOrdinal"].every(key=>Object.hasOwn(Object.getOwnPropertyDescriptor(input,key) ?? {},"value")) || ![input.failures,input.responses,input.proxy].every(rows=>Array.isArray(rows) && rows.length<=controlCancellationPolicy.recordLimit) || input.coverage?.installed!==true || input.coverage.scopeClosed!==false || !["missing","errors","overflow"].every(key=>input.coverage[key]===0) || !Number.isSafeInteger(input.browserEventOrdinal) || input.browserEventOrdinal<0 || input.failures.length>0 && !mixedTechnicalCandidateDigest(input,observeSerialization))return reject("input-prelude");
   const ids=progressFailureIds(input);if(input.failures.some(row=>!Number.isSafeInteger(row.failedEventOrdinal) || row.failedEventOrdinal<1 || row.failedEventOrdinal>input.browserEventOrdinal) || !ids.every(safeTechnicalId) || new Set(ids).size!==ids.length)return reject("failure-census");
-  const ordinary=classifyControlCancellations(input),cores=[];
+  const ordinary=classifyControlCancellations(input),cores=mixedOwnedArray(input.failures.length,()=>[],{bytesPerEntry:1024});
   for(let i=0;i<input.failures.length;i++){
    const failure=input.failures[i],record=ordinary.records[i];
    if(record.outcome==="real-failure")return reject("real-failure",i,failure,record);
    if(record.outcome==="protocol-control")continue;
    if(failure.error!=="net::ERR_ABORTED" || failure.canceled!==true || failure.ambiguousRedirect===true || failure.httpErrorObserved===true)return reject("failure-flags",i,failure,record);
-   const matches=input.proxy.filter(row=>sameRequest(failure,row) && failure.proxyResponseId===row.id),matchCount=matches.length;
+   const matches=mixedOwnedArray(input.proxy.length,()=>mixedOwnedFilter(input.proxy,row=>sameRequest(failure,row) && failure.proxyResponseId===row.id)),matchCount=matches.length;
    if(matchCount!==1)return reject("proxy-cardinality",i,failure,record,matches,matchCount);
    const core=nativeKnownExtraRequestCore(failure,matches[0],input.responses,input.proxy,input.nativeContext,input.browserRevision);
    if(!core)return reject("native-core",i,failure,record,matches,matchCount);cores.push(core);
@@ -2465,7 +2469,7 @@ export function mixedNativePrefixCandidates(input,onReject) {
 /** A positive acknowledged prefix stays separately typed; the final closed validator never consumes it. */
 export function createMixedNativePrefix({checkpointOrdinal,begin,end,acknowledgment,headerPrefix,operationDeadlineMs=null,returnedAtMs}) {
  const facts=structuredClone({protocol:mixedPrefixProtocol,checkpointOrdinal,operationDeadlineMs,begin,end,acknowledgment,headerPrefix,returnedAtMs});
- const receipt={...facts,prefixSha256:bodySha256(Buffer.from(JSON.stringify(facts)))};
+ const receipt={...facts,prefixSha256:bodySha256(mixedOwnedUTF8(mixedOwnedJSONString(facts)))};
  if(!validateMixedNativePrefix(receipt))throw Error("Mixed Native prefix is not positively acknowledged.");
  return receipt;
 }
@@ -2475,21 +2479,21 @@ export function validateMixedNativePrefix(receipt) {
   if(!receipt || Reflect.ownKeys(receipt).length!==names.length || !names.every(key=>Object.hasOwn(Object.getOwnPropertyDescriptor(receipt,key) ?? {},"value")) || receipt.protocol!==mixedPrefixProtocol || !Number.isSafeInteger(receipt.checkpointOrdinal) || receipt.checkpointOrdinal<1 || receipt.checkpointOrdinal>controlCancellationPolicy.recordLimit || !digest(receipt.prefixSha256) || !nativeContextDigest(receipt))return false;
   const {begin,end,acknowledgment:ack,headerPrefix,operationDeadlineMs,returnedAtMs}=receipt;
   const first=mixedNativePrefixCandidates(begin),last=mixedNativePrefixCandidates(end);
-  if(!first || !last || first.cores.length===0 || JSON.stringify(first)!==JSON.stringify(last) || begin.nativeContext.contextId!==end.nativeContext.contextId || end.browserEventOrdinal<begin.browserEventOrdinal)return false;
+  if(!first || !last || first.cores.length===0 || mixedOwnedJSONString(first)!==mixedOwnedJSONString(last) || begin.nativeContext.contextId!==end.nativeContext.contextId || end.browserEventOrdinal<begin.browserEventOrdinal)return false;
   const start=begin.nativeContext,finish=end.nativeContext;
-  if(start.protocol!==finish.protocol || start.contextId!==finish.contextId || start.originSha256!==finish.originSha256 || start.workerScriptSha256!==finish.workerScriptSha256 || start.rootScopeSha256!==finish.rootScopeSha256 || start.operatorFile!==finish.operatorFile || JSON.stringify(start.binding)!==JSON.stringify(finish.binding) || JSON.stringify(start.protocolSources)!==JSON.stringify(finish.protocolSources) || JSON.stringify(start.principalEpoch.before)!==JSON.stringify(finish.principalEpoch.before))return false;
+  if(start.protocol!==finish.protocol || start.contextId!==finish.contextId || start.originSha256!==finish.originSha256 || start.workerScriptSha256!==finish.workerScriptSha256 || start.rootScopeSha256!==finish.rootScopeSha256 || start.operatorFile!==finish.operatorFile || mixedOwnedJSONString(start.binding)!==mixedOwnedJSONString(finish.binding) || mixedOwnedJSONString(start.protocolSources)!==mixedOwnedJSONString(finish.protocolSources) || mixedOwnedJSONString(start.principalEpoch.before)!==mixedOwnedJSONString(finish.principalEpoch.before))return false;
   const beforeWorkers=start.environment?.workerTargets,afterWorkers=finish.environment?.workerTargets;
-  if(!Array.isArray(beforeWorkers?.events) || !Array.isArray(afterWorkers?.events) || afterWorkers.events.length<beforeWorkers.events.length || JSON.stringify(afterWorkers.events.slice(0,beforeWorkers.events.length))!==JSON.stringify(beforeWorkers.events))return false;
+  if(!Array.isArray(beforeWorkers?.events) || !Array.isArray(afterWorkers?.events) || afterWorkers.events.length<beforeWorkers.events.length || mixedOwnedJSONString(afterWorkers.events.slice(0,beforeWorkers.events.length))!==mixedOwnedJSONString(beforeWorkers.events))return false;
   if(ack?.protocol!=="native-environment-progress-readonly-v1" || ack.contextId!==finish.contextId || ack.checkpointOrdinal!==receipt.checkpointOrdinal || ack.timedOut!==false || ack.pendingOperations!==0 || ack.readErrors!==0 || !Number.isFinite(ack.startedAtMs) || !Number.isFinite(ack.finishedAtMs) || ack.finishedAtMs<ack.startedAtMs || ack.elapsedMs!==ack.finishedAtMs-ack.startedAtMs || !Number.isFinite(ack.deadlineMs) || !Number.isFinite(ack.deadlineBudgetMs) || ack.deadlineBudgetMs<=0 || ack.deadlineBudgetMs>10000 || ack.deadlineMs-ack.startedAtMs!==ack.deadlineBudgetMs || ack.finishedAtMs>ack.deadlineMs || operationDeadlineMs!==null && (!Number.isFinite(operationDeadlineMs) || ack.deadlineMs>operationDeadlineMs))return false;
   const beforeReads=start.principalEpoch?.progressReads,afterReads=finish.principalEpoch?.progressReads,ownRead=ack.principalReadOperation;
-  if(!knownProgressReadHistory(start.principalEpoch) || !knownProgressReadHistory(finish.principalEpoch) || beforeReads.records.some(row=>row.acknowledgmentOrdinal===receipt.checkpointOrdinal) || !ownRead || ownRead.acknowledgmentOrdinal!==receipt.checkpointOrdinal || ownRead.snapshotSha256!==ack.principalRead?.sha256 || ownRead.error!==false || ownRead.finishedOrdinal===null || afterReads.records.filter(row=>JSON.stringify(row)===JSON.stringify(ownRead)).length!==1 || beforeReads.started>afterReads.started || beforeReads.finished>afterReads.finished || beforeReads.records.some(row=>{const match=afterReads.records.find(next=>next.acknowledgmentOrdinal===row.acknowledgmentOrdinal);return !match || row.startedOrdinal!==match.startedOrdinal || row.kind!==match.kind || row.finishedOrdinal!==null && JSON.stringify(row)!==JSON.stringify(match);}))return false;
+  if(!knownProgressReadHistory(start.principalEpoch) || !knownProgressReadHistory(finish.principalEpoch) || beforeReads.records.some(row=>row.acknowledgmentOrdinal===receipt.checkpointOrdinal) || !ownRead || ownRead.acknowledgmentOrdinal!==receipt.checkpointOrdinal || ownRead.snapshotSha256!==ack.principalRead?.sha256 || ownRead.error!==false || ownRead.finishedOrdinal===null || mixedOwnedFilter(afterReads.records,row=>mixedOwnedJSONString(row)===mixedOwnedJSONString(ownRead)).length!==1 || beforeReads.started>afterReads.started || beforeReads.finished>afterReads.finished || beforeReads.records.some(row=>{const match=afterReads.records.find(next=>next.acknowledgmentOrdinal===row.acknowledgmentOrdinal);return !match || row.startedOrdinal!==match.startedOrdinal || row.kind!==match.kind || row.finishedOrdinal!==null && mixedOwnedJSONString(row)!==mixedOwnedJSONString(match);}))return false;
   if(!Number.isFinite(returnedAtMs) || returnedAtMs<ack.finishedAtMs || returnedAtMs>ack.deadlineMs || !sameMixedReturnJournals(start,finish))return false;
   const document=ack.document;
   if(document?.protocol!=="actual-cdp-document-acknowledgment-v1" || document.contextId!==finish.contextId || !knownMixedDocumentJournal(document.sourceJournal,document) || ![document.frameId,document.loaderId,document.executionContextUniqueId].every(safeTechnicalId) || !Number.isSafeInteger(document.documentGeneration) || document.documentGeneration<1 || document.actualDocumentIdentityStable!==true || document.originSha256!==finish.originSha256 || !["executionEventOrdinalBefore","executionEventOrdinalAfter","documentEventOrdinalBefore","documentEventOrdinalAfter"].every(key=>Number.isSafeInteger(document[key]) && document[key]>=0) || document.executionEventOrdinalBefore!==document.executionEventOrdinalAfter || document.documentEventOrdinalBefore!==document.documentEventOrdinalAfter)return false;
-  if(JSON.stringify(document.sourceJournal)!==JSON.stringify(start.documentJournal) || JSON.stringify(document.sourceJournal)!==JSON.stringify(finish.documentJournal))return false;
+  if(mixedOwnedJSONString(document.sourceJournal)!==mixedOwnedJSONString(start.documentJournal) || mixedOwnedJSONString(document.sourceJournal)!==mixedOwnedJSONString(finish.documentJournal))return false;
   if(!knownMixedPrefixAuthority(start,ack,start.headerPrefix) || !knownMixedPrefixAuthority(finish,ack,headerPrefix) || !sameHeaderJournalPrefix(start.headerPrefix.lifecycle,headerPrefix.lifecycle))return false;
   const {prefixSha256,...facts}=receipt;
-  return prefixSha256===bodySha256(Buffer.from(JSON.stringify(facts)));
+  return prefixSha256===bodySha256(mixedOwnedUTF8(mixedOwnedJSONString(facts)));
  }catch{return false;}
 }
 /** Stable external authority digest; closure/cursor facts are deliberately separate. */
@@ -2499,13 +2503,13 @@ export function mixedNativeProgressVector(input){
  return {browserEventOrdinal:input.browserEventOrdinal,headerEventOrdinal:h?.eventOrdinal,workerEventCount:w?.events?.length,principalProgressStarted:p.progressReads?.started ?? 0,principalProgressFinished:p.progressReads?.finished ?? 0,failureIds:progressFailureIds(input)};
 }
 const sameHeaderJournalPrefix=(prefix,final)=>{
- if(!final || final.errors!==0 || final.overflow!==0 || prefix.proxyInstanceId!==final.proxyInstanceId || prefix.originSha256!==final.originSha256 || JSON.stringify(prefix.allowedOriginSha256)!==JSON.stringify(final.allowedOriginSha256) || prefix.eventOrdinal>final.eventOrdinal)return false;
- const expected=final.requests.filter(row=>row.acceptedOrdinal<=prefix.eventOrdinal).map(row=>Object.fromEntries(Object.entries(row).map(([key,value])=>[key,key.endsWith("Ordinal") && value>prefix.eventOrdinal?null:value])));
- return JSON.stringify(prefix.requests)===JSON.stringify(expected);
+ if(!final || final.errors!==0 || final.overflow!==0 || prefix.proxyInstanceId!==final.proxyInstanceId || prefix.originSha256!==final.originSha256 || mixedOwnedJSONString(prefix.allowedOriginSha256)!==mixedOwnedJSONString(final.allowedOriginSha256) || prefix.eventOrdinal>final.eventOrdinal)return false;
+ const expected=mixedOwnedFilter(final.requests,row=>row.acceptedOrdinal<=prefix.eventOrdinal).map(row=>Object.fromEntries(Object.entries(row).map(([key,value])=>[key,key.endsWith("Ordinal") && value>prefix.eventOrdinal?null:value])));
+ return mixedOwnedJSONString(prefix.requests)===mixedOwnedJSONString(expected);
 };
-const samePrincipalJournalPrefix=(past,final)=>knownProgressReadHistory(past) && knownProgressReadHistory(final) && past.contextId===final.contextId && JSON.stringify(past.before)===JSON.stringify(final.before) && past.progressReads.started<=final.progressReads.started && past.progressReads.finished<=final.progressReads.finished && past.progressReads.records.every(row=>{
+const samePrincipalJournalPrefix=(past,final)=>knownProgressReadHistory(past) && knownProgressReadHistory(final) && past.contextId===final.contextId && mixedOwnedJSONString(past.before)===mixedOwnedJSONString(final.before) && past.progressReads.started<=final.progressReads.started && past.progressReads.finished<=final.progressReads.finished && past.progressReads.records.every(row=>{
  const match=final.progressReads.records.find(value=>value.acknowledgmentOrdinal===row.acknowledgmentOrdinal);
- return match && match.startedOrdinal===row.startedOrdinal && match.kind===row.kind && (row.finishedOrdinal!==null?JSON.stringify(row)===JSON.stringify(match):match.finishedOrdinal===null || match.finishedOrdinal>past.progressReads.finished);
+ return match && match.startedOrdinal===row.startedOrdinal && match.kind===row.kind && (row.finishedOrdinal!==null?mixedOwnedJSONString(row)===mixedOwnedJSONString(match):match.finishedOrdinal===null || match.finishedOrdinal>past.progressReads.finished);
 });
 /** Prefix replay is additional evidence. Final lifetime/browser/native checks remain independently required. */
 export function validateMixedProgressObservations(progress,context,finalInputs) {
@@ -2514,22 +2518,22 @@ export function validateMixedProgressObservations(progress,context,finalInputs) 
   if(!progress || Object.keys(progress).length!==names.length || !names.every(key=>Object.hasOwn(Object.getOwnPropertyDescriptor(progress,key) ?? {},"value")) || progress.protocol!=="mixed-native-progress-observations-v1" || progress.candidateRepresentationProtocol!==mixedNativeProgressPolicy.candidateRepresentationProtocol || progress.contextId!==context?.contextId || progress.authoritySha256!==mixedNativeAuthorityDigest(context) || !Number.isSafeInteger(progress.guardChecks) || progress.guardChecks<1 || progress.guardChecks>controlCancellationPolicy.recordLimit || !Number.isSafeInteger(progress.attempted) || progress.attempted<0 || progress.attempted>progress.guardChecks || progress.failed!==0 || progress.overflow!==0 || !Number.isSafeInteger(progress.retainedBytes) || progress.retainedBytes<0 || progress.retainedBytes>controlCancellationPolicy.retainedLimit || !Array.isArray(progress.prefixes) || progress.prefixes.length!==progress.attempted || !Array.isArray(progress.checks) || progress.checks.length!==progress.guardChecks || !Array.isArray(finalInputs?.failureIds) || !knownMixedDocumentJournal(finalInputs.documentJournal) || finalInputs.documentJournal.closed!==true || finalInputs.documentJournal.contextId!==context.contextId || !Array.isArray(finalInputs.nativeFailureIds) || !Number.isSafeInteger(finalInputs.browserEventOrdinal) || !validateProxyHeaderLifecycle(finalInputs.headerLifecycle) || finalInputs.headerLifecycle.closed!==true || finalInputs.headerLifecycle.pendingUpstreams!==0 || finalInputs.headerLifecycle.acceptedRequests!==finalInputs.headerLifecycle.upstreamRequests || finalInputs.headerLifecycle.closedUpstreams!==finalInputs.headerLifecycle.upstreamRequests || context.principalEpoch?.scopeClosed!==true || context.principalEpoch.pendingReads!==0 || context.environment?.workerTargets?.scopeClosed!==true || finalInputs.headerLifecycle.errors!==0 || finalInputs.headerLifecycle.overflow!==0)return false;
   if(!knownMixedFailureOccurrences(finalInputs.failureOccurrences,context.contextId,finalInputs.browserEventOrdinal,finalInputs.failureIds))return false;
   const occurrences=new Map(finalInputs.failureOccurrences.records.map(row=>[row.requestId,row.eventOrdinal])),finalIds=new Set(finalInputs.failureIds),used=new Set();let previousStart=-1;
-  const vector=(v)=>v && Object.keys(v).length===6 && ["browserEventOrdinal","headerEventOrdinal","workerEventCount","principalProgressStarted","principalProgressFinished"].every(key=>Number.isSafeInteger(v[key]) && v[key]>=0) && v.principalProgressFinished<=v.principalProgressStarted && v.browserEventOrdinal<=finalInputs.browserEventOrdinal && v.headerEventOrdinal<=finalInputs.headerLifecycle.eventOrdinal && v.workerEventCount<=context.environment.workerTargets.events.length && Array.isArray(v.failureIds) && new Set(v.failureIds).size===v.failureIds.length && v.failureIds.every(id=>safeTechnicalId(id) && finalIds.has(id)) && JSON.stringify(v.failureIds)===JSON.stringify(finalInputs.failureOccurrences.records.filter(row=>row.eventOrdinal<=v.browserEventOrdinal).map(row=>row.requestId).sort());
+  const vector=(v)=>v && Object.keys(v).length===6 && ["browserEventOrdinal","headerEventOrdinal","workerEventCount","principalProgressStarted","principalProgressFinished"].every(key=>Number.isSafeInteger(v[key]) && v[key]>=0) && v.principalProgressFinished<=v.principalProgressStarted && v.browserEventOrdinal<=finalInputs.browserEventOrdinal && v.headerEventOrdinal<=finalInputs.headerLifecycle.eventOrdinal && v.workerEventCount<=context.environment.workerTargets.events.length && Array.isArray(v.failureIds) && new Set(v.failureIds).size===v.failureIds.length && v.failureIds.every(id=>safeTechnicalId(id) && finalIds.has(id)) && mixedOwnedJSONString(v.failureIds)===mixedOwnedJSONString(mixedOwnedFilter(finalInputs.failureOccurrences.records,row=>row.eventOrdinal<=v.browserEventOrdinal).map(row=>row.requestId).sort());
   for(let index=0;index<progress.checks.length;index++){
    const check=progress.checks[index];
-   if(Object.keys(check).length!==5 || check.ordinal!==index+1 || !vector(check.begin) || !vector(check.returned) || check.begin.browserEventOrdinal<previousStart || ["browserEventOrdinal","headerEventOrdinal","workerEventCount","principalProgressStarted","principalProgressFinished"].some(key=>check.returned[key]<check.begin[key]) || JSON.stringify(check.begin.failureIds)!==JSON.stringify(check.returned.failureIds))return false;
+   if(Object.keys(check).length!==5 || check.ordinal!==index+1 || !vector(check.begin) || !vector(check.returned) || check.begin.browserEventOrdinal<previousStart || ["browserEventOrdinal","headerEventOrdinal","workerEventCount","principalProgressStarted","principalProgressFinished"].some(key=>check.returned[key]<check.begin[key]) || mixedOwnedJSONString(check.begin.failureIds)!==mixedOwnedJSONString(check.returned.failureIds))return false;
    previousStart=check.begin.browserEventOrdinal;
    if(check.prefixSha256===null){if(check.checkpointOrdinal!==null || check.returned.failureIds.some(id=>finalInputs.nativeFailureIds.includes(id)))return false;}
-   else{const matches=progress.prefixes.filter(row=>row.prefixSha256===check.prefixSha256 && row.checkpointOrdinal===check.checkpointOrdinal);if(matches.length!==1 || used.has(check.prefixSha256))return false;used.add(check.prefixSha256);const prefix=matches[0];if(JSON.stringify(check.begin)!==JSON.stringify(mixedNativeProgressVector(prefix.begin)) || JSON.stringify(check.returned)!==JSON.stringify(mixedNativeProgressVector(prefix.end)))return false;}
+   else{const matches=mixedOwnedFilter(progress.prefixes,row=>row.prefixSha256===check.prefixSha256 && row.checkpointOrdinal===check.checkpointOrdinal);if(matches.length!==1 || used.has(check.prefixSha256))return false;used.add(check.prefixSha256);const prefix=matches[0];if(mixedOwnedJSONString(check.begin)!==mixedOwnedJSONString(mixedNativeProgressVector(prefix.begin)) || mixedOwnedJSONString(check.returned)!==mixedOwnedJSONString(mixedNativeProgressVector(prefix.end)))return false;}
   }
   for(let index=0;index<progress.prefixes.length;index++){
    const prefix=progress.prefixes[index];if([prefix?.begin,prefix?.end].some(cut=>!Array.isArray(cut?.failures) || cut.failures.some(row=>occurrences.get(row.requestId)!==row.failedEventOrdinal)))return false;if(prefix.checkpointOrdinal!==index+1 || !validateMixedNativePrefix(prefix) || mixedNativeAuthorityDigest(prefix.end.nativeContext)!==progress.authoritySha256 || !sameHeaderJournalPrefix(prefix.headerPrefix.lifecycle,finalInputs.headerLifecycle) || !sameHeaderJournalPrefix(prefix.begin.nativeContext.headerPrefix.lifecycle,finalInputs.headerLifecycle) || !samePrincipalJournalPrefix(prefix.begin.nativeContext.principalEpoch,context.principalEpoch) || !samePrincipalJournalPrefix(prefix.end.nativeContext.principalEpoch,context.principalEpoch) || !used.has(prefix.prefixSha256))return false;
    const source=prefix.acknowledgment.document.sourceJournal,final=finalInputs.documentJournal;
-   if(JSON.stringify(final.executionEvents.slice(0,source.executionEventOrdinal))!==JSON.stringify(source.executionEvents) || JSON.stringify(final.documents.slice(0,source.documentEventOrdinal))!==JSON.stringify(source.documents))return false;
+   if(mixedOwnedJSONString(final.executionEvents.slice(0,source.executionEventOrdinal))!==mixedOwnedJSONString(source.executionEvents) || mixedOwnedJSONString(final.documents.slice(0,source.documentEventOrdinal))!==mixedOwnedJSONString(source.documents))return false;
    const past=prefix.end.nativeContext.environment.workerTargets.events;
-   if(JSON.stringify(context.environment.workerTargets.events.slice(0,past.length))!==JSON.stringify(past))return false;
+   if(mixedOwnedJSONString(context.environment.workerTargets.events.slice(0,past.length))!==mixedOwnedJSONString(past))return false;
   }
-  return progress.retainedBytes===Buffer.byteLength(JSON.stringify(progress.checks))+progress.prefixes.reduce((n,prefix)=>n+Buffer.byteLength(JSON.stringify(prefix)),0);
+  return progress.retainedBytes===Buffer.byteLength(mixedOwnedJSONString(progress.checks))+progress.prefixes.reduce((n,prefix)=>n+Buffer.byteLength(mixedOwnedJSONString(prefix)),0);
  }catch{return false;}
 }
 
@@ -2555,7 +2559,7 @@ export function knownMixedDocumentJournal(journal,document) {
   }
   if(!document)return true;
   if(journal.closed!==false || document.contextId!==journal.contextId || document.executionEventOrdinalAfter!==journal.executionEventOrdinal || document.documentEventOrdinalAfter!==journal.documentEventOrdinal || document.documentGeneration!==journal.currentGeneration)return false;
-  const execution=contexts.get(document.executionContextId),defaults=[...contexts.values()].filter(row=>row.isDefault && row.frameId===document.frameId),docs=journal.documents.filter(row=>row.frameId===document.frameId && row.loaderId===document.loaderId);
+  const execution=contexts.get(document.executionContextId),defaults=[...contexts.values()].filter(row=>row.isDefault && row.frameId===document.frameId),docs=mixedOwnedFilter(journal.documents,row=>row.frameId===document.frameId && row.loaderId===document.loaderId);
   return execution?.isDefault===true && execution.uniqueId===document.executionContextUniqueId && execution.frameId===document.frameId && defaults.length===1 && docs.length===1 && docs[0].requestId===document.documentRequestId && docs[0].originSha256===document.originSha256 && docs[0].documentGeneration===document.contextId+":"+document.documentGeneration;
  }catch{return false;}
 }
@@ -2563,7 +2567,7 @@ export function knownMixedDocumentJournal(journal,document) {
 /** CORE chronology from actual loadingFailed callbacks, not request start time or nearest-time inference. */
 export function mixedFailureOccurrenceCensus({contextId,scopeClosed,browserEventOrdinal,records}){
  const facts={protocol:"actual-browser-failed-occurrence-census-v1",contextId,scopeClosed,browserEventOrdinal,records:records.map(row=>({...row})).sort((a,b)=>a.requestId<b.requestId?-1:a.requestId>b.requestId?1:0)};
- return {...facts,censusSha256:bodySha256(Buffer.from(JSON.stringify(facts)))};
+ return {...facts,censusSha256:bodySha256(mixedOwnedUTF8(mixedOwnedJSONString(facts)))};
 }
 const knownMixedFailureOccurrences=(proof,contextId,browserEventOrdinal,ids)=>{
  try{
@@ -2571,6 +2575,6 @@ const knownMixedFailureOccurrences=(proof,contextId,browserEventOrdinal,ids)=>{
   const seen=new Set(),ordinals=new Set();
   for(const row of proof.records){if(Object.keys(row).length!==3 || !safeTechnicalId(row.requestId) || seen.has(row.requestId) || !Number.isSafeInteger(row.eventOrdinal) || row.eventOrdinal<1 || row.eventOrdinal>browserEventOrdinal || ordinals.has(row.eventOrdinal) || row.failedEvents!==1)return false;seen.add(row.requestId);ordinals.add(row.eventOrdinal);}
   const {censusSha256,...facts}=proof;
-  return censusSha256===bodySha256(Buffer.from(JSON.stringify(facts))) && JSON.stringify([...seen].sort())===JSON.stringify([...ids].sort());
+  return censusSha256===bodySha256(mixedOwnedUTF8(mixedOwnedJSONString(facts))) && mixedOwnedJSONString([...seen].sort())===mixedOwnedJSONString([...ids].sort());
  }catch{return false;}
 };

@@ -656,7 +656,8 @@ test("source-bound digest serialization diagnostics report once and preserve enc
   const calls={stringify:0,encode:0,hash:0},observed=[],value={technical:true};
   const encode={from:text=>{calls.encode++;if(mode==="encode")throw Error("PRIVATE_ENCODE");return Buffer.from(text);}},json={stringify:input=>{calls.stringify++;if(mode==="stringify")throw Error("PRIVATE_STRINGIFY");return JSON.stringify(input);}},bodyHash=bytes=>{calls.hash++;if(mode==="hash")throw Error("PRIVATE_HASH");return sha(bytes);};
   // Execute the actual private source, with only its IO-free primitives replaced for genuine fault injection.
-  const digest=Function("Buffer","JSON","controlCancellationPolicy","bodySha256","utilTypes",definition+";return nativeContextDigest;")(encode,json,controlCancellationPolicy,bodyHash,types);
+  const {mixedOwnedOperation,mixedOwnedJSONString,mixedOwnedUTF8}=await import("./mixed-technical-gzip.mjs");
+  const digest=Function("Buffer","JSON","controlCancellationPolicy","bodySha256","utilTypes","mixedOwnedOperation","mixedOwnedJSONString","mixedOwnedUTF8",definition+";return nativeContextDigest;")(encode,json,controlCancellationPolicy,bodyHash,types,mixedOwnedOperation,mixedOwnedJSONString,mixedOwnedUTF8);
   const result=digest(value,row=>{observed.push(row);throw Error("PRIVATE_CALLBACK");});
   assert.equal(observed.length,1,mode);assert.equal(calls.stringify,1);assert.equal(calls.encode,mode==="stringify"?0:1);assert.equal(calls.hash,["stringify","encode"].includes(mode)?0:1);
   assert.equal(result,mode==="success"?sha(Buffer.from(JSON.stringify(value))):null);
@@ -702,4 +703,23 @@ test("closed pending guard forgets full cut and candidate child references befor
  const pending=observer.check();observer.close();let forgotten=false;
  for(let i=0;i<12;i++){await tick();collect();await tick();if(rootReference.deref()===undefined&&childReference.deref()===undefined){forgotten=true;break;}}
  assert.equal(forgotten,true,"neither full begin nor candidate child data may remain in the suspended check");finish({...ack,...args});await assert.rejects(pending,/closed/);observer.releaseSnapshot();assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);
+});
+
+
+test("owned classifier receipts preserve ordinary control facts and allocation denial releases only their own leases",async()=>{
+ const {createMixedTechnicalOwner}=await import("./mixed-technical-gzip.mjs"),{input}=fixture(),expected=classifyControlCancellations(input);assert.equal(expected.provenControls,1);
+ const proxy=createProxyControlCollector({contextId:input.nativeContext.contextId});proxy.installed();
+ const owner=createMixedTechnicalOwner({contextId:input.nativeContext.contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});
+ const result=owner.retainEvidence(()=>classifyControlCancellations(input));assert.deepEqual(result,expected);assert.ok(owner.stats().retainedRecords>0);assert.ok(owner.stats().peakBytes>owner.stats().retainedBytes);owner.releaseEvidence(result);assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);
+ assert.equal(proxy.reserveTemporaryObservation(33554432-200000),true);
+ assert.throws(()=>owner.retainEvidence(()=>classifyControlCancellations(input)));assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);
+ assert.equal(proxy.reserveTemporaryObservation(200001),false);proxy.releaseTemporaryObservation(33554432-200000);assert.equal(proxy.reserveTemporaryObservation(33554432),true);proxy.releaseTemporaryObservation(33554432);owner.close();
+});
+
+
+test("candidate gzip never widens the independent Native-context or full-prefix4MiB gates",async()=>{
+ const {input}=fixture();input.nativeContext.padding="small";assert.equal(classifyControlCancellations(input).provenControls,1);
+ input.nativeContext.padding="x".repeat(4194304);assert.equal(classifyControlCancellations(input).provenControls,0);
+ const {api,begin,end,ack}=await openPrefixFixture(),small=api.createMixedNativePrefix({checkpointOrdinal:1,begin,end,acknowledgment:ack,headerPrefix:end.nativeContext.headerPrefix,returnedAtMs:ack.finishedAtMs});assert.equal(api.validateMixedNativePrefix(small),true);
+ const large=structuredClone(small);large.begin.proxy[0].padding="x".repeat(4194304);assert.equal(api.validateMixedNativePrefix(large),false);
 });

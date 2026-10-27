@@ -1,6 +1,6 @@
 /** Pure observations of one owned proxy's upstream response headers; no cookie/native eligibility claim. */
 import { createHash } from "node:crypto";
-import {mixedOwnedClone as structuredClone,mixedOwnedRows,mixedOwnedArray,mixedOwnedJSONString,mixedOwnedHashInput} from "./mixed-technical-gzip.mjs";
+import {mixedOwnedOperation,mixedOwnedClone as structuredClone,mixedOwnedRows,mixedOwnedArray,mixedOwnedJSONString,mixedOwnedHashInput} from "./mixed-technical-gzip.mjs";
 
 export const proxyHeaderCensusProtocol =
 	"owned-proxy-upstream-header-census-v1";
@@ -14,7 +14,8 @@ const requestKnown = (value) =>
 const faultKinds = ["error", "duplicate", "missing", "late", "overflow"];
 const emptyFaultCounts = () =>
 	Object.fromEntries(faultKinds.map((kind) => [kind, 0]));
-const summarize = (requests, faults, unretainedFaults) => {
+const summarize = (requests, faults, unretainedFaults) => mixedOwnedOperation(()=>{
+ mixedOwnedArray(Math.max(requests.length,faults.length),()=>null,{bytesPerEntry:128});
 	const count = (kind) =>
 		faults.filter((fault) => fault.kind === kind).length +
 		unretainedFaults[kind];
@@ -42,7 +43,7 @@ const summarize = (requests, faults, unretainedFaults) => {
 			count("overflow") +
 			Object.values(unretainedFaults).reduce((sum, value) => sum + value, 0),
 	};
-};
+},{retainResult:true});
 const inspectHeaders = (headers) => {
 	try {
 		if (
@@ -97,7 +98,7 @@ const inspectHeaders = (headers) => {
 		}
 		return {
 			setCookieLines: lines.length,
-			setCookieSha256: lines.length ? digest(JSON.stringify(lines)) : null,
+			setCookieSha256: lines.length ? digest(mixedOwnedJSONString(lines)) : null,
 		};
 	} catch {
 		return null;
@@ -284,7 +285,7 @@ export function validateProxyHeaderCensus(proof, { contextId } = {}) {
 								: !/^[a-f0-9]{64}$/.test(row.setCookieSha256))
 						: row.setCookieLines !== null || row.setCookieSha256 !== null),
 			) ||
-			new Set(proof.requests.map((row) => row.requestId)).size !==
+			new Set(mixedOwnedArray(proof.requests.length,()=>proof.requests.map((row) => row.requestId),{bytesPerEntry:80})).size !==
 				proof.requests.length
 		)
 			return false;
@@ -328,7 +329,7 @@ export function validateProxyHeaderCensus(proof, { contextId } = {}) {
 			!Object.values(expected.counts).every(count)
 		)
 			return false;
-		return JSON.stringify(proof) === JSON.stringify(expected);
+		return mixedOwnedJSONString(proof) === mixedOwnedJSONString(expected);
 	} catch {
 		return false;
 	}
@@ -342,8 +343,8 @@ const exactDataKeys = (value, names) => value && [Object.prototype,null].include
 const lifecycleFields = ["acceptedOrdinal","upstreamCreatedOrdinal","headersReceivedOrdinal","headersForwardedOrdinal","upstreamClosedOrdinal"];
 const lifecycleFacts = state => {
  const requests=mixedOwnedRows(()=>state.requests.values(),row=>({...row})).sort((a,b)=>a.requestId<b.requestId?-1:1);
- const facts={protocol:lifecycleProtocol,proxyInstanceId:state.proxyInstanceId,originSha256:state.originSha256,allowedOriginSha256:[...state.allowedOriginSha256],closed:state.closed,eventOrdinal:state.eventOrdinal,errors:state.errors,overflow:state.overflow,requests,
- acceptedRequests:requests.length,upstreamRequests:requests.filter(row=>row.upstreamCreatedOrdinal!==null).length,closedUpstreams:requests.filter(row=>row.upstreamClosedOrdinal!==null).length};
+ const facts={protocol:lifecycleProtocol,proxyInstanceId:state.proxyInstanceId,originSha256:state.originSha256,allowedOriginSha256:mixedOwnedArray(state.allowedOriginSha256.length,()=>[...state.allowedOriginSha256],{bytesPerEntry:80}),closed:state.closed,eventOrdinal:state.eventOrdinal,errors:state.errors,overflow:state.overflow,requests,
+ acceptedRequests:requests.length,upstreamRequests:mixedOwnedArray(requests.length,()=>requests.filter(row=>row.upstreamCreatedOrdinal!==null)).length,closedUpstreams:mixedOwnedArray(requests.length,()=>requests.filter(row=>row.upstreamClosedOrdinal!==null)).length};
  return {...facts,pendingUpstreams:facts.upstreamRequests-facts.closedUpstreams};
 };
 /** Source-adjacent lifecycle facts only. An open upstream is never represented as a finished request. */
@@ -381,12 +382,12 @@ export function validateProxyHeaderPrefix(proof,{contextId}={}) {
   if(!exactDataKeys(proof,["protocol","census","lifecycle","prefixSha256"]) || proof.protocol!==proxyHeaderPrefixProtocol || !shaKnown(proof.prefixSha256) || !validateProxyHeaderCensus(proof.census,{contextId}) || proof.census.closed!==false)return false;
   const life=proof.lifecycle;
   if(!validateProxyHeaderLifecycle(life) || life.closed!==false || life.requests.length!==proof.census.requests.length)return false;
-  const requests=new Map(life.requests.map(row=>[row.requestId,row]));
+  const requests=new Map(mixedOwnedArray(life.requests.length,()=>life.requests.map(row=>[row.requestId,row]),{bytesPerEntry:96}));
   for(const row of proof.census.requests){
    const source=requests.get(row.requestId);if(!source)return false;
    if(row.observation==="pending" && (source.headersReceivedOrdinal!==null || source.headersForwardedOrdinal!==null || source.upstreamClosedOrdinal!==null) || ["headers","unknown-headers"].includes(row.observation) && source.headersReceivedOrdinal===null || row.observation==="terminal-before-headers" && (source.headersReceivedOrdinal!==null || source.headersForwardedOrdinal!==null || source.upstreamClosedOrdinal===null))return false;
   }
-  return proof.prefixSha256===digest(JSON.stringify({protocol:proof.protocol,census:proof.census,lifecycle:life}));
+  return proof.prefixSha256===digest(mixedOwnedJSONString({protocol:proof.protocol,census:proof.census,lifecycle:life}));
  }catch{return false;}
 }
 
@@ -394,16 +395,16 @@ export function validateProxyHeaderPrefix(proof,{contextId}={}) {
 export function validateProxyHeaderLifecycle(life){
  try{
   if(!exactDataKeys(life,["protocol","proxyInstanceId","originSha256","allowedOriginSha256","closed","eventOrdinal","errors","overflow","requests","acceptedRequests","upstreamRequests","closedUpstreams","pendingUpstreams"]) || life.protocol!==lifecycleProtocol || !/^[a-f0-9]{32}$/.test(life.proxyInstanceId ?? "") || !shaKnown(life.originSha256) || typeof life.closed!=="boolean" || !["eventOrdinal","errors","overflow","acceptedRequests","upstreamRequests","closedUpstreams","pendingUpstreams"].every(key=>whole(life[key])) || !Array.isArray(life.requests) || life.requests.length>proxyHeaderCensusLimit || !Array.isArray(life.allowedOriginSha256) || life.allowedOriginSha256.length<1 || life.allowedOriginSha256.length>32 || !life.allowedOriginSha256.every(shaKnown) || new Set(life.allowedOriginSha256).size!==life.allowedOriginSha256.length || !life.allowedOriginSha256.includes(life.originSha256))return false;
-  const events=[], requests=new Map();
+  const events=mixedOwnedArray(life.requests.length,()=>[],{bytesPerEntry:192}), requests=new Map();
   for(const row of life.requests){
    if(!exactDataKeys(row,["requestId","originSha256",...lifecycleFields]) || !requestKnown(row.requestId) || requests.has(row.requestId) || !life.allowedOriginSha256.includes(row.originSha256) || !Number.isSafeInteger(row.acceptedOrdinal) || row.acceptedOrdinal<1)return false;
    for(const field of lifecycleFields){const n=row[field];if(n!==null){if(!Number.isSafeInteger(n)||n<1||n>life.eventOrdinal)return false;events.push(n);}}
    if(row.upstreamCreatedOrdinal!==null && row.upstreamCreatedOrdinal<=row.acceptedOrdinal || [row.headersReceivedOrdinal,row.headersForwardedOrdinal,row.upstreamClosedOrdinal].some(n=>n!==null && (row.upstreamCreatedOrdinal===null || n<=row.upstreamCreatedOrdinal)) || row.headersForwardedOrdinal!==null && (row.headersReceivedOrdinal===null || row.headersForwardedOrdinal<=row.headersReceivedOrdinal) || row.upstreamClosedOrdinal!==null && row.headersReceivedOrdinal!==null && row.upstreamClosedOrdinal<=row.headersReceivedOrdinal || row.upstreamClosedOrdinal!==null && row.headersForwardedOrdinal!==null && row.upstreamClosedOrdinal<=row.headersForwardedOrdinal)return false;
    requests.set(row.requestId,row);
   }
-  if(events.length!==life.eventOrdinal || events.sort((a,b)=>a-b).some((n,i)=>n!==i+1) || life.requests.map(row=>Number(row.requestId.split(".")[1])).sort((a,b)=>a-b).some((n,i)=>n!==i+1))return false;
+  if(events.length!==life.eventOrdinal || events.sort((a,b)=>a-b).some((n,i)=>n!==i+1) || mixedOwnedArray(life.requests.length,()=>life.requests.map(row=>Number(row.requestId.split(".")[1]))).sort((a,b)=>a-b).some((n,i)=>n!==i+1))return false;
   const expected=lifecycleFacts({...life,requests});
-  if(JSON.stringify(expected)!==JSON.stringify(life))return false;
+  if(mixedOwnedJSONString(expected)!==mixedOwnedJSONString(life))return false;
   return true;
  }catch{return false;}
 }

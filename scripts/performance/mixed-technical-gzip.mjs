@@ -170,6 +170,27 @@ export function mixedOwnedArray(count,construct,{bytesPerEntry=8,records=0}={}){
  const lease=collect(charge(construction.state,2048+count*bytesPerEntry,'snapshot-bounded-array',records));
  try{const value=construct();bind(lease,value);return value;}catch{lease.release();throw bad();}
 }
+/** Synchronous predicate temporaries end before the next existing predicate executes. */
+export function mixedOwnedOperation(construct,{retainResult=false}={}){
+ if(!construction)return construct();
+ const parent=construction,frame={state:parent.state,leases:[charge(parent.state,131072,'technical-predicate-fixed-shells')]};let result=null;
+ construction=frame;
+ try{
+  result=construct();
+  if(retainResult&&result!==null&&typeof result==='object'){
+   const measured=measure(result,parent.state,null,limits.owner),lease=charge(parent.state,measured.bytes+2048,'technical-predicate-return-view',measured.typedRecords);bind(lease,result);parent.leases.push(lease);
+  }
+  return result;
+ }finally{construction=parent;for(const lease of frame.leases.reverse())lease.release();}
+}
+/** Precharge a derived receipt before its fixed-key constructor executes. */
+export function mixedOwnedProjectedValue(source,construct,{keys=null,omit=null,extraBytes=2048,records=1}={}){
+ if(!construction)return construct();
+ const {state}=construction,m=measure(source,state,null,limits.owner,{keys,omit}),lease=collect(charge(state,m.bytes+extraBytes,'derived-technical-receipt',records+m.typedRecords));
+ try{const value=construct();bind(lease,value);return value;}catch{lease.release();throw bad();}
+}
+/** A filter creates an index/reference vector; source rows keep their existing leases. */
+export function mixedOwnedFilter(source,predicate){return mixedOwnedArray(source.length,()=>source.filter(predicate));}
 export function mixedOwnedHashInput(value){return construction&&typeof value==='string'?mixedOwnedUTF8(value):value;}
 export function mixedOwnedFreeze(value){
  must(construction!==null);const workspace=collect(charge(construction.state,vectorBase,'immutable-snapshot-key-vectors')),ancestors=new Set();let nodes=0;
@@ -182,15 +203,15 @@ export function mixedOwnedFreeze(value){
  };
  try{freeze(value,0);return value;}finally{workspace.release();}
 }
-export function mixedOwnedJSONString(value){
- if(!construction)return JSON.stringify(value);
+export function mixedOwnedJSONString(value,serialize=JSON.stringify){
+ if(!construction)return serialize(value);
  const {state}=construction,m=measure(value,state,null,limits.owner),lease=collect(charge(state,2*m.bytes,'snapshot-UTF16-string'));
- try{const text=JSON.stringify(value);bind(lease,text);return text;}catch{lease.release();throw bad();}
+ try{const text=serialize(value);bind(lease,text);return text;}catch{lease.release();throw bad();}
 }
-export function mixedOwnedUTF8(value){
- if(!construction)return Buffer.from(value);
+export function mixedOwnedUTF8(value,encode=Buffer.from){
+ if(!construction)return encode(value);
  must(typeof value==='string');const lease=collect(charge(construction.state,Buffer.byteLength(value),'snapshot-UTF8-buffer'));
- try{const bytes=Buffer.from(value);bind(lease,bytes);return bytes;}catch{lease.release();throw bad();}
+ try{const bytes=encode(value);bind(lease,bytes);return bytes;}catch{lease.release();throw bad();}
 }
 export function createMixedTechnicalOwner(options){
  qualified();
