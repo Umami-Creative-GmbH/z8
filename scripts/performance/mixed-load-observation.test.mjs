@@ -403,6 +403,28 @@ test("whole mixed observation uses real v2 registration, native close/flush and 
 					driverQueries: 4,
 					driverComplete: true,
 					complete: true,
+					serverWitnesses: {
+						limit: 128,
+						overflow: 0,
+						missingIds: 0,
+						duplicateStarts: 0,
+						unmatchedEnds: 0,
+						open: [],
+					},
+					incomingHttp: {
+						records: [],
+						overflow: 0,
+						missingSpanIds: 0,
+						duplicateSpanIds: 0,
+						invalidPathnames: 0,
+						readErrors: 0,
+						rejected: {
+							missingOrMalformedParent: 0,
+							unknownHeaderTrace: 0,
+							traceMismatch: 0,
+						},
+						limit: 128,
+					},
 				},
 			],
 		);
