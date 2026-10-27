@@ -1205,3 +1205,130 @@ test("mixed failure occurrence CORE uses actual callback ordinals and retains du
  const proof=collector.snapshot();assert.deepEqual(proof.browserFailureOccurrences.records,[{requestId:"failed",eventOrdinal:5,failedEvents:1}]);assert.equal(proof.browserFailureOccurrences.browserEventOrdinal,5);assert.equal(proof.browserFailureOccurrences.scopeClosed,true);assert.equal(proof.rawMeasuredFailedRequests,1);assert.equal(proof.measured.unknownFailures,1,"Technical occurrence facts do not make the unread/unmatched response a control.");
  collector.failed({requestId:"failed",errorText:"net::ERR_ABORTED",canceled:true});const duplicate=collector.snapshot();assert.equal(duplicate.browserFailureOccurrences.records[0].eventOrdinal,5);assert.equal(duplicate.browserFailureOccurrences.records[0].failedEvents,2);assert.equal(duplicate.browserEventOrdinal,6);assert.ok(duplicate.measured.coverage.errors>0);
 });
+
+
+async function requestShapeTestBinding() {
+ const directory=await mkdtemp(join(tmpdir(),"z8-request-shape-")),manifestPath=join(directory,"required-server-files.json"),build="c".repeat(40),actionId="40"+"a".repeat(40);
+ const registry=Buffer.from(JSON.stringify({node:{[actionId]:{filename:"apps/webapp/src/app/[locale]/(app)/analytics/actions.ts",exportedName:"getTeamPerformanceData"}},edge:{}}));
+ const manifest=Buffer.from(JSON.stringify({config:{deploymentId:build,experimental:{cachedNavigations:true}}}));
+ await mkdir(join(directory,"server"));await writeFile(manifestPath,manifest);await writeFile(join(directory,"server/server-reference-manifest.json"),registry);
+ const diagnostic={protocol:"request-shape-diagnostic-v1",compiledBuild:build,compiledManifestSha256:segmentHash(manifest),actionRegistrySha256:segmentHash(registry),actionHeaderSha256:segmentHash(actionId),actionName:"getTeamPerformanceData"};
+ const plan={runtime:{build,browserControl:{policy:controlCancellationPolicy,browserRevision:chromiumSWRRevision,compiledCachedNavigations:true,compiledManifestSha256:segmentHash(manifest),requestShapeDiagnostic:diagnostic}}};
+ const binding=await readBrowserControlBinding({plan,manifestPath});return {directory,manifestPath,plan,binding,actionId};
+}
+const segmentHash=value=>createHash("sha256").update(value).digest("hex");
+const requestShapeHeaders=actionId=>({"next-action":actionId,"content-type":"text/plain;charset=UTF-8"});
+const requestShapeBytes=()=>Buffer.from(JSON.stringify([{start:"$D2025-01-01T00:00:00.000Z",end:"$D2025-12-31T23:59:59.999Z",startDate:"2025-01-01",endDate:"2025-12-31",timezone:"PRIVATE_ZONE"}]));
+
+test("request-shape diagnostic verifies actual registry before capture and rejects copied or mismatched authority",async()=>{
+ const f=await requestShapeTestBinding();try{
+  const proxy=createProxyControlCollector({contextId,origin,compiledBinding:f.binding});proxy.installed();
+  assert.equal(proxy.request("a".repeat(32)+".1",{url,method:"POST",headers:requestShapeHeaders(f.actionId),traceId:"a".repeat(32)}),true);
+  assert.throws(()=>createProxyControlCollector({contextId,origin,compiledBinding:{...f.binding}}),/request.shape/i);
+  for(const field of ["compiledBuild","compiledManifestSha256","actionRegistrySha256","actionHeaderSha256","actionName"]){
+   const plan=structuredClone(f.plan);plan.runtime.browserControl.requestShapeDiagnostic[field]="wrong";
+   await assert.rejects(readBrowserControlBinding({plan,manifestPath:f.manifestPath}),/request.shape/i);
+  }
+  await writeFile(join(f.directory,"server/server-reference-manifest.json"),"{}");
+  await assert.rejects(readBrowserControlBinding({plan:f.plan,manifestPath:f.manifestPath}),/request.shape/i);
+ }finally{await rm(f.directory,{recursive:true,force:true});}
+});
+
+test("request-shape diagnostic reports real request EOF and fixed shape facts without values or admission",async()=>{
+ const f=await requestShapeTestBinding();try{
+  const proxy=createProxyControlCollector({contextId,origin,compiledBinding:f.binding});proxy.installed();const id="a".repeat(32)+".1",bytes=requestShapeBytes();
+  assert.equal(proxy.request(id,{url,method:"POST",headers:requestShapeHeaders(f.actionId),traceId:"a".repeat(32)}),true);
+  proxy.requestBodyBytes(id,bytes.subarray(0,7));proxy.requestBodyBytes(id,bytes.subarray(7));
+  assert.equal(proxy.snapshot().requestShapeDiagnostics.pendingRequests,1);
+  proxy.response(id,{status:200,headers:responseHeaders});proxy.end(id);await tick();
+  assert.equal(proxy.snapshot().requestShapeDiagnostics.rows[0].requestEOF,false,"upstream response EOF is not incoming request EOF");
+  proxy.requestBodyEnd(id);assert.equal(proxy.snapshot().requestShapeDiagnostics.pendingParses,1);await tick();
+  const diagnostic=proxy.snapshot().requestShapeDiagnostics,row=diagnostic.rows[0];
+  assert.equal(row.requestEOF,true);assert.equal(row.encodedBytes,bytes.length);assert.equal(row.bodySha256,segmentHash(bytes));
+  assert.equal(row.shape.jsonParsed,true);assert.equal(row.shape.rootKind,"array");assert.equal(row.shape.argumentCount,1);
+  assert.equal(row.shape.fields.start.type,"date-string");assert.equal(row.shape.fields.start.canonicalDate,true);
+  assert.equal(row.shape.unknownKeys,0);assert.equal(row.shape.duplicateKeyStatus,"not-inspected");assert.equal(row.shape.known,false);
+  assert.equal(diagnostic.pendingRequests,0);assert.equal(diagnostic.pendingParses,0);assert.equal(diagnostic.acceptanceClaim,"none");
+  assert.doesNotMatch(JSON.stringify(diagnostic),/2025-01|PRIVATE_ZONE|\$D|40aaaaaaaa/);
+  const plain=createProxyControlCollector({contextId,origin});plain.installed();plain.request(id,{url,method:"POST",headers:requestShapeHeaders(f.actionId),traceId:"a".repeat(32)});
+  assert.equal(Object.hasOwn(plain.snapshot(),"requestShapeDiagnostics"),false);
+ }finally{await rm(f.directory,{recursive:true,force:true});}
+});
+
+test("request-shape diagnostic keeps incomplete, late, unsupported and bounded observations explicit",async()=>{
+ const f=await requestShapeTestBinding();try{
+  const make=()=>{const p=createProxyControlCollector({contextId,origin,compiledBinding:f.binding});p.installed();return p;},id="a".repeat(32)+".1";
+  const start=(p,headers=requestShapeHeaders(f.actionId))=>p.request(id,{url,method:"POST",headers,traceId:"a".repeat(32)});
+  const aborted=make();start(aborted);aborted.requestBodyBytes(id,Buffer.from("["));aborted.requestBodyFailure(id,"aborted");
+  assert.equal(aborted.snapshot().requestShapeDiagnostics.rows[0].requestEOF,false);assert.equal(aborted.snapshot().requestShapeDiagnostics.rows[0].bodySha256,null);
+  const late=make();start(late);late.requestBodyBytes(id,requestShapeBytes());late.requestBodyEnd(id);await tick();late.requestBodyBytes(id,Buffer.from(" "));late.requestBodyEnd(id);
+  assert.ok(late.snapshot().requestShapeDiagnostics.errors>=2);
+  const oversized=make();start(oversized);oversized.requestBodyBytes(id,Buffer.alloc(16385,65));oversized.requestBodyEnd(id);await tick();
+  assert.ok(oversized.snapshot().requestShapeDiagnostics.overflow>0);assert.equal(oversized.snapshot().requestShapeDiagnostics.rows[0].bodySha256,null);
+  for(const [body,reason]of [["[[[]]]","shape-depth-limit"],["["+"0,".repeat(40)+"0]","shape-work-limit"],["[}","invalid-json"]]){
+   const p=make();start(p);p.requestBodyBytes(id,Buffer.from(body));p.requestBodyEnd(id);await tick();assert.equal(p.snapshot().requestShapeDiagnostics.rows[0].shape.reason,reason);
+  }
+  const unknown=make();unknown.requestBodyEnd(id);assert.equal(unknown.snapshot().requestShapeDiagnostics.errors,1);
+  const unselected=make();assert.equal(unselected.request(id,{url,method:"POST",headers:requestShapeHeaders("wrong"),traceId:"a".repeat(32)}),undefined);assert.equal(unselected.snapshot().requestShapeDiagnostics.selected,0);
+ }finally{await rm(f.directory,{recursive:true,force:true});}
+});
+
+test("request-shape diagnostic shares the proxy response reservation ceiling and never supplies a second pool",async()=>{
+ const f=await requestShapeTestBinding();try{
+  const proxy=createProxyControlCollector({contextId,origin,compiledBinding:f.binding});proxy.installed();
+  for(let n=1;n<=8;n++){const id="a".repeat(32)+"."+n;proxy.request(id,{url,method:"GET",headers,traceId:"a".repeat(32)});proxy.response(id,{status:200,headers:responseHeaders});proxy.bytes(id,Buffer.alloc(controlCancellationPolicy.encodedLimit));}
+  const id="a".repeat(32)+".9";proxy.request(id,{url,method:"POST",headers:requestShapeHeaders(f.actionId),traceId:"a".repeat(32)});
+  const diagnostic=proxy.snapshot().requestShapeDiagnostics;
+  assert.ok(diagnostic.overflow>0);assert.equal(diagnostic.unretainedSelections,1);assert.equal(diagnostic.rows.length,0);
+  assert.equal(diagnostic.pendingRequests,null,"Lost request identity cannot manufacture a known zero pending count.");
+ }finally{await rm(f.directory,{recursive:true,force:true});}
+});
+
+
+test("request-shape diagnostic preparse limits, encoding and closure never turn unavailable facts into completeness",async()=>{
+ const f=await requestShapeTestBinding();try{
+  const id="a".repeat(32)+".1",make=()=>{const p=createProxyControlCollector({contextId,origin,compiledBinding:f.binding});p.installed();return p;};
+  const start=(p,h=requestShapeHeaders(f.actionId))=>p.request(id,{url,method:"POST",headers:h,traceId:"a".repeat(32)});
+  const exact=make();start(exact);const bytes=Buffer.from('["'+"X".repeat(16380)+'"]');assert.equal(bytes.length,16384);exact.requestBodyBytes(id,bytes);exact.requestBodyEnd(id);await tick();
+  assert.equal(exact.snapshot().requestShapeDiagnostics.rows[0].bodySha256,segmentHash(bytes));assert.equal(exact.snapshot().requestShapeDiagnostics.overflow,0);assert.equal(exact.snapshot().requestShapeDiagnostics.rows[0].shape.known,false);
+  for(const body of ['[{"PRIVATE_KEY":"PRIVATE_VALUE"}]','[{"start":"$Dinvalid","start":"$D2025-01-01T00:00:00.000Z"}]']){
+   const p=make();start(p);p.requestBodyBytes(id,Buffer.from(body));p.requestBodyEnd(id);await tick();const row=p.snapshot().requestShapeDiagnostics.rows[0];
+   assert.equal(row.shape.known,false);assert.equal(row.shape.duplicateKeyStatus,"not-inspected");assert.doesNotMatch(JSON.stringify(row),/PRIVATE_KEY|PRIVATE_VALUE|2025-01/);
+  }
+  const encoding=make();start(encoding,{...requestShapeHeaders(f.actionId),"content-type":"multipart/form-data; boundary=PRIVATE"});encoding.requestBodyBytes(id,Buffer.from("PRIVATE_BODY"));encoding.requestBodyEnd(id);await tick();
+  assert.equal(encoding.snapshot().requestShapeDiagnostics.rows[0].shape.reason,"unsupported-request-encoding");assert.doesNotMatch(JSON.stringify(encoding.snapshot().requestShapeDiagnostics),/PRIVATE/);
+  const pending=make();start(pending);pending.transportClosed({serverClosed:false,acceptedRequests:1,upstreamRequests:1,closedUpstreams:0,pendingUpstreams:1});
+  assert.equal(pending.snapshot().requestShapeDiagnostics.closed,false);assert.equal(pending.snapshot().requestShapeDiagnostics.pendingRequests,1);
+  const closed=make();start(closed);closed.transportClosed({serverClosed:true,acceptedRequests:1,upstreamRequests:1,closedUpstreams:1,pendingUpstreams:0});
+  const row=closed.snapshot().requestShapeDiagnostics.rows[0];assert.equal(row.requestEOF,false);assert.equal(row.bodySha256,null);assert.equal(row.terminal,"transport-closed-without-request-end");assert.equal(closed.snapshot().requestShapeDiagnostics.complete,false);
+ }finally{await rm(f.directory,{recursive:true,force:true});}
+});
+
+test("request-shape diagnostic reserves parse work before allocation while other proxy bodies remain retained",async()=>{
+ const f=await requestShapeTestBinding();try{
+  const p=createProxyControlCollector({contextId,origin,compiledBinding:f.binding});p.installed();const chunk=Buffer.alloc(controlCancellationPolicy.encodedLimit),bytes=requestShapeBytes();
+  for(let n=1;n<=8;n++){const id="a".repeat(32)+"."+n;p.request(id,{url,method:"GET",headers,traceId:"a".repeat(32)});p.response(id,{status:200,headers:responseHeaders});p.bytes(id,n===8?chunk.subarray(0,chunk.length-2048-16384-1):chunk);}
+  const id="a".repeat(32)+".9";assert.equal(p.request(id,{url,method:"POST",headers:requestShapeHeaders(f.actionId),traceId:"a".repeat(32)}),true);p.requestBodyBytes(id,bytes);p.requestBodyEnd(id);await tick();
+  const diagnostic=p.snapshot().requestShapeDiagnostics,row=diagnostic.rows[0];assert.equal(row.requestEOF,true);assert.equal(row.bodySha256,null);assert.equal(row.shape.reason,"request-parse-reservation");assert.ok(diagnostic.overflow>0);assert.equal(diagnostic.pendingParses,0);assert.ok(diagnostic.sharedProxyRetainedBytes<=controlCancellationPolicy.retainedLimit);
+ }finally{await rm(f.directory,{recursive:true,force:true});}
+});
+
+
+test("request-shape diagnostic assembles split UTF-8 without normalizing invalid encoding or BOM",async()=>{
+ const f=await requestShapeTestBinding();try{
+  const id="a".repeat(32)+".1",run=async bytes=>{const p=createProxyControlCollector({contextId,origin,compiledBinding:f.binding});p.installed();p.request(id,{url,method:"POST",headers:requestShapeHeaders(f.actionId),traceId:"a".repeat(32)});for(let n=0;n<bytes.length;n++)p.requestBodyBytes(id,bytes.subarray(n,n+1));p.requestBodyEnd(id);await tick();return p.snapshot().requestShapeDiagnostics.rows[0];};
+  const bytes=Buffer.from('[{"timezone":"PRIVATE_é_ZONE"}]');const row=await run(bytes);assert.equal(row.bodySha256,segmentHash(bytes));assert.equal(row.shape.jsonParsed,true);assert.equal(row.shape.fields.timezone.type,"string");assert.doesNotMatch(JSON.stringify(row),/PRIVATE|é/);
+  const invalid=await run(Buffer.from([91,34,255,34,93]));assert.equal(invalid.shape.reason,"invalid-utf8");
+  const bom=await run(Buffer.concat([Buffer.from([239,187,191]),requestShapeBytes()]));assert.equal(bom.shape.reason,"invalid-json");
+ }finally{await rm(f.directory,{recursive:true,force:true});}
+});
+
+
+test("request-shape diagnostic bounds empty byte-event bookkeeping without retaining chunk objects",async()=>{
+ const f=await requestShapeTestBinding();try{
+  const p=createProxyControlCollector({contextId,origin,compiledBinding:f.binding});p.installed();const id="a".repeat(32)+".1";
+  p.request(id,{url,method:"POST",headers:requestShapeHeaders(f.actionId),traceId:"a".repeat(32)});
+  for(let n=0;n<=controlCancellationPolicy.recordLimit;n++)p.requestBodyBytes(id,Buffer.alloc(0));p.requestBodyEnd(id);await tick();
+  const diagnostic=p.snapshot().requestShapeDiagnostics;assert.ok(diagnostic.overflow>0);assert.equal(diagnostic.rows[0].encodedBytes,0);assert.equal(diagnostic.rows[0].bodySha256,null);assert.equal(diagnostic.sharedProxyRetainedBytes,2048);assert.equal(diagnostic.pendingParses,0);
+ }finally{await rm(f.directory,{recursive:true,force:true});}
+});

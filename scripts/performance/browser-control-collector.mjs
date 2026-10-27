@@ -106,6 +106,11 @@ export function renderedPathSourceFacts({response,compiledRouting,origin,request
 // Private file locator only; all actual source/hash observations are serialized, not stored here.
 const nativeManifestLocators = new WeakMap();
 const compiledRoutingSources = new WeakMap();
+const requestShapeBindings = new WeakMap();
+// Diagnostic-only: at most 16 KiB input, 32 punctuation tokens, and depth two.
+// 256 KiB reserves concat + UTF-16 text/parsed strings + bounded graph/metadata
+// BEFORE decoding/JSON.parse; it is charged to the existing proxy body pool.
+const requestShapeLimits = Object.freeze({ encodedBytes: 16384, depth: 2, punctuation: 32, byteEvents: controlCancellationPolicy.recordLimit, parseReservation: 262144, metadataReservation: 2048 });
 export const compiledRoutingForBinding = binding=>compiledRoutingSources.get(binding) ?? null;
 const shaChunks = (chunks) => {
 	const hash = createHash("sha256");
@@ -303,6 +308,28 @@ export async function readBrowserControlBinding({ plan, manifestPath }) {
 			row.file === metadata.nativePublicSources.files[index].file && row.bytes === metadata.nativePublicSources.files[index].bytes && row.sha256 === metadata.nativePublicSources.files[index].sha256)))
 		throw Error("Serving public sources differ from the independently qualified compiled source.");
 	const binding = Object.freeze({ ...metadata, compiledBuild: plan.runtime.build, manifestVerified: true, browserVerified: false,servingPublicSources });
+	if (Object.hasOwn(metadata,"requestShapeDiagnostic")) {
+		const configuration=metadata.requestShapeDiagnostic;
+		const keys=["protocol","compiledBuild","compiledManifestSha256","actionRegistrySha256","actionHeaderSha256","actionName"];
+		if (!configuration || JSON.stringify(Object.keys(configuration).sort())!==JSON.stringify([...keys].sort()) ||
+			configuration.protocol!=="request-shape-diagnostic-v1" || configuration.actionName!=="getTeamPerformanceData" ||
+			configuration.compiledBuild!==binding.compiledBuild || configuration.compiledManifestSha256!==binding.compiledManifestSha256 ||
+			![configuration.actionRegistrySha256,configuration.actionHeaderSha256].every(value=>typeof value==="string" && /^[a-f0-9]{64}$/.test(value)))
+			throw Error("Request-shape diagnostic source binding is invalid.");
+		const registryPath=resolve(dirname(manifestPath),"server/server-reference-manifest.json"),before=await stat(registryPath,{bigint:true});
+		if (!before.isFile() || before.size>BigInt(controlCancellationPolicy.encodedLimit)) throw Error("Request-shape registry exceeds the source bound.");
+		const chunks=[];let registryLength=0;
+		for await(const chunk of createReadStream(registryPath,{highWaterMark:65536})){registryLength+=chunk.length;if(registryLength>controlCancellationPolicy.encodedLimit)throw Error("Request-shape registry exceeds the source bound.");chunks.push(chunk);}
+		const after=await stat(registryPath,{bigint:true});
+		if(["dev","ino","size","mtimeNs"].some(key=>before[key]!==after[key]) || BigInt(registryLength)!==after.size)throw Error("Request-shape registry changed during admission.");
+		const registryBytes=Buffer.concat(chunks,registryLength);
+		if (sha(registryBytes)!==configuration.actionRegistrySha256) throw Error("Request-shape action registry hash differs.");
+		const registry=JSON.parse(registryBytes.toString("utf8"));
+		const matches=Object.entries(registry.node ?? {}).filter(([id])=>/^[a-f0-9]{42}$/.test(id) && sha(id)===configuration.actionHeaderSha256);
+		if (matches.length!==1 || matches[0][1]?.exportedName!==configuration.actionName ||
+			matches[0][1]?.filename!=="apps/webapp/src/app/[locale]/(app)/analytics/actions.ts") throw Error("Request-shape action identity differs.");
+		requestShapeBindings.set(binding,Object.freeze({...configuration}));
+	}
 	compiledRoutingSources.set(binding,Object.freeze(compiledRoutingSourceFacts(manifest.config,sha(bytes))));
 	nativeManifestLocators.set(binding,manifestPath);
 	return binding;
@@ -320,6 +347,7 @@ export async function verifyBrowserControlBrowser(browser, binding) {
 		const verified = Object.freeze({ ...binding, browserVerified: true, nativeLaunchMetadata: await captureNativeLaunchMetadata(browser) });
 		if (nativeManifestLocators.has(binding)) nativeManifestLocators.set(verified,nativeManifestLocators.get(binding));
 		if(compiledRoutingSources.has(binding))compiledRoutingSources.set(verified,compiledRoutingSources.get(binding));
+		if(requestShapeBindings.has(binding))requestShapeBindings.set(verified,requestShapeBindings.get(binding));
 		return verified;
 	} finally { await session.detach(); }
 }
@@ -832,6 +860,7 @@ export function createBrowserControlCollector({
 		});
 		return {
 			contextId,
+			...(proxy.requestShapeDiagnostics?{requestShapeDiagnostics:proxy.requestShapeDiagnostics}:{}),
 			...(captureContextFailures?{browserEventOrdinal,proxyHeaderLifecycle:proxy.headerLifecycle ?? null,browserFailureOccurrences:mixedFailureOccurrenceCensus({contextId,scopeClosed:closed,browserEventOrdinal,records:failures.map(row=>({requestId:row.requestId,eventOrdinal:row.failedEventOrdinal ?? null,failedEvents:row.failedEvents}))})}:{}),
 			proxyHeaderCensus: proxy.headerCensus ?? null,
 			proxyHeaderLifetime: proxy.headerLifetime ?? null,
@@ -1323,6 +1352,36 @@ export async function installBrowserControlCollector({
 	};
 }
 
+/** Fixed diagnostic facts only. No model references, temporary map, or business values escape. */
+function inspectRequestShape(bytes) {
+	let text;
+	try { text=new TextDecoder("utf-8",{fatal:true,ignoreBOM:true}).decode(bytes); }
+	catch { return {known:false,jsonParsed:false,reason:"invalid-utf8"}; }
+	let quoted=false,escaped=false,depth=0,punctuation=0;
+	for (const char of text) {
+		if (quoted) { if(escaped)escaped=false;else if(char==="\\")escaped=true;else if(char==='"')quoted=false;continue; }
+		if(char==='"')quoted=true;
+		else if(char==="[" || char==="{") { if(++depth>requestShapeLimits.depth)return {known:false,jsonParsed:false,reason:"shape-depth-limit"}; }
+		else if(char==="]" || char==="}")depth--;
+		else if((char==="," || char===":") && ++punctuation>requestShapeLimits.punctuation)return {known:false,jsonParsed:false,reason:"shape-work-limit"};
+	}
+	let value;
+	try { value=JSON.parse(text); } catch { return {known:false,jsonParsed:false,reason:"invalid-json"}; }
+	const kind=value=>value===null?"null":Array.isArray(value)?"array":typeof value;
+	const argument=Array.isArray(value)&&value.length===1?value[0]:null;
+	const fields={};
+	for (const key of ["start","end","startDate","endDate","timezone"]) {
+		const descriptor=argument && typeof argument==="object" && !Array.isArray(argument)?Object.getOwnPropertyDescriptor(argument,key):null;
+		const item=descriptor?.value,date=typeof item==="string" && item.startsWith("$D");
+		let canonicalDate=null;
+		if(date){const suffix=item.slice(2);canonicalDate=/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(suffix) && Number.isFinite(Date.parse(suffix)) && new Date(suffix).toISOString()===suffix;}
+		fields[key]={present:Boolean(descriptor),type:!descriptor?"absent":date?"date-string":typeof item==="string"&&item.startsWith("$")?"protocol-string":kind(item),canonicalDate};
+	}
+	const keys=argument && typeof argument==="object" && !Array.isArray(argument)?Object.keys(argument):[];
+	return {known:false,jsonParsed:true,reason:"duplicate-key-knowledge-unavailable",duplicateKeyStatus:"not-inspected",rootKind:kind(value),argumentCount:Array.isArray(value)?value.length:null,
+		fields,unknownKeys:keys.filter(key=>!Object.hasOwn(fields,key)).length,prototypeSensitiveKeys:keys.filter(key=>["__proto__","constructor","prototype"].includes(key)).length};
+}
+
 /** Same actual bytes as forwarding; no replay, clone, response hold, or public payload retention. */
 export function createProxyControlCollector({
 	contextId,
@@ -1339,6 +1398,17 @@ export function createProxyControlCollector({
 		errors = 0,
 		overflow = 0,
 		pendingBodies = 0;
+	const shapeConfiguration=requestShapeBindings.get(compiledBinding),shapeRows=new Map();
+	if(Object.hasOwn(compiledBinding ?? {},"requestShapeDiagnostic") && (!shapeConfiguration || JSON.stringify(shapeConfiguration)!==JSON.stringify(compiledBinding.requestShapeDiagnostic)))
+		throw Error("Request-shape diagnostic requires the actual verified source binding.");
+	let shapeErrors=0,shapeOverflow=0,shapeClosed=false,shapePendingParses=0,shapeSelected=0,shapeUnretainedSelections=0;
+	const shapeRelease=row=>{retained-=row.retained;row.retained=0;row.buffer=null;};
+	const shapeReserve=(row,bytes)=>{if(retained+bytes>controlCancellationPolicy.retainedLimit){shapeOverflow++;row.unavailable=true;return false;}retained+=bytes;row.retained+=bytes;return true;};
+	const shapeSnapshot=()=>({protocol:"request-shape-diagnostic-v1",source:shapeConfiguration,limits:requestShapeLimits,closed:shapeClosed,
+		selected:shapeSelected,unretainedSelections:shapeUnretainedSelections,errors:shapeErrors,overflow:shapeOverflow,pendingRequests:shapeUnretainedSelections?null:[...shapeRows.values()].filter(row=>!row.requestEOF && row.terminal===null).length,
+		pendingParses:shapePendingParses,sharedProxyRetainedBytes:retained,acceptanceClaim:"none",complete:false,
+		rows:[...shapeRows.values()].map(row=>({id:row.id,requestEOF:row.requestEOF,terminal:row.terminal,encodedBytes:row.bytes,bodySha256:row.bodySha256,
+			contentType:row.contentType,charset:row.charset,contentEncoding:row.contentEncoding,unavailable:row.unavailable,shape:row.shape}))});
 	const release = (row) => {
 		retained -= row.retainedBytes;
 		row.retainedBytes = 0;
@@ -1358,6 +1428,7 @@ export function createProxyControlCollector({
 		observerError() {
 			errors++;
 			headerCensus.observerError();
+			if(shapeConfiguration)shapeErrors++;
 		},
 		request(id, { url, method, headers, traceId }) {
 			headerCensus.accepted(id);
@@ -1385,6 +1456,48 @@ export function createProxyControlCollector({
 				chunks: [],
 				retainedBytes: 0,
 			});
+			if(shapeConfiguration && method==="POST" && new URL(url).origin===origin && identity.headerFieldSha256["next-action"]===shapeConfiguration.actionHeaderSha256){
+				shapeSelected++;
+				if(retained+requestShapeLimits.metadataReservation>controlCancellationPolicy.retainedLimit){shapeOverflow++;shapeUnretainedSelections++;return;}
+				retained+=requestShapeLimits.metadataReservation;
+				const values=lowerHeaders(headers),parts=(values["content-type"] ?? "").toLowerCase().split(";").map(value=>value.trim());
+				const row={id,requestEOF:false,terminal:null,bytes:0,events:0,bodySha256:null,hash:createHash("sha256"),buffer:null,retained:0,metadataRetained:requestShapeLimits.metadataReservation,unavailable:false,
+					contentType:parts[0]==="text/plain"?"text/plain":"unsupported",charset:parts.length===2 && parts[1]==="charset=utf-8"?"utf-8":"unsupported",
+					contentEncoding:values["content-encoding"]===undefined || values["content-encoding"]==="identity"?"identity":"unsupported",
+					shape:{known:false,jsonParsed:false,reason:"request-pending"}};
+				shapeRows.set(id,row);
+				if(shapeReserve(row,requestShapeLimits.encodedBytes))row.buffer=Buffer.alloc(requestShapeLimits.encodedBytes);
+				else row.shape={known:false,jsonParsed:false,reason:"request-buffer-reservation"};
+				return true;
+			}
+		},
+		requestBodyBytes(id,chunk){
+			const row=shapeRows.get(id);if(!row || shapeClosed || row.requestEOF || row.terminal!==null || !Buffer.isBuffer(chunk)){shapeErrors++;return;}
+			const offset=row.bytes;row.bytes+=chunk.length;
+			if(row.unavailable)return;
+			if(row.bytes>requestShapeLimits.encodedBytes || row.bytes>controlCancellationPolicy.encodedLimit || ++row.events>requestShapeLimits.byteEvents){
+				if(!row.unavailable)shapeOverflow++;row.unavailable=true;shapeRelease(row);row.shape={known:false,jsonParsed:false,reason:"request-byte-limit"};return;
+			}
+			row.hash.update(chunk);chunk.copy(row.buffer,offset);
+		},
+		requestBodyEnd(id){
+			const row=shapeRows.get(id);if(!row || shapeClosed || row.requestEOF || row.terminal!==null){shapeErrors++;return;}
+			row.requestEOF=true;row.terminal="end";
+			if(row.unavailable){row.shape={known:false,jsonParsed:false,reason:"request-unavailable"};shapeRelease(row);return;}
+			row.bodySha256=row.hash.digest("hex");
+			if(row.contentType!=="text/plain" || row.charset!=="utf-8" || row.contentEncoding!=="identity"){
+				row.shape={known:false,jsonParsed:false,reason:"unsupported-request-encoding"};shapeRelease(row);return;
+			}
+			if(!shapeReserve(row,requestShapeLimits.parseReservation)){row.bodySha256=null;row.shape={known:false,jsonParsed:false,reason:"request-parse-reservation"};shapeRelease(row);return;}
+			shapePendingParses++;
+			setImmediate(()=>{try{row.shape=inspectRequestShape(row.buffer.subarray(0,row.bytes));}catch{shapeErrors++;row.shape={known:false,jsonParsed:false,reason:"request-shape-unavailable"};}
+				finally{shapeRelease(row);shapePendingParses--;}});
+		},
+		requestBodyFailure(id,kind){
+			const row=shapeRows.get(id);if(!row || !["error","aborted","close"].includes(kind)){shapeErrors++;return;}
+			if(kind==="close" && row.requestEOF)return;
+			shapeErrors++;
+			if(!row.requestEOF && row.terminal===null){row.terminal=kind;row.unavailable=true;row.shape={known:false,jsonParsed:false,reason:"request-incomplete"};shapeRelease(row);}
 		},
 		response(id, { status, headers }) {
 			headerCensus.headers(id,headers);
@@ -1481,12 +1594,16 @@ export function createProxyControlCollector({
 				upstreamRequests:count(fact?.upstreamRequests),closedUpstreams:count(fact?.closedUpstreams),pendingUpstreams:count(fact?.pendingUpstreams)};
 			if (transportClosure.serverClosed && transportClosure.acceptedRequests === headerCensus.snapshot().counts.accepted &&
 				transportClosure.upstreamRequests !== null && transportClosure.upstreamRequests === transportClosure.acceptedRequests &&
-				transportClosure.closedUpstreams === transportClosure.upstreamRequests && transportClosure.pendingUpstreams === 0) headerCensus.close();
-			else headerCensus.observerError();
+				transportClosure.closedUpstreams === transportClosure.upstreamRequests && transportClosure.pendingUpstreams === 0) {
+				headerCensus.close();
+				if(shapeConfiguration){shapeClosed=true;for(const row of shapeRows.values())if(!row.requestEOF && row.terminal===null){shapeErrors++;row.terminal="transport-closed-without-request-end";row.unavailable=true;row.shape={known:false,jsonParsed:false,reason:"request-incomplete"};shapeRelease(row);}}
+			}
+			else {headerCensus.observerError();if(shapeConfiguration)shapeErrors++;}
 		},
 		snapshot() {
 			return {
 				installed,
+				...(shapeConfiguration?{requestShapeDiagnostics:shapeSnapshot()}:{}),
 				headerCensus:headerCensus.snapshot(),
 				headerLifetime:{protocol:"owned-context-upstream-header-lifetime-v1",contextId,installation:transportInstallation,closure:transportClosure},
 				errors,

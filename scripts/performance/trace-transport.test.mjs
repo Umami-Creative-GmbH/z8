@@ -1,9 +1,11 @@
+import { createHash } from "node:crypto";
+import { EventEmitter } from "node:events";
 import assert from "node:assert/strict";
 import { createServer, request } from "node:http";
 import { connect } from "node:net";
 import test from "node:test";
 import { gzipSync } from "node:zlib";
-import { createFixtureTraceTransport } from "./trace-transport.mjs";
+import { tapOwnedRequestBody, createFixtureTraceTransport } from "./trace-transport.mjs";
 
 const pause = (ms) => new Promise((done) => setTimeout(done, ms));
 
@@ -423,4 +425,41 @@ test("CONNECT refusal contains client aborts and keeps numeric reason evidence",
 	} finally {
 		await transport.close();
 	}
+});
+
+
+test("request-shape tap observes the original chunks and actual end without taking over forwarding",()=>{
+ const request=new EventEmitter(),calls=[],chunks=[Buffer.from("first"),Buffer.from("second")];let forwardingCalls=0;
+ for(const name of ["read","resume","setEncoding","pause"])request[name]=()=>{throw Error("No stream control");};
+ request.pipe=destination=>{forwardingCalls++;for(const chunk of chunks){request.emit("data",chunk);destination.write(chunk);}request.emit("end");destination.end();return destination;};
+ tapOwnedRequestBody(request,"technical.1",(method,id,value)=>calls.push({method,id,value}),()=>assert.fail("unexpected observer exception"));
+ const received=[],destination={write:chunk=>received.push(chunk),end:()=>{}};assert.equal(request.pipe(destination),destination);
+ assert.equal(forwardingCalls,1);assert.equal(received[0],chunks[0]);assert.equal(received[1],chunks[1]);
+ assert.deepEqual(calls.map(row=>row.method),["requestBodyBytes","requestBodyBytes","requestBodyEnd"]);assert.equal(calls[0].value,chunks[0]);
+ request.emit("close");assert.equal(calls.at(-1).value,"close");assert.equal(calls.at(-1).method,"requestBodyFailure");
+});
+
+test("request-shape tap contains callback exceptions and records safe failure enums",()=>{
+ const request=new EventEmitter(),events=[];let errors=0;
+ tapOwnedRequestBody(request,"technical.2",(method,id,value)=>{events.push({method,id,value});if(method==="requestBodyBytes")throw Error("PRIVATE");},()=>{errors++;});
+ assert.doesNotThrow(()=>request.emit("data",Buffer.from("PRIVATE_BYTES")));request.emit("aborted");request.emit("error",Error("PRIVATE_ERROR"));request.emit("close");
+ assert.equal(errors,1);assert.deepEqual(events.slice(1).map(row=>row.value),["aborted","error","close"]);
+ assert.equal(events.every(row=>row.id==="technical.2"),true);
+});
+
+
+// Root owns this socket test; agent-only verification selects the two mock cases above.
+test("request-shape tap real loopback forwarding stays byte header and status equivalent",{timeout:5000},async()=>{
+ const bodies=[],upload=Buffer.from('[{"synthetic":"é"}]');let headersSeen,observedEnd=0,observerErrors=0,throwObserver=false;
+ const backend=createServer((req,res)=>{const chunks=[];headersSeen=req.headers;req.on("data",chunk=>chunks.push(chunk));req.on("end",()=>{bodies.push(Buffer.concat(chunks));res.writeHead(201,{"content-type":"text/plain","x-technical-test":"preserved"});res.end("complete");});});
+ await new Promise(done=>backend.listen(0,"127.0.0.1",done));const origin='http://127.0.0.1:'+backend.address().port,transport=await createFixtureTraceTransport({origin,getTraceId:()=>"a".repeat(32)}),captured=[];
+ const observer={installed(){},request(){return true;},response(){},bytes(){},end(){},cancel(){},failure(){},upstreamClosedBeforeHeaders(){},transportClosed(){},observerError(){observerErrors++;},
+  requestBodyBytes(id,chunk){captured.push(Buffer.from(chunk));if(throwObserver)throw Error("synthetic observer failure");},requestBodyEnd(){observedEnd++;},requestBodyFailure(){}};
+ const errors=transport.setControlCancellationObserver(observer);
+ try{
+  const proxy=new URL(transport.browserContextOptions.proxyServer);
+  const send=()=>new Promise((done,reject)=>{const call=request({hostname:proxy.hostname,port:proxy.port,path:origin+'/upload',method:"POST",headers:{host:new URL(origin).host,origin,"content-type":"text/plain;charset=UTF-8","next-action":"synthetic"}},res=>{const chunks=[];res.on("data",chunk=>chunks.push(chunk));res.on("end",()=>done({status:res.statusCode,header:res.headers['x-technical-test'],bytes:Buffer.concat(chunks)}));});call.on("error",reject);call.write(upload.subarray(0,5));call.end(upload.subarray(5));});
+  const first=await send();assert.equal(first.status,201);assert.equal(first.header,"preserved");assert.equal(first.bytes.toString(),"complete");assert.deepEqual(bodies[0],upload);assert.equal(headersSeen.host,new URL(origin).host);assert.equal(headersSeen.origin,origin);assert.equal(headersSeen['content-type'],"text/plain;charset=UTF-8");assert.equal(observedEnd,1);assert.equal(createHash("sha256").update(Buffer.concat(captured)).digest("hex"),createHash("sha256").update(upload).digest("hex"));assert.equal(errors(),0);
+  throwObserver=true;const second=await send();assert.equal(second.status,201);assert.deepEqual(bodies[1],upload);assert.equal(observedEnd,2);assert.ok(errors()>0);assert.ok(observerErrors>0);
+ }finally{await transport.close();backend.closeAllConnections();await new Promise(done=>backend.close(done));}
 });
