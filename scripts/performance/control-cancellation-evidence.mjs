@@ -129,20 +129,22 @@ function inspectFlightBody(
 	const dependencyCosts={calls:0,first:0,repeatedSameContext:0,repeatedDifferentContext:0,unknownContext:0,contexts:0,identityOverflow:0,contextOverflow:0,
 		activeSameOwner:0,activeDifferentOwner:0,activeOwnerUnknown:0,parentCertificateUses:0,parentCertificateWithSeen:0,parentCertificateWithActive:0,parentCertificateWithoutSeenOrActive:0};
 	let dependencyOrdinalCount=0,diagnosticContextCount=0,chargedWork=0;
+	const diagnosticLanes={background:{identityLimit:2048,contextLimit:512,identities:0,contexts:0,identityMisses:0,contextMisses:0,crossLaneReuseLookups:0},anchor:{identityLimit:2048,contextLimit:512,identities:0,contexts:0,identityMisses:0,contextMisses:0,crossLaneReuseLookups:0}};
 	const semanticValues=new WeakMap(),semanticBuckets=new Map();
 	const semanticRoles=new Set(["root","required","transport","tree","data","tree-map","tree-map-model","tree-map-pair","output","cache-output","suspended-output","fallback-output","component-data","element-type","element-key","host-props","cache-host-props","fallback-host-props","suspense-props","suspended-host-props"]);
 	const semanticArrivals=new Set(["root-or-required","collection-reference","model-reference","outlined-reference","element-type","element-key","element-props","element-field","typed-data-r","array-output","element-children","element-fallback","own-field"]);
-	const semanticCounts={observations:0,contexts:0,first:0,repeatedExact:0,sameValueDifferentObligation:0,unknown:0,overflow:0,committedPopWork:0,committedScheduledChildren:0};
+	const semanticCounts={observations:0,contexts:0,first:0,repeatedExact:0,sameValueDifferentObligation:0,unknown:0,overflow:0,committedPopWork:0,committedScheduledChildren:0,selectedAnchorArrivals:0,sourceKnownAnchorArrivals:0,conservativeOutlinedPathDifferences:0};
 	let semanticPhase="pre",semanticPreWork=0,semanticPostStart=0,semanticGuardOnlyWork=0,activeSemanticIteration=null;
 	const reasonBits={seenId:1,seenContainer:2,activeAnchor:4,elementSkip:8,opaque:16,removedField:32,parentCertificate:64};
 	const chargeModel=(site,atDepth=null)=>{const result=++budget.models,row=costPhases[site];chargedWork++;row.work++;if(Number.isInteger(atDepth)&&atDepth>=0&&atDepth<=64)row.depthWork[atDepth]++;else row.unknownDepthWork++;return result;};
-	const dependencyOrdinal=value=>{
+	const diagnosticOrdinal=(value,lane)=>{
 		if(typeof value!=="string" && (!value || typeof value!=="object"))return null;
-		const table=typeof value==="string"?dependencyOrigins:dependencyOrdinals;
-		if(table.has(value))return table.get(value);
-		if(dependencyOrdinalCount>=4096){dependencyCosts.identityOverflow++;return null;}
-		const ordinal=++dependencyOrdinalCount;table.set(value,ordinal);return ordinal;
+		const table=typeof value==="string"?dependencyOrigins:dependencyOrdinals,allocation=diagnosticLanes[lane];
+		if(table.has(value)){const stored=table.get(value);if(stored.lane!==lane)allocation.crossLaneReuseLookups++;return stored.ordinal;}
+		if(allocation.identities>=allocation.identityLimit || dependencyOrdinalCount>=4096){allocation.identityMisses++;dependencyCosts.identityOverflow++;return null;}
+		const ordinal=++dependencyOrdinalCount;allocation.identities++;table.set(value,{ordinal,lane});return ordinal;
 	};
+	const dependencyOrdinal=value=>diagnosticOrdinal(value,"background");
 	const noteDependencyContext=(value,originId,forceElement,seen,atDepth)=>{
 		dependencyCosts.calls++;
 		if(seen.size>64 || activePaths.size>64 || parentCheckDepths.length>64){dependencyCosts.unknownContext++;return;}
@@ -153,9 +155,9 @@ function inspectFlightBody(
 		if(contexts?.has(key)){dependencyCosts.repeatedSameContext++;return;}
 		if(contexts?.size)dependencyCosts.repeatedDifferentContext++;
 		else dependencyCosts.first++;
-		if(diagnosticContextCount>=1024){dependencyCosts.contextOverflow++;dependencyCosts.unknownContext++;return;}
+		if(diagnosticLanes.background.contexts>=512 || diagnosticContextCount>=1024){diagnosticLanes.background.contextMisses++;dependencyCosts.contextOverflow++;dependencyCosts.unknownContext++;return;}
 		if(!origins)dependencyObjects.set(value,origins=new Map());if(!forces)origins.set(origin,forces=new Map());if(!contexts)forces.set(forceElement===true,contexts=new Set());
-		contexts.add(key);dependencyCosts.contexts++;diagnosticContextCount++;
+		contexts.add(key);dependencyCosts.contexts++;diagnosticContextCount++;diagnosticLanes.background.contexts++;
 	};
 	const semanticKind=value=>value===null?"null":Array.isArray(value)?"array":typeof value==="object"?"object":typeof value!=="string"?typeof value:value.startsWith("$$")?"escaped-string":!value.startsWith("$")?"literal-string":plainPath.test(value)?"outlined-reference":/^\$L/.test(value)?"lazy-reference":/^\$@/.test(value)?"promise-reference":/^\$[QWi]/.test(value)?"collection-reference":"other-reference";
 	const noteSemantic=(entry,queue,start)=>{
@@ -163,23 +165,33 @@ function inspectFlightBody(
 		let bucket=semanticBuckets.get(bucketKey);if(!bucket)semanticBuckets.set(bucketKey,bucket={role:safeRole,kind,observations:0,work:0,scheduledChildren:0});
 		bucket.observations++;semanticCounts.observations++;activeSemanticIteration={start,queue,queueAtPop:queue.length,bucketKey};
 		if(!value || typeof value!=="object")return;
+		const anchor=Object.hasOwn(entry,"outputArrival") && ["outlined-reference","model-reference","collection-reference"].includes(entry.outputArrival),lane=anchor?"anchor":"background",allocation=diagnosticLanes[lane];
+		if(anchor)semanticCounts.selectedAnchorArrivals++;
 		const origin=entry.observationOrigin,flags=[];
 		let known=safeRole!=="unknown" && origin && typeof origin==="object";
 		const reference=entry.observationReference;if(reference!==undefined && (typeof reference!=="string"||!reference.startsWith("$")))known=false;
+		if(anchor && reference===undefined)known=false;
 		for(const key of ["directEmbeddedOutput","fromTypedOutput","rArrayOutput","insideRArray"]){const present=Object.hasOwn(entry,key),flag=entry[key];flags.push([present,flag===undefined?0:flag===false?1:flag===true?2:3]);if(present && flag!==undefined && typeof flag!=="boolean")known=false;}
 		const ancestry=entry.fallbackReferences,ancestryPresent=Object.hasOwn(entry,"fallbackReferences");
 		if(ancestry!==undefined && (!(ancestry instanceof Set)||ancestry.size>64))known=false;
 		const arrival=Object.hasOwn(entry,"outputArrival")?[true,entry.outputArrival??null]:[false,null],parentArrival=Object.hasOwn(entry,"outputParentArrival")?[true,entry.outputParentArrival??null]:[false,null];
 		if([arrival,parentArrival].some(([present,item])=>present&&item!==null&&!semanticArrivals.has(item)))known=false;
 		if(!known){semanticCounts.unknown++;return;}
-		const valueIdentity=dependencyOrdinal(value),originId=dependencyOrdinal(origin),referenceId=reference===undefined?0:dependencyOrdinal(reference),ancestorIds=ancestry===undefined?[]:[...ancestry].map(dependencyOrdinal);
+		if(anchor)semanticCounts.sourceKnownAnchorArrivals++;
+		const valueIdentity=diagnosticOrdinal(value,lane),originId=diagnosticOrdinal(origin,lane),referenceId=reference===undefined?0:diagnosticOrdinal(reference,lane),ancestorIds=ancestry===undefined?[]:[...ancestry].map(item=>diagnosticOrdinal(item,lane));
 		if(valueIdentity===null || originId===null || referenceId===null || ancestorIds.includes(null)){semanticCounts.unknown++;return;}
-		const key=JSON.stringify([role,originId,origin.tag,origin.stream,Object.hasOwn(entry,"observationReference"),referenceId,flags,ancestryPresent,ancestry===undefined?0:1,ancestorIds.sort((a,b)=>a-b),arrival,parentArrival]);
+		const form=reference===undefined?"none":plainPath.test(reference)?"outlined":"other";
+		const tuple=[role,originId,origin.tag,origin.stream,Object.hasOwn(entry,"observationReference"),form,referenceId,flags,ancestryPresent,ancestry===undefined?0:1,ancestorIds.sort((a,b)=>a-b),arrival,parentArrival],key=JSON.stringify(tuple);
 		let contexts=semanticValues.get(value);
 		if(contexts?.has(key)){semanticCounts.repeatedExact++;return;}
+		if(anchor && form==="outlined" && contexts?.size){
+			// Compare only bounded numeric diagnostic tuples in existing slots, never body data.
+			const projection=JSON.stringify(tuple.filter((_,index)=>index!==6));
+			if([...contexts].some(stored=>{const previous=JSON.parse(stored);return previous[5]==="outlined" && previous[6]!==referenceId && JSON.stringify(previous.filter((_,index)=>index!==6))===projection;}))semanticCounts.conservativeOutlinedPathDifferences++;
+		}
 		if(contexts?.size)semanticCounts.sameValueDifferentObligation++;else semanticCounts.first++;
-		if(diagnosticContextCount>=1024){semanticCounts.overflow++;semanticCounts.unknown++;return;}
-		if(!contexts)semanticValues.set(value,contexts=new Set());contexts.add(key);semanticCounts.contexts++;diagnosticContextCount++;
+		if(allocation.contexts>=allocation.contextLimit || diagnosticContextCount>=1024){allocation.contextMisses++;semanticCounts.overflow++;semanticCounts.unknown++;return;}
+		if(!contexts)semanticValues.set(value,contexts=new Set());contexts.add(key);semanticCounts.contexts++;diagnosticContextCount++;allocation.contexts++;
 	};
 	const finishSemantic=()=>{const active=activeSemanticIteration;if(!active)return;const work=chargedWork-active.start,children=active.queue.length-active.queueAtPop,bucket=semanticBuckets.get(active.bucketKey);bucket.work+=work;bucket.scheduledChildren+=children;semanticCounts.committedPopWork+=work;semanticCounts.committedScheduledChildren+=children;activeSemanticIteration=null;};
 	const semanticSnapshot=()=>{
@@ -195,7 +207,7 @@ function inspectFlightBody(
 		const work=budget.models-candidate.start;row.count++;row.ready+=ready?1:0;row.work+=work;row.maxWork=Math.max(row.maxWork,work);row.maxSpan=Math.max(row.maxSpan,span);
 	};
 	const modelCostSnapshot=()=>({protocol:"bounded-model-cost-observation-v1",inspectionDepth:depth,chargedWork,sharedModelSteps:budget.models,localModelSteps:budget.models-modelBudgetAtStart,
-		embeddedWork:budget.models-modelBudgetAtStart-chargedWork,phases:structuredClone(Object.values(costPhases)),dependencies:{...dependencyCosts},sharedDiagnosticContexts:diagnosticContextCount,sharedDiagnosticIdentities:dependencyOrdinalCount,semanticObligations:semanticSnapshot(),
+		embeddedWork:budget.models-modelBudgetAtStart-chargedWork,phases:structuredClone(Object.values(costPhases)),dependencies:{...dependencyCosts},sharedDiagnosticContexts:diagnosticContextCount,sharedDiagnosticIdentities:dependencyOrdinalCount,diagnosticAllocation:{protocol:"fixed-reference-anchor-reservation-v1",...structuredClone(diagnosticLanes)},semanticObligations:semanticSnapshot(),
 		candidates:structuredClone([...candidateCosts.values()].sort((a,b)=>a.reasonMask-b.reasonMask)),
 		activeCandidates:costCandidates.map(candidate=>({reasonMask:candidate.reasonMask,work:budget.models-candidate.start,span:candidate.scope.maxDepth-candidate.depth})),
 		truncated:dependencyCosts.identityOverflow>0 || dependencyCosts.contextOverflow>0 || dependencyCosts.unknownContext>0});

@@ -1604,8 +1604,9 @@ test("candidate masks distinguish wrapper plus real borrow costs and bounded dep
 	assert.ok(cost.dependencies.parentCertificateWithSeen>0);
 	const many=Array.from({length:1500},()=>({value:"KNOWN"}));
 	const bounded=inspectRequiredFlightBody(closedMemoBody("$1:leaf",'1:'+JSON.stringify({leaf:"KNOWN",many})+'\n'),{cachedNavigations:true});
-	assert.equal(bounded.complete,true);assert.equal(bounded.modelCostObservation.sharedDiagnosticContexts,1024);
-	assert.equal(bounded.modelCostObservation.dependencies.contexts+bounded.modelCostObservation.semanticObligations.contexts,1024);
+	assert.equal(bounded.complete,true);assert.equal(bounded.modelCostObservation.sharedDiagnosticContexts,512);
+	assert.equal(bounded.modelCostObservation.dependencies.contexts+bounded.modelCostObservation.semanticObligations.contexts,512);
+	assert.equal(bounded.modelCostObservation.diagnosticAllocation.anchor.contexts,0,"Background work cannot borrow unused anchor contexts.");
 	assert.equal(bounded.modelCostObservation.truncated,true);assert.ok(bounded.modelCostObservation.dependencies.contextOverflow>0);
 	assert.ok(bounded.modelCostObservation.candidates.length<=256);
 	assert.ok(bounded.modelCostObservation.phases.every(row=>row.depthWork.length===65 && row.depthWork.reduce((sum,n)=>sum+n,0)+row.unknownDepthWork===row.work));
@@ -1709,21 +1710,70 @@ test("semantic full keys keep required role flags and exact fallback ancestry di
 	const flagRoot={q:"",i:false,t:{t:{s:"en",d:{r:"$2:nested",p:true,v:null}},h:{r:["$2:nested"],p:true,v:null}}};
 	const flags=inspectRequiredFlightBody(Buffer.from('~0:'+JSON.stringify(flagRoot)+'\n2:{"nested":["KNOWN"]}\n'),options);
 	assert.equal(flags.complete,true,JSON.stringify(flags));assert.ok(flags.modelCostObservation.semanticObligations.sameValueDifferentObligation>0,"The same outlined array inside and outside an r-array has different obligations.");
+	assert.equal(flags.modelCostObservation.semanticObligations.conservativeOutlinedPathDifferences,0);
 	const ancestry=inspectRequiredFlightBody(encode([suspense("$1"),suspense("$2")],'1:["$","div",null,{"children":"$3:nested"}]\n2:["$","div",null,{"children":"$3:nested"}]\n3:{"nested":["KNOWN"]}\n'),options);
 	assert.equal(ancestry.complete,true,JSON.stringify(ancestry));assert.ok(ancestry.modelCostObservation.semanticObligations.sameValueDifferentObligation>0,"Equal-sized different fallback ancestry sets cannot match.");
+	assert.equal(ancestry.modelCostObservation.semanticObligations.conservativeOutlinedPathDifferences,0);
 });
 
 test("semantic census keeps unknown resolved provenance and shared overflow explicit without skipping required post-work",()=>{
 	const encode=(s,r,rows="")=>Buffer.from('#0:'+JSON.stringify({q:"",i:false,t:{t:{s,d:{r,p:false,v:null}}}})+'\n'+rows);
 	const alias=inspectRequiredFlightBody(encode("en","$Q2",'2:"$3"\n3:[["key","KNOWN"]]\n'),{cachedNavigations:true});
 	assert.equal(alias.complete,true);assert.ok(alias.modelCostObservation.semanticObligations.unknown>0,"A resolve without an actual origin trace cannot invent collection provenance.");
+	assert.equal(alias.modelCostObservation.diagnosticAllocation.anchor.contexts,0);assert.equal(alias.modelCostObservation.diagnosticAllocation.anchor.identities,0);
 	const post=inspectRequiredFlightBody(encode("$1:leaf","KNOWN",'1:{"leaf":"en"}\n'),{cachedNavigations:true});
 	assert.equal(post.complete,true);assert.ok(post.modelCostObservation.semanticObligations.postWork>0);
 	assert.equal(post.modelCostObservation.semanticObligations.accountedWork,post.modelCostObservation.chargedWork);
 	const overflow=inspectRequiredFlightBody(encode("en",Array.from({length:5000},()=>({known:"KNOWN"}))),{cachedNavigations:true});
 	assert.equal(overflow.complete,true);const cost=overflow.modelCostObservation;
-	assert.equal(cost.sharedDiagnosticIdentities,4096);assert.equal(cost.sharedDiagnosticContexts,1024);
-	assert.equal(cost.dependencies.contexts+cost.semanticObligations.contexts,1024);
+	assert.equal(cost.sharedDiagnosticIdentities,2048);assert.equal(cost.sharedDiagnosticContexts,512);
+	assert.equal(cost.dependencies.contexts+cost.semanticObligations.contexts,512);
 	assert.equal(cost.semanticObligations.truncated,true);assert.ok(cost.semanticObligations.unknown>0);assert.ok(cost.semanticObligations.overflow>0);
 	assert.equal(cost.semanticObligations.accountedWork,cost.chargedWork);assert.doesNotMatch(JSON.stringify(cost.semanticObligations),/KNOWN|\$[a-f0-9]/);
+});
+
+test("reference-anchor reservation survives background floods under the same total diagnostic limits",()=>{
+	const r=["$1:target","$1:target",...Array.from({length:5000},()=>({known:"KNOWN"}))];
+	const bytes=Buffer.from('#0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:{r,p:false,v:null}}}})+'\n1:{"target":{"known":"KNOWN"}}\n');
+	const result=inspectRequiredFlightBody(bytes,{cachedNavigations:true});assert.equal(result.complete,true);
+	const cost=result.modelCostObservation,allocation=cost.diagnosticAllocation;
+	assert.equal(allocation.protocol,"fixed-reference-anchor-reservation-v1");
+	assert.equal(allocation.background.contexts,512);assert.equal(allocation.background.identities,2048);
+	assert.ok(allocation.anchor.contexts>0);assert.ok(cost.semanticObligations.repeatedExact>0);
+	assert.ok(cost.sharedDiagnosticIdentities<=4096);assert.ok(cost.sharedDiagnosticContexts<=1024);
+	assert.equal(allocation.anchor.contexts+allocation.background.contexts,cost.sharedDiagnosticContexts);
+	assert.equal(allocation.anchor.identities+allocation.background.identities,cost.sharedDiagnosticIdentities);
+});
+
+test("anchor contexts and identities cannot borrow unused background quota and shared identities are charged once",()=>{
+	const encode=(r,rows)=>Buffer.from('#0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:{r,p:false,v:null}}}})+'\n'+rows);
+	const many=count=>{const ids=Array.from({length:count},(_,index)=>(index+1).toString(16));return inspectRequiredFlightBody(encode(ids.map(id=>'$'+id),ids.map(id=>id+':{"known":"KNOWN"}\n').join('')),{cachedNavigations:true});};
+	const contexts=many(600);assert.equal(contexts.complete,true);
+	const first=contexts.modelCostObservation;assert.equal(first.diagnosticAllocation.anchor.contexts,512);assert.ok(first.diagnosticAllocation.anchor.contextMisses>0);
+	assert.ok(first.diagnosticAllocation.background.contexts<512);assert.ok(first.sharedDiagnosticContexts<1024,"An exhausted anchor lane leaves background slots unused.");
+	const identities=many(1000);assert.equal(identities.complete,true);
+	const second=identities.modelCostObservation;assert.equal(second.diagnosticAllocation.anchor.identities,2048);assert.ok(second.diagnosticAllocation.anchor.identityMisses>0);
+	assert.ok(second.diagnosticAllocation.background.identities<2048);assert.ok(second.sharedDiagnosticIdentities<4096);
+	const plain=inspectRequiredFlightBody(encode("$1",'1:{"known":"KNOWN"}\n'),{cachedNavigations:true});
+	const outlined=inspectRequiredFlightBody(encode("$1:target",'1:{"target":{"known":"KNOWN"}}\n'),{cachedNavigations:true});
+	assert.equal(plain.complete,true);assert.equal(outlined.complete,true);
+	assert.equal(plain.modelCostObservation.diagnosticAllocation.anchor.identities,3);
+	assert.equal(outlined.modelCostObservation.diagnosticAllocation.anchor.identities,2,"The target already observed eagerly must not be charged again to the anchor lane.");
+	assert.ok(outlined.modelCostObservation.diagnosticAllocation.anchor.crossLaneReuseLookups>0);
+	for(const cost of [first,second,plain.modelCostObservation,outlined.modelCostObservation]){
+		const {anchor,background}=cost.diagnosticAllocation;assert.equal(anchor.identities+background.identities,cost.sharedDiagnosticIdentities);assert.equal(anchor.contexts+background.contexts,cost.sharedDiagnosticContexts);
+		assert.ok(anchor.identities<=2048&&background.identities<=2048&&anchor.contexts<=512&&background.contexts<=512);
+		assert.equal(cost.semanticObligations.accountedWork,cost.chargedWork);
+	}
+});
+
+test("different outlined paths to the same exact target are diagnostic-only and retain the strict reference key",()=>{
+	const encode=r=>Buffer.from('#0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:{r,p:false,v:null}}}})+'\n1:{"nested":{"target":{"known":"KNOWN"},"back":"$1:nested"}}\n');
+	const same=inspectRequiredFlightBody(encode(["$1:nested:target","$1:nested:target"]),{cachedNavigations:true});
+	const different=inspectRequiredFlightBody(encode(["$1:nested:target","$1:nested:back:target"]),{cachedNavigations:true});
+	assert.equal(same.complete,true);assert.equal(different.complete,true);
+	assert.ok(same.modelCostObservation.semanticObligations.repeatedExact>0);assert.equal(same.modelCostObservation.semanticObligations.conservativeOutlinedPathDifferences,0);
+	assert.equal(different.modelCostObservation.semanticObligations.repeatedExact,0);assert.ok(different.modelCostObservation.semanticObligations.sameValueDifferentObligation>0);
+	assert.ok(different.modelCostObservation.semanticObligations.conservativeOutlinedPathDifferences>0);
+	assert.doesNotMatch(JSON.stringify(different.modelCostObservation.diagnosticAllocation),/KNOWN|target|nested|\$1/);
 });
