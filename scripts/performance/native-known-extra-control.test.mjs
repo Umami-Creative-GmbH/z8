@@ -469,3 +469,34 @@ test("final failure occurrences reject erased same-cut Native guards but preserv
  inputs.browserEventOrdinal=13;inputs.failureOccurrences=makeCensus(13,13);
  assert.equal(api.validateMixedProgressObservations(observer.snapshot(),context,inputs),true,"A genuinely later failure still depends on the independent final closed validator.");
 });
+
+async function replayFixtureAfterReturn(){
+ const {createMixedProgressAcknowledgments}=await import("./browser-control-collector.mjs"),{api,begin,end,ack,life,io}=await openPrefixFixture();let current=structuredClone(begin);
+ const app=()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0});
+ const observer=createMixedProgressAcknowledgments({input:()=>structuredClone(current),application:app,acknowledge:async({checkpointOrdinal,deadlineMs})=>{current.nativeContext.principalEpoch=structuredClone(end.nativeContext.principalEpoch);const at=performance.now();return {...structuredClone(ack),checkpointOrdinal,startedAtMs:at,finishedAtMs:at,elapsedMs:0,deadlineMs,deadlineBudgetMs:deadlineMs-at};}});
+ const token=await observer.check();observer.confirm(token);
+ // These are explicitly later source facts, so all monotone vector dimensions have room for an invalid moved cut.
+ const third="a".repeat(32)+".3";life.accepted(third,begin.nativeContext.originSha256);life.upstreamCreated(third);life.headersReceived(third);life.headersForwarded(third);life.upstreamClosed(third);life.close();
+ const context=structuredClone(current.nativeContext);context.principalEpoch.scopeClosed=true;context.environment.workerTargets.scopeClosed=true;context.environment.workerTargets.events.push({...context.environment.workerTargets.events[0],event:"changed"});
+ const history=context.principalEpoch.progressReads;history.started=2;history.finished=2;history.records.push({...history.records[0],acknowledgmentOrdinal:2,startedOrdinal:2,finishedOrdinal:2});
+ const inputs={failureIds:["native"],nativeFailureIds:["native"],browserEventOrdinal:13,headerLifecycle:life.snapshot(),documentJournal:{...structuredClone(ack.document.sourceJournal),closed:true},failureOccurrences:api.mixedFailureOccurrenceCensus({contextId:context.contextId,scopeClosed:true,browserEventOrdinal:13,records:[{requestId:"native",eventOrdinal:9,failedEvents:1}]})};
+ const ledger=observer.snapshot();assert.equal(api.validateMixedProgressObservations(ledger,context,inputs),true);
+ return {api,ledger,context,inputs};
+}
+
+test("a Native returned vector is exactly its sealed end across every component",async()=>{
+ const {api,ledger,context,inputs}=await replayFixtureAfterReturn();
+ for(const edit of [v=>v.browserEventOrdinal=13,v=>v.headerEventOrdinal++,v=>v.workerEventCount++,v=>v.principalProgressStarted++,v=>v.principalProgressFinished=0,v=>v.failureIds=[]]){
+  const moved=structuredClone(ledger);edit(moved.checks[0].returned);moved.retainedBytes=Buffer.byteLength(JSON.stringify(moved.checks))+moved.prefixes.reduce((n,p)=>n+Buffer.byteLength(JSON.stringify(p)),0);
+  assert.equal(api.validateMixedProgressObservations(moved,context,inputs),false,"A final-valid later cut is not the actual sealed return cut.");
+ }
+});
+
+test("every retained prefix failure row agrees with the CORE loadingFailed occurrence",async()=>{
+ const {api,ledger,context,inputs}=await replayFixtureAfterReturn();
+ const forged=structuredClone(ledger),prefix=forged.prefixes[0];
+ prefix.begin.failures[0].failedEventOrdinal=8;prefix.end.failures[0].failedEventOrdinal=8;
+ const {prefixSha256,...facts}=prefix;prefix.prefixSha256=sha(JSON.stringify(facts));forged.checks[0].prefixSha256=prefix.prefixSha256;forged.retainedBytes=Buffer.byteLength(JSON.stringify(forged.checks))+forged.prefixes.reduce((n,p)=>n+Buffer.byteLength(JSON.stringify(p)),0);
+ assert.equal(api.validateMixedNativePrefix(prefix),true,"The isolated row chronology is internally plausible before the independent census join.");
+ assert.equal(api.validateMixedProgressObservations(forged,context,inputs),false,"Same-context same-ID records cannot disagree with the observed callback census.");
+});
