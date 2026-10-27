@@ -26,6 +26,7 @@ import {
 	knownTeamAnnualActionSource, teamAnnualModule, teamAnnualWorkers,
 	openTeamAnnualProjection, takeTeamAnnualProjection, closeTeamAnnualProjection,
 	teamAnnualGoldenReceipt,
+	knownMixedDocumentJournal,
 } from "./control-cancellation-evidence.mjs";
 import { createProxyHeaderCensus, proxyHeaderPrefix } from "./proxy-header-census.mjs";
 import { projectCachedCdpText } from "./cdp-cached-text-projection.mjs";
@@ -121,7 +122,7 @@ const annualTeamBindings = new WeakMap();
 export function annualTeamActionAuthority(binding){try{return binding?.browserVerified===true && annualTeamBindings.get(binding)===binding.teamAnnualAction?structuredClone(binding.teamAnnualAction):null;}catch{return null;}}
 
 /** One pre-armed response-object selection. No raw request/body/header values survive a callback. */
-export function createTeamAnnualResponseSelection({contextId,origin,source,reserve,release,requestCount,packetFor,browserFor,contextFor,mainFrame}) {
+export function createTeamAnnualResponseSelection({contextId,origin,source,reserve,release,requestCount,packetFor,browserFor,contextFor,mainFrame,documentForSelection,documentReady}) {
 	let handles=new WeakMap(),responses=new WeakMap(),responseIds=new Set(),responseCount=0,active=null,armed=false,consumed=false,closed=false,errors=0,overflow=0,retained=0,receipt=null,waiter=null;
 	const charge=n=>{if(reserve(n)!==true){overflow++;return false;}retained+=n;return true;};
 	const safeError=()=>Error("Annual team selected response is unavailable or unqualified.");
@@ -138,13 +139,13 @@ export function createTeamAnnualResponseSelection({contextId,origin,source,reser
 			const {held,selected}=waiter,packet=packetFor(selected.proxyResponseId),browser=browserFor(selected.proxyResponseId);
 			if(closed || errors || overflow || performance.now()>held.deadlineMs)throw safeError();
 			if(!packet || !browser || !packet.proxyInspectionSettled || !browser.loadingFinished && !browser.failed || browser.failed===true && browser.bodyReadSettled!==true)return;
-			const selection={protocol:"actual-response-object-selection-v1",contextId,proxyResponseId:selected.proxyResponseId,status:selected.status,mainFrame:selected.mainFrame,fullUrlSha256:selected.fullUrlSha256,requestBodySha256:selected.requestBodySha256,encodedBytes:selected.encodedBytes,requestOrdinalAtArm:held.requestOrdinal,startedAtMs:held.startedAtMs,deadlineMs:held.deadlineMs,selectedAtMs:selected.selectedAtMs,fulfilledAtMs:performance.now()};
+			const selection={protocol:"actual-response-object-selection-v1",contextId,proxyResponseId:selected.proxyResponseId,status:selected.status,mainFrame:selected.mainFrame,fullUrlSha256:selected.fullUrlSha256,armFullUrlSha256:held.urlSha256,locale:"en",document:selected.document,selectedContentType:selected.contentType,requestBodySha256:selected.requestBodySha256,encodedBytes:selected.encodedBytes,requestOrdinalAtArm:held.requestOrdinal,startedAtMs:held.startedAtMs,deadlineMs:held.deadlineMs,selectedAtMs:selected.selectedAtMs,fulfilledAtMs:performance.now()};
 			if(packet.annualRequestOrdinal<=held.requestOrdinal || packet.fullUrlSha256!==held.urlSha256 || browser.fullUrlSha256!==held.urlSha256 || !packet.teamAnnualProjection)throw safeError();
 			// Precharge a bounded CORE copy before request/semantic receipts are projected or cloned.
 			if(!charge(1048576))throw safeError();
 			if(!charge(controlCancellationPolicy.decodedLimit))throw safeError();
 			let result;
-			try {result=teamAnnualGoldenReceipt({browser,packet,projection:packet.teamAnnualProjection,source,context:contextFor(),selection});}
+			try {if(documentReady?.()!==true)throw safeError();result=teamAnnualGoldenReceipt({browser,packet,projection:packet.teamAnnualProjection,source,context:contextFor(),selection,origin});}
 			finally{release(controlCancellationPolicy.decodedLimit);retained-=controlCancellationPolicy.decodedLimit;}
 			const serialized=result?JSON.stringify(result):null;
 			if(!serialized || Buffer.byteLength(serialized)*8+2048>1048576)throw safeError();
@@ -155,26 +156,30 @@ export function createTeamAnnualResponseSelection({contextId,origin,source,reser
 	};
 	return Object.freeze({
 		arm(input){try{
-			if(closed || active || !knownTeamAnnualActionSource(source,source?.compiledBuild,source?.compiledManifestSha256) || typeof input?.path!=="string" || !/^\/[a-z]{2}(?:-[A-Z]{2})?\/analytics\/team-performance$/.test(input.path) || !Number.isFinite(input.timeoutMs) || input.timeoutMs<=0 || input.timeoutMs>90000 || !charge(32768))return null;
+			if(closed || active || !knownTeamAnnualActionSource(source,source?.compiledBuild,source?.compiledManifestSha256) || input?.path!=="/en/analytics/team-performance" || !Number.isFinite(input.timeoutMs) || input.timeoutMs<=0 || input.timeoutMs>90000 || !charge(32768))return null;
 			const startedAtMs=performance.now(),handle=Object.freeze({protocol:"private-annual-team-selection-v1"});
 			active={startedAtMs,deadlineMs:startedAtMs+input.timeoutMs,requestOrdinal:requestCount(),urlSha256:sha(new URL(input.path,origin).href),consumed:false};armed=true;handles.set(handle,active);return handle;
 		}catch{errors++;return null;}},
 		eligible(row){return !closed && active && !active.consumed && performance.now()<=active.deadlineMs && row.annualRequestOrdinal>active.requestOrdinal && row.fullUrlSha256===active.urlSha256 && row.action===true && row.headerFieldSha256?.["next-action"]===source.actionHeaderSha256;},
 		response(response){
 			if(!active || closed || active.consumed)return;
-			let transient=false,headerReservation=false;
+			let transient=false,headerReservation=false,documentReservation=false;
 			try {
 				const request=response.request();if(request.method()!=="POST" || sha(request.url())!==active.urlSha256 || sha(response.url())!==active.urlSha256)return;
 				if(!charge(262144))throw safeError();headerReservation=true;
 				if(sha(headerValue(request.headers(),"next-action") ?? "")!==source.actionHeaderSha256)return;
 				if(responses.has(response) || request.redirectChain().length!==0 || request.frame()!==mainFrame() || response.status()!==200)throw safeError();
-				const value=headerValue(response.headers(),controlResponseHeader);
+				const responseHeaders=response.headers(),value=headerValue(responseHeaders,controlResponseHeader);
+				const contentType=headerValue(responseHeaders,"content-type"),match=typeof contentType==="string"?/^text\/x-component(?:;\s*charset=(utf-8))?$/i.exec(contentType.trim()):null;
+				if(!match)throw safeError();
 				if(typeof value!=="string" || !/^[a-f0-9]{32}\.[1-9][0-9]{0,9}$/.test(value) || responseIds.has(value) || responseCount>=controlCancellationPolicy.recordLimit || performance.now()>active.deadlineMs)throw safeError();
 				if(!charge(2*controlCancellationPolicy.encodedLimit))throw safeError();transient=true;
 				const body=request.postData(),length=typeof body==="string"?Buffer.byteLength(body):0;
-				if(!length || length>controlCancellationPolicy.encodedLimit || !charge(32768))throw safeError();
-				responseIds.add(value);responseCount++;responses.set(response,Object.freeze({proxyResponseId:value,status:200,mainFrame:true,fullUrlSha256:sha(request.url()),requestBodySha256:sha(body),encodedBytes:length,selectedAtMs:performance.now()}));
-			}catch{errors++;}finally{if(transient){release(2*controlCancellationPolicy.encodedLimit);retained-=2*controlCancellationPolicy.encodedLimit;}if(headerReservation){release(262144);retained-=262144;}}
+				if(!length || length>controlCancellationPolicy.encodedLimit || !charge(controlCancellationPolicy.decodedLimit))throw safeError();documentReservation=true;
+				const document=documentForSelection?.(),documentBytes=document?Buffer.byteLength(JSON.stringify(document))*8+2048:0;
+				if(!document || documentBytes>controlCancellationPolicy.decodedLimit || !knownMixedDocumentJournal(document.journal,document.document) || !charge(32768+documentBytes))throw safeError();
+				responseIds.add(value);responseCount++;responses.set(response,Object.freeze({proxyResponseId:value,status:200,mainFrame:true,fullUrlSha256:sha(request.url()),requestBodySha256:sha(body),encodedBytes:length,document,contentType:{mime:"text/x-component",charset:match[1]?"utf-8":"absent"},selectedAtMs:performance.now()}));
+			}catch{errors++;}finally{if(transient){release(2*controlCancellationPolicy.encodedLimit);retained-=2*controlCancellationPolicy.encodedLimit;}if(headerReservation){release(262144);retained-=262144;}if(documentReservation){release(controlCancellationPolicy.decodedLimit);retained-=controlCancellationPolicy.decodedLimit;}}
 			notify();
 		},
 		read(handle,response){
@@ -1452,7 +1457,7 @@ export async function installBrowserControlCollector({
 	const scheduleTeamRead=()=>{if(knownTemporaryValueObservation(environmentBinding?.temporaryValueObservation))teamScheduler?.event();};
 	const proxy = createProxyControlCollector({
 		currentTeamCut,
-		annualSource:annualTeamActionAuthority(environmentBinding),annualContext:()=>collector.annualContext(),mainFrame:()=>page.mainFrame(),
+		annualSource:annualTeamActionAuthority(environmentBinding),annualContext:()=>collector.annualContext(),mainFrame:()=>page.mainFrame(),annualDocument:()=>documentAcknowledgment?.selectedDocument() ?? null,annualDocumentReady:()=>Boolean(documentAcknowledgment?.sourceReady()),
 	origin,
 		protocolSources,
 		contextId,
@@ -1626,7 +1631,7 @@ export function createProxyControlCollector({
 	compiledBinding,
 	currentTeamCut = () => null,
 	operatorSource = null,
-	annualSource = null, annualContext=()=>null, mainFrame=()=>null,
+	annualSource = null, annualContext=()=>null, mainFrame=()=>null,annualDocument=()=>null,annualDocumentReady=()=>false,
 }) {
 	const requests = new Map();
 	const headerCensus = createProxyHeaderCensus({contextId});
@@ -1644,7 +1649,7 @@ export function createProxyControlCollector({
 	const teamDispatch=knownTemporaryValueObservation(compiledBinding?.temporaryValueObservation)?createTeamReplayDispatchJournal({contextId,origin,reserve:reserveTeam,release:releaseTeam}):null;
 	const sourceCuts=createTeamSourceCutJournal({contextId,reserve:reserveTeam});
     const requestHandles=new Map(),proxyCuts=new Map(),browserRows=new Map(),browserCuts=new WeakMap(),requestAuthorities=new Map(),bodyUses=new Map();
-	const annual=annualSource?createTeamAnnualResponseSelection({contextId,origin,source:annualSource,reserve:reserveTeam,release:releaseTeam,requestCount:()=>requests.size,packetFor:id=>requests.get(id),browserFor:id=>browserRows.get(id),contextFor:annualContext,mainFrame}):null;
+	const annual=annualSource?createTeamAnnualResponseSelection({contextId,origin,source:annualSource,reserve:reserveTeam,release:releaseTeam,requestCount:()=>requests.size,packetFor:id=>requests.get(id),browserFor:id=>browserRows.get(id),contextFor:annualContext,mainFrame,documentForSelection:annualDocument,documentReady:annualDocumentReady}):null;
 	let teamClosed=false;
 	const temporaryInspectionFor=(row,bodySha256,decodedBytes)=>{
 		const id=row.id ?? row.proxyResponseId,packet=requests.get(id),browser=row.requestId?row:browserRows.get(id),handle=requestHandles.get(id);
@@ -1981,6 +1986,12 @@ export async function createMixedDocumentAcknowledgment({session,contextId,origi
   snapshot,
   sourceSnapshot(){return documents.length+executionEvents.length<=128?snapshot():null;},
   sourceReady,
+  selectedDocument(){
+   const token=sourceReady();if(!token)return null;
+   const execution=[...contexts.values()].filter(row=>row.uniqueId===token.executionContextUniqueId);if(execution.length!==1)return null;
+   const document={...token,executionContextId:execution[0].id,originSha256:sha(origin),executionEventOrdinalAfter:token.executionEventOrdinal,documentEventOrdinalAfter:token.documentEventOrdinal};
+   const journal=snapshot();return knownMixedDocumentJournal(journal,document)?{document,journal}:null;
+  },
   close(){closed=true;for(const [name,listener]of listeners)session.off(name,listener);},
   async read({checkpointOrdinal,deadlineMs,principalEpoch,readCookies,readSources,sourceSubsetLimit,sourceEvent}){
    const startedAtMs=performance.now(),deadlineBudgetMs=deadlineMs-startedAtMs;

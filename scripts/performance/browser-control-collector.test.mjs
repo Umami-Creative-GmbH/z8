@@ -1,4 +1,4 @@
-import {testBrowserBinding,testEmptyTemporaryValues} from "./control-cancellation-test-fixtures.mjs";
+import {testBrowserBinding,testEmptyTemporaryValues,testTeamAnnualDocument} from "./control-cancellation-test-fixtures.mjs";
 import { temporaryValueObservation } from "./team-temporary-value-authority.mjs";
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
@@ -1574,8 +1574,9 @@ async function annualProxyFixture({failed=false,readFailure=false,bodyText='0:{"
 	const hash=value=>createHash('sha256').update(value).digest('hex'),actionId='40'+'a'.repeat(40),frame={},requestBody='[]',target=origin+'/en/analytics/team-performance',id='a'.repeat(32)+'.1';
 	const binding=testBrowserBinding('c'.repeat(40));binding.teamAnnualAction.actionHeaderSha256=hash(actionId);
 	const principal=createPrincipalEpochObserver(contextId,{origin});principal.start([{name:'session',value:'PRIVATE_COOKIE',domain:'localhost',path:'/',httpOnly:true}]);
-	let collector;const proxy=createProxyControlCollector({contextId,origin,compiledBinding:binding,compiledCachedNavigations:true,annualSource:binding.teamAnnualAction,mainFrame:()=>frame,annualContext:()=>collector.annualContext()});proxy.installed();
-	collector=createBrowserControlCollector({contextId,origin,compiledBinding:binding,compiledCachedNavigations:true,principalEpoch:principal,proxyObservation:()=>proxy.snapshot(),temporaryInspectionFor:proxy.temporaryInspectionFor,temporaryRequestObserved:proxy.observeTeamBrowserRequest,readBody:async()=>{if(readFailure)throw Error('PRIVATE_READ_ERROR');return {body:bodyText,base64Encoded:false};}});collector.installed();collector.beginMeasurement();
+	const document=testTeamAnnualDocument(contextId,origin);
+	let collector;const proxy=createProxyControlCollector({contextId,origin,compiledBinding:binding,compiledCachedNavigations:true,annualSource:binding.teamAnnualAction,mainFrame:()=>frame,annualContext:()=>collector.annualContext(),annualDocument:()=>structuredClone(document),annualDocumentReady:()=>true});proxy.installed();
+	collector=createBrowserControlCollector({contextId,origin,compiledBinding:binding,compiledCachedNavigations:true,principalEpoch:principal,proxyObservation:()=>proxy.snapshot(),temporaryInspectionFor:proxy.temporaryInspectionFor,temporaryRequestObserved:proxy.observeTeamBrowserRequest,environmentObservation:()=>({temporaryValueSourceReads:{documentJournal:structuredClone(document.journal)}}),readBody:async()=>{if(readFailure)throw Error('PRIVATE_READ_ERROR');return {body:bodyText,base64Encoded:false};}});collector.installed();collector.beginMeasurement();
 	const handle=proxy.armAnnualTeam({path:'/en/analytics/team-performance',timeoutMs:1000});
 	const actualHeaders={'next-action':actionId,'content-type':'text/plain;charset=UTF-8',accept:'text/x-component','accept-language':'en',cookie:'session=PRIVATE_COOKIE','x-z8-fixture-document-generation':contextId+':1'};
 	proxy.request(id,{url:target,method:'POST',headers:actualHeaders,traceId:'a'.repeat(32)});proxy.requestBodyBytes(id,Buffer.from(requestBody));proxy.requestBodyEnd(id);
@@ -1583,7 +1584,7 @@ async function annualProxyFixture({failed=false,readFailure=false,bodyText='0:{"
 	proxy.response(id,{status:200,headers:{'content-type':'text/x-component'}});
 	collector.response({requestId:'selected',response:{status:200,headers:{'content-type':'text/x-component','x-z8-fixture-response-id':id}}});
 	const request={url:()=>target,method:()=>"POST",headers:()=>actualHeaders,postData:()=>requestBody,frame:()=>frame,redirectChain:()=>[]};
-	const response={url:()=>target,status:()=>200,request:()=>request,headers:()=>({'x-z8-fixture-response-id':id})};proxy.observeAnnualResponse(response);
+	const response={url:()=>target,status:()=>200,request:()=>request,headers:()=>({'x-z8-fixture-response-id':id,'content-type':'text/x-component'})};proxy.observeAnnualResponse(response);
 	proxy.bytes(id,Buffer.from(bodyText));proxy.end(id);collector.data({requestId:'selected',dataLength:Buffer.byteLength(bodyText)});
 	if(failed)collector.failed({requestId:'selected',errorText:'net::ERR_ABORTED',canceled:true});else collector.finished({requestId:'selected',timestamp:2});
 	await tick();await tick();return {proxy,collector,handle,response,binding,principal,id};
@@ -1601,12 +1602,13 @@ test('annual response selection uses the exact natural EOF projection for succes
 
 test('annual CORE replay rejects missing changed and foreign response request body source or principal facts',async()=>{
 	const f=await annualProxyFixture();try {
-		const result=await f.proxy.readAnnualTeam(f.handle,f.response),context=f.collector.annualContext();assert.equal(validateTeamAnnualGoldenReceipt(result,context),true);
+		const result=await f.proxy.readAnnualTeam(f.handle,f.response),context=f.collector.annualContext();assert.equal(validateTeamAnnualGoldenReceipt(result,context,origin),true);
 		const get=structuredClone(result);get.browser.method='GET';get.packet.method='GET';assert.equal(get.browser.loadingFinished,true);assert.equal(validateTeamAnnualGoldenReceipt(get,context),false,'header-derived action plus method equality cannot replace actual POST');
+		for(const mutate of [r=>{const value=segmentHash(origin+'/en/not-team');r.browser.fullUrlSha256=value;r.packet.fullUrlSha256=value;r.selection.fullUrlSha256=value;},r=>{const value=segmentHash(origin+'/de/analytics/team-performance');r.browser.fullUrlSha256=value;r.packet.fullUrlSha256=value;r.selection.fullUrlSha256=value;},r=>{r.browser.responseHeaderSnapshotKnown=false;r.packet.responseHeaderSnapshotKnown=false;},r=>{r.browser.responseContentType={headerKnown:true,mime:'text/html',charset:'absent'};r.packet.responseContentType={headerKnown:true,mime:'text/html',charset:'absent'};},r=>{r.browser.documentGeneration='foreign:9';r.packet.documentGeneration='foreign:9';},r=>r.browser.initialHeaderIdentity.documentGeneration='foreign:9',r=>r.browser.extraHeaderIdentity.documentGeneration='foreign:9',r=>r.browser.frameId='foreign',r=>r.browser.loaderId='foreign',r=>{r.projection.projectionSteps=100001;r.packet.teamAnnualProjection.projectionSteps=100001;}]){const changed=structuredClone(result);mutate(changed);assert.equal(validateTeamAnnualGoldenReceipt(changed,context,origin),false);}
 		for(const mutate of [r=>delete r.packet.teamAnnualProjection,r=>r.source.compiledBuild='d'.repeat(40),r=>r.source.workersSha256='d'.repeat(64),r=>r.selection.contextId='foreign',r=>r.selection.proxyResponseId='b'.repeat(32)+'.2',r=>r.selection.requestBodySha256='d'.repeat(64),r=>r.selection.mainFrame=false,r=>r.selection.fulfilledAtMs=r.selection.deadlineMs+1,r=>r.packet.requestBodyFacts.actualEOF=false,r=>r.packet.bodyProof.complete=false,r=>r.packet.bodyProof.serverErrors=1,r=>r.packet.bodyProof.temporaryValues=null,r=>r.browser.requestHeadersKnown=false,r=>r.browser.proxyResponseId='b'.repeat(32)+'.2',r=>r.browser.initialHeaderIdentity.headerFieldSha256.cookie='d'.repeat(64)]){
-			const changed=structuredClone(result);mutate(changed);assert.equal(validateTeamAnnualGoldenReceipt(changed,context),false);
+			const changed=structuredClone(result);mutate(changed);assert.equal(validateTeamAnnualGoldenReceipt(changed,context,origin),false);
 		}
-		for(const mutate of [c=>c.principalEpoch.pendingReads=1,c=>c.principalEpoch.observedSetCookieResponses=1,c=>c.principalEpoch.before.known=false,c=>c.headerCensus=createProxyHeaderCensus({contextId}).snapshot()]){const changed=structuredClone(context);mutate(changed);assert.equal(validateTeamAnnualGoldenReceipt(result,changed),false);}
+		for(const mutate of [c=>c.principalEpoch.pendingReads=1,c=>c.principalEpoch.observedSetCookieResponses=1,c=>c.principalEpoch.before.known=false,c=>c.headerCensus=createProxyHeaderCensus({contextId}).snapshot(),c=>{c.principalEpoch.scopeClosed=true;c.headerCensus.closed=true;c.principalEpoch.after={known:true,sha256:'b'.repeat(64)};c.principalEpoch.matchesAtBoundaries=true;}]){const changed=structuredClone(context);mutate(changed);assert.equal(validateTeamAnnualGoldenReceipt(result,changed,origin),false);}
 	}finally{f.proxy.closeTeamValues();}
 });
 
@@ -1630,11 +1632,19 @@ test('annual action admission independently binds each phase registry and reject
 test('annual response pending close and original deadline retain no private response or handle reservations',async()=>{
 	for(const mode of ['close','deadline']){
 		let pool=0;const frame={},source=testBrowserBinding('c'.repeat(40)).teamAnnualAction,id='a'.repeat(32)+'.1',target=origin+'/en/analytics/team-performance';
-		const observer=createTeamAnnualResponseSelection({contextId,origin,source,reserve:n=>{pool+=n;return true;},release:n=>{pool-=n;},requestCount:()=>0,packetFor:()=>null,browserFor:()=>null,contextFor:()=>null,mainFrame:()=>frame});
-		const arm=observer.arm({path:'/en/analytics/team-performance',timeoutMs:20}),request={url:()=>target,method:()=>"POST",headers:()=>({'next-action':'40'+'a'.repeat(40)}),postData:()=>"[]",frame:()=>frame,redirectChain:()=>[]},response={url:()=>target,status:()=>200,request:()=>request,headers:()=>({'x-z8-fixture-response-id':id})};
+		const observer=createTeamAnnualResponseSelection({contextId,origin,source,reserve:n=>{pool+=n;return true;},release:n=>{pool-=n;},requestCount:()=>0,packetFor:()=>null,browserFor:()=>null,contextFor:()=>null,mainFrame:()=>frame,documentForSelection:()=>testTeamAnnualDocument(contextId,origin),documentReady:()=>true});
+		const arm=observer.arm({path:'/en/analytics/team-performance',timeoutMs:20}),request={url:()=>target,method:()=>"POST",headers:()=>({'next-action':'40'+'a'.repeat(40)}),postData:()=>"[]",frame:()=>frame,redirectChain:()=>[]},response={url:()=>target,status:()=>200,request:()=>request,headers:()=>({'x-z8-fixture-response-id':id,'content-type':'text/x-component'})};
 		observer.response(response);const pending=observer.read(arm,response);assert.equal(observer.snapshot().pending,1);
 		if(mode==='close')observer.close();
 		await assert.rejects(pending,/Annual team/);observer.close();assert.equal(observer.snapshot().pending,0);assert.equal(observer.snapshot().errors,1);assert.equal(pool,0);
 		assert.equal(observer.snapshot().retainedBytes,0);await assert.rejects(observer.read(arm,response),'retaining real keys after close cannot reuse forgotten private observations');
 	}
+});
+
+test('annual selection captures only actual existing document and execution facts without new IO',async()=>{
+	const f=await sourceSupersessionFixture();try{
+		const before=f.tracker.selectedDocument();assert.equal(before.document.executionContextId,3);assert.equal(before.document.executionEventOrdinalAfter,5);assert.equal(before.document.documentGeneration,1);assert.equal(f.evaluations(),0);
+		f.nondefault();const after=f.tracker.selectedDocument();assert.equal(after.document.executionContextId,3);assert.equal(after.document.executionEventOrdinalAfter,6);assert.equal(after.journal.executionEvents.at(-1).executionContextId,4);assert.equal(f.evaluations(),0);
+		after.document.frameId='foreign';after.journal.executionEvents.length=0;assert.equal(f.tracker.selectedDocument().document.frameId,'frame');assert.equal(f.tracker.selectedDocument().journal.executionEvents.length,6);
+	}finally{f.close();}
 });

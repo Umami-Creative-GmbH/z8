@@ -2097,20 +2097,32 @@ export function mixedNativeProgressInput({failures,responses,proxy,nativeContext
 }
 
 /** Same request-local control predicate as the classifier; no lifetime closure is manufactured. */
-export function knownTeamAnnualSelectedRequest({browser,packet,projection,source,context,selection}) {
+export function knownTeamAnnualSelectedRequest({browser,packet,projection,source,context,selection,origin}) {
 	try {
 		const principal=context?.principalEpoch;
 		const census=context?.headerCensus,headers=census?.requests?.filter(row=>row.requestId===packet?.id);
+		const originURL=new URL(origin),expectedUrl=bodySha256(Buffer.from(new URL('/en/analytics/team-performance',origin).href));
+		const document=selection?.document?.document,past=selection?.document?.journal,current=context?.environment?.temporaryValueSourceReads?.documentJournal;
+		if(originURL.origin!==origin || originURL.protocol!=="http:" || !["localhost","127.0.0.1","[::1]"].includes(originURL.hostname) || bodySha256(Buffer.from(origin))!==context?.originSha256 ||
+			selection?.locale!=="en" || selection.armFullUrlSha256!==expectedUrl || selection.fullUrlSha256!==expectedUrl || browser?.fullUrlSha256!==expectedUrl || packet?.fullUrlSha256!==expectedUrl ||
+			!knownMixedDocumentJournal(past,document) || past.executionEvents.length+past.documents.length>128 || !knownMixedDocumentJournal(current) || current.contextId!==context.contextId || current.closed!==principal?.scopeClosed ||
+			JSON.stringify(current.executionEvents.slice(0,past.executionEvents.length))!==JSON.stringify(past.executionEvents) || JSON.stringify(current.documents.slice(0,past.documents.length))!==JSON.stringify(past.documents) ||
+			document.contextId!==context.contextId || document.originSha256!==context.originSha256 || browser.frameId!==document.frameId || browser.loaderId!==document.loaderId ||
+			browser.documentGeneration!==document.contextId+":"+document.documentGeneration || packet.documentGeneration!==browser.documentGeneration ||
+			[browser.initialHeaderIdentity,browser.extraHeaderIdentity].some(identity=>identity?.documentGeneration!==browser.documentGeneration) ||
+			[browser,browser.initialHeaderIdentity,browser.extraHeaderIdentity,packet].some(identity=>identity?.headerFieldSha256?.["x-z8-fixture-document-generation"]!==bodySha256(Buffer.from(browser.documentGeneration))))return false;
 		if(!knownTeamAnnualActionSource(source,context?.binding?.compiledBuild,context?.binding?.compiledManifestSha256) ||
 			!validateProxyHeaderCensus(census,{contextId:context.contextId}) || census.closed!==principal?.scopeClosed || headers?.length!==1 || headers[0].observation!=="headers" || headers[0].setCookieLines!==0 || headers[0].setCookieSha256!==null ||
 			!["unknownHeaders","setCookieResponses","setCookieLines","errors","duplicates","missing","late","overflow"].every(key=>census.counts[key]===0) || principal?.scopeClosed===true && census.counts.pending!==0 ||
 			principal?.before?.known!==true || principal.before.cookieAttributes?.singleOwnedRootHttpOnlyCookie!==true || !["observedSetCookieResponses","unknownResponseHeaders","readErrors","pendingReads","observationErrors","overflow"].every(key=>principal[key]===0) ||
-			principal.scopeClosed===true && (principal.after?.known!==true || principal.matchesAtBoundaries!==true) ||
+			!digest(principal.before.sha256) || principal.scopeClosed===true && (principal.after?.known!==true || !digest(principal.after.sha256) || principal.after.sha256!==principal.before.sha256 || principal.matchesAtBoundaries!==true) ||
 			!knownOriginalTeamHeaderJoin(browser.initialHeaderIdentity,browser.extraHeaderIdentity,packet,principal.before.cookieAttributes.singleCookieHeaderSha256) ||
 			JSON.stringify(source)!==JSON.stringify(context.binding.teamAnnualAction) || !sameRequest(browser,packet) || browser.contextId!==context.contextId ||
 			browser.type!=="Fetch" || browser.method!=="POST" || packet.method!=="POST" || browser.action!==true || packet.action!==true || browser.ambiguousRedirect!==false || browser.proxyResponseId!==packet.id ||
 			!browser.requestId || !browser.frameId || !browser.loaderId || browser.requestOriginSha256!==context.originSha256 || packet.requestOriginSha256!==context.originSha256 ||
 			browser.status!==200 || packet.status!==200 || browser.httpErrorObserved===true || browser.observedProtocolError?.serverErrors>0 || browser.observedProtocolError?.explicitActionFailure===true ||
+			[browser,packet].some(row=>row.responseHeaderSnapshotKnown!==true || row.flight!==true || row.responseContentType?.headerKnown!==true || row.responseContentType.mime!=="text/x-component" || !["absent","utf-8"].includes(row.responseContentType.charset)) ||
+			selection.selectedContentType?.mime!=="text/x-component" || selection.selectedContentType.charset!==browser.responseContentType.charset || selection.selectedContentType.charset!==packet.responseContentType.charset ||
 			packet.complete!==true || packet.canceled!==false || packet.upstreamError!==false || packet.flight!==true || packet.responseEvents!==1 ||
 			packet.headerFieldSha256?.["next-action"]!==source.actionHeaderSha256 || browser.headerFieldSha256?.["next-action"]!==source.actionHeaderSha256 ||
 			browser.requestHeaderSnapshotKnown!==true || browser.requestHeadersKnown!==true || packet.requestHeaderSnapshotKnown!==true ||
@@ -2121,7 +2133,7 @@ export function knownTeamAnnualSelectedRequest({browser,packet,projection,source
 			projection?.protocol!=="team-annual-scalar-projection-v1" || projection.fatalUtf8!==true || projection.bodySha256!==packet.bodyProof.bodySha256 || projection.decodedBytes!==packet.bodyProof.decodedBytes ||
 			JSON.stringify(projection)!==JSON.stringify(packet.teamAnnualProjection) || projection.temporaryBindingSha256!==(packet.temporaryValueObservation?.bindingSha256 ?? null) ||
 			projection.proofCoreSha256!==bodySha256(Buffer.from(JSON.stringify(teamAnnualProofCore(packet.bodyProof,projection.temporaryBindingSha256)))) ||
-			!Number.isSafeInteger(projection.employees) || projection.employees<0 || !Number.isFinite(projection.hours) || !Number.isSafeInteger(projection.projectionSteps) || projection.projectionSteps<=0 ||
+			!Number.isSafeInteger(projection.employees) || projection.employees<0 || !Number.isFinite(projection.hours) || !Number.isSafeInteger(projection.projectionSteps) || projection.projectionSteps<=0 || !Number.isSafeInteger(packet.bodyProof.modelSteps) || projection.projectionSteps>packet.bodyProof.modelSteps || packet.bodyProof.modelSteps>100000 ||
 			selection?.protocol!=="actual-response-object-selection-v1" || selection.contextId!==browser.contextId || selection.proxyResponseId!==packet.id || selection.status!==200 || selection.mainFrame!==true ||
 			!Number.isSafeInteger(selection.requestOrdinalAtArm) || selection.requestOrdinalAtArm<0 || !Number.isSafeInteger(packet.annualRequestOrdinal) || packet.annualRequestOrdinal<=selection.requestOrdinalAtArm || packet.annualRequestOrdinal>controlCancellationPolicy.recordLimit ||
 			selection.fullUrlSha256!==browser.fullUrlSha256 || selection.requestBodySha256!==packet.requestBodyFacts.bodySha256 || selection.encodedBytes!==packet.requestBodyFacts.encodedBytes ||
@@ -2134,15 +2146,15 @@ export function knownTeamAnnualSelectedRequest({browser,packet,projection,source
 		return browser.loadingFinished===true && browser.failed!==true;
 	}catch{return false;}
 }
-export function teamAnnualGoldenReceipt({browser,packet,projection,source,context,selection}) {
-	if(!knownTeamAnnualSelectedRequest({browser,packet,projection,source,context,selection}))return null;
+export function teamAnnualGoldenReceipt({browser,packet,projection,source,context,selection,origin}) {
+	if(!knownTeamAnnualSelectedRequest({browser,packet,projection,source,context,selection,origin}))return null;
 	return {protocol:"selected-team-natural-eof-golden-v1",bodySource:"owned-proxy-natural-eof",source,selection,projection,browser:requestReceipt(browser),packet:{...requestReceipt(packet),responseEvents:packet.responseEvents}};
 }
-export function validateTeamAnnualGoldenReceipt(receipt,context) {
-	return receipt?.protocol==="selected-team-natural-eof-golden-v1" && receipt.bodySource==="owned-proxy-natural-eof" && knownTeamAnnualSelectedRequest({...receipt,context});
+export function validateTeamAnnualGoldenReceipt(receipt,context,origin) {
+	return receipt?.protocol==="selected-team-natural-eof-golden-v1" && receipt.bodySource==="owned-proxy-natural-eof" && knownTeamAnnualSelectedRequest({...receipt,context,origin});
 }
 /** Mandatory mixed preparation CORE, independent of raw browser failure counts. */
-export function validateMixedTeamAnnualGolden(run) {
+export function validateMixedTeamAnnualGolden(run,origin) {
 	try {
 		if(!Array.isArray(run?.transports) || run.transports.length!==4 || !run.annualTeamGolden || !["baseline","release"].includes(run.phase) || run.requestTimeoutMs!==(run.phase==="baseline"?90000:30000) || run.annualTeamGolden.selection?.deadlineMs!==run.annualTeamGolden.selection?.startedAtMs+run.requestTimeoutMs)return false;
 		let selected=0;
@@ -2153,7 +2165,7 @@ export function validateMixedTeamAnnualGolden(run) {
 				selected++;
 				if(annual.armed!==true || annual.consumed!==true || annual.retainedBytes!==1048576 || JSON.stringify(annual.receipt)!==JSON.stringify(run.annualTeamGolden) ||
 					context?.contextId!==transport.contextId || !matchingBrowserControlBinding({build:run.sourceCommit,browserControl:run.browserControl},context.binding) ||
-					!validateTeamAnnualGoldenReceipt(annual.receipt,context) || annual.receipt.projection.employees!==8 || annual.receipt.projection.hours!==16704)return false;
+					!validateTeamAnnualGoldenReceipt(annual.receipt,context,origin) || annual.receipt.projection.employees!==8 || annual.receipt.projection.hours!==16704)return false;
 			}else if(annual.armed!==false || annual.consumed!==false || annual.receipt!==null || annual.retainedBytes!==0)return false;
 		}
 		return selected===1;

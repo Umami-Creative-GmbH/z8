@@ -188,7 +188,7 @@ function validateRecordedBrowser(run, context) {
 
 /** Validate every record and every registered native group, never a selected success subset. */
 export function validateMixedClockRun(run, build, phase = "baseline",authority) {
-	check(validateMixedTeamAnnualGolden(run),"mandatory selected annual TEAM natural-EOF golden CORE");
+	check(validateMixedTeamAnnualGolden(run,authority?.origin),"mandatory selected annual TEAM natural-EOF golden CORE");
 	check(same(run?.nativeProgressPolicy,mixedNativeProgressPolicy) && same(run?.cleanEvidencePolicy, cleanEvidencePolicy) && run.browserFailureScope === mixedBrowserWorkScope &&
 		matchingBrowserControlBinding({ build, browserControl: run.browserControl }, run.browserControl) && sha(run.browserControlMetadataFileSha256),
 		"qualified browser control run metadata");
