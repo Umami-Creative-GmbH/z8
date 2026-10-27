@@ -1,6 +1,7 @@
 import { createProxyWireObserver } from "./proxy-wire-observer.mjs";
 import { createActionResultObserver } from "./action-result-observer.mjs";
 import { testBrowserEvidence, testBrowserMetadata, testBrowserBinding } from "./control-cancellation-test-fixtures.mjs";
+import {teamAnnualModule,teamAnnualWorkers} from "./control-cancellation-evidence.mjs";
 import { nextStreamCompletionPatch } from "./next-stream-completion-patch.mjs";
 import {
   primaryProtocolIdentity,
@@ -14,7 +15,7 @@ import {
 } from "./settled-resources.mjs";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -223,6 +224,8 @@ function fixture() {
   };
   saveBefore();
   save("release-manifest.json", { config: { deploymentId: "d".repeat(40), experimental: { cachedNavigations: true } } });
+  mkdirSync(join(dir,"server"));
+  save("server/server-reference-manifest.json",{node:{["40"+"a".repeat(40)]:{filename:teamAnnualModule,exportedName:"getTeamPerformanceData",workers:Object.fromEntries(teamAnnualWorkers.map(key=>[key,{moduleId:1,async:true}]))}},edge:{}});
   save("release-browser-control.json", {...testBrowserMetadata(),compiledManifestSha256:hash(readFileSync(join(dir,"release-manifest.json")))});
   const run = (...args) =>
     spawnSync(
@@ -570,7 +573,7 @@ function candidate(f) {
   artifact.planSha256 = hash(
     readFileSync(join(f.dir, "derived/release-plan.json")),
   );
-  artifact.runtime = { ...plan.runtime, browserControl: { ...plan.runtime.browserControl, compiledBuild: plan.runtime.build, manifestVerified: true, browserVerified: true }, buildVerified: true };
+  artifact.runtime = { ...plan.runtime, browserControl: testBrowserBinding(plan.runtime.build,plan.runtime.browserControl), buildVerified: true };
   for (const s of artifact.samples)
     for (const proof of s.prerequisiteQuiescence) proof.capMs = plan.timeoutMs;
   artifact.acceptance = "fulfilled";

@@ -2,7 +2,7 @@
 import { createHash } from "node:crypto";
 import { validateProxyHeaderCensus, validateProxyHeaderPrefix, validateProxyHeaderLifecycle } from "./proxy-header-census.mjs";
 import {cachedCdpTextProjectionProtocol,cachedCdpTextSourceRevision,cachedCdpTextMappingSha256} from "./cdp-cached-text-projection.mjs";
-import { resolveOriginalTeamTemporaryReference, closeOriginalTeamBodyInspection, originalTeamBodyObservation, validateOriginalTeamTemporaryValues, validateOriginalTeamBodyUseCoverage, knownTemporaryValueObservation, knownOriginalTeamSourceConfiguration } from "./team-temporary-value-authority.mjs";
+import { resolveOriginalTeamTemporaryReference, closeOriginalTeamBodyInspection, originalTeamBodyObservation, validateOriginalTeamTemporaryValues, validateOriginalTeamBodyUseCoverage, knownTemporaryValueObservation, knownOriginalTeamSourceConfiguration, knownOriginalTeamHeaderJoin } from "./team-temporary-value-authority.mjs";
 export const controlCancellationPolicy = Object.freeze({
 	version: 2,
 	protocol: "positively-proven-protocol-controls-v2",
@@ -103,11 +103,17 @@ export function knownNativePublicSources(source, compiledBuild, compiledManifest
 
 export function knownBrowserControlMetadata(metadata) {
 	return Boolean(metadata && JSON.stringify(metadata.policy) === JSON.stringify(controlCancellationPolicy) &&
+		(metadata.manifestVerified!==true || knownTeamAnnualActionSource(metadata.teamAnnualAction,metadata.compiledBuild,metadata.compiledManifestSha256)) &&
 		metadata.browserRevision === chromiumSWRRevision && typeof metadata.compiledCachedNavigations === "boolean" &&
 		knownTemporaryValueObservation(metadata.temporaryValueObservation) && Object.hasOwn(metadata,"originalTeamSource") &&
 		knownOriginalTeamSourceConfiguration(metadata.originalTeamSource,undefined,metadata.compiledManifestSha256) &&
 		typeof metadata.compiledManifestSha256 === "string" && /^[a-f0-9]{64}$/.test(metadata.compiledManifestSha256) &&
 		(!Object.hasOwn(metadata,"nativePublicSources") || knownNativePublicSources(metadata.nativePublicSources,metadata.nativePublicSources?.compiledBuild,metadata.compiledManifestSha256)));
+}
+export const teamAnnualWorkers=Object.freeze(["app/[locale]/(app)/analytics/page","app/[locale]/(app)/analytics/team-performance/page"]);
+export const teamAnnualModule="apps/webapp/src/app/[locale]/(app)/analytics/actions.ts";
+export function knownTeamAnnualActionSource(source,build,manifestSha256) {
+	try{return exactDataKeys(source,["protocol","compiledBuild","compiledManifestSha256","registrySha256","actionHeaderSha256","moduleSha256","workersSha256","exportName"]) && source.protocol==="compiled-team-annual-action-v1" && /^[a-f0-9]{40}$/.test(build ?? "") && source.compiledBuild===build && source.compiledManifestSha256===manifestSha256 && [source.compiledManifestSha256,source.registrySha256,source.actionHeaderSha256].every(digest) && source.exportName==="getTeamPerformanceData" && source.moduleSha256===bodySha256(Buffer.from(teamAnnualModule)) && source.workersSha256===bodySha256(Buffer.from(JSON.stringify(teamAnnualWorkers)));}catch{return false;}
 }
 
 export function matchingBrowserControlBinding(runtime, binding) {
@@ -117,6 +123,7 @@ export function matchingBrowserControlBinding(runtime, binding) {
 		JSON.stringify(binding.nativePublicSources) === JSON.stringify(expected.nativePublicSources) &&
 		JSON.stringify(binding.temporaryValueObservation) === JSON.stringify(expected.temporaryValueObservation) &&
 		JSON.stringify(binding.originalTeamSource) === JSON.stringify(expected.originalTeamSource) &&
+		(!expected.teamAnnualAction || JSON.stringify(binding.teamAnnualAction)===JSON.stringify(expected.teamAnnualAction)) &&
 		knownOriginalTeamSourceConfiguration(binding.originalTeamSource,binding.compiledBuild,binding.compiledManifestSha256) &&
 		(!expected.nativePublicSources || knownNativePublicSources(expected.nativePublicSources,runtime.build,expected.compiledManifestSha256)) &&
 		(!binding.nativePublicSources || knownNativePublicSources(binding.nativePublicSources,binding.compiledBuild,binding.compiledManifestSha256)) &&
@@ -1748,6 +1755,8 @@ const requestReceipt = (row) => ({
 		"temporaryValueObservation",
 		"temporaryRequestAuthority",
         "requestBodyFacts",
+		"teamAnnualProjection",
+		"annualRequestOrdinal",
 		"browserDataLedger",
 		"rsc",
 		"purposeHeaderPresent",
@@ -2085,6 +2094,70 @@ function nativeKnownExtraProof(failure,packet,responses,proxy,context,browserRev
 /** Bounded technical inputs only; payload chunks and raw header values never enter a prefix. */
 export function mixedNativeProgressInput({failures,responses,proxy,nativeContext,coverage,browserRevision,browserEventOrdinal}) {
  return structuredClone({failures:failures.map(requestReceipt),responses:(failures.length?responses:[]).map(requestReceipt),proxy:(failures.length?proxy:[]).map(requestReceipt),nativeContext,coverage,browserRevision,browserEventOrdinal});
+}
+
+/** Same request-local control predicate as the classifier; no lifetime closure is manufactured. */
+export function knownTeamAnnualSelectedRequest({browser,packet,projection,source,context,selection}) {
+	try {
+		const principal=context?.principalEpoch;
+		const census=context?.headerCensus,headers=census?.requests?.filter(row=>row.requestId===packet?.id);
+		if(!knownTeamAnnualActionSource(source,context?.binding?.compiledBuild,context?.binding?.compiledManifestSha256) ||
+			!validateProxyHeaderCensus(census,{contextId:context.contextId}) || census.closed!==principal?.scopeClosed || headers?.length!==1 || headers[0].observation!=="headers" || headers[0].setCookieLines!==0 || headers[0].setCookieSha256!==null ||
+			!["unknownHeaders","setCookieResponses","setCookieLines","errors","duplicates","missing","late","overflow"].every(key=>census.counts[key]===0) || principal?.scopeClosed===true && census.counts.pending!==0 ||
+			principal?.before?.known!==true || principal.before.cookieAttributes?.singleOwnedRootHttpOnlyCookie!==true || !["observedSetCookieResponses","unknownResponseHeaders","readErrors","pendingReads","observationErrors","overflow"].every(key=>principal[key]===0) ||
+			principal.scopeClosed===true && (principal.after?.known!==true || principal.matchesAtBoundaries!==true) ||
+			!knownOriginalTeamHeaderJoin(browser.initialHeaderIdentity,browser.extraHeaderIdentity,packet,principal.before.cookieAttributes.singleCookieHeaderSha256) ||
+			JSON.stringify(source)!==JSON.stringify(context.binding.teamAnnualAction) || !sameRequest(browser,packet) || browser.contextId!==context.contextId ||
+			browser.type!=="Fetch" || browser.method!=="POST" || packet.method!=="POST" || browser.action!==true || packet.action!==true || browser.ambiguousRedirect!==false || browser.proxyResponseId!==packet.id ||
+			!browser.requestId || !browser.frameId || !browser.loaderId || browser.requestOriginSha256!==context.originSha256 || packet.requestOriginSha256!==context.originSha256 ||
+			browser.status!==200 || packet.status!==200 || browser.httpErrorObserved===true || browser.observedProtocolError?.serverErrors>0 || browser.observedProtocolError?.explicitActionFailure===true ||
+			packet.complete!==true || packet.canceled!==false || packet.upstreamError!==false || packet.flight!==true || packet.responseEvents!==1 ||
+			packet.headerFieldSha256?.["next-action"]!==source.actionHeaderSha256 || browser.headerFieldSha256?.["next-action"]!==source.actionHeaderSha256 ||
+			browser.requestHeaderSnapshotKnown!==true || browser.requestHeadersKnown!==true || packet.requestHeaderSnapshotKnown!==true ||
+			packet.requestBodyFacts?.protocol!=="owned-proxy-request-eof-v1" || packet.requestBodyFacts.proxyResponseId!==packet.id || packet.requestBodyFacts.actualEOF!==true ||
+			!digest(packet.requestBodyFacts.bodySha256) || !Number.isSafeInteger(packet.requestBodyFacts.encodedBytes) || packet.requestBodyFacts.encodedBytes<=0 || packet.requestBodyFacts.encodedBytes>controlCancellationPolicy.encodedLimit ||
+			!goodBody(packet.bodyProof) || packet.bodyProof.action!==true || !validateOriginalTeamTemporaryValues(packet.bodyProof.temporaryValues,{bodySha256:packet.bodyProof.bodySha256,decodedBytes:packet.bodyProof.decodedBytes,request:packet,context}) ||
+			packet.transportBodyReceipt?.naturalEOF!==true || packet.transportBodyReceipt.bodySha256!==packet.bodyProof.bodySha256 || packet.transportBodyReceipt.decodedBytes!==packet.bodyProof.decodedBytes ||
+			projection?.protocol!=="team-annual-scalar-projection-v1" || projection.fatalUtf8!==true || projection.bodySha256!==packet.bodyProof.bodySha256 || projection.decodedBytes!==packet.bodyProof.decodedBytes ||
+			JSON.stringify(projection)!==JSON.stringify(packet.teamAnnualProjection) || projection.temporaryBindingSha256!==(packet.temporaryValueObservation?.bindingSha256 ?? null) ||
+			projection.proofCoreSha256!==bodySha256(Buffer.from(JSON.stringify(teamAnnualProofCore(packet.bodyProof,projection.temporaryBindingSha256)))) ||
+			!Number.isSafeInteger(projection.employees) || projection.employees<0 || !Number.isFinite(projection.hours) || !Number.isSafeInteger(projection.projectionSteps) || projection.projectionSteps<=0 ||
+			selection?.protocol!=="actual-response-object-selection-v1" || selection.contextId!==browser.contextId || selection.proxyResponseId!==packet.id || selection.status!==200 || selection.mainFrame!==true ||
+			!Number.isSafeInteger(selection.requestOrdinalAtArm) || selection.requestOrdinalAtArm<0 || !Number.isSafeInteger(packet.annualRequestOrdinal) || packet.annualRequestOrdinal<=selection.requestOrdinalAtArm || packet.annualRequestOrdinal>controlCancellationPolicy.recordLimit ||
+			selection.fullUrlSha256!==browser.fullUrlSha256 || selection.requestBodySha256!==packet.requestBodyFacts.bodySha256 || selection.encodedBytes!==packet.requestBodyFacts.encodedBytes ||
+			!Number.isFinite(selection.startedAtMs) || !Number.isFinite(selection.deadlineMs) || !Number.isFinite(selection.selectedAtMs) || !Number.isFinite(selection.fulfilledAtMs) ||
+			selection.startedAtMs>selection.selectedAtMs || selection.selectedAtMs>selection.fulfilledAtMs || selection.fulfilledAtMs>selection.deadlineMs)return false;
+		if(browser.failed===true) {
+			const actual=classifyControlCancellations({failures:[browser],proxy:[packet],responses:[],nativeContext:context,browserRevision:context.binding.browserRevision});
+			return actual.records.length===1 && actual.records[0].outcome==="protocol-control" && actual.records[0].reason==="completed-flight-late-terminal-cancel";
+		}
+		return browser.loadingFinished===true && browser.failed!==true;
+	}catch{return false;}
+}
+export function teamAnnualGoldenReceipt({browser,packet,projection,source,context,selection}) {
+	if(!knownTeamAnnualSelectedRequest({browser,packet,projection,source,context,selection}))return null;
+	return {protocol:"selected-team-natural-eof-golden-v1",bodySource:"owned-proxy-natural-eof",source,selection,projection,browser:requestReceipt(browser),packet:{...requestReceipt(packet),responseEvents:packet.responseEvents}};
+}
+export function validateTeamAnnualGoldenReceipt(receipt,context) {
+	return receipt?.protocol==="selected-team-natural-eof-golden-v1" && receipt.bodySource==="owned-proxy-natural-eof" && knownTeamAnnualSelectedRequest({...receipt,context});
+}
+/** Mandatory mixed preparation CORE, independent of raw browser failure counts. */
+export function validateMixedTeamAnnualGolden(run) {
+	try {
+		if(!Array.isArray(run?.transports) || run.transports.length!==4 || !run.annualTeamGolden)return false;
+		let selected=0;
+		for(const transport of run.transports){
+			const evidence=transport.browserControlEvidence,annual=evidence?.annualTeam,context=evidence?.allPhase?.nativeContext;
+			if(annual?.protocol!=="annual-team-selection-observation-v1" || annual.contextId!==transport.contextId || annual.closed!==true || !["errors","overflow","pending"].every(key=>annual[key]===0))return false;
+			if(transport.actor==="small-admin"){
+				selected++;
+				if(annual.armed!==true || annual.consumed!==true || annual.retainedBytes!==1048576 || JSON.stringify(annual.receipt)!==JSON.stringify(run.annualTeamGolden) ||
+					context?.contextId!==transport.contextId || !matchingBrowserControlBinding({build:run.sourceCommit,browserControl:run.browserControl},context.binding) ||
+					!validateTeamAnnualGoldenReceipt(annual.receipt,context) || annual.receipt.projection.employees!==8 || annual.receipt.projection.hours!==16704)return false;
+			}else if(annual.armed!==false || annual.consumed!==false || annual.receipt!==null || annual.retainedBytes!==0)return false;
+		}
+		return selected===1;
+	}catch{return false;}
 }
 
 /** Input records are emitted by the owned passive collector, never inferred from labels alone. */

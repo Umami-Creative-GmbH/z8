@@ -21,7 +21,7 @@ export function knownOriginalTeamHeaderJoin(initial,extra,wire,cookieHeaderSha25
     (initial.headerFieldSha256[key]===extra.headerFieldSha256[key] || ["cookie","accept-encoding"].includes(key) && initial.headerFieldSha256[key]===null && digest(extra.headerFieldSha256[key])));
  }catch{return false;}
 }
-export const temporaryValueObservation = Object.freeze({ protocol: "original-team-temporary-value-observation-v1", replayHeader: teamReplayHeader, documentJournal: "actual-cdp-document-journal-v1" });
+export const temporaryValueObservation = Object.freeze({ protocol: "original-team-temporary-value-observation-v1", replayHeader: teamReplayHeader, documentJournal: "actual-cdp-document-journal-v1",annualTeam:Object.freeze({protocol:"team-annual-golden-observation-v1",bodySource:"owned-proxy-natural-eof",selection:"actual-response-object",projection:"team-employees-hours-v1",deadline:"existing-annual-selection"}) });
 const deepFreeze = value => {
 	if (value && typeof value === "object") {
 		for (const child of Object.values(value)) deepFreeze(child);
@@ -347,7 +347,7 @@ export const originalTeamTemporaryProfiles = deepFreeze([
   }
 ]);
 export function knownTemporaryValueObservation(value) {
-	try { return ownData(value, ["protocol", "replayHeader", "documentJournal"]) && Object.entries(temporaryValueObservation).every(([key, expected]) => value[key] === expected); }
+	try { return ownData(value, ["protocol", "replayHeader", "documentJournal","annualTeam"]) && ["protocol","replayHeader","documentJournal"].every(key=>value[key]===temporaryValueObservation[key]) && ownData(value.annualTeam,Object.keys(temporaryValueObservation.annualTeam)) && Object.entries(temporaryValueObservation.annualTeam).every(([key,expected])=>value.annualTeam[key]===expected); }
 	catch { return false; }
 }
 /** Null explicitly declares unsupported T authority. A configured Original is exact, not a descendant exception. */

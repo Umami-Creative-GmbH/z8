@@ -33,7 +33,7 @@ import {
 
 import { cleanApplicationEvidence, cleanObservationPolicy, observationTimeoutMs, cleanBrowserContextEvidence, cleanEvidencePolicy } from "./clean-evidence.mjs";
 import { installBrowserControlCollector, readBrowserControlBinding, verifyBrowserControlBrowser, mixedBrowserWorkScope } from "./browser-control-collector.mjs";
-import { mixedNativeProgressPolicy } from "./control-cancellation-evidence.mjs";
+import { mixedNativeProgressPolicy, validateMixedTeamAnnualGolden } from "./control-cancellation-evidence.mjs";
 import { mixedProtocolIdentity } from "./protocol-fingerprints.mjs";
 
 /** Match the recorded source against the public, possibly abbreviated build hash. */
@@ -184,6 +184,7 @@ function numericMetrics(row) {
 	};
 }
 
+export function teamAnnualSummary(scalars){return {employees:scalars?.employees,hours:scalars?.hours,correct:scalars?.employees===8 && scalars?.hours===16704};}
 function analyticsSummary(kind, payload) {
 	if (payload?.success !== true) return { correct: false };
 	const data = payload.data;
@@ -199,11 +200,7 @@ function analyticsSummary(kind, payload) {
 			(sum, team) => sum + team.employeeCount,
 			0,
 		);
-		return {
-			employees,
-			hours: data.organizationTotal,
-			correct: employees === 8 && data.organizationTotal === 16704,
-		};
+		return teamAnnualSummary({employees,hours:data.organizationTotal});
 	}
 	const hours = data.weeklySeries.reduce(
 		(sum, week) => sum + week.overtimeHours,
@@ -328,12 +325,13 @@ export function createMixedCaptureDiagnostics() {
 		let known;try{known=analytics.find(value=>value.actor===reader?.actor && value.kind===reader?.kind);}catch{}
 		let row=null;
 		if(!known || rows.length>=3 || rows.some(value=>value.actor===known.actor))overflow++;
-		else {row={actor:known.actor,reader:known.kind,stage:"open-page",status:null,responseOK:null,captured:null,bodyRead:"not-reached",payloadShape:null,success:null,summary:{employees:null,hours:null,weeks:null,overtimeHours:null,correct:null},exceptionName:null};rows.push(row);}
+		else {row={actor:known.actor,reader:known.kind,stage:"open-page",status:null,responseOK:null,captured:null,bodyRead:"not-reached",bodyReadSource:null,payloadShape:null,success:null,summary:{employees:null,hours:null,weeks:null,overtimeHours:null,correct:null},exceptionName:null};rows.push(row);}
 		return Object.freeze({
 			stage(value){if(row && stages.includes(value))row.stage=value;},
 			status(response){if(row)try{const value=response.status();row.status=Number.isInteger(value) && value>=0 && value<=599?value:null;}catch{}},
 			captured(value){if(row)row.captured=Boolean(value);},
 			bodyFulfilled(){if(row)row.bodyRead="fulfilled";},
+			bodySource(value){if(row && ["puppeteer-text","proxy-golden"].includes(value))row.bodyReadSource=value;},
 			payload(value){if(row)try{row.payloadShape=value===null?"null":Array.isArray(value)?"array":typeof value==="object"?"object":"scalar";const success=value?.success;row.success=typeof success==="boolean"?success:value && Object.hasOwn(value,"success")?"wrong-type":"absent";}catch{row.success=null;}},
 			responseOK(value){if(row)row.responseOK=typeof value==="boolean"?value:null;return value;},
 			summary(value){if(row)try{for(const key of ["employees","hours","weeks","overtimeHours"]){const number=value?.[key];row.summary[key]=Number.isFinite(number)?number:null;}const correct=value?.correct;row.summary.correct=typeof correct==="boolean"?correct:null;}catch{}return value;},
@@ -397,27 +395,37 @@ async function captureAnalytics(
 	diagnostic.stage("verify-actor");
 	await verifyActor(page, expectedActor);
 	diagnostic.stage("wait-annual-response");
+	const annualHandle=reader.kind==="team"?opened.browserObservation.armAnnualTeam({path:reader.path,timeoutMs:timeout}):null;
+	if(reader.kind==="team" && !annualHandle)throw Error("Actual annual team selection could not be armed.");
 	const annual = await selectAnnualAnalyticsPeriod(page, reader.path, timeout);
 	diagnostic.status(annual);
 	diagnostic.captured(captured);
 	diagnostic.stage("read-annual-body");
-	const text=await annual.text();
-	diagnostic.bodyFulfilled();
-	diagnostic.stage("parse-public-result");
-	const payload = publicResult(text);
-	diagnostic.payload(payload);
+	let summary,payload,annualTeamGolden=null;
+	if(reader.kind==="team") {
+		diagnostic.bodySource("proxy-golden");
+		annualTeamGolden=await opened.browserObservation.readAnnualTeam(annualHandle,annual);
+		diagnostic.bodyFulfilled();summary=teamAnnualSummary(annualTeamGolden.projection);
+	}else{
+		diagnostic.bodySource("puppeteer-text");
+		const text=await annual.text();
+		diagnostic.bodyFulfilled();
+		diagnostic.stage("parse-public-result");
+		payload = publicResult(text);
+		diagnostic.payload(payload);
+	}
 	diagnostic.captured(captured);
 	diagnostic.stage("verify-capture");
 	if (
 		!diagnostic.responseOK(annual.ok()) ||
 		!captured ||
-		!(diagnostic.stage("summarize-annual"),diagnostic.summary(analyticsSummary(reader.kind, payload))).correct
+		!(diagnostic.stage("summarize-annual"),diagnostic.summary(reader.kind==="team"?summary:analyticsSummary(reader.kind,payload))).correct
 	)
 		throw new Error(
 			"Actual annual caller did not complete with the literal fixture totals.",
 		);
 	diagnostic.stage("complete");
-	return { ...opened, captured, reader };
+	return { ...opened, captured, reader,annualTeamGolden };
 	}catch(error){diagnostic.failed(error);throw error;}
 }
 
@@ -504,6 +512,7 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 		commandActive = 0,
 		userMaxInflight = 0;
 	let nativeRunCoverage = { complete: false },
+		annualTeamGolden=null,
 		nativeCloseProof = null,
 		nativeCloseElapsedMs = null,
 		backendGroups = [],
@@ -555,6 +564,7 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 				protocolSources,
 				captureDiagnostics,
 			);
+			if(reader.kind==="team")annualTeamGolden=item.annualTeamGolden;
 			await requireCleanWork();
 			item.page.on("request", (request) => {
 				const value = request.headers().traceparent?.split("-")[1];
@@ -846,6 +856,7 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 	const completeCoverage =
 		nativeRunCoverage.complete === true &&
 		completeTransport &&
+		validateMixedTeamAnnualGolden({transports,annualTeamGolden,sourceCommit,browserControl:browserControlBinding}) &&
 		browserClosed &&
 		pageErrors === 0;
 	if (userMaxInflight !== 4) {
@@ -873,6 +884,7 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 		browserClosed,
 		clockReadinessDiagnostics:controls?.snapshot() ?? null,
 		captureDiagnostics:captureDiagnostics.snapshot(),
+		annualTeamGolden,
 		pageErrors,
 		nativeRunCoverage,
 		nativeCloseProof,

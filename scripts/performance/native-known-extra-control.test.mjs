@@ -1,4 +1,4 @@
-import {testEmptyTemporaryValues} from "./control-cancellation-test-fixtures.mjs";
+import {testEmptyTemporaryValues,testTeamAnnualSource} from "./control-cancellation-test-fixtures.mjs";
 import { temporaryValueObservation } from "./team-temporary-value-authority.mjs";
 import assert from "node:assert/strict";
 import test from "node:test";
@@ -26,7 +26,7 @@ function fixture({applicationIds=[1,2],originalApplicationId=1,currentApplicatio
   const contextId="synthetic-context",origin="http://localhost:1234",url=origin+"/en?_rsc=synthetic",build="b".repeat(40);
   const files=["sw.js","lib/offline-queue-db.js","lib/sync-service.js","lib/clock-command-dispatch.js"].map(file=>({file,bytes:12,sha256:sha(file),gitBlob:"d".repeat(40)}));
   const binding={policy:controlCancellationPolicy,temporaryValueObservation:structuredClone(temporaryValueObservation),originalTeamSource:null,browserRevision:chromiumSWRRevision,compiledBuild:build,compiledManifestSha256:"c".repeat(64),compiledCachedNavigations:true,manifestVerified:true,browserVerified:true,
-    nativePublicSources:{protocol:"qualified-serving-worker-sources-v1",compiledBuild:build,compiledManifestSha256:"c".repeat(64),files}};
+    teamAnnualAction:testTeamAnnualSource(build,"c".repeat(64)),nativePublicSources:{protocol:"qualified-serving-worker-sources-v1",compiledBuild:build,compiledManifestSha256:"c".repeat(64),files}};
   const initial={rsc:"1","next-router-prefetch":"1","next-router-segment-prefetch":"/page","next-router-state-tree":"synthetic-tree","accept-language":"en","x-z8-fixture-document-generation":contextId+":4"};
   const wire={...initial,accept:"*/*","accept-encoding":"gzip",cookie:"session=synthetic"};
   const response={"content-type":"text/x-component","x-nextjs-postponed":"2","x-nextjs-deployment-id":build,vary:"RSC, Next-Router-Prefetch, Next-Router-Segment-Prefetch, Next-Router-State-Tree, Accept-Encoding","cache-control":"s-maxage=100, stale-while-revalidate=200"};
