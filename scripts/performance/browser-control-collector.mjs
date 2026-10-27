@@ -26,6 +26,7 @@ import {
 } from "./control-cancellation-evidence.mjs";
 import { createProxyHeaderCensus, proxyHeaderPrefix } from "./proxy-header-census.mjs";
 import { projectCachedCdpText } from "./cdp-cached-text-projection.mjs";
+import { readLegacyClockReadinessSource } from "./legacy-clock-readiness.mjs";
 
 export const controlResponseHeader = "x-z8-fixture-response-id";
 export const controlDocumentHeader = "x-z8-fixture-document-generation";
@@ -107,6 +108,13 @@ export function renderedPathSourceFacts({response,compiledRouting,origin,request
 const nativeManifestLocators = new WeakMap();
 const compiledRoutingSources = new WeakMap();
 const requestShapeBindings = new WeakMap();
+const legacyClockBindings = new WeakMap();
+/** Source facts are not capabilities: only the exact privately branded, browser-verified binding matches. */
+export function legacyClockReadinessAuthority(binding,{origin,phase}={}) {
+	const facts=binding && legacyClockBindings.get(binding);
+	if(!facts)return null;
+	try{if(binding.manifestVerified!==true || binding.browserVerified!==true || binding.compiledBuild!==facts.compiledBuild || binding.compiledManifestSha256!==facts.compiledManifestSha256 || phase!==facts.phase || sha(new URL(origin).origin)!==facts.originSha256)return null;return structuredClone(facts);}catch{return null;}
+}
 // Diagnostic-only: at most 16 KiB input, 32 punctuation tokens, and depth two.
 // 256 KiB reserves concat + UTF-16 text/parsed strings + bounded graph/metadata
 // BEFORE decoding/JSON.parse; it is charged to the existing proxy body pool.
@@ -333,6 +341,7 @@ export async function readBrowserControlBinding({ plan, manifestPath }) {
 		requestShapeBindings.set(binding,Object.freeze({...configuration}));
 	}
 	compiledRoutingSources.set(binding,Object.freeze(compiledRoutingSourceFacts(manifest.config,sha(bytes))));
+	if(Object.hasOwn(metadata,"legacyClockReadiness"))legacyClockBindings.set(binding,await readLegacyClockReadinessSource({configuration:metadata.legacyClockReadiness,manifestPath,compiledBuild:plan.runtime.build,manifestSha256:sha(bytes),origin:plan.origin,phase:plan.phase}));
 	nativeManifestLocators.set(binding,manifestPath);
 	return binding;
 }
@@ -350,6 +359,7 @@ export async function verifyBrowserControlBrowser(browser, binding) {
 		if (nativeManifestLocators.has(binding)) nativeManifestLocators.set(verified,nativeManifestLocators.get(binding));
 		if(compiledRoutingSources.has(binding))compiledRoutingSources.set(verified,compiledRoutingSources.get(binding));
 		if(requestShapeBindings.has(binding))requestShapeBindings.set(verified,requestShapeBindings.get(binding));
+		if(legacyClockBindings.has(binding))legacyClockBindings.set(verified,legacyClockBindings.get(binding));
 		return verified;
 	} finally { await session.detach(); }
 }

@@ -397,10 +397,10 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 	const protocolSources=await mixedProtocolIdentity();
 	if (!browserControlPath) throw Error("Explicit browser control metadata file is required.");
 	const metadataBytes = await readFile(browserControlPath);
-	let browserControlBinding = await readBrowserControlBinding({ plan: { runtime: { build: sourceCommit,
+	const { origin, fixture } = await readFixture(directory);
+	let browserControlBinding = await readBrowserControlBinding({ plan: { origin,phase,runtime: { build: sourceCommit,
 		browserControl: JSON.parse(metadataBytes.toString("utf8")) } }, manifestPath });
-	const { origin, fixture } = await readFixture(directory),
-		auth = await json(join(directory, "auth-private.json"));
+	const auth = await json(join(directory, "auth-private.json"));
 	const control =
 		collectorPath || join(directory, "observer-v2/collector-control.json");
 	const configuration = await json(control);
@@ -521,6 +521,7 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 		);
 		controls = await openPublicHeaderClock(clock.page, {
 			origin,
+			browserControlBinding,
 			expectedActor: fixture.actors[clockActor],
 			timeoutMs: timeout,
 			phase,
