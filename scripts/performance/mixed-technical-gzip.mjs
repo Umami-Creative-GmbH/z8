@@ -168,12 +168,19 @@ function checkCoverage(value,state,seen=new Set()){
  const m=measure(value,state,null,limits.owner);must(m.bytes===known.bytes&&m.digest===known.digest&&m.typedRecords===known.records&&(known.arrayLength===null||value.length===known.arrayLength));
 }
 /** Fixed private source containers compose already charged child values. */
-export function mixedOwnedFixedContainer(construct){
- if(!construction)return construct();const {state}=construction,lease=collect(charge(state,8192,'fixed-source-container-and-coverage-control'));let value=null,keys=null;
- try{value=construct();must(value&&Object.getPrototypeOf(value)===Object.prototype&&!types.isProxy(value));keys=Reflect.ownKeys(value);must(keys.length<=64);const children=[];
-  for(const key of keys){must(typeof key==='string');const descriptor=Object.getOwnPropertyDescriptor(value,key);must(descriptor?.enumerable&&Object.hasOwn(descriptor,'value'));const child=descriptor.value;must(child===null||['string','number','boolean','object'].includes(typeof child));if(typeof child==='number')must(Number.isFinite(child)&&!Object.is(child,-0));if(child&&typeof child==='object')checkCoverage(child,state);children.push([key,child]);}
-  Object.freeze(value);bind(lease,value);coverage.set(value,{kind:'container',lease,children});return value;
- }catch{value=null;lease.release();throw bad();}finally{keys=null;}
+export function mixedOwnedFixedContainer(prepare){
+ if(!construction)return Object.fromEntries(prepare());const {state}=construction,lease=collect(charge(state,8192,'fixed-source-container-and-coverage-control'));let value=null,entries=null;
+ try{entries=prepare();must(!types.isProxy(entries)&&Array.isArray(entries)&&entries.length<=64);const children=[],seen=new Set();let ownBytes=3072+entries.length*48+2;const scalar=part=>{ownBytes+=Buffer.byteLength(part);must(ownBytes<=8192);};
+  for(let index=0;index<entries.length;index++){
+   const field=Object.getOwnPropertyDescriptor(entries,String(index)),pair=field?.value;must(field?.enumerable&&Object.hasOwn(field,'value')&&!types.isProxy(pair)&&Array.isArray(pair)&&pair.length===2);
+   const keyField=Object.getOwnPropertyDescriptor(pair,'0'),valueField=Object.getOwnPropertyDescriptor(pair,'1');must(keyField?.enumerable&&valueField?.enumerable&&Object.hasOwn(keyField,'value')&&Object.hasOwn(valueField,'value'));const key=keyField.value,child=valueField.value;must(typeof key==='string'&&!seen.has(key));seen.add(key);stringTokens(key,scalar);scalar(':,');
+   must(child===null||['string','number','boolean','object'].includes(typeof child));if(typeof child==='number')must(Number.isFinite(child)&&!Object.is(child,-0));
+   if(child&&typeof child==='object')checkCoverage(child,state);else if(typeof child==='string')stringTokens(child,scalar);else scalar(child===null?'null':String(child));children.push([key,child]);
+  }
+  // Primitive/key storage and both bounded staging vectors are covered BEFORE
+  // this creates the actual object. Only our fresh own-data entries are iterated.
+  value=Object.fromEntries(children);for(const pair of children)Object.freeze(pair);Object.freeze(children);Object.freeze(value);bind(lease,value);coverage.set(value,{kind:'container',lease,children});return value;
+ }catch{value=null;lease.release();throw bad();}finally{entries=null;}
 }
 /** Borrowed static metadata is copied before entering a covered source container. */
 export function mixedOwnedCoveredValue(value){
@@ -188,20 +195,20 @@ export function mixedOwnedClone(value,records=null){
  try{const copy=structuredClone(value);bind(lease,copy);coverWhole(lease,copy,m,records??0);return copy;}catch{lease.release();throw bad();}
 }
 /** Reiterable private source collection; measurement never invokes the projector. */
-export function mixedOwnedRows(source,project,{keys=null,omit=null,extraBytesPerRow=0,constructorScratchBytes=0,constructorViewCopies=0}={}){
- if(!construction){const values=source();return Array.isArray(values)?values.map(project):Array.from(values,project);}
+export function mixedOwnedRows(source,project,{keys=null,omit=null,extraBytesPerRow=0,constructorScratchBytes=0,constructorViewCopies=0,sort=null}={}){
+ if(!construction){const values=source(),rows=Array.isArray(values)?values.map(project):Array.from(values,project);return sort?rows.sort(sort):rows;}
  const {state}=construction;let bytes=2,count=0,nestedRecords=0,maxRowBytes=0;
  for(const row of source()){must(++count<=limits.records);const measured=measure(row,state,null,limits.owner,{keys,omit});nestedRecords+=measured.typedRecords;maxRowBytes=Math.max(maxRowBytes,measured.bytes);bytes+=measured.bytes+extraBytesPerRow+(count>1?1:0);must(bytes<=limits.owner);}
  must(Number.isSafeInteger(constructorScratchBytes)&&constructorScratchBytes>=0&&Number.isSafeInteger(constructorViewCopies)&&constructorViewCopies>=0&&constructorViewCopies<=4);
- const lease=collect(charge(state,bytes,'snapshot-typed-rows',count+nestedRecords));let scratch=null;
- try{if(count&&(constructorScratchBytes||constructorViewCopies))scratch=charge(state,constructorScratchBytes+constructorViewCopies*maxRowBytes,'sequential-row-constructor-scratch');const rows=Array.from(source(),project);must(rows.length===count);bind(lease,rows);coverWhole(lease,rows,null,count);return rows;}catch{lease.release();throw bad();}finally{scratch?.release();}
+ const lease=collect(charge(state,bytes,'snapshot-typed-rows',count+nestedRecords));let scratch=null,sorting=null;
+ try{if(count&&(constructorScratchBytes||constructorViewCopies))scratch=charge(state,constructorScratchBytes+constructorViewCopies*maxRowBytes,'sequential-row-constructor-scratch');const rows=Array.from(source(),project);must(rows.length===count);if(sort){sorting=charge(state,2048+count*16,'snapshot-row-sort-index');rows.sort(sort);}bind(lease,rows);coverWhole(lease,rows,null,count);return rows;}catch{lease.release();throw bad();}finally{sorting?.release();scratch?.release();}
 }
 /** Closed constructors supply a source-justified count/element storage bound. */
 export function mixedOwnedArray(count,construct,{bytesPerEntry=8,records=0}={}){
  if(!construction)return construct();
  must(Number.isSafeInteger(count)&&count>=0&&count<=limits.records&&Number.isSafeInteger(bytesPerEntry)&&bytesPerEntry>=8);
  const lease=collect(charge(construction.state,2048+count*bytesPerEntry,'snapshot-bounded-array',records));
- try{const value=construct();bind(lease,value);if(records)coverWhole(lease,value,null,Array.isArray(value)?value.length:0);return value;}catch{lease.release();throw bad();}
+ try{const value=construct();bind(lease,value);if(records||!types.isProxy(value)&&Array.isArray(value)&&value.every(item=>item===null||["string","boolean","number"].includes(typeof item)))coverWhole(lease,value,null,records&&Array.isArray(value)?value.length:0);return value;}catch{lease.release();throw bad();}
 }
 /** Synchronous predicate temporaries end before the next existing predicate executes. */
 export function mixedOwnedOperation(construct,{retainResult=false}={}){
@@ -211,7 +218,7 @@ export function mixedOwnedOperation(construct,{retainResult=false}={}){
  try{
   result=construct();
   if(retainResult&&result!==null&&typeof result==='object'){
-   const measured=measure(result,parent.state,null,limits.owner),lease=charge(parent.state,measured.bytes+2048,'technical-predicate-return-view',measured.typedRecords);bind(lease,result);parent.leases.push(lease);
+   const measured=measure(result,parent.state,null,limits.owner),lease=charge(parent.state,measured.bytes+2048,'technical-predicate-return-view',measured.typedRecords);bind(lease,result);coverWhole(lease,result,measured);parent.leases.push(lease);
   }
   return result;
  }finally{construction=parent;for(const lease of frame.leases.reverse())lease.release();}

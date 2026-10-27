@@ -1,6 +1,6 @@
 /** Pure observations of one owned proxy's upstream response headers; no cookie/native eligibility claim. */
 import { createHash } from "node:crypto";
-import {mixedOwnedOperation,mixedOwnedClone as structuredClone,mixedOwnedRows,mixedOwnedArray,mixedOwnedJSONString,mixedOwnedHashInput} from "./mixed-technical-gzip.mjs";
+import {mixedOwnedFixedContainer,mixedOwnedOperation,mixedOwnedClone as structuredClone,mixedOwnedRows,mixedOwnedArray,mixedOwnedJSONString,mixedOwnedHashInput} from "./mixed-technical-gzip.mjs";
 
 export const proxyHeaderCensusProtocol =
 	"owned-proxy-upstream-header-census-v1";
@@ -105,23 +105,8 @@ const inspectHeaders = (headers) => {
 	}
 };
 const snapshot = (contextId, closed, requests, faults, unretainedFaults) => {
-	const facts = {
-		protocol: proxyHeaderCensusProtocol,
-		contextId,
-		limit: proxyHeaderCensusLimit,
-		closed,
-		requests: mixedOwnedRows(()=>requests,(row) => ({ ...row }))
-			.sort((a, b) =>
-				a.requestId < b.requestId ? -1 : a.requestId > b.requestId ? 1 : 0,
-			),
-		faults: mixedOwnedRows(()=>faults,(fault) => ({ ...fault })),
-		unretainedFaults: { ...unretainedFaults },
-	};
-	return {
-		...facts,
-		counts: summarize(facts.requests, facts.faults, facts.unretainedFaults),
-		censusSha256: digest(mixedOwnedJSONString(facts)),
-	};
+	const facts = mixedOwnedFixedContainer(()=>[["protocol",proxyHeaderCensusProtocol],["contextId",contextId],["limit",proxyHeaderCensusLimit],["closed",closed],["requests",mixedOwnedRows(()=>requests,(row) => ({ ...row }),{sort:(a,b)=>a.requestId < b.requestId ? -1 : a.requestId > b.requestId ? 1 : 0})],["faults",mixedOwnedRows(()=>faults,(fault) => ({ ...fault }))],["unretainedFaults",mixedOwnedFixedContainer(()=>[...Object.entries(unretainedFaults)])]]);
+	return mixedOwnedFixedContainer(()=>[...Object.entries(facts),["counts",summarize(facts.requests, facts.faults, facts.unretainedFaults)],["censusSha256",digest(mixedOwnedJSONString(facts))]]);
 };
 
 export function createProxyHeaderCensus({ contextId }) {
@@ -342,10 +327,9 @@ const whole = value => Number.isSafeInteger(value) && value >= 0;
 const exactDataKeys = (value, names) => value && [Object.prototype,null].includes(Object.getPrototypeOf(value)) && Reflect.ownKeys(value).length===names.length && names.every(name=>Object.hasOwn(Object.getOwnPropertyDescriptor(value,name) ?? {},"value"));
 const lifecycleFields = ["acceptedOrdinal","upstreamCreatedOrdinal","headersReceivedOrdinal","headersForwardedOrdinal","upstreamClosedOrdinal"];
 const lifecycleFacts = state => {
- const requests=mixedOwnedRows(()=>state.requests.values(),row=>({...row})).sort((a,b)=>a.requestId<b.requestId?-1:1);
- const facts={protocol:lifecycleProtocol,proxyInstanceId:state.proxyInstanceId,originSha256:state.originSha256,allowedOriginSha256:mixedOwnedArray(state.allowedOriginSha256.length,()=>[...state.allowedOriginSha256],{bytesPerEntry:80}),closed:state.closed,eventOrdinal:state.eventOrdinal,errors:state.errors,overflow:state.overflow,requests,
- acceptedRequests:requests.length,upstreamRequests:mixedOwnedArray(requests.length,()=>requests.filter(row=>row.upstreamCreatedOrdinal!==null)).length,closedUpstreams:mixedOwnedArray(requests.length,()=>requests.filter(row=>row.upstreamClosedOrdinal!==null)).length};
- return {...facts,pendingUpstreams:facts.upstreamRequests-facts.closedUpstreams};
+ const requests=mixedOwnedRows(()=>state.requests.values(),row=>({...row}),{sort:(a,b)=>a.requestId<b.requestId?-1:1});
+ const facts=mixedOwnedFixedContainer(()=>[["protocol",lifecycleProtocol],["proxyInstanceId",state.proxyInstanceId],["originSha256",state.originSha256],["allowedOriginSha256",mixedOwnedArray(state.allowedOriginSha256.length,()=>[...state.allowedOriginSha256],{bytesPerEntry:80})],["closed",state.closed],["eventOrdinal",state.eventOrdinal],["errors",state.errors],["overflow",state.overflow],["requests",requests],["acceptedRequests",requests.length],["upstreamRequests",mixedOwnedArray(requests.length,()=>requests.filter(row=>row.upstreamCreatedOrdinal!==null)).length],["closedUpstreams",mixedOwnedArray(requests.length,()=>requests.filter(row=>row.upstreamClosedOrdinal!==null)).length]]);
+ return mixedOwnedFixedContainer(()=>[...Object.entries(facts),["pendingUpstreams",facts.upstreamRequests-facts.closedUpstreams]]);
 };
 /** Source-adjacent lifecycle facts only. An open upstream is never represented as a finished request. */
 export function createProxyHeaderLifecycle({proxyInstanceId,originSha256,allowedOriginSha256}) {
@@ -373,8 +357,8 @@ export function createProxyHeaderLifecycle({proxyInstanceId,originSha256,allowed
 }
 /** Immutable vector cut; this neither closes the census nor promises future headers are clean. */
 export function proxyHeaderPrefix(census,lifecycle) {
- const facts={protocol:proxyHeaderPrefixProtocol,census:structuredClone(census),lifecycle:structuredClone(lifecycle)};
- return {...facts,prefixSha256:digest(mixedOwnedJSONString(facts))};
+ const facts=mixedOwnedFixedContainer(()=>[["protocol",proxyHeaderPrefixProtocol],["census",structuredClone(census)],["lifecycle",structuredClone(lifecycle)]]);
+ return mixedOwnedFixedContainer(()=>[...Object.entries(facts),["prefixSha256",digest(mixedOwnedJSONString(facts))]]);
 }
 /** Recomputes open facts and their membership/order; callers separately require zero error/Set-Cookie counts. */
 export function validateProxyHeaderPrefix(proof,{contextId}={}) {
