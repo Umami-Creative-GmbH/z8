@@ -728,7 +728,7 @@ export async function runMixedBudgetCommand(args) {
 	if (flags.command === "derive") {
 		const context = await load(flags["before-context"]);
 		const headControl = await load(flags["head-browser-control"]);
-		await readBrowserControlBinding({ plan: { runtime: { build: flags["expected-head-build"], browserControl: headControl.value } },
+		await readBrowserControlBinding({ plan: { origin:context.value.conditions.origin,phase:"release",runtime: { build: flags["expected-head-build"], browserControl: headControl.value } },
 			manifestPath: flags["head-app-manifest"] });
 		result = deriveMixedClockBudgets({
 			before: before.value,
