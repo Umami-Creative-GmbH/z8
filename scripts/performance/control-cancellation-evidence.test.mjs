@@ -2095,3 +2095,10 @@ test('private team projection diagnostic distinguishes ordinary and selected-fie
 	const hostile=new Proxy({outcome:null},{getOwnPropertyDescriptor(){traps++;api.closeTeamAnnualProjection(guarded);return {value:null,writable:true,enumerable:true,configurable:true};},getPrototypeOf(){traps++;return Object.prototype;},defineProperty(){traps++;return true;}});
 	assert.equal(api.takeTeamAnnualProjection(guarded,hostile)?.hours,0,'a diagnostic cannot close or change the original take result');assert.equal(traps,0);api.closeTeamAnnualProjection(guarded);
 });
+
+test("mixed candidate uses whole portable4MiB and logical8MiB while ordinary controls stay exact",async()=>{
+ const evidence=testBrowserEvidence("codec-control",true),record=evidence.measured.records[0];assert.equal(record.outcome,"protocol-control");
+ const input={failures:[{...record.proof.failure,failedEventOrdinal:1}],responses:[],proxy:[record.proof.packet],nativeContext:{contextId:"codec-control",technicalPadding:"x".repeat(4250000)},coverage:{installed:true,scopeClosed:false,missing:0,overflow:0,errors:0,pendingBodies:0},browserRevision:chromiumSWRRevision,browserEventOrdinal:1};
+ const {mixedNativePrefixCandidates}=await import("./control-cancellation-evidence.mjs");assert.ok(mixedNativePrefixCandidates(input));
+ input.nativeContext.technicalPadding="x".repeat(8388608);assert.equal(mixedNativePrefixCandidates(input),null);
+});

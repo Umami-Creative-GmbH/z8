@@ -549,7 +549,7 @@ test("mixed first-failure diagnostics preserve successful schema and genuine thr
  const {createMixedProgressAcknowledgments}=await import("./browser-control-collector.mjs"),{begin}=await openPrefixFixture(),current=structuredClone(begin);current.failures=[];
  const app=()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0});
  const success=createMixedProgressAcknowledgments({input:()=>current,application:app,acknowledge:()=>assert.fail("fast")}),token=await success.check();assert.equal(success.confirm(token),true);
- const snapshot=success.snapshot();assert.deepEqual(Object.keys(snapshot).sort(),["protocol","contextId","authoritySha256","guardChecks","attempted","failed","overflow","retainedBytes","checks","prefixes"].sort());
+ const snapshot=success.snapshot();assert.deepEqual(Object.keys(snapshot).sort(),["protocol","candidateRepresentationProtocol","contextId","authoritySha256","guardChecks","attempted","failed","overflow","retainedBytes","checks","prefixes"].sort());
  assert.equal(snapshot.retainedBytes,Buffer.byteLength(JSON.stringify(snapshot.checks)));assert.equal(snapshot.failed,0);
  const sentinel=Error("PRIVATE_OBSERVER_ERROR");let getterCalls=0,inputs=0;
  const application=app();Object.defineProperty(application,"unknown",{enumerable:true,get(){getterCalls++;throw sentinel;}});
@@ -629,16 +629,15 @@ test("mixed candidate rejection hooks reuse the same classification and strict f
  const {api,begin}=await openPrefixFixture();
  function run(observe){const input=structuredClone(begin);input.proxy[1].complete=false;let errorReads=0;const value=input.failures[0].error;Object.defineProperty(input.failures[0],"error",{enumerable:true,get(){errorReads++;return value;}});let row=null;
   const result=api.mixedNativePrefixCandidates(input,observe?value=>{row=value;}:undefined);assert.equal(result,null);return{errorReads,row};}
- const plain=run(false),observed=run(true);assert.equal(observed.errorReads,plain.errorReads);assert.ok(plain.errorReads>0);assert.equal(observed.row.site,"native-core");assert.equal(observed.row.strictMatchCount,1);assert.equal(observed.row.firstMatchedProxyIdSha256,sha(begin.proxy[1].id));assert.equal(observed.row.firstMatchedProofKnown,true);assert.equal(observed.row.firstMatchedProofComplete,true);
+ const plain=run(false),observed=run(true);assert.equal(observed.errorReads,plain.errorReads);assert.equal(plain.errorReads,0);assert.equal(observed.row.site,"input-prelude");assert.equal(observed.row.strictMatchCount,null);assert.equal(observed.row.firstMatchedProxyIdSha256,null);
 });
 
-test("mixed candidate serialization diagnostics preserve the original aggregate limit and cyclic rejection",async()=>{
+test("mixed candidate representation accepts compressible logical input over4MiB and rejects cyclic input",async()=>{
  const {api,begin}=await openPrefixFixture(),oversized=structuredClone(begin);oversized.proxy[1].padding="PRIVATE_SERIALIZED_"+"x".repeat(4*1024*1024);
  const encodedBytes=Buffer.byteLength(JSON.stringify(oversized)),oversize=[];assert.ok(encodedBytes>4*1024*1024);
- assert.equal(api.mixedNativePrefixCandidates(oversized,row=>oversize.push(row)),null);
- assert.equal(oversize[0].site,"input-prelude");assert.deepEqual(oversize[0].serialization,{serialized:true,encodedBytes,withinLimit:false,outcome:"over-limit"});
+ assert.ok(api.mixedNativePrefixCandidates(oversized,row=>oversize.push(row)));assert.equal(oversize.length,0);
  const cyclic=structuredClone(begin);cyclic.proxy[1].cycle=cyclic;const cycle=[];assert.equal(api.mixedNativePrefixCandidates(cyclic,row=>cycle.push(row)),null);
- assert.deepEqual(cycle[0].serialization,{serialized:false,encodedBytes:null,withinLimit:null,outcome:"stringify-error"});
+ assert.deepEqual(cycle[0].serialization,{protocol:"mixed-progress-technical-gzip-v1",serialized:null,logicalBytes:null,encodedBytes:null,withinLimit:null,outcome:"representation-rejected"});
  assert.doesNotMatch(JSON.stringify([oversize,cycle]),/PRIVATE_|padding|cycle|http:|session/);
 });
 
@@ -646,7 +645,7 @@ test("mixed candidate serialization facts remain unknown before the original dig
  const {api,begin}=await openPrefixFixture(),early=[];assert.equal(api.mixedNativePrefixCandidates(undefined,row=>early.push(row)),null);assert.equal(early[0].serialization,null);
  const input=structuredClone(begin);input.failures[0].failedEventOrdinal=0;const expectedBytes=Buffer.byteLength(JSON.stringify(input)),rows=[];
  assert.equal(api.mixedNativePrefixCandidates(input,row=>{rows.push(row);throw Error("PRIVATE_OBSERVER");}),null);assert.equal(rows.length,1);assert.equal(rows[0].site,"failure-census");
- assert.deepEqual(rows[0].serialization,{serialized:true,encodedBytes:expectedBytes,withinLimit:true,outcome:"complete"});assert.doesNotMatch(JSON.stringify(rows),/PRIVATE_OBSERVER/);
+ assert.equal(rows[0].serialization.protocol,"mixed-progress-technical-gzip-v1");assert.equal(rows[0].serialization.logicalBytes,expectedBytes);assert.equal(rows[0].serialization.serialized,true);assert.equal(rows[0].serialization.withinLimit,true);assert.equal(rows[0].serialization.outcome,"complete");assert.ok(Number.isSafeInteger(rows[0].serialization.encodedBytes)&&rows[0].serialization.encodedBytes>=48&&rows[0].serialization.encodedBytes<=4194304);assert.doesNotMatch(JSON.stringify(rows),/PRIVATE_OBSERVER/);
  assert.deepEqual(api.mixedNativePrefixCandidates(structuredClone(begin)),api.mixedNativePrefixCandidates(structuredClone(begin),()=>assert.fail("positive candidate has no rejection hook")));
 });
 
@@ -665,4 +664,32 @@ test("source-bound digest serialization diagnostics report once and preserve enc
   assert.equal(observed[0].encodedBytes,["stringify","encode"].includes(mode)?null:Buffer.byteLength(JSON.stringify(value)));assert.equal(observed[0].withinLimit,["stringify","encode"].includes(mode)?null:true);
   assert.doesNotMatch(JSON.stringify(observed),/PRIVATE_|technical/);
  }
+});
+
+test("owned fast guards transfer journal facts and release unconsumed and failed tokens on close",async()=>{
+ const {createMixedProgressAcknowledgments,createProxyControlCollector}=await import("./browser-control-collector.mjs"),{createMixedTechnicalOwner}=await import("./mixed-technical-gzip.mjs"),{begin}=await openPrefixFixture();
+ for(const mode of ["confirmed","unconsumed","changed-principal"]){
+  const current=structuredClone(begin);current.failures=[];const contextId=current.nativeContext.contextId,proxy=createProxyControlCollector({contextId});proxy.installed();
+  const owner=createMixedTechnicalOwner({contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});
+  const observer=createMixedProgressAcknowledgments({technicalOwner:owner,input:()=>owner.capture(()=>current),application:()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0}),acknowledge:()=>assert.fail("ordinary fast guard does not read metadata")});
+  const token=await observer.check();assert.equal(owner.stats().liveCuts,0,"whole begin cut is no longer retained by an ordinary token");
+  if(mode==="confirmed")assert.equal(observer.confirm(token),true);
+  if(mode==="changed-principal"){current.nativeContext.principalEpoch.observedSetCookieResponses=1;assert.throws(()=>observer.confirm(token));}
+  observer.close();const snapshot=observer.snapshot();assert.equal(snapshot.candidateRepresentationProtocol,"mixed-progress-technical-gzip-v1");assert.equal(snapshot.failed===0,mode==="confirmed");assert.ok(owner.stats().retainedBytes>0,"closed evidence remains charged until consumed");
+  observer.releaseSnapshot();assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);assert.equal(proxy.reserveTemporaryObservation(33554432),true);proxy.releaseTemporaryObservation(33554432);assert.equal(proxy.reserveTemporaryRecords(10000),true);proxy.releaseTemporaryRecords(10000);assert.throws(()=>observer.confirm(token));
+ }
+});
+
+test("closing an owned pending acknowledgment fails once and late completion cannot revive cut leases",async()=>{
+ const {createMixedProgressAcknowledgments,createProxyControlCollector}=await import("./browser-control-collector.mjs"),{createMixedTechnicalOwner}=await import("./mixed-technical-gzip.mjs"),{begin,ack}=await openPrefixFixture(),contextId=begin.nativeContext.contextId;
+ const proxy=createProxyControlCollector({contextId});proxy.installed();const owner=createMixedTechnicalOwner({contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});let finish,reads=0,args;
+ const observer=createMixedProgressAcknowledgments({technicalOwner:owner,input:()=>owner.capture(()=>begin),application:()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0}),acknowledge:value=>{reads++;args=value;return new Promise(resolve=>{finish=resolve;});}});
+ const pending=observer.check();assert.equal(reads,1);observer.close();assert.equal(owner.stats().liveCuts,0);finish({...ack,...args});await assert.rejects(pending,/closed/);assert.equal(observer.snapshot().failed,1);observer.releaseSnapshot();assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);
+});
+
+test("owned Native prefix seals its full begin and end and releases only after closed snapshot consumption",async()=>{
+ const {createMixedProgressAcknowledgments,createProxyControlCollector}=await import("./browser-control-collector.mjs"),{createMixedTechnicalOwner}=await import("./mixed-technical-gzip.mjs"),{api,begin,end,ack}=await openPrefixFixture();
+ const contextId=begin.nativeContext.contextId,proxy=createProxyControlCollector({contextId});proxy.installed();const owner=createMixedTechnicalOwner({contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});let current=begin,reads=0;
+ const observer=createMixedProgressAcknowledgments({technicalOwner:owner,input:()=>owner.capture(()=>current),application:()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0}),acknowledge:async({checkpointOrdinal,deadlineMs})=>{reads++;current=end;const startedAtMs=performance.now(),finishedAtMs=startedAtMs+0.01;return {...structuredClone(ack),checkpointOrdinal,startedAtMs,finishedAtMs,elapsedMs:finishedAtMs-startedAtMs,deadlineMs,deadlineBudgetMs:deadlineMs-startedAtMs};}});
+ const token=await observer.check();assert.equal(reads,1);assert.equal(owner.stats().liveCuts,0);assert.equal(observer.confirm(token),true);observer.close();const snapshot=observer.snapshot();assert.equal(snapshot.failed,0);assert.equal(snapshot.prefixes.length,1);assert.equal(api.validateMixedNativePrefix(snapshot.prefixes[0]),true);assert.deepEqual(snapshot.prefixes[0].begin,begin);assert.deepEqual(snapshot.prefixes[0].end,end);assert.ok(owner.stats().retainedBytes>0);observer.releaseSnapshot();assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);
 });

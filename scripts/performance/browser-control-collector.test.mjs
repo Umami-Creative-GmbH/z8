@@ -1829,7 +1829,7 @@ test('manual and annual inspection deadlines are exact producer observations rat
 test("mixed technical owner shares the proxy budget and rejects foreign cut leases",async()=>{
  const {createMixedTechnicalOwner}=await import("./mixed-technical-gzip.mjs");
  const proxy=createProxyControlCollector({contextId,origin});proxy.installed();
- const owner=createMixedTechnicalOwner({contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation});
+ const owner=createMixedTechnicalOwner({contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});
  const value={failures:[],responses:[],proxy:[],nativeContext:{contextId},coverage:{installed:true},browserRevision:chromiumSWRRevision,browserEventOrdinal:0};
  const cut=owner.capture(()=>value);assert.equal(owner.stats().liveCuts,1);
  assert.throws(()=>owner.encode({...cut}));
@@ -1837,7 +1837,7 @@ test("mixed technical owner shares the proxy budget and rejects foreign cut leas
  assert.equal(proxy.reserveTemporaryObservation(33554432),false);
  owner.releaseCut(cut);packed.release();assert.equal(owner.stats().retainedBytes,0);
  assert.equal(proxy.reserveTemporaryObservation(33554432),true);proxy.releaseTemporaryObservation(33554432);
- const denied=createMixedTechnicalOwner({contextId,reserve:()=>false,release:()=>{throw Error("unexpected release");}});
+ const denied=createMixedTechnicalOwner({contextId,reserve:()=>false,release:()=>{throw Error("unexpected release");},reserveRecords:()=>true,releaseRecords:()=>{}});
  assert.throws(()=>denied.capture(()=>value));assert.equal(denied.stats().retainedBytes,0);
 });
 
@@ -1846,7 +1846,7 @@ test("owned progress projection preserves the complete seven fields and attaches
  const proxy=createProxyControlCollector({contextId,origin});proxy.installed();
  const collector=createBrowserControlCollector({contextId,origin,browserRevision:chromiumSWRRevision,proxyObservation:proxy.snapshot});collector.installed();
  const document=testTeamAnnualDocument(contextId,origin).journal,expected=collector.progressInput();expected.nativeContext.documentJournal=structuredClone(document);
- const owner=createMixedTechnicalOwner({contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation});
+ const owner=createMixedTechnicalOwner({contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});
  const cut=collector.progressInput({owner,documentJournal:()=>document});assert.deepEqual(cut,expected);assert.equal(owner.stats().liveCuts,1);
  document.executionEvents[0].frameId="changed-after-clone";assert.equal(cut.nativeContext.documentJournal.executionEvents[0].frameId,"frame");
  owner.releaseCut(cut);assert.equal(owner.stats().retainedBytes,0);
@@ -1859,6 +1859,18 @@ test("owned nonempty progress cut matches ordinary proof and keeps proxy source 
  const id="a".repeat(32)+".1";proxy.request(id,{url,method:"GET",headers,traceId:"a".repeat(32)});proxy.response(id,{status:200,headers:responseHeaders});proxy.bytes(id,Buffer.from(body));proxy.end(id);
  collector.request(event("owned-control",1));collector.requestExtra({requestId:"owned-control",headers});collector.response({requestId:"owned-control",response:{status:200,headers:{...responseHeaders,[controlResponseHeader]:id},fromDiskCache:false,fromServiceWorker:false}});collector.responseExtra({requestId:"owned-control",statusCode:200,headers:{...responseHeaders,[controlResponseHeader]:id}});collector.failed({requestId:"owned-control",errorText:"net::ERR_ABORTED",canceled:true,timestamp:2});await tick();await tick();
  const expected=collector.progressInput(),document=testTeamAnnualDocument(contextId,origin).journal;expected.nativeContext.documentJournal=structuredClone(document);
- const owner=createMixedTechnicalOwner({contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation}),cut=collector.progressInput({owner,documentJournal:()=>document});assert.deepEqual(cut,expected);assert.equal(cut.failures[0].bodyProof.complete,true);
+ const owner=createMixedTechnicalOwner({contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords}),cut=collector.progressInput({owner,documentJournal:()=>document});assert.deepEqual(cut,expected);assert.equal(cut.failures[0].bodyProof.complete,true);
  const encoded=owner.encode(cut);assert.ok(encoded.bytes.length<4194304);encoded.release();owner.releaseCut(cut);assert.equal(owner.stats().retainedBytes,0);assert.equal(proxy.reserveTemporaryObservation(33554432),true);proxy.releaseTemporaryObservation(33554432);
+});
+
+test("retained cut records share the actual proxy allowance and closing never releases another owner's records",async()=>{
+ const {createMixedTechnicalOwner}=await import("./mixed-technical-gzip.mjs");
+ const proxy=createProxyControlCollector({contextId,origin});proxy.installed();
+ const owner=createMixedTechnicalOwner({contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});
+ const value={failures:Array.from({length:6000},(_,i)=>({requestId:"record-"+i})),responses:[],proxy:[],nativeContext:{contextId},coverage:{installed:true},browserRevision:chromiumSWRRevision,browserEventOrdinal:6000};
+ const cut=owner.capture(()=>value);assert.equal(owner.stats().retainedRecords,6000);
+ assert.throws(()=>owner.capture(()=>value));assert.equal(owner.stats().retainedRecords,6000);assert.equal(owner.stats().liveCuts,1);
+ assert.equal(proxy.reserveTemporaryRecords(3999),true);owner.close();assert.equal(owner.stats().retainedRecords,0);assert.equal(owner.stats().retainedBytes,0);
+ assert.equal(proxy.reserveTemporaryRecords(6002),false);proxy.releaseTemporaryRecords(3999);assert.equal(proxy.reserveTemporaryRecords(10000),true);proxy.releaseTemporaryRecords(10000);owner.releaseCut(cut);owner.close();
+ assert.equal(proxy.reserveTemporaryObservation(33554432),true);proxy.releaseTemporaryObservation(33554432);
 });
