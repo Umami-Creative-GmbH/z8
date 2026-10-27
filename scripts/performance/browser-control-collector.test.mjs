@@ -1560,13 +1560,14 @@ test('annual response selection owns the exact response object and preserves the
 test('annual response selection rejects malformed copied and foreign response metadata without private leakage',async()=>{
 	const source=testBrowserBinding('c'.repeat(40)).teamAnnualAction,frame={};let pool=0;
 	for(const mutate of [v=>({...v}),v=>({...v,status:()=>500}),v=>({...v,headers:()=>({'x-z8-fixture-response-id':'PRIVATE_SECRET'})}),v=>({...v,request:()=>{throw Error('PRIVATE_SENTINEL');}})]){
+		const beforePool=pool;
 		const observer=createTeamAnnualResponseSelection({contextId,origin,source,reserve:n=>{pool+=n;return true;},release:n=>{pool-=n;},requestCount:()=>0,packetFor:()=>null,browserFor:()=>null,contextFor:()=>null,mainFrame:()=>frame});
 		const arm=observer.arm({path:'/en/analytics/team-performance',timeoutMs:20});
 		const request={url:()=>origin+'/en/analytics/team-performance',method:()=>"POST",headers:()=>({'next-action':'PRIVATE_ACTION'}),postData:()=>"PRIVATE_BODY",frame:()=>frame,redirectChain:()=>[]};
 		const response={url:request.url,status:()=>200,request:()=>request,headers:()=>({'x-z8-fixture-response-id':'a'.repeat(32)+'.1'})};
 		observer.response(mutate(response));
 		await assert.rejects(observer.read(arm,{...response}),error=>!String(error).includes('PRIVATE_'));
-		assert.doesNotMatch(JSON.stringify(observer.snapshot()),/PRIVATE_|BODY|ACTION/);observer.close();assert.equal(pool,0);
+		assert.doesNotMatch(JSON.stringify(observer.snapshot()),/PRIVATE_|BODY|ACTION/);observer.close();assert.equal(pool,beforePool+16384);
 	}
 });
 
@@ -1636,8 +1637,8 @@ test('annual response pending close and original deadline retain no private resp
 		const arm=observer.arm({path:'/en/analytics/team-performance',timeoutMs:20}),request={url:()=>target,method:()=>"POST",headers:()=>({'next-action':'40'+'a'.repeat(40)}),postData:()=>"[]",frame:()=>frame,redirectChain:()=>[]},response={url:()=>target,status:()=>200,request:()=>request,headers:()=>({'x-z8-fixture-response-id':id,'content-type':'text/x-component'})};
 		observer.response(response);const pending=observer.read(arm,response);assert.equal(observer.snapshot().pending,1);
 		if(mode==='close')observer.close();
-		await assert.rejects(pending,/Annual team/);observer.close();assert.equal(observer.snapshot().pending,0);assert.equal(observer.snapshot().errors,1);assert.equal(pool,0);
-		assert.equal(observer.snapshot().retainedBytes,0);await assert.rejects(observer.read(arm,response),'retaining real keys after close cannot reuse forgotten private observations');
+		await assert.rejects(pending,/Annual team/);observer.close();assert.equal(observer.snapshot().pending,0);assert.equal(observer.snapshot().errors,1);assert.equal(pool,16384);
+		assert.equal(observer.snapshot().diagnostic.firstFailureSite,mode);assert.equal(observer.snapshot().retainedBytes,16384);await assert.rejects(observer.read(arm,response),'retaining real keys after close cannot reuse forgotten private observations');
 	}
 });
 
@@ -1647,6 +1648,24 @@ test('annual selection captures only actual existing document and execution fact
 		f.nondefault();const after=f.tracker.selectedDocument();assert.equal(after.document.executionContextId,3);assert.equal(after.document.executionEventOrdinalAfter,6);assert.equal(after.journal.executionEvents.at(-1).executionContextId,4);assert.equal(f.evaluations(),0);
 		after.document.frameId='foreign';after.journal.executionEvents.length=0;assert.equal(f.tracker.selectedDocument().document.frameId,'frame');assert.equal(f.tracker.selectedDocument().journal.executionEvents.length,6);
 	}finally{f.close();}
+});
+
+test('annual diagnostic distinguishes passive failure from read rejection and keeps its first failure after close',async()=>{
+	let pool=0;const source=testBrowserBinding('c'.repeat(40)).teamAnnualAction,frame={},observer=createTeamAnnualResponseSelection({contextId,origin,source,reserve:n=>{pool+=n;return true;},release:n=>{pool-=n;},requestCount:()=>4,mainFrame:()=>frame});
+	const handle=observer.arm({path:'/en/analytics/team-performance',timeoutMs:50}),request={method:()=>"POST",url:()=>origin+'/en/analytics/team-performance',headers:()=>({'next-action':'40'+'a'.repeat(40)}),redirectChain:()=>[],frame:()=>frame},response={request:()=>request,url:request.url,status:()=>500};
+	observer.response(response);await assert.rejects(observer.read(handle,response));observer.close();
+	const d=observer.snapshot().diagnostic;assert.equal(d.firstFailureSite,'response');assert.equal(d.firstFailureStage,'response-identity');assert.equal(d.selectedProxyIdSha256,null);assert.equal(d.armRequestOrdinal,4);assert.equal(d.candidateResponses,1);assert.equal(d.readCalls,1);assert.equal(pool,16384);assert.equal(observer.snapshot().retainedBytes,16384);assert.doesNotMatch(JSON.stringify(d),/next-action|localhost|SECRET/);
+});
+
+test('annual diagnostic distinguishes CORE failure and transfers its one immutable row into the existing receipt charge',async()=>{
+	const rejected=await annualProxyFixture({failed:true,readFailure:true});try{assert.equal(rejected.proxy.annualTeamSnapshot().diagnostic,null);await assert.rejects(rejected.proxy.readAnnualTeam(rejected.handle,rejected.response));rejected.proxy.closeTeamValues();const d=rejected.proxy.annualTeamSnapshot().diagnostic;assert.equal(d.firstFailureSite,'notify');assert.equal(d.firstFailureStage,'notify-core');assert.equal(d.coreReturned,false);assert.equal(d.projectionKnown,true);assert.equal(d.selectedProxyIdSha256,segmentHash(rejected.id));assert.equal(rejected.proxy.annualTeamSnapshot().retainedBytes,16384);}finally{rejected.proxy.closeTeamValues();}
+	const accepted=await annualProxyFixture();try{await assert.rejects(accepted.proxy.readAnnualTeam({...accepted.handle},accepted.response));const result=await accepted.proxy.readAnnualTeam(accepted.handle,accepted.response);accepted.proxy.closeTeamValues();const state=accepted.proxy.annualTeamSnapshot();assert.equal(state.retainedBytes,1048576);assert.equal(state.diagnostic,result.annualDiagnostic);assert.equal(state.diagnostic.firstFailureSite,'read');assert.equal(state.diagnostic.stage,'published');assert.equal(state.diagnostic.selectedProxyIdSha256,segmentHash(accepted.id));assert.equal(state.diagnostic.selectedBrowserIdSha256,segmentHash('selected'));assert.ok(Object.isFrozen(state.diagnostic));
+		const maximum=structuredClone(state.diagnostic);for(const key of ['candidateProxyIdSha256','selectedProxyIdSha256','selectedBrowserIdSha256'])maximum[key]='f'.repeat(64);for(const key of ['armRequestOrdinal','candidateResponses','recordedResponses','readCalls','packetOrdinal','requestBodyBytes','status','redirects'])maximum[key]=Number.MAX_VALUE;maximum.stage='response-document';maximum.firstFailureSite='response';maximum.firstFailureStage='response-identity';const charged=Buffer.byteLength(JSON.stringify(maximum))*8+2048;assert.ok(charged<=16384,`maximum fixed diagnostic charge ${charged}`);console.log(JSON.stringify({diagnosticMaximumChargedBytes:charged,reservationBytes:16384}));assert.doesNotMatch(JSON.stringify(state.diagnostic),/PRIVATE_|localhost|employeeCount|organizationTotal/);
+	}finally{accepted.proxy.closeTeamValues();}
+});
+
+test('annual diagnostic records a genuine selected response even when a prior passive error rejects its read',async()=>{
+	const f=await annualProxyFixture();try{f.proxy.observeAnnualResponse({...f.response,status:()=>500});await assert.rejects(f.proxy.readAnnualTeam(f.handle,f.response));f.proxy.closeTeamValues();const d=f.proxy.annualTeamSnapshot().diagnostic;assert.equal(d.firstFailureSite,'response');assert.equal(d.firstFailureStage,'response-identity');assert.equal(d.candidateResponses,2);assert.equal(d.recordedResponses,1);assert.equal(d.handleKnown,true);assert.equal(d.responseKnown,true);assert.equal(d.selectedProxyIdSha256,segmentHash(f.id));assert.equal(d.coreReturned,null);}finally{f.proxy.closeTeamValues();}
 });
 
 test('context snapshots preserve the exact phase clock and request certificates independently of caller mutation',()=>{
