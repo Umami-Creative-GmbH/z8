@@ -264,6 +264,85 @@ function clockDiagnosticPage(){
 	return {page,dom,expected,status,writes:()=>writes};
 }
 
+function clockActionEvent(page,action,body){
+	const request={headers:()=>({"next-action":action}),url:()=>"http://localhost/PRIVATE_ACTION_PATH",method:()=>"POST"};
+	page.emit("request",request);
+	return {request,respond(){page.emit("response",{request:()=>request,url:()=>request.url(),status:()=>200,text:()=>body});}};
+}
+
+test("public clock attempt preserves status delivery when a later unrelated action replaces the latest read",async()=>{
+	const f=clockDiagnosticPage(),controls=await openPublicHeaderClock(f.page,{origin:"http://localhost",expectedActor:f.expected,phase:"baseline",timeoutMs:50});
+	try{
+		await controls.prepare("in");
+		clockActionEvent(f.page,"PRIVATE_STATUS_ACTION",Promise.resolve('{"hasEmployee":true,"isClockedIn":false}')).respond();
+		await new Promise(setImmediate);
+		clockActionEvent(f.page,"PRIVATE_OTHER_ACTION",Promise.resolve('{"unrelated":"PRIVATE_VALUE"}')).respond();
+		await new Promise(setImmediate);
+		const d=controls.snapshot();assert.equal(d.lastStatusRead.parseOutcome,"unrecognized");
+		assert.equal(d.attemptActionReads.completeness,"known");assert.equal(d.attemptActionReads.records.length,2);
+		const [status,other]=d.attemptActionReads.records;
+		assert.equal(status.actionHeaderSha256,createHash("sha256").update("PRIVATE_STATUS_ACTION").digest("hex"));
+		assert.equal(status.parseOutcome,"status-known");assert.equal(status.isClockedIn,false);assert.equal(status.deliveredToStatusCache,true);assert.equal(status.pending,false);
+		assert.equal(other.parseOutcome,"unrecognized");assert.equal(other.deliveredToStatusCache,false);assert.ok(status.completedEventOrdinal<other.requestEventOrdinal);
+		assert.equal(status.carryIn,false);assert.equal(status.requestDocumentGeneration,d.documentGeneration);
+		assert.equal(await controls.state(),"out");assert.equal(/PRIVATE_|localhost/.test(JSON.stringify(d)),false);
+	}finally{controls.dispose();}
+});
+
+test("public clock history carries pending reads across prepare and separates no response, failure, OUT and IN",async()=>{
+	const f=clockDiagnosticPage(),controls=await openPublicHeaderClock(f.page,{origin:"http://localhost",expectedActor:f.expected,phase:"baseline",timeoutMs:50});
+	try{
+		let finish;const carried=clockActionEvent(f.page,"PRIVATE_CARRY_ACTION",new Promise(resolve=>{finish=resolve;}));carried.respond();
+		f.page.emit("requestfailed",carried.request);
+		const prepared=await controls.prepare("in");
+		let d=controls.snapshot();assert.equal(d.attemptActionReads.records.length,1);const original=d.attemptActionReads.records[0];
+		assert.equal(original.carryIn,true);assert.equal(original.pending,true);assert.equal(original.failure,"request-failed");assert.ok(original.requestEventOrdinal<d.attempt.prepareEventOrdinal);
+		clockActionEvent(f.page,"PRIVATE_NEVER_RESPONDS",Promise.resolve(""));
+		const failed=clockActionEvent(f.page,"PRIVATE_FAILED_ACTION",Promise.resolve(""));f.page.emit("requestfailed",failed.request);
+		clockActionEvent(f.page,"PRIVATE_OUT_ACTION",Promise.resolve('{"hasEmployee":true,"isClockedIn":false}')).respond();
+		clockActionEvent(f.page,"PRIVATE_IN_ACTION",Promise.resolve('{"hasEmployee":true,"isClockedIn":true}')).respond();
+		await new Promise(setImmediate);assert.equal(await controls.state(),"out","The existing ready DOM wins even when a status IN was delivered.");
+		d=controls.snapshot();const rows=d.attemptActionReads.records;
+		assert.equal(rows[1].parseOutcome,"request-pending");assert.equal(rows[1].responseEventOrdinal,null);assert.equal(rows[1].pending,true);
+		assert.equal(rows[2].parseOutcome,"request-failed");assert.equal(rows[2].pending,false);assert.ok(rows[2].failedEventOrdinal>rows[2].requestEventOrdinal);
+		assert.equal(rows[3].isClockedIn,false);assert.equal(rows[4].isClockedIn,true);assert.equal(rows[4].deliveredToStatusCache,true);
+		assert.equal(d.cachedStatus.isClockedIn,true);assert.equal(d.lastDOM.state,"out");
+		assert.equal((await prepared.submit()).success,true);await controls.prepare("out");
+		const reset=controls.snapshot();assert.equal(reset.attemptActionReads.records.length,2);assert.equal(reset.attemptActionReads.records[0].requestEventOrdinal,original.requestEventOrdinal);assert.equal(reset.attemptActionReads.records[0].attemptPrepareEventOrdinal,reset.attempt.prepareEventOrdinal);assert.equal(reset.attemptActionReads.records[0].requestAttemptPrepareEventOrdinal,null);
+		f.page.emit("framenavigated",{parentFrame:()=>null});finish('{"hasEmployee":true,"isClockedIn":false}');await new Promise(setImmediate);
+		const completed=controls.snapshot().attemptActionReads.records[0];assert.equal(completed.requestEventOrdinal,original.requestEventOrdinal);assert.equal(completed.requestDocumentGeneration,original.requestDocumentGeneration);assert.ok(completed.completedDocumentGeneration>completed.requestDocumentGeneration);assert.equal(completed.pending,false);assert.equal(completed.failure,"request-failed");
+		assert.equal(/PRIVATE_|localhost/.test(JSON.stringify(controls.snapshot())),false);
+	}finally{controls.dispose();assert.equal(f.page.listenerCount("requestfailed"),0);}
+});
+
+test("public clock attempt history bounds retention and keeps overflow UNKNOWN through reset without extra page calls",async()=>{
+	const f=clockDiagnosticPage();let pageCalls=0;const evaluate=f.page.evaluate;f.page.evaluate=(...args)=>{pageCalls++;return evaluate(...args);};
+	const controls=await openPublicHeaderClock(f.page,{origin:"http://localhost",expectedActor:f.expected,phase:"baseline",timeoutMs:50});
+	try{
+		const prepared=await controls.prepare("in"),before=pageCalls;
+		for(let i=0;i<33;i++)clockActionEvent(f.page,"PRIVATE_BOUNDED_ACTION_"+i,Promise.resolve(""));
+		assert.equal(pageCalls,before);let h=controls.snapshot().attemptActionReads;
+		assert.equal(h.records.length,32);assert.equal(h.retainedBytes,32768);assert.equal(h.overflow,1);assert.equal(h.completeness,"UNKNOWN");assert.ok(Buffer.byteLength(JSON.stringify(h))<=h.byteLimit);
+		assert.equal((await prepared.submit()).success,true,"Diagnostic overflow does not change the existing usable-DOM result.");
+		await controls.prepare("out");h=controls.snapshot().attemptActionReads;assert.equal(h.records.length,32);assert.equal(h.completeness,"UNKNOWN");assert.equal(h.overflow,1);assert.equal(h.records.every(row=>row.carryIn),true);
+		const copy=controls.snapshot();copy.attemptActionReads.records[0].isClockedIn=true;assert.equal(controls.snapshot().attemptActionReads.records[0].isClockedIn,null);
+		assert.equal(/PRIVATE_|localhost/.test(JSON.stringify(controls.snapshot())),false);
+	}finally{controls.dispose();}
+});
+
+test("public clock history exposes failed body reads and rejects unknown action identities without retaining private values",async()=>{
+	const f=clockDiagnosticPage(),controls=await openPublicHeaderClock(f.page,{origin:"http://localhost",expectedActor:f.expected,phase:"baseline",timeoutMs:50});
+	try{
+		await controls.prepare("in");clockActionEvent(f.page,"PRIVATE_BODY_FAILURE",Promise.reject(Error("PRIVATE_BODY_ERROR"))).respond();await new Promise(setImmediate);
+		const row=controls.snapshot().attemptActionReads.records[0];assert.equal(row.parseOutcome,"body-unavailable");assert.equal(row.failure,"body-unavailable");assert.equal(row.pending,false);assert.equal(row.deliveredToStatusCache,false);
+		let getterCalls=0;for(const headers of [Object.create({"next-action":"PRIVATE_INHERITED"}),Object.defineProperty({},"next-action",{get(){getterCalls++;throw Error("PRIVATE_GETTER");}}),{"next-action":"x".repeat(1025)}])f.page.emit("request",{headers:()=>headers});
+		assert.equal(getterCalls,0);let h=controls.snapshot().attemptActionReads;assert.equal(h.errors,3);assert.equal(h.records.length,1);assert.equal(h.completeness,"UNKNOWN");assert.equal(await controls.state(),"out");
+		const missing={headers:()=>({"next-action":"PRIVATE_MISSING_REQUEST"})};f.page.emit("response",{request:()=>missing,url:()=>"http://localhost/PRIVATE",text:async()=>'{"hasEmployee":true,"isClockedIn":true}'});await new Promise(setImmediate);
+		h=controls.snapshot().attemptActionReads;assert.equal(h.errors,4);assert.equal(h.records.length,1);assert.equal(h.completeness,"UNKNOWN");assert.equal(controls.snapshot().cachedStatus.isClockedIn,true);assert.equal(await controls.state(),"out");
+		assert.equal(/PRIVATE_|localhost|cause|stack/.test(JSON.stringify(controls.snapshot())),false);
+	}finally{controls.dispose();}
+});
+
 test("public header clock readiness reports the existing usable DOM predicate without changing state",async()=>{
 	const {page,dom,expected}=clockDiagnosticPage(),controls=await openPublicHeaderClock(page,{origin:"http://localhost",expectedActor:expected,phase:"baseline",timeoutMs:50});
 	try{
