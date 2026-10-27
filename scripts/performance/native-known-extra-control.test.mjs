@@ -631,3 +631,38 @@ test("mixed candidate rejection hooks reuse the same classification and strict f
   const result=api.mixedNativePrefixCandidates(input,observe?value=>{row=value;}:undefined);assert.equal(result,null);return{errorReads,row};}
  const plain=run(false),observed=run(true);assert.equal(observed.errorReads,plain.errorReads);assert.ok(plain.errorReads>0);assert.equal(observed.row.site,"native-core");assert.equal(observed.row.strictMatchCount,1);assert.equal(observed.row.firstMatchedProxyIdSha256,sha(begin.proxy[1].id));assert.equal(observed.row.firstMatchedProofKnown,true);assert.equal(observed.row.firstMatchedProofComplete,true);
 });
+
+test("mixed candidate serialization diagnostics preserve the original aggregate limit and cyclic rejection",async()=>{
+ const {api,begin}=await openPrefixFixture(),oversized=structuredClone(begin);oversized.proxy[1].padding="PRIVATE_SERIALIZED_"+"x".repeat(4*1024*1024);
+ const encodedBytes=Buffer.byteLength(JSON.stringify(oversized)),oversize=[];assert.ok(encodedBytes>4*1024*1024);
+ assert.equal(api.mixedNativePrefixCandidates(oversized,row=>oversize.push(row)),null);
+ assert.equal(oversize[0].site,"input-prelude");assert.deepEqual(oversize[0].serialization,{serialized:true,encodedBytes,withinLimit:false,outcome:"over-limit"});
+ const cyclic=structuredClone(begin);cyclic.proxy[1].cycle=cyclic;const cycle=[];assert.equal(api.mixedNativePrefixCandidates(cyclic,row=>cycle.push(row)),null);
+ assert.deepEqual(cycle[0].serialization,{serialized:false,encodedBytes:null,withinLimit:null,outcome:"stringify-error"});
+ assert.doesNotMatch(JSON.stringify([oversize,cycle]),/PRIVATE_|padding|cycle|http:|session/);
+});
+
+test("mixed candidate serialization facts remain unknown before the original digest and preserve default success",async()=>{
+ const {api,begin}=await openPrefixFixture(),early=[];assert.equal(api.mixedNativePrefixCandidates(undefined,row=>early.push(row)),null);assert.equal(early[0].serialization,null);
+ const input=structuredClone(begin);input.failures[0].failedEventOrdinal=0;const expectedBytes=Buffer.byteLength(JSON.stringify(input)),rows=[];
+ assert.equal(api.mixedNativePrefixCandidates(input,row=>{rows.push(row);throw Error("PRIVATE_OBSERVER");}),null);assert.equal(rows.length,1);assert.equal(rows[0].site,"failure-census");
+ assert.deepEqual(rows[0].serialization,{serialized:true,encodedBytes:expectedBytes,withinLimit:true,outcome:"complete"});assert.doesNotMatch(JSON.stringify(rows),/PRIVATE_OBSERVER/);
+ assert.deepEqual(api.mixedNativePrefixCandidates(structuredClone(begin)),api.mixedNativePrefixCandidates(structuredClone(begin),()=>assert.fail("positive candidate has no rejection hook")));
+});
+
+test("source-bound digest serialization diagnostics report once and preserve encoding, hashing and callback failures",async()=>{
+ const {readFile}=await import("node:fs/promises"),{types}=await import("node:util"),source=await readFile(new URL("./control-cancellation-evidence.mjs",import.meta.url),"utf8");
+ const start=source.indexOf("const nativeContextDigest ="),end=source.indexOf("\n};",start)+4;assert.ok(start>0&&end>start);const definition=source.slice(start,end);
+ for(const mode of ["success","stringify","encode","hash"]){
+  const calls={stringify:0,encode:0,hash:0},observed=[],value={technical:true};
+  const encode={from:text=>{calls.encode++;if(mode==="encode")throw Error("PRIVATE_ENCODE");return Buffer.from(text);}},json={stringify:input=>{calls.stringify++;if(mode==="stringify")throw Error("PRIVATE_STRINGIFY");return JSON.stringify(input);}},bodyHash=bytes=>{calls.hash++;if(mode==="hash")throw Error("PRIVATE_HASH");return sha(bytes);};
+  // Execute the actual private source, with only its IO-free primitives replaced for genuine fault injection.
+  const digest=Function("Buffer","JSON","controlCancellationPolicy","bodySha256","utilTypes",definition+";return nativeContextDigest;")(encode,json,controlCancellationPolicy,bodyHash,types);
+  const result=digest(value,row=>{observed.push(row);throw Error("PRIVATE_CALLBACK");});
+  assert.equal(observed.length,1,mode);assert.equal(calls.stringify,1);assert.equal(calls.encode,mode==="stringify"?0:1);assert.equal(calls.hash,["stringify","encode"].includes(mode)?0:1);
+  assert.equal(result,mode==="success"?sha(Buffer.from(JSON.stringify(value))):null);
+  assert.equal(observed[0].outcome,mode==="success"?"complete":mode+"-error");assert.equal(observed[0].serialized,mode!=="stringify");
+  assert.equal(observed[0].encodedBytes,["stringify","encode"].includes(mode)?null:Buffer.byteLength(JSON.stringify(value)));assert.equal(observed[0].withinLimit,["stringify","encode"].includes(mode)?null:true);
+  assert.doesNotMatch(JSON.stringify(observed),/PRIVATE_|technical/);
+ }
+});
