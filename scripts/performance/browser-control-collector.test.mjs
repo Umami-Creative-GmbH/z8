@@ -1,4 +1,4 @@
-import {testBrowserBinding,testEmptyTemporaryValues,testTeamAnnualDocument} from "./control-cancellation-test-fixtures.mjs";
+import {testBrowserBinding,testBrowserMetadata,testEmptyTemporaryValues,testTeamAnnualDocument} from "./control-cancellation-test-fixtures.mjs";
 import { temporaryValueObservation } from "./team-temporary-value-authority.mjs";
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
@@ -1005,7 +1005,7 @@ test("the actual compiled unmarked fallback is passed identically to browser and
 });
 
 test("segment readers receive actual request/response facts and the verified compiled deployment binding", async()=>{
-	const compiledBinding=testBrowserBinding("b".repeat(40),{...testBrowserBinding("b".repeat(40)),compiledManifestSha256:"c".repeat(64)});
+	const compiledBinding=testBrowserBinding("b".repeat(40),{...testBrowserMetadata(),compiledManifestSha256:"c".repeat(64)});
 	const staged='0:{"t":{"t":{"s":"","d":{"r":null,"p":"$@3","v":null,"s":"$4"}}},"a":"$@5","u":"$@6"}\n3:"$undefined"\n4:X\n4:60\n4:C\n5:null\n6:false\n';
 	const requestHeaders={...headers,"next-router-segment-prefetch":"/_index"};
 	const segmentHeaders={...responseHeaders,"x-nextjs-postponed":"2","x-nextjs-deployment-id":compiledBinding.compiledBuild};
