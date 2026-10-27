@@ -1621,3 +1621,43 @@ test("dependency cost census distinguishes exact repeated contexts from new acti
 	assert.ok(anchor.modelCostObservation.dependencies.activeSameOwner+anchor.modelCostObservation.dependencies.activeDifferentOwner>0);
 	assert.equal(anchor.closedEagerMemo.published,0,"Counting an active dependency never makes its conditional result publishable.");
 });
+// Append to the existing registered proof test only after Root releases the worktree.
+test("outer shared-work failure retains the completed child's bounded phase observation",()=>{
+ const many=Array(50000).fill(null);
+ const inner=Buffer.from('#0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:{r:many,p:false,v:null}}}})+'\n');
+ const outer=Buffer.concat([Buffer.from('0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:{r:many,p:false,v:null}}},p:"$1"})+'\n1:R\n1:o'+inner.length.toString(16)+','),inner,Buffer.from('1:C\n')]);
+ const result=inspectRequiredFlightBody(outer,{cachedNavigations:true});
+ assert.equal(result.complete,false);assert.equal(result.reason,"model-limit");
+ const limit=result.modelLimitObservation,child=limit.embeddedModelCostObservation;
+ assert.equal(limit.sharedModelSteps,100001);assert.equal(child.inspectionDepth,1);
+ assert.equal(child.chargedWork,limit.embeddedModelSteps);
+ assert.equal(child.phases.reduce((sum,row)=>sum+row.work,0),child.chargedWork);
+ assert.equal(limit.modelCostObservation.chargedWork+child.chargedWork,100001);
+ assert.equal(child.embeddedWork,0);
+ assert.equal(child.phases.length,7);assert.ok(child.phases.every(row=>row.depthWork.length===65));
+ assert.doesNotMatch(JSON.stringify(child),/"value"|\$[a-f0-9]/);
+});
+
+test("a nonembedded model limit retains null child evidence and its own unchanged charged budget",()=>{
+ const bytes=Buffer.from('#0:'+JSON.stringify({t:{t:{s:"en",d:{r:Array(100001).fill(null),p:false,v:null}}}})+'\n');
+ const result=inspectRequiredFlightBody(bytes,{cachedNavigations:true});
+ assert.equal(result.complete,false);assert.equal(result.reason,"model-limit");
+ const limit=result.modelLimitObservation;
+ assert.equal(limit.guard,"queue-width");assert.equal(limit.embeddedModelSteps,0);
+ assert.equal(limit.embeddedModelCostObservation,null);
+ assert.equal(limit.modelCostObservation.embeddedWork,0);
+ assert.equal(limit.modelCostObservation.chargedWork,limit.sharedModelSteps);
+ assert.ok(limit.sharedModelSteps<100000,"The existing queue-width guard stays earlier than the shared work cap.");
+});
+
+test("an incomplete child keeps its existing failure wrapper without fabricating a completed outer child receipt",()=>{
+ const inner=Buffer.from('#0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:{r:Array(100001).fill(null),p:false,v:null}}}})+'\n');
+ const outer=Buffer.concat([Buffer.from('0:{"q":"","i":false,"t":{"t":{"s":"en","d":{"r":"MAIN","p":false,"v":null}}},"p":"$1"}\n1:R\n1:o'+inner.length.toString(16)+','),inner,Buffer.from('1:C\n')]);
+ const result=inspectRequiredFlightBody(outer,{cachedNavigations:true});
+ assert.equal(result.complete,false);assert.equal(result.reason,"embedded-runtime-prefetch-incomplete");
+ assert.equal(result.embeddedReason,"model-limit");assert.equal(Object.hasOwn(result,"modelLimitObservation"),false);
+ const limit=result.embeddedModelLimitObservation;
+ assert.equal(limit.recursionLevel,1);assert.equal(limit.guard,"queue-width");
+ assert.equal(limit.embeddedModelCostObservation,null);assert.equal(limit.modelCostObservation.embeddedWork,0);
+ assert.equal(limit.modelCostObservation.inspectionDepth,1);
+});
