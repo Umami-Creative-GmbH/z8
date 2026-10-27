@@ -167,6 +167,17 @@ export function mixedOwnedArray(count,construct,{bytesPerEntry=8,records=0}={}){
  try{const value=construct();bind(lease,value);return value;}catch{lease.release();throw bad();}
 }
 export function mixedOwnedHashInput(value){return construction&&typeof value==='string'?mixedOwnedUTF8(value):value;}
+export function mixedOwnedFreeze(value){
+ must(construction!==null);const workspace=collect(charge(construction.state,vectorBase,'immutable-snapshot-key-vectors')),ancestors=new Set();let nodes=0;
+ const freeze=(item,depth)=>{
+  must(depth<=limits.depth&&++nodes<=1000000);if(item===null||typeof item!=='object')return;
+  must(!types.isProxy(item)&&!ancestors.has(item));if(Object.isFrozen(item))return;
+  const keys=Reflect.ownKeys(item);must(keys.length<=10001);ancestors.add(item);
+  for(const key of keys){const descriptor=Object.getOwnPropertyDescriptor(item,key);must(descriptor&&Object.hasOwn(descriptor,'value'));freeze(descriptor.value,depth+1);}
+  ancestors.delete(item);Object.freeze(item);
+ };
+ try{freeze(value,0);return value;}finally{workspace.release();}
+}
 export function mixedOwnedJSONString(value){
  if(!construction)return JSON.stringify(value);
  const {state}=construction,m=measure(value,state,null,limits.owner),lease=collect(charge(state,2*m.bytes,'snapshot-UTF16-string'));

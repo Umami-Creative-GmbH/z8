@@ -1608,6 +1608,7 @@ export async function installBrowserControlCollector({
   acknowledgeMixedProgress(options){if(!progress)throw Error("Mixed progress observation was not installed before app IO.");return progress.check(options);},
   confirmMixedProgress(token){if(!progress)throw Error("Mixed progress observation is unavailable.");return progress.confirm(token);},
   releaseMixedProgressSnapshot(){progress?.releaseSnapshot();},
+  validateMixedProgress(verify){if(!technicalOwner)throw Error("Mixed validation owner is unavailable.");return technicalOwner.run(verify);},
   snapshot(){return {...collector.snapshot(),annualTeam:proxy.annualTeamSnapshot(),temporaryValueSourceReads:teamScheduler.snapshot(),...(progress?{mixedProgress:progress.snapshot(),mixedDocumentJournal:documentAcknowledgment.snapshot()}:{})};},
 		async close({ deadlineMs } = {}) {
 			try {
@@ -2262,7 +2263,7 @@ export function createMixedProgressAcknowledgments({input,application,acknowledg
    released=true;const saved=closedSnapshot;closedSnapshot=null;drop(saved);for(const snapshot of exportedSnapshots){exportedSnapshots.delete(snapshot);drop(snapshot);}tokens.clear();checks.length=prefixes.length=0;firstFailure=null;technicalOwner?.close();
   },
  };
- function snapshotValue(){return structuredClone({protocol:"mixed-native-progress-observations-v1",candidateRepresentationProtocol:mixedNativeProgressPolicy.candidateRepresentationProtocol,contextId,authoritySha256,guardChecks,attempted,failed,overflow,retainedBytes:bytes(),checks:[...checks].sort((a,b)=>a.ordinal-b.ordinal),prefixes:[...prefixes].sort((a,b)=>a.checkpointOrdinal-b.checkpointOrdinal),...(firstFailure?{firstFailure}: {})});}
+ function snapshotValue(){const value=structuredClone({protocol:"mixed-native-progress-observations-v1",candidateRepresentationProtocol:mixedNativeProgressPolicy.candidateRepresentationProtocol,contextId,authoritySha256,guardChecks,attempted,failed,overflow,retainedBytes:bytes(),checks:mixedOwnedArray(checks.length,()=>[...checks].sort((a,b)=>a.ordinal-b.ordinal),{bytesPerEntry:16}),prefixes:mixedOwnedArray(prefixes.length,()=>[...prefixes].sort((a,b)=>a.checkpointOrdinal-b.checkpointOrdinal),{bytesPerEntry:16}),...(firstFailure?{firstFailure}: {})});return technicalOwner?mixedOwnedFreeze(value):value;}
 }
 const progressFailureIdsForCollector=input=>mixedOwnedArray(input.failures.length,()=>input.failures.map(row=>row.requestId).sort(),{bytesPerEntry:16});
-import {mixedOwnedClone as structuredClone,mixedOwnedRows,mixedOwnedArray,mixedOwnedJSONString,mixedOwnedUTF8,createMixedTechnicalOwner} from "./mixed-technical-gzip.mjs";
+import {mixedOwnedClone as structuredClone,mixedOwnedRows,mixedOwnedArray,mixedOwnedJSONString,mixedOwnedUTF8,mixedOwnedFreeze,createMixedTechnicalOwner} from "./mixed-technical-gzip.mjs";

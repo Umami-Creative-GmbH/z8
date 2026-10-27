@@ -23,6 +23,7 @@ import {
 	mixedTransportIsComplete,
 	runMixedReader,
 	requireCleanMixedProgress,
+	releaseMixedProgressSnapshots,
 	settleMixedTransports,
 } from "./mixed-load-observation.mjs";
 import { openPublicHeaderClock } from "./public-header-clock.mjs";
@@ -851,9 +852,10 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 			}
 		}
 	}
+	try{
 	const completeTransport =
-		transports.length === 4 && transports.every((row) => row.browserControlEvidence?.mixedProgress?.protocol === "mixed-native-progress-observations-v1" && mixedTransportIsComplete(row) && cleanApplicationEvidence(row.traceTransport.applicationEvidence) &&
-			cleanBrowserContextEvidence(row.contextId, row.browserControlEvidence, row.rawBrowserFailedRequests,{runtime:{build:sourceCommit,browserControl:browserControlBinding},protocolSources,origin}));
+		transports.length === 4 && transports.every((row) => opened.find(item=>item.contextId===row.contextId)?.browserObservation?.validateMixedProgress(()=>row.browserControlEvidence?.mixedProgress?.protocol === "mixed-native-progress-observations-v1" && mixedTransportIsComplete(row) && cleanApplicationEvidence(row.traceTransport.applicationEvidence) &&
+			cleanBrowserContextEvidence(row.contextId, row.browserControlEvidence, row.rawBrowserFailedRequests,{runtime:{build:sourceCommit,browserControl:browserControlBinding},protocolSources,origin}))===true);
 	const completeCoverage =
 		nativeRunCoverage.complete === true &&
 		completeTransport &&
@@ -926,6 +928,7 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 		}),
 	);
 	if (!report.success) process.exitCode = 1;
+	}finally{releaseMixedProgressSnapshots(opened,transports);}
 }
 
 async function main() {
