@@ -502,3 +502,132 @@ test("every retained prefix failure row agrees with the CORE loadingFailed occur
  assert.equal(api.validateMixedNativePrefix(prefix),true,"The isolated row chronology is internally plausible before the independent census join.");
  assert.equal(api.validateMixedProgressObservations(forged,context,inputs),false,"Same-context same-ID records cannot disagree with the observed callback census.");
 });
+
+test("mixed first-failure diagnostics retain the exact pending-EOF cut without changing its rejection",async()=>{
+ const {createMixedProgressAcknowledgments}=await import("./browser-control-collector.mjs"),{begin}=await openPrefixFixture();
+ const current=structuredClone(begin);current.coverage.pendingBodies=1;delete current.proxy[1].bodyProof;
+ let inputs=0,apps=0,reads=0;const app=()=>{apps++;return {failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0};};
+ const observer=createMixedProgressAcknowledgments({input:()=>{inputs++;return current;},application:app,acknowledge:()=>{reads++;assert.fail("pending current proof cannot acknowledge");}});
+ await assert.rejects(observer.check(),{message:"Mixed browser observation lacks request-local evidence."});
+ const snapshot=observer.snapshot();assert.equal(snapshot.failed,1);assert.equal(snapshot.guardChecks,0);assert.deepEqual([inputs,apps,reads],[1,1,0]);
+ assert.equal(snapshot.firstFailure.stage,"check-live");assert.equal(snapshot.firstFailure.subreason,"candidate");
+ assert.equal(snapshot.firstFailure.cut.coverage.pendingBodies,1);assert.equal(snapshot.firstFailure.cut.latestFailure.requestIdSha256,sha("native"));
+ assert.equal(snapshot.firstFailure.cut.matchingPacket.count,1);assert.equal(snapshot.firstFailure.cut.matchingPacket.bodyProofKnown,false);assert.equal(snapshot.firstFailure.cut.matchingPacket.bodyProofComplete,null);
+ assert.equal(snapshot.firstFailure.predicates.journalsKnown,true);assert.equal(snapshot.firstFailure.predicates.candidateKnown,false);
+ assert.ok(snapshot.retainedBytes>=32768);assert.doesNotMatch(JSON.stringify(snapshot.firstFailure),/synthetic|http:|session|net::|PRIVATE/);
+ const first=structuredClone(snapshot.firstFailure);current.coverage.pendingBodies=0;current.browserEventOrdinal++;
+ await assert.rejects(observer.check(),{message:"Mixed required application observation is not clean."});assert.deepEqual(observer.snapshot().firstFailure,first);
+ assert.deepEqual([inputs,apps,reads],[1,1,0],"sticky failure still short-circuits before the old callbacks");
+});
+
+test("mixed first-failure diagnostics distinguish confirm, acknowledgment, token and journal stops",async()=>{
+ const {createMixedProgressAcknowledgments}=await import("./browser-control-collector.mjs");
+ const app=()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0});
+ {
+  const {begin}=await openPrefixFixture(),current=structuredClone(begin);current.failures=[];let reads=0;
+  const observer=createMixedProgressAcknowledgments({input:()=>current,application:app,acknowledge:()=>{reads++;assert.fail("fast");}}),token=await observer.check();
+  current.failures=structuredClone(begin.failures);current.coverage.pendingBodies=1;delete current.proxy[1].bodyProof;
+  assert.throws(()=>observer.confirm(token),{message:"Mixed browser observation lacks request-local evidence."});assert.equal(reads,0);
+  assert.equal(observer.snapshot().firstFailure.stage,"confirm-live");assert.equal(observer.snapshot().firstFailure.cut.coverage.pendingBodies,1);
+ }
+ {
+  const {begin}=await openPrefixFixture(),order=[];
+  const observer=createMixedProgressAcknowledgments({input:()=>{order.push("input");return begin;},application:()=>{order.push("application");return app();},acknowledge:async args=>{order.push("acknowledge");return {...args,checkpointOrdinal:args.checkpointOrdinal+1};}});
+  await assert.rejects(observer.check(),{message:"Mixed acknowledgment used another read or deadline."});
+  assert.deepEqual(order,["application","input","acknowledge"]);assert.equal(observer.snapshot().firstFailure.stage,"ack-identity");
+ }
+ for(const mode of ["token","journal"]){
+  const {begin}=await openPrefixFixture(),current=structuredClone(begin);current.failures=[];
+  const observer=createMixedProgressAcknowledgments({input:()=>structuredClone(current),application:app,acknowledge:()=>assert.fail("fast")}),token=await observer.check();
+  if(mode==="journal"){const journal=current.nativeContext.documentJournal;journal.executionEventOrdinal=2;journal.executionEvents.push({ordinal:2,event:"created",executionContextId:2,uniqueId:"utility-context",frameId:"frame",isDefault:false});}
+  assert.throws(()=>observer.confirm(mode==="token"?{...token}:token));
+  assert.equal(observer.snapshot().firstFailure.stage,mode==="token"?"confirm-token":"confirm-journals");
+ }
+});
+
+test("mixed first-failure diagnostics preserve successful schema and genuine thrown errors without extra getter reads",async()=>{
+ const {createMixedProgressAcknowledgments}=await import("./browser-control-collector.mjs"),{begin}=await openPrefixFixture(),current=structuredClone(begin);current.failures=[];
+ const app=()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0});
+ const success=createMixedProgressAcknowledgments({input:()=>current,application:app,acknowledge:()=>assert.fail("fast")}),token=await success.check();assert.equal(success.confirm(token),true);
+ const snapshot=success.snapshot();assert.deepEqual(Object.keys(snapshot).sort(),["protocol","contextId","authoritySha256","guardChecks","attempted","failed","overflow","retainedBytes","checks","prefixes"].sort());
+ assert.equal(snapshot.retainedBytes,Buffer.byteLength(JSON.stringify(snapshot.checks)));assert.equal(snapshot.failed,0);
+ const sentinel=Error("PRIVATE_OBSERVER_ERROR");let getterCalls=0,inputs=0;
+ const application=app();Object.defineProperty(application,"unknown",{enumerable:true,get(){getterCalls++;throw sentinel;}});
+ const failure=createMixedProgressAcknowledgments({input:()=>{inputs++;return current;},application:()=>application,acknowledge:()=>assert.fail("no read")});
+ await assert.rejects(failure.check(),error=>error===sentinel);assert.equal(getterCalls,1);assert.equal(inputs,0);
+ const diagnostic=failure.snapshot().firstFailure;assert.equal(diagnostic.stage,"check-live");assert.equal(diagnostic.cut,null);assert.equal(diagnostic.application.unknown,null);assert.doesNotMatch(JSON.stringify(diagnostic),/PRIVATE_OBSERVER_ERROR/);
+});
+
+test("mixed first-failure diagnostic privacy and fixed retention cover the maximum bounded event projection",async()=>{
+ const {createMixedProgressAcknowledgments}=await import("./browser-control-collector.mjs"),{begin}=await openPrefixFixture(),current=structuredClone(begin);
+ const privateId="PRIVATE_EVENT_ID_"+"x".repeat(180);current.browserEventOrdinal=10000;
+ current.failures=Array.from({length:10000},(_,i)=>({requestId:privateId+i,proxyResponseId:"PRIVATE_PROXY",failedEventOrdinal:i+1,failedEvents:Number.MAX_SAFE_INTEGER,status:Number.MAX_SAFE_INTEGER,failed:true,loadingFinished:false,canceled:true,error:"PRIVATE_REASON".repeat(300),bodyProof:{complete:false,reason:"PRIVATE_BODY_REASON".repeat(200)}}));
+ current.proxy=[{id:"PRIVATE_PROXY",complete:false,canceled:false,upstreamError:false,responseEvents:Number.MAX_SAFE_INTEGER,bodyProof:{complete:false,reason:"PRIVATE_PACKET_REASON".repeat(190)}}];current.coverage.pendingBodies=Number.MAX_SAFE_INTEGER;
+ const observer=createMixedProgressAcknowledgments({input:()=>current,application:()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0}),acknowledge:()=>assert.fail("invalid current proof")});
+ await assert.rejects(observer.check());const snapshot=observer.snapshot(),diagnostic=snapshot.firstFailure;
+ assert.equal(diagnostic.cut.failureCount,10000);assert.equal(diagnostic.cut.latestFailure.failedEventOrdinal,10000);assert.equal(diagnostic.cut.latestFailure.requestIdSha256,sha(privateId+9999));
+ assert.equal(diagnostic.cut.matchingPacket.count,1);assert.equal(diagnostic.cut.matchingPacket.bodyProofComplete,false);assert.ok(Buffer.byteLength(JSON.stringify(diagnostic))*8+2048<=32768);assert.equal(snapshot.retainedBytes,32768+2);assert.equal(snapshot.overflow,0);
+ assert.doesNotMatch(JSON.stringify(diagnostic),/PRIVATE_|http:|cookie|payload/);
+ diagnostic.cut.coverage.pendingBodies=0;assert.equal(observer.snapshot().firstFailure.cut.coverage.pendingBodies,Number.MAX_SAFE_INTEGER,"snapshot edits cannot alter the retained first failure");
+});
+
+test("mixed first-failure diagnostics reset the per-live input and predicates after acknowledgment",async()=>{
+ const {createMixedProgressAcknowledgments}=await import("./browser-control-collector.mjs"),{begin}=await openPrefixFixture();
+ let unknown=0,inputs=0,applications=0,reads=0;
+ const observer=createMixedProgressAcknowledgments({input:()=>{inputs++;return structuredClone(begin);},application:()=>{applications++;return {failures:0,serverErrors:0,unknown,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0};},acknowledge:async args=>{reads++;unknown=1;return args;}});
+ await assert.rejects(observer.check(),{message:"Mixed required application observation is not clean."});
+ const snapshot=observer.snapshot(),diagnostic=snapshot.firstFailure;
+ assert.deepEqual([inputs,applications,reads],[1,2,1]);assert.equal(snapshot.failed,1);
+ assert.equal(diagnostic.stage,"check-after-ack-live");assert.equal(diagnostic.subreason,"application");assert.equal(diagnostic.cut,null);assert.equal(diagnostic.cutStage,null);
+ assert.equal(diagnostic.application.unknown,1);assert.equal(diagnostic.predicates.applicationKnown,false);assert.equal(diagnostic.candidate,null);
+ for(const key of ["candidateKnown","authorityKnown","journalsKnown","protocolObservedZero","protocolOverflowZero","authorityMatches","returnJournalsKnown"])assert.equal(diagnostic.predicates[key],null,key);
+});
+
+test("mixed first-failure diagnostics reject revoked arrays before introspection and never relabel the first stop",async()=>{
+ const {createMixedProgressAcknowledgments}=await import("./browser-control-collector.mjs"),revoked=Proxy.revocable([],{});revoked.revoke();let inputs=0;
+ const observer=createMixedProgressAcknowledgments({input:()=>{inputs++;return {failures:revoked.proxy,proxy:[],coverage:{},nativeContext:{}};},application:()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0}),acknowledge:()=>assert.fail("not reached")});
+ await assert.rejects(observer.check(),{message:"Mixed browser observation lacks request-local evidence."});const first=observer.snapshot();
+ assert.equal(first.failed,1);assert.equal(first.overflow,0);assert.equal(first.firstFailure.stage,"check-live");assert.equal(first.firstFailure.cutStage,"check-live");assert.equal(first.firstFailure.cut.failureCount,null);
+ await assert.rejects(observer.check(),{message:"Mixed required application observation is not clean."});const second=observer.snapshot();assert.equal(inputs,1);assert.equal(second.failed,2);assert.equal(second.overflow,0);assert.deepEqual(second.firstFailure,first.firstFailure);
+});
+
+test("mixed candidate rejection diagnostics identify the earlier strict match failure rather than the newest row",async()=>{
+ const {createMixedProgressAcknowledgments}=await import("./browser-control-collector.mjs"),{begin}=await openPrefixFixture(),current=structuredClone(begin);
+ const earlier={...structuredClone(current.failures[0]),requestId:"PRIVATE_EARLIER",failedEventOrdinal:9,fullUrlSha256:"f".repeat(64)},latest={...structuredClone(current.failures[0]),requestId:"PRIVATE_LATEST",failedEventOrdinal:10};current.failures=[earlier,latest];
+ const observer=createMixedProgressAcknowledgments({input:()=>current,application:()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0}),acknowledge:()=>assert.fail("must stop on the first strict join")});
+ await assert.rejects(observer.check(),{message:"Mixed browser observation lacks request-local evidence."});
+ const diagnostic=observer.snapshot().firstFailure;assert.equal(diagnostic.cut.latestFailure.requestIdSha256,sha("PRIVATE_LATEST"));
+ assert.equal(diagnostic.candidate.site,"proxy-cardinality");assert.equal(diagnostic.candidate.failureIndex,0);assert.equal(diagnostic.candidate.failureIdSha256,sha("PRIVATE_EARLIER"));assert.equal(diagnostic.candidate.strictMatchCount,0);
+ assert.equal(diagnostic.candidate.ordinaryOutcome,"unknown");assert.equal(diagnostic.candidate.firstMatchedProofKnown,null);assert.doesNotMatch(JSON.stringify(diagnostic),/PRIVATE_/);
+ assert.ok(Buffer.byteLength(JSON.stringify(diagnostic))*8+2048<=32768);
+});
+
+test("mixed candidate rejection hooks cover every existing null exit with unchanged defaults and safe failures",async()=>{
+ const {api,begin}=await openPrefixFixture();
+ const cases=[
+  ["input-prelude",()=>undefined],
+  ["failure-census",()=>{const x=structuredClone(begin);x.failures[0].failedEventOrdinal=0;return x;}],
+  ["real-failure",()=>{const x=structuredClone(begin);x.failures[0].error="net::ERR_FAILED";return x;}],
+  ["failure-flags",()=>{const x=structuredClone(begin);x.failures[0].error="PRIVATE_UNKNOWN_ERROR";return x;}],
+  ["proxy-cardinality",()=>{const x=structuredClone(begin);x.proxy[1].requestHeadersSha256="f".repeat(64);return x;}],
+  ["native-core",()=>{const x=structuredClone(begin);x.proxy[1].complete=false;return x;}],
+  ["exception",()=>{const x=Proxy.revocable({},{});x.revoke();return x.proxy;}],
+ ];
+ for(const [site,make]of cases){
+  assert.equal(api.mixedNativePrefixCandidates(make()),null);const observations=[];
+  assert.equal(api.mixedNativePrefixCandidates(make(),row=>observations.push(row)),null);assert.equal(observations.length,1,site);assert.equal(observations[0].site,site);
+  assert.doesNotMatch(JSON.stringify(observations),/PRIVATE_|http:|session|net::/);
+  assert.equal(api.mixedNativePrefixCandidates(make(),()=>{throw Error("PRIVATE_HOOK");}),null);
+ }
+ const positive=api.mixedNativePrefixCandidates(structuredClone(begin));let calls=0;
+ assert.deepEqual(api.mixedNativePrefixCandidates(structuredClone(begin),()=>{calls++;throw Error("not called");}),positive);assert.equal(calls,0);
+ const hook=Proxy.revocable(()=>assert.fail("Proxy hook may not execute"),{});hook.revoke();assert.equal(api.mixedNativePrefixCandidates(undefined,hook.proxy),null);
+ const invalid=cases[4][1]();assert.equal(api.mixedNativePrefixCandidates(invalid,()=>{invalid.failures=[];}),null,"a hook cannot turn the decided rejection into success");
+});
+
+test("mixed candidate rejection hooks reuse the same classification and strict filter without new getter reads",async()=>{
+ const {api,begin}=await openPrefixFixture();
+ function run(observe){const input=structuredClone(begin);input.proxy[1].complete=false;let errorReads=0;const value=input.failures[0].error;Object.defineProperty(input.failures[0],"error",{enumerable:true,get(){errorReads++;return value;}});let row=null;
+  const result=api.mixedNativePrefixCandidates(input,observe?value=>{row=value;}:undefined);assert.equal(result,null);return{errorReads,row};}
+ const plain=run(false),observed=run(true);assert.equal(observed.errorReads,plain.errorReads);assert.ok(plain.errorReads>0);assert.equal(observed.row.site,"native-core");assert.equal(observed.row.strictMatchCount,1);assert.equal(observed.row.firstMatchedProxyIdSha256,sha(begin.proxy[1].id));assert.equal(observed.row.firstMatchedProofKnown,true);assert.equal(observed.row.firstMatchedProofComplete,true);
+});

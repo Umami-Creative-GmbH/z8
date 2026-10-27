@@ -2144,45 +2144,88 @@ const progressApplicationKeys=["failures","serverErrors","unknown","httpErrors",
 const progressApplicationKnown=application=>progressApplicationKeys.every(key=>application?.[key]===0);
 /** Independent acknowledgments at existing mixed stop guards. No mutex, retry, quiescence or business operation. */
 export function createMixedProgressAcknowledgments({input,application,acknowledge}) {
- const prefixes=[],checks=[],tokens=new WeakMap();let attempted=0,guardChecks=0,failed=0,overflow=0,authoritySha256=null,contextId=null;
- const bytes=()=>Buffer.byteLength(JSON.stringify(checks))+prefixes.reduce((sum,prefix)=>sum+Buffer.byteLength(JSON.stringify(prefix)),0);
- const live=()=>{
-  if(failed || overflow || !progressApplicationKnown(application()))throw Error("Mixed required application observation is not clean.");
-  const cut=input(),candidate=mixedNativePrefixCandidates(cut),authority=mixedNativeAuthorityDigest(cut.nativeContext);
-  if(!knownMixedOpenJournals(cut.nativeContext) || cut.nativeContext?.protocolErrors?.observed!==0 || cut.nativeContext.protocolErrors.overflow!==0 || !candidate || !authority || authoritySha256!==null && authoritySha256!==authority)throw Error("Mixed browser observation lacks request-local evidence.");
+ const prefixes=[],checks=[],tokens=new WeakMap();let attempted=0,guardChecks=0,failed=0,overflow=0,authoritySha256=null,contextId=null,firstFailure=null,diagnosticAttempted=false;
+ // One failure-only fixed record shares the existing retention and record bounds.
+ const diagnosticCharge=32768;
+ const bytes=()=>Buffer.byteLength(JSON.stringify(checks))+prefixes.reduce((sum,prefix)=>sum+Buffer.byteLength(JSON.stringify(prefix)),0)+(firstFailure?diagnosticCharge:0);
+ const own=(value,key)=>value && typeof value==="object" && !utilTypes.isProxy(value)?Object.getOwnPropertyDescriptor(value,key)?.value:undefined;
+ const count=value=>Number.isSafeInteger(value) && value>=0?value:null;
+ const flag=value=>typeof value==="boolean"?value:null;
+ const hashed=value=>typeof value==="string" && value.length<=4096?sha(value):null;
+ const boundedRows=value=>!utilTypes.isProxy(value) && Array.isArray(value) && value.length<=controlCancellationPolicy.recordLimit?value:null;
+ const failureDiagnostic=state=>{
+  const cut=state.cut,failures=boundedRows(own(cut,"failures")),packets=boundedRows(own(cut,"proxy")),coverage=own(cut,"coverage"),principal=own(own(cut,"nativeContext"),"principalEpoch");
+  let latest=null,latestOrdinal=0,latestCount=0,matching=null,matchingCount=null;
+  const digest=createHash("sha256");
+  if(failures)for(let i=0;i<failures.length;i++){const row=own(failures,String(i)),ordinal=count(own(row,"failedEventOrdinal"));digest.update(JSON.stringify([hashed(own(row,"requestId")),ordinal]));if(ordinal!==null && ordinal>latestOrdinal){latest=row;latestOrdinal=ordinal;latestCount=1;}else if(ordinal===latestOrdinal)latestCount++;}
+  if(latestCount!==1)latest=null;
+  const proxyId=own(latest,"proxyResponseId");
+  if(latest && typeof proxyId==="string" && proxyId.length<=256 && packets){matchingCount=0;for(let i=0;i<packets.length;i++){const packet=own(packets,String(i));if(own(packet,"id")===proxyId){matchingCount++;matching=packet;}}if(matchingCount!==1)matching=null;}
+  const proof=own(matching,"bodyProof"),latestProof=own(latest,"bodyProof");
+  const row={protocol:"mixed-first-failure-diagnostic-v1",stage:state.stage,cutStage:state.cutStage,subreason:state.subreason,guardChecks,attempted,contextIdSha256:hashed(own(own(cut,"nativeContext"),"contextId")),
+   predicates:state.predicates,candidate:state.candidateDiagnostic,application:Object.fromEntries(progressApplicationKeys.map(key=>[key,count(own(state.application,key))])),
+   cut:cut?{browserEventOrdinal:count(own(cut,"browserEventOrdinal")),failureCount:failures?.length??null,responseCount:boundedRows(own(cut,"responses"))?.length??null,proxyCount:packets?.length??null,
+    failureSetSha256:failures?digest.digest("hex"):null,latestFailureMatches:latestCount,
+    coverage:{installed:flag(own(coverage,"installed")),scopeClosed:flag(own(coverage,"scopeClosed")),errors:count(own(coverage,"errors")),overflow:count(own(coverage,"overflow")),missing:count(own(coverage,"missing")),pendingBodies:count(own(coverage,"pendingBodies"))},
+    principal:Object.fromEntries(["observedSetCookieResponses","unknownResponseHeaders","readErrors","observationErrors","overflow","pendingReads"].map(key=>[key,count(own(principal,key))])),
+    latestFailure:latest?{requestIdSha256:hashed(own(latest,"requestId")),proxyResponseIdSha256:hashed(proxyId),failedEventOrdinal:count(own(latest,"failedEventOrdinal")),failedEvents:count(own(latest,"failedEvents")),status:count(own(latest,"status")),failed:flag(own(latest,"failed")),loadingFinished:flag(own(latest,"loadingFinished")),canceled:flag(own(latest,"canceled")),errorSha256:hashed(own(latest,"error")),bodyProofKnown:latestProof!==undefined,bodyProofComplete:flag(own(latestProof,"complete")),bodyProofReasonSha256:hashed(own(latestProof,"reason"))}:null,
+    matchingPacket:{count:matchingCount,idSha256:hashed(own(matching,"id")),complete:flag(own(matching,"complete")),canceled:flag(own(matching,"canceled")),upstreamError:flag(own(matching,"upstreamError")),responseEvents:count(own(matching,"responseEvents")),bodyProofKnown:matching?proof!==undefined:null,bodyProofComplete:flag(own(proof,"complete")),bodyProofReasonSha256:hashed(own(proof,"reason"))}}:null};
+  return row;
+ };
+ const diagnose=state=>{if(diagnosticAttempted)return;diagnosticAttempted=true;try{if(bytes()+diagnosticCharge>controlCancellationPolicy.retainedLimit || checks.length+prefixes.length>=controlCancellationPolicy.recordLimit){overflow++;return;}const row=failureDiagnostic(state);if(Buffer.byteLength(JSON.stringify(row))*8+2048>diagnosticCharge){overflow++;return;}firstFailure=row;}catch{overflow++;}};
+ const observation=stage=>({stage,subreason:"entry",cut:null,cutStage:null,application:null,candidateDiagnostic:null,predicates:{applicationKnown:null,candidateKnown:null,authorityKnown:null,journalsKnown:null,protocolObservedZero:null,protocolOverflowZero:null,authorityMatches:null,returnJournalsKnown:null}});
+ const seen=(state,key,value)=>{state.predicates[key]=Boolean(value);return value;};
+ const live=state=>{
+  state.cut=null;state.cutStage=null;state.application=null;state.candidateDiagnostic=null;for(const key of Object.keys(state.predicates))state.predicates[key]=null;
+  state.subreason="application";
+  if(failed || overflow || !seen(state,"applicationKnown",progressApplicationKnown(state.application=application()))){state.subreason=failed?"previous-failure":overflow?"previous-overflow":"application";throw Error("Mixed required application observation is not clean.");}
+  state.subreason="input";const cut=state.cut=input();state.cutStage=state.stage;state.subreason="candidate-evaluation";const candidate=mixedNativePrefixCandidates(cut,record=>{state.candidateDiagnostic=record;});state.predicates.candidateKnown=Boolean(candidate);
+  state.subreason="authority-evaluation";const authority=mixedNativeAuthorityDigest(cut.nativeContext);state.predicates.authorityKnown=Boolean(authority);
+  state.subreason="live-predicate";
+  if(!seen(state,"journalsKnown",knownMixedOpenJournals(cut.nativeContext)) || !seen(state,"protocolObservedZero",cut.nativeContext?.protocolErrors?.observed===0) || !seen(state,"protocolOverflowZero",cut.nativeContext.protocolErrors.overflow===0) || !candidate || !authority || !seen(state,"authorityMatches",!(authoritySha256!==null && authoritySha256!==authority))){
+   state.subreason=state.predicates.journalsKnown===false?"journals":state.predicates.protocolObservedZero===false?"protocol-observed":state.predicates.protocolOverflowZero===false?"protocol-overflow":!candidate?"candidate":!authority?"authority":"authority-changed";
+   throw Error("Mixed browser observation lacks request-local evidence.");
+  }
   authoritySha256=authority;contextId=cut.nativeContext.contextId;return {cut,candidate};
  };
  const retained=()=>{if(bytes()>controlCancellationPolicy.retainedLimit){overflow++;throw Error("Mixed prefix retention bound exceeded.");}};
  return {
   async check({operationDeadlineMs=null}={}){
+   const state=observation("check-live");
    try{
-    const {cut:begin,candidate}=live();
+    const {cut:begin,candidate}=live(state);
+    state.stage="check-record-limit";state.subreason="record-limit";
     if(guardChecks>=controlCancellationPolicy.recordLimit){overflow++;throw Error("Mixed guard bound exceeded.");}
     const ordinal=++guardChecks;let receipt=null,end=begin;
     if(candidate.cores.length!==0){
      const checkpointOrdinal=++attempted;
      const observerDeadline=performance.now()+mixedNativeProgressPolicy.observerCeilingMs;
      const deadlineMs=operationDeadlineMs===null?observerDeadline:Math.min(observerDeadline,operationDeadlineMs);
-     const acknowledgment=await acknowledge({checkpointOrdinal,deadlineMs});
+     state.stage="acknowledge";state.subreason="acknowledge";const acknowledgment=await acknowledge({checkpointOrdinal,deadlineMs});
+     state.stage="ack-identity";state.subreason="ack-identity";
      if(acknowledgment?.checkpointOrdinal!==checkpointOrdinal || acknowledgment.deadlineMs!==deadlineMs)throw Error("Mixed acknowledgment used another read or deadline.");
-     end=live().cut;receipt=createMixedNativePrefix({checkpointOrdinal,begin,end,acknowledgment,headerPrefix:end.nativeContext.headerPrefix,operationDeadlineMs,returnedAtMs:performance.now()});prefixes.push(receipt);
+     state.stage="check-after-ack-live";end=live(state).cut;state.stage="create-prefix";state.subreason="prefix";receipt=createMixedNativePrefix({checkpointOrdinal,begin,end,acknowledgment,headerPrefix:end.nativeContext.headerPrefix,operationDeadlineMs,returnedAtMs:performance.now()});prefixes.push(receipt);
     }
-    const check={ordinal,begin:mixedNativeProgressVector(begin),returned:null,checkpointOrdinal:receipt?.checkpointOrdinal ?? null,prefixSha256:receipt?.prefixSha256 ?? null};checks.push(check);retained();
-    const token=Object.freeze({ordinal,contextId,authoritySha256,failureIds:Object.freeze(progressFailureIdsForCollector(end))});tokens.set(token,{check,begin,receipt});return token;
-   }catch(error){failed++;throw error;}
+    const check={ordinal,begin:mixedNativeProgressVector(begin),returned:null,checkpointOrdinal:receipt?.checkpointOrdinal ?? null,prefixSha256:receipt?.prefixSha256 ?? null};checks.push(check);state.stage="retain-check";state.subreason="retention";retained();
+    state.stage="issue-token";state.subreason="token";const token=Object.freeze({ordinal,contextId,authoritySha256,failureIds:Object.freeze(progressFailureIdsForCollector(end))});tokens.set(token,{check,begin,receipt});return token;
+   }catch(error){failed++;diagnose(state);throw error;}
   },
   confirm(token){
+   const state=observation("confirm-live");
    try{
-    const {cut,candidate}=live(),owned=tokens.get(token),check=owned?.check;
+    const {cut,candidate}=live(state),owned=tokens.get(token),check=owned?.check;
+    state.stage="confirm-token";state.subreason="token-or-failure-ids";
     if(!check || check.returned!==null || token.contextId!==contextId || token.authoritySha256!==authoritySha256 || JSON.stringify(token.failureIds)!==JSON.stringify(candidate.failureIds))throw Error("New mixed failed request or wrong acknowledgment at return cut.");
-    if(!sameMixedReturnJournals(owned.begin.nativeContext,cut.nativeContext))throw Error("Mixed current authority changed after acknowledgment.");
-    if(owned.receipt){const initial=owned.receipt;const sealed=createMixedNativePrefix({checkpointOrdinal:initial.checkpointOrdinal,begin:initial.begin,end:cut,acknowledgment:initial.acknowledgment,headerPrefix:cut.nativeContext.headerPrefix,operationDeadlineMs:initial.operationDeadlineMs,returnedAtMs:performance.now()});if(performance.now()>initial.acknowledgment.deadlineMs)throw Error("Mixed acknowledgment deadline expired before return.");const index=prefixes.findIndex(row=>row.checkpointOrdinal===initial.checkpointOrdinal);if(index<0)throw Error("Mixed acknowledgment lost its owned prefix.");prefixes[index]=sealed;check.prefixSha256=sealed.prefixSha256;}
+    state.stage="confirm-journals";state.subreason="return-journals";
+    if(!seen(state,"returnJournalsKnown",sameMixedReturnJournals(owned.begin.nativeContext,cut.nativeContext)))throw Error("Mixed current authority changed after acknowledgment.");
+    if(owned.receipt){state.stage="seal-prefix";state.subreason="prefix";const initial=owned.receipt;const sealed=createMixedNativePrefix({checkpointOrdinal:initial.checkpointOrdinal,begin:initial.begin,end:cut,acknowledgment:initial.acknowledgment,headerPrefix:cut.nativeContext.headerPrefix,operationDeadlineMs:initial.operationDeadlineMs,returnedAtMs:performance.now()});state.stage="confirm-deadline";state.subreason="deadline";if(performance.now()>initial.acknowledgment.deadlineMs)throw Error("Mixed acknowledgment deadline expired before return.");state.stage="confirm-prefix-index";state.subreason="prefix-index";const index=prefixes.findIndex(row=>row.checkpointOrdinal===initial.checkpointOrdinal);if(index<0)throw Error("Mixed acknowledgment lost its owned prefix.");prefixes[index]=sealed;check.prefixSha256=sealed.prefixSha256;}
     const principal=cut.nativeContext?.principalEpoch,census=cut.nativeContext?.headerCensus,errors=cut.nativeContext?.protocolErrors;
+    state.stage="confirm-principal";state.subreason="principal-header-protocol";
     if(principal?.observedSetCookieResponses!==0 || principal.unknownResponseHeaders!==0 || principal.readErrors!==0 || principal.observationErrors!==0 || principal.overflow!==0 || errors?.observed!==0 || errors.overflow!==0 || !["unknownHeaders","setCookieResponses","setCookieLines","errors","duplicates","missing","late","overflow"].every(key=>census?.counts?.[key]===0))throw Error("A new principal/header/protocol error invalidated the mixed return cut.");
-    check.returned=mixedNativeProgressVector(cut);tokens.delete(token);retained();return true;
-   }catch(error){failed++;throw error;}
+    check.returned=mixedNativeProgressVector(cut);tokens.delete(token);state.stage="retain-return";state.subreason="retention";retained();return true;
+   }catch(error){failed++;diagnose(state);throw error;}
   },
-  snapshot:()=>structuredClone({protocol:"mixed-native-progress-observations-v1",contextId,authoritySha256,guardChecks,attempted,failed,overflow,retainedBytes:bytes(),checks:[...checks].sort((a,b)=>a.ordinal-b.ordinal),prefixes:[...prefixes].sort((a,b)=>a.checkpointOrdinal-b.checkpointOrdinal)}),
+  snapshot:()=>structuredClone({protocol:"mixed-native-progress-observations-v1",contextId,authoritySha256,guardChecks,attempted,failed,overflow,retainedBytes:bytes(),checks:[...checks].sort((a,b)=>a.ordinal-b.ordinal),prefixes:[...prefixes].sort((a,b)=>a.checkpointOrdinal-b.checkpointOrdinal),...(firstFailure?{firstFailure}: {})}),
  };
 }
 const progressFailureIdsForCollector=input=>input.failures.map(row=>row.requestId).sort();
