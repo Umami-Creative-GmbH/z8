@@ -514,7 +514,7 @@ async function main() {
     throw Error("Require --release-app-manifest and independently qualified --release-browser-control.");
   const releaseBrowserControlBytes = await readFile(options["--release-browser-control"]);
   const releaseBrowserControl = JSON.parse(releaseBrowserControlBytes.toString("utf8"));
-  await readBrowserControlBinding({plan:{runtime:{build:options["--release-build"],browserControl:releaseBrowserControl}},manifestPath:options["--release-app-manifest"]});
+  await readBrowserControlBinding({plan:{origin:bp.value.origin,phase:"release",runtime:{build:options["--release-build"],browserControl:releaseBrowserControl}},manifestPath:options["--release-app-manifest"]});
   const result = derive(
     bp.value,
     b.value,

@@ -1,4 +1,4 @@
-import {testBrowserBinding,testEmptyTemporaryValues,testTeamAnnualDocument} from "./control-cancellation-test-fixtures.mjs";
+import {testBrowserBinding,testBrowserMetadata,testEmptyTemporaryValues,testTeamAnnualDocument} from "./control-cancellation-test-fixtures.mjs";
 import { temporaryValueObservation } from "./team-temporary-value-authority.mjs";
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
@@ -1005,7 +1005,7 @@ test("the actual compiled unmarked fallback is passed identically to browser and
 });
 
 test("segment readers receive actual request/response facts and the verified compiled deployment binding", async()=>{
-	const compiledBinding=testBrowserBinding("b".repeat(40),{...testBrowserBinding("b".repeat(40)),compiledManifestSha256:"c".repeat(64)});
+	const compiledBinding=testBrowserBinding("b".repeat(40),{...testBrowserMetadata(),compiledManifestSha256:"c".repeat(64)});
 	const staged='0:{"t":{"t":{"s":"","d":{"r":null,"p":"$@3","v":null,"s":"$4"}}},"a":"$@5","u":"$@6"}\n3:"$undefined"\n4:X\n4:60\n4:C\n5:null\n6:false\n';
 	const requestHeaders={...headers,"next-router-segment-prefetch":"/_index"};
 	const segmentHeaders={...responseHeaders,"x-nextjs-postponed":"2","x-nextjs-deployment-id":compiledBinding.compiledBuild};
@@ -1647,4 +1647,13 @@ test('annual selection captures only actual existing document and execution fact
 		f.nondefault();const after=f.tracker.selectedDocument();assert.equal(after.document.executionContextId,3);assert.equal(after.document.executionEventOrdinalAfter,6);assert.equal(after.journal.executionEvents.at(-1).executionContextId,4);assert.equal(f.evaluations(),0);
 		after.document.frameId='foreign';after.journal.executionEvents.length=0;assert.equal(f.tracker.selectedDocument().document.frameId,'frame');assert.equal(f.tracker.selectedDocument().journal.executionEvents.length,6);
 	}finally{f.close();}
+});
+
+test('context snapshots preserve the exact phase clock and request certificates independently of caller mutation',()=>{
+	const binding=testBrowserBinding('c'.repeat(40));binding.legacyClockReadiness={protocol:'synthetic-source-config',review:{sha256:'a'.repeat(64)}};binding.requestShapeDiagnostic={protocol:'synthetic-request-config',actionRegistrySha256:'b'.repeat(64)};
+	const collector=createBrowserControlCollector({contextId,origin,compiledBinding:binding});collector.installed();
+	const observed=collector.snapshot().allPhase.nativeContext.binding;
+	assert.deepEqual(observed.legacyClockReadiness,binding.legacyClockReadiness);assert.deepEqual(observed.requestShapeDiagnostic,binding.requestShapeDiagnostic);
+	observed.legacyClockReadiness.review.sha256='changed';observed.requestShapeDiagnostic.actionRegistrySha256='changed';
+	assert.equal(binding.legacyClockReadiness.review.sha256,'a'.repeat(64));assert.equal(binding.requestShapeDiagnostic.actionRegistrySha256,'b'.repeat(64));
 });
