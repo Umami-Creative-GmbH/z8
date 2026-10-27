@@ -1911,3 +1911,36 @@ test("Plain summary continues finish exactly once and keeps prequeue and active 
 	assert.equal(shared.plainJsonFastPath.logicalInspected,shared.semanticObligations.observations+shared.plainJsonFastPath.coveredDescendants+1);
 	assert.equal(shared.semanticObligations.accountedWork,shared.chargedWork);
 });
+
+test("unsupported temporary-reference token diagnostics preserve UNKNOWN with exact hash and actual semantic context", () => {
+ const token="$T0:0";
+ const inspect=reference=>inspectRequiredFlightBody(Buffer.from('0:'+JSON.stringify({a:{success:true,data:{dateRange:reference}}})+'\n'),{action:true});
+ const proof=inspect(token);
+ assert.equal(proof.complete,false);assert.equal(proof.reason,"unsupported-model-reference");
+ assert.deepEqual(proof.modelReference,{prefix:"T",length:token.length,form:"typed-outlined-path",tokenSha256:createHash("sha256").update(token).digest("hex"),phase:"semantic-loop",semanticRole:"required"});
+ assert.equal(inspect(token).modelReference.tokenSha256,proof.modelReference.tokenSha256);
+ assert.notEqual(inspect("$T0:1").modelReference.tokenSha256,proof.modelReference.tokenSha256);
+ assert.doesNotMatch(JSON.stringify(proof),/\$T0:0|dateRange|success/);
+ const other=inspect("$H0:0");
+ assert.deepEqual(other,{complete:false,reason:"unsupported-model-reference",modelReference:{prefix:"H",length:5,form:"typed-outlined-path"}});
+});
+
+test("temporary-reference diagnostics remain bounded, private and propagated from embedded required scope", () => {
+ const token="$T1:PRIVATE_TOKEN";
+ const inner='~0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:{r:["$","div",null,{title:token,children:"KNOWN"}],p:true,v:null}}}})+'\n';
+ const outer=Buffer.concat([Buffer.from('0:{"q":"","i":false,"t":{"t":{"s":"en","d":{"r":"MAIN","p":false,"v":null}}},"p":"$1"}\n1:R\n1:o'+Buffer.byteLength(inner).toString(16)+','),Buffer.from(inner),Buffer.from('1:C\n')]);
+ const proof=inspectRequiredFlightBody(outer,{cachedNavigations:true});
+ assert.equal(proof.complete,false);assert.equal(proof.reason,"embedded-runtime-prefetch-incomplete");
+ assert.equal(proof.embeddedReason,"unsupported-model-reference");
+ assert.equal(proof.embeddedModelReference.tokenSha256,createHash("sha256").update(token).digest("hex"));
+ assert.equal(proof.embeddedModelReference.phase,"semantic-loop");assert.equal(proof.embeddedModelReference.semanticRole,"required");
+ assert.doesNotMatch(JSON.stringify(proof),/PRIVATE_TOKEN|\$T1|title|children/);
+ const overflow=inspectRequiredFlightBody(Buffer.alloc(8*1024*1024+1,65),{action:true});
+ assert.deepEqual(overflow,{complete:false,reason:"bounded-body-unavailable"});
+ const error=inspectRequiredFlightBody(Buffer.from('0:{"a":{"success":true,"data":"$T0:0"}}\n1:E{"digest":"PRIVATE_ERROR"}\n'),{action:true});
+ assert.equal(error.complete,false);assert.equal(error.serverErrors,1);assert.equal(error.modelReference,undefined);
+ const failure=inspectRequiredFlightBody(Buffer.from('0:{"a":{"success":false,"error":"PRIVATE_FAILURE","data":"$T0:0"}}\n'),{action:true});
+ assert.equal(failure.complete,false);assert.equal(failure.reason,"unsupported-model-reference");
+ const explicitFailure=inspectRequiredFlightBody(Buffer.from('0:{"a":{"success":false,"error":"PRIVATE_FAILURE"}}\n'),{action:true});
+ assert.equal(explicitFailure.complete,false);assert.equal(explicitFailure.explicitActionFailure,true);
+});

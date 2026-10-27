@@ -1102,6 +1102,11 @@ function inspectFlightBody(
 						: /^\$[A-Za-z@-][a-f0-9]+:/.test(value)
 							? "typed-outlined-path"
 							: "other",
+					...(value[1] === "T" ? {
+						tokenSha256: createHash("sha256").update(value).digest("hex"),
+						phase: "semantic-loop",
+						...(semanticRoles.has(role) ? { semanticRole: role } : {}),
+					} : {}),
 				},
 			});
 		} else if (value && typeof value === "object" && !opaqueText.has(value)) {
