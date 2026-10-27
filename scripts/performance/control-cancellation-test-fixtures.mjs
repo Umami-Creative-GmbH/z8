@@ -37,7 +37,7 @@ export function testEmptyTemporaryValues(contextId) {
 }
 
 /** Fresh synthetic body inspected through the real scalar and temporary-value APIs. */
-export function testTeamAnnualGolden(context,origin="http://localhost:58792") {
+export function testTeamAnnualGolden(context,origin="http://localhost:58792",timeoutMs=90000) {
 	const hash=value=>createHash("sha256").update(value).digest("hex"),bytes=Buffer.from('0:{"a":{"success":true,"data":{"teams":[{"employeeCount":8}],"organizationTotal":16704}}}\n'),id="a".repeat(32)+".1";
 	const census=createProxyHeaderCensus({contextId:context.contextId});census.accepted(id);census.headers(id,{"content-type":"text/x-component"});if(context.principalEpoch.scopeClosed)census.close();context.headerCensus=census.snapshot();
 	const inspection=openOriginalTeamBodyInspection({bodySha256:hash(bytes),decodedBytes:bytes.length}),cap=openTeamAnnualProjection({bodySha256:hash(bytes),decodedBytes:bytes.length});
@@ -48,6 +48,6 @@ export function testTeamAnnualGolden(context,origin="http://localhost:58792") {
 	const packet={...identity,id,traceId:"a".repeat(32),responseEvents:1,status:200,action:true,flight:true,complete:true,canceled:false,upstreamError:false,annualRequestOrdinal:1,bodyProof,teamAnnualProjection:projection,
 		requestBodyFacts:{protocol:"owned-proxy-request-eof-v1",proxyResponseId:id,actualEOF:true,encodedBytes:2,bodySha256:hash("[]")},temporaryValueObservation:originalTeamBodyObservation(inspection),transportBodyReceipt:{protocol:"proxy-natural-eof-decoded-bytes-v1",naturalEOF:true,decodedBytes:bytes.length,bodySha256:hash(bytes)}};
 	const browser={...identity,requestId:"selected",proxyResponseId:id,frameId:"frame",loaderId:"loader",type:"Fetch",action:true,status:200,ambiguousRedirect:false,loadingFinished:true,failed:false,requestHeadersKnown:true,initialHeaderIdentity:initial,extraHeaderIdentity:initial};
-	const selection={protocol:"actual-response-object-selection-v1",contextId:context.contextId,proxyResponseId:id,status:200,mainFrame:true,fullUrlSha256:identity.fullUrlSha256,requestBodySha256:hash("[]"),encodedBytes:2,requestOrdinalAtArm:0,startedAtMs:1,selectedAtMs:2,fulfilledAtMs:3,deadlineMs:90001};
+	const selection={protocol:"actual-response-object-selection-v1",contextId:context.contextId,proxyResponseId:id,status:200,mainFrame:true,fullUrlSha256:identity.fullUrlSha256,requestBodySha256:hash("[]"),encodedBytes:2,requestOrdinalAtArm:0,startedAtMs:1,selectedAtMs:2,fulfilledAtMs:3,deadlineMs:1+timeoutMs};
 	return teamAnnualGoldenReceipt({browser,packet,projection,source:context.binding.teamAnnualAction,context,selection});
 }

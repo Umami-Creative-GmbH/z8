@@ -856,7 +856,7 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 	const completeCoverage =
 		nativeRunCoverage.complete === true &&
 		completeTransport &&
-		validateMixedTeamAnnualGolden({transports,annualTeamGolden,sourceCommit,browserControl:browserControlBinding}) &&
+		validateMixedTeamAnnualGolden({transports,annualTeamGolden,sourceCommit,browserControl:browserControlBinding,phase,requestTimeoutMs:timeout}) &&
 		browserClosed &&
 		pageErrors === 0;
 	if (userMaxInflight !== 4) {

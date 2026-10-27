@@ -2144,7 +2144,7 @@ export function validateTeamAnnualGoldenReceipt(receipt,context) {
 /** Mandatory mixed preparation CORE, independent of raw browser failure counts. */
 export function validateMixedTeamAnnualGolden(run) {
 	try {
-		if(!Array.isArray(run?.transports) || run.transports.length!==4 || !run.annualTeamGolden)return false;
+		if(!Array.isArray(run?.transports) || run.transports.length!==4 || !run.annualTeamGolden || !["baseline","release"].includes(run.phase) || run.requestTimeoutMs!==(run.phase==="baseline"?90000:30000) || run.annualTeamGolden.selection?.deadlineMs!==run.annualTeamGolden.selection?.startedAtMs+run.requestTimeoutMs)return false;
 		let selected=0;
 		for(const transport of run.transports){
 			const evidence=transport.browserControlEvidence,annual=evidence?.annualTeam,context=evidence?.allPhase?.nativeContext;
