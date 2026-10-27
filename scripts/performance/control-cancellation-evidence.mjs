@@ -889,6 +889,7 @@ function inspectFlightBody(
 	const modelLimitObservation=(site,guard,objectKeyCount=null)=>({protocol:"bounded-model-limit-observation-v1",site,guard,modelCap:100000,depthCap:64,
 		sharedModelSteps:budget.models,localModelSteps:budget.models-modelBudgetAtStart,inspected,queueLength:queue.length,objectKeyCount,visitedStates:visited.size,recordCount,
 		recursionLevel:depth,embeddedModelSteps:embeddedRuntimePrefetch?.modelSteps ?? 0,eagerParentCalls,outlinedCalls,eagerUniqueObjects,repeatedEagerObjects,activeOutlinedPaths:activePaths.size,
+		embeddedModelCostObservation:embeddedRuntimePrefetch?.modelCostObservation ?? null,
 		parentMemoChecks,parentMemoHits,parentMemoAbsent,parentMemoNonStandalone,parentMemoDepthExcluded,parentMemoKnownExcluded,parentMemoReady,parentMemoPublished,closedEagerMemo:structuredClone(closedEagerMemo),modelCostObservation:modelCostSnapshot()});
 	while (queue.length) {
 		if (++inspected > 100000 || chargeModel("semantic-loop") > 100000) return unknown("model-limit",{modelLimitObservation:modelLimitObservation("semantic-loop",inspected>100000?"local-inspected-work":"shared-model-work")});
