@@ -502,3 +502,71 @@ test("every retained prefix failure row agrees with the CORE loadingFailed occur
  assert.equal(api.validateMixedNativePrefix(prefix),true,"The isolated row chronology is internally plausible before the independent census join.");
  assert.equal(api.validateMixedProgressObservations(forged,context,inputs),false,"Same-context same-ID records cannot disagree with the observed callback census.");
 });
+
+test("mixed first-failure diagnostics retain the exact pending-EOF cut without changing its rejection",async()=>{
+ const {createMixedProgressAcknowledgments}=await import("./browser-control-collector.mjs"),{begin}=await openPrefixFixture();
+ const current=structuredClone(begin);current.coverage.pendingBodies=1;delete current.proxy[1].bodyProof;
+ let inputs=0,apps=0,reads=0;const app=()=>{apps++;return {failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0};};
+ const observer=createMixedProgressAcknowledgments({input:()=>{inputs++;return current;},application:app,acknowledge:()=>{reads++;assert.fail("pending current proof cannot acknowledge");}});
+ await assert.rejects(observer.check(),{message:"Mixed browser observation lacks request-local evidence."});
+ const snapshot=observer.snapshot();assert.equal(snapshot.failed,1);assert.equal(snapshot.guardChecks,0);assert.deepEqual([inputs,apps,reads],[1,1,0]);
+ assert.equal(snapshot.firstFailure.stage,"check-live");assert.equal(snapshot.firstFailure.subreason,"candidate");
+ assert.equal(snapshot.firstFailure.cut.coverage.pendingBodies,1);assert.equal(snapshot.firstFailure.cut.latestFailure.requestIdSha256,sha("native"));
+ assert.equal(snapshot.firstFailure.cut.matchingPacket.count,1);assert.equal(snapshot.firstFailure.cut.matchingPacket.bodyProofKnown,false);assert.equal(snapshot.firstFailure.cut.matchingPacket.bodyProofComplete,null);
+ assert.equal(snapshot.firstFailure.predicates.journalsKnown,true);assert.equal(snapshot.firstFailure.predicates.candidateKnown,false);
+ assert.ok(snapshot.retainedBytes>=32768);assert.doesNotMatch(JSON.stringify(snapshot.firstFailure),/synthetic|http:|session|net::|PRIVATE/);
+ const first=structuredClone(snapshot.firstFailure);current.coverage.pendingBodies=0;current.browserEventOrdinal++;
+ await assert.rejects(observer.check(),{message:"Mixed required application observation is not clean."});assert.deepEqual(observer.snapshot().firstFailure,first);
+ assert.deepEqual([inputs,apps,reads],[1,1,0],"sticky failure still short-circuits before the old callbacks");
+});
+
+test("mixed first-failure diagnostics distinguish confirm, acknowledgment, token and journal stops",async()=>{
+ const {createMixedProgressAcknowledgments}=await import("./browser-control-collector.mjs");
+ const app=()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0});
+ {
+  const {begin}=await openPrefixFixture(),current=structuredClone(begin);current.failures=[];let reads=0;
+  const observer=createMixedProgressAcknowledgments({input:()=>current,application:app,acknowledge:()=>{reads++;assert.fail("fast");}}),token=await observer.check();
+  current.failures=structuredClone(begin.failures);current.coverage.pendingBodies=1;delete current.proxy[1].bodyProof;
+  assert.throws(()=>observer.confirm(token),{message:"Mixed browser observation lacks request-local evidence."});assert.equal(reads,0);
+  assert.equal(observer.snapshot().firstFailure.stage,"confirm-live");assert.equal(observer.snapshot().firstFailure.cut.coverage.pendingBodies,1);
+ }
+ {
+  const {begin}=await openPrefixFixture(),order=[];
+  const observer=createMixedProgressAcknowledgments({input:()=>{order.push("input");return begin;},application:()=>{order.push("application");return app();},acknowledge:async args=>{order.push("acknowledge");return {...args,checkpointOrdinal:args.checkpointOrdinal+1};}});
+  await assert.rejects(observer.check(),{message:"Mixed acknowledgment used another read or deadline."});
+  assert.deepEqual(order,["application","input","acknowledge"]);assert.equal(observer.snapshot().firstFailure.stage,"ack-identity");
+ }
+ for(const mode of ["token","journal"]){
+  const {begin}=await openPrefixFixture(),current=structuredClone(begin);current.failures=[];
+  const observer=createMixedProgressAcknowledgments({input:()=>structuredClone(current),application:app,acknowledge:()=>assert.fail("fast")}),token=await observer.check();
+  if(mode==="journal"){const journal=current.nativeContext.documentJournal;journal.executionEventOrdinal=2;journal.executionEvents.push({ordinal:2,event:"created",executionContextId:2,uniqueId:"utility-context",frameId:"frame",isDefault:false});}
+  assert.throws(()=>observer.confirm(mode==="token"?{...token}:token));
+  assert.equal(observer.snapshot().firstFailure.stage,mode==="token"?"confirm-token":"confirm-journals");
+ }
+});
+
+test("mixed first-failure diagnostics preserve successful schema and genuine thrown errors without extra getter reads",async()=>{
+ const {createMixedProgressAcknowledgments}=await import("./browser-control-collector.mjs"),{begin}=await openPrefixFixture(),current=structuredClone(begin);current.failures=[];
+ const app=()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0});
+ const success=createMixedProgressAcknowledgments({input:()=>current,application:app,acknowledge:()=>assert.fail("fast")}),token=await success.check();assert.equal(success.confirm(token),true);
+ const snapshot=success.snapshot();assert.deepEqual(Object.keys(snapshot).sort(),["protocol","contextId","authoritySha256","guardChecks","attempted","failed","overflow","retainedBytes","checks","prefixes"].sort());
+ assert.equal(snapshot.retainedBytes,Buffer.byteLength(JSON.stringify(snapshot.checks)));assert.equal(snapshot.failed,0);
+ const sentinel=Error("PRIVATE_OBSERVER_ERROR");let getterCalls=0,inputs=0;
+ const application=app();Object.defineProperty(application,"unknown",{enumerable:true,get(){getterCalls++;throw sentinel;}});
+ const failure=createMixedProgressAcknowledgments({input:()=>{inputs++;return current;},application:()=>application,acknowledge:()=>assert.fail("no read")});
+ await assert.rejects(failure.check(),error=>error===sentinel);assert.equal(getterCalls,1);assert.equal(inputs,0);
+ const diagnostic=failure.snapshot().firstFailure;assert.equal(diagnostic.stage,"check-live");assert.equal(diagnostic.cut,null);assert.equal(diagnostic.application.unknown,null);assert.doesNotMatch(JSON.stringify(diagnostic),/PRIVATE_OBSERVER_ERROR/);
+});
+
+test("mixed first-failure diagnostic privacy and fixed retention cover the maximum bounded event projection",async()=>{
+ const {createMixedProgressAcknowledgments}=await import("./browser-control-collector.mjs"),{begin}=await openPrefixFixture(),current=structuredClone(begin);
+ const privateId="PRIVATE_EVENT_ID_"+"x".repeat(180);current.browserEventOrdinal=10000;
+ current.failures=Array.from({length:10000},(_,i)=>({requestId:privateId+i,proxyResponseId:"PRIVATE_PROXY",failedEventOrdinal:i+1,failedEvents:Number.MAX_SAFE_INTEGER,status:Number.MAX_SAFE_INTEGER,failed:true,loadingFinished:false,canceled:true,error:"PRIVATE_REASON".repeat(300),bodyProof:{complete:false,reason:"PRIVATE_BODY_REASON".repeat(200)}}));
+ current.proxy=[{id:"PRIVATE_PROXY",complete:false,canceled:false,upstreamError:false,responseEvents:Number.MAX_SAFE_INTEGER,bodyProof:{complete:false,reason:"PRIVATE_PACKET_REASON".repeat(190)}}];current.coverage.pendingBodies=Number.MAX_SAFE_INTEGER;
+ const observer=createMixedProgressAcknowledgments({input:()=>current,application:()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0}),acknowledge:()=>assert.fail("invalid current proof")});
+ await assert.rejects(observer.check());const snapshot=observer.snapshot(),diagnostic=snapshot.firstFailure;
+ assert.equal(diagnostic.cut.failureCount,10000);assert.equal(diagnostic.cut.latestFailure.failedEventOrdinal,10000);assert.equal(diagnostic.cut.latestFailure.requestIdSha256,sha(privateId+9999));
+ assert.equal(diagnostic.cut.matchingPacket.count,1);assert.equal(diagnostic.cut.matchingPacket.bodyProofComplete,false);assert.ok(Buffer.byteLength(JSON.stringify(diagnostic))*8+2048<=32768);assert.equal(snapshot.retainedBytes,32768+2);assert.equal(snapshot.overflow,0);
+ assert.doesNotMatch(JSON.stringify(diagnostic),/PRIVATE_|http:|cookie|payload/);
+ diagnostic.cut.coverage.pendingBodies=0;assert.equal(observer.snapshot().firstFailure.cut.coverage.pendingBodies,Number.MAX_SAFE_INTEGER,"snapshot edits cannot alter the retained first failure");
+});
