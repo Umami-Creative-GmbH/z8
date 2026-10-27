@@ -1648,3 +1648,12 @@ test('annual selection captures only actual existing document and execution fact
 		after.document.frameId='foreign';after.journal.executionEvents.length=0;assert.equal(f.tracker.selectedDocument().document.frameId,'frame');assert.equal(f.tracker.selectedDocument().journal.executionEvents.length,6);
 	}finally{f.close();}
 });
+
+test('context snapshots preserve the exact phase clock and request certificates independently of caller mutation',()=>{
+	const binding=testBrowserBinding('c'.repeat(40));binding.legacyClockReadiness={protocol:'synthetic-source-config',review:{sha256:'a'.repeat(64)}};binding.requestShapeDiagnostic={protocol:'synthetic-request-config',actionRegistrySha256:'b'.repeat(64)};
+	const collector=createBrowserControlCollector({contextId,origin,compiledBinding:binding});collector.installed();
+	const observed=collector.snapshot().allPhase.nativeContext.binding;
+	assert.deepEqual(observed.legacyClockReadiness,binding.legacyClockReadiness);assert.deepEqual(observed.requestShapeDiagnostic,binding.requestShapeDiagnostic);
+	observed.legacyClockReadiness.review.sha256='changed';observed.requestShapeDiagnostic.actionRegistrySha256='changed';
+	assert.equal(binding.legacyClockReadiness.review.sha256,'a'.repeat(64));assert.equal(binding.requestShapeDiagnostic.actionRegistrySha256,'b'.repeat(64));
+});

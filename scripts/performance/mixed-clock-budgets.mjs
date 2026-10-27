@@ -64,6 +64,8 @@ const commonConditions = (conditions) => {
 	const result = structuredClone(conditions);
 	delete result.browserControlMetadataFileSha256;
 	if (result.browserControl) delete result.browserControl.compiledManifestSha256;
+	for(const key of ["legacyClockReadiness","originalTeamSource","requestShapeDiagnostic"])if(result.browserControl)delete result.browserControl[key];
+	if(result.browserControl?.teamAnnualAction)for(const key of ["compiledBuild","compiledManifestSha256","registrySha256","actionHeaderSha256"])delete result.browserControl.teamAnnualAction[key];
 	if (result.browserControl?.nativePublicSources) {
 		delete result.browserControl.nativePublicSources.compiledBuild;
 		delete result.browserControl.nativePublicSources.compiledManifestSha256;
@@ -519,9 +521,9 @@ export function deriveMixedClockBudgets(input) {
 		expectedBeforeBuild,
 		expectedHeadBuild,
 		expectedOrigin:beforeContext.conditions.origin,
-		expectedBeforeBrowserControl: beforeContext.conditions.browserControl,
+		expectedBeforeBrowserControl: structuredClone(beforeContext.conditions.browserControl),
 		expectedBeforeBrowserControlFileSha256: beforeContext.conditions.browserControlMetadataFileSha256,
-		expectedHeadBrowserControl,
+		expectedHeadBrowserControl:structuredClone(expectedHeadBrowserControl),
 		expectedHeadBrowserControlFileSha256,
 		conditionsSha256: digest(canonical(commonConditions(beforeContext.conditions))),
 		clock: Object.fromEntries(

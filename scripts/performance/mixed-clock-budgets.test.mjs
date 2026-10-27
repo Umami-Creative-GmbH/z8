@@ -1,4 +1,4 @@
-import {testEmptyTemporaryValues,testTeamAnnualGolden} from "./control-cancellation-test-fixtures.mjs";
+import {testEmptyTemporaryValues,testTeamAnnualGolden,testTeamAnnualSource} from "./control-cancellation-test-fixtures.mjs";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
@@ -94,8 +94,8 @@ function fastMixedEvidence(contextId,build,files=Object.fromEntries(budgets.mixe
  evidence.mixedProgress={protocol:"mixed-native-progress-observations-v1",contextId,authoritySha256:mixedNativeAuthorityDigest(context),guardChecks:1,attempted:0,failed:0,overflow:0,retainedBytes:Buffer.byteLength(JSON.stringify(checks)),checks,prefixes:[]};
  life.close();census.close();principal.end([{name:"session",value:"synthetic",domain:"localhost",path:"/",httpOnly:true}]);context.principalEpoch=principal.snapshot();context.environment.workerTargets.scopeClosed=true;context.headerCensus=census.snapshot();delete context.headerPrefix;evidence.measured.nativeContext=context;evidence.allPhase.nativeContext=structuredClone(context);evidence.browserEventOrdinal=0;evidence.proxyHeaderLifecycle=life.snapshot();evidence.browserFailureOccurrences=mixedFailureOccurrenceCensus({contextId,scopeClosed:true,browserEventOrdinal:0,records:[]});evidence.mixedDocumentJournal={protocol:"actual-cdp-document-journal-v1",contextId,installed:true,currentGeneration:1,executionEventOrdinal:1,documentEventOrdinal:1,errors:0,overflow:0,closed:true,executionEvents:[{ordinal:1,event:"created",executionContextId:1,uniqueId:"unique",frameId:"frame",isDefault:true}],documents:[{ordinal:1,requestId:"doc",frameId:"frame",loaderId:"loader",originSha256:sha(origin),documentGeneration:contextId+":1"}]};return evidence;
 }
-function attachAnnual(run){for(const row of run.transports){const receipt=row.actor==="small-admin"?testTeamAnnualGolden(row.browserControlEvidence.allPhase.nativeContext,"http://localhost:58792",run.requestTimeoutMs):null;row.browserControlEvidence.annualTeam={protocol:"annual-team-selection-observation-v1",contextId:row.contextId,closed:true,armed:receipt!==null,consumed:receipt!==null,errors:0,overflow:0,pending:0,retainedBytes:receipt?1048576:0,receipt};if(receipt)run.annualTeamGolden=receipt;}return run;}
-function refreshProgress(run,files=Object.fromEntries(budgets.mixedProtocolFiles.map(name=>[name,hash]))){for(const row of run.transports)row.browserControlEvidence=fastMixedEvidence(row.contextId,run.sourceCommit,files,run.browserControl);attachAnnual(run);}
+function attachAnnual(run,actionId){for(const row of run.transports){const receipt=row.actor==="small-admin"?testTeamAnnualGolden(row.browserControlEvidence.allPhase.nativeContext,"http://localhost:58792",run.requestTimeoutMs,actionId):null;row.browserControlEvidence.annualTeam={protocol:"annual-team-selection-observation-v1",contextId:row.contextId,closed:true,armed:receipt!==null,consumed:receipt!==null,errors:0,overflow:0,pending:0,retainedBytes:receipt?1048576:0,receipt};if(receipt)run.annualTeamGolden=receipt;}return run;}
+function refreshProgress(run,files=Object.fromEntries(budgets.mixedProtocolFiles.map(name=>[name,hash])),actionId){for(const row of run.transports)row.browserControlEvidence=fastMixedEvidence(row.contextId,run.sourceCommit,files,run.browserControl);attachAnnual(run,actionId);}
 function fixture(build = BEFORE) {
 	const incoming = {
 		knownHeaderKnownSpan: 0,
@@ -818,4 +818,70 @@ test('both mixed phases require the selected TEAM CORE even when all browser raw
 			const changed=structuredClone(run);mutate(changed);assert.throws(()=>budgets.validateMixedClockRun(changed,build,phase,authority),/mandatory selected annual TEAM/);
 		}
 	}
+});
+
+function phaseCertificateInput(){
+	const input=inputs(),build="4b911c1788b1f8b41d893c38fb6d0c644c41ec1c",manifest="510d800e5d84a9a7859b5e59cb5187c25ac45891a910a63411f64a2bd6154e0d",buildHash="d4f596b441757de46ffda618d524ba50196772b10183877c8fbba0a2481736f0";
+	const clock=(compiledBuild,compiledManifestSha256,phase)=>({protocol:"source-qualified-legacy-header-readiness-v1",compiledBuild,compiledManifestSha256,originSha256:createHash('sha256').update(input.beforeContext.conditions.origin).digest('hex'),phase,review:{path:`C:/synthetic/${phase}-review.json`,sha256:phase==='baseline'?'1'.repeat(64):'2'.repeat(64)},buildRecord:{path:`C:/synthetic/${phase}-build.json`,sha256:phase==='baseline'?buildHash:'3'.repeat(64)}});
+	const before={...metadataFor(BEFORE),compiledManifestSha256:manifest,originalTeamSource:{protocol:"original-team-source-configuration-v1",profileId:"original-team-admin-guard-4b-v1",phase:"baseline",compiledBuild:build,compiledManifestSha256:manifest,buildRecordPath:"C:/synthetic/baseline-build.json",buildRecordSha256:buildHash},legacyClockReadiness:clock(build,manifest,'baseline'),requestShapeDiagnostic:{protocol:"request-shape-diagnostic-v1",compiledBuild:build,compiledManifestSha256:manifest,actionRegistrySha256:'4'.repeat(64),actionHeaderSha256:'5'.repeat(64),actionName:'getTeamPerformanceData'}};
+	const after={...metadataFor(HEAD),legacyClockReadiness:clock(HEAD,metadataFor(HEAD).compiledManifestSha256,'release')};
+	input.expectedBeforeBuild=build;input.beforeContext.fullBuild=build;input.beforeContext.conditions.browserControl=before;input.before.sourceCommit=build;input.before.liveVersion=build.slice(0,7);input.before.browserControl=testBrowserBinding(build,before);refreshProgress(input.before);input.expectedHeadBrowserControl=after;
+	return input;
+}
+function phaseComparison(input,budget,actionId){
+	const head=fixture(HEAD);head.browserControl=testBrowserBinding(HEAD,input.expectedHeadBrowserControl);refreshProgress(head,undefined,actionId);
+	return {budgets:budget,budgetSha256:hash,expectedBudgetSha256:hash,before:input.before,beforeSha256:hash,head,headSha256:hash,protocol:input.protocol,protocolSha256:hash,operatorSha256:hash,headContextSha256:hash,observedAt:"2026-10-25T04:00:00.000Z",headContext:{...input.beforeContext,fullBuild:HEAD,conditions:{...input.beforeContext.conditions,browserControl:input.expectedHeadBrowserControl,browserControlMetadataFileSha256:input.expectedHeadBrowserControlFileSha256},phase:"release",observationTimeoutMs:30000,firstControlledHeadStartedAt:"2026-10-25T02:00:00.000Z",startedAt:"2026-10-25T02:00:00.000Z",finishedAt:"2026-10-25T03:00:00.000Z"}};
+}
+test('valid distinct phase source configurations share conditions without sharing their exact certificates',()=>{
+	const input=phaseCertificateInput(),budget=budgets.deriveMixedClockBudgets(input),comparison=phaseComparison(input,budget);
+	assert.equal(budgets.compareMixedClockBudgets(comparison).passed,true);
+	assert.equal(budget.policy.version,9);assert.equal(budget.clock.in.ceilingMs,500);assert.equal(budget.clock.out.ceilingMs,630);
+});
+
+test('phase configuration normalization cannot admit missing swapped or altered actual certificates',()=>{
+	for(const field of ['legacyClockReadiness','originalTeamSource','requestShapeDiagnostic'])for(const mutation of ['missing','altered','swapped']){
+		const input=phaseCertificateInput();
+		if(mutation==='missing')delete input.before.browserControl[field];
+		else if(mutation==='altered')input.before.browserControl[field]={...input.before.browserControl[field],unregistered:'changed'};
+		else input.before.browserControl[field]=input.expectedHeadBrowserControl[field];
+		refreshProgress(input.before);assert.throws(()=>budgets.deriveMixedClockBudgets(input),undefined,field+':'+mutation);
+	}
+	const input=phaseCertificateInput(),budget=budgets.deriveMixedClockBudgets(input);
+	for(const mutation of ['missing','altered','swapped']){
+		const comparison=phaseComparison(input,budget);
+		if(mutation==='missing')delete comparison.head.browserControl.legacyClockReadiness;
+		else if(mutation==='altered')comparison.head.browserControl.legacyClockReadiness.review.sha256='9'.repeat(64);
+		else comparison.head.browserControl.legacyClockReadiness=structuredClone(input.beforeContext.conditions.browserControl.legacyClockReadiness);
+		refreshProgress(comparison.head);assert.throws(()=>budgets.compareMixedClockBudgets(comparison),undefined,'HEAD:'+mutation);
+	}
+});
+
+test('distinct compiled annual action identities remain phase-bound while their shared method is comparable',()=>{
+	const input=phaseCertificateInput(),before=input.beforeContext.conditions.browserControl,after=input.expectedHeadBrowserControl,otherAction='40'+'b'.repeat(40);
+	before.teamAnnualAction=testTeamAnnualSource(input.expectedBeforeBuild,before.compiledManifestSha256);after.teamAnnualAction=testTeamAnnualSource(HEAD,after.compiledManifestSha256);after.teamAnnualAction.registrySha256='8'.repeat(64);after.teamAnnualAction.actionHeaderSha256=createHash('sha256').update(otherAction).digest('hex');
+	input.before.browserControl=testBrowserBinding(input.expectedBeforeBuild,before);refreshProgress(input.before);
+	const budget=budgets.deriveMixedClockBudgets(input),comparison=phaseComparison(input,budget,otherAction);
+	assert.notEqual(before.teamAnnualAction.compiledBuild,after.teamAnnualAction.compiledBuild);assert.notEqual(before.teamAnnualAction.compiledManifestSha256,after.teamAnnualAction.compiledManifestSha256);assert.notEqual(before.teamAnnualAction.registrySha256,after.teamAnnualAction.registrySha256);assert.notEqual(before.teamAnnualAction.actionHeaderSha256,after.teamAnnualAction.actionHeaderSha256);
+	assert.equal(budgets.compareMixedClockBudgets(comparison).passed,true);
+	for(const field of ['compiledBuild','compiledManifestSha256','registrySha256','actionHeaderSha256']){const changed=structuredClone(comparison);changed.head.browserControl.teamAnnualAction[field]=before.teamAnnualAction[field];refreshProgress(changed.head,undefined,otherAction);assert.throws(()=>budgets.compareMixedClockBudgets(changed));}
+	for(const field of ['protocol','moduleSha256','workersSha256','exportName']){const changed=structuredClone(comparison);changed.headContext.conditions.browserControl.teamAnnualAction[field]='changed';assert.throws(()=>budgets.compareMixedClockBudgets(changed));}
+});
+
+test('registered phase metadata is a snapshot and cannot borrow later caller certificate mutations',()=>{
+	const input=phaseCertificateInput(),before=structuredClone(input.beforeContext.conditions.browserControl),after=structuredClone(input.expectedHeadBrowserControl),budget=budgets.deriveMixedClockBudgets(input);
+	input.beforeContext.conditions.browserControl.legacyClockReadiness.review.sha256='0'.repeat(64);input.expectedHeadBrowserControl.legacyClockReadiness.review.sha256='0'.repeat(64);
+	assert.deepEqual(budget.expectedBeforeBrowserControl,before);assert.deepEqual(budget.expectedHeadBrowserControl,after);
+	assert.throws(()=>budgets.compareMixedClockBudgets(phaseComparison(input,budget)));
+});
+
+test('phase normalization retains shared observer policy public-worker and unknown condition mismatches',()=>{
+	for(const mutate of [c=>c.temporaryValueObservation.annualTeam.deadline='changed',c=>c.policy.version=999]){
+		const input=phaseCertificateInput();mutate(input.expectedHeadBrowserControl);assert.throws(()=>budgets.deriveMixedClockBudgets(input));
+	}
+	const input=phaseCertificateInput();
+	const publicSources=(build,manifest)=>({protocol:'qualified-serving-worker-sources-v1',compiledBuild:build,compiledManifestSha256:manifest,files:['sw.js','lib/offline-queue-db.js','lib/sync-service.js','lib/clock-command-dispatch.js'].map(file=>({file,bytes:12,sha256:hash,gitBlob:'a'.repeat(40)}))});
+	input.beforeContext.conditions.browserControl.nativePublicSources=publicSources(input.expectedBeforeBuild,input.before.browserControl.compiledManifestSha256);input.before.browserControl.nativePublicSources=structuredClone(input.beforeContext.conditions.browserControl.nativePublicSources);refreshProgress(input.before);
+	input.expectedHeadBrowserControl.nativePublicSources=publicSources(HEAD,input.expectedHeadBrowserControl.compiledManifestSha256);input.expectedHeadBrowserControl.nativePublicSources.files[0].sha256='b'.repeat(64);
+	const budget=budgets.deriveMixedClockBudgets(input);assert.throws(()=>budgets.compareMixedClockBudgets(phaseComparison(input,budget)),/identical conditions/);
+	for(const field of ['unknownSharedObserver','unknownSharedSource']){const candidate=phaseCertificateInput();candidate.expectedHeadBrowserControl[field]='head-only';const registered=budgets.deriveMixedClockBudgets(candidate);assert.throws(()=>budgets.compareMixedClockBudgets(phaseComparison(candidate,registered)),/identical conditions/);}
 });

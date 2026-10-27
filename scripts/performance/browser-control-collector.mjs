@@ -985,7 +985,7 @@ export function createBrowserControlCollector({
 			observed:protocolErrorRecords.length,overflow:protocolErrorOverflow+Math.max(0,protocolErrorRecords.length-controlCancellationPolicy.recordLimit),records:protocolErrorRecords.slice(0,controlCancellationPolicy.recordLimit)};
 		const environment=environmentObservation(),principal=principalEpoch.snapshot();
 		const nativeContext={protocol:"qualified-known-extra-native-context-v1",contextId,originSha256:sha(origin),workerScriptSha256:sha(origin+"/sw.js"),rootScopeSha256:sha(origin+"/"),
-			binding:compiledBinding ? Object.fromEntries(["policy","browserRevision","compiledBuild","compiledManifestSha256","compiledCachedNavigations","manifestVerified","browserVerified","nativePublicSources","temporaryValueObservation","originalTeamSource","teamAnnualAction"].filter(key=>Object.hasOwn(compiledBinding,key)).map(key=>[key,compiledBinding[key]])) : null,
+			binding:compiledBinding ? Object.fromEntries(["policy","browserRevision","compiledBuild","compiledManifestSha256","compiledCachedNavigations","manifestVerified","browserVerified","nativePublicSources","temporaryValueObservation","originalTeamSource","teamAnnualAction","legacyClockReadiness","requestShapeDiagnostic"].filter(key=>Object.hasOwn(compiledBinding,key)).map(key=>[key,["legacyClockReadiness","requestShapeDiagnostic"].includes(key)?structuredClone(compiledBinding[key]):compiledBinding[key]])) : null,
 			protocolSources:protocolSources ?? null,operatorFile:operatorFile ?? null,principalEpoch:principal,headerCensus:proxy.headerCensus ?? null,headerLifetime:proxy.headerLifetime ?? null,headerPrefix:proxy.headerPrefix ?? null,
 			protocolErrors,environment};
 		const data = { responses, proxy: proxy.rows, coverage, browserRevision,nativeContext };

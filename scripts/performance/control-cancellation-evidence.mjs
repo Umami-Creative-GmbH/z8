@@ -123,6 +123,7 @@ export function matchingBrowserControlBinding(runtime, binding) {
 		JSON.stringify(binding.nativePublicSources) === JSON.stringify(expected.nativePublicSources) &&
 		JSON.stringify(binding.temporaryValueObservation) === JSON.stringify(expected.temporaryValueObservation) &&
 		JSON.stringify(binding.originalTeamSource) === JSON.stringify(expected.originalTeamSource) &&
+		["legacyClockReadiness","requestShapeDiagnostic"].every(key=>Object.hasOwn(binding,key)===Object.hasOwn(expected,key) && JSON.stringify(binding[key])===JSON.stringify(expected[key])) &&
 		(!expected.teamAnnualAction || JSON.stringify(binding.teamAnnualAction)===JSON.stringify(expected.teamAnnualAction)) &&
 		knownOriginalTeamSourceConfiguration(binding.originalTeamSource,binding.compiledBuild,binding.compiledManifestSha256) &&
 		(!expected.nativePublicSources || knownNativePublicSources(expected.nativePublicSources,runtime.build,expected.compiledManifestSha256)) &&
