@@ -546,6 +546,7 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 					failureStage: "prepare",
 					elapsedUntilFailureMs: performance.now() - preparationStart,
 					clockReadyMs: null,
+					clockReadinessDiagnostics:controls.snapshot(),
 				});
 				uiTrace = traces.preparation[3];
 				throw Error("Header preparation failed");
@@ -829,6 +830,7 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 		unknownOutstanding,
 		completeCoverage,
 		browserClosed,
+		clockReadinessDiagnostics:controls?.snapshot() ?? null,
 		pageErrors,
 		nativeRunCoverage,
 		nativeCloseProof,

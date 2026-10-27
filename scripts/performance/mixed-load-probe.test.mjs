@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { EventEmitter } from "node:events";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import { runInNewContext } from "node:vm";
 import * as mixedProbe from "./mixed-load-probe.mjs";
 import { openPublicHeaderClock } from "./public-header-clock.mjs";
 
@@ -238,4 +240,113 @@ test("mixed page locale waits for header setup and fails before installer on unk
  const running=mixedProbe.installMixedPageObservation({page,condition:mixedProbe.mixedBrowserCondition},async options=>{installed++;assert.deepEqual(options.headers,{"Accept-Language":"en"});});
  await Promise.resolve();await Promise.resolve();await Promise.resolve();assert.equal(installed,0);release();await running;assert.equal(installed,1);
  for(const locale of [undefined,null,"","en\r\nX-Test:bad"]){let calls=0;await assert.rejects(mixedProbe.installMixedPageObservation({page:{setViewport:async()=>{calls++;}},condition:{...mixedProbe.mixedBrowserCondition,locale}},async()=>{calls++;}));assert.equal(calls,0);}
+});
+
+function clockDiagnosticPage(){
+	const page=new EventEmitter(),dom={label:"Clock In",disabled:false,visible:true,marker:"ready",afterWrite:null,responseSuccess:true,extraButtons:[]},expected={email:"PRIVATE_EMAIL",organizationId:"PRIVATE_ORG"};
+	const button={getAttribute:key=>key==="aria-label"?dom.label:key==="aria-expanded"?"true":null,getClientRects:()=>dom.visible?[{}]:[],get disabled(){return dom.disabled;},get textContent(){return dom.label;},matches:()=>dom.disabled,closest:selector=>{if(selector==='[data-clock-status]')if(dom.markerReadError)throw Error("PRIVATE_DIAGNOSTIC_READ");return selector==='[data-clock-status="ready"]'?dom.marker==="ready"?{}:null:dom.marker?{getAttribute:()=>dom.marker}:null;}};
+	const document={querySelectorAll:()=>[button,...dom.extraButtons]};
+	page.goto=page.reload=async()=>page.emit("framenavigated",{parentFrame:()=>null});
+	page.evaluate=async(fn,...args)=>runInNewContext('('+fn.toString()+')(...args)',{args,document,AbortSignal:{timeout:()=>({})},fetch:async path=>({ok:true,json:async()=>path.includes("get-session")?{user:{email:expected.email},session:{activeOrganizationId:expected.organizationId}}:{onlineSubmit:"available",submit:"unavailable"}})});
+	let predicate,resolveResponse,writes=0;
+	page.waitForResponse=match=>{predicate=match;return new Promise(resolve=>{resolveResponse=resolve;});};
+	const handle={isVisible:async()=>dom.visible,evaluate:async(fn,...args)=>fn(button,...args),asLocator:()=>({setTimeout:()=>({click:async()=>{
+		writes++;const action=dom.label==="Clock In"?"in":"out",request={headers:()=>({}),url:()=>"http://localhost/api/time-clock",method:()=>"POST",postData:()=>JSON.stringify({action:"clock_"+action})};
+		const response={request:()=>request,url:()=>request.url(),text:async()=>JSON.stringify({success:dom.responseSuccess,PRIVATE_FIELD:"PRIVATE_VALUE"}),status:()=>200,ok:()=>true};
+		page.emit("request",request);page.emit("response",response);dom.label=action==="in"?"Clock Out":"Clock In";dom.afterWrite?.();if(predicate(response))resolveResponse(response);
+	}})})};
+	page.$$=async()=>[handle];page.waitForFunction=async(fn,...args)=>{assert.equal(await page.evaluate(fn,...args.slice(1)),true);};
+	const status=(text,body)=>{const request={headers:()=>({"next-action":"PRIVATE_STATUS_ACTION"}),url:()=>"http://localhost/en",method:()=>"POST"};page.emit("request",request);page.emit("response",{request:()=>request,url:()=>request.url(),text:()=>body??Promise.resolve(text)});return request;};
+	return {page,dom,expected,status,writes:()=>writes};
+}
+
+test("public header clock readiness reports the existing usable DOM predicate without changing state",async()=>{
+	const {page,dom,expected}=clockDiagnosticPage(),controls=await openPublicHeaderClock(page,{origin:"http://localhost",expectedActor:expected,phase:"baseline",timeoutMs:50});
+	try{
+		assert.equal(await controls.state(),"out");const diagnostic=controls.snapshot();
+		assert.equal(diagnostic.protocol,"public-header-clock-readiness-diagnostic-v1");assert.ok(diagnostic.polls>=2);
+		assert.equal(diagnostic.lastDOM.selectedLabel,"clock-in");assert.equal(diagnostic.lastDOM.marker,"ready");assert.equal(diagnostic.lastDOM.state,"out");
+		dom.disabled=true;dom.marker="pending";assert.equal(await controls.state(),null);assert.equal(controls.snapshot().lastDOM.enabledVisible,0);assert.equal(controls.snapshot().lastDOM.markers.pending,1);assert.equal(controls.snapshot().lastDOM.clockInVisible,1);
+		assert.doesNotMatch(JSON.stringify(controls.snapshot()),/PRIVATE_EMAIL|PRIVATE_ORG|localhost/);
+	}finally{controls.dispose();}
+});
+
+test("public header clock diagnostics distinguish stale missing and unrecognized status without accepting their DOM",async()=>{
+	const f=clockDiagnosticPage(),controls=await openPublicHeaderClock(f.page,{origin:"http://localhost",expectedActor:f.expected,phase:"baseline",timeoutMs:50});
+	try{
+		f.dom.marker=null;assert.equal(await controls.state(),null);assert.equal(controls.snapshot().cachedStatus,null);
+		f.status('{"hasEmployee":true,"isClockedIn":false,"private":"PRIVATE_STATUS"}');await new Promise(setImmediate);
+		assert.equal(await controls.state(),"out");assert.equal(controls.snapshot().cachedStatus.parseOutcome,"status-known");
+		assert.equal(controls.snapshot().cachedStatus.actionHeaderSha256Known,true);assert.equal(controls.snapshot().cachedStatus.originMatches,true);assert.ok(controls.snapshot().statusAgeMs>=0);
+		f.dom.label="Clock Out";assert.equal(await controls.state(),null);assert.equal(controls.snapshot().lastDOM.selectedLabel,"clock-out");assert.equal(controls.snapshot().cachedStatus.isClockedIn,false);
+		f.status('PRIVATE_INVALID_STATUS');await new Promise(setImmediate);assert.equal(controls.snapshot().lastStatusRead.parseOutcome,"unrecognized");assert.equal(await controls.state(),null);
+		f.status('',Promise.reject(Error("PRIVATE_READ_ERROR")));await new Promise(setImmediate);assert.equal(controls.snapshot().lastStatusRead.parseOutcome,"body-unavailable");assert.equal(controls.snapshot().pendingStatusReads,0);
+		f.dom.marker="ready";assert.equal(await controls.state(),"in","Existing ready marker still suffices despite old cached status.");
+		assert.doesNotMatch(JSON.stringify(controls.snapshot()),/PRIVATE_|localhost|\/en/);
+	}finally{controls.dispose();}
+});
+
+test("public header clock diagnostics expose out-of-order and navigation-stale status while preserving the old predicate",async()=>{
+	const f=clockDiagnosticPage(),controls=await openPublicHeaderClock(f.page,{origin:"http://localhost",expectedActor:f.expected,phase:"baseline",timeoutMs:50});
+	try{
+		let release;f.status('',new Promise(resolve=>{release=resolve;}));
+		f.status('{"hasEmployee":true,"isClockedIn":true}');await new Promise(setImmediate);const newer=controls.snapshot().cachedStatus.requestEventOrdinal;
+		f.page.emit("framenavigated",{parentFrame:()=>null});release('{"hasEmployee":true,"isClockedIn":false}');await new Promise(setImmediate);
+		const result=controls.snapshot();assert.equal(result.outOfOrderStatusUpdates,1);assert.ok(result.cachedStatus.requestEventOrdinal<newer);assert.equal(result.cachedStatusSameObservedNavigationGeneration,false);
+		f.dom.marker=null;assert.equal(await controls.state(),"out","Metadata must not add a new freshness gate.");
+		assert.equal(controls.snapshot().actorVerifiedGeneration<controls.snapshot().documentGeneration,true);
+	}finally{controls.dispose();}
+});
+
+test("public header clock accepted REST acknowledgement remains separate from stale status and failed readiness",async()=>{
+	const f=clockDiagnosticPage(),controls=await openPublicHeaderClock(f.page,{origin:"http://localhost",expectedActor:f.expected,phase:"baseline",timeoutMs:30});
+	try{
+		f.status('{"hasEmployee":true,"isClockedIn":false}');await new Promise(setImmediate);f.dom.marker=null;
+		const prepared=await controls.prepare("in"),result=await prepared.submit();
+		assert.equal(result.success,false);assert.equal(result.censored,true);assert.equal(result.httpStatus,200);assert.equal(result.unknownCommandOutcome,false);assert.equal(result.clockReadyMs,null);assert.equal(f.writes(),1);
+		const d=result.clockReadinessDiagnostics;assert.equal(d.failureStage,"readiness-deadline");assert.equal(d.writeResponse.accepted,true);assert.equal(d.writeResponse.requestStartedAfterSubmit,true);assert.equal(d.writeResponse.originMatches,true);
+		assert.equal(d.cachedStatus.isClockedIn,false);assert.equal(d.statusRequestAfterAcceptedWrite,false);assert.equal(d.lastDOM.selectedLabel,"clock-out");assert.equal(d.lastDOM.marker,"absent");assert.equal(d.lastDOM.enabledVisible,1);assert.equal(d.lastDOM.state,null);
+		assert.doesNotMatch(JSON.stringify(d),/PRIVATE_|localhost|clock_in/);await assert.rejects(prepared.submit(),/only once/);
+	}finally{controls.dispose();}
+});
+
+test("public header clock successful and disabled DOM observations retain their existing outcome and cleanup",async()=>{
+	for(const disabled of [false,true]){
+		const f=clockDiagnosticPage(),controls=await openPublicHeaderClock(f.page,{origin:"http://localhost",expectedActor:f.expected,phase:"baseline",timeoutMs:30});
+		try{
+			f.dom.afterWrite=()=>{f.dom.disabled=disabled;};const result=await (await controls.prepare("in")).submit();
+			assert.equal(result.success,!disabled);assert.equal(result.unknownCommandOutcome,false);assert.equal(f.writes(),1);
+			const d=result.clockReadinessDiagnostics;assert.equal(d.writeResponse.accepted,true);assert.equal(d.cachedStatus,null);assert.equal(d.lastDOM.enabledVisible,disabled?0:1);
+			assert.equal(d.failureStage,disabled?"readiness-deadline":null);assert.equal(d.lastDOM.state,disabled?null:"in");
+		}finally{controls.dispose();assert.equal(f.page.listenerCount("request"),0);assert.equal(f.page.listenerCount("response"),0);assert.equal(f.page.listenerCount("framenavigated"),0);}
+	}
+});
+
+test("public header clock bounded diagnostic counters never change source selection or print raw values",async()=>{
+	const f=clockDiagnosticPage(),controls=await openPublicHeaderClock(f.page,{origin:"http://localhost",expectedActor:f.expected,phase:"baseline",timeoutMs:50});
+	try{
+		f.dom.extraButtons=Array.from({length:40},()=>({getClientRects:()=>[{}],disabled:false,getAttribute:()=>"Clock Out",closest:()=>null}));
+		assert.equal(await controls.state(),"out","Existing first usable button selection is unchanged.");
+		const dom=controls.snapshot().lastDOM;assert.equal(dom.candidates,32);assert.equal(dom.truncated,true);assert.equal(dom.enabledVisible,32);assert.equal(dom.conflictingUsableLabels,true);
+		const request={headers:()=>({}),url:()=>"http://localhost/PRIVATE_URL"};for(let n=0;n<10002;n++)f.page.emit("request",request);
+		const d=controls.snapshot();assert.ok(d.errors>0);assert.ok(d.overflow>0);assert.ok(d.eventOrdinal<=10000);assert.ok(d.requestFacts<=10000);assert.equal(await controls.state(),"out");
+		assert.doesNotMatch(JSON.stringify(controls.snapshot()),/PRIVATE_|localhost/);
+	}finally{controls.dispose();}
+});
+
+test("public header clock HTTP200 with a refused result does not become an accepted-write fact",async()=>{
+	const f=clockDiagnosticPage(),controls=await openPublicHeaderClock(f.page,{origin:"http://localhost",expectedActor:f.expected,phase:"baseline",timeoutMs:30});
+	try{
+		f.dom.responseSuccess=false;const result=await (await controls.prepare("in")).submit();
+		assert.equal(result.success,false);assert.equal(result.httpStatus,200);assert.equal(result.unknownCommandOutcome,false);assert.equal(result.clockReadyMs,null);assert.equal(f.writes(),1);
+		assert.equal(result.clockReadinessDiagnostics.failureStage,"caller-result");assert.equal(result.clockReadinessDiagnostics.writeResponse.accepted,false);assert.equal(result.clockReadinessDiagnostics.writeResponse.success,false);assert.equal(result.clockReadinessDiagnostics.writeMatchesCurrentAttempt,true);
+	}finally{controls.dispose();}
+});
+
+test("public header clock diagnostic-only read failures cannot change a ready marker decision",async()=>{
+	const f=clockDiagnosticPage(),controls=await openPublicHeaderClock(f.page,{origin:"http://localhost",expectedActor:f.expected,phase:"baseline",timeoutMs:50});
+	try{
+		f.dom.markerReadError=true;assert.equal(await controls.state(),"out");const d=controls.snapshot();
+		assert.equal(d.errors,1);assert.equal(d.lastDOM.known,false);assert.equal(d.lastDOM.reason,"diagnostic-read-unavailable");assert.equal(d.lastDOM.state,"out");assert.doesNotMatch(JSON.stringify(d),/PRIVATE_/);
+	}finally{controls.dispose();}
 });
