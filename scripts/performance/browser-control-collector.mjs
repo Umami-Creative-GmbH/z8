@@ -1,5 +1,6 @@
 /** Passive all-phase identity/body receipts. No app requests, payloads, URLs or header values are emitted. */
 import { createHash } from "node:crypto";
+import { types as utilTypes } from "node:util";
 import { createReadStream } from "node:fs";
 import { readFile, stat } from "node:fs/promises";
 import { basename, dirname, resolve } from "node:path";
@@ -174,6 +175,7 @@ export function createTeamAnnualResponseSelection({contextId,origin,source,reser
 		}catch{errors++;return null;}},
 		eligible(row){return !closed && active && !active.consumed && performance.now()<=active.deadlineMs && row.annualRequestOrdinal>active.requestOrdinal && row.fullUrlSha256===active.urlSha256 && row.action===true && row.headerFieldSha256?.["next-action"]===source.actionHeaderSha256;},
 		inspectionActive(){return Boolean(active && !closed && !active.consumed);},
+		inspectionDeadline(row){return active && !closed && !active.consumed && row.fullUrlSha256===active.urlSha256?active.deadlineMs:null;},
 		response(response){
 			if(!active || closed || active.consumed)return;
 			let transient=false,headerReservation=false,documentReservation=false;
@@ -1042,6 +1044,7 @@ export function createBrowserControlCollector({
 			...(captureContextFailures?{browserEventOrdinal,proxyHeaderLifecycle:proxy.headerLifecycle ?? null,browserFailureOccurrences:mixedFailureOccurrenceCensus({contextId,scopeClosed:closed,browserEventOrdinal,records:failures.map(row=>({requestId:row.requestId,eventOrdinal:row.failedEventOrdinal ?? null,failedEvents:row.failedEvents}))})}:{}),
 			proxyHeaderCensus: proxy.headerCensus ?? null,
 			proxyHeaderLifetime: proxy.headerLifetime ?? null,
+			proxyInspectionJobs:proxy.inspectionJobs ?? null,
 			protocolErrors: { protocol: "positive-flight-error-observations-v1", contextId, installed: coverage.installed, scopeClosed: closed,
 				observed: protocolErrorRecords.length, overflow: protocolErrorOverflow + Math.max(0, protocolErrorRecords.length - controlCancellationPolicy.recordLimit),
 				records: protocolErrorRecords.slice(0, controlCancellationPolicy.recordLimit) },
@@ -1579,6 +1582,7 @@ export async function installBrowserControlCollector({
 					[controlDocumentHeader]: `${contextId}:${++generation}`,
 				},
 			});
+			proxy.beginTeamNavigation(method,args,generation);
 			return Reflect.apply(original, this, args);
 		};
 	}
@@ -1666,6 +1670,7 @@ export function createProxyControlCollector({
 		overflow = 0,
 		pendingBodies = 0;
 	let annualInspectionRetainedBytes=0;
+	let navigationWindow=null,navigationWindowCharged=false,annualWindowGeneration=null,jobBytes=0,unresolvedJobs=0;
 	const qualification=originalTeamBindings.get(compiledBinding),sourceFacts=originalTeamSourceFacts(qualification);
 	const shapeConfiguration=requestShapeBindings.get(compiledBinding) ?? (sourceFacts?{protocol:"original-team-request-observation-v1",actionHeaderSha256:sourceFacts.actionHeaderSha256}:annualSource?{protocol:"annual-team-request-observation-v1",actionHeaderSha256:annualSource.actionHeaderSha256}:null),shapeRows=new Map();
 	const reserveTeam=bytes=>{if(!Number.isSafeInteger(bytes)||bytes<0||retained+bytes>controlCancellationPolicy.retainedLimit)return false;retained+=bytes;return true;};
@@ -1724,12 +1729,113 @@ export function createProxyControlCollector({
 		rows:[...shapeRows.values()].map(row=>({id:row.id,requestEOF:row.requestEOF,terminal:row.terminal,encodedBytes:row.bytes,bodySha256:row.bodySha256,
 			contentType:row.contentType,charset:row.charset,contentEncoding:row.contentEncoding,unavailable:row.unavailable,shape:row.shape}))});
 	const release = (row) => {
-		retained -= row.retainedBytes;
-		row.retainedBytes = 0;
+		const bytes=row.retainedBytes;
 		row.chunks = [];
+		row.retainedBytes = 0;
+		retained -= bytes;
 	};
+
+	const runInspection=row=>{const id=row.id;
+		let inspection=null;
+		try {
+			if(annual?.inspectionActive()){
+				if(reserveTeam(8192)){annualInspectionRetainedBytes+=8192;inspection=row.annualInspection={stage:"entered",skip:null,eligible:null,opened:null,proofComplete:null,proofReasonSha256:null,projection:null,outcome:null,eof:null,bytes:null,sha256:null,bounded:row.bounded===true,flight:row.flight===true,action:row.action===true,catchStage:null,prefix:null,form:null,length:null,tokenSha256:null,role:null,pathFailure:null,lookupAttempted:null,valueUsed:null,authorityStage:null};}
+				else overflow++;
+			}
+			if ((!row.flight && !row.action) || row.bounded) {if(inspection)inspection.skip=row.bounded?"bounded":"not-flight-action";return;}
+			if(inspection)inspection.stage="decode";
+			let bytes = Buffer.concat(row.chunks);
+			const options = {
+				maxOutputLength: controlCancellationPolicy.decodedLimit,
+			};
+			if (row.encoding === "gzip") bytes = gunzipSync(bytes, options);
+			else if (row.encoding === "br")
+				bytes = brotliDecompressSync(bytes, options);
+			else if (row.encoding === "deflate")
+				bytes = inflateSync(bytes, options);
+			else if (!["", "identity"].includes(row.encoding))
+				throw Error("Unsupported encoding");
+			row.transportBodyReceipt = { protocol: "proxy-natural-eof-decoded-bytes-v1", naturalEOF: true,
+				decodedBytes: bytes.length, bodySha256: sha(bytes) };
+			if(inspection){inspection.eof=true;inspection.bytes=bytes.length;inspection.sha256=row.transportBodyReceipt.bodySha256;}
+			try {
+				row.transportBodyReceipt.cdpTextProjection = {available:true,...projectCachedCdpText(bytes)};
+			} catch(error) {
+				const reason=["unsupported-original-buffer","original-byte-limit","unsupported-bom-prefix","projected-byte-limit"].includes(error?.message) ? error.message : "projection-unavailable";
+				row.transportBodyReceipt.cdpTextProjection = {available:false,reason};
+			}
+			let projection=null;
+			if(inspection)inspection.stage="eligible";
+			const eligible=annual?.eligible(row);if(inspection)inspection.eligible=eligible===true;
+			if(eligible){
+				// Scratch UTF-8 decoding plus scalar/hash receipt only; no second body pool.
+				if(!reserveTeam(65536)){overflow++;throw Error("Annual projection reservation unavailable.");}
+				if(inspection)inspection.stage="open";
+				projection=openTeamAnnualProjection({bodySha256:row.transportBodyReceipt.bodySha256,decodedBytes:bytes.length});
+				if(inspection)inspection.opened=Boolean(projection);
+			}
+			try {
+				if(inspection)inspection.stage="inspect";
+				assignBodyProof(row, inspectCollectedFlightBody(row,bytes,compiledCachedNavigations,compiledBinding,temporaryInspectionFor,projection), "proxy-natural-eof", row.transportBodyReceipt.bodySha256);
+				if(inspection){
+					const proof=row.bodyProof,reference=proof?.modelReference,prefix=reference?.prefix,role=reference?.semanticRole ?? proof?.semanticRole,observation=row.temporaryValueObservation;
+					inspection.prefix=["plain","other",..."QWiKBDnShTL@FINuZwH-"].includes(prefix)?prefix:null;
+					inspection.form=["outlined-path","typed-outlined-path","other"].includes(reference?.form)?reference.form:null;
+					inspection.length=Number.isSafeInteger(reference?.length) && reference.length>=0 && reference.length<=controlCancellationPolicy.decodedLimit?reference.length:null;
+					inspection.tokenSha256=/^[a-f0-9]{64}$/.test(reference?.tokenSha256 ?? "")?reference.tokenSha256:null;
+					inspection.role=["root","required","transport","tree","data","tree-map","tree-map-model","tree-map-pair","output","cache-output","suspended-output","fallback-output","component-data","element-type","element-key","host-props","cache-host-props","fallback-host-props","suspense-props","suspended-host-props"].includes(role)?role:null;
+					inspection.pathFailure=["depth-or-model-limit","unsupported-eager-reference","noncanonical-eager-reference","unsupported-eager-collection","missing-eager-model","eager-import-model","eager-cross-record-or-alias-cycle","eager-binary-or-text-value","malformed-eager-element","unsupported-reference-shape","unsupported-cross-record-cycle","outlined-reference-cycle","path-component-limit","path-alias-cycle","missing-path-model","path-import-model","unsupported-path-model-kind","path-promise-not-unwrapped","unsupported-path-temporary-value","non-object-projection","binary-or-text-projection","missing-element-own-property","removed-proto-property","unsupported-parent-prototype","missing-own-property","non-data-own-property","removed-undefined-property","unavailable-own-data"].includes(proof?.pathFailure)?proof.pathFailure:null;
+					inspection.lookupAttempted=typeof observation?.lookupAttempted==="boolean"?observation.lookupAttempted:null;inspection.valueUsed=typeof observation?.valueUsed==="boolean"?observation.valueUsed:null;
+				}
+				if(inspection){inspection.proofComplete=row.bodyProof?.complete===true;inspection.proofReasonSha256=typeof row.bodyProof?.reason==="string"?sha(row.bodyProof.reason):null;inspection.stage="take";}
+				if(projection)row.teamAnnualProjection=takeTeamAnnualProjection(projection,inspection);
+				if(inspection)inspection.projection=Boolean(row.teamAnnualProjection);
+			}finally{if(projection)closeTeamAnnualProjection(projection);}
+		} catch {
+			if(inspection)inspection.catchStage=inspection.stage;
+			row.bodyProof = { complete: false, reason: "proxy-body-unavailable" };
+		} finally {
+			if(inspection){inspection.stage="settled";if(inspection.catchStage!==null){inspection.proofComplete=false;inspection.proofReasonSha256=sha("proxy-body-unavailable");}Object.freeze(inspection);}
+			row.proxyInspectionSettled=true;retireValue(id);
+			annual?.notify();
+			release(row);
+			pendingBodies--;
+			if(row.inspectionJob)row.inspectionJob.state="settled";
+		}
+	};
+	const disposeInspection=(row,reason)=>{
+		const job=row.inspectionJob;if(!job || ["settled","closed-unresolved"].includes(job.state))return;
+		const pending=["waiting","scheduled","running"].includes(job.state);
+		if(row.inspectionTask){clearImmediate(row.inspectionTask);row.inspectionTask=null;}
+		job.state="closed-unresolved";job.reason=reason;unresolvedJobs++;errors++;
+		row.bodyProof={complete:false,reason:"proxy-inspection-unresolved"};row.proxyInspectionSettled=true;
+		release(row);if(pending)pendingBodies--;retireValue(row.id);
+	};
+	const resumeInspection=row=>{
+		const job=row?.inspectionJob;if(!job || ["scheduled","running","settled","closed-unresolved"].includes(job.state))return;
+		if(teamClosed || performance.now()>job.deadlineMs){disposeInspection(row,teamClosed?"closed":"deadline");return;}
+		if(!row.complete || row.canceled)return;
+		const shape=shapeRows.get(row.id),browser=browserRows.get(row.id);
+		if(shape && !shape.unavailable && (shape.terminal===null && !shape.requestEOF || shape.requestEOF && !row.requestParseSettled))return;
+		if(!browser || browser.initialHeaderIdentity?.requestHeaderSnapshotKnown===true && browser.requestHeadersKnown!==true)return;
+		job.state="scheduled";row.inspectionTask=setImmediate(()=>{
+			row.inspectionTask=null;if(teamClosed || job.state!=="scheduled")return;
+			if(performance.now()>job.deadlineMs){disposeInspection(row,"deadline");return;}
+			job.state="running";job.parseCalls++;runInspection(row);
+		});
+	};
+	const requestParseDone=id=>{const packet=requests.get(id);if(packet){packet.requestParseSettled=true;resumeInspection(packet);}};
 	return {
-		armAnnualTeam(input){return annual?.arm(input) ?? null;},
+		beginTeamNavigation(method,args,generation){
+			if(!sourceFacts || teamClosed)return false;
+			const options=method==="goto"?args[1]:args[0];
+			if(!options || typeof options!=="object" || utilTypes.isProxy(options))return false;
+			const field=Object.getOwnPropertyDescriptor(options,"timeout"),timeout=field && Object.hasOwn(field,"value")?field.value:null;
+			if(!Number.isFinite(timeout) || timeout<=0 || timeout>90000 || !Number.isSafeInteger(generation) || generation<1)return false;
+			if(!navigationWindowCharged){if(!reserveTeam(4096)){overflow++;return false;}navigationWindowCharged=true;}
+			navigationWindow={kind:"navigation",deadlineMs:performance.now()+timeout,generation};return true;
+		},
+		armAnnualTeam(input){const handle=annual?.arm(input) ?? null;if(handle)annualWindowGeneration=navigationWindow?.generation ?? null;return handle;},
 		observeAnnualResponse(response){annual?.response(response);},
 		readAnnualTeam(handle,response){if(!annual)return Promise.reject(Error("Annual team observer is unavailable."));return annual.read(handle,response);},
 		annualTeamSnapshot(){return annual?.snapshot() ?? null;},
@@ -1745,9 +1851,10 @@ export function createProxyControlCollector({
 			if(kind==="body-settled")retireValue(row.proxyResponseId);
             if(kind==="request" && (sourceFacts && row.headerFieldSha256?.["next-action"]===sourceFacts.actionHeaderSha256 || row.headerFieldSha256?.[teamReplayHeader]))browserCuts.set(row,sourceCuts.capture("browser-request",row.requestId,currentTeamCut(),originalTeamRequestRouteFacts(operatorSource,row)));
 			if(row.proxyResponseId){const prior=browserRows.get(row.proxyResponseId);if(prior && prior!==row){errors++;return;}browserRows.set(row.proxyResponseId,row);}
+			if(row.proxyResponseId)resumeInspection(requests.get(row.proxyResponseId));
 			annual?.notify();
 		},
-		closeTeamValues(){if(teamClosed)return;teamClosed=true;annual?.close();teamDispatch?.close();sourceCuts.close();teamStore.close();},
+		closeTeamValues(){if(teamClosed)return;teamClosed=true;for(const row of requests.values())disposeInspection(row,"closed");annual?.close();teamDispatch?.close();sourceCuts.close();teamStore.close();},
 		installed(binding) {
 			installed = true;
 			if (binding) transportInstallation = {
@@ -1796,6 +1903,15 @@ export function createProxyControlCollector({
 				chunks: [],
 				retainedBytes: 0,
 			});
+			const routes=operatorSource?.pageRoutes,routeMatches=routes?.protocol==="source-qualified-team-page-routes-v1" && routes.originSha256===sha(origin) && identity.requestOriginSha256===routes.originSha256 && Array.isArray(routes.destinations) && routes.destinations.length<=128?routes.destinations.filter(route=>route.fullUrlSha256===identity.fullUrlSha256 && identity.headerFieldSha256["accept-language"]===sha(route.locale)).length:0;
+			if(sourceFacts && observedTeamCut && proxyCuts.get(id) && method==="POST" && routeMatches===1 && identity.headerFieldSha256["next-action"]===sourceFacts.actionHeaderSha256){
+				const manual=ownedReplay?teamDispatch?.inspectionDeadline(id):null,annualDeadline=replayNonce===undefined && identity.documentGeneration===contextId+":"+annualWindowGeneration?annual?.inspectionDeadline(identity):null;
+				const window=ownedReplay?{kind:"manual",deadlineMs:manual}:replayNonce!==undefined?null:Number.isFinite(annualDeadline)?{kind:"annual",deadlineMs:annualDeadline}:navigationWindow && contextId+":"+navigationWindow.generation===identity.documentGeneration?navigationWindow:null;
+				if(window && Number.isFinite(window.deadlineMs) && window.deadlineMs>performance.now()){
+					if(reserveTeam(8192)){jobBytes+=8192;requests.get(id).inspectionJob={state:"accepted",kind:window.kind,deadlineMs:window.deadlineMs,parseCalls:0,reason:null};}
+					else overflow++;
+				}
+			}
 			if(method==="POST" && new URL(url).origin===origin && (ownedReplay || shapeConfiguration && identity.headerFieldSha256["next-action"]===shapeConfiguration.actionHeaderSha256)){
 				shapeSelected++;
 				if(retained+requestShapeLimits.metadataReservation>controlCancellationPolicy.retainedLimit){shapeOverflow++;shapeUnretainedSelections++;return;}
@@ -1823,13 +1939,13 @@ export function createProxyControlCollector({
 		requestBodyEnd(id){
 			const row=shapeRows.get(id);if(!row || shapeClosed || row.requestEOF || row.terminal!==null){shapeErrors++;return;}
 			row.requestEOF=true;row.terminal="end";
-			if(row.unavailable){row.shape={known:false,jsonParsed:false,reason:"request-unavailable"};shapeRelease(row);return;}
+			if(row.unavailable){row.shape={known:false,jsonParsed:false,reason:"request-unavailable"};shapeRelease(row);requestParseDone(id);return;}
 			row.bodySha256=row.hash.digest("hex");
             const packet=requests.get(id);if(packet)packet.requestBodyFacts=Object.freeze({protocol:"owned-proxy-request-eof-v1",proxyResponseId:id,actualEOF:true,encodedBytes:row.bytes,bodySha256:row.bodySha256});
 			if(row.contentType!=="text/plain" || row.charset!=="utf-8" || row.contentEncoding!=="identity"){
-				row.shape={known:false,jsonParsed:false,reason:"unsupported-request-encoding"};shapeRelease(row);return;
+				row.shape={known:false,jsonParsed:false,reason:"unsupported-request-encoding"};shapeRelease(row);requestParseDone(id);return;
 			}
-			if(!shapeReserve(row,requestShapeLimits.parseReservation)){row.bodySha256=null;row.shape={known:false,jsonParsed:false,reason:"request-parse-reservation"};shapeRelease(row);return;}
+			if(!shapeReserve(row,requestShapeLimits.parseReservation)){row.bodySha256=null;row.shape={known:false,jsonParsed:false,reason:"request-parse-reservation"};shapeRelease(row);requestParseDone(id);return;}
 			shapePendingParses++;
 			setImmediate(()=>{try{
 				const bytes=row.buffer.subarray(0,row.bytes);row.shape=inspectRequestShape(bytes);
@@ -1839,13 +1955,13 @@ export function createProxyControlCollector({
 				}
 				if(requests.get(id)?.headerFieldSha256?.[teamReplayHeader]!==null)teamDispatch?.requestEOF(id,{encodedBytes:row.bytes,bodySha256:row.bodySha256});
 			}catch{shapeErrors++;row.shape={known:false,jsonParsed:false,reason:"request-shape-unavailable"};}
-				finally{shapeRelease(row);shapePendingParses--;}});
+				finally{shapeRelease(row);shapePendingParses--;requestParseDone(id);}});
 		},
 		requestBodyFailure(id,kind){
 			const row=shapeRows.get(id);if(!row || !["error","aborted","close"].includes(kind)){shapeErrors++;return;}
 			if(kind==="close" && row.requestEOF)return;
 			shapeErrors++;
-			if(!row.requestEOF && row.terminal===null){row.terminal=kind;row.unavailable=true;row.shape={known:false,jsonParsed:false,reason:"request-incomplete"};shapeRelease(row);}
+			if(!row.requestEOF && row.terminal===null){row.terminal=kind;row.unavailable=true;row.shape={known:false,jsonParsed:false,reason:"request-incomplete"};shapeRelease(row);requestParseDone(id);}
 		},
 		response(id, { status, headers }) {
 			headerCensus.headers(id,headers);
@@ -1862,6 +1978,7 @@ export function createProxyControlCollector({
 		bytes(id, chunk) {
 			const row = requests.get(id);
 			if (!row || row.canceled || row.complete) return;
+			if(row.inspectionJob?.state==="closed-unresolved")return;
 			if (!row.flight && !row.action) return;
 			if (
 				row.bounded ||
@@ -1881,78 +1998,12 @@ export function createProxyControlCollector({
 			retained += chunk.length;
 		},
 		end(id) {
-			const row = requests.get(id);
-			if (!row || row.canceled || row.complete) return;
-			row.complete = true;
-			pendingBodies++;
-			// Do not hold response forwarding/EOF open for proof parsing.
-			setImmediate(() => {
-				let inspection=null;
-				try {
-					if(annual?.inspectionActive()){
-						if(reserveTeam(8192)){annualInspectionRetainedBytes+=8192;inspection=row.annualInspection={stage:"entered",skip:null,eligible:null,opened:null,proofComplete:null,proofReasonSha256:null,projection:null,outcome:null,eof:null,bytes:null,sha256:null,bounded:row.bounded===true,flight:row.flight===true,action:row.action===true,catchStage:null,prefix:null,form:null,length:null,tokenSha256:null,role:null,pathFailure:null,lookupAttempted:null,valueUsed:null,authorityStage:null};}
-						else overflow++;
-					}
-					if ((!row.flight && !row.action) || row.bounded) {if(inspection)inspection.skip=row.bounded?"bounded":"not-flight-action";return;}
-					if(inspection)inspection.stage="decode";
-					let bytes = Buffer.concat(row.chunks);
-					const options = {
-						maxOutputLength: controlCancellationPolicy.decodedLimit,
-					};
-					if (row.encoding === "gzip") bytes = gunzipSync(bytes, options);
-					else if (row.encoding === "br")
-						bytes = brotliDecompressSync(bytes, options);
-					else if (row.encoding === "deflate")
-						bytes = inflateSync(bytes, options);
-					else if (!["", "identity"].includes(row.encoding))
-						throw Error("Unsupported encoding");
-					row.transportBodyReceipt = { protocol: "proxy-natural-eof-decoded-bytes-v1", naturalEOF: true,
-						decodedBytes: bytes.length, bodySha256: sha(bytes) };
-					if(inspection){inspection.eof=true;inspection.bytes=bytes.length;inspection.sha256=row.transportBodyReceipt.bodySha256;}
-					try {
-						row.transportBodyReceipt.cdpTextProjection = {available:true,...projectCachedCdpText(bytes)};
-					} catch(error) {
-						const reason=["unsupported-original-buffer","original-byte-limit","unsupported-bom-prefix","projected-byte-limit"].includes(error?.message) ? error.message : "projection-unavailable";
-						row.transportBodyReceipt.cdpTextProjection = {available:false,reason};
-					}
-					let projection=null;
-					if(inspection)inspection.stage="eligible";
-					const eligible=annual?.eligible(row);if(inspection)inspection.eligible=eligible===true;
-					if(eligible){
-						// Scratch UTF-8 decoding plus scalar/hash receipt only; no second body pool.
-						if(!reserveTeam(65536)){overflow++;throw Error("Annual projection reservation unavailable.");}
-						if(inspection)inspection.stage="open";
-						projection=openTeamAnnualProjection({bodySha256:row.transportBodyReceipt.bodySha256,decodedBytes:bytes.length});
-						if(inspection)inspection.opened=Boolean(projection);
-					}
-					try {
-						if(inspection)inspection.stage="inspect";
-						assignBodyProof(row, inspectCollectedFlightBody(row,bytes,compiledCachedNavigations,compiledBinding,temporaryInspectionFor,projection), "proxy-natural-eof", row.transportBodyReceipt.bodySha256);
-						if(inspection){
-							const proof=row.bodyProof,reference=proof?.modelReference,prefix=reference?.prefix,role=reference?.semanticRole ?? proof?.semanticRole,observation=row.temporaryValueObservation;
-							inspection.prefix=["plain","other",..."QWiKBDnShTL@FINuZwH-"].includes(prefix)?prefix:null;
-							inspection.form=["outlined-path","typed-outlined-path","other"].includes(reference?.form)?reference.form:null;
-							inspection.length=Number.isSafeInteger(reference?.length) && reference.length>=0 && reference.length<=controlCancellationPolicy.decodedLimit?reference.length:null;
-							inspection.tokenSha256=/^[a-f0-9]{64}$/.test(reference?.tokenSha256 ?? "")?reference.tokenSha256:null;
-							inspection.role=["root","required","transport","tree","data","tree-map","tree-map-model","tree-map-pair","output","cache-output","suspended-output","fallback-output","component-data","element-type","element-key","host-props","cache-host-props","fallback-host-props","suspense-props","suspended-host-props"].includes(role)?role:null;
-							inspection.pathFailure=["depth-or-model-limit","unsupported-eager-reference","noncanonical-eager-reference","unsupported-eager-collection","missing-eager-model","eager-import-model","eager-cross-record-or-alias-cycle","eager-binary-or-text-value","malformed-eager-element","unsupported-reference-shape","unsupported-cross-record-cycle","outlined-reference-cycle","path-component-limit","path-alias-cycle","missing-path-model","path-import-model","unsupported-path-model-kind","path-promise-not-unwrapped","unsupported-path-temporary-value","non-object-projection","binary-or-text-projection","missing-element-own-property","removed-proto-property","unsupported-parent-prototype","missing-own-property","non-data-own-property","removed-undefined-property","unavailable-own-data"].includes(proof?.pathFailure)?proof.pathFailure:null;
-							inspection.lookupAttempted=typeof observation?.lookupAttempted==="boolean"?observation.lookupAttempted:null;inspection.valueUsed=typeof observation?.valueUsed==="boolean"?observation.valueUsed:null;
-						}
-						if(inspection){inspection.proofComplete=row.bodyProof?.complete===true;inspection.proofReasonSha256=typeof row.bodyProof?.reason==="string"?sha(row.bodyProof.reason):null;inspection.stage="take";}
-						if(projection)row.teamAnnualProjection=takeTeamAnnualProjection(projection,inspection);
-						if(inspection)inspection.projection=Boolean(row.teamAnnualProjection);
-					}finally{if(projection)closeTeamAnnualProjection(projection);}
-				} catch {
-					if(inspection)inspection.catchStage=inspection.stage;
-					row.bodyProof = { complete: false, reason: "proxy-body-unavailable" };
-				} finally {
-					if(inspection){inspection.stage="settled";if(inspection.catchStage!==null){inspection.proofComplete=false;inspection.proofReasonSha256=sha("proxy-body-unavailable");}Object.freeze(inspection);}
-					row.proxyInspectionSettled=true;retireValue(id);
-					annual?.notify();
-					release(row);
-					pendingBodies--;
-				}
-			});
+			const row=requests.get(id);if(!row || row.canceled || row.complete)return;
+			if(row.inspectionJob?.state==="closed-unresolved"){row.complete=true;return;}
+			row.complete=true;pendingBodies++;
+			// Forwarded EOF is never held; only the existing single observer inspection may await exact metadata.
+			if(row.inspectionJob){row.inspectionJob.state="waiting";resumeInspection(row);}
+			else setImmediate(()=>runInspection(row));
 		},
 		cancel(id) {
 			const row = requests.get(id);
@@ -1992,12 +2043,13 @@ export function createProxyControlCollector({
 				...(shapeConfiguration?{requestShapeDiagnostics:shapeSnapshot()}:{}),
 				headerCensus:headerCensus.snapshot(),
 				annualInspectionRetainedBytes,
+				inspectionJobs:{protocol:"event-bound-original-team-inspections-v1",closed:teamClosed,retainedBytes:jobBytes,navigationWindowRetainedBytes:navigationWindowCharged?4096:0,unresolved:unresolvedJobs,waiting:[...requests.values()].filter(row=>["waiting","scheduled","running"].includes(row.inspectionJob?.state)).length},
 				headerLifetime:{protocol:"owned-context-upstream-header-lifetime-v1",contextId,installation:transportInstallation,closure:transportClosure},
 				errors,
 				overflow,
 				pendingBodies,
 				rows: [...requests.values()].map(
-					({ chunks, retainedBytes, encoding, ...proof }) => ({ ...proof }),
+					({ chunks, retainedBytes, encoding, inspectionTask, inspectionJob, ...proof }) => ({ ...proof,...(inspectionJob?{inspectionJob:Object.freeze({...inspectionJob})}:{}) }),
 				),
 			};
 		},

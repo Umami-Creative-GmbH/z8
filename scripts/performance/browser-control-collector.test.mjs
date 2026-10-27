@@ -8,7 +8,7 @@ import { mkdtemp, mkdir, writeFile, rm, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { createHash } from "node:crypto";
-import { gzipSync } from "node:zlib";
+import { gzipSync, gunzipSync } from "node:zlib";
 import { createProxyHeaderCensus } from "./proxy-header-census.mjs";
 import { cleanBrowserContextEvidence } from "./clean-evidence.mjs";
 import { setImmediate as tick } from "node:timers/promises";
@@ -1762,4 +1762,66 @@ test('authority diagnostic wrappers preserve actual short-circuit operands and t
 		const expected=['browser','handle','header-snapshot','headers-ready'].includes(mode)?['open']:['header-join','header-hash','url-hash','document','action','redirect','origin'].includes(mode)?['headerJoin','open']:mode==='reservation'?['headerJoin','reserve','open']:mode==='bind-rejected'?['headerJoin','reserve','bind','release','open']:mode==='cached'?['facts','open']:['headerJoin','reserve','bind','facts','open'];
 		assert.deepEqual(calls,expected,mode);assert.equal(inspection.authorityStage,mode==='frozen'?null:mode,mode);if(['bound','cached','frozen'].includes(mode))assert.equal(result.requestAuthority,authority,mode);
 	}
+});
+
+test('TEAM navigation inspection window never reads an accessor or Proxy timeout',()=>{
+	const p=createProxyControlCollector({contextId,origin});let reads=0;
+	assert.equal(p.beginTeamNavigation('goto',[origin,{get timeout(){reads++;throw Error('PRIVATE');}}],1),false);
+	assert.equal(p.beginTeamNavigation('goto',[origin,new Proxy({timeout:90000},{getOwnPropertyDescriptor(){reads++;throw Error('PRIVATE');},getPrototypeOf(){reads++;throw Error('PRIVATE');}})],1),false);
+	assert.equal(reads,0,'unsupported observation does not execute input code');
+});
+
+async function eventBoundInspectionFixture({timeout=1000,requestEOF=true,source=true,limit=controlCancellationPolicy.retainedLimit,path="/en/analytics/team-performance",cutKnown=true}={}){
+	// Execute the actual factory at controlled Node boundaries. Synthetic source facts
+	// select scheduling only; no real private T/source capability is minted or admitted.
+	const text=await readFile(new URL('./browser-control-collector.mjs',import.meta.url),'utf8'),start=text.indexOf('export function createProxyControlCollector('),end=text.indexOf('\nconst progressTechnicalId',start),team=await import('./team-temporary-value-authority.mjs'),api=await import('./browser-control-collector.mjs'),control=await import('./control-cancellation-evidence.mjs');
+	const binding={},action='40'+'a'.repeat(40),cut={},id='a'.repeat(32)+'.1',headers={'next-action':action,'accept-language':'en','content-type':'text/plain;charset=UTF-8','x-z8-fixture-document-generation':contextId+':1'},body=Buffer.from('0:{"a":1}\n');let parses=0,now=0;
+	const env={...team,...api,createProxyHeaderCensus,utilTypes:(await import("node:util")).types,Buffer,URL,Object,Map,Set,WeakMap,performance:{now:()=>now},setImmediate,clearImmediate,createHash,gunzipSync,inflateSync:()=>{throw Error('unused');},brotliDecompressSync:()=>{throw Error('unused');},controlCancellationPolicy:{...controlCancellationPolicy,retainedLimit:limit},originalTeamBindings:new WeakMap(source?[[binding,{}]]:[]),requestShapeBindings:new WeakMap(),originalTeamSourceFacts:q=>q?{actionHeaderSha256:segmentHash(action)}:null,sha:segmentHash,lowerHeaders:value=>Object.fromEntries(Object.entries(value??{}).map(([key,item])=>[key.toLowerCase(),item])),renderedPathSourceFacts:()=>null,routingURLFacts:()=>({fallback:{scalarKeys:{known:false}}}),scalarFactBytes:()=>0,requestShapeLimits:{encodedBytes:16384,depth:2,punctuation:32,byteEvents:10000,parseReservation:262144,metadataReservation:2048},inspectRequestShape:()=>({known:false}),parseInertDateRangeRequest:(await import('./inert-date-range-request.mjs')).parseInertDateRangeRequest,projectCachedCdpText,assignBodyProof:(row,proof)=>{row.bodyProof=proof;},inspectCollectedFlightBody:(row,bytes)=>{parses++;return control.inspectRequiredFlightBody(bytes,{action:row.action,cachedNavigations:true});}};
+	const factory=runInNewContext('('+text.slice(start,end).replace('export function','function')+')',env),p=factory({contextId,origin,compiledBinding:binding,currentTeamCut:()=>cutKnown?cut:null,operatorSource:{pageRoutes:{protocol:"source-qualified-team-page-routes-v1",originSha256:segmentHash(origin),destinations:[{locale:"en",fullUrlSha256:segmentHash(origin+"/en/analytics/team-performance")}]}}});p.installed();p.beginTeamNavigation?.('goto',[origin,{timeout}],1);
+	p.request(id,{url:origin+path,method:'POST',headers,traceId:'a'.repeat(32)});const request=Buffer.from('[{"start":"$D2025-01-01T00:00:00.000Z","end":"$D2025-01-02T00:00:00.000Z","startDate":"2025-01-01","endDate":"2025-01-02","timezone":"SYNTHETIC"}]');
+	const finishRequest=()=>{p.requestBodyBytes(id,request);p.requestBodyEnd(id);};if(requestEOF){finishRequest();await tick();}
+	p.response(id,{status:200,headers:{'content-type':'text/x-component'}});p.bytes(id,body);
+	const browser={...controlRequestIdentity(contextId,origin+'/en/analytics/team-performance','POST',headers),requestId:'browser',proxyResponseId:id,initialHeaderIdentity:{requestHeaderSnapshotKnown:true},requestHeadersKnown:false,bodyReadSettled:true};
+	return {p,id,browser,parses:()=>parses,advance:n=>{now+=n;},finishRequest,body,end:()=>p.end(id),event:(kind='response')=>p.observeTeamBrowserRequest(browser,kind)};
+}
+
+test('source-qualified proxy EOF waits for the exact browser and ExtraInfo then inspects exactly once',async()=>{
+	const f=await eventBoundInspectionFixture();f.end();await tick();assert.equal(f.parses(),0);assert.equal(f.p.snapshot().pendingBodies,1);assert.equal(f.p.snapshot().rows[0].inspectionJob.state,'waiting');
+	f.p.observeTeamBrowserRequest({...f.browser,proxyResponseId:'b'.repeat(32)+'.1'},'response');await tick();assert.equal(f.parses(),0,'foreign response ID cannot wake the selected body');
+	f.event();await tick();assert.equal(f.parses(),0,'actual response alone cannot replace missing ExtraInfo');f.browser.requestHeadersKnown=true;f.event('extra');await tick();assert.equal(f.parses(),1);assert.equal(f.p.snapshot().pendingBodies,0);assert.equal(f.p.snapshot().rows[0].inspectionJob.parseCalls,1);assert.equal(f.p.snapshot().rows[0].bodyProof.complete,true);
+	f.event('terminal');f.event('body-settled');await tick();assert.equal(f.parses(),1);f.p.closeTeamValues();assert.equal(f.p.snapshot().inspectionJobs.unresolved,0);
+});
+
+test('event-bound inspection handles normal order and late request parsing without another pass',async()=>{
+	for(const lateRequest of [false,true]){const f=await eventBoundInspectionFixture({requestEOF:!lateRequest});f.browser.requestHeadersKnown=true;f.event('extra');f.end();if(lateRequest){await tick();assert.equal(f.parses(),0);f.finishRequest();}await tick();await tick();assert.equal(f.parses(),1);assert.equal(f.p.snapshot().pendingBodies,0);f.p.closeTeamValues();}
+	const head=await eventBoundInspectionFixture({source:false});head.end();await tick();assert.equal(head.parses(),1);assert.equal(head.p.snapshot().rows[0].inspectionJob,undefined);head.p.closeTeamValues();
+});
+
+test('event-bound unresolved close and original deadline discard bytes once without a late parse',async()=>{
+	for(const deadline of [false,true]){const f=await eventBoundInspectionFixture({timeout:deadline?1:1000});f.end();if(deadline){f.advance(2);f.browser.requestHeadersKnown=true;f.event();}else f.p.closeTeamValues();await tick();const snapshot=f.p.snapshot();assert.equal(f.parses(),0);assert.equal(snapshot.pendingBodies,0);assert.equal(snapshot.inspectionJobs.unresolved,1);assert.equal(snapshot.errors,1);assert.equal(snapshot.rows[0].inspectionJob.state,'closed-unresolved');assert.equal(snapshot.rows[0].bodyProof.complete,false);f.browser.requestHeadersKnown=true;f.event('extra');await tick();assert.equal(f.parses(),0);f.p.closeTeamValues();assert.equal(f.p.snapshot().inspectionJobs.unresolved,1);}
+});
+
+test('event-bound jobs never borrow a newer window or defer foreign route source or HEAD requests',async()=>{
+	const f=await eventBoundInspectionFixture();let getters=0;assert.equal(f.p.beginTeamNavigation('goto',[origin,{get timeout(){getters++;return 90000;}}],2),false);assert.equal(f.p.beginTeamNavigation('goto',[origin,new Proxy({timeout:90000},{getOwnPropertyDescriptor(){getters++;throw Error('PRIVATE');}})],2),false);assert.equal(getters,0);
+	const deadline=f.p.snapshot().rows[0].inspectionJob.deadlineMs;f.end();f.p.beginTeamNavigation('goto',[origin,{timeout:90000}],2);assert.equal(f.p.snapshot().rows[0].inspectionJob.deadlineMs,deadline);f.advance(1001);f.browser.requestHeadersKnown=true;f.event();await tick();assert.equal(f.parses(),0);assert.equal(f.p.snapshot().inspectionJobs.unresolved,1);f.p.closeTeamValues();
+	for(const options of [{path:'/en/not-team'},{cutKnown:false},{source:false}]){const other=await eventBoundInspectionFixture(options);other.end();await tick();assert.equal(other.p.snapshot().rows[0].inspectionJob,undefined);assert.equal(other.parses(),1);other.p.closeTeamValues();}
+	const queued=await eventBoundInspectionFixture();queued.browser.requestHeadersKnown=true;queued.event();queued.end();assert.equal(queued.p.snapshot().rows[0].inspectionJob.state,'scheduled');queued.p.closeTeamValues();await tick();assert.equal(queued.parses(),0);assert.equal(queued.p.snapshot().pendingBodies,0);assert.equal(queued.p.snapshot().inspectionJobs.unresolved,1);
+});
+
+test('event-bound job and navigation metadata remain charged within the unchanged shared cap',async()=>{
+	const f=await eventBoundInspectionFixture();f.end();f.p.closeTeamValues();const before=f.p.snapshot();assert.equal(before.inspectionJobs.retainedBytes,8192);assert.equal(before.inspectionJobs.navigationWindowRetainedBytes,4096);assert.ok(before.requestShapeDiagnostics.sharedProxyRetainedBytes>=8192+4096);
+	const maximum={state:'closed-unresolved',kind:'navigation',deadlineMs:Number.MAX_VALUE,parseCalls:10000,reason:'deadline'};assert.ok((Buffer.byteLength(JSON.stringify(maximum))*2)*8+2048<=8192,'row and one detached snapshot metadata fit the existing job reservation');
+	const capped=await eventBoundInspectionFixture({limit:8192});capped.end();capped.browser.requestHeadersKnown=true;capped.event();await tick();assert.ok(capped.p.snapshot().overflow>0);assert.equal(capped.p.snapshot().rows[0].inspectionJob,undefined);capped.p.closeTeamValues();
+});
+
+test('pre-EOF disposal is terminal for late bytes EOF and metadata and releases only once',async()=>{
+	for(const close of [true,false]){const f=await eventBoundInspectionFixture({timeout:1});if(close)f.p.closeTeamValues();else {f.advance(2);f.event();}const before=f.p.snapshot();assert.equal(before.inspectionJobs.unresolved,1);assert.equal(before.pendingBodies,0);f.p.bytes(f.id,Buffer.alloc(100));f.end();f.browser.requestHeadersKnown=true;f.event('extra');await tick();const after=f.p.snapshot();assert.equal(f.parses(),0);assert.equal(after.pendingBodies,0);assert.equal(after.inspectionJobs.unresolved,1);assert.equal(after.errors,1);assert.equal(after.requestShapeDiagnostics.sharedProxyRetainedBytes,before.requestShapeDiagnostics.sharedProxyRetainedBytes);assert.equal(after.rows[0].inspectionJob.state,'closed-unresolved');f.p.closeTeamValues();}
+});
+
+test('manual and annual inspection deadlines are exact producer observations rather than fallback budgets',async()=>{
+	const team=await import('./team-temporary-value-authority.mjs'),journal=team.createTeamReplayDispatchJournal({contextId,origin,reserve:()=>true,release:()=>{}}),action='40'+'a'.repeat(40),id='a'.repeat(32)+'.1';let reads=0;
+	const input={traceId:'a'.repeat(32),action,body:'[]',url:origin+'/en/analytics/team-performance',observerDeadlineMs:1234},handle=journal.arm(input),nonce=journal.headers(handle)[team.teamReplayHeader];assert.equal(journal.proxyRequest({id,traceId:input.traceId,method:'POST',url:input.url,action,nonce}),true);assert.equal(journal.inspectionDeadline(id),1234);assert.equal(journal.inspectionDeadline('b'.repeat(32)+'.1'),null);assert.equal(journal.finished(handle,{error:false}),true);
+	const accessor=journal.arm({...input,traceId:'b'.repeat(32),get observerDeadlineMs(){reads++;return 9999;}});assert.ok(accessor);assert.equal(reads,0);journal.finished(accessor,{error:false});journal.close();assert.equal(journal.inspectionDeadline(id),null);
+	const observer=createTeamAnnualResponseSelection({contextId,origin,source:testBrowserBinding('c'.repeat(40)).teamAnnualAction,reserve:()=>true,release:()=>{},requestCount:()=>0});assert.ok(observer.arm({path:'/en/analytics/team-performance',timeoutMs:1000}));const row={fullUrlSha256:segmentHash(origin+'/en/analytics/team-performance')},deadline=observer.inspectionDeadline(row);assert.ok(Number.isFinite(deadline));assert.equal(observer.inspectionDeadline(row),deadline);assert.equal(observer.inspectionDeadline({fullUrlSha256:segmentHash(origin+'/en/not-team')}),null);observer.close();assert.equal(observer.inspectionDeadline(row),null);
+	const metadata=structuredClone(temporaryValueObservation);delete metadata.annualTeam.proxyInspection;assert.equal(team.knownTemporaryValueObservation(metadata),false,'old observer metadata fails before IO in both phase readers');
 });

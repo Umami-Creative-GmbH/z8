@@ -1,5 +1,6 @@
 /** Original-only source and request-value authority. No payload is serialized. */
 import { createHash, randomBytes } from "node:crypto";
+import { types as utilTypes } from "node:util";
 import { open } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { basename, dirname, join, resolve } from "node:path";
@@ -21,7 +22,7 @@ export function knownOriginalTeamHeaderJoin(initial,extra,wire,cookieHeaderSha25
     (initial.headerFieldSha256[key]===extra.headerFieldSha256[key] || ["cookie","accept-encoding"].includes(key) && initial.headerFieldSha256[key]===null && digest(extra.headerFieldSha256[key])));
  }catch{return false;}
 }
-export const temporaryValueObservation = Object.freeze({ protocol: "original-team-temporary-value-observation-v1", replayHeader: teamReplayHeader, documentJournal: "actual-cdp-document-journal-v1",annualTeam:Object.freeze({protocol:"team-annual-golden-observation-v1",bodySource:"owned-proxy-natural-eof",selection:"actual-response-object",projection:"team-employees-hours-v1",deadline:"existing-annual-selection"}) });
+export const temporaryValueObservation = Object.freeze({ protocol: "original-team-temporary-value-observation-v1", replayHeader: teamReplayHeader, documentJournal: "actual-cdp-document-journal-v1",annualTeam:Object.freeze({protocol:"team-annual-golden-observation-v1",bodySource:"owned-proxy-natural-eof",selection:"actual-response-object",projection:"team-employees-hours-v1",deadline:"existing-annual-selection",proxyInspection:"source-qualified-event-bound-single-proxy-inspection-v1"}) });
 const deepFreeze = value => {
 	if (value && typeof value === "object") {
 		for (const child of Object.values(value)) deepFreeze(child);
@@ -930,6 +931,8 @@ export function createTeamReplayDispatchJournal({ contextId, origin, reserve, re
 		arm(input = {}) {
 			try {
 				const { traceId, action, body, url } = input, requestURL = typeof url === "string" && url.length <= 4096 ? new URL(url) : null;
+				const deadlineField=!utilTypes.isProxy(input)?Object.getOwnPropertyDescriptor(input,"observerDeadlineMs"):null;
+				const observerDeadlineMs=deadlineField && Object.hasOwn(deadlineField,"value") && Number.isFinite(deadlineField.value)?deadlineField.value:null;
 				if (closed || !budgetKnown || !/^[a-f0-9]{32}$/.test(traceId ?? "") || typeof action !== "string" || !/^[a-f0-9]{40,64}$/.test(action) ||
 					typeof body !== "string" || body.length > 16384 || Buffer.byteLength(body) > 16384 || requestURL?.origin !== origin || requestURL.username || requestURL.password) throw Error();
 				if (rows.length >= 10000 || retained + 18432 > 32 * 1024 * 1024) { overflow++; unretainedArms++; return null; }
@@ -939,7 +942,7 @@ export function createTeamReplayDispatchJournal({ contextId, origin, reserve, re
 				retained += 18432;
 				const nonce = randomBytes(16).toString("hex");
 				const row = { ordinal: rows.length + 1, traceId, nonceSha256: sha(nonce), urlSha256: sha(requestURL.href), actionHeaderSha256: sha(action), encodedBytes: Buffer.byteLength(body), bodySha256: sha(body),
-					proxyId: null, requestEOF: null, browser: null, returned: false, returnedError: null };
+					proxyId: null, requestEOF: null, browser: null, returned: false, returnedError: null,observerDeadlineMs };
 				try { release(16384); retained -= 16384; } catch { errors++; budgetKnown = false; unretainedArms++; return null; }
 				if (nonces.has(nonce)) { errors++; unretainedArms++; return null; }
 				const handle = Object.freeze({ protocol: "private-team-manual-dispatch-v1", contextId, ordinal: row.ordinal });
@@ -983,6 +986,7 @@ export function createTeamReplayDispatchJournal({ contextId, origin, reserve, re
 			const row = proxies.get(id);
 			return row?.requestEOF && row.browser ? deepFreeze({ protocol: "observed-team-manual-dispatch-v1", contextId, sourceBound: false, ...safeRow(row) }) : null;
 		},
+		inspectionDeadline(id){const row=proxies.get(id);return !closed && row?row.observerDeadlineMs:null;},
 		close() { if (closed) return; closed = true; if (rows.some(row => !row.returned)) errors++; },
 		snapshot() { return { protocol: "team-replay-dispatch-observations-v1", contextId, sourceBound: false, acceptanceClaim: "none", closed, errors, overflow, unretainedArms, budgetKnown,
 			retainedBytes: budgetKnown ? retained : null, pendingDispatches: rows.filter(row => !row.returned).length, rows: rows.map(row => deepFreeze(structuredClone(safeRow(row)))) }; },
