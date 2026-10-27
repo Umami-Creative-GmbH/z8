@@ -570,3 +570,23 @@ test("mixed first-failure diagnostic privacy and fixed retention cover the maxim
  assert.doesNotMatch(JSON.stringify(diagnostic),/PRIVATE_|http:|cookie|payload/);
  diagnostic.cut.coverage.pendingBodies=0;assert.equal(observer.snapshot().firstFailure.cut.coverage.pendingBodies,Number.MAX_SAFE_INTEGER,"snapshot edits cannot alter the retained first failure");
 });
+
+test("mixed first-failure diagnostics reset the per-live input and predicates after acknowledgment",async()=>{
+ const {createMixedProgressAcknowledgments}=await import("./browser-control-collector.mjs"),{begin}=await openPrefixFixture();
+ let unknown=0,inputs=0,applications=0,reads=0;
+ const observer=createMixedProgressAcknowledgments({input:()=>{inputs++;return structuredClone(begin);},application:()=>{applications++;return {failures:0,serverErrors:0,unknown,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0};},acknowledge:async args=>{reads++;unknown=1;return args;}});
+ await assert.rejects(observer.check(),{message:"Mixed required application observation is not clean."});
+ const snapshot=observer.snapshot(),diagnostic=snapshot.firstFailure;
+ assert.deepEqual([inputs,applications,reads],[1,2,1]);assert.equal(snapshot.failed,1);
+ assert.equal(diagnostic.stage,"check-after-ack-live");assert.equal(diagnostic.subreason,"application");assert.equal(diagnostic.cut,null);assert.equal(diagnostic.cutStage,null);
+ assert.equal(diagnostic.application.unknown,1);assert.equal(diagnostic.predicates.applicationKnown,false);
+ for(const key of ["candidateKnown","authorityKnown","journalsKnown","protocolObservedZero","protocolOverflowZero","authorityMatches","returnJournalsKnown"])assert.equal(diagnostic.predicates[key],null,key);
+});
+
+test("mixed first-failure diagnostics reject revoked arrays before introspection and never relabel the first stop",async()=>{
+ const {createMixedProgressAcknowledgments}=await import("./browser-control-collector.mjs"),revoked=Proxy.revocable([],{});revoked.revoke();let inputs=0;
+ const observer=createMixedProgressAcknowledgments({input:()=>{inputs++;return {failures:revoked.proxy,proxy:[],coverage:{},nativeContext:{}};},application:()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0}),acknowledge:()=>assert.fail("not reached")});
+ await assert.rejects(observer.check(),{message:"Mixed browser observation lacks request-local evidence."});const first=observer.snapshot();
+ assert.equal(first.failed,1);assert.equal(first.overflow,0);assert.equal(first.firstFailure.stage,"check-live");assert.equal(first.firstFailure.cutStage,"check-live");assert.equal(first.firstFailure.cut.failureCount,null);
+ await assert.rejects(observer.check(),{message:"Mixed required application observation is not clean."});const second=observer.snapshot();assert.equal(inputs,1);assert.equal(second.failed,2);assert.equal(second.overflow,0);assert.deepEqual(second.firstFailure,first.firstFailure);
+});

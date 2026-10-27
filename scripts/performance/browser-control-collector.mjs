@@ -2144,7 +2144,7 @@ const progressApplicationKeys=["failures","serverErrors","unknown","httpErrors",
 const progressApplicationKnown=application=>progressApplicationKeys.every(key=>application?.[key]===0);
 /** Independent acknowledgments at existing mixed stop guards. No mutex, retry, quiescence or business operation. */
 export function createMixedProgressAcknowledgments({input,application,acknowledge}) {
- const prefixes=[],checks=[],tokens=new WeakMap();let attempted=0,guardChecks=0,failed=0,overflow=0,authoritySha256=null,contextId=null,firstFailure=null;
+ const prefixes=[],checks=[],tokens=new WeakMap();let attempted=0,guardChecks=0,failed=0,overflow=0,authoritySha256=null,contextId=null,firstFailure=null,diagnosticAttempted=false;
  // One failure-only fixed record shares the existing retention and record bounds.
  const diagnosticCharge=32768;
  const bytes=()=>Buffer.byteLength(JSON.stringify(checks))+prefixes.reduce((sum,prefix)=>sum+Buffer.byteLength(JSON.stringify(prefix)),0)+(firstFailure?diagnosticCharge:0);
@@ -2152,7 +2152,7 @@ export function createMixedProgressAcknowledgments({input,application,acknowledg
  const count=value=>Number.isSafeInteger(value) && value>=0?value:null;
  const flag=value=>typeof value==="boolean"?value:null;
  const hashed=value=>typeof value==="string" && value.length<=4096?sha(value):null;
- const boundedRows=value=>Array.isArray(value) && !utilTypes.isProxy(value) && value.length<=controlCancellationPolicy.recordLimit?value:null;
+ const boundedRows=value=>!utilTypes.isProxy(value) && Array.isArray(value) && value.length<=controlCancellationPolicy.recordLimit?value:null;
  const failureDiagnostic=state=>{
   const cut=state.cut,failures=boundedRows(own(cut,"failures")),packets=boundedRows(own(cut,"proxy")),coverage=own(cut,"coverage"),principal=own(own(cut,"nativeContext"),"principalEpoch");
   let latest=null,latestOrdinal=0,latestCount=0,matching=null,matchingCount=null;
@@ -2162,7 +2162,7 @@ export function createMixedProgressAcknowledgments({input,application,acknowledg
   const proxyId=own(latest,"proxyResponseId");
   if(latest && typeof proxyId==="string" && proxyId.length<=256 && packets){matchingCount=0;for(let i=0;i<packets.length;i++){const packet=own(packets,String(i));if(own(packet,"id")===proxyId){matchingCount++;matching=packet;}}if(matchingCount!==1)matching=null;}
   const proof=own(matching,"bodyProof"),latestProof=own(latest,"bodyProof");
-  const row={protocol:"mixed-first-failure-diagnostic-v1",stage:state.stage,subreason:state.subreason,guardChecks,attempted,contextIdSha256:hashed(own(own(cut,"nativeContext"),"contextId")),
+  const row={protocol:"mixed-first-failure-diagnostic-v1",stage:state.stage,cutStage:state.cutStage,subreason:state.subreason,guardChecks,attempted,contextIdSha256:hashed(own(own(cut,"nativeContext"),"contextId")),
    predicates:state.predicates,application:Object.fromEntries(progressApplicationKeys.map(key=>[key,count(own(state.application,key))])),
    cut:cut?{browserEventOrdinal:count(own(cut,"browserEventOrdinal")),failureCount:failures?.length??null,responseCount:boundedRows(own(cut,"responses"))?.length??null,proxyCount:packets?.length??null,
     failureSetSha256:failures?digest.digest("hex"):null,latestFailureMatches:latestCount,
@@ -2172,13 +2172,14 @@ export function createMixedProgressAcknowledgments({input,application,acknowledg
     matchingPacket:{count:matchingCount,idSha256:hashed(own(matching,"id")),complete:flag(own(matching,"complete")),canceled:flag(own(matching,"canceled")),upstreamError:flag(own(matching,"upstreamError")),responseEvents:count(own(matching,"responseEvents")),bodyProofKnown:matching?proof!==undefined:null,bodyProofComplete:flag(own(proof,"complete")),bodyProofReasonSha256:hashed(own(proof,"reason"))}}:null};
   return row;
  };
- const diagnose=state=>{if(firstFailure)return;try{if(bytes()+diagnosticCharge>controlCancellationPolicy.retainedLimit || checks.length+prefixes.length>=controlCancellationPolicy.recordLimit){overflow++;return;}const row=failureDiagnostic(state);if(Buffer.byteLength(JSON.stringify(row))*8+2048>diagnosticCharge){overflow++;return;}firstFailure=row;}catch{overflow++;}};
- const observation=stage=>({stage,subreason:"entry",cut:null,application:null,predicates:{applicationKnown:null,candidateKnown:null,authorityKnown:null,journalsKnown:null,protocolObservedZero:null,protocolOverflowZero:null,authorityMatches:null,returnJournalsKnown:null}});
+ const diagnose=state=>{if(diagnosticAttempted)return;diagnosticAttempted=true;try{if(bytes()+diagnosticCharge>controlCancellationPolicy.retainedLimit || checks.length+prefixes.length>=controlCancellationPolicy.recordLimit){overflow++;return;}const row=failureDiagnostic(state);if(Buffer.byteLength(JSON.stringify(row))*8+2048>diagnosticCharge){overflow++;return;}firstFailure=row;}catch{overflow++;}};
+ const observation=stage=>({stage,subreason:"entry",cut:null,cutStage:null,application:null,predicates:{applicationKnown:null,candidateKnown:null,authorityKnown:null,journalsKnown:null,protocolObservedZero:null,protocolOverflowZero:null,authorityMatches:null,returnJournalsKnown:null}});
  const seen=(state,key,value)=>{state.predicates[key]=Boolean(value);return value;};
  const live=state=>{
+  state.cut=null;state.cutStage=null;state.application=null;for(const key of Object.keys(state.predicates))state.predicates[key]=null;
   state.subreason="application";
   if(failed || overflow || !seen(state,"applicationKnown",progressApplicationKnown(state.application=application()))){state.subreason=failed?"previous-failure":overflow?"previous-overflow":"application";throw Error("Mixed required application observation is not clean.");}
-  state.subreason="input";const cut=state.cut=input();state.subreason="candidate-evaluation";const candidate=mixedNativePrefixCandidates(cut);state.predicates.candidateKnown=Boolean(candidate);
+  state.subreason="input";const cut=state.cut=input();state.cutStage=state.stage;state.subreason="candidate-evaluation";const candidate=mixedNativePrefixCandidates(cut);state.predicates.candidateKnown=Boolean(candidate);
   state.subreason="authority-evaluation";const authority=mixedNativeAuthorityDigest(cut.nativeContext);state.predicates.authorityKnown=Boolean(authority);
   state.subreason="live-predicate";
   if(!seen(state,"journalsKnown",knownMixedOpenJournals(cut.nativeContext)) || !seen(state,"protocolObservedZero",cut.nativeContext?.protocolErrors?.observed===0) || !seen(state,"protocolOverflowZero",cut.nativeContext.protocolErrors.overflow===0) || !candidate || !authority || !seen(state,"authorityMatches",!(authoritySha256!==null && authoritySha256!==authority))){
