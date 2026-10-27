@@ -23,6 +23,7 @@ const metadataFor = (build) => ({ ...testBrowserMetadata(), compiledManifestSha2
 const metadataFileHash = (build) => (build === HEAD ? "f" : "c").repeat(64);
 function transport(actor,build) {
 	const counts = () => ({
+		upstreamSocketPolicy: { protocol: "no-idle-upstream-sockets-v1", keepAlive: false, maxSockets: 64, retries: 0 },
 		requests: 0,
 		rewrittenRequests: 0,
 		refusedRequests: 0,
@@ -494,6 +495,10 @@ test("native, server, metric, transport, overlap and analytics failures remain s
 		(r) => { r.transports[0].contextId = id(9999); r.transports[0].browserControlEvidence = testBrowserEvidence(id(9999)); },
 		(r) => r.transports[0].wire.mandatoryErrors++,
 		(r) => r.transports[0].traceTransport.browserInitialization.requests++,
+		(r) => delete r.transports[0].traceTransport.upstreamSocketPolicy,
+		(r) => { r.transports[0].traceTransport.upstreamSocketPolicy.keepAlive = true; },
+		(r) => { r.transports[0].traceTransport.browserInitialization.upstreamSocketPolicy.maxSockets = 65; },
+		(r) => { r.transports[0].traceTransport.upstreamSocketPolicy.retries = 1; },
 		(r) => (r.records[0].analyticsInflightAtCommandStart = 2),
 		(r) => (r.userMaxInflight = 5),
 		(r) => (r.cleanupRequired = true),

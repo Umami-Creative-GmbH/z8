@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { setTimeout as pause } from "node:timers/promises";
+import { knownFixtureUpstreamSocketPolicy } from "./trace-transport.mjs";
 
 export const fixtureBrowserPolicy = "isolated-profile-no-prediction-v1";
 const preferences = {
@@ -17,6 +18,8 @@ export function fixtureTransportIsComplete(snapshot) {
 	const init = snapshot?.browserInitialization,
 		after = snapshot?.afterInitialization;
 	if (
+		!knownFixtureUpstreamSocketPolicy(snapshot?.upstreamSocketPolicy) ||
+		!knownFixtureUpstreamSocketPolicy(init?.upstreamSocketPolicy) ||
 		!init ||
 		!after ||
 		init.policy !== fixtureBrowserPolicy ||

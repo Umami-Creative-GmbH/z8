@@ -530,6 +530,7 @@ test("strict mixed transport keeps empty-profile proof and refuses later loss, o
 		malformed: 0,
 	});
 	const counts = () => ({
+		upstreamSocketPolicy: { protocol: "no-idle-upstream-sockets-v1", keepAlive: false, maxSockets: 64, retries: 0 },
 		requests: 0,
 		rewrittenRequests: 0,
 		refusedRequests: 0,
@@ -575,6 +576,22 @@ test("strict mixed transport keeps empty-profile proof and refuses later loss, o
 		},
 	};
 	assert.equal(mixedTransportIsComplete(sample), true);
+	for (const select of [value => value.traceTransport, value => value.traceTransport.browserInitialization]) {
+		for (const mutate of [
+			value => delete value.upstreamSocketPolicy,
+			value => { value.upstreamSocketPolicy = null; },
+			value => { value.upstreamSocketPolicy.keepAlive = true; },
+			value => { value.upstreamSocketPolicy.keepAlive = "false"; },
+			value => { value.upstreamSocketPolicy.maxSockets = 65; },
+			value => { value.upstreamSocketPolicy.retries = 1; },
+			value => { value.upstreamSocketPolicy.protocol = "legacy-idle-pool"; },
+			value => { value.upstreamSocketPolicy.extra = true; },
+		]) {
+			const changed = structuredClone(sample);
+			mutate(select(changed));
+			assert.equal(mixedTransportIsComplete(changed), false);
+		}
+	}
 	for (const key of [
 		"capped",
 		"censored",
