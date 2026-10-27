@@ -48,7 +48,7 @@ import {
 import { controlCancellationPolicy } from "./control-cancellation-evidence.mjs";
 import { validateProxyHeaderCensus } from "./proxy-header-census.mjs";
 import { projectCachedCdpText } from "./cdp-cached-text-projection.mjs";
-import { primaryProtocolIdentity, companionProtocolIdentity, budgetProtocolIdentity } from "./protocol-fingerprints.mjs";
+import { primaryProtocolIdentity, companionProtocolIdentity, budgetProtocolIdentity,mixedProtocolIdentity } from "./protocol-fingerprints.mjs";
 import { mixedProtocolFiles } from "./mixed-clock-budgets.mjs";
 
 const origin = "http://localhost:1234",
@@ -91,7 +91,9 @@ test("proxy header census survives semantic scope end and closes only with actua
 });
 
 test("every protocol source closure binds the newly wired proxy header census",async()=>{
-	const maps=await Promise.all([primaryProtocolIdentity(),companionProtocolIdentity(),budgetProtocolIdentity()]);
+	const maps=await Promise.all([primaryProtocolIdentity(),companionProtocolIdentity(),budgetProtocolIdentity(),mixedProtocolIdentity()]);
+ assert.deepEqual(maps.map(map=>Object.keys(map).length),[22,28,30,19]);
+ const codec=await readFile(new URL("./mixed-technical-gzip.mjs",import.meta.url));for(const map of maps)assert.equal(map["mixed-technical-gzip.mjs"],createHash("sha256").update(codec).digest("hex"));
 	for(const map of maps) assert.match(map["proxy-header-census.mjs"],/^[a-f0-9]{64}$/);
 	assert.equal(mixedProtocolFiles.filter(name=>name==="proxy-header-census.mjs").length,1);
 	for(const map of maps) assert.match(map["cdp-cached-text-projection.mjs"],/^[a-f0-9]{64}$/);
@@ -1776,7 +1778,7 @@ async function eventBoundInspectionFixture({timeout=1000,requestEOF=true,source=
 	// select scheduling only; no real private T/source capability is minted or admitted.
 	const text=await readFile(new URL('./browser-control-collector.mjs',import.meta.url),'utf8'),start=text.indexOf('export function createProxyControlCollector('),end=text.indexOf('\nconst progressTechnicalId',start),team=await import('./team-temporary-value-authority.mjs'),api=await import('./browser-control-collector.mjs'),control=await import('./control-cancellation-evidence.mjs');
 	const binding={},action='40'+'a'.repeat(40),cut={},id='a'.repeat(32)+'.1',headers={'next-action':action,'accept-language':'en','content-type':'text/plain;charset=UTF-8','x-z8-fixture-document-generation':contextId+':1'},body=Buffer.from('0:{"a":1}\n');let parses=0,now=0;
-	const env={...team,...api,createProxyHeaderCensus,utilTypes:(await import("node:util")).types,Buffer,URL,Object,Map,Set,WeakMap,performance:{now:()=>now},setImmediate,clearImmediate,createHash,gunzipSync,inflateSync:()=>{throw Error('unused');},brotliDecompressSync:()=>{throw Error('unused');},controlCancellationPolicy:{...controlCancellationPolicy,retainedLimit:limit},originalTeamBindings:new WeakMap(source?[[binding,{}]]:[]),requestShapeBindings:new WeakMap(),originalTeamSourceFacts:q=>q?{actionHeaderSha256:segmentHash(action)}:null,sha:segmentHash,lowerHeaders:value=>Object.fromEntries(Object.entries(value??{}).map(([key,item])=>[key.toLowerCase(),item])),renderedPathSourceFacts:()=>null,routingURLFacts:()=>({fallback:{scalarKeys:{known:false}}}),scalarFactBytes:()=>0,requestShapeLimits:{encodedBytes:16384,depth:2,punctuation:32,byteEvents:10000,parseReservation:262144,metadataReservation:2048},inspectRequestShape:()=>({known:false}),parseInertDateRangeRequest:(await import('./inert-date-range-request.mjs')).parseInertDateRangeRequest,projectCachedCdpText,assignBodyProof:(row,proof)=>{row.bodyProof=proof;},inspectCollectedFlightBody:(row,bytes)=>{parses++;return control.inspectRequiredFlightBody(bytes,{action:row.action,cachedNavigations:true});}};
+	const env={...team,...api,...(await import("./mixed-technical-gzip.mjs")),createProxyHeaderCensus,utilTypes:(await import("node:util")).types,Buffer,URL,Object,Map,Set,WeakMap,performance:{now:()=>now},setImmediate,clearImmediate,createHash,gunzipSync,inflateSync:()=>{throw Error('unused');},brotliDecompressSync:()=>{throw Error('unused');},controlCancellationPolicy:{...controlCancellationPolicy,retainedLimit:limit},originalTeamBindings:new WeakMap(source?[[binding,{}]]:[]),requestShapeBindings:new WeakMap(),originalTeamSourceFacts:q=>q?{actionHeaderSha256:segmentHash(action)}:null,sha:segmentHash,lowerHeaders:value=>Object.fromEntries(Object.entries(value??{}).map(([key,item])=>[key.toLowerCase(),item])),renderedPathSourceFacts:()=>null,routingURLFacts:()=>({fallback:{scalarKeys:{known:false}}}),scalarFactBytes:()=>0,requestShapeLimits:{encodedBytes:16384,depth:2,punctuation:32,byteEvents:10000,parseReservation:262144,metadataReservation:2048},inspectRequestShape:()=>({known:false}),parseInertDateRangeRequest:(await import('./inert-date-range-request.mjs')).parseInertDateRangeRequest,projectCachedCdpText,assignBodyProof:(row,proof)=>{row.bodyProof=proof;},inspectCollectedFlightBody:(row,bytes)=>{parses++;return control.inspectRequiredFlightBody(bytes,{action:row.action,cachedNavigations:true});}};
 	const factory=runInNewContext('('+text.slice(start,end).replace('export function','function')+')',env),p=factory({contextId,origin,compiledBinding:binding,currentTeamCut:()=>cutKnown?cut:null,operatorSource:{pageRoutes:{protocol:"source-qualified-team-page-routes-v1",originSha256:segmentHash(origin),destinations:[{locale:"en",fullUrlSha256:segmentHash(origin+"/en/analytics/team-performance")}]}}});p.installed();p.beginTeamNavigation?.('goto',[origin,{timeout}],1);
 	p.request(id,{url:origin+path,method:'POST',headers,traceId:'a'.repeat(32)});const request=Buffer.from('[{"start":"$D2025-01-01T00:00:00.000Z","end":"$D2025-01-02T00:00:00.000Z","startDate":"2025-01-01","endDate":"2025-01-02","timezone":"SYNTHETIC"}]');
 	const finishRequest=()=>{p.requestBodyBytes(id,request);p.requestBodyEnd(id);};if(requestEOF){finishRequest();await tick();}
@@ -1824,4 +1826,172 @@ test('manual and annual inspection deadlines are exact producer observations rat
 	const accessor=journal.arm({...input,traceId:'b'.repeat(32),get observerDeadlineMs(){reads++;return 9999;}});assert.ok(accessor);assert.equal(reads,0);journal.finished(accessor,{error:false});journal.close();assert.equal(journal.inspectionDeadline(id),null);
 	const observer=createTeamAnnualResponseSelection({contextId,origin,source:testBrowserBinding('c'.repeat(40)).teamAnnualAction,reserve:()=>true,release:()=>{},requestCount:()=>0});assert.ok(observer.arm({path:'/en/analytics/team-performance',timeoutMs:1000}));const row={fullUrlSha256:segmentHash(origin+'/en/analytics/team-performance')},deadline=observer.inspectionDeadline(row);assert.ok(Number.isFinite(deadline));assert.equal(observer.inspectionDeadline(row),deadline);assert.equal(observer.inspectionDeadline({fullUrlSha256:segmentHash(origin+'/en/not-team')}),null);observer.close();assert.equal(observer.inspectionDeadline(row),null);
 	const metadata=structuredClone(temporaryValueObservation);delete metadata.annualTeam.proxyInspection;assert.equal(team.knownTemporaryValueObservation(metadata),false,'old observer metadata fails before IO in both phase readers');
+});
+
+test("mixed technical owner shares the proxy budget and rejects foreign cut leases",async()=>{
+ const {createMixedTechnicalOwner}=await import("./mixed-technical-gzip.mjs");
+ const proxy=createProxyControlCollector({contextId,origin});proxy.installed();
+ const owner=createMixedTechnicalOwner({contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});
+ const value={failures:[],responses:[],proxy:[],nativeContext:{contextId},coverage:{installed:true},browserRevision:chromiumSWRRevision,browserEventOrdinal:0};
+ const cut=owner.capture(()=>value);assert.equal(owner.stats().liveCuts,1);
+ assert.throws(()=>owner.encode({...cut}));
+ const packed=owner.encode(cut);assert.ok(packed.bytes.length>48);
+ assert.equal(proxy.reserveTemporaryObservation(33554432),false);
+ owner.releaseCut(cut);packed.release();assert.equal(owner.stats().retainedBytes,0);
+ assert.equal(proxy.reserveTemporaryObservation(33554432),true);proxy.releaseTemporaryObservation(33554432);
+ const denied=createMixedTechnicalOwner({contextId,reserve:()=>false,release:()=>{throw Error("unexpected release");},reserveRecords:()=>true,releaseRecords:()=>{}});
+ assert.throws(()=>denied.capture(()=>value));assert.equal(denied.stats().retainedBytes,0);
+});
+
+test("owned progress projection preserves the complete seven fields and attaches document facts before cloning",async()=>{
+ const {createMixedTechnicalOwner}=await import("./mixed-technical-gzip.mjs");
+ const proxy=createProxyControlCollector({contextId,origin});proxy.installed();
+ const collector=createBrowserControlCollector({contextId,origin,browserRevision:chromiumSWRRevision,proxyObservation:proxy.snapshot});collector.installed();
+ const document=testTeamAnnualDocument(contextId,origin).journal,expected=collector.progressInput();expected.nativeContext.documentJournal=structuredClone(document);
+ const owner=createMixedTechnicalOwner({contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});
+ const cut=collector.progressInput({owner,documentJournal:()=>document});assert.deepEqual(cut,expected);assert.equal(owner.stats().liveCuts,1);
+ document.executionEvents[0].frameId="changed-after-clone";assert.equal(cut.nativeContext.documentJournal.executionEvents[0].frameId,"frame");
+ owner.releaseCut(cut);assert.equal(owner.stats().retainedBytes,0);
+});
+
+test("owned nonempty progress cut matches ordinary proof and keeps proxy source budgets releasable",async()=>{
+ const {createMixedTechnicalOwner}=await import("./mixed-technical-gzip.mjs");
+ const proxy=createProxyControlCollector({contextId,origin});proxy.installed();
+ const collector=createBrowserControlCollector({contextId,origin,browserRevision:chromiumSWRRevision,proxyObservation:proxy.snapshot,readBody:async()=>({body,base64Encoded:false})});collector.installed();
+ const id="a".repeat(32)+".1";proxy.request(id,{url,method:"GET",headers,traceId:"a".repeat(32)});proxy.response(id,{status:200,headers:responseHeaders});proxy.bytes(id,Buffer.from(body));proxy.end(id);
+ collector.request(event("owned-control",1));collector.requestExtra({requestId:"owned-control",headers});collector.response({requestId:"owned-control",response:{status:200,headers:{...responseHeaders,[controlResponseHeader]:id},fromDiskCache:false,fromServiceWorker:false}});collector.responseExtra({requestId:"owned-control",statusCode:200,headers:{...responseHeaders,[controlResponseHeader]:id}});collector.failed({requestId:"owned-control",errorText:"net::ERR_ABORTED",canceled:true,timestamp:2});await tick();await tick();
+ const expected=collector.progressInput(),document=testTeamAnnualDocument(contextId,origin).journal;expected.nativeContext.documentJournal=structuredClone(document);
+ const owner=createMixedTechnicalOwner({contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords}),cut=collector.progressInput({owner,documentJournal:()=>document});assert.deepEqual(cut,expected);assert.equal(cut.failures[0].bodyProof.complete,true);
+ const encoded=owner.encode(cut);assert.ok(encoded.bytes.length<4194304);encoded.release();owner.releaseCut(cut);assert.equal(owner.stats().retainedBytes,0);assert.equal(proxy.reserveTemporaryObservation(33554432),true);proxy.releaseTemporaryObservation(33554432);
+});
+
+test("retained cut records share the actual proxy allowance and closing never releases another owner's records",async()=>{
+ const {createMixedTechnicalOwner}=await import("./mixed-technical-gzip.mjs");
+ const proxy=createProxyControlCollector({contextId,origin});proxy.installed();
+ const owner=createMixedTechnicalOwner({contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});
+ const value={failures:Array.from({length:6000},(_,i)=>({requestId:"record-"+i})),responses:[],proxy:[],nativeContext:{contextId},coverage:{installed:true},browserRevision:chromiumSWRRevision,browserEventOrdinal:6000};
+ const cut=owner.capture(()=>value);assert.equal(owner.stats().retainedRecords,6000);
+ assert.throws(()=>owner.capture(()=>value));assert.equal(owner.stats().retainedRecords,6000);assert.equal(owner.stats().liveCuts,1);
+ assert.equal(proxy.reserveTemporaryRecords(3999),true);owner.close();assert.equal(owner.stats().retainedRecords,0);assert.equal(owner.stats().retainedBytes,0);
+ assert.equal(proxy.reserveTemporaryRecords(6002),false);proxy.releaseTemporaryRecords(3999);assert.equal(proxy.reserveTemporaryRecords(10000),true);proxy.releaseTemporaryRecords(10000);owner.releaseCut(cut);owner.close();
+ assert.equal(proxy.reserveTemporaryObservation(33554432),true);proxy.releaseTemporaryObservation(33554432);
+});
+
+test("pending read views keep the real proxy reservation through close until their async finally",async()=>{
+ const {createMixedTechnicalOwner}=await import("./mixed-technical-gzip.mjs"),proxy=createProxyControlCollector({contextId,origin});proxy.installed();
+ const owner=createMixedTechnicalOwner({contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords}),read=owner.openRead();let finish;
+ const pending=(async()=>{const view=read.keep(()=>({frameId:"frame",metadata:"x".repeat(100000)}));try{await new Promise(resolve=>{finish=resolve;});return view.frameId;}finally{read.finish();}})();
+ owner.close();assert.equal(owner.stats().pendingReads,1);assert.ok(owner.stats().retainedBytes>100000);assert.equal(proxy.reserveTemporaryObservation(33554432),false);
+ finish();assert.equal(await pending,"frame");assert.equal(owner.stats().pendingReads,0);assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);read.finish();assert.equal(proxy.reserveTemporaryObservation(33554432),true);proxy.releaseTemporaryObservation(33554432);
+});
+
+test("owned document ACK charges frame and result lifetimes through success and late readonly completion",async()=>{
+ const {createMixedDocumentAcknowledgment}=await import("./browser-control-collector.mjs"),{createMixedTechnicalOwner}=await import("./mixed-technical-gzip.mjs");
+ for(const late of [false,true]){
+  const id="owned-ack",proxy=createProxyControlCollector({contextId:id,origin});proxy.installed();const owner=createMixedTechnicalOwner({contextId:id,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords}),session=new EventEmitter();let finish,frames=0,evaluations=0,cookieReads=0,sourceReads=0;
+  const metadata={result:{value:{available:true,secureContext:true,origin,documentIdentityStable:true,controllerIdentityStable:true,controllerBefore:null,controllerAfter:null,registrationCount:0,registrationOverflow:0,registrations:[]}}};
+  session.send=async(method)=>{if(method==="Runtime.enable")session.emit("Runtime.executionContextCreated",{context:{id:1,uniqueId:"owned-unique",auxData:{isDefault:true,frameId:"frame"}}});if(method==="Page.getFrameTree"){frames++;return {frameTree:{frame:{id:"frame",loaderId:"loader",url:origin+"/en"}}};}if(method==="Runtime.evaluate"){evaluations++;return late?new Promise(resolve=>{finish=resolve;}):metadata;}return {};};
+  const journal=await createMixedDocumentAcknowledgment({session,contextId:id,origin,generation:()=>1});session.emit("Network.requestWillBeSent",{requestId:"doc",type:"Document",frameId:"frame",loaderId:"loader",request:{url:origin+"/en",headers:{[controlDocumentHeader]:id+":1"}}});
+  const principal=createPrincipalEpochObserver(id,{origin});principal.start([]);
+  const result=await journal.read({technicalOwner:owner,checkpointOrdinal:1,deadlineMs:performance.now()+(late?10:1000),principalEpoch:principal,readCookies:async()=>{cookieReads++;return [];},readSources:async()=>{sourceReads++;return {known:true};}});
+  assert.equal(evaluations,1);assert.equal(cookieReads,1);assert.equal(sourceReads,1);assert.equal(result.timedOut,late);assert.equal(owner.stats().pendingConsumers,1);
+  if(!late){assert.equal(result.readErrors,0);assert.equal(frames,3);assert.equal(owner.stats().pendingReads,0);}
+  owner.close();owner.releaseEvidence(result);
+  if(late){assert.equal(owner.stats().pendingReads,1);assert.ok(owner.stats().retainedBytes>0);assert.equal(proxy.reserveTemporaryObservation(33554432),false);finish(metadata);await tick();await tick();}
+  assert.equal(owner.stats().pendingReads,0);assert.equal(owner.stats().pendingConsumers,0);assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);journal.close();
+ }
+});
+
+
+test("a progress cut reuses its exact synchronous proxy snapshot without dropping any environment fields",()=>{
+ const proxy=createProxyControlCollector({contextId,origin});proxy.installed();let snapshots=0,anchor;
+ const observe=()=>{snapshots++;return anchor=proxy.snapshot();};
+ const legacy=createBrowserControlCollector({contextId,origin,proxyObservation:observe,environmentObservation:()=>({temporaryValues:observe().temporaryValues,sharedFact:"preserved"})});legacy.installed();
+ const expected=legacy.progressInput();assert.equal(snapshots,2);snapshots=0;
+ const current=createBrowserControlCollector({contextId,origin,proxyObservation:observe,environmentObservation:observed=>{assert.equal(observed,anchor);return {temporaryValues:observed.temporaryValues,sharedFact:"preserved"};}});current.installed();
+ assert.deepEqual(current.progressInput(),expected);assert.equal(snapshots,1);
+});
+
+
+test("tracked candidate codec preserves complete JSON and separates typed records from metadata array slots",async()=>{
+ const {createMixedTechnicalOwner}=await import("./mixed-technical-gzip.mjs"),{gunzipSync}=await import("node:zlib");
+ const proxy=createProxyControlCollector({contextId,origin});proxy.installed();const owner=createMixedTechnicalOwner({contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});
+ const rows=Array.from({length:700},(_,index)=>({requestId:"request-"+index,metadata:Array(16).fill("漢字_\ud800"),conflict:index%2===0})),input={failures:rows,responses:[],proxy:[],nativeContext:{contextId},coverage:{installed:true},browserRevision:chromiumSWRRevision,browserEventOrdinal:700};
+ const cut=owner.capture(()=>input),packed=owner.encode(cut),logical=gunzipSync(packed.bytes.subarray(48),{maxOutputLength:8388608,rejectGarbageAfterEnd:true});
+ assert.deepEqual(JSON.parse(logical.toString("utf8")),input);assert.equal(packed.bytes.subarray(0,8).toString("ascii"),"Z8MIXGZ2");assert.equal(packed.bytes.readUInt32BE(12),logical.length);assert.equal(createHash("sha256").update(logical).digest("hex"),packed.bytes.subarray(16,48).toString("hex"));
+ assert.equal(packed.stats.logicalReceiptRows,700);assert.ok(packed.stats.codecArraySlots>10000);assert.equal(owner.stats().retainedRecords,700);
+ packed.release();cut.failures[0].conflict="mutated";assert.throws(()=>owner.encode(cut));owner.releaseCut(cut);assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);
+ const tooMany={...input,failures:Array.from({length:10001},(_,i)=>({requestId:"request-"+i}))};assert.throws(()=>owner.capture(()=>tooMany));owner.close();assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);
+});
+
+
+test("sequential receipt constructors precharge one shared scratch window and release it after the loop",async()=>{
+ const {createMixedTechnicalOwner,mixedOwnedRows}=await import("./mixed-technical-gzip.mjs"),proxy=createProxyControlCollector({contextId,origin});proxy.installed();
+ const owner=createMixedTechnicalOwner({contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords}),source=[{requestId:"x".repeat(256),status:200}];let during;
+ const result=owner.retainEvidence(()=>mixedOwnedRows(()=>source,row=>{during=owner.stats().retainedBytes;return {...row};},{constructorScratchBytes:16384,constructorViewCopies:2}));
+ assert.ok(during>=148000&&during<149000,"one-row worked storage bound includes the 16KiB constructor window before projection");assert.deepEqual(result,source);assert.ok(owner.stats().retainedBytes<4096,"constructor scratch is gone while its small result remains owned");owner.releaseEvidence(result);assert.equal(owner.stats().retainedBytes,0);
+ let calls=0;const many=Array.from({length:1000},(_,i)=>({requestId:"row-"+i,status:200}));
+ const rows=owner.retainEvidence(()=>mixedOwnedRows(()=>many,row=>{calls++;return {...row};},{constructorScratchBytes:16384,constructorViewCopies:2}));assert.equal(calls,1000);assert.deepEqual(rows,many);assert.ok(owner.stats().peakBytes<8*1024*1024,"dead per-row scratch is not retained for the next projection");owner.releaseEvidence(rows);
+ assert.throws(()=>owner.retainEvidence(()=>mixedOwnedRows(()=>source,()=>{throw Error("PRIVATE_PROJECTOR");},{constructorScratchBytes:16384,constructorViewCopies:2})),error=>!error.message.includes("PRIVATE_PROJECTOR"));assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);owner.close();
+});
+
+
+test("encoder traversal retains only each live frame vector under the unchanged depth limit",async()=>{
+ const {createMixedTechnicalOwner}=await import("./mixed-technical-gzip.mjs"),proxy=createProxyControlCollector({contextId,origin});proxy.installed();const owner=createMixedTechnicalOwner({contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});let nested=null;for(let i=0;i<62;i++)nested={child:nested};
+ const value={failures:[],responses:[],proxy:[],nativeContext:{contextId,nested},coverage:{installed:true},browserRevision:chromiumSWRRevision,browserEventOrdinal:0},cut=owner.capture(()=>value),packed=owner.encode(cut);assert.ok(packed.bytes.length>48);assert.ok(owner.stats().peakBytes<10*1024*1024,"the63 small ancestor vectors do not each retain the full10001-key ceiling");packed.release();owner.releaseCut(cut);
+ assert.throws(()=>owner.capture(()=>({...value,nativeContext:{contextId,nested:{child:nested}}})));assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);owner.close();
+});
+
+
+test("covered assembled cuts retain component leases through detachment and reject foreign or changed coverage",async()=>{
+ const {createMixedTechnicalOwner,mixedOwnedFixedContainer,mixedOwnedClone}=await import("./mixed-technical-gzip.mjs");
+ const make=id=>{const proxy=createProxyControlCollector({contextId:id,origin});proxy.installed();return {proxy,owner:createMixedTechnicalOwner({contextId:id,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords})};};
+ const a=make("coverage-a"),b=make("coverage-b"),collector=createBrowserControlCollector({contextId:"coverage-a",origin,browserRevision:chromiumSWRRevision,proxyObservation:a.proxy.snapshot});collector.installed();
+ const cut=collector.progressInput({owner:a.owner});assert.ok(a.owner.stats().peakBytes<2*1024*1024,"a covered assembled view does not acquire another provisional8MiB graph pin");
+ assert.throws(()=>b.owner.capture(()=>mixedOwnedFixedContainer(()=>[["nativeContext",mixedOwnedFixedContainer(()=>[["contextId","coverage-b"]])],["foreign",cut]])));assert.equal(b.owner.stats().retainedBytes,0);assert.ok(a.owner.stats().retainedBytes>0);
+ assert.throws(()=>b.owner.capture(()=>{const child=mixedOwnedClone({marker:"before"});child.marker="after!";return mixedOwnedFixedContainer(()=>[["nativeContext",mixedOwnedFixedContainer(()=>[["contextId","coverage-b"]])],["child",child]]);}));assert.equal(b.owner.stats().retainedBytes,0);
+ assert.throws(()=>b.owner.capture(()=>mixedOwnedFixedContainer(()=>[["nativeContext",{contextId:"coverage-b"}]])));assert.equal(b.owner.stats().retainedBytes,0);
+ const saved=structuredClone(cut);a.owner.releaseCut(cut);a.owner.close();b.owner.close();assert.deepEqual(saved.nativeContext.contextId,"coverage-a");assert.equal(a.owner.stats().retainedBytes,0);assert.equal(a.owner.stats().retainedRecords,0);assert.equal(b.owner.stats().retainedRecords,0);
+});
+
+
+test("covered container staging rejects oversized or escaped primitive storage before constructing its object",async()=>{
+ const {createMixedTechnicalOwner,mixedOwnedFixedContainer}=await import("./mixed-technical-gzip.mjs"),proxy=createProxyControlCollector({contextId,origin});proxy.installed();const owner=createMixedTechnicalOwner({contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});
+ const huge="x".repeat(1048576),escaped="\u0000".repeat(1000);const small=owner.capture(()=>mixedOwnedFixedContainer(()=>[["nativeContext",mixedOwnedFixedContainer(()=>[["contextId",contextId]])],["small","x"]]));owner.releaseCut(small);for(const entries of [[["large",huge]],[[huge,1]],[["escaped",escaped]],[["unsupported",1n]]]){assert.throws(()=>owner.capture(()=>mixedOwnedFixedContainer(()=>[["nativeContext",mixedOwnedFixedContainer(()=>[["contextId",contextId]])],...entries])));assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);}
+ let traps=0;const proxyEntries=new Proxy([],{get(){traps++;throw Error("PRIVATE_TRAP");},getPrototypeOf(){traps++;throw Error("PRIVATE_TRAP");}});assert.throws(()=>owner.capture(()=>mixedOwnedFixedContainer(()=>proxyEntries)));assert.equal(traps,0);assert.equal(owner.stats().retainedBytes,0);owner.close();
+});
+
+
+test("byte JSON replay produces immutable private provenance and refuses unknown or copied JavaScript",async()=>{
+ const {parseMixedTechnicalReplayJSON,mixedTechnicalCandidateDigest}=await import("./mixed-technical-gzip.mjs"),value={failures:[],responses:[],proxy:[],nativeContext:{contextId:"replay"},coverage:{installed:true},browserRevision:chromiumSWRRevision,browserEventOrdinal:0,unicode:"漢字_\ud800",own:{["__proto__"]:{data:true}}},bytes=Buffer.from(JSON.stringify(value)),parsed=parseMixedTechnicalReplayJSON(bytes);
+ assert.deepEqual(parsed,value);assert.equal(Object.isFrozen(parsed),true);assert.equal(Object.isFrozen(parsed.own.__proto__),true);assert.throws(()=>{parsed.nativeContext.contextId="changed";});assert.equal(mixedTechnicalCandidateDigest(parsed),createHash("sha256").update(bytes).digest("hex"));
+ assert.equal(mixedTechnicalCandidateDigest(value),null);assert.equal(mixedTechnicalCandidateDigest(structuredClone(parsed)),null);let traps=0;const unknown=new Proxy(value,{ownKeys(){traps++;throw Error("PRIVATE_TRAP");},get(){traps++;throw Error("PRIVATE_TRAP");}});assert.equal(mixedTechnicalCandidateDigest(unknown),null);assert.equal(traps,0);
+ for(const bad of [Buffer.from('{"PRIVATE_JSON_SENTINEL":'),Buffer.from([0xff,0xfe])])assert.throws(()=>parseMixedTechnicalReplayJSON(bad),error=>error.message==="Mixed technical JSON replay input rejected.");
+});
+
+test("private replay bounds are established before trusted traversal and nested pins precede workspace",async()=>{
+ const {parseMixedTechnicalReplayJSON,mixedTechnicalCandidateDigest,createMixedTechnicalOwner}=await import("./mixed-technical-gzip.mjs"),base={failures:[],responses:[],proxy:[],nativeContext:{contextId},coverage:{installed:true},browserRevision:chromiumSWRRevision,browserEventOrdinal:0},bytes=Buffer.from(JSON.stringify(base)),parsed=parseMixedTechnicalReplayJSON(bytes),proxy=createProxyControlCollector({contextId,origin});proxy.installed();const charges=[];
+ const owner=createMixedTechnicalOwner({contextId,reserve:n=>{charges.push(n);return proxy.reserveTemporaryObservation(n);},release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});assert.match(owner.run(()=>mixedTechnicalCandidateDigest(parsed)),/^[a-f0-9]{64}$/);assert.equal(charges[1],bytes.length);assert.ok(charges.findIndex(n=>n>5000000)>1,"selected source pin precedes byte-derived traversal workspace");assert.equal(owner.stats().retainedBytes,0);
+ let nested=null;for(let i=0;i<65;i++)nested={child:nested};const wide=Object.fromEntries(Array.from({length:10002},(_,i)=>["field"+i,i]));
+ for(const value of [{...base,nested},{...base,wide},{...base,padding:"x".repeat(8388608)}]){
+  const input=parseMixedTechnicalReplayJSON(Buffer.from(JSON.stringify(value))),old=Reflect.ownKeys;let traversals=0;Reflect.ownKeys=(...args)=>{traversals++;return old(...args);};try{assert.equal(mixedTechnicalCandidateDigest(input),null);assert.equal(traversals,0);}finally{Reflect.ownKeys=old;}
+ }
+ for(const numeric of ["-0","1e400"]){const input=parseMixedTechnicalReplayJSON(Buffer.from(JSON.stringify(base).slice(0,-1)+',"invalid":'+numeric+'}'));assert.equal(mixedTechnicalCandidateDigest(input),null);}
+ owner.close();assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);
+});
+
+
+test("failed descendant registration never publishes released cut or evidence maps",async()=>{
+ const {parseMixedTechnicalReplayJSON,createMixedTechnicalOwner}=await import("./mixed-technical-gzip.mjs"),child={failures:[],responses:[],proxy:[],nativeContext:{contextId},coverage:{installed:true},browserRevision:chromiumSWRRevision,browserEventOrdinal:0},parsed=parseMixedTechnicalReplayJSON(Buffer.from(JSON.stringify({protocol:"acknowledged-mixed-native-prefix-v1",nativeContext:{contextId},begin:child,end:child})));
+ for(const kind of ["replay","evidence"]){const proxy=createProxyControlCollector({contextId,origin});proxy.installed();let refuse=true,registrationFaults=0;const owner=createMixedTechnicalOwner({contextId,reserve:n=>{if(refuse&&n===2560){registrationFaults++;return false;}return proxy.reserveTemporaryObservation(n);},release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});
+  const perform=()=>kind==="replay"?owner.replay(parsed):owner.retainEvidence(()=>parsed);assert.throws(perform);assert.equal(registrationFaults,1);assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);assert.equal(owner.stats().liveCuts,0);
+  refuse=false;let result;assert.doesNotThrow(()=>{result=perform();});if(kind==="replay")owner.releaseCut(result);else owner.releaseEvidence(result);owner.close();assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);assert.equal(proxy.reserveTemporaryObservation(33554432),true);proxy.releaseTemporaryObservation(33554432);
+ }
+});
+
+
+test("committed descendant rebinding forgets the replaced parent before its reservation is released",async()=>{
+ const {setFlagsFromString}=await import("node:v8"),{runInNewContext}=await import("node:vm");setFlagsFromString("--expose_gc");const collect=runInNewContext("gc"),{parseMixedTechnicalReplayJSON,createMixedTechnicalOwner}=await import("./mixed-technical-gzip.mjs"),child=parseMixedTechnicalReplayJSON(Buffer.from(JSON.stringify({nativeContext:{contextId}}))),proxy=createProxyControlCollector({contextId,origin});proxy.installed();const owner=createMixedTechnicalOwner({contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});
+ let first=owner.retainEvidence(()=>({protocol:"acknowledged-mixed-native-prefix-v1",begin:child,end:child,unrelated:"x".repeat(1048576)}));const weak=new WeakRef(first),second=owner.retainEvidence(()=>({protocol:"acknowledged-mixed-native-prefix-v1",begin:child,end:child,unrelated:"small"}));owner.releaseEvidence(first);first=null;assert.ok(owner.stats().retainedBytes<10000);
+ let forgotten=false;for(let index=0;index<12;index++){await tick();collect();await tick();if(weak.deref()===undefined){forgotten=true;break;}}assert.equal(forgotten,true,"successful child rebinding must not retain rollback-only prior.root");owner.releaseEvidence(second);owner.close();assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);
 });

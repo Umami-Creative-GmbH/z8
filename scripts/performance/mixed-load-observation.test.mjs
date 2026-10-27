@@ -663,3 +663,10 @@ test("mixed guard orchestration awaits every context then rejects errors appeari
  unknown=0;expectedDeadline=null;opened.pop();await requireCleanMixedProgress({opened,pageErrors:()=>pageErrors});assert.equal(confirmed,1);
  pageErrors=1;await assert.rejects(requireCleanMixedProgress({opened,pageErrors:()=>pageErrors}));assert.equal(confirmed,1);
 });
+
+test("mixed snapshot consumption forgets exported progress before releasing every observer",async()=>{
+ const {releaseMixedProgressSnapshots}=await import("./mixed-load-observation.mjs");
+ const order=[],transports=[{contextId:"a",browserControlEvidence:{mixedProgress:{proof:"a"},other:"kept"}},{contextId:"b",browserControlEvidence:{mixedProgress:{proof:"b"}}}];
+ const sentinel=Error("release failed"),opened=transports.map((row,index)=>({browserObservation:{releaseMixedProgressSnapshot(){assert.equal(Object.hasOwn(row.browserControlEvidence,"mixedProgress"),false);order.push(index);if(index===0)throw sentinel;}}}));
+ assert.throws(()=>releaseMixedProgressSnapshots(opened,transports),error=>error===sentinel);assert.deepEqual(order,[0,1]);assert.equal(transports[0].browserControlEvidence.other,"kept");
+});

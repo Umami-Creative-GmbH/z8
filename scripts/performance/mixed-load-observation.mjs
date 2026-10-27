@@ -8,6 +8,14 @@ import {
 } from "./collector-client.mjs";
 import { fixtureTransportIsComplete } from "./fixture-browser.mjs";
 
+/** The raw artifact consumer has finished; forget its exports before releasing owners. */
+export function releaseMixedProgressSnapshots(opened,transports){
+ for(const row of transports)if(row.browserControlEvidence)delete row.browserControlEvidence.mixedProgress;
+ let failure=null;
+ for(const item of opened)try{item.browserObservation?.releaseMixedProgressSnapshot();}catch(error){failure??=error;}
+ if(failure)throw failure;
+}
+
 export function createMixedTracePlan(
 	next = () => randomBytes(16).toString("hex"),
 ) {

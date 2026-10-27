@@ -5,6 +5,7 @@ const primaryFiles = [
   "run-baseline.mjs",
   "clean-evidence.mjs",
   "control-cancellation-evidence.mjs",
+  "mixed-technical-gzip.mjs",
   "browser-control-collector.mjs",
   "legacy-clock-readiness.mjs", "inert-date-range-request.mjs", "team-temporary-value-authority.mjs",
   "proxy-header-census.mjs",
@@ -40,6 +41,7 @@ export const companionProtocolIdentity = () =>
     "settled-resources.mjs",
     "clean-evidence.mjs",
     "control-cancellation-evidence.mjs",
+    "mixed-technical-gzip.mjs",
     "browser-control-collector.mjs",
     "legacy-clock-readiness.mjs", "inert-date-range-request.mjs", "team-temporary-value-authority.mjs",
     "proxy-header-census.mjs",
@@ -79,7 +81,7 @@ export const budgetProtocolIdentity = () =>
 export const mixedProtocolFiles = [
   "mixed-load-probe.mjs", "mixed-load-observation.mjs", "public-header-clock.mjs",
   "collector-client.mjs", "fixture-browser.mjs", "journey-steps.mjs", "trace-transport.mjs",
-  "action-result-observer.mjs", "clean-evidence.mjs", "control-cancellation-evidence.mjs",
+  "action-result-observer.mjs", "clean-evidence.mjs", "control-cancellation-evidence.mjs", "mixed-technical-gzip.mjs",
   "browser-control-collector.mjs", "legacy-clock-readiness.mjs", "inert-date-range-request.mjs", "team-temporary-value-authority.mjs", "proxy-header-census.mjs", "cdp-cached-text-projection.mjs", "proxy-wire-observer.mjs", "protocol-fingerprints.mjs",
 ];
 export const mixedProtocolIdentity = () => fingerprints(mixedProtocolFiles);

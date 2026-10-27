@@ -40,7 +40,7 @@ import { temporaryValueObservation, knownTemporaryValueObservation, knownOrigina
 export const controlResponseHeader = "x-z8-fixture-response-id";
 export const controlDocumentHeader = "x-z8-fixture-document-generation";
 export const mixedBrowserWorkScope = "all-mixed-context-work-before-first-app-io-through-finite-settlement-v1";
-const sha = (value) => createHash("sha256").update(value).digest("hex");
+const sha = (value) => createHash("sha256").update(mixedOwnedHashInput(value)).digest("hex");
 const scalarFactBytes=facts=>facts?.known===true?Buffer.byteLength(JSON.stringify(facts))+1024:0;
 const ownData=(object,key)=>{
 	try{const field=object && typeof object==="object"?Object.getOwnPropertyDescriptor(object,key):null;return field && Object.hasOwn(field,"value")?{present:true,value:field.value}:{present:field!==undefined && field!==null,unknown:field!==undefined && field!==null};}catch{return {present:false,unknown:true};}
@@ -367,7 +367,7 @@ export function createNativeWorkerObserver({ browser, context, contextId, origin
 	return {
 		close() { scopeClosed = true; for (const [name,listener] of listeners) try { browser.off(name,listener); } catch { errors++; } listeners.clear(); },
 		snapshot: () => ({ protocol: "owned-context-worker-target-metadata-v1", contextId, contextJoinKnown, contextIdentitySha256, installed, scopeClosed,
-			enumerationBasis: "existing-puppeteer-target-manager", controllerObservation: "not-collected", errors, overflow, events: events.map(row=>({...row})) }),
+			enumerationBasis: "existing-puppeteer-target-manager", controllerObservation: "not-collected", errors, overflow, events: mixedOwnedRows(()=>events,row=>({...row})) }),
 	};
 }
 
@@ -380,11 +380,11 @@ const nativeControllerMetadata = (raw,origin) => {
 				ownedScript: script ? script.href === `${origin}/sw.js` : null, state: stateKnown ? value.state : "unknown" };
 		};
 		if (raw?.available !== true) return { available: false, known: false };
-		const registrations = Array.isArray(raw.registrations) && raw.registrations.length <= 32 ? raw.registrations.map(registration => {
+		const registrations = Array.isArray(raw.registrations) && raw.registrations.length <= 32 ? mixedOwnedArray(raw.registrations.length,()=>raw.registrations.map(registration => {
 			const scope = url(registration?.scope);
 			return { scopeKnown: Boolean(scope), scopeSha256: scope ? sha(scope.href) : null, ownedRootScope: scope ? scope.href === `${origin}/` : null,
 				active: worker(registration?.active), waiting: worker(registration?.waiting), installing: worker(registration?.installing) };
-		}) : null;
+		}),{bytesPerEntry:2048,records:raw.registrations.length}) : null;
 		return { available: true, secureContext: raw.secureContext === true, originMatches: raw.origin === origin,
 			controllerIdentityStable: typeof raw.controllerIdentityStable === "boolean" ? raw.controllerIdentityStable : null,
 			controllerBefore: worker(raw.controllerBefore), controllerAfter: worker(raw.controllerAfter),
@@ -523,9 +523,9 @@ export function createPrincipalEpochObserver(contextId, { origin } = {}) {
 	const snapshotCookies = (cookies) => {
 		if (!Array.isArray(cookies) || cookies.length > controlCancellationPolicy.recordLimit || cookies.some((cookie) =>
 			!cookie || ["name", "domain", "path", "value"].some((key) => typeof cookie[key] !== "string") || cookie.partitionKey !== undefined)) return unknown();
-		const rows = cookies.map(({ name, domain, path, value }) => [name, domain, path, value]).sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
-		if (new Set(rows.map((row) => JSON.stringify(row.slice(0, 3)))).size !== rows.length) return unknown();
-		const bytes = JSON.stringify(rows);
+		const rows = mixedOwnedRows(()=>cookies,({ name, domain, path, value }) => [name, domain, path, value],{keys:["name","domain","path","value"]}).sort((a, b) => mixedOwnedJSONString(a).localeCompare(mixedOwnedJSONString(b)));
+		if (new Set(mixedOwnedArray(rows.length,()=>rows.map((row) => mixedOwnedJSONString(mixedOwnedArray(3,()=>row.slice(0, 3)))),{bytesPerEntry:128})).size !== rows.length) return unknown();
+		const bytes = mixedOwnedJSONString(rows);
 		if (Buffer.byteLength(bytes) > controlCancellationPolicy.encodedLimit) return unknown();
 		const httpOnlyKnown = cookies.every((cookie) => typeof cookie.httpOnly === "boolean");
 		const single = cookies[0];
@@ -587,7 +587,7 @@ export function createPrincipalEpochObserver(contextId, { origin } = {}) {
 			return { protocol: "actual-browser-cookie-boundaries-v1", contextId, before: { ...actualBefore }, after: { ...actualAfter },
 				matchesAtBoundaries: actualBefore.known && actualAfter.known ? actualBefore.sha256 === actualAfter.sha256 : null,
 				scopeClosed, observedSetCookieResponses: setCookies.size, unknownResponseHeaders, readErrors, pendingReads, observationErrors, overflow,
-				stablePrincipalClaim: false,progressReads:{protocol:"owned-read-only-principal-operations-v1",started:progressReadsStarted,finished:progressReadsFinished,pending:[...progressReads.values()].map(({acknowledgmentOrdinal,kind})=>({acknowledgmentOrdinal,kind})).sort((a,b)=>a.acknowledgmentOrdinal-b.acknowledgmentOrdinal),records:[...progressReadHistory.values()].map(row=>({...row})).sort((a,b)=>a.acknowledgmentOrdinal-b.acknowledgmentOrdinal)} };
+				stablePrincipalClaim: false,progressReads:{protocol:"owned-read-only-principal-operations-v1",started:progressReadsStarted,finished:progressReadsFinished,pending:mixedOwnedRows(()=>progressReads.values(),({acknowledgmentOrdinal,kind})=>({acknowledgmentOrdinal,kind})).sort((a,b)=>a.acknowledgmentOrdinal-b.acknowledgmentOrdinal),records:mixedOwnedRows(()=>progressReadHistory.values(),row=>({...row})).sort((a,b)=>a.acknowledgmentOrdinal-b.acknowledgmentOrdinal)} };
 		},
 	};
 }
@@ -782,7 +782,7 @@ export function createBrowserControlCollector({
 	const limited = () =>
 		requests.size + extra.size + responseExtras.size >=
 		controlCancellationPolicy.recordLimit;
-	const rows = () => [...requests.values()];
+	const rows = () => mixedOwnedArray(requests.size,()=>[...requests.values()]);
 	const recordMeasuredFailure = (requestId) => {
 		rawMeasuredFailedRequests++;
 		if (!measurementStarted || measurementClosed) errors++;
@@ -980,9 +980,11 @@ export function createBrowserControlCollector({
         temporaryRequestObserved?.(row,"response");
 	};
 	let browserEventOrdinal=0,progressInput;
-	const snapshot = () => {
-		const failures = rows().filter((row) => row.failed),
-			responses = rows().filter((row) => row.loadingFinished);
+	const browserLedger=row=>({protocol:"cached-browser-data-ledger-v1",requestObserved:true,responseEvents:row.responseEvents,finishedEvents:row.finishedEvents,failedEvents:row.failedEvents,
+		dataEvents:row.dataEvents,dataAfterTerminal:row.dataAfterTerminal,dataBeforeResponse:row.dataBeforeResponse,responseAfterTerminal:row.responseAfterTerminal,terminalBeforeResponse:row.terminalBeforeResponse,invalidData:row.observedDataLengthInvalid===true,observedDataLength:row.observedDataLength});
+	const snapshot = ({progressOnly=false}={}) => {
+		const failures = mixedOwnedArray(requests.size,()=>rows().filter((row) => row.failed)),
+			responses = mixedOwnedArray(requests.size,()=>rows().filter((row) => row.loadingFinished));
 		const proxy = proxyObservation();
 		const coverage = {
 			installed: installed && proxy.installed === true,
@@ -997,25 +999,26 @@ export function createBrowserControlCollector({
 			).length,
 			pendingBodies: pending.size + queue.length + proxy.pendingBodies,
 		};
-		for(const row of rows()) row.browserDataLedger={protocol:"cached-browser-data-ledger-v1",requestObserved:true,responseEvents:row.responseEvents,finishedEvents:row.finishedEvents,failedEvents:row.failedEvents,
-			dataEvents:row.dataEvents,dataAfterTerminal:row.dataAfterTerminal,dataBeforeResponse:row.dataBeforeResponse,responseAfterTerminal:row.responseAfterTerminal,terminalBeforeResponse:row.terminalBeforeResponse,invalidData:row.observedDataLengthInvalid===true,observedDataLength:row.observedDataLength};
-		const sources = [...rows().map((row) => ({ source: "browser", row })), ...proxy.rows.map((row) => ({ source: "proxy", row }))];
-		const protocolErrorRecords = sources.flatMap(({ source, row }) => {
+		if(!progressOnly)for(const row of rows()) row.browserDataLedger=browserLedger(row);
+		const sources = mixedOwnedArray(requests.size+proxy.rows.length,()=>[...rows().map((row) => ({ source: "browser", row })), ...proxy.rows.map((row) => ({ source: "proxy", row }))],{bytesPerEntry:512});
+		const protocolErrorRecords = mixedOwnedArray(sources.length*2,()=>sources.flatMap(({ source, row }) => {
 			const history = row.protocolErrorObservations ?? (hasProtocolError(row.bodyProof) ? [protocolErrorFact(row.bodyProof, "latest-proof",
 				row.transportBodyReceipt?.bodySha256 ?? row.bodyReadbackReceipt?.bodySha256 ?? row.streamReceipt?.capturedBodySha256,row)] : []);
-			return history.map((fact) => ({ source, contextId: row.contextId, requestId: row.requestId ?? row.id,
-				proxyResponseId: row.proxyResponseId ?? (source === "proxy" ? row.id : null), ...fact }));
-		});
+			const extraBytesPerRow=512+Buffer.byteLength(row.contextId??"")+Buffer.byteLength(row.requestId??row.id??"")+Buffer.byteLength(row.proxyResponseId??(source==="proxy"?row.id:"")??"");
+			return mixedOwnedRows(()=>history,(fact) => ({ source, contextId: row.contextId, requestId: row.requestId ?? row.id,
+				proxyResponseId: row.proxyResponseId ?? (source === "proxy" ? row.id : null), ...fact }),{extraBytesPerRow});
+		}));
 		const protocolErrorOverflow = sources.reduce((total, { row }) => total + (row.protocolErrorObservationOverflow ?? 0), 0);
 		const protocolErrors={protocol:"positive-flight-error-observations-v1",contextId,installed:coverage.installed,scopeClosed:closed,
-			observed:protocolErrorRecords.length,overflow:protocolErrorOverflow+Math.max(0,protocolErrorRecords.length-controlCancellationPolicy.recordLimit),records:protocolErrorRecords.slice(0,controlCancellationPolicy.recordLimit)};
-		const environment=environmentObservation(),principal=principalEpoch.snapshot();
+			observed:protocolErrorRecords.length,overflow:protocolErrorOverflow+Math.max(0,protocolErrorRecords.length-controlCancellationPolicy.recordLimit),records:mixedOwnedArray(Math.min(protocolErrorRecords.length,controlCancellationPolicy.recordLimit),()=>protocolErrorRecords.slice(0,controlCancellationPolicy.recordLimit))};
+		const environment=environmentObservation(proxy),principal=principalEpoch.snapshot();
 		const nativeContext={protocol:"qualified-known-extra-native-context-v1",contextId,originSha256:sha(origin),workerScriptSha256:sha(origin+"/sw.js"),rootScopeSha256:sha(origin+"/"),
 			binding:compiledBinding ? Object.fromEntries(["policy","browserRevision","compiledBuild","compiledManifestSha256","compiledCachedNavigations","manifestVerified","browserVerified","nativePublicSources","temporaryValueObservation","originalTeamSource","teamAnnualAction","legacyClockReadiness","requestShapeDiagnostic"].filter(key=>Object.hasOwn(compiledBinding,key)).map(key=>[key,["legacyClockReadiness","requestShapeDiagnostic"].includes(key)?structuredClone(compiledBinding[key]):compiledBinding[key]])) : null,
 			protocolSources:protocolSources ?? null,operatorFile:operatorFile ?? null,principalEpoch:principal,headerCensus:proxy.headerCensus ?? null,headerLifetime:proxy.headerLifetime ?? null,headerPrefix:proxy.headerPrefix ?? null,
 			protocolErrors,environment};
 		const data = { responses, proxy: proxy.rows, coverage, browserRevision,nativeContext };
 		progressInput={...data,failures,browserEventOrdinal,nativeContext:{...nativeContext,headerPrefix:proxy.headerPrefix ?? null}};
+		if(progressOnly)return progressInput;
 		const measuredRows = measuredFailureIds.map((id) =>
 			requests.get(id)?.failed
 				? requests.get(id)
@@ -1214,8 +1217,13 @@ export function createBrowserControlCollector({
 			measurementClosed = measurementStarted;
 		},
 		recordMeasuredFailure,
-		progressInput(){snapshot();return mixedNativeProgressInput(progressInput);},
-		annualContext(){snapshot();return progressInput.nativeContext;},
+		progressInput({owner=null,documentJournal=null}={}){
+			if(!owner){try{snapshot();return mixedNativeProgressInput(progressInput);}finally{progressInput=null;}}
+			// A discarded prior full snapshot is not an operation-owned live view.
+			progressInput=null;
+			return owner.capture(()=>{try{const view=snapshot({progressOnly:true});if(documentJournal)view.nativeContext.documentJournal=documentJournal();return mixedNativeProgressInput(view,{copy:false,browserLedger});}finally{progressInput=null;}});
+		},
+		annualContext(){try{snapshot();return progressInput.nativeContext;}finally{progressInput=null;}},
 		endScope() {
 			closed = true;
 			for (const row of rows())
@@ -1450,7 +1458,7 @@ export function createTeamSourceReadScheduler({ready,read,accept,reserve,release
   if(seen.size>=controlCancellationPolicy.recordLimit || records.length+queue.length>=controlCancellationPolicy.recordLimit){overflow++;release(32768);return false;}
   eventRetainedBytes+=32768;
   const observedAtMs=performance.now();seen.add(key);queue.push({ordinal:++eventOrdinal,token:structuredClone(token),observedAtMs,deadlineMs:observedAtMs+10000});pump();return true;
- },close(){closed=true;if(running || queue.length)errors++;},status(){return {scopeClosed:closed,pending:Number(running)+queue.length,errors,overflow,unavailable,eventRetainedBytes};},snapshot(){return {protocol:"actual-team-source-read-journal-v1",scopeClosed:closed,pending:Number(running)+queue.length,errors,overflow,unavailable,eventRetainedBytes,records:structuredClone(records)};}});
+ },close(){closed=true;if(running || queue.length)errors++;},status(){return {scopeClosed:closed,pending:Number(running)+queue.length,errors,overflow,unavailable,eventRetainedBytes};},snapshot(){return {protocol:"actual-team-source-read-journal-v1",scopeClosed:closed,pending:Number(running)+queue.length,errors,overflow,unavailable,eventRetainedBytes,records:structuredClone(records,records.length)};}});
 }
 /** Optional prospective installation; callers retain their normal measurement boundaries. */
 export async function installBrowserControlCollector({
@@ -1491,6 +1499,7 @@ export async function installBrowserControlCollector({
 		compiledCachedNavigations,
 		compiledBinding:environmentBinding,
 	});
+	const technicalOwner=captureContextFailures?createMixedTechnicalOwner({contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords}):null;
 	if(!annualTeamActionAuthority(environmentBinding))throw Error("Annual team observer requires actual compiled and browser admission.");
 	if(qualification) {
 		// One canonical immutable operator graph, including at most128 route rows, in the same pool.
@@ -1518,7 +1527,7 @@ export async function installBrowserControlCollector({
 	const proxyObservation = () => {
 		const proof = proxy.snapshot();
 		const cut=typeof transport.controlHeaderCut==="function"?transport.controlHeaderCut():null;
-		const sourceRead=teamScheduler.snapshot();
+		const sourceRead=teamScheduler.status();
         return { ...proof, errors: proof.errors + transportErrors()+sourceRead.errors,overflow:proof.overflow+sourceRead.overflow,headerPrefix:cut?proxyHeaderPrefix(proof.headerCensus,cut):null,headerLifecycle:cut };
 	};
 	const collector = createBrowserControlCollector({
@@ -1533,14 +1542,7 @@ export async function installBrowserControlCollector({
 		protocolSources,
 		operatorFile,
 		principalEpoch,
-		environmentObservation: () => ({ protocol: "native-cache-environment-metadata-v1", contextId,
-			servingPublicSources: environmentBinding?.servingPublicSources ?? null,
-			nativeLaunchMetadata: environmentBinding?.nativeLaunchMetadata ?? null,
-			workerTargets: workerObservation?.snapshot() ?? null,
-            temporaryValueSourceReads:{...teamScheduler.snapshot(),operatorSource:originalTeamOperatorSourceFacts(operatorQualification),documentJournal:documentAcknowledgment?.snapshot() ?? null},
-            temporaryValues:proxy.snapshot().temporaryValues,
-			controllerObservation: endMetadata ? "read-only-end-snapshot" : "not-collected",
-			publicSourceRecheck: endMetadata?.publicSourceRecheck ?? "not-collected", endRead: endMetadata, acceptanceClaim: "none" }),
+		environmentObservation: anchoredProxy => mixedOwnedFixedContainer(()=>[["protocol","native-cache-environment-metadata-v1"],["contextId",contextId],["servingPublicSources",mixedOwnedCoveredValue(environmentBinding?.servingPublicSources ?? null)],["nativeLaunchMetadata",mixedOwnedCoveredValue(environmentBinding?.nativeLaunchMetadata ?? null)],["workerTargets",mixedOwnedCoveredValue(workerObservation?.snapshot() ?? null)],["temporaryValueSourceReads",mixedOwnedCoveredValue({...teamScheduler.snapshot(),operatorSource:originalTeamOperatorSourceFacts(operatorQualification),documentJournal:documentAcknowledgment?.snapshot() ?? null})],["temporaryValues",mixedOwnedCoveredValue(anchoredProxy.temporaryValues)],["controllerObservation",endMetadata ? "read-only-end-snapshot" : "not-collected"],["publicSourceRecheck",mixedOwnedCoveredValue(endMetadata?.publicSourceRecheck ?? "not-collected")],["endRead",mixedOwnedCoveredValue(endMetadata)],["acceptanceClaim","none"]]),
 		proxyObservation,
 		readBody: (requestId) =>
 			session.send("Network.getResponseBody", { requestId }),
@@ -1589,8 +1591,8 @@ export async function installBrowserControlCollector({
 	collector.installed();
 	const annualResponse=response=>proxy.observeAnnualResponse(response);
 	page.on("response",annualResponse);
- const progress=captureContextFailures?createMixedProgressAcknowledgments({input:()=>{const cut=collector.progressInput();cut.nativeContext.documentJournal=documentAcknowledgment.snapshot();return cut;},application:()=>transport.snapshot().applicationEvidence,
-  acknowledge:options=>documentAcknowledgment.read({...options,principalEpoch,readCookies:()=>context.cookies(),readSources:async()=>{const locator=environmentBinding && nativeManifestLocators.get(environmentBinding);return locator?await readNativePublicSources(locator):null;}})}):null;
+ const progress=captureContextFailures?createMixedProgressAcknowledgments({technicalOwner,input:()=>collector.progressInput({owner:technicalOwner,documentJournal:()=>documentAcknowledgment.snapshot()}),application:()=>transport.snapshot().applicationEvidence,
+  acknowledge:options=>documentAcknowledgment.read({...options,technicalOwner,principalEpoch,readCookies:()=>context.cookies(),readSources:async()=>{const locator=environmentBinding && nativeManifestLocators.get(environmentBinding);return locator?await readNativePublicSources(locator):null;}})}):null;
 	return {
 		...collector,
 		armAnnualTeam(input){return proxy.armAnnualTeam(input);},
@@ -1600,6 +1602,8 @@ export async function installBrowserControlCollector({
         finishTeamReplay(handle,facts){return proxy.finishTeamReplay(handle,facts);},
   acknowledgeMixedProgress(options){if(!progress)throw Error("Mixed progress observation was not installed before app IO.");return progress.check(options);},
   confirmMixedProgress(token){if(!progress)throw Error("Mixed progress observation is unavailable.");return progress.confirm(token);},
+  releaseMixedProgressSnapshot(){progress?.releaseSnapshot();},
+  validateMixedProgress(verify){if(!technicalOwner)throw Error("Mixed validation owner is unavailable.");return technicalOwner.run(verify);},
   snapshot(){return {...collector.snapshot(),annualTeam:proxy.annualTeamSnapshot(),temporaryValueSourceReads:teamScheduler.snapshot(),...(progress?{mixedProgress:progress.snapshot(),mixedDocumentJournal:documentAcknowledgment.snapshot()}:{})};},
 		async close({ deadlineMs } = {}) {
 			try {
@@ -1607,6 +1611,7 @@ export async function installBrowserControlCollector({
 				endMetadata = await captureNativeEndMetadata({ page, binding: environmentBinding, origin, deadlineMs });
 			}
 			finally {
+				let progressCloseError=null;try{progress?.close();}catch(error){progressCloseError=error;}
 				teamScheduler.close();
                 documentAcknowledgment?.close();
                 proxy.closeTeamValues();
@@ -1615,6 +1620,7 @@ export async function installBrowserControlCollector({
 				collector.endScope();
 				for (const [method, original] of originals) page[method] = original;
 				await session.detach();
+				if(progressCloseError)throw progressCloseError;
 			}
 		},
 	};
@@ -1669,7 +1675,7 @@ export function createProxyControlCollector({
 		errors = 0,
 		overflow = 0,
 		pendingBodies = 0;
-	let annualInspectionRetainedBytes=0;
+	let annualInspectionRetainedBytes=0,temporaryObservationRecords=0;
 	let navigationWindow=null,navigationWindowCharged=false,annualWindowGeneration=null,jobBytes=0,unresolvedJobs=0;
 	const qualification=originalTeamBindings.get(compiledBinding),sourceFacts=originalTeamSourceFacts(qualification);
 	const shapeConfiguration=requestShapeBindings.get(compiledBinding) ?? (sourceFacts?{protocol:"original-team-request-observation-v1",actionHeaderSha256:sourceFacts.actionHeaderSha256}:annualSource?{protocol:"annual-team-request-observation-v1",actionHeaderSha256:annualSource.actionHeaderSha256}:null),shapeRows=new Map();
@@ -1843,6 +1849,8 @@ export function createProxyControlCollector({
 		issueTeamCut(cut){return sourceCuts.issued(cut)!==null;},
         reserveTemporaryObservation(bytes){return reserveTeam(bytes);},
         releaseTemporaryObservation(bytes){releaseTeam(bytes);},
+        reserveTemporaryRecords(count){if(!Number.isSafeInteger(count)||count<0||requests.size+temporaryObservationRecords+count>controlCancellationPolicy.recordLimit)return false;temporaryObservationRecords+=count;return true;},
+        releaseTemporaryRecords(count){if(!Number.isSafeInteger(count)||count<0||count>temporaryObservationRecords)throw Error("Temporary observation record reservation mismatch.");temporaryObservationRecords-=count;},
         armTeamReplay(input){return teamDispatch?.arm(input) ?? null;},
 		teamReplayHeaders(handle){return teamDispatch?.headers(handle) ?? null;},
 		finishTeamReplay(handle,facts){return teamDispatch?.finished(handle,facts) ?? false;},
@@ -1874,7 +1882,7 @@ export function createProxyControlCollector({
 			const observedTeamCut=currentTeamCut();
 			headerCensus.accepted(id);
 			if (
-				requests.size >= controlCancellationPolicy.recordLimit ||
+				requests.size+temporaryObservationRecords >= controlCancellationPolicy.recordLimit ||
 				requests.has(id)
 			) {
 				if(shapeConfiguration && shapeRows.has(id) && method==="POST" && sha(lowerHeaders(headers)["next-action"] ?? "")===shapeConfiguration.actionHeaderSha256){shapeErrors++;shapeSelected++;shapeUnretainedSelections++;}
@@ -2048,8 +2056,8 @@ export function createProxyControlCollector({
 				errors,
 				overflow,
 				pendingBodies,
-				rows: [...requests.values()].map(
-					({ chunks, retainedBytes, encoding, inspectionTask, inspectionJob, ...proof }) => ({ ...proof,...(inspectionJob?{inspectionJob:Object.freeze({...inspectionJob})}:{}) }),
+				rows: mixedOwnedRows(()=>requests.values(),
+					({ chunks, retainedBytes, encoding, inspectionTask, inspectionJob, ...proof }) => ({ ...proof,...(inspectionJob?{inspectionJob:Object.freeze({...inspectionJob})}:{}) }),{omit:["chunks","retainedBytes","encoding","inspectionTask"]},
 				),
 			};
 		},
@@ -2072,14 +2080,16 @@ export async function createMixedDocumentAcknowledgment({session,contextId,origi
   documents.push({ordinal:documentEventOrdinal,requestId:event.requestId,frameId:event.frameId,loaderId:event.loaderId,originSha256:identity.requestOriginSha256,documentGeneration:identity.documentGeneration});onSourceEvent?.();
  });
  try{await session.send("Runtime.enable");installed=true;}catch{errors++;}
- const frame=async()=>{
+ const frame=async(readScope=null)=>{
   const value=(await session.send("Page.getFrameTree"))?.frameTree?.frame;
+  const construct=()=>{
   if(!progressTechnicalId(value?.id) || !progressTechnicalId(value.loaderId) || new URL(value.url).origin!==origin)throw Error("Missing owned document frame.");
-  const matching=[...contexts.values()].filter(row=>row.isDefault && row.frameId===value.id);
-  const docs=documents.filter(row=>row.frameId===value.id && row.loaderId===value.loaderId && row.originSha256===sha(origin));
+  const matching=mixedOwnedArray(contexts.size,()=>[...contexts.values()].filter(row=>row.isDefault && row.frameId===value.id),{bytesPerEntry:16});
+  const docs=mixedOwnedArray(documents.length,()=>documents.filter(row=>row.frameId===value.id && row.loaderId===value.loaderId && row.originSha256===sha(origin)));
   const number=generation();
   if(matching.length!==1 || docs.length!==1 || !Number.isSafeInteger(number) || number<1 || docs[0].documentGeneration!==contextId+":"+number)throw Error("Missing actual document/context/generation join.");
   return {frameId:value.id,loaderId:value.loaderId,executionContextUniqueId:matching[0].uniqueId,executionContextId:matching[0].id,documentRequestId:docs[0].requestId,documentGeneration:number};
+  };return readScope?readScope.keep(construct):construct();
  };
  const snapshot=()=>structuredClone({protocol:"actual-cdp-document-journal-v1",contextId,installed,currentGeneration:generation(),executionEventOrdinal,documentEventOrdinal,errors,overflow,closed,executionEvents,documents});
  const sourceReady=()=>{
@@ -2099,9 +2109,11 @@ export async function createMixedDocumentAcknowledgment({session,contextId,origi
    const journal=snapshot();return knownMixedDocumentJournal(journal,document)?{document,journal}:null;
   },
   close(){closed=true;for(const [name,listener]of listeners)session.off(name,listener);},
-  async read({checkpointOrdinal,deadlineMs,principalEpoch,readCookies,readSources,sourceSubsetLimit,sourceEvent}){
+  async read({checkpointOrdinal,deadlineMs,principalEpoch,readCookies,readSources,sourceSubsetLimit,sourceEvent,technicalOwner=null}){
    const startedAtMs=performance.now(),deadlineBudgetMs=deadlineMs-startedAtMs;
-   let pendingOperations=0,readErrors=0,document=null,controller=null,principalRead=null,principalReadOperation=null,publicSourceRecheck=null,timer;
+   let pendingOperations=0,readErrors=0,document=null,controller=null,principalRead=null,principalReadOperation=null,publicSourceRecheck=null,timer,readReturned=false;
+   const readScope=technicalOwner?.openRead(),run=construct=>readScope?readScope.run(construct):construct(),keepRead=construct=>readScope?readScope.keep(construct):construct();
+   try{
    const sourceMode=sourceSubsetLimit===128 && sourceEvent!==undefined,supersession=Symbol();let sourceSuperseded=false,sourceReadStage="not-started";
    // Only successful IO followed by an actual journal revision can produce this private sentinel.
    const checkSourceEvent=stage=>{
@@ -2111,31 +2123,33 @@ export async function createMixedDocumentAcknowledgment({session,contextId,origi
     if(sourceEvent.executionEventOrdinal!==executionEventOrdinal || sourceEvent.documentEventOrdinal!==documentEventOrdinal)throw supersession;
     if(JSON.stringify(sourceReady())!==JSON.stringify(sourceEvent))throw Error("Source document identity is unavailable.");
    };
-   const result=()=>{const finishedAtMs=performance.now();return structuredClone({protocol:"native-environment-progress-readonly-v1",contextId,checkpointOrdinal,startedAtMs,finishedAtMs,deadlineMs,deadlineBudgetMs,elapsedMs:finishedAtMs-startedAtMs,timedOut:pendingOperations>0 || finishedAtMs>deadlineMs,pendingOperations,readErrors,...(sourceMode?{sourceSuperseded,sourceReadStage}:{}),document:document && !sourceSuperseded?{...document,sourceJournal:sourceSubsetLimit===128?(documents.length+executionEvents.length<=128?snapshot():null):snapshot()}:null,sourceSubsetExceeded:sourceSubsetLimit===128 && documents.length+executionEvents.length>128,controller:sourceSuperseded?null:controller,principalRead,principalReadOperation,publicSourceRecheck});};
+   const resultValue=()=>{const finishedAtMs=performance.now();return structuredClone({protocol:"native-environment-progress-readonly-v1",contextId,checkpointOrdinal,startedAtMs,finishedAtMs,deadlineMs,deadlineBudgetMs,elapsedMs:finishedAtMs-startedAtMs,timedOut:pendingOperations>0 || finishedAtMs>deadlineMs,pendingOperations,readErrors,...(sourceMode?{sourceSuperseded,sourceReadStage}:{}),document:document && !sourceSuperseded?{...document,sourceJournal:sourceSubsetLimit===128?(documents.length+executionEvents.length<=128?snapshot():null):snapshot()}:null,sourceSubsetExceeded:sourceSubsetLimit===128 && documents.length+executionEvents.length>128,controller:sourceSuperseded?null:controller,principalRead,principalReadOperation,publicSourceRecheck});};
+   const result=()=>{try{return technicalOwner?technicalOwner.retainReadResult(resultValue):resultValue();}finally{readReturned=true;if(pendingOperations===0)readScope?.finish();}};
    if(sourceSubsetLimit!==undefined && sourceSubsetLimit!==128 || sourceEvent!==undefined && (!sourceMode || JSON.stringify(sourceReady())!==JSON.stringify(sourceEvent)) || sourceSubsetLimit===128 && documents.length+executionEvents.length>128 || closed || errors || overflow || !Number.isFinite(deadlineBudgetMs) || deadlineBudgetMs<=0 || deadlineBudgetMs>10000 || !principalEpoch.progressStarted(checkpointOrdinal)){readErrors++;return result();}
-   const track=task=>{pendingOperations++;return Promise.resolve().then(task).catch(error=>{if(sourceMode && error===supersession)sourceSuperseded=true;else readErrors++;}).finally(()=>{pendingOperations--;});};
+   const track=task=>{pendingOperations++;return Promise.resolve().then(task).catch(error=>{if(sourceMode && error===supersession)sourceSuperseded=true;else readErrors++;}).finally(()=>{pendingOperations--;if(readReturned&&pendingOperations===0)readScope?.finish();});};
    const tasks=[track(async()=>{
     const executionBefore=executionEventOrdinal,documentBefore=documentEventOrdinal;
-    const before=await frame();
+    const before=await frame(readScope);
     checkSourceEvent("after-first-frame");
     const evaluated=await session.send("Runtime.evaluate",{uniqueContextId:before.executionContextUniqueId,awaitPromise:true,returnByValue:true,expression:`(async()=>{const doc=globalThis.document,sw=globalThis.navigator?.serviceWorker;if(!doc||!sw||typeof sw.getRegistrations!=="function")return {available:false};const describe=w=>w===null?null:{scriptURL:w?.scriptURL,state:w?.state};const before=sw.controller,beforeMetadata=describe(before),registrations=await sw.getRegistrations(),after=sw.controller;return {available:true,secureContext:globalThis.isSecureContext===true,origin:globalThis.location?.origin,documentIdentityStable:doc===globalThis.document,controllerIdentityStable:before===after,controllerBefore:beforeMetadata,controllerAfter:describe(after),registrationCount:Array.isArray(registrations)?registrations.length:null,registrationOverflow:Array.isArray(registrations)?Math.max(0,registrations.length-32):null,registrations:Array.isArray(registrations)&&registrations.length<=32?registrations.map(r=>({scope:r.scope,active:describe(r.active),waiting:describe(r.waiting),installing:describe(r.installing)})):null};})()`});
     if(evaluated?.exceptionDetails || !evaluated?.result || !Object.hasOwn(evaluated.result,"value"))throw Error("Document read rejected.");
-    const metadata=nativeControllerMetadata(evaluated.result.value,origin);
+    const metadata=keepRead(()=>nativeControllerMetadata(evaluated.result.value,origin));
     if(sourceMode && (evaluated.result.value?.documentIdentityStable!==true || metadata.available!==true || typeof evaluated.result.value.secureContext!=="boolean" || metadata.originMatches!==true || metadata.controllerIdentityStable===null || !metadata.controllerBefore.known || !metadata.controllerAfter.known || metadata.registrationOverflow!==0 || metadata.registrationCount!==metadata.registrations?.length || !metadata.registrations.every(row=>row.scopeKnown && [row.active,row.waiting,row.installing].every(worker=>worker.known))))throw Error("Source document result is malformed.");
-    const after=await frame();
+    const after=await frame(readScope);
     checkSourceEvent("after-document-read");
-    if(JSON.stringify(before)!==JSON.stringify(after) || executionBefore!==executionEventOrdinal || documentBefore!==documentEventOrdinal || errors || overflow || closed || evaluated.result.value?.documentIdentityStable!==true)throw Error("Document changed across acknowledgment.");
+    if(run(()=>mixedOwnedJSONString(before)!==mixedOwnedJSONString(after) || executionBefore!==executionEventOrdinal || documentBefore!==documentEventOrdinal || errors || overflow || closed || evaluated.result.value?.documentIdentityStable!==true))throw Error("Document changed across acknowledgment.");
     controller=metadata;
-    document={protocol:"actual-cdp-document-acknowledgment-v1",contextId,...before,originSha256:sha(origin),actualDocumentIdentityStable:true,executionEventOrdinalBefore:executionBefore,executionEventOrdinalAfter:executionEventOrdinal,documentEventOrdinalBefore:documentBefore,documentEventOrdinalAfter:documentEventOrdinal};
-   }),track(async()=>{try{principalRead=principalEpoch.progressFinished(checkpointOrdinal,await readCookies());principalReadOperation=principalEpoch.progressOperation(checkpointOrdinal);}catch{principalEpoch.progressFailed(checkpointOrdinal);throw Error("Cookie read failed.");}}),track(async()=>{publicSourceRecheck=await readSources();})];
+    document=keepRead(()=>({protocol:"actual-cdp-document-acknowledgment-v1",contextId,...before,originSha256:sha(origin),actualDocumentIdentityStable:true,executionEventOrdinalBefore:executionBefore,executionEventOrdinalAfter:executionEventOrdinal,documentEventOrdinalBefore:documentBefore,documentEventOrdinalAfter:documentEventOrdinal}));
+   }),track(async()=>{try{const cookies=await readCookies();keepRead(()=>{principalRead=principalEpoch.progressFinished(checkpointOrdinal,cookies);principalReadOperation=principalEpoch.progressOperation(checkpointOrdinal);return {principalRead,principalReadOperation};});}catch{principalEpoch.progressFailed(checkpointOrdinal);throw Error("Cookie read failed.");}}),track(async()=>{const value=await readSources();publicSourceRecheck=keepRead(()=>value);})];
    try{
     await Promise.race([Promise.all(tasks),new Promise(resolve=>{timer=setTimeout(resolve,deadlineBudgetMs);})]);clearTimeout(timer);
     if(pendingOperations===0 && readErrors===0 && document && performance.now()<deadlineMs){
-     const seal=track(async()=>{const end=await frame();checkSourceEvent("after-return-frame");if(JSON.stringify(end)!==JSON.stringify(Object.fromEntries(["frameId","loaderId","executionContextUniqueId","executionContextId","documentRequestId","documentGeneration"].map(key=>[key,document[key]]))) || document.executionEventOrdinalAfter!==executionEventOrdinal || document.documentEventOrdinalAfter!==documentEventOrdinal || closed || errors || overflow)throw Error("Document changed during other acknowledged reads.");});
+     const seal=track(async()=>{const end=await frame(readScope);checkSourceEvent("after-return-frame");if(run(()=>mixedOwnedJSONString(end)!==mixedOwnedJSONString(Object.fromEntries(["frameId","loaderId","executionContextUniqueId","executionContextId","documentRequestId","documentGeneration"].map(key=>[key,document[key]]))) || document.executionEventOrdinalAfter!==executionEventOrdinal || document.documentEventOrdinalAfter!==documentEventOrdinal || closed || errors || overflow))throw Error("Document changed during other acknowledged reads.");});
      await Promise.race([seal,new Promise(resolve=>{timer=setTimeout(resolve,Math.max(0,deadlineMs-performance.now()));})]);
     }
    }finally{clearTimeout(timer);}
    return result();
+   }finally{readReturned=true;if(pendingOperations===0)readScope?.finish();}
   },
  };
 }
@@ -2143,11 +2157,16 @@ export async function createMixedDocumentAcknowledgment({session,contextId,origi
 const progressApplicationKeys=["failures","serverErrors","unknown","httpErrors","overflows","decodeFailures","registryConflicts"];
 const progressApplicationKnown=application=>progressApplicationKeys.every(key=>application?.[key]===0);
 /** Independent acknowledgments at existing mixed stop guards. No mutex, retry, quiescence or business operation. */
-export function createMixedProgressAcknowledgments({input,application,acknowledge}) {
- const prefixes=[],checks=[],tokens=new WeakMap();let attempted=0,guardChecks=0,failed=0,overflow=0,authoritySha256=null,contextId=null,firstFailure=null,diagnosticAttempted=false;
+export function createMixedProgressAcknowledgments({input,application,acknowledge,technicalOwner=null}) {
+ const prefixes=[],checks=[],tokens=new Map(),activeChecks=new Set(),exportedSnapshots=new Set();let attempted=0,guardChecks=0,failed=0,overflow=0,authoritySha256=null,contextId=null,firstFailure=null,diagnosticAttempted=false,closed=false,closedSnapshot=null,released=false;
+ const keep=construct=>technicalOwner?technicalOwner.retainEvidence(construct):construct();
+ const run=construct=>technicalOwner?technicalOwner.run(construct):construct();
+ const drop=value=>technicalOwner?.releaseEvidence(value);
+ const replaceCheck=(owned,update)=>{const previous=owned.check,index=checks.indexOf(previous);if(index<0)throw Error("Mixed guard lost its owned check.");const next=keep(()=>({...previous,...update()}));checks[index]=next;owned.check=next;drop(previous);return next;};
  // One failure-only fixed record shares the existing retention and record bounds.
  const diagnosticCharge=32768;
- const bytes=()=>Buffer.byteLength(JSON.stringify(checks))+prefixes.reduce((sum,prefix)=>sum+Buffer.byteLength(JSON.stringify(prefix)),0)+(firstFailure?diagnosticCharge:0);
+ const byteCount=()=>Buffer.byteLength(mixedOwnedJSONString(checks))+prefixes.reduce((sum,prefix)=>sum+Buffer.byteLength(mixedOwnedJSONString(prefix)),0)+(firstFailure?diagnosticCharge:0);
+ const bytes=()=>technicalOwner?technicalOwner.run(byteCount):byteCount();
  const own=(value,key)=>value && typeof value==="object" && !utilTypes.isProxy(value)?Object.getOwnPropertyDescriptor(value,key)?.value:undefined;
  const count=value=>Number.isSafeInteger(value) && value>=0?value:null;
  const flag=value=>typeof value==="boolean"?value:null;
@@ -2157,7 +2176,7 @@ export function createMixedProgressAcknowledgments({input,application,acknowledg
   const cut=state.cut,failures=boundedRows(own(cut,"failures")),packets=boundedRows(own(cut,"proxy")),coverage=own(cut,"coverage"),principal=own(own(cut,"nativeContext"),"principalEpoch");
   let latest=null,latestOrdinal=0,latestCount=0,matching=null,matchingCount=null;
   const digest=createHash("sha256");
-  if(failures)for(let i=0;i<failures.length;i++){const row=own(failures,String(i)),ordinal=count(own(row,"failedEventOrdinal"));digest.update(JSON.stringify([hashed(own(row,"requestId")),ordinal]));if(ordinal!==null && ordinal>latestOrdinal){latest=row;latestOrdinal=ordinal;latestCount=1;}else if(ordinal===latestOrdinal)latestCount++;}
+  if(failures)for(let i=0;i<failures.length;i++){const row=own(failures,String(i)),ordinal=count(own(row,"failedEventOrdinal"));digest.update(mixedOwnedJSONString([hashed(own(row,"requestId")),ordinal]));if(ordinal!==null && ordinal>latestOrdinal){latest=row;latestOrdinal=ordinal;latestCount=1;}else if(ordinal===latestOrdinal)latestCount++;}
   if(latestCount!==1)latest=null;
   const proxyId=own(latest,"proxyResponseId");
   if(latest && typeof proxyId==="string" && proxyId.length<=256 && packets){matchingCount=0;for(let i=0;i<packets.length;i++){const packet=own(packets,String(i));if(own(packet,"id")===proxyId){matchingCount++;matching=packet;}}if(matchingCount!==1)matching=null;}
@@ -2172,17 +2191,19 @@ export function createMixedProgressAcknowledgments({input,application,acknowledg
     matchingPacket:{count:matchingCount,idSha256:hashed(own(matching,"id")),complete:flag(own(matching,"complete")),canceled:flag(own(matching,"canceled")),upstreamError:flag(own(matching,"upstreamError")),responseEvents:count(own(matching,"responseEvents")),bodyProofKnown:matching?proof!==undefined:null,bodyProofComplete:flag(own(proof,"complete")),bodyProofReasonSha256:hashed(own(proof,"reason"))}}:null};
   return row;
  };
- const diagnose=state=>{if(diagnosticAttempted)return;diagnosticAttempted=true;try{if(bytes()+diagnosticCharge>controlCancellationPolicy.retainedLimit || checks.length+prefixes.length>=controlCancellationPolicy.recordLimit){overflow++;return;}const row=failureDiagnostic(state);if(Buffer.byteLength(JSON.stringify(row))*8+2048>diagnosticCharge){overflow++;return;}firstFailure=row;}catch{overflow++;}};
- const observation=stage=>({stage,subreason:"entry",cut:null,cutStage:null,application:null,candidateDiagnostic:null,predicates:{applicationKnown:null,candidateKnown:null,authorityKnown:null,journalsKnown:null,protocolObservedZero:null,protocolOverflowZero:null,authorityMatches:null,returnJournalsKnown:null}});
+ const diagnose=state=>{if(diagnosticAttempted)return;diagnosticAttempted=true;try{if(bytes()+diagnosticCharge>controlCancellationPolicy.retainedLimit || checks.length+prefixes.length>=controlCancellationPolicy.recordLimit){overflow++;return;}const row=keep(()=>failureDiagnostic(state));if(run(()=>Buffer.byteLength(mixedOwnedJSONString(row))*8+2048>diagnosticCharge)){drop(row);overflow++;return;}firstFailure=row;}catch{overflow++;}};
+ const observation=stage=>({stage,subreason:"entry",cut:null,cutStage:null,application:null,candidateDiagnostic:null,ownedCuts:new Set(),ownedCandidates:new Set(),ownedAcknowledgments:new Set(),closeFailed:false,predicates:{applicationKnown:null,candidateKnown:null,authorityKnown:null,journalsKnown:null,protocolObservedZero:null,protocolOverflowZero:null,authorityMatches:null,returnJournalsKnown:null}});
+ const disposeState=state=>{state.cut=null;state.beginResult=null;state.endResult=null;for(const cut of state.ownedCuts){state.ownedCuts.delete(cut);technicalOwner?.releaseCut(cut);}for(const candidate of state.ownedCandidates){state.ownedCandidates.delete(candidate);drop(candidate);}for(const ack of state.ownedAcknowledgments){state.ownedAcknowledgments.delete(ack);drop(ack);}};
  const seen=(state,key,value)=>{state.predicates[key]=Boolean(value);return value;};
  const live=state=>{
+  if(closed)throw Error("Mixed progress observation is closed.");
   state.cut=null;state.cutStage=null;state.application=null;state.candidateDiagnostic=null;for(const key of Object.keys(state.predicates))state.predicates[key]=null;
   state.subreason="application";
   if(failed || overflow || !seen(state,"applicationKnown",progressApplicationKnown(state.application=application()))){state.subreason=failed?"previous-failure":overflow?"previous-overflow":"application";throw Error("Mixed required application observation is not clean.");}
-  state.subreason="input";const cut=state.cut=input();state.cutStage=state.stage;state.subreason="candidate-evaluation";const candidate=mixedNativePrefixCandidates(cut,record=>{state.candidateDiagnostic=record;});state.predicates.candidateKnown=Boolean(candidate);
-  state.subreason="authority-evaluation";const authority=mixedNativeAuthorityDigest(cut.nativeContext);state.predicates.authorityKnown=Boolean(authority);
+  state.subreason="input";const cut=state.cut=input();if(technicalOwner)state.ownedCuts.add(cut);state.cutStage=state.stage;state.subreason="candidate-evaluation";const candidate=keep(()=>mixedNativePrefixCandidates(cut,record=>{state.candidateDiagnostic=record;}));if(technicalOwner&&candidate)state.ownedCandidates.add(candidate);state.predicates.candidateKnown=Boolean(candidate);
+  state.subreason="authority-evaluation";const authority=run(()=>mixedNativeAuthorityDigest(cut.nativeContext));state.predicates.authorityKnown=Boolean(authority);
   state.subreason="live-predicate";
-  if(!seen(state,"journalsKnown",knownMixedOpenJournals(cut.nativeContext)) || !seen(state,"protocolObservedZero",cut.nativeContext?.protocolErrors?.observed===0) || !seen(state,"protocolOverflowZero",cut.nativeContext.protocolErrors.overflow===0) || !candidate || !authority || !seen(state,"authorityMatches",!(authoritySha256!==null && authoritySha256!==authority))){
+  if(!seen(state,"journalsKnown",run(()=>knownMixedOpenJournals(cut.nativeContext))) || !seen(state,"protocolObservedZero",cut.nativeContext?.protocolErrors?.observed===0) || !seen(state,"protocolOverflowZero",cut.nativeContext.protocolErrors.overflow===0) || !candidate || !authority || !seen(state,"authorityMatches",!(authoritySha256!==null && authoritySha256!==authority))){
    state.subreason=state.predicates.journalsKnown===false?"journals":state.predicates.protocolObservedZero===false?"protocol-observed":state.predicates.protocolOverflowZero===false?"protocol-overflow":!candidate?"candidate":!authority?"authority":"authority-changed";
    throw Error("Mixed browser observation lacks request-local evidence.");
   }
@@ -2191,41 +2212,60 @@ export function createMixedProgressAcknowledgments({input,application,acknowledg
  const retained=()=>{if(bytes()>controlCancellationPolicy.retainedLimit){overflow++;throw Error("Mixed prefix retention bound exceeded.");}};
  return {
   async check({operationDeadlineMs=null}={}){
+   if(closed)throw Error("Mixed progress observation is closed.");
    const state=observation("check-live");
+   activeChecks.add(state);
    try{
-    const {cut:begin,candidate}=live(state);
+    state.beginResult=live(state);state.endResult=state.beginResult;
     state.stage="check-record-limit";state.subreason="record-limit";
     if(guardChecks>=controlCancellationPolicy.recordLimit){overflow++;throw Error("Mixed guard bound exceeded.");}
-    const ordinal=++guardChecks;let receipt=null,end=begin;
-    if(candidate.cores.length!==0){
+    const ordinal=++guardChecks;let receipt=null;
+    if(state.beginResult.candidate.cores.length!==0){
      const checkpointOrdinal=++attempted;
      const observerDeadline=performance.now()+mixedNativeProgressPolicy.observerCeilingMs;
      const deadlineMs=operationDeadlineMs===null?observerDeadline:Math.min(observerDeadline,operationDeadlineMs);
-     state.stage="acknowledge";state.subreason="acknowledge";const acknowledgment=await acknowledge({checkpointOrdinal,deadlineMs});
+     state.stage="acknowledge";state.subreason="acknowledge";const acknowledgment=await acknowledge({checkpointOrdinal,deadlineMs});if(technicalOwner)state.ownedAcknowledgments.add(acknowledgment);
      state.stage="ack-identity";state.subreason="ack-identity";
      if(acknowledgment?.checkpointOrdinal!==checkpointOrdinal || acknowledgment.deadlineMs!==deadlineMs)throw Error("Mixed acknowledgment used another read or deadline.");
-     state.stage="check-after-ack-live";end=live(state).cut;state.stage="create-prefix";state.subreason="prefix";receipt=createMixedNativePrefix({checkpointOrdinal,begin,end,acknowledgment,headerPrefix:end.nativeContext.headerPrefix,operationDeadlineMs,returnedAtMs:performance.now()});prefixes.push(receipt);
+     state.stage="check-after-ack-live";state.endResult=live(state);state.stage="create-prefix";state.subreason="prefix";receipt=keep(()=>createMixedNativePrefix({checkpointOrdinal,begin:state.beginResult.cut,end:state.endResult.cut,acknowledgment,headerPrefix:state.endResult.cut.nativeContext.headerPrefix,operationDeadlineMs,returnedAtMs:performance.now()}));prefixes.push(receipt);
     }
-    const check={ordinal,begin:mixedNativeProgressVector(begin),returned:null,checkpointOrdinal:receipt?.checkpointOrdinal ?? null,prefixSha256:receipt?.prefixSha256 ?? null};checks.push(check);state.stage="retain-check";state.subreason="retention";retained();
-    state.stage="issue-token";state.subreason="token";const token=Object.freeze({ordinal,contextId,authoritySha256,failureIds:Object.freeze(progressFailureIdsForCollector(end))});tokens.set(token,{check,begin,receipt});return token;
-   }catch(error){failed++;diagnose(state);throw error;}
+    const check=keep(()=>({ordinal,begin:mixedNativeProgressVector(state.beginResult.cut),returned:null,checkpointOrdinal:receipt?.checkpointOrdinal ?? null,prefixSha256:receipt?.prefixSha256 ?? null}));checks.push(check);state.stage="retain-check";state.subreason="retention";retained();
+    state.stage="issue-token";state.subreason="token";const token=keep(()=>Object.freeze({ordinal,contextId,authoritySha256,failureIds:Object.freeze(progressFailureIdsForCollector(state.endResult.cut))}));const tokenBegin=technicalOwner?keep(()=>({nativeContext:state.beginResult.cut.nativeContext})):state.beginResult.cut;tokens.set(token,{check,begin:tokenBegin,receipt});return token;
+   }catch(error){if(!state.closeFailed)failed++;diagnose(state);throw error;}
+   finally{activeChecks.delete(state);disposeState(state);}
   },
   confirm(token){
+   if(closed)throw Error("Mixed progress observation is closed.");
    const state=observation("confirm-live");
    try{
-    const {cut,candidate}=live(state),owned=tokens.get(token),check=owned?.check;
+    const {cut,candidate}=live(state),owned=tokens.get(token);let check=owned?.check;
     state.stage="confirm-token";state.subreason="token-or-failure-ids";
-    if(!check || check.returned!==null || token.contextId!==contextId || token.authoritySha256!==authoritySha256 || JSON.stringify(token.failureIds)!==JSON.stringify(candidate.failureIds))throw Error("New mixed failed request or wrong acknowledgment at return cut.");
+    if(!check || check.returned!==null || token.contextId!==contextId || token.authoritySha256!==authoritySha256 || run(()=>mixedOwnedJSONString(token.failureIds)!==mixedOwnedJSONString(candidate.failureIds)))throw Error("New mixed failed request or wrong acknowledgment at return cut.");
     state.stage="confirm-journals";state.subreason="return-journals";
-    if(!seen(state,"returnJournalsKnown",sameMixedReturnJournals(owned.begin.nativeContext,cut.nativeContext)))throw Error("Mixed current authority changed after acknowledgment.");
-    if(owned.receipt){state.stage="seal-prefix";state.subreason="prefix";const initial=owned.receipt;const sealed=createMixedNativePrefix({checkpointOrdinal:initial.checkpointOrdinal,begin:initial.begin,end:cut,acknowledgment:initial.acknowledgment,headerPrefix:cut.nativeContext.headerPrefix,operationDeadlineMs:initial.operationDeadlineMs,returnedAtMs:performance.now()});state.stage="confirm-deadline";state.subreason="deadline";if(performance.now()>initial.acknowledgment.deadlineMs)throw Error("Mixed acknowledgment deadline expired before return.");state.stage="confirm-prefix-index";state.subreason="prefix-index";const index=prefixes.findIndex(row=>row.checkpointOrdinal===initial.checkpointOrdinal);if(index<0)throw Error("Mixed acknowledgment lost its owned prefix.");prefixes[index]=sealed;check.prefixSha256=sealed.prefixSha256;}
+    if(!seen(state,"returnJournalsKnown",run(()=>sameMixedReturnJournals(owned.begin.nativeContext,cut.nativeContext))))throw Error("Mixed current authority changed after acknowledgment.");
+    if(owned.receipt){state.stage="seal-prefix";state.subreason="prefix";const initial=owned.receipt;const sealed=keep(()=>createMixedNativePrefix({checkpointOrdinal:initial.checkpointOrdinal,begin:initial.begin,end:cut,acknowledgment:initial.acknowledgment,headerPrefix:cut.nativeContext.headerPrefix,operationDeadlineMs:initial.operationDeadlineMs,returnedAtMs:performance.now()}));state.stage="confirm-deadline";state.subreason="deadline";if(performance.now()>initial.acknowledgment.deadlineMs)throw Error("Mixed acknowledgment deadline expired before return.");state.stage="confirm-prefix-index";state.subreason="prefix-index";const index=prefixes.findIndex(row=>row.checkpointOrdinal===initial.checkpointOrdinal);if(index<0)throw Error("Mixed acknowledgment lost its owned prefix.");prefixes[index]=sealed;owned.receipt=sealed;drop(initial);check=replaceCheck(owned,()=>({prefixSha256:sealed.prefixSha256}));}
     const principal=cut.nativeContext?.principalEpoch,census=cut.nativeContext?.headerCensus,errors=cut.nativeContext?.protocolErrors;
     state.stage="confirm-principal";state.subreason="principal-header-protocol";
     if(principal?.observedSetCookieResponses!==0 || principal.unknownResponseHeaders!==0 || principal.readErrors!==0 || principal.observationErrors!==0 || principal.overflow!==0 || errors?.observed!==0 || errors.overflow!==0 || !["unknownHeaders","setCookieResponses","setCookieLines","errors","duplicates","missing","late","overflow"].every(key=>census?.counts?.[key]===0))throw Error("A new principal/header/protocol error invalidated the mixed return cut.");
-    check.returned=mixedNativeProgressVector(cut);tokens.delete(token);state.stage="retain-return";state.subreason="retention";retained();return true;
+    check=replaceCheck(owned,()=>({returned:mixedNativeProgressVector(cut)}));tokens.delete(token);drop(token);drop(owned.begin);owned.begin=null;state.stage="retain-return";state.subreason="retention";retained();return true;
    }catch(error){failed++;diagnose(state);throw error;}
+   finally{disposeState(state);}
   },
-  snapshot:()=>structuredClone({protocol:"mixed-native-progress-observations-v1",contextId,authoritySha256,guardChecks,attempted,failed,overflow,retainedBytes:bytes(),checks:[...checks].sort((a,b)=>a.ordinal-b.ordinal),prefixes:[...prefixes].sort((a,b)=>a.checkpointOrdinal-b.checkpointOrdinal),...(firstFailure?{firstFailure}: {})}),
+  snapshot(){if(released)throw Error("Mixed progress snapshot was released.");if(closedSnapshot)return closedSnapshot;const value=keep(snapshotValue);if(technicalOwner)exportedSnapshots.add(value);return value;},
+  close(){
+   if(closed)return;closed=true;for(const state of activeChecks){state.closeFailed=true;failed++;state.stage="close-pending";state.subreason="pending-acknowledgment";diagnose(state);disposeState(state);}
+   if(tokens.size){failed++;const state=observation("close-token");state.subreason="unconsumed-token";diagnose(state);}
+   let snapshotError=null;try{closedSnapshot=keep(snapshotValue);}catch(error){failed++;snapshotError=error;}
+   for(const [token,owned]of tokens){tokens.delete(token);drop(token);drop(owned.begin);owned.begin=null;owned.receipt=null;}
+   if(closedSnapshot){while(checks.length)drop(checks.pop());while(prefixes.length)drop(prefixes.pop());const diagnostic=firstFailure;firstFailure=null;drop(diagnostic);}
+   if(snapshotError)throw snapshotError;
+  },
+  releaseSnapshot(value=null){
+   if(value){if(exportedSnapshots.delete(value))drop(value);return;}
+   released=true;const saved=closedSnapshot;closedSnapshot=null;drop(saved);for(const snapshot of exportedSnapshots){exportedSnapshots.delete(snapshot);drop(snapshot);}tokens.clear();checks.length=prefixes.length=0;firstFailure=null;technicalOwner?.close();
+  },
  };
+ function snapshotValue(){const value=structuredClone({protocol:"mixed-native-progress-observations-v1",candidateRepresentationProtocol:mixedNativeProgressPolicy.candidateRepresentationProtocol,contextId,authoritySha256,guardChecks,attempted,failed,overflow,retainedBytes:bytes(),checks:mixedOwnedArray(checks.length,()=>[...checks].sort((a,b)=>a.ordinal-b.ordinal),{bytesPerEntry:16}),prefixes:mixedOwnedArray(prefixes.length,()=>[...prefixes].sort((a,b)=>a.checkpointOrdinal-b.checkpointOrdinal),{bytesPerEntry:16}),...(firstFailure?{firstFailure}: {})});return technicalOwner?mixedOwnedFreeze(value):value;}
 }
-const progressFailureIdsForCollector=input=>input.failures.map(row=>row.requestId).sort();
+const progressFailureIdsForCollector=input=>mixedOwnedArray(input.failures.length,()=>input.failures.map(row=>row.requestId).sort(),{bytesPerEntry:16});
+import {mixedOwnedFixedContainer,mixedOwnedCoveredValue,mixedOwnedClone as structuredClone,mixedOwnedRows,mixedOwnedArray,mixedOwnedJSONString,mixedOwnedUTF8,mixedOwnedHashInput,mixedOwnedFreeze,createMixedTechnicalOwner} from "./mixed-technical-gzip.mjs";
