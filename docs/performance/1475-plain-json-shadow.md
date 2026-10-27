@@ -1,5 +1,10 @@
 # Plain-JSON N/W shadow metadata
 
+This was introduced as a shadow-only observation. The separately reviewed
+[completed Plain fast path](1475-plain-json-fast-path.md) now consumes qualified
+summaries; skippingEnabled truthfully reports that enabled optimization. The
+observation itself still performs no skip or semantic mutation.
+
 This prospective diagnostic never skips a visit, advances inspected, changes a
 charge, moves a guard or alters a queue/visited/memo decision. It provides no
 semantic-cache or benchmark acceptance. Existing method/source pins still apply.

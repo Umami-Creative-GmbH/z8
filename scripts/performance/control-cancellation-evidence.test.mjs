@@ -1778,12 +1778,12 @@ test("different outlined paths to the same exact target are diagnostic-only and 
 	assert.doesNotMatch(JSON.stringify(different.modelCostObservation.diagnosticAllocation),/KNOWN|target|nested|\$1/);
 });
 
-test("Plain shadow summaries count nodes and the original LIFO pending peak without skipping visits",()=>{
+test("Plain summaries count nodes and the original LIFO pending peak with enabled skipping explicit",()=>{
 	const inspect=target=>inspectRequiredFlightBody(Buffer.from('#0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:{r:"$1:target",p:false,v:null}}}})+'\n1:'+JSON.stringify({target})+'\n'),{cachedNavigations:true});
 	for(const [target,nodes,pending] of [[{x:[null,null,null]},5,3],[{a:{b:{c:{d:null}}}},5,1],[{},1,0],[[],1,0],[[{a:[null,null]},null],6,2],[[null,{a:[null,null]}],6,3]]){
 		const result=inspect(target);assert.equal(result.complete,true);
 		const shadow=result.modelCostObservation.plainJsonShadow;
-		assert.equal(shadow.protocol,"plain-json-semantic-shadow-v1");assert.equal(shadow.skippingEnabled,false);
+		assert.equal(shadow.protocol,"plain-json-semantic-shadow-v1");assert.equal(shadow.skippingEnabled,true);
 		assert.equal(shadow.maxHitNodes,nodes);assert.equal(shadow.maxHitPending,pending);assert.ok(shadow.byRole.required.hits>0);
 	}
 });
@@ -1798,7 +1798,7 @@ test("Plain shadow uses actual integer-key order and forecasts the descendant wi
 		assert.equal(result.complete,false);assert.equal(result.reason,"model-limit");assert.equal(result.modelLimitObservation.guard,guard);
 		const shadow=result.modelLimitObservation.modelCostObservation.plainJsonShadow;
 		assert.equal(shadow.widthExclusions,widthExcluded);assert.equal(shadow.maxHitPending,3);assert.equal(shadow.inspectedExclusions,0);
-		assert.equal(shadow.skippingEnabled,false);
+		assert.equal(shadow.skippingEnabled,true);
 	}
 });
 
@@ -1846,4 +1846,68 @@ test("shadow opportunities never bypass global E action failures or independent 
 	const navigation=s=>Buffer.from('#0:'+JSON.stringify({q:"",i:false,t:{t:{s,d:{r:"$1:target",p:false,v:null}}}})+'\n1:{"target":{"known":"KNOWN"}}\n');
 	const valid=inspectRequiredFlightBody(navigation("en"),{cachedNavigations:true});assert.equal(valid.complete,true);assert.ok(valid.modelCostObservation.plainJsonShadow.byRole.required.hits>0);
 	const invalid=inspectRequiredFlightBody(navigation(42),{cachedNavigations:true});assert.equal(invalid.complete,false);assert.equal(invalid.reason,"unsupported-navigation-transport");
+});
+
+test("completed Plain fast path covers logical descendants without fabricating real work or pushes",()=>{
+	const bytes=Buffer.from('0:{"a":"$1:result"}\n1:{"result":{"items":[null,null,null],"ok":true}}\n');
+	const result=inspectRequiredFlightBody(bytes,{action:true});assert.equal(result.complete,true);
+	const cost=result.modelCostObservation,fast=cost.plainJsonFastPath,semantic=cost.semanticObligations;
+	assert.equal(fast.protocol,"plain-json-semantic-fast-path-v1");assert.equal(fast.enabled,true);
+	assert.equal(cost.plainJsonShadow.skippingEnabled,true);
+	assert.equal(fast.appliedHits.required,1);assert.equal(fast.appliedHits["component-data"],0);
+	assert.equal(fast.coveredDescendants,5);assert.equal(fast.maxNodes,6);assert.equal(fast.maxPendingDelta,3);
+	assert.equal(fast.logicalInspected,semantic.observations+fast.coveredDescendants+fast.noPopGuardAttempts);
+	assert.equal(fast.noPopGuardAttempts,0);assert.equal(semantic.accountedWork,cost.chargedWork);
+	assert.equal(semantic.committedScheduledChildren,2,"Only the real root and outlined-reference pushes occurred.");
+});
+
+test("Plain fast path preserves reachable logical 100000 and 100001 guards using real completed projections",()=>{
+	const inspect=(count,fill)=>inspectRequiredFlightBody(Buffer.from('0:'+JSON.stringify({a:[...Array(count).fill("$1:target"),...Array(fill).fill(null)]})+'\n1:'+JSON.stringify({target:Array(1000).fill(null)})+'\n'),{action:true});
+	const exact=inspect(99,800);assert.equal(exact.complete,true);
+	const cost=exact.modelCostObservation,fast=cost.plainJsonFastPath;
+	assert.equal(fast.logicalInspected,100000);assert.equal(fast.coveredDescendants,99000);assert.equal(fast.appliedHits.required,99);
+	assert.equal(fast.noPopGuardAttempts,0);assert.ok(cost.chargedWork<10000);assert.equal(cost.semanticObligations.observations,1000);
+	const exceeded=inspect(100,0);assert.equal(exceeded.complete,false);assert.equal(exceeded.reason,"model-limit");
+	const limit=exceeded.modelLimitObservation,limited=limit.modelCostObservation,f=limited.plainJsonFastPath;
+	assert.equal(limit.guard,"local-inspected-work");assert.equal(limit.inspected,100001);assert.equal(f.logicalInspected,100001);
+	assert.equal(f.inspectedExclusions,1);assert.equal(f.appliedHits.required,99);assert.equal(f.noPopGuardAttempts,1);
+	assert.equal(limited.semanticObligations.guardOnlyWork,0);assert.equal(limited.semanticObligations.activeIteration,false);
+	assert.equal(f.logicalInspected,limited.semanticObligations.observations+f.coveredDescendants+f.noPopGuardAttempts);
+	assert.equal(limited.semanticObligations.accountedWork,limited.chargedWork);assert.ok(limited.chargedWork<10000);
+});
+
+test("Plain fast path records both roles but never borrows a depth-only forced opaque or protocol certificate",()=>{
+	const encode=(r,rows,marker="#")=>Buffer.from(marker+'0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:{r,p:marker==="~",v:null}}}})+'\n'+rows);
+	const rows='1:{"target":{"known":"KNOWN"}}\n2:I["module",[],"Export"]\n';
+	const mixed=inspectRequiredFlightBody(encode([["$","$L2",null,"$1:target"],["$","div",null,{title:"$1:target"}]],rows,"~"),{cachedNavigations:true,requestKind:"runtime-shell"});
+	assert.equal(mixed.complete,true);const fast=mixed.modelCostObservation.plainJsonFastPath;
+	assert.ok(fast.appliedHits.required>0);assert.ok(fast.appliedHits["component-data"]>0);
+	for(const [r,extra] of [["$1:target",rows],["$1",'1:{"known":"KNOWN"}\n'],["$1:target",'1:{"target":{"token":"$$literal"}}\n'],["$1:target",'1:{"target":{"number":1e400}}\n'],["$Q2",'2:"$3"\n3:[["key","KNOWN"]]\n']]){
+		const cacheOutput=r==="$1:target"&&extra===rows;
+		const result=inspectRequiredFlightBody(encode(r,extra,cacheOutput?"~":"#"),{cachedNavigations:true,...(cacheOutput?{requestKind:"runtime-shell"}:{})});
+		assert.equal(result.complete,true);assert.deepEqual(result.modelCostObservation.plainJsonFastPath.appliedHits,{required:0,"component-data":0});
+	}
+	for(const r of [["$1:known","$1"],["$1","$1:known"]]){
+		const result=inspectRequiredFlightBody(encode(r,'1:{"known":"KNOWN"}\n'),{cachedNavigations:true});assert.equal(result.complete,true);
+		assert.equal(result.modelCostObservation.plainJsonFastPath.coveredDescendants,0);
+	}
+	for(const field of ["$8","$L8","$@8"]){const failed=inspectRequiredFlightBody(encode("$1:target",'1:'+JSON.stringify({target:{known:"KNOWN",late:field}})+'\n'),{cachedNavigations:true});assert.equal(failed.complete,false);}
+});
+
+test("Plain summary continues finish exactly once and keeps prequeue and active return snapshots truthful",()=>{
+	const prefix='0:'+JSON.stringify({a:["$2:leaf","$1:target"]})+'\n1:{"target":{"items":[null,null]}}\n';
+	let deep=null;for(let index=0;index<64;index++)deep={next:deep};
+	const result=inspectRequiredFlightBody(Buffer.from(prefix+'2:'+JSON.stringify({leaf:"KNOWN",deep})+'\n'),{action:true});
+	assert.equal(result.complete,false);const cost=result.pathLimitObservation.modelCostObservation,f=cost.plainJsonFastPath,s=cost.semanticObligations;
+	assert.ok(f.coveredDescendants>0);assert.equal(s.activeIteration,true);assert.ok(s.activePopWork>0);
+	assert.equal(f.noPopGuardAttempts,0);assert.equal(f.logicalInspected,s.observations+f.coveredDescendants);
+	assert.equal(s.accountedWork,cost.chargedWork);assert.equal(s.buckets.reduce((sum,row)=>sum+row.work,0),s.committedPopWork+s.activePopWork);
+	const wide=inspectRequiredFlightBody(Buffer.from('0:'+JSON.stringify({a:Array(100001).fill(null)})+'\n'),{action:true}).modelLimitObservation.modelCostObservation;
+	assert.equal(wide.plainJsonFastPath.coveredDescendants,0);assert.equal(wide.plainJsonFastPath.noPopGuardAttempts,0);assert.equal(wide.semanticObligations.activeIteration,true);
+	const many=Array(50000).fill(null),inner=Buffer.from('#0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:{r:many,p:false,v:null}}}})+'\n');
+	const outer=Buffer.concat([Buffer.from('0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:{r:many,p:false,v:null}}},p:"$1"})+'\n1:R\n1:o'+inner.length.toString(16)+','),inner,Buffer.from('1:C\n')]);
+	const shared=inspectRequiredFlightBody(outer,{cachedNavigations:true}).modelLimitObservation.modelCostObservation;
+	assert.equal(shared.plainJsonFastPath.noPopGuardAttempts,1);assert.equal(shared.semanticObligations.guardOnlyWork,1);
+	assert.equal(shared.plainJsonFastPath.logicalInspected,shared.semanticObligations.observations+shared.plainJsonFastPath.coveredDescendants+1);
+	assert.equal(shared.semanticObligations.accountedWork,shared.chargedWork);
 });
