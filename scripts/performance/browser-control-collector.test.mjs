@@ -48,7 +48,7 @@ import {
 import { controlCancellationPolicy } from "./control-cancellation-evidence.mjs";
 import { validateProxyHeaderCensus } from "./proxy-header-census.mjs";
 import { projectCachedCdpText } from "./cdp-cached-text-projection.mjs";
-import { primaryProtocolIdentity, companionProtocolIdentity, budgetProtocolIdentity } from "./protocol-fingerprints.mjs";
+import { primaryProtocolIdentity, companionProtocolIdentity, budgetProtocolIdentity,mixedProtocolIdentity } from "./protocol-fingerprints.mjs";
 import { mixedProtocolFiles } from "./mixed-clock-budgets.mjs";
 
 const origin = "http://localhost:1234",
@@ -91,7 +91,9 @@ test("proxy header census survives semantic scope end and closes only with actua
 });
 
 test("every protocol source closure binds the newly wired proxy header census",async()=>{
-	const maps=await Promise.all([primaryProtocolIdentity(),companionProtocolIdentity(),budgetProtocolIdentity()]);
+	const maps=await Promise.all([primaryProtocolIdentity(),companionProtocolIdentity(),budgetProtocolIdentity(),mixedProtocolIdentity()]);
+ assert.deepEqual(maps.map(map=>Object.keys(map).length),[22,28,30,19]);
+ const codec=await readFile(new URL("./mixed-technical-gzip.mjs",import.meta.url));for(const map of maps)assert.equal(map["mixed-technical-gzip.mjs"],createHash("sha256").update(codec).digest("hex"));
 	for(const map of maps) assert.match(map["proxy-header-census.mjs"],/^[a-f0-9]{64}$/);
 	assert.equal(mixedProtocolFiles.filter(name=>name==="proxy-header-census.mjs").length,1);
 	for(const map of maps) assert.match(map["cdp-cached-text-projection.mjs"],/^[a-f0-9]{64}$/);
@@ -1908,4 +1910,27 @@ test("a progress cut reuses its exact synchronous proxy snapshot without droppin
  const expected=legacy.progressInput();assert.equal(snapshots,2);snapshots=0;
  const current=createBrowserControlCollector({contextId,origin,proxyObservation:observe,environmentObservation:observed=>{assert.equal(observed,anchor);return {temporaryValues:observed.temporaryValues,sharedFact:"preserved"};}});current.installed();
  assert.deepEqual(current.progressInput(),expected);assert.equal(snapshots,1);
+});
+
+
+test("tracked candidate codec preserves complete JSON and separates typed records from metadata array slots",async()=>{
+ const {createMixedTechnicalOwner}=await import("./mixed-technical-gzip.mjs"),{gunzipSync}=await import("node:zlib");
+ const proxy=createProxyControlCollector({contextId,origin});proxy.installed();const owner=createMixedTechnicalOwner({contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});
+ const rows=Array.from({length:700},(_,index)=>({requestId:"request-"+index,metadata:Array(16).fill("漢字_\ud800"),conflict:index%2===0})),input={failures:rows,responses:[],proxy:[],nativeContext:{contextId},coverage:{installed:true},browserRevision:chromiumSWRRevision,browserEventOrdinal:700};
+ const cut=owner.capture(()=>input),packed=owner.encode(cut),logical=gunzipSync(packed.bytes.subarray(48),{maxOutputLength:8388608,rejectGarbageAfterEnd:true});
+ assert.deepEqual(JSON.parse(logical.toString("utf8")),input);assert.equal(packed.bytes.subarray(0,8).toString("ascii"),"Z8MIXGZ2");assert.equal(packed.bytes.readUInt32BE(12),logical.length);assert.equal(createHash("sha256").update(logical).digest("hex"),packed.bytes.subarray(16,48).toString("hex"));
+ assert.equal(packed.stats.logicalReceiptRows,700);assert.ok(packed.stats.codecArraySlots>10000);assert.equal(owner.stats().retainedRecords,700);
+ packed.release();cut.failures[0].conflict="mutated";assert.throws(()=>owner.encode(cut));owner.releaseCut(cut);assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);
+ const tooMany={...input,failures:Array.from({length:10001},(_,i)=>({requestId:"request-"+i}))};assert.throws(()=>owner.capture(()=>tooMany));owner.close();assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);
+});
+
+
+test("sequential receipt constructors precharge one shared scratch window and release it after the loop",async()=>{
+ const {createMixedTechnicalOwner,mixedOwnedRows}=await import("./mixed-technical-gzip.mjs"),proxy=createProxyControlCollector({contextId,origin});proxy.installed();
+ const owner=createMixedTechnicalOwner({contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords}),source=[{requestId:"x".repeat(256),status:200}];let during;
+ const result=owner.retainEvidence(()=>mixedOwnedRows(()=>source,row=>{during=owner.stats().retainedBytes;return {...row};},{constructorScratchBytes:16384,constructorViewCopies:2}));
+ assert.ok(during>=148000&&during<149000,"one-row worked storage bound includes the 16KiB constructor window before projection");assert.deepEqual(result,source);assert.ok(owner.stats().retainedBytes<4096,"constructor scratch is gone while its small result remains owned");owner.releaseEvidence(result);assert.equal(owner.stats().retainedBytes,0);
+ let calls=0;const many=Array.from({length:1000},(_,i)=>({requestId:"row-"+i,status:200}));
+ const rows=owner.retainEvidence(()=>mixedOwnedRows(()=>many,row=>{calls++;return {...row};},{constructorScratchBytes:16384,constructorViewCopies:2}));assert.equal(calls,1000);assert.deepEqual(rows,many);assert.ok(owner.stats().peakBytes<8*1024*1024,"dead per-row scratch is not retained for the next projection");owner.releaseEvidence(rows);
+ assert.throws(()=>owner.retainEvidence(()=>mixedOwnedRows(()=>source,()=>{throw Error("PRIVATE_PROJECTOR");},{constructorScratchBytes:16384,constructorViewCopies:2})),error=>!error.message.includes("PRIVATE_PROJECTOR"));assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);owner.close();
 });

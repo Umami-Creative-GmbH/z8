@@ -6,7 +6,7 @@ export const limits=Object.freeze({portable:4194304,logical:8388608,owner:335544
 export const mixedTechnicalRepresentation=Object.freeze({protocol:'mixed-progress-technical-gzip-v1',kind:1,portableLimit:4194304,logicalLimit:8388608,retainedLimit:33554432,recordLimit:10000,owner:'existing-proxy-temporary-observation-owner-v1',accounting:'modeled-serialized-views-plus-explicit-buffers-v1'});
 export const mixedTechnicalRuntime=Object.freeze({node:'26.9.0',zlib:'1.3.2.1-motley-285e94b'});
 const states=new WeakMap(), leases=new WeakMap(), cutLeases=new WeakMap(), MAGIC='Z8MIXGZ2', CHUNK=65536;
-const bad=()=>new Error('Bounded technical gzip prototype rejected input.');
+const bad=()=>new Error('Mixed technical gzip rejected input.');
 const must=x=>{if(!x)throw bad();};
 const hash=b=>createHash('sha256').update(b).digest();
 const round=n=>Math.ceil(n/CHUNK)*CHUNK;
@@ -27,7 +27,8 @@ function bufferFacts(bytes){try{
  }catch{throw bad();}}
 
 // Explicit modeled serialized views; buffers/UTF16/workspace charged separately.
-// This synthetic owner does not certify any existing collector's allocations.
+// The adapter below uses the actual proxy callbacks. Constructor premises are
+// listed in docs/performance/1450-clean-original-observation.md; no arbitrary graph entry is qualified.
 function createBoundedOwner({reserve,release,reserveRecords,releaseRecords}){
  const state={used:0,peak:0,attempts:0,active:0,records:0,reserve,release,reserveRecords,releaseRecords};
   // Closed source constructor ONLY: every own-key width<=10001,
@@ -69,7 +70,7 @@ const typedCollections=Object.freeze({
  'bounded-unqualified-team-values-v1':['rows'],'team-source-occurrence-journal-v1':['records'],'team-replay-dispatch-observations-v1':['rows'],
  'actual-body-value-observations-v1':['records'],'positive-flight-error-observations-v1':['records'],
  'actual-browser-failed-occurrence-census-v1':['records'],'mixed-native-progress-observations-v1':[],
- 'serving-public-worker-source-metadata-v1':['files'],'owned-native-launch-metadata-v1':['observerSources'],
+ 'serving-public-worker-source-metadata-v1':['files'],'qualified-serving-worker-sources-v1':['files'],'owned-native-launch-metadata-v1':['observerSources'],
 });
 function tokens(value,emit,projection=null){
  const ancestors=new Set();let slots=0,nodes=0,rootReceiptRows=0,typedRecords=0;
@@ -83,6 +84,7 @@ function tokens(value,emit,projection=null){
    const own=name=>Object.getOwnPropertyDescriptor(v,name)?.value,protocol=own('protocol');
    const fields=typeof protocol==='string'&&Object.hasOwn(typedCollections,protocol)?typedCollections[protocol]:[];
    for(const field of fields){const rows=own(field);must(!types.isProxy(rows)&&Array.isArray(rows));typedRecords+=rows.length;}
+   const usedBodies=own('usedBodies');if(own('requestFacts')&&own('typeFacts')&&!types.isProxy(usedBodies)&&Array.isArray(usedBodies))typedRecords+=usedBodies.length;
    if(own('nativeContext')&&['failures','responses','proxy'].every(name=>!types.isProxy(own(name))&&Array.isArray(own(name))))for(const name of ['failures','responses','proxy'])typedRecords+=own(name).length;
    must(typedRecords<=limits.records);
   }
@@ -156,12 +158,13 @@ export function mixedOwnedClone(value,records=null){
  try{const copy=structuredClone(value);bind(lease,copy);return copy;}catch{lease.release();throw bad();}
 }
 /** Reiterable private source collection; measurement never invokes the projector. */
-export function mixedOwnedRows(source,project,{keys=null,omit=null,extraBytesPerRow=0}={}){
+export function mixedOwnedRows(source,project,{keys=null,omit=null,extraBytesPerRow=0,constructorScratchBytes=0,constructorViewCopies=0}={}){
  if(!construction){const values=source();return Array.isArray(values)?values.map(project):Array.from(values,project);}
- const {state}=construction;let bytes=2,count=0,nestedRecords=0;
- for(const row of source()){must(++count<=limits.records);const measured=measure(row,state,null,limits.owner,{keys,omit});nestedRecords+=measured.typedRecords;bytes+=measured.bytes+extraBytesPerRow+(count>1?1:0);must(bytes<=limits.owner);}
- const lease=collect(charge(state,bytes,'snapshot-typed-rows',count+nestedRecords));
- try{const rows=Array.from(source(),project);must(rows.length===count);bind(lease,rows);return rows;}catch{lease.release();throw bad();}
+ const {state}=construction;let bytes=2,count=0,nestedRecords=0,maxRowBytes=0;
+ for(const row of source()){must(++count<=limits.records);const measured=measure(row,state,null,limits.owner,{keys,omit});nestedRecords+=measured.typedRecords;maxRowBytes=Math.max(maxRowBytes,measured.bytes);bytes+=measured.bytes+extraBytesPerRow+(count>1?1:0);must(bytes<=limits.owner);}
+ must(Number.isSafeInteger(constructorScratchBytes)&&constructorScratchBytes>=0&&Number.isSafeInteger(constructorViewCopies)&&constructorViewCopies>=0&&constructorViewCopies<=4);
+ const lease=collect(charge(state,bytes,'snapshot-typed-rows',count+nestedRecords));let scratch=null;
+ try{if(count&&(constructorScratchBytes||constructorViewCopies))scratch=charge(state,constructorScratchBytes+constructorViewCopies*maxRowBytes,'sequential-row-constructor-scratch');const rows=Array.from(source(),project);must(rows.length===count);bind(lease,rows);return rows;}catch{lease.release();throw bad();}finally{scratch?.release();}
 }
 /** Closed constructors supply a source-justified count/element storage bound. */
 export function mixedOwnedArray(count,construct,{bytesPerEntry=8,records=0}={}){
@@ -184,17 +187,20 @@ export function mixedOwnedOperation(construct,{retainResult=false}={}){
  }finally{construction=parent;for(const lease of frame.leases.reverse())lease.release();}
 }
 /** Precharge a derived receipt before its fixed-key constructor executes. */
-export function mixedOwnedProjectedValue(source,construct,{keys=null,omit=null,extraBytes=2048,records=1}={}){
+export function mixedOwnedProjectedValue(source,construct,{keys=null,omit=null,extraBytes=2048,records=1,copies=1}={}){
  if(!construction)return construct();
- const {state}=construction,m=measure(source,state,null,limits.owner,{keys,omit}),lease=collect(charge(state,m.bytes+extraBytes,'derived-technical-receipt',records+m.typedRecords));
+ must(Number.isSafeInteger(copies)&&copies>=1&&copies<=4);
+ const {state}=construction,m=measure(source,state,null,limits.owner,{keys,omit}),lease=collect(charge(state,copies*m.bytes+extraBytes,'derived-technical-receipt',records+m.typedRecords));
  try{const value=construct();bind(lease,value);return value;}catch{lease.release();throw bad();}
 }
 /** A filter creates an index/reference vector; source rows keep their existing leases. */
 export function mixedOwnedFilter(source,predicate){return construction?mixedOwnedArray(source.length,()=>source.filter(predicate)):source.filter(predicate);}
+export function mixedOwnedOptionalFilter(source,predicate){return source===null||source===undefined?undefined:mixedOwnedFilter(source,predicate);}
 export function mixedOwnedMap(source,project){return construction?mixedOwnedArray(source.length,()=>source.map(project),{bytesPerEntry:128}):source.map(project);}
 export function mixedOwnedSlice(source,...args){return construction?mixedOwnedArray(source.length,()=>source.slice(...args)):source.slice(...args);}
 /** Per source row: bounded identifier splitting plus Map/Set and ordinal/index slots. */
 export function mixedOwnedIndexWork(count){if(construction)mixedOwnedArray(count,()=>null,{bytesPerEntry:256});}
+export function mixedOwnedLazyValue(prepare,construct,options){return construction?mixedOwnedProjectedValue(prepare(),construct,options):construct();}
 export function mixedOwnedHashInput(value){return construction&&typeof value==='string'?mixedOwnedUTF8(value):value;}
 export function mixedOwnedFreeze(value){
  must(construction!==null);const workspace=collect(charge(construction.state,vectorBase,'immutable-snapshot-key-vectors')),ancestors=new Set();let nodes=0;
@@ -208,7 +214,7 @@ export function mixedOwnedFreeze(value){
  try{freeze(value,0);return value;}finally{workspace.release();}
 }
 export function mixedOwnedJSONString(value,serialize=JSON.stringify){
- if(!construction)return serialize(value);
+ if(!construction||value===undefined)return serialize(value);
  const {state}=construction,m=measure(value,state,null,limits.owner),lease=collect(charge(state,2*m.bytes,'snapshot-UTF16-string'));
  try{const text=serialize(value);bind(lease,text);return text;}catch{lease.release();throw bad();}
 }

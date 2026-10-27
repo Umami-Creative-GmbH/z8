@@ -32,7 +32,7 @@ export function teamAnnualProofCore(proof,temporaryBindingSha256) {
 	return {protocol:proof?.protocol,complete:proof?.complete,action:proof?.action,requestKind:proof?.requestKind,requiredStage:proof?.requiredStage,bodySha256:proof?.bodySha256,decodedBytes:proof?.decodedBytes,modelSteps:proof?.modelSteps,serverErrors:proof?.serverErrors,explicitActionFailure:proof?.explicitActionFailure,temporaryBindingSha256};
 }
 export const routePathSourceDigest = facts=>{
-	try{const {scalarKeys,...source}=facts;const bytes=Buffer.from(JSON.stringify(source));return bytes.length<=controlCancellationPolicy.encodedLimit?bodySha256(bytes):null;}catch{return null;}
+	try{const {scalarKeys,...source}=facts;const bytes=mixedOwnedUTF8(mixedOwnedJSONString(source));return bytes.length<=controlCancellationPolicy.encodedLimit?bodySha256(bytes):null;}catch{return null;}
 };
 /** Immediate callback math; the returned certificate contains no pathname or scalar value. */
 export function canonicalRouteScalarFacts(pathname){
@@ -40,8 +40,8 @@ export function canonicalRouteScalarFacts(pathname){
 	if(typeof pathname!=="string" || Buffer.byteLength(pathname)>controlCancellationPolicy.encodedLimit)return unknown("unsupported-path-input");
 	const parts=pathname.split("/").filter(Boolean);if(parts.length>64)return unknown("bounded-path-part-count");
 	try{const facts=parts.map((part,index)=>{const scalar=encodeURIComponent(decodeURIComponent(part));if(!part || !scalar)throw Error("Empty scalar");
-		return {index,partPresent:true,canonicalizationKnown:true,partBytes:Buffer.byteLength(part),scalarBytes:Buffer.byteLength(scalar),scalarSha256:bodySha256(Buffer.from(scalar))};});
-		return {protocol:"canonical-route-scalar-facts-v1",known:true,reason:null,partCount:parts.length,pathnameSha256:bodySha256(Buffer.from(pathname)),partsSha256:bodySha256(Buffer.from(JSON.stringify(facts))),parts:facts};
+		return {index,partPresent:true,canonicalizationKnown:true,partBytes:Buffer.byteLength(part),scalarBytes:Buffer.byteLength(scalar),scalarSha256:bodySha256(mixedOwnedUTF8(scalar))};});
+		return {protocol:"canonical-route-scalar-facts-v1",known:true,reason:null,partCount:parts.length,pathnameSha256:bodySha256(mixedOwnedUTF8(pathname)),partsSha256:bodySha256(mixedOwnedUTF8(mixedOwnedJSONString(facts))),parts:facts};
 	}catch{return unknown("unsupported-scalar-canonicalization");}
 }
 const knownNullPathSource=(facts,binding)=>{
@@ -56,13 +56,13 @@ const knownNullPathSource=(facts,binding)=>{
 			keys?.protocol!=="canonical-route-scalar-facts-v1" || keys.known!==true || keys.reason!==null || keys.sourceSha256!==routePathSourceDigest(facts) || keys.pathnameSha256!==rendered.pathnameSha256 ||
 			!Number.isSafeInteger(keys.partCount) || keys.partCount<=0 || keys.partCount>64 || keys.partCount!==rendered.partsCount || !Array.isArray(keys.parts) || keys.parts.length!==keys.partCount ||
 			keys.parts.some((row,index)=>Object.keys(row).length!==6 || row.index!==index || row.partPresent!==true || row.canonicalizationKnown!==true || !Number.isSafeInteger(row.partBytes) || row.partBytes<=0 || row.partBytes>controlCancellationPolicy.encodedLimit || !Number.isSafeInteger(row.scalarBytes) || row.scalarBytes<=0 || row.scalarBytes>controlCancellationPolicy.encodedLimit || !digest(row.scalarSha256)) ||
-			keys.partsSha256!==bodySha256(Buffer.from(JSON.stringify(keys.parts))))return false;
+			keys.partsSha256!==bodySha256(mixedOwnedUTF8(mixedOwnedJSONString(keys.parts))))return false;
 		return true;
 	}catch{return false;}
 };
 const knownRouteReadiness=(readiness,binding,bodyHash,treeNodes,metadataPages)=>{
 	try{if(readiness?.protocol!=="null-d-route-readiness-v1" || readiness.bodySha256!==bodyHash || !knownNullPathSource(readiness.pathSourceFacts,binding) || !Number.isSafeInteger(readiness.nullNodes) || readiness.nullNodes<=0 || readiness.metadataPages!==metadataPages ||
-		!Array.isArray(readiness.nodes) || readiness.nodes.length!==treeNodes || readiness.nodes.length>4096 || readiness.walkSha256!==bodySha256(Buffer.from(JSON.stringify(readiness.nodes))))return false;
+		!Array.isArray(readiness.nodes) || readiness.nodes.length!==treeNodes || readiness.nodes.length>4096 || readiness.walkSha256!==bodySha256(mixedOwnedUTF8(mixedOwnedJSONString(readiness.nodes))))return false;
 		let nullNodes=0,pages=0;const depth=[];const slots=new Map();
 		for(let index=0;index<readiness.nodes.length;index++){
 			const row=readiness.nodes[index],parent=readiness.nodes[row.parentOrdinal-1];
@@ -107,7 +107,7 @@ export function knownNativePublicSources(source, compiledBuild, compiledManifest
 }
 
 export function knownBrowserControlMetadata(metadata) {
-	return Boolean(metadata && JSON.stringify(metadata.policy) === JSON.stringify(controlCancellationPolicy) &&
+	return Boolean(metadata && mixedOwnedJSONString(metadata.policy) === mixedOwnedJSONString(controlCancellationPolicy) &&
 		(metadata.manifestVerified!==true || knownTeamAnnualActionSource(metadata.teamAnnualAction,metadata.compiledBuild,metadata.compiledManifestSha256)) &&
 		metadata.browserRevision === chromiumSWRRevision && typeof metadata.compiledCachedNavigations === "boolean" &&
 		knownTemporaryValueObservation(metadata.temporaryValueObservation) && Object.hasOwn(metadata,"originalTeamSource") &&
@@ -118,18 +118,18 @@ export function knownBrowserControlMetadata(metadata) {
 export const teamAnnualWorkers=Object.freeze(["app/[locale]/(app)/analytics/page","app/[locale]/(app)/analytics/team-performance/page"]);
 export const teamAnnualModule="apps/webapp/src/app/[locale]/(app)/analytics/actions.ts";
 export function knownTeamAnnualActionSource(source,build,manifestSha256) {
-	try{return exactDataKeys(source,["protocol","compiledBuild","compiledManifestSha256","registrySha256","actionHeaderSha256","moduleSha256","workersSha256","exportName"]) && source.protocol==="compiled-team-annual-action-v1" && /^[a-f0-9]{40}$/.test(build ?? "") && source.compiledBuild===build && source.compiledManifestSha256===manifestSha256 && [source.compiledManifestSha256,source.registrySha256,source.actionHeaderSha256].every(digest) && source.exportName==="getTeamPerformanceData" && source.moduleSha256===bodySha256(Buffer.from(teamAnnualModule)) && source.workersSha256===bodySha256(Buffer.from(JSON.stringify(teamAnnualWorkers)));}catch{return false;}
+	try{return exactDataKeys(source,["protocol","compiledBuild","compiledManifestSha256","registrySha256","actionHeaderSha256","moduleSha256","workersSha256","exportName"]) && source.protocol==="compiled-team-annual-action-v1" && /^[a-f0-9]{40}$/.test(build ?? "") && source.compiledBuild===build && source.compiledManifestSha256===manifestSha256 && [source.compiledManifestSha256,source.registrySha256,source.actionHeaderSha256].every(digest) && source.exportName==="getTeamPerformanceData" && source.moduleSha256===bodySha256(mixedOwnedUTF8(teamAnnualModule)) && source.workersSha256===bodySha256(mixedOwnedUTF8(mixedOwnedJSONString(teamAnnualWorkers)));}catch{return false;}
 }
 
 export function matchingBrowserControlBinding(runtime, binding) {
 	const expected = runtime?.browserControl;
 	return knownBrowserControlMetadata(expected) && knownBrowserControlMetadata(binding) &&
 		["browserRevision", "compiledCachedNavigations", "compiledManifestSha256"].every((key) => binding[key] === expected[key]) &&
-		JSON.stringify(binding.nativePublicSources) === JSON.stringify(expected.nativePublicSources) &&
-		JSON.stringify(binding.temporaryValueObservation) === JSON.stringify(expected.temporaryValueObservation) &&
-		JSON.stringify(binding.originalTeamSource) === JSON.stringify(expected.originalTeamSource) &&
-		["legacyClockReadiness","requestShapeDiagnostic"].every(key=>Object.hasOwn(binding,key)===Object.hasOwn(expected,key) && JSON.stringify(binding[key])===JSON.stringify(expected[key])) &&
-		(!expected.teamAnnualAction || JSON.stringify(binding.teamAnnualAction)===JSON.stringify(expected.teamAnnualAction)) &&
+		mixedOwnedJSONString(binding.nativePublicSources) === mixedOwnedJSONString(expected.nativePublicSources) &&
+		mixedOwnedJSONString(binding.temporaryValueObservation) === mixedOwnedJSONString(expected.temporaryValueObservation) &&
+		mixedOwnedJSONString(binding.originalTeamSource) === mixedOwnedJSONString(expected.originalTeamSource) &&
+		["legacyClockReadiness","requestShapeDiagnostic"].every(key=>Object.hasOwn(binding,key)===Object.hasOwn(expected,key) && mixedOwnedJSONString(binding[key])===mixedOwnedJSONString(expected[key])) &&
+		(!expected.teamAnnualAction || mixedOwnedJSONString(binding.teamAnnualAction)===mixedOwnedJSONString(expected.teamAnnualAction)) &&
 		knownOriginalTeamSourceConfiguration(binding.originalTeamSource,binding.compiledBuild,binding.compiledManifestSha256) &&
 		(!expected.nativePublicSources || knownNativePublicSources(expected.nativePublicSources,runtime.build,expected.compiledManifestSha256)) &&
 		(!binding.nativePublicSources || knownNativePublicSources(binding.nativePublicSources,binding.compiledBuild,binding.compiledManifestSha256)) &&
@@ -2118,7 +2118,7 @@ function nativeKnownExtraProof(failure,packet,responses,proxy,context,browserRev
 /** Bounded technical inputs only; payload chunks and raw header values never enter a prefix. */
 export function mixedNativeProgressInput({failures,responses,proxy,nativeContext,coverage,browserRevision,browserEventOrdinal},{copy=true,browserLedger=null}={}) {
  const keys=requestReceiptStorageKeys,browserReceipt=browserLedger?row=>requestReceiptValue({...row,browserDataLedger:browserLedger(row)}):requestReceiptValue;
- const projected={failures:mixedOwnedRows(()=>failures,browserReceipt,{keys,extraBytesPerRow:8192}),responses:mixedOwnedRows(()=>failures.length?responses:[],browserReceipt,{keys,extraBytesPerRow:8192}),proxy:mixedOwnedRows(()=>failures.length?proxy:[],requestReceiptValue,{keys,extraBytesPerRow:8192}),nativeContext,coverage,browserRevision,browserEventOrdinal};
+ const projected={failures:mixedOwnedRows(()=>failures,browserReceipt,{keys,extraBytesPerRow:browserLedger?1024:0,constructorScratchBytes:16384,constructorViewCopies:2}),responses:mixedOwnedRows(()=>failures.length?responses:[],browserReceipt,{keys,extraBytesPerRow:browserLedger?1024:0,constructorScratchBytes:16384,constructorViewCopies:2}),proxy:mixedOwnedRows(()=>failures.length?proxy:[],requestReceiptValue,{keys,constructorScratchBytes:16384,constructorViewCopies:2}),nativeContext,coverage,browserRevision,browserEventOrdinal};
  return copy?mixedOwnedClone(projected):projected;
 }
 
@@ -2432,7 +2432,7 @@ export function completeAllPhaseBrowserObservation(evidence) {
 export const mixedNativeProgressPolicy=Object.freeze({version:1,prefixProtocol:"acknowledged-mixed-native-prefix-v1",ledgerProtocol:"mixed-native-progress-observations-v1",candidateRepresentationProtocol:mixedTechnicalRepresentation.protocol,failureOccurrenceProtocol:"actual-browser-failed-occurrence-census-v1",observerCeilingMs:10000,guardScope:"existing-mixed-stop-guards-only"});
 const mixedPrefixProtocol=mixedNativeProgressPolicy.prefixProtocol;
 const safeTechnicalId=value=>typeof value==="string" && /^[A-Za-z0-9._:-]{1,256}$/.test(value);
-const progressFailureIds=input=>mixedOwnedArray(input.failures.length,()=>mixedOwnedMap(input.failures,row=>row.requestId).sort(),{bytesPerEntry:16});
+const progressFailureIds=input=>mixedOwnedMap(input.failures,row=>row.requestId).sort();
 /** Cheap request-local prerequisite. It grants no Native authority and never admits incomplete current packets. */
 export function mixedNativePrefixCandidates(input,onReject) {
  let serialization=null;
@@ -2569,7 +2569,7 @@ export function knownMixedDocumentJournal(journal,document) {
 
 /** CORE chronology from actual loadingFailed callbacks, not request start time or nearest-time inference. */
 export function mixedFailureOccurrenceCensus({contextId,scopeClosed,browserEventOrdinal,records}){
- const facts={protocol:"actual-browser-failed-occurrence-census-v1",contextId,scopeClosed,browserEventOrdinal,records:mixedOwnedMap(records,row=>({...row})).sort((a,b)=>a.requestId<b.requestId?-1:a.requestId>b.requestId?1:0)};
+ const facts={protocol:"actual-browser-failed-occurrence-census-v1",contextId,scopeClosed,browserEventOrdinal,records:mixedOwnedRows(()=>records,row=>({...row})).sort((a,b)=>a.requestId<b.requestId?-1:a.requestId>b.requestId?1:0)};
  return {...facts,censusSha256:bodySha256(mixedOwnedUTF8(mixedOwnedJSONString(facts)))};
 }
 const knownMixedFailureOccurrences=(proof,contextId,browserEventOrdinal,ids)=>{
