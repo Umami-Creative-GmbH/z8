@@ -217,11 +217,12 @@ function analyticsSummary(kind, payload) {
 export async function dispatchMixedAnalyticsRequest({page,captured,readerKind,requestId,timeoutMs,observation,origin}) {
 	let handle=null,failed=true;
 	try {
+		const observerStartedAt=performance.now();
 		const headers={...captured.headers,traceparent:traceparent(requestId)};
 		if(readerKind==="team") {
 			const entries=Object.entries(captured.headers ?? {}),action=entries.filter(([key])=>key.toLowerCase()==="next-action");
 			if(action.length!==1 || entries.some(([key])=>key.toLowerCase()==="x-z8-fixture-replay-id"))throw Error();
-			handle=observation.armTeamReplay({traceId:requestId,action:action[0][1],body:captured.body,url:new URL(captured.path,origin).href});
+			handle=observation.armTeamReplay({traceId:requestId,action:action[0][1],body:captured.body,url:new URL(captured.path,origin).href,observerDeadlineMs:observerStartedAt+timeoutMs});
 			const replay=handle && observation.teamReplayHeaders(handle);
 			if(!replay)throw Error();
 			Object.assign(headers,replay);
