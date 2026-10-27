@@ -2099,6 +2099,8 @@ test('private team projection diagnostic distinguishes ordinary and selected-fie
 test("mixed candidate uses whole portable4MiB and logical8MiB while ordinary controls stay exact",async()=>{
  const evidence=testBrowserEvidence("codec-control",true),record=evidence.measured.records[0];assert.equal(record.outcome,"protocol-control");
  const input={failures:[{...record.proof.failure,failedEventOrdinal:1}],responses:[],proxy:[record.proof.packet],nativeContext:{contextId:"codec-control",technicalPadding:"x".repeat(4250000)},coverage:{installed:true,scopeClosed:false,missing:0,overflow:0,errors:0,pendingBodies:0},browserRevision:chromiumSWRRevision,browserEventOrdinal:1};
- const {mixedNativePrefixCandidates}=await import("./control-cancellation-evidence.mjs");assert.ok(mixedNativePrefixCandidates(input));
- input.nativeContext.technicalPadding="x".repeat(8388608);assert.equal(mixedNativePrefixCandidates(input),null);
+ const {mixedNativePrefixCandidates}=await import("./control-cancellation-evidence.mjs"),{parseMixedTechnicalReplayJSON}=await import("./mixed-technical-gzip.mjs");
+ assert.equal(mixedNativePrefixCandidates(input),null,"unleased JavaScript has no replay constructor premise");
+ assert.ok(mixedNativePrefixCandidates(parseMixedTechnicalReplayJSON(Buffer.from(JSON.stringify(input)))));
+ input.nativeContext.technicalPadding="x".repeat(8388608);assert.equal(mixedNativePrefixCandidates(parseMixedTechnicalReplayJSON(Buffer.from(JSON.stringify(input)))),null);
 });

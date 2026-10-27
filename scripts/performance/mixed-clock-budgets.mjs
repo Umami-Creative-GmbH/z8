@@ -1,4 +1,5 @@
-export {parseMixedTechnicalReplayJSON} from "./mixed-technical-gzip.mjs";
+import {parseMixedTechnicalReplayJSON} from "./mixed-technical-gzip.mjs";
+export {parseMixedTechnicalReplayJSON};
 /** File-only prospective budgets for complete single-app mixed clock cohorts. */
 import { createHash } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
@@ -711,7 +712,7 @@ export const writeMixedBudgetOutput = (path, value) =>
 	});
 async function load(path) {
 	const bytes = await readFile(path);
-	return { value: JSON.parse(bytes), sha256: digest(bytes) };
+	return { value: parseMixedTechnicalReplayJSON(bytes), sha256: digest(bytes) };
 }
 export async function runMixedBudgetCommand(args) {
 	const flags = parseMixedBudgetArguments(args),
