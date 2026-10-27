@@ -5,7 +5,7 @@ import {gzipSync,gunzipSync,constants} from 'node:zlib';
 export const limits=Object.freeze({portable:4194304,logical:8388608,owner:33554432,records:10000,depth:64,header:48});
 export const mixedTechnicalRepresentation=Object.freeze({protocol:'mixed-progress-technical-gzip-v1',kind:1,portableLimit:4194304,logicalLimit:8388608,retainedLimit:33554432,recordLimit:10000,owner:'existing-proxy-temporary-observation-owner-v1',accounting:'modeled-serialized-views-plus-explicit-buffers-v1'});
 export const mixedTechnicalRuntime=Object.freeze({node:'26.9.0',zlib:'1.3.2.1-motley-285e94b'});
-const states=new WeakMap(), leases=new WeakMap(), cutLeases=new WeakMap(), coverage=new WeakMap(), MAGIC='Z8MIXGZ2', CHUNK=65536;
+const states=new WeakMap(), leases=new WeakMap(), cutLeases=new WeakMap(), coverage=new WeakMap(), replayFacts=new WeakMap(), MAGIC='Z8MIXGZ2', CHUNK=65536;
 const bad=()=>new Error('Mixed technical gzip rejected input.');
 const must=x=>{if(!x)throw bad();};
 const hash=b=>createHash('sha256').update(b).digest();
@@ -152,6 +152,38 @@ export function unpackMixedTechnicalJSON(portable,kind,ownerLease){
  }catch{value=null;portable=null;for(const lease of held.reverse())lease.release();throw bad();}
 }
 
+/** File acquisition remains the existing256MiB scope, not a protocol allowance.
+ * JSON.parse creates the only replay premise. Reviver child summaries avoid an
+ * additional unbounded own-key enumeration; unsupported ancestors stay unqualified.
+ */
+export function parseMixedTechnicalReplayJSON(bytes){
+ qualified();let text=null,value=null;
+ try{const facts=bufferFacts(bytes);must(facts.length<=256*1024*1024);const pending=new WeakMap();
+  text=new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(new NativeUint8Array(facts.backing,facts.offset,facts.length));
+  const scalarBytes=part=>{let size=0;stringTokens(part,chunk=>{size+=Buffer.byteLength(chunk);});return size;};
+  value=JSON.parse(text,function(key,child){
+   let info;
+   if(child!==null&&typeof child==='object'){
+    const row=pending.get(child)??{bytes:2,count:0,depth:0,nodes:1,maxKeys:0,maxArray:0,json:true},array=Array.isArray(child);pending.delete(child);
+    const width=row.count+(array?1:0),maxKeys=Math.max(width,row.maxKeys),maxArray=Math.max(array?row.count:0,row.maxArray);
+    info=Object.freeze({bytes:row.json?row.bytes:null,depth:row.depth,nodes:row.nodes,maxKeys,maxArray,json:row.json,eligible:row.json&&row.bytes<=limits.logical&&row.depth<=limits.depth&&row.nodes<=1000000&&maxKeys<=10001&&maxArray<=limits.records});
+    Object.freeze(child);replayFacts.set(child,info);
+   }else{
+    const json=typeof child!=='number'||Number.isFinite(child)&&!Object.is(child,-0),size=typeof child==='string'?scalarBytes(child):child===null?4:typeof child==='boolean'?(child?4:5):json?Buffer.byteLength(String(child)):0;
+    info={bytes:size,depth:0,nodes:1,maxKeys:0,maxArray:0,json};
+   }
+   let parent=pending.get(this);if(!parent){parent={bytes:2,count:0,depth:0,nodes:1,maxKeys:0,maxArray:0,json:true};pending.set(this,parent);}
+   if(parent.count++)parent.bytes++;if(!Array.isArray(this))parent.bytes+=scalarBytes(key)+1;
+   parent.bytes+=info.bytes??0;parent.depth=Math.max(parent.depth,info.depth+1);parent.nodes+=info.nodes;parent.maxKeys=Math.max(parent.maxKeys,info.maxKeys);parent.maxArray=Math.max(parent.maxArray,info.maxArray);parent.json=parent.json&&info.json;
+   return child;
+  });text=null;must(value!==null&&typeof value==='object'&&replayFacts.has(value));return value;
+ }catch{text=null;value=null;throw Error('Mixed technical JSON replay input rejected.');}
+}
+export function mixedTechnicalInputIsQualified(input){
+ const held=cutLeases.get(input),record=held&&leases.get(held);
+ if(record?.live)return record.value===input&&(!construction||record.state===construction.state);
+ const facts=replayFacts.get(input);return Boolean(facts?.eligible&&Object.isFrozen(input)&&(!construction||ownData(ownData(input,'nativeContext'),'contextId')===construction.state.contextId));
+}
 /** Private exact-context cut leases share the existing proxy's one retention owner. */
 let construction=null;
 const collect=lease=>{construction.leases.push(lease);return lease;};
@@ -265,7 +297,7 @@ export function createMixedTechnicalOwner(options){
  const contextId=ownData(options,'contextId'),reserve=ownData(options,'reserve'),release=ownData(options,'release'),reserveRecords=ownData(options,'reserveRecords'),releaseRecords=ownData(options,'releaseRecords');
  must(typeof contextId==='string'&&/^[A-Za-z0-9_.:-]{1,256}$/.test(contextId)&&[reserve,release,reserveRecords,releaseRecords].every(value=>typeof value==='function'&&!types.isProxy(value)));
  const owner=createBoundedOwner({reserve,release,reserveRecords,releaseRecords}),cuts=new Map(),evidence=new Map(),outputs=new Set(),reads=new Set();let closed=false,allocatingRead=null,pendingExport=false;
- const state=states.get(owner);
+ const state=states.get(owner);state.contextId=contextId;
  const api=Object.freeze({
   capture(construct){
    must(!closed&&typeof construct==='function'&&construction===null);let lease,view=null,copy=null;
@@ -279,6 +311,10 @@ export function createMixedTechnicalOwner(options){
     view=null;lease?.release();lease=null;cuts.set(copy,cloneLease);cutLeases.set(copy,cloneLease);return copy;
    }catch{view=null;copy=null;lease?.release();throw bad();}
    finally{construction=null;for(const ownedLease of frame.leases.reverse())ownedLease.release();}
+  },
+  replay(value){
+   must(!closed&&!cutLeases.has(value)&&replayFacts.get(value)?.eligible&&Object.isFrozen(value)&&ownData(ownData(value,'nativeContext'),'contextId')===contextId);const known=replayFacts.get(value),pin=charge(state,known.bytes,'bounded-json-replay-source-pin');let retained=null;
+   try{const m=measure(value,state,known.bytes);must(m.bytes===known.bytes);retained=charge(state,m.bytes+2048,'bounded-json-replay-view-and-control',m.typedRecords);bind(retained,value);Object.assign(leases.get(retained),{logicalBytes:m.bytes,logicalSHA:m.digest});cuts.set(value,retained);cutLeases.set(value,retained);return value;}catch{retained?.release();throw bad();}finally{pin.release();}
   },
   encode(value){
    must(!closed&&cuts.has(value));const packed=packMixedTechnicalJSON(value,1,cuts.get(value));outputs.add(packed);
@@ -316,13 +352,13 @@ export function createMixedTechnicalOwner(options){
 export function mixedTechnicalCandidateDigest(input,onReport){
  let temporary=null,borrow=null,packed=null,held=cutLeases.get(input),bytes=0,records=0,report={protocol:mixedTechnicalRepresentation.protocol,serialized:null,logicalBytes:null,encodedBytes:null,withinLimit:null,outcome:'representation-rejected'};
  try{
-  qualified();
-  if(!held&&construction){const measured=measure(input,construction.state);borrow=charge(construction.state,measured.bytes,'candidate-subcut-view',measured.typedRecords);bind(borrow,input);Object.assign(leases.get(borrow),{logicalBytes:measured.bytes,logicalSHA:measured.digest});held=borrow;}
+  qualified();must(!held||!construction||leases.get(held)?.state===construction.state);
+  if(!held&&construction){must(mixedTechnicalInputIsQualified(input));const known=replayFacts.get(input);must(known?.eligible);const pin=charge(construction.state,known.bytes,'candidate-replay-source-pin');try{const measured=measure(input,construction.state,known.bytes);must(measured.bytes===known.bytes);borrow=charge(construction.state,measured.bytes+2048,'candidate-subcut-view',measured.typedRecords);bind(borrow,input);Object.assign(leases.get(borrow),{logicalBytes:measured.bytes,logicalSHA:measured.digest});held=borrow;}finally{pin.release();}}
   if(!held){
-   temporary=createMixedTechnicalOwner({contextId:ownData(ownData(input,'nativeContext'),'contextId'),
+   must(mixedTechnicalInputIsQualified(input));temporary=createMixedTechnicalOwner({contextId:ownData(ownData(input,'nativeContext'),'contextId'),
     reserve:n=>{if(bytes+n>limits.owner)return false;bytes+=n;return true;},release:n=>{bytes-=n;},
     reserveRecords:n=>{if(records+n>limits.records)return false;records+=n;return true;},releaseRecords:n=>{records-=n;}});
-   input=temporary.capture(()=>input);held=cutLeases.get(input);
+   input=temporary.replay(input);held=cutLeases.get(input);
   }
   packed=packMixedTechnicalJSON(input,1,held);
   report={protocol:mixedTechnicalRepresentation.protocol,serialized:true,logicalBytes:packed.stats.logicalBytes,encodedBytes:packed.stats.portableBytes,withinLimit:true,outcome:'complete'};

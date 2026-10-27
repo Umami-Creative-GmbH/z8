@@ -1,3 +1,4 @@
+export {parseMixedTechnicalReplayJSON} from "./mixed-technical-gzip.mjs";
 /** File-only prospective budgets for complete single-app mixed clock cohorts. */
 import { createHash } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";

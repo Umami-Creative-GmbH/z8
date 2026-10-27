@@ -1960,3 +1960,22 @@ test("covered container staging rejects oversized or escaped primitive storage b
  const huge="x".repeat(1048576),escaped="\u0000".repeat(1000);const small=owner.capture(()=>mixedOwnedFixedContainer(()=>[["nativeContext",mixedOwnedFixedContainer(()=>[["contextId",contextId]])],["small","x"]]));owner.releaseCut(small);for(const entries of [[["large",huge]],[[huge,1]],[["escaped",escaped]],[["unsupported",1n]]]){assert.throws(()=>owner.capture(()=>mixedOwnedFixedContainer(()=>[["nativeContext",mixedOwnedFixedContainer(()=>[["contextId",contextId]])],...entries])));assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);}
  let traps=0;const proxyEntries=new Proxy([],{get(){traps++;throw Error("PRIVATE_TRAP");},getPrototypeOf(){traps++;throw Error("PRIVATE_TRAP");}});assert.throws(()=>owner.capture(()=>mixedOwnedFixedContainer(()=>proxyEntries)));assert.equal(traps,0);assert.equal(owner.stats().retainedBytes,0);owner.close();
 });
+
+
+test("byte JSON replay produces immutable private provenance and refuses unknown or copied JavaScript",async()=>{
+ const {parseMixedTechnicalReplayJSON,mixedTechnicalCandidateDigest}=await import("./mixed-technical-gzip.mjs"),value={failures:[],responses:[],proxy:[],nativeContext:{contextId:"replay"},coverage:{installed:true},browserRevision:chromiumSWRRevision,browserEventOrdinal:0,unicode:"漢字_\ud800",own:{["__proto__"]:{data:true}}},bytes=Buffer.from(JSON.stringify(value)),parsed=parseMixedTechnicalReplayJSON(bytes);
+ assert.deepEqual(parsed,value);assert.equal(Object.isFrozen(parsed),true);assert.equal(Object.isFrozen(parsed.own.__proto__),true);assert.throws(()=>{parsed.nativeContext.contextId="changed";});assert.equal(mixedTechnicalCandidateDigest(parsed),createHash("sha256").update(bytes).digest("hex"));
+ assert.equal(mixedTechnicalCandidateDigest(value),null);assert.equal(mixedTechnicalCandidateDigest(structuredClone(parsed)),null);let traps=0;const unknown=new Proxy(value,{ownKeys(){traps++;throw Error("PRIVATE_TRAP");},get(){traps++;throw Error("PRIVATE_TRAP");}});assert.equal(mixedTechnicalCandidateDigest(unknown),null);assert.equal(traps,0);
+ for(const bad of [Buffer.from('{"PRIVATE_JSON_SENTINEL":'),Buffer.from([0xff,0xfe])])assert.throws(()=>parseMixedTechnicalReplayJSON(bad),error=>error.message==="Mixed technical JSON replay input rejected.");
+});
+
+test("private replay bounds are established before trusted traversal and nested pins precede workspace",async()=>{
+ const {parseMixedTechnicalReplayJSON,mixedTechnicalCandidateDigest,createMixedTechnicalOwner}=await import("./mixed-technical-gzip.mjs"),base={failures:[],responses:[],proxy:[],nativeContext:{contextId},coverage:{installed:true},browserRevision:chromiumSWRRevision,browserEventOrdinal:0},bytes=Buffer.from(JSON.stringify(base)),parsed=parseMixedTechnicalReplayJSON(bytes),proxy=createProxyControlCollector({contextId,origin});proxy.installed();const charges=[];
+ const owner=createMixedTechnicalOwner({contextId,reserve:n=>{charges.push(n);return proxy.reserveTemporaryObservation(n);},release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});assert.match(owner.run(()=>mixedTechnicalCandidateDigest(parsed)),/^[a-f0-9]{64}$/);assert.equal(charges[1],bytes.length);assert.ok(charges.findIndex(n=>n>5000000)>1,"selected source pin precedes byte-derived traversal workspace");assert.equal(owner.stats().retainedBytes,0);
+ let nested=null;for(let i=0;i<65;i++)nested={child:nested};const wide=Object.fromEntries(Array.from({length:10002},(_,i)=>["field"+i,i]));
+ for(const value of [{...base,nested},{...base,wide},{...base,padding:"x".repeat(8388608)}]){
+  const input=parseMixedTechnicalReplayJSON(Buffer.from(JSON.stringify(value))),old=Reflect.ownKeys;let traversals=0;Reflect.ownKeys=(...args)=>{traversals++;return old(...args);};try{assert.equal(mixedTechnicalCandidateDigest(input),null);assert.equal(traversals,0);}finally{Reflect.ownKeys=old;}
+ }
+ for(const numeric of ["-0","1e400"]){const input=parseMixedTechnicalReplayJSON(Buffer.from(JSON.stringify(base).slice(0,-1)+',"invalid":'+numeric+'}'));assert.equal(mixedTechnicalCandidateDigest(input),null);}
+ owner.close();assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);
+});
