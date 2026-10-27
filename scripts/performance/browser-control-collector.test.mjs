@@ -1332,3 +1332,29 @@ test("request-shape diagnostic bounds empty byte-event bookkeeping without retai
   const diagnostic=p.snapshot().requestShapeDiagnostics;assert.ok(diagnostic.overflow>0);assert.equal(diagnostic.rows[0].encodedBytes,0);assert.equal(diagnostic.rows[0].bodySha256,null);assert.equal(diagnostic.sharedProxyRetainedBytes,2048);assert.equal(diagnostic.pendingParses,0);
  }finally{await rm(f.directory,{recursive:true,force:true});}
 });
+
+
+test("request-shape registry parse failures expose only a fixed safe error",async()=>{
+ const f=await requestShapeTestBinding();try{
+  const sentinel="CONFIDENTIAL_REGISTRY_SENTINEL",bytes=Buffer.from('{"private":"'+sentinel+'",BROKEN}');
+  await writeFile(join(f.directory,"server/server-reference-manifest.json"),bytes);const plan=structuredClone(f.plan);plan.runtime.browserControl.requestShapeDiagnostic.actionRegistrySha256=segmentHash(bytes);
+  await assert.rejects(readBrowserControlBinding({plan,manifestPath:f.manifestPath}),error=>{
+   assert.equal(error.name,"Error");assert.equal(error.message==="Request-shape action registry is malformed.",true,"Registry parse errors must use the fixed message.");assert.equal(error.cause===undefined,true);
+   assert.equal([error.name,error.message,error.stack,String(error)].join("\n").includes(sentinel),false,"Registry errors must not expose source bytes.");return true;
+  });
+ }finally{await rm(f.directory,{recursive:true,force:true});}
+});
+
+test("request-shape rejected duplicate target records uncertainty without rewriting or reallocating the first row",async()=>{
+ const f=await requestShapeTestBinding();try{
+  const p=createProxyControlCollector({contextId,origin,compiledBinding:f.binding});p.installed();const id="a".repeat(32)+".1",bytes=requestShapeBytes(),input={url,method:"POST",headers:requestShapeHeaders(f.actionId),traceId:"a".repeat(32)};
+  assert.equal(p.request(id,input),true);p.requestBodyBytes(id,bytes.subarray(0,5));const before=p.snapshot().requestShapeDiagnostics;
+  assert.equal(p.request(id,input),undefined);const duplicate=p.snapshot().requestShapeDiagnostics;
+  assert.deepEqual(duplicate.rows,before.rows);assert.equal(duplicate.sharedProxyRetainedBytes,before.sharedProxyRetainedBytes);
+  assert.equal(duplicate.selected,2);assert.equal(duplicate.unretainedSelections,1);assert.equal(duplicate.errors,1);assert.equal(duplicate.pendingRequests,null);
+  p.requestBodyBytes(id,bytes.subarray(5));p.requestBodyEnd(id);await tick();
+  const completed=p.snapshot().requestShapeDiagnostics;assert.equal(completed.rows.length,1);assert.equal(completed.rows[0].requestEOF,true);assert.equal(completed.rows[0].bodySha256,segmentHash(bytes));assert.equal(completed.unretainedSelections,1);assert.equal(completed.pendingRequests,null);assert.equal(completed.sharedProxyRetainedBytes,2048);
+  p.requestBodyFailure(id,"close");p.transportClosed({serverClosed:true,acceptedRequests:1,upstreamRequests:1,closedUpstreams:1,pendingUpstreams:0});
+  const closed=p.snapshot().requestShapeDiagnostics;assert.equal(closed.unretainedSelections,1);assert.equal(closed.pendingRequests,null);assert.equal(closed.complete,false);assert.equal(closed.sharedProxyRetainedBytes,2048);
+ }finally{await rm(f.directory,{recursive:true,force:true});}
+});

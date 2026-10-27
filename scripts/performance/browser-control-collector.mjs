@@ -324,7 +324,9 @@ export async function readBrowserControlBinding({ plan, manifestPath }) {
 		if(["dev","ino","size","mtimeNs"].some(key=>before[key]!==after[key]) || BigInt(registryLength)!==after.size)throw Error("Request-shape registry changed during admission.");
 		const registryBytes=Buffer.concat(chunks,registryLength);
 		if (sha(registryBytes)!==configuration.actionRegistrySha256) throw Error("Request-shape action registry hash differs.");
-		const registry=JSON.parse(registryBytes.toString("utf8"));
+		let registry;
+		try { registry=JSON.parse(registryBytes.toString("utf8")); }
+		catch { throw Error("Request-shape action registry is malformed."); }
 		const matches=Object.entries(registry.node ?? {}).filter(([id])=>/^[a-f0-9]{42}$/.test(id) && sha(id)===configuration.actionHeaderSha256);
 		if (matches.length!==1 || matches[0][1]?.exportedName!==configuration.actionName ||
 			matches[0][1]?.filename!=="apps/webapp/src/app/[locale]/(app)/analytics/actions.ts") throw Error("Request-shape action identity differs.");
@@ -1436,6 +1438,7 @@ export function createProxyControlCollector({
 				requests.size >= controlCancellationPolicy.recordLimit ||
 				requests.has(id)
 			) {
+				if(shapeConfiguration && shapeRows.has(id) && method==="POST" && sha(lowerHeaders(headers)["next-action"] ?? "")===shapeConfiguration.actionHeaderSha256){shapeErrors++;shapeSelected++;shapeUnretainedSelections++;}
 				overflow++;
 				return;
 			}

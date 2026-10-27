@@ -12,4 +12,6 @@ At real EOF, bounded UTF-8/JSON inspection emits only body length/SHA, encoding 
 
 Absent configuration installs no body tap and adds no diagnostic snapshot field. Current resource, semantic, error, native, workload, deadline and numerical gates are unchanged. No new module or protocol-list entry is needed; the two modified modules already belong to every relevant source closure.
 
+Malformed registry JSON throws a fixed error without its original message or cause. A rejected duplicate selected request increments diagnostic ambiguity/unretained counts and makes the pending count unknown. The existing duplicate-ID guard still preserves the first row and its reservations; later callbacks and closure cannot erase that ambiguity.
+
 Pure checks use `browser-control-collector.test.mjs` and the two mock cases selected by `--test-name-pattern='request-shape tap (observes|contains)'` in `trace-transport.test.mjs`. Root alone runs the new `request-shape tap real loopback forwarding stays byte header and status equivalent` socket test. Agents have not run that HTTP test or any app/browser/DB workload.
