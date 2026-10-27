@@ -333,15 +333,121 @@ export function createTeamTemporaryValueStore({ contextId, reserve, release }) {
 }
 
 const dispatchJournals = new WeakMap(), dispatchHandles = new WeakMap();
+const operatorQualifications = new WeakMap(), uiProducerCuts = new WeakMap(), requestAuthorities = new WeakMap();
+const technicalId = value => typeof value === "string" && /^[A-Za-z0-9:_.-]{1,256}$/.test(value);
+/** File/plan qualification does not issue a request value. Every manual producer is in the frozen graph. */
+export async function readOriginalTeamOperatorQualification(input) {
+	try {
+		const {qualification,operatorFile,protocolSources,plan}=input;
+		if (!isOriginalTeamSourceQualification(qualification) || !["run-baseline.mjs", "settled-resources.mjs", "mixed-load-probe.mjs"].includes(operatorFile) ||
+			!protocolSources || Object.keys(protocolSources).length > 64 || ![operatorFile, "browser-control-collector.mjs", "team-temporary-value-authority.mjs", "inert-date-range-request.mjs", "journey-steps.mjs", "trace-transport.mjs"].every(file => digest(protocolSources[file]))) throw Error();
+		for (const [file, expected] of Object.entries(protocolSources)) {
+			if (!/^(?:\.\.\/\.\.\/docs\/performance\/evidence\/)?[A-Za-z0-9_.-]+(?:\/[^/]+)*$/.test(file) || !digest(expected)) throw Error();
+			const bytes = await readSource(new URL(file, import.meta.url));
+			if (sha(bytes) !== expected) throw Error();
+		}
+		const text = JSON.stringify(plan);
+		if (typeof text !== "string" || Buffer.byteLength(text) > 4194304) throw Error();
+		const queue = [{value:JSON.parse(text),depth:0}]; let work=0;
+		while(queue.length) {
+			const {value,depth}=queue.pop(); if(++work>100000 || depth>64)throw Error();
+			if(value && typeof value==="object")for(const [key,child]of Object.entries(value)) {
+				if(["evaluate","javascript","script","function"].includes(key))throw Error();
+				queue.push({value:child,depth:depth+1});
+			}
+		}
+		const facts=deepFreeze({protocol:"closed-team-operator-source-v1",operatorFile,protocolSources:{...protocolSources},planSha256:sha(text),executablePlanSteps:false,manualReplayHeader:teamReplayHeader});
+		const result=Object.freeze({protocol:"private-team-operator-source-v1"}); operatorQualifications.set(result,{qualification,facts});return result;
+	} catch { throw Error("Original team operator source qualification unavailable."); }
+}
+const sourcePublicKnown = (sources, expected) => sources?.protocol === "serving-public-worker-source-metadata-v1" && sources.servingRootKnown===true &&
+	Array.isArray(sources.files) && sources.files.length===4 && Array.isArray(expected?.files) && expected.files.length===4 &&
+	sources.files.every((row,index)=>row.known===true && row.reason===null && row.file===expected.files[index].file && row.bytes===expected.files[index].bytes && row.sha256===expected.files[index].sha256);
+/** A cut is issued only from an already completed, stable read. It cannot authorize an earlier request. */
+function replayOriginalTeamUIProducerCut({source,operator,acknowledgment,principal,workers,binding,documentJournal}) {
+	try {
+		const ack=acknowledgment,doc=ack?.document,controller=ack?.controller;
+		if(!knownOriginalTeamSourceFacts(source) || !ownData(operator,["protocol","operatorFile","protocolSources","planSha256","executablePlanSteps","manualReplayHeader"]) ||
+            operator.protocol!=="closed-team-operator-source-v1" || !["run-baseline.mjs","settled-resources.mjs","mixed-load-probe.mjs"].includes(operator.operatorFile) || !digest(operator.planSha256) || operator.executablePlanSteps!==false || operator.manualReplayHeader!==teamReplayHeader ||
+            !operator.protocolSources || ![operator.operatorFile,"browser-control-collector.mjs","team-temporary-value-authority.mjs","inert-date-range-request.mjs","journey-steps.mjs","trace-transport.mjs"].every(file=>digest(operator.protocolSources[file])) || !knownTemporaryValueObservation(binding?.temporaryValueObservation) ||
+			binding.manifestVerified!==true || binding.browserVerified!==true || binding.compiledBuild!==source.binarySource ||
+			ack?.protocol!=="native-environment-progress-readonly-v1" || ack.timedOut!==false || ack.pendingOperations!==0 || ack.readErrors!==0 ||
+			!Number.isFinite(ack.deadlineBudgetMs) || ack.deadlineBudgetMs<=0 || ack.deadlineBudgetMs>10000 || ack.finishedAtMs>ack.deadlineMs ||
+			doc?.protocol!=="actual-cdp-document-acknowledgment-v1" || doc.actualDocumentIdentityStable!==true || ![doc.contextId,doc.frameId,doc.loaderId,doc.executionContextUniqueId,doc.documentRequestId].every(technicalId) ||
+			!Number.isSafeInteger(doc.documentGeneration) || doc.documentGeneration<1 || !digest(doc.originSha256) ||
+			JSON.stringify(doc.sourceJournal)!==JSON.stringify(documentJournal) || documentJournal?.installed!==true || documentJournal.closed!==false || documentJournal.errors!==0 || documentJournal.overflow!==0 ||
+			doc.executionEventOrdinalBefore!==doc.executionEventOrdinalAfter || doc.documentEventOrdinalBefore!==doc.documentEventOrdinalAfter ||
+			principal?.protocol!=="actual-browser-cookie-boundaries-v1" || principal.contextId!==doc.contextId || principal.scopeClosed!==false || principal.before?.known!==true ||
+			ack.principalRead?.known!==true || ack.principalRead.sha256!==principal.before.sha256 || !digest(principal.before.sha256) ||
+			!["observedSetCookieResponses","unknownResponseHeaders","readErrors","pendingReads","observationErrors","overflow"].every(key=>principal[key]===0) ||
+			workers?.protocol!=="owned-context-worker-target-metadata-v1" || workers.contextId!==doc.contextId || workers.contextJoinKnown!==true || workers.installed!==true || workers.scopeClosed!==false || workers.errors!==0 || workers.overflow!==0 ||
+			!Array.isArray(workers.events) || workers.events.length<1 || workers.events.length>256 || workers.events.some(row=>!["page","service_worker"].includes(row.type) || row.urlKnown!==true || !digest(row.urlSha256) || row.type==="service_worker" && (row.ownedWorkerScript!==true || row.originMatches!==true)) ||
+			!sourcePublicKnown(ack.publicSourceRecheck,binding.nativePublicSources))return null;
+		const owned = row=>row?.present===true && row.known===true && row.ownedScript===true && row.state==="activated" && digest(row.scriptUrlSha256);
+		if(controller?.available!==true || controller.secureContext!==true || controller.originMatches!==true || controller.controllerIdentityStable!==true || !owned(controller.controllerBefore) || !owned(controller.controllerAfter) ||
+			controller.controllerBefore.scriptUrlSha256!==controller.controllerAfter.scriptUrlSha256 || controller.registrationCount!==1 || controller.registrationOverflow!==0 || !Array.isArray(controller.registrations) || controller.registrations.length!==1)return null;
+		const registration=controller.registrations[0];
+		if(registration.scopeKnown!==true || registration.ownedRootScope!==true || !digest(registration.scopeSha256) || !owned(registration.active) || registration.active.scriptUrlSha256!==controller.controllerAfter.scriptUrlSha256 ||
+			![registration.waiting,registration.installing].every(row=>row?.present===false && row.known===true))return null;
+		const facts=deepFreeze({protocol:"observed-team-ui-source-cut-v1",contextId:doc.contextId,originSha256:doc.originSha256,frameId:doc.frameId,loaderId:doc.loaderId,
+			documentGeneration:doc.contextId+":"+doc.documentGeneration,executionContextUniqueId:doc.executionContextUniqueId,documentRequestId:doc.documentRequestId,
+			checkpointOrdinal:ack.checkpointOrdinal,documentJournalSha256:sha(JSON.stringify(documentJournal)),principalSha256:principal.before.sha256,workerJournalSha256:sha(JSON.stringify(workers)),
+			controllerSha256:sha(JSON.stringify(controller)),publicSourceSha256:sha(JSON.stringify(ack.publicSourceRecheck)),operatorSourceSha256:sha(JSON.stringify(operator)),operatorFile:operator.operatorFile});
+		return facts;
+	} catch { return null; }
+}
+export function createOriginalTeamUIProducerCut(input) {
+	try {
+		const qualification=input.qualification,operatorQualification=input.operatorQualification,operator=operatorQualifications.get(operatorQualification),source=qualifications.get(qualification);
+		if(!source || operator?.qualification!==qualification)return null;
+		const facts=replayOriginalTeamUIProducerCut({...input,source,operator:operator.facts});if(!facts)return null;
+		const result=Object.freeze({protocol:"private-team-ui-source-cut-v1"});uiProducerCuts.set(result,{qualification,operatorQualification,facts});return result;
+	} catch { return null; }
+}
+export function originalTeamOperatorSourceFacts(qualification) {const held=operatorQualifications.get(qualification);return held?structuredClone(held.facts):null;}
+export function originalTeamUIProducerCutFacts(cut) { const held=uiProducerCuts.get(cut);return held?structuredClone(held.facts):null; }
+/** Require the actual same cut at proxy acceptance and browser request observation, not a later read. */
+export function bindOriginalTeamRequestValue(input) {
+	try {
+		const {qualification,store,handle,request,proxyCut,browserCut,dispatchJournal}=input;
+		const source=qualifications.get(qualification),stored=valueStores.get(store),record=stored?.recordFor(handle),cut=uiProducerCuts.get(proxyCut);
+		if(!source || !record || record.released || !record.projection || proxyCut!==browserCut || cut?.qualification!==qualification || stored.contextId!==cut.facts.contextId ||
+			!ownData(request,["contextId","proxyResponseId","requestId","traceId","method","fullUrlSha256","requestHeadersSha256","requestOriginSha256","documentGeneration","frameId","loaderId","actionHeaderSha256","requestBodySha256","encodedBytes","actualEOF","replayHeaderSha256"]) ||
+			request.contextId!==stored.contextId || request.proxyResponseId!==record.id || request.method!=="POST" || !technicalId(request.requestId) || !/^[a-f0-9]{32}$/.test(request.traceId ?? "") ||
+			![request.fullUrlSha256,request.requestHeadersSha256,request.requestOriginSha256,request.requestBodySha256].every(digest) || request.requestOriginSha256!==cut.facts.originSha256 ||
+			request.documentGeneration!==cut.facts.documentGeneration || request.frameId!==cut.facts.frameId || request.loaderId!==cut.facts.loaderId || request.actionHeaderSha256!==source.actionHeaderSha256 ||
+			request.actualEOF!==true || request.encodedBytes!==record.requestFacts.encodedBytes || request.requestBodySha256!==record.requestFacts.bodySha256)return null;
+		let producer={kind:"qualified-ui",sourceCut:cut.facts,manualDispatch:null};
+		if(request.replayHeaderSha256!==null) {
+			if(!digest(request.replayHeaderSha256) || !dispatchJournals.has(dispatchJournal))return null;
+			const manual=dispatchJournal.factsFor(record.id);
+			if(!manual || manual.contextId!==stored.contextId || manual.nonceSha256!==request.replayHeaderSha256 || manual.browser.requestId!==request.requestId || manual.browser.frameId!==request.frameId || manual.browser.loaderId!==request.loaderId ||
+				manual.urlSha256!==request.fullUrlSha256 || manual.bodySha256!==request.requestBodySha256 || manual.actionHeaderSha256!==request.actionHeaderSha256 || manual.traceId!==request.traceId)return null;
+			producer={kind:"owned-manual-replay",sourceCut:cut.facts,manualDispatch:manual};
+		}
+		const facts=deepFreeze({protocol:"original-team-request-value-authority-v1",source:{profileId:source.profileId,binarySource:source.binarySource,sourceFactsSha256:qualification.sourceFactsSha256},
+			request:{...request},producer,requestFacts:record.requestFacts,typeFacts:record.typeFacts});
+		const authority=Object.freeze({protocol:"private-original-team-request-authority-v1"});requestAuthorities.set(authority,{qualification,store,handle,record,facts});return authority;
+	} catch { return null; }
+}
+export function originalTeamRequestAuthorityFacts(authority) {const held=requestAuthorities.get(authority);return held?structuredClone(held.facts):null;}
 const bodyInspections = new WeakMap();
 /** Observer-only capability. It never grants source/request authority or resolves a T value. */
 export function openOriginalTeamBodyInspection(input) {
 	try {
-		if (!ownData(input, ["bodySha256", "decodedBytes"]) || !digest(input.bodySha256) ||
+		if (!(ownData(input, ["bodySha256", "decodedBytes"]) || ownData(input, ["bodySha256", "decodedBytes", "requestAuthority"])) || !digest(input.bodySha256) ||
 			!Number.isSafeInteger(input.decodedBytes) || input.decodedBytes <= 0 || input.decodedBytes > 8 * 1024 * 1024) return null;
 		const inspection = Object.freeze({ protocol: "private-original-team-body-inspection-v1" });
 		bodyInspections.set(inspection, { bodySha256: input.bodySha256, decodedBytes: input.decodedBytes, closed: false,
 			lookupAttempted: false, valueUsed: false, bindingSha256: null, qualification: null, resolved: null, store: null, consumer: null });
+		const authority=requestAuthorities.get(input.requestAuthority);
+		if(authority && authority.record.projection && !authority.record.releaseAttempted) {
+			const consumer=authority.store.beginInspection(authority.handle);
+			if(consumer) {
+				const receipt=deepFreeze({protocol:"original-team-temporary-value-binding-v1",requestAuthority:authority.facts,bodySha256:input.bodySha256,decodedBytes:input.decodedBytes,temporaryKeySha256:sha("$T0:0")});
+				Object.assign(bodyInspections.get(inspection),{qualification:authority.qualification,store:authority.store,consumer,resolved:Object.freeze({value:authority.record.projection.value,receipt})});
+			}
+		}
 		return inspection;
 	} catch { return null; }
 }
@@ -361,7 +467,8 @@ export function closeOriginalTeamBodyInspection(inspection) {
 	const held = inspection !== null && typeof inspection === "object" ? bodyInspections.get(inspection) : null;
 	if (!held || held.closed) return false;
 	held.closed = true;
-	return held.store === null ? true : held.store.finishInspection(held.consumer);
+	const store=held.store,consumer=held.consumer;held.resolved=null;held.store=null;held.consumer=null;held.qualification=null;
+	return store === null ? true : store.finishInspection(consumer);
 }
 /** Available only after this actual capability closes; contains no private value or token. */
 export function originalTeamBodyObservation(inspection) {
@@ -370,19 +477,77 @@ export function originalTeamBodyObservation(inspection) {
 		decodedBytes: held.decodedBytes, lookupAttempted: held.lookupAttempted, valueUsed: held.valueUsed,
 		bindingSha256: held.bindingSha256, closed: true }) : null;
 }
-/** Closed replay starts with strict zero-use sections. Positive issuance remains unsupported in this checkpoint. */
-export function validateOriginalTeamTemporaryValues(section, boundary) {
+const expectedOriginalSourceFacts = profile => ({protocol:"original-team-temporary-source-facts-v1",profileId:profile.id,phase:"baseline",binarySource:profile.binarySource,
+	manifestSha256:profile.manifestSha256,buildRecordSha256:profile.buildRecordSha256,registrySha256:profile.registrySha256,actionHeaderSha256:profile.actionHeaderSha256,
+	selectedActionMatches:1,concurrentRouterQueue:false,cachedNavigations:true,appFiles:profile.appFiles,frameworkFiles:profile.frameworkFiles});
+const sameJSON=(left,right)=>JSON.stringify(left)===JSON.stringify(right);
+function knownRequestAuthority(authority,boundary) {
 	try {
-		if (!ownData(section, ["protocol", "referenceCount", "binding", "obligations"]) || section.protocol !== "original-team-temporary-values-v1" ||
-			!digest(boundary?.bodySha256) || !Number.isSafeInteger(boundary.decodedBytes) || boundary.decodedBytes <= 0 || boundary.decodedBytes > 8 * 1024 * 1024 ||
-			section.referenceCount !== 0 || section.binding !== null || !Array.isArray(section.obligations) || section.obligations.length !== 0) return false;
-		if (boundary.request !== undefined) {
-			const observed = boundary.request?.temporaryValueObservation;
-			if (!ownData(observed, ["protocol", "bodySha256", "decodedBytes", "lookupAttempted", "valueUsed", "bindingSha256", "closed"]) ||
-				observed.protocol !== "original-team-body-value-observation-v1" || observed.bodySha256 !== boundary.bodySha256 || observed.decodedBytes !== boundary.decodedBytes ||
-				typeof observed.lookupAttempted !== "boolean" || observed.valueUsed !== false || observed.bindingSha256 !== null || observed.closed !== true) return false;
+		if(!ownData(authority,["protocol","source","request","producer","requestFacts","typeFacts"]) || authority.protocol!=="original-team-request-value-authority-v1" ||
+			!ownData(authority.source,["profileId","binarySource","sourceFactsSha256"]) || !knownClosedDateRangeTypeFacts(authority.typeFacts))return false;
+		const profile=originalTeamTemporaryProfiles.find(row=>row.id===authority.source.profileId),request=authority.request,producer=authority.producer,context=boundary.context,row=boundary.request;
+		if(!profile || authority.source.binarySource!==profile.binarySource || authority.source.sourceFactsSha256!==sha(JSON.stringify(expectedOriginalSourceFacts(profile))) ||
+			!request || request.contextId!==context?.contextId || request.method!=="POST" || request.actualEOF!==true || request.actionHeaderSha256!==profile.actionHeaderSha256 ||
+			![request.proxyResponseId,request.requestId,request.documentGeneration,request.frameId,request.loaderId].every(technicalId) || !/^[a-f0-9]{32}$/.test(request.traceId ?? "") ||
+			![request.fullUrlSha256,request.requestHeadersSha256,request.requestOriginSha256,request.requestBodySha256].every(digest) ||
+			!Number.isSafeInteger(request.encodedBytes) || request.encodedBytes<1 || request.encodedBytes>16384 || request.replayHeaderSha256!==null && !digest(request.replayHeaderSha256) ||
+			!row || !sameJSON(row.temporaryRequestAuthority,authority) || row.contextId!==request.contextId || row.method!==request.method || row.action!==true || row.requestKind!=="action" ||
+			row.fullUrlSha256!==request.fullUrlSha256 || row.requestHeadersSha256!==request.requestHeadersSha256 || row.documentGeneration!==request.documentGeneration ||
+			(row.id!==undefined ? row.id!==request.proxyResponseId : row.proxyResponseId!==request.proxyResponseId || row.requestId!==request.requestId || row.frameId!==request.frameId || row.loaderId!==request.loaderId) ||
+			row.headerFieldSha256?.["next-action"]!==profile.actionHeaderSha256 || row.headerFieldSha256?.[teamReplayHeader]!==request.replayHeaderSha256)return false;
+		const syntax=authority.requestFacts;
+		if(!ownData(syntax,["protocol","sourceBound","requestEOFClaim","acceptanceClaim","encodedBytes","bodySha256","work","maxDepth","punctuation","known","duplicateKeys","inputConsumed","fieldCount","valueDescriptorSha256"]) ||
+			syntax.protocol!=="inert-date-range-request-v1" || syntax.sourceBound!==false || syntax.requestEOFClaim!==false || syntax.acceptanceClaim!=="none" || syntax.known!==true || syntax.duplicateKeys!=="absent" || syntax.inputConsumed!==true || syntax.fieldCount!==5 ||
+			syntax.encodedBytes!==request.encodedBytes || syntax.bodySha256!==request.requestBodySha256 || !digest(syntax.valueDescriptorSha256) || !Number.isSafeInteger(syntax.work) || syntax.work<1 || syntax.work>65536 || syntax.maxDepth!==2 || !Number.isSafeInteger(syntax.punctuation) || syntax.punctuation<1 || syntax.punctuation>32)return false;
+		const binding=context.binding,environment=context.environment,readInfo=environment?.temporaryValueSourceReads,values=environment?.temporaryValues;
+		if(context.protocol!=="qualified-known-extra-native-context-v1" || context.originSha256!==request.requestOriginSha256 || binding?.compiledBuild!==profile.binarySource || binding.compiledManifestSha256!==profile.manifestSha256 ||
+			binding.browserVerified!==true || binding.manifestVerified!==true || !knownTemporaryValueObservation(binding.temporaryValueObservation) || !knownOriginalTeamSourceConfiguration(binding.originalTeamSource,profile.binarySource,profile.manifestSha256) || binding.originalTeamSource===null ||
+			readInfo?.protocol!=="actual-team-source-read-journal-v1" || typeof readInfo.scopeClosed!=="boolean" || readInfo.scopeClosed!==context.principalEpoch?.scopeClosed || readInfo.pending!==0 || readInfo.errors!==0 || readInfo.overflow!==0 ||
+			!Array.isArray(readInfo.records) || readInfo.records.length>10000 || !ownData(producer,["kind","sourceCut","manualDispatch"]) || !["qualified-ui","owned-manual-replay"].includes(producer.kind))return false;
+		const cut=producer.sourceCut,records=readInfo.records.filter(record=>record.checkpointOrdinal===cut?.checkpointOrdinal);
+		if(records.length!==1 || !sameJSON(records[0].issuedCut,cut) || readInfo.operatorSource?.operatorFile!==context.operatorFile || !sameJSON(readInfo.operatorSource.protocolSources,context.protocolSources))return false;
+		const proof=records[0],recomputed=replayOriginalTeamUIProducerCut({source:expectedOriginalSourceFacts(profile),operator:readInfo.operatorSource,acknowledgment:proof.acknowledgment,
+			principal:proof.principal,workers:proof.workers,binding,documentJournal:proof.acknowledgment?.document?.sourceJournal});
+		if(!recomputed || !sameJSON(recomputed,cut) || cut.contextId!==request.contextId || cut.originSha256!==request.requestOriginSha256 || cut.frameId!==request.frameId || cut.loaderId!==request.loaderId || cut.documentGeneration!==request.documentGeneration)return false;
+		const finalJournal=readInfo.documentJournal,pastJournal=proof.acknowledgment.document.sourceJournal,workers=environment.workerTargets,pastWorkers=proof.workers,principal=context.principalEpoch;
+		if(finalJournal?.contextId!==request.contextId || finalJournal.errors!==0 || finalJournal.overflow!==0 || !Array.isArray(finalJournal.documents) || !Array.isArray(finalJournal.executionEvents) ||
+			!sameJSON(finalJournal.documents.slice(0,pastJournal.documents.length),pastJournal.documents) || !sameJSON(finalJournal.executionEvents.slice(0,pastJournal.executionEvents.length),pastJournal.executionEvents) ||
+			!Array.isArray(workers?.events) || !sameJSON(workers.events.slice(0,pastWorkers.events.length),pastWorkers.events) || workers.errors!==0 || workers.overflow!==0 ||
+			workers.events.some(event=>!["page","service_worker"].includes(event.type) || event.urlKnown!==true || event.type==="service_worker" && (event.ownedWorkerScript!==true || event.originMatches!==true)) ||
+			principal?.before?.sha256!==cut.principalSha256 || !["observedSetCookieResponses","unknownResponseHeaders","readErrors","pendingReads","observationErrors","overflow"].every(key=>principal[key]===0) ||
+			principal.scopeClosed && (principal.after?.known!==true || principal.after.sha256!==cut.principalSha256))return false;
+		if(producer.kind==="qualified-ui") {if(request.replayHeaderSha256!==null || producer.manualDispatch!==null)return false;}
+		else {
+			const manual=producer.manualDispatch,journal=values?.manualDispatch,actual=journal?.rows?.filter(item=>item.proxyId===request.proxyResponseId);
+			if(manual?.protocol!=="observed-team-manual-dispatch-v1" || manual.contextId!==request.contextId || manual.proxyId!==request.proxyResponseId || manual.nonceSha256!==request.replayHeaderSha256 || manual.bodySha256!==request.requestBodySha256 || manual.traceId!==request.traceId ||
+				manual.browser?.requestId!==request.requestId || manual.browser.frameId!==request.frameId || manual.browser.loaderId!==request.loaderId || manual.browser.documentGeneration!==request.documentGeneration ||
+				manual.browser.initialReplaySha256!==request.replayHeaderSha256 || manual.browser.extraReplaySha256!==request.replayHeaderSha256 ||
+				journal?.errors!==0 || journal.overflow!==0 || journal.unretainedArms!==0 || journal.budgetKnown!==true || !Array.isArray(actual) || actual.length!==1 || actual[0].nonceSha256!==request.replayHeaderSha256 ||
+				!sameJSON(actual[0].requestEOF,manual.requestEOF) || !sameJSON(actual[0].browser,manual.browser) || principal.scopeClosed && (actual[0].returned!==true || actual[0].returnedError!==false || journal.pendingDispatches!==0))return false;
 		}
-		return true;
+		const store=values?.store,selected=store?.rows?.filter(item=>item.id===request.proxyResponseId);
+		return store?.errors===0 && store.overflow===0 && store.unavailable===0 && store.budgetKnown===true && Array.isArray(selected) && selected.length===1 &&
+			sameJSON(selected[0].requestFacts,syntax) && sameJSON(selected[0].typeFacts,authority.typeFacts) && (!principal.scopeClosed || store.pendingConsumers===0 && selected[0].valueForgotten===true && selected[0].released===true);
+	} catch { return false; }
+}
+/** Both live factual cuts and final replay retain the actual zero/nonzero body-use observation. Final closure gates remain separate. */
+export function validateOriginalTeamTemporaryValues(section,boundary) {
+	try {
+		if(!ownData(section,["protocol","referenceCount","binding","obligations"]) || section.protocol!=="original-team-temporary-values-v1" || !digest(boundary?.bodySha256) ||
+			!Number.isSafeInteger(boundary.decodedBytes) || boundary.decodedBytes<1 || boundary.decodedBytes>8388608 || !Number.isSafeInteger(section.referenceCount) || section.referenceCount<0 || section.referenceCount>100000 || !Array.isArray(section.obligations) || section.obligations.length>16)return false;
+		const roles=new Set();let count=0;
+		for(const obligation of section.obligations) {
+			if(!ownData(obligation,["role","count"]) || typeof obligation.role!=="string" || !/^[A-Z][A-Z0-9_]{0,63}$/.test(obligation.role) || roles.has(obligation.role) || !Number.isSafeInteger(obligation.count) || obligation.count<1 || obligation.count>100000)return false;
+			roles.add(obligation.role);count+=obligation.count;
+		}
+		if(count!==section.referenceCount)return false;
+		const observed=boundary.request?.temporaryValueObservation;
+		if(boundary.request!==undefined && (!ownData(observed,["protocol","bodySha256","decodedBytes","lookupAttempted","valueUsed","bindingSha256","closed"]) || observed.protocol!=="original-team-body-value-observation-v1" || observed.bodySha256!==boundary.bodySha256 || observed.decodedBytes!==boundary.decodedBytes || observed.closed!==true))return false;
+		if(section.binding===null)return section.referenceCount===0 && section.obligations.length===0 && (boundary.request===undefined || observed.lookupAttempted===false && observed.valueUsed===false && observed.bindingSha256===null);
+		const receipt=section.binding;
+		return ownData(receipt,["protocol","requestAuthority","bodySha256","decodedBytes","temporaryKeySha256"]) && receipt.protocol==="original-team-temporary-value-binding-v1" &&
+			receipt.bodySha256===boundary.bodySha256 && receipt.decodedBytes===boundary.decodedBytes && receipt.temporaryKeySha256===sha("$T0:0") &&
+			observed?.lookupAttempted===true && observed.valueUsed===true && observed.bindingSha256===sha(JSON.stringify(receipt)) && knownRequestAuthority(receipt.requestAuthority,boundary);
 	} catch { return false; }
 }
 /** Actual dispatch/HTTP/CDP identity observations only; never source or value authority by themselves. */

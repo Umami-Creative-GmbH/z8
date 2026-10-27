@@ -701,7 +701,9 @@ test("observer-only temporary body inspections close without granting value auth
 	const observed = originalTeamBodyObservation(inspection);
 	assert.deepEqual(observed, { protocol: "original-team-body-value-observation-v1", bodySha256: boundary.bodySha256, decodedBytes: 32, lookupAttempted: true, valueUsed: false, bindingSha256: null, closed: true });
 	const section = { protocol: "original-team-temporary-values-v1", referenceCount: 0, binding: null, obligations: [] };
-	assert.equal(validateOriginalTeamTemporaryValues(section, { ...boundary, request: { temporaryValueObservation: observed } }), true);
+	assert.equal(validateOriginalTeamTemporaryValues(section, { ...boundary, request: { temporaryValueObservation: observed } }), false);
+    const pristine=openOriginalTeamBodyInspection({bodySha256:boundary.bodySha256,decodedBytes:32});closeOriginalTeamBodyInspection(pristine);
+    assert.equal(validateOriginalTeamTemporaryValues(section,{...boundary,request:{temporaryValueObservation:originalTeamBodyObservation(pristine)}}),true);
 	for (const changed of [undefined, { ...observed, valueUsed: true }, { ...observed, bindingSha256: "b".repeat(64) }, { ...observed, closed: false }, { ...observed, decodedBytes: 31 }])
 		assert.equal(validateOriginalTeamTemporaryValues(section, { ...boundary, request: { temporaryValueObservation: changed } }), false);
 	assert.equal(openOriginalTeamBodyInspection(null), null);
@@ -718,4 +720,19 @@ test("temporary observation condition and Original source configuration reject o
 	assert.equal(knownOriginalTeamSourceConfiguration(config, profile.binarySource, profile.manifestSha256), true);
 	for (const row of [undefined, {}, { ...config, phase: "release" }, { ...config, compiledBuild: "a".repeat(40) }, { ...config, buildRecordSha256: "a".repeat(64) }, { ...config, buildRecordPath: "" }, { ...config, extra: true }]) assert.equal(knownOriginalTeamSourceConfiguration(row), false);
 	assert.equal(knownOriginalTeamSourceConfiguration(config, "a".repeat(40)), false);
+});
+
+test("temporary request issuance rejects receipt copies and unqualified producer claims", async () => {
+	const { bindOriginalTeamRequestValue, openOriginalTeamBodyInspection, resolveOriginalTeamTemporaryReference, closeOriginalTeamBodyInspection, originalTeamBodyObservation } = await import("./team-temporary-value-authority.mjs");
+	const pool = teamStorePool(), store = createTeamTemporaryValueStore({ contextId: "issuer", reserve: pool.reserve, release: pool.release });
+	const descriptor = teamStoreDescriptor(), handle = store.retain({ id: "a".repeat(32) + ".1", descriptor });
+	assert.equal(bindOriginalTeamRequestValue({ qualification: {}, store, handle, request: {}, producer: {} }), null);
+	const boundary = { bodySha256: "b".repeat(64), decodedBytes: 23, action: true, requestKind: "action" };
+	const inspection = openOriginalTeamBodyInspection({ bodySha256: boundary.bodySha256, decodedBytes: 23, requestAuthority: {} });
+	assert.ok(inspection);
+	assert.equal(resolveOriginalTeamTemporaryReference(inspection, "$T0:0", boundary), null);
+	assert.equal(closeOriginalTeamBodyInspection(inspection), true);
+	assert.equal(originalTeamBodyObservation(inspection).valueUsed, false);
+	store.close();
+	assert.equal(pool.retained(), 2048);
 });

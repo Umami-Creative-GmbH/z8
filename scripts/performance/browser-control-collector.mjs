@@ -27,6 +27,10 @@ import {
 import { createProxyHeaderCensus, proxyHeaderPrefix } from "./proxy-header-census.mjs";
 import { projectCachedCdpText } from "./cdp-cached-text-projection.mjs";
 import { readLegacyClockReadinessSource } from "./legacy-clock-readiness.mjs";
+import { parseInertDateRangeRequest } from "./inert-date-range-request.mjs";
+import { temporaryValueObservation, knownTemporaryValueObservation, knownOriginalTeamSourceConfiguration, readOriginalTeamSourceQualification,
+ readOriginalTeamOperatorQualification, createTeamTemporaryValueStore, createTeamReplayDispatchJournal, teamReplayHeader, createOriginalTeamUIProducerCut,
+ originalTeamSourceFacts, originalTeamOperatorSourceFacts, originalTeamUIProducerCutFacts, bindOriginalTeamRequestValue, originalTeamRequestAuthorityFacts, openOriginalTeamBodyInspection, closeOriginalTeamBodyInspection, originalTeamBodyObservation } from "./team-temporary-value-authority.mjs";
 
 export const controlResponseHeader = "x-z8-fixture-response-id";
 export const controlDocumentHeader = "x-z8-fixture-document-generation";
@@ -109,6 +113,7 @@ const nativeManifestLocators = new WeakMap();
 const compiledRoutingSources = new WeakMap();
 const requestShapeBindings = new WeakMap();
 const legacyClockBindings = new WeakMap();
+const originalTeamBindings = new WeakMap(), originalTeamPlans = new WeakMap();
 /** Source facts are not capabilities: only the exact privately branded, browser-verified binding matches. */
 export function legacyClockReadinessAuthority(binding,{origin,phase}={}) {
 	const facts=binding && legacyClockBindings.get(binding);
@@ -315,7 +320,17 @@ export async function readBrowserControlBinding({ plan, manifestPath }) {
 		!servingPublicSources.servingRootKnown || !servingPublicSources.files.every((row,index)=>row.known === true &&
 			row.file === metadata.nativePublicSources.files[index].file && row.bytes === metadata.nativePublicSources.files[index].bytes && row.sha256 === metadata.nativePublicSources.files[index].sha256)))
 		throw Error("Serving public sources differ from the independently qualified compiled source.");
+	if (!knownTemporaryValueObservation(metadata.temporaryValueObservation) || !Object.hasOwn(metadata,"originalTeamSource") ||
+		!knownOriginalTeamSourceConfiguration(metadata.originalTeamSource,plan.runtime.build,metadata.compiledManifestSha256))
+		throw Error("Missing temporary-value observation condition or qualified Original configuration.");
 	const binding = Object.freeze({ ...metadata, compiledBuild: plan.runtime.build, manifestVerified: true, browserVerified: false,servingPublicSources });
+	originalTeamPlans.set(binding, structuredClone(plan));
+	if(metadata.originalTeamSource!==null) {
+		if(plan.phase!=="baseline")throw Error("Original temporary source cannot qualify a release phase.");
+		const config=metadata.originalTeamSource;
+		const qualification=await readOriginalTeamSourceQualification({profileId:config.profileId,phase:config.phase,compiledManifestPath:manifestPath,buildRecordPath:config.buildRecordPath});
+		originalTeamBindings.set(binding,qualification);
+	}
 	if (Object.hasOwn(metadata,"requestShapeDiagnostic")) {
 		const configuration=metadata.requestShapeDiagnostic;
 		const keys=["protocol","compiledBuild","compiledManifestSha256","actionRegistrySha256","actionHeaderSha256","actionName"];
@@ -360,6 +375,8 @@ export async function verifyBrowserControlBrowser(browser, binding) {
 		if(compiledRoutingSources.has(binding))compiledRoutingSources.set(verified,compiledRoutingSources.get(binding));
 		if(requestShapeBindings.has(binding))requestShapeBindings.set(verified,requestShapeBindings.get(binding));
 		if(legacyClockBindings.has(binding))legacyClockBindings.set(verified,legacyClockBindings.get(binding));
+        if(originalTeamBindings.has(binding))originalTeamBindings.set(verified,originalTeamBindings.get(binding));
+        if(originalTeamPlans.has(binding))originalTeamPlans.set(verified,originalTeamPlans.get(binding));
 		return verified;
 	} finally { await session.detach(); }
 }
@@ -394,7 +411,12 @@ export function createPrincipalEpochObserver(contextId, { origin } = {}) {
 			singleCookieHeaderSha256: singleOwnedRootHttpOnlyCookie === true ? sha(`${single.name}=${single.value}`) : null } };
 	};
 	return {
-		progressStarted(acknowledgmentOrdinal){
+		nextTemporaryReadOrdinal(){
+   if(scopeClosed || progressReadIds.size>=controlCancellationPolicy.recordLimit){overflow++;return null;}
+   for(let ordinal=controlCancellationPolicy.recordLimit;ordinal>=1;ordinal--)if(!progressReadIds.has(ordinal))return ordinal;
+   overflow++;return null;
+  },
+  progressStarted(acknowledgmentOrdinal){
    if(scopeClosed || !Number.isSafeInteger(acknowledgmentOrdinal) || acknowledgmentOrdinal<1 || acknowledgmentOrdinal>controlCancellationPolicy.recordLimit || progressReadIds.has(acknowledgmentOrdinal) || progressReadIds.size>=controlCancellationPolicy.recordLimit){observationErrors++;return false;}
    progressReadIds.add(acknowledgmentOrdinal);const row={acknowledgmentOrdinal,kind:"read-only-context-cookies-v1",startedOrdinal:++progressReadsStarted,finishedOrdinal:null,snapshotSha256:null,error:false};progressReads.set(acknowledgmentOrdinal,row);progressReadHistory.set(acknowledgmentOrdinal,row);pendingReads++;return true;
   },
@@ -473,6 +495,7 @@ export function controlRequestIdentity(contextId, url, method, headers) {
 		method,
 		fullUrlSha256: sha(url),
 		requestOriginSha256,
+        incomingTraceId: /^00-[a-f0-9]{32}-[a-f0-9]{16}-0[01]$/.test(h.traceparent ?? "") ? h.traceparent.split("-")[1] : null,
 		requestHeadersSha256: sha(
 			JSON.stringify(selectedHeaders.map((key) => [key, h[key] ?? null])),
 		),
@@ -557,6 +580,16 @@ export function controlResponseMetadata(headers, status) {
 
 // These are actual observation inputs, not a verdict or a default deployment ID.
 // The body inspector derives the key and rechecks Next's header-before-body rule.
+function inspectCollectedFlightBody(row, bytes, compiledCachedNavigations, compiledBinding, inspectionFor) {
+	const options=bodyInspectionOptions(row,compiledCachedNavigations,compiledBinding);
+	let inspection=null;
+	if(row.action===true) {
+		inspection=inspectionFor?.(row,sha(bytes),bytes.length) ?? openOriginalTeamBodyInspection({bodySha256:sha(bytes),decodedBytes:bytes.length});
+		options.temporaryValueInspection=inspection;
+	}
+	try { return inspectRequiredFlightBody(bytes,options); }
+	finally { if(inspection) { closeOriginalTeamBodyInspection(inspection);row.temporaryValueObservation=originalTeamBodyObservation(inspection); } }
+}
 function bodyInspectionOptions(row, compiledCachedNavigations, compiledBinding) {
 	const options = {action:row.action,cachedNavigations:compiledCachedNavigations,requestKind:row.requestKind};
 	if (["segment-prefetch","route-tree"].includes(row.requestKind)) {
@@ -587,6 +620,8 @@ export function createBrowserControlCollector({
 	operatorFile,
 	readBody,
 	readStream,
+	temporaryInspectionFor,
+	temporaryRequestObserved,
 	captureContextFailures = false,
 	principalEpoch = createPrincipalEpochObserver(contextId, { origin }),
 	environmentObservation = () => null,
@@ -680,7 +715,7 @@ export function createBrowserControlCollector({
 						observedDataLengthAtReadback:row.loadingFinished === true && row.observedDataLengthInvalid !== true && Number.isSafeInteger(row.observedDataLength) ? row.observedDataLength : null,
 						responseContentType:row.initialSegmentResponse?.responseContentType ?? row.responseContentType ?? null, effectiveCdpResponse:row.effectiveCdpResponse ?? null, decodedBytes: bytes.length, bodySha256: sha(bytes),
 						terminal: row.failed ? "failed" : row.loadingFinished ? "finished" : "pending", naturalEOFClaim: false };
-					assignBodyProof(row, inspectRequiredFlightBody(bytes, bodyInspectionOptions(row,compiledCachedNavigations,compiledBinding)), "cdp-readback", row.bodyReadbackReceipt.bodySha256);
+					assignBodyProof(row, inspectCollectedFlightBody(row,bytes,compiledCachedNavigations,compiledBinding,temporaryInspectionFor), "cdp-readback", row.bodyReadbackReceipt.bodySha256);
 					row.bodyReadbackComplete = true;
 				} catch {
 					if (!row.streamReceipt?.captureComplete)
@@ -711,7 +746,7 @@ export function createBrowserControlCollector({
 			reason: stream.reason ?? (captureComplete ? null : "byte-coverage-gap"),
 		};
 		if (captureComplete)
-			assignBodyProof(row, inspectRequiredFlightBody(Buffer.concat(stream.chunks), bodyInspectionOptions(row,compiledCachedNavigations,compiledBinding)), "passive-stream", row.streamReceipt.capturedBodySha256);
+			assignBodyProof(row, inspectCollectedFlightBody(row,Buffer.concat(stream.chunks),compiledCachedNavigations,compiledBinding,temporaryInspectionFor), "passive-stream", row.streamReceipt.capturedBodySha256);
 		retained -= stream.bytes;
 		streamRetained -= stream.bytes;
 		stream.chunks = [];
@@ -804,12 +839,14 @@ export function createBrowserControlCollector({
 		row.extraHeaderIdentity = identity;
 		Object.assign(row, identity);
 		row.requestHeadersKnown = true;
+        temporaryRequestObserved?.(row,"extra");
 	};
 	const applyResponseExtra = (row, metadata) => {
 		row.extraResponseVary = metadata.vary;
 		if (row.status !== undefined)
 			metadata = { ...metadata, status: row.status };
 		Object.assign(row, metadata, { vary: row.initialResponseVary ?? metadata.vary });
+        temporaryRequestObserved?.(row,"response");
 	};
 	let browserEventOrdinal=0,progressInput;
 	const snapshot = () => {
@@ -843,7 +880,7 @@ export function createBrowserControlCollector({
 			observed:protocolErrorRecords.length,overflow:protocolErrorOverflow+Math.max(0,protocolErrorRecords.length-controlCancellationPolicy.recordLimit),records:protocolErrorRecords.slice(0,controlCancellationPolicy.recordLimit)};
 		const environment=environmentObservation(),principal=principalEpoch.snapshot();
 		const nativeContext={protocol:"qualified-known-extra-native-context-v1",contextId,originSha256:sha(origin),workerScriptSha256:sha(origin+"/sw.js"),rootScopeSha256:sha(origin+"/"),
-			binding:compiledBinding ? Object.fromEntries(["policy","browserRevision","compiledBuild","compiledManifestSha256","compiledCachedNavigations","manifestVerified","browserVerified","nativePublicSources"].filter(key=>Object.hasOwn(compiledBinding,key)).map(key=>[key,compiledBinding[key]])) : null,
+			binding:compiledBinding ? Object.fromEntries(["policy","browserRevision","compiledBuild","compiledManifestSha256","compiledCachedNavigations","manifestVerified","browserVerified","nativePublicSources","temporaryValueObservation","originalTeamSource"].filter(key=>Object.hasOwn(compiledBinding,key)).map(key=>[key,compiledBinding[key]])) : null,
 			protocolSources:protocolSources ?? null,operatorFile:operatorFile ?? null,principalEpoch:principal,headerCensus:proxy.headerCensus ?? null,headerLifetime:proxy.headerLifetime ?? null,
 			protocolErrors,environment};
 		const data = { responses, proxy: proxy.rows, coverage, browserRevision,nativeContext };
@@ -1090,6 +1127,7 @@ export function createBrowserControlCollector({
 				),
 				requestId: event.requestId,
 				loaderId: event.loaderId,
+				frameId: event.frameId,
 				startedAt: event.timestamp,
 				type: event.type,
 				priority: event.request.initialPriority,
@@ -1103,6 +1141,7 @@ export function createBrowserControlCollector({
 				responseEvents:0,finishedEvents:0,failedEvents:0,dataEvents:0,dataAfterTerminal:0,dataBeforeResponse:0,responseAfterTerminal:0,terminalBeforeResponse:0,observedDataLength:0,
 			};
 			row.initialHeaderIdentity = headerIdentity(event.request.headers);
+            temporaryRequestObserved?.(row,"request");
 			requests.set(event.requestId, row);
 			if (extra.has(event.requestId)) {
 				applyExtra(row, extra.get(event.requestId));
@@ -1154,7 +1193,8 @@ export function createBrowserControlCollector({
 			row.effectiveCdpResponse={protocol:"cdp-effective-response-decoder-metadata-v1",provenance:"Network.responseReceived",
 				mimeKnown:mime!==null,mime:mime===null?null:mime==="text/x-component"?mime:"other",charsetKnown:charset!==null,
 				charset:charset===null?null:charset===""?"empty":["utf-8","utf8","iso-8859-1","latin1","us-ascii","windows-1252","utf-16le","utf-16be"].includes(charset)?charset:"other"};
-			startStream(row);
+			temporaryRequestObserved?.(row,"response");
+            startStream(row);
 		},
 		responseExtra(event) {
 			browserEventOrdinal++;
@@ -1267,14 +1307,51 @@ export async function installBrowserControlCollector({
 	const session = await page.createCDPSession();
 	const principalEpoch = createPrincipalEpochObserver(contextId, { origin });
 	let workerObservation, endMetadata = null, generation = 0, documentAcknowledgment;
+	const qualification=originalTeamBindings.get(environmentBinding);
+	const operatorQualification=qualification?await readOriginalTeamOperatorQualification({qualification,operatorFile,protocolSources,plan:originalTeamPlans.get(environmentBinding)}):null;
+	let teamCut=null,teamReadPending=0,teamReadErrors=0,teamReadOverflow=0,teamReadScheduled=false;
+	const teamReadRecords=[];
+	const currentTeamCut=()=>{
+		if(!teamCut || teamReadErrors || teamReadOverflow || !documentAcknowledgment)return null;
+		const facts=originalTeamUIProducerCutFacts(teamCut),principal=principalEpoch.snapshot(),workers=workerObservation?.snapshot(),journal=documentAcknowledgment.snapshot();
+		if(!facts || facts.documentJournalSha256!==sha(JSON.stringify(journal)) || facts.workerJournalSha256!==sha(JSON.stringify(workers)) || principal.before?.sha256!==facts.principalSha256 ||
+			!["observedSetCookieResponses","unknownResponseHeaders","readErrors","pendingReads","observationErrors","overflow"].every(key=>principal[key]===0))return null;
+		return teamCut;
+	};
+	const scheduleTeamRead=()=>{
+		if(!qualification || teamReadScheduled || teamReadPending || generation<1 || !documentAcknowledgment || !workerObservation)return;
+		teamReadScheduled=true;
+		queueMicrotask(()=>{
+			teamReadScheduled=false;
+			if(teamReadRecords.length>=controlCancellationPolicy.recordLimit){teamReadOverflow++;return;}
+            const journal=documentAcknowledgment.snapshot();
+            if(journal.documents.length+journal.executionEvents.length>128){teamReadOverflow++;return;}
+            if(!proxy.reserveTemporaryObservation(controlCancellationPolicy.decodedLimit)){teamReadOverflow++;return;}
+			const checkpointOrdinal=principalEpoch.nextTemporaryReadOrdinal();
+			if(checkpointOrdinal===null){teamReadOverflow++;proxy.releaseTemporaryObservation(controlCancellationPolicy.decodedLimit);return;}
+			teamReadPending++;
+			const deadlineMs=performance.now()+10000;
+			Promise.resolve(documentAcknowledgment.read({checkpointOrdinal,deadlineMs,principalEpoch,readCookies:()=>context.cookies(),readSources:async()=>{const path=nativeManifestLocators.get(environmentBinding);return path?readNativePublicSources(path):null;}}))
+				.then(ack=>{
+					const cut=createOriginalTeamUIProducerCut({qualification,operatorQualification,acknowledgment:ack,principal:principalEpoch.snapshot(),workers:workerObservation.snapshot(),binding:environmentBinding,documentJournal:documentAcknowledgment.snapshot()});
+					teamCut=cut;
+					const record={checkpointOrdinal,acknowledgment:ack,principal:principalEpoch.snapshot(),workers:workerObservation.snapshot(),issuedCut:cut?originalTeamUIProducerCutFacts(cut):null};
+					const charge=Buffer.byteLength(JSON.stringify(record))*8+2048;
+					if(charge>controlCancellationPolicy.decodedLimit){teamReadOverflow++;teamCut=null;proxy.releaseTemporaryObservation(controlCancellationPolicy.decodedLimit);}
+					else{teamReadRecords.push(record);proxy.releaseTemporaryObservation(controlCancellationPolicy.decodedLimit-charge);}
+				},()=>{teamReadErrors++;teamCut=null;proxy.releaseTemporaryObservation(controlCancellationPolicy.decodedLimit);})
+				.finally(()=>{teamReadPending--;});
+		});
+	};
 	const proxy = createProxyControlCollector({
-		origin,
+		currentTeamCut,
+	origin,
 		protocolSources,
 		contextId,
 		compiledCachedNavigations,
 		compiledBinding:environmentBinding,
 	});
-	const transportErrors = transport.setControlCancellationObserver(proxy,{captureHeaderPrefixes:captureContextFailures});
+	const transportErrors = transport.setControlCancellationObserver(proxy,{captureHeaderPrefixes:captureContextFailures || knownTemporaryValueObservation(environmentBinding?.temporaryValueObservation)});
 	const proxyObservation = () => {
 		const proof = proxy.snapshot();
 		const cut=typeof transport.controlHeaderCut==="function"?transport.controlHeaderCut():null;
@@ -1287,6 +1364,8 @@ export async function installBrowserControlCollector({
 		compiledCachedNavigations,
 		compiledBinding:environmentBinding,
 		captureContextFailures,
+		temporaryInspectionFor:proxy.temporaryInspectionFor,
+	temporaryRequestObserved:proxy.observeTeamBrowserRequest,
 		protocolSources,
 		operatorFile,
 		principalEpoch,
@@ -1294,6 +1373,8 @@ export async function installBrowserControlCollector({
 			servingPublicSources: environmentBinding?.servingPublicSources ?? null,
 			nativeLaunchMetadata: environmentBinding?.nativeLaunchMetadata ?? null,
 			workerTargets: workerObservation?.snapshot() ?? null,
+            temporaryValueSourceReads:{protocol:"actual-team-source-read-journal-v1",scopeClosed:documentAcknowledgment?.snapshot().closed ?? false,pending:teamReadPending,errors:teamReadErrors,overflow:teamReadOverflow,operatorSource:originalTeamOperatorSourceFacts(operatorQualification),records:teamReadRecords,documentJournal:documentAcknowledgment?.snapshot() ?? null},
+            temporaryValues:proxy.snapshot().temporaryValues,
 			controllerObservation: endMetadata ? "read-only-end-snapshot" : "not-collected",
 			publicSourceRecheck: endMetadata?.publicSourceRecheck ?? "not-collected", endRead: endMetadata, acceptanceClaim: "none" }),
 		proxyObservation,
@@ -1319,7 +1400,7 @@ export async function installBrowserControlCollector({
 				collector.observerError();
 			}
 		});
-	if(captureContextFailures)documentAcknowledgment=await createMixedDocumentAcknowledgment({session,contextId,origin,generation:()=>generation});
+	if(captureContextFailures || knownTemporaryValueObservation(environmentBinding?.temporaryValueObservation))documentAcknowledgment=await createMixedDocumentAcknowledgment({session,contextId,origin,generation:()=>generation,onSourceEvent:scheduleTeamRead});
 	await session.send("Network.enable");
 	await capturePrincipalBoundary({ context, observer: principalEpoch, stage: "start", deadlineMs: performance.now() + 10000 });
 	let browser;
@@ -1345,9 +1426,12 @@ export async function installBrowserControlCollector({
   acknowledge:options=>documentAcknowledgment.read({...options,principalEpoch,readCookies:()=>context.cookies(),readSources:async()=>{const locator=environmentBinding && nativeManifestLocators.get(environmentBinding);return locator?await readNativePublicSources(locator):null;}})}):null;
 	return {
 		...collector,
+        armTeamReplay(input){return proxy.armTeamReplay(input);},
+        teamReplayHeaders(handle){return proxy.teamReplayHeaders(handle);},
+        finishTeamReplay(handle,facts){return proxy.finishTeamReplay(handle,facts);},
   acknowledgeMixedProgress(options){if(!progress)throw Error("Mixed progress observation was not installed before app IO.");return progress.check(options);},
   confirmMixedProgress(token){if(!progress)throw Error("Mixed progress observation is unavailable.");return progress.confirm(token);},
-  snapshot(){return {...collector.snapshot(),...(progress?{mixedProgress:progress.snapshot(),mixedDocumentJournal:documentAcknowledgment.snapshot()}:{})};},
+  snapshot(){return {...collector.snapshot(),temporaryValueSourceReads:{protocol:"actual-team-source-read-journal-v1",pending:teamReadPending,errors:teamReadErrors,overflow:teamReadOverflow,records:structuredClone(teamReadRecords)},...(progress?{mixedProgress:progress.snapshot(),mixedDocumentJournal:documentAcknowledgment.snapshot()}:{})};},
 		async close({ deadlineMs } = {}) {
 			try {
 				await capturePrincipalBoundary({ context, observer: principalEpoch, stage: "end", deadlineMs });
@@ -1355,6 +1439,7 @@ export async function installBrowserControlCollector({
 			}
 			finally {
 				documentAcknowledgment?.close();
+                proxy.closeTeamValues();
 				workerObservation.close();
 				collector.endScope();
 				for (const [method, original] of originals) page[method] = original;
@@ -1401,6 +1486,7 @@ export function createProxyControlCollector({
 	protocolSources,
 	compiledCachedNavigations,
 	compiledBinding,
+	currentTeamCut = () => null,
 }) {
 	const requests = new Map();
 	const headerCensus = createProxyHeaderCensus({contextId});
@@ -1410,7 +1496,32 @@ export function createProxyControlCollector({
 		errors = 0,
 		overflow = 0,
 		pendingBodies = 0;
-	const shapeConfiguration=requestShapeBindings.get(compiledBinding),shapeRows=new Map();
+	const qualification=originalTeamBindings.get(compiledBinding),sourceFacts=originalTeamSourceFacts(qualification);
+	const shapeConfiguration=requestShapeBindings.get(compiledBinding) ?? (sourceFacts?{protocol:"original-team-request-observation-v1",actionHeaderSha256:sourceFacts.actionHeaderSha256}:null),shapeRows=new Map();
+	const reserveTeam=bytes=>{if(!Number.isSafeInteger(bytes)||bytes<0||retained+bytes>controlCancellationPolicy.retainedLimit)return false;retained+=bytes;return true;};
+	const releaseTeam=bytes=>{if(!Number.isSafeInteger(bytes)||bytes<0||bytes>retained)throw Error("Temporary value reservation mismatch.");retained-=bytes;};
+	const teamStore=createTeamTemporaryValueStore({contextId,reserve:reserveTeam,release:releaseTeam});
+	const teamDispatch=knownTemporaryValueObservation(compiledBinding?.temporaryValueObservation)?createTeamReplayDispatchJournal({contextId,origin,reserve:reserveTeam,release:releaseTeam}):null;
+	const requestHandles=new Map(),proxyCuts=new Map(),browserRows=new Map(),browserCuts=new WeakMap();
+	let teamClosed=false;
+	const temporaryInspectionFor=(row,bodySha256,decodedBytes)=>{
+		const id=row.id ?? row.proxyResponseId,packet=requests.get(id),browser=row.requestId?row:browserRows.get(id),handle=requestHandles.get(id);
+		let authority=null;
+		if(packet && browser && handle && browser.requestHeadersKnown===true && browser.initialHeaderIdentity?.requestHeadersSha256===packet.requestHeadersSha256 &&
+			browser.extraHeaderIdentity?.requestHeadersSha256===packet.requestHeadersSha256 && browser.fullUrlSha256===packet.fullUrlSha256 && browser.documentGeneration===packet.documentGeneration &&
+			browser.action===true && browser.ambiguousRedirect===false && browser.requestOriginSha256===packet.requestOriginSha256) {
+			const request={contextId,proxyResponseId:id,requestId:browser.requestId,traceId:packet.traceId,method:packet.method,fullUrlSha256:packet.fullUrlSha256,
+				requestHeadersSha256:packet.requestHeadersSha256,requestOriginSha256:packet.requestOriginSha256,documentGeneration:packet.documentGeneration,frameId:browser.frameId,loaderId:browser.loaderId,
+				actionHeaderSha256:packet.headerFieldSha256["next-action"],requestBodySha256:shapeRows.get(id)?.bodySha256,encodedBytes:shapeRows.get(id)?.bytes,actualEOF:shapeRows.get(id)?.requestEOF===true,
+				replayHeaderSha256:packet.headerFieldSha256[teamReplayHeader] ?? null};
+			if(request.replayHeaderSha256!==null)teamDispatch?.browserRequest({proxyId:id,contextId,requestId:browser.requestId,method:browser.method,traceId:browser.incomingTraceId,
+				urlSha256:browser.fullUrlSha256,actionHeaderSha256:browser.headerFieldSha256["next-action"],initialHeadersKnown:browser.initialHeaderIdentity?.requestHeaderSnapshotKnown===true,extraHeadersKnown:browser.extraHeaderIdentity?.requestHeaderSnapshotKnown===true,
+				initialReplaySha256:browser.initialHeaderIdentity?.headerFieldSha256?.[teamReplayHeader],extraReplaySha256:browser.extraHeaderIdentity?.headerFieldSha256?.[teamReplayHeader],frameId:browser.frameId,loaderId:browser.loaderId,documentGeneration:browser.documentGeneration});
+			authority=bindOriginalTeamRequestValue({qualification,store:teamStore,handle,request,proxyCut:proxyCuts.get(id),browserCut:browserCuts.get(browser),dispatchJournal:teamDispatch});
+			if(authority){const facts=originalTeamRequestAuthorityFacts(authority);row.temporaryRequestAuthority=facts;packet.temporaryRequestAuthority=facts;browser.temporaryRequestAuthority=facts;}
+		}
+		return openOriginalTeamBodyInspection({bodySha256,decodedBytes,requestAuthority:authority});
+	};
 	if(Object.hasOwn(compiledBinding ?? {},"requestShapeDiagnostic") && (!shapeConfiguration || JSON.stringify(shapeConfiguration)!==JSON.stringify(compiledBinding.requestShapeDiagnostic)))
 		throw Error("Request-shape diagnostic requires the actual verified source binding.");
 	let shapeErrors=0,shapeOverflow=0,shapeClosed=false,shapePendingParses=0,shapeSelected=0,shapeUnretainedSelections=0;
@@ -1427,6 +1538,17 @@ export function createProxyControlCollector({
 		row.chunks = [];
 	};
 	return {
+		reserveTemporaryObservation(bytes){return reserveTeam(bytes);},
+        releaseTemporaryObservation(bytes){releaseTeam(bytes);},
+        armTeamReplay(input){return teamDispatch?.arm(input) ?? null;},
+		teamReplayHeaders(handle){return teamDispatch?.headers(handle) ?? null;},
+		finishTeamReplay(handle,facts){return teamDispatch?.finished(handle,facts) ?? false;},
+		temporaryInspectionFor,
+		observeTeamBrowserRequest(row,kind){
+			if(kind==="request")browserCuts.set(row,currentTeamCut());
+			if(row.proxyResponseId){const prior=browserRows.get(row.proxyResponseId);if(prior && prior!==row){errors++;return;}browserRows.set(row.proxyResponseId,row);}
+		},
+		closeTeamValues(){if(teamClosed)return;teamClosed=true;teamDispatch?.close();teamStore.close();},
 		installed(binding) {
 			installed = true;
 			if (binding) transportInstallation = {
@@ -1443,6 +1565,7 @@ export function createProxyControlCollector({
 			if(shapeConfiguration)shapeErrors++;
 		},
 		request(id, { url, method, headers, traceId }) {
+			const observedTeamCut=currentTeamCut();
 			headerCensus.accepted(id);
 			if (
 				requests.size >= controlCancellationPolicy.recordLimit ||
@@ -1453,6 +1576,9 @@ export function createProxyControlCollector({
 				return;
 			}
 			const identity=controlRequestIdentity(contextId,url,method,headers);
+            proxyCuts.set(id,observedTeamCut);
+            const replayNonce=lowerHeaders(headers)[teamReplayHeader];
+            const ownedReplay=replayNonce!==undefined && teamDispatch?teamDispatch.proxyRequest({id,traceId,method,url,action:lowerHeaders(headers)["next-action"],nonce:replayNonce}):false;
 			const urlFacts=routingURLFacts(url,compiledRoutingForBinding(compiledBinding),origin,"owned-proxy-request-url-no-follow",identity.requestKind==="route-tree" && identity.rsc && identity.prefetch);
 			const scalarBytes=scalarFactBytes(urlFacts.fallback.scalarKeys);
 			if(retained+scalarBytes>controlCancellationPolicy.retainedLimit){overflow++;urlFacts.fallback.scalarKeys={known:false,reason:"scalar-retention-limit"};}
@@ -1469,7 +1595,7 @@ export function createProxyControlCollector({
 				chunks: [],
 				retainedBytes: 0,
 			});
-			if(shapeConfiguration && method==="POST" && new URL(url).origin===origin && identity.headerFieldSha256["next-action"]===shapeConfiguration.actionHeaderSha256){
+			if(method==="POST" && new URL(url).origin===origin && (ownedReplay || shapeConfiguration && identity.headerFieldSha256["next-action"]===shapeConfiguration.actionHeaderSha256)){
 				shapeSelected++;
 				if(retained+requestShapeLimits.metadataReservation>controlCancellationPolicy.retainedLimit){shapeOverflow++;shapeUnretainedSelections++;return;}
 				retained+=requestShapeLimits.metadataReservation;
@@ -1503,7 +1629,14 @@ export function createProxyControlCollector({
 			}
 			if(!shapeReserve(row,requestShapeLimits.parseReservation)){row.bodySha256=null;row.shape={known:false,jsonParsed:false,reason:"request-parse-reservation"};shapeRelease(row);return;}
 			shapePendingParses++;
-			setImmediate(()=>{try{row.shape=inspectRequestShape(row.buffer.subarray(0,row.bytes));}catch{shapeErrors++;row.shape={known:false,jsonParsed:false,reason:"request-shape-unavailable"};}
+			setImmediate(()=>{try{
+				const bytes=row.buffer.subarray(0,row.bytes);row.shape=inspectRequestShape(bytes);
+				if(sourceFacts && requests.get(id)?.headerFieldSha256?.["next-action"]===sourceFacts.actionHeaderSha256) {
+					const descriptor=parseInertDateRangeRequest(bytes);row.inertRequestFacts=descriptor;
+					if(descriptor.known===true){const handle=teamStore.retain({id,descriptor});if(handle)requestHandles.set(id,handle);}
+				}
+				if(requests.get(id)?.headerFieldSha256?.[teamReplayHeader]!==null)teamDispatch?.requestEOF(id,{encodedBytes:row.bytes,bodySha256:row.bodySha256});
+			}catch{shapeErrors++;row.shape={known:false,jsonParsed:false,reason:"request-shape-unavailable"};}
 				finally{shapeRelease(row);shapePendingParses--;}});
 		},
 		requestBodyFailure(id,kind){
@@ -1573,7 +1706,7 @@ export function createProxyControlCollector({
 						const reason=["unsupported-original-buffer","original-byte-limit","unsupported-bom-prefix","projected-byte-limit"].includes(error?.message) ? error.message : "projection-unavailable";
 						row.transportBodyReceipt.cdpTextProjection = {available:false,reason};
 					}
-					assignBodyProof(row, inspectRequiredFlightBody(bytes, bodyInspectionOptions(row,compiledCachedNavigations,compiledBinding)), "proxy-natural-eof", row.transportBodyReceipt.bodySha256);
+					assignBodyProof(row, inspectCollectedFlightBody(row,bytes,compiledCachedNavigations,compiledBinding,temporaryInspectionFor), "proxy-natural-eof", row.transportBodyReceipt.bodySha256);
 				} catch {
 					row.bodyProof = { complete: false, reason: "proxy-body-unavailable" };
 				} finally {
@@ -1616,6 +1749,7 @@ export function createProxyControlCollector({
 		snapshot() {
 			return {
 				installed,
+                temporaryValues:{condition:temporaryValueObservation,store:teamStore.snapshot(),manualDispatch:teamDispatch?.snapshot() ?? null},
 				...(shapeConfiguration?{requestShapeDiagnostics:shapeSnapshot()}:{}),
 				headerCensus:headerCensus.snapshot(),
 				headerLifetime:{protocol:"owned-context-upstream-header-lifetime-v1",contextId,installation:transportInstallation,closure:transportClosure},
@@ -1632,18 +1766,18 @@ export function createProxyControlCollector({
 
 const progressTechnicalId=value=>typeof value==="string" && /^[A-Za-z0-9._:-]{1,256}$/.test(value);
 /** Mixed only: actual public CDP identities, never private Puppeteer fields or temporal joins. */
-export async function createMixedDocumentAcknowledgment({session,contextId,origin,generation}) {
+export async function createMixedDocumentAcknowledgment({session,contextId,origin,generation,onSourceEvent}) {
  const contexts=new Map(),documents=[],executionEvents=[];let executionEventOrdinal=0,documentEventOrdinal=0,errors=0,overflow=0,closed=false,installed=false;
  const listeners=new Map();
  const on=(name,read)=>{const listener=value=>{if(closed){errors++;return;}try{read(value);}catch{errors++;}};session.on(name,listener);listeners.set(name,listener);};
- on("Runtime.executionContextCreated",({context})=>{executionEventOrdinal++;if(!Number.isSafeInteger(context?.id) || !progressTechnicalId(context.uniqueId) || typeof context.auxData?.isDefault!=="boolean" || !progressTechnicalId(context.auxData.frameId)){errors++;return;}if(documents.length+executionEvents.length>=controlCancellationPolicy.recordLimit || contexts.has(context.id)){overflow++;return;}contexts.set(context.id,{id:context.id,uniqueId:context.uniqueId,frameId:context.auxData.frameId,isDefault:context.auxData.isDefault});executionEvents.push({ordinal:executionEventOrdinal,event:"created",executionContextId:context.id,uniqueId:context.uniqueId,frameId:context.auxData.frameId,isDefault:context.auxData.isDefault});});
+ on("Runtime.executionContextCreated",({context})=>{executionEventOrdinal++;if(!Number.isSafeInteger(context?.id) || !progressTechnicalId(context.uniqueId) || typeof context.auxData?.isDefault!=="boolean" || !progressTechnicalId(context.auxData.frameId)){errors++;return;}if(documents.length+executionEvents.length>=controlCancellationPolicy.recordLimit || contexts.has(context.id)){overflow++;return;}contexts.set(context.id,{id:context.id,uniqueId:context.uniqueId,frameId:context.auxData.frameId,isDefault:context.auxData.isDefault});executionEvents.push({ordinal:executionEventOrdinal,event:"created",executionContextId:context.id,uniqueId:context.uniqueId,frameId:context.auxData.frameId,isDefault:context.auxData.isDefault});if(context.auxData.isDefault)onSourceEvent?.();});
  on("Runtime.executionContextDestroyed",event=>{executionEventOrdinal++;if(!contexts.delete(event.executionContextId))errors++;if(documents.length+executionEvents.length>=controlCancellationPolicy.recordLimit){overflow++;return;}executionEvents.push({ordinal:executionEventOrdinal,event:"destroyed",executionContextId:event.executionContextId});});
  on("Runtime.executionContextsCleared",()=>{executionEventOrdinal++;contexts.clear();if(documents.length+executionEvents.length>=controlCancellationPolicy.recordLimit){overflow++;return;}executionEvents.push({ordinal:executionEventOrdinal,event:"cleared"});});
  on("Network.requestWillBeSent",event=>{
   if(event.type!=="Document")return;documentEventOrdinal++;
   if(documents.length+executionEvents.length>=controlCancellationPolicy.recordLimit){overflow++;return;}
   const identity=controlRequestIdentity(contextId,event.request?.url,event.request?.method ?? "GET",event.request?.headers);
-  documents.push({ordinal:documentEventOrdinal,requestId:event.requestId,frameId:event.frameId,loaderId:event.loaderId,originSha256:identity.requestOriginSha256,documentGeneration:identity.documentGeneration});
+  documents.push({ordinal:documentEventOrdinal,requestId:event.requestId,frameId:event.frameId,loaderId:event.loaderId,originSha256:identity.requestOriginSha256,documentGeneration:identity.documentGeneration});onSourceEvent?.();
  });
  try{await session.send("Runtime.enable");installed=true;}catch{errors++;}
  const frame=async()=>{

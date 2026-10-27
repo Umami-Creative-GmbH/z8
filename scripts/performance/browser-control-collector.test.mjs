@@ -1,3 +1,4 @@
+import { temporaryValueObservation } from "./team-temporary-value-authority.mjs";
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import { runInNewContext } from "node:vm";
@@ -320,7 +321,7 @@ test("native end metadata reads controller registrations and public bytes within
 		await mkdir(join(dir,".next"));await mkdir(join(dir,"public/lib"),{recursive:true});
 		for(const file of ["sw.js","lib/offline-queue-db.js","lib/sync-service.js","lib/clock-command-dispatch.js"])await writeFile(join(dir,"public",file),"SYNTHETIC");
 		const build="c".repeat(40),bytes=Buffer.from(JSON.stringify({config:{deploymentId:build,experimental:{cachedNavigations:true}}})),manifestPath=join(dir,".next/required-server-files.json");await writeFile(manifestPath,bytes);
-		const binding=await readBrowserControlBinding({manifestPath,plan:{runtime:{build,browserControl:{policy:controlCancellationPolicy,browserRevision:chromiumSWRRevision,compiledCachedNavigations:true,compiledManifestSha256:createHash("sha256").update(bytes).digest("hex")}}}});
+		const binding=await readBrowserControlBinding({manifestPath,plan:{runtime:{build,browserControl:{policy:controlCancellationPolicy,temporaryValueObservation:structuredClone(temporaryValueObservation),originalTeamSource:null,browserRevision:chromiumSWRRevision,compiledCachedNavigations:true,compiledManifestSha256:createHash("sha256").update(bytes).digest("hex")}}}});
 		let queries=0;const worker={scriptURL:`${origin}/sw.js`,state:"activated"};
 		const page={evaluate:async fn=>runInNewContext(`(${fn.toString()})()`,{navigator:{serviceWorker:{controller:worker,getRegistrations:async()=>{queries++;return[{scope:`${origin}/`,active:worker,waiting:null,installing:null}];},get ready(){throw Error("Must not await ready");}}},location:{origin},isSecureContext:true})};
 		const result=await captureNativeEndMetadata({page,binding,origin,deadlineMs:performance.now()+10000});
@@ -345,7 +346,7 @@ test("normal admission binds the actual manifest before IO and actual browser re
 		const manifestPath = join(dir, "required-server-files.json"), build = "c".repeat(40);
 		const bytes = Buffer.from(JSON.stringify({ config: { deploymentId: build, basePath:"",output:"standalone",experimental: { cachedNavigations: true } } }));
 		await writeFile(manifestPath, bytes);
-		const browserControl = { policy: controlCancellationPolicy, browserRevision: chromiumSWRRevision,
+		const browserControl = { policy: controlCancellationPolicy, temporaryValueObservation:structuredClone(temporaryValueObservation),originalTeamSource:null, browserRevision: chromiumSWRRevision,
 			compiledCachedNavigations: true, compiledManifestSha256: createHash("sha256").update(bytes).digest("hex") };
 		const plan = { runtime: { build, browserControl } };
 		const binding = await readBrowserControlBinding({ plan, manifestPath });
@@ -374,7 +375,7 @@ test("browser and no-follow proxy retain independent routing source digests whil
 	try{
 	const manifestPath=join(dir,"required-server-files.json"),build="b".repeat(40),bytes=Buffer.from(JSON.stringify({config:{deploymentId:build,basePath:"",output:"standalone",experimental:{cachedNavigations:true}}}));
 	await writeFile(manifestPath,bytes);
-	const compiledBinding=await readBrowserControlBinding({manifestPath,plan:{runtime:{build,browserControl:{policy:controlCancellationPolicy,browserRevision:chromiumSWRRevision,compiledCachedNavigations:true,compiledManifestSha256:createHash("sha256").update(bytes).digest("hex")}}}});
+	const compiledBinding=await readBrowserControlBinding({manifestPath,plan:{runtime:{build,browserControl:{policy:controlCancellationPolicy,temporaryValueObservation:structuredClone(temporaryValueObservation),originalTeamSource:null,browserRevision:chromiumSWRRevision,compiledCachedNavigations:true,compiledManifestSha256:createHash("sha256").update(bytes).digest("hex")}}}});
 	const actualUrl=origin+"/en/PRIVATE_PATH?_rsc=PRIVATE_MARKER&a=PRIVATE_QUERY+b&a=c&2=z";
 	const routeHeaders={...headers,"next-router-segment-prefetch":"/_tree"},protocolSources=await primaryProtocolIdentity();
 	const expectedSearch="?2=z&a=PRIVATE_QUERY%20b&a=c",hash=value=>createHash("sha256").update(value).digest("hex");
@@ -427,7 +428,7 @@ test("Native pre-IO public binding uses reviewed expected files rather than qual
 		const manifestSha=createHash("sha256").update(manifest).digest("hex");
 		const nativePublicSources={protocol:"qualified-serving-worker-sources-v1",compiledBuild:build,compiledManifestSha256:manifestSha,
 			files:files.map(file=>({file,bytes:18,sha256:createHash("sha256").update("reviewed-synthetic").digest("hex"),gitBlob:"d".repeat(40)}))};
-		const plan={runtime:{build,browserControl:{policy:controlCancellationPolicy,browserRevision:chromiumSWRRevision,compiledCachedNavigations:true,compiledManifestSha256:manifestSha,nativePublicSources}}};
+		const plan={runtime:{build,browserControl:{policy:controlCancellationPolicy,temporaryValueObservation:structuredClone(temporaryValueObservation),originalTeamSource:null,browserRevision:chromiumSWRRevision,compiledCachedNavigations:true,compiledManifestSha256:manifestSha,nativePublicSources}}};
 		assert.deepEqual((await readBrowserControlBinding({plan,manifestPath})).nativePublicSources,nativePublicSources);
 		await writeFile(join(dir,"public/sw.js"),"changed-synthetic");
 		await assert.rejects(readBrowserControlBinding({plan,manifestPath}),/independently qualified/);
@@ -981,7 +982,7 @@ test("the actual compiled unmarked fallback is passed identically to browser and
 });
 
 test("segment readers receive actual request/response facts and the verified compiled deployment binding", async()=>{
-	const compiledBinding={policy:controlCancellationPolicy,browserRevision:chromiumSWRRevision,compiledCachedNavigations:true,
+	const compiledBinding={policy:controlCancellationPolicy,temporaryValueObservation:structuredClone(temporaryValueObservation),originalTeamSource:null,browserRevision:chromiumSWRRevision,compiledCachedNavigations:true,
 		compiledManifestSha256:"c".repeat(64),compiledBuild:"b".repeat(40),manifestVerified:true};
 	const staged='0:{"t":{"t":{"s":"","d":{"r":null,"p":"$@3","v":null,"s":"$4"}}},"a":"$@5","u":"$@6"}\n3:"$undefined"\n4:X\n4:60\n4:C\n5:null\n6:false\n';
 	const requestHeaders={...headers,"next-router-segment-prefetch":"/_index"};
@@ -989,7 +990,7 @@ test("segment readers receive actual request/response facts and the verified com
 	for(const missing of [null,"compiledBinding","x-nextjs-postponed","x-nextjs-deployment-id","RSC","next-router-prefetch","next-router-segment-prefetch"]){
 		const actualRequest={...requestHeaders},actualResponse={...segmentHeaders};
 		delete actualRequest[missing]; delete actualResponse[missing];
-		const options={contextId,compiledCachedNavigations:true,compiledBinding:missing==="compiledBinding"?undefined:compiledBinding};
+		const options={contextId,origin,compiledCachedNavigations:true,compiledBinding:missing==="compiledBinding"?undefined:compiledBinding};
 		const proxy=createProxyControlCollector(options); proxy.installed();
 		const collector=createBrowserControlCollector({...options,origin,proxyObservation:proxy.snapshot,
 			readBody:async()=>({body:staged,base64Encoded:false})}); collector.installed();
@@ -1213,7 +1214,7 @@ async function requestShapeTestBinding() {
  const manifest=Buffer.from(JSON.stringify({config:{deploymentId:build,experimental:{cachedNavigations:true}}}));
  await mkdir(join(directory,"server"));await writeFile(manifestPath,manifest);await writeFile(join(directory,"server/server-reference-manifest.json"),registry);
  const diagnostic={protocol:"request-shape-diagnostic-v1",compiledBuild:build,compiledManifestSha256:segmentHash(manifest),actionRegistrySha256:segmentHash(registry),actionHeaderSha256:segmentHash(actionId),actionName:"getTeamPerformanceData"};
- const plan={runtime:{build,browserControl:{policy:controlCancellationPolicy,browserRevision:chromiumSWRRevision,compiledCachedNavigations:true,compiledManifestSha256:segmentHash(manifest),requestShapeDiagnostic:diagnostic}}};
+ const plan={runtime:{build,browserControl:{policy:controlCancellationPolicy,temporaryValueObservation:structuredClone(temporaryValueObservation),originalTeamSource:null,browserRevision:chromiumSWRRevision,compiledCachedNavigations:true,compiledManifestSha256:segmentHash(manifest),requestShapeDiagnostic:diagnostic}}};
  const binding=await readBrowserControlBinding({plan,manifestPath});return {directory,manifestPath,plan,binding,actionId};
 }
 const segmentHash=value=>createHash("sha256").update(value).digest("hex");

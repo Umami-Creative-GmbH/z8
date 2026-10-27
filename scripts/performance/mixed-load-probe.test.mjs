@@ -390,4 +390,22 @@ test('NEW legacy authority cannot override CSS-hidden, aria-disabled or effectiv
 }
 
 test('unbranded/copy/raw legacy metadata never supplies direct clock authority',()=>{for(const binding of [undefined,null,false,{},Object.freeze({manifestVerified:true,browserVerified:true,compiledBuild:'b'.repeat(40),legacyClockReadiness:{qualified:true}})])assert.equal(legacyClockReadinessAuthority(binding,{origin:'http://localhost',phase:'baseline'}),null);});
-test('all four protocol closures include every newly imported legacy source byte',async()=>{const{primaryProtocolIdentity,companionProtocolIdentity,budgetProtocolIdentity,mixedProtocolIdentity}=await import('./protocol-fingerprints.mjs');const maps=await Promise.all([primaryProtocolIdentity(),companionProtocolIdentity(),budgetProtocolIdentity(),mixedProtocolIdentity()]);assert.deepEqual(maps.map(map=>Object.keys(map).length),[19,25,27,16]);for(const map of maps)assert.match(map['legacy-clock-readiness.mjs'],/^[a-f0-9]{64}$/);assert.equal(new Set(maps.map(map=>map['legacy-clock-readiness.mjs'])).size,1);});
+test('all four protocol closures include every newly imported legacy source byte',async()=>{const{primaryProtocolIdentity,companionProtocolIdentity,budgetProtocolIdentity,mixedProtocolIdentity}=await import('./protocol-fingerprints.mjs');const maps=await Promise.all([primaryProtocolIdentity(),companionProtocolIdentity(),budgetProtocolIdentity(),mixedProtocolIdentity()]);assert.deepEqual(maps.map(map=>Object.keys(map).length),[21,27,29,18]);for(const map of maps)assert.match(map['legacy-clock-readiness.mjs'],/^[a-f0-9]{64}$/);assert.equal(new Set(maps.map(map=>map['legacy-clock-readiness.mjs'])).size,1);});
+test("manual team dispatch arms before exactly one existing evaluate and records completion", async () => {
+ const {dispatchMixedAnalyticsRequest}=await import("./mixed-load-probe.mjs");
+ const order=[],handle={};let actual;
+ const observation={armTeamReplay(input){order.push("arm");assert.equal(input.traceId,"a".repeat(32));assert.equal(input.url,"http://127.0.0.1:4000/en/team");return handle;},teamReplayHeaders(value){assert.equal(value,handle);order.push("headers");return {"x-z8-fixture-replay-id":"b".repeat(32)};},finishTeamReplay(value,{error}){assert.equal(value,handle);order.push(error?"failed":"finished");return true;}};
+ const page={async evaluate(_callback,input){order.push("evaluate");actual=input;return {status:200,text:"synthetic"};}};
+ const captured={path:"/en/team",body:"[]",headers:{"next-action":"c".repeat(40),"accept-language":"en"}};
+ assert.deepEqual(await dispatchMixedAnalyticsRequest({page,captured,readerKind:"team",requestId:"a".repeat(32),timeoutMs:90000,observation,origin:"http://127.0.0.1:4000"}),{status:200,text:"synthetic"});
+ assert.deepEqual(order,["arm","headers","evaluate","finished"]);
+ assert.equal(actual.body,captured.body);assert.equal(actual.timeoutMs,90000);assert.equal(actual.headers["accept-language"],"en");assert.equal(actual.headers["x-z8-fixture-replay-id"],"b".repeat(32));
+ assert.equal(Object.hasOwn(captured.headers,"x-z8-fixture-replay-id"),false);
+});
+test("manual team dispatch never sends when ownership is missing and preserves failures", async () => {
+ const {dispatchMixedAnalyticsRequest}=await import("./mixed-load-probe.mjs");let calls=0,finished=null;
+ const input={page:{async evaluate(){calls++;throw Error("PRIVATE_PAGE_SENTINEL");}},captured:{path:"/team",body:"[]",headers:{"next-action":"c".repeat(40)}},readerKind:"team",requestId:"a".repeat(32),timeoutMs:30000,origin:"http://127.0.0.1:4000"};
+ await assert.rejects(dispatchMixedAnalyticsRequest({...input,observation:{armTeamReplay(){return null;}}}),{message:"Mixed analytics dispatch is unavailable."});assert.equal(calls,0);
+ const handle={};await assert.rejects(dispatchMixedAnalyticsRequest({...input,observation:{armTeamReplay(){return handle;},teamReplayHeaders(){return {"x-z8-fixture-replay-id":"b".repeat(32)};},finishTeamReplay(value,facts){assert.equal(value,handle);finished=facts;return true;}}}),{message:"Mixed analytics dispatch is unavailable."});
+ assert.equal(calls,1);assert.deepEqual(finished,{error:true});
+});

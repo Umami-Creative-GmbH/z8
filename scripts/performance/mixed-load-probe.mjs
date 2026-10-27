@@ -216,6 +216,27 @@ function analyticsSummary(kind, payload) {
 	};
 }
 
+/** One existing manual request, with positive dispatch ownership recorded before evaluate. No retry or additional IO. */
+export async function dispatchMixedAnalyticsRequest({page,captured,readerKind,requestId,timeoutMs,observation,origin}) {
+	let handle=null,failed=true;
+	try {
+		const headers={...captured.headers,traceparent:traceparent(requestId)};
+		if(readerKind==="team") {
+			const entries=Object.entries(captured.headers ?? {}),action=entries.filter(([key])=>key.toLowerCase()==="next-action");
+			if(action.length!==1 || entries.some(([key])=>key.toLowerCase()==="x-z8-fixture-replay-id"))throw Error();
+			handle=observation.armTeamReplay({traceId:requestId,action:action[0][1],body:captured.body,url:new URL(captured.path,origin).href});
+			const replay=handle && observation.teamReplayHeaders(handle);
+			if(!replay)throw Error();
+			Object.assign(headers,replay);
+		}
+		const value=await page.evaluate(async input=>{
+			const response=await fetch(input.path,{method:"POST",headers:input.headers,body:input.body,credentials:"same-origin",signal:AbortSignal.timeout(input.timeoutMs)});
+			return {status:response.status,text:await response.text()};
+		},{...captured,timeoutMs,headers});
+		failed=false;return value;
+	} catch { throw Error("Mixed analytics dispatch is unavailable."); }
+	finally { if(handle && observation.finishTeamReplay(handle,{error:failed})!==true)throw Error("Mixed analytics dispatch observation is unavailable."); }
+}
 export const mixedBrowserCondition=Object.freeze({viewport:Object.freeze({width:1280,height:900}),timezone:"Europe/Berlin",locale:"en"});
 
 /** The same declared condition reaches actual browser requests and navigation's collector header delegate. */
@@ -557,7 +578,7 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 				overlap = null, observerOperationDeadline = null;
 			const workers = cleanup
 				? []
-				: readers.map(({ page, captured, reader }, index) =>
+				: readers.map(({ page, captured, reader, browserObservation }, index) =>
 						runMixedReader({
 							limit: 100,
 						stopped: async () => {
@@ -570,29 +591,7 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 									started = performance.now();
 								let result;
 								try {
-									const value = await page.evaluate(
-										async (input) => {
-											const response = await fetch(input.path, {
-												method: "POST",
-												headers: input.headers,
-												body: input.body,
-												credentials: "same-origin",
-												signal: AbortSignal.timeout(input.timeoutMs),
-											});
-											return {
-												status: response.status,
-												text: await response.text(),
-											};
-										},
-										{
-											...captured,
-											timeoutMs: timeout,
-											headers: {
-												...captured.headers,
-												traceparent: traceparent(requestId),
-											},
-										},
-									);
+									const value = await dispatchMixedAnalyticsRequest({page,captured,readerKind:reader.kind,requestId,timeoutMs:timeout,observation:browserObservation,origin});
 									const summary = analyticsSummary(
 										reader.kind,
 										publicResult(value.text),
