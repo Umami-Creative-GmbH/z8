@@ -1777,3 +1777,73 @@ test("different outlined paths to the same exact target are diagnostic-only and 
 	assert.ok(different.modelCostObservation.semanticObligations.conservativeOutlinedPathDifferences>0);
 	assert.doesNotMatch(JSON.stringify(different.modelCostObservation.diagnosticAllocation),/KNOWN|target|nested|\$1/);
 });
+
+test("Plain shadow summaries count nodes and the original LIFO pending peak without skipping visits",()=>{
+	const inspect=target=>inspectRequiredFlightBody(Buffer.from('#0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:{r:"$1:target",p:false,v:null}}}})+'\n1:'+JSON.stringify({target})+'\n'),{cachedNavigations:true});
+	for(const [target,nodes,pending] of [[{x:[null,null,null]},5,3],[{a:{b:{c:{d:null}}}},5,1],[{},1,0],[[],1,0],[[{a:[null,null]},null],6,2],[[null,{a:[null,null]}],6,3]]){
+		const result=inspect(target);assert.equal(result.complete,true);
+		const shadow=result.modelCostObservation.plainJsonShadow;
+		assert.equal(shadow.protocol,"plain-json-semantic-shadow-v1");assert.equal(shadow.skippingEnabled,false);
+		assert.equal(shadow.maxHitNodes,nodes);assert.equal(shadow.maxHitPending,pending);assert.ok(shadow.byRole.required.hits>0);
+	}
+});
+
+test("Plain shadow uses actual integer-key order and forecasts the descendant width boundary without changing it",()=>{
+	const prefix='#0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:{r:"$1:target",p:false,v:null}}}})+'\n';
+	const ordered=inspectRequiredFlightBody(Buffer.from(prefix+'1:{"target":{"2":{"a":[null,null]},"1":null}}\n'),{cachedNavigations:true});
+	assert.equal(ordered.complete,true);assert.equal(ordered.modelCostObservation.plainJsonShadow.maxHitNodes,6);assert.equal(ordered.modelCostObservation.plainJsonShadow.maxHitPending,3);
+	for(const [outside,widthExcluded,guard] of [[99997,0,"shared-model-work"],[99998,1,"queue-width"]]){
+		const values=Array(outside).fill(null);values.push("$1:target");
+		const result=inspectRequiredFlightBody(Buffer.from('0:'+JSON.stringify({a:values})+'\n1:{"target":{"x":[null,null,null]}}\n'),{action:true});
+		assert.equal(result.complete,false);assert.equal(result.reason,"model-limit");assert.equal(result.modelLimitObservation.guard,guard);
+		const shadow=result.modelLimitObservation.modelCostObservation.plainJsonShadow;
+		assert.equal(shadow.widthExclusions,widthExcluded);assert.equal(shadow.maxHitPending,3);assert.equal(shadow.inspectedExclusions,0);
+		assert.equal(shadow.skippingEnabled,false);
+	}
+});
+
+test("Plain shadow never promotes depth-only, borrowed, removed, opaque or protocol-token data",()=>{
+	const inspect=(target,rows="")=>inspectRequiredFlightBody(Buffer.from('#0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:{r:"$1:target",p:false,v:null}}}})+'\n1:'+JSON.stringify({target})+'\n'+rows),{cachedNavigations:true});
+	for(const target of [{known:"$$literal"},{known:"$undefined"},{known:"$NaN"},{known:"$Sreact.fragment"}]){
+		const result=inspect(target);assert.equal(result.complete,true);const shadow=result.modelCostObservation.plainJsonShadow;
+		assert.equal(shadow.maxHitNodes,0);assert.equal(shadow.byRole.required.hits,0);
+	}
+	const nonfinite=inspectRequiredFlightBody(Buffer.from('#0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:{r:"$1:target",p:false,v:null}}}})+'\n1:{"target":{"known":1e400}}\n'),{cachedNavigations:true});
+	assert.equal(nonfinite.complete,true);assert.equal(nonfinite.modelCostObservation.plainJsonShadow.maxHitNodes,0);assert.ok(nonfinite.modelCostObservation.plainJsonShadow.misses.depthOnly>0);
+	const alias=inspectRequiredFlightBody(Buffer.from('#0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:{r:"$Q2",p:false,v:null}}}})+'\n2:"$3"\n3:[["key","KNOWN"]]\n'),{cachedNavigations:true});
+	assert.equal(alias.complete,true);assert.ok(alias.modelCostObservation.plainJsonShadow.misses.provenance>0);
+	for(const target of [{bad:"$8"},["$","div",null,{bad:"$8"}]])assert.equal(inspect(target).complete,false);
+	const self=inspectRequiredFlightBody(Buffer.from('#0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:{r:"$1:leaf",p:false,v:null}}}})+'\n1:{"leaf":"KNOWN","self":"$1","target":{"known":"KNOWN"},"late":"$8"}\n'),{cachedNavigations:true});
+	assert.equal(self.complete,false,"A complete earlier child cannot make its failed parent ready.");
+	assert.equal(inspect(JSON.parse('{"__proto__":{"bad":"$8"}}')).complete,false);
+	for(const rows of ['2:T1,x','2:R\n2:C\n']){
+		const result=inspect({field:"$2"},rows);assert.equal(result.complete,true);assert.equal(result.modelCostObservation.plainJsonShadow.maxHitNodes,0);
+	}
+	assert.equal(inspect({field:"$2"},'2:o1,x').complete,false);
+});
+
+test("Plain shadow qualifies only the two data roles with exact provenance and does not promote a forced parent",()=>{
+	const encode=(r,marker="#")=>Buffer.from(marker+'0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:{r,p:marker==="~",v:null}}}})+'\n1:{"target":{"known":"KNOWN"}}\n2:I["module",[],"Export"]\n');
+	const r=[["$","$L2",null,"$1:target"],["$","div",null,{title:"$1:target"}]];
+	const data=inspectRequiredFlightBody(encode(r,"~"),{cachedNavigations:true,requestKind:"runtime-shell"});
+	assert.equal(data.complete,true,JSON.stringify(data));const shadow=data.modelCostObservation.plainJsonShadow;
+	assert.ok(shadow.byRole.required.hits>0);assert.ok(shadow.byRole["component-data"].hits>0);
+	const hits=shadow.byRole.required.hits+shadow.byRole["component-data"].hits;
+	assert.equal(shadow.flagStates.reduce((sum,count)=>sum+count,0),hits);assert.ok(shadow.flagStates.filter(count=>count>0).length>=2);
+	assert.equal(Object.values(shadow.ancestryKinds).reduce((sum,count)=>sum+count,0),hits);
+	const excluded=inspectRequiredFlightBody(encode("$1:target","~"),{cachedNavigations:true,requestKind:"runtime-shell"});
+	assert.equal(excluded.complete,true);assert.equal(excluded.modelCostObservation.plainJsonShadow.maxHitNodes,0);assert.ok(excluded.modelCostObservation.plainJsonShadow.misses.role>0);
+	const forced=inspectRequiredFlightBody(Buffer.from('#0:'+JSON.stringify({q:"",i:false,t:{t:{s:"en",d:{r:["$1","$1:known"],p:false,v:null}}}})+'\n1:{"known":"KNOWN"}\n'),{cachedNavigations:true});
+	assert.equal(forced.complete,true);assert.equal(forced.modelCostObservation.plainJsonShadow.maxHitNodes,0);assert.ok(forced.modelCostObservation.plainJsonShadow.misses.noFalseForce>0);
+	assert.doesNotMatch(JSON.stringify(shadow),/KNOWN|Export|module|\$[a-f0-9]/);
+});
+
+test("shadow opportunities never bypass global E action failures or independent typed postchecks",()=>{
+	const action=success=>Buffer.from('0:{"a":"$1:result"}\n1:'+JSON.stringify({result:{success,error:"PRIVATE"}})+'\n');
+	const good=inspectRequiredFlightBody(action(true),{action:true});assert.equal(good.complete,true);assert.ok(good.modelCostObservation.plainJsonShadow.byRole.required.hits>0);
+	const bad=inspectRequiredFlightBody(action(false),{action:true});assert.equal(bad.complete,false);assert.equal(bad.explicitActionFailure,true);assert.equal(bad.reason,"explicit-root-action-failure");
+	const framed=inspectRequiredFlightBody(Buffer.concat([action(true),Buffer.from('f:E{"digest":"PRIVATE"}\n')]),{action:true});assert.equal(framed.complete,false);assert.equal(framed.reason,"flight-server-error");
+	const navigation=s=>Buffer.from('#0:'+JSON.stringify({q:"",i:false,t:{t:{s,d:{r:"$1:target",p:false,v:null}}}})+'\n1:{"target":{"known":"KNOWN"}}\n');
+	const valid=inspectRequiredFlightBody(navigation("en"),{cachedNavigations:true});assert.equal(valid.complete,true);assert.ok(valid.modelCostObservation.plainJsonShadow.byRole.required.hits>0);
+	const invalid=inspectRequiredFlightBody(navigation(42),{cachedNavigations:true});assert.equal(invalid.complete,false);assert.equal(invalid.reason,"unsupported-navigation-transport");
+});

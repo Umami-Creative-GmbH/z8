@@ -134,6 +134,34 @@ function inspectFlightBody(
 	const semanticRoles=new Set(["root","required","transport","tree","data","tree-map","tree-map-model","tree-map-pair","output","cache-output","suspended-output","fallback-output","component-data","element-type","element-key","host-props","cache-host-props","fallback-host-props","suspense-props","suspended-host-props"]);
 	const semanticArrivals=new Set(["root-or-required","collection-reference","model-reference","outlined-reference","element-type","element-key","element-props","element-field","typed-data-r","array-output","element-children","element-fallback","own-field"]);
 	const semanticCounts={observations:0,contexts:0,first:0,repeatedExact:0,sameValueDifferentObligation:0,unknown:0,overflow:0,committedPopWork:0,committedScheduledChildren:0,selectedAnchorArrivals:0,sourceKnownAnchorArrivals:0,conservativeOutlinedPathDifferences:0};
+	const plainSummaryProtocol="plain-json-summary-v1";
+	const plainJsonShadow={protocol:"plain-json-semantic-shadow-v1",skippingEnabled:false,published:0,maxPublishedNodes:0,maxPublishedPending:0,maxHitNodes:0,maxHitPending:0,inclusiveHitNodes:0,
+		byRole:{required:{lookups:0,hits:0},"component-data":{lookups:0,hits:0}},
+		misses:{role:0,provenance:0,flags:0,ancestry:0,noFalseForce:0,depthOnly:0,summaryBounds:0},widthExclusions:0,inspectedExclusions:0,bothBoundsPass:0,
+		binUpperBounds:[1,8,64,512,4096,100000,100001],nodeBins:Array(7).fill(0),pendingBins:Array(7).fill(0),flagStates:Array(256).fill(0),ancestryKinds:{absent:0,undefined:0,empty:0,nonempty:0}};
+	const plainSummaryBin=value=>plainJsonShadow.binUpperBounds.findIndex(bound=>value<=bound);
+	const notePlainShadow=(entry,outsideQueue,inspected)=>{
+		const row=Object.hasOwn(plainJsonShadow.byRole,entry.role)?plainJsonShadow.byRole[entry.role]:null;if(!row){plainJsonShadow.misses.role++;return;}row.lookups++;
+		const origin=entry.observationOrigin;
+		if(!origin || origin.tag!==null || origin.stream!==false || binaryValues.has(entry.value) || opaqueText.has(entry.value)){plainJsonShadow.misses.provenance++;return;}
+		let flagState=0;
+		for(const [index,key] of ["directEmbeddedOutput","fromTypedOutput","rArrayOutput","insideRArray"].entries()){
+			const descriptor=Object.getOwnPropertyDescriptor(entry,key);if(descriptor&&(!Object.hasOwn(descriptor,"value")||descriptor.value!==undefined&&typeof descriptor.value!=="boolean")){plainJsonShadow.misses.flags++;return;}
+			flagState+=(descriptor?descriptor.value===undefined?1:descriptor.value===false?2:3:0)*4**index;
+		}
+		const ancestry=Object.getOwnPropertyDescriptor(entry,"fallbackReferences");
+		if(ancestry&&(!Object.hasOwn(ancestry,"value")||ancestry.value!==undefined&&(!(ancestry.value instanceof Set)||ancestry.value.size>64||![...ancestry.value].every(canonicalFlightId)))){plainJsonShadow.misses.ancestry++;return;}
+		const certificate=literalParentChecks.get(entry.value)?.get(false);
+		if(!certificate){plainJsonShadow.misses.noFalseForce++;return;}
+		const summary=certificate.plainJsonSummary;
+		if(!summary){plainJsonShadow.misses.depthOnly++;return;}
+		if(summary.protocol!==plainSummaryProtocol||!Number.isSafeInteger(summary.nodes)||summary.nodes<1||summary.nodes>100000||!Number.isSafeInteger(summary.maxPendingDelta)||summary.maxPendingDelta<0||summary.maxPendingDelta>100000){plainJsonShadow.misses.summaryBounds++;return;}
+		row.hits++;plainJsonShadow.maxHitNodes=Math.max(plainJsonShadow.maxHitNodes,summary.nodes);plainJsonShadow.maxHitPending=Math.max(plainJsonShadow.maxHitPending,summary.maxPendingDelta);plainJsonShadow.inclusiveHitNodes+=summary.nodes;
+		plainJsonShadow.nodeBins[plainSummaryBin(summary.nodes)]++;plainJsonShadow.pendingBins[plainSummaryBin(summary.maxPendingDelta)]++;plainJsonShadow.flagStates[flagState]++;
+		plainJsonShadow.ancestryKinds[!ancestry?"absent":ancestry.value===undefined?"undefined":ancestry.value.size===0?"empty":"nonempty"]++;
+		const width=outsideQueue+summary.maxPendingDelta<=100000,logical=inspected+summary.nodes-1<=100000;
+		if(!width)plainJsonShadow.widthExclusions++;if(!logical)plainJsonShadow.inspectedExclusions++;if(width&&logical)plainJsonShadow.bothBoundsPass++;
+	};
 	let semanticPhase="pre",semanticPreWork=0,semanticPostStart=0,semanticGuardOnlyWork=0,activeSemanticIteration=null;
 	const reasonBits={seenId:1,seenContainer:2,activeAnchor:4,elementSkip:8,opaque:16,removedField:32,parentCertificate:64};
 	const chargeModel=(site,atDepth=null)=>{const result=++budget.models,row=costPhases[site];chargedWork++;row.work++;if(Number.isInteger(atDepth)&&atDepth>=0&&atDepth<=64)row.depthWork[atDepth]++;else row.unknownDepthWork++;return result;};
@@ -207,7 +235,7 @@ function inspectFlightBody(
 		const work=budget.models-candidate.start;row.count++;row.ready+=ready?1:0;row.work+=work;row.maxWork=Math.max(row.maxWork,work);row.maxSpan=Math.max(row.maxSpan,span);
 	};
 	const modelCostSnapshot=()=>({protocol:"bounded-model-cost-observation-v1",inspectionDepth:depth,chargedWork,sharedModelSteps:budget.models,localModelSteps:budget.models-modelBudgetAtStart,
-		embeddedWork:budget.models-modelBudgetAtStart-chargedWork,phases:structuredClone(Object.values(costPhases)),dependencies:{...dependencyCosts},sharedDiagnosticContexts:diagnosticContextCount,sharedDiagnosticIdentities:dependencyOrdinalCount,diagnosticAllocation:{protocol:"fixed-reference-anchor-reservation-v1",...structuredClone(diagnosticLanes)},semanticObligations:semanticSnapshot(),
+		embeddedWork:budget.models-modelBudgetAtStart-chargedWork,phases:structuredClone(Object.values(costPhases)),dependencies:{...dependencyCosts},sharedDiagnosticContexts:diagnosticContextCount,sharedDiagnosticIdentities:dependencyOrdinalCount,diagnosticAllocation:{protocol:"fixed-reference-anchor-reservation-v1",...structuredClone(diagnosticLanes)},semanticObligations:semanticSnapshot(),plainJsonShadow:structuredClone(plainJsonShadow),
 		candidates:structuredClone([...candidateCosts.values()].sort((a,b)=>a.reasonMask-b.reasonMask)),
 		activeCandidates:costCandidates.map(candidate=>({reasonMask:candidate.reasonMask,work:budget.models-candidate.start,span:candidate.scope.maxDepth-candidate.depth})),
 		truncated:dependencyCosts.identityOverflow>0 || dependencyCosts.contextOverflow>0 || dependencyCosts.unknownContext>0});
@@ -492,10 +520,20 @@ function inspectFlightBody(
 		if (Object.hasOwn(value,"__proto__")) { referenceSensitiveEpoch++; borrowReadiness("removedField"); }
 		const containers = new Set([...seen,value]);
 		parentCheckDepths.push(scope);
-		let ready;
-		try { ready = Object.keys(value).filter(key=>key!=="__proto__").every(key=> {
+		let ready,plain=false,plainNodes=1,plainPending=0,plainRootKeys=0;
+		try { const keys=Object.keys(value).filter(key=>key!=="__proto__");
+			plain=forceElement===false&&!Object.hasOwn(value,"__proto__")&&(Array.isArray(value)?Object.getPrototypeOf(value)===Array.prototype&&keys.length===value.length:Object.getPrototypeOf(value)===Object.prototype);
+			plainPending=plainRootKeys=keys.length;
+			ready = keys.every((key,index)=> {
 			const descriptor=Object.getOwnPropertyDescriptor(value,key);
-			return descriptor && Object.hasOwn(descriptor,"value") && eagerParent(descriptor.value,false,containers,depth + 1,referenceEdges,jsonDepth + 1,originId);
+			const childReady=descriptor && Object.hasOwn(descriptor,"value") && eagerParent(descriptor.value,false,containers,depth + 1,referenceEdges,jsonDepth + 1,originId);
+			if(plain&&childReady){
+				const child=descriptor.value,scalar=child===null||typeof child==="boolean"||typeof child==="number"&&Number.isFinite(child)||typeof child==="string"&&!child.startsWith("$");
+				const summary=scalar?{nodes:1,maxPendingDelta:0}:child&&typeof child==="object"?literalParentChecks.get(child)?.get(false)?.plainJsonSummary:null;
+				if(Array.isArray(value)&&key!==String(index)||!summary||!scalar&&summary.protocol!==plainSummaryProtocol||!Number.isSafeInteger(summary.nodes)||summary.nodes<1||summary.nodes>100001||!Number.isSafeInteger(summary.maxPendingDelta)||summary.maxPendingDelta<0||summary.maxPendingDelta>100001)plain=false;
+				else{plainNodes=Math.min(100001,plainNodes+summary.nodes);plainPending=Math.min(100001,Math.max(plainPending,index+summary.maxPendingDelta));}
+			}
+			return childReady;
 		}); } finally { parentCheckDepths.pop();costCandidates.pop();recordCandidateCost(costCandidate,ready,scope.maxDepth-depth); }
 		if (ready) closedEagerMemo.closures++;
 		const containsCanonicalWrappers=canonicalWrapperEpoch!==candidateWrapperEpoch;
@@ -523,7 +561,9 @@ function inspectFlightBody(
 		if (ready && referenceSensitiveEpoch === eligibility) {
 			let byForce = literalParentChecks.get(value);
 			if (!byForce) literalParentChecks.set(value,byForce=new Map());
-			byForce.set(forceElement===true,{depthSpan:scope.maxDepth-depth});
+			const plainJsonSummary=plain&&forceElement===false&&borrowEpoch===candidateEpoch?{protocol:plainSummaryProtocol,nodes:plainNodes,maxPendingDelta:plainPending,rootKeys:plainRootKeys}:null;
+			if(plainJsonSummary){plainJsonShadow.published++;plainJsonShadow.maxPublishedNodes=Math.max(plainJsonShadow.maxPublishedNodes,plainNodes);plainJsonShadow.maxPublishedPending=Math.max(plainJsonShadow.maxPublishedPending,plainPending);}
+			byForce.set(forceElement===true,{depthSpan:scope.maxDepth-depth,...(plainJsonSummary?{plainJsonSummary}:{})});
 		}
 		return ready;
 	};
@@ -1063,6 +1103,7 @@ function inspectFlightBody(
 			});
 		} else if (value && typeof value === "object" && !opaqueText.has(value)) {
 			if (Object.keys(value).length + queue.length > 100000) return unknown("model-limit",{modelLimitObservation:modelLimitObservation("semantic-queue-size","queue-width",Object.keys(value).length)});
+			notePlainShadow(entry,queue.length,inspected);
 			const output = ["output", "cache-output", "suspended-output", "fallback-output"].includes(role) || (embeddedPartialScope && role === "component-data");
 			if (shellScope && output && Array.isArray(value) && value[0] === "$" && value.length !== 4)
 				return unknown("unsupported-runtime-shell-output");
