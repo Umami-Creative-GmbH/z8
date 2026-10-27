@@ -3,13 +3,110 @@ import test from "node:test";
 import { createHash } from "node:crypto";
 import { createActionResultObserver } from "./action-result-observer.mjs";
 import { testBrowserEvidence } from "./control-cancellation-test-fixtures.mjs";
+import { openOriginalTeamBodyInspection, originalTeamBodyObservation } from "./team-temporary-value-authority.mjs";
 import {
 	inspectRequiredFlightBody,
 	classifyControlCancellations,
 	chromiumSWRRevision,
 	cleanBrowserFailureEvidence,
 	knownNativePublicSources,
+	knownBrowserControlMetadata,
+	matchingBrowserControlBinding,
+	controlCancellationPolicy,
 } from "./control-cancellation-evidence.mjs";
+
+test("temporary inspection closes real observer capability and retains mandatory zero-use action facts",()=>{
+	const bytes=Buffer.from('0:{"a":{"success":true,"data":null}}\n');
+	const inspection=openOriginalTeamBodyInspection({bodySha256:segmentDigest(bytes),decodedBytes:bytes.length});
+	const proof=inspectRequiredFlightBody(bytes,{action:true,temporaryValueInspection:inspection});
+	assert.equal(proof.complete,true);
+	assert.deepEqual(proof.temporaryValues,{protocol:"original-team-temporary-values-v1",referenceCount:0,binding:null,obligations:[]});
+	assert.deepEqual(originalTeamBodyObservation(inspection),{protocol:"original-team-body-value-observation-v1",bodySha256:segmentDigest(bytes),decodedBytes:bytes.length,lookupAttempted:false,valueUsed:false,bindingSha256:null,closed:true});
+});
+
+test("temporary inspection observes unresolved T attempts without granting unqualified value authority",()=>{
+	for(const token of ["$T0:0","$T0:1","$T1:0"]){
+		const bytes=Buffer.from('0:'+JSON.stringify({a:{success:true,data:{dateRange:token}}})+'\n');
+		const inspection=openOriginalTeamBodyInspection({bodySha256:segmentDigest(bytes),decodedBytes:bytes.length});
+		const proof=inspectRequiredFlightBody(bytes,{action:true,temporaryValueInspection:inspection});
+		assert.equal(proof.complete,false);
+		assert.equal(proof.modelReference.prefix,"T");
+		assert.equal(originalTeamBodyObservation(inspection).lookupAttempted,true);
+		assert.equal(originalTeamBodyObservation(inspection).valueUsed,false);
+	}
+});
+
+test("temporary action replay requires the actual closed no-value row and rejects missing or downgraded facts",()=>{
+	const bytes=Buffer.from('0:{"a":{"success":true,"data":null}}\n');
+	const inspection=openOriginalTeamBodyInspection({bodySha256:segmentDigest(bytes),decodedBytes:bytes.length});
+	const proof=inspectRequiredFlightBody(bytes,{action:true,temporaryValueInspection:inspection});
+	const input=cancellationFixture();
+	for(const row of [input.failures[0],input.proxy[0]]) Object.assign(row,{method:"POST",requestKind:"action",action:true,bodyProof:proof,temporaryValueObservation:originalTeamBodyObservation(inspection)});
+	Object.assign(input.failures[0],{bodyReadbackComplete:true,prefetch:false});
+	Object.assign(input.proxy[0],{complete:true,canceled:false});
+	const classified=classifyControlCancellations(input);
+	assert.equal(classified.provenControls,1);
+	assert.equal(cleanBrowserFailureEvidence(classified,1),true);
+	assert.deepEqual(classified.records[0].proof.failure.bodyProof.temporaryValues,proof.temporaryValues);
+	for(const target of ["failure","packet"]) for(const mutate of [
+		row=>delete row.bodyProof.temporaryValues,
+		row=>delete row.temporaryValueObservation,
+		row=>row.temporaryValueObservation.valueUsed=true,
+		row=>row.temporaryValueObservation.bindingSha256="a".repeat(64),
+		row=>row.temporaryValueObservation.bodySha256="a".repeat(64),
+		row=>row.temporaryValueObservation.closed=false,
+	]){
+		const evidence=structuredClone(classified);mutate(evidence.records[0].proof[target]);
+		assert.equal(cleanBrowserFailureEvidence(evidence,1),false,target);
+	}
+});
+
+test("temporary inspection closes early framing and genuine-error returns and thrown option reads",()=>{
+	for(const bytes of [Buffer.from("invalid"),Buffer.from('0:{"a":null}\n1:E{"digest":"synthetic"}\n'),Buffer.from('0:{"a":{"success":false,"error":"synthetic"}}\n')]){
+		const inspection=openOriginalTeamBodyInspection({bodySha256:segmentDigest(bytes),decodedBytes:bytes.length});
+		const proof=inspectRequiredFlightBody(bytes,{action:true,temporaryValueInspection:inspection});
+		assert.equal(proof.complete,false);
+		assert.equal(originalTeamBodyObservation(inspection).closed,true);
+		if(bytes.includes(Buffer.from("1:E"))) assert.equal(proof.serverErrors,1);
+		if(bytes.includes(Buffer.from('"success":false'))) assert.equal(proof.explicitActionFailure,true);
+	}
+	const bytes=Buffer.from('0:{"a":null}\n'),inspection=openOriginalTeamBodyInspection({bodySha256:segmentDigest(bytes),decodedBytes:bytes.length}),error=Error("synthetic option failure");
+	assert.throws(()=>inspectRequiredFlightBody(bytes,{temporaryValueInspection:inspection,get action(){throw error;}}),value=>value===error);
+	assert.equal(originalTeamBodyObservation(inspection).closed,true);
+});
+
+test("temporary inspection copies expired and wrong-body handles never resolve or complete through forged closure",()=>{
+	const bytes=Buffer.from('0:{"a":{"dateRange":"$T0:0"}}\n');
+	const input={bodySha256:segmentDigest(bytes),decodedBytes:bytes.length};
+	const original=openOriginalTeamBodyInspection(input);
+	assert.equal(inspectRequiredFlightBody(bytes,{action:true,temporaryValueInspection:{...original}}).complete,false);
+	assert.equal(originalTeamBodyObservation(original),null);
+	assert.equal(inspectRequiredFlightBody(bytes,{action:true,temporaryValueInspection:original}).complete,false);
+	assert.equal(originalTeamBodyObservation(original).valueUsed,false);
+	assert.equal(inspectRequiredFlightBody(bytes,{action:true,temporaryValueInspection:original}).complete,false);
+	const wrong=openOriginalTeamBodyInspection({...input,bodySha256:"a".repeat(64)});
+	assert.equal(inspectRequiredFlightBody(bytes,{action:true,temporaryValueInspection:wrong}).complete,false);
+	assert.equal(originalTeamBodyObservation(wrong).lookupAttempted,false);
+	assert.equal(originalTeamBodyObservation(wrong).closed,true);
+});
+
+test("temporary metadata cannot omit the shared observation contract or the explicit unsupported source profile",()=>{
+	const metadata={policy:controlCancellationPolicy,browserRevision:chromiumSWRRevision,compiledCachedNavigations:true,compiledManifestSha256:"c".repeat(64),
+		temporaryValueObservation:{protocol:"original-team-temporary-value-observation-v1",replayHeader:"x-z8-fixture-replay-id",documentJournal:"actual-cdp-document-journal-v1"},originalTeamSource:null};
+	assert.equal(knownBrowserControlMetadata(metadata),true);
+	for(const mutate of [value=>delete value.temporaryValueObservation,value=>delete value.originalTeamSource,value=>value.originalTeamSource=undefined,value=>value.temporaryValueObservation.replayHeader="other",value=>value.temporaryValueObservation.extra=true]){
+		const changed=structuredClone(metadata);mutate(changed);assert.equal(knownBrowserControlMetadata(changed),false);
+	}
+	const runtime={build:"b".repeat(40),browserControl:metadata},binding={...structuredClone(metadata),compiledBuild:runtime.build,manifestVerified:true,browserVerified:true};
+	assert.equal(matchingBrowserControlBinding(runtime,binding),true);
+	assert.equal(matchingBrowserControlBinding(runtime,{...binding,originalTeamSource:{}}),false);
+	const source={protocol:"original-team-source-configuration-v1",profileId:"original-team-bfdf-v1",phase:"baseline",compiledBuild:"bfdf2d573052eb485d2a6b9bd75896f98882baeb",compiledManifestSha256:"8cd0fc10a5288431c5b7afbc4f3d36273f965d6ff4d5b4a54bebe33a21201e64",buildRecordPath:"synthetic-reviewed-build.json",buildRecordSha256:"34acb938396ed571886c66933415dd7cede4dda6aaf4ccb82a5048ddf68be147"};
+	const original={...metadata,compiledManifestSha256:source.compiledManifestSha256,originalTeamSource:source};
+	const originalBinding={...original,compiledBuild:source.compiledBuild,manifestVerified:true,browserVerified:true};
+	assert.equal(matchingBrowserControlBinding({build:source.compiledBuild,browserControl:original},originalBinding),true);
+	assert.equal(matchingBrowserControlBinding({build:source.compiledBuild,browserControl:original},{...originalBinding,originalTeamSource:{...source,buildRecordPath:"different-reviewed-build.json"}}),false);
+	assert.equal(matchingBrowserControlBinding({build:"a".repeat(40),browserControl:original},{...originalBinding,compiledBuild:"a".repeat(40)}),false);
+});
 
 test("Native public-source authority binds exact reviewed paths, compiled source and manifest without an eligibility flag",()=>{
 	const source={protocol:"qualified-serving-worker-sources-v1",compiledBuild:"b".repeat(40),compiledManifestSha256:"c".repeat(64),
@@ -394,13 +491,16 @@ test("unnamed POST late termination needs exact complete browser/proxy bodies an
 		const body = Buffer.from(
 			`0:{"b":"b","a":"$@1"}\n1:${failureBody ? '{"success":false,"error":"PRIVATE"}' : '{"unrelated":42}'}\n`,
 		);
-		const proof = inspectRequiredFlightBody(body, { action: true });
+		const inspection = openOriginalTeamBodyInspection({bodySha256:segmentDigest(body),decodedBytes:body.length});
+		const proof = inspectRequiredFlightBody(body, { action: true, temporaryValueInspection:inspection });
+		const temporaryValueObservation = originalTeamBodyObservation(inspection);
 		Object.assign(value.failures[0], {
 			method: "POST",
 			requestKind: "action",
 			action: true,
 			bodyProof: proof,
 			bodyReadbackComplete: true,
+			temporaryValueObservation,
 		});
 		Object.assign(value.proxy[0], {
 			method: "POST",
@@ -409,6 +509,7 @@ test("unnamed POST late termination needs exact complete browser/proxy bodies an
 			bodyProof: proof,
 			complete: true,
 			canceled: false,
+			temporaryValueObservation,
 		});
 		const result = classifyControlCancellations(value);
 		assert.equal(result.provenControls, failureBody ? 0 : 1);
