@@ -2163,7 +2163,7 @@ export function createMixedProgressAcknowledgments({input,application,acknowledg
   if(latest && typeof proxyId==="string" && proxyId.length<=256 && packets){matchingCount=0;for(let i=0;i<packets.length;i++){const packet=own(packets,String(i));if(own(packet,"id")===proxyId){matchingCount++;matching=packet;}}if(matchingCount!==1)matching=null;}
   const proof=own(matching,"bodyProof"),latestProof=own(latest,"bodyProof");
   const row={protocol:"mixed-first-failure-diagnostic-v1",stage:state.stage,cutStage:state.cutStage,subreason:state.subreason,guardChecks,attempted,contextIdSha256:hashed(own(own(cut,"nativeContext"),"contextId")),
-   predicates:state.predicates,application:Object.fromEntries(progressApplicationKeys.map(key=>[key,count(own(state.application,key))])),
+   predicates:state.predicates,candidate:state.candidateDiagnostic,application:Object.fromEntries(progressApplicationKeys.map(key=>[key,count(own(state.application,key))])),
    cut:cut?{browserEventOrdinal:count(own(cut,"browserEventOrdinal")),failureCount:failures?.length??null,responseCount:boundedRows(own(cut,"responses"))?.length??null,proxyCount:packets?.length??null,
     failureSetSha256:failures?digest.digest("hex"):null,latestFailureMatches:latestCount,
     coverage:{installed:flag(own(coverage,"installed")),scopeClosed:flag(own(coverage,"scopeClosed")),errors:count(own(coverage,"errors")),overflow:count(own(coverage,"overflow")),missing:count(own(coverage,"missing")),pendingBodies:count(own(coverage,"pendingBodies"))},
@@ -2173,13 +2173,13 @@ export function createMixedProgressAcknowledgments({input,application,acknowledg
   return row;
  };
  const diagnose=state=>{if(diagnosticAttempted)return;diagnosticAttempted=true;try{if(bytes()+diagnosticCharge>controlCancellationPolicy.retainedLimit || checks.length+prefixes.length>=controlCancellationPolicy.recordLimit){overflow++;return;}const row=failureDiagnostic(state);if(Buffer.byteLength(JSON.stringify(row))*8+2048>diagnosticCharge){overflow++;return;}firstFailure=row;}catch{overflow++;}};
- const observation=stage=>({stage,subreason:"entry",cut:null,cutStage:null,application:null,predicates:{applicationKnown:null,candidateKnown:null,authorityKnown:null,journalsKnown:null,protocolObservedZero:null,protocolOverflowZero:null,authorityMatches:null,returnJournalsKnown:null}});
+ const observation=stage=>({stage,subreason:"entry",cut:null,cutStage:null,application:null,candidateDiagnostic:null,predicates:{applicationKnown:null,candidateKnown:null,authorityKnown:null,journalsKnown:null,protocolObservedZero:null,protocolOverflowZero:null,authorityMatches:null,returnJournalsKnown:null}});
  const seen=(state,key,value)=>{state.predicates[key]=Boolean(value);return value;};
  const live=state=>{
-  state.cut=null;state.cutStage=null;state.application=null;for(const key of Object.keys(state.predicates))state.predicates[key]=null;
+  state.cut=null;state.cutStage=null;state.application=null;state.candidateDiagnostic=null;for(const key of Object.keys(state.predicates))state.predicates[key]=null;
   state.subreason="application";
   if(failed || overflow || !seen(state,"applicationKnown",progressApplicationKnown(state.application=application()))){state.subreason=failed?"previous-failure":overflow?"previous-overflow":"application";throw Error("Mixed required application observation is not clean.");}
-  state.subreason="input";const cut=state.cut=input();state.cutStage=state.stage;state.subreason="candidate-evaluation";const candidate=mixedNativePrefixCandidates(cut);state.predicates.candidateKnown=Boolean(candidate);
+  state.subreason="input";const cut=state.cut=input();state.cutStage=state.stage;state.subreason="candidate-evaluation";const candidate=mixedNativePrefixCandidates(cut,record=>{state.candidateDiagnostic=record;});state.predicates.candidateKnown=Boolean(candidate);
   state.subreason="authority-evaluation";const authority=mixedNativeAuthorityDigest(cut.nativeContext);state.predicates.authorityKnown=Boolean(authority);
   state.subreason="live-predicate";
   if(!seen(state,"journalsKnown",knownMixedOpenJournals(cut.nativeContext)) || !seen(state,"protocolObservedZero",cut.nativeContext?.protocolErrors?.observed===0) || !seen(state,"protocolOverflowZero",cut.nativeContext.protocolErrors.overflow===0) || !candidate || !authority || !seen(state,"authorityMatches",!(authoritySha256!==null && authoritySha256!==authority))){

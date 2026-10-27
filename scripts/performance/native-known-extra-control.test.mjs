@@ -579,7 +579,7 @@ test("mixed first-failure diagnostics reset the per-live input and predicates af
  const snapshot=observer.snapshot(),diagnostic=snapshot.firstFailure;
  assert.deepEqual([inputs,applications,reads],[1,2,1]);assert.equal(snapshot.failed,1);
  assert.equal(diagnostic.stage,"check-after-ack-live");assert.equal(diagnostic.subreason,"application");assert.equal(diagnostic.cut,null);assert.equal(diagnostic.cutStage,null);
- assert.equal(diagnostic.application.unknown,1);assert.equal(diagnostic.predicates.applicationKnown,false);
+ assert.equal(diagnostic.application.unknown,1);assert.equal(diagnostic.predicates.applicationKnown,false);assert.equal(diagnostic.candidate,null);
  for(const key of ["candidateKnown","authorityKnown","journalsKnown","protocolObservedZero","protocolOverflowZero","authorityMatches","returnJournalsKnown"])assert.equal(diagnostic.predicates[key],null,key);
 });
 
@@ -589,4 +589,45 @@ test("mixed first-failure diagnostics reject revoked arrays before introspection
  await assert.rejects(observer.check(),{message:"Mixed browser observation lacks request-local evidence."});const first=observer.snapshot();
  assert.equal(first.failed,1);assert.equal(first.overflow,0);assert.equal(first.firstFailure.stage,"check-live");assert.equal(first.firstFailure.cutStage,"check-live");assert.equal(first.firstFailure.cut.failureCount,null);
  await assert.rejects(observer.check(),{message:"Mixed required application observation is not clean."});const second=observer.snapshot();assert.equal(inputs,1);assert.equal(second.failed,2);assert.equal(second.overflow,0);assert.deepEqual(second.firstFailure,first.firstFailure);
+});
+
+test("mixed candidate rejection diagnostics identify the earlier strict match failure rather than the newest row",async()=>{
+ const {createMixedProgressAcknowledgments}=await import("./browser-control-collector.mjs"),{begin}=await openPrefixFixture(),current=structuredClone(begin);
+ const earlier={...structuredClone(current.failures[0]),requestId:"PRIVATE_EARLIER",failedEventOrdinal:9,fullUrlSha256:"f".repeat(64)},latest={...structuredClone(current.failures[0]),requestId:"PRIVATE_LATEST",failedEventOrdinal:10};current.failures=[earlier,latest];
+ const observer=createMixedProgressAcknowledgments({input:()=>current,application:()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0}),acknowledge:()=>assert.fail("must stop on the first strict join")});
+ await assert.rejects(observer.check(),{message:"Mixed browser observation lacks request-local evidence."});
+ const diagnostic=observer.snapshot().firstFailure;assert.equal(diagnostic.cut.latestFailure.requestIdSha256,sha("PRIVATE_LATEST"));
+ assert.equal(diagnostic.candidate.site,"proxy-cardinality");assert.equal(diagnostic.candidate.failureIndex,0);assert.equal(diagnostic.candidate.failureIdSha256,sha("PRIVATE_EARLIER"));assert.equal(diagnostic.candidate.strictMatchCount,0);
+ assert.equal(diagnostic.candidate.ordinaryOutcome,"unknown");assert.equal(diagnostic.candidate.firstMatchedProofKnown,null);assert.doesNotMatch(JSON.stringify(diagnostic),/PRIVATE_/);
+ assert.ok(Buffer.byteLength(JSON.stringify(diagnostic))*8+2048<=32768);
+});
+
+test("mixed candidate rejection hooks cover every existing null exit with unchanged defaults and safe failures",async()=>{
+ const {api,begin}=await openPrefixFixture();
+ const cases=[
+  ["input-prelude",()=>undefined],
+  ["failure-census",()=>{const x=structuredClone(begin);x.failures[0].failedEventOrdinal=0;return x;}],
+  ["real-failure",()=>{const x=structuredClone(begin);x.failures[0].error="net::ERR_FAILED";return x;}],
+  ["failure-flags",()=>{const x=structuredClone(begin);x.failures[0].error="PRIVATE_UNKNOWN_ERROR";return x;}],
+  ["proxy-cardinality",()=>{const x=structuredClone(begin);x.proxy[1].requestHeadersSha256="f".repeat(64);return x;}],
+  ["native-core",()=>{const x=structuredClone(begin);x.proxy[1].complete=false;return x;}],
+  ["exception",()=>{const x=Proxy.revocable({},{});x.revoke();return x.proxy;}],
+ ];
+ for(const [site,make]of cases){
+  assert.equal(api.mixedNativePrefixCandidates(make()),null);const observations=[];
+  assert.equal(api.mixedNativePrefixCandidates(make(),row=>observations.push(row)),null);assert.equal(observations.length,1,site);assert.equal(observations[0].site,site);
+  assert.doesNotMatch(JSON.stringify(observations),/PRIVATE_|http:|session|net::/);
+  assert.equal(api.mixedNativePrefixCandidates(make(),()=>{throw Error("PRIVATE_HOOK");}),null);
+ }
+ const positive=api.mixedNativePrefixCandidates(structuredClone(begin));let calls=0;
+ assert.deepEqual(api.mixedNativePrefixCandidates(structuredClone(begin),()=>{calls++;throw Error("not called");}),positive);assert.equal(calls,0);
+ const hook=Proxy.revocable(()=>assert.fail("Proxy hook may not execute"),{});hook.revoke();assert.equal(api.mixedNativePrefixCandidates(undefined,hook.proxy),null);
+ const invalid=cases[4][1]();assert.equal(api.mixedNativePrefixCandidates(invalid,()=>{invalid.failures=[];}),null,"a hook cannot turn the decided rejection into success");
+});
+
+test("mixed candidate rejection hooks reuse the same classification and strict filter without new getter reads",async()=>{
+ const {api,begin}=await openPrefixFixture();
+ function run(observe){const input=structuredClone(begin);input.proxy[1].complete=false;let errorReads=0;const value=input.failures[0].error;Object.defineProperty(input.failures[0],"error",{enumerable:true,get(){errorReads++;return value;}});let row=null;
+  const result=api.mixedNativePrefixCandidates(input,observe?value=>{row=value;}:undefined);assert.equal(result,null);return{errorReads,row};}
+ const plain=run(false),observed=run(true);assert.equal(observed.errorReads,plain.errorReads);assert.ok(plain.errorReads>0);assert.equal(observed.row.site,"native-core");assert.equal(observed.row.strictMatchCount,1);assert.equal(observed.row.firstMatchedProxyIdSha256,sha(begin.proxy[1].id));assert.equal(observed.row.firstMatchedProofKnown,true);assert.equal(observed.row.firstMatchedProofComplete,true);
 });
