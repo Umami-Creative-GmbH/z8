@@ -53,3 +53,27 @@ a prediction that a formerly capped payload will now complete.
 Prospective qualification uses only synthetic public-parser tests and a fresh
 Root-operated normal capture. Historical failed captures retain their original
 UNKNOWN verdicts. No captured payload is reparsed or retroactively admitted.
+
+## Fresh functional qualification
+
+Tooling `35bc5de53c309e887ee676e36f5811e02657c728` ran one fresh normal 90s
+small-admin employee-directory manual sample on original application
+`bfdf2d573052eb485d2a6b9bd75896f98882baeb`, fixture `business39`. The sample passed
+every required observation gate, with failed=false and censored=false. Its fresh
+finished 1,637,179-byte body had a complete proof at 61,270 actual shared model
+steps: 31,258 outer plus 30,012 inner. The outer inspection recorded 33,718 logical
+visits, 27,284 covered descendants and 693 applied hits (maximum N=4301/W=161).
+
+The raw browser partition remained 1 cancellation, 1 proven control, 0 unknown and
+0 real failures. All 1,041 native queries started, ended and were observed, with
+zero pending queries or active traces; the fresh log was clean with zero errors.
+The browser closed through the awaited finally. CLI exit 1 reflects the diagnostic
+mode's intentionally unfulfilled overall capture, not a failed sample.
+
+The source-recorded profile SHA256 is
+7af2fe42dcb4416ac82c55f57c688684c6025af27d3144b8fdc5bd74858aba25;
+postflight SHA256 is
+ee0df7c99deb0f91f2abb1b7c092ad4372be561334574fe7a758ac3727ed89f4.
+This qualifies one functional prerequisite. It establishes no 114/54 journey
+sweep, mixed 20-pair run, full baseline, numerical budgets, performance gain or
+HEAD timing. Historical failed captures remain unchanged; no body was reparsed.
