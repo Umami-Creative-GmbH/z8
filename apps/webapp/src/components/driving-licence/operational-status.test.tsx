@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
+	act,
 	cleanup,
 	fireEvent,
 	render,
@@ -77,6 +78,7 @@ vi.mock("@/components/time-tracking/clock-vehicle-use", async () =>
 );
 
 import { ClockInOutWidget } from "../time-tracking/clock-in-out-widget";
+import { queryKeys } from "@/lib/query/keys";
 import {
 	DrivingAuthorizationAdvisory,
 	OperationalDrivingStatusPanel,
@@ -91,6 +93,129 @@ afterEach(() => {
 function client() {
 	return new QueryClient({ defaultOptions: { queries: { retry: false } } });
 }
+
+it("lets an already started advisory read finish when its panel unmounts", async () => {
+	const pending = Promise.withResolvers<Response>();
+	let aborts = 0;
+	const fetchMock = vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
+		init?.signal?.addEventListener("abort", () => {
+			aborts++;
+			pending.reject(new DOMException("Aborted", "AbortError"));
+		});
+		return pending.promise;
+	});
+	vi.stubGlobal("fetch", fetchMock);
+	const queryClient = client();
+	const view = render(
+		<QueryClientProvider client={queryClient}>
+			<DrivingAuthorizationAdvisory />
+		</QueryClientProvider>,
+	);
+	try {
+		await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+		view.unmount();
+		expect(aborts).toBe(0);
+		const result = { success: true, data: null };
+		await act(async () => pending.resolve(Response.json(result)));
+		await waitFor(() =>
+			expect(queryClient.getQueryData(queryKeys.drivingLicence.statusFor("org-a", "user-a", undefined))).toEqual(result),
+		);
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+	} finally {
+		pending.resolve(Response.json({ success: true, data: null }));
+		queryClient.clear();
+	}
+});
+
+it("starts no advisory read before mount or without both identity guards", async () => {
+	const fetchMock = vi.fn().mockResolvedValue(Response.json({ success: true, data: null }));
+	vi.stubGlobal("fetch", fetchMock);
+	const queryClient = client();
+	const panel = (shown: boolean) => (
+		<QueryClientProvider client={queryClient}>
+			{shown ? <DrivingAuthorizationAdvisory /> : null}
+		</QueryClientProvider>
+	);
+	const view = render(panel(false));
+	try {
+		await act(async () => {});
+		expect(fetchMock).not.toHaveBeenCalled();
+		remote.identity = { organizationId: "", userId: "user-a" };
+		view.rerender(panel(true));
+		await act(async () => {});
+		expect(fetchMock).not.toHaveBeenCalled();
+		remote.identity = { organizationId: "org-a", userId: "" };
+		view.rerender(panel(true));
+		await act(async () => {});
+		expect(fetchMock).not.toHaveBeenCalled();
+		remote.identity = { organizationId: "org-a", userId: "user-a" };
+		view.rerender(panel(true));
+		await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+	} finally {
+		view.unmount();
+		queryClient.clear();
+	}
+});
+
+it.each(["organization/user", "employee"])("keeps a finishing read under its own key after %s changes", async (scope) => {
+	const pending = Promise.withResolvers<Response>();
+	const oldResult = { success: true, data: { employeeId: "a", status: "active", authorizedClasses: ["B"], classes: [] } };
+	const newResult = { success: true, data: { employeeId: "b", status: "not_enrolled", authorizedClasses: [], classes: [] } };
+	let calls = 0;
+	let employeeId = scope === "employee" ? "driver-a" : undefined;
+	vi.stubGlobal("fetch", vi.fn(() => ++calls === 1 ? pending.promise : Promise.resolve(Response.json(newResult))));
+	const queryClient = client();
+	const panel = () => <QueryClientProvider client={queryClient}><DrivingAuthorizationAdvisory employeeId={employeeId} /></QueryClientProvider>;
+	const view = render(panel());
+	try {
+		await waitFor(() => expect(calls).toBe(1));
+		if (scope === "employee") employeeId = "driver-b";
+		else remote.identity = { organizationId: "org-b", userId: "user-b" };
+		view.rerender(panel());
+		expect(await screen.findByText("Not an intended driver — no driving authorization")).toBeTruthy();
+		await act(async () => pending.resolve(Response.json(oldResult)));
+		await waitFor(() => expect(queryClient.getQueryData(queryKeys.drivingLicence.statusFor("org-a", "user-a", scope === "employee" ? "driver-a" : undefined))).toEqual(oldResult));
+		expect(queryClient.getQueryData(queryKeys.drivingLicence.statusFor(remote.identity.organizationId, remote.identity.userId, employeeId))).toEqual(newResult);
+		expect(screen.queryByText("Driving authorization active")).toBeNull();
+		expect(calls).toBe(2);
+	} finally {
+		pending.resolve(Response.json(oldResult));
+		view.unmount();
+		queryClient.clear();
+	}
+});
+
+it("does not let a replaced refetch overwrite a newer advisory result", async () => {
+	const oldRead = Promise.withResolvers<Response>();
+	const newRead = Promise.withResolvers<Response>();
+	const active = { success: true, data: { employeeId: "a", status: "active", authorizedClasses: ["B"], classes: [] } };
+	const latest = { success: true, data: { employeeId: "a", status: "not_enrolled", authorizedClasses: [], classes: [] } };
+	let calls = 0;
+	vi.stubGlobal("fetch", vi.fn(() => ++calls === 1 ? Promise.resolve(Response.json(active)) : calls === 2 ? oldRead.promise : newRead.promise));
+	const queryClient = client();
+	const view = render(<QueryClientProvider client={queryClient}><DrivingAuthorizationAdvisory /></QueryClientProvider>);
+	try {
+		expect(await screen.findByText("Driving authorization active")).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: "Refresh driving status" }));
+		await waitFor(() => expect(calls).toBe(2));
+		await act(async () => {
+			const replacement = queryClient.refetchQueries({ queryKey: queryKeys.drivingLicence.statusFor("org-a", "user-a", undefined), exact: true }, { cancelRefetch: true });
+			expect(calls).toBe(3);
+			newRead.resolve(Response.json(latest));
+			await replacement;
+		});
+		expect(await screen.findByText("Not an intended driver — no driving authorization")).toBeTruthy();
+		await act(async () => oldRead.resolve(Response.json(active)));
+		expect(queryClient.getQueryData(queryKeys.drivingLicence.statusFor("org-a", "user-a", undefined))).toEqual(latest);
+		expect(screen.queryByText("Driving authorization active")).toBeNull();
+		expect(calls).toBe(3);
+	} finally {
+		oldRead.resolve(Response.json(active));
+		newRead.resolve(Response.json(latest));
+		view.unmount();
+		queryClient.clear();
+	}
+});
 it("keeps the real clock button usable while status is pending, suspended or failed", async () => {
 	let resolveStatus: (value: unknown) => void = () => {};
 	remote.status.mockImplementationOnce(
