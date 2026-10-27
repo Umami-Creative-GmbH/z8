@@ -60,6 +60,9 @@ as read-only source facts by legacy-clock-readiness.mjs for independent review;
 those facts are not capabilities. Root must review the actual compiled-serving
 relation and its pinned dependency execution contract before supplying this file.
 No accepting operational review is created by the implementation.
+Source UTF-8 BOMs are rejected before canonical hashing. Both public source
+validation/acquisition entrypoints expose only one fixed failure message, with
+no private JSON/path/assertion values or nested error cause.
 
 Qualified facts are stored in a private WeakMap for the exact binding and
 transferred only by the existing actual browser-revision verifier. The header

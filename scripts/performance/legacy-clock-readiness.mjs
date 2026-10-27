@@ -79,7 +79,7 @@ function exactKeys(value, keys) {
 	assert.ok(value && typeof value === "object" && !Array.isArray(value));
 	assert.deepEqual(Object.keys(value).sort(), keys.slice().sort());
 }
-export function validateLegacyClockReadinessSource(f) {
+function validateSource(f) {
 	const c = f.configuration,
 		r = f.review;
 	exactKeys(c, [
@@ -170,6 +170,14 @@ export function validateLegacyClockReadinessSource(f) {
 		buildRecordSha256: c.buildRecord.sha256,
 	});
 }
+/** No private JSON, assertion values, paths or nested error causes leave this seam. */
+export function validateLegacyClockReadinessSource(f) {
+	try {
+		return validateSource(f);
+	} catch {
+		throw new Error("Legacy clock readiness source qualification failed.");
+	}
+}
 async function bounded(path, max) {
 	const file = await open(path, "r");
 	try {
@@ -199,7 +207,7 @@ async function bounded(path, max) {
 	}
 }
 /** Actual file acquisition is only called by the compiled binding reader before browser IO. */
-export async function readLegacyClockReadinessSource({
+async function readSource({
 	configuration,
 	manifestPath,
 	compiledBuild,
@@ -243,6 +251,7 @@ export async function readLegacyClockReadinessSource({
 		const path = resolve(app, known.file.replace("apps/webapp/", ""));
 		assert.ok(!relative(app, path).startsWith(".."));
 		const bytes = await bounded(path, 256 * 1024);
+		assert.ok(!(bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf));
 		total += bytes.length;
 		assert.ok(total <= 1024 * 1024);
 		const canonical = Buffer.from(
@@ -271,4 +280,12 @@ export async function readLegacyClockReadinessSource({
 		origin,
 		phase,
 	});
+}
+/** Acquisition failures expose only a fixed message; preserving their rejection needs no raw cause. */
+export async function readLegacyClockReadinessSource(options) {
+	try {
+		return await readSource(options);
+	} catch {
+		throw new Error("Legacy clock readiness source qualification failed.");
+	}
 }
