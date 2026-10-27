@@ -1512,6 +1512,7 @@ function inspectFlightBody(
 		};
 		const field=(raw,key,atDepth)=>{const object=read(raw,atDepth);if(!object || typeof object!=="object" || Array.isArray(object))throw Error("projection-object-unavailable");const descriptor=Object.getOwnPropertyDescriptor(object,key);if(!descriptor || !Object.hasOwn(descriptor,"value"))throw Error("projection-own-field-unavailable");step(atDepth);return read(descriptor.value,atDepth+1);};
 		try {
+			if(records.get("0")?.tag!==null || records.get("0")?.stream)throw Error("projection-root-provenance");
 			const result=read(root.a,1);if(field(result,"success",2)!==true)throw Error("projection-action-result");
 			const data=field(result,"data",2),teams=field(data,"teams",3),hours=field(data,"organizationTotal",3);if(!Array.isArray(teams) || teams.length>100000 || !Number.isFinite(hours))throw Error("projection-summary-type");
 			let employees=0;for(let index=0;index<teams.length;index++){step(4);const descriptor=Object.getOwnPropertyDescriptor(teams,String(index));if(!descriptor || !Object.hasOwn(descriptor,"value"))throw Error("projection-array-hole");const count=field(descriptor.value,"employeeCount",5);if(!Number.isSafeInteger(count) || count<0 || !Number.isSafeInteger(employees+count))throw Error("projection-count-type");employees+=count;}

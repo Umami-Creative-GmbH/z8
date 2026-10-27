@@ -2066,3 +2066,12 @@ test('team projection cannot bypass required references record provenance global
  api.inspectRequiredFlightBody(bytes,{action:true,teamAnnualProjection:cap});api.inspectRequiredFlightBody(bytes,{action:true,teamAnnualProjection:cap});assert.equal(api.takeTeamAnnualProjection(cap),null,'reusing a projection invalidates its previous publication');api.closeTeamAnnualProjection(cap);
  const invalid=Buffer.concat([bytes,Buffer.from([255])]),bad=api.openTeamAnnualProjection({bodySha256:segmentDigest(invalid),decodedBytes:invalid.length});assert.equal(api.inspectRequiredFlightBody(invalid,{action:true,teamAnnualProjection:bad}).complete,false);assert.equal(api.takeTeamAnnualProjection(bad),null);api.closeTeamAnnualProjection(bad);
 });
+
+test('team projection requires ordinary nonstream row0 without changing the generic tagged-root verdict',async()=>{
+ const api=await import('./control-cancellation-evidence.mjs');
+ for(const tag of ['I','R','X']){
+  const bytes=Buffer.from(tag==='I'?'0:I{"a":{"success":true,"data":{"teams":[{"employeeCount":8}],"organizationTotal":16704}}}\n':tag==='R'?'0:R\n0:{"a":{"success":true,"data":{"teams":[{"employeeCount":8}],"organizationTotal":16704}}}\n0:C\n':'0:X\n0:{"a":{"success":true,"data":{"teams":[{"employeeCount":8}],"organizationTotal":16704}}}\n0:C\n');
+  const before=api.inspectRequiredFlightBody(bytes,{action:true}),cap=api.openTeamAnnualProjection({bodySha256:segmentDigest(bytes),decodedBytes:bytes.length});const proof=api.inspectRequiredFlightBody(bytes,{action:true,teamAnnualProjection:cap});
+  assert.equal(api.takeTeamAnnualProjection(cap),null,tag);assert.equal(proof.complete,before.complete,tag);api.closeTeamAnnualProjection(cap);
+ }
+});
