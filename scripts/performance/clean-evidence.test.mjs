@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import test from "node:test";
 import {
 	cleanEvidenceGates,
@@ -401,6 +402,8 @@ import {
 	projectInertDateRangeRequest,
 	knownClosedDateRangeTypeFacts,
 	createTeamTemporaryValueStore,
+	createTeamReplayDispatchJournal,
+	teamReplayHeader,
 } from "./team-temporary-value-authority.mjs";
 import { parseInertDateRangeRequest, forgetInertDateRangeRequestValue } from "./inert-date-range-request.mjs";
 
@@ -594,6 +597,33 @@ test("request values keep the exact10000 record and32MiB ownership limits", () =
 	assert.equal(pool.retained(), 20480000);
 });
 
+test("manual replay journal requires actual nonce proxy EOF and both browser header observations", () => {
+	const origin = "http://localhost:58792", traceId = "a".repeat(32), action = "9".repeat(40), body = "synthetic-body";
+	const pool = teamStorePool(), journal = createTeamReplayDispatchJournal({ contextId: "one", origin, ...pool });
+	const handle = journal.arm({ traceId, action, body, url: origin + "/en/analytics/team-performance" });
+	const headers = journal.headers(handle);
+	assert.match(headers[teamReplayHeader], /^[a-f0-9]{32}$/);
+	assert.equal(journal.headers({ ...handle }), null);
+	const nonceSha256 = createHash("sha256").update(headers[teamReplayHeader]).digest("hex"), proxyId = traceId + ".1";
+	assert.equal(journal.proxyRequest({ id: proxyId, traceId, method: "POST", url: origin + "/en/analytics/team-performance", action, nonce: headers[teamReplayHeader] }), true);
+	assert.equal(journal.requestEOF(proxyId, { encodedBytes: Buffer.byteLength(body), bodySha256: createHash("sha256").update(body).digest("hex") }), true);
+	assert.equal(journal.factsFor(proxyId), null);
+	assert.equal(journal.browserRequest({ proxyId, contextId: "one", requestId: "browser.1", method: "POST", traceId,
+		urlSha256: createHash("sha256").update(origin + "/en/analytics/team-performance").digest("hex"), actionHeaderSha256: createHash("sha256").update(action).digest("hex"),
+		frameId: "frame", loaderId: "loader", documentGeneration: "one:1", initialHeadersKnown: true, extraHeadersKnown: true, initialReplaySha256: nonceSha256, extraReplaySha256: nonceSha256 }), true);
+	const joined = journal.factsFor(proxyId);
+	assert.equal(joined.proxyId, proxyId); assert.equal(joined.browser.requestId, "browser.1");
+	assert.equal(joined.requestEOF.bodySha256, createHash("sha256").update(body).digest("hex"));
+	assert.equal(journal.finished(handle, { error: false }), true);
+	journal.close();
+	const facts = journal.snapshot();
+	assert.equal(facts.pendingDispatches, 0); assert.equal(facts.rows.length, 1);
+	assert.equal(facts.rows[0].nonceSha256, nonceSha256);
+	assert.equal(facts.sourceBound, false); assert.equal(facts.acceptanceClaim, "none");
+	assert.doesNotMatch(JSON.stringify(facts), new RegExp(headers[teamReplayHeader]));
+	assert.doesNotMatch(JSON.stringify(facts), /synthetic-body|localhost|team-performance|9999999999/);
+});
+
 test("actual source file qualification fails with a fixed private error on unknown phase profile and malformed inputs", async () => {
 	const folder = await mkdtemp(join(tmpdir(), "z8-team-source-test-"));
 	try {
@@ -612,6 +642,18 @@ test("actual source file qualification fails with a fixed private error on unkno
 			}
 		}
 	} finally { assert.ok(folder.startsWith(join(tmpdir(), "z8-team-source-test-"))); await rm(folder, { recursive: true, force: true }); }
+});
+
+test("source issuer captures argument acquisition inside its fixed private failure boundary", async () => {
+	const throwing = { get profileId() { throw Error("PRIVATE_ISSUER_GETTER_SENTINEL"); } };
+	for (const input of [throwing, null, undefined, false, 1, "PRIVATE_ISSUER_ARGUMENT"]) {
+		await assert.rejects(readOriginalTeamSourceQualification(input), error => {
+			assert.equal(error.message, "Original team temporary source qualification unavailable.");
+			assert.equal(Object.hasOwn(error, "cause"), false);
+			assert.doesNotMatch(String(error), /PRIVATE_ISSUER/);
+			return true;
+		});
+	}
 });
 
 test("source file normalization permits only CRLF and rejects BOM invalid text and oversize input", () => {
@@ -643,4 +685,25 @@ test("original source facts reject HEAD foreign profiles omitted files and copie
 		assert.equal(knownOriginalTeamSourceFacts(facts), false);
 		assert.equal(isOriginalTeamSourceQualification(facts), false);
 	}
+});
+
+test("observer-only temporary body inspections close without granting value authority", async () => {
+	const { openOriginalTeamBodyInspection, resolveOriginalTeamTemporaryReference, closeOriginalTeamBodyInspection, originalTeamBodyObservation, validateOriginalTeamTemporaryValues } = await import("./team-temporary-value-authority.mjs");
+	const boundary = { bodySha256: "a".repeat(64), decodedBytes: 32, action: true, requestKind: "action" };
+	const inspection = openOriginalTeamBodyInspection({ bodySha256: boundary.bodySha256, decodedBytes: boundary.decodedBytes });
+	assert.ok(inspection);
+	assert.equal(originalTeamBodyObservation(inspection), null);
+	assert.equal(resolveOriginalTeamTemporaryReference({ ...inspection }, "$T0:0", boundary), null);
+	assert.equal(closeOriginalTeamBodyInspection({ ...inspection }), false);
+	assert.equal(resolveOriginalTeamTemporaryReference(inspection, "$T0:0", boundary), null);
+	assert.equal(closeOriginalTeamBodyInspection(inspection), true);
+	assert.equal(closeOriginalTeamBodyInspection(inspection), false);
+	const observed = originalTeamBodyObservation(inspection);
+	assert.deepEqual(observed, { protocol: "original-team-body-value-observation-v1", bodySha256: boundary.bodySha256, decodedBytes: 32, lookupAttempted: true, valueUsed: false, bindingSha256: null, closed: true });
+	const section = { protocol: "original-team-temporary-values-v1", referenceCount: 0, binding: null, obligations: [] };
+	assert.equal(validateOriginalTeamTemporaryValues(section, { ...boundary, request: { temporaryValueObservation: observed } }), true);
+	for (const changed of [undefined, { ...observed, valueUsed: true }, { ...observed, bindingSha256: "b".repeat(64) }, { ...observed, closed: false }, { ...observed, decodedBytes: 31 }])
+		assert.equal(validateOriginalTeamTemporaryValues(section, { ...boundary, request: { temporaryValueObservation: changed } }), false);
+	assert.equal(openOriginalTeamBodyInspection(null), null);
+	assert.equal(openOriginalTeamBodyInspection({ bodySha256: boundary.bodySha256, decodedBytes: 8388609 }), null);
 });

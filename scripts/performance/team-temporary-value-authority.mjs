@@ -1,5 +1,5 @@
 /** Original-only source and request-value authority. No payload is serialized. */
-import { createHash } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { open } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { basename, dirname, join, resolve } from "node:path";
@@ -8,6 +8,8 @@ import { readInertDateRangeRequestValue, forgetInertDateRangeRequestValue } from
 const sha = value => createHash("sha256").update(value).digest("hex");
 const digest = value => typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
 const rangeFields = Object.freeze(["start", "end", "startDate", "endDate", "timezone"]);
+export const teamReplayHeader = "x-z8-fixture-replay-id";
+export const temporaryValueObservation = Object.freeze({ protocol: "original-team-temporary-value-observation-v1", replayHeader: teamReplayHeader, documentJournal: "actual-cdp-document-journal-v1" });
 const deepFreeze = value => {
 	if (value && typeof value === "object") {
 		for (const child of Object.values(value)) deepFreeze(child);
@@ -313,6 +315,136 @@ export function createTeamTemporaryValueStore({ contextId, reserve, release }) {
 	return api;
 }
 
+const dispatchJournals = new WeakMap(), dispatchHandles = new WeakMap();
+const bodyInspections = new WeakMap();
+/** Observer-only capability. It never grants source/request authority or resolves a T value. */
+export function openOriginalTeamBodyInspection(input) {
+	try {
+		if (!ownData(input, ["bodySha256", "decodedBytes"]) || !digest(input.bodySha256) ||
+			!Number.isSafeInteger(input.decodedBytes) || input.decodedBytes <= 0 || input.decodedBytes > 8 * 1024 * 1024) return null;
+		const inspection = Object.freeze({ protocol: "private-original-team-body-inspection-v1" });
+		bodyInspections.set(inspection, { bodySha256: input.bodySha256, decodedBytes: input.decodedBytes, closed: false,
+			lookupAttempted: false, valueUsed: false, bindingSha256: null, qualification: null, resolved: null, store: null, consumer: null });
+		return inspection;
+	} catch { return null; }
+}
+/** Missing source/request issuance, copied capabilities, and every token except exact T0:0 fail closed. */
+export function resolveOriginalTeamTemporaryReference(inspection, token, boundary) {
+	try {
+		const held = inspection !== null && typeof inspection === "object" ? bodyInspections.get(inspection) : null;
+		if (!held || held.closed || boundary?.action !== true || boundary.requestKind !== "action" ||
+			boundary.bodySha256 !== held.bodySha256 || boundary.decodedBytes !== held.decodedBytes) return null;
+		held.lookupAttempted = true;
+		if (!isOriginalTeamSourceQualification(held.qualification) || token !== "$T0:0" || held.resolved === null) return null;
+		held.valueUsed = true; held.bindingSha256 = sha(JSON.stringify(held.resolved.receipt));
+		return held.resolved;
+	} catch { return null; }
+}
+export function closeOriginalTeamBodyInspection(inspection) {
+	const held = inspection !== null && typeof inspection === "object" ? bodyInspections.get(inspection) : null;
+	if (!held || held.closed) return false;
+	held.closed = true;
+	return held.store === null ? true : held.store.finishInspection(held.consumer);
+}
+/** Available only after this actual capability closes; contains no private value or token. */
+export function originalTeamBodyObservation(inspection) {
+	const held = inspection !== null && typeof inspection === "object" ? bodyInspections.get(inspection) : null;
+	return held?.closed ? Object.freeze({ protocol: "original-team-body-value-observation-v1", bodySha256: held.bodySha256,
+		decodedBytes: held.decodedBytes, lookupAttempted: held.lookupAttempted, valueUsed: held.valueUsed,
+		bindingSha256: held.bindingSha256, closed: true }) : null;
+}
+/** Closed replay starts with strict zero-use sections. Positive issuance remains unsupported in this checkpoint. */
+export function validateOriginalTeamTemporaryValues(section, boundary) {
+	try {
+		if (!ownData(section, ["protocol", "referenceCount", "binding", "obligations"]) || section.protocol !== "original-team-temporary-values-v1" ||
+			!digest(boundary?.bodySha256) || !Number.isSafeInteger(boundary.decodedBytes) || boundary.decodedBytes <= 0 || boundary.decodedBytes > 8 * 1024 * 1024 ||
+			section.referenceCount !== 0 || section.binding !== null || !Array.isArray(section.obligations) || section.obligations.length !== 0) return false;
+		if (boundary.request !== undefined) {
+			const observed = boundary.request?.temporaryValueObservation;
+			if (!ownData(observed, ["protocol", "bodySha256", "decodedBytes", "lookupAttempted", "valueUsed", "bindingSha256", "closed"]) ||
+				observed.protocol !== "original-team-body-value-observation-v1" || observed.bodySha256 !== boundary.bodySha256 || observed.decodedBytes !== boundary.decodedBytes ||
+				typeof observed.lookupAttempted !== "boolean" || observed.valueUsed !== false || observed.bindingSha256 !== null || observed.closed !== true) return false;
+		}
+		return true;
+	} catch { return false; }
+}
+/** Actual dispatch/HTTP/CDP identity observations only; never source or value authority by themselves. */
+export function createTeamReplayDispatchJournal({ contextId, origin, reserve, release }) {
+	let target;
+	try { target = new URL(origin); } catch {}
+	if (!target || target.origin !== origin || target.protocol !== "http:" || !["localhost", "127.0.0.1", "[::1]"].includes(target.hostname) || target.username || target.password ||
+		typeof contextId !== "string" || !/^[A-Za-z0-9:_.-]{1,256}$/.test(contextId) || typeof reserve !== "function" || typeof release !== "function")
+		throw Error("Known owned team replay observation is required.");
+	const owner = {}, rows = [], nonces = new Map(), proxies = new Map();
+	let closed = false, errors = 0, overflow = 0, unretainedArms = 0, retained = 0, budgetKnown = true;
+	const rowFor = handle => { const held = handle !== null && typeof handle === "object" ? dispatchHandles.get(handle) : null; return held?.owner === owner ? held.row : null; };
+	const safeRow = row => ({ ordinal: row.ordinal, traceId: row.traceId, nonceSha256: row.nonceSha256, urlSha256: row.urlSha256, actionHeaderSha256: row.actionHeaderSha256,
+		encodedBytes: row.encodedBytes, bodySha256: row.bodySha256, proxyId: row.proxyId, requestEOF: row.requestEOF, browser: row.browser, returned: row.returned, returnedError: row.returnedError });
+	const api = Object.freeze({
+		arm(input = {}) {
+			try {
+				const { traceId, action, body, url } = input, requestURL = typeof url === "string" && url.length <= 4096 ? new URL(url) : null;
+				if (closed || !budgetKnown || !/^[a-f0-9]{32}$/.test(traceId ?? "") || typeof action !== "string" || !/^[a-f0-9]{40,64}$/.test(action) ||
+					typeof body !== "string" || body.length > 16384 || Buffer.byteLength(body) > 16384 || requestURL?.origin !== origin || requestURL.username || requestURL.password) throw Error();
+				if (rows.length >= 10000 || retained + 18432 > 32 * 1024 * 1024) { overflow++; unretainedArms++; return null; }
+				let answer;
+				try { answer = reserve(18432); } catch { errors++; budgetKnown = false; unretainedArms++; return null; }
+				if (answer !== true) { if (answer === false) overflow++; else { errors++; budgetKnown = false; } unretainedArms++; return null; }
+				retained += 18432;
+				const nonce = randomBytes(16).toString("hex");
+				const row = { ordinal: rows.length + 1, traceId, nonceSha256: sha(nonce), urlSha256: sha(requestURL.href), actionHeaderSha256: sha(action), encodedBytes: Buffer.byteLength(body), bodySha256: sha(body),
+					proxyId: null, requestEOF: null, browser: null, returned: false, returnedError: null };
+				try { release(16384); retained -= 16384; } catch { errors++; budgetKnown = false; unretainedArms++; return null; }
+				if (nonces.has(nonce)) { errors++; unretainedArms++; return null; }
+				const handle = Object.freeze({ protocol: "private-team-manual-dispatch-v1", contextId, ordinal: row.ordinal });
+				rows.push(row); nonces.set(nonce, row); dispatchHandles.set(handle, { owner, row, nonce });
+				return handle;
+			} catch { errors++; unretainedArms++; return null; }
+		},
+		headers(handle) {
+			const held = handle !== null && typeof handle === "object" ? dispatchHandles.get(handle) : null;
+			if (closed || held?.owner !== owner || held.row.returned) { errors++; return null; }
+			return Object.freeze({ [teamReplayHeader]: held.nonce });
+		},
+		proxyRequest({ id, traceId, method, url, action, nonce }) {
+			const row = typeof nonce === "string" && /^[a-f0-9]{32}$/.test(nonce) ? nonces.get(nonce) : null;
+			if (closed || !budgetKnown || !row || row.proxyId !== null || proxies.has(id) || typeof id !== "string" || !/^[a-f0-9]{32}\.[1-9][0-9]{0,15}$/.test(id) ||
+				traceId !== row.traceId || method !== "POST" || typeof url !== "string" || url.length > 4096 || sha(url) !== row.urlSha256 || typeof action !== "string" || sha(action) !== row.actionHeaderSha256) { errors++; return false; }
+			row.proxyId = id; proxies.set(id, row); return true;
+		},
+		requestEOF(id, facts) {
+			const row = proxies.get(id);
+			if (closed || !row || row.requestEOF !== null || facts?.encodedBytes !== row.encodedBytes || facts?.bodySha256 !== row.bodySha256) { errors++; return false; }
+			row.requestEOF = Object.freeze({ encodedBytes: facts.encodedBytes, bodySha256: facts.bodySha256, actualEOF: true }); return true;
+		},
+		browserRequest(facts) {
+			const row = proxies.get(facts?.proxyId);
+			if (closed || !row || facts.contextId !== contextId || typeof facts.requestId !== "string" || !/^[A-Za-z0-9_.:-]{1,256}$/.test(facts.requestId) || facts.method !== "POST" || facts.traceId !== row.traceId ||
+				facts.urlSha256 !== row.urlSha256 || facts.actionHeaderSha256 !== row.actionHeaderSha256 || facts.initialHeadersKnown !== true || facts.extraHeadersKnown !== true ||
+				facts.initialReplaySha256 !== row.nonceSha256 || facts.extraReplaySha256 !== row.nonceSha256 ||
+				![facts.frameId, facts.loaderId, facts.documentGeneration].every(value => typeof value === "string" && /^[A-Za-z0-9_.:-]{1,256}$/.test(value))) { errors++; return false; }
+			const browser = Object.freeze({ requestId: facts.requestId, frameId: facts.frameId, loaderId: facts.loaderId, documentGeneration: facts.documentGeneration,
+				initialReplaySha256: facts.initialReplaySha256, extraReplaySha256: facts.extraReplaySha256 });
+			if (row.browser !== null && JSON.stringify(row.browser) !== JSON.stringify(browser)) { errors++; return false; }
+			row.browser = browser; return true;
+		},
+		finished(handle, { error }) {
+			const row = rowFor(handle);
+			if (!row || row.returned || typeof error !== "boolean") { errors++; return false; }
+			row.returned = true; row.returnedError = error; return true;
+		},
+		factsFor(id) {
+			const row = proxies.get(id);
+			return row?.requestEOF && row.browser ? deepFreeze({ protocol: "observed-team-manual-dispatch-v1", contextId, sourceBound: false, ...safeRow(row) }) : null;
+		},
+		close() { if (closed) return; closed = true; if (rows.some(row => !row.returned)) errors++; },
+		snapshot() { return { protocol: "team-replay-dispatch-observations-v1", contextId, sourceBound: false, acceptanceClaim: "none", closed, errors, overflow, unretainedArms, budgetKnown,
+			retainedBytes: budgetKnown ? retained : null, pendingDispatches: rows.filter(row => !row.returned).length, rows: rows.map(row => deepFreeze(structuredClone(safeRow(row)))) }; },
+	});
+	dispatchJournals.set(api, { owner, contextId, proxies });
+	return api;
+}
+
 async function readSource(path) {
 	const handle = await open(path, "r");
 	try {
@@ -341,8 +473,10 @@ export function originalTeamSourceFileFacts(bytes) {
 }
 
 /** Actual bounded file reads are the only live source issuer; public receipt copies cannot qualify. */
-export async function readOriginalTeamSourceQualification({ profileId, phase, compiledManifestPath, buildRecordPath }) {
+export async function readOriginalTeamSourceQualification(input) {
 	try {
+		if (!ownData(input, ["profileId", "phase", "compiledManifestPath", "buildRecordPath"])) throw Error();
+		const { profileId, phase, compiledManifestPath, buildRecordPath } = input;
 		const profile = originalTeamTemporaryProfiles.find(value => value.id === profileId);
 		if (!profile || phase !== "baseline" || typeof compiledManifestPath !== "string" || typeof buildRecordPath !== "string" ||
 			compiledManifestPath.length > 4096 || buildRecordPath.length > 4096 || basename(compiledManifestPath) !== "required-server-files.json") throw Error();
