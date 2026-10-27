@@ -204,8 +204,8 @@ function registerOwnedCutViews(lease,value,source=value){
     const info={lease,root:value,index:ledger?index:null,side,bytes:cutLeases.has(original)?leases.get(cutLeases.get(original)).logicalBytes:replayFacts.get(original)?.bytes??ownedCutView(original)?.bytes};must(Number.isSafeInteger(info.bytes)&&info.bytes<=limits.logical);bindings.push([child,info,ownedCutViews.get(child)]);ownedCutViews.set(child,info);
    }
   }
-  if(!bindings.length)return;const previous=held.onRelease;held.onRelease=()=>{while(bindings.length){const [child,info]=bindings.pop();if(ownedCutViews.get(child)===info)ownedCutViews.delete(child);}metadata.release();previous?.();};attached=true;
- }finally{if(!attached){for(const [child,info,prior]of bindings)if(ownedCutViews.get(child)===info){if(prior&&leases.get(prior.lease)?.live)ownedCutViews.set(child,prior);else ownedCutViews.delete(child);}bindings.length=0;metadata.release();}}
+  if(!bindings.length)return;for(const binding of bindings)binding[2]=null;const previous=held.onRelease;held.onRelease=()=>{while(bindings.length){const [child,info]=bindings.pop();if(ownedCutViews.get(child)===info)ownedCutViews.delete(child);}metadata.release();previous?.();};attached=true;
+ }finally{if(!attached){for(let index=bindings.length-1;index>=0;index--){const [child,info,prior]=bindings[index];if(ownedCutViews.get(child)===info){if(prior&&leases.get(prior.lease)?.live)ownedCutViews.set(child,prior);else ownedCutViews.delete(child);}}bindings.length=0;metadata.release();}}
 }
 function coverWhole(lease,value,measured,rootRecords=0){
  const held=leases.get(lease);if(value===null||typeof value!=='object'||types.isProxy(value))return;

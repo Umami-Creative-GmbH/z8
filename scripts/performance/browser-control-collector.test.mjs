@@ -1988,3 +1988,10 @@ test("failed descendant registration never publishes released cut or evidence ma
   refuse=false;let result;assert.doesNotThrow(()=>{result=perform();});if(kind==="replay")owner.releaseCut(result);else owner.releaseEvidence(result);owner.close();assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);assert.equal(proxy.reserveTemporaryObservation(33554432),true);proxy.releaseTemporaryObservation(33554432);
  }
 });
+
+
+test("committed descendant rebinding forgets the replaced parent before its reservation is released",async()=>{
+ const {setFlagsFromString}=await import("node:v8"),{runInNewContext}=await import("node:vm");setFlagsFromString("--expose_gc");const collect=runInNewContext("gc"),{parseMixedTechnicalReplayJSON,createMixedTechnicalOwner}=await import("./mixed-technical-gzip.mjs"),child=parseMixedTechnicalReplayJSON(Buffer.from(JSON.stringify({nativeContext:{contextId}}))),proxy=createProxyControlCollector({contextId,origin});proxy.installed();const owner=createMixedTechnicalOwner({contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});
+ let first=owner.retainEvidence(()=>({protocol:"acknowledged-mixed-native-prefix-v1",begin:child,end:child,unrelated:"x".repeat(1048576)}));const weak=new WeakRef(first),second=owner.retainEvidence(()=>({protocol:"acknowledged-mixed-native-prefix-v1",begin:child,end:child,unrelated:"small"}));owner.releaseEvidence(first);first=null;assert.ok(owner.stats().retainedBytes<10000);
+ let forgotten=false;for(let index=0;index<12;index++){await tick();collect();await tick();if(weak.deref()===undefined){forgotten=true;break;}}assert.equal(forgotten,true,"successful child rebinding must not retain rollback-only prior.root");owner.releaseEvidence(second);owner.close();assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);
+});
