@@ -2,6 +2,7 @@
 import { createHash } from "node:crypto";
 import { waitVisible } from "./journey-steps.mjs";
 import { observationTimeoutMs } from "./clean-evidence.mjs";
+import { legacyClockReadinessAuthority } from "./browser-control-collector.mjs";
 
 const initialFailureDiagnostics=new WeakMap();
 const weakErrorKey=value=>value!==null&&(typeof value==="object"||typeof value==="function");
@@ -11,6 +12,36 @@ export function getPublicHeaderClockFailureDiagnostics(error){
 	return value?structuredClone(value):null;
 }
 
+
+/** Browser callback; Node caller supplies only its privately verified authority result. */
+export function readPublicHeaderClockDOM(known,legacyQualified=false){
+			const buttons = [
+				...document.querySelectorAll(
+					'header button[aria-label="Clock In"],header button[aria-label="Clock Out"]',
+				),
+			],button=buttons.find((node) => node.getClientRects().length && !node.disabled);
+			let value=null;
+			if(button){value =
+				button.getAttribute("aria-label") === "Clock In" ? "out" : "in";
+			if (
+				!button.closest('[data-clock-status="ready"]') &&
+				(known?.hasEmployee !== true || known.isClockedIn !== (value === "in"))
+			)
+				value=null;}
+			// Preserve the old readiness decision even if extra diagnostic reads fail.
+			try{
+			const markerFor=node=>{const marker=node.closest('[data-clock-status]')?.getAttribute("data-clock-status");return marker===undefined||marker===null?"absent":["ready","pending","unavailable"].includes(marker)?marker:"other";};
+			const dom={known:true,candidates:Math.min(buttons.length,32),truncated:buttons.length>32,visible:0,enabledVisible:0,clockInVisible:0,clockOutVisible:0,clockInEnabledVisible:0,clockOutEnabledVisible:0,markers:{ready:0,pending:0,unavailable:0,absent:0,other:0},selectedLabel:button?button.getAttribute("aria-label")==="Clock In"?"clock-in":"clock-out":"none",marker:button?markerFor(button):"absent",state:value};
+			for(const node of buttons.slice(0,32)){dom.markers[markerFor(node)]++;if(node.getClientRects().length){dom.visible++;if(node.getAttribute("aria-label")==="Clock In")dom.clockInVisible++;else dom.clockOutVisible++;if(!node.disabled){dom.enabledVisible++;if(node.getAttribute("aria-label")==="Clock In")dom.clockInEnabledVisible++;else dom.clockOutEnabledVisible++;}}}
+			dom.conflictingUsableLabels=dom.clockInEnabledVisible>0&&dom.clockOutEnabledVisible>0?true:dom.truncated?null:false;
+			dom.readinessAuthority=value===null?"unknown":"existing-marker-or-status";
+			if(value===null && legacyQualified===true && button?.tagName==="BUTTON" && dom.truncated===false && dom.visible===1 && dom.enabledVisible===1 && dom.conflictingUsableLabels===false && dom.marker==="absent" && button.getAttribute("aria-disabled")!=="true" && !button.matches(":disabled") && typeof button.checkVisibility==="function" && button.checkVisibility({visibilityProperty:true,opacityProperty:true,contentVisibilityAuto:true})===true){
+				value=button.getAttribute("aria-label")==="Clock In"?"out":"in";
+				dom.state=value;dom.readinessAuthority="qualified-legacy-dom";
+			}
+			return {value,dom};
+			}catch{return {value,dom:{known:false,reason:"diagnostic-read-unavailable",state:value}};}
+		}
 const pause = (ms) => new Promise((done) => setTimeout(done, ms));
 function resultFrom(text) {
 	try {
@@ -45,7 +76,7 @@ async function verifyActor(page, expected) {
 /** No invented command bodies, action IDs, hidden clicks or automatic write retries. */
 export async function openPublicHeaderClock(
 	page,
-	{ origin, expectedActor, phase = "release", timeoutMs = observationTimeoutMs(phase) },
+	{ origin, expectedActor, phase = "release", timeoutMs = observationTimeoutMs(phase), browserControlBinding },
 ) {
 	const url = new URL(origin);
 	if (
@@ -66,13 +97,14 @@ export async function openPublicHeaderClock(
 		throw new Error(
 			"An authenticated loopback fixture and bounded timeout are required.",
 		);
+	const legacyAuthority=legacyClockReadinessAuthority(browserControlBinding,{origin:url.origin,phase});
 	let knownStatus = null,
 		armed = false,
 		needsResolution = false;
 	const diagnostic={protocol:"public-header-clock-readiness-diagnostic-v1",acceptanceClaim:"none",polls:0,errors:0,overflow:0,eventOrdinal:0,requestFacts:0,navigationEvents:0,documentGeneration:0,actorVerifiedGeneration:null,pendingStatusReads:0,outOfOrderStatusUpdates:0,disposed:false,lastDOM:null,lastStatusRead:null,cachedStatus:null,attempt:null,writeResponse:null,failureStage:null};
 	const requests=new WeakMap();let cachedStatusAt=null;
 	const ordinal=()=>{if(diagnostic.eventOrdinal>=10000){diagnostic.overflow++;return null;}return ++diagnostic.eventOrdinal;};
-	const snapshot=()=>structuredClone({...diagnostic,statusAgeMs:cachedStatusAt===null?null:Math.max(0,performance.now()-cachedStatusAt),
+	const snapshot=()=>structuredClone({...diagnostic,legacyReadinessSource:legacyAuthority,statusAgeMs:cachedStatusAt===null?null:Math.max(0,performance.now()-cachedStatusAt),
 		cachedStatusSameObservedNavigationGeneration:diagnostic.cachedStatus?.requestDocumentGeneration===undefined?null:diagnostic.cachedStatus.requestDocumentGeneration===diagnostic.documentGeneration,
 		writeMatchesCurrentAttempt:Number.isSafeInteger(diagnostic.attempt?.submitEventOrdinal)&&Number.isSafeInteger(diagnostic.writeResponse?.submitEventOrdinal)?diagnostic.attempt.submitEventOrdinal===diagnostic.writeResponse.submitEventOrdinal:null,
 		statusRequestAfterAcceptedWrite:diagnostic.writeResponse?.accepted===true && Number.isSafeInteger(diagnostic.cachedStatus?.requestEventOrdinal) && Number.isSafeInteger(diagnostic.writeResponse.acknowledgedEventOrdinal)?diagnostic.cachedStatus.requestEventOrdinal>diagnostic.writeResponse.acknowledgedEventOrdinal:null});
@@ -110,29 +142,7 @@ export async function openPublicHeaderClock(
 	async function state(expected=null) {
 		diagnostic.polls++;
 		let observation;
-		try{observation=await page.evaluate((known) => {
-			const buttons = [
-				...document.querySelectorAll(
-					'header button[aria-label="Clock In"],header button[aria-label="Clock Out"]',
-				),
-			],button=buttons.find((node) => node.getClientRects().length && !node.disabled);
-			let value=null;
-			if(button){value =
-				button.getAttribute("aria-label") === "Clock In" ? "out" : "in";
-			if (
-				!button.closest('[data-clock-status="ready"]') &&
-				(known?.hasEmployee !== true || known.isClockedIn !== (value === "in"))
-			)
-				value=null;}
-			// Preserve the old readiness decision even if extra diagnostic reads fail.
-			try{
-			const markerFor=node=>{const marker=node.closest('[data-clock-status]')?.getAttribute("data-clock-status");return marker===undefined||marker===null?"absent":["ready","pending","unavailable"].includes(marker)?marker:"other";};
-			const dom={known:true,candidates:Math.min(buttons.length,32),truncated:buttons.length>32,visible:0,enabledVisible:0,clockInVisible:0,clockOutVisible:0,clockInEnabledVisible:0,clockOutEnabledVisible:0,markers:{ready:0,pending:0,unavailable:0,absent:0,other:0},selectedLabel:button?button.getAttribute("aria-label")==="Clock In"?"clock-in":"clock-out":"none",marker:button?markerFor(button):"absent",state:value};
-			for(const node of buttons.slice(0,32)){dom.markers[markerFor(node)]++;if(node.getClientRects().length){dom.visible++;if(node.getAttribute("aria-label")==="Clock In")dom.clockInVisible++;else dom.clockOutVisible++;if(!node.disabled){dom.enabledVisible++;if(node.getAttribute("aria-label")==="Clock In")dom.clockInEnabledVisible++;else dom.clockOutEnabledVisible++;}}}
-			dom.conflictingUsableLabels=dom.clockInEnabledVisible>0&&dom.clockOutEnabledVisible>0?true:dom.truncated?null:false;
-			return {value,dom};
-			}catch{return {value,dom:{known:false,reason:"diagnostic-read-unavailable",state:value}};}
-		}, knownStatus);}catch(error){diagnostic.failureStage="readiness-read";diagnostic.errors++;throw error;}
+		try{observation=await page.evaluate(readPublicHeaderClockDOM, knownStatus, legacyAuthority!==null);}catch(error){diagnostic.failureStage="readiness-read";diagnostic.errors++;throw error;}
 		if(observation.dom.known!==true)diagnostic.errors++;
 		diagnostic.lastDOM={...observation.dom,expected:["in","out"].includes(expected)?expected:null,expectedMatches:expected===null?null:observation.value===expected};
 		return observation.value;
