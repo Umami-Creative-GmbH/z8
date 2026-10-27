@@ -11,6 +11,14 @@ const loopback = (url) =>
 	["localhost", "127.0.0.1", "[::1]"].includes(url.hostname) &&
 	!url.username &&
 	!url.password;
+
+/** Observe only: the caller retains its original pipe, chunks and backpressure. */
+export function tapOwnedRequestBody(request, id, emit, observerError) {
+	const observe=(method,...args)=>{try{emit(method,id,...args);}catch{observerError();}};
+	request.on("data",chunk=>observe("requestBodyBytes",chunk));
+	request.once("end",()=>observe("requestBodyEnd"));
+	for(const kind of ["aborted","error","close"])request.on(kind,()=>observe("requestBodyFailure",kind));
+}
 export async function createFixtureTraceTransport({
 	origin,
 	getTraceId,
@@ -44,13 +52,14 @@ export async function createFixtureTraceTransport({
 		headerLifecycle?.close();
 		control("transportClosed",{serverClosed:true,acceptedRequests:counts.requests,upstreamRequests,closedUpstreams,pendingUpstreams:0});
 	};
-	const control = (method, ...args) => {
-		try { controlObserver?.[method](...args); }
-		catch {
+	const controlError = () => {
 			controlObserverErrors++;
 			headerLifecycle?.observerError();
 			try { controlObserver?.observerError(); } catch {}
-		}
+	};
+	const control = (method, ...args) => {
+		try { return controlObserver?.[method](...args); }
+		catch { controlError(); }
 	};
 	const counts = {
 		requests: 0,
@@ -77,7 +86,7 @@ export async function createFixtureTraceTransport({
 		},
 	};
 	const server = createServer((request, response) => {
-		let wireId, applicationId, controlId;
+		let wireId, applicationId, controlId, captureRequestShape=false;
 		try {
 			const traceId = getTraceId({
 				headers: request.headers,
@@ -104,7 +113,7 @@ export async function createFixtureTraceTransport({
 			if (controlObserver && Number.isSafeInteger(applicationId) && applicationId > 0) {
 				controlId = `${traceId}.${applicationId}`;
 				headerLifecycle?.accepted(controlId,createHash("sha256").update(url.origin).digest("hex"));
-				control("request", controlId, { traceId, url: url.href, method: request.method, headers: request.headers });
+				captureRequestShape=control("request", controlId, { traceId, url: url.href, method: request.method, headers: request.headers })===true;
 			}
 			else if (controlObserver) control("observerError");
 			const headers = { ...request.headers };
@@ -225,6 +234,10 @@ export async function createFixtureTraceTransport({
 			response.on("close", () => {
 				if (!response.writableEnded) canceled();
 			});
+			if(captureRequestShape){
+				if(["requestBodyBytes","requestBodyEnd","requestBodyFailure"].every(key=>typeof controlObserver?.[key]==="function"))tapOwnedRequestBody(request,controlId,control,controlError);
+				else controlError();
+			}
 			request.pipe(upstream);
 		} catch {
 			counts.refusedRequests++;
