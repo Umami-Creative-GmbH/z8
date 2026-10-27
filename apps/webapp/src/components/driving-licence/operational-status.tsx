@@ -27,8 +27,8 @@ export function DrivingAuthorizationAdvisory({
 	const userId = session?.user.id;
 	const query = useQuery({
 		queryKey: queryKeys.drivingLicence.statusFor(organizationId, userId, employeeId),
-		queryFn: ({ signal }) =>
-			loadDrivingAuthorizationStatus(organizationId ?? "", employeeId, signal),
+		// Let an already started advisory read finish after its UI unmounts.
+		queryFn: () => loadDrivingAuthorizationStatus(organizationId ?? "", employeeId),
 		enabled: !!organizationId && !!userId,
 		staleTime: 0,
 		refetchInterval: 60_000,
