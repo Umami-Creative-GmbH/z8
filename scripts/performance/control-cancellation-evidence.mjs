@@ -2,6 +2,7 @@
 import { createHash } from "node:crypto";
 import { validateProxyHeaderCensus, validateProxyHeaderPrefix, validateProxyHeaderLifecycle } from "./proxy-header-census.mjs";
 import {cachedCdpTextProjectionProtocol,cachedCdpTextSourceRevision,cachedCdpTextMappingSha256} from "./cdp-cached-text-projection.mjs";
+import { resolveOriginalTeamTemporaryReference, closeOriginalTeamBodyInspection, validateOriginalTeamTemporaryValues, validateOriginalTeamBodyUseCoverage, knownTemporaryValueObservation, knownOriginalTeamSourceConfiguration } from "./team-temporary-value-authority.mjs";
 export const controlCancellationPolicy = Object.freeze({
 	version: 2,
 	protocol: "positively-proven-protocol-controls-v2",
@@ -11,7 +12,7 @@ export const controlCancellationPolicy = Object.freeze({
 	recordLimit: 10000,
 });
 export const chromiumSWRRevision = "d0c02bfad08ec92a6ffcf989e53cd995e6381a4c";
-export const controlIdentityHeaders = Object.freeze(["rsc","next-router-prefetch","next-router-segment-prefetch","next-router-state-tree","next-url","next-action","accept","accept-encoding","accept-language","cookie","authorization","x-z8-fixture-document-generation"]);
+export const controlIdentityHeaders = Object.freeze(["rsc","next-router-prefetch","next-router-segment-prefetch","next-router-state-tree","next-url","next-action","accept","accept-encoding","accept-language","cookie","authorization","x-z8-fixture-document-generation","x-z8-fixture-replay-id"]);
 export const bodySha256 = (bytes) =>
 	createHash("sha256").update(bytes).digest("hex");
 export const routePathSourceDigest = facts=>{
@@ -92,6 +93,8 @@ export function knownNativePublicSources(source, compiledBuild, compiledManifest
 export function knownBrowserControlMetadata(metadata) {
 	return Boolean(metadata && JSON.stringify(metadata.policy) === JSON.stringify(controlCancellationPolicy) &&
 		metadata.browserRevision === chromiumSWRRevision && typeof metadata.compiledCachedNavigations === "boolean" &&
+		knownTemporaryValueObservation(metadata.temporaryValueObservation) && Object.hasOwn(metadata,"originalTeamSource") &&
+		knownOriginalTeamSourceConfiguration(metadata.originalTeamSource,undefined,metadata.compiledManifestSha256) &&
 		typeof metadata.compiledManifestSha256 === "string" && /^[a-f0-9]{64}$/.test(metadata.compiledManifestSha256) &&
 		(!Object.hasOwn(metadata,"nativePublicSources") || knownNativePublicSources(metadata.nativePublicSources,metadata.nativePublicSources?.compiledBuild,metadata.compiledManifestSha256)));
 }
@@ -101,6 +104,9 @@ export function matchingBrowserControlBinding(runtime, binding) {
 	return knownBrowserControlMetadata(expected) && knownBrowserControlMetadata(binding) &&
 		["browserRevision", "compiledCachedNavigations", "compiledManifestSha256"].every((key) => binding[key] === expected[key]) &&
 		JSON.stringify(binding.nativePublicSources) === JSON.stringify(expected.nativePublicSources) &&
+		JSON.stringify(binding.temporaryValueObservation) === JSON.stringify(expected.temporaryValueObservation) &&
+		JSON.stringify(binding.originalTeamSource) === JSON.stringify(expected.originalTeamSource) &&
+		knownOriginalTeamSourceConfiguration(binding.originalTeamSource,binding.compiledBuild,binding.compiledManifestSha256) &&
 		(!expected.nativePublicSources || knownNativePublicSources(expected.nativePublicSources,runtime.build,expected.compiledManifestSha256)) &&
 		(!binding.nativePublicSources || knownNativePublicSources(binding.nativePublicSources,binding.compiledBuild,binding.compiledManifestSha256)) &&
 		binding.compiledBuild === runtime.build && binding.manifestVerified === true && binding.browserVerified === true;
@@ -109,7 +115,15 @@ export function matchingBrowserControlBinding(runtime, binding) {
 export function inspectRequiredFlightBody(
 	bytes, options = {},
 ) {
-	return inspectFlightBody(bytes, options, { decoded: 0, rows: 0, models: 0 }, 0);
+	let proof;
+	const inspection = options?.temporaryValueInspection ?? null;
+	try { proof = inspectFlightBody(bytes, options, { decoded: 0, rows: 0, models: 0 }, 0); }
+	finally {
+		if (inspection !== null && !closeOriginalTeamBodyInspection(inspection) && proof) {
+			proof = { ...proof, complete: false, ...(proof.serverErrors > 0 || proof.explicitActionFailure === true ? {} : { reason: "temporary-value-inspection-unclosed" }) };
+		}
+	}
+	return proof;
 }
 
 function inspectFlightBody(
@@ -119,6 +133,7 @@ function inspectFlightBody(
 		cachedNavigations,
 		segmentBinding,
 		routeTreeBinding,
+		temporaryValueInspection,
 		requestKind = action ? "action" : "navigation",
 	} = {}, budget, depth,
 ) {
@@ -408,6 +423,22 @@ function inspectFlightBody(
 		(action ? !Object.hasOwn(root, "a") : !Object.hasOwn(root, "t"))
 	)
 		return unknown("unsupported-root");
+	let temporaryBinding = null, temporaryReferenceCount = 0, temporaryEpoch = 0;
+	let temporaryBoundary = null;
+	const temporaryObjects = new WeakSet();
+	const temporaryObligations = new Map();
+	const resolveTemporary = token => {
+		if (typeof token !== "string" || !token.startsWith("$T") || !action || requestKind !== "action" || depth !== 0) return undefined;
+		temporaryBoundary ??= { bodySha256: bodySha256(bytes), decodedBytes: bytes.length, action, requestKind };
+		const resolved = resolveOriginalTeamTemporaryReference(temporaryValueInspection, token, temporaryBoundary);
+		if (!resolved) return undefined;
+		temporaryBinding = resolved.receipt;
+		if (resolved.value && typeof resolved.value === "object") temporaryObjects.add(resolved.value);
+		temporaryEpoch++;
+		// A request value is never an unfinished response-model anchor.
+		for (const state of activePaths.values()) { state.temporaryUsed = true; state.anchorKnown = false; }
+		return resolved.value;
+	};
 	const plainPath = /^\$(0|[1-9a-f][a-f0-9]{0,12}):/;
 	let pathLimit = false, pathFailure = null, pathLimitObservation = null, eagerParentCalls = 0, outlinedCalls = 0, eagerUniqueObjects = 0, repeatedEagerObjects = 0;
 	const eagerObjectsObserved = new WeakSet();
@@ -459,6 +490,12 @@ function inspectFlightBody(
 		if (!pathStep(depth,"eager-parent",{referenceEdgesInParent:referenceEdges,jsonDepthInParent:jsonDepth})) return false;
 		if (typeof value === "string") {
 			if (value.startsWith("$")) referenceSensitiveEpoch++;
+			if (value.startsWith("$T")) {
+				const projected = resolveTemporary(value);
+				if (projected === undefined) return notePathFailure("unsupported-eager-reference");
+				borrowReadiness("opaque");
+				return eagerParent(projected, forceElement, seen, depth + 1, referenceEdges + 1, 0, null);
+			}
 			if (/^\$(?:L|@)[a-f0-9]+$/.test(value)) {
 				if (!canonicalFlightId(value.slice(2))) return notePathFailure("noncanonical-eager-reference");
 				// This completes the old wrapper-shape predicate, not its target or role.
@@ -492,7 +529,7 @@ function inspectFlightBody(
 		if (elementTuple(value) && !forceElement) { referenceSensitiveEpoch++; borrowReadiness("elementSkip"); return true; }
 		if (elementTuple(value) && value.length !== 4) return notePathFailure("malformed-eager-element");
 		if (seen.has(value)) { referenceSensitiveEpoch++; borrowReadiness("seenContainer",costCandidates.findLast(candidate=>candidate.value===value)?.owner); return true; }
-		const literal = literalParentChecks.get(value)?.get(forceElement===true);
+		const literal = !temporaryObjects.has(value) && literalParentChecks.get(value)?.get(forceElement===true);
 		if (literal && depth + literal.depthSpan <= 64) {
 			closedEagerMemo.literalHits++;
 			const origin=records.get(originId),closed=typeof originId==="string" && origin?.tag===null && !origin.stream && closedEagerChecks.get(value)?.get(originId)?.get(forceElement===true);
@@ -503,7 +540,7 @@ function inspectFlightBody(
 			includeDepth(depth+literal.depthSpan);
 			return true;
 		}
-		const origin = records.get(originId), originKnown = typeof originId === "string" && origin?.tag === null && !origin.stream;
+		const origin = records.get(originId), originKnown = !temporaryObjects.has(value) && typeof originId === "string" && origin?.tag === null && !origin.stream;
 		const certificate = originKnown && closedEagerChecks.get(value)?.get(originId)?.get(forceElement===true);
 		if (certificate && depth + certificate.depthSpan <= 64) {
 			closedEagerMemo.hits++;
@@ -560,7 +597,7 @@ function inspectFlightBody(
 				byForce.set(forceElement===true,{depthSpan:scope.maxDepth-depth,literalEligible,containsCanonicalWrappers});
 			}
 		}
-		if (ready && referenceSensitiveEpoch === eligibility) {
+		if (ready && referenceSensitiveEpoch === eligibility && !temporaryObjects.has(value)) {
 			let byForce = literalParentChecks.get(value);
 			if (!byForce) literalParentChecks.set(value,byForce=new Map());
 			const plainJsonSummary=plain&&forceElement===false&&borrowEpoch===candidateEpoch?{protocol:plainSummaryProtocol,nodes:plainNodes,maxPendingDelta:plainPending,rootKeys:plainRootKeys}:null;
@@ -609,6 +646,12 @@ function inspectFlightBody(
 					originId = selected.originId; for (const modelId of selected.modelIds) state.modelIds.add(modelId);
 				}
 				if (typeof value === "string" && /^\$@/.test(value)) return unknownPath("path-promise-not-unwrapped");
+				if (typeof value === "string" && value.startsWith("$T")) {
+					if (!pathStep(depth + 1,"path-alias",{referenceEdgesInStep:1})) return {known:false};
+					const projected = resolveTemporary(value);
+					if (projected === undefined) return unknownPath("unsupported-path-temporary-value");
+					referenceSensitiveEpoch++; borrowReadiness("opaque"); value = projected; originId = null;
+				}
 				if (!value || typeof value !== "object") return unknownPath("non-object-projection");
 				if (binaryValues.has(value) || opaqueText.has(value)) return unknownPath("binary-or-text-projection");
 				parents.push({value,originId});
@@ -628,7 +671,7 @@ function inspectFlightBody(
 			// Locate the actual own-data target before validating its parents. Only a materialized
 			// same-model target can anchor a self-cycle; a reference string is never an anchor.
 			state.checking = true; state.target = value; state.originId = originId;
-			state.anchorKnown = value !== undefined && (typeof value !== "string" || !value.startsWith("$") || value.startsWith("$$"));
+			state.anchorKnown = !state.temporaryUsed && value !== undefined && (typeof value !== "string" || !value.startsWith("$") || value.startsWith("$$"));
 			// A standalone same-model check has no unfinished enclosing parent to borrow from.
 			// Publish its certificates only after the ENTIRE parent list has succeeded.
 			const standalone = trail.size === 0 && activePaths.size === 1 && state.modelIds.size === 1 && parents.every(parent=>parent.originId===id);
@@ -658,13 +701,14 @@ function inspectFlightBody(
 				const inherited = [...trail].every(item=>typeof item !== "string" || item === parent.originId) ? trail : [];
 				const scope = {maxDepth:entryDepth}; parentCheckDepths.push(scope);
 				const dependencyBefore={...closedEagerMemo.borrowReasons};
+				const temporaryBefore=temporaryEpoch;
 				let ready;
 				try { ready = eagerParent(parent.value,true,new Set([...inherited,parent.originId]),entryDepth,0,0,parent.originId); }
 				finally { parentCheckDepths.pop(); }
-				if (ready && standalone) { parentMemoReady++;const observedDependencyMask=Object.entries(reasonBits).reduce((mask,[reason,bit])=>mask|(closedEagerMemo.borrowReasons[reason]>dependencyBefore[reason]?bit:0),0);pendingParentChecks.push({parent,depthSpan:scope.maxDepth-entryDepth,observedDependencyMask}); }
+				if (ready && standalone && temporaryBefore===temporaryEpoch && !state.temporaryUsed) { parentMemoReady++;const observedDependencyMask=Object.entries(reasonBits).reduce((mask,[reason,bit])=>mask|(closedEagerMemo.borrowReasons[reason]>dependencyBefore[reason]?bit:0),0);pendingParentChecks.push({parent,depthSpan:scope.maxDepth-entryDepth,observedDependencyMask}); }
 				return ready;
 			})) return {known:false};
-			for (const {parent,depthSpan,observedDependencyMask} of pendingParentChecks) {
+			for (const {parent,depthSpan,observedDependencyMask} of state.temporaryUsed ? [] : pendingParentChecks) {
 				let byOrigin = completedParentChecks.get(parent.value);
 				if (!byOrigin) completedParentChecks.set(parent.value,byOrigin = new Map());
 				byOrigin.set(parent.originId,{forceElement:true,depthSpan,observedDependencyMask});
@@ -686,6 +730,7 @@ function inspectFlightBody(
 				value = record?.value;
 			}
 		}
+		if (typeof value === "string" && value.startsWith("$T")) return resolveTemporary(value);
 		return value;
 	};
 	let segmentClaims = null, segmentOutputs = [];
@@ -991,6 +1036,15 @@ function inspectFlightBody(
 		const entry=queue.pop();noteSemantic(entry,queue,beforeGuard);
 		const { value, role, fallbackReferences, directEmbeddedOutput, fromTypedOutput, outputArrival, outputParentArrival, rArrayOutput, insideRArray,observationOrigin,observationReference } = entry;
 		try {
+		if (typeof value === "string" && value.startsWith("$T")) {
+			const projected = resolveTemporary(value);
+			if (projected !== undefined) {
+				temporaryReferenceCount++;
+				temporaryObligations.set(role,(temporaryObligations.get(role) ?? 0)+1);
+				queue.push({...entry,value:projected,observationOrigin:null,observationReference:undefined,temporaryProvenance:"request-value"});
+				continue;
+			}
+		}
 		if (value && typeof value === "object" && binaryValues.has(value)) return unknown("unsupported-binary-role");
 		if (shellScope && role === "fallback-output" && (
 			(value && typeof value === "object" && !Array.isArray(value)) ||
@@ -1429,6 +1483,7 @@ function inspectFlightBody(
 		isPartial: Boolean(isPartial),
 		...(marker === "unmarked-navigation" ? { cachedNavigations } : {}),
 		action,
+		...(action ? { temporaryValues: { protocol: "original-team-temporary-values-v1", referenceCount: temporaryReferenceCount, binding: temporaryBinding, obligations: [...temporaryObligations].map(([role,count])=>({role,count})) } } : {}),
 		requiredStage,
 		...(patchClaims ?? {}),
 		boundaryBytes,
@@ -1473,6 +1528,7 @@ const goodBody = (proof, depth = 0,allowNullRoute=false) => {
 		proof.boundaryBytes > proof.decodedBytes
 	)
 		return false;
+	if (proof.action && !validateOriginalTeamTemporaryValues(proof.temporaryValues,{bodySha256:proof.bodySha256,decodedBytes:proof.decodedBytes})) return false;
 	if (!Number.isSafeInteger(proof.protocolRows) || proof.protocolRows <= 0 || proof.protocolRows > 4096 ||
 		!Number.isSafeInteger(proof.modelSteps) || proof.modelSteps <= 0 || proof.modelSteps > 100000 ||
 		!Object.hasOwn(proof, "embeddedRuntimePrefetch") || depth > 1 || (proof.requestKind === "embedded-runtime-prefetch" && depth !== 1)) return false;
@@ -1603,6 +1659,7 @@ const bodyReceipt = (row) => {
 		"bodySha256",
 		"serverErrors",
 		"explicitActionFailure",
+		"temporaryValues",
 	]);
 	if (Object.hasOwn(row, "embeddedRuntimePrefetch")) proof.embeddedRuntimePrefetch = row.embeddedRuntimePrefetch === null ? null : bodyReceipt(row.embeddedRuntimePrefetch);
 	return proof;
@@ -1626,6 +1683,7 @@ const requestReceipt = (row) => ({
 		"id",
 		"traceId",
 		"loaderId",
+		"frameId",
 		"fullUrlSha256",
 		"requestOriginSha256",
 		"requestHeadersSha256",
@@ -1643,6 +1701,9 @@ const requestReceipt = (row) => ({
 		"vary",
 		"transportBodyReceipt",
 		"bodyReadbackReceipt",
+		"temporaryValueObservation",
+		"temporaryRequestAuthority",
+        "requestBodyFacts",
 		"browserDataLedger",
 		"rsc",
 		"purposeHeaderPresent",
@@ -1992,6 +2053,9 @@ export function classifyControlCancellations({
 	nativeContext,
 	scope = "measured",
 }) {
+	const temporaryValueBodies=[...responses.map(row=>({source:"browser",row})),...failures.map(row=>({source:"browser",row})),...proxy.map(row=>({source:"proxy",row}))]
+		.filter(({row})=>row.bodyProof?.action===true && row.bodyProof?.temporaryValues?.binding!==null && row.bodyProof?.temporaryValues?.binding!==undefined)
+		.map(({source,row})=>({source,row:requestReceipt(row)}));
 	const records = [],
 		seen = new Set();
 	let realFailures = 0,
@@ -2003,7 +2067,8 @@ export function classifyControlCancellations({
 		["missing", "overflow", "errors", "pendingBodies"].every(
 			(key) => coverage[key] === 0,
 		) &&
-		failures.length <= controlCancellationPolicy.recordLimit;
+		failures.length <= controlCancellationPolicy.recordLimit && temporaryValueBodies.length <= controlCancellationPolicy.recordLimit &&
+        validateOriginalTeamBodyUseCoverage(nativeContext,temporaryValueBodies) && temporaryValueBodies.every(({row})=>goodBody(row.bodyProof) && validateOriginalTeamTemporaryValues(row.bodyProof.temporaryValues,{bodySha256:row.bodyProof.bodySha256,decodedBytes:row.bodyProof.decodedBytes,request:row,context:nativeContext}));
 	for (const failure of failures) {
 		const key = `${failure.contextId}:${failure.requestId}`;
 		if (!failure.requestId || seen.has(key)) complete = false;
@@ -2054,6 +2119,8 @@ export function classifyControlCancellations({
 					packet.flight === true &&
 					goodBody(failure.bodyProof) &&
 					goodBody(packet.bodyProof) &&
+					(!failure.bodyProof.action || validateOriginalTeamTemporaryValues(failure.bodyProof.temporaryValues,{bodySha256:failure.bodyProof.bodySha256,decodedBytes:failure.bodyProof.decodedBytes,request:failure,context:nativeContext})) &&
+					(!packet.bodyProof.action || validateOriginalTeamTemporaryValues(packet.bodyProof.temporaryValues,{bodySha256:packet.bodyProof.bodySha256,decodedBytes:packet.bodyProof.decodedBytes,request:packet,context:nativeContext})) &&
 					receivedBody(failure) &&
 					failure.action === packet.action &&
 					failure.bodyProof.action === failure.action &&
@@ -2093,6 +2160,7 @@ export function classifyControlCancellations({
 		policy: controlCancellationPolicy,
 		scope,
 		rawFailedRequests: failures.length,
+        temporaryValueBodies,
 		realFailures,
 		unknownFailures,
 		provenControls,
@@ -2111,6 +2179,10 @@ function browserFailureEvidenceMatches(evidence, rawFailedRequests, scope, requi
 		JSON.stringify(evidence.policy) !==
 			JSON.stringify(controlCancellationPolicy) ||
 		evidence.scope !== scope ||
+		!Array.isArray(evidence.temporaryValueBodies) || evidence.temporaryValueBodies.length>controlCancellationPolicy.recordLimit ||
+		evidence.temporaryValueBodies.some(entry=>!["browser","proxy"].includes(entry?.source) || !goodBody(entry.row?.bodyProof) ||
+			!validateOriginalTeamTemporaryValues(entry.row.bodyProof.temporaryValues,{bodySha256:entry.row.bodyProof.bodySha256,decodedBytes:entry.row.bodyProof.decodedBytes,request:entry.row,context:evidence.nativeContext})) ||
+		!validateOriginalTeamBodyUseCoverage(evidence.nativeContext,evidence.temporaryValueBodies) ||
 		evidence.complete !== true ||
 		!Number.isSafeInteger(rawFailedRequests) ||
 		rawFailedRequests < 0 ||

@@ -56,3 +56,7 @@ export function parseInertDateRangeRequest(bytes){
 export function readInertDateRangeRequestValue(descriptor){
 	return descriptor!==null&&(typeof descriptor==="object"||typeof descriptor==="function")?values.get(descriptor)??null:null;
 }
+/** Delete the real private value before its owner's retained-byte reservation is released. */
+export function forgetInertDateRangeRequestValue(descriptor){
+	return descriptor!==null&&(typeof descriptor==="object"||typeof descriptor==="function")?values.delete(descriptor):false;
+}

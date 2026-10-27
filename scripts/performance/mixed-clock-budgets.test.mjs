@@ -1,3 +1,4 @@
+import {testEmptyTemporaryValues} from "./control-cancellation-test-fixtures.mjs";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
@@ -87,7 +88,7 @@ function fastMixedEvidence(contextId,build,files=Object.fromEntries(budgets.mixe
  const origin="http://localhost:58792",sha=value=>createHash("sha256").update(value).digest("hex"),evidence=testBrowserEvidence(contextId),principal=createPrincipalEpochObserver(contextId,{origin});
  principal.start([{name:"session",value:"synthetic",domain:"localhost",path:"/",httpOnly:true}]);
  const census=createProxyHeaderCensus({contextId}),life=createProxyHeaderLifecycle({proxyInstanceId:"f".repeat(32),originSha256:sha(origin),allowedOriginSha256:[sha(origin)]});
- const context={protocol:"qualified-known-extra-native-context-v1",contextId,originSha256:sha(origin),workerScriptSha256:sha(origin+"/sw.js"),rootScopeSha256:sha(origin+"/"),operatorFile:"mixed-load-probe.mjs",binding:testBrowserBinding(build,metadata),protocolSources:files,principalEpoch:principal.snapshot(),headerCensus:census.snapshot(),headerPrefix:proxyHeaderPrefix(census.snapshot(),life.snapshot()),environment:{workerTargets:{events:[]}}};
+ const context={protocol:"qualified-known-extra-native-context-v1",contextId,originSha256:sha(origin),workerScriptSha256:sha(origin+"/sw.js"),rootScopeSha256:sha(origin+"/"),operatorFile:"mixed-load-probe.mjs",binding:testBrowserBinding(build,metadata),protocolSources:files,principalEpoch:principal.snapshot(),headerCensus:census.snapshot(),headerPrefix:proxyHeaderPrefix(census.snapshot(),life.snapshot()),environment:{temporaryValues:testEmptyTemporaryValues(contextId),workerTargets:{events:[]}}};
  const vector=mixedNativeProgressVector({nativeContext:context,browserEventOrdinal:0,failures:[]});
  const checks=[{ordinal:1,begin:vector,returned:structuredClone(vector),checkpointOrdinal:null,prefixSha256:null}];
  evidence.mixedProgress={protocol:"mixed-native-progress-observations-v1",contextId,authoritySha256:mixedNativeAuthorityDigest(context),guardChecks:1,attempted:0,failed:0,overflow:0,retainedBytes:Buffer.byteLength(JSON.stringify(checks)),checks,prefixes:[]};

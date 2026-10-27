@@ -1,3 +1,5 @@
+import {testEmptyTemporaryValues} from "./control-cancellation-test-fixtures.mjs";
+import { temporaryValueObservation } from "./team-temporary-value-authority.mjs";
 import assert from "node:assert/strict";
 import test from "node:test";
 import {createHash} from "node:crypto";
@@ -23,7 +25,7 @@ test("Native controls bind only the independently qualified current Chromium rev
 function fixture({applicationIds=[1,2],originalApplicationId=1,currentApplicationId=2,mixedTraces=false}={}) {
   const contextId="synthetic-context",origin="http://localhost:1234",url=origin+"/en?_rsc=synthetic",build="b".repeat(40);
   const files=["sw.js","lib/offline-queue-db.js","lib/sync-service.js","lib/clock-command-dispatch.js"].map(file=>({file,bytes:12,sha256:sha(file),gitBlob:"d".repeat(40)}));
-  const binding={policy:controlCancellationPolicy,browserRevision:chromiumSWRRevision,compiledBuild:build,compiledManifestSha256:"c".repeat(64),compiledCachedNavigations:true,manifestVerified:true,browserVerified:true,
+  const binding={policy:controlCancellationPolicy,temporaryValueObservation:structuredClone(temporaryValueObservation),originalTeamSource:null,browserRevision:chromiumSWRRevision,compiledBuild:build,compiledManifestSha256:"c".repeat(64),compiledCachedNavigations:true,manifestVerified:true,browserVerified:true,
     nativePublicSources:{protocol:"qualified-serving-worker-sources-v1",compiledBuild:build,compiledManifestSha256:"c".repeat(64),files}};
   const initial={rsc:"1","next-router-prefetch":"1","next-router-segment-prefetch":"/page","next-router-state-tree":"synthetic-tree","accept-language":"en","x-z8-fixture-document-generation":contextId+":4"};
   const wire={...initial,accept:"*/*","accept-encoding":"gzip",cookie:"session=synthetic"};
@@ -51,7 +53,7 @@ function fixture({applicationIds=[1,2],originalApplicationId=1,currentApplicatio
   const nativeContext={protocol:"qualified-known-extra-native-context-v1",contextId,originSha256:sha(origin),workerScriptSha256:sha(origin+"/sw.js"),rootScopeSha256:sha(origin+"/"),binding,protocolSources:protocol,operatorFile:"run-baseline.mjs",principalEpoch:principal.snapshot(),headerCensus:census.snapshot(),
     headerLifetime:{protocol:"owned-context-upstream-header-lifetime-v1",contextId,installation:{protocol:"owned-context-upstream-header-lifetime-v1",proxyInstanceId:"f".repeat(32),originSha256:sha(origin),allowedOriginSha256:[sha(origin)],acceptedRequestsAtInstall:0},closure:{serverClosed:true,acceptedRequests:applicationIds.length,upstreamRequests:applicationIds.length,closedUpstreams:applicationIds.length,pendingUpstreams:0}},
     protocolErrors:{protocol:"positive-flight-error-observations-v1",contextId,installed:true,scopeClosed:true,observed:0,overflow:0,records:[]},
-    environment:{protocol:"native-cache-environment-metadata-v1",contextId,servingPublicSources:publicSources,
+    environment:{protocol:"native-cache-environment-metadata-v1",contextId,temporaryValues:testEmptyTemporaryValues(contextId),servingPublicSources:publicSources,
       nativeLaunchMetadata:{protocol:"owned-native-launch-metadata-v1",processKnown:true,fixturePolicy:"isolated-profile-no-prediction-v1",argumentsKnown:true,argumentsSha256:"5".repeat(64),recordedArgumentsSha256:"5".repeat(64),argumentsMatchRecorded:true,argumentKeys:["--disable-extensions","--headless","--disable-features"],profileArgumentCount:1,profileArgumentSha256:"6".repeat(64),recordedProfileDirectorySha256:"6".repeat(64),profileArgumentMatchesRecorded:true,executable:{known:true,bytes:12,sha256:"7".repeat(64),reason:null},observerSources:["browser-control-collector.mjs","fixture-browser.mjs"].map(file=>({file,known:true,bytes:12,sha256:protocol[file],reason:null}))},
       workerTargets:{protocol:"owned-context-worker-target-metadata-v1",contextId,contextJoinKnown:true,contextIdentitySha256:sha("owned-browser-context"),installed:true,scopeClosed:true,errors:0,overflow:0,events:[{targetOrdinal:1,event:"created",type:"page",urlKnown:true,urlSha256:sha("about:blank"),originMatches:false,ownedWorkerScript:null},{targetOrdinal:2,event:"created",type:"service_worker",urlKnown:true,urlSha256:sha(origin+"/sw.js"),originMatches:true,ownedWorkerScript:true}]},
       endRead:{protocol:"native-environment-end-readonly-v1",timedOut:false,pendingOperations:0,readErrors:0,publicSourceRecheck:publicSources,
@@ -329,7 +331,7 @@ test("genuine browser/HTTP/protocol failures are never relabeled as Native contr
 test("actual collector APIs carry CORE authority and exact-byte joins after transport closure",async()=>{
  for(const mode of ["exact","projection","route-tree"]){
   const setup=mode==="exact"?fixture():mode==="projection"?projectionFixture():routeTreeFixture(),{input,io}=setup,bytes=setup.original ?? setup.bytes,ctx=input.nativeContext;
-  const proxy=createProxyControlCollector({contextId:ctx.contextId,compiledCachedNavigations:true,compiledBinding:ctx.binding});
+  const proxy=createProxyControlCollector({contextId:ctx.contextId,origin:io.origin,compiledCachedNavigations:true,compiledBinding:ctx.binding});
   proxy.installed(ctx.headerLifetime.installation);
   const collector=createBrowserControlCollector({contextId:ctx.contextId,origin:io.origin,browserRevision:chromiumSWRRevision,compiledCachedNavigations:true,compiledBinding:ctx.binding,
     protocolSources:protocol,operatorFile:"run-baseline.mjs",principalEpoch:io.principal,environmentObservation:()=>ctx.environment,proxyObservation:proxy.snapshot,

@@ -1,4 +1,6 @@
+import { testBrowserEvidence, testBrowserMetadata } from "./control-cancellation-test-fixtures.mjs";
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import test from "node:test";
 import {
 	cleanEvidenceGates,
@@ -15,20 +17,7 @@ import { classifyControlCancellations, inspectRequiredFlightBody, chromiumSWRRev
 
 const ids = ["measured", "prerequisite", "background"];
 const plan = { routes: [{ name: "dashboard", clockReady: "button" }] };
-const browserEvidence = (controlled = false) => {
-	const identity = { contextId: ids[0], method: "POST", requestKind: "action", fullUrlSha256: "a".repeat(64),
-		requestHeadersSha256: "b".repeat(64), documentGeneration: "context:1" };
-	const bodyProof = inspectRequiredFlightBody(Buffer.from('0:{"a":{"success":true}}\n'), { action: true });
-	const failure = { ...identity, requestId: "request", error: "net::ERR_ABORTED", canceled: true,
-		status: 200, proxyResponseId: "packet", action: true, bodyReadbackComplete: true, bodyProof };
-	const packet = { ...identity, id: "packet", status: 200, flight: true, action: true, complete: true,
-		canceled: false, upstreamError: false, bodyProof };
-	const input = { failures: controlled ? [failure] : [], proxy: controlled ? [packet] : [],
-		browserRevision: chromiumSWRRevision,
-		coverage: { installed: true, scopeClosed: true, missing: 0, overflow: 0, errors: 0, pendingBodies: 0 } };
-	return { contextId: ids[0], protocolErrors: { protocol: "positive-flight-error-observations-v1", contextId: ids[0], installed: true, scopeClosed: true, observed: 0, overflow: 0, records: [] }, measured: classifyControlCancellations(input),
-		allPhase: classifyControlCancellations({ ...input, scope: "all-phase-semantic-correlation" }) };
-};
+const browserEvidence = (controlled = false) => testBrowserEvidence(ids[0], controlled);
 const sample = () => ({
 	traceId: ids[0],
 	prerequisiteTraceId: ids[1],
@@ -236,8 +225,7 @@ test("recorded original and HEAD readiness cannot exceed their declared observat
 			poolMax: 10,
 			poolAcquisitionTimeoutMs: 60000,
 			build: "c".repeat(40),
-			browserControl: { policy: controlCancellationPolicy, browserRevision: chromiumSWRRevision,
-				compiledCachedNavigations: true, compiledManifestSha256: "d".repeat(64) },
+			browserControl: testBrowserMetadata(),
 		};
 		const actualRuntime = { ...runtime, browserControl: { ...runtime.browserControl,
 			compiledBuild: runtime.build, manifestVerified: true, browserVerified: true } };
@@ -386,4 +374,380 @@ test("missing required named contract and pending semantic observations are unkn
 			},
 		}).length > 0,
 	);
+});
+
+// Original-only request-value/source authority tests are registered in this existing suite.
+import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import {
+	originalTeamTemporaryProfiles,
+	knownOriginalTeamSourceFacts,
+	isOriginalTeamSourceQualification,
+	originalTeamSourceFileFacts,
+	readOriginalTeamSourceQualification,
+	projectInertDateRangeRequest,
+	knownClosedDateRangeTypeFacts,
+	createTeamTemporaryValueStore,
+	createTeamReplayDispatchJournal,
+	teamReplayHeader,
+} from "./team-temporary-value-authority.mjs";
+import { parseInertDateRangeRequest, forgetInertDateRangeRequestValue } from "./inert-date-range-request.mjs";
+
+const sourceFacts = () => {
+	const profile = originalTeamTemporaryProfiles[0];
+	return {
+		protocol: "original-team-temporary-source-facts-v1",
+		profileId: profile.id,
+		phase: "baseline",
+		binarySource: "bfdf2d573052eb485d2a6b9bd75896f98882baeb",
+		manifestSha256: "8cd0fc10a5288431c5b7afbc4f3d36273f965d6ff4d5b4a54bebe33a21201e64",
+		buildRecordSha256: "34acb938396ed571886c66933415dd7cede4dda6aaf4ccb82a5048ddf68be147",
+		registrySha256: "301a1afee35124ef83695e842e4d1fe2402d06da38964e0f0def9c4c66741f30",
+		actionHeaderSha256: "355ec2d858094c87d7c3ef4b72d291185893ee976b865ce2916bd10922204884",
+		selectedActionMatches: 1,
+		concurrentRouterQueue: false,
+		cachedNavigations: true,
+		appFiles: profile.appFiles.map(row => ({ ...row })),
+		frameworkFiles: profile.frameworkFiles.map(row => ({ ...row })),
+	};
+};
+
+test("original temporary source facts identify the one reviewed baseline without becoming a live qualification", () => {
+	assert.equal(originalTeamTemporaryProfiles.length, 2);
+	const facts = sourceFacts();
+	assert.equal(knownOriginalTeamSourceFacts(facts), true);
+	assert.equal(isOriginalTeamSourceQualification(facts), false);
+	assert.equal(isOriginalTeamSourceQualification(structuredClone(facts)), false);
+	assert.ok(Object.isFrozen(originalTeamTemporaryProfiles));
+	assert.ok(Object.isFrozen(originalTeamTemporaryProfiles[0].appFiles));
+	assert.throws(() => { originalTeamTemporaryProfiles[0].binarySource = "foreign"; }, TypeError);
+});
+
+test("all120 field orders project the same five inert leaves without changing inline Flight obligations", () => {
+	const expected = { start: "$D2025-01-01T00:00:00.000Z", end: "$D2025-01-02T23:59:59.999Z", startDate: "2025-01-01", endDate: "2025-01-02", timezone: "$$L9" };
+	const permutations = values => values.length ? values.flatMap((value, index) => permutations(values.filter((_, n) => n !== index)).map(rest => [value, ...rest])) : [[]];
+	let count = 0, firstFacts, firstSteps;
+	for (const order of permutations(Object.keys(expected))) {
+		const bytes = Buffer.from(JSON.stringify([Object.fromEntries(order.map(key => [key, expected[key]]))]));
+		const descriptor = parseInertDateRangeRequest(bytes), projection = projectInertDateRangeRequest(descriptor);
+		assert.deepEqual(projection.value, expected);
+		assert.equal(knownClosedDateRangeTypeFacts(projection.facts), true);
+		assert.doesNotMatch(JSON.stringify(projection.facts), /2025-01|\$D|\$L9/);
+		assert.ok(Object.isFrozen(projection.value));
+		const body = Buffer.from('0:' + JSON.stringify({ a: { success: true, data: { dateRange: projection.value } } }) + '\n');
+		const proof = inspectRequiredFlightBody(body, { action: true, cachedNavigations: true });
+		assert.equal(proof.complete, true);
+		if (!count) { firstFacts = projection.facts; firstSteps = proof.modelSteps; }
+		else { assert.deepEqual(projection.facts, firstFacts); assert.equal(proof.modelSteps, firstSteps); }
+		assert.equal(forgetInertDateRangeRequestValue(descriptor), true);
+		assert.equal(projectInertDateRangeRequest(descriptor), null);
+		count++;
+	}
+	assert.equal(count, 120);
+});
+
+test("closed DateRange type facts reject altered roles kinds bounds keys and undocumented assertions", () => {
+	const descriptor = parseInertDateRangeRequest(Buffer.from('[{"start":"$D2025-01-01T00:00:00.000Z","end":"$D2025-01-02T00:00:00.000Z","startDate":"x","endDate":"y","timezone":"z"}]'));
+	const facts = projectInertDateRangeRequest(descriptor).facts;
+	for (const mutate of [
+		v => { v.fieldCount = 4; }, v => { v.nodes = 0; }, v => { v.depth = 3; },
+		v => { v.fields.pop(); }, v => { v.fields[0].field = "__proto__"; },
+		v => { v.fields[0].kind = "literal-string"; }, v => { v.fields[0].canonical = false; },
+		v => { v.fields[0].utf16Units = 25; }, v => { v.fields[2].utf8Bytes = 16385; },
+		v => { v.fields[2].protocolEdges = true; }, v => { v.fields[2].sha256 = "unknown"; },
+		v => { v.rolePassed = true; },
+	]) { const changed = structuredClone(facts); mutate(changed); assert.equal(knownClosedDateRangeTypeFacts(changed), false); }
+	for (const value of [null, {}, { ...descriptor }]) assert.equal(projectInertDateRangeRequest(value), null);
+	forgetInertDateRangeRequestValue(descriptor);
+});
+
+test("bounded request value store holds private values through actual consumers and forgets before releasing bytes", () => {
+	const descriptor = parseInertDateRangeRequest(Buffer.from('[{"start":"$D2025-01-01T00:00:00.000Z","end":"$D2025-01-02T00:00:00.000Z","startDate":"PRIVATE_START","endDate":"PRIVATE_END","timezone":"PRIVATE_ZONE"}]'));
+	let retained = 0, forgotBeforeRelease = false;
+	const store = createTeamTemporaryValueStore({ contextId: "synthetic-context", reserve(bytes) { retained += bytes; return true; }, release(bytes) {
+		forgotBeforeRelease = projectInertDateRangeRequest(descriptor) === null;
+		retained -= bytes;
+	} });
+	const handle = store.retain({ id: "a".repeat(32) + ".1", descriptor });
+	assert.notEqual(handle, null);
+	assert.equal(store.snapshot().payloadRetainedBytes, 262144);
+	assert.equal(store.snapshot().metadataRetainedBytes, 2048);
+	assert.equal(retained, 264192);
+	const pending = store.beginInspection(handle);
+	assert.equal(store.snapshot().pendingConsumers, 1);
+	assert.equal(store.finishInspection(pending), true);
+	assert.equal(store.release(handle), true);
+	assert.equal(forgotBeforeRelease, true);
+	assert.equal(retained, 2048);
+	assert.equal(projectInertDateRangeRequest(descriptor), null);
+	store.close();
+	const facts = store.snapshot();
+	assert.equal(facts.closed, true); assert.equal(facts.pendingConsumers, 0);
+	assert.equal(facts.payloadRetainedBytes, 0); assert.equal(facts.errors, 0);
+	assert.equal(facts.sourceBound, false); assert.equal(facts.acceptanceClaim, "none");
+	assert.doesNotMatch(JSON.stringify(facts), /PRIVATE_|2025-01|\$D/);
+});
+
+const teamStoreDescriptor = () => parseInertDateRangeRequest(Buffer.from('[{"start":"$D2025-01-01T00:00:00.000Z","end":"$D2025-01-02T00:00:00.000Z","startDate":"x","endDate":"y","timezone":"z"}]'));
+const teamStorePool = (limit = 32 * 1024 * 1024) => {
+	let bytes = 0;
+	return { reserve: count => { if (bytes + count > limit) return false; bytes += count; return true; }, release: count => { bytes -= count; }, retained: () => bytes };
+};
+test("value store cannot close pending consumers or borrow copied and cross-store handles", () => {
+	const pool = teamStorePool(), store = createTeamTemporaryValueStore({ contextId: "one", ...pool }), other = createTeamTemporaryValueStore({ contextId: "two", ...pool });
+	const descriptor = teamStoreDescriptor(), handle = store.retain({ id: "a".repeat(32) + ".1", descriptor });
+	assert.equal(other.beginInspection(handle), null);
+	assert.equal(store.beginInspection({ ...handle }), null);
+	const token = store.beginInspection(handle);
+	assert.equal(store.release(handle), false);
+	assert.notEqual(projectInertDateRangeRequest(descriptor), null);
+	store.close();
+	assert.equal(store.snapshot().pendingConsumers, 1);
+	assert.equal(store.snapshot().payloadRetainedBytes, 262144);
+	assert.equal(store.finishInspection({ ...token }), false);
+	assert.equal(store.snapshot().pendingConsumers, 1);
+	assert.equal(other.finishInspection(token), false);
+	assert.equal(store.finishInspection(token), true);
+	assert.equal(store.snapshot().pendingConsumers, 0);
+	assert.equal(store.snapshot().payloadRetainedBytes, 0);
+	assert.equal(projectInertDateRangeRequest(descriptor), null);
+	assert.equal(store.finishInspection(token), false);
+	assert.ok(store.snapshot().errors > 0);
+	assert.ok(other.snapshot().errors > 0);
+});
+
+test("value storage budget refusal and duplicate selection never erase the first owned value", () => {
+	const pool = teamStorePool(264192), store = createTeamTemporaryValueStore({ contextId: "one", ...pool });
+	const first = teamStoreDescriptor(), handle = store.retain({ id: "a".repeat(32) + ".1", descriptor: first });
+	const refused = teamStoreDescriptor();
+	assert.equal(store.retain({ id: "a".repeat(32) + ".2", descriptor: refused }), null);
+	assert.equal(projectInertDateRangeRequest(refused), null);
+	assert.equal(pool.retained(), 264192);
+	assert.equal(store.snapshot().overflow, 1);
+	const duplicate = teamStoreDescriptor();
+	assert.equal(store.retain({ id: "a".repeat(32) + ".1", descriptor: duplicate }), null);
+	assert.equal(projectInertDateRangeRequest(duplicate), null);
+	assert.notEqual(projectInertDateRangeRequest(first), null);
+	const other = createTeamTemporaryValueStore({ contextId: "two", ...pool });
+	assert.equal(other.retain({ id: "b".repeat(32) + ".1", descriptor: first }), null);
+	assert.notEqual(projectInertDateRangeRequest(first), null);
+	assert.equal(store.release(handle), true);
+	assert.equal(pool.retained(), 2048);
+	assert.equal(store.snapshot().rows.length, 1);
+	assert.equal(store.snapshot().unavailable, 2);
+	store.close(); other.close();
+});
+
+test("value release callback loss is sticky unknown and never reports invented retained-byte zeros", () => {
+	let calls = 0;
+	const store = createTeamTemporaryValueStore({ contextId: "one", reserve: () => true, release: () => { calls++; throw Error("PRIVATE_RELEASE_CAUSE"); } });
+	const descriptor = teamStoreDescriptor(), handle = store.retain({ id: "a".repeat(32) + ".1", descriptor });
+	assert.equal(store.release(handle), false);
+	assert.equal(projectInertDateRangeRequest(descriptor), null);
+	store.close();
+	const facts = store.snapshot();
+	assert.equal(facts.budgetKnown, false);
+	assert.equal(facts.payloadRetainedBytes, null);
+	assert.equal(facts.metadataRetainedBytes, null);
+	assert.equal(facts.pendingConsumers, 0);
+	assert.equal(calls, 1);
+	assert.ok(facts.errors > 0);
+	assert.doesNotMatch(JSON.stringify(facts), /PRIVATE_RELEASE_CAUSE/);
+});
+
+test("ambiguous reservation returns cannot manufacture a known zero allocation", () => {
+	for (const result of [undefined, null, 1, NaN, {}]) {
+		const store = createTeamTemporaryValueStore({ contextId: "one", reserve: () => result, release() {} });
+		const descriptor = teamStoreDescriptor();
+		assert.equal(store.retain({ id: "a".repeat(32) + ".1", descriptor }), null);
+		assert.equal(projectInertDateRangeRequest(descriptor), null);
+		assert.equal(store.snapshot().budgetKnown, false);
+		assert.equal(store.snapshot().payloadRetainedBytes, null);
+		assert.ok(store.snapshot().errors > 0);
+	}
+});
+
+test("request values keep the exact10000 record and32MiB ownership limits", () => {
+	const pool = teamStorePool(), store = createTeamTemporaryValueStore({ contextId: "one", ...pool });
+	for (let n = 1; n <= 10000; n++) {
+		const descriptor = teamStoreDescriptor(), handle = store.retain({ id: "a".repeat(32) + "." + n, descriptor });
+		assert.notEqual(handle, null); assert.equal(store.release(handle), true);
+	}
+	const overflow = teamStoreDescriptor();
+	assert.equal(store.retain({ id: "a".repeat(32) + ".10001", descriptor: overflow }), null);
+	assert.equal(projectInertDateRangeRequest(overflow), null);
+	store.close();
+	const facts = store.snapshot();
+	assert.equal(facts.rows.length, 10000); assert.equal(facts.overflow, 1);
+	assert.equal(facts.payloadRetainedBytes, 0); assert.equal(facts.metadataRetainedBytes, 20480000);
+	assert.equal(pool.retained(), 20480000);
+});
+
+test("manual replay journal requires actual nonce proxy EOF and both browser header observations", () => {
+	const origin = "http://localhost:58792", traceId = "a".repeat(32), action = "9".repeat(40), body = "synthetic-body";
+	const pool = teamStorePool(), journal = createTeamReplayDispatchJournal({ contextId: "one", origin, ...pool });
+	const handle = journal.arm({ traceId, action, body, url: origin + "/en/analytics/team-performance" });
+	const headers = journal.headers(handle);
+	assert.match(headers[teamReplayHeader], /^[a-f0-9]{32}$/);
+	assert.equal(journal.headers({ ...handle }), null);
+	const nonceSha256 = createHash("sha256").update(headers[teamReplayHeader]).digest("hex"), proxyId = traceId + ".1";
+	assert.equal(journal.proxyRequest({ id: proxyId, traceId, method: "POST", url: origin + "/en/analytics/team-performance", action, nonce: headers[teamReplayHeader] }), true);
+	assert.equal(journal.requestEOF(proxyId, { encodedBytes: Buffer.byteLength(body), bodySha256: createHash("sha256").update(body).digest("hex") }), true);
+	assert.equal(journal.factsFor(proxyId), null);
+	assert.equal(journal.browserRequest({ proxyId, contextId: "one", requestId: "browser.1", method: "POST", traceId,
+		urlSha256: createHash("sha256").update(origin + "/en/analytics/team-performance").digest("hex"), actionHeaderSha256: createHash("sha256").update(action).digest("hex"),
+		frameId: "frame", loaderId: "loader", documentGeneration: "one:1", initialHeadersKnown: true, extraHeadersKnown: true, initialReplaySha256: nonceSha256, extraReplaySha256: nonceSha256 }), true);
+	const joined = journal.factsFor(proxyId);
+	assert.equal(joined.proxyId, proxyId); assert.equal(joined.browser.requestId, "browser.1");
+	assert.equal(joined.requestEOF.bodySha256, createHash("sha256").update(body).digest("hex"));
+	assert.equal(journal.finished(handle, { error: false }), true);
+	journal.close();
+	const facts = journal.snapshot();
+	assert.equal(facts.pendingDispatches, 0); assert.equal(facts.rows.length, 1);
+	assert.equal(facts.rows[0].nonceSha256, nonceSha256);
+	assert.equal(facts.sourceBound, false); assert.equal(facts.acceptanceClaim, "none");
+	assert.doesNotMatch(JSON.stringify(facts), new RegExp(headers[teamReplayHeader]));
+	assert.doesNotMatch(JSON.stringify(facts), /synthetic-body|localhost|team-performance|9999999999/);
+});
+
+test("actual source file qualification fails with a fixed private error on unknown phase profile and malformed inputs", async () => {
+	const folder = await mkdtemp(join(tmpdir(), "z8-team-source-test-"));
+	try {
+		const app = join(folder, "apps/webapp/.next"); await mkdir(app, { recursive: true });
+		const manifest = join(app, "required-server-files.json"), record = join(folder, "build.json");
+		await writeFile(record, "PRIVATE_SOURCE_SENTINEL");
+		for (const text of ["PRIVATE_SOURCE_SENTINEL", '{"PRIVATE_SOURCE_SENTINEL":', "x".repeat(4194305)]) {
+			await writeFile(manifest, text);
+			for (const change of [{}, { phase: "release" }, { profileId: "unreviewed-original" }]) {
+				await assert.rejects(readOriginalTeamSourceQualification({ profileId: "original-team-bfdf-v1", phase: "baseline", compiledManifestPath: manifest, buildRecordPath: record, ...change }), error => {
+					assert.equal(error.message, "Original team temporary source qualification unavailable.");
+					assert.equal(Object.hasOwn(error, "cause"), false);
+					assert.doesNotMatch(String(error), /PRIVATE_SOURCE_SENTINEL|apps[\\/]webapp|build\.json/);
+					return true;
+				});
+			}
+		}
+	} finally { assert.ok(folder.startsWith(join(tmpdir(), "z8-team-source-test-"))); await rm(folder, { recursive: true, force: true }); }
+});
+
+test("source issuer captures argument acquisition inside its fixed private failure boundary", async () => {
+	const throwing = { get profileId() { throw Error("PRIVATE_ISSUER_GETTER_SENTINEL"); } };
+	for (const input of [throwing, null, undefined, false, 1, "PRIVATE_ISSUER_ARGUMENT"]) {
+		await assert.rejects(readOriginalTeamSourceQualification(input), error => {
+			assert.equal(error.message, "Original team temporary source qualification unavailable.");
+			assert.equal(Object.hasOwn(error, "cause"), false);
+			assert.doesNotMatch(String(error), /PRIVATE_ISSUER/);
+			return true;
+		});
+	}
+});
+
+test("source file normalization permits only CRLF and rejects BOM invalid text and oversize input", () => {
+	assert.deepEqual(originalTeamSourceFileFacts(Buffer.from("synthetic\r\nsource\r\n")), originalTeamSourceFileFacts(Buffer.from("synthetic\nsource\n")));
+	for (const bytes of [Buffer.from([239,187,191,120]), Buffer.from([255]), Buffer.alloc(4194305), new Uint8Array(4), null])
+		assert.equal(originalTeamSourceFileFacts(bytes), null);
+});
+
+test("original source facts reject HEAD foreign profiles omitted files and copied altered configuration", () => {
+	for (const mutate of [
+		v => { v.phase = "release"; },
+		v => { v.binarySource = "05cd9e40c38a3dd8c49d41a621999543a9a64e17"; },
+		v => { v.profileId = "future-original-not-reviewed"; },
+		v => { v.manifestSha256 = "0".repeat(64); },
+		v => { v.registrySha256 = "0".repeat(64); },
+		v => { v.buildRecordSha256 = "0".repeat(64); },
+		v => { v.actionHeaderSha256 = "0".repeat(64); },
+		v => { v.selectedActionMatches = 2; },
+		v => { v.concurrentRouterQueue = true; },
+		v => { v.cachedNavigations = undefined; },
+		v => { v.appFiles.pop(); },
+		v => { v.frameworkFiles.pop(); },
+		v => { v.appFiles[0].canonicalLfSha256 = "0".repeat(64); },
+		v => { v.frameworkFiles[0].sha256 = "0".repeat(64); },
+		v => { v.appFiles.push(v.appFiles[0]); },
+		v => { v.qualifierSaysKnown = true; },
+	]) {
+		const facts = sourceFacts(); mutate(facts);
+		assert.equal(knownOriginalTeamSourceFacts(facts), false);
+		assert.equal(isOriginalTeamSourceQualification(facts), false);
+	}
+});
+
+test("observer-only temporary body inspections close without granting value authority", async () => {
+	const { openOriginalTeamBodyInspection, resolveOriginalTeamTemporaryReference, closeOriginalTeamBodyInspection, originalTeamBodyObservation, validateOriginalTeamTemporaryValues } = await import("./team-temporary-value-authority.mjs");
+	const boundary = { bodySha256: "a".repeat(64), decodedBytes: 32, action: true, requestKind: "action" };
+	const inspection = openOriginalTeamBodyInspection({ bodySha256: boundary.bodySha256, decodedBytes: boundary.decodedBytes });
+	assert.ok(inspection);
+	assert.equal(originalTeamBodyObservation(inspection), null);
+	assert.equal(resolveOriginalTeamTemporaryReference({ ...inspection }, "$T0:0", boundary), null);
+	assert.equal(closeOriginalTeamBodyInspection({ ...inspection }), false);
+	assert.equal(resolveOriginalTeamTemporaryReference(inspection, "$T0:0", boundary), null);
+	assert.equal(closeOriginalTeamBodyInspection(inspection), true);
+	assert.equal(closeOriginalTeamBodyInspection(inspection), false);
+	const observed = originalTeamBodyObservation(inspection);
+	assert.deepEqual(observed, { protocol: "original-team-body-value-observation-v1", bodySha256: boundary.bodySha256, decodedBytes: 32, lookupAttempted: true, valueUsed: false, bindingSha256: null, closed: true });
+	const section = { protocol: "original-team-temporary-values-v1", referenceCount: 0, binding: null, obligations: [] };
+	assert.equal(validateOriginalTeamTemporaryValues(section, { ...boundary, request: { temporaryValueObservation: observed } }), false);
+    const pristine=openOriginalTeamBodyInspection({bodySha256:boundary.bodySha256,decodedBytes:32});closeOriginalTeamBodyInspection(pristine);
+    assert.equal(validateOriginalTeamTemporaryValues(section,{...boundary,request:{temporaryValueObservation:originalTeamBodyObservation(pristine)}}),true);
+	for (const changed of [undefined, { ...observed, valueUsed: true }, { ...observed, bindingSha256: "b".repeat(64) }, { ...observed, closed: false }, { ...observed, decodedBytes: 31 }])
+		assert.equal(validateOriginalTeamTemporaryValues(section, { ...boundary, request: { temporaryValueObservation: changed } }), false);
+	assert.equal(openOriginalTeamBodyInspection(null), null);
+	assert.equal(openOriginalTeamBodyInspection({ bodySha256: boundary.bodySha256, decodedBytes: 8388609 }), null);
+});
+
+test("temporary observation condition and Original source configuration reject omitted or foreign declarations", async () => {
+	const { temporaryValueObservation, knownTemporaryValueObservation, knownOriginalTeamSourceConfiguration, originalTeamTemporaryProfiles } = await import("./team-temporary-value-authority.mjs");
+	assert.equal(knownTemporaryValueObservation(structuredClone(temporaryValueObservation)), true);
+	for (const row of [undefined, null, {}, { ...temporaryValueObservation, replayHeader: "other" }, { ...temporaryValueObservation, extra: false }]) assert.equal(knownTemporaryValueObservation(row), false);
+	const profile = originalTeamTemporaryProfiles[0];
+	const config = { protocol: "original-team-source-configuration-v1", profileId: profile.id, phase: "baseline", compiledBuild: profile.binarySource, compiledManifestSha256: profile.manifestSha256, buildRecordPath: "owned/before-build.json", buildRecordSha256: profile.buildRecordSha256 };
+	assert.equal(knownOriginalTeamSourceConfiguration(null), true);
+	assert.equal(knownOriginalTeamSourceConfiguration(config, profile.binarySource, profile.manifestSha256), true);
+	for (const row of [undefined, {}, { ...config, phase: "release" }, { ...config, compiledBuild: "a".repeat(40) }, { ...config, buildRecordSha256: "a".repeat(64) }, { ...config, buildRecordPath: "" }, { ...config, extra: true }]) assert.equal(knownOriginalTeamSourceConfiguration(row), false);
+	assert.equal(knownOriginalTeamSourceConfiguration(config, "a".repeat(40)), false);
+});
+
+test("temporary request issuance rejects receipt copies and unqualified producer claims", async () => {
+	const { bindOriginalTeamRequestValue, openOriginalTeamBodyInspection, resolveOriginalTeamTemporaryReference, closeOriginalTeamBodyInspection, originalTeamBodyObservation } = await import("./team-temporary-value-authority.mjs");
+	const pool = teamStorePool(), store = createTeamTemporaryValueStore({ contextId: "issuer", reserve: pool.reserve, release: pool.release });
+	const descriptor = teamStoreDescriptor(), handle = store.retain({ id: "a".repeat(32) + ".1", descriptor });
+	assert.equal(bindOriginalTeamRequestValue({ qualification: {}, store, handle, request: {}, producer: {} }), null);
+	const boundary = { bodySha256: "b".repeat(64), decodedBytes: 23, action: true, requestKind: "action" };
+	const inspection = openOriginalTeamBodyInspection({ bodySha256: boundary.bodySha256, decodedBytes: 23, requestAuthority: {} });
+	assert.ok(inspection);
+	assert.equal(resolveOriginalTeamTemporaryReference(inspection, "$T0:0", boundary), null);
+	assert.equal(closeOriginalTeamBodyInspection(inspection), true);
+	assert.equal(originalTeamBodyObservation(inspection).valueUsed, false);
+	store.close();
+	assert.equal(pool.retained(), 2048);
+});
+
+test("source occurrence observations retain missing prior cuts and the existing record and byte limits", async () => {
+ const {createTeamSourceCutJournal,bindOriginalTeamRequestValue}=await import("./team-temporary-value-authority.mjs");let retained=0;
+ const journal=createTeamSourceCutJournal({contextId:"source-journal",reserve:bytes=>{retained+=bytes;return true;}});
+ const captured=journal.capture("proxy-request","request-one",null);assert.ok(captured);
+ assert.deepEqual(journal.snapshot().records,[{ordinal:1,kind:"proxy-request",id:"request-one",sourceCutOrdinal:null,sourceCutSha256:null}]);
+ assert.equal(bindOriginalTeamRequestValue({proxyCut:captured,browserCut:{...captured}}),null);
+ for(let index=1;index<8192;index++)assert.ok(journal.capture("browser-request","request-"+index,null));
+ assert.equal(journal.capture("browser-request","over-limit",null),null);
+ assert.equal(retained,33554432);assert.equal(journal.snapshot().records.length,8192);assert.equal(journal.snapshot().overflow,1);
+ journal.close();assert.equal(journal.capture("browser-request","late",null),null);assert.equal(journal.snapshot().errors,1);
+ assert.equal(JSON.stringify(journal.snapshot()).includes("PRIVATE"),false);
+});
+
+test("source occurrence ownership never replaces an earlier missing cut under the same actual request",async()=>{
+ const {createTeamSourceCutJournal}=await import("./team-temporary-value-authority.mjs");const journal=createTeamSourceCutJournal({contextId:"first-request",reserve:()=>true});
+ assert.ok(journal.capture("proxy-request","same",null));const first=journal.snapshot().records[0];
+ assert.equal(journal.capture("proxy-request","same",null),null);assert.deepEqual(journal.snapshot().records,[first]);assert.equal(journal.snapshot().errors,1);
+ assert.ok(journal.capture("browser-request","browser",null));assert.equal(journal.capture("browser-request","browser",null),null);assert.equal(journal.snapshot().errors,2);
+});
+test("typed body-use coverage rejects deleted observers and independent ever-used latch downgrades",async()=>{
+ const {validateOriginalTeamBodyUseCoverage,temporaryValueObservation}=await import("./team-temporary-value-authority.mjs");
+ const use={bodySha256:"a".repeat(64),decodedBytes:32,bindingSha256:"b".repeat(64)},id="c".repeat(32)+".1",contextId="use-context";
+ const values={store:{protocol:"bounded-unqualified-team-values-v1",contextId,errors:0,overflow:0,unavailable:0,budgetKnown:true,usage:{protocol:"actual-private-value-use-census-v1",contextId,observed:1},rows:[{id,everUsed:true,usedBodies:[use]}]},bodyUses:{protocol:"actual-body-value-observations-v1",contextId,observed:1,records:[{proxyResponseId:id,...use}]}};
+ const context={contextId,binding:{temporaryValueObservation},environment:{temporaryValues:values}},bodies=[{source:"proxy",row:{id,bodyProof:{bodySha256:use.bodySha256},temporaryValueObservation:{bindingSha256:use.bindingSha256}}}];
+ assert.equal(validateOriginalTeamBodyUseCoverage(context,bodies),true);
+ for(const mutate of [value=>delete value.bodyUses,value=>value.bodyUses={...value.bodyUses,observed:0,records:[]},value=>delete value.store.usage,value=>delete value.store.rows[0].everUsed,value=>value.store.rows[0].usedBodies=[]]){const changed=structuredClone(context);mutate(changed.environment.temporaryValues);assert.equal(validateOriginalTeamBodyUseCoverage(changed,[]),false);}
 });

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {createHash} from "node:crypto";
-import {inertDateRangeRequestLimits,parseInertDateRangeRequest,readInertDateRangeRequestValue} from "./inert-date-range-request.mjs";
+import {inertDateRangeRequestLimits,parseInertDateRangeRequest,readInertDateRangeRequestValue,forgetInertDateRangeRequestValue} from "./inert-date-range-request.mjs";
 
 const range=()=>({start:"$D2025-01-01T00:00:00.000Z",end:"$D2025-01-02T00:00:00.000Z",startDate:"2025-01-01",endDate:"2025-01-02",timezone:"SYNTHETIC_PRIVATE_ZONE"});
 const bytes=value=>Buffer.from(JSON.stringify([value]));
@@ -67,4 +67,15 @@ test("inert request descriptors are immutable commitments independent of later i
 	assert.throws(()=>{value.timezone.text="PRIVATE_MUTATION";},TypeError);assert.equal(readInertDateRangeRequestValue(structuredClone(result)),null);
 	for(const key of [null,undefined,false,1,"PRIVATE",{},()=>{}])assert.equal(readInertDateRangeRequestValue(key),null);
 	const reversed=Object.fromEntries(Object.entries(range()).reverse()),second=parseInertDateRangeRequest(bytes(reversed));assert.equal(second.valueDescriptorSha256,result.valueDescriptorSha256);assert.notEqual(second.bodySha256,result.bodySha256);
+});
+
+test("inert request value release removes the actual private value without mutating retained safe facts",()=>{
+	const descriptor=parseInertDateRangeRequest(bytes(range())),before=JSON.stringify(descriptor);
+	assert.equal(forgetInertDateRangeRequestValue({...descriptor}),false);
+	assert.notEqual(readInertDateRangeRequestValue(descriptor),null);
+	assert.equal(forgetInertDateRangeRequestValue(descriptor),true);
+	assert.equal(readInertDateRangeRequestValue(descriptor),null);
+	assert.equal(JSON.stringify(descriptor),before);
+	assert.equal(forgetInertDateRangeRequestValue(descriptor),false);
+	for(const value of [null,undefined,false,1,"synthetic",{}])assert.equal(forgetInertDateRangeRequestValue(value),false);
 });
