@@ -320,6 +320,28 @@ export async function selectAnnualAnalyticsPeriod(page, path, timeout = 30000) {
 	return response;
 }
 
+/** Fixed technical diagnostics only; observations cannot replace a capture predicate or exception. */
+export function createMixedCaptureDiagnostics() {
+	const rows=[];let overflow=0;
+	const stages=["open-page","goto","verify-actor","wait-annual-response","read-annual-body","parse-public-result","verify-capture","summarize-annual","complete"];
+	return Object.freeze({begin(reader){
+		let known;try{known=analytics.find(value=>value.actor===reader?.actor && value.kind===reader?.kind);}catch{}
+		let row=null;
+		if(!known || rows.length>=3 || rows.some(value=>value.actor===known.actor))overflow++;
+		else {row={actor:known.actor,reader:known.kind,stage:"open-page",status:null,responseOK:null,captured:null,bodyRead:"not-reached",payloadShape:null,success:null,summary:{employees:null,hours:null,weeks:null,overtimeHours:null,correct:null},exceptionName:null};rows.push(row);}
+		return Object.freeze({
+			stage(value){if(row && stages.includes(value))row.stage=value;},
+			status(response){if(row)try{const value=response.status();row.status=Number.isInteger(value) && value>=0 && value<=599?value:null;}catch{}},
+			captured(value){if(row)row.captured=Boolean(value);},
+			bodyFulfilled(){if(row)row.bodyRead="fulfilled";},
+			payload(value){if(row)try{row.payloadShape=value===null?"null":Array.isArray(value)?"array":typeof value==="object"?"object":"scalar";const success=value?.success;row.success=typeof success==="boolean"?success:value && Object.hasOwn(value,"success")?"wrong-type":"absent";}catch{row.success=null;}},
+			responseOK(value){if(row)row.responseOK=typeof value==="boolean"?value:null;return value;},
+			summary(value){if(row)try{for(const key of ["employees","hours","weeks","overtimeHours"]){const number=value?.[key];row.summary[key]=Number.isFinite(number)?number:null;}const correct=value?.correct;row.summary.correct=typeof correct==="boolean"?correct:null;}catch{}return value;},
+			failed(error){if(row){if(row.stage==="read-annual-body")row.bodyRead="rejected";let name;try{name=error?.name;}catch{}row.exceptionName=["TimeoutError","ProtocolError","TypeError","Error"].includes(name)?name:"other";}},
+		});
+	},snapshot(){return structuredClone({protocol:"mixed-annual-capture-diagnostics-v1",limit:3,overflow,rows});}});
+}
+
 async function captureAnalytics(
 	browser,
 	auth,
@@ -331,7 +353,10 @@ async function captureAnalytics(
 	timeout,
 	browserControlBinding,
 	protocolSources,
+	captureDiagnostics,
 ) {
+	const diagnostic=captureDiagnostics.begin(reader);
+	try {
 	const opened = await openPage(
 		browser,
 		auth,
@@ -364,22 +389,36 @@ async function captureAnalytics(
 				),
 			};
 	});
+	diagnostic.stage("goto");
 	await page.goto(origin + reader.path, {
 		waitUntil: "domcontentloaded",
 		timeout,
 	});
+	diagnostic.stage("verify-actor");
 	await verifyActor(page, expectedActor);
+	diagnostic.stage("wait-annual-response");
 	const annual = await selectAnnualAnalyticsPeriod(page, reader.path, timeout);
-	const payload = publicResult(await annual.text());
+	diagnostic.status(annual);
+	diagnostic.captured(captured);
+	diagnostic.stage("read-annual-body");
+	const text=await annual.text();
+	diagnostic.bodyFulfilled();
+	diagnostic.stage("parse-public-result");
+	const payload = publicResult(text);
+	diagnostic.payload(payload);
+	diagnostic.captured(captured);
+	diagnostic.stage("verify-capture");
 	if (
-		!annual.ok() ||
+		!diagnostic.responseOK(annual.ok()) ||
 		!captured ||
-		!analyticsSummary(reader.kind, payload).correct
+		!(diagnostic.stage("summarize-annual"),diagnostic.summary(analyticsSummary(reader.kind, payload))).correct
 	)
 		throw new Error(
 			"Actual annual caller did not complete with the literal fixture totals.",
 		);
+	diagnostic.stage("complete");
 	return { ...opened, captured, reader };
+	}catch(error){diagnostic.failed(error);throw error;}
 }
 
 function clockCohorts(records) {
@@ -442,6 +481,7 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 	if (!/^[a-f0-9]{9,40}$/.test(sourceCommit) || !buildId)
 		throw Error("Actual source and compiled identity required");
 	const traces = createMixedTracePlan(),
+		captureDiagnostics=createMixedCaptureDiagnostics(),
 		records = [],
 		opened = [],
 		activeRequests = new Set();
@@ -513,6 +553,7 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 				timeout,
 				browserControlBinding,
 				protocolSources,
+				captureDiagnostics,
 			);
 			await requireCleanWork();
 			item.page.on("request", (request) => {
@@ -831,6 +872,7 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 		completeCoverage,
 		browserClosed,
 		clockReadinessDiagnostics:controls?.snapshot() ?? null,
+		captureDiagnostics:captureDiagnostics.snapshot(),
 		pageErrors,
 		nativeRunCoverage,
 		nativeCloseProof,
