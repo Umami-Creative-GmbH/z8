@@ -135,10 +135,11 @@ function inspectFlightBody(
 	const semanticArrivals=new Set(["root-or-required","collection-reference","model-reference","outlined-reference","element-type","element-key","element-props","element-field","typed-data-r","array-output","element-children","element-fallback","own-field"]);
 	const semanticCounts={observations:0,contexts:0,first:0,repeatedExact:0,sameValueDifferentObligation:0,unknown:0,overflow:0,committedPopWork:0,committedScheduledChildren:0,selectedAnchorArrivals:0,sourceKnownAnchorArrivals:0,conservativeOutlinedPathDifferences:0};
 	const plainSummaryProtocol="plain-json-summary-v1";
-	const plainJsonShadow={protocol:"plain-json-semantic-shadow-v1",skippingEnabled:false,published:0,maxPublishedNodes:0,maxPublishedPending:0,maxHitNodes:0,maxHitPending:0,inclusiveHitNodes:0,
+	const plainJsonShadow={protocol:"plain-json-semantic-shadow-v1",skippingEnabled:true,published:0,maxPublishedNodes:0,maxPublishedPending:0,maxHitNodes:0,maxHitPending:0,inclusiveHitNodes:0,
 		byRole:{required:{lookups:0,hits:0},"component-data":{lookups:0,hits:0}},
 		misses:{role:0,provenance:0,flags:0,ancestry:0,noFalseForce:0,depthOnly:0,summaryBounds:0},widthExclusions:0,inspectedExclusions:0,bothBoundsPass:0,
 		binUpperBounds:[1,8,64,512,4096,100000,100001],nodeBins:Array(7).fill(0),pendingBins:Array(7).fill(0),flagStates:Array(256).fill(0),ancestryKinds:{absent:0,undefined:0,empty:0,nonempty:0}};
+	const plainJsonFastPath={protocol:"plain-json-semantic-fast-path-v1",enabled:true,appliedHits:{required:0,"component-data":0},coveredDescendants:0,maxNodes:0,maxPendingDelta:0,widthExclusions:0,inspectedExclusions:0,logicalInspected:0,noPopGuardAttempts:0};
 	const plainSummaryBin=value=>plainJsonShadow.binUpperBounds.findIndex(bound=>value<=bound);
 	const notePlainShadow=(entry,outsideQueue,inspected)=>{
 		const row=Object.hasOwn(plainJsonShadow.byRole,entry.role)?plainJsonShadow.byRole[entry.role]:null;if(!row){plainJsonShadow.misses.role++;return;}row.lookups++;
@@ -161,6 +162,7 @@ function inspectFlightBody(
 		plainJsonShadow.ancestryKinds[!ancestry?"absent":ancestry.value===undefined?"undefined":ancestry.value.size===0?"empty":"nonempty"]++;
 		const width=outsideQueue+summary.maxPendingDelta<=100000,logical=inspected+summary.nodes-1<=100000;
 		if(!width)plainJsonShadow.widthExclusions++;if(!logical)plainJsonShadow.inspectedExclusions++;if(width&&logical)plainJsonShadow.bothBoundsPass++;
+		return {summary,width,logical};
 	};
 	let semanticPhase="pre",semanticPreWork=0,semanticPostStart=0,semanticGuardOnlyWork=0,activeSemanticIteration=null;
 	const reasonBits={seenId:1,seenContainer:2,activeAnchor:4,elementSkip:8,opaque:16,removedField:32,parentCertificate:64};
@@ -235,7 +237,7 @@ function inspectFlightBody(
 		const work=budget.models-candidate.start;row.count++;row.ready+=ready?1:0;row.work+=work;row.maxWork=Math.max(row.maxWork,work);row.maxSpan=Math.max(row.maxSpan,span);
 	};
 	const modelCostSnapshot=()=>({protocol:"bounded-model-cost-observation-v1",inspectionDepth:depth,chargedWork,sharedModelSteps:budget.models,localModelSteps:budget.models-modelBudgetAtStart,
-		embeddedWork:budget.models-modelBudgetAtStart-chargedWork,phases:structuredClone(Object.values(costPhases)),dependencies:{...dependencyCosts},sharedDiagnosticContexts:diagnosticContextCount,sharedDiagnosticIdentities:dependencyOrdinalCount,diagnosticAllocation:{protocol:"fixed-reference-anchor-reservation-v1",...structuredClone(diagnosticLanes)},semanticObligations:semanticSnapshot(),plainJsonShadow:structuredClone(plainJsonShadow),
+		embeddedWork:budget.models-modelBudgetAtStart-chargedWork,phases:structuredClone(Object.values(costPhases)),dependencies:{...dependencyCosts},sharedDiagnosticContexts:diagnosticContextCount,sharedDiagnosticIdentities:dependencyOrdinalCount,diagnosticAllocation:{protocol:"fixed-reference-anchor-reservation-v1",...structuredClone(diagnosticLanes)},semanticObligations:semanticSnapshot(),plainJsonShadow:structuredClone(plainJsonShadow),plainJsonFastPath:structuredClone(plainJsonFastPath),
 		candidates:structuredClone([...candidateCosts.values()].sort((a,b)=>a.reasonMask-b.reasonMask)),
 		activeCandidates:costCandidates.map(candidate=>({reasonMask:candidate.reasonMask,work:budget.models-candidate.start,span:candidate.scope.maxDepth-candidate.depth})),
 		truncated:dependencyCosts.identityOverflow>0 || dependencyCosts.contextOverflow>0 || dependencyCosts.unknownContext>0});
@@ -984,7 +986,8 @@ function inspectFlightBody(
 	semanticPreWork=chargedWork;semanticPhase="pop";
 	while (queue.length) {
 		const beforeGuard=chargedWork;
-		if (++inspected > 100000 || chargeModel("semantic-loop") > 100000){semanticGuardOnlyWork+=chargedWork-beforeGuard;return unknown("model-limit",{modelLimitObservation:modelLimitObservation("semantic-loop",inspected>100000?"local-inspected-work":"shared-model-work")});}
+		plainJsonFastPath.logicalInspected=++inspected;
+		if (inspected > 100000 || chargeModel("semantic-loop") > 100000){plainJsonFastPath.noPopGuardAttempts++;semanticGuardOnlyWork+=chargedWork-beforeGuard;return unknown("model-limit",{modelLimitObservation:modelLimitObservation("semantic-loop",inspected>100000?"local-inspected-work":"shared-model-work")});}
 		const entry=queue.pop();noteSemantic(entry,queue,beforeGuard);
 		const { value, role, fallbackReferences, directEmbeddedOutput, fromTypedOutput, outputArrival, outputParentArrival, rArrayOutput, insideRArray,observationOrigin,observationReference } = entry;
 		try {
@@ -1108,7 +1111,18 @@ function inspectFlightBody(
 			});
 		} else if (value && typeof value === "object" && !opaqueText.has(value)) {
 			if (Object.keys(value).length + queue.length > 100000) return unknown("model-limit",{modelLimitObservation:modelLimitObservation("semantic-queue-size","queue-width",Object.keys(value).length)});
-			notePlainShadow(entry,queue.length,inspected);
+			const plain=notePlainShadow(entry,queue.length,inspected);
+			if(plain){
+				if(!plain.width)plainJsonFastPath.widthExclusions++;if(!plain.logical)plainJsonFastPath.inspectedExclusions++;
+				if(plain.width&&plain.logical&&plain.summary.nodes>1){
+					// The completed Plain subtree has no protocol edges. Cover its logical
+					// descendants without inventing real queue pushes or model charges.
+					plainJsonFastPath.appliedHits[role]++;plainJsonFastPath.coveredDescendants+=plain.summary.nodes-1;
+					plainJsonFastPath.maxNodes=Math.max(plainJsonFastPath.maxNodes,plain.summary.nodes);plainJsonFastPath.maxPendingDelta=Math.max(plainJsonFastPath.maxPendingDelta,plain.summary.maxPendingDelta);
+					plainJsonFastPath.logicalInspected=inspected+=plain.summary.nodes-1;
+					continue;
+				}
+			}
 			const output = ["output", "cache-output", "suspended-output", "fallback-output"].includes(role) || (embeddedPartialScope && role === "component-data");
 			if (shellScope && output && Array.isArray(value) && value[0] === "$" && value.length !== 4)
 				return unknown("unsupported-runtime-shell-output");
