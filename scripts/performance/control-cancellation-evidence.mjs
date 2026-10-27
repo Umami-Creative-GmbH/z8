@@ -1550,6 +1550,7 @@ const requestReceipt = (row) => ({
 	...pick(row, [
 		"contextId",
 		"requestId",
+		"failedEventOrdinal",
 		"id",
 		"traceId",
 		"loaderId",
@@ -1687,6 +1688,44 @@ const knownProgressReadHistory=principal=>{
  }
  return starts.sort((a,b)=>a-b).every((n,i)=>n===i+1) && ends.length===reads.finished && ends.sort((a,b)=>a-b).every((n,i)=>n===i+1) && JSON.stringify(pending.sort((a,b)=>a.acknowledgmentOrdinal-b.acknowledgmentOrdinal))===JSON.stringify(reads.pending);
 };
+export const knownMixedOpenJournals = context => {
+ const headerPrefix=context?.headerPrefix;
+	try {
+		const binding=context?.binding,env=context?.environment,principal=context?.principalEpoch,census=context?.headerCensus,lifetime=context?.headerLifetime;
+		if(context?.protocol !== "qualified-known-extra-native-context-v1" || typeof context.contextId !== "string" || !context.contextId || !digest(context.originSha256) ||
+			!knownBrowserControlMetadata(binding) || binding.browserVerified !== true || binding.manifestVerified !== true ||
+			!knownNativePublicSources(binding.nativePublicSources,binding.compiledBuild,binding.compiledManifestSha256) ||
+			!context.protocolSources || Object.keys(context.protocolSources).length > 64 || Object.entries(context.protocolSources).some(([file,sha])=>file.length > 256 || !digest(sha)) ||
+			context.operatorFile!=="mixed-load-probe.mjs" ||
+			![context.operatorFile,"control-cancellation-evidence.mjs","browser-control-collector.mjs","fixture-browser.mjs","trace-transport.mjs","action-result-observer.mjs","proxy-header-census.mjs","cdp-cached-text-projection.mjs"].every(file=>digest(context.protocolSources?.[file]))) return false;
+		const errors=context.protocolErrors;
+		if(errors?.protocol !== "positive-flight-error-observations-v1" || errors.contextId !== context.contextId || errors.installed !== true || errors.scopeClosed !== false ||
+			errors.observed !== 0 || errors.overflow !== 0 || !Array.isArray(errors.records) || errors.records.length !== 0) return false;
+		const actualFiles = value => value?.protocol === "serving-public-worker-source-metadata-v1" && value.servingRootKnown === true && Array.isArray(value.files) && value.files.length === 4 &&
+			value.files.every((row,index)=>row.known === true && row.reason === null && row.file === binding.nativePublicSources.files[index].file && row.bytes === binding.nativePublicSources.files[index].bytes && row.sha256 === binding.nativePublicSources.files[index].sha256);
+		if(env?.protocol !== "native-cache-environment-metadata-v1" || env.contextId !== context.contextId || !actualFiles(env.servingPublicSources)) return false;
+		const launch=env.nativeLaunchMetadata;
+		if(launch?.protocol !== "owned-native-launch-metadata-v1" || launch.processKnown !== true || launch.fixturePolicy !== "isolated-profile-no-prediction-v1" || launch.argumentsKnown !== true ||
+			!digest(launch.argumentsSha256) || launch.argumentsSha256 !== launch.recordedArgumentsSha256 || launch.argumentsMatchRecorded !== true ||
+			!Array.isArray(launch.argumentKeys) || launch.argumentKeys.length > 1024 || launch.argumentKeys.some(value=>typeof value!=="string" || value.length>128) || !launch.argumentKeys.includes("--disable-extensions") ||
+			launch.profileArgumentCount !== 1 || !digest(launch.profileArgumentSha256) || launch.profileArgumentSha256 !== launch.recordedProfileDirectorySha256 || launch.profileArgumentMatchesRecorded !== true ||
+			launch.executable?.known !== true || !digest(launch.executable.sha256) || !Number.isSafeInteger(launch.executable.bytes) || launch.executable.bytes <= 0 || launch.executable.bytes > 1024*1024*1024 ||
+			!Array.isArray(launch.observerSources) || launch.observerSources.length !== 2 || !["browser-control-collector.mjs","fixture-browser.mjs"].every(file=>{
+				const rows=launch.observerSources.filter(row=>row.file===file);return rows.length===1 && rows[0].known===true && rows[0].sha256===context.protocolSources[file];})) return false;
+		const workers=env.workerTargets;
+		if(workers?.protocol !== "owned-context-worker-target-metadata-v1" || workers.contextId !== context.contextId || workers.contextJoinKnown !== true || !digest(workers.contextIdentitySha256) ||
+			workers.installed !== true || workers.scopeClosed !== false || workers.errors !== 0 || workers.overflow !== 0 || !Array.isArray(workers.events) || workers.events.length === 0 || workers.events.length > 256 ||
+			workers.events.some(row=>!["page","service_worker"].includes(row.type) || row.urlKnown !== true || !digest(row.urlSha256) ||
+				(row.type === "service_worker" ? row.ownedWorkerScript !== true || row.originMatches !== true : row.originMatches !== true && row.urlSha256 !== bodySha256(Buffer.from("about:blank"))))) return false;
+  if(!digest(context.workerScriptSha256) || !digest(context.rootScopeSha256) || workers.events.some(row=>!["initial","created","changed","destroyed"].includes(row.event) || !Number.isSafeInteger(row.targetOrdinal) || row.targetOrdinal<=0 || row.type==="service_worker" && row.urlSha256!==context.workerScriptSha256) || !knownMixedDocumentJournal(context.documentJournal) || context.documentJournal.closed!==false || context.documentJournal.contextId!==context.contextId)return false;
+  if(principal?.protocol!=="actual-browser-cookie-boundaries-v1" || principal.contextId!==context.contextId || principal.scopeClosed!==false || !["observedSetCookieResponses","unknownResponseHeaders","readErrors","observationErrors","overflow"].every(key=>principal[key]===0) || !knownProgressReadHistory(principal))return false;
+  if(!validateProxyHeaderPrefix(headerPrefix,{contextId:context.contextId}) || JSON.stringify(census)!==JSON.stringify(headerPrefix.census) || !["unknownHeaders","setCookieResponses","setCookieLines","errors","duplicates","missing","late","overflow"].every(key=>census.counts[key]===0) || headerPrefix.lifecycle.errors!==0 || headerPrefix.lifecycle.overflow!==0 || headerPrefix.lifecycle.upstreamRequests!==census.counts.accepted || lifetime?.protocol!=="owned-context-upstream-header-lifetime-v1" || lifetime.contextId!==context.contextId || lifetime.closure!==null)return false;
+  const installation=lifetime.installation,life=headerPrefix.lifecycle;
+  return installation?.protocol===lifetime.protocol && installation.proxyInstanceId===life.proxyInstanceId && installation.originSha256===context.originSha256 && life.originSha256===context.originSha256 && installation.acceptedRequestsAtInstall===0 && JSON.stringify(installation.allowedOriginSha256)===JSON.stringify(life.allowedOriginSha256);
+ }catch{return false;}
+};
+export const sameMixedReturnJournals=(begin,current)=>knownMixedOpenJournals(current) && sameHeaderJournalPrefix(begin.headerPrefix.lifecycle,current.headerPrefix.lifecycle) && samePrincipalJournalPrefix(begin.principalEpoch,current.principalEpoch) && JSON.stringify(current.documentJournal)===JSON.stringify(begin.documentJournal) && Array.isArray(begin.environment?.workerTargets?.events) && JSON.stringify(current.environment.workerTargets.events.slice(0,begin.environment.workerTargets.events.length))===JSON.stringify(begin.environment.workerTargets.events);
+
 const knownMixedPrefixAuthority = (context,ack,headerPrefix) => {
 	try {
 		const binding=context?.binding,env=context?.environment,principal=context?.principalEpoch,census=context?.headerCensus,lifetime=context?.headerLifetime;
@@ -2091,7 +2130,7 @@ export function completeAllPhaseBrowserObservation(evidence) {
 	return browserFailureEvidenceMatches(evidence, evidence?.rawFailedRequests, "all-phase-semantic-correlation", false);
 }
 
-export const mixedNativeProgressPolicy=Object.freeze({version:1,prefixProtocol:"acknowledged-mixed-native-prefix-v1",ledgerProtocol:"mixed-native-progress-observations-v1",observerCeilingMs:10000,guardScope:"existing-mixed-stop-guards-only"});
+export const mixedNativeProgressPolicy=Object.freeze({version:1,prefixProtocol:"acknowledged-mixed-native-prefix-v1",ledgerProtocol:"mixed-native-progress-observations-v1",failureOccurrenceProtocol:"actual-browser-failed-occurrence-census-v1",observerCeilingMs:10000,guardScope:"existing-mixed-stop-guards-only"});
 const mixedPrefixProtocol=mixedNativeProgressPolicy.prefixProtocol;
 const safeTechnicalId=value=>typeof value==="string" && /^[A-Za-z0-9._:-]{1,256}$/.test(value);
 const progressFailureIds=input=>input.failures.map(row=>row.requestId).sort();
@@ -2099,7 +2138,7 @@ const progressFailureIds=input=>input.failures.map(row=>row.requestId).sort();
 export function mixedNativePrefixCandidates(input) {
  try {
   if(!input || Object.keys(input).length!==7 || !["failures","responses","proxy","nativeContext","coverage","browserRevision","browserEventOrdinal"].every(key=>Object.hasOwn(Object.getOwnPropertyDescriptor(input,key) ?? {},"value")) || ![input.failures,input.responses,input.proxy].every(rows=>Array.isArray(rows) && rows.length<=controlCancellationPolicy.recordLimit) || input.coverage?.installed!==true || input.coverage.scopeClosed!==false || !["missing","errors","overflow"].every(key=>input.coverage[key]===0) || !Number.isSafeInteger(input.browserEventOrdinal) || input.browserEventOrdinal<0 || input.failures.length>0 && !nativeContextDigest(input))return null;
-  const ids=progressFailureIds(input);if(!ids.every(safeTechnicalId) || new Set(ids).size!==ids.length)return null;
+  const ids=progressFailureIds(input);if(input.failures.some(row=>!Number.isSafeInteger(row.failedEventOrdinal) || row.failedEventOrdinal<1 || row.failedEventOrdinal>input.browserEventOrdinal) || !ids.every(safeTechnicalId) || new Set(ids).size!==ids.length)return null;
   const ordinary=classifyControlCancellations(input),cores=[];
   for(let i=0;i<input.failures.length;i++){
    const failure=input.failures[i],record=ordinary.records[i];
@@ -2116,17 +2155,17 @@ export function mixedNativePrefixCandidates(input) {
 }
 
 /** A positive acknowledged prefix stays separately typed; the final closed validator never consumes it. */
-export function createMixedNativePrefix({checkpointOrdinal,begin,end,acknowledgment,headerPrefix,operationDeadlineMs=null}) {
- const facts=structuredClone({protocol:mixedPrefixProtocol,checkpointOrdinal,operationDeadlineMs,begin,end,acknowledgment,headerPrefix});
+export function createMixedNativePrefix({checkpointOrdinal,begin,end,acknowledgment,headerPrefix,operationDeadlineMs=null,returnedAtMs}) {
+ const facts=structuredClone({protocol:mixedPrefixProtocol,checkpointOrdinal,operationDeadlineMs,begin,end,acknowledgment,headerPrefix,returnedAtMs});
  const receipt={...facts,prefixSha256:bodySha256(Buffer.from(JSON.stringify(facts)))};
  if(!validateMixedNativePrefix(receipt))throw Error("Mixed Native prefix is not positively acknowledged.");
  return receipt;
 }
 export function validateMixedNativePrefix(receipt) {
  try {
-  const names=["protocol","checkpointOrdinal","operationDeadlineMs","begin","end","acknowledgment","headerPrefix","prefixSha256"];
+  const names=["protocol","checkpointOrdinal","operationDeadlineMs","begin","end","acknowledgment","headerPrefix","returnedAtMs","prefixSha256"];
   if(!receipt || Reflect.ownKeys(receipt).length!==names.length || !names.every(key=>Object.hasOwn(Object.getOwnPropertyDescriptor(receipt,key) ?? {},"value")) || receipt.protocol!==mixedPrefixProtocol || !Number.isSafeInteger(receipt.checkpointOrdinal) || receipt.checkpointOrdinal<1 || receipt.checkpointOrdinal>controlCancellationPolicy.recordLimit || !digest(receipt.prefixSha256) || !nativeContextDigest(receipt))return false;
-  const {begin,end,acknowledgment:ack,headerPrefix,operationDeadlineMs}=receipt;
+  const {begin,end,acknowledgment:ack,headerPrefix,operationDeadlineMs,returnedAtMs}=receipt;
   const first=mixedNativePrefixCandidates(begin),last=mixedNativePrefixCandidates(end);
   if(!first || !last || first.cores.length===0 || JSON.stringify(first)!==JSON.stringify(last) || begin.nativeContext.contextId!==end.nativeContext.contextId || end.browserEventOrdinal<begin.browserEventOrdinal)return false;
   const start=begin.nativeContext,finish=end.nativeContext;
@@ -2136,8 +2175,10 @@ export function validateMixedNativePrefix(receipt) {
   if(ack?.protocol!=="native-environment-progress-readonly-v1" || ack.contextId!==finish.contextId || ack.checkpointOrdinal!==receipt.checkpointOrdinal || ack.timedOut!==false || ack.pendingOperations!==0 || ack.readErrors!==0 || !Number.isFinite(ack.startedAtMs) || !Number.isFinite(ack.finishedAtMs) || ack.finishedAtMs<ack.startedAtMs || ack.elapsedMs!==ack.finishedAtMs-ack.startedAtMs || !Number.isFinite(ack.deadlineMs) || !Number.isFinite(ack.deadlineBudgetMs) || ack.deadlineBudgetMs<=0 || ack.deadlineBudgetMs>10000 || ack.deadlineMs-ack.startedAtMs!==ack.deadlineBudgetMs || ack.finishedAtMs>ack.deadlineMs || operationDeadlineMs!==null && (!Number.isFinite(operationDeadlineMs) || ack.deadlineMs>operationDeadlineMs))return false;
   const beforeReads=start.principalEpoch?.progressReads,afterReads=finish.principalEpoch?.progressReads,ownRead=ack.principalReadOperation;
   if(!knownProgressReadHistory(start.principalEpoch) || !knownProgressReadHistory(finish.principalEpoch) || beforeReads.records.some(row=>row.acknowledgmentOrdinal===receipt.checkpointOrdinal) || !ownRead || ownRead.acknowledgmentOrdinal!==receipt.checkpointOrdinal || ownRead.snapshotSha256!==ack.principalRead?.sha256 || ownRead.error!==false || ownRead.finishedOrdinal===null || afterReads.records.filter(row=>JSON.stringify(row)===JSON.stringify(ownRead)).length!==1 || beforeReads.started>afterReads.started || beforeReads.finished>afterReads.finished || beforeReads.records.some(row=>{const match=afterReads.records.find(next=>next.acknowledgmentOrdinal===row.acknowledgmentOrdinal);return !match || row.startedOrdinal!==match.startedOrdinal || row.kind!==match.kind || row.finishedOrdinal!==null && JSON.stringify(row)!==JSON.stringify(match);}))return false;
+  if(!Number.isFinite(returnedAtMs) || returnedAtMs<ack.finishedAtMs || returnedAtMs>ack.deadlineMs || !sameMixedReturnJournals(start,finish))return false;
   const document=ack.document;
   if(document?.protocol!=="actual-cdp-document-acknowledgment-v1" || document.contextId!==finish.contextId || !knownMixedDocumentJournal(document.sourceJournal,document) || ![document.frameId,document.loaderId,document.executionContextUniqueId].every(safeTechnicalId) || !Number.isSafeInteger(document.documentGeneration) || document.documentGeneration<1 || document.actualDocumentIdentityStable!==true || document.originSha256!==finish.originSha256 || !["executionEventOrdinalBefore","executionEventOrdinalAfter","documentEventOrdinalBefore","documentEventOrdinalAfter"].every(key=>Number.isSafeInteger(document[key]) && document[key]>=0) || document.executionEventOrdinalBefore!==document.executionEventOrdinalAfter || document.documentEventOrdinalBefore!==document.documentEventOrdinalAfter)return false;
+  if(JSON.stringify(document.sourceJournal)!==JSON.stringify(start.documentJournal) || JSON.stringify(document.sourceJournal)!==JSON.stringify(finish.documentJournal))return false;
   if(!knownMixedPrefixAuthority(start,ack,start.headerPrefix) || !knownMixedPrefixAuthority(finish,ack,headerPrefix) || !sameHeaderJournalPrefix(start.headerPrefix.lifecycle,headerPrefix.lifecycle))return false;
   const {prefixSha256,...facts}=receipt;
   return prefixSha256===bodySha256(Buffer.from(JSON.stringify(facts)));
@@ -2163,8 +2204,9 @@ export function validateMixedProgressObservations(progress,context,finalInputs) 
  try {
   const names=["protocol","contextId","authoritySha256","guardChecks","attempted","failed","overflow","retainedBytes","checks","prefixes"];
   if(!progress || Object.keys(progress).length!==names.length || !names.every(key=>Object.hasOwn(Object.getOwnPropertyDescriptor(progress,key) ?? {},"value")) || progress.protocol!=="mixed-native-progress-observations-v1" || progress.contextId!==context?.contextId || progress.authoritySha256!==mixedNativeAuthorityDigest(context) || !Number.isSafeInteger(progress.guardChecks) || progress.guardChecks<1 || progress.guardChecks>controlCancellationPolicy.recordLimit || !Number.isSafeInteger(progress.attempted) || progress.attempted<0 || progress.attempted>progress.guardChecks || progress.failed!==0 || progress.overflow!==0 || !Number.isSafeInteger(progress.retainedBytes) || progress.retainedBytes<0 || progress.retainedBytes>controlCancellationPolicy.retainedLimit || !Array.isArray(progress.prefixes) || progress.prefixes.length!==progress.attempted || !Array.isArray(progress.checks) || progress.checks.length!==progress.guardChecks || !Array.isArray(finalInputs?.failureIds) || !knownMixedDocumentJournal(finalInputs.documentJournal) || finalInputs.documentJournal.closed!==true || finalInputs.documentJournal.contextId!==context.contextId || !Array.isArray(finalInputs.nativeFailureIds) || !Number.isSafeInteger(finalInputs.browserEventOrdinal) || !validateProxyHeaderLifecycle(finalInputs.headerLifecycle) || finalInputs.headerLifecycle.closed!==true || finalInputs.headerLifecycle.pendingUpstreams!==0 || finalInputs.headerLifecycle.acceptedRequests!==finalInputs.headerLifecycle.upstreamRequests || finalInputs.headerLifecycle.closedUpstreams!==finalInputs.headerLifecycle.upstreamRequests || context.principalEpoch?.scopeClosed!==true || context.principalEpoch.pendingReads!==0 || context.environment?.workerTargets?.scopeClosed!==true || finalInputs.headerLifecycle.errors!==0 || finalInputs.headerLifecycle.overflow!==0)return false;
+  if(!knownMixedFailureOccurrences(finalInputs.failureOccurrences,context.contextId,finalInputs.browserEventOrdinal,finalInputs.failureIds))return false;
   const finalIds=new Set(finalInputs.failureIds),used=new Set();let previousStart=-1;
-  const vector=(v)=>v && Object.keys(v).length===6 && ["browserEventOrdinal","headerEventOrdinal","workerEventCount","principalProgressStarted","principalProgressFinished"].every(key=>Number.isSafeInteger(v[key]) && v[key]>=0) && v.principalProgressFinished<=v.principalProgressStarted && v.browserEventOrdinal<=finalInputs.browserEventOrdinal && v.headerEventOrdinal<=finalInputs.headerLifecycle.eventOrdinal && v.workerEventCount<=context.environment.workerTargets.events.length && Array.isArray(v.failureIds) && new Set(v.failureIds).size===v.failureIds.length && v.failureIds.every(id=>safeTechnicalId(id) && finalIds.has(id));
+  const vector=(v)=>v && Object.keys(v).length===6 && ["browserEventOrdinal","headerEventOrdinal","workerEventCount","principalProgressStarted","principalProgressFinished"].every(key=>Number.isSafeInteger(v[key]) && v[key]>=0) && v.principalProgressFinished<=v.principalProgressStarted && v.browserEventOrdinal<=finalInputs.browserEventOrdinal && v.headerEventOrdinal<=finalInputs.headerLifecycle.eventOrdinal && v.workerEventCount<=context.environment.workerTargets.events.length && Array.isArray(v.failureIds) && new Set(v.failureIds).size===v.failureIds.length && v.failureIds.every(id=>safeTechnicalId(id) && finalIds.has(id)) && JSON.stringify(v.failureIds)===JSON.stringify(finalInputs.failureOccurrences.records.filter(row=>row.eventOrdinal<=v.browserEventOrdinal).map(row=>row.requestId).sort());
   for(let index=0;index<progress.checks.length;index++){
    const check=progress.checks[index];
    if(Object.keys(check).length!==5 || check.ordinal!==index+1 || !vector(check.begin) || !vector(check.returned) || check.begin.browserEventOrdinal<previousStart || ["browserEventOrdinal","headerEventOrdinal","workerEventCount","principalProgressStarted","principalProgressFinished"].some(key=>check.returned[key]<check.begin[key]) || JSON.stringify(check.begin.failureIds)!==JSON.stringify(check.returned.failureIds))return false;
@@ -2186,7 +2228,7 @@ export function validateMixedProgressObservations(progress,context,finalInputs) 
 /** Replays only observed technical Runtime/Document facts; no payload, time-nearness or private page identity. */
 export function knownMixedDocumentJournal(journal,document) {
  try{
-  if(!journal || Object.keys(journal).length!==10 || journal.protocol!=="actual-cdp-document-journal-v1" || !safeTechnicalId(journal.contextId) || journal.installed!==true || typeof journal.closed!=="boolean" || journal.errors!==0 || journal.overflow!==0 || !Array.isArray(journal.executionEvents) || !Array.isArray(journal.documents) || journal.executionEvents.length+ journal.documents.length>controlCancellationPolicy.recordLimit || journal.executionEventOrdinal!==journal.executionEvents.length || journal.documentEventOrdinal!==journal.documents.length)return false;
+  if(!journal || Object.keys(journal).length!==11 || journal.protocol!=="actual-cdp-document-journal-v1" || !safeTechnicalId(journal.contextId) || journal.installed!==true || !Number.isSafeInteger(journal.currentGeneration) || journal.currentGeneration<0 || typeof journal.closed!=="boolean" || journal.errors!==0 || journal.overflow!==0 || !Array.isArray(journal.executionEvents) || !Array.isArray(journal.documents) || journal.executionEvents.length+ journal.documents.length>controlCancellationPolicy.recordLimit || journal.executionEventOrdinal!==journal.executionEvents.length || journal.documentEventOrdinal!==journal.documents.length)return false;
   const contexts=new Map(),unique=new Set();
   for(let index=0;index<journal.executionEvents.length;index++){
    const event=journal.executionEvents[index];if(event.ordinal!==index+1)return false;
@@ -2204,8 +2246,23 @@ export function knownMixedDocumentJournal(journal,document) {
    const generation=row.documentGeneration.slice(journal.contextId.length+1);if(!/^[1-9][0-9]*$/.test(generation) || !Number.isSafeInteger(Number(generation)))return false;
   }
   if(!document)return true;
-  if(journal.closed!==false || document.contextId!==journal.contextId || document.executionEventOrdinalAfter!==journal.executionEventOrdinal || document.documentEventOrdinalAfter!==journal.documentEventOrdinal)return false;
+  if(journal.closed!==false || document.contextId!==journal.contextId || document.executionEventOrdinalAfter!==journal.executionEventOrdinal || document.documentEventOrdinalAfter!==journal.documentEventOrdinal || document.documentGeneration!==journal.currentGeneration)return false;
   const execution=contexts.get(document.executionContextId),defaults=[...contexts.values()].filter(row=>row.isDefault && row.frameId===document.frameId),docs=journal.documents.filter(row=>row.frameId===document.frameId && row.loaderId===document.loaderId);
   return execution?.isDefault===true && execution.uniqueId===document.executionContextUniqueId && execution.frameId===document.frameId && defaults.length===1 && docs.length===1 && docs[0].requestId===document.documentRequestId && docs[0].originSha256===document.originSha256 && docs[0].documentGeneration===document.contextId+":"+document.documentGeneration;
  }catch{return false;}
 }
+
+/** CORE chronology from actual loadingFailed callbacks, not request start time or nearest-time inference. */
+export function mixedFailureOccurrenceCensus({contextId,scopeClosed,browserEventOrdinal,records}){
+ const facts={protocol:"actual-browser-failed-occurrence-census-v1",contextId,scopeClosed,browserEventOrdinal,records:records.map(row=>({...row})).sort((a,b)=>a.requestId<b.requestId?-1:a.requestId>b.requestId?1:0)};
+ return {...facts,censusSha256:bodySha256(Buffer.from(JSON.stringify(facts)))};
+}
+const knownMixedFailureOccurrences=(proof,contextId,browserEventOrdinal,ids)=>{
+ try{
+  if(!proof || Object.keys(proof).length!==6 || proof.protocol!=="actual-browser-failed-occurrence-census-v1" || proof.contextId!==contextId || proof.scopeClosed!==true || proof.browserEventOrdinal!==browserEventOrdinal || !Number.isSafeInteger(browserEventOrdinal) || browserEventOrdinal<0 || !Array.isArray(proof.records) || proof.records.length>controlCancellationPolicy.recordLimit || !digest(proof.censusSha256))return false;
+  const seen=new Set(),ordinals=new Set();
+  for(const row of proof.records){if(Object.keys(row).length!==3 || !safeTechnicalId(row.requestId) || seen.has(row.requestId) || !Number.isSafeInteger(row.eventOrdinal) || row.eventOrdinal<1 || row.eventOrdinal>browserEventOrdinal || ordinals.has(row.eventOrdinal) || row.failedEvents!==1)return false;seen.add(row.requestId);ordinals.add(row.eventOrdinal);}
+  const {censusSha256,...facts}=proof;
+  return censusSha256===bodySha256(Buffer.from(JSON.stringify(facts))) && JSON.stringify([...seen].sort())===JSON.stringify([...ids].sort());
+ }catch{return false;}
+};

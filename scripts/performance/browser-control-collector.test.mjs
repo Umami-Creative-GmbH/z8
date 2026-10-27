@@ -1198,3 +1198,10 @@ test("mixed document acknowledgments retain pending/read-error facts across time
  assert.equal(ack.timedOut,true);assert.equal(ack.pendingOperations,1);assert.equal(ack.readErrors,1);assert.equal(ack.document,null);assert.equal(principal.snapshot().pendingReads,1);
  resolveCookie([]);await tick();assert.equal(ack.pendingOperations,1,"late completion does not rewrite a sealed failed receipt");assert.equal(principal.snapshot().pendingReads,0);tracker.close();
 });
+
+test("mixed failure occurrence CORE uses actual callback ordinals and retains duplicate/error evidence",async()=>{
+ const collector=createBrowserControlCollector({contextId,origin,captureContextFailures:true,compiledCachedNavigations:false,readBody:async()=>({body,base64Encoded:false}),proxyObservation:()=>({rows:[],installed:true,errors:0,overflow:0,pendingBodies:0})});
+ collector.installed();collector.beginMeasurement();collector.request(event("failed",1));collector.requestExtra({requestId:"failed",headers});collector.response({requestId:"failed",response:{status:200,headers:responseHeaders}});collector.data({requestId:"failed",dataLength:Buffer.byteLength(body)});collector.failed({requestId:"failed",errorText:"net::ERR_ABORTED",canceled:true});collector.endMeasurement();collector.endScope();await tick();
+ const proof=collector.snapshot();assert.deepEqual(proof.browserFailureOccurrences.records,[{requestId:"failed",eventOrdinal:5,failedEvents:1}]);assert.equal(proof.browserFailureOccurrences.browserEventOrdinal,5);assert.equal(proof.browserFailureOccurrences.scopeClosed,true);assert.equal(proof.rawMeasuredFailedRequests,1);assert.equal(proof.measured.unknownFailures,1,"Technical occurrence facts do not make the unread/unmatched response a control.");
+ collector.failed({requestId:"failed",errorText:"net::ERR_ABORTED",canceled:true});const duplicate=collector.snapshot();assert.equal(duplicate.browserFailureOccurrences.records[0].eventOrdinal,5);assert.equal(duplicate.browserFailureOccurrences.records[0].failedEvents,2);assert.equal(duplicate.browserEventOrdinal,6);assert.ok(duplicate.measured.coverage.errors>0);
+});

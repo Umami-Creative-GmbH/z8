@@ -17,8 +17,11 @@ import {
 	mixedNativeAuthorityDigest,
 	mixedNativeProgressVector,
 	mixedNativeProgressPolicy,
+	mixedFailureOccurrenceCensus,
 	createMixedNativePrefix,
 	validateMixedNativePrefix,
+	knownMixedOpenJournals,
+	sameMixedReturnJournals,
 	routePathSourceDigest,
 } from "./control-cancellation-evidence.mjs";
 import { createProxyHeaderCensus, proxyHeaderPrefix } from "./proxy-header-census.mjs";
@@ -829,7 +832,7 @@ export function createBrowserControlCollector({
 		});
 		return {
 			contextId,
-			...(captureContextFailures?{browserEventOrdinal,proxyHeaderLifecycle:proxy.headerLifecycle ?? null}:{}),
+			...(captureContextFailures?{browserEventOrdinal,proxyHeaderLifecycle:proxy.headerLifecycle ?? null,browserFailureOccurrences:mixedFailureOccurrenceCensus({contextId,scopeClosed:closed,browserEventOrdinal,records:failures.map(row=>({requestId:row.requestId,eventOrdinal:row.failedEventOrdinal ?? null,failedEvents:row.failedEvents}))})}:{}),
 			proxyHeaderCensus: proxy.headerCensus ?? null,
 			proxyHeaderLifetime: proxy.headerLifetime ?? null,
 			protocolErrors: { protocol: "positive-flight-error-observations-v1", contextId, installed: coverage.installed, scopeClosed: closed,
@@ -1165,6 +1168,7 @@ export function createBrowserControlCollector({
 				errors++;
 				return;
 			}
+			row.failedEventOrdinal=browserEventOrdinal;
 			row.failed = true;
 			row.error = event.errorText;
 			row.canceled = event.canceled === true;
@@ -1296,7 +1300,7 @@ export async function installBrowserControlCollector({
 		};
 	}
 	collector.installed();
- const progress=captureContextFailures?createMixedProgressAcknowledgments({input:collector.progressInput,application:()=>transport.snapshot().applicationEvidence,
+ const progress=captureContextFailures?createMixedProgressAcknowledgments({input:()=>{const cut=collector.progressInput();cut.nativeContext.documentJournal=documentAcknowledgment.snapshot();return cut;},application:()=>transport.snapshot().applicationEvidence,
   acknowledge:options=>documentAcknowledgment.read({...options,principalEpoch,readCookies:()=>context.cookies(),readSources:async()=>{const locator=environmentBinding && nativeManifestLocators.get(environmentBinding);return locator?await readNativePublicSources(locator):null;}})}):null;
 	return {
 		...collector,
@@ -1521,7 +1525,7 @@ export async function createMixedDocumentAcknowledgment({session,contextId,origi
   if(matching.length!==1 || docs.length!==1 || !Number.isSafeInteger(number) || number<1 || docs[0].documentGeneration!==contextId+":"+number)throw Error("Missing actual document/context/generation join.");
   return {frameId:value.id,loaderId:value.loaderId,executionContextUniqueId:matching[0].uniqueId,executionContextId:matching[0].id,documentRequestId:docs[0].requestId,documentGeneration:number};
  };
- const snapshot=()=>structuredClone({protocol:"actual-cdp-document-journal-v1",contextId,installed,executionEventOrdinal,documentEventOrdinal,errors,overflow,closed,executionEvents,documents});
+ const snapshot=()=>structuredClone({protocol:"actual-cdp-document-journal-v1",contextId,installed,currentGeneration:generation(),executionEventOrdinal,documentEventOrdinal,errors,overflow,closed,executionEvents,documents});
  return {
   snapshot,
   close(){closed=true;for(const [name,listener]of listeners)session.off(name,listener);},
@@ -1562,7 +1566,7 @@ export function createMixedProgressAcknowledgments({input,application,acknowledg
  const live=()=>{
   if(failed || overflow || !progressApplicationKnown(application()))throw Error("Mixed required application observation is not clean.");
   const cut=input(),candidate=mixedNativePrefixCandidates(cut),authority=mixedNativeAuthorityDigest(cut.nativeContext);
-  if(cut.nativeContext?.protocolErrors?.observed!==0 || cut.nativeContext.protocolErrors.overflow!==0 || !candidate || !authority || authoritySha256!==null && authoritySha256!==authority)throw Error("Mixed browser observation lacks request-local evidence.");
+  if(!knownMixedOpenJournals(cut.nativeContext) || cut.nativeContext?.protocolErrors?.observed!==0 || cut.nativeContext.protocolErrors.overflow!==0 || !candidate || !authority || authoritySha256!==null && authoritySha256!==authority)throw Error("Mixed browser observation lacks request-local evidence.");
   authoritySha256=authority;contextId=cut.nativeContext.contextId;return {cut,candidate};
  };
  const retained=()=>{if(bytes()>controlCancellationPolicy.retainedLimit){overflow++;throw Error("Mixed prefix retention bound exceeded.");}};
@@ -1578,16 +1582,18 @@ export function createMixedProgressAcknowledgments({input,application,acknowledg
      const deadlineMs=operationDeadlineMs===null?observerDeadline:Math.min(observerDeadline,operationDeadlineMs);
      const acknowledgment=await acknowledge({checkpointOrdinal,deadlineMs});
      if(acknowledgment?.checkpointOrdinal!==checkpointOrdinal || acknowledgment.deadlineMs!==deadlineMs)throw Error("Mixed acknowledgment used another read or deadline.");
-     end=live().cut;receipt=createMixedNativePrefix({checkpointOrdinal,begin,end,acknowledgment,headerPrefix:end.nativeContext.headerPrefix,operationDeadlineMs});prefixes.push(receipt);
+     end=live().cut;receipt=createMixedNativePrefix({checkpointOrdinal,begin,end,acknowledgment,headerPrefix:end.nativeContext.headerPrefix,operationDeadlineMs,returnedAtMs:performance.now()});prefixes.push(receipt);
     }
     const check={ordinal,begin:mixedNativeProgressVector(begin),returned:null,checkpointOrdinal:receipt?.checkpointOrdinal ?? null,prefixSha256:receipt?.prefixSha256 ?? null};checks.push(check);retained();
-    const token=Object.freeze({ordinal,contextId,authoritySha256,failureIds:Object.freeze(progressFailureIdsForCollector(end))});tokens.set(token,check);return token;
+    const token=Object.freeze({ordinal,contextId,authoritySha256,failureIds:Object.freeze(progressFailureIdsForCollector(end))});tokens.set(token,{check,begin,receipt});return token;
    }catch(error){failed++;throw error;}
   },
   confirm(token){
    try{
-    const {cut,candidate}=live(),check=tokens.get(token);
+    const {cut,candidate}=live(),owned=tokens.get(token),check=owned?.check;
     if(!check || check.returned!==null || token.contextId!==contextId || token.authoritySha256!==authoritySha256 || JSON.stringify(token.failureIds)!==JSON.stringify(candidate.failureIds))throw Error("New mixed failed request or wrong acknowledgment at return cut.");
+    if(!sameMixedReturnJournals(owned.begin.nativeContext,cut.nativeContext))throw Error("Mixed current authority changed after acknowledgment.");
+    if(owned.receipt){const initial=owned.receipt;const sealed=createMixedNativePrefix({checkpointOrdinal:initial.checkpointOrdinal,begin:initial.begin,end:cut,acknowledgment:initial.acknowledgment,headerPrefix:cut.nativeContext.headerPrefix,operationDeadlineMs:initial.operationDeadlineMs,returnedAtMs:performance.now()});if(performance.now()>initial.acknowledgment.deadlineMs)throw Error("Mixed acknowledgment deadline expired before return.");const index=prefixes.findIndex(row=>row.checkpointOrdinal===initial.checkpointOrdinal);if(index<0)throw Error("Mixed acknowledgment lost its owned prefix.");prefixes[index]=sealed;check.prefixSha256=sealed.prefixSha256;}
     const principal=cut.nativeContext?.principalEpoch,census=cut.nativeContext?.headerCensus,errors=cut.nativeContext?.protocolErrors;
     if(principal?.observedSetCookieResponses!==0 || principal.unknownResponseHeaders!==0 || principal.readErrors!==0 || principal.observationErrors!==0 || principal.overflow!==0 || errors?.observed!==0 || errors.overflow!==0 || !["unknownHeaders","setCookieResponses","setCookieLines","errors","duplicates","missing","late","overflow"].every(key=>census?.counts?.[key]===0))throw Error("A new principal/header/protocol error invalidated the mixed return cut.");
     check.returned=mixedNativeProgressVector(cut);tokens.delete(token);retained();return true;

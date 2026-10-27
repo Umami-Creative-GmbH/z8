@@ -41,7 +41,7 @@ function fixture({applicationIds=[1,2],originalApplicationId=1,currentApplicatio
   const cached={...identity(initial),...controlResponseMetadata(response,200),requestId:"cached",loaderId:"loader",type:"Fetch",startedAt:1,finishedAt:2,loadingFinished:true,fromDiskCache:true,fromServiceWorker:false,
     initialHeaderIdentity:identity(initial),proxyResponseId:originalId,bodyReadbackComplete:true,bodyProof:proof(initial),
     bodyReadbackReceipt:{available:true,base64Encoded:false,utf16CodeUnitLength:bytes.length,observedDataLengthAtReadback:bytes.length,decodedBytes:bytes.length,bodySha256:sha(bytes),responseContentType:{headerKnown:true,mime:"text/x-component",charset:"absent"}}};
-  const failure={...identity(wire),...controlResponseMetadata(response,200),requestId:"native",loaderId:"loader",type:"Other",initiator:"other",initiatorStackKnownAbsent:true,priority:"VeryLow",startedAt:3,
+  const failure={...identity(wire),...controlResponseMetadata(response,200),requestId:"native",failedEventOrdinal:9,loaderId:"loader",type:"Other",initiator:"other",initiatorStackKnownAbsent:true,priority:"VeryLow",startedAt:3,
     requestHeadersKnown:true,initialHeaderIdentity:identity(initial),extraHeaderIdentity:identity(wire),proxyResponseId:currentId,error:"net::ERR_ABORTED",canceled:true};
   const principal=createPrincipalEpochObserver(contextId,{origin});
   const cookies=[{name:"session",value:"synthetic",domain:"localhost",path:"/",httpOnly:true}];principal.start(cookies);principal.end(cookies);
@@ -371,18 +371,19 @@ async function openPrefixFixture(){
  const census=createProxyHeaderCensus({contextId:context.contextId}),life=censusApi.createProxyHeaderLifecycle({proxyInstanceId:"f".repeat(32),originSha256:context.originSha256,allowedOriginSha256:[context.originSha256]});
  for(let n=1;n<=2;n++){const rid="a".repeat(32)+"."+n;census.accepted(rid);life.accepted(rid,context.originSha256);life.upstreamCreated(rid);life.headersReceived(rid);census.headers(rid,io.response);life.headersForwarded(rid);life.upstreamClosed(rid);}
  context.headerCensus=census.snapshot();context.headerPrefix=censusApi.proxyHeaderPrefix(census.snapshot(),life.snapshot());
+ context.documentJournal={protocol:"actual-cdp-document-journal-v1",contextId:context.contextId,installed:true,currentGeneration:4,executionEventOrdinal:1,documentEventOrdinal:1,errors:0,overflow:0,closed:false,executionEvents:[{ordinal:1,event:"created",executionContextId:1,uniqueId:"actual-context-unique",frameId:"frame",isDefault:true}],documents:[{ordinal:1,requestId:"document",frameId:"frame",loaderId:"loader",originSha256:context.originSha256,documentGeneration:context.contextId+":4"}]};
  input.coverage.scopeClosed=false;input.browserEventOrdinal=12;
  const begin=api.mixedNativeProgressInput(input);principal.progressStarted(1);const principalRead=principal.progressFinished(1,cookies);context.principalEpoch=principal.snapshot();
  const ack={...closedContext.environment.endRead,protocol:"native-environment-progress-readonly-v1",contextId:context.contextId,checkpointOrdinal:1,principalRead,principalReadOperation:principal.progressOperation(1),startedAtMs:100,finishedAtMs:101,elapsedMs:1,deadlineMs:110,deadlineBudgetMs:10,
  document:{protocol:"actual-cdp-document-acknowledgment-v1",contextId:context.contextId,frameId:"frame",loaderId:"loader",executionContextUniqueId:"actual-context-unique",executionContextId:1,documentRequestId:"document",documentGeneration:4,actualDocumentIdentityStable:true,originSha256:context.originSha256,executionEventOrdinalBefore:1,executionEventOrdinalAfter:1,documentEventOrdinalBefore:1,documentEventOrdinalAfter:1}};
- ack.document.sourceJournal={protocol:"actual-cdp-document-journal-v1",contextId:context.contextId,installed:true,executionEventOrdinal:1,documentEventOrdinal:1,errors:0,overflow:0,closed:false,executionEvents:[{ordinal:1,event:"created",executionContextId:1,uniqueId:"actual-context-unique",frameId:"frame",isDefault:true}],documents:[{ordinal:1,requestId:"document",frameId:"frame",loaderId:"loader",originSha256:context.originSha256,documentGeneration:context.contextId+":4"}]};
+ ack.document.sourceJournal=structuredClone(context.documentJournal);
  const end=api.mixedNativeProgressInput(input);
  return {api,censusApi,input,io,closedContext,context,begin,end,ack,life};
 }
 
 test("acknowledged Native prefixes recompute the natural-EOF core but never satisfy final closed evidence",async()=>{
  const {api,input,closedContext,context,begin,end,ack}=await openPrefixFixture();
- const receipt=api.createMixedNativePrefix({checkpointOrdinal:1,begin,end,acknowledgment:ack,headerPrefix:context.headerPrefix});
+ const receipt=api.createMixedNativePrefix({checkpointOrdinal:1,begin,end,acknowledgment:ack,headerPrefix:context.headerPrefix,returnedAtMs:101});
  assert.equal(api.validateMixedNativePrefix(JSON.parse(JSON.stringify(receipt))),true);
  assert.equal(classifyControlCancellations(input).provenControls,0,"open authority never passes final Native proof");
  assert.equal(cleanBrowserFailureEvidence(receipt,1),false);
@@ -413,7 +414,7 @@ test("mixed progress acknowledgments stop on genuine or incomplete work before m
  const acquire=async({checkpointOrdinal,deadlineMs})=>{reads++;current.nativeContext.principalEpoch=structuredClone(end.nativeContext.principalEpoch);const startedAtMs=performance.now(),finishedAtMs=startedAtMs+0.01;return {...structuredClone(ack),checkpointOrdinal,startedAtMs,finishedAtMs,elapsedMs:finishedAtMs-startedAtMs,deadlineMs,deadlineBudgetMs:deadlineMs-startedAtMs};};
  const observer=createMixedProgressAcknowledgments({input:()=>structuredClone(current),application,acknowledge:acquire});
  const token=await observer.check();assert.equal(observer.confirm(token),true);assert.equal(reads,1);
- life.close();const finalInputs={failureIds:["native"],nativeFailureIds:["native"],browserEventOrdinal:12,headerLifecycle:life.snapshot(),documentJournal:{...structuredClone(ack.document.sourceJournal),closed:true}};
+ life.close();const finalInputs={failureIds:["native"],nativeFailureIds:["native"],browserEventOrdinal:12,failureOccurrences:api.mixedFailureOccurrenceCensus({contextId:begin.nativeContext.contextId,scopeClosed:true,browserEventOrdinal:12,records:[{requestId:"native",eventOrdinal:9,failedEvents:1}]}),headerLifecycle:life.snapshot(),documentJournal:{...structuredClone(ack.document.sourceJournal),closed:true}};
  const finalContext=structuredClone(current.nativeContext);finalContext.principalEpoch.scopeClosed=true;finalContext.environment.workerTargets.scopeClosed=true;
  assert.equal(api.validateMixedProgressObservations(observer.snapshot(),finalContext,finalInputs),true);
  for(const edit of [v=>delete v.checks,v=>v.checks.pop(),v=>v.contextId="another-context",v=>v.checks[0].prefixSha256=null,v=>v.prefixes.pop(),v=>v.checks[0].returned.headerEventOrdinal=999,v=>v.authoritySha256="0".repeat(64)]){const bad=structuredClone(observer.snapshot());edit(bad);assert.equal(api.validateMixedProgressObservations(bad,finalContext,finalInputs),false); }
@@ -442,6 +443,29 @@ test("live mixed guard tokens cannot be copied or borrowed even for zero-failure
 
 test("acknowledged document fields must join their observed Runtime/Document source records",async()=>{
  const {api,begin,end,ack,context}=await openPrefixFixture();
- const receipt=api.createMixedNativePrefix({checkpointOrdinal:1,begin,end,acknowledgment:ack,headerPrefix:context.headerPrefix});
+ const receipt=api.createMixedNativePrefix({checkpointOrdinal:1,begin,end,acknowledgment:ack,headerPrefix:context.headerPrefix,returnedAtMs:101});
  const bad=structuredClone(receipt);bad.acknowledgment.document.loaderId="another-loader";const {prefixSha256,...facts}=bad;bad.prefixSha256=sha(JSON.stringify(facts));assert.equal(api.validateMixedNativePrefix(bad),false);
+});
+
+test("return cuts reject invalid worker and document authority observed while another context is awaiting",async()=>{
+ const {createMixedProgressAcknowledgments}=await import("./browser-control-collector.mjs");
+ for(const mutate of [v=>v.nativeContext.environment.workerTargets.events.push({type:"service_worker",event:"created",targetOrdinal:3,urlKnown:true,urlSha256:"f".repeat(64),ownedWorkerScript:false,originMatches:false}),v=>v.nativeContext.environment.workerTargets.errors++,v=>v.nativeContext.environment.workerTargets.scopeClosed=true,v=>v.nativeContext.documentJournal.currentGeneration++,v=>v.nativeContext.documentJournal.documents[0].loaderId="new-loader",v=>v.nativeContext.documentJournal.executionEvents[0].uniqueId="another-context",v=>v.nativeContext.environment.servingPublicSources.files[0].sha256="0".repeat(64),v=>v.nativeContext.principalEpoch.progressReads.records[0].snapshotSha256="0".repeat(64)]){
+  const {begin,end,ack}=await openPrefixFixture();let current=structuredClone(begin);
+  const app=()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0});
+  const observer=createMixedProgressAcknowledgments({input:()=>structuredClone(current),application:app,acknowledge:async({checkpointOrdinal,deadlineMs})=>{current.nativeContext.principalEpoch=structuredClone(end.nativeContext.principalEpoch);const startedAtMs=performance.now(),finishedAtMs=startedAtMs+0.01;return {...structuredClone(ack),checkpointOrdinal,startedAtMs,finishedAtMs,elapsedMs:finishedAtMs-startedAtMs,deadlineMs,deadlineBudgetMs:deadlineMs-startedAtMs};}});
+  const token=await observer.check();mutate(current);assert.throws(()=>observer.confirm(token));assert.equal(observer.snapshot().failed,1);
+ }
+});
+
+test("final failure occurrences reject erased same-cut Native guards but preserve genuinely later closed controls",async()=>{
+ const {createMixedProgressAcknowledgments}=await import("./browser-control-collector.mjs"),{api,begin,end,ack,life}=await openPrefixFixture();
+ const current=structuredClone(begin);current.failures=[];
+ const app=()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0});
+ const observer=createMixedProgressAcknowledgments({input:()=>structuredClone(current),application:app,acknowledge:()=>assert.fail("fast guard must not read")});const token=await observer.check();observer.confirm(token);life.close();
+ const context=structuredClone(end.nativeContext);context.principalEpoch.scopeClosed=true;context.environment.workerTargets.scopeClosed=true;
+ const makeCensus=(eventOrdinal,last)=>{const facts={protocol:"actual-browser-failed-occurrence-census-v1",contextId:context.contextId,scopeClosed:true,browserEventOrdinal:last,records:[{requestId:"native",eventOrdinal,failedEvents:1}]};return {...facts,censusSha256:sha(JSON.stringify(facts))};};
+ const inputs={failureIds:["native"],nativeFailureIds:["native"],browserEventOrdinal:12,headerLifecycle:life.snapshot(),documentJournal:{...structuredClone(ack.document.sourceJournal),closed:true},failureOccurrences:makeCensus(9,12)};
+ assert.equal(api.validateMixedProgressObservations(observer.snapshot(),context,inputs),false,"Same-cut failure absence cannot be explained as a later arrival.");
+ inputs.browserEventOrdinal=13;inputs.failureOccurrences=makeCensus(13,13);
+ assert.equal(api.validateMixedProgressObservations(observer.snapshot(),context,inputs),true,"A genuinely later failure still depends on the independent final closed validator.");
 });
