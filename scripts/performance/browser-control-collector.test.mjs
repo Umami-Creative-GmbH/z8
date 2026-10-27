@@ -1979,3 +1979,12 @@ test("private replay bounds are established before trusted traversal and nested 
  for(const numeric of ["-0","1e400"]){const input=parseMixedTechnicalReplayJSON(Buffer.from(JSON.stringify(base).slice(0,-1)+',"invalid":'+numeric+'}'));assert.equal(mixedTechnicalCandidateDigest(input),null);}
  owner.close();assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);
 });
+
+
+test("failed descendant registration never publishes released cut or evidence maps",async()=>{
+ const {parseMixedTechnicalReplayJSON,createMixedTechnicalOwner}=await import("./mixed-technical-gzip.mjs"),child={failures:[],responses:[],proxy:[],nativeContext:{contextId},coverage:{installed:true},browserRevision:chromiumSWRRevision,browserEventOrdinal:0},parsed=parseMixedTechnicalReplayJSON(Buffer.from(JSON.stringify({protocol:"acknowledged-mixed-native-prefix-v1",nativeContext:{contextId},begin:child,end:child})));
+ for(const kind of ["replay","evidence"]){const proxy=createProxyControlCollector({contextId,origin});proxy.installed();let refuse=true,registrationFaults=0;const owner=createMixedTechnicalOwner({contextId,reserve:n=>{if(refuse&&n===2560){registrationFaults++;return false;}return proxy.reserveTemporaryObservation(n);},release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});
+  const perform=()=>kind==="replay"?owner.replay(parsed):owner.retainEvidence(()=>parsed);assert.throws(perform);assert.equal(registrationFaults,1);assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);assert.equal(owner.stats().liveCuts,0);
+  refuse=false;let result;assert.doesNotThrow(()=>{result=perform();});if(kind==="replay")owner.releaseCut(result);else owner.releaseEvidence(result);owner.close();assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);assert.equal(proxy.reserveTemporaryObservation(33554432),true);proxy.releaseTemporaryObservation(33554432);
+ }
+});
