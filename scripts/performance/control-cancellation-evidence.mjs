@@ -128,7 +128,12 @@ function inspectFlightBody(
 	const candidateCosts=new Map(),costCandidates=[],dependencyObjects=new WeakMap(),dependencyOrdinals=new WeakMap(),dependencyOrigins=new Map();
 	const dependencyCosts={calls:0,first:0,repeatedSameContext:0,repeatedDifferentContext:0,unknownContext:0,contexts:0,identityOverflow:0,contextOverflow:0,
 		activeSameOwner:0,activeDifferentOwner:0,activeOwnerUnknown:0,parentCertificateUses:0,parentCertificateWithSeen:0,parentCertificateWithActive:0,parentCertificateWithoutSeenOrActive:0};
-	let dependencyOrdinalCount=0,chargedWork=0;
+	let dependencyOrdinalCount=0,diagnosticContextCount=0,chargedWork=0;
+	const semanticValues=new WeakMap(),semanticBuckets=new Map();
+	const semanticRoles=new Set(["root","required","transport","tree","data","tree-map","tree-map-model","tree-map-pair","output","cache-output","suspended-output","fallback-output","component-data","element-type","element-key","host-props","cache-host-props","fallback-host-props","suspense-props","suspended-host-props"]);
+	const semanticArrivals=new Set(["root-or-required","collection-reference","model-reference","outlined-reference","element-type","element-key","element-props","element-field","typed-data-r","array-output","element-children","element-fallback","own-field"]);
+	const semanticCounts={observations:0,contexts:0,first:0,repeatedExact:0,sameValueDifferentObligation:0,unknown:0,overflow:0,committedPopWork:0,committedScheduledChildren:0};
+	let semanticPhase="pre",semanticPreWork=0,semanticPostStart=0,semanticGuardOnlyWork=0,activeSemanticIteration=null;
 	const reasonBits={seenId:1,seenContainer:2,activeAnchor:4,elementSkip:8,opaque:16,removedField:32,parentCertificate:64};
 	const chargeModel=(site,atDepth=null)=>{const result=++budget.models,row=costPhases[site];chargedWork++;row.work++;if(Number.isInteger(atDepth)&&atDepth>=0&&atDepth<=64)row.depthWork[atDepth]++;else row.unknownDepthWork++;return result;};
 	const dependencyOrdinal=value=>{
@@ -141,23 +146,56 @@ function inspectFlightBody(
 	const noteDependencyContext=(value,originId,forceElement,seen,atDepth)=>{
 		dependencyCosts.calls++;
 		if(seen.size>64 || activePaths.size>64 || parentCheckDepths.length>64){dependencyCosts.unknownContext++;return;}
-		const origin=originId===null?0:dependencyOrdinal(originId),seenIds=[...seen].map(dependencyOrdinal),pathIds=[...activePaths.values()].map(dependencyOrdinal),scopeIds=parentCheckDepths.map(dependencyOrdinal);
-		if(origin===null || [...seenIds,...pathIds,...scopeIds].includes(null)){dependencyCosts.unknownContext++;return;}
+		const valueIdentity=dependencyOrdinal(value),origin=originId===null?0:dependencyOrdinal(originId),seenIds=[...seen].map(dependencyOrdinal),pathIds=[...activePaths.values()].map(dependencyOrdinal),scopeIds=parentCheckDepths.map(dependencyOrdinal);
+		if(valueIdentity===null || origin===null || [...seenIds,...pathIds,...scopeIds].includes(null)){dependencyCosts.unknownContext++;return;}
 		const key=JSON.stringify([atDepth,seenIds.sort((a,b)=>a-b),pathIds,scopeIds]);
 		let origins=dependencyObjects.get(value),forces=origins?.get(origin),contexts=forces?.get(forceElement===true);
 		if(contexts?.has(key)){dependencyCosts.repeatedSameContext++;return;}
 		if(contexts?.size)dependencyCosts.repeatedDifferentContext++;
 		else dependencyCosts.first++;
-		if(dependencyCosts.contexts>=1024){dependencyCosts.contextOverflow++;dependencyCosts.unknownContext++;return;}
+		if(diagnosticContextCount>=1024){dependencyCosts.contextOverflow++;dependencyCosts.unknownContext++;return;}
 		if(!origins)dependencyObjects.set(value,origins=new Map());if(!forces)origins.set(origin,forces=new Map());if(!contexts)forces.set(forceElement===true,contexts=new Set());
-		contexts.add(key);dependencyCosts.contexts++;
+		contexts.add(key);dependencyCosts.contexts++;diagnosticContextCount++;
+	};
+	const semanticKind=value=>value===null?"null":Array.isArray(value)?"array":typeof value==="object"?"object":typeof value!=="string"?typeof value:value.startsWith("$$")?"escaped-string":!value.startsWith("$")?"literal-string":plainPath.test(value)?"outlined-reference":/^\$L/.test(value)?"lazy-reference":/^\$@/.test(value)?"promise-reference":/^\$[QWi]/.test(value)?"collection-reference":"other-reference";
+	const noteSemantic=(entry,queue,start)=>{
+		const {value,role}=entry,kind=semanticKind(value),safeRole=semanticRoles.has(role)?role:"unknown",bucketKey=safeRole+"/"+kind;
+		let bucket=semanticBuckets.get(bucketKey);if(!bucket)semanticBuckets.set(bucketKey,bucket={role:safeRole,kind,observations:0,work:0,scheduledChildren:0});
+		bucket.observations++;semanticCounts.observations++;activeSemanticIteration={start,queue,queueAtPop:queue.length,bucketKey};
+		if(!value || typeof value!=="object")return;
+		const origin=entry.observationOrigin,flags=[];
+		let known=safeRole!=="unknown" && origin && typeof origin==="object";
+		const reference=entry.observationReference;if(reference!==undefined && (typeof reference!=="string"||!reference.startsWith("$")))known=false;
+		for(const key of ["directEmbeddedOutput","fromTypedOutput","rArrayOutput","insideRArray"]){const present=Object.hasOwn(entry,key),flag=entry[key];flags.push([present,flag===undefined?0:flag===false?1:flag===true?2:3]);if(present && flag!==undefined && typeof flag!=="boolean")known=false;}
+		const ancestry=entry.fallbackReferences,ancestryPresent=Object.hasOwn(entry,"fallbackReferences");
+		if(ancestry!==undefined && (!(ancestry instanceof Set)||ancestry.size>64))known=false;
+		const arrival=Object.hasOwn(entry,"outputArrival")?[true,entry.outputArrival??null]:[false,null],parentArrival=Object.hasOwn(entry,"outputParentArrival")?[true,entry.outputParentArrival??null]:[false,null];
+		if([arrival,parentArrival].some(([present,item])=>present&&item!==null&&!semanticArrivals.has(item)))known=false;
+		if(!known){semanticCounts.unknown++;return;}
+		const valueIdentity=dependencyOrdinal(value),originId=dependencyOrdinal(origin),referenceId=reference===undefined?0:dependencyOrdinal(reference),ancestorIds=ancestry===undefined?[]:[...ancestry].map(dependencyOrdinal);
+		if(valueIdentity===null || originId===null || referenceId===null || ancestorIds.includes(null)){semanticCounts.unknown++;return;}
+		const key=JSON.stringify([role,originId,origin.tag,origin.stream,Object.hasOwn(entry,"observationReference"),referenceId,flags,ancestryPresent,ancestry===undefined?0:1,ancestorIds.sort((a,b)=>a-b),arrival,parentArrival]);
+		let contexts=semanticValues.get(value);
+		if(contexts?.has(key)){semanticCounts.repeatedExact++;return;}
+		if(contexts?.size)semanticCounts.sameValueDifferentObligation++;else semanticCounts.first++;
+		if(diagnosticContextCount>=1024){semanticCounts.overflow++;semanticCounts.unknown++;return;}
+		if(!contexts)semanticValues.set(value,contexts=new Set());contexts.add(key);semanticCounts.contexts++;diagnosticContextCount++;
+	};
+	const finishSemantic=()=>{const active=activeSemanticIteration;if(!active)return;const work=chargedWork-active.start,children=active.queue.length-active.queueAtPop,bucket=semanticBuckets.get(active.bucketKey);bucket.work+=work;bucket.scheduledChildren+=children;semanticCounts.committedPopWork+=work;semanticCounts.committedScheduledChildren+=children;activeSemanticIteration=null;};
+	const semanticSnapshot=()=>{
+		const active=activeSemanticIteration,activePopWork=active?chargedWork-active.start:0,activeScheduledChildren=active?active.queue.length-active.queueAtPop:0;
+		const preWork=semanticPhase==="pre"?chargedWork:semanticPreWork,postWork=semanticPhase==="post"?chargedWork-semanticPostStart:0;
+		const buckets=[...semanticBuckets.entries()].map(([key,row])=>({...row,work:row.work+(active?.bucketKey===key?activePopWork:0),scheduledChildren:row.scheduledChildren+(active?.bucketKey===key?activeScheduledChildren:0)}));
+		return {protocol:"bounded-semantic-obligation-observation-v1",...semanticCounts,preWork,activePopWork,activeScheduledChildren,guardOnlyWork:semanticGuardOnlyWork,postWork,
+			accountedWork:preWork+semanticCounts.committedPopWork+activePopWork+semanticGuardOnlyWork+postWork,activeIteration:active!==null,buckets,
+			truncated:semanticCounts.unknown>0||semanticCounts.overflow>0};
 	};
 	const recordCandidateCost=(candidate,ready,span)=>{
 		let row=candidateCosts.get(candidate.reasonMask);if(!row)candidateCosts.set(candidate.reasonMask,row={reasonMask:candidate.reasonMask,count:0,ready:0,work:0,maxWork:0,maxSpan:0});
 		const work=budget.models-candidate.start;row.count++;row.ready+=ready?1:0;row.work+=work;row.maxWork=Math.max(row.maxWork,work);row.maxSpan=Math.max(row.maxSpan,span);
 	};
 	const modelCostSnapshot=()=>({protocol:"bounded-model-cost-observation-v1",inspectionDepth:depth,chargedWork,sharedModelSteps:budget.models,localModelSteps:budget.models-modelBudgetAtStart,
-		embeddedWork:budget.models-modelBudgetAtStart-chargedWork,phases:structuredClone(Object.values(costPhases)),dependencies:{...dependencyCosts},
+		embeddedWork:budget.models-modelBudgetAtStart-chargedWork,phases:structuredClone(Object.values(costPhases)),dependencies:{...dependencyCosts},sharedDiagnosticContexts:diagnosticContextCount,sharedDiagnosticIdentities:dependencyOrdinalCount,semanticObligations:semanticSnapshot(),
 		candidates:structuredClone([...candidateCosts.values()].sort((a,b)=>a.reasonMask-b.reasonMask)),
 		activeCandidates:costCandidates.map(candidate=>({reasonMask:candidate.reasonMask,work:budget.models-candidate.start,span:candidate.scope.maxDepth-candidate.depth})),
 		truncated:dependencyCosts.identityOverflow>0 || dependencyCosts.contextOverflow>0 || dependencyCosts.unknownContext>0});
@@ -880,7 +918,7 @@ function inspectFlightBody(
 	if (requestKind === "runtime-shell" && (marker !== "partial" || Object.hasOwn(root, "l") || Object.hasOwn(root, "a")))
 		return unknown("unsupported-runtime-shell-metadata");
 	// Roles follow exact transport edges; another required path to the same model stays required.
-	const queue = segmentContract ? segmentOutputs : [{ value: root, role: "root" }],
+	const queue = segmentContract ? segmentOutputs : [{ value: root, role: "root",observationOrigin:records.get("0")?.value===root?records.get("0"):null }],
 		visited = new Set();
 	// Structural parent readiness is independent; semantic visits must retain every
 	// permission bit so a permitted alias cannot discharge a required incoming edge.
@@ -889,10 +927,15 @@ function inspectFlightBody(
 	const modelLimitObservation=(site,guard,objectKeyCount=null)=>({protocol:"bounded-model-limit-observation-v1",site,guard,modelCap:100000,depthCap:64,
 		sharedModelSteps:budget.models,localModelSteps:budget.models-modelBudgetAtStart,inspected,queueLength:queue.length,objectKeyCount,visitedStates:visited.size,recordCount,
 		recursionLevel:depth,embeddedModelSteps:embeddedRuntimePrefetch?.modelSteps ?? 0,eagerParentCalls,outlinedCalls,eagerUniqueObjects,repeatedEagerObjects,activeOutlinedPaths:activePaths.size,
+		embeddedModelCostObservation:embeddedRuntimePrefetch?.modelCostObservation ?? null,
 		parentMemoChecks,parentMemoHits,parentMemoAbsent,parentMemoNonStandalone,parentMemoDepthExcluded,parentMemoKnownExcluded,parentMemoReady,parentMemoPublished,closedEagerMemo:structuredClone(closedEagerMemo),modelCostObservation:modelCostSnapshot()});
+	semanticPreWork=chargedWork;semanticPhase="pop";
 	while (queue.length) {
-		if (++inspected > 100000 || chargeModel("semantic-loop") > 100000) return unknown("model-limit",{modelLimitObservation:modelLimitObservation("semantic-loop",inspected>100000?"local-inspected-work":"shared-model-work")});
-		const { value, role, fallbackReferences, directEmbeddedOutput, fromTypedOutput, outputArrival, outputParentArrival, rArrayOutput, insideRArray } = queue.pop();
+		const beforeGuard=chargedWork;
+		if (++inspected > 100000 || chargeModel("semantic-loop") > 100000){semanticGuardOnlyWork+=chargedWork-beforeGuard;return unknown("model-limit",{modelLimitObservation:modelLimitObservation("semantic-loop",inspected>100000?"local-inspected-work":"shared-model-work")});}
+		const entry=queue.pop();noteSemantic(entry,queue,beforeGuard);
+		const { value, role, fallbackReferences, directEmbeddedOutput, fromTypedOutput, outputArrival, outputParentArrival, rArrayOutput, insideRArray,observationOrigin,observationReference } = entry;
+		try {
 		if (value && typeof value === "object" && binaryValues.has(value)) return unknown("unsupported-binary-role");
 		if (shellScope && role === "fallback-output" && (
 			(value && typeof value === "object" && !Array.isArray(value)) ||
@@ -933,7 +976,7 @@ function inspectFlightBody(
 			const visit = semanticVisitKey(modelRole,id);
 			if (!visited.has(visit)) {
 				visited.add(visit);
-				queue.push({ value: model, role: modelRole, fallbackReferences, fromTypedOutput, outputArrival:"collection-reference" });
+				queue.push({ value: model, role: modelRole, fallbackReferences, fromTypedOutput, outputArrival:"collection-reference",observationOrigin:model===record.value?record:null,observationReference:value });
 			}
 		} else if (
 			typeof value === "string" &&
@@ -973,7 +1016,7 @@ function inspectFlightBody(
 				const record = records.get(id);
 				if (shellScope && role === "fallback-output" && record.tag !== null && record.tag !== "T")
 					return unknown("unsupported-runtime-shell-fallback-kind");
-				if (record.tag !== "T") queue.push({ value: record.value, role:role==="cache-output" && (value[1]==="@" || record.tag!==null || record.stream) ? "required" : role, fromTypedOutput, outputArrival:"model-reference",
+				if (record.tag !== "T") queue.push({ value: record.value, role:role==="cache-output" && (value[1]==="@" || record.tag!==null || record.stream) ? "required" : role, fromTypedOutput, outputArrival:"model-reference",observationOrigin:record,observationReference:value,
 					rArrayOutput:rArrayOutput===true && value[1]!=="@" && record.tag===null && !record.stream,insideRArray,
 					fallbackReferences: role === "fallback-output" ? new Set([...(fallbackReferences ?? []), id]) : fallbackReferences });
 			}
@@ -984,7 +1027,7 @@ function inspectFlightBody(
 				semanticRole:role,pathFailure:pathFailure ?? (pathLimit?"depth-or-model-limit":"unavailable-own-data"),marker,isPartial,requestKind,
 				...(pathLimitObservation ? {pathLimitObservation} : {}),
 			});
-			queue.push({value:selected.value,role,fallbackReferences,fromTypedOutput,outputArrival:"outlined-reference",rArrayOutput,insideRArray});
+			queue.push({value:selected.value,role,fallbackReferences,fromTypedOutput,outputArrival:"outlined-reference",rArrayOutput,insideRArray,observationOrigin:selected.modelIds?.has(selected.originId)?records.get(selected.originId):null,observationReference:value});
 		} else if (
 			typeof value === "string" &&
 			value.startsWith("$") &&
@@ -1024,8 +1067,8 @@ function inspectFlightBody(
 						// React's optional fallback prop is a known empty fallback, never a missing model row.
 						if (!Object.hasOwn(props, "fallback") || props.fallback === null || props.fallback === "$undefined") knownEmptyFallbacks++;
 					}
-					queue.push({ value: value[1], role: "element-type", fallbackReferences, fromTypedOutput, outputArrival:"element-type" }, { value: value[2], role: "element-key", fallbackReferences, fromTypedOutput, outputArrival:"element-key" },
-						{ value: value[3], role: role === "fallback-output" ? "fallback-host-props" : suspense ? "suspense-props" : role === "suspended-output" ? "suspended-host-props" : role === "cache-output" ? "cache-host-props" : "host-props", fallbackReferences, fromTypedOutput, outputArrival:"element-props" });
+					queue.push({ value: value[1], role: "element-type", fallbackReferences, fromTypedOutput, outputArrival:"element-type",observationOrigin,observationReference }, { value: value[2], role: "element-key", fallbackReferences, fromTypedOutput, outputArrival:"element-key",observationOrigin,observationReference },
+						{ value: value[3], role: role === "fallback-output" ? "fallback-host-props" : suspense ? "suspense-props" : role === "suspended-output" ? "suspended-host-props" : role === "cache-output" ? "cache-host-props" : "host-props", fallbackReferences, fromTypedOutput, outputArrival:"element-props",observationOrigin,observationReference });
 					continue;
 				}
 				if (role === "fallback-output") {
@@ -1037,7 +1080,7 @@ function inspectFlightBody(
 					if (partialCacheScope && knownModule && props && typeof props === "object" && !Array.isArray(props)) {
 						// The cache stores this fulfilled element/props representation; it does not render the imported component.
 						representedComponentFallbacks++;
-						queue.push({value:value[1],role:"element-type",fromTypedOutput,outputArrival:"element-type"},{value:value[2],role:"element-key",fromTypedOutput,outputArrival:"element-key"},{value:value[3],role:"required",fromTypedOutput,outputArrival:"element-props"});
+						queue.push({value:value[1],role:"element-type",fromTypedOutput,outputArrival:"element-type",observationOrigin,observationReference},{value:value[2],role:"element-key",fromTypedOutput,outputArrival:"element-key",observationOrigin,observationReference},{value:value[3],role:"required",fromTypedOutput,outputArrival:"element-props",observationOrigin,observationReference});
 						continue;
 					}
 					return unknown("unknown-runtime-shell-fallback", { fallbackKind: "component-element",
@@ -1046,7 +1089,7 @@ function inspectFlightBody(
 				}
 				// Unknown component props may interpret children as ordinary required data.
 				for (let index = value.length - 1; index >= 0; index--)
-					queue.push({ value: value[index], role: index === 1 ? "element-type" : index === 3 ? "component-data" : "required", fallbackReferences,fromTypedOutput,outputArrival:index===1?"element-type":index===3?"element-props":"element-field" });
+					queue.push({ value: value[index], role: index === 1 ? "element-type" : index === 3 ? "component-data" : "required", fallbackReferences,fromTypedOutput,outputArrival:index===1?"element-type":index===3?"element-props":"element-field",observationOrigin,observationReference });
 				continue;
 			}
 			for (const [key, item] of Object.entries(value)) {
@@ -1067,7 +1110,7 @@ function inspectFlightBody(
 				else if (shellScope && key === "children" && role === "host-props") nextRole = "output";
 				else if (shellScope && output && Array.isArray(value)) nextRole = role;
 				else if (shellScope && role === "component-data") nextRole = role;
-				queue.push({ value: item, role: nextRole, fallbackReferences, directEmbeddedOutput: embeddedPartialScope && role === "data" && key === "r",
+				queue.push({ value: item, role: nextRole, fallbackReferences, directEmbeddedOutput: embeddedPartialScope && role === "data" && key === "r",observationOrigin,observationReference,
 					rArrayOutput:(partialCacheScope && role==="data" && key==="r") || (rArrayOutput===true && role==="cache-output" && Array.isArray(value) && !elementTuple(value)),
 					insideRArray:role==="cache-output" && Array.isArray(value) && !elementTuple(value),
 					fromTypedOutput:fromTypedOutput===true || (role==="data" && key==="r"),
@@ -1075,7 +1118,9 @@ function inspectFlightBody(
 					outputArrival:role==="data" && key==="r" ? "typed-data-r" : Array.isArray(value) && output ? "array-output" : key==="children" && ["host-props","cache-host-props","suspense-props","suspended-host-props","fallback-host-props"].includes(role) ? "element-children" : key==="fallback" && role==="suspense-props" ? "element-fallback" : "own-field" });
 			}
 		}
+		} finally {finishSemantic();}
 	}
+	semanticPhase="post";semanticPostStart=chargedWork;
 	if (segmentContract) return {
 		protocol:"bounded-required-flight-v1",complete:true,requestKind,marker,isPartial:segmentClaims.partialNodes > 0,action:false,
 		requiredStage:"segment-prefetch-representation",...segmentClaims,
