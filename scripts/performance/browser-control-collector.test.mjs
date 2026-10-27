@@ -128,7 +128,7 @@ test("response encoding diagnostics retain only actual allowlisted MIME/charset 
 	for(const [value,charset] of [["text/x-component","absent"],["text/x-component; charset=utf-8","utf-8"],['text/x-component; charset="ISO-8859-1"',"iso-8859-1"],["text/x-component; charset=private-value","other"],["text/x-component; charset=utf-8; charset=latin1","ambiguous"]]){
 		const facts=controlResponseMetadata({"content-type":value},200).responseContentType;
 		assert.deepEqual(facts,{headerKnown:true,mime:"text/x-component",charset});
-		assert.doesNotMatch(JSON.stringify(facts),/__PRIVATE_COOKIE_SECRET_1475__/);
+		assert.doesNotMatch(JSON.stringify(facts),/private-value/);
 	}
 	assert.deepEqual(controlResponseMetadata({},200).responseContentType,{headerKnown:false,mime:null,charset:"absent"});
 });

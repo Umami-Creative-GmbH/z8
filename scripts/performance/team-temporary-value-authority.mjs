@@ -4,7 +4,7 @@ import { open } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { basename, dirname, join, resolve } from "node:path";
 import { readInertDateRangeRequestValue, forgetInertDateRangeRequestValue } from "./inert-date-range-request.mjs";
-import { validateProxyHeaderCensus, validateProxyHeaderPrefix } from "./proxy-header-census.mjs";
+import { validateProxyHeaderCensus, validateProxyHeaderPrefix, validateProxyHeaderLifecycle } from "./proxy-header-census.mjs";
 
 const sha = value => createHash("sha256").update(value).digest("hex");
 const digest = value => typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
@@ -775,12 +775,20 @@ function knownRequestAuthority(authority,boundary) {
 		if(!validateProxyHeaderCensus(census,{contextId:request.contextId}) || !["unknownHeaders","setCookieResponses","setCookieLines","errors","duplicates","missing","late","overflow"].every(key=>census.counts[key]===0) ||
 			lifetime?.protocol!=="owned-context-upstream-header-lifetime-v1" || lifetime.contextId!==request.contextId || lifetime.installation?.protocol!==lifetime.protocol ||
 			lifetime.installation.originSha256!==request.requestOriginSha256 || lifetime.installation.acceptedRequestsAtInstall!==0 || !Array.isArray(lifetime.installation.allowedOriginSha256) || !lifetime.installation.allowedOriginSha256.includes(request.requestOriginSha256))return false;
+		const prefix=context.headerPrefix,life=prefix?.lifecycle,headerRows=census.requests.filter(entry=>entry.requestId===request.proxyResponseId);
+		if(headerRows.length!==1 || headerRows[0].observation!=="headers" || headerRows[0].setCookieLines!==0 || headerRows[0].setCookieSha256!==null ||
+			!ownData(prefix,["protocol","census","lifecycle","prefixSha256"]) || prefix.protocol!=="owned-proxy-open-header-prefix-v1" || !sameJSON(prefix.census,census) ||
+			!validateProxyHeaderLifecycle(life) || life.errors!==0 || life.overflow!==0 || life.upstreamRequests!==census.counts.accepted || life.requests.length!==census.requests.length ||
+			life.proxyInstanceId!==lifetime.installation.proxyInstanceId || life.originSha256!==request.requestOriginSha256 || !sameJSON(life.allowedOriginSha256,lifetime.installation.allowedOriginSha256) ||
+			prefix.prefixSha256!==sha(JSON.stringify({protocol:prefix.protocol,census:prefix.census,lifecycle:life})))return false;
+		const lifecycleRows=life.requests.filter(entry=>entry.requestId===request.proxyResponseId);
+		if(lifecycleRows.length!==1 || lifecycleRows[0].originSha256!==request.requestOriginSha256 || lifecycleRows[0].headersReceivedOrdinal===null || lifecycleRows[0].headersForwardedOrdinal===null ||
+			census.requests.some(entry=>!life.requests.some(observed=>observed.requestId===entry.requestId)))return false;
 		if(context.principalEpoch.scopeClosed) {
 			const closure=lifetime.closure;
-			if(census.closed!==true || census.counts.pending!==0 || census.counts.terminalBeforeHeaders!==0 || census.counts.knownHeaders!==census.counts.accepted || closure?.serverClosed!==true || closure.acceptedRequests!==census.counts.accepted || closure.upstreamRequests!==census.counts.accepted || closure.closedUpstreams!==census.counts.accepted || closure.pendingUpstreams!==0)return false;
+			if(census.closed!==true || life.closed!==true || lifecycleRows[0].upstreamClosedOrdinal===null || census.counts.pending!==0 || census.counts.terminalBeforeHeaders!==0 || census.counts.knownHeaders!==census.counts.accepted || closure?.serverClosed!==true || closure.acceptedRequests!==census.counts.accepted || closure.upstreamRequests!==census.counts.accepted || closure.closedUpstreams!==census.counts.accepted || closure.pendingUpstreams!==0)return false;
 		}else {
-			const prefix=context.headerPrefix;
-			if(!validateProxyHeaderPrefix(prefix,{contextId:request.contextId}) || !sameJSON(prefix.census,census) || prefix.lifecycle.errors!==0 || prefix.lifecycle.overflow!==0 || prefix.lifecycle.upstreamRequests!==census.counts.accepted || lifetime.closure!==null || prefix.lifecycle.proxyInstanceId!==lifetime.installation.proxyInstanceId || prefix.lifecycle.originSha256!==request.requestOriginSha256 || !sameJSON(prefix.lifecycle.allowedOriginSha256,lifetime.installation.allowedOriginSha256))return false;
+			if(!validateProxyHeaderPrefix(prefix,{contextId:request.contextId}) || lifetime.closure!==null)return false;
 		}
 		const finalJournal=readInfo.documentJournal,pastJournal=proof.acknowledgment.document.sourceJournal,workers=environment.workerTargets,pastWorkers=proof.workers,principal=context.principalEpoch;
 		if(!knownTeamDocumentJournal(finalJournal,request.contextId) || finalJournal?.contextId!==request.contextId || finalJournal.errors!==0 || finalJournal.overflow!==0 || !Array.isArray(finalJournal.documents) || !Array.isArray(finalJournal.executionEvents) ||
