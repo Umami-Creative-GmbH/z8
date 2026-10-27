@@ -412,7 +412,7 @@ test("manual team dispatch never sends when ownership is missing and preserves f
 
 test('mixed capture diagnostic keeps bounded scalar stages and preserves thrown errors without private values',async()=>{
  const ledger=mixedProbe.createMixedCaptureDiagnostics(),d=ledger.begin({actor:'small-admin',kind:'team'});
- assert.deepEqual(ledger.snapshot().rows[0],{actor:'small-admin',reader:'team',stage:'open-page',status:null,responseOK:null,captured:null,bodyRead:'not-reached',payloadShape:null,success:null,summary:{employees:null,hours:null,weeks:null,overtimeHours:null,correct:null},exceptionName:null});
+ assert.deepEqual(ledger.snapshot().rows[0],{actor:'small-admin',reader:'team',stage:'open-page',status:null,responseOK:null,captured:null,bodyRead:'not-reached',bodyReadSource:null,payloadShape:null,success:null,summary:{employees:null,hours:null,weeks:null,overtimeHours:null,correct:null},exceptionName:null});
  d.stage('read-annual-body');d.status({status:()=>200});d.captured({body:'PRIVATE_BODY'});const error=Object.assign(new Error('PRIVATE_MESSAGE'),{name:'ProtocolError',cause:'PRIVATE_CAUSE'});d.failed(error);
  const row=ledger.snapshot().rows[0];assert.equal(row.bodyRead,'rejected');assert.equal(row.exceptionName,'ProtocolError');assert.equal(row.status,200);assert.equal(row.captured,true);assert.doesNotMatch(JSON.stringify(ledger.snapshot()),/PRIVATE_/);
  const summary={employees:8,hours:16704,private:'PRIVATE_SUMMARY'};assert.equal(d.summary(summary),summary);assert.equal(d.responseOK(false),false);d.payload({success:true,private:'PRIVATE_PAYLOAD'});
@@ -427,10 +427,10 @@ test('actual mixed capture preserves await order predicates and original failure
  const publicResult=source.slice(source.indexOf('function publicResult('),source.indexOf('\nfunction numericMetrics('));
  const summary=source.slice(source.indexOf('function analyticsSummary('),source.indexOf('\n/** One existing manual request'));
  for(const kind of ['good','text-error','golden-error','parse-null','summary-error','http-error','capture-missing']){
-  const calls=[],ledger=mixedProbe.createMixedCaptureDiagnostics(),reader={kind:'team',actor:'small-admin',path:'/en/analytics/team-performance'};
+  const calls=[],ledger=mixedProbe.createMixedCaptureDiagnostics(),reader={kind:'work',actor:'large-admin',path:'/en/analytics/work-hours'};
   const original=Object.assign(new Error('PRIVATE_RESPONSE_FAILURE'),{name:'ProtocolError'});let listener;
   const page={on(name,value){assert.equal(name,'request');calls.push('listen');listener=value;},async goto(){calls.push('goto');if(kind!=='capture-missing')listener({url:()=> 'http://localhost'+reader.path,headers:()=>({'next-action':'PRIVATE_ACTION_ID'}),postData:()=> '["2025-01-01","PRIVATE_ARGUMENT"]',method:()=> 'POST'});}};
-  const payload=kind==='parse-null'?'0:{"a":{"success":true}}\n':JSON.stringify({success:true,data:kind==='summary-error'?null:{teams:[{employeeCount:8}],organizationTotal:kind==='golden-error'?1:16704}});
+  const payload=kind==='parse-null'?'0:{"a":{"success":true}}\n':JSON.stringify({success:true,data:kind==='summary-error'?null:{byEmployee:Array.from({length:200},()=>({})),summary:{totalHours:kind==='golden-error'?1:417600}}});
   const response={status(){calls.push('status');return kind==='http-error'?500:200;},ok(){calls.push('ok');return kind!=='http-error';},async text(){calls.push('text');if(kind==='text-error')throw original;return payload;}};
   const fn=runInNewContext(publicResult+'\n'+summary+'\n('+capture+')',{URL,openPage:async()=>{calls.push('open');return {page};},verifyActor:async()=>{calls.push('actor');},selectAnnualAnalyticsPeriod:async()=>{calls.push('annual');return response;}});
   const promise=fn({}, {},'http://localhost',reader,{}, {},[],90000,{}, {},ledger);
@@ -440,10 +440,25 @@ test('actual mixed capture preserves await order predicates and original failure
   assert.deepEqual(calls,kind==='text-error'?['open','listen','goto','actor','annual','status','text']:['open','listen','goto','actor','annual','status','text','ok']);
   assert.equal(row.stage,kind==='good'?'complete':kind==='text-error'?'read-annual-body':['http-error','capture-missing'].includes(kind)?'verify-capture':'summarize-annual');
   assert.equal(row.bodyRead,kind==='text-error'?'rejected':'fulfilled');
-  assert.equal(row.summary.hours,kind==='good'?16704:kind==='golden-error'?1:null);
+  assert.equal(row.summary.hours,kind==='good'?417600:kind==='golden-error'?1:null);
   assert.equal(row.exceptionName,kind==='good'?null:kind==='text-error'?'ProtocolError':kind==='summary-error'?'TypeError':'Error');
   assert.doesNotMatch(JSON.stringify(ledger.snapshot()),/PRIVATE_|2025-01/);
  }
+});
+
+test('TEAM capture pre-arms the same response and consumes only proxy golden scalars without calling text',async()=>{
+	const source=await readFile(new URL('./mixed-load-probe.mjs',import.meta.url),'utf8'),capture=source.slice(source.indexOf('async function captureAnalytics('),source.indexOf('\nfunction clockCohorts('));
+	for(const kind of ['good','golden-error','projection-error']){
+		const calls=[],ledger=mixedProbe.createMixedCaptureDiagnostics(),reader={kind:'team',actor:'small-admin',path:'/en/analytics/team-performance'},handle={};let listener;
+		const page={on(name,value){assert.equal(name,'request');listener=value;},async goto(){calls.push('goto');listener({url:()=> 'http://localhost'+reader.path,headers:()=>({'next-action':'PRIVATE_ACTION'}),postData:()=> '["2025-01-01","PRIVATE_ARGUMENT"]',method:()=> 'POST'});}};
+		const response={status:()=>200,ok:()=>true,text(){throw Error('TEAM text must not be called');}};
+		const observation={armAnnualTeam(input){calls.push('arm');assert.equal(input.timeoutMs,90000);assert.equal(input.path,reader.path);return handle;},async readAnnualTeam(actualHandle,actualResponse){calls.push('proxy-golden');assert.equal(actualHandle,handle);assert.equal(actualResponse,response);if(kind==='projection-error')throw Error('fixed observer failure');return {projection:{employees:8,hours:kind==='golden-error'?1:16704}};}};
+		const fn=runInNewContext('('+capture+')',{URL,openPage:async()=>({page,browserObservation:observation}),verifyActor:async()=>calls.push('actor'),selectAnnualAnalyticsPeriod:async()=>{calls.push('annual');return response;},teamAnnualSummary:mixedProbe.teamAnnualSummary});
+		const promise=fn({}, {},'http://localhost',reader,{}, {},[],90000,{}, {},ledger);
+		if(kind==='good')assert.equal((await promise).reader,reader);else await assert.rejects(promise);
+		assert.deepEqual(calls,['goto','actor','arm','annual','proxy-golden']);
+		const row=ledger.snapshot().rows[0];assert.equal(row.bodyReadSource,'proxy-golden');assert.equal(row.payloadShape,null);assert.equal(row.success,null);assert.equal(row.bodyRead,kind==='projection-error'?'rejected':'fulfilled');assert.equal(row.summary.correct,kind==='projection-error'?null:kind==='good');assert.doesNotMatch(JSON.stringify(row),/PRIVATE_/);
+	}
 });
 
 test('capture diagnostics never publish malformed values or manufacture missing numeric zero',()=>{

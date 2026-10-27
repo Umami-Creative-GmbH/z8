@@ -1,4 +1,4 @@
-import { testBrowserEvidence, testBrowserMetadata } from "./control-cancellation-test-fixtures.mjs";
+import { testBrowserEvidence, testBrowserMetadata, testBrowserBinding } from "./control-cancellation-test-fixtures.mjs";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import test from "node:test";
@@ -227,8 +227,7 @@ test("recorded original and HEAD readiness cannot exceed their declared observat
 			build: "c".repeat(40),
 			browserControl: testBrowserMetadata(),
 		};
-		const actualRuntime = { ...runtime, browserControl: { ...runtime.browserControl,
-			compiledBuild: runtime.build, manifestVerified: true, browserVerified: true } };
+		const actualRuntime = { ...runtime, browserControl: testBrowserBinding(runtime.build,runtime.browserControl) };
 		const s = {
 			...sample(),
 			applicationEvidence: createActionResultObserver().snapshot(),
@@ -812,4 +811,10 @@ test('team route receipts stay hash-only within the existing shared pool and sou
  assert.ok(Buffer.byteLength(JSON.stringify({pageRoute:route,headerEvidence:{initial:maxHeader,extra:maxHeader}}))*8+2048<=32768);
  const refused=createTeamSourceCutJournal({contextId:'ctx',reserve:()=>false});assert.equal(refused.capture('browser-request','request',null,route),null);assert.equal(refused.snapshot().overflow,1);assert.equal(refused.snapshot().records.length,0);
  assert.equal(originalTeamPageRouteContract({origin,conditions:[{locale:'en'+('-abcdefgh').repeat(10)}],routes:[{path:'/en/analytics'}]}),null);
+});
+
+test('both-phase temporary observations require the exact nested annual team condition',async()=>{
+ const {temporaryValueObservation,knownTemporaryValueObservation}=await import('./team-temporary-value-authority.mjs');
+ assert.equal(temporaryValueObservation.annualTeam?.protocol,'team-annual-golden-observation-v1');assert.equal(knownTemporaryValueObservation(structuredClone(temporaryValueObservation)),true);
+ for(const mutate of [v=>delete v.annualTeam,v=>v.annualTeam=null,v=>v.annualTeam.bodySource='cdp-text-fallback',v=>v.annualTeam.deadline='renewed',v=>v.annualTeam.extra=true]){const value=structuredClone(temporaryValueObservation);mutate(value);assert.equal(knownTemporaryValueObservation(value),false);}
 });

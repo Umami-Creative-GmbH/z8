@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createHash } from "node:crypto";
 import { createActionResultObserver } from "./action-result-observer.mjs";
-import { testBrowserEvidence } from "./control-cancellation-test-fixtures.mjs";
-import { openOriginalTeamBodyInspection, originalTeamBodyObservation } from "./team-temporary-value-authority.mjs";
+import { testBrowserEvidence, testBrowserBinding } from "./control-cancellation-test-fixtures.mjs";
+import { openOriginalTeamBodyInspection, originalTeamBodyObservation,temporaryValueObservation } from "./team-temporary-value-authority.mjs";
 import {
 	inspectRequiredFlightBody,
 	classifyControlCancellations,
@@ -92,17 +92,17 @@ test("temporary inspection copies expired and wrong-body handles never resolve o
 
 test("temporary metadata cannot omit the shared observation contract or the explicit unsupported source profile",()=>{
 	const metadata={policy:controlCancellationPolicy,browserRevision:chromiumSWRRevision,compiledCachedNavigations:true,compiledManifestSha256:"c".repeat(64),
-		temporaryValueObservation:{protocol:"original-team-temporary-value-observation-v1",replayHeader:"x-z8-fixture-replay-id",documentJournal:"actual-cdp-document-journal-v1"},originalTeamSource:null};
+		temporaryValueObservation:structuredClone(temporaryValueObservation),originalTeamSource:null};
 	assert.equal(knownBrowserControlMetadata(metadata),true);
 	for(const mutate of [value=>delete value.temporaryValueObservation,value=>delete value.originalTeamSource,value=>value.originalTeamSource=undefined,value=>value.temporaryValueObservation.replayHeader="other",value=>value.temporaryValueObservation.extra=true]){
 		const changed=structuredClone(metadata);mutate(changed);assert.equal(knownBrowserControlMetadata(changed),false);
 	}
-	const runtime={build:"b".repeat(40),browserControl:metadata},binding={...structuredClone(metadata),compiledBuild:runtime.build,manifestVerified:true,browserVerified:true};
+	const runtime={build:"b".repeat(40),browserControl:metadata},binding=testBrowserBinding(runtime.build,structuredClone(metadata));
 	assert.equal(matchingBrowserControlBinding(runtime,binding),true);
 	assert.equal(matchingBrowserControlBinding(runtime,{...binding,originalTeamSource:{}}),false);
 	const source={protocol:"original-team-source-configuration-v1",profileId:"original-team-bfdf-v1",phase:"baseline",compiledBuild:"bfdf2d573052eb485d2a6b9bd75896f98882baeb",compiledManifestSha256:"8cd0fc10a5288431c5b7afbc4f3d36273f965d6ff4d5b4a54bebe33a21201e64",buildRecordPath:"synthetic-reviewed-build.json",buildRecordSha256:"34acb938396ed571886c66933415dd7cede4dda6aaf4ccb82a5048ddf68be147"};
 	const original={...metadata,compiledManifestSha256:source.compiledManifestSha256,originalTeamSource:source};
-	const originalBinding={...original,compiledBuild:source.compiledBuild,manifestVerified:true,browserVerified:true};
+	const originalBinding=testBrowserBinding(source.compiledBuild,original);
 	assert.equal(matchingBrowserControlBinding({build:source.compiledBuild,browserControl:original},originalBinding),true);
 	assert.equal(matchingBrowserControlBinding({build:source.compiledBuild,browserControl:original},{...originalBinding,originalTeamSource:{...source,buildRecordPath:"different-reviewed-build.json"}}),false);
 	assert.equal(matchingBrowserControlBinding({build:"a".repeat(40),browserControl:original},{...originalBinding,compiledBuild:"a".repeat(40)}),false);
@@ -2044,4 +2044,34 @@ test("temporary-reference diagnostics remain bounded, private and propagated fro
  assert.equal(failure.complete,false);assert.equal(failure.reason,"unsupported-model-reference");
  const explicitFailure=inspectRequiredFlightBody(Buffer.from('0:{"a":{"success":false,"error":"PRIVATE_FAILURE"}}\n'),{action:true});
  assert.equal(explicitFailure.complete,false);assert.equal(explicitFailure.explicitActionFailure,true);
+});
+
+test('private annual team projection publishes only scalar facts after the complete required action proof',async()=>{
+ const api=await import('./control-cancellation-evidence.mjs');
+ for(const body of ['0:{"a":{"success":true,"data":{"teams":[{"employeeCount":8}],"organizationTotal":16704,"private":"PRIVATE"}}}\n','0:{"a":"$@1"}\n1:{"success":true,"data":"$2"}\n2:{"teams":["$3"],"organizationTotal":16704}\n3:{"employeeCount":8}\n']){
+  const bytes=Buffer.from(body),cap=api.openTeamAnnualProjection({bodySha256:segmentDigest(bytes),decodedBytes:bytes.length});assert.ok(cap);
+  const proof=api.inspectRequiredFlightBody(bytes,{action:true,teamAnnualProjection:cap});assert.equal(proof.complete,true);
+  const facts=api.takeTeamAnnualProjection(cap);assert.equal(facts.employees,8);assert.equal(facts.hours,16704);assert.equal(facts.bodySha256,proof.bodySha256);assert.equal(facts.fatalUtf8,true);assert.ok(facts.projectionSteps>0);assert.ok(facts.projectionSteps<=proof.modelSteps);assert.doesNotMatch(JSON.stringify(facts),/PRIVATE|teams|dateRange/);
+  assert.equal(api.takeTeamAnnualProjection(cap),null);assert.equal(api.closeTeamAnnualProjection(cap),true);assert.equal(api.takeTeamAnnualProjection({...cap}),null);
+ }
+});
+
+test('team projection cannot bypass required references record provenance global errors or private ownership',async()=>{
+ const api=await import('./control-cancellation-evidence.mjs');
+ const base='0:{"a":{"success":true,"data":{"teams":[{"employeeCount":8}],"organizationTotal":16704}}}\n';
+ const bodies=[base+'9:E{"digest":"PRIVATE_ERROR"}\n','0:{"a":{"success":true,"data":{"teams":[{"employeeCount":"$4"}],"organizationTotal":16704}}}\n4:T1,8','0:{"a":{"success":true,"data":{"teams":[{"employeeCount":"$4"}],"organizationTotal":16704}}}\n4:I[8]\n','0:{"a":{"success":true,"data":{"teams":"$9","organizationTotal":16704}}}\n','0:{"a":{"success":true,"data":{"teams":[{"employeeCount":"$T0:0"}],"organizationTotal":16704}}}\n'];
+ for(const text of bodies){const bytes=Buffer.from(text),cap=api.openTeamAnnualProjection({bodySha256:segmentDigest(bytes),decodedBytes:bytes.length}),proof=api.inspectRequiredFlightBody(bytes,{action:true,teamAnnualProjection:cap});assert.equal(api.takeTeamAnnualProjection(cap),null);if(text.includes('9:E'))assert.ok(proof.serverErrors>0);api.closeTeamAnnualProjection(cap);}
+ const bytes=Buffer.from(base),cap=api.openTeamAnnualProjection({bodySha256:segmentDigest(bytes),decodedBytes:bytes.length});
+ assert.equal(api.inspectRequiredFlightBody(bytes,{action:true,teamAnnualProjection:{...cap}}).complete,false);
+ api.inspectRequiredFlightBody(bytes,{action:true,teamAnnualProjection:cap});api.inspectRequiredFlightBody(bytes,{action:true,teamAnnualProjection:cap});assert.equal(api.takeTeamAnnualProjection(cap),null,'reusing a projection invalidates its previous publication');api.closeTeamAnnualProjection(cap);
+ const invalid=Buffer.concat([bytes,Buffer.from([255])]),bad=api.openTeamAnnualProjection({bodySha256:segmentDigest(invalid),decodedBytes:invalid.length});assert.equal(api.inspectRequiredFlightBody(invalid,{action:true,teamAnnualProjection:bad}).complete,false);assert.equal(api.takeTeamAnnualProjection(bad),null);api.closeTeamAnnualProjection(bad);
+});
+
+test('team projection requires ordinary nonstream row0 without changing the generic tagged-root verdict',async()=>{
+ const api=await import('./control-cancellation-evidence.mjs');
+ for(const tag of ['I','R','X']){
+  const bytes=Buffer.from(tag==='I'?'0:I{"a":{"success":true,"data":{"teams":[{"employeeCount":8}],"organizationTotal":16704}}}\n':tag==='R'?'0:R\n0:{"a":{"success":true,"data":{"teams":[{"employeeCount":8}],"organizationTotal":16704}}}\n0:C\n':'0:X\n0:{"a":{"success":true,"data":{"teams":[{"employeeCount":8}],"organizationTotal":16704}}}\n0:C\n');
+  const before=api.inspectRequiredFlightBody(bytes,{action:true}),cap=api.openTeamAnnualProjection({bodySha256:segmentDigest(bytes),decodedBytes:bytes.length});const proof=api.inspectRequiredFlightBody(bytes,{action:true,teamAnnualProjection:cap});
+  assert.equal(api.takeTeamAnnualProjection(cap),null,tag);assert.equal(proof.complete,before.complete,tag);api.closeTeamAnnualProjection(cap);
+ }
 });

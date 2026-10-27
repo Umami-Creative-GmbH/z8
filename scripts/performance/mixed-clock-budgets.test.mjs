@@ -1,7 +1,7 @@
-import {testEmptyTemporaryValues} from "./control-cancellation-test-fixtures.mjs";
+import {testEmptyTemporaryValues,testTeamAnnualGolden} from "./control-cancellation-test-fixtures.mjs";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import test from "node:test";
@@ -10,7 +10,7 @@ import { nextStreamCompletionPatch } from "./next-stream-completion-patch.mjs";
 import { cleanObservationPolicy, cleanEvidencePolicy } from "./clean-evidence.mjs";
 import { testBrowserEvidence, testBrowserMetadata, testBrowserBinding } from "./control-cancellation-test-fixtures.mjs";
 import { mixedBrowserWorkScope } from "./browser-control-collector.mjs";
-import { mixedFailureOccurrenceCensus, mixedNativeProgressPolicy, mixedNativeAuthorityDigest, mixedNativeProgressVector } from "./control-cancellation-evidence.mjs";
+import { mixedFailureOccurrenceCensus, mixedNativeProgressPolicy, mixedNativeAuthorityDigest, mixedNativeProgressVector,teamAnnualModule,teamAnnualWorkers } from "./control-cancellation-evidence.mjs";
 import { createPrincipalEpochObserver } from "./browser-control-collector.mjs";
 import { createProxyHeaderCensus,createProxyHeaderLifecycle,proxyHeaderPrefix } from "./proxy-header-census.mjs";
 import { createActionResultObserver } from "./action-result-observer.mjs";
@@ -94,7 +94,8 @@ function fastMixedEvidence(contextId,build,files=Object.fromEntries(budgets.mixe
  evidence.mixedProgress={protocol:"mixed-native-progress-observations-v1",contextId,authoritySha256:mixedNativeAuthorityDigest(context),guardChecks:1,attempted:0,failed:0,overflow:0,retainedBytes:Buffer.byteLength(JSON.stringify(checks)),checks,prefixes:[]};
  life.close();census.close();principal.end([{name:"session",value:"synthetic",domain:"localhost",path:"/",httpOnly:true}]);context.principalEpoch=principal.snapshot();context.environment.workerTargets.scopeClosed=true;context.headerCensus=census.snapshot();delete context.headerPrefix;evidence.measured.nativeContext=context;evidence.allPhase.nativeContext=structuredClone(context);evidence.browserEventOrdinal=0;evidence.proxyHeaderLifecycle=life.snapshot();evidence.browserFailureOccurrences=mixedFailureOccurrenceCensus({contextId,scopeClosed:true,browserEventOrdinal:0,records:[]});evidence.mixedDocumentJournal={protocol:"actual-cdp-document-journal-v1",contextId,installed:true,currentGeneration:1,executionEventOrdinal:1,documentEventOrdinal:1,errors:0,overflow:0,closed:true,executionEvents:[{ordinal:1,event:"created",executionContextId:1,uniqueId:"unique",frameId:"frame",isDefault:true}],documents:[{ordinal:1,requestId:"doc",frameId:"frame",loaderId:"loader",originSha256:sha(origin),documentGeneration:contextId+":1"}]};return evidence;
 }
-function refreshProgress(run,files=Object.fromEntries(budgets.mixedProtocolFiles.map(name=>[name,hash]))){for(const row of run.transports)row.browserControlEvidence=fastMixedEvidence(row.contextId,run.sourceCommit,files,run.browserControl);}
+function attachAnnual(run){for(const row of run.transports){const receipt=row.actor==="small-admin"?testTeamAnnualGolden(row.browserControlEvidence.allPhase.nativeContext,"http://localhost:58792",run.requestTimeoutMs):null;row.browserControlEvidence.annualTeam={protocol:"annual-team-selection-observation-v1",contextId:row.contextId,closed:true,armed:receipt!==null,consumed:receipt!==null,errors:0,overflow:0,pending:0,retainedBytes:receipt?1048576:0,receipt};if(receipt)run.annualTeamGolden=receipt;}return run;}
+function refreshProgress(run,files=Object.fromEntries(budgets.mixedProtocolFiles.map(name=>[name,hash]))){for(const row of run.transports)row.browserControlEvidence=fastMixedEvidence(row.contextId,run.sourceCommit,files,run.browserControl);attachAnnual(run);}
 function fixture(build = BEFORE) {
 	const incoming = {
 		knownHeaderKnownSpan: 0,
@@ -186,7 +187,7 @@ function fixture(build = BEFORE) {
 								: { correct: true, weeks: 53, overtimeHours: 0 },
 				});
 		}
-	return {
+	return attachAnnual({
 		version: 2,
 		phase: build === BEFORE ? "baseline" : "release",
 		topology: "single app",
@@ -212,7 +213,7 @@ function fixture(build = BEFORE) {
 		cleanEvidencePolicy,
 		nativeProgressPolicy:mixedNativeProgressPolicy,
 		browserFailureScope: mixedBrowserWorkScope,
-		browserControl: { ...testBrowserBinding(build), ...metadataFor(build) },
+		browserControl: testBrowserBinding(build,metadataFor(build)),
 		browserControlMetadataFileSha256: metadataFileHash(build),
 		liveVersion: build.slice(0, 7),
 		success: true,
@@ -273,7 +274,7 @@ function fixture(build = BEFORE) {
 			lastActivityAgeMs: 1000,
 			drainElapsedMs: 1,
 		})),
-	};
+	});
 }
 function inputs() {
 	const conditions = {
@@ -688,7 +689,7 @@ test("actual file commands bind protocol bytes, registration SHA and independent
 		const headMetadata = encode(input.expectedHeadBrowserControl);
 		input.expectedHeadBrowserControlFileSha256 = sha(headMetadata);
 		const headValue = fixture(HEAD);
-		headValue.browserControl = { ...testBrowserBinding(HEAD), ...input.expectedHeadBrowserControl };
+		headValue.browserControl = testBrowserBinding(HEAD,input.expectedHeadBrowserControl);
 		headValue.browserControlMetadataFileSha256 = input.expectedHeadBrowserControlFileSha256;
 
 		const protocol = encode({
@@ -721,6 +722,8 @@ test("actual file commands bind protocol bytes, registration SHA and independent
 			"head-browser-control.json": headMetadata,
 		}))
 			await writeFile(join(folder, name), value);
+		await mkdir(join(folder,"server"));
+		await writeFile(join(folder,"server/server-reference-manifest.json"),JSON.stringify({node:{["40"+"a".repeat(40)]:{filename:teamAnnualModule,exportedName:"getTeamPerformanceData",workers:Object.fromEntries(teamAnnualWorkers.map(key=>[key,{moduleId:1,async:true}]))}},edge:{}}));
 		await budgets.runMixedBudgetCommand([
 			"derive",
 			"--before",
@@ -804,4 +807,15 @@ test("mixed derivation requires bound fast-guard ledgers in all four contexts",(
  for(const mutate of [r=>delete r.transports[0].browserControlEvidence.browserFailureOccurrences,r=>r.transports[0].browserControlEvidence.browserFailureOccurrences.contextId="another",r=>r.transports[0].browserControlEvidence.browserFailureOccurrences.censusSha256="0".repeat(64),r=>delete r.nativeProgressPolicy,r=>r.nativeProgressPolicy={...r.nativeProgressPolicy,observerCeilingMs:11000},r=>delete r.transports[0].browserControlEvidence.mixedDocumentJournal,r=>r.transports[0].browserControlEvidence.mixedDocumentJournal.closed=false,r=>delete r.transports[0].browserControlEvidence.mixedProgress,r=>r.transports[0].browserControlEvidence.mixedProgress=null,r=>r.transports[0].browserControlEvidence.mixedProgress.guardChecks=0,r=>r.transports[0].browserControlEvidence.mixedProgress.checks.pop(),r=>r.transports[0].browserControlEvidence.mixedProgress=r.transports[1].browserControlEvidence.mixedProgress,r=>r.transports[0].browserControlEvidence.mixedProgress.authoritySha256="0".repeat(64),r=>r.transports[0].browserControlEvidence.measured.nativeContext.protocolSources={},r=>r.transports[0].browserControlEvidence.mixedProgress.checks[0].returned.failureIds.push("new-unknown")]){
   const input=inputs();mutate(input.before);assert.throws(()=>budgets.deriveMixedClockBudgets(input),/four closed strict transports|qualified browser control run metadata/);
  }
+});
+
+test('both mixed phases require the selected TEAM CORE even when all browser raw counts are zero',()=>{
+	for(const build of [BEFORE,HEAD]){
+		const run=fixture(build),phase=build===BEFORE?'baseline':'release',authority={runtime:{build,browserControl:run.browserControl},protocolSources:run.transports[0].browserControlEvidence.measured.nativeContext.protocolSources,origin:'http://localhost:58792'};
+		assert.doesNotThrow(()=>budgets.validateMixedClockRun(run,build,phase,authority));
+		const contradicted=structuredClone(run);contradicted.transports[1].browserControlEvidence.allPhase.nativeContext.principalEpoch.after.sha256='0'.repeat(64);assert.equal(contradicted.transports[1].browserControlEvidence.allPhase.nativeContext.principalEpoch.matchesAtBoundaries,true);assert.throws(()=>budgets.validateMixedClockRun(contradicted,build,phase,authority),/mandatory selected annual TEAM/);
+		for(const mutate of [r=>delete r.annualTeamGolden,r=>r.annualTeamGolden=null,r=>r.annualTeamGolden.selection.deadlineMs+=1,r=>delete r.transports[1].browserControlEvidence.annualTeam,r=>r.transports[1].browserControlEvidence.annualTeam.receipt=null,r=>r.transports[1].browserControlEvidence.annualTeam.consumed=false,r=>r.transports[1].browserControlEvidence.annualTeam.closed=false,r=>r.transports[1].browserControlEvidence.annualTeam.pending=1,r=>r.transports[1].browserControlEvidence.annualTeam=r.transports[0].browserControlEvidence.annualTeam,r=>r.annualTeamGolden.projection.employees=7,r=>r.annualTeamGolden.packet.teamAnnualProjection=null,r=>r.annualTeamGolden.packet.requestBodyFacts.actualEOF=false]){
+			const changed=structuredClone(run);mutate(changed);assert.throws(()=>budgets.validateMixedClockRun(changed,build,phase,authority),/mandatory selected annual TEAM/);
+		}
+	}
 });

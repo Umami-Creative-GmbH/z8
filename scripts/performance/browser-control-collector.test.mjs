@@ -1,4 +1,4 @@
-import {testBrowserBinding,testEmptyTemporaryValues} from "./control-cancellation-test-fixtures.mjs";
+import {testBrowserBinding,testEmptyTemporaryValues,testTeamAnnualDocument} from "./control-cancellation-test-fixtures.mjs";
 import { temporaryValueObservation } from "./team-temporary-value-authority.mjs";
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
@@ -6,15 +6,22 @@ import { runInNewContext } from "node:vm";
 import test from "node:test";
 import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
 import { createHash } from "node:crypto";
 import { gzipSync } from "node:zlib";
+import { createProxyHeaderCensus } from "./proxy-header-census.mjs";
 import { cleanBrowserContextEvidence } from "./clean-evidence.mjs";
 import { setImmediate as tick } from "node:timers/promises";
 import {
 	chromiumSWRRevision,
 	cleanBrowserFailureEvidence,
+	teamAnnualWorkers,teamAnnualModule,
+	validateTeamAnnualGoldenReceipt,
 } from "./control-cancellation-evidence.mjs";
+async function writeAnnualRegistry(manifestPath) {
+	await mkdir(join(dirname(manifestPath),"server"),{recursive:true});
+	await writeFile(join(dirname(manifestPath),"server/server-reference-manifest.json"),JSON.stringify({node:{["40"+"a".repeat(40)]:{filename:teamAnnualModule,exportedName:"getTeamPerformanceData",workers:Object.fromEntries(teamAnnualWorkers.map(key=>[key,{moduleId:1,async:true}]))}},edge:{}}));
+}
 import {
 	controlRequestIdentity,
 	controlResponseMetadata,
@@ -30,6 +37,8 @@ import {
 	compiledRoutingForBinding,
 	renderedPathSourceFacts,
 	verifyBrowserControlBrowser,
+	createTeamAnnualResponseSelection,
+	annualTeamActionAuthority,
 	createBrowserControlCollector,
 	createProxyControlCollector,
 	installBrowserControlCollector,
@@ -322,6 +331,7 @@ test("native end metadata reads controller registrations and public bytes within
 		await mkdir(join(dir,".next"));await mkdir(join(dir,"public/lib"),{recursive:true});
 		for(const file of ["sw.js","lib/offline-queue-db.js","lib/sync-service.js","lib/clock-command-dispatch.js"])await writeFile(join(dir,"public",file),"SYNTHETIC");
 		const build="c".repeat(40),bytes=Buffer.from(JSON.stringify({config:{deploymentId:build,experimental:{cachedNavigations:true}}})),manifestPath=join(dir,".next/required-server-files.json");await writeFile(manifestPath,bytes);
+		await writeAnnualRegistry(manifestPath);
 		const binding=await readBrowserControlBinding({manifestPath,plan:{runtime:{build,browserControl:{policy:controlCancellationPolicy,temporaryValueObservation:structuredClone(temporaryValueObservation),originalTeamSource:null,browserRevision:chromiumSWRRevision,compiledCachedNavigations:true,compiledManifestSha256:createHash("sha256").update(bytes).digest("hex")}}}});
 		let queries=0;const worker={scriptURL:`${origin}/sw.js`,state:"activated"};
 		const page={evaluate:async fn=>runInNewContext(`(${fn.toString()})()`,{navigator:{serviceWorker:{controller:worker,getRegistrations:async()=>{queries++;return[{scope:`${origin}/`,active:worker,waiting:null,installing:null}];},get ready(){throw Error("Must not await ready");}}},location:{origin},isSecureContext:true})};
@@ -347,6 +357,7 @@ test("normal admission binds the actual manifest before IO and actual browser re
 		const manifestPath = join(dir, "required-server-files.json"), build = "c".repeat(40);
 		const bytes = Buffer.from(JSON.stringify({ config: { deploymentId: build, basePath:"",output:"standalone",experimental: { cachedNavigations: true } } }));
 		await writeFile(manifestPath, bytes);
+		await writeAnnualRegistry(manifestPath);
 		const browserControl = { policy: controlCancellationPolicy, temporaryValueObservation:structuredClone(temporaryValueObservation),originalTeamSource:null, browserRevision: chromiumSWRRevision,
 			compiledCachedNavigations: true, compiledManifestSha256: createHash("sha256").update(bytes).digest("hex") };
 		const plan = { runtime: { build, browserControl } };
@@ -359,7 +370,11 @@ test("normal admission binds the actual manifest before IO and actual browser re
 			send: async (method) => { assert.equal(method, "Browser.getVersion"); return { revision: `@${chromiumSWRRevision}` }; },
 			detach: async () => { detach++; },
 		}) }) };
-		assert.equal((await verifyBrowserControlBrowser(browser, binding)).browserVerified, true);
+		const verified=await verifyBrowserControlBrowser(browser,binding);
+		assert.equal(verified.browserVerified,true);
+		assert.equal(annualTeamActionAuthority(binding),null);
+		assert.deepEqual(annualTeamActionAuthority(verified),binding.teamAnnualAction);
+		assert.equal(annualTeamActionAuthority({...verified}),null);
 		assert.equal(detach, 1);
 		for (const change of [
 			{ ...plan, runtime: { ...plan.runtime, build: "d".repeat(40) } },
@@ -376,6 +391,7 @@ test("browser and no-follow proxy retain independent routing source digests whil
 	try{
 	const manifestPath=join(dir,"required-server-files.json"),build="b".repeat(40),bytes=Buffer.from(JSON.stringify({config:{deploymentId:build,basePath:"",output:"standalone",experimental:{cachedNavigations:true}}}));
 	await writeFile(manifestPath,bytes);
+	await writeAnnualRegistry(manifestPath);
 	const compiledBinding=await readBrowserControlBinding({manifestPath,plan:{runtime:{build,browserControl:{policy:controlCancellationPolicy,temporaryValueObservation:structuredClone(temporaryValueObservation),originalTeamSource:null,browserRevision:chromiumSWRRevision,compiledCachedNavigations:true,compiledManifestSha256:createHash("sha256").update(bytes).digest("hex")}}}});
 	const actualUrl=origin+"/en/PRIVATE_PATH?_rsc=PRIVATE_MARKER&a=PRIVATE_QUERY+b&a=c&2=z";
 	const routeHeaders={...headers,"next-router-segment-prefetch":"/_tree"},protocolSources=await primaryProtocolIdentity();
@@ -430,6 +446,7 @@ test("Native pre-IO public binding uses reviewed expected files rather than qual
 		const nativePublicSources={protocol:"qualified-serving-worker-sources-v1",compiledBuild:build,compiledManifestSha256:manifestSha,
 			files:files.map(file=>({file,bytes:18,sha256:createHash("sha256").update("reviewed-synthetic").digest("hex"),gitBlob:"d".repeat(40)}))};
 		const plan={runtime:{build,browserControl:{policy:controlCancellationPolicy,temporaryValueObservation:structuredClone(temporaryValueObservation),originalTeamSource:null,browserRevision:chromiumSWRRevision,compiledCachedNavigations:true,compiledManifestSha256:manifestSha,nativePublicSources}}};
+		await writeAnnualRegistry(manifestPath);
 		assert.deepEqual((await readBrowserControlBinding({plan,manifestPath})).nativePublicSources,nativePublicSources);
 		await writeFile(join(dir,"public/sw.js"),"changed-synthetic");
 		await assert.rejects(readBrowserControlBinding({plan,manifestPath}),/independently qualified/);
@@ -902,7 +919,7 @@ test("installation preserves navigation arguments/results/errors and adds only d
 	};
 	session.detach = async () => calls.push(["detach"]);
 	const args = [url, { waitUntil: "domcontentloaded" }];
-	const page = { createCDPSession: async () => session };
+	const page = Object.assign(new EventEmitter(),{ createCDPSession: async () => session });
 	const goto = function (...actual) {
 		assert.equal(this, page);
 		assert.deepEqual(actual, args);
@@ -917,6 +934,7 @@ test("installation preserves navigation arguments/results/errors and adds only d
 			return () => 0;
 		},
 	};
+	const f=await requestShapeTestBinding(),environmentBinding=await verifyBrowserControlBrowser({target:()=>({createCDPSession:async()=>({send:async()=>({revision:'@'+chromiumSWRRevision}),detach:async()=>{}})})},f.binding);
 	const observer = await installBrowserControlCollector({
 		page,
 		context: { async cookies() { cookieReads++; return [{ name: "session", domain: "localhost", path: "/", value: "PRIVATE_COOKIE" }]; } },
@@ -925,6 +943,7 @@ test("installation preserves navigation arguments/results/errors and adds only d
 		headers: { "Accept-Language": "en" },
 		contextId,
 		browserRevision: chromiumSWRRevision,
+		environmentBinding,
 	});
 	assert.equal(await page.goto(...args), "original-result");
 	await assert.rejects(page.reload(), (value) => value === error);
@@ -932,12 +951,13 @@ test("installation preserves navigation arguments/results/errors and adds only d
 		calls.filter(([method]) => method === "Network.setExtraHTTPHeaders").length,
 		2,
 	);
-	assert.equal(calls[1][1].headers["Accept-Language"], "en");
+	assert.equal(calls.find(([method])=>method==="Network.setExtraHTTPHeaders")[1].headers["Accept-Language"], "en");
 	await observer.close({ deadlineMs: performance.now() + 1000 });
 	assert.equal(page.goto, goto);
 	assert.equal(cookieReads, 2);
 	assert.equal(observer.snapshot().principalEpoch.matchesAtBoundaries, true);
 	assert.equal(observer.snapshot().principalEpoch.stablePrincipalClaim, false);
+	await rm(f.directory,{recursive:true,force:true});
 });
 
 test("the actual compiled unmarked fallback is passed identically to browser and proxy readers", async () => {
@@ -985,8 +1005,7 @@ test("the actual compiled unmarked fallback is passed identically to browser and
 });
 
 test("segment readers receive actual request/response facts and the verified compiled deployment binding", async()=>{
-	const compiledBinding={policy:controlCancellationPolicy,temporaryValueObservation:structuredClone(temporaryValueObservation),originalTeamSource:null,browserRevision:chromiumSWRRevision,compiledCachedNavigations:true,
-		compiledManifestSha256:"c".repeat(64),compiledBuild:"b".repeat(40),manifestVerified:true};
+	const compiledBinding=testBrowserBinding("b".repeat(40),{...testBrowserBinding("b".repeat(40)),compiledManifestSha256:"c".repeat(64)});
 	const staged='0:{"t":{"t":{"s":"","d":{"r":null,"p":"$@3","v":null,"s":"$4"}}},"a":"$@5","u":"$@6"}\n3:"$undefined"\n4:X\n4:60\n4:C\n5:null\n6:false\n';
 	const requestHeaders={...headers,"next-router-segment-prefetch":"/_index"};
 	const segmentHeaders={...responseHeaders,"x-nextjs-postponed":"2","x-nextjs-deployment-id":compiledBinding.compiledBuild};
@@ -1213,7 +1232,7 @@ test("mixed failure occurrence CORE uses actual callback ordinals and retains du
 
 async function requestShapeTestBinding() {
  const directory=await mkdtemp(join(tmpdir(),"z8-request-shape-")),manifestPath=join(directory,"required-server-files.json"),build="c".repeat(40),actionId="40"+"a".repeat(40);
- const registry=Buffer.from(JSON.stringify({node:{[actionId]:{filename:"apps/webapp/src/app/[locale]/(app)/analytics/actions.ts",exportedName:"getTeamPerformanceData"}},edge:{}}));
+ const registry=Buffer.from(JSON.stringify({node:{[actionId]:{filename:teamAnnualModule,exportedName:"getTeamPerformanceData",workers:Object.fromEntries(teamAnnualWorkers.map(key=>[key,{moduleId:1,async:true}]))}},edge:{}}));
  const manifest=Buffer.from(JSON.stringify({config:{deploymentId:build,experimental:{cachedNavigations:true}}}));
  await mkdir(join(directory,"server"));await writeFile(manifestPath,manifest);await writeFile(join(directory,"server/server-reference-manifest.json"),registry);
  const diagnostic={protocol:"request-shape-diagnostic-v1",compiledBuild:build,compiledManifestSha256:segmentHash(manifest),actionRegistrySha256:segmentHash(registry),actionHeaderSha256:segmentHash(actionId),actionName:"getTeamPerformanceData"};
@@ -1233,7 +1252,7 @@ test("request-shape diagnostic verifies actual registry before capture and rejec
    const plan=structuredClone(f.plan);plan.runtime.browserControl.requestShapeDiagnostic[field]="wrong";
    await assert.rejects(readBrowserControlBinding({plan,manifestPath:f.manifestPath}),/request.shape/i);
   }
-  await writeFile(join(f.directory,"server/server-reference-manifest.json"),"{}");
+  await writeFile(join(f.directory,"server/server-reference-manifest.json"),JSON.stringify({node:{[f.actionId]:{filename:teamAnnualModule,exportedName:"getTeamPerformanceData",workers:Object.fromEntries(teamAnnualWorkers.map(key=>[key,{moduleId:1,async:true}]))}},edge:{},changed:true}));
   await assert.rejects(readBrowserControlBinding({plan:f.plan,manifestPath:f.manifestPath}),/request.shape/i);
  }finally{await rm(f.directory,{recursive:true,force:true});}
 });
@@ -1343,7 +1362,7 @@ test("request-shape registry parse failures expose only a fixed safe error",asyn
   const sentinel="CONFIDENTIAL_REGISTRY_SENTINEL",bytes=Buffer.from('{"private":"'+sentinel+'",BROKEN}');
   await writeFile(join(f.directory,"server/server-reference-manifest.json"),bytes);const plan=structuredClone(f.plan);plan.runtime.browserControl.requestShapeDiagnostic.actionRegistrySha256=segmentHash(bytes);
   await assert.rejects(readBrowserControlBinding({plan,manifestPath:f.manifestPath}),error=>{
-   assert.equal(error.name,"Error");assert.equal(error.message==="Request-shape action registry is malformed.",true,"Registry parse errors must use the fixed message.");assert.equal(error.cause===undefined,true);
+   assert.equal(error.name,"Error");assert.equal(error.message==="Compiled annual team action source is unavailable or differs.",true,"The mandatory registry read rejects malformed JSON before request-shape admission, using a fixed message.");assert.equal(error.cause===undefined,true);
    assert.equal([error.name,error.message,error.stack,String(error)].join("\n").includes(sentinel),false,"Registry errors must not expose source bytes.");return true;
   });
  }finally{await rm(f.directory,{recursive:true,force:true});}
@@ -1525,4 +1544,107 @@ test('source ACK checks actual revisions after each successful frame IO boundary
   const f=await sourceSupersessionFixture({onFrame:({nondefault,frames})=>{if(frames===frameOrdinal)nondefault();}});
   try{const ack=await f.read(f.tracker.sourceReady(),performance.now()+1000);assert.equal(ack.sourceSuperseded,true,String(frameOrdinal));assert.equal(ack.readErrors,0);assert.equal(ack.document,null);assert.equal(ack.sourceReadStage,['after-first-frame','after-document-read','after-return-frame'][frameOrdinal-1]);}finally{f.close();}
  }
+});
+
+test('annual response selection owns the exact response object and preserves the original deadline',async()=>{
+	let reserved=0,released=0;const frame={},source=testBrowserBinding('c'.repeat(40)).teamAnnualAction;
+	const observer=createTeamAnnualResponseSelection({contextId,origin,source,reserve:n=>{reserved+=n;return true;},release:n=>{released+=n;},requestCount:()=>0,packetFor:()=>null,browserFor:()=>null,contextFor:()=>null,mainFrame:()=>frame});
+	const arm=observer.arm({path:'/en/analytics/team-performance',timeoutMs:15});
+	assert.equal(observer.arm({path:'/en/analytics/team-performance',timeoutMs:15}),null,'a second arm cannot renew the deadline');
+	await assert.rejects(observer.read({...arm},{}),/Annual team/);
+	await assert.rejects(observer.read(arm,{}),/Annual team/);
+	assert.ok(reserved>0);observer.close();assert.ok(released>0);
+	await assert.rejects(observer.read(arm,{}),/Annual team/);
+});
+
+test('annual response selection rejects malformed copied and foreign response metadata without private leakage',async()=>{
+	const source=testBrowserBinding('c'.repeat(40)).teamAnnualAction,frame={};let pool=0;
+	for(const mutate of [v=>({...v}),v=>({...v,status:()=>500}),v=>({...v,headers:()=>({'x-z8-fixture-response-id':'PRIVATE_SECRET'})}),v=>({...v,request:()=>{throw Error('PRIVATE_SENTINEL');}})]){
+		const observer=createTeamAnnualResponseSelection({contextId,origin,source,reserve:n=>{pool+=n;return true;},release:n=>{pool-=n;},requestCount:()=>0,packetFor:()=>null,browserFor:()=>null,contextFor:()=>null,mainFrame:()=>frame});
+		const arm=observer.arm({path:'/en/analytics/team-performance',timeoutMs:20});
+		const request={url:()=>origin+'/en/analytics/team-performance',method:()=>"POST",headers:()=>({'next-action':'PRIVATE_ACTION'}),postData:()=>"PRIVATE_BODY",frame:()=>frame,redirectChain:()=>[]};
+		const response={url:request.url,status:()=>200,request:()=>request,headers:()=>({'x-z8-fixture-response-id':'a'.repeat(32)+'.1'})};
+		observer.response(mutate(response));
+		await assert.rejects(observer.read(arm,{...response}),error=>!String(error).includes('PRIVATE_'));
+		assert.doesNotMatch(JSON.stringify(observer.snapshot()),/PRIVATE_|BODY|ACTION/);observer.close();assert.equal(pool,0);
+	}
+});
+
+async function annualProxyFixture({failed=false,readFailure=false,bodyText='0:{"a":{"success":true,"data":{"teams":[{"employeeCount":8}],"organizationTotal":16704}}}\n'}={}) {
+	const hash=value=>createHash('sha256').update(value).digest('hex'),actionId='40'+'a'.repeat(40),frame={},requestBody='[]',target=origin+'/en/analytics/team-performance',id='a'.repeat(32)+'.1';
+	const binding=testBrowserBinding('c'.repeat(40));binding.teamAnnualAction.actionHeaderSha256=hash(actionId);
+	const principal=createPrincipalEpochObserver(contextId,{origin});principal.start([{name:'session',value:'PRIVATE_COOKIE',domain:'localhost',path:'/',httpOnly:true}]);
+	const document=testTeamAnnualDocument(contextId,origin);
+	let collector;const proxy=createProxyControlCollector({contextId,origin,compiledBinding:binding,compiledCachedNavigations:true,annualSource:binding.teamAnnualAction,mainFrame:()=>frame,annualContext:()=>collector.annualContext(),annualDocument:()=>structuredClone(document),annualDocumentReady:()=>true});proxy.installed();
+	collector=createBrowserControlCollector({contextId,origin,compiledBinding:binding,compiledCachedNavigations:true,principalEpoch:principal,proxyObservation:()=>proxy.snapshot(),temporaryInspectionFor:proxy.temporaryInspectionFor,temporaryRequestObserved:proxy.observeTeamBrowserRequest,environmentObservation:()=>({temporaryValueSourceReads:{documentJournal:structuredClone(document.journal)}}),readBody:async()=>{if(readFailure)throw Error('PRIVATE_READ_ERROR');return {body:bodyText,base64Encoded:false};}});collector.installed();collector.beginMeasurement();
+	const handle=proxy.armAnnualTeam({path:'/en/analytics/team-performance',timeoutMs:1000});
+	const actualHeaders={'next-action':actionId,'content-type':'text/plain;charset=UTF-8',accept:'text/x-component','accept-language':'en',cookie:'session=PRIVATE_COOKIE','x-z8-fixture-document-generation':contextId+':1'};
+	proxy.request(id,{url:target,method:'POST',headers:actualHeaders,traceId:'a'.repeat(32)});proxy.requestBodyBytes(id,Buffer.from(requestBody));proxy.requestBodyEnd(id);
+	collector.request({requestId:'selected',loaderId:'loader',frameId:'frame',type:'Fetch',timestamp:1,request:{url:target,method:'POST',headers:actualHeaders}});collector.requestExtra({requestId:'selected',headers:actualHeaders});
+	proxy.response(id,{status:200,headers:{'content-type':'text/x-component'}});
+	collector.response({requestId:'selected',response:{status:200,headers:{'content-type':'text/x-component','x-z8-fixture-response-id':id}}});
+	const request={url:()=>target,method:()=>"POST",headers:()=>actualHeaders,postData:()=>requestBody,frame:()=>frame,redirectChain:()=>[]};
+	const response={url:()=>target,status:()=>200,request:()=>request,headers:()=>({'x-z8-fixture-response-id':id,'content-type':'text/x-component'})};proxy.observeAnnualResponse(response);
+	proxy.bytes(id,Buffer.from(bodyText));proxy.end(id);collector.data({requestId:'selected',dataLength:Buffer.byteLength(bodyText)});
+	if(failed)collector.failed({requestId:'selected',errorText:'net::ERR_ABORTED',canceled:true});else collector.finished({requestId:'selected',timestamp:2});
+	await tick();await tick();return {proxy,collector,handle,response,binding,principal,id};
+}
+
+test('annual response selection uses the exact natural EOF projection for successful and proven canceled replies',async()=>{
+	for(const failed of [false,true]){
+		const f=await annualProxyFixture({failed});
+		try {const result=await f.proxy.readAnnualTeam(f.handle,f.response);assert.equal(result.projection.employees,8);assert.equal(result.projection.hours,16704);assert.equal(result.bodySource,'owned-proxy-natural-eof');assert.equal(result.browser.failed,failed);assert.doesNotMatch(JSON.stringify(result),/PRIVATE_COOKIE|employeeCount|organizationTotal/);await assert.rejects(f.proxy.readAnnualTeam(f.handle,f.response));
+			assert.throws(()=>{result.packet.headerFieldSha256.cookie='changed';},TypeError);assert.throws(()=>{result.selection.mainFrame=false;},TypeError);assert.throws(()=>{result.packet.bodyProof.complete=false;},TypeError);
+			assert.equal(f.proxy.snapshot().rows[0].bodyProof.complete,true,'returned receipts cannot mutate live rows');f.proxy.closeTeamValues();const final=f.proxy.annualTeamSnapshot();assert.equal(final.retainedBytes,1048576,'only the detached CORE remains charged after private maps are forgotten');assert.equal(final.pending,0);assert.equal(final.consumed,true);await assert.rejects(f.proxy.readAnnualTeam(f.handle,f.response));}
+		finally{f.proxy.closeTeamValues();}
+	}
+});
+
+test('annual CORE replay rejects missing changed and foreign response request body source or principal facts',async()=>{
+	const f=await annualProxyFixture();try {
+		const result=await f.proxy.readAnnualTeam(f.handle,f.response),context=f.collector.annualContext();assert.equal(validateTeamAnnualGoldenReceipt(result,context,origin),true);
+		const get=structuredClone(result);get.browser.method='GET';get.packet.method='GET';assert.equal(get.browser.loadingFinished,true);assert.equal(validateTeamAnnualGoldenReceipt(get,context),false,'header-derived action plus method equality cannot replace actual POST');
+		for(const mutate of [r=>{const value=segmentHash(origin+'/en/not-team');r.browser.fullUrlSha256=value;r.packet.fullUrlSha256=value;r.selection.fullUrlSha256=value;},r=>{const value=segmentHash(origin+'/de/analytics/team-performance');r.browser.fullUrlSha256=value;r.packet.fullUrlSha256=value;r.selection.fullUrlSha256=value;},r=>{r.browser.responseHeaderSnapshotKnown=false;r.packet.responseHeaderSnapshotKnown=false;},r=>{r.browser.responseContentType={headerKnown:true,mime:'text/html',charset:'absent'};r.packet.responseContentType={headerKnown:true,mime:'text/html',charset:'absent'};},r=>{r.browser.documentGeneration='foreign:9';r.packet.documentGeneration='foreign:9';},r=>r.browser.initialHeaderIdentity.documentGeneration='foreign:9',r=>r.browser.extraHeaderIdentity.documentGeneration='foreign:9',r=>r.browser.frameId='foreign',r=>r.browser.loaderId='foreign',r=>{r.projection.projectionSteps=100001;r.packet.teamAnnualProjection.projectionSteps=100001;}]){const changed=structuredClone(result);mutate(changed);assert.equal(validateTeamAnnualGoldenReceipt(changed,context,origin),false);}
+		for(const mutate of [r=>delete r.packet.teamAnnualProjection,r=>r.source.compiledBuild='d'.repeat(40),r=>r.source.workersSha256='d'.repeat(64),r=>r.selection.contextId='foreign',r=>r.selection.proxyResponseId='b'.repeat(32)+'.2',r=>r.selection.requestBodySha256='d'.repeat(64),r=>r.selection.mainFrame=false,r=>r.selection.fulfilledAtMs=r.selection.deadlineMs+1,r=>r.packet.requestBodyFacts.actualEOF=false,r=>r.packet.bodyProof.complete=false,r=>r.packet.bodyProof.serverErrors=1,r=>r.packet.bodyProof.temporaryValues=null,r=>r.browser.requestHeadersKnown=false,r=>r.browser.proxyResponseId='b'.repeat(32)+'.2',r=>r.browser.initialHeaderIdentity.headerFieldSha256.cookie='d'.repeat(64)]){
+			const changed=structuredClone(result);mutate(changed);assert.equal(validateTeamAnnualGoldenReceipt(changed,context,origin),false);
+		}
+		for(const mutate of [c=>c.principalEpoch.pendingReads=1,c=>c.principalEpoch.observedSetCookieResponses=1,c=>c.principalEpoch.before.known=false,c=>c.headerCensus=createProxyHeaderCensus({contextId}).snapshot(),c=>{c.principalEpoch.scopeClosed=true;c.headerCensus.closed=true;c.principalEpoch.after={known:true,sha256:'b'.repeat(64)};c.principalEpoch.matchesAtBoundaries=true;}]){const changed=structuredClone(context);mutate(changed);assert.equal(validateTeamAnnualGoldenReceipt(result,changed,origin),false);}
+	}finally{f.proxy.closeTeamValues();}
+});
+
+test('annual selection never replaces unread required browser proof or invalid full Flight with golden fields',async()=>{
+	for(const options of [{failed:true,readFailure:true},{bodyText:'0:{"a":{"success":true,"data":{"teams":"$7","organizationTotal":16704}}}\n'},{bodyText:'0:I{"a":{"success":true,"data":{"teams":[{"employeeCount":8}],"organizationTotal":16704}}}\n'},{bodyText:'0:{"a":{"success":true,"data":{"teams":[{"employeeCount":8}],"organizationTotal":16704}}}\n1:E{"digest":"PRIVATE"}\n'}]){
+		const f=await annualProxyFixture(options);try{await assert.rejects(f.proxy.readAnnualTeam(f.handle,f.response),error=>!String(error).includes('PRIVATE'));assert.equal(f.proxy.annualTeamSnapshot().receipt,null);}finally{f.proxy.closeTeamValues();}
+	}
+	let attempted=0;const observer=createTeamAnnualResponseSelection({contextId,origin,source:testBrowserBinding('c'.repeat(40)).teamAnnualAction,reserve:()=>{attempted++;return false;},release:()=>{throw Error('No unowned release');}});assert.equal(observer.arm({path:'/en/analytics/team-performance',timeoutMs:1000}),null);assert.equal(attempted,1);assert.equal(observer.snapshot().overflow,1);observer.close();
+});
+
+test('annual action admission independently binds each phase registry and rejects unknown duplicate or wrong worker sources',async()=>{
+	const f=await requestShapeTestBinding();try{
+		const path=join(f.directory,'server/server-reference-manifest.json'),plan=structuredClone(f.plan);delete plan.runtime.browserControl.requestShapeDiagnostic;plan.phase='release';
+		const worker=Object.fromEntries(teamAnnualWorkers.map(key=>[key,{moduleId:1,async:true}])),entry={filename:teamAnnualModule,exportedName:'getTeamPerformanceData',workers:worker},other='40'+'b'.repeat(40);
+		await writeFile(path,JSON.stringify({node:{[other]:entry},edge:{}}));const after=await readBrowserControlBinding({plan,manifestPath:f.manifestPath});assert.notEqual(after.teamAnnualAction.actionHeaderSha256,f.binding.teamAnnualAction.actionHeaderSha256);assert.notEqual(after.teamAnnualAction.registrySha256,f.binding.teamAnnualAction.registrySha256);
+		for(const registry of [{node:{}},{node:{[other]:entry,[f.actionId]:entry}},{node:{[other]:{...entry,filename:'other'}}},{node:{[other]:{...entry,exportedName:'other'}}},{node:{[other]:{...entry,workers:{}}}}]){await writeFile(path,JSON.stringify(registry));await assert.rejects(readBrowserControlBinding({plan,manifestPath:f.manifestPath}),/Compiled annual team action source/);}
+		await rm(path);await assert.rejects(readBrowserControlBinding({plan,manifestPath:f.manifestPath}),/Compiled annual team action source/);
+	}finally{await rm(f.directory,{recursive:true,force:true});}
+});
+
+test('annual response pending close and original deadline retain no private response or handle reservations',async()=>{
+	for(const mode of ['close','deadline']){
+		let pool=0;const frame={},source=testBrowserBinding('c'.repeat(40)).teamAnnualAction,id='a'.repeat(32)+'.1',target=origin+'/en/analytics/team-performance';
+		const observer=createTeamAnnualResponseSelection({contextId,origin,source,reserve:n=>{pool+=n;return true;},release:n=>{pool-=n;},requestCount:()=>0,packetFor:()=>null,browserFor:()=>null,contextFor:()=>null,mainFrame:()=>frame,documentForSelection:()=>testTeamAnnualDocument(contextId,origin),documentReady:()=>true});
+		const arm=observer.arm({path:'/en/analytics/team-performance',timeoutMs:20}),request={url:()=>target,method:()=>"POST",headers:()=>({'next-action':'40'+'a'.repeat(40)}),postData:()=>"[]",frame:()=>frame,redirectChain:()=>[]},response={url:()=>target,status:()=>200,request:()=>request,headers:()=>({'x-z8-fixture-response-id':id,'content-type':'text/x-component'})};
+		observer.response(response);const pending=observer.read(arm,response);assert.equal(observer.snapshot().pending,1);
+		if(mode==='close')observer.close();
+		await assert.rejects(pending,/Annual team/);observer.close();assert.equal(observer.snapshot().pending,0);assert.equal(observer.snapshot().errors,1);assert.equal(pool,0);
+		assert.equal(observer.snapshot().retainedBytes,0);await assert.rejects(observer.read(arm,response),'retaining real keys after close cannot reuse forgotten private observations');
+	}
+});
+
+test('annual selection captures only actual existing document and execution facts without new IO',async()=>{
+	const f=await sourceSupersessionFixture();try{
+		const before=f.tracker.selectedDocument();assert.equal(before.document.executionContextId,3);assert.equal(before.document.executionEventOrdinalAfter,5);assert.equal(before.document.documentGeneration,1);assert.equal(f.evaluations(),0);
+		f.nondefault();const after=f.tracker.selectedDocument();assert.equal(after.document.executionContextId,3);assert.equal(after.document.executionEventOrdinalAfter,6);assert.equal(after.journal.executionEvents.at(-1).executionContextId,4);assert.equal(f.evaluations(),0);
+		after.document.frameId='foreign';after.journal.executionEvents.length=0;assert.equal(f.tracker.selectedDocument().document.frameId,'frame');assert.equal(f.tracker.selectedDocument().journal.executionEvents.length,6);
+	}finally{f.close();}
 });

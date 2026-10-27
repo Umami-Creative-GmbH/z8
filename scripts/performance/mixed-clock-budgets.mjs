@@ -5,7 +5,7 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { isNextStreamCompletionPatch } from "./next-stream-completion-patch.mjs";
 import { cleanApplicationEvidence, cleanObservationPolicy, observationTimeoutMs, cleanEvidencePolicy, cleanBrowserContextEvidence } from "./clean-evidence.mjs";
-import { mixedNativeProgressPolicy, knownBrowserControlMetadata, matchingBrowserControlBinding,knownNativePublicSources } from "./control-cancellation-evidence.mjs";
+import { mixedNativeProgressPolicy, knownBrowserControlMetadata, matchingBrowserControlBinding,knownNativePublicSources,validateMixedTeamAnnualGolden } from "./control-cancellation-evidence.mjs";
 import { mixedBrowserWorkScope, readBrowserControlBinding } from "./browser-control-collector.mjs";
 import {
 	clockObservationIsComplete,
@@ -188,6 +188,7 @@ function validateRecordedBrowser(run, context) {
 
 /** Validate every record and every registered native group, never a selected success subset. */
 export function validateMixedClockRun(run, build, phase = "baseline",authority) {
+	check(validateMixedTeamAnnualGolden(run,authority?.origin),"mandatory selected annual TEAM natural-EOF golden CORE");
 	check(same(run?.nativeProgressPolicy,mixedNativeProgressPolicy) && same(run?.cleanEvidencePolicy, cleanEvidencePolicy) && run.browserFailureScope === mixedBrowserWorkScope &&
 		matchingBrowserControlBinding({ build, browserControl: run.browserControl }, run.browserControl) && sha(run.browserControlMetadataFileSha256),
 		"qualified browser control run metadata");
