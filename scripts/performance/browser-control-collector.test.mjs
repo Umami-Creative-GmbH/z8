@@ -1934,3 +1934,10 @@ test("sequential receipt constructors precharge one shared scratch window and re
  const rows=owner.retainEvidence(()=>mixedOwnedRows(()=>many,row=>{calls++;return {...row};},{constructorScratchBytes:16384,constructorViewCopies:2}));assert.equal(calls,1000);assert.deepEqual(rows,many);assert.ok(owner.stats().peakBytes<8*1024*1024,"dead per-row scratch is not retained for the next projection");owner.releaseEvidence(rows);
  assert.throws(()=>owner.retainEvidence(()=>mixedOwnedRows(()=>source,()=>{throw Error("PRIVATE_PROJECTOR");},{constructorScratchBytes:16384,constructorViewCopies:2})),error=>!error.message.includes("PRIVATE_PROJECTOR"));assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);owner.close();
 });
+
+
+test("encoder traversal retains only each live frame vector under the unchanged depth limit",async()=>{
+ const {createMixedTechnicalOwner}=await import("./mixed-technical-gzip.mjs"),proxy=createProxyControlCollector({contextId,origin});proxy.installed();const owner=createMixedTechnicalOwner({contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});let nested=null;for(let i=0;i<62;i++)nested={child:nested};
+ const value={failures:[],responses:[],proxy:[],nativeContext:{contextId,nested},coverage:{installed:true},browserRevision:chromiumSWRRevision,browserEventOrdinal:0},cut=owner.capture(()=>value),packed=owner.encode(cut);assert.ok(packed.bytes.length>48);assert.ok(owner.stats().peakBytes<10*1024*1024,"the63 small ancestor vectors do not each retain the full10001-key ceiling");packed.release();owner.releaseCut(cut);
+ assert.throws(()=>owner.capture(()=>({...value,nativeContext:{contextId,nested:{child:nested}}})));assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);owner.close();
+});

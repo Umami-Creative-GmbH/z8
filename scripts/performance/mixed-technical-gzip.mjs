@@ -72,7 +72,7 @@ const typedCollections=Object.freeze({
  'actual-browser-failed-occurrence-census-v1':['records'],'mixed-native-progress-observations-v1':[],
  'serving-public-worker-source-metadata-v1':['files'],'qualified-serving-worker-sources-v1':['files'],'owned-native-launch-metadata-v1':['observerSources'],
 });
-function tokens(value,emit,projection=null){
+function tokens(value,emit,projection=null,{state=null,incremental=false}={}){
  const ancestors=new Set();let slots=0,nodes=0,rootReceiptRows=0,typedRecords=0;
  function walk(v,depth){must(depth<=limits.depth&&++nodes<=1000000);
   if(v===null){emit('null');return;}if(typeof v==='string'){stringTokens(v,emit);return;}
@@ -89,7 +89,10 @@ function tokens(value,emit,projection=null){
    must(typedRecords<=limits.records);
   }
   if(array)must(v.length<=limits.records);
-  const keys=Reflect.ownKeys(v);must(keys.length<=10001&&keys.every(k=>typeof k==='string'));
+  let keys=null,vector=null;
+  // The closed-source width ceiling is reserved before enumeration. Arrays use
+  // the same ceiling here; no extra-own-key premise is inferred from length.
+  try{if(incremental)vector=charge(state,10001*8,'canonical-key-vector');keys=Reflect.ownKeys(v);must(keys.length<=10001&&keys.every(k=>typeof k==='string'));if(vector)resize(vector,keys.length*8);
   if(!array){const protocol=Object.getOwnPropertyDescriptor(v,'protocol')?.value;
    if(protocol==='acknowledged-mixed-native-prefix-v1'||protocol==='mixed-first-failure-diagnostic-v1')typedRecords++;
    if(['actual-cdp-document-acknowledgment-v1','native-environment-progress-readonly-v1','native-environment-end-readonly-v1','owned-native-launch-metadata-v1'].includes(protocol))typedRecords++;
@@ -106,11 +109,12 @@ function tokens(value,emit,projection=null){
    if(array)must(key===String(count));if(count++)emit(',');if(!array){stringTokens(key,emit);emit(':');}walk(d.value,depth+1);
   }
   emit(array?']':'}');ancestors.delete(v);
+  }finally{keys=null;vector?.release();}
  }
  walk(value,0);return {slots,nodes,rootReceiptRows,typedRecords};
 }
-function measure(value,state,decoderN=null,limit=limits.logical,projection=null){const workspace=charge(state,vectorBase+(decoderN===null?0:2*decoderN),'canonical-traversal-and-scalar-scratch');try{let bytes=0;const digest=createHash('sha256');const counts=tokens(value,s=>{bytes+=Buffer.byteLength(s);must(bytes<=limit);digest.update(s);},projection);return{bytes,digest:digest.digest('hex'),...counts};}finally{workspace.release();}}
-function canonical(value,state,N,decoder=false){const lease=charge(state,N,'canonical-buffer');try{const bytes=Buffer.allocUnsafeSlow(N);let offset=0;const workspace=charge(state,vectorBase+(decoder?2*N:0),'canonical-traversal-and-scalar-scratch');try{tokens(value,s=>{offset+=bytes.write(s,offset,N-offset);});must(offset===N);}finally{workspace.release();}return{bytes,lease};}catch{lease.release();throw bad();}}
+function measure(value,state,decoderN=null,limit=limits.logical,projection=null){const workspace=charge(state,decoderN===null?131072:vectorBase+2*decoderN,'canonical-traversal-and-scalar-scratch');try{let bytes=0;const digest=createHash('sha256');const counts=tokens(value,s=>{bytes+=Buffer.byteLength(s);must(bytes<=limit);digest.update(s);},projection,{state,incremental:decoderN===null});return{bytes,digest:digest.digest('hex'),...counts};}finally{workspace.release();}}
+function canonical(value,state,N,decoder=false){const lease=charge(state,N,'canonical-buffer');try{const bytes=Buffer.allocUnsafeSlow(N);let offset=0;const workspace=charge(state,decoder?vectorBase+2*N:131072,'canonical-traversal-and-scalar-scratch');try{tokens(value,s=>{offset+=bytes.write(s,offset,N-offset);},null,{state,incremental:!decoder});must(offset===N);}finally{workspace.release();}return{bytes,lease};}catch{lease.release();throw bad();}}
 
 export function packMixedTechnicalJSON(original,kind,ownerLease){
  const state=owned(ownerLease,original),held=[];let bytes=null;
