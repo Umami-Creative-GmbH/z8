@@ -103,23 +103,47 @@ export async function openPublicHeaderClock(
 		needsResolution = false;
 	const diagnostic={protocol:"public-header-clock-readiness-diagnostic-v1",acceptanceClaim:"none",polls:0,errors:0,overflow:0,eventOrdinal:0,requestFacts:0,navigationEvents:0,documentGeneration:0,actorVerifiedGeneration:null,pendingStatusReads:0,outOfOrderStatusUpdates:0,disposed:false,lastDOM:null,lastStatusRead:null,cachedStatus:null,attempt:null,writeResponse:null,failureStage:null};
 	const requests=new WeakMap();let cachedStatusAt=null;
+	// One bounded attempt view; raw requests remain only WeakMap keys.
+	const actionReads={protocol:"public-clock-attempt-action-reads-v1",rowLimit:32,byteLimit:32768,retainedBytes:2048,attemptPrepareEventOrdinal:null,overflow:0,errors:0,records:[]};
+	const actionReadUnknown=overflow=>{if(overflow){actionReads.overflow++;diagnostic.overflow++;}else{actionReads.errors++;diagnostic.errors++;}};
 	const ordinal=()=>{if(diagnostic.eventOrdinal>=10000){diagnostic.overflow++;return null;}return ++diagnostic.eventOrdinal;};
 	const snapshot=()=>structuredClone({...diagnostic,legacyReadinessSource:legacyAuthority,statusAgeMs:cachedStatusAt===null?null:Math.max(0,performance.now()-cachedStatusAt),
+		attemptActionReads:{...actionReads,completeness:actionReads.overflow===0&&actionReads.errors===0&&diagnostic.overflow===0?"known":"UNKNOWN"},
 		cachedStatusSameObservedNavigationGeneration:diagnostic.cachedStatus?.requestDocumentGeneration===undefined?null:diagnostic.cachedStatus.requestDocumentGeneration===diagnostic.documentGeneration,
 		writeMatchesCurrentAttempt:Number.isSafeInteger(diagnostic.attempt?.submitEventOrdinal)&&Number.isSafeInteger(diagnostic.writeResponse?.submitEventOrdinal)?diagnostic.attempt.submitEventOrdinal===diagnostic.writeResponse.submitEventOrdinal:null,
 		statusRequestAfterAcceptedWrite:diagnostic.writeResponse?.accepted===true && Number.isSafeInteger(diagnostic.cachedStatus?.requestEventOrdinal) && Number.isSafeInteger(diagnostic.writeResponse.acknowledgedEventOrdinal)?diagnostic.cachedStatus.requestEventOrdinal>diagnostic.writeResponse.acknowledgedEventOrdinal:null});
 	const kind=value=>value===undefined?"absent":value===null?"null":typeof value==="boolean"?"boolean":"other";
+	const actionRow=fact=>Number.isSafeInteger(fact?.requestEventOrdinal)?actionReads.records.find(row=>row.requestEventOrdinal===fact.requestEventOrdinal):null;
+	const observeActionRequest=(request,fact)=>{try{
+		const headers=request.headers(),descriptor=Object.getOwnPropertyDescriptor(headers,"next-action");
+		if(!descriptor){if("next-action" in headers)actionReadUnknown(false);return;}
+		if(!Object.hasOwn(descriptor,"value")||typeof descriptor.value!=="string"||descriptor.value.length===0||Buffer.byteLength(descriptor.value)>1024||!Number.isSafeInteger(fact.requestEventOrdinal)||!Number.isSafeInteger(fact.documentGeneration)||fact.documentGeneration>10000){actionReadUnknown(false);return;}
+		// Reserve the fixed row allowance before hashing or constructing its metadata.
+		if(actionReads.records.length>=actionReads.rowLimit||actionReads.retainedBytes+960>actionReads.byteLimit){actionReadUnknown(true);return;}
+		actionReads.retainedBytes+=960;
+		actionReads.records.push({actionHeaderSha256:createHash("sha256").update(descriptor.value).digest("hex"),requestEventOrdinal:fact.requestEventOrdinal,requestDocumentGeneration:fact.documentGeneration,requestAttemptPrepareEventOrdinal:actionReads.attemptPrepareEventOrdinal,attemptPrepareEventOrdinal:actionReads.attemptPrepareEventOrdinal,carryIn:false,responseEventOrdinal:null,responseDocumentGeneration:null,completedEventOrdinal:null,completedDocumentGeneration:null,failedEventOrdinal:null,httpStatus:null,parseOutcome:"request-pending",pending:true,statusReadPending:false,failure:null,hasEmployee:null,isClockedIn:null,deliveredToStatusCache:false});
+	}catch{actionReadUnknown(false);}};
+	const beginActionAttempt=prepareEventOrdinal=>{
+		actionReads.records=actionReads.records.filter(row=>row.pending);
+		for(const row of actionReads.records){row.carryIn=true;row.attemptPrepareEventOrdinal=prepareEventOrdinal;}
+		actionReads.retainedBytes=2048+960*actionReads.records.length;
+		actionReads.attemptPrepareEventOrdinal=prepareEventOrdinal;
+	};
 	const observeRequest=request=>{
 		const eventOrdinal=ordinal();if(diagnostic.requestFacts>=10000){diagnostic.overflow++;return;}
-		if(request && typeof request==="object" && !requests.has(request)){requests.set(request,{requestEventOrdinal:eventOrdinal,documentGeneration:diagnostic.documentGeneration,responseEventOrdinal:null});diagnostic.requestFacts++;}
+		if(request && typeof request==="object" && !requests.has(request)){const fact={requestEventOrdinal:eventOrdinal,documentGeneration:diagnostic.documentGeneration,responseEventOrdinal:null};requests.set(request,fact);diagnostic.requestFacts++;observeActionRequest(request,fact);}
 		else diagnostic.errors++;
 	};
+	const observeRequestFailed=request=>{try{const row=actionRow(requests.get(request));if(row){row.failedEventOrdinal=ordinal();row.pending=row.statusReadPending;row.failure="request-failed";row.parseOutcome="request-failed";}}catch{actionReadUnknown(false);}};
 	const observeNavigation=frame=>{try{if(frame.parentFrame()===null){ordinal();diagnostic.navigationEvents++;diagnostic.documentGeneration++;}}catch{diagnostic.errors++;}};
 	const observeStatus = async (response) => {
 		const request=response.request(),headers=request.headers(),fact=requests.get(request),responseEventOrdinal=ordinal();
 		if(fact)fact.responseEventOrdinal=responseEventOrdinal;
 		if (!headers["next-action"]) return;
 		const descriptor=Object.getOwnPropertyDescriptor(headers,"next-action"),action=descriptor && Object.hasOwn(descriptor,"value") && typeof descriptor.value==="string" && Buffer.byteLength(descriptor.value)<=1024?descriptor.value:null;
+		const readRow=actionRow(fact);
+		if(!readRow)actionReadUnknown(false);
+		if(readRow){readRow.responseEventOrdinal=responseEventOrdinal;readRow.responseDocumentGeneration=diagnostic.documentGeneration;readRow.parseOutcome="response-pending";readRow.statusReadPending=true;readRow.pending=true;try{const status=response.status();readRow.httpStatus=Number.isInteger(status)&&status>=100&&status<=599?status:null;}catch{actionReadUnknown(false);}}
 		let bodyUnavailable=false;diagnostic.pendingStatusReads++;
 		const value = resultFrom(await response.text().catch(() => {bodyUnavailable=true;return "";}));
 		diagnostic.pendingStatusReads--;
@@ -130,14 +154,16 @@ export async function openPublicHeaderClock(
 			parseOutcome:bodyUnavailable?"body-unavailable":typeof value?.isClockedIn==="boolean"?"status-known":"unrecognized",
 			hasEmployeeType:kind(value?.hasEmployee),hasEmployee:value?.hasEmployee===true?true:value?.hasEmployee===false?false:null,isClockedInType:kind(value?.isClockedIn),isClockedIn:typeof value?.isClockedIn==="boolean"?value.isClockedIn:null};
 		diagnostic.lastStatusRead=metadata;
+		if(readRow){readRow.completedEventOrdinal=metadata.completedEventOrdinal;readRow.completedDocumentGeneration=diagnostic.documentGeneration;readRow.pending=false;readRow.statusReadPending=false;readRow.parseOutcome=metadata.parseOutcome;readRow.hasEmployee=metadata.hasEmployee;readRow.isClockedIn=metadata.isClockedIn;if(bodyUnavailable&&readRow.failure===null)readRow.failure="body-unavailable";}
 		if (typeof value?.isClockedIn === "boolean") {
 			if(Number.isSafeInteger(diagnostic.cachedStatus?.requestEventOrdinal) && Number.isSafeInteger(metadata.requestEventOrdinal) && metadata.requestEventOrdinal<diagnostic.cachedStatus.requestEventOrdinal)diagnostic.outOfOrderStatusUpdates++;
 			knownStatus = value;diagnostic.cachedStatus=metadata;cachedStatusAt=performance.now();
+			if(readRow)readRow.deliveredToStatusCache=true;
 		}
 	};
-	page.on("request",observeRequest);page.on("framenavigated",observeNavigation);
+	page.on("request",observeRequest);page.on("requestfailed",observeRequestFailed);page.on("framenavigated",observeNavigation);
 	page.on("response", observeStatus);
-	const dispose=()=>{diagnostic.disposed=true;page.off("request",observeRequest);page.off("framenavigated",observeNavigation);page.off("response",observeStatus);};
+	const dispose=()=>{diagnostic.disposed=true;page.off("request",observeRequest);page.off("requestfailed",observeRequestFailed);page.off("framenavigated",observeNavigation);page.off("response",observeStatus);};
 
 	async function state(expected=null) {
 		diagnostic.polls++;
@@ -206,6 +232,7 @@ export async function openPublicHeaderClock(
 			);
 		armed = true;
 		diagnostic.attempt={action,prepareEventOrdinal:ordinal(),submitEventOrdinal:null,documentGeneration:diagnostic.documentGeneration};
+		beginActionAttempt(diagnostic.attempt.prepareEventOrdinal);
 		let button;
 		try {
 			diagnostic.failureStage="prepare-state";
