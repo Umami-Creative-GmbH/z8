@@ -1,8 +1,8 @@
 # Original team-action temporary values
 
-This checkpoint contains source qualification and bounded inert-value storage.
-Request producer authority and the semantic adapter are not wired yet. T remains
-UNKNOWN; these modules do not establish baseline or release acceptance.
+This prospective source checkpoint wires exact Original request/value authority
+and its normal-role semantic adapter. Independent code review and fresh Root-run
+qualification are still required; no baseline or release acceptance is established.
 
 The first candidate source profile is exact original build `bfdf2d573`, its actual
 CI record, compiled manifest/action registry,14 application files and15 installed

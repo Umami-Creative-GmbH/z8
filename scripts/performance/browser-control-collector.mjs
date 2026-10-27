@@ -1609,7 +1609,7 @@ export function createProxyControlCollector({
 				return;
 			}
 			const identity=controlRequestIdentity(contextId,url,method,headers);
-            
+
             const replayNonce=lowerHeaders(headers)[teamReplayHeader];
             const ownedReplay=replayNonce!==undefined && teamDispatch?teamDispatch.proxyRequest({id,traceId,method,url,action:lowerHeaders(headers)["next-action"],nonce:replayNonce}):false;
             if(ownedReplay || sourceFacts && identity.headerFieldSha256["next-action"]===sourceFacts.actionHeaderSha256)proxyCuts.set(id,sourceCuts.capture("proxy-request",id,observedTeamCut));
