@@ -707,3 +707,15 @@ test("observer-only temporary body inspections close without granting value auth
 	assert.equal(openOriginalTeamBodyInspection(null), null);
 	assert.equal(openOriginalTeamBodyInspection({ bodySha256: boundary.bodySha256, decodedBytes: 8388609 }), null);
 });
+
+test("temporary observation condition and Original source configuration reject omitted or foreign declarations", async () => {
+	const { temporaryValueObservation, knownTemporaryValueObservation, knownOriginalTeamSourceConfiguration, originalTeamTemporaryProfiles } = await import("./team-temporary-value-authority.mjs");
+	assert.equal(knownTemporaryValueObservation(structuredClone(temporaryValueObservation)), true);
+	for (const row of [undefined, null, {}, { ...temporaryValueObservation, replayHeader: "other" }, { ...temporaryValueObservation, extra: false }]) assert.equal(knownTemporaryValueObservation(row), false);
+	const profile = originalTeamTemporaryProfiles[0];
+	const config = { protocol: "original-team-source-configuration-v1", profileId: profile.id, phase: "baseline", compiledBuild: profile.binarySource, compiledManifestSha256: profile.manifestSha256, buildRecordPath: "owned/before-build.json", buildRecordSha256: profile.buildRecordSha256 };
+	assert.equal(knownOriginalTeamSourceConfiguration(null), true);
+	assert.equal(knownOriginalTeamSourceConfiguration(config, profile.binarySource, profile.manifestSha256), true);
+	for (const row of [undefined, {}, { ...config, phase: "release" }, { ...config, compiledBuild: "a".repeat(40) }, { ...config, buildRecordSha256: "a".repeat(64) }, { ...config, buildRecordPath: "" }, { ...config, extra: true }]) assert.equal(knownOriginalTeamSourceConfiguration(row), false);
+	assert.equal(knownOriginalTeamSourceConfiguration(config, "a".repeat(40)), false);
+});

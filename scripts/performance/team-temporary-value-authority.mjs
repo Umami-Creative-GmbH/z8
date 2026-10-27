@@ -177,6 +177,23 @@ export const originalTeamTemporaryProfiles = deepFreeze([
     ]
   }
 ]);
+export function knownTemporaryValueObservation(value) {
+	try { return ownData(value, ["protocol", "replayHeader", "documentJournal"]) && Object.entries(temporaryValueObservation).every(([key, expected]) => value[key] === expected); }
+	catch { return false; }
+}
+/** Null explicitly declares unsupported T authority. A configured Original is exact, not a descendant exception. */
+export function knownOriginalTeamSourceConfiguration(value, compiledBuild, compiledManifestSha256) {
+	try {
+		if (value === null) return true;
+		if (!ownData(value, ["protocol", "profileId", "phase", "compiledBuild", "compiledManifestSha256", "buildRecordPath", "buildRecordSha256"]) ||
+			value.protocol !== "original-team-source-configuration-v1" || value.phase !== "baseline" ||
+			typeof value.buildRecordPath !== "string" || value.buildRecordPath.length < 1 || value.buildRecordPath.length > 4096) return false;
+		const profile = originalTeamTemporaryProfiles.find(row => row.id === value.profileId);
+		return Boolean(profile && value.compiledBuild === profile.binarySource && value.compiledManifestSha256 === profile.manifestSha256 &&
+			value.buildRecordSha256 === profile.buildRecordSha256 && (compiledBuild === undefined || compiledBuild === profile.binarySource) &&
+			(compiledManifestSha256 === undefined || compiledManifestSha256 === profile.manifestSha256));
+	} catch { return false; }
+}
 const qualifications = new WeakMap();
 const factKeys = ["protocol", "profileId", "phase", "binarySource", "manifestSha256", "buildRecordSha256", "registrySha256", "actionHeaderSha256", "selectedActionMatches", "concurrentRouterQueue", "cachedNavigations", "appFiles", "frameworkFiles"];
 const ownData = (value, keys) => value !== null && typeof value === "object" && !Array.isArray(value) &&
