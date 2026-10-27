@@ -728,7 +728,7 @@ test("source occurrence observations retain missing prior cuts and the existing 
  const {createTeamSourceCutJournal,bindOriginalTeamRequestValue}=await import("./team-temporary-value-authority.mjs");let retained=0;
  const journal=createTeamSourceCutJournal({contextId:"source-journal",reserve:bytes=>{retained+=bytes;return true;}});
  const captured=journal.capture("proxy-request","request-one",null);assert.ok(captured);
- assert.deepEqual(journal.snapshot().records,[{ordinal:1,kind:"proxy-request",id:"request-one",sourceCutOrdinal:null,sourceCutSha256:null}]);
+ assert.deepEqual(journal.snapshot().records,[{ordinal:1,kind:"proxy-request",id:"request-one",sourceCutOrdinal:null,sourceCutSha256:null,pageRoute:null}]);
  assert.equal(bindOriginalTeamRequestValue({proxyCut:captured,browserCut:{...captured}}),null);
  for(let index=1;index<8192;index++)assert.ok(journal.capture("browser-request","request-"+index,null));
  assert.equal(journal.capture("browser-request","over-limit",null),null);
@@ -750,4 +750,66 @@ test("typed body-use coverage rejects deleted observers and independent ever-use
  const context={contextId,binding:{temporaryValueObservation},environment:{temporaryValues:values}},bodies=[{source:"proxy",row:{id,bodyProof:{bodySha256:use.bodySha256},temporaryValueObservation:{bindingSha256:use.bindingSha256}}}];
  assert.equal(validateOriginalTeamBodyUseCoverage(context,bodies),true);
  for(const mutate of [value=>delete value.bodyUses,value=>value.bodyUses={...value.bodyUses,observed:0,records:[]},value=>delete value.store.usage,value=>delete value.store.rows[0].everUsed,value=>value.store.rows[0].usedBodies=[]]){const changed=structuredClone(context);mutate(changed.environment.temporaryValues);assert.equal(validateOriginalTeamBodyUseCoverage(changed,[]),false);}
+});
+
+test('team wire headers distinguish browser-added absent fields from changed critical values',async()=>{
+ const {knownOriginalTeamHeaderJoin}=await import('./team-temporary-value-authority.mjs');
+ const {controlRequestIdentity}=await import('./browser-control-collector.mjs');
+ const cookie='synthetic-session=value',initial=controlRequestIdentity('ctx','http://localhost:1234/en/analytics','POST',{'next-action':'synthetic','accept':'text/x-component','accept-language':'en'}),
+  wire=controlRequestIdentity('ctx','http://localhost:1234/en/analytics','POST',{'next-action':'synthetic','accept':'text/x-component','accept-language':'en','cookie':cookie,'accept-encoding':'gzip, deflate'}),extra=structuredClone(wire);
+ const expected=createHash('sha256').update(cookie).digest('hex');
+ assert.equal(knownOriginalTeamHeaderJoin(initial,extra,wire,expected),true);
+ assert.equal(knownOriginalTeamHeaderJoin(wire,extra,wire,expected),true);
+ for(const field of ['accept','next-action','accept-language','authorization','next-router-state-tree','x-z8-fixture-document-generation','x-z8-fixture-replay-id','cookie','accept-encoding']){
+  const bad=structuredClone(initial);bad.headerFieldSha256[field]='a'.repeat(64);assert.equal(knownOriginalTeamHeaderJoin(bad,extra,wire,expected),false,field);
+ }
+ for(const mutate of [v=>{v.requestHeaderSnapshotKnown=false;},v=>{v.requestHeadersSha256='a'.repeat(64);},v=>{v.headerFieldSha256.accept='a'.repeat(64);},v=>{delete v.headerFieldSha256.cookie;}]){const bad=structuredClone(extra);mutate(bad);assert.equal(knownOriginalTeamHeaderJoin(initial,bad,wire,expected),false);}
+ assert.equal(knownOriginalTeamHeaderJoin(initial,extra,wire,'b'.repeat(64)),false);
+});
+
+test('team source controller regimes distinguish known-uncontrolled from unknown and preserve strict worker prefixes',async()=>{
+ const {originalTeamControllerRegime,knownOriginalTeamWorkerExtension}=await import('./team-temporary-value-authority.mjs');
+ const hash=value=>createHash('sha256').update(value).digest('hex'),script=hash('http://localhost:1234/sw.js');
+ const page={targetOrdinal:1,event:'initial',type:'page',urlKnown:true,urlSha256:hash('about:blank'),originMatches:false,ownedWorkerScript:null};
+ const past={protocol:'owned-context-worker-target-metadata-v1',contextId:'ctx',contextJoinKnown:true,contextIdentitySha256:hash('ctx'),installed:true,scopeClosed:false,errors:0,overflow:0,controllerObservation:'not-collected',enumerationBasis:'existing-puppeteer-target-manager',events:[page]};
+ const none={available:true,secureContext:true,originMatches:true,controllerIdentityStable:true,controllerBefore:{present:false,known:true},controllerAfter:{present:false,known:true},registrationCount:0,registrationOverflow:0,registrations:[]};
+ assert.equal(originalTeamControllerRegime(none,past,script),'known-uncontrolled-page-only');
+ const later=structuredClone(past);later.events.push({...page,event:'changed',urlSha256:hash('http://localhost:1234/en/analytics'),originMatches:true},{targetOrdinal:2,event:'created',type:'service_worker',urlKnown:true,urlSha256:script,originMatches:true,ownedWorkerScript:true});
+ assert.equal(knownOriginalTeamWorkerExtension(past,later,script),true);
+ assert.equal(originalTeamControllerRegime(none,later,script),null,'known-none issuance requires its actual prefix to be page-only');
+ for(const mutate of [v=>{v.controllerBefore.known=false;},v=>{v.controllerAfter={present:true,known:true};},v=>{v.registrationCount=1;},v=>{v.registrations=[{}];},v=>{v.controllerIdentityStable=false;},v=>{v.registrationOverflow=1;}]){const bad=structuredClone(none);mutate(bad);assert.equal(originalTeamControllerRegime(bad,past,script),null);}
+ for(const mutate of [v=>{v.contextId='foreign';},v=>{v.errors=1;},v=>{v.events[0].urlSha256=hash('different');},v=>{v.events[2].ownedWorkerScript=false;},v=>{v.events[2].urlSha256=hash('foreign');},v=>{v.events[2].type='shared_worker';},v=>{v.events[2].targetOrdinal=0;},v=>{v.events[1].originMatches=false;}]){const bad=structuredClone(later);mutate(bad);assert.equal(knownOriginalTeamWorkerExtension(past,bad,script),false);}
+ const owned={present:true,known:true,ownedScript:true,state:'activated',scriptUrlSha256:script};
+ const activated={...none,controllerBefore:owned,controllerAfter:owned,registrationCount:1,registrations:[{scopeKnown:true,ownedRootScope:true,scopeSha256:hash('http://localhost:1234/'),active:owned,waiting:{present:false,known:true},installing:{present:false,known:true}}]};
+ assert.equal(originalTeamControllerRegime(activated,later,script),'owned-activated');
+});
+
+test('team page routes derive only declared page destinations and preserve the separate caller closure',async()=>{
+ const {originalTeamPageRouteContract,originalTeamRequestRouteFacts,knownOriginalTeamRequestRoute}=await import('./team-temporary-value-authority.mjs');
+ const {controlRequestIdentity}=await import('./browser-control-collector.mjs');
+ const origin='http://localhost:1234',plan={origin,conditions:[{name:'admin',locale:'en'},{name:'other',locale:'de'}],routes:[{path:'/{locale}/analytics/overtime-burn-down',awayPath:'/{locale}/settings'},{path:'/{locale}/settings/employees/{employee}'},{path:'/api/time-entries'},{path:'/{locale}/asset.js'}]};
+ const contract=originalTeamPageRouteContract(plan);assert.ok(contract);
+ const operator={pageRoutes:contract};
+ for(const path of ['/en/analytics','/en/analytics/team-performance','/en/analytics/overtime-burn-down','/de/analytics/overtime-burn-down']){
+  const locale=path.split('/')[1],row={...controlRequestIdentity('ctx',origin+path,'POST',{'accept-language':locale}),type:'Fetch'};
+  const route=originalTeamRequestRouteFacts(operator,row);assert.ok(route,path);assert.equal(knownOriginalTeamRequestRoute(route,operator,row),true);
+  assert.doesNotMatch(JSON.stringify(route),/localhost|analytics|overtime/);
+  for(const field of ['fullUrlSha256','pathnameSha256','originSha256','routeContractSha256']){const bad={...route,[field]:'a'.repeat(64)};assert.equal(knownOriginalTeamRequestRoute(bad,operator,row),false,field);}
+ }
+ for(const path of ['/fr/analytics','/en/asset.js','/api/time-entries','/en/other','/en/analytics?x=1']){const row={...controlRequestIdentity('ctx',origin+path,'POST',{'accept-language':'en'}),type:'Fetch'};assert.equal(originalTeamRequestRouteFacts(operator,row),null,path);}
+ const row={...controlRequestIdentity('ctx',origin+'/en/analytics','POST',{'accept-language':'en'}),type:'Fetch'};
+ for(const bad of [{...row,type:'Document'},{...row,method:'GET'},{...row,requestOriginSha256:'a'.repeat(64)},{...row,headerFieldSha256:{...row.headerFieldSha256,'accept-language':'a'.repeat(64)}}])assert.equal(originalTeamRequestRouteFacts(operator,bad),null);
+ assert.equal(originalTeamPageRouteContract({origin,routes:plan.routes}),null);assert.equal(originalTeamPageRouteContract({...plan,origin:'https://foreign.example'}),null);
+});
+
+test('team route receipts stay hash-only within the existing shared pool and source event charges',async()=>{
+ const {originalTeamPageRouteContract,originalTeamRequestRouteFacts,createTeamSourceCutJournal}=await import('./team-temporary-value-authority.mjs');
+ const {controlRequestIdentity}=await import('./browser-control-collector.mjs');
+ const origin='http://localhost:1234',contract=originalTeamPageRouteContract({origin,conditions:[{locale:'en'}],routes:[{path:'/en/analytics/overtime-burn-down'}]}),row={...controlRequestIdentity('ctx',origin+'/en/analytics/overtime-burn-down','POST',{'accept-language':'en'}),type:'Fetch'},route=originalTeamRequestRouteFacts({pageRoutes:contract},row);
+ const charges=[],journal=createTeamSourceCutJournal({contextId:'ctx',reserve:bytes=>{charges.push(bytes);return true;}});journal.capture('browser-request','request',null,route);
+ assert.deepEqual(charges,[8192]);assert.deepEqual(journal.snapshot().records[0].pageRoute,route);assert.equal(journal.snapshot().retainedBytes,8192);assert.doesNotMatch(JSON.stringify(journal.snapshot()),/localhost|overtime/);
+ const maxHeader={requestHeaderSnapshotKnown:true,requestHeadersSha256:'a'.repeat(64),headerFieldSha256:Object.fromEntries(Object.keys(row.headerFieldSha256).map(key=>[key,'a'.repeat(64)]))};
+ assert.ok(Buffer.byteLength(JSON.stringify({pageRoute:route,headerEvidence:{initial:maxHeader,extra:maxHeader}}))*8+2048<=32768);
+ const refused=createTeamSourceCutJournal({contextId:'ctx',reserve:()=>false});assert.equal(refused.capture('browser-request','request',null,route),null);assert.equal(refused.snapshot().overflow,1);assert.equal(refused.snapshot().records.length,0);
+ assert.equal(originalTeamPageRouteContract({origin,conditions:[{locale:'en'+('-abcdefgh').repeat(10)}],routes:[{path:'/en/analytics'}]}),null);
 });

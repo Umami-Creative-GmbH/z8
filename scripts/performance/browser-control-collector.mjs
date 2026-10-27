@@ -30,7 +30,7 @@ import { readLegacyClockReadinessSource } from "./legacy-clock-readiness.mjs";
 import { parseInertDateRangeRequest } from "./inert-date-range-request.mjs";
 import { temporaryValueObservation, knownTemporaryValueObservation, knownOriginalTeamSourceConfiguration, readOriginalTeamSourceQualification,
  readOriginalTeamOperatorQualification, createTeamSourceCutJournal, createTeamTemporaryValueStore, createTeamReplayDispatchJournal, teamReplayHeader, createOriginalTeamUIProducerCut,
- originalTeamSourceFacts, originalTeamOperatorSourceFacts, originalTeamUIProducerCutFacts, bindOriginalTeamRequestValue, originalTeamRequestAuthorityFacts, openOriginalTeamBodyInspection, closeOriginalTeamBodyInspection, originalTeamBodyObservation } from "./team-temporary-value-authority.mjs";
+ originalTeamSourceFacts, originalTeamOperatorSourceFacts, originalTeamUIProducerCutFacts, originalTeamUIProducerWorkerExtension, originalTeamRequestRouteFacts, knownOriginalTeamHeaderJoin, bindOriginalTeamRequestValue, originalTeamRequestAuthorityFacts, openOriginalTeamBodyInspection, closeOriginalTeamBodyInspection, originalTeamBodyObservation } from "./team-temporary-value-authority.mjs";
 
 export const controlResponseHeader = "x-z8-fixture-response-id";
 export const controlDocumentHeader = "x-z8-fixture-document-generation";
@@ -1341,13 +1341,13 @@ export async function installBrowserControlCollector({
 	const principalEpoch = createPrincipalEpochObserver(contextId, { origin });
 	let workerObservation, endMetadata = null, generation = 0, documentAcknowledgment;
 	const qualification=originalTeamBindings.get(environmentBinding);
-	const operatorQualification=qualification?await readOriginalTeamOperatorQualification({qualification,operatorFile,protocolSources,plan:originalTeamPlans.get(environmentBinding)}):null;
+	let operatorQualification=null;
 	let teamCut=null,teamScheduler;
 	const currentTeamCut=()=>{
 		const state=teamScheduler?.status();if(!teamCut || !state || state.scopeClosed || state.errors || state.overflow || !documentAcknowledgment)return null;
 		if(!documentAcknowledgment.sourceReady())return null;
         const facts=originalTeamUIProducerCutFacts(teamCut),principal=principalEpoch.sourceState(),workers=workerObservation?.snapshot(),journal=documentAcknowledgment.sourceSnapshot();
-		if(!facts || facts.documentJournalSha256!==sha(JSON.stringify(journal)) || facts.workerJournalSha256!==sha(JSON.stringify(workers)) || principal.before?.sha256!==facts.principalSha256 ||
+        if(!facts || facts.documentJournalSha256!==sha(JSON.stringify(journal)) || !originalTeamUIProducerWorkerExtension(teamCut,workers) || principal.before?.sha256!==facts.principalSha256 ||
 			!["observedSetCookieResponses","unknownResponseHeaders","readErrors","pendingReads","observationErrors","overflow"].every(key=>principal[key]===0))return null;
 		return teamCut;
 	};
@@ -1360,6 +1360,15 @@ export async function installBrowserControlCollector({
 		compiledCachedNavigations,
 		compiledBinding:environmentBinding,
 	});
+	if(qualification) {
+		// One canonical immutable operator graph, including at most128 route rows, in the same pool.
+		const reserved=128*8192;
+		if(!proxy.reserveTemporaryObservation(reserved))throw Error("Original team operator route observation unavailable.");
+		try {
+			operatorQualification=await readOriginalTeamOperatorQualification({qualification,operatorFile,protocolSources,plan:originalTeamPlans.get(environmentBinding)});
+			if(!proxy.setTeamOperatorSource(originalTeamOperatorSourceFacts(operatorQualification)))throw Error();
+		}catch{proxy.releaseTemporaryObservation(reserved);throw Error("Original team operator route observation unavailable.");}
+	}
 	teamScheduler=createTeamSourceReadScheduler({ready:()=>knownTemporaryValueObservation(environmentBinding?.temporaryValueObservation) && generation>=1?documentAcknowledgment?.sourceReady() ?? null:null,
 		reserve:bytes=>proxy.reserveTemporaryObservation(bytes),release:bytes=>proxy.releaseTemporaryObservation(bytes),
 		accept:cut=>{if(!proxy.issueTeamCut(cut))return false;teamCut=cut;return true;},
@@ -1511,6 +1520,7 @@ export function createProxyControlCollector({
 	compiledCachedNavigations,
 	compiledBinding,
 	currentTeamCut = () => null,
+	operatorSource = null,
 }) {
 	const requests = new Map();
 	const headerCensus = createProxyHeaderCensus({contextId});
@@ -1533,19 +1543,23 @@ export function createProxyControlCollector({
 		const id=row.id ?? row.proxyResponseId,packet=requests.get(id),browser=row.requestId?row:browserRows.get(id),handle=requestHandles.get(id);
 		let authority=requestAuthorities.get(id) ?? null;
         if(packet && browser){browser.requestBodyFacts=packet.requestBodyFacts;browser.traceId=packet.traceId;}
-		if(packet && browser && handle && packet.requestHeaderSnapshotKnown===true && browser.requestHeaderSnapshotKnown===true && browser.initialHeaderIdentity?.requestHeaderSnapshotKnown===true && browser.extraHeaderIdentity?.requestHeaderSnapshotKnown===true && browser.requestHeadersKnown===true && browser.initialHeaderIdentity?.requestHeadersSha256===packet.requestHeadersSha256 &&
-			browser.extraHeaderIdentity?.requestHeadersSha256===packet.requestHeadersSha256 && browser.fullUrlSha256===packet.fullUrlSha256 && browser.documentGeneration===packet.documentGeneration &&
+		if(!authority && packet && browser && handle && browser.requestHeaderSnapshotKnown===true && browser.requestHeadersKnown===true && knownOriginalTeamHeaderJoin(browser.initialHeaderIdentity,browser.extraHeaderIdentity,packet,packet.headerFieldSha256.cookie) &&
+			browser.requestHeadersSha256===packet.requestHeadersSha256 && browser.fullUrlSha256===packet.fullUrlSha256 && browser.documentGeneration===packet.documentGeneration &&
 			browser.action===true && browser.ambiguousRedirect===false && browser.requestOriginSha256===packet.requestOriginSha256) {
+			// The new hash-only header/route receipts use the same pool, before copying either receipt.
+			if(!reserveTeam(32768)){overflow++;return openOriginalTeamBodyInspection({bodySha256,decodedBytes});}
+			const headerReceipt=value=>Object.fromEntries(["requestHeaderSnapshotKnown","requestHeadersSha256","headerFieldSha256"].map(key=>[key,key==="headerFieldSha256"?{...value[key]}:value[key]]));
 			const request={contextId,proxyResponseId:id,requestId:browser.requestId,traceId:packet.traceId,method:packet.method,fullUrlSha256:packet.fullUrlSha256,
 				requestHeadersSha256:packet.requestHeadersSha256,requestOriginSha256:packet.requestOriginSha256,documentGeneration:packet.documentGeneration,frameId:browser.frameId,loaderId:browser.loaderId,
 				actionHeaderSha256:packet.headerFieldSha256["next-action"],requestBodySha256:shapeRows.get(id)?.bodySha256,encodedBytes:shapeRows.get(id)?.bytes,actualEOF:shapeRows.get(id)?.requestEOF===true,
-				replayHeaderSha256:packet.headerFieldSha256[teamReplayHeader] ?? null,cookieHeaderSha256:packet.headerFieldSha256.cookie};
+				replayHeaderSha256:packet.headerFieldSha256[teamReplayHeader] ?? null,cookieHeaderSha256:packet.headerFieldSha256.cookie,pageRoute:originalTeamRequestRouteFacts(operatorSource,browser),headerEvidence:{initial:headerReceipt(browser.initialHeaderIdentity),extra:headerReceipt(browser.extraHeaderIdentity)}};
 			if(request.replayHeaderSha256!==null)teamDispatch?.browserRequest({proxyId:id,contextId,requestId:browser.requestId,method:browser.method,traceId:browser.incomingTraceId,
 				urlSha256:browser.fullUrlSha256,actionHeaderSha256:browser.headerFieldSha256["next-action"],initialHeadersKnown:browser.initialHeaderIdentity?.requestHeaderSnapshotKnown===true,extraHeadersKnown:browser.extraHeaderIdentity?.requestHeaderSnapshotKnown===true,
 				initialReplaySha256:browser.initialHeaderIdentity?.headerFieldSha256?.[teamReplayHeader],extraReplaySha256:browser.extraHeaderIdentity?.headerFieldSha256?.[teamReplayHeader],frameId:browser.frameId,loaderId:browser.loaderId,documentGeneration:browser.documentGeneration});
-			authority ??= bindOriginalTeamRequestValue({qualification,store:teamStore,handle,request,proxyCut:proxyCuts.get(id),browserCut:browserCuts.get(browser),dispatchJournal:teamDispatch});
+			authority=bindOriginalTeamRequestValue({qualification,store:teamStore,handle,request,proxyCut:proxyCuts.get(id),browserCut:browserCuts.get(browser),dispatchJournal:teamDispatch,wire:packet});
+			if(!authority)releaseTeam(32768);
 			if(authority){requestAuthorities.set(id,authority);const facts=originalTeamRequestAuthorityFacts(authority);row.temporaryRequestAuthority=facts;packet.temporaryRequestAuthority=facts;browser.temporaryRequestAuthority=facts;}
-		}
+		}else if(authority)row.temporaryRequestAuthority=originalTeamRequestAuthorityFacts(authority);
 		return openOriginalTeamBodyInspection({bodySha256,decodedBytes,requestAuthority:authority});
 	};
 	const retireValue=id=>{
@@ -1576,6 +1590,7 @@ export function createProxyControlCollector({
 		row.chunks = [];
 	};
 	return {
+		setTeamOperatorSource(source){try{if(installed || operatorSource!==null || !source || !Object.isFrozen(source) || source.protocol!=="closed-team-operator-source-v1"){errors++;return false;}operatorSource=source;return true;}catch{errors++;return false;}},
 		issueTeamCut(cut){return sourceCuts.issued(cut)!==null;},
         reserveTemporaryObservation(bytes){return reserveTeam(bytes);},
         releaseTemporaryObservation(bytes){releaseTeam(bytes);},
@@ -1585,7 +1600,7 @@ export function createProxyControlCollector({
 		temporaryInspectionFor,
 		observeTeamBrowserRequest(row,kind){
 			if(kind==="body-settled")retireValue(row.proxyResponseId);
-            if(kind==="request" && (sourceFacts && row.headerFieldSha256?.["next-action"]===sourceFacts.actionHeaderSha256 || row.headerFieldSha256?.[teamReplayHeader]))browserCuts.set(row,sourceCuts.capture("browser-request",row.requestId,currentTeamCut()));
+            if(kind==="request" && (sourceFacts && row.headerFieldSha256?.["next-action"]===sourceFacts.actionHeaderSha256 || row.headerFieldSha256?.[teamReplayHeader]))browserCuts.set(row,sourceCuts.capture("browser-request",row.requestId,currentTeamCut(),originalTeamRequestRouteFacts(operatorSource,row)));
 			if(row.proxyResponseId){const prior=browserRows.get(row.proxyResponseId);if(prior && prior!==row){errors++;return;}browserRows.set(row.proxyResponseId,row);}
 		},
 		closeTeamValues(){if(teamClosed)return;teamClosed=true;teamDispatch?.close();sourceCuts.close();teamStore.close();},
