@@ -3,6 +3,14 @@ import { createHash } from "node:crypto";
 import { waitVisible } from "./journey-steps.mjs";
 import { observationTimeoutMs } from "./clean-evidence.mjs";
 
+const initialFailureDiagnostics=new WeakMap();
+const weakErrorKey=value=>value!==null&&(typeof value==="object"||typeof value==="function");
+/** Metadata only: never retain, inspect or export the thrown value's fields. */
+export function getPublicHeaderClockFailureDiagnostics(error){
+	if(!weakErrorKey(error))return null;const value=initialFailureDiagnostics.get(error);
+	return value?structuredClone(value):null;
+}
+
 const pause = (ms) => new Promise((done) => setTimeout(done, ms));
 function resultFrom(text) {
 	try {
@@ -176,6 +184,7 @@ export async function openPublicHeaderClock(
 			);
 		await waitState("out");
 	} catch (error) {
+		try{if(weakErrorKey(error))initialFailureDiagnostics.set(error,{...snapshot(),capture:"initial-open-failure-before-dispose"});}catch{}
 		dispose();
 		throw error;
 	}

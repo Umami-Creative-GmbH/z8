@@ -9,6 +9,7 @@ import { fileURLToPath } from "node:url";
 import { runInNewContext } from "node:vm";
 import * as mixedProbe from "./mixed-load-probe.mjs";
 import { openPublicHeaderClock } from "./public-header-clock.mjs";
+import * as publicHeaderClock from "./public-header-clock.mjs";
 
 test("mixed annual preparation registers the actual response before keyboard selection commits", async () => {
 	const events = [],
@@ -349,4 +350,18 @@ test("public header clock diagnostic-only read failures cannot change a ready ma
 		f.dom.markerReadError=true;assert.equal(await controls.state(),"out");const d=controls.snapshot();
 		assert.equal(d.errors,1);assert.equal(d.lastDOM.known,false);assert.equal(d.lastDOM.reason,"diagnostic-read-unavailable");assert.equal(d.lastDOM.state,"out");assert.doesNotMatch(JSON.stringify(d),/PRIVATE_/);
 	}finally{controls.dispose();}
+});
+
+test("public header clock initial failure preserves its original identity and exposes only cloned fixed diagnostics",async()=>{
+	const f=clockDiagnosticPage();f.dom.marker=null;let caught;
+	try{await openPublicHeaderClock(f.page,{origin:"http://localhost",expectedActor:f.expected,phase:"baseline",timeoutMs:30});}catch(error){caught=error;}
+	assert.ok(caught instanceof Error);const diagnostic=publicHeaderClock.getPublicHeaderClockFailureDiagnostics(caught);
+	assert.equal(diagnostic.protocol,"public-header-clock-readiness-diagnostic-v1");assert.equal(diagnostic.failureStage,"readiness-deadline");assert.ok(diagnostic.polls>0);assert.equal(diagnostic.lastDOM.state,null);assert.equal(diagnostic.lastDOM.marker,"absent");
+	diagnostic.polls=999999;assert.notEqual(publicHeaderClock.getPublicHeaderClockFailureDiagnostics(caught).polls,999999);
+	for(const name of ["request","response","framenavigated"])assert.equal(f.page.listenerCount(name),0);
+	for(const thrown of [Error("PRIVATE_ORIGINAL_ERROR"),"PRIVATE_NON_ERROR",null]){
+		const x=clockDiagnosticPage();x.page.goto=async()=>{throw thrown;};let actual;try{await openPublicHeaderClock(x.page,{origin:"http://localhost",expectedActor:x.expected,phase:"baseline",timeoutMs:30});}catch(error){actual=error;}
+		assert.equal(actual,thrown);const details=publicHeaderClock.getPublicHeaderClockFailureDiagnostics(actual);if(thrown instanceof Error){assert.equal(details.polls,0);assert.doesNotMatch(JSON.stringify(details),/PRIVATE_|Error|stack/);}else assert.equal(details,null);
+	}
+	for(const unknown of [undefined,false,123,"PRIVATE",{},Error("PRIVATE_UNRECORDED")])assert.equal(publicHeaderClock.getPublicHeaderClockFailureDiagnostics(unknown),null);
 });

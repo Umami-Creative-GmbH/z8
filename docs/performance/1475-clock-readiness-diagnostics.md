@@ -34,3 +34,9 @@ Pending status reads remain explicit; disposal removes the added listeners.
 The original failed mixed run is immutable. A fresh Root-operated clock cycle,
 independent native reconciliation and review are required before proposing any
 positive readiness refinement; this diagnostic claims no new acceptance.
+
+If initial opening throws before returning controls, the original thrown object
+is rethrown unchanged. A private WeakMap saves only fixed diagnostics before
+disposal; getPublicHeaderClockFailureDiagnostics(error) returns a defensive clone
+or null for an unknown/primitive value. It never reads or exports error messages,
+stacks or payload fields. The capture enum identifies its pre-disposal timing.
