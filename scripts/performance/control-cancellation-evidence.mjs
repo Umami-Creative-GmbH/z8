@@ -1977,9 +1977,15 @@ const knownMixedPrefixAuthority = (context,ack,headerPrefix) => {
  }catch{return false;}
 };
 
-const nativeContextDigest = context => {
-	try {const bytes=Buffer.from(JSON.stringify(context));return bytes.length<=controlCancellationPolicy.encodedLimit ? bodySha256(bytes) : null;}
-	catch{return null;}
+const nativeContextDigest = (context,onObserved) => {
+ let serialized=false,encodedBytes=null,withinLimit=null,stage="stringify";
+ const report=outcome=>{try{if(!utilTypes.isProxy(onObserved) && typeof onObserved==="function")onObserved({serialized,encodedBytes,withinLimit,outcome});}catch{}};
+ try {
+  const text=JSON.stringify(context);serialized=true;stage="encode";
+  const bytes=Buffer.from(text);encodedBytes=bytes.length;withinLimit=encodedBytes<=controlCancellationPolicy.encodedLimit;
+  if(!withinLimit){report("over-limit");return null;}
+  stage="hash";const digest=bodySha256(bytes);report("complete");return digest;
+ }catch{report(stage==="stringify"?"stringify-error":stage==="encode"?"encode-error":"hash-error");return null;}
 };
 
 const goodNativePrefetchBody = (row,context) => {
@@ -2419,13 +2425,15 @@ const safeTechnicalId=value=>typeof value==="string" && /^[A-Za-z0-9._:-]{1,256}
 const progressFailureIds=input=>input.failures.map(row=>row.requestId).sort();
 /** Cheap request-local prerequisite. It grants no Native authority and never admits incomplete current packets. */
 export function mixedNativePrefixCandidates(input,onReject) {
+ let serialization=null;
+ const observeSerialization=!utilTypes.isProxy(onReject) && typeof onReject==="function"?facts=>{serialization=facts;}:undefined;
  const reject=(site,failureIndex=null,failure=null,record=null,matches=null,matchCount=null)=>{
   try{
    if(utilTypes.isProxy(onReject) || typeof onReject!=="function")return null;
    const own=(value,key)=>value && typeof value==="object" && !utilTypes.isProxy(value)?Object.getOwnPropertyDescriptor(value,key)?.value:undefined;
    const hashed=value=>typeof value==="string" && value.length<=4096?bodySha256(Buffer.from(value)):null;
    const packet=own(matches,"0"),proof=own(packet,"bodyProof"),outcome=own(record,"outcome"),reason=own(record,"reason");
-   onReject({site,failureIndex,failureIdSha256:hashed(own(failure,"requestId")),failureProxyIdSha256:hashed(own(failure,"proxyResponseId")),
+   onReject({site,serialization,failureIndex,failureIdSha256:hashed(own(failure,"requestId")),failureProxyIdSha256:hashed(own(failure,"proxyResponseId")),
     strictMatchCount:Number.isSafeInteger(matchCount)&&matchCount>=0?matchCount:null,ordinaryOutcome:["unknown","real-failure","protocol-control"].includes(outcome)?outcome:null,
     ordinaryReasonSha256:["unproven-cancellation","browser-or-http-error","server-or-application-error","completed-flight-late-terminal-cancel","qualified-cached-flight-native-revalidation"].includes(reason)?hashed(reason):null,
     firstMatchedProxyIdSha256:hashed(own(packet,"id")),firstMatchedProofKnown:packet?proof!==undefined:null,firstMatchedProofComplete:typeof own(proof,"complete")==="boolean"?own(proof,"complete"):null,firstMatchedProofReasonSha256:hashed(own(proof,"reason"))});
@@ -2433,7 +2441,7 @@ export function mixedNativePrefixCandidates(input,onReject) {
   return null;
  };
  try {
-  if(!input || Object.keys(input).length!==7 || !["failures","responses","proxy","nativeContext","coverage","browserRevision","browserEventOrdinal"].every(key=>Object.hasOwn(Object.getOwnPropertyDescriptor(input,key) ?? {},"value")) || ![input.failures,input.responses,input.proxy].every(rows=>Array.isArray(rows) && rows.length<=controlCancellationPolicy.recordLimit) || input.coverage?.installed!==true || input.coverage.scopeClosed!==false || !["missing","errors","overflow"].every(key=>input.coverage[key]===0) || !Number.isSafeInteger(input.browserEventOrdinal) || input.browserEventOrdinal<0 || input.failures.length>0 && !nativeContextDigest(input))return reject("input-prelude");
+  if(!input || Object.keys(input).length!==7 || !["failures","responses","proxy","nativeContext","coverage","browserRevision","browserEventOrdinal"].every(key=>Object.hasOwn(Object.getOwnPropertyDescriptor(input,key) ?? {},"value")) || ![input.failures,input.responses,input.proxy].every(rows=>Array.isArray(rows) && rows.length<=controlCancellationPolicy.recordLimit) || input.coverage?.installed!==true || input.coverage.scopeClosed!==false || !["missing","errors","overflow"].every(key=>input.coverage[key]===0) || !Number.isSafeInteger(input.browserEventOrdinal) || input.browserEventOrdinal<0 || input.failures.length>0 && !nativeContextDigest(input,observeSerialization))return reject("input-prelude");
   const ids=progressFailureIds(input);if(input.failures.some(row=>!Number.isSafeInteger(row.failedEventOrdinal) || row.failedEventOrdinal<1 || row.failedEventOrdinal>input.browserEventOrdinal) || !ids.every(safeTechnicalId) || new Set(ids).size!==ids.length)return reject("failure-census");
   const ordinary=classifyControlCancellations(input),cores=[];
   for(let i=0;i<input.failures.length;i++){
