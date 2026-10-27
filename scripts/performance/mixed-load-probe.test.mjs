@@ -451,6 +451,10 @@ test('capture diagnostics never publish malformed values or manufacture missing 
  d.status({status:()=>NaN});d.payload({success:'PRIVATE_SUCCESS'});assert.equal(d.summary(bad),bad);d.failed({get name(){throw Error('PRIVATE_NAME');}});
  const row=ledger.snapshot().rows[0];assert.equal(row.status,null);assert.equal(row.summary.employees,null);assert.equal(row.summary.hours,null);assert.equal(row.success,'wrong-type');assert.equal(row.exceptionName,'other');assert.doesNotMatch(JSON.stringify(row),/PRIVATE_/);
  ledger.begin({get actor(){throw Error('PRIVATE_ACTOR');}});assert.equal(ledger.snapshot().overflow,1);assert.equal(ledger.snapshot().rows.length,1);
+ ledger.begin({actor:'large-admin',kind:'work'});assert.equal(ledger.snapshot().overflow,2,'a duplicate reader rejects before the row cap');
+ ledger.begin({actor:'PRIVATE_ACTOR',kind:'PRIVATE_READER'});assert.equal(ledger.snapshot().overflow,3);assert.equal(ledger.snapshot().rows.length,1);
+ for(const status of [-1,600,NaN,Infinity,null,'PRIVATE_STATUS']){d.status({status:()=>status});assert.equal(ledger.snapshot().rows[0].status,null);}
+ d.status({status(){throw Error('PRIVATE_STATUS_ERROR');}});d.failed({name:'PRIVATE_ERROR',message:'PRIVATE_MESSAGE'});assert.equal(ledger.snapshot().rows[0].exceptionName,'other');assert.doesNotMatch(JSON.stringify(ledger.snapshot()),/PRIVATE_/);
 });
 
 test('capture diagnostic scalar getters are read once and cannot change from numeric or boolean to private text',()=>{
