@@ -6,6 +6,19 @@ import { createActionResultObserver } from "./action-result-observer.mjs";
 import { createProxyHeaderLifecycle } from "./proxy-header-census.mjs";
 
 export const fixtureTraceTransport = "context-loopback-proxy-v1";
+export const fixtureUpstreamSocketPolicy = Object.freeze({
+	protocol: "no-idle-upstream-sockets-v1",
+	keepAlive: false,
+	maxSockets: 64,
+	retries: 0,
+});
+export function knownFixtureUpstreamSocketPolicy(value) {
+	return value !== null && typeof value === "object" &&
+		Object.keys(value).length === 4 &&
+		Object.entries(fixtureUpstreamSocketPolicy).every(
+			([key, expected]) => Object.hasOwn(value, key) && value[key] === expected,
+		);
+}
 const loopback = (url) =>
 	url.protocol === "http:" &&
 	["localhost", "127.0.0.1", "[::1]"].includes(url.hostname) &&
@@ -39,7 +52,10 @@ export async function createFixtureTraceTransport({
 			"Trace transport requires an explicit owned loopback origin allowlist.",
 		);
 	const allowed = new Set(allowedOrigins);
-	const agent = new Agent({ keepAlive: true, maxSockets: 64 });
+	const agent = new Agent({
+		keepAlive: fixtureUpstreamSocketPolicy.keepAlive,
+		maxSockets: fixtureUpstreamSocketPolicy.maxSockets,
+	});
 	const wire = createProxyWireObserver();
 	const application = createActionResultObserver();
 	let controlObserver, controlObserverErrors = 0;
@@ -308,6 +324,7 @@ export async function createFixtureTraceTransport({
 		finishBrowserInitialization(evidence) {
 			if (
 				initialization ||
+				!knownFixtureUpstreamSocketPolicy(evidence.upstreamSocketPolicy) ||
 				evidence.complete !== true ||
 				evidence.requests !== 0 ||
 				evidence.responseBodyBytes !== 0
@@ -319,9 +336,11 @@ export async function createFixtureTraceTransport({
 		},
 		snapshot: () => {
 			const total = snapshot();
-			if (!initialization) return { ...total, applicationEvidence: application.snapshot() };
+			const upstreamSocketPolicy = { ...fixtureUpstreamSocketPolicy };
+			if (!initialization) return { ...total, upstreamSocketPolicy, applicationEvidence: application.snapshot() };
 			return {
 				...total,
+				upstreamSocketPolicy,
 				applicationEvidence: application.snapshot(),
 				browserInitialization: structuredClone(initialization),
 				afterInitialization: Object.fromEntries(

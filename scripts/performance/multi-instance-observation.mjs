@@ -28,6 +28,7 @@ import {
 import {
 	createFixtureTraceTransport,
 	fixtureTraceTransport,
+	knownFixtureUpstreamSocketPolicy,
 } from "./trace-transport.mjs";
 
 const json = async (path) => JSON.parse(await readFile(path, "utf8"));
@@ -230,6 +231,8 @@ export function multiInstanceTransportComplete(snapshot) {
 	const init = snapshot.browserInitialization,
 		after = snapshot.afterInitialization;
 	if (
+		!knownFixtureUpstreamSocketPolicy(snapshot.upstreamSocketPolicy) ||
+		!knownFixtureUpstreamSocketPolicy(init?.upstreamSocketPolicy) ||
 		!Number.isFinite(init?.quietObservedMs) ||
 		!Number.isFinite(init?.elapsedMs) ||
 		init.elapsedMs < init.quietObservedMs
