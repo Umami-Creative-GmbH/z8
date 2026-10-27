@@ -1941,3 +1941,15 @@ test("encoder traversal retains only each live frame vector under the unchanged 
  const value={failures:[],responses:[],proxy:[],nativeContext:{contextId,nested},coverage:{installed:true},browserRevision:chromiumSWRRevision,browserEventOrdinal:0},cut=owner.capture(()=>value),packed=owner.encode(cut);assert.ok(packed.bytes.length>48);assert.ok(owner.stats().peakBytes<10*1024*1024,"the63 small ancestor vectors do not each retain the full10001-key ceiling");packed.release();owner.releaseCut(cut);
  assert.throws(()=>owner.capture(()=>({...value,nativeContext:{contextId,nested:{child:nested}}})));assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);owner.close();
 });
+
+
+test("covered assembled cuts retain component leases through detachment and reject foreign or changed coverage",async()=>{
+ const {createMixedTechnicalOwner,mixedOwnedFixedContainer,mixedOwnedClone}=await import("./mixed-technical-gzip.mjs");
+ const make=id=>{const proxy=createProxyControlCollector({contextId:id,origin});proxy.installed();return {proxy,owner:createMixedTechnicalOwner({contextId:id,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords})};};
+ const a=make("coverage-a"),b=make("coverage-b"),collector=createBrowserControlCollector({contextId:"coverage-a",origin,browserRevision:chromiumSWRRevision,proxyObservation:a.proxy.snapshot});collector.installed();
+ const cut=collector.progressInput({owner:a.owner});assert.ok(a.owner.stats().peakBytes<2*1024*1024,"a covered assembled view does not acquire another provisional8MiB graph pin");
+ assert.throws(()=>b.owner.capture(()=>mixedOwnedFixedContainer(()=>({nativeContext:mixedOwnedFixedContainer(()=>({contextId:"coverage-b"})),foreign:cut}))));assert.equal(b.owner.stats().retainedBytes,0);assert.ok(a.owner.stats().retainedBytes>0);
+ assert.throws(()=>b.owner.capture(()=>{const child=mixedOwnedClone({marker:"before"});child.marker="after!";return mixedOwnedFixedContainer(()=>({nativeContext:mixedOwnedFixedContainer(()=>({contextId:"coverage-b"})),child}));}));assert.equal(b.owner.stats().retainedBytes,0);
+ assert.throws(()=>b.owner.capture(()=>mixedOwnedFixedContainer(()=>({nativeContext:{contextId:"coverage-b"}}))));assert.equal(b.owner.stats().retainedBytes,0);
+ const saved=structuredClone(cut);a.owner.releaseCut(cut);a.owner.close();b.owner.close();assert.deepEqual(saved.nativeContext.contextId,"coverage-a");assert.equal(a.owner.stats().retainedBytes,0);assert.equal(a.owner.stats().retainedRecords,0);assert.equal(b.owner.stats().retainedRecords,0);
+});

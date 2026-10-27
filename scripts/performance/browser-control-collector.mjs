@@ -1458,7 +1458,7 @@ export function createTeamSourceReadScheduler({ready,read,accept,reserve,release
   if(seen.size>=controlCancellationPolicy.recordLimit || records.length+queue.length>=controlCancellationPolicy.recordLimit){overflow++;release(32768);return false;}
   eventRetainedBytes+=32768;
   const observedAtMs=performance.now();seen.add(key);queue.push({ordinal:++eventOrdinal,token:structuredClone(token),observedAtMs,deadlineMs:observedAtMs+10000});pump();return true;
- },close(){closed=true;if(running || queue.length)errors++;},status(){return {scopeClosed:closed,pending:Number(running)+queue.length,errors,overflow,unavailable,eventRetainedBytes};},snapshot(){return {protocol:"actual-team-source-read-journal-v1",scopeClosed:closed,pending:Number(running)+queue.length,errors,overflow,unavailable,eventRetainedBytes,records:structuredClone(records)};}});
+ },close(){closed=true;if(running || queue.length)errors++;},status(){return {scopeClosed:closed,pending:Number(running)+queue.length,errors,overflow,unavailable,eventRetainedBytes};},snapshot(){return {protocol:"actual-team-source-read-journal-v1",scopeClosed:closed,pending:Number(running)+queue.length,errors,overflow,unavailable,eventRetainedBytes,records:structuredClone(records,records.length)};}});
 }
 /** Optional prospective installation; callers retain their normal measurement boundaries. */
 export async function installBrowserControlCollector({
@@ -1542,14 +1542,14 @@ export async function installBrowserControlCollector({
 		protocolSources,
 		operatorFile,
 		principalEpoch,
-		environmentObservation: anchoredProxy => ({ protocol: "native-cache-environment-metadata-v1", contextId,
-			servingPublicSources: environmentBinding?.servingPublicSources ?? null,
-			nativeLaunchMetadata: environmentBinding?.nativeLaunchMetadata ?? null,
-			workerTargets: workerObservation?.snapshot() ?? null,
-            temporaryValueSourceReads:{...teamScheduler.snapshot(),operatorSource:originalTeamOperatorSourceFacts(operatorQualification),documentJournal:documentAcknowledgment?.snapshot() ?? null},
-            temporaryValues:anchoredProxy.temporaryValues,
+		environmentObservation: anchoredProxy => mixedOwnedFixedContainer(()=>({ protocol: "native-cache-environment-metadata-v1", contextId,
+			servingPublicSources: mixedOwnedCoveredValue(environmentBinding?.servingPublicSources ?? null),
+			nativeLaunchMetadata: mixedOwnedCoveredValue(environmentBinding?.nativeLaunchMetadata ?? null),
+			workerTargets: mixedOwnedCoveredValue(workerObservation?.snapshot() ?? null),
+            temporaryValueSourceReads:mixedOwnedCoveredValue({...teamScheduler.snapshot(),operatorSource:originalTeamOperatorSourceFacts(operatorQualification),documentJournal:documentAcknowledgment?.snapshot() ?? null}),
+            temporaryValues:mixedOwnedCoveredValue(anchoredProxy.temporaryValues),
 			controllerObservation: endMetadata ? "read-only-end-snapshot" : "not-collected",
-			publicSourceRecheck: endMetadata?.publicSourceRecheck ?? "not-collected", endRead: endMetadata, acceptanceClaim: "none" }),
+			publicSourceRecheck: mixedOwnedCoveredValue(endMetadata?.publicSourceRecheck ?? "not-collected"), endRead: mixedOwnedCoveredValue(endMetadata), acceptanceClaim: "none" })),
 		proxyObservation,
 		readBody: (requestId) =>
 			session.send("Network.getResponseBody", { requestId }),
@@ -2275,4 +2275,4 @@ export function createMixedProgressAcknowledgments({input,application,acknowledg
  function snapshotValue(){const value=structuredClone({protocol:"mixed-native-progress-observations-v1",candidateRepresentationProtocol:mixedNativeProgressPolicy.candidateRepresentationProtocol,contextId,authoritySha256,guardChecks,attempted,failed,overflow,retainedBytes:bytes(),checks:mixedOwnedArray(checks.length,()=>[...checks].sort((a,b)=>a.ordinal-b.ordinal),{bytesPerEntry:16}),prefixes:mixedOwnedArray(prefixes.length,()=>[...prefixes].sort((a,b)=>a.checkpointOrdinal-b.checkpointOrdinal),{bytesPerEntry:16}),...(firstFailure?{firstFailure}: {})});return technicalOwner?mixedOwnedFreeze(value):value;}
 }
 const progressFailureIdsForCollector=input=>mixedOwnedArray(input.failures.length,()=>input.failures.map(row=>row.requestId).sort(),{bytesPerEntry:16});
-import {mixedOwnedClone as structuredClone,mixedOwnedRows,mixedOwnedArray,mixedOwnedJSONString,mixedOwnedUTF8,mixedOwnedHashInput,mixedOwnedFreeze,createMixedTechnicalOwner} from "./mixed-technical-gzip.mjs";
+import {mixedOwnedFixedContainer,mixedOwnedCoveredValue,mixedOwnedClone as structuredClone,mixedOwnedRows,mixedOwnedArray,mixedOwnedJSONString,mixedOwnedUTF8,mixedOwnedHashInput,mixedOwnedFreeze,createMixedTechnicalOwner} from "./mixed-technical-gzip.mjs";

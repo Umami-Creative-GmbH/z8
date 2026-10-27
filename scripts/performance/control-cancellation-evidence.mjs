@@ -1,7 +1,7 @@
 /** Proofs are prospective; a canceled request is never a successful payload. */
 import { createHash } from "node:crypto";
 import { types as utilTypes } from "node:util";
-import {mixedOwnedIndexWork,mixedOwnedMap,mixedOwnedSlice,mixedOwnedFilter,mixedOwnedOperation,mixedOwnedProjectedValue,mixedOwnedJSONString,mixedOwnedUTF8,mixedOwnedRows,mixedOwnedArray,mixedOwnedClone,mixedOwnedClone as structuredClone,mixedTechnicalCandidateDigest,mixedTechnicalRepresentation} from "./mixed-technical-gzip.mjs";
+import {mixedOwnedFixedContainer,mixedOwnedCoveredValue,mixedOwnedIndexWork,mixedOwnedMap,mixedOwnedSlice,mixedOwnedFilter,mixedOwnedOperation,mixedOwnedProjectedValue,mixedOwnedJSONString,mixedOwnedUTF8,mixedOwnedRows,mixedOwnedArray,mixedOwnedClone,mixedOwnedClone as structuredClone,mixedTechnicalCandidateDigest,mixedTechnicalRepresentation} from "./mixed-technical-gzip.mjs";
 import { validateProxyHeaderCensus, validateProxyHeaderPrefix, validateProxyHeaderLifecycle } from "./proxy-header-census.mjs";
 import {cachedCdpTextProjectionProtocol,cachedCdpTextSourceRevision,cachedCdpTextMappingSha256} from "./cdp-cached-text-projection.mjs";
 import { resolveOriginalTeamTemporaryReference, closeOriginalTeamBodyInspection, originalTeamBodyObservation, validateOriginalTeamTemporaryValues, validateOriginalTeamBodyUseCoverage, knownTemporaryValueObservation, knownOriginalTeamSourceConfiguration, knownOriginalTeamHeaderJoin } from "./team-temporary-value-authority.mjs";
@@ -2118,7 +2118,9 @@ function nativeKnownExtraProof(failure,packet,responses,proxy,context,browserRev
 /** Bounded technical inputs only; payload chunks and raw header values never enter a prefix. */
 export function mixedNativeProgressInput({failures,responses,proxy,nativeContext,coverage,browserRevision,browserEventOrdinal},{copy=true,browserLedger=null}={}) {
  const keys=requestReceiptStorageKeys,browserReceipt=browserLedger?row=>requestReceiptValue({...row,browserDataLedger:browserLedger(row)}):requestReceiptValue;
- const projected={failures:mixedOwnedRows(()=>failures,browserReceipt,{keys,extraBytesPerRow:browserLedger?1024:0,constructorScratchBytes:16384,constructorViewCopies:2}),responses:mixedOwnedRows(()=>failures.length?responses:[],browserReceipt,{keys,extraBytesPerRow:browserLedger?1024:0,constructorScratchBytes:16384,constructorViewCopies:2}),proxy:mixedOwnedRows(()=>failures.length?proxy:[],requestReceiptValue,{keys,constructorScratchBytes:16384,constructorViewCopies:2}),nativeContext,coverage,browserRevision,browserEventOrdinal};
+ const contextValue=copy?nativeContext:mixedOwnedFixedContainer(()=>Object.fromEntries(Object.entries(nativeContext).map(([key,value])=>[key,mixedOwnedCoveredValue(value)])));
+ const construct=()=>({failures:mixedOwnedRows(()=>failures,browserReceipt,{keys,extraBytesPerRow:browserLedger?1024:0,constructorScratchBytes:16384,constructorViewCopies:2}),responses:mixedOwnedRows(()=>failures.length?responses:[],browserReceipt,{keys,extraBytesPerRow:browserLedger?1024:0,constructorScratchBytes:16384,constructorViewCopies:2}),proxy:mixedOwnedRows(()=>failures.length?proxy:[],requestReceiptValue,{keys,constructorScratchBytes:16384,constructorViewCopies:2}),nativeContext:contextValue,coverage:mixedOwnedCoveredValue(coverage),browserRevision,browserEventOrdinal});
+ const projected=copy?construct():mixedOwnedFixedContainer(construct);
  return copy?mixedOwnedClone(projected):projected;
 }
 
