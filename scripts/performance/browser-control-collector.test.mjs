@@ -1399,3 +1399,130 @@ test("source subset guards run before source snapshots while default mixed histo
  session.emit("Runtime.executionContextCreated",{context:{id:1,uniqueId:"context",auxData:{frameId:"frame",isDefault:true}}});
  assert.equal(observer.sourceReady(),null);assert.equal(observer.sourceSnapshot(),null);assert.equal(observer.snapshot().documents.length,129);assert.equal(observer.snapshot().overflow,0);observer.close();
 });
+
+async function sourceSupersessionFixture({sourceMode=true,scheduleEvents=false,onFrame,onEvaluate,onCookies,onSources}={}) {
+ const {createMixedDocumentAcknowledgment,createTeamSourceReadScheduler}=await import('./browser-control-collector.mjs');
+ const session=new EventEmitter(),cookies=[{name:'session',value:'synthetic',domain:'localhost',path:'/',httpOnly:true}];
+ const worker={scriptURL:origin+'/sw.js',state:'activated'};
+ let tracker,scheduler,evaluations=0,frames=0,sourceEvents=0;
+ const nondefault=()=>session.emit('Runtime.executionContextCreated',{context:{id:4,uniqueId:'nondefault-4',auxData:{isDefault:false,frameId:'frame'}}});
+ session.send=async(method)=>{
+  if(method==='Page.getFrameTree'){frames++;await onFrame?.({nondefault,session,frames});return {frameTree:{frame:{id:'frame',loaderId:'loader',url:origin+'/en'}}};}
+  if(method==='Runtime.evaluate'){
+   evaluations++;const replacement=await onEvaluate?.({nondefault,session,evaluations});if(replacement && typeof replacement==='object')return replacement;
+   return {result:{value:{available:true,secureContext:true,origin,documentIdentityStable:true,controllerIdentityStable:true,controllerBefore:worker,controllerAfter:worker,registrationCount:1,registrationOverflow:0,registrations:[{scope:origin+'/',active:worker,waiting:null,installing:null}]}}};
+  }
+  return {};
+ };
+ tracker=await createMixedDocumentAcknowledgment({session,contextId:'source',origin,generation:()=>1,onSourceEvent:()=>{sourceEvents++;if(scheduleEvents)scheduler?.event();}});
+ session.emit('Runtime.executionContextCreated',{context:{id:2,uniqueId:'initial-nondefault-2',auxData:{isDefault:false,frameId:'frame'}}});
+ session.emit('Runtime.executionContextCreated',{context:{id:1,uniqueId:'initial-default-1',auxData:{isDefault:true,frameId:'frame'}}});
+ session.emit('Runtime.executionContextsCleared');session.emit('Runtime.executionContextsCleared');
+ session.emit('Network.requestWillBeSent',{type:'Document',requestId:'document',frameId:'frame',loaderId:'loader',request:{url:origin+'/en',method:'GET',headers:{[controlDocumentHeader]:'source:1'}}});
+ session.emit('Runtime.executionContextCreated',{context:{id:3,uniqueId:'default-3',auxData:{isDefault:true,frameId:'frame'}}});
+ const principal=createPrincipalEpochObserver('source',{origin});principal.start(cookies);let ordinal=0;
+ const read=async(token,deadlineMs)=>tracker.read({checkpointOrdinal:++ordinal,deadlineMs,principalEpoch:principal,
+  ...(sourceMode?{sourceSubsetLimit:128,sourceEvent:token}:{}),readCookies:async()=>{await onCookies?.({nondefault,session});return cookies;},readSources:async()=>{await onSources?.({nondefault,session});return {technical:true};}});
+ const accepted=[];
+ scheduler=createTeamSourceReadScheduler({ready:()=>tracker.sourceReady(),reserve:()=>true,release:()=>{},
+  read:async(token,deadline)=>{const ack=await read(token,deadline);return {record:{acknowledgment:ack,issuedCut:ack.document},cut:ack.document,failed:ack.timedOut!==false||ack.pendingOperations!==0||ack.readErrors!==0};},accept:cut=>{accepted.push(cut);return true;}});
+ return {session,tracker,scheduler,read,accepted,nondefault,sourceEvents:()=>sourceEvents,evaluations:()=>evaluations,close(){scheduler.close();tracker.close();}};
+}
+
+test('source ACK supersession queues the actual nondefault event and never backfills the old cut',async()=>{
+ const f=await sourceSupersessionFixture({scheduleEvents:true,onEvaluate:({nondefault,evaluations})=>{if(evaluations===1)nondefault();}});
+ try{
+  f.scheduler.event();for(let n=0;n<5;n++)await tick();
+  const journal=f.scheduler.snapshot();assert.equal(journal.errors,0);assert.equal(journal.pending,0);assert.equal(journal.unavailable,1);
+  assert.equal(journal.records.length,2);assert.equal(journal.records[0].acknowledgment.sourceSuperseded,true);
+  assert.equal(journal.records[0].acknowledgment.readErrors,0);assert.equal(journal.records[0].issuedCut,null);
+  assert.equal(journal.records[0].sourceEvent.executionEventOrdinal,5);
+  assert.equal(journal.records[1].sourceEvent.executionEventOrdinal,6);assert.equal(journal.records[1].acknowledgment.sourceSuperseded,false);
+  assert.equal(f.accepted.length,1);assert.equal(f.accepted[0].executionEventOrdinalBefore,6);
+  assert.equal(journal.records[0].observerDeadlineMs,journal.records[0].eventObservedAtMs+10000);
+  assert.equal(journal.records[1].observerDeadlineMs,journal.records[1].eventObservedAtMs+10000);
+  assert.equal(f.scheduler.event(),false,'the same actual event cannot renew its deadline or start another read');
+  assert.deepEqual(f.scheduler.snapshot().records,journal.records);
+ }finally{f.close();}
+});
+
+test('source ACK real faults stay sticky despite the same actual context supersession',async()=>{
+ for(const kind of ['cdp','malformed-envelope','malformed-value','cookie','source','frame']){
+  let f;
+  const options={onEvaluate:({nondefault})=>{nondefault();if(kind==='cdp')throw Error('PRIVATE_CDP_SENTINEL');if(kind==='malformed-envelope')return {exceptionDetails:{text:'PRIVATE_CDP_SENTINEL'}};if(kind==='malformed-value')return {result:{value:{documentIdentityStable:true}}};if(kind==='frame')f.session.send=async()=>{throw Error('PRIVATE_FRAME_SENTINEL');};}};
+  if(kind==='cookie')options.onCookies=()=>{throw Error('PRIVATE_COOKIE_SENTINEL');};
+  if(kind==='source')options.onSources=()=>{throw Error('PRIVATE_SOURCE_SENTINEL');};
+  f=await sourceSupersessionFixture(options);
+  try{
+   const ack=await f.read(f.tracker.sourceReady(),performance.now()+1000);
+   assert.ok(ack.readErrors>0,kind);assert.equal(ack.document,null,kind);assert.equal(ack.pendingOperations,0,kind);
+   if(['cookie','source'].includes(kind))assert.equal(ack.sourceSuperseded,true,kind);
+   else assert.equal(ack.sourceSuperseded,false,kind);
+   assert.doesNotMatch(JSON.stringify(ack),/PRIVATE_/);
+  }finally{f.close();}
+ }
+});
+
+test('default mixed ACK retains its existing error on a nondefault context change',async()=>{
+ const f=await sourceSupersessionFixture({sourceMode:false,onEvaluate:({nondefault})=>nondefault()});
+ try{const ack=await f.read(f.tracker.sourceReady(),performance.now()+1000);assert.equal(ack.readErrors,1);assert.equal(ack.document,null);assert.equal(Object.hasOwn(ack,'sourceSuperseded'),false);}finally{f.close();}
+});
+
+test('source observer notifies every actual context journal invalidation and retains missing readiness',async()=>{
+ const f=await sourceSupersessionFixture();
+ try{
+  const initial=f.sourceEvents();f.nondefault();assert.equal(f.sourceEvents(),initial+1);
+  f.session.emit('Runtime.executionContextDestroyed',{executionContextId:4});assert.equal(f.sourceEvents(),initial+2);
+  f.session.emit('Runtime.executionContextsCleared');assert.equal(f.sourceEvents(),initial+3);assert.equal(f.tracker.sourceReady(),null);
+  for(let n=0;n<3;n++)await tick();assert.equal(f.accepted.length,0);assert.equal(f.scheduler.snapshot().errors,0);
+ }finally{f.close();}
+});
+
+test('source ACK seals supersession after other readonly operations without renewing the original deadline',async()=>{
+ let finishCookies,startedCookies;
+ const started=new Promise(resolve=>{startedCookies=resolve;});
+ const f=await sourceSupersessionFixture({onCookies:()=>{startedCookies();return new Promise(resolve=>{finishCookies=resolve;});}});
+ try{
+  const deadline=performance.now()+1000,reading=f.read(f.tracker.sourceReady(),deadline);await started;await tick();
+  f.nondefault();finishCookies();const ack=await reading;
+  assert.equal(ack.sourceSuperseded,true);assert.equal(ack.sourceReadStage,'after-return-frame');assert.equal(ack.readErrors,0);assert.equal(ack.document,null);assert.equal(ack.controller,null);assert.equal(ack.deadlineMs,deadline);
+ }finally{f.close();}
+});
+
+test('source ACK supersession never waives a timed-out pending operation',async()=>{
+ let finishCookies;
+ const f=await sourceSupersessionFixture({onEvaluate:({nondefault})=>nondefault(),onCookies:()=>new Promise(resolve=>{finishCookies=resolve;})});
+ try{
+  const ack=await f.read(f.tracker.sourceReady(),performance.now()+20);
+  assert.equal(ack.sourceSuperseded,true);assert.equal(ack.timedOut,true);assert.equal(ack.pendingOperations,1);assert.equal(ack.document,null);
+  finishCookies();await tick();assert.equal(ack.pendingOperations,1,'late completion cannot rewrite the failed receipt');
+ }finally{f.close();}
+});
+
+test('source scheduler retains genuine coincident read failures even when the successor event is readable',async()=>{
+ const f=await sourceSupersessionFixture({scheduleEvents:true,onEvaluate:({nondefault,evaluations})=>{if(evaluations===1){nondefault();throw Error('PRIVATE_RPC_SENTINEL');}}});
+ try{
+  f.scheduler.event();for(let n=0;n<5;n++)await tick();const journal=f.scheduler.snapshot();
+  assert.equal(journal.records.length,2);assert.equal(journal.unavailable,1);assert.equal(journal.errors,1);
+  assert.equal(journal.records[0].acknowledgment.readErrors,1);assert.equal(journal.records[0].acknowledgment.sourceSuperseded,false);assert.equal(journal.records[0].issuedCut,null);
+  assert.equal(journal.records[1].acknowledgment.readErrors,0);assert.equal(journal.pending,0);assert.doesNotMatch(JSON.stringify(journal),/PRIVATE_/);
+ }finally{f.close();}
+});
+
+test('source ACK never turns malformed journals or subset loss into structural supersession',async()=>{
+ for(const kind of ['invalid-context','subset']){
+  const f=await sourceSupersessionFixture({onEvaluate:({nondefault,session})=>{
+   nondefault();
+   if(kind==='invalid-context')session.emit('Runtime.executionContextCreated',{context:{id:5,uniqueId:'bad-context',auxData:{frameId:'frame'}}});
+   else for(let n=5;n<130;n++)session.emit('Runtime.executionContextCreated',{context:{id:n,uniqueId:'nondefault-'+n,auxData:{frameId:'frame',isDefault:false}}});
+  }});
+  try{const ack=await f.read(f.tracker.sourceReady(),performance.now()+1000);assert.equal(ack.readErrors,1,kind);assert.equal(ack.sourceSuperseded,false,kind);assert.equal(ack.document,null,kind);}finally{f.close();}
+ }
+});
+
+test('source ACK checks actual revisions after each successful frame IO boundary',async()=>{
+ for(const frameOrdinal of [1,2,3]){
+  const f=await sourceSupersessionFixture({onFrame:({nondefault,frames})=>{if(frames===frameOrdinal)nondefault();}});
+  try{const ack=await f.read(f.tracker.sourceReady(),performance.now()+1000);assert.equal(ack.sourceSuperseded,true,String(frameOrdinal));assert.equal(ack.readErrors,0);assert.equal(ack.document,null);assert.equal(ack.sourceReadStage,['after-first-frame','after-document-read','after-return-frame'][frameOrdinal-1]);}finally{f.close();}
+ }
+});
