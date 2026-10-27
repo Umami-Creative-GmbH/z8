@@ -2045,3 +2045,24 @@ test("temporary-reference diagnostics remain bounded, private and propagated fro
  const explicitFailure=inspectRequiredFlightBody(Buffer.from('0:{"a":{"success":false,"error":"PRIVATE_FAILURE"}}\n'),{action:true});
  assert.equal(explicitFailure.complete,false);assert.equal(explicitFailure.explicitActionFailure,true);
 });
+
+test('private annual team projection publishes only scalar facts after the complete required action proof',async()=>{
+ const api=await import('./control-cancellation-evidence.mjs');
+ for(const body of ['0:{"a":{"success":true,"data":{"teams":[{"employeeCount":8}],"organizationTotal":16704,"private":"PRIVATE"}}}\n','0:{"a":"$@1"}\n1:{"success":true,"data":"$2"}\n2:{"teams":["$3"],"organizationTotal":16704}\n3:{"employeeCount":8}\n']){
+  const bytes=Buffer.from(body),cap=api.openTeamAnnualProjection({bodySha256:segmentDigest(bytes),decodedBytes:bytes.length});assert.ok(cap);
+  const proof=api.inspectRequiredFlightBody(bytes,{action:true,teamAnnualProjection:cap});assert.equal(proof.complete,true);
+  const facts=api.takeTeamAnnualProjection(cap);assert.equal(facts.employees,8);assert.equal(facts.hours,16704);assert.equal(facts.bodySha256,proof.bodySha256);assert.equal(facts.fatalUtf8,true);assert.ok(facts.projectionSteps>0);assert.ok(facts.projectionSteps<=proof.modelSteps);assert.doesNotMatch(JSON.stringify(facts),/PRIVATE|teams|dateRange/);
+  assert.equal(api.takeTeamAnnualProjection(cap),null);assert.equal(api.closeTeamAnnualProjection(cap),true);assert.equal(api.takeTeamAnnualProjection({...cap}),null);
+ }
+});
+
+test('team projection cannot bypass required references record provenance global errors or private ownership',async()=>{
+ const api=await import('./control-cancellation-evidence.mjs');
+ const base='0:{"a":{"success":true,"data":{"teams":[{"employeeCount":8}],"organizationTotal":16704}}}\n';
+ const bodies=[base+'9:E{"digest":"PRIVATE_ERROR"}\n','0:{"a":{"success":true,"data":{"teams":[{"employeeCount":"$4"}],"organizationTotal":16704}}}\n4:T1,8','0:{"a":{"success":true,"data":{"teams":[{"employeeCount":"$4"}],"organizationTotal":16704}}}\n4:I[8]\n','0:{"a":{"success":true,"data":{"teams":"$9","organizationTotal":16704}}}\n','0:{"a":{"success":true,"data":{"teams":[{"employeeCount":"$T0:0"}],"organizationTotal":16704}}}\n'];
+ for(const text of bodies){const bytes=Buffer.from(text),cap=api.openTeamAnnualProjection({bodySha256:segmentDigest(bytes),decodedBytes:bytes.length}),proof=api.inspectRequiredFlightBody(bytes,{action:true,teamAnnualProjection:cap});assert.equal(api.takeTeamAnnualProjection(cap),null);if(text.includes('9:E'))assert.ok(proof.serverErrors>0);api.closeTeamAnnualProjection(cap);}
+ const bytes=Buffer.from(base),cap=api.openTeamAnnualProjection({bodySha256:segmentDigest(bytes),decodedBytes:bytes.length});
+ assert.equal(api.inspectRequiredFlightBody(bytes,{action:true,teamAnnualProjection:{...cap}}).complete,false);
+ api.inspectRequiredFlightBody(bytes,{action:true,teamAnnualProjection:cap});api.inspectRequiredFlightBody(bytes,{action:true,teamAnnualProjection:cap});assert.equal(api.takeTeamAnnualProjection(cap),null,'reusing a projection invalidates its previous publication');api.closeTeamAnnualProjection(cap);
+ const invalid=Buffer.concat([bytes,Buffer.from([255])]),bad=api.openTeamAnnualProjection({bodySha256:segmentDigest(invalid),decodedBytes:invalid.length});assert.equal(api.inspectRequiredFlightBody(invalid,{action:true,teamAnnualProjection:bad}).complete,false);assert.equal(api.takeTeamAnnualProjection(bad),null);api.closeTeamAnnualProjection(bad);
+});

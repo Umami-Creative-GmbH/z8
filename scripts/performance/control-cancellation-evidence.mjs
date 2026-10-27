@@ -2,7 +2,7 @@
 import { createHash } from "node:crypto";
 import { validateProxyHeaderCensus, validateProxyHeaderPrefix, validateProxyHeaderLifecycle } from "./proxy-header-census.mjs";
 import {cachedCdpTextProjectionProtocol,cachedCdpTextSourceRevision,cachedCdpTextMappingSha256} from "./cdp-cached-text-projection.mjs";
-import { resolveOriginalTeamTemporaryReference, closeOriginalTeamBodyInspection, validateOriginalTeamTemporaryValues, validateOriginalTeamBodyUseCoverage, knownTemporaryValueObservation, knownOriginalTeamSourceConfiguration } from "./team-temporary-value-authority.mjs";
+import { resolveOriginalTeamTemporaryReference, closeOriginalTeamBodyInspection, originalTeamBodyObservation, validateOriginalTeamTemporaryValues, validateOriginalTeamBodyUseCoverage, knownTemporaryValueObservation, knownOriginalTeamSourceConfiguration } from "./team-temporary-value-authority.mjs";
 export const controlCancellationPolicy = Object.freeze({
 	version: 2,
 	protocol: "positively-proven-protocol-controls-v2",
@@ -15,6 +15,17 @@ export const chromiumSWRRevision = "d0c02bfad08ec92a6ffcf989e53cd995e6381a4c";
 export const controlIdentityHeaders = Object.freeze(["rsc","next-router-prefetch","next-router-segment-prefetch","next-router-state-tree","next-url","next-action","accept","accept-encoding","accept-language","cookie","authorization","x-z8-fixture-document-generation","x-z8-fixture-replay-id"]);
 export const bodySha256 = (bytes) =>
 	createHash("sha256").update(bytes).digest("hex");
+const annualTeamProjections=new WeakMap();
+export function openTeamAnnualProjection(input) {
+	try {if(!input || Object.keys(input).length!==2 || !/^[a-f0-9]{64}$/.test(input.bodySha256 ?? "") || !Number.isSafeInteger(input.decodedBytes) || input.decodedBytes<1 || input.decodedBytes>controlCancellationPolicy.decodedLimit)return null;
+	 const cap=Object.freeze({protocol:"private-team-annual-projection-v1"});annualTeamProjections.set(cap,{...input,started:false,closed:false,taken:false,candidate:null,result:null});return cap;
+	}catch{return null;}
+}
+export function takeTeamAnnualProjection(cap){const held=annualTeamProjections.get(cap);if(!held || held.closed || held.taken || !held.result)return null;held.taken=true;return held.result;}
+export function closeTeamAnnualProjection(cap){const held=annualTeamProjections.get(cap);if(!held || held.closed)return false;held.closed=true;held.candidate=null;held.result=null;annualTeamProjections.delete(cap);return true;}
+export function teamAnnualProofCore(proof,temporaryBindingSha256) {
+	return {protocol:proof?.protocol,complete:proof?.complete,action:proof?.action,requestKind:proof?.requestKind,requiredStage:proof?.requiredStage,bodySha256:proof?.bodySha256,decodedBytes:proof?.decodedBytes,modelSteps:proof?.modelSteps,serverErrors:proof?.serverErrors,explicitActionFailure:proof?.explicitActionFailure,temporaryBindingSha256};
+}
 export const routePathSourceDigest = facts=>{
 	try{const {scalarKeys,...source}=facts;const bytes=Buffer.from(JSON.stringify(source));return bytes.length<=controlCancellationPolicy.encodedLimit?bodySha256(bytes):null;}catch{return null;}
 };
@@ -117,11 +128,22 @@ export function inspectRequiredFlightBody(
 ) {
 	let proof;
 	const inspection = options?.temporaryValueInspection ?? null;
-	try { proof = inspectFlightBody(bytes, options, { decoded: 0, rows: 0, models: 0 }, 0); }
+	const projection=annualTeamProjections.get(options?.teamAnnualProjection);let projectionValid=false;
+	if(projection && !projection.started && !projection.closed && Buffer.isBuffer(bytes) && bytes.length===projection.decodedBytes && bodySha256(bytes)===projection.bodySha256) {
+		projection.started=true;
+		try{const decoder=new TextDecoder("utf-8",{fatal:true});for(let offset=0;offset<bytes.length;offset+=4096)decoder.decode(bytes.subarray(offset,offset+4096),{stream:true});decoder.decode();projectionValid=true;}catch{}
+	}
+	if(projection && !projectionValid){projection.result=null;projection.candidate=null;}
+	try { proof = inspectFlightBody(bytes, {...options,teamAnnualProjection:projectionValid?options.teamAnnualProjection:undefined}, { decoded: 0, rows: 0, models: 0 }, 0); }
 	finally {
 		if (inspection !== null && !closeOriginalTeamBodyInspection(inspection) && proof) {
 			proof = { ...proof, complete: false, ...(proof.serverErrors > 0 || proof.explicitActionFailure === true ? {} : { reason: "temporary-value-inspection-unclosed" }) };
 		}
+	}
+	if(options?.teamAnnualProjection!==undefined && !projectionValid)proof={...proof,complete:false,...(proof.serverErrors>0 || proof.explicitActionFailure===true?{}:{reason:"team-projection-boundary-or-utf8-unavailable"})};
+	if(projectionValid && proof?.complete===true && projection.candidate) {
+		const temporaryBindingSha256=inspection?originalTeamBodyObservation(inspection)?.bindingSha256 ?? null:null;
+		projection.result=Object.freeze({protocol:"team-annual-scalar-projection-v1",bodySha256:projection.bodySha256,decodedBytes:projection.decodedBytes,...projection.candidate,fatalUtf8:true,temporaryBindingSha256,proofCoreSha256:bodySha256(Buffer.from(JSON.stringify(teamAnnualProofCore(proof,temporaryBindingSha256))))});
 	}
 	return proof;
 }
@@ -134,6 +156,7 @@ function inspectFlightBody(
 		segmentBinding,
 		routeTreeBinding,
 		temporaryValueInspection,
+		teamAnnualProjection,
 		requestKind = action ? "action" : "navigation",
 	} = {}, budget, depth,
 ) {
@@ -1474,6 +1497,26 @@ function inspectFlightBody(
 			![...records.values()].some((record) => record.end === boundaryBytes)
 		)
 			return unknown("incomplete-required-boundary");
+	}
+	if(teamAnnualProjection!==undefined && action && depth===0) {
+		const projection=annualTeamProjections.get(teamAnnualProjection);let projectionSteps=0;
+		const step=atDepth=>{projectionSteps++;if(!pathStep(atDepth,"path-alias"))throw Error("projection-work-limit");};
+		const read=(raw,atDepth)=>{
+			step(atDepth);const seen=new Set();
+			while(typeof raw==="string" && (/^\$@?[a-f0-9]+$/.test(raw) || plainPath.test(raw))) {
+				step(atDepth+seen.size);if(seen.has(raw) || seen.size>=8)throw Error("projection-reference-unavailable");seen.add(raw);
+				if(plainPath.test(raw)){const selected=outlined(raw,atDepth);if(!selected.known || !(selected.modelIds instanceof Set) || [...selected.modelIds].some(id=>{const record=records.get(id);return !record || record.tag!==null || record.stream || Array.isArray(record.value) && record.value[0]==="$";}))throw Error("projection-record-kind");raw=selected.value;}
+				else {const record=records.get(raw.replace(/^\$@?/,""));if(!record || record.tag!==null || record.stream)throw Error("projection-record-kind");raw=record.value;}
+			}
+			if(raw && typeof raw==="object" && (opaqueText.has(raw) || binaryValues.has(raw)))throw Error("projection-opaque-value");return raw;
+		};
+		const field=(raw,key,atDepth)=>{const object=read(raw,atDepth);if(!object || typeof object!=="object" || Array.isArray(object))throw Error("projection-object-unavailable");const descriptor=Object.getOwnPropertyDescriptor(object,key);if(!descriptor || !Object.hasOwn(descriptor,"value"))throw Error("projection-own-field-unavailable");step(atDepth);return read(descriptor.value,atDepth+1);};
+		try {
+			const result=read(root.a,1);if(field(result,"success",2)!==true)throw Error("projection-action-result");
+			const data=field(result,"data",2),teams=field(data,"teams",3),hours=field(data,"organizationTotal",3);if(!Array.isArray(teams) || teams.length>100000 || !Number.isFinite(hours))throw Error("projection-summary-type");
+			let employees=0;for(let index=0;index<teams.length;index++){step(4);const descriptor=Object.getOwnPropertyDescriptor(teams,String(index));if(!descriptor || !Object.hasOwn(descriptor,"value"))throw Error("projection-array-hole");const count=field(descriptor.value,"employeeCount",5);if(!Number.isSafeInteger(count) || count<0 || !Number.isSafeInteger(employees+count))throw Error("projection-count-type");employees+=count;}
+			if(projection)projection.candidate={employees,hours,projectionSteps};
+		}catch {if(pathLimit || budget.models>100000)return unknown("model-limit");}
 	}
 	return {
 		protocol: "bounded-required-flight-v1",
