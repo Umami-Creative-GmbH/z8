@@ -1011,7 +1011,7 @@ export function createBrowserControlCollector({
 		const protocolErrorOverflow = sources.reduce((total, { row }) => total + (row.protocolErrorObservationOverflow ?? 0), 0);
 		const protocolErrors={protocol:"positive-flight-error-observations-v1",contextId,installed:coverage.installed,scopeClosed:closed,
 			observed:protocolErrorRecords.length,overflow:protocolErrorOverflow+Math.max(0,protocolErrorRecords.length-controlCancellationPolicy.recordLimit),records:mixedOwnedArray(Math.min(protocolErrorRecords.length,controlCancellationPolicy.recordLimit),()=>protocolErrorRecords.slice(0,controlCancellationPolicy.recordLimit))};
-		const environment=environmentObservation(),principal=principalEpoch.snapshot();
+		const environment=environmentObservation(proxy),principal=principalEpoch.snapshot();
 		const nativeContext={protocol:"qualified-known-extra-native-context-v1",contextId,originSha256:sha(origin),workerScriptSha256:sha(origin+"/sw.js"),rootScopeSha256:sha(origin+"/"),
 			binding:compiledBinding ? Object.fromEntries(["policy","browserRevision","compiledBuild","compiledManifestSha256","compiledCachedNavigations","manifestVerified","browserVerified","nativePublicSources","temporaryValueObservation","originalTeamSource","teamAnnualAction","legacyClockReadiness","requestShapeDiagnostic"].filter(key=>Object.hasOwn(compiledBinding,key)).map(key=>[key,["legacyClockReadiness","requestShapeDiagnostic"].includes(key)?structuredClone(compiledBinding[key]):compiledBinding[key]])) : null,
 			protocolSources:protocolSources ?? null,operatorFile:operatorFile ?? null,principalEpoch:principal,headerCensus:proxy.headerCensus ?? null,headerLifetime:proxy.headerLifetime ?? null,headerPrefix:proxy.headerPrefix ?? null,
@@ -1525,7 +1525,7 @@ export async function installBrowserControlCollector({
 	const proxyObservation = () => {
 		const proof = proxy.snapshot();
 		const cut=typeof transport.controlHeaderCut==="function"?transport.controlHeaderCut():null;
-		const sourceRead=teamScheduler.snapshot();
+		const sourceRead=teamScheduler.status();
         return { ...proof, errors: proof.errors + transportErrors()+sourceRead.errors,overflow:proof.overflow+sourceRead.overflow,headerPrefix:cut?proxyHeaderPrefix(proof.headerCensus,cut):null,headerLifecycle:cut };
 	};
 	const collector = createBrowserControlCollector({
@@ -1540,12 +1540,12 @@ export async function installBrowserControlCollector({
 		protocolSources,
 		operatorFile,
 		principalEpoch,
-		environmentObservation: () => ({ protocol: "native-cache-environment-metadata-v1", contextId,
+		environmentObservation: anchoredProxy => ({ protocol: "native-cache-environment-metadata-v1", contextId,
 			servingPublicSources: environmentBinding?.servingPublicSources ?? null,
 			nativeLaunchMetadata: environmentBinding?.nativeLaunchMetadata ?? null,
 			workerTargets: workerObservation?.snapshot() ?? null,
             temporaryValueSourceReads:{...teamScheduler.snapshot(),operatorSource:originalTeamOperatorSourceFacts(operatorQualification),documentJournal:documentAcknowledgment?.snapshot() ?? null},
-            temporaryValues:proxy.snapshot().temporaryValues,
+            temporaryValues:anchoredProxy.temporaryValues,
 			controllerObservation: endMetadata ? "read-only-end-snapshot" : "not-collected",
 			publicSourceRecheck: endMetadata?.publicSourceRecheck ?? "not-collected", endRead: endMetadata, acceptanceClaim: "none" }),
 		proxyObservation,

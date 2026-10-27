@@ -1899,3 +1899,13 @@ test("owned document ACK charges frame and result lifetimes through success and 
   assert.equal(owner.stats().pendingReads,0);assert.equal(owner.stats().pendingConsumers,0);assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);journal.close();
  }
 });
+
+
+test("a progress cut reuses its exact synchronous proxy snapshot without dropping any environment fields",()=>{
+ const proxy=createProxyControlCollector({contextId,origin});proxy.installed();let snapshots=0,anchor;
+ const observe=()=>{snapshots++;return anchor=proxy.snapshot();};
+ const legacy=createBrowserControlCollector({contextId,origin,proxyObservation:observe,environmentObservation:()=>({temporaryValues:observe().temporaryValues,sharedFact:"preserved"})});legacy.installed();
+ const expected=legacy.progressInput();assert.equal(snapshots,2);snapshots=0;
+ const current=createBrowserControlCollector({contextId,origin,proxyObservation:observe,environmentObservation:observed=>{assert.equal(observed,anchor);return {temporaryValues:observed.temporaryValues,sharedFact:"preserved"};}});current.installed();
+ assert.deepEqual(current.progressInput(),expected);assert.equal(snapshots,1);
+});
