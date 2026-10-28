@@ -36,7 +36,7 @@ function freshAssociation() {
 	collector.installed();
 	collector.beginMeasurement();
 	let ordinal = 0;
-	async function network(requestId) {
+	async function network(requestId, { complete = true } = {}) {
 		// Same producer ordering and ID composition as trace-transport's synchronous request callback.
 		const applicationId = application.request({ traceId, method: "GET", headers: requestHeaders, applicationOrigin: true, compiledAsset: false });
 		assert.ok(Number.isSafeInteger(applicationId) && applicationId > 0);
@@ -47,9 +47,11 @@ function freshAssociation() {
 		const forwarded = { ...upstreamHeaders, [controlResponseHeader]: id };
 		proxy.bytes(id, Buffer.from(body));
 		application.bytes(applicationId, Buffer.from(body));
-		application.end(applicationId);
-		proxy.end(id);
-		await browser(requestId, forwarded, { fromDiskCache: false });
+		if (complete) {
+			application.end(applicationId);
+			proxy.end(id);
+		}
+		await browser(requestId, forwarded, { fromDiskCache: false }, { unfinished: !complete });
 		await tick();
 		return { id, forwarded };
 	}
@@ -60,6 +62,7 @@ function freshAssociation() {
 		observer.requestExtra({ requestId, headers: requestHeaders });
 		observer.response({ requestId, response: { status: 200, headers, mimeType: "text/x-component", charset: "", ...cache } });
 		observer.responseExtra({ requestId, statusCode: 200, headers });
+		if (change.unfinished) return;
 		observer.data({ requestId, dataLength: Buffer.byteLength(body) });
 		observer.finished({ requestId, timestamp: ++ordinal });
 		await tick();
@@ -97,6 +100,7 @@ for (const [name, cache, change] of [
 	["absent cache provenance", {}, {}],
 	["unsupported cache flag", { fromDiskCache: "true" }, {}],
 	["memory-only flag not recorded by this collector", { fromMemoryCache: true }, {}],
+	["service-worker receipt", { fromDiskCache: true, fromServiceWorker: true }, {}],
 	["different method", { fromDiskCache: true }, { method: "POST" }],
 	["different URL", { fromDiskCache: true }, { url: `${origin}/en/other` }],
 	["foreign context", { fromDiskCache: true }, { foreignContext: true }],
@@ -108,5 +112,16 @@ for (const [name, cache, change] of [
 		assert.ok(f.proxy.snapshot().errors > 0);
 		assert.ok(f.collector.snapshot().allPhase.coverage.errors > 0);
 		assert.equal(f.proxy.snapshot().rows.length, 1);
+	} finally { f.proxy.closeTeamValues(); }
+});
+
+test("cached response association: incomplete original EOF stays fail-closed", async () => {
+	const f = freshAssociation();
+	try {
+		const original = await f.network("network-still-pending", { complete: false });
+		assert.equal(f.proxy.snapshot().rows[0].complete, false);
+		await f.browser("unproven-cache-ancestry", original.forwarded, { fromDiskCache: true });
+		assert.ok(f.proxy.snapshot().errors > 0);
+		assert.equal(f.proxy.snapshot().rows[0].complete, false, "the cache receipt cannot finish the original upstream");
 	} finally { f.proxy.closeTeamValues(); }
 });
