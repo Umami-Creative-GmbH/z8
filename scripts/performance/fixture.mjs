@@ -465,6 +465,34 @@ async function upgrade(directory) {
 	);
 }
 
+export function waitForProductionFixtureExit(child) {
+	return new Promise((done, reject) => {
+		child.once("exit", (code, signal) =>
+			code === 0 || code === null
+				? done()
+				: reject(
+						new Error(
+							`Production fixture exited. ${JSON.stringify({
+								code: Number.isSafeInteger(code) ? code : "unknown",
+								signal:
+									signal === null
+										? null
+										: [
+												"SIGABRT", "SIGBREAK", "SIGBUS", "SIGFPE", "SIGHUP",
+												"SIGILL", "SIGINT", "SIGKILL", "SIGPIPE", "SIGQUIT",
+												"SIGSEGV", "SIGTERM", "SIGTRAP",
+											].includes(signal)
+											? signal
+											: "unknown",
+								observedAtUtc: new Date().toISOString(),
+							})}`,
+						),
+					),
+		);
+		child.once("error", reject);
+	});
+}
+
 async function start(directory) {
 	const runtime = JSON.parse(
 		await readFile(join(directory, "runtime-private.json"), "utf8"),
@@ -538,14 +566,7 @@ async function start(directory) {
 		console.log(
 			`Production fixture ready at ${runtime.origin}. Private authentication is prepared. Stop this command before cleanup.`,
 		);
-		await new Promise((done, reject) => {
-			child.once("exit", (code) =>
-				code === 0 || code === null
-					? done()
-					: reject(new Error("Production fixture exited.")),
-			);
-			child.once("error", reject);
-		});
+		await waitForProductionFixtureExit(child);
 	} finally {
 		stop();
 		log.end();
