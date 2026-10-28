@@ -42,3 +42,10 @@ through idle OUT, fetching OUT, idle IN and detached UNKNOWN. It checks producti
 fiber availability, not the production application bundle. The existing mocked
 public-observer suite checks queued-field privacy and unchanged success behavior.
 No application source, benchmark workload or previous failed result changes.
+
+Run the rendered diagnostic with the existing installed webapp dependencies and
+`vitest.clock-mounted-query.config.ts`. When running outside the sibling owned
+fixture layout, set test-only `Z8_CLOCK_ORIGINAL_APP` to the reviewed Original
+webapp directory. This selects a test source fixture, never operational authority.
+The production smoke requires `NODE_ENV=production`. Neither command starts a
+service or browser.

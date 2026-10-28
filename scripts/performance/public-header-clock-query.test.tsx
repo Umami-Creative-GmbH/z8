@@ -16,7 +16,7 @@ vi.mock("@/lib/time-tracking/timezone-capture",()=>({getBrowserTimezone:()=>"Eur
 import {readPublicHeaderClockDOM} from "./public-header-clock.mjs";
 function observeMounted(_button:HTMLElement|null){return readPublicHeaderClockDOM(null,false).dom.mountedClockQuery;}
 import {useTimeClock as headHook} from "../../apps/webapp/src/lib/query/use-time-clock";
-import {useTimeClock as originalHook} from "../../../wt-1450-original-advisory-lifetime/apps/webapp/src/lib/query/use-time-clock";
+import {useTimeClock as originalHook} from "@clock-original-hook";
 const OUT={hasEmployee:true,employeeId:"employee-synthetic",isClockedIn:false,activeWorkPeriod:null};
 const IN={...OUT,isClockedIn:true,activeWorkPeriod:{id:"period-synthetic",startTime:new Date("2026-10-28T08:00:00Z")}};
 function deferred<T>(){let resolve!:(value:T)=>void;const promise=new Promise<T>(yes=>{resolve=yes;});return {promise,resolve};}
