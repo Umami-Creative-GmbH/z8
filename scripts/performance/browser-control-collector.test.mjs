@@ -118,6 +118,26 @@ for(const scenario of [
 	}finally{await f.close();}
 });
 
+test("cache event metadata is included in the same owned cut bytes without becoming another typed record",async()=>{
+	const {createMixedTechnicalOwner}=await import("./mixed-technical-gzip.mjs");
+	const proxy=createProxyControlCollector({contextId,origin});proxy.installed();
+	const collector=createBrowserControlCollector({contextId,origin,proxyObservation:()=>proxy.snapshot(),readBody:async()=>({body:'0:{}\n',base64Encoded:false})});collector.installed();collector.beginMeasurement();
+	collector.request(event("owned-cache-event",1));
+	collector.requestServedFromCache({requestId:"owned-cache-event"});collector.requestServedFromCache({requestId:"owned-cache-event"});
+	collector.failed({requestId:"owned-cache-event",errorText:"net::ERR_ABORTED",canceled:true});await tick();
+	const owner=createMixedTechnicalOwner({contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});
+	try{
+		const cut=collector.progressInput({owner});assert.equal(cut.failures[0].cacheEventObserved,true);
+		assert.equal(owner.stats().retainedRecords,1,"one browser failure remains one typed row; the scalar is not a new receipt");
+		const packed=owner.encode(cut),expanded=gunzipSync(packed.bytes.subarray(48),{maxOutputLength:8388608,rejectGarbageAfterEnd:true});
+		assert.equal(JSON.parse(expanded).failures[0].cacheEventObserved,true);assert.equal(packed.stats.logicalBytes,expanded.length);
+		const without=structuredClone(cut);delete without.failures[0].cacheEventObserved;
+		assert.equal(expanded.length-Buffer.byteLength(JSON.stringify(without)),Buffer.byteLength('"cacheEventObserved":true,'),"the copied optional scalar contributes its full serialized bytes before encoding");
+		assert.ok(owner.stats().retainedBytes>=expanded.length);packed.release();owner.releaseCut(cut);
+		assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);
+	}finally{owner.close();proxy.closeTeamValues();}
+});
+
 test("proxy header census survives semantic scope end and closes only with actual transport lifetime facts",()=>{
 	const proxy=createProxyControlCollector({contextId});proxy.installed();
 	const collector=createBrowserControlCollector({contextId,origin,proxyObservation:proxy.snapshot});collector.installed();

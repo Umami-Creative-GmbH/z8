@@ -782,6 +782,8 @@ export function createBrowserControlCollector({
 	const limited = () =>
 		requests.size + extra.size + responseExtras.size >=
 		controlCancellationPolicy.recordLimit;
+	// Maximum modeled JSON storage for the optional, positively observed scalar.
+	const cacheEventMetadataBytes=Buffer.byteLength('"cacheEventObserved":false,');
 	const rows = () => mixedOwnedArray(requests.size,()=>[...requests.values()]);
 	const recordMeasuredFailure = (requestId) => {
 		rawMeasuredFailedRequests++;
@@ -1248,6 +1250,13 @@ export function createBrowserControlCollector({
 		observerError() {
 			errors++;
 		},
+		requestServedFromCache(event) {
+			const row=requests.get(event.requestId);
+			if(!row || row.loadingFinished || row.failed || row.cacheEventObserved===true)return;
+			if(retained+cacheEventMetadataBytes>controlCancellationPolicy.retainedLimit){overflow++;return;}
+			retained+=cacheEventMetadataBytes;
+			row.cacheEventObserved=true;
+		},
 		request(event) {
 			browserEventOrdinal++;
 			if (limited()) {
@@ -1552,6 +1561,7 @@ export async function installBrowserControlCollector({
 	const events = {
 		requestWillBeSent: "request",
 		requestWillBeSentExtraInfo: "requestExtra",
+		requestServedFromCache: "requestServedFromCache",
 		responseReceived: "response",
 		responseReceivedExtraInfo: "responseExtra",
 		loadingFinished: "finished",
@@ -1859,8 +1869,8 @@ export function createProxyControlCollector({
 			const prior=row.proxyResponseId?browserRows.get(row.proxyResponseId):null;
 			if(prior && prior!==row){
 				const packet=requests.get(row.proxyResponseId);
-				// A positively observed disk-cache receipt may reuse the original packet, never its mutable browser/value authority.
-				const cachedAncestry=row.fromDiskCache===true && row.fromServiceWorker!==true &&
+				// A positively observed cache receipt may reuse the original packet, never its mutable browser/value authority.
+				const cachedAncestry=(row.fromDiskCache===true || row.cacheEventObserved===true) &&
 					typeof row.requestId==="string" && row.requestId.length>0 && typeof prior.requestId==="string" && prior.requestId.length>0 && row.requestId!==prior.requestId &&
 					typeof contextId==="string" && contextId.length>0 && row.contextId===contextId && prior.contextId===contextId && packet?.contextId===contextId &&
 					["GET","HEAD"].includes(row.method) && prior.method===row.method && packet.method===row.method &&
