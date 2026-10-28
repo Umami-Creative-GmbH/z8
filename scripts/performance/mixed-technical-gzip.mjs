@@ -7,9 +7,19 @@ export const mixedTechnicalRepresentation=Object.freeze({protocol:'mixed-progres
 export const mixedTechnicalRuntime=Object.freeze({node:'26.9.0',zlib:'1.3.2.1-motley-285e94b'});
 const states=new WeakMap(), leases=new WeakMap(), cutLeases=new WeakMap(), coverage=new WeakMap(), replayFacts=new WeakMap(), ownedCutViews=new WeakMap(), MAGIC='Z8MIXGZ2', CHUNK=65536;
 const bad=()=>new Error('Mixed technical gzip rejected input.');
-let captureObservation=null;
+let captureObservation=null,representationObservation=null,reservationState=null,reservationRepresentation=null;
 const captureLabels=new Set(['original-provisional','canonical-traversal-and-scalar-scratch','canonical-key-vector','canonical-buffer','fixed-source-container-and-coverage-control','snapshot-clone','snapshot-typed-rows','sequential-row-constructor-scratch','snapshot-row-sort-index','snapshot-bounded-array','technical-predicate-fixed-shells','technical-predicate-return-view','derived-technical-receipt','immutable-snapshot-key-vectors','snapshot-UTF16-string','snapshot-UTF8-buffer','snapshot-fixed-constructor-shells','complete-progress-cut-clone-and-private-control']);
 const diagnosticCount=value=>Number.isSafeInteger(value)&&value>=0?value:null;
+for(const label of ['operation-hash-control-smallobjects','deflate-native-and-smallobjects','deflate-output-chunks','deflate-returned-buffer','portable-assembly','owned-native-subcut-borrow','candidate-replay-source-pin','candidate-subcut-view','bounded-json-replay-source-pin','bounded-json-replay-view-and-control'])captureLabels.add(label);
+const representationStage=stage=>{if(representationObservation)representationObservation.stage=stage;};
+function representationFailure(){try{const scope=representationObservation;if(scope&&!scope.failure)scope.failure=Object.freeze({protocol:'mixed-candidate-representation-failure-v1',stage:scope.stage,innerStage:scope.innerStage,ownerUsedBytes:scope.state?diagnosticCount(scope.state.used):null,ownerUsedRecords:scope.state?diagnosticCount(scope.state.records):null,refusal:scope.refusal});}catch{}}
+// Parent callbacks are external to this synchronous operation. A nested digest
+// gets its own scope; direct nested owner operations cannot write the caller's.
+function parentCall(state,method,amount){
+ const previous=representationObservation,priorState=reservationState,priorReservation=reservationRepresentation;
+ representationObservation=null;reservationState=state;reservationRepresentation=previous;
+ try{return state[method](amount);}finally{representationObservation=previous;reservationState=priorState;reservationRepresentation=priorReservation;}
+}
 // Synchronous, failure-only control slots. No graph/error is retained after this call.
 export function observeMixedTechnicalCapture(construct,onFailure){
  const previous=captureObservation,scope={state:null,stage:null,innerStage:null,used:null,records:null,refusal:null,parent:null};captureObservation=scope;
@@ -17,8 +27,8 @@ export function observeMixedTechnicalCapture(construct,onFailure){
  finally{captureObservation=previous;scope.state=null;scope.refusal=null;scope.parent=null;}
 }
 /** Called only on the original proxy reservation refusal; no additional reservation or getter. */
-export function recordMixedTechnicalParentRefusal(usedBytes,usedRecords){try{const scope=captureObservation;if(scope?.state&&!scope.parent)scope.parent=Object.freeze({parentUsedBytes:diagnosticCount(usedBytes),parentUsedRecords:diagnosticCount(usedRecords)});}catch{}}
-function captureRefusal(state,kind,label,bytes,records){try{const scope=captureObservation;if(scope?.state===state&&!scope.refusal)scope.refusal=Object.freeze({kind,label:captureLabels.has(label)?label:null,requestedBytes:diagnosticCount(bytes),requestedRecords:diagnosticCount(records),ownerUsedBytes:diagnosticCount(state.used),ownerUsedRecords:diagnosticCount(state.records),parentUsedBytes:scope.parent?.parentUsedBytes??null,parentUsedRecords:scope.parent?.parentUsedRecords??null});}catch{}}
+export function recordMixedTechnicalParentRefusal(usedBytes,usedRecords){const record=scope=>{try{if(scope?.state===reservationState&&!scope.parent)scope.parent=Object.freeze({parentUsedBytes:diagnosticCount(usedBytes),parentUsedRecords:diagnosticCount(usedRecords)});}catch{}};record(captureObservation);record(reservationRepresentation);}
+function captureRefusal(state,kind,label,bytes,records){const record=scope=>{try{if(scope?.state===state&&!scope.refusal)scope.refusal=Object.freeze({kind,label:captureLabels.has(label)?label:null,requestedBytes:diagnosticCount(bytes),requestedRecords:diagnosticCount(records),ownerUsedBytes:diagnosticCount(state.used),ownerUsedRecords:diagnosticCount(state.records),parentUsedBytes:scope.parent?.parentUsedBytes??null,parentUsedRecords:scope.parent?.parentUsedRecords??null});}catch{}};record(captureObservation);record(representationObservation);}
 const must=x=>{if(!x)throw bad();};
 const hash=b=>createHash('sha256').update(b).digest();
 const round=n=>Math.ceil(n/CHUNK)*CHUNK;
@@ -53,18 +63,19 @@ function createBoundedOwner({reserve,release,reserveRecords,releaseRecords}){
  states.set(api,state);return api;
 }
 function charge(state,bytes,label,records=0){
+ if(representationObservation&&!representationObservation.state)representationObservation.state=state;
  const validBytes=Number.isSafeInteger(bytes)&&bytes>=0;if(!validBytes)captureRefusal(state,'invalid-byte-count',label,bytes,records);must(validBytes);state.attempts++;
  const allowed=Number.isSafeInteger(records)&&records>=0&&state.records+records<=limits.records&&state.used+bytes<=limits.owner;if(!allowed)captureRefusal(state,'owner-limit',label,bytes,records);must(allowed);
- if(records){let granted;try{granted=state.reserveRecords(records)===true;}catch(error){captureRefusal(state,'parent-records-threw',label,bytes,records);throw error;}if(!granted)captureRefusal(state,'parent-records-refused',label,bytes,records);must(granted);}
- let reserved=false;try{reserved=state.reserve(bytes)===true;}catch{captureRefusal(state,'parent-bytes-threw',label,bytes,records);if(records)state.releaseRecords(records);throw bad();}
- if(!reserved){captureRefusal(state,'parent-bytes-refused',label,bytes,records);if(records)state.releaseRecords(records);throw bad();}
+ if(records){let granted;try{granted=parentCall(state,'reserveRecords',records)===true;}catch(error){captureRefusal(state,'parent-records-threw',label,bytes,records);throw error;}if(!granted)captureRefusal(state,'parent-records-refused',label,bytes,records);must(granted);}
+ let reserved=false;try{reserved=parentCall(state,'reserve',bytes)===true;}catch{captureRefusal(state,'parent-bytes-threw',label,bytes,records);if(records)parentCall(state,'releaseRecords',records);throw bad();}
+ if(!reserved){captureRefusal(state,'parent-bytes-refused',label,bytes,records);if(records)parentCall(state,'releaseRecords',records);throw bad();}
  state.records+=records;
  state.used+=bytes;state.peak=Math.max(state.peak,state.used);state.active++;
- const lease=Object.freeze({release(){const s=leases.get(lease);if(s.live){s.onRelease?.();s.value=null;s.logicalSHA=null;s.live=false;state.used-=s.bytes;state.active--;state.records-=s.records;state.release(s.bytes);if(s.records)state.releaseRecords(s.records);}}});
+ const lease=Object.freeze({release(){const s=leases.get(lease);if(s.live){s.onRelease?.();s.value=null;s.logicalSHA=null;s.live=false;state.used-=s.bytes;state.active--;state.records-=s.records;parentCall(state,'release',s.bytes);if(s.records)parentCall(state,'releaseRecords',s.records);}}});
  leases.set(lease,{state,bytes,records,label,live:true,value:null});return lease;
 }
 function bind(lease,value){leases.get(lease).value=value;}
-function resize(lease,bytes){const s=leases.get(lease);must(s?.live&&bytes<=s.bytes);const difference=s.bytes-bytes;s.state.used-=difference;s.bytes=bytes;if(difference)s.state.release(difference);}
+function resize(lease,bytes){const s=leases.get(lease);must(s?.live&&bytes<=s.bytes);const difference=s.bytes-bytes;s.state.used-=difference;s.bytes=bytes;if(difference)parentCall(s.state,'release',difference);}
 function owned(lease,value){must(lease&&typeof lease==='object'&&!types.isProxy(lease));const s=leases.get(lease);must(s?.live&&s.value===value);return s.state;}
 
 // Bounded scalar chunks avoid a whole UTF16 JSON intermediate. Do not split pairs.
@@ -125,24 +136,26 @@ function tokens(value,emit,projection=null,{state=null,incremental=false}={}){
  }
  walk(value,0);return {slots,nodes,rootReceiptRows,typedRecords};
 }
-function measure(value,state,decoderN=null,limit=limits.logical,projection=null){const workspace=charge(state,decoderN===null?131072:vectorBase+2*decoderN,'canonical-traversal-and-scalar-scratch');try{let bytes=0;const digest=createHash('sha256');const counts=tokens(value,s=>{bytes+=Buffer.byteLength(s);must(bytes<=limit);digest.update(s);},projection,{state,incremental:decoderN===null});return{bytes,digest:digest.digest('hex'),...counts};}catch(error){if(captureObservation?.state===state&&!captureObservation.innerStage)captureObservation.innerStage='canonical-measure';throw error;}finally{workspace.release();}}
-function canonical(value,state,N,decoder=false){const lease=charge(state,N,'canonical-buffer');try{const bytes=Buffer.allocUnsafeSlow(N);let offset=0;const workspace=charge(state,decoder?vectorBase+2*N:131072,'canonical-traversal-and-scalar-scratch');try{tokens(value,s=>{offset+=bytes.write(s,offset,N-offset);},null,{state,incremental:!decoder});must(offset===N);}finally{workspace.release();}return{bytes,lease};}catch{lease.release();throw bad();}}
+function measure(value,state,decoderN=null,limit=limits.logical,projection=null){const workspace=charge(state,decoderN===null?131072:vectorBase+2*decoderN,'canonical-traversal-and-scalar-scratch');try{let bytes=0;const digest=createHash('sha256');const counts=tokens(value,s=>{bytes+=Buffer.byteLength(s);must(bytes<=limit);digest.update(s);},projection,{state,incremental:decoderN===null});return{bytes,digest:digest.digest('hex'),...counts};}catch(error){if(captureObservation?.state===state&&!captureObservation.innerStage)captureObservation.innerStage='canonical-measure';if(representationObservation?.state===state){representationObservation.innerStage='canonical-measure';representationFailure();}throw error;}finally{workspace.release();}}
+function canonical(value,state,N,decoder=false){const lease=charge(state,N,'canonical-buffer');try{const bytes=Buffer.allocUnsafeSlow(N);let offset=0;const workspace=charge(state,decoder?vectorBase+2*N:131072,'canonical-traversal-and-scalar-scratch');try{tokens(value,s=>{offset+=bytes.write(s,offset,N-offset);},null,{state,incremental:!decoder});must(offset===N);}catch(error){representationFailure();throw error;}finally{workspace.release();}return{bytes,lease};}catch{representationFailure();lease.release();throw bad();}}
 
 export function packMixedTechnicalJSON(original,kind,ownerLease){
+ representationStage('pack-owner');
  const state=owned(ownerLease,original),held=[];let bytes=null;
- try{must(kind===1);const operation=charge(state,131072,'operation-hash-control-smallobjects');held.push(operation);const m=measure(original,state),prior=leases.get(ownerLease);must(m.bytes===prior.logicalBytes&&m.digest===prior.logicalSHA);const canonicalView=canonical(original,state,m.bytes);held.push(canonicalView.lease);
+ if(representationObservation)representationObservation.state=state;
+ try{representationStage('pack-kind');must(kind===1);const operation=charge(state,131072,'operation-hash-control-smallobjects');held.push(operation);representationStage('measure');const m=measure(original,state),prior=leases.get(ownerLease);representationStage('binding-match');must(m.bytes===prior.logicalBytes&&m.digest===prior.logicalSHA);representationStage('canonical');const canonicalView=canonical(original,state,m.bytes);held.push(canonicalView.lease);
   // Native documented workspace +128KiB explicit small-object allowance.
-  const native=charge(state,262144+131072,'deflate-native-and-smallobjects');held.push(native);
+  representationStage('deflate-reserve');const native=charge(state,262144+131072,'deflate-native-and-smallobjects');held.push(native);
   const chunks=charge(state,round(limits.portable-limits.header),'deflate-output-chunks');held.push(chunks);
   const result=charge(state,round(limits.portable-limits.header)+CHUNK,'deflate-returned-buffer');held.push(result);
-  let gz=gzipSync(canonicalView.bytes,{level:6,windowBits:15,memLevel:8,strategy:constants.Z_DEFAULT_STRATEGY,chunkSize:CHUNK,maxOutputLength:limits.portable-limits.header});
-  resize(result,gz.buffer.byteLength);chunks.release();native.release();
-  const outputLease=charge(state,limits.header+gz.length,'portable-assembly');held.push(outputLease);
-  bytes=Buffer.allocUnsafeSlow(limits.header+gz.length);bytes.write(MAGIC,0,'ascii');bytes[8]=1;bytes[9]=0;bytes.writeUInt16BE(48,10);bytes.writeUInt32BE(m.bytes,12);hash(canonicalView.bytes).copy(bytes,16);gz.copy(bytes,48);
+  representationStage('deflate-call');let gz=gzipSync(canonicalView.bytes,{level:6,windowBits:15,memLevel:8,strategy:constants.Z_DEFAULT_STRATEGY,chunkSize:CHUNK,maxOutputLength:limits.portable-limits.header});
+  representationStage('resize');resize(result,gz.buffer.byteLength);chunks.release();native.release();
+  representationStage('assembly-reserve');const outputLease=charge(state,limits.header+gz.length,'portable-assembly');held.push(outputLease);
+  representationStage('assembly');bytes=Buffer.allocUnsafeSlow(limits.header+gz.length);bytes.write(MAGIC,0,'ascii');bytes[8]=1;bytes[9]=0;bytes.writeUInt16BE(48,10);bytes.writeUInt32BE(m.bytes,12);hash(canonicalView.bytes).copy(bytes,16);gz.copy(bytes,48);
   gz=null;result.release();canonicalView.bytes=null;canonicalView.lease.release();bind(outputLease,bytes);leases.get(outputLease).onRelease=()=>{bytes=null;};
   const stats=Object.freeze({logicalBytes:m.bytes,portableBytes:bytes.length,codecArraySlots:m.slots,logicalReceiptRows:m.rootReceiptRows,peakChargedBytes:state.peak,authority:false});operation.release();
-  let live=true;return Object.freeze({get bytes(){return bytes;},lease:outputLease,stats,release(){if(live){live=false;bytes=null;outputLease.release();}}});
- }catch{bytes=null;for(const lease of held.reverse())lease.release();throw bad();}
+  representationStage('return');let live=true;return Object.freeze({get bytes(){return bytes;},lease:outputLease,stats,release(){if(live){live=false;bytes=null;outputLease.release();}}});
+ }catch{representationFailure();bytes=null;for(const lease of held.reverse())lease.release();throw bad();}
 }
 
 export function unpackMixedTechnicalJSON(portable,kind,ownerLease){
@@ -349,7 +362,7 @@ export function createMixedTechnicalOwner(options){
   },
   replay(value){
    must(!closed&&!cutLeases.has(value)&&replayFacts.get(value)?.eligible&&Object.isFrozen(value)&&ownData(ownData(value,'nativeContext'),'contextId')===contextId);const known=replayFacts.get(value),pin=charge(state,known.bytes,'bounded-json-replay-source-pin');let retained=null;
-   try{const m=measure(value,state,known.bytes);must(m.bytes===known.bytes);retained=charge(state,m.bytes+2048,'bounded-json-replay-view-and-control',m.typedRecords);bind(retained,value);Object.assign(leases.get(retained),{logicalBytes:m.bytes,logicalSHA:m.digest});registerOwnedCutViews(retained,value);cuts.set(value,retained);cutLeases.set(value,retained);return value;}catch{retained?.release();throw bad();}finally{pin.release();}
+   try{const m=measure(value,state,known.bytes);must(m.bytes===known.bytes);retained=charge(state,m.bytes+2048,'bounded-json-replay-view-and-control',m.typedRecords);bind(retained,value);Object.assign(leases.get(retained),{logicalBytes:m.bytes,logicalSHA:m.digest});registerOwnedCutViews(retained,value);cuts.set(value,retained);cutLeases.set(value,retained);return value;}catch{representationFailure();retained?.release();throw bad();}finally{pin.release();}
   },
   encode(value){
    must(!closed&&cuts.has(value));const packed=packMixedTechnicalJSON(value,1,cuts.get(value));outputs.add(packed);
@@ -385,13 +398,14 @@ export function createMixedTechnicalOwner(options){
 
 /** Same representation check for a private live cut or a separately bounded replay operation. */
 export function mixedTechnicalCandidateDigest(input,onReport){
+ const previous=representationObservation,observed=!types.isProxy(onReport)&&typeof onReport==='function',scope=observed?{state:null,stage:'qualification',innerStage:null,refusal:null,parent:null,failure:null}:null;representationObservation=scope;
  let temporary=null,borrow=null,packed=null,held=cutLeases.get(input),bytes=0,records=0,report={protocol:mixedTechnicalRepresentation.protocol,serialized:null,logicalBytes:null,encodedBytes:null,withinLimit:null,outcome:'representation-rejected'};
  try{
-  qualified();must(!held||!construction||leases.get(held)?.state===construction.state);
-  if(!held&&ownedCutView(input)){const info=ownedCutView(input),state=leases.get(info.lease).state;must(!construction||state===construction.state);borrow=charge(state,2048,'owned-native-subcut-borrow');bind(borrow,input);const measured=measure(input,state);must(measured.bytes===info.bytes);Object.assign(leases.get(borrow),{logicalBytes:measured.bytes,logicalSHA:measured.digest});held=borrow;}
-  if(!held&&construction){must(mixedTechnicalInputIsQualified(input));const known=replayFacts.get(input);must(known?.eligible);const pin=charge(construction.state,known.bytes,'candidate-replay-source-pin');try{const measured=measure(input,construction.state,known.bytes);must(measured.bytes===known.bytes);borrow=charge(construction.state,measured.bytes+2048,'candidate-subcut-view',measured.typedRecords);bind(borrow,input);Object.assign(leases.get(borrow),{logicalBytes:measured.bytes,logicalSHA:measured.digest});held=borrow;}finally{pin.release();}}
+  qualified();representationStage('owner-join');must(!held||!construction||leases.get(held)?.state===construction.state);
+  representationStage('owned-subcut');if(!held&&ownedCutView(input)){const info=ownedCutView(input),state=leases.get(info.lease).state;must(!construction||state===construction.state);borrow=charge(state,2048,'owned-native-subcut-borrow');bind(borrow,input);const measured=measure(input,state);must(measured.bytes===info.bytes);Object.assign(leases.get(borrow),{logicalBytes:measured.bytes,logicalSHA:measured.digest});held=borrow;}
+  representationStage('replay-subcut');if(!held&&construction){must(mixedTechnicalInputIsQualified(input));const known=replayFacts.get(input);must(known?.eligible);const pin=charge(construction.state,known.bytes,'candidate-replay-source-pin');try{const measured=measure(input,construction.state,known.bytes);must(measured.bytes===known.bytes);borrow=charge(construction.state,measured.bytes+2048,'candidate-subcut-view',measured.typedRecords);bind(borrow,input);Object.assign(leases.get(borrow),{logicalBytes:measured.bytes,logicalSHA:measured.digest});held=borrow;}catch(error){representationFailure();throw error;}finally{pin.release();}}
   if(!held){
-   must(mixedTechnicalInputIsQualified(input));temporary=createMixedTechnicalOwner({contextId:ownData(ownData(input,'nativeContext'),'contextId'),
+   representationStage('fallback-replay');must(mixedTechnicalInputIsQualified(input));temporary=createMixedTechnicalOwner({contextId:ownData(ownData(input,'nativeContext'),'contextId'),
     reserve:n=>{if(bytes+n>limits.owner)return false;bytes+=n;return true;},release:n=>{bytes-=n;},
     reserveRecords:n=>{if(records+n>limits.records)return false;records+=n;return true;},releaseRecords:n=>{records-=n;}});
    input=temporary.replay(input);held=cutLeases.get(input);
@@ -399,9 +413,10 @@ export function mixedTechnicalCandidateDigest(input,onReport){
   packed=packMixedTechnicalJSON(input,1,held);
   report={protocol:mixedTechnicalRepresentation.protocol,serialized:true,logicalBytes:packed.stats.logicalBytes,encodedBytes:packed.stats.portableBytes,withinLimit:true,outcome:'complete'};
   return packed.bytes.subarray(16,48).toString('hex');
- }catch{return null;}
+ }catch{representationFailure();if(scope?.failure)report.failure=scope.failure;return null;}
  finally{
-  packed?.release();borrow?.release();temporary?.close();
-  try{if(!types.isProxy(onReport)&&typeof onReport==='function')onReport(report);}catch{}
+  try{packed?.release();borrow?.release();temporary?.close();}
+  finally{representationObservation=previous;if(scope){scope.state=null;scope.refusal=null;scope.parent=null;scope.failure=null;}}
+  try{if(observed)onReport(report);}catch{}
  }
 }

@@ -253,3 +253,30 @@ remains failed at 13 of 20 pairs. No timings or budgets come from these syntheti
 diagnostics or failed runs. The complete actual 20-pair, 40-command workload must
 still pass every strict gate independently on Original and HEAD before
 qualification; previous failures are never retroactively qualified.
+# Candidate representation failure acquisition
+
+The failure-only serialization report can retain a fixed statement stage, inner
+measurement stage and the first actual reservation refusal. It records nullable
+integer owner/parent/request counts before cleanup; a pre-owner rejection keeps
+counts unknown. It retains no input, lease, error, message, identifier or body.
+Nested synchronous scopes restore their predecessor before publishing the existing
+once-only report. Parent callbacks suspend the active representation scope while
+preserving a separate exact reservation context for actual parent refusal counts;
+direct nested encodes cannot become outer evidence. Successful reports and
+portable bytes are unchanged.
+
+The closed bookkeeping uses at most 64 scalar/reference slots and four fixed
+records: a conservative modeled `64 * 128 + 4 * 256 = 9,216` bytes within the
+existing 131,072-byte candidate evidence/codec control workspace. It adds no
+reservation. Persistent output remains inside the existing 32,768-byte first
+failure allowance. Separate reachable failure shapes measure at most 22,816 bytes;
+their conservative scalar-width bound is 27,288 bytes, preserving null/presence
+and mutually exclusive alternatives. The maximum hashed event projection with a
+real representation rejection measures 22,944 bytes. This is modeled control and
+serialized-view accounting, not a physical heap bound.
+
+This is prospective acquisition, not a diagnosis or repair of the failed 18/20
+Original capture. Its underlying representation rejection remains unknown. The
+32 MiB shared owner, 10,000 typed records, 4 MiB whole portable and 8 MiB logical
+limits, Native-context/full-prefix/body guards and canonical 20-pair/40-command
+workload remain unchanged. No failed capture is retroactively qualified.
