@@ -320,8 +320,15 @@ export async function requireCleanMixedProgress({opened,pageErrors,operationDead
   const required=()=>{
    if(pageErrors()!==0)throw Error("Mixed page observation is not clean.");
    for(const item of opened){
-    const evidence=item.browserObservation?.snapshot(),application=item.transport.snapshot().applicationEvidence;
-    if(!evidence || evidence.allPhase.realFailures || ["missing","errors","overflow"].some(key=>evidence.measured.coverage[key]!==0) || ["failures","serverErrors","unknown","httpErrors","overflows","decodeFailures","registryConflicts"].some(key=>application?.[key]!==0))throw Error("Required mixed browser or application observation is not clean.");
+    let evidence;
+    try{
+     evidence=item.browserObservation?.snapshot();const application=item.transport.snapshot().applicationEvidence;
+     if(!evidence || evidence.allPhase.realFailures || ["missing","errors","overflow"].some(key=>evidence.measured.coverage[key]!==0) || ["failures","serverErrors","unknown","httpErrors","overflows","decodeFailures","registryConflicts"].some(key=>application?.[key]!==0))throw Error("Required mixed browser or application observation is not clean.");
+    }finally{
+     // This synchronous guard has consumed only this export, not the durable journal.
+     const progress=evidence?.mixedProgress;evidence=null;
+     if(progress)item.browserObservation.releaseMixedProgressSnapshot?.(progress);
+    }
    }
   };
   required();
