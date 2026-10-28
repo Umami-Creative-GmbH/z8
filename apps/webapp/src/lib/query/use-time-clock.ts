@@ -4,7 +4,6 @@ import { type QueryClient, useMutation, useQuery, useQueryClient } from "@tansta
 import { useState, useSyncExternalStore } from "react";
 import {
 	addBreakToActiveSession,
-	getTimeClockStatus,
 	resumeBreakInProgress,
 	startBreakInProgress,
 	updateTimeEntryNotes,
@@ -31,6 +30,7 @@ import type {
 	ClockVehicleUse,
 } from "@/lib/time-tracking/vehicle-use/clock-vehicle-use";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
+import { getWebClockStatus as getTimeClockStatus } from "@/lib/time-tracking/web-clock-status-client";
 import { queryKeys } from "./keys";
 import { invalidatePeriodSubmissionReadiness } from "./period-submission-readiness";
 
