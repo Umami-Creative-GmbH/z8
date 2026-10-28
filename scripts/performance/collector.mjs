@@ -415,10 +415,15 @@ await writeFile(
 	}),
 	{ flag: "wx", mode: 0o600 },
 );
-// Release deduplication IDs after ten quiet minutes. Late data becomes incomplete instead of double-counted.
+// Keep deduplication IDs for open registered visits; other traces retire after ten quiet minutes.
+// Data arriving after retirement remains incomplete instead of double-counted.
 const housekeeping = setInterval(() => {
-	for (const metric of traces.values())
-		if (!metric.retired && Date.now() - metric.lastSeen > 600000) {
+	for (const [traceId, metric] of traces)
+		if (
+			registered.get(traceId)?.closed !== false &&
+			!metric.retired &&
+			Date.now() - metric.lastSeen > 600000
+		) {
 			metric.seen.clear();
 			metric.retired = true;
 		}
