@@ -22,29 +22,26 @@ import {
 	BatchSpanProcessor,
 } from "@opentelemetry/sdk-trace-base";
 import { expect, it } from "vitest";
-import { SetupPrivacySpanProcessor } from "./setup/telemetry";
-import { isolateFixtureExporter } from "./performance-fixture-export-scope";
-import { FixturePerformanceSpanProcessor } from "./performance-fixture-observer";
+import { SetupPrivacySpanProcessor } from "../../apps/webapp/src/lib/setup/telemetry";
+import { isolateFixtureExporter } from "../../apps/webapp/src/lib/performance-fixture-export-scope";
+import { FixturePerformanceSpanProcessor } from "../../apps/webapp/src/lib/performance-fixture-observer";
 import {
 	FixtureNativeCoverage,
 	installFixtureDriverCounter,
 	startFixtureNativeControl,
-} from "./performance-fixture-native-coverage";
+} from "../../apps/webapp/src/lib/performance-fixture-native-coverage";
 import {
 	beginCollectorVisit,
 	endCollectorVisit,
 	readCollectorCounters,
 	reconcileCollectorRun,
-} from "../../../../scripts/performance/collector-client.mjs";
+} from "./collector-client.mjs";
 
 const collectorFile = fileURLToPath(
-	new URL("../../../../scripts/performance/collector.mjs", import.meta.url),
+	new URL("./collector.mjs", import.meta.url),
 );
 const clockFile = fileURLToPath(
-	new URL(
-		"../../../../scripts/performance/test-fixtures/collector-owned-clock.mjs",
-		import.meta.url,
-	),
+	new URL("./test-fixtures/collector-owned-clock.mjs", import.meta.url),
 );
 const sha = (value: string) => createHash("sha256").update(value).digest("hex");
 
