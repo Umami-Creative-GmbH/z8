@@ -45,11 +45,11 @@ function freshAssociation() {
 		proxy.response(id, { status: 200, headers: upstreamHeaders });
 		application.response(applicationId, { status: 200, mimeType: "text/x-component", encoding: "identity" });
 		const forwarded = { ...upstreamHeaders, [controlResponseHeader]: id };
-		await browser(requestId, forwarded, { fromDiskCache: false });
 		proxy.bytes(id, Buffer.from(body));
 		application.bytes(applicationId, Buffer.from(body));
 		application.end(applicationId);
 		proxy.end(id);
+		await browser(requestId, forwarded, { fromDiskCache: false });
 		await tick();
 		return { id, forwarded };
 	}
@@ -83,7 +83,7 @@ test("cached response association: known disk cache reuse keeps the original pac
 	const f = freshAssociation();
 	try {
 		const original = await f.network("network-original");
-		const before = f.proxy.snapshot().rows;
+		const before = structuredClone(f.proxy.snapshot().rows);
 		await f.browser("disk-cache-reuse", original.forwarded, { fromDiskCache: true });
 		assert.ok(f.calls.some(row => row.requestId === "disk-cache-reuse" && row.kind === "body-settled"), "actual readback finally must exercise the cached body-settled callback");
 		assert.deepEqual(f.proxy.snapshot().rows, before, "cache reuse creates no new upstream packet and cannot change its original evidence");
