@@ -662,3 +662,41 @@ test("public clock GET and Next action history share the original row budget and
   assert.equal(/PRIVATE_|localhost/.test(JSON.stringify(controls.snapshot())),false);
  }finally{controls.dispose();}
 });
+
+
+test("an abandoned never-submitted clock handle permits fresh UI cleanup without sending its write",async()=>{
+ const f=clockDiagnosticPage();let calls=0;const evaluate=f.page.evaluate;f.page.evaluate=(...args)=>{calls++;return evaluate(...args);};
+ const controls=await openPublicHeaderClock(f.page,{origin:"http://localhost",expectedActor:f.expected,phase:"baseline",timeoutMs:50});
+ try{
+  assert.equal((await(await controls.prepare("in")).submit()).success,true);assert.equal(f.writes(),1);
+  const prepared=await controls.prepare("out");assert.equal(controls.snapshot().failureStage,null);await assert.rejects(controls.resolveState(),/already prepared/);
+  const before=calls;assert.equal(prepared.abandon(),true);assert.equal(calls,before);assert.equal(f.writes(),1);assert.equal(prepared.abandon(),false);
+  await assert.rejects(prepared.submit(),/abandoned/);assert.equal(f.writes(),1);
+  assert.equal(await controls.resolveState(),"in");
+  const cleanup=await controls.prepare("out");assert.equal(prepared.abandon(),false);await assert.rejects(controls.prepare("out"),/Resolve previous work/);
+  assert.equal((await cleanup.submit()).success,true);assert.equal(f.writes(),2);assert.equal(await controls.state(),"out");
+ }finally{controls.dispose();}
+});
+
+
+test("a started clock submission cannot be abandoned or disarm its in-flight control",async()=>{
+ const f=clockDiagnosticPage(),originalWait=f.page.waitForResponse;let release,calls=0;const evaluate=f.page.evaluate;f.page.evaluate=(...args)=>{calls++;return evaluate(...args);};
+ f.page.waitForResponse=(...args)=>{const actual=originalWait(...args);return new Promise(resolve=>{release=()=>actual.then(resolve);});};
+ const controls=await openPublicHeaderClock(f.page,{origin:"http://localhost",expectedActor:f.expected,phase:"baseline",timeoutMs:50});
+ try{
+  const prepared=await controls.prepare("in"),pending=prepared.submit();await new Promise(setImmediate);assert.equal(f.writes(),1);const before=calls;
+  assert.equal(prepared.abandon(),false);assert.equal(calls,before);await assert.rejects(controls.prepare("out"),/Resolve previous work/);await assert.rejects(controls.resolveState(),/already prepared/);
+  release();const result=await pending;assert.equal(result.success,true);assert.equal(result.unknownCommandOutcome,false);assert.equal(prepared.abandon(),false);await assert.rejects(prepared.submit(),/only once/);
+  const next=await controls.prepare("out");assert.equal(prepared.abandon(),false);await assert.rejects(controls.prepare("out"),/Resolve previous work/);assert.equal(next.abandon(),true);assert.equal(f.writes(),1);
+ }finally{controls.dispose();}
+});
+
+test("abandon cannot clear an unknown submitted write or its required resolution",async()=>{
+ const f=clockDiagnosticPage(),originalWait=f.page.waitForResponse;f.page.waitForResponse=(...args)=>{originalWait(...args);return Promise.reject(Error("PRIVATE_RESPONSE_FAILURE"));};
+ const controls=await openPublicHeaderClock(f.page,{origin:"http://localhost",expectedActor:f.expected,phase:"baseline",timeoutMs:50});
+ try{
+  const prepared=await controls.prepare("in"),result=await prepared.submit();assert.equal(result.success,false);assert.equal(result.censored,true);assert.equal(result.unknownCommandOutcome,true);assert.equal(f.writes(),1);
+  assert.equal(prepared.abandon(),false);await assert.rejects(controls.prepare("out"),/Resolve previous work/);await assert.rejects(prepared.submit(),/only once/);assert.equal(f.writes(),1);
+  assert.equal(await controls.resolveState(),"in");const cleanup=await controls.prepare("out");assert.equal(cleanup.abandon(),true);assert.equal(f.writes(),1);assert.equal(/PRIVATE_RESPONSE_FAILURE/.test(JSON.stringify(controls.snapshot())),false);
+ }finally{controls.dispose();}
+});

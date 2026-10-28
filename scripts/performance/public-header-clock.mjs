@@ -351,9 +351,17 @@ export async function openPublicHeaderClock(
 			armed = false;
 			throw error;
 		}
-		let submitted = false;
+		diagnostic.failureStage=null;
+		let submitted = false, abandoned = false;
 		return {
+			abandon() {
+				if (submitted || abandoned) return false;
+				abandoned = true;
+				armed = false;
+				return true;
+			},
 			async submit() {
+				if (abandoned) throw new Error("An abandoned header command cannot be submitted.");
 				if (submitted)
 					throw new Error(
 						"A prepared header write can be submitted only once.",
