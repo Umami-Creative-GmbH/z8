@@ -260,7 +260,10 @@ measurement stage and the first actual reservation refusal. It records nullable
 integer owner/parent/request counts before cleanup; a pre-owner rejection keeps
 counts unknown. It retains no input, lease, error, message, identifier or body.
 Nested synchronous scopes restore their predecessor before publishing the existing
-once-only report. Successful reports and portable bytes are unchanged.
+once-only report. Parent callbacks suspend the active representation scope while
+preserving a separate exact reservation context for actual parent refusal counts;
+direct nested encodes cannot become outer evidence. Successful reports and
+portable bytes are unchanged.
 
 The closed bookkeeping uses at most 64 scalar/reference slots and four fixed
 records: a conservative modeled `64 * 128 + 4 * 256 = 9,216` bytes within the

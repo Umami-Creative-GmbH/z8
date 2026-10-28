@@ -7,12 +7,19 @@ export const mixedTechnicalRepresentation=Object.freeze({protocol:'mixed-progres
 export const mixedTechnicalRuntime=Object.freeze({node:'26.9.0',zlib:'1.3.2.1-motley-285e94b'});
 const states=new WeakMap(), leases=new WeakMap(), cutLeases=new WeakMap(), coverage=new WeakMap(), replayFacts=new WeakMap(), ownedCutViews=new WeakMap(), MAGIC='Z8MIXGZ2', CHUNK=65536;
 const bad=()=>new Error('Mixed technical gzip rejected input.');
-let captureObservation=null,representationObservation=null,reservationState=null;
+let captureObservation=null,representationObservation=null,reservationState=null,reservationRepresentation=null;
 const captureLabels=new Set(['original-provisional','canonical-traversal-and-scalar-scratch','canonical-key-vector','canonical-buffer','fixed-source-container-and-coverage-control','snapshot-clone','snapshot-typed-rows','sequential-row-constructor-scratch','snapshot-row-sort-index','snapshot-bounded-array','technical-predicate-fixed-shells','technical-predicate-return-view','derived-technical-receipt','immutable-snapshot-key-vectors','snapshot-UTF16-string','snapshot-UTF8-buffer','snapshot-fixed-constructor-shells','complete-progress-cut-clone-and-private-control']);
 const diagnosticCount=value=>Number.isSafeInteger(value)&&value>=0?value:null;
 for(const label of ['operation-hash-control-smallobjects','deflate-native-and-smallobjects','deflate-output-chunks','deflate-returned-buffer','portable-assembly','owned-native-subcut-borrow','candidate-replay-source-pin','candidate-subcut-view','bounded-json-replay-source-pin','bounded-json-replay-view-and-control'])captureLabels.add(label);
 const representationStage=stage=>{if(representationObservation)representationObservation.stage=stage;};
 function representationFailure(){try{const scope=representationObservation;if(scope&&!scope.failure)scope.failure=Object.freeze({protocol:'mixed-candidate-representation-failure-v1',stage:scope.stage,innerStage:scope.innerStage,ownerUsedBytes:scope.state?diagnosticCount(scope.state.used):null,ownerUsedRecords:scope.state?diagnosticCount(scope.state.records):null,refusal:scope.refusal});}catch{}}
+// Parent callbacks are external to this synchronous operation. A nested digest
+// gets its own scope; direct nested owner operations cannot write the caller's.
+function parentCall(state,method,amount){
+ const previous=representationObservation,priorState=reservationState,priorReservation=reservationRepresentation;
+ representationObservation=null;reservationState=state;reservationRepresentation=previous;
+ try{return state[method](amount);}finally{representationObservation=previous;reservationState=priorState;reservationRepresentation=priorReservation;}
+}
 // Synchronous, failure-only control slots. No graph/error is retained after this call.
 export function observeMixedTechnicalCapture(construct,onFailure){
  const previous=captureObservation,scope={state:null,stage:null,innerStage:null,used:null,records:null,refusal:null,parent:null};captureObservation=scope;
@@ -20,7 +27,7 @@ export function observeMixedTechnicalCapture(construct,onFailure){
  finally{captureObservation=previous;scope.state=null;scope.refusal=null;scope.parent=null;}
 }
 /** Called only on the original proxy reservation refusal; no additional reservation or getter. */
-export function recordMixedTechnicalParentRefusal(usedBytes,usedRecords){const record=scope=>{try{if(scope?.state===reservationState&&!scope.parent)scope.parent=Object.freeze({parentUsedBytes:diagnosticCount(usedBytes),parentUsedRecords:diagnosticCount(usedRecords)});}catch{}};record(captureObservation);record(representationObservation);}
+export function recordMixedTechnicalParentRefusal(usedBytes,usedRecords){const record=scope=>{try{if(scope?.state===reservationState&&!scope.parent)scope.parent=Object.freeze({parentUsedBytes:diagnosticCount(usedBytes),parentUsedRecords:diagnosticCount(usedRecords)});}catch{}};record(captureObservation);record(reservationRepresentation);}
 function captureRefusal(state,kind,label,bytes,records){const record=scope=>{try{if(scope?.state===state&&!scope.refusal)scope.refusal=Object.freeze({kind,label:captureLabels.has(label)?label:null,requestedBytes:diagnosticCount(bytes),requestedRecords:diagnosticCount(records),ownerUsedBytes:diagnosticCount(state.used),ownerUsedRecords:diagnosticCount(state.records),parentUsedBytes:scope.parent?.parentUsedBytes??null,parentUsedRecords:scope.parent?.parentUsedRecords??null});}catch{}};record(captureObservation);record(representationObservation);}
 const must=x=>{if(!x)throw bad();};
 const hash=b=>createHash('sha256').update(b).digest();
@@ -59,16 +66,16 @@ function charge(state,bytes,label,records=0){
  if(representationObservation&&!representationObservation.state)representationObservation.state=state;
  const validBytes=Number.isSafeInteger(bytes)&&bytes>=0;if(!validBytes)captureRefusal(state,'invalid-byte-count',label,bytes,records);must(validBytes);state.attempts++;
  const allowed=Number.isSafeInteger(records)&&records>=0&&state.records+records<=limits.records&&state.used+bytes<=limits.owner;if(!allowed)captureRefusal(state,'owner-limit',label,bytes,records);must(allowed);
- if(records){let granted;const previous=reservationState;try{reservationState=state;granted=state.reserveRecords(records)===true;}catch(error){captureRefusal(state,'parent-records-threw',label,bytes,records);throw error;}finally{reservationState=previous;}if(!granted)captureRefusal(state,'parent-records-refused',label,bytes,records);must(granted);}
- let reserved=false;const previous=reservationState;try{reservationState=state;reserved=state.reserve(bytes)===true;}catch{captureRefusal(state,'parent-bytes-threw',label,bytes,records);if(records)state.releaseRecords(records);throw bad();}finally{reservationState=previous;}
- if(!reserved){captureRefusal(state,'parent-bytes-refused',label,bytes,records);if(records)state.releaseRecords(records);throw bad();}
+ if(records){let granted;try{granted=parentCall(state,'reserveRecords',records)===true;}catch(error){captureRefusal(state,'parent-records-threw',label,bytes,records);throw error;}if(!granted)captureRefusal(state,'parent-records-refused',label,bytes,records);must(granted);}
+ let reserved=false;try{reserved=parentCall(state,'reserve',bytes)===true;}catch{captureRefusal(state,'parent-bytes-threw',label,bytes,records);if(records)parentCall(state,'releaseRecords',records);throw bad();}
+ if(!reserved){captureRefusal(state,'parent-bytes-refused',label,bytes,records);if(records)parentCall(state,'releaseRecords',records);throw bad();}
  state.records+=records;
  state.used+=bytes;state.peak=Math.max(state.peak,state.used);state.active++;
- const lease=Object.freeze({release(){const s=leases.get(lease);if(s.live){s.onRelease?.();s.value=null;s.logicalSHA=null;s.live=false;state.used-=s.bytes;state.active--;state.records-=s.records;state.release(s.bytes);if(s.records)state.releaseRecords(s.records);}}});
+ const lease=Object.freeze({release(){const s=leases.get(lease);if(s.live){s.onRelease?.();s.value=null;s.logicalSHA=null;s.live=false;state.used-=s.bytes;state.active--;state.records-=s.records;parentCall(state,'release',s.bytes);if(s.records)parentCall(state,'releaseRecords',s.records);}}});
  leases.set(lease,{state,bytes,records,label,live:true,value:null});return lease;
 }
 function bind(lease,value){leases.get(lease).value=value;}
-function resize(lease,bytes){const s=leases.get(lease);must(s?.live&&bytes<=s.bytes);const difference=s.bytes-bytes;s.state.used-=difference;s.bytes=bytes;if(difference)s.state.release(difference);}
+function resize(lease,bytes){const s=leases.get(lease);must(s?.live&&bytes<=s.bytes);const difference=s.bytes-bytes;s.state.used-=difference;s.bytes=bytes;if(difference)parentCall(s.state,'release',difference);}
 function owned(lease,value){must(lease&&typeof lease==='object'&&!types.isProxy(lease));const s=leases.get(lease);must(s?.live&&s.value===value);return s.state;}
 
 // Bounded scalar chunks avoid a whole UTF16 JSON intermediate. Do not split pairs.
