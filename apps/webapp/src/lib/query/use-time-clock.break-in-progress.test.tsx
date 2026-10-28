@@ -15,6 +15,8 @@ const mocks = vi.hoisted(() => ({
 	submitClockCommand: vi.fn(),
 }));
 
+vi.mock("@/lib/time-tracking/web-clock-status-client",()=>({getWebClockStatus:mocks.getTimeClockStatus}));
+
 vi.mock("@/app/[locale]/(app)/time-tracking/actions", () => ({
 	addBreakToActiveSession: vi.fn(),
 	startBreakInProgress: mocks.startBreakInProgress,

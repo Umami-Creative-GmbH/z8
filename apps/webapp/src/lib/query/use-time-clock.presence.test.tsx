@@ -17,6 +17,8 @@ const mocks = vi.hoisted(() => ({
 	getBrowserTimezone: vi.fn(),
 }));
 
+vi.mock("@/lib/time-tracking/web-clock-status-client",()=>({getWebClockStatus:mocks.getTimeClockStatus}));
+
 vi.mock("@/app/[locale]/(app)/time-tracking/actions", () => ({
 	addBreakToActiveSession: mocks.addBreakToActiveSession,
 	getTimeClockStatus: mocks.getTimeClockStatus,

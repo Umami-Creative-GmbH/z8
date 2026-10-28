@@ -47,6 +47,7 @@ vi.mock("@/hooks/use-offline-clock", () => ({
 		workerCommandVersions: [],
 	}),
 }));
+vi.mock("@/lib/time-tracking/web-clock-status-client",()=>({getWebClockStatus:boundary.status}));
 vi.mock("@/app/[locale]/(app)/time-tracking/actions", () => ({
 	getTimeClockStatus: boundary.status,
 	getAssignedProjects: boundary.projects,
