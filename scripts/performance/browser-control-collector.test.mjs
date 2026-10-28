@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import { runInNewContext } from "node:vm";
 import test from "node:test";
-import { mkdtemp, mkdir, writeFile, rm, readFile } from "node:fs/promises";
+import { mkdtemp, mkdir, writeFile, rm, readFile, realpath } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { createHash } from "node:crypto";
@@ -50,6 +50,7 @@ import { validateProxyHeaderCensus } from "./proxy-header-census.mjs";
 import { projectCachedCdpText } from "./cdp-cached-text-projection.mjs";
 import { primaryProtocolIdentity, companionProtocolIdentity, budgetProtocolIdentity,mixedProtocolIdentity } from "./protocol-fingerprints.mjs";
 import { mixedProtocolFiles } from "./mixed-clock-budgets.mjs";
+import { createActionResultObserver } from "./action-result-observer.mjs";
 
 const origin = "http://localhost:1234",
 	url = `${origin}/en?_rsc=PRIVATE_QUERY`,
@@ -64,6 +65,58 @@ const responseHeaders = {
 	"content-type": "text/x-component",
 	"cache-control": "s-maxage=100, stale-while-revalidate=200",
 };
+
+async function installedCacheAssociationFixture() {
+	const source=await requestShapeTestBinding();
+	const environmentBinding=await verifyBrowserControlBrowser({target:()=>({createCDPSession:async()=>({send:async()=>({revision:"@"+chromiumSWRRevision}),detach:async()=>{}})})},source.binding);
+	const session=new EventEmitter(),page=Object.assign(new EventEmitter(),{createCDPSession:async()=>session,goto:async()=>null,reload:async()=>null,goBack:async()=>null,mainFrame:()=>null});
+	session.send=async()=>({});session.detach=async()=>{};
+	let proxy;
+	const transport={setControlCancellationObserver(value){proxy=value;value.installed();return()=>0;}};
+	const observer=await installBrowserControlCollector({page,context:{cookies:async()=>[]},transport,origin,headers:{},contextId,browserRevision:chromiumSWRRevision,environmentBinding});
+	const application=createActionResultObserver(),traceId="d".repeat(32),target=origin+"/_next/static/chunks/fresh-cache-association.js",bytes=Buffer.from("globalThis.__syntheticCacheAssociation = true;");
+	const headers={"content-type":"application/javascript","cache-control":"public, max-age=60"};
+	let ordinal=0;
+	const request=(requestId,change={})=>session.emit("Network.requestWillBeSent",{requestId,loaderId:"fresh-loader",frameId:"fresh-frame",type:"Script",timestamp:++ordinal,request:{url:change.url??target,method:change.method??"GET",headers:{}}});
+	const response=(requestId,forwarded,cache)=>session.emit("Network.responseReceived",{requestId,type:"Script",response:{status:200,headers:forwarded,mimeType:"application/javascript",charset:"",...cache}});
+	const finish=requestId=>{session.emit("Network.dataReceived",{requestId,dataLength:bytes.length});session.emit("Network.loadingFinished",{requestId,timestamp:++ordinal,encodedDataLength:bytes.length});};
+	async function network(requestId){
+		const applicationId=application.request({traceId,method:"GET",headers:{},applicationOrigin:true,compiledAsset:true});assert.ok(Number.isSafeInteger(applicationId)&&applicationId>0);
+		const id=traceId+"."+applicationId;proxy.request(id,{traceId,url:target,method:"GET",headers:{}});proxy.response(id,{status:200,headers});application.response(applicationId,{status:200,mimeType:"application/javascript",encoding:"identity"});
+		const forwarded={...headers,[controlResponseHeader]:id};request(requestId);response(requestId,forwarded,{fromDiskCache:false,fromServiceWorker:false});
+		proxy.bytes(id,bytes);application.bytes(applicationId,bytes);application.end(applicationId);proxy.end(id);finish(requestId);await tick();return{id,forwarded};
+	}
+	async function replay(requestId,forwarded,{cache={},served=false,missingRow=false,change={}}={}){
+		if(missingRow)session.emit("Network.requestServedFromCache",{requestId});
+		request(requestId,change);
+		if(served)session.emit("Network.requestServedFromCache",{requestId});
+		response(requestId,forwarded,cache);finish(requestId);await tick();
+	}
+	return{observer,proxy,network,replay,target,async close(){try{await observer.close({deadlineMs:performance.now()+1000});}finally{const directory=await realpath(source.directory),prefix=join(await realpath(tmpdir()),"z8-request-shape-");assert.ok(directory.startsWith(prefix));await rm(directory,{recursive:true,force:true});}}};
+}
+
+for(const scenario of [
+	{name:"fresh network control",network:true,healthy:true},
+	{name:"observed disk plus service worker",cache:{fromDiskCache:true,fromServiceWorker:true},healthy:true},
+	{name:"actual same-occurrence served-from-cache event",cache:{fromDiskCache:false,fromServiceWorker:false},served:true,healthy:true},
+	{name:"unknown native event",cache:{fromDiskCache:false,fromServiceWorker:false},healthy:false},
+	{name:"native event before an existing row",cache:{fromDiskCache:false},missingRow:true,healthy:false},
+	{name:"forged memory response flag",cache:{fromMemoryCache:true},healthy:false},
+	{name:"service worker alone",cache:{fromServiceWorker:true},healthy:false},
+	{name:"native event with URL mismatch",cache:{fromDiskCache:false},served:true,change:{url:origin+"/other.js"},healthy:false},
+	{name:"native event with method mismatch",cache:{fromDiskCache:false},served:true,change:{method:"POST"},healthy:false},
+]) test(`installed cached response association: ${scenario.name}`,async()=>{
+	const f=await installedCacheAssociationFixture();
+	try{
+		const original=await f.network("network-original"),before=structuredClone(f.proxy.snapshot().rows);
+		f.observer.beginMeasurement();
+		if(scenario.network){const next=await f.network("network-next");assert.notEqual(next.id,original.id);}
+		else{await f.replay("new-browser-occurrence",original.forwarded,scenario);assert.deepEqual(f.proxy.snapshot().rows,before,"a cache event cannot replace or finish the canonical upstream packet");}
+		const errors=f.proxy.snapshot().errors;
+		assert.equal(errors===0,scenario.healthy,`actual installed event facade recorded ${errors} proxy association errors`);
+		assert.equal(f.observer.snapshot().allPhase.coverage.errors===0,scenario.healthy);
+	}finally{await f.close();}
+});
 
 test("proxy header census survives semantic scope end and closes only with actual transport lifetime facts",()=>{
 	const proxy=createProxyControlCollector({contextId});proxy.installed();

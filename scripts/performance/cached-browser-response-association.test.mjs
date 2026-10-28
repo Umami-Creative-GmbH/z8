@@ -100,7 +100,7 @@ for (const [name, cache, change] of [
 	["absent cache provenance", {}, {}],
 	["unsupported cache flag", { fromDiskCache: "true" }, {}],
 	["memory-only flag not recorded by this collector", { fromMemoryCache: true }, {}],
-	["service-worker receipt", { fromDiskCache: true, fromServiceWorker: true }, {}],
+	["service-worker alone without positive cache evidence", { fromServiceWorker: true }, {}],
 	["different method", { fromDiskCache: true }, { method: "POST" }],
 	["different URL", { fromDiskCache: true }, { url: `${origin}/en/other` }],
 	["foreign context", { fromDiskCache: true }, { foreignContext: true }],
