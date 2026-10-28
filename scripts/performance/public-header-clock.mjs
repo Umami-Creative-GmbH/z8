@@ -15,6 +15,38 @@ export function getPublicHeaderClockFailureDiagnostics(error){
 
 /** Browser callback; Node caller supplies only its privately verified authority result. */
 export function readPublicHeaderClockDOM(known,legacyQualified=false){
+	// Diagnostic only: query metadata never participates in readiness.
+function readMountedClockQueryState(button){
+ const unknown=reason=>({known:false,reason,queryStatus:null,fetchStatus:null,isInvalidated:null,cachedHasEmployee:null,cachedIsClockedIn:null,observerCount:null,failureCount:null});
+ const data=(value,key)=>value&&typeof value==='object'?Object.getOwnPropertyDescriptor(value,key)?.value:undefined;
+ const method=(value,key)=>{for(let i=0;value&&i<8;i++,value=Object.getPrototypeOf(value)){const d=Object.getOwnPropertyDescriptor(value,key);if(d)return typeof d.value==='function'?d.value:null;}return null;};
+ const call=(object,key,args=[])=>{const fn=method(object,key);if(!fn)throw Error();return Reflect.apply(fn,object,args);};
+ try{
+  if(!button||typeof button!=='object')return unknown('no-element');
+  const keys=Object.getOwnPropertyNames(button);if(keys.length>32)return unknown('host-bound');const fiberKeys=keys.filter(key=>key.startsWith('__reactFiber$'));if(fiberKeys.length!==1)return unknown('fiber-unknown');
+  const connected=Object.getOwnPropertyDescriptor(Node.prototype,'isConnected')?.get;if(!connected||!Reflect.apply(connected,button,[]))return unknown('not-mounted');
+  const host=data(button,fiberKeys[0]),branches=[host,data(host,'alternate')].filter(Boolean),paths=[];let rootOwner=null;
+  for(const first of branches){let node=first;const path=[],seen=new Set();let valid=data(first,'tag')===5&&data(first,'stateNode')===button;
+   for(let depth=0;node&&depth<96;depth++){
+    if(seen.has(node)){valid=false;break;}seen.add(node);path.push(node);const parent=data(node,'return');
+    if(!parent){const root=data(node,'stateNode'),current=data(root,'current');if(data(node,'tag')!==3||!root||!current||typeof current!=='object'||(current!==node&&current!==data(node,'alternate'))||(rootOwner&&rootOwner!==root))valid=false;rootOwner=root;node=null;break;}node=parent;
+   }
+   if(node||!valid)return unknown('current-fiber-unknown');paths.push(path);
+  }
+  if(!paths.length)return unknown('current-fiber-unknown');
+  const candidates=[];
+  for(const path of paths){const found=[];for(const node of path){const client=data(data(node,'memoizedProps'),'client'),child=data(node,'child'),context=data(child,'type');if(!client||typeof data(node,'type')!=='function'||data(child,'tag')!==10||data(context,'$$typeof')!==Symbol.for('react.context')||data(data(child,'memoizedProps'),'value')!==client)continue;found.push(client);}if(found.length!==1)return unknown(found.length?'provider-multiple':'provider-unknown');candidates.push(found[0]);}
+  if(candidates.some(value=>value!==candidates[0]))return unknown('provider-alternate-unknown');
+  const client=candidates[0],key=['time-clock','status'],state=call(client,'getQueryState',[key]);if(!state)return unknown('query-absent');
+  const cache=call(client,'getQueryCache'),query=call(cache,'get',['["time-clock","status"]']);if(!query||data(query,'state')!==state)return unknown('query-identity-unknown');
+  const queryStatus=data(state,'status'),fetchStatus=data(state,'fetchStatus'),invalidated=data(state,'isInvalidated'),count=call(query,'getObserversCount'),failureCount=data(state,'fetchFailureCount');
+  if(!['pending','success','error'].includes(queryStatus)||!['idle','fetching','paused'].includes(fetchStatus)||typeof invalidated!=='boolean'||!Number.isSafeInteger(count)||count<0||count>10000||!Number.isSafeInteger(failureCount)||failureCount<0||failureCount>10000)return unknown('state-unknown');
+  const clockedIn=data(data(state,'data'),'isClockedIn'),hasEmployee=data(data(state,'data'),'hasEmployee');
+  return {known:true,reason:'read-only-provider-query',queryStatus,fetchStatus,isInvalidated:invalidated,cachedHasEmployee:typeof hasEmployee==='boolean'?hasEmployee:null,cachedIsClockedIn:typeof clockedIn==='boolean'?clockedIn:null,observerCount:count,failureCount};
+ }catch{return unknown('read-failed');}
+}
+
+
 			const buttons = [
 				...document.querySelectorAll(
 					'header button[aria-label="Clock In"],header button[aria-label="Clock Out"]',
@@ -39,8 +71,9 @@ export function readPublicHeaderClockDOM(known,legacyQualified=false){
 				value=button.getAttribute("aria-label")==="Clock In"?"out":"in";
 				dom.state=value;dom.readinessAuthority="qualified-legacy-dom";
 			}
+			dom.mountedClockQuery=readMountedClockQueryState(button);
 			return {value,dom};
-			}catch{return {value,dom:{known:false,reason:"diagnostic-read-unavailable",state:value}};}
+			}catch{return {value,dom:{known:false,reason:"diagnostic-read-unavailable",state:value,mountedClockQuery:readMountedClockQueryState(null)}};}
 		}
 const pause = (ms) => new Promise((done) => setTimeout(done, ms));
 function resultFrom(text) {
@@ -325,6 +358,8 @@ export async function openPublicHeaderClock(
 					const received = await response;
 					diagnostic.failureStage="caller-result";
 					const payload = resultFrom(await received.text());
+					const serverQueuedDescriptor=payload && typeof payload==="object"?Object.getOwnPropertyDescriptor(payload,"queued"):undefined;
+					const serverQueued=serverQueuedDescriptor && Object.hasOwn(serverQueuedDescriptor,"value")?serverQueuedDescriptor.value:undefined;
 					httpStatus = received.status();
 					outcomeKnown = typeof payload?.success === "boolean";
 					commandResponseMs = performance.now() - started;
@@ -333,7 +368,8 @@ export async function openPublicHeaderClock(
 						requestOrderKnown:Number.isSafeInteger(fact?.requestEventOrdinal),requestEventOrdinal:fact?.requestEventOrdinal ?? null,responseEventOrdinal:fact?.responseEventOrdinal ?? null,requestDocumentGeneration:fact?.documentGeneration ?? null,
 						requestStartedAfterSubmit:Number.isSafeInteger(fact?.requestEventOrdinal)&&Number.isSafeInteger(submitEventOrdinal)?fact.requestEventOrdinal>submitEventOrdinal:null,
 						sameObservedNavigationGeneration:fact?fact.documentGeneration===diagnostic.documentGeneration:null,documentNavigationObserved:diagnostic.navigationEvents>0,originMatches,httpStatus,
-						successType:kind(payload?.success),success:outcomeKnown?payload.success:null,accepted:received.ok()&&payload?.success===true};
+						successType:kind(payload?.success),success:outcomeKnown?payload.success:null,accepted:received.ok()&&payload?.success===true,
+						serverQueuedFieldPresent:serverQueuedDescriptor!==undefined,serverQueuedFieldType:serverQueuedDescriptor===undefined?"absent":kind(serverQueued),serverQueued:typeof serverQueued==="boolean"?serverQueued:null};
 					if (!received.ok() || payload?.success !== true)
 						throw new Error("Public clock write refused.");
 					diagnostic.failureStage="readiness-read";

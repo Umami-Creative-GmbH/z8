@@ -256,7 +256,7 @@ function clockDiagnosticPage(){
 	page.waitForResponse=match=>{predicate=match;return new Promise(resolve=>{resolveResponse=resolve;});};
 	const handle={isVisible:async()=>dom.visible,evaluate:async(fn,...args)=>fn(button,...args),asLocator:()=>({setTimeout:()=>({click:async()=>{
 		writes++;const action=dom.label==="Clock In"?"in":"out",request={headers:()=>({}),url:()=>"http://localhost/api/time-clock",method:()=>"POST",postData:()=>JSON.stringify({action:"clock_"+action})};
-		const response={request:()=>request,url:()=>request.url(),text:async()=>JSON.stringify({success:dom.responseSuccess,PRIVATE_FIELD:"PRIVATE_VALUE"}),status:()=>200,ok:()=>true};
+		const response={request:()=>request,url:()=>request.url(),text:async()=>JSON.stringify({success:dom.responseSuccess,PRIVATE_FIELD:"PRIVATE_VALUE",...(Object.hasOwn(dom,"serverQueued")?{queued:dom.serverQueued}:{})}),status:()=>200,ok:()=>true};
 		page.emit("request",request);page.emit("response",response);dom.label=action==="in"?"Clock Out":"Clock In";dom.afterWrite?.();if(predicate(response))resolveResponse(response);
 	}})})};
 	page.$$=async()=>[handle];page.waitForFunction=async(fn,...args)=>{assert.equal(await page.evaluate(fn,...args.slice(1)),true);};
@@ -424,6 +424,14 @@ test("public header clock HTTP200 with a refused result does not become an accep
 		assert.equal(result.success,false);assert.equal(result.httpStatus,200);assert.equal(result.unknownCommandOutcome,false);assert.equal(result.clockReadyMs,null);assert.equal(f.writes(),1);
 		assert.equal(result.clockReadinessDiagnostics.failureStage,"caller-result");assert.equal(result.clockReadinessDiagnostics.writeResponse.accepted,false);assert.equal(result.clockReadinessDiagnostics.writeResponse.success,false);assert.equal(result.clockReadinessDiagnostics.writeMatchesCurrentAttempt,true);
 	}finally{controls.dispose();}
+});
+
+test("public clock queued metadata describes only the existing parsed server response and never changes success",async()=>{
+	for(const fixture of [{present:false,type:"absent",value:null},{present:true,type:"boolean",input:true,value:true},{present:true,type:"boolean",input:false,value:false},{present:true,type:"null",input:null,value:null},{present:true,type:"other",input:"PRIVATE_QUEUED",value:null},{present:true,type:"other",input:{private:"PRIVATE_NESTED"},value:null}]){
+		const f=clockDiagnosticPage();if(fixture.present)f.dom.serverQueued=fixture.input;
+		const controls=await openPublicHeaderClock(f.page,{origin:"http://localhost",expectedActor:f.expected,phase:"baseline",timeoutMs:50});
+		try{const result=await(await controls.prepare("in")).submit(),write=result.clockReadinessDiagnostics.writeResponse;assert.equal(result.success,true);assert.equal(result.unknownCommandOutcome,false);assert.equal(f.writes(),1);assert.equal(write.accepted,true);assert.equal(write.serverQueuedFieldPresent,fixture.present);assert.equal(write.serverQueuedFieldType,fixture.type);assert.equal(write.serverQueued,fixture.value);assert.equal(/PRIVATE_|localhost/.test(JSON.stringify(result.clockReadinessDiagnostics)),false);}finally{controls.dispose();}
+	}
 });
 
 test("public header clock diagnostic-only read failures cannot change a ready marker decision",async()=>{
