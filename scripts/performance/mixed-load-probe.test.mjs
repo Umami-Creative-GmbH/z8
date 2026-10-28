@@ -580,3 +580,66 @@ test('capture diagnostic scalar getters are read once and cannot change from num
  d.payload({get success(){return ++success===1?true:'PRIVATE_SECOND_READ';}});
  assert.equal(numeric,1);assert.equal(correct,1);assert.equal(success,1);assert.doesNotMatch(JSON.stringify(ledger.snapshot()),/PRIVATE_/);
 });
+
+function clockGetEvent(page,{method="GET",requestURL="http://localhost/api/time-clock/status",responseURL=requestURL,status=200,contentType="application/json",responseHeaders,redirects=[],value={hasEmployee:true,employeeId:"PRIVATE_EMPLOYEE",isClockedIn:false,activeWorkPeriod:null},text,body}={}){
+ let reads=0;const request={id:"PRIVATE_GET_ID",headers:()=>({}),url:()=>requestURL,method:()=>method,redirectChain:()=>redirects};
+ page.emit("request",request);return {request,reads:()=>reads,respond(){page.emit("response",{request:()=>request,url:()=>responseURL,status:()=>status,headers:()=>responseHeaders??({"content-type":contentType}),text:()=>{reads++;return body??Promise.resolve(text??JSON.stringify(value));}});}};
+}
+
+test("public clock observes the exact passive GET DTO through the existing status and DOM predicate",async()=>{
+ const f=clockDiagnosticPage(),controls=await openPublicHeaderClock(f.page,{origin:"http://localhost",expectedActor:f.expected,phase:"baseline",timeoutMs:50});
+ try{
+  await controls.prepare("in");f.dom.marker=null;assert.equal(await controls.state(),null);
+  const event=clockGetEvent(f.page);event.respond();await new Promise(setImmediate);
+  assert.equal(await controls.state(),"out");assert.equal(event.reads(),1);
+  const d=controls.snapshot(),row=d.attemptActionReads.records[0];assert.equal(d.cachedStatus.source,"page-response-clock-status-get");assert.equal(d.cachedStatus.actionHeaderSha256,null);assert.equal(d.cachedStatus.actionHeaderSha256Known,false);
+  assert.equal(row.source,"page-response-clock-status-get");assert.equal(row.actionHeaderSha256,null);assert.equal(row.deliveredToStatusCache,true);assert.equal(d.attemptActionReads.completeness,"known");assert.equal(/PRIVATE_|localhost|employeeId/.test(JSON.stringify(d)),false);
+  f.dom.disabled=true;assert.equal(await controls.state(),null,"GET status cannot bypass a disabled DOM.");f.dom.disabled=false;
+  f.dom.label="Clock Out";assert.equal(await controls.state(),null,"GET status cannot bypass a mismatching DOM.");
+ }finally{controls.dispose();}
+});
+
+
+test("public clock passive GET rejects foreign selectors and ineligible HTTP before reading a body",async()=>{
+ const f=clockDiagnosticPage(),controls=await openPublicHeaderClock(f.page,{origin:"http://localhost",expectedActor:f.expected,phase:"baseline",timeoutMs:50});
+ try{
+  f.dom.marker=null;
+  for(const options of [{method:"POST"},{method:"HEAD"},{requestURL:"http://localhost/api/time-clock"},{requestURL:"http://localhost/api/time-clock/status?"},{requestURL:"http://localhost/api/time-clock/status?x=1"},{requestURL:"http://localhost/api/time-clock/status#x"},{requestURL:"http://foreign.test/api/time-clock/status"},{requestURL:"http://user:pass@localhost/api/time-clock/status"},{responseURL:"http://foreign.test/api/time-clock/status"},{responseURL:"http://localhost/api/time-clock/status?x=1"},{redirects:[{}]},{status:201},{status:401},{status:500},{contentType:"text/html"},{contentType:"application/jsonp"},{contentType:null},{responseHeaders:{}},{responseHeaders:{"content-type":"application/json","Content-Type":"application/json"}},{responseHeaders:Object.defineProperty({},"content-type",{enumerable:true,get(){throw Error("PRIVATE_HEADER_GETTER");}})}]){
+   const event=clockGetEvent(f.page,options);event.respond();await new Promise(setImmediate);
+   assert.equal(event.reads(),0);assert.equal(await controls.state(),null);assert.equal(controls.snapshot().cachedStatus,null);
+  }
+  assert.equal(/foreign|pass|localhost/.test(JSON.stringify(controls.snapshot())),false);
+ }finally{controls.dispose();}
+});
+
+test("public clock passive GET validates every DTO field without retaining business values",async()=>{
+ const f=clockDiagnosticPage(),controls=await openPublicHeaderClock(f.page,{origin:"http://localhost",expectedActor:f.expected,phase:"baseline",timeoutMs:50});
+ const valid={hasEmployee:true,employeeId:"PRIVATE_EMPLOYEE",isClockedIn:true,activeWorkPeriod:{id:"PRIVATE_PERIOD",startTime:"2026-10-28T10:00:00.000Z",currentTask:{id:"PRIVATE_TASK",name:"PRIVATE_NAME",state:"open",projectId:"PRIVATE_PROJECT"},breakStartedAt:"2026-10-28T11:00:00.000Z",breakStartedZone:"PRIVATE_ZONE"}};
+ try{
+  f.dom.marker=null;f.dom.label="Clock Out";
+  const invalid=[null,[],{}, {...valid,extra:true},{...valid,employeeId:""},{...valid,hasEmployee:"true"},{...valid,isClockedIn:1},{...valid,isClockedIn:false},{...valid,activeWorkPeriod:null},{...valid,hasEmployee:false},{...valid,activeWorkPeriod:{...valid.activeWorkPeriod,extra:true}},{...valid,activeWorkPeriod:{...valid.activeWorkPeriod,id:""}},{...valid,activeWorkPeriod:{...valid.activeWorkPeriod,startTime:"2026-10-28T10:00:00Z"}},{...valid,activeWorkPeriod:{...valid.activeWorkPeriod,startTime:"invalid"}},{...valid,activeWorkPeriod:{...valid.activeWorkPeriod,breakStartedAt:0}},{...valid,activeWorkPeriod:{...valid.activeWorkPeriod,breakStartedZone:0}},{...valid,activeWorkPeriod:{...valid.activeWorkPeriod,currentTask:{...valid.activeWorkPeriod.currentTask,state:"other"}}},{...valid,activeWorkPeriod:{...valid.activeWorkPeriod,currentTask:{...valid.activeWorkPeriod.currentTask,projectId:null}}},{...valid,activeWorkPeriod:{...valid.activeWorkPeriod,currentTask:{...valid.activeWorkPeriod.currentTask,name:1}}},{...valid,activeWorkPeriod:{...valid.activeWorkPeriod,currentTask:{...valid.activeWorkPeriod.currentTask,id:""}}},{...valid,activeWorkPeriod:{...valid.activeWorkPeriod,currentTask:{...valid.activeWorkPeriod.currentTask,extra:true}}}];
+  for(const value of invalid){clockGetEvent(f.page,{value}).respond();await new Promise(setImmediate);assert.equal(await controls.state(),null);assert.equal(controls.snapshot().cachedStatus,null);}
+  for(const text of ['PRIVATE_INVALID_JSON','0:{"hasEmployee":true,"isClockedIn":true}',JSON.stringify(valid)+' '.repeat(4194304)]){clockGetEvent(f.page,{text}).respond();await new Promise(setImmediate);assert.equal(controls.snapshot().cachedStatus,null);}
+  for(const value of [valid,{...valid,activeWorkPeriod:{...valid.activeWorkPeriod,currentTask:{...valid.activeWorkPeriod.currentTask,state:"done"},breakStartedAt:null,breakStartedZone:null}},{...valid,activeWorkPeriod:{...valid.activeWorkPeriod,currentTask:null}}]){clockGetEvent(f.page,{value,contentType:"Application/JSON; charset=utf-8"}).respond();await new Promise(setImmediate);assert.equal(await controls.state(),"in");}
+  clockGetEvent(f.page,{value:{hasEmployee:false,employeeId:null,isClockedIn:false,activeWorkPeriod:null}}).respond();await new Promise(setImmediate);assert.equal(await controls.state(),null);assert.equal(controls.snapshot().cachedStatus.hasEmployee,false);
+  assert.equal(/PRIVATE_|employeeId|startTime|projectId|localhost/.test(JSON.stringify(controls.snapshot())),false);
+ }finally{controls.dispose();}
+});
+
+test("public clock GET and Next action history share the original row budget and preserve lifecycle without Page calls",async()=>{
+ const f=clockDiagnosticPage();let calls=0;const evaluate=f.page.evaluate;f.page.evaluate=(...args)=>{calls++;return evaluate(...args);};
+ const controls=await openPublicHeaderClock(f.page,{origin:"http://localhost",expectedActor:f.expected,phase:"baseline",timeoutMs:50});
+ try{
+  await controls.prepare("in");const before=calls;
+  const pending=clockGetEvent(f.page);const failed=clockGetEvent(f.page,{body:Promise.reject(Error("PRIVATE_BODY_ERROR"))});failed.respond();await new Promise(setImmediate);
+  assert.equal(calls,before);let h=controls.snapshot().attemptActionReads;assert.equal(h.records[0].pending,true);assert.equal(h.records[1].failure,"body-unavailable");
+  for(let i=0;i<30;i++)if(i%2)clockActionEvent(f.page,"PRIVATE_ACTION_"+i,Promise.resolve(""));else clockGetEvent(f.page);
+  clockGetEvent(f.page);h=controls.snapshot().attemptActionReads;
+  assert.equal(h.records.length,32);assert.equal(h.retainedBytes,32768);assert.equal(h.overflow,1);assert.equal(h.completeness,"UNKNOWN");assert.equal(calls,before);
+  const max={...h.records[0]};for(const key of ["requestEventOrdinal","requestDocumentGeneration","requestAttemptPrepareEventOrdinal","attemptPrepareEventOrdinal","responseEventOrdinal","responseDocumentGeneration","completedEventOrdinal","completedDocumentGeneration","failedEventOrdinal"])max[key]=10000;
+  Object.assign(max,{httpStatus:599,parseOutcome:"response-ineligible",failure:"body-unavailable",carryIn:false,pending:false,statusReadPending:false,hasEmployee:false,isClockedIn:false,deliveredToStatusCache:false});
+  assert.ok(Buffer.byteLength(JSON.stringify(max))<=960);assert.ok(Buffer.byteLength(JSON.stringify(h))<=32768);
+  pending.respond();await new Promise(setImmediate);assert.equal(controls.snapshot().attemptActionReads.records[0].deliveredToStatusCache,true);assert.equal(controls.snapshot().attemptActionReads.completeness,"UNKNOWN");
+  assert.equal(/PRIVATE_|localhost/.test(JSON.stringify(controls.snapshot())),false);
+ }finally{controls.dispose();}
+});

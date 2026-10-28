@@ -88,6 +88,31 @@ function resultFrom(text) {
 	return null;
 }
 
+// Exact passive HTTP boundary; this observer never initiates a status read.
+function clockGETRequest(request,origin){
+ try{return request.method()==="GET" && request.url()===origin+"/api/time-clock/status" && Array.isArray(request.redirectChain()) && request.redirectChain().length===0;}catch{return false;}
+}
+function clockGETResponse(response,request,origin){
+ try{const headers=response.headers(),keys=Object.keys(headers).filter(key=>key.toLowerCase()==="content-type"),field=keys.length===1?Object.getOwnPropertyDescriptor(headers,keys[0]):null;
+ return clockGETRequest(request,origin) && response.url()===origin+"/api/time-clock/status" && response.status()===200 && field && Object.hasOwn(field,"value") && typeof field.value==="string" && field.value.split(";",1)[0].trim().toLowerCase()==="application/json";
+ }catch{return false;}
+}
+function clockGETStatus(text){
+ try{
+  if(typeof text!=="string" || Buffer.byteLength(text)>4194304)return null;
+  const value=JSON.parse(text),exact=(v,keys)=>v!==null&&typeof v==="object"&&!Array.isArray(v)&&Object.keys(v).length===keys.length&&keys.every(key=>Object.hasOwn(v,key));
+  const nonempty=v=>typeof v==="string"&&v.length>0,instant=v=>typeof v==="string"&&Number.isFinite(new Date(v).getTime())&&new Date(v).toISOString()===v;
+  if(!exact(value,["hasEmployee","employeeId","isClockedIn","activeWorkPeriod"])||typeof value.hasEmployee!=="boolean"||typeof value.isClockedIn!=="boolean"||!(value.employeeId===null||nonempty(value.employeeId)))return null;
+  const period=value.activeWorkPeriod;
+  if(period!==null){
+   if(!exact(period,["id","startTime","currentTask","breakStartedAt","breakStartedZone"])||!nonempty(period.id)||!instant(period.startTime)||!(period.breakStartedAt===null||instant(period.breakStartedAt))||!(period.breakStartedZone===null||typeof period.breakStartedZone==="string"))return null;
+   const task=period.currentTask;if(task!==null&&(!exact(task,["id","name","state","projectId"])||!nonempty(task.id)||typeof task.name!=="string"||!["open","done"].includes(task.state)||!nonempty(task.projectId)))return null;
+  }
+  if(value.hasEmployee ? value.employeeId===null || value.isClockedIn!==(period!==null) : value.employeeId!==null || value.isClockedIn || period!==null)return null;
+  return {hasEmployee:value.hasEmployee,isClockedIn:value.isClockedIn};
+ }catch{return null;}
+}
+
 async function verifyActor(page, expected) {
 	const current = await page.evaluate(async () => {
 		const response = await fetch("/api/auth/get-session", {
@@ -150,13 +175,15 @@ export async function openPublicHeaderClock(
 	const optionalRequestIdHash=request=>{try{const descriptor=Object.getOwnPropertyDescriptor(request,"id"),id=descriptor && Object.hasOwn(descriptor,"value")?descriptor.value:null;return typeof id==="string" && id.length>0 && id.length<=256 && Buffer.byteLength(id)<=256 && /^[A-Za-z0-9_.:-]+$/.test(id)?createHash("sha256").update(id).digest("hex"):null;}catch{return null;}};
 	const observeActionRequest=(request,fact)=>{try{
 		const headers=request.headers(),descriptor=Object.getOwnPropertyDescriptor(headers,"next-action");
-		if(!descriptor){if("next-action" in headers)actionReadUnknown(false);return;}
-		if(!Object.hasOwn(descriptor,"value")||typeof descriptor.value!=="string"||descriptor.value.length===0||Buffer.byteLength(descriptor.value)>1024||!Number.isSafeInteger(fact.requestEventOrdinal)||!Number.isSafeInteger(fact.documentGeneration)||fact.documentGeneration>10000){actionReadUnknown(false);return;}
+		const isClockGET=!descriptor && !("next-action" in headers) && clockGETRequest(request,url.origin);
+		if(!descriptor&&!isClockGET){if("next-action" in headers)actionReadUnknown(false);return;}
+		if(!isClockGET&&(!Object.hasOwn(descriptor,"value")||typeof descriptor.value!=="string"||descriptor.value.length===0||Buffer.byteLength(descriptor.value)>1024||!Number.isSafeInteger(fact.requestEventOrdinal)||!Number.isSafeInteger(fact.documentGeneration)||fact.documentGeneration>10000)){actionReadUnknown(false);return;}
+		if(isClockGET&&(!Number.isSafeInteger(fact.requestEventOrdinal)||!Number.isSafeInteger(fact.documentGeneration)||fact.documentGeneration>10000)){actionReadUnknown(false);return;}
 		// Reserve the fixed row allowance before hashing or constructing its metadata.
 		if(actionReads.records.length>=actionReads.rowLimit||actionReads.retainedBytes+960>actionReads.byteLimit){actionReadUnknown(true);return;}
 		actionReads.retainedBytes+=960;
 		const cdpRequestIdSha256=optionalRequestIdHash(request);
-		actionReads.records.push({actionHeaderSha256:createHash("sha256").update(descriptor.value).digest("hex"),cdpRequestIdSha256,cdpRequestIdIdentity:cdpRequestIdSha256===null?"UNKNOWN":"known",requestEventOrdinal:fact.requestEventOrdinal,requestDocumentGeneration:fact.documentGeneration,requestAttemptPrepareEventOrdinal:actionReads.attemptPrepareEventOrdinal,attemptPrepareEventOrdinal:actionReads.attemptPrepareEventOrdinal,carryIn:false,responseEventOrdinal:null,responseDocumentGeneration:null,completedEventOrdinal:null,completedDocumentGeneration:null,failedEventOrdinal:null,httpStatus:null,parseOutcome:"request-pending",pending:true,statusReadPending:false,failure:null,hasEmployee:null,isClockedIn:null,deliveredToStatusCache:false});
+		actionReads.records.push({...(isClockGET?{source:"page-response-clock-status-get"}:{}),actionHeaderSha256:isClockGET?null:createHash("sha256").update(descriptor.value).digest("hex"),cdpRequestIdSha256,cdpRequestIdIdentity:cdpRequestIdSha256===null?"UNKNOWN":"known",requestEventOrdinal:fact.requestEventOrdinal,requestDocumentGeneration:fact.documentGeneration,requestAttemptPrepareEventOrdinal:actionReads.attemptPrepareEventOrdinal,attemptPrepareEventOrdinal:actionReads.attemptPrepareEventOrdinal,carryIn:false,responseEventOrdinal:null,responseDocumentGeneration:null,completedEventOrdinal:null,completedDocumentGeneration:null,failedEventOrdinal:null,httpStatus:null,parseOutcome:"request-pending",pending:true,statusReadPending:false,failure:null,hasEmployee:null,isClockedIn:null,deliveredToStatusCache:false});
 	}catch{actionReadUnknown(false);}};
 	const beginActionAttempt=prepareEventOrdinal=>{
 		actionReads.records=actionReads.records.filter(row=>row.pending);
@@ -174,19 +201,23 @@ export async function openPublicHeaderClock(
 	const observeStatus = async (response) => {
 		const request=response.request(),headers=request.headers(),fact=requests.get(request),responseEventOrdinal=ordinal();
 		if(fact)fact.responseEventOrdinal=responseEventOrdinal;
-		if (!headers["next-action"]) return;
+		const isClockGET=!headers["next-action"] && fact && actionRow(fact)?.source==="page-response-clock-status-get" && clockGETRequest(request,url.origin);
+		if (!headers["next-action"] && !isClockGET) return;
 		const descriptor=Object.getOwnPropertyDescriptor(headers,"next-action"),action=descriptor && Object.hasOwn(descriptor,"value") && typeof descriptor.value==="string" && Buffer.byteLength(descriptor.value)<=1024?descriptor.value:null;
 		const readRow=actionRow(fact);
 		if(!readRow)actionReadUnknown(false);
 		if(readRow){readRow.responseEventOrdinal=responseEventOrdinal;readRow.responseDocumentGeneration=diagnostic.documentGeneration;readRow.parseOutcome="response-pending";readRow.statusReadPending=true;readRow.pending=true;try{const status=response.status();readRow.httpStatus=Number.isInteger(status)&&status>=100&&status<=599?status:null;}catch{actionReadUnknown(false);}}
+		const eligibleClockGET=!isClockGET||clockGETResponse(response,request,url.origin);
 		let bodyUnavailable=false;diagnostic.pendingStatusReads++;
-		const value = resultFrom(await response.text().catch(() => {bodyUnavailable=true;return "";}));
+		const value = isClockGET
+			? eligibleClockGET?clockGETStatus(await response.text().catch(() => {bodyUnavailable=true;return "";})):null
+			: resultFrom(await response.text().catch(() => {bodyUnavailable=true;return "";}));
 		diagnostic.pendingStatusReads--;
 		let originMatches=null;try{originMatches=new URL(response.url()).origin===url.origin;}catch{diagnostic.errors++;}
-		const metadata={source:"page-response-next-action",requestOrderKnown:Number.isSafeInteger(fact?.requestEventOrdinal),requestEventOrdinal:fact?.requestEventOrdinal ?? null,responseEventOrdinal,completedEventOrdinal:ordinal(),requestDocumentGeneration:fact?.documentGeneration ?? null,
+		const metadata={source:isClockGET?"page-response-clock-status-get":"page-response-next-action",requestOrderKnown:Number.isSafeInteger(fact?.requestEventOrdinal),requestEventOrdinal:fact?.requestEventOrdinal ?? null,responseEventOrdinal,completedEventOrdinal:ordinal(),requestDocumentGeneration:fact?.documentGeneration ?? null,
 			sameObservedNavigationGeneration:fact?fact.documentGeneration===diagnostic.documentGeneration:null,documentNavigationObserved:diagnostic.navigationEvents>0,originMatches,
 			actionHeaderSha256Known:action!==null,actionHeaderSha256:action===null?null:createHash("sha256").update(action).digest("hex"),
-			parseOutcome:bodyUnavailable?"body-unavailable":typeof value?.isClockedIn==="boolean"?"status-known":"unrecognized",
+			parseOutcome:!eligibleClockGET?"response-ineligible":bodyUnavailable?"body-unavailable":typeof value?.isClockedIn==="boolean"?"status-known":"unrecognized",
 			hasEmployeeType:kind(value?.hasEmployee),hasEmployee:value?.hasEmployee===true?true:value?.hasEmployee===false?false:null,isClockedInType:kind(value?.isClockedIn),isClockedIn:typeof value?.isClockedIn==="boolean"?value.isClockedIn:null};
 		diagnostic.lastStatusRead=metadata;
 		if(readRow){readRow.completedEventOrdinal=metadata.completedEventOrdinal;readRow.completedDocumentGeneration=diagnostic.documentGeneration;readRow.pending=false;readRow.statusReadPending=false;readRow.parseOutcome=metadata.parseOutcome;readRow.hasEmployee=metadata.hasEmployee;readRow.isClockedIn=metadata.isClockedIn;if(bodyUnavailable&&readRow.failure===null)readRow.failure="body-unavailable";}
