@@ -27,7 +27,7 @@ function readMountedClockQueryState(button){
   const connected=Object.getOwnPropertyDescriptor(Node.prototype,'isConnected')?.get;if(!connected||!Reflect.apply(connected,button,[]))return unknown('not-mounted');
   const host=data(button,fiberKeys[0]),branches=[host,data(host,'alternate')].filter(Boolean),paths=[];let rootOwner=null;
   for(const first of branches){let node=first;const path=[],seen=new Set();let valid=data(first,'tag')===5&&data(first,'stateNode')===button;
-   for(let depth=0;node&&depth<96;depth++){
+   for(let depth=0;node&&depth<256;depth++){
     if(seen.has(node)){valid=false;break;}seen.add(node);path.push(node);const parent=data(node,'return');
     if(!parent){const root=data(node,'stateNode'),current=data(root,'current');if(data(node,'tag')!==3||!root||!current||typeof current!=='object'||(current!==node&&current!==data(node,'alternate'))||(rootOwner&&rootOwner!==root))valid=false;rootOwner=root;node=null;break;}node=parent;
    }

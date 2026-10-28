@@ -7,7 +7,7 @@ not participate in DOM readiness, write acceptance, deadlines or command outcome
 No mutation status is inferred: the clock hook has no exact mutation key.
 
 The probe starts at the selected connected native button. It inspects at most 32
-host properties and both React fiber ancestor paths, each bounded to 96 nodes.
+host properties and both React fiber ancestor paths, each bounded to 256 nodes.
 Both paths must reach the same current root and exactly one matching function
 provider/client plus immediate React context/value pair, with the same client on
 both paths. Missing, ambiguous, detached or bounded-out state returns fixed UNKNOWN
@@ -70,3 +70,15 @@ and `cdp/NetworkManager.js` SHA256
 `a7cb994a5e081efc6be3038447d2dfb1e0da462adc40606888295b1223537075`.
 Version alone is insufficient. The row grants no identity or acceptance authority;
 redirected or reused IDs remain ambiguous without an independent occurrence join.
+
+## Production ancestry bound
+
+The Root-only production probe at tooling1de observed a connected native host,
+matching host state and no cycle, but its first ancestry path exhausted96 nodes.
+That explains the diagnostic UNKNOWN result; it does not explain the clock status
+failure. The prospective observer-only bound is now256 nodes per alternate path.
+A real rendered provider/context/Suspense tree deeper than96 is readable under
+that bound, while a real tree beyond256 remains UNKNOWN. All provider identity,
+read-only scalar, readiness and command gates remain unchanged. Earlier failed
+clock captures remain failed, and the larger diagnostic bound grants no business
+or performance acceptance.

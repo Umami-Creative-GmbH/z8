@@ -78,8 +78,15 @@ it("integrated callback bounds host properties and ancestor traversal and report
  const client=new QueryClient();clients.push(client);client.setQueryData(["time-clock","status"],OUT);
  const view=render(<QueryClientProvider client={client}><header><button aria-label="Clock In" data-testid="bounds">OUT</button></header></QueryClientProvider>),button=screen.getByTestId("bounds");
  const fiberKey=Object.getOwnPropertyNames(button).find(key=>key.startsWith("__reactFiber$"))!,descriptor=Object.getOwnPropertyDescriptor(button,fiberKey)!;
- const chain=Array.from({length:97},(_,i)=>({tag:i===0?5:0,stateNode:i===0?button:null,return:null as unknown}));for(let i=0;i<chain.length-1;i++)chain[i].return=chain[i+1];
+ const chain=Array.from({length:257},(_,i)=>({tag:i===0?5:0,stateNode:i===0?button:null,return:null as unknown}));for(let i=0;i<chain.length-1;i++)chain[i].return=chain[i+1];
  Object.defineProperty(button,fiberKey,{...descriptor,value:chain[0]});try{expect(observeMounted(button)).toMatchObject({known:false,reason:"current-fiber-unknown"});}finally{Object.defineProperty(button,fiberKey,descriptor);}
  for(let i=0;i<33;i++)Object.defineProperty(button,"boundedDiagnostic"+i,{value:0,configurable:true});expect(observeMounted(button)).toMatchObject({known:false,reason:"host-bound"});for(let i=0;i<33;i++)delete (button as any)["boundedDiagnostic"+i];
  view.unmount();expect(observeMounted(button)).toMatchObject({known:false});
+});
+
+it("a real deep provider and Suspense tree stays readable above96 while beyond256 remains UNKNOWN",()=>{
+ const Context=React.createContext(null);function Layer({children}:{children:React.ReactNode}){return <Context value={null}>{children}</Context>;}function Clock(){const clock=headHook();return <header><button aria-label={clock.isClockedIn?"Clock Out":"Clock In"} data-testid="deep-clock">OUT</button></header>;}
+ for(const levels of [64,130]){const client=new QueryClient({defaultOptions:{queries:{retry:false},mutations:{retry:false}}});clients.push(client);client.setQueryData(["time-clock","status"],OUT);let tree:React.ReactNode=<Clock/>;for(let i=0;i<levels;i++){tree=<Layer>{tree}</Layer>;if(i%4===0)tree=<React.Suspense fallback={null}>{tree}</React.Suspense>;}const view=render(<QueryClientProvider client={client}>{tree}</QueryClientProvider>),button=screen.getByTestId("deep-clock");const key=Object.getOwnPropertyNames(button).find(value=>value.startsWith("__reactFiber$"))!;let node=(button as any)[key],depth=0;while(node&&depth<512){depth++;node=node.return;}expect(depth).toBeGreaterThan(96);const before=client.getQueryState(["time-clock","status"]),observation=readPublicHeaderClockDOM(null,false);
+  if(levels===64){expect(depth).toBeLessThanOrEqual(256);expect(observation.dom.mountedClockQuery).toMatchObject({known:true,queryStatus:"success",fetchStatus:"idle",cachedIsClockedIn:false,observerCount:1});}else{expect(depth).toBeGreaterThan(256);expect(observation.dom.mountedClockQuery).toMatchObject({known:false,reason:"current-fiber-unknown",observerCount:null});}
+  expect(observation.value).toBe(null);expect(client.getQueryState(["time-clock","status"])).toBe(before);expect(mocks.status).not.toHaveBeenCalled();expect(mocks.post).not.toHaveBeenCalled();view.unmount();}
 });
