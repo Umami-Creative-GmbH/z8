@@ -49,3 +49,24 @@ fixture layout, set test-only `Z8_CLOCK_ORIGINAL_APP` to the reviewed Original
 webapp directory. This selects a test source fixture, never operational authority.
 The production smoke requires `NODE_ENV=production`. Neither command starts a
 service or browser.
+
+## Optional internal request-ID digest
+
+Action rows may also contain `cdpRequestIdSha256`. This is only a digest of an own
+data `id` string in the supported 1–256 byte ASCII technical subset. An absent,
+inherited, accessor, malformed or oversized field returns null with identity
+`UNKNOWN`; it does not change the existing action-history completeness. No getter,
+request method or CDP command is invoked. The 960-byte row allowance is unchanged,
+and a conservative maximum-width serialized row is tested against that allowance.
+
+Interpreting the digest as a CDP identifier requires a separate Root preflight pin
+of the installed source and version. The reviewed puppeteer-core 25.13.0 source
+assigns the own field from `data.requestId`, but its declaration is `@internal`.
+Required source identities are `cdp/HTTPRequest.js` SHA256
+`2a15a2df1bd73adfce5e449bafdf08a8b78d6e96286a4480b2067dd83d525466`,
+`api/HTTPRequest.d.ts` SHA256
+`cd7ca14dfaf621cc1fed7c38dae4dd69d48317aef53ef1ac77c91b1934da7fb7`
+and `cdp/NetworkManager.js` SHA256
+`a7cb994a5e081efc6be3038447d2dfb1e0da462adc40606888295b1223537075`.
+Version alone is insufficient. The row grants no identity or acceptance authority;
+redirected or reused IDs remain ambiguous without an independent occurrence join.

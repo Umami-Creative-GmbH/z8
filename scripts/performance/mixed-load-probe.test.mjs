@@ -343,6 +343,20 @@ test("public clock history exposes failed body reads and rejects unknown action 
 	}finally{controls.dispose();}
 });
 
+test("public clock request id digest is optional diagnostic metadata with bounded own-data identity",async()=>{
+	const f=clockDiagnosticPage(),controls=await openPublicHeaderClock(f.page,{origin:"http://localhost",expectedActor:f.expected,phase:"baseline",timeoutMs:50});
+	try{
+		await controls.prepare("in");let getters=0;
+		const cases=[{value:"PRIVATE_CDP_ID",known:true},{value:"a".repeat(256),known:true},{value:"",known:false},{value:"a".repeat(257),known:false},{value:null,known:false},{value:123,known:false},{value:"PRIVATE\nID",known:false},{getter:true,known:false},{inherited:true,known:false},{missing:true,known:false}];
+		for(const c of cases){const request={headers:()=>({"next-action":"PRIVATE_ACTION"})};if(c.getter)Object.defineProperty(request,"id",{get(){getters++;throw Error("PRIVATE_ID_GETTER");}});else if(c.inherited)Object.setPrototypeOf(request,{id:"PRIVATE_INHERITED_ID"});else if(!c.missing)Object.defineProperty(request,"id",{value:c.value});f.page.emit("request",request);}
+		const h=controls.snapshot().attemptActionReads;assert.equal(h.completeness,"known");assert.equal(h.errors,0);assert.equal(h.records.length,cases.length);assert.equal(getters,0);
+		for(const [i,c]of cases.entries()){assert.equal(h.records[i].cdpRequestIdIdentity,c.known?"known":"UNKNOWN");assert.equal(h.records[i].cdpRequestIdSha256,c.known?createHash("sha256").update(c.value).digest("hex"):null);}
+		const maximum={...h.records[0]};for(const key of ["requestEventOrdinal","requestDocumentGeneration","requestAttemptPrepareEventOrdinal","attemptPrepareEventOrdinal","responseEventOrdinal","responseDocumentGeneration","completedEventOrdinal","completedDocumentGeneration","failedEventOrdinal"])maximum[key]=10000;
+		Object.assign(maximum,{httpStatus:599,parseOutcome:"body-unavailable",failure:"body-unavailable",carryIn:false,pending:false,statusReadPending:false,hasEmployee:false,isClockedIn:false,deliveredToStatusCache:false,cdpRequestIdIdentity:"UNKNOWN"});assert.ok(Buffer.byteLength(JSON.stringify(maximum))<=960);
+		assert.equal(/PRIVATE_|localhost/.test(JSON.stringify(h)),false);assert.equal(await controls.state(),"out");
+	}finally{controls.dispose();}
+});
+
 test("public header clock readiness reports the existing usable DOM predicate without changing state",async()=>{
 	const {page,dom,expected}=clockDiagnosticPage(),controls=await openPublicHeaderClock(page,{origin:"http://localhost",expectedActor:expected,phase:"baseline",timeoutMs:50});
 	try{

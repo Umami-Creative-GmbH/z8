@@ -147,6 +147,7 @@ export async function openPublicHeaderClock(
 		statusRequestAfterAcceptedWrite:diagnostic.writeResponse?.accepted===true && Number.isSafeInteger(diagnostic.cachedStatus?.requestEventOrdinal) && Number.isSafeInteger(diagnostic.writeResponse.acknowledgedEventOrdinal)?diagnostic.cachedStatus.requestEventOrdinal>diagnostic.writeResponse.acknowledgedEventOrdinal:null});
 	const kind=value=>value===undefined?"absent":value===null?"null":typeof value==="boolean"?"boolean":"other";
 	const actionRow=fact=>Number.isSafeInteger(fact?.requestEventOrdinal)?actionReads.records.find(row=>row.requestEventOrdinal===fact.requestEventOrdinal):null;
+	const optionalRequestIdHash=request=>{try{const descriptor=Object.getOwnPropertyDescriptor(request,"id"),id=descriptor && Object.hasOwn(descriptor,"value")?descriptor.value:null;return typeof id==="string" && id.length>0 && id.length<=256 && Buffer.byteLength(id)<=256 && /^[A-Za-z0-9_.:-]+$/.test(id)?createHash("sha256").update(id).digest("hex"):null;}catch{return null;}};
 	const observeActionRequest=(request,fact)=>{try{
 		const headers=request.headers(),descriptor=Object.getOwnPropertyDescriptor(headers,"next-action");
 		if(!descriptor){if("next-action" in headers)actionReadUnknown(false);return;}
@@ -154,7 +155,8 @@ export async function openPublicHeaderClock(
 		// Reserve the fixed row allowance before hashing or constructing its metadata.
 		if(actionReads.records.length>=actionReads.rowLimit||actionReads.retainedBytes+960>actionReads.byteLimit){actionReadUnknown(true);return;}
 		actionReads.retainedBytes+=960;
-		actionReads.records.push({actionHeaderSha256:createHash("sha256").update(descriptor.value).digest("hex"),requestEventOrdinal:fact.requestEventOrdinal,requestDocumentGeneration:fact.documentGeneration,requestAttemptPrepareEventOrdinal:actionReads.attemptPrepareEventOrdinal,attemptPrepareEventOrdinal:actionReads.attemptPrepareEventOrdinal,carryIn:false,responseEventOrdinal:null,responseDocumentGeneration:null,completedEventOrdinal:null,completedDocumentGeneration:null,failedEventOrdinal:null,httpStatus:null,parseOutcome:"request-pending",pending:true,statusReadPending:false,failure:null,hasEmployee:null,isClockedIn:null,deliveredToStatusCache:false});
+		const cdpRequestIdSha256=optionalRequestIdHash(request);
+		actionReads.records.push({actionHeaderSha256:createHash("sha256").update(descriptor.value).digest("hex"),cdpRequestIdSha256,cdpRequestIdIdentity:cdpRequestIdSha256===null?"UNKNOWN":"known",requestEventOrdinal:fact.requestEventOrdinal,requestDocumentGeneration:fact.documentGeneration,requestAttemptPrepareEventOrdinal:actionReads.attemptPrepareEventOrdinal,attemptPrepareEventOrdinal:actionReads.attemptPrepareEventOrdinal,carryIn:false,responseEventOrdinal:null,responseDocumentGeneration:null,completedEventOrdinal:null,completedDocumentGeneration:null,failedEventOrdinal:null,httpStatus:null,parseOutcome:"request-pending",pending:true,statusReadPending:false,failure:null,hasEmployee:null,isClockedIn:null,deliveredToStatusCache:false});
 	}catch{actionReadUnknown(false);}};
 	const beginActionAttempt=prepareEventOrdinal=>{
 		actionReads.records=actionReads.records.filter(row=>row.pending);
