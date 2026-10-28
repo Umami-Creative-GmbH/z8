@@ -165,11 +165,18 @@ const cases = [
 		first: true,
 		later: false,
 	},
+	{
+		name: "query-only after the first housekeeping tick beyond ten quiet minutes",
+		advanceMs: 660000,
+		first: true,
+		later: true,
+		acquisitions: false,
+	},
 ];
 
 it.each(cases)(
 	"keeps an OPEN registered SDK/export visit lossless at $name",
-	async ({ name, advanceMs, first, later }) => {
+	async ({ name, advanceMs, first, later, acquisitions = true }) => {
 		const folder = await mkdtemp(
 			join(tmpdir(), "z8-collector-open-retention-"),
 		);
@@ -267,13 +274,15 @@ it.each(cases)(
 			const pg = provider.getTracer("@opentelemetry/instrumentation-pg"),
 				emittedSpanIds: string[] = [];
 			const emitBatch = async () => {
-				const acquisition = pg.startSpan(
-					"pg-pool.connect",
-					{ kind: SpanKind.CLIENT },
-					parent,
-				);
-				emittedSpanIds.push(acquisition.spanContext().spanId);
-				acquisition.end();
+				if (acquisitions) {
+					const acquisition = pg.startSpan(
+						"pg-pool.connect",
+						{ kind: SpanKind.CLIENT },
+						parent,
+					);
+					emittedSpanIds.push(acquisition.spanContext().spanId);
+					acquisition.end();
+				}
 				const query = pg.startSpan(
 					"pg.query.open-retention-test",
 					{
@@ -300,7 +309,9 @@ it.each(cases)(
 			expect(firstMetrics.length).toBe(first ? 1 : 0);
 			if (first) {
 				expect(firstMetrics[0].observedQueryCount).toBe(1);
-				expect(firstMetrics[0].observedPoolAcquisitions).toBe(1);
+				expect(firstMetrics[0].observedPoolAcquisitions).toBe(
+					Number(acquisitions),
+				);
 			}
 			const clock = await advanceOwnedCollector(child, advanceMs);
 			expect(clock.realTimerUnrefed).toBe(true);
@@ -309,7 +320,10 @@ it.each(cases)(
 			);
 			if (later) await emitBatch();
 			const expected = Number(first) + Number(later);
-			expect(new Set(emittedSpanIds).size).toBe(expected * 2);
+			const expectedAcquisitions = acquisitions ? expected : 0;
+			expect(new Set(emittedSpanIds).size).toBe(
+				expected + expectedAcquisitions,
+			);
 			const closed = await endCollectorVisit(visit);
 			const native = closed.nativeCloseProof[0],
 				observed = closed.traces[0];
@@ -326,6 +340,7 @@ it.each(cases)(
 					advanceMs,
 					actualHousekeepingCallbacks: clock.actualHousekeepingCallbacks,
 					expected,
+					expectedAcquisitions,
 					nativeQueries: native.queries,
 					nativeAcquisitions: native.acquisitions,
 					nativeDriverQueries: native.driverQueries,
@@ -339,13 +354,13 @@ it.each(cases)(
 				}),
 			);
 			expect(native.queries).toBe(expected);
-			expect(native.acquisitions).toBe(expected);
+			expect(native.acquisitions).toBe(expectedAcquisitions);
 			expect(native.driverQueries).toBe(expected);
 			expect(native.complete).toBe(true);
 			expect(native.drained).toBe(true);
 			// Lossless OPEN visits must reconcile at the real close, regardless of quiet age.
 			expect(observed.observedQueryCount).toBe(expected);
-			expect(observed.observedPoolAcquisitions).toBe(expected);
+			expect(observed.observedPoolAcquisitions).toBe(expectedAcquisitions);
 			expect(observed.coverage.closed).toBe(true);
 			expect(observed.coverage.nativeProof).toBe(true);
 			expect(observed.coverage.incomplete).toBe(false);
