@@ -6,7 +6,7 @@ import { once } from "node:events";
 import { createWriteStream } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { createServer } from "node:net";
-import { join, resolve } from "node:path";
+import { isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { authenticateFixture } from "./fixture-auth.mjs";
 import { fixtureBrowserPolicy } from "./fixture-browser.mjs";
@@ -493,11 +493,26 @@ export function waitForProductionFixtureExit(child) {
 	});
 }
 
+export function resolveFixtureStartAppDirectory(startArgs) {
+	const overrides = startArgs.filter(value => value === "--app-dir");
+	if (overrides.length > 1 || startArgs.some(value => value.startsWith("--app-dir=")))
+		throw new Error("Fixture --app-dir requires one absolute compiled app directory.");
+	if (overrides.length === 0) return app;
+	const value = startArgs[startArgs.indexOf("--app-dir") + 1];
+	if (typeof value !== "string" || !isAbsolute(value))
+		throw new Error("Fixture --app-dir requires one absolute compiled app directory.");
+	if (startArgs.includes("--build"))
+		throw new Error("Fixture custom app directory is compiled-only and cannot use --build.");
+	return resolve(value);
+}
+
 async function start(directory) {
+	const startApp = resolveFixtureStartAppDirectory(args);
+	const customApp = args.includes("--app-dir");
 	const runtime = JSON.parse(
 		await readFile(join(directory, "runtime-private.json"), "utf8"),
 	);
-	if (!args.includes("--build")) await requireMatchingFixtureDeployment(runtime);
+	if (!args.includes("--build")) await requireMatchingFixtureDeployment(runtime, join(startApp, ".next/required-server-files.json"));
 	else if (
 		typeof runtime.env?.NEXT_DEPLOYMENT_ID !== "string" ||
 		!runtime.env.NEXT_DEPLOYMENT_ID
@@ -505,6 +520,10 @@ async function start(directory) {
 		throw new Error(
 			"Fixture runtime deployment identity is required before startup.",
 		);
+	if (customApp) {
+		await readFile(join(startApp, ".next/BUILD_ID"));
+		await readFile(join(startApp, "node_modules/next/dist/bin/next"));
+	}
 	if (args.includes("--collector")) {
 		const collector = JSON.parse(
 			await readFile(args[args.indexOf("--collector") + 1], "utf8"),
@@ -527,13 +546,13 @@ async function start(directory) {
 	await once(log, "open");
 	if (args.includes("--build")) {
 		await run(["run", "build"], { ...runtime.env, CI: "true" }, log);
-		await requireMatchingFixtureDeployment(runtime);
+		await requireMatchingFixtureDeployment(runtime, join(startApp, ".next/required-server-files.json"));
 	}
-	await readFile(join(app, ".next/BUILD_ID")); // no dev server or implicit fallback
+	if (!customApp) await readFile(join(startApp, ".next/BUILD_ID")); // no dev server or implicit fallback
 	const child = spawn(
 		process.execPath,
 		[
-			join(app, "node_modules/next/dist/bin/next"),
+			join(startApp, "node_modules/next/dist/bin/next"),
 			"start",
 			"--hostname",
 			"127.0.0.1",
@@ -541,7 +560,7 @@ async function start(directory) {
 			String(runtime.port),
 		],
 		{
-			cwd: app,
+			cwd: startApp,
 			env: isolatedEnv({ ...runtime.env, CI: "false" }),
 			stdio: ["ignore", log, log],
 			windowsHide: true,
@@ -791,10 +810,11 @@ const knownCommands = [
 	"upgrade",
 ];
 if (
-	executingCli && (!knownCommands.includes(command) || !inputDirectory)
+	executingCli && (!knownCommands.includes(command) || !inputDirectory ||
+		command !== "start" && args.some(value => value === "--app-dir" || value.startsWith("--app-dir=")))
 ) {
 	console.error(
-		"Usage: pnpm performance:fixture <prepare|start|cleanup|plan|authenticate|check-runtime|check-observer|initialize-projections|upgrade> <private-directory> [--build|--collector control.json|--as-of instant|plan-output.json]",
+		"Usage: pnpm performance:fixture <prepare|start|cleanup|plan|authenticate|check-runtime|check-observer|initialize-projections|upgrade> <private-directory> [--build|--collector control.json|--as-of instant|plan-output.json] [start only: --app-dir /absolute/compiled-app without --build]",
 	);
 	process.exitCode = 2;
 } else if (executingCli) {
