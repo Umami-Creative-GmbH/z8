@@ -75,13 +75,37 @@ export const reviewedLegacyClockFiles = Object.freeze(
 		},
 	].map(Object.freeze),
 );
+const webClockOriginal='2ef3b3f17ea61d65570f23c46f92d1d320f5ef25',webClockHead='405ab67fa4cf05800a51526c4d67bc52c001a08b';
+export const reviewedWebClockStatusLegacyFiles=Object.freeze(reviewedLegacyClockFiles.map(row=>Object.freeze(row.file==='apps/webapp/src/lib/query/use-time-clock.ts'?{...row,canonicalSha256:'6b01dcb420acd88cce52f233ce78e05eebcea978a9b1fb5c813cdf12b3d46ae5',gitBlob:'8e2342c0be4e1b57e19962e8b5859f6d8735f736'}:{...row})));
+export const reviewedWebClockStatusTransportFiles=Object.freeze([
+ ['apps/webapp/src/app/api/time-clock/status/route.ts','ebf43785a4a238742b90f6d00536ed31bdbe1f94b6028a5c1044c3e91475c4d3','83dcc4b7e902b65f3622f66e2b3efa5aad61e7ca'],
+ ['apps/webapp/src/lib/time-tracking/web-clock-status.ts','c559558e97e9705207c7f2aba06aed7d9a1800ecfa7f25473fb753b2b9d4a1d8','94f26bab6caa25dfb150257197e6fa7fd04f0ce1'],
+ ['apps/webapp/src/lib/time-tracking/web-clock-status-client.ts','608a54052a0f03c5acc47facd59faf3dc8d98302224f753fd31bcef27d8c6255','8a5281a67b51a6a536f5adeff39b7c80f45a59ed'],
+ ['apps/webapp/src/lib/projects/project-task-model.ts','84ba384777230b9569c522b4c110bdf65dcca1e671da91863e81a4771b93f75e','353aac9aaf25c1eb34ddcf7367e8d00a33221b99'],
+].map(([file,canonicalSha256,gitBlob])=>Object.freeze({file,canonicalSha256,gitBlob})));
+function legacyFilesForSource(compiledBuild){assert.notEqual(compiledBuild,webClockHead);return compiledBuild===webClockOriginal?reviewedWebClockStatusLegacyFiles:reviewedLegacyClockFiles;}
+function transportCertificate(f){
+ const c=f.configuration,common=f.transportCertificate,correction=common?.approvedWebClockStatusCorrection;
+ assert.equal(f.phase,'baseline');assert.equal(f.transportSourceSha256,c.transportSource.sha256);assert.equal(f.review.transportSourceSha256,c.transportSource.sha256);
+ assert.equal(common.schema,1);assert.equal(common.kind,'identical-common7-plus-approved-admin-advisory-and-web-clock-status-hunks-provenance-v33');
+ assert.equal(common.originalBinarySource,webClockOriginal);assert.equal(common.headBinarySource,webClockHead);assert.equal(common.originalBusinessSource,'39a08d0bbe77e00ceb5b204b9f9100ab2cfb86be');
+ for(const key of ['userApproved','ready','sourceQualificationComplete'])assert.equal(common[key],true);
+ assert.equal(common.builds.original.source,webClockOriginal);assert.equal(common.builds.head.source,webClockHead);assert.equal(common.builds.original.requiredServerFilesSha256,f.manifestSha256);assert.equal(common.builds.original.recordSha256,c.buildRecord.sha256);assert.ok(digest(common.builds.head.requiredServerFilesSha256));
+ assert.equal(correction.userApproved,true);assert.equal(correction.identicalHunks,true);
+ const hook=reviewedWebClockStatusLegacyFiles.find(row=>row.file==='apps/webapp/src/lib/query/use-time-clock.ts'),changed=[...reviewedWebClockStatusTransportFiles.slice(0,3),hook];
+ assert.deepEqual(correction.productionPaths.slice().sort(),changed.map(row=>row.file).sort());assert.equal(correction.records.length,4);
+ const check=(row,pin)=>{exactKeys(row,['file','canonicalSha256','gitBlob','physicalSha256']);for(const key of ['file','canonicalSha256','gitBlob'])assert.equal(row[key],pin[key]);assert.ok(digest(row.physicalSha256));};
+ for(const pin of changed){const records=correction.records.filter(row=>row.file===pin.file);assert.equal(records.length,1);const row=records[0];assert.ok(digest(row.signedHunkSha256));check(row.phases.original,pin);const actual=[...f.sourceFacts,...f.transportFacts].find(item=>item.file===pin.file);assert.equal(actual?.physicalSha256,row.phases.original.physicalSha256);check(row.phases.head,pin===hook?{...pin,canonicalSha256:'7e75bac444559faa4b28f61272814a12c5151cbe0e62328f210a3e334f0d0fd3',gitBlob:'e8f7250a3a14c9bbffdb8af3ec6b23f460cb61f2'}:pin);}
+ assert.equal(correction.transportClosure.length,4);assert.equal(f.transportFacts?.length,4);
+ for(let i=0;i<4;i++){const pin=reviewedWebClockStatusTransportFiles[i],row=correction.transportClosure[i];assert.equal(row.file,pin.file);check(row.phases.original,pin);check(row.phases.head,pin);check(f.transportFacts[i],pin);assert.equal(f.transportFacts[i].physicalSha256,row.phases.original.physicalSha256);}
+}
 function exactKeys(value, keys) {
 	assert.ok(value && typeof value === "object" && !Array.isArray(value));
 	assert.deepEqual(Object.keys(value).sort(), keys.slice().sort());
 }
 function validateSource(f) {
 	const c = f.configuration,
-		r = f.review;
+		r = f.review,files=legacyFilesForSource(f.compiledBuild),webClock=f.compiledBuild===webClockOriginal;
 	exactKeys(c, [
 		"protocol",
 		"compiledBuild",
@@ -90,9 +114,10 @@ function validateSource(f) {
 		"phase",
 		"review",
 		"buildRecord",
+		...(webClock?["transportSource"]:[]),
 	]);
 	assert.equal(c.protocol, legacyClockReadinessProtocol);
-	for (const ref of [c.review, c.buildRecord]) {
+	for (const ref of [c.review, c.buildRecord,...(webClock?[c.transportSource]:[])]) {
 		exactKeys(ref, ["path", "sha256"]);
 		assert.ok(
 			isAbsolute(ref.path) && ref.path.length <= 1024 && digest(ref.sha256),
@@ -119,6 +144,7 @@ function validateSource(f) {
 		"phase",
 		"buildRecordSha256",
 		"files",
+		...(webClock?["transportSourceSha256"]:[]),
 	]);
 	assert.equal(r.schema, 1);
 	assert.equal(r.kind, "root-reviewed-legacy-header-readiness-source-v1");
@@ -146,10 +172,10 @@ function validateSource(f) {
 			Number.isFinite(Date.parse(b.finishedAt)) &&
 			Date.parse(b.startedAt) <= Date.parse(b.finishedAt),
 	);
-	assert.equal(r.files?.length, reviewedLegacyClockFiles.length);
-	assert.equal(f.sourceFacts?.length, reviewedLegacyClockFiles.length);
-	for (let i = 0; i < reviewedLegacyClockFiles.length; i++) {
-		const known = reviewedLegacyClockFiles[i],
+	assert.equal(r.files?.length, files.length);
+	assert.equal(f.sourceFacts?.length, files.length);
+	for (let i = 0; i < files.length; i++) {
+		const known = files[i],
 			actual = f.sourceFacts[i],
 			reviewed = r.files[i];
 		for (const row of [actual, reviewed]) {
@@ -160,7 +186,9 @@ function validateSource(f) {
 		}
 		assert.equal(actual.physicalSha256, reviewed.physicalSha256);
 	}
+	if(webClock)transportCertificate(f);
 	return Object.freeze({
+		...(webClock?{transportSourceSha256:c.transportSource.sha256}:{}),
 		protocol: legacyClockReadinessProtocol,
 		compiledBuild: f.compiledBuild,
 		compiledManifestSha256: f.manifestSha256,
@@ -216,6 +244,7 @@ async function readSource({
 	phase,
 }) {
 	// Validate reference shape before opening a caller path; no acceptance Boolean is consumed alone.
+	const files=legacyFilesForSource(compiledBuild),webClock=compiledBuild===webClockOriginal;
 	exactKeys(configuration, [
 		"protocol",
 		"compiledBuild",
@@ -224,8 +253,9 @@ async function readSource({
 		"phase",
 		"review",
 		"buildRecord",
+		...(webClock?["transportSource"]:[]),
 	]);
-	for (const ref of [configuration.review, configuration.buildRecord]) {
+	for (const ref of [configuration.review, configuration.buildRecord,...(webClock?[configuration.transportSource]:[])]) {
 		exactKeys(ref, ["path", "sha256"]);
 		assert.ok(
 			isAbsolute(ref.path) && ref.path.length <= 1024 && digest(ref.sha256),
@@ -247,7 +277,7 @@ async function readSource({
 			.trim();
 	const sourceFacts = [];
 	let total = 0;
-	for (const known of reviewedLegacyClockFiles) {
+	for (const known of [...files,...(webClock?reviewedWebClockStatusTransportFiles:[])]) {
 		const path = resolve(app, known.file.replace("apps/webapp/", ""));
 		assert.ok(!relative(app, path).startsWith(".."));
 		const bytes = await bounded(path, 256 * 1024);
@@ -269,12 +299,15 @@ async function readSource({
 				.digest("hex"),
 		});
 	}
+	let certificate=null,certificateSha=null;
+	if(webClock){const bytes=await bounded(configuration.transportSource.path,256*1024);assert.equal(sha(bytes),configuration.transportSource.sha256);assert.ok(!(bytes[0]===239&&bytes[1]===187&&bytes[2]===191));certificate=JSON.parse(new TextDecoder("utf-8",{fatal:true}).decode(bytes));certificateSha=sha(bytes);}
 	return validateLegacyClockReadinessSource({
 		configuration,
 		review,
 		buildRecord,
 		buildId,
-		sourceFacts,
+		sourceFacts:sourceFacts.slice(0,files.length),
+		...(webClock?{transportFacts:sourceFacts.slice(files.length),transportCertificate:certificate,transportSourceSha256:certificateSha}:{}),
 		compiledBuild,
 		manifestSha256,
 		origin,
