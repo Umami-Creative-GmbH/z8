@@ -287,3 +287,9 @@ in its existing nonzero-exit error message. Its original zero/null resolution,
 error identity, once listeners and shutdown behavior remain unchanged. This is
 prospective failed-supervision evidence only; it does not recover the previous
 application exit, establish a resource/OOM/Chromium cause or qualify a failed run.
+
+Normal `fixture start` can select an existing compiled app with one explicit
+`--app-dir /absolute/app` argument. The custom app's manifest, BUILD_ID and Next
+entrypoint are checked before collector configuration or log writes. A custom
+directory cannot use `--build`; other commands reject the override. Omitting it
+preserves the original application directory, build path, environment and guards.
