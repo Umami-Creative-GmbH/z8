@@ -999,3 +999,91 @@ test("ordinary shared graphs have no escaped strong reference after last confirm
   }finally{f.dispose();}
  }
 });
+test("representation rejection retains the original deflate reservation stage before cleanup",async()=>{
+ const {mixedTechnicalCandidateDigest}=await import("./mixed-technical-gzip.mjs"),{begin}=await openPrefixFixture();
+ const proxy=createProxyControlCollector({contextId:begin.nativeContext.contextId});proxy.installed();
+ const owner=createMixedTechnicalOwner({contextId:begin.nativeContext.contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});
+ const cut=owner.capture(()=>begin),held=33554432-4194304;assert.equal(proxy.reserveTemporaryObservation(held),true);const reports=[];
+ try{
+  assert.equal(owner.retainEvidence(()=>mixedTechnicalCandidateDigest(cut,row=>reports.push(row))),null);assert.equal(reports.length,1);
+  const failure=reports[0].failure;assert.ok(failure,"failed representation must identify its original stage");
+  assert.equal(failure.stage,"deflate-reserve");assert.equal(failure.refusal.kind,"parent-bytes-refused");
+  assert.equal(failure.refusal.label,"deflate-output-chunks");assert.equal(failure.refusal.requestedBytes,4194304);
+  assert.ok(failure.ownerUsedBytes>owner.stats().retainedBytes,"failure captures the pre-cleanup live owner");
+  assert.ok(failure.refusal.parentUsedBytes>=held);assert.equal(reports[0].serialized,null);
+ }finally{proxy.releaseTemporaryObservation(held);owner.releaseCut(cut);owner.close();assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);}
+});
+test("representation diagnostics distinguish pre-owner qualification binding and canonical failure",async()=>{
+ const {mixedTechnicalCandidateDigest}=await import("./mixed-technical-gzip.mjs"),{begin}=await openPrefixFixture();
+ let report;assert.equal(mixedTechnicalCandidateDigest({privateValue:"PRIVATE_UNKNOWN"},row=>{report=row;}),null);
+ assert.equal(report.failure.stage,"fallback-replay");assert.equal(report.failure.ownerUsedBytes,null);assert.equal(report.failure.ownerUsedRecords,null);assert.equal(report.failure.refusal,null);
+ const first=fixtureOwner(begin.nativeContext.contextId),second=fixtureOwner(begin.nativeContext.contextId),cut=first.capture(()=>begin);
+ try{
+  assert.equal(second.run(()=>mixedTechnicalCandidateDigest(cut,row=>{report=row;})),null);assert.equal(report.failure.stage,"owner-join");assert.equal(report.failure.ownerUsedBytes,null);
+  cut.browserEventOrdinal++;assert.equal(mixedTechnicalCandidateDigest(cut,row=>{report=row;}),null);assert.equal(report.failure.stage,"binding-match");assert.equal(report.failure.refusal,null);
+  cut.proxy[0].PRIVATE_INVALID=NaN;assert.equal(mixedTechnicalCandidateDigest(cut,row=>{report=row;}),null);assert.equal(report.failure.stage,"measure");assert.equal(report.failure.innerStage,"canonical-measure");
+  assert.doesNotMatch(JSON.stringify(report),/PRIVATE_|privateValue/);assert.ok(Object.isFrozen(report.failure));
+ }finally{first.releaseCut(cut);first.close();second.close();assert.equal(first.stats().retainedBytes,0);assert.equal(second.stats().retainedBytes,0);}
+});
+
+test("representation diagnostics preserve actual replay record denial and assembly exception cleanup",async()=>{
+ const {mixedTechnicalCandidateDigest}=await import("./mixed-technical-gzip.mjs"),{begin}=await openPrefixFixture(),contextId=begin.nativeContext.contextId;
+ const proxy=createProxyControlCollector({contextId});proxy.installed();const owner=createMixedTechnicalOwner({contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});
+ const parsed=parseMixedTechnicalReplayJSON(Buffer.from(JSON.stringify(begin)));assert.equal(proxy.reserveTemporaryRecords(10000),true);let report;
+ try{assert.equal(owner.run(()=>mixedTechnicalCandidateDigest(parsed,row=>{report=row;})),null);assert.equal(report.failure.stage,"replay-subcut");assert.equal(report.failure.refusal.kind,"parent-records-refused");assert.equal(report.failure.refusal.label,"candidate-subcut-view");assert.equal(report.failure.refusal.parentUsedRecords,10000);assert.ok(report.failure.refusal.requestedRecords>0);assert.equal(owner.stats().retainedBytes,0);}
+ finally{proxy.releaseTemporaryRecords(10000);owner.close();}
+ let armed=false,assemblyBytes=0,calls=0;const assembly=createMixedTechnicalOwner({contextId,reserve:n=>{if(armed&&n===assemblyBytes){calls++;throw Error("PRIVATE_ASSEMBLY_CALLBACK");}return proxy.reserveTemporaryObservation(n);},release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords}),cut=assembly.capture(()=>begin),sample=assembly.encode(cut);assemblyBytes=sample.stats.portableBytes;sample.release();armed=true;
+ try{assert.equal(mixedTechnicalCandidateDigest(cut,row=>{report=row;throw Error("PRIVATE_SINK");}),null);assert.equal(calls,1);assert.equal(report.failure.stage,"assembly-reserve");assert.equal(report.failure.refusal.kind,"parent-bytes-threw");assert.equal(report.failure.refusal.label,"portable-assembly");assert.equal(report.failure.refusal.requestedBytes,assemblyBytes);assert.doesNotMatch(JSON.stringify(report),/PRIVATE_|"message"|"stack"/);}
+ finally{assembly.releaseCut(cut);assembly.close();assert.equal(assembly.stats().retainedBytes,0);assert.equal(assembly.stats().retainedRecords,0);}
+});
+
+test("native gzip maxOutput failure is reported without an error object or changed logical limit",async()=>{
+ const {mixedTechnicalCandidateDigest}=await import("./mixed-technical-gzip.mjs"),{randomBytes}=await import("node:crypto");
+ const contextId="fresh-incompressible",owner=fixtureOwner(contextId),cut=owner.capture(()=>({nativeContext:{contextId},PRIVATE_FIELD:randomBytes(4259840).toString("base64")}));let report;
+ try{assert.equal(mixedTechnicalCandidateDigest(cut,row=>{report=row;}),null);assert.equal(report.failure.stage,"deflate-call");assert.equal(report.failure.refusal,null);assert.ok(report.failure.ownerUsedBytes>owner.stats().retainedBytes);assert.equal(report.logicalBytes,null);assert.equal(report.encodedBytes,null);assert.doesNotMatch(JSON.stringify(report),/PRIVATE_FIELD|fresh-incompressible|Error|stack|message/);}
+ finally{owner.releaseCut(cut);owner.close();assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);}
+});
+
+test("nested representation scopes restore owner identity and hostile sinks cannot execute or change results",async()=>{
+ const {mixedTechnicalCandidateDigest}=await import("./mixed-technical-gzip.mjs"),{begin}=await openPrefixFixture(),contextId=begin.nativeContext.contextId;
+ const inner=fixtureOwner(contextId),innerCut=inner.capture(()=>begin),proxy=createProxyControlCollector({contextId});proxy.installed();let armed=false,nested=0,innerReport,outerReport;
+ const owner=createMixedTechnicalOwner({contextId,reserve:n=>{if(armed&&n===131072){armed=false;nested++;assert.ok(mixedTechnicalCandidateDigest(innerCut,row=>{innerReport=row;}));}return proxy.reserveTemporaryObservation(n);},release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords}),cut=owner.capture(()=>begin),held=33554432-owner.stats().retainedBytes-131071;
+ assert.equal(proxy.reserveTemporaryObservation(held),true);armed=true;
+ try{assert.equal(mixedTechnicalCandidateDigest(cut,row=>{outerReport=row;}),null);assert.equal(nested,1);assert.equal(innerReport.outcome,"complete");assert.equal(Object.hasOwn(innerReport,"failure"),false);assert.equal(outerReport.failure.stage,"pack-kind");assert.equal(outerReport.failure.refusal.kind,"parent-bytes-refused");assert.equal(outerReport.failure.refusal.parentUsedBytes,held+owner.stats().retainedBytes);}
+ finally{proxy.releaseTemporaryObservation(held);owner.releaseCut(cut);owner.close();}
+ try{
+  const expected=mixedTechnicalCandidateDigest(innerCut),reports=[];assert.equal(mixedTechnicalCandidateDigest(innerCut,row=>{reports.push(row);throw Error("PRIVATE_SINK");}),expected);assert.equal(reports.length,1);assert.equal(Object.hasOwn(reports[0],"failure"),false);
+  let traps=0;const hostile=Proxy.revocable(()=>{traps++;},{get(){traps++;throw Error("PRIVATE_PROXY");}});hostile.revoke();assert.equal(mixedTechnicalCandidateDigest(innerCut,hostile.proxy),expected);assert.equal(traps,0);
+  let unknown;assert.equal(mixedTechnicalCandidateDigest({},row=>{unknown=row;}),null);assert.equal(unknown.failure.ownerUsedBytes,null);assert.equal(unknown.failure.refusal,null);
+ }finally{inner.releaseCut(innerCut);inner.close();assert.equal(inner.stats().retainedBytes,0);assert.equal(owner.stats().retainedBytes,0);}
+});
+test("reachable representation failures fit the existing firstFailure reservation and stay failure-only",async()=>{
+ const {begin}=await openPrefixFixture();let maximum=0,conservativeMaximum=0;
+ // Scalar-width upper bound of each separately reached shape, never a fabricated cut.
+ // Preserve null/presence and mutually exclusive alternatives; hashes stay64 chars.
+ const widest=(value,key)=>typeof value==="number"?Number.MAX_SAFE_INTEGER:typeof value==="boolean"?false:typeof value==="string"?key==="label"?"complete-progress-cut-clone-and-private-control":key==="kind"?"parent-records-refused":["stage","cutStage"].includes(key)?"check-after-ack-live":value:value&&typeof value==="object"?Object.fromEntries(Object.entries(value).map(([name,item])=>[name,widest(item,name)])):value;
+ for(const mode of ["deflate-parent","assembly-throw","binding","measure","owner-join"]){
+  const contextId=begin.nativeContext.contextId,proxy=createProxyControlCollector({contextId});proxy.installed();let armed=false,wireBytes=0;
+  const owner=createMixedTechnicalOwner({contextId,reserve:n=>{if(armed&&mode==="assembly-throw"&&n===wireBytes)throw Error("PRIVATE_ASSEMBLY");return proxy.reserveTemporaryObservation(n);},release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});
+  const foreign=mode==="owner-join"?fixtureOwner(contextId):null,cut=(foreign??owner).capture(()=>begin),sample=(foreign??owner).encode(cut);wireBytes=sample.stats.portableBytes;sample.release();
+  if(mode==="binding")cut.browserEventOrdinal=Number.MAX_SAFE_INTEGER;
+  if(mode==="measure")cut.proxy[0].PRIVATE_VALUE=NaN;
+  const held=mode==="deflate-parent"?33554432-4194304:0;let heldLive=held>0;if(held)assert.equal(proxy.reserveTemporaryObservation(held),true);armed=true;
+  const observer=realProgressObserver({technicalOwner:owner,input:()=>cut,application:()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0}),acknowledge:()=>assert.fail("failed candidate cannot request ACK")});
+  try{
+   await assert.rejects(observer.check());armed=false;if(heldLive){proxy.releaseTemporaryObservation(held);heldLive=false;}const snapshot=observer.snapshot(),row=snapshot.firstFailure;assert.ok(row,mode);
+   assert.equal(row.candidate.site,"input-prelude");if(mode==="owner-join")assert.equal(row.candidate.serialization,null,"earlier qualification rejects before any digest call");else{assert.equal(row.candidate.serialization.outcome,"representation-rejected");assert.ok(row.candidate.serialization.failure);}
+   assert.equal(row.inputCapture,undefined);const charge=Buffer.byteLength(JSON.stringify(row))*8+2048;maximum=Math.max(maximum,charge);assert.ok(charge<=32768,mode+":"+charge);const upper=Buffer.byteLength(JSON.stringify(widest(row)))*8+2048;conservativeMaximum=Math.max(conservativeMaximum,upper);assert.ok(upper<=32768,mode+" scalar-width upper:"+upper);
+   assert.doesNotMatch(JSON.stringify(row),/PRIVATE_|stack|message|http:/);observer.releaseSnapshot(snapshot);
+  }finally{armed=false;if(heldLive)proxy.releaseTemporaryObservation(held);observer.close();observer.releaseSnapshot();foreign?.releaseCut(cut);foreign?.close();assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);}
+ }
+ console.log(JSON.stringify({reachableRepresentationDiagnosticMaxCharge:maximum,conservativeScalarWidthMaxCharge:conservativeMaximum,existingReservation:32768}));
+});
+test("maximum hashed event projection with a real representation rejection stays within32KiB",async()=>{
+ const {begin}=await openPrefixFixture(),current=structuredClone(begin);current.browserEventOrdinal=Number.MAX_SAFE_INTEGER;
+ current.failures=Array.from({length:10000},(_,i)=>({requestId:"PRIVATE_EVENT_"+i,proxyResponseId:"PRIVATE_PROXY",failedEventOrdinal:i+1,failedEvents:Number.MAX_SAFE_INTEGER,status:Number.MAX_SAFE_INTEGER,failed:true,loadingFinished:false,canceled:true,error:"PRIVATE_ERROR",bodyProof:{complete:false,reason:"PRIVATE_BODY_REASON"}}));
+ current.proxy=[{id:"PRIVATE_PROXY",complete:false,canceled:false,upstreamError:false,responseEvents:Number.MAX_SAFE_INTEGER,bodyProof:{complete:false,reason:"PRIVATE_PACKET_REASON"}}];current.coverage.pendingBodies=Number.MAX_SAFE_INTEGER;
+ const parsed=parseMixedTechnicalReplayJSON(Buffer.from(JSON.stringify(current))),observer=realProgressObserver({input:()=>parsed,application:()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0}),acknowledge:()=>assert.fail("over-limit typed record graph rejects")});
+ try{await assert.rejects(observer.check());const row=observer.snapshot().firstFailure;assert.ok(row);assert.equal(row.candidate.serialization.failure.stage,"fallback-replay");assert.equal(row.candidate.serialization.failure.innerStage,"canonical-measure");assert.equal(row.cut.latestFailure.bodyProofReasonSha256,sha("PRIVATE_BODY_REASON"));assert.equal(row.cut.matchingPacket.bodyProofReasonSha256,sha("PRIVATE_PACKET_REASON"));const charge=Buffer.byteLength(JSON.stringify(row))*8+2048;assert.ok(charge<=32768);assert.doesNotMatch(JSON.stringify(row),/PRIVATE_|"message"|"stack"/);console.log(JSON.stringify({maxEventProjectionRepresentationCharge:charge,existingReservation:32768}));}
+ finally{observer.close();observer.releaseSnapshot();}
+});
