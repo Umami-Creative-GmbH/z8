@@ -502,6 +502,163 @@ export const originalTeamTemporaryProfiles = deepFreeze([
         "sha256": "5f7c1756783d12f6145dd368ae29a2d4831b4f0b3727786cb4fe3a00e7c121e1"
       }
     ]
+  },
+  {
+    "id": "original-team-web-clock-status-2ef-v1",
+    "binarySource": "2ef3b3f17ea61d65570f23c46f92d1d320f5ef25",
+    "manifestSha256": "4a494ab798bcc6cd6b438673bdf2b5fd6d3a8a8b11e1a4650bb807e7885c99f8",
+    "buildRecordSha256": "e941aa3c8cfd111a9bcf3a84b40556258c790318c35346d767e367ccefe6ff46",
+    "registrySha256": "c16613818be250574e87f121ac596c87b8cd50b3bbaa0f1d732f750bae6d1f09",
+    "actionHeaderSha256": "75e71e23f888beb5e9d0251a1b7ef1a57454b599069d6c5b451dcd1293a9dc59",
+    "appFiles": [
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/analytics/page.tsx",
+        "gitBlob": "b081db8a3018bdcb34932d8eab0d7b9f380c02b8",
+        "canonicalLfSha256": "54253fff67a4e10b1b9eb4b43e11ddfdd746de51224e4fa472b7b88d3d759793"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/analytics/team-performance/page.tsx",
+        "gitBlob": "f7458cf92f0ef2db6304439088ea9173dcb61985",
+        "canonicalLfSha256": "69edc9b5a312b33906d6d606f947fb0d03647db64359ac0e42a4acb79b0bed91"
+      },
+      {
+        "path": "apps/webapp/src/app/[locale]/(app)/analytics/actions.ts",
+        "gitBlob": "9f281b436e86d9555f4562990d87b98ad7519407",
+        "canonicalLfSha256": "ca8984fd0f173866eed151ecd037d1b36ee7ed869cd328bcea8689f976099472"
+      },
+      {
+        "path": "apps/webapp/src/lib/effect/services/analytics.service.ts",
+        "gitBlob": "aa5bb31705ecb9ac423f729fcc79b57efa045573",
+        "canonicalLfSha256": "a2b868807eb10691dcd4b7f90583ed7076ed5e2312e3cdac8fea6df11bd8ef38"
+      },
+      {
+        "path": "apps/webapp/src/lib/effect/result.ts",
+        "gitBlob": "5c8cc57d829d33f0019ddb76820632c0dcde6e28",
+        "canonicalLfSha256": "ac91c4720ac557fae05a5555df97b65a92af8b25c9750a0f5f4617ce6cb6f57a"
+      },
+      {
+        "path": "apps/webapp/src/lib/analytics/date-ranges.ts",
+        "gitBlob": "930365fe7bd9ce19530dfe1b702a048dfd0fca7c",
+        "canonicalLfSha256": "095a81ae8f4e87f2f640baa489d487d6dff6465613444d192dffdfe2c2190c1f"
+      },
+      {
+        "path": "apps/webapp/src/lib/analytics/types.ts",
+        "gitBlob": "67644543cb2527464c9a4d788917c7286e5a9ef2",
+        "canonicalLfSha256": "dad4e4d3c3d23d22f23132ff9b6b8abd4456df8d52310ba0f6d89e795ab9a34d"
+      },
+      {
+        "path": "apps/webapp/src/components/analytics/date-range-picker.tsx",
+        "gitBlob": "423d198408a8f68fb8fc771f862b18824be9d8d3",
+        "canonicalLfSha256": "9863f2737fef10ce71ee6b0f4bfcbe5b4677ed1fbc244fee95433e83b0d70bf0"
+      },
+      {
+        "path": "apps/webapp/src/components/reports/date-range-picker.tsx",
+        "gitBlob": "18c2db57eb55af1e990fda2a8c84afa2c0645317",
+        "canonicalLfSha256": "a344338209c40c0bade3fb8b55314c36815ccf547278b2bab584c0ee528d7d7b"
+      },
+      {
+        "path": "apps/webapp/src/lib/reports/date-ranges.ts",
+        "gitBlob": "14c82432031f4a1bc2cf98b89151e959433501ba",
+        "canonicalLfSha256": "0ab5c18bfa3e6a9c221875c90c5481c96108579c33f552a741a5a624e06f00a4"
+      },
+      {
+        "path": "apps/webapp/src/lib/reports/report-date-range.ts",
+        "gitBlob": "7be5b52e66e4e7b2969e49c01d776baf5ea4ab8e",
+        "canonicalLfSha256": "a35fa98350fb716ef89d9b726af28bf4e330cd29cff8e222dbe11eb7e999187e"
+      },
+      {
+        "path": "apps/webapp/src/lib/reports/types.ts",
+        "gitBlob": "535752e061571025d8121116627bb539f66eb2db",
+        "canonicalLfSha256": "2d5c79753dab7987ff92ba70cbb09f557998bc25c80574d03cb188ad49e9f651"
+      },
+      {
+        "path": "apps/webapp/src/lib/datetime/temporal-core.ts",
+        "gitBlob": "965c40a9034a3643e185bcaf5d631d530186dd25",
+        "canonicalLfSha256": "340864dae1f59706b4d3eb59227e0f83136b3f8bb22a8bb84f15b3ef38608226"
+      },
+      {
+        "path": "apps/webapp/src/lib/timezone/validation.ts",
+        "gitBlob": "cc66071cd8d223cb7feea53edb1288636f5847b3",
+        "canonicalLfSha256": "630dd41244f4bcf5c2833d9cc7a2c1dec0811c2bc5ebbbbe1b02d26c28b54b7d"
+      }
+    ],
+    "frameworkFiles": [
+      {
+        "path": "next/package.json",
+        "bytes": 3188,
+        "sha256": "440efba874450dc997b2c3bf9efa4c3c4835abbc40d65442e94a7c69f4bad031"
+      },
+      {
+        "path": "next/dist/client/app-call-server.js",
+        "bytes": 1538,
+        "sha256": "f0e9fc00ebb81a3b264c9a4e34b4e6d984dae3055cbea15e2e10f7e3f55997fe"
+      },
+      {
+        "path": "next/dist/client/sequential-call-server.js",
+        "bytes": 1859,
+        "sha256": "fb04a49cedc4706c7449c7087255b2027fc7893e79d70c709e14d67e516e95e2"
+      },
+      {
+        "path": "next/dist/client/components/use-action-queue.js",
+        "bytes": 5940,
+        "sha256": "b0495a960d3312966950b78399676dedece7c646ba84fa2543142a3744e1e2ba"
+      },
+      {
+        "path": "next/dist/client/components/app-router-instance.js",
+        "bytes": 11229,
+        "sha256": "679a2c335d4a849eb14c997d80ddd356fbd7789f50c0777ceabd0525d1e77807"
+      },
+      {
+        "path": "next/dist/client/components/router-reducer/router-reducer.js",
+        "bytes": 2630,
+        "sha256": "22b9b831dbaeda84ae94020ad23ff298435a936132136925b6f0a5a3062b6d4d"
+      },
+      {
+        "path": "next/dist/client/components/router-reducer/reducers/server-action-reducer.js",
+        "bytes": 20696,
+        "sha256": "45d9f7de636d847174881f3005082d5bce90399c745fba2dc3fd4ea402832950"
+      },
+      {
+        "path": "next/dist/shared/lib/server-reference-info.js",
+        "bytes": 2130,
+        "sha256": "f2d96534f7dcf77c1f951112f3b4bde9728e36a1a6425928cf8b7f4b4a5cf9de"
+      },
+      {
+        "path": "next/dist/server/app-render/action-handler.js",
+        "bytes": 60411,
+        "sha256": "f60960b2a15f7ec07e37e9d745ffd185763519d1693e41f39010782ccaf910cc"
+      },
+      {
+        "path": "next/dist/compiled/react-server-dom-webpack/client.browser.js",
+        "bytes": 254,
+        "sha256": "4225884493381174db42ea47deef8b52ec41e358e63b49acd4929fe2f97f7a69"
+      },
+      {
+        "path": "next/dist/compiled/react-server-dom-webpack/client.node.js",
+        "bytes": 248,
+        "sha256": "704a07592993924515710e08c9365e8d6b49d96df54166b869f0210d004b8685"
+      },
+      {
+        "path": "next/dist/compiled/react-server-dom-webpack/server.node.js",
+        "bytes": 849,
+        "sha256": "218c48074fc0737329d0db31603fa0194d659f980b12c1920c88aa644e07d906"
+      },
+      {
+        "path": "next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.browser.production.js",
+        "bytes": 66327,
+        "sha256": "538d7566cd8471ce95b60c3204131e862c92e76f663d16e079b1b559a0b99fd7"
+      },
+      {
+        "path": "next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-client.node.production.js",
+        "bytes": 78295,
+        "sha256": "163f82ee5a33e3616f6e3561ee932baaa8240a97e37470aa8ac6d18dd37b3255"
+      },
+      {
+        "path": "next/dist/compiled/react-server-dom-webpack/cjs/react-server-dom-webpack-server.node.production.js",
+        "bytes": 134763,
+        "sha256": "5f7c1756783d12f6145dd368ae29a2d4831b4f0b3727786cb4fe3a00e7c121e1"
+      }
+    ]
   }
 ]);
 export function knownTemporaryValueObservation(value) {
