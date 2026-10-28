@@ -727,6 +727,7 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 					unknownOutstanding = false;
 				}
 			} catch {
+				prepared.abandon();
 				result = {
 					success: false,
 					censored: true,
