@@ -82,3 +82,7 @@ that bound, while a real tree beyond256 remains UNKNOWN. All provider identity,
 read-only scalar, readiness and command gates remain unchanged. Earlier failed
 clock captures remain failed, and the larger diagnostic bound grants no business
 or performance acceptance.
+
+## GET hook test compatibility
+
+The rendered diagnostic now mocks getWebClockStatus at the current hooks' HTTP-client boundary, alongside the retained legacy action mock. Original tests select the exact new reviewed checkout through Z8_CLOCK_ORIGINAL_APP. The test deliberately routes that mock through the installed Next FIFO to produce pending query states for the passive callback. It does not claim that the real GET transport uses or waits for the action queue. The unchanged readonly, bounds and FIFO assertions remain a diagnostic mechanism test; the separate dual-build GET transport tests establish its actual transport independence. No production callback or readiness predicate changes in this compatibility update.
