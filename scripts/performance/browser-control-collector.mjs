@@ -1847,9 +1847,9 @@ export function createProxyControlCollector({
 		annualTeamSnapshot(){return annual?.snapshot() ?? null;},
 		setTeamOperatorSource(source){try{if(installed || operatorSource!==null || !source || !Object.isFrozen(source) || source.protocol!=="closed-team-operator-source-v1"){errors++;return false;}operatorSource=source;return true;}catch{errors++;return false;}},
 		issueTeamCut(cut){return sourceCuts.issued(cut)!==null;},
-        reserveTemporaryObservation(bytes){return reserveTeam(bytes);},
+        reserveTemporaryObservation(bytes){const reserved=reserveTeam(bytes);if(!reserved)recordMixedTechnicalParentRefusal(retained,requests.size+temporaryObservationRecords);return reserved;},
         releaseTemporaryObservation(bytes){releaseTeam(bytes);},
-        reserveTemporaryRecords(count){if(!Number.isSafeInteger(count)||count<0||requests.size+temporaryObservationRecords+count>controlCancellationPolicy.recordLimit)return false;temporaryObservationRecords+=count;return true;},
+        reserveTemporaryRecords(count){if(!Number.isSafeInteger(count)||count<0||requests.size+temporaryObservationRecords+count>controlCancellationPolicy.recordLimit){recordMixedTechnicalParentRefusal(retained,requests.size+temporaryObservationRecords);return false;}temporaryObservationRecords+=count;return true;},
         releaseTemporaryRecords(count){if(!Number.isSafeInteger(count)||count<0||count>temporaryObservationRecords)throw Error("Temporary observation record reservation mismatch.");temporaryObservationRecords-=count;},
         armTeamReplay(input){return teamDispatch?.arm(input) ?? null;},
 		teamReplayHeaders(handle){return teamDispatch?.headers(handle) ?? null;},
@@ -2182,7 +2182,7 @@ export function createMixedProgressAcknowledgments({input,application,acknowledg
   if(latest && typeof proxyId==="string" && proxyId.length<=256 && packets){matchingCount=0;for(let i=0;i<packets.length;i++){const packet=own(packets,String(i));if(own(packet,"id")===proxyId){matchingCount++;matching=packet;}}if(matchingCount!==1)matching=null;}
   const proof=own(matching,"bodyProof"),latestProof=own(latest,"bodyProof");
   const row={protocol:"mixed-first-failure-diagnostic-v1",stage:state.stage,cutStage:state.cutStage,subreason:state.subreason,guardChecks,attempted,contextIdSha256:hashed(own(own(cut,"nativeContext"),"contextId")),
-   predicates:state.predicates,candidate:state.candidateDiagnostic,application:Object.fromEntries(progressApplicationKeys.map(key=>[key,count(own(state.application,key))])),
+   predicates:state.predicates,candidate:state.candidateDiagnostic,...(state.inputCapture?{inputCapture:state.inputCapture}:{}),application:Object.fromEntries(progressApplicationKeys.map(key=>[key,count(own(state.application,key))])),
    cut:cut?{browserEventOrdinal:count(own(cut,"browserEventOrdinal")),failureCount:failures?.length??null,responseCount:boundedRows(own(cut,"responses"))?.length??null,proxyCount:packets?.length??null,
     failureSetSha256:failures?digest.digest("hex"):null,latestFailureMatches:latestCount,
     coverage:{installed:flag(own(coverage,"installed")),scopeClosed:flag(own(coverage,"scopeClosed")),errors:count(own(coverage,"errors")),overflow:count(own(coverage,"overflow")),missing:count(own(coverage,"missing")),pendingBodies:count(own(coverage,"pendingBodies"))},
@@ -2193,14 +2193,14 @@ export function createMixedProgressAcknowledgments({input,application,acknowledg
  };
  const diagnose=state=>{if(diagnosticAttempted)return;diagnosticAttempted=true;try{if(bytes()+diagnosticCharge>controlCancellationPolicy.retainedLimit || checks.length+prefixes.length>=controlCancellationPolicy.recordLimit){overflow++;return;}const row=keep(()=>failureDiagnostic(state));if(run(()=>Buffer.byteLength(mixedOwnedJSONString(row))*8+2048>diagnosticCharge)){drop(row);overflow++;return;}firstFailure=row;}catch{overflow++;}};
  const observation=stage=>({stage,subreason:"entry",cut:null,cutStage:null,application:null,candidateDiagnostic:null,ownedCuts:new Set(),ownedCandidates:new Set(),ownedAcknowledgments:new Set(),closeFailed:false,predicates:{applicationKnown:null,candidateKnown:null,authorityKnown:null,journalsKnown:null,protocolObservedZero:null,protocolOverflowZero:null,authorityMatches:null,returnJournalsKnown:null}});
- const disposeState=state=>{state.cut=null;state.beginResult=null;state.endResult=null;for(const cut of state.ownedCuts){state.ownedCuts.delete(cut);technicalOwner?.releaseCut(cut);}for(const candidate of state.ownedCandidates){state.ownedCandidates.delete(candidate);drop(candidate);}for(const ack of state.ownedAcknowledgments){state.ownedAcknowledgments.delete(ack);drop(ack);}};
+ const disposeState=state=>{state.cut=null;state.inputCapture=null;state.beginResult=null;state.endResult=null;for(const cut of state.ownedCuts){state.ownedCuts.delete(cut);technicalOwner?.releaseCut(cut);}for(const candidate of state.ownedCandidates){state.ownedCandidates.delete(candidate);drop(candidate);}for(const ack of state.ownedAcknowledgments){state.ownedAcknowledgments.delete(ack);drop(ack);}};
  const seen=(state,key,value)=>{state.predicates[key]=Boolean(value);return value;};
  const live=state=>{
   if(closed)throw Error("Mixed progress observation is closed.");
-  state.cut=null;state.cutStage=null;state.application=null;state.candidateDiagnostic=null;for(const key of Object.keys(state.predicates))state.predicates[key]=null;
+  state.cut=null;state.cutStage=null;state.inputCapture=null;state.application=null;state.candidateDiagnostic=null;for(const key of Object.keys(state.predicates))state.predicates[key]=null;
   state.subreason="application";
   if(failed || overflow || !seen(state,"applicationKnown",progressApplicationKnown(state.application=application()))){state.subreason=failed?"previous-failure":overflow?"previous-overflow":"application";throw Error("Mixed required application observation is not clean.");}
-  state.subreason="input";const cut=state.cut=input();if(technicalOwner)state.ownedCuts.add(cut);state.cutStage=state.stage;state.subreason="candidate-evaluation";const candidate=keep(()=>mixedNativePrefixCandidates(cut,record=>{state.candidateDiagnostic=record;}));if(technicalOwner&&candidate)state.ownedCandidates.add(candidate);state.predicates.candidateKnown=Boolean(candidate);
+  state.subreason="input";const cut=state.cut=observeMixedTechnicalCapture(input,value=>{state.inputCapture=value;});if(technicalOwner)state.ownedCuts.add(cut);state.cutStage=state.stage;state.subreason="candidate-evaluation";const candidate=keep(()=>mixedNativePrefixCandidates(cut,record=>{state.candidateDiagnostic=record;}));if(technicalOwner&&candidate)state.ownedCandidates.add(candidate);state.predicates.candidateKnown=Boolean(candidate);
   state.subreason="authority-evaluation";const authority=run(()=>mixedNativeAuthorityDigest(cut.nativeContext));state.predicates.authorityKnown=Boolean(authority);
   state.subreason="live-predicate";
   if(!seen(state,"journalsKnown",run(()=>knownMixedOpenJournals(cut.nativeContext))) || !seen(state,"protocolObservedZero",cut.nativeContext?.protocolErrors?.observed===0) || !seen(state,"protocolOverflowZero",cut.nativeContext.protocolErrors.overflow===0) || !candidate || !authority || !seen(state,"authorityMatches",!(authoritySha256!==null && authoritySha256!==authority))){
@@ -2268,4 +2268,4 @@ export function createMixedProgressAcknowledgments({input,application,acknowledg
  function snapshotValue(){const value=structuredClone({protocol:"mixed-native-progress-observations-v1",candidateRepresentationProtocol:mixedNativeProgressPolicy.candidateRepresentationProtocol,contextId,authoritySha256,guardChecks,attempted,failed,overflow,retainedBytes:bytes(),checks:mixedOwnedArray(checks.length,()=>[...checks].sort((a,b)=>a.ordinal-b.ordinal),{bytesPerEntry:16}),prefixes:mixedOwnedArray(prefixes.length,()=>[...prefixes].sort((a,b)=>a.checkpointOrdinal-b.checkpointOrdinal),{bytesPerEntry:16}),...(firstFailure?{firstFailure}: {})});return technicalOwner?mixedOwnedFreeze(value):value;}
 }
 const progressFailureIdsForCollector=input=>mixedOwnedArray(input.failures.length,()=>input.failures.map(row=>row.requestId).sort(),{bytesPerEntry:16});
-import {mixedOwnedFixedContainer,mixedOwnedCoveredValue,mixedOwnedClone as structuredClone,mixedOwnedRows,mixedOwnedArray,mixedOwnedJSONString,mixedOwnedUTF8,mixedOwnedHashInput,mixedOwnedFreeze,createMixedTechnicalOwner} from "./mixed-technical-gzip.mjs";
+import {mixedOwnedFixedContainer,mixedOwnedCoveredValue,mixedOwnedClone as structuredClone,mixedOwnedRows,mixedOwnedArray,mixedOwnedJSONString,mixedOwnedUTF8,mixedOwnedHashInput,mixedOwnedFreeze,createMixedTechnicalOwner,observeMixedTechnicalCapture,recordMixedTechnicalParentRefusal} from "./mixed-technical-gzip.mjs";
