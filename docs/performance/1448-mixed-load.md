@@ -280,3 +280,10 @@ Original capture. Its underlying representation rejection remains unknown. The
 32 MiB shared owner, 10,000 typed records, 4 MiB whole portable and 8 MiB logical
 limits, Native-context/full-prefix/body guards and canonical 20-pair/40-command
 workload remain unchanged. No failed capture is retroactively qualified.
+
+The normal production fixture supervisor now retains a safe integer exit code,
+an allowlisted Node signal (or null/unknown) and the actual UTC observation time
+in its existing nonzero-exit error message. Its original zero/null resolution,
+error identity, once listeners and shutdown behavior remain unchanged. This is
+prospective failed-supervision evidence only; it does not recover the previous
+application exit, establish a resource/OOM/Chromium cause or qualify a failed run.
