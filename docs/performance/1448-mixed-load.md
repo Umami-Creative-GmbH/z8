@@ -220,3 +220,36 @@ A deterministic microtask test guards against adding a timer throttle between
 successful reads. These are operator protocol tests, not compiled application
 or performance acceptance. No original/head app, browser, database or live mixed
 write was exercised for this preparation checkpoint.
+## Pending ordinary guard journal ownership
+
+Ordinary stop-guard tokens retain an independently charged, immutable copy of
+four complete return journals: header lifecycle, principal epoch, document
+journal and worker targets. Two pending tokens in the same observer share that
+copy only after exact whole projected JSON equality, including field presence
+and order. Each token keeps its own charged control; changed journal versions
+retain separate copies. The last token releases the shared copy. Full current
+captures, source/semantic checks and Native prefix begin/end evidence remain
+unchanged. No waits, sequencing or deadline changes are introduced.
+
+The shared 32 MiB modeled operation pool, 10,000 typed-record limit, whole binary
+4 MiB candidate representation and expanded logical 8 MiB limits remain strict.
+These are modeled serialized-view/control reservations, not physical heap claims.
+The pre-existing parent pools and all independent body, Native-context,
+full-prefix, error and resource gates remain unchanged.
+
+Fresh synthetic 700-request growth diagnostics completed 49 and 137 guards. The
+additional 200-guard diagnostic **failed** after 175 completed guards, at guard
+176: its parent reservation required `6496 + 3515 = 10011` typed records. That
+capacity point remains failed. Its entire probe source and failure log are
+preserved separately; its new diagnostic PASS-expectation row was removed from
+the active test table, without changing the observer or quota. This diagnostic
+is not a frozen benchmark acceptance gate or an assertion that all legal
+workloads fit.
+
+The actual Original run at source `4dc33af59` (capture
+`3859790d4d6177f859673d416a77f6cf`, SHA-256
+`34fa6a225850b69c8d25bde1db88848009ea725880cdc12c1bfac5d21b18e394`)
+remains failed at 13 of 20 pairs. No timings or budgets come from these synthetic
+diagnostics or failed runs. The complete actual 20-pair, 40-command workload must
+still pass every strict gate independently on Original and HEAD before
+qualification; previous failures are never retroactively qualified.

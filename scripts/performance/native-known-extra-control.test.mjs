@@ -782,3 +782,220 @@ test("production guard lifecycle retains the complete synthetic284-request histo
  console.log(JSON.stringify({synthetic:true,stages,population:count,completed,owner:owner.stats()}));assert.equal(completed,49);assert.equal(count,284);const final=collector.snapshot();assert.equal(final.allPhase.rawFailedRequests,1);assert.equal(final.allPhase.provenControls,1);assert.equal(final.bodyReceipts.length,1);const history=collector.progressInput({owner,documentJournal:()=>context.documentJournal});assert.equal(history.failures.length,1);assert.equal(history.responses.length,283);assert.equal(history.proxy.length,284);assert.deepEqual(history.proxy.map(row=>row.id),Array.from({length:284},(_,index)=>"a".repeat(32)+"."+(index+1)));owner.releaseCut(history);const durable=progress.snapshot();assert.equal(durable.guardChecks,49);assert.equal(durable.attempted,0);assert.equal(durable.prefixes.length,0);assert.equal(durable.checks.length,49);assert.ok(durable.checks.every(row=>row.returned!==null));progress.releaseSnapshot(durable);
  }catch(error){const diagnostic=progress.snapshot();console.log(JSON.stringify({synthetic:true,stages,population:count,completed,owner:owner.stats(),firstFailure:diagnostic.firstFailure??null}));progress.releaseSnapshot(diagnostic);throw error;}finally{try{progress.close();}catch{}progress.releaseSnapshot();owner.close();assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);}
 });
+
+// Fresh scalar/event fixtures only. The frozen d6d9 diagnosis preserves every
+// earlier variant; this shared exercise keeps the same real production seam.
+async function exerciseGuardRecordOverlap({ schedule, controls = 1 }) {
+ const { context, io } = await openPrefixFixture();
+ const { createProxyHeaderLifecycle, proxyHeaderPrefix } = await import("./proxy-header-census.mjs");
+ const { requireCleanMixedProgress } = await import("./mixed-load-observation.mjs");
+ const contextId = context.contextId, origin = io.origin;
+ const principal = createPrincipalEpochObserver(contextId, { origin });
+ principal.start([{ name:"session", value:"synthetic", domain:"localhost", path:"/", httpOnly:true }]);
+ const proxy = createProxyControlCollector({ contextId, origin, compiledBinding:context.binding,
+  compiledCachedNavigations:true, protocolSources:context.protocolSources });
+ const installation = { protocol:"owned-context-upstream-header-lifetime-v1", proxyInstanceId:"e".repeat(32),
+  originSha256:sha(origin), allowedOriginSha256:[sha(origin)], acceptedRequestsAtInstall:0 };
+ proxy.installed(installation);
+ const life = createProxyHeaderLifecycle(installation);
+ const text = '#0:{"b":"synthetic","t":{"t":{"s":""}}}\n';
+ const headers = { RSC:"1", "next-router-prefetch":"1", "accept-language":"en", accept:"text/x-component",
+  cookie:"session=synthetic", "x-z8-fixture-document-generation":contextId+":4" };
+ const responseHeaders = { "content-type":"text/x-component", "cache-control":"s-maxage=100, stale-while-revalidate=200" };
+ const collector = createBrowserControlCollector({ contextId, origin, browserRevision:chromiumSWRRevision,
+  compiledBinding:context.binding, protocolSources:context.protocolSources, operatorFile:"mixed-load-probe.mjs",
+  principalEpoch:principal, environmentObservation:anchored=>({...context.environment, temporaryValues:anchored.temporaryValues}),
+  proxyObservation:()=>{const p=proxy.snapshot(),h=life.snapshot();return {...p,headerLifecycle:h,headerPrefix:proxyHeaderPrefix(p.headerCensus,h)};},
+  readBody:async()=>({body:text,base64Encoded:false}) });
+ collector.installed(); collector.beginMeasurement();
+ const owner = createMixedTechnicalOwner({ contextId, reserve:proxy.reserveTemporaryObservation,
+  release:proxy.releaseTemporaryObservation, reserveRecords:proxy.reserveTemporaryRecords, releaseRecords:proxy.releaseTemporaryRecords });
+ const application = ()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0});
+ const progress = realProgressObserver({ technicalOwner:owner,
+  input:()=>collector.progressInput({owner,documentJournal:()=>context.documentJournal}), application,
+  acknowledge:()=>assert.fail("ordinary positive must not ask for NativeACK") });
+ const opened = [{ browserObservation:{
+  snapshot:()=>({...collector.snapshot(),annualTeam:proxy.annualTeamSnapshot(),mixedProgress:progress.snapshot(),mixedDocumentJournal:context.documentJournal}),
+  acknowledgeMixedProgress:options=>progress.check(options), confirmMixedProgress:token=>progress.confirm(token),
+  releaseMixedProgressSnapshot:value=>progress.releaseSnapshot(value),
+ }, transport:{snapshot:()=>({applicationEvidence:application()})} }];
+ let count=0,completed=0; const stages=[];
+ try {
+  for (const {population,groups} of schedule) {
+   while (count<population) {
+    const n=++count,id="a".repeat(32)+"."+n,requestId="synthetic-browser-"+n,url=origin+"/en?synthetic="+n;
+    life.accepted(id,sha(origin)); life.upstreamCreated(id);
+    proxy.request(id,{url,method:"GET",headers,traceId:"a".repeat(32)});
+    collector.request({requestId,timestamp:n,frameId:"frame",loaderId:"loader",type:"Fetch",initiator:{type:"script"},
+     request:{url,method:"GET",headers,initialPriority:"High"}});
+    collector.requestExtra({requestId,headers}); proxy.response(id,{status:200,headers:responseHeaders});
+    life.headersReceived(id); life.headersForwarded(id);
+    const response={...responseHeaders,[controlResponseHeader]:id};
+    collector.response({requestId,response:{status:200,headers:response,fromDiskCache:false,fromServiceWorker:false}});
+    collector.responseExtra({requestId,statusCode:200,headers:response});
+    proxy.bytes(id,Buffer.from(text)); proxy.end(id); life.upstreamClosed(id);
+    collector.data({requestId,dataLength:Buffer.byteLength(text),timestamp:n+.1});
+    if(n<=controls)collector.failed({requestId,timestamp:n+.2,errorText:"net::ERR_ABORTED",canceled:true});
+    else collector.finished({requestId,timestamp:n+.2});
+   }
+   await tick(); await tick();
+   for(const concurrent of groups) {
+    await Promise.all(Array.from({length:concurrent},()=>requireCleanMixedProgress({opened,pageErrors:()=>0})));
+    completed+=concurrent;
+   }
+   const stage={population,completed,owner:owner.stats()};stages.push(stage);console.log(JSON.stringify({syntheticStage:true,...stage}));
+  }
+  const expected=schedule.reduce((sum,row)=>sum+row.groups.reduce((n,value)=>n+value,0),0);
+  assert.equal(completed,expected); assert.equal(count,schedule.at(-1).population);
+  const final=collector.snapshot();
+  assert.equal(final.allPhase.rawFailedRequests,controls); assert.equal(final.allPhase.provenControls,controls);
+  assert.equal(final.bodyReceipts.length,controls); assert.equal(proxy.snapshot().rows.length,count);
+  let history=collector.progressInput({owner,documentJournal:()=>context.documentJournal});
+  assert.equal(history.failures.length,controls);
+  assert.equal(history.responses.length,controls?count-controls:0); assert.equal(history.proxy.length,controls?count:0);
+  const ids=Array.from({length:count},(_,index)=>"a".repeat(32)+"."+(index+1));
+  assert.deepEqual(history.nativeContext.headerCensus.requests.map(row=>row.requestId),[...ids].sort());
+  if(controls)assert.deepEqual(history.proxy.map(row=>row.id),ids);
+  owner.releaseCut(history); history=null;
+  let durable=progress.snapshot();
+  assert.equal(durable.guardChecks,expected); assert.equal(durable.attempted,0); assert.equal(durable.prefixes.length,0);
+  assert.equal(durable.checks.length,expected); assert.ok(durable.checks.every(row=>row.returned!==null));
+  progress.releaseSnapshot(durable); durable=null;
+  console.log(JSON.stringify({synthetic:true,stages,population:count,completed,owner:owner.stats()}));
+ } catch(error) {
+  const diagnostic=progress.snapshot();
+  console.log(JSON.stringify({synthetic:true,stages,population:count,completed,owner:owner.stats(),
+   observer:{guardChecks:diagnostic.guardChecks,attempted:diagnostic.attempted,failed:diagnostic.failed,
+    overflow:diagnostic.overflow,checks:diagnostic.checks.length,prefixes:diagnostic.prefixes.length},
+   firstFailure:diagnostic.firstFailure??null}));
+  progress.releaseSnapshot(diagnostic); throw error;
+ } finally {
+  try{progress.close();}catch{}
+  progress.releaseSnapshot(); owner.close();
+  assert.equal(owner.stats().retainedBytes,0); assert.equal(owner.stats().retainedRecords,0);
+ }
+}
+const guardRecordCases = [
+ {name:"397/four-callers",schedule:[{population:397,groups:[4]}]},
+ {name:"396/four-callers",schedule:[{population:396,groups:[4]}]},
+ {name:"397/three-callers",schedule:[{population:397,groups:[3]}]},
+ {name:"397/zero-control",controls:0,schedule:[{population:397,groups:[4]}]},
+ {name:"700/four-callers",schedule:[{population:700,groups:[4]}]},
+ {name:"700/growing49",schedule:[100,200,300,400,500,600,700].map(population=>({population,groups:[4,3]}))},
+ {name:"700/growing137",schedule:[100,200,300,400,500,600,700].map((population,index)=>({population,groups:index===6?[4,4,4,4,1]:[4,4,4,4,4]}))},
+];
+for(const scenario of guardRecordCases)test("production owned guard record history "+scenario.name,()=>exerciseGuardRecordOverlap(scenario));
+
+test("ordinary pending guards share one owned immutable journal graph until the last token returns",async()=>{
+ const {begin}=await openPrefixFixture(),current=structuredClone(begin);current.failures=[];
+ const owner=fixtureOwner(current.nativeContext.contextId),observer=realProgressObserver({technicalOwner:owner,
+  input:()=>owner.capture(()=>current),application:()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0}),
+  acknowledge:()=>assert.fail("ordinary token never acknowledges")});
+ try{
+  const first=await observer.check(),firstRecords=owner.stats().retainedRecords;
+  const second=await observer.check();
+  assert.equal(owner.stats().retainedRecords-firstRecords,2,"only the new check and opaque token add typed records");
+  observer.confirm(first);assert.ok(owner.stats().retainedRecords>2,"the second token still owns the shared graph");
+  observer.confirm(second);assert.equal(owner.stats().retainedRecords,2,"both complete durable checks remain");
+ }finally{observer.close();observer.releaseSnapshot();assert.equal(owner.stats().retainedRecords,0);assert.equal(owner.stats().retainedBytes,0);}
+});
+async function pendingJournalFixture({fault=null}={}) {
+ const {begin,end}=await openPrefixFixture();let current=structuredClone(begin);current.failures=[];
+ const contextId=current.nativeContext.contextId,proxy=createProxyControlCollector({contextId});proxy.installed();
+ let denyNextBytes=false,comparisonArmed=false;
+ const owner=createMixedTechnicalOwner({contextId,reserve:n=>{if(denyNextBytes){denyNextBytes=false;return false;}return proxy.reserveTemporaryObservation(n);},
+  release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});
+ const graphSet=new WeakSet(),metrics={retains:0,graphs:0,releasedGraphs:0,graphRefs:[]};
+ const observedOwner={...owner,
+  retainEvidence(construct){
+   metrics.retains++;
+   if(fault==="new-begin"&&metrics.retains===4 || fault==="distinct-begin"&&metrics.retains===8)denyNextBytes=true;
+   const value=owner.retainEvidence(construct);
+   if(value?.nativeContext && Object.keys(value.nativeContext).join(",")==="headerPrefix,principalEpoch,documentJournal,environment"){
+    assert.equal(Object.isFrozen(value),true);assert.equal(Object.isFrozen(value.nativeContext.headerPrefix.lifecycle.requests),true);
+    assert.equal(Object.isFrozen(value.nativeContext.principalEpoch.before),true);assert.equal(Object.isFrozen(value.nativeContext.documentJournal),true);
+    assert.equal(Object.isFrozen(value.nativeContext.environment.workerTargets.events),true);
+    graphSet.add(value);metrics.graphs++;metrics.graphRefs.push(new WeakRef(value));
+   }
+   if(fault==="comparison" && value?.ordinal===2 && value.failureIds)comparisonArmed=true;
+   return value;
+  },
+  run(construct){if(comparisonArmed){comparisonArmed=false;denyNextBytes=true;}return owner.run(construct);},
+  releaseEvidence(value){if(graphSet.has(value))metrics.releasedGraphs++;return owner.releaseEvidence(value);},
+ };
+ const observer=realProgressObserver({technicalOwner:observedOwner,input:()=>owner.capture(()=>current),
+  application:()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0}),
+  acknowledge:()=>assert.fail("ordinary journal never reads NativeACK")});
+ return {owner,observer,metrics,current:()=>current,advancePrincipal(){current.nativeContext.principalEpoch=structuredClone(end.nativeContext.principalEpoch);},
+  dispose(){try{observer.close();}finally{observer.releaseSnapshot();assert.equal(owner.stats().retainedRecords,0);assert.equal(owner.stats().retainedBytes,0);}}};
+}
+
+test("ordinary journal sharing separates changed full JSON values and key order",async()=>{
+ for(const change of ["principal","key-order"]){
+  const f=await pendingJournalFixture();
+  try{
+   const first=await f.observer.check(),before=f.owner.stats().retainedRecords;
+   if(change==="principal")f.advancePrincipal();
+   else{const context=f.current().nativeContext;context.environment.workerTargets=Object.fromEntries(Object.entries(context.environment.workerTargets).reverse());}
+   const second=await f.observer.check();assert.equal(f.metrics.graphs,2);assert.ok(f.owner.stats().retainedRecords-before>2);
+   f.observer.confirm(first);assert.equal(f.metrics.releasedGraphs,1);
+   f.observer.confirm(second);assert.equal(f.metrics.releasedGraphs,2);
+  }finally{f.dispose();}
+ }
+});
+
+test("ordinary journal allocation denials roll back only unpublished holds",async()=>{
+ for(const fault of ["new-begin","comparison","distinct-begin"]){
+  const f=await pendingJournalFixture({fault});
+  try{
+   if(fault!=="new-begin"){await f.observer.check();if(fault==="distinct-begin")f.advancePrincipal();}
+   await assert.rejects(f.observer.check(),/Mixed technical gzip rejected input/);
+   assert.equal(f.metrics.graphs,fault==="new-begin"?0:1);assert.equal(f.metrics.releasedGraphs,0);
+   // No newly issued opaque token survives the failed acquisition. Existing
+   // registered token/graph and durable checks/diagnostic retain their own units.
+   assert.equal(f.owner.stats().retainedRecords,fault==="new-begin"?2:10);
+  }finally{f.dispose();assert.equal(f.metrics.releasedGraphs,f.metrics.graphs);}
+ }
+});
+
+test("ordinary shared graphs survive failed foreign and double confirms until the remaining token closes",async()=>{
+ for(const failure of ["foreign","double","changed-journal"]){
+  const f=await pendingJournalFixture();
+  try{
+   const first=await f.observer.check(),second=await f.observer.check();assert.equal(f.metrics.graphs,1);
+   if(failure==="double"){f.observer.confirm(first);assert.equal(f.metrics.releasedGraphs,0);assert.throws(()=>f.observer.confirm(first));}
+   else if(failure==="foreign")assert.throws(()=>f.observer.confirm({...first}));
+   else{f.current().nativeContext.documentJournal.documents[0].loaderId="foreign";assert.throws(()=>f.observer.confirm(first));}
+   assert.equal(f.metrics.releasedGraphs,0);assert.ok(f.metrics.graphRefs[0].deref());
+   assert.throws(()=>f.observer.confirm(second));
+  }finally{f.dispose();assert.equal(f.metrics.releasedGraphs,1);}
+ }
+});
+
+test("ordinary projected journals retain every original current rejection gate",async()=>{
+ const changes=[
+  c=>c.headerPrefix.lifecycle.requests[0].acceptedOrdinal=999,
+  c=>c.principalEpoch.before.sha256="0".repeat(64),
+  c=>c.documentJournal.documents[0].loaderId="foreign",
+  c=>c.environment.workerTargets.events[0].urlSha256="0".repeat(64),
+  c=>c.protocolErrors.observed=1,
+  c=>c.headerCensus.counts.unknownHeaders=1,
+  c=>c.environment.workerTargets=null,
+ ];
+ for(const change of changes){const f=await pendingJournalFixture();try{const token=await f.observer.check();change(f.current().nativeContext);assert.throws(()=>f.observer.confirm(token));assert.equal(f.metrics.releasedGraphs,0);}finally{f.dispose();assert.equal(f.metrics.releasedGraphs,1);}}
+});
+
+test("ordinary shared graphs have no escaped strong reference after last confirm or close",async()=>{
+ const {setFlagsFromString}=await import("node:v8"),{runInNewContext}=await import("node:vm");
+ setFlagsFromString("--expose_gc");const collect=runInNewContext("gc");
+ for(const mode of ["confirmed","closed"]){
+  const f=await pendingJournalFixture();
+  try{
+   const first=await f.observer.check(),second=await f.observer.check(),reference=f.metrics.graphRefs[0];
+   if(mode==="confirmed"){f.observer.confirm(first);await tick();collect();assert.ok(reference.deref(),"remaining token owns the graph");f.observer.confirm(second);}
+   else f.observer.close();
+   let forgotten=false;for(let i=0;i<12;i++){await tick();collect();await tick();if(reference.deref()===undefined){forgotten=true;break;}}
+   assert.equal(forgotten,true);assert.equal(f.metrics.releasedGraphs,1);
+  }finally{f.dispose();}
+ }
+});
