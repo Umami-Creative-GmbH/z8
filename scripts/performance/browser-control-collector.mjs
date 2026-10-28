@@ -782,6 +782,8 @@ export function createBrowserControlCollector({
 	const limited = () =>
 		requests.size + extra.size + responseExtras.size >=
 		controlCancellationPolicy.recordLimit;
+	// Maximum modeled JSON storage for the optional, positively observed scalar.
+	const cacheEventMetadataBytes=Buffer.byteLength('"cacheEventObserved":false,');
 	const rows = () => mixedOwnedArray(requests.size,()=>[...requests.values()]);
 	const recordMeasuredFailure = (requestId) => {
 		rawMeasuredFailedRequests++;
@@ -1248,6 +1250,13 @@ export function createBrowserControlCollector({
 		observerError() {
 			errors++;
 		},
+		requestServedFromCache(event) {
+			const row=requests.get(event.requestId);
+			if(!row || row.loadingFinished || row.failed || row.cacheEventObserved===true)return;
+			if(retained+cacheEventMetadataBytes>controlCancellationPolicy.retainedLimit){overflow++;return;}
+			retained+=cacheEventMetadataBytes;
+			row.cacheEventObserved=true;
+		},
 		request(event) {
 			browserEventOrdinal++;
 			if (limited()) {
@@ -1552,6 +1561,7 @@ export async function installBrowserControlCollector({
 	const events = {
 		requestWillBeSent: "request",
 		requestWillBeSentExtraInfo: "requestExtra",
+		requestServedFromCache: "requestServedFromCache",
 		responseReceived: "response",
 		responseReceivedExtraInfo: "responseExtra",
 		loadingFinished: "finished",
@@ -1856,9 +1866,23 @@ export function createProxyControlCollector({
 		finishTeamReplay(handle,facts){return teamDispatch?.finished(handle,facts) ?? false;},
 		temporaryInspectionFor,
 		observeTeamBrowserRequest(row,kind){
+			const prior=row.proxyResponseId?browserRows.get(row.proxyResponseId):null;
+			if(prior && prior!==row){
+				const packet=requests.get(row.proxyResponseId);
+				// A positively observed cache receipt may reuse the original packet, never its mutable browser/value authority.
+				const cachedAncestry=(row.fromDiskCache===true || row.cacheEventObserved===true) &&
+					typeof row.requestId==="string" && row.requestId.length>0 && typeof prior.requestId==="string" && prior.requestId.length>0 && row.requestId!==prior.requestId &&
+					typeof contextId==="string" && contextId.length>0 && row.contextId===contextId && prior.contextId===contextId && packet?.contextId===contextId &&
+					["GET","HEAD"].includes(row.method) && prior.method===row.method && packet.method===row.method &&
+					/^[a-f0-9]{64}$/.test(row.fullUrlSha256 ?? "") && prior.fullUrlSha256===row.fullUrlSha256 && packet.fullUrlSha256===row.fullUrlSha256 &&
+					/^[a-f0-9]{32}\.[1-9]\d{0,9}$/.test(row.proxyResponseId) && prior.proxyResponseId===row.proxyResponseId && packet.id===row.proxyResponseId &&
+					packet.complete===true && packet.canceled===false && packet.upstreamError===false;
+				if(!cachedAncestry)errors++;
+				return;
+			}
 			if(kind==="body-settled")retireValue(row.proxyResponseId);
             if(kind==="request" && (sourceFacts && row.headerFieldSha256?.["next-action"]===sourceFacts.actionHeaderSha256 || row.headerFieldSha256?.[teamReplayHeader]))browserCuts.set(row,sourceCuts.capture("browser-request",row.requestId,currentTeamCut(),originalTeamRequestRouteFacts(operatorSource,row)));
-			if(row.proxyResponseId){const prior=browserRows.get(row.proxyResponseId);if(prior && prior!==row){errors++;return;}browserRows.set(row.proxyResponseId,row);}
+			if(row.proxyResponseId)browserRows.set(row.proxyResponseId,row);
 			if(row.proxyResponseId)resumeInspection(requests.get(row.proxyResponseId));
 			annual?.notify();
 		},

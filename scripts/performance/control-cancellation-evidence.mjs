@@ -1795,6 +1795,7 @@ const requestReceiptKeys = [
 		"complete",
 		"staleWhileRevalidateSeconds",
 		"fromDiskCache",
+		"cacheEventObserved",
 		"fromServiceWorker",
 		"loadingFinished",
 		"failed",
