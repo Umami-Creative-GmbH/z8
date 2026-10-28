@@ -1602,7 +1602,7 @@ export async function installBrowserControlCollector({
         finishTeamReplay(handle,facts){return proxy.finishTeamReplay(handle,facts);},
   acknowledgeMixedProgress(options){if(!progress)throw Error("Mixed progress observation was not installed before app IO.");return progress.check(options);},
   confirmMixedProgress(token){if(!progress)throw Error("Mixed progress observation is unavailable.");return progress.confirm(token);},
-  releaseMixedProgressSnapshot(){progress?.releaseSnapshot();},
+  releaseMixedProgressSnapshot(value=null){progress?.releaseSnapshot(value);},
   validateMixedProgress(verify){if(!technicalOwner)throw Error("Mixed validation owner is unavailable.");return technicalOwner.run(verify);},
   snapshot(){return {...collector.snapshot(),annualTeam:proxy.annualTeamSnapshot(),temporaryValueSourceReads:teamScheduler.snapshot(),...(progress?{mixedProgress:progress.snapshot(),mixedDocumentJournal:documentAcknowledgment.snapshot()}:{})};},
 		async close({ deadlineMs } = {}) {
