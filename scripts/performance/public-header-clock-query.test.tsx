@@ -7,6 +7,8 @@ import {QueryClient,QueryClientProvider} from "@tanstack/react-query";
 import {act,cleanup,render,screen,waitFor} from "@testing-library/react";
 import {afterAll,afterEach,beforeEach,describe,expect,it,vi} from "vitest";
 const mocks=vi.hoisted(()=>({status:vi.fn(),post:vi.fn()}));
+// The diagnostic intentionally queues this MOCK status boundary; real GET is not a Next action.
+vi.mock("@/lib/time-tracking/web-clock-status-client",()=>({getWebClockStatus:mocks.status}));
 vi.mock("@/app/[locale]/(app)/time-tracking/actions",()=>({getTimeClockStatus:mocks.status,addBreakToActiveSession:vi.fn(),updateTimeEntryNotes:vi.fn(),startBreakInProgress:vi.fn(),resumeBreakInProgress:vi.fn()}));
 vi.mock("@/hooks/use-offline-clock",()=>({useOfflineClock:()=>({isOnline:true,isOffline:false,pendingCount:0,waitingCount:0,isSyncing:false,queueClockEvent:vi.fn(),commandCapabilities:null,workerCommandVersions:[],submitClockCommand:vi.fn()})}));
 vi.mock("@/lib/auth-client",()=>({useSession:()=>({data:{user:{id:"user-synthetic"},session:{activeOrganizationId:"org-synthetic"}}})}));
@@ -35,8 +37,8 @@ function installedQueue(reducer:(state:unknown,action:any)=>unknown){
 }
 const clients:QueryClient[]=[],facts:unknown[]=[];
 beforeEach(()=>{vi.clearAllMocks();vi.spyOn(HTMLElement.prototype,"getClientRects").mockReturnValue([{}] as any);});afterEach(()=>{cleanup();vi.restoreAllMocks();for(const client of clients)client.clear();clients.length=0;});
-for(const [phase,useClock]of [["original-c6ee",originalHook],["head-5ac",headHook]]as const){describe(phase,()=>{
- for(const heldHead of [true,false])it(`installed FIFO ${heldHead?"blocks":"does not block"} status transport after accepted REST`,async()=>{
+for(const [phase,useClock]of [["original-current-hook",originalHook],["head-current-hook",headHook]]as const){describe(phase,()=>{
+ for(const heldHead of [true,false])it(`diagnostic callback with intentionally queued status mock ${heldHead?"blocks":"does not block"} status transport after accepted REST`,async()=>{
   const timeline:string[]=[],dashboard=deferred<{success:true,data:never[]}>(),status=deferred<typeof IN>();let statusTransportStarts=0,dashboardTransportStarts=0;
   const {queue,callServer}=installedQueue((state,action)=>{if(action.actionId==="synthetic-dashboard-birthdays"){dashboardTransportStarts++;timeline.push("dashboard-transport-start");return dashboard.promise.then(value=>{timeline.push("dashboard-reducer-settled");action.resolve(value);return state;});}if(action.actionId==="synthetic-clock-status"){statusTransportStarts++;timeline.push("status-transport-start");return status.promise.then(value=>{timeline.push("status-reducer-settled");action.resolve(value);return state;});}throw Error("unexpected action");});
   const call=(id:string)=>{timeline.push(id==="synthetic-clock-status"?"status-enqueue":"dashboard-enqueue");return callServer(id,[]);};
