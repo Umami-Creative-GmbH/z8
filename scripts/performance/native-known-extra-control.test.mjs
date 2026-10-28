@@ -1008,7 +1008,7 @@ test("representation rejection retains the original deflate reservation stage be
   assert.equal(owner.retainEvidence(()=>mixedTechnicalCandidateDigest(cut,row=>reports.push(row))),null);assert.equal(reports.length,1);
   const failure=reports[0].failure;assert.ok(failure,"failed representation must identify its original stage");
   assert.equal(failure.stage,"deflate-reserve");assert.equal(failure.refusal.kind,"parent-bytes-refused");
-  assert.equal(failure.refusal.label,"deflate-output-chunks");assert.equal(failure.refusal.requestedBytes,4194304);
+  assert.equal(failure.refusal.label,"deflate-returned-buffer");assert.equal(failure.refusal.requestedBytes,4194304);
   assert.ok(failure.ownerUsedBytes>owner.stats().retainedBytes,"failure captures the pre-cleanup live owner");
   assert.ok(failure.refusal.parentUsedBytes>=held);assert.equal(reports[0].serialized,null);
  }finally{proxy.releaseTemporaryObservation(held);owner.releaseCut(cut);owner.close();assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);}
@@ -1102,4 +1102,55 @@ test("direct nested encode during release cannot corrupt a later outer refusal",
  const owner=createMixedTechnicalOwner({contextId,reserve:n=>{if(nested&&n===4194304){expectedOwnerBytes=owner.stats().retainedBytes;held=33554432-expectedOwnerBytes-n+1;assert.equal(proxy.reserveTemporaryObservation(held),true);}return proxy.reserveTemporaryObservation(n);},release:n=>{if(armed&&n===131072){armed=false;nested++;const result=inner.encode(innerCut);result.release();}proxy.releaseTemporaryObservation(n);},reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords}),cut=owner.capture(()=>({nativeContext:{contextId},outer:true}));armed=true;let report;
  try{assert.equal(mixedTechnicalCandidateDigest(cut,row=>{report=row;}),null);assert.equal(nested,1);assert.equal(report.failure.stage,"deflate-reserve");assert.equal(report.failure.ownerUsedBytes,expectedOwnerBytes);assert.equal(report.failure.refusal.kind,"parent-bytes-refused");assert.equal(report.failure.refusal.parentUsedBytes,held+expectedOwnerBytes);}
  finally{armed=false;if(held)proxy.releaseTemporaryObservation(held);owner.releaseCut(cut);owner.close();inner.releaseCut(innerCut);inner.close();assert.equal(owner.stats().retainedBytes,0);assert.equal(inner.stats().retainedBytes,0);}
+});
+
+test("candidate gzip precharges one physical output backing before its single native call",async()=>{
+ const {createMixedTechnicalOwner}=await import("./mixed-technical-gzip.mjs"),{createRequire,syncBuiltinESMExports}=await import("node:module"),native=createRequire(import.meta.url)("node:zlib");
+ const contextId="single-output-backing",proxy=createProxyControlCollector({contextId});proxy.installed();const reserves=[];let nativeComplete=false,nativeBytes=0,assemblyOwnerBytes=null;
+ const owner=createMixedTechnicalOwner({contextId,reserve:n=>{reserves.push(n);if(nativeComplete&&n===nativeBytes+48)assemblyOwnerBytes=owner.stats().retainedBytes;return proxy.reserveTemporaryObservation(n);},release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords}),cut=owner.capture(()=>({nativeContext:{contextId},unicode:"é😀",metadata:"fresh".repeat(1000)}));const cutBytes=owner.stats().retainedBytes;reserves.length=0;
+ const originalGzip=native.gzipSync,originalAlloc=Buffer.allocUnsafe;let calls=0,observation,packed;
+ native.gzipSync=function(input,options){calls++;const backings=[],allocations=[];const before=[...reserves];Buffer.allocUnsafe=function(...args){const value=Reflect.apply(originalAlloc,this,args);backings.push(value.buffer);allocations.push(value.buffer.byteLength);return value;};try{const value=Reflect.apply(originalGzip,this,[input,options]);observation={before,allocations,aliases:backings.includes(value.buffer),backingBytes:value.buffer.byteLength,chunkSize:options.chunkSize,maxOutputLength:options.maxOutputLength};nativeComplete=true;nativeBytes=value.length;return value;}finally{Buffer.allocUnsafe=originalAlloc;}};syncBuiltinESMExports();
+ try{packed=owner.encode(cut);assert.equal(calls,1);assert.deepEqual(observation.before.filter(n=>n>=4194304),[4194304]);assert.deepEqual(observation.allocations,[4194304]);assert.equal(observation.aliases,true);assert.equal(observation.backingBytes,4194304);assert.equal(observation.chunkSize,4194304);assert.equal(observation.maxOutputLength,4194256);assert.ok(packed.bytes.length<=4194304);assert.equal(assemblyOwnerBytes,cutBytes+131072+packed.stats.logicalBytes+4194304,"entire native backing remains charged at assembly even for small gzip");}
+ finally{native.gzipSync=originalGzip;Buffer.allocUnsafe=originalAlloc;syncBuiltinESMExports();packed?.release();owner.releaseCut(cut);owner.close();assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);}
+});
+test("single gzip backing rejects unsafe changed pool descriptors before native allocation",async()=>{
+ const {createMixedTechnicalOwner}=await import("./mixed-technical-gzip.mjs"),{createRequire,syncBuiltinESMExports}=await import("node:module"),native=createRequire(import.meta.url)("node:zlib"),originalGzip=native.gzipSync,originalPool=Object.getOwnPropertyDescriptor(Buffer,"poolSize");
+ for(const mode of ["large","unsigned-large","getter"]){
+  const id="pool-guard-"+mode,proxy=createProxyControlCollector({contextId:id});proxy.installed();let armed=false,calls=0,reads=0;
+  const owner=createMixedTechnicalOwner({contextId:id,reserve:n=>{const granted=proxy.reserveTemporaryObservation(n);if(armed&&n===4194304){if(mode==="getter")Object.defineProperty(Buffer,"poolSize",{configurable:true,get(){reads++;throw Error("PRIVATE_POOL_GETTER");}});else Object.defineProperty(Buffer,"poolSize",{...originalPool,value:mode==="large"?16777216:4294967295});}return granted;},release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords}),cut=owner.capture(()=>({nativeContext:{contextId:id},fresh:true}));
+  native.gzipSync=function(...args){calls++;return Reflect.apply(originalGzip,this,args);};syncBuiltinESMExports();armed=true;
+  try{assert.throws(()=>owner.encode(cut),/Mixed technical gzip rejected input/);assert.equal(calls,0);assert.equal(reads,0);}
+  finally{armed=false;Object.defineProperty(Buffer,"poolSize",originalPool);native.gzipSync=originalGzip;syncBuiltinESMExports();owner.releaseCut(cut);owner.close();assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);assert.equal(proxy.reserveTemporaryObservation(33554432),true);proxy.releaseTemporaryObservation(33554432);}
+ }
+});
+test("single gzip output native overflow never allocates a second backing and releases all leases",async()=>{
+ const {createMixedTechnicalOwner}=await import("./mixed-technical-gzip.mjs"),{createRequire,syncBuiltinESMExports}=await import("node:module"),{randomBytes}=await import("node:crypto"),native=createRequire(import.meta.url)("node:zlib"),originalGzip=native.gzipSync,originalAlloc=Buffer.allocUnsafe;
+ const id="single-output-overflow",proxy=createProxyControlCollector({contextId:id});proxy.installed();const owner=createMixedTechnicalOwner({contextId:id,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords}),cut=owner.capture(()=>({nativeContext:{contextId:id},value:randomBytes(4259840).toString("base64")}));let calls=0,code=null;const allocations=[];
+ native.gzipSync=function(...args){calls++;Buffer.allocUnsafe=function(...input){const value=Reflect.apply(originalAlloc,this,input);allocations.push(value.buffer.byteLength);return value;};try{return Reflect.apply(originalGzip,this,args);}catch(error){code=error.code;throw error;}finally{Buffer.allocUnsafe=originalAlloc;}};syncBuiltinESMExports();
+ try{assert.throws(()=>owner.encode(cut),/Mixed technical gzip rejected input/);assert.equal(calls,1);assert.equal(code,"ERR_BUFFER_TOO_LARGE");assert.deepEqual(allocations,[4194304]);}
+ finally{native.gzipSync=originalGzip;Buffer.allocUnsafe=originalAlloc;syncBuiltinESMExports();owner.releaseCut(cut);owner.close();assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);}
+});
+
+test("single gzip output reservation denial happens before native and refunds only its own leases",async()=>{
+ const {createMixedTechnicalOwner}=await import("./mixed-technical-gzip.mjs"),{createRequire,syncBuiltinESMExports}=await import("node:module"),native=createRequire(import.meta.url)("node:zlib"),originalGzip=native.gzipSync,id="single-output-denial",proxy=createProxyControlCollector({contextId:id});proxy.installed();let armed=false,denials=0,calls=0;
+ const owner=createMixedTechnicalOwner({contextId:id,reserve:n=>{if(armed&&n===4194304){denials++;return false;}return proxy.reserveTemporaryObservation(n);},release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords}),cut=owner.capture(()=>({nativeContext:{contextId:id},fresh:true})),before=owner.stats().retainedBytes;
+ native.gzipSync=function(...args){calls++;return Reflect.apply(originalGzip,this,args);};syncBuiltinESMExports();armed=true;
+ try{assert.throws(()=>owner.encode(cut),/Mixed technical gzip rejected input/);assert.equal(denials,1);assert.equal(calls,0);assert.equal(owner.stats().retainedBytes,before);}
+ finally{armed=false;native.gzipSync=originalGzip;syncBuiltinESMExports();owner.releaseCut(cut);owner.close();assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);assert.equal(proxy.reserveTemporaryObservation(33554432),true);proxy.releaseTemporaryObservation(33554432);}
+});
+
+test("single gzip output keeps the exact8MiB logical edge and rejects one byte more",async()=>{
+ const {createMixedTechnicalOwner}=await import("./mixed-technical-gzip.mjs"),id="single-output-logical-edge",empty={nativeContext:{contextId:id},value:""},overhead=Buffer.byteLength(JSON.stringify(empty));
+ for(const extra of [0,1]){const proxy=createProxyControlCollector({contextId:id});proxy.installed();const owner=createMixedTechnicalOwner({contextId:id,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});let cut=null,packed=null;
+  try{const value={...empty,value:"x".repeat(8388608-overhead+extra)};if(extra)assert.throws(()=>owner.capture(()=>value),/Mixed technical gzip rejected input/);else{cut=owner.capture(()=>value);packed=owner.encode(cut);assert.equal(packed.stats.logicalBytes,8388608);assert.ok(packed.bytes.length<=4194304);}}
+  finally{packed?.release();if(cut)owner.releaseCut(cut);owner.close();assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);}
+ }
+});
+
+test("qualified native gzip exact output boundary aliases one chunk and rejects one byte below",async()=>{
+ const {gzipSync,constants}=await import("node:zlib"),{randomBytes}=await import("node:crypto"),input=randomBytes(131072),options={level:6,windowBits:15,memLevel:8,strategy:constants.Z_DEFAULT_STRATEGY},expected=gzipSync(input,options).length,originalAlloc=Buffer.allocUnsafe;
+ for(const limit of [expected,expected-1]){const backings=[],allocations=[];Buffer.allocUnsafe=function(...args){const value=Reflect.apply(originalAlloc,this,args);backings.push(value.buffer);allocations.push(value.buffer.byteLength);return value;};
+  try{if(limit===expected){const result=gzipSync(input,{...options,chunkSize:expected+1,maxOutputLength:limit});assert.equal(result.length,expected);assert.ok(backings.includes(result.buffer));}else assert.throws(()=>gzipSync(input,{...options,chunkSize:expected+1,maxOutputLength:limit}),{code:"ERR_BUFFER_TOO_LARGE"});assert.deepEqual(allocations,[expected+1]);}
+  finally{Buffer.allocUnsafe=originalAlloc;}
+ }
 });
