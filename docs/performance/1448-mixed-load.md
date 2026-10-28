@@ -293,3 +293,28 @@ Normal `fixture start` can select an existing compiled app with one explicit
 entrypoint are checked before collector configuration or log writes. A custom
 directory cannot use `--build`; other commands reject the override. Omitting it
 preserves the original application directory, build path, environment and guards.
+
+
+## One bounded gzip output backing
+
+On the qualified benchmark runtime (Node 26.9.0, zlib
+1.3.2.1-motley-285e94b), candidate encoding precharges one 4 MiB native
+output backing before its single synchronous gzip call. That chunk is larger
+than the unchanged maximum gzip payload (4 MiB minus the 48-byte envelope).
+The qualified Node implementation rejects excess output before allocating a
+second chunk; successful output is a view of the first backing. The whole
+4 MiB remains charged until the assembly copy finishes and that view is dropped.
+An own-data Buffer.poolSize check after the last parent callback rejects a pool
+configuration that could make this allocation use a larger pooled backing.
+
+This replaces the overlapping chunk-output and returned-buffer reservations;
+canonical input, native workspace, portable assembly, source views and journals
+retain their reservations and lifetimes. It reduces worst-case modeled output
+overlap, without claiming lower RSS for small compressible inputs. Wire bytes,
+logical digest and semantic statistics are unchanged; peak charged bytes and
+output reservation traces change. The same 32 MiB shared owner, 10,000 typed
+records, 4 MiB whole portable, 8 MiB logical and all independent Native/body/
+full-prefix gates remain strict. The synthetic allocation-class reproduction
+is not an exact failed-live-cut reconstruction or benchmark qualification.
+Every previous actual failure remains failed; both phases still require a
+fresh complete 20-pair/40-command run through every gate.

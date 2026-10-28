@@ -32,6 +32,7 @@ function captureRefusal(state,kind,label,bytes,records){const record=scope=>{try
 const must=x=>{if(!x)throw bad();};
 const hash=b=>createHash('sha256').update(b).digest();
 const round=n=>Math.ceil(n/CHUNK)*CHUNK;
+const deflateChunkSize=round(limits.portable-limits.header);
 // Root depth0 through depth64 can retain65 vectors simultaneously.
 const vectorBase=65*10001*8+131072;
 const typedPrototype=Object.getPrototypeOf(Uint8Array.prototype);
@@ -146,10 +147,14 @@ export function packMixedTechnicalJSON(original,kind,ownerLease){
  try{representationStage('pack-kind');must(kind===1);const operation=charge(state,131072,'operation-hash-control-smallobjects');held.push(operation);representationStage('measure');const m=measure(original,state),prior=leases.get(ownerLease);representationStage('binding-match');must(m.bytes===prior.logicalBytes&&m.digest===prior.logicalSHA);representationStage('canonical');const canonicalView=canonical(original,state,m.bytes);held.push(canonicalView.lease);
   // Native documented workspace +128KiB explicit small-object allowance.
   representationStage('deflate-reserve');const native=charge(state,262144+131072,'deflate-native-and-smallobjects');held.push(native);
-  const chunks=charge(state,round(limits.portable-limits.header),'deflate-output-chunks');held.push(chunks);
-  const result=charge(state,round(limits.portable-limits.header)+CHUNK,'deflate-returned-buffer');held.push(result);
-  representationStage('deflate-call');let gz=gzipSync(canonicalView.bytes,{level:6,windowBits:15,memLevel:8,strategy:constants.Z_DEFAULT_STRATEGY,chunkSize:CHUNK,maxOutputLength:limits.portable-limits.header});
-  representationStage('resize');resize(result,gz.buffer.byteLength);chunks.release();native.release();
+  // Qualified Node checks maxOutputLength before allocating a second chunk;
+  // this chunk is strictly larger than that unchanged limit. The returned view
+  // aliases its backing, which remains fully charged through the assembly copy.
+  const result=charge(state,deflateChunkSize,'deflate-returned-buffer');held.push(result);
+  const pool=Object.getOwnPropertyDescriptor(Buffer,'poolSize');
+  must(pool&&Object.hasOwn(pool,'value')&&Number.isSafeInteger(pool.value)&&pool.value>=0&&(pool.value>>>1)<=deflateChunkSize);
+  representationStage('deflate-call');let gz=gzipSync(canonicalView.bytes,{level:6,windowBits:15,memLevel:8,strategy:constants.Z_DEFAULT_STRATEGY,chunkSize:deflateChunkSize,maxOutputLength:limits.portable-limits.header});
+  representationStage('resize');resize(result,gz.buffer.byteLength);native.release();
   representationStage('assembly-reserve');const outputLease=charge(state,limits.header+gz.length,'portable-assembly');held.push(outputLease);
   representationStage('assembly');bytes=Buffer.allocUnsafeSlow(limits.header+gz.length);bytes.write(MAGIC,0,'ascii');bytes[8]=1;bytes[9]=0;bytes.writeUInt16BE(48,10);bytes.writeUInt32BE(m.bytes,12);hash(canonicalView.bytes).copy(bytes,16);gz.copy(bytes,48);
   gz=null;result.release();canonicalView.bytes=null;canonicalView.lease.release();bind(outputLease,bytes);leases.get(outputLease).onRelease=()=>{bytes=null;};
