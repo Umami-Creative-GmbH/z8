@@ -22,12 +22,6 @@ export default {
 			...Object.fromEntries(
 				packages.map((name) => [name, appRequire.resolve(name)]),
 			),
-			vitest: fileURLToPath(
-				new URL(
-					"../../apps/webapp/node_modules/vitest/dist/index.js",
-					import.meta.url,
-				),
-			),
 		},
 	},
 	test: {
