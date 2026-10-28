@@ -31,11 +31,7 @@ export default {
 				extends: true,
 				test: {
 					name: "unit",
-					include: [
-						fileURLToPath(
-							new URL("./collector-open-retention.test.ts", import.meta.url),
-						),
-					],
+				include: ["../../scripts/performance/collector-open-retention.test.ts"],
 					env: { Z8_TEST_PROJECT: "unit" },
 					setupFiles: [
 						fileURLToPath(
