@@ -413,7 +413,7 @@ const sourceFacts = () => {
 };
 
 test("original temporary source facts identify the one reviewed baseline without becoming a live qualification", () => {
-	assert.equal(originalTeamTemporaryProfiles.length, 3);
+	assert.equal(originalTeamTemporaryProfiles.length, 4);
 	const facts = sourceFacts();
 	assert.equal(knownOriginalTeamSourceFacts(facts), true);
 	assert.equal(isOriginalTeamSourceQualification(facts), false);
@@ -846,6 +846,46 @@ test("advisory-lifetime profile explicitly binds the new Original while preservi
  const { knownOriginalTeamSourceConfiguration } = await import("./team-temporary-value-authority.mjs");
  const config = { protocol: "original-team-source-configuration-v1", profileId: profile.id, phase: "baseline", compiledBuild: profile.binarySource,
   compiledManifestSha256: profile.manifestSha256, buildRecordPath: "C:/synthetic/c6ee-before-build.json", buildRecordSha256: profile.buildRecordSha256 };
+ assert.equal(knownOriginalTeamSourceConfiguration(config, profile.binarySource, profile.manifestSha256), true);
+ for (const changed of [{ ...config, phase: "release" }, { ...config, profileId: prior.id }, { ...config, compiledBuild: prior.binarySource },
+  { ...config, compiledManifestSha256: prior.manifestSha256 }, { ...config, buildRecordSha256: prior.buildRecordSha256 },
+  { ...config, compiledBuild: "f".repeat(40) }]) assert.equal(knownOriginalTeamSourceConfiguration(changed), false);
+ assert.equal(knownOriginalTeamSourceConfiguration(config, prior.binarySource), false);
+ assert.equal(knownOriginalTeamSourceConfiguration(config, profile.binarySource, prior.manifestSha256), false);
+ assert.equal(knownOriginalTeamSourceConfiguration(null), true);
+});
+
+test("web-status GET profile explicitly binds the actual new Original while preserving the reviewed source closure", async () => {
+ const profile = originalTeamTemporaryProfiles.find(row => row.id === "original-team-web-clock-status-2ef-v1");
+ assert.ok(profile, "a new build needs its own explicit reviewed profile");
+ assert.equal(profile.binarySource, "2ef3b3f17ea61d65570f23c46f92d1d320f5ef25");
+ assert.equal(profile.manifestSha256,"4a494ab798bcc6cd6b438673bdf2b5fd6d3a8a8b11e1a4650bb807e7885c99f8");
+ assert.equal(profile.buildRecordSha256,"e941aa3c8cfd111a9bcf3a84b40556258c790318c35346d767e367ccefe6ff46");
+ assert.equal(profile.registrySha256,"c16613818be250574e87f121ac596c87b8cd50b3bbaa0f1d732f750bae6d1f09");
+ assert.equal(profile.actionHeaderSha256,"75e71e23f888beb5e9d0251a1b7ef1a57454b599069d6c5b451dcd1293a9dc59");
+ const prior = originalTeamTemporaryProfiles.find(row => row.id === "original-team-advisory-lifetime-c6ee-v1");
+ assert.deepEqual(profile.appFiles, prior.appFiles);
+ assert.deepEqual(profile.frameworkFiles, prior.frameworkFiles);
+ assert.ok(Object.isFrozen(profile) && Object.isFrozen(profile.appFiles) && Object.isFrozen(profile.frameworkFiles));
+ for (const key of ["manifestSha256", "buildRecordSha256", "registrySha256", "actionHeaderSha256"]) {
+  assert.match(profile[key], /^[a-f0-9]{64}$/);
+
+ }
+ const facts = { ...sourceFacts(), profileId: profile.id, binarySource: profile.binarySource, manifestSha256: profile.manifestSha256,
+  buildRecordSha256: profile.buildRecordSha256, registrySha256: profile.registrySha256, actionHeaderSha256: profile.actionHeaderSha256,
+  appFiles: structuredClone(profile.appFiles), frameworkFiles: structuredClone(profile.frameworkFiles) };
+ assert.equal(knownOriginalTeamSourceFacts(facts), true);
+ assert.equal(isOriginalTeamSourceQualification(facts), false);
+ for (const key of ["profileId", "binarySource", "manifestSha256", "buildRecordSha256", "registrySha256", "actionHeaderSha256"]) {
+  const changed = structuredClone(facts); changed[key] = key === "profileId" ? prior.id : key === "binarySource" ? prior.binarySource : "f".repeat(64);
+  assert.equal(knownOriginalTeamSourceFacts(changed), false, key);
+  const missing = structuredClone(facts); delete missing[key]; assert.equal(knownOriginalTeamSourceFacts(missing), false, key);
+ }
+ const descendant = structuredClone(facts); descendant.binarySource = "f".repeat(40);
+ assert.equal(knownOriginalTeamSourceFacts(descendant), false);
+ const { knownOriginalTeamSourceConfiguration } = await import("./team-temporary-value-authority.mjs");
+ const config = { protocol: "original-team-source-configuration-v1", profileId: profile.id, phase: "baseline", compiledBuild: profile.binarySource,
+  compiledManifestSha256: profile.manifestSha256, buildRecordPath: "C:/synthetic/2ef-before-build.json", buildRecordSha256: profile.buildRecordSha256 };
  assert.equal(knownOriginalTeamSourceConfiguration(config, profile.binarySource, profile.manifestSha256), true);
  for (const changed of [{ ...config, phase: "release" }, { ...config, profileId: prior.id }, { ...config, compiledBuild: prior.binarySource },
   { ...config, compiledManifestSha256: prior.manifestSha256 }, { ...config, buildRecordSha256: prior.buildRecordSha256 },
