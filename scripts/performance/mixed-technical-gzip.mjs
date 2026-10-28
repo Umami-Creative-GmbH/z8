@@ -7,6 +7,18 @@ export const mixedTechnicalRepresentation=Object.freeze({protocol:'mixed-progres
 export const mixedTechnicalRuntime=Object.freeze({node:'26.9.0',zlib:'1.3.2.1-motley-285e94b'});
 const states=new WeakMap(), leases=new WeakMap(), cutLeases=new WeakMap(), coverage=new WeakMap(), replayFacts=new WeakMap(), ownedCutViews=new WeakMap(), MAGIC='Z8MIXGZ2', CHUNK=65536;
 const bad=()=>new Error('Mixed technical gzip rejected input.');
+let captureObservation=null;
+const captureLabels=new Set(['original-provisional','canonical-traversal-and-scalar-scratch','canonical-key-vector','canonical-buffer','fixed-source-container-and-coverage-control','snapshot-clone','snapshot-typed-rows','sequential-row-constructor-scratch','snapshot-row-sort-index','snapshot-bounded-array','technical-predicate-fixed-shells','technical-predicate-return-view','derived-technical-receipt','immutable-snapshot-key-vectors','snapshot-UTF16-string','snapshot-UTF8-buffer','snapshot-fixed-constructor-shells','complete-progress-cut-clone-and-private-control']);
+const diagnosticCount=value=>Number.isSafeInteger(value)&&value>=0?value:null;
+// Synchronous, failure-only control slots. No graph/error is retained after this call.
+export function observeMixedTechnicalCapture(construct,onFailure){
+ const previous=captureObservation,scope={state:null,stage:null,innerStage:null,used:null,records:null,refusal:null,parent:null};captureObservation=scope;
+ try{return construct();}catch(error){captureObservation=previous;try{onFailure(scope.state?Object.freeze({protocol:'mixed-input-capture-failure-v1',stage:scope.stage,innerStage:scope.innerStage,ownerUsedBytes:diagnosticCount(scope.used??scope.state.used),ownerUsedRecords:diagnosticCount(scope.records??scope.state.records),refusal:scope.refusal}):null);}catch{}throw error;}
+ finally{captureObservation=previous;scope.state=null;scope.refusal=null;scope.parent=null;}
+}
+/** Called only on the original proxy reservation refusal; no additional reservation or getter. */
+export function recordMixedTechnicalParentRefusal(usedBytes,usedRecords){try{const scope=captureObservation;if(scope?.state&&!scope.parent)scope.parent=Object.freeze({parentUsedBytes:diagnosticCount(usedBytes),parentUsedRecords:diagnosticCount(usedRecords)});}catch{}}
+function captureRefusal(state,kind,label,bytes,records){try{const scope=captureObservation;if(scope?.state===state&&!scope.refusal)scope.refusal=Object.freeze({kind,label:captureLabels.has(label)?label:null,requestedBytes:diagnosticCount(bytes),requestedRecords:diagnosticCount(records),ownerUsedBytes:diagnosticCount(state.used),ownerUsedRecords:diagnosticCount(state.records),parentUsedBytes:scope.parent?.parentUsedBytes??null,parentUsedRecords:scope.parent?.parentUsedRecords??null});}catch{}}
 const must=x=>{if(!x)throw bad();};
 const hash=b=>createHash('sha256').update(b).digest();
 const round=n=>Math.ceil(n/CHUNK)*CHUNK;
@@ -41,11 +53,11 @@ function createBoundedOwner({reserve,release,reserveRecords,releaseRecords}){
  states.set(api,state);return api;
 }
 function charge(state,bytes,label,records=0){
- must(Number.isSafeInteger(bytes)&&bytes>=0);state.attempts++;
- must(Number.isSafeInteger(records)&&records>=0&&state.records+records<=limits.records&&state.used+bytes<=limits.owner);
- if(records)must(state.reserveRecords(records)===true);
- let reserved=false;try{reserved=state.reserve(bytes)===true;}catch{if(records)state.releaseRecords(records);throw bad();}
- if(!reserved){if(records)state.releaseRecords(records);throw bad();}
+ const validBytes=Number.isSafeInteger(bytes)&&bytes>=0;if(!validBytes)captureRefusal(state,'invalid-byte-count',label,bytes,records);must(validBytes);state.attempts++;
+ const allowed=Number.isSafeInteger(records)&&records>=0&&state.records+records<=limits.records&&state.used+bytes<=limits.owner;if(!allowed)captureRefusal(state,'owner-limit',label,bytes,records);must(allowed);
+ if(records){let granted;try{granted=state.reserveRecords(records)===true;}catch(error){captureRefusal(state,'parent-records-threw',label,bytes,records);throw error;}if(!granted)captureRefusal(state,'parent-records-refused',label,bytes,records);must(granted);}
+ let reserved=false;try{reserved=state.reserve(bytes)===true;}catch{captureRefusal(state,'parent-bytes-threw',label,bytes,records);if(records)state.releaseRecords(records);throw bad();}
+ if(!reserved){captureRefusal(state,'parent-bytes-refused',label,bytes,records);if(records)state.releaseRecords(records);throw bad();}
  state.records+=records;
  state.used+=bytes;state.peak=Math.max(state.peak,state.used);state.active++;
  const lease=Object.freeze({release(){const s=leases.get(lease);if(s.live){s.onRelease?.();s.value=null;s.logicalSHA=null;s.live=false;state.used-=s.bytes;state.active--;state.records-=s.records;state.release(s.bytes);if(s.records)state.releaseRecords(s.records);}}});
@@ -113,7 +125,7 @@ function tokens(value,emit,projection=null,{state=null,incremental=false}={}){
  }
  walk(value,0);return {slots,nodes,rootReceiptRows,typedRecords};
 }
-function measure(value,state,decoderN=null,limit=limits.logical,projection=null){const workspace=charge(state,decoderN===null?131072:vectorBase+2*decoderN,'canonical-traversal-and-scalar-scratch');try{let bytes=0;const digest=createHash('sha256');const counts=tokens(value,s=>{bytes+=Buffer.byteLength(s);must(bytes<=limit);digest.update(s);},projection,{state,incremental:decoderN===null});return{bytes,digest:digest.digest('hex'),...counts};}finally{workspace.release();}}
+function measure(value,state,decoderN=null,limit=limits.logical,projection=null){const workspace=charge(state,decoderN===null?131072:vectorBase+2*decoderN,'canonical-traversal-and-scalar-scratch');try{let bytes=0;const digest=createHash('sha256');const counts=tokens(value,s=>{bytes+=Buffer.byteLength(s);must(bytes<=limit);digest.update(s);},projection,{state,incremental:decoderN===null});return{bytes,digest:digest.digest('hex'),...counts};}catch(error){if(captureObservation?.state===state&&!captureObservation.innerStage)captureObservation.innerStage='canonical-measure';throw error;}finally{workspace.release();}}
 function canonical(value,state,N,decoder=false){const lease=charge(state,N,'canonical-buffer');try{const bytes=Buffer.allocUnsafeSlow(N);let offset=0;const workspace=charge(state,decoder?vectorBase+2*N:131072,'canonical-traversal-and-scalar-scratch');try{tokens(value,s=>{offset+=bytes.write(s,offset,N-offset);},null,{state,incremental:!decoder});must(offset===N);}finally{workspace.release();}return{bytes,lease};}catch{lease.release();throw bad();}}
 
 export function packMixedTechnicalJSON(original,kind,ownerLease){
@@ -320,17 +332,20 @@ export function createMixedTechnicalOwner(options){
  const state=states.get(owner);state.contextId=contextId;
  const api=Object.freeze({
   capture(construct){
+   const diagnostic=captureObservation?.state===null?captureObservation:null;if(diagnostic){diagnostic.state=state;diagnostic.stage='entry';}
    must(!closed&&typeof construct==='function'&&construction===null);let lease,view=null,copy=null;
+   if(diagnostic)diagnostic.stage='constructor-shell';
    const frame={state,leases:[]};const shell=charge(state,131072,'snapshot-fixed-constructor-shells');frame.leases.push(shell);construction=frame;
    try{
-    view=construct();must(ownData(ownData(view,'nativeContext'),'contextId')===contextId);let measured;
-    if(coverage.get(view)?.kind==='container'){checkCoverage(view,state);measured=measure(view,state);}
-    else{lease=owner.holdSourceValue(view);const previous=leases.get(lease);measured={bytes:previous.bytes,digest:previous.logicalSHA,typedRecords:previous.typedRecords};}
+    if(diagnostic)diagnostic.stage='construct';view=construct();if(diagnostic)diagnostic.stage='context';must(ownData(ownData(view,'nativeContext'),'contextId')===contextId);let measured;
+    if(coverage.get(view)?.kind==='container'){if(diagnostic)diagnostic.stage='coverage';checkCoverage(view,state);if(diagnostic)diagnostic.stage='measure';measured=measure(view,state);}
+    else{if(diagnostic)diagnostic.stage='source-pin';lease=owner.holdSourceValue(view);const previous=leases.get(lease);measured={bytes:previous.bytes,digest:previous.logicalSHA,typedRecords:previous.typedRecords};}
+    if(diagnostic)diagnostic.stage='clone-reservation';
     const cloneLease=charge(state,measured.bytes+2048,'complete-progress-cut-clone-and-private-control',measured.typedRecords);
-    try{copy=structuredClone(view);bind(cloneLease,copy);coverWhole(cloneLease,copy,measured);Object.assign(leases.get(cloneLease),{logicalBytes:measured.bytes,logicalSHA:measured.digest});}catch{cloneLease.release();throw bad();}
-    view=null;lease?.release();lease=null;cuts.set(copy,cloneLease);cutLeases.set(copy,cloneLease);return copy;
-   }catch{view=null;copy=null;lease?.release();throw bad();}
-   finally{construction=null;for(const ownedLease of frame.leases.reverse())ownedLease.release();}
+    try{if(diagnostic)diagnostic.stage='clone';copy=structuredClone(view);if(diagnostic)diagnostic.stage='clone-coverage';bind(cloneLease,copy);coverWhole(cloneLease,copy,measured);Object.assign(leases.get(cloneLease),{logicalBytes:measured.bytes,logicalSHA:measured.digest});}catch{cloneLease.release();throw bad();}
+    if(diagnostic)diagnostic.stage='publish';view=null;lease?.release();lease=null;cuts.set(copy,cloneLease);cutLeases.set(copy,cloneLease);return copy;
+   }catch{if(diagnostic){diagnostic.used=state.used;diagnostic.records=state.records;}view=null;copy=null;try{lease?.release();}catch(error){if(diagnostic){diagnostic.stage='cleanup';diagnostic.used=state.used;diagnostic.records=state.records;}throw error;}throw bad();}
+   finally{construction=null;try{for(const ownedLease of frame.leases.reverse())ownedLease.release();}catch(error){if(diagnostic){diagnostic.stage='cleanup';diagnostic.used=state.used;diagnostic.records=state.records;}throw error;}}
   },
   replay(value){
    must(!closed&&!cutLeases.has(value)&&replayFacts.get(value)?.eligible&&Object.isFrozen(value)&&ownData(ownData(value,'nativeContext'),'contextId')===contextId);const known=replayFacts.get(value),pin=charge(state,known.bytes,'bounded-json-replay-source-pin');let retained=null;
