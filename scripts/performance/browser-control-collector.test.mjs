@@ -119,20 +119,25 @@ for(const scenario of [
 });
 
 test("cache event metadata is included in the same owned cut bytes without becoming another typed record",async()=>{
-	const {createMixedTechnicalOwner}=await import("./mixed-technical-gzip.mjs");
+	const {createMixedTechnicalOwner,parseMixedTechnicalReplayJSON}=await import("./mixed-technical-gzip.mjs");
 	const proxy=createProxyControlCollector({contextId,origin});proxy.installed();
-	const collector=createBrowserControlCollector({contextId,origin,proxyObservation:()=>proxy.snapshot(),readBody:async()=>({body:'0:{}\n',base64Encoded:false})});collector.installed();collector.beginMeasurement();
-	collector.request(event("owned-cache-event",1));
+	const collector=createBrowserControlCollector({contextId,origin,browserRevision:chromiumSWRRevision,proxyObservation:()=>proxy.snapshot(),readBody:async()=>({body,base64Encoded:false})});collector.installed();collector.beginMeasurement();
+	const id="a".repeat(32)+".1";proxy.request(id,{url,method:"GET",headers,traceId:"a".repeat(32)});proxy.response(id,{status:200,headers:responseHeaders});proxy.bytes(id,Buffer.from(body));proxy.end(id);
+	collector.request(event("owned-cache-event",1));collector.requestExtra({requestId:"owned-cache-event",headers});
 	collector.requestServedFromCache({requestId:"owned-cache-event"});collector.requestServedFromCache({requestId:"owned-cache-event"});
-	collector.failed({requestId:"owned-cache-event",errorText:"net::ERR_ABORTED",canceled:true});await tick();
+	collector.response({requestId:"owned-cache-event",response:{status:200,headers:{...responseHeaders,[controlResponseHeader]:id},fromDiskCache:false,fromServiceWorker:false}});collector.responseExtra({requestId:"owned-cache-event",statusCode:200,headers:{...responseHeaders,[controlResponseHeader]:id}});
+	collector.failed({requestId:"owned-cache-event",errorText:"net::ERR_ABORTED",canceled:true,timestamp:2});await tick();await tick();
+	const document=testTeamAnnualDocument(contextId,origin).journal;
 	const owner=createMixedTechnicalOwner({contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});
 	try{
-		const cut=collector.progressInput({owner});assert.equal(cut.failures[0].cacheEventObserved,true);
-		assert.equal(owner.stats().retainedRecords,1,"one browser failure remains one typed row; the scalar is not a new receipt");
+		const cut=collector.progressInput({owner,documentJournal:()=>document});assert.equal(cut.failures[0].cacheEventObserved,true);
+		const records=owner.stats().retainedRecords;
 		const packed=owner.encode(cut),expanded=gunzipSync(packed.bytes.subarray(48),{maxOutputLength:8388608,rejectGarbageAfterEnd:true});
 		assert.equal(JSON.parse(expanded).failures[0].cacheEventObserved,true);assert.equal(packed.stats.logicalBytes,expanded.length);
 		const without=structuredClone(cut);delete without.failures[0].cacheEventObserved;
 		assert.equal(expanded.length-Buffer.byteLength(JSON.stringify(without)),Buffer.byteLength('"cacheEventObserved":true,'),"the copied optional scalar contributes its full serialized bytes before encoding");
+		const comparison=owner.replay(parseMixedTechnicalReplayJSON(Buffer.from(JSON.stringify(without))));
+		assert.equal(owner.stats().retainedRecords-records,records,"the same complete fresh journals have identical typed-record counts with or without the scalar");owner.releaseCut(comparison);
 		assert.ok(owner.stats().retainedBytes>=expanded.length);packed.release();owner.releaseCut(cut);
 		assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);
 	}finally{owner.close();proxy.closeTeamValues();}
