@@ -897,9 +897,13 @@ const teamPublicSources = Object.freeze([
  ["lib/sync-service.js",1385,"f8bfd4a69ebaf3f43e33ffeb4858523d0afd3f3988c52fc82cda6cae7f810a05"],
  ["lib/clock-command-dispatch.js",13604,"663be8d36271e9c6c0c1efd5e4188994e1e49e40bcd70f7f432526ede7014c07"],
 ]);
+// Each entry is a whole qualified public4 revision; only the approved empty-queue SW differs.
+const teamPublicSourceRevisions = Object.freeze([teamPublicSources, Object.freeze([
+ ["sw.js",26569,"721215e68848d0494616c684fa7f2f43873893412a558f84864ba35d6c1dadcd"], ...teamPublicSources.slice(1),
+])]);
 const sourcePublicKnown = (sources, expected) => sources?.protocol === "serving-public-worker-source-metadata-v1" && sources.servingRootKnown===true && expected?.protocol==="qualified-serving-worker-sources-v1" &&
 	Array.isArray(sources.files) && sources.files.length===4 && Array.isArray(expected?.files) && expected.files.length===4 &&
-	sources.files.every((row,index)=>row.known===true && row.reason===null && row.file===expected.files[index].file && row.bytes===expected.files[index].bytes && row.sha256===expected.files[index].sha256 && row.file===teamPublicSources[index][0] && row.bytes===teamPublicSources[index][1] && row.sha256===teamPublicSources[index][2]);
+	sources.files.every((row,index)=>row.known===true && row.reason===null && row.file===expected.files[index].file && row.bytes===expected.files[index].bytes && row.sha256===expected.files[index].sha256) && teamPublicSourceRevisions.some(revision=>sources.files.every((row,index)=>row.file===revision[index][0] && row.bytes===revision[index][1] && row.sha256===revision[index][2]));
 /** Source noninterference only. This never attests continuous controller state or closes a scope. */
 export function knownOriginalTeamWorkerExtension(past,current,workerScriptSha256) {
  try {
