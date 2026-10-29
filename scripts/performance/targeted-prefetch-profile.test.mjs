@@ -345,9 +345,9 @@ test('real file-qualified installer covers fresh/controlled documents and BFCach
 
 test('closed receipt and fixed source envelopes fit without secret retention or quota expansion',()=>{
  const receipt={event:'controller',calls:1000000,selected:500000,passed:500000,unsupported:1000000,overwritten:1000000,errors:1000000,restores:1000000,installed:true,controllerState:'uncontrolled'};
- const terminal={version:1,nonce:'a'.repeat(32),sourceEpoch,sequence:1000000,stage:'terminal',intact:true,receipt};
+ const terminal={version:1,nonce:'a'.repeat(32),sourceEpoch,sequence:1000000,stage:'terminal',intact:false,receipt};
  const maximum={...receipt,event:'checkpoint',sourceEpoch,documentNonce:'c'.repeat(32),sequence:1000000,handoffState:'consumed',handoff:terminal};
- assert.ok(JSON.stringify(terminal).length<=512);assert.ok(Buffer.byteLength(JSON.stringify(maximum))<=2048);
+ assert.ok(JSON.stringify(terminal).length<=512);assert.ok(Buffer.byteLength(JSON.stringify(maximum))<=1024);
  assert.ok(12*2048+4096<=32768,'storage, JSON/CDP/public workviews plus fixed private controls');
  assert.ok(installTargetedPrefetchProfile.toString().length+2048<=16384,'source plus bounded serialized profile/origin/epoch arguments');
  let bytes=0,records=0;const journal=createTargetedPrefetchProfileJournal({profile:targetedPrefetchProfile,sourceEpoch,reserve:n=>(bytes+=n,true),release:n=>{bytes-=n;},reserveRecords:n=>(records+=n,true),releaseRecords:n=>{records-=n;}});

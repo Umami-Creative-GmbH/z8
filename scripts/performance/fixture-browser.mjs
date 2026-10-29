@@ -92,9 +92,9 @@ export function createTargetedPrefetchProfileJournal({profile, sourceEpoch, work
 	const receipt=value=>value&&value.installed===true&&fields.every(name=>Number.isSafeInteger(value[name])&&value[name]>=0&&value[name]<=1000000)&&value.calls===value.selected+value.passed&&events.includes(value.event)&&states.includes(value.controllerState);
 	const merge=(row,value,sequence)=>{
 		if(sequence<row.sequence){if(fields.some(name=>value[name]>row[name])||states.indexOf(value.controllerState)>states.indexOf(row.controllerState)){bad();return null;}return false;}
-		if(sequence===row.sequence){if(fields.some(name=>value[name]!==row[name])||value.controllerState!==row.controllerState){bad();return null;}return false;}
+		if(sequence===row.sequence){if(fields.some(name=>value[name]!==row[name])||value.controllerState!==row.controllerState||value.event!==row.event){bad();return null;}return false;}
 		if(fields.some(name=>value[name]<row[name])||states.indexOf(value.controllerState)<states.indexOf(row.controllerState)){bad();return null;}
-		for(const name of fields)row[name]=value[name];row.controllerState=value.controllerState;row.sequence=sequence;row.terminalSealed=row.departed&&row.terminalSequence===sequence;return true;
+		for(const name of fields)row[name]=value[name];row.controllerState=value.controllerState;row.event=value.event;row.sequence=sequence;row.terminalSealed=row.departed&&row.terminalSequence===sequence;return true;
 	};
 	const handoff=(value,currentNonce)=>{
 		if(!value||Object.keys(value).length!==7||value.version!==1||value.sourceEpoch!==sourceEpoch||value.stage!=="terminal"||typeof value.intact!=="boolean"||value.nonce===currentNonce||!Number.isSafeInteger(value.sequence)||value.sequence<1||value.sequence>1000000||!receipt(value.receipt)||Object.keys(value.receipt).length!==10||!["pagehide","call","controller","overwrite"].includes(value.receipt.event)){bad();return;}
@@ -108,7 +108,7 @@ export function createTargetedPrefetchProfileJournal({profile, sourceEpoch, work
 		receive(id, payload) {
 			if (scopeClosed) { bad(); return; }
 			try {
-				if (!Number.isSafeInteger(id) || id <= 0 || typeof payload !== "string" || Buffer.byteLength(payload) > 2048) { bad(); return; }
+				if (!Number.isSafeInteger(id) || id <= 0 || typeof payload !== "string" || Buffer.byteLength(payload) > 1024) { bad(); return; }
 				const value = JSON.parse(payload);
 				if (!receipt(value)||Object.keys(value).length!==15||value.sourceEpoch!==sourceEpoch||!/^[a-f0-9]{32}$/.test(value.documentNonce??"")||!Number.isSafeInteger(value.sequence)||value.sequence<1||value.sequence>1000000||!["none","empty","consumed","invalid","unavailable"].includes(value.handoffState)) { bad(); return; }
 				if(["installed","restore","checkpoint"].includes(value.event)?value.handoffState==="none":value.handoffState!=="none"){bad();return;}
@@ -169,7 +169,7 @@ export function installTargetedPrefetchProfile(target, profile, sourceEpoch, exp
 	const plain = value => value !== null && typeof value === "object" && [Object.prototype, null].includes(Object.getPrototypeOf(value));
 	const NativeURL = URL, prototype = NativeURL.prototype, href = Object.getOwnPropertyDescriptor(prototype, "href").get;
 	const counts = { calls: 0, selected: 0, passed: 0, unsupported: 0, overwritten: 0, errors: 0, restores: 0 };
-	let installed = false, observedController = null, bound = null, currentFetch, wrapper, controllerState = "uncontrolled", hidden = false,documentNonce=null,sequence=0,readStorage,writeStorage,removeStorage;
+	let installed = false, observedController = null, bound = null, currentFetch, wrapper, controllerState = "uncontrolled", hidden = false,documentNonce=null,sequence=0,lastTerminalText=null,readStorage,writeStorage,removeStorage;
 	const terminalValid=value=>value&&Object.keys(value).length===7&&value.version===1&&/^[a-f0-9]{32}$/.test(value.nonce??"")&&value.sourceEpoch===sourceEpoch&&value.stage==="terminal"&&typeof value.intact==="boolean"&&Number.isSafeInteger(value.sequence)&&value.sequence>0&&value.sequence<=1000000&&value.receipt&&Object.keys(value.receipt).length===10&&value.receipt.installed===true&&counterNames.every(name=>Number.isSafeInteger(value.receipt[name])&&value.receipt[name]>=0&&value.receipt[name]<=1000000)&&value.receipt.calls===value.receipt.selected+value.receipt.passed&&["pagehide","call","controller","overwrite"].includes(value.receipt.event)&&["uncontrolled","activating","bound","invalid"].includes(value.receipt.controllerState);
 	const consume=()=>{
 		try{let raw=readStorage();removeStorage();
@@ -181,19 +181,28 @@ export function installTargetedPrefetchProfile(target, profile, sourceEpoch, exp
 			return {state:"consumed",value};
 		}catch{counts.errors++;return {state:"unavailable",value:null};}
 	};
-	const persist=event=>{
+	const poison=()=>{counts.errors++;try{writeStorage('{"version":1,"stage":"poison"}');}catch{}};
+	const prepareTerminal=()=>{
 		try{
-			let raw=readStorage();if(raw!==null){if(typeof raw!=="string"||raw.length>512||JSON.parse(raw).nonce!==documentNonce)throw 0;}raw=null;
-			writeStorage(JSON.stringify({version:1,nonce:documentNonce,sourceEpoch,sequence,stage:"entry"}));
+			let raw=readStorage();if(raw!==null&&(typeof raw!=="string"||raw.length>512||raw!==lastTerminalText||!terminalValid(JSON.parse(raw))))throw 0;raw=null;
+			const entry=JSON.stringify({version:1,nonce:documentNonce,sourceEpoch,sequence,stage:"entry"});writeStorage(entry);
 			const matched=intact();controller();
-			const value={version:1,nonce:documentNonce,sourceEpoch,sequence,stage:"terminal",intact:matched,receipt:{event,...counts,installed,controllerState}},text=JSON.stringify(value);
-			if(text.length>512)throw 0;writeStorage(text);
-		}catch{counts.errors++;try{writeStorage('{"version":1,"stage":"poison"}');}catch{}}
+			return {entry,matched};
+		}catch{poison();return null;}
+	};
+	const finishTerminal=(event,prepared)=>{
+		try{
+			if(readStorage()!==prepared.entry)throw 0;
+			const matched=intact();controller();
+			const value={version:1,nonce:documentNonce,sourceEpoch,sequence,stage:"terminal",intact:prepared.matched&&matched,receipt:{event,...counts,installed,controllerState}},text=JSON.stringify(value);
+			if(text.length>512)throw 0;writeStorage(text);lastTerminalText=text;
+		}catch{poison();}
 	};
 	const emit = event => {
 		sequence++;const prior=["installed","restore","checkpoint"].includes(event)?consume():{state:"none",value:null};
-		if(hidden&&["pagehide","call","controller","overwrite"].includes(event))persist(event);
+		const prepared=hidden&&["pagehide","call","controller","overwrite"].includes(event)?prepareTerminal():null;
 		try { target[binding](JSON.stringify({event,...counts,installed,controllerState,sourceEpoch,documentNonce,sequence,handoffState:prior.state,handoff:prior.value})); } catch { counts.errors++; }
+		if(prepared)finishTerminal(event,prepared);
 	};
 	const bump = name => { if (counts[name] < 1000000) counts[name]++; else counts.errors++; };
 	const scope = input => {
