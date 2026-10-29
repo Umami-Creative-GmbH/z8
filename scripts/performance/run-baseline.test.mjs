@@ -11,6 +11,7 @@ import { clickVisible } from "./journey-steps.mjs";
 import { nextStreamCompletionPatch } from "./next-stream-completion-patch.mjs";
 import { primaryProtocolIdentity } from "./protocol-fingerprints.mjs";
 import { measure } from "./run-baseline.mjs";
+import { runInNewContext } from "node:vm";
 import { testBrowserMetadata, testBrowserEvidence } from "./control-cancellation-test-fixtures.mjs";
 
 test("fixture startup checks the actual temporary compiled manifest and never repairs stale identity", async () => {
@@ -1424,4 +1425,38 @@ test("fully observed failed journeys cannot finalize either baseline or release 
 	} finally {
 		rmSync(folder, { recursive: true, force: true });
 	}
+});
+/** Public measure/Page seam: a selector result loses its context during return navigation. */
+async function returningClockFixture(t, { timeoutMs = 90000, waitFailure = null } = {}) {
+ let now=0, resolveClock, disposed=0, wait=null;
+ const order=[], clockSelector='button[aria-label="Clock In"]:not(:disabled)';
+ const transferError=Object.assign(Error("Protocol error (DOM.describeNode): Cannot find context with specified id"),{name:"ProtocolError"});
+ const selectorError=Error("Waiting for selector clock failed",{cause:transferError});
+ t.mock.method(performance,"now",()=>now);
+ const page={
+  setViewport:async()=>{},emulateTimezone:async()=>{},setExtraHTTPHeaders:async()=>{},setRequestInterception:async()=>{},on(){},evaluateOnNewDocument:async()=>{},
+  goto:async()=>{now+=10;},isClosed:()=>false,evaluate:async()=>"denied",
+  waitForSelector:async selector=>{if(selector===clockSelector)throw selectorError;},
+  waitForFunction:(predicate,options,selector)=>{
+   order.push("clock-start");wait={predicate,options,selector,startedAt:now};
+   if(waitFailure)return Promise.reject(waitFailure);
+   return new Promise(resolve=>{resolveClock=()=>resolve({dispose:async()=>{disposed++;}});});
+  },
+  goBack:async()=>{order.push("goBack");now=35;resolveClock?.();},
+  createCDPSession:async()=>({send:async()=>{},on(){},detach:async()=>{}}),
+ };
+ const sample=await measure({createBrowserContext:async()=>({id:"clock-unit",setPermission:async()=>{},setCookie:async()=>{},newPage:async()=>page,close:async()=>{}})},
+  {fixture:{cookies:[]}},{origin:"http://localhost",timeoutMs,runtime:{}},{name:"fixture",locale:"en"},{name:"month"},
+  {name:"analytics",path:"/analytics",awayPath:"/away",link:'a[href="/analytics"]',ready:"#content",clockReady:clockSelector},"return-visit",0,1);
+ return {sample,wait,order,disposed,clockSelector};
+}
+test("primary clock readiness survives a return navigation without transferring an element between realms",async t=>{
+ const result=await returningClockFixture(t);
+ assert.equal(result.sample.clockReadyMs,15);
+ assert.equal(result.sample.clockWaitFailure,undefined);
+ assert.deepEqual(result.order,["clock-start","goBack"]);
+ assert.equal(result.wait.selector,result.clockSelector);
+ assert.deepEqual(result.wait.options,{polling:"raf",timeout:90000});
+ assert.equal(result.wait.startedAt,20);
+ assert.equal(result.disposed,1);
 });
