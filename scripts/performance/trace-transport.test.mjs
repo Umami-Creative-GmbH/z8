@@ -341,7 +341,8 @@ test("context transport preserves streaming, cookies, bodies and phase identity 
 		assert.ok(seen.parent.startsWith(`00-${traceId}-`));
 		release();
 		assert.equal(await done, "firstsecond");
-		const { applicationEvidence, ...transportCounts } = transport.snapshot();
+		const { applicationEvidence, upstreamFailureFacts, ...transportCounts } = transport.snapshot();
+		assert.deepEqual(upstreamFailureFacts, { status: "RECORDED", records: [], overflow: 0, errors: 0 });
 		assert.equal(applicationEvidence.complete, true);
 		assert.equal(applicationEvidence.outOfScope, 1);
 		assert.equal(applicationEvidence.failures, 0);
@@ -663,3 +664,74 @@ test('native connection log mock forgets an earlier hash when a later close find
   assert.equal(browser.fixtureLaunchPolicy.nativeConnectionLog.sha256,null);assert.equal(browser.fixtureLaunchPolicy.nativeConnectionLog.bytes,null);
  }finally{if(logFile)await rm(dirname(logFile),{recursive:true,force:true});}
 });
+
+function upstreamFactsMock(assertions) {
+ const child=spawnSync(process.execPath,['--input-type=module','-'],{encoding:'utf8',input:`
+import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
+import http from 'node:http';
+import {EventEmitter} from 'node:events';
+import {syncBuiltinESMExports} from 'node:module';
+let handler,calls=0,upstream;
+class FakeAgent {destroy(){}}
+class FakeServer extends EventEmitter {listen(port,host,done){queueMicrotask(done);}address(){return {port:12345};}closeAllConnections(){}close(done){done();}}
+http.Agent=FakeAgent;http.createServer=callback=>{handler=callback;return new FakeServer();};
+http.request=()=>{calls++;upstream=new EventEmitter();upstream.reusedSocket=false;upstream.destroy=()=>{};return upstream;};
+syncBuiltinESMExports();
+const {createFixtureTraceTransport}=await import(${JSON.stringify(new URL('./trace-transport.mjs',import.meta.url).href)});
+const transport=await createFixtureTraceTransport({origin:'http://localhost:58792',getTraceId:()=> 'a'.repeat(32)});
+transport.setControlCancellationObserver(Object.fromEntries(['installed','request','response','bytes','end','cancel','failure','observerError','upstreamClosedBeforeHeaders','transportClosed'].map(key=>[key,()=>false])));
+transport.finishBrowserInitialization({...transport.snapshot(),complete:true});
+function fail(error,cancel=false){const request=new EventEmitter();request.headers={host:'localhost:58792',authorization:'PRIVATE_HEADER'};request.method='GET';request.url='http://localhost:58792/private-path?secret=PRIVATE_URL';request.pipe=value=>value;
+ const response=new EventEmitter();response.destroyed=false;response.headersSent=false;response.writeHead=status=>{response.status=status;return response;};response.end=()=>{response.writableEnded=true;};
+ handler(request,response);if(cancel)request.emit('aborted');upstream.emit('error',error);upstream.emit('error',error);upstream.emit('close');assert.equal(response.status,502);return transport.snapshot();}
+${assertions}
+await transport.close();
+`});
+ assert.equal(child.status,0,child.stderr);
+}
+
+test('upstream connect facts mock captures own Node endpoint scalars without changing one-failure forwarding',()=>upstreamFactsMock(`
+const error=Object.assign(new Error('PRIVATE_MESSAGE'),{code:'ECONNREFUSED',errno:-4078,address:'::1',port:58792,syscall:'connect'});
+const value=fail(error),facts=value.upstreamFailureFacts;
+assert.equal(calls,1);assert.equal(value.upstreamFailures,1);assert.equal(value.upstreamConnectionErrors,1);assert.equal(value.upstreamRefusedErrors,1);assert.equal(value.downstreamCancellations,0);
+assert.deepEqual(facts.records,[{ordinal:1,phase:'connection',method:'GET',urlSha256:createHash('sha256').update('http://localhost:58792/private-path?secret=PRIVATE_URL').digest('hex'),controlId:'a'.repeat(32)+'.1',error:{code:'ECONNREFUSED',errno:-4078,address:'::1',addressFamily:'IPv6',port:58792,syscall:'connect'},aggregateErrors:[],aggregateOverflow:false}]);
+assert.equal(facts.status,'RECORDED');assert.equal(facts.overflow,0);assert.equal(facts.errors,0);
+assert.doesNotMatch(JSON.stringify(facts),/PRIVATE_MESSAGE|PRIVATE_HEADER|PRIVATE_URL|private-path|stack/);
+assert.equal(Object.hasOwn(value.afterInitialization,'upstreamFailureFacts'),false);
+facts.records[0].error.port=1;assert.equal(transport.snapshot().upstreamFailureFacts.records[0].error.port,58792);
+`));
+
+test('upstream connect facts mock caps aggregate children and records overflow as UNKNOWN',()=>upstreamFactsMock(`
+let forbidden=0;
+const children=[Object.assign(new Error('PRIVATE_CHILD'),{code:'ECONNREFUSED',errno:-4078,address:'::1',port:58792,syscall:'connect'}),Object.assign(new Error('PRIVATE_CHILD'),{code:'ECONNREFUSED',errno:-4078,address:'127.0.0.1',port:58792,syscall:'connect'})];
+Object.defineProperty(children,'2',{get(){forbidden++;throw Error('PRIVATE_THIRD');}});
+const error=Object.assign(new AggregateError([],'PRIVATE_AGGREGATE'),{code:'ECONNREFUSED',errors:children});
+const value=fail(error),facts=value.upstreamFailureFacts;
+assert.equal(forbidden,0);assert.equal(calls,1);assert.equal(value.upstreamFailures,1);
+assert.equal(facts.status,'UNKNOWN');assert.equal(facts.records.length,1);assert.equal(facts.records[0].aggregateOverflow,true);
+assert.deepEqual(facts.records[0].aggregateErrors,[{code:'ECONNREFUSED',errno:-4078,address:'::1',addressFamily:'IPv6',port:58792,syscall:'connect'},{code:'ECONNREFUSED',errno:-4078,address:'127.0.0.1',addressFamily:'IPv4',port:58792,syscall:'connect'}]);
+assert.doesNotMatch(JSON.stringify(facts),/PRIVATE/);
+`));
+
+test('upstream connect facts mock bounds retained rows without dropping failure counters',()=>upstreamFactsMock(`
+let value;
+for(let index=0;index<9;index++)value=fail(Object.assign(new Error('PRIVATE'),{code:'ECONNREFUSED',address:'127.0.0.1',port:58792,syscall:'connect'}));
+assert.equal(calls,9);assert.equal(value.upstreamFailures,9);assert.equal(value.upstreamConnectionErrors,9);assert.equal(value.upstreamRefusedErrors,9);
+assert.equal(value.upstreamFailureFacts.records.length,8);assert.equal(value.upstreamFailureFacts.overflow,1);assert.equal(value.upstreamFailureFacts.status,'UNKNOWN');
+assert.ok(Buffer.byteLength(JSON.stringify(value.upstreamFailureFacts))<=8192);
+`));
+
+test('upstream connect facts mock never invokes error accessors or retains unknown private strings',()=>upstreamFactsMock(`
+let getterCalls=0;
+const getter=Object.assign(new Error('PRIVATE'),{code:'ECONNREFUSED'});Object.defineProperty(getter,'address',{get(){getterCalls++;return 'PRIVATE_ADDRESS';}});
+let value=fail(getter);assert.equal(getterCalls,0);assert.equal(value.upstreamFailures,1);assert.equal(value.upstreamFailureFacts.records.length,0);assert.equal(value.upstreamFailureFacts.errors,1);assert.equal(value.upstreamFailureFacts.status,'UNKNOWN');
+value=fail(Object.assign(new Error('PRIVATE_MESSAGE'),{code:'PRIVATE_CODE',errno:'PRIVATE_ERRNO',address:'192.0.2.1',port:'PRIVATE_PORT',syscall:'PRIVATE_SYSCALL'}));
+assert.deepEqual(value.upstreamFailureFacts.records[0].error,{code:null,errno:null,address:null,addressFamily:null,port:null,syscall:null});
+assert.doesNotMatch(JSON.stringify(value.upstreamFailureFacts),/PRIVATE|192\\.0\\.2\\.1/);
+`));
+
+test('upstream connect facts mock does not turn a downstream cancellation into a retained upstream failure',()=>upstreamFactsMock(`
+const value=fail(Object.assign(new Error('PRIVATE'),{code:'ECONNRESET'}),true);
+assert.equal(calls,1);assert.equal(value.downstreamCancellations,1);assert.equal(value.upstreamFailures,0);assert.equal(value.upstreamFailureFacts.records.length,0);assert.equal(value.upstreamFailureFacts.overflow,0);
+`));
