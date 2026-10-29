@@ -3,6 +3,7 @@ import { cleanEvidenceGates, cleanEvidencePolicy, cleanObservationMatches, clean
 import { knownBrowserControlMetadata, matchingBrowserControlBinding } from "./control-cancellation-evidence.mjs";
 import { readBrowserControlBinding, verifyBrowserControlBrowser, installBrowserControlCollector } from "./browser-control-collector.mjs";
 import { createHash, randomBytes } from "node:crypto";
+import { types as utilTypes } from "node:util";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { cpus, platform, release, totalmem } from "node:os";
 import { join } from "node:path";
@@ -111,6 +112,21 @@ const coverageNames = [
 	"nativeProof",
 	"nativeDriverQueries",
 ];
+
+/** Failure-only prospective diagnostics; no exception, message, selector or stack is retained. */
+function clockWaiterFailureFacts(error){
+	const unknown={name:null,code:null,technicalReason:"unknown",messageSha256:null};
+	try{
+		if(!error||typeof error!=="object"||utilTypes.isProxy(error))return unknown;
+		const field=name=>{let object=error;for(let depth=0;object&&depth<3;depth++,object=Object.getPrototypeOf(object)){const descriptor=Object.getOwnPropertyDescriptor(object,name);if(descriptor)return Object.hasOwn(descriptor,"value")?descriptor.value:undefined;}};
+		const rawName=field("name"),rawCode=field("code"),message=field("message");
+		const name=["Error","TypeError","TimeoutError","AbortError","ProtocolError","TargetCloseError"].includes(rawName)?rawName:null;
+		const code=Number.isSafeInteger(rawCode)||["ABORT_ERR","ERR_ABORTED","ERR_TIMEOUT","ERR_CONTEXT_DESTROYED","ERR_TARGET_CLOSED"].includes(rawCode)?rawCode:null;
+		if(typeof message!=="string"||message.length>8192)return {...unknown,name,code};
+		const technicalReason=/Execution context was destroyed/i.test(message)?"execution-context-destroyed":/Cannot find context with specified id/i.test(message)?"execution-context-missing":/Target closed|Session closed|Connection closed/i.test(message)?"target-or-session-closed":/frame was detached/i.test(message)?"frame-detached":name==="TimeoutError"&&/selector/i.test(message)?"selector-timeout":"unknown";
+		return {name,code,technicalReason,messageSha256:createHash("sha256").update(message).digest("hex")};
+	}catch{return unknown;}
+}
 
 function validate(plan, verifying = false) {
 	if (!cleanObservationMatches(plan)) throw Error("Require the approved clean original/optimized observation windows and common pool timeout.");
@@ -1246,7 +1262,7 @@ export async function measure(
 						sample.clockReadyMs = performance.now() - start;
 						return sample.clockReadyMs;
 					})
-					.catch(() => null)
+					.catch(error => {sample.clockWaitFailure=clockWaiterFailureFacts(error);return null;})
 			: Promise.resolve(null);
 		if (mode === "first-document") {
 			await page.goto(url, { waitUntil: "domcontentloaded" });
