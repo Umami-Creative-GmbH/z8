@@ -569,3 +569,37 @@ test("request-shape tap real loopback forwarding stays byte header and status eq
   throwObserver=true;const second=await send();assert.equal(second.status,201);assert.deepEqual(bodies[1],upload);assert.equal(observedEnd,2);assert.ok(errors()>0);assert.ok(observerErrors>0);
  }finally{await transport.close();backend.closeAllConnections();await new Promise(done=>backend.close(done));}
 });
+import { access, readFile, writeFile, rm, truncate } from "node:fs/promises";
+import { dirname, relative, isAbsolute, join } from "node:path";
+import { launchFixtureBrowser } from "./fixture-browser.mjs";
+
+test("native connection log mock retains private diagnostics outside the deleted browser profile", async () => {
+ let options, browser, logFile;
+ const bytes = Buffer.from('{"events":[],"constants":{}}');
+ const puppeteer = {async launch(value) {
+  options = value;
+  logFile = value.args.find(arg => arg.startsWith('--log-net-log='))?.slice('--log-net-log='.length);
+  return {process:()=>({spawnargs:['chrome',...value.args,`--user-data-dir=${value.userDataDir}`,'--remote-debugging-port=0']}),version:async()=> 'Chrome/156.0.0.0',close:async()=>{if(logFile)await writeFile(logFile,bytes);}};
+ }};
+ try {
+  browser = await launchFixtureBrowser(puppeteer, 'MOCK_CHROME');
+  assert.equal(launchFixtureBrowser.length,2);
+  assert.ok(options.args.includes('--net-log-capture-mode=Default'));
+  assert.ok(options.args.includes('--net-log-max-size-mb=8'));
+  assert.ok(logFile);
+  const inside=relative(options.userDataDir,logFile);
+  assert.ok(inside.startsWith('..') || isAbsolute(inside));
+  assert.equal(browser.fixtureLaunchPolicy.arguments.some(arg=>arg.startsWith('--log-net-log=')),false);
+  assert.equal(browser.fixtureLaunchPolicy.nativeConnectionLog.file,logFile);
+  assert.equal(browser.fixtureLaunchPolicy.nativeConnectionLog.status,'UNKNOWN');
+  await browser.close();
+  assert.deepEqual(await readFile(logFile),bytes);
+  await assert.rejects(access(options.userDataDir));
+  assert.equal(browser.fixtureLaunchPolicy.nativeConnectionLog.reason,'retained-unparsed');
+  assert.equal(browser.fixtureLaunchPolicy.nativeConnectionLog.bytes,26);
+  assert.equal(browser.fixtureLaunchPolicy.nativeConnectionLog.sha256,createHash('sha256').update(bytes).digest('hex'));
+ } finally {
+  if(browser)await browser.close();
+  if(logFile)await rm(dirname(logFile),{recursive:true,force:true});
+ }
+});
