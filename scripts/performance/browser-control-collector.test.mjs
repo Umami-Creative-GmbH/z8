@@ -371,14 +371,18 @@ test("native launch metadata hashes the actual executable and preserves missing 
 	const dir=await mkdtemp(join(tmpdir(),"z8-native-launch-"));
 	try {
 		const executable=join(dir,"synthetic.exe"); await writeFile(executable,"SYNTHETIC_EXECUTABLE");
-		const browser={process:()=>({spawnfile:executable,spawnargs:[executable,"--disable-extensions","--user-data-dir=PRIVATE_PROFILE","--remote-debugging-port=0"]}),
-			fixtureLaunchPolicy:{policy:"isolated-profile-no-prediction-v1",arguments:["--disable-extensions"],profileDirectorySha256:createHash("sha256").update("PRIVATE_PROFILE").digest("hex")}};
+		const browser={process:()=>({spawnfile:executable,spawnargs:[executable,"--disable-extensions","--net-log-capture-mode=Default","--net-log-max-size-mb=8","--log-net-log=PRIVATE_NATIVE_LOG","--user-data-dir=PRIVATE_PROFILE","--remote-debugging-port=0"]}),
+			fixtureLaunchPolicy:{policy:"isolated-profile-no-prediction-v1",arguments:["--disable-extensions","--net-log-capture-mode=Default","--net-log-max-size-mb=8"],profileDirectorySha256:createHash("sha256").update("PRIVATE_PROFILE").digest("hex")}};
 		const metadata=await captureNativeLaunchMetadata(browser);
 		assert.equal(metadata.processKnown,true); assert.equal(metadata.argumentsMatchRecorded,true);
 		assert.equal(metadata.profileArgumentMatchesRecorded,true);
 		assert.equal(metadata.executable.sha256,createHash("sha256").update("SYNTHETIC_EXECUTABLE").digest("hex"));
 		assert.equal((await captureNativeLaunchMetadata({})).processKnown,false);
-		assert.doesNotMatch(JSON.stringify(metadata),/PRIVATE_PROFILE|synthetic.exe|SYNTHETIC_EXECUTABLE/);
+		assert.doesNotMatch(JSON.stringify(metadata),/PRIVATE_PROFILE|PRIVATE_NATIVE_LOG|synthetic.exe|SYNTHETIC_EXECUTABLE/);
+		for (const flag of ["--net-log-capture-mode=IncludeSensitive", "--net-log-max-size-mb=16"]) {
+			const altered = {...browser,process:()=>({...browser.process(),spawnargs:browser.process().spawnargs.map(arg=>arg.startsWith(flag.split("=")[0]+"=")?flag:arg)})};
+			assert.equal((await captureNativeLaunchMetadata(altered)).argumentsMatchRecorded,false);
+		}
 	} finally { await rm(dir,{recursive:true,force:true}); }
 });
 
