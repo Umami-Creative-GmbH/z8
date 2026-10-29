@@ -3,6 +3,7 @@ import "server-only";
 import { and, asc, eq, sql } from "drizzle-orm";
 import { Effect } from "effect";
 import { cacheLife } from "next/cache";
+import { unstable_rethrow } from "next/navigation";
 import { getEmployeeSettingsActorContext } from "@/app/[locale]/(app)/settings/employees/employee-action-utils";
 import {
 	buildEmployeeFilters,
@@ -11,7 +12,11 @@ import {
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { employee, workPolicy } from "@/db/schema";
-import { runServerActionSafe } from "@/lib/effect/result";
+import { DatabaseError } from "@/lib/effect/errors";
+import {
+	runServerActionSafe,
+	type ServerActionResult,
+} from "@/lib/effect/result";
 import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import type { SettingsAccessTier } from "@/lib/settings-access";
 import type { EmployeeManagerChoice } from "./employee-read-types";
@@ -126,9 +131,30 @@ function displayScope(
 	};
 }
 
+/** The cache owns its database read, after the caller's authorization run ends. */
+async function readCachedChoices<T>(
+	operation: string,
+	read: () => Promise<T>,
+): Promise<ServerActionResult<T>> {
+	try {
+		return { success: true, data: await read() };
+	} catch (cause) {
+		unstable_rethrow(cause);
+		return runServerActionSafe(
+			Effect.fail(
+				new DatabaseError({
+					message: `Database query failed: ${operation}`,
+					operation,
+					cause,
+				}),
+			),
+		);
+	}
+}
+
 /** Fresh business authorization precedes the first cache lookup on every call. */
 export async function getEmployeeManagerChoices(excludeId: string) {
-	return runServerActionSafe(
+	const prepared = await runServerActionSafe(
 		Effect.gen(function* () {
 			const actor = yield* getEmployeeSettingsActorContext({
 				queryName: "employeeDetail.managerChoices:actor",
@@ -144,15 +170,18 @@ export async function getEmployeeManagerChoices(excludeId: string) {
 				"employeeDetail.managerChoicesRevision",
 				() => managerRevision(actor.dbService.db, scope, filter),
 			);
-			return yield* actor.dbService.query("employeeDetail.managerChoices", () =>
-				cachedManagerChoices(scope, filter, revision),
-			);
+			return { scope, filter, revision };
 		}),
+	);
+	if (!prepared.success) return prepared;
+	const { scope, filter, revision } = prepared.data;
+	return readCachedChoices("employeeDetail.managerChoices", () =>
+		cachedManagerChoices(scope, filter, revision),
 	);
 }
 
 export async function getEmployeeWorkPolicyChoices() {
-	return runServerActionSafe(
+	const prepared = await runServerActionSafe(
 		Effect.gen(function* () {
 			const actor = yield* getEmployeeSettingsActorContext({
 				queryName: "employeeDetail.policyChoices:actor",
@@ -162,9 +191,12 @@ export async function getEmployeeWorkPolicyChoices() {
 				"employeeDetail.policyChoicesRevision",
 				() => policyRevision(actor.dbService.db, scope.organizationId),
 			);
-			return yield* actor.dbService.query("employeeDetail.policyChoices", () =>
-				cachedPolicyChoices(scope, revision),
-			);
+			return { scope, revision };
 		}),
+	);
+	if (!prepared.success) return prepared;
+	const { scope, revision } = prepared.data;
+	return readCachedChoices("employeeDetail.policyChoices", () =>
+		cachedPolicyChoices(scope, revision),
 	);
 }
