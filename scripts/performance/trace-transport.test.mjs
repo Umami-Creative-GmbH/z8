@@ -341,7 +341,8 @@ test("context transport preserves streaming, cookies, bodies and phase identity 
 		assert.ok(seen.parent.startsWith(`00-${traceId}-`));
 		release();
 		assert.equal(await done, "firstsecond");
-		const { applicationEvidence, ...transportCounts } = transport.snapshot();
+		const { applicationEvidence, upstreamFailureFacts, ...transportCounts } = transport.snapshot();
+		assert.deepEqual(upstreamFailureFacts, { status: "RECORDED", records: [], overflow: 0, errors: 0 });
 		assert.equal(applicationEvidence.complete, true);
 		assert.equal(applicationEvidence.outOfScope, 1);
 		assert.equal(applicationEvidence.failures, 0);
