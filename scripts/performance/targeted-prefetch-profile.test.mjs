@@ -6,18 +6,20 @@ import { mkdtemp, mkdir, writeFile, readFile, copyFile, rm } from 'node:fs/promi
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve, sep } from 'node:path';
-import { createHash } from 'node:crypto';
+import { createHash, webcrypto } from 'node:crypto';
 import { readBrowserControlBinding, verifyBrowserControlBrowser, installBrowserControlCollector } from './browser-control-collector.mjs';
 import { testBrowserMetadata } from './control-cancellation-test-fixtures.mjs';
 import { teamAnnualModule, teamAnnualWorkers, nativePublicPaths } from './control-cancellation-evidence.mjs';
 import { installTargetedPrefetchProfile, createTargetedPrefetchProfileJournal, createTargetedPrefetchWorkerWitness, completeTargetedPrefetchProfileEvidence, targetedPrefetchProfile, releaseTargetedPrefetchProfileEvidence, releaseTargetedPrefetchProfileSamples } from './fixture-browser.mjs';
 
-function windowFixture(controller=null) {
+function windowFixture(controller=null,store=new Map()) {
  const listeners=new Map(),workerListeners=new Map(),calls=[],receipts=[];
  const worker={controller,addEventListener(name,fn){workerListeners.set(name,fn);},removeEventListener(name){workerListeners.delete(name);}};
  const result=Promise.resolve('original');
  const target={document:{readyState:'loading'},location:{href:'https://fixture.test/en/analytics'},navigator:{serviceWorker:worker},
   fetch(...args){calls.push({receiver:this,args});return result;},addEventListener(name,fn){listeners.set(name,fn);}};
+ class StorageFixture{getItem(key){return store.get(key)??null;}setItem(key,value){store.set(key,String(value));}removeItem(key){store.delete(key);}}
+ target.Storage=StorageFixture;target.sessionStorage=new StorageFixture();target.crypto=webcrypto;
  target.window=target;target.top=target;
  const receive=value=>receipts.push(JSON.parse(value));
  target.__z8TargetedPrefetchReceiptV1=receive;
@@ -34,6 +36,17 @@ test('approved prefetch condition preserves native URL, delegate result, receive
  assert.equal(f.calls.length,1);assert.equal(f.calls[0].receiver,receiver);assert.equal(f.calls[0].args[0],input);
  assert.equal(f.calls[0].args[1].cache,'no-cache');assert.equal(f.calls[0].args[1].headers,headers);assert.equal(f.calls[0].args[1].signal,signal);
  assert.equal(Object.hasOwn(init,'cache'),false);
+});
+
+test('terminal handoff preserves departure when native pagehide delivery is lost',()=>{
+ const journal=createTargetedPrefetchProfileJournal({profile:targetedPrefetchProfile,sourceEpoch,reserve:()=>true,release:()=>{},reserveRecords:()=>true,releaseRecords:()=>{}}),store=new Map();
+ const first=windowFixture(null,store);first.target.__z8TargetedPrefetchReceiptV1=payload=>{if(JSON.parse(payload).event!=='pagehide')journal.receive(1,payload);};
+ installTargetedPrefetchProfile(first.target,targetedPrefetchProfile,sourceEpoch,'https://fixture.test');
+ first.target.fetch('/en/analytics',{headers:{RSC:'1','Next-Router-Prefetch':'1'}});first.listeners.get('pagehide')({persisted:false});
+ const next=windowFixture(null,store);next.target.__z8TargetedPrefetchReceiptV1=payload=>journal.receive(2,payload);
+ const capsule=installTargetedPrefetchProfile(next.target,targetedPrefetchProfile,sourceEpoch,'https://fixture.test');capsule.snapshot();journal.close();
+ const value=journal.snapshot();assert.equal(completeTargetedPrefetchProfileEvidence(value),true,JSON.stringify(value));
+ assert.equal(value.documents[0].departed,true);assert.equal(value.documents[0].selected,1);assert.equal(store.size,0);releaseTargetedPrefetchProfileEvidence(value);
 });
 
 test('phase source epoch and per-document receipts fail closed without discounting prior errors',()=>{
@@ -205,14 +218,14 @@ test('real file-qualified installer covers fresh/controlled documents and BFCach
  try {
   const binding=await readBrowserControlBinding({plan:files.plan,manifestPath:files.manifestPath}),session=new EventEmitter(),calls=[];
   const browser=Object.assign(new EventEmitter(),{targets:()=>[],target:()=>({createCDPSession:async()=>({send:async()=>({revision:'@'+binding.browserRevision}),detach:async()=>{}})})});
-  const context={id:'owned-context',browser:()=>browser,cookies:async()=>[]};let script,pageURL='about:blank',world=null,previous=null,ordinal=0;
+  const context={id:'owned-context',browser:()=>browser,cookies:async()=>[]},store=new Map();let script,pageURL='about:blank',world=null,previous=null,ordinal=0;
   const installError=Error('synthetic installation failure');
   session.send=async(name,args)=>{calls.push(name);if(mode==='failed-install'&&name==='Runtime.addBinding')throw installError;if(name==='Target.getTargetInfo')return {targetInfo:{type:'page',targetId:'owned-page',browserContextId:context.id}};return {};};session.detach=async()=>{session.detached=true;};
   const emitWorker=(runningStatus='running',targetId='worker1')=>{
    session.emit('ServiceWorker.workerRegistrationUpdated',{registrations:[{registrationId:'registration',scopeURL:origin+'/',isDeleted:false}]});
    session.emit('ServiceWorker.workerVersionUpdated',{versions:[{versionId:'version',registrationId:'registration',scriptURL:origin+'/sw.js',status:'activated',runningStatus,targetId,controlledClients:['owned-page']}]});
   };
-  const makeWorld=()=>{const fixture=windowFixture(ordinal===0?null:{scriptURL:origin+'/sw.js',state:'activated'});fixture.target.location.href=origin+'/en/analytics';fixture.worker.getRegistrations=async()=>[];
+  const makeWorld=()=>{const fixture=windowFixture(ordinal===0?null:{scriptURL:origin+'/sw.js',state:'activated'},store);fixture.target.location.href=origin+'/en/analytics';fixture.worker.getRegistrations=async()=>[];
    const id=++ordinal;fixture.target.__z8TargetedPrefetchReceiptV1=payload=>session.emit('Runtime.bindingCalled',{name:'__z8TargetedPrefetchReceiptV1',executionContextId:id,payload});
    const value=createContext({...fixture.target,URL});runInContext('window=globalThis;top=globalThis;',value);runInContext(script,value);return {fixture,value,id};};
   const navigate=async url=>{if(world){world.fixture.listeners.get('pagehide')({persisted:true});previous=world;}pageURL=url;world=makeWorld();if(!world.fixture.worker.controller){world.fixture.worker.controller={scriptURL:origin+'/sw.js',state:'activated'};world.fixture.workerListeners.get('controllerchange')();}emitWorker();return 'navigation-result';};
