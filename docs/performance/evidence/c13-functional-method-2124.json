@@ -1,0 +1,278 @@
+{
+  "schema": 1,
+  "kind": "c13-functional-method-proof-v1",
+  "scope": "functional-method-only",
+  "captureToolingSource": "2124acb33ec8f9acfabfe29ed3697047c63f7c23",
+  "sourceTree": "b8f537462dcf001c3f61aa20200cdb15f53776e4",
+  "sourceReceiptSha256": "0e4ef01c8617599643158a63c58bbbc0c550776a4e5082f51ae4b06899bf8dcd",
+  "protocolMapSha256": {
+    "primary": "9db309486872350037b12a05ed4b561f650bb685be0d2bb169ba217bb398ba84",
+    "companion": "f7a2aeb8b00ad7ab11dcfa1c5d7161ae20f67608711f9656318986673edc6f7a",
+    "budgets": "5cb6227d8002bbb33fa3f874ba33a2f95865b9c41471a0a5e17d9a053c35dcb9",
+    "mixed": "dc91a6e7e0e3df3764b4d6327ef99ca820b0f6f2d7579afcc994fc7fc54ea279"
+  },
+  "predicates": {
+    "clean": {
+      "root": "repository",
+      "file": "scripts/performance/clean-evidence.mjs",
+      "sha256": "67476d9f9fca269bf073b456621e496235d8ff603bc1cd115614812cdb98faac"
+    },
+    "browser": {
+      "root": "repository",
+      "file": "scripts/performance/fixture-browser.mjs",
+      "sha256": "2cbfea113d68e20d361c56d84996fc5debddf7d2332f02a509e014c54c2fa56f"
+    },
+    "reload": {
+      "root": "repository",
+      "file": "scripts/performance/operator-reload-quiescence.mjs",
+      "sha256": "4c6895c4219577b85340ab9c569d6787f3c969940e18d011ef9e2ff92f10a87d"
+    },
+    "prerequisite": {
+      "root": "repository",
+      "file": "scripts/performance/prerequisite-quiescence.mjs",
+      "sha256": "1a5e1ddd8833048be0666ba35650a5848a1f7ff7b963aeb19483e55fa3ac4c87"
+    },
+    "cleanup": {
+      "root": "repository",
+      "file": "scripts/performance/primary-context-cleanup.mjs",
+      "sha256": "95e5b767a5ee7ec49b0ee539dffa50e9ccbfe657a70e11a6c7a0597f4aa2b52f"
+    },
+    "companion": {
+      "root": "repository",
+      "file": "scripts/performance/settled-resources.mjs",
+      "sha256": "c2c77d3a536365770c3eae8a97597932d160c61187d4621e0cd7ca3af3ee8c81"
+    },
+    "control": {
+      "root": "repository",
+      "file": "scripts/performance/control-cancellation-evidence.mjs",
+      "sha256": "960c3ed93a28c0edd2de6010d1078f2f958546709b39be3d8f8638a4833adc59"
+    },
+    "binding": {
+      "root": "repository",
+      "file": "scripts/performance/browser-control-collector.mjs",
+      "sha256": "3de8db9bc4ef6e974ce32bfece860d79c5f5ee2f015ede054d43506f1e98557b"
+    },
+    "mixed": {
+      "root": "repository",
+      "file": "scripts/performance/mixed-clock-budgets.mjs",
+      "sha256": "79193ac23df55eba8a5788ccf2c01e1b1139cd0d518e36716f70f6d38791eb8d"
+    },
+    "patch": {
+      "root": "repository",
+      "file": "scripts/performance/next-stream-completion-patch.mjs",
+      "sha256": "fb626f95d2911ce2b556c21feb9174656e234e6fbcf050fca624bbcf71df50b6"
+    },
+    "recipe": {
+      "root": "scratch",
+      "file": "c9-navigation-recipe.mjs",
+      "sha256": "9c41b77e9f854abe7c8e709292c2f389cd040f45521caaf5e2b4573e496071da"
+    },
+    "classifier": {
+      "root": "scratch",
+      "file": "strict-fresh-log-classifier-server-action-v2.mjs",
+      "sha256": "a12162fb4c6edda6552821818a12ce4f40abc84b037ade3771c422c73b129e46"
+    },
+    "mixedController": {
+      "root": "scratch",
+      "file": "c13-mixed-with-log-gate-matched-profile-v1.mjs",
+      "sha256": "6cfd34ecd526cffa9d57cb7ee762db8b9986fe05a7e5b6f14ad730d252627a5b"
+    },
+    "journeyFunctional": {
+      "root": "scratch",
+      "file": "functional-journeys-with-log-gate-v10.mjs",
+      "sha256": "963f414f50e50f997f83e7040155e0568a3475d5d91ebf33c00b508637d9deed"
+    },
+    "mixedFunctional": {
+      "root": "scratch",
+      "file": "functional-mixed-with-log-gate-v10.mjs",
+      "sha256": "e1dda25d27c1055a1ea0f0ebdb3f70eb8af0e783dc6e47fa28887cb2b2a0b542"
+    },
+    "journeyAuthority": {
+      "root": "scratch",
+      "file": "functional-mixed-with-log-gate-v10.mjs",
+      "sha256": "e1dda25d27c1055a1ea0f0ebdb3f70eb8af0e783dc6e47fa28887cb2b2a0b542"
+    },
+    "companionProjection": {
+      "root": "scratch",
+      "file": "functional-companion-per-visit-projection-v1.mjs",
+      "sha256": "1dcaf877fa21012dcf7ff54f9e7044d79a4879fe7658ba3cf0ee16b6b2fa5dfc"
+    },
+    "captureController": {
+      "root": "scratch",
+      "file": "c13-capture-with-log-gate.mjs",
+      "sha256": "88b3e52fff91788341f01e95d91531b80da47062b0f3b7e2ee50443041dac6e3"
+    }
+  },
+  "controllerFiles": {
+    "primary": {
+      "functional-journeys-with-log-gate-v10.mjs": "963f414f50e50f997f83e7040155e0568a3475d5d91ebf33c00b508637d9deed",
+      "functional-companion-per-visit-projection-v1.mjs": "1dcaf877fa21012dcf7ff54f9e7044d79a4879fe7658ba3cf0ee16b6b2fa5dfc",
+      "c9-navigation-recipe.mjs": "9c41b77e9f854abe7c8e709292c2f389cd040f45521caaf5e2b4573e496071da"
+    },
+    "companion": {
+      "functional-journeys-with-log-gate-v10.mjs": "963f414f50e50f997f83e7040155e0568a3475d5d91ebf33c00b508637d9deed",
+      "functional-companion-per-visit-projection-v1.mjs": "1dcaf877fa21012dcf7ff54f9e7044d79a4879fe7658ba3cf0ee16b6b2fa5dfc",
+      "c9-navigation-recipe.mjs": "9c41b77e9f854abe7c8e709292c2f389cd040f45521caaf5e2b4573e496071da"
+    },
+    "mixed": {
+      "functional-mixed-with-log-gate-v10.mjs": "e1dda25d27c1055a1ea0f0ebdb3f70eb8af0e783dc6e47fa28887cb2b2a0b542",
+      "c13-mixed-with-log-gate-matched-profile-v1.mjs": "6cfd34ecd526cffa9d57cb7ee762db8b9986fe05a7e5b6f14ad730d252627a5b",
+      "c13-capture-with-log-gate.mjs": "88b3e52fff91788341f01e95d91531b80da47062b0f3b7e2ee50443041dac6e3",
+      "strict-fresh-log-classifier-server-action-v2.mjs": "a12162fb4c6edda6552821818a12ce4f40abc84b037ade3771c422c73b129e46"
+    }
+  },
+  "builds": {
+    "baseline": {
+      "compiledSource": "2ef3b3f17ea61d65570f23c46f92d1d320f5ef25",
+      "manifestSha256": "4a494ab798bcc6cd6b438673bdf2b5fd6d3a8a8b11e1a4650bb807e7885c99f8",
+      "ciRecordSha256": "e941aa3c8cfd111a9bcf3a84b40556258c790318c35346d767e367ccefe6ff46",
+      "registrySha256": "c16613818be250574e87f121ac596c87b8cd50b3bbaa0f1d732f750bae6d1f09"
+    },
+    "release": {
+      "compiledSource": "86934776e734e3e28c4a78ca5a55c8c064d3f8ed",
+      "manifestSha256": "6757523f9b8e86bd27e9b5d8ccd8c74d561caa6d95b94fdd03ea32f960051e02",
+      "ciRecordSha256": "1ecbd68b75be62974fb205a62d1123278bea74211d12b8b60e2b71f12c54001b",
+      "registrySha256": "922aa11503c162eb1b0496564b06236795ec1d8700e1623371ea1d29ca83a121"
+    }
+  },
+  "conditions": {
+    "targetedPrefetchProfile": {
+      "protocol": "targeted-prefetch-profile-v1",
+      "profileId": "same-origin-next-prefetch-no-cache-v1",
+      "contractSha256": "e74ef28e94926c91fde9088ca4e86292db7289d58f1ca1fe5d66d430e1046eed"
+    },
+    "cancellationPolicyIdentitySha256": "b1db0f5cafe4e7cfe2c5ca7c707f5c07bc2a91374168763bda3442ed6ebf39e3",
+    "runtimeCancellationFieldsSha256": "fe5e0ab853b1bdcbe99ee32e83dc29bd07d66d7d0f4bd9cdb5107f5fd1cf84d7",
+    "companionPolicyVersion": 9,
+    "mixedBudgetPolicyVersion": 9,
+    "numericalPolicyVersion": 9,
+    "originalObservationMs": 90000,
+    "headObservationMs": 30000,
+    "poolMax": 10,
+    "poolAcquisitionTimeoutMs": 60000,
+    "c1Sha256": "3feed7ee263c08f522bc886c8390224abdbfa67926c4ff02d0fb50f3d30dabb3",
+    "commonSha256": "669251f3a690661a1efae94014405f635bcdfdddf62534bdd8add9d81d4f81f6",
+    "strictLogSha256": "a12162fb4c6edda6552821818a12ce4f40abc84b037ade3771c422c73b129e46",
+    "browserRevision": "d0c02bfad08ec92a6ffcf989e53cd995e6381a4c",
+    "ownedBrowserSha256": "480f275b63d1ea39113cbc8344ac395578acc25b432bd39af5fbc77005179aca",
+    "ownedBrowserBytes": 4522648,
+    "browserControlSha256": {
+      "baseline": "73ad39201451316d5b26ea4fab11583d1a2e33ae0916596126dfa0529f780345",
+      "release": "6a6cee35374eac9e3a00827256002c4a98291d28c857110b5446a3963d9c10ad"
+    }
+  },
+  "references": {
+    "rootReceipt": {
+      "sha256": "0e4ef01c8617599643158a63c58bbbc0c550776a4e5082f51ae4b06899bf8dcd",
+      "bytes": 21763
+    },
+    "primaryPlan": {
+      "sha256": "21fabd58620a583fa7357dea267380a7b9979ce851eef1e04b8bb12c87d432bd",
+      "bytes": 24459
+    },
+    "primaryArtifact": {
+      "sha256": "f090511b55902033500400dd272ebe4230f15b2d3d03d599dc54d14dc87d225c",
+      "bytes": 132466608
+    },
+    "primaryNative": {
+      "sha256": "ebe26ef0dd892cd4d64247969e6a5a4345b50fc64eb86dc5e1c19ced62b55136",
+      "bytes": 1995872
+    },
+    "primaryController": {
+      "sha256": "aed54f29a73d497f8a0db101aa0a5f59491728e52e2be3171196e7b5e2e18d17",
+      "bytes": 5865
+    },
+    "primaryLog": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "primaryOperatorOutput": {
+      "sha256": "bd6a8abcb98f7d67961f246dd194596d7f67075c6347c57093afc2e195394973",
+      "bytes": 122
+    },
+    "companionPlan": {
+      "sha256": "21fabd58620a583fa7357dea267380a7b9979ce851eef1e04b8bb12c87d432bd",
+      "bytes": 24459
+    },
+    "companionArtifact": {
+      "sha256": "f4f6d2fc63fe7f4794a693100f6e489eaa0e3006137ce069547baf77efcf5ee8",
+      "bytes": 53265616
+    },
+    "companionNative": {
+      "sha256": "e7cfec105c7acd0338eb04d82b1e1eb19dbaf9f09413feb9e6ff5cddf6d262ff",
+      "bytes": 2120422
+    },
+    "companionController": {
+      "sha256": "73404d0de8301817b0950a7138d054f717a75f329b279591630cfb133e0dc107",
+      "bytes": 5874
+    },
+    "companionLog": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "companionOperatorOutput": {
+      "sha256": "8c991c13d62cfb9efff26af6adee39d7558205ddf2051b715b93bc1565208f5d",
+      "bytes": 112
+    },
+    "mixedArtifact": {
+      "sha256": "7457e4a07d17c02d8734090a3d6fc31d28adf33f600e38b932d2987de9afe2f9",
+      "bytes": 27051196
+    },
+    "mixedController": {
+      "sha256": "68fd847e42fad76b0ea7182a79a417f2c62d29379022b81c2a24a27a236f8818",
+      "bytes": 5251
+    },
+    "c1": {
+      "sha256": "3feed7ee263c08f522bc886c8390224abdbfa67926c4ff02d0fb50f3d30dabb3",
+      "bytes": 17631
+    },
+    "primaryBinding": {
+      "sha256": "12a31eea01dea3833bbbce104b0a9e101d11b38569363d97d85028d0629146a6",
+      "bytes": 7257
+    },
+    "primaryReview": {
+      "sha256": "0ed9cb46ed3d846124f6b540ee543f1a51ab7d3f502cc824223c7b4e240c214f",
+      "bytes": 935
+    },
+    "companionBinding": {
+      "sha256": "b3a304a238011cba2c85dcdb459290c35ba2fa591dd60472500b87b363155f0d",
+      "bytes": 7263
+    },
+    "companionReview": {
+      "sha256": "9427d61c2ec3176366693a863cfc7db5ac121214abc1b48f05e4ce647c140385",
+      "bytes": 937
+    },
+    "mixedBinding": {
+      "sha256": "95892f1ce2b5f05cdc2e257943eddb654ffadb12207defcf344e53fa17036286",
+      "bytes": 5756
+    },
+    "mixedOperatorOutput": {
+      "sha256": "84effa4f0b72632f0c9098f3f12c4d3afcf70706bb14199e1052c9e24f8c75d1",
+      "bytes": 147
+    },
+    "mixedLog": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    }
+  },
+  "qualification": {
+    "primary": {
+      "phase": "baseline",
+      "visits": 114,
+      "restorationStatus": "restored-by-validated-normal-diagnostic-operator"
+    },
+    "companion": {
+      "phase": "baseline",
+      "visits": 54,
+      "restorationStatus": "restored-by-validated-normal-diagnostic-operator"
+    },
+    "mixed": {
+      "phase": "baseline",
+      "pairs": 20,
+      "clockCommands": 40,
+      "restorationStatus": "restored-by-validated-normal-operator"
+    }
+  },
+  "numericalAcceptance": "unfulfilled",
+  "formalC13Acceptance": false
+}
