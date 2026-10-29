@@ -10,10 +10,24 @@ import * as journeySteps from "./journey-steps.mjs";
 import { clickVisible } from "./journey-steps.mjs";
 import { nextStreamCompletionPatch } from "./next-stream-completion-patch.mjs";
 import { primaryProtocolIdentity } from "./protocol-fingerprints.mjs";
-import { measure } from "./run-baseline.mjs";
+import { measure, encodeArtifact } from "./run-baseline.mjs";
 import { runInNewContext } from "node:vm";
 import { cleanEvidenceGates } from "./clean-evidence.mjs";
 import { testBrowserMetadata, testBrowserEvidence } from "./control-cancellation-test-fixtures.mjs";
+
+test("primary artifact output preserves JSON values without pretty-print overhead", () => {
+	const value = { samples: [{ a: 1 }, { a: 2 }] };
+	const encoded = encodeArtifact(value);
+	assert.equal(encoded, '{"samples":[{"a":1},{"a":2}]}');
+	assert.equal(Buffer.byteLength(encoded), 29);
+	assert.equal(Buffer.byteLength(JSON.stringify(value, null, 2)), 73);
+	assert.ok(Buffer.byteLength(encoded) <= 64 && 73 > 64, "Worked byte boundary, without changing the real artifact read cap.");
+	assert.deepEqual(JSON.parse(encoded), value);
+	const opaque = { protocol: "unchanged", payload: "AQID==\nopaque \\\" bytes", text: "ä😀", absent: null, rows: [false, 0, -1.25, { z: 2, a: 1 }] };
+	assert.deepEqual(JSON.parse(encodeArtifact(opaque)), JSON.parse(JSON.stringify(opaque, null, 2)));
+	assert.equal(JSON.parse(encodeArtifact(opaque)).payload, opaque.payload);
+	assert.deepEqual(Object.keys(JSON.parse(encodeArtifact(opaque)).rows[3]), ["z", "a"]);
+});
 
 test("fixture startup checks the actual temporary compiled manifest and never repairs stale identity", async () => {
 	const fixture = await import("./fixture.mjs");

@@ -35,6 +35,7 @@ test("companion validates required inputs and sample counts before importing a b
   );
 });
 import {
+  encodeArtifact,
   requireSettledEvidence,
   companionCaptureConfiguration,
   parseCompanionCommand,
@@ -45,6 +46,20 @@ import {
   companionWireContract,
   measureFixtureResources,
 } from "./settled-resources.mjs";
+
+test("companion artifact output preserves values and its newline without pretty-print overhead", () => {
+  const value = { samples: [{ a: 1 }, { a: 2 }] };
+  const encoded = encodeArtifact(value);
+  assert.equal(encoded, '{"samples":[{"a":1},{"a":2}]}\n');
+  assert.equal(Buffer.byteLength(encoded), 30);
+  assert.equal(Buffer.byteLength(JSON.stringify(value, null, 2) + "\n"), 74);
+  assert.ok(Buffer.byteLength(encoded) <= 64 && 74 > 64, "Worked byte boundary, without changing the real artifact read cap.");
+  assert.deepEqual(JSON.parse(encoded), value);
+  const opaque = { protocol: "unchanged", payload: "AQID==\nopaque \\\" bytes", text: "ä😀", absent: null, rows: [false, 0, -1.25, { z: 2, a: 1 }] };
+  assert.deepEqual(JSON.parse(encodeArtifact(opaque)), JSON.parse(JSON.stringify(opaque, null, 2)));
+  assert.equal(JSON.parse(encodeArtifact(opaque)).payload, opaque.payload);
+  assert.deepEqual(Object.keys(JSON.parse(encodeArtifact(opaque)).rows[3]), ["z", "a"]);
+});
 
 test("controlled companion rejects missing browser pins before any collector IO", async () => {
   let calls = 0;
