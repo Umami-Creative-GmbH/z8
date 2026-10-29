@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import { createContext, runInContext } from 'node:vm';
-import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, readFile, copyFile, rm } from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve, sep } from 'node:path';
 import { createHash } from 'node:crypto';
@@ -179,11 +180,27 @@ async function qualifiedFileFixture() {
  const files=[];for(const file of nativePublicPaths){const bytes=Buffer.from('synthetic source '+file);const path=join(directory,'app/public',file);await mkdir(dirname(path),{recursive:true});await writeFile(path,bytes);files.push({file,bytes:bytes.length,sha256:hash(bytes),gitBlob:'e'.repeat(40)});}
  const metadata={...testBrowserMetadata(),compiledManifestSha256:hash(manifest),targetedPrefetchProfile,nativePublicSources:{protocol:'qualified-serving-worker-sources-v1',compiledBuild:build,compiledManifestSha256:hash(manifest),files}};
  const plan={runtime:{build,targetedPrefetchProfile,browserControl:metadata}};
+ const nextRoot=dirname(createRequire(new URL('../../apps/webapp/package.json',import.meta.url)).resolve('next/package.json')),nextCopy=join(directory,'app/node_modules/next');
+ await mkdir(nextCopy,{recursive:true});await writeFile(join(nextCopy,'package.json'),JSON.stringify({name:'next',version:'16.4.0'}));
+ for(const file of ['dist/client/components/segment-cache/fetch.js','dist/esm/client/components/segment-cache/fetch.js','dist/client/components/router-reducer/fetch-server-response.js','dist/esm/client/components/router-reducer/fetch-server-response.js','dist/build/define-env.js']){await mkdir(dirname(join(nextCopy,file)),{recursive:true});await copyFile(join(nextRoot,file),join(nextCopy,file));}
  return {directory,manifestPath,plan};
 }
 
+test('file admission rejects a changed/missing producer and enabled testing fetch override',async()=>{
+ for(const mode of ['changed','missing','testing-override']){
+  const files=await qualifiedFileFixture();
+  try{
+   const producer=join(files.directory,'app/node_modules/next/dist/client/components/segment-cache/fetch.js');
+   if(mode==='changed')await writeFile(producer,'changed producer');
+   else if(mode==='missing')await rm(producer);
+   else{const manifest=JSON.parse(await readFile(files.manifestPath,'utf8'));manifest.config.experimental.exposeTestingApiInProductionBuild=true;const bytes=Buffer.from(JSON.stringify(manifest));await writeFile(files.manifestPath,bytes);const hash=createHash('sha256').update(bytes).digest('hex');files.plan.runtime.browserControl.compiledManifestSha256=hash;files.plan.runtime.browserControl.nativePublicSources.compiledManifestSha256=hash;}
+   await assert.rejects(readBrowserControlBinding({plan:files.plan,manifestPath:files.manifestPath}),/qualified serving source epoch/,mode);
+  }finally{const path=resolve(files.directory),parent=resolve(tmpdir());assert.ok(path.startsWith(parent+sep)&&path!==parent);await rm(path,{recursive:true,force:true});}
+ }
+});
+
 test('real file-qualified installer covers fresh/controlled documents and BFCache with one continuous owned CDP witness',async()=>{
- for(const mode of ['healthy','changed-version','lost-session','changed-source','failed-install']){
+ for(const mode of ['healthy','changed-version','lost-session','changed-source','changed-producer','failed-install']){
  const files=await qualifiedFileFixture(),origin='http://localhost:1234';
  try {
   const binding=await readBrowserControlBinding({plan:files.plan,manifestPath:files.manifestPath}),session=new EventEmitter(),calls=[];
@@ -214,6 +231,10 @@ test('real file-qualified installer covers fresh/controlled documents and BFCach
    await writeFile(join(files.directory,'app/public/sw.js'),'changed source');
    await assert.rejects(page.goto(origin+'/en/analytics'),/source epoch changed/);
   }
+  if(mode==='changed-producer'){
+   await writeFile(join(files.directory,'app/node_modules/next/dist/client/components/segment-cache/fetch.js'),'changed producer');
+   await assert.rejects(page.goto(origin+'/en/analytics'),/source epoch changed/);
+  }
   await observer.close({deadlineMs:performance.now()+1000});const proof=observer.snapshot().targetedPrefetchProfile;
   assert.equal(proof.documents.length,2);assert.equal(proof.documents[0].restores,1);assert.equal(proof.workerVersion.complete,mode!=='changed-version');
   assert.equal(completeTargetedPrefetchProfileEvidence(proof),mode==='healthy',mode+':'+JSON.stringify(proof));
@@ -227,7 +248,7 @@ test('real file-qualified installer covers fresh/controlled documents and BFCach
 });
 
 test('closed receipt and fixed source envelopes fit without secret retention or quota expansion',()=>{
- const maximum={event:'checkpoint',calls:1000000,selected:999999,passed:1,unsupported:1000000,overwritten:1000000,errors:1000000,restores:1000000,installed:true,controllerState:'uncontrolled',sourceEpoch};
+ const maximum={event:'checkpoint',calls:1000000,selected:500000,passed:500000,unsupported:1000000,overwritten:1000000,errors:1000000,restores:1000000,installed:true,controllerState:'uncontrolled',sourceEpoch};
  assert.ok(Buffer.byteLength(JSON.stringify(maximum))<=1024);
  assert.ok(6*JSON.stringify(maximum).length+2048<=4096,'three worst-case UTF16 views plus private control slots');
  assert.ok(installTargetedPrefetchProfile.toString().length+2048<=16384,'source plus bounded serialized profile/origin/epoch arguments');

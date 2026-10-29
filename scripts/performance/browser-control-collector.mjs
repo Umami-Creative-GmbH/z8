@@ -2,6 +2,7 @@
 import { createHash } from "node:crypto";
 import { types as utilTypes } from "node:util";
 import { createReadStream } from "node:fs";
+import { createRequire } from "node:module";
 import { readFile, stat } from "node:fs/promises";
 import { basename, dirname, resolve } from "node:path";
 import { brotliDecompressSync, gunzipSync, inflateSync } from "node:zlib";
@@ -31,7 +32,7 @@ import {
 } from "./control-cancellation-evidence.mjs";
 import { createProxyHeaderCensus, proxyHeaderPrefix } from "./proxy-header-census.mjs";
 import { projectCachedCdpText } from "./cdp-cached-text-projection.mjs";
-import { targetedPrefetchProfile, knownTargetedPrefetchProfile, targetedPrefetchSourceEpoch, installTargetedPrefetchProfile, createTargetedPrefetchProfileJournal, createTargetedPrefetchWorkerWitness } from "./fixture-browser.mjs";
+import { targetedPrefetchProfile, knownTargetedPrefetchProfile, targetedPrefetchProducerChain, targetedPrefetchSourceEpoch, installTargetedPrefetchProfile, createTargetedPrefetchProfileJournal, createTargetedPrefetchWorkerWitness } from "./fixture-browser.mjs";
 import { readLegacyClockReadinessSource } from "./legacy-clock-readiness.mjs";
 import { parseInertDateRangeRequest } from "./inert-date-range-request.mjs";
 import { temporaryValueObservation, knownTemporaryValueObservation, knownOriginalTeamSourceConfiguration, readOriginalTeamSourceQualification,
@@ -306,6 +307,16 @@ export async function readNativePublicSources(manifestPath) {
 			{ known: false, bytes: null, sha256: null, reason: "unqualified-manifest-location" }) }))) };
 }
 
+async function matchingTargetedPrefetchProducerChain(manifestPath){
+	try{
+		const path=createRequire(resolve(dirname(manifestPath),"../package.json")).resolve("next/package.json"),info=await stat(path);
+		if(!info.isFile()||info.size>65536)return false;
+		const pkg=JSON.parse(await readFile(path,"utf8"));if(pkg.name!=="next"||pkg.version!==targetedPrefetchProducerChain.version)return false;
+		const rows=await Promise.all(targetedPrefetchProducerChain.files.map(async expected=>({expected,actual:await nativeFileMetadata(resolve(dirname(path),expected.file),controlCancellationPolicy.encodedLimit)})));
+		return rows.every(({expected,actual})=>actual.known===true&&actual.bytes===expected.bytes&&actual.sha256===expected.sha256);
+	}catch{return false;}
+}
+
 /** Files and arguments from the actual owned child; metadata alone is not a producer certificate. */
 export async function captureNativeLaunchMetadata(browser) {
 	let child;
@@ -399,7 +410,7 @@ export async function captureNativeEndMetadata({ page, binding, origin, deadline
 	const started = performance.now(), remaining = deadlineMs - started;
 	if (!Number.isFinite(remaining) || remaining <= 0 || remaining > 10000)
 		return { protocol: "native-environment-end-readonly-v1", timedOut: remaining <= 0, reason: "invalid-or-expired-deadline", pendingOperations: 0, readErrors: 0, controller: null, publicSourceRecheck: null, publicSourcesMatch: null };
-	let pendingOperations = 2, readErrors = 0, controller = null, publicSourceRecheck = null, timer;
+	let pendingOperations = 2, readErrors = 0, controller = null, publicSourceRecheck = null, timer,targetedPrefetchProducerChainMatch=null;
 
 	const tasks = [Promise.resolve().then(async () => {
 		const raw = await page.evaluate(async () => {
@@ -418,6 +429,7 @@ export async function captureNativeEndMetadata({ page, binding, origin, deadline
 	}), Promise.resolve().then(async () => {
 		const locator = binding && nativeManifestLocators.get(binding);
 		publicSourceRecheck = locator ? await readNativePublicSources(locator) : { protocol: "serving-public-worker-source-metadata-v1", servingRootKnown: false, files: null, reason: "missing-bound-serving-root" };
+		if(targetedPrefetchBindings.has(binding))targetedPrefetchProducerChainMatch=locator?await matchingTargetedPrefetchProducerChain(locator):false;
 	})].map(task => task.catch(() => { readErrors++; }).finally(() => { pendingOperations--; }));
 	try { await Promise.race([Promise.all(tasks),new Promise(resolve=>{timer=setTimeout(resolve,remaining);})]); }
 	finally { clearTimeout(timer); }
@@ -425,7 +437,7 @@ export async function captureNativeEndMetadata({ page, binding, origin, deadline
 	const sourcesKnown = before?.files?.length === 4 && after?.files?.length === 4 && [...before.files,...after.files].every(file=>file.known===true);
 	return { protocol: "native-environment-end-readonly-v1", timedOut: pendingOperations > 0 || performance.now() > deadlineMs,
 		deadlineBudgetMs: remaining, elapsedMs: performance.now() - started, pendingOperations, readErrors, controller, publicSourceRecheck,
-		publicSourcesMatch: sourcesKnown ? JSON.stringify(before) === JSON.stringify(after) : null };
+		publicSourcesMatch: sourcesKnown ? JSON.stringify(before) === JSON.stringify(after) : null,...(targetedPrefetchBindings.has(binding)?{targetedPrefetchProducerChainMatch}:{} ) };
 }
 
 /** Read the compiled source boundary before app/control/browser IO; never infer a missing flag. */
@@ -452,7 +464,7 @@ export async function readBrowserControlBinding({ plan, manifestPath }) {
 	const teamAnnualAction=await readTeamAnnualActionSource(manifestPath,plan.runtime.build,metadata.compiledManifestSha256);
 	const binding = Object.freeze({ ...metadata, compiledBuild: plan.runtime.build, manifestVerified: true, browserVerified: false,servingPublicSources,teamAnnualAction });
 	if (Object.hasOwn(plan.runtime,"targetedPrefetchProfile") || Object.hasOwn(metadata,"targetedPrefetchProfile")) {
-		if (!knownTargetedPrefetchProfile(plan.runtime.targetedPrefetchProfile) || !knownTargetedPrefetchProfile(metadata.targetedPrefetchProfile) || manifest.config.experimental.exposeTestingApiInProductionBuild === true || !metadata.nativePublicSources || !servingPublicSources.servingRootKnown || servingPublicSources.files.some(row=>!row.known))
+		if (!knownTargetedPrefetchProfile(plan.runtime.targetedPrefetchProfile) || !knownTargetedPrefetchProfile(metadata.targetedPrefetchProfile) || manifest.config.experimental.exposeTestingApiInProductionBuild === true || !metadata.nativePublicSources || !servingPublicSources.servingRootKnown || servingPublicSources.files.some(row=>!row.known) || !await matchingTargetedPrefetchProducerChain(manifestPath))
 			throw Error("Missing matched targeted-prefetch profile or qualified serving source epoch.");
 		targetedPrefetchBindings.set(binding,targetedPrefetchSourceEpoch(servingPublicSources,metadata.nativePublicSources));
 	}
@@ -1620,7 +1632,7 @@ export async function installBrowserControlCollector({
 		page[method] = async function (...args) {
 			const beforeProfile=profileJournal?.boundary();
 			if(profileJournal && session.detached===true){profileJournal.error();throw Error("Targeted-prefetch observation session was lost.");}
-			if(profileJournal){const actual=await readNativePublicSources(nativeManifestLocators.get(environmentBinding));if(JSON.stringify(actual)!==JSON.stringify(environmentBinding.servingPublicSources)){profileJournal.error();throw Error("Targeted-prefetch serving source epoch changed.");}}
+			if(profileJournal){const locator=nativeManifestLocators.get(environmentBinding),actual=await readNativePublicSources(locator);if(JSON.stringify(actual)!==JSON.stringify(environmentBinding.servingPublicSources)||!await matchingTargetedPrefetchProducerChain(locator)){profileJournal.error();throw Error("Targeted-prefetch serving source epoch changed.");}}
 			// This declared technical header is observed on both HTTP and CDP, never inferred from timing.
 			await session.send("Network.setExtraHTTPHeaders", {
 				headers: {

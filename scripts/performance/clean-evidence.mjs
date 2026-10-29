@@ -96,7 +96,7 @@ export function cleanBrowserContextEvidence(id, evidence, rawFailedRequests,auth
 		if(!knownTargetedPrefetchProfile(profile) || !completeTargetedPrefetchProfileEvidence(evidence?.targetedPrefetchProfile,profile))return false;
 		const sources=evidence?.allPhase?.nativeContext?.environment?.endRead;
 		const context=evidence?.allPhase?.nativeContext;
-		if(sources?.publicSourcesMatch!==true || evidence.targetedPrefetchProfile.sourceEpoch!==targetedPrefetchSourceEpoch(context?.environment?.servingPublicSources,context?.binding?.nativePublicSources))return false;
+		if(sources?.publicSourcesMatch!==true || sources.targetedPrefetchProducerChainMatch!==true || evidence.targetedPrefetchProfile.sourceEpoch!==targetedPrefetchSourceEpoch(context?.environment?.servingPublicSources,context?.binding?.nativePublicSources))return false;
 	}
 	if(!nativeEvidenceAuthorityMatches(evidence,authority?.runtime,authority?.protocolSources,authority?.origin)) return false;
 	if(evidence?.mixedProgress!==undefined){

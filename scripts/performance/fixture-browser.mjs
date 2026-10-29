@@ -26,7 +26,16 @@ export const targetedPrefetchProfile = Object.freeze({
 export const knownTargetedPrefetchProfile = value => value !== null && typeof value === "object" &&
 	JSON.stringify(Object.keys(value).sort()) === JSON.stringify(Object.keys(targetedPrefetchProfile).sort()) &&
 	Object.entries(targetedPrefetchProfile).every(([key, field]) => value[key] === field);
-export const targetedPrefetchSourceEpoch = (publicSources, nativePublicSources) => createHash("sha256").update(JSON.stringify({profile:targetedPrefetchProfile,publicSources,nativePublicSources})).digest("hex");
+/** Current source qualification, not an assertion about historical framework15/build-time observation. */
+export const targetedPrefetchProducerChain=Object.freeze({version:"16.4.0",files:Object.freeze([
+	{file:"dist/client/components/segment-cache/fetch.js",bytes:1379,sha256:"378770d930578c5103083c029f8e388c4315ec67666d5843b2ddfc8af9469061"},
+	{file:"dist/esm/client/components/segment-cache/fetch.js",bytes:847,sha256:"c654815886065d532207f212ad58a2198fa2c58cef9ca13d7a6bc66fa4c5abdb"},
+	{file:"dist/client/components/router-reducer/fetch-server-response.js",bytes:29577,sha256:"fba387124134c7becf61938ca1ce38738220a554a97931ad745ed4976c989a51"},
+	{file:"dist/esm/client/components/router-reducer/fetch-server-response.js",bytes:29946,sha256:"3c29b2c86b4f66407b2694fd236b96eb6531771feb7c4933a81294b16df1f208"},
+	{file:"dist/build/define-env.js",bytes:17758,sha256:"0ea6c29ea783a910159e4a15855434d080d24c750be0636633064908810b883f"},
+].map(Object.freeze))});
+export const targetedPrefetchProducerChainSha256=createHash("sha256").update(JSON.stringify(targetedPrefetchProducerChain)).digest("hex");
+export const targetedPrefetchSourceEpoch = (publicSources, nativePublicSources) => createHash("sha256").update(JSON.stringify({profile:targetedPrefetchProfile,publicSources,nativePublicSources,producerChainSha256:targetedPrefetchProducerChainSha256})).digest("hex");
 const targetedPrefetchExports=new WeakMap();
 /** Caller has forgotten the last public field after its final file/validation consumer. */
 export function releaseTargetedPrefetchProfileEvidence(value) {
@@ -35,8 +44,12 @@ export function releaseTargetedPrefetchProfileEvidence(value) {
 	targetedPrefetchExports.delete(value);owner.dispose();return true;
 }
 export function releaseTargetedPrefetchProfileSamples(samples) {
+	const owners=new Set();
 	for(const sample of samples){const evidence=sample.browserControlEvidence,value=evidence?.targetedPrefetchProfile;
-		if(value && targetedPrefetchExports.has(value)){delete evidence.targetedPrefetchProfile;releaseTargetedPrefetchProfileEvidence(value);}}
+		if(value && targetedPrefetchExports.has(value)){delete evidence.targetedPrefetchProfile;owners.add(value);}}
+	let failure=null;
+	for(const value of owners)try{releaseTargetedPrefetchProfileEvidence(value);}catch(error){failure??=error;}
+	if(failure)throw failure;
 }
 
 /** Partition-scoped passive version evidence supplements (never replaces) the actual document controller. */

@@ -13,7 +13,10 @@ export function releaseMixedProgressSnapshots(opened,transports){
  let failure=null;
  try{releaseTargetedPrefetchProfileSamples(transports);}catch(error){failure=error;}
  for(const row of transports)if(row.browserControlEvidence)delete row.browserControlEvidence.mixedProgress;
- for(const item of opened)try{item.browserObservation?.releaseMixedProgressSnapshot();item.browserObservation?.releaseTargetedPrefetchProfile?.();}catch(error){failure??=error;}
+ for(const item of opened){
+  try{item.browserObservation?.releaseMixedProgressSnapshot();}catch(error){failure??=error;}
+  try{item.browserObservation?.releaseTargetedPrefetchProfile?.();}catch(error){failure??=error;}
+ }
  if(failure)throw failure;
 }
 
