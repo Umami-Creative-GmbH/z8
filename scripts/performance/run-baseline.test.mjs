@@ -12,6 +12,7 @@ import { nextStreamCompletionPatch } from "./next-stream-completion-patch.mjs";
 import { primaryProtocolIdentity } from "./protocol-fingerprints.mjs";
 import { measure } from "./run-baseline.mjs";
 import { runInNewContext } from "node:vm";
+import { cleanEvidenceGates } from "./clean-evidence.mjs";
 import { testBrowserMetadata, testBrowserEvidence } from "./control-cancellation-test-fixtures.mjs";
 
 test("fixture startup checks the actual temporary compiled manifest and never repairs stale identity", async () => {
@@ -670,6 +671,7 @@ for (const mutationFails of [true, false]) {
 			evaluateOnNewDocument: async () => {},
 			goto: async () => {},
 			waitForSelector: async selector => {if(selector==='button[data-clock]')throw clockError;},
+			waitForFunction: async (_predicate,_options,selector) => {if(selector==='button[data-clock]')throw clockError;},
 			isClosed: () => false,
 			evaluate: async () => "denied",
 			createCDPSession: async () => ({
@@ -1427,7 +1429,7 @@ test("fully observed failed journeys cannot finalize either baseline or release 
 	}
 });
 /** Public measure/Page seam: a selector result loses its context during return navigation. */
-async function returningClockFixture(t, { timeoutMs = 90000, waitFailure = null } = {}) {
+async function returningClockFixture(t, { timeoutMs = 90000, waitFailure = null, disposeFailure = null } = {}) {
  let now=0, resolveClock, disposed=0, wait=null;
  const order=[], clockSelector='button[aria-label="Clock In"]:not(:disabled)';
  const transferError=Object.assign(Error("Protocol error (DOM.describeNode): Cannot find context with specified id"),{name:"ProtocolError"});
@@ -1441,7 +1443,7 @@ async function returningClockFixture(t, { timeoutMs = 90000, waitFailure = null 
   waitForFunction:(predicate,options,selector)=>{
    order.push("clock-start");wait={predicate,options,selector,startedAt:now};
    if(waitFailure)return Promise.reject(waitFailure);
-   return new Promise(resolve=>{resolveClock=()=>resolve({dispose:async()=>{disposed++;}});});
+   return new Promise(resolve=>{resolveClock=()=>resolve({dispose:async()=>{disposed++;if(disposeFailure)throw disposeFailure;}});});
   },
   goBack:async()=>{order.push("goBack");now=35;resolveClock?.();},
   createCDPSession:async()=>({send:async()=>{},on(){},detach:async()=>{}}),
@@ -1463,4 +1465,44 @@ test("primary clock readiness survives a return navigation without transferring 
  assert.deepEqual(result.wait.options,{polling:"raf",timeout:90000});
  assert.equal(result.wait.startedAt,20);
  assert.equal(result.disposed,1);
+});
+test("primary clock predicate preserves first CSS match and Puppeteer visibility while returning only booleans",async t=>{
+ const result=await returningClockFixture(t),predicate=result.wait.predicate;
+ const cases=[
+  {name:"missing",present:false,expected:false},
+  {name:"disabled selector does not match",disabled:true,expected:false},
+  {name:"visible",expected:true},
+  {name:"visibility hidden",visibility:"hidden",expected:false},
+  {name:"visibility collapse",visibility:"collapse",expected:false},
+  {name:"zero width",width:0,expected:false},
+  {name:"zero height",height:0,expected:false},
+  {name:"no computed style",style:false,expected:false},
+  {name:"opacity alone is not Puppeteer hidden",opacity:"0",expected:true},
+  {name:"first match hidden despite a later visible duplicate",visibility:"hidden",laterVisible:true,expected:false},
+ ];
+ for(const item of cases){
+  const node={getBoundingClientRect:()=>({width:item.width??10,height:item.height??10})},later={getBoundingClientRect:()=>({width:10,height:10})};
+  const context={selector:result.clockSelector,document:{querySelector(selector){assert.equal(selector,result.clockSelector);return item.present===false||item.disabled?null:node;},querySelectorAll(){return item.laterVisible?[node,later]:[node];}},window:{getComputedStyle(element){if(element===later)return {visibility:"visible"};assert.equal(element,node);return item.style===false?null:{visibility:item.visibility??"visible",opacity:item.opacity??"1"};}}};
+  const value=runInNewContext("("+predicate.toString()+")(selector)",context);
+  assert.equal(typeof value,"boolean",item.name);assert.equal(value,item.expected,item.name);
+ }
+ assert.equal(cleanEvidenceGates({routes:[{name:"analytics",clockReady:result.clockSelector}],runtime:{}},{samples:[result.sample]},[]).includes("Clean evidence requires the planned clock readiness."),false);
+});
+test("primary clock wait retains Original and Head timeout values and never retries genuine API errors",async t=>{
+ for(const timeoutMs of[90000,30000])for(const name of["TimeoutError","ProtocolError","TargetCloseError","TypeError"]){
+  const message="PRIVATE_CLOCK_ERROR_"+name,error=Object.assign(Error(message),{name});
+  const result=await returningClockFixture(t,{timeoutMs,waitFailure:error});
+  assert.equal(result.sample.censored,false);assert.equal(result.sample.clockReadyMs,null);
+  assert.equal(result.sample.clockWaitFailure.messageSha256,createHash("sha256").update(message).digest("hex"));
+  assert.equal(result.sample.clockWaitFailure.name,name);assert.equal(result.wait.options.timeout,timeoutMs);
+  assert.deepEqual(result.order,["clock-start","goBack"]);assert.equal(result.disposed,0);
+  assert.equal(cleanEvidenceGates({routes:[{name:"analytics",clockReady:result.clockSelector}],runtime:{}},{samples:[result.sample]},[]).includes("Clean evidence requires the planned clock readiness."),true);
+  assert.doesNotMatch(JSON.stringify(result.sample),/PRIVATE_CLOCK_ERROR_/);
+ }
+});
+test("primary clock handle disposal failure stays unknown and cannot satisfy readiness",async t=>{
+ const error=Error("PRIVATE_DISPOSE_ERROR"),result=await returningClockFixture(t,{disposeFailure:error});
+ assert.equal(result.disposed,1);assert.equal(result.sample.clockReadyMs,null);
+ assert.equal(result.sample.clockWaitFailure.messageSha256,createHash("sha256").update(error.message).digest("hex"));
+ assert.equal(cleanEvidenceGates({routes:[{name:"analytics",clockReady:result.clockSelector}],runtime:{}},{samples:[result.sample]},[]).includes("Clean evidence requires the planned clock readiness."),true);
 });

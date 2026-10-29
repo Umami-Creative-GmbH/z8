@@ -1254,13 +1254,19 @@ export async function measure(
 		stage = "navigate";
 		const clock = route.clockReady
 			? page
-					.waitForSelector(route.clockReady, {
-						visible: true,
-						timeout: plan.timeoutMs ?? 30000,
-					})
-					.then(() => {
-						sample.clockReadyMs = performance.now() - start;
-						return sample.clockReadyMs;
+					.waitForFunction((selector) => {
+						const element = document.querySelector(selector);
+						if (!element) return false;
+						const style = window.getComputedStyle(element);
+						if (!style || ["hidden", "collapse"].includes(style.visibility)) return false;
+						const rect = element.getBoundingClientRect();
+						return rect.width !== 0 && rect.height !== 0;
+					}, { polling: "raf", timeout: plan.timeoutMs ?? 30000 }, route.clockReady)
+					.then(async (handle) => {
+						const readyMs = performance.now() - start;
+						await handle.dispose();
+						sample.clockReadyMs = readyMs;
+						return readyMs;
 					})
 					.catch(error => {sample.clockWaitFailure=clockWaiterFailureFacts(error);return null;})
 			: Promise.resolve(null);
