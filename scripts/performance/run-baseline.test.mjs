@@ -15,6 +15,104 @@ import { runInNewContext } from "node:vm";
 import { cleanEvidenceGates } from "./clean-evidence.mjs";
 import { testBrowserMetadata, testBrowserEvidence } from "./control-cancellation-test-fixtures.mjs";
 
+async function primaryScriptFixture(t, { scripts = true, timeoutMs = 90000, mode = "first-document" } = {}) {
+	let now = 0, visible;
+	const visibleReached = new Promise(resolve => { visible = resolve; }), callbacks = {};
+	const clock = t.mock.method(performance, "now", () => now);
+	const client = { send: async () => {}, on(name, callback) { callbacks[name] = callback; }, detach: async () => {} };
+	const emit = (name, event, at) => { now = at; callbacks[name](event); };
+	const startScripts = () => { now += 10; if (scripts) emit("Network.requestWillBeSent", { requestId: "script-one", timestamp: now / 1000, type: "Script" }, now); };
+	const page = {
+		setViewport: async () => {}, emulateTimezone: async () => {}, setExtraHTTPHeaders: async () => {},
+		setRequestInterception: async () => {}, on() {}, evaluateOnNewDocument: async () => {},
+		goto: async () => { startScripts(); }, reload: async () => { startScripts(); },
+		waitForSelector: async selector => { if (selector === "#ready") { now += 10; visible(); } },
+		isClosed: () => false, createCDPSession: async () => client,
+		evaluate: async fn => fn.toString().includes("Notification.permission") ? "denied" : fn.toString().includes("__z8Baseline") ? { lcp: null, inp: null } : 0,
+	};
+	const pending = measure({ createBrowserContext: async () => ({ id: "script-fixture", setPermission: async () => {}, setCookie: async () => {}, newPage: async () => page, close: async () => {} }) },
+		{ fixture: { cookies: [] } }, { origin: "http://localhost", runtime: {}, timeoutMs },
+		{ name: "fixture", locale: "en" }, { name: "default" },
+		{ name: "dashboard", path: "/en", ready: "#ready", mutation: { steps: [{ reload: true }], ready: "#ready", reset: [] } }, mode, 0, 1);
+	let settled = false; pending.finally(() => { settled = true; });
+	await Promise.race([visibleReached, pending.then(() => { throw Error("Fixture ended before visible readiness."); })]);
+	await new Promise(resolve => setImmediate(resolve));
+	return { pending, emit, settled: () => settled, setTime: value => { now = value; }, restoreTime: () => clock.mock.restore() };
+}
+
+test("primary script readiness charges delayed and newly observed scripts into latency and bytes", async t => {
+	const fixture = await primaryScriptFixture(t);
+	assert.equal(fixture.settled(), false, "Visible content alone must not close a pending Script measurement.");
+	fixture.emit("Network.requestWillBeSent", { requestId: "script-two", timestamp: .03, type: "Script" }, 30);
+	fixture.emit("Network.loadingFinished", { requestId: "script-one", timestamp: .06, encodedDataLength: 7 }, 60);
+	await new Promise(resolve => setImmediate(resolve));
+	assert.equal(fixture.settled(), false, "A later observed Script stays in the same measured drain.");
+	fixture.emit("Network.loadingFinished", { requestId: "script-two", timestamp: .09, encodedDataLength: 11 }, 90);
+	const sample = await fixture.pending;
+	assert.equal(sample.failed, false);
+	assert.equal(sample.firstVisibleContentMs, 20);
+	assert.equal(sample.usableContentMs, 90);
+	assert.equal(sample.javascriptBytes, 18);
+	assert.equal(sample.totalBytes, 18);
+	assert.equal(sample.pendingScriptRequests, 0);
+	assert.equal(sample.resourceObservedUntilMs, 90);
+	fixture.restoreTime();
+});
+
+test("primary script readiness rejects failed or unknown Script completion rather than inventing success", async t => {
+	for (const [event, fields, expectedFailures] of [
+		["Network.loadingFailed", { type: "Script", errorText: "net::ERR_FAILED" }, 1],
+		["Network.loadingFinished", { encodedDataLength: undefined }, 0],
+	]) {
+		const fixture = await primaryScriptFixture(t);
+		fixture.emit(event, { requestId: "script-one", timestamp: .06, ...fields }, 60);
+		const sample = await fixture.pending;
+		assert.equal(sample.failed, true);
+		assert.equal(sample.failureStage, "script-readiness");
+		assert.equal(sample.firstVisibleContentMs, 20);
+		assert.equal(sample.usableContentMs, null);
+		assert.equal(sample.failedRequests, expectedFailures);
+		fixture.restoreTime();
+	}
+});
+
+test("primary script readiness retains the original absolute Original and Head deadlines", async t => {
+	t.mock.timers.enable({ apis: ["setTimeout"] });
+	for (const timeoutMs of [90000, 30000]) {
+		const fixture = await primaryScriptFixture(t, { timeoutMs });
+		fixture.setTime(timeoutMs - 1);
+		t.mock.timers.tick(timeoutMs - 21);
+		await new Promise(resolve => setImmediate(resolve));
+		assert.equal(fixture.settled(), false);
+		fixture.setTime(timeoutMs);
+		t.mock.timers.tick(1);
+		const sample = await fixture.pending;
+		assert.equal(sample.failed, true);
+		assert.equal(sample.failureStage, "script-readiness");
+		assert.equal(sample.failureKind, "timeout");
+		assert.equal(sample.elapsedUntilFailureMs, timeoutMs);
+		assert.equal(sample.firstVisibleContentMs, 20);
+		assert.equal(sample.usableContentMs, null);
+		assert.equal(sample.pendingScriptRequests, 1);
+		assert.equal(sample.resourceObservedUntilMs, timeoutMs);
+		fixture.restoreTime();
+	}
+});
+
+test("primary script readiness adds no wait when no Script is pending, including mutation markers", async t => {
+	for (const mode of ["first-document", "mutation-refresh"]) {
+		const fixture = await primaryScriptFixture(t, { scripts: false, mode });
+		const sample = await fixture.pending;
+		assert.equal(sample.failed, false);
+		assert.equal(sample.firstVisibleContentMs, 20);
+		assert.equal(sample.usableContentMs, 20);
+		assert.equal(sample.pendingScriptRequests, 0);
+		assert.equal(sample.javascriptBytes, 0);
+		assert.equal(sample.resourceObservedUntilMs, 20);
+		fixture.restoreTime();
+	}
+});
+
 test("primary artifact output preserves JSON values without pretty-print overhead", () => {
 	const value = { samples: [{ a: 1 }, { a: 2 }] };
 	const encoded = encodeArtifact(value);
