@@ -99,6 +99,31 @@ test('a later BFCache restore cannot erase a missing earlier terminal handoff',(
  const value=journal.snapshot();assert.equal(completeTargetedPrefetchProfileEvidence(value),false);releaseTargetedPrefetchProfileEvidence(value);
 });
 
+for(const mode of ['binding-throw','same-nonce-malformed','same-nonce-contradictory'])test(`terminal commit cannot hide ${mode}`,()=>{
+  const store=new Map(),journal=createTargetedPrefetchProfileJournal({profile:targetedPrefetchProfile,sourceEpoch,reserve:()=>true,release:()=>{},reserveRecords:()=>true,releaseRecords:()=>{}});let hidden=false;
+  const first=windowFixture(null,store);first.target.__z8TargetedPrefetchReceiptV1=payload=>{if(hidden){if(mode==='binding-throw')throw Error('PRIVATE_BINDING_FAILURE');}else journal.receive(1,payload);};
+  installTargetedPrefetchProfile(first.target,targetedPrefetchProfile,sourceEpoch,'https://fixture.test');first.target.fetch('/en/analytics',{headers:{RSC:'1','Next-Router-Prefetch':'1'}});
+  hidden=true;first.listeners.get('pagehide')({persisted:false});
+  if(mode!=='binding-throw'){
+   const key=[...store.keys()][0],stored=JSON.parse(store.get(key));
+   if(mode==='same-nonce-malformed')store.set(key,JSON.stringify({nonce:stored.nonce,private:'PRIVATE_STORED_POISON'}));
+   else{stored.receipt.calls=0;stored.receipt.selected=0;store.set(key,JSON.stringify(stored));}
+   first.target.fetch('/en/analytics',{headers:{RSC:'1','Next-Router-Prefetch':'1'}});
+  }
+  const next=windowFixture(null,store);next.target.__z8TargetedPrefetchReceiptV1=payload=>journal.receive(2,payload);
+  installTargetedPrefetchProfile(next.target,targetedPrefetchProfile,sourceEpoch,'https://fixture.test').snapshot();journal.close();const value=journal.snapshot();
+  assert.equal(completeTargetedPrefetchProfileEvidence(value),false,mode);assert.doesNotMatch(JSON.stringify(value),/PRIVATE_/);releaseTargetedPrefetchProfileEvidence(value);
+});
+
+for(const event of ['controller','checkpoint'])test(`same-sequence native mirror rejects changed event ${event}`,()=>{
+  const store=new Map(),native=[],journal=createTargetedPrefetchProfileJournal({profile:targetedPrefetchProfile,sourceEpoch,reserve:()=>true,release:()=>{},reserveRecords:()=>true,releaseRecords:()=>{}});
+  const first=windowFixture(null,store);first.target.__z8TargetedPrefetchReceiptV1=payload=>{native.push(payload);if(JSON.parse(payload).event!=='pagehide')journal.receive(1,payload);};
+  installTargetedPrefetchProfile(first.target,targetedPrefetchProfile,sourceEpoch,'https://fixture.test');first.listeners.get('pagehide')({persisted:false});
+  const next=windowFixture(null,store);next.target.__z8TargetedPrefetchReceiptV1=payload=>journal.receive(2,payload);const capsule=installTargetedPrefetchProfile(next.target,targetedPrefetchProfile,sourceEpoch,'https://fixture.test');
+  const altered={...JSON.parse(native.at(-1)),event,...(event==='checkpoint'?{handoffState:'empty'}:{})};journal.receive(1,JSON.stringify(altered));capsule.snapshot();journal.close();
+  const value=journal.snapshot();assert.equal(completeTargetedPrefetchProfileEvidence(value),false,event);releaseTargetedPrefetchProfileEvidence(value);
+});
+
 test('phase source epoch and per-document receipts fail closed without discounting prior errors',()=>{
  let bytes=0,records=0;
  const journal=createTargetedPrefetchProfileJournal({profile:targetedPrefetchProfile,sourceEpoch,
