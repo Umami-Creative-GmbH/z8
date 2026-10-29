@@ -663,3 +663,40 @@ test('native connection log mock forgets an earlier hash when a later close find
   assert.equal(browser.fixtureLaunchPolicy.nativeConnectionLog.sha256,null);assert.equal(browser.fixtureLaunchPolicy.nativeConnectionLog.bytes,null);
  }finally{if(logFile)await rm(dirname(logFile),{recursive:true,force:true});}
 });
+
+function upstreamFactsMock(assertions) {
+ const child=spawnSync(process.execPath,['--input-type=module','-'],{encoding:'utf8',input:`
+import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
+import http from 'node:http';
+import {EventEmitter} from 'node:events';
+import {syncBuiltinESMExports} from 'node:module';
+let handler,calls=0,upstream;
+class FakeAgent {destroy(){}}
+class FakeServer extends EventEmitter {listen(port,host,done){queueMicrotask(done);}address(){return {port:12345};}closeAllConnections(){}close(done){done();}}
+http.Agent=FakeAgent;http.createServer=callback=>{handler=callback;return new FakeServer();};
+http.request=()=>{calls++;upstream=new EventEmitter();upstream.reusedSocket=false;upstream.destroy=()=>{};return upstream;};
+syncBuiltinESMExports();
+const {createFixtureTraceTransport}=await import(${JSON.stringify(new URL('./trace-transport.mjs',import.meta.url).href)});
+const transport=await createFixtureTraceTransport({origin:'http://localhost:58792',getTraceId:()=> 'a'.repeat(32)});
+transport.setControlCancellationObserver(Object.fromEntries(['installed','request','response','bytes','end','cancel','failure','observerError','upstreamClosedBeforeHeaders','transportClosed'].map(key=>[key,()=>false])));
+transport.finishBrowserInitialization({...transport.snapshot(),complete:true});
+function fail(error){const request=new EventEmitter();request.headers={host:'localhost:58792',authorization:'PRIVATE_HEADER'};request.method='GET';request.url='http://localhost:58792/private-path?secret=PRIVATE_URL';request.pipe=value=>value;
+ const response=new EventEmitter();response.destroyed=false;response.headersSent=false;response.writeHead=status=>{response.status=status;return response;};response.end=()=>{response.writableEnded=true;};
+ handler(request,response);upstream.emit('error',error);upstream.emit('error',error);upstream.emit('close');assert.equal(response.status,502);return transport.snapshot();}
+${assertions}
+await transport.close();
+`});
+ assert.equal(child.status,0,child.stderr);
+}
+
+test('upstream connect facts mock captures own Node endpoint scalars without changing one-failure forwarding',()=>upstreamFactsMock(`
+const error=Object.assign(new Error('PRIVATE_MESSAGE'),{code:'ECONNREFUSED',errno:-4078,address:'::1',port:58792,syscall:'connect'});
+const value=fail(error),facts=value.upstreamFailureFacts;
+assert.equal(calls,1);assert.equal(value.upstreamFailures,1);assert.equal(value.upstreamConnectionErrors,1);assert.equal(value.upstreamRefusedErrors,1);assert.equal(value.downstreamCancellations,0);
+assert.deepEqual(facts.records,[{ordinal:1,phase:'connection',method:'GET',urlSha256:createHash('sha256').update('http://localhost:58792/private-path?secret=PRIVATE_URL').digest('hex'),controlId:'a'.repeat(32)+'.1',error:{code:'ECONNREFUSED',errno:-4078,address:'::1',addressFamily:'IPv6',port:58792,syscall:'connect'},aggregateErrors:[],aggregateOverflow:false}]);
+assert.equal(facts.status,'RECORDED');assert.equal(facts.overflow,0);assert.equal(facts.errors,0);
+assert.doesNotMatch(JSON.stringify(facts),/PRIVATE_MESSAGE|PRIVATE_HEADER|PRIVATE_URL|private-path|stack/);
+assert.equal(Object.hasOwn(value.afterInitialization,'upstreamFailureFacts'),false);
+facts.records[0].error.port=1;assert.equal(transport.snapshot().upstreamFailureFacts.records[0].error.port,58792);
+`));
