@@ -124,6 +124,14 @@ for(const event of ['controller','checkpoint'])test(`same-sequence native mirror
   const value=journal.snapshot();assert.equal(completeTargetedPrefetchProfileEvidence(value),false,event);releaseTargetedPrefetchProfileEvidence(value);
 });
 
+test('native receipt keeps the original1024-byte bound including harmless JSON padding',()=>{
+ const journal=createTargetedPrefetchProfileJournal({profile:targetedPrefetchProfile,sourceEpoch,reserve:()=>true,release:()=>{},reserveRecords:()=>true,releaseRecords:()=>{}}),f=windowFixture();
+ const capsule=installTargetedPrefetchProfile(f.target,targetedPrefetchProfile,sourceEpoch,'https://fixture.test'),payload=JSON.stringify(f.receipts[0]);
+ assert.ok(payload.length<1024);journal.receive(1,payload+' '.repeat(1025-payload.length));
+ f.target.__z8TargetedPrefetchReceiptV1=value=>journal.receive(1,value);capsule.snapshot();journal.close();const result=journal.snapshot();
+ assert.equal(completeTargetedPrefetchProfileEvidence(result),false);releaseTargetedPrefetchProfileEvidence(result);
+});
+
 test('phase source epoch and per-document receipts fail closed without discounting prior errors',()=>{
  let bytes=0,records=0;
  const journal=createTargetedPrefetchProfileJournal({profile:targetedPrefetchProfile,sourceEpoch,
