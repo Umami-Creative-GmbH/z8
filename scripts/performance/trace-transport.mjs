@@ -101,6 +101,46 @@ export async function createFixtureTraceTransport({
 			malformed: 0,
 		},
 	};
+	// Optional lower-level facts only; counters and classification below remain authoritative.
+	const upstreamFailureRecords = [];
+	let upstreamFailureOverflow = 0, upstreamFactErrors = 0;
+	const ownErrorField = (value, key) => {
+		if (value === null || typeof value !== "object") return undefined;
+		const descriptor = Object.getOwnPropertyDescriptor(value, key);
+		if (descriptor && !Object.hasOwn(descriptor, "value")) throw Error("Unknown error field.");
+		return descriptor?.value;
+	};
+	const errorFacts = error => {
+		const code = ownErrorField(error, "code"), errno = ownErrorField(error, "errno"),
+			address = ownErrorField(error, "address"), port = ownErrorField(error, "port"), syscall = ownErrorField(error, "syscall");
+		return {
+			code: ["ECONNREFUSED", "ECONNRESET", "ETIMEDOUT", "ENETUNREACH", "EHOSTUNREACH", "ECONNABORTED", "ENOTFOUND", "EAI_AGAIN", "EPIPE", "EADDRNOTAVAIL", "EACCES", "EPERM", "EMFILE", "ENFILE", "ENOBUFS", "ENOMEM", "ERR_SOCKET_CLOSED", "ERR_SOCKET_CONNECTION_TIMEOUT", "ERR_STREAM_PREMATURE_CLOSE"].includes(code) ? code : null,
+			errno: Number.isSafeInteger(errno) ? errno : null,
+			address: ["127.0.0.1", "::1"].includes(address) ? address : null,
+			addressFamily: address === "127.0.0.1" ? "IPv4" : address === "::1" ? "IPv6" : null,
+			port: Number.isInteger(port) && port > 0 && port <= 65535 ? port : null,
+			syscall: ["connect", "read", "write", "recv", "send", "getaddrinfo"].includes(syscall) ? syscall : null,
+		};
+	};
+	const recordUpstreamFailure = (phase, error, method, url, controlId) => {
+		if (upstreamFailureRecords.length === 8) { upstreamFailureOverflow++; return; }
+		try {
+			const aggregate = ownErrorField(error, "errors"), aggregateErrors = [];
+			if (aggregate !== undefined && !Array.isArray(aggregate)) throw Error("Unknown aggregate error.");
+			const length = aggregate === undefined ? 0 : ownErrorField(aggregate, "length");
+			if (!Number.isSafeInteger(length) || length < 0) throw Error("Unknown aggregate length.");
+			for (let index = 0; index < Math.min(length, 2); index++) aggregateErrors.push(errorFacts(ownErrorField(aggregate, String(index))));
+			const row = { ordinal: upstreamFailureRecords.length + 1, phase,
+				method: ["GET", "POST", "HEAD", "PUT", "PATCH", "DELETE", "OPTIONS"].includes(method) ? method : null,
+				urlSha256: createHash("sha256").update(url.href).digest("hex"),
+				controlId: typeof controlId === "string" && /^[a-f0-9]{32}\.[1-9][0-9]{0,15}$/.test(controlId) ? controlId : null,
+				error: errorFacts(error), aggregateErrors, aggregateOverflow: length > 2 };
+			if (Buffer.byteLength(JSON.stringify(row)) > 1024) throw Error("Upstream facts limit.");
+			upstreamFailureRecords.push(row);
+		} catch { upstreamFactErrors++; }
+	};
+	const upstreamFailureFacts = () => ({ status: upstreamFailureOverflow || upstreamFactErrors || upstreamFailureRecords.some(row => row.aggregateOverflow) ? "UNKNOWN" : "RECORDED",
+		records: structuredClone(upstreamFailureRecords), overflow: upstreamFailureOverflow, errors: upstreamFactErrors });
 	const server = createServer((request, response) => {
 		let wireId, applicationId, controlId, captureRequestShape=false;
 		try {
@@ -170,6 +210,7 @@ export async function createFixtureTraceTransport({
 								? "upstreamRefusedErrors"
 								: "upstreamOtherErrors"
 					]++;
+					recordUpstreamFailure(phase, error, request.method, url, controlId);
 				}
 				wire.end(wireId, { error: true }, performance.now());
 			};
@@ -337,10 +378,11 @@ export async function createFixtureTraceTransport({
 		snapshot: () => {
 			const total = snapshot();
 			const upstreamSocketPolicy = { ...fixtureUpstreamSocketPolicy };
-			if (!initialization) return { ...total, upstreamSocketPolicy, applicationEvidence: application.snapshot() };
+			if (!initialization) return { ...total, upstreamSocketPolicy, upstreamFailureFacts: upstreamFailureFacts(), applicationEvidence: application.snapshot() };
 			return {
 				...total,
 				upstreamSocketPolicy,
+				upstreamFailureFacts: upstreamFailureFacts(),
 				applicationEvidence: application.snapshot(),
 				browserInitialization: structuredClone(initialization),
 				afterInitialization: Object.fromEntries(
