@@ -1436,6 +1436,7 @@ async function returningClockFixture(t, { timeoutMs = 90000, waitFailure = null 
  const page={
   setViewport:async()=>{},emulateTimezone:async()=>{},setExtraHTTPHeaders:async()=>{},setRequestInterception:async()=>{},on(){},evaluateOnNewDocument:async()=>{},
   goto:async()=>{now+=10;},isClosed:()=>false,evaluate:async()=>"denied",
+  $$:async()=>[{isVisible:async()=>true,evaluate:async()=>true}],
   waitForSelector:async selector=>{if(selector===clockSelector)throw selectorError;},
   waitForFunction:(predicate,options,selector)=>{
    order.push("clock-start");wait={predicate,options,selector,startedAt:now};
@@ -1452,6 +1453,9 @@ async function returningClockFixture(t, { timeoutMs = 90000, waitFailure = null 
 }
 test("primary clock readiness survives a return navigation without transferring an element between realms",async t=>{
  const result=await returningClockFixture(t);
+ assert.equal(result.sample.censored,false);
+ assert.equal(result.sample.failureStage,null);
+ assert.equal(result.sample.usableContentMs,15);
  assert.equal(result.sample.clockReadyMs,15);
  assert.equal(result.sample.clockWaitFailure,undefined);
  assert.deepEqual(result.order,["clock-start","goBack"]);
