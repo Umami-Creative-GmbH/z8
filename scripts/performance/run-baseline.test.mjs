@@ -656,6 +656,8 @@ test("primary retains the original sanitized failure when native close is incomp
 for (const mutationFails of [true, false]) {
 	test(`primary retains ${mutationFails ? "the mutation timeout" : "the first restoration failure"} through native close errors`, async (t) => {
 		let now = 0, reloads = 0, closed = 0, detached = 0;
+		const clockMessage="Waiting for selector button failed: PRIVATE_CLOCK_CANARY timeout exceeded",clockError=Object.assign(Error(clockMessage),{name:"TimeoutError",code:mutationFails?"ABORT_ERR":"PRIVATE_CODE"});let clockGetterReads=0;
+		if(!mutationFails)Object.defineProperty(clockError,"message",{get(){clockGetterReads++;throw Error("PRIVATE_GETTER");}});
 		const callbacks = {}, observedIds = [], observationOrder = [];
 		t.mock.method(performance, "now", () => now);
 		const page = {
@@ -666,7 +668,7 @@ for (const mutationFails of [true, false]) {
 			on() {},
 			evaluateOnNewDocument: async () => {},
 			goto: async () => {},
-			waitForSelector: async () => {},
+			waitForSelector: async selector => {if(selector==='button[data-clock]')throw clockError;},
 			isClosed: () => false,
 			evaluate: async () => "denied",
 			createCDPSession: async () => ({
@@ -710,6 +712,7 @@ for (const mutationFails of [true, false]) {
 			{
 				name: "dashboard",
 				path: "/en",
+				clockReady: 'button[data-clock]',
 				mutation: {
 					steps: [{ reload: true }],
 					reset: [{ reload: true }],
@@ -752,7 +755,9 @@ for (const mutationFails of [true, false]) {
 		assert.deepEqual(observedIds, ["measured"]);
 		assert.deepEqual(observationOrder, ["begin", "end", "close"]);
 		assert.deepEqual(sample.browserControlEvidence, { observed: 1 });
-		assert.doesNotMatch(JSON.stringify(sample), /PRIVATE_.*CANARY|TimeoutError|stack/);
+		assert.deepEqual(sample.clockWaitFailure,{name:"TimeoutError",code:mutationFails?"ABORT_ERR":null,technicalReason:mutationFails?"selector-timeout":"unknown",messageSha256:mutationFails?createHash("sha256").update(clockMessage).digest("hex"):null});
+		assert.equal(clockGetterReads,0);assert.equal(sample.clockReadyMs,null);
+		assert.doesNotMatch(JSON.stringify(sample), /PRIVATE_.*CANARY|PRIVATE_CODE|PRIVATE_GETTER|stack/);
 	});
 }
 

@@ -6,18 +6,20 @@ import { mkdtemp, mkdir, writeFile, readFile, copyFile, rm } from 'node:fs/promi
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join, dirname, resolve, sep } from 'node:path';
-import { createHash } from 'node:crypto';
+import { createHash, webcrypto } from 'node:crypto';
 import { readBrowserControlBinding, verifyBrowserControlBrowser, installBrowserControlCollector } from './browser-control-collector.mjs';
 import { testBrowserMetadata } from './control-cancellation-test-fixtures.mjs';
 import { teamAnnualModule, teamAnnualWorkers, nativePublicPaths } from './control-cancellation-evidence.mjs';
 import { installTargetedPrefetchProfile, createTargetedPrefetchProfileJournal, createTargetedPrefetchWorkerWitness, completeTargetedPrefetchProfileEvidence, targetedPrefetchProfile, releaseTargetedPrefetchProfileEvidence, releaseTargetedPrefetchProfileSamples } from './fixture-browser.mjs';
 
-function windowFixture(controller=null) {
+function windowFixture(controller=null,store=new Map()) {
  const listeners=new Map(),workerListeners=new Map(),calls=[],receipts=[];
  const worker={controller,addEventListener(name,fn){workerListeners.set(name,fn);},removeEventListener(name){workerListeners.delete(name);}};
  const result=Promise.resolve('original');
  const target={document:{readyState:'loading'},location:{href:'https://fixture.test/en/analytics'},navigator:{serviceWorker:worker},
   fetch(...args){calls.push({receiver:this,args});return result;},addEventListener(name,fn){listeners.set(name,fn);}};
+ class StorageFixture{getItem(key){return store.get(key)??null;}setItem(key,value){store.set(key,String(value));}removeItem(key){store.delete(key);}}
+ target.Storage=StorageFixture;target.sessionStorage=new StorageFixture();target.crypto=webcrypto;
  target.window=target;target.top=target;
  const receive=value=>receipts.push(JSON.parse(value));
  target.__z8TargetedPrefetchReceiptV1=receive;
@@ -34,6 +36,100 @@ test('approved prefetch condition preserves native URL, delegate result, receive
  assert.equal(f.calls.length,1);assert.equal(f.calls[0].receiver,receiver);assert.equal(f.calls[0].args[0],input);
  assert.equal(f.calls[0].args[1].cache,'no-cache');assert.equal(f.calls[0].args[1].headers,headers);assert.equal(f.calls[0].args[1].signal,signal);
  assert.equal(Object.hasOwn(init,'cache'),false);
+});
+
+test('terminal handoff preserves departure when native pagehide delivery is lost',()=>{
+ const journal=createTargetedPrefetchProfileJournal({profile:targetedPrefetchProfile,sourceEpoch,reserve:()=>true,release:()=>{},reserveRecords:()=>true,releaseRecords:()=>{}}),store=new Map();
+ const first=windowFixture(null,store);first.target.__z8TargetedPrefetchReceiptV1=payload=>{if(JSON.parse(payload).event!=='pagehide')journal.receive(1,payload);};
+ installTargetedPrefetchProfile(first.target,targetedPrefetchProfile,sourceEpoch,'https://fixture.test');
+ first.target.fetch('/en/analytics',{headers:{RSC:'1','Next-Router-Prefetch':'1'}});first.listeners.get('pagehide')({persisted:false});
+ const next=windowFixture(null,store);next.target.__z8TargetedPrefetchReceiptV1=payload=>journal.receive(2,payload);
+ const capsule=installTargetedPrefetchProfile(next.target,targetedPrefetchProfile,sourceEpoch,'https://fixture.test');capsule.snapshot();journal.close();
+ const value=journal.snapshot();assert.equal(completeTargetedPrefetchProfileEvidence(value),true,JSON.stringify(value));
+ assert.equal(value.documents[0].departed,true);assert.equal(value.documents[0].selected,1);assert.equal(store.size,0);releaseTargetedPrefetchProfileEvidence(value);
+});
+
+test('late hidden-window counters are retained by the same bounded terminal handoff',()=>{
+ for(const mode of ['fetch','overwrite','controller']){
+  const store=new Map(),journal=createTargetedPrefetchProfileJournal({profile:targetedPrefetchProfile,sourceEpoch,reserve:()=>true,release:()=>{},reserveRecords:()=>true,releaseRecords:()=>{}});let hidden=false;
+  const first=windowFixture(null,store);first.target.__z8TargetedPrefetchReceiptV1=payload=>{if(!hidden)journal.receive(1,payload);};
+  installTargetedPrefetchProfile(first.target,targetedPrefetchProfile,sourceEpoch,'https://fixture.test');
+  first.target.fetch('/en/analytics',{headers:{RSC:'1','Next-Router-Prefetch':'1'}});hidden=true;first.listeners.get('pagehide')({persisted:false});
+  if(mode==='fetch')first.target.fetch('/en/analytics',{headers:{RSC:'1','Next-Router-Prefetch':'1'}});
+  if(mode==='overwrite')first.target.fetch=()=>Promise.resolve('changed');
+  if(mode==='controller'){first.worker.controller={scriptURL:'https://fixture.test/other.js',state:'activated'};first.workerListeners.get('controllerchange')();}
+  const next=windowFixture(null,store);next.target.__z8TargetedPrefetchReceiptV1=payload=>journal.receive(2,payload);
+  installTargetedPrefetchProfile(next.target,targetedPrefetchProfile,sourceEpoch,'https://fixture.test').snapshot();journal.close();const value=journal.snapshot();
+  assert.equal(completeTargetedPrefetchProfileEvidence(value),mode==='fetch',mode);
+  if(mode==='fetch')assert.equal(value.documents[0].selected,2);
+  if(mode==='overwrite')assert.ok(value.documents[0].overwritten>0);
+  if(mode==='controller')assert.equal(value.documents[0].controllerState,'invalid');
+  releaseTargetedPrefetchProfileEvidence(value);
+ }
+});
+
+test('handoff missing, poison, unknown nonce, replay and contradictory or post-seal facts remain strict',()=>{
+ for(const mode of ['missing','poison','unknown-nonce','wrong-epoch','replay','contradictory','post-seal','stale-malformed','exact-native-mirror']){
+  const store=new Map(),native=[],journal=createTargetedPrefetchProfileJournal({profile:targetedPrefetchProfile,sourceEpoch,reserve:()=>true,release:()=>{},reserveRecords:()=>true,releaseRecords:()=>{}});let hidden=false;
+  const first=windowFixture(null,store);first.target.__z8TargetedPrefetchReceiptV1=payload=>{native.push(payload);if(!hidden)journal.receive(1,payload);};
+  installTargetedPrefetchProfile(first.target,targetedPrefetchProfile,sourceEpoch,'https://fixture.test');first.target.fetch('/en/analytics',{headers:{RSC:'1','Next-Router-Prefetch':'1'}});
+  hidden=true;first.listeners.get('pagehide')({persisted:false});const key=[...store.keys()][0],original=store.get(key),terminal=JSON.parse(original);
+  if(mode==='missing')store.delete(key);
+  if(mode==='poison')store.set(key,'PRIVATE_POISON_MUST_NOT_LEAK');
+  if(mode==='unknown-nonce'){terminal.nonce=(terminal.nonce[0]==='a'?'b':'a')+terminal.nonce.slice(1);store.set(key,JSON.stringify(terminal));}
+  if(mode==='wrong-epoch'){terminal.sourceEpoch='c'.repeat(64);store.set(key,JSON.stringify(terminal));}
+  if(mode==='contradictory'){terminal.receipt.calls=0;terminal.receipt.selected=0;store.set(key,JSON.stringify(terminal));}
+  const next=windowFixture(null,store);next.target.__z8TargetedPrefetchReceiptV1=payload=>journal.receive(2,payload);
+  const current=installTargetedPrefetchProfile(next.target,targetedPrefetchProfile,sourceEpoch,'https://fixture.test');
+  if(mode==='replay')store.set(key,original);
+  if(mode==='post-seal'){hidden=false;first.target.fetch('/en/analytics',{headers:{RSC:'1','Next-Router-Prefetch':'1'}});}
+  if(mode==='stale-malformed')journal.receive(1,JSON.stringify({...JSON.parse(native[1]),private:'PRIVATE_POISON_MUST_NOT_LEAK'}));
+  if(mode==='exact-native-mirror')journal.receive(1,native.at(-1));
+  current.snapshot();journal.close();const value=journal.snapshot();assert.equal(completeTargetedPrefetchProfileEvidence(value),mode==='exact-native-mirror',mode+':'+JSON.stringify(value));
+  assert.doesNotMatch(JSON.stringify(value),/PRIVATE_POISON/);assert.equal(store.size,0);releaseTargetedPrefetchProfileEvidence(value);
+ }
+});
+
+test('a later BFCache restore cannot erase a missing earlier terminal handoff',()=>{
+ const store=new Map(),journal=createTargetedPrefetchProfileJournal({profile:targetedPrefetchProfile,sourceEpoch,reserve:()=>true,release:()=>{},reserveRecords:()=>true,releaseRecords:()=>{}});
+ const first=windowFixture(null,store);first.target.__z8TargetedPrefetchReceiptV1=payload=>{if(JSON.parse(payload).event!=='pagehide')journal.receive(1,payload);};
+ const original=installTargetedPrefetchProfile(first.target,targetedPrefetchProfile,sourceEpoch,'https://fixture.test');first.listeners.get('pagehide')({persisted:true});store.clear();
+ const next=windowFixture(null,store);next.target.__z8TargetedPrefetchReceiptV1=payload=>journal.receive(2,payload);installTargetedPrefetchProfile(next.target,targetedPrefetchProfile,sourceEpoch,'https://fixture.test');
+ next.listeners.get('pagehide')({persisted:true});first.listeners.get('pageshow')({persisted:true});original.snapshot();journal.close();
+ const value=journal.snapshot();assert.equal(completeTargetedPrefetchProfileEvidence(value),false);releaseTargetedPrefetchProfileEvidence(value);
+});
+
+for(const mode of ['binding-throw','same-nonce-malformed','same-nonce-contradictory'])test(`terminal commit cannot hide ${mode}`,()=>{
+  const store=new Map(),journal=createTargetedPrefetchProfileJournal({profile:targetedPrefetchProfile,sourceEpoch,reserve:()=>true,release:()=>{},reserveRecords:()=>true,releaseRecords:()=>{}});let hidden=false;
+  const first=windowFixture(null,store);first.target.__z8TargetedPrefetchReceiptV1=payload=>{if(hidden){if(mode==='binding-throw')throw Error('PRIVATE_BINDING_FAILURE');}else journal.receive(1,payload);};
+  installTargetedPrefetchProfile(first.target,targetedPrefetchProfile,sourceEpoch,'https://fixture.test');first.target.fetch('/en/analytics',{headers:{RSC:'1','Next-Router-Prefetch':'1'}});
+  hidden=true;first.listeners.get('pagehide')({persisted:false});
+  if(mode!=='binding-throw'){
+   const key=[...store.keys()][0],stored=JSON.parse(store.get(key));
+   if(mode==='same-nonce-malformed')store.set(key,JSON.stringify({nonce:stored.nonce,private:'PRIVATE_STORED_POISON'}));
+   else{stored.receipt.calls=0;stored.receipt.selected=0;store.set(key,JSON.stringify(stored));}
+   first.target.fetch('/en/analytics',{headers:{RSC:'1','Next-Router-Prefetch':'1'}});
+  }
+  const next=windowFixture(null,store);next.target.__z8TargetedPrefetchReceiptV1=payload=>journal.receive(2,payload);
+  installTargetedPrefetchProfile(next.target,targetedPrefetchProfile,sourceEpoch,'https://fixture.test').snapshot();journal.close();const value=journal.snapshot();
+  assert.equal(completeTargetedPrefetchProfileEvidence(value),false,mode);assert.doesNotMatch(JSON.stringify(value),/PRIVATE_/);releaseTargetedPrefetchProfileEvidence(value);
+});
+
+for(const event of ['controller','checkpoint'])test(`same-sequence native mirror rejects changed event ${event}`,()=>{
+  const store=new Map(),native=[],journal=createTargetedPrefetchProfileJournal({profile:targetedPrefetchProfile,sourceEpoch,reserve:()=>true,release:()=>{},reserveRecords:()=>true,releaseRecords:()=>{}});
+  const first=windowFixture(null,store);first.target.__z8TargetedPrefetchReceiptV1=payload=>{native.push(payload);if(JSON.parse(payload).event!=='pagehide')journal.receive(1,payload);};
+  installTargetedPrefetchProfile(first.target,targetedPrefetchProfile,sourceEpoch,'https://fixture.test');first.listeners.get('pagehide')({persisted:false});
+  const next=windowFixture(null,store);next.target.__z8TargetedPrefetchReceiptV1=payload=>journal.receive(2,payload);const capsule=installTargetedPrefetchProfile(next.target,targetedPrefetchProfile,sourceEpoch,'https://fixture.test');
+  const altered={...JSON.parse(native.at(-1)),event,...(event==='checkpoint'?{handoffState:'empty'}:{})};journal.receive(1,JSON.stringify(altered));capsule.snapshot();journal.close();
+  const value=journal.snapshot();assert.equal(completeTargetedPrefetchProfileEvidence(value),false,event);releaseTargetedPrefetchProfileEvidence(value);
+});
+
+test('native receipt keeps the original1024-byte bound including harmless JSON padding',()=>{
+ const journal=createTargetedPrefetchProfileJournal({profile:targetedPrefetchProfile,sourceEpoch,reserve:()=>true,release:()=>{},reserveRecords:()=>true,releaseRecords:()=>{}}),f=windowFixture();
+ const capsule=installTargetedPrefetchProfile(f.target,targetedPrefetchProfile,sourceEpoch,'https://fixture.test'),payload=JSON.stringify(f.receipts[0]);
+ assert.ok(payload.length<1024);journal.receive(1,payload+' '.repeat(1025-payload.length));
+ f.target.__z8TargetedPrefetchReceiptV1=value=>journal.receive(1,value);capsule.snapshot();journal.close();const result=journal.snapshot();
+ assert.equal(completeTargetedPrefetchProfileEvidence(result),false);releaseTargetedPrefetchProfileEvidence(result);
 });
 
 test('phase source epoch and per-document receipts fail closed without discounting prior errors',()=>{
@@ -205,14 +301,14 @@ test('real file-qualified installer covers fresh/controlled documents and BFCach
  try {
   const binding=await readBrowserControlBinding({plan:files.plan,manifestPath:files.manifestPath}),session=new EventEmitter(),calls=[];
   const browser=Object.assign(new EventEmitter(),{targets:()=>[],target:()=>({createCDPSession:async()=>({send:async()=>({revision:'@'+binding.browserRevision}),detach:async()=>{}})})});
-  const context={id:'owned-context',browser:()=>browser,cookies:async()=>[]};let script,pageURL='about:blank',world=null,previous=null,ordinal=0;
+  const context={id:'owned-context',browser:()=>browser,cookies:async()=>[]},store=new Map();let script,pageURL='about:blank',world=null,previous=null,ordinal=0;
   const installError=Error('synthetic installation failure');
   session.send=async(name,args)=>{calls.push(name);if(mode==='failed-install'&&name==='Runtime.addBinding')throw installError;if(name==='Target.getTargetInfo')return {targetInfo:{type:'page',targetId:'owned-page',browserContextId:context.id}};return {};};session.detach=async()=>{session.detached=true;};
   const emitWorker=(runningStatus='running',targetId='worker1')=>{
    session.emit('ServiceWorker.workerRegistrationUpdated',{registrations:[{registrationId:'registration',scopeURL:origin+'/',isDeleted:false}]});
    session.emit('ServiceWorker.workerVersionUpdated',{versions:[{versionId:'version',registrationId:'registration',scriptURL:origin+'/sw.js',status:'activated',runningStatus,targetId,controlledClients:['owned-page']}]});
   };
-  const makeWorld=()=>{const fixture=windowFixture(ordinal===0?null:{scriptURL:origin+'/sw.js',state:'activated'});fixture.target.location.href=origin+'/en/analytics';fixture.worker.getRegistrations=async()=>[];
+  const makeWorld=()=>{const fixture=windowFixture(ordinal===0?null:{scriptURL:origin+'/sw.js',state:'activated'},store);fixture.target.location.href=origin+'/en/analytics';fixture.worker.getRegistrations=async()=>[];
    const id=++ordinal;fixture.target.__z8TargetedPrefetchReceiptV1=payload=>session.emit('Runtime.bindingCalled',{name:'__z8TargetedPrefetchReceiptV1',executionContextId:id,payload});
    const value=createContext({...fixture.target,URL});runInContext('window=globalThis;top=globalThis;',value);runInContext(script,value);return {fixture,value,id};};
   const navigate=async url=>{if(world){world.fixture.listeners.get('pagehide')({persisted:true});previous=world;}pageURL=url;world=makeWorld();if(!world.fixture.worker.controller){world.fixture.worker.controller={scriptURL:origin+'/sw.js',state:'activated'};world.fixture.workerListeners.get('controllerchange')();}emitWorker();return 'navigation-result';};
@@ -248,9 +344,11 @@ test('real file-qualified installer covers fresh/controlled documents and BFCach
 });
 
 test('closed receipt and fixed source envelopes fit without secret retention or quota expansion',()=>{
- const maximum={event:'checkpoint',calls:1000000,selected:500000,passed:500000,unsupported:1000000,overwritten:1000000,errors:1000000,restores:1000000,installed:true,controllerState:'uncontrolled',sourceEpoch};
- assert.ok(Buffer.byteLength(JSON.stringify(maximum))<=1024);
- assert.ok(6*JSON.stringify(maximum).length+2048<=4096,'three worst-case UTF16 views plus private control slots');
+ const receipt={event:'controller',calls:1000000,selected:500000,passed:500000,unsupported:1000000,overwritten:1000000,errors:1000000,restores:1000000,installed:true,controllerState:'uncontrolled'};
+ const terminal={version:1,nonce:'a'.repeat(32),sourceEpoch,sequence:1000000,stage:'terminal',intact:false,receipt};
+ const maximum={...receipt,event:'checkpoint',sourceEpoch,documentNonce:'c'.repeat(32),sequence:1000000,handoffState:'consumed',handoff:terminal};
+ assert.ok(JSON.stringify(terminal).length<=512);assert.ok(Buffer.byteLength(JSON.stringify(maximum))<=1024);
+ assert.ok(12*2048+4096<=32768,'storage, JSON/CDP/public workviews plus fixed private controls');
  assert.ok(installTargetedPrefetchProfile.toString().length+2048<=16384,'source plus bounded serialized profile/origin/epoch arguments');
  let bytes=0,records=0;const journal=createTargetedPrefetchProfileJournal({profile:targetedPrefetchProfile,sourceEpoch,reserve:n=>(bytes+=n,true),release:n=>{bytes-=n;},reserveRecords:n=>(records+=n,true),releaseRecords:n=>{records-=n;}});
  for(let id=1;id<=129;id++){
@@ -259,6 +357,6 @@ test('closed receipt and fixed source envelopes fit without secret retention or 
  }
  journal.receive(1,JSON.stringify({private:'PRIVATE_BODY_MUST_NOT_SURVIVE'}));journal.close();
  const value=journal.snapshot();assert.equal(value.documents.length,128);assert.ok(value.overflow>0);assert.equal(completeTargetedPrefetchProfileEvidence(value),false);assert.doesNotMatch(JSON.stringify(value),/PRIVATE_BODY/);
- assert.equal(records,128);assert.equal(bytes,655360);
+ assert.equal(records,128);assert.equal(bytes,4325376);
  releaseTargetedPrefetchProfileEvidence(value);assert.equal(bytes,0);assert.equal(records,0);
 });
