@@ -46,8 +46,8 @@ test('phase source epoch and per-document receipts fail closed without discounti
  const incomplete=structuredClone(journal.snapshot());delete incomplete.documents[0].checkpoint;
  assert.equal(completeTargetedPrefetchProfileEvidence(incomplete,targetedPrefetchProfile),false);
  assert.equal(records,1);assert.ok(bytes>0);
- const value=journal.snapshot();assert.equal(journal.snapshot(),value);const samples=[{browserControlEvidence:{targetedPrefetchProfile:value}}];
- releaseTargetedPrefetchProfileSamples(samples);assert.equal(Object.hasOwn(samples[0].browserControlEvidence,'targetedPrefetchProfile'),false);
+ const value=journal.snapshot();assert.equal(journal.snapshot(),value);const samples=[{browserControlEvidence:{targetedPrefetchProfile:value}},{browserControlEvidence:{targetedPrefetchProfile:value}}];
+ releaseTargetedPrefetchProfileSamples(samples);assert.equal(samples.every(sample=>!Object.hasOwn(sample.browserControlEvidence,'targetedPrefetchProfile')),true);
  assert.equal(releaseTargetedPrefetchProfileEvidence(value),false);assert.equal(bytes,0);assert.equal(records,0);assert.throws(()=>journal.snapshot(),/released/);
 });
 
