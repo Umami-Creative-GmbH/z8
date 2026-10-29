@@ -60,6 +60,7 @@ import {
 } from "./trace-transport.mjs";
 
 const args = process.argv.slice(2);
+export const encodeArtifact = (value) => JSON.stringify(value);
 const option = (name) => args[args.indexOf(name) + 1];
 const fail = (message) => {
 	throw new Error(message);
@@ -600,7 +601,7 @@ async function main() {
 					? "baseline-recorded"
 					: "fulfilled"
 				: "unfulfilled";
-		await writeFile(artifactPath, JSON.stringify(result, null, 2));
+		await writeFile(artifactPath, encodeArtifact(result));
 		console.log(`Baseline acceptance: ${result.acceptance}.`);
 		process.exitCode = result.gates.length ? 1 : 0;
 		return;
@@ -701,7 +702,7 @@ async function main() {
 		];
 		await writeFile(
 			join(out, "baseline.json"),
-			JSON.stringify(result, null, 2),
+			encodeArtifact(result),
 		);
 		console.log(
 			"Baseline acceptance: unfulfilled (application build identity).",
@@ -777,7 +778,7 @@ async function main() {
 									checkpoint = checkpoint.then(() =>
 										writeFile(
 											join(out, "baseline.json"),
-											JSON.stringify(result, null, 2),
+											encodeArtifact(result),
 										),
 									);
 									await checkpoint;
@@ -869,7 +870,7 @@ async function main() {
 					}
 		await writeFile(
 			join(out, "baseline.json"),
-			JSON.stringify(result, null, 2),
+			encodeArtifact(result),
 		);
 		}finally{releaseTargetedPrefetchProfileSamples(result.samples);}
 	}

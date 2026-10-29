@@ -43,7 +43,7 @@ import {
   settledPolicy,
 } from "./settled-resource-observer.mjs";
 const hash = (bytes) => createHash("sha256").update(bytes).digest("hex");
-const encode = (value) => JSON.stringify(value, null, 2) + "\n";
+export const encodeArtifact = (value) => JSON.stringify(value) + "\n";
 const key = (s) => [s.condition, s.route, s.range, s.mode].join("/");
 const metrics = [
   "queryCount",
@@ -1001,7 +1001,7 @@ async function main() {
     artifact.acceptance = artifact.resourceComplete
       ? "settled-resources-recorded"
       : "unfulfilled";
-    await writeFile(options["--artifact"], encode(artifact));
+    await writeFile(options["--artifact"], encodeArtifact(artifact));
     console.log(`Settled resource acceptance: ${artifact.acceptance}.`);
     process.exitCode = artifact.resourceComplete ? 0 : 1;
     return;
@@ -1046,7 +1046,7 @@ async function main() {
     nativeRunCoverage: { complete: false },
   };
   await mkdir(dirname(options["--out"]), { recursive: true });
-  await writeFile(options["--out"], encode(artifact), { flag: "wx" });
+  await writeFile(options["--out"], encodeArtifact(artifact), { flag: "wx" });
   let checkpoint = Promise.resolve();
   await runCompanionCapture({
     collector,
@@ -1093,7 +1093,7 @@ async function main() {
           checkpoint: async (sample) => {
               artifact.samples.push(sample);
               checkpoint = checkpoint.then(() =>
-                writeFile(options["--out"], encode(artifact)),
+                writeFile(options["--out"], encodeArtifact(artifact)),
               );
               await checkpoint;
           },
@@ -1102,7 +1102,7 @@ async function main() {
     },
     checkpoint: async () => {
       await checkpoint;
-      await writeFile(options["--out"], encode(artifact));
+      await writeFile(options["--out"], encodeArtifact(artifact));
     },
   });
   console.log(
