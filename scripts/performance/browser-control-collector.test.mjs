@@ -2105,3 +2105,42 @@ test("capture refusal distinguishes actual shared-parent usage and typed record 
 test("canonical capture rejection is identified without leaking a value and remains within the existing diagnostic reservation",async()=>{
  const {createMixedTechnicalOwner,observeMixedTechnicalCapture}=await import("./mixed-technical-gzip.mjs"),proxy=createProxyControlCollector({contextId,origin});proxy.installed();const owner=createMixedTechnicalOwner({contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});let seen;assert.throws(()=>observeMixedTechnicalCapture(()=>owner.capture(()=>({nativeContext:{contextId},PRIVATE_INVALID_NUMBER:NaN})),value=>{seen=value;}));assert.equal(seen.innerStage,"canonical-measure");assert.equal(seen.refusal,null);assert.doesNotMatch(JSON.stringify(seen),/PRIVATE_INVALID_NUMBER/);assert.ok(Buffer.byteLength(JSON.stringify(seen))*8+2048<32768);assert.equal(owner.stats().retainedBytes,0);owner.close();
 });
+
+import { targetedPrefetchProfile, knownTargetedPrefetchProfile } from "./fixture-browser.mjs";
+import { matchingBrowserControlBinding } from "./control-cancellation-evidence.mjs";
+
+function snapshotProfileBinding(compiledBinding) {
+ const collector=createBrowserControlCollector({contextId,origin,compiledBinding});
+ collector.installed();collector.beginMeasurement();collector.endMeasurement();collector.endScope();
+ return collector.snapshot();
+}
+
+test('public snapshot preserves the exact optional matched profile in measured and all-phase authority',()=>{
+ const build='b'.repeat(40),binding=testBrowserBinding(build,{...testBrowserMetadata(),targetedPrefetchProfile:structuredClone(targetedPrefetchProfile)});
+ const snapshot=snapshotProfileBinding(binding);
+ for(const scope of ['measured','allPhase']){
+  const projected=snapshot[scope].nativeContext.binding;
+  assert.deepEqual(projected.targetedPrefetchProfile,targetedPrefetchProfile);
+  assert.equal(matchingBrowserControlBinding({build,browserControl:binding},projected),true);
+ }
+});
+
+test('public snapshot keeps a legacy authority without the optional matched profile absent',()=>{
+ const build='b'.repeat(40),binding=testBrowserBinding(build),snapshot=snapshotProfileBinding(binding);
+ for(const scope of ['measured','allPhase']){
+  const projected=snapshot[scope].nativeContext.binding;
+  assert.equal(Object.hasOwn(projected,'targetedPrefetchProfile'),false);
+  assert.equal(matchingBrowserControlBinding({build,browserControl:binding},projected),true);
+ }
+});
+
+test('public snapshot preserves malformed profile data without inventing a valid matching authority',()=>{
+ const build='b'.repeat(40),malformed={...targetedPrefetchProfile,contractSha256:'invalid'},binding=testBrowserBinding(build,{...testBrowserMetadata(),targetedPrefetchProfile:malformed});
+ const expected=testBrowserBinding(build,{...testBrowserMetadata(),targetedPrefetchProfile:structuredClone(targetedPrefetchProfile)}),snapshot=snapshotProfileBinding(binding);
+ for(const scope of ['measured','allPhase']){
+  const projected=snapshot[scope].nativeContext.binding;
+  assert.deepEqual(projected.targetedPrefetchProfile,malformed);
+  assert.equal(knownTargetedPrefetchProfile(projected.targetedPrefetchProfile),false);
+  assert.equal(matchingBrowserControlBinding({build,browserControl:expected},projected),false);
+ }
+});
