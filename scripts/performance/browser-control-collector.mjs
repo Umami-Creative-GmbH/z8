@@ -333,7 +333,7 @@ export async function captureNativeLaunchMetadata(browser) {
 		return true;
 	};
 	const argumentsKnown = valid(argumentList), recordedKnown = valid(recorded);
-	const normalized = argumentsKnown ? argumentList.filter(arg => !arg.startsWith("--user-data-dir=") && !arg.startsWith("--remote-debugging-port=")) : null;
+	const normalized = argumentsKnown ? argumentList.filter(arg => !arg.startsWith("--user-data-dir=") && !arg.startsWith("--remote-debugging-port=") && !arg.startsWith("--log-net-log=")) : null;
 	const profiles = argumentsKnown ? argumentList.filter(arg => arg.startsWith("--user-data-dir=")) : [];
 	const profileArgumentSha256 = profiles.length === 1 ? sha(profiles[0].slice("--user-data-dir=".length)) : null;
 	return { protocol: "owned-native-launch-metadata-v1", processKnown: typeof child?.spawnfile === "string" && argumentsKnown,

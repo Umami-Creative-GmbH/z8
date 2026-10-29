@@ -1,5 +1,6 @@
 /** Only the fresh profile owned by this launch is configured; app network requests remain observable. */
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile, lstat } from "node:fs/promises";
+import { createReadStream } from "node:fs";
 import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -366,9 +367,37 @@ export function fixtureTransportIsComplete(snapshot) {
 	return true;
 }
 
+// Admission only: the rotating Chrome event budget is not a whole-file hard cap.
+const nativeConnectionLogAdmissionBytes = 16 * 1024 * 1024;
+async function retainNativeConnectionLog(reference) {
+	reference.bytes = null;
+	reference.sha256 = null;
+	try {
+		const before = await lstat(reference.file);
+		reference.bytes = before.size;
+		if (!before.isFile() || before.isSymbolicLink()) { reference.reason = "unavailable"; return; }
+		if (before.size > nativeConnectionLogAdmissionBytes) { reference.reason = "admission-exceeded"; return; }
+		const hash = createHash("sha256");
+		let bytes = 0;
+		for await (const chunk of createReadStream(reference.file, { end: nativeConnectionLogAdmissionBytes })) {
+			bytes += chunk.length;
+			if (bytes > nativeConnectionLogAdmissionBytes) { reference.reason = "admission-exceeded"; return; }
+			hash.update(chunk);
+		}
+		const after = await lstat(reference.file);
+		if (bytes !== before.size || after.size !== before.size || after.mtimeMs !== before.mtimeMs) { reference.reason = "changed-during-read"; return; }
+		reference.sha256 = hash.digest("hex");
+		reference.reason = "retained-unparsed";
+	} catch (error) {
+		reference.reason = error?.code === "ENOENT" ? "missing" : "unavailable";
+	}
+}
+
 export async function launchFixtureBrowser(puppeteer, executablePath) {
 	const profile = await mkdtemp(join(tmpdir(), "z8-performance-chrome-"));
 	try {
+		const logDirectory = await mkdtemp(join(tmpdir(), "z8-performance-netlog-"));
+		const nativeConnectionLog = { file: join(logDirectory, "netlog.json"), status: "UNKNOWN", reason: "recording", bytes: null, sha256: null };
 		await mkdir(join(profile, "Default"));
 		await writeFile(
 			join(profile, "Default", "Preferences"),
@@ -378,10 +407,20 @@ export async function launchFixtureBrowser(puppeteer, executablePath) {
 			executablePath,
 			headless: true,
 			userDataDir: profile,
-			args: ["--disable-features=AutofillServerCommunication"],
+			args: ["--disable-features=AutofillServerCommunication", "--net-log-capture-mode=Default", "--net-log-max-size-mb=8", `--log-net-log=${nativeConnectionLog.file}`],
 		});
+		const actualArguments = browser.process()?.spawnargs?.slice(1);
+		const expectedLogArguments = ["--net-log-capture-mode=Default", "--net-log-max-size-mb=8", `--log-net-log=${nativeConnectionLog.file}`];
+		if (!Array.isArray(actualArguments) || !expectedLogArguments.every(expected => {
+			const key = expected.slice(0, expected.indexOf("="));
+			const matches = actualArguments.filter(argument => typeof argument === "string" && (argument === key || argument.startsWith(`${key}=`)));
+			return matches.length === 1 && matches[0] === expected;
+		})) {
+			try { await browser.close(); } finally { throw Error("Native connection log launch configuration mismatch."); }
+		}
 		browser.fixtureLaunchPolicy = {
 			policy: fixtureBrowserPolicy,
+			nativeConnectionLog,
 			profileDirectorySha256: createHash("sha256").update(profile).digest("hex"),
 			headless: true,
 			preferences: structuredClone(preferences),
@@ -391,7 +430,8 @@ export async function launchFixtureBrowser(puppeteer, executablePath) {
 				.filter(
 					(argument) =>
 						!argument.startsWith("--user-data-dir=") &&
-						!argument.startsWith("--remote-debugging-port="),
+						!argument.startsWith("--remote-debugging-port=") &&
+						!argument.startsWith("--log-net-log="),
 				),
 			browserVersion: await browser.version(),
 		};
@@ -400,6 +440,7 @@ export async function launchFixtureBrowser(puppeteer, executablePath) {
 			try {
 				await close();
 			} finally {
+				await retainNativeConnectionLog(nativeConnectionLog);
 				await rm(profile, { recursive: true, force: true });
 			}
 		};

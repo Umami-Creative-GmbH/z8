@@ -570,7 +570,7 @@ test("request-shape tap real loopback forwarding stays byte header and status eq
  }finally{await transport.close();backend.closeAllConnections();await new Promise(done=>backend.close(done));}
 });
 import { access, readFile, writeFile, rm, truncate } from "node:fs/promises";
-import { dirname, relative, isAbsolute, join } from "node:path";
+import { dirname, relative, isAbsolute } from "node:path";
 import { launchFixtureBrowser } from "./fixture-browser.mjs";
 
 test("native connection log mock retains private diagnostics outside the deleted browser profile", async () => {
@@ -596,10 +596,70 @@ test("native connection log mock retains private diagnostics outside the deleted
   assert.deepEqual(await readFile(logFile),bytes);
   await assert.rejects(access(options.userDataDir));
   assert.equal(browser.fixtureLaunchPolicy.nativeConnectionLog.reason,'retained-unparsed');
-  assert.equal(browser.fixtureLaunchPolicy.nativeConnectionLog.bytes,26);
+  assert.equal(browser.fixtureLaunchPolicy.nativeConnectionLog.bytes,28);
   assert.equal(browser.fixtureLaunchPolicy.nativeConnectionLog.sha256,createHash('sha256').update(bytes).digest('hex'));
  } finally {
   if(browser)await browser.close();
   if(logFile)await rm(dirname(logFile),{recursive:true,force:true});
  }
+});
+
+for (const mode of ['missing','oversize','unavailable']) test(`native connection log mock keeps ${mode} diagnostics UNKNOWN without a hash`, async () => {
+ let logFile, options, browser;
+ const puppeteer={async launch(value){options=value;logFile=value.args.find(arg=>arg.startsWith('--log-net-log=')).slice(14);return {
+  process:()=>({spawnargs:['chrome',...value.args]}),version:async()=> 'Chrome/156.0.0.0',async close(){
+   if(mode==='oversize'){await writeFile(logFile,'');await truncate(logFile,16*1024*1024+1);}
+   if(mode==='unavailable')await import('node:fs/promises').then(fs=>fs.mkdir(logFile,{recursive:true}));
+  }
+ };}};
+ try{
+  browser=await launchFixtureBrowser(puppeteer,'MOCK_CHROME');await browser.close();
+  const reference=browser.fixtureLaunchPolicy.nativeConnectionLog;
+  assert.equal(reference.status,'UNKNOWN');assert.equal(reference.sha256,null);
+  assert.equal(reference.reason,mode==='oversize'?'admission-exceeded':mode);
+  if(mode==='missing')assert.equal(reference.bytes,null);
+  if(mode==='oversize')assert.equal(reference.bytes,16777217);
+  await assert.rejects(access(options.userDataDir));
+ }finally{if(logFile)await rm(dirname(logFile),{recursive:true,force:true});}
+});
+
+test('native connection log mock retains bytes when the original browser close rejects', async()=>{
+ const failure=new Error('MOCK_CLOSE_FAILURE');let logFile,options,browser;
+ try{
+  browser=await launchFixtureBrowser({async launch(value){options=value;logFile=value.args.find(arg=>arg.startsWith('--log-net-log=')).slice(14);return {
+   process:()=>({spawnargs:['chrome',...value.args]}),version:async()=> 'Chrome/156.0.0.0',async close(){await writeFile(logFile,'NOT_PARSED_PRIVATE_LOG');throw failure;}
+  };}},'MOCK_CHROME');
+  await assert.rejects(browser.close(),error=>error===failure);
+  assert.equal(browser.fixtureLaunchPolicy.nativeConnectionLog.status,'UNKNOWN');
+  assert.equal(browser.fixtureLaunchPolicy.nativeConnectionLog.reason,'retained-unparsed');
+  assert.equal(await readFile(logFile,'utf8'),'NOT_PARSED_PRIVATE_LOG');
+  assert.doesNotMatch(JSON.stringify(browser.fixtureLaunchPolicy.arguments),/NOT_PARSED_PRIVATE_LOG|z8-performance-netlog/);
+  await assert.rejects(access(options.userDataDir));
+ }finally{if(logFile)await rm(dirname(logFile),{recursive:true,force:true});}
+});
+
+for(const mutation of ['sensitive','missing-budget','foreign-path','duplicate-mode']) test(`native connection log mock refuses ${mutation} actual launch arguments before returning a browser`,async()=>{
+ let logFile,profile,closes=0;
+ try{
+  await assert.rejects(launchFixtureBrowser({async launch(options){profile=options.userDataDir;logFile=options.args.find(arg=>arg.startsWith('--log-net-log=')).slice(14);let args=[...options.args];
+   if(mutation==='sensitive')args=args.map(arg=>arg==='--net-log-capture-mode=Default'?'--net-log-capture-mode=IncludeSensitive':arg);
+   if(mutation==='missing-budget')args=args.filter(arg=>!arg.startsWith('--net-log-max-size-mb='));
+   if(mutation==='foreign-path')args=args.map(arg=>arg.startsWith('--log-net-log=')?'--log-net-log=PRIVATE_WRONG_PATH':arg);
+   if(mutation==='duplicate-mode')args.push('--net-log-capture-mode=Everything');
+   return {process:()=>({spawnargs:['chrome',...args]}),version:async()=> 'Chrome/156.0.0.0',async close(){closes++;}};
+  }},'MOCK_CHROME'),error=>{assert.equal(error.message,'Native connection log launch configuration mismatch.');assert.doesNotMatch(error.message,/PRIVATE_WRONG_PATH|z8-performance-netlog/);return true;});
+  assert.equal(closes,1);await assert.rejects(access(profile));
+ }finally{if(logFile)await rm(dirname(logFile),{recursive:true,force:true});}
+});
+
+test('native connection log mock forgets an earlier hash when a later close finds no file',async()=>{
+ let logFile,browser,closes=0;
+ try{
+  browser=await launchFixtureBrowser({async launch(options){logFile=options.args.find(arg=>arg.startsWith('--log-net-log=')).slice(14);return {
+   process:()=>({spawnargs:['chrome',...options.args]}),version:async()=> 'Chrome/156.0.0.0',async close(){if(++closes===1)await writeFile(logFile,'private');else await rm(logFile,{force:true});}
+  };}},'MOCK_CHROME');
+  await browser.close();assert.match(browser.fixtureLaunchPolicy.nativeConnectionLog.sha256,/^[a-f0-9]{64}$/);
+  await browser.close();assert.equal(browser.fixtureLaunchPolicy.nativeConnectionLog.reason,'missing');
+  assert.equal(browser.fixtureLaunchPolicy.nativeConnectionLog.sha256,null);assert.equal(browser.fixtureLaunchPolicy.nativeConnectionLog.bytes,null);
+ }finally{if(logFile)await rm(dirname(logFile),{recursive:true,force:true});}
 });
