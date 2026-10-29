@@ -666,7 +666,8 @@ test("mixed guard orchestration awaits every context then rejects errors appeari
 
 test("mixed snapshot consumption forgets exported progress before releasing every observer",async()=>{
  const {releaseMixedProgressSnapshots}=await import("./mixed-load-observation.mjs");
- const order=[],transports=[{contextId:"a",browserControlEvidence:{mixedProgress:{proof:"a"},other:"kept"}},{contextId:"b",browserControlEvidence:{mixedProgress:{proof:"b"}}}];
- const sentinel=Error("release failed"),opened=transports.map((row,index)=>({browserObservation:{releaseMixedProgressSnapshot(){assert.equal(Object.hasOwn(row.browserControlEvidence,"mixedProgress"),false);order.push(index);if(index===0)throw sentinel;}}}));
+ const order=[],profiles=[],transports=[{contextId:"a",browserControlEvidence:{mixedProgress:{proof:"a"},other:"kept"}},{contextId:"b",browserControlEvidence:{mixedProgress:{proof:"b"}}}];
+ const sentinel=Error("release failed"),opened=transports.map((row,index)=>({browserObservation:{releaseMixedProgressSnapshot(){assert.equal(Object.hasOwn(row.browserControlEvidence,"mixedProgress"),false);order.push(index);if(index===0)throw sentinel;},releaseTargetedPrefetchProfile(){profiles.push(index);}}}));
  assert.throws(()=>releaseMixedProgressSnapshots(opened,transports),error=>error===sentinel);assert.deepEqual(order,[0,1]);assert.equal(transports[0].browserControlEvidence.other,"kept");
+ assert.deepEqual(profiles,[0,1]);
 });

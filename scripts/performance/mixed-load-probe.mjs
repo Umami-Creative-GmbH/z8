@@ -467,9 +467,10 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 	const protocolSources=await mixedProtocolIdentity();
 	if (!browserControlPath) throw Error("Explicit browser control metadata file is required.");
 	const metadataBytes = await readFile(browserControlPath);
+	const metadata=JSON.parse(metadataBytes.toString("utf8"));
 	const { origin, fixture } = await readFixture(directory);
 	let browserControlBinding = await readBrowserControlBinding({ plan: { origin,phase,conditions:[{locale:mixedBrowserCondition.locale}],routes:analytics.map(({path})=>({path})),runtime: { build: sourceCommit,
-		browserControl: JSON.parse(metadataBytes.toString("utf8")) } }, manifestPath });
+		browserControl: metadata,...(metadata.targetedPrefetchProfile?{targetedPrefetchProfile:metadata.targetedPrefetchProfile}:{}) } }, manifestPath });
 	const auth = await json(join(directory, "auth-private.json"));
 	const control =
 		collectorPath || join(directory, "observer-v2/collector-control.json");
@@ -856,7 +857,7 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 	try{
 	const completeTransport =
 		transports.length === 4 && transports.every((row) => opened.find(item=>item.contextId===row.contextId)?.browserObservation?.validateMixedProgress(()=>row.browserControlEvidence?.mixedProgress?.protocol === "mixed-native-progress-observations-v1" && mixedTransportIsComplete(row) && cleanApplicationEvidence(row.traceTransport.applicationEvidence) &&
-			cleanBrowserContextEvidence(row.contextId, row.browserControlEvidence, row.rawBrowserFailedRequests,{runtime:{build:sourceCommit,browserControl:browserControlBinding},protocolSources,origin}))===true);
+			cleanBrowserContextEvidence(row.contextId, row.browserControlEvidence, row.rawBrowserFailedRequests,{runtime:{build:sourceCommit,browserControl:browserControlBinding,...(metadata.targetedPrefetchProfile?{targetedPrefetchProfile:metadata.targetedPrefetchProfile}:{})},protocolSources,origin}))===true);
 	const completeCoverage =
 		nativeRunCoverage.complete === true &&
 		completeTransport &&
@@ -870,6 +871,7 @@ async function run(directory, artifactApp, sourceCommit, collectorPath, runId, p
 	const report = {
 		...plan(phase),
 		browserControl: browserControlBinding,
+		...(metadata.targetedPrefetchProfile?{targetedPrefetchProfile:metadata.targetedPrefetchProfile}:{}),
 		protocolSources,
 		browserControlMetadataFileSha256: createHash("sha256").update(metadataBytes).digest("hex"),
 		runId,
