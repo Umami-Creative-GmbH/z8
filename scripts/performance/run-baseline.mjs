@@ -61,6 +61,7 @@ import {
 
 const args = process.argv.slice(2);
 export const encodeArtifact = (value) => JSON.stringify(value);
+export const primaryReadinessPolicy = "visible-content-and-observed-script-completion-v1";
 const option = (name) => args[args.indexOf(name) + 1];
 const fail = (message) => {
 	throw new Error(message);
@@ -637,6 +638,7 @@ async function main() {
 		planSha256: createHash("sha256").update(planBytes).digest("hex"),
 		protocol: await primaryProtocolIdentity(),
 		runtime: {
+			primaryReadinessPolicy,
 			mode: plan.runtime.mode,
 			collectorProtocol: plan.runtime.collectorProtocol ?? null,
 			traceTransport: plan.runtime.traceTransport ?? "page-interception-v1",
@@ -673,11 +675,11 @@ async function main() {
 		summaries: [],
 		missingMetrics: backendMetrics,
 		limitations: [
-			"Browser usable-content observations measure DOM readiness; they are not paint timings.",
+			"Browser usable-content observations include visible content and observed Script completion; first-visible content is separate and neither is a paint timing.",
 			"Fresh-context first documents have cold browser storage, not necessarily cold server/runtime caches.",
 			"LCP is browser-native for first documents. Largest observed event duration is reported separately; full page-lifetime INP is unavailable.",
 			"Backend metrics require correlated request/transaction telemetry; browser observations do not substitute for them.",
-			"Network counts and completed transfer sizes stop at usable-content and clock readiness; pending resource kinds are explicit, and priming/restoration requests are excluded.",
+			"Network counts and completed transfer sizes stop after visible content, clock readiness and observed Script completion under the original absolute measured deadline; pending other resource kinds are explicit, and priming/restoration requests are excluded.",
 		],
 	};
 	try {
@@ -932,6 +934,8 @@ export async function measure(
 		censored: false,
 		notApplicableBrowserMetrics: [],
 		usableContentMs: null,
+		firstVisibleContentMs: null,
+		primaryReadinessPolicy,
 		clockReadyMs: null,
 		lcpMs: null,
 		inpMs: null,
@@ -973,6 +977,12 @@ export async function measure(
 	let client;
 	const pendingRequests = new Set();
 	const requests = new Map();
+	let scriptReadyChanged;
+	let scriptReadinessError = false;
+	const pendingScripts = () => {
+		for (const id of pendingRequests) if (requests.get(id)?.type === "Script") return true;
+		return false;
+	};
 	let requestTraceId = prerequisiteTraceId;
 	let bindings;
 	let measurementStart;
@@ -1219,19 +1229,23 @@ export async function measure(
 				start: event.timestamp,
 				type: event.type,
 			});
+			scriptReadyChanged?.();
 		});
 		client.on("Network.responseReceived", (event) => {
 			const request = requests.get(event.requestId);
 			if (request) {
+				if (request.type === "Script" && event.type !== "Script") scriptReadinessError = true;
 				request.type = event.type;
 				request.rsc = event.response.mimeType?.includes("text/x-component");
 			}
 			if (event.response.fromDiskCache || event.response.fromServiceWorker)
 				sample.browserCacheHits++;
+			scriptReadyChanged?.();
 		});
 		client.on("Network.loadingFinished", (event) => {
 			const request = requests.get(event.requestId);
 			if (request) {
+				if (request.type === "Script" && (!Number.isFinite(event.encodedDataLength) || event.encodedDataLength < 0 || !Number.isFinite(event.timestamp) || event.timestamp < request.start)) scriptReadinessError = true;
 				pendingRequests.delete(event.requestId);
 				sample.totalBytes += event.encodedDataLength;
 				sample.requestDurationMs += (event.timestamp - request.start) * 1000;
@@ -1239,13 +1253,16 @@ export async function measure(
 					sample.javascriptBytes += event.encodedDataLength;
 				if (request.rsc) sample.rscBytes += event.encodedDataLength;
 			}
+			scriptReadyChanged?.();
 		});
 		client.on("Network.loadingFailed", (event) => {
 			if (requests.has(event.requestId)) {
+				if (requests.get(event.requestId).type === "Script" || event.type === "Script") scriptReadinessError = true;
 				pendingRequests.delete(event.requestId);
 				sample.failedRequests++;
 				observeBrowser("recordMeasuredFailure", event.requestId);
 			}
+			scriptReadyChanged?.();
 		});
 		requestTraceId = traceId;
 		const start = performance.now();
@@ -1346,7 +1363,7 @@ export async function measure(
 			await verify();
 			await ready();
 		}
-		sample.usableContentMs = performance.now() - start;
+		sample.firstVisibleContentMs = performance.now() - start;
 		sample.notificationPermission = await page.evaluate(
 			() => Notification.permission,
 		);
@@ -1369,6 +1386,22 @@ export async function measure(
 						0,
 					),
 			);
+		stage = "script-readiness";
+		const scriptDeadline = start + (plan.timeoutMs ?? 30000);
+		const scriptTimeout = () => Object.assign(Error("Observed Script readiness exceeded the measured deadline."), { name: "TimeoutError" });
+		const scriptFailure = () => Error("Observed Script transfer failed or has unknown completion.");
+		if (scriptReadinessError) throw scriptFailure();
+		if (performance.now() >= scriptDeadline) throw scriptTimeout();
+		if (pendingScripts()) await new Promise((resolve, reject) => {
+			const finish = error => { clearTimeout(timer); scriptReadyChanged = undefined; error ? reject(error) : resolve(); };
+			const timer = setTimeout(() => finish(scriptTimeout()), scriptDeadline - performance.now());
+			scriptReadyChanged = () => {
+				if (scriptReadinessError) finish(scriptFailure());
+				else if (performance.now() >= scriptDeadline) finish(scriptTimeout());
+				else if (!pendingScripts()) finish();
+			};
+		});
+		sample.usableContentMs = performance.now() - start;
 	} catch (error) {
 		sample.failed = true;
 		sample.notificationPermission =
