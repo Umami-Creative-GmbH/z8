@@ -28,6 +28,7 @@ import {
   fixtureTransportIsComplete,
   initializeFixtureBrowserContext,
   launchFixtureBrowser,
+  releaseTargetedPrefetchProfileSamples,
 } from "./fixture-browser.mjs";
 import {
   clickVisible,
@@ -153,7 +154,7 @@ export async function runCompanionCapture({
       artifact.nativeRunCoverage = { complete: false };
     }
     if (!closed) artifact.nativeRunCoverage.complete = false;
-    await checkpoint();
+    try{await checkpoint();}finally{releaseTargetedPrefetchProfileSamples(artifact.samples);}
   }
 }
 export function settledCohorts(plan) {

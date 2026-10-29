@@ -2,6 +2,7 @@
 import { createHash } from "node:crypto";
 const mixedOriginDigest=origin=>typeof origin==="string"?createHash("sha256").update(origin).digest("hex"):null;
 import { actionResultPolicy } from "./action-result-observer.mjs";
+import { knownTargetedPrefetchProfile, targetedPrefetchSourceEpoch, completeTargetedPrefetchProfileEvidence } from "./fixture-browser.mjs";
 import { validateMixedProgressObservations, cleanBrowserFailureEvidence, completeAllPhaseBrowserObservation, controlCancellationPolicy, matchingBrowserControlBinding, nativeEvidenceAuthorityMatches } from "./control-cancellation-evidence.mjs";
 
 export const cleanObservationPolicy = Object.freeze({
@@ -90,6 +91,13 @@ export function cleanBrowserVisitEvidence(sample,authority) {
 }
 
 export function cleanBrowserContextEvidence(id, evidence, rawFailedRequests,authority) {
+	const profile=authority?.runtime?.targetedPrefetchProfile;
+	if(profile!==undefined || evidence?.targetedPrefetchProfile!==undefined){
+		if(!knownTargetedPrefetchProfile(profile) || !completeTargetedPrefetchProfileEvidence(evidence?.targetedPrefetchProfile,profile))return false;
+		const sources=evidence?.allPhase?.nativeContext?.environment?.endRead;
+		const context=evidence?.allPhase?.nativeContext;
+		if(sources?.publicSourcesMatch!==true || evidence.targetedPrefetchProfile.sourceEpoch!==targetedPrefetchSourceEpoch(context?.environment?.servingPublicSources,context?.binding?.nativePublicSources))return false;
+	}
 	if(!nativeEvidenceAuthorityMatches(evidence,authority?.runtime,authority?.protocolSources,authority?.origin)) return false;
 	if(evidence?.mixedProgress!==undefined){
   const context=evidence.measured?.nativeContext;

@@ -43,6 +43,7 @@ import {
 	fixtureTransportIsComplete,
 	initializeFixtureBrowserContext,
 	launchFixtureBrowser,
+	releaseTargetedPrefetchProfileSamples,
 } from "./fixture-browser.mjs";
 import {
 	clickVisible,
@@ -637,6 +638,7 @@ async function main() {
 			observer: plan.runtime.observer ?? null,
 			redisCommandTimeoutMs: plan.runtime.redisCommandTimeoutMs ?? null,
 			toolingBuild: plan.runtime.toolingBuild ?? null,
+			...(plan.runtime.targetedPrefetchProfile?{targetedPrefetchProfile:plan.runtime.targetedPrefetchProfile}:{}),
 			poolMax: plan.runtime.poolMax ?? null,
 			poolAcquisitionTimeoutMs: plan.runtime.poolAcquisitionTimeoutMs ?? null,
 			images: plan.runtime.images ?? [],
@@ -770,6 +772,7 @@ async function main() {
 			}
 		}
 	} finally {
+		try{
 		await browser.close();
 		if (nativeBefore) {
 			try {
@@ -852,6 +855,7 @@ async function main() {
 			join(out, "baseline.json"),
 			JSON.stringify(result, null, 2),
 		);
+		}finally{releaseTargetedPrefetchProfileSamples(result.samples);}
 	}
 	console.log(
 		"Browser samples saved. Acceptance remains unfulfilled until backend telemetry, budgets and fixture journeys are verified.",

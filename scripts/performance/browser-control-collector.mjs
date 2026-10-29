@@ -31,6 +31,7 @@ import {
 } from "./control-cancellation-evidence.mjs";
 import { createProxyHeaderCensus, proxyHeaderPrefix } from "./proxy-header-census.mjs";
 import { projectCachedCdpText } from "./cdp-cached-text-projection.mjs";
+import { targetedPrefetchProfile, knownTargetedPrefetchProfile, targetedPrefetchSourceEpoch, installTargetedPrefetchProfile, createTargetedPrefetchProfileJournal, createTargetedPrefetchWorkerWitness } from "./fixture-browser.mjs";
 import { readLegacyClockReadinessSource } from "./legacy-clock-readiness.mjs";
 import { parseInertDateRangeRequest } from "./inert-date-range-request.mjs";
 import { temporaryValueObservation, knownTemporaryValueObservation, knownOriginalTeamSourceConfiguration, readOriginalTeamSourceQualification,
@@ -115,6 +116,7 @@ export function renderedPathSourceFacts({response,compiledRouting,origin,request
 }
 // Private file locator only; all actual source/hash observations are serialized, not stored here.
 const nativeManifestLocators = new WeakMap();
+const targetedPrefetchBindings = new WeakMap();
 const compiledRoutingSources = new WeakMap();
 const requestShapeBindings = new WeakMap();
 const legacyClockBindings = new WeakMap();
@@ -401,6 +403,7 @@ export async function captureNativeEndMetadata({ page, binding, origin, deadline
 
 	const tasks = [Promise.resolve().then(async () => {
 		const raw = await page.evaluate(async () => {
+			globalThis.__z8TargetedPrefetchProfileV1?.snapshot();
 			const serviceWorker = globalThis.navigator?.serviceWorker;
 			if (!serviceWorker || typeof serviceWorker.getRegistrations !== "function") return { available: false };
 			const describe = worker => worker === null ? null : { scriptURL: worker?.scriptURL, state: worker?.state };
@@ -448,6 +451,11 @@ export async function readBrowserControlBinding({ plan, manifestPath }) {
 		throw Error("Missing temporary-value observation condition or qualified Original configuration.");
 	const teamAnnualAction=await readTeamAnnualActionSource(manifestPath,plan.runtime.build,metadata.compiledManifestSha256);
 	const binding = Object.freeze({ ...metadata, compiledBuild: plan.runtime.build, manifestVerified: true, browserVerified: false,servingPublicSources,teamAnnualAction });
+	if (Object.hasOwn(plan.runtime,"targetedPrefetchProfile") || Object.hasOwn(metadata,"targetedPrefetchProfile")) {
+		if (!knownTargetedPrefetchProfile(plan.runtime.targetedPrefetchProfile) || !knownTargetedPrefetchProfile(metadata.targetedPrefetchProfile) || manifest.config.experimental.exposeTestingApiInProductionBuild === true || !metadata.nativePublicSources || !servingPublicSources.servingRootKnown || servingPublicSources.files.some(row=>!row.known))
+			throw Error("Missing matched targeted-prefetch profile or qualified serving source epoch.");
+		targetedPrefetchBindings.set(binding,targetedPrefetchSourceEpoch(servingPublicSources,metadata.nativePublicSources));
+	}
 	annualTeamBindings.set(binding,teamAnnualAction);
 	originalTeamPlans.set(binding, structuredClone(plan));
 	if(metadata.originalTeamSource!==null) {
@@ -497,6 +505,7 @@ export async function verifyBrowserControlBrowser(browser, binding) {
 			throw Error("Actual browser revision differs from qualified protocol control source.");
 		const verified = Object.freeze({ ...binding, browserVerified: true, nativeLaunchMetadata: await captureNativeLaunchMetadata(browser) });
 		if (nativeManifestLocators.has(binding)) nativeManifestLocators.set(verified,nativeManifestLocators.get(binding));
+		if (targetedPrefetchBindings.has(binding)) targetedPrefetchBindings.set(verified,targetedPrefetchBindings.get(binding));
 		if(compiledRoutingSources.has(binding))compiledRoutingSources.set(verified,compiledRoutingSources.get(binding));
 		if(annualTeamBindings.has(binding))annualTeamBindings.set(verified,annualTeamBindings.get(binding));
 		if(requestShapeBindings.has(binding))requestShapeBindings.set(verified,requestShapeBindings.get(binding));
@@ -1485,6 +1494,10 @@ export async function installBrowserControlCollector({
 	operatorFile,
 }) {
 	const session = await page.createCDPSession();
+	const profileEpoch=targetedPrefetchBindings.get(environmentBinding);
+	let profileJournal=null,profileBindingListener=null,profileWorkerWitness=null,profileClosed=false;
+	const profileListeners=new Map();
+	try{
 	const principalEpoch = createPrincipalEpochObserver(contextId, { origin });
 	let workerObservation, endMetadata = null, generation = 0, documentAcknowledgment;
 	const qualification=originalTeamBindings.get(environmentBinding);
@@ -1508,6 +1521,23 @@ export async function installBrowserControlCollector({
 		compiledCachedNavigations,
 		compiledBinding:environmentBinding,
 	});
+	if(environmentBinding?.targetedPrefetchProfile && !profileEpoch)throw Error("Targeted-prefetch profile lacks private source admission.");
+	if(profileEpoch){
+		const {targetInfo}=await session.send("Target.getTargetInfo");
+		if(targetInfo?.type!=="page" || typeof targetInfo.targetId!=="string" || targetInfo.browserContextId!==context.id || page.url()!=="about:blank")throw Error("Targeted-prefetch profile requires the owned fresh page/context target.");
+		profileWorkerWitness=createTargetedPrefetchWorkerWitness({origin,targetId:targetInfo.targetId});
+		profileJournal=createTargetedPrefetchProfileJournal({profile:targetedPrefetchProfile,sourceEpoch:profileEpoch,workerWitness:profileWorkerWitness,
+			reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});
+		for(const [name,listener] of [["ServiceWorker.workerRegistrationUpdated",profileWorkerWitness.registration],["ServiceWorker.workerVersionUpdated",profileWorkerWitness.version],["Inspector.detached",()=>profileJournal.error()]]){session.on(name,listener);profileListeners.set(name,listener);}
+		await session.send("ServiceWorker.enable");
+		profileBindingListener=value=>{if(value.name==="__z8TargetedPrefetchReceiptV1")profileJournal.receive(value.executionContextId,value.payload);};
+		session.on("Runtime.bindingCalled",profileBindingListener);
+		await session.send("Runtime.addBinding",{name:"__z8TargetedPrefetchReceiptV1"});
+		await session.send("Runtime.enable");
+		const script=`(${installTargetedPrefetchProfile.toString()})(globalThis,${JSON.stringify(targetedPrefetchProfile)},${JSON.stringify(profileEpoch)},${JSON.stringify(origin)});`;
+		if(script.length>16384)throw Error("Targeted-prefetch profile source capsule exceeds its reserved envelope.");
+		await page.evaluateOnNewDocument(script);
+	}
 	const technicalOwner=captureContextFailures?createMixedTechnicalOwner({contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords}):null;
 	if(!annualTeamActionAuthority(environmentBinding))throw Error("Annual team observer requires actual compiled and browser admission.");
 	if(qualification) {
@@ -1534,10 +1564,11 @@ export async function installBrowserControlCollector({
 		}});
 	const transportErrors = transport.setControlCancellationObserver(proxy,{captureHeaderPrefixes:captureContextFailures || knownTemporaryValueObservation(environmentBinding?.temporaryValueObservation)});
 	const proxyObservation = () => {
+		if(profileJournal && !profileClosed && session.detached===true)profileJournal.error();
 		const proof = proxy.snapshot();
 		const cut=typeof transport.controlHeaderCut==="function"?transport.controlHeaderCut():null;
 		const sourceRead=teamScheduler.status();
-        return { ...proof, errors: proof.errors + transportErrors()+sourceRead.errors,overflow:proof.overflow+sourceRead.overflow,headerPrefix:cut?proxyHeaderPrefix(proof.headerCensus,cut):null,headerLifecycle:cut };
+        return { ...proof, errors: proof.errors + transportErrors()+sourceRead.errors+(profileJournal?.errors() ?? 0),overflow:proof.overflow+sourceRead.overflow,headerPrefix:cut?proxyHeaderPrefix(proof.headerCensus,cut):null,headerLifecycle:cut };
 	};
 	const collector = createBrowserControlCollector({
 		contextId,
@@ -1587,6 +1618,9 @@ export async function installBrowserControlCollector({
 		const original = page[method];
 		originals.set(method, original);
 		page[method] = async function (...args) {
+			const beforeProfile=profileJournal?.boundary();
+			if(profileJournal && session.detached===true){profileJournal.error();throw Error("Targeted-prefetch observation session was lost.");}
+			if(profileJournal){const actual=await readNativePublicSources(nativeManifestLocators.get(environmentBinding));if(JSON.stringify(actual)!==JSON.stringify(environmentBinding.servingPublicSources)){profileJournal.error();throw Error("Targeted-prefetch serving source epoch changed.");}}
 			// This declared technical header is observed on both HTTP and CDP, never inferred from timing.
 			await session.send("Network.setExtraHTTPHeaders", {
 				headers: {
@@ -1595,7 +1629,9 @@ export async function installBrowserControlCollector({
 				},
 			});
 			proxy.beginTeamNavigation(method,args,generation);
-			return Reflect.apply(original, this, args);
+			const result=await Reflect.apply(original, this, args);
+			if(profileJournal && profileJournal.boundary()===beforeProfile){profileJournal.error();throw Error("Targeted-prefetch document installation or retained restoration is unproven.");}
+			return result;
 		};
 	}
 	collector.installed();
@@ -1613,14 +1649,18 @@ export async function installBrowserControlCollector({
   acknowledgeMixedProgress(options){if(!progress)throw Error("Mixed progress observation was not installed before app IO.");return progress.check(options);},
   confirmMixedProgress(token){if(!progress)throw Error("Mixed progress observation is unavailable.");return progress.confirm(token);},
   releaseMixedProgressSnapshot(value=null){progress?.releaseSnapshot(value);},
+  releaseTargetedPrefetchProfile(){profileJournal?.dispose();},
   validateMixedProgress(verify){if(!technicalOwner)throw Error("Mixed validation owner is unavailable.");return technicalOwner.run(verify);},
-  snapshot(){return {...collector.snapshot(),annualTeam:proxy.annualTeamSnapshot(),temporaryValueSourceReads:teamScheduler.snapshot(),...(progress?{mixedProgress:progress.snapshot(),mixedDocumentJournal:documentAcknowledgment.snapshot()}:{})};},
+  snapshot(){return {...collector.snapshot(),annualTeam:proxy.annualTeamSnapshot(),temporaryValueSourceReads:teamScheduler.snapshot(),...(profileJournal?{targetedPrefetchProfile:profileJournal.snapshot()}:{}),...(progress?{mixedProgress:progress.snapshot(),mixedDocumentJournal:documentAcknowledgment.snapshot()}:{})};},
 		async close({ deadlineMs } = {}) {
 			try {
 				await capturePrincipalBoundary({ context, observer: principalEpoch, stage: "end", deadlineMs });
 				endMetadata = await captureNativeEndMetadata({ page, binding: environmentBinding, origin, deadlineMs });
 			}
 			finally {
+				if(profileJournal && session.detached===true)profileJournal.error();
+				profileJournal?.close();
+				profileClosed=true;
 				let progressCloseError=null;try{progress?.close();}catch(error){progressCloseError=error;}
 				teamScheduler.close();
                 documentAcknowledgment?.close();
@@ -1628,12 +1668,23 @@ export async function installBrowserControlCollector({
 				page.off("response",annualResponse);
 				workerObservation.close();
 				collector.endScope();
+				if(profileBindingListener)session.off("Runtime.bindingCalled",profileBindingListener);
+				for(const [name,listener]of profileListeners)session.off(name,listener);
 				for (const [method, original] of originals) page[method] = original;
 				await session.detach();
 				if(progressCloseError)throw progressCloseError;
 			}
 		},
 	};
+	}catch(error){
+		if(profileEpoch){
+			if(profileBindingListener)session.off("Runtime.bindingCalled",profileBindingListener);
+			for(const [name,listener]of profileListeners)session.off(name,listener);
+			profileJournal?.dispose();
+			try{await session.detach();}catch{}
+		}
+		throw error;
+	}
 }
 
 /** Fixed diagnostic facts only. No model references, temporary map, or business values escape. */

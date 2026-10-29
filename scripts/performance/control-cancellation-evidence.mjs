@@ -128,7 +128,7 @@ export function matchingBrowserControlBinding(runtime, binding) {
 		mixedOwnedJSONString(binding.nativePublicSources) === mixedOwnedJSONString(expected.nativePublicSources) &&
 		mixedOwnedJSONString(binding.temporaryValueObservation) === mixedOwnedJSONString(expected.temporaryValueObservation) &&
 		mixedOwnedJSONString(binding.originalTeamSource) === mixedOwnedJSONString(expected.originalTeamSource) &&
-		["legacyClockReadiness","requestShapeDiagnostic"].every(key=>Object.hasOwn(binding,key)===Object.hasOwn(expected,key) && mixedOwnedJSONString(binding[key])===mixedOwnedJSONString(expected[key])) &&
+		["legacyClockReadiness","requestShapeDiagnostic","targetedPrefetchProfile"].every(key=>Object.hasOwn(binding,key)===Object.hasOwn(expected,key) && mixedOwnedJSONString(binding[key])===mixedOwnedJSONString(expected[key])) &&
 		(!expected.teamAnnualAction || mixedOwnedJSONString(binding.teamAnnualAction)===mixedOwnedJSONString(expected.teamAnnualAction)) &&
 		knownOriginalTeamSourceConfiguration(binding.originalTeamSource,binding.compiledBuild,binding.compiledManifestSha256) &&
 		(!expected.nativePublicSources || knownNativePublicSources(expected.nativePublicSources,runtime.build,expected.compiledManifestSha256)) &&
