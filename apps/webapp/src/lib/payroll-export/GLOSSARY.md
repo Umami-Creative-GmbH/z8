@@ -5,8 +5,28 @@ How an organization prepares work, absences and overtime payouts for its payroll
 ## Language
 
 **Payroll export**:
-The data prepared for one payroll target, period and employee scope. A payroll export may be delivered as a file or through a supported integration.
+The data prepared for one payroll target, period and employee scope. A payroll export may be delivered as a file or through a payroll connector.
 _Avoid_: payroll run (Travel Expenses uses that term for an export that can also carry reimbursements)
+
+**Payroll connector**:
+A payroll target that receives payroll exports through the vendor's API rather than as a file.
+_Avoid_: integration, API export, sync
+
+**Delivered record**:
+A work period or absence a payroll connector has accepted, together with the vendor's id for it and the values Z8 sent. A later payroll export of the same period and scope updates or removes delivered records instead of sending them again; a file target instead receives a new file.
+_Avoid_: synced record, export line (that belongs to files)
+
+**Contract-verified**:
+A payroll connector whose requests and responses match the vendor's published documentation, checked against examples taken from that documentation. It says nothing about whether any real vendor account accepts the export.
+_Avoid_: tested, working
+
+**Tenant-verified**:
+A payroll connector that has delivered a payroll export into a real vendor account, with the result checked in the vendor's own system.
+_Avoid_: live-tested, production-ready
+
+**Withdrawn connector**:
+A payroll connector Z8 no longer offers for setup or delivery until it is rebuilt and tenant-verified. Its past payroll exports stay in the history; nothing new is sent to it.
+_Avoid_: disabled, deprecated, beta, hidden
 
 **Baseline export**:
 A successful payroll export an operator selects as the historical side of a payroll comparison. It represents what was exported then, including the identifiers and wage codes used at that time.
