@@ -263,16 +263,16 @@ describe("independent time tracking region components", () => {
 		expect(boundaries.map((boundary) => boundary.props.children.type)).toEqual([
 			ClockRegion,
 			DrivingRegion,
-			TimelineRegion,
 			SummaryRegion,
+			TimelineRegion,
 			PeriodsRegion,
 			HistoryRegion,
 		]);
 		expect(boundaries.map((boundary) => boundary.props.fallback.type)).toEqual([
 			ClockLoading,
 			DrivingLoading,
-			TimelineLoading,
 			SummaryLoading,
+			TimelineLoading,
 			PeriodsLoading,
 			HistoryLoading,
 		]);
@@ -281,7 +281,7 @@ describe("independent time tracking region components", () => {
 		).toEqual([context, context, context, context, context, context]);
 		expect(
 			boundaries.map((boundary) => boundary.props.children.props.searchParams),
-		).toEqual([undefined, undefined, date.promise, undefined, undefined, undefined]);
+		).toEqual([undefined, undefined, undefined, date.promise, undefined, undefined]);
 		expect(readActiveWorkPeriod).not.toHaveBeenCalled();
 		expect(readSummaryRegion).not.toHaveBeenCalled();
 		expect(readHistoryRegion).not.toHaveBeenCalled();

@@ -41,7 +41,7 @@ import { breakInProgressHandlers } from "./break-in-progress-handlers";
 import { BreakInProgressNotice } from "./break-in-progress-notice";
 import { toastClockCommandError } from "./clock-command-error-toast";
 import { ClockConnectionNotice } from "./clock-connection-notice";
-import { WorkLocationSelector } from "./clock-in-out-widget-parts";
+import { WorkLocationField } from "./clock-in-out-widget-parts";
 import {
 	BreakVehicleReading,
 	ClockInVehicleUse,
@@ -330,7 +330,7 @@ function ClockControlsView(props: ClockControlsViewProps) {
 			)}
 			{showBookingChoices && <ClockBookingChoices {...props} />}
 			{(!isClockedIn || isLocalCapture) && (
-				<WorkLocationSelector value={workLocationType} onChange={onWorkLocationChange} t={t} />
+				<WorkLocationField value={workLocationType} onChange={onWorkLocationChange} t={t} />
 			)}
 			<ClockVehicleUseField {...props} />
 			<DrivingAuthorizationAdvisory />
@@ -839,7 +839,7 @@ export function TimeClockPopover({ timeFormat = "24h" }: { timeFormat?: TimeForm
 					</Button>
 				</PopoverTrigger>
 				<PopoverContent className="w-72" align="end">
-					<div className="flex flex-col gap-3">
+					<div className="@container/widget flex flex-col gap-3">
 						<TimeClockPopoverPanel controller={controller} timeFormat={timeFormat} />
 					</div>
 				</PopoverContent>

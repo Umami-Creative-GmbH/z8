@@ -16,8 +16,8 @@ function TimeTrackingPageLoading() {
 	return (
 		<div className="@container/main flex flex-1 flex-col gap-6 py-4 md:py-6">
 			<ClockLoading />
-			<TimelineLoading />
 			<SummaryLoading />
+			<TimelineLoading />
 			<HistoryLoading />
 		</div>
 	);

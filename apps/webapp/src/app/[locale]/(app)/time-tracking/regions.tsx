@@ -289,11 +289,12 @@ export async function TimeTrackingPageContent({
 			<Suspense fallback={<DrivingLoading />}>
 				<DrivingRegion context={context} />
 			</Suspense>
-			<Suspense fallback={<TimelineLoading />}>
-				<TimelineRegion context={context} searchParams={searchParams} />
-			</Suspense>
+			{/* The totals answer "how much so far" beside the clock; the timeline details one day. */}
 			<Suspense fallback={<SummaryLoading />}>
 				<SummaryRegion context={context} />
+			</Suspense>
+			<Suspense fallback={<TimelineLoading />}>
+				<TimelineRegion context={context} searchParams={searchParams} />
 			</Suspense>
 			<Suspense fallback={<PeriodsLoading />}>
 				<PeriodsRegion context={context} />
