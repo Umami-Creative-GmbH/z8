@@ -113,6 +113,7 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"timeTracking.unknownCategory",
 		"timeTracking.unknownProject",
 		"timeTracking.workCategory",
+		"timeTracking.workLocation",
 		"timeTracking.workLocationHome",
 		"timeTracking.workLocationOffice",
 		"timeTracking.workLocationOther",
