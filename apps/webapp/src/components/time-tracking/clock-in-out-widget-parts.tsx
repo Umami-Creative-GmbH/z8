@@ -10,7 +10,6 @@ import type { TFnType } from "@tolgee/react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatDurationWithSeconds } from "@/lib/time-tracking/time-utils";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
 import { getTimeFormatDateTimeOptions, type TimeFormat } from "@/lib/user-preferences/time-format";
@@ -60,6 +59,26 @@ export function RestPeriodWarnBanner({ t }: { t: TFnType }) {
 	);
 }
 
+/** The clock's work location choice, named so it reads as a question before Clock In. */
+export function WorkLocationField({
+	value,
+	onChange,
+	t,
+}: {
+	value: WorkLocationType | null;
+	onChange: (value: WorkLocationType) => void;
+	t: TFnType;
+}) {
+	return (
+		<fieldset className="min-w-0">
+			<legend className="mb-2 font-medium text-muted-foreground text-xs">
+				{t("timeTracking.workLocation", "Work location")}
+			</legend>
+			<WorkLocationSelector value={value} onChange={onChange} t={t} />
+		</fieldset>
+	);
+}
+
 export function WorkLocationSelector({
 	value,
 	onChange,
@@ -69,8 +88,9 @@ export function WorkLocationSelector({
 	onChange: (value: WorkLocationType) => void;
 	t: TFnType;
 }) {
-	// Labels need 24rem: on phones German labels ("Homeoffice") overflow their segment. Segments
-	// are 44 px tall on touch screens (#846).
+	// Every option always names itself. Two columns below 22rem keep German labels ("Homeoffice")
+	// whole; from 22rem the four sit in a row with the label under the icon. Options are 44 px
+	// tall on touch screens (#846).
 	return (
 		<ToggleGroup
 			type="single"
@@ -82,7 +102,7 @@ export function WorkLocationSelector({
 					onChange(nextValue as WorkLocationType);
 				}
 			}}
-			className="w-full pointer-coarse:*:h-11"
+			className="grid w-full grid-cols-2 items-stretch gap-1.5 data-[variant=outline]:shadow-none @[22rem]/widget:grid-cols-4"
 		>
 			<WorkLocationOption value="office" label={t("timeTracking.workLocationOffice", "Office")} />
 			<WorkLocationOption value="home" label={t("timeTracking.workLocationHome", "Home")} />
@@ -92,21 +112,16 @@ export function WorkLocationSelector({
 	);
 }
 
-/** Narrow widgets show only the icon, so the tooltip names the location. */
 function WorkLocationOption({ value, label }: { value: WorkLocationType; label: string }) {
 	const Icon = workLocationIcons[value];
 	return (
-		<Tooltip>
-			<TooltipTrigger
-				render={
-					<ToggleGroupItem value={value} aria-label={label}>
-						<Icon className="size-4" />
-						<span className="hidden @[24rem]/widget:inline text-xs">{label}</span>
-					</ToggleGroupItem>
-				}
-			/>
-			<TooltipContent>{label}</TooltipContent>
-		</Tooltip>
+		<ToggleGroupItem
+			value={value}
+			className="h-auto min-h-9 rounded-md px-2 py-1.5 shadow-xs data-[variant=outline]:border-l pointer-coarse:min-h-11 @[22rem]/widget:min-h-14 @[22rem]/widget:flex-col @[22rem]/widget:gap-1 data-pressed:border-primary data-pressed:bg-primary/10 data-pressed:text-primary data-pressed:hover:bg-primary/15 data-pressed:hover:text-primary"
+		>
+			<Icon aria-hidden="true" className="size-4" />
+			<span className="min-w-0 truncate text-xs">{label}</span>
+		</ToggleGroupItem>
 	);
 }
 
