@@ -308,6 +308,45 @@ describe("position capture settings and consent on PostgreSQL", () => {
 		expect((await resolve(ids.field)).captureOn).toBe(true);
 	});
 
+	it("refuses a new assignment for a former employee and still switches an existing one (#1438)", async () => {
+		actAs(ids.ownerUser);
+		expect(
+			await admin.setPositionCaptureAssignmentAction({
+				target: { type: "employee", employeeId: ids.office },
+				captureEnabled: true,
+			}),
+		).toMatchObject({ success: true });
+		await pool.query("update employee set is_active = false where id = any($1::uuid[])", [
+			[ids.office, ids.manager],
+		]);
+		// As if deactivated before the instant was stored (#1439): not recorded.
+		await pool.query("update employee set deactivated_at = null where id = $1", [ids.office]);
+
+		expect(
+			await admin.setPositionCaptureAssignmentAction({
+				target: { type: "employee", employeeId: ids.manager },
+				captureEnabled: true,
+			}),
+		).toMatchObject({ success: false, code: "former_employee" });
+		expect(
+			await admin.setPositionCaptureAssignmentAction({
+				target: { type: "employee", employeeId: ids.office },
+				captureEnabled: false,
+			}),
+		).toMatchObject({ success: true });
+
+		// Offered: the current roster, and the former employee whose row still names them.
+		const data = await admin.getPositionCaptureAdminDataAction();
+		if (!data.success) throw new Error(data.error);
+		const offered = new Map(data.data.employees.map((row) => [row.id, row.isFormer]));
+		expect(offered.get(ids.office)).toBe(true);
+		expect(offered.has(ids.manager)).toBe(false);
+		expect(offered.get(ids.field)).toBe(false);
+		const since = new Map(data.data.employees.map((row) => [row.id, row.formerSince]));
+		expect(since.get(ids.office)).toBeNull();
+		expect(since.get(ids.field)).toBeUndefined();
+	});
+
 	async function switchOnForFieldTeam(purposeStatement = "Customer proof", retentionDays = 90) {
 		await saveSettings({ enabled: true, purposeStatement, retentionDays });
 		actAs(ids.ownerUser);

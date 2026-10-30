@@ -156,6 +156,9 @@ export const employee = pgTable(
 		startDate: timestamp("start_date"),
 		endDate: timestamp("end_date"),
 		isActive: boolean("is_active").default(true).notNull(),
+		// When the employee was switched off without a departure recording it (#1439). A
+		// trigger keeps it: set when is_active turns false, cleared when it turns true.
+		deactivatedAt: timestamp("deactivated_at", { withTimezone: true }),
 
 		// Contract type in force today, projected from the employment terms. The wage lives
 		// only in the terms (Organization ADR 0002).

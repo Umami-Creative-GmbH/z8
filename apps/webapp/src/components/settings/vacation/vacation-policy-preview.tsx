@@ -74,6 +74,8 @@ export function VacationPolicyPreview({
 					<form.Field name="employeeId">
 						{(field) => (
 							<EmployeeSingleSelect
+								// A date can lie in the past, when a former employee was still here (#1438).
+								includeFormerEmployees
 								label={t(
 									"settings.vacation.history.previewEmployee",
 									"Preview employee",

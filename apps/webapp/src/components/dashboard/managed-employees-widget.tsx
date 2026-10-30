@@ -7,31 +7,21 @@ import {
 	IconUsers,
 	IconUsersGroup,
 } from "@tabler/icons-react";
-import { useQuery } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
 import { EmployeeActivityText } from "@/components/employee-activity-text";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { type EmployeeClockStatus, UserAvatar } from "@/components/user-avatar";
+import type { ManagedEmployee } from "@/lib/effect/services/manager.service";
 import { useEmployeeClockStatuses } from "@/lib/query";
 import { Link } from "@/navigation";
-import { getManagedEmployees } from "./actions";
+import type { DashboardWidgetData, DashboardWidgetSnapshot } from "./dashboard-types";
 import { DashboardWidget } from "./dashboard-widget";
+import { useDashboardWidget } from "./use-dashboard-widget";
 import { WidgetCard } from "./widget-card";
+import { WidgetReadError } from "./widget-read-error";
 
-type ManagedEmployee = {
-	id: string;
-	position: string | null;
-	user: {
-		id: string;
-		name: string;
-		email: string;
-		image: string | null;
-	};
-	team: {
-		name: string;
-	} | null;
+type ManagedEmployeeCard = ManagedEmployee & {
 	clockStatus?: EmployeeClockStatus;
 	lastActivityAt?: string | null;
 	lastActivityUtcOffsetMinutes?: number | null;
@@ -40,7 +30,7 @@ type ManagedEmployee = {
 	breakStartedZone?: string | null;
 };
 
-function EmployeeCard({ employee }: { employee: ManagedEmployee }) {
+function EmployeeCard({ employee }: { employee: ManagedEmployeeCard }) {
 	return (
 		<Link
 			href={`/settings/employees/${employee.id}`}
@@ -72,9 +62,7 @@ function EmployeeCard({ employee }: { employee: ManagedEmployee }) {
 				</div>
 				<EmployeeActivityText
 					lastActivityAt={employee.lastActivityAt ?? null}
-					lastActivityUtcOffsetMinutes={
-						employee.lastActivityUtcOffsetMinutes ?? null
-					}
+					lastActivityUtcOffsetMinutes={employee.lastActivityUtcOffsetMinutes ?? null}
 					breakStartedAt={employee.breakStartedAt}
 					breakStartedZone={employee.breakStartedZone}
 				/>
@@ -115,34 +103,13 @@ function EmptyState() {
 	);
 }
 
-export function ManagedEmployeesWidget() {
+export function ManagedEmployeesWidget({
+	initialSnapshot,
+}: {
+	initialSnapshot?: DashboardWidgetSnapshot<DashboardWidgetData["managed-employees"]>;
+} = {}) {
 	const { t } = useTranslate();
-	const managedEmployeesQuery = useQuery({
-		queryKey: ["dashboard", "managed-employees"],
-		queryFn: async () => {
-			const current = await getCurrentEmployee();
-			if (!current) {
-				return { employees: [] as ManagedEmployee[], isManager: false };
-			}
-
-			const result = await getManagedEmployees(current.id);
-			if (!result.success) {
-				throw new Error(
-					result.error ||
-						t(
-							"dashboard.managed-employees.error",
-							"Failed to load managed employees",
-						),
-				);
-			}
-
-			return {
-				employees: result.data,
-				isManager: result.data.length > 0 || current.role === "admin",
-			};
-		},
-	});
-
+	const managedEmployeesQuery = useDashboardWidget("managed-employees", initialSnapshot);
 	const employees = managedEmployeesQuery.data?.employees ?? [];
 	const presence = useEmployeeClockStatuses(
 		employees.map((employee) => employee.id),
@@ -154,21 +121,19 @@ export function ManagedEmployeesWidget() {
 			...employee,
 			clockStatus: presence.getStatus(employee.id),
 			lastActivityAt: activity?.lastActivityAt ?? null,
-			lastActivityUtcOffsetMinutes:
-				activity?.lastActivityUtcOffsetMinutes ?? null,
+			lastActivityUtcOffsetMinutes: activity?.lastActivityUtcOffsetMinutes ?? null,
 			...presence.getBreak(employee.id),
 		};
 	});
 	const isManager = managedEmployeesQuery.data?.isManager ?? false;
-	const loading = managedEmployeesQuery.isLoading;
-	const refreshing =
-		managedEmployeesQuery.isFetching && !managedEmployeesQuery.isLoading;
+	const loading = managedEmployeesQuery.loading;
+	const refreshing = managedEmployeesQuery.refreshing;
 
 	const refetch = () => {
 		managedEmployeesQuery.refetch();
 	};
 
-	if (!loading && !isManager) return null;
+	if (!loading && !managedEmployeesQuery.error && !isManager) return null;
 
 	return (
 		<DashboardWidget id="managed-employees">
@@ -176,17 +141,10 @@ export function ManagedEmployeesWidget() {
 				title={t("dashboard.managed-employees.title", "Your Team")}
 				description={
 					employees.length > 0
-						? t(
-								"dashboard.managed-employees.direct-reports",
-								"{count} direct reports",
-								{
-									count: employees.length,
-								},
-							)
-						: t(
-								"dashboard.managed-employees.people-you-manage",
-								"People you manage",
-							)
+						? t("dashboard.managed-employees.direct-reports", "{count} direct reports", {
+								count: employees.length,
+							})
+						: t("dashboard.managed-employees.people-you-manage", "People you manage")
 				}
 				icon={<IconUsers className="size-4 text-indigo-500" />}
 				loading={loading}
@@ -203,7 +161,14 @@ export function ManagedEmployeesWidget() {
 					) : undefined
 				}
 			>
-				{employees.length === 0 ? (
+				{managedEmployeesQuery.error ? (
+					<WidgetReadError
+						title={t("dashboard.managed-employees.title", "Your Team")}
+						message={managedEmployeesQuery.error}
+						retry={refetch}
+						refreshing={refreshing}
+					/>
+				) : employees.length === 0 ? (
 					<EmptyState />
 				) : (
 					<div className="space-y-2">

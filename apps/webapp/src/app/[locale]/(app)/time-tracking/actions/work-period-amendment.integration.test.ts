@@ -52,7 +52,11 @@ vi.mock("@/lib/auth", () => ({
 								name: "Actor",
 								email: "actor@example.test",
 							},
-							session: { activeOrganizationId: harness.organizationId },
+							session: {
+								id: `integration-${harness.userId}`,
+								userId: harness.userId,
+								activeOrganizationId: harness.organizationId,
+							},
 						}
 					: null,
 		},

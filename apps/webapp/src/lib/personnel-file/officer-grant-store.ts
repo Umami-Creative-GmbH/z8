@@ -9,6 +9,7 @@ import {
 	team,
 } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
+import { assertOnCurrentRoster } from "@/lib/employee-lifecycle/current-roster-guard";
 import { DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { validateId, validateIdList } from "@/lib/payroll-access/grant-scope";
 import { isCanonicalUuid } from "@/lib/validations/canonical-uuid";
@@ -201,6 +202,14 @@ export async function savePersonnelFileOfficerGrant(
 	if (![officerEmployeeId, ...requestedTeamIds, ...requestedEmployeeIds].every(isCanonicalUuid)) {
 		throw new ValidationError({ message: "Personnel file officer IDs must be valid" });
 	}
+	// The officer must be on the current roster (#1438). Named employees may be
+	// former: their files stay under retention after they leave.
+	await assertOnCurrentRoster(tx, {
+		organizationId,
+		employeeIds: [officerEmployeeId],
+		field: "officerEmployeeId",
+		message: "The personnel file officer must be a current employee of the organization",
+	});
 
 	const [current] = await tx
 		.select(grantColumns())
@@ -372,8 +381,8 @@ export async function revokePersonnelFileOfficerGrant(
 
 /**
  * Revokes the active grant the officer holds, if any, recording
- * `auditMetadata` on the audit entry. Offboarding calls it inside the
- * departure's transaction. Grants that only name the employee in their scope
+ * `auditMetadata` on the audit entry, and returns its id (null when they held
+ * none). Offboarding calls it inside the departure's transaction. Grants that only name the employee in their scope
  * stay, so their personnel file can still be managed.
  */
 export async function revokePersonnelFileOfficerGrantHeldBy(
@@ -384,7 +393,7 @@ export async function revokePersonnelFileOfficerGrantHeldBy(
 		officerEmployeeId: string;
 		auditMetadata: Record<string, unknown>;
 	},
-): Promise<void> {
+): Promise<string | null> {
 	const { organizationId, actorUserId } = input;
 	const [row] = await tx
 		.select(grantColumns())
@@ -399,7 +408,7 @@ export async function revokePersonnelFileOfficerGrantHeldBy(
 		.limit(1)
 		.for("update");
 	const [grant] = row ? await withScopeRows(tx, organizationId, [row]) : [];
-	if (!grant) return;
+	if (!grant) return null;
 
 	await revokeLockedGrant(tx, {
 		organizationId,
@@ -407,6 +416,7 @@ export async function revokePersonnelFileOfficerGrantHeldBy(
 		grant,
 		metadata: input.auditMetadata,
 	});
+	return grant.id;
 }
 
 async function revokeLockedGrant(

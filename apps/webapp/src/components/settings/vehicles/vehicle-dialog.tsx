@@ -68,7 +68,14 @@ function VehicleDialogContent({
 	const initiallyAssigned = new Set(initialEmployeeIds);
 	const employeeOptions = employees
 		.filter((employee) => employee.isActive || initiallyAssigned.has(employee.id))
-		.map((employee) => toSelectableEmployee(employee, { isActive: employee.isActive }));
+		.map((employee) =>
+			toSelectableEmployee(
+				employee,
+				employee.isActive
+					? { isActive: true }
+					: { isActive: false, formerSince: employee.formerSince },
+			),
+		);
 
 	const form = useForm({
 		defaultValues: {

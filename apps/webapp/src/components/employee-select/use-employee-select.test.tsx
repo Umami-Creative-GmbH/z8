@@ -79,6 +79,42 @@ describe("useEmployeeSelect", () => {
 		expect(presenceMock).toHaveBeenCalledWith(["emp_1"], { polling: false });
 	});
 
+	it("asks for the current roster by default, without a status filter (#1438)", async () => {
+		listEmployeesForSelectMock.mockResolvedValue({
+			success: true,
+			data: { employees: [employee], total: 1, hasMore: false },
+		});
+
+		const { result } = renderHook(
+			() => useEmployeeSelect({ filters: { status: "all" } }),
+			{ wrapper: createWrapper() },
+		);
+
+		await waitFor(() => expect(result.current.employees).toHaveLength(1));
+		expect(listEmployeesForSelectMock).toHaveBeenCalledWith(
+			expect.objectContaining({ status: "current" }),
+		);
+		expect(result.current.canFilterStatus).toBe(false);
+	});
+
+	it("includes former employees only when a picker opts in", async () => {
+		listEmployeesForSelectMock.mockResolvedValue({
+			success: true,
+			data: { employees: [{ ...employee, isActive: false, isFormer: true }], total: 1, hasMore: false },
+		});
+
+		const { result } = renderHook(() => useEmployeeSelect({ includeFormerEmployees: true }), {
+			wrapper: createWrapper(),
+		});
+
+		await waitFor(() => expect(result.current.employees).toHaveLength(1));
+		expect(listEmployeesForSelectMock).toHaveBeenCalledWith(
+			expect.objectContaining({ status: "all" }),
+		);
+		expect(result.current.canFilterStatus).toBe(true);
+		expect(result.current.employees[0].isFormer).toBe(true);
+	});
+
 	it("enriches selected employees with clock status", async () => {
 		getEmployeesByIdsMock.mockResolvedValue({ success: true, data: [employee] });
 

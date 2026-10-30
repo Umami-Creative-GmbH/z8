@@ -4,7 +4,6 @@ import { type QueryClient, useMutation, useQuery, useQueryClient } from "@tansta
 import { useState, useSyncExternalStore } from "react";
 import {
 	addBreakToActiveSession,
-	getTimeClockStatus,
 	resumeBreakInProgress,
 	startBreakInProgress,
 	updateTimeEntryNotes,
@@ -31,6 +30,7 @@ import type {
 	ClockVehicleUse,
 } from "@/lib/time-tracking/vehicle-use/clock-vehicle-use";
 import type { WorkLocationType } from "@/lib/time-tracking/work-location";
+import { getWebClockStatus as getTimeClockStatus } from "@/lib/time-tracking/web-clock-status-client";
 import { queryKeys } from "./keys";
 import { invalidatePeriodSubmissionReadiness } from "./period-submission-readiness";
 
@@ -375,6 +375,16 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 						queryKey: queryKeys.workPolicies.presence.status(status.employeeId),
 					});
 				}
+				if (session?.user?.id && activeOrganizationId) {
+					void queryClient.invalidateQueries({
+						queryKey: queryKeys.dashboard.widget(
+							"presence-status",
+							session.user.id,
+							activeOrganizationId,
+						),
+						exact: true,
+					});
+				}
 			}
 		},
 	});
@@ -462,6 +472,16 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 				if (status?.employeeId) {
 					void queryClient.invalidateQueries({
 						queryKey: queryKeys.workPolicies.presence.status(status.employeeId),
+					});
+				}
+				if (session?.user?.id && activeOrganizationId) {
+					void queryClient.invalidateQueries({
+						queryKey: queryKeys.dashboard.widget(
+							"presence-status",
+							session.user.id,
+							activeOrganizationId,
+						),
+						exact: true,
 					});
 				}
 			}
@@ -652,6 +672,7 @@ export function useTimeClock(options: UseTimeClockOptions = {}) {
 		// Status
 		status,
 		isLoading: statusQuery.isLoading,
+		isPending: statusQuery.isPending,
 		isFetching: statusQuery.isFetching,
 		isError: statusQuery.isError,
 

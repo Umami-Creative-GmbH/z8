@@ -113,16 +113,30 @@ export function EmployeeOffboardingSection(props: EmployeeOffboardingSectionProp
 		}
 	}
 
-	const followUpList = view.departure ? (
+	// A departure's follow-up, else a deactivation's (#1440): listed and resolved the same way.
+	const followUpSource = view.departure
+		? {
+				anchor: { departureId: view.departure.id },
+				at: view.departure.cutoff,
+				timezone: view.departure.timezone,
+			}
+		: view.deactivation
+			? {
+					anchor: { deactivationId: view.deactivation.id },
+					at: view.deactivation.deactivatedAt,
+					timezone: view.deactivation.timezone,
+				}
+			: null;
+	const followUpList = followUpSource ? (
 		<FollowUpList
 			employeeId={targetEmployeeId}
-			departureId={view.departure.id}
+			anchor={followUpSource.anchor}
 			reviews={view.reviews}
 			failedTasks={view.failedTasks}
 			canResolve={view.capabilities.resolve}
 			timeCorrectionHref={`/calendar/${targetEmployeeId}?date=${departureCutoffDate(
-				view.departure.cutoff,
-				view.departure.timezone,
+				followUpSource.at,
+				followUpSource.timezone,
 			)}`}
 			highlightedReviewId={props.highlightedReviewId}
 			replacementOptions={props.managers}

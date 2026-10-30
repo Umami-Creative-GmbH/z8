@@ -11,7 +11,12 @@ import {
 	IconX,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import { useState } from "react";
 import { z } from "zod";
+import {
+	FormerEmployeeBadge,
+	ShowFormerEmployeesSwitch,
+} from "@/components/former-employees/former-employee-ui";
 import {
 	ActionPanel,
 	ActionPanelBody,
@@ -290,7 +295,7 @@ export function TeamInfoCard(props: {
 							</div>
 							<div className="flex items-center gap-2">
 								<IconUsers className="size-4 text-muted-foreground" aria-hidden="true" />
-								<span className="font-medium">{team.employees?.length || 0}</span>
+								<span className="font-medium">{currentTeamMembers(team).length}</span>
 							</div>
 						</div>
 					</>
@@ -298,6 +303,13 @@ export function TeamInfoCard(props: {
 			</CardContent>
 		</Card>
 	);
+}
+
+type TeamMemberRow = { id: string; isFormer?: boolean };
+
+/** The members on the current roster; former members are counted and listed apart (#1438). */
+function currentTeamMembers(team: { employees?: TeamMemberRow[] }): TeamMemberRow[] {
+	return (team.employees ?? []).filter((employee) => !employee.isFormer);
 }
 
 export function TeamMembersCard(props: {
@@ -308,8 +320,13 @@ export function TeamMembersCard(props: {
 }) {
 	const { team, canManageMembers, onOpenAddMember, onRemoveMember } = props;
 	const { t } = useTranslate();
+	// Former members stay hidden until the admin asks for them (#1438).
+	const [showFormer, setShowFormer] = useState(false);
+	const allMembers: any[] = team.employees ?? [];
+	const formerCount = allMembers.length - currentTeamMembers(team).length;
+	const members = showFormer ? allMembers : currentTeamMembers(team);
 	const presence = useEmployeeClockStatuses(
-		team.employees?.map((employee: { id: string }) => employee.id) ?? [],
+		members.map((employee: { id: string }) => employee.id),
 		{ polling: false },
 	);
 
@@ -330,9 +347,12 @@ export function TeamMembersCard(props: {
 						</Button>
 					) : null}
 				</div>
+				{formerCount > 0 ? (
+					<ShowFormerEmployeesSwitch checked={showFormer} onCheckedChange={setShowFormer} />
+				) : null}
 			</CardHeader>
 			<CardContent>
-				{!team.employees || team.employees.length === 0 ? (
+				{members.length === 0 ? (
 					<div className="flex flex-col items-center justify-center py-8">
 						<IconUsers className="mb-4 size-12 text-muted-foreground" aria-hidden="true" />
 						<p className="text-sm text-muted-foreground">
@@ -341,7 +361,7 @@ export function TeamMembersCard(props: {
 					</div>
 				) : (
 					<div className="space-y-2">
-						{team.employees.map((employee: any) => (
+						{members.map((employee: any) => (
 							<div
 								key={employee.id}
 								className="flex items-center justify-between rounded-lg border p-3"
@@ -361,6 +381,7 @@ export function TeamMembersCard(props: {
 									{employee.position ? (
 										<Badge variant="secondary">{employee.position}</Badge>
 									) : null}
+									{employee.isFormer ? <FormerEmployeeBadge since={employee.formerSince} /> : null}
 								</div>
 								{canManageMembers ? (
 									<Button

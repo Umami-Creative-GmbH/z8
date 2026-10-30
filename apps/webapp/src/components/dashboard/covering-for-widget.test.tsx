@@ -1,11 +1,10 @@
 /* @vitest-environment jsdom */
 
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { CoverDuties } from "@/lib/absences/cover-duties";
-
-const { useWidgetDataMock } = vi.hoisted(() => ({ useWidgetDataMock: vi.fn() }));
 
 vi.mock("@tolgee/react", () => ({
 	useTolgee: () => ({ getLanguage: () => "en" }),
@@ -21,17 +20,41 @@ vi.mock("./cover-duties-actions", () => ({ getCoverDuties: vi.fn() }));
 vi.mock("./dashboard-widget", () => ({
 	DashboardWidget: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }));
-vi.mock("./use-widget-data", () => ({ useWidgetData: useWidgetDataMock }));
+vi.mock("@/hooks/use-organization", () => ({
+	useOrganization: () => ({
+		userId: "user-a",
+		organizationId: "org-a",
+		role: "manager",
+		isLoading: false,
+	}),
+}));
 vi.mock("./widget-card", () => ({
 	WidgetCard: ({ children, title }: { children: ReactNode; title: string }) => (
 		<section aria-label={title}>{children}</section>
 	),
 }));
 
+import type { DashboardWidgetData } from "./dashboard-types";
+
+let delivered: { data: DashboardWidgetData["covering-for"] | null; loading?: boolean };
+function setDelivery(value: typeof delivered) {
+	delivered = value;
+}
+function initialDelivery() {
+	return {
+		scope: { userId: "user-a", organizationId: "org-a" },
+		updatedAt: Date.now(),
+		result:
+			delivered.data === null
+				? { success: false as const, error: "Fixture unavailable" }
+				: { success: true as const, data: delivered.data },
+	};
+}
+
 import { CoveringForWidget } from "./covering-for-widget";
 
 function showDuties(data: CoverDuties | null, loading = false) {
-	useWidgetDataMock.mockReturnValue({ data, loading, refreshing: false, refetch: vi.fn() });
+	setDelivery({ data: data ? { ...data, viewerRole: "manager" } : null, loading });
 }
 
 describe("CoveringForWidget", () => {
@@ -63,7 +86,11 @@ describe("CoveringForWidget", () => {
 			],
 		});
 
-		render(<CoveringForWidget />);
+		render(
+			<QueryClientProvider client={new QueryClient()}>
+				<CoveringForWidget initialSnapshot={initialDelivery()} />
+			</QueryClientProvider>,
+		);
 
 		const card = screen.getByRole("region", { name: "Covering for" });
 		expect(card.textContent).toContain("Covering for Ada Lovelace until Oct 16, 2026");
@@ -78,16 +105,25 @@ describe("CoveringForWidget", () => {
 	it("shows nothing to an employee who is nobody's deputy", () => {
 		showDuties({ running: [], upcoming: [] });
 
-		const { container } = render(<CoveringForWidget />);
+		const { container } = render(
+			<QueryClientProvider client={new QueryClient()}>
+				<CoveringForWidget initialSnapshot={initialDelivery()} />
+			</QueryClientProvider>,
+		);
 
 		expect(container.textContent).toBe("");
 	});
 
-	it("shows nothing when the cover duties could not be loaded", () => {
+	it("exposes a failed cover read with a local retry", () => {
 		showDuties(null);
 
-		const { container } = render(<CoveringForWidget />);
+		render(
+			<QueryClientProvider client={new QueryClient()}>
+				<CoveringForWidget initialSnapshot={initialDelivery()} />
+			</QueryClientProvider>,
+		);
 
-		expect(container.textContent).toBe("");
+		expect(screen.getByRole("alert")).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Retry Covering for" })).toBeTruthy();
 	});
 });

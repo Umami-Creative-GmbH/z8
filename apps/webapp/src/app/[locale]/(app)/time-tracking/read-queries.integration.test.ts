@@ -33,7 +33,11 @@ vi.mock("@/lib/auth", () => ({
 		api: {
 			getSession: async () => ({
 				user: { id: actor.userId },
-				session: { activeOrganizationId: actor.organizationId },
+				session: {
+					id: `integration-${actor.userId}`,
+					userId: actor.userId,
+					activeOrganizationId: actor.organizationId,
+				},
 			}),
 		},
 	},

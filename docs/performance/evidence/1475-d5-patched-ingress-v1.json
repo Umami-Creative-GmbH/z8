@@ -1,0 +1,392 @@
+{
+  "schema": 1,
+  "evidenceVersion": "d5-patched-ingress-v1",
+  "sourceBuild": "d5a2dd7de883a41473a9207282f971c06bc99bf6",
+  "operatorCommit": "25fb0196c6b81b02a1be3289855c2604a31aa228",
+  "buildRecordSha256": "524dca5cdfe5d4c75f50c8a80dc2c8758d6e4dfbc17c61e0a3f696417611df4e",
+  "artifactManifestSha256": "9c8d7d2c7ad054e0e974ae1ee75e07707af80ec2e6b4445533587b42a5469ac4",
+  "matrixRecordSha256": "6dc3a8c9ef7a0b85d327cf49c4e4a750c7d46beaa5e35c09f35159bc05118923",
+  "nextVersion": "16.4.0",
+  "nextPatchSha256": "0e7fd3eef6034e754a9ef87ad3887b564baf544dce77b046c6f4b805a51b7558",
+  "functionalConditions": 14,
+  "functionalConditionsPassed": 14,
+  "nativeAndTransportConditionsPassed": 14,
+  "fullResourceConditionsPassed": 10,
+  "intentionalFaultResourceConditionsFailed": 4,
+  "cancelledQueryRowCostsKnown": false,
+  "pairedVisits": 28,
+  "perReplicaClosures": 56,
+  "serverClosureProofs": 136,
+  "rawAdmissionHttpErrorsRetained": 10,
+  "controlledPerformanceEvidence": false,
+  "successfulSsoVerified": false,
+  "productionIngressVerified": false,
+  "cdnVerified": false,
+  "cases": [
+    {
+      "viewport": "desktop",
+      "mode": "first-document",
+      "scenario": "held",
+      "functionalPassed": true,
+      "rawOverallPassed": true,
+      "resourceOutcome": "pass",
+      "driverQueries": 700,
+      "nativeCountsExact": true,
+      "allServerSpansClosed": true,
+      "strictTransportComplete": true,
+      "acknowledgedQueryCancellations": 0,
+      "observedQueryErrors": 0,
+      "rawEvidence": {
+        "capturedAt": "2026-10-25T10:58:19.337Z",
+        "sha256": "723a02b17ad8a9e1ab8487f89eb15909b5958f306dddc9b20be99566ad0f35d3"
+      },
+      "streaming": {
+        "usefulSiblingBeforeRelease": true,
+        "knownClockBeforeRelease": true,
+        "secondaryPendingBeforeRelease": true,
+        "secondaryEventuallyComplete": true
+      }
+    },
+    {
+      "viewport": "desktop",
+      "mode": "first-document",
+      "scenario": "failed",
+      "functionalPassed": true,
+      "rawOverallPassed": false,
+      "resourceOutcome": "raw-fail-cancelled-query-row-cost-unknown",
+      "driverQueries": 716,
+      "nativeCountsExact": true,
+      "allServerSpansClosed": true,
+      "strictTransportComplete": true,
+      "acknowledgedQueryCancellations": 2,
+      "observedQueryErrors": 2,
+      "rawEvidence": {
+        "capturedAt": "2026-10-25T10:58:29.136Z",
+        "sha256": "0f516f65f80de6d7d92960566bdd392183e73a6d1628a5e69884d36000863c85"
+      },
+      "streaming": {
+        "usefulSiblingBeforeRelease": true,
+        "knownClockBeforeRelease": true,
+        "secondaryPendingBeforeRelease": true,
+        "secondaryEventuallyComplete": true,
+        "localErrorAndKeyboardRetryRecovered": true
+      }
+    },
+    {
+      "viewport": "desktop",
+      "mode": "repeat-link",
+      "scenario": "held",
+      "functionalPassed": true,
+      "rawOverallPassed": true,
+      "resourceOutcome": "pass",
+      "driverQueries": 1026,
+      "nativeCountsExact": true,
+      "allServerSpansClosed": true,
+      "strictTransportComplete": true,
+      "acknowledgedQueryCancellations": 0,
+      "observedQueryErrors": 0,
+      "rawEvidence": {
+        "capturedAt": "2026-10-25T10:58:48.863Z",
+        "sha256": "7fd0b7286b2c96915e4117479f53af303b5a1f0ca902d383a2054a357bebfe4c"
+      },
+      "streaming": {
+        "usefulSiblingBeforeRelease": true,
+        "knownClockBeforeRelease": true,
+        "secondaryPendingBeforeRelease": true,
+        "secondaryEventuallyComplete": true
+      }
+    },
+    {
+      "viewport": "desktop",
+      "mode": "repeat-link",
+      "scenario": "failed",
+      "functionalPassed": true,
+      "rawOverallPassed": false,
+      "resourceOutcome": "raw-fail-cancelled-query-row-cost-unknown",
+      "driverQueries": 1042,
+      "nativeCountsExact": true,
+      "allServerSpansClosed": true,
+      "strictTransportComplete": true,
+      "acknowledgedQueryCancellations": 1,
+      "observedQueryErrors": 1,
+      "rawEvidence": {
+        "capturedAt": "2026-10-25T10:59:01.136Z",
+        "sha256": "26c9c1f5459f3f1adac8da9c7efa67e0388d3c8eb62dfd407974f2cefd54cb60"
+      },
+      "streaming": {
+        "usefulSiblingBeforeRelease": true,
+        "knownClockBeforeRelease": true,
+        "secondaryPendingBeforeRelease": true,
+        "secondaryEventuallyComplete": true,
+        "localErrorAndKeyboardRetryRecovered": true
+      }
+    },
+    {
+      "viewport": "desktop",
+      "mode": "admission",
+      "scenario": "signed-out",
+      "functionalPassed": true,
+      "rawOverallPassed": true,
+      "resourceOutcome": "pass",
+      "driverQueries": 680,
+      "nativeCountsExact": true,
+      "allServerSpansClosed": true,
+      "strictTransportComplete": true,
+      "acknowledgedQueryCancellations": 0,
+      "observedQueryErrors": 0,
+      "rawEvidence": {
+        "capturedAt": "2026-10-25T10:59:36.858Z",
+        "sha256": "0684d682965dc535a1cd7801721d4f41f0957014697cc9b14c5119fccde28e8d"
+      },
+      "admission": {
+        "protectedContentEmitted": false,
+        "allowedClockStatus": 200,
+        "deniedClockStatus": 401,
+        "rawDeniedCleanupComplete": false,
+        "rawHttpErrors": 1,
+        "exactExpectedResponseClassification": true,
+        "missingProviderDenialOnly": false
+      }
+    },
+    {
+      "viewport": "desktop",
+      "mode": "admission",
+      "scenario": "mfa",
+      "functionalPassed": true,
+      "rawOverallPassed": true,
+      "resourceOutcome": "pass",
+      "driverQueries": 834,
+      "nativeCountsExact": true,
+      "allServerSpansClosed": true,
+      "strictTransportComplete": true,
+      "acknowledgedQueryCancellations": 0,
+      "observedQueryErrors": 0,
+      "rawEvidence": {
+        "capturedAt": "2026-10-25T11:00:11.877Z",
+        "sha256": "56a775cfa0a164f44f729ba974215cd99f7341d68a93834cd13c7131f2c3697c"
+      },
+      "admission": {
+        "protectedContentEmitted": false,
+        "allowedClockStatus": 200,
+        "deniedClockStatus": 400,
+        "rawDeniedCleanupComplete": false,
+        "rawHttpErrors": 1,
+        "exactExpectedResponseClassification": true,
+        "missingProviderDenialOnly": false
+      }
+    },
+    {
+      "viewport": "desktop",
+      "mode": "admission",
+      "scenario": "sso",
+      "functionalPassed": true,
+      "rawOverallPassed": true,
+      "resourceOutcome": "pass",
+      "driverQueries": 747,
+      "nativeCountsExact": true,
+      "allServerSpansClosed": true,
+      "strictTransportComplete": true,
+      "acknowledgedQueryCancellations": 0,
+      "observedQueryErrors": 0,
+      "rawEvidence": {
+        "capturedAt": "2026-10-25T11:00:46.323Z",
+        "sha256": "26b83bae61eda702536f0a4ac2eb5b691b565079f10a7a9e17444dea23701bdd"
+      },
+      "admission": {
+        "protectedContentEmitted": false,
+        "allowedClockStatus": 200,
+        "deniedClockStatus": 400,
+        "rawDeniedCleanupComplete": false,
+        "rawHttpErrors": 3,
+        "exactExpectedResponseClassification": true,
+        "missingProviderDenialOnly": true
+      }
+    },
+    {
+      "viewport": "mobile",
+      "mode": "first-document",
+      "scenario": "held",
+      "functionalPassed": true,
+      "rawOverallPassed": true,
+      "resourceOutcome": "pass",
+      "driverQueries": 700,
+      "nativeCountsExact": true,
+      "allServerSpansClosed": true,
+      "strictTransportComplete": true,
+      "acknowledgedQueryCancellations": 0,
+      "observedQueryErrors": 0,
+      "rawEvidence": {
+        "capturedAt": "2026-10-25T11:01:02.379Z",
+        "sha256": "ce2d3a6bf2b818a926f6471957c85cbdb1e2a1e60463baa58a19932377496967"
+      },
+      "streaming": {
+        "usefulSiblingBeforeRelease": true,
+        "knownClockBeforeRelease": true,
+        "secondaryPendingBeforeRelease": true,
+        "secondaryEventuallyComplete": true
+      }
+    },
+    {
+      "viewport": "mobile",
+      "mode": "first-document",
+      "scenario": "failed",
+      "functionalPassed": true,
+      "rawOverallPassed": false,
+      "resourceOutcome": "raw-fail-cancelled-query-row-cost-unknown",
+      "driverQueries": 716,
+      "nativeCountsExact": true,
+      "allServerSpansClosed": true,
+      "strictTransportComplete": true,
+      "acknowledgedQueryCancellations": 2,
+      "observedQueryErrors": 2,
+      "rawEvidence": {
+        "capturedAt": "2026-10-25T11:01:12.205Z",
+        "sha256": "e1521175a43ef6cea44261d66f5d309bc76b3e90865f3243c83a9af8de6fb4e9"
+      },
+      "streaming": {
+        "usefulSiblingBeforeRelease": true,
+        "knownClockBeforeRelease": true,
+        "secondaryPendingBeforeRelease": true,
+        "secondaryEventuallyComplete": true,
+        "localErrorAndKeyboardRetryRecovered": true
+      }
+    },
+    {
+      "viewport": "mobile",
+      "mode": "repeat-link",
+      "scenario": "held",
+      "functionalPassed": true,
+      "rawOverallPassed": true,
+      "resourceOutcome": "pass",
+      "driverQueries": 1026,
+      "nativeCountsExact": true,
+      "allServerSpansClosed": true,
+      "strictTransportComplete": true,
+      "acknowledgedQueryCancellations": 0,
+      "observedQueryErrors": 0,
+      "rawEvidence": {
+        "capturedAt": "2026-10-25T11:01:29.276Z",
+        "sha256": "1236c8bf3d1dc47ba2e026d26c9f3c14e230b34b3cbc67310c78eccd239fa935"
+      },
+      "streaming": {
+        "usefulSiblingBeforeRelease": true,
+        "knownClockBeforeRelease": true,
+        "secondaryPendingBeforeRelease": true,
+        "secondaryEventuallyComplete": true
+      }
+    },
+    {
+      "viewport": "mobile",
+      "mode": "repeat-link",
+      "scenario": "failed",
+      "functionalPassed": true,
+      "rawOverallPassed": false,
+      "resourceOutcome": "raw-fail-cancelled-query-row-cost-unknown",
+      "driverQueries": 1242,
+      "nativeCountsExact": true,
+      "allServerSpansClosed": true,
+      "strictTransportComplete": true,
+      "acknowledgedQueryCancellations": 1,
+      "observedQueryErrors": 1,
+      "rawEvidence": {
+        "capturedAt": "2026-10-25T11:01:44.954Z",
+        "sha256": "26608a4ab1a26b70367d5c255c28416b52ca27e504f3aead07f24488835a910c"
+      },
+      "streaming": {
+        "usefulSiblingBeforeRelease": true,
+        "knownClockBeforeRelease": true,
+        "secondaryPendingBeforeRelease": true,
+        "secondaryEventuallyComplete": true,
+        "localErrorAndKeyboardRetryRecovered": true
+      }
+    },
+    {
+      "viewport": "mobile",
+      "mode": "admission",
+      "scenario": "signed-out",
+      "functionalPassed": true,
+      "rawOverallPassed": true,
+      "resourceOutcome": "pass",
+      "driverQueries": 680,
+      "nativeCountsExact": true,
+      "allServerSpansClosed": true,
+      "strictTransportComplete": true,
+      "acknowledgedQueryCancellations": 0,
+      "observedQueryErrors": 0,
+      "rawEvidence": {
+        "capturedAt": "2026-10-25T11:02:23.257Z",
+        "sha256": "09dbbe5358877159252a2595b059c39b340eb4f529ddba3a80f6ac16f6ca0fba"
+      },
+      "admission": {
+        "protectedContentEmitted": false,
+        "allowedClockStatus": 200,
+        "deniedClockStatus": 401,
+        "rawDeniedCleanupComplete": false,
+        "rawHttpErrors": 1,
+        "exactExpectedResponseClassification": true,
+        "missingProviderDenialOnly": false
+      }
+    },
+    {
+      "viewport": "mobile",
+      "mode": "admission",
+      "scenario": "mfa",
+      "functionalPassed": true,
+      "rawOverallPassed": true,
+      "resourceOutcome": "pass",
+      "driverQueries": 834,
+      "nativeCountsExact": true,
+      "allServerSpansClosed": true,
+      "strictTransportComplete": true,
+      "acknowledgedQueryCancellations": 0,
+      "observedQueryErrors": 0,
+      "rawEvidence": {
+        "capturedAt": "2026-10-25T11:02:59.387Z",
+        "sha256": "5ab8946746c9c03c80ea38270a57e8c7aaff23b5f0a014399ebb1f2cf1ed1e98"
+      },
+      "admission": {
+        "protectedContentEmitted": false,
+        "allowedClockStatus": 200,
+        "deniedClockStatus": 400,
+        "rawDeniedCleanupComplete": false,
+        "rawHttpErrors": 1,
+        "exactExpectedResponseClassification": true,
+        "missingProviderDenialOnly": false
+      }
+    },
+    {
+      "viewport": "mobile",
+      "mode": "admission",
+      "scenario": "sso",
+      "functionalPassed": true,
+      "rawOverallPassed": true,
+      "resourceOutcome": "pass",
+      "driverQueries": 747,
+      "nativeCountsExact": true,
+      "allServerSpansClosed": true,
+      "strictTransportComplete": true,
+      "acknowledgedQueryCancellations": 0,
+      "observedQueryErrors": 0,
+      "rawEvidence": {
+        "capturedAt": "2026-10-25T11:03:34.518Z",
+        "sha256": "96f62faf2122b1056e8c6e75df47d77c524dd58c5d32a6d0b62a922c18334f63"
+      },
+      "admission": {
+        "protectedContentEmitted": false,
+        "allowedClockStatus": 200,
+        "deniedClockStatus": 400,
+        "rawDeniedCleanupComplete": false,
+        "rawHttpErrors": 3,
+        "exactExpectedResponseClassification": true,
+        "missingProviderDenialOnly": true
+      }
+    }
+  ],
+  "limitations": [
+    "Four intentional SQL-cancellation cases retain raw resource failure and UNKNOWN returned-row cost; no zero was substituted.",
+    "Admission response classification is exact, scenario-specific and functional only; all raw HTTP errors and raw cleanup failures remain visible.",
+    "The SSO fixture deliberately lacks a provider: its fail-closed picker is verified, not successful SSO or a real IdP integration.",
+    "Query counts include each finite condition preparation and background work; these are not isolated route costs or numeric performance budgets.",
+    "Historical failed attempts remain immutable and source-qualified. Controlled before/head budget gates and production/CDN verification remain separate."
+  ]
+}

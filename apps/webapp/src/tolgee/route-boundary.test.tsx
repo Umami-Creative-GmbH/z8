@@ -25,6 +25,12 @@ import { TolgeeNextProvider, useNamespaces } from "./client";
 import { FeatureTranslationProvider } from "./feature-provider";
 import { loadCatalogSlice, loadShellTranslations } from "./load-translations";
 
+// Match createTestTolgee: keep the real SDK without a browser-extension process
+// whose retry timers can outlive this file's jsdom environment.
+vi.mock("@tolgee/web", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("@tolgee/web")>();
+	return { ...actual, Tolgee: actual.TolgeeCore };
+});
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 vi.mock("server-only", () => ({}));
 vi.mock("next/cache", () => ({ cacheLife: vi.fn() }));
@@ -50,6 +56,29 @@ function Labels() {
 }
 
 describe("real Tolgee feature delivery", () => {
+	it("renders route providers without starting browser-extension handshakes", async () => {
+		const shell = await loadShellTranslations("bs");
+		vi.useFakeTimers();
+		const postMessage = vi.spyOn(window, "postMessage");
+		const view = render(
+			<TolgeeNextProvider slice={shell}>
+				<p>Provider ready</p>
+			</TolgeeNextProvider>,
+		);
+		try {
+			await act(async () => {
+				await vi.runAllTimersAsync();
+			});
+			expect(screen.getByText("Provider ready")).toBeTruthy();
+			expect(postMessage).not.toHaveBeenCalled();
+			expect(vi.getTimerCount()).toBe(0);
+		} finally {
+			view.unmount();
+			vi.clearAllTimers();
+			vi.useRealTimers();
+			postMessage.mockRestore();
+		}
+	});
 	it("translates the actual no-employee guard and its create-organization dialog with only shell records", async () => {
 		const shell = await loadShellTranslations("de");
 		render(

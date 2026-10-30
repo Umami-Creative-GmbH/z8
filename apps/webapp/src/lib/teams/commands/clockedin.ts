@@ -8,7 +8,8 @@
 import { and, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
-import { employee, employeeManagers, workPeriod } from "@/db/schema";
+import { employee, workPeriod } from "@/db/schema";
+import { currentRosterReportIds } from "@/lib/bot-platform/current-roster-team";
 import { getBotTranslate } from "@/lib/bot-platform/i18n";
 import type { BotCommand, BotCommandContext, BotCommandResponse } from "@/lib/bot-platform/types";
 import { instantFromDate } from "@/lib/datetime/temporal-core";
@@ -29,34 +30,18 @@ export const clockedInCommand: BotCommand = {
 			const t = await getBotTranslate(ctx.locale);
 			const temporal = ctx.temporal ?? getCommandTemporalContext(ctx);
 
-			// Get employees this user manages (join through employee to filter by org)
-			const managedEmployees = await db.query.employeeManagers.findMany({
-				where: eq(employeeManagers.managerId, ctx.employeeId),
-				with: {
-					employee: {
-						columns: { id: true, organizationId: true },
-						with: {
-							user: {
-								columns: { name: true },
-							},
-						},
-					},
-				},
+			// The manager's team in this organization: its current roster only (#1438).
+			const managedEmployeeIds = await currentRosterReportIds(db, {
+				organizationId: ctx.organizationId,
+				managerEmployeeId: ctx.employeeId,
 			});
 
-			// Filter to employees in this organization
-			const orgManagedEmployees = managedEmployees.filter(
-				(m) => m.employee.organizationId === ctx.organizationId,
-			);
-
-			if (orgManagedEmployees.length === 0) {
+			if (managedEmployeeIds.length === 0) {
 				return {
 					type: "text",
 					text: t("bot.cmd.clockedin.noTeam", "You don't have any team members assigned to you."),
 				};
 			}
-
-			const managedEmployeeIds = orgManagedEmployees.map((m) => m.employeeId);
 
 			// Get active work periods (isActive = true) for managed employees
 			const activeWorkPeriods = await db
@@ -82,7 +67,7 @@ export const clockedInCommand: BotCommand = {
 					text: t(
 						"bot.cmd.clockedin.noneActive",
 						"None of your {total} team members are currently clocked in.",
-						{ total: orgManagedEmployees.length },
+						{ total: managedEmployeeIds.length },
 					),
 				};
 			}
@@ -96,7 +81,7 @@ export const clockedInCommand: BotCommand = {
 			});
 
 			const response = [
-				`**${t("bot.cmd.clockedin.header", "{active} of {total} team members currently clocked in:", { active: activeWorkPeriods.length, total: orgManagedEmployees.length })}**`,
+				`**${t("bot.cmd.clockedin.header", "{active} of {total} team members currently clocked in:", { active: activeWorkPeriods.length, total: managedEmployeeIds.length })}**`,
 				"",
 				...lines,
 			].join("\n");

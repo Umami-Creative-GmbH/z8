@@ -55,10 +55,23 @@ export async function lockLifecycleOrganization(
 	tx: Pick<LifecycleClient, "execute">,
 	organizationId: string,
 ): Promise<void> {
+	if (!(await tryLockLifecycleOrganization(tx, organizationId))) {
+		throw new Error("organization_not_found");
+	}
+}
+
+/**
+ * The organization row lock every lifecycle mutation takes, serializing owner
+ * safety checks; false when the organization does not exist.
+ */
+export async function tryLockLifecycleOrganization(
+	tx: Pick<LifecycleClient, "execute">,
+	organizationId: string,
+): Promise<boolean> {
 	const result = await tx.execute(sql`
 		SELECT id FROM organization WHERE id = ${organizationId} FOR UPDATE
 	`);
-	if (result.rows.length !== 1) throw new Error("organization_not_found");
+	return result.rows.length === 1;
 }
 
 /**

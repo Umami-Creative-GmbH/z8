@@ -7,6 +7,7 @@ import type { TeamDrivingDetailsRow } from "@/lib/time-tracking/vehicle-use/driv
 import { DrivingDetailsList } from "./driving-details-list";
 
 vi.mock("@tolgee/react", () => ({
+	useTolgee: () => ({ getLanguage: () => "en-GB" }),
 	useTranslate: () => ({
 		t: (_key: string, fallback: string, params?: Record<string, string | number>) =>
 			Object.entries(params ?? {}).reduce(
@@ -33,6 +34,7 @@ const row = (overrides: Partial<TeamDrivingDetailsRow>): TeamDrivingDetailsRow =
 	employeeId: "employee-1",
 	name: "Ada",
 	teamName: "Field",
+	former: false,
 	workDay: "2026-09-07",
 	startedAt: "2026-09-07T06:00:00Z",
 	endedAt: "2026-09-07T14:00:00Z",
@@ -65,6 +67,39 @@ describe("the driving details missing list (#1127)", () => {
 			within(second).getByRole("link", { name: "Open the calendar of Ada" }).getAttribute("href"),
 		).toBe("/calendar/employee-1?date=2026-09-08");
 		expect(screen.getByText(/missing driving details\.$/)).toBeTruthy();
+	});
+
+	it("marks a former employee's work as former, with the date they left (#1438, #1439)", () => {
+		render(
+			<DrivingDetailsList
+				teams={[]}
+				employees={[]}
+				filters={{ teamId: null, employeeId: null }}
+				rows={[
+					row({}),
+					row({
+						workPeriodId: "work-2",
+						employeeId: "employee-2",
+						name: "Bo",
+						former: true,
+						formerSince: "2026-10-12",
+					}),
+					row({
+						workPeriodId: "work-3",
+						employeeId: "employee-3",
+						name: "Cy",
+						former: true,
+						formerSince: null,
+					}),
+				]}
+				truncated={false}
+			/>,
+		);
+
+		const [, current, former, unrecorded] = screen.getAllByRole("row");
+		expect(within(current).queryByText(/Former/)).toBeNull();
+		expect(within(former).getByText("Former since 12 Oct 2026")).toBeTruthy();
+		expect(within(unrecorded).getByText("Former · date not recorded")).toBeTruthy();
 	});
 
 	it("says so when nothing is missing", () => {

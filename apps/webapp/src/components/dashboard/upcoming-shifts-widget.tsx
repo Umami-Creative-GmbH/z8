@@ -2,34 +2,42 @@
 
 import { IconCalendarTime, IconChevronRight, IconClock, IconMapPin } from "@tabler/icons-react";
 import { useTolgee, useTranslate } from "@tolgee/react";
-import { getMyUpcomingShifts } from "@/app/[locale]/(app)/scheduling/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { parsePlainDate } from "@/lib/datetime/temporal-core";
 import { formatPlainDate } from "@/lib/datetime/temporal-format";
 import { shiftEndsNextDay, shiftPlaceLabel } from "@/lib/scheduling/shift-labels";
-import type { UpcomingShift, UpcomingShifts } from "@/lib/scheduling/upcoming-shifts";
+import type { UpcomingShift } from "@/lib/scheduling/upcoming-shifts";
 import { Link } from "@/navigation";
 import { useShiftsEnabled } from "@/stores/organization-settings-store";
+import type { DashboardWidgetData, DashboardWidgetSnapshot } from "./dashboard-types";
 import { DashboardWidget } from "./dashboard-widget";
-import { useWidgetData } from "./use-widget-data";
+import { useDashboardWidget } from "./use-dashboard-widget";
 import { WidgetCard } from "./widget-card";
+import { WidgetReadError } from "./widget-read-error";
 
 /** The employee's next published shifts, shown while the organization plans shifts. */
-export function UpcomingShiftsWidget() {
+export function UpcomingShiftsWidget({
+	initialSnapshot,
+}: {
+	initialSnapshot?: DashboardWidgetSnapshot<DashboardWidgetData["upcoming-shifts"]>;
+} = {}) {
 	const shiftsEnabled = useShiftsEnabled();
 	if (!shiftsEnabled) return null;
-	return <UpcomingShiftsWidgetContent />;
+	return <UpcomingShiftsWidgetContent initialSnapshot={initialSnapshot} />;
 }
 
-function UpcomingShiftsWidgetContent() {
+function UpcomingShiftsWidgetContent({
+	initialSnapshot,
+}: {
+	initialSnapshot?: DashboardWidgetSnapshot<DashboardWidgetData["upcoming-shifts"]>;
+}) {
 	const { t } = useTranslate();
-	const { data, loading, refreshing, refetch } = useWidgetData<UpcomingShifts>(
-		() => getMyUpcomingShifts(),
-		{ errorMessage: t("dashboard.upcoming-shifts.error", "Failed to load your upcoming shifts") },
+	const { data, loading, refreshing, refetch, error } = useDashboardWidget(
+		"upcoming-shifts",
+		initialSnapshot,
 	);
-
-	if (!loading && !data) return null;
+	if (!loading && !error && !data) return null;
 
 	return (
 		<DashboardWidget id="upcoming-shifts">
@@ -41,37 +49,46 @@ function UpcomingShiftsWidgetContent() {
 				refreshing={refreshing}
 				onRefresh={refetch}
 			>
-				{data && (
-					<div className="space-y-3">
-						{data.shifts.length === 0 ? (
-							<div className="rounded-xl border border-dashed p-4 text-center">
-								<p className="font-medium text-sm">
-									{t("dashboard.upcoming-shifts.empty", "No upcoming shifts")}
-								</p>
-								<p className="mt-1 text-muted-foreground text-xs">
-									{t(
-										"dashboard.upcoming-shifts.empty-description",
-										"Your next published shifts will show up here.",
-									)}
-								</p>
-							</div>
-						) : (
-							<ul className="space-y-2">
-								{data.shifts.map((shift) => (
-									<li key={shift.id}>
-										<UpcomingShiftRow shift={shift} today={data.today} />
-									</li>
-								))}
-							</ul>
-						)}
+				{error ? (
+					<WidgetReadError
+						title={t("dashboard.upcoming-shifts.title", "Upcoming Shifts")}
+						message={error}
+						retry={refetch}
+						refreshing={refreshing}
+					/>
+				) : (
+					data && (
+						<div className="space-y-3">
+							{data.shifts.length === 0 ? (
+								<div className="rounded-xl border border-dashed p-4 text-center">
+									<p className="font-medium text-sm">
+										{t("dashboard.upcoming-shifts.empty", "No upcoming shifts")}
+									</p>
+									<p className="mt-1 text-muted-foreground text-xs">
+										{t(
+											"dashboard.upcoming-shifts.empty-description",
+											"Your next published shifts will show up here.",
+										)}
+									</p>
+								</div>
+							) : (
+								<ul className="space-y-2">
+									{data.shifts.map((shift) => (
+										<li key={shift.id}>
+											<UpcomingShiftRow shift={shift} today={data.today} />
+										</li>
+									))}
+								</ul>
+							)}
 
-						<Button className="group w-full" variant="outline" asChild>
-							<Link href="/scheduling">
-								<IconCalendarTime className="mr-2 size-4 transition-transform group-hover:scale-110" />
-								{t("dashboard.upcoming-shifts.view-schedule", "View schedule")}
-							</Link>
-						</Button>
-					</div>
+							<Button className="group w-full" variant="outline" asChild>
+								<Link href="/scheduling">
+									<IconCalendarTime className="mr-2 size-4 transition-transform group-hover:scale-110" />
+									{t("dashboard.upcoming-shifts.view-schedule", "View schedule")}
+								</Link>
+							</Button>
+						</div>
+					)
 				)}
 			</WidgetCard>
 		</DashboardWidget>

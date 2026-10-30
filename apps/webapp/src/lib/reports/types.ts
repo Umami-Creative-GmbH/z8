@@ -144,4 +144,11 @@ export interface AccessibleEmployee {
 	pronouns: string | null;
 	position: string | null;
 	role: "admin" | "manager" | "employee";
+	/** Deactivated or past a due departure (#1438): the selector labels them "Former". */
+	isFormer?: boolean;
+	/**
+	 * The organization-local date a former employee left (`YYYY-MM-DD`, #1439),
+	 * `null` when it isn't recorded. Only on former employees.
+	 */
+	formerSince?: string | null;
 }

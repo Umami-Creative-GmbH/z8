@@ -21,14 +21,18 @@ const mockState = vi.hoisted(() => ({
 	}),
 	select: vi.fn(() => ({
 		from: vi.fn(() => ({
-			where: vi.fn(async () => []),
+			innerJoin: vi.fn(() => ({
+				leftJoin: vi.fn(() => ({
+					where: vi.fn(() => ({ orderBy: vi.fn(async () => []) })),
+				})),
+			})),
 		})),
 	})),
 	loadWorkingDays: vi.fn(),
 }));
 
 vi.mock("drizzle-orm", async (importOriginal) => ({
- ...(await importOriginal<typeof import("drizzle-orm")>()),
+	...(await importOriginal<typeof import("drizzle-orm")>()),
 	and: vi.fn((...args: unknown[]) => ({ and: args })),
 	eq: vi.fn((left: unknown, right: unknown) => ({ eq: [left, right] })),
 	gt: vi.fn((left: unknown, right: unknown) => ({ gt: [left, right] })),
@@ -91,7 +95,10 @@ vi.mock("@/lib/time-tracking/calculations", () => ({
 }));
 
 vi.mock("@/lib/organization/custom-fields/report-reads", () => ({
-	readCustomFieldReportValues: vi.fn(async () => ({ columns: [], byRecord: {} })),
+	readCustomFieldReportValues: vi.fn(async () => ({
+		columns: [],
+		byRecord: {},
+	})),
 }));
 
 const { aggregateHomeOfficeDays } = await import("./report-generator");
@@ -117,18 +124,12 @@ describe("report generator", () => {
 
 		expect(mockState.absenceCategoryFindMany).toHaveBeenCalledTimes(1);
 		expect(mockState.homeOfficeCategoryWhere).toEqual({
-			and: [
-				{ eq: ["type", "home_office"] },
-				{ eq: ["organizationId", "org-1"] },
-			],
+			and: [{ eq: ["type", "home_office"] }, { eq: ["organizationId", "org-1"] }],
 		});
 	});
 
 	it("aggregates home office days across active and inactive home office categories", async () => {
-		mockState.homeOfficeCategories = [
-			{ id: "home-office-1" },
-			{ id: "home-office-2" },
-		];
+		mockState.homeOfficeCategories = [{ id: "home-office-1" }, { id: "home-office-2" }];
 		mockState.absences = [
 			{
 				categoryId: "home-office-1",
@@ -160,10 +161,7 @@ describe("report generator", () => {
 				{ eq: ["employeeId", "employee-1"] },
 				{ eq: ["organizationId", "org-1"] },
 				{
-					or: [
-						{ eq: ["categoryId", "home-office-1"] },
-						{ eq: ["categoryId", "home-office-2"] },
-					],
+					or: [{ eq: ["categoryId", "home-office-1"] }, { eq: ["categoryId", "home-office-2"] }],
 				},
 				{ eq: ["status", "approved"] },
 				{ lte: ["startDate", "2026-01-31"] },
@@ -174,9 +172,7 @@ describe("report generator", () => {
 
 	it("clips absence days to the report calendar strings", async () => {
 		// Monday to Thursday: Friday 1 May is not a working day, Monday 4 May is.
-		mockState.loadWorkingDays.mockResolvedValue(
-			(day: { dayOfWeek: number }) => day.dayOfWeek <= 4,
-		);
+		mockState.loadWorkingDays.mockResolvedValue((day: { dayOfWeek: number }) => day.dayOfWeek <= 4);
 		mockState.absences = [
 			{
 				categoryId: "vacation",

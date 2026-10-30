@@ -9,7 +9,15 @@ import {
 
 // Protection itself is covered by authorization-mutation.test.ts and the
 // PostgreSQL suite; here it runs the mutation in the fake's transaction.
-const protection = vi.hoisted(() => ({ scopes: [] as unknown[] }));
+const protection = vi.hoisted(() => ({
+	scopes: [] as unknown[],
+	formerEmployeeIds: new Set<string>(),
+}));
+vi.mock("@/lib/employee-lifecycle/current-roster-guard", async () =>
+	(
+		await import("@/lib/employee-lifecycle/testing/current-roster-guard.test.mock")
+	).currentRosterGuardModule(() => protection.formerEmployeeIds),
+);
 vi.mock("@/lib/authorization/authorization-mutation", () => ({
 	withAuthorizationMutation: async (
 		scope: unknown,
@@ -350,6 +358,37 @@ describe("PermissionsService mutations", () => {
 
 		const scope = { organizationId: "org-1", employeeIds: ["employee-target"] };
 		expect(protection.scopes).toEqual([scope, scope]);
+	});
+
+	it("refuses granting a former employee team permissions but still clears them (#1438)", async () => {
+		const { db } = createMutationDb();
+		protection.formerEmployeeIds = new Set(["employee-target"]);
+		try {
+			await expect(
+				runWithService(db, (service) =>
+					service.grantPermissions(
+						"employee-target",
+						"org-1",
+						{ canCreateTeams: true },
+						null,
+						"employee-granter",
+					),
+				),
+			).rejects.toMatchObject({ _tag: "ValidationError", field: "employeeId" });
+			await expect(
+				runWithService(db, (service) =>
+					service.grantPermissions(
+						"employee-target",
+						"org-1",
+						{ canCreateTeams: false },
+						null,
+						"employee-granter",
+					),
+				),
+			).resolves.toBeUndefined();
+		} finally {
+			protection.formerEmployeeIds = new Set();
+		}
 	});
 
 	it("authorizes a membership admin by the scoped granter employee user ID", async () => {

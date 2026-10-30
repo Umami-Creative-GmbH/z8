@@ -37,6 +37,11 @@ export function vehicleRefusalMessage(t: Translate, reason: VehicleRefusal): str
 				"settings.vehicles.refusals.driverNotFound",
 				"An assigned employee or team no longer exists. Reload the page.",
 			);
+		case "former_driver":
+			return t(
+				"settings.vehicles.refusals.formerDriver",
+				"Former employees can't be assigned as drivers. Choose employees on the current roster.",
+			);
 		case "vehicle_used":
 			return t(
 				"settings.vehicles.refusals.vehicleUsed",

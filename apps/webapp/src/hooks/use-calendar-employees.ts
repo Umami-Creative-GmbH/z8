@@ -9,6 +9,7 @@ import {
 } from "@/app/[locale]/(app)/team/actions";
 import type { SelectableEmployee } from "@/components/employee-select/types";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
+import { formerSinceField } from "@/lib/employee-lifecycle/former-since";
 import { queryKeys } from "@/lib/query/keys";
 
 /**
@@ -38,6 +39,9 @@ function transformManagedEmployee(emp: ManagedEmployee): SelectableEmployee {
 		position: emp.position,
 		role: emp.role,
 		isActive: emp.isActive,
+		// Former reports stay selectable for their past, labelled (#1438).
+		isFormer: emp.isFormer,
+		...formerSinceField(emp.isFormer === true, emp.formerSince),
 		teamId: emp.team?.id ?? null,
 		user: {
 			id: emp.user.id,

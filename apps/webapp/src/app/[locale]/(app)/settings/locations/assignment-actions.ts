@@ -14,6 +14,7 @@ import {
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import { ensureOnCurrentRoster } from "@/lib/employee-lifecycle/current-roster-guard";
 import { logger } from "@/lib/logger";
 import {
 	type AssignLocationEmployee,
@@ -109,7 +110,6 @@ export async function assignLocationEmployee(
 							where: and(
 								eq(employee.id, input.employeeId),
 								eq(employee.organizationId, loc.organizationId),
-								eq(employee.isActive, true),
 							),
 						});
 					})
@@ -126,6 +126,12 @@ export async function assignLocationEmployee(
 									),
 						),
 					);
+				// A former employee gets no new location (#1438).
+				yield* ensureOnCurrentRoster(dbService, {
+					organizationId: loc.organizationId,
+					employeeIds: [input.employeeId],
+					field: "employeeId",
+				});
 
 				// Check for existing assignment
 				const existing = yield* dbService.query("checkExisting", async () => {
@@ -411,7 +417,6 @@ export async function assignSubareaEmployee(
 							where: and(
 								eq(employee.id, input.employeeId),
 								eq(employee.organizationId, typedSubarea.location.organizationId),
-								eq(employee.isActive, true),
 							),
 						});
 					})
@@ -428,6 +433,12 @@ export async function assignSubareaEmployee(
 									),
 						),
 					);
+				// A former employee gets no new subarea (#1438).
+				yield* ensureOnCurrentRoster(dbService, {
+					organizationId: typedSubarea.location.organizationId,
+					employeeIds: [input.employeeId],
+					field: "employeeId",
+				});
 
 				// Check for existing assignment
 				const existing = yield* dbService.query("checkExisting", async () => {

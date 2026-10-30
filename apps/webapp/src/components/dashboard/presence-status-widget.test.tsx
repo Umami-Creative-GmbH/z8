@@ -1,15 +1,22 @@
 /* @vitest-environment jsdom */
 
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PresenceStatusWidget } from "./presence-status-widget";
 
-const mocks = vi.hoisted(() => ({
-	getCurrentEmployee: vi.fn(),
-	usePresenceStatus: vi.fn(),
-}));
-
+let delivered: { data: Record<string, unknown>; isLoading: boolean };
+function setDelivery(value: typeof delivered) {
+	delivered = value;
+}
+function initialDelivery() {
+	return {
+		scope: { userId: "user-1", organizationId: "org-1" },
+		updatedAt: Date.now(),
+		result: { success: true as const, data: delivered.data },
+	};
+}
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
 		t: (_key: string, fallback: string, params?: Record<string, unknown>) => {
@@ -29,12 +36,13 @@ vi.mock("@tolgee/react", () => ({
 	}),
 }));
 
-vi.mock("@/app/[locale]/(app)/time-tracking/actions", () => ({
-	getCurrentEmployee: mocks.getCurrentEmployee,
-}));
-
-vi.mock("@/hooks/use-presence-status", () => ({
-	usePresenceStatus: mocks.usePresenceStatus,
+vi.mock("@/hooks/use-organization", () => ({
+	useOrganization: () => ({
+		userId: "user-1",
+		organizationId: "org-1",
+		role: "employee",
+		isLoading: false,
+	}),
 }));
 
 vi.mock("./dashboard-widget", () => ({
@@ -61,18 +69,13 @@ vi.mock("./widget-card", () => ({
 	),
 }));
 
-function mockEmployee() {
-	mocks.getCurrentEmployee.mockResolvedValue({ id: "emp-1" });
-}
-
 describe("PresenceStatusWidget", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
 
 	it("renders equal home-office and office-required stats", async () => {
-		mockEmployee();
-		mocks.usePresenceStatus.mockReturnValue({
+		setDelivery({
 			isLoading: false,
 			data: {
 				presenceEnabled: true,
@@ -92,7 +95,11 @@ describe("PresenceStatusWidget", () => {
 			},
 		});
 
-		render(<PresenceStatusWidget />);
+		render(
+			<QueryClientProvider client={new QueryClient()}>
+				<PresenceStatusWidget initialSnapshot={initialDelivery()} />
+			</QueryClientProvider>,
+		);
 
 		expect(await screen.findByText("Work location")).toBeTruthy();
 		expect(screen.getByText("Home office left")).toBeTruthy();
@@ -102,8 +109,7 @@ describe("PresenceStatusWidget", () => {
 	});
 
 	it("renders localized fixed office day notes", async () => {
-		mockEmployee();
-		mocks.usePresenceStatus.mockReturnValue({
+		setDelivery({
 			isLoading: false,
 			data: {
 				presenceEnabled: true,
@@ -123,14 +129,17 @@ describe("PresenceStatusWidget", () => {
 			},
 		});
 
-		render(<PresenceStatusWidget />);
+		render(
+			<QueryClientProvider client={new QueryClient()}>
+				<PresenceStatusWidget initialSnapshot={initialDelivery()} />
+			</QueryClientProvider>,
+		);
 
 		expect(await screen.findByText("Fixed office days: Mo, Mi")).toBeTruthy();
 	});
 
 	it("renders fixed office day notes with common localized weekday labels", async () => {
-		mockEmployee();
-		mocks.usePresenceStatus.mockReturnValue({
+		setDelivery({
 			isLoading: false,
 			data: {
 				presenceEnabled: true,
@@ -150,26 +159,32 @@ describe("PresenceStatusWidget", () => {
 			},
 		});
 
-		render(<PresenceStatusWidget />);
+		render(
+			<QueryClientProvider client={new QueryClient()}>
+				<PresenceStatusWidget initialSnapshot={initialDelivery()} />
+			</QueryClientProvider>,
+		);
 
 		expect(await screen.findByText("Fixed office days: Di, Do")).toBeTruthy();
 	});
 
 	it("hides when presence is disabled", async () => {
-		mockEmployee();
-		mocks.usePresenceStatus.mockReturnValue({
+		setDelivery({
 			isLoading: false,
 			data: { presenceEnabled: false },
 		});
 
-		const { container } = render(<PresenceStatusWidget />);
+		const { container } = render(
+			<QueryClientProvider client={new QueryClient()}>
+				<PresenceStatusWidget initialSnapshot={initialDelivery()} />
+			</QueryClientProvider>,
+		);
 
 		await waitFor(() => expect(container.innerHTML).toBe(""));
 	});
 
-	it("does not force loading when employee lookup returns no employee", async () => {
-		mocks.getCurrentEmployee.mockResolvedValue(null);
-		mocks.usePresenceStatus.mockReturnValue({
+	it("renders unavailable data without a separate employee lookup", async () => {
+		setDelivery({
 			isLoading: false,
 			data: {
 				presenceEnabled: true,
@@ -178,15 +193,18 @@ describe("PresenceStatusWidget", () => {
 			},
 		});
 
-		render(<PresenceStatusWidget />);
+		render(
+			<QueryClientProvider client={new QueryClient()}>
+				<PresenceStatusWidget initialSnapshot={initialDelivery()} />
+			</QueryClientProvider>,
+		);
 
 		await waitFor(() => expect(screen.queryByText("Loading widget")).toBeNull());
 		expect(screen.getByText("Presence policy is unavailable.")).toBeTruthy();
 	});
 
 	it("shows an unavailable state for enabled malformed policies", async () => {
-		mockEmployee();
-		mocks.usePresenceStatus.mockReturnValue({
+		setDelivery({
 			isLoading: false,
 			data: {
 				presenceEnabled: true,
@@ -195,7 +213,11 @@ describe("PresenceStatusWidget", () => {
 			},
 		});
 
-		render(<PresenceStatusWidget />);
+		render(
+			<QueryClientProvider client={new QueryClient()}>
+				<PresenceStatusWidget initialSnapshot={initialDelivery()} />
+			</QueryClientProvider>,
+		);
 
 		expect(await screen.findByText("Presence policy has invalid fixed office days.")).toBeTruthy();
 		expect(screen.queryByText("Home office left")).toBeNull();

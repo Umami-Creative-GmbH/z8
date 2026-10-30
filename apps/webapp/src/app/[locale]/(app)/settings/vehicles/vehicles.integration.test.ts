@@ -592,6 +592,98 @@ describe("organization vehicles on PostgreSQL", () => {
 			expect(await listed()).toEqual([]);
 		});
 
+		it("refuses newly assigning a former employee and keeps one already assigned (#1438)", async () => {
+			await admin.query("update employee set is_active = false where id = $1", [
+				ids.memberEmployee,
+			]);
+			expect(
+				await refusal({
+					kind: "create",
+					name: "Van",
+					licencePlate: "M-AB 1",
+					drivers: { employeeIds: [ids.memberEmployee], teamIds: [] },
+				}),
+			).toBe("former_driver");
+			await admin.query("update employee set is_active = true where id = $1", [
+				ids.memberEmployee,
+			]);
+			const van = await create("Van", "M-AB 1", {
+				employeeIds: [ids.memberEmployee],
+				teamIds: [],
+			});
+			await admin.query("update employee set is_active = false where id = $1", [
+				ids.memberEmployee,
+			]);
+
+			const renamed = await apply({
+				kind: "update",
+				vehicleId: van.id,
+				name: "Blue van",
+				licencePlate: "M-AB 1",
+				drivers: { employeeIds: [ids.memberEmployee, ids.managerEmployee], teamIds: [] },
+			});
+			const offered = async () => {
+				const result = await getVehicleSettings();
+				if (!result.success) throw new Error(result.error);
+				return result.data.employees.find((row) => row.id === ids.memberEmployee);
+			};
+			// Still a driver: offered, marked, so the edit keeps them.
+			expect(await offered()).toMatchObject({ isFormer: true, isActive: false });
+			expect(
+				renamed
+					.find((vehicle) => vehicle.id === van.id)
+					?.drivers.employees.map((driver) => driver.id)
+					.toSorted(),
+			).toEqual([ids.managerEmployee, ids.memberEmployee].toSorted());
+			const removed = await apply({
+				kind: "update",
+				vehicleId: van.id,
+				name: "Blue van",
+				licencePlate: "M-AB 1",
+				drivers: { employeeIds: [ids.managerEmployee], teamIds: [] },
+			});
+			expect(
+				removed.find((vehicle) => vehicle.id === van.id)?.drivers.employees.map((d) => d.id),
+			).toEqual([ids.managerEmployee]);
+			// No longer a driver anywhere: no longer offered.
+			expect(await offered()).toBeUndefined();
+		});
+
+		it("says since when, in the organization's timezone, an assigned former driver left (#1439)", async () => {
+			await admin.query("update organization set timezone = 'Pacific/Auckland' where id = $1", [
+				ids.organization,
+			]);
+			await create("Van", "M-AB 1", {
+				employeeIds: [ids.memberEmployee, ids.managerEmployee],
+				teamIds: [],
+			});
+			// 13:00 UTC on 14 September is already the 15th in Auckland (UTC+12).
+			await admin.query(
+				"update employee set is_active = false, deactivated_at = '2026-09-14T13:00:00Z' where id = $1",
+				[ids.memberEmployee],
+			);
+			// Deactivated before the instant was stored: the date isn't recorded.
+			await admin.query("update employee set is_active = false where id = $1", [
+				ids.managerEmployee,
+			]);
+			await admin.query("update employee set deactivated_at = null where id = $1", [
+				ids.managerEmployee,
+			]);
+
+			const result = await getVehicleSettings();
+			if (!result.success) throw new Error(result.error);
+			const byId = new Map(result.data.employees.map((row) => [row.id, row]));
+
+			expect(byId.get(ids.memberEmployee)).toMatchObject({
+				isFormer: true,
+				formerSince: "2026-09-15",
+			});
+			expect(byId.get(ids.managerEmployee)).toMatchObject({ isFormer: true, formerSince: null });
+			expect(byId.get(ids.employeeAdminEmployee)).toMatchObject({ isFormer: false });
+			// A current employee carries no date at all.
+			expect(byId.get(ids.employeeAdminEmployee)).not.toHaveProperty("formerSince");
+		});
+
 		it("refuses a driver row that points at another organization's employee in the database", async () => {
 			const van = await create("Van", "M-AB 1");
 			await expect(

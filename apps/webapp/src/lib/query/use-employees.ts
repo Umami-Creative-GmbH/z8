@@ -3,14 +3,14 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { PaginationState } from "@tanstack/react-table";
 import { useState } from "react";
-import { getCurrentEmployee } from "@/app/[locale]/(app)/approvals/actions";
-import {
-	type EmployeeListParams,
-	listEmployees,
-	type PaginatedEmployeeResponse,
-} from "@/app/[locale]/(app)/settings/employees/actions";
-import type { EmployeeDirectoryStatus } from "@/app/[locale]/(app)/settings/employees/employee-action-types";
+import type {
+	EmployeeDirectoryStatus,
+	EmployeeListParams,
+	PaginatedEmployeeResponse,
+} from "@/app/[locale]/(app)/settings/employees/employee-action-types";
+import { useOrganization } from "@/hooks/use-organization";
 import type { SettingsAccessTier } from "@/lib/settings-access";
+import { fetchEmployeeRead } from "./employee-read-client";
 import { queryKeys } from "./keys";
 
 interface UseEmployeesOptions {
@@ -22,11 +22,12 @@ interface UseEmployeesOptions {
 export function useEmployees(options: UseEmployeesOptions = {}) {
 	const { initialPageSize = 20 } = options;
 	const queryClient = useQueryClient();
+	const organization = useOrganization();
 
-	// Filter state (search, role, status)
+	// Filter state (search, role, status). The directory opens on the current roster (#1438).
 	const [search, setSearchState] = useState("");
 	const [role, setRoleState] = useState<string>("all");
-	const [status, setStatusState] = useState<EmployeeDirectoryStatus>("all");
+	const [status, setStatusState] = useState<EmployeeDirectoryStatus>("current");
 
 	// Pagination state (synced with react-table)
 	const [pagination, setPagination] = useState<PaginationState>({
@@ -43,28 +44,46 @@ export function useEmployees(options: UseEmployeesOptions = {}) {
 		offset: pagination.pageIndex * pagination.pageSize,
 	};
 
-	// Current employee query
-	const currentEmployeeQuery = useQuery({
-		queryKey: ["current-employee"],
-		queryFn: getCurrentEmployee,
-		staleTime: 5 * 60 * 1000,
-	});
-
-	const orgId = options.organizationId ?? currentEmployeeQuery.data?.organizationId ?? "";
-	const hasEmployee = !!currentEmployeeQuery.data || options.accessTier === "orgAdmin";
+	const orgId =
+		organization.activeOrganizationId ?? organization.organizationId;
+	const userId = organization.userId;
+	const hasEmployee =
+		Boolean(organization.employeeId) || options.accessTier === "orgAdmin";
+	const canLoad =
+		hasEmployee &&
+		!organization.isLoading &&
+		Boolean(userId && orgId) &&
+		(!options.organizationId || options.organizationId === orgId);
 
 	// Main employees query
 	const employeesQuery = useQuery({
-		queryKey: queryKeys.employees.list(orgId, params),
-		queryFn: async (): Promise<PaginatedEmployeeResponse> => {
-			const result = await listEmployees(params);
-			if (!result.success) throw new Error(result.error);
-			return result.data;
+		queryKey: queryKeys.employees.scopedList(userId, orgId, params),
+		queryFn: async ({ signal }): Promise<PaginatedEmployeeResponse> => {
+			if (!userId || !orgId) throw new Error("Employee context is unavailable");
+			return (
+				await fetchEmployeeRead(
+					"directory",
+					{ userId, organizationId: orgId },
+					params,
+					signal,
+				)
+			).data;
 		},
-		enabled: hasEmployee && !!orgId,
+		enabled: canLoad,
 		staleTime: 30 * 1000,
-		placeholderData: (prev) => prev,
+		retry: false,
+		placeholderData: (previous, query) =>
+			query?.queryKey[1] === orgId && query.queryKey[3] === userId
+				? previous
+				: undefined,
 	});
+	const data =
+		canLoad && !employeesQuery.isError ? employeesQuery.data : undefined;
+	const contextError = organization.error
+		? new Error(organization.error)
+		: !organization.isLoading && hasEmployee && !canLoad
+			? new Error("Employee context changed. Refresh to continue.")
+			: null;
 
 	// Filter setters (reset to page 0)
 	const setSearch = (value: string) => {
@@ -84,19 +103,24 @@ export function useEmployees(options: UseEmployeesOptions = {}) {
 
 	// Refresh
 	const refresh = () => {
-		queryClient.invalidateQueries({ queryKey: queryKeys.employees.all });
+		if (!canLoad || organization.error) return organization.refetch();
+		return queryClient.invalidateQueries({
+			queryKey: queryKeys.employees.scopedList(userId, orgId, params),
+			exact: true,
+		});
 	};
 
 	return {
 		// Data
-		employees: employeesQuery.data?.employees ?? [],
-		total: employeesQuery.data?.total ?? 0,
-		hasMore: employeesQuery.data?.hasMore ?? false,
+		employees: data?.employees ?? [],
+		total: data?.total ?? 0,
+		hasMore: data?.hasMore ?? false,
 
 		// Loading states
-		isLoading: currentEmployeeQuery.isLoading || employeesQuery.isLoading,
+		isLoading: organization.isLoading || (canLoad && employeesQuery.isPending),
 		isFetching: employeesQuery.isFetching,
-		isError: employeesQuery.isError,
+		isError: Boolean(contextError) || employeesQuery.isError,
+		error: contextError ?? employeesQuery.error,
 
 		// Auth
 		hasEmployee,
@@ -113,7 +137,7 @@ export function useEmployees(options: UseEmployeesOptions = {}) {
 		// Pagination (for react-table)
 		pagination,
 		setPagination,
-		pageCount: Math.ceil((employeesQuery.data?.total ?? 0) / pagination.pageSize) || 1,
+		pageCount: Math.ceil((data?.total ?? 0) / pagination.pageSize) || 1,
 
 		// Actions
 		refresh,

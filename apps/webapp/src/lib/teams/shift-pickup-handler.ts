@@ -9,13 +9,14 @@ import type { TurnContext } from "botbuilder";
 import { and, eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { db } from "@/db";
-import { employee, employeeManagers, shift } from "@/db/schema";
+import { employee, shift } from "@/db/schema";
 import { runtime } from "@/lib/effect/runtime";
 import {
 	OpenShiftsService,
 	OpenShiftsServiceLive,
 } from "@/lib/effect/services/open-shifts.service";
 import { createLogger } from "@/lib/logger";
+import { currentRosterManagerRecipients } from "@/lib/notifications/manager-notice-recipients";
 import { type NotificationCopy, translatedContent } from "@/lib/notifications/notification-copy";
 import { notificationParam } from "@/lib/notifications/notification-params";
 import { createNotification } from "@/lib/notifications/notification-service";
@@ -50,37 +51,15 @@ interface NotifyPrimaryManagerAboutShiftPickupParams {
 	organizationId: string;
 }
 
-export async function notifyPrimaryManagerAboutShiftPickup({
-	requestId,
-	shiftId,
-	requesterId,
-	organizationId,
-}: NotifyPrimaryManagerAboutShiftPickupParams): Promise<void> {
+export async function notifyPrimaryManagerAboutShiftPickup(
+	params: NotifyPrimaryManagerAboutShiftPickupParams,
+): Promise<void> {
+	const { requestId, shiftId, requesterId, organizationId } = params;
 	try {
-		const primaryManager = await db.query.employeeManagers.findFirst({
-			where: and(
-				eq(employeeManagers.employeeId, requesterId),
-				eq(employeeManagers.isPrimary, true),
-			),
-			columns: { managerId: true },
-		});
-
-		if (!primaryManager) {
-			logger.debug({ requesterId, organizationId }, "No primary manager for shift pickup request");
-			return;
-		}
-
-		const [requester, manager, requestedShift, organizationTimezone] = await Promise.all([
+		const [requester, requestedShift, organizationTimezone] = await Promise.all([
 			db.query.employee.findFirst({
 				where: and(eq(employee.id, requesterId), eq(employee.organizationId, organizationId)),
-				columns: { firstName: true, lastName: true },
-			}),
-			db.query.employee.findFirst({
-				where: and(
-					eq(employee.id, primaryManager.managerId),
-					eq(employee.organizationId, organizationId),
-				),
-				columns: { userId: true },
+				columns: { userId: true, firstName: true, lastName: true },
 			}),
 			db.query.shift.findFirst({
 				where: and(eq(shift.id, shiftId), eq(shift.organizationId, organizationId)),
@@ -89,11 +68,26 @@ export async function notifyPrimaryManagerAboutShiftPickup({
 			loadOrganizationTimezone(db, organizationId),
 		]);
 
-		if (!requester || !manager?.userId || !requestedShift) {
+		if (!requester || !requestedShift) {
 			logger.debug(
-				{ requesterId, managerId: primaryManager.managerId, shiftId, organizationId },
+				{ requesterId, shiftId, organizationId },
 				"Missing data for shift pickup manager notification",
 			);
+			return;
+		}
+
+		// Actionable: the request waits for a decision. A former primary manager is
+		// skipped, and with no current one the organization's admins decide (#1438).
+		const recipients = await currentRosterManagerRecipients(db, {
+			organizationId,
+			employeeIds: [requesterId],
+			notice: "actionable",
+			primaryOnly: true,
+			excludeUserIds: [requester.userId],
+		});
+
+		if (recipients.userIds.length === 0) {
+			logger.debug({ requesterId, organizationId }, "No recipient for shift pickup request");
 			return;
 		}
 
@@ -112,22 +106,26 @@ export async function notifyPrimaryManagerAboutShiftPickup({
 		};
 		const content = translatedContent(copy, i18nParams);
 
-		await createNotification({
-			userId: manager.userId,
-			organizationId,
-			type: "shift_pickup_requested",
-			title: content.title,
-			message: content.message,
-			entityType: "shift_request",
-			entityId: requestId,
-			actionUrl: "/scheduling",
-			metadata: {
-				shiftId,
-				requesterId,
-				managerId: primaryManager.managerId,
-				i18n: content.i18n,
-			},
-		});
+		await Promise.all(
+			recipients.userIds.map((userId) =>
+				createNotification({
+					userId,
+					organizationId,
+					type: "shift_pickup_requested",
+					title: content.title,
+					message: content.message,
+					entityType: "shift_request",
+					entityId: requestId,
+					actionUrl: "/scheduling",
+					metadata: {
+						shiftId,
+						requesterId,
+						recipientReason: recipients.reason,
+						i18n: content.i18n,
+					},
+				}),
+			),
+		);
 	} catch (error) {
 		logger.error(
 			{ error, requestId, shiftId, requesterId, organizationId },

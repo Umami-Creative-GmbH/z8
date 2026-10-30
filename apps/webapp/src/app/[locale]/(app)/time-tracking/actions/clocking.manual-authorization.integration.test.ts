@@ -580,8 +580,14 @@ describe("organization authorization mutations on PostgreSQL", () => {
 			const command = manualCommand();
 			const submission = await pausedSubmission(command, ids.managerUser);
 			actAs(ids.ownerUser);
-			const deactivation = deactivateEmployeeAction(ids.employee);
-			await waitForWaiterOn(userGuard(ids.employeeUser));
+			const deactivation = deactivateEmployeeAction({
+				employeeId: ids.employee,
+				requestId: randomUUID(),
+				replacementManagers: {},
+			});
+			// The deactivation ends project assignments too, so it takes the exclusive
+			// organization configuration guard before the target's user guard (#1440).
+			await waitForWaiterOn(organizationGuard);
 			await submission.release();
 
 			await expect(submission.pending).resolves.toMatchObject({

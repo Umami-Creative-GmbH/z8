@@ -141,7 +141,14 @@ const mockState = vi.hoisted(() => ({
 	deleteConditions: [] as Array<any>,
 	actorContextCalls: [] as Array<any>,
 	selectCalls: [] as Array<any>,
+	formerEmployeeIds: new Set<string>(),
 }));
+
+vi.mock("@/lib/employee-lifecycle/current-roster-guard", async () =>
+	(
+		await import("@/lib/employee-lifecycle/testing/current-roster-guard.test.mock")
+	).currentRosterGuardModule(() => mockState.formerEmployeeIds),
+);
 
 vi.mock("drizzle-orm", () => ({
 	and: vi.fn((...args: unknown[]) => ({ and: args })),
@@ -498,6 +505,36 @@ describe("holiday preset settings scope behavior", () => {
 		mockState.deleteConditions = [];
 		mockState.actorContextCalls = [];
 		mockState.selectCalls = [];
+		mockState.formerEmployeeIds = new Set();
+	});
+
+	it("refuses a holiday preset assignment for a former employee and checks current ones (#1438)", async () => {
+		mockState.actor.accessTier = "orgAdmin";
+		const assign = () =>
+			createPresetAssignment("org-1", {
+				presetId: "preset-existing",
+				assignmentType: "employee",
+				teamId: null,
+				employeeId: "employee-managed",
+				effectiveFrom: null,
+				effectiveUntil: null,
+				isActive: true,
+			});
+		const { ensureOnCurrentRoster } = await import(
+			"@/lib/employee-lifecycle/current-roster-guard"
+		);
+
+		mockState.formerEmployeeIds = new Set(["employee-managed"]);
+		expect(await assign()).toMatchObject({ success: false, code: "ValidationError" });
+		expect(mockState.insertCalls).toHaveLength(0);
+
+		mockState.formerEmployeeIds = new Set();
+		const current = await assign();
+		expect(current).not.toMatchObject({ code: "ValidationError" });
+		expect(ensureOnCurrentRoster).toHaveBeenLastCalledWith(
+			expect.anything(),
+			expect.objectContaining({ organizationId: "org-1", employeeIds: ["employee-managed"] }),
+		);
 	});
 
 	it("lets managers read only organization, managed-team, and managed-employee preset assignments", async () => {

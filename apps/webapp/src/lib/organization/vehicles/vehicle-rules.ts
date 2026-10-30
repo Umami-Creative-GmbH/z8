@@ -45,6 +45,8 @@ export type VehicleRefusal =
 	| "vehicle_archived"
 	| "licence_plate_taken"
 	| "driver_not_found"
+	/** A newly assigned driver is a former employee (#1438). */
+	| "former_driver"
 	/** The vehicle was recorded on work, or an open time correction requests it: it can only be archived. */
 	| "vehicle_used";
 

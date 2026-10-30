@@ -234,6 +234,7 @@ export type TeamPerformanceParams = {
 	organizationId: string;
 	dateRange: DateRange;
 	teamId?: string;
+	scope: AnalyticsEmployeeScope;
 };
 
 export type VacationTrendsParams = {
@@ -245,11 +246,17 @@ export type WorkHoursParams = {
 	organizationId: string;
 	dateRange: DateRange;
 	employeeId?: string;
+	scope: AnalyticsEmployeeScope;
 };
+
+export type AnalyticsEmployeeScope =
+	| { role: "admin" }
+	| { role: "manager"; managerEmployeeId: string };
 
 export type AbsencePatternsParams = {
 	organizationId: string;
 	dateRange: DateRange;
+	scope: AnalyticsEmployeeScope;
 };
 
 export type ManagerEffectivenessParams = {
@@ -266,10 +273,7 @@ export type OvertimeBurnDownParams = {
 		costCenterId?: string;
 		managerId?: string;
 	};
-	scope?: {
-		role: "admin" | "manager";
-		managerEmployeeId?: string;
-	};
+	scope: AnalyticsEmployeeScope;
 };
 
 /**

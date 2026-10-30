@@ -68,18 +68,17 @@ export function useTeamDetailPage(teamId: string) {
 	const { data: managerOptions = [] } = useQuery({
 		queryKey: ["teams", teamId, "primary-manager-options"],
 		queryFn: async () => {
+			// Managers and admins on the current roster (#1438); the server applies the rule.
 			const result = await listEmployeesForSelect({
 				limit: 1000,
 				roles: ["manager", "admin"],
-				status: "active",
+				status: "current",
 			});
 			if (!result.success) {
 				throw new Error(result.error || "Failed to load manager options");
 			}
 			return result.data.employees.filter(
-				(employee) =>
-					employee.isActive &&
-					(employee.role === "manager" || employee.role === "admin"),
+				(employee) => employee.role === "manager" || employee.role === "admin",
 			);
 		},
 		enabled: canManageSettings,
@@ -88,9 +87,11 @@ export function useTeamDetailPage(teamId: string) {
 	async function loadAvailableEmployees() {
 		if (!team) return;
 
+		// Only the current roster can join a team (#1438).
 		const result = await listEmployeesForSelect({
 			limit: 1000,
 			excludeIds: extractTeamMemberIds(team),
+			status: "current",
 		});
 
 		if (result.success && result.data) {

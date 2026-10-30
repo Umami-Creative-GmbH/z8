@@ -156,7 +156,12 @@ describe("PayrollAccessForm", () => {
 			<PayrollAccessForm
 				employees={[{ id: "employee-a", name: "Ada Lovelace", email: "ada@example.com" }]}
 				departedEmployees={[
-					{ id: "employee-gone", name: "Former Colleague", email: "former@example.com" },
+					{
+						id: "employee-gone",
+						name: "Former Colleague",
+						email: "former@example.com",
+						formerSince: null,
+					},
 				]}
 				teams={[]}
 				initialGrants={[
@@ -201,7 +206,12 @@ describe("PayrollAccessForm", () => {
 			<PayrollAccessForm
 				employees={[{ id: "employee-a", name: "Ada Lovelace", email: "ada@example.com" }]}
 				departedEmployees={[
-					{ id: "employee-gone", name: "Former Colleague", email: "former@example.com" },
+					{
+						id: "employee-gone",
+						name: "Former Colleague",
+						email: "former@example.com",
+						formerSince: null,
+					},
 				]}
 				teams={[]}
 				initialGrants={[]}

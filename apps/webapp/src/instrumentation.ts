@@ -1,5 +1,3 @@
-import { REPORT_SHARE_REQUEST_PATH, SETUP_REQUEST_PATH } from "@/lib/setup/telemetry";
-
 type RequestErrorRequest = {
 	headers?: Headers | { cookie?: string | string[] };
 	path?: string;
@@ -14,34 +12,12 @@ export async function register() {
 	}
 }
 
-export const onRequestError = async (
-	err: unknown,
-	request: RequestErrorRequest,
-) => {
-	if (
-		process.env.NEXT_RUNTIME !== "nodejs" ||
-		(request.path &&
-			(SETUP_REQUEST_PATH.test(request.path) ||
-				REPORT_SHARE_REQUEST_PATH.test(request.path)))
-	) {
-		return;
-	}
-
-	const { getPostHogDistinctIdFromCookie, getPostHogServer } = await import(
-		"@/lib/posthog-server"
-	);
-	const posthog = getPostHogServer();
-
-	if (!posthog) {
-		return;
-	}
-
-	const cookieHeader =
-		request.headers instanceof Headers
-			? request.headers.get("cookie")
-			: request.headers?.cookie;
-	const distinctId = getPostHogDistinctIdFromCookie(cookieHeader ?? undefined);
-	const error = err instanceof Error ? err : new Error(String(err));
-
-	await posthog.captureException(error, distinctId ?? undefined);
-};
+export function onRequestError(
+	_error: unknown,
+	_request: RequestErrorRequest,
+): void {
+	// This failure hook has no authoritative product-analytics consent. A vendor
+	// identity cookie is not consent, and resolving auth/DB here can fail recursively.
+	// Never send raw errors, request context or protected parameters to third parties.
+	// First-party operational tracing remains owned by instrumentation.node.ts.
+}

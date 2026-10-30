@@ -6,7 +6,43 @@ import type { ContractType } from "@/lib/validations/employee";
 export type EmployeeRole = (typeof employee.$inferSelect)["role"];
 export const EMPLOYEE_DRAFT_ID_PREFIX = "draft:";
 export type EmployeeRecordKind = "employee" | "invitationDraft";
-export type EmployeeDirectoryStatus = "active" | "inactive" | "draft" | "all";
+/**
+ * Which employees a list or picker shows (#1438): the current roster, former
+ * employees (deactivated or past a due departure), or both.
+ */
+export type EmployeeRosterStatus = "current" | "former" | "all";
+export type EmployeeDirectoryStatus = EmployeeRosterStatus | "draft";
+/** Status values older clients still send: "active" reads as current, "inactive" as former. */
+export type LegacyEmployeeStatus = "active" | "inactive";
+
+/**
+ * The directory status a request asks for. Legacy values keep working, and an
+ * unknown value falls back to `fallback`.
+ */
+export function normalizeEmployeeDirectoryStatus(
+	status: string | undefined,
+	fallback: EmployeeDirectoryStatus,
+): EmployeeDirectoryStatus {
+	switch (status) {
+		case "current":
+		case "active":
+			return "current";
+		case "former":
+		case "inactive":
+			return "former";
+		case "draft":
+		case "all":
+			return status;
+		default:
+			return fallback;
+	}
+}
+
+/** The picker status a request asks for: the current roster unless it opts in to former employees. */
+export function normalizeEmployeeSelectStatus(status: string | undefined): EmployeeRosterStatus {
+	const normalized = normalizeEmployeeDirectoryStatus(status, "current");
+	return normalized === "draft" ? "current" : normalized;
+}
 export type EmployeeMembershipSummary = Pick<
 	typeof member.$inferSelect,
 	"id" | "role" | "status"
@@ -28,6 +64,13 @@ export type EmployeeWithRelations = typeof employee.$inferSelect & {
 	user: typeof user.$inferSelect;
 	team: typeof team.$inferSelect | null;
 	membership: EmployeeMembershipSummary | null;
+	/** Deactivated or past a due departure (#1438); set by the directory list. */
+	isFormer?: boolean;
+	/**
+	 * The organization-local date a former employee left (`YYYY-MM-DD`, #1439),
+	 * `null` when it isn't recorded; set by the directory list on former rows only.
+	 */
+	formerSince?: string | null;
 	/** A required custom field the viewer sees has no value (#818); set by the directory list. */
 	missingRequiredCustomFields?: boolean;
 	/**
@@ -51,12 +94,27 @@ export type EmployeeInvitationDraftWithRelations = typeof employeeInvitationDraf
 };
 
 export type EmployeeDirectoryRow = EmployeeWithRelations | EmployeeInvitationDraftWithRelations;
-export type EmployeeDetailRecord = EmployeeDirectoryRow & { managers?: unknown[] };
+export type EmployeeManagerRelation = {
+	id: string;
+	isPrimary: boolean;
+	manager: {
+		id: string;
+		userId: string;
+		user: Pick<
+			typeof user.$inferSelect,
+			"firstName" | "lastName" | "name" | "email" | "image"
+		>;
+	};
+};
+export type EmployeeDetailRecord = EmployeeDirectoryRow & {
+	managers?: EmployeeManagerRelation[];
+};
 
 export interface EmployeeListParams {
 	search?: string;
 	role?: EmployeeRole | "all";
-	status?: EmployeeDirectoryStatus;
+	/** Every employee and draft when omitted. */
+	status?: EmployeeDirectoryStatus | LegacyEmployeeStatus;
 	limit?: number;
 	offset?: number;
 }
@@ -76,6 +134,13 @@ export interface SelectableEmployee {
 	position: string | null;
 	role: EmployeeRole;
 	isActive: boolean;
+	/** Deactivated or past a due departure (#1438): pickers label the row "Former". */
+	isFormer?: boolean;
+	/**
+	 * The organization-local date a former employee left (`YYYY-MM-DD`, #1439),
+	 * `null` when it isn't recorded. Only on former rows.
+	 */
+	formerSince?: string | null;
 	clockStatus?: EmployeeClockStatus;
 	teamId: string | null;
 	user: {
@@ -96,7 +161,11 @@ export interface EmployeeSelectParams {
 	search?: string;
 	role?: EmployeeRole | "all";
 	roles?: EmployeeRole[];
-	status?: "active" | "inactive" | "all";
+	/**
+	 * The current roster when omitted (#1438). Only pickers for views of the past
+	 * opt in to former employees with "all" or "former".
+	 */
+	status?: EmployeeRosterStatus | LegacyEmployeeStatus;
 	teamId?: string;
 	excludeIds?: string[];
 	limit?: number;

@@ -6,12 +6,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ManagedEmployee } from "./team-members-data";
 import { TeamMembersList } from "./team-members-list";
 
-const { getActivityMock, useBalanceAdjustmentSectionMock } = vi.hoisted(() => ({
+const { getActivityMock, replaceMock, useBalanceAdjustmentSectionMock } = vi.hoisted(() => ({
 	getActivityMock: vi.fn(),
+	replaceMock: vi.fn(),
 	useBalanceAdjustmentSectionMock: vi.fn(),
 }));
 
 vi.mock("@tolgee/react", () => ({
+	useTolgee: () => ({ getLanguage: () => "en-GB" }),
 	useTranslate: () => ({
 		t: (
 			_key: string,
@@ -53,6 +55,7 @@ vi.mock("@/hooks/use-display-context", () => ({
 	useDisplayContext: () => ({ locale: "en-GB", timezone: "UTC", timeFormat: "24h" }),
 }));
 vi.mock("@/navigation", () => ({
+	useRouter: () => ({ replace: replaceMock }),
 	Link: ({
 		href,
 		children,
@@ -76,6 +79,7 @@ const employee = (overrides: Partial<ManagedEmployee>): ManagedEmployee => ({
 	position: "Manager",
 	role: "manager",
 	isActive: true,
+	isFormer: false,
 	isPrimaryManager: false,
 	isCurrentUser: false,
 	timeBalance: null,
@@ -109,6 +113,7 @@ const timeBalance = (
 describe("TeamMembersList", () => {
 	beforeEach(() => {
 		getActivityMock.mockReset().mockReturnValue(null);
+		replaceMock.mockReset();
 		useBalanceAdjustmentSectionMock.mockReset().mockReturnValue({
 			isLoading: false,
 			isError: false,
@@ -321,5 +326,74 @@ describe("TeamMembersList", () => {
 		expect(bodyRows[0]?.textContent).toContain("Grace Hopper");
 		expect(bodyRows[1]?.textContent).toContain("Katherine Johnson");
 		expect(bodyRows[2]?.textContent).toContain("Ada Lovelace");
+	});
+
+	it("hides former employees by default and offers to show them through the URL", () => {
+		render(<TeamMembersList employees={[employee({})]} />);
+
+		const toggle = screen.getByRole("switch", { name: "Show former employees" });
+		expect(toggle.getAttribute("aria-checked")).toBe("false");
+
+		fireEvent.click(toggle);
+
+		expect(replaceMock).toHaveBeenCalledWith("/team?former=1", { scroll: false });
+	});
+
+	it("marks former employees shown through the toggle in card and table views", () => {
+		render(
+			<TeamMembersList
+				showFormer
+				employees={[
+					employee({}),
+					employee({
+						id: "employee-2",
+						isFormer: true,
+						formerSince: "2026-10-12",
+						isActive: false,
+						user: {
+							id: "user-2",
+							firstName: "Grace",
+							lastName: "Hopper",
+							name: "Grace Hopper",
+							email: "grace@example.com",
+							image: null,
+						},
+					}),
+					employee({
+						id: "employee-3",
+						isFormer: true,
+						formerSince: null,
+						isActive: false,
+						user: {
+							id: "user-3",
+							firstName: "Alan",
+							lastName: "Turing",
+							name: "Alan Turing",
+							email: "alan@example.com",
+							image: null,
+						},
+					}),
+				]}
+			/>,
+		);
+
+		expect(
+			screen.getByRole("switch", { name: "Show former employees" }).getAttribute("aria-checked"),
+		).toBe("true");
+		expect(screen.getAllByText("Former since 12 Oct 2026")).toHaveLength(1);
+		expect(screen.getAllByText("Former · date not recorded")).toHaveLength(1);
+
+		fireEvent.click(screen.getByRole("radio", { name: "Table view" }));
+		const rows = screen.getAllByRole("row").slice(1);
+		const former = rows.find((row) => row.textContent?.includes("Grace Hopper"));
+		const unrecorded = rows.find((row) => row.textContent?.includes("Alan Turing"));
+		const current = rows.find((row) => row.textContent?.includes("Ada Lovelace"));
+		expect(former && within(former).getByText("Former since 12 Oct 2026")).toBeTruthy();
+		expect(unrecorded && within(unrecorded).getByText("Former · date not recorded")).toBeTruthy();
+		expect(current && within(current).getByText("Current")).toBeTruthy();
+		expect(current && within(current).queryByText(/Former/)).toBeNull();
+
+		fireEvent.click(screen.getByRole("switch", { name: "Show former employees" }));
+		expect(replaceMock).toHaveBeenCalledWith("/team", { scroll: false });
 	});
 });

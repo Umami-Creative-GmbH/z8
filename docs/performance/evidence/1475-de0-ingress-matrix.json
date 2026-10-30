@@ -1,0 +1,1167 @@
+{
+  "schema": 1,
+  "sourceBuild": "de0b1a128b384196c7c93ac69cd5324e8d0cbbd8",
+  "artifactManifestSha256": "876c31b0d96fb2123be97c8767fd28d1058981a4822ff55d30e93ccc451a1ac3",
+  "operatorCommit": "b90b93aba65c15ce1be627b4fd5a4e00383a64c7",
+  "parserCommit": "98af9f8352a601a79ddb794fe71c11976d2617f4",
+  "functionalMatrixComplete": true,
+  "nativeAndTransportMatrixComplete": true,
+  "resourceMatrixComplete": false,
+  "functionalConditions": 14,
+  "fullResourceConditions": 10,
+  "cancelledRowCostUnknownConditions": 4,
+  "controlledPerformanceEvidence": false,
+  "productionTopologyVerified": false,
+  "cdnVerified": false,
+  "cases": [
+    {
+      "viewport": "desktop",
+      "mode": "first-document",
+      "scenario": "held",
+      "functionalPassed": true,
+      "rawOverallPassed": true,
+      "resourceCoverage": "complete",
+      "acknowledgedCancellations": 0,
+      "observedQueryErrors": 0,
+      "unknownRowTraces": 0,
+      "native": {
+        "complete": true,
+        "transportComplete": true,
+        "replicas": {
+          "a": {
+            "driver": 332,
+            "started": 332,
+            "ended": 332,
+            "received": 332,
+            "pending": 0,
+            "active": 0,
+            "complete": true
+          },
+          "b": {
+            "driver": 193,
+            "started": 193,
+            "ended": 193,
+            "received": 193,
+            "pending": 0,
+            "active": 0,
+            "complete": true
+          }
+        }
+      },
+      "usefulSiblingWhileHeld": true,
+      "clockReadyWhileHeld": true,
+      "secondaryPendingWhileHeld": true,
+      "overflowEarly": 0,
+      "earlyLandmarks": {
+        "header": {
+          "x": 287.9974365234375,
+          "y": 8,
+          "width": 984,
+          "height": 49
+        },
+        "main": {
+          "x": 287.9974365234375,
+          "y": 8,
+          "width": 984,
+          "height": 884
+        },
+        "quickStats": {
+          "x": 311.9974365234375,
+          "y": 81,
+          "width": 460,
+          "height": 356
+        },
+        "secondary": {
+          "x": 787.9974365234375,
+          "y": 81,
+          "width": 460,
+          "height": 192
+        },
+        "clock": {
+          "x": 1067.2474365234375,
+          "y": 16,
+          "width": 92.75,
+          "height": 32
+        }
+      },
+      "afterLandmarks": {
+        "header": {
+          "x": 288,
+          "y": 8,
+          "width": 984,
+          "height": 49
+        },
+        "main": {
+          "x": 288,
+          "y": 8,
+          "width": 984,
+          "height": 884
+        },
+        "quickStats": {
+          "x": 312,
+          "y": 81,
+          "width": 460,
+          "height": 356
+        },
+        "secondary": {
+          "x": 788,
+          "y": 81,
+          "width": 460,
+          "height": 238
+        },
+        "clock": {
+          "x": 1067.25,
+          "y": 16,
+          "width": 92.75,
+          "height": 32
+        }
+      },
+      "overflowAfter": 0,
+      "clockRequests": [
+        {
+          "startedMs": 530.3548000000001,
+          "responseMs": 564.8913000000002,
+          "finishedMs": 566.1207999999997,
+          "status": 200
+        }
+      ],
+      "completed": true
+    },
+    {
+      "viewport": "desktop",
+      "mode": "first-document",
+      "scenario": "failed",
+      "functionalPassed": true,
+      "rawOverallPassed": false,
+      "resourceCoverage": "unknown-intentionally-cancelled-row-cost",
+      "acknowledgedCancellations": 2,
+      "observedQueryErrors": 2,
+      "unknownRowTraces": 2,
+      "native": {
+        "complete": true,
+        "transportComplete": true,
+        "replicas": {
+          "a": {
+            "driver": 448,
+            "started": 448,
+            "ended": 448,
+            "received": 448,
+            "pending": 0,
+            "active": 0,
+            "complete": true
+          },
+          "b": {
+            "driver": 268,
+            "started": 268,
+            "ended": 268,
+            "received": 268,
+            "pending": 0,
+            "active": 0,
+            "complete": true
+          }
+        }
+      },
+      "usefulSiblingWhileHeld": true,
+      "clockReadyWhileHeld": true,
+      "secondaryPendingWhileHeld": true,
+      "overflowEarly": 0,
+      "earlyLandmarks": {
+        "header": {
+          "x": 280.1126708984375,
+          "y": 8,
+          "width": 984,
+          "height": 49
+        },
+        "main": {
+          "x": 280.1126708984375,
+          "y": 8,
+          "width": 984,
+          "height": 884
+        },
+        "quickStats": {
+          "x": 304.1126708984375,
+          "y": 81,
+          "width": 460,
+          "height": 356
+        },
+        "secondary": {
+          "x": 780.1126708984375,
+          "y": 81,
+          "width": 460,
+          "height": 192
+        },
+        "clock": {
+          "x": 1059.3626708984375,
+          "y": 16,
+          "width": 92.75,
+          "height": 32
+        }
+      },
+      "afterLandmarks": {
+        "header": {
+          "x": 288,
+          "y": 8,
+          "width": 984,
+          "height": 49
+        },
+        "main": {
+          "x": 288,
+          "y": 8,
+          "width": 984,
+          "height": 884
+        },
+        "quickStats": {
+          "x": 312,
+          "y": 81,
+          "width": 460,
+          "height": 356
+        },
+        "secondary": {
+          "x": 788,
+          "y": 81,
+          "width": 460,
+          "height": 238
+        },
+        "clock": {
+          "x": 1067.25,
+          "y": 16,
+          "width": 92.75,
+          "height": 32
+        }
+      },
+      "overflowAfter": 0,
+      "clockRequests": [
+        {
+          "startedMs": 548.1478999999999,
+          "responseMs": 583.9339,
+          "finishedMs": 584.5720000000001,
+          "status": 200
+        }
+      ],
+      "completed": true,
+      "localError": true,
+      "errorMs": 1492.6219,
+      "cancelMs": 1460.3914999999997,
+      "keyboardRetryFocus": "secondary-retry",
+      "nextTabAfterRecovery": "secondary"
+    },
+    {
+      "viewport": "desktop",
+      "mode": "repeat-link",
+      "scenario": "held",
+      "functionalPassed": true,
+      "rawOverallPassed": true,
+      "resourceCoverage": "complete",
+      "acknowledgedCancellations": 0,
+      "observedQueryErrors": 0,
+      "unknownRowTraces": 0,
+      "native": {
+        "complete": true,
+        "transportComplete": true,
+        "replicas": {
+          "a": {
+            "driver": 676,
+            "started": 676,
+            "ended": 676,
+            "received": 676,
+            "pending": 0,
+            "active": 0,
+            "complete": true
+          },
+          "b": {
+            "driver": 350,
+            "started": 350,
+            "ended": 350,
+            "received": 350,
+            "pending": 0,
+            "active": 0,
+            "complete": true
+          }
+        }
+      },
+      "usefulSiblingWhileHeld": true,
+      "clockReadyWhileHeld": true,
+      "secondaryPendingWhileHeld": true,
+      "overflowEarly": 0,
+      "earlyLandmarks": {
+        "header": {
+          "x": 288,
+          "y": 8,
+          "width": 984,
+          "height": 49
+        },
+        "main": {
+          "x": 288,
+          "y": 8,
+          "width": 984,
+          "height": 884
+        },
+        "quickStats": {
+          "x": 312,
+          "y": 81,
+          "width": 460,
+          "height": 356
+        },
+        "secondary": {
+          "x": 788,
+          "y": 81,
+          "width": 460,
+          "height": 192
+        },
+        "clock": {
+          "x": 1067.25,
+          "y": 16,
+          "width": 92.75,
+          "height": 32
+        }
+      },
+      "afterLandmarks": {
+        "header": {
+          "x": 288,
+          "y": 8,
+          "width": 984,
+          "height": 49
+        },
+        "main": {
+          "x": 288,
+          "y": 8,
+          "width": 984,
+          "height": 884
+        },
+        "quickStats": {
+          "x": 312,
+          "y": 81,
+          "width": 460,
+          "height": 356
+        },
+        "secondary": {
+          "x": 788,
+          "y": 81,
+          "width": 460,
+          "height": 238
+        },
+        "clock": {
+          "x": 1067.25,
+          "y": 16,
+          "width": 92.75,
+          "height": 32
+        }
+      },
+      "overflowAfter": 0,
+      "clockRequests": [],
+      "completed": true
+    },
+    {
+      "viewport": "desktop",
+      "mode": "repeat-link",
+      "scenario": "failed",
+      "functionalPassed": true,
+      "rawOverallPassed": false,
+      "resourceCoverage": "unknown-intentionally-cancelled-row-cost",
+      "acknowledgedCancellations": 1,
+      "observedQueryErrors": 1,
+      "unknownRowTraces": 1,
+      "native": {
+        "complete": true,
+        "transportComplete": true,
+        "replicas": {
+          "a": {
+            "driver": 724,
+            "started": 724,
+            "ended": 724,
+            "received": 724,
+            "pending": 0,
+            "active": 0,
+            "complete": true
+          },
+          "b": {
+            "driver": 418,
+            "started": 418,
+            "ended": 418,
+            "received": 418,
+            "pending": 0,
+            "active": 0,
+            "complete": true
+          }
+        }
+      },
+      "usefulSiblingWhileHeld": true,
+      "clockReadyWhileHeld": true,
+      "secondaryPendingWhileHeld": true,
+      "overflowEarly": 0,
+      "earlyLandmarks": {
+        "header": {
+          "x": 288,
+          "y": 8,
+          "width": 984,
+          "height": 49
+        },
+        "main": {
+          "x": 288,
+          "y": 8,
+          "width": 984,
+          "height": 884
+        },
+        "quickStats": {
+          "x": 312,
+          "y": 81,
+          "width": 460,
+          "height": 356
+        },
+        "secondary": {
+          "x": 788,
+          "y": 81,
+          "width": 460,
+          "height": 192
+        },
+        "clock": {
+          "x": 1067.25,
+          "y": 16,
+          "width": 92.75,
+          "height": 32
+        }
+      },
+      "afterLandmarks": {
+        "header": {
+          "x": 288,
+          "y": 8,
+          "width": 984,
+          "height": 49
+        },
+        "main": {
+          "x": 288,
+          "y": 8,
+          "width": 984,
+          "height": 884
+        },
+        "quickStats": {
+          "x": 312,
+          "y": 81,
+          "width": 460,
+          "height": 356
+        },
+        "secondary": {
+          "x": 788,
+          "y": 81,
+          "width": 460,
+          "height": 238
+        },
+        "clock": {
+          "x": 1067.25,
+          "y": 16,
+          "width": 92.75,
+          "height": 32
+        }
+      },
+      "overflowAfter": 0,
+      "clockRequests": [],
+      "completed": true,
+      "localError": true,
+      "errorMs": 1385.0556000000006,
+      "cancelMs": 1375.1277,
+      "keyboardRetryFocus": "secondary-retry",
+      "nextTabAfterRecovery": "secondary"
+    },
+    {
+      "viewport": "desktop",
+      "mode": "admission",
+      "scenario": "signed-out",
+      "functionalPassed": true,
+      "rawOverallPassed": true,
+      "resourceCoverage": "complete",
+      "acknowledgedCancellations": 0,
+      "observedQueryErrors": 0,
+      "unknownRowTraces": 0,
+      "native": {
+        "complete": true,
+        "transportComplete": true,
+        "replicas": {
+          "a": {
+            "driver": 205,
+            "started": 205,
+            "ended": 205,
+            "received": 205,
+            "pending": 0,
+            "active": 0,
+            "complete": true
+          },
+          "b": {
+            "driver": 25,
+            "started": 25,
+            "ended": 25,
+            "received": 25,
+            "pending": 0,
+            "active": 0,
+            "complete": true
+          }
+        }
+      },
+      "protectedMarkupEmitted": false,
+      "expectedChallenge": true,
+      "clockStatusDenied": true,
+      "clockHttpStatus": 401,
+      "allowedClockControlStatus": 200,
+      "allowedClockControlHasEmployee": true
+    },
+    {
+      "viewport": "desktop",
+      "mode": "admission",
+      "scenario": "mfa",
+      "functionalPassed": true,
+      "rawOverallPassed": true,
+      "resourceCoverage": "complete",
+      "acknowledgedCancellations": 0,
+      "observedQueryErrors": 0,
+      "unknownRowTraces": 0,
+      "native": {
+        "complete": true,
+        "transportComplete": true,
+        "replicas": {
+          "a": {
+            "driver": 310,
+            "started": 310,
+            "ended": 310,
+            "received": 310,
+            "pending": 0,
+            "active": 0,
+            "complete": true
+          },
+          "b": {
+            "driver": 43,
+            "started": 43,
+            "ended": 43,
+            "received": 43,
+            "pending": 0,
+            "active": 0,
+            "complete": true
+          }
+        }
+      },
+      "protectedMarkupEmitted": false,
+      "expectedChallenge": true,
+      "clockStatusDenied": true,
+      "clockHttpStatus": 400,
+      "allowedClockControlStatus": 200,
+      "allowedClockControlHasEmployee": true
+    },
+    {
+      "viewport": "desktop",
+      "mode": "admission",
+      "scenario": "sso",
+      "functionalPassed": true,
+      "rawOverallPassed": true,
+      "resourceCoverage": "complete",
+      "acknowledgedCancellations": 0,
+      "observedQueryErrors": 0,
+      "unknownRowTraces": 0,
+      "native": {
+        "complete": true,
+        "transportComplete": true,
+        "replicas": {
+          "a": {
+            "driver": 272,
+            "started": 272,
+            "ended": 272,
+            "received": 272,
+            "pending": 0,
+            "active": 0,
+            "complete": true
+          },
+          "b": {
+            "driver": 25,
+            "started": 25,
+            "ended": 25,
+            "received": 25,
+            "pending": 0,
+            "active": 0,
+            "complete": true
+          }
+        }
+      },
+      "protectedMarkupEmitted": false,
+      "expectedChallenge": true,
+      "clockStatusDenied": true,
+      "clockHttpStatus": 400,
+      "allowedClockControlStatus": 200,
+      "allowedClockControlHasEmployee": true
+    },
+    {
+      "viewport": "mobile",
+      "mode": "first-document",
+      "scenario": "held",
+      "functionalPassed": true,
+      "rawOverallPassed": true,
+      "resourceCoverage": "complete",
+      "acknowledgedCancellations": 0,
+      "observedQueryErrors": 0,
+      "unknownRowTraces": 0,
+      "native": {
+        "complete": true,
+        "transportComplete": true,
+        "replicas": {
+          "a": {
+            "driver": 375,
+            "started": 375,
+            "ended": 375,
+            "received": 375,
+            "pending": 0,
+            "active": 0,
+            "complete": true
+          },
+          "b": {
+            "driver": 175,
+            "started": 175,
+            "ended": 175,
+            "received": 175,
+            "pending": 0,
+            "active": 0,
+            "complete": true
+          }
+        }
+      },
+      "usefulSiblingWhileHeld": true,
+      "clockReadyWhileHeld": true,
+      "secondaryPendingWhileHeld": true,
+      "overflowEarly": 0,
+      "earlyLandmarks": {
+        "header": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 49
+        },
+        "main": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844
+        },
+        "quickStats": {
+          "x": 16,
+          "y": 65,
+          "width": 358,
+          "height": 356
+        },
+        "secondary": {
+          "x": 16,
+          "y": 437,
+          "width": 358,
+          "height": 192
+        },
+        "clock": {
+          "x": 262,
+          "y": 8,
+          "width": 36,
+          "height": 32
+        }
+      },
+      "afterLandmarks": {
+        "header": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 49
+        },
+        "main": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844
+        },
+        "quickStats": {
+          "x": 16,
+          "y": 65,
+          "width": 358,
+          "height": 356
+        },
+        "secondary": {
+          "x": 16,
+          "y": 437,
+          "width": 358,
+          "height": 238
+        },
+        "clock": {
+          "x": 262,
+          "y": 8,
+          "width": 36,
+          "height": 32
+        }
+      },
+      "overflowAfter": 0,
+      "clockRequests": [
+        {
+          "startedMs": 519.5907000000007,
+          "responseMs": 665.5935,
+          "finishedMs": 666.2310000000007,
+          "status": 200
+        }
+      ],
+      "completed": true
+    },
+    {
+      "viewport": "mobile",
+      "mode": "first-document",
+      "scenario": "failed",
+      "functionalPassed": true,
+      "rawOverallPassed": false,
+      "resourceCoverage": "unknown-intentionally-cancelled-row-cost",
+      "acknowledgedCancellations": 2,
+      "observedQueryErrors": 2,
+      "unknownRowTraces": 2,
+      "native": {
+        "complete": true,
+        "transportComplete": true,
+        "replicas": {
+          "a": {
+            "driver": 491,
+            "started": 491,
+            "ended": 491,
+            "received": 491,
+            "pending": 0,
+            "active": 0,
+            "complete": true
+          },
+          "b": {
+            "driver": 225,
+            "started": 225,
+            "ended": 225,
+            "received": 225,
+            "pending": 0,
+            "active": 0,
+            "complete": true
+          }
+        }
+      },
+      "usefulSiblingWhileHeld": true,
+      "clockReadyWhileHeld": true,
+      "secondaryPendingWhileHeld": true,
+      "overflowEarly": 0,
+      "earlyLandmarks": {
+        "header": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 49
+        },
+        "main": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844
+        },
+        "quickStats": {
+          "x": 16,
+          "y": 65,
+          "width": 358,
+          "height": 356
+        },
+        "secondary": {
+          "x": 16,
+          "y": 437,
+          "width": 358,
+          "height": 192
+        },
+        "clock": {
+          "x": 262,
+          "y": 8,
+          "width": 36,
+          "height": 32
+        }
+      },
+      "afterLandmarks": {
+        "header": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 49
+        },
+        "main": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844
+        },
+        "quickStats": {
+          "x": 16,
+          "y": 65,
+          "width": 358,
+          "height": 356
+        },
+        "secondary": {
+          "x": 16,
+          "y": 437,
+          "width": 358,
+          "height": 238
+        },
+        "clock": {
+          "x": 262,
+          "y": 8,
+          "width": 36,
+          "height": 32
+        }
+      },
+      "overflowAfter": 0,
+      "clockRequests": [
+        {
+          "startedMs": 492.2545,
+          "responseMs": 688.3495000000003,
+          "finishedMs": 689.5874000000003,
+          "status": 200
+        }
+      ],
+      "completed": true,
+      "localError": true,
+      "errorMs": 1569.1845000000003,
+      "cancelMs": 1539.6229999999996,
+      "keyboardRetryFocus": "secondary-retry",
+      "nextTabAfterRecovery": "secondary"
+    },
+    {
+      "viewport": "mobile",
+      "mode": "repeat-link",
+      "scenario": "held",
+      "functionalPassed": true,
+      "rawOverallPassed": true,
+      "resourceCoverage": "complete",
+      "acknowledgedCancellations": 0,
+      "observedQueryErrors": 0,
+      "unknownRowTraces": 0,
+      "native": {
+        "complete": true,
+        "transportComplete": true,
+        "replicas": {
+          "a": {
+            "driver": 701,
+            "started": 701,
+            "ended": 701,
+            "received": 701,
+            "pending": 0,
+            "active": 0,
+            "complete": true
+          },
+          "b": {
+            "driver": 325,
+            "started": 325,
+            "ended": 325,
+            "received": 325,
+            "pending": 0,
+            "active": 0,
+            "complete": true
+          }
+        }
+      },
+      "usefulSiblingWhileHeld": true,
+      "clockReadyWhileHeld": true,
+      "secondaryPendingWhileHeld": true,
+      "overflowEarly": 0,
+      "earlyLandmarks": {
+        "header": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 49
+        },
+        "main": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844
+        },
+        "quickStats": {
+          "x": 16,
+          "y": 65,
+          "width": 358,
+          "height": 356
+        },
+        "secondary": {
+          "x": 16,
+          "y": 437,
+          "width": 358,
+          "height": 192
+        },
+        "clock": {
+          "x": 262,
+          "y": 8,
+          "width": 36,
+          "height": 32
+        }
+      },
+      "afterLandmarks": {
+        "header": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 49
+        },
+        "main": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844
+        },
+        "quickStats": {
+          "x": 16,
+          "y": 65,
+          "width": 358,
+          "height": 356
+        },
+        "secondary": {
+          "x": 16,
+          "y": 437,
+          "width": 358,
+          "height": 238
+        },
+        "clock": {
+          "x": 262,
+          "y": 8,
+          "width": 36,
+          "height": 32
+        }
+      },
+      "overflowAfter": 0,
+      "clockRequests": [],
+      "completed": true
+    },
+    {
+      "viewport": "mobile",
+      "mode": "repeat-link",
+      "scenario": "failed",
+      "functionalPassed": true,
+      "rawOverallPassed": false,
+      "resourceCoverage": "unknown-intentionally-cancelled-row-cost",
+      "acknowledgedCancellations": 1,
+      "observedQueryErrors": 1,
+      "unknownRowTraces": 1,
+      "native": {
+        "complete": true,
+        "transportComplete": true,
+        "replicas": {
+          "a": {
+            "driver": 674,
+            "started": 674,
+            "ended": 674,
+            "received": 674,
+            "pending": 0,
+            "active": 0,
+            "complete": true
+          },
+          "b": {
+            "driver": 418,
+            "started": 418,
+            "ended": 418,
+            "received": 418,
+            "pending": 0,
+            "active": 0,
+            "complete": true
+          }
+        }
+      },
+      "usefulSiblingWhileHeld": true,
+      "clockReadyWhileHeld": true,
+      "secondaryPendingWhileHeld": true,
+      "overflowEarly": 0,
+      "earlyLandmarks": {
+        "header": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 49
+        },
+        "main": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844
+        },
+        "quickStats": {
+          "x": 16,
+          "y": 65,
+          "width": 358,
+          "height": 356
+        },
+        "secondary": {
+          "x": 16,
+          "y": 437,
+          "width": 358,
+          "height": 192
+        },
+        "clock": {
+          "x": 262,
+          "y": 8,
+          "width": 36,
+          "height": 32
+        }
+      },
+      "afterLandmarks": {
+        "header": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 49
+        },
+        "main": {
+          "x": 0,
+          "y": 0,
+          "width": 390,
+          "height": 844
+        },
+        "quickStats": {
+          "x": 16,
+          "y": 65,
+          "width": 358,
+          "height": 356
+        },
+        "secondary": {
+          "x": 16,
+          "y": 437,
+          "width": 358,
+          "height": 238
+        },
+        "clock": {
+          "x": 262,
+          "y": 8,
+          "width": 36,
+          "height": 32
+        }
+      },
+      "overflowAfter": 0,
+      "clockRequests": [],
+      "completed": true,
+      "localError": true,
+      "errorMs": 1682.9543000000003,
+      "cancelMs": 1673.7791000000007,
+      "keyboardRetryFocus": "secondary-retry",
+      "nextTabAfterRecovery": "secondary"
+    },
+    {
+      "viewport": "mobile",
+      "mode": "admission",
+      "scenario": "signed-out",
+      "functionalPassed": true,
+      "rawOverallPassed": true,
+      "resourceCoverage": "complete",
+      "acknowledgedCancellations": 0,
+      "observedQueryErrors": 0,
+      "unknownRowTraces": 0,
+      "native": {
+        "complete": true,
+        "transportComplete": true,
+        "replicas": {
+          "a": {
+            "driver": 205,
+            "started": 205,
+            "ended": 205,
+            "received": 205,
+            "pending": 0,
+            "active": 0,
+            "complete": true
+          },
+          "b": {
+            "driver": 0,
+            "started": 0,
+            "ended": 0,
+            "received": 0,
+            "pending": 0,
+            "active": 0,
+            "complete": true
+          }
+        }
+      },
+      "protectedMarkupEmitted": false,
+      "expectedChallenge": true,
+      "clockStatusDenied": true,
+      "clockHttpStatus": 401,
+      "allowedClockControlStatus": 200,
+      "allowedClockControlHasEmployee": true
+    },
+    {
+      "viewport": "mobile",
+      "mode": "admission",
+      "scenario": "mfa",
+      "functionalPassed": true,
+      "rawOverallPassed": true,
+      "resourceCoverage": "complete",
+      "acknowledgedCancellations": 0,
+      "observedQueryErrors": 0,
+      "unknownRowTraces": 0,
+      "native": {
+        "complete": true,
+        "transportComplete": true,
+        "replicas": {
+          "a": {
+            "driver": 310,
+            "started": 310,
+            "ended": 310,
+            "received": 310,
+            "pending": 0,
+            "active": 0,
+            "complete": true
+          },
+          "b": {
+            "driver": 68,
+            "started": 68,
+            "ended": 68,
+            "received": 68,
+            "pending": 0,
+            "active": 0,
+            "complete": true
+          }
+        }
+      },
+      "protectedMarkupEmitted": false,
+      "expectedChallenge": true,
+      "clockStatusDenied": true,
+      "clockHttpStatus": 400,
+      "allowedClockControlStatus": 200,
+      "allowedClockControlHasEmployee": true
+    },
+    {
+      "viewport": "mobile",
+      "mode": "admission",
+      "scenario": "sso",
+      "functionalPassed": true,
+      "rawOverallPassed": true,
+      "resourceCoverage": "complete",
+      "acknowledgedCancellations": 0,
+      "observedQueryErrors": 0,
+      "unknownRowTraces": 0,
+      "native": {
+        "complete": true,
+        "transportComplete": true,
+        "replicas": {
+          "a": {
+            "driver": 229,
+            "started": 229,
+            "ended": 229,
+            "received": 229,
+            "pending": 0,
+            "active": 0,
+            "complete": true
+          },
+          "b": {
+            "driver": 68,
+            "started": 68,
+            "ended": 68,
+            "received": 68,
+            "pending": 0,
+            "active": 0,
+            "complete": true
+          }
+        }
+      },
+      "protectedMarkupEmitted": false,
+      "expectedChallenge": true,
+      "clockStatusDenied": true,
+      "clockHttpStatus": 400,
+      "allowedClockControlStatus": 200,
+      "allowedClockControlHasEmployee": true
+    }
+  ],
+  "limitations": [
+    "Four intentional-fault raw overall/resource results remain failed; cancelled SQL row costs are unknown, never filled with zero.",
+    "Normal baseline/head resource gates and the existing per-trace cancellation predicate remain unchanged.",
+    "Historical failed normal/diagnostic attempts are retained; no old artifact is relabeled or erased.",
+    "Counts include each finite case's preparation/background traffic and are not isolated route-cost or performance-budget evidence.",
+    "Two-tab scoped-read browser proof remains separate and pending; production/CDN access remains unavailable."
+  ]
+}

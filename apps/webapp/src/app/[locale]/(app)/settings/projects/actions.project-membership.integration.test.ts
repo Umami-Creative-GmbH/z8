@@ -535,6 +535,25 @@ describe("project membership settings on PostgreSQL", () => {
 			expect(await assignments()).toEqual([]);
 		});
 
+		it("refuses a former employee as assignee or manager with the current-roster refusal (#1438)", async () => {
+			const refusal = {
+				success: false,
+				code: "ValidationError",
+				error: "Former employees can't be assigned. Choose someone on the current roster.",
+			};
+			expect(
+				await actAs(ids.ownerUser, () =>
+					projects.addProjectAssignment(ids.project, "employee", ids.inactiveEmployee),
+				),
+			).toMatchObject(refusal);
+			expect(
+				await actAs(ids.ownerUser, () =>
+					projects.addProjectManager(ids.project, ids.inactiveEmployee),
+				),
+			).toMatchObject(refusal);
+			expect(await assignments()).toEqual([]);
+		});
+
 		it("rejects assignment changes on a foreign project", async () => {
 			const added = await actAs(ids.ownerUser, () =>
 				projects.addProjectAssignment(

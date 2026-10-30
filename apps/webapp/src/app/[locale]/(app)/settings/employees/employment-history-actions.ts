@@ -95,7 +95,7 @@ export async function listEmployeeEmploymentHistoryAction(
 			Effect.gen(function* () {
 				const actor = yield* getEmployeeSettingsActorContext({ queryName: "listEmployeeEmploymentHistoryAction:actor" });
 				const { dbService } = actor;
-				const targetEmployee = yield* getTargetEmployee(employeeId);
+				const targetEmployee = yield* getTargetEmployee(employeeId, "getTargetEmployee", actor.organizationId);
 
 				yield* ensureSettingsActorCanAccessEmployeeTarget(actor, targetEmployee, {
 					message: "You do not have access to this employee's employment history",

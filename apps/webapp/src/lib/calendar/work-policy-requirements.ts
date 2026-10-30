@@ -4,6 +4,7 @@ import { DateTime } from "luxon";
 import {
 	absenceCategory,
 	absenceEntry,
+	type EmployeeEmploymentHistory,
 	employee,
 	employeeEmploymentHistory,
 	shift,
@@ -29,19 +30,20 @@ import {
 	WorkPolicyService,
 	WorkPolicyServiceLive,
 } from "@/lib/effect/services/work-policy.service";
-import { clipRequirementsToEmployment } from "@/lib/employee-lifecycle/employment-coverage";
+import { clipRequirementsToEmployment, type EmploymentInterval } from "@/lib/employee-lifecycle/employment-coverage";
 import { loadEmploymentCoverage } from "@/lib/employee-lifecycle/employment-periods";
 import { loadConfirmedTermsSpans } from "@/lib/employment-history/load-terms-in-force";
 import {
 	type CalendarDateRange,
 	clipTermsSpans,
+	type TermsSpan,
 } from "@/lib/employment-history/terms-in-force";
 import {
 	shiftCalendarDate,
 	shiftDateRangeBounds,
 } from "@/lib/scheduling/shift-date";
 import { shiftInterval } from "@/lib/scheduling/shift-occasion";
-import { loadEmployeeTrackingContext } from "@/lib/time-tracking/tracking-start";
+import { type EmployeeTrackingContext, loadEmployeeTrackingContext } from "@/lib/time-tracking/tracking-start";
 import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
 import { loadOrganizationTimezone } from "@/lib/timezone/load-organization-timezone";
 import { isValidIanaTimeZone } from "@/lib/timezone/validation";
@@ -51,6 +53,7 @@ import {
 	applyAbsenceAdjustmentsToRequirements,
 } from "./absence-adjusted-requirements";
 import {
+	type AssignedHolidayRange,
 	applyAssignedHolidayAdjustmentsToRequirements,
 	getAssignedHolidaysForEmployee,
 } from "./assigned-holidays";
@@ -235,7 +238,7 @@ function mergeDailyWorkRequirements(
 	return target;
 }
 
-function mapPolicyToEffective(policy: PolicyWithDetails): EffectiveWorkPolicy {
+export function mapPolicyToEffective(policy: PolicyWithDetails): EffectiveWorkPolicy {
 	return {
 		policyId: policy.id,
 		policyName: policy.name,
@@ -371,6 +374,7 @@ export async function getPublishedShiftRequirementsForEmployee(params: {
 	startDate: Date;
 	endDate: Date;
 	timezone?: string | null;
+	evidence?: EmployeeRequirementInputs["shifts"];
 }): Promise<DailyWorkRequirements> {
 	const requestedZone =
 		params.timezone && isValidIanaTimeZone(params.timezone)
@@ -383,39 +387,55 @@ export async function getPublishedShiftRequirementsForEmployee(params: {
 	const lastDay = plainDateAt(instantFromDate(params.endDate), requestedZone);
 	if (comparePlainDates(firstDay, lastDay) > 0) return {};
 
-	const assignedShifts = await Effect.runPromise(
-		params.database.query(
-			"getPublishedShiftsForCalendarRequirements",
-			async () => {
-				const organizationTimezone = await loadOrganizationTimezone(
-					params.database.db,
-					params.organizationId,
+	const evidence = params.evidence;
+	const bounds = evidence
+		? shiftDateRangeBounds(
+				firstDay,
+				lastDay.add({ days: 1 }),
+				evidence.organizationTimezone,
+			)
+		: null;
+	const assignedShifts =
+		evidence && bounds
+			? {
+					organizationTimezone: evidence.organizationTimezone,
+					shifts: evidence.shifts.filter(
+						(row) => row.date >= bounds.start && row.date < bounds.endExclusive,
+					),
+				}
+			: await Effect.runPromise(
+					params.database.query(
+						"getPublishedShiftsForCalendarRequirements",
+						async () => {
+							const organizationTimezone = await loadOrganizationTimezone(
+								params.database.db,
+								params.organizationId,
+							);
+							const bounds = shiftDateRangeBounds(
+								firstDay,
+								lastDay.add({ days: 1 }),
+								organizationTimezone,
+							);
+							const shifts = await params.database.db
+								.select({
+									date: shift.date,
+									startTime: shift.startTime,
+									endTime: shift.endTime,
+								})
+								.from(shift)
+								.where(
+									and(
+										eq(shift.employeeId, params.employeeId),
+										eq(shift.organizationId, params.organizationId),
+										eq(shift.status, "published"),
+										gte(shift.date, bounds.start),
+										lt(shift.date, bounds.endExclusive),
+									),
+								);
+							return { organizationTimezone, shifts };
+						},
+					),
 				);
-				const bounds = shiftDateRangeBounds(
-					firstDay,
-					lastDay.add({ days: 1 }),
-					organizationTimezone,
-				);
-				const shifts = await params.database.db
-					.select({
-						date: shift.date,
-						startTime: shift.startTime,
-						endTime: shift.endTime,
-					})
-					.from(shift)
-					.where(
-						and(
-							eq(shift.employeeId, params.employeeId),
-							eq(shift.organizationId, params.organizationId),
-							eq(shift.status, "published"),
-							gte(shift.date, bounds.start),
-							lt(shift.date, bounds.endExclusive),
-						),
-					);
-				return { organizationTimezone, shifts };
-			},
-		),
-	);
 
 	return buildShiftDailyWorkRequirements({
 		shifts: assignedShifts.shifts,
@@ -454,6 +474,7 @@ async function buildEmploymentHistoryDailyRequirements(params: {
 	endDate: Date;
 	timezone?: string | null;
 	fallbackPolicy: EffectiveWorkPolicy | null;
+	evidence?: EmployeeRequirementInputs;
 }): Promise<DailyWorkRequirements | null> {
 	const timezone =
 		params.timezone && isValidIanaTimeZone(params.timezone)
@@ -465,31 +486,38 @@ async function buildEmploymentHistoryDailyRequirements(params: {
 			days: 1,
 		}),
 	};
-	const spans = await Effect.runPromise(
-		params.database.query("getConfirmedEmploymentRequirementSlices", () =>
-			loadConfirmedTermsSpans(params.database.db, {
-				organizationId: params.organizationId,
-				employeeId: params.employeeId,
-				range,
-				timezone,
-			}),
-		),
-	);
+	const spans =
+		params.evidence?.termsSpans ??
+		(await Effect.runPromise(
+			params.database.query("getConfirmedEmploymentRequirementSlices", () =>
+				loadConfirmedTermsSpans(params.database.db, {
+					organizationId: params.organizationId,
+					employeeId: params.employeeId,
+					range,
+					timezone,
+				}),
+			),
+		));
 	if (spans.length === 0) {
 		// Only employees without confirmed terms use the legacy policy fallback.
 		// A gap in an established terms timeline must not manufacture required time.
-		const anyTerms = await Effect.runPromise(
-			params.database.query("calendarRequirements.hasConfirmedTerms", () =>
-				params.database.db.query.employeeEmploymentHistory.findFirst({
-					where: and(
-						eq(employeeEmploymentHistory.organizationId, params.organizationId),
-						eq(employeeEmploymentHistory.employeeId, params.employeeId),
-						eq(employeeEmploymentHistory.reviewState, "confirmed"),
+		const anyTerms = params.evidence
+			? params.evidence.hasConfirmedTerms
+			: await Effect.runPromise(
+					params.database.query("calendarRequirements.hasConfirmedTerms", () =>
+						params.database.db.query.employeeEmploymentHistory.findFirst({
+							where: and(
+								eq(
+									employeeEmploymentHistory.organizationId,
+									params.organizationId,
+								),
+								eq(employeeEmploymentHistory.employeeId, params.employeeId),
+								eq(employeeEmploymentHistory.reviewState, "confirmed"),
+							),
+							columns: { id: true },
+						}),
 					),
-					columns: { id: true },
-				}),
-			),
-		);
+				);
 		return anyTerms ? {} : null;
 	}
 
@@ -513,15 +541,18 @@ async function buildEmploymentHistoryDailyRequirements(params: {
 					startDate: start,
 					endDate: end,
 					timezone,
+					evidence: params.evidence?.shifts,
 				});
 			}
 
 			const policy = slice.workPolicyId
-				? await getEmploymentHistoryWorkPolicy({
-						database: params.database,
-						organizationId: params.organizationId,
-						policyId: slice.workPolicyId,
-					})
+				? params.evidence
+					? (params.evidence.policies.get(slice.workPolicyId) ?? null)
+					: await getEmploymentHistoryWorkPolicy({
+							database: params.database,
+							organizationId: params.organizationId,
+							policyId: slice.workPolicyId,
+						})
 				: params.fallbackPolicy;
 
 			return buildDailyWorkRequirements({
@@ -583,18 +614,42 @@ type DailyWorkRequirementsParams = {
 	employeeTimezoneOverride?: string;
 };
 
+/** Internal range evidence; it is never accepted from a browser request. */
+export type EmployeeRequirementInputs = {
+	scopedEmployee: {
+		id: string;
+		startDate: Date | null;
+		contractType: (typeof employee.$inferSelect)["contractType"];
+		user: { createdAt: Date };
+		userSettings: { timezone: string | null } | null;
+		organization: { timezone: string | null };
+	};
+	fallbackPolicy: EffectiveWorkPolicy | null;
+	termsSpans: TermsSpan<EmployeeEmploymentHistory>[];
+	hasConfirmedTerms: boolean;
+	policies: ReadonlyMap<string, EffectiveWorkPolicy>;
+	shifts: { organizationTimezone: string; shifts: ShiftRequirementSource[] };
+	absences: ApprovedAbsenceRange[];
+	employmentCoverage: EmploymentInterval[] | null;
+	holidays: AssignedHolidayRange[];
+};
+
 /**
  * The employee's daily work requirements from `startDate`'s day through `endDate`'s, as an effect
  * on the caller's `DatabaseService` and `WorkPolicyService`.
  */
 export function loadDailyWorkRequirementsForEmployee(
 	params: DailyWorkRequirementsParams,
+	preloaded?: {
+		tracking: EmployeeTrackingContext | null;
+		inputs?: EmployeeRequirementInputs;
+	},
 ) {
 	return Effect.gen(function* () {
 		const database = yield* DatabaseService;
-		const scopedEmployee = yield* database.query(
-			"getEmployeeForCalendarRequirements",
-			async () => {
+		const scopedEmployee =
+			preloaded?.inputs?.scopedEmployee ??
+			(yield* database.query("getEmployeeForCalendarRequirements", async () => {
 				return database.db.query.employee.findFirst({
 					where: and(
 						eq(employee.id, params.employeeId),
@@ -607,8 +662,7 @@ export function loadDailyWorkRequirementsForEmployee(
 						organization: { columns: { timezone: true } },
 					},
 				});
-			},
-		);
+			}));
 		if (!scopedEmployee) return {};
 		params = {
 			...params,
@@ -622,9 +676,11 @@ export function loadDailyWorkRequirementsForEmployee(
 
 		// This is the balance requirement projection. Historical policy-at-date and published
 		// shift readers above remain unbounded, so rollout never rewrites schedule history.
-		const tracking = yield* database.query("tracking.employeeStart", () =>
-			loadEmployeeTrackingContext(database.db, params),
-		);
+		const tracking = preloaded
+			? preloaded.tracking
+			: yield* database.query("tracking.employeeStart", () =>
+					loadEmployeeTrackingContext(database.db, params),
+				);
 		if (tracking) params = { ...params, timezone: tracking.timezone };
 		const requestedStartDate = DateTime.fromJSDate(params.startDate, {
 			zone: "utc",
@@ -677,7 +733,9 @@ export function loadDailyWorkRequirementsForEmployee(
 		if (effectiveStartDate > params.endDate) return {};
 
 		const service = yield* WorkPolicyService;
-		const fallbackPolicy = yield* service.getEffectivePolicy(params.employeeId);
+		const fallbackPolicy = preloaded?.inputs
+			? preloaded.inputs.fallbackPolicy
+			: yield* service.getEffectivePolicy(params.employeeId);
 		const historyRequirements = yield* Effect.promise(() =>
 			buildEmploymentHistoryDailyRequirements({
 				database,
@@ -687,6 +745,7 @@ export function loadDailyWorkRequirementsForEmployee(
 				endDate: params.endDate,
 				timezone: params.timezone,
 				fallbackPolicy,
+				evidence: preloaded?.inputs,
 			}),
 		);
 		const requirements =
@@ -700,6 +759,7 @@ export function loadDailyWorkRequirementsForEmployee(
 							startDate: effectiveStartDate,
 							endDate: params.endDate,
 							timezone: params.timezone,
+							evidence: preloaded?.inputs?.shifts,
 						}),
 					)
 				: buildDailyWorkRequirements({
@@ -708,28 +768,30 @@ export function loadDailyWorkRequirementsForEmployee(
 						endDate: params.endDate,
 						timezone: params.timezone,
 					}));
-		const approvedAbsences = yield* Effect.promise(() =>
-			getApprovedAbsenceRanges({
-				database,
-				organizationId: params.organizationId,
-				employeeId: params.employeeId,
-				startDate: effectiveStartDate,
-				endDate: params.endDate,
-				timezone: params.timezone,
-			}),
-		);
-
-		// Days outside employment (after a departure, or between stints) require nothing.
-		const employmentCoverage = yield* database.query(
-			"getEmploymentCoverageForRequirements",
-			() =>
-				loadEmploymentCoverage(database.db, {
-					employeeEmploymentStartDateOverride:
-						params.employeeEmploymentStartDateOverride,
+		const approvedAbsences =
+			preloaded?.inputs?.absences ??
+			(yield* Effect.promise(() =>
+				getApprovedAbsenceRanges({
+					database,
 					organizationId: params.organizationId,
 					employeeId: params.employeeId,
+					startDate: effectiveStartDate,
+					endDate: params.endDate,
+					timezone: params.timezone,
 				}),
-		);
+			));
+
+		// Days outside employment (after a departure, or between stints) require nothing.
+		const employmentCoverage = preloaded?.inputs
+			? preloaded.inputs.employmentCoverage
+			: yield* database.query("getEmploymentCoverageForRequirements", () =>
+					loadEmploymentCoverage(database.db, {
+						employeeEmploymentStartDateOverride:
+							params.employeeEmploymentStartDateOverride,
+						organizationId: params.organizationId,
+						employeeId: params.employeeId,
+					}),
+				);
 		const employedRequirements = clipRequirementsToEmployment(
 			requirements,
 			employmentCoverage,
@@ -741,14 +803,17 @@ export function loadDailyWorkRequirementsForEmployee(
 				employedRequirements,
 				approvedAbsences,
 			);
-		const assignedHolidays = yield* Effect.promise(() =>
-			getAssignedHolidaysForEmployee({
-				organizationId: params.organizationId,
-				employeeId: params.employeeId,
-				startDate: effectiveStartDate,
-				endDate: params.endDate,
-			}),
-		);
+		const assignedHolidays =
+			preloaded?.inputs?.holidays ??
+			(yield* Effect.promise(() =>
+				getAssignedHolidaysForEmployee({
+					organizationId: params.organizationId,
+					employeeId: params.employeeId,
+					startDate: effectiveStartDate,
+					endDate: params.endDate,
+					database: database.db,
+				}),
+			));
 
 		// biome-ignore format: source-level regression test asserts this call order.
 		return applyAssignedHolidayAdjustmentsToRequirements(absenceAdjustedRequirements, assignedHolidays);

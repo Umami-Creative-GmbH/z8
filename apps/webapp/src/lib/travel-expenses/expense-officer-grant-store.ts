@@ -9,6 +9,7 @@ import {
 	team,
 } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
+import { assertOnCurrentRoster } from "@/lib/employee-lifecycle/current-roster-guard";
 import {
 	DatabaseError,
 	NotFoundError,
@@ -259,6 +260,14 @@ export async function saveExpenseOfficerGrant(
 	) {
 		throw new ValidationError({ message: "Expense officer IDs must be valid" });
 	}
+	// The officer must be on the current roster (#1438). Named employees may be
+	// former: their last reports still need reimbursing.
+	await assertOnCurrentRoster(tx, {
+		organizationId,
+		employeeIds: [officerEmployeeId],
+		field: "officerEmployeeId",
+		message: "The expense officer must be a current employee of the organization",
+	});
 
 	const [current] = await tx
 		.select(grantColumns())
@@ -451,8 +460,8 @@ export async function revokeExpenseOfficerGrant(
 
 /**
  * Revokes the active grant the officer holds, if any, recording
- * `auditMetadata` on the audit entry. Offboarding (#750) calls it inside the
- * departure's transaction. Grants that only name the employee in their scope
+ * `auditMetadata` on the audit entry, and returns its id (null when they held
+ * none). Offboarding (#750) calls it inside the departure's transaction. Grants that only name the employee in their scope
  * stay, so their reports can still be reimbursed.
  */
 export async function revokeExpenseOfficerGrantHeldBy(
@@ -463,7 +472,7 @@ export async function revokeExpenseOfficerGrantHeldBy(
 		officerEmployeeId: string;
 		auditMetadata: Record<string, unknown>;
 	},
-): Promise<void> {
+): Promise<string | null> {
 	const { organizationId, actorUserId } = input;
 	const [row] = await tx
 		.select(grantColumns())
@@ -478,7 +487,7 @@ export async function revokeExpenseOfficerGrantHeldBy(
 		.limit(1)
 		.for("update");
 	const [grant] = row ? await withScopeRows(tx, organizationId, [row]) : [];
-	if (!grant) return;
+	if (!grant) return null;
 
 	await revokeLockedGrant(tx, {
 		organizationId,
@@ -486,6 +495,7 @@ export async function revokeExpenseOfficerGrantHeldBy(
 		grant,
 		metadata: input.auditMetadata,
 	});
+	return grant.id;
 }
 
 async function revokeLockedGrant(

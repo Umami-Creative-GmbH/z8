@@ -1,11 +1,9 @@
-import { createHash } from "node:crypto";
 import { and, desc, eq, inArray, lte, sql } from "drizzle-orm";
 import type { db as rootDatabase } from "@/db";
 import { organization } from "@/db/auth-schema";
 import { employee, employeeManagers } from "@/db/schema";
 import {
 	employeeDeparture,
-	employeeDepartureEvent,
 	employeeDepartureTask,
 	employeeEmploymentPeriod,
 } from "@/db/schema/employee-lifecycle";
@@ -26,6 +24,7 @@ import { runDepartureTransaction } from "./departure-transaction";
 import { resolveCurrentEmploymentPeriod } from "./employment-periods";
 import { assertReadCommitted, lockLifecycleScope } from "./locks";
 import { type DepartureBlockedReason, evaluateDepartureAuthority } from "./owner-invariant";
+import { readReceipt as readLedgerReceipt, requestFingerprint, writeReceipt } from "./receipts";
 import { executeDepartureInTransaction } from "./transition";
 import type {
 	CancelDeparture,
@@ -38,6 +37,8 @@ import type {
 	RehireEmployee,
 	ScheduleDeparture,
 } from "./types";
+
+export { requestFingerprint } from "./receipts";
 
 export type DepartureCommandErrorCode =
 	| DepartureBlockedReason
@@ -888,87 +889,22 @@ async function persistDispatchIntent(
 		.onConflictDoNothing();
 }
 
-/** Stable SHA-256 over actor, command and canonical (key-sorted) input. */
-export function requestFingerprint(actor: LifecycleActor, command: string, input: object): string {
-	const canonical = JSON.stringify({
-		actor: actor.userId,
-		command,
-		input: sortKeys(input),
-	});
-	return createHash("sha256").update(canonical).digest("hex");
-}
-
-function sortKeys(value: unknown): unknown {
-	if (Array.isArray(value)) return value.map(sortKeys);
-	if (value && typeof value === "object") {
-		return Object.fromEntries(
-			Object.entries(value as Record<string, unknown>)
-				.sort(([left], [right]) => left.localeCompare(right))
-				.map(([key, entry]) => [key, sortKeys(entry)]),
-		);
-	}
-	return value;
-}
-
 /**
  * A request receipt is event index 0 for the request. Replaying the same
  * payload returns the original result; a different payload under the same
  * request ID is rejected.
  */
-async function readReceipt<T>(
+function readReceipt<T>(
 	tx: LifecycleClient,
 	actor: LifecycleActor,
 	requestId: string,
 	fingerprint: string,
 ): Promise<T | null> {
-	const [receipt] = await tx
-		.select({
-			fingerprint: employeeDepartureEvent.requestFingerprint,
-			result: employeeDepartureEvent.result,
-		})
-		.from(employeeDepartureEvent)
-		.where(
-			and(
-				eq(employeeDepartureEvent.organizationId, actor.organizationId),
-				eq(employeeDepartureEvent.requestId, requestId),
-				eq(employeeDepartureEvent.eventIndex, 0),
-			),
-		);
-	if (!receipt) return null;
-	if (receipt.fingerprint !== fingerprint) throw new DepartureCommandError("request_conflict");
-	return receipt.result as T;
-}
-
-async function writeReceipt(
-	tx: LifecycleClient,
-	input: {
-		actor: LifecycleActor;
-		employeeId: string;
-		employmentPeriodId: string;
-		departureId: string | null;
-		revision: number | null;
-		requestId: string;
-		fingerprint: string;
-		kind: typeof employeeDepartureEvent.$inferInsert.kind;
-		occurredAt: Date;
-		result: Record<string, unknown>;
-		eventIndex?: number;
-		metadata?: Record<string, unknown>;
-	},
-) {
-	await tx.insert(employeeDepartureEvent).values({
-		organizationId: input.actor.organizationId,
-		employeeId: input.employeeId,
-		employmentPeriodId: input.employmentPeriodId,
-		departureId: input.departureId,
-		requestId: input.requestId,
-		eventIndex: input.eventIndex ?? 0,
-		revision: input.revision,
-		kind: input.kind,
-		actorUserId: input.actor.userId,
-		occurredAt: input.occurredAt,
-		metadata: input.metadata ?? {},
-		requestFingerprint: input.eventIndex ? null : input.fingerprint,
-		result: input.eventIndex ? null : input.result,
-	});
+	return readLedgerReceipt<T>(
+		tx,
+		actor,
+		requestId,
+		fingerprint,
+		() => new DepartureCommandError("request_conflict"),
+	);
 }

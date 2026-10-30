@@ -14,6 +14,7 @@ import { useTranslate } from "@tolgee/react";
 import { type ReactNode, useState } from "react";
 import { toast } from "sonner";
 import { EmployeeSingleSelect } from "@/components/employee-select";
+import { FormerEmployeeBadge } from "@/components/former-employees/former-employee-ui";
 import { toSelectableEmployee } from "@/components/settings/access-grants/grant-editor";
 import {
 	ActionPanel,
@@ -63,7 +64,11 @@ interface FeatureAssignment<Value extends string> {
 interface ScopedFeatureAssignmentsProps<Value extends string> {
 	assignments: FeatureAssignment<Value>[];
 	teams: { id: string; name: string }[];
-	employees: { id: string; name: string }[];
+	/**
+	 * A former employee (#1438) is listed only to name an existing row; never
+	 * offered. `formerSince` is the date they left, null when not recorded (#1439).
+	 */
+	employees: { id: string; name: string; isFormer?: boolean; formerSince?: string | null }[];
 	options: { value: Value; label: string }[];
 	valueLabel: string;
 	organizationLabel: string;
@@ -174,7 +179,7 @@ export function ScopedFeatureAssignments<Value extends string>({
 	// The preloaded picker path does not apply excludeIds, so exclude assigned employees here.
 	const assignedEmployeeIdSet = new Set(assignedEmployeeIds);
 	const availableEmployees = employees
-		.filter((employee) => !assignedEmployeeIdSet.has(employee.id))
+		.filter((employee) => !employee.isFormer && !assignedEmployeeIdSet.has(employee.id))
 		.map((employee) =>
 			toSelectableEmployee({ ...employee, email: "" }, { isActive: true }),
 		);
@@ -427,6 +432,11 @@ function FeatureAssignmentSections<Value extends string>({
 	const employeeNames = new Map(
 		employees.map((employee) => [employee.id, employee.name]),
 	);
+	const formerEmployees = new Map(
+		employees
+			.filter((employee) => employee.isFormer)
+			.map((employee) => [employee.id, { since: employee.formerSince }]),
+	);
 	const optionLabels = new Map(
 		options.map((option) => [option.value, option.label]),
 	);
@@ -504,6 +514,10 @@ function FeatureAssignmentSections<Value extends string>({
 							) : (
 								<ul className="space-y-2" aria-label={section.title}>
 									{rows.map((assignment) => {
+										const former =
+											section.type === "employee"
+												? formerEmployees.get(assignment.employeeId ?? "")
+												: undefined;
 										const label =
 											section.type === "organization"
 												? organizationLabel
@@ -532,7 +546,10 @@ function FeatureAssignmentSections<Value extends string>({
 														aria-hidden="true"
 													/>
 													<div className="min-w-0">
-														<p className="break-words font-medium">{label}</p>
+														<p className="flex flex-wrap items-center gap-2 break-words font-medium">
+															{label}
+															{former ? <FormerEmployeeBadge since={former.since} /> : null}
+														</p>
 														<p className="text-xs text-muted-foreground">
 															{optionLabels.get(assignment.value)}
 														</p>

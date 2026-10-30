@@ -11,6 +11,18 @@ The organization's own identifier for an employee, used by payroll exports and t
 Once SCIM supplies this field, the identity provider owns it for that employee in that organization. Local admins can read it but cannot change or clear it. A SCIM clear keeps IdP ownership; an invitation or a reactivation does not take ownership away.
 _Avoid_: employee ID, payroll ID
 
+**Former employee**:
+An employee who has left the organization, either because their departure took effect or because they were deactivated. They left at the cutoff of their departure or at the moment they were deactivated. Their past work, absences, decisions and documents stay theirs, and views of the past keep showing them, marked as former since that moment. They are no longer on the current roster.
+_Avoid_: inactive user, disabled user, deleted user, ex-member
+
+**Deactivation**:
+Ending someone's employment at once, without scheduling a departure. It has the same consequences as a departure taking effect at that moment. **Reactivation** undoes a deactivation but brings back nothing that ended.
+_Avoid_: disabling, suspension, archiving an employee
+
+**Current roster**:
+The organization's employees who are not former employees. Everything that answers "who works here now" shows only the current roster: teams, presence, planning, the people offered for picking, and who gets notified.
+_Avoid_: active users, active members, all employees
+
 ### Custom fields
 
 **Custom field**:

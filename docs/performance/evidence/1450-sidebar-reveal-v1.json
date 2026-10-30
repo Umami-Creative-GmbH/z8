@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "kind": "responsive-sidebar-ensure-open-qualification",
+  "diagnosticOnly": true,
+  "historicalC9CauseProved": false,
+  "interruptedC9ResultSha256": "aecf623237986483e02bc64ccd8aa3bc44dd7d92322371bbb8299d115eea811d",
+  "unchangedRecipeReproduction": {
+    "resultSha256": "40a7957b35212f22fa1cc4a370c8bc8d9ff3eaf38517eba5d8ebcad705168cd8",
+    "visits": 6,
+    "failedVisits": 1,
+    "failingRepeatIteration": 4,
+    "nativeQueriesMatchedDriverSdkAndReceived": 10905,
+    "activeTraces": 0,
+    "pendingNativeQueries": 0,
+    "allReceivedTracesReconciled": true,
+    "witnessOverflow": 0,
+    "witnessErrors": 0,
+    "causalTimelineDocumentMs": {
+      "expandedSidebarWithTargetAbsent": 275.5,
+      "targetVisibleAndReceivingPointer": 387.6,
+      "trustedTriggerClickWhileExpanded": 719.1,
+      "sidebarCollapsedAndTargetOffscreen": 727.2
+    },
+    "trustedIntendedClicks": 0
+  },
+  "chromeHttpCounterfactual": {
+    "resultSha256": "0382a68193701ce88059127fef79c39935e7e014c6ec8f96ff646dabe21ab65d",
+    "stateScenarios": 4,
+    "journeys": 5,
+    "propertiesEstablished": 5,
+    "oldExpandedDelayedTarget": "one-toggle-then-timeout-no-target-request",
+    "candidateExpandedDelayedTarget": "no-toggle-one-trusted-target-request",
+    "candidateMobileClosed": "one-toggle-after-responsive-hydration-one-target-request",
+    "candidateMobileOpen": "no-toggle-one-target-request",
+    "candidateUnknownState": "original-deadline-no-input-no-target-request",
+    "inputRetries": 0,
+    "operatorDomClickUsed": false
+  },
+  "compiledPrivateCandidate": {
+    "baseToolingSource": "86c3878f797c7c26176e94a612d6ac5f20aa7398",
+    "applicationBuild": "bda468856728844f8172f6832c4deb9ad34a3bb0",
+    "candidateSha256": "c2b8ec750e62a2f11ef00edbcfba8e8de600e3fb035a9c0061ef2b4950ee012b",
+    "adapterSha256": "bbe715c5ae2a162b60058ddd8e85bf5a7e4d09c27e65c98def1c6ada53262fd4",
+    "qualificationSha256": "45b0fd5e4eb947c0bdbe0bd0cb852771ab0bd00e23037d929db0df2c0a43c318",
+    "onlyNormalMeasureDiff": "journey-import-to-private-reveal-adapter",
+    "allOtherCopiedModuleBytesIdentical": true,
+    "fullFrozenC9PlanUnchanged": true,
+    "results": [
+      { "condition": "desktop-large-admin-dashboard", "visits": 21, "resultSha256": "bc1b67c02626f74c6146c7dd84738c1983c4e9d40ff1a9053c60930bb942aee5", "nativeQueries": 41562 },
+      { "condition": "mobile-small-admin-dashboard", "visits": 2, "resultSha256": "fbb0b2a6bbfccf22316c4c294239413010d47fc2e0654321d2cc3b063999e04a", "nativeQueries": 3113 },
+      { "condition": "mobile-small-admin-time-tracking", "visits": 2, "resultSha256": "1746582dcae4119691f418b5c11f25bf2f721c7124402aa677967bcd6e151acc", "nativeQueries": 2967 },
+      { "condition": "mobile-small-admin-reports-month", "visits": 2, "resultSha256": "b3cbec1fc89a82a7f889030c9a569ee3f18aaa3fc54cee2a9ebad0c54579fbc7", "nativeQueries": 2330 }
+    ],
+    "failedVisits": 0,
+    "allNativeWireAndMeasuredFiveMetricGuardsPassed": true,
+    "activeTraces": 0,
+    "pendingNativeQueries": 0,
+    "witnessOverflow": 0,
+    "witnessErrors": 0,
+    "mobileTwentySampleCohortClaim": false
+  },
+  "sourceQualification": {
+    "journeyCanonicalLfSha256": "ef3f794c7c1a19b60aea894817618716267881e681219e2cb1a73f98f6446a56",
+    "candidateFunctionsAstEquivalentIgnoringFormattingAndSplitConstDeclarations": true,
+    "onlyExistingChangedStatement": "performSteps-global-sidebar-reveal-branch",
+    "controlledRevealAdapterAndPublicStepSemanticsEquivalent": true,
+    "genericPointerPeriodCalendarAndOtherTopLevelStatementsUnchanged": true,
+    "allGeneratedNavigationRecipesUnchanged": true,
+    "applicationNextDependenciesDatesCountsFactorsAndDeadlinesUnchanged": true,
+    "publicStepTestsRedThenGreen": true,
+    "focusedTestsPassed": 32,
+    "shippedNormalRuntimeValidated": false
+  },
+  "priorFailedRawEvidencePreserved": true,
+  "fullC9CaptureAcceptance": "unfulfilled",
+  "fullC10CaptureAcceptance": "unfulfilled",
+  "productionDeliveryClaim": false
+}

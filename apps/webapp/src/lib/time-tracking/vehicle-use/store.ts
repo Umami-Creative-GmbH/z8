@@ -3,6 +3,7 @@ import "server-only";
 import { and, asc, eq } from "drizzle-orm";
 import { auditLog, employee, team, vehicleUseAssignment, vehicleUseSetting } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
+import { findEmployeesNotOnCurrentRoster } from "@/lib/employee-lifecycle/current-roster-guard";
 import type { WorkTransactionClient } from "../work-transaction";
 import { VehicleUseRefusal } from "./errors";
 import type { VehicleUseMode } from "./policy";
@@ -139,6 +140,16 @@ export async function setVehicleUseAssignment(
 			);
 		assignmentId = existing.id;
 	} else {
+		// A former employee gets no new assignment (#1438); an existing one can still be switched.
+		if (target.type === "employee") {
+			const former = await findEmployeesNotOnCurrentRoster(tx, {
+				organizationId,
+				employeeIds: [target.employeeId],
+			});
+			if (former.length > 0) {
+				throw new VehicleUseRefusal("former_employee", "The employee is a former employee");
+			}
+		}
 		const [inserted] = await tx
 			.insert(vehicleUseAssignment)
 			.values({

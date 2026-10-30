@@ -521,6 +521,7 @@ export function validateAssignmentTargetFields(
 
 export function getManagedEmployeeIdsForSettingsActor(actor: {
 	accessTier: SettingsAccessTier;
+	organizationId: string;
 	currentEmployee: Pick<typeof employee.$inferSelect, "id" | "role"> | null;
 }) {
 	return Effect.gen(function* () {
@@ -533,8 +534,11 @@ export function getManagedEmployeeIdsForSettingsActor(actor: {
 		}
 
 		const managerService = yield* ManagerService;
+		// Authority, not a roster: a manager keeps reaching a former report (#1438).
 		const managedEmployees = yield* managerService.getManagedEmployees(
 			actor.currentEmployee.id,
+			actor.organizationId,
+			{ roster: "all" },
 		);
 
 		return new Set(
@@ -605,6 +609,7 @@ export function validateInput<T>(
 export function getTargetEmployee(
 	employeeId: string,
 	queryName = "getTargetEmployee",
+	organizationId?: string,
 ) {
 	return Effect.gen(function* () {
 		const dbService = yield* DatabaseService;
@@ -612,7 +617,12 @@ export function getTargetEmployee(
 		return yield* dbService
 			.query(queryName, async () => {
 				return await dbService.db.query.employee.findFirst({
-					where: eq(employee.id, employeeId),
+					where: organizationId
+						? and(
+								eq(employee.id, employeeId),
+								eq(employee.organizationId, organizationId),
+							)
+						: eq(employee.id, employeeId),
 					with: {
 						user: {
 							columns: {

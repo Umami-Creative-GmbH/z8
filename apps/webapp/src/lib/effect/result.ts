@@ -1,4 +1,5 @@
 import { type Effect, Exit, type Layer } from "effect";
+import { unstable_rethrow } from "next/navigation";
 import { env } from "@/env";
 import { monthClosedRefusalOf } from "@/lib/time-tracking/closed-months/refusal";
 import { failureOfCause, isInterruptOnly } from "./cause-failure";
@@ -24,6 +25,7 @@ export function toServerActionResult<T>(exit: Exit.Exit<T, AnyAppError>): Server
 			// Without a typed failure or defect (interrupt-only), keep the cause so the
 			// client gets the generic message instead of Cause.squash's internal one.
 			const failure = isInterruptOnly(cause) ? cause : failureOfCause(cause);
+			unstable_rethrow(failure);
 			// A closed month refuses as itself, also when the database refusal arrives
 			// wrapped in a `DatabaseError` or a defect (#762).
 			const error = monthClosedRefusalOf(failure) ?? failure;

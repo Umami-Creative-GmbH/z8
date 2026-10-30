@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
 	createNotification: vi.fn(),
 	employeeFindFirst: vi.fn(),
-	employeeManagersFindFirst: vi.fn(),
+	managerRecipients: vi.fn(),
 	shiftFindFirst: vi.fn(),
 	loadOrganizationTimezone: vi.fn(),
 }));
@@ -16,7 +16,6 @@ vi.mock("@/db", () => ({
 	db: {
 		query: {
 			employee: { findFirst: mocks.employeeFindFirst },
-			employeeManagers: { findFirst: mocks.employeeManagersFindFirst },
 			shift: { findFirst: mocks.shiftFindFirst },
 		},
 	},
@@ -24,6 +23,10 @@ vi.mock("@/db", () => ({
 
 vi.mock("@/lib/notifications/notification-service", () => ({
 	createNotification: mocks.createNotification,
+}));
+
+vi.mock("@/lib/notifications/manager-notice-recipients", () => ({
+	currentRosterManagerRecipients: mocks.managerRecipients,
 }));
 
 import { notifyPrimaryManagerAboutShiftPickup } from "./shift-pickup-handler";
@@ -41,10 +44,12 @@ describe("notifyPrimaryManagerAboutShiftPickup", () => {
 		"notifies the requester's primary manager of a $timezone organization's shift date",
 		async ({ timezone, stored }) => {
 			mocks.loadOrganizationTimezone.mockResolvedValue(timezone);
-			mocks.employeeManagersFindFirst.mockResolvedValue({ managerId: "manager-1" });
-			mocks.employeeFindFirst
-				.mockResolvedValueOnce({ firstName: "Ada", lastName: "Lovelace" })
-				.mockResolvedValueOnce({ userId: "manager-user-1" });
+			mocks.managerRecipients.mockResolvedValue({ userIds: ["manager-user-1"], reason: "managers" });
+			mocks.employeeFindFirst.mockResolvedValue({
+				userId: "requester-user",
+				firstName: "Ada",
+				lastName: "Lovelace",
+			});
 			mocks.shiftFindFirst.mockResolvedValue({
 				date: new Date(stored),
 				startTime: "09:00",
@@ -70,7 +75,7 @@ describe("notifyPrimaryManagerAboutShiftPickup", () => {
 				metadata: {
 					shiftId: "shift-1",
 					requesterId: "employee-1",
-					managerId: "manager-1",
+					recipientReason: "managers",
 					// Each channel formats the calendar date in the manager's language.
 					i18n: {
 						titleKey: "common:notifications.content.shiftPickupRequested.title",
@@ -92,10 +97,12 @@ describe("notifyPrimaryManagerAboutShiftPickup", () => {
 
 	it("translates the request of a requester without a name", async () => {
 		mocks.loadOrganizationTimezone.mockResolvedValue("UTC");
-		mocks.employeeManagersFindFirst.mockResolvedValue({ managerId: "manager-1" });
-		mocks.employeeFindFirst
-			.mockResolvedValueOnce({ firstName: null, lastName: null })
-			.mockResolvedValueOnce({ userId: "manager-user-1" });
+		mocks.managerRecipients.mockResolvedValue({ userIds: ["manager-user-1"], reason: "managers" });
+		mocks.employeeFindFirst.mockResolvedValue({
+			userId: "requester-user",
+			firstName: null,
+			lastName: null,
+		});
 		mocks.shiftFindFirst.mockResolvedValue({
 			date: new Date("2026-06-02T00:00:00.000Z"),
 			startTime: "09:00",
@@ -118,5 +125,69 @@ describe("notifyPrimaryManagerAboutShiftPickup", () => {
 			params: { startTime: "09:00", endTime: "17:00" },
 		});
 		expect(notification.metadata.i18n.params).not.toHaveProperty("requesterName");
+	});
+
+	function pickupData() {
+		mocks.loadOrganizationTimezone.mockResolvedValue("UTC");
+		mocks.employeeFindFirst.mockResolvedValue({
+			userId: "requester-user",
+			firstName: "Ada",
+			lastName: "Lovelace",
+		});
+		mocks.shiftFindFirst.mockResolvedValue({
+			date: new Date("2026-06-02T00:00:00.000Z"),
+			startTime: "09:00",
+			endTime: "17:00",
+		});
+	}
+
+	const notify = () =>
+		notifyPrimaryManagerAboutShiftPickup({
+			requestId: "request-1",
+			shiftId: "shift-1",
+			requesterId: "employee-1",
+			organizationId: "org-1",
+		});
+
+	it("asks for the current primary manager as an actionable notice, never the requester (#1438)", async () => {
+		pickupData();
+		mocks.managerRecipients.mockResolvedValue({ userIds: ["manager-user-1"], reason: "managers" });
+
+		await notify();
+
+		expect(mocks.managerRecipients).toHaveBeenCalledWith(expect.anything(), {
+			organizationId: "org-1",
+			employeeIds: ["employee-1"],
+			notice: "actionable",
+			primaryOnly: true,
+			excludeUserIds: ["requester-user"],
+		});
+	});
+
+	it("asks the organization's admins when the primary manager is a former employee", async () => {
+		pickupData();
+		mocks.managerRecipients.mockResolvedValue({
+			userIds: ["admin-user-1", "owner-user-1"],
+			reason: "organization_admins",
+		});
+
+		await notify();
+
+		expect(mocks.createNotification.mock.calls.map(([params]) => params.userId)).toEqual([
+			"admin-user-1",
+			"owner-user-1",
+		]);
+		expect(mocks.createNotification.mock.calls[0]?.[0].metadata).toMatchObject({
+			recipientReason: "organization_admins",
+		});
+	});
+
+	it("notifies nobody when no one can receive the request", async () => {
+		pickupData();
+		mocks.managerRecipients.mockResolvedValue({ userIds: [], reason: "none" });
+
+		await notify();
+
+		expect(mocks.createNotification).not.toHaveBeenCalled();
 	});
 });

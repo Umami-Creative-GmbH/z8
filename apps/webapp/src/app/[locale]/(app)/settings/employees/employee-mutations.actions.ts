@@ -250,6 +250,16 @@ export async function createEmployeeAction(
 function authorizeEmployeeUpdate(employeeId: string, data: UpdateEmployee) {
 	return Effect.gen(function* () {
 		const actor = yield* getEmployeeSettingsActorContext({ queryName: "updateEmployeeAction:actor" });
+		// The edit form never switches an employee on or off: a stale client or a crafted
+		// request is refused, not silently ignored (#1439).
+		if (Object.hasOwn(data as object, "isActive")) {
+			return yield* Effect.fail(
+				new ValidationError({
+					message: "Use Deactivate or Reactivate to change whether an employee is active.",
+					field: "isActive",
+				}),
+			);
+		}
 		const inputData: UpdateEmployee =
 			actor.accessTier === "manager"
 				? (filterEmployeeUpdateForScopedManager(data) as UpdateEmployee)
@@ -467,8 +477,8 @@ export async function updateEmployeeAction(
 						),
 					);
 
-				// A lower role or a deactivation can take projects away from the employee's share links (#806).
-				if ("role" in employeeUpdateData || "isActive" in employeeUpdateData) {
+				// A lower role can take projects away from the employee's share links (#806).
+				if ("role" in employeeUpdateData) {
 					yield* dbService.query("reportShareLink.revokeAfterEmployeeUpdate", () =>
 						revokeShareLinksAfterAccessChange(dbService.db, {
 							organizationId: targetEmployee.organizationId,

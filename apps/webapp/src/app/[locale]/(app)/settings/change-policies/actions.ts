@@ -5,6 +5,10 @@ import { Effect } from "effect";
 import { changePolicy, changePolicyAssignment, employee, team, teamPermissions } from "@/db/schema";
 import { type AnyAppError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
+import {
+	findEmployeesNotOnCurrentRoster,
+	formerEmployeeRefusal,
+} from "@/lib/employee-lifecycle/current-roster-guard";
 import { withOrganizationConfigurationMutation } from "@/lib/time-tracking/work-transaction/ranks";
 import {
 	getEmployeeSettingsActorContext,
@@ -726,6 +730,12 @@ export async function createChangePolicyAssignment(
 						)
 						.limit(1);
 					if (!assignedEmployee) return { invalid: "employeeId" as const };
+					// A former employee gets no new change policy assignment (#1438).
+					const former = await findEmployeesNotOnCurrentRoster(tx, {
+						organizationId: actor.organizationId,
+						employeeIds: [data.employeeId],
+					});
+					if (former.length > 0) return { former };
 				}
 
 				const [assignment] = await tx
@@ -755,6 +765,9 @@ export async function createChangePolicyAssignment(
 					field: created.invalid,
 				}),
 			);
+		}
+		if ("former" in created) {
+			return yield* Effect.fail(formerEmployeeRefusal({ field: "employeeId" }, created.former ?? []));
 		}
 
 		return { id: created.id };

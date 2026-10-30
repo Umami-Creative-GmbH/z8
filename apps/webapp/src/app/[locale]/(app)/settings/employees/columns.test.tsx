@@ -3,7 +3,7 @@
 import { readFileSync } from "node:fs";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type React from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { EmployeeWithRelations } from "./actions";
@@ -18,6 +18,7 @@ vi.mock("@tolgee/react", () => ({
 				values?.[name] === undefined ? match : String(values[name]),
 			),
 	}),
+	useTolgee: () => ({ getLanguage: () => "en" }),
 }));
 
 vi.mock("@/components/user-avatar", () => ({
@@ -56,11 +57,20 @@ vi.mock("@/navigation", () => ({
 			{children}
 		</a>
 	),
+	// The lifecycle actions link a reactivation to its checklist (#1441).
+	useRouter: () => ({ push: vi.fn() }),
 }));
 
 vi.mock("./actions", async (importOriginal) => ({
 	...(await importOriginal<typeof import("./actions")>()),
-	deactivateEmployee: vi.fn(),
+	deactivateEmployee: vi.fn(async () => ({ success: true, data: undefined })),
+	// Deactivate previews its consequences first (#1440).
+	previewEmployeeDeactivation: vi.fn(async () => ({
+		success: true,
+		data: (
+			await import("@/components/organization/testing/deactivation-preview.test.fixture")
+		).emptyDeactivationPreview(),
+	})),
 	reactivateEmployee: vi.fn(),
 	removeEmployeeAccess: vi.fn(),
 }));
@@ -410,9 +420,12 @@ describe("employee directory columns", () => {
 		fireEvent.click(
 			await screen.findByRole("menuitem", { name: "Deactivate" }),
 		);
-		fireEvent.click(await screen.findByRole("button", { name: "Deactivate" }));
+		const dialog = await screen.findByRole("dialog");
+		const confirm = within(dialog).getByRole("button", { name: "Deactivate" });
+		await waitFor(() => expect(confirm.hasAttribute("disabled")).toBe(false));
+		fireEvent.click(confirm);
 
-		expect(onOptimisticStatusChange).toHaveBeenCalledWith("emp_1", false);
+		await waitFor(() => expect(onOptimisticStatusChange).toHaveBeenCalledWith("emp_1", false));
 	});
 
 	it("offers draft as an employee status filter", () => {

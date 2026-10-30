@@ -135,7 +135,7 @@ export const CANONICAL_WRITE_OWNERS = {
 // Remove each exact exception when its domain adapter migrates to canonical writes.
 export const TEMPORARY_LEGACY_WRITE_EXCEPTIONS = {
 	// Retain all three writes until legacy/shadow cancellation is retired.
-	"src/app/[locale]/(app)/absences/mutations.ts": {
+	"src/app/[locale]/(app)/absences/cancel-absence-core.ts": {
 		approval_chain_instance: ["update"],
 		approval_chain_stage_instance: ["update"],
 		approval_request: ["delete"],
@@ -1320,7 +1320,10 @@ export interface ScanApprovalWriteBoundaryOptions {
 
 const PRODUCTION_SOURCE = /\.[cm]?[jt]sx?$/;
 const TEST_SOURCE = /\.(?:test|spec)\.[cm]?[jt]sx?$/;
-const MAX_PRODUCTION_FILES = 4_096;
+// #1448 grew the admitted inventory from 4,081 to over 4,121 sources.
+// Keep a finite file budget with growth headroom; the independent 32 MiB total,
+// 2 MiB per-file and native analysis budgets still fail closed.
+const MAX_PRODUCTION_FILES = 6_144;
 const MAX_SOURCE_BYTES = 2 * 1024 * 1024;
 const MAX_TOTAL_SOURCE_BYTES = 32 * 1024 * 1024;
 const APPROVAL_TABLE_PREFILTER =

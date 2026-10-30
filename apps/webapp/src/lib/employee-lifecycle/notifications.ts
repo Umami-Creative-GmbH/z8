@@ -3,6 +3,7 @@ import type { db as rootDatabase } from "@/db";
 import type { DepartureReviewKind } from "@/db/schema/employee-lifecycle";
 import { dateFromInstant, type Instant, instantFromDate } from "@/lib/datetime/temporal-core";
 import type { CreateNotificationParams, NotificationChannel } from "@/lib/notifications/types";
+import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
 import { isCanonicalUuid } from "@/lib/validations/canonical-uuid";
 import { memberIsAccessibleOwnerOrAdmin } from "./authority-sql";
 import { formatDepartureCutoff } from "./cutoff-display";
@@ -20,16 +21,23 @@ type NotificationDatabase = Pick<typeof rootDatabase, "execute">;
  */
 export async function enqueueReviewNotifications(
 	executor: NotificationDatabase,
-	input: { organizationId: string; departureId: string },
+	input:
+		| { organizationId: string; departureId: string; deactivationId?: null }
+		| { organizationId: string; deactivationId: string; departureId?: null },
 ): Promise<void> {
+	const anchor = input.deactivationId
+		? sql`r.deactivation_id = ${input.deactivationId}::uuid`
+		: sql`r.departure_id = ${input.departureId}::uuid`;
 	await executor.execute(sql`
 		INSERT INTO employee_departure_task
-			(organization_id, employee_id, employment_period_id, departure_id, kind, dedupe_key, payload)
-		SELECT r.organization_id, r.employee_id, r.employment_period_id, r.departure_id, 'notify_review',
+			(organization_id, employee_id, employment_period_id, departure_id, deactivation_id, kind,
+				dedupe_key, payload)
+		SELECT r.organization_id, r.employee_id, r.employment_period_id, r.departure_id,
+			r.deactivation_id, 'notify_review',
 			'notify-review:' || r.id::text, jsonb_build_object('reviewId', r.id)
 		FROM employee_departure_review r
 		WHERE r.organization_id = ${input.organizationId}
-			AND r.departure_id = ${input.departureId}::uuid AND r.status = 'open'
+			AND ${anchor} AND r.status = 'open'
 		ON CONFLICT DO NOTHING
 	`);
 }
@@ -149,10 +157,19 @@ const REVIEW_MESSAGES: Record<
 	},
 };
 
+// A deactivation (#1440) raises only approval handover reviews.
+const DEACTIVATION_REVIEW_MESSAGE = {
+	label: "Approval duties need a replacement",
+	key: "common:notifications.content.employeeOffboardingReview.approval_handover_deactivation",
+	fallback:
+		"{employeeName}: Approval duties need a replacement (deactivated {cutoff}, {timezone}).",
+};
+
 /**
  * Notification content for one review and recipient. The cutoff is shown in
- * the zone frozen on the departure and the recipient's locale, never the
- * server's; in-app rendering re-localizes through the i18n metadata.
+ * the zone frozen on the departure (a deactivation's: the organization's) and
+ * the recipient's locale, never the server's; in-app rendering re-localizes
+ * through the i18n metadata.
  */
 export function buildReviewNotification(input: {
 	organizationId: string;
@@ -162,14 +179,19 @@ export function buildReviewNotification(input: {
 	cutoff: Instant;
 	timezone: string;
 	locale: string;
+	/** What raised the review; a deactivation words the instant differently. */
+	anchor?: "departure" | "deactivation";
 }): CreateNotificationParams {
 	const cutoff = formatDepartureCutoff(input.cutoff, input.timezone, input.locale);
+	const deactivation = input.anchor === "deactivation";
 	const {
 		label: reviewLabel,
 		key: messageKey,
 		fallback: messageDefault,
-	} = REVIEW_MESSAGES[input.review.kind];
-	const message = `${input.employeeName}: ${reviewLabel} (departure effective ${cutoff}, ${input.timezone}).`;
+	} = deactivation ? DEACTIVATION_REVIEW_MESSAGE : REVIEW_MESSAGES[input.review.kind];
+	const message = deactivation
+		? `${input.employeeName}: ${reviewLabel} (deactivated ${cutoff}, ${input.timezone}).`
+		: `${input.employeeName}: ${reviewLabel} (departure effective ${cutoff}, ${input.timezone}).`;
 	return {
 		userId: input.recipientUserId,
 		organizationId: input.organizationId,
@@ -208,28 +230,46 @@ type ReviewFacts = {
 	kind: DepartureReviewKind;
 	status: "open" | "resolved";
 	employee_id: string;
-	departure_id: string;
+	departure_id: string | null;
+	deactivation_id: string | null;
 	employment_period_id: string;
 	cutoff_at: Date;
-	timezone: string;
+	/** The departure's frozen zone; null for a deactivation's review. */
+	timezone: string | null;
+	organization_timezone: string | null;
 	employee_name: string | null;
 };
 
+/**
+ * A departure's review shows its cutoff in the departure's frozen zone; a
+ * deactivation's review (#1440) shows the deactivation instant in the
+ * organization's zone.
+ */
 async function loadReview(
 	database: NotificationDatabase,
 	organizationId: string,
 	reviewId: string,
-): Promise<ReviewFacts | null> {
+): Promise<(ReviewFacts & { timezone: string }) | null> {
 	const result = await database.execute<ReviewFacts>(sql`
-		SELECT r.id, r.kind, r.status, r.employee_id, r.departure_id, r.employment_period_id,
-			d.cutoff_at, d.timezone, u.name AS employee_name
+		SELECT r.id, r.kind, r.status, r.employee_id, r.departure_id, r.deactivation_id,
+			r.employment_period_id, coalesce(d.cutoff_at, x.deactivated_at) AS cutoff_at, d.timezone,
+			o.timezone AS organization_timezone, u.name AS employee_name
 		FROM employee_departure_review r
-		JOIN employee_departure d ON d.id = r.departure_id AND d.organization_id = r.organization_id
+		LEFT JOIN employee_departure d ON d.id = r.departure_id AND d.organization_id = r.organization_id
+		LEFT JOIN employee_deactivation x
+			ON x.id = r.deactivation_id AND x.organization_id = r.organization_id
+		JOIN organization o ON o.id = r.organization_id
 		JOIN employee e ON e.id = r.employee_id AND e.organization_id = r.organization_id
 		LEFT JOIN "user" u ON u.id = e.user_id
 		WHERE r.organization_id = ${organizationId} AND r.id = ${reviewId}::uuid
+			AND (d.id IS NOT NULL OR x.id IS NOT NULL)
 	`);
-	return result.rows[0] ?? null;
+	const row = result.rows[0];
+	if (!row) return null;
+	return {
+		...row,
+		timezone: row.timezone ?? resolveOrganizationTimezone(row.organization_timezone).timezone,
+	};
 }
 
 /**
@@ -277,10 +317,11 @@ export function createReviewNotificationHandler(deps: {
 			for (const delivery of plan.deliveries) {
 				await deps.database.execute(sql`
 					INSERT INTO employee_departure_task
-						(organization_id, employee_id, employment_period_id, departure_id, kind, dedupe_key,
-							payload, available_at)
+						(organization_id, employee_id, employment_period_id, departure_id, deactivation_id, kind,
+							dedupe_key, payload, available_at)
 					VALUES (${claim.organizationId}, ${review.employee_id}::uuid,
-						${review.employment_period_id}::uuid, ${review.departure_id}::uuid, 'notify_review',
+						${review.employment_period_id}::uuid, ${review.departure_id}::uuid,
+						${review.deactivation_id}::uuid, 'notify_review',
 						${`notify-review:${reviewId}:${delivery.recipientUserId}:${delivery.channel}`},
 						${JSON.stringify({
 							reviewId,
@@ -319,6 +360,7 @@ export function createReviewNotificationHandler(deps: {
 			cutoff: instantFromDate(new Date(review.cutoff_at)),
 			timezone: review.timezone,
 			locale,
+			anchor: review.deactivation_id ? "deactivation" : "departure",
 		});
 		if (channel === "in_app") {
 			await deps.transport.insertInApp(params);

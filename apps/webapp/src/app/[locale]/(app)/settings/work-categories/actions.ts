@@ -27,6 +27,7 @@ import {
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import { assertOnCurrentRoster } from "@/lib/employee-lifecycle/current-roster-guard";
 import {
 	type Transaction,
 	withOrganizationConfigurationMutation,
@@ -1600,6 +1601,12 @@ export async function createSetAssignment(
 							field: "employeeId",
 						});
 					}
+					// A former employee gets no new work category set (#1438).
+					await assertOnCurrentRoster(tx, {
+						organizationId: input.organizationId,
+						employeeIds: [employeeId],
+						field: "employeeId",
+					});
 				}
 
 				const [inserted] = await tx

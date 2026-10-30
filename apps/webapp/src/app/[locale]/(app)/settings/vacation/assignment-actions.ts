@@ -18,6 +18,7 @@ import {
 import { DatabaseError, NotFoundError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
 import { DatabaseService } from "@/lib/effect/services/database.service";
+import { ensureOnCurrentRoster } from "@/lib/employee-lifecycle/current-roster-guard";
 import {
 	ensureSettingsActorCanAccessEmployeeTarget,
 	filterItemsToManagedEmployees,
@@ -268,6 +269,12 @@ export async function createVacationPolicyAssignment(
 				"createVacationPolicyAssignment:getOrganizationTeam",
 			);
 		}
+		// A former employee gets no new policy assignment (#1438).
+		yield* ensureOnCurrentRoster(dbService, {
+			organizationId: actor.organizationId,
+			employeeIds: [data.employeeId],
+			field: "employeeId",
+		});
 
 		// Step 7: Create the assignment
 		const newAssignment = yield* dbService
@@ -383,6 +390,14 @@ export async function setEmployeePolicyAssignment(
 				action: "update",
 			});
 		const dbService = yield* DatabaseService;
+		// Clearing stays possible; a new policy needs a current employee (#1438).
+		if (policyId) {
+			yield* ensureOnCurrentRoster(dbService, {
+				organizationId: actor.organizationId,
+				employeeIds: [employeeId],
+				field: "employeeId",
+			});
+		}
 		yield* dbService
 			.query("vacation.employeeAssignment", () =>
 				writeVacationPolicyAssignment(dbService.db, {

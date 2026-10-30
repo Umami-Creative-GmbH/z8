@@ -12,7 +12,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { flexRender, type SortingState, useTable } from "@tanstack/react-table";
 import { useTranslate } from "@tolgee/react";
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { EmploymentDateUploadDialog } from "@/components/settings/employment-date-upload-dialog";
 import { NoEmployeeError } from "@/components/errors/no-employee-error";
 import { InviteCodeManagement } from "@/components/organization/invite-code-management";
 import { InviteMemberDialog } from "@/components/organization/invite-member-dialog";
@@ -22,9 +21,16 @@ import type {
 	InvitationWithInviter,
 	MemberWithUserAndEmployee,
 } from "@/components/organization/people-management-types";
+import { EmploymentDateUploadDialog } from "@/components/settings/employment-date-upload-dialog";
 import { OpeningBalanceUploadDialog } from "@/components/settings/work-balance/opening-balance-upload-dialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
 	Select,
@@ -46,10 +52,11 @@ import { queryKeys, useEmployeeClockStatuses } from "@/lib/query";
 import { useEmployees } from "@/lib/query/use-employees";
 import type { SettingsAccessTier } from "@/lib/settings-access";
 import { createEmployeeColumns } from "./columns";
-import type {
-	EmployeeDirectoryRow,
-	EmployeeDirectoryStatus,
-	PaginatedEmployeeResponse,
+import {
+	type EmployeeDirectoryStatus,
+	type EmployeeWithRelations,
+	normalizeEmployeeDirectoryStatus,
+	type PaginatedEmployeeResponse,
 } from "./employee-action-types";
 import { employeeTableFeatures } from "./employee-table-features";
 
@@ -110,7 +117,10 @@ export function EmployeesPageClient(props: {
 						{t("settings.employees.title", "Employees")}
 					</h1>
 					<p className="text-sm text-muted-foreground">
-						{t("settings.employees.description", "Manage employees, members, and invites")}
+						{t(
+							"settings.employees.description",
+							"Manage employees, members, and invites",
+						)}
 					</p>
 				</div>
 				<div className="flex flex-wrap gap-2"><EmploymentDateUploadDialog /><OpeningBalanceUploadDialog /></div>
@@ -231,7 +241,10 @@ function EmployeeDirectoryFilters({
 			<div className="relative flex-1">
 				<IconSearch className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
 				<Input
-					aria-label={t("settings.employees.directory.searchLabel", "Search employees")}
+					aria-label={t(
+						"settings.employees.directory.searchLabel",
+						"Search employees",
+					)}
 					placeholder={t(
 						"settings.employees.directory.searchPlaceholder",
 						"Search by name, email, or position...",
@@ -244,7 +257,10 @@ function EmployeeDirectoryFilters({
 			<Select value={role} onValueChange={onRoleChange}>
 				<SelectTrigger className="w-full sm:w-[180px]">
 					<SelectValue
-						placeholder={t("settings.employees.directory.roleFilter", "Filter by role")}
+						placeholder={t(
+							"settings.employees.directory.roleFilter",
+							"Filter by role",
+						)}
 					/>
 				</SelectTrigger>
 				<SelectContent>
@@ -262,24 +278,36 @@ function EmployeeDirectoryFilters({
 					</SelectItem>
 				</SelectContent>
 			</Select>
-			<Select value={status} onValueChange={onStatusChange}>
-				<SelectTrigger className="w-full sm:w-[180px]">
+			<Select
+				value={status}
+				onValueChange={(value) => onStatusChange(normalizeEmployeeDirectoryStatus(value, "current"))}
+			>
+				<SelectTrigger
+					className="w-full sm:w-[180px]"
+					aria-label={t(
+						"settings.employees.directory.statusFilter",
+						"Filter by status",
+					)}
+				>
 					<SelectValue
-						placeholder={t("settings.employees.directory.statusFilter", "Filter by status")}
+						placeholder={t(
+							"settings.employees.directory.statusFilter",
+							"Filter by status",
+						)}
 					/>
 				</SelectTrigger>
 				<SelectContent>
-					<SelectItem value="all">
-						{t("settings.employees.directory.statuses.all", "All Status")}
+					<SelectItem value="current">
+						{t("settings.employees.directory.statuses.current", "Current")}
 					</SelectItem>
-					<SelectItem value="active">
-						{t("settings.employees.directory.statuses.active", "Active")}
-					</SelectItem>
-					<SelectItem value="inactive">
-						{t("settings.employees.directory.statuses.inactive", "Inactive")}
+					<SelectItem value="former">
+						{t("settings.employees.directory.statuses.former", "Former")}
 					</SelectItem>
 					<SelectItem value="draft">
 						{t("settings.employees.directory.statuses.draft", "Draft")}
+					</SelectItem>
+					<SelectItem value="all">
+						{t("settings.employees.directory.statuses.all", "All Status")}
 					</SelectItem>
 				</SelectContent>
 			</Select>
@@ -301,6 +329,8 @@ function EmployeeDirectoryTab(props: {
 		total,
 		isLoading,
 		isFetching,
+		isError,
+		error,
 		hasEmployee,
 		role,
 		status,
@@ -332,9 +362,8 @@ function EmployeeDirectoryTab(props: {
 	const [searchInput, setSearchInput] = useState("");
 	const updateCachedEmployee = (
 		employeeId: string,
-		updates:
-			| Pick<EmployeeDirectoryRow, "isActive" | "membership">
-			| Pick<EmployeeDirectoryRow, "isActive">,
+		updates: Pick<EmployeeWithRelations, "isActive" | "isFormer"> &
+			Partial<Pick<EmployeeWithRelations, "membership">>,
 	) => {
 		queryClient.setQueriesData<PaginatedEmployeeResponse>(
 			{ queryKey: queryKeys.employees.organization(props.organizationId) },
@@ -353,10 +382,15 @@ function EmployeeDirectoryTab(props: {
 		organizationId: props.organizationId,
 		currentUserId: props.currentUserId,
 		currentMemberRole: props.currentMemberRole,
+		// Deactivating makes a former employee at once; reactivating brings them back (#1438).
 		onOptimisticStatusChange: (employeeId, isActive) =>
-			updateCachedEmployee(employeeId, { isActive }),
+			updateCachedEmployee(employeeId, { isActive, isFormer: !isActive }),
 		onRemoved: (employeeId) =>
-			updateCachedEmployee(employeeId, { isActive: false, membership: null }),
+			updateCachedEmployee(employeeId, {
+				isActive: false,
+				isFormer: true,
+				membership: null,
+			}),
 	});
 
 	useEffect(() => {
@@ -377,11 +411,14 @@ function EmployeeDirectoryTab(props: {
 		pageCount,
 	});
 
-	if (!hasEmployee && !isLoading) {
+	if (!hasEmployee && !isLoading && !isError) {
 		return (
 			<div className="flex flex-1 items-center justify-center p-6">
 				<NoEmployeeError
-					feature={t("settings.employees.directory.noEmployeeFeature", "manage employees")}
+					feature={t(
+						"settings.employees.directory.noEmployeeFeature",
+						"manage employees",
+					)}
 				/>
 			</div>
 		);
@@ -396,7 +433,10 @@ function EmployeeDirectoryTab(props: {
 							{t("settings.employees.title", "Employees")}
 						</h1>
 						<p className="text-sm text-muted-foreground">
-							{t("settings.employees.description", "Manage employees, members, and invites")}
+							{t(
+								"settings.employees.description",
+								"Manage employees, members, and invites",
+							)}
 						</p>
 					</div>
 					<Button variant="ghost" size="icon" onClick={refresh} disabled={isFetching}>
@@ -413,7 +453,8 @@ function EmployeeDirectoryTab(props: {
 						<CardDescription>
 							{t("settings.employees.directory.countFound", "{count} employee(s) found", {
 								count: total,
-							})}
+								},
+							)}
 						</CardDescription>
 					</div>
 					{!props.showHeader && (
@@ -435,10 +476,30 @@ function EmployeeDirectoryTab(props: {
 						onStatusChange={setStatus}
 					/>
 
-					{isLoading ? (
+					{isError ? (
+						<div role="alert" className="space-y-3 py-4">
+							<p>
+								{error?.message ||
+									t(
+										"settings.employees.directory.loadFailed",
+										"Employee directory could not be loaded",
+									)}
+							</p>
+							<Button
+								variant="outline"
+								onClick={() => void refresh()}
+								disabled={isFetching}
+							>
+								{t("common.retry", "Try again")}
+							</Button>
+						</div>
+					) : isLoading ? (
 						<div className="flex items-center justify-center py-8">
 							<p className="text-sm text-muted-foreground">
-								{t("settings.employees.directory.loading", "Loading employees...")}
+								{t(
+									"settings.employees.directory.loading",
+									"Loading employees...",
+								)}
 							</p>
 						</div>
 					) : (
@@ -452,7 +513,10 @@ function EmployeeDirectoryTab(props: {
 													<TableHead key={header.id}>
 														{header.isPlaceholder
 															? null
-															: flexRender(header.column.columnDef.header, header.getContext())}
+															: flexRender(
+																	header.column.columnDef.header,
+																	header.getContext(),
+																)}
 													</TableHead>
 												))}
 											</TableRow>
@@ -464,7 +528,10 @@ function EmployeeDirectoryTab(props: {
 												<TableRow key={row.id}>
 													{row.getVisibleCells().map((cell) => (
 														<TableCell key={cell.id}>
-															{flexRender(cell.column.columnDef.cell, cell.getContext())}
+															{flexRender(
+																cell.column.columnDef.cell,
+																cell.getContext(),
+															)}
 														</TableCell>
 													))}
 												</TableRow>
@@ -475,7 +542,10 @@ function EmployeeDirectoryTab(props: {
 													<div className="flex flex-col items-center justify-center">
 														<IconUser className="mb-2 size-8 text-muted-foreground" />
 														<p className="text-sm text-muted-foreground">
-															{t("settings.employees.directory.emptyState", "No employees found")}
+															{t(
+																"settings.employees.directory.emptyState",
+																"No employees found",
+															)}
 														</p>
 													</div>
 												</TableCell>
@@ -491,7 +561,8 @@ function EmployeeDirectoryTab(props: {
 										{t("settings.employees.directory.pagination.pageOf", "Page {page} of {total}", {
 											page: table.state.pagination.pageIndex + 1,
 											total: table.getPageCount(),
-										})}
+											},
+										)}
 									</div>
 									<div className="flex items-center gap-2">
 										<Button
@@ -501,7 +572,10 @@ function EmployeeDirectoryTab(props: {
 											disabled={!table.getCanPreviousPage() || isFetching}
 										>
 											<IconChevronLeft className="mr-1 size-4" />
-											{t("settings.employees.directory.pagination.previous", "Previous")}
+											{t(
+												"settings.employees.directory.pagination.previous",
+												"Previous",
+											)}
 										</Button>
 										<Button
 											variant="outline"
@@ -509,7 +583,10 @@ function EmployeeDirectoryTab(props: {
 											onClick={() => table.nextPage()}
 											disabled={!table.getCanNextPage() || isFetching}
 										>
-											{t("settings.employees.directory.pagination.next", "Next")}
+											{t(
+												"settings.employees.directory.pagination.next",
+												"Next",
+											)}
 											<IconChevronRight className="ml-1 size-4" />
 										</Button>
 									</div>

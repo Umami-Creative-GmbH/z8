@@ -60,7 +60,6 @@ import { Callout } from 'fumadocs-ui/components/callout';
     Edit the information:
     - Personal information (name, gender, birthday)
     - Job information (position, team, role)
-    - Status (active/inactive)
   </Step>
   <Step>
     Click **"Save Changes"**
@@ -100,22 +99,56 @@ When an employee leaves:
 
 <Steps>
   <Step>
-    Navigate to the employee's profile
+    Go to **Settings** → **Employees** and find the employee
   </Step>
   <Step>
-    Change status to **"Inactive"**
+    Open the row's actions menu, or the employee's profile, and choose **Deactivate**
   </Step>
   <Step>
-    Click **"Save"**
+    Review what changes. If someone they manage would be left without a manager, choose a new manager for them (a current admin or manager)
+  </Step>
+  <Step>
+    Confirm
   </Step>
 </Steps>
 
+Only owners and admins can deactivate, and the employee's details form doesn't change whether someone is active.
+
+Before you confirm, the dialog lists everything the deactivation changes. Z8 checks it again when you confirm: if a new manager you chose can no longer manage the report, the dialog says so and you can choose someone else. Confirming twice, for example after a lost connection, never deactivates twice.
+
 <Callout type="warn" title="What happens when deactivated">
-- Employee loses system access
-- Cannot submit new requests
+- Employee loses system access and is signed out
+- They become a **former employee**: they no longer appear where Z8 shows who works here now, and are shown as *Former since* the day you deactivated them
+- **Managers**: the people they managed keep their other manager, or get the new manager you chose. People they managed who have left themselves just lose the link. Their own manager links end
+- **Teams and projects**: they leave their teams, their own project assignments and their project manager roles
+- **Approvals**: requests waiting for their decision move to the new manager you chose for that person, or to the next approver the workflow finds. Anything that can't move appears on their employee page under *Needs review*
+- **Shifts**: upcoming shifts become open shifts, and their current managers get one notice (or, if they had none, the organization's owners and admins). Past shifts and a shift already running stay
+- **Absences**: pending and approved absences after their last day are cancelled, which frees the allowance. An absence running over their last day stays, and so does one in a closed month (reopen the month to cancel it). They stop covering other people's absences as deputy
+- **Access**: expense officer, payroll access, personnel file officer and driving licence verifier roles end, driving authorizations end, kiosk badges and their report share links stop working
+- Personnel file retention counts from the day you deactivated them
+- They stop counting as a paid seat
 - Historical data remains intact
-- Can be reactivated later if needed
+- Can be reactivated later if needed; **Reactivate** counts them as a seat again, but restores none of the above
 </Callout>
+
+### Reactivating employees
+
+Choose **Reactivate** in the row's actions menu or on the employee's profile. The employee can sign in again, is a current employee again and counts as a paid seat. Personnel file retention stops counting.
+
+Reactivation restores nothing the deactivation ended. Right after you reactivate, Z8 shows **What to grant again**: the manager links and moved reports, roles, kiosk badges, driving authorizations, teams and projects, opened shifts, cancelled absences and revoked report share links of that deactivation. Each item links to the page where you grant it again, so you only give back what the person still needs. The list stays on the employee's profile until an admin dismisses it. The deactivation's open *Needs review* items close, because the person is a current employee again.
+
+The employee's **Contract & Work Model** card lists each deactivation and reactivation with its date and time in your organization's time zone. Deactivations from before this list existed appear while their audit log entries are kept (one year).
+
+### Current and former employees
+
+A former employee is someone who was deactivated, or whose departure has taken effect. Z8 keeps their past work, absences, decisions and documents, but leaves them out of everything about the present:
+
+- **Team views**: the dashboard's *Your team*, *Who's out today* and *Upcoming time off*, the team page, team counts and averages, chat-bot team commands and manager digests show current employees only.
+- **Lists you manage**: the team page, team members and project members hide former employees. Turn on **Show former employees** to see them, marked *Former*.
+- **Employee directory**: **Settings** → **Employees** opens on **Current**, which also lists pending invitations. Choose **Former**, **Draft** or **All** to see the others.
+- **Pickers**: choosing someone for a team, a manager, a shift, a policy, a vehicle, a grant or a document request offers current employees only. Z8 also refuses to save a former employee into such a role, while removing one still works.
+- **Notifications**: manager notices skip former managers. A request that needs a decision goes to the organization admins when every manager of the employee has left.
+- **Views of the past**: reports, past calendars and the team calendar feed keep former employees' past entries, marked *Former*; their later absences are left out.
 
 <Callout type="info">
 **Best Practice**: Keep employee records for at least one full year after departure for reporting and compliance purposes.

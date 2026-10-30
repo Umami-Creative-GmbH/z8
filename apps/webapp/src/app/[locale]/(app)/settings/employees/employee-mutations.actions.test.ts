@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { eq } from "drizzle-orm";
-import { Effect } from "effect";
+import { Effect, Exit } from "effect";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { user } from "@/db/auth-schema";
 import {
@@ -501,6 +501,37 @@ describe("createEmployeeAction", () => {
 describe("updateEmployeeAction", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+	});
+
+	it("refuses to switch an employee on or off, leaving that to Deactivate and Reactivate (#1439)", async () => {
+		const update = vi.fn();
+		mocks.runTracedEmployeeAction.mockImplementation((options) =>
+			Effect.runPromiseExit(options.execute({ setAttribute: vi.fn() })),
+		);
+		mocks.getEmployeeSettingsActorContext.mockReturnValue(
+			Effect.succeed({
+				accessTier: "orgAdmin",
+				organizationId: "org-1",
+				session: { user: { id: "user-admin-1", email: "admin@example.com" } },
+				dbService: { db: { update }, query: vi.fn() },
+			}),
+		);
+
+		for (const isActive of [false, true]) {
+			const exit = (await updateEmployeeAction("employee-1", {
+				position: "Engineer",
+				isActive,
+			} as unknown as Parameters<typeof updateEmployeeAction>[1])) as unknown as Exit.Exit<
+				unknown,
+				unknown
+			>;
+
+			expect(Exit.isFailure(exit)).toBe(true);
+			expect(JSON.stringify(exit)).toContain('"field":"isActive"');
+		}
+		expect(mocks.validateInput).not.toHaveBeenCalled();
+		expect(mocks.getTargetEmployee).not.toHaveBeenCalled();
+		expect(update).not.toHaveBeenCalled();
 	});
 
 	it("writes auth names to the linked user and not the employee update payload", async () => {

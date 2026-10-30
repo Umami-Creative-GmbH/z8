@@ -3403,12 +3403,12 @@ describe("approval write boundary production ownership", () => {
 	});
 
 	it("fails closed before parsing when the production file-count limit is exceeded", {
-		timeout: 15_000,
+		timeout: 30_000,
 	}, () => {
 		withApprovalWriteTree({}, (workspaceRoot) => {
 			const sourceRoot = join(workspaceRoot, "src");
 			mkdirSync(sourceRoot, { recursive: true });
-			for (let index = 0; index < 4_097; index += 1) {
+			for (let index = 0; index < 6_145; index += 1) {
 				writeFileSync(join(sourceRoot, `${index}.ts`), "");
 			}
 
@@ -3418,12 +3418,22 @@ describe("approval write boundary production ownership", () => {
 				{
 					column: 0,
 					detail:
-						"Approval write boundary production file-count limit exceeded: 4096.",
+						"Approval write boundary production file-count limit exceeded: 6144.",
 					error: "traversal",
 					kind: "error",
 					line: 0,
 					path: ".",
 				},
+			]);
+		});
+	});
+
+	it("still detects an unowned write at the admitted production file capacity", { timeout: 15_000 }, () => {
+		withApprovalWriteTree({ "src/unowned.ts": WORKFLOW_INSERT }, (workspaceRoot) => {
+			const sourceRoot = join(workspaceRoot, "src");
+			for (let index = 0; index < 6_143; index += 1) writeFileSync(join(sourceRoot, `${index}.ts`), "");
+			expect(scanApprovalWriteBoundary({ roots: ["src"], workspaceRoot })).toEqual([
+				expect.objectContaining({ kind: "mutation", operation: "insert", path: "src/unowned.ts", table: "approval_workflow" }),
 			]);
 		});
 	});
@@ -4407,7 +4417,7 @@ db.delete(approvalOutbox);`,
 
 	it("exports the complete exact temporary legacy exception map", () => {
 		expect(TEMPORARY_LEGACY_WRITE_EXCEPTIONS).toEqual({
-			"src/app/[locale]/(app)/absences/mutations.ts": {
+			"src/app/[locale]/(app)/absences/cancel-absence-core.ts": {
 				approval_chain_instance: ["update"],
 				approval_chain_stage_instance: ["update"],
 				approval_request: ["delete"],
@@ -4784,7 +4794,7 @@ export async function hiddenImport(rows: object[]) {
 			{ operation: "insert", table: "approval_request" },
 		]);
 		expect(
-			analyzeOperations("src/app/[locale]/(app)/absences/mutations.ts"),
+			analyzeOperations("src/app/[locale]/(app)/absences/cancel-absence-core.ts"),
 		).toEqual([
 			{ operation: "update", table: "approval_chain_stage_instance" },
 			{ operation: "update", table: "approval_chain_instance" },

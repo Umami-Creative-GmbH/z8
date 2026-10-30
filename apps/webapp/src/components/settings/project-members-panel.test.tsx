@@ -24,6 +24,7 @@ vi.mock("@/app/[locale]/(app)/settings/projects/actions", () => actions);
 vi.mock("sonner", () => ({ toast }));
 
 vi.mock("@tolgee/react", () => ({
+	useTolgee: () => ({ getLanguage: () => "en-GB" }),
 	useTranslate: () => ({
 		t: (_key: string, fallback: string, params?: Record<string, unknown>) =>
 			params
@@ -244,6 +245,57 @@ describe("ProjectMembersPanel", () => {
 		await user.click(within(managers).getByRole("button", { name: "Remove Pat Manager" }));
 		expect(actions.removeProjectManager).toHaveBeenCalledWith("project-1", "emp-pm");
 		expect(onChanged).toHaveBeenCalledTimes(2);
+	});
+
+	it("hides former employees' assignments until asked for, then marks them with the date they left (#1438, #1439)", async () => {
+		const user = userEvent.setup();
+		const base = project();
+		renderPanel({
+			project: {
+				...base,
+				assignments: [
+					...base.assignments,
+					{
+						id: "assignment-former",
+						type: "employee",
+						teamId: null,
+						teamName: null,
+						employeeId: "emp-former",
+						employeeName: "Fern Former",
+						employeeIsFormer: true,
+						employeeFormerSince: "2026-10-12",
+					},
+					{
+						id: "assignment-unrecorded",
+						type: "employee",
+						teamId: null,
+						teamName: null,
+						employeeId: "emp-unrecorded",
+						employeeName: "Gus Gone",
+						employeeIsFormer: true,
+						employeeFormerSince: null,
+					},
+				],
+			},
+		});
+
+		const employees = screen.getByRole("region", { name: "Employees" });
+		expect(within(employees).getByText("Avery Employee")).toBeTruthy();
+		expect(within(employees).queryByText("Fern Former")).toBeNull();
+
+		await user.click(within(employees).getByRole("switch", { name: "Show former employees" }));
+
+		const rowOf = (name: string) => within(employees).getByText(name).closest("li") as HTMLElement;
+		expect(within(rowOf("Fern Former")).getByText("Former since 12 Oct 2026")).toBeTruthy();
+		expect(within(rowOf("Gus Gone")).getByText("Former · date not recorded")).toBeTruthy();
+		expect(within(rowOf("Avery Employee")).queryByText(/Former/)).toBeNull();
+	});
+
+	it("shows no former-employees toggle when no assignment belongs to one", () => {
+		renderPanel();
+
+		const employees = screen.getByRole("region", { name: "Employees" });
+		expect(within(employees).queryByRole("switch")).toBeNull();
 	});
 
 	it("shows project managers read-only to a manager-tier viewer", () => {

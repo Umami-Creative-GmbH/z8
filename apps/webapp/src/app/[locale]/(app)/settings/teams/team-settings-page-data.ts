@@ -4,6 +4,8 @@ import * as authSchema from "@/db/auth-schema";
 import { employee, team, teamMembership } from "@/db/schema";
 import { ensureEmployeeProfilesForOrganizationMembers } from "@/lib/auth/organization-member-provisioning";
 import type { TeamPermissions } from "@/lib/authorization";
+import { formerEmployeesAmong } from "@/lib/employee-lifecycle/current-roster-among";
+import { formerMark } from "@/lib/employee-lifecycle/former-since";
 import { buildTeamSettingsSurface, filterMembersForTeamSettingsSurface } from "./team-scope";
 
 export async function loadTeamSettingsPageData(input: {
@@ -47,12 +49,27 @@ export async function loadTeamSettingsPageData(input: {
 		membershipsByEmployeeId.set(membership.employeeId, employeeMemberships);
 	}
 
-	const membersWithMemberships = membersData.map((memberEntry) => ({
-		...memberEntry,
-		teamMemberships: memberEntry.employee
-			? (membershipsByEmployeeId.get(memberEntry.employee.id) ?? [])
-			: [],
-	}));
+	// Team lists hide former employees by default and their pickers never offer them
+	// (#1438); a former one carries the date they left, null when not recorded (#1439).
+	const formerSinceById = await formerEmployeesAmong(
+		db,
+		organizationId,
+		membersData.flatMap((memberEntry) => (memberEntry.employee ? [memberEntry.employee.id] : [])),
+	);
+
+	const membersWithMemberships = membersData.map((memberEntry) => {
+		const { isFormer, ...formerSince } = memberEntry.employee
+			? formerMark(formerSinceById, memberEntry.employee.id)
+			: { isFormer: false };
+		return {
+			...memberEntry,
+			teamMemberships: memberEntry.employee
+				? (membershipsByEmployeeId.get(memberEntry.employee.id) ?? [])
+				: [],
+			isFormerEmployee: isFormer,
+			...formerSince,
+		};
+	});
 
 	const teamSurface = buildTeamSettingsSurface({
 		accessTier: settingsRouteContext.accessTier,

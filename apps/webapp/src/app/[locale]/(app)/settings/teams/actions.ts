@@ -23,6 +23,10 @@ import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/resul
 import { AuthService } from "@/lib/effect/services/auth.service";
 import { DatabaseService } from "@/lib/effect/services/database.service";
 import { PermissionsService } from "@/lib/effect/services/permissions.service";
+import { onCurrentRoster } from "@/lib/employee-lifecycle/current-roster";
+import { formerEmployeesAmong } from "@/lib/employee-lifecycle/current-roster-among";
+import { ensureOnCurrentRoster } from "@/lib/employee-lifecycle/current-roster-guard";
+import { formerMark } from "@/lib/employee-lifecycle/former-since";
 import { createLogger } from "@/lib/logger";
 import { onTeamMemberAdded, onTeamMemberRemoved } from "@/lib/notifications/triggers";
 import type { DrivingLicenceTeamChangeImpact } from "@/lib/organization/driving-licence/intended-driver-rules";
@@ -32,6 +36,7 @@ import {
 	runDrivingLicenceIntendedDriverWrite,
 } from "@/lib/organization/driving-licence/no-longer-intended";
 import { keepDrivingLicenceStalePreview } from "@/lib/organization/driving-licence/stale-preview";
+import { removeTeamMembership } from "@/lib/organization/team-membership-removal";
 import {
 	buildTeamSettingsSurface,
 	canUseManagerScopedTeamSettings,
@@ -136,8 +141,8 @@ function validatePrimaryManager(
 			return await dbService.db.query.employee.findFirst({
 				where: and(
 					eq(employee.id, primaryManagerId),
-					eq(employee.organizationId, organizationId),
-					eq(employee.isActive, true),
+					// A former employee can't become a team's primary manager (#1438).
+					onCurrentRoster(organizationId),
 				),
 			});
 		});
@@ -302,45 +307,13 @@ async function writeTeamMemberAddition(
 
 /**
  * Removes the membership; when it was the primary team, the alphabetically first remaining
- * membership (by id) becomes the primary team, else none.
+ * membership (by id) becomes the primary team, else none (shared with the deactivation, #1440).
  */
 async function writeTeamMemberRemoval(
 	tx: TeamWriteTransaction,
 	input: { organizationId: string; teamId: string; employeeId: string },
 ) {
-	const { organizationId, teamId, employeeId } = input;
-	await tx
-		.delete(teamMembership)
-		.where(
-			and(
-				eq(teamMembership.organizationId, organizationId),
-				eq(teamMembership.teamId, teamId),
-				eq(teamMembership.employeeId, employeeId),
-			),
-		);
-
-	// Re-read under protection: the compatibility team may have moved.
-	const current = await tx.query.employee.findFirst({
-		where: and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)),
-		columns: { teamId: true },
-	});
-	if (current?.teamId !== teamId) return;
-
-	const remainingMemberships = await tx.query.teamMembership.findMany({
-		where: and(
-			eq(teamMembership.organizationId, organizationId),
-			eq(teamMembership.employeeId, employeeId),
-		),
-	});
-	const nextTeamId =
-		remainingMemberships
-			.flatMap((membership) => (membership.teamId !== teamId ? [membership.teamId] : []))
-			.toSorted()[0] ?? null;
-
-	await tx
-		.update(employee)
-		.set({ teamId: nextTeamId, updatedAt: currentTimestamp() })
-		.where(and(eq(employee.id, employeeId), eq(employee.organizationId, organizationId)));
+	await removeTeamMembership(tx, input);
 }
 
 /** Deletes a team without memberships; false when it still has members. */
@@ -449,6 +422,14 @@ function authorizeTeamMemberChange(teamId: string, employeeId: string, kind: "ad
 					entityId: employeeId,
 				}),
 			);
+		}
+		// A former employee joins no team (#1438); removing one stays possible.
+		if (kind === "add") {
+			yield* ensureOnCurrentRoster(dbService, {
+				organizationId: targetTeam.organizationId,
+				employeeIds: [employeeId],
+				field: "employeeId",
+			});
 		}
 
 		if (kind === "add" && targetEmployee && actor.accessTier !== "orgAdmin") {
@@ -1045,12 +1026,20 @@ export async function deleteTeam(
 }
 
 /**
- * Get team details with members
+ * Get team details with members. Every member is listed; former employees are
+ * marked so the page hides them until "Show former employees" is on (#1438).
  */
 export async function getTeam(teamId: string): Promise<
 	ServerActionResult<
 		ScopedTeam & {
-			employees?: Array<typeof employee.$inferSelect & { user: unknown }>;
+			employees?: Array<
+				typeof employee.$inferSelect & {
+					user: unknown;
+					isFormer: boolean;
+					/** On a former member only: the date they left, null when not recorded (#1439). */
+					formerSince?: string | null;
+				}
+			>;
 		}
 	>
 > {
@@ -1131,8 +1120,21 @@ export async function getTeam(teamId: string): Promise<
 			);
 		}
 
+		const teamWithEmployees = withMembershipEmployees(targetTeam as TeamWithMemberRelations);
+		const formerSinceById = yield* dbService.query("getTeam.formerMembers", () =>
+			formerEmployeesAmong(
+				dbService.db,
+				targetTeam.organizationId,
+				teamWithEmployees.employees.map((member) => member.id),
+			),
+		);
+
 		return {
-			...withMembershipEmployees(targetTeam as TeamWithMemberRelations),
+			...teamWithEmployees,
+			employees: teamWithEmployees.employees.map((member) => ({
+				...member,
+				...formerMark(formerSinceById, member.id),
+			})),
 			canManageMembers: scopedFlags.canManageMembers,
 			canManageSettings: scopedFlags.canManageSettings,
 		};

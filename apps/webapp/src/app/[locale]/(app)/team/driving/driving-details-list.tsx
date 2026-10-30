@@ -4,6 +4,7 @@ import { IconCalendar } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useLocale } from "next-intl";
 import { useId, useTransition } from "react";
+import { FormerEmployeeBadge } from "@/components/former-employees/former-employee-ui";
 import { useTimeFormat } from "@/components/providers/user-preferences-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -183,7 +184,12 @@ export function DrivingDetailsList({
 									<TableRow key={row.workPeriodId}>
 										<TableCell className="font-medium">
 											<div className="flex flex-col">
-												<span>{row.name}</span>
+												<span className="flex flex-wrap items-center gap-2">
+													{row.name}
+													{row.former ? (
+														<FormerEmployeeBadge since={row.formerSince} />
+													) : null}
+												</span>
 												{row.teamName ? (
 													<span className="text-xs text-muted-foreground">{row.teamName}</span>
 												) : null}

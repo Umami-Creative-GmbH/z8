@@ -57,7 +57,7 @@ describe("employee query name source", () => {
 
 	it("uses the shared pending-future eligibility predicate for draft list and detail queries", () => {
 		expect(source).toContain("buildEligibleInvitationDraftPredicate");
-		expect(source).toContain("buildInvitationDraftFilters(actor.organizationId, now, params)");
+		expect(source).toContain("buildInvitationDraftFilters(actor.organizationId, now, filterParams)");
 		expect(source).toContain("draftId,");
 		expect(source.match(/buildEligibleInvitationDraftPredicate\(\{/g)).toHaveLength(2);
 		expect(source.match(/dateFromInstant\(systemClock\.nowInstant\(\)\)/g)).toHaveLength(2);

@@ -1,6 +1,7 @@
 import { Cause, Exit } from "effect";
+import { makeDynamicHangingPromise } from "next/dist/server/dynamic-rendering-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ConflictError, DatabaseError, ValidationError } from "./errors";
+import { AuthenticationError, ConflictError, DatabaseError, ValidationError } from "./errors";
 import { toServerActionResult } from "./result";
 
 afterEach(() => {
@@ -8,6 +9,33 @@ afterEach(() => {
 });
 
 describe("toServerActionResult", () => {
+	it("rethrows Next prerender cancellation before logging or returning a server-action error", async () => {
+		const controller = new AbortController();
+		const rejected = makeDynamicHangingPromise(
+			controller.signal,
+			"/fixture",
+			"`connection()`",
+		).catch((error: unknown) => error);
+		controller.abort();
+		const cancellation = await rejected;
+		const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+
+		expect(() => toServerActionResult(Exit.die(cancellation))).toThrow(cancellation);
+		expect(consoleError).not.toHaveBeenCalled();
+	});
+
+	it("retains ordinary authentication failures as refused server-action results", () => {
+		vi.spyOn(console, "error").mockImplementation(() => {});
+
+		expect(
+			toServerActionResult(Exit.fail(new AuthenticationError({ message: "Not authenticated" }))),
+		).toEqual({
+			success: false,
+			error: "Not authenticated",
+			code: "AuthenticationError",
+		});
+	});
+
 	it("returns the success value", () => {
 		expect(toServerActionResult(Exit.succeed({ id: "entry-1" }))).toEqual({
 			success: true,

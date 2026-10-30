@@ -6,6 +6,7 @@ import { db } from "@/db";
 import { user } from "@/db/auth-schema";
 import { employee, team } from "@/db/schema";
 import { NotFoundError, ValidationError } from "@/lib/effect/errors";
+import { formerSinceDate, isFormerEmployee } from "@/lib/employee-lifecycle/current-roster";
 import type { ServerActionResult } from "@/lib/effect/result";
 import { logger } from "@/lib/logger";
 import { requireExpenseAdministrator } from "@/lib/travel-expenses/expense-administrator";
@@ -32,11 +33,16 @@ export interface ExpenseOfficerPersonOption {
 	email: string;
 }
 
+/** A former employee, with the organization-local date they left (#1439; null when not recorded). */
+export interface ExpenseOfficerDepartedPersonOption extends ExpenseOfficerPersonOption {
+	formerSince: string | null;
+}
+
 export interface ExpenseOfficerAdminData {
 	/** Active employees: possible officers and named employees. */
 	employees: ExpenseOfficerPersonOption[];
 	/** Departed employees: they can still be named, since their last reports may be owed. */
-	departedEmployees: ExpenseOfficerPersonOption[];
+	departedEmployees: ExpenseOfficerDepartedPersonOption[];
 	teams: Array<{ id: string; name: string }>;
 	grants: ExpenseOfficerGrantData[];
 }
@@ -61,7 +67,9 @@ export async function getExpenseOfficerAdminData(): Promise<
 				.select({
 					id: employee.id,
 					employeeNumber: employee.employeeNumber,
-					isActive: employee.isActive,
+					// Current roster (#1438): a due departure counts the same as a deactivation.
+					isFormer: isFormerEmployee(employee),
+					formerSince: formerSinceDate(employee),
 					name: user.name,
 					email: user.email,
 				})
@@ -84,8 +92,10 @@ export async function getExpenseOfficerAdminData(): Promise<
 		return {
 			success: true,
 			data: {
-				employees: people.filter((row) => row.isActive).map(toOption),
-				departedEmployees: people.filter((row) => !row.isActive).map(toOption),
+				employees: people.filter((row) => !row.isFormer).map(toOption),
+				departedEmployees: people
+					.filter((row) => row.isFormer)
+					.map((row) => ({ ...toOption(row), formerSince: row.formerSince })),
 				teams,
 				grants,
 			},

@@ -10,14 +10,18 @@ import {
 	type ClockVehicleUseContext,
 	changeLiveVehicleUse,
 	getClockVehicleUseContext,
+	getClockVehicleUseStatus,
 } from "@/app/[locale]/(app)/time-tracking/actions/clock-vehicle-use";
 import { checkVehicleUseWarnings } from "@/app/[locale]/(app)/time-tracking/actions/vehicle-use-warnings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useSession } from "@/lib/auth-client";
 import { queryKeys } from "@/lib/query/keys";
+import { CLOCK_READ_SCOPE_CHANGED } from "@/lib/time-tracking/clock-read-scope";
 import type { WorkVehicleUse } from "@/lib/time-tracking/vehicle-use/work-vehicle-use";
 import { isWorkVehicleUseRefusalCode } from "@/lib/time-tracking/vehicle-use/work-vehicle-use-refusals";
+import { ClockChoiceReadError } from "./clock-choice-read-error";
 import {
 	breakClosingVehicleUse,
 	breakVehicleUseFromReading,
@@ -47,20 +51,69 @@ import { vehicleOptionLabel, vehicleUseRefusalText, vehicleUseText } from "./veh
  * The context stays cached, so an offline clock-in still asks with the last
  * known vehicles; warnings need a connection and are only advice.
  */
-export function useClockVehicleUse({ enabled }: { enabled: boolean }) {
-	const queryClient = useQueryClient();
-	const query = useQuery({
-		queryKey: queryKeys.timeClock.vehicleUse(),
-		queryFn: async (): Promise<ClockVehicleUseContext> => {
-			const result = await getClockVehicleUseContext();
+function useClockVehicleContext(enabled: boolean, choicesEnabled: boolean) {
+	const { data: session, isPending } = useSession();
+	const scope = {
+		userId: session?.user.id ?? null,
+		organizationId: session?.session.activeOrganizationId ?? null,
+		isLoading: isPending,
+	};
+	const allowed = enabled && !!scope.userId && !!scope.organizationId && !scope.isLoading;
+	const choicesKey = queryKeys.timeClock.vehicleUse(scope.userId, scope.organizationId);
+	const operationalKey = queryKeys.timeClock.vehicleUseStatus(scope.userId, scope.organizationId);
+	const operational = useQuery({
+		queryKey: operationalKey,
+		queryFn: async () => {
+			const { userId, organizationId } = scope;
+			if (!userId || !organizationId) throw new Error(CLOCK_READ_SCOPE_CHANGED);
+			const result = await getClockVehicleUseStatus({ userId, organizationId });
 			if (!result.success) throw new Error(result.error);
 			return result.data;
 		},
-		enabled,
+		enabled: allowed,
 		staleTime: 60_000,
 		retry: false,
 	});
-	const context = query.data ?? null;
+	const needsChoices =
+		operational.data?.mode !== "off" ||
+		operational.data.live?.vehicleUse?.vehicle.kind === "organization";
+	const query = useQuery({
+		queryKey: choicesKey,
+		queryFn: async (): Promise<ClockVehicleUseContext> => {
+			const { userId, organizationId } = scope;
+			if (!userId || !organizationId) throw new Error(CLOCK_READ_SCOPE_CHANGED);
+			const result = await getClockVehicleUseContext({
+				userId,
+				organizationId,
+			});
+			if (!result.success) throw new Error(result.error);
+			return result.data;
+		},
+		enabled: allowed && choicesEnabled && needsChoices,
+		staleTime: 60_000,
+		retry: false,
+	});
+
+	const status =
+		operational.data && operational.dataUpdatedAt >= query.dataUpdatedAt
+			? operational.data
+			: (query.data ?? operational.data);
+	const context: ClockVehicleUseContext | null = status
+		? { ...(query.data ?? { vehicles: [] }), ...status }
+		: null;
+	return { query, operational, status, context, choicesKey, operationalKey };
+}
+
+export function useClockVehicleUse({
+	enabled,
+	choicesEnabled = true,
+}: {
+	enabled: boolean;
+	choicesEnabled?: boolean;
+}) {
+	const queryClient = useQueryClient();
+	const { query, operational, status, context, choicesKey, operationalKey } =
+		useClockVehicleContext(enabled, choicesEnabled);
 	const mode = context?.mode ?? "off";
 	const live = context?.live?.vehicleUse ?? null;
 	// Untouched, the clock-in shows the pre-filled draft (#1121).
@@ -76,6 +129,13 @@ export function useClockVehicleUse({ enabled }: { enabled: boolean }) {
 
 	return {
 		context,
+		choicesLoading: query.isLoading,
+		choicesError: query.isError,
+		choicesUnavailable: choicesEnabled && !query.data && query.isPaused,
+		operationalError: operational.isError && !status,
+		operationalLoading: operational.isPending && !status,
+		retryChoices: () => query.refetch(),
+		retryOperational: () => operational.refetch(),
 		mode,
 		/** Whether the clock asks for vehicle use at all. */
 		asks: mode !== "off",
@@ -96,19 +156,70 @@ export function useClockVehicleUse({ enabled }: { enabled: boolean }) {
 			setClockInDraft(null);
 			setClockOutDraft(EMPTY_VEHICLE_USE_DRAFT);
 			setBreakReading("");
-			void queryClient.invalidateQueries({
-				queryKey: queryKeys.timeClock.vehicleUse(),
-			});
 		},
 		refresh() {
-			return queryClient.invalidateQueries({
-				queryKey: queryKeys.timeClock.vehicleUse(),
-			});
+			return Promise.all([
+				queryClient.invalidateQueries({ queryKey: choicesKey }),
+				queryClient.invalidateQueries({ queryKey: operationalKey }),
+			]);
 		},
 	};
 }
 
 export type ClockVehicleUseState = ReturnType<typeof useClockVehicleUse>;
+
+function ClockVehicleChoiceStatus({ state, t }: { state: ClockVehicleUseState; t: TFnType }) {
+	if (state.operationalLoading)
+		return (
+			<p role="status" className="text-xs text-muted-foreground">
+				{t("timeTracking.vehicleUse.settingsLoading", "Loading vehicle-use settings…")}
+			</p>
+		);
+	if (state.operationalError)
+		return (
+			<ClockChoiceReadError
+				label={t("timeTracking.vehicleUse.title", "Vehicle use")}
+				retry={() => void state.retryOperational()}
+			/>
+		);
+	if (!state.asks) return null;
+	if (state.choicesError)
+		return (
+			<ClockChoiceReadError
+				label={t("timeTracking.vehicleUse.choices", "Vehicle choices")}
+				retry={() => void state.retryChoices()}
+			/>
+		);
+	if (state.choicesLoading || state.choicesUnavailable)
+		return (
+			<p role="status" className="text-xs text-muted-foreground">
+				{state.choicesUnavailable
+					? t(
+							"timeTracking.vehicleUse.choicesOffline",
+							"Vehicle choices are unavailable offline. You can record time and add details later.",
+						)
+					: t("timeTracking.vehicleUse.choicesLoading", "Loading vehicle choices…")}
+			</p>
+		);
+	return null;
+}
+
+export function ClockInVehicleUse(props: Parameters<typeof ClockInVehicleUseFields>[0]) {
+	return (
+		<>
+			<ClockVehicleChoiceStatus state={props.state} t={props.t} />
+			<ClockInVehicleUseFields {...props} />
+		</>
+	);
+}
+export function ClockOutVehicleUse(props: Parameters<typeof ClockOutVehicleUseFields>[0]) {
+	return (
+		<>
+			<ClockVehicleChoiceStatus state={props.state} t={props.t} />
+			<ClockOutVehicleUseFields {...props} />
+		</>
+	);
+}
 
 function vehicleLabel(context: ClockVehicleUseContext | null, use: WorkVehicleUse) {
 	if (use.vehicle.kind === "own") return null;
@@ -153,7 +264,7 @@ function useClockWarnings(
 }
 
 /** The clock-in's vehicle and start reading, asked per mode. */
-export function ClockInVehicleUse({
+function ClockInVehicleUseFields({
 	state,
 	disabled,
 	t,
@@ -190,7 +301,7 @@ export function ClockInVehicleUse({
  * The clock-out's end reading (or distance), with the live work's vehicle use and
  * a way to change its vehicle or start reading while clocked in.
  */
-export function ClockOutVehicleUse({
+function ClockOutVehicleUseFields({
 	state,
 	disabled,
 	t,

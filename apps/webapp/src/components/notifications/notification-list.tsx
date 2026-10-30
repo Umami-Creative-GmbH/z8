@@ -46,7 +46,15 @@ export function NotificationList({
 
 	if (isLoading) {
 		return (
-			<div className="divide-y">
+			<div
+				role="status"
+				aria-label={t("common:notifications.title", "Notifications")}
+				aria-busy="true"
+				className="divide-y"
+			>
+				<span className="sr-only">
+					{t("common:common.loading", "Loading…")}
+				</span>
 				<NotificationSkeleton />
 				<NotificationSkeleton />
 				<NotificationSkeleton />

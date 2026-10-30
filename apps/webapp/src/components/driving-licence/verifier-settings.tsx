@@ -162,7 +162,12 @@ function VerifierEditor({
 								"settings.drivingLicence.verifiers.untilInPast",
 								"The until date can't be in the past.",
 							)
-						: result.error,
+						: result.error === "former_employee"
+							? t(
+									"settings.drivingLicence.verifiers.formerEmployee",
+									"Former employees can't be added. Choose employees on the current roster.",
+								)
+							: result.error,
 				);
 				return;
 			}
@@ -178,15 +183,24 @@ function VerifierEditor({
 	});
 	const values = useStore(form.store, (s) => s.values);
 	const submitting = useStore(form.store, (s) => s.isSubmitting);
-	const options = data.employees.map((person) =>
+	// Only the current roster can verify; a former employee a grant still names
+	// stays selectable in its scope, marked, so editing the grant keeps them (#1438).
+	const currentPeople = data.employees.filter((person) => !person.isFormer);
+	const options = currentPeople.map((person) =>
 		toSelectableEmployee(person, { isActive: true }),
+	);
+	const scopeOptions = data.employees.map((person) =>
+		toSelectableEmployee(
+			person,
+			person.isFormer ? { isActive: false, formerSince: person.formerSince } : { isActive: true },
+		),
 	);
 	const nameOf = (id: string) =>
 		data.employees.find((p) => p.id === id)?.name ?? id;
 	const current = data.grants.filter(
 		(g) =>
 			!g.revokedAt &&
-			data.employees.some((person) => person.id === g.verifierEmployeeId),
+			currentPeople.some((person) => person.id === g.verifierEmployeeId),
 	);
 	// Until dates are calendar days in the fixed driving licence timezone, never the viewer's.
 	const today = plainDateAt(systemClock.nowInstant(), data.timezone).toString();
@@ -240,7 +254,7 @@ function VerifierEditor({
 					title: nameOf(grant.verifierEmployeeId),
 					details: <VerifierGrantSummary grant={grant} data={data} />,
 				}))}
-				canAdd={data.employees.length > 0}
+				canAdd={currentPeople.length > 0}
 				onAdd={() => edit(null)}
 				onEdit={(id) => edit(current.find((g) => g.id === id) ?? null)}
 				onRevoke={(id) => setRevoking(current.find((g) => g.id === id) ?? null)}
@@ -320,7 +334,7 @@ function VerifierEditor({
 							form.setFieldValue("employeeIds", ids)
 						}
 						teams={data.teams}
-						employeeOptions={options}
+						employeeOptions={scopeOptions}
 						disabled={submitting}
 						testIdPrefix="driving-verifier-team"
 						copy={{

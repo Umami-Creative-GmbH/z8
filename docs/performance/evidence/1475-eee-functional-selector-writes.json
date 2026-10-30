@@ -1,0 +1,1815 @@
+{
+  "version": 1,
+  "source": "eee1fc6501e290a17705fb4edb0db41e91d29b30",
+  "kind": "compiled-functional-selector-writes",
+  "condition": "Fresh isolated browser, unchanged CDP continuation for actual POST ownership before context proxy; all node/browser/control requests registered; whole-run native reconciliation; all finite and prefetch work drained before close. Functional proof, not a timing capture.",
+  "technicalObserver": "SDK SERVER=1; additive server/drain diagnostic fields not present in this compiled source and are not inferred.",
+  "cases": [
+    {
+      "kind": "role",
+      "passed": true,
+      "formBaseline": {
+        "givenMatchesPublicDto": true,
+        "familyMatchesPublicDto": true,
+        "startDateMatchesPublicDto": true
+      },
+      "commands": [
+        {
+          "label": "employee-reduce",
+          "status": 200,
+          "actualIdentityMatched": true,
+          "actualBodyMatched": true,
+          "accepted": true
+        },
+        {
+          "label": "employee-restore",
+          "status": 200,
+          "actualIdentityMatched": true,
+          "actualBodyMatched": true,
+          "accepted": true
+        }
+      ],
+      "requests": [
+        {
+          "label": "identity-small-admin",
+          "status": 200,
+          "choices": null,
+          "bytes": 790,
+          "elapsedMs": 19.32940000000002
+        },
+        {
+          "label": "identity-large-admin",
+          "status": 200,
+          "choices": null,
+          "bytes": 790,
+          "elapsedMs": 16.931999999999988
+        },
+        {
+          "label": "identity-small-manager",
+          "status": 200,
+          "choices": null,
+          "bytes": 790,
+          "elapsedMs": 16.708499999999987
+        },
+        {
+          "label": "manager-detail-prerequisite",
+          "status": 200,
+          "choices": null,
+          "bytes": 1815,
+          "elapsedMs": 61.14920000000001
+        },
+        {
+          "label": "manager-policy-prime",
+          "status": 200,
+          "choices": 1,
+          "bytes": 198,
+          "elapsedMs": 60.53269999999975
+        },
+        {
+          "label": "manager-policy-hit",
+          "status": 200,
+          "choices": 1,
+          "bytes": 198,
+          "elapsedMs": 61.97530000000006
+        },
+        {
+          "label": "admin-managers-prime",
+          "status": 200,
+          "choices": 1,
+          "bytes": 350,
+          "elapsedMs": 60.47389999999996
+        },
+        {
+          "label": "other-managers-prime",
+          "status": 200,
+          "choices": 1,
+          "bytes": 342,
+          "elapsedMs": 54.01920000000018
+        },
+        {
+          "label": "reduced-options-small",
+          "status": 200,
+          "choices": 0,
+          "bytes": 127,
+          "elapsedMs": 153.2556000000004
+        },
+        {
+          "label": "reduced-options-other",
+          "status": 200,
+          "choices": 1,
+          "bytes": 342,
+          "elapsedMs": 85.57020000000011
+        },
+        {
+          "label": "reduced-actor-managers",
+          "status": 403,
+          "choices": null,
+          "bytes": 45,
+          "elapsedMs": 32.99010000000089
+        },
+        {
+          "label": "reduced-actor-policies",
+          "status": 403,
+          "choices": null,
+          "bytes": 45,
+          "elapsedMs": 34.9304000000011
+        },
+        {
+          "label": "restored-options-small",
+          "status": 200,
+          "choices": 1,
+          "bytes": 350,
+          "elapsedMs": 131.0386000000035
+        },
+        {
+          "label": "restored-policy-manager",
+          "status": 200,
+          "choices": 1,
+          "bytes": 198,
+          "elapsedMs": 104.82080000000133
+        }
+      ],
+      "metrics": [
+        {
+          "label": "browser",
+          "queryCount": 2416,
+          "rowsRetrieved": 1342,
+          "cacheHits": 41,
+          "cacheMisses": 0,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "rejectedBatches": 0,
+            "registration": true,
+            "closed": true,
+            "incomplete": false,
+            "unattributedNativeSpans": 0,
+            "lateSpans": 0,
+            "nativeProof": true,
+            "nativeDriverQueries": 2416
+          }
+        },
+        {
+          "label": "identity-small-admin",
+          "queryCount": 8,
+          "rowsRetrieved": 4,
+          "cacheHits": 0,
+          "cacheMisses": 0,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "rejectedBatches": 0,
+            "registration": true,
+            "closed": true,
+            "incomplete": false,
+            "unattributedNativeSpans": 0,
+            "lateSpans": 0,
+            "nativeProof": true,
+            "nativeDriverQueries": 8
+          }
+        },
+        {
+          "label": "identity-large-admin",
+          "queryCount": 8,
+          "rowsRetrieved": 4,
+          "cacheHits": 0,
+          "cacheMisses": 0,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "rejectedBatches": 0,
+            "registration": true,
+            "closed": true,
+            "incomplete": false,
+            "unattributedNativeSpans": 0,
+            "lateSpans": 0,
+            "nativeProof": true,
+            "nativeDriverQueries": 8
+          }
+        },
+        {
+          "label": "identity-small-manager",
+          "queryCount": 8,
+          "rowsRetrieved": 4,
+          "cacheHits": 0,
+          "cacheMisses": 0,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "rejectedBatches": 0,
+            "registration": true,
+            "closed": true,
+            "incomplete": false,
+            "unattributedNativeSpans": 0,
+            "lateSpans": 0,
+            "nativeProof": true,
+            "nativeDriverQueries": 8
+          }
+        },
+        {
+          "label": "manager-detail-prerequisite",
+          "queryCount": 48,
+          "rowsRetrieved": 26,
+          "cacheHits": 0,
+          "cacheMisses": 0,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "rejectedBatches": 0,
+            "registration": true,
+            "closed": true,
+            "incomplete": false,
+            "unattributedNativeSpans": 0,
+            "lateSpans": 0,
+            "nativeProof": true,
+            "nativeDriverQueries": 48
+          }
+        },
+        {
+          "label": "manager-policy-prime",
+          "queryCount": 46,
+          "rowsRetrieved": 24,
+          "cacheHits": 0,
+          "cacheMisses": 1,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "rejectedBatches": 0,
+            "registration": true,
+            "closed": true,
+            "incomplete": false,
+            "unattributedNativeSpans": 0,
+            "lateSpans": 0,
+            "nativeProof": true,
+            "nativeDriverQueries": 46
+          }
+        },
+        {
+          "label": "manager-policy-hit",
+          "queryCount": 45,
+          "rowsRetrieved": 23,
+          "cacheHits": 1,
+          "cacheMisses": 0,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "rejectedBatches": 0,
+            "registration": true,
+            "closed": true,
+            "incomplete": false,
+            "unattributedNativeSpans": 0,
+            "lateSpans": 0,
+            "nativeProof": true,
+            "nativeDriverQueries": 45
+          }
+        },
+        {
+          "label": "admin-managers-prime",
+          "queryCount": 46,
+          "rowsRetrieved": 24,
+          "cacheHits": 0,
+          "cacheMisses": 1,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "rejectedBatches": 0,
+            "registration": true,
+            "closed": true,
+            "incomplete": false,
+            "unattributedNativeSpans": 0,
+            "lateSpans": 0,
+            "nativeProof": true,
+            "nativeDriverQueries": 46
+          }
+        },
+        {
+          "label": "other-managers-prime",
+          "queryCount": 46,
+          "rowsRetrieved": 24,
+          "cacheHits": 0,
+          "cacheMisses": 1,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "rejectedBatches": 0,
+            "registration": true,
+            "closed": true,
+            "incomplete": false,
+            "unattributedNativeSpans": 0,
+            "lateSpans": 0,
+            "nativeProof": true,
+            "nativeDriverQueries": 46
+          }
+        },
+        {
+          "label": "employee-reduce",
+          "queryCount": 29,
+          "rowsRetrieved": 16,
+          "cacheHits": 0,
+          "cacheMisses": 0,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "rejectedBatches": 0,
+            "registration": true,
+            "closed": true,
+            "incomplete": false,
+            "unattributedNativeSpans": 0,
+            "lateSpans": 0,
+            "nativeProof": true,
+            "nativeDriverQueries": 29
+          }
+        },
+        {
+          "label": "reduced-options-small",
+          "queryCount": 46,
+          "rowsRetrieved": 23,
+          "cacheHits": 0,
+          "cacheMisses": 1,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "rejectedBatches": 0,
+            "registration": true,
+            "closed": true,
+            "incomplete": false,
+            "unattributedNativeSpans": 0,
+            "lateSpans": 0,
+            "nativeProof": true,
+            "nativeDriverQueries": 46
+          }
+        },
+        {
+          "label": "reduced-options-other",
+          "queryCount": 45,
+          "rowsRetrieved": 23,
+          "cacheHits": 1,
+          "cacheMisses": 0,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "rejectedBatches": 0,
+            "registration": true,
+            "closed": true,
+            "incomplete": false,
+            "unattributedNativeSpans": 0,
+            "lateSpans": 0,
+            "nativeProof": true,
+            "nativeDriverQueries": 45
+          }
+        },
+        {
+          "label": "reduced-actor-managers",
+          "queryCount": 26,
+          "rowsRetrieved": 12,
+          "cacheHits": 0,
+          "cacheMisses": 0,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "rejectedBatches": 0,
+            "registration": true,
+            "closed": true,
+            "incomplete": false,
+            "unattributedNativeSpans": 0,
+            "lateSpans": 0,
+            "nativeProof": true,
+            "nativeDriverQueries": 26
+          }
+        },
+        {
+          "label": "reduced-actor-policies",
+          "queryCount": 26,
+          "rowsRetrieved": 12,
+          "cacheHits": 0,
+          "cacheMisses": 0,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "rejectedBatches": 0,
+            "registration": true,
+            "closed": true,
+            "incomplete": false,
+            "unattributedNativeSpans": 0,
+            "lateSpans": 0,
+            "nativeProof": true,
+            "nativeDriverQueries": 26
+          }
+        },
+        {
+          "label": "employee-restore",
+          "queryCount": 29,
+          "rowsRetrieved": 16,
+          "cacheHits": 0,
+          "cacheMisses": 0,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "rejectedBatches": 0,
+            "registration": true,
+            "closed": true,
+            "incomplete": false,
+            "unattributedNativeSpans": 0,
+            "lateSpans": 0,
+            "nativeProof": true,
+            "nativeDriverQueries": 29
+          }
+        },
+        {
+          "label": "restored-options-small",
+          "queryCount": 46,
+          "rowsRetrieved": 24,
+          "cacheHits": 0,
+          "cacheMisses": 1,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "rejectedBatches": 0,
+            "registration": true,
+            "closed": true,
+            "incomplete": false,
+            "unattributedNativeSpans": 0,
+            "lateSpans": 0,
+            "nativeProof": true,
+            "nativeDriverQueries": 46
+          }
+        },
+        {
+          "label": "restored-policy-manager",
+          "queryCount": 45,
+          "rowsRetrieved": 23,
+          "cacheHits": 1,
+          "cacheMisses": 0,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "rejectedBatches": 0,
+            "registration": true,
+            "closed": true,
+            "incomplete": false,
+            "unattributedNativeSpans": 0,
+            "lateSpans": 0,
+            "nativeProof": true,
+            "nativeDriverQueries": 45
+          }
+        }
+      ],
+      "rawNativeCloseProof": [
+        {
+          "label": "browser",
+          "queries": 2416,
+          "acquisitions": 2416,
+          "cache": 41,
+          "started": {
+            "queries": 2416,
+            "acquisitions": 2416,
+            "cache": 41
+          },
+          "ended": {
+            "queries": 2416,
+            "acquisitions": 2416,
+            "cache": 41
+          },
+          "unattributedNativeSpans": 0,
+          "driverQueries": 2416,
+          "driverComplete": true,
+          "complete": true
+        },
+        {
+          "label": "manager-detail-prerequisite",
+          "queries": 48,
+          "acquisitions": 48,
+          "cache": 0,
+          "started": {
+            "queries": 48,
+            "acquisitions": 48,
+            "cache": 0
+          },
+          "ended": {
+            "queries": 48,
+            "acquisitions": 48,
+            "cache": 0
+          },
+          "unattributedNativeSpans": 0,
+          "driverQueries": 48,
+          "driverComplete": true,
+          "complete": true
+        },
+        {
+          "label": "identity-small-admin",
+          "queries": 8,
+          "acquisitions": 8,
+          "cache": 0,
+          "started": {
+            "queries": 8,
+            "acquisitions": 8,
+            "cache": 0
+          },
+          "ended": {
+            "queries": 8,
+            "acquisitions": 8,
+            "cache": 0
+          },
+          "unattributedNativeSpans": 0,
+          "driverQueries": 8,
+          "driverComplete": true,
+          "complete": true
+        },
+        {
+          "label": "identity-large-admin",
+          "queries": 8,
+          "acquisitions": 8,
+          "cache": 0,
+          "started": {
+            "queries": 8,
+            "acquisitions": 8,
+            "cache": 0
+          },
+          "ended": {
+            "queries": 8,
+            "acquisitions": 8,
+            "cache": 0
+          },
+          "unattributedNativeSpans": 0,
+          "driverQueries": 8,
+          "driverComplete": true,
+          "complete": true
+        },
+        {
+          "label": "identity-small-manager",
+          "queries": 8,
+          "acquisitions": 8,
+          "cache": 0,
+          "started": {
+            "queries": 8,
+            "acquisitions": 8,
+            "cache": 0
+          },
+          "ended": {
+            "queries": 8,
+            "acquisitions": 8,
+            "cache": 0
+          },
+          "unattributedNativeSpans": 0,
+          "driverQueries": 8,
+          "driverComplete": true,
+          "complete": true
+        },
+        {
+          "label": "manager-policy-prime",
+          "queries": 46,
+          "acquisitions": 46,
+          "cache": 1,
+          "started": {
+            "queries": 46,
+            "acquisitions": 46,
+            "cache": 1
+          },
+          "ended": {
+            "queries": 46,
+            "acquisitions": 46,
+            "cache": 1
+          },
+          "unattributedNativeSpans": 0,
+          "driverQueries": 46,
+          "driverComplete": true,
+          "complete": true
+        },
+        {
+          "label": "manager-policy-hit",
+          "queries": 45,
+          "acquisitions": 45,
+          "cache": 1,
+          "started": {
+            "queries": 45,
+            "acquisitions": 45,
+            "cache": 1
+          },
+          "ended": {
+            "queries": 45,
+            "acquisitions": 45,
+            "cache": 1
+          },
+          "unattributedNativeSpans": 0,
+          "driverQueries": 45,
+          "driverComplete": true,
+          "complete": true
+        },
+        {
+          "label": "admin-managers-prime",
+          "queries": 46,
+          "acquisitions": 46,
+          "cache": 1,
+          "started": {
+            "queries": 46,
+            "acquisitions": 46,
+            "cache": 1
+          },
+          "ended": {
+            "queries": 46,
+            "acquisitions": 46,
+            "cache": 1
+          },
+          "unattributedNativeSpans": 0,
+          "driverQueries": 46,
+          "driverComplete": true,
+          "complete": true
+        },
+        {
+          "label": "other-managers-prime",
+          "queries": 46,
+          "acquisitions": 46,
+          "cache": 1,
+          "started": {
+            "queries": 46,
+            "acquisitions": 46,
+            "cache": 1
+          },
+          "ended": {
+            "queries": 46,
+            "acquisitions": 46,
+            "cache": 1
+          },
+          "unattributedNativeSpans": 0,
+          "driverQueries": 46,
+          "driverComplete": true,
+          "complete": true
+        },
+        {
+          "label": "employee-reduce",
+          "queries": 29,
+          "acquisitions": 15,
+          "cache": 0,
+          "started": {
+            "queries": 29,
+            "acquisitions": 15,
+            "cache": 0
+          },
+          "ended": {
+            "queries": 29,
+            "acquisitions": 15,
+            "cache": 0
+          },
+          "unattributedNativeSpans": 0,
+          "driverQueries": 29,
+          "driverComplete": true,
+          "complete": true
+        },
+        {
+          "label": "reduced-options-small",
+          "queries": 46,
+          "acquisitions": 46,
+          "cache": 1,
+          "started": {
+            "queries": 46,
+            "acquisitions": 46,
+            "cache": 1
+          },
+          "ended": {
+            "queries": 46,
+            "acquisitions": 46,
+            "cache": 1
+          },
+          "unattributedNativeSpans": 0,
+          "driverQueries": 46,
+          "driverComplete": true,
+          "complete": true
+        },
+        {
+          "label": "reduced-options-other",
+          "queries": 45,
+          "acquisitions": 45,
+          "cache": 1,
+          "started": {
+            "queries": 45,
+            "acquisitions": 45,
+            "cache": 1
+          },
+          "ended": {
+            "queries": 45,
+            "acquisitions": 45,
+            "cache": 1
+          },
+          "unattributedNativeSpans": 0,
+          "driverQueries": 45,
+          "driverComplete": true,
+          "complete": true
+        },
+        {
+          "label": "reduced-actor-managers",
+          "queries": 26,
+          "acquisitions": 26,
+          "cache": 0,
+          "started": {
+            "queries": 26,
+            "acquisitions": 26,
+            "cache": 0
+          },
+          "ended": {
+            "queries": 26,
+            "acquisitions": 26,
+            "cache": 0
+          },
+          "unattributedNativeSpans": 0,
+          "driverQueries": 26,
+          "driverComplete": true,
+          "complete": true
+        },
+        {
+          "label": "reduced-actor-policies",
+          "queries": 26,
+          "acquisitions": 26,
+          "cache": 0,
+          "started": {
+            "queries": 26,
+            "acquisitions": 26,
+            "cache": 0
+          },
+          "ended": {
+            "queries": 26,
+            "acquisitions": 26,
+            "cache": 0
+          },
+          "unattributedNativeSpans": 0,
+          "driverQueries": 26,
+          "driverComplete": true,
+          "complete": true
+        },
+        {
+          "label": "employee-restore",
+          "queries": 29,
+          "acquisitions": 15,
+          "cache": 0,
+          "started": {
+            "queries": 29,
+            "acquisitions": 15,
+            "cache": 0
+          },
+          "ended": {
+            "queries": 29,
+            "acquisitions": 15,
+            "cache": 0
+          },
+          "unattributedNativeSpans": 0,
+          "driverQueries": 29,
+          "driverComplete": true,
+          "complete": true
+        },
+        {
+          "label": "restored-options-small",
+          "queries": 46,
+          "acquisitions": 46,
+          "cache": 1,
+          "started": {
+            "queries": 46,
+            "acquisitions": 46,
+            "cache": 1
+          },
+          "ended": {
+            "queries": 46,
+            "acquisitions": 46,
+            "cache": 1
+          },
+          "unattributedNativeSpans": 0,
+          "driverQueries": 46,
+          "driverComplete": true,
+          "complete": true
+        },
+        {
+          "label": "restored-policy-manager",
+          "queries": 45,
+          "acquisitions": 45,
+          "cache": 1,
+          "started": {
+            "queries": 45,
+            "acquisitions": 45,
+            "cache": 1
+          },
+          "ended": {
+            "queries": 45,
+            "acquisitions": 45,
+            "cache": 1
+          },
+          "unattributedNativeSpans": 0,
+          "driverQueries": 45,
+          "driverComplete": true,
+          "complete": true
+        }
+      ],
+      "nativeCloseElapsedMs": 3.025500000003376,
+      "native": {
+        "complete": true,
+        "expectedTraces": 17,
+        "receivedTraces": 17,
+        "driverQueries": 2963,
+        "sdkQueries": 2963,
+        "receivedQueries": 2963,
+        "acquisitions": 2935,
+        "cache": 49,
+        "unknownNativeDelta": 0,
+        "incoming": {
+          "knownHeaderKnownSpan": 429,
+          "knownHeaderOtherSpan": 0,
+          "otherHeaderKnownSpan": 0,
+          "otherHeaderOtherSpan": 3,
+          "matchingParent": 429,
+          "mismatchingParent": 0
+        },
+        "standard": {
+          "driverQueryCount": 2963,
+          "nativeQueryStartedCount": 2963,
+          "nativeQueryEndedCount": 2963,
+          "observedQueryCount": 2963,
+          "pendingNativeQueries": 0,
+          "activeTraces": 0,
+          "allReceivedTracesReconciled": true,
+          "complete": true
+        }
+      },
+      "beforeContextClose": [
+        {
+          "groups": {
+            "javascript": {
+              "requests": 141,
+              "completed": 141,
+              "pending": 0,
+              "errors": 0,
+              "completedBytes": 1850048,
+              "observedBodyBytes": 1850048,
+              "inheritedRequests": 0,
+              "inheritedCompletedBytes": 0
+            },
+            "document": {
+              "requests": 3,
+              "completed": 3,
+              "pending": 0,
+              "errors": 0,
+              "completedBytes": 1127661,
+              "observedBodyBytes": 1127661,
+              "inheritedRequests": 0,
+              "inheritedCompletedBytes": 0
+            },
+            "rsc": {
+              "requests": 80,
+              "completed": 80,
+              "pending": 0,
+              "errors": 0,
+              "completedBytes": 2364720,
+              "observedBodyBytes": 2364720,
+              "inheritedRequests": 0,
+              "inheritedCompletedBytes": 0
+            },
+            "otherFinite": {
+              "requests": 56,
+              "completed": 56,
+              "pending": 0,
+              "errors": 0,
+              "completedBytes": 168913,
+              "observedBodyBytes": 168913,
+              "inheritedRequests": 0,
+              "inheritedCompletedBytes": 0
+            },
+            "prefetch": {
+              "requests": 134,
+              "completed": 134,
+              "pending": 0,
+              "errors": 0,
+              "completedBytes": 1711760,
+              "observedBodyBytes": 1711760,
+              "inheritedRequests": 0,
+              "inheritedCompletedBytes": 0
+            },
+            "longLived": {
+              "requests": 0,
+              "completed": 0,
+              "pending": 0,
+              "errors": 0,
+              "completedBytes": 0,
+              "observedBodyBytes": 0,
+              "inheritedRequests": 0,
+              "inheritedCompletedBytes": 0
+            }
+          },
+          "quietObservedMs": 1033.624499999998,
+          "mandatoryPending": 0,
+          "mandatoryErrors": 0
+        }
+      ],
+      "pageErrors": 0,
+      "strictTransport": true,
+      "cleanup": {
+        "roleRestored": true,
+        "policyDeleted": true
+      }
+    },
+    {
+      "kind": "policy",
+      "passed": true,
+      "formBaseline": null,
+      "commands": [
+        {
+          "label": "policy-create",
+          "status": 200,
+          "actualIdentityMatched": true,
+          "actualBodyMatched": true,
+          "accepted": true
+        },
+        {
+          "label": "policy-delete",
+          "status": 200,
+          "actualIdentityMatched": true,
+          "actualBodyMatched": true,
+          "accepted": true
+        }
+      ],
+      "requests": [
+        {
+          "label": "identity-small-admin",
+          "status": 200,
+          "choices": null,
+          "bytes": 790,
+          "elapsedMs": 16.20859999999999
+        },
+        {
+          "label": "identity-large-admin",
+          "status": 200,
+          "choices": null,
+          "bytes": 790,
+          "elapsedMs": 13.831400000000002
+        },
+        {
+          "label": "identity-small-manager",
+          "status": 200,
+          "choices": null,
+          "bytes": 790,
+          "elapsedMs": 14.207099999999997
+        },
+        {
+          "label": "manager-detail-prerequisite",
+          "status": 200,
+          "choices": null,
+          "bytes": 1815,
+          "elapsedMs": 60.2251
+        },
+        {
+          "label": "baseline-small-policy",
+          "status": 200,
+          "choices": 1,
+          "bytes": 198,
+          "elapsedMs": 52.47449999999998
+        },
+        {
+          "label": "baseline-large-policy",
+          "status": 200,
+          "choices": 1,
+          "bytes": 198,
+          "elapsedMs": 54.13990000000001
+        },
+        {
+          "label": "baseline-small-managers",
+          "status": 200,
+          "choices": 1,
+          "bytes": 350,
+          "elapsedMs": 53.66329999999999
+        },
+        {
+          "label": "baseline-large-managers",
+          "status": 200,
+          "choices": 1,
+          "bytes": 342,
+          "elapsedMs": 52.24680000000001
+        },
+        {
+          "label": "policy-created-small",
+          "status": 200,
+          "choices": 2,
+          "bytes": 285,
+          "elapsedMs": 57.13299999999981
+        },
+        {
+          "label": "policy-created-other",
+          "status": 200,
+          "choices": 1,
+          "bytes": 198,
+          "elapsedMs": 52.286699999998746
+        },
+        {
+          "label": "deleted-policies-small",
+          "status": 200,
+          "choices": 1,
+          "bytes": 198,
+          "elapsedMs": 58.66870000000199
+        },
+        {
+          "label": "deleted-policies-other",
+          "status": 200,
+          "choices": 1,
+          "bytes": 198,
+          "elapsedMs": 81.99820000000182
+        }
+      ],
+      "metrics": [
+        {
+          "label": "browser",
+          "queryCount": 1040,
+          "rowsRetrieved": 506,
+          "cacheHits": 37,
+          "cacheMisses": 0,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "rejectedBatches": 0,
+            "registration": true,
+            "closed": true,
+            "incomplete": false,
+            "unattributedNativeSpans": 0,
+            "lateSpans": 0,
+            "nativeProof": true,
+            "nativeDriverQueries": 1040
+          }
+        },
+        {
+          "label": "identity-small-admin",
+          "queryCount": 8,
+          "rowsRetrieved": 4,
+          "cacheHits": 0,
+          "cacheMisses": 0,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "rejectedBatches": 0,
+            "registration": true,
+            "closed": true,
+            "incomplete": false,
+            "unattributedNativeSpans": 0,
+            "lateSpans": 0,
+            "nativeProof": true,
+            "nativeDriverQueries": 8
+          }
+        },
+        {
+          "label": "identity-large-admin",
+          "queryCount": 8,
+          "rowsRetrieved": 4,
+          "cacheHits": 0,
+          "cacheMisses": 0,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "rejectedBatches": 0,
+            "registration": true,
+            "closed": true,
+            "incomplete": false,
+            "unattributedNativeSpans": 0,
+            "lateSpans": 0,
+            "nativeProof": true,
+            "nativeDriverQueries": 8
+          }
+        },
+        {
+          "label": "identity-small-manager",
+          "queryCount": 8,
+          "rowsRetrieved": 4,
+          "cacheHits": 0,
+          "cacheMisses": 0,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "rejectedBatches": 0,
+            "registration": true,
+            "closed": true,
+            "incomplete": false,
+            "unattributedNativeSpans": 0,
+            "lateSpans": 0,
+            "nativeProof": true,
+            "nativeDriverQueries": 8
+          }
+        },
+        {
+          "label": "manager-detail-prerequisite",
+          "queryCount": 48,
+          "rowsRetrieved": 26,
+          "cacheHits": 0,
+          "cacheMisses": 0,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "rejectedBatches": 0,
+            "registration": true,
+            "closed": true,
+            "incomplete": false,
+            "unattributedNativeSpans": 0,
+            "lateSpans": 0,
+            "nativeProof": true,
+            "nativeDriverQueries": 48
+          }
+        },
+        {
+          "label": "baseline-small-policy",
+          "queryCount": 45,
+          "rowsRetrieved": 23,
+          "cacheHits": 1,
+          "cacheMisses": 0,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "rejectedBatches": 0,
+            "registration": true,
+            "closed": true,
+            "incomplete": false,
+            "unattributedNativeSpans": 0,
+            "lateSpans": 0,
+            "nativeProof": true,
+            "nativeDriverQueries": 45
+          }
+        },
+        {
+          "label": "baseline-large-policy",
+          "queryCount": 46,
+          "rowsRetrieved": 24,
+          "cacheHits": 0,
+          "cacheMisses": 1,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "rejectedBatches": 0,
+            "registration": true,
+            "closed": true,
+            "incomplete": false,
+            "unattributedNativeSpans": 0,
+            "lateSpans": 0,
+            "nativeProof": true,
+            "nativeDriverQueries": 46
+          }
+        },
+        {
+          "label": "baseline-small-managers",
+          "queryCount": 45,
+          "rowsRetrieved": 23,
+          "cacheHits": 1,
+          "cacheMisses": 0,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "rejectedBatches": 0,
+            "registration": true,
+            "closed": true,
+            "incomplete": false,
+            "unattributedNativeSpans": 0,
+            "lateSpans": 0,
+            "nativeProof": true,
+            "nativeDriverQueries": 45
+          }
+        },
+        {
+          "label": "baseline-large-managers",
+          "queryCount": 45,
+          "rowsRetrieved": 23,
+          "cacheHits": 1,
+          "cacheMisses": 0,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "rejectedBatches": 0,
+            "registration": true,
+            "closed": true,
+            "incomplete": false,
+            "unattributedNativeSpans": 0,
+            "lateSpans": 0,
+            "nativeProof": true,
+            "nativeDriverQueries": 45
+          }
+        },
+        {
+          "label": "policy-create",
+          "queryCount": 40,
+          "rowsRetrieved": 17,
+          "cacheHits": 0,
+          "cacheMisses": 0,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "rejectedBatches": 0,
+            "registration": true,
+            "closed": true,
+            "incomplete": false,
+            "unattributedNativeSpans": 0,
+            "lateSpans": 0,
+            "nativeProof": true,
+            "nativeDriverQueries": 40
+          }
+        },
+        {
+          "label": "policy-created-small",
+          "queryCount": 46,
+          "rowsRetrieved": 25,
+          "cacheHits": 0,
+          "cacheMisses": 1,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "rejectedBatches": 0,
+            "registration": true,
+            "closed": true,
+            "incomplete": false,
+            "unattributedNativeSpans": 0,
+            "lateSpans": 0,
+            "nativeProof": true,
+            "nativeDriverQueries": 46
+          }
+        },
+        {
+          "label": "policy-created-other",
+          "queryCount": 45,
+          "rowsRetrieved": 23,
+          "cacheHits": 1,
+          "cacheMisses": 0,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "rejectedBatches": 0,
+            "registration": true,
+            "closed": true,
+            "incomplete": false,
+            "unattributedNativeSpans": 0,
+            "lateSpans": 0,
+            "nativeProof": true,
+            "nativeDriverQueries": 45
+          }
+        },
+        {
+          "label": "policy-delete",
+          "queryCount": 38,
+          "rowsRetrieved": 15,
+          "cacheHits": 0,
+          "cacheMisses": 0,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "rejectedBatches": 0,
+            "registration": true,
+            "closed": true,
+            "incomplete": false,
+            "unattributedNativeSpans": 0,
+            "lateSpans": 0,
+            "nativeProof": true,
+            "nativeDriverQueries": 38
+          }
+        },
+        {
+          "label": "deleted-policies-small",
+          "queryCount": 46,
+          "rowsRetrieved": 24,
+          "cacheHits": 0,
+          "cacheMisses": 1,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "rejectedBatches": 0,
+            "registration": true,
+            "closed": true,
+            "incomplete": false,
+            "unattributedNativeSpans": 0,
+            "lateSpans": 0,
+            "nativeProof": true,
+            "nativeDriverQueries": 46
+          }
+        },
+        {
+          "label": "deleted-policies-other",
+          "queryCount": 45,
+          "rowsRetrieved": 23,
+          "cacheHits": 1,
+          "cacheMisses": 0,
+          "coverage": {
+            "observer": true,
+            "pg": true,
+            "rows": true,
+            "cache": true,
+            "eventLoop": true,
+            "rejectedBatches": 0,
+            "registration": true,
+            "closed": true,
+            "incomplete": false,
+            "unattributedNativeSpans": 0,
+            "lateSpans": 0,
+            "nativeProof": true,
+            "nativeDriverQueries": 45
+          }
+        }
+      ],
+      "rawNativeCloseProof": [
+        {
+          "label": "browser",
+          "queries": 1040,
+          "acquisitions": 1040,
+          "cache": 37,
+          "started": {
+            "queries": 1040,
+            "acquisitions": 1040,
+            "cache": 37
+          },
+          "ended": {
+            "queries": 1040,
+            "acquisitions": 1040,
+            "cache": 37
+          },
+          "unattributedNativeSpans": 0,
+          "driverQueries": 1040,
+          "driverComplete": true,
+          "complete": true
+        },
+        {
+          "label": "manager-detail-prerequisite",
+          "queries": 48,
+          "acquisitions": 48,
+          "cache": 0,
+          "started": {
+            "queries": 48,
+            "acquisitions": 48,
+            "cache": 0
+          },
+          "ended": {
+            "queries": 48,
+            "acquisitions": 48,
+            "cache": 0
+          },
+          "unattributedNativeSpans": 0,
+          "driverQueries": 48,
+          "driverComplete": true,
+          "complete": true
+        },
+        {
+          "label": "identity-small-admin",
+          "queries": 8,
+          "acquisitions": 8,
+          "cache": 0,
+          "started": {
+            "queries": 8,
+            "acquisitions": 8,
+            "cache": 0
+          },
+          "ended": {
+            "queries": 8,
+            "acquisitions": 8,
+            "cache": 0
+          },
+          "unattributedNativeSpans": 0,
+          "driverQueries": 8,
+          "driverComplete": true,
+          "complete": true
+        },
+        {
+          "label": "identity-large-admin",
+          "queries": 8,
+          "acquisitions": 8,
+          "cache": 0,
+          "started": {
+            "queries": 8,
+            "acquisitions": 8,
+            "cache": 0
+          },
+          "ended": {
+            "queries": 8,
+            "acquisitions": 8,
+            "cache": 0
+          },
+          "unattributedNativeSpans": 0,
+          "driverQueries": 8,
+          "driverComplete": true,
+          "complete": true
+        },
+        {
+          "label": "identity-small-manager",
+          "queries": 8,
+          "acquisitions": 8,
+          "cache": 0,
+          "started": {
+            "queries": 8,
+            "acquisitions": 8,
+            "cache": 0
+          },
+          "ended": {
+            "queries": 8,
+            "acquisitions": 8,
+            "cache": 0
+          },
+          "unattributedNativeSpans": 0,
+          "driverQueries": 8,
+          "driverComplete": true,
+          "complete": true
+        },
+        {
+          "label": "baseline-small-policy",
+          "queries": 45,
+          "acquisitions": 45,
+          "cache": 1,
+          "started": {
+            "queries": 45,
+            "acquisitions": 45,
+            "cache": 1
+          },
+          "ended": {
+            "queries": 45,
+            "acquisitions": 45,
+            "cache": 1
+          },
+          "unattributedNativeSpans": 0,
+          "driverQueries": 45,
+          "driverComplete": true,
+          "complete": true
+        },
+        {
+          "label": "baseline-large-policy",
+          "queries": 46,
+          "acquisitions": 46,
+          "cache": 1,
+          "started": {
+            "queries": 46,
+            "acquisitions": 46,
+            "cache": 1
+          },
+          "ended": {
+            "queries": 46,
+            "acquisitions": 46,
+            "cache": 1
+          },
+          "unattributedNativeSpans": 0,
+          "driverQueries": 46,
+          "driverComplete": true,
+          "complete": true
+        },
+        {
+          "label": "baseline-small-managers",
+          "queries": 45,
+          "acquisitions": 45,
+          "cache": 1,
+          "started": {
+            "queries": 45,
+            "acquisitions": 45,
+            "cache": 1
+          },
+          "ended": {
+            "queries": 45,
+            "acquisitions": 45,
+            "cache": 1
+          },
+          "unattributedNativeSpans": 0,
+          "driverQueries": 45,
+          "driverComplete": true,
+          "complete": true
+        },
+        {
+          "label": "baseline-large-managers",
+          "queries": 45,
+          "acquisitions": 45,
+          "cache": 1,
+          "started": {
+            "queries": 45,
+            "acquisitions": 45,
+            "cache": 1
+          },
+          "ended": {
+            "queries": 45,
+            "acquisitions": 45,
+            "cache": 1
+          },
+          "unattributedNativeSpans": 0,
+          "driverQueries": 45,
+          "driverComplete": true,
+          "complete": true
+        },
+        {
+          "label": "policy-create",
+          "queries": 40,
+          "acquisitions": 40,
+          "cache": 0,
+          "started": {
+            "queries": 40,
+            "acquisitions": 40,
+            "cache": 0
+          },
+          "ended": {
+            "queries": 40,
+            "acquisitions": 40,
+            "cache": 0
+          },
+          "unattributedNativeSpans": 0,
+          "driverQueries": 40,
+          "driverComplete": true,
+          "complete": true
+        },
+        {
+          "label": "policy-created-small",
+          "queries": 46,
+          "acquisitions": 46,
+          "cache": 1,
+          "started": {
+            "queries": 46,
+            "acquisitions": 46,
+            "cache": 1
+          },
+          "ended": {
+            "queries": 46,
+            "acquisitions": 46,
+            "cache": 1
+          },
+          "unattributedNativeSpans": 0,
+          "driverQueries": 46,
+          "driverComplete": true,
+          "complete": true
+        },
+        {
+          "label": "policy-created-other",
+          "queries": 45,
+          "acquisitions": 45,
+          "cache": 1,
+          "started": {
+            "queries": 45,
+            "acquisitions": 45,
+            "cache": 1
+          },
+          "ended": {
+            "queries": 45,
+            "acquisitions": 45,
+            "cache": 1
+          },
+          "unattributedNativeSpans": 0,
+          "driverQueries": 45,
+          "driverComplete": true,
+          "complete": true
+        },
+        {
+          "label": "policy-delete",
+          "queries": 38,
+          "acquisitions": 38,
+          "cache": 0,
+          "started": {
+            "queries": 38,
+            "acquisitions": 38,
+            "cache": 0
+          },
+          "ended": {
+            "queries": 38,
+            "acquisitions": 38,
+            "cache": 0
+          },
+          "unattributedNativeSpans": 0,
+          "driverQueries": 38,
+          "driverComplete": true,
+          "complete": true
+        },
+        {
+          "label": "deleted-policies-small",
+          "queries": 46,
+          "acquisitions": 46,
+          "cache": 1,
+          "started": {
+            "queries": 46,
+            "acquisitions": 46,
+            "cache": 1
+          },
+          "ended": {
+            "queries": 46,
+            "acquisitions": 46,
+            "cache": 1
+          },
+          "unattributedNativeSpans": 0,
+          "driverQueries": 46,
+          "driverComplete": true,
+          "complete": true
+        },
+        {
+          "label": "deleted-policies-other",
+          "queries": 45,
+          "acquisitions": 45,
+          "cache": 1,
+          "started": {
+            "queries": 45,
+            "acquisitions": 45,
+            "cache": 1
+          },
+          "ended": {
+            "queries": 45,
+            "acquisitions": 45,
+            "cache": 1
+          },
+          "unattributedNativeSpans": 0,
+          "driverQueries": 45,
+          "driverComplete": true,
+          "complete": true
+        }
+      ],
+      "nativeCloseElapsedMs": 2.995600000002014,
+      "native": {
+        "complete": true,
+        "expectedTraces": 15,
+        "receivedTraces": 15,
+        "driverQueries": 1553,
+        "sdkQueries": 1553,
+        "receivedQueries": 1553,
+        "acquisitions": 1553,
+        "cache": 45,
+        "unknownNativeDelta": 0,
+        "incoming": {
+          "knownHeaderKnownSpan": 364,
+          "knownHeaderOtherSpan": 0,
+          "otherHeaderKnownSpan": 0,
+          "otherHeaderOtherSpan": 3,
+          "matchingParent": 364,
+          "mismatchingParent": 0
+        },
+        "standard": {
+          "driverQueryCount": 1553,
+          "nativeQueryStartedCount": 1553,
+          "nativeQueryEndedCount": 1553,
+          "observedQueryCount": 1553,
+          "pendingNativeQueries": 0,
+          "activeTraces": 0,
+          "allReceivedTracesReconciled": true,
+          "complete": true
+        }
+      },
+      "beforeContextClose": [
+        {
+          "groups": {
+            "javascript": {
+              "requests": 127,
+              "completed": 127,
+              "pending": 0,
+              "errors": 0,
+              "completedBytes": 1619913,
+              "observedBodyBytes": 1619913,
+              "inheritedRequests": 0,
+              "inheritedCompletedBytes": 0
+            },
+            "document": {
+              "requests": 3,
+              "completed": 3,
+              "pending": 0,
+              "errors": 0,
+              "completedBytes": 1069146,
+              "observedBodyBytes": 1069146,
+              "inheritedRequests": 0,
+              "inheritedCompletedBytes": 0
+            },
+            "rsc": {
+              "requests": 49,
+              "completed": 49,
+              "pending": 0,
+              "errors": 0,
+              "completedBytes": 2352486,
+              "observedBodyBytes": 2352486,
+              "inheritedRequests": 0,
+              "inheritedCompletedBytes": 0
+            },
+            "otherFinite": {
+              "requests": 42,
+              "completed": 42,
+              "pending": 0,
+              "errors": 0,
+              "completedBytes": 131605,
+              "observedBodyBytes": 131605,
+              "inheritedRequests": 0,
+              "inheritedCompletedBytes": 0
+            },
+            "prefetch": {
+              "requests": 130,
+              "completed": 130,
+              "pending": 0,
+              "errors": 0,
+              "completedBytes": 1731978,
+              "observedBodyBytes": 1731978,
+              "inheritedRequests": 0,
+              "inheritedCompletedBytes": 0
+            },
+            "longLived": {
+              "requests": 0,
+              "completed": 0,
+              "pending": 0,
+              "errors": 0,
+              "completedBytes": 0,
+              "observedBodyBytes": 0,
+              "inheritedRequests": 0,
+              "inheritedCompletedBytes": 0
+            }
+          },
+          "quietObservedMs": 1037.9386999999988,
+          "mandatoryPending": 0,
+          "mandatoryErrors": 0
+        }
+      ],
+      "pageErrors": 0,
+      "strictTransport": true,
+      "cleanup": {
+        "roleRestored": true,
+        "policyDeleted": true
+      }
+    }
+  ],
+  "historicalFailures": {
+    "retained": true,
+    "combined27TraceFalseCause": "unknown; separate successful cases do not retroactively repair the failed batch",
+    "fixtureNameNormalization": "First accepted employee update normalizes the synthetic user display name from its structured names; first full-DTo restoration comparison retained failed.",
+    "missedFaults": "Separate compiled-chunk trials retained; none are included as successful cases here."
+  },
+  "pending": [
+    "New compiled header hydration verification",
+    "Terminal compiled chunk/local retry with corrected main-document oracle and zero unexplained page errors",
+    "Manual refresh native drain cause with additive server diagnostics",
+    "Controlled release measurements and final reviews"
+  ]
+}

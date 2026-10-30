@@ -12,6 +12,7 @@ import {
 } from "@/db/schema";
 import type { PaginatedParams, PaginatedResponse } from "@/lib/data-table/types";
 import { type AnyAppError, ConflictError, DatabaseError, NotFoundError } from "@/lib/effect/errors";
+import { ensureOnCurrentRoster } from "@/lib/employee-lifecycle/current-roster-guard";
 import {
 	type AppServices,
 	runServerActionSafe,
@@ -730,6 +731,12 @@ export async function createHolidayCategoryAssignment(data: {
 					}),
 				);
 			}
+			// A former employee gets no new holiday category assignment (#1438).
+			yield* ensureOnCurrentRoster(actor.dbService, {
+				organizationId: actor.organizationId,
+				employeeIds: [assignmentEmployeeId],
+				field: "employeeId",
+			});
 		}
 
 		const newAssignment = yield* actor.dbService.query("createHolidayCategoryAssignment", async () => {
@@ -854,6 +861,14 @@ export async function createHolidayAssignment(data: {
 						entityId: data.holidayId,
 					}),
 			));
+		// Only an employee of this organization's current roster can be named (#1438).
+		if (data.assignmentType === "employee") {
+			yield* ensureOnCurrentRoster(actor.dbService, {
+				organizationId: actor.organizationId,
+				employeeIds: [data.employeeId],
+				field: "employeeId",
+			});
+		}
 
 		const newAssignment = yield* actor.dbService.query("createHolidayAssignment", async () => {
 				const [assignment] = await actor.dbService.db

@@ -3,7 +3,7 @@
 import { IconBell } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { Button } from "@/components/ui/button";
-import { useNotifications } from "@/hooks/use-notifications";
+import { useNotificationUnreadCount } from "@/hooks/use-notifications";
 import { useOrganization } from "@/hooks/use-organization";
 import { cn } from "@/lib/utils";
 import { NotificationPopover } from "./notification-popover";
@@ -13,7 +13,7 @@ export function NotificationBell() {
 	const { organizationId } = useOrganization();
 	const hasOrganization = Boolean(organizationId);
 
-	const { unreadCount } = useNotifications({
+	const { unreadCount } = useNotificationUnreadCount({
 		enabled: hasOrganization,
 		organizationId,
 	});
@@ -30,7 +30,7 @@ export function NotificationBell() {
 					{ count: unreadCount },
 				)}
 			>
-				<IconBell className="size-5" />
+				<IconBell className="size-5" aria-hidden="true" />
 				{unreadCount > 0 && (
 					<span
 						className={cn(

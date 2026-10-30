@@ -15,6 +15,10 @@ import {
 	systemClock,
 } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
+import {
+	addedEmployeeIds,
+	assertOnCurrentRoster,
+} from "@/lib/employee-lifecycle/current-roster-guard";
 import { assertDrivingLicenceControlOn } from "./control-state";
 import { verifierGrantExpiry, verifierGrantUntil } from "./deadlines";
 import { lockDrivingLicenceOrganization } from "./locks";
@@ -264,6 +268,25 @@ export async function saveDrivingLicenceVerifierGrant(
 		teams.length !== new Set(value.teamIds).size
 	)
 		throw new Error("All scope selections must belong to this organization");
+	// Newly named employees must be on the current roster (#1438); the ones the
+	// replaced grant already names may stay, so an unrelated edit still saves.
+	const [replaced] = await tx
+		.select({ employeeIds: drivingLicenceVerifierGrant.employeeIds })
+		.from(drivingLicenceVerifierGrant)
+		.where(
+			and(
+				eq(drivingLicenceVerifierGrant.organizationId, input.organizationId),
+				eq(drivingLicenceVerifierGrant.verifierEmployeeId, value.verifierEmployeeId),
+				isNull(drivingLicenceVerifierGrant.revokedAt),
+			),
+		)
+		.limit(1);
+	await assertOnCurrentRoster(tx, {
+		organizationId: input.organizationId,
+		employeeIds: addedEmployeeIds(value.employeeIds, replaced?.employeeIds ?? []),
+		field: "employeeIds",
+		now,
+	});
 	await tx
 		.update(drivingLicenceVerifierGrant)
 		.set({ revokedAt: dateFromInstant(now), revokedBy: input.actorUserId })
@@ -340,8 +363,8 @@ export async function revokeDrivingLicenceVerifierGrantsHeldBy(
 		actorUserId: string;
 		now?: Instant;
 	},
-) {
-	await tx
+): Promise<string[]> {
+	const revoked = await tx
 		.update(drivingLicenceVerifierGrant)
 		.set({
 			revokedAt: dateFromInstant(input.now ?? systemClock.nowInstant()),
@@ -362,5 +385,7 @@ export async function revokeDrivingLicenceVerifierGrantsHeldBy(
 					: isNull(drivingLicenceVerifierGrant.employmentPeriodId),
 				isNull(drivingLicenceVerifierGrant.revokedAt),
 			),
-		);
+		)
+		.returning({ id: drivingLicenceVerifierGrant.id });
+	return revoked.map((grant) => grant.id);
 }

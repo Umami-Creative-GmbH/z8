@@ -1,6 +1,4 @@
-import { mfaChallengeFromSession } from "@/lib/organization-mfa/http";
-import { MfaDeadlineBanner } from "@/components/organization-mfa/deadline-banner";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { Effect } from "effect";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -10,25 +8,29 @@ import { TrialBanner } from "@/components/billing/trial-banner";
 import { PushPermissionProvider } from "@/components/notifications/push-permission-provider";
 import { OfflineBanner } from "@/components/offline";
 import { OrganizationDeletionBanner } from "@/components/organization/organization-deletion-banner";
+import { MfaDeadlineBanner } from "@/components/organization-mfa/deadline-banner";
 import { PositionConsentDialogHost } from "@/components/position-capture/position-consent-dialog";
 import { PostHogProvider } from "@/components/posthog-provider";
 import { OrganizationSettingsProvider } from "@/components/providers/organization-settings-provider";
 import { UserPreferencesProvider } from "@/components/providers/user-preferences-provider";
-import { ServerAppSidebar } from "@/components/server-app-sidebar";
+import { ServerSidebarRegion } from "@/components/server-sidebar-region";
 import { SiteHeader } from "@/components/site-header";
 import { GetTheAppBanner } from "@/components/store-app/get-the-app-banner";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/db";
-import { member } from "@/db/auth-schema";
 import { subscription } from "@/db/schema";
 import { env } from "@/env";
+import {
+	getRenderApprovedMembership,
+	getRenderOrganizationDisplayContext,
+} from "@/lib/auth/render-context";
 import { getRenderSession } from "@/lib/auth/render-session";
 import { runtime } from "@/lib/effect/runtime";
 import type { BillingAccessResult } from "@/lib/effect/services/billing/billing-enforcement.service";
 import { createLogger } from "@/lib/logger";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
-import { getOrganizationSettings } from "@/lib/organization-settings";
+import { mfaChallengeFromSession } from "@/lib/organization-mfa/http";
 import { appBannerScrollPaddingClassName } from "@/lib/store-app/app-banner";
 import { getRenderUserPreferences } from "@/lib/user-preferences/render-snapshot";
 import { DOMAIN_HEADERS } from "@/proxy";
@@ -77,19 +79,11 @@ function SiteHeaderLoading() {
 	);
 }
 
-export async function AuthenticatedAppContent({
-	children,
-	params,
-}: AuthenticatedAppContentProps) {
-	// Auth database instrumentation uses random trace IDs and must run per request.
-	await connection();
-	// Centralized auth check protects all routes in the (app) group.
-	const [{ locale }, headersList, session] = await Promise.all([
-		params,
-		headers(),
-		getRenderSession(),
-	]);
-
+async function requireAppSession(
+	session: Awaited<ReturnType<typeof getRenderSession>>,
+	headersList: Headers,
+	locale: string,
+) {
 	if (!session?.user) {
 		// Session cookie exists but is invalid - redirect to session-expired handler
 		// which properly clears cookies before redirecting to sign-in.
@@ -104,11 +98,36 @@ export async function AuthenticatedAppContent({
 		return redirectWithLocale(
 			`/mfa?organizationId=${encodeURIComponent(mfaChallenge.organizationId)}`,
 		);
+	if ("ssoRequired" in session && session.ssoRequired === true) {
+		const callbackUrl =
+			headersList.get(DOMAIN_HEADERS.PATHNAME) || `/${locale}`;
+		const query = new URLSearchParams({ callbackUrl });
+		const organizationId = session.session?.activeOrganizationId;
+		if (organizationId) query.set("organizationId", organizationId);
+		return redirectWithLocale(`/init?${query}`);
+	}
+	return session;
+}
+
+export async function AuthenticatedAppContent({
+	children,
+	params,
+}: AuthenticatedAppContentProps) {
+	// Auth database instrumentation uses random trace IDs and must run per request.
+	await connection();
+	// Centralized auth check protects all routes in the (app) group.
+	const [{ locale }, headersList, rawSession] = await Promise.all([
+		params,
+		headers(),
+		getRenderSession(),
+	]);
+
+	const session = await requireAppSession(rawSession, headersList, locale);
 	const activeOrganizationId = session.session?.activeOrganizationId;
 	// Sync DB locale preference on load (null = user hasn't set preference, respect browser/cookie)
-	const [preferences, organizationSettings] = await Promise.all([
+	const [preferences, organizationContext] = await Promise.all([
 		getRenderUserPreferences(session.user.id),
-		getOrganizationSettings(activeOrganizationId, session.user.id),
+		getRenderOrganizationDisplayContext(),
 	]);
 	const {
 		locale: dbLocale,
@@ -130,7 +149,7 @@ export async function AuthenticatedAppContent({
 		trialDaysRemaining,
 		canManageBilling,
 		showTrialBanner,
-	} = await loadAppBillingStatus(activeOrganizationId, session.user.id);
+	} = await loadAppBillingStatus(activeOrganizationId);
 	const isBillingRecoveryPath =
 		pathname === `/${locale}/settings/billing` ||
 		pathname.startsWith(`/${locale}/settings/billing/`) ||
@@ -143,6 +162,7 @@ export async function AuthenticatedAppContent({
 
 	return (
 		<PostHogProvider
+			identityKey={JSON.stringify([session.user.id, activeOrganizationId])}
 			disabled={env.NODE_ENV === "development"}
 			helpImproveProduct={helpImproveProduct}
 		>
@@ -152,7 +172,7 @@ export async function AuthenticatedAppContent({
 					timeFormat={timeFormat}
 					timezone={timezone}
 				>
-					<OrganizationSettingsProvider initialSettings={organizationSettings}>
+					<OrganizationSettingsProvider initialContext={organizationContext}>
 						<SidebarProvider
 							style={
 								{
@@ -161,7 +181,7 @@ export async function AuthenticatedAppContent({
 								} as React.CSSProperties
 							}
 						>
-							<ServerAppSidebar
+							<ServerSidebarRegion
 								variant="inset"
 								showWorksCouncilNav={Boolean(activeOrganizationId)}
 							/>
@@ -230,7 +250,6 @@ function AppTrialBanner({
 
 async function loadAppBillingStatus(
 	activeOrganizationId: string | null | undefined,
-	userId: string,
 ) {
 	const billingEnabled = env.BILLING_ENABLED === "true";
 	const billingAccess =
@@ -247,12 +266,7 @@ async function loadAppBillingStatus(
 	const [membershipRecord, subscriptionRow] =
 		activeOrganizationId && billingEnabled
 			? await Promise.all([
-					db.query.member.findFirst({
-						where: and(
-							eq(member.userId, userId),
-							eq(member.organizationId, activeOrganizationId),
-						),
-					}),
+					getRenderApprovedMembership(),
 					db.query.subscription.findFirst({
 						where: eq(subscription.organizationId, activeOrganizationId),
 					}),

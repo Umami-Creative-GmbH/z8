@@ -2,13 +2,13 @@ import { and, eq, inArray } from "drizzle-orm";
 import type { db } from "@/db";
 import {
 	auditLog,
-	employee,
 	payrollAccessEmployee,
 	payrollAccessGrant,
 	payrollAccessTeam,
 	team,
 } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
+import { findEmployeesNotOnCurrentRoster } from "@/lib/employee-lifecycle/current-roster-guard";
 import { DatabaseError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import {
 	buildValidatedPayrollAccessInput,
@@ -65,17 +65,11 @@ export async function savePayrollAccessGrant(
 		.for("update");
 	const currentScope = current ? await readGrantScope(tx, organizationId, current) : null;
 
-	const [activeEmployeeRows, teamRows] = await Promise.all([
-		tx
-			.select({ id: employee.id })
-			.from(employee)
-			.where(
-				and(
-					eq(employee.organizationId, organizationId),
-					eq(employee.isActive, true),
-					inArray(employee.id, [payrollEmployeeId, ...requestedEmployeeIds]),
-				),
-			),
+	// The officer and newly named employees must be on the current roster (#1438);
+	// employees the grant already names stay valid after they leave.
+	const requestedPeople = [payrollEmployeeId, ...requestedEmployeeIds];
+	const [notCurrentIds, teamRows] = await Promise.all([
+		findEmployeesNotOnCurrentRoster(tx, { organizationId, employeeIds: requestedPeople }),
 		requestedTeamIds.length > 0
 			? tx
 					.select({ id: team.id })
@@ -85,7 +79,7 @@ export async function savePayrollAccessGrant(
 	]);
 
 	const validated = buildValidatedPayrollAccessInput(input.grant, {
-		activeEmployeeIds: activeEmployeeRows.map((row) => row.id),
+		activeEmployeeIds: requestedPeople.filter((id) => !notCurrentIds.includes(id)),
 		organizationTeamIds: teamRows.map((row) => row.id),
 		retainedEmployeeIds: currentScope?.employeeIds ?? [],
 	});
@@ -225,8 +219,9 @@ export async function revokePayrollAccessGrant(
 
 /**
  * Revokes the active grant the employee holds, if any, recording `auditMetadata` on the
- * audit entry. Offboarding (#750) calls it inside the departure's transaction. Grants
- * that only name the employee in their scope stay as they are.
+ * audit entry, and returns its id (null when they held none). Offboarding (#750) calls it
+ * inside the departure's transaction. Grants that only name the employee in their scope
+ * stay as they are.
  */
 export async function revokePayrollAccessGrantHeldBy(
 	tx: PayrollAccessTransaction,
@@ -236,7 +231,7 @@ export async function revokePayrollAccessGrantHeldBy(
 		payrollEmployeeId: string;
 		auditMetadata: Record<string, unknown>;
 	},
-): Promise<void> {
+): Promise<string | null> {
 	const { organizationId, actorUserId } = input;
 	const [grant] = await tx
 		.select({
@@ -254,9 +249,10 @@ export async function revokePayrollAccessGrantHeldBy(
 		)
 		.limit(1)
 		.for("update");
-	if (!grant) return;
+	if (!grant) return null;
 
 	await revokeLockedGrant(tx, { organizationId, actorUserId, grant, metadata: input.auditMetadata });
+	return grant.id;
 }
 
 async function revokeLockedGrant(

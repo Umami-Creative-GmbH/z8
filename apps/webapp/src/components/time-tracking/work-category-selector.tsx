@@ -13,11 +13,9 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { formatFactorAsMultiplier } from "@/lib/work-category/work-category.service";
+import { ClockChoiceReadError } from "./clock-choice-read-error";
 import { writeLastWorkCategoryId } from "./selection-preferences";
-import {
-	useAvailableWorkCategories,
-	type WorkCategory,
-} from "./use-available-work-categories";
+import { useAvailableWorkCategories, type WorkCategory } from "./use-available-work-categories";
 
 interface WorkCategorySelectorProps {
 	/**
@@ -48,6 +46,7 @@ interface WorkCategorySelectorViewProps extends WorkCategorySelectorProps {
 	categories: WorkCategory[];
 	isLoading: boolean;
 	isError: boolean;
+	onRetry?: () => void;
 }
 
 /**
@@ -57,7 +56,7 @@ interface WorkCategorySelectorViewProps extends WorkCategorySelectorProps {
 export function WorkCategorySelector({ ...props }: WorkCategorySelectorProps) {
 	const query = useAvailableWorkCategories(props.employeeId);
 
-	return <WorkCategorySelectorView {...props} {...query} />;
+	return <WorkCategorySelectorView {...props} {...query} onRetry={() => void query.refetch()} />;
 }
 
 export function WorkCategorySelectorView({
@@ -69,6 +68,7 @@ export function WorkCategorySelectorView({
 	categories,
 	isLoading,
 	isError,
+	onRetry,
 }: WorkCategorySelectorViewProps) {
 	const { t } = useTranslate();
 	const triggerId = useId();
@@ -89,7 +89,12 @@ export function WorkCategorySelectorView({
 
 	// Don't render if error
 	if (isError) {
-		return null;
+		return (
+			<ClockChoiceReadError
+				label={t("timeTracking.workCategory", "Work Category")}
+				retry={onRetry}
+			/>
+		);
 	}
 
 	// Show loading state
@@ -121,22 +126,13 @@ export function WorkCategorySelectorView({
 					{t("timeTracking.workCategory", "Work Category")}
 				</Label>
 			)}
-			<Select
-				value={value ?? "none"}
-				onValueChange={handleValueChange}
-				disabled={disabled}
-			>
+			<Select value={value ?? "none"} onValueChange={handleValueChange} disabled={disabled}>
 				<SelectTrigger id={triggerId} className="w-full">
-					<SelectValue
-						placeholder={t("timeTracking.selectCategory", "Select a category")}
-					>
+					<SelectValue placeholder={t("timeTracking.selectCategory", "Select a category")}>
 						{value ? (
 							<CategoryOption
 								category={categoriesMap.get(value)}
-								unknownLabel={t(
-									"timeTracking.unknownCategory",
-									"Unknown category",
-								)}
+								unknownLabel={t("timeTracking.unknownCategory", "Unknown category")}
 							/>
 						) : (
 							<span className="text-muted-foreground">
@@ -156,10 +152,7 @@ export function WorkCategorySelectorView({
 						<SelectItem key={category.id} value={category.id}>
 							<CategoryOption
 								category={category}
-								unknownLabel={t(
-									"timeTracking.unknownCategory",
-									"Unknown category",
-								)}
+								unknownLabel={t("timeTracking.unknownCategory", "Unknown category")}
 							/>
 						</SelectItem>
 					))}
@@ -185,10 +178,7 @@ function CategoryOption({
 	return (
 		<div className="flex items-center gap-2">
 			{category.color ? (
-				<div
-					className="size-3 rounded-full"
-					style={{ backgroundColor: category.color }}
-				/>
+				<div className="size-3 rounded-full" style={{ backgroundColor: category.color }} />
 			) : (
 				<IconTag className="size-3 text-muted-foreground" />
 			)}

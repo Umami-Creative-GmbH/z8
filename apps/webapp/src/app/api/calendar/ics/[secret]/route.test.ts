@@ -13,6 +13,7 @@ const mockState = vi.hoisted(() => ({
 	employeeFindFirst: vi.fn(),
 	employeeFindMany: vi.fn(),
 	teamFindFirst: vi.fn(),
+	organizationFindFirst: vi.fn(),
 	update: vi.fn(),
 	select: vi.fn(),
 	updateWherePredicates: [] as Predicate[],
@@ -51,7 +52,12 @@ vi.mock("drizzle-orm", () => ({
 	inArray: (left: string, right: unknown) => ({ op: "inArray", left, right }),
 	isNull: (left: string) => ({ op: "isNull", left }),
 	lte: (left: string, right: unknown) => ({ op: "lte", left, right }),
+	not: (arg: Predicate) => ({ op: "not", args: [arg] }),
 	or: (...args: Predicate[]) => ({ op: "or", args }),
+}));
+
+vi.mock("@/lib/employee-lifecycle/current-roster", () => ({
+	isFormerEmployee: () => ({ op: "isFormerEmployee" }),
 }));
 
 vi.mock("@/db/schema", () => ({
@@ -104,6 +110,9 @@ vi.mock("@/db/schema/organization", () => ({
 }));
 
 vi.mock("@/db/auth-schema", () => ({
+	organization: {
+		id: "organization.id",
+	},
 	user: {
 		id: "user.id",
 		name: "user.name",
@@ -119,6 +128,7 @@ vi.mock("@/db", () => ({
 				findMany: mockState.employeeFindMany,
 			},
 			team: { findFirst: mockState.teamFindFirst },
+			organization: { findFirst: mockState.organizationFindFirst },
 		},
 		update: mockState.update,
 		select: mockState.select,
@@ -337,5 +347,34 @@ describe("GET /api/calendar/ics/[secret]", () => {
 		expectEq(absenceWhere, "absenceEntry.organizationId", "org-feed");
 		expectEq(absenceWhere, "employee.organizationId", "org-feed");
 		expectEq(absenceWhere, "absenceCategory.organizationId", "org-feed");
+		const organizationWhere = mockState.organizationFindFirst.mock.calls[0]?.[0]?.where as Predicate;
+		expectEq(organizationWhere, "organization.id", "org-feed");
+	});
+
+	it("leaves out a former team member's absences that start after today in the organization's timezone", async () => {
+		vi.useFakeTimers({ now: new Date("2026-10-23T23:30:00Z"), toFake: ["Date"] });
+		try {
+			mockState.icsFeedFindFirst.mockResolvedValue(
+				makeFeed({ feedType: "team", teamId: "team-feed" }),
+			);
+			mockState.teamFindFirst.mockResolvedValue({ name: "Ops" });
+			mockState.employeeFindMany.mockResolvedValue([{ id: "employee-feed" }]);
+			mockState.organizationFindFirst.mockResolvedValue({ timezone: "Europe/Berlin" });
+
+			const response = await fetchFeed();
+
+			expect(response.status).toBe(200);
+			const absenceWhere = mockState.selectWherePredicates[0];
+			expect(absenceWhere?.args).toContainEqual({
+				op: "or",
+				args: [
+					{ op: "not", args: [{ op: "isFormerEmployee" }] },
+					// 23:30 UTC is already the 24th in Berlin.
+					{ op: "lte", left: "absenceEntry.startDate", right: "2026-10-24" },
+				],
+			});
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 });

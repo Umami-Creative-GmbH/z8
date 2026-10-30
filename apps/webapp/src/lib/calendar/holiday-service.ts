@@ -1,11 +1,78 @@
 import "server-only";
 
-import { and, eq, gte, lte } from "drizzle-orm";
+import { and, eq, gte, lte, or } from "drizzle-orm";
 import { DateTime } from "luxon";
 import { db } from "@/db";
 import { holiday, holidayCategory } from "@/db/schema";
 import { dateFromDB, dateToDB } from "@/lib/datetime/drizzle-adapter";
+import { localDayRange } from "@/lib/datetime/temporal-boundaries";
+import { compareInstants, dateFromInstant, instantFromDate } from "@/lib/datetime/temporal-core";
 import type { HolidayEvent } from "./types";
+
+/** Legacy calculation exclusion semantics, loaded once on the caller's scoped client. */
+export async function loadCalculationExclusions(
+	reader: Pick<typeof db, "select">,
+	organizationId: string,
+	startDate: Date,
+	endDate: Date,
+): Promise<(date: Date) => boolean> {
+	const rows = await reader
+		.select({ holiday, category: holidayCategory })
+		.from(holiday)
+		.innerJoin(holidayCategory, eq(holiday.categoryId, holidayCategory.id))
+		.where(
+			and(
+				eq(holiday.organizationId, organizationId),
+				eq(holidayCategory.organizationId, organizationId),
+				eq(holiday.isActive, true),
+				eq(holidayCategory.isActive, true),
+				eq(holidayCategory.excludeFromCalculations, true),
+				or(
+					eq(holiday.recurrenceType, "yearly"),
+					and(
+						eq(holiday.recurrenceType, "none"),
+						lte(
+							holiday.startDate,
+							dateFromInstant(instantFromDate(endDate).add({ hours: 48 })),
+						),
+						gte(
+							holiday.endDate,
+							dateFromInstant(
+								instantFromDate(startDate).subtract({ hours: 48 }),
+							),
+						),
+					),
+				),
+			),
+		);
+	return (date) => {
+		const instant = instantFromDate(date);
+		const day = instant.toZonedDateTimeISO("UTC");
+		const window = localDayRange(day.toPlainDate().toString(), "UTC");
+		if (
+			rows.some(
+				({ holiday: h }) =>
+					h.recurrenceType === "none" &&
+					compareInstants(instantFromDate(h.startDate), window.endExclusive) <
+						0 &&
+					compareInstants(instantFromDate(h.endDate), window.start) >= 0,
+			)
+		)
+			return true;
+		for (const { holiday: h } of rows) {
+			if (h.recurrenceType !== "yearly" || !h.recurrenceRule) continue;
+			const rule = JSON.parse(h.recurrenceRule);
+			if (
+				rule.month === day.month &&
+				rule.day === day.day &&
+				(!h.recurrenceEndDate ||
+					compareInstants(instant, instantFromDate(h.recurrenceEndDate)) <= 0)
+			)
+				return true;
+		}
+		return false;
+	};
+}
 
 interface HolidayWithCategory {
 	holiday: typeof holiday.$inferSelect;

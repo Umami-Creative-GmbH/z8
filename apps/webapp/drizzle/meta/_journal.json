@@ -1982,6 +1982,48 @@
       "when": 1809100800000,
       "tag": "0282_drop_driving_licence_enrollments",
       "breakpoints": true
+    },
+    {
+      "idx": 283,
+      "version": "7",
+      "when": 1809187200000,
+      "tag": "0283_employee_deactivated_at",
+      "breakpoints": true
+    },
+    {
+      "idx": 284,
+      "version": "7",
+      "when": 1809273600000,
+      "tag": "0284_employee_deactivation_shifts_opened",
+      "breakpoints": true
+    },
+    {
+      "idx": 285,
+      "version": "7",
+      "when": 1809360000000,
+      "tag": "0285_employee_deactivation",
+      "breakpoints": true
+    },
+    {
+      "idx": 286,
+      "version": "7",
+      "when": 1809446400000,
+      "tag": "0286_employee_deactivation_checklist",
+      "breakpoints": true
+    },
+    {
+      "idx": 287,
+      "version": "7",
+      "when": 1809532800000,
+      "tag": "0287_former_employee_reports_without_manager",
+      "breakpoints": true
+    },
+    {
+      "idx": 288,
+      "version": "7",
+      "when": 1809619200000,
+      "tag": "0288_absence_employee_overlap",
+      "breakpoints": true
     }
   ]
 }

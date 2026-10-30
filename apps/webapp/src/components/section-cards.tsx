@@ -2,10 +2,11 @@
 
 import { useIsFetching } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useState, useSyncExternalStore } from "react";
-import { BirthdayRemindersWidget } from "@/components/dashboard/birthday-reminders-widget";
+import { type ReactNode, useEffect, useState, useSyncExternalStore } from "react";
 import { CoveringForWidget } from "@/components/dashboard/covering-for-widget";
-import { HydrationWidget } from "@/components/dashboard/hydration-widget";
+import type { DashboardLayoutBootstrap } from "@/components/dashboard/dashboard-types";
+import { DeferredDashboardWidget } from "@/components/dashboard/deferred-dashboard-widget";
+
 import { ManagedEmployeesWidget } from "@/components/dashboard/managed-employees-widget";
 import { ManagerTodayWidget } from "@/components/dashboard/manager-today-widget";
 import { PendingApprovalsWidget } from "@/components/dashboard/pending-approvals-widget";
@@ -31,6 +32,13 @@ import { Skeleton } from "@/components/ui/skeleton";
  * Map of widget IDs to their component.
  * Widgets handle their own DashboardWidget wrapper internally.
  */
+function BirthdayRemindersFallback() {
+	return <DeferredDashboardWidget id="birthday-reminders" />;
+}
+function HydrationFallback() {
+	return <DeferredDashboardWidget id="hydration" />;
+}
+
 const WIDGET_COMPONENTS: Record<WidgetId, React.ComponentType> = {
 	"manager-today": ManagerTodayWidget,
 	"managed-employees": ManagedEmployeesWidget,
@@ -42,16 +50,13 @@ const WIDGET_COMPONENTS: Record<WidgetId, React.ComponentType> = {
 	"whos-out-today": WhosOutTodayWidget,
 	"upcoming-time-off": UpcomingTimeOffWidget,
 	"recently-approved": RecentlyApprovedWidget,
-	"birthday-reminders": BirthdayRemindersWidget,
-	hydration: HydrationWidget,
+	"birthday-reminders": BirthdayRemindersFallback,
+	hydration: HydrationFallback,
 	"vacation-balance": VacationBalanceWidget,
 	"presence-status": PresenceStatusWidget,
 };
 
-const WIDGET_SKELETON_KEYS = Array.from(
-	{ length: 8 },
-	(_, index) => `widget-skeleton-${index}`,
-);
+const WIDGET_SKELETON_KEYS = Array.from({ length: 8 }, (_, index) => `widget-skeleton-${index}`);
 
 const subscribeToHydration = () => () => {};
 const getHydratedSnapshot = () => true;
@@ -104,15 +109,12 @@ function HiddenWidgetsEmptyState({ onReset }: { onReset: () => void }) {
 	return (
 		<div className="mx-4 rounded-xl border border-dashed bg-card p-8 text-center lg:mx-6">
 			<h2 className="font-semibold text-card-foreground text-lg">
-				{t(
-					"dashboard.customize.empty-title",
-					"All dashboard widgets are hidden",
-				)}
+				{t("dashboard.customize.empty-title", "All dashboard widgets are hidden")}
 			</h2>
 			<p className="mx-auto mt-2 max-w-md text-muted-foreground text-sm">
 				{t(
-					"dashboard.customize.empty-description",
-					"Use the dashboard customization icon to re-enable individual widgets, or reset the layout to show every widget again.",
+					"dashboard.customize.empty-description-defaults",
+					"Use the dashboard customization icon to re-enable individual widgets, or reset the layout to restore your default widgets.",
 				)}
 			</p>
 			<Button className="mt-4" onClick={onReset} variant="outline">
@@ -126,17 +128,17 @@ function DashboardWidgetLayout({
 	visibleWidgetOrder,
 	onReorder,
 	resetOrder,
+	widgetSlots,
 }: {
 	visibleWidgetOrder: WidgetId[];
 	onReorder: (newOrder: WidgetId[]) => void;
 	resetOrder: () => void;
+	widgetSlots?: Partial<Record<WidgetId, ReactNode>>;
 }) {
 	const renderedWidgets = useVisibleWidgets();
 	const fetchingDashboardWidgets = useIsFetching({ queryKey: ["dashboard"] });
 	const visibleWidgetKey = visibleWidgetOrder.join("|");
-	const [hasCheckedRenderedWidgets, setHasCheckedRenderedWidgets] = useState(
-		!visibleWidgetKey,
-	);
+	const [hasCheckedRenderedWidgets, setHasCheckedRenderedWidgets] = useState(!visibleWidgetKey);
 	const [checkedWidgetKey, setCheckedWidgetKey] = useState(visibleWidgetKey);
 
 	if (checkedWidgetKey !== visibleWidgetKey) {
@@ -147,9 +149,7 @@ function DashboardWidgetLayout({
 	const hasConfiguredWidgets = visibleWidgetOrder.length > 0;
 	const shouldShowEmptyState =
 		!hasConfiguredWidgets ||
-		(hasCheckedRenderedWidgets &&
-			fetchingDashboardWidgets === 0 &&
-			renderedWidgets.length === 0);
+		(hasCheckedRenderedWidgets && fetchingDashboardWidgets === 0 && renderedWidgets.length === 0);
 
 	useEffect(() => {
 		if (!visibleWidgetKey) {
@@ -168,30 +168,37 @@ function DashboardWidgetLayout({
 	return (
 		<>
 			{hasConfiguredWidgets ? (
-				<SortableWidgetGrid
-					widgetOrder={visibleWidgetOrder}
-					onReorder={onReorder}
-				>
+				<SortableWidgetGrid widgetOrder={visibleWidgetOrder} onReorder={onReorder}>
 					{visibleWidgetOrder.map((widgetId) => {
+						if (widgetSlots?.[widgetId]) {
+							return (
+								<div key={widgetId} className="contents">
+									{widgetSlots[widgetId]}
+								</div>
+							);
+						}
 						const WidgetComponent = WIDGET_COMPONENTS[widgetId];
 						if (!WidgetComponent) return null;
 						return <WidgetComponent key={widgetId} />;
 					})}
 				</SortableWidgetGrid>
 			) : null}
-			{shouldShowEmptyState ? (
-				<HiddenWidgetsEmptyState onReset={resetOrder} />
-			) : null}
+			{shouldShowEmptyState ? <HiddenWidgetsEmptyState onReset={resetOrder} /> : null}
 		</>
 	);
 }
 
-export function SectionCards() {
-	const { visibleWidgetOrder, onReorder, resetOrder, isLoading } =
-		useWidgetOrder();
+export function SectionCards({
+	initialLayout,
+	widgetSlots,
+}: {
+	initialLayout?: DashboardLayoutBootstrap;
+	widgetSlots?: Partial<Record<WidgetId, ReactNode>>;
+} = {}) {
+	const { visibleWidgetOrder, onReorder, resetOrder, isLoading } = useWidgetOrder(initialLayout);
 	const hasHydrated = useHasHydrated();
 
-	if (!hasHydrated || isLoading) {
+	if ((!initialLayout && !hasHydrated) || isLoading) {
 		return <SectionCardsSkeleton />;
 	}
 
@@ -201,6 +208,7 @@ export function SectionCards() {
 				onReorder={onReorder}
 				resetOrder={resetOrder}
 				visibleWidgetOrder={visibleWidgetOrder}
+				widgetSlots={widgetSlots}
 			/>
 		</WidgetVisibilityProvider>
 	);

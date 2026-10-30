@@ -1,0 +1,59 @@
+import { and, eq, inArray } from "drizzle-orm";
+import { employee } from "@/db/schema";
+import type { Instant } from "@/lib/datetime/temporal-core";
+import type { DatabaseClient } from "@/lib/effect/services/database.service";
+import { isUuid } from "@/lib/validations/uuid";
+import { formerSinceDate, isFormerEmployee, onCurrentRoster } from "./current-roster";
+
+/**
+ * Which of these employees are on the organization's current roster (#1438).
+ * Lists that people manage (team members, project assignments) hide former
+ * employees by default and mark them when a toggle shows them; they load their
+ * rows as before and ask this which ones are current. An id from another
+ * organization, or one that isn't a uuid, is never current. One query for the
+ * whole list, none for an empty one.
+ */
+export async function currentRosterAmong(
+	db: Pick<DatabaseClient, "select">,
+	organizationId: string,
+	employeeIds: Iterable<string>,
+	now?: Instant,
+): Promise<Set<string>> {
+	// Not a uuid can't be an employee; keep it out of the uuid comparison.
+	const ids = [...new Set(employeeIds)].filter(isUuid);
+	if (ids.length === 0) return new Set();
+
+	const rows = await db
+		.select({ id: employee.id })
+		.from(employee)
+		.where(and(inArray(employee.id, ids), onCurrentRoster(organizationId, employee, now)));
+	return new Set(rows.map((row) => row.id));
+}
+
+/**
+ * Which of these employees of the organization are former, and the
+ * organization-local date each left (`YYYY-MM-DD`, null when not recorded), for
+ * "Former since …" marks (#1439). Current employees, ids of another
+ * organization and ids that aren't uuids are left out. One query.
+ */
+export async function formerEmployeesAmong(
+	db: Pick<DatabaseClient, "select">,
+	organizationId: string,
+	employeeIds: Iterable<string>,
+	now?: Instant,
+): Promise<Map<string, string | null>> {
+	const ids = [...new Set(employeeIds)].filter(isUuid);
+	if (ids.length === 0) return new Map();
+
+	const rows = await db
+		.select({ id: employee.id, since: formerSinceDate(employee, now) })
+		.from(employee)
+		.where(
+			and(
+				inArray(employee.id, ids),
+				eq(employee.organizationId, organizationId),
+				isFormerEmployee(employee, now),
+			),
+		);
+	return new Map(rows.map((row) => [row.id, row.since]));
+}
