@@ -19,7 +19,7 @@ import {
 	ClockActionButton,
 	PostClockOutNotesForm,
 	RestPeriodWarnBanner,
-	WorkLocationSelector,
+	WorkLocationField,
 } from "@/components/time-tracking/clock-in-out-widget-parts";
 import {
 	BreakVehicleReading,
@@ -34,10 +34,10 @@ import {
 	Card,
 	CardContent,
 	CardDescription,
-	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
 import type { TimeFormat } from "@/lib/user-preferences/time-format";
+import { cn } from "@/lib/utils";
 
 interface ActiveWorkPeriodData {
 	id: string;
@@ -89,28 +89,47 @@ function isOnBreak(widget: ClockWidget) {
 	return widget.isClockedIn && !!widget.activeWorkPeriod?.breakStartedAt;
 }
 
-function ClockWidgetDescription({
+/**
+ * The clock's state leads the card; the site header already names the page. A dot marks
+ * working (green) and a break (amber) at a glance.
+ */
+function ClockWidgetHeading({
 	widget,
 	employeeName,
 }: {
 	widget: ClockWidget;
 	employeeName: string;
 }) {
-	if (isOnBreak(widget)) {
-		return widget.t(
-			"timeTracking.breakInProgress.description",
-			"You're on a break",
-		);
-	}
+	const { t } = widget;
 	if (widget.isClockedIn) {
-		return widget.t(
-			"timeTracking.currentlyClockedIn",
-			"You're currently clocked in",
+		const onBreak = isOnBreak(widget);
+		return (
+			<CardTitle className="flex items-center gap-2 text-base">
+				<span
+					aria-hidden="true"
+					className={cn(
+						"size-2.5 shrink-0 rounded-full",
+						onBreak ? "bg-amber-500" : "bg-emerald-500 motion-safe:animate-pulse",
+					)}
+				/>
+				{onBreak
+					? t("timeTracking.breakInProgress.description", "You're on a break")
+					: t("timeTracking.currentlyClockedIn", "You're currently clocked in")}
+			</CardTitle>
 		);
 	}
-	return widget.t("timeTracking.welcomeBack", "Welcome back, {name}", {
-		name: employeeName,
-	});
+	return (
+		<div className="flex flex-col gap-1.5">
+			<CardTitle className="text-lg">
+				{t("timeTracking.welcomeBack", "Welcome back, {name}", {
+					name: employeeName,
+				})}
+			</CardTitle>
+			<CardDescription>
+				{t("timeTracking.readyToClockIn", "Ready to start working?")}
+			</CardDescription>
+		</div>
+	);
 }
 
 function ClockSessionStatus({
@@ -155,7 +174,7 @@ function ClockBookingChoices({ widget }: { widget: ClockWidget }) {
 		<>
 			{(widget.captureMode !== "server" || !widget.isClockedIn) &&
 			!showsNotes ? (
-				<WorkLocationSelector
+				<WorkLocationField
 					value={widget.uiState.workLocationType}
 					onChange={widget.setWorkLocationType}
 					t={widget.t}
@@ -286,31 +305,33 @@ export function ClockInOutWidget({
 }: Props) {
 	const widget = useClockInOutWidget(activeWorkPeriod);
 
+	// Wide cards put the state beside the controls, so Clock In stays a button-sized target
+	// instead of a bar across the page; narrow cards stack them.
 	return (
 		<Card className="@container/widget">
-			<CardHeader>
-				<CardTitle>{widget.t("timeTracking.title", "Time Tracking")}</CardTitle>
-				<CardDescription>
-					<ClockWidgetDescription widget={widget} employeeName={employeeName} />
-				</CardDescription>
-			</CardHeader>
-			<CardContent className="flex flex-col gap-4">
-				<ClockSessionStatus widget={widget} timeFormat={timeFormat} />
+			<CardContent className="grid gap-6 @3xl/widget:grid-cols-[minmax(0,1fr)_26rem] @3xl/widget:items-center @3xl/widget:gap-x-8">
+				<div className="flex min-w-0 flex-col gap-4">
+					<ClockWidgetHeading widget={widget} employeeName={employeeName} />
+					<ClockSessionStatus widget={widget} timeFormat={timeFormat} />
 
-				<ClockComplianceNotices widget={widget} />
+					<ClockComplianceNotices widget={widget} />
 
-				<SessionReminderPanel
-					isClockedIn={widget.isClockedIn}
-					sessionStartTime={widget.activeWorkPeriod?.startTime ?? null}
-				/>
+					<SessionReminderPanel
+						isClockedIn={widget.isClockedIn}
+						sessionStartTime={widget.activeWorkPeriod?.startTime ?? null}
+					/>
+				</div>
 
-				<ClockBookingChoices widget={widget} />
+				{/* Its own widget container: the location options size to this column, not the card. */}
+				<div className="@container/widget flex min-w-0 flex-col gap-4 @3xl/widget:border-l @3xl/widget:pl-8">
+					<ClockBookingChoices widget={widget} />
 
-				<DrivingAuthorizationAdvisory />
-				<ClockConnectionNotice show={widget.connectionRequired} />
+					<DrivingAuthorizationAdvisory />
+					<ClockConnectionNotice show={widget.connectionRequired} />
 
-				<ClockWidgetControls widget={widget} />
-				<BreakConnectionNote show={widget.isOffline && widget.isClockedIn} t={widget.t} />
+					<ClockWidgetControls widget={widget} />
+					<BreakConnectionNote show={widget.isOffline && widget.isClockedIn} t={widget.t} />
+				</div>
 			</CardContent>
 
 			<ExceptionRequestDialog

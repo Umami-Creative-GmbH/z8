@@ -29,8 +29,8 @@ describe("time tracking page identity boundary", () => {
 		);
 		expect(fallback.props.children.map((region) => region.type)).toEqual([
 			ClockLoading,
-			TimelineLoading,
 			SummaryLoading,
+			TimelineLoading,
 			HistoryLoading,
 		]);
 	});
