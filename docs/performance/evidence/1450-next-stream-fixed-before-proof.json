@@ -1,0 +1,547 @@
+{
+  "schema": 1,
+  "kind": "common-next-fixed-original-annual-diagnostic-proof",
+  "acceptance": "unfulfilled",
+  "controlledCapture": false,
+  "budgetsDerived": false,
+  "originalBinarySource": "bda468856728844f8172f6832c4deb9ad34a3bb0",
+  "originalBusinessSource": "39a08d0bbe77e00ceb5b204b9f9100ab2cfb86be",
+  "nextStreamCompletionPatch": {
+    "nextVersion": "16.4.0",
+    "patchSha256": "0e7fd3eef6034e754a9ef87ad3887b564baf544dce77b046c6f4b805a51b7558",
+    "lockSha256": "8d9537b280029f0bb487af820b7740aec5a692721e08e2c61115145e41dc493e",
+    "cjsSha256": "13d6b042e0a52e8845a7c04086515418a26bb45eec00fca2ea2b728ecc2aad4e",
+    "esmSha256": "098cae63c84dad74f95b1121981cb04dfb71b8ee9614e547de853a693332bf81"
+  },
+  "originalBuild": {
+    "kind": "owned-original-observer-build",
+    "businessSource": "39a08d0bbe77e00ceb5b204b9f9100ab2cfb86be",
+    "source": "bda468856728844f8172f6832c4deb9ad34a3bb0",
+    "ci": true,
+    "workers": 2,
+    "startedAt": "2026-10-25T08:44:56.312Z",
+    "finishedAt": "2026-10-25T08:54:05.464Z",
+    "exitCode": 0,
+    "buildId": "build-TfctsWXpff2fKS"
+  },
+  "originalBuildSha256": "b1f165c8a4f97e22f4b52ddaaf4e0663c183938f4e8076aac89c88329303bf32",
+  "headBuild": {
+    "kind": "owned-final-head-build",
+    "source": "d5a2dd7de883a41473a9207282f971c06bc99bf6",
+    "ci": true,
+    "workers": 2,
+    "startedAt": "2026-10-25T08:55:59.135Z",
+    "finishedAt": "2026-10-25T09:04:30.722Z",
+    "exitCode": 0,
+    "buildId": "build-TfctsWXpff2fKS"
+  },
+  "headBuildSha256": "524dca5cdfe5d4c75f50c8a80dc2c8758d6e4dfbc17c61e0a3f696417611df4e",
+  "headRequiredManifestSha256": "9c8d7d2c7ad054e0e974ae1ee75e07707af80ec2e6b4445533587b42a5469ac4",
+  "sourceQualification": {
+    "commonMaintainedNextVersion": "16.4.0",
+    "patchSource": "b5ead34d5b9b0145d90ae2250603a409166f0279",
+    "lineEndingQualification": "6e2ea85af4bbdd58fbef32f9e1a6abd57088a98b",
+    "originalPort": "bda468856728844f8172f6832c4deb9ad34a3bb0",
+    "headBusinessBase": "de0b1a128b384196c7c93ac69cd5324e8d0cbbd8",
+    "businessSourceUnchanged": true,
+    "sharedRuntimeConditionChanged": true,
+    "installedHashQualification": "owned app roots only; user-root Next installation unchanged",
+    "oldUnpatchedCapturesRequalified": false
+  },
+  "actualToolingSource": "d5a2dd7de883a41473a9207282f971c06bc99bf6",
+  "diagnosticSourceMapsSha256": "63677a63e3922bd3b8ae5acab363341b9b2d845e2c965190a981b2c00e6c7a6e",
+  "diagnosticPlanSha256": "cd01ac2bce3262942274de9424a69681d18c8a2f8ec19575ef3ee63f55e8ef21",
+  "diagnosticOperatorSha256": "143fa83a2fb912d48179282df9b3ae4e008c85099ec12f80878ab10bdeeb08a2",
+  "reviewSha256": "c2dbb08f421229f73c134ae7d66e9c17682f2c64e79031552f26e876ef95e290",
+  "previousProofs": [
+    {
+      "file": "1450-observer-v4-before-proof.json",
+      "canonicalSha256": "ec1f85b2a63393b2ccf41edcd99162259a33803e059bbf9cb65fbcf134cee050",
+      "byteSha256": "3270525cdc63f4dd9a81bb866a304cac5d483c259dbcd04758ed68c7124a8898",
+      "retainedUnchanged": true
+    },
+    {
+      "file": "1450-observer-v8-before-proof.json",
+      "canonicalSha256": "bb422fdb9e48b59631f942e358d4396c2e494a2a5f6b8345dcb1dff794f4c613",
+      "byteSha256": "2e5b457975af7acf18746483eb59c424d9bbc1d98f22237d4def248441d1e2a3",
+      "retainedUnchanged": true
+    }
+  ],
+  "compiledTwoVisit": {
+    "artifactSha256": "184e174a56920b91007ed23d07c74459fe688f534f5c21e030bf111261362642",
+    "samples": 2,
+    "passed": 2,
+    "globalQueries": 3343,
+    "nativeComplete": true,
+    "ownedPrefetchRequests": 14,
+    "ownedPrefetchAborts": 0,
+    "scope": "positive compiled path only; canceled critical path NOT exercised by this two-visit run"
+  },
+  "maintainedRuntimeRegression": {
+    "source": "scripts/performance/next-stream-completion.test.mjs",
+    "cases": 6,
+    "scope": "real Node HTTP and Next tracer/SDK CJS+ESM completion/disconnect/waitUntil controls",
+    "activeCancellationPreserved": true,
+    "waitUntilNotDropped": true,
+    "compiledDisconnectClaim": false
+  },
+  "annualUnderlyingCause": {
+    "underlyingKind": "pool-acquire-timeout",
+    "originalPoolMax": 10,
+    "originalConnectionTimeoutMs": 10000,
+    "statementQueryErrors": 0,
+    "privateLog": {
+      "intervals": [
+        {
+          "phase": "primary-first",
+          "exitCode": 1,
+          "startByte": 2306499,
+          "endByte": 2309987,
+          "bytes": 3488,
+          "sha256": "ff4d172d80407d7034df4cc3b83b27e1a0408ff49f0ce393dda7375d48436491",
+          "poolTimeoutCauseMatches": 1,
+          "DatabaseErrorMatches": 1,
+          "statementTimeoutMatches": 0,
+          "missingColumnMatches": 0,
+          "missingRelationMatches": 0,
+          "syntaxErrorMatches": 0,
+          "otherKnownErrorMatches": 0
+        },
+        {
+          "phase": "companion-first",
+          "exitCode": 1,
+          "startByte": 2309987,
+          "endByte": 2314119,
+          "bytes": 4132,
+          "sha256": "fb153e85142cdf168a5ff3c03cd6e962b163d80703aa2d339f8ef61f644eef0d",
+          "poolTimeoutCauseMatches": 1,
+          "DatabaseErrorMatches": 1,
+          "statementTimeoutMatches": 0,
+          "missingColumnMatches": 0,
+          "missingRelationMatches": 0,
+          "syntaxErrorMatches": 0,
+          "otherKnownErrorMatches": 0
+        },
+        {
+          "phase": "companion-link",
+          "exitCode": 1,
+          "startByte": 2314119,
+          "endByte": 2322240,
+          "bytes": 8121,
+          "sha256": "1cee8886cbece8ea00766b8179c5e5c726b8d91007318c5370971444218aa3ca",
+          "poolTimeoutCauseMatches": 2,
+          "DatabaseErrorMatches": 2,
+          "statementTimeoutMatches": 0,
+          "missingColumnMatches": 0,
+          "missingRelationMatches": 0,
+          "syntaxErrorMatches": 0,
+          "otherKnownErrorMatches": 0
+        }
+      ],
+      "noMessagesOrSqlPersisted": true
+    }
+  },
+  "nativePaint": {
+    "usableContentMs": null,
+    "clockReadyMs": 901.1950000000002,
+    "lcpMs": 716,
+    "interactionMaxMs": 48,
+    "readCompleted": true,
+    "lcpEntries": 1,
+    "eventEntries": 6,
+    "rawObservations": 1,
+    "controlledCohortRequired": 20,
+    "failed": true,
+    "failureStage": "verify-expected-content",
+    "resourceScope": "measured-visit"
+  },
+  "visits": [
+    {
+      "phase": "primary-first",
+      "artifactSha256": "ceb4ff9ff68b1aca2ff4e457c94aa2ffaa29e7c61ef5256bb08a34a41b83ed65",
+      "backendSha256": "70f28823b88c48ee4ff4580af657e6a4d8f2b17045b26bfa81df03c43aa8b4f0",
+      "failed": true,
+      "failureStage": "verify-expected-content",
+      "failureKind": "timeout",
+      "elapsedUntilFailureMs": 31383.9291,
+      "observationComplete": true,
+      "existing456PolicyMatched": false,
+      "transportComplete": true,
+      "sourceFingerprintMapsRecorded": true,
+      "proofPrerequisites": {
+        "originalCiSha256": "b1f165c8a4f97e22f4b52ddaaf4e0663c183938f4e8076aac89c88329303bf32",
+        "headCiSha256": "524dca5cdfe5d4c75f50c8a80dc2c8758d6e4dfbc17c61e0a3f696417611df4e",
+        "fixedTwoSha256": "184e174a56920b91007ed23d07c74459fe688f534f5c21e030bf111261362642",
+        "nextStreamCompletionPatch": {
+          "nextVersion": "16.4.0",
+          "patchSha256": "0e7fd3eef6034e754a9ef87ad3887b564baf544dce77b046c6f4b805a51b7558",
+          "lockSha256": "8d9537b280029f0bb487af820b7740aec5a692721e08e2c61115145e41dc493e",
+          "cjsSha256": "13d6b042e0a52e8845a7c04086515418a26bb45eec00fca2ea2b728ecc2aad4e",
+          "esmSha256": "098cae63c84dad74f95b1121981cb04dfb71b8ee9614e547de853a693332bf81"
+        }
+      },
+      "globalQueries": 4893,
+      "nativeCloseElapsedMs": 80.65110000000277,
+      "native": [
+        {
+          "phase": "measured",
+          "complete": true,
+          "driverComplete": true,
+          "driverQueries": 4893,
+          "started": {
+            "queries": 4893,
+            "acquisitions": 4966,
+            "cache": 7
+          },
+          "ended": {
+            "queries": 4893,
+            "acquisitions": 4966,
+            "cache": 7
+          },
+          "serverStarted": 346,
+          "serverEnded": 346,
+          "serverBalance": 0,
+          "drained": true,
+          "queries": 4893,
+          "acquisitions": 4966,
+          "acquisitionErrors": 73,
+          "queryErrors": 0,
+          "allFiveBackendFieldsCovered": true
+        },
+        {
+          "phase": "prerequisite",
+          "complete": true,
+          "driverComplete": true,
+          "driverQueries": 0,
+          "started": {
+            "queries": 0,
+            "acquisitions": 0,
+            "cache": 0
+          },
+          "ended": {
+            "queries": 0,
+            "acquisitions": 0,
+            "cache": 0
+          },
+          "serverStarted": 0,
+          "serverEnded": 0,
+          "serverBalance": 0,
+          "drained": true,
+          "zeroNativeWork": true
+        },
+        {
+          "phase": "background",
+          "complete": true,
+          "driverComplete": true,
+          "driverQueries": 0,
+          "started": {
+            "queries": 0,
+            "acquisitions": 0,
+            "cache": 0
+          },
+          "ended": {
+            "queries": 0,
+            "acquisitions": 0,
+            "cache": 0
+          },
+          "serverStarted": 0,
+          "serverEnded": 0,
+          "serverBalance": 0,
+          "drained": true,
+          "zeroNativeWork": true
+        }
+      ],
+      "logInterval": {
+        "exitCode": 1,
+        "startByte": 2306499,
+        "endByte": 2309987,
+        "bytes": 3488,
+        "sha256": "ff4d172d80407d7034df4cc3b83b27e1a0408ff49f0ce393dda7375d48436491",
+        "poolTimeoutCauseMatches": 1,
+        "DatabaseErrorMatches": 1,
+        "statementTimeoutMatches": 0,
+        "missingColumnMatches": 0,
+        "missingRelationMatches": 0,
+        "syntaxErrorMatches": 0,
+        "otherKnownErrorMatches": 0
+      },
+      "nativePaint": {
+        "usableContentMs": null,
+        "clockReadyMs": 901.1950000000002,
+        "lcpMs": 716,
+        "interactionMaxMs": 48,
+        "readCompleted": true,
+        "lcpEntries": 1,
+        "eventEntries": 6,
+        "rawObservations": 1,
+        "controlledCohortRequired": 20
+      }
+    },
+    {
+      "phase": "companion-first",
+      "artifactSha256": "0e898ccc3c0383444fea715ce5e0159c21ace74bf9f49584da6112cdb2295fae",
+      "backendSha256": "c710a3c2bb974d7cb6be09e5153ed9e91a01987e23bea455fb548ed55adb4bf3",
+      "failed": true,
+      "failureStage": "verify-expected-content",
+      "failureKind": "timeout",
+      "elapsedUntilFailureMs": 31714.888999999996,
+      "observationComplete": true,
+      "existing456PolicyMatched": false,
+      "transportComplete": true,
+      "sourceFingerprintMapsRecorded": true,
+      "proofPrerequisites": {
+        "originalCiSha256": "b1f165c8a4f97e22f4b52ddaaf4e0663c183938f4e8076aac89c88329303bf32",
+        "headCiSha256": "524dca5cdfe5d4c75f50c8a80dc2c8758d6e4dfbc17c61e0a3f696417611df4e",
+        "fixedTwoSha256": "184e174a56920b91007ed23d07c74459fe688f534f5c21e030bf111261362642",
+        "nextStreamCompletionPatch": {
+          "nextVersion": "16.4.0",
+          "patchSha256": "0e7fd3eef6034e754a9ef87ad3887b564baf544dce77b046c6f4b805a51b7558",
+          "lockSha256": "8d9537b280029f0bb487af820b7740aec5a692721e08e2c61115145e41dc493e",
+          "cjsSha256": "13d6b042e0a52e8845a7c04086515418a26bb45eec00fca2ea2b728ecc2aad4e",
+          "esmSha256": "098cae63c84dad74f95b1121981cb04dfb71b8ee9614e547de853a693332bf81"
+        }
+      },
+      "globalQueries": 4861,
+      "nativeCloseElapsedMs": 3.758799999995972,
+      "native": [
+        {
+          "phase": "measured",
+          "complete": true,
+          "driverComplete": true,
+          "driverQueries": 4861,
+          "started": {
+            "queries": 4861,
+            "acquisitions": 4921,
+            "cache": 7
+          },
+          "ended": {
+            "queries": 4861,
+            "acquisitions": 4921,
+            "cache": 7
+          },
+          "serverStarted": 241,
+          "serverEnded": 241,
+          "serverBalance": 0,
+          "drained": true,
+          "queries": 4861,
+          "acquisitions": 4921,
+          "acquisitionErrors": 60,
+          "queryErrors": 0,
+          "allFiveBackendFieldsCovered": true
+        },
+        {
+          "phase": "prerequisite",
+          "complete": true,
+          "driverComplete": true,
+          "driverQueries": 0,
+          "started": {
+            "queries": 0,
+            "acquisitions": 0,
+            "cache": 0
+          },
+          "ended": {
+            "queries": 0,
+            "acquisitions": 0,
+            "cache": 0
+          },
+          "serverStarted": 0,
+          "serverEnded": 0,
+          "serverBalance": 0,
+          "drained": true,
+          "zeroNativeWork": true
+        },
+        {
+          "phase": "background",
+          "complete": true,
+          "driverComplete": true,
+          "driverQueries": 0,
+          "started": {
+            "queries": 0,
+            "acquisitions": 0,
+            "cache": 0
+          },
+          "ended": {
+            "queries": 0,
+            "acquisitions": 0,
+            "cache": 0
+          },
+          "serverStarted": 105,
+          "serverEnded": 105,
+          "serverBalance": 0,
+          "drained": true,
+          "zeroNativeWork": true
+        }
+      ],
+      "logInterval": {
+        "exitCode": 1,
+        "startByte": 2309987,
+        "endByte": 2314119,
+        "bytes": 4132,
+        "sha256": "fb153e85142cdf168a5ff3c03cd6e962b163d80703aa2d339f8ef61f644eef0d",
+        "poolTimeoutCauseMatches": 1,
+        "DatabaseErrorMatches": 1,
+        "statementTimeoutMatches": 0,
+        "missingColumnMatches": 0,
+        "missingRelationMatches": 0,
+        "syntaxErrorMatches": 0,
+        "otherKnownErrorMatches": 0
+      },
+      "wireFailureDrain": {
+        "complete": true,
+        "capped": false,
+        "mandatoryErrors": 0,
+        "mandatoryPending": 0,
+        "quietObservedMs": 1051.5526000000027,
+        "postReadyMs": 1051.5526000000027,
+        "protocol": "context-proxy-wire-v1",
+        "byteUnits": "http-response-body-bytes-before-content-decoding-excludes-headers",
+        "bytes": {
+          "javascript": 1393053,
+          "document": 275865,
+          "rsc": 313402,
+          "otherFinite": 124322
+        },
+        "inlineRscDecodedBytes": 696746
+      }
+    },
+    {
+      "phase": "companion-link",
+      "artifactSha256": "90bf4df094dd1e610f8cf0082e9c0104803d3b827dc3f52510a20eed40b90a44",
+      "backendSha256": "2fe0deaaed0e5688a302b600502a768fa1d05fa415b7cec54cb0ea071cfe2606",
+      "failed": true,
+      "failureStage": "verify-expected-content",
+      "failureKind": "timeout",
+      "elapsedUntilFailureMs": 30418.6818,
+      "observationComplete": true,
+      "existing456PolicyMatched": false,
+      "transportComplete": true,
+      "sourceFingerprintMapsRecorded": true,
+      "proofPrerequisites": {
+        "originalCiSha256": "b1f165c8a4f97e22f4b52ddaaf4e0663c183938f4e8076aac89c88329303bf32",
+        "headCiSha256": "524dca5cdfe5d4c75f50c8a80dc2c8758d6e4dfbc17c61e0a3f696417611df4e",
+        "fixedTwoSha256": "184e174a56920b91007ed23d07c74459fe688f534f5c21e030bf111261362642",
+        "nextStreamCompletionPatch": {
+          "nextVersion": "16.4.0",
+          "patchSha256": "0e7fd3eef6034e754a9ef87ad3887b564baf544dce77b046c6f4b805a51b7558",
+          "lockSha256": "8d9537b280029f0bb487af820b7740aec5a692721e08e2c61115145e41dc493e",
+          "cjsSha256": "13d6b042e0a52e8845a7c04086515418a26bb45eec00fca2ea2b728ecc2aad4e",
+          "esmSha256": "098cae63c84dad74f95b1121981cb04dfb71b8ee9614e547de853a693332bf81"
+        }
+      },
+      "globalQueries": 13617,
+      "nativeCloseElapsedMs": 3.8003000000026077,
+      "native": [
+        {
+          "phase": "measured",
+          "complete": true,
+          "driverComplete": true,
+          "driverQueries": 4113,
+          "started": {
+            "queries": 4113,
+            "acquisitions": 4176,
+            "cache": 0
+          },
+          "ended": {
+            "queries": 4113,
+            "acquisitions": 4176,
+            "cache": 0
+          },
+          "serverStarted": 6,
+          "serverEnded": 6,
+          "serverBalance": 0,
+          "drained": true,
+          "queries": 4113,
+          "acquisitions": 4176,
+          "acquisitionErrors": 63,
+          "queryErrors": 0,
+          "allFiveBackendFieldsCovered": true
+        },
+        {
+          "phase": "prerequisite",
+          "complete": true,
+          "driverComplete": true,
+          "driverQueries": 9504,
+          "started": {
+            "queries": 9504,
+            "acquisitions": 9569,
+            "cache": 14
+          },
+          "ended": {
+            "queries": 9504,
+            "acquisitions": 9569,
+            "cache": 14
+          },
+          "serverStarted": 559,
+          "serverEnded": 559,
+          "serverBalance": 0,
+          "drained": true,
+          "queries": 9504,
+          "acquisitions": 9569,
+          "acquisitionErrors": 65,
+          "queryErrors": 0,
+          "allFiveBackendFieldsCovered": true
+        },
+        {
+          "phase": "background",
+          "complete": true,
+          "driverComplete": true,
+          "driverQueries": 0,
+          "started": {
+            "queries": 0,
+            "acquisitions": 0,
+            "cache": 0
+          },
+          "ended": {
+            "queries": 0,
+            "acquisitions": 0,
+            "cache": 0
+          },
+          "serverStarted": 0,
+          "serverEnded": 0,
+          "serverBalance": 0,
+          "drained": true,
+          "zeroNativeWork": true
+        }
+      ],
+      "logInterval": {
+        "exitCode": 1,
+        "startByte": 2314119,
+        "endByte": 2322240,
+        "bytes": 8121,
+        "sha256": "1cee8886cbece8ea00766b8179c5e5c726b8d91007318c5370971444218aa3ca",
+        "poolTimeoutCauseMatches": 2,
+        "DatabaseErrorMatches": 2,
+        "statementTimeoutMatches": 0,
+        "missingColumnMatches": 0,
+        "missingRelationMatches": 0,
+        "syntaxErrorMatches": 0,
+        "otherKnownErrorMatches": 0
+      },
+      "wireFailureDrain": {
+        "complete": true,
+        "capped": false,
+        "mandatoryErrors": 0,
+        "mandatoryPending": 0,
+        "quietObservedMs": 1056.5818,
+        "postReadyMs": 1056.5818,
+        "protocol": "context-proxy-wire-v1",
+        "byteUnits": "http-response-body-bytes-before-content-decoding-excludes-headers",
+        "bytes": {
+          "javascript": 0,
+          "document": 0,
+          "rsc": 5425,
+          "otherFinite": 0
+        },
+        "inlineRscDecodedBytes": null
+      }
+    }
+  ],
+  "limitations": [
+    "Three diagnostic visits only; one real native paint entry does not establish20-sample completeness or a numerical budget.",
+    "All annual visits retain failed verify-content timeout and null usable-content readiness; complete observed traffic is failed-baseline cost, not successful-route cost.",
+    "The fixed two-visit compiled run observed no owned prefetch abort; actual canceled critical-path behavior is covered by the maintained real HTTP/SDK regression, not claimed from this run.",
+    "The common maintained Next patch is a NEW before/head runtime condition; old Next captures/frozen invalid C5 are not requalified.",
+    "Both initial CIv1 failures and13 relocated archives remain retained; archive scan eligibility does not prove the IPC timeout cause.",
+    "No controlled HEAD benchmark, full C6 capture, numerical derivation or release acceptance is claimed."
+  ]
+}

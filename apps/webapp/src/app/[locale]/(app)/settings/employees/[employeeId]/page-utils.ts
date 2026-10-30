@@ -50,7 +50,15 @@ export const defaultFormValues: EmployeeDetailFormValues = {
 	hourlyRate: "",
 };
 
-export const scheduleDayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+export const scheduleDayLabels = [
+	"Mon",
+	"Tue",
+	"Wed",
+	"Thu",
+	"Fri",
+	"Sat",
+	"Sun",
+];
 
 export const scheduleDayKeys = [
 	"monday",
@@ -62,7 +70,9 @@ export const scheduleDayKeys = [
 	"sunday",
 ] as const;
 
-export function formatEmployeeDetailDateInputValue(value: Date | string | null | undefined) {
+export function formatEmployeeDetailDateInputValue(
+	value: Date | string | null | undefined,
+) {
 	if (!value) return "";
 	const date =
 		value instanceof Date
@@ -89,10 +99,19 @@ export function buildEmployeeUpdatePayload(value: EmployeeDetailFormValues) {
  * validation error or a save refusal the server put on the field (a taken
  * personnel number, `showEmployeeSaveRefusal`).
  */
-export function focusFirstInvalidEmployeeDetailField(formApi: EmployeeDetailFormMetaApi) {
-	for (const fieldName of ["firstName", "lastName", "pronouns", "employeeNumber"] as const) {
+export function focusFirstInvalidEmployeeDetailField(
+	formApi: EmployeeDetailFormMetaApi,
+) {
+	for (const fieldName of [
+		"firstName",
+		"lastName",
+		"pronouns",
+		"employeeNumber",
+	] as const) {
 		if (formApi.getFieldMeta(fieldName)?.errors.length) {
-			document.querySelector<HTMLInputElement>(`input[name="${fieldName}"]`)?.focus();
+			document
+				.querySelector<HTMLInputElement>(`input[name="${fieldName}"]`)
+				?.focus();
 			break;
 		}
 	}
@@ -107,7 +126,11 @@ export function showEmployeeSaveRefusal(
 	form: Pick<EmployeeDetailFormApi, "setFieldMeta">,
 	result: { error: string; refusal?: string },
 ): boolean {
-	if (result.refusal !== PERSONNEL_NUMBER_TAKEN && result.refusal !== "personnel_number_managed_by_idp") return false;
+	if (
+		result.refusal !== PERSONNEL_NUMBER_TAKEN &&
+		result.refusal !== "personnel_number_managed_by_idp"
+	)
+		return false;
 	form.setFieldMeta("employeeNumber", (meta) => ({
 		...meta,
 		errorMap: { ...meta.errorMap, onSubmit: result.error },
@@ -115,20 +138,36 @@ export function showEmployeeSaveRefusal(
 	return true;
 }
 
-export function syncEmployeeForm(form: EmployeeDetailFormApi, employee: EmployeeDetail) {
-	form.reset();
-	form.setFieldValue("firstName", employee.user.firstName || "");
-	form.setFieldValue("lastName", employee.user.lastName || "");
-	form.setFieldValue("gender", employee.gender || undefined);
-	form.setFieldValue("pronouns", employee.pronouns || "");
-	form.setFieldValue("position", employee.position || "");
-	form.setFieldValue("employeeNumber", employee.employeeNumber || "");
-	form.setFieldValue("startDate", formatEmployeeDetailDateInputValue(employee.startDate));
-	form.setFieldValue("role", employee.role || undefined);
-	// Only an invitation draft edits contract type and wage here; an employee's
-	// change through employment terms (Organization ADR 0002).
-	if (employee.kind === "invitationDraft") {
-		form.setFieldValue("contractType", employee.contractType || "fixed");
-		form.setFieldValue("hourlyRate", employee.currentHourlyRate || "");
-	}
+export function buildEmployeeDetailFormValues(
+	employee: EmployeeDetail,
+): EmployeeDetailFormValues {
+	return {
+		...defaultFormValues,
+		firstName: employee.user.firstName || "",
+		lastName: employee.user.lastName || "",
+		gender: employee.gender || undefined,
+		pronouns: employee.pronouns || "",
+		position: employee.position || "",
+		employeeNumber: employee.employeeNumber || "",
+		startDate: formatEmployeeDetailDateInputValue(employee.startDate),
+		role: employee.role || undefined,
+		// Employee wages change only through confirmed employment terms (ADR 0002).
+		contractType:
+			employee.kind === "invitationDraft"
+				? employee.contractType || "fixed"
+				: "fixed",
+		hourlyRate:
+			employee.kind === "invitationDraft"
+				? employee.currentHourlyRate || ""
+				: "",
+	};
+}
+
+export function syncEmployeeForm(
+	form: Pick<EmployeeDetailFormApi, "reset">,
+	employee: EmployeeDetail,
+) {
+	// Reset the baseline to the received values. Populating via setFieldValue
+	// marks untouched fields dirty, which would prevent a later safe refresh.
+	form.reset(buildEmployeeDetailFormValues(employee));
 }

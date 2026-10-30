@@ -1,0 +1,177 @@
+{
+  "schema": 1,
+  "kind": "c4-prerequisite-functional-diagnostics",
+  "acceptance": "unfulfilled",
+  "controlledCapture": false,
+  "budgetsDerived": false,
+  "source": "996303e9beea1f3527ca55684d82a2b715ea8512",
+  "measuringSource": "2acc9ef415b63f885af842b12bde324b82edce92",
+  "binary": "295de0b706e439bcdaf4d2d25661ce45f02ddb61",
+  "businessSource": "39a08d0bbe77e00ceb5b204b9f9100ab2cfb86be",
+  "numericalPolicyVersion": 5,
+  "companionPolicyVersion": 5,
+  "prerequisiteQuiescencePolicy": "settled-prerequisite-transfers-v1",
+  "changedCondition": "C4 warm preparation settles transfers before leaving target/away; not identical execution to C1/C2/C3",
+  "history": {
+    "initialLaunch": {
+      "samples": 0,
+      "buildVerified": true,
+      "cause": "UNKNOWN; no exception was retained in the initial attempt; not an app failure claim"
+    },
+    "firstEscalatedRetry": {
+      "samples": 1,
+      "uiFailed": false,
+      "nativeComplete": true,
+      "receivedMetrics": 2,
+      "nativeProofs": 3,
+      "wrapperFalseFailure": "required three OTLP rows even for a complete zero-work prerequisite trace"
+    },
+    "correctedGuard": {
+      "negativeCasesRejected": 14,
+      "missingMetricRowAllowedOnly": "exact registered native identity, complete known-zero query/acquisition/cache and driver counts",
+      "guardSha256": "1af9e743b1f7eb50433b2f219cccf216f99f4b2bd6b075f4f6c1acb5f4451932"
+    },
+    "c2": {
+      "samples": 49,
+      "failures": 11,
+      "eligibleForDerivation": false
+    },
+    "c3": {
+      "samples": 94,
+      "failures": 48,
+      "completedDashboardMutationsRestored": 5,
+      "eligibleForDerivation": false
+    }
+  },
+  "runs": [
+    {
+      "kind": "primary",
+      "artifact": "observer-v6-c4-normal-primary-diagnostic-retry2/diagnostic.json",
+      "artifactSha256": "b357cb35768d566e2706f12d4d03eaee982d373c33289fc8ea60c19dee5368e7",
+      "samples": 25,
+      "failed": 0,
+      "diagnosticComplete": true,
+      "modes": {
+        "dashboard/first-document": 5,
+        "dashboard/repeat-link": 5,
+        "dashboard/return-visit": 5,
+        "dashboard/manual-refresh": 5,
+        "employee-directory/repeat-link": 5
+      },
+      "prerequisiteProofs": 35,
+      "nativeCloseProofs": 75,
+      "maxNativeCloseElapsedMs": 3.4152000000030966,
+      "completeKnownZeroTracesWithoutOtlpRows": 15,
+      "downstreamCancellations": 0,
+      "prerequisitePrefetchErrors": 0,
+      "strictLifetimeTransportComplete": true,
+      "nativeRunCoverage": {
+        "driverQueryCount": 40675,
+        "nativeQueryStartedCount": 40675,
+        "nativeQueryEndedCount": 40675,
+        "observedQueryCount": 40675,
+        "pendingNativeQueries": 0,
+        "activeTraces": 0,
+        "allReceivedTracesReconciled": true,
+        "complete": true
+      }
+    },
+    {
+      "kind": "companion",
+      "artifact": "observer-v6-c4-normal-companion-diagnostic/diagnostic.json",
+      "artifactSha256": "a900444c84ab2bf38493b0084163a42cd778112c3a52e6c322481ff9a2b7af55",
+      "samples": 6,
+      "failed": 0,
+      "diagnosticComplete": true,
+      "modes": {
+        "dashboard/first-document": 1,
+        "dashboard/repeat-link": 5
+      },
+      "prerequisiteProofs": 10,
+      "nativeCloseProofs": 18,
+      "maxNativeCloseElapsedMs": 3.3083000000005995,
+      "completeKnownZeroTracesWithoutOtlpRows": 1,
+      "downstreamCancellations": 0,
+      "prerequisitePrefetchErrors": 0,
+      "strictLifetimeTransportComplete": true,
+      "nativeRunCoverage": {
+        "driverQueryCount": 11077,
+        "nativeQueryStartedCount": 11077,
+        "nativeQueryEndedCount": 11077,
+        "observedQueryCount": 11077,
+        "pendingNativeQueries": 0,
+        "activeTraces": 0,
+        "allReceivedTracesReconciled": true,
+        "complete": true
+      }
+    },
+    {
+      "kind": "annual",
+      "artifact": "observer-v6-c4-annual-link-diagnostic/diagnostic.json",
+      "artifactSha256": "eb6a547e238fa6eb3cfb39c7d0e8a91f0fb5e34b23321554164268ba268daf1f",
+      "samples": 1,
+      "failed": 1,
+      "diagnosticComplete": false,
+      "modes": {
+        "analytics/repeat-link": 1
+      },
+      "prerequisiteProofs": 2,
+      "nativeCloseProofs": 3,
+      "maxNativeCloseElapsedMs": 4.255599999996775,
+      "completeKnownZeroTracesWithoutOtlpRows": 1,
+      "downstreamCancellations": 0,
+      "prerequisitePrefetchErrors": 0,
+      "strictLifetimeTransportComplete": true,
+      "nativeRunCoverage": {
+        "driverQueryCount": 13690,
+        "nativeQueryStartedCount": 13690,
+        "nativeQueryEndedCount": 13690,
+        "observedQueryCount": 13690,
+        "pendingNativeQueries": 0,
+        "activeTraces": 0,
+        "allReceivedTracesReconciled": true,
+        "complete": true
+      },
+      "annual": {
+        "failed": true,
+        "failureStage": "verify-expected-content",
+        "failureKind": "timeout",
+        "usableContentMs": null,
+        "elapsedUntilFailureMs": 30409.4713,
+        "existingBeforeFailurePolicyMatch": true,
+        "observationComplete": true,
+        "classifiedKnownBeforeFailure": true,
+        "behaviorComplete": false,
+        "prerequisites": [
+          {
+            "phase": "primed-target",
+            "complete": true,
+            "elapsedMs": 1018.9465000000018,
+            "mandatoryPending": 0,
+            "mandatoryErrors": 0,
+            "capped": false
+          },
+          {
+            "phase": "away-navigation",
+            "complete": true,
+            "elapsedMs": 4034.512899999998,
+            "mandatoryPending": 0,
+            "mandatoryErrors": 0,
+            "capped": false
+          }
+        ],
+        "observedQueryErrors": 0,
+        "observedQueryCount": 4154,
+        "observedPoolAcquisitions": 4185,
+        "observedPoolAcquisitionErrors": 31
+      }
+    }
+  ],
+  "limits": [
+    "31 normal diagnostic visits plus one known failed annual UI observation only; no complete controlled cohort or threshold derivation.",
+    "Annual usable-content failure remains failed/null; known failure classification does not turn it into successful route latency.",
+    "Primary partial CDP resource observations are not relabeled complete wire cost. Prerequisite, measured and cleanup scopes remain separate.",
+    "Original binary/business/failure proof and all numerical factors/floors remain unchanged; no app/native-accounting or mixed-load per-read change.",
+    "Earlier frozen ledgers remain diagnostic only. Ingress, mixed load, final review and other release gates are not fulfilled by this proof."
+  ]
+}

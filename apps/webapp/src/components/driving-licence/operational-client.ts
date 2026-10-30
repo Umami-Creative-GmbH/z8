@@ -6,7 +6,7 @@ import type {
 export async function loadDrivingAuthorizationStatus(
 	organizationId: string,
 	employeeId: string | undefined,
-	signal: AbortSignal,
+	signal?: AbortSignal,
 ): Promise<Awaited<ReturnType<typeof getDrivingAuthorizationStatusAction>>> {
 	const params = new URLSearchParams({
 		organizationId,

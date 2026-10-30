@@ -208,7 +208,6 @@ describe("EmployeeDraftActions", () => {
 			});
 			expect(removeQueries).toHaveBeenCalledWith({
 				queryKey: queryKeys.employees.detail("draft:draft-1"),
-				exact: true,
 			});
 			expect(pushMock).toHaveBeenCalledWith("/settings/employees");
 		});

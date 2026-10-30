@@ -2017,6 +2017,13 @@
       "when": 1809532800000,
       "tag": "0287_former_employee_reports_without_manager",
       "breakpoints": true
+    },
+    {
+      "idx": 288,
+      "version": "7",
+      "when": 1809619200000,
+      "tag": "0288_absence_employee_overlap",
+      "breakpoints": true
     }
   ]
 }

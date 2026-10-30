@@ -1,0 +1,246 @@
+{
+  "schema": 1,
+  "kind": "c5-interruption-and-open-next-witness-diagnostic",
+  "recordedAt": "2026-10-25T05:08:29.068Z",
+  "acceptance": "unfulfilled",
+  "budgetsDerived": false,
+  "controlledHeadTimings": false,
+  "c5": {
+    "frozen": true,
+    "invalid": true,
+    "toolingCommit": "884398dd3a7808feddaa2962c5c16b50796381de",
+    "planSha256": "63870f53e4fdd850f2ea662faf17f0c6261d1a650146e46d5b552e4bd3885bdc",
+    "preparationSha256": "ad9e2cd0b380c25a02526e6b64d1da2698f67734a87b26d47bd0b67e29139f03",
+    "interruptionAt": "2026-10-25T04:36:02.3590454+00:00",
+    "interruptionSha256": "93026cc9421c072037066640006e3cc1c891e2d518e0fcac1a95b9e1bb16136e",
+    "rawArtifactSha256": "608927a4dfd32f2baad9d4b19fa0c7894465a861ed36db91c1bbf95d818e4706",
+    "rawHashProvenance": "Retained by bounded diagnostic wrapper; interrupted raw reviewed once in this documentation task.",
+    "samples": 159,
+    "failures": 1,
+    "completedMutations": 5,
+    "allCompletedMutationsRestored": true,
+    "budgetEligible": false,
+    "failedVisit": {
+      "condition": "small-admin",
+      "route": "employee-detail",
+      "range": "default",
+      "mode": "return-visit",
+      "iteration": 2,
+      "stage": "native-coverage",
+      "kind": "observation-incomplete",
+      "nativeCompleteByPhase": {
+        "measured": false,
+        "prerequisite": false,
+        "background": false
+      },
+      "nativeCloseElapsedMsRounded": 10027.9,
+      "measuredNative": {
+        "driverComplete": true,
+        "started": {
+          "queries": 538,
+          "acquisitions": 538,
+          "cache": 1
+        },
+        "ended": {
+          "queries": 538,
+          "acquisitions": 538,
+          "cache": 1
+        },
+        "httpServer": {
+          "started": 41,
+          "ended": 41
+        },
+        "nextServer": {
+          "started": 58,
+          "ended": 57
+        },
+        "serverBalance": 1,
+        "lastActivityAgeMsRounded": 11467.8,
+        "openSpanIdentityAvailable": false
+      },
+      "nativeCleanup": {
+        "complete": true,
+        "mandatoryErrors": 0,
+        "mandatoryPending": 0,
+        "quietObservedMsRounded": 1026,
+        "prefetchRequests": 4,
+        "prefetchErrors": 1
+      },
+      "transportComplete": true,
+      "cause": "UNKNOWN; one unmatched Next SERVER end is localized, not explained",
+      "numericProvenance": "Retained raw checked once; close/age/quiet values use ROOT checkpoint rounding."
+    }
+  },
+  "witnessSource": {
+    "integration": "9f2fab7bc8f1ee328b0c61865d58185ed6490a1c",
+    "implementation": "12b393eff8214dc0f966e878f8248290aba3965c",
+    "originalObserverPort": "ca005fe24e282c268156801d7cf7cbd70b1fa0f2",
+    "businessSource": "39a08d0bbe77e00ceb5b204b9f9100ab2cfb86be",
+    "build": {
+      "kind": "owned-original-observer-build",
+      "businessSource": "39a08d0bbe77e00ceb5b204b9f9100ab2cfb86be",
+      "source": "ca005fe24e282c268156801d7cf7cbd70b1fa0f2",
+      "ci": true,
+      "workers": 2,
+      "startedAt": "2026-10-25T04:44:24.595Z",
+      "finishedAt": "2026-10-25T04:54:00.036Z",
+      "exitCode": 0,
+      "buildId": "build-TfctsWXpff2fKS"
+    },
+    "buildSha256": "64b0241b24c507b4e16a1e24abcec15d2228624b23048244dc8e9d44c3398d2d",
+    "handoffSha256": "05c2fe5b81a368330a60ea23ad7e6b1d5033e96a5efee4d1e042dbd208a1bef9",
+    "diagnosticFiles": {
+      "1475-passive-request-witness.mjs": "5f8b5b723c7d39230b87274960c32a0a9dbf95e3c366a1bbda7e8aba10e1dca9",
+      "1475-passive-request-witness.test.mjs": "2dd20dc57b4e75ae232a143a4b8aec111679cc9909a58efec364243b8fce7d45",
+      "c5-open-server-return-diagnostic.mjs": "c68fff8eea9cef86997202b875d02058d1c4698cd9adb50ac2165e0b4eacac87",
+      "before-c5-open-server-DIAGNOSTIC.json": "550c048de5a55324218dd0368e514562bedbf6294e994524f425423ab1bcfa65"
+    },
+    "condition": {
+      "initialFirstDocuments": 1,
+      "maximumReturnVisits": 5,
+      "condition": "small-admin",
+      "route": "employee-detail",
+      "stopFirstStrictFailure": true,
+      "noMutationCommands": true,
+      "noCountOrCapChange": true,
+      "diagnosticOnly": true,
+      "derivationEligible": false
+    },
+    "additiveOnly": true,
+    "countersQuietCapCompletionUnchanged": true,
+    "allThreeC5MapsUnchanged": true
+  },
+  "boundedDiagnostic": {
+    "artifactSha256": "3c4ac38fdca0b745ff19585a81344dffa0f7c0c0dd90a12421ab0601515167c5",
+    "samples": [
+      {
+        "mode": "first-document",
+        "iteration": 0,
+        "failed": false,
+        "transportComplete": true,
+        "nativeCleanupComplete": true,
+        "mandatoryErrors": 0,
+        "mandatoryPending": 0,
+        "optionalPrefetchErrors": 0,
+        "nativeCloseElapsedMs": 3.352100000000064
+      },
+      {
+        "mode": "return-visit",
+        "iteration": 0,
+        "failed": false,
+        "transportComplete": true,
+        "nativeCleanupComplete": true,
+        "mandatoryErrors": 0,
+        "mandatoryPending": 0,
+        "optionalPrefetchErrors": 0,
+        "nativeCloseElapsedMs": 3.286900000002788
+      },
+      {
+        "mode": "return-visit",
+        "iteration": 1,
+        "failed": false,
+        "transportComplete": true,
+        "nativeCleanupComplete": true,
+        "mandatoryErrors": 0,
+        "mandatoryPending": 0,
+        "optionalPrefetchErrors": 0,
+        "nativeCloseElapsedMs": 3.475800000000163
+      },
+      {
+        "mode": "return-visit",
+        "iteration": 2,
+        "failed": false,
+        "transportComplete": true,
+        "nativeCleanupComplete": true,
+        "mandatoryErrors": 0,
+        "mandatoryPending": 0,
+        "optionalPrefetchErrors": 0,
+        "nativeCloseElapsedMs": 2.983699999997043
+      },
+      {
+        "mode": "return-visit",
+        "iteration": 3,
+        "failed": false,
+        "transportComplete": true,
+        "nativeCleanupComplete": true,
+        "mandatoryErrors": 0,
+        "mandatoryPending": 0,
+        "optionalPrefetchErrors": 0,
+        "nativeCloseElapsedMs": 2.872400000000198
+      },
+      {
+        "mode": "return-visit",
+        "iteration": 4,
+        "failed": false,
+        "transportComplete": true,
+        "nativeCleanupComplete": true,
+        "mandatoryErrors": 0,
+        "mandatoryPending": 0,
+        "optionalPrefetchErrors": 0,
+        "nativeCloseElapsedMs": 2.3660000000018044
+      }
+    ],
+    "firstDocuments": 1,
+    "returnVisits": 5,
+    "failures": 0,
+    "businessMutationCommands": 0,
+    "diagnosticComplete": true,
+    "derivationEligible": false,
+    "global": {
+      "complete": true,
+      "driverQueryCount": 12079,
+      "nativeQueryStartedCount": 12079,
+      "nativeQueryEndedCount": 12079,
+      "observedQueryCount": 12079,
+      "pendingNativeQueries": 0,
+      "activeTraces": 0,
+      "allReceivedTracesReconciled": true
+    },
+    "nativeCloseProofs": 18,
+    "maxNativeCloseElapsedMs": 3.475800000000163,
+    "openWitnesses": 0,
+    "witnessOverflow": 0,
+    "missingIds": 0,
+    "duplicateStarts": 0,
+    "unmatchedEnds": 0,
+    "allTransportsStrict": true,
+    "forwardedHttp": {
+      "requests": 1256,
+      "httpStatusAtLeast400": 0,
+      "responseAborts": 0,
+      "requestErrors": 0,
+      "responseErrors": 0,
+      "allResponseEndsObserved": true
+    },
+    "passiveCdp": {
+      "allErrAborted": 54,
+      "postHttp200ErrAborted": 46,
+      "getHttp200ErrAborted": 8,
+      "retained": true,
+      "causalRelationship": "UNPROVEN; not substituted for owned-forward HTTP evidence"
+    }
+  },
+  "prospectiveAgeCondition": {
+    "sourceRecordSha256": "f29098a8c864f59f18d13376f6ecca6dfc2e878fefa387fa9ede09b1dbe8b996",
+    "declaredAt": "2026-10-25T05:02:25.2675087+00:00",
+    "priorDiagnosticFinishedAt": "2026-10-25T04:56:59.4227405+00:00",
+    "notBefore": "2026-10-25T05:13:00Z",
+    "observedDefaultRevalidateSeconds": 900,
+    "actualRouteCacheProfile": "unknown; no default-profile attribution",
+    "source": "ca005fe24e282c268156801d7cf7cbd70b1fa0f2",
+    "sameDiagnosticInputs": true,
+    "noFixtureHttpDbBrowserDuringQuiet": true,
+    "noGateChange": true,
+    "result": null,
+    "greenWouldNotRepairHistoricalFailure": true
+  },
+  "limitations": [
+    "Interrupted C5 is immutable invalid evidence: no finalization, derivation or registered numerical acceptance.",
+    "Fresh six-visit success does not reproduce or explain the earlier aged failure/prefetch error; no historical cap-fix claim.",
+    "The old456 run lacks the new open-span witness; its missing identity/cause cannot be reconstructed.",
+    "Passive CDP aborted events and completed owned forwards are different observations; no cancellation or native-proof waiver.",
+    "Age condition is prospectively declared; actual route cache profile unknown and no aged result is recorded here.",
+    "Current exact456/business39 policy7 bindings and all factors remain unchanged; ca005 diagnostic is not a new accepted full baseline.",
+    "No complete original companion, mixed20, controlled HEAD capture, budget derivation or final release acceptance is claimed."
+  ]
+}

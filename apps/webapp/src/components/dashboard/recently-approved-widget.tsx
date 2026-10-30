@@ -6,27 +6,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
-import { getRecentlyApprovedRequests } from "./actions";
+import type { DashboardWidgetData, DashboardWidgetSnapshot } from "./dashboard-types";
 import { DashboardWidget } from "./dashboard-widget";
 import { formatDashboardDate } from "./format-dashboard-date";
-import { useWidgetData } from "./use-widget-data";
+import { useDashboardWidget } from "./use-dashboard-widget";
 import { WidgetCard } from "./widget-card";
+import { WidgetReadError } from "./widget-read-error";
 
-type RecentlyApproved = {
-	id: string;
-	type: "absence" | "time_correction";
-	updatedAt: Date;
-	requestedByEmployee: {
-		user: {
-			name: string | null;
-		};
-	};
-	approverEmployee: {
-		user: {
-			name: string | null;
-		};
-	} | null;
-};
+type RecentlyApproved = DashboardWidgetData["recently-approved"][number];
 
 function ApprovedCard({ request }: { request: RecentlyApproved }) {
 	const { t } = useTranslate();
@@ -63,7 +50,7 @@ function ApprovedCard({ request }: { request: RecentlyApproved }) {
 						})}
 					</span>
 					<span className="text-muted-foreground/50">•</span>
-					<span>{formatDashboardDate(new Date(request.updatedAt), locale)}</span>
+					<span>{formatDashboardDate(request.updatedAt, locale)}</span>
 				</div>
 			</div>
 
@@ -85,21 +72,19 @@ function ApprovedCard({ request }: { request: RecentlyApproved }) {
 	);
 }
 
-export function RecentlyApprovedWidget() {
+export function RecentlyApprovedWidget({
+	initialSnapshot,
+}: {
+	initialSnapshot?: DashboardWidgetSnapshot<DashboardWidgetData["recently-approved"]>;
+} = {}) {
 	const { t } = useTranslate();
 	const {
 		data: requests,
 		loading,
 		refreshing,
 		refetch,
-	} = useWidgetData<RecentlyApproved[]>(() => getRecentlyApprovedRequests(10), {
-		errorMessage: t(
-			"dashboard.recently-approved.error",
-			"Failed to load recently approved requests",
-		),
-	});
-
-	if (!loading && (!requests || requests.length === 0)) return null;
+		error,
+	} = useDashboardWidget("recently-approved", initialSnapshot);
 
 	const requestLabel = requests
 		? requests.length === 1
@@ -135,7 +120,18 @@ export function RecentlyApprovedWidget() {
 					) : undefined
 				}
 			>
-				{requests && (
+				{error ? (
+					<WidgetReadError
+						title={t("dashboard.recently-approved.title", "Recently Approved")}
+						message={error}
+						retry={refetch}
+						refreshing={refreshing}
+					/>
+				) : !requests?.length ? (
+					<p role="status">
+						{t("dashboard.recently-approved.empty", "No recently approved requests")}
+					</p>
+				) : (
 					<div className="space-y-3">
 						{/* Success Summary */}
 						<div className="flex items-center gap-3 rounded-xl bg-gradient-to-r from-emerald-50 to-green-50 p-3 dark:from-emerald-950/30 dark:to-green-950/30">

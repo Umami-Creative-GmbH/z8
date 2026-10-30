@@ -1,13 +1,13 @@
 /* @vitest-environment jsdom */
 
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { UpcomingShifts } from "@/lib/scheduling/upcoming-shifts";
 
-const { shiftsEnabledMock, useWidgetDataMock } = vi.hoisted(() => ({
+const { shiftsEnabledMock } = vi.hoisted(() => ({
 	shiftsEnabledMock: vi.fn(),
-	useWidgetDataMock: vi.fn(),
 }));
 
 vi.mock("@tolgee/react", () => ({
@@ -37,17 +37,41 @@ vi.mock("@/app/[locale]/(app)/scheduling/actions", () => ({ getMyUpcomingShifts:
 vi.mock("./dashboard-widget", () => ({
 	DashboardWidget: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }));
-vi.mock("./use-widget-data", () => ({ useWidgetData: useWidgetDataMock }));
+vi.mock("@/hooks/use-organization", () => ({
+	useOrganization: () => ({
+		userId: "user-a",
+		organizationId: "org-a",
+		role: "employee",
+		isLoading: false,
+	}),
+}));
 vi.mock("./widget-card", () => ({
 	WidgetCard: ({ children, title }: { children: ReactNode; title: string }) => (
 		<section aria-label={title}>{children}</section>
 	),
 }));
 
+import type { DashboardWidgetData } from "./dashboard-types";
+
+let delivered: { data: DashboardWidgetData["upcoming-shifts"] | null; loading?: boolean };
+function setDelivery(value: typeof delivered) {
+	delivered = value;
+}
+function initialDelivery() {
+	return {
+		scope: { userId: "user-a", organizationId: "org-a" },
+		updatedAt: Date.now(),
+		result:
+			delivered.data === null
+				? { success: false as const, error: "Fixture unavailable" }
+				: { success: true as const, data: delivered.data },
+	};
+}
+
 import { UpcomingShiftsWidget } from "./upcoming-shifts-widget";
 
 function widgetData(data: UpcomingShifts | null, loading = false) {
-	useWidgetDataMock.mockReturnValue({ data, loading, refreshing: false, refetch: vi.fn() });
+	setDelivery({ data, loading, refreshing: false, refetch: vi.fn() });
 }
 
 describe("UpcomingShiftsWidget", () => {
@@ -63,7 +87,11 @@ describe("UpcomingShiftsWidget", () => {
 	it("shows an empty state when nothing is planned", () => {
 		widgetData({ today: "2026-10-09", shifts: [] });
 
-		render(<UpcomingShiftsWidget />);
+		render(
+			<QueryClientProvider client={new QueryClient()}>
+				<UpcomingShiftsWidget initialSnapshot={initialDelivery()} />
+			</QueryClientProvider>,
+		);
 
 		expect(screen.getByRole("region", { name: "Upcoming Shifts" })).toBeTruthy();
 		expect(screen.getByText("No upcoming shifts")).toBeTruthy();
@@ -98,7 +126,11 @@ describe("UpcomingShiftsWidget", () => {
 			],
 		});
 
-		render(<UpcomingShiftsWidget />);
+		render(
+			<QueryClientProvider client={new QueryClient()}>
+				<UpcomingShiftsWidget initialSnapshot={initialDelivery()} />
+			</QueryClientProvider>,
+		);
 
 		const first = screen.getByRole("link", { name: /Fri, Oct 9/ });
 		expect(first.getAttribute("href")).toBe("/scheduling?date=2026-10-09");
@@ -116,17 +148,25 @@ describe("UpcomingShiftsWidget", () => {
 		shiftsEnabledMock.mockReturnValue(false);
 		widgetData({ today: "2026-10-09", shifts: [] });
 
-		const { container } = render(<UpcomingShiftsWidget />);
+		const { container } = render(
+			<QueryClientProvider client={new QueryClient()}>
+				<UpcomingShiftsWidget initialSnapshot={initialDelivery()} />
+			</QueryClientProvider>,
+		);
 
 		expect(container.innerHTML).toBe("");
-		expect(useWidgetDataMock).not.toHaveBeenCalled();
 	});
 
-	it("renders nothing when the shifts could not be loaded", () => {
+	it("exposes failed shift data with a local retry", () => {
 		widgetData(null);
 
-		const { container } = render(<UpcomingShiftsWidget />);
+		render(
+			<QueryClientProvider client={new QueryClient()}>
+				<UpcomingShiftsWidget initialSnapshot={initialDelivery()} />
+			</QueryClientProvider>,
+		);
 
-		expect(container.innerHTML).toBe("");
+		expect(screen.getByRole("alert")).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Retry Upcoming Shifts" })).toBeTruthy();
 	});
 });

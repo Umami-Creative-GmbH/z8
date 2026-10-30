@@ -84,7 +84,11 @@ vi.mock("@/lib/auth", () => ({
 				harness.userId
 					? {
 							user: { id: harness.userId, role: "user" },
-							session: { activeOrganizationId: harness.organizationId },
+							session: {
+								id: `integration-${harness.userId}`,
+								userId: harness.userId,
+								activeOrganizationId: harness.organizationId,
+							},
 						}
 					: null,
 		},
@@ -114,7 +118,11 @@ vi.mock("@/lib/auth-helpers", async (importOriginal) => {
 				.limit(1);
 			return {
 				user: { id: harness.userId, name: harness.userId, email: `${harness.userId}@example.test` },
-				session: { activeOrganizationId: harness.organizationId },
+				session: {
+					id: `integration-${harness.userId}`,
+					userId: harness.userId,
+					activeOrganizationId: harness.organizationId,
+				},
 				employee: row
 					? { id: row.id, organizationId: row.organizationId, role: row.role, teamId: row.teamId }
 					: null,

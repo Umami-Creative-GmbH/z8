@@ -1,6 +1,8 @@
 import "server-only";
 import { db } from "@/db";
+import type { AuthContext } from "@/lib/auth-helpers";
 import { getAbility, getAuthContext } from "@/lib/auth-helpers";
+import type { AppAbility } from "@/lib/authorization";
 import { officerScopeOf } from "./expense-officer-grant";
 import { loadActiveExpenseOfficerGrant } from "./expense-officer-grant-store";
 import {
@@ -39,6 +41,18 @@ export async function loadFinanceActor(
 	} = {},
 ): Promise<FinanceActor | null> {
 	const [actor, ability] = await Promise.all([getAuthContext(), getAbility()]);
+	return loadFinanceActorForIdentity(actor, ability, options);
+}
+
+/** Internal server reuse of trusted identity; not a browser authorization API. */
+export async function loadFinanceActorForIdentity(
+	actor: AuthContext | null,
+	ability: AppAbility | null,
+	options: {
+		database?: Parameters<typeof loadActiveExpenseOfficerGrant>[0];
+		lockGrant?: boolean;
+	} = {},
+): Promise<FinanceActor | null> {
 	if (!actor?.employee || !ability) return null;
 	const organizationId = actor.employee.organizationId;
 	const activeOrganizationId = actor.session.activeOrganizationId ?? null;

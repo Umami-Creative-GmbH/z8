@@ -96,10 +96,19 @@ vi.mock("@/components/posthog-provider", () => ({
 	PostHogProvider: ({
 		children,
 		helpImproveProduct,
+		identityKey,
 	}: {
 		children: React.ReactNode;
 		helpImproveProduct: boolean;
-	}) => <div data-consent={String(helpImproveProduct)}>{children}</div>,
+		identityKey: string;
+	}) => (
+		<div
+			data-consent={String(helpImproveProduct)}
+			data-analytics-identity={identityKey}
+		>
+			{children}
+		</div>
+	),
 }));
 
 vi.mock("@/components/providers/organization-settings-provider", () => ({
@@ -205,8 +214,15 @@ vi.mock("@/lib/logger", () => ({
 	createLogger: () => ({ error: mockState.loggerError }),
 }));
 
-vi.mock("@/lib/organization-settings", () => ({
-	getOrganizationSettings: mockState.getOrganizationSettings,
+vi.mock("@/lib/auth/render-context", () => ({
+	getRenderOrganizationDisplayContext: async () => ({
+		userId: "user-1",
+		organizationId: "organization-1",
+		employee: null,
+		organizationSettings: await mockState.getOrganizationSettings(),
+		updatedAt: 0,
+	}),
+	getRenderApprovedMembership: mockState.findMember,
 }));
 
 vi.mock("@/proxy", () => ({
@@ -281,10 +297,7 @@ describe("authenticated app layout gates", () => {
 				}),
 			]);
 			expect(mockState.checkBillingAccess).not.toHaveBeenCalled();
-			expect(mockState.getOrganizationSettings).toHaveBeenCalledWith(
-				"organization-1",
-				"user-1",
-			);
+			expect(mockState.getOrganizationSettings).toHaveBeenCalledOnce();
 		},
 	);
 
@@ -311,6 +324,9 @@ describe("authenticated app layout gates", () => {
 		const { errors, html } = await serverRender("/en/time-tracking");
 		expect(errors).toEqual([]);
 		expect(html).toContain('data-consent="false"');
+		expect(html).toContain(
+			'data-analytics-identity="[&quot;user-1&quot;,&quot;organization-1&quot;]"',
+		);
 		expect(html).toContain('data-week-start="monday"');
 		expect(html).toContain('data-time-format="12h"');
 		expect(html).toContain('data-timezone="Europe/Berlin"');
@@ -326,13 +342,13 @@ describe("authenticated app layout gates", () => {
 		const { errors, html } = await serverRender("/en/time-tracking");
 		expect(errors).toEqual([]);
 		expect(html).toContain('data-consent="true"');
+		expect(html).toContain(
+			'data-analytics-identity="[&quot;user-1&quot;,null]"',
+		);
 		expect(html).toContain('data-week-start="sunday"');
 		expect(html).toContain('data-time-format="24h"');
 		expect(html).toContain('data-timezone="UTC"');
-		expect(mockState.getOrganizationSettings).toHaveBeenCalledWith(
-			null,
-			"user-1",
-		);
+		expect(mockState.getOrganizationSettings).toHaveBeenCalledOnce();
 		expect(mockState.checkBillingAccess).not.toHaveBeenCalled();
 	});
 
@@ -379,6 +395,23 @@ describe("authenticated app layout gates", () => {
 		expect(mockState.protectedChildRender).not.toHaveBeenCalled();
 	});
 
+	it("redirects an SSO-held identity to workspace initialization before protected children or loaders", async () => {
+		mockState.getSession.mockResolvedValue({
+			user: { id: "user-1" },
+			session: { activeOrganizationId: null },
+			ssoRequired: true,
+		});
+		const { errors } = await serverRender("/en/settings/profile");
+		expect(errors).toHaveLength(1);
+		expect(mockState.redirect).toHaveBeenCalledWith(
+			"/en/init?callbackUrl=%2Fen%2Fsettings%2Fprofile",
+		);
+		expect(mockState.protectedChildRender).not.toHaveBeenCalled();
+		expect(mockState.findUserSettings).not.toHaveBeenCalled();
+		expect(mockState.getOrganizationSettings).not.toHaveBeenCalled();
+		expect(mockState.checkBillingAccess).not.toHaveBeenCalled();
+	});
+
 	it("redirects an MFA-held identity before protected children or organization loaders", async () => {
 		mockState.getSession.mockResolvedValue({
 			user: { id: "user-1" },
@@ -398,6 +431,20 @@ describe("authenticated app layout gates", () => {
 		expect(mockState.getOrganizationSettings).not.toHaveBeenCalled();
 		expect(mockState.checkBillingAccess).not.toHaveBeenCalled();
 	});
+	it.each(["/en/settings/billing", "/en/billing/suspended"])(
+		"keeps the recovery route %s accessible after a fresh billing denial",
+		async (pathname) => {
+			mockState.checkBillingAccess.mockResolvedValue({
+				canAccess: false,
+				state: "suspended",
+			});
+			const { errors, html } = await serverRender(pathname);
+			expect(errors).toEqual([]);
+			expect(mockState.checkBillingAccess).toHaveBeenCalledOnce();
+			expect(mockState.redirect).not.toHaveBeenCalled();
+			expect(html).toContain("Protected child content");
+		},
+	);
 	it("renders protected children after all authorization gates succeed", async () => {
 		mockState.getSession.mockResolvedValue({
 			session: { activeOrganizationId: "organization-1" },

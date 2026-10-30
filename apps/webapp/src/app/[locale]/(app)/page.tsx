@@ -1,13 +1,14 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { ServerSectionCards } from "@/components/dashboard/server-section-cards";
 import { NoOrganizationError } from "@/components/errors/no-organization-error";
-import { SectionCards, SectionCardsSkeleton } from "@/components/section-cards";
+import { SectionCardsSkeleton } from "@/components/section-cards";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import {
-	getOnboardingStatus,
-	getPendingInvitationId,
-	getUserOrganizations,
-} from "@/lib/auth-helpers";
+	getRenderOnboardingStatus as getOnboardingStatus,
+	getRenderPendingInvitationId as getPendingInvitationId,
+	getRenderUserOrganizations as getUserOrganizations,
+} from "@/lib/auth/render-context";
 import { redirectWithLocale } from "@/lib/navigation/locale-redirect";
 import { getOnboardingStepPath } from "@/lib/validations/onboarding";
 import { RouteTranslationBoundary } from "@/tolgee/route-boundary";
@@ -30,7 +31,9 @@ async function DashboardPageContent() {
 
 	// Redirect if onboarding not complete
 	if (onboardingStatus && !onboardingStatus.onboardingComplete) {
-		return redirectWithLocale(getOnboardingStepPath(onboardingStatus.onboardingStep));
+		return redirectWithLocale(
+			getOnboardingStepPath(onboardingStatus.onboardingStep),
+		);
 	}
 
 	if (!hasOrganizations) {
@@ -45,7 +48,7 @@ async function DashboardPageContent() {
 		<div className="@container/main flex flex-1 flex-col gap-2">
 			<div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
 				<Suspense fallback={<SectionCardsSkeleton />}>
-					<SectionCards />
+					<ServerSectionCards />
 				</Suspense>
 			</div>
 		</div>

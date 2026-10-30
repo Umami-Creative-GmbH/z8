@@ -1,0 +1,587 @@
+{
+  "schema": 1,
+  "kind": "corrected-original-observer-annual-diagnostic-proof",
+  "acceptance": "unfulfilled",
+  "controlledCapture": false,
+  "fullC2Frozen": false,
+  "budgetsDerived": false,
+  "originalBinarySource": "295de0b706e439bcdaf4d2d25661ce45f02ddb61",
+  "originalBusinessSource": "39a08d0bbe77e00ceb5b204b9f9100ab2cfb86be",
+  "observerCorrection": {
+    "source": "e059597490b02c575c6e1cf64f1d83da712cff97",
+    "sdkServerSpanKind": 1,
+    "otlpWireServerSpanKind": 2,
+    "wireProtocolUnchanged": true,
+    "businessSourceUnchanged": true
+  },
+  "originalBuild": {
+    "kind": "owned-original-observer-build",
+    "businessSource": "39a08d0bbe77e00ceb5b204b9f9100ab2cfb86be",
+    "source": "295de0b706e439bcdaf4d2d25661ce45f02ddb61",
+    "ci": true,
+    "workers": 2,
+    "startedAt": "2026-10-24T22:24:08.179Z",
+    "finishedAt": "2026-10-24T22:34:59.654Z",
+    "exitCode": 0,
+    "buildId": "build-TfctsWXpff2fKS"
+  },
+  "correctedHeadBuild": {
+    "kind": "owned-final-head-build",
+    "source": "e059597490b02c575c6e1cf64f1d83da712cff97",
+    "ci": true,
+    "workers": 2,
+    "startedAt": "2026-10-24T22:28:43.539Z",
+    "finishedAt": "2026-10-24T22:38:12.931Z",
+    "exitCode": 0,
+    "buildId": "build-TfctsWXpff2fKS"
+  },
+  "previousProofs": {
+    "causeCanonicalSha256": "6903cf4254772858fec412bc2daa4dd0447a2b29cef937ef396ff2d7b69a669d",
+    "paintCanonicalSha256": "f4afd63448f06bf92a975c3140f6c9d064313ea6e8764c3e0476b8141f21c3fd",
+    "binary": "d5550e35c3bd9adf584e9731ade31d6420abf545",
+    "retainedUnchanged": true
+  },
+  "diagnosticPlanSha256": "a91d264c1b820e9a365c480ae7c3860ed5f1e9590447159260d25ce73481f9ab",
+  "primaryArtifactSha256": "e093ddf3e8f622808e95eae1924f9799bcfb4409194421b85bbff881aea3cc70",
+  "finiteArtifactSha256": "e2089ad0786b9e9a2b9dded44f0b4757a47f7de19eb35392918643566444de8d",
+  "finiteNativeSha256": "6f86523202fadb8f2e05a759dd096e0b37b287d47bd4c2273ca1fa4cca5644c5",
+  "finiteOperatorSha256": "3e0ae9c1243d893c7e03edd87e12f9e531e3031348f89942c7bc8a7cd3d3b1f3",
+  "actualToolingSource": "c632301be625efc44326f945fdcfdd9f49463619",
+  "primaryProtocol": {
+    "run-baseline.mjs": "ce69c6aa89457b9b22321ee510d44b6556786a7e809771ff9633397cb392bbbe",
+    "browser-performance.mjs": "bf344b4f7c1f5557f8cb99d11f35f0581dc046972d9446c14d995e4eee1cb758",
+    "journey-steps.mjs": "3b7659676b57c7e95cb32c1bffde7b0295b3ea03b7366a683a1d1bc61d87965f",
+    "collector-client.mjs": "67b3752c34bed34a28bd4c099bd19f6a7c86e3a9f578a4940130a97c2cf33ef1",
+    "trace-transport.mjs": "2cabf5411081a5bb387a7f4b7aacd918751d86d05783a69c8c0010a23dcdf57e",
+    "proxy-wire-observer.mjs": "fa2cb5cc3848aeb2de9d26aca38526844f1075d10239aa688b56da1b7b5378e9",
+    "fixture-browser.mjs": "d15abe562103b2c366890256ad16cffe9dcf43880d7520898754e7603349b7e9",
+    "protocol-fingerprints.mjs": "acdb03ce5c393f869b07cb853fc1efd0ac9013c858a3bc5df6f3515d9b8992de"
+  },
+  "annualUnderlyingCause": {
+    "underlyingKind": "pool-acquire-timeout",
+    "originalPoolMax": 10,
+    "originalConnectionTimeoutMs": 10000,
+    "statementQueryErrors": 0,
+    "privateLog": {
+      "intervals": [
+        {
+          "phase": "primary",
+          "startByte": 2201333,
+          "endByte": 2204821,
+          "bytes": 3488,
+          "sha256": "61dd87315af60d367ce6dfd90a7b77503abe53145feee9ef748f9518d0b97ce3",
+          "poolTimeoutCauseMatches": 1,
+          "DatabaseErrorMatches": 1,
+          "statementTimeoutMatches": 0,
+          "missingColumnMatches": 0,
+          "missingRelationMatches": 0,
+          "syntaxErrorMatches": 0,
+          "otherKnownErrorMatches": 0
+        },
+        {
+          "phase": "finite",
+          "startByte": 2204821,
+          "endByte": 2215285,
+          "bytes": 10464,
+          "sha256": "6f7ee3cceb2b61296ab07221a57039a62cac49f2b8da02de1b887adbca30d4a2",
+          "poolTimeoutCauseMatches": 3,
+          "DatabaseErrorMatches": 3,
+          "statementTimeoutMatches": 0,
+          "missingColumnMatches": 0,
+          "missingRelationMatches": 0,
+          "syntaxErrorMatches": 0,
+          "otherKnownErrorMatches": 0
+        }
+      ],
+      "noMessagesOrSqlPersisted": true
+    },
+    "primaryNative": {
+      "mode": "first-document",
+      "phase": "measured",
+      "queryCount": 4797,
+      "poolAcquisitions": 4894,
+      "poolAcquisitionErrors": 97,
+      "queryErrors": 0,
+      "queryDurationMs": 168769.981,
+      "rowsRetrieved": 85418,
+      "poolWaitMs": 2895899.706100002,
+      "cacheHits": 6,
+      "cacheMisses": 1,
+      "eventLoopDelayMs": 9101.550600000017,
+      "coverage": {
+        "observer": true,
+        "pg": true,
+        "rows": true,
+        "cache": true,
+        "eventLoop": true,
+        "rejectedBatches": 0,
+        "registration": true,
+        "closed": true,
+        "incomplete": false,
+        "unattributedNativeSpans": 0,
+        "lateSpans": 0,
+        "nativeProof": true,
+        "nativeDriverQueries": 4797
+      }
+    },
+    "finiteNative": [
+      {
+        "mode": "first-document",
+        "phase": "measured",
+        "queryCount": 4824,
+        "poolAcquisitions": 4921,
+        "poolAcquisitionErrors": 97,
+        "queryErrors": 0,
+        "queryDurationMs": 193368.4659999999,
+        "rowsRetrieved": 92465,
+        "poolWaitMs": 3355335.7114,
+        "cacheHits": 7,
+        "cacheMisses": 0,
+        "eventLoopDelayMs": 9399.416399999987,
+        "coverage": {
+          "observer": true,
+          "pg": true,
+          "rows": true,
+          "cache": true,
+          "eventLoop": true,
+          "rejectedBatches": 0,
+          "registration": true,
+          "closed": true,
+          "incomplete": false,
+          "unattributedNativeSpans": 0,
+          "lateSpans": 0,
+          "nativeProof": true,
+          "nativeDriverQueries": 4824
+        }
+      },
+      {
+        "mode": "repeat-link",
+        "phase": "measured",
+        "queryCount": 8349,
+        "poolAcquisitions": 8453,
+        "poolAcquisitionErrors": 104,
+        "queryErrors": 0,
+        "queryDurationMs": 182613.55339999986,
+        "rowsRetrieved": 87583,
+        "poolWaitMs": 3325583.678700001,
+        "cacheHits": 7,
+        "cacheMisses": 0,
+        "eventLoopDelayMs": 9702.30859999999,
+        "coverage": {
+          "observer": true,
+          "pg": true,
+          "rows": true,
+          "cache": true,
+          "eventLoop": true,
+          "rejectedBatches": 0,
+          "registration": true,
+          "closed": true,
+          "incomplete": false,
+          "unattributedNativeSpans": 0,
+          "lateSpans": 0,
+          "nativeProof": true,
+          "nativeDriverQueries": 8349
+        }
+      },
+      {
+        "mode": "repeat-link",
+        "phase": "prerequisite",
+        "queryCount": 4997,
+        "poolAcquisitions": 5100,
+        "poolAcquisitionErrors": 103,
+        "queryErrors": 0,
+        "queryDurationMs": 174901.78200000018,
+        "rowsRetrieved": 87851,
+        "poolWaitMs": 3013923.864799999,
+        "cacheHits": 7,
+        "cacheMisses": 0,
+        "eventLoopDelayMs": 9740.233799999987,
+        "coverage": {
+          "observer": true,
+          "pg": true,
+          "rows": true,
+          "cache": true,
+          "eventLoop": true,
+          "rejectedBatches": 0,
+          "registration": true,
+          "closed": true,
+          "incomplete": false,
+          "unattributedNativeSpans": 0,
+          "lateSpans": 0,
+          "nativeProof": true,
+          "nativeDriverQueries": 4997
+        }
+      }
+    ]
+  },
+  "nativePaint": {
+    "rawObservations": 1,
+    "minimumPerControlledCohort": 20,
+    "failed": true,
+    "failureStage": "verify-expected-content",
+    "usableContentMs": null,
+    "clockReadyMs": 2217.7447000000006,
+    "lcpMs": 1896,
+    "interactionMaxMs": 48,
+    "nativePerformanceObservation": {
+      "readCompleted": true,
+      "lcpEntries": 1,
+      "eventEntries": 6
+    },
+    "resourceScope": "measured-visit",
+    "global": {
+      "driverQueryCount": 4797,
+      "nativeQueryStartedCount": 4797,
+      "nativeQueryEndedCount": 4797,
+      "observedQueryCount": 4797,
+      "pendingNativeQueries": 0,
+      "activeTraces": 0,
+      "allReceivedTracesReconciled": true,
+      "complete": true
+    }
+  },
+  "finite": {
+    "kind": "settled-resource-diagnostic",
+    "acceptance": "unfulfilled",
+    "global": {
+      "driverQueryCount": 18170,
+      "nativeQueryStartedCount": 18170,
+      "nativeQueryEndedCount": 18170,
+      "observedQueryCount": 18170,
+      "pendingNativeQueries": 0,
+      "activeTraces": 0,
+      "allReceivedTracesReconciled": true,
+      "complete": true
+    },
+    "samples": [
+      {
+        "mode": "first-document",
+        "failed": true,
+        "censored": true,
+        "failureStage": "verify-expected-content",
+        "failureKind": "timeout",
+        "measurementStarted": true,
+        "prerequisiteComplete": true,
+        "targetRangePrepared": true,
+        "elapsedUntilFailureMs": 31925.343999999997,
+        "readyMs": null,
+        "inlineRscDecodedBytes": 696772,
+        "wireFailureDrain": {
+          "protocol": "context-proxy-wire-v1",
+          "byteUnits": "http-response-body-bytes-before-content-decoding-excludes-headers",
+          "complete": true,
+          "capped": false,
+          "mandatoryErrors": 0,
+          "mandatoryPending": 0,
+          "quietObservedMs": 1035.037400000001,
+          "postReadyMs": 1035.037400000001,
+          "bytes": {
+            "javascript": 1393058,
+            "document": 365369,
+            "rsc": 313388,
+            "otherFinite": 131439
+          },
+          "groups": {
+            "javascript": {
+              "requests": 102,
+              "completed": 102,
+              "pending": 0,
+              "errors": 0,
+              "completedBytes": 1393058,
+              "observedBodyBytes": 1393058,
+              "inheritedRequests": 0,
+              "inheritedCompletedBytes": 0
+            },
+            "document": {
+              "requests": 2,
+              "completed": 2,
+              "pending": 0,
+              "errors": 0,
+              "completedBytes": 365369,
+              "observedBodyBytes": 365369,
+              "inheritedRequests": 0,
+              "inheritedCompletedBytes": 0
+            },
+            "rsc": {
+              "requests": 13,
+              "completed": 13,
+              "pending": 0,
+              "errors": 0,
+              "completedBytes": 313388,
+              "observedBodyBytes": 313388,
+              "inheritedRequests": 0,
+              "inheritedCompletedBytes": 0
+            },
+            "otherFinite": {
+              "requests": 39,
+              "completed": 39,
+              "pending": 0,
+              "errors": 0,
+              "completedBytes": 131439,
+              "observedBodyBytes": 131439,
+              "inheritedRequests": 0,
+              "inheritedCompletedBytes": 0
+            },
+            "prefetch": {
+              "requests": 35,
+              "completed": 35,
+              "pending": 0,
+              "errors": 0,
+              "completedBytes": 448832,
+              "observedBodyBytes": 448832,
+              "inheritedRequests": 0,
+              "inheritedCompletedBytes": 0
+            },
+            "longLived": {
+              "requests": 0,
+              "completed": 0,
+              "pending": 0,
+              "errors": 0,
+              "completedBytes": 0,
+              "observedBodyBytes": 0,
+              "inheritedRequests": 0,
+              "inheritedCompletedBytes": 0
+            }
+          }
+        },
+        "transportComplete": true,
+        "afterInitialization": {
+          "requests": 191,
+          "rewrittenRequests": 191,
+          "refusedRequests": 0,
+          "upstreamFailures": 0,
+          "downstreamCancellations": 0,
+          "upstreamConnectionErrors": 0,
+          "upstreamResponseErrors": 0,
+          "upstreamReusedSocketErrors": 0,
+          "upstreamGetErrors": 0,
+          "upstreamPostErrors": 0,
+          "upstreamOtherMethodErrors": 0,
+          "upstreamResetErrors": 0,
+          "upstreamRefusedErrors": 0,
+          "upstreamOtherErrors": 0,
+          "responseBodyBytes": 2652086,
+          "refusalReasons": {
+            "unexpectedLoopback": 0,
+            "nonLoopbackHttp": 0,
+            "loopbackConnect": 0,
+            "nonLoopbackConnect": 0,
+            "malformed": 0
+          }
+        },
+        "native": [
+          {
+            "mode": "first-document",
+            "phase": "measured",
+            "queryCount": 4824,
+            "poolAcquisitions": 4921,
+            "poolAcquisitionErrors": 97,
+            "queryErrors": 0,
+            "queryDurationMs": 193368.4659999999,
+            "rowsRetrieved": 92465,
+            "poolWaitMs": 3355335.7114,
+            "cacheHits": 7,
+            "cacheMisses": 0,
+            "eventLoopDelayMs": 9399.416399999987,
+            "coverage": {
+              "observer": true,
+              "pg": true,
+              "rows": true,
+              "cache": true,
+              "eventLoop": true,
+              "rejectedBatches": 0,
+              "registration": true,
+              "closed": true,
+              "incomplete": false,
+              "unattributedNativeSpans": 0,
+              "lateSpans": 0,
+              "nativeProof": true,
+              "nativeDriverQueries": 4824
+            }
+          }
+        ]
+      },
+      {
+        "mode": "repeat-link",
+        "failed": true,
+        "censored": true,
+        "failureStage": "verify-expected-content",
+        "failureKind": "timeout",
+        "measurementStarted": true,
+        "prerequisiteComplete": true,
+        "targetRangePrepared": true,
+        "elapsedUntilFailureMs": 31091.829299999998,
+        "readyMs": null,
+        "inlineRscDecodedBytes": null,
+        "wireFailureDrain": {
+          "protocol": "context-proxy-wire-v1",
+          "byteUnits": "http-response-body-bytes-before-content-decoding-excludes-headers",
+          "complete": true,
+          "capped": false,
+          "mandatoryErrors": 0,
+          "mandatoryPending": 0,
+          "quietObservedMs": 1037.497000000003,
+          "postReadyMs": 1037.497000000003,
+          "bytes": {
+            "javascript": 0,
+            "document": 0,
+            "rsc": 322498,
+            "otherFinite": 1981
+          },
+          "groups": {
+            "javascript": {
+              "requests": 8,
+              "completed": 8,
+              "pending": 0,
+              "errors": 0,
+              "completedBytes": 0,
+              "observedBodyBytes": 0,
+              "inheritedRequests": 0,
+              "inheritedCompletedBytes": 0
+            },
+            "document": {
+              "requests": 0,
+              "completed": 0,
+              "pending": 0,
+              "errors": 0,
+              "completedBytes": 0,
+              "observedBodyBytes": 0,
+              "inheritedRequests": 0,
+              "inheritedCompletedBytes": 0
+            },
+            "rsc": {
+              "requests": 15,
+              "completed": 15,
+              "pending": 0,
+              "errors": 0,
+              "completedBytes": 322498,
+              "observedBodyBytes": 322593,
+              "inheritedRequests": 1,
+              "inheritedCompletedBytes": 95
+            },
+            "otherFinite": {
+              "requests": 17,
+              "completed": 17,
+              "pending": 0,
+              "errors": 0,
+              "completedBytes": 1981,
+              "observedBodyBytes": 2825,
+              "inheritedRequests": 3,
+              "inheritedCompletedBytes": 844
+            },
+            "prefetch": {
+              "requests": 35,
+              "completed": 35,
+              "pending": 0,
+              "errors": 0,
+              "completedBytes": 448447,
+              "observedBodyBytes": 449009,
+              "inheritedRequests": 2,
+              "inheritedCompletedBytes": 562
+            },
+            "longLived": {
+              "requests": 0,
+              "completed": 0,
+              "pending": 0,
+              "errors": 0,
+              "completedBytes": 0,
+              "observedBodyBytes": 0,
+              "inheritedRequests": 0,
+              "inheritedCompletedBytes": 0
+            }
+          }
+        },
+        "transportComplete": true,
+        "afterInitialization": {
+          "requests": 270,
+          "rewrittenRequests": 270,
+          "refusedRequests": 0,
+          "upstreamFailures": 0,
+          "downstreamCancellations": 0,
+          "upstreamConnectionErrors": 0,
+          "upstreamResponseErrors": 0,
+          "upstreamReusedSocketErrors": 0,
+          "upstreamGetErrors": 0,
+          "upstreamPostErrors": 0,
+          "upstreamOtherMethodErrors": 0,
+          "upstreamResetErrors": 0,
+          "upstreamRefusedErrors": 0,
+          "upstreamOtherErrors": 0,
+          "responseBodyBytes": 3606410,
+          "refusalReasons": {
+            "unexpectedLoopback": 0,
+            "nonLoopbackHttp": 0,
+            "loopbackConnect": 0,
+            "nonLoopbackConnect": 0,
+            "malformed": 0
+          }
+        },
+        "native": [
+          {
+            "mode": "repeat-link",
+            "phase": "measured",
+            "queryCount": 8349,
+            "poolAcquisitions": 8453,
+            "poolAcquisitionErrors": 104,
+            "queryErrors": 0,
+            "queryDurationMs": 182613.55339999986,
+            "rowsRetrieved": 87583,
+            "poolWaitMs": 3325583.678700001,
+            "cacheHits": 7,
+            "cacheMisses": 0,
+            "eventLoopDelayMs": 9702.30859999999,
+            "coverage": {
+              "observer": true,
+              "pg": true,
+              "rows": true,
+              "cache": true,
+              "eventLoop": true,
+              "rejectedBatches": 0,
+              "registration": true,
+              "closed": true,
+              "incomplete": false,
+              "unattributedNativeSpans": 0,
+              "lateSpans": 0,
+              "nativeProof": true,
+              "nativeDriverQueries": 8349
+            }
+          },
+          {
+            "mode": "repeat-link",
+            "phase": "prerequisite",
+            "queryCount": 4997,
+            "poolAcquisitions": 5100,
+            "poolAcquisitionErrors": 103,
+            "queryErrors": 0,
+            "queryDurationMs": 174901.78200000018,
+            "rowsRetrieved": 87851,
+            "poolWaitMs": 3013923.864799999,
+            "cacheHits": 7,
+            "cacheMisses": 0,
+            "eventLoopDelayMs": 9740.233799999987,
+            "coverage": {
+              "observer": true,
+              "pg": true,
+              "rows": true,
+              "cache": true,
+              "eventLoop": true,
+              "rejectedBatches": 0,
+              "registration": true,
+              "closed": true,
+              "incomplete": false,
+              "unattributedNativeSpans": 0,
+              "lateSpans": 0,
+              "nativeProof": true,
+              "nativeDriverQueries": 4997
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "limitations": [
+    "One raw native paint observation and two finite-resource visits are diagnostic only; no20sample completeness claim.",
+    "Failed UI and null usable-content timing remain unchanged.",
+    "No fullC2 capture, numerical release budget or controlled head comparison has run."
+  ]
+}

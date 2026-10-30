@@ -1,0 +1,1156 @@
+import {testEmptyTemporaryValues,testTeamAnnualSource} from "./control-cancellation-test-fixtures.mjs";
+import { temporaryValueObservation } from "./team-temporary-value-authority.mjs";
+import assert from "node:assert/strict";
+import test,{afterEach} from "node:test";
+import {createHash} from "node:crypto";
+import {classifyControlCancellations,cleanBrowserFailureEvidence,inspectRequiredFlightBody,controlCancellationPolicy,chromiumSWRRevision} from "./control-cancellation-evidence.mjs";
+import {controlRequestIdentity,controlResponseMetadata,createPrincipalEpochObserver,createProxyControlCollector,createBrowserControlCollector,createMixedProgressAcknowledgments as realProgressObserver,controlResponseHeader,renderedPathSourceFacts,compiledRoutingSourceFacts} from "./browser-control-collector.mjs";
+import {setImmediate as tick} from "node:timers/promises";
+import {createProxyHeaderCensus} from "./proxy-header-census.mjs";
+import {primaryProtocolIdentity} from "./protocol-fingerprints.mjs";
+import {cleanBrowserContextEvidence} from "./clean-evidence.mjs";
+import {createMixedTechnicalOwner,parseMixedTechnicalReplayJSON} from "./mixed-technical-gzip.mjs";
+import {projectCachedCdpText} from "./cdp-cached-text-projection.mjs";
+
+const sha=value=>createHash("sha256").update(value).digest("hex");
+const protocol=await primaryProtocolIdentity();
+// Pure fixture producer: use the same real proxy quota callbacks as live guards.
+const fixtureObservers=new Set();
+function fixtureOwner(contextId){const proxy=createProxyControlCollector({contextId});proxy.installed();return createMixedTechnicalOwner({contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});}
+function replayFixture(value){return parseMixedTechnicalReplayJSON(Buffer.from(JSON.stringify(value)));}
+function makeProgressObserver(options){if(options.technicalOwner)return realProgressObserver(options);const owner=fixtureOwner("synthetic-context"),observer=realProgressObserver({...options,technicalOwner:owner,input:()=>owner.capture(options.input)});fixtureObservers.add(observer);return observer;}
+afterEach(()=>{for(const observer of fixtureObservers){try{observer.close();}finally{observer.releaseSnapshot();}}fixtureObservers.clear();});
+
+
+test("Native controls bind only the independently qualified current Chromium revision",()=>{
+  assert.equal(chromiumSWRRevision,"d0c02bfad08ec92a6ffcf989e53cd995e6381a4c");
+  const {input}=fixture();input.browserRevision="1d17a2e2ee147bb7d6ae2ab6abdb3a2510c17775";
+  assert.equal(classifyControlCancellations(input).provenControls,0,"historical revision is not an alternative accepted pin");
+});
+
+// Entirely synthetic observations, produced through the real parser/identity/census APIs.
+// This fixture never reads private capture data and makes no runtime claim.
+function fixture({applicationIds=[1,2],originalApplicationId=1,currentApplicationId=2,mixedTraces=false}={}) {
+  const contextId="synthetic-context",origin="http://localhost:1234",url=origin+"/en?_rsc=synthetic",build="b".repeat(40);
+  const files=["sw.js","lib/offline-queue-db.js","lib/sync-service.js","lib/clock-command-dispatch.js"].map(file=>({file,bytes:12,sha256:sha(file),gitBlob:"d".repeat(40)}));
+  const binding={policy:controlCancellationPolicy,temporaryValueObservation:structuredClone(temporaryValueObservation),originalTeamSource:null,browserRevision:chromiumSWRRevision,compiledBuild:build,compiledManifestSha256:"c".repeat(64),compiledCachedNavigations:true,manifestVerified:true,browserVerified:true,
+    teamAnnualAction:testTeamAnnualSource(build,"c".repeat(64)),nativePublicSources:{protocol:"qualified-serving-worker-sources-v1",compiledBuild:build,compiledManifestSha256:"c".repeat(64),files}};
+  const initial={rsc:"1","next-router-prefetch":"1","next-router-segment-prefetch":"/page","next-router-state-tree":"synthetic-tree","accept-language":"en","x-z8-fixture-document-generation":contextId+":4"};
+  const wire={...initial,accept:"*/*","accept-encoding":"gzip",cookie:"session=synthetic"};
+  const response={"content-type":"text/x-component","x-nextjs-postponed":"2","x-nextjs-deployment-id":build,vary:"RSC, Next-Router-Prefetch, Next-Router-Segment-Prefetch, Next-Router-State-Tree, Accept-Encoding","cache-control":"s-maxage=100, stale-while-revalidate=200"};
+  const identity=headers=>controlRequestIdentity(contextId,url,"GET",headers);
+  const bytes=Buffer.from('0:{"t":{"t":{"s":"","c":"$Q2"}},"a":"$@5","u":"$@6"}\n2:[["children",{"s":"page","d":{"r":["$","span",null,{"children":"known"}],"p":"$@3","v":null,"s":"$4"}}]]\n3:"$undefined"\n4:X\n4:60\n4:C\n5:null\n6:false\n');
+  const proof=headers=>inspectRequiredFlightBody(bytes,{requestKind:"segment-prefetch",segmentBinding:{method:"GET",status:200,flight:true,rsc:true,prefetch:true,postponed:true,requestHeadersSha256:identity(headers).requestHeadersSha256,
+    requestKeySha256:sha("/page"),responseDeploymentSha256:sha(build),compiledBuild:build,compiledManifestSha256:binding.compiledManifestSha256,manifestVerified:true}});
+  const requestId=id=>(mixedTraces && id%2===0?"b":"a").repeat(32)+"."+id;
+  const originalId=requestId(originalApplicationId),currentId=requestId(currentApplicationId);
+  const originalHeaders={...wire,"x-z8-fixture-document-generation":contextId+":1"};
+  const packet=(id,headers)=>({...identity(headers),...controlResponseMetadata(response,200),id,traceId:id.split(".")[0],complete:true,canceled:false,upstreamError:false,
+    bodyProof:proof(headers),transportBodyReceipt:{protocol:"proxy-natural-eof-decoded-bytes-v1",naturalEOF:true,decodedBytes:bytes.length,bodySha256:sha(bytes)}});
+  const original=packet(originalId,originalHeaders),current=packet(currentId,wire);
+  const cached={...identity(initial),...controlResponseMetadata(response,200),requestId:"cached",loaderId:"loader",type:"Fetch",startedAt:1,finishedAt:2,loadingFinished:true,fromDiskCache:true,fromServiceWorker:false,
+    initialHeaderIdentity:identity(initial),proxyResponseId:originalId,bodyReadbackComplete:true,bodyProof:proof(initial),
+    bodyReadbackReceipt:{available:true,base64Encoded:false,utf16CodeUnitLength:bytes.length,observedDataLengthAtReadback:bytes.length,decodedBytes:bytes.length,bodySha256:sha(bytes),responseContentType:{headerKnown:true,mime:"text/x-component",charset:"absent"}}};
+  const failure={...identity(wire),...controlResponseMetadata(response,200),requestId:"native",failedEventOrdinal:9,loaderId:"loader",type:"Other",initiator:"other",initiatorStackKnownAbsent:true,priority:"VeryLow",startedAt:3,
+    requestHeadersKnown:true,initialHeaderIdentity:identity(initial),extraHeaderIdentity:identity(wire),proxyResponseId:currentId,error:"net::ERR_ABORTED",canceled:true};
+  const principal=createPrincipalEpochObserver(contextId,{origin});
+  const cookies=[{name:"session",value:"synthetic",domain:"localhost",path:"/",httpOnly:true}];principal.start(cookies);principal.end(cookies);
+  const census=createProxyHeaderCensus({contextId});for(const appId of applicationIds){const id=requestId(appId);census.accepted(id);census.headers(id,response);}census.close();
+  const publicSources={protocol:"serving-public-worker-source-metadata-v1",servingRootKnown:true,files:files.map(({gitBlob,...row})=>({...row,known:true,reason:null}))};
+  const worker={present:true,known:true,ownedScript:true,state:"activated",scriptUrlSha256:sha(origin+"/sw.js")},absent={present:false,known:true};
+  const nativeContext={protocol:"qualified-known-extra-native-context-v1",contextId,originSha256:sha(origin),workerScriptSha256:sha(origin+"/sw.js"),rootScopeSha256:sha(origin+"/"),binding,protocolSources:protocol,operatorFile:"run-baseline.mjs",principalEpoch:principal.snapshot(),headerCensus:census.snapshot(),
+    headerLifetime:{protocol:"owned-context-upstream-header-lifetime-v1",contextId,installation:{protocol:"owned-context-upstream-header-lifetime-v1",proxyInstanceId:"f".repeat(32),originSha256:sha(origin),allowedOriginSha256:[sha(origin)],acceptedRequestsAtInstall:0},closure:{serverClosed:true,acceptedRequests:applicationIds.length,upstreamRequests:applicationIds.length,closedUpstreams:applicationIds.length,pendingUpstreams:0}},
+    protocolErrors:{protocol:"positive-flight-error-observations-v1",contextId,installed:true,scopeClosed:true,observed:0,overflow:0,records:[]},
+    environment:{protocol:"native-cache-environment-metadata-v1",contextId,temporaryValues:testEmptyTemporaryValues(contextId),servingPublicSources:publicSources,
+      nativeLaunchMetadata:{protocol:"owned-native-launch-metadata-v1",processKnown:true,fixturePolicy:"isolated-profile-no-prediction-v1",argumentsKnown:true,argumentsSha256:"5".repeat(64),recordedArgumentsSha256:"5".repeat(64),argumentsMatchRecorded:true,argumentKeys:["--disable-extensions","--headless","--disable-features"],profileArgumentCount:1,profileArgumentSha256:"6".repeat(64),recordedProfileDirectorySha256:"6".repeat(64),profileArgumentMatchesRecorded:true,executable:{known:true,bytes:12,sha256:"7".repeat(64),reason:null},observerSources:["browser-control-collector.mjs","fixture-browser.mjs"].map(file=>({file,known:true,bytes:12,sha256:protocol[file],reason:null}))},
+      workerTargets:{protocol:"owned-context-worker-target-metadata-v1",contextId,contextJoinKnown:true,contextIdentitySha256:sha("owned-browser-context"),installed:true,scopeClosed:true,errors:0,overflow:0,events:[{targetOrdinal:1,event:"created",type:"page",urlKnown:true,urlSha256:sha("about:blank"),originMatches:false,ownedWorkerScript:null},{targetOrdinal:2,event:"created",type:"service_worker",urlKnown:true,urlSha256:sha(origin+"/sw.js"),originMatches:true,ownedWorkerScript:true}]},
+      endRead:{protocol:"native-environment-end-readonly-v1",timedOut:false,pendingOperations:0,readErrors:0,publicSourceRecheck:publicSources,
+        controller:{available:true,secureContext:true,originMatches:true,controllerIdentityStable:true,controllerBefore:worker,controllerAfter:worker,registrationCount:1,registrationOverflow:0,registrations:[{scopeKnown:true,scopeSha256:sha(origin+"/"),ownedRootScope:true,active:worker,waiting:absent,installing:absent}]}}}};
+  return {input:{failures:[failure],responses:[cached],proxy:[original,current],nativeContext,browserRevision:chromiumSWRRevision,coverage:{installed:true,scopeClosed:true,missing:0,overflow:0,errors:0,pendingBodies:0}},bytes,io:{origin,url,initial,wire,response,originalHeaders,originalId,currentId,principal}};
+}
+
+function projectionFixture(){
+  const result=fixture(),{input}=result;
+  const original=Buffer.from(result.bytes.toString("utf8").replace("known","é"));
+  const readback=original.toString("latin1"),readbackBytes=Buffer.from(readback);
+  for(const packet of input.proxy){
+    packet.bodyProof=inspectRequiredFlightBody(original,{requestKind:"segment-prefetch",segmentBinding:packet.bodyProof.segmentBinding});
+    packet.transportBodyReceipt={protocol:"proxy-natural-eof-decoded-bytes-v1",naturalEOF:true,decodedBytes:original.length,bodySha256:sha(original),cdpTextProjection:{available:true,...projectCachedCdpText(original)}};
+  }
+  const cached=input.responses[0];cached.ambiguousRedirect=false;cached.failed=false;
+  cached.bodyProof={complete:false,reason:"unsupported-record"};
+  cached.bodyReadbackReceipt={...cached.bodyReadbackReceipt,decodedBytes:readbackBytes.length,bodySha256:sha(readbackBytes),utf16CodeUnitLength:readback.length,observedDataLengthAtReadback:original.length,terminal:"finished",
+    effectiveCdpResponse:{protocol:"cdp-effective-response-decoder-metadata-v1",provenance:"Network.responseReceived",mimeKnown:true,mime:"text/x-component",charsetKnown:true,charset:"empty"}};
+  cached.browserDataLedger={protocol:"cached-browser-data-ledger-v1",requestObserved:true,responseEvents:1,finishedEvents:1,failedEvents:0,dataEvents:1,dataAfterTerminal:0,dataBeforeResponse:0,responseAfterTerminal:0,terminalBeforeResponse:0,invalidData:false,observedDataLength:original.length};
+  return {...result,original,readbackBytes};
+}
+
+function routeTreeFixture(){
+  const result=fixture(),{input,io}=result;
+  for(const source of [io.initial,io.wire,io.originalHeaders])source["next-router-segment-prefetch"]="/_tree";
+  const identity=source=>controlRequestIdentity(input.nativeContext.contextId,io.url,"GET",source);
+  const bytes=Buffer.from('0:{"t":{"t":{"s":"","c":"$Q2"}}}\n2:[["children",{"s":"__PAGE__"}],["modal",{"s":"__PAGE__"}]]\n');
+  const binding=input.proxy[0].bodyProof.segmentBinding;
+  const proof=source=>inspectRequiredFlightBody(bytes,{requestKind:"route-tree",routeTreeBinding:{...binding,requestHeadersSha256:identity(source).requestHeadersSha256,requestKeySha256:sha("/_tree")}});
+  for(const [packet,source] of [[input.proxy[0],io.originalHeaders],[input.proxy[1],io.wire]]){
+    Object.assign(packet,identity(source));packet.bodyProof=proof(source);
+    packet.transportBodyReceipt={protocol:"proxy-natural-eof-decoded-bytes-v1",naturalEOF:true,decodedBytes:bytes.length,bodySha256:sha(bytes)};
+  }
+  const cached=input.responses[0];Object.assign(cached,identity(io.initial));cached.initialHeaderIdentity=identity(io.initial);cached.bodyProof=proof(io.initial);
+  cached.bodyReadbackReceipt={...cached.bodyReadbackReceipt,decodedBytes:bytes.length,bodySha256:sha(bytes),utf16CodeUnitLength:bytes.length,observedDataLengthAtReadback:bytes.length};
+  Object.assign(input.failures[0],identity(io.wire));input.failures[0].initialHeaderIdentity=identity(io.initial);input.failures[0].extraHeaderIdentity=identity(io.wire);
+  return {...result,bytes};
+}
+
+function routeNullFixture({pathname="/en",bodyText}={}){
+  const setup=routeTreeFixture(),{input,io}=setup,compiled=input.nativeContext.binding;
+  io.url=io.origin+pathname+"?_rsc=synthetic";
+  const identity=source=>controlRequestIdentity(input.nativeContext.contextId,io.url,"GET",source);
+  Object.assign(input.failures[0],identity(io.wire));input.failures[0].initialHeaderIdentity=identity(io.initial);input.failures[0].extraHeaderIdentity=identity(io.wire);
+  const bytes=Buffer.from(bodyText ?? '0:{"t":{"t":{"s":"","c":"$Q2"}}}\n2:[["children",{"s":{"n":"locale","t":"d","k":null,"s":[]},"c":"$Q3"}]]\n3:[["children",{"s":"__PAGE__"}]]\n');
+  for(const row of [...input.proxy,input.responses[0]]){
+    Object.assign(row,identity(row.id===io.originalId?io.originalHeaders:row.id?io.wire:io.initial));if(!row.id)row.initialHeaderIdentity=identity(io.initial);
+    const facts=renderedPathSourceFacts({response:{url:io.url,status:200,headers:io.response},compiledRouting:compiledRoutingSourceFacts({basePath:"",output:"standalone"},compiled.compiledManifestSha256),origin:io.origin,collectScalars:true,responseOrdinal:1,observerSourceSha256:protocol["browser-control-collector.mjs"]});
+    if(row.id){facts.url.provenance="owned-proxy-request-url-no-follow";facts.rendered.pathnameSource="owned-proxy-request-url-no-follow";facts.rendered.searchSource="owned-proxy-request-url-no-follow";if(facts.scalarKeys){const {scalarKeys,...source}=facts;scalarKeys.sourceSha256=sha(JSON.stringify(source));}}
+    row.pathSourceFacts=facts;
+    row.bodyProof=inspectRequiredFlightBody(bytes,{requestKind:"route-tree",routeTreeBinding:{...row.bodyProof.routeTreeBinding,pathSourceFacts:facts,requestUrlSha256:row.fullUrlSha256,requestOriginSha256:row.requestOriginSha256,ambiguousRedirect:false}});
+    if(row.id)row.transportBodyReceipt={protocol:"proxy-natural-eof-decoded-bytes-v1",naturalEOF:true,decodedBytes:bytes.length,bodySha256:sha(bytes)};
+    else{row.bodyReadbackReceipt={...row.bodyReadbackReceipt,decodedBytes:bytes.length,bodySha256:sha(bytes),utf16CodeUnitLength:bytes.length,observedDataLengthAtReadback:bytes.length};row.ambiguousRedirect=false;row.failed=false;row.browserDataLedger={protocol:"cached-browser-data-ledger-v1",requestObserved:true,responseEvents:1,finishedEvents:1,failedEvents:0,dataEvents:1,dataAfterTerminal:0,dataBeforeResponse:0,responseAfterTerminal:0,terminalBeforeResponse:0,invalidData:false,observedDataLength:bytes.length};}
+  }
+  return {...setup,bytes};
+}
+
+test("ordinary d/null route readiness uses source-bound canonical scalar facts and a complete branch-index walk",()=>{
+  const {input}=routeNullFixture(),result=classifyControlCancellations(input);
+  assert.equal(result.provenControls,1,JSON.stringify(result.records));
+  const readiness=result.records[0].proof.origin.bodyProof.routeReadiness;
+  assert.equal(readiness.nullNodes,1);assert.equal(readiness.metadataPages,1);assert.equal(readiness.nodes[1].partIndex,0);
+  assert.equal(cleanBrowserFailureEvidence(JSON.parse(JSON.stringify(result)),1),true);
+  assert.equal(JSON.stringify(result).includes('"locale"'),false);
+});
+
+test("nullable route inspection cannot downgrade missing readiness to the concrete route contract",()=>{
+  const valid=classifyControlCancellations(routeNullFixture().input);
+  assert.equal(valid.provenControls,1);
+  for(const key of ["origin","packet","cached"]){
+    assert.ok(valid.records[0].proof[key],key);
+    for(const mutate of [p=>p.routeReadiness=null,p=>delete p.routeReadiness,p=>delete p.routeNullNodes,p=>p.routeNullNodes=0,p=>p.routeNullNodes=-1,p=>p.routeNullNodes="1",p=>p.routeNullNodes=null,p=>p.routeNullNodes=2,
+      p=>{p.routeReadiness=null;p.routeNullNodes=0;}]){
+      const bad=structuredClone(valid);mutate(bad.records[0].proof[key].bodyProof);
+      assert.equal(cleanBrowserFailureEvidence(bad,1),false,key);
+    }
+  }
+  for(const mutate of [p=>p.routeReadiness=null,p=>delete p.routeReadiness,p=>delete p.routeNullNodes,p=>p.routeNullNodes=0,p=>p.routeNullNodes=-1,p=>p.routeNullNodes="1",p=>p.routeNullNodes=null,p=>p.routeNullNodes=2,
+    p=>{p.routeReadiness=null;p.routeNullNodes=0;}]){
+    const {input}=routeNullFixture();
+    for(const row of [...input.proxy,input.responses[0]]){mutate(row.bodyProof);row.pathSourceFacts=null;}
+    assert.equal(classifyControlCancellations(input).provenControls,0);
+  }
+  const concrete=classifyControlCancellations(routeTreeFixture().input);
+  assert.equal(concrete.provenControls,1);
+  assert.equal(concrete.records[0].proof.origin.bodyProof.routeNullNodes,0);
+  const missing=structuredClone(concrete);delete missing.records[0].proof.origin.bodyProof.routeNullNodes;
+  assert.equal(cleanBrowserFailureEvidence(missing,1),false);
+});
+
+test("nullable route walk uses each branch position and cannot borrow page, alias or encoder readiness",()=>{
+  const dynamic={n:"PRIVATE_NAME",t:"d",k:null,s:[]},page={s:"__PAGE__"};
+  const body=tree=>'0:'+JSON.stringify({t:{t:tree}})+'\n';
+  const node=(s,child)=>({s,c:"$Q"+child});
+  const examples=[
+    {pathname:"/en",bodyText:body(node("",1))+'1:[["children",'+JSON.stringify(node("(group)",2))+']]\n2:[["children",'+JSON.stringify(node(dynamic,3))+']]\n3:[["children",'+JSON.stringify(page)+']]\n',index:0},
+    {pathname:"/fixed/en",bodyText:body(node("",1))+'1:[["children",'+JSON.stringify(node("fixed",2))+']]\n2:[["children",'+JSON.stringify(node(dynamic,3))+']]\n3:[["children",'+JSON.stringify(page)+']]\n',index:1},
+    {pathname:"/fixed/en",bodyText:body(node("",1))+'1:[["children",'+JSON.stringify(node({...dynamic,k:"fixed"},2))+']]\n2:[["children",'+JSON.stringify(node(dynamic,3))+']]\n3:[["children",'+JSON.stringify(page)+']]\n',index:1},
+  ];
+  for(const example of examples){const {input}=routeNullFixture(example),result=classifyControlCancellations(input);assert.equal(result.provenControls,1,JSON.stringify(input.proxy[0].bodyProof));
+    const walk=result.records[0].proof.origin.bodyProof.routeReadiness;assert.equal(walk.nodes.find(row=>row.kind==="dynamic-null-d").partIndex,example.index);assert.equal(cleanBrowserFailureEvidence(JSON.parse(JSON.stringify(result)),1),true);}
+  const alias=body(node("",1))+'1:[["children",'+JSON.stringify(node("fixed",2))+'],["modal",{"s":"$4","c":"$Q3"}]]\n2:[["children",{"s":"$4","c":"$Q5"}]]\n3:[["children",'+JSON.stringify(page)+']]\n5:[["children",'+JSON.stringify(page)+']]\n4:'+JSON.stringify(dynamic)+'\n';
+  assert.equal(classifyControlCancellations(routeNullFixture({pathname:"/one/two",bodyText:alias}).input).provenControls,1);
+  assert.equal(classifyControlCancellations(routeNullFixture({pathname:"/one",bodyText:alias}).input).provenControls,0,"an early alias/page cannot hide a missing later branch part");
+  for(const changed of ["/","/%E0%A4%A"]){assert.equal(classifyControlCancellations(routeNullFixture({pathname:changed}).input).provenControls,0);}
+  for(const bodyText of [alias.replace('"modal"','"💥"'),alias.replace('"PRIVATE_NAME"','"💥"'),alias.replace('"t":"d"','"t":"di(.)"'),alias.replace('"fixed"','"(..)fixed"')])assert.equal(classifyControlCancellations(routeNullFixture({pathname:"/one/two",bodyText}).input).provenControls,0);
+});
+
+test("nullable route source and serialized walk premises are mandatory, not copied resolution booleans",()=>{
+  const cases=[row=>delete row.pathSourceFacts.scalarKeys,row=>row.pathSourceFacts.url.sha256="0".repeat(64),row=>row.pathSourceFacts.observerSourceSha256="0".repeat(64),
+    row=>row.pathSourceFacts.rewrite.path.present=true,row=>row.pathSourceFacts.compiledRouting.basePathEmpty=false,row=>row.pathSourceFacts.compiledRouting.output="export",row=>row.pathSourceFacts.rendered.searchBytes=1,
+    row=>row.pathSourceFacts.scalarKeys.parts[0].canonicalizationKnown=false,row=>row.pathSourceFacts.scalarKeys.parts[0].scalarSha256="0".repeat(64),row=>row.pathSourceFacts.compiledRouting.compiledManifestSha256="0".repeat(64)];
+  for(const mutate of cases){const {input}=routeNullFixture();mutate(input.proxy[0]);assert.equal(classifyControlCancellations(input).provenControls,0);}
+  const {input}=routeNullFixture(),result=classifyControlCancellations(input);
+  for(const mutate of [r=>r.nodes[1].partIndex=1,r=>r.nodes[1].nextIndex=0,r=>r.nodes[2].parentOrdinal=1,r=>r.nodes[1].scalar.sha256="0".repeat(64),r=>r.nullNodes=2]){
+    const bad=JSON.parse(JSON.stringify(result)),readiness=bad.records[0].proof.origin.bodyProof.routeReadiness;mutate(readiness);readiness.walkSha256=sha(JSON.stringify(readiness.nodes));
+    assert.equal(cleanBrowserFailureEvidence(bad,1),false);
+  }
+});
+
+test("dedicated route-tree Native control binds the fixed request and fully buffered branching structure",()=>{
+  const {input}=routeTreeFixture(),result=classifyControlCancellations(input);
+  assert.equal(result.provenControls,1,JSON.stringify({records:result.records,bodies:input.proxy.map(row=>row.bodyProof)}));
+  assert.equal(result.records[0].proof.origin.bodyProof.requiredStage,"route-tree-structure");
+  assert.equal(result.records[0].proof.origin.bodyProof.metadataPages,2);
+  assert.equal(cleanBrowserFailureEvidence(JSON.parse(JSON.stringify(result)),1),true);
+  for(const mutate of [i=>i.failures[0].requestHeadersKnown=false,i=>i.proxy[1].canceled=true,i=>i.proxy[0].complete=false,
+    i=>i.proxy[0].bodyProof.routeTreeBinding.requestKeySha256=sha("/_head"),i=>i.proxy[1].bodyProof.routeTreeBinding.compiledBuild="a".repeat(40),
+    i=>i.responses[0].bodyProof.metadataPages=0,i=>i.responses[0].bodyProof.routeTreeBinding.responseDeploymentSha256="0".repeat(64),
+    i=>i.responses[0].bodyReadbackReceipt.bodySha256="0".repeat(64),i=>i.proxy[0].bodyProof.serverErrors=1]){
+    const bad=routeTreeFixture().input;mutate(bad);assert.equal(classifyControlCancellations(bad).provenControls,0);
+  }
+});
+
+test("Native forward-image equality keeps original Flight proof distinct from unknown CDP text parsing",()=>{
+  const {input,original}=projectionFixture(),result=classifyControlCancellations(input);
+  assert.equal(result.provenControls,1,JSON.stringify(result.records));
+  assert.equal(result.records[0].proof.byteCorrespondence.kind,"windows-1252-forward-image");
+  assert.equal(result.records[0].proof.cached.bodyProof.complete,false);
+  assert.equal(result.records[0].proof.origin.bodyProof.complete,true);
+  assert.equal(result.records[0].proof.byteCorrespondence.originalBytes,original.length);
+  assert.equal(cleanBrowserFailureEvidence(JSON.parse(JSON.stringify(result)),1),true);
+  const tampered=JSON.parse(JSON.stringify(result));tampered.records[0].proof.byteCorrespondence.kind="exact";
+  assert.equal(cleanBrowserFailureEvidence(tampered,1),false);
+});
+
+test("Native forward-image proof rejects missing decoder, final data, original protocol or byte correspondence premises",()=>{
+  const cases=[
+    i=>delete i.responses[0].browserDataLedger,i=>i.responses[0].browserDataLedger.invalidData=true,
+    i=>i.responses[0].browserDataLedger.dataAfterTerminal=1,i=>i.responses[0].browserDataLedger.finishedEvents=2,
+    i=>i.responses[0].browserDataLedger.dataBeforeResponse=1,i=>i.responses[0].browserDataLedger.responseAfterTerminal=1,i=>i.responses[0].browserDataLedger.terminalBeforeResponse=1,
+    i=>i.responses[0].browserDataLedger.failedEvents=1,i=>i.responses[0].browserDataLedger.responseEvents=2,
+    i=>i.responses[0].browserDataLedger.observedDataLength++,i=>i.responses[0].browserDataLedger.requestObserved=false,
+    i=>i.responses[0].failed=true,i=>i.responses[0].ambiguousRedirect=true,
+    i=>i.responses[0].bodyReadbackReceipt.observedDataLengthAtReadback++,i=>i.responses[0].bodyReadbackReceipt.terminal="failed",
+    i=>i.responses[0].bodyReadbackReceipt.base64Encoded=true,i=>i.responses[0].bodyReadbackReceipt.utf16CodeUnitLength++,
+    i=>delete i.responses[0].bodyReadbackReceipt.effectiveCdpResponse,i=>i.responses[0].bodyReadbackReceipt.effectiveCdpResponse.charset="utf-8",
+    i=>i.responses[0].responseContentType.charset="utf-8",i=>i.responses[0].responseContentType.mime="other",i=>i.responses[0].bodyReadbackReceipt.responseContentType.headerKnown=false,
+    i=>i.responses[0].bodyReadbackReceipt.effectiveCdpResponse.charsetKnown=false,i=>i.responses[0].bodyReadbackReceipt.effectiveCdpResponse.mime="other",
+    i=>i.proxy[0].transportBodyReceipt.cdpTextProjection.sourceRevision="0".repeat(40),i=>i.proxy[0].transportBodyReceipt.cdpTextProjection.mappingSha256="0".repeat(64),
+    i=>i.proxy[0].transportBodyReceipt.cdpTextProjection.outputCodeUnits++,i=>i.proxy[1].transportBodyReceipt.cdpTextProjection.utf8Sha256="0".repeat(64),
+    i=>i.proxy[0].bodyProof.complete=false,i=>i.proxy[0].bodyProof.serverErrors=1,i=>i.responses[0].observedProtocolError={serverErrors:1,explicitActionFailure:false},
+    i=>i.responses[0].bodyProof.bodySha256="0".repeat(64),i=>i.responses[0].bodyProof.decodedBytes=1,
+    i=>i.responses[0].bodyProof={complete:false,explicitActionFailure:true},i=>i.responses[0].initialSegmentResponse={...i.responses[0],responseHeaderSnapshotKnown:false},
+  ];
+  for(let index=0;index<cases.length;index++){
+    const {input}=projectionFixture();cases[index](input);
+    assert.equal(classifyControlCancellations(input).provenControls,0,String(index));
+  }
+});
+
+test("known-Extra Native control requires a complete source/principal/variant/ancestor/exact-byte certificate",()=>{
+  const {input}=fixture();
+  const result=classifyControlCancellations(input);
+  assert.equal(result.provenControls,1,JSON.stringify(result.records));
+  assert.equal(result.unknownFailures,0);
+  assert.equal(result.records[0].reason,"qualified-cached-flight-native-revalidation");
+  assert.equal(cleanBrowserFailureEvidence(JSON.parse(JSON.stringify(result)),1),true);
+});
+
+test("Native census chronology uses context application IDs independently of lexical trace serialization",()=>{
+  const applicationIds=Array.from({length:12},(_,i)=>i+1);
+  for(const mixedTraces of [false,true]){
+    const {input}=fixture({applicationIds,originalApplicationId:2,currentApplicationId:11,mixedTraces});
+    const result=classifyControlCancellations(input);
+    assert.equal(result.provenControls,1,JSON.stringify(result.records));
+    assert.equal(cleanBrowserFailureEvidence(JSON.parse(JSON.stringify(result)),1),true);
+    const reverse=fixture({applicationIds,originalApplicationId:11,currentApplicationId:2,mixedTraces}).input;
+    assert.equal(classifyControlCancellations(reverse).provenControls,0,"a later origin cannot precede the current wire");
+  }
+  const gap=fixture({applicationIds:[1,2,4],originalApplicationId:1,currentApplicationId:2}).input;
+  assert.equal(classifyControlCancellations(gap).provenControls,0,"context census must retain numeric continuity");
+  const {input,io}=fixture({applicationIds,mixedTraces:true,originalApplicationId:2,currentApplicationId:11});
+  const census=createProxyHeaderCensus({contextId:input.nativeContext.contextId});
+  for(let id=1;id<=12;id++){
+    const number=id===12?11:id;
+    const requestId=(id%2===0?"b":"a").repeat(32)+"."+number;
+    census.accepted(requestId);census.headers(requestId,io.response);
+  }
+  census.close();input.nativeContext.headerCensus=census.snapshot();
+  assert.equal(classifyControlCancellations(input).provenControls,0,"different traces cannot duplicate a context application ID");
+});
+
+test("Native proof cannot use NoExtra, missing source authority, body mismatches or an incomplete current wire",()=>{
+  for(const mutate of [i=>delete i.nativeContext,i=>delete i.nativeContext.binding.nativePublicSources,i=>i.failures[0].requestHeadersKnown=false,
+    i=>i.responses.push(structuredClone(i.responses[0])),i=>i.proxy.push(structuredClone(i.proxy[0])),i=>i.responses[0].bodyReadbackReceipt.bodySha256="0".repeat(64),
+    i=>i.proxy[0].responseHeaderSnapshotKnown=false,i=>i.proxy[1].responseHeaderSnapshotKnown=false,
+    i=>i.responses[0].responseHeaderSnapshotKnown=false,i=>i.responses[0].initialSegmentResponse={...i.responses[0],responseHeaderSnapshotKnown:false},
+    i=>i.responses[0].initialSegmentResponse={...i.responses[0],status:500},i=>i.responses[0].requestHeaderSnapshotKnown=false,
+    i=>i.failures[0].extraHeaderIdentity.purposeHeaderPresent=true,i=>i.failures[0].extraHeaderIdentity.secPurposeHeaderPresent=true,
+    i=>i.proxy[1].complete=false,i=>i.proxy[1].canceled=true,i=>i.nativeContext.headerCensus.closed=false,i=>i.nativeContext.principalEpoch.after.sha256="0".repeat(64)]){
+    const {input}=fixture();mutate(input);const result=classifyControlCancellations(input);assert.equal(result.provenControls,0);assert.equal(result.unknownFailures,1);
+  }
+  for(const source of ["initialHeaderIdentity","extraHeaderIdentity"]){
+    for(const [field,value] of [["rsc",false],["prefetch",false],["action",true],["purposeHeaderPresent",true],["secPurposeHeaderPresent",true]]){
+      const {input}=fixture();input.failures[0][source][field]=value;
+      assert.equal(classifyControlCancellations(input).provenControls,0,source+":"+field);
+    }
+  }
+});
+
+test("Native serialized controls require external runtime and frozen protocol authority at finalization",()=>{
+  const {input}=fixture();
+  const measured=classifyControlCancellations(input),allPhase=classifyControlCancellations({...input,scope:"all-phase-semantic-correlation"});
+  const evidence={contextId:input.nativeContext.contextId,protocolErrors:input.nativeContext.protocolErrors,measured,allPhase};
+  const authority={runtime:{build:input.nativeContext.binding.compiledBuild,browserControl:input.nativeContext.binding},protocolSources:protocol,origin:"http://localhost:1234"};
+  assert.equal(cleanBrowserContextEvidence(evidence.contextId,evidence,1),false);
+  assert.equal(cleanBrowserContextEvidence(evidence.contextId,JSON.parse(JSON.stringify(evidence)),1,authority),true);
+  const wrongProtocol={...authority,protocolSources:{...protocol,"browser-control-collector.mjs":"0".repeat(64)}};
+  assert.equal(cleanBrowserContextEvidence(evidence.contextId,evidence,1,wrongProtocol),false);
+  assert.equal(cleanBrowserContextEvidence(evidence.contextId,evidence,1,{...authority,origin:"http://localhost:9999"}),false);
+  const wrongRuntime=structuredClone(authority);wrongRuntime.runtime.browserControl.nativePublicSources.files[0].sha256="0".repeat(64);
+  assert.equal(cleanBrowserContextEvidence(evidence.contextId,evidence,1,wrongRuntime),false);
+  for(const mutate of [p=>p.cachedCandidates=2,p=>p.originCandidates=0,p=>p.nativeContextSha256="0".repeat(64),p=>p.origin.bodyProof.segmentBinding.derivedRequestKeySha256="0".repeat(64),p=>delete p.failure.extraHeaderIdentity]){
+    const bad=JSON.parse(JSON.stringify(measured));mutate(bad.records[0].proof);assert.equal(cleanBrowserFailureEvidence(bad,1),false);
+  }
+  const historical=structuredClone(measured);historical.protocol="positively-proven-protocol-controls-v1";historical.policy.version=1;
+  assert.equal(cleanBrowserFailureEvidence(historical,1),false,"old policy evidence cannot acquire the new Native exemption");
+});
+
+test("Native source, principal, Vary and producer premises are mandatory rather than an Other/prefetch allowlist",()=>{
+  const cases=[
+    i=>i.failures[0].type="Fetch",i=>i.failures[0].initiator="script",i=>i.failures[0].priority="Low",i=>i.failures[0].purposeHeaderPresent=true,
+    i=>delete i.failures[0].proxyResponseId,i=>i.failures[0].requestOriginSha256="0".repeat(64),
+    i=>i.responses[0].finishedAt=4,i=>i.responses[0].loaderId="old",i=>i.responses[0].initialHeaderIdentity.headerFieldSha256["next-url"]="0".repeat(64),
+    i=>i.proxy[0].headerFieldSha256.cookie="0".repeat(64),i=>i.proxy[1].headerFieldSha256["accept-encoding"]="0".repeat(64),
+    i=>i.proxy[1].vary.star=true,i=>i.proxy[0].vary.known=false,
+    i=>i.responses[0].staleWhileRevalidateSeconds=null,
+    i=>i.nativeContext.binding.browserVerified=false,i=>i.nativeContext.environment.servingPublicSources.files[0].sha256="0".repeat(64),
+    i=>i.nativeContext.environment.endRead.publicSourceRecheck={...i.nativeContext.environment.endRead.publicSourceRecheck,servingRootKnown:false},
+    i=>i.nativeContext.environment.nativeLaunchMetadata.observerSources[0].sha256="0".repeat(64),
+    i=>i.nativeContext.environment.nativeLaunchMetadata.recordedArgumentsSha256="0".repeat(64),i=>i.nativeContext.environment.nativeLaunchMetadata.profileArgumentCount=2,
+    i=>i.nativeContext.environment.workerTargets.contextJoinKnown=false,i=>i.nativeContext.environment.endRead.controller.controllerAfter.ownedScript=false,
+    i=>i.nativeContext.environment.endRead.controller.registrations[0].waiting={present:true,known:true},
+    i=>i.nativeContext.principalEpoch.before.cookieAttributes.singleOwnedRootHttpOnlyCookie=false,i=>i.nativeContext.principalEpoch.unknownResponseHeaders=1,
+    i=>i.nativeContext.headerLifetime.closure.acceptedRequests=3,i=>delete i.nativeContext.headerLifetime.installation.proxyInstanceId,
+    i=>i.nativeContext.headerCensus.requests.pop(),i=>i.nativeContext.protocolErrors.observed=1,
+    i=>i.responses[0].bodyReadbackReceipt.observedDataLengthAtReadback=null,i=>i.responses[0].bodyReadbackReceipt.utf16CodeUnitLength++,
+  ];
+  for(let index=0;index<cases.length;index++){
+    const {input}=fixture();cases[index](input);const result=classifyControlCancellations(input);
+    assert.equal(result.provenControls,0,String(index));assert.equal(result.unknownFailures,1,String(index));
+  }
+});
+
+test("genuine browser/HTTP/protocol failures are never relabeled as Native controls",()=>{
+  for(const mutate of [i=>i.failures[0].error="net::ERR_CONNECTION_RESET",i=>i.proxy[1].status=500,i=>i.proxy[1].observedProtocolError={serverErrors:1,explicitActionFailure:false},i=>i.proxy[1].observedProtocolError={serverErrors:0,explicitActionFailure:true}]){
+    const {input}=fixture();mutate(input);const result=classifyControlCancellations(input);assert.equal(result.realFailures,1);assert.equal(result.provenControls,0);
+  }
+  const {input}=fixture();input.proxy[0].bodyProof.serverErrors=1;
+  assert.equal(classifyControlCancellations(input).provenControls,0,"a bad required ancestor is never borrowed");
+});
+
+test("actual collector APIs carry CORE authority and exact-byte joins after transport closure",async()=>{
+ for(const mode of ["exact","projection","route-tree"]){
+  const setup=mode==="exact"?fixture():mode==="projection"?projectionFixture():routeTreeFixture(),{input,io}=setup,bytes=setup.original ?? setup.bytes,ctx=input.nativeContext;
+  const proxy=createProxyControlCollector({contextId:ctx.contextId,origin:io.origin,compiledCachedNavigations:true,compiledBinding:ctx.binding});
+  proxy.installed(ctx.headerLifetime.installation);
+  const collector=createBrowserControlCollector({contextId:ctx.contextId,origin:io.origin,browserRevision:chromiumSWRRevision,compiledCachedNavigations:true,compiledBinding:ctx.binding,
+    protocolSources:protocol,operatorFile:"run-baseline.mjs",principalEpoch:io.principal,environmentObservation:()=>ctx.environment,proxyObservation:proxy.snapshot,
+    readBody:async id=>{if(id!=="cached")throw Error("Synthetic native response body unavailable");return{body:mode==="projection"?bytes.toString("latin1"):bytes.toString(),base64Encoded:false};}});
+  collector.installed();
+  const request=(id,type,timestamp)=>({requestId:id,loaderId:"loader",timestamp,type,initiator:{type:type==="Fetch"?"script":"other"},request:{url:io.url,method:"GET",headers:io.initial,initialPriority:"VeryLow"}});
+  proxy.request(io.originalId,{url:io.url,method:"GET",headers:io.originalHeaders,traceId:"a".repeat(32)});proxy.response(io.originalId,{status:200,headers:io.response});proxy.bytes(io.originalId,bytes);proxy.end(io.originalId);
+  collector.request(request("cached","Fetch",1));collector.response({requestId:"cached",response:{status:200,headers:{...io.response,[controlResponseHeader]:io.originalId},fromDiskCache:true,fromServiceWorker:false,mimeType:"text/x-component",charset:""}});
+  collector.data({requestId:"cached",dataLength:bytes.length});collector.finished({requestId:"cached",timestamp:2});await tick();await tick();
+  collector.beginMeasurement();
+  proxy.request(io.currentId,{url:io.url,method:"GET",headers:io.wire,traceId:"a".repeat(32)});proxy.response(io.currentId,{status:200,headers:io.response});proxy.bytes(io.currentId,bytes);proxy.end(io.currentId);
+  collector.request(request("native","Other",3));collector.requestExtra({requestId:"native",headers:io.wire});collector.responseExtra({requestId:"native",statusCode:200,headers:{...io.response,[controlResponseHeader]:io.currentId}});
+  collector.recordMeasuredFailure("native");collector.failed({requestId:"native",errorText:"net::ERR_ABORTED",canceled:true});collector.endMeasurement();collector.endScope();
+  await tick();await tick();proxy.transportClosed(ctx.headerLifetime.closure);
+  const result=collector.snapshot();
+  assert.equal(result.measured.provenControls,1,JSON.stringify(result.diagnostics.failures));
+  assert.equal(result.measured.unknownFailures,0);
+  assert.equal(result.measured.records[0].proof.byteCorrespondence.kind,mode==="projection"?"windows-1252-forward-image":"exact");
+  assert.equal(cleanBrowserContextEvidence(ctx.contextId,JSON.parse(JSON.stringify(result)),1,{runtime:{build:ctx.binding.compiledBuild,browserControl:ctx.binding},protocolSources:protocol,origin:io.origin}),true);
+  if(mode==="projection"){
+    collector.data({requestId:"cached",dataLength:0});const after=collector.snapshot();
+    assert.equal(after.measured.provenControls,0,"later actual data invalidates the formerly complete correspondence");
+    assert.equal(after.measured.rawFailedRequests,1);
+    assert.equal(after.bodyReceipts.find(row=>row.requestId==="cached").bodyReadbackReceipt.observedDataLengthAtReadback,bytes.length);
+  }
+ }
+});
+
+async function openPrefixFixture(){
+ const raw=await import("./control-cancellation-evidence.mjs"),owner=fixtureOwner("synthetic-context");
+ const api={...raw,
+  mixedNativePrefixCandidates(value,onReject){let cut;try{cut=owner.capture(()=>value);}catch{return raw.mixedNativePrefixCandidates(value,onReject);}try{const result=raw.mixedNativePrefixCandidates(cut,onReject);return result===null?null:replayFixture(result);}finally{owner.releaseCut(cut);}},
+  createMixedNativePrefix(args){let begin,end,receipt;try{begin=owner.capture(()=>args.begin);end=owner.capture(()=>args.end);receipt=owner.retainEvidence(()=>raw.createMixedNativePrefix({...args,begin,end}));return replayFixture(receipt);}finally{owner.releaseEvidence(receipt);owner.releaseCut(begin);owner.releaseCut(end);}},
+  validateMixedNativePrefix(value){try{return raw.validateMixedNativePrefix(replayFixture(value));}catch{return false;}},
+ };
+ const censusApi=await import("./proxy-header-census.mjs");
+ const {input,io}=fixture();
+ const final=classifyControlCancellations(input);assert.equal(final.provenControls,1);
+ const closedContext=structuredClone(input.nativeContext),context=input.nativeContext;
+ context.operatorFile="mixed-load-probe.mjs";context.protocolSources={...context.protocolSources,"mixed-load-probe.mjs":sha("synthetic-mixed-source")};
+ context.protocolErrors.scopeClosed=false;context.environment.workerTargets.scopeClosed=false;
+ const principal=createPrincipalEpochObserver(context.contextId,{origin:io.origin}),cookies=[{name:"session",value:"synthetic",domain:"localhost",path:"/",httpOnly:true}];principal.start(cookies);context.principalEpoch=principal.snapshot();
+ context.environment.endRead=null;context.headerLifetime.closure=null;
+ const census=createProxyHeaderCensus({contextId:context.contextId}),life=censusApi.createProxyHeaderLifecycle({proxyInstanceId:"f".repeat(32),originSha256:context.originSha256,allowedOriginSha256:[context.originSha256]});
+ for(let n=1;n<=2;n++){const rid="a".repeat(32)+"."+n;census.accepted(rid);life.accepted(rid,context.originSha256);life.upstreamCreated(rid);life.headersReceived(rid);census.headers(rid,io.response);life.headersForwarded(rid);life.upstreamClosed(rid);}
+ context.headerCensus=census.snapshot();context.headerPrefix=censusApi.proxyHeaderPrefix(census.snapshot(),life.snapshot());
+ context.documentJournal={protocol:"actual-cdp-document-journal-v1",contextId:context.contextId,installed:true,currentGeneration:4,executionEventOrdinal:1,documentEventOrdinal:1,errors:0,overflow:0,closed:false,executionEvents:[{ordinal:1,event:"created",executionContextId:1,uniqueId:"actual-context-unique",frameId:"frame",isDefault:true}],documents:[{ordinal:1,requestId:"document",frameId:"frame",loaderId:"loader",originSha256:context.originSha256,documentGeneration:context.contextId+":4"}]};
+ input.coverage.scopeClosed=false;input.browserEventOrdinal=12;
+ const begin=api.mixedNativeProgressInput(input);principal.progressStarted(1);const principalRead=principal.progressFinished(1,cookies);context.principalEpoch=principal.snapshot();
+ const ack={...closedContext.environment.endRead,protocol:"native-environment-progress-readonly-v1",contextId:context.contextId,checkpointOrdinal:1,principalRead,principalReadOperation:principal.progressOperation(1),startedAtMs:100,finishedAtMs:101,elapsedMs:1,deadlineMs:110,deadlineBudgetMs:10,
+ document:{protocol:"actual-cdp-document-acknowledgment-v1",contextId:context.contextId,frameId:"frame",loaderId:"loader",executionContextUniqueId:"actual-context-unique",executionContextId:1,documentRequestId:"document",documentGeneration:4,actualDocumentIdentityStable:true,originSha256:context.originSha256,executionEventOrdinalBefore:1,executionEventOrdinalAfter:1,documentEventOrdinalBefore:1,documentEventOrdinalAfter:1}};
+ ack.document.sourceJournal=structuredClone(context.documentJournal);
+ const end=api.mixedNativeProgressInput(input);
+ return {api,censusApi,input,io,closedContext,context,begin,end,ack,life};
+}
+
+test("acknowledged Native prefixes recompute the natural-EOF core but never satisfy final closed evidence",async()=>{
+ const {api,input,closedContext,context,begin,end,ack}=await openPrefixFixture();
+ const receipt=api.createMixedNativePrefix({checkpointOrdinal:1,begin,end,acknowledgment:ack,headerPrefix:context.headerPrefix,returnedAtMs:101});
+ assert.equal(api.validateMixedNativePrefix(JSON.parse(JSON.stringify(receipt))),true);
+ assert.equal(classifyControlCancellations(input).provenControls,0,"open authority never passes final Native proof");
+ assert.equal(cleanBrowserFailureEvidence(receipt,1),false);
+ for(const mutate of [r=>delete r.acknowledgment.principalReadOperation,r=>r.acknowledgment.principalReadOperation.acknowledgmentOrdinal=2,r=>r.end.failures.push({...r.end.failures[0],requestId:"new-failure"}),r=>r.end.proxy[1].complete=false,r=>r.end.proxy[1].canceled=true,r=>r.end.proxy[1].bodyProof.serverErrors=1,r=>r.acknowledgment.principalRead.sha256="0".repeat(64),r=>r.acknowledgment.controller.controllerIdentityStable=false,r=>r.acknowledgment.document.executionEventOrdinalAfter++,r=>r.acknowledgment.document.actualDocumentIdentityStable=false,r=>r.acknowledgment.document.contextId="foreign",r=>r.acknowledgment.readErrors=1,r=>r.acknowledgment.pendingOperations=1,r=>r.acknowledgment.publicSourceRecheck.files[0].sha256="0".repeat(64),r=>r.end.protocolSources={},r=>r.end.nativeContext.protocolErrors.observed=1,r=>r.headerPrefix.census.counts.setCookieLines=1,r=>r.end.nativeContext.environment.workerTargets.events.push({type:"shared_worker"})]){
+  const bad=structuredClone(receipt);mutate(bad);const {prefixSha256,...facts}=bad;bad.prefixSha256=sha(JSON.stringify(facts));assert.equal(api.validateMixedNativePrefix(bad),false);
+ }
+ assert.equal(classifyControlCancellations({...input,nativeContext:closedContext,coverage:{...input.coverage,scopeClosed:true}}).provenControls,1,"the unchanged final authority still admits the synthetic closed positive");
+});
+
+test("progress cookie reads carry bounded read-only ownership without closing the principal epoch",()=>{
+ const observer=createPrincipalEpochObserver("ctx",{origin:"http://localhost:1234"});
+ const cookies=[{name:"session",value:"synthetic",domain:"localhost",path:"/",httpOnly:true}];observer.start(cookies);
+ observer.progressStarted(1);observer.progressStarted(2);
+ const own=observer.progressFinished(1,cookies),cut=observer.snapshot();
+ assert.equal(own.known,true);assert.equal(cut.scopeClosed,false);assert.equal(cut.after.known,false);
+ assert.equal(cut.pendingReads,1);assert.deepEqual(cut.progressReads.pending,[{acknowledgmentOrdinal:2,kind:"read-only-context-cookies-v1"}]);
+ assert.equal(cut.progressReads.started-cut.progressReads.finished,1);
+ observer.progressFailed(2);assert.equal(observer.snapshot().readErrors,1);assert.equal(observer.snapshot().pendingReads,0);
+ observer.progressStarted(1);assert.equal(observer.snapshot().observationErrors,1,"an acknowledgment cannot reuse another read's ownership");
+ observer.end(cookies);assert.equal(observer.snapshot().scopeClosed,true);
+});
+
+test("mixed progress acknowledgments stop on genuine or incomplete work before metadata and seal exact return IDs",async()=>{
+ const {createMixedProgressAcknowledgments}=await import("./browser-control-collector.mjs");
+ const {api,begin,end,ack,life}=await openPrefixFixture();
+ const application=()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0});
+ let current=structuredClone(begin),reads=0;
+ const acquire=async({checkpointOrdinal,deadlineMs})=>{reads++;current.nativeContext.principalEpoch=structuredClone(end.nativeContext.principalEpoch);const startedAtMs=performance.now(),finishedAtMs=startedAtMs+0.01;return {...structuredClone(ack),checkpointOrdinal,startedAtMs,finishedAtMs,elapsedMs:finishedAtMs-startedAtMs,deadlineMs,deadlineBudgetMs:deadlineMs-startedAtMs};};
+ const observer=makeProgressObserver({input:()=>structuredClone(current),application,acknowledge:acquire});
+ const token=await observer.check();assert.equal(observer.confirm(token),true);assert.equal(reads,1);
+ life.close();const finalInputs={failureIds:["native"],nativeFailureIds:["native"],browserEventOrdinal:12,failureOccurrences:api.mixedFailureOccurrenceCensus({contextId:begin.nativeContext.contextId,scopeClosed:true,browserEventOrdinal:12,records:[{requestId:"native",eventOrdinal:9,failedEvents:1}]}),headerLifecycle:life.snapshot(),documentJournal:{...structuredClone(ack.document.sourceJournal),closed:true}};
+ const finalContext=structuredClone(current.nativeContext);finalContext.principalEpoch.scopeClosed=true;finalContext.environment.workerTargets.scopeClosed=true;
+ assert.equal(api.validateMixedProgressObservations(observer.snapshot(),finalContext,finalInputs),true);
+ for(const edit of [v=>delete v.checks,v=>v.checks.pop(),v=>v.contextId="another-context",v=>v.checks[0].prefixSha256=null,v=>v.prefixes.pop(),v=>v.checks[0].returned.headerEventOrdinal=999,v=>v.authoritySha256="0".repeat(64)]){const bad=structuredClone(observer.snapshot());edit(bad);assert.equal(api.validateMixedProgressObservations(bad,finalContext,finalInputs),false); }
+ const ownPending=structuredClone(observer.snapshot().prefixes[0]);
+ const parallel=createPrincipalEpochObserver(begin.nativeContext.contextId,{origin:"http://localhost:1234"}),cookies=[{name:"session",value:"synthetic",domain:"localhost",path:"/",httpOnly:true}];parallel.start(cookies);parallel.progressStarted(2);ownPending.begin.nativeContext.principalEpoch=parallel.snapshot();parallel.progressStarted(1);ownPending.acknowledgment.principalRead=parallel.progressFinished(1,cookies);ownPending.acknowledgment.principalReadOperation=parallel.progressOperation(1);ownPending.end.nativeContext.principalEpoch=parallel.snapshot();
+ const rehash=p=>{const {prefixSha256,...facts}=p;p.prefixSha256=sha(JSON.stringify(facts));};rehash(ownPending);assert.equal(api.validateMixedNativePrefix(ownPending),true,"other explicitly owned read-only cookie reads need no mutex");
+ for(const edit of [p=>p.end.nativeContext.principalEpoch.progressReads.pending[0].acknowledgmentOrdinal=1,p=>delete p.end.nativeContext.principalEpoch.progressReads,p=>p.end.nativeContext.principalEpoch.progressReads.pending[0].kind="unknown",p=>p.acknowledgment.pendingOperations=1]){const bad=structuredClone(ownPending);edit(bad);rehash(bad);assert.equal(api.validateMixedNativePrefix(bad),false);}
+ current=structuredClone(begin);const race=makeProgressObserver({input:()=>structuredClone(current),application,acknowledge:acquire});const beforeNewFailure=await race.check();current.failures.push({...current.failures[0],requestId:"new-id"});assert.throws(()=>race.confirm(beforeNewFailure),/New mixed/);assert.equal(race.snapshot().failed,1);
+ for(const edit of [v=>v.proxy[1].complete=false,v=>v.proxy[1].canceled=true,v=>v.failures[0].error="net::ERR_FAILED",v=>v.proxy[1].bodyProof.serverErrors=1]){
+  const v=structuredClone(begin);edit(v);let calls=0;const o=makeProgressObserver({input:()=>v,application,acknowledge:async()=>{calls++;return ack;}});await assert.rejects(o.check());assert.equal(calls,0);
+ }
+ let calls=0;const unknown=makeProgressObserver({input:()=>begin,application:()=>({...application(),unknown:1}),acknowledge:async()=>{calls++;return ack;}});await assert.rejects(unknown.check());assert.equal(calls,0);
+ const changed=makeProgressObserver({input:()=>structuredClone(current),application,acknowledge:async args=>{current.failures.push({...current.failures[0],requestId:"late-id"});return acquire(args);}});
+ current=structuredClone(begin);await assert.rejects(changed.check());assert.equal(changed.snapshot().failed,1);
+});
+
+test("live mixed guard tokens cannot be copied or borrowed even for zero-failure fast guards",async()=>{
+ const {createMixedProgressAcknowledgments}=await import("./browser-control-collector.mjs"),{begin}=await openPrefixFixture();
+ const input=structuredClone(begin);input.failures=[];input.responses=[];input.proxy=[];
+ const application=()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0});
+ const one=makeProgressObserver({input:()=>input,application,acknowledge:()=>assert.fail("no Native candidate may read metadata")});
+ const token=await one.check();assert.throws(()=>one.confirm({...token}),/acknowledgment/);
+ const other=makeProgressObserver({input:()=>input,application,acknowledge:()=>assert.fail("fast guard")});
+ const own=await other.check();assert.throws(()=>other.confirm(token),/acknowledgment/);assert.equal(other.snapshot().failed,1);assert.equal(own.contextId,input.nativeContext.contextId);
+});
+
+test("acknowledged document fields must join their observed Runtime/Document source records",async()=>{
+ const {api,begin,end,ack,context}=await openPrefixFixture();
+ const receipt=api.createMixedNativePrefix({checkpointOrdinal:1,begin,end,acknowledgment:ack,headerPrefix:context.headerPrefix,returnedAtMs:101});
+ const bad=structuredClone(receipt);bad.acknowledgment.document.loaderId="another-loader";const {prefixSha256,...facts}=bad;bad.prefixSha256=sha(JSON.stringify(facts));assert.equal(api.validateMixedNativePrefix(bad),false);
+});
+
+test("return cuts reject invalid worker and document authority observed while another context is awaiting",async()=>{
+ const {createMixedProgressAcknowledgments}=await import("./browser-control-collector.mjs");
+ for(const mutate of [v=>v.nativeContext.environment.workerTargets.events.push({type:"service_worker",event:"created",targetOrdinal:3,urlKnown:true,urlSha256:"f".repeat(64),ownedWorkerScript:false,originMatches:false}),v=>v.nativeContext.environment.workerTargets.errors++,v=>v.nativeContext.environment.workerTargets.scopeClosed=true,v=>v.nativeContext.documentJournal.currentGeneration++,v=>v.nativeContext.documentJournal.documents[0].loaderId="new-loader",v=>v.nativeContext.documentJournal.executionEvents[0].uniqueId="another-context",v=>v.nativeContext.environment.servingPublicSources.files[0].sha256="0".repeat(64),v=>v.nativeContext.principalEpoch.progressReads.records[0].snapshotSha256="0".repeat(64)]){
+  const {begin,end,ack}=await openPrefixFixture();let current=structuredClone(begin);
+  const app=()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0});
+  const observer=makeProgressObserver({input:()=>structuredClone(current),application:app,acknowledge:async({checkpointOrdinal,deadlineMs})=>{current.nativeContext.principalEpoch=structuredClone(end.nativeContext.principalEpoch);const startedAtMs=performance.now(),finishedAtMs=startedAtMs+0.01;return {...structuredClone(ack),checkpointOrdinal,startedAtMs,finishedAtMs,elapsedMs:finishedAtMs-startedAtMs,deadlineMs,deadlineBudgetMs:deadlineMs-startedAtMs};}});
+  const token=await observer.check();mutate(current);assert.throws(()=>observer.confirm(token));assert.equal(observer.snapshot().failed,1);
+ }
+});
+
+test("final failure occurrences reject erased same-cut Native guards but preserve genuinely later closed controls",async()=>{
+ const {createMixedProgressAcknowledgments}=await import("./browser-control-collector.mjs"),{api,begin,end,ack,life}=await openPrefixFixture();
+ const current=structuredClone(begin);current.failures=[];
+ const app=()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0});
+ const observer=makeProgressObserver({input:()=>structuredClone(current),application:app,acknowledge:()=>assert.fail("fast guard must not read")});const token=await observer.check();observer.confirm(token);life.close();
+ const context=structuredClone(end.nativeContext);context.principalEpoch.scopeClosed=true;context.environment.workerTargets.scopeClosed=true;
+ const makeCensus=(eventOrdinal,last)=>{const facts={protocol:"actual-browser-failed-occurrence-census-v1",contextId:context.contextId,scopeClosed:true,browserEventOrdinal:last,records:[{requestId:"native",eventOrdinal,failedEvents:1}]};return {...facts,censusSha256:sha(JSON.stringify(facts))};};
+ const inputs={failureIds:["native"],nativeFailureIds:["native"],browserEventOrdinal:12,headerLifecycle:life.snapshot(),documentJournal:{...structuredClone(ack.document.sourceJournal),closed:true},failureOccurrences:makeCensus(9,12)};
+ assert.equal(api.validateMixedProgressObservations(observer.snapshot(),context,inputs),false,"Same-cut failure absence cannot be explained as a later arrival.");
+ inputs.browserEventOrdinal=13;inputs.failureOccurrences=makeCensus(13,13);
+ assert.equal(api.validateMixedProgressObservations(observer.snapshot(),context,inputs),true,"A genuinely later failure still depends on the independent final closed validator.");
+});
+
+async function replayFixtureAfterReturn(){
+ const {createMixedProgressAcknowledgments}=await import("./browser-control-collector.mjs"),{api,begin,end,ack,life,io}=await openPrefixFixture();let current=structuredClone(begin);
+ const app=()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0});
+ const observer=makeProgressObserver({input:()=>structuredClone(current),application:app,acknowledge:async({checkpointOrdinal,deadlineMs})=>{current.nativeContext.principalEpoch=structuredClone(end.nativeContext.principalEpoch);const at=performance.now();return {...structuredClone(ack),checkpointOrdinal,startedAtMs:at,finishedAtMs:at,elapsedMs:0,deadlineMs,deadlineBudgetMs:deadlineMs-at};}});
+ const token=await observer.check();observer.confirm(token);
+ // These are explicitly later source facts, so all monotone vector dimensions have room for an invalid moved cut.
+ const third="a".repeat(32)+".3";life.accepted(third,begin.nativeContext.originSha256);life.upstreamCreated(third);life.headersReceived(third);life.headersForwarded(third);life.upstreamClosed(third);life.close();
+ const context=structuredClone(current.nativeContext);context.principalEpoch.scopeClosed=true;context.environment.workerTargets.scopeClosed=true;context.environment.workerTargets.events.push({...context.environment.workerTargets.events[0],event:"changed"});
+ const history=context.principalEpoch.progressReads;history.started=2;history.finished=2;history.records.push({...history.records[0],acknowledgmentOrdinal:2,startedOrdinal:2,finishedOrdinal:2});
+ const inputs={failureIds:["native"],nativeFailureIds:["native"],browserEventOrdinal:13,headerLifecycle:life.snapshot(),documentJournal:{...structuredClone(ack.document.sourceJournal),closed:true},failureOccurrences:api.mixedFailureOccurrenceCensus({contextId:context.contextId,scopeClosed:true,browserEventOrdinal:13,records:[{requestId:"native",eventOrdinal:9,failedEvents:1}]})};
+ const ledger=observer.snapshot();assert.equal(api.validateMixedProgressObservations(ledger,context,inputs),true);
+ return {api,ledger,context,inputs};
+}
+
+test("a Native returned vector is exactly its sealed end across every component",async()=>{
+ const {api,ledger,context,inputs}=await replayFixtureAfterReturn();
+ for(const edit of [v=>v.browserEventOrdinal=13,v=>v.headerEventOrdinal++,v=>v.workerEventCount++,v=>v.principalProgressStarted++,v=>v.principalProgressFinished=0,v=>v.failureIds=[]]){
+  const moved=structuredClone(ledger);edit(moved.checks[0].returned);moved.retainedBytes=Buffer.byteLength(JSON.stringify(moved.checks))+moved.prefixes.reduce((n,p)=>n+Buffer.byteLength(JSON.stringify(p)),0);
+  assert.equal(api.validateMixedProgressObservations(moved,context,inputs),false,"A final-valid later cut is not the actual sealed return cut.");
+ }
+});
+
+test("every retained prefix failure row agrees with the CORE loadingFailed occurrence",async()=>{
+ const {api,ledger,context,inputs}=await replayFixtureAfterReturn();
+ const forged=structuredClone(ledger),prefix=forged.prefixes[0];
+ prefix.begin.failures[0].failedEventOrdinal=8;prefix.end.failures[0].failedEventOrdinal=8;
+ const {prefixSha256,...facts}=prefix;prefix.prefixSha256=sha(JSON.stringify(facts));forged.checks[0].prefixSha256=prefix.prefixSha256;forged.retainedBytes=Buffer.byteLength(JSON.stringify(forged.checks))+forged.prefixes.reduce((n,p)=>n+Buffer.byteLength(JSON.stringify(p)),0);
+ assert.equal(api.validateMixedNativePrefix(prefix),true,"The isolated row chronology is internally plausible before the independent census join.");
+ assert.equal(api.validateMixedProgressObservations(forged,context,inputs),false,"Same-context same-ID records cannot disagree with the observed callback census.");
+});
+
+test("mixed first-failure diagnostics retain the exact pending-EOF cut without changing its rejection",async()=>{
+ const {createMixedProgressAcknowledgments}=await import("./browser-control-collector.mjs"),{begin}=await openPrefixFixture();
+ const current=structuredClone(begin);current.coverage.pendingBodies=1;delete current.proxy[1].bodyProof;
+ let inputs=0,apps=0,reads=0;const app=()=>{apps++;return {failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0};};
+ const observer=makeProgressObserver({input:()=>{inputs++;return current;},application:app,acknowledge:()=>{reads++;assert.fail("pending current proof cannot acknowledge");}});
+ await assert.rejects(observer.check(),{message:"Mixed browser observation lacks request-local evidence."});
+ const snapshot=observer.snapshot();assert.equal(snapshot.failed,1);assert.equal(snapshot.guardChecks,0);assert.deepEqual([inputs,apps,reads],[1,1,0]);
+ assert.equal(snapshot.firstFailure.stage,"check-live");assert.equal(snapshot.firstFailure.subreason,"candidate");
+ assert.equal(snapshot.firstFailure.cut.coverage.pendingBodies,1);assert.equal(snapshot.firstFailure.cut.latestFailure.requestIdSha256,sha("native"));
+ assert.equal(snapshot.firstFailure.cut.matchingPacket.count,1);assert.equal(snapshot.firstFailure.cut.matchingPacket.bodyProofKnown,false);assert.equal(snapshot.firstFailure.cut.matchingPacket.bodyProofComplete,null);
+ assert.equal(snapshot.firstFailure.predicates.journalsKnown,true);assert.equal(snapshot.firstFailure.predicates.candidateKnown,false);
+ assert.ok(snapshot.retainedBytes>=32768);assert.doesNotMatch(JSON.stringify(snapshot.firstFailure),/synthetic|http:|session|net::|PRIVATE/);
+ const first=structuredClone(snapshot.firstFailure);current.coverage.pendingBodies=0;current.browserEventOrdinal++;
+ await assert.rejects(observer.check(),{message:"Mixed required application observation is not clean."});assert.deepEqual(observer.snapshot().firstFailure,first);
+ assert.deepEqual([inputs,apps,reads],[1,1,0],"sticky failure still short-circuits before the old callbacks");
+});
+
+test("mixed first-failure diagnostics distinguish confirm, acknowledgment, token and journal stops",async()=>{
+ const {createMixedProgressAcknowledgments}=await import("./browser-control-collector.mjs");
+ const app=()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0});
+ {
+  const {begin}=await openPrefixFixture(),current=structuredClone(begin);current.failures=[];let reads=0;
+  const observer=makeProgressObserver({input:()=>current,application:app,acknowledge:()=>{reads++;assert.fail("fast");}}),token=await observer.check();
+  current.failures=structuredClone(begin.failures);current.coverage.pendingBodies=1;delete current.proxy[1].bodyProof;
+  assert.throws(()=>observer.confirm(token),{message:"Mixed browser observation lacks request-local evidence."});assert.equal(reads,0);
+  assert.equal(observer.snapshot().firstFailure.stage,"confirm-live");assert.equal(observer.snapshot().firstFailure.cut.coverage.pendingBodies,1);
+ }
+ {
+  const {begin}=await openPrefixFixture(),order=[];
+  const observer=makeProgressObserver({input:()=>{order.push("input");return begin;},application:()=>{order.push("application");return app();},acknowledge:async args=>{order.push("acknowledge");return {...args,checkpointOrdinal:args.checkpointOrdinal+1};}});
+  await assert.rejects(observer.check(),{message:"Mixed acknowledgment used another read or deadline."});
+  assert.deepEqual(order,["application","input","acknowledge"]);assert.equal(observer.snapshot().firstFailure.stage,"ack-identity");
+ }
+ for(const mode of ["token","journal"]){
+  const {begin}=await openPrefixFixture(),current=structuredClone(begin);current.failures=[];
+  const observer=makeProgressObserver({input:()=>structuredClone(current),application:app,acknowledge:()=>assert.fail("fast")}),token=await observer.check();
+  if(mode==="journal"){const journal=current.nativeContext.documentJournal;journal.executionEventOrdinal=2;journal.executionEvents.push({ordinal:2,event:"created",executionContextId:2,uniqueId:"utility-context",frameId:"frame",isDefault:false});}
+  assert.throws(()=>observer.confirm(mode==="token"?{...token}:token));
+  assert.equal(observer.snapshot().firstFailure.stage,mode==="token"?"confirm-token":"confirm-journals");
+ }
+});
+
+test("mixed first-failure diagnostics preserve successful schema and genuine thrown errors without extra getter reads",async()=>{
+ const {createMixedProgressAcknowledgments}=await import("./browser-control-collector.mjs"),{begin}=await openPrefixFixture(),current=structuredClone(begin);current.failures=[];
+ const app=()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0});
+ const success=makeProgressObserver({input:()=>current,application:app,acknowledge:()=>assert.fail("fast")}),token=await success.check();assert.equal(success.confirm(token),true);
+ const snapshot=success.snapshot();assert.deepEqual(Object.keys(snapshot).sort(),["protocol","candidateRepresentationProtocol","contextId","authoritySha256","guardChecks","attempted","failed","overflow","retainedBytes","checks","prefixes"].sort());
+ assert.equal(snapshot.retainedBytes,Buffer.byteLength(JSON.stringify(snapshot.checks)));assert.equal(snapshot.failed,0);
+ const sentinel=Error("PRIVATE_OBSERVER_ERROR");let getterCalls=0,inputs=0;
+ const application=app();Object.defineProperty(application,"unknown",{enumerable:true,get(){getterCalls++;throw sentinel;}});
+ const failure=makeProgressObserver({input:()=>{inputs++;return current;},application:()=>application,acknowledge:()=>assert.fail("no read")});
+ await assert.rejects(failure.check(),error=>error===sentinel);assert.equal(getterCalls,1);assert.equal(inputs,0);
+ const diagnostic=failure.snapshot().firstFailure;assert.equal(diagnostic.stage,"check-live");assert.equal(diagnostic.cut,null);assert.equal(diagnostic.application.unknown,null);assert.doesNotMatch(JSON.stringify(diagnostic),/PRIVATE_OBSERVER_ERROR/);
+});
+
+test("mixed first-failure diagnostic privacy and fixed retention cover the maximum bounded event projection",async()=>{
+ const {createMixedProgressAcknowledgments}=await import("./browser-control-collector.mjs"),{begin}=await openPrefixFixture(),current=structuredClone(begin);
+ const privateId="PRIVATE_EVENT_ID_"+"x".repeat(180);current.browserEventOrdinal=10000;
+ current.failures=Array.from({length:10000},(_,i)=>({requestId:privateId+i,proxyResponseId:"PRIVATE_PROXY",failedEventOrdinal:i+1,failedEvents:Number.MAX_SAFE_INTEGER,status:Number.MAX_SAFE_INTEGER,failed:true,loadingFinished:false,canceled:true,error:"PRIVATE_REASON".repeat(300),bodyProof:{complete:false,reason:"PRIVATE_BODY_REASON".repeat(200)}}));
+ current.proxy=[{id:"PRIVATE_PROXY",complete:false,canceled:false,upstreamError:false,responseEvents:Number.MAX_SAFE_INTEGER,bodyProof:{complete:false,reason:"PRIVATE_PACKET_REASON".repeat(190)}}];current.coverage.pendingBodies=Number.MAX_SAFE_INTEGER;
+ const observer=realProgressObserver({input:()=>current,application:()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0}),acknowledge:()=>assert.fail("invalid current proof")});
+ await assert.rejects(observer.check());const snapshot=observer.snapshot(),diagnostic=snapshot.firstFailure;
+ assert.equal(diagnostic.cut.failureCount,10000);assert.equal(diagnostic.cut.latestFailure.failedEventOrdinal,10000);assert.equal(diagnostic.cut.latestFailure.requestIdSha256,sha(privateId+9999));
+ assert.equal(diagnostic.cut.matchingPacket.count,1);assert.equal(diagnostic.cut.matchingPacket.bodyProofComplete,false);assert.ok(Buffer.byteLength(JSON.stringify(diagnostic))*8+2048<=32768);assert.equal(snapshot.retainedBytes,32768+2);assert.equal(snapshot.overflow,0);
+ assert.doesNotMatch(JSON.stringify(diagnostic),/PRIVATE_|http:|cookie|payload/);
+ diagnostic.cut.coverage.pendingBodies=0;assert.equal(observer.snapshot().firstFailure.cut.coverage.pendingBodies,Number.MAX_SAFE_INTEGER,"snapshot edits cannot alter the retained first failure");
+});
+
+test("mixed first-failure diagnostics reset the per-live input and predicates after acknowledgment",async()=>{
+ const {createMixedProgressAcknowledgments}=await import("./browser-control-collector.mjs"),{begin}=await openPrefixFixture();
+ let unknown=0,inputs=0,applications=0,reads=0;
+ const observer=makeProgressObserver({input:()=>{inputs++;return structuredClone(begin);},application:()=>{applications++;return {failures:0,serverErrors:0,unknown,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0};},acknowledge:async args=>{reads++;unknown=1;return args;}});
+ await assert.rejects(observer.check(),{message:"Mixed required application observation is not clean."});
+ const snapshot=observer.snapshot(),diagnostic=snapshot.firstFailure;
+ assert.deepEqual([inputs,applications,reads],[1,2,1]);assert.equal(snapshot.failed,1);
+ assert.equal(diagnostic.stage,"check-after-ack-live");assert.equal(diagnostic.subreason,"application");assert.equal(diagnostic.cut,null);assert.equal(diagnostic.cutStage,null);
+ assert.equal(diagnostic.application.unknown,1);assert.equal(diagnostic.predicates.applicationKnown,false);assert.equal(diagnostic.candidate,null);
+ for(const key of ["candidateKnown","authorityKnown","journalsKnown","protocolObservedZero","protocolOverflowZero","authorityMatches","returnJournalsKnown"])assert.equal(diagnostic.predicates[key],null,key);
+});
+
+test("mixed first-failure diagnostics reject revoked arrays before introspection and never relabel the first stop",async()=>{
+ const {createMixedProgressAcknowledgments}=await import("./browser-control-collector.mjs"),revoked=Proxy.revocable([],{});revoked.revoke();let inputs=0;
+ const observer=realProgressObserver({input:()=>{inputs++;return {failures:revoked.proxy,proxy:[],coverage:{},nativeContext:{}};},application:()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0}),acknowledge:()=>assert.fail("not reached")});
+ await assert.rejects(observer.check(),{message:"Mixed browser observation lacks request-local evidence."});const first=observer.snapshot();
+ assert.equal(first.failed,1);assert.equal(first.overflow,0);assert.equal(first.firstFailure.stage,"check-live");assert.equal(first.firstFailure.cutStage,"check-live");assert.equal(first.firstFailure.cut.failureCount,null);
+ await assert.rejects(observer.check(),{message:"Mixed required application observation is not clean."});const second=observer.snapshot();assert.equal(inputs,1);assert.equal(second.failed,2);assert.equal(second.overflow,0);assert.deepEqual(second.firstFailure,first.firstFailure);
+});
+
+test("mixed candidate rejection diagnostics identify the earlier strict match failure rather than the newest row",async()=>{
+ const {createMixedProgressAcknowledgments}=await import("./browser-control-collector.mjs"),{begin}=await openPrefixFixture(),current=structuredClone(begin);
+ const earlier={...structuredClone(current.failures[0]),requestId:"PRIVATE_EARLIER",failedEventOrdinal:9,fullUrlSha256:"f".repeat(64)},latest={...structuredClone(current.failures[0]),requestId:"PRIVATE_LATEST",failedEventOrdinal:10};current.failures=[earlier,latest];
+ const observer=makeProgressObserver({input:()=>current,application:()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0}),acknowledge:()=>assert.fail("must stop on the first strict join")});
+ await assert.rejects(observer.check(),{message:"Mixed browser observation lacks request-local evidence."});
+ const diagnostic=observer.snapshot().firstFailure;assert.equal(diagnostic.cut.latestFailure.requestIdSha256,sha("PRIVATE_LATEST"));
+ assert.equal(diagnostic.candidate.site,"proxy-cardinality");assert.equal(diagnostic.candidate.failureIndex,0);assert.equal(diagnostic.candidate.failureIdSha256,sha("PRIVATE_EARLIER"));assert.equal(diagnostic.candidate.strictMatchCount,0);
+ assert.equal(diagnostic.candidate.ordinaryOutcome,"unknown");assert.equal(diagnostic.candidate.firstMatchedProofKnown,null);assert.doesNotMatch(JSON.stringify(diagnostic),/PRIVATE_/);
+ assert.ok(Buffer.byteLength(JSON.stringify(diagnostic))*8+2048<=32768);
+});
+
+test("mixed candidate rejection hooks cover every existing null exit with unchanged defaults and safe failures",async()=>{
+ const {api,begin}=await openPrefixFixture();
+ const cases=[
+  ["input-prelude",()=>undefined],
+  ["failure-census",()=>{const x=structuredClone(begin);x.failures[0].failedEventOrdinal=0;return x;}],
+  ["real-failure",()=>{const x=structuredClone(begin);x.failures[0].error="net::ERR_FAILED";return x;}],
+  ["failure-flags",()=>{const x=structuredClone(begin);x.failures[0].error="PRIVATE_UNKNOWN_ERROR";return x;}],
+  ["proxy-cardinality",()=>{const x=structuredClone(begin);x.proxy[1].requestHeadersSha256="f".repeat(64);return x;}],
+  ["native-core",()=>{const x=structuredClone(begin);x.proxy[1].complete=false;return x;}],
+  ["input-prelude",()=>{const x=Proxy.revocable({},{});x.revoke();return x.proxy;}],
+ ];
+ for(const [site,make]of cases){
+  assert.equal(api.mixedNativePrefixCandidates(make()),null);const observations=[];
+  assert.equal(api.mixedNativePrefixCandidates(make(),row=>observations.push(row)),null);assert.equal(observations.length,1,site);assert.equal(observations[0].site,site);
+  assert.doesNotMatch(JSON.stringify(observations),/PRIVATE_|http:|session|net::/);
+  assert.equal(api.mixedNativePrefixCandidates(make(),()=>{throw Error("PRIVATE_HOOK");}),null);
+ }
+ const positive=api.mixedNativePrefixCandidates(structuredClone(begin));let calls=0;
+ assert.deepEqual(api.mixedNativePrefixCandidates(structuredClone(begin),()=>{calls++;throw Error("not called");}),positive);assert.equal(calls,0);
+ const hook=Proxy.revocable(()=>assert.fail("Proxy hook may not execute"),{});hook.revoke();assert.equal(api.mixedNativePrefixCandidates(undefined,hook.proxy),null);
+ const invalid=cases[4][1]();assert.equal(api.mixedNativePrefixCandidates(invalid,()=>{invalid.failures=[];}),null,"a hook cannot turn the decided rejection into success");
+});
+
+test("mixed candidate rejection hooks reuse the same classification and strict filter without new getter reads",async()=>{
+ const {api,begin}=await openPrefixFixture();
+ function run(observe){const input=structuredClone(begin);input.proxy[1].complete=false;let errorReads=0;const value=input.failures[0].error;Object.defineProperty(input.failures[0],"error",{enumerable:true,get(){errorReads++;return value;}});let row=null;
+  const result=api.mixedNativePrefixCandidates(input,observe?value=>{row=value;}:undefined);assert.equal(result,null);return{errorReads,row};}
+ const plain=run(false),observed=run(true);assert.equal(observed.errorReads,plain.errorReads);assert.equal(plain.errorReads,0);assert.equal(observed.row.site,"input-prelude");assert.equal(observed.row.strictMatchCount,null);assert.equal(observed.row.firstMatchedProxyIdSha256,null);
+});
+
+test("mixed candidate representation accepts compressible logical input over4MiB and rejects cyclic input",async()=>{
+ const {api,begin}=await openPrefixFixture(),oversized=structuredClone(begin);oversized.proxy[1].padding="PRIVATE_SERIALIZED_"+"x".repeat(4*1024*1024);
+ const encodedBytes=Buffer.byteLength(JSON.stringify(oversized)),oversize=[];assert.ok(encodedBytes>4*1024*1024);
+ assert.ok(api.mixedNativePrefixCandidates(oversized,row=>oversize.push(row)));assert.equal(oversize.length,0);
+ const cyclic=structuredClone(begin);cyclic.proxy[1].cycle=cyclic;const cycle=[];assert.equal(api.mixedNativePrefixCandidates(cyclic,row=>cycle.push(row)),null);
+ assert.equal(cycle[0].site,"input-prelude");assert.equal(cycle[0].serialization,null,"unqualified cyclic JavaScript never reaches representation traversal");
+ assert.doesNotMatch(JSON.stringify([oversize,cycle]),/PRIVATE_|padding|cycle|http:|session/);
+});
+
+test("mixed candidate serialization facts remain unknown before the original digest and preserve default success",async()=>{
+ const {api,begin}=await openPrefixFixture(),early=[];assert.equal(api.mixedNativePrefixCandidates(undefined,row=>early.push(row)),null);assert.equal(early[0].serialization,null);
+ const input=structuredClone(begin);input.failures[0].failedEventOrdinal=0;const expectedBytes=Buffer.byteLength(JSON.stringify(input)),rows=[];
+ assert.equal(api.mixedNativePrefixCandidates(input,row=>{rows.push(row);throw Error("PRIVATE_OBSERVER");}),null);assert.equal(rows.length,1);assert.equal(rows[0].site,"failure-census");
+ assert.equal(rows[0].serialization.protocol,"mixed-progress-technical-gzip-v1");assert.equal(rows[0].serialization.logicalBytes,expectedBytes);assert.equal(rows[0].serialization.serialized,true);assert.equal(rows[0].serialization.withinLimit,true);assert.equal(rows[0].serialization.outcome,"complete");assert.ok(Number.isSafeInteger(rows[0].serialization.encodedBytes)&&rows[0].serialization.encodedBytes>=48&&rows[0].serialization.encodedBytes<=4194304);assert.doesNotMatch(JSON.stringify(rows),/PRIVATE_OBSERVER/);
+ assert.deepEqual(api.mixedNativePrefixCandidates(structuredClone(begin)),api.mixedNativePrefixCandidates(structuredClone(begin),()=>assert.fail("positive candidate has no rejection hook")));
+});
+
+test("source-bound digest serialization diagnostics report once and preserve encoding, hashing and callback failures",async()=>{
+ const {readFile}=await import("node:fs/promises"),{types}=await import("node:util"),source=await readFile(new URL("./control-cancellation-evidence.mjs",import.meta.url),"utf8");
+ const start=source.indexOf("const nativeContextDigest ="),end=source.indexOf("\n};",start)+4;assert.ok(start>0&&end>start);const definition=source.slice(start,end);
+ for(const mode of ["success","stringify","encode","hash"]){
+  const calls={stringify:0,encode:0,hash:0},observed=[],value={technical:true};
+  const encode={from:text=>{calls.encode++;if(mode==="encode")throw Error("PRIVATE_ENCODE");return Buffer.from(text);}},json={stringify:input=>{calls.stringify++;if(mode==="stringify")throw Error("PRIVATE_STRINGIFY");return JSON.stringify(input);}},bodyHash=bytes=>{calls.hash++;if(mode==="hash")throw Error("PRIVATE_HASH");return sha(bytes);};
+  // Execute the actual private source, with only its IO-free primitives replaced for genuine fault injection.
+  const {mixedOwnedOperation,mixedOwnedJSONString,mixedOwnedUTF8}=await import("./mixed-technical-gzip.mjs");
+  const digest=Function("Buffer","JSON","controlCancellationPolicy","bodySha256","utilTypes","mixedOwnedOperation","mixedOwnedJSONString","mixedOwnedUTF8",definition+";return nativeContextDigest;")(encode,json,controlCancellationPolicy,bodyHash,types,mixedOwnedOperation,mixedOwnedJSONString,mixedOwnedUTF8);
+  const result=digest(value,row=>{observed.push(row);throw Error("PRIVATE_CALLBACK");});
+  assert.equal(observed.length,1,mode);assert.equal(calls.stringify,1);assert.equal(calls.encode,mode==="stringify"?0:1);assert.equal(calls.hash,["stringify","encode"].includes(mode)?0:1);
+  assert.equal(result,mode==="success"?sha(Buffer.from(JSON.stringify(value))):null);
+  assert.equal(observed[0].outcome,mode==="success"?"complete":mode+"-error");assert.equal(observed[0].serialized,mode!=="stringify");
+  assert.equal(observed[0].encodedBytes,["stringify","encode"].includes(mode)?null:Buffer.byteLength(JSON.stringify(value)));assert.equal(observed[0].withinLimit,["stringify","encode"].includes(mode)?null:true);
+  assert.doesNotMatch(JSON.stringify(observed),/PRIVATE_|technical/);
+ }
+});
+
+test("owned fast guards transfer journal facts and release unconsumed and failed tokens on close",async()=>{
+ const {createMixedProgressAcknowledgments,createProxyControlCollector}=await import("./browser-control-collector.mjs"),{createMixedTechnicalOwner}=await import("./mixed-technical-gzip.mjs"),{begin}=await openPrefixFixture();
+ for(const mode of ["confirmed","unconsumed","changed-principal"]){
+  const current=structuredClone(begin);current.failures=[];const contextId=current.nativeContext.contextId,proxy=createProxyControlCollector({contextId});proxy.installed();
+  const owner=createMixedTechnicalOwner({contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});
+  const observer=makeProgressObserver({technicalOwner:owner,input:()=>owner.capture(()=>current),application:()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0}),acknowledge:()=>assert.fail("ordinary fast guard does not read metadata")});
+  const token=await observer.check();assert.equal(owner.stats().liveCuts,0,"whole begin cut is no longer retained by an ordinary token");
+  if(mode==="confirmed")assert.equal(observer.confirm(token),true);
+  if(mode==="changed-principal"){current.nativeContext.principalEpoch.observedSetCookieResponses=1;assert.throws(()=>observer.confirm(token));}
+  observer.close();const snapshot=observer.snapshot();assert.equal(snapshot.candidateRepresentationProtocol,"mixed-progress-technical-gzip-v1");assert.equal(snapshot.failed===0,mode==="confirmed");assert.ok(owner.stats().retainedBytes>0,"closed evidence remains charged until consumed");
+  observer.releaseSnapshot();assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);assert.equal(proxy.reserveTemporaryObservation(33554432),true);proxy.releaseTemporaryObservation(33554432);assert.equal(proxy.reserveTemporaryRecords(10000),true);proxy.releaseTemporaryRecords(10000);assert.throws(()=>observer.confirm(token));
+ }
+});
+
+test("closing an owned pending acknowledgment fails once and late completion cannot revive cut leases",async()=>{
+ const {createMixedProgressAcknowledgments,createProxyControlCollector}=await import("./browser-control-collector.mjs"),{createMixedTechnicalOwner}=await import("./mixed-technical-gzip.mjs"),{begin,ack}=await openPrefixFixture(),contextId=begin.nativeContext.contextId;
+ const proxy=createProxyControlCollector({contextId});proxy.installed();const owner=createMixedTechnicalOwner({contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});let finish,reads=0,args;
+ const observer=makeProgressObserver({technicalOwner:owner,input:()=>owner.capture(()=>begin),application:()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0}),acknowledge:value=>{reads++;args=value;return new Promise(resolve=>{finish=resolve;});}});
+ const pending=observer.check();assert.equal(reads,1);observer.close();assert.equal(owner.stats().liveCuts,0);finish({...ack,...args});await assert.rejects(pending,/closed/);assert.equal(observer.snapshot().failed,1);observer.releaseSnapshot();assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);
+});
+
+test("owned Native prefix seals its full begin and end and releases only after closed snapshot consumption",async()=>{
+ const {createMixedProgressAcknowledgments,createProxyControlCollector}=await import("./browser-control-collector.mjs"),{createMixedTechnicalOwner}=await import("./mixed-technical-gzip.mjs"),{api,begin,end,ack}=await openPrefixFixture();
+ const contextId=begin.nativeContext.contextId,proxy=createProxyControlCollector({contextId});proxy.installed();const owner=createMixedTechnicalOwner({contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});let current=begin,reads=0;
+ const observer=makeProgressObserver({technicalOwner:owner,input:()=>owner.capture(()=>current),application:()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0}),acknowledge:async({checkpointOrdinal,deadlineMs})=>{reads++;current=end;const startedAtMs=performance.now(),finishedAtMs=startedAtMs+0.01;return {...structuredClone(ack),checkpointOrdinal,startedAtMs,finishedAtMs,elapsedMs:finishedAtMs-startedAtMs,deadlineMs,deadlineBudgetMs:deadlineMs-startedAtMs};}});
+ const token=await observer.check();assert.equal(reads,1);assert.equal(owner.stats().liveCuts,0);assert.equal(observer.confirm(token),true);let consumed=observer.snapshot();const exportedBytes=owner.stats().retainedBytes;assert.equal(consumed.prefixes.length,1);observer.releaseSnapshot(consumed);consumed=null;assert.ok(owner.stats().retainedBytes<exportedBytes);observer.close();const snapshot=observer.snapshot(),closedStats=owner.stats();observer.releaseSnapshot(snapshot);assert.deepEqual(owner.stats(),closedStats,"value-specific consumption cannot release the final artifact");assert.equal(snapshot.failed,0);assert.equal(snapshot.prefixes.length,1);assert.equal(Object.isFrozen(snapshot),true);assert.equal(Object.isFrozen(snapshot.prefixes[0].begin.nativeContext),true);assert.equal(api.validateMixedNativePrefix(snapshot.prefixes[0]),true);assert.deepEqual(snapshot.prefixes[0].begin,begin);assert.deepEqual(snapshot.prefixes[0].end,end);assert.ok(owner.stats().retainedBytes>0);observer.releaseSnapshot();assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);
+});
+
+test("closed pending guard forgets full cut and candidate child references before the ACK resolves",async()=>{
+ const {setFlagsFromString}=await import("node:v8"),{runInNewContext}=await import("node:vm"),{setImmediate:tick}=await import("node:timers/promises");setFlagsFromString("--expose_gc");const collect=runInNewContext("gc");
+ const {createMixedProgressAcknowledgments,createProxyControlCollector}=await import("./browser-control-collector.mjs"),{createMixedTechnicalOwner}=await import("./mixed-technical-gzip.mjs"),{begin,ack}=await openPrefixFixture(),contextId=begin.nativeContext.contextId;
+ const proxy=createProxyControlCollector({contextId});proxy.installed();const owner=createMixedTechnicalOwner({contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});let rootReference,childReference,finish,args;
+ const observer=makeProgressObserver({technicalOwner:owner,input:()=>{const cut=owner.capture(()=>begin);rootReference=new WeakRef(cut);childReference=new WeakRef(cut.proxy[1].headerFieldSha256);return cut;},application:()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0}),acknowledge:value=>{args=value;return new Promise(resolve=>{finish=resolve;});}});
+ const pending=observer.check();observer.close();let forgotten=false;
+ for(let i=0;i<12;i++){await tick();collect();await tick();if(rootReference.deref()===undefined&&childReference.deref()===undefined){forgotten=true;break;}}
+ assert.equal(forgotten,true,"neither full begin nor candidate child data may remain in the suspended check");finish({...ack,...args});await assert.rejects(pending,/closed/);observer.releaseSnapshot();assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);
+});
+
+
+test("owned classifier receipts preserve ordinary control facts and allocation denial releases only their own leases",async()=>{
+ const {createMixedTechnicalOwner}=await import("./mixed-technical-gzip.mjs"),{input}=fixture(),expected=classifyControlCancellations(input);assert.equal(expected.provenControls,1);
+ const proxy=createProxyControlCollector({contextId:input.nativeContext.contextId});proxy.installed();
+ const owner=createMixedTechnicalOwner({contextId:input.nativeContext.contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});
+ const result=owner.retainEvidence(()=>classifyControlCancellations(input));assert.deepEqual(result,expected);assert.ok(owner.stats().retainedRecords>0);assert.ok(owner.stats().peakBytes>owner.stats().retainedBytes);owner.releaseEvidence(result);assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);
+ assert.equal(proxy.reserveTemporaryObservation(33554432-200000),true);
+ assert.throws(()=>owner.retainEvidence(()=>classifyControlCancellations(input)));assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);
+ assert.equal(proxy.reserveTemporaryObservation(200001),false);proxy.releaseTemporaryObservation(33554432-200000);assert.equal(proxy.reserveTemporaryObservation(33554432),true);proxy.releaseTemporaryObservation(33554432);owner.close();
+});
+
+
+test("candidate gzip never widens the independent Native-context or full-prefix4MiB gates",async()=>{
+ const {input}=fixture();input.nativeContext.padding="small";assert.equal(classifyControlCancellations(input).provenControls,1);
+ input.nativeContext.padding="x".repeat(4194304);assert.equal(classifyControlCancellations(input).provenControls,0);
+ const {api,begin,end,ack}=await openPrefixFixture(),small=api.createMixedNativePrefix({checkpointOrdinal:1,begin,end,acknowledgment:ack,headerPrefix:end.nativeContext.headerPrefix,returnedAtMs:ack.finishedAtMs});assert.equal(api.validateMixedNativePrefix(small),true);
+ const large=structuredClone(small);large.begin.proxy[0].padding="x".repeat(4194304);assert.equal(api.validateMixedNativePrefix(large),false);
+});
+
+
+test("candidate exception telemetry retains the genuine post-representation allocation failure",async()=>{
+ const raw=await import("./control-cancellation-evidence.mjs"),{begin}=await openPrefixFixture(),contextId=begin.nativeContext.contextId,proxy=createProxyControlCollector({contextId});proxy.installed();let armed=false,wireSeen=false,wireBytes;
+ const owner=createMixedTechnicalOwner({contextId,reserve:n=>{if(armed&&wireSeen)return false;if(armed&&n===wireBytes)wireSeen=true;return proxy.reserveTemporaryObservation(n);},release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords}),cut=owner.capture(()=>begin),sample=owner.encode(cut);wireBytes=sample.stats.portableBytes;sample.release();const observations=[];armed=true;
+ assert.equal(owner.retainEvidence(()=>raw.mixedNativePrefixCandidates(cut,row=>observations.push(row))),null);assert.equal(wireSeen,true);assert.equal(observations.length,1);assert.equal(observations[0].site,"exception");assert.equal(observations[0].serialization.outcome,"complete");armed=false;owner.releaseCut(cut);owner.close();assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);
+});
+
+
+test("required guard releases only its consumed owned progress exports",async()=>{
+ const {begin}=await openPrefixFixture(),current=structuredClone(begin);current.failures=[];
+ const owner=fixtureOwner(current.nativeContext.contextId),observer=realProgressObserver({technicalOwner:owner,input:()=>owner.capture(()=>current),application:()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0}),acknowledge:()=>assert.fail("ordinary guard must not acknowledge")});
+ const {requireCleanMixedProgress}=await import("./mixed-load-observation.mjs");let releases=0;const consumption=[];
+ const unconsumed=observer.snapshot(),opened=[{browserObservation:{snapshot:()=>({allPhase:{realFailures:0},measured:{coverage:{missing:0,errors:0,overflow:0}},mixedProgress:observer.snapshot()}),releaseMixedProgressSnapshot:value=>{assert.notEqual(value,unconsumed);assert.ok(value);releases++;const before=owner.stats();observer.releaseSnapshot(value);const after=owner.stats();assert.ok(after.retainedBytes<before.retainedBytes);consumption.push({records:before.retainedRecords-after.retainedRecords,checks:value.checks.length});observer.releaseSnapshot(value);assert.deepEqual(owner.stats(),after,"specific release is idempotent");},acknowledgeMixedProgress:options=>observer.check(options),confirmMixedProgress:token=>observer.confirm(token)},transport:{snapshot:()=>({applicationEvidence:{failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0}})}}];
+ try{await requireCleanMixedProgress({opened,pageErrors:()=>0});assert.equal(releases,3);assert.deepEqual(consumption,[{records:0,checks:0},{records:1,checks:1},{records:1,checks:1}]);assert.equal(unconsumed.checks.length,0);const value=observer.snapshot();assert.equal(value.checks.length,1);assert.ok(value.checks[0].returned);observer.releaseSnapshot(value);assert.ok(owner.stats().retainedRecords>0);observer.releaseSnapshot(unconsumed);assert.ok(owner.stats().retainedRecords>0,"durable returned check is retained separately");}finally{observer.close();observer.releaseSnapshot();assert.equal(owner.stats().retainedRecords,0);assert.equal(owner.stats().retainedBytes,0);}
+});
+
+test("required guard consumes its owned export on predicate and transport exceptions without altering the error",async()=>{
+ const {begin}=await openPrefixFixture(),{requireCleanMixedProgress}=await import("./mixed-load-observation.mjs");
+ for(const mode of ["application","coverage","transport","predicate"]){
+  const owner=fixtureOwner(begin.nativeContext.contextId),observer=realProgressObserver({technicalOwner:owner,input:()=>assert.fail("failed prerequisite never captures"),application:()=>assert.fail("failed prerequisite never starts check"),acknowledge:()=>assert.fail("failed prerequisite never acknowledges")});
+  const unconsumed=observer.snapshot(),baseline=owner.stats(),sentinel=Error("synthetic prerequisite exception");let snapshots=0,releases=0,transportCalls=0;
+  const opened=[{browserObservation:{snapshot(){snapshots++;const coverage={missing:0,errors:mode==="coverage"?1:0,overflow:0};if(mode==="predicate")Object.defineProperty(coverage,"errors",{get(){throw sentinel;}});return {allPhase:{realFailures:0},measured:{coverage},mixedProgress:observer.snapshot()};},releaseMixedProgressSnapshot(value){assert.notEqual(value,unconsumed);assert.ok(value);releases++;observer.releaseSnapshot(value);}},transport:{snapshot(){transportCalls++;if(mode==="transport")throw sentinel;return {applicationEvidence:{failures:0,serverErrors:0,unknown:mode==="application"?1:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0}};}}}];
+  try{await assert.rejects(requireCleanMixedProgress({opened,pageErrors:()=>0}),error=>["transport","predicate"].includes(mode)?error===sentinel:/Required mixed browser or application observation is not clean/.test(error.message));assert.equal(snapshots,1);assert.equal(transportCalls,1);assert.equal(releases,1);assert.equal(owner.stats().retainedBytes,baseline.retainedBytes);assert.equal(owner.stats().retainedRecords,baseline.retainedRecords);assert.equal(unconsumed.guardChecks,0);}finally{observer.close();observer.releaseSnapshot();assert.equal(owner.stats().retainedRecords,0);assert.equal(owner.stats().retainedBytes,0);}
+ }
+});
+
+test("required guard never terminally releases an absent undelivered or null progress export",async()=>{
+ const {begin}=await openPrefixFixture(),{requireCleanMixedProgress}=await import("./mixed-load-observation.mjs");
+ for(const mode of ["missing","null","snapshot-throws"]){
+  const current=structuredClone(begin);current.failures=[];const owner=fixtureOwner(current.nativeContext.contextId),observer=realProgressObserver({technicalOwner:owner,input:()=>owner.capture(()=>current),application:()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0}),acknowledge:()=>assert.fail("ordinary guard must not acknowledge")});
+  const unconsumed=observer.snapshot(),sentinel=Error("synthetic snapshot exception");let releases=0;
+  const opened=[{browserObservation:{snapshot(){if(mode==="snapshot-throws"){observer.snapshot();throw sentinel;}return {allPhase:{realFailures:0},measured:{coverage:{missing:0,errors:0,overflow:0}},...(mode==="null"?{mixedProgress:null}:{})};},releaseMixedProgressSnapshot(value){releases++;observer.releaseSnapshot(value);},acknowledgeMixedProgress:options=>observer.check(options),confirmMixedProgress:token=>observer.confirm(token)},transport:{snapshot:()=>({applicationEvidence:{failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0}})}}];
+  try{if(mode==="snapshot-throws")await assert.rejects(requireCleanMixedProgress({opened,pageErrors:()=>0}),error=>error===sentinel);else await requireCleanMixedProgress({opened,pageErrors:()=>0});assert.equal(releases,0);assert.equal(unconsumed.guardChecks,0);const proof=observer.snapshot();assert.equal(proof.checks.length,mode==="snapshot-throws"?0:1);observer.releaseSnapshot(proof);assert.ok(owner.stats().retainedBytes>0,"unconsumed and undelivered exports remain charged");}finally{observer.close();observer.releaseSnapshot();assert.equal(owner.stats().retainedRecords,0);assert.equal(owner.stats().retainedBytes,0);}
+ }
+});
+
+test("production guard lifecycle retains the complete synthetic284-request history under the shared record limit",async()=>{
+ const {context,io}=await openPrefixFixture(),{createProxyHeaderLifecycle,proxyHeaderPrefix}=await import("./proxy-header-census.mjs"),contextId=context.contextId,origin=io.origin,principal=createPrincipalEpochObserver(contextId,{origin});principal.start([{name:"session",value:"synthetic",domain:"localhost",path:"/",httpOnly:true}]);
+ const proxy=createProxyControlCollector({contextId,origin,compiledBinding:context.binding,compiledCachedNavigations:true,protocolSources:context.protocolSources});proxy.installed({protocol:"owned-context-upstream-header-lifetime-v1",proxyInstanceId:"e".repeat(32),originSha256:sha(origin),allowedOriginSha256:[sha(origin)],acceptedRequestsAtInstall:0});const life=createProxyHeaderLifecycle({proxyInstanceId:"e".repeat(32),originSha256:sha(origin),allowedOriginSha256:[sha(origin)]});const text='#0:{"b":"synthetic","t":{"t":{"s":""}}}\n',heads={RSC:"1","next-router-prefetch":"1","accept-language":"en",accept:"text/x-component",cookie:"session=synthetic","x-z8-fixture-document-generation":contextId+":4"},response={"content-type":"text/x-component","cache-control":"s-maxage=100, stale-while-revalidate=200"};
+ const collector=createBrowserControlCollector({contextId,origin,browserRevision:chromiumSWRRevision,compiledBinding:context.binding,protocolSources:context.protocolSources,operatorFile:"mixed-load-probe.mjs",principalEpoch:principal,environmentObservation:anchored=>({...context.environment,temporaryValues:anchored.temporaryValues}),proxyObservation:()=>{const p=proxy.snapshot(),h=life.snapshot();return{...p,headerLifecycle:h,headerPrefix:proxyHeaderPrefix(p.headerCensus,h)};},readBody:async()=>({body:text,base64Encoded:false})});collector.installed();collector.beginMeasurement();
+ const owner=createMixedTechnicalOwner({contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords}),progress=realProgressObserver({technicalOwner:owner,input:()=>collector.progressInput({owner,documentJournal:()=>context.documentJournal}),application:()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0}),acknowledge:()=>{throw Error("ordinary positive must not ask for NativeACK");}});
+ const {requireCleanMixedProgress}=await import("./mixed-load-observation.mjs"),opened=[{browserObservation:{snapshot:()=>({...collector.snapshot(),annualTeam:proxy.annualTeamSnapshot(),mixedProgress:progress.snapshot(),mixedDocumentJournal:context.documentJournal}),acknowledgeMixedProgress:options=>progress.check(options),confirmMixedProgress:token=>progress.confirm(token),releaseMixedProgressSnapshot:value=>progress.releaseSnapshot(value)},transport:{snapshot:()=>({applicationEvidence:{failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0}})}}];let count=0,completed=0;const stages=[];try{for(const population of [40,80,120,160,200,240,284]){while(count<population){const n=++count,id="a".repeat(32)+"."+n,requestId="synthetic-browser-"+n,url=origin+"/en?synthetic="+n;life.accepted(id,sha(origin));life.upstreamCreated(id);proxy.request(id,{url,method:"GET",headers:heads,traceId:"a".repeat(32)});collector.request({requestId,timestamp:n,frameId:"frame",loaderId:"loader",type:"Fetch",initiator:{type:"script"},request:{url,method:"GET",headers:heads,initialPriority:"High"}});collector.requestExtra({requestId,headers:heads});proxy.response(id,{status:200,headers:response});life.headersReceived(id);life.headersForwarded(id);collector.response({requestId,response:{status:200,headers:{...response,[controlResponseHeader]:id},fromDiskCache:false,fromServiceWorker:false}});collector.responseExtra({requestId,statusCode:200,headers:{...response,[controlResponseHeader]:id}});proxy.bytes(id,Buffer.from(text));proxy.end(id);life.upstreamClosed(id);collector.data({requestId,dataLength:Buffer.byteLength(text),timestamp:n+.1});if(n<=1)collector.failed({requestId,timestamp:n+.2,errorText:"net::ERR_ABORTED",canceled:true});else collector.finished({requestId,timestamp:n+.2});}await tick();await tick();for(const concurrent of [4,3]){await Promise.all(Array.from({length:concurrent},()=>requireCleanMixedProgress({opened,pageErrors:()=>0})));completed+=concurrent;}stages.push({population,completed,owner:owner.stats()});}
+ console.log(JSON.stringify({synthetic:true,stages,population:count,completed,owner:owner.stats()}));assert.equal(completed,49);assert.equal(count,284);const final=collector.snapshot();assert.equal(final.allPhase.rawFailedRequests,1);assert.equal(final.allPhase.provenControls,1);assert.equal(final.bodyReceipts.length,1);const history=collector.progressInput({owner,documentJournal:()=>context.documentJournal});assert.equal(history.failures.length,1);assert.equal(history.responses.length,283);assert.equal(history.proxy.length,284);assert.deepEqual(history.proxy.map(row=>row.id),Array.from({length:284},(_,index)=>"a".repeat(32)+"."+(index+1)));owner.releaseCut(history);const durable=progress.snapshot();assert.equal(durable.guardChecks,49);assert.equal(durable.attempted,0);assert.equal(durable.prefixes.length,0);assert.equal(durable.checks.length,49);assert.ok(durable.checks.every(row=>row.returned!==null));progress.releaseSnapshot(durable);
+ }catch(error){const diagnostic=progress.snapshot();console.log(JSON.stringify({synthetic:true,stages,population:count,completed,owner:owner.stats(),firstFailure:diagnostic.firstFailure??null}));progress.releaseSnapshot(diagnostic);throw error;}finally{try{progress.close();}catch{}progress.releaseSnapshot();owner.close();assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);}
+});
+
+// Fresh scalar/event fixtures only. The frozen d6d9 diagnosis preserves every
+// earlier variant; this shared exercise keeps the same real production seam.
+async function exerciseGuardRecordOverlap({ schedule, controls = 1 }) {
+ const { context, io } = await openPrefixFixture();
+ const { createProxyHeaderLifecycle, proxyHeaderPrefix } = await import("./proxy-header-census.mjs");
+ const { requireCleanMixedProgress } = await import("./mixed-load-observation.mjs");
+ const contextId = context.contextId, origin = io.origin;
+ const principal = createPrincipalEpochObserver(contextId, { origin });
+ principal.start([{ name:"session", value:"synthetic", domain:"localhost", path:"/", httpOnly:true }]);
+ const proxy = createProxyControlCollector({ contextId, origin, compiledBinding:context.binding,
+  compiledCachedNavigations:true, protocolSources:context.protocolSources });
+ const installation = { protocol:"owned-context-upstream-header-lifetime-v1", proxyInstanceId:"e".repeat(32),
+  originSha256:sha(origin), allowedOriginSha256:[sha(origin)], acceptedRequestsAtInstall:0 };
+ proxy.installed(installation);
+ const life = createProxyHeaderLifecycle(installation);
+ const text = '#0:{"b":"synthetic","t":{"t":{"s":""}}}\n';
+ const headers = { RSC:"1", "next-router-prefetch":"1", "accept-language":"en", accept:"text/x-component",
+  cookie:"session=synthetic", "x-z8-fixture-document-generation":contextId+":4" };
+ const responseHeaders = { "content-type":"text/x-component", "cache-control":"s-maxage=100, stale-while-revalidate=200" };
+ const collector = createBrowserControlCollector({ contextId, origin, browserRevision:chromiumSWRRevision,
+  compiledBinding:context.binding, protocolSources:context.protocolSources, operatorFile:"mixed-load-probe.mjs",
+  principalEpoch:principal, environmentObservation:anchored=>({...context.environment, temporaryValues:anchored.temporaryValues}),
+  proxyObservation:()=>{const p=proxy.snapshot(),h=life.snapshot();return {...p,headerLifecycle:h,headerPrefix:proxyHeaderPrefix(p.headerCensus,h)};},
+  readBody:async()=>({body:text,base64Encoded:false}) });
+ collector.installed(); collector.beginMeasurement();
+ const owner = createMixedTechnicalOwner({ contextId, reserve:proxy.reserveTemporaryObservation,
+  release:proxy.releaseTemporaryObservation, reserveRecords:proxy.reserveTemporaryRecords, releaseRecords:proxy.releaseTemporaryRecords });
+ const application = ()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0});
+ const progress = realProgressObserver({ technicalOwner:owner,
+  input:()=>collector.progressInput({owner,documentJournal:()=>context.documentJournal}), application,
+  acknowledge:()=>assert.fail("ordinary positive must not ask for NativeACK") });
+ const opened = [{ browserObservation:{
+  snapshot:()=>({...collector.snapshot(),annualTeam:proxy.annualTeamSnapshot(),mixedProgress:progress.snapshot(),mixedDocumentJournal:context.documentJournal}),
+  acknowledgeMixedProgress:options=>progress.check(options), confirmMixedProgress:token=>progress.confirm(token),
+  releaseMixedProgressSnapshot:value=>progress.releaseSnapshot(value),
+ }, transport:{snapshot:()=>({applicationEvidence:application()})} }];
+ let count=0,completed=0; const stages=[];
+ try {
+  for (const {population,groups} of schedule) {
+   while (count<population) {
+    const n=++count,id="a".repeat(32)+"."+n,requestId="synthetic-browser-"+n,url=origin+"/en?synthetic="+n;
+    life.accepted(id,sha(origin)); life.upstreamCreated(id);
+    proxy.request(id,{url,method:"GET",headers,traceId:"a".repeat(32)});
+    collector.request({requestId,timestamp:n,frameId:"frame",loaderId:"loader",type:"Fetch",initiator:{type:"script"},
+     request:{url,method:"GET",headers,initialPriority:"High"}});
+    collector.requestExtra({requestId,headers}); proxy.response(id,{status:200,headers:responseHeaders});
+    life.headersReceived(id); life.headersForwarded(id);
+    const response={...responseHeaders,[controlResponseHeader]:id};
+    collector.response({requestId,response:{status:200,headers:response,fromDiskCache:false,fromServiceWorker:false}});
+    collector.responseExtra({requestId,statusCode:200,headers:response});
+    proxy.bytes(id,Buffer.from(text)); proxy.end(id); life.upstreamClosed(id);
+    collector.data({requestId,dataLength:Buffer.byteLength(text),timestamp:n+.1});
+    if(n<=controls)collector.failed({requestId,timestamp:n+.2,errorText:"net::ERR_ABORTED",canceled:true});
+    else collector.finished({requestId,timestamp:n+.2});
+   }
+   await tick(); await tick();
+   for(const concurrent of groups) {
+    await Promise.all(Array.from({length:concurrent},()=>requireCleanMixedProgress({opened,pageErrors:()=>0})));
+    completed+=concurrent;
+   }
+   const stage={population,completed,owner:owner.stats()};stages.push(stage);console.log(JSON.stringify({syntheticStage:true,...stage}));
+  }
+  const expected=schedule.reduce((sum,row)=>sum+row.groups.reduce((n,value)=>n+value,0),0);
+  assert.equal(completed,expected); assert.equal(count,schedule.at(-1).population);
+  const final=collector.snapshot();
+  assert.equal(final.allPhase.rawFailedRequests,controls); assert.equal(final.allPhase.provenControls,controls);
+  assert.equal(final.bodyReceipts.length,controls); assert.equal(proxy.snapshot().rows.length,count);
+  let history=collector.progressInput({owner,documentJournal:()=>context.documentJournal});
+  assert.equal(history.failures.length,controls);
+  assert.equal(history.responses.length,controls?count-controls:0); assert.equal(history.proxy.length,controls?count:0);
+  const ids=Array.from({length:count},(_,index)=>"a".repeat(32)+"."+(index+1));
+  assert.deepEqual(history.nativeContext.headerCensus.requests.map(row=>row.requestId),[...ids].sort());
+  if(controls)assert.deepEqual(history.proxy.map(row=>row.id),ids);
+  owner.releaseCut(history); history=null;
+  let durable=progress.snapshot();
+  assert.equal(durable.guardChecks,expected); assert.equal(durable.attempted,0); assert.equal(durable.prefixes.length,0);
+  assert.equal(durable.checks.length,expected); assert.ok(durable.checks.every(row=>row.returned!==null));
+  progress.releaseSnapshot(durable); durable=null;
+  console.log(JSON.stringify({synthetic:true,stages,population:count,completed,owner:owner.stats()}));
+ } catch(error) {
+  const diagnostic=progress.snapshot();
+  console.log(JSON.stringify({synthetic:true,stages,population:count,completed,owner:owner.stats(),
+   observer:{guardChecks:diagnostic.guardChecks,attempted:diagnostic.attempted,failed:diagnostic.failed,
+    overflow:diagnostic.overflow,checks:diagnostic.checks.length,prefixes:diagnostic.prefixes.length},
+   firstFailure:diagnostic.firstFailure??null}));
+  progress.releaseSnapshot(diagnostic); throw error;
+ } finally {
+  try{progress.close();}catch{}
+  progress.releaseSnapshot(); owner.close();
+  assert.equal(owner.stats().retainedBytes,0); assert.equal(owner.stats().retainedRecords,0);
+ }
+}
+const guardRecordCases = [
+ {name:"397/four-callers",schedule:[{population:397,groups:[4]}]},
+ {name:"396/four-callers",schedule:[{population:396,groups:[4]}]},
+ {name:"397/three-callers",schedule:[{population:397,groups:[3]}]},
+ {name:"397/zero-control",controls:0,schedule:[{population:397,groups:[4]}]},
+ {name:"700/four-callers",schedule:[{population:700,groups:[4]}]},
+ {name:"700/growing49",schedule:[100,200,300,400,500,600,700].map(population=>({population,groups:[4,3]}))},
+ {name:"700/growing137",schedule:[100,200,300,400,500,600,700].map((population,index)=>({population,groups:index===6?[4,4,4,4,1]:[4,4,4,4,4]}))},
+];
+for(const scenario of guardRecordCases)test("production owned guard record history "+scenario.name,()=>exerciseGuardRecordOverlap(scenario));
+
+test("ordinary pending guards share one owned immutable journal graph until the last token returns",async()=>{
+ const {begin}=await openPrefixFixture(),current=structuredClone(begin);current.failures=[];
+ const owner=fixtureOwner(current.nativeContext.contextId),observer=realProgressObserver({technicalOwner:owner,
+  input:()=>owner.capture(()=>current),application:()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0}),
+  acknowledge:()=>assert.fail("ordinary token never acknowledges")});
+ try{
+  const first=await observer.check(),firstRecords=owner.stats().retainedRecords;
+  const second=await observer.check();
+  assert.equal(owner.stats().retainedRecords-firstRecords,2,"only the new check and opaque token add typed records");
+  observer.confirm(first);assert.ok(owner.stats().retainedRecords>2,"the second token still owns the shared graph");
+  observer.confirm(second);assert.equal(owner.stats().retainedRecords,2,"both complete durable checks remain");
+ }finally{observer.close();observer.releaseSnapshot();assert.equal(owner.stats().retainedRecords,0);assert.equal(owner.stats().retainedBytes,0);}
+});
+async function pendingJournalFixture({fault=null}={}) {
+ const {begin,end}=await openPrefixFixture();let current=structuredClone(begin);current.failures=[];
+ const contextId=current.nativeContext.contextId,proxy=createProxyControlCollector({contextId});proxy.installed();
+ let denyNextBytes=false,comparisonArmed=false;
+ const owner=createMixedTechnicalOwner({contextId,reserve:n=>{if(denyNextBytes){denyNextBytes=false;return false;}return proxy.reserveTemporaryObservation(n);},
+  release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});
+ const graphSet=new WeakSet(),metrics={retains:0,graphs:0,releasedGraphs:0,graphRefs:[]};
+ const observedOwner={...owner,
+  retainEvidence(construct){
+   metrics.retains++;
+   if(fault==="new-begin"&&metrics.retains===4 || fault==="distinct-begin"&&metrics.retains===8)denyNextBytes=true;
+   const value=owner.retainEvidence(construct);
+   if(value?.nativeContext && Object.keys(value.nativeContext).join(",")==="headerPrefix,principalEpoch,documentJournal,environment"){
+    assert.equal(Object.isFrozen(value),true);assert.equal(Object.isFrozen(value.nativeContext.headerPrefix.lifecycle.requests),true);
+    assert.equal(Object.isFrozen(value.nativeContext.principalEpoch.before),true);assert.equal(Object.isFrozen(value.nativeContext.documentJournal),true);
+    assert.equal(Object.isFrozen(value.nativeContext.environment.workerTargets.events),true);
+    graphSet.add(value);metrics.graphs++;metrics.graphRefs.push(new WeakRef(value));
+   }
+   if(fault==="comparison" && value?.ordinal===2 && value.failureIds)comparisonArmed=true;
+   return value;
+  },
+  run(construct){if(comparisonArmed){comparisonArmed=false;denyNextBytes=true;}return owner.run(construct);},
+  releaseEvidence(value){if(graphSet.has(value))metrics.releasedGraphs++;return owner.releaseEvidence(value);},
+ };
+ const observer=realProgressObserver({technicalOwner:observedOwner,input:()=>owner.capture(()=>current),
+  application:()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0}),
+  acknowledge:()=>assert.fail("ordinary journal never reads NativeACK")});
+ return {owner,observer,metrics,current:()=>current,advancePrincipal(){current.nativeContext.principalEpoch=structuredClone(end.nativeContext.principalEpoch);},
+  dispose(){try{observer.close();}finally{observer.releaseSnapshot();assert.equal(owner.stats().retainedRecords,0);assert.equal(owner.stats().retainedBytes,0);}}};
+}
+
+test("ordinary journal sharing separates changed full JSON values and key order",async()=>{
+ for(const change of ["principal","key-order"]){
+  const f=await pendingJournalFixture();
+  try{
+   const first=await f.observer.check(),before=f.owner.stats().retainedRecords;
+   if(change==="principal")f.advancePrincipal();
+   else{const context=f.current().nativeContext;context.environment.workerTargets=Object.fromEntries(Object.entries(context.environment.workerTargets).reverse());}
+   const second=await f.observer.check();assert.equal(f.metrics.graphs,2);assert.ok(f.owner.stats().retainedRecords-before>2);
+   f.observer.confirm(first);assert.equal(f.metrics.releasedGraphs,1);
+   f.observer.confirm(second);assert.equal(f.metrics.releasedGraphs,2);
+  }finally{f.dispose();}
+ }
+});
+
+test("ordinary journal allocation denials roll back only unpublished holds",async()=>{
+ for(const fault of ["new-begin","comparison","distinct-begin"]){
+  const f=await pendingJournalFixture({fault});
+  try{
+   if(fault!=="new-begin"){await f.observer.check();if(fault==="distinct-begin")f.advancePrincipal();}
+   await assert.rejects(f.observer.check(),/Mixed technical gzip rejected input/);
+   assert.equal(f.metrics.graphs,fault==="new-begin"?0:1);assert.equal(f.metrics.releasedGraphs,0);
+   // No newly issued opaque token survives the failed acquisition. Existing
+   // registered token/graph and durable checks/diagnostic retain their own units.
+   assert.equal(f.owner.stats().retainedRecords,fault==="new-begin"?2:10);
+  }finally{f.dispose();assert.equal(f.metrics.releasedGraphs,f.metrics.graphs);}
+ }
+});
+
+test("ordinary shared graphs survive failed foreign and double confirms until the remaining token closes",async()=>{
+ for(const failure of ["foreign","double","changed-journal"]){
+  const f=await pendingJournalFixture();
+  try{
+   const first=await f.observer.check(),second=await f.observer.check();assert.equal(f.metrics.graphs,1);
+   if(failure==="double"){f.observer.confirm(first);assert.equal(f.metrics.releasedGraphs,0);assert.throws(()=>f.observer.confirm(first));}
+   else if(failure==="foreign")assert.throws(()=>f.observer.confirm({...first}));
+   else{f.current().nativeContext.documentJournal.documents[0].loaderId="foreign";assert.throws(()=>f.observer.confirm(first));}
+   assert.equal(f.metrics.releasedGraphs,0);assert.ok(f.metrics.graphRefs[0].deref());
+   assert.throws(()=>f.observer.confirm(second));
+  }finally{f.dispose();assert.equal(f.metrics.releasedGraphs,1);}
+ }
+});
+
+test("ordinary projected journals retain every original current rejection gate",async()=>{
+ const changes=[
+  c=>c.headerPrefix.lifecycle.requests[0].acceptedOrdinal=999,
+  c=>c.principalEpoch.before.sha256="0".repeat(64),
+  c=>c.documentJournal.documents[0].loaderId="foreign",
+  c=>c.environment.workerTargets.events[0].urlSha256="0".repeat(64),
+  c=>c.protocolErrors.observed=1,
+  c=>c.headerCensus.counts.unknownHeaders=1,
+  c=>c.environment.workerTargets=null,
+ ];
+ for(const change of changes){const f=await pendingJournalFixture();try{const token=await f.observer.check();change(f.current().nativeContext);assert.throws(()=>f.observer.confirm(token));assert.equal(f.metrics.releasedGraphs,0);}finally{f.dispose();assert.equal(f.metrics.releasedGraphs,1);}}
+});
+
+test("ordinary shared graphs have no escaped strong reference after last confirm or close",async()=>{
+ const {setFlagsFromString}=await import("node:v8"),{runInNewContext}=await import("node:vm");
+ setFlagsFromString("--expose_gc");const collect=runInNewContext("gc");
+ for(const mode of ["confirmed","closed"]){
+  const f=await pendingJournalFixture();
+  try{
+   const first=await f.observer.check(),second=await f.observer.check(),reference=f.metrics.graphRefs[0];
+   if(mode==="confirmed"){f.observer.confirm(first);await tick();collect();assert.ok(reference.deref(),"remaining token owns the graph");f.observer.confirm(second);}
+   else f.observer.close();
+   let forgotten=false;for(let i=0;i<12;i++){await tick();collect();await tick();if(reference.deref()===undefined){forgotten=true;break;}}
+   assert.equal(forgotten,true);assert.equal(f.metrics.releasedGraphs,1);
+  }finally{f.dispose();}
+ }
+});
+test("representation rejection retains the original deflate reservation stage before cleanup",async()=>{
+ const {mixedTechnicalCandidateDigest}=await import("./mixed-technical-gzip.mjs"),{begin}=await openPrefixFixture();
+ const proxy=createProxyControlCollector({contextId:begin.nativeContext.contextId});proxy.installed();
+ const owner=createMixedTechnicalOwner({contextId:begin.nativeContext.contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});
+ const cut=owner.capture(()=>begin),held=33554432-4194304;assert.equal(proxy.reserveTemporaryObservation(held),true);const reports=[];
+ try{
+  assert.equal(owner.retainEvidence(()=>mixedTechnicalCandidateDigest(cut,row=>reports.push(row))),null);assert.equal(reports.length,1);
+  const failure=reports[0].failure;assert.ok(failure,"failed representation must identify its original stage");
+  assert.equal(failure.stage,"deflate-reserve");assert.equal(failure.refusal.kind,"parent-bytes-refused");
+  assert.equal(failure.refusal.label,"deflate-returned-buffer");assert.equal(failure.refusal.requestedBytes,4194304);
+  assert.ok(failure.ownerUsedBytes>owner.stats().retainedBytes,"failure captures the pre-cleanup live owner");
+  assert.ok(failure.refusal.parentUsedBytes>=held);assert.equal(reports[0].serialized,null);
+ }finally{proxy.releaseTemporaryObservation(held);owner.releaseCut(cut);owner.close();assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);}
+});
+test("representation diagnostics distinguish pre-owner qualification binding and canonical failure",async()=>{
+ const {mixedTechnicalCandidateDigest}=await import("./mixed-technical-gzip.mjs"),{begin}=await openPrefixFixture();
+ let report;assert.equal(mixedTechnicalCandidateDigest({privateValue:"PRIVATE_UNKNOWN"},row=>{report=row;}),null);
+ assert.equal(report.failure.stage,"fallback-replay");assert.equal(report.failure.ownerUsedBytes,null);assert.equal(report.failure.ownerUsedRecords,null);assert.equal(report.failure.refusal,null);
+ const first=fixtureOwner(begin.nativeContext.contextId),second=fixtureOwner(begin.nativeContext.contextId),cut=first.capture(()=>begin);
+ try{
+  assert.equal(second.run(()=>mixedTechnicalCandidateDigest(cut,row=>{report=row;})),null);assert.equal(report.failure.stage,"owner-join");assert.equal(report.failure.ownerUsedBytes,null);
+  cut.browserEventOrdinal++;assert.equal(mixedTechnicalCandidateDigest(cut,row=>{report=row;}),null);assert.equal(report.failure.stage,"binding-match");assert.equal(report.failure.refusal,null);
+  cut.proxy[0].PRIVATE_INVALID=NaN;assert.equal(mixedTechnicalCandidateDigest(cut,row=>{report=row;}),null);assert.equal(report.failure.stage,"measure");assert.equal(report.failure.innerStage,"canonical-measure");
+  assert.doesNotMatch(JSON.stringify(report),/PRIVATE_|privateValue/);assert.ok(Object.isFrozen(report.failure));
+ }finally{first.releaseCut(cut);first.close();second.close();assert.equal(first.stats().retainedBytes,0);assert.equal(second.stats().retainedBytes,0);}
+});
+
+test("representation diagnostics preserve actual replay record denial and assembly exception cleanup",async()=>{
+ const {mixedTechnicalCandidateDigest}=await import("./mixed-technical-gzip.mjs"),{begin}=await openPrefixFixture(),contextId=begin.nativeContext.contextId;
+ const proxy=createProxyControlCollector({contextId});proxy.installed();const owner=createMixedTechnicalOwner({contextId,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});
+ const parsed=parseMixedTechnicalReplayJSON(Buffer.from(JSON.stringify(begin)));assert.equal(proxy.reserveTemporaryRecords(10000),true);let report;
+ try{assert.equal(owner.run(()=>mixedTechnicalCandidateDigest(parsed,row=>{report=row;})),null);assert.equal(report.failure.stage,"replay-subcut");assert.equal(report.failure.refusal.kind,"parent-records-refused");assert.equal(report.failure.refusal.label,"candidate-subcut-view");assert.equal(report.failure.refusal.parentUsedRecords,10000);assert.ok(report.failure.refusal.requestedRecords>0);assert.equal(owner.stats().retainedBytes,0);}
+ finally{proxy.releaseTemporaryRecords(10000);owner.close();}
+ let armed=false,assemblyBytes=0,calls=0;const assembly=createMixedTechnicalOwner({contextId,reserve:n=>{if(armed&&n===assemblyBytes){calls++;throw Error("PRIVATE_ASSEMBLY_CALLBACK");}return proxy.reserveTemporaryObservation(n);},release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords}),cut=assembly.capture(()=>begin),sample=assembly.encode(cut);assemblyBytes=sample.stats.portableBytes;sample.release();armed=true;
+ try{assert.equal(mixedTechnicalCandidateDigest(cut,row=>{report=row;throw Error("PRIVATE_SINK");}),null);assert.equal(calls,1);assert.equal(report.failure.stage,"assembly-reserve");assert.equal(report.failure.refusal.kind,"parent-bytes-threw");assert.equal(report.failure.refusal.label,"portable-assembly");assert.equal(report.failure.refusal.requestedBytes,assemblyBytes);assert.doesNotMatch(JSON.stringify(report),/PRIVATE_|"message"|"stack"/);}
+ finally{assembly.releaseCut(cut);assembly.close();assert.equal(assembly.stats().retainedBytes,0);assert.equal(assembly.stats().retainedRecords,0);}
+});
+
+test("native gzip maxOutput failure is reported without an error object or changed logical limit",async()=>{
+ const {mixedTechnicalCandidateDigest}=await import("./mixed-technical-gzip.mjs"),{randomBytes}=await import("node:crypto");
+ const contextId="fresh-incompressible",owner=fixtureOwner(contextId),cut=owner.capture(()=>({nativeContext:{contextId},PRIVATE_FIELD:randomBytes(4259840).toString("base64")}));let report;
+ try{assert.equal(mixedTechnicalCandidateDigest(cut,row=>{report=row;}),null);assert.equal(report.failure.stage,"deflate-call");assert.equal(report.failure.refusal,null);assert.ok(report.failure.ownerUsedBytes>owner.stats().retainedBytes);assert.equal(report.logicalBytes,null);assert.equal(report.encodedBytes,null);assert.doesNotMatch(JSON.stringify(report),/PRIVATE_FIELD|fresh-incompressible|Error|stack|message/);}
+ finally{owner.releaseCut(cut);owner.close();assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);}
+});
+
+test("nested representation scopes restore owner identity and hostile sinks cannot execute or change results",async()=>{
+ const {mixedTechnicalCandidateDigest}=await import("./mixed-technical-gzip.mjs"),{begin}=await openPrefixFixture(),contextId=begin.nativeContext.contextId;
+ const inner=fixtureOwner(contextId),innerCut=inner.capture(()=>begin),proxy=createProxyControlCollector({contextId});proxy.installed();let armed=false,nested=0,innerReport,outerReport;
+ const owner=createMixedTechnicalOwner({contextId,reserve:n=>{if(armed&&n===131072){armed=false;nested++;assert.ok(mixedTechnicalCandidateDigest(innerCut,row=>{innerReport=row;}));}return proxy.reserveTemporaryObservation(n);},release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords}),cut=owner.capture(()=>begin),held=33554432-owner.stats().retainedBytes-131071;
+ assert.equal(proxy.reserveTemporaryObservation(held),true);armed=true;
+ try{assert.equal(mixedTechnicalCandidateDigest(cut,row=>{outerReport=row;}),null);assert.equal(nested,1);assert.equal(innerReport.outcome,"complete");assert.equal(Object.hasOwn(innerReport,"failure"),false);assert.equal(outerReport.failure.stage,"pack-kind");assert.equal(outerReport.failure.refusal.kind,"parent-bytes-refused");assert.equal(outerReport.failure.refusal.parentUsedBytes,held+owner.stats().retainedBytes);}
+ finally{proxy.releaseTemporaryObservation(held);owner.releaseCut(cut);owner.close();}
+ try{
+  const expected=mixedTechnicalCandidateDigest(innerCut),reports=[];assert.equal(mixedTechnicalCandidateDigest(innerCut,row=>{reports.push(row);throw Error("PRIVATE_SINK");}),expected);assert.equal(reports.length,1);assert.equal(Object.hasOwn(reports[0],"failure"),false);
+  let traps=0;const hostile=Proxy.revocable(()=>{traps++;},{get(){traps++;throw Error("PRIVATE_PROXY");}});hostile.revoke();assert.equal(mixedTechnicalCandidateDigest(innerCut,hostile.proxy),expected);assert.equal(traps,0);
+  let unknown;assert.equal(mixedTechnicalCandidateDigest({},row=>{unknown=row;}),null);assert.equal(unknown.failure.ownerUsedBytes,null);assert.equal(unknown.failure.refusal,null);
+ }finally{inner.releaseCut(innerCut);inner.close();assert.equal(inner.stats().retainedBytes,0);assert.equal(owner.stats().retainedBytes,0);}
+});
+test("reachable representation failures fit the existing firstFailure reservation and stay failure-only",async()=>{
+ const {begin}=await openPrefixFixture();let maximum=0,conservativeMaximum=0;
+ // Scalar-width upper bound of each separately reached shape, never a fabricated cut.
+ // Preserve null/presence and mutually exclusive alternatives; hashes stay64 chars.
+ const widest=(value,key)=>typeof value==="number"?Number.MAX_SAFE_INTEGER:typeof value==="boolean"?false:typeof value==="string"?key==="label"?"complete-progress-cut-clone-and-private-control":key==="kind"?"parent-records-refused":["stage","cutStage"].includes(key)?"check-after-ack-live":value:value&&typeof value==="object"?Object.fromEntries(Object.entries(value).map(([name,item])=>[name,widest(item,name)])):value;
+ for(const mode of ["deflate-parent","assembly-throw","binding","measure","owner-join"]){
+  const contextId=begin.nativeContext.contextId,proxy=createProxyControlCollector({contextId});proxy.installed();let armed=false,wireBytes=0;
+  const owner=createMixedTechnicalOwner({contextId,reserve:n=>{if(armed&&mode==="assembly-throw"&&n===wireBytes)throw Error("PRIVATE_ASSEMBLY");return proxy.reserveTemporaryObservation(n);},release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});
+  const foreign=mode==="owner-join"?fixtureOwner(contextId):null,cut=(foreign??owner).capture(()=>begin),sample=(foreign??owner).encode(cut);wireBytes=sample.stats.portableBytes;sample.release();
+  if(mode==="binding")cut.browserEventOrdinal=Number.MAX_SAFE_INTEGER;
+  if(mode==="measure")cut.proxy[0].PRIVATE_VALUE=NaN;
+  const held=mode==="deflate-parent"?33554432-4194304:0;let heldLive=held>0;if(held)assert.equal(proxy.reserveTemporaryObservation(held),true);armed=true;
+  const observer=realProgressObserver({technicalOwner:owner,input:()=>cut,application:()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0}),acknowledge:()=>assert.fail("failed candidate cannot request ACK")});
+  try{
+   await assert.rejects(observer.check());armed=false;if(heldLive){proxy.releaseTemporaryObservation(held);heldLive=false;}const snapshot=observer.snapshot(),row=snapshot.firstFailure;assert.ok(row,mode);
+   assert.equal(row.candidate.site,"input-prelude");if(mode==="owner-join")assert.equal(row.candidate.serialization,null,"earlier qualification rejects before any digest call");else{assert.equal(row.candidate.serialization.outcome,"representation-rejected");assert.ok(row.candidate.serialization.failure);}
+   assert.equal(row.inputCapture,undefined);const charge=Buffer.byteLength(JSON.stringify(row))*8+2048;maximum=Math.max(maximum,charge);assert.ok(charge<=32768,mode+":"+charge);const upper=Buffer.byteLength(JSON.stringify(widest(row)))*8+2048;conservativeMaximum=Math.max(conservativeMaximum,upper);assert.ok(upper<=32768,mode+" scalar-width upper:"+upper);
+   assert.doesNotMatch(JSON.stringify(row),/PRIVATE_|stack|message|http:/);observer.releaseSnapshot(snapshot);
+  }finally{armed=false;if(heldLive)proxy.releaseTemporaryObservation(held);observer.close();observer.releaseSnapshot();foreign?.releaseCut(cut);foreign?.close();assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);}
+ }
+ console.log(JSON.stringify({reachableRepresentationDiagnosticMaxCharge:maximum,conservativeScalarWidthMaxCharge:conservativeMaximum,existingReservation:32768}));
+});
+test("maximum hashed event projection with a real representation rejection stays within32KiB",async()=>{
+ const {begin}=await openPrefixFixture(),current=structuredClone(begin);current.browserEventOrdinal=Number.MAX_SAFE_INTEGER;
+ current.failures=Array.from({length:10000},(_,i)=>({requestId:"PRIVATE_EVENT_"+i,proxyResponseId:"PRIVATE_PROXY",failedEventOrdinal:i+1,failedEvents:Number.MAX_SAFE_INTEGER,status:Number.MAX_SAFE_INTEGER,failed:true,loadingFinished:false,canceled:true,error:"PRIVATE_ERROR",bodyProof:{complete:false,reason:"PRIVATE_BODY_REASON"}}));
+ current.proxy=[{id:"PRIVATE_PROXY",complete:false,canceled:false,upstreamError:false,responseEvents:Number.MAX_SAFE_INTEGER,bodyProof:{complete:false,reason:"PRIVATE_PACKET_REASON"}}];current.coverage.pendingBodies=Number.MAX_SAFE_INTEGER;
+ const parsed=parseMixedTechnicalReplayJSON(Buffer.from(JSON.stringify(current))),observer=realProgressObserver({input:()=>parsed,application:()=>({failures:0,serverErrors:0,unknown:0,httpErrors:0,overflows:0,decodeFailures:0,registryConflicts:0}),acknowledge:()=>assert.fail("over-limit typed record graph rejects")});
+ try{await assert.rejects(observer.check());const row=observer.snapshot().firstFailure;assert.ok(row);assert.equal(row.candidate.serialization.failure.stage,"fallback-replay");assert.equal(row.candidate.serialization.failure.innerStage,"canonical-measure");assert.equal(row.cut.latestFailure.bodyProofReasonSha256,sha("PRIVATE_BODY_REASON"));assert.equal(row.cut.matchingPacket.bodyProofReasonSha256,sha("PRIVATE_PACKET_REASON"));const charge=Buffer.byteLength(JSON.stringify(row))*8+2048;assert.ok(charge<=32768);assert.doesNotMatch(JSON.stringify(row),/PRIVATE_|"message"|"stack"/);console.log(JSON.stringify({maxEventProjectionRepresentationCharge:charge,existingReservation:32768}));}
+ finally{observer.close();observer.releaseSnapshot();}
+});
+test("direct nested encodes cannot replace the outer reservation diagnostic",async()=>{
+ const {mixedTechnicalCandidateDigest}=await import("./mixed-technical-gzip.mjs"),contextId="nested-direct-encode";
+ for(const sameOwner of [false,true]){
+  const proxy=createProxyControlCollector({contextId});proxy.installed();let armed=false,held=0,nestedCalls=0,expectedOwnerBytes=0;
+  let owner,inner,innerCut;owner=createMixedTechnicalOwner({contextId,reserve:n=>{if(armed&&n===131072){armed=false;nestedCalls++;const result=inner.encode(innerCut);result.release();expectedOwnerBytes=owner.stats().retainedBytes;held=33554432-expectedOwnerBytes-131071;assert.equal(proxy.reserveTemporaryObservation(held),true);}return proxy.reserveTemporaryObservation(n);},release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});
+  inner=sameOwner?owner:fixtureOwner(contextId);const outerCut=owner.capture(()=>({nativeContext:{contextId},outer:true}));innerCut=inner.capture(()=>({nativeContext:{contextId},inner:"different inner bytes"}));armed=true;let report;
+  try{assert.equal(mixedTechnicalCandidateDigest(outerCut,row=>{report=row;}),null);assert.equal(nestedCalls,1);assert.equal(report.failure.stage,"pack-kind");assert.equal(report.failure.ownerUsedBytes,expectedOwnerBytes);assert.equal(report.failure.refusal.kind,"parent-bytes-refused");assert.equal(report.failure.refusal.label,"operation-hash-control-smallobjects");assert.equal(report.failure.refusal.parentUsedBytes,held+expectedOwnerBytes);}
+  finally{armed=false;if(held)proxy.releaseTemporaryObservation(held);owner.releaseCut(outerCut);inner.releaseCut(innerCut);owner.close();inner.close();assert.equal(owner.stats().retainedBytes,0);assert.equal(inner.stats().retainedBytes,0);}
+ }
+});
+test("direct nested encode during release cannot corrupt a later outer refusal",async()=>{
+ const {mixedTechnicalCandidateDigest}=await import("./mixed-technical-gzip.mjs"),contextId="nested-direct-release",inner=fixtureOwner(contextId),innerCut=inner.capture(()=>({nativeContext:{contextId},inner:true})),proxy=createProxyControlCollector({contextId});proxy.installed();let armed=false,nested=0,held=0,expectedOwnerBytes=0;
+ const owner=createMixedTechnicalOwner({contextId,reserve:n=>{if(nested&&n===4194304){expectedOwnerBytes=owner.stats().retainedBytes;held=33554432-expectedOwnerBytes-n+1;assert.equal(proxy.reserveTemporaryObservation(held),true);}return proxy.reserveTemporaryObservation(n);},release:n=>{if(armed&&n===131072){armed=false;nested++;const result=inner.encode(innerCut);result.release();}proxy.releaseTemporaryObservation(n);},reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords}),cut=owner.capture(()=>({nativeContext:{contextId},outer:true}));armed=true;let report;
+ try{assert.equal(mixedTechnicalCandidateDigest(cut,row=>{report=row;}),null);assert.equal(nested,1);assert.equal(report.failure.stage,"deflate-reserve");assert.equal(report.failure.ownerUsedBytes,expectedOwnerBytes);assert.equal(report.failure.refusal.kind,"parent-bytes-refused");assert.equal(report.failure.refusal.parentUsedBytes,held+expectedOwnerBytes);}
+ finally{armed=false;if(held)proxy.releaseTemporaryObservation(held);owner.releaseCut(cut);owner.close();inner.releaseCut(innerCut);inner.close();assert.equal(owner.stats().retainedBytes,0);assert.equal(inner.stats().retainedBytes,0);}
+});
+
+test("candidate gzip precharges one physical output backing before its single native call",async()=>{
+ const {createMixedTechnicalOwner}=await import("./mixed-technical-gzip.mjs"),{createRequire,syncBuiltinESMExports}=await import("node:module"),native=createRequire(import.meta.url)("node:zlib");
+ const contextId="single-output-backing",proxy=createProxyControlCollector({contextId});proxy.installed();const reserves=[];let nativeComplete=false,nativeBytes=0,assemblyOwnerBytes=null;
+ const owner=createMixedTechnicalOwner({contextId,reserve:n=>{reserves.push(n);if(nativeComplete&&n===nativeBytes+48)assemblyOwnerBytes=owner.stats().retainedBytes;return proxy.reserveTemporaryObservation(n);},release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords}),cut=owner.capture(()=>({nativeContext:{contextId},unicode:"é😀",metadata:"fresh".repeat(1000)}));const cutBytes=owner.stats().retainedBytes;reserves.length=0;
+ const originalGzip=native.gzipSync,originalAlloc=Buffer.allocUnsafe;let calls=0,observation,packed;
+ native.gzipSync=function(input,options){calls++;const backings=[],allocations=[];const before=[...reserves];Buffer.allocUnsafe=function(...args){const value=Reflect.apply(originalAlloc,this,args);backings.push(value.buffer);allocations.push(value.buffer.byteLength);return value;};try{const value=Reflect.apply(originalGzip,this,[input,options]);observation={before,allocations,aliases:backings.includes(value.buffer),backingBytes:value.buffer.byteLength,chunkSize:options.chunkSize,maxOutputLength:options.maxOutputLength};nativeComplete=true;nativeBytes=value.length;return value;}finally{Buffer.allocUnsafe=originalAlloc;}};syncBuiltinESMExports();
+ try{packed=owner.encode(cut);assert.equal(calls,1);assert.deepEqual(observation.before.filter(n=>n>=4194304),[4194304]);assert.deepEqual(observation.allocations,[4194304]);assert.equal(observation.aliases,true);assert.equal(observation.backingBytes,4194304);assert.equal(observation.chunkSize,4194304);assert.equal(observation.maxOutputLength,4194256);assert.ok(packed.bytes.length<=4194304);assert.equal(assemblyOwnerBytes,cutBytes+131072+packed.stats.logicalBytes+4194304,"entire native backing remains charged at assembly even for small gzip");}
+ finally{native.gzipSync=originalGzip;Buffer.allocUnsafe=originalAlloc;syncBuiltinESMExports();packed?.release();owner.releaseCut(cut);owner.close();assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);}
+});
+test("single gzip backing rejects unsafe changed pool descriptors before native allocation",async()=>{
+ const {createMixedTechnicalOwner}=await import("./mixed-technical-gzip.mjs"),{createRequire,syncBuiltinESMExports}=await import("node:module"),native=createRequire(import.meta.url)("node:zlib"),originalGzip=native.gzipSync,originalPool=Object.getOwnPropertyDescriptor(Buffer,"poolSize");
+ for(const mode of ["large","unsigned-large","getter"]){
+  const id="pool-guard-"+mode,proxy=createProxyControlCollector({contextId:id});proxy.installed();let armed=false,calls=0,reads=0;
+  const owner=createMixedTechnicalOwner({contextId:id,reserve:n=>{const granted=proxy.reserveTemporaryObservation(n);if(armed&&n===4194304){if(mode==="getter")Object.defineProperty(Buffer,"poolSize",{configurable:true,get(){reads++;throw Error("PRIVATE_POOL_GETTER");}});else Object.defineProperty(Buffer,"poolSize",{...originalPool,value:mode==="large"?16777216:4294967295});}return granted;},release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords}),cut=owner.capture(()=>({nativeContext:{contextId:id},fresh:true}));
+  native.gzipSync=function(...args){calls++;return Reflect.apply(originalGzip,this,args);};syncBuiltinESMExports();armed=true;
+  try{assert.throws(()=>owner.encode(cut),/Mixed technical gzip rejected input/);assert.equal(calls,0);assert.equal(reads,0);}
+  finally{armed=false;Object.defineProperty(Buffer,"poolSize",originalPool);native.gzipSync=originalGzip;syncBuiltinESMExports();owner.releaseCut(cut);owner.close();assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);assert.equal(proxy.reserveTemporaryObservation(33554432),true);proxy.releaseTemporaryObservation(33554432);}
+ }
+});
+test("single gzip output native overflow never allocates a second backing and releases all leases",async()=>{
+ const {createMixedTechnicalOwner}=await import("./mixed-technical-gzip.mjs"),{createRequire,syncBuiltinESMExports}=await import("node:module"),{randomBytes}=await import("node:crypto"),native=createRequire(import.meta.url)("node:zlib"),originalGzip=native.gzipSync,originalAlloc=Buffer.allocUnsafe;
+ const id="single-output-overflow",proxy=createProxyControlCollector({contextId:id});proxy.installed();const owner=createMixedTechnicalOwner({contextId:id,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords}),cut=owner.capture(()=>({nativeContext:{contextId:id},value:randomBytes(4259840).toString("base64")}));let calls=0,code=null;const allocations=[];
+ native.gzipSync=function(...args){calls++;Buffer.allocUnsafe=function(...input){const value=Reflect.apply(originalAlloc,this,input);allocations.push(value.buffer.byteLength);return value;};try{return Reflect.apply(originalGzip,this,args);}catch(error){code=error.code;throw error;}finally{Buffer.allocUnsafe=originalAlloc;}};syncBuiltinESMExports();
+ try{assert.throws(()=>owner.encode(cut),/Mixed technical gzip rejected input/);assert.equal(calls,1);assert.equal(code,"ERR_BUFFER_TOO_LARGE");assert.deepEqual(allocations,[4194304]);}
+ finally{native.gzipSync=originalGzip;Buffer.allocUnsafe=originalAlloc;syncBuiltinESMExports();owner.releaseCut(cut);owner.close();assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);}
+});
+
+test("single gzip output reservation denial happens before native and refunds only its own leases",async()=>{
+ const {createMixedTechnicalOwner}=await import("./mixed-technical-gzip.mjs"),{createRequire,syncBuiltinESMExports}=await import("node:module"),native=createRequire(import.meta.url)("node:zlib"),originalGzip=native.gzipSync,id="single-output-denial",proxy=createProxyControlCollector({contextId:id});proxy.installed();let armed=false,denials=0,calls=0;
+ const owner=createMixedTechnicalOwner({contextId:id,reserve:n=>{if(armed&&n===4194304){denials++;return false;}return proxy.reserveTemporaryObservation(n);},release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords}),cut=owner.capture(()=>({nativeContext:{contextId:id},fresh:true})),before=owner.stats().retainedBytes;
+ native.gzipSync=function(...args){calls++;return Reflect.apply(originalGzip,this,args);};syncBuiltinESMExports();armed=true;
+ try{assert.throws(()=>owner.encode(cut),/Mixed technical gzip rejected input/);assert.equal(denials,1);assert.equal(calls,0);assert.equal(owner.stats().retainedBytes,before);}
+ finally{armed=false;native.gzipSync=originalGzip;syncBuiltinESMExports();owner.releaseCut(cut);owner.close();assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);assert.equal(proxy.reserveTemporaryObservation(33554432),true);proxy.releaseTemporaryObservation(33554432);}
+});
+
+test("single gzip output keeps the exact8MiB logical edge and rejects one byte more",async()=>{
+ const {createMixedTechnicalOwner}=await import("./mixed-technical-gzip.mjs"),id="single-output-logical-edge",empty={nativeContext:{contextId:id},value:""},overhead=Buffer.byteLength(JSON.stringify(empty));
+ for(const extra of [0,1]){const proxy=createProxyControlCollector({contextId:id});proxy.installed();const owner=createMixedTechnicalOwner({contextId:id,reserve:proxy.reserveTemporaryObservation,release:proxy.releaseTemporaryObservation,reserveRecords:proxy.reserveTemporaryRecords,releaseRecords:proxy.releaseTemporaryRecords});let cut=null,packed=null;
+  try{const value={...empty,value:"x".repeat(8388608-overhead+extra)};if(extra)assert.throws(()=>owner.capture(()=>value),/Mixed technical gzip rejected input/);else{cut=owner.capture(()=>value);packed=owner.encode(cut);assert.equal(packed.stats.logicalBytes,8388608);assert.ok(packed.bytes.length<=4194304);}}
+  finally{packed?.release();if(cut)owner.releaseCut(cut);owner.close();assert.equal(owner.stats().retainedBytes,0);assert.equal(owner.stats().retainedRecords,0);}
+ }
+});
+
+test("qualified native gzip exact output boundary aliases one chunk and rejects one byte below",async()=>{
+ const {gzipSync,constants}=await import("node:zlib"),{randomBytes}=await import("node:crypto"),input=randomBytes(131072),options={level:6,windowBits:15,memLevel:8,strategy:constants.Z_DEFAULT_STRATEGY},expected=gzipSync(input,options).length,originalAlloc=Buffer.allocUnsafe;
+ for(const limit of [expected,expected-1]){const backings=[],allocations=[];Buffer.allocUnsafe=function(...args){const value=Reflect.apply(originalAlloc,this,args);backings.push(value.buffer);allocations.push(value.buffer.byteLength);return value;};
+  try{if(limit===expected){const result=gzipSync(input,{...options,chunkSize:expected+1,maxOutputLength:limit});assert.equal(result.length,expected);assert.ok(backings.includes(result.buffer));}else assert.throws(()=>gzipSync(input,{...options,chunkSize:expected+1,maxOutputLength:limit}),{code:"ERR_BUFFER_TOO_LARGE"});assert.deepEqual(allocations,[expected+1]);}
+  finally{Buffer.allocUnsafe=originalAlloc;}
+ }
+});

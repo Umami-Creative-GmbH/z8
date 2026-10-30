@@ -1,7 +1,23 @@
-import { and, asc, eq, inArray, ne, or, type SQL, type SQLWrapper, sql } from "drizzle-orm";
+import {
+	and,
+	asc,
+	eq,
+	inArray,
+	ne,
+	or,
+	type SQL,
+	type SQLWrapper,
+	sql,
+} from "drizzle-orm";
 import type { db as appDb } from "@/db";
 import { member, organization, user } from "@/db/auth-schema";
-import { employee, employeeDocument, employeeDocumentRequest, teamMembership } from "@/db/schema";
+import {
+	employee,
+	employeeDocument,
+	employeeDocumentRequest,
+	teamMembership,
+} from "@/db/schema";
+import type { AuthorizedOrganizationIdentity } from "@/lib/auth/organization-identity";
 import { hasOrganizationRole } from "@/lib/auth/organization-role";
 import type { Instant } from "@/lib/datetime/temporal-core";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
@@ -50,7 +66,8 @@ export async function resolvePersonnelFileAccess(
 	database: Reader,
 	input: { userId: string; organizationId: string; now?: Instant },
 ): Promise<PersonnelFileAccess | null> {
-	if (!(await isPersonnelFilesEnabled(database, input.organizationId))) return null;
+	if (!(await isPersonnelFilesEnabled(database, input.organizationId)))
+		return null;
 	const [[membership], [profile]] = await Promise.all([
 		database
 			.select({ role: member.role })
@@ -64,32 +81,58 @@ export async function resolvePersonnelFileAccess(
 			)
 			.limit(1),
 		database
-			.select({ id: employee.id, hasAccess: employeeHasOrganizationAccess(input.now) })
+			.select({
+				id: employee.id,
+				hasAccess: employeeHasOrganizationAccess(input.now),
+			})
 			.from(employee)
 			.where(
-				and(eq(employee.userId, input.userId), eq(employee.organizationId, input.organizationId)),
+				and(
+					eq(employee.userId, input.userId),
+					eq(employee.organizationId, input.organizationId),
+				),
 			)
 			.limit(1),
 	]);
 	if (!membership) return null;
 	if (profile && !profile.hasAccess) return null;
+	return resolvePersonnelFileAccessForIdentity(database, {
+		userId: input.userId,
+		organizationId: input.organizationId,
+		membershipRole: membership.role,
+		selfEmployeeId: profile?.id ?? null,
+	});
+}
+
+/** Internal server reuse after feature admission and current identity are known.
+ * The public resolver above still enforces both from fresh database evidence.
+ */
+export async function resolvePersonnelFileAccessForIdentity(
+	database: Reader,
+	identity: Pick<
+		AuthorizedOrganizationIdentity,
+		"userId" | "organizationId" | "membershipRole"
+	> & { selfEmployeeId: string | null },
+): Promise<PersonnelFileAccess> {
+	const input = identity;
 	const isOrganizationAdmin =
-		hasOrganizationRole(membership.role, "owner") || hasOrganizationRole(membership.role, "admin");
+		hasOrganizationRole(identity.membershipRole, "owner") ||
+		hasOrganizationRole(identity.membershipRole, "admin");
 	let grants: ManageGrant[] = [];
 	if (isOrganizationAdmin) {
 		grants = [ORGANIZATION_ADMIN_GRANT];
-	} else if (profile) {
+	} else if (identity.selfEmployeeId) {
 		// A personnel file officer grant (#866) is the only other source of access.
 		const officerGrant = await loadActivePersonnelFileOfficerGrant(database, {
 			organizationId: input.organizationId,
-			officerEmployeeId: profile.id,
+			officerEmployeeId: identity.selfEmployeeId,
 		});
 		if (officerGrant) grants = [manageGrantOf(officerGrant)];
 	}
 	return {
 		organizationId: input.organizationId,
 		userId: input.userId,
-		selfEmployeeId: profile?.id ?? null,
+		selfEmployeeId: identity.selfEmployeeId,
 		grants,
 	};
 }
@@ -106,7 +149,10 @@ export async function loadEmployeeRef(
 		.select({ id: employee.id, teamId: employee.teamId })
 		.from(employee)
 		.where(
-			and(eq(employee.id, input.employeeId), eq(employee.organizationId, input.organizationId)),
+			and(
+				eq(employee.id, input.employeeId),
+				eq(employee.organizationId, input.organizationId),
+			),
 		)
 		.limit(1);
 	if (!row) return null;
@@ -149,7 +195,10 @@ export async function loadEmployeeRefsInScope(
 		.orderBy(asc(employee.id));
 	if (rows.length === 0) return [];
 	const memberships = await database
-		.select({ employeeId: teamMembership.employeeId, teamId: teamMembership.teamId })
+		.select({
+			employeeId: teamMembership.employeeId,
+			teamId: teamMembership.teamId,
+		})
 		.from(teamMembership)
 		.where(
 			and(
@@ -211,7 +260,11 @@ function managedEmployeeCondition(
 	scope: EmployeeScope,
 	employeeIdColumn: SQLWrapper = employeeDocument.employeeId,
 ): SQL {
-	const inScope = employeeInScope(access.organizationId, scope, employeeIdColumn);
+	const inScope = employeeInScope(
+		access.organizationId,
+		scope,
+		employeeIdColumn,
+	);
 	return access.selfEmployeeId
 		? (and(inScope, ne(employeeIdColumn, access.selfEmployeeId)) as SQL)
 		: inScope;
@@ -240,7 +293,9 @@ export async function listManagedEmployees(
 ): Promise<ManagedEmployee[]> {
 	const { category } = filter;
 	const scopes = access.grants
-		.filter((grant) => (category ? grant.categories.has(category) : grant.categories.size > 0))
+		.filter((grant) =>
+			category ? grant.categories.has(category) : grant.categories.size > 0,
+		)
 		.map((grant) => managedEmployeeCondition(access, grant.scope, employee.id));
 	if (scopes.length === 0) return [];
 	const rows = await database
@@ -282,7 +337,9 @@ export function managedEmployeesCondition(
 ): SQL {
 	const scopes = access.grants
 		.filter((grant) => grant.categories.has(category))
-		.map((grant) => managedEmployeeCondition(access, grant.scope, employeeIdColumn));
+		.map((grant) =>
+			managedEmployeeCondition(access, grant.scope, employeeIdColumn),
+		);
 	return scopes.length > 0 ? (or(...scopes) as SQL) : sql`false`;
 }
 
@@ -293,7 +350,9 @@ export function managedEmployeesCondition(
  * actor's own. Coverage is checked live, so an officer who loses it loses
  * sight of the request. Always scoped to the actor's organization.
  */
-export function managedDocumentRequestsCondition(access: PersonnelFileAccess): SQL {
+export function managedDocumentRequestsCondition(
+	access: PersonnelFileAccess,
+): SQL {
 	const managed = access.grants.flatMap((grant) => {
 		const categories = DOCUMENT_REQUEST_CATEGORIES.filter((category) =>
 			grant.categories.has(category),
@@ -301,7 +360,11 @@ export function managedDocumentRequestsCondition(access: PersonnelFileAccess): S
 		if (categories.length === 0) return [];
 		return [
 			and(
-				managedEmployeeCondition(access, grant.scope, employeeDocumentRequest.employeeId),
+				managedEmployeeCondition(
+					access,
+					grant.scope,
+					employeeDocumentRequest.employeeId,
+				),
 				inArray(employeeDocumentRequest.category, categories),
 			) as SQL,
 		];

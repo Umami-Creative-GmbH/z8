@@ -608,6 +608,20 @@ async function readInspectableRecords(context) {
  */
 async function handleGetQueueCount(event) {
 	try {
+		let storesEmpty = false;
+		try {
+			const [legacy, commands] = await Promise.all([
+				self.OfflineQueueDB.getRecords(),
+				self.ClockCommandStore.list(),
+			]);
+			storesEmpty = Array.isArray(legacy) && Array.isArray(commands) && legacy.length === 0 && commands.length === 0;
+		} catch {
+			// Unreadable stores do not prove emptiness; retain authorized recovery below.
+		}
+		if (storesEmpty) {
+			event.ports[0]?.postMessage({ count: 0, reviewCount: 0, waitingCount: 0, savedCount: 0 });
+			return;
+		}
 		const context = await requireRecoveryContext(event.data.context);
 		const { legacy, commands } = await readInspectableRecords(context);
 		const legacyCount = legacy.filter(

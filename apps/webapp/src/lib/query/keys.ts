@@ -14,6 +14,11 @@ import type { StaffingShiftInput } from "@/lib/scheduling/staffing/types";
 type Id = string | null | undefined;
 
 export const queryKeys = {
+	organizationContext: {
+		all: ["organization-context"] as const,
+		current: (userId: Id, organizationId: Id) =>
+			["organization-context", userId, organizationId] as const,
+	},
 	// Organizations
 	organizations: {
 		all: ["organizations"] as const,
@@ -244,6 +249,14 @@ export const queryKeys = {
 		all: ["employees"] as const,
 		organization: (orgId: string) => ["employees", orgId] as const,
 		list: <T extends object>(orgId: string, params?: T) => ["employees", orgId, params] as const,
+		scopedList: <T extends object>(userId: Id, orgId: Id, params: T) =>
+			["employees", orgId, "list", userId, params] as const,
+		detailFor: (userId: Id, orgId: Id, employeeId: string) =>
+			["employees", "detail", employeeId, userId, orgId] as const,
+		referencePolicies: (userId: Id, orgId: Id) =>
+			["work-policies", "list", orgId, "employee-choices", userId] as const,
+		managerChoices: (userId: Id, orgId: Id, employeeId: string) =>
+			["employees", orgId, "manager-choices", userId, employeeId] as const,
 		detail: (employeeId: string) => ["employees", "detail", employeeId] as const,
 		employmentHistory: (employeeId: string) =>
 			["employees", "detail", employeeId, "employment-history"] as const,
@@ -370,7 +383,10 @@ export const queryKeys = {
 		 * pre-fill and the live work's vehicle use. Under `status`, so every clock
 		 * status refresh also refreshes it.
 		 */
-		vehicleUse: () => ["time-clock", "status", "vehicle-use"] as const,
+		vehicleUse: (userId?: Id, organizationId?: Id) =>
+			["time-clock", "status", "vehicle-use", userId, organizationId] as const,
+		vehicleUseStatus: (userId?: Id, organizationId?: Id) =>
+			["time-clock", "status", "vehicle-use-operational", userId, organizationId] as const,
 	},
 
 	// Position stamps on a work period's detail (#831); never the positions themselves
@@ -402,12 +418,30 @@ export const queryKeys = {
 	// Notifications
 	notifications: {
 		all: ["notifications"] as const,
-		list: (options?: { limit?: number; unreadOnly?: boolean; organizationId?: string | null }) =>
-			["notifications", "list", options] as const,
-		unreadCount: (organizationId?: string | null) =>
-			organizationId
-				? (["notifications", "unread-count", organizationId] as const)
-				: (["notifications", "unread-count"] as const),
+		inbox: (userId: string | null, organizationId: string | null) =>
+			["notifications", "inbox", userId, organizationId] as const,
+		list: (options?: {
+			limit?: number;
+			unreadOnly?: boolean;
+			organizationId?: string | null;
+			userId?: string | null;
+		}) =>
+			options && "userId" in options
+				? ([
+						"notifications",
+						"inbox",
+						options.userId,
+						options.organizationId,
+						"list",
+						{ limit: options.limit, unreadOnly: options.unreadOnly },
+					] as const)
+				: (["notifications", "list", options] as const),
+		unreadCount: (organizationId?: string | null, userId?: string | null) =>
+			userId !== undefined
+				? (["notifications", "inbox", userId, organizationId, "unread-count"] as const)
+				: organizationId
+					? (["notifications", "unread-count", organizationId] as const)
+					: (["notifications", "unread-count"] as const),
 		preferences: (organizationId?: string | null) =>
 			organizationId
 				? (["notifications", "preferences", organizationId] as const)
@@ -517,7 +551,7 @@ export const queryKeys = {
 		list: <T extends object>(orgId: string, params?: T) =>
 			["projects", "list", orgId, params] as const,
 		detail: (projectId: string) => ["projects", "detail", projectId] as const,
-		assignable: (orgId: string) => ["projects", "assignable", orgId] as const,
+		assignable: (orgId: string, userId?: Id) => ["projects", "assignable", orgId, userId] as const,
 		teamSelection: (orgId: string) => ["projects", "teamSelection", orgId] as const,
 		employeeSelection: (orgId: string) => ["projects", "employeeSelection", orgId] as const,
 		tasks: (projectId: string) => ["projects", "tasks", projectId] as const,
@@ -655,7 +689,12 @@ export const queryKeys = {
 	dashboard: {
 		all: ["dashboard"] as const,
 		userSettings: () => ["dashboard", "user-settings"] as const,
-		widgetOrder: () => ["dashboard", "widget-order"] as const,
+		widgetOrder: (userId?: string | null, organizationId?: string | null) =>
+			userId === undefined && organizationId === undefined
+				? (["dashboard", "widget-order"] as const)
+				: (["dashboard", "widget-order", userId ?? null, organizationId ?? null] as const),
+		widget: (id: string, userId: string | null, organizationId: string | null) =>
+			["dashboard", "widget", id, userId, organizationId] as const,
 	},
 
 	// User settings (global user preferences)
@@ -677,7 +716,8 @@ export const queryKeys = {
 		// Org-level categories list
 		orgList: (orgId: string) => ["work-categories", "org", orgId] as const,
 		// Categories available to an employee (resolved through assignment hierarchy)
-		available: (employeeId: string) => ["work-categories", "available", employeeId] as const,
+		available: (employeeId: string, organizationId?: Id, userId?: Id) =>
+			["work-categories", "available", employeeId, organizationId, userId] as const,
 	},
 
 	// Work category set assignments (org/team/employee)

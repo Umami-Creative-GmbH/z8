@@ -1,0 +1,150 @@
+{
+  "schema": 1,
+  "sourceBuild": "de0b1a128b384196c7c93ac69cd5324e8d0cbbd8",
+  "artifactManifestSha256": "876c31b0d96fb2123be97c8767fd28d1058981a4822ff55d30e93ccc451a1ac3",
+  "parserCorrectionCommit": "98af9f8352a601a79ddb794fe71c11976d2617f4",
+  "diagnosticWitnessCommit": "1f2322082e8972868341527659aec402260b276c",
+  "controlledPerformanceEvidence": false,
+  "fullFourteenConditionMatrixComplete": false,
+  "productionTopologyVerified": false,
+  "cdnVerified": false,
+  "held": {
+    "operatorParser": "original-regex-before-correction",
+    "viewport": "desktop",
+    "mode": "first-document",
+    "passed": true,
+    "applicationPassed": true,
+    "blockedApplicationReads": 1,
+    "documentLoadingAtEarlyObservation": true,
+    "clockReadyWhileHeld": true,
+    "usefulSiblingWhileHeld": true,
+    "secondaryPendingWhileHeld": true,
+    "recovered": true,
+    "clockRequests": [
+      {
+        "startedMs": 7943.3451000000005,
+        "responseMs": 8068.264500000001,
+        "finishedMs": 8068.9935000000005,
+        "status": 200
+      }
+    ],
+    "releaseMs": 9053.1158,
+    "closureFailures": 0,
+    "native": {
+      "complete": true,
+      "transportComplete": true,
+      "combined": {
+        "driverQueryCount": 375,
+        "nativeQueryStartedCount": 375,
+        "nativeQueryEndedCount": 375,
+        "observedQueryCount": 375,
+        "pendingNativeQueries": 0,
+        "activeTraces": 0
+      },
+      "replicas": {
+        "a": {
+          "complete": true,
+          "driverQueries": 300,
+          "sdkStarted": 300,
+          "sdkEnded": 300,
+          "received": 300,
+          "pending": 0,
+          "active": 0
+        },
+        "b": {
+          "complete": true,
+          "driverQueries": 75,
+          "sdkStarted": 75,
+          "sdkEnded": 75,
+          "received": 75,
+          "pending": 0,
+          "active": 0
+        }
+      }
+    }
+  },
+  "failed": {
+    "operatorParserCommit": "98af9f8352a601a79ddb794fe71c11976d2617f4",
+    "viewport": "desktop",
+    "mode": "first-document",
+    "rawOverallPassed": false,
+    "applicationPassed": true,
+    "acknowledgedCancellations": 2,
+    "cancelStartedMs": 1460.3914999999997,
+    "errorObservedMs": 1492.6219,
+    "localErrorWithClockAndSibling": true,
+    "retryKeyboardFocus": "secondary-retry",
+    "recovered": true,
+    "releaseMs": 1570.862,
+    "closureFailures": 1,
+    "scopedErrors": [
+      {
+        "replica": "a",
+        "scope": "measured",
+        "queries": 173,
+        "queryErrors": 1,
+        "rowsKnown": false,
+        "unknownNative": 0,
+        "late": 0
+      },
+      {
+        "replica": "a",
+        "scope": "context-background",
+        "queries": 275,
+        "queryErrors": 0,
+        "rowsKnown": true,
+        "unknownNative": 0,
+        "late": 0
+      },
+      {
+        "replica": "b",
+        "scope": "context-background",
+        "queries": 268,
+        "queryErrors": 1,
+        "rowsKnown": false,
+        "unknownNative": 0,
+        "late": 0
+      }
+    ],
+    "perTraceIntentionalCancellationAccepted": false,
+    "cancelledQueryRowCost": "unknown",
+    "native": {
+      "complete": true,
+      "transportComplete": true,
+      "combined": {
+        "driverQueryCount": 716,
+        "nativeQueryStartedCount": 716,
+        "nativeQueryEndedCount": 716,
+        "observedQueryCount": 716,
+        "pendingNativeQueries": 0,
+        "activeTraces": 0
+      },
+      "replicas": {
+        "a": {
+          "complete": true,
+          "driverQueries": 448,
+          "sdkStarted": 448,
+          "sdkEnded": 448,
+          "received": 448,
+          "pending": 0,
+          "active": 0
+        },
+        "b": {
+          "complete": true,
+          "driverQueries": 268,
+          "sdkStarted": 268,
+          "sdkEnded": 268,
+          "received": 268,
+          "pending": 0,
+          "active": 0
+        }
+      }
+    }
+  },
+  "limits": [
+    "Historical normal timeout and always-false alert diagnostic remain failed immutable attempts.",
+    "Synthetic real-CDP regression proves exponential parser behavior; the exact historical document payload was not retained.",
+    "Functional recovery does not fill missing row costs or relax normal resource/native/transport gates.",
+    "No additional matrix or two-tab scope-browser case is claimed by this preflight."
+  ]
+}

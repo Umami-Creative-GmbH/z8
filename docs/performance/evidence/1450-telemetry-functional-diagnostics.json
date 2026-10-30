@@ -1,0 +1,384 @@
+{
+	"schema": 1,
+	"issue": 1450,
+	"acceptance": "unfulfilled",
+	"controlledCapture": false,
+	"originalBinarySource": "d5550e35c3bd9adf584e9731ade31d6420abf545",
+	"originalBusinessSource": "39a08d0bbe77e00ceb5b204b9f9100ab2cfb86be",
+	"actualCompanionToolingSource": "ed35debb0fc746848782552650b5b08639b3337c",
+	"draftPlanFrozen": false,
+	"browserWireOracle": {
+		"kind": "synthetic-owned-chrome-worker-form-gzip-wire-oracle",
+		"source": "d3de62909",
+		"browser": "Chrome/156.0.8078.47",
+		"testExitCode": 0,
+		"contexts": 2,
+		"workerGzipRequests": 2,
+		"compressedFixtureBytes": 210,
+		"decodedFixtureBytes": 57344,
+		"perContext": {
+			"javascriptBodyBytes": 534,
+			"serverJavascriptBodyBytes": 534,
+			"documentBodyBytes": 651,
+			"serverDocumentBodyBytes": 651,
+			"responseBodyBytes": 1185,
+			"wireCompleteBeforeDeliberateEscape": true,
+			"initializationAppRequests": 0,
+			"initializationResponseBodyBytes": 0,
+			"initializationPending": 0,
+			"initializationRefusedNonLoopbackConnect": 1,
+			"initializationQuietMs": 2000,
+			"initializationCapMs": 10000,
+			"postInitializationRefusalsBeforeDeliberateEscape": 0,
+			"deliberateAppExternalConnectRefused": 1,
+			"mandatoryErrorsAfterDeliberateEscape": 1,
+			"wireCompleteAfterDeliberateEscape": false
+		},
+		"sourceSha256": {
+			"fixture-browser.mjs": "999cc3c6c6ad7396c461a1339644ab21a5be88b771e92f9b461e7f7b19126c41",
+			"trace-transport.mjs": "c7a11dc09ccd36e2051f204ae44f6c563fff1b32db05a6ce368accc16b483a87",
+			"trace-transport.runtime.test.mjs": "8d207a0d846c419f85fb9dc09f26c244b1871285b7b72b46c307bcc515019278"
+		}
+	},
+	"annualUnderlyingCause": {
+		"kind": "original-synthetic-fixture-annual-failure-cause",
+		"underlyingKind": "pool-acquire-timeout",
+		"sqlState": null,
+		"sqlStateReason": "pool-client-acquisition-failed-before-SQL",
+		"originalPoolMax": 10,
+		"originalConnectionTimeoutMs": 10000,
+		"privateLog": {
+			"boundedTailBytes": 2000000,
+			"lastErrorSegmentsInspected": 10,
+			"poolTimeoutCauseMatches": 9,
+			"statementTimeoutMatches": 0,
+			"missingColumnMatches": 0,
+			"missingRelationMatches": 0,
+			"noMessagesOrSqlPersisted": true
+		},
+		"currentNativeEvidence": [
+			{
+				"mode": "first-document",
+				"phase": "measured",
+				"driverQueries": 4924,
+				"poolAcquisitions": 4993,
+				"poolAcquisitionErrors": 69,
+				"summedPoolAcquisitionDurationMs": 3318987.7312
+			},
+			{
+				"mode": "repeat-link",
+				"phase": "prerequisite",
+				"driverQueries": 5025,
+				"poolAcquisitions": 5118,
+				"poolAcquisitionErrors": 93,
+				"summedPoolAcquisitionDurationMs": 3098515.0703
+			},
+			{
+				"mode": "repeat-link",
+				"phase": "measured",
+				"driverQueries": 8440,
+				"poolAcquisitions": 8534,
+				"poolAcquisitionErrors": 94,
+				"summedPoolAcquisitionDurationMs": 4749243.4666
+			}
+		],
+		"statementQueryErrors": 0,
+		"globalNativeQueries": 18389,
+		"globalNativeComplete": true,
+		"firstWireFailureDrainComplete": true,
+		"linkWireFailureDrainComplete": false,
+		"linkWireMandatoryErrors": 1,
+		"acceptance": "unfulfilled"
+	},
+	"annualCompanion": {
+		"kind": "settled-resource-diagnostic",
+		"acceptance": "unfulfilled",
+		"native": {
+			"driverQueryCount": 18389,
+			"nativeQueryStartedCount": 18389,
+			"nativeQueryEndedCount": 18389,
+			"observedQueryCount": 18389,
+			"pendingNativeQueries": 0,
+			"activeTraces": 0,
+			"allReceivedTracesReconciled": true,
+			"complete": true
+		},
+		"samples": [
+			{
+				"mode": "first-document",
+				"elapsed": 31144.4325,
+				"stage": "verify-expected-content",
+				"annualActions": [
+					{
+						"httpStatus": 200,
+						"success": false,
+						"byEmployeeCount": null,
+						"totalHours": null,
+						"minHours": null,
+						"maxHours": null,
+						"errorClass": "DatabaseError",
+						"requestedPublicDates": [[2025, 1, 1], [2025, 12, 31]],
+						"bodyReadComplete": true
+					}
+				],
+				"fixedConsoleErrors": {
+					"workHoursLoadFailure": 1,
+					"other": 0
+				},
+				"wireDrain": {
+					"complete": true,
+					"capped": false,
+					"pending": 0,
+					"errors": 0,
+					"postReadyMs": 1051.662400000001,
+					"byPhase": [
+						{
+							"phase": "measured",
+							"groups": {
+								"javascript": {
+									"requests": 102,
+									"completed": 102,
+									"pending": 0,
+									"errors": 0,
+									"inheritedRequests": 0,
+									"completedBytes": 1393021,
+									"inheritedCompletedBytes": 0
+								},
+								"document": {
+									"requests": 2,
+									"completed": 2,
+									"pending": 0,
+									"errors": 0,
+									"inheritedRequests": 0,
+									"completedBytes": 365204,
+									"inheritedCompletedBytes": 0
+								},
+								"rsc": {
+									"requests": 13,
+									"completed": 13,
+									"pending": 0,
+									"errors": 0,
+									"inheritedRequests": 0,
+									"completedBytes": 313389,
+									"inheritedCompletedBytes": 0
+								},
+								"otherFinite": {
+									"requests": 39,
+									"completed": 39,
+									"pending": 0,
+									"errors": 0,
+									"inheritedRequests": 0,
+									"completedBytes": 131439,
+									"inheritedCompletedBytes": 0
+								}
+							}
+						},
+						{
+							"phase": "background",
+							"groups": {
+								"prefetch": {
+									"requests": 35,
+									"completed": 35,
+									"pending": 0,
+									"errors": 0,
+									"inheritedRequests": 0,
+									"completedBytes": 448821,
+									"inheritedCompletedBytes": 0
+								}
+							}
+						}
+					]
+				},
+				"after": {
+					"requests": 191,
+					"rewrittenRequests": 191,
+					"refusedRequests": 0,
+					"upstreamFailures": 0,
+					"responseBodyBytes": 2651874,
+					"refusalReasons": {
+						"unexpectedLoopback": 0,
+						"nonLoopbackHttp": 0,
+						"loopbackConnect": 0,
+						"nonLoopbackConnect": 0,
+						"malformed": 0
+					}
+				},
+				"native": {
+					"observer": true,
+					"pg": true,
+					"rows": true,
+					"cache": true,
+					"eventLoop": true,
+					"rejectedBatches": 0,
+					"registration": true,
+					"closed": true,
+					"incomplete": false,
+					"unattributedNativeSpans": 0,
+					"lateSpans": 0,
+					"nativeProof": true,
+					"nativeDriverQueries": 4924
+				}
+			},
+			{
+				"mode": "repeat-link",
+				"elapsed": 31080.104100000004,
+				"stage": "verify-expected-content",
+				"annualActions": [
+					{
+						"httpStatus": 200,
+						"success": false,
+						"byEmployeeCount": null,
+						"totalHours": null,
+						"minHours": null,
+						"maxHours": null,
+						"errorClass": "DatabaseError",
+						"requestedPublicDates": [[2025, 1, 1], [2025, 12, 31]],
+						"bodyReadComplete": true
+					},
+					{
+						"httpStatus": 200,
+						"success": false,
+						"byEmployeeCount": null,
+						"totalHours": null,
+						"minHours": null,
+						"maxHours": null,
+						"errorClass": "DatabaseError",
+						"requestedPublicDates": [[2025, 1, 1], [2025, 12, 31]],
+						"bodyReadComplete": true
+					}
+				],
+				"fixedConsoleErrors": {
+					"workHoursLoadFailure": 2,
+					"other": 0
+				},
+				"wireDrain": {
+					"complete": false,
+					"capped": true,
+					"pending": 0,
+					"errors": 1,
+					"postReadyMs": 10004.566900000005,
+					"byPhase": [
+						{
+							"phase": "prerequisite",
+							"groups": {
+								"rsc": {
+									"requests": 1,
+									"completed": 1,
+									"pending": 0,
+									"errors": 0,
+									"inheritedRequests": 1,
+									"completedBytes": 0,
+									"inheritedCompletedBytes": 95
+								},
+								"otherFinite": {
+									"requests": 3,
+									"completed": 3,
+									"pending": 0,
+									"errors": 0,
+									"inheritedRequests": 3,
+									"completedBytes": 0,
+									"inheritedCompletedBytes": 844
+								},
+								"prefetch": {
+									"requests": 2,
+									"completed": 2,
+									"pending": 0,
+									"errors": 0,
+									"inheritedRequests": 2,
+									"completedBytes": 0,
+									"inheritedCompletedBytes": 561
+								}
+							}
+						},
+						{
+							"phase": "measured",
+							"groups": {
+								"javascript": {
+									"requests": 13,
+									"completed": 13,
+									"pending": 0,
+									"errors": 1,
+									"inheritedRequests": 0,
+									"completedBytes": 109383,
+									"inheritedCompletedBytes": 0
+								},
+								"rsc": {
+									"requests": 10,
+									"completed": 10,
+									"pending": 0,
+									"errors": 0,
+									"inheritedRequests": 0,
+									"completedBytes": 150100,
+									"inheritedCompletedBytes": 0
+								},
+								"otherFinite": {
+									"requests": 14,
+									"completed": 14,
+									"pending": 0,
+									"errors": 0,
+									"inheritedRequests": 0,
+									"completedBytes": 1981,
+									"inheritedCompletedBytes": 0
+								}
+							}
+						},
+						{
+							"phase": "background",
+							"groups": {
+								"prefetch": {
+									"requests": 25,
+									"completed": 25,
+									"pending": 0,
+									"errors": 0,
+									"inheritedRequests": 0,
+									"completedBytes": 179443,
+									"inheritedCompletedBytes": 0
+								}
+							}
+						}
+					]
+				},
+				"after": {
+					"requests": 258,
+					"rewrittenRequests": 258,
+					"refusedRequests": 0,
+					"upstreamFailures": 1,
+					"responseBodyBytes": 3093129,
+					"refusalReasons": {
+						"unexpectedLoopback": 0,
+						"nonLoopbackHttp": 0,
+						"loopbackConnect": 0,
+						"nonLoopbackConnect": 0,
+						"malformed": 0
+					}
+				},
+				"native": {
+					"observer": true,
+					"pg": true,
+					"rows": true,
+					"cache": true,
+					"eventLoop": true,
+					"rejectedBatches": 0,
+					"registration": true,
+					"closed": true,
+					"incomplete": false,
+					"unattributedNativeSpans": 0,
+					"lateSpans": 0,
+					"nativeProof": true,
+					"nativeDriverQueries": 8440
+				}
+			}
+		]
+	},
+	"remainingGates": [
+		"Measured Link JavaScript upstream failure remains incomplete; do not derive full byte budgets.",
+		"Prospective original-only known-behavior-failure eligibility must be implemented and verified separately.",
+		"Fresh complete original primary/companion captures, final protocol fingerprints and head functional windows remain outstanding."
+	],
+	"interruptedDiagnostic": {
+		"retained": true,
+		"reason": "Puppeteer response body read never settled after owned fixture contexts closed",
+		"acceptance": "unfulfilled",
+		"replacementUsesClonedActualUiResponses": true
+	}
+}

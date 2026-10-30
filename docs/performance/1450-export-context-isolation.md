@@ -1,0 +1,13 @@
+# Fixture exporter context
+
+A bounded private caller-stack witness identified `Date.now()` in the real OTLP retry transport, reached through a batch processor timer inherited from Next's `prerender-runtime` scope. The retained stack proof is SHA256 `7db193c62b4dd7a78c7c9b52af648887d3cdc00ed48be905520759b61f22cbf4`. Earlier incomplete probes remain diagnostics.
+
+The fixture exporter now creates an async resource during instrumentation startup. Each actual export runs in that startup resource while explicitly restoring the captured OpenTelemetry context, including tracing suppression, parent span and baggage. The same batch, callback, receiver, return and exceptions pass through. Flush and shutdown methods are unchanged. Cache operations and native span accounting remain in their original contexts.
+
+The real SDK batch timer and HTTP transport regression failed with inherited render context and passed with isolation. It verifies one actual export, unchanged span identity, and preserved OpenTelemetry suppression/context. A separate contract test checks callback, return, error and lifecycle identity. Both tests, lint and the normal Next type generation plus all three TypeScript configurations passed.
+
+The identical original and optimized observer builds passed CI. A [four-case rebuilt-original diagnostic](evidence/1450-export-context-strict-four-v1.json) then passed month/year first-document and Link journeys through the normal runner: four correct UIs, complete semantic and wire evidence, zero query/acquisition errors in every registered scope, and 79,359 reconciled native queries with no active traces or pending queries. Both first-document cases observed native paint. All four fresh-log intervals and the whole interval were empty and passed the expanded eleven-counter classifier, including unknown-line rejection.
+
+The earlier four-case operator result remains unqualified because its narrower classifier missed two actual prerender errors. The first clock probe remains invalid because its diagnostic output collided across workers; the corrected probe supplied the actual exporter caller stack. These artifacts remain unchanged.
+
+This validates the common fix in a bounded original-runtime diagnostic. Optimized runtime checks and complete clean original/optimized captures remain required; no numerical budget, full-baseline, production/CDN or release acceptance is claimed here.

@@ -2,13 +2,27 @@ import { and, eq } from "drizzle-orm";
 import type { db } from "@/db";
 import { member } from "@/db/auth-schema";
 import { employee, employeeManagers, teamPermissions } from "@/db/schema";
-import { customRole, customRolePermission, employeeCustomRole } from "@/db/schema/custom-role";
+import {
+	customRole,
+	customRolePermission,
+	employeeCustomRole,
+} from "@/db/schema/custom-role";
+import type { AuthorizedOrganizationIdentity } from "@/lib/auth/organization-identity";
 import type { PermissionFlags } from "@/lib/effect/services/permissions.service";
 import { employeeHasOrganizationAccess } from "@/lib/employee-lifecycle/access";
-import type { Action, CustomRoleInfo, PrincipalContext, Subject, TeamPermissions } from "./types";
+import type {
+	Action,
+	CustomRoleInfo,
+	PrincipalContext,
+	Subject,
+	TeamPermissions,
+} from "./types";
 
 type DatabaseTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
-export type PrincipalLoaderExecutor = Pick<typeof db | DatabaseTransaction, "select">;
+export type PrincipalLoaderExecutor = Pick<
+	typeof db | DatabaseTransaction,
+	"select"
+>;
 
 /**
  * Loads the organization-scoped principal for one non-platform-admin user from
@@ -46,7 +60,26 @@ export async function loadOrganizationPrincipalContext(
 			.limit(1),
 	]);
 
-	const authorizedEmployeeRecord = memberRecord ? employeeRecord : null;
+	return loadOrganizationPrincipalForIdentity(executor, {
+		userId,
+		organizationId,
+		membershipRole: memberRecord?.role ?? "",
+		employee: memberRecord ? (employeeRecord ?? null) : null,
+	});
+}
+
+/** Internal server callers may reuse already authorized identity; public guards
+ * continue through loadOrganizationPrincipalContext's fresh database reads.
+ */
+export async function loadOrganizationPrincipalForIdentity(
+	executor: PrincipalLoaderExecutor,
+	identity: AuthorizedOrganizationIdentity,
+): Promise<PrincipalContext> {
+	const {
+		userId,
+		organizationId,
+		employee: authorizedEmployeeRecord,
+	} = identity;
 
 	const permissions: TeamPermissions = {
 		orgWide: null,
@@ -87,7 +120,10 @@ export async function loadOrganizationPrincipalContext(
 			})
 			.from(employeeCustomRole)
 			.innerJoin(customRole, eq(employeeCustomRole.customRoleId, customRole.id))
-			.innerJoin(customRolePermission, eq(customRolePermission.customRoleId, customRole.id))
+			.innerJoin(
+				customRolePermission,
+				eq(customRolePermission.customRoleId, customRole.id),
+			)
 			.where(
 				and(
 					eq(employeeCustomRole.employeeId, authorizedEmployeeRecord.id),
@@ -118,7 +154,8 @@ export async function loadOrganizationPrincipalContext(
 
 	if (
 		authorizedEmployeeRecord &&
-		(authorizedEmployeeRecord.role === "manager" || authorizedEmployeeRecord.role === "admin")
+		(authorizedEmployeeRecord.role === "manager" ||
+			authorizedEmployeeRecord.role === "admin")
 	) {
 		const managedRecords = await executor
 			.select({ employeeId: employeeManagers.employeeId })
@@ -132,10 +169,10 @@ export async function loadOrganizationPrincipalContext(
 		userId,
 		isPlatformAdmin: false,
 		activeOrganizationId: organizationId,
-		orgMembership: memberRecord
+		orgMembership: identity.membershipRole
 			? {
-					organizationId: memberRecord.organizationId,
-					role: memberRecord.role as "owner" | "admin" | "member",
+					organizationId,
+					role: identity.membershipRole as "owner" | "admin" | "member",
 					status: "active",
 				}
 			: null,

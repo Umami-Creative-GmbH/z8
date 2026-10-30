@@ -52,29 +52,68 @@ export function ViewRefreshProvider({ children }: { children: ReactNode }) {
 	const refresh = () => {
 		if (refreshing.current) return;
 		if (!navigator.onLine) {
-			toast.error(t("common.refreshDataFailed", "Could not refresh data. Please try again."));
+			toast.error(
+				t(
+					"common.refreshDataFailed",
+					"Could not refresh data. Please try again.",
+				),
+			);
 			return;
 		}
 		const href = window.location.href;
 		refreshing.current = true;
 		startTransition(async () => {
+			// Server-owned snapshots are refreshed by the RSC merge below. Stop local
+			// retries first so an older GET cannot replace that accepted snapshot.
+			await queryClient.cancelQueries({
+				predicate: (query) => query.meta?.viewRefresh === "server",
+			});
+			// Independent owners start together; a slow secondary client/custom read
+			// must not postpone server data. A navigation during cancellation wins.
+			if (window.location.href === href)
+				startTransition(() => router.refresh());
+			const clientQueries = queryClient.getQueryCache().findAll({
+				type: "active",
+				predicate: (query) => query.meta?.viewRefresh !== "server",
+			});
 			// allSettled keeps pending feedback until every visible source has finished.
 			const results = await Promise.allSettled([
-				queryClient.invalidateQueries({ refetchType: "active" }, { throwOnError: true }),
+				queryClient
+					.invalidateQueries(
+						{
+							refetchType: "active",
+							predicate: (query) => query.meta?.viewRefresh !== "server",
+						},
+						{ cancelRefetch: false },
+					)
+					.then(() => {
+						// Wait for every client sibling, then report failures. Letting the
+						// combined refetch reject early would end pending feedback too soon.
+						if (clientQueries.some((query) => query.state.status === "error"))
+							throw new Error("Client data could not be refreshed");
+					}),
 				mutate(() => true),
 				...Array.from(handlers, (handler) => Promise.resolve().then(handler)),
 			]);
-			if (results.some((result) => result.status === "rejected")) {
-				toast.error(t("common.refreshDataFailed", "Could not refresh data. Please try again."));
+			if (
+				window.location.href === href &&
+				results.some((result) => result.status === "rejected")
+			) {
+				toast.error(
+					t(
+						"common.refreshDataFailed",
+						"Could not refresh data. Please try again.",
+					),
+				);
 			}
-			// Next merges fresh server props while retaining client and scroll state.
-			if (window.location.href === href) startTransition(() => router.refresh());
 		});
 	};
 
 	return (
 		<RefreshRegistrationContext value={register}>
-			<ViewRefreshContext value={{ refresh, isRefreshing }}>{children}</ViewRefreshContext>
+			<ViewRefreshContext value={{ refresh, isRefreshing }}>
+				{children}
+			</ViewRefreshContext>
 		</RefreshRegistrationContext>
 	);
 }

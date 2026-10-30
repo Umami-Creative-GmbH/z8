@@ -3,7 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { getActivityMock, getManagedEmployeesMock } = vi.hoisted(() => ({
 	getActivityMock: vi.fn(),
@@ -12,11 +12,7 @@ const { getActivityMock, getManagedEmployeesMock } = vi.hoisted(() => ({
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
-		t: (
-			_key: string,
-			fallback: string,
-			params?: Record<string, string | number>,
-		) =>
+		t: (_key: string, fallback: string, params?: Record<string, string | number>) =>
 			Object.entries(params ?? {}).reduce(
 				(message, [key, value]) => message.replace(`{${key}}`, String(value)),
 				fallback,
@@ -81,8 +77,13 @@ vi.mock("@dnd-kit/utilities", () => ({
 	CSS: { Translate: { toString: () => undefined } },
 }));
 
-vi.mock("./actions", () => ({
-	getManagedEmployees: getManagedEmployeesMock,
+vi.mock("@/hooks/use-organization", () => ({
+	useOrganization: () => ({
+		userId: "user-a",
+		organizationId: "org-a",
+		role: "manager",
+		isLoading: false,
+	}),
 }));
 
 import { ManagedEmployeesWidget } from "./managed-employees-widget";
@@ -114,12 +115,23 @@ const ada = {
 };
 
 describe("ManagedEmployeesWidget", () => {
+	afterEach(() => vi.unstubAllGlobals());
 	beforeEach(() => {
 		getActivityMock.mockReset().mockReturnValue(null);
 		getManagedEmployeesMock.mockReset();
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async () =>
+				Response.json({
+					scope: { userId: "user-a", organizationId: "org-a" },
+					updatedAt: Date.now(),
+					result: await getManagedEmployeesMock(),
+				}),
+			),
+		);
 	});
 
-	it("asks the server for the caller's own reports without naming a manager", async () => {
+	it("requests the scoped GET for the caller's own reports without naming a manager", async () => {
 		getManagedEmployeesMock.mockResolvedValue({
 			success: true,
 			data: { isManager: true, employees: [ada] },
@@ -129,7 +141,13 @@ describe("ManagedEmployeesWidget", () => {
 
 		await screen.findByRole("link", { name: /ada lovelace/i });
 		expect(getManagedEmployeesMock).toHaveBeenCalledTimes(1);
-		expect(getManagedEmployeesMock).toHaveBeenCalledWith();
+		expect(fetch).toHaveBeenCalledWith(
+			"/api/dashboard/widgets/managed-employees",
+			expect.objectContaining({
+				cache: "no-store",
+				headers: expect.objectContaining({ "x-z8-context-user": "user-a" }),
+			}),
+		);
 	});
 
 	it("renders nothing for a caller who manages nobody", async () => {
@@ -158,18 +176,15 @@ describe("ManagedEmployeesWidget", () => {
 		const name = within(employeeLink)
 			.getAllByText("Ada Lovelace")
 			.find((element) => element.className.includes("font-medium"));
-		const arrow = Array.from(employeeLink.querySelectorAll("svg")).find(
-			(element) =>
-				element.getAttribute("class")?.includes("tabler-icon-arrow-right"),
+		const arrow = Array.from(employeeLink.querySelectorAll("svg")).find((element) =>
+			element.getAttribute("class")?.includes("tabler-icon-arrow-right"),
 		);
 
 		expect(employeeLink.className).toContain("group/employee");
 		expect(name?.className).toContain("group-hover/employee:text-primary");
 		expect(arrow?.getAttribute("class")).toContain("group-hover/employee:opacity-100");
 		expect(arrow?.getAttribute("class")).toContain("group-hover/employee:translate-x-1");
-		expect(arrow?.getAttribute("class")).toContain(
-			"transition-[opacity,translate]",
-		);
+		expect(arrow?.getAttribute("class")).toContain("transition-[opacity,translate]");
 	});
 
 	it("renders employee clock activity metadata in the employee link", async () => {
@@ -187,9 +202,7 @@ describe("ManagedEmployeesWidget", () => {
 		const employeeLink = await screen.findByRole("link", {
 			name: /ada lovelace/i,
 		});
-		expect(
-			within(employeeLink).getByText("activity:2026-07-28T10:40:00.000Z:120"),
-		).toBeTruthy();
+		expect(within(employeeLink).getByText("activity:2026-07-28T10:40:00.000Z:120")).toBeTruthy();
 		expect(getActivityMock).toHaveBeenCalledWith("employee-1");
 	});
 });

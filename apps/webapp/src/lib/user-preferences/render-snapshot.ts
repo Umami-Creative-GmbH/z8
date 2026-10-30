@@ -16,10 +16,8 @@ export type RenderUserPreferences = {
 	helpImproveProduct: boolean;
 };
 
-export async function readUserPreferences(
-	userId: string,
-): Promise<RenderUserPreferences> {
-	const settings = await db.query.userSettings.findFirst({
+async function readUserSettings(userId: string) {
+	return db.query.userSettings.findFirst({
 		where: eq(userSettings.userId, userId),
 		columns: {
 			locale: true,
@@ -27,14 +25,22 @@ export async function readUserPreferences(
 			timeFormat: true,
 			timezone: true,
 			helpImproveProduct: true,
+			onboardingComplete: true,
+			onboardingStep: true,
+			dashboardWidgetOrder: true,
+			waterReminderEnabled: true,
+			waterReminderDailyGoal: true,
 		},
 	});
+}
 
+export const getRenderUserSettings = cache(readUserSettings);
+
+function preferencesFromSettings(
+	settings: Awaited<ReturnType<typeof readUserSettings>>,
+): RenderUserPreferences {
 	return {
-		locale:
-			settings?.locale && ALL_LANGUAGES.includes(settings.locale)
-				? settings.locale
-				: null,
+		locale: settings?.locale && ALL_LANGUAGES.includes(settings.locale) ? settings.locale : null,
 		weekStartDay: normalizeWeekStartDay(settings?.weekStartDay),
 		timeFormat: normalizeTimeFormat(settings?.timeFormat),
 		timezone: settings?.timezone || "UTC",
@@ -42,5 +48,11 @@ export async function readUserPreferences(
 	};
 }
 
-// Only share preferences within an RSC request, keyed by the authorized user's ID.
-export const getRenderUserPreferences = cache(readUserPreferences);
+export async function readUserPreferences(userId: string): Promise<RenderUserPreferences> {
+	return preferencesFromSettings(await readUserSettings(userId));
+}
+
+// Presentation and Dashboard onboarding share one user-settings read in RSC.
+export const getRenderUserPreferences = cache(async (userId: string) =>
+	preferencesFromSettings(await getRenderUserSettings(userId)),
+);
