@@ -220,7 +220,7 @@ function snapshot() {
 			cacheHits: cacheKnown ? metric.hits : null,
 			cacheMisses: cacheKnown ? metric.misses : null,
 			cacheDefinition:
-				"existing Next 16.4.0 native default use-cache handler get outcomes; excludes private/fetch/React/Redis caches",
+				"existing Next 16.4.3 native default use-cache handler get outcomes; excludes private/fetch/React/Redis caches",
 			eventLoopDelayMs:
 				complete && !metric.loopIncomplete ? metric.loopDelay : null,
 			observedQueryErrors: metric.queryErrors,

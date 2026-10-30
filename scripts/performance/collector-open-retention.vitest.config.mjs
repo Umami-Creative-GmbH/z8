@@ -10,7 +10,7 @@ const packages = [
 	"@opentelemetry/api",
 	"@opentelemetry/exporter-trace-otlp-http",
 	"@opentelemetry/resources",
-	"@opentelemetry/sdk-trace-base",
+	"@opentelemetry/sdk-trace",
 ];
 
 // Reuse the existing unit environment, aliases and DB guard without changing app configuration.

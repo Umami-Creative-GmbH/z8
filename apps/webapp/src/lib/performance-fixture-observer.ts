@@ -3,7 +3,7 @@ import { type Context, type Span, SpanKind, trace } from "@opentelemetry/api";
 import type {
 	ReadableSpan,
 	SpanProcessor,
-} from "@opentelemetry/sdk-trace-base";
+} from "@opentelemetry/sdk-trace";
 import type { CacheHandler } from "next/cache";
 import { getCacheHandler } from "next/dist/server/use-cache/handlers";
 import nextPackage from "next/package.json";
@@ -16,7 +16,7 @@ const observedHandlers = new WeakSet<CacheHandler>();
 
 /** Preserve the installed native handler object: custom registration changes Next's built-in reuse rules. */
 function observeNextDefaultCache(): boolean {
-	if (nextPackage.version !== "16.4.0") return false;
+	if (nextPackage.version !== "16.4.3") return false;
 	let handler: CacheHandler | undefined;
 	try {
 		handler = getCacheHandler("default");

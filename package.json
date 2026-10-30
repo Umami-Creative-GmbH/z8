@@ -58,10 +58,10 @@
 	},
 	"devDependencies": {
 		"@esbuild/win32-x64": "^0.28.2",
-		"puppeteer-core": "^25.13.0",
-		"react-doctor": "^0.9.17",
-		"shadcn": "^4.21.4",
-		"turbo": "^2.11.7"
+		"puppeteer-core": "^25.16.0",
+		"react-doctor": "^0.9.18",
+		"shadcn": "^4.23.0",
+		"turbo": "^2.11.10"
 	},
-	"packageManager": "pnpm@12.14.0"
+	"packageManager": "pnpm@12.16.1"
 }

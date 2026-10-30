@@ -13,7 +13,7 @@ import {
 	BatchSpanProcessor,
 	type ReadableSpan,
 	type SpanExporter,
-} from "@opentelemetry/sdk-trace-base";
+} from "@opentelemetry/sdk-trace";
 import { describe, expect, it, vi } from "vitest";
 import { isolateFixtureExporter } from "./performance-fixture-export-scope";
 
@@ -94,7 +94,8 @@ describe("fixture export context", () => {
 			attemptResolve();
 			return original.call(this, batch, callback);
 		};
-		const batch = new BatchSpanProcessor(isolateFixtureExporter(exporter), {
+		const batch = new BatchSpanProcessor({
+			exporter: isolateFixtureExporter(exporter),
 			scheduledDelayMillis: 5,
 			maxExportBatchSize: 128,
 		});

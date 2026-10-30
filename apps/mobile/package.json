@@ -21,16 +21,16 @@
 	},
 	"dependencies": {
 		"@capacitor-firebase/messaging": "8.5.2",
-		"@capacitor/android": "8.5.3",
+		"@capacitor/android": "8.6.0",
 		"@capacitor/app": "8.1.2",
 		"@capacitor/browser": "8.0.5",
-		"@capacitor/core": "8.5.3",
-		"@capacitor/ios": "8.5.3",
+		"@capacitor/core": "8.6.0",
+		"@capacitor/ios": "8.6.0",
 		"@capacitor/splash-screen": "8.0.2"
 	},
 	"devDependencies": {
-		"@capacitor/cli": "8.5.3",
-		"@types/node": "26.6.5",
+		"@capacitor/cli": "8.6.0",
+		"@types/node": "26.6.6",
 		"sharp": "0.35.5",
 		"typescript": "7.0.2"
 	}

@@ -18,9 +18,9 @@ import {
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { resourceFromAttributes } from "@opentelemetry/resources";
 import {
-	BasicTracerProvider,
+	TracerProvider,
 	BatchSpanProcessor,
-} from "@opentelemetry/sdk-trace-base";
+} from "@opentelemetry/sdk-trace";
 import { expect, it } from "vitest";
 import { SetupPrivacySpanProcessor } from "../../apps/webapp/src/lib/setup/telemetry";
 import { isolateFixtureExporter } from "../../apps/webapp/src/lib/performance-fixture-export-scope";
@@ -200,7 +200,7 @@ it.each(cases)(
 			},
 		);
 		let nativeServer: Server | undefined,
-			provider: BasicTracerProvider | undefined;
+			provider: TracerProvider | undefined;
 		let spawnFailed = false;
 		child.once("error", () => {
 			spawnFailed = true;
@@ -242,7 +242,8 @@ it.each(cases)(
 				new OTLPTraceExporter({ url: endpoint }),
 			);
 			const delegate = new SetupPrivacySpanProcessor(
-				new BatchSpanProcessor(exporter, {
+				new BatchSpanProcessor({
+					exporter,
 					maxQueueSize: 20000,
 					maxExportBatchSize: 128,
 					scheduledDelayMillis: 500,
@@ -250,7 +251,7 @@ it.each(cases)(
 				}),
 			);
 			const processor = new FixturePerformanceSpanProcessor(delegate, coverage);
-			provider = new BasicTracerProvider({
+			provider = new TracerProvider({
 				resource: resourceFromAttributes({ "z8.perf.observer.version": 2 }),
 				spanProcessors: [processor],
 			});

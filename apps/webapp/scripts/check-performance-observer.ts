@@ -7,7 +7,7 @@ import { NodeSDK } from "@opentelemetry/sdk-node";
 import {
 	InMemorySpanExporter,
 	SimpleSpanProcessor,
-} from "@opentelemetry/sdk-trace-base";
+} from "@opentelemetry/sdk-trace";
 import {
 	FixturePerformanceSpanProcessor,
 	observeFixturePgResponse,
@@ -20,8 +20,8 @@ async function run() {
 		? new OTLPTraceExporter({ url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT })
 		: undefined;
 	const processor = new FixturePerformanceSpanProcessor(
-		new SimpleSpanProcessor(
-			remote
+		new SimpleSpanProcessor({
+			exporter: remote
 				? {
 						export(spans, callback) {
 							exporter.export(spans, () => remote.export(spans, callback));
@@ -31,7 +31,7 @@ async function run() {
 						},
 					}
 				: exporter,
-		),
+		}),
 	);
 	const sdk = new NodeSDK({
 		resource: resourceFromAttributes({ "z8.perf.observer.version": 1 }),

@@ -75,7 +75,7 @@ test("operator plan records two private host replicas and the actual local proxy
 				version: 1,
 				origin: "http://localhost:50754",
 				sourceBuild: "897b4077b",
-				nextVersion: "16.4.0",
+				nextVersion: "16.4.3",
 				artifactCopies: "per-replica",
 				replicas: { a: { port: 50755 }, b: { port: 50756 } },
 				env: {
@@ -120,7 +120,7 @@ test("operator plan refuses a production origin before starting or querying serv
 				version: 1,
 				origin: "https://ui.z8-time.app",
 				sourceBuild: "897b4077b",
-				nextVersion: "16.4.0",
+				nextVersion: "16.4.3",
 				replicas: { a: { port: 50755 }, b: { port: 50756 } },
 				env: {
 					POSTGRES_HOST: "127.0.0.1",

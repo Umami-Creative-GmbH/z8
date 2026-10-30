@@ -54,6 +54,7 @@ export async function exportReportDocumentToPDF(document: ReportDocument): Promi
 	const { Document, Page, pdf, StyleSheet, Text, View } = await import("@react-pdf/renderer");
 	const styles = StyleSheet.create(styleDefinitions);
 
+	// biome-ignore lint/correctness/noComponentHookFactories: one-shot @react-pdf render over the dynamically imported primitives; it never re-renders.
 	const ReportPDF = () => (
 		<Document title={document.title}>
 			<Page size="A4" orientation="landscape" style={styles.page}>

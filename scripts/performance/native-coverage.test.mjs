@@ -10,7 +10,7 @@ test("HTTP mapping bridges an actual SDK Next parent through a real IncomingMess
 	const require = createRequire(
 		new URL("../../apps/webapp/package.json", import.meta.url),
 	);
-	const { BasicTracerProvider } = require("@opentelemetry/sdk-trace-base"),
+	const { TracerProvider } = require("@opentelemetry/sdk-trace"),
 		{
 			trace,
 			ROOT_CONTEXT,
@@ -21,7 +21,7 @@ test("HTTP mapping bridges an actual SDK Next parent through a real IncomingMess
 		traceId = "7".repeat(32),
 		remoteParent = "8".repeat(16);
 	coverage.register([traceId]);
-	const provider = new BasicTracerProvider({
+	const provider = new TracerProvider({
 		spanProcessors: [
 			{
 				onStart: (span) => coverage.onStart(span),
@@ -159,7 +159,7 @@ test("SERVER witnesses identify an actual SDK-created open Next span without cha
 	const require = createRequire(
 		new URL("../../apps/webapp/package.json", import.meta.url),
 	);
-	const { BasicTracerProvider } = require("@opentelemetry/sdk-trace-base");
+	const { TracerProvider } = require("@opentelemetry/sdk-trace");
 	const {
 		ROOT_CONTEXT,
 		trace,
@@ -168,7 +168,7 @@ test("SERVER witnesses identify an actual SDK-created open Next span without cha
 	} = require("@opentelemetry/api");
 	const coverage = new FixtureNativeCoverage();
 	coverage.enableDriverCounter();
-	const provider = new BasicTracerProvider({
+	const provider = new TracerProvider({
 		spanProcessors: [
 			{
 				onStart: (span) => coverage.onStart(span),
@@ -335,12 +335,12 @@ test("installed SDK and shared Effect runtime preserve independently counted con
 	const {
 		InMemorySpanExporter,
 		SimpleSpanProcessor,
-	} = require("@opentelemetry/sdk-trace-base");
+	} = require("@opentelemetry/sdk-trace");
 	const { trace } = require("@opentelemetry/api");
 	const { Effect, ManagedRuntime, Layer } = require("effect");
 	const coverage = new FixtureNativeCoverage();
 	const exporter = new InMemorySpanExporter();
-	const delegate = new SimpleSpanProcessor(exporter);
+	const delegate = new SimpleSpanProcessor({ exporter });
 	const sdk = new NodeSDK({
 		spanProcessors: [
 			{

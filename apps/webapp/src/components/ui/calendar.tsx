@@ -1,10 +1,13 @@
 "use client";
 
 import {
+	type Chevron,
 	type DayButton,
 	DayPicker,
 	defaultDateLib,
 	getDefaultClassNames,
+	type Root,
+	type WeekNumber,
 } from "@daypicker/react";
 import { IconChevronDown, IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import * as React from "react";
@@ -124,34 +127,44 @@ function Calendar({
 				...classNames,
 			}}
 			components={{
-				Root: ({ className, rootRef, ...props }) => {
-					return <div data-slot="calendar" ref={rootRef} className={cn(className)} {...props} />;
-				},
-				Chevron: ({ className, orientation, ...props }) => {
-					if (orientation === "left") {
-						return <IconChevronLeft className={cn("size-4", className)} {...props} />;
-					}
-
-					if (orientation === "right") {
-						return <IconChevronRight className={cn("size-4", className)} {...props} />;
-					}
-
-					return <IconChevronDown className={cn("size-4", className)} {...props} />;
-				},
+				Root: CalendarRoot,
+				Chevron: CalendarChevron,
 				DayButton: CalendarDayButton,
-				WeekNumber: ({ children, ...props }) => {
-					return (
-						<td {...props}>
-							<div className="flex size-(--cell-size) items-center justify-center text-center">
-								{children}
-							</div>
-						</td>
-					);
-				},
+				WeekNumber: CalendarWeekNumber,
 				...components,
 			}}
 			{...props}
 		/>
+	);
+}
+
+function CalendarRoot({ className, rootRef, ...props }: React.ComponentProps<typeof Root>) {
+	return <div data-slot="calendar" ref={rootRef} className={cn(className)} {...props} />;
+}
+
+function CalendarChevron({
+	className,
+	orientation,
+	...props
+}: React.ComponentProps<typeof Chevron>) {
+	if (orientation === "left") {
+		return <IconChevronLeft className={cn("size-4", className)} {...props} />;
+	}
+
+	if (orientation === "right") {
+		return <IconChevronRight className={cn("size-4", className)} {...props} />;
+	}
+
+	return <IconChevronDown className={cn("size-4", className)} {...props} />;
+}
+
+function CalendarWeekNumber({ children, ...props }: React.ComponentProps<typeof WeekNumber>) {
+	return (
+		<td {...props}>
+			<div className="flex size-(--cell-size) items-center justify-center text-center">
+				{children}
+			</div>
+		</td>
 	);
 }
 
