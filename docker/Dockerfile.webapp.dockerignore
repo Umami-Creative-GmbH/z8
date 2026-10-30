@@ -37,6 +37,10 @@ coverage
 **/__tests__
 vitest.config.*
 
+# Local fixture operators depend on repository-only helpers and test data.
+apps/webapp/scripts/initialize-performance-projections.ts
+apps/webapp/scripts/performance-fixture.ts
+
 # Logs
 *.log
 npm-debug.log*
