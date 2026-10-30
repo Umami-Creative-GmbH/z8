@@ -441,4 +441,29 @@ describe("DeactivationPreviewDialog", () => {
 
 		await waitFor(() => expect(props.onConfirm).toHaveBeenCalledWith({ [REPORT]: BEN }));
 	});
+
+	it("validates a kept pick against the recalculated preview", async () => {
+		const user = userEvent.setup();
+		const { props, rerender } = renderDialog({ plan: planWithReport() });
+		await pick(user, "New manager for Rita Report", "Ben Manager");
+
+		const plan = planWithReport();
+		plan.managerLinks.reportsNeedingReplacement[0] = {
+			...plan.managerLinks.reportsNeedingReplacement[0],
+			replacementEmployeeId: BEN,
+			refusal: "replacement_ineligible",
+		};
+		plan.refusals = ["replacement_ineligible"];
+		rerender(<DeactivationPreviewDialog {...props} plan={plan} />);
+
+		expect(
+			screen.getByText("Ben Manager can no longer manage Rita Report. Choose someone else."),
+		).toBeTruthy();
+		await user.click(screen.getByRole("button", { name: "Deactivate" }));
+		expect(props.onConfirm).not.toHaveBeenCalled();
+
+		await pick(user, "New manager for Rita Report", "Anna Admin");
+		await user.click(screen.getByRole("button", { name: "Deactivate" }));
+		await waitFor(() => expect(props.onConfirm).toHaveBeenCalledWith({ [REPORT]: ANNA }));
+	});
 });

@@ -115,8 +115,6 @@ function DeactivationPreviewForm(props: DeactivationPreviewDialogProps) {
 	const { plan } = props;
 	const errorRef = useRef<HTMLDivElement>(null);
 	const replacementsHeadingId = useId();
-	const planRef = useRef(plan);
-	planRef.current = plan;
 
 	const form = useForm({
 		defaultValues: { replacements: initialPicks(plan) },
@@ -136,6 +134,46 @@ function DeactivationPreviewForm(props: DeactivationPreviewDialogProps) {
 		props.onReplacementsChange?.(
 			cleanPicks({ ...form.state.values.replacements, [reportId]: value }),
 		);
+	}
+
+	function replacementProblem(reportId: string, value: string | undefined) {
+		const report = plan?.managerLinks.reportsNeedingReplacement.find(
+			(candidate) => candidate.employeeId === reportId,
+		);
+		if (!report) return undefined;
+		if (!value) {
+			return t(
+				"settings.employees.lifecycle.deactivationPreview.replacementRequired",
+				"Choose a new manager for {name}.",
+				{ name: report.name },
+			);
+		}
+		return ineligibleMessage(report, value);
+	}
+
+	/** The server found the pick it previewed with no longer eligible. */
+	function ineligibleMessage(report: ReportNeedingReplacement, value: string | undefined) {
+		if (
+			report.refusal !== "replacement_ineligible" ||
+			!value ||
+			value !== report.replacementEmployeeId
+		) {
+			return undefined;
+		}
+		const replacement = plan?.managerLinks.replacementOptions.find(
+			(option) => option.employeeId === value,
+		);
+		return replacement?.name
+			? t(
+					"settings.employees.lifecycle.deactivationPreview.replacementIneligible",
+					"{replacement} can no longer manage {name}. Choose someone else.",
+					{ replacement: replacement.name, name: report.name },
+				)
+			: t(
+					"settings.employees.lifecycle.deactivationPreview.replacementIneligibleUnnamed",
+					"The chosen manager can no longer manage {name}. Choose someone else.",
+					{ name: report.name },
+				);
 	}
 
 	return (
@@ -272,46 +310,6 @@ function DeactivationPreviewForm(props: DeactivationPreviewDialogProps) {
 			</DialogFooter>
 		</form>
 	);
-
-	function replacementProblem(reportId: string, value: string | undefined) {
-		const report = planRef.current?.managerLinks.reportsNeedingReplacement.find(
-			(candidate) => candidate.employeeId === reportId,
-		);
-		if (!report) return undefined;
-		if (!value) {
-			return t(
-				"settings.employees.lifecycle.deactivationPreview.replacementRequired",
-				"Choose a new manager for {name}.",
-				{ name: report.name },
-			);
-		}
-		return ineligibleMessage(report, value);
-	}
-
-	/** The server found the pick it previewed with no longer eligible. */
-	function ineligibleMessage(report: ReportNeedingReplacement, value: string | undefined) {
-		if (
-			report.refusal !== "replacement_ineligible" ||
-			!value ||
-			value !== report.replacementEmployeeId
-		) {
-			return undefined;
-		}
-		const replacement = planRef.current?.managerLinks.replacementOptions.find(
-			(option) => option.employeeId === value,
-		);
-		return replacement?.name
-			? t(
-					"settings.employees.lifecycle.deactivationPreview.replacementIneligible",
-					"{replacement} can no longer manage {name}. Choose someone else.",
-					{ replacement: replacement.name, name: report.name },
-				)
-			: t(
-					"settings.employees.lifecycle.deactivationPreview.replacementIneligibleUnnamed",
-					"The chosen manager can no longer manage {name}. Choose someone else.",
-					{ name: report.name },
-				);
-	}
 }
 
 /**
