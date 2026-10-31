@@ -10,8 +10,7 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { withCallbackUrl } from "@/lib/auth/callback-url";
-import { authClient, useSession } from "@/lib/auth-client";
-import { signOut } from "@/lib/store-app/sign-out";
+import { useAuthPageSession } from "@/lib/auth/use-auth-page-session";
 import { useRouter } from "@/navigation";
 import {
 	AcceptInvitationFormBody,
@@ -60,7 +59,7 @@ export function AcceptInvitationForm({
 }: AcceptInvitationFormProps) {
 	const { t } = useTranslate();
 	const router = useRouter();
-	const { data: session, isPending: sessionLoading } = useSession();
+	const { data: session, isPending: sessionLoading } = useAuthPageSession();
 	const [state, setState] = useState<InvitationState>("ready");
 	const [error, setError] = useState<string | null>(null);
 
@@ -129,6 +128,8 @@ export function AcceptInvitationForm({
 		setError(null);
 
 		try {
+			// The app client carries the organization plugin; load it only to accept.
+			const { authClient } = await import("@/lib/auth-client");
 			const result = await authClient.organization.acceptInvitation({
 				invitationId,
 			});
@@ -157,6 +158,7 @@ export function AcceptInvitationForm({
 	};
 
 	const handleSignOut = async () => {
+		const { signOut } = await import("@/lib/store-app/sign-out");
 		await signOut({
 			fetchOptions: {
 				onSuccess: () => {

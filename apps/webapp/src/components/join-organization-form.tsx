@@ -6,7 +6,7 @@ import {
 	redeemInviteCode,
 	validateInviteCode,
 } from "@/app/[locale]/(auth)/invite-code-actions";
-import { useSession } from "@/lib/auth-client";
+import { useAuthPageSession } from "@/lib/auth/use-auth-page-session";
 import { useRouter } from "@/navigation";
 import {
 	JoinOrganizationFormBody,
@@ -35,7 +35,7 @@ function JoinOrganizationFormContent({
 }) {
 	const { t } = useTranslate();
 	const router = useRouter();
-	const { data: session, isPending: sessionLoading } = useSession();
+	const { data: session, isPending: sessionLoading } = useAuthPageSession();
 
 	const [code, setCode] = useState(initialCode || "");
 	const [state, setState] = useState<JoinState>(

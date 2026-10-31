@@ -58,21 +58,15 @@ vi.mock("@/components/auth-background-image", () => ({
 	AuthBackgroundImage: () => null,
 }));
 vi.mock("@/components/info-footer", () => ({ InfoFooter: () => null }));
-vi.mock("@/components/language-switcher", () => ({
-	LanguageSwitcher: () => null,
-}));
-vi.mock("@/components/font-size-toggle", () => ({
-	FontSizeToggle: () => null,
-}));
-vi.mock("@/components/theme-toggle", () => ({ ThemeToggle: () => null }));
+vi.mock("@/components/auth-shell-controls", () => ({ AuthShellControls: () => null }));
 vi.mock("@/lib/platform-settings", () => ({
 	getCookieConsentScript: async () => null,
 }));
 vi.mock("@/lib/hooks/use-enabled-providers", () => ({
 	useEnabledProviders: () => ({ enabledProviders: [], isLoading: false }),
 }));
-vi.mock("@/lib/auth/sign-in-client", () => ({
-	signInClient: { signIn: { email: mocks.signInEmail } },
+vi.mock("@/lib/auth/auth-page-client", () => ({
+	authPageClient: { signIn: { email: mocks.signInEmail } },
 }));
 vi.mock("@/navigation", () => ({
 	Link: ({ children, href }: { children: ReactNode; href: string }) => (

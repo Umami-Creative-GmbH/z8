@@ -12,7 +12,7 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-export function ThemeToggle() {
+export function ThemeToggle({ defaultOpen }: { defaultOpen?: boolean } = {}) {
 	const { t } = useTranslate();
 	const { theme, setTheme } = useTheme();
 	const mounted = useSyncExternalStore(
@@ -35,7 +35,7 @@ export function ThemeToggle() {
 	}
 
 	return (
-		<DropdownMenu>
+		<DropdownMenu defaultOpen={defaultOpen}>
 			<DropdownMenuTrigger asChild>
 				<Button variant="outline" size="icon">
 					{theme === "dark" ? <IconMoon className="size-4" /> : <IconSun className="size-4" />}

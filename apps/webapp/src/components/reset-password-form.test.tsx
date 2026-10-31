@@ -19,8 +19,8 @@ vi.mock("@tolgee/react", () => ({
 	}),
 }));
 
-vi.mock("@/lib/auth-client", () => ({
-	authClient: { resetPassword: mocks.resetPassword },
+vi.mock("@/lib/auth/auth-page-client", () => ({
+	authPageClient: { resetPassword: mocks.resetPassword },
 }));
 
 vi.mock("@/navigation", () => ({
