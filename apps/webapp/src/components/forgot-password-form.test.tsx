@@ -9,7 +9,7 @@ vi.mock("@tolgee/react", () => ({
 	useTolgee: () => ({ getLanguage: () => "en" }),
 }));
 vi.mock("@/lib/auth/domain-auth-context", () => ({ useTurnstile: mocks.useTurnstile }));
-vi.mock("@/lib/auth-client", () => ({ authClient: { requestPasswordReset: mocks.requestPasswordReset } }));
+vi.mock("@/lib/auth/auth-page-client", () => ({ authPageClient: { requestPasswordReset: mocks.requestPasswordReset } }));
 vi.mock("@/lib/turnstile/verify", () => ({ verifyTurnstileWithServer: mocks.verify }));
 vi.mock("@/navigation", () => ({ Link: ({ children, href }: { children: ReactNode; href: string }) => <a href={href}>{children}</a> }));
 vi.mock("./auth-form-wrapper", () => ({ AuthFormWrapper: ({ children, formProps }: { children: ReactNode; formProps?: ComponentProps<"form"> }) => <form {...formProps}>{children}</form> }));

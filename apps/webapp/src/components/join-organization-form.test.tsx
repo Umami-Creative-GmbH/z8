@@ -28,8 +28,8 @@ vi.mock("@/app/[locale]/(auth)/invite-code-actions", () => ({
 	validateInviteCode: mocks.validateInviteCode,
 }));
 
-vi.mock("@/lib/auth-client", () => ({
-	useSession: () => ({ data: null, isPending: false }),
+vi.mock("@/lib/auth/use-auth-page-session", () => ({
+	useAuthPageSession: () => ({ data: null, isPending: false }),
 }));
 
 vi.mock("@/navigation", () => ({

@@ -15,7 +15,7 @@ import {
 import { sanitizeCallbackUrl, withCallbackUrl } from "@/lib/auth/callback-url";
 import { toAuthStructuredName } from "@/lib/auth/derived-user-name";
 import { useDomainAuth, useTurnstile } from "@/lib/auth/domain-auth-context";
-import { authClient } from "@/lib/auth-client";
+import { loadAuthPageClient } from "@/lib/auth/load-auth-page-client";
 import { useEnabledProviders } from "@/lib/hooks/use-enabled-providers";
 import type { SocialProviderId } from "@/lib/social-providers";
 import { useRouter } from "@/navigation";
@@ -87,6 +87,7 @@ export function useSignupFormController({
 					firstName: value.firstName,
 					lastName: value.lastName,
 				});
+				const authClient = await loadAuthPageClient();
 				const signupResult = await authClient.signUp.email({
 					email: value.email,
 					password: value.password,
@@ -229,6 +230,7 @@ export function useSignupFormController({
 			const callbackURL =
 				sanitizedCallbackUrl ||
 				(inviteCode && inviteCodeValid ? `/join/${inviteCode}` : "/");
+			const authClient = await loadAuthPageClient();
 			await authClient.signIn.social({ provider, callbackURL });
 		} catch (caught) {
 			setIsLoading(false);

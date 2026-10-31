@@ -7,7 +7,8 @@ import { AuthFormWrapper } from "@/components/auth-form-wrapper";
 import { AuthContentLoading } from "@/components/shells/auth-content-loading";
 import { Button } from "@/components/ui/button";
 import { sanitizeCallbackUrl, withCallbackUrl } from "@/lib/auth/callback-url";
-import { authClient, useSession } from "@/lib/auth-client";
+import { loadAuthPageClient } from "@/lib/auth/load-auth-page-client";
+import { useAuthPageSession } from "@/lib/auth/use-auth-page-session";
 import { runWithCleanup } from "@/lib/run-with-cleanup";
 import { Link } from "@/navigation";
 
@@ -16,7 +17,7 @@ function VerifyEmailPendingContent() {
 	const searchParams = useSearchParams();
 	const { get } = searchParams;
 	const getSearchParam = (key: string) => get.call(searchParams, key);
-	const { data: session } = useSession();
+	const { data: session } = useAuthPageSession();
 	const [isResending, setIsResending] = useState(false);
 	const [resendMessage, setResendMessage] = useState<string>("");
 	const callbackUrl = sanitizeCallbackUrl(getSearchParam("callbackUrl"), "");
@@ -38,11 +39,13 @@ function VerifyEmailPendingContent() {
 		setIsResending(true);
 		await runWithCleanup(
 			async () => {
-				const result = await authClient
-					.sendVerificationEmail({
-						email,
-						callbackURL: "/verify-email",
-					})
+				const result = await loadAuthPageClient()
+					.then((authClient) =>
+						authClient.sendVerificationEmail({
+							email,
+							callbackURL: "/verify-email",
+						}),
+					)
 					.catch((error) => ({
 						error: {
 							message:

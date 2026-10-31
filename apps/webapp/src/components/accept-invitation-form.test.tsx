@@ -35,7 +35,9 @@ vi.mock("@/lib/auth-client", () => ({
 		},
 		signOut: signOutMock,
 	},
-	useSession: useSessionMock,
+}));
+vi.mock("@/lib/auth/use-auth-page-session", () => ({
+	useAuthPageSession: useSessionMock,
 }));
 
 vi.mock("@/navigation", () => ({

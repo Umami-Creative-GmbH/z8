@@ -1,7 +1,6 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { queryKeys } from "@/lib/query/keys";
 import {
 	SOCIAL_PROVIDERS,
 	type SocialProvider,
@@ -46,7 +45,9 @@ interface UseEnabledProvidersReturn {
  */
 export function useEnabledProviders(): UseEnabledProvidersReturn {
 	const providersQuery = useQuery({
-		queryKey: queryKeys.auth.providers(),
+		// Same key as `queryKeys.auth.providers()`; importing the key registry would add
+		// ~15 KB to the sign-in and sign-up pages for this one key.
+		queryKey: ["auth", "providers"] as const,
 		queryFn: async ({ signal }) => {
 			const response = await fetch("/api/auth/providers", { signal });
 			if (!response.ok) {

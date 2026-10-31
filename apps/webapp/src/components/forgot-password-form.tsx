@@ -16,7 +16,7 @@ import {
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { useTurnstile } from "@/lib/auth/domain-auth-context";
 import { getAuthErrorMessage } from "@/lib/auth/error-message";
-import { authClient } from "@/lib/auth-client";
+import { loadAuthPageClient } from "@/lib/auth/load-auth-page-client";
 import { runWithCleanup } from "@/lib/run-with-cleanup";
 import { Link } from "@/navigation";
 import { AuthFormWrapper } from "./auth-form-wrapper";
@@ -69,14 +69,16 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
 			setIsLoading(true);
 			await runWithCleanup(
 				async () => {
-					const response = await authClient
-						.requestPasswordReset({
-							email: value.email,
-							redirectTo: `${window.location.origin}/${locale}/reset-password`,
-							...(turnstileToken
-								? { fetchOptions: { headers: { "x-captcha-response": turnstileToken } } }
-								: {}),
-						})
+					const response = await loadAuthPageClient()
+						.then((authClient) =>
+							authClient.requestPasswordReset({
+								email: value.email,
+								redirectTo: `${window.location.origin}/${locale}/reset-password`,
+								...(turnstileToken
+									? { fetchOptions: { headers: { "x-captcha-response": turnstileToken } } }
+									: {}),
+							}),
+						)
 						.catch((err) => ({
 							error: {
 								message:

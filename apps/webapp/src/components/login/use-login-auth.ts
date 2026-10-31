@@ -10,7 +10,7 @@ import {
 } from "@/lib/auth/callback-url";
 import { useDomainAuth, useTurnstile } from "@/lib/auth/domain-auth-context";
 import { getAuthErrorMessage } from "@/lib/auth/error-message";
-import { loadSignInClient } from "@/lib/auth/load-sign-in-client";
+import { loadAuthPageClient } from "@/lib/auth/load-auth-page-client";
 import { useEnabledProviders } from "@/lib/hooks/use-enabled-providers";
 import type { SocialProviderId } from "@/lib/social-providers";
 import { getOnboardingStepPath } from "@/lib/validations/onboarding-steps";
@@ -54,7 +54,7 @@ export function useLoginAuth(turnstileRef: React.RefObject<{ reset: () => void }
 	useEffect(() => {
 		dispatch({ type: "RESET_LOADING" });
 		// Fetch the auth client after hydration so the first sign-in action does not wait for it.
-		loadSignInClient().catch(() => {});
+		loadAuthPageClient().catch(() => {});
 	}, []);
 
 	const resetTurnstile = () => {
@@ -125,7 +125,7 @@ export function useLoginAuth(turnstileRef: React.RefObject<{ reset: () => void }
 		}
 
 		try {
-			const authClient = await loadSignInClient();
+			const authClient = await loadAuthPageClient();
 			const signInResult = await authClient.signIn.email(
 				{ email: state.email, password: state.password },
 				{
@@ -200,7 +200,7 @@ export function useLoginAuth(turnstileRef: React.RefObject<{ reset: () => void }
 					`/api/auth/social-org/${provider}?callbackURL=${encodeURIComponent(postSignInRedirectUrl)}`,
 				);
 			} else {
-				const authClient = await loadSignInClient();
+				const authClient = await loadAuthPageClient();
 				await authClient.signIn.social({ provider, callbackURL: postSignInRedirectUrl });
 			}
 		} catch (error) {
@@ -218,7 +218,7 @@ export function useLoginAuth(turnstileRef: React.RefObject<{ reset: () => void }
 	const handlePasskeyLogin = async () => {
 		dispatch({ type: "SET_LOADING", loading: true });
 		try {
-			const authClient = await loadSignInClient();
+			const authClient = await loadAuthPageClient();
 			const result = await authClient.signIn.passkey({ autoFill: false });
 			if (result.error) {
 				dispatch({
@@ -252,7 +252,7 @@ export function useLoginAuth(turnstileRef: React.RefObject<{ reset: () => void }
 		dispatch({ type: "SET_LOADING", loading: true });
 		dispatch({ type: "SET_ERROR", error: null });
 		try {
-			const authClient = await loadSignInClient();
+			const authClient = await loadAuthPageClient();
 			await authClient.signIn.sso({ providerId: ssoProviderId, callbackURL: postSignInRedirectUrl });
 		} catch (error) {
 			dispatch({ type: "SET_LOADING", loading: false });
@@ -277,7 +277,7 @@ export function useLoginAuth(turnstileRef: React.RefObject<{ reset: () => void }
 		dispatch({ type: "SET_LOADING", loading: true });
 		dispatch({ type: "SET_ERROR", error: null });
 		try {
-			const authClient = await loadSignInClient();
+			const authClient = await loadAuthPageClient();
 			const result = await authClient.twoFactor.verifyTotp({
 				code: state.otpValue,
 				trustDevice: state.trustDevice,

@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Label } from "@/components/ui/label";
 import { getAuthErrorMessage } from "@/lib/auth/error-message";
-import { authClient } from "@/lib/auth-client";
+import { loadAuthPageClient } from "@/lib/auth/load-auth-page-client";
 import { runWithCleanup } from "@/lib/run-with-cleanup";
 import { useRouter } from "@/navigation";
 
@@ -33,10 +33,12 @@ export function TwoFactorVerificationForm() {
 					return;
 				}
 
-				const result = await authClient.twoFactor
-					.verifyBackupCode({
-						code: backupCode,
-					})
+				const result = await loadAuthPageClient()
+					.then((authClient) =>
+						authClient.twoFactor.verifyBackupCode({
+							code: backupCode,
+						}),
+					)
 					.catch((error: unknown) => {
 						toast.error(t("auth.2fa.verification-failed", "Verification failed"), {
 							description:
@@ -73,10 +75,12 @@ export function TwoFactorVerificationForm() {
 				return;
 			}
 
-			const result = await authClient.twoFactor
-				.verifyTotp({
-					code: otpValue,
-				})
+			const result = await loadAuthPageClient()
+				.then((authClient) =>
+					authClient.twoFactor.verifyTotp({
+						code: otpValue,
+					}),
+				)
 				.catch((error: unknown) => {
 					toast.error(t("auth.2fa.verification-failed", "Verification failed"), {
 						description:
