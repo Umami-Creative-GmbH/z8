@@ -17,7 +17,7 @@ import {
 import { applyShareResponseHeaders } from "@/lib/projects/report-share/http";
 import { applySecurityHeaders } from "@/lib/security";
 import { applySetupResponseHeaders } from "@/lib/setup/http";
-import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
+import { DEFAULT_LANGUAGE } from "@/tolgee/catalog-config";
 
 // Headers used to pass context to pages
 export const DOMAIN_HEADERS = {

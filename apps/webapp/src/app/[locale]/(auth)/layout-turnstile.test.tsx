@@ -71,8 +71,8 @@ vi.mock("@/lib/platform-settings", () => ({
 vi.mock("@/lib/hooks/use-enabled-providers", () => ({
 	useEnabledProviders: () => ({ enabledProviders: [], isLoading: false }),
 }));
-vi.mock("@/lib/auth-client", () => ({
-	authClient: { signIn: { email: mocks.signInEmail } },
+vi.mock("@/lib/auth/sign-in-client", () => ({
+	signInClient: { signIn: { email: mocks.signInEmail } },
 }));
 vi.mock("@/navigation", () => ({
 	Link: ({ children, href }: { children: ReactNode; href: string }) => (

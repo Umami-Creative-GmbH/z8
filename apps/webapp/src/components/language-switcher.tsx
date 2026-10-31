@@ -14,7 +14,7 @@ import { LANGUAGE_CONFIG } from "@/lib/language-config";
 import { cn } from "@/lib/utils";
 import { usePathname, useRouter } from "@/navigation";
 import { persistLocaleToDb, setLanguage } from "@/tolgee/language";
-import { ALL_LANGUAGES } from "@/tolgee/shared";
+import { ALL_LANGUAGES } from "@/tolgee/catalog-config";
 
 type LanguageSwitcherProps = {
 	variant?: "default" | "compact";
