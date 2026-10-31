@@ -38,6 +38,12 @@ vi.mock("@/app/[locale]/(app)/absences/sick-note-actions", () => ({
 	discardStagedSickNoteUploadsAction: vi.fn(),
 }));
 
+// The real Better Auth session store schedules its unmount cleanup on a timer that touches
+// window after jsdom is torn down. No session matches what the real client returns here.
+vi.mock("@/lib/auth-client", () => ({
+	useSession: () => ({ data: null }),
+}));
+
 // The deputy field (#1011) is not under test here.
 vi.mock("./deputy-picker", async (original) => ({
 	...(await original<typeof import("./deputy-picker")>()),
