@@ -7,6 +7,7 @@ import {
 	canonicalizeNamespaces,
 	normalizeCatalogLocale,
 } from "./catalog-slices";
+import { projectRouteCatalog, type RouteCatalogScope } from "./route-catalog-scopes";
 import { APP_NAMESPACES, loadNamespaces, type Namespace } from "./shared";
 import { projectShellCatalog } from "./shell-catalog";
 
@@ -38,6 +39,14 @@ export async function loadCatalogSlice(
 		normalizeCatalogLocale(locale),
 		canonicalizeNamespaces(namespaces),
 	);
+}
+
+/** A route boundary's catalog: its scope's namespaces minus subtrees it never renders. */
+export async function loadRouteCatalogSlice(
+	locale: string,
+	scope: RouteCatalogScope,
+): Promise<CatalogSlice> {
+	return projectRouteCatalog(scope, await loadCatalogSlice(locale, scope.namespaces));
 }
 
 async function loadCanonicalSlice(

@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/select";
 import { LANGUAGE_CONFIG } from "@/lib/language-config";
 import { useRouter } from "@/navigation";
-import { ALL_LANGUAGES } from "@/tolgee/shared";
+import { ALL_LANGUAGES } from "@/tolgee/catalog-config";
 
 interface OrganizationLanguageCardProps {
 	organizationId: string;

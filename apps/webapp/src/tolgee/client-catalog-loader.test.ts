@@ -51,6 +51,12 @@ describe("selective client acquisition", () => {
 			instance.stop();
 		} finally {
 			for (const path of paths) vi.doUnmock(path);
+			// The loader imports `./shared` lazily, so later tests need the mock back.
+			vi.resetModules();
+			vi.doMock("./shared", async (original) => ({
+				...(await original<typeof import("./shared")>()),
+				loadNamespaces,
+			}));
 		}
 	});
 	it("deduplicates canonical concurrent identities and retries failed loads", async () => {
@@ -68,7 +74,8 @@ describe("selective client acquisition", () => {
 		]);
 		const second = loadClientCatalogSlice("en", ["common", "reports"]);
 		expect(first).toBe(second);
-		expect(loadNamespaces).toHaveBeenCalledTimes(1);
+		// The loader imports `./shared` on demand, so the call lands a tick later.
+		await vi.waitFor(() => expect(loadNamespaces).toHaveBeenCalledTimes(1));
 		expect(loadNamespaces).toHaveBeenLastCalledWith(
 			"en",
 			["common", "reports"],
