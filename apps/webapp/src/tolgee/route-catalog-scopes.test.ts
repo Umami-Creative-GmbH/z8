@@ -3,8 +3,8 @@ import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { mergeCatalogRecords } from "./catalog-store";
 import {
-	loadCatalogSlice,
 	loadCompleteServerTranslations,
+	loadRouteCatalogSlice,
 	loadShellTranslations,
 } from "./load-translations";
 import {
@@ -120,7 +120,7 @@ describe("route catalog wiring", () => {
 								leaves(
 									mergeCatalogRecords(
 										shell,
-										await loadCatalogSlice(locale, scope.namespaces),
+										await loadRouteCatalogSlice(locale, scope),
 									).records[locale] as TreeTranslationsData,
 								),
 							] as const,
@@ -158,7 +158,7 @@ describe("route catalog wiring", () => {
 				mergeCatalogRecords(
 					shell,
 					scope
-						? await loadCatalogSlice("en", scope.namespaces)
+						? await loadRouteCatalogSlice("en", scope)
 						: { ...shell, records: { en: {} } },
 				).records.en as TreeTranslationsData,
 			);
@@ -207,6 +207,21 @@ describe("route catalog wiring", () => {
 		expect(getRouteCatalogScope("/team/absences")?.namespaces).toContain("calendar");
 		expect(getRouteCatalogScope("/reportsextra")).toBeUndefined();
 	});
+	it("keeps feature-only common subtrees out of the auth catalog", async () => {
+		const auth = await loadRouteCatalogSlice("en", getRouteCatalogScope("/sign-in")!);
+		const tree = auth.records.en as TreeTranslationsData;
+		for (const key of ["drivingLicence", "notifications", "personalDataExport"]) {
+			expect(tree[key], key).toBeUndefined();
+			expect(tree[`common:${key}`], `common:${key}`).toBeUndefined();
+		}
+		expect(tree.auth).toBeDefined();
+		expect(tree.common).toBeDefined();
+		expect(auth.namespaces).toEqual(["auth", "setup"]);
+
+		const dashboard = await loadRouteCatalogSlice("en", getRouteCatalogScope("/")!);
+		expect((dashboard.records.en as TreeTranslationsData).notifications).toBeDefined();
+		expect(dashboard.namespaces).toContain("common");
+	});
 	it.each(ALL_LANGUAGES)(
 		"preserves audited shared, recovery, nested and feature labels in %s",
 		async (locale) => {
@@ -219,7 +234,7 @@ describe("route catalog wiring", () => {
 			for (const scope of ROUTE_CATALOG_SCOPES) {
 				const slice = mergeCatalogRecords(
 					shell,
-					await loadCatalogSlice(locale, scope.namespaces),
+					await loadRouteCatalogSlice(locale, scope),
 				);
 				const actual = leaves(slice.records[locale] as TreeTranslationsData);
 				for (const key of scope.keys)
@@ -245,7 +260,7 @@ describe("route catalog wiring", () => {
 								scope.route,
 								Buffer.byteLength(
 									JSON.stringify(
-										await loadCatalogSlice(locale, scope.namespaces),
+										await loadRouteCatalogSlice(locale, scope),
 									),
 								),
 							] as const,

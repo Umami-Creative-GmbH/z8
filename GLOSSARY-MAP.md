@@ -40,6 +40,7 @@
 - **Work policy → Absences**: the schedule of an employee's work policy decides which of their days are working days; Absences reads it to count absence days and never changes it
 - **Personal data export ≠ data export**: an Organization personal data export holds one employee's data in one organization; a data export, scheduled or not, holds the whole organization's data for its admins
 - **Personnel File → Organization**: a personal data export includes the employee's shared documents; HR-only documents are withheld data, included only in an admin export
+- **Scheduled Exports → Payroll Exports**: a scheduled payroll export to a payroll connector fails when its delivery has failed records, and one to a withdrawn connector is paused
 - **Download link ≠ report share link**: a Scheduled Exports download link hands one run's file to an approved external recipient; a Projects report share link shows a frozen report snapshot to whoever holds the URL
 - **Organization → Time Tracking**: an employee records the organization vehicle or their own vehicle they drove during a work period; Organization owns the vehicles
 - **Time Tracking → Travel Expenses**: distance driven in an own vehicle can pre-fill a mileage item; only the mileage item is reimbursed, after its own submission and approval

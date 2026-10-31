@@ -97,8 +97,7 @@ vi.mock("@/components/deployment-refresh", () => ({
 	),
 }));
 
-vi.mock("@/components/offline", () => ({
-	OfflineBanner: () => null,
+vi.mock("@/components/offline/sw-update-prompt", () => ({
 	SWUpdatePrompt: () => null,
 }));
 
@@ -121,7 +120,7 @@ vi.mock("@/components/ui/tooltip", () => ({
 	),
 }));
 
-vi.mock("@/lib/query", () => ({
+vi.mock("@/lib/query/provider", () => ({
 	QueryProvider: ({ children }: { children: React.ReactNode }) => (
 		<>{children}</>
 	),

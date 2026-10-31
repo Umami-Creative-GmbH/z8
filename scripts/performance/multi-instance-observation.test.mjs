@@ -1045,14 +1045,14 @@ test("paired V2 lifecycle adds both replicas' same-trace evidence and detects gl
 const requireSdk = createRequire(
 	new URL("../../apps/webapp/package.json", import.meta.url),
 );
-const { BasicTracerProvider } = requireSdk("@opentelemetry/sdk-trace-base");
+const { TracerProvider } = requireSdk("@opentelemetry/sdk-trace");
 const { SpanKind, ROOT_CONTEXT, trace } = requireSdk("@opentelemetry/api");
 test("paired context closes after pending HTTP finishes and a real SDK SERVER span ends, preserving fixed snapshots", async () => {
 	const id = "d".repeat(32),
 		coverage = new FixtureNativeCoverage();
 	coverage.register([id]);
 	coverage.enableDriverCounter();
-	const provider = new BasicTracerProvider({
+	const provider = new TracerProvider({
 		spanProcessors: [
 			{
 				onStart: (span) => coverage.onStart(span),

@@ -9,11 +9,11 @@ import {
 	APP_NAMESPACES,
 	mergeTreeTranslations,
 	type Namespace,
-	type TolgeeBase,
 	type TreeTranslationsData,
-} from "./shared";
+} from "./catalog-config";
+import type { createTolgee } from "./tolgee-core";
 
-export type TolgeeInstance = ReturnType<ReturnType<typeof TolgeeBase>["init"]>;
+export type TolgeeInstance = ReturnType<ReturnType<typeof createTolgee>["init"]>;
 type InstanceCatalog = {
 	slice: CatalogSlice;
 	applying: number;

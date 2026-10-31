@@ -4,7 +4,8 @@ import { type ReactNode, Suspense } from "react";
 import { BProgressBar } from "@/components/bprogress/bprogress";
 import { DeploymentRefreshChecker } from "@/components/deployment-refresh";
 import { FontSizeProvider } from "@/components/font-size-preference";
-import { SWUpdatePrompt } from "@/components/offline";
+// Direct module imports: barrels would make every re-exported client module part of the root chunk group.
+import { SWUpdatePrompt } from "@/components/offline/sw-update-prompt";
 import { ThemeProvider } from "@/components/theme-provider";
 import { LoadingRegion } from "@/components/ui/loading-region";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,7 +15,7 @@ import { loadShellTranslations } from "@/tolgee/load-translations";
 import { ALL_LANGUAGES } from "@/tolgee/shared";
 import "../globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryProvider } from "@/lib/query";
+import { QueryProvider } from "@/lib/query/provider";
 import { TranslationProviders } from "./translation-providers";
 
 type Props = {

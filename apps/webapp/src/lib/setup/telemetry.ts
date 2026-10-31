@@ -2,7 +2,7 @@ import type { Context } from "@opentelemetry/api";
 import type {
 	ReadableSpan,
 	SpanProcessor,
-} from "@opentelemetry/sdk-trace-base";
+} from "@opentelemetry/sdk-trace";
 
 // Shared with Next's incoming-request logger. Setup URLs must not enter routine logs.
 export const SETUP_REQUEST_PATH =
@@ -11,13 +11,20 @@ export const SETUP_REQUEST_PATH =
 // Report share link pages (#806): the path's token opens the shared snapshot.
 export const REPORT_SHARE_REQUEST_PATH = /(?:^|\/)(?:[a-z]{2,3}\/)?share\/[^/?#]+/;
 
+// OpenTelemetry API 1.10 attribute values may be arrays and maps nested to any depth.
 function containsSetupData(value: unknown): boolean {
-	return (
-		typeof value === "string" &&
-		(SETUP_REQUEST_PATH.test(value) ||
+	if (typeof value === "string") {
+		return (
+			SETUP_REQUEST_PATH.test(value) ||
 			REPORT_SHARE_REQUEST_PATH.test(value) ||
-			value.includes("{setup-bootstrap}"))
-	);
+			value.includes("{setup-bootstrap}")
+		);
+	}
+	if (Array.isArray(value)) return value.some(containsSetupData);
+	if (value !== null && typeof value === "object" && !ArrayBuffer.isView(value)) {
+		return Object.values(value).some(containsSetupData);
+	}
+	return false;
 }
 
 // Redis EVAL instrumentation includes command arguments, and HTTP spans include URLs.

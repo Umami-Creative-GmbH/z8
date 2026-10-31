@@ -14,13 +14,14 @@ import { LANGUAGE_CONFIG } from "@/lib/language-config";
 import { cn } from "@/lib/utils";
 import { usePathname, useRouter } from "@/navigation";
 import { persistLocaleToDb, setLanguage } from "@/tolgee/language";
-import { ALL_LANGUAGES } from "@/tolgee/shared";
+import { ALL_LANGUAGES } from "@/tolgee/catalog-config";
 
 type LanguageSwitcherProps = {
 	variant?: "default" | "compact";
+	defaultOpen?: boolean;
 };
 
-export function LanguageSwitcher({ variant = "default" }: LanguageSwitcherProps) {
+export function LanguageSwitcher({ variant = "default", defaultOpen }: LanguageSwitcherProps) {
 	const { t } = useTranslate();
 	const locale = useLocale();
 	const { replace } = useRouter();
@@ -40,7 +41,12 @@ export function LanguageSwitcher({ variant = "default" }: LanguageSwitcherProps)
 	const CurrentFlag = currentConfig?.Flag as ComponentType<SVGProps<SVGSVGElement>> | undefined;
 
 	return (
-		<Select value={locale} onValueChange={handleLanguageChange} disabled={isPending}>
+		<Select
+			value={locale}
+			onValueChange={handleLanguageChange}
+			disabled={isPending}
+			defaultOpen={defaultOpen}
+		>
 			<SelectTrigger
 				aria-label={t("common.select-language", "Select language")}
 				className={cn("bg-background", isCompact ? "w-[88px]" : "w-[160px]")}

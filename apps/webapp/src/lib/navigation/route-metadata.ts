@@ -1,5 +1,5 @@
 import { SETTINGS_ENTRIES } from "@/components/settings/settings-config";
-import { ALL_LANGUAGES } from "@/tolgee/shared";
+import { ALL_LANGUAGES } from "@/tolgee/catalog-config";
 
 export type AppRouteMetadata = {
 	id: string;

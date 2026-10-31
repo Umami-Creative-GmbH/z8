@@ -5,7 +5,6 @@ import { useTranslate } from "@tolgee/react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { env } from "@/env";
 import type { OrganizationBranding } from "@/lib/domain";
 import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
@@ -31,7 +30,8 @@ export function AuthFormWrapper({
 }: AuthFormWrapperProps) {
 	const { t } = useTranslate();
 	const appName = branding?.appName || "z8";
-	const visibleBuildHash = buildHash ?? env.NEXT_PUBLIC_BUILD_HASH;
+	// Read the inlined value directly: importing `@/env` would ship every env schema to the auth pages.
+	const visibleBuildHash = buildHash ?? process.env.NEXT_PUBLIC_BUILD_HASH;
 
 	const customStyles = branding?.primaryColor
 		? ({

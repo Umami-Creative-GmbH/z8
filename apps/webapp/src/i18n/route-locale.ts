@@ -1,4 +1,4 @@
-import { ALL_LANGUAGES } from "@/tolgee/shared";
+import { ALL_LANGUAGES } from "@/tolgee/catalog-config";
 
 /**
  * Splits a supported locale prefix off a path. Only supported locales count, three-letter

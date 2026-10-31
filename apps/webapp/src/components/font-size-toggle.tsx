@@ -14,7 +14,7 @@ import {
 import { useFontSizePreference } from "./font-size-preference";
 import { FONT_SIZE_OPTIONS, isFontSizePreference } from "./font-size-preference-utils";
 
-export function FontSizeToggle() {
+export function FontSizeToggle({ defaultOpen }: { defaultOpen?: boolean } = {}) {
 	const { t } = useTranslate();
 	const { fontSize, setFontSize } = useFontSizePreference();
 	const handleFontSizeChange = (value: string) => {
@@ -24,7 +24,7 @@ export function FontSizeToggle() {
 	};
 
 	return (
-		<DropdownMenu>
+		<DropdownMenu defaultOpen={defaultOpen}>
 			<DropdownMenuTrigger asChild>
 				<Button variant="outline" size="icon">
 					<IconTextSize aria-hidden="true" className="size-4" />

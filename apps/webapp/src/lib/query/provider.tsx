@@ -11,7 +11,7 @@ import {
 	isServerActionVersionSkewError,
 } from "@/components/deployment-refresh/server-action-skew";
 import { ViewRefreshProvider } from "@/components/providers/view-refresh-provider";
-import { isUnauthorizedError } from "@/lib/fetch";
+import { isUnauthorizedError } from "@/lib/api-error";
 
 interface QueryProviderProps {
 	children: ReactNode;

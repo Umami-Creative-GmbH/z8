@@ -28,7 +28,7 @@ export const knownTargetedPrefetchProfile = value => value !== null && typeof va
 	JSON.stringify(Object.keys(value).sort()) === JSON.stringify(Object.keys(targetedPrefetchProfile).sort()) &&
 	Object.entries(targetedPrefetchProfile).every(([key, field]) => value[key] === field);
 /** Current source qualification, not an assertion about historical framework15/build-time observation. */
-export const targetedPrefetchProducerChain=Object.freeze({version:"16.4.0",files:Object.freeze([
+export const targetedPrefetchProducerChain=Object.freeze({version:"16.4.3",files:Object.freeze([
 	{file:"dist/client/components/segment-cache/fetch.js",bytes:1379,sha256:"378770d930578c5103083c029f8e388c4315ec67666d5843b2ddfc8af9469061"},
 	{file:"dist/esm/client/components/segment-cache/fetch.js",bytes:847,sha256:"c654815886065d532207f212ad58a2198fa2c58cef9ca13d7a6bc66fa4c5abdb"},
 	{file:"dist/client/components/router-reducer/fetch-server-response.js",bytes:29577,sha256:"fba387124134c7becf61938ca1ce38738220a554a97931ad745ed4976c989a51"},

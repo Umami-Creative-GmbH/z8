@@ -58,16 +58,14 @@ vi.mock("@/components/info-footer", () => ({
 	InfoFooter: () => <footer>Info footer</footer>,
 }));
 
-vi.mock("@/components/language-switcher", () => ({
-	LanguageSwitcher: () => <button type="button">Language</button>,
-}));
-
-vi.mock("@/components/font-size-toggle", () => ({
-	FontSizeToggle: () => <button type="button">Font size</button>,
-}));
-
-vi.mock("@/components/theme-toggle", () => ({
-	ThemeToggle: () => <button type="button">Theme</button>,
+vi.mock("@/components/auth-shell-controls", () => ({
+	AuthShellControls: () => (
+		<>
+			<button type="button">Theme</button>
+			<button type="button">Font size</button>
+			<button type="button">Language</button>
+		</>
+	),
 }));
 
 vi.mock("@/env", () => ({

@@ -1,5 +1,5 @@
 import type { CatalogSlice } from "./catalog-slices";
-import type { Namespace, TreeTranslationsData } from "./shared";
+import type { Namespace, TreeTranslationsData } from "./catalog-config";
 
 export type ShellCatalogKey = { namespace: Namespace; path: readonly string[] };
 function keys(

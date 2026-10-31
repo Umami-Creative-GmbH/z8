@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, type ReactNode, use } from "react";
-import { DEFAULT_LANGUAGE } from "@/tolgee/shared";
+import { DEFAULT_LANGUAGE } from "@/tolgee/catalog-config";
 
 const AppLocaleContext = createContext<string>(DEFAULT_LANGUAGE);
 

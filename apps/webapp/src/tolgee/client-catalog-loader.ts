@@ -1,10 +1,16 @@
+import type { Namespace } from "./catalog-config";
 import {
 	CATALOG_SOURCE_METADATA,
 	type CatalogSlice,
 	canonicalizeNamespaces,
 	normalizeCatalogLocale,
 } from "./catalog-slices";
-import { loadNamespaces, type Namespace } from "./shared";
+
+// `./shared` holds the import map over every catalog file. Fetch it with the first
+// missing namespace so the map stays out of the bundle every page loads.
+function loadNamespaces(...args: Parameters<typeof import("./shared").loadNamespaces>) {
+	return import("./shared").then((shared) => shared.loadNamespaces(...args));
+}
 
 const inFlight = new Map<string, Promise<CatalogSlice>>();
 

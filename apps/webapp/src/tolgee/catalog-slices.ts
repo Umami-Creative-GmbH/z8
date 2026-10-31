@@ -5,7 +5,7 @@ import {
 	DEFAULT_LANGUAGE,
 	isAppNamespace,
 	type Namespace,
-} from "./shared";
+} from "./catalog-config";
 
 export type CatalogSlice = {
 	locale: string;

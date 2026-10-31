@@ -44,14 +44,8 @@ vi.mock("@/tolgee/route-boundary", () => ({
 vi.mock("@/lib/auth/domain-auth-context", () => ({
 	DomainAuthProvider: ({ children }: { children: ReactNode }) => children,
 }));
-vi.mock("@/components/font-size-toggle", () => ({
-	FontSizeToggle: () => null,
-}));
 vi.mock("@/components/info-footer", () => ({ InfoFooter: () => null }));
-vi.mock("@/components/language-switcher", () => ({
-	LanguageSwitcher: () => null,
-}));
-vi.mock("@/components/theme-toggle", () => ({ ThemeToggle: () => null }));
+vi.mock("@/components/auth-shell-controls", () => ({ AuthShellControls: () => null }));
 vi.mock("@/components/shells/auth-content-loading", () => ({
 	AuthContentLoading: () => <div>Loading form</div>,
 }));

@@ -3,14 +3,11 @@ import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentation
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http";
 import { resourceFromAttributes } from "@opentelemetry/resources";
 import { NodeSDK } from "@opentelemetry/sdk-node";
-import type {
-	ReadableSpan,
-	SpanProcessor,
-} from "@opentelemetry/sdk-trace-base";
+import type { ReadableSpan, SpanProcessor } from "@opentelemetry/sdk-trace";
 import {
 	BatchSpanProcessor,
 	ConsoleSpanExporter,
-} from "@opentelemetry/sdk-trace-base";
+} from "@opentelemetry/sdk-trace";
 import { ATTR_SERVICE_NAME } from "@opentelemetry/semantic-conventions";
 import { isolateFixtureExporter } from "@/lib/performance-fixture-export-scope";
 import {
@@ -108,8 +105,8 @@ export async function registerNodeRuntime() {
 		isDev || !hasRemoteOtel
 			? [new ExceptionOnlySpanProcessor()]
 			: [
-					new BatchSpanProcessor(
-						fixtureObserver
+					new BatchSpanProcessor({
+						exporter: fixtureObserver
 							? isolateFixtureExporter(
 									new OTLPTraceExporter({
 										url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
@@ -118,15 +115,15 @@ export async function registerNodeRuntime() {
 							: new OTLPTraceExporter({
 									url: process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
 								}),
-						fixtureObserver
+						...(fixtureObserver
 							? {
 									maxQueueSize: 20000,
 									maxExportBatchSize: 128,
 									scheduledDelayMillis: 500,
 									exportTimeoutMillis: 10000,
 								}
-							: undefined,
-					),
+							: {}),
+					}),
 				];
 
 	const sdk = new NodeSDK({

@@ -112,7 +112,7 @@ const nextConfig: NextConfig = {
 		"@opentelemetry/sdk-node",
 		"@opentelemetry/resources",
 		"@opentelemetry/semantic-conventions",
-		"@opentelemetry/sdk-trace-base",
+		"@opentelemetry/sdk-trace",
 		"@opentelemetry/exporter-trace-otlp-http",
 		"@opentelemetry/exporter-metrics-otlp-http",
 		"@opentelemetry/auto-instrumentations-node",

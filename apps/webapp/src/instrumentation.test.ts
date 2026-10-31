@@ -35,10 +35,10 @@ vi.mock("@opentelemetry/sdk-node", () => ({
 		shutdown = vi.fn(async () => undefined);
 	},
 }));
-vi.mock("@opentelemetry/sdk-trace-base", () => ({
+vi.mock("@opentelemetry/sdk-trace", () => ({
 	BatchSpanProcessor: class {
-		constructor(exporter: unknown) {
-			mocks.batchSpanProcessor(exporter);
+		constructor(options: { exporter: unknown }) {
+			mocks.batchSpanProcessor(options.exporter);
 		}
 	},
 	ConsoleSpanExporter: class {

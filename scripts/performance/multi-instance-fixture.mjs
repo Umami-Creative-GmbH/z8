@@ -166,7 +166,7 @@ async function prepare(
 	);
 	const required = JSON.parse(requiredText);
 	if (
-		packageInfo.version !== "16.4.0" ||
+		packageInfo.version !== "16.4.3" ||
 		required.config.cacheHandler ||
 		Object.keys(required.config.cacheHandlers ?? {}).length ||
 		required.config.cacheMaxMemorySize !== 50 * 1024 * 1024
