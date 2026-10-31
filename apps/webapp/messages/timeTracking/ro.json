@@ -46,6 +46,10 @@
       "uncertainDescription": "Pontajul dvs. a fost actualizat. Verificați-l înainte de a încerca din nou."
     },
     "budget": "Buget",
+    "choices": {
+      "retry": "Reîncearcă {choice}",
+      "unavailable": "{choice} indisponibil"
+    },
     "clockedOutSuccess": "Ați pontat ieșirea!",
     "clockIn": "Pontează intrarea",
     "clockingIn": "Se pontează intrarea…",
@@ -59,6 +63,11 @@
     "clockOutSavedForSending": "Pontarea de ieșire a fost salvată pe acest dispozitiv. Este trimisă automat și nu este încă confirmată.",
     "clockOutSavedHeld": "Pontarea de ieșire a fost salvată pe acest dispozitiv, dar nu a fost trimisă. Examinați înregistrările salvate.",
     "clockOutSuccess": "Ieșire pontată cu succes",
+    "clockStatus": {
+      "loading": "Se încarcă starea pontajului",
+      "retry": "Reîncearcă starea pontajului",
+      "unavailable": "Starea pontajului este indisponibilă"
+    },
     "compliance": {
       "violation": "Încălcare a conformității",
       "warning": "Notificare de conformitate"
@@ -564,6 +573,9 @@
       "breakReading": "Citirea kilometrajului la pauză (km)",
       "breakReadingHint": "Opțional. Încheie citirea acestei activități și o începe pe a următoarei.",
       "changeLive": "Modificare",
+      "choices": "Opțiuni vehicul",
+      "choicesLoading": "Se încarcă opțiunile de vehicule…",
+      "choicesOffline": "Opțiunile de vehicule nu sunt disponibile offline. Poți înregistra timpul și adăuga detalii mai târziu.",
       "derivedDistance": "Distanță parcursă: {distance} km",
       "distanceKm": "Distanță parcursă (km)",
       "distanceText": "{distance} km parcurși",
@@ -599,6 +611,7 @@
         "off": "Utilizarea vehiculului nu este înregistrată pentru acest angajat.",
         "splitOutOfRange": "Numărul de kilometri la împărțire trebuie să se încadreze în kilometrii perioadei de lucru."
       },
+      "settingsLoading": "Se încarcă setările de utilizare a vehiculului…",
       "startKm": "Index inițial (km)",
       "title": "Utilizare vehicul",
       "unknownVehicle": "Vehicul necunoscut (indisponibil)",

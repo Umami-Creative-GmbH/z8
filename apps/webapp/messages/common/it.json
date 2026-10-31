@@ -268,6 +268,7 @@
       "importReview": "Caricamento della revisione dell'importazione",
       "importSettings": "Caricamento delle impostazioni di importazione",
       "locationSettings": "Caricamento delle impostazioni della sede",
+      "navigation": "Caricamento della navigazione",
       "onboarding": "Caricamento dell'onboarding",
       "payrollExportSettings": "Caricamento delle impostazioni di esportazione delle buste paga",
       "payrollReadiness": "Caricamento dello stato di preparazione delle buste paga",
@@ -317,6 +318,10 @@
     "moveDown": "Sposta giù",
     "moveUp": "Sposta su",
     "name": "Nome",
+    "navigation": {
+      "retry": "Riprova la navigazione",
+      "unavailable": "Alcuni elementi di navigazione non sono disponibili"
+    },
     "new": "Nuovo",
     "next": "Avanti",
     "no": "No",
@@ -342,6 +347,7 @@
       "assignmentNotFound": "Questa assegnazione non esiste più.",
       "employeeNotFound": "Questo dipendente non è stato trovato.",
       "employeeProfileRequired": "È richiesto un profilo dipendente in questa organizzazione.",
+      "formerEmployee": "Gli ex dipendenti non possono ricevere una nuova assegnazione. Scegli qualcuno dall'elenco attuale.",
       "invalidTarget": "Scegli a chi applicare l'assegnazione.",
       "noticeChanged": "L'informativa sulla posizione è cambiata. Consulta l'informativa attuale prima di decidere.",
       "positionsForbidden": "Non sei autorizzato a visualizzare le posizioni di questo periodo di lavoro.",
@@ -933,7 +939,6 @@
   "employeeSelect": {
     "countSelected": "{count} dipendenti selezionati",
     "countWithMore": "{count} dipendenti (+altri {more})",
-    "inactive": "Inattivo",
     "noEmployeesFound": "Nessun dipendente trovato",
     "removeSelected": "Rimuovi {name}",
     "role": "Ruolo",
@@ -975,6 +980,13 @@
       "digest": "Riferimento: {digest}",
       "title": "Si è verificato un errore"
     }
+  },
+  "formerEmployees": {
+    "current": "Attuale",
+    "former": "Ex",
+    "formerDateNotRecorded": "Ex · data non registrata",
+    "formerSince": "Ex dal {date}",
+    "showFormer": "Mostra ex dipendenti"
   },
   "generic": {
     "done": "Fatto",
@@ -1331,8 +1343,13 @@
         "message": "Organizza un controllo della patente di guida originale per {employeeName}, categoria {classes}, entro il {deadline}.",
         "title": "Controllo patente di guida in scadenza"
       },
+      "employeeDeactivationShiftsOpened": {
+        "message": "{shiftCount, plural, one {{employeeName} è stato disattivato. # turno imminente è ora aperto.} other {{employeeName} è stato disattivato. # turni imminenti sono ora aperti.}}",
+        "title": "I turni necessitano di assegnazione"
+      },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Le mansioni di approvazione richiedono un sostituto (uscita effettiva il {cutoff}, {timezone}).",
+        "approval_handover_deactivation": "{employeeName}: le mansioni di approvazione necessitano di un sostituto (disattivato il {cutoff}, {timezone}).",
         "clock_out": "{employeeName}: Da verificare: timbratura di uscita per offboarding (uscita effettiva il {cutoff}, {timezone}).",
         "clock_repair": "{employeeName}: Riparazione del timer richiesta (uscita effettiva il {cutoff}, {timezone}).",
         "employment_terms": "{employeeName}: Le condizioni contrattuali future richiedono una revisione (uscita effettiva il {cutoff}, {timezone}).",
@@ -1342,6 +1359,10 @@
       "forgottenClockOutReminder": {
         "message": "Il tuo turno è terminato alle {endTime} ({timezone}). Timbra l'uscita se hai finito di lavorare.",
         "title": "Risulti ancora al lavoro"
+      },
+      "formerEmployeeReportsWithoutManager": {
+        "message": "{count, plural, one {# dipendente è ancora collegato solo a un ex responsabile: {names}. Assegna un responsabile attuale.} other {# dipendenti sono ancora collegati solo a un ex responsabile: {names}. Assegna un responsabile attuale.}}",
+        "title": "Dipendenti senza un responsabile attuale"
       },
       "kioskCommandRefused": {
         "forwardedMessage": "Una {action, select, clock_in {timbratura di ingresso} clock_out {timbratura di uscita} start_break {timbratura di inizio pausa} resume_break {timbratura di fine pausa} other {timbratura}} di {employeeName} alle {time} sul chiosco {kioskName} non è stata registrata: {reason, select, wrong_pin {il PIN era errato} pin_locked {il PIN del chiosco è stato bloccato dopo troppi tentativi errati} no_pin {non era presente alcun PIN del chiosco con cui confrontarlo} pin_unchecked {impossibile verificare il PIN} kiosk_retired {il chiosco è stato revocato o nuovamente associato prima di riconnettersi} contact_unverifiable {Z8 non ha potuto confermare l'ultima connessione del chiosco} outside_window {l'orario era al di fuori dell'intervallo accettato da Z8} clock_untrusted {l'orologio del chiosco non è risultato attendibile} not_assigned {il dipendente non è assegnato alla sede del chiosco} not_adopted {l'organizzazione non accetta timbrature offline da chiosco} month_closed {il mese è chiuso} holiday {il giorno è festivo senza registrazione dell'orario} conflict {è in conflitto con un altro orario registrato} other {Z8 non ha potuto accettarla}}. Registra l'orario per il dipendente o verificalo insieme a lui.",
@@ -1806,7 +1827,9 @@
         "driving_authorization_suspended_or_ended": "Autorizzazione alla guida sospesa o terminata",
         "driving_details_missing_reminder": "Dettagli di guida mancanti",
         "driving_licence_reminder": "Controllo patente di guida in scadenza",
+        "employee_deactivation_shifts_opened": "Turni aperti a seguito di una disattivazione",
         "forgotten_clock_out_reminder": "Timbratura di uscita dimenticata",
+        "former_employee_reports_without_manager": "Dipendenti senza un responsabile attuale",
         "kiosk_command_refused": "Timbratura da chiosco non registrata",
         "missed_clock_in_reminder": "Mancata timbratura di entrata",
         "period_submission_decided": "Ore inviate approvate o rifiutate",
@@ -3157,10 +3180,6 @@
     "admin": "Amministratore",
     "employee": "Dipendente",
     "manager": "Manager"
-  },
-  "status": {
-    "active": "Attivo",
-    "inactive": "Inattivo"
   },
   "storeAppBanner": {
     "description": "Ricevi promemoria e notifiche di approvazione nell'app.",

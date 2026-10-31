@@ -17,13 +17,12 @@
     },
     "covering-for": {
       "description": "Colegi pe care îi înlocuiți în timpul absenței lor",
-      "error": "Nu s-au putut încărca atribuțiile dvs. de înlocuire",
       "running": "Înlocuire pentru {name} până la {date}",
       "title": "Înlocuire pentru",
       "upcoming": "Urmează: înlocuire pentru {name} de la {start} până la {end}"
     },
     "customize": {
-      "empty-description": "Utilizați pictograma de personalizare a tabloului de bord pentru a reactiva widgeturile individuale sau resetați aspectul pentru a afișa din nou toate widgeturile.",
+      "empty-description-defaults": "Utilizați pictograma de personalizare a tabloului de bord pentru a reactiva widgeturi individuale sau resetați aspectul pentru a restaura widgeturile implicite.",
       "empty-title": "Toate widgeturile din tabloul de bord sunt ascunse",
       "move-down": "Mută {widget} în jos",
       "move-up": "Mută {widget} în sus",
@@ -54,7 +53,6 @@
     },
     "managed-employees": {
       "direct-reports": "{count} subordonați direcți",
-      "error": "Nu s-au putut încărca angajații gestionați",
       "no-reports": "Niciun subordonat direct încă",
       "no-reports-description": "Vei vedea membrii echipei tale aici odată ce sunt alocați",
       "people-you-manage": "Persoane pe care le gestionezi",
@@ -78,7 +76,7 @@
       "awaiting-approval": "În așteptarea aprobării tale",
       "correction": "Corecție",
       "description": "Cereri în așteptarea deciziei tale",
-      "error": "Nu s-au putut încărca aprobările în așteptare",
+      "empty": "Nicio aprobare în așteptare",
       "more-requests": "+ încă {count} cereri",
       "pending-requests": "{count} {request} în așteptare",
       "request": "cerere",
@@ -117,7 +115,7 @@
       "by": "de {name}",
       "description": "Ultimele cereri aprobate",
       "description-count": "Ultimele {count} {request} aprobate",
-      "error": "Nu s-au putut încărca cererile aprobate recent",
+      "empty": "Nicio cerere aprobată recent",
       "more-approved": "+ încă {count} aprobate",
       "request": "cerere",
       "requests": "cereri",
@@ -126,12 +124,11 @@
       "view-all": "Vezi toate aprobările"
     },
     "team-overview": {
-      "active-count": "{active} din {total} angajați ({percent}%)",
-      "active-employees": "Angajați activi",
       "avg-hours": "Medie ore",
+      "current-employees": "Angajați actuali",
+      "current-employees-description": "Toți cei care lucrează aici în prezent",
       "description": "Statistici ale echipei pe scurt",
       "employees-button": "Angajați",
-      "error": "Nu s-au putut încărca statisticile echipei",
       "per-week": "/săptămână",
       "teams": "Echipe",
       "teams-button": "Echipe",
@@ -142,7 +139,6 @@
       "empty": "Nicio tură viitoare",
       "empty-description": "Următoarele tale ture publicate vor apărea aici.",
       "ends-next-day": "se termină a doua zi",
-      "error": "Nu s-au putut încărca turele tale viitoare",
       "title": "Ture viitoare",
       "today": "Astăzi",
       "tomorrow": "Mâine",
@@ -155,7 +151,7 @@
       "days": "zile",
       "description": "Absențe programate ale echipei",
       "description-count": "Următoarele {count} {absence} programate",
-      "error": "Nu s-au putut încărca zilele libere viitoare",
+      "empty": "Niciun concediu viitor",
       "title": "Zile libere viitoare",
       "today": "Astăzi",
       "tomorrow": "Mâine",
@@ -167,7 +163,6 @@
       "carryover-days": "{days} zile",
       "days-remaining": "zile rămase",
       "description": "Zile de concediu {year}",
-      "error": "Nu s-a putut încărca soldul de concediu",
       "expires-in": "Expiră în {days} zile",
       "label-available": "Disponibil",
       "label-pending": "În așteptare",
@@ -176,10 +171,10 @@
       "percent-used": "{percent}% utilizat",
       "title": "Sold concediu",
       "total": "{days} în total",
+      "unavailable": "Soldul de concediu este indisponibil.",
       "used": "{days} utilizate"
     },
     "whos-out": {
-      "error": "Nu s-au putut încărca absențele de astăzi",
       "everyone-in": "Toată lumea este la birou astăzi",
       "everyones-in": "Toată lumea este prezentă!",
       "full-team": "Toată echipa este disponibilă!",
@@ -198,9 +193,13 @@
       "view-calendar": "Vezi calendarul complet"
     },
     "widgets": {
+      "deferred": "Se încarcă când este vizibil. Îl puteți încărca și acum.",
       "dragToReorder": "Trageți pentru a reordona widgetul",
+      "load": "Încărcați {widget}",
+      "loading": "Se încarcă widgetul pentru tabloul de bord…",
       "moving": "Se mută widgetul…",
-      "refresh": "Reîmprospătare"
+      "refresh": "Reîmprospătare",
+      "retry": "Reîncercați {widget}"
     }
   }
 }

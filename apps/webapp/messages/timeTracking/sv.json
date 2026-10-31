@@ -46,6 +46,10 @@
       "uncertainDescription": "Din stämpelklocka har uppdaterats. Kontrollera den innan du försöker igen."
     },
     "budget": "Budget",
+    "choices": {
+      "retry": "Försök igen med {choice}",
+      "unavailable": "{choice} är inte tillgängligt"
+    },
     "clockedOutSuccess": "Du har stämplat ut!",
     "clockIn": "Stämpla in",
     "clockingIn": "Stämplar in…",
@@ -59,6 +63,11 @@
     "clockOutSavedForSending": "Utstämpling sparad på denna enhet. Den skickas automatiskt och är inte bekräftad ännu.",
     "clockOutSavedHeld": "Utstämpling sparad på denna enhet men inte skickad. Granska sparade poster.",
     "clockOutSuccess": "Utstämpling lyckades",
+    "clockStatus": {
+      "loading": "Läser in stämpelstatus",
+      "retry": "Försök hämta stämpelstatus igen",
+      "unavailable": "Stämpelstatus är inte tillgänglig"
+    },
     "compliance": {
       "violation": "Regelöverträdelse",
       "warning": "Regelefterlevnadsmeddelande"
@@ -564,6 +573,9 @@
       "breakReading": "Mätarställning vid rast (km)",
       "breakReadingHint": "Valfritt. Den avslutar detta arbetes mätarställning och påbörjar nästa.",
       "changeLive": "Ändra",
+      "choices": "Fordonsval",
+      "choicesLoading": "Läser in fordonsval…",
+      "choicesOffline": "Fordonsval är inte tillgängliga offline. Du kan registrera tid och lägga till detaljer senare.",
       "derivedDistance": "Körd sträcka: {distance} km",
       "distanceKm": "Körd sträcka (km)",
       "distanceText": "{distance} km körda",
@@ -599,6 +611,7 @@
         "off": "Fordonsanvändning registreras inte för denna medarbetare.",
         "splitOutOfRange": "Kilometertalet vid delningen måste ligga inom arbetsperiodens kilometer."
       },
+      "settingsLoading": "Läser in inställningar för fordonsanvändning…",
       "startKm": "Startmätarställning (km)",
       "title": "Fordonsanvändning",
       "unknownVehicle": "Okänt fordon (ej tillgängligt)",

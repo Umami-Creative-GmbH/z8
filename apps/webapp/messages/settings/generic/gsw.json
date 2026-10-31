@@ -25,6 +25,7 @@
         "adminOnly": "Nur Organisations-Inhaber und Admins chönd zuegwiseni Standört verwalte.",
         "employeeNotFound": "Mitarbeiter nöd gfunde.",
         "failed": "Zuegwiseni Standört händ nöd chönne aktualisiert werde. Probier's nomal.",
+        "formerEmployee": "Ehemalige Mitarbeiter cha kein Standort zuegordnet werde.",
         "invalidSelection": "Wähl us de Liste us.",
         "locationNotFound": "Standort nöd gfunde."
       },
@@ -873,6 +874,7 @@
         "attribution": "Vergeh dur {actor} am {time}",
         "editor": "Prüfer-Beriich",
         "empty": "Kei Prüfer-Verantwortige zuegwise",
+        "formerEmployee": "Ehemaligi Mitarbeiter chönd nöd hinzugefüegt werde. Wähl Mitarbeiter us de aktuelle Lischte.",
         "history": "Verlauf vo de Verantwortig",
         "historyEntry": "Vergää dur {grantor} am {granted}; widerzoge dur {revoker} am {revoked}",
         "loadFailed": "Prüfer-Verantwortige händ nöd chönne glade wärde",
@@ -3002,6 +3004,7 @@
       },
       "refusals": {
         "driverNotFound": "Ein zugewiesener Mitarbeiter oder ein zugewiesenes Team existiert nicht mehr. Laden Sie die Seite neu.",
+        "formerDriver": "Ehemaligi Mitarbeiter chönd nöd als Fahrer iiteilt werde. Wähl Mitarbeiter us de aktuelle Lischte.",
         "invalidChange": "Die Änderung konnte nicht gespeichert werden. Laden Sie die Seite neu und versuchen Sie es erneut.",
         "invalidDrivers": "Wählen Sie höchstens 500 zugewiesene Mitarbeiter und Teams aus.",
         "invalidLicencePlate": "Geben Sie ein Kontrollschild mit bis zu 20 Zeichen ein.",
@@ -3030,6 +3033,7 @@
         "assignmentNotFound": "Die Zueordnig git es nüm. Lad d'Site neu.",
         "employeeNotFound": "Dä Mitarbeiter git es nüm.",
         "failed": "Öppis isch schiefglaufe. Probier's nomal.",
+        "formerEmployee": "Ehemaligi Mitarbeiter chönd kei neui Zueornig übercho. Wähl öpper us de aktuelle Lischte.",
         "invalidMode": "Wähl en Modus für d'Zueordnig.",
         "invalidTarget": "Wähl us, für wen d'Zueordnig gilt.",
         "teamNotFound": "Das Team git es nüm."

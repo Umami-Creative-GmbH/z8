@@ -211,10 +211,6 @@
       "ariaLabel": "Szukaj członków zespołu",
       "placeholder": "Szukaj według imienia i nazwiska, adresu e-mail, stanowiska lub zespołu..."
     },
-    "status": {
-      "active": "Aktywny",
-      "inactive": "Nieaktywny"
-    },
     "table": {
       "employee": "Pracownik",
       "position": "Stanowisko",

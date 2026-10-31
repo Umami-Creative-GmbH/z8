@@ -46,6 +46,10 @@
       "uncertainDescription": "Ihre Zeiterfassung wurde aktualisiert. Überprüfen Sie diese, bevor Sie es erneut versuchen."
     },
     "budget": "Budget",
+    "choices": {
+      "retry": "{choice} erneut versuchen",
+      "unavailable": "{choice} nicht verfügbar"
+    },
     "clockedOutSuccess": "Sie haben ausgestempelt!",
     "clockIn": "Einstempeln",
     "clockingIn": "Stemple ein...",
@@ -59,6 +63,11 @@
     "clockOutSavedForSending": "Ausstempeln auf diesem Gerät gespeichert. Es wird automatisch gesendet und ist noch nicht bestätigt.",
     "clockOutSavedHeld": "Ausstempeln auf diesem Gerät gespeichert, aber nicht gesendet. Überprüfen Sie die gespeicherten Einträge.",
     "clockOutSuccess": "Erfolgreich ausgestempelt",
+    "clockStatus": {
+      "loading": "Stempelstatus wird geladen",
+      "retry": "Stempelstatus erneut versuchen",
+      "unavailable": "Stempelstatus nicht verfügbar"
+    },
     "compliance": {
       "violation": "Compliance-Verstoß",
       "warning": "Compliance-Hinweis"
@@ -564,6 +573,9 @@
       "breakReading": "Kilometerstand bei der Pause (km)",
       "breakReadingHint": "Optional. Beendet den Kilometerstand dieser Arbeit und beginnt den der nächsten.",
       "changeLive": "Ändern",
+      "choices": "Fahrzeugauswahl",
+      "choicesLoading": "Fahrzeugauswahl wird geladen…",
+      "choicesOffline": "Die Fahrzeugauswahl ist offline nicht verfügbar. Sie können Zeiten erfassen und Details später hinzufügen.",
       "derivedDistance": "Gefahrene Strecke: {distance} km",
       "distanceKm": "Gefahrene Strecke (km)",
       "distanceText": "{distance} km gefahren",
@@ -599,6 +611,7 @@
         "off": "Für diesen Mitarbeiter wird keine Fahrzeugnutzung erfasst.",
         "splitOutOfRange": "Der Kilometerstand bei der Teilung muss innerhalb der Kilometer des Arbeitszeitraums liegen."
       },
+      "settingsLoading": "Einstellungen zur Fahrzeugnutzung werden geladen…",
       "startKm": "Anfangsstand (km)",
       "title": "Fahrzeugnutzung",
       "unknownVehicle": "Unbekanntes Fahrzeug (nicht verfügbar)",

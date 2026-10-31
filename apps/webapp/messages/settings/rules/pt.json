@@ -556,6 +556,7 @@
       "endTime": "Hora de Término",
       "endTimeDescription": "ex: 06:00 para turno noturno",
       "loadError": "Falha ao carregar atribuições",
+      "loadFailed": "Não foi possível carregar os modelos de sobretaxa. Tente novamente.",
       "loading": "Carregando configurações de adicional...",
       "modelCreated": "Modelo de adicional criado",
       "modelDeleted": "Modelo de adicional excluído",

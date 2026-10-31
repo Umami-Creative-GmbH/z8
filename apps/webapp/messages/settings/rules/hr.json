@@ -556,6 +556,7 @@
       "endTime": "Vrijeme završetka",
       "endTimeDescription": "npr. 06:00 za noćnu smjenu",
       "loadError": "Učitavanje dodjela nije uspjelo",
+      "loadFailed": "Modeli doplata nisu se mogli učitati. Pokušajte ponovno.",
       "loading": "Učitavanje postavki dodataka...",
       "modelCreated": "Model dodataka stvoren",
       "modelDeleted": "Model dodataka izbrisan",

@@ -46,6 +46,10 @@
       "uncertainDescription": "Seu relógio foi atualizado. Verifique-o antes de tentar novamente."
     },
     "budget": "Orçamento",
+    "choices": {
+      "retry": "Tentar {choice} novamente",
+      "unavailable": "{choice} indisponível"
+    },
     "clockedOutSuccess": "Você registrou a saída!",
     "clockIn": "Registrar Entrada",
     "clockingIn": "Registrando entrada...",
@@ -59,6 +63,11 @@
     "clockOutSavedForSending": "Saída salva neste dispositivo. Ela é enviada automaticamente e ainda não foi confirmada.",
     "clockOutSavedHeld": "Saída salva neste dispositivo, mas não enviada. Revise os registros salvos.",
     "clockOutSuccess": "Saída registrada com sucesso",
+    "clockStatus": {
+      "loading": "Carregando status do ponto",
+      "retry": "Tentar novamente status do ponto",
+      "unavailable": "Status do ponto indisponível"
+    },
     "compliance": {
       "violation": "Violação de Conformidade",
       "warning": "Aviso de Conformidade"
@@ -564,6 +573,9 @@
       "breakReading": "Leitura do odômetro no intervalo (km)",
       "breakReadingHint": "Opcional. Encerra a leitura deste trabalho e inicia a do próximo.",
       "changeLive": "Alterar",
+      "choices": "Opções de veículos",
+      "choicesLoading": "Carregando opções de veículos…",
+      "choicesOffline": "As opções de veículos estão indisponíveis offline. Você pode registrar o tempo e adicionar detalhes mais tarde.",
       "derivedDistance": "Distância percorrida: {distance} km",
       "distanceKm": "Distância percorrida (km)",
       "distanceText": "{distance} km percorridos",
@@ -599,6 +611,7 @@
         "off": "O uso do veículo não é registrado para este funcionário.",
         "splitOutOfRange": "Os quilômetros na divisão devem estar dentro dos quilômetros do período de trabalho."
       },
+      "settingsLoading": "Carregando configurações de uso de veículos…",
       "startKm": "Leitura inicial (km)",
       "title": "Uso do veículo",
       "unknownVehicle": "Veículo desconhecido (indisponível)",

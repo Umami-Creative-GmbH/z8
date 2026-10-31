@@ -268,6 +268,7 @@
       "importReview": "Se încarcă revizuirea importului",
       "importSettings": "Se încarcă setările de import",
       "locationSettings": "Se încarcă setările locației",
+      "navigation": "Se încarcă navigarea",
       "onboarding": "Se încarcă integrarea",
       "payrollExportSettings": "Se încarcă setările de export pentru salarizare",
       "payrollReadiness": "Se încarcă starea de pregătire a salarizării",
@@ -317,6 +318,10 @@
     "moveDown": "Mută în jos",
     "moveUp": "Mută în sus",
     "name": "Nume",
+    "navigation": {
+      "retry": "Reîncercați navigarea",
+      "unavailable": "Unele elemente de navigare sunt indisponibile"
+    },
     "new": "Nou",
     "next": "Următorul",
     "no": "Nu",
@@ -342,6 +347,7 @@
       "assignmentNotFound": "Această atribuire nu mai există.",
       "employeeNotFound": "Acest angajat nu a fost găsit.",
       "employeeProfileRequired": "Este necesar un profil de angajat în această organizație.",
+      "formerEmployee": "Foștii angajați nu pot primi o nouă atribuire. Alegeți pe cineva din lista actuală.",
       "invalidTarget": "Alegeți cui i se aplică atribuirea.",
       "noticeChanged": "Notificarea privind poziția s-a modificat. Consultați notificarea actuală înainte de a decide.",
       "positionsForbidden": "Nu aveți permisiunea de a vedea pozițiile din această perioadă de lucru.",
@@ -933,7 +939,6 @@
   "employeeSelect": {
     "countSelected": "{count} angajați selectați",
     "countWithMore": "{count} angajați (+încă {more})",
-    "inactive": "Inactiv",
     "noEmployeesFound": "Niciun angajat găsit",
     "removeSelected": "Elimină {name}",
     "role": "Rol",
@@ -975,6 +980,13 @@
       "digest": "Referință: {digest}",
       "title": "Ceva nu a funcționat corect"
     }
+  },
+  "formerEmployees": {
+    "current": "Actual",
+    "former": "Fost",
+    "formerDateNotRecorded": "Fost · dată neînregistrată",
+    "formerSince": "Fost din {date}",
+    "showFormer": "Afișează foștii angajați"
   },
   "generic": {
     "done": "Gata",
@@ -1331,8 +1343,13 @@
         "message": "Organizați o verificare a permisului de conducere în original pentru {employeeName}, categoria {classes}, până la {deadline}.",
         "title": "Verificare a permisului de conducere scadentă"
       },
+      "employeeDeactivationShiftsOpened": {
+        "message": "{shiftCount, plural, one {{employeeName} a fost dezactivat. # tură viitoare este deschisă acum.} other {{employeeName} a fost dezactivat. # ture viitoare sunt deschise acum.}}",
+        "title": "Turele au nevoie de cineva"
+      },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Sarcinile de aprobare necesită un înlocuitor (plecare în vigoare la {cutoff}, {timezone}).",
+        "approval_handover_deactivation": "{employeeName}: Responsabilitățile de aprobare necesită un înlocuitor (dezactivat la {cutoff}, {timezone}).",
         "clock_out": "{employeeName}: Necesită revizuire: pontaj de ieșire la offboarding (plecare în vigoare la {cutoff}, {timezone}).",
         "clock_repair": "{employeeName}: Este necesară remedierea cronometrului (plecare în vigoare la {cutoff}, {timezone}).",
         "employment_terms": "{employeeName}: Termenii viitori de angajare necesită revizuire (plecare în vigoare la {cutoff}, {timezone}).",
@@ -1342,6 +1359,10 @@
       "forgottenClockOutReminder": {
         "message": "Tura dvs. s-a încheiat la {endTime} ({timezone}). Înregistrați ieșirea dacă ați terminat programul de lucru.",
         "title": "Sunteți încă pontat(ă)"
+      },
+      "formerEmployeeReportsWithoutManager": {
+        "message": "{count, plural, one {# angajat este asociat în continuare doar cu un fost manager: {names}. Atribuiți un manager actual.} other {# angajați sunt asociați în continuare doar cu un fost manager: {names}. Atribuiți un manager actual.}}",
+        "title": "Angajați fără un manager actual"
       },
       "kioskCommandRefused": {
         "forwardedMessage": "{action, select, clock_in {O pontare la intrare} clock_out {O pontare la ieșire} start_break {Un început de pauză} resume_break {O revenire din pauză} other {O pontare}} efectuată de {employeeName} la {time} la chioșcul {kioskName} nu a fost înregistrată: {reason, select, wrong_pin {PIN-ul a fost incorect} pin_locked {PIN-ul chioșcului a fost blocat după prea multe încercări incorecte} no_pin {nu a existat niciun PIN de chioșc pentru verificare} pin_unchecked {PIN-ul nu a putut fi verificat} kiosk_retired {chioșcul a fost revocat sau asociat din nou înainte de a se reconecta} contact_unverifiable {Z8 nu a putut confirma ultima conexiune a chioșcului} outside_window {ora a fost în afara intervalului acceptat de Z8} clock_untrusted {ceasul chioșcului nu a putut fi considerat de încredere} not_assigned {angajatul nu este alocat la locația chioșcului} not_adopted {organizația nu acceptă pontări offline la chioșc} month_closed {luna este închisă} holiday {ziua este o sărbătoare fără pontare} conflict {se află în conflict cu o altă oră înregistrată} other {Z8 nu a putut să o accepte}}. Înregistrați timpul în locul său sau verificați-l împreună cu acesta.",
@@ -1806,7 +1827,9 @@
         "driving_authorization_suspended_or_ended": "Autorizație de conducere suspendată sau încetată",
         "driving_details_missing_reminder": "Lipsesc detaliile de conducere",
         "driving_licence_reminder": "Verificare a permisului de conducere scadentă",
+        "employee_deactivation_shifts_opened": "Ture deschise în urma unei dezactivări",
         "forgotten_clock_out_reminder": "Pontare de ieșire omisă",
+        "former_employee_reports_without_manager": "Angajați fără un manager actual",
         "kiosk_command_refused": "Pontare la chioșc neînregistrată",
         "missed_clock_in_reminder": "Pontare omisă la intrare",
         "period_submission_decided": "Timp trimis aprobat sau respins",
@@ -3157,10 +3180,6 @@
     "admin": "Administrator",
     "employee": "Angajat",
     "manager": "Manager"
-  },
-  "status": {
-    "active": "Activ",
-    "inactive": "Inactiv"
   },
   "storeAppBanner": {
     "description": "Primește mementouri și notificări de aprobare în aplicație.",

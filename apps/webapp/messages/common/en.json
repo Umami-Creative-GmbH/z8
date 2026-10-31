@@ -268,6 +268,7 @@
       "importReview": "Loading import review",
       "importSettings": "Loading import settings",
       "locationSettings": "Loading location settings",
+      "navigation": "Loading navigation",
       "onboarding": "Loading onboarding",
       "payrollExportSettings": "Loading payroll export settings",
       "payrollReadiness": "Loading payroll readiness",
@@ -317,6 +318,10 @@
     "moveDown": "Move down",
     "moveUp": "Move up",
     "name": "Name",
+    "navigation": {
+      "retry": "Retry navigation",
+      "unavailable": "Some navigation is unavailable"
+    },
     "new": "New",
     "next": "Next",
     "no": "No",
@@ -342,6 +347,7 @@
       "assignmentNotFound": "This assignment no longer exists.",
       "employeeNotFound": "This employee was not found.",
       "employeeProfileRequired": "An employee profile in this organization is required.",
+      "formerEmployee": "Former employees can't get a new assignment. Choose someone on the current roster.",
       "invalidTarget": "Choose who the assignment applies to.",
       "noticeChanged": "The position notice has changed. Review the current notice before deciding.",
       "positionsForbidden": "You are not allowed to see the positions of this work period.",
@@ -933,7 +939,6 @@
   "employeeSelect": {
     "countSelected": "{count} employees selected",
     "countWithMore": "{count} employees (+{more} more)",
-    "inactive": "Inactive",
     "noEmployeesFound": "No employees found",
     "removeSelected": "Remove {name}",
     "role": "Role",
@@ -975,6 +980,13 @@
       "digest": "Reference: {digest}",
       "title": "Something went wrong"
     }
+  },
+  "formerEmployees": {
+    "current": "Current",
+    "former": "Former",
+    "formerDateNotRecorded": "Former · date not recorded",
+    "formerSince": "Former since {date}",
+    "showFormer": "Show former employees"
   },
   "generic": {
     "done": "Done",
@@ -1331,8 +1343,13 @@
         "message": "Arrange an original driving licence check for {employeeName}, class {classes}, by {deadline}.",
         "title": "Driving licence check due"
       },
+      "employeeDeactivationShiftsOpened": {
+        "message": "{shiftCount, plural, one {{employeeName} was deactivated. # upcoming shift is open now.} other {{employeeName} was deactivated. # upcoming shifts are open now.}}",
+        "title": "Shifts need someone"
+      },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Approval duties need a replacement (departure effective {cutoff}, {timezone}).",
+        "approval_handover_deactivation": "{employeeName}: Approval duties need a replacement (deactivated {cutoff}, {timezone}).",
         "clock_out": "{employeeName}: Needs review: offboarding clock-out (departure effective {cutoff}, {timezone}).",
         "clock_repair": "{employeeName}: Timer repair required (departure effective {cutoff}, {timezone}).",
         "employment_terms": "{employeeName}: Future employment terms need review (departure effective {cutoff}, {timezone}).",
@@ -1342,6 +1359,10 @@
       "forgottenClockOutReminder": {
         "message": "Your shift ended at {endTime} ({timezone}). Clock out if you have finished working.",
         "title": "You are still clocked in"
+      },
+      "formerEmployeeReportsWithoutManager": {
+        "message": "{count, plural, one {# employee is still linked only to a former manager: {names}. Assign a current manager.} other {# employees are still linked only to a former manager: {names}. Assign a current manager.}}",
+        "title": "Employees without a current manager"
       },
       "kioskCommandRefused": {
         "forwardedMessage": "A {action, select, clock_in {clock-in} clock_out {clock-out} start_break {break start} resume_break {return from break} other {clocking}} by {employeeName} at {time} on the kiosk {kioskName} was not recorded: {reason, select, wrong_pin {the PIN was wrong} pin_locked {the kiosk PIN was locked after too many wrong attempts} no_pin {there was no kiosk PIN to check it against} pin_unchecked {the PIN could not be checked} kiosk_retired {the kiosk was revoked or paired again before it reconnected} contact_unverifiable {Z8 could not confirm the kiosk's last connection} outside_window {its time was outside the window Z8 accepts} clock_untrusted {the kiosk's clock could not be trusted for it} not_assigned {the employee is not assigned to the kiosk's location} not_adopted {the organization does not accept offline kiosk clockings} month_closed {the month is closed} holiday {the day is a holiday without time recording} conflict {it conflicts with other recorded time} other {Z8 could not accept it}}. Record the time for them or check it with them.",
@@ -1806,7 +1827,9 @@
         "driving_authorization_suspended_or_ended": "Driving authorization suspended or ended",
         "driving_details_missing_reminder": "Driving details missing",
         "driving_licence_reminder": "Driving licence check due",
+        "employee_deactivation_shifts_opened": "Shifts opened by a deactivation",
         "forgotten_clock_out_reminder": "Forgotten clock-out",
+        "former_employee_reports_without_manager": "Employees without a current manager",
         "kiosk_command_refused": "Kiosk clocking not recorded",
         "missed_clock_in_reminder": "Missed clock-in",
         "period_submission_decided": "Submitted time approved or rejected",
@@ -3157,10 +3180,6 @@
     "admin": "Admin",
     "employee": "Employee",
     "manager": "Manager"
-  },
-  "status": {
-    "active": "Active",
-    "inactive": "Inactive"
   },
   "storeAppBanner": {
     "description": "Get reminders and approval notifications in the app.",

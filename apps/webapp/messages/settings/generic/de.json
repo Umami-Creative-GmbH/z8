@@ -25,6 +25,7 @@
         "adminOnly": "Nur Inhaber und Administratoren der Organisation können zugewiesene Standorte verwalten.",
         "employeeNotFound": "Mitarbeiter nicht gefunden.",
         "failed": "Zugewiesene Standorte konnten nicht aktualisiert werden. Versuchen Sie es erneut.",
+        "formerEmployee": "Ehemaligen Mitarbeitern kann kein Standort zugewiesen werden.",
         "invalidSelection": "Aus der Liste auswählen.",
         "locationNotFound": "Standort nicht gefunden."
       },
@@ -873,6 +874,7 @@
         "attribution": "Erteilt von {actor} am {time}",
         "editor": "Prüferbereich",
         "empty": "Keine Prüferzuständigkeiten zugewiesen",
+        "formerEmployee": "Ehemalige Mitarbeiter können nicht hinzugefügt werden. Wählen Sie Mitarbeiter aus der aktuellen Personalliste.",
         "history": "Zuständigkeitshistorie",
         "historyEntry": "Erteilt von {grantor} am {granted}; widerrufen von {revoker} am {revoked}",
         "loadFailed": "Prüferzuständigkeiten konnten nicht geladen werden",
@@ -3002,6 +3004,7 @@
       },
       "refusals": {
         "driverNotFound": "Ein zugewiesener Mitarbeiter oder ein zugewiesenes Team existiert nicht mehr. Laden Sie die Seite neu.",
+        "formerDriver": "Ehemalige Mitarbeiter können nicht als Fahrer zugewiesen werden. Wählen Sie Mitarbeiter aus der aktuellen Personalliste.",
         "invalidChange": "Die Änderung konnte nicht gespeichert werden. Laden Sie die Seite neu und versuchen Sie es erneut.",
         "invalidDrivers": "Wählen Sie höchstens 500 zugewiesene Mitarbeiter und Teams aus.",
         "invalidLicencePlate": "Geben Sie ein Kennzeichen mit bis zu 20 Zeichen ein.",
@@ -3030,6 +3033,7 @@
         "assignmentNotFound": "Diese Zuweisung existiert nicht mehr. Laden Sie die Seite neu.",
         "employeeNotFound": "Dieser Mitarbeiter existiert nicht mehr.",
         "failed": "Etwas ist schiefgelaufen. Versuchen Sie es erneut.",
+        "formerEmployee": "Ehemalige Mitarbeiter können keine neue Zuweisung erhalten. Wählen Sie jemanden aus der aktuellen Personalliste.",
         "invalidMode": "Wählen Sie einen Modus für die Zuweisung.",
         "invalidTarget": "Wählen Sie aus, für wen die Zuweisung gilt.",
         "teamNotFound": "Dieses Team existiert nicht mehr."

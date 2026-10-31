@@ -556,6 +556,7 @@
       "endTime": "Hora de finalización",
       "endTimeDescription": "p. ej., 06:00 para turno nocturno",
       "loadError": "Error al cargar las asignaciones",
+      "loadFailed": "No se pudieron cargar los modelos de recargo. Por favor, inténtelo de nuevo.",
       "loading": "Cargando ajustes de recargo...",
       "modelCreated": "Modelo de recargo creado",
       "modelDeleted": "Modelo de recargo eliminado",

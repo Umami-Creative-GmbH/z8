@@ -17,13 +17,12 @@
     },
     "covering-for": {
       "description": "Kolleginne und Kollege, wo du d Stellvertretig machsch, während si wäg sind",
-      "error": "Dini Vertretigsufgabe händ nöd chönne glade wärde",
       "running": "Vertretig für {name} bis {date}",
       "title": "Vertretig für",
       "upcoming": "Demnächst: Vertretig für {name} vom {start} bis {end}"
     },
     "customize": {
-      "empty-description": "Nutze s Dashboard-Aapassigs-Icon zum einzelni Widgets wieder z'aktiviere oder s Layout z'ruckzsetze, zum alli Widgets wieder aazzeige.",
+      "empty-description-defaults": "Bruuch s Dashboard-Aapassigs-Icon zum einzelni Widgets wider z aktiviere, oder setz s Layout zrugg zum dini Standard-Widgets widerherzstelle.",
       "empty-title": "Alli Dashboard-Widgets sind versteckt",
       "move-down": "{widget} abe schiebe",
       "move-up": "{widget} ufe schiebe",
@@ -54,7 +53,6 @@
     },
     "managed-employees": {
       "direct-reports": "{count} direkti Mitarbeiter",
-      "error": "Verwalteti Mitarbeiter chönd nöd glade werde",
       "no-reports": "Noch keini diräkte Unterstellte",
       "no-reports-description": "Sobald öpper zuegwise isch, gsehsch d'Teammitglieder do",
       "people-you-manage": "Lüt, wo du füersch",
@@ -78,7 +76,7 @@
       "awaiting-approval": "Wartet uf dini Freigab",
       "correction": "Korrektur",
       "description": "Aastellige, wo uf dini Entscheidig warted",
-      "error": "Fehler bim Lade vo de offene Freigabe",
+      "empty": "Kei aastehende Freigaabe",
       "more-requests": "+{count} witeri Aastellige",
       "pending-requests": "{count} offeni {request}",
       "request": "Aafrog",
@@ -117,7 +115,7 @@
       "by": "vo {name}",
       "description": "Die letschte freigäbene Aastellige",
       "description-count": "Die letschte {count} freigäbene {request}",
-      "error": "Fehler bim Lade vo de chürzlich freigäbene Aastellige",
+      "empty": "Kei chürzlich genehmigte Aaträg",
       "more-approved": "+{count} meh freigäh",
       "request": "Aafrog",
       "requests": "Aafroge",
@@ -126,12 +124,11 @@
       "view-all": "Alli Freigabe aazeige"
     },
     "team-overview": {
-      "active-count": "{active} vo {total} Aagstellte ({percent}%)",
-      "active-employees": "Aktivi Aagstellti",
       "avg-hours": "Durchschn. Stunde",
+      "current-employees": "Aktuelli Mitarbeiter",
+      "current-employees-description": "Ali, wo jetzt da schaffed",
       "description": "Teamstatistik uf e Blick",
       "employees-button": "Aagstellti",
-      "error": "Team-Statistike chönd nöd glade werde",
       "per-week": "/Wuche",
       "teams": "Team",
       "teams-button": "Team",
@@ -142,7 +139,6 @@
       "empty": "Kei bevorstehendi Schichte",
       "empty-description": "Dini nächste veröffentlichte Schichte wärdet da aazeigt.",
       "ends-next-day": "ändet am nächste Tag",
-      "error": "Dini bevorstehende Schichte händ nöd chönne glade wärde",
       "title": "Bevorstehendi Schichte",
       "today": "Hüt",
       "tomorrow": "Morn",
@@ -155,7 +151,7 @@
       "days": "Täg",
       "description": "Geplanti Team-Abweseheite",
       "description-count": "Die nächste {count} geplante {absence}",
-      "error": "Lade vo de bevorstehende Abweseheite isch fählgschlage",
+      "empty": "Kei bevorstehendi Abweseheite",
       "title": "Bevorstehendi Abweseheite",
       "today": "Hüt",
       "tomorrow": "Morn",
@@ -167,7 +163,6 @@
       "carryover-days": "{days} Täg",
       "days-remaining": "verbleibendi Täg",
       "description": "{year} Ferietäg",
-      "error": "Lade vom Feriesaldo isch fählgschlage",
       "expires-in": "Läuft in {days} Täg ab",
       "label-available": "Verfügbar",
       "label-pending": "Pängdig",
@@ -176,10 +171,10 @@
       "percent-used": "{percent}% brucht",
       "title": "Feriesaldo",
       "total": "{days} total",
+      "unavailable": "Ferieguthabe isch nöd verfüegbar.",
       "used": "{days} brucht"
     },
     "whos-out": {
-      "error": "Lade vo de hütige Abweseheite isch fählgschlage",
       "everyone-in": "All sind hüt im Büro",
       "everyones-in": "All sind da!",
       "full-team": "S'ganze Team isch verfügbar!",
@@ -198,9 +193,13 @@
       "view-calendar": "Ganze Kaländer aaluege"
     },
     "widgets": {
+      "deferred": "Wird glade, sobald s im Blickfeld isch. Du chasch es au jetzt lade.",
       "dragToReorder": "Ziehe zum Widget neu aordne",
+      "load": "{widget} lade",
+      "loading": "Dashboard-Widget wird glade…",
       "moving": "Widget wird verschobe…",
-      "refresh": "Aktualisiere"
+      "refresh": "Aktualisiere",
+      "retry": "{widget} nomal probiere"
     }
   }
 }

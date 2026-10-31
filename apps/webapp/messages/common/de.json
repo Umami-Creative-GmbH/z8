@@ -268,6 +268,7 @@
       "importReview": "Importprüfung wird geladen",
       "importSettings": "Importeinstellungen werden geladen",
       "locationSettings": "Standorteinstellungen werden geladen",
+      "navigation": "Navigation wird geladen",
       "onboarding": "Onboarding wird geladen",
       "payrollExportSettings": "Lohnabrechnungs-Exporteinstellungen werden geladen",
       "payrollReadiness": "Lohnabrechnungsbereitschaft wird geladen",
@@ -317,6 +318,10 @@
     "moveDown": "Nach unten verschieben",
     "moveUp": "Nach oben verschieben",
     "name": "Name",
+    "navigation": {
+      "retry": "Navigation erneut laden",
+      "unavailable": "Einige Navigationsbereiche sind nicht verfügbar"
+    },
     "new": "Neu",
     "next": "Weiter",
     "no": "Nein",
@@ -342,6 +347,7 @@
       "assignmentNotFound": "Diese Zuweisung existiert nicht mehr.",
       "employeeNotFound": "Dieser Mitarbeiter wurde nicht gefunden.",
       "employeeProfileRequired": "Ein Mitarbeiterprofil in dieser Organisation ist erforderlich.",
+      "formerEmployee": "Ehemalige Mitarbeiter können keine neue Zuweisung erhalten. Wählen Sie jemanden aus der aktuellen Personalliste.",
       "invalidTarget": "Wählen Sie aus, für wen die Zuweisung gilt.",
       "noticeChanged": "Der Standorthinweis hat sich geändert. Prüfen Sie den aktuellen Hinweis, bevor Sie eine Entscheidung treffen.",
       "positionsForbidden": "Sie sind nicht berechtigt, die Standorte dieses Arbeitszeitraums einzusehen.",
@@ -933,7 +939,6 @@
   "employeeSelect": {
     "countSelected": "{count} Mitarbeiter ausgewählt",
     "countWithMore": "{count} Mitarbeiter (+{more} weitere)",
-    "inactive": "Inaktiv",
     "noEmployeesFound": "Keine Mitarbeiter gefunden",
     "removeSelected": "{name} entfernen",
     "role": "Rolle",
@@ -975,6 +980,13 @@
       "digest": "Referenz: {digest}",
       "title": "Etwas ist schiefgelaufen"
     }
+  },
+  "formerEmployees": {
+    "current": "Aktuell",
+    "former": "Ehemalig",
+    "formerDateNotRecorded": "Ehemalig · Datum nicht erfasst",
+    "formerSince": "Ehemalig seit {date}",
+    "showFormer": "Ehemalige Mitarbeiter anzeigen"
   },
   "generic": {
     "done": "Fertig",
@@ -1331,8 +1343,13 @@
         "message": "Veranlassen Sie eine Prüfung des Original-Führerscheins für {employeeName}, Klasse {classes}, bis {deadline}.",
         "title": "Führerscheinprüfung fällig"
       },
+      "employeeDeactivationShiftsOpened": {
+        "message": "{shiftCount, plural, one {{employeeName} wurde deaktiviert. # bevorstehende Schicht ist jetzt offen.} other {{employeeName} wurde deaktiviert. # bevorstehende Schichten sind jetzt offen.}}",
+        "title": "Schichten müssen besetzt werden"
+      },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Genehmigungsaufgaben erfordern eine Vertretung (Austritt wirksam {cutoff}, {timezone}).",
+        "approval_handover_deactivation": "{employeeName}: Für Genehmigungsaufgaben ist eine Vertretung erforderlich (deaktiviert {cutoff}, {timezone}).",
         "clock_out": "{employeeName}: Prüfung erforderlich: Offboarding-Ausstempeln (Austritt wirksam {cutoff}, {timezone}).",
         "clock_repair": "{employeeName}: Timer-Reparatur erforderlich (Austritt wirksam {cutoff}, {timezone}).",
         "employment_terms": "{employeeName}: Zukünftige Anstellungsbedingungen müssen überprüft werden (Austritt wirksam {cutoff}, {timezone}).",
@@ -1342,6 +1359,10 @@
       "forgottenClockOutReminder": {
         "message": "Ihre Schicht endete um {endTime} ({timezone}). Stempeln Sie aus, wenn Sie Ihre Arbeit beendet haben.",
         "title": "Sie sind noch eingestempelt"
+      },
+      "formerEmployeeReportsWithoutManager": {
+        "message": "{count, plural, one {# Mitarbeiter ist weiterhin nur mit einer ehemaligen Führungskraft verknüpft: {names}. Weisen Sie eine aktuelle Führungskraft zu.} other {# Mitarbeiter sind weiterhin nur mit einer ehemaligen Führungskraft verknüpft: {names}. Weisen Sie eine aktuelle Führungskraft zu.}}",
+        "title": "Mitarbeiter ohne aktuelle Führungskraft"
       },
       "kioskCommandRefused": {
         "forwardedMessage": "{action, select, clock_in {Ein Einstempeln} clock_out {Ein Ausstempeln} start_break {Ein Pausenbeginn} resume_break {Ein Pausenende} other {Eine Buchung}} von {employeeName} um {time} am Kiosk {kioskName} wurde nicht erfasst: {reason, select, wrong_pin {die PIN war falsch} pin_locked {die Kiosk-PIN wurde nach zu vielen Fehlversuchen gesperrt} no_pin {es gab keine Kiosk-PIN zum Abgleich} pin_unchecked {die PIN konnte nicht überprüft werden} kiosk_retired {der Kiosk wurde widerrufen oder erneut gekoppelt, bevor er sich wieder verbunden hat} contact_unverifiable {Z8 konnte die letzte Verbindung des Kiosks nicht bestätigen} outside_window {die Zeit lag außerhalb des von Z8 akzeptierten Zeitfensters} clock_untrusted {der Kioskuhr konnte nicht vertraut werden} not_assigned {der Mitarbeiter ist dem Standort des Kiosks nicht zugewiesen} not_adopted {die Organisation akzeptiert keine Offline-Buchungen am Kiosk} month_closed {der Monat ist abgeschlossen} holiday {der Tag ist ein Feiertag ohne Zeiterfassung} conflict {sie steht im Konflikt mit einer anderen erfassten Zeit} other {Z8 konnte sie nicht annehmen}}. Erfassen Sie die Zeit für die Person oder stimmen Sie sie mit ihr ab.",
@@ -1806,7 +1827,9 @@
         "driving_authorization_suspended_or_ended": "Fahrberechtigung ausgesetzt oder beendet",
         "driving_details_missing_reminder": "Fahrtdetails fehlen",
         "driving_licence_reminder": "Führerscheinprüfung fällig",
+        "employee_deactivation_shifts_opened": "Durch Deaktivierung frei gewordene Schichten",
         "forgotten_clock_out_reminder": "Vergessenes Ausstempeln",
+        "former_employee_reports_without_manager": "Mitarbeiter ohne aktuelle Führungskraft",
         "kiosk_command_refused": "Kiosk-Buchung nicht erfasst",
         "missed_clock_in_reminder": "Verpasstes Einstempeln",
         "period_submission_decided": "Eingereichte Zeiten genehmigt oder abgelehnt",
@@ -3157,10 +3180,6 @@
     "admin": "Administrator",
     "employee": "Mitarbeiter",
     "manager": "Manager"
-  },
-  "status": {
-    "active": "Aktiv",
-    "inactive": "Inaktiv"
   },
   "storeAppBanner": {
     "description": "Erhalten Sie Erinnerungen und Genehmigungsbenachrichtigungen in der App.",

@@ -268,6 +268,7 @@
       "importReview": "Učitavanje pregleda uvoza",
       "importSettings": "Učitavanje postavki uvoza",
       "locationSettings": "Učitavanje postavki lokacije",
+      "navigation": "Učitavanje navigacije",
       "onboarding": "Učitavanje uvođenja",
       "payrollExportSettings": "Učitavanje postavki izvoza obračuna plata",
       "payrollReadiness": "Učitavanje spremnosti obračuna plata",
@@ -317,6 +318,10 @@
     "moveDown": "Pomjeri dolje",
     "moveUp": "Pomjeri gore",
     "name": "Ime",
+    "navigation": {
+      "retry": "Pokušaj ponovo navigaciju",
+      "unavailable": "Dio navigacije nije dostupan"
+    },
     "new": "Novo",
     "next": "Dalje",
     "no": "Ne",
@@ -342,6 +347,7 @@
       "assignmentNotFound": "Ovaj zadatak više ne postoji.",
       "employeeNotFound": "Ovaj uposlenik nije pronađen.",
       "employeeProfileRequired": "Potreban je profil uposlenika u ovoj organizaciji.",
+      "formerEmployee": "Bivši zaposlenici ne mogu dobiti novo zaduženje. Odaberite nekoga s trenutnog spiska.",
       "invalidTarget": "Odaberite na koga se dodjela odnosi.",
       "noticeChanged": "Obavijest o lokaciji je promijenjena. Pregledajte trenutnu obavijest prije donošenja odluke.",
       "positionsForbidden": "Nemate dozvolu za pregled lokacija ovog perioda rada.",
@@ -933,7 +939,6 @@
   "employeeSelect": {
     "countSelected": "{count} zaposlenika odabrano",
     "countWithMore": "{count} zaposlenika (+ još {more})",
-    "inactive": "Neaktivno",
     "noEmployeesFound": "Nema pronađenih zaposlenika",
     "removeSelected": "Ukloni {name}",
     "role": "Uloga",
@@ -975,6 +980,13 @@
       "digest": "Referenca: {digest}",
       "title": "Nešto je pošlo po zlu"
     }
+  },
+  "formerEmployees": {
+    "current": "Trenutni",
+    "former": "Bivši",
+    "formerDateNotRecorded": "Bivši · datum nije zabilježen",
+    "formerSince": "Bivši od {date}",
+    "showFormer": "Prikaži bivše zaposlenike"
   },
   "generic": {
     "done": "Gotovo",
@@ -1331,8 +1343,13 @@
         "message": "Organizujte provjeru originalne vozačke dozvole za zaposlenika {employeeName}, kategorija {classes}, do {deadline}.",
         "title": "Dospjela provjera vozačke dozvole"
       },
+      "employeeDeactivationShiftsOpened": {
+        "message": "{shiftCount, plural, one {{employeeName} je deaktiviran. # predstojeća smjena je sada otvorena.} other {{employeeName} je deaktiviran. # predstojećih smjena je sada otvoreno.}}",
+        "title": "Smjene trebaju nekoga"
+      },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Za dužnosti odobravanja potrebna je zamjena (odlazak stupa na snagu {cutoff}, {timezone}).",
+        "approval_handover_deactivation": "{employeeName}: Za dužnosti odobravanja potrebna je zamjena (deaktivirano {cutoff}, {timezone}).",
         "clock_out": "{employeeName}: Potreban pregled: odjava pri prestanku radnog odnosa (odlazak stupa na snagu {cutoff}, {timezone}).",
         "clock_repair": "{employeeName}: Potrebna ispravka mjerača vremena (odlazak stupa na snagu {cutoff}, {timezone}).",
         "employment_terms": "{employeeName}: Budući uslovi zaposlenja zahtijevaju pregled (odlazak stupa na snagu {cutoff}, {timezone}).",
@@ -1342,6 +1359,10 @@
       "forgottenClockOutReminder": {
         "message": "Vaša smjena je završila u {endTime} ({timezone}). Odjavite se ako ste završili s radom.",
         "title": "Još uvijek ste prijavljeni"
+      },
+      "formerEmployeeReportsWithoutManager": {
+        "message": "{count, plural, one {# zaposlenik je i dalje povezan samo s bivšim menadžerom: {names}. Dodijelite trenutnog menadžera.} other {# zaposlenika je i dalje povezano samo s bivšim menadžerom: {names}. Dodijelite trenutnog menadžera.}}",
+        "title": "Zaposlenici bez trenutnog menadžera"
       },
       "kioskCommandRefused": {
         "forwardedMessage": "Radnja ({action, select, clock_in {prijava} clock_out {odjava} start_break {početak pauze} resume_break {povratak s pauze} other {evidencija}}) zaposlenika {employeeName} u {time} na kiosku {kioskName} nije zabilježena: {reason, select, wrong_pin {PIN nije bio tačan} pin_locked {PIN kioska je zaključan nakon previše netačnih pokušaja} no_pin {nije bilo PIN-a kioska s kojim bi se uporedio} pin_unchecked {PIN se nije mogao provjeriti} kiosk_retired {kiosk je opozvan ili ponovo uparen prije nego što se ponovo povezao} contact_unverifiable {Z8 nije mogao potvrditi posljednje povezivanje kioska} outside_window {vrijeme je bilo izvan vremenskog okvira koji Z8 prihvata} clock_untrusted {satu kioska se nije moglo vjerovati za ovu radnju} not_assigned {zaposlenik nije dodijeljen na lokaciju kioska} not_adopted {organizacija ne prihvata vanmrežne evidencije s kioska} month_closed {mjesec je zaključen} holiday {dan je praznik bez evidencije radnog vremena} conflict {postoji konflikt s drugim evidentiranim vremenom} other {Z8 to nije mogao prihvatiti}}. Evidentirajte vrijeme za njih ili ga provjerite s njima.",
@@ -1806,7 +1827,9 @@
         "driving_authorization_suspended_or_ended": "Ovlaštenje za vožnju je suspendovano ili isteklo",
         "driving_details_missing_reminder": "Nedostaju podaci o vožnji",
         "driving_licence_reminder": "Dospjela provjera vozačke dozvole",
+        "employee_deactivation_shifts_opened": "Smjene otvorene deaktivacijom",
         "forgotten_clock_out_reminder": "Zaboravljena odjava",
+        "former_employee_reports_without_manager": "Zaposlenici bez trenutnog menadžera",
         "kiosk_command_refused": "Evidencija na kiosku nije zabilježena",
         "missed_clock_in_reminder": "Propuštena prijava",
         "period_submission_decided": "Prijavljeno radno vrijeme odobreno ili odbijeno",
@@ -3157,10 +3180,6 @@
     "admin": "Administrator",
     "employee": "Zaposlenik",
     "manager": "Menadžer"
-  },
-  "status": {
-    "active": "Aktivan",
-    "inactive": "Neaktivan"
   },
   "storeAppBanner": {
     "description": "Primajte podsjetnike i obavijesti o odobrenjima u aplikaciji.",

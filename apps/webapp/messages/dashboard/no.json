@@ -17,13 +17,12 @@
     },
     "covering-for": {
       "description": "Kolleger du er stedfortreder for mens de er borte",
-      "error": "Kunne ikke laste inn stedfortrederoppgavene dine",
       "running": "Stedfortreder for {name} frem til {date}",
       "title": "Stedfortreder for",
       "upcoming": "Kommende: stedfortreder for {name} fra {start} til {end}"
     },
     "customize": {
-      "empty-description": "Bruk ikonet for tilpassing av dashbordet for å aktivere enkeltmoduler igjen, eller tilbakestill oppsettet for å vise alle moduler igjen.",
+      "empty-description-defaults": "Bruk ikonet for tilpasning av dashbordet for å reaktivere individuelle widgeter, eller tilbakestill oppsettet for å gjenopprette standardwidgetene dine.",
       "empty-title": "Alle dashbordmoduler er skjult",
       "move-down": "Flytt {widget} ned",
       "move-up": "Flytt {widget} opp",
@@ -54,7 +53,6 @@
     },
     "managed-employees": {
       "direct-reports": "{count} direkterapporterende",
-      "error": "Kunne ikke laste inn administrerte ansatte",
       "no-reports": "Ingen direkterapporterende ennå",
       "no-reports-description": "Du vil se teammedlemmene dine her når de er tildelt",
       "people-you-manage": "Personer du leder",
@@ -78,7 +76,7 @@
       "awaiting-approval": "Venter på din godkjenning",
       "correction": "Korrigering",
       "description": "Forespørsler som venter på din avgjørelse",
-      "error": "Kunne ikke laste inn ventende godkjenninger",
+      "empty": "Ingen ventende godkjenninger",
       "more-requests": "+{count} flere forespørsler",
       "pending-requests": "{count} ventende {request}",
       "request": "forespørsel",
@@ -117,7 +115,7 @@
       "by": "av {name}",
       "description": "Siste godkjente forespørsler",
       "description-count": "Siste {count} godkjente {request}",
-      "error": "Kunne ikke laste nylig godkjente forespørsler",
+      "empty": "Ingen nylig godkjente forespørsler",
       "more-approved": "+{count} flere godkjente",
       "request": "forespørsel",
       "requests": "forespørsler",
@@ -126,12 +124,11 @@
       "view-all": "Se alle godkjenninger"
     },
     "team-overview": {
-      "active-count": "{active} av {total} ansatte ({percent}%)",
-      "active-employees": "Aktive ansatte",
       "avg-hours": "Gj.snittstimer",
+      "current-employees": "Nåværende ansatte",
+      "current-employees-description": "Alle som jobber her nå",
       "description": "Teamstatistikk på et øyeblikk",
       "employees-button": "Ansatte",
-      "error": "Kunne ikke laste inn teamstatistikk",
       "per-week": "/uke",
       "teams": "Team",
       "teams-button": "Team",
@@ -142,7 +139,6 @@
       "empty": "Ingen kommende vakter",
       "empty-description": "Dine neste publiserte vakter vises her.",
       "ends-next-day": "slutter neste dag",
-      "error": "Kunne ikke laste inn dine kommende vakter",
       "title": "Kommende vakter",
       "today": "I dag",
       "tomorrow": "I morgen",
@@ -155,7 +151,7 @@
       "days": "dager",
       "description": "Planlagt teamfravær",
       "description-count": "Neste {count} planlagte {absence}",
-      "error": "Kunne ikke laste kommende fravær",
+      "empty": "Inget kommende fravær",
       "title": "Kommende fravær",
       "today": "I dag",
       "tomorrow": "I morgen",
@@ -167,7 +163,6 @@
       "carryover-days": "{days} dager",
       "days-remaining": "dager igjen",
       "description": "{year} feriedager",
-      "error": "Kunne ikke laste inn feriesaldo",
       "expires-in": "Utløper om {days} dager",
       "label-available": "Tilgjengelig",
       "label-pending": "Til behandling",
@@ -176,10 +171,10 @@
       "percent-used": "{percent}% brukt",
       "title": "Feriesaldo",
       "total": "{days} totalt",
+      "unavailable": "Feriesaldo er utilgjengelig.",
       "used": "{days} brukt"
     },
     "whos-out": {
-      "error": "Kunne ikke laste inn dagens fravær",
       "everyone-in": "Alle er på kontoret i dag",
       "everyones-in": "Alle er på plass!",
       "full-team": "Hele teamet er tilgjengelig!",
@@ -198,9 +193,13 @@
       "view-calendar": "Se hele kalenderen"
     },
     "widgets": {
+      "deferred": "Lastes inn når den er synlig. Du kan også laste den inn nå.",
       "dragToReorder": "Dra for å endre rekkefølge på widget",
+      "load": "Last inn {widget}",
+      "loading": "Laster inn dashbordwidget …",
       "moving": "Flytter widget…",
-      "refresh": "Oppdater"
+      "refresh": "Oppdater",
+      "retry": "Prøv {widget} på nytt"
     }
   }
 }

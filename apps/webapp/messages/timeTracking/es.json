@@ -46,6 +46,10 @@
       "uncertainDescription": "Tu reloj se ha actualizado. Compruébalo antes de intentarlo de nuevo."
     },
     "budget": "Presupuesto",
+    "choices": {
+      "retry": "Reintentar {choice}",
+      "unavailable": "{choice} no disponible"
+    },
     "clockedOutSuccess": "Has marcado salida!",
     "clockIn": "Entrada",
     "clockingIn": "Marcando entrada...",
@@ -59,6 +63,11 @@
     "clockOutSavedForSending": "Registro de salida guardado en este dispositivo. Se envía automáticamente y aún no está confirmado.",
     "clockOutSavedHeld": "Registro de salida guardado en este dispositivo pero no enviado. Revise los registros guardados.",
     "clockOutSuccess": "Salida marcada exitosamente",
+    "clockStatus": {
+      "loading": "Cargando el estado del reloj",
+      "retry": "Reintentar estado del reloj",
+      "unavailable": "Estado del reloj no disponible"
+    },
     "compliance": {
       "violation": "Violación de cumplimiento",
       "warning": "Aviso de cumplimiento"
@@ -564,6 +573,9 @@
       "breakReading": "Lectura del odómetro en la pausa (km)",
       "breakReadingHint": "Opcional. Finaliza la lectura de este trabajo e inicia la del siguiente.",
       "changeLive": "Cambiar",
+      "choices": "Opciones de vehículos",
+      "choicesLoading": "Cargando opciones de vehículos…",
+      "choicesOffline": "Las opciones de vehículos no están disponibles sin conexión. Puede registrar el tiempo y agregar detalles más tarde.",
       "derivedDistance": "Distancia recorrida: {distance} km",
       "distanceKm": "Distancia recorrida (km)",
       "distanceText": "{distance} km recorridos",
@@ -599,6 +611,7 @@
         "off": "El uso del vehículo no se registra para este empleado.",
         "splitOutOfRange": "Los kilómetros en la división deben estar dentro de los kilómetros del período de trabajo."
       },
+      "settingsLoading": "Cargando la configuración de uso del vehículo…",
       "startKm": "Lectura inicial (km)",
       "title": "Uso del vehículo",
       "unknownVehicle": "Vehículo desconocido (no disponible)",

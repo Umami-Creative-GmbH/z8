@@ -46,6 +46,10 @@
       "uncertainDescription": "Twój rejestrator został odświeżony. Sprawdź go przed ponowną próbą."
     },
     "budget": "Budżet",
+    "choices": {
+      "retry": "Ponów: {choice}",
+      "unavailable": "{choice} – niedostępne"
+    },
     "clockedOutSuccess": "Wylogowano z systemu!",
     "clockIn": "Rozpocznij pracę",
     "clockingIn": "Rozpoczynanie pracy…",
@@ -59,6 +63,11 @@
     "clockOutSavedForSending": "Zakończenie pracy zapisano na tym urządzeniu. Zostanie wysłane automatycznie i nie jest jeszcze potwierdzone.",
     "clockOutSavedHeld": "Zakończenie pracy zapisano na tym urządzeniu, ale nie zostało wysłane. Przejrzyj zapisane wpisy.",
     "clockOutSuccess": "Pomyślnie zakończono pracę",
+    "clockStatus": {
+      "loading": "Wczytywanie statusu rejestracji czasu",
+      "retry": "Ponów sprawdzanie statusu rejestracji czasu",
+      "unavailable": "Status rejestracji czasu jest niedostępny"
+    },
     "compliance": {
       "violation": "Naruszenie przepisów",
       "warning": "Powiadomienie o zgodności"
@@ -564,6 +573,9 @@
       "breakReading": "Stan licznika w czasie przerwy (km)",
       "breakReadingHint": "Opcjonalnie. Kończy stan licznika tej pracy i rozpoczyna kolejną.",
       "changeLive": "Zmień",
+      "choices": "Wybór pojazdu",
+      "choicesLoading": "Wczytywanie dostępnych pojazdów…",
+      "choicesOffline": "Wybór pojazdu jest niedostępny w trybie offline. Możesz zarejestrować czas i dodać szczegóły później.",
       "derivedDistance": "Przejechany dystans: {distance} km",
       "distanceKm": "Przejechany dystans (km)",
       "distanceText": "Przejechano {distance} km",
@@ -599,6 +611,7 @@
         "off": "Użycie pojazdu nie jest rejestrowane dla tego pracownika.",
         "splitOutOfRange": "Wartość kilometrów w punkcie podziału musi mieścić się w zakresie kilometrów okresu pracy."
       },
+      "settingsLoading": "Wczytywanie ustawień użytkowania pojazdu…",
       "startKm": "Stan początkowy (km)",
       "title": "Użycie pojazdu",
       "unknownVehicle": "Nieznany pojazd (niedostępny)",

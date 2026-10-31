@@ -25,6 +25,7 @@
         "adminOnly": "Solo i proprietari e gli amministratori dell'organizzazione possono gestire le sedi assegnate.",
         "employeeNotFound": "Dipendente non trovato.",
         "failed": "Impossibile aggiornare le sedi assegnate. Riprova.",
+        "formerEmployee": "Agli ex dipendenti non può essere assegnata una sede.",
         "invalidSelection": "Scegli dall'elenco.",
         "locationNotFound": "Sede non trovata."
       },
@@ -873,6 +874,7 @@
         "attribution": "Concessa da {actor} alle {time}",
         "editor": "Ambito del verificatore",
         "empty": "Nessuna responsabilità di verifica assegnata",
+        "formerEmployee": "Gli ex dipendenti non possono essere aggiunti. Scegli dipendenti dall'elenco attuale.",
         "history": "Cronologia delle responsabilità",
         "historyEntry": "Assegnata da {grantor} il {granted}; revocata da {revoker} il {revoked}",
         "loadFailed": "Impossibile caricare le responsabilità del verificatore",
@@ -3002,6 +3004,7 @@
       },
       "refusals": {
         "driverNotFound": "Un dipendente o team assegnato non esiste più. Ricarica la pagina.",
+        "formerDriver": "Gli ex dipendenti non possono essere assegnati come autisti. Scegli dipendenti dall'elenco attuale.",
         "invalidChange": "Impossibile salvare la modifica. Ricarica la pagina e riprova.",
         "invalidDrivers": "Seleziona al massimo 500 dipendenti e team assegnati.",
         "invalidLicencePlate": "Inserisci una targa contenente fino a 20 caratteri.",
@@ -3030,6 +3033,7 @@
         "assignmentNotFound": "Questa assegnazione non esiste più. Ricarica la pagina.",
         "employeeNotFound": "Questo dipendente non esiste più.",
         "failed": "Si è verificato un errore. Riprova.",
+        "formerEmployee": "Gli ex dipendenti non possono ricevere una nuova assegnazione. Scegli qualcuno dall'elenco attuale.",
         "invalidMode": "Scegli una modalità per l'assegnazione.",
         "invalidTarget": "Scegli a chi si applica l'assegnazione.",
         "teamNotFound": "Questo team non esiste più."

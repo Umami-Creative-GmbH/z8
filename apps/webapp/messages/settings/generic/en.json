@@ -25,6 +25,7 @@
         "adminOnly": "Only organization owners and admins can manage assigned locations.",
         "employeeNotFound": "Employee not found.",
         "failed": "Assigned locations could not be updated. Try again.",
+        "formerEmployee": "Former employees can't be assigned a location.",
         "invalidSelection": "Choose from the list.",
         "locationNotFound": "Location not found."
       },
@@ -873,6 +874,7 @@
         "attribution": "Granted by {actor} at {time}",
         "editor": "Verifier scope",
         "empty": "No verifier responsibilities assigned",
+        "formerEmployee": "Former employees can't be added. Choose employees on the current roster.",
         "history": "Responsibility history",
         "historyEntry": "Granted by {grantor} at {granted}; revoked by {revoker} at {revoked}",
         "loadFailed": "Could not load verifier responsibilities",
@@ -3002,6 +3004,7 @@
       },
       "refusals": {
         "driverNotFound": "An assigned employee or team no longer exists. Reload the page.",
+        "formerDriver": "Former employees can't be assigned as drivers. Choose employees on the current roster.",
         "invalidChange": "The change could not be saved. Reload the page and try again.",
         "invalidDrivers": "Choose at most 500 assigned employees and teams.",
         "invalidLicencePlate": "Enter a licence plate of up to 20 characters.",
@@ -3030,6 +3033,7 @@
         "assignmentNotFound": "That assignment no longer exists. Reload the page.",
         "employeeNotFound": "That employee no longer exists.",
         "failed": "Something went wrong. Try again.",
+        "formerEmployee": "Former employees can't get a new assignment. Choose someone on the current roster.",
         "invalidMode": "Choose a mode for the assignment.",
         "invalidTarget": "Choose who the assignment applies to.",
         "teamNotFound": "That team no longer exists."

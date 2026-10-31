@@ -46,6 +46,10 @@
       "uncertainDescription": "Il tuo orologio è stato aggiornato. Controllalo prima di riprovare."
     },
     "budget": "Budget",
+    "choices": {
+      "retry": "Riprova {choice}",
+      "unavailable": "{choice} non disponibile"
+    },
     "clockedOutSuccess": "Hai timbrato l'uscita!",
     "clockIn": "Entrata",
     "clockingIn": "Timbratura entrata...",
@@ -59,6 +63,11 @@
     "clockOutSavedForSending": "Uscita salvata su questo dispositivo. Viene inviata automaticamente e non è ancora confermata.",
     "clockOutSavedHeld": "Uscita salvata su questo dispositivo ma non inviata. Controlla i record salvati.",
     "clockOutSuccess": "Uscita timbrata con successo",
+    "clockStatus": {
+      "loading": "Caricamento stato timbratura",
+      "retry": "Riprova stato timbratura",
+      "unavailable": "Stato timbratura non disponibile"
+    },
     "compliance": {
       "violation": "Violazione conformità",
       "warning": "Avviso conformità"
@@ -564,6 +573,9 @@
       "breakReading": "Lettura del contachilometri alla pausa (km)",
       "breakReadingHint": "Facoltativo. Termina la lettura di questo lavoro e avvia quella del successivo.",
       "changeLive": "Modifica",
+      "choices": "Opzioni veicolo",
+      "choicesLoading": "Caricamento opzioni veicolo…",
+      "choicesOffline": "Le opzioni veicolo non sono disponibili offline. Puoi registrare l'orario e aggiungere i dettagli in seguito.",
       "derivedDistance": "Distanza percorsa: {distance} km",
       "distanceKm": "Distanza percorsa (km)",
       "distanceText": "{distance} km percorsi",
@@ -599,6 +611,7 @@
         "off": "L'uso del veicolo non è registrato per questo dipendente.",
         "splitOutOfRange": "I chilometri al momento della divisione devono rientrare nei chilometri del periodo di lavoro."
       },
+      "settingsLoading": "Caricamento impostazioni sull'uso dei veicoli…",
       "startKm": "Lettura iniziale (km)",
       "title": "Uso del veicolo",
       "unknownVehicle": "Veicolo sconosciuto (non disponibile)",

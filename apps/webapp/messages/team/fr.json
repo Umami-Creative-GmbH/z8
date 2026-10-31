@@ -211,10 +211,6 @@
       "ariaLabel": "Rechercher des membres de l'équipe",
       "placeholder": "Rechercher par nom, email, poste ou équipe..."
     },
-    "status": {
-      "active": "Actif",
-      "inactive": "Inactif"
-    },
     "table": {
       "employee": "Employé",
       "position": "Poste",

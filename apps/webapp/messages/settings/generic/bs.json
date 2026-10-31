@@ -25,6 +25,7 @@
         "adminOnly": "Samo vlasnici organizacije i administratori mogu upravljati dodijeljenim lokacijama.",
         "employeeNotFound": "Zaposlenik nije pronađen.",
         "failed": "Nije uspjelo ažuriranje dodijeljenih lokacija. Pokušajte ponovo.",
+        "formerEmployee": "Bivšim zaposlenicima se ne može dodijeliti lokacija.",
         "invalidSelection": "Odaberite s liste.",
         "locationNotFound": "Lokacija nije pronađena."
       },
@@ -873,6 +874,7 @@
         "attribution": "Dodijelio/la {actor} u {time}",
         "editor": "Opseg verifikatora",
         "empty": "Nema dodijeljenih odgovornosti verifikatora",
+        "formerEmployee": "Bivši zaposlenici se ne mogu dodati. Odaberite zaposlenike s trenutnog spiska.",
         "history": "Historija odgovornosti",
         "historyEntry": "Dodijelio {grantor} u {granted}; opozvao {revoker} u {revoked}",
         "loadFailed": "Nije uspjelo učitavanje odgovornosti verifikatora",
@@ -3002,6 +3004,7 @@
       },
       "refusals": {
         "driverNotFound": "Dodijeljeni zaposlenik ili tim više ne postoji. Ponovo učitajte stranicu.",
+        "formerDriver": "Bivši zaposlenici se ne mogu dodijeliti kao vozači. Odaberite zaposlenike s trenutnog spiska.",
         "invalidChange": "Promjena se nije mogla sačuvati. Ponovo učitajte stranicu i pokušajte ponovo.",
         "invalidDrivers": "Odaberite najviše 500 dodijeljenih zaposlenika i timova.",
         "invalidLicencePlate": "Unesite registarsku oznaku do 20 znakova.",
@@ -3030,6 +3033,7 @@
         "assignmentNotFound": "Ta dodjela više ne postoji. Ponovo učitajte stranicu.",
         "employeeNotFound": "Taj zaposlenik više ne postoji.",
         "failed": "Nešto je pošlo po zlu. Pokušajte ponovo.",
+        "formerEmployee": "Bivši zaposlenici ne mogu dobiti novo zaduženje. Odaberite nekoga s trenutnog spiska.",
         "invalidMode": "Odaberite način rada za dodjelu.",
         "invalidTarget": "Odaberite na koga se dodjela odnosi.",
         "teamNotFound": "Taj tim više ne postoji."

@@ -556,6 +556,7 @@
       "endTime": "Heure de fin",
       "endTimeDescription": "ex. : 06:00 pour le travail de nuit",
       "loadError": "Échec du chargement des assignations",
+      "loadFailed": "Impossible de charger les modèles de majoration. Veuillez réessayer.",
       "loading": "Chargement des paramètres de majoration...",
       "modelCreated": "Modèle de majoration créé",
       "modelDeleted": "Modèle de majoration supprimé",

@@ -17,13 +17,12 @@
     },
     "covering-for": {
       "description": "Kolleginnen und Kollegen, die Sie während ihrer Abwesenheit vertreten",
-      "error": "Ihre Vertretungsaufgaben konnten nicht geladen werden",
       "running": "Vertretung für {name} bis {date}",
       "title": "Vertretung für",
       "upcoming": "Bevorstehend: Vertretung für {name} von {start} bis {end}"
     },
     "customize": {
-      "empty-description": "Verwenden Sie das Symbol zur Dashboard-Anpassung, um einzelne Widgets wieder zu aktivieren oder das Layout zurückzusetzen, damit alle Widgets wieder angezeigt werden.",
+      "empty-description-defaults": "Verwenden Sie das Symbol zum Anpassen des Dashboards, um einzelne Widgets wieder zu aktivieren, oder setzen Sie das Layout zurück, um Ihre Standard-Widgets wiederherzustellen.",
       "empty-title": "Alle Dashboard-Widgets sind ausgeblendet",
       "move-down": "{widget} nach unten verschieben",
       "move-up": "{widget} nach oben verschieben",
@@ -54,7 +53,6 @@
     },
     "managed-employees": {
       "direct-reports": "{count} direkte Mitarbeiter",
-      "error": "Laden der verwalteten Mitarbeiter fehlgeschlagen",
       "no-reports": "Noch keine direkten Mitarbeiter",
       "no-reports-description": "Sie sehen Ihre Teammitglieder hier, sobald sie zugewiesen sind",
       "people-you-manage": "Personen, die Sie verwalten",
@@ -78,7 +76,7 @@
       "awaiting-approval": "Wartet auf Ihre Genehmigung",
       "correction": "Korrektur",
       "description": "Anträge, die auf Ihre Entscheidung warten",
-      "error": "Fehler beim Laden der ausstehenden Genehmigungen",
+      "empty": "Keine ausstehenden Genehmigungen",
       "more-requests": "+{count} weitere Anträge",
       "pending-requests": "{count} ausstehende {request}",
       "request": "Anfrage",
@@ -117,7 +115,7 @@
       "by": "von {name}",
       "description": "Zuletzt genehmigte Anträge",
       "description-count": "Letzte {count} genehmigte {request}",
-      "error": "Fehler beim Laden der kürzlich genehmigten Anträge",
+      "empty": "Keine kürzlich genehmigten Anfragen",
       "more-approved": "+{count} weitere genehmigt",
       "request": "Anfrage",
       "requests": "Anfragen",
@@ -126,12 +124,11 @@
       "view-all": "Alle Genehmigungen anzeigen"
     },
     "team-overview": {
-      "active-count": "{active} von {total} Mitarbeitern ({percent}%)",
-      "active-employees": "Aktive Mitarbeiter",
       "avg-hours": "Ø Stunden",
+      "current-employees": "Aktuelle Mitarbeiter",
+      "current-employees-description": "Alle, die aktuell hier arbeiten",
       "description": "Teamstatistiken auf einen Blick",
       "employees-button": "Mitarbeiter",
-      "error": "Laden der Teamstatistiken fehlgeschlagen",
       "per-week": "/Woche",
       "teams": "Teams",
       "teams-button": "Teams",
@@ -142,7 +139,6 @@
       "empty": "Keine anstehenden Schichten",
       "empty-description": "Ihre nächsten veröffentlichten Schichten werden hier angezeigt.",
       "ends-next-day": "endet am nächsten Tag",
-      "error": "Ihre anstehenden Schichten konnten nicht geladen werden",
       "title": "Anstehende Schichten",
       "today": "Heute",
       "tomorrow": "Morgen",
@@ -155,7 +151,7 @@
       "days": "Tage",
       "description": "Geplante Teamabwesenheiten",
       "description-count": "Nächste {count} geplante {absence}",
-      "error": "Fehler beim Laden der kommenden Abwesenheiten",
+      "empty": "Keine bevorstehenden Abwesenheiten",
       "title": "Kommende Abwesenheiten",
       "today": "Heute",
       "tomorrow": "Morgen",
@@ -167,7 +163,6 @@
       "carryover-days": "{days} Tage",
       "days-remaining": "verbleibende Tage",
       "description": "{year} Urlaubstage",
-      "error": "Fehler beim Laden des Urlaubssaldos",
       "expires-in": "Läuft in {days} Tagen ab",
       "label-available": "Verfügbar",
       "label-pending": "Ausstehend",
@@ -176,10 +171,10 @@
       "percent-used": "{percent}% verbraucht",
       "title": "Urlaubssaldo",
       "total": "{days} gesamt",
+      "unavailable": "Urlaubsguthaben ist nicht verfügbar.",
       "used": "{days} verbraucht"
     },
     "whos-out": {
-      "error": "Fehler beim Laden der heutigen Abwesenheiten",
       "everyone-in": "Alle sind heute im Büro",
       "everyones-in": "Alle da!",
       "full-team": "Volles Team verfügbar!",
@@ -198,9 +193,13 @@
       "view-calendar": "Vollständigen Kalender anzeigen"
     },
     "widgets": {
+      "deferred": "Wird geladen, sobald im Sichtbereich. Sie können es auch jetzt laden.",
       "dragToReorder": "Zum Neuanordnen des Widgets ziehen",
+      "load": "{widget} laden",
+      "loading": "Dashboard-Widget wird geladen…",
       "moving": "Widget wird verschoben…",
-      "refresh": "Aktualisieren"
+      "refresh": "Aktualisieren",
+      "retry": "{widget} erneut laden"
     }
   }
 }

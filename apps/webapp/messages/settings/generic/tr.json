@@ -25,6 +25,7 @@
         "adminOnly": "Atanan konumları yalnızca kuruluş sahipleri ve yöneticiler yönetebilir.",
         "employeeNotFound": "Çalışan bulunamadı.",
         "failed": "Atanan konumlar güncellenemedi. Yeniden deneyin.",
+        "formerEmployee": "Eski çalışanlara bir konum atanamaz.",
         "invalidSelection": "Listeden seçin.",
         "locationNotFound": "Konum bulunamadı."
       },
@@ -873,6 +874,7 @@
         "attribution": "{actor} tarafından {time} tarihinde verildi",
         "editor": "Doğrulayıcı kapsamı",
         "empty": "Atanmış doğrulayıcı sorumluluğu yok",
+        "formerEmployee": "Eski çalışanlar eklenemez. Mevcut kadrodaki çalışanları seçin.",
         "history": "Sorumluluk geçmişi",
         "historyEntry": "{grantor} tarafından {granted} tarihinde verildi; {revoker} tarafından {revoked} tarihinde iptal edildi",
         "loadFailed": "Doğrulayıcı sorumlulukları yüklenemedi",
@@ -3002,6 +3004,7 @@
       },
       "refusals": {
         "driverNotFound": "Atanan bir çalışan veya ekip artık mevcut değil. Sayfayı yeniden yükleyin.",
+        "formerDriver": "Eski çalışanlar sürücü olarak atanamaz. Mevcut kadrodaki çalışanları seçin.",
         "invalidChange": "Değişiklik kaydedilemedi. Sayfayı yeniden yükleyin ve tekrar deneyin.",
         "invalidDrivers": "En fazla 500 atanan çalışan ve ekip seçin.",
         "invalidLicencePlate": "En fazla 20 karakterden oluşan bir plaka girin.",
@@ -3030,6 +3033,7 @@
         "assignmentNotFound": "Bu atama artık mevcut değil. Sayfayı yeniden yükleyin.",
         "employeeNotFound": "Bu çalışan artık mevcut değil.",
         "failed": "Bir şeyler ters gitti. Tekrar deneyin.",
+        "formerEmployee": "Eski çalışanlara yeni bir görev atanamaz. Mevcut kadrodan birini seçin.",
         "invalidMode": "Atama için bir mod seçin.",
         "invalidTarget": "Atamanın kimin için geçerli olduğunu seçin.",
         "teamNotFound": "Bu ekip artık mevcut değil."

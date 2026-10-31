@@ -46,6 +46,10 @@
       "uncertainDescription": "Ora juaj është rifreskuar. Kontrollojeni përpara se të provoni përsëri."
     },
     "budget": "Buxheti",
+    "choices": {
+      "retry": "Riprovo {choice}",
+      "unavailable": "{choice} nuk disponohet"
+    },
     "clockedOutSuccess": "Keni regjistruar daljen!",
     "clockIn": "Regjistro hyrjen",
     "clockingIn": "Duke regjistruar hyrjen…",
@@ -59,6 +63,11 @@
     "clockOutSavedForSending": "Dalja nga puna u ruajt në këtë pajisje. Ajo dërgohet automatikisht dhe nuk është konfirmuar ende.",
     "clockOutSavedHeld": "Dalja nga puna u ruajt në këtë pajisje, por nuk u dërgua. Shqyrtoni regjistrimet e ruajtura.",
     "clockOutSuccess": "Dalja u regjistrua me sukses",
+    "clockStatus": {
+      "loading": "Po ngarkohet statusi i orës",
+      "retry": "Riprovo statusin e orës",
+      "unavailable": "Statusi i orës nuk disponohet"
+    },
     "compliance": {
       "violation": "Shkelje e përputhshmërisë",
       "warning": "Njoftim përputhshmërie"
@@ -564,6 +573,9 @@
       "breakReading": "Leximi i odometrit në pushim (km)",
       "breakReadingHint": "Opsionale. Përfundon leximin e kësaj pune dhe fillon leximin e radhës.",
       "changeLive": "Ndrysho",
+      "choices": "Zgjedhjet e automjeteve",
+      "choicesLoading": "Po ngarkohen zgjedhjet e automjeteve…",
+      "choicesOffline": "Zgjedhjet e automjeteve nuk disponohen jashtë linje. Mund të regjistroni kohën dhe të shtoni detaje më vonë.",
       "derivedDistance": "Distanca e përshkuar: {distance} km",
       "distanceKm": "Distanca e përshkuar (km)",
       "distanceText": "{distance} km të përshkuara",
@@ -599,6 +611,7 @@
         "off": "Përdorimi i automjetit nuk regjistrohet për këtë punonjës.",
         "splitOutOfRange": "Kilometrat në ndarje duhet të jenë brenda kilometrave të periudhës së punës."
       },
+      "settingsLoading": "Po ngarkohen cilësimet e përdorimit të automjetit…",
       "startKm": "Leximi fillestar (km)",
       "title": "Përdorimi i automjetit",
       "unknownVehicle": "Automjet i panjohur (i padisponueshëm)",

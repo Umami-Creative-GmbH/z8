@@ -25,6 +25,7 @@
         "adminOnly": "Vetëm pronarët e organizatës dhe administratorët mund të menaxhojnë vendndodhjet e caktuara.",
         "employeeNotFound": "Punonjësi nuk u gjet.",
         "failed": "Vendndodhjet e caktuara nuk mund të përditësoheshin. Provoni përsëri.",
+        "formerEmployee": "Ish-punonjësve nuk mund t'u caktohet një vendndodhje.",
         "invalidSelection": "Zgjidhni nga lista.",
         "locationNotFound": "Vendndodhja nuk u gjet."
       },
@@ -873,6 +874,7 @@
         "attribution": "Dhënë nga {actor} më {time}",
         "editor": "Fusha e verifikuesit",
         "empty": "Nuk janë caktuar përgjegjësi verifikuesi",
+        "formerEmployee": "Ish-punonjësit nuk mund të shtohen. Zgjidhni punonjës nga lista aktuale.",
         "history": "Historiku i përgjegjësive",
         "historyEntry": "Dhënë nga {grantor} më {granted}; revokuar nga {revoker} më {revoked}",
         "loadFailed": "Nuk mund të ngarkoheshin përgjegjësitë e verifikuesit",
@@ -3002,6 +3004,7 @@
       },
       "refusals": {
         "driverNotFound": "Një punonjës ose ekip i caktuar nuk ekziston më. Ringarkoni faqen.",
+        "formerDriver": "Ish-punonjësit nuk mund të caktohen si shoferë. Zgjidhni punonjës nga lista aktuale.",
         "invalidChange": "Ndryshimi nuk mund të ruhej. Ringarkoni faqen dhe provoni përsëri.",
         "invalidDrivers": "Zgjidhni më së shumti 500 punonjës dhe ekipe të caktuara.",
         "invalidLicencePlate": "Vendosni një targë me deri në 20 karaktere.",
@@ -3030,6 +3033,7 @@
         "assignmentNotFound": "Ky caktim nuk ekziston më. Ringarkoni faqen.",
         "employeeNotFound": "Ky punonjës nuk ekziston më.",
         "failed": "Diçka shkoi keq. Provoni përsëri.",
+        "formerEmployee": "Ish-punonjësit nuk mund të marrin një caktim të ri. Zgjidhni dikë nga lista aktuale.",
         "invalidMode": "Zgjidhni një modalitet për caktimin.",
         "invalidTarget": "Zgjidhni kujt i zbatohet caktimi.",
         "teamNotFound": "Ky ekip nuk ekziston më."

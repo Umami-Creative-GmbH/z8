@@ -25,6 +25,7 @@
         "adminOnly": "Tylko właściciele i administratorzy organizacji mogą zarządzać przypisanymi lokalizacjami.",
         "employeeNotFound": "Nie znaleziono pracownika.",
         "failed": "Nie udało się zaktualizować przypisanych lokalizacji. Spróbuj ponownie.",
+        "formerEmployee": "Byłym pracownikom nie można przypisać lokalizacji.",
         "invalidSelection": "Wybierz z listy.",
         "locationNotFound": "Nie znaleziono lokalizacji."
       },
@@ -873,6 +874,7 @@
         "attribution": "Nadane przez: {actor} o {time}",
         "editor": "Zakres weryfikatora",
         "empty": "Brak przypisanych uprawnień weryfikatora",
+        "formerEmployee": "Nie można dodać byłych pracowników. Wybierz pracowników z aktualnej listy.",
         "history": "Historia uprawnień",
         "historyEntry": "Przyznano przez {grantor} o {granted}; odebrano przez {revoker} o {revoked}",
         "loadFailed": "Nie udało się załadować uprawnień weryfikatora",
@@ -3002,6 +3004,7 @@
       },
       "refusals": {
         "driverNotFound": "Przypisany pracownik lub zespół już nie istnieje. Odśwież stronę.",
+        "formerDriver": "Byli pracownicy nie mogą być przypisani jako kierowcy. Wybierz pracowników z aktualnej listy.",
         "invalidChange": "Nie udało się zapisać zmiany. Odśwież stronę i spróbuj ponownie.",
         "invalidDrivers": "Wybierz maksymalnie 500 przypisanych pracowników i zespołów.",
         "invalidLicencePlate": "Wprowadź numer rejestracyjny o długości do 20 znaków.",
@@ -3030,6 +3033,7 @@
         "assignmentNotFound": "To przypisanie już nie istnieje. Odśwież stronę.",
         "employeeNotFound": "Ten pracownik już nie istnieje.",
         "failed": "Coś poszło nie tak. Spróbuj ponownie.",
+        "formerEmployee": "Byli pracownicy nie mogą otrzymać nowego przypisania. Wybierz kogoś z aktualnej listy pracowników.",
         "invalidMode": "Wybierz tryb dla przypisania.",
         "invalidTarget": "Wybierz, kogo dotyczy przypisanie.",
         "teamNotFound": "Ten zespół już nie istnieje."

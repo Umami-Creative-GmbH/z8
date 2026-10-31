@@ -268,6 +268,7 @@
       "importReview": "Chargement de la vérification de l'importation",
       "importSettings": "Chargement des paramètres d'importation",
       "locationSettings": "Chargement des paramètres d'emplacement",
+      "navigation": "Chargement de la navigation",
       "onboarding": "Chargement de l'intégration",
       "payrollExportSettings": "Chargement des paramètres d'exportation de la paie",
       "payrollReadiness": "Chargement de la préparation de la paie",
@@ -317,6 +318,10 @@
     "moveDown": "Déplacer vers le bas",
     "moveUp": "Monter",
     "name": "Nom",
+    "navigation": {
+      "retry": "Réessayer la navigation",
+      "unavailable": "Certains éléments de navigation sont indisponibles"
+    },
     "new": "Nouveau",
     "next": "Suivant",
     "no": "Non",
@@ -342,6 +347,7 @@
       "assignmentNotFound": "Cette affectation n'existe plus.",
       "employeeNotFound": "Cet employé n'a pas été trouvé.",
       "employeeProfileRequired": "Un profil d'employé dans cette organisation est requis.",
+      "formerEmployee": "Les anciens employés ne peuvent pas recevoir de nouvelle affectation. Choisissez une personne figurant dans l'effectif actuel.",
       "invalidTarget": "Choisissez à qui s'applique l'affectation.",
       "noticeChanged": "La notice relative aux positions a changé. Veuillez consulter la notice actuelle avant de prendre une décision.",
       "positionsForbidden": "Vous n'êtes pas autorisé à voir les positions pour cette période de travail.",
@@ -933,7 +939,6 @@
   "employeeSelect": {
     "countSelected": "{count} employés sélectionnés",
     "countWithMore": "{count} employés (+{more} autres)",
-    "inactive": "Inactif",
     "noEmployeesFound": "Aucun employé trouvé",
     "removeSelected": "Supprimer {name}",
     "role": "Rôle",
@@ -975,6 +980,13 @@
       "digest": "Référence : {digest}",
       "title": "Une erreur s'est produite"
     }
+  },
+  "formerEmployees": {
+    "current": "Actuel",
+    "former": "Ancien",
+    "formerDateNotRecorded": "Ancien · date non enregistrée",
+    "formerSince": "Ancien depuis le {date}",
+    "showFormer": "Afficher les anciens employés"
   },
   "generic": {
     "done": "Terminé",
@@ -1331,8 +1343,13 @@
         "message": "Organisez un contrôle de l'original du permis de conduire pour {employeeName}, catégorie {classes}, avant le {deadline}.",
         "title": "Contrôle du permis de conduire requis"
       },
+      "employeeDeactivationShiftsOpened": {
+        "message": "{shiftCount, plural, one {{employeeName} a été désactivé(e). # créneau à venir est désormais ouvert.} other {{employeeName} a été désactivé(e). # créneaux à venir sont désormais ouverts.}}",
+        "title": "Des créneaux nécessitent une affectation"
+      },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName} : Les tâches d'approbation nécessitent un remplaçant (départ effectif le {cutoff}, {timezone}).",
+        "approval_handover_deactivation": "{employeeName} : Les responsabilités d'approbation nécessitent un remplaçant (désactivé(e) le {cutoff}, {timezone}).",
         "clock_out": "{employeeName} : À vérifier : pointage de sortie (départ de l'employé) (départ effectif le {cutoff}, {timezone}).",
         "clock_repair": "{employeeName} : Correction du minuteur requise (départ effectif le {cutoff}, {timezone}).",
         "employment_terms": "{employeeName} : Les futures conditions d'emploi doivent être vérifiées (départ effectif le {cutoff}, {timezone}).",
@@ -1342,6 +1359,10 @@
       "forgottenClockOutReminder": {
         "message": "Votre quart de travail s'est terminé à {endTime} ({timezone}). Pointez votre départ si vous avez fini de travailler.",
         "title": "Vous n'avez pas encore pointé votre départ"
+      },
+      "formerEmployeeReportsWithoutManager": {
+        "message": "{count, plural, one {# employé est toujours rattaché uniquement à un ancien responsable : {names}. Attribuez un responsable actuel.} other {# employés sont toujours rattachés uniquement à un ancien responsable : {names}. Attribuez un responsable actuel.}}",
+        "title": "Employés sans responsable actuel"
       },
       "kioskCommandRefused": {
         "forwardedMessage": "{action, select, clock_in {Un pointage d'arrivée} clock_out {Un pointage de départ} start_break {Un début de pause} resume_break {Un retour de pause} other {Un pointage}} effectué par {employeeName} à {time} sur la borne {kioskName} n'a pas été enregistré : {reason, select, wrong_pin {le code PIN était incorrect} pin_locked {le code PIN de la borne a été verrouillé après un nombre excessif de tentatives incorrectes} no_pin {il n'y avait aucun code PIN sur la borne pour effectuer la vérification} pin_unchecked {le code PIN n'a pas pu être vérifié} kiosk_retired {la borne a été révoquée ou jumelée de nouveau avant de se reconnecter} contact_unverifiable {Z8 n'a pas pu confirmer la dernière connexion de la borne} outside_window {l'heure était en dehors du créneau accepté par Z8} clock_untrusted {l'horloge de la borne ne pouvait pas être considérée comme fiable} not_assigned {l'employé n'est pas affecté au site de la borne} not_adopted {l'organisation n'accepte pas les pointages hors ligne sur borne} month_closed {le mois est clôturé} holiday {ce jour est un jour férié sans enregistrement du temps} conflict {il entre en conflit avec d'autres heures enregistrées} other {Z8 n'a pas pu l'accepter}}. Enregistrez le temps pour cet employé ou vérifiez-le avec lui.",
@@ -1806,7 +1827,9 @@
         "driving_authorization_suspended_or_ended": "Autorisation de conduite suspendue ou expirée",
         "driving_details_missing_reminder": "Informations de conduite manquantes",
         "driving_licence_reminder": "Contrôle du permis de conduire requis",
+        "employee_deactivation_shifts_opened": "Créneaux ouverts suite à une désactivation",
         "forgotten_clock_out_reminder": "Oubli de pointage de sortie",
+        "former_employee_reports_without_manager": "Employés sans responsable actuel",
         "kiosk_command_refused": "Pointage sur la borne non enregistré",
         "missed_clock_in_reminder": "Pointage d'arrivée manqué",
         "period_submission_decided": "Heures soumises approuvées ou rejetées",
@@ -3157,10 +3180,6 @@
     "admin": "Administrateur",
     "employee": "Employé",
     "manager": "Manager"
-  },
-  "status": {
-    "active": "Actif",
-    "inactive": "Inactif"
   },
   "storeAppBanner": {
     "description": "Recevez des rappels et des notifications d'approbation dans l'application.",

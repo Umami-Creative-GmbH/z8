@@ -556,6 +556,7 @@
       "endTime": "Endzeit",
       "endTimeDescription": "z. B. 06:00 für Nachtschicht",
       "loadError": "Fehler beim Laden der Zuweisungen",
+      "loadFailed": "Zuschlagsmodelle konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
       "loading": "Zuschlagseinstellungen werden geladen...",
       "modelCreated": "Zuschlagsmodell erstellt",
       "modelDeleted": "Zuschlagsmodell gelöscht",

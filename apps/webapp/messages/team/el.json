@@ -211,10 +211,6 @@
       "ariaLabel": "Αναζήτηση μελών ομάδας",
       "placeholder": "Αναζήτηση με όνομα, email, θέση ή ομάδα..."
     },
-    "status": {
-      "active": "Ενεργός",
-      "inactive": "Ανενεργός"
-    },
     "table": {
       "employee": "Εργαζόμενος",
       "position": "Θέση",

@@ -17,13 +17,12 @@
     },
     "covering-for": {
       "description": "Kolege koje mijenjate dok su odsutni",
-      "error": "Učitavanje vaših dužnosti zamjene nije uspjelo",
       "running": "Zamjena za {name} do {date}",
       "title": "Zamjena za",
       "upcoming": "Nadolazeće: zamjena za {name} od {start} do {end}"
     },
     "customize": {
-      "empty-description": "Upotrijebite ikonu za prilagodbu nadzorne ploče kako biste ponovno omogućili pojedinačne widgete ili poništite raspored kako biste ponovno prikazali sve widgete.",
+      "empty-description-defaults": "Upotrijebite ikonu za prilagodbu nadzorne ploče kako biste ponovno omogućili pojedinačne widgete ili ponovno postavite izgled kako biste vratili zadane widgete.",
       "empty-title": "Svi widgeti nadzorne ploče su skriveni",
       "move-down": "Pomakni {widget} prema dolje",
       "move-up": "Pomakni {widget} prema gore",
@@ -54,7 +53,6 @@
     },
     "managed-employees": {
       "direct-reports": "{count} izravno podređenih",
-      "error": "Učitavanje zaposlenika kojima upravljate nije uspjelo",
       "no-reports": "Još nema izravno podređenih",
       "no-reports-description": "Ovdje ćete vidjeti članove svog tima nakon što budu dodijeljeni",
       "people-you-manage": "Osobe kojima upravljate",
@@ -78,7 +76,7 @@
       "awaiting-approval": "Čeka vaše odobrenje",
       "correction": "Ispravak",
       "description": "Zahtjevi koji čekaju vašu odluku",
-      "error": "Učitavanje odobrenja na čekanju nije uspjelo",
+      "empty": "Nema odobrenja na čekanju",
       "more-requests": "+{count} dodatnih zahtjeva",
       "pending-requests": "{count} {request} na čekanju",
       "request": "zahtjev",
@@ -117,7 +115,7 @@
       "by": "od {name}",
       "description": "Najnoviji odobreni zahtjevi",
       "description-count": "Zadnjih {count} odobrenih {request}",
-      "error": "Učitavanje nedavno odobrenih zahtjeva nije uspjelo",
+      "empty": "Nema nedavno odobrenih zahtjeva",
       "more-approved": "Još +{count} odobreno",
       "request": "zahtjev",
       "requests": "zahtjevi",
@@ -126,12 +124,11 @@
       "view-all": "Prikaži sva odobrenja"
     },
     "team-overview": {
-      "active-count": "{active} od {total} zaposlenika ({percent}%)",
-      "active-employees": "Aktivni zaposlenici",
       "avg-hours": "Prosj. sati",
+      "current-employees": "Trenutačni zaposlenici",
+      "current-employees-description": "Svi koji sada ovdje rade",
       "description": "Pregled statistike tima",
       "employees-button": "Zaposlenici",
-      "error": "Učitavanje statistike tima nije uspjelo",
       "per-week": "/tjedno",
       "teams": "Timovi",
       "teams-button": "Timovi",
@@ -142,7 +139,6 @@
       "empty": "Nema nadolazećih smjena",
       "empty-description": "Ovdje će se prikazati vaše sljedeće objavljene smjene.",
       "ends-next-day": "završava sljedeći dan",
-      "error": "Učitavanje vaših nadolazećih smjena nije uspjelo",
       "title": "Nadolazeće smjene",
       "today": "Danas",
       "tomorrow": "Sutra",
@@ -155,7 +151,7 @@
       "days": "dani",
       "description": "Planirane odsutnosti tima",
       "description-count": "Sljedeće {count} planirane {absence}",
-      "error": "Učitavanje nadolazećih slobodnih dana nije uspjelo",
+      "empty": "Nema nadolazećih slobodnih dana",
       "title": "Nadolazeći slobodni dani",
       "today": "Danas",
       "tomorrow": "Sutra",
@@ -167,7 +163,6 @@
       "carryover-days": "{days} dana",
       "days-remaining": "preostalo dana",
       "description": "Dani godišnjeg odmora za {year}.",
-      "error": "Učitavanje stanja godišnjeg odmora nije uspjelo",
       "expires-in": "Istječe za {days} dana",
       "label-available": "Dostupno",
       "label-pending": "Na čekanju",
@@ -176,10 +171,10 @@
       "percent-used": "{percent}% iskorišteno",
       "title": "Stanje godišnjeg odmora",
       "total": "{days} ukupno",
+      "unavailable": "Stanje godišnjeg odmora nije dostupno.",
       "used": "{days} iskorišteno"
     },
     "whos-out": {
-      "error": "Učitavanje današnjih odsutnosti nije uspjelo",
       "everyone-in": "Danas su svi u uredu",
       "everyones-in": "Svi su tu!",
       "full-team": "Cijeli tim je dostupan!",
@@ -198,9 +193,13 @@
       "view-calendar": "Prikaži cijeli kalendar"
     },
     "widgets": {
+      "deferred": "Učitava se kada postane vidljiv. Možete ga učitati i sada.",
       "dragToReorder": "Povucite za promjenu redoslijeda widgeta",
+      "load": "Učitaj {widget}",
+      "loading": "Učitavanje widgeta nadzorne ploče…",
       "moving": "Premještanje widgeta…",
-      "refresh": "Osvježi"
+      "refresh": "Osvježi",
+      "retry": "Pokušaj ponovno: {widget}"
     }
   }
 }

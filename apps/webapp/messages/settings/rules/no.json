@@ -556,6 +556,7 @@
       "endTime": "Sluttid",
       "endTimeDescription": "f.eks. 06:00 for nattskift",
       "loadError": "Kunne ikke laste inn tildelinger",
+      "loadFailed": "Tilleggsmodeller kunne ikke lastes inn. Prøv på nytt.",
       "loading": "Laster inn tilleggsinnstillinger...",
       "modelCreated": "Tilleggsmodell opprettet",
       "modelDeleted": "Tilleggsmodell slettet",

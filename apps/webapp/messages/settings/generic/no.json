@@ -25,6 +25,7 @@
         "adminOnly": "Bare organisasjonseiere og -administratorer kan administrere tildelte lokasjoner.",
         "employeeNotFound": "Fant ikke ansatt.",
         "failed": "Kunne ikke oppdatere tildelte lokasjoner. Prøv igjen.",
+        "formerEmployee": "Tidligere ansatte kan ikke tildeles en lokasjon.",
         "invalidSelection": "Velg fra listen.",
         "locationNotFound": "Fant ikke lokasjon."
       },
@@ -873,6 +874,7 @@
         "attribution": "Tildelt av {actor} {time}",
         "editor": "Kontrolløromfang",
         "empty": "Ingen kontrolløransvar tildelt",
+        "formerEmployee": "Tidligere ansatte kan ikke legges til. Velg ansatte fra den nåværende listen.",
         "history": "Ansvarshistorikk",
         "historyEntry": "Tildelt av {grantor} {granted}; tilbakekalt av {revoker} {revoked}",
         "loadFailed": "Kunne ikke laste inn kontrolløransvar",
@@ -3002,6 +3004,7 @@
       },
       "refusals": {
         "driverNotFound": "En tilordnet ansatt eller et team finnes ikke lenger. Last inn siden på nytt.",
+        "formerDriver": "Tidligere ansatte kan ikke tildeles som sjåfører. Velg ansatte fra den nåværende listen.",
         "invalidChange": "Endringen kunne ikke lagres. Last inn siden på nytt og prøv igjen.",
         "invalidDrivers": "Velg maksimalt 500 tilordnede ansatte og team.",
         "invalidLicencePlate": "Angi et registreringsnummer på opptil 20 tegn.",
@@ -3030,6 +3033,7 @@
         "assignmentNotFound": "Den tilordningen finnes ikke lenger. Last inn siden på nytt.",
         "employeeNotFound": "Den ansatte finnes ikke lenger.",
         "failed": "Noe gikk galt. Prøv igjen.",
+        "formerEmployee": "Tidligere ansatte kan ikke få nye oppdrag. Velg noen fra den nåværende listen.",
         "invalidMode": "Velg en modus for tilordningen.",
         "invalidTarget": "Velg hvem tilordningen gjelder for.",
         "teamNotFound": "Det teamet finnes ikke lenger."

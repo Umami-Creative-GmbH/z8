@@ -556,6 +556,7 @@
       "endTime": "Czas zakończenia",
       "endTimeDescription": "np. 06:00 dla zmiany nocnej",
       "loadError": "Nie udało się załadować przypisań",
+      "loadFailed": "Nie udało się załadować modeli dopłat. Spróbuj ponownie.",
       "loading": "Ładowanie ustawień dodatków...",
       "modelCreated": "Utworzono model dodatków",
       "modelDeleted": "Usunięto model dodatków",

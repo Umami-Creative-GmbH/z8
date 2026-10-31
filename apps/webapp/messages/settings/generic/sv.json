@@ -25,6 +25,7 @@
         "adminOnly": "Endast organisationsägare och administratörer kan hantera tilldelade platser.",
         "employeeNotFound": "Medarbetaren hittades inte.",
         "failed": "Tilldelade platser kunde inte uppdateras. Försök igen.",
+        "formerEmployee": "Tidigare anställda kan inte tilldelas en plats.",
         "invalidSelection": "Välj från listan.",
         "locationNotFound": "Platsen hittades inte."
       },
@@ -873,6 +874,7 @@
         "attribution": "Tilldelad av {actor} {time}",
         "editor": "Verifierarens omfattning",
         "empty": "Inget verifieraransvar tilldelat",
+        "formerEmployee": "Tidigare anställda kan inte läggas till. Välj anställda i den aktuella personalstyrkan.",
         "history": "Ansvarshistorik",
         "historyEntry": "Beviljades av {grantor} {granted}; återkallades av {revoker} {revoked}",
         "loadFailed": "Kunde inte läsa in verifieraransvar",
@@ -3002,6 +3004,7 @@
       },
       "refusals": {
         "driverNotFound": "En tilldelad medarbetare eller ett tilldelat team finns inte längre. Ladda om sidan.",
+        "formerDriver": "Tidigare anställda kan inte tilldelas som förare. Välj anställda i den aktuella personalstyrkan.",
         "invalidChange": "Ändringen kunde inte sparas. Ladda om sidan och försök igen.",
         "invalidDrivers": "Välj högst 500 tilldelade medarbetare och team.",
         "invalidLicencePlate": "Ange ett registreringsnummer med högst 20 tecken.",
@@ -3030,6 +3033,7 @@
         "assignmentNotFound": "Den tilldelningen finns inte längre. Ladda om sidan.",
         "employeeNotFound": "Den medarbetaren finns inte längre.",
         "failed": "Något gick fel. Försök igen.",
+        "formerEmployee": "Tidigare anställda kan inte få en ny tilldelning. Välj någon i den aktuella personalstyrkan.",
         "invalidMode": "Välj ett läge för tilldelningen.",
         "invalidTarget": "Välj vem tilldelningen gäller för.",
         "teamNotFound": "Det teamet finns inte längre."

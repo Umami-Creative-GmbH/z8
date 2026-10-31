@@ -268,6 +268,7 @@
       "importReview": "Φόρτωση επισκόπησης εισαγωγής",
       "importSettings": "Φόρτωση ρυθμίσεων εισαγωγής",
       "locationSettings": "Φόρτωση ρυθμίσεων τοποθεσίας",
+      "navigation": "Φόρτωση πλοήγησης",
       "onboarding": "Φόρτωση διαδικασίας ένταξης",
       "payrollExportSettings": "Φόρτωση ρυθμίσεων εξαγωγής μισθοδοσίας",
       "payrollReadiness": "Φόρτωση ετοιμότητας μισθοδοσίας",
@@ -317,6 +318,10 @@
     "moveDown": "Μετακίνηση προς τα κάτω",
     "moveUp": "Μετακίνηση προς τα πάνω",
     "name": "Όνομα",
+    "navigation": {
+      "retry": "Επανάληψη πλοήγησης",
+      "unavailable": "Ορισμένα στοιχεία πλοήγησης δεν είναι διαθέσιμα"
+    },
     "new": "Νέο",
     "next": "Επόμενο",
     "no": "Όχι",
@@ -342,6 +347,7 @@
       "assignmentNotFound": "Αυτή η ανάθεση δεν υπάρχει πλέον.",
       "employeeNotFound": "Αυτός ο εργαζόμενος δεν βρέθηκε.",
       "employeeProfileRequired": "Απαιτείται προφίλ εργαζομένου σε αυτόν τον οργανισμό.",
+      "formerEmployee": "Οι πρώην εργαζόμενοι δεν μπορούν να λάβουν νέα ανάθεση. Επιλέξτε κάποιον από το τρέχον δυναμικό.",
       "invalidTarget": "Επιλέξτε σε ποιον εφαρμόζεται η ανάθεση.",
       "noticeChanged": "Η ειδοποίηση τοποθεσίας έχει αλλάξει. Ελέγξτε την τρέχουσα ειδοποίηση πριν αποφασίσετε.",
       "positionsForbidden": "Δεν επιτρέπεται να δείτε τις τοποθεσίες αυτής της περιόδου εργασίας.",
@@ -933,7 +939,6 @@
   "employeeSelect": {
     "countSelected": "{count} υπάλληλοι επιλέχθηκαν",
     "countWithMore": "{count} υπάλληλοι (+{more} ακόμη)",
-    "inactive": "Ανενεργό",
     "noEmployeesFound": "Δεν βρέθηκαν υπάλληλοι",
     "removeSelected": "Κατάργηση {name}",
     "role": "Ρόλος",
@@ -975,6 +980,13 @@
       "digest": "Αναφορά: {digest}",
       "title": "Κάτι πήγε στραβά"
     }
+  },
+  "formerEmployees": {
+    "current": "Τρέχοντες",
+    "former": "Πρώην",
+    "formerDateNotRecorded": "Πρώην · δεν έχει καταγραφεί ημερομηνία",
+    "formerSince": "Πρώην από τις {date}",
+    "showFormer": "Εμφάνιση πρώην εργαζομένων"
   },
   "generic": {
     "done": "Τέλος",
@@ -1331,8 +1343,13 @@
         "message": "Κανονίστε έλεγχο πρωτότυπης άδειας οδήγησης για τον/την {employeeName}, κατηγορία {classes}, έως τις {deadline}.",
         "title": "Εκκρεμεί έλεγχος άδειας οδήγησης"
       },
+      "employeeDeactivationShiftsOpened": {
+        "message": "{shiftCount, plural, one {Ο/Η {employeeName} απενεργοποιήθηκε. # επερχόμενη βάρδια είναι πλέον ανοιχτή.} other {Ο/Η {employeeName} απενεργοποιήθηκε. # επερχόμενες βάρδιες είναι πλέον ανοιχτές.}}",
+        "title": "Οι βάρδιες χρειάζονται άτομο"
+      },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Τα καθήκοντα έγκρισης χρειάζονται αντικαταστάτη (αποχώρηση σε ισχύ από {cutoff}, {timezone}).",
+        "approval_handover_deactivation": "{employeeName}: Τα καθήκοντα έγκρισης χρειάζονται αντικαταστάτη (απενεργοποιήθηκε στις {cutoff}, {timezone}).",
         "clock_out": "{employeeName}: Απαιτείται έλεγχος: καταγραφή εξόδου offboarding (αποχώρηση σε ισχύ από {cutoff}, {timezone}).",
         "clock_repair": "{employeeName}: Απαιτείται επιδιόρθωση χρονομέτρου (αποχώρηση σε ισχύ από {cutoff}, {timezone}).",
         "employment_terms": "{employeeName}: Οι μελλοντικοί όροι απασχόλησης χρειάζονται έλεγχο (αποχώρηση σε ισχύ από {cutoff}, {timezone}).",
@@ -1342,6 +1359,10 @@
       "forgottenClockOutReminder": {
         "message": "Η βάρδιά σας έληξε στις {endTime} ({timezone}). Καταχωρίστε αποχώρηση εάν έχετε ολοκληρώσει την εργασία σας.",
         "title": "Είστε ακόμα σε κατάσταση εισόδου"
+      },
+      "formerEmployeeReportsWithoutManager": {
+        "message": "{count, plural, one {# εργαζόμενος εξακολουθεί να συνδέεται μόνο με έναν πρώην προϊστάμενο: {names}. Ορίστε έναν τρέχοντα προϊστάμενο.} other {# εργαζόμενοι εξακολουθούν να συνδέονται μόνο με έναν πρώην προϊστάμενο: {names}. Ορίστε έναν τρέχοντα προϊστάμενο.}}",
+        "title": "Εργαζόμενοι χωρίς τρέχοντα προϊστάμενο"
       },
       "kioskCommandRefused": {
         "forwardedMessage": "Μια ενέργεια ({action, select, clock_in {προσέλευση} clock_out {αποχώρηση} start_break {έναρξη διαλείμματος} resume_break {επιστροφή από διάλειμμα} other {καταγραφή}}) από τον/την {employeeName} στις {time} στο κιόσκι {kioskName} δεν καταγράφηκε: {reason, select, wrong_pin {το PIN ήταν εσφαλμένο} pin_locked {το PIN του κιόσκι κλειδώθηκε μετά από πάρα πολλές λανθασμένες προσπάθειες} no_pin {δεν υπήρχε PIN κιόσκι για έλεγχο} pin_unchecked {δεν ήταν δυνατός ο έλεγχος του PIN} kiosk_retired {το κιόσκι ανακλήθηκε ή αντιστοιχίστηκε ξανά πριν επανασυνδεθεί} contact_unverifiable {το Z8 δεν μπόρεσε να επιβεβαιώσει την τελευταία σύνδεση του κιόσκι} outside_window {η ώρα ήταν εκτός του χρονικού παραθύρου που δέχεται το Z8} clock_untrusted {το ρολόι του κιόσκι δεν ήταν αξιόπιστο για αυτό} not_assigned {ο εργαζόμενος δεν είναι αντιστοιχισμένος στην τοποθεσία του κιόσκι} not_adopted {ο οργανισμός δεν αποδέχεται καταγραφές κιόσκι εκτός σύνδεσης} month_closed {ο μήνας έχει κλείσει} holiday {η ημέρα είναι αργία χωρίς καταγραφή χρόνου} conflict {υπάρχει διένεξη με άλλον καταγεγραμμένο χρόνο} other {το Z8 δεν μπόρεσε να την αποδεχτεί}}. Καταχωρίστε τον χρόνο για αυτόν/αυτήν ή ελέγξτε τον μαζί του/της.",
@@ -1806,7 +1827,9 @@
         "driving_authorization_suspended_or_ended": "Η εξουσιοδότηση οδήγησης ανεστάλη ή έληξε",
         "driving_details_missing_reminder": "Λείπουν λεπτομέρειες οδήγησης",
         "driving_licence_reminder": "Εκκρεμεί έλεγχος άδειας οδήγησης",
+        "employee_deactivation_shifts_opened": "Βάρδιες που άνοιξαν λόγω απενεργοποίησης",
         "forgotten_clock_out_reminder": "Ξεχασμένη έξοδος",
+        "former_employee_reports_without_manager": "Εργαζόμενοι χωρίς τρέχοντα προϊστάμενο",
         "kiosk_command_refused": "Σήμανση στο κιόσκι δεν καταγράφηκε",
         "missed_clock_in_reminder": "Παράλειψη εισόδου",
         "period_submission_decided": "Ο υποβληθείς χρόνος εγκρίθηκε ή απορρίφθηκε",
@@ -3157,10 +3180,6 @@
     "admin": "Διαχειριστής",
     "employee": "Υπάλληλος",
     "manager": "Διευθυντής"
-  },
-  "status": {
-    "active": "Ενεργό",
-    "inactive": "Ανενεργό"
   },
   "storeAppBanner": {
     "description": "Λάβετε υπενθυμίσεις και ειδοποιήσεις έγκρισης στην εφαρμογή.",

@@ -25,6 +25,7 @@
         "adminOnly": "Samo vlasnici organizacije i administratori mogu upravljati dodijeljenim lokacijama.",
         "employeeNotFound": "Zaposlenik nije pronađen.",
         "failed": "Dodijeljene lokacije nisu se mogle ažurirati. Pokušajte ponovno.",
+        "formerEmployee": "Bivšim zaposlenicima ne može se dodijeliti lokacija.",
         "invalidSelection": "Odaberite s popisa.",
         "locationNotFound": "Lokacija nije pronađena."
       },
@@ -873,6 +874,7 @@
         "attribution": "Dodijelio/la {actor} u {time}",
         "editor": "Doseg provjeritelja",
         "empty": "Nisu dodijeljene odgovornosti provjeritelja",
+        "formerEmployee": "Bivši zaposlenici ne mogu se dodati. Odaberite zaposlenike s trenutačnog popisa.",
         "history": "Povijest odgovornosti",
         "historyEntry": "Dodijelio {grantor} u {granted}; opozvao {revoker} u {revoked}",
         "loadFailed": "Nije bilo moguće učitati odgovornosti provjeritelja",
@@ -3002,6 +3004,7 @@
       },
       "refusals": {
         "driverNotFound": "Dodijeljeni zaposlenik ili tim više ne postoji. Ponovno učitajte stranicu.",
+        "formerDriver": "Bivši zaposlenici ne mogu se dodijeliti kao vozači. Odaberite zaposlenike s trenutačnog popisa.",
         "invalidChange": "Promjena se nije mogla spremiti. Ponovno učitajte stranicu i pokušajte ponovno.",
         "invalidDrivers": "Odaberite najviše 500 dodijeljenih zaposlenika i timova.",
         "invalidLicencePlate": "Unesite registarsku oznaku od najviše 20 znakova.",
@@ -3030,6 +3033,7 @@
         "assignmentNotFound": "Ta dodjela više ne postoji. Ponovno učitajte stranicu.",
         "employeeNotFound": "Taj zaposlenik više ne postoji.",
         "failed": "Nešto je pošlo po zlu. Pokušajte ponovno.",
+        "formerEmployee": "Bivši zaposlenici ne mogu dobiti novo zaduženje. Odaberite nekoga s trenutačnog popisa.",
         "invalidMode": "Odaberite način rada za dodjelu.",
         "invalidTarget": "Odaberite na koga se dodjela odnosi.",
         "teamNotFound": "Taj tim više ne postoji."

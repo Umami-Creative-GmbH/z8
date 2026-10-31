@@ -268,6 +268,7 @@
       "importReview": "Laster inn importgjennomgang",
       "importSettings": "Laster inn importinnstillinger",
       "locationSettings": "Laster inn stedsinnstillinger",
+      "navigation": "Laster inn navigasjon",
       "onboarding": "Laster inn onboarding",
       "payrollExportSettings": "Laster inn innstillinger for lønnseksport",
       "payrollReadiness": "Laster inn lønnsklarhet",
@@ -317,6 +318,10 @@
     "moveDown": "Flytt ned",
     "moveUp": "Flytt opp",
     "name": "Navn",
+    "navigation": {
+      "retry": "Prøv navigasjon på nytt",
+      "unavailable": "Deler av navigasjonen er utilgjengelig"
+    },
     "new": "Ny",
     "next": "Neste",
     "no": "Nei",
@@ -342,6 +347,7 @@
       "assignmentNotFound": "Dette oppdraget finnes ikke lenger.",
       "employeeNotFound": "Denne ansatte ble ikke funnet.",
       "employeeProfileRequired": "En ansattprofil i denne organisasjonen er påkrevd.",
+      "formerEmployee": "Tidligere ansatte kan ikke få nye oppdrag. Velg noen fra den nåværende listen.",
       "invalidTarget": "Velg hvem oppdraget gjelder for.",
       "noticeChanged": "Posisjonsvarselet er endret. Se gjennom det gjeldende varselet før du bestemmer deg.",
       "positionsForbidden": "Du har ikke tillatelse til å se posisjonene for denne arbeidsperioden.",
@@ -933,7 +939,6 @@
   "employeeSelect": {
     "countSelected": "{count} ansatte valgt",
     "countWithMore": "{count} ansatte (+{more} flere)",
-    "inactive": "Inaktiv",
     "noEmployeesFound": "Ingen ansatte funnet",
     "removeSelected": "Fjern {name}",
     "role": "Rolle",
@@ -975,6 +980,13 @@
       "digest": "Referanse: {digest}",
       "title": "Noe gikk galt"
     }
+  },
+  "formerEmployees": {
+    "current": "Nåværende",
+    "former": "Tidligere",
+    "formerDateNotRecorded": "Tidligere · dato ikke registrert",
+    "formerSince": "Tidligere siden {date}",
+    "showFormer": "Vis tidligere ansatte"
   },
   "generic": {
     "done": "Ferdig",
@@ -1331,8 +1343,13 @@
         "message": "Avtal en kontroll av originalt førerkort for {employeeName}, klasse {classes}, innen {deadline}.",
         "title": "Førerkortkontroll forfaller"
       },
+      "employeeDeactivationShiftsOpened": {
+        "message": "{shiftCount, plural, one {{employeeName} ble deaktivert. # kommende vakt er nå åpen.} other {{employeeName} ble deaktivert. # kommende vakter er nå åpne.}}",
+        "title": "Vakter mangler bemanning"
+      },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Godkjenningsoppgaver trenger en stedfortreder (fratredelse gjelder fra {cutoff}, {timezone}).",
+        "approval_handover_deactivation": "{employeeName}: Godkjenningsoppgaver trenger en erstatter (deaktivert {cutoff}, {timezone}).",
         "clock_out": "{employeeName}: Må gjennomgås: utstempling ved offboarding (fratredelse gjelder fra {cutoff}, {timezone}).",
         "clock_repair": "{employeeName}: Tidtakerreparasjon påkrevd (fratredelse gjelder fra {cutoff}, {timezone}).",
         "employment_terms": "{employeeName}: Fremtidige ansettelsesvilkår må gjennomgås (fratredelse gjelder fra {cutoff}, {timezone}).",
@@ -1342,6 +1359,10 @@
       "forgottenClockOutReminder": {
         "message": "Vakten din var ferdig kl. {endTime} ({timezone}). Stemple ut hvis du er ferdig med å jobbe.",
         "title": "Du er fortsatt stemplet inn"
+      },
+      "formerEmployeeReportsWithoutManager": {
+        "message": "{count, plural, one {# ansatt er fortsatt kun koblet til en tidligere leder: {names}. Tildel en nåværende leder.} other {# ansatte er fortsatt kun koblet til en tidligere leder: {names}. Tildel en nåværende leder.}}",
+        "title": "Ansatte uten en nåværende leder"
       },
       "kioskCommandRefused": {
         "forwardedMessage": "En {action, select, clock_in {innstempling} clock_out {utstempling} start_break {start på pause} resume_break {retur fra pause} other {stempling}} av {employeeName} kl. {time} på kiosken {kioskName} ble ikke registrert: {reason, select, wrong_pin {PIN-koden var feil} pin_locked {kiosk-PIN-koden ble låst etter for mange feil forsøk} no_pin {det var ingen kiosk-PIN-kode å kontrollere mot} pin_unchecked {PIN-koden kunne ikke kontrolleres} kiosk_retired {kiosken ble tilbakekalt eller koblet til på nytt før den koblet til igjen} contact_unverifiable {Z8 kunne ikke bekrefte kioskens forrige tilkobling} outside_window {tidspunktet var utenfor tidsvinduet Z8 godtar} clock_untrusted {kioskklokken kunne ikke stoles på for dette} not_assigned {den ansatte er ikke tilknyttet kioskens plassering} not_adopted {organisasjonen godtar ikke frakoblede kioskstemplinger} month_closed {måneden er stengt} holiday {dagen er en helligdag uten tidsregistrering} conflict {den er i konflikt med annen registrert tid} other {Z8 kunne ikke godta det}}. Registrer tiden for vedkommende eller kontroller den med dem.",
@@ -1806,7 +1827,9 @@
         "driving_authorization_suspended_or_ended": "Kjøretillatelse suspendert eller avsluttet",
         "driving_details_missing_reminder": "Kjøredetaljer mangler",
         "driving_licence_reminder": "Førerkortkontroll forfaller",
+        "employee_deactivation_shifts_opened": "Vakter som er åpnet etter en deaktivering",
         "forgotten_clock_out_reminder": "Glemt utstempling",
+        "former_employee_reports_without_manager": "Ansatte uten en nåværende leder",
         "kiosk_command_refused": "Kioskstempling ikke registrert",
         "missed_clock_in_reminder": "Manglende innstempling",
         "period_submission_decided": "Innsendte timer godkjent eller avvist",
@@ -3157,10 +3180,6 @@
     "admin": "Admin",
     "employee": "Ansatt",
     "manager": "Leder"
-  },
-  "status": {
-    "active": "Aktiv",
-    "inactive": "Inaktiv"
   },
   "storeAppBanner": {
     "description": "Få påminnelser og godkjenningsvarsler i appen.",

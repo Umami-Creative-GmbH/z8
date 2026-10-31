@@ -46,6 +46,10 @@
       "uncertainDescription": "Klokken din har blitt oppdatert. Sjekk den før du prøver igjen."
     },
     "budget": "Budsjett",
+    "choices": {
+      "retry": "Prøv {choice} på nytt",
+      "unavailable": "{choice} utilgjengelig"
+    },
     "clockedOutSuccess": "Du har stemplet ut!",
     "clockIn": "Stemple inn",
     "clockingIn": "Stempler inn…",
@@ -59,6 +63,11 @@
     "clockOutSavedForSending": "Utstempling lagret på denne enheten. Den sendes automatisk og er ikke bekreftet ennå.",
     "clockOutSavedHeld": "Utstempling lagret på denne enheten, men ikke sendt. Se gjennom lagrede oppføringer.",
     "clockOutSuccess": "Stemplet ut",
+    "clockStatus": {
+      "loading": "Laster inn stemplingsstatus",
+      "retry": "Prøv stemplingsstatus på nytt",
+      "unavailable": "Stemplingsstatus utilgjengelig"
+    },
     "compliance": {
       "violation": "Regelverksbrudd",
       "warning": "Samsvarsvarsel"
@@ -564,6 +573,9 @@
       "breakReading": "Kilometerstand ved pausen (km)",
       "breakReadingHint": "Valgfritt. Den avslutter avlesningen for dette arbeidet og starter neste.",
       "changeLive": "Endre",
+      "choices": "Kjøretøyvalg",
+      "choicesLoading": "Laster inn kjøretøyvalg…",
+      "choicesOffline": "Kjøretøyvalg er utilgjengelige i frakoblet modus. Du kan registrere tid og legge til detaljer senere.",
       "derivedDistance": "Kjørt distanse: {distance} km",
       "distanceKm": "Kjørt distanse (km)",
       "distanceText": "{distance} km kjørt",
@@ -599,6 +611,7 @@
         "off": "Kjøretøybruk registreres ikke for denne ansatte.",
         "splitOutOfRange": "Kilometerne ved delingen må ligge innenfor arbeidsperiodens kilometer."
       },
+      "settingsLoading": "Laster inn innstillinger for kjøretøybruk…",
       "startKm": "Startavlesning (km)",
       "title": "Kjøretøybruk",
       "unknownVehicle": "Ukjent kjøretøy (utilgjengelig)",

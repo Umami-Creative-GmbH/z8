@@ -268,6 +268,7 @@
       "importReview": "Po ngarkohet shqyrtimi i importit",
       "importSettings": "Po ngarkohen cilësimet e importit",
       "locationSettings": "Po ngarkohen cilësimet e vendndodhjes",
+      "navigation": "Po ngarkohet navigimi",
       "onboarding": "Po ngarkohet orientimi",
       "payrollExportSettings": "Po ngarkohen cilësimet e eksportit të listëpagesave",
       "payrollReadiness": "Po ngarkohet gatishmëria e listëpagesave",
@@ -317,6 +318,10 @@
     "moveDown": "Lëviz poshtë",
     "moveUp": "Lëviz lart",
     "name": "Emri",
+    "navigation": {
+      "retry": "Riprovo navigimin",
+      "unavailable": "Një pjesë e navigimit nuk është e disponueshme"
+    },
     "new": "I ri",
     "next": "Tjetra",
     "no": "Jo",
@@ -342,6 +347,7 @@
       "assignmentNotFound": "Kjo detyrë nuk ekziston më.",
       "employeeNotFound": "Ky punonjës nuk u gjet.",
       "employeeProfileRequired": "Kërkohet një profil punonjësi në këtë organizatë.",
+      "formerEmployee": "Ish-punonjësit nuk mund të marrin një caktim të ri. Zgjidhni dikë nga lista aktuale.",
       "invalidTarget": "Zgjidhni kujt i zbatohet kjo detyrë.",
       "noticeChanged": "Njoftimi për vendndodhjen ka ndryshuar. Rishikoni njoftimin aktual përpara se të vendosni.",
       "positionsForbidden": "Nuk ju lejohet të shihni pozicionet e kësaj periudhe pune.",
@@ -933,7 +939,6 @@
   "employeeSelect": {
     "countSelected": "{count} punonjës të përzgjedhur",
     "countWithMore": "{count} punonjës (+{more} të tjerë)",
-    "inactive": "Joaktiv",
     "noEmployeesFound": "Nuk u gjet asnjë punonjës",
     "removeSelected": "Hiq {name}",
     "role": "Roli",
@@ -975,6 +980,13 @@
       "digest": "Referenca: {digest}",
       "title": "Diçka shkoi keq"
     }
+  },
+  "formerEmployees": {
+    "current": "Aktual",
+    "former": "Ish-punonjës",
+    "formerDateNotRecorded": "Ish-punonjës · data nuk është regjistruar",
+    "formerSince": "Ish-punonjës që nga {date}",
+    "showFormer": "Shfaq ish-punonjësit"
   },
   "generic": {
     "done": "U krye",
@@ -1331,8 +1343,13 @@
         "message": "Organizoni një kontroll të patentë shoferit origjinal për {employeeName}, kategoria {classes}, deri më {deadline}.",
         "title": "Afati i kontrollit të patentë shoferit"
       },
+      "employeeDeactivationShiftsOpened": {
+        "message": "{shiftCount, plural, one {{employeeName} u çaktivizua. # turn i ardhshëm është i hapur tani.} other {{employeeName} u çaktivizua. # turne të ardhshme janë të hapura tani.}}",
+        "title": "Turnet kanë nevojë për dikë"
+      },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Detyrat e miratimit kanë nevojë për një zëvendësues (largimi hyn në fuqi më {cutoff}, {timezone}).",
+        "approval_handover_deactivation": "{employeeName}: Detyrat e miratimit kanë nevojë për një zëvendësues (çaktivizuar më {cutoff}, {timezone}).",
         "clock_out": "{employeeName}: Nevojitet shqyrtim: dalja nga puna gjatë largimit nga kompania (largimi hyn në fuqi më {cutoff}, {timezone}).",
         "clock_repair": "{employeeName}: Kërkohet rregullimi i kohëmatësit (largimi hyn në fuqi më {cutoff}, {timezone}).",
         "employment_terms": "{employeeName}: Kushtet e ardhshme të punësimit kanë nevojë për shqyrtim (largimi hyn në fuqi më {cutoff}, {timezone}).",
@@ -1342,6 +1359,10 @@
       "forgottenClockOutReminder": {
         "message": "Turni juaj përfundoi në {endTime} ({timezone}). Regjistroni daljen nëse keni përfunduar punën.",
         "title": "Jeni ende i regjistruar në punë"
+      },
+      "formerEmployeeReportsWithoutManager": {
+        "message": "{count, plural, one {# punonjës është ende i lidhur vetëm me një ish-menaxher: {names}. Caktoni një menaxher aktual.} other {# punonjës janë ende të lidhur vetëm me një ish-menaxher: {names}. Caktoni një menaxher aktual.}}",
+        "title": "Punonjës pa një menaxher aktual"
       },
       "kioskCommandRefused": {
         "forwardedMessage": "Një {action, select, clock_in {hyrje} clock_out {dalje} start_break {fillim pushimi} resume_break {kthim nga pushimi} other {regjistrim orari}} nga {employeeName} në orën {time} në kioskën {kioskName} nuk u regjistrua: {reason, select, wrong_pin {PIN-i ishte i pasaktë} pin_locked {PIN-i i kioskës u bllokua pas shumë tentativave të pasakta} no_pin {nuk kishte PIN kioske me të cilin të krahasohej} pin_unchecked {PIN-i nuk mund të kontrollohej} kiosk_retired {kioska u shfuqizua ose u çiftua përsëri para se të rilidhej} contact_unverifiable {Z8 nuk mundi të konfirmonte lidhjen e fundit të kioskës} outside_window {ora e saj ishte jashtë dritares kohore që pranon Z8} clock_untrusted {ora e kioskës nuk mund të konsiderohej e besueshme për këtë} not_assigned {punonjësi nuk është caktuar në vendndodhjen e kioskës} not_adopted {organizata nuk pranon regjistrime orari jashtë linje nga kioska} month_closed {muaji është i mbyllur} holiday {dita është festë pa regjistrim orari} conflict {bie në konflikt me orë të tjera të regjistruara} other {Z8 nuk mundi ta pranonte}}. Regjistroni orarin për ta ose kontrollojeni me ta.",
@@ -1806,7 +1827,9 @@
         "driving_authorization_suspended_or_ended": "Autorizimi i drejtimit të mjetit u pezullua ose përfundoi",
         "driving_details_missing_reminder": "Mungojnë detajet e drejtimit të automjetit",
         "driving_licence_reminder": "Afati i kontrollit të patentë shoferit",
+        "employee_deactivation_shifts_opened": "Turne të hapura nga një çaktivizim",
         "forgotten_clock_out_reminder": "Dalje e harruar",
+        "former_employee_reports_without_manager": "Punonjës pa një menaxher aktual",
         "kiosk_command_refused": "Regjistrimi i orarit në kioskë nuk u regjistrua",
         "missed_clock_in_reminder": "Hyrje e paregjistruar",
         "period_submission_decided": "Koha e dorëzuar u miratua ose u refuzua",
@@ -3157,10 +3180,6 @@
     "admin": "Administratori",
     "employee": "Punonjës",
     "manager": "Menaxher"
-  },
-  "status": {
-    "active": "Aktiv",
-    "inactive": "Joaktiv"
   },
   "storeAppBanner": {
     "description": "Merrni kujtesa dhe njoftime miratimi në aplikacion.",

@@ -25,6 +25,7 @@
         "adminOnly": "Seuls les propriétaires et les administrateurs de l'organisation peuvent gérer les lieux attribués.",
         "employeeNotFound": "Employé introuvable.",
         "failed": "Impossible de mettre à jour les lieux attribués. Réessayez.",
+        "formerEmployee": "Les anciens employés ne peuvent pas être affectés à un lieu.",
         "invalidSelection": "Choisissez dans la liste.",
         "locationNotFound": "Lieu introuvable."
       },
@@ -873,6 +874,7 @@
         "attribution": "Accordé par {actor} à {time}",
         "editor": "Périmètre du vérificateur",
         "empty": "Aucune responsabilité de vérificateur attribuée",
+        "formerEmployee": "Les anciens employés ne peuvent pas être ajoutés. Choisissez des employés figurant dans l'effectif actuel.",
         "history": "Historique des responsabilités",
         "historyEntry": "Accordé par {grantor} à {granted} ; révoqué par {revoker} à {revoked}",
         "loadFailed": "Impossible de charger les responsabilités de vérificateur",
@@ -3002,6 +3004,7 @@
       },
       "refusals": {
         "driverNotFound": "Un employé ou une équipe assigné n'existe plus. Rechargez la page.",
+        "formerDriver": "Les anciens employés ne peuvent pas être affectés en tant que conducteurs. Choisissez des employés figurant dans l'effectif actuel.",
         "invalidChange": "La modification n'a pas pu être enregistrée. Rechargez la page et réessayez.",
         "invalidDrivers": "Sélectionnez au maximum 500 employés et équipes assignés.",
         "invalidLicencePlate": "Saisissez une plaque d'immatriculation de 20 caractères maximum.",
@@ -3030,6 +3033,7 @@
         "assignmentNotFound": "Cette affectation n'existe plus. Rechargez la page.",
         "employeeNotFound": "Cet employé n'existe plus.",
         "failed": "Une erreur s'est produite. Réessayez.",
+        "formerEmployee": "Les anciens employés ne peuvent pas recevoir de nouvelle affectation. Choisissez une personne figurant dans l'effectif actuel.",
         "invalidMode": "Choisissez un mode pour l'affectation.",
         "invalidTarget": "Choisissez à qui s'applique l'affectation.",
         "teamNotFound": "Cette équipe n'existe plus."

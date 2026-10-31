@@ -46,6 +46,10 @@
       "uncertainDescription": "Your clock has been refreshed. Check it before trying again."
     },
     "budget": "Budget",
+    "choices": {
+      "retry": "Retry {choice}",
+      "unavailable": "{choice} unavailable"
+    },
     "clockedOutSuccess": "You've clocked out!",
     "clockIn": "Clock In",
     "clockingIn": "Clocking In…",
@@ -59,6 +63,11 @@
     "clockOutSavedForSending": "Clock-out saved on this device. It is sent automatically and is not confirmed yet.",
     "clockOutSavedHeld": "Clock-out saved on this device but not sent. Review saved records.",
     "clockOutSuccess": "Clocked out successfully",
+    "clockStatus": {
+      "loading": "Loading clock status",
+      "retry": "Retry clock status",
+      "unavailable": "Clock status unavailable"
+    },
     "compliance": {
       "violation": "Compliance Violation",
       "warning": "Compliance Notice"
@@ -564,6 +573,9 @@
       "breakReading": "Odometer reading at the break (km)",
       "breakReadingHint": "Optional. It ends this work's reading and starts the next one's.",
       "changeLive": "Change",
+      "choices": "Vehicle choices",
+      "choicesLoading": "Loading vehicle choices…",
+      "choicesOffline": "Vehicle choices are unavailable offline. You can record time and add details later.",
       "derivedDistance": "Driven distance: {distance} km",
       "distanceKm": "Driven distance (km)",
       "distanceText": "{distance} km driven",
@@ -599,6 +611,7 @@
         "off": "Vehicle use is not recorded for this employee.",
         "splitOutOfRange": "The kilometres at the split must lie within the work period's kilometres."
       },
+      "settingsLoading": "Loading vehicle-use settings…",
       "startKm": "Start reading (km)",
       "title": "Vehicle use",
       "unknownVehicle": "Unknown vehicle (unavailable)",

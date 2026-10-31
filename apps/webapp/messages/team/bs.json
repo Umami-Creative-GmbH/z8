@@ -211,10 +211,6 @@
       "ariaLabel": "Pretražite članove tima",
       "placeholder": "Pretražite po imenu, e-pošti, poziciji ili timu..."
     },
-    "status": {
-      "active": "Aktivan",
-      "inactive": "Neaktivan"
-    },
     "table": {
       "employee": "Zaposlenik",
       "position": "Pozicija",

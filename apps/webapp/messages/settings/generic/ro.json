@@ -25,6 +25,7 @@
         "adminOnly": "Doar proprietarii și administratorii organizației pot gestiona locațiile atribuite.",
         "employeeNotFound": "Angajatul nu a fost găsit.",
         "failed": "Locațiile atribuite nu au putut fi actualizate. Încercați din nou.",
+        "formerEmployee": "Foștilor angajați nu li se poate atribui o locație.",
         "invalidSelection": "Alegeți din listă.",
         "locationNotFound": "Locația nu a fost găsită."
       },
@@ -873,6 +874,7 @@
         "attribution": "Acordat de {actor} la {time}",
         "editor": "Domeniu de competență al verificatorului",
         "empty": "Nicio responsabilitate de verificator atribuită",
+        "formerEmployee": "Foștii angajați nu pot fi adăugați. Alegeți angajați din lista actuală.",
         "history": "Istoric responsabilități",
         "historyEntry": "Acordată de {grantor} la {granted}; revocată de {revoker} la {revoked}",
         "loadFailed": "Nu s-au putut încărca responsabilitățile de verificator",
@@ -3002,6 +3004,7 @@
       },
       "refusals": {
         "driverNotFound": "Un angajat asociat sau o echipă asociată nu mai există. Reîncărcați pagina.",
+        "formerDriver": "Foștii angajați nu pot fi desemnați ca șoferi. Alegeți angajați din lista actuală.",
         "invalidChange": "Modificarea nu a putut fi salvată. Reîncărcați pagina și încercați din nou.",
         "invalidDrivers": "Alegeți cel mult 500 de angajați și echipe asociate.",
         "invalidLicencePlate": "Introduceți un număr de înmatriculare de până la 20 de caractere.",
@@ -3030,6 +3033,7 @@
         "assignmentNotFound": "Acea atribuire nu mai există. Reîncărcați pagina.",
         "employeeNotFound": "Acel angajat nu mai există.",
         "failed": "Ceva nu a funcționat corect. Încercați din nou.",
+        "formerEmployee": "Foștii angajați nu pot primi o nouă atribuire. Alegeți pe cineva din lista actuală.",
         "invalidMode": "Alegeți un mod pentru atribuire.",
         "invalidTarget": "Alegeți cui i se aplică atribuirea.",
         "teamNotFound": "Acea echipă nu mai există."

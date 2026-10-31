@@ -17,13 +17,12 @@
     },
     "covering-for": {
       "description": "Kolegët për të cilët jeni zëvendësues gjatë mungesës së tyre",
-      "error": "Ngarkimi i detyrave tuaja të zëvendësimit dështoi",
       "running": "Po zëvendësoni {name} deri më {date}",
       "title": "Zëvendësimi për",
       "upcoming": "Së shpejti: po zëvendësoni {name} nga {start} deri më {end}"
     },
     "customize": {
-      "empty-description": "Përdorni ikonën e personalizimit të panelit për të riaktivizuar miniaplikacionet individuale, ose rivendosni paraqitjen për të shfaqur sërish çdo miniaplikacion.",
+      "empty-description-defaults": "Përdorni ikonën e personalizimit të panelit për të riaktivizuar miniaplikacione individuale, ose rivendosni strukturën për të rikthyer miniaplikacionet e paracaktuara.",
       "empty-title": "Të gjitha miniaplikacionet e panelit janë të fshehura",
       "move-down": "Lëviz {widget} poshtë",
       "move-up": "Lëviz {widget} lart",
@@ -54,7 +53,6 @@
     },
     "managed-employees": {
       "direct-reports": "{count} vartës të drejtpërdrejtë",
-      "error": "Ngarkimi i punonjësve të menaxhuar dështoi",
       "no-reports": "Ende nuk ka vartës të drejtpërdrejtë",
       "no-reports-description": "Anëtarët e ekipit tuaj do t'i shihni këtu sapo të caktohen",
       "people-you-manage": "Personat që menaxhoni",
@@ -78,7 +76,7 @@
       "awaiting-approval": "Në pritje të miratimit tuaj",
       "correction": "Korrigjim",
       "description": "Kërkesa në pritje të vendimit tuaj",
-      "error": "Ngarkimi i miratimeve në pritje dështoi",
+      "empty": "Nuk ka miratime në pritje",
       "more-requests": "+{count} kërkesa të tjera",
       "pending-requests": "{count} {request} në pritje",
       "request": "kërkesë",
@@ -117,7 +115,7 @@
       "by": "nga {name}",
       "description": "Kërkesat më të fundit të miratuara",
       "description-count": "{count} {request} e fundit të miratuara",
-      "error": "Ngarkimi i kërkesave të miratuara së fundmi dështoi",
+      "empty": "Nuk ka kërkesa të miratuara së fundmi",
       "more-approved": "+{count} të tjera të miratuara",
       "request": "kërkesë",
       "requests": "kërkesa",
@@ -126,12 +124,11 @@
       "view-all": "Shiko të gjitha miratimet"
     },
     "team-overview": {
-      "active-count": "{active} nga {total} punonjës ({percent}%)",
-      "active-employees": "Punonjës aktivë",
       "avg-hours": "Orë mesatare",
+      "current-employees": "Punonjësit aktualë",
+      "current-employees-description": "Të gjithë ata që punojnë këtu tani",
       "description": "Statistikat e ekipit me një shikim",
       "employees-button": "Punonjësit",
-      "error": "Ngarkimi i statistikave të ekipit dështoi",
       "per-week": "/javë",
       "teams": "Ekipet",
       "teams-button": "Ekipet",
@@ -142,7 +139,6 @@
       "empty": "Nuk ka turne të ardhshme",
       "empty-description": "Turnet tuaja të ardhshme të publikuara do të shfaqen këtu.",
       "ends-next-day": "përfundon ditën tjetër",
-      "error": "Ngarkimi i turneve tuaja të ardhshme dështoi",
       "title": "Turnet e ardhshme",
       "today": "Sot",
       "tomorrow": "Nesër",
@@ -155,7 +151,7 @@
       "days": "ditë",
       "description": "Mungesat e planifikuara të ekipit",
       "description-count": "{count} {absence} e ardhshme të planifikuara",
-      "error": "Ngarkimi i pushimeve të ardhshme dështoi",
+      "empty": "Nuk ka pushime të ardhshme",
       "title": "Pushimet e ardhshme",
       "today": "Sot",
       "tomorrow": "Nesër",
@@ -167,7 +163,6 @@
       "carryover-days": "{days} ditë",
       "days-remaining": "ditë të mbetura",
       "description": "{year} ditë pushimi",
-      "error": "Dështoi ngarkimi i bilancit të pushimeve",
       "expires-in": "Skadon për {days} ditë",
       "label-available": "Të disponueshme",
       "label-pending": "Në pritje",
@@ -176,10 +171,10 @@
       "percent-used": "{percent}% të përdorura",
       "title": "Bilanci i pushimeve",
       "total": "{days} gjithsej",
+      "unavailable": "Bilanci i pushimeve nuk është i disponueshëm.",
       "used": "{days} të përdorura"
     },
     "whos-out": {
-      "error": "Dështoi ngarkimi i mungesave të sotme",
       "everyone-in": "Të gjithë janë në zyrë sot",
       "everyones-in": "Të gjithë janë të pranishëm!",
       "full-team": "Ekipi i plotë është i disponueshëm!",
@@ -198,9 +193,13 @@
       "view-calendar": "Shiko kalendarin e plotë"
     },
     "widgets": {
+      "deferred": "Ngarkohet kur shfaqet në pamje. Mund ta ngarkoni edhe tani.",
       "dragToReorder": "Tërhiqni për të rirenditur miniaplikacionin",
+      "load": "Ngarko {widget}",
+      "loading": "Po ngarkohet miniaplikacioni i panelit…",
       "moving": "Po lëvizet miniaplikacioni…",
-      "refresh": "Rifresko"
+      "refresh": "Rifresko",
+      "retry": "Riprovo {widget}"
     }
   }
 }

@@ -46,6 +46,10 @@
       "uncertainDescription": "Vaš je sat osvježen. Provjerite ga prije ponovnog pokušaja."
     },
     "budget": "Proračun",
+    "choices": {
+      "retry": "Pokušajte ponovno: {choice}",
+      "unavailable": "{choice} nije dostupno"
+    },
     "clockedOutSuccess": "Odjavili ste se!",
     "clockIn": "Prijava",
     "clockingIn": "Prijava u tijeku…",
@@ -59,6 +63,11 @@
     "clockOutSavedForSending": "Prijava odlaska spremljena je na ovaj uređaj. Šalje se automatski i još nije potvrđena.",
     "clockOutSavedHeld": "Prijava odlaska spremljena je na ovaj uređaj, ali nije poslana. Pregledajte spremljene zapise.",
     "clockOutSuccess": "Uspješno ste se odjavili",
+    "clockStatus": {
+      "loading": "Učitavanje statusa evidencije radnog vremena",
+      "retry": "Ponovno pokušaj učitati status evidencije radnog vremena",
+      "unavailable": "Status evidencije radnog vremena nije dostupan"
+    },
     "compliance": {
       "violation": "Kršenje propisa",
       "warning": "Obavijest o usklađenosti"
@@ -564,6 +573,9 @@
       "breakReading": "Stanje brojača kilometara na pauzi (km)",
       "breakReadingHint": "Neobavezno. Time završava očitanje za ovaj rad i započinje za sljedeći.",
       "changeLive": "Promijeni",
+      "choices": "Odabir vozila",
+      "choicesLoading": "Učitavanje odabira vozila…",
+      "choicesOffline": "Odabir vozila nije dostupan izvan mreže. Možete zabilježiti radno vrijeme i dodati pojedinosti kasnije.",
       "derivedDistance": "Prijeđena udaljenost: {distance} km",
       "distanceKm": "Prijeđena udaljenost (km)",
       "distanceText": "Prijeđeno {distance} km",
@@ -599,6 +611,7 @@
         "off": "Korištenje vozila ne bilježi se za ovog zaposlenika.",
         "splitOutOfRange": "Kilometri na podjeli moraju biti unutar raspona kilometara radnog razdoblja."
       },
+      "settingsLoading": "Učitavanje postavki korištenja vozila…",
       "startKm": "Početno stanje (km)",
       "title": "Korištenje vozila",
       "unknownVehicle": "Nepoznato vozilo (nedostupno)",

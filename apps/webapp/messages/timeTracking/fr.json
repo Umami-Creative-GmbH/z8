@@ -46,6 +46,10 @@
       "uncertainDescription": "Votre pointeuse a été actualisée. Vérifiez-la avant de réessayer."
     },
     "budget": "Budget",
+    "choices": {
+      "retry": "Réessayer {choice}",
+      "unavailable": "{choice} non disponible"
+    },
     "clockedOutSuccess": "Vous avez pointé votre départ !",
     "clockIn": "Pointer l'entrée",
     "clockingIn": "Pointage de l'entrée...",
@@ -59,6 +63,11 @@
     "clockOutSavedForSending": "Pointage de départ enregistré sur cet appareil. Il est envoyé automatiquement et n'est pas encore confirmé.",
     "clockOutSavedHeld": "Pointage de départ enregistré sur cet appareil mais non envoyé. Vérifiez les enregistrements sauvegardés.",
     "clockOutSuccess": "Sortie pointée avec succès",
+    "clockStatus": {
+      "loading": "Chargement du statut de pointage",
+      "retry": "Réessayer le statut de pointage",
+      "unavailable": "Statut de pointage indisponible"
+    },
     "compliance": {
       "violation": "Violation de conformité",
       "warning": "Avis de conformité"
@@ -564,6 +573,9 @@
       "breakReading": "Relevé du compteur kilométrique à la pause (km)",
       "breakReadingHint": "Facultatif. Termine le relevé de ce travail et commence celui du suivant.",
       "changeLive": "Modifier",
+      "choices": "Choix de véhicules",
+      "choicesLoading": "Chargement des choix de véhicules…",
+      "choicesOffline": "Les choix de véhicules ne sont pas disponibles hors ligne. Vous pouvez enregistrer votre temps et ajouter des détails plus tard.",
       "derivedDistance": "Distance parcourue : {distance} km",
       "distanceKm": "Distance parcourue (km)",
       "distanceText": "{distance} km parcourus",
@@ -599,6 +611,7 @@
         "off": "L'utilisation d'un véhicule n'est pas enregistrée pour cet employé.",
         "splitOutOfRange": "Les kilomètres au moment de la scission doivent être compris dans les kilomètres de la période de travail."
       },
+      "settingsLoading": "Chargement des paramètres d'utilisation du véhicule…",
       "startKm": "Relevé de début (km)",
       "title": "Utilisation du véhicule",
       "unknownVehicle": "Véhicule inconnu (indisponible)",

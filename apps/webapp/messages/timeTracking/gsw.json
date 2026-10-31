@@ -46,6 +46,10 @@
       "uncertainDescription": "Dini Stächuhr isch aktualisiert worde. Überprüef sie, vori du's nomal probiersch."
     },
     "budget": "Budget",
+    "choices": {
+      "retry": "{choice} nomol probiere",
+      "unavailable": "{choice} nöd verfüegbar"
+    },
     "clockedOutSuccess": "Du häsch usgstämplet!",
     "clockIn": "Iistämple",
     "clockingIn": "Am Iistämple…",
@@ -59,6 +63,11 @@
     "clockOutSavedForSending": "Usstämple uf däm Grät gspycheret. Es wird automatisch gschickt und isch nonig bestätigt.",
     "clockOutSavedHeld": "Usstämple uf däm Grät gspycheret, aber nid gschickt. Überprüef die gspycherete Iiträg.",
     "clockOutSuccess": "Erfolgriich usgstämplet",
+    "clockStatus": {
+      "loading": "Stämpelstatus wird glade",
+      "retry": "Stämpelstatus nomol lade",
+      "unavailable": "Stämpelstatus nöd verfüegbar"
+    },
     "compliance": {
       "violation": "Compliance-Verstoss",
       "warning": "Compliance-Hiwiis"
@@ -564,6 +573,9 @@
       "breakReading": "Kilometerstand bi de Pause (km)",
       "breakReadingHint": "Optional. Das beändet de Stand vo dere Arbet und startet de nächschti.",
       "changeLive": "Ändere",
+      "choices": "Fahrzüguuswahl",
+      "choicesLoading": "Fahrzüguuswahl wird glade…",
+      "choicesOffline": "D Fahrzüguuswahl isch offline nöd verfüegbar. Du chasch d Ziit erfasse und d Details spöter dezuefüege.",
       "derivedDistance": "Gfahreti Distanz: {distance} km",
       "distanceKm": "Gfahreti Distanz (km)",
       "distanceText": "{distance} km gfahre",
@@ -599,6 +611,7 @@
         "off": "Für diesen Mitarbeitenden wird keine Fahrzeugnutzung erfasst.",
         "splitOutOfRange": "Die Kilometer bei der Aufteilung müssen innerhalb der Kilometer der Arbeitsperiode liegen."
       },
+      "settingsLoading": "Istellige für d Fahrzügnutzig werded glade…",
       "startKm": "Anfangsstand (km)",
       "title": "Fahrzeugnutzung",
       "unknownVehicle": "Unbekanntes Fahrzeug (nicht verfügbar)",

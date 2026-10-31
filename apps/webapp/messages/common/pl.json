@@ -268,6 +268,7 @@
       "importReview": "Ładowanie przeglądu importu",
       "importSettings": "Ładowanie ustawień importu",
       "locationSettings": "Ładowanie ustawień lokalizacji",
+      "navigation": "Ładowanie nawigacji",
       "onboarding": "Ładowanie onboardingu",
       "payrollExportSettings": "Ładowanie ustawień eksportu listy płac",
       "payrollReadiness": "Ładowanie gotowości listy płac",
@@ -317,6 +318,10 @@
     "moveDown": "Przesuń w dół",
     "moveUp": "Przesuń w górę",
     "name": "Nazwa",
+    "navigation": {
+      "retry": "Ponów ładowanie nawigacji",
+      "unavailable": "Niektóre elementy nawigacji są niedostępne"
+    },
     "new": "Nowy",
     "next": "Dalej",
     "no": "Nie",
@@ -342,6 +347,7 @@
       "assignmentNotFound": "To przypisanie już nie istnieje.",
       "employeeNotFound": "Nie znaleziono tego pracownika.",
       "employeeProfileRequired": "Wymagany jest profil pracownika w tej organizacji.",
+      "formerEmployee": "Byli pracownicy nie mogą otrzymać nowego przypisania. Wybierz kogoś z aktualnej listy pracowników.",
       "invalidTarget": "Wybierz, kogo dotyczy to przypisanie.",
       "noticeChanged": "Informacja o pozycji uległa zmianie. Przejrzyj aktualną treść przed podjęciem decyzji.",
       "positionsForbidden": "Nie masz uprawnień do przeglądania pozycji z tego okresu pracy.",
@@ -933,7 +939,6 @@
   "employeeSelect": {
     "countSelected": "Wybrano {count} pracowników",
     "countWithMore": "{count} pracowników (+{more} więcej)",
-    "inactive": "Nieaktywny",
     "noEmployeesFound": "Nie znaleziono pracowników",
     "removeSelected": "Usuń {name}",
     "role": "Rola",
@@ -975,6 +980,13 @@
       "digest": "Odniesienie: {digest}",
       "title": "Coś poszło nie tak"
     }
+  },
+  "formerEmployees": {
+    "current": "Aktualni",
+    "former": "Byli",
+    "formerDateNotRecorded": "Były pracownik · brak zarejestrowanej daty",
+    "formerSince": "Były pracownik od {date}",
+    "showFormer": "Pokaż byłych pracowników"
   },
   "generic": {
     "done": "Gotowe",
@@ -1331,8 +1343,13 @@
         "message": "Zorganizuj kontrolę oryginału prawa jazdy dla {employeeName}, kategoria {classes}, do {deadline}.",
         "title": "Wymagana kontrola prawa jazdy"
       },
+      "employeeDeactivationShiftsOpened": {
+        "message": "{shiftCount, plural, one {Użytkownik {employeeName} został dezaktywowany. # nadchodząca zmiana jest teraz otwarta.} few {Użytkownik {employeeName} został dezaktywowany. # nadchodzące zmiany są teraz otwarte.} many {Użytkownik {employeeName} został dezaktywowany. # nadchodzących zmian jest teraz otwartych.} other {Użytkownik {employeeName} został dezaktywowany. # nadchodzącej zmiany jest teraz otwarte.}}",
+        "title": "Zmiany wymagają obsady"
+      },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Obowiązki zatwierdzania wymagają zastępstwa (odejście z dniem {cutoff}, {timezone}).",
+        "approval_handover_deactivation": "{employeeName}: Obowiązki zatwierdzania wymagają zastępstwa (dezaktywowano {cutoff}, {timezone}).",
         "clock_out": "{employeeName}: Wymaga weryfikacji: rejestracja wyjścia (offboarding) (odejście z dniem {cutoff}, {timezone}).",
         "clock_repair": "{employeeName}: Wymagana naprawa licznika czasu (odejście z dniem {cutoff}, {timezone}).",
         "employment_terms": "{employeeName}: Przyszłe warunki zatrudnienia wymagają weryfikacji (odejście z dniem {cutoff}, {timezone}).",
@@ -1342,6 +1359,10 @@
       "forgottenClockOutReminder": {
         "message": "Twoja zmiana zakończyła się o {endTime} ({timezone}). Zarejestruj wyjście, jeśli zakończono pracę.",
         "title": "Nadal masz zarejestrowane wejście"
+      },
+      "formerEmployeeReportsWithoutManager": {
+        "message": "{count, plural, one {# pracownik jest nadal powiązany tylko z byłym menedżerem: {names}. Przypisz aktualnego menedżera.} few {# pracownicy są nadal powiązani tylko z byłym menedżerem: {names}. Przypisz aktualnego menedżera.} many {# pracowników jest nadal powiązanych tylko z byłym menedżerem: {names}. Przypisz aktualnego menedżera.} other {# pracownika jest nadal powiązanych tylko z byłym menedżerem: {names}. Przypisz aktualnego menedżera.}}",
+        "title": "Pracownicy bez aktualnego menedżera"
       },
       "kioskCommandRefused": {
         "forwardedMessage": "Zdarzenie: {action, select, clock_in {rozpoczęcie pracy} clock_out {zakończenie pracy} start_break {rozpoczęcie przerwy} resume_break {powrót z przerwy} other {rejestracja czasu}} pracownika {employeeName} o {time} na terminalu {kioskName} nie zostało zarejestrowane: {reason, select, wrong_pin {błędny kod PIN} pin_locked {kod PIN terminala został zablokowany po zbyt wielu nieudanych próbach} no_pin {brak kodu PIN terminala do weryfikacji} pin_unchecked {nie można było sprawdzić kodu PIN} kiosk_retired {terminal został wycofany lub ponownie sparowany przed ponownym połączeniem} contact_unverifiable {system Z8 nie mógł potwierdzić ostatniego połączenia z terminalem} outside_window {czas był poza oknem akceptowanym przez Z8} clock_untrusted {zegar terminala nie był wystarczająco wiarygodny} not_assigned {pracownik nie jest przypisany do lokalizacji terminala} not_adopted {organizacja nie akceptuje rejestracji offline z terminali} month_closed {miesiąc jest zamknięty} holiday {ten dzień jest świętem bez rejestracji czasu pracy} conflict {występuje konflikt z innym zarejestrowanym czasem} other {system Z8 nie mógł go zaakceptować}}. Zarejestruj czas dla pracownika lub sprawdź to z nim.",
@@ -1806,7 +1827,9 @@
         "driving_authorization_suspended_or_ended": "Upoważnienie do kierowania zawieszone lub zakończone",
         "driving_details_missing_reminder": "Brak szczegółów przejazdu",
         "driving_licence_reminder": "Wymagana kontrola prawa jazdy",
+        "employee_deactivation_shifts_opened": "Zmiany otwarte wskutek dezaktywacji",
         "forgotten_clock_out_reminder": "Zapomniana rejestracja wyjścia",
+        "former_employee_reports_without_manager": "Pracownicy bez aktualnego menedżera",
         "kiosk_command_refused": "Rejestracja w terminalu nie została zapisana",
         "missed_clock_in_reminder": "Brak rejestracji wejścia",
         "period_submission_decided": "Przesłany czas pracy zatwierdzony lub odrzucony",
@@ -3157,10 +3180,6 @@
     "admin": "Administrator",
     "employee": "Pracownik",
     "manager": "Menedżer"
-  },
-  "status": {
-    "active": "Aktywny",
-    "inactive": "Nieaktywny"
   },
   "storeAppBanner": {
     "description": "Otrzymuj przypomnienia i powiadomienia o zatwierdzeniach w aplikacji.",

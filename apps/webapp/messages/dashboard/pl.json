@@ -17,13 +17,12 @@
     },
     "covering-for": {
       "description": "Współpracownicy, których zastępujesz podczas ich nieobecności",
-      "error": "Nie udało się załadować Twoich zastępstw",
       "running": "Zastępstwo za {name} do {date}",
       "title": "Zastępstwo za",
       "upcoming": "Nadchodzące: zastępstwo za {name} od {start} do {end}"
     },
     "customize": {
-      "empty-description": "Użyj ikony dostosowywania pulpitu, aby ponownie włączyć poszczególne widżety lub zresetuj układ, aby ponownie wyświetlić wszystkie widżety.",
+      "empty-description-defaults": "Użyj ikony dostosowywania pulpitu, aby ponownie włączyć poszczególne widżety, lub zresetuj układ, aby przywrócić domyślne widżety.",
       "empty-title": "Wszystkie widżety pulpitu są ukryte",
       "move-down": "Przesuń {widget} w dół",
       "move-up": "Przesuń {widget} w górę",
@@ -54,7 +53,6 @@
     },
     "managed-employees": {
       "direct-reports": "{count} bezpośrednich podwładnych",
-      "error": "Nie udało się załadować zarządzanych pracowników",
       "no-reports": "Brak bezpośrednich podwładnych",
       "no-reports-description": "Tutaj zobaczysz członków swojego zespołu, gdy zostaną przypisani",
       "people-you-manage": "Osoby, którymi zarządzasz",
@@ -78,7 +76,7 @@
       "awaiting-approval": "Oczekujące na Twoją akceptację",
       "correction": "Korekta",
       "description": "Wnioski oczekujące na Twoją decyzję",
-      "error": "Nie udało się załadować oczekujących wniosków",
+      "empty": "Brak oczekujących zatwierdzeń",
       "more-requests": "+{count} więcej wniosków",
       "pending-requests": "{count} oczekujący {request, plural, one {wniosek} few {wnioski} other {wniosków}}",
       "request": "wniosek",
@@ -117,7 +115,7 @@
       "by": "przez {name}",
       "description": "Ostatnio zatwierdzone wnioski",
       "description-count": "Ostatnie {count} zatwierdzone {request, plural, one {wnioski} other {wnioski}}",
-      "error": "Nie udało się załadować ostatnio zatwierdzonych wniosków",
+      "empty": "Brak ostatnio zatwierdzonych wniosków",
       "more-approved": "+{count} więcej zatwierdzonych",
       "request": "wniosek",
       "requests": "wnioski",
@@ -126,12 +124,11 @@
       "view-all": "Zobacz wszystkie wnioski"
     },
     "team-overview": {
-      "active-count": "{active} z {total} pracowników ({percent}%)",
-      "active-employees": "Aktywni pracownicy",
       "avg-hours": "Śr. liczba godzin",
+      "current-employees": "Aktualni pracownicy",
+      "current-employees-description": "Wszyscy, którzy obecnie tutaj pracują",
       "description": "Statystyki zespołu w skrócie",
       "employees-button": "Pracownicy",
-      "error": "Nie udało się załadować statystyk zespołu",
       "per-week": "/tydzień",
       "teams": "Zespoły",
       "teams-button": "Zespoły",
@@ -142,7 +139,6 @@
       "empty": "Brak nadchodzących zmian",
       "empty-description": "Tutaj pojawią się Twoje kolejne opublikowane zmiany.",
       "ends-next-day": "kończy się następnego dnia",
-      "error": "Nie udało się załadować nadchodzących zmian",
       "title": "Nadchodzące zmiany",
       "today": "Dzisiaj",
       "tomorrow": "Jutro",
@@ -155,7 +151,7 @@
       "days": "dni",
       "description": "Zaplanowane nieobecności zespołu",
       "description-count": "Kolejne {count} zaplanowane {absence, plural, one {nieobecności} other {nieobecności}}",
-      "error": "Nie udało się załadować nadchodzących urlopów",
+      "empty": "Brak nadchodzących dni wolnych",
       "title": "Nadchodzące urlopy",
       "today": "Dzisiaj",
       "tomorrow": "Jutro",
@@ -167,7 +163,6 @@
       "carryover-days": "{days} dni",
       "days-remaining": "pozostało dni",
       "description": "{year} dni urlopu",
-      "error": "Nie udało się załadować bilansu urlopowego",
       "expires-in": "Wygasa za {days} dni",
       "label-available": "Dostępne",
       "label-pending": "Oczekujące",
@@ -176,10 +171,10 @@
       "percent-used": "{percent}% wykorzystane",
       "title": "Bilans urlopowy",
       "total": "{days} łącznie",
+      "unavailable": "Saldo urlopowe jest niedostępne.",
       "used": "{days} wykorzystane"
     },
     "whos-out": {
-      "error": "Nie udało się załadować dzisiejszych nieobecności",
       "everyone-in": "Wszyscy są dzisiaj w biurze",
       "everyones-in": "Wszyscy są na miejscu!",
       "full-team": "Cały zespół jest dostępny!",
@@ -198,9 +193,13 @@
       "view-calendar": "Zobacz pełny kalendarz"
     },
     "widgets": {
+      "deferred": "Ładuje się, gdy jest w widoku. Możesz go też załadować teraz.",
       "dragToReorder": "Przeciągnij, aby zmienić kolejność widżetu",
+      "load": "Załaduj {widget}",
+      "loading": "Ładowanie widżetu pulpitu…",
       "moving": "Przenoszenie widżetu…",
-      "refresh": "Odśwież"
+      "refresh": "Odśwież",
+      "retry": "Ponów: {widget}"
     }
   }
 }

@@ -46,6 +46,10 @@
       "uncertainDescription": "Saatiniz yenilendi. Tekrar denemeden önce kontrol edin."
     },
     "budget": "Bütçe",
+    "choices": {
+      "retry": "{choice} için tekrar dene",
+      "unavailable": "{choice} kullanılamıyor"
+    },
     "clockedOutSuccess": "Mesainizi bitirdiniz!",
     "clockIn": "İşe Giriş",
     "clockingIn": "İşe giriş yapılıyor…",
@@ -59,6 +63,11 @@
     "clockOutSavedForSending": "Çıkış kaydı bu cihaza kaydedildi. Otomatik olarak gönderilir ve henüz onaylanmadı.",
     "clockOutSavedHeld": "Çıkış kaydı bu cihaza kaydedildi ancak gönderilmedi. Kaydedilen kayıtları inceleyin.",
     "clockOutSuccess": "İşten çıkış başarıyla yapıldı",
+    "clockStatus": {
+      "loading": "Giriş/çıkış durumu yükleniyor",
+      "retry": "Giriş/çıkış durumunu tekrar dene",
+      "unavailable": "Giriş/çıkış durumu kullanılamıyor"
+    },
     "compliance": {
       "violation": "Uyumluluk İhlali",
       "warning": "Uyumluluk Bildirimi"
@@ -564,6 +573,9 @@
       "breakReading": "Moladaki kilometre sayacı değeri (km)",
       "breakReadingHint": "İsteğe bağlı. Bu çalışmanın sayaç değerini sonlandırır ve bir sonrakininkini başlatır.",
       "changeLive": "Değiştir",
+      "choices": "Araç seçenekleri",
+      "choicesLoading": "Araç seçenekleri yükleniyor…",
+      "choicesOffline": "Araç seçenekleri çevrimdışıyken kullanılamaz. Süreyi kaydedebilir ve ayrıntıları daha sonra ekleyebilirsiniz.",
       "derivedDistance": "Kat edilen mesafe: {distance} km",
       "distanceKm": "Kat edilen mesafe (km)",
       "distanceText": "{distance} km kat edildi",
@@ -599,6 +611,7 @@
         "off": "Bu çalışan için araç kullanımı kaydedilmiyor.",
         "splitOutOfRange": "Bölme noktasındaki kilometre, çalışma döneminin kilometre aralığında olmalıdır."
       },
+      "settingsLoading": "Araç kullanım ayarları yükleniyor…",
       "startKm": "Başlangıç değeri (km)",
       "title": "Araç kullanımı",
       "unknownVehicle": "Bilinmeyen araç (kullanılamıyor)",

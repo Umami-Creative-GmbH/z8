@@ -25,6 +25,7 @@
         "adminOnly": "Solo los propietarios y administradores de la organización pueden administrar las ubicaciones asignadas.",
         "employeeNotFound": "Empleado no encontrado.",
         "failed": "No se pudieron actualizar las ubicaciones asignadas. Inténtalo de nuevo.",
+        "formerEmployee": "No se puede asignar una ubicación a los exempleados.",
         "invalidSelection": "Elige de la lista.",
         "locationNotFound": "Ubicación no encontrada."
       },
@@ -873,6 +874,7 @@
         "attribution": "Concedido por {actor} a las {time}",
         "editor": "Alcance del verificador",
         "empty": "No hay responsabilidades de verificador asignadas",
+        "formerEmployee": "No se pueden añadir exempleados. Elige empleados de la plantilla actual.",
         "history": "Historial de responsabilidades",
         "historyEntry": "Otorgado por {grantor} el {granted}; revocado por {revoker} el {revoked}",
         "loadFailed": "No se pudieron cargar las responsabilidades de verificador",
@@ -3002,6 +3004,7 @@
       },
       "refusals": {
         "driverNotFound": "Un empleado o equipo asignado ya no existe. Recargue la página.",
+        "formerDriver": "No se puede asignar a exempleados como conductores. Elige empleados de la plantilla actual.",
         "invalidChange": "No se pudo guardar el cambio. Recargue la página e inténtelo de nuevo.",
         "invalidDrivers": "Elija como máximo 500 empleados y equipos asignados.",
         "invalidLicencePlate": "Introduzca una matrícula de hasta 20 caracteres.",
@@ -3030,6 +3033,7 @@
         "assignmentNotFound": "Esa asignación ya no existe. Recarga la página.",
         "employeeNotFound": "Ese empleado ya no existe.",
         "failed": "Algo salió mal. Inténtalo de nuevo.",
+        "formerEmployee": "Los exempleados no pueden recibir una nueva asignación. Elige a alguien de la plantilla actual.",
         "invalidMode": "Elige un modo para la asignación.",
         "invalidTarget": "Elige a quién se aplica la asignación.",
         "teamNotFound": "Ese equipo ya no existe."

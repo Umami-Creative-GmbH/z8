@@ -268,6 +268,7 @@
       "importReview": "Import-Überprüefig wird glade",
       "importSettings": "Import-Iistellige werdet glade",
       "locationSettings": "Standort-Iistellige werdet glade",
+      "navigation": "Navigation wird glade",
       "onboarding": "Onboarding wird glade",
       "payrollExportSettings": "Lohnabrechnigs-Export-Iistellige werdet glade",
       "payrollReadiness": "Lohnabrechnigs-Bereitschaft wird glade",
@@ -317,6 +318,10 @@
     "moveDown": "Abewärts verschiebe",
     "moveUp": "Ufewärts verschiebe",
     "name": "Name",
+    "navigation": {
+      "retry": "Navigation nomal probiere",
+      "unavailable": "Einigi Navigationsoptione sind nöd verfüegbar"
+    },
     "new": "Neu",
     "next": "Wiiter",
     "no": "Nei",
@@ -342,6 +347,7 @@
       "assignmentNotFound": "Die Zueordnig git's nüme.",
       "employeeNotFound": "De Mitarbeiter isch nöd gfunde worde.",
       "employeeProfileRequired": "Es bruucht es Mitarbeiterprofil i dere Organisation.",
+      "formerEmployee": "Ehemaligi Mitarbeiter chönd kei neui Zueornig übercho. Wähl öpper us de aktuelle Lischte.",
       "invalidTarget": "Wähl us, für wen die Zueordnig gilt.",
       "noticeChanged": "De Standorthinwiis hät gänderet. Überprüef de aktuell Hinwiis, bevor du entscheidisch.",
       "positionsForbidden": "Du dörfsch d Positione vo dere Arbeitsperiode nöd gseh.",
@@ -933,7 +939,6 @@
   "employeeSelect": {
     "countSelected": "{count} Aagstellti usgwählt",
     "countWithMore": "{count} Aagstellti (+{more} wiiteri)",
-    "inactive": "Inaktiv",
     "noEmployeesFound": "Kei Aagstellti gfunde",
     "removeSelected": "{name} entferne",
     "role": "Rolle",
@@ -975,6 +980,13 @@
       "digest": "Referänz: {digest}",
       "title": "Öppis isch schiefgloffe"
     }
+  },
+  "formerEmployees": {
+    "current": "Aktuell",
+    "former": "Ehemalig",
+    "formerDateNotRecorded": "Ehemalig · Datum nöd erfasst",
+    "formerSince": "Ehemalig sit {date}",
+    "showFormer": "Ehemaligi Mitarbeiter aazeige"
   },
   "generic": {
     "done": "Fertig",
@@ -1331,8 +1343,13 @@
         "message": "Organisier e Prüefig vom Original-Fahruuswiis für {employeeName}, Kategori {classes}, bis {deadline}.",
         "title": "Fahruuswiis-Prüefig fällig"
       },
+      "employeeDeactivationShiftsOpened": {
+        "message": "{shiftCount, plural, one {{employeeName} isch deaktiviert worde. # bevorstehendi Schicht isch jetzt offe.} other {{employeeName} isch deaktiviert worde. # bevorstehendi Schichte sind jetzt offe.}}",
+        "title": "Schichte bruched öpper"
+      },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Genehmigungsaufgaben erfordern eine Stellvertretung (Austritt wirksam {cutoff}, {timezone}).",
+        "approval_handover_deactivation": "{employeeName}: Freigaabezueständigkeit brucht en Ersatz (deaktiviert {cutoff}, {timezone}).",
         "clock_out": "{employeeName}: Überprüfung erforderlich: Offboarding-Ausstempeln (Austritt wirksam {cutoff}, {timezone}).",
         "clock_repair": "{employeeName}: Timer-Reparatur erforderlich (Austritt wirksam {cutoff}, {timezone}).",
         "employment_terms": "{employeeName}: Zukünftige Anstellungsbedingungen müssen überprüft werden (Austritt wirksam {cutoff}, {timezone}).",
@@ -1342,6 +1359,10 @@
       "forgottenClockOutReminder": {
         "message": "Dini Schicht het um {endTime} ({timezone}) gändet. Stämpfel us, wänn du fertig gschaffet häsch.",
         "title": "Du bisch immer no yygstämpflet"
+      },
+      "formerEmployeeReportsWithoutManager": {
+        "message": "{count, plural, one {# Mitarbeiter isch immer no nume mit eme ehemalige Vorgesetzte verchnüpft: {names}. Wiis en aktuelle Vorgesetzte zue.} other {# Mitarbeiter sind immer no nume mit eme ehemalige Vorgesetzte verchnüpft: {names}. Wiis en aktuelle Vorgesetzte zue.}}",
+        "title": "Mitarbeiter ohni aktuelle Vorgesetzte"
       },
       "kioskCommandRefused": {
         "forwardedMessage": "E {action, select, clock_in {Iistämplig} clock_out {Usstämplig} start_break {Pause-Aafang} resume_break {Ruckchehr us de Pause} other {Stämplig}} vo {employeeName} um {time} am Kiosk {kioskName} isch nöd erfasst worde: {reason, select, wrong_pin {de PIN isch falsch gsi} pin_locked {de Kiosk-PIN isch nach z vill falsche Versüech gsperrt worde} no_pin {es hät kei Kiosk-PIN zum Vergliiche geh} pin_unchecked {de PIN hät nöd chönne überprüft werde} kiosk_retired {de Kiosk isch widerruefe oder neu kopplet worde, bevor er sich wider verbunde hät} contact_unverifiable {Z8 hät die letscht Verbindig vom Kiosk nöd chönne bestätige} outside_window {d Ziit isch usserhalb vom Ziitfänschter gsi, wo Z8 akzeptiert} clock_untrusted {d Uhr vom Kiosk isch defür nöd vertrauenswürdig gsi} not_assigned {d Person isch em Standort vom Kiosk nöd zuegwise} not_adopted {d Organisation akzeptiert keini Offline-Kiosk-Stämplige} month_closed {de Monet isch abgschlosse} holiday {de Tag isch en Fiertig ohni Ziterfassig} conflict {es kollidiert mit anderi erfassti Ziite} other {Z8 hät das nöd chönne aanee}}. Trag d Ziit für si ii oder überprüef si mit ine.",
@@ -1806,7 +1827,9 @@
         "driving_authorization_suspended_or_ended": "Fahrberechtigung sistiert oder beendet",
         "driving_details_missing_reminder": "Fahrtdetails fähled",
         "driving_licence_reminder": "Fahruuswiis-Prüefig fällig",
+        "employee_deactivation_shifts_opened": "Schichte, wo dur e Deaktivierig offe worde sind",
         "forgotten_clock_out_reminder": "Vergessenes Ausstempeln",
+        "former_employee_reports_without_manager": "Mitarbeiter ohni aktuelle Vorgesetzte",
         "kiosk_command_refused": "Kiosk-Stämplig nöd erfasst",
         "missed_clock_in_reminder": "Verpasstes Einstempeln",
         "period_submission_decided": "Iigreichti Ziit gnähmigt oder abglehnt",
@@ -3157,10 +3180,6 @@
     "admin": "Admin",
     "employee": "Aagstellte",
     "manager": "Vorgesetzte/r"
-  },
-  "status": {
-    "active": "Aktiv",
-    "inactive": "Inaktiv"
   },
   "storeAppBanner": {
     "description": "Chumm Erinnerige und Gnähmigungs-Benachrichtigunge i de App über.",

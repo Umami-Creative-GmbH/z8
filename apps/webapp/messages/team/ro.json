@@ -211,10 +211,6 @@
       "ariaLabel": "Căutați membri ai echipei",
       "placeholder": "Căutați după nume, e-mail, funcție sau echipă..."
     },
-    "status": {
-      "active": "Activ",
-      "inactive": "Inactiv"
-    },
     "table": {
       "employee": "Angajat",
       "position": "Funcție",
