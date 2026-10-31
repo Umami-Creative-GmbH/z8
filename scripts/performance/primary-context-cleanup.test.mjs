@@ -12,7 +12,7 @@ import { createProxyWireObserver } from "./proxy-wire-observer.mjs";
 const require = createRequire(
   new URL("../../apps/webapp/package.json", import.meta.url),
 );
-const { BasicTracerProvider } = require("@opentelemetry/sdk-trace-base");
+const { TracerProvider } = require("@opentelemetry/sdk-trace");
 const { SpanKind, ROOT_CONTEXT, trace } = require("@opentelemetry/api");
 const pause = (ms) => new Promise((done) => setTimeout(done, ms));
 
@@ -29,7 +29,7 @@ test("primary closes after pending HTTP finishes and a real SDK SERVER span ends
     coverage = new FixtureNativeCoverage();
   coverage.register([id]);
   coverage.enableDriverCounter();
-  const provider = new BasicTracerProvider({
+  const provider = new TracerProvider({
     spanProcessors: [
       {
         onStart: (span) => coverage.onStart(span),

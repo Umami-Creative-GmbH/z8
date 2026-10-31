@@ -5,5 +5,5 @@
 apps/webapp/src/tolgee/catalog-source-metadata.generated.ts text eol=lf
 
 # pnpm hashes patch contents and writes its lockfile with LF.
-patches/next@16.4.0.patch text eol=lf
+patches/next@16.4.3.patch text eol=lf
 pnpm-lock.yaml text eol=lf

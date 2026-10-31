@@ -47,4 +47,4 @@ minimumReleaseAgeExclude:
 overrides:
   "esbuild": "0.25.12"
   "pako": "1.0.11"
-  "uuid": "14.0.0"
+  "uuid": "14.0.3"

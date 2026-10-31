@@ -57,6 +57,27 @@
 			"tailwindDirectives": true
 		}
 	},
+	"overrides": [
+		{
+			// Test wrappers and module mocks define components inside factories on purpose.
+			"includes": ["**/*.test.ts", "**/*.test.tsx", "**/*.test-stub.ts"],
+			"linter": {
+				"rules": {
+					"correctness": {
+						"noComponentHookFactories": "off"
+					}
+				}
+			}
+		}
+	],
+	"markdown": {
+		"formatter": {
+			"enabled": false
+		},
+		"linter": {
+			"enabled": false
+		}
+	},
 	"files": {
 		"ignoreUnknown": true
 	}

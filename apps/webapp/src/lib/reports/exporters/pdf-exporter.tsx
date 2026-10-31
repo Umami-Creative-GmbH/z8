@@ -147,6 +147,7 @@ export async function exportToPDF(
 	);
 
 	// Define the PDF document component inline (closure over dynamic imports)
+	// biome-ignore lint/correctness/noComponentHookFactories: one-shot @react-pdf render over the dynamically imported primitives; it never re-renders.
 	const EmployeeReportPDF = () => (
 		<Document>
 			<Page size="A4" style={styles.page}>

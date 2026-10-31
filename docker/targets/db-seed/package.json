@@ -2,17 +2,17 @@
 	"name": "@z8-target/db-seed",
 	"private": true,
 	"type": "module",
-	"packageManager": "pnpm@12.14.0",
+	"packageManager": "pnpm@12.16.1",
 	"dependencies": {
-		"@opentelemetry/api": "^1.9.1",
+		"@opentelemetry/api": "^1.10.0",
 		"@t3-oss/env-nextjs": "^0.13.11",
-		"dotenv": "^18.0.7",
+		"dotenv": "^18.0.9",
 		"drizzle-orm": "^0.45.4",
 		"luxon": "^3.7.2",
-		"next": "16.4.0",
+		"next": "16.4.3",
 		"pg": "^8.23.1",
 		"pino": "^10.4.0",
-		"temporal-polyfill": "1.0.5",
-		"zod": "^4.6.5"
+		"temporal-polyfill": "1.0.6",
+		"zod": "^4.6.7"
 	}
 }

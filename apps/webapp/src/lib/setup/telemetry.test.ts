@@ -1,7 +1,7 @@
 import type {
 	ReadableSpan,
 	SpanProcessor,
-} from "@opentelemetry/sdk-trace-base";
+} from "@opentelemetry/sdk-trace";
 import { describe, expect, it, vi } from "vitest";
 import {
 	REPORT_SHARE_REQUEST_PATH,
@@ -21,6 +21,14 @@ describe("setup credential telemetry privacy", () => {
 			attributes: {
 				"db.statement": "eval script 2 z8:{setup-bootstrap}:code secret",
 			},
+		},
+		{
+			name: "array attribute",
+			attributes: { "db.query.parameters": ["z8:{setup-bootstrap}:code"] },
+		},
+		{
+			name: "nested map attribute",
+			attributes: { request: { url: { path: "/api/setup/authorize" } } },
 		},
 	])("never exports setup HTTP or Redis spans: $name", (span) => {
 		const delegate = { onEnd: vi.fn() } as unknown as SpanProcessor;

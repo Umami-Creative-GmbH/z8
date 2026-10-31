@@ -277,7 +277,7 @@ async function qualifiedFileFixture() {
  const metadata={...testBrowserMetadata(),compiledManifestSha256:hash(manifest),targetedPrefetchProfile,nativePublicSources:{protocol:'qualified-serving-worker-sources-v1',compiledBuild:build,compiledManifestSha256:hash(manifest),files}};
  const plan={runtime:{build,targetedPrefetchProfile,browserControl:metadata}};
  const nextRoot=dirname(createRequire(new URL('../../apps/webapp/package.json',import.meta.url)).resolve('next/package.json')),nextCopy=join(directory,'app/node_modules/next');
- await mkdir(nextCopy,{recursive:true});await writeFile(join(nextCopy,'package.json'),JSON.stringify({name:'next',version:'16.4.0'}));
+ await mkdir(nextCopy,{recursive:true});await writeFile(join(nextCopy,'package.json'),JSON.stringify({name:'next',version:'16.4.3'}));
  for(const file of ['dist/client/components/segment-cache/fetch.js','dist/esm/client/components/segment-cache/fetch.js','dist/client/components/router-reducer/fetch-server-response.js','dist/esm/client/components/router-reducer/fetch-server-response.js','dist/build/define-env.js']){await mkdir(dirname(join(nextCopy,file)),{recursive:true});await copyFile(join(nextRoot,file),join(nextCopy,file));}
  return {directory,manifestPath,plan};
 }
