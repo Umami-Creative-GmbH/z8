@@ -26,6 +26,11 @@ interface AcceptInvitationFormProps {
 	invitationId: string;
 }
 
+// The app client carries the organization plugin; load it only to accept.
+// Loaders live outside the component because React Compiler cannot compile import().
+const loadAuthClient = () => import("@/lib/auth-client");
+const loadSignOut = () => import("@/lib/store-app/sign-out");
+
 function getInvitationCallbackUrl(invitationId: string) {
 	return `/accept-invitation/${invitationId}`;
 }
@@ -128,8 +133,7 @@ export function AcceptInvitationForm({
 		setError(null);
 
 		try {
-			// The app client carries the organization plugin; load it only to accept.
-			const { authClient } = await import("@/lib/auth-client");
+			const { authClient } = await loadAuthClient();
 			const result = await authClient.organization.acceptInvitation({
 				invitationId,
 			});
@@ -158,7 +162,7 @@ export function AcceptInvitationForm({
 	};
 
 	const handleSignOut = async () => {
-		const { signOut } = await import("@/lib/store-app/sign-out");
+		const { signOut } = await loadSignOut();
 		await signOut({
 			fetchOptions: {
 				onSuccess: () => {
