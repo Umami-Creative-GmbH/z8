@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { Suspense } from "react";
 import { LoginForm } from "@/components/login-form";
-import { StoreAppSignInForm } from "@/components/login/store-app-sign-in-form";
+import { StoreAppSignInForm } from "@/components/login/store-app-sign-in-form-lazy";
 import { AuthContentLoading } from "@/components/shells/auth-content-loading";
 import { getStoreAppPlatformFromUserAgent } from "@/lib/store-app/shell";
 import { ALL_LANGUAGES } from "@/tolgee/shared";

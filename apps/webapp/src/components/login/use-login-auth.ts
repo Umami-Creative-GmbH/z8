@@ -3,7 +3,6 @@
 import { useTranslate } from "@tolgee/react";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useReducer } from "react";
-import { z } from "zod";
 import {
 	getPostSignInRedirectUrl,
 	sanitizeCallbackUrl,
@@ -14,9 +13,14 @@ import { getAuthErrorMessage } from "@/lib/auth/error-message";
 import { authClient } from "@/lib/auth-client";
 import { useEnabledProviders } from "@/lib/hooks/use-enabled-providers";
 import type { SocialProviderId } from "@/lib/social-providers";
-import { getOnboardingStepPath } from "@/lib/validations/onboarding";
+import { getOnboardingStepPath } from "@/lib/validations/onboarding-steps";
 import { useRouter } from "@/navigation";
-import { initialLoginState, loginReducer, loginSchema } from "./login-state";
+import {
+	initialLoginState,
+	isValidLoginEmail,
+	loginReducer,
+	validateLoginCredentials,
+} from "./login-state";
 
 export function useLoginAuth(turnstileRef: React.RefObject<{ reset: () => void } | null>) {
 	const { t } = useTranslate();
@@ -74,8 +78,7 @@ export function useLoginAuth(turnstileRef: React.RefObject<{ reset: () => void }
 	};
 
 	const handleEmailBlur = (value: string) => {
-		const result = z.email().safeParse(value);
-		if (result.success) {
+		if (isValidLoginEmail(value)) {
 			dispatch({ type: "CLEAR_FIELD_ERROR", field: "email" });
 		} else {
 			dispatch({
@@ -103,12 +106,8 @@ export function useLoginAuth(turnstileRef: React.RefObject<{ reset: () => void }
 		dispatch({ type: "SET_LOADING", loading: true });
 		dispatch({ type: "SET_ERROR", error: null });
 
-		const result = loginSchema.safeParse({ email: state.email, password: state.password });
-		if (!result.success) {
-			const errors: Record<string, string> = {};
-			for (const issue of result.error.issues) {
-				if (issue.path[0]) errors[issue.path[0] as string] = issue.message;
-			}
+		const errors = validateLoginCredentials({ email: state.email, password: state.password });
+		if (Object.keys(errors).length > 0) {
 			dispatch({ type: "SET_FIELD_ERRORS", errors });
 			dispatch({ type: "SET_LOADING", loading: false });
 			return;

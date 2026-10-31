@@ -2,6 +2,7 @@
 
 import { IconFingerprint } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import dynamic from "next/dynamic";
 import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { withCallbackUrl } from "@/lib/auth/callback-url";
@@ -10,8 +11,12 @@ import { type TurnstileRef, TurnstileWidget } from "../turnstile-widget";
 import { LoginActions } from "./login-actions";
 import { LoginAlternativeAuth } from "./alternative-auth";
 import { LoginCredentialsFields } from "./credentials-fields";
-import { TwoFactorForm } from "./two-factor-form";
 import { useLoginAuth } from "./use-login-auth";
+
+// Only shown after a sign-in asks for a 2FA code, so input-otp stays out of the first load.
+const TwoFactorForm = dynamic(() => import("./two-factor-form").then((mod) => mod.TwoFactorForm), {
+	ssr: false,
+});
 
 export function LoginFormContent({ className, ...props }: React.ComponentProps<"div">) {
 	const { t } = useTranslate();
