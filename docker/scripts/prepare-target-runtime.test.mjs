@@ -229,9 +229,12 @@ test("marketing and webapp use TypeScript 7 supported by their Next.js builds", 
 
 test("app Biome configurations extend the repository project", async () => {
 	for (const app of ["marketing", "webapp"]) {
-		const config = JSON.parse(
-			await fs.readFile(new URL(`../../apps/${app}/biome.jsonc`, import.meta.url), "utf8"),
+		const source = await fs.readFile(
+			new URL(`../../apps/${app}/biome.jsonc`, import.meta.url),
+			"utf8",
 		);
+		// JSONC allows whole-line comments; drop them before parsing.
+		const config = JSON.parse(source.replace(/^\s*\/\/.*$/gm, ""));
 
 		assert.equal(config.root, false, `${app} Biome configuration must not define a nested root`);
 	}
