@@ -13,6 +13,8 @@ const ALLOWED_DIRECT_ENV_READERS = new Set([
 	join("db", "unit-project-guard.ts"),
 	// Loaded by drizzle.config.ts; the migration image has only POSTGRES_* variables (#660).
 	join("db", "postgres-ssl.ts"),
+	// Reads the inlined NEXT_PUBLIC_BUILD_HASH so the auth pages do not ship the env schemas (#1487).
+	join("components", "auth-form-wrapper.tsx"),
 ]);
 const RUNTIME_FILE_EXTENSIONS = [".ts", ".tsx"] as const;
 
