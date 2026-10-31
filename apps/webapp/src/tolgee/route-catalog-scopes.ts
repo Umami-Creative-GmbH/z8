@@ -1,10 +1,12 @@
-import { canonicalizeNamespaces } from "./catalog-slices";
-import { type Namespace, ROUTE_NAMESPACES } from "./shared";
+import { type Namespace, ROUTE_NAMESPACES, type TreeTranslationsData } from "./catalog-config";
+import { type CatalogSlice, canonicalizeNamespaces } from "./catalog-slices";
 
-type RouteCatalogScope = {
+export type RouteCatalogScope = {
 	route: string;
 	namespaces: readonly Namespace[];
 	keys: readonly string[];
+	/** Top-level `common` subtrees the route never renders; left out of its slice. */
+	omittedCommonSubtrees?: readonly string[];
 };
 const EXTRA_SCOPES: Record<string, Namespace[]> = {
 	"/mfa": ["common", "settings/generic", "auth", "setup"],
@@ -39,6 +41,13 @@ const AUTH_ROUTES = [
 	"/accept-invitation",
 ];
 const AUTH_SET = new Set(AUTH_ROUTES);
+// Signed-out pages never render these feature families. Together they are about two
+// thirds of `common` (~125 KB of en JSON), which every auth page would inline otherwise.
+const AUTH_OMITTED_COMMON_SUBTREES = [
+	"drivingLicence",
+	"notifications",
+	"personalDataExport",
+];
 const DEPENDENCIES: Record<string, Namespace[]> = {
 	"/sign-in": ["setup"],
 	"/setup": ["auth"],
@@ -104,7 +113,41 @@ export const ROUTE_CATALOG_SCOPES: readonly RouteCatalogScope[] =
 				"organization.createDialog.title",
 				...(AUDITED_KEYS[route] ?? []),
 			],
+			...(route === "/sign-in"
+				? { omittedCommonSubtrees: AUTH_OMITTED_COMMON_SUBTREES }
+				: {}),
 		}));
+
+/**
+ * Drops a scope's omitted `common` subtrees (and their `common:` aliases) from its
+ * slice. The result no longer declares `common` complete: like the shell's partial
+ * leaves, it merges into the client dictionary without claiming the namespace.
+ */
+export function projectRouteCatalog(
+	scope: RouteCatalogScope,
+	slice: CatalogSlice,
+): CatalogSlice {
+	if (!scope.omittedCommonSubtrees?.length) return slice;
+	const omitted = new Set(
+		scope.omittedCommonSubtrees.flatMap((key) => [key, `common:${key}`]),
+	);
+	const tree = Object.fromEntries(
+		Object.entries(
+			(slice.records[slice.locale] ?? {}) as TreeTranslationsData,
+		).filter(([key]) => !omitted.has(key)),
+	);
+	const keyOwners = Object.fromEntries(
+		Object.entries(slice.keyOwners).filter(
+			([encoded]) => !omitted.has((JSON.parse(encoded) as string[])[0]),
+		),
+	);
+	return {
+		locale: slice.locale,
+		namespaces: slice.namespaces.filter((namespace) => namespace !== "common"),
+		records: { [slice.locale]: tree },
+		keyOwners,
+	};
+}
 
 export function getRouteCatalogScope(
 	pathname: string,

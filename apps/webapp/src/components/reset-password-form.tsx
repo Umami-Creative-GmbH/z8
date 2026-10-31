@@ -18,7 +18,7 @@ import {
 	TFormMessage,
 } from "@/components/ui/tanstack-form";
 import { getAuthErrorMessage } from "@/lib/auth/error-message";
-import { authClient } from "@/lib/auth-client";
+import { loadAuthPageClient } from "@/lib/auth/load-auth-page-client";
 import { passwordSchema } from "@/lib/validations/password";
 import { Link } from "@/navigation";
 import { AuthFormWrapper } from "./auth-form-wrapper";
@@ -117,8 +117,10 @@ function useResetPasswordForm(token: string, t: Translate) {
 		defaultValues: { password: "", confirmPassword: "" },
 		onSubmit: async ({ value }) => {
 			setError(null);
-			const response = await authClient
-				.resetPassword({ newPassword: value.password, token })
+			const response = await loadAuthPageClient()
+				.then((authClient) =>
+					authClient.resetPassword({ newPassword: value.password, token }),
+				)
 				.catch((caughtError) => ({
 					error: {
 						message:

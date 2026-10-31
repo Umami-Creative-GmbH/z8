@@ -32,7 +32,7 @@ import { useSidebar } from "@/components/ui/sidebar";
 import { LANGUAGE_CONFIG } from "@/lib/language-config";
 import { useRouter } from "@/navigation";
 import { persistLocaleToDb, setLanguage } from "@/tolgee/language";
-import { ALL_LANGUAGES } from "@/tolgee/shared";
+import { ALL_LANGUAGES } from "@/tolgee/catalog-config";
 
 type MobilePreferenceSection = "language" | "fontSize" | "theme";
 

@@ -7,7 +7,7 @@ import { NodeSDK } from "@opentelemetry/sdk-node";
 import {
 	InMemorySpanExporter,
 	SimpleSpanProcessor,
-} from "@opentelemetry/sdk-trace-base";
+} from "@opentelemetry/sdk-trace";
 import { Effect, Layer, ManagedRuntime } from "effect";
 import {
 	FixtureNativeCoverage,
@@ -18,7 +18,7 @@ let stage = "start-sdk";
 async function run() {
 	const coverage = new FixtureNativeCoverage();
 	const exporter = new InMemorySpanExporter();
-	const delegate = new SimpleSpanProcessor(exporter);
+	const delegate = new SimpleSpanProcessor({ exporter });
 	const sdk = new NodeSDK({
 		spanProcessors: [
 			{

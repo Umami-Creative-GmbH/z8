@@ -3,6 +3,7 @@
 import { TolgeeProvider, useTolgee } from "@tolgee/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import type { Namespace } from "./catalog-config";
 import { type CatalogSlice, normalizeCatalogLocale } from "./catalog-slices";
 import {
 	applyCatalogRecords,
@@ -15,7 +16,7 @@ import {
 	FeatureCatalogContext,
 	prepareCatalogForRender,
 } from "./feature-provider";
-import { type Namespace, TolgeeBase } from "./shared";
+import { createProviderTolgee } from "./tolgee-core";
 
 type Props = {
 	slice: CatalogSlice;
@@ -24,7 +25,7 @@ type Props = {
 const tolgeeCache = new Map<string, TolgeeInstance>();
 
 function createTolgee(language: string) {
-	return TolgeeBase({ loadAllLanguageCatalogs: false }).init({
+	return createProviderTolgee().init({
 		language,
 		staticData: { [language]: {} },
 	});

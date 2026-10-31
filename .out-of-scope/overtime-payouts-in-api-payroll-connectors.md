@@ -56,7 +56,9 @@ formats.
   Workday's public API, and that the SuccessFactors connector posts to
   an `EmployeeTimeOff` entity that SuccessFactors does not document.
   These are bugs in what the connectors already do, not requests for
-  new payroll data.
+  new payroll data. The grilling of #1052–#1054 (2026-10-30) withdrew
+  the Workday and SuccessFactors API connectors and moved Personio to
+  its v2 API; see the Payroll Exports ADRs 0002 and 0003.
 - Re-opening this if a vendor adds an API that takes overtime hours as
   payroll input.
 

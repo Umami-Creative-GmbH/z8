@@ -369,6 +369,7 @@ export async function exportPayrollSummaryToPDF(
 	);
 	const styles = StyleSheet.create(styleDefinitions);
 
+	// biome-ignore lint/correctness/noComponentHookFactories: one-shot @react-pdf render over the dynamically imported primitives; it never re-renders.
 	const PayrollSummaryPDF = () => (
 		<Document>
 			<Page size="A4" style={styles.page}>

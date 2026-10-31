@@ -1,7 +1,7 @@
 import "server-only";
 import { type ReactNode, Suspense } from "react";
 import { FeatureTranslationProvider } from "./feature-provider";
-import { loadCatalogSlice } from "./load-translations";
+import { loadRouteCatalogSlice } from "./load-translations";
 import { getRouteCatalogScope } from "./route-catalog-scopes";
 
 type Props = {
@@ -14,7 +14,7 @@ async function RouteCatalog({ route, params, children }: Props) {
 	const { locale } = await params;
 	const scope = getRouteCatalogScope(route);
 	if (!scope) throw new Error(`No translation scope for ${route}`);
-	const slice = await loadCatalogSlice(locale, scope.namespaces);
+	const slice = await loadRouteCatalogSlice(locale, scope);
 	return (
 		<FeatureTranslationProvider slice={slice}>
 			{children}

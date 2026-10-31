@@ -184,7 +184,7 @@ async function fixtureTest(run) {
 				containers: [],
 				origin: "http://localhost:50754",
 				sourceBuild: source,
-				nextVersion: "16.4.0",
+				nextVersion: "16.4.3",
 				replicas: { a: { port: 50755 }, b: { port: 50756 } },
 				env: {
 					POSTGRES_HOST: "127.0.0.1",

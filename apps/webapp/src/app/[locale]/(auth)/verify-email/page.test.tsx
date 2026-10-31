@@ -5,7 +5,6 @@ import type { ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { authClient } from "@/lib/auth-client";
 import VerifyEmailPage from "./page";
 
 const {
@@ -62,8 +61,8 @@ vi.mock("@/components/ui/button", () => ({
 	),
 }));
 
-vi.mock("@/lib/auth-client", () => ({
-	authClient: {
+vi.mock("@/lib/auth/auth-page-client", () => ({
+	authPageClient: {
 		verifyEmail: verifyEmailMock,
 	},
 }));
@@ -138,7 +137,7 @@ describe("VerifyEmailPage", () => {
 			).toBeTruthy();
 		});
 
-		expect(authClient.verifyEmail).toHaveBeenCalledTimes(1);
+		expect(verifyEmailMock).toHaveBeenCalledTimes(1);
 	});
 
 	it("ignores an earlier verification result after the token changes", async () => {
@@ -198,9 +197,12 @@ describe("VerifyEmailPage", () => {
 		expect(screen.getByLabelText("Verifying your email...")).toBeTruthy();
 		expect(screen.queryByRole("button", { name: "Continue Setup" })).toBeNull();
 		expect(screen.queryByText("You've joined {organization}!")).toBeNull();
-		expect(verifyEmailMock).toHaveBeenLastCalledWith({
-			query: { token: "token_2" },
-		});
+		// The auth client loads lazily, so the request starts a tick after the commit.
+		await waitFor(() =>
+			expect(verifyEmailMock).toHaveBeenLastCalledWith({
+				query: { token: "token_2" },
+			}),
+		);
 	});
 
 	it("renders loading in the token-change commit before passive effects", async () => {

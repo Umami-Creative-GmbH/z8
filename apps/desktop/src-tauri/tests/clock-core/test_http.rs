@@ -1,14 +1,27 @@
 //! Loopback HTTP at the real transport boundary: each response is served on
 //! its own connection, and `None` drops the connection without answering.
+use std::collections::BTreeSet;
 use std::io::{Read, Write};
 use std::net::TcpListener;
+use std::sync::Mutex;
 use std::time::{Duration, Instant};
+
+/// Ports already given to a test. An endpoint is unbound between rounds, and
+/// the OS may hand that port to a parallel test's `bind(0)`, so no port is
+/// given out twice.
+static HANDED_OUT: Mutex<BTreeSet<u16>> = Mutex::new(BTreeSet::new());
 
 /// A local endpoint that refuses connections, as when the device is offline,
 /// until `serve_on` answers on it.
 pub fn free_endpoint() -> String {
-    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
-    format!("http://{}", listener.local_addr().unwrap())
+    let mut handed_out = HANDED_OUT.lock().unwrap_or_else(|error| error.into_inner());
+    loop {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        if handed_out.insert(address.port()) {
+            return format!("http://{address}");
+        }
+    }
 }
 
 pub fn server<B: Into<String>>(
@@ -38,7 +51,20 @@ pub fn serve_on(
     count: usize,
     mut respond: impl FnMut(usize, &str) -> Option<(u16, String)> + Send + 'static,
 ) -> std::thread::JoinHandle<Vec<String>> {
-    let listener = TcpListener::bind(endpoint.trim_start_matches("http://")).unwrap();
+    let address = endpoint.trim_start_matches("http://");
+    // A client connection may briefly hold the freed port as its local port.
+    let deadline = Instant::now() + Duration::from_secs(5);
+    let listener = loop {
+        match TcpListener::bind(address) {
+            Ok(listener) => break listener,
+            Err(error)
+                if error.kind() == std::io::ErrorKind::AddrInUse && Instant::now() < deadline =>
+            {
+                std::thread::sleep(Duration::from_millis(20));
+            }
+            Err(error) => panic!("{error}"),
+        }
+    };
     listener.set_nonblocking(true).unwrap();
     std::thread::spawn(move || {
         let mut requests = Vec::new();

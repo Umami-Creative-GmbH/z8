@@ -36,7 +36,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { findAbsenceCategoryRuleConflict } from "@/lib/absences/category-rules";
 import { canRequireDeputy } from "@/lib/absences/deputy";
 import { LANGUAGE_CONFIG } from "@/lib/language-config";
-import { ALL_LANGUAGES } from "@/tolgee/shared";
+import { ALL_LANGUAGES } from "@/tolgee/catalog-config";
 import {
 	type AbsenceCategoryForSettings,
 	buildAbsenceCategoryPayload,

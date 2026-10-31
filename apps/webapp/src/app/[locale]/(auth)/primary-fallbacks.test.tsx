@@ -41,9 +41,11 @@ vi.mock("@/navigation", () => ({
 	useRouter: () => ({ push: vi.fn() }),
 }));
 
-vi.mock("@/lib/auth-client", () => ({
-	authClient: { verifyEmail: vi.fn() },
-	useSession: () => ({ data: null }),
+vi.mock("@/lib/auth/auth-page-client", () => ({
+	authPageClient: { verifyEmail: vi.fn() },
+}));
+vi.mock("@/lib/auth/use-auth-page-session", () => ({
+	useAuthPageSession: () => ({ data: null, isPending: false }),
 }));
 
 vi.mock("@/app/[locale]/(auth)/invite-code-actions", () => ({

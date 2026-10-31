@@ -43,8 +43,8 @@ vi.mock("@/lib/auth/domain-auth-context", () => ({
 	useTurnstile: useTurnstileMock,
 }));
 
-vi.mock("@/lib/auth-client", () => ({
-	authClient: {
+vi.mock("@/lib/auth/auth-page-client", () => ({
+	authPageClient: {
 		signIn: {
 			email: signInEmailMock,
 			passkey: vi.fn(),

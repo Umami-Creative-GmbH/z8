@@ -3,7 +3,11 @@ import { renderToReadableStream, renderToString } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { TolgeeNextProvider } from "./client";
 import { FeatureTranslationProvider } from "./feature-provider";
-import { loadCatalogSlice, loadShellTranslations } from "./load-translations";
+import {
+	loadCatalogSlice,
+	loadRouteCatalogSlice,
+	loadShellTranslations,
+} from "./load-translations";
 import { RouteTranslationBoundary } from "./route-boundary";
 import { ALL_LANGUAGES, APP_NAMESPACES, type Namespace } from "./shared";
 
@@ -12,7 +16,11 @@ vi.mock("server-only", () => ({}));
 vi.mock("next/cache", () => ({ cacheLife: vi.fn() }));
 vi.mock("./load-translations", async (original) => {
 	const module = await original<typeof import("./load-translations")>();
-	return { ...module, loadCatalogSlice: vi.fn(module.loadCatalogSlice) };
+	return {
+		...module,
+		loadCatalogSlice: vi.fn(module.loadCatalogSlice),
+		loadRouteCatalogSlice: vi.fn(module.loadRouteCatalogSlice),
+	};
 });
 
 describe("render-local feature SSR", () => {
@@ -62,7 +70,7 @@ describe("render-local feature SSR", () => {
 		const shell = await loadShellTranslations("de");
 		const feature = await loadCatalogSlice("de", ["common", "reports"]);
 		let resolve!: (value: typeof feature) => void;
-		vi.mocked(loadCatalogSlice).mockImplementationOnce(
+		vi.mocked(loadRouteCatalogSlice).mockImplementationOnce(
 			() =>
 				new Promise((done) => {
 					resolve = done;

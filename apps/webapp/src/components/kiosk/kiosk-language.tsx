@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { LANGUAGE_CONFIG } from "@/lib/language-config";
 import { usePathname, useRouter } from "@/navigation";
-import { ALL_LANGUAGES } from "@/tolgee/shared";
+import { ALL_LANGUAGES } from "@/tolgee/catalog-config";
 
 /**
  * The kiosk page's language (#862). It follows the organization's default

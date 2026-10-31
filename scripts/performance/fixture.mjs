@@ -773,7 +773,7 @@ async function plan(directory) {
 				nativeDrainCapMs: 10000,
 				eventLoopProbeIntervalMs: 10,
 				retainedEventLoopProbes: 30000,
-				cacheHandler: "installed-16.4.0-native-default-in-place",
+				cacheHandler: "installed-16.4.3-native-default-in-place",
 				cacheMaxMemoryBytes: 50 * 1024 * 1024,
 				traceQueueLimit: 20000,
 				traceBatchSize: 128,

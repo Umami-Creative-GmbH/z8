@@ -30,8 +30,8 @@ vi.mock("@/navigation", () => ({
 	),
 }));
 
-vi.mock("@/lib/auth-client", () => ({
-	authClient: { resetPassword: vi.fn() },
+vi.mock("@/lib/auth/auth-page-client", () => ({
+	authPageClient: { resetPassword: vi.fn() },
 }));
 
 import { LoginForm } from "./login-form";

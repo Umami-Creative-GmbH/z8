@@ -77,7 +77,7 @@ const mockNativePush = vi.hoisted(() => ({
 }));
 vi.mock("@/lib/store-app/native-push", () => mockNativePush);
 
-vi.mock("@/tolgee/shared", () => ({
+vi.mock("@/tolgee/catalog-config", () => ({
 	ALL_LANGUAGES: ["en", "de"],
 }));
 

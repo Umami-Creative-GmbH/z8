@@ -1,6 +1,6 @@
 import { AsyncResource } from "node:async_hooks";
 import { context } from "@opentelemetry/api";
-import type { SpanExporter } from "@opentelemetry/sdk-trace-base";
+import type { SpanExporter } from "@opentelemetry/sdk-trace";
 
 /** Created during instrumentation startup, before any Next render context exists. */
 export function isolateFixtureExporter<T extends SpanExporter>(exporter: T): T {

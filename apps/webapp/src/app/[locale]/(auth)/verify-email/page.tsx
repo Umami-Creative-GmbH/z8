@@ -15,7 +15,7 @@ import { processPendingInviteCode } from "@/app/[locale]/(auth)/invite-code-acti
 import { AuthFormWrapper } from "@/components/auth-form-wrapper";
 import { AuthContentLoading } from "@/components/shells/auth-content-loading";
 import { Button } from "@/components/ui/button";
-import { authClient } from "@/lib/auth-client";
+import { loadAuthPageClient } from "@/lib/auth/load-auth-page-client";
 import { Link, useRouter } from "@/navigation";
 
 type JoinResult = {
@@ -80,12 +80,14 @@ function VerifyEmailTokenContent({
 				return;
 			}
 
-			const result = await authClient
-				.verifyEmail({
-					query: {
-						token,
-					},
-				})
+			const result = await loadAuthPageClient()
+				.then((authClient) =>
+					authClient.verifyEmail({
+						query: {
+							token,
+						},
+					}),
+				)
 				.catch((error) => ({
 					error: {
 						message:
