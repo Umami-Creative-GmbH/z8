@@ -1,7 +1,7 @@
 /* @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render } from "@/test/render-with-translations";
@@ -12,6 +12,8 @@ const mocks = vi.hoisted(() => ({ getHandOffOverview: vi.fn() }));
 vi.mock("./actions", () => ({
 	checkInvoiceDraftStatusAction: vi.fn(),
 	confirmHandOffAction: vi.fn(),
+	downloadChangedWorkCsvAction: vi.fn(),
+	downloadDraftReconciliationCsvAction: vi.fn(),
 	getHandOffOverview: mocks.getHandOffOverview,
 	getInvoiceDraftAction: vi.fn(),
 	previewHandOffAction: vi.fn(),
@@ -84,6 +86,7 @@ const overview: HandOffOverview = {
 				currency: "EUR",
 				period: { from: "2026-03-01", to: "2026-03-31" },
 				title: "Acme March",
+				externalId: "x-1",
 				createdAt: "2026-04-01T08:00:00Z",
 			},
 			invoicedWorkId: "iw-1",
@@ -158,5 +161,19 @@ describe("HandOffView", () => {
 		await waitFor(() => expect(scrollIntoView).toHaveBeenCalled());
 		const section = document.getElementById("changed-after-invoicing");
 		expect(section?.textContent).toContain("Grace");
+	});
+
+	it("offers the marked work as a reconciliation CSV", async () => {
+		mocks.getHandOffOverview.mockResolvedValue({ success: true, data: overview });
+		renderView();
+
+		const section = await waitFor(() => {
+			const found = document.getElementById("changed-after-invoicing");
+			if (!found) throw new Error("No changed-work section");
+			return found;
+		});
+		expect(
+			within(section).getByRole("button", { name: "Download reconciliation CSV" }),
+		).toBeTruthy();
 	});
 });

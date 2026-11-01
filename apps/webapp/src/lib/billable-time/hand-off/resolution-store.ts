@@ -18,6 +18,7 @@ import {
 	workPeriod,
 } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
+import { isUuid } from "../input";
 import { amountDifferenceOf } from "./amount-difference";
 import { compareWork } from "./comparison";
 import {
@@ -200,6 +201,7 @@ async function comparisonsOf(
 				periodFrom: invoiceDraft.periodFrom,
 				periodTo: invoiceDraft.periodTo,
 				title: invoiceDraft.title,
+				externalId: invoiceDraft.externalId,
 				createdAt: invoiceDraft.createdAt,
 			})
 			.from(invoiceDraft)
@@ -275,6 +277,7 @@ async function comparisonsOf(
 				currency: draft.currency,
 				period: { from: draft.periodFrom, to: draft.periodTo },
 				title: draft.title,
+				externalId: draft.externalId,
 				createdAt: draft.createdAt.toISOString(),
 			},
 		});
@@ -282,6 +285,7 @@ async function comparisonsOf(
 	return comparisons;
 }
 
+/** The items' views; an item without an open mark (resolved) has no changed fields. */
 function markedItemsOf(
 	items: ReadonlyMap<string, readonly ItemRowView[]>,
 	{ history }: ItemHistory,
@@ -291,7 +295,7 @@ function markedItemsOf(
 	for (const [rootId, rows] of items) {
 		const open = rows.filter((row) => row.changedAfterInvoicingAt !== null);
 		const compared = comparisons.get(rootId);
-		if (open.length === 0 || !compared) continue;
+		if (!compared) continue;
 		const {
 			id: _id,
 			timesheet: _timesheet,
@@ -304,12 +308,13 @@ function markedItemsOf(
 		marked.push({
 			...root,
 			// ISO instants of one format: the smallest string is the earliest.
-			changedAfterInvoicingAt: open.map((row) => row.changedAfterInvoicingAt as string).sort()[0],
+			changedAfterInvoicingAt:
+				open.map((row) => row.changedAfterInvoicingAt as string).sort()[0] ?? null,
 			changedFields: [...new Set(open.flatMap((row) => row.changedFields))].sort(),
 			markVersion: itemMarkVersion(rows),
 			draft: compared.draft,
 			// Release returns every row of a draft at once.
-			openWhenReleased: rows[0].released,
+			openWhenReleased: open.length > 0 && rows[0].released,
 			history: history.get(rootId) ?? [],
 			comparison: compared.comparison,
 		});
@@ -388,6 +393,53 @@ export async function readDraftReconciliation(
 		resolutionHistory: [...history.history.values()]
 			.flat()
 			.sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0)),
+	};
+}
+
+/**
+ * A draft's items for its reconciliation CSV (#1504): every item still marked
+ * or with a resolution history, with its comparison, in the order of their
+ * hand-off. Read like the draft detail, so released drafts are included. Null
+ * when the draft is not the organization's.
+ */
+export async function readDraftReconciliationItems(
+	reader: Reader,
+	input: { organizationId: string; draftId: string },
+): Promise<{ period: { from: string; to: string }; items: MarkedWorkItemView[] } | null> {
+	if (!isUuid(input.draftId)) return null;
+	const [draft] = await reader
+		.select({ periodFrom: invoiceDraft.periodFrom, periodTo: invoiceDraft.periodTo })
+		.from(invoiceDraft)
+		.where(
+			and(
+				eq(invoiceDraft.id, input.draftId),
+				eq(invoiceDraft.organizationId, input.organizationId),
+			),
+		)
+		.limit(1);
+	if (!draft) return null;
+	const rows = await invoicedWorkViews(
+		reader,
+		input.organizationId,
+		eq(invoicedWork.invoiceDraftId, input.draftId),
+	);
+	const all = itemsOf(rows);
+	const history = await historyOf(reader, input.organizationId, all);
+	const reconciled = new Map(
+		[...all].filter(
+			([rootId, members]) =>
+				history.history.has(rootId) || members.some((row) => row.changedAfterInvoicingAt !== null),
+		),
+	);
+	const comparisons = await comparisonsOf(
+		reader,
+		input.organizationId,
+		reconciled,
+		history.lastResolved,
+	);
+	return {
+		period: { from: draft.periodFrom, to: draft.periodTo },
+		items: markedItemsOf(reconciled, history, comparisons),
 	};
 }
 

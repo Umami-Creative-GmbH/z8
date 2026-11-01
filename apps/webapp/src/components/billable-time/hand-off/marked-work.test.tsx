@@ -48,6 +48,7 @@ const item = (overrides: Partial<MarkedWorkItemView> = {}): MarkedWorkItemView =
 		currency: "EUR",
 		period: { from: "2026-03-01", to: "2026-03-31" },
 		title: "Acme March",
+		externalId: null,
 		createdAt: "2026-04-01T08:00:00Z",
 	},
 	invoicedWorkId: "11111111-1111-4111-8111-111111111111",

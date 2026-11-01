@@ -293,6 +293,8 @@ export interface MarkedWorkDraftView {
 	currency: string;
 	period: { from: string; to: string };
 	title: string;
+	/** The draft's reference in the accounting tool, once known (#1504). */
+	externalId: string | null;
 	createdAt: string;
 }
 

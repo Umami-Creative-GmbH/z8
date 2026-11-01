@@ -54,6 +54,7 @@ import type {
 import { queryKeys } from "@/lib/query/keys";
 import { useHandOffLabels } from "./hand-off-labels";
 import { MarkedWork, ResolutionHistoryList, type ResolveMarks, useItemLabel } from "./marked-work";
+import { ReconciliationCsvButton } from "./reconciliation-csv-button";
 
 type ActionResult<T> = { success: true; data: T } | { success: false; error: string };
 
@@ -64,6 +65,9 @@ export interface InvoiceDraftPanelActions {
 	retry(draftId: string): Promise<ActionResult<{ status: "created" | "pending" }>>;
 	release(draftId: string, reason: string): Promise<ActionResult<{ workReturned: number }>>;
 	resolveMarks: ResolveMarks;
+	downloadReconciliationCsv(
+		draftId: string,
+	): Promise<ActionResult<{ fileName: string; content: string }>>;
 }
 
 async function unwrap<T>(result: Promise<ActionResult<T>>): Promise<T> {
@@ -362,6 +366,12 @@ function DraftDetail({
 					</h3>
 					<ResolutionHistoryList entries={draft.resolutionHistory} itemLabel={workLabel} />
 				</section>
+			)}
+
+			{(draft.marked.length > 0 || draft.resolutionHistory.length > 0) && (
+				<div className="flex justify-end">
+					<ReconciliationCsvButton download={() => actions.downloadReconciliationCsv(draft.id)} />
+				</div>
 			)}
 
 			{releasable && (
