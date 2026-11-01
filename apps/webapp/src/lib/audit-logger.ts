@@ -341,6 +341,10 @@ export enum AuditAction {
 	KIOSK_BADGE_REPLACED = "kiosk_badge.replaced",
 	KIOSK_BADGE_REVOKED = "kiosk_badge.revoked",
 
+	// Kiosk fobs (#1505); never the full serial number
+	KIOSK_FOB_REGISTERED = "kiosk_fob.registered",
+	KIOSK_FOB_ENDED = "kiosk_fob.ended",
+
 	// Kiosk enrolment (#859)
 	KIOSK_CREATED = "kiosk.created",
 	KIOSK_UPDATED = "kiosk.updated",
@@ -450,6 +454,7 @@ export interface AuditLogEntry {
 		| "user"
 		| "kiosk_pin"
 		| "kiosk_badge"
+		| "kiosk_fob"
 		| "audit_pack_request"
 		| "works_council_settings"
 		| "works_council_export"

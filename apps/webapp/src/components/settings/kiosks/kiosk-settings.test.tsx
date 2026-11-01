@@ -58,6 +58,7 @@ function kiosk(overrides: Partial<KioskData> = {}): KioskData {
 		offlineModeEnabled: false,
 		badgeScannerEnabled: false,
 		badgeCameraEnabled: false,
+		nfcFobReaderEnabled: false,
 		status: "paired",
 		pairingCodeExpiresAt: null,
 		pairedAt: "2026-10-01T08:00:00.000Z",
@@ -255,6 +256,47 @@ describe("KioskSettings", () => {
 			await waitFor(() =>
 				expect(mocks.updateKioskAction).toHaveBeenCalledWith(
 					expect.objectContaining({ badgeCameraEnabled: false, badgeScannerEnabled: true }),
+				),
+			);
+		});
+	});
+
+	describe("NFC fob reader (#1505)", () => {
+		it("is off by default and switches on without touching either badge input", async () => {
+			mocks.updateKioskAction.mockResolvedValue({ success: true, data: { kioskId: kiosk().id } });
+			renderSettings([kiosk()]);
+			expect(screen.queryByText(/NFC fob reader on/)).toBeNull();
+
+			fireEvent.click(screen.getByRole("button", { name: "Edit" }));
+			const reader = screen.getByRole("switch", { name: "NFC fob reader" });
+			expect(reader.getAttribute("aria-checked")).toBe("false");
+			fireEvent.click(reader);
+			fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+			await waitFor(() =>
+				expect(mocks.updateKioskAction).toHaveBeenCalledWith(
+					expect.objectContaining({
+						kioskId: kiosk().id,
+						nfcFobReaderEnabled: true,
+						badgeScannerEnabled: false,
+						badgeCameraEnabled: false,
+					}),
+				),
+			);
+		});
+
+		it("shows the reader on in the list and switches it off while the scanner stays on", async () => {
+			mocks.updateKioskAction.mockResolvedValue({ success: true, data: { kioskId: kiosk().id } });
+			renderSettings([kiosk({ badgeScannerEnabled: true, nfcFobReaderEnabled: true })]);
+			expect(screen.getByText(/NFC fob reader on/)).toBeTruthy();
+
+			fireEvent.click(screen.getByRole("button", { name: "Edit" }));
+			fireEvent.click(screen.getByRole("switch", { name: "NFC fob reader" }));
+			fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+			await waitFor(() =>
+				expect(mocks.updateKioskAction).toHaveBeenCalledWith(
+					expect.objectContaining({ nfcFobReaderEnabled: false, badgeScannerEnabled: true }),
 				),
 			);
 		});

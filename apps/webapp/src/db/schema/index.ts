@@ -88,6 +88,7 @@ export * from "./import-review";
 export * from "./invite-code";
 export * from "./kiosk";
 export * from "./kiosk-badge";
+export * from "./kiosk-fob";
 export * from "./kiosk-pin";
 export * from "./notification";
 // Domain tables

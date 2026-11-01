@@ -2,6 +2,7 @@
 
 import { useEffect, useEffectEvent } from "react";
 import { normalizeKioskBadgeCredential } from "@/lib/time-tracking/kiosk/badge-credential";
+import { normalizeKioskFobSerial } from "@/lib/time-tracking/kiosk/fob-serial";
 
 /**
  * An attached QR scanner at a kiosk (#1366, spec #889). Keyboard-style
@@ -10,10 +11,13 @@ import { normalizeKioskBadgeCredential } from "@/lib/time-tracking/kiosk/badge-c
  * apart from ordinary typing (the name search) by the time between keys, for
  * every key, whatever the code holds (a badge, a product barcode, a link).
  *
+ * An attached NFC reader (#1505) types a kiosk fob's serial number the same
+ * way, so the same listener hears it.
+ *
  * - `read` (the home screen): a burst of at least `MIN_BURST_LENGTH` keys,
  *   ended by Enter or Tab or by a pause, is a scan. A badge credential goes to
- *   `onBadge`; anything else (a link, another code) to `onUnreadable`, and is
- *   never opened. Ordinary typing in the search box is left alone; the keys of
+ *   `onBadge`, a fob serial number to `onFob` (each only while given); anything
+ *   else (a link, another code) to `onUnreadable`, and is never opened. Ordinary typing in the search box is left alone; the keys of
  *   a scan that also reached it are taken back through `onScanStart`/`onScanEnd`.
  *   Outside a text field, typed characters mean nothing on the home screen, so
  *   they are kept from the focused control (no language typeahead, no button
@@ -44,6 +48,13 @@ const MAX_BURST_LENGTH = 256;
 interface KioskBadgeScannerOptions {
 	mode: KioskBadgeScannerMode;
 	onBadge?: (credential: string) => void;
+	/**
+	 * A kiosk fob's serial number (#1505), typed by an attached NFC reader the
+	 * same way. Told apart from a badge by format: a badge starts with `K8B`, a
+	 * serial number is 4, 7 or 10 bytes of hex.
+	 */
+	onFob?: (serial: string) => void;
+	/** A burst that is neither, while badges are read (with fobs alone it is ignored). */
 	onUnreadable?: () => void;
 	/** The first key of what may be a scan; the search box has not changed yet. */
 	onScanStart?: () => void;
@@ -85,8 +96,10 @@ export function useKioskBadgeScanner(options: KioskBadgeScannerOptions) {
 
 	const finish = useEffectEvent((text: string, overflow: boolean) => {
 		options.onScanEnd?.();
-		const credential = overflow ? null : normalizeKioskBadgeCredential(text);
+		const credential = overflow || !options.onBadge ? null : normalizeKioskBadgeCredential(text);
+		const serial = overflow || !options.onFob ? null : normalizeKioskFobSerial(text);
 		if (credential) options.onBadge?.(credential);
+		else if (serial) options.onFob?.(serial);
 		else options.onUnreadable?.();
 	});
 	const started = useEffectEvent(() => options.onScanStart?.());

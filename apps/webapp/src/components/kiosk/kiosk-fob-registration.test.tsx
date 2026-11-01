@@ -1,0 +1,325 @@
+/* @vitest-environment jsdom */
+
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	KIOSK_TOKEN_STORAGE_KEY,
+	type KioskDeviceInfo,
+	type KioskEmployeeSnapshot,
+	type KioskFobRegistrationResult,
+} from "@/lib/time-tracking/kiosk/protocol";
+import { KioskApp } from "./kiosk-app";
+
+vi.mock("@tolgee/react", () => ({
+	useTranslate: () => ({
+		t: (_key: string, fallback: string, params?: Record<string, unknown>) =>
+			fallback.replace(/\{(\w+)\}/g, (_match, name: string) => String(params?.[name] ?? "")),
+	}),
+}));
+
+const navigation = vi.hoisted(() => ({ replace: vi.fn() }));
+vi.mock("next-intl", () => ({ useLocale: () => "en" }));
+vi.mock("@/navigation", () => ({
+	usePathname: () => "/kiosk",
+	useRouter: () => ({ replace: navigation.replace }),
+}));
+
+/**
+ * #1505: kiosk fobs read by an attached keyboard-style NFC reader, through the
+ * kiosk page with the kiosk endpoints stubbed at `fetch`. The reader types the
+ * chip's serial number as a fast burst ending in Enter. An unknown fob offers
+ * "Register this fob": the employee picks their name and enters their kiosk
+ * PIN. Badges keep reaching badge clocking when both switches are on.
+ */
+const kiosk: KioskDeviceInfo = {
+	id: "22222222-2222-4222-8222-222222222222",
+	name: "Front door",
+	locationId: "11111111-1111-4111-8111-111111111111",
+	locationName: "Store",
+	timezone: "Europe/Berlin",
+	boardEnabled: false,
+	language: "en",
+	offlineMode: false,
+	nfcFobReaderEnabled: true,
+};
+
+const anna = { id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", name: "Anna Berger" };
+const ben = { id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", name: "Ben Özdemir" };
+/** A 7-byte chip serial number as an ACR1552U in hex mode types it. */
+const TYPED_SERIAL = "04a1b2c3d4e5f6";
+const SERIAL = "04A1B2C3D4E5F6";
+const BADGE = "K8B0123456789ABCDEFGHJKMNPQRSTVWX0123456789ABCDEFGHJKMNP";
+
+const clockedOut: KioskEmployeeSnapshot = {
+	employee: anna,
+	state: { status: "clocked_out" },
+	dayTotal: { date: "2026-11-02", timezone: "Europe/Berlin", minutes: 0 },
+};
+const registered: KioskFobRegistrationResult = {
+	outcome: "registered",
+	employee: anna,
+	lastFour: "E5F6",
+	replaced: false,
+};
+
+type Call = { url: string; body: Record<string, unknown> | null };
+type Route = (call: Call) => Response | Promise<Response>;
+
+function stubFetch(routes: Record<string, Route>) {
+	const calls: Call[] = [];
+	vi.stubGlobal(
+		"fetch",
+		vi.fn(async (url: string, init?: RequestInit) => {
+			const call = { url, body: init?.body ? JSON.parse(String(init.body)) : null };
+			calls.push(call);
+			const route = routes[url];
+			return route ? route(call) : Response.json({}, { status: 404 });
+		}),
+	);
+	return calls;
+}
+
+function kioskRoutes(
+	extra: Record<string, Route> = {},
+	device: KioskDeviceInfo = kiosk,
+): Record<string, Route> {
+	return {
+		"/api/kiosk/session": () => Response.json({ kiosk: device }),
+		"/api/kiosk/employees": () => Response.json({ employees: [anna, ben] }),
+		"/api/kiosk/employee-status": () => Response.json(clockedOut),
+		"/api/kiosk/fob": () => Response.json({ outcome: "not_recognised" }),
+		"/api/kiosk/fob/registration": () => Response.json(registered),
+		...extra,
+	};
+}
+
+function urls(calls: Call[], url: string) {
+	return calls.filter((call) => call.url === url);
+}
+
+/** A keyboard-style reader typing `text` at once, then Enter. */
+function readKeys(text: string) {
+	const target = document.activeElement ?? document.body;
+	for (const key of text) {
+		const capital = key !== key.toLowerCase();
+		if (capital) fireEvent.keyDown(target, { key: "Shift", shiftKey: true });
+		fireEvent.keyDown(target, { key, shiftKey: capital });
+	}
+	fireEvent.keyDown(target, { key: "Enter" });
+}
+
+async function advance(ms: number) {
+	await act(async () => {
+		await vi.advanceTimersByTimeAsync(ms);
+	});
+}
+
+async function openHome() {
+	render(<KioskApp />);
+	await screen.findByRole("button", { name: /Anna Berger/ });
+}
+
+function pressPin(pin: string) {
+	for (const digit of pin) fireEvent.click(screen.getByRole("button", { name: digit }));
+	fireEvent.click(screen.getByRole("button", { name: "OK" }));
+}
+
+/** From an unknown fob on the home screen to the PIN pad for Anna. */
+async function startRegistration() {
+	readKeys(TYPED_SERIAL);
+	fireEvent.click(await screen.findByRole("button", { name: "Register this fob" }));
+	fireEvent.click(await screen.findByRole("button", { name: /Anna Berger/ }));
+	expect(await screen.findByText("Enter your kiosk PIN to register this fob")).toBeTruthy();
+}
+
+describe("kiosk fob registration with an attached NFC reader (#1505)", () => {
+	beforeEach(() => {
+		window.localStorage.clear();
+		window.sessionStorage.clear();
+		window.localStorage.setItem(KIOSK_TOKEN_STORAGE_KEY, "z8k_device-token");
+		window.history.replaceState(null, "", "/en/kiosk");
+		navigation.replace.mockReset();
+		vi.useFakeTimers({ shouldAdvanceTime: true });
+	});
+
+	afterEach(() => {
+		cleanup();
+		vi.useRealTimers();
+		vi.unstubAllGlobals();
+		vi.restoreAllMocks();
+	});
+
+	it("offers to register an unknown fob, links it after the employee's name and PIN, and returns home", async () => {
+		const calls = stubFetch(kioskRoutes());
+		await openHome();
+		expect(screen.getByText("Or tap your fob on the reader.")).toBeTruthy();
+
+		readKeys(TYPED_SERIAL);
+
+		expect(await screen.findByText("This fob is not recognised here.")).toBeTruthy();
+		expect(urls(calls, "/api/kiosk/fob").map((call) => call.body)).toEqual([{ serial: SERIAL }]);
+		fireEvent.click(screen.getByRole("button", { name: "Register this fob" }));
+		fireEvent.click(await screen.findByRole("button", { name: /Anna Berger/ }));
+		expect(await screen.findByRole("heading", { name: "Anna Berger" })).toBeTruthy();
+		expect(screen.getByText("Enter your kiosk PIN to register this fob")).toBeTruthy();
+
+		pressPin("4711");
+
+		const confirmation = await screen.findByRole("status", { name: "Fob registered" });
+		expect(within(confirmation).getByText(/Anna Berger/)).toBeTruthy();
+		expect(within(confirmation).getByText(/ending in E5F6/)).toBeTruthy();
+		expect(urls(calls, "/api/kiosk/fob/registration").map((call) => call.body)).toEqual([
+			{ serial: SERIAL, employeeId: anna.id, pin: "4711" },
+		]);
+		// Nothing about the fob stays on the device; the screen never shows the whole serial.
+		expect(JSON.stringify(window.localStorage)).not.toContain(SERIAL);
+		expect(document.body.textContent).not.toContain(SERIAL);
+
+		await advance(10_500);
+		expect(await screen.findByRole("searchbox", { name: "Find your name" })).toBeTruthy();
+	});
+
+	it("says when the new fob replaced the employee's earlier one", async () => {
+		stubFetch(
+			kioskRoutes({
+				"/api/kiosk/fob/registration": () => Response.json({ ...registered, replaced: true }),
+			}),
+		);
+		await openHome();
+		await startRegistration();
+		pressPin("4711");
+
+		const confirmation = await screen.findByRole("status", { name: "Fob registered" });
+		expect(within(confirmation).getByText(/replaces your earlier fob/)).toBeTruthy();
+	});
+
+	it("asks for the PIN again after a wrong one, and links nothing", async () => {
+		let attempts = 0;
+		stubFetch(
+			kioskRoutes({
+				"/api/kiosk/fob/registration": () =>
+					++attempts === 1
+						? Response.json({ code: "wrong_pin" }, { status: 403 })
+						: Response.json(registered),
+			}),
+		);
+		await openHome();
+		await startRegistration();
+		pressPin("0000");
+
+		expect(await screen.findByText("That PIN is not correct. Try again.")).toBeTruthy();
+		expect(screen.getByText("Enter your kiosk PIN to register this fob")).toBeTruthy();
+		pressPin("4711");
+		expect(await screen.findByRole("status", { name: "Fob registered" })).toBeTruthy();
+	});
+
+	it("returns home without naming anyone when the fob belongs to another employee", async () => {
+		stubFetch(
+			kioskRoutes({
+				"/api/kiosk/fob/registration": () =>
+					Response.json({ code: "fob_linked_to_other_employee" }, { status: 409 }),
+			}),
+		);
+		await openHome();
+		await startRegistration();
+		pressPin("4711");
+
+		expect(
+			await screen.findByText(
+				"This fob is already registered to someone else. Nothing was changed. Ask your manager.",
+			),
+		).toBeTruthy();
+		expect(screen.getByRole("searchbox", { name: "Find your name" })).toBeTruthy();
+	});
+
+	it("leaves a recognised fob for the PIN step it will open (#1506) and offers no registration", async () => {
+		stubFetch(
+			kioskRoutes({
+				"/api/kiosk/fob": () => Response.json({ outcome: "employee", employee: anna }),
+			}),
+		);
+		await openHome();
+		readKeys(TYPED_SERIAL);
+		await advance(100);
+
+		expect(screen.queryByRole("button", { name: "Register this fob" })).toBeNull();
+		expect(screen.getByRole("searchbox", { name: "Find your name" })).toBeTruthy();
+	});
+
+	it("needs a connection: offline, a fob sends nothing", async () => {
+		const calls = stubFetch(kioskRoutes());
+		await openHome();
+		vi.spyOn(window.navigator, "onLine", "get").mockReturnValue(false);
+		act(() => {
+			window.dispatchEvent(new Event("offline"));
+		});
+
+		readKeys(TYPED_SERIAL);
+
+		expect(
+			await screen.findByText(
+				"Fobs need a connection. Nothing was recorded. Tap your name to use your PIN.",
+			),
+		).toBeTruthy();
+		expect(urls(calls, "/api/kiosk/fob")).toEqual([]);
+	});
+
+	it("ignores a fob at a kiosk whose reader switch is off", async () => {
+		const calls = stubFetch(kioskRoutes({}, { ...kiosk, nfcFobReaderEnabled: false }));
+		await openHome();
+		expect(screen.queryByText("Or tap your fob on the reader.")).toBeNull();
+
+		readKeys(TYPED_SERIAL);
+		await advance(300);
+
+		expect(urls(calls, "/api/kiosk/fob")).toEqual([]);
+		expect(screen.queryByRole("button", { name: "Register this fob" })).toBeNull();
+	});
+
+	it("ignores input that is neither a badge nor a fob serial number", async () => {
+		const calls = stubFetch(kioskRoutes());
+		await openHome();
+
+		// A 4-byte chip printed in decimal, as a misconfigured reader types it.
+		readKeys("0078234179");
+		await advance(300);
+
+		expect(urls(calls, "/api/kiosk/fob")).toEqual([]);
+		expect(screen.queryByRole("alert")).toBeNull();
+	});
+
+	it("keeps fob reads away from the registration's own screens", async () => {
+		const calls = stubFetch(kioskRoutes());
+		await openHome();
+		await startRegistration();
+
+		readKeys("1A2B3C4D");
+		await advance(300);
+
+		expect(urls(calls, "/api/kiosk/fob")).toHaveLength(1);
+		expect(screen.getByText("Enter your kiosk PIN to register this fob")).toBeTruthy();
+	});
+
+	it("still sends a badge to badge clocking when both the scanner and the fob reader are on", async () => {
+		const calls = stubFetch(kioskRoutes({}, { ...kiosk, badgeScannerEnabled: true }));
+		await openHome();
+
+		readKeys(BADGE);
+
+		expect(await screen.findByRole("heading", { name: "Anna Berger" })).toBeTruthy();
+		expect(urls(calls, "/api/kiosk/employee-status").map((call) => call.body)).toEqual([
+			{ badge: BADGE },
+		]);
+		expect(urls(calls, "/api/kiosk/fob")).toEqual([]);
+	});
+
+	it("sends a fob serial to the fob flow when both the scanner and the fob reader are on", async () => {
+		const calls = stubFetch(kioskRoutes({}, { ...kiosk, badgeScannerEnabled: true }));
+		await openHome();
+
+		readKeys(TYPED_SERIAL);
+
+		expect(await screen.findByText("This fob is not recognised here.")).toBeTruthy();
+		expect(urls(calls, "/api/kiosk/employee-status")).toEqual([]);
+	});
+});
