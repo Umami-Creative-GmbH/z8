@@ -82,7 +82,7 @@ What a correction changes in the amount invoiced work was handed off with, price
 _Avoid_: Credit amount, delta, invoice correction
 
 **Release**:
-Withdrawing an invoice draft in Z8, typically because it was deleted in the accounting tool, so that its work is un-invoiced again.
+Withdrawing an invoice draft in Z8, typically because it was deleted in the accounting tool, so that its work is un-invoiced again. The released draft keeps its comparisons and resolutions readable; marks still open are shown as "open when released" and can no longer be resolved. Handing the work off again starts a new draft whose comparisons start from that hand-off.
 _Avoid_: Cancel, void, undo hand-off
 
 **Accounting connection**:

@@ -60,6 +60,7 @@ const item = (overrides: Partial<MarkedWorkItemView> = {}): MarkedWorkItemView =
 	changedAfterInvoicingAt: "2026-04-02T08:00:00Z",
 	changedFields: ["times"],
 	markVersion: "11111111-1111-4111-8111-111111111111:2",
+	openWhenReleased: false,
 	history: [],
 	comparison: {
 		amountDifference: plus25,
@@ -174,6 +175,40 @@ describe("MarkedWork", () => {
 
 		await user.click(within(dialog).getByRole("button", { name: "Reload" }));
 		expect(onResolved).toHaveBeenCalled();
+	});
+
+	it("says nothing was resolved when the hand-off was released meanwhile", async () => {
+		const resolve = vi.fn().mockResolvedValue({
+			success: true,
+			data: { status: "released", invoicedWorkIds: [grace.invoicedWorkId] },
+		});
+		const { onResolved, user } = setup(resolve);
+		const dialog = await openFor(user, "Grace");
+		await user.type(within(dialog).getByLabelText(/Explanation/), "Handled");
+		await user.click(within(dialog).getByRole("button", { name: "Resolve 1 item" }));
+
+		const alert = await within(dialog).findByRole("alert");
+		expect(alert.textContent).toContain("Nothing was resolved");
+		expect(alert.textContent).toContain("released");
+		expect(alert.textContent).toContain("Grace");
+		expect(within(dialog).queryByRole("button", { name: "Resolve 1 item" })).toBeNull();
+
+		await user.click(within(dialog).getByRole("button", { name: "Reload" }));
+		expect(onResolved).toHaveBeenCalled();
+	});
+
+	it("shows a released draft's open marks read-only, as open when released, with their comparison", async () => {
+		const released = [item({ openWhenReleased: true }), { ...linus, openWhenReleased: true }];
+		const { user } = setup(undefined, released);
+
+		expect(screen.queryByRole("checkbox")).toBeNull();
+		expect(screen.queryByRole("button", { name: /Resolve/ })).toBeNull();
+		expect(screen.getAllByText("Open when released")).toHaveLength(2);
+		expect(screen.getByText(/can no longer be resolved/)).toBeTruthy();
+
+		const row = screen.getByText("Grace").closest("li") as HTMLElement;
+		await user.click(within(row).getByRole("button", { name: "Compare" }));
+		expect(within(row).getByRole("table", { name: /Comparison of/ })).toBeTruthy();
 	});
 
 	it("compares an item with its hand-off values on request", async () => {

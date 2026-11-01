@@ -158,7 +158,10 @@ async function historyOf(
 	return { history: byItem, lastResolved };
 }
 
-/** The items with an open mark. The row views carry no mark once released. */
+/**
+ * The items with an open mark. Released rows keep the marks open at release
+ * (#1503); they stay listed, read-only.
+ */
 function openItems(
 	items: ReadonlyMap<string, readonly ItemRowView[]>,
 ): Map<string, readonly ItemRowView[]> {
@@ -305,6 +308,8 @@ function markedItemsOf(
 			changedFields: [...new Set(open.flatMap((row) => row.changedFields))].sort(),
 			markVersion: itemMarkVersion(rows),
 			draft: compared.draft,
+			// Release returns every row of a draft at once.
+			openWhenReleased: rows[0].released,
 			history: history.get(rootId) ?? [],
 			comparison: compared.comparison,
 		});
@@ -361,7 +366,12 @@ export async function listMarkedItems(
 	);
 }
 
-/** A draft's marked items and the resolution history of all its items. */
+/**
+ * A draft's marked items and the resolution history of all its items. On a
+ * released draft (#1503) these are the items still open at release, with
+ * their comparisons, and the history as it was: re-handed-off work is new
+ * invoiced work of another draft, with comparisons and history of its own.
+ */
 export async function readDraftReconciliation(
 	reader: Reader,
 	input: { organizationId: string; draftId: string },
@@ -385,8 +395,10 @@ export type ResolveResult =
 	| { ok: true; resolved: number }
 	/** An item is not invoiced work of the organization. */
 	| { ok: false; reason: "not_found" }
-	/** These items changed since they were loaded (or were released); nothing was resolved. */
-	| { ok: false; reason: "stale"; invoicedWorkIds: string[] };
+	/** These items changed since they were loaded; nothing was resolved. */
+	| { ok: false; reason: "stale"; invoicedWorkIds: string[] }
+	/** These items' draft was released (#1503): read-only; nothing was resolved. */
+	| { ok: false; reason: "released"; invoicedWorkIds: string[] };
 
 /** The live values of the work periods, read without locks (see the module note). */
 async function currentValues(
@@ -508,11 +520,16 @@ export async function resolveChangedAfterInvoicing(
 		if (requestedIds.some((id) => !known.has(id))) return { ok: false, reason: "not_found" };
 
 		const items = comparisonItems(rows);
+		// Release keeps a draft's history read-only (#1503). The hand-off lock
+		// serializes this check with release.
+		const released = requestedIds.filter((id) =>
+			items.get(id)?.some((row) => row.releasedAt !== null),
+		);
+		if (released.length > 0) return { ok: false, reason: "released", invoicedWorkIds: released };
 		const stale = resolution.items.flatMap(({ invoicedWorkId, markVersion }) => {
 			const members = items.get(invoicedWorkId);
 			const unchanged =
-				members?.every((row) => row.releasedAt === null) === true &&
-				members.some((row) => row.changedAfterInvoicingAt !== null) &&
+				members?.some((row) => row.changedAfterInvoicingAt !== null) &&
 				itemMarkVersion(members) === markVersion;
 			return unchanged ? [] : [invoicedWorkId];
 		});

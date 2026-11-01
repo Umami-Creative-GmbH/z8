@@ -433,7 +433,8 @@ function resolutionInputError(error: ResolutionFieldError) {
  * Resolves changed-after-invoicing marks (#1499): one resolution and audit row
  * per item, sharing the explanation and accounting reference. The whole batch
  * is refused as `stale`, naming the items, when any item changed since it was
- * loaded. Works while the module is off.
+ * loaded, and as `released` when an item's draft was released (#1503). Works
+ * while the module is off.
  */
 export async function resolveChangedAfterInvoicingAction(input: {
 	items: ResolveItem[];
@@ -453,8 +454,8 @@ export async function resolveChangedAfterInvoicingAction(input: {
 			}),
 		);
 		if (outcome.ok) return { status: "resolved", resolved: outcome.resolved } as const;
-		if (outcome.reason === "stale") {
-			return { status: "stale", invoicedWorkIds: outcome.invoicedWorkIds } as const;
+		if (outcome.reason === "stale" || outcome.reason === "released") {
+			return { status: outcome.reason, invoicedWorkIds: outcome.invoicedWorkIds } as const;
 		}
 		return yield* Effect.fail(
 			new NotFoundError({
