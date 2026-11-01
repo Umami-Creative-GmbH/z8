@@ -1,6 +1,6 @@
 "use client";
 
-import { IconAlertTriangle, IconHistory, IconLoader2 } from "@tabler/icons-react";
+import { IconAlertTriangle, IconArrowsDiff, IconHistory, IconLoader2 } from "@tabler/icons-react";
 import { useForm } from "@tanstack/react-form";
 import { useTranslate } from "@tolgee/react";
 import { useState } from "react";
@@ -43,6 +43,7 @@ import type {
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import { formatInstant } from "@/lib/datetime/temporal-format";
 import { useHandOffLabels } from "./hand-off-labels";
+import { WorkComparison } from "./work-comparison";
 
 type ActionResult<T> = { success: true; data: T } | { success: false; error: string };
 
@@ -70,7 +71,8 @@ export function useItemLabel() {
 
 /**
  * Invoiced work marked as changed after invoicing (#1499): each comparison
- * item with its changed fields and history, resolved one by one or several at
+ * item with its changed fields (since the last resolution), its comparison
+ * with the hand-off values (#1501) and history, resolved one by one or several at
  * once with an explanation and an optional accounting reference.
  */
 export function MarkedWork({
@@ -89,6 +91,7 @@ export function MarkedWork({
 	const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
 	const [resolving, setResolving] = useState<readonly MarkedWorkItemView[] | null>(null);
 	const [historyOpen, setHistoryOpen] = useState<ReadonlySet<string>>(new Set());
+	const [compareOpen, setCompareOpen] = useState<ReadonlySet<string>>(new Set());
 	if (marked.length === 0) return null;
 
 	const chosen = marked.filter((item) => selected.has(item.invoicedWorkId));
@@ -140,6 +143,7 @@ export function MarkedWork({
 				</li>
 				{marked.map((item) => {
 					const showHistory = historyOpen.has(item.invoicedWorkId);
+					const showComparison = compareOpen.has(item.invoicedWorkId);
 					return (
 						<li key={item.invoicedWorkId} className="space-y-2 p-2">
 							<div className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -163,6 +167,19 @@ export function MarkedWork({
 									))}
 								</span>
 								<span className="ml-auto flex gap-1">
+									<Button
+										size="sm"
+										variant="ghost"
+										aria-expanded={showComparison}
+										onClick={() =>
+											setCompareOpen((current) =>
+												toggle(current, item.invoicedWorkId, !showComparison),
+											)
+										}
+									>
+										<IconArrowsDiff aria-hidden="true" className="size-4" />
+										{t("settings.billableTime.handOff.marks.compare", "Compare")}
+									</Button>
 									{item.history.length > 0 && (
 										<Button
 											size="sm"
@@ -185,6 +202,9 @@ export function MarkedWork({
 									</Button>
 								</span>
 							</div>
+							{showComparison && (
+								<WorkComparison comparison={item.comparison} label={itemLabel(item)} />
+							)}
 							{showHistory && <ResolutionHistoryList entries={item.history} />}
 						</li>
 					);

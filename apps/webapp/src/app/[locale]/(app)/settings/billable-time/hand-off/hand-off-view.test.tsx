@@ -37,6 +37,20 @@ vi.mock("@/hooks/use-display-context", () => ({
 
 import { HandOffView } from "./hand-off-view";
 
+const comparedValues: HandOffOverview["changedAfterInvoicing"][number]["comparison"]["handOff"] = {
+	removed: false,
+	pieceCount: 1,
+	removedPieceCount: 0,
+	day: "2026-03-02",
+	start: { at: "2026-03-02T08:00:00.000Z", offsetMinutes: 0 },
+	end: { at: "2026-03-02T10:30:00.000Z", offsetMinutes: 0 },
+	durationMinutes: 150,
+	hours: "2.50",
+	projects: [{ id: "p-web", name: "Website" }],
+	customers: [{ id: "customer-1", name: "Acme" }],
+	billability: "billable",
+};
+
 const overview: HandOffOverview = {
 	customers: [],
 	drafts: [
@@ -75,6 +89,17 @@ const overview: HandOffOverview = {
 			changedFields: ["times"],
 			markVersion: "iw-1:1",
 			history: [],
+			comparison: {
+				handOff: comparedValues,
+				lastResolved: null,
+				current: {
+					...comparedValues,
+					durationMinutes: 165,
+					hours: "2.75",
+					changedFromHandOff: ["hours"],
+					changedSinceResolution: null,
+				},
+			},
 		},
 	],
 };

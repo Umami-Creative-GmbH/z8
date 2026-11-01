@@ -8,14 +8,17 @@ import { user } from "@/db/auth-schema";
 import {
 	auditLog,
 	customer,
+	invoiceDraft,
 	invoicedWork,
 	invoicedWorkResolution,
 	project,
+	type ResolutionSnapshot,
 	type ResolvedWorkValues,
 	timeEntry,
 	workPeriod,
 } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
+import { compareWork } from "./comparison";
 import {
 	changedFieldsOf,
 	type InvoicedWorkRowView,
@@ -23,14 +26,16 @@ import {
 	lockHandOffs,
 } from "./hand-off-store";
 import { comparisonItems, itemMarkVersion, type ResolutionInput } from "./resolution";
-import type { MarkedWorkItemView, ResolutionHistoryEntryView } from "./views";
+import type { MarkedWorkItemView, ResolutionHistoryEntryView, WorkComparisonView } from "./views";
 
 /**
  * Resolving work changed after invoicing (#1499). A resolution records who
  * handled a comparison item, when, why, the accounting reference, the changed
  * fields it resolved and the live values reviewed, then removes the item's
  * mark. Resolutions are append-only (migration 0290); a later correction marks
- * the item again. Callers authorize an org admin of `organizationId` first;
+ * the item again. Each marked item is listed with its comparison (#1501): the
+ * hand-off, its latest resolution's snapshot and the live values. Callers
+ * authorize an org admin of `organizationId` first;
  * everything here is scoped to that organization. The Billable Time module may
  * be off.
  *
@@ -50,15 +55,21 @@ function itemsOf(rows: readonly InvoicedWorkRowView[]): Map<string, ItemRowView[
 	return comparisonItems(rows.map((row) => ({ ...row, id: row.invoicedWorkId })));
 }
 
-/** Resolutions and earlier clears of the items, newest first, by handed-off row. */
+interface ItemHistory {
+	/** Resolutions and earlier clears, newest first, by handed-off row. */
+	history: Map<string, ResolutionHistoryEntryView[]>;
+	/** The latest resolution's reviewed values, by handed-off row. */
+	lastResolved: Map<string, { resolvedAt: string; snapshot: ResolutionSnapshot }>;
+}
+
 async function historyOf(
 	reader: Reader,
 	organizationId: string,
 	items: ReadonlyMap<string, readonly ItemRowView[]>,
-): Promise<Map<string, ResolutionHistoryEntryView[]>> {
+): Promise<ItemHistory> {
 	const rootOf = new Map<string, string>();
 	for (const [root, rows] of items) for (const row of rows) rootOf.set(row.id, root);
-	if (rootOf.size === 0) return new Map();
+	if (rootOf.size === 0) return { history: new Map(), lastResolved: new Map() };
 	const [resolutions, cleared] = await Promise.all([
 		reader
 			.select({
@@ -69,6 +80,7 @@ async function historyOf(
 				explanation: invoicedWorkResolution.explanation,
 				accountingReference: invoicedWorkResolution.accountingReference,
 				resolvedFields: invoicedWorkResolution.resolvedFields,
+				snapshot: invoicedWorkResolution.snapshot,
 			})
 			.from(invoicedWorkResolution)
 			.leftJoin(user, eq(user.id, invoicedWorkResolution.resolvedBy))
@@ -127,24 +139,120 @@ async function historyOf(
 		list.push(entry);
 		byItem.set(entry.invoicedWorkId, list);
 	}
-	return byItem;
+	const lastResolved: ItemHistory["lastResolved"] = new Map();
+	for (const row of resolutions) {
+		const latest = lastResolved.get(row.invoicedWorkId);
+		if (!latest || latest.resolvedAt < row.at.toISOString()) {
+			lastResolved.set(row.invoicedWorkId, {
+				resolvedAt: row.at.toISOString(),
+				snapshot: row.snapshot,
+			});
+		}
+	}
+	return { history: byItem, lastResolved };
+}
+
+/** The items with an open mark. The row views carry no mark once released. */
+function openItems(
+	items: ReadonlyMap<string, readonly ItemRowView[]>,
+): Map<string, readonly ItemRowView[]> {
+	return new Map(
+		[...items].filter(([, rows]) => rows.some((row) => row.changedAfterInvoicingAt !== null)),
+	);
+}
+
+/**
+ * Each item's comparison (#1501): the handed-off row against its latest
+ * resolution's snapshot and the live work periods of all its pieces. The
+ * hand-off's customer is the draft's.
+ */
+async function comparisonsOf(
+	reader: Reader,
+	organizationId: string,
+	items: ReadonlyMap<string, readonly ItemRowView[]>,
+	lastResolved: ItemHistory["lastResolved"],
+): Promise<Map<string, WorkComparisonView>> {
+	if (items.size === 0) return new Map();
+	const rows = [...items.values()].flat();
+	const [drafts, current] = await Promise.all([
+		reader
+			.select({
+				id: invoiceDraft.id,
+				customerId: invoiceDraft.customerId,
+				customerName: customer.name,
+			})
+			.from(invoiceDraft)
+			.leftJoin(
+				customer,
+				and(eq(customer.id, invoiceDraft.customerId), eq(customer.organizationId, organizationId)),
+			)
+			.where(
+				and(
+					eq(invoiceDraft.organizationId, organizationId),
+					inArray(invoiceDraft.id, [...new Set(rows.map((row) => row.invoiceDraftId))]),
+				),
+			),
+		currentValues(
+			reader,
+			organizationId,
+			rows.map((row) => row.workPeriodId),
+		),
+	]);
+	const draftCustomer = new Map(drafts.map((draft) => [draft.id, draft]));
+	const comparisons = new Map<string, WorkComparisonView>();
+	for (const [rootId, members] of items) {
+		const root = members[0];
+		const frozen = root.handedOff;
+		const customerOfDraft = draftCustomer.get(root.invoiceDraftId);
+		comparisons.set(
+			rootId,
+			compareWork({
+				handOff: {
+					removed: false,
+					startedAt: frozen.startedAt,
+					endedAt: frozen.endedAt,
+					startOffsetMinutes: frozen.startOffsetMinutes,
+					endOffsetMinutes: frozen.startOffsetMinutes,
+					durationMinutes: frozen.durationMinutes,
+					projectId: frozen.projectId,
+					projectName: root.projectName || null,
+					customerId: customerOfDraft?.customerId ?? null,
+					customerName: customerOfDraft?.customerName ?? null,
+					// Only billable work is handed off.
+					billable: true,
+				},
+				lastResolved: (() => {
+					const latest = lastResolved.get(rootId);
+					return latest ? { resolvedAt: latest.resolvedAt, pieces: latest.snapshot.pieces } : null;
+				})(),
+				// The work period cascades its invoiced work away, so each piece has one.
+				current: members.flatMap((row) => {
+					const values = current.get(row.workPeriodId);
+					return values ? [values] : [];
+				}),
+			}),
+		);
+	}
+	return comparisons;
 }
 
 function markedItemsOf(
 	items: ReadonlyMap<string, readonly ItemRowView[]>,
-	history: ReadonlyMap<string, ResolutionHistoryEntryView[]>,
+	{ history }: ItemHistory,
+	comparisons: ReadonlyMap<string, WorkComparisonView>,
 ): MarkedWorkItemView[] {
 	const marked: MarkedWorkItemView[] = [];
 	for (const [rootId, rows] of items) {
-		// The row views carry no mark once released.
 		const open = rows.filter((row) => row.changedAfterInvoicingAt !== null);
-		if (open.length === 0) continue;
+		const comparison = comparisons.get(rootId);
+		if (open.length === 0 || !comparison) continue;
 		const {
 			id: _id,
 			timesheet: _timesheet,
 			carriedFromWorkPeriodId: _source,
 			markVersion: _version,
 			released: _released,
+			handedOff: _handedOff,
 			...root
 		} = rows[0];
 		marked.push({
@@ -154,9 +262,22 @@ function markedItemsOf(
 			changedFields: [...new Set(open.flatMap((row) => row.changedFields))].sort(),
 			markVersion: itemMarkVersion(rows),
 			history: history.get(rootId) ?? [],
+			comparison,
 		});
 	}
 	return marked;
+}
+
+/** Marked items with their history and comparison. */
+async function markedItemsWithComparisons(
+	reader: Reader,
+	organizationId: string,
+	items: ReadonlyMap<string, readonly ItemRowView[]>,
+	history: ItemHistory,
+): Promise<MarkedWorkItemView[]> {
+	const open = openItems(items);
+	const comparisons = await comparisonsOf(reader, organizationId, open, history.lastResolved);
+	return markedItemsOf(open, history, comparisons);
 }
 
 /** The organization's comparison items marked as changed after invoicing, in unreleased drafts. */
@@ -187,8 +308,13 @@ export async function listMarkedItems(
 			isNull(invoicedWork.releasedAt),
 		),
 	);
-	const items = itemsOf(rows);
-	return markedItemsOf(items, await historyOf(reader, organizationId, items));
+	const items = openItems(itemsOf(rows));
+	return markedItemsWithComparisons(
+		reader,
+		organizationId,
+		items,
+		await historyOf(reader, organizationId, items),
+	);
 }
 
 /** A draft's marked items and the resolution history of all its items. */
@@ -204,8 +330,8 @@ export async function readDraftReconciliation(
 	const items = itemsOf(rows);
 	const history = await historyOf(reader, input.organizationId, items);
 	return {
-		marked: markedItemsOf(items, history),
-		resolutionHistory: [...history.values()]
+		marked: await markedItemsWithComparisons(reader, input.organizationId, items, history),
+		resolutionHistory: [...history.history.values()]
 			.flat()
 			.sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0)),
 	};

@@ -146,6 +146,79 @@ export type ResolutionHistoryEntryView =
 			actorName: string | null;
 	  };
 
+/** What a comparison of invoiced work compares (#1501). */
+export const COMPARED_FIELDS = [
+	"day",
+	"start",
+	"end",
+	"hours",
+	"project",
+	"customer",
+	"billability",
+	"removed",
+] as const;
+
+export type ComparedField = (typeof COMPARED_FIELDS)[number];
+
+/** An instant (ISO) with the UTC offset the work recorded for it. */
+export interface RecordedTimeView {
+	at: string;
+	offsetMinutes: number;
+}
+
+/** A project or customer; a null id is none, a null name one no longer found. */
+export interface ComparedReferenceView {
+	id: string | null;
+	name: string | null;
+}
+
+/**
+ * One column of a comparison: a comparison item's values over its pieces that
+ * are not removed. Start is the earliest start, end the latest end, each at the
+ * offset recorded for it; hours are the sum of the pieces. When every piece is
+ * removed, only `removed` and the piece counts carry meaning.
+ */
+export interface ComparedWorkValuesView {
+	removed: boolean;
+	pieceCount: number;
+	removedPieceCount: number;
+	/** The work-local day of the start (ISO). */
+	day: string | null;
+	start: RecordedTimeView | null;
+	/** Null while a piece is still running. */
+	end: RecordedTimeView | null;
+	/** Recorded minutes, net of breaks. */
+	durationMinutes: number;
+	/** `durationMinutes` as two-decimal hours. */
+	hours: string;
+	/** Distinct, in piece order. */
+	projects: ComparedReferenceView[];
+	customers: ComparedReferenceView[];
+	billability: "billable" | "non_billable" | "mixed" | null;
+}
+
+/**
+ * A comparison item's values as handed off, as last resolved (the latest
+ * resolution's snapshot; null when never resolved) and now, with the fields
+ * that differ (#1501). Add further per-item figures (such as an amount
+ * difference) as fields of their own.
+ */
+export interface WorkComparisonView {
+	handOff: ComparedWorkValuesView;
+	lastResolved:
+		| (ComparedWorkValuesView & {
+				/** When the latest resolution was recorded (an instant, ISO). */
+				resolvedAt: string;
+				changedFromHandOff: ComparedField[];
+		  })
+		| null;
+	current: ComparedWorkValuesView & {
+		changedFromHandOff: ComparedField[];
+		/** Null when the item was never resolved. */
+		changedSinceResolution: ComparedField[] | null;
+	};
+}
+
 /**
  * A comparison item marked as changed after invoicing: the handed-off row
  * (its day, employee, project and hours as handed off) with the split-off
@@ -158,6 +231,7 @@ export interface MarkedWorkItemView extends InvoicedWorkView {
 	markVersion: string;
 	/** Newest first. */
 	history: ResolutionHistoryEntryView[];
+	comparison: WorkComparisonView;
 }
 
 /**

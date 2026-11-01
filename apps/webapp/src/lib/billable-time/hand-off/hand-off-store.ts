@@ -1419,6 +1419,14 @@ export type InvoicedWorkRowView = InvoicedWorkView & {
 	carriedFromWorkPeriodId: string | null;
 	markVersion: number;
 	released: boolean;
+	/** The frozen values as handed off (the end at the start's offset, as the timesheet). */
+	handedOff: {
+		projectId: string;
+		startedAt: string;
+		endedAt: string;
+		startOffsetMinutes: number;
+		durationMinutes: number;
+	};
 };
 
 /** Invoiced work rows with names, for a draft or for all marked work. */
@@ -1463,6 +1471,13 @@ export async function invoicedWorkViews(
 			carriedFromWorkPeriodId: work.carriedFromWorkPeriodId,
 			markVersion: work.markVersion,
 			released: work.releasedAt !== null,
+			handedOff: {
+				projectId: work.projectId,
+				startedAt: work.startedAt.toISOString(),
+				endedAt: work.endedAt.toISOString(),
+				startOffsetMinutes: work.startOffsetMinutes,
+				durationMinutes: work.durationMinutes,
+			},
 			changedAfterInvoicingAt:
 				work.releasedAt === null ? (work.changedAfterInvoicingAt?.toISOString() ?? null) : null,
 			changedFields: work.releasedAt === null ? changedFieldsOf(work.changedFields) : [],
@@ -1561,6 +1576,7 @@ export async function getInvoiceDraftDetail(
 				carriedFromWorkPeriodId: _source,
 				markVersion: _version,
 				released: _released,
+				handedOff: _handedOff,
 				...view
 			}) => view,
 		),
