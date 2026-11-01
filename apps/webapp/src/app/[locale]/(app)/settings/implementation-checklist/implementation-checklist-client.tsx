@@ -1,6 +1,13 @@
 "use client";
 
-import { IconCheck, IconCircle, IconLoader2 } from "@tabler/icons-react";
+import {
+	IconAlertTriangle,
+	IconCheck,
+	IconCircle,
+	IconCircleCheck,
+	IconCloudOff,
+	IconLoader2,
+} from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -8,41 +15,47 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import type { ImplementationChecklistItemStatus } from "@/lib/implementation-checklist/go-live/types";
+import type { ResolvedImplementationChecklistItem } from "@/lib/implementation-checklist/status";
 import { cn } from "@/lib/utils";
 import { Link } from "@/navigation";
 import {
 	markImplementationChecklistItemComplete,
 	markImplementationChecklistItemIncomplete,
 } from "./actions";
+import { GoLiveCheckPanel } from "./go-live-check-panel";
+import { GoLiveReadinessCard, type GoLiveReadinessView } from "./go-live-readiness-card";
 
-type ChecklistStatus = "complete" | "not-started";
-type CompletionSource = "automatic" | "manual" | null;
-
-interface ImplementationChecklistItem {
-	id: string;
-	title: string;
-	titleKey?: string;
-	description: string;
-	descriptionKey?: string;
-	helperText: string;
-	helperTextKey?: string;
-	actionLabel: string;
-	actionLabelKey?: string;
-	href: string;
-	status: ChecklistStatus;
-	completionSource: CompletionSource;
-	canToggleManualCompletion: boolean;
-}
-
-interface ImplementationChecklistViewModel {
-	items: ImplementationChecklistItem[];
-	completedCount: number;
-	totalCount: number;
-}
+type ImplementationChecklistItem = Pick<
+	ResolvedImplementationChecklistItem,
+	| "id"
+	| "title"
+	| "description"
+	| "helperText"
+	| "actionLabel"
+	| "href"
+	| "status"
+	| "completionSource"
+	| "canToggleManualCompletion"
+	| "goLive"
+> &
+	Partial<
+		Pick<
+			ResolvedImplementationChecklistItem,
+			"titleKey" | "descriptionKey" | "helperTextKey" | "actionLabelKey"
+		>
+	>;
 
 interface ImplementationChecklistClientProps {
-	checklist: ImplementationChecklistViewModel;
+	checklist: {
+		items: readonly ImplementationChecklistItem[];
+		completedCount: number;
+		totalCount: number;
+		goLive: GoLiveReadinessView;
+	};
 }
+
+type Translate = ReturnType<typeof useTranslate>["t"];
 
 export function ImplementationChecklistClient({ checklist }: ImplementationChecklistClientProps) {
 	const { t } = useTranslate();
@@ -57,7 +70,7 @@ export function ImplementationChecklistClient({ checklist }: ImplementationCheck
 		setPendingItemId(item.id);
 		startTransition(async () => {
 			const result =
-				item.status === "complete"
+				item.completionSource === "manual"
 					? await markImplementationChecklistItemIncomplete(item.id)
 					: await markImplementationChecklistItemComplete(item.id);
 
@@ -93,6 +106,8 @@ export function ImplementationChecklistClient({ checklist }: ImplementationCheck
 					</p>
 				</div>
 			</div>
+
+			<GoLiveReadinessCard goLive={checklist.goLive} />
 
 			<Card>
 				<CardHeader>
@@ -135,9 +150,15 @@ export function ImplementationChecklistClient({ checklist }: ImplementationCheck
 			<div className="grid gap-4 lg:grid-cols-2">
 				{checklist.items.map((item) => {
 					const itemPending = pendingItemId === item.id;
+					const showsGoLiveDetail =
+						item.goLive !== null &&
+						(item.goLive.outcome === "unavailable" ||
+							item.goLive.failures.length > 0 ||
+							item.goLive.warnings.length > 0 ||
+							item.goLive.notes.length > 0);
 
 					return (
-						<Card key={item.id} className="shadow-none">
+						<Card key={item.id} className={cn("shadow-none", showsGoLiveDetail && "lg:col-span-2")}>
 							<CardHeader>
 								<div className="flex items-start gap-3">
 									<StatusMarker status={item.status} />
@@ -155,7 +176,7 @@ export function ImplementationChecklistClient({ checklist }: ImplementationCheck
 														: item.description}
 												</CardDescription>
 											</div>
-											<Badge variant={item.status === "complete" ? "secondary" : "outline"}>
+											<Badge variant={statusBadgeVariant(item.status)}>
 												{getStatusLabel(item, t)}
 											</Badge>
 										</div>
@@ -166,6 +187,9 @@ export function ImplementationChecklistClient({ checklist }: ImplementationCheck
 								<p className="text-muted-foreground text-sm">
 									{item.helperTextKey ? t(item.helperTextKey, item.helperText) : item.helperText}
 								</p>
+								{showsGoLiveDetail && item.goLive ? (
+									<GoLiveCheckPanel result={item.goLive} />
+								) : null}
 								<div className="flex flex-wrap items-center gap-3">
 									<Button asChild size="sm">
 										<Link href={item.href}>
@@ -185,7 +209,7 @@ export function ImplementationChecklistClient({ checklist }: ImplementationCheck
 											{itemPending ? (
 												<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
 											) : null}
-											{item.status === "complete"
+											{item.completionSource === "manual"
 												? t(
 														"settings.implementationChecklist.actions.markIncomplete",
 														"Mark incomplete",
@@ -206,23 +230,28 @@ export function ImplementationChecklistClient({ checklist }: ImplementationCheck
 	);
 }
 
-function StatusMarker({ status }: { status: ChecklistStatus }) {
+const STATUS_ICONS = {
+	"not-set-up": IconCircle,
+	configured: IconCheck,
+	verified: IconCircleCheck,
+	"needs-attention": IconAlertTriangle,
+	unavailable: IconCloudOff,
+} as const satisfies Record<ImplementationChecklistItemStatus, unknown>;
+
+function StatusMarker({ status }: { status: ImplementationChecklistItemStatus }) {
 	const { t } = useTranslate();
-	const complete = status === "complete";
-	const Icon = complete ? IconCheck : IconCircle;
+	const Icon = STATUS_ICONS[status];
 
 	return (
 		<output
-			aria-label={
-				complete
-					? t("settings.implementationChecklist.status.complete", "Complete")
-					: t("settings.implementationChecklist.status.notStarted", "Not started")
-			}
+			aria-label={statusText(status, t)}
 			className={cn(
 				"mt-1 inline-flex size-8 shrink-0 items-center justify-center rounded-full border",
-				complete
-					? "border-primary bg-primary text-primary-foreground"
-					: "border-border bg-background text-muted-foreground",
+				status === "verified" && "border-primary bg-primary text-primary-foreground",
+				status === "configured" && "border-primary text-primary",
+				status === "needs-attention" && "border-destructive text-destructive",
+				(status === "not-set-up" || status === "unavailable") &&
+					"border-border bg-background text-muted-foreground",
 			)}
 		>
 			<Icon aria-hidden="true" className="size-4" />
@@ -230,15 +259,32 @@ function StatusMarker({ status }: { status: ChecklistStatus }) {
 	);
 }
 
-function getStatusLabel(
-	item: ImplementationChecklistItem,
-	t: ReturnType<typeof useTranslate>["t"],
-) {
-	if (item.status !== "complete") {
-		return t("settings.implementationChecklist.status.needsReview", "Needs review");
+function statusBadgeVariant(status: ImplementationChecklistItemStatus) {
+	if (status === "verified") return "default" as const;
+	if (status === "needs-attention") return "destructive" as const;
+	if (status === "configured") return "secondary" as const;
+	return "outline" as const;
+}
+
+function statusText(status: ImplementationChecklistItemStatus, t: Translate) {
+	switch (status) {
+		case "not-set-up":
+			return t("settings.implementationChecklist.status.notSetUp", "Not set up");
+		case "configured":
+			return t("settings.implementationChecklist.status.configured", "Configured");
+		case "verified":
+			return t("settings.implementationChecklist.status.verified", "Verified");
+		case "needs-attention":
+			return t("settings.implementationChecklist.status.needsAttention", "Needs attention");
+		case "unavailable":
+			return t("settings.implementationChecklist.status.unavailable", "Unavailable");
+	}
+}
+
+function getStatusLabel(item: ImplementationChecklistItem, t: Translate) {
+	if (item.status === "configured" && item.completionSource === "manual") {
+		return t("settings.implementationChecklist.status.manuallyComplete", "Manually complete");
 	}
 
-	return item.completionSource === "manual"
-		? t("settings.implementationChecklist.status.manuallyComplete", "Manually complete")
-		: t("settings.implementationChecklist.status.complete", "Complete");
+	return statusText(item.status, t);
 }

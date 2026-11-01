@@ -17,7 +17,9 @@ const mocks = vi.hoisted(() => ({
 		notificationPreference: vi.fn(),
 		employee: vi.fn(),
 		implementationChecklistManualState: vi.fn(),
+		organization: vi.fn(),
 	},
+	runGoLiveChecks: vi.fn(),
 	insert: vi.fn(),
 	values: vi.fn(),
 	onConflictDoUpdate: vi.fn(),
@@ -30,6 +32,25 @@ vi.mock("next/cache", () => ({
 }));
 
 vi.mock("server-only", () => ({}));
+
+vi.mock("@/env", () => ({ env: { BILLING_ENABLED: "false" } }));
+
+vi.mock("@/lib/implementation-checklist/go-live/run", () => ({
+	goLiveAsOf: (instant: unknown, timezone: string) => ({ instant, timezone, today: null }),
+	runGoLiveChecks: mocks.runGoLiveChecks,
+	unavailableGoLiveRun: () => ({
+		results: [
+			{
+				outcome: "unavailable",
+				checkId: "work-policy",
+				itemId: "work-policies",
+				severity: "mandatory",
+				checkedMemberCount: 0,
+			},
+		],
+		memberCount: null,
+	}),
+}));
 
 vi.mock("drizzle-orm", () => ({
 	and: vi.fn((...conditions: unknown[]) => ({ and: conditions })),
@@ -55,6 +76,7 @@ vi.mock("@/db", () => ({
 			implementationChecklistManualState: {
 				findFirst: mocks.findFirst.implementationChecklistManualState,
 			},
+			organization: { findFirst: mocks.findFirst.organization },
 		},
 		insert: mocks.insert,
 		delete: mocks.delete,
@@ -121,6 +143,18 @@ import { loadImplementationChecklistForContext } from "./queries";
 
 const checklistPath = "/settings/implementation-checklist";
 
+const passingWorkPolicyCheck = {
+	outcome: "passed",
+	configured: true,
+	failures: [],
+	warnings: [],
+	notes: [],
+	checkId: "work-policy",
+	itemId: "work-policies",
+	severity: "mandatory",
+	checkedMemberCount: 3,
+};
+
 describe("implementation checklist actions", () => {
 	beforeEach(() => {
 		mocks.revalidatePath.mockReset();
@@ -134,6 +168,24 @@ describe("implementation checklist actions", () => {
 			findFirst.mockReset();
 			findFirst.mockResolvedValue(undefined);
 		}
+
+		mocks.findFirst.organization.mockResolvedValue({
+			id: "org-active",
+			timezone: "Europe/Berlin",
+			shiftsEnabled: false,
+			projectsEnabled: false,
+			surchargesEnabled: false,
+			demoDataEnabled: true,
+			worksCouncilEnabled: false,
+			billableTimeEnabled: false,
+			personnelFilesEnabled: false,
+			deletedAt: null,
+		});
+		mocks.runGoLiveChecks.mockReset();
+		mocks.runGoLiveChecks.mockResolvedValue({
+			results: [passingWorkPolicyCheck],
+			memberCount: 3,
+		});
 
 		mocks.insert.mockReset();
 		mocks.values.mockReset();
@@ -165,11 +217,11 @@ describe("implementation checklist actions", () => {
 			throw new Error(result.error);
 		}
 		expect(result.data.items.find((item) => item.id === "holidays")).toMatchObject({
-			status: "complete",
+			status: "configured",
 			completionSource: "automatic",
 		});
 		expect(result.data.items.find((item) => item.id === "organization-structure")).toMatchObject({
-			status: "complete",
+			status: "configured",
 			completionSource: "manual",
 		});
 		expect(mocks.findFirst.holiday).toHaveBeenCalledWith(
@@ -225,9 +277,8 @@ describe("implementation checklist actions", () => {
 		);
 	});
 
-	it("automatically completes holidays, work policies, and employee import from org-scoped data", async () => {
+	it("detects holidays and employee import from org-scoped data", async () => {
 		mocks.findFirst.holidayAssignment.mockResolvedValue({ id: "holiday-assignment-1" });
-		mocks.findFirst.workPolicyAssignment.mockResolvedValue({ id: "policy-assignment-1" });
 		mocks.findFirst.employee.mockResolvedValue({ id: "employee-1" });
 
 		const result = await getImplementationChecklist();
@@ -237,15 +288,11 @@ describe("implementation checklist actions", () => {
 			throw new Error(result.error);
 		}
 		expect(result.data.items.find((item) => item.id === "holidays")).toMatchObject({
-			status: "complete",
-			completionSource: "automatic",
-		});
-		expect(result.data.items.find((item) => item.id === "work-policies")).toMatchObject({
-			status: "complete",
+			status: "configured",
 			completionSource: "automatic",
 		});
 		expect(result.data.items.find((item) => item.id === "employee-import")).toMatchObject({
-			status: "complete",
+			status: "configured",
 			completionSource: "automatic",
 		});
 		expect(mocks.findFirst.employee).toHaveBeenCalledWith(
@@ -271,11 +318,11 @@ describe("implementation checklist actions", () => {
 			throw new Error(result.error);
 		}
 		expect(result.data.items.find((item) => item.id === "integrations")).toMatchObject({
-			status: "complete",
+			status: "configured",
 			completionSource: "automatic",
 		});
 		expect(result.data.items.find((item) => item.id === "notifications")).toMatchObject({
-			status: "complete",
+			status: "configured",
 			completionSource: "automatic",
 		});
 		expect(mocks.findFirst.discordBotConfig).toHaveBeenCalledWith(
@@ -300,7 +347,7 @@ describe("implementation checklist actions", () => {
 			throw new Error(result.error);
 		}
 		expect(result.data.items.find((item) => item.id === "notifications")).toMatchObject({
-			status: "complete",
+			status: "configured",
 			completionSource: "automatic",
 		});
 		expect(mocks.findFirst.notificationPreference).toHaveBeenCalledWith(
@@ -325,9 +372,66 @@ describe("implementation checklist actions", () => {
 			throw new Error(result.error);
 		}
 		expect(result.data.items.find((item) => item.id === "holidays")).toMatchObject({
-			status: "not-started",
+			status: "not-set-up",
 			completionSource: null,
 		});
+	});
+
+	it("runs the go-live checks for the active organization and reports readiness", async () => {
+		const result = await getImplementationChecklist();
+
+		expect(result.success).toBe(true);
+		if (!result.success) {
+			throw new Error(result.error);
+		}
+		expect(mocks.runGoLiveChecks).toHaveBeenCalledWith(
+			expect.objectContaining({
+				organizationId: "org-active",
+				asOf: expect.objectContaining({ timezone: "Europe/Berlin" }),
+			}),
+		);
+		const { fixLink } = mocks.runGoLiveChecks.mock.calls[0]?.[0] ?? {};
+		const label = { key: "k", fallback: "f" };
+		expect(fixLink("/settings/work-policies?tab=work&view=assignments", label)).toEqual({
+			href: "/settings/work-policies?tab=work&view=assignments",
+			label,
+		});
+		expect(result.data.items.find((item) => item.id === "work-policies")).toMatchObject({
+			status: "verified",
+			goLive: { checkId: "work-policy", outcome: "passed" },
+		});
+		expect(result.data.goLive).toEqual({
+			readiness: { status: "ready", warnings: [] },
+			checkedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
+			timezone: "Europe/Berlin",
+			memberCount: 3,
+		});
+		expect(mocks.findFirst.workPolicy).not.toHaveBeenCalled();
+		expect(mocks.findFirst.workPolicyAssignment).not.toHaveBeenCalled();
+	});
+
+	it("reports go-live readiness unavailable, never ready, when the organization lookup fails", async () => {
+		mocks.findFirst.organization.mockRejectedValue(new Error("database unavailable"));
+
+		const result = await getImplementationChecklist();
+
+		expect(result.success).toBe(true);
+		if (!result.success) {
+			throw new Error(result.error);
+		}
+		expect(mocks.runGoLiveChecks).not.toHaveBeenCalled();
+		expect(result.data.goLive.readiness).toEqual({ status: "unavailable" });
+		expect(result.data.items.find((item) => item.id === "work-policies")?.status).toBe(
+			"unavailable",
+		);
+	});
+
+	it("never runs go-live checks for a viewer without org-admin settings access", async () => {
+		mocks.requireAccess.mockRejectedValue(new Error("NEXT_REDIRECT"));
+
+		await expect(getImplementationChecklist()).rejects.toThrow("NEXT_REDIRECT");
+		expect(mocks.runGoLiveChecks).not.toHaveBeenCalled();
+		expect(mocks.findFirst.organization).not.toHaveBeenCalled();
 	});
 
 	it("requires access before rejecting invalid or non-manual item ids for manual mutations", async () => {

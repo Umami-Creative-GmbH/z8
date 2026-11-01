@@ -226,6 +226,11 @@ const ROSTER_SURFACES: Surface[] = [
 		functions: ["getVehicleUseAdminDataAction"],
 		note: "vehicle use assignment picker",
 	},
+	{
+		file: "lib/implementation-checklist/go-live/group.ts",
+		functions: ["resolveGoLiveGroup"],
+		note: "the go-live group every go-live check runs over",
+	},
 ];
 
 const HISTORY_VIEWS: Surface[] = [

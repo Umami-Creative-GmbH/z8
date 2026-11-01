@@ -1,20 +1,22 @@
-import { and, desc, eq, gt, gte, isNull, lte, or, type SQL, type sql } from "drizzle-orm";
+import { and, desc, eq, gt, gte, isNull, lte, or, type SQL } from "drizzle-orm";
 import { Context, Effect, Layer } from "effect";
 import {
 	employee,
 	workPolicy,
 	workPolicyAssignment,
-	type workPolicyBreakOption,
-	type workPolicyBreakRule,
 	workPolicyPreset,
-	type workPolicyRegulation,
-	type workPolicySchedule,
-	type workPolicyScheduleDay,
 	workPolicyViolation,
 } from "@/db/schema";
 import { dateFromInstant, type Instant } from "@/lib/datetime/temporal-core";
 import { type DatabaseError, NotFoundError } from "@/lib/effect/errors";
 import { applicableBreakRule } from "@/lib/time-tracking/break-due";
+import {
+	loadEffectiveWorkPolicies,
+	orderEffectiveAssignments,
+	toEffectiveWorkPolicy,
+	WORK_POLICY_DETAILS_WITH,
+	type WorkPolicyWithDetails,
+} from "@/lib/work-policy/effective-work-policies";
 import { DatabaseService } from "./database.service";
 
 // ============================================
@@ -237,17 +239,6 @@ function calculateBreakRequirementsInternal(params: {
 	};
 }
 
-function orderEffectiveAssignments(
-	assignment: Pick<typeof workPolicyAssignment, "effectiveFrom" | "createdAt" | "id">,
-	operators: { desc: typeof desc; sql: typeof sql },
-) {
-	return [
-		operators.sql`${assignment.effectiveFrom} desc nulls last`,
-		operators.desc(assignment.createdAt),
-		operators.desc(assignment.id),
-	];
-}
-
 // ============================================
 // SERVICE DEFINITION
 // ============================================
@@ -274,6 +265,17 @@ export class WorkPolicyService extends Context.Service<
 			organizationId: string;
 			at: Instant;
 		}) => Effect.Effect<EffectiveWorkPolicy | null, NotFoundError | DatabaseError>;
+
+		/**
+		 * Many employees' work policies as of `at`, resolved like
+		 * `getEffectivePolicyAt` in one organization-scoped query. The caller gives
+		 * each employee's primary team. Keyed by employee id.
+		 */
+		readonly getEffectivePolicies: (input: {
+			organizationId: string;
+			employees: readonly { id: string; teamId: string | null }[];
+			at: Instant;
+		}) => Effect.Effect<Map<string, EffectiveWorkPolicy | null>, DatabaseError>;
 
 		/**
 		 * Check compliance for a working session against the policy in force at
@@ -356,93 +358,6 @@ export const WorkPolicyServiceLive = Layer.effect(
 	Effect.gen(function* () {
 		const dbService = yield* DatabaseService;
 
-		// Type definitions for the with clause results
-		type PolicyWithDetails = typeof workPolicy.$inferSelect & {
-			schedule:
-				| (typeof workPolicySchedule.$inferSelect & {
-						days: (typeof workPolicyScheduleDay.$inferSelect)[];
-				  })
-				| null;
-			regulation:
-				| (typeof workPolicyRegulation.$inferSelect & {
-						breakRules: (typeof workPolicyBreakRule.$inferSelect & {
-							options: (typeof workPolicyBreakOption.$inferSelect)[];
-						})[];
-				  })
-				| null;
-		};
-
-		// Helper to map raw policy to EffectiveWorkPolicy
-		const mapToEffective = (
-			policy: PolicyWithDetails,
-			assignmentType: "organization" | "team" | "employee",
-			assignedVia: string,
-		): EffectiveWorkPolicy => ({
-			policyId: policy.id,
-			policyName: policy.name,
-			schedule:
-				policy.scheduleEnabled && policy.schedule
-					? {
-							scheduleCycle: policy.schedule.scheduleCycle,
-							scheduleType: policy.schedule.scheduleType,
-							workingDaysPreset: policy.schedule.workingDaysPreset,
-							hoursPerCycle: policy.schedule.hoursPerCycle,
-							homeOfficeDaysPerCycle: policy.schedule.homeOfficeDaysPerCycle ?? 0,
-							days: policy.schedule.days.map((d) => ({
-								dayOfWeek: d.dayOfWeek,
-								hoursPerDay: d.hoursPerDay,
-								isWorkDay: d.isWorkDay,
-								latestClockIn: d.latestClockIn ?? null,
-							})),
-						}
-					: null,
-			regulation:
-				policy.regulationEnabled && policy.regulation
-					? {
-							maxDailyMinutes: policy.regulation.maxDailyMinutes,
-							maxWeeklyMinutes: policy.regulation.maxWeeklyMinutes,
-							maxUninterruptedMinutes: policy.regulation.maxUninterruptedMinutes,
-							// ArbZG compliance fields
-							minRestPeriodMinutes: policy.regulation.minRestPeriodMinutes,
-							restPeriodEnforcement: policy.regulation.restPeriodEnforcement ?? "warn",
-							overtimeDailyThresholdMinutes: policy.regulation.overtimeDailyThresholdMinutes,
-							overtimeWeeklyThresholdMinutes: policy.regulation.overtimeWeeklyThresholdMinutes,
-							overtimeMonthlyThresholdMinutes: policy.regulation.overtimeMonthlyThresholdMinutes,
-							alertBeforeLimitMinutes: policy.regulation.alertBeforeLimitMinutes ?? 30,
-							alertThresholdPercent: policy.regulation.alertThresholdPercent ?? 80,
-							breakRules: policy.regulation.breakRules
-								.sort((a, b) => a.sortOrder - b.sortOrder)
-								.map((rule) => ({
-									workingMinutesThreshold: rule.workingMinutesThreshold,
-									requiredBreakMinutes: rule.requiredBreakMinutes,
-									options: rule.options
-										.sort((a, b) => a.sortOrder - b.sortOrder)
-										.map((opt) => ({
-											splitCount: opt.splitCount,
-											minimumSplitMinutes: opt.minimumSplitMinutes,
-											minimumLongestSplitMinutes: opt.minimumLongestSplitMinutes,
-										})),
-								})),
-						}
-					: null,
-			assignmentType,
-			assignedVia,
-		});
-
-		// Helper to build the with clause for policy relations
-		const policyWith = {
-			schedule: {
-				with: { days: true },
-			},
-			regulation: {
-				with: {
-					breakRules: {
-						with: { options: true },
-					},
-				},
-			},
-		} as const;
-
 		const findEmployeeForPolicy = (
 			queryName: string,
 			employeeId: string,
@@ -487,7 +402,7 @@ export const WorkPolicyServiceLive = Layer.effect(
 					),
 					with: {
 						policy: {
-							with: policyWith,
+							with: WORK_POLICY_DETAILS_WITH,
 						},
 					},
 					orderBy: organizationId ? orderEffectiveAssignments : undefined,
@@ -531,8 +446,8 @@ export const WorkPolicyServiceLive = Layer.effect(
 					at,
 				);
 				if (employeeAssignment?.policy?.isActive) {
-					return mapToEffective(
-						employeeAssignment.policy as PolicyWithDetails,
+					return toEffectiveWorkPolicy(
+						employeeAssignment.policy as WorkPolicyWithDetails,
 						"employee",
 						"Individual",
 					);
@@ -550,8 +465,8 @@ export const WorkPolicyServiceLive = Layer.effect(
 						at,
 					);
 					if (teamAssignment?.policy?.isActive) {
-						return mapToEffective(
-							teamAssignment.policy as PolicyWithDetails,
+						return toEffectiveWorkPolicy(
+							teamAssignment.policy as WorkPolicyWithDetails,
 							"team",
 							emp.team?.name ?? "Team",
 						);
@@ -572,8 +487,8 @@ export const WorkPolicyServiceLive = Layer.effect(
 					at,
 				);
 				if (orgAssignment?.policy?.isActive) {
-					return mapToEffective(
-						orgAssignment.policy as PolicyWithDetails,
+					return toEffectiveWorkPolicy(
+						orgAssignment.policy as WorkPolicyWithDetails,
 						"organization",
 						"Organization Default",
 					);
@@ -609,6 +524,11 @@ export const WorkPolicyServiceLive = Layer.effect(
 
 			getEffectivePolicyAt: (input) =>
 				effectivePolicyOf(input.employeeId, input.organizationId, dateFromInstant(input.at)),
+
+			getEffectivePolicies: (input) =>
+				dbService.query("workPolicy.effectivePolicies", () =>
+					loadEffectiveWorkPolicies(dbService.db, input),
+				),
 
 			checkCompliance: (input) =>
 				Effect.gen(function* () {

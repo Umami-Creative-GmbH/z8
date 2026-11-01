@@ -1,9 +1,24 @@
 import { describe, expect, it } from "vitest";
 import { IMPLEMENTATION_CHECKLIST_ITEMS } from "./definition";
-import { resolveImplementationChecklistItems } from "./status";
+import type { GoLiveCheckResult } from "./go-live/types";
+import { resolveImplementationChecklistItems, summarizeImplementationChecklist } from "./status";
+
+const workPolicyResult = (overrides: Partial<GoLiveCheckResult> = {}): GoLiveCheckResult =>
+	({
+		checkId: "work-policy",
+		itemId: "work-policies",
+		severity: "mandatory",
+		checkedMemberCount: 3,
+		outcome: "passed",
+		configured: true,
+		failures: [],
+		warnings: [],
+		notes: [],
+		...overrides,
+	}) as GoLiveCheckResult;
 
 describe("implementation checklist status resolver", () => {
-	it("keeps the expected customer rollout checklist order", () => {
+	it("keeps the expected customer go-live checklist order", () => {
 		expect(IMPLEMENTATION_CHECKLIST_ITEMS.map((item) => item.id)).toEqual([
 			"organization-structure",
 			"holidays",
@@ -25,23 +40,38 @@ describe("implementation checklist status resolver", () => {
 		});
 	});
 
-	it("marks automatic items complete from detector output", () => {
+	it("classifies every item for go-live readiness", () => {
+		expect(
+			Object.fromEntries(IMPLEMENTATION_CHECKLIST_ITEMS.map((item) => [item.id, item.role])),
+		).toEqual({
+			"organization-structure": "manual-only",
+			holidays: "informational",
+			"work-policies": "mandatory",
+			"approval-rules": "manual-only",
+			"payroll-readiness": "manual-only",
+			integrations: "informational",
+			notifications: "informational",
+			"employee-import": "informational",
+		});
+	});
+
+	it("maps presence detection onto configured and not set up", () => {
 		const items = resolveImplementationChecklistItems({
-			detectedCompleteIds: new Set(["holidays", "work-policies", "employee-import"]),
+			detectedCompleteIds: new Set(["holidays", "employee-import"]),
 			manualCompleteIds: new Set(),
 		});
 
 		expect(items.find((item) => item.id === "holidays")).toMatchObject({
-			status: "complete",
-			completionSource: "automatic",
-		});
-		expect(items.find((item) => item.id === "work-policies")).toMatchObject({
-			status: "complete",
+			status: "configured",
 			completionSource: "automatic",
 		});
 		expect(items.find((item) => item.id === "employee-import")).toMatchObject({
-			status: "complete",
+			status: "configured",
 			completionSource: "automatic",
+		});
+		expect(items.find((item) => item.id === "integrations")).toMatchObject({
+			status: "not-set-up",
+			completionSource: null,
 		});
 	});
 
@@ -52,17 +82,17 @@ describe("implementation checklist status resolver", () => {
 		});
 
 		expect(items.find((item) => item.id === "organization-structure")).toMatchObject({
-			status: "complete",
+			status: "configured",
 			completionSource: "manual",
 			canToggleManualCompletion: true,
 		});
 		expect(items.find((item) => item.id === "approval-rules")).toMatchObject({
-			status: "complete",
+			status: "configured",
 			completionSource: "manual",
 			canToggleManualCompletion: true,
 		});
 		expect(items.find((item) => item.id === "holidays")).toMatchObject({
-			status: "not-started",
+			status: "not-set-up",
 			completionSource: null,
 			canToggleManualCompletion: false,
 		});
@@ -75,7 +105,7 @@ describe("implementation checklist status resolver", () => {
 		});
 
 		expect(items.find((item) => item.id === "integrations")).toMatchObject({
-			status: "complete",
+			status: "configured",
 			completionSource: "automatic",
 		});
 	});
@@ -87,26 +117,57 @@ describe("implementation checklist status resolver", () => {
 		});
 
 		expect(items.find((item) => item.id === "approval-rules")).toMatchObject({
-			status: "complete",
+			status: "configured",
 			completionSource: "manual",
 			canToggleManualCompletion: true,
 		});
 		expect(items.find((item) => item.id === "payroll-readiness")).toMatchObject({
-			status: "not-started",
+			status: "not-set-up",
 			completionSource: null,
 			canToggleManualCompletion: true,
 		});
 	});
 
-	it("returns a progress summary", () => {
-		const items = resolveImplementationChecklistItems({
-			detectedCompleteIds: new Set(["holidays", "work-policies"]),
-			manualCompleteIds: new Set(["approval-rules"]),
+	it("takes a go-live item's status from its check, never from settings presence", () => {
+		const verified = resolveImplementationChecklistItems({
+			detectedCompleteIds: new Set(["work-policies"]),
+			manualCompleteIds: new Set(),
+			goLiveResults: [workPolicyResult()],
+		});
+		expect(verified.find((item) => item.id === "work-policies")).toMatchObject({
+			status: "verified",
+			goLive: { checkId: "work-policy", outcome: "passed" },
 		});
 
-		const completedCount = items.filter((item) => item.status === "complete").length;
+		const unchecked = resolveImplementationChecklistItems({
+			detectedCompleteIds: new Set(["work-policies"]),
+			manualCompleteIds: new Set(),
+			goLiveResults: [workPolicyResult({ outcome: "unavailable" } as Partial<GoLiveCheckResult>)],
+		});
+		expect(unchecked.find((item) => item.id === "work-policies")).toMatchObject({
+			status: "unavailable",
+			completionSource: null,
+		});
+	});
 
-		expect(completedCount).toBe(3);
-		expect(items).toHaveLength(8);
+	it("counts verified go-live items and configured other items toward progress", () => {
+		const items = resolveImplementationChecklistItems({
+			detectedCompleteIds: new Set(["holidays"]),
+			manualCompleteIds: new Set(["approval-rules"]),
+			goLiveResults: [workPolicyResult({ checkedMemberCount: 0 })],
+		});
+
+		expect(items.find((item) => item.id === "work-policies")?.status).toBe("configured");
+		expect(summarizeImplementationChecklist(items)).toEqual({ completedCount: 2, totalCount: 8 });
+
+		const verified = resolveImplementationChecklistItems({
+			detectedCompleteIds: new Set(["holidays"]),
+			manualCompleteIds: new Set(["approval-rules"]),
+			goLiveResults: [workPolicyResult()],
+		});
+		expect(summarizeImplementationChecklist(verified)).toEqual({
+			completedCount: 3,
+			totalCount: 8,
+		});
 	});
 });

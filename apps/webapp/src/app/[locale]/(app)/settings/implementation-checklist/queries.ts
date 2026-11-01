@@ -14,23 +14,47 @@ import {
 	teamsTenantConfig,
 	telegramBotConfig,
 	webhookEndpoint,
-	workPolicy,
-	workPolicyAssignment,
 } from "@/db/schema";
+import { env } from "@/env";
+import { organizationSettingsForDisplay } from "@/lib/auth/organization-display";
 import type { AuthContext } from "@/lib/auth-helpers";
+import { systemClock } from "@/lib/datetime/temporal-core";
 import {
 	IMPLEMENTATION_CHECKLIST_ITEMS,
 	type ImplementationChecklistItemId,
 } from "@/lib/implementation-checklist/definition";
+import { goLiveFixLinks } from "@/lib/implementation-checklist/go-live/fix-links";
+import { resolveGoLiveReadiness } from "@/lib/implementation-checklist/go-live/readiness";
+import {
+	type GoLiveRun,
+	goLiveAsOf,
+	runGoLiveChecks,
+	unavailableGoLiveRun,
+} from "@/lib/implementation-checklist/go-live/run";
+import type { GoLiveReadiness } from "@/lib/implementation-checklist/go-live/types";
 import {
 	type ResolvedImplementationChecklistItem,
 	resolveImplementationChecklistItems,
+	summarizeImplementationChecklist,
 } from "@/lib/implementation-checklist/status";
+import { createLogger } from "@/lib/logger";
+import { resolveOrganizationTimezone } from "@/lib/timezone/resolve-timezone";
+
+const logger = createLogger("ImplementationChecklist");
 
 export interface ImplementationChecklistViewModel {
 	items: ResolvedImplementationChecklistItem[];
 	completedCount: number;
 	totalCount: number;
+	goLive: {
+		readiness: GoLiveReadiness;
+		/** When the go-live checks ran, as an ISO instant. */
+		checkedAt: string;
+		/** The organization's timezone, for showing `checkedAt`. */
+		timezone: string;
+		/** How many members the go-live group has; null when it could not be resolved. */
+		memberCount: number | null;
+	};
 }
 
 type ImplementationChecklistActionFailure = { success: false; error: string };
@@ -125,21 +149,8 @@ async function detectCompleteIds(
 
 			return Boolean(customHoliday || holidayPreset || assignedHoliday);
 		}),
-		"work-policies": detectorComplete(async () => {
-			const [policy, assignment] = await Promise.all([
-				db.query.workPolicy.findFirst({
-					where: and(eq(workPolicy.organizationId, organizationId), eq(workPolicy.isActive, true)),
-				}),
-				db.query.workPolicyAssignment.findFirst({
-					where: and(
-						eq(workPolicyAssignment.organizationId, organizationId),
-						eq(workPolicyAssignment.isActive, true),
-					),
-				}),
-			]);
-
-			return Boolean(policy || assignment);
-		}),
+		// A go-live check, never a presence detector: settings alone don't verify it.
+		"work-policies": null,
 		"approval-rules": null,
 		"payroll-readiness": null,
 		integrations: activeIntegration,
@@ -216,18 +227,69 @@ export async function loadImplementationChecklistForContext({
 }: ImplementationChecklistLoaderContext): Promise<
 	ImplementationChecklistActionResult<ImplementationChecklistViewModel>
 > {
-	const [detectedCompleteIds, manualCompleteIds] = await Promise.all([
+	const [detectedCompleteIds, manualCompleteIds, goLive] = await Promise.all([
 		detectCompleteIds(organizationId, authContext.user.id),
 		loadManualCompleteIds(organizationId),
+		runGoLive(organizationId),
 	]);
-	const items = resolveImplementationChecklistItems({ detectedCompleteIds, manualCompleteIds });
+	const items = resolveImplementationChecklistItems({
+		detectedCompleteIds,
+		manualCompleteIds,
+		goLiveResults: goLive.run.results,
+	});
 
 	return {
 		success: true,
 		data: {
 			items,
-			completedCount: items.filter((item) => item.status === "complete").length,
-			totalCount: items.length,
+			...summarizeImplementationChecklist(items),
+			goLive: {
+				readiness: resolveGoLiveReadiness(goLive.run.results),
+				checkedAt: goLive.checkedAt,
+				timezone: goLive.timezone,
+				memberCount: goLive.run.memberCount,
+			},
 		},
 	};
+}
+
+/**
+ * The go-live checks, worked out live for the organization as of now. Callers
+ * have already authorized an org admin, so fix links are gated for that tier
+ * and the organization's feature flags. A failed lookup is unavailable, never a pass.
+ */
+async function runGoLive(
+	organizationId: string,
+): Promise<{ run: GoLiveRun; checkedAt: string; timezone: string }> {
+	const instant = systemClock.nowInstant();
+	let settings: ReturnType<typeof organizationSettingsForDisplay>;
+	try {
+		const record = await db.query.organization.findFirst({
+			where: (organization, { eq: equals }) => equals(organization.id, organizationId),
+		});
+		if (!record) throw new Error("Organization not found");
+		settings = organizationSettingsForDisplay(record);
+	} catch (error) {
+		logger.error({ organizationId, error }, "Go-live checks could not load the organization");
+		return { run: unavailableGoLiveRun(), checkedAt: instant.toString(), timezone: "UTC" };
+	}
+
+	const {
+		organizationId: _id,
+		timezone: storedTimezone,
+		deletedAt: _deletedAt,
+		...featureFlags
+	} = settings;
+	const { timezone } = resolveOrganizationTimezone(storedTimezone);
+	const run = await runGoLiveChecks({
+		db,
+		organizationId,
+		asOf: goLiveAsOf(instant, timezone),
+		fixLink: goLiveFixLinks({
+			accessTier: "orgAdmin",
+			billingEnabled: env.BILLING_ENABLED === "true",
+			featureFlags,
+		}),
+	});
+	return { run, checkedAt: instant.toString(), timezone };
 }

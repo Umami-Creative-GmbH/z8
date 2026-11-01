@@ -1,3 +1,5 @@
+import type { ImplementationChecklistItemRole } from "./go-live/types";
+
 export type ImplementationChecklistItemId =
 	| "organization-structure"
 	| "holidays"
@@ -8,7 +10,11 @@ export type ImplementationChecklistItemId =
 	| "notifications"
 	| "employee-import";
 
-export type ImplementationChecklistDetector = "automatic" | "manual";
+/**
+ * How an item is completed: a presence detector, a manual confirmation, or a go-live check
+ * registered in go-live/checks for the item.
+ */
+export type ImplementationChecklistDetector = "automatic" | "manual" | "go-live";
 
 export interface ImplementationChecklistDefinition {
 	id: ImplementationChecklistItemId;
@@ -23,6 +29,8 @@ export interface ImplementationChecklistDefinition {
 	href: string;
 	detector: ImplementationChecklistDetector;
 	canManualComplete: boolean;
+	/** How the item counts for go-live readiness and checklist progress. */
+	role: ImplementationChecklistItemRole;
 }
 
 export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[] = [
@@ -39,6 +47,7 @@ export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[]
 		href: "/settings/organizations",
 		detector: "manual",
 		canManualComplete: true,
+		role: "manual-only",
 	},
 	{
 		id: "holidays",
@@ -54,6 +63,7 @@ export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[]
 		href: "/settings/holidays",
 		detector: "automatic",
 		canManualComplete: false,
+		role: "informational",
 	},
 	{
 		id: "work-policies",
@@ -61,13 +71,15 @@ export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[]
 		titleKey: "settings.implementationChecklist.items.workPolicies.title",
 		description: "Set schedules, working time rules, and policy assignments for the organization.",
 		descriptionKey: "settings.implementationChecklist.items.workPolicies.description",
-		helperText: "Z8 checks for active work policies or active work policy assignments.",
-		helperTextKey: "settings.implementationChecklist.items.workPolicies.helperText",
+		helperText:
+			"Z8 checks that every employee on the current roster has an effective work policy today.",
+		helperTextKey: "settings.implementationChecklist.items.workPolicies.goLiveHelperText",
 		actionLabel: "Configure work policies",
 		actionLabelKey: "settings.implementationChecklist.items.workPolicies.actionLabel",
 		href: "/settings/work-policies",
-		detector: "automatic",
+		detector: "go-live",
 		canManualComplete: false,
+		role: "mandatory",
 	},
 	{
 		id: "approval-rules",
@@ -82,6 +94,7 @@ export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[]
 		href: "/settings/change-policies",
 		detector: "manual",
 		canManualComplete: true,
+		role: "manual-only",
 	},
 	{
 		id: "payroll-readiness",
@@ -97,6 +110,7 @@ export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[]
 		href: "/settings/payroll-readiness",
 		detector: "manual",
 		canManualComplete: true,
+		role: "manual-only",
 	},
 	{
 		id: "integrations",
@@ -111,6 +125,7 @@ export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[]
 		href: "/settings/webhooks",
 		detector: "automatic",
 		canManualComplete: false,
+		role: "informational",
 	},
 	{
 		id: "notifications",
@@ -125,6 +140,7 @@ export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[]
 		href: "/settings/notifications",
 		detector: "automatic",
 		canManualComplete: false,
+		role: "informational",
 	},
 	{
 		id: "employee-import",
@@ -140,6 +156,7 @@ export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[]
 		href: "/settings/import",
 		detector: "automatic",
 		canManualComplete: false,
+		role: "informational",
 	},
 ];
 
