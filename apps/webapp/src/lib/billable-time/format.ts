@@ -4,11 +4,18 @@ import { Temporal } from "temporal-polyfill";
  * Display formatting for Billable Time amounts and rate dates. Client-safe.
  * The decimal string itself is formatted, so no binary float can change a digit.
  */
-export function formatBillableAmount(locale: string, amount: string, currency: string): string {
+export function formatBillableAmount(
+	locale: string,
+	amount: string,
+	currency: string,
+	options: { signDisplay?: "exceptZero" } = {},
+): string {
 	try {
-		return new Intl.NumberFormat(locale, { style: "currency", currency }).format(
-			amount as Intl.StringNumericLiteral,
-		);
+		return new Intl.NumberFormat(locale, {
+			style: "currency",
+			currency,
+			signDisplay: options.signDisplay,
+		}).format(amount as Intl.StringNumericLiteral);
 	} catch {
 		return `${amount} ${currency}`;
 	}

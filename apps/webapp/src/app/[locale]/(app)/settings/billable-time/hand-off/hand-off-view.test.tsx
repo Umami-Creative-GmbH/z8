@@ -78,6 +78,14 @@ const overview: HandOffOverview = {
 	changedAfterInvoicing: [
 		{
 			invoiceDraftId: "draft-1",
+			draft: {
+				customerId: "customer-1",
+				customerName: "Acme",
+				currency: "EUR",
+				period: { from: "2026-03-01", to: "2026-03-31" },
+				title: "Acme March",
+				createdAt: "2026-04-01T08:00:00Z",
+			},
 			invoicedWorkId: "iw-1",
 			workPeriodId: "wp-1",
 			day: "2026-03-02",
@@ -90,6 +98,17 @@ const overview: HandOffOverview = {
 			markVersion: "iw-1:1",
 			history: [],
 			comparison: {
+				amountDifference: {
+					currency: "EUR",
+					fromHandOff: {
+						kind: "known",
+						amount: "25.00",
+						reason: "frozen_rate",
+						roundingCaveat: true,
+					},
+					sinceResolution: null,
+					notOnHandOffForNewCustomer: false,
+				},
 				handOff: comparedValues,
 				lastResolved: null,
 				current: {

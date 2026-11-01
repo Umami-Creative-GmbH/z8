@@ -18,6 +18,7 @@ import {
 	workPeriod,
 } from "@/db/schema";
 import { AuditAction } from "@/lib/audit-logger";
+import { amountDifferenceOf } from "./amount-difference";
 import { compareWork } from "./comparison";
 import {
 	changedFieldsOf,
@@ -26,7 +27,12 @@ import {
 	lockHandOffs,
 } from "./hand-off-store";
 import { comparisonItems, itemMarkVersion, type ResolutionInput } from "./resolution";
-import type { MarkedWorkItemView, ResolutionHistoryEntryView, WorkComparisonView } from "./views";
+import type {
+	MarkedWorkDraftView,
+	MarkedWorkItemView,
+	ResolutionHistoryEntryView,
+	WorkComparisonView,
+} from "./views";
 
 /**
  * Resolving work changed after invoicing (#1499). A resolution records who
@@ -161,17 +167,24 @@ function openItems(
 	);
 }
 
+interface ItemComparison {
+	comparison: WorkComparisonView;
+	draft: MarkedWorkDraftView;
+}
+
 /**
  * Each item's comparison (#1501): the handed-off row against its latest
  * resolution's snapshot and the live work periods of all its pieces. The
- * hand-off's customer is the draft's.
+ * hand-off's customer is the draft's. The amount difference (#1502) is priced
+ * at the handed-off row's frozen shares in the draft's currency, never at
+ * current billable rates.
  */
 async function comparisonsOf(
 	reader: Reader,
 	organizationId: string,
 	items: ReadonlyMap<string, readonly ItemRowView[]>,
 	lastResolved: ItemHistory["lastResolved"],
-): Promise<Map<string, WorkComparisonView>> {
+): Promise<Map<string, ItemComparison>> {
 	if (items.size === 0) return new Map();
 	const rows = [...items.values()].flat();
 	const [drafts, current] = await Promise.all([
@@ -180,6 +193,11 @@ async function comparisonsOf(
 				id: invoiceDraft.id,
 				customerId: invoiceDraft.customerId,
 				customerName: customer.name,
+				currency: invoiceDraft.currency,
+				periodFrom: invoiceDraft.periodFrom,
+				periodTo: invoiceDraft.periodTo,
+				title: invoiceDraft.title,
+				createdAt: invoiceDraft.createdAt,
 			})
 			.from(invoiceDraft)
 			.leftJoin(
@@ -198,40 +216,65 @@ async function comparisonsOf(
 			rows.map((row) => row.workPeriodId),
 		),
 	]);
-	const draftCustomer = new Map(drafts.map((draft) => [draft.id, draft]));
-	const comparisons = new Map<string, WorkComparisonView>();
+	const draftsById = new Map(drafts.map((draft) => [draft.id, draft]));
+	const comparisons = new Map<string, ItemComparison>();
 	for (const [rootId, members] of items) {
 		const root = members[0];
 		const frozen = root.handedOff;
-		const customerOfDraft = draftCustomer.get(root.invoiceDraftId);
-		comparisons.set(
-			rootId,
-			compareWork({
-				handOff: {
-					removed: false,
-					startedAt: frozen.startedAt,
-					endedAt: frozen.endedAt,
-					startOffsetMinutes: frozen.startOffsetMinutes,
-					endOffsetMinutes: frozen.startOffsetMinutes,
-					durationMinutes: frozen.durationMinutes,
-					projectId: frozen.projectId,
-					projectName: root.projectName || null,
-					customerId: customerOfDraft?.customerId ?? null,
-					customerName: customerOfDraft?.customerName ?? null,
-					// Only billable work is handed off.
-					billable: true,
-				},
-				lastResolved: (() => {
-					const latest = lastResolved.get(rootId);
-					return latest ? { resolvedAt: latest.resolvedAt, pieces: latest.snapshot.pieces } : null;
-				})(),
-				// The work period cascades its invoiced work away, so each piece has one.
-				current: members.flatMap((row) => {
-					const values = current.get(row.workPeriodId);
-					return values ? [values] : [];
+		const draft = draftsById.get(root.invoiceDraftId);
+		// The draft cascades its invoiced work away, so it is always there.
+		if (!draft) continue;
+		const latest = lastResolved.get(rootId);
+		const lastResolvedPieces = latest ? latest.snapshot.pieces : null;
+		// The work period cascades its invoiced work away, so each piece has one.
+		const currentPieces = members.flatMap((row) => {
+			const values = current.get(row.workPeriodId);
+			return values ? [values] : [];
+		});
+		comparisons.set(rootId, {
+			comparison: {
+				...compareWork({
+					handOff: {
+						removed: false,
+						startedAt: frozen.startedAt,
+						endedAt: frozen.endedAt,
+						startOffsetMinutes: frozen.startOffsetMinutes,
+						endOffsetMinutes: frozen.startOffsetMinutes,
+						durationMinutes: frozen.durationMinutes,
+						projectId: frozen.projectId,
+						projectName: root.projectName || null,
+						customerId: draft.customerId,
+						customerName: draft.customerName,
+						// Only billable work is handed off.
+						billable: true,
+					},
+					lastResolved:
+						latest && lastResolvedPieces
+							? { resolvedAt: latest.resolvedAt, pieces: lastResolvedPieces }
+							: null,
+					current: currentPieces,
 				}),
-			}),
-		);
+				amountDifference: amountDifferenceOf({
+					frozen: {
+						shares: frozen.shares,
+						durationMinutes: frozen.durationMinutes,
+						projectId: frozen.projectId,
+						customerId: draft.customerId,
+						currency: draft.currency,
+					},
+					lastResolved: lastResolvedPieces,
+					current: currentPieces,
+				}),
+			},
+			draft: {
+				customerId: draft.customerId,
+				customerName: draft.customerName ?? "",
+				currency: draft.currency,
+				period: { from: draft.periodFrom, to: draft.periodTo },
+				title: draft.title,
+				createdAt: draft.createdAt.toISOString(),
+			},
+		});
 	}
 	return comparisons;
 }
@@ -239,13 +282,13 @@ async function comparisonsOf(
 function markedItemsOf(
 	items: ReadonlyMap<string, readonly ItemRowView[]>,
 	{ history }: ItemHistory,
-	comparisons: ReadonlyMap<string, WorkComparisonView>,
+	comparisons: ReadonlyMap<string, ItemComparison>,
 ): MarkedWorkItemView[] {
 	const marked: MarkedWorkItemView[] = [];
 	for (const [rootId, rows] of items) {
 		const open = rows.filter((row) => row.changedAfterInvoicingAt !== null);
-		const comparison = comparisons.get(rootId);
-		if (open.length === 0 || !comparison) continue;
+		const compared = comparisons.get(rootId);
+		if (open.length === 0 || !compared) continue;
 		const {
 			id: _id,
 			timesheet: _timesheet,
@@ -261,8 +304,9 @@ function markedItemsOf(
 			changedAfterInvoicingAt: open.map((row) => row.changedAfterInvoicingAt as string).sort()[0],
 			changedFields: [...new Set(open.flatMap((row) => row.changedFields))].sort(),
 			markVersion: itemMarkVersion(rows),
+			draft: compared.draft,
 			history: history.get(rootId) ?? [],
-			comparison,
+			comparison: compared.comparison,
 		});
 	}
 	return marked;

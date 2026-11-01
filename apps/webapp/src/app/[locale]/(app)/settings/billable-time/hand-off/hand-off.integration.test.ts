@@ -1830,6 +1830,187 @@ describe("hand-off on PostgreSQL", () => {
 		});
 	});
 
+	describe("amount differences at the frozen rate (#1502)", () => {
+		async function differenceOf(workPeriodId: string) {
+			const found = (await unwrap(getHandOffOverview())).changedAfterInvoicing.find(
+				(item) => item.workPeriodId === workPeriodId,
+			);
+			if (!found) throw new Error(`No marked item for ${workPeriodId}`);
+			return found.comparison.amountDifference;
+		}
+
+		async function frozenState(draftId: string) {
+			const [lines, totals, shares] = await Promise.all([
+				admin.query(
+					"select position, quantity_hundredths, unit_price, amount from invoice_draft_line where invoice_draft_id = $1 order by position",
+					[draftId],
+				),
+				admin.query("select net_total from invoice_draft where id = $1", [draftId]),
+				admin.query(
+					"select id, shares from invoiced_work where invoice_draft_id = $1 order by id",
+					[draftId],
+				),
+			]);
+			return { lines: lines.rows, totals: totals.rows, shares: shares.rows };
+		}
+
+		it("prices corrected times at the frozen rate; a backdated rate edit and reading change nothing", async () => {
+			const { draftId } = await unwrap(confirm());
+			const before = await frozenState(draftId);
+			// Website 90 → 105 minutes at 100.00; App 61 → 71 minutes at 85.50.
+			await admin.query(
+				"update work_period set end_time = end_time + interval '15 minutes', duration_minutes = 105 where id = $1",
+				[work.website],
+			);
+			await admin.query(
+				"update work_period set end_time = end_time + interval '10 minutes', duration_minutes = 71 where id = $1",
+				[work.app],
+			);
+			await admin.query(
+				"update billable_rate set hourly_rate = 200.00 where organization_id = $1",
+				[ids.organization],
+			);
+
+			expect(await differenceOf(work.website)).toEqual({
+				currency: "EUR",
+				fromHandOff: {
+					kind: "known",
+					amount: "25.00",
+					reason: "frozen_rate",
+					roundingCaveat: true,
+				},
+				sinceResolution: null,
+				notOnHandOffForNewCustomer: false,
+			});
+			expect((await differenceOf(work.app)).fromHandOff).toMatchObject({ amount: "14.25" });
+			expect(await frozenState(draftId)).toEqual(before);
+		});
+
+		it("can't price corrected times the hand-off split across a rate change", async () => {
+			const { draftId } = await unwrap(confirm());
+			// As handed off across a rate change: 60 minutes at 100.00, 30 at 120.00.
+			await admin.query(
+				`update invoiced_work set shares = $2::jsonb where invoice_draft_id = $1 and work_period_id = $3`,
+				[
+					draftId,
+					JSON.stringify([
+						{ line: 1, durationMs: 3_600_000, rate: "100.00", amount: "100.00" },
+						{ line: 3, durationMs: 1_800_000, rate: "120.00", amount: "60.00" },
+					]),
+					work.website,
+				],
+			);
+			await admin.query(
+				"update work_period set end_time = end_time + interval '15 minutes', duration_minutes = 105 where id = $1",
+				[work.website],
+			);
+
+			expect((await differenceOf(work.website)).fromHandOff).toEqual({
+				kind: "unknown",
+				reason: "several_rates",
+			});
+		});
+
+		it("reverses removed and non-billable work in full, and can't price a move to another project of the customer", async () => {
+			await unwrap(confirm());
+			await admin.query(
+				"update work_period set deleted_at = now(), deleted_by = $2 where id = $1",
+				[work.website, ids.ownerUser],
+			);
+			// App's 61 minutes were one line: 1.02 h × 85.50 = 87.21.
+			await admin.query("update work_period set is_billable = false where id = $1", [
+				work.app,
+			]);
+
+			expect((await differenceOf(work.website)).fromHandOff).toEqual({
+				kind: "known",
+				amount: "-150.00",
+				reason: "removed",
+				roundingCaveat: false,
+			});
+			expect((await differenceOf(work.app)).fromHandOff).toEqual({
+				kind: "known",
+				amount: "-87.21",
+				reason: "non_billable",
+				roundingCaveat: false,
+			});
+
+			await admin.query(
+				"update work_period set is_billable = true, project_id = $2 where id = $1",
+				[work.app, ids.website],
+			);
+			expect((await differenceOf(work.app)).fromHandOff).toEqual({
+				kind: "unknown",
+				reason: "other_project",
+			});
+		});
+
+		it("reverses work whose project moved to another customer and warns it is on no hand-off for it", async () => {
+			await unwrap(confirm());
+			await admin.query("update project set customer_id = $2 where id = $1", [
+				ids.app,
+				ids.beta,
+			]);
+
+			expect(await differenceOf(work.app)).toMatchObject({
+				fromHandOff: { kind: "known", amount: "-87.21", reason: "customer" },
+				notOnHandOffForNewCustomer: true,
+			});
+		});
+
+		it("estimates a reversal for shares handed off without a stored amount", async () => {
+			const { draftId } = await unwrap(confirm());
+			await admin.query(
+				`update invoiced_work
+				 set shares = (select jsonb_agg(share - 'amount') from jsonb_array_elements(shares) share)
+				 where invoice_draft_id = $1 and work_period_id = $2`,
+				[draftId, work.website],
+			);
+			await admin.query(
+				"update work_period set deleted_at = now(), deleted_by = $2 where id = $1",
+				[work.website, ids.ownerUser],
+			);
+
+			expect((await differenceOf(work.website)).fromHandOff).toEqual({
+				kind: "estimated",
+				amount: "-150.00",
+				reason: "removed",
+				roundingCaveat: false,
+			});
+		});
+
+		it("shows the difference from the hand-off and since the last resolution after resolve and correct", async () => {
+			const { draftId } = await unwrap(confirm());
+			await admin.query(
+				"update work_period set end_time = end_time + interval '15 minutes', duration_minutes = 105 where id = $1",
+				[work.website],
+			);
+			const loaded = (await unwrap(getHandOffOverview())).changedAfterInvoicing.find(
+				(item) => item.workPeriodId === work.website,
+			);
+			if (!loaded) throw new Error("Not marked");
+			await unwrap(
+				resolveChangedAfterInvoicingAction({
+					items: [{ invoicedWorkId: loaded.invoicedWorkId, markVersion: loaded.markVersion }],
+					explanation: "Credit note CN-7",
+				}),
+			);
+			await admin.query(
+				"update work_period set end_time = end_time + interval '15 minutes', duration_minutes = 120 where id = $1",
+				[work.website],
+			);
+
+			const difference = await differenceOf(work.website);
+			expect(difference.fromHandOff).toMatchObject({ kind: "known", amount: "50.00" });
+			expect(difference.sinceResolution).toMatchObject({ kind: "known", amount: "25.00" });
+			const detail = await unwrap(getInvoiceDraftAction({ draftId }));
+			expect(
+				detail.marked.find((item) => item.workPeriodId === work.website)?.comparison
+					.amountDifference,
+			).toEqual(difference);
+		});
+	});
+
 	it("reports invoiced and un-invoiced hours and revenue at the frozen rates", async () => {
 		await unwrap(confirm({ projectIds: [ids.website] }));
 		await addWork({

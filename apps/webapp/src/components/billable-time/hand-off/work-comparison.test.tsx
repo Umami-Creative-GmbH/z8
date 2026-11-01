@@ -36,6 +36,12 @@ function comparison(
 	changedSinceResolution: ComparedField[] | null = null,
 ): WorkComparisonView {
 	return {
+		amountDifference: {
+			currency: "EUR",
+			fromHandOff: { kind: "unknown", reason: "several_rates" },
+			sinceResolution: null,
+			notOnHandOffForNewCustomer: false,
+		},
 		handOff: handedOffValues,
 		lastResolved,
 		current: { ...handedOffValues, ...current, changedFromHandOff, changedSinceResolution },

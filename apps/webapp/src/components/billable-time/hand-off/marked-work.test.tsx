@@ -3,7 +3,10 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import type { MarkedWorkItemView } from "@/lib/billable-time/hand-off/views";
+import type {
+	ItemAmountDifferenceView,
+	MarkedWorkItemView,
+} from "@/lib/billable-time/hand-off/views";
 import { render } from "@/test/render-with-translations";
 import { MarkedWork } from "./marked-work";
 
@@ -25,8 +28,28 @@ const handOffValues = {
 	billability: "billable",
 } satisfies MarkedWorkItemView["comparison"]["handOff"];
 
+const plus25: ItemAmountDifferenceView = {
+	currency: "EUR",
+	fromHandOff: { kind: "known", amount: "25.00", reason: "frozen_rate", roundingCaveat: true },
+	sinceResolution: null,
+	notOnHandOffForNewCustomer: false,
+};
+
+const withDifference = (
+	base: MarkedWorkItemView,
+	amountDifference: ItemAmountDifferenceView,
+): MarkedWorkItemView => ({ ...base, comparison: { ...base.comparison, amountDifference } });
+
 const item = (overrides: Partial<MarkedWorkItemView> = {}): MarkedWorkItemView => ({
 	invoiceDraftId: "draft-1",
+	draft: {
+		customerId: "c-acme",
+		customerName: "Acme",
+		currency: "EUR",
+		period: { from: "2026-03-01", to: "2026-03-31" },
+		title: "Acme March",
+		createdAt: "2026-04-01T08:00:00Z",
+	},
 	invoicedWorkId: "11111111-1111-4111-8111-111111111111",
 	workPeriodId: "wp-1",
 	day: "2026-03-02",
@@ -39,6 +62,7 @@ const item = (overrides: Partial<MarkedWorkItemView> = {}): MarkedWorkItemView =
 	markVersion: "11111111-1111-4111-8111-111111111111:2",
 	history: [],
 	comparison: {
+		amountDifference: plus25,
 		handOff: handOffValues,
 		lastResolved: null,
 		current: {
@@ -67,9 +91,12 @@ const linus = item({
 function setup(
 	resolve = vi.fn().mockResolvedValue({ success: true, data: { status: "resolved", resolved: 1 } }),
 	marked: MarkedWorkItemView[] = [grace, linus],
+	grouped = false,
 ) {
 	const onResolved = vi.fn();
-	render(<MarkedWork marked={marked} resolve={resolve} onResolved={onResolved} />);
+	render(
+		<MarkedWork marked={marked} resolve={resolve} onResolved={onResolved} grouped={grouped} />,
+	);
 	return { resolve, onResolved, user: userEvent.setup() };
 }
 
@@ -193,5 +220,130 @@ describe("MarkedWork", () => {
 		expect(screen.getByText("Credit note CN-7")).toBeTruthy();
 		expect(screen.getByText("Cleared before resolutions were recorded")).toBeTruthy();
 		expect(screen.getByText(/Bob/)).toBeTruthy();
+	});
+
+	describe("amount differences", () => {
+		const rowOf = (name: string) => screen.getByText(name).closest("li") as HTMLElement;
+
+		it("shows the difference at the frozen rate, with the rounding caveat", () => {
+			setup(undefined, [grace]);
+
+			const row = rowOf("Grace");
+			expect(row.textContent).toContain("+€25.00");
+			expect(row.textContent).toContain("a few cents");
+		});
+
+		it("shows an unknown difference with its reason and no amount", () => {
+			setup(undefined, [
+				withDifference(grace, {
+					...plus25,
+					fromHandOff: { kind: "unknown", reason: "several_rates" },
+				}),
+			]);
+
+			const row = rowOf("Grace");
+			expect(row.textContent).toContain("Unknown");
+			expect(row.textContent).toContain("several rates");
+			expect(row.textContent).not.toContain("€");
+		});
+
+		it("labels an estimated reversal", () => {
+			setup(undefined, [
+				withDifference(grace, {
+					...plus25,
+					fromHandOff: {
+						kind: "estimated",
+						amount: "-128.25",
+						reason: "removed",
+						roundingCaveat: false,
+					},
+				}),
+			]);
+
+			const row = rowOf("Grace");
+			expect(row.textContent).toContain("-€128.25");
+			expect(row.textContent).toContain("Estimated");
+		});
+
+		it("warns that work moved to another customer is on no hand-off for it", () => {
+			setup(undefined, [
+				withDifference(grace, {
+					...plus25,
+					fromHandOff: {
+						kind: "known",
+						amount: "-150.00",
+						reason: "customer",
+						roundingCaveat: false,
+					},
+					notOnHandOffForNewCustomer: true,
+				}),
+			]);
+
+			const warning = within(rowOf("Grace")).getByRole("status");
+			expect(warning.textContent).toContain("not on any hand-off");
+		});
+
+		it("also shows the difference since the last resolution", () => {
+			setup(undefined, [
+				withDifference(grace, {
+					...plus25,
+					fromHandOff: {
+						kind: "known",
+						amount: "50.00",
+						reason: "frozen_rate",
+						roundingCaveat: true,
+					},
+					sinceResolution: {
+						kind: "known",
+						amount: "25.00",
+						reason: "frozen_rate",
+						roundingCaveat: true,
+					},
+				}),
+			]);
+
+			const row = rowOf("Grace");
+			expect(row.textContent).toContain("+€50.00");
+			expect(row.textContent).toMatch(/Since the last resolution:?\s*\+€25\.00/);
+		});
+	});
+
+	describe("grouped by customer and draft", () => {
+		const beta = {
+			customerId: "c-beta",
+			customerName: "Beta",
+			currency: "CHF",
+			period: { from: "2026-03-01", to: "2026-03-31" },
+			title: "Beta March",
+			createdAt: "2026-04-01T08:00:00Z",
+		};
+
+		it("subtotals each draft's known differences and counts unknown ones apart", () => {
+			const unknown = withDifference(linus, {
+				...plus25,
+				fromHandOff: { kind: "unknown", reason: "other_project" },
+			});
+			const betaWork = withDifference(
+				item({
+					invoicedWorkId: "33333333-3333-4333-8333-333333333333",
+					invoiceDraftId: "draft-2",
+					employeeName: "Ada",
+					draft: beta,
+					changedAfterInvoicingAt: "2026-04-01T08:00:00Z",
+				}),
+				{ ...plus25, currency: "CHF" },
+			);
+			setup(undefined, [grace, unknown, betaWork], true);
+
+			const [first, second] = screen.getAllByRole("region");
+			// Beta's change is the oldest.
+			expect(within(first).getByRole("heading", { name: "Beta" })).toBeTruthy();
+			expect(first.textContent).toContain("CHF");
+			const acme = within(second);
+			expect(acme.getByRole("heading", { name: "Acme" })).toBeTruthy();
+			expect(second.textContent).toContain("Acme March");
+			expect(second.textContent).toMatch(/Known amount differences:?\s*\+€25\.00/);
+			expect(second.textContent).toContain("1 unknown difference not included");
+		});
 	});
 });
