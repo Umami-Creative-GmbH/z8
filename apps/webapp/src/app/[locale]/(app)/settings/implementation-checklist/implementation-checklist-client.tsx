@@ -50,6 +50,10 @@ type ImplementationChecklistItem = Pick<
 			| "actionLabelKey"
 			| "firstWorkflows"
 			| "manualConfirmation"
+			| "confirmationLabel"
+			| "confirmationLabelKey"
+			| "confirmedLabel"
+			| "confirmedLabelKey"
 		>
 	>;
 
@@ -215,6 +219,17 @@ export function ImplementationChecklistClient({ checklist }: ImplementationCheck
 									<GoLiveCheckPanel result={item.goLive} />
 								) : null}
 								{firstWorkflows ? <FirstWorkflowsPanel evidence={firstWorkflows} /> : null}
+								{item.goLive &&
+								item.confirmedLabel &&
+								hasManualConfirmation(item) &&
+								!confirmationLapsed ? (
+									<p className="flex items-center gap-2 text-sm">
+										<IconCheck aria-hidden="true" className="size-4 text-primary" />
+										{item.confirmedLabelKey
+											? t(item.confirmedLabelKey, item.confirmedLabel)
+											: item.confirmedLabel}
+									</p>
+								) : null}
 								{item.manualConfirmation ? (
 									<ManualConfirmationNote confirmation={item.manualConfirmation} />
 								) : null}
@@ -248,30 +263,19 @@ export function ImplementationChecklistClient({ checklist }: ImplementationCheck
 												type="button"
 												variant="ghost"
 											>
-												{t(
-													"settings.implementationChecklist.actions.markIncomplete",
-													"Mark incomplete",
-												)}
+												{removeConfirmationLabel(item, t)}
 											</Button>
 										</>
 									) : item.canToggleManualCompletion ? (
 										<Button
 											disabled={controlsDisabled}
-											onClick={() => setManualCompletion(item, item.completionSource !== "manual")}
+											onClick={() => setManualCompletion(item, !hasManualConfirmation(item))}
 											size="sm"
 											type="button"
 											variant="outline"
 										>
 											{pendingIcon}
-											{item.completionSource === "manual"
-												? t(
-														"settings.implementationChecklist.actions.markIncomplete",
-														"Mark incomplete",
-													)
-												: t(
-														"settings.implementationChecklist.actions.markComplete",
-														"Mark complete",
-													)}
+											{manualToggleLabel(item, t)}
 										</Button>
 									) : null}
 								</div>
@@ -333,6 +337,34 @@ function statusText(status: ImplementationChecklistItemStatus, t: Translate) {
 		case "unavailable":
 			return t("settings.implementationChecklist.status.unavailable", "Unavailable");
 	}
+}
+
+/**
+ * Whether the item holds a confirmation, current or lapsed. A lapsed confirmation on a go-live
+ * item is no longer its completion source, so the confirmation itself decides; items loaded
+ * without confirmation details fall back to the completion source.
+ */
+function hasManualConfirmation(item: ImplementationChecklistItem) {
+	return Boolean(item.manualConfirmation) || item.completionSource === "manual";
+}
+
+/** A go-live item's confirmation is a business sign-off, not a way to complete the item. */
+function manualToggleLabel(item: ImplementationChecklistItem, t: Translate) {
+	if (hasManualConfirmation(item)) {
+		return removeConfirmationLabel(item, t);
+	}
+	if (item.goLive && item.confirmationLabel) {
+		return item.confirmationLabelKey
+			? t(item.confirmationLabelKey, item.confirmationLabel)
+			: item.confirmationLabel;
+	}
+	return t("settings.implementationChecklist.actions.markComplete", "Mark complete");
+}
+
+function removeConfirmationLabel(item: ImplementationChecklistItem, t: Translate) {
+	return item.goLive && item.confirmationLabel
+		? t("settings.implementationChecklist.actions.removeConfirmation", "Remove confirmation")
+		: t("settings.implementationChecklist.actions.markIncomplete", "Mark incomplete");
 }
 
 function getStatusLabel(item: ImplementationChecklistItem, t: Translate) {

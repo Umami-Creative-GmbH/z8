@@ -571,6 +571,87 @@ describe("ImplementationChecklistClient", () => {
 		expect(screen.getByRole("button", { name: "Confirm again" })).toBeTruthy();
 	});
 
+	it("shows an approval rules confirmation next to the approver check, never as verified", async () => {
+		markIncomplete.mockResolvedValue({ success: true });
+		const { ImplementationChecklistClient } = await import("./implementation-checklist-client");
+		const approvalRules = {
+			...failingWorkPolicyItem,
+			id: "approval-rules",
+			title: "Approval rules",
+			actionLabel: "Review approval rules",
+			href: "/settings/change-policies",
+			canManualComplete: true,
+			canToggleManualCompletion: true,
+			confirmationLabel: "Confirm our approval process is agreed",
+			confirmedLabel: "Confirmed: our approval process is agreed",
+			completionSource: "manual",
+			goLive: {
+				...failingWorkPolicyItem.goLive,
+				checkId: "approver",
+				itemId: "approval-rules",
+				failures: [],
+			},
+		} as const;
+
+		const { rerender } = render(
+			<ImplementationChecklistClient checklist={{ ...checklist, items: [approvalRules] }} />,
+		);
+
+		expect(screen.getByText("Confirmed: our approval process is agreed")).toBeTruthy();
+		expect(screen.getByText("Needs attention")).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: "Remove confirmation" }));
+		await waitFor(() => expect(markIncomplete).toHaveBeenCalledWith("approval-rules"));
+
+		rerender(
+			<ImplementationChecklistClient
+				checklist={{ ...checklist, items: [{ ...approvalRules, completionSource: null }] }}
+			/>,
+		);
+		expect(screen.queryByText("Confirmed: our approval process is agreed")).toBeNull();
+		expect(
+			screen.getByRole("button", { name: "Confirm our approval process is agreed" }),
+		).toBeTruthy();
+	});
+
+	it("offers to confirm a stale approval rules confirmation again or remove it", async () => {
+		markComplete.mockResolvedValue({ success: true });
+		const { ImplementationChecklistClient } = await import("./implementation-checklist-client");
+
+		render(
+			<ImplementationChecklistClient
+				checklist={{
+					...checklist,
+					items: [
+						{
+							...failingWorkPolicyItem,
+							id: "approval-rules",
+							title: "Approval rules",
+							actionLabel: "Review approval rules",
+							href: "/settings/change-policies",
+							canToggleManualCompletion: true,
+							confirmationLabel: "Confirm our approval process is agreed",
+							confirmedLabel: "Confirmed: our approval process is agreed",
+							completionSource: null,
+							manualConfirmation: { confirmedAt: "2026-10-30T09:00:00Z", freshness: "stale" },
+							goLive: {
+								...failingWorkPolicyItem.goLive,
+								checkId: "approver",
+								itemId: "approval-rules",
+								failures: [],
+							},
+						},
+					],
+				}}
+			/>,
+		);
+
+		expect(screen.getByText("Settings changed since confirmed on Oct 30, 2026")).toBeTruthy();
+		expect(screen.queryByText("Confirmed: our approval process is agreed")).toBeNull();
+		expect(screen.getByRole("button", { name: "Remove confirmation" })).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: "Confirm again" }));
+		await waitFor(() => expect(markComplete).toHaveBeenCalledWith("approval-rules"));
+	});
+
 	it("marks manual items complete and shows an error toast on failure", async () => {
 		markComplete.mockResolvedValue({ success: false, error: "Unable to update checklist" });
 		const { ImplementationChecklistClient } = await import("./implementation-checklist-client");

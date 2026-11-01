@@ -49,6 +49,14 @@ export interface ImplementationChecklistDefinition {
 	canManualComplete: boolean;
 	/** How the item counts for go-live readiness and checklist progress. */
 	role: ImplementationChecklistItemRole;
+	/**
+	 * The optional business confirmation of a go-live item ("our approval process is agreed"):
+	 * the action that records it and the text shown once recorded. It never verifies the item.
+	 */
+	confirmationLabel?: string;
+	confirmationLabelKey?: string;
+	confirmedLabel?: string;
+	confirmedLabelKey?: string;
 }
 
 export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[] = [
@@ -108,15 +116,20 @@ export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[]
 		titleKey: "settings.implementationChecklist.items.approvalRules.title",
 		description: "Review who approves corrections, absences, and policy-sensitive changes.",
 		descriptionKey: "settings.implementationChecklist.items.approvalRules.description",
-		helperText: "Manual review: approval readiness depends on your internal process.",
-		helperTextKey: "settings.implementationChecklist.items.approvalRules.helperText",
+		helperText:
+			"Z8 checks that every employee on the current roster can get each kind of request decided. Confirming that your approval process is agreed is optional.",
+		helperTextKey: "settings.implementationChecklist.items.approvalRules.goLiveHelperText",
 		actionLabel: "Review approval rules",
 		actionLabelKey: "settings.implementationChecklist.items.approvalRules.actionLabel",
 		confirmationCovers: "approval-rules",
 		href: "/settings/change-policies",
-		detector: "manual",
+		detector: "go-live",
 		canManualComplete: true,
-		role: "manual-only",
+		role: "mandatory",
+		confirmationLabel: "Confirm our approval process is agreed",
+		confirmationLabelKey: "settings.implementationChecklist.items.approvalRules.confirmationLabel",
+		confirmedLabel: "Confirmed: our approval process is agreed",
+		confirmedLabelKey: "settings.implementationChecklist.items.approvalRules.confirmedLabel",
 	},
 	{
 		id: "payroll-readiness",

@@ -30,6 +30,19 @@ describe("go-live fix links", () => {
 		).toBeNull();
 	});
 
+	it("offers a detail page under an entry the viewer may open, and gates it by that entry", () => {
+		const href = "/settings/teams/5f0c7a52-36a4-4d43-9d5e-3b7f1f3f8a10";
+
+		expect(goLiveFixLinks({ accessTier: "manager", featureFlags: {} })(href, label)).toEqual({
+			href,
+			label,
+		});
+		expect(goLiveFixLinks({ accessTier: "member", featureFlags: {} })(href, label)).toBeNull();
+		expect(
+			goLiveFixLinks({ accessTier: "orgAdmin", featureFlags: {} })("/settings/teamsx/1", label),
+		).toBeNull();
+	});
+
 	it("leaves out a page that is not a settings entry", () => {
 		const fixLink = goLiveFixLinks({ accessTier: "orgAdmin", featureFlags: {} });
 

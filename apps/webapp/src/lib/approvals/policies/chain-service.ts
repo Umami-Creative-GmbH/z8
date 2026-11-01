@@ -135,7 +135,7 @@ export type ResolvePolicyAndCreateApprovalResult =
 			reason: "requester_is_approver";
 	  };
 
-type DbPolicyRecord = ApprovalPolicyDraft & {
+export type DbPolicyRecord = ApprovalPolicyDraft & {
 	description?: string | null;
 };
 
@@ -177,7 +177,8 @@ function nullableNumber(value: unknown) {
 	return undefined;
 }
 
-function policyFromDbRecord(record: DbPolicyRecord): ApprovalPolicyDraft {
+/** A stored approval policy with its conditions and stages, as legacy routing matches it. */
+export function policyFromDbRecord(record: DbPolicyRecord): ApprovalPolicyDraft {
 	return {
 		id: record.id,
 		organizationId: record.organizationId,

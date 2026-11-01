@@ -50,7 +50,7 @@ describe("implementation checklist status resolver", () => {
 			"organization-structure": "manual-only",
 			holidays: "informational",
 			"work-policies": "mandatory",
-			"approval-rules": "manual-only",
+			"approval-rules": "mandatory",
 			"payroll-readiness": "mandatory",
 			integrations: "informational",
 			notifications: "informational",
@@ -251,6 +251,34 @@ describe("implementation checklist status resolver", () => {
 				(item) => item.confirmationCovers === null,
 			),
 		).toBe(true);
+	});
+
+	it("keeps an approval rules confirmation without letting it verify the approver check", () => {
+		const approver = (overrides: Partial<GoLiveCheckResult>) =>
+			workPolicyResult({ checkId: "approver", itemId: "approval-rules", ...overrides });
+
+		const failing = resolveImplementationChecklistItems({
+			detectedCompleteIds: new Set(),
+			manualCompleteIds: new Set(["approval-rules"]),
+			goLiveResults: [approver({ outcome: "failed" } as Partial<GoLiveCheckResult>)],
+		});
+		expect(failing.find((item) => item.id === "approval-rules")).toMatchObject({
+			status: "needs-attention",
+			completionSource: "manual",
+			canToggleManualCompletion: true,
+			countsTowardProgress: false,
+		});
+
+		const unchecked = resolveImplementationChecklistItems({
+			detectedCompleteIds: new Set(),
+			manualCompleteIds: new Set(["approval-rules"]),
+			goLiveResults: [approver({ checkedMemberCount: 0 })],
+		});
+		expect(unchecked.find((item) => item.id === "approval-rules")).toMatchObject({
+			status: "configured",
+			completionSource: "manual",
+			countsTowardProgress: false,
+		});
 	});
 
 	it("counts verified go-live items and configured other items toward progress", () => {
