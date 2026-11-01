@@ -73,7 +73,8 @@ export function useItemLabel() {
  * Invoiced work marked as changed after invoicing (#1499): each comparison
  * item with its changed fields (since the last resolution), its comparison
  * with the hand-off values (#1501) and history, resolved one by one or several at
- * once with an explanation and an optional accounting reference.
+ * once with an explanation and an optional accounting reference. Items still
+ * open when their draft was released (#1503) are shown read-only.
  */
 export function MarkedWork({
 	marked,
@@ -94,8 +95,10 @@ export function MarkedWork({
 	const [compareOpen, setCompareOpen] = useState<ReadonlySet<string>>(new Set());
 	if (marked.length === 0) return null;
 
-	const chosen = marked.filter((item) => selected.has(item.invoicedWorkId));
-	const all = chosen.length === marked.length;
+	// Open when released (#1503): read-only, never selectable or resolvable.
+	const resolvable = marked.filter((item) => !item.openWhenReleased);
+	const chosen = resolvable.filter((item) => selected.has(item.invoicedWorkId));
+	const all = chosen.length === resolvable.length;
 	const toggle = (set: ReadonlySet<string>, id: string, on: boolean) => {
 		const next = new Set(set);
 		if (on) next.add(id);
@@ -109,53 +112,72 @@ export function MarkedWork({
 				<h3 className="font-medium text-sm">
 					{t("settings.billableTime.handOff.marks.title", "Changed after invoicing")}
 				</h3>
-				<Button
-					size="sm"
-					variant="outline"
-					disabled={chosen.length === 0}
-					onClick={() => setResolving(chosen)}
-				>
-					{t("settings.billableTime.handOff.marks.resolveSelected", "Resolve selected ({count})", {
-						count: chosen.length,
-					})}
-				</Button>
+				{resolvable.length > 0 && (
+					<Button
+						size="sm"
+						variant="outline"
+						disabled={chosen.length === 0}
+						onClick={() => setResolving(chosen)}
+					>
+						{t(
+							"settings.billableTime.handOff.marks.resolveSelected",
+							"Resolve selected ({count})",
+							{
+								count: chosen.length,
+							},
+						)}
+					</Button>
+				)}
 			</div>
 			<p className="text-muted-foreground text-sm">
-				{t(
-					"settings.billableTime.handOff.marks.resolveHelp",
-					"This invoiced work was corrected after its hand-off. Correct the invoice in the accounting tool if needed (for example with a credit note), then resolve the change with an explanation.",
-				)}
+				{resolvable.length > 0
+					? t(
+							"settings.billableTime.handOff.marks.resolveHelp",
+							"This invoiced work was corrected after its hand-off. Correct the invoice in the accounting tool if needed (for example with a credit note), then resolve the change with an explanation.",
+						)
+					: t(
+							"settings.billableTime.handOff.marks.releasedHelp",
+							"This invoiced work was corrected after its hand-off and was still open when the hand-off was released. It can no longer be resolved here. The current values show the work as it is now.",
+						)}
 			</p>
 			<ul className="divide-y rounded-md border text-sm">
-				<li className="flex items-center gap-3 p-2">
-					<Checkbox
-						id="marked-work-select-all"
-						checked={all ? true : chosen.length > 0 ? "indeterminate" : false}
-						onCheckedChange={(checked) =>
-							setSelected(
-								checked === true ? new Set(marked.map((item) => item.invoicedWorkId)) : new Set(),
-							)
-						}
-					/>
-					<label htmlFor="marked-work-select-all" className="text-muted-foreground">
-						{t("settings.billableTime.handOff.marks.selectAll", "Select all")}
-					</label>
-				</li>
+				{resolvable.length > 0 && (
+					<li className="flex items-center gap-3 p-2">
+						<Checkbox
+							id="marked-work-select-all"
+							checked={all ? true : chosen.length > 0 ? "indeterminate" : false}
+							onCheckedChange={(checked) =>
+								setSelected(
+									checked === true
+										? new Set(resolvable.map((item) => item.invoicedWorkId))
+										: new Set(),
+								)
+							}
+						/>
+						<label htmlFor="marked-work-select-all" className="text-muted-foreground">
+							{t("settings.billableTime.handOff.marks.selectAll", "Select all")}
+						</label>
+					</li>
+				)}
 				{marked.map((item) => {
 					const showHistory = historyOpen.has(item.invoicedWorkId);
 					const showComparison = compareOpen.has(item.invoicedWorkId);
 					return (
 						<li key={item.invoicedWorkId} className="space-y-2 p-2">
 							<div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-								<Checkbox
-									aria-label={t("settings.billableTime.handOff.marks.select", "Select {item}", {
-										item: itemLabel(item),
-									})}
-									checked={selected.has(item.invoicedWorkId)}
-									onCheckedChange={(checked) =>
-										setSelected((current) => toggle(current, item.invoicedWorkId, checked === true))
-									}
-								/>
+								{!item.openWhenReleased && (
+									<Checkbox
+										aria-label={t("settings.billableTime.handOff.marks.select", "Select {item}", {
+											item: itemLabel(item),
+										})}
+										checked={selected.has(item.invoicedWorkId)}
+										onCheckedChange={(checked) =>
+											setSelected((current) =>
+												toggle(current, item.invoicedWorkId, checked === true),
+											)
+										}
+									/>
+								)}
 								<span className="tabular-nums">{labels.day(item.day)}</span>
 								<span>{item.employeeName}</span>
 								<span className="text-muted-foreground">{item.projectName}</span>
@@ -166,6 +188,14 @@ export function MarkedWork({
 										</Badge>
 									))}
 								</span>
+								{item.openWhenReleased && (
+									<Badge variant="secondary">
+										{t(
+										"settings.billableTime.handOff.marks.openWhenReleased",
+										"Open when released",
+									)}
+									</Badge>
+								)}
 								<span className="ml-auto flex gap-1">
 									<Button
 										size="sm"
@@ -197,9 +227,11 @@ export function MarkedWork({
 											})}
 										</Button>
 									)}
-									<Button size="sm" variant="ghost" onClick={() => setResolving([item])}>
-										{t("settings.billableTime.handOff.marks.resolve", "Resolve")}
-									</Button>
+									{!item.openWhenReleased && (
+										<Button size="sm" variant="ghost" onClick={() => setResolving([item])}>
+											{t("settings.billableTime.handOff.marks.resolve", "Resolve")}
+										</Button>
+									)}
 								</span>
 							</div>
 							{showComparison && (
@@ -313,7 +345,11 @@ function ResolveMarksForm({
 	const itemLabel = useItemLabel();
 	const fieldMessage = useFieldMessage();
 	const [problem, setProblem] = useState<string | null>(null);
-	const [stale, setStale] = useState<readonly MarkedWorkItemView[] | null>(null);
+	/** Nothing was resolved: these items changed meanwhile, or their draft was released. */
+	const [refused, setRefused] = useState<{
+		reason: "stale" | "released";
+		items: readonly MarkedWorkItemView[];
+	} | null>(null);
 	const resolveItems = items.map(({ invoicedWorkId, markVersion }) => ({
 		invoicedWorkId,
 		markVersion,
@@ -356,9 +392,12 @@ function ResolveMarksForm({
 				setProblem(result.error);
 				return;
 			}
-			if (result.data.status === "stale") {
+			if (result.data.status !== "resolved") {
 				const changed = new Set(result.data.invoicedWorkIds);
-				setStale(items.filter((item) => changed.has(item.invoicedWorkId)));
+				setRefused({
+					reason: result.data.status,
+					items: items.filter((item) => changed.has(item.invoicedWorkId)),
+				});
 				return;
 			}
 			toast.success(
@@ -439,18 +478,23 @@ function ResolveMarksForm({
 					</TFormItem>
 				)}
 			</form.Field>
-			{stale && (
+			{refused && (
 				<Alert variant="destructive" role="alert">
 					<IconAlertTriangle aria-hidden="true" className="size-4" />
 					<AlertDescription className="space-y-2">
 						<p>
-							{t(
-								"settings.billableTime.handOff.resolve.stale",
-								"Nothing was resolved: this work changed since you opened it. Reload to review the changes.",
-							)}
+							{refused.reason === "released"
+								? t(
+										"settings.billableTime.handOff.resolve.released",
+										"Nothing was resolved: the hand-off of this work was released, so its changes can no longer be resolved. Reload to see it.",
+									)
+								: t(
+										"settings.billableTime.handOff.resolve.stale",
+										"Nothing was resolved: this work changed since you opened it. Reload to review the changes.",
+									)}
 						</p>
 						<ul className="list-disc pl-4">
-							{stale.map((item) => (
+							{refused.items.map((item) => (
 								<li key={item.invoicedWorkId}>{itemLabel(item)}</li>
 							))}
 						</ul>
@@ -469,7 +513,7 @@ function ResolveMarksForm({
 						<Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
 							{t("common.cancel", "Cancel")}
 						</Button>
-						{stale ? (
+						{refused ? (
 							<Button type="button" onClick={onResolved}>
 								{t("settings.billableTime.handOff.resolve.reload", "Reload")}
 							</Button>

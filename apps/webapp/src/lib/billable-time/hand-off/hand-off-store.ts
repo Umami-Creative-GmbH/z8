@@ -1478,9 +1478,10 @@ export async function invoicedWorkViews(
 				startOffsetMinutes: work.startOffsetMinutes,
 				durationMinutes: work.durationMinutes,
 			},
-			changedAfterInvoicingAt:
-				work.releasedAt === null ? (work.changedAfterInvoicingAt?.toISOString() ?? null) : null,
-			changedFields: work.releasedAt === null ? changedFieldsOf(work.changedFields) : [],
+			// Release leaves the marks as they were (#1503): on released work they are
+			// the marks still open at release, which no correction changes any more.
+			changedAfterInvoicingAt: work.changedAfterInvoicingAt?.toISOString() ?? null,
+			changedFields: changedFieldsOf(work.changedFields),
 			timesheet:
 				work.carriedFromWorkPeriodId === null
 					? {

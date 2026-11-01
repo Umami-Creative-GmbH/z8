@@ -1830,6 +1830,254 @@ describe("hand-off on PostgreSQL", () => {
 		});
 	});
 
+	describe("reconciliation history on released drafts (#1503)", () => {
+		async function detailOf(draftId: string) {
+			return unwrap(getInvoiceDraftAction({ draftId }));
+		}
+
+		function markedOf(
+			detail: Awaited<ReturnType<typeof detailOf>>,
+			workPeriodId: string,
+		) {
+			const found = detail.marked.find(
+				(item) => item.workPeriodId === workPeriodId,
+			);
+			if (!found) throw new Error(`No marked item for ${workPeriodId}`);
+			return found;
+		}
+
+		async function recorded() {
+			const { rows } = await admin.query<{
+				resolutions: number;
+				audits: number;
+			}>(
+				`select
+				 (select count(*)::int from invoiced_work_resolution where organization_id = $1) as resolutions,
+				 (select count(*)::int from audit_log where organization_id = $1
+				  and action = 'billable_time.invoiced_work_mark_resolved') as audits`,
+				[ids.organization],
+			);
+			return rows[0];
+		}
+
+		async function marks(draftId: string) {
+			const { rows } = await admin.query(
+				`select id, changed_fields, changed_after_invoicing_at, mark_version, released_at
+				 from invoiced_work where organization_id = $1 and invoice_draft_id = $2 order by id`,
+				[ids.organization, draftId],
+			);
+			return rows;
+		}
+
+		/** Hands off September, corrects both items and resolves the App one. */
+		async function releasedWithHistory() {
+			const { draftId } = await unwrap(confirm());
+			await admin.query(
+				"update work_period set end_time = end_time + interval '15 minutes', duration_minutes = 105 where id = $1",
+				[work.website],
+			);
+			await admin.query(
+				"update work_period set project_id = $2 where id = $1",
+				[work.app, ids.website],
+			);
+			const app = markedOf(await detailOf(draftId), work.app);
+			await unwrap(
+				resolveChangedAfterInvoicingAction({
+					items: [
+						{ invoicedWorkId: app.invoicedWorkId, markVersion: app.markVersion },
+					],
+					explanation: "Credit note CN-1",
+				}),
+			);
+			const beforeRelease = await detailOf(draftId);
+			await unwrap(releaseInvoiceDraftAction({ draftId, reason: "Redo" }));
+			return { draftId, beforeRelease };
+		}
+
+		it("keeps showing the comparisons and history its items had, with open marks as open when released", async () => {
+			const { draftId, beforeRelease } = await releasedWithHistory();
+			const before = markedOf(beforeRelease, work.website);
+			expect(before.openWhenReleased).toBe(false);
+
+			const released = await detailOf(draftId);
+			expect(released.status).toBe("released");
+			expect(released.resolutionHistory).toEqual(
+				beforeRelease.resolutionHistory,
+			);
+			expect(released.resolutionHistory).toEqual([
+				expect.objectContaining({
+					kind: "resolution",
+					explanation: "Credit note CN-1",
+					resolvedFields: ["project"],
+				}),
+			]);
+			expect(released.marked).toEqual([
+				{ ...before, openWhenReleased: true },
+			]);
+			expect(released.marked[0]?.comparison).toMatchObject({
+				handOff: { hours: "1.50" },
+				current: { hours: "1.75", changedFromHandOff: ["end", "hours"] },
+			});
+		});
+
+		it("refuses resolving work of a released draft, recording nothing", async () => {
+			const { draftId, beforeRelease } = await releasedWithHistory();
+			const loadedBefore = markedOf(beforeRelease, work.website);
+			const loadedAfter = markedOf(await detailOf(draftId), work.website);
+			const countsBefore = await recorded();
+			const marksBefore = await marks(draftId);
+
+			for (const loaded of [loadedBefore, loadedAfter]) {
+				await expect(
+					unwrap(
+						resolveChangedAfterInvoicingAction({
+							items: [
+								{
+									invoicedWorkId: loaded.invoicedWorkId,
+									markVersion: loaded.markVersion,
+								},
+							],
+							explanation: "Handled",
+						}),
+					),
+				).resolves.toEqual({
+					status: "released",
+					invoicedWorkIds: [loaded.invoicedWorkId],
+				});
+			}
+			expect(await recorded()).toEqual(countsBefore);
+			expect(await marks(draftId)).toEqual(marksBefore);
+
+			// The whole batch is refused when it also holds resolvable work of another draft.
+			const { draftId: secondDraftId } = await unwrap(confirm());
+			await admin.query(
+				"update work_period set duration_minutes = 50 where id = $1",
+				[work.app],
+			);
+			const open = markedOf(await detailOf(secondDraftId), work.app);
+			await expect(
+				unwrap(
+					resolveChangedAfterInvoicingAction({
+						items: [
+							{
+								invoicedWorkId: open.invoicedWorkId,
+								markVersion: open.markVersion,
+							},
+							{
+								invoicedWorkId: loadedAfter.invoicedWorkId,
+								markVersion: loadedAfter.markVersion,
+							},
+						],
+						explanation: "Handled",
+					}),
+				),
+			).resolves.toEqual({
+				status: "released",
+				invoicedWorkIds: [loadedAfter.invoicedWorkId],
+			});
+			expect(await recorded()).toEqual(countsBefore);
+		});
+
+		it("starts a new draft's comparisons from its own hand-off and leaves the released draft's history as it was", async () => {
+			const { draftId } = await releasedWithHistory();
+			const oldDetail = await detailOf(draftId);
+			const oldMarks = await marks(draftId);
+
+			const { draftId: newDraftId } = await unwrap(confirm());
+			expect(newDraftId).not.toBe(draftId);
+			const fresh = await detailOf(newDraftId);
+			expect(fresh.marked).toEqual([]);
+			expect(fresh.resolutionHistory).toEqual([]);
+
+			await admin.query(
+				"update work_period set end_time = end_time + interval '15 minutes', duration_minutes = 120 where id = $1",
+				[work.website],
+			);
+			const corrected = markedOf(await detailOf(newDraftId), work.website);
+			expect(corrected).toMatchObject({
+				openWhenReleased: false,
+				changedFields: ["times"],
+				history: [],
+				comparison: {
+					handOff: {
+						end: { at: "2026-09-02T09:45:00.000Z", offsetMinutes: 0 },
+						hours: "1.75",
+					},
+					lastResolved: null,
+					current: {
+						end: { at: "2026-09-02T10:00:00.000Z", offsetMinutes: 0 },
+						hours: "2.00",
+						changedFromHandOff: ["end", "hours"],
+					},
+				},
+			});
+
+			// The released draft's marks and history stay as they were.
+			const oldAgain = await detailOf(draftId);
+			expect(await marks(draftId)).toEqual(oldMarks);
+			expect(oldAgain.resolutionHistory).toEqual(oldDetail.resolutionHistory);
+			expect(markedOf(oldAgain, work.website)).toMatchObject({
+				openWhenReleased: true,
+				changedFields: ["times"],
+				markVersion: markedOf(oldDetail, work.website).markVersion,
+			});
+
+			// Resolving in the new draft leaves the released draft's history alone.
+			await unwrap(
+				resolveChangedAfterInvoicingAction({
+					items: [
+						{
+							invoicedWorkId: corrected.invoicedWorkId,
+							markVersion: corrected.markVersion,
+						},
+					],
+					explanation: "Handled in the new draft",
+				}),
+			);
+			expect((await detailOf(draftId)).resolutionHistory).toEqual(
+				oldDetail.resolutionHistory,
+			);
+			expect((await detailOf(newDraftId)).resolutionHistory).toEqual([
+				expect.objectContaining({ explanation: "Handled in the new draft" }),
+			]);
+		});
+
+		it("refuses non-admins and other organizations, on reads and on resolving", async () => {
+			const { draftId } = await releasedWithHistory();
+			const loaded = markedOf(await detailOf(draftId), work.website);
+			const resolving = () =>
+				resolveChangedAfterInvoicingAction({
+					items: [
+						{
+							invoicedWorkId: loaded.invoicedWorkId,
+							markVersion: loaded.markVersion,
+						},
+					],
+					explanation: "Handled",
+				});
+
+			actAs(ids.memberUser);
+			await expect(getInvoiceDraftAction({ draftId })).resolves.toMatchObject({
+				success: false,
+				code: "AuthorizationError",
+			});
+			await expect(resolving()).resolves.toMatchObject({
+				success: false,
+				code: "AuthorizationError",
+			});
+
+			actAs(ids.otherUser, ids.otherOrganization);
+			await expect(getInvoiceDraftAction({ draftId })).resolves.toMatchObject({
+				success: false,
+				code: "NotFoundError",
+			});
+			await expect(resolving()).resolves.toMatchObject({
+				success: false,
+				code: "NotFoundError",
+			});
+		});
+	});
+
 	it("reports invoiced and un-invoiced hours and revenue at the frozen rates", async () => {
 		await unwrap(confirm({ projectIds: [ids.website] }));
 		await addWork({

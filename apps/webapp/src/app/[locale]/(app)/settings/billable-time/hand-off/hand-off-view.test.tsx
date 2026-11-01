@@ -88,6 +88,7 @@ const overview: HandOffOverview = {
 			changedAfterInvoicingAt: "2026-04-02T08:00:00Z",
 			changedFields: ["times"],
 			markVersion: "iw-1:1",
+			openWhenReleased: false,
 			history: [],
 			comparison: {
 				handOff: comparedValues,

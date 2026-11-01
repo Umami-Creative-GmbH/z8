@@ -119,6 +119,7 @@ export interface InvoicedWorkView extends HandOffWorkView {
 	invoicedWorkId: string;
 	/** The split-off half of invoiced work: invoiced, not in the timesheet. */
 	carried: boolean;
+	/** On released work: the mark still open when it was released (#1503). */
 	changedAfterInvoicingAt: string | null;
 	changedFields: ChangedField[];
 }
@@ -229,6 +230,12 @@ export interface MarkedWorkItemView extends InvoicedWorkView {
 	invoiceDraftId: string;
 	/** Send it back when resolving: the item is refused when it changed since. */
 	markVersion: string;
+	/**
+	 * Its draft was released while the mark was open (#1503): shown read-only,
+	 * it can no longer be resolved. Its marks stay as they were at release; the
+	 * current values are the work as it is now.
+	 */
+	openWhenReleased: boolean;
 	/** Newest first. */
 	history: ResolutionHistoryEntryView[];
 	comparison: WorkComparisonView;
@@ -236,11 +243,13 @@ export interface MarkedWorkItemView extends InvoicedWorkView {
 
 /**
  * What resolving did: `stale` names the items (handed-off rows) that changed
- * since they were loaded; then nothing was resolved.
+ * since they were loaded, `released` those whose draft was released (#1503);
+ * then nothing was resolved.
  */
 export type ResolveOutcomeView =
 	| { status: "resolved"; resolved: number }
-	| { status: "stale"; invoicedWorkIds: string[] };
+	| { status: "stale"; invoicedWorkIds: string[] }
+	| { status: "released"; invoicedWorkIds: string[] };
 
 /** One row of the timesheet: the work as it was handed off. */
 export interface TimesheetRowView {
