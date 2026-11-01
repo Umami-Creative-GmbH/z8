@@ -69,19 +69,20 @@ import {
 	minutesAsHundredths,
 	planHandOff,
 } from "./hand-off-plan";
-import type {
-	ChangedField,
-	DraftToolStatusView,
-	HandOffBlockerView,
-	HandOffCustomerOption,
-	HandOffLineView,
-	HandOffPreview,
-	HandOffWorkView,
-	InvoiceDraftDetailView,
-	InvoiceDraftStatusView,
-	InvoiceDraftSummaryView,
-	InvoicedWorkView,
-	TimesheetRowView,
+import {
+	CHANGED_FIELDS,
+	type ChangedField,
+	type DraftToolStatusView,
+	type HandOffBlockerView,
+	type HandOffCustomerOption,
+	type HandOffLineView,
+	type HandOffPreview,
+	type HandOffWorkView,
+	type InvoiceDraftDetailView,
+	type InvoiceDraftStatusView,
+	type InvoiceDraftSummaryView,
+	type InvoicedWorkView,
+	type TimesheetRowView,
 } from "./views";
 
 /**
@@ -582,6 +583,24 @@ async function recordAttempt(
 		const { connection, contact, taxTreatment, plan } = context;
 		if (!connection || !contact || !taxTreatment || settings.currency === null) {
 			return { ok: false, reason: "blocked", blocker: { kind: "not_connected" } } as const;
+		}
+
+		// Hold the included projects' customers still too (#1500): a customer change
+		// that committed after the plan was read refuses the hand-off, and a later
+		// one waits for this transaction and then marks its invoiced work. Projects
+		// before work periods, the order the project settings edit takes them in.
+		const projectIds = [...new Set(plan.included.map((item) => item.work.projectId))].sort();
+		const lockedProjects = await tx
+			.select({ id: project.id, customerId: project.customerId })
+			.from(project)
+			.where(and(eq(project.organizationId, input.organizationId), inArray(project.id, projectIds)))
+			.orderBy(asc(project.id))
+			.for("share");
+		if (
+			lockedProjects.length !== projectIds.length ||
+			lockedProjects.some((row) => row.customerId !== context.customer.id)
+		) {
+			return { ok: false, reason: "preview_outdated" } as const;
 		}
 
 		// Hold the included work still while it becomes invoiced work: a writer
@@ -1448,7 +1467,7 @@ function localTime(instant: Date, offsetMinutes: number): string {
 }
 
 function changedFieldsOf(values: readonly string[]): ChangedField[] {
-	const known: readonly string[] = ["times", "project", "billability", "removed", "split"];
+	const known: readonly string[] = CHANGED_FIELDS;
 	return values.filter((value): value is ChangedField => known.includes(value));
 }
 
