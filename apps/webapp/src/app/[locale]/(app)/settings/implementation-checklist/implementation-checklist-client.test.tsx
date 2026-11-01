@@ -471,6 +471,106 @@ describe("ImplementationChecklistClient", () => {
 		expect(screen.getByText("Rehearsal goes here")).toBeTruthy();
 	});
 
+	const organizationStructure = checklist.items[0];
+
+	it("shows when a counting confirmation was made, and offers to remove it", async () => {
+		const { ImplementationChecklistClient } = await import("./implementation-checklist-client");
+
+		render(
+			<ImplementationChecklistClient
+				checklist={{
+					...checklist,
+					items: [
+						{
+							...organizationStructure,
+							status: "configured",
+							completionSource: "manual",
+							countsTowardProgress: true,
+							manualConfirmation: { confirmedAt: "2026-10-30T09:00:00Z", freshness: "current" },
+						},
+					],
+				}}
+			/>,
+		);
+
+		expect(screen.getByText("Confirmed Oct 30, 2026")).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Mark incomplete" })).toBeTruthy();
+		expect(screen.queryByRole("button", { name: "Confirm again" })).toBeNull();
+	});
+
+	it("labels a confirmation made before change tracking", async () => {
+		const { ImplementationChecklistClient } = await import("./implementation-checklist-client");
+
+		render(
+			<ImplementationChecklistClient
+				checklist={{
+					...checklist,
+					items: [
+						{
+							...organizationStructure,
+							status: "configured",
+							completionSource: "manual",
+							countsTowardProgress: true,
+							manualConfirmation: {
+								confirmedAt: "2026-01-05T08:00:00Z",
+								freshness: "before-change-tracking",
+							},
+						},
+					],
+				}}
+			/>,
+		);
+
+		expect(screen.getByText("Confirmed Jan 5, 2026, before change tracking")).toBeTruthy();
+	});
+
+	it("shows a stale confirmation and confirms it again", async () => {
+		markComplete.mockResolvedValue({ success: true });
+		const { ImplementationChecklistClient } = await import("./implementation-checklist-client");
+
+		render(
+			<ImplementationChecklistClient
+				checklist={{
+					...checklist,
+					items: [
+						{
+							...organizationStructure,
+							manualConfirmation: { confirmedAt: "2026-10-30T09:00:00Z", freshness: "stale" },
+						},
+					],
+				}}
+			/>,
+		);
+
+		expect(screen.getByText("Settings changed since confirmed on Oct 30, 2026")).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Mark incomplete" })).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: "Confirm again" }));
+		await waitFor(() => expect(markComplete).toHaveBeenCalledWith("organization-structure"));
+	});
+
+	it("says when Z8 couldn't check a confirmation", async () => {
+		const { ImplementationChecklistClient } = await import("./implementation-checklist-client");
+
+		render(
+			<ImplementationChecklistClient
+				checklist={{
+					...checklist,
+					items: [
+						{
+							...organizationStructure,
+							manualConfirmation: { confirmedAt: "2026-10-30T09:00:00Z", freshness: "unchecked" },
+						},
+					],
+				}}
+			/>,
+		);
+
+		expect(
+			screen.getByText("Couldn't check for settings changes since confirmed on Oct 30, 2026"),
+		).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Confirm again" })).toBeTruthy();
+	});
+
 	it("marks manual items complete and shows an error toast on failure", async () => {
 		markComplete.mockResolvedValue({ success: false, error: "Unable to update checklist" });
 		const { ImplementationChecklistClient } = await import("./implementation-checklist-client");

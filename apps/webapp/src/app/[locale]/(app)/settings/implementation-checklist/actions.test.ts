@@ -21,11 +21,18 @@ const mocks = vi.hoisted(() => ({
 	},
 	runGoLiveChecks: vi.fn(),
 	loadFirstWorkflowEvidence: vi.fn(),
-	insert: vi.fn(),
-	values: vi.fn(),
-	onConflictDoUpdate: vi.fn(),
-	delete: vi.fn(),
-	where: vi.fn(),
+	computeConfirmationFingerprint: vi.fn(),
+	confirm: vi.fn(),
+	unconfirm: vi.fn(),
+}));
+
+vi.mock("@/lib/implementation-checklist/confirmation/fingerprint", () => ({
+	computeConfirmationFingerprint: mocks.computeConfirmationFingerprint,
+}));
+
+vi.mock("@/lib/implementation-checklist/confirmation/store", () => ({
+	confirmImplementationChecklistItem: mocks.confirm,
+	unconfirmImplementationChecklistItem: mocks.unconfirm,
 }));
 
 vi.mock("next/cache", () => ({
@@ -84,8 +91,6 @@ vi.mock("@/db", () => ({
 			},
 			organization: { findFirst: mocks.findFirst.organization },
 		},
-		insert: mocks.insert,
-		delete: mocks.delete,
 	},
 }));
 
@@ -207,17 +212,11 @@ describe("implementation checklist actions", () => {
 			payrollExport: { state: "not-yet" },
 		});
 
-		mocks.insert.mockReset();
-		mocks.values.mockReset();
-		mocks.onConflictDoUpdate.mockReset();
-		mocks.delete.mockReset();
-		mocks.where.mockReset();
-
-		mocks.onConflictDoUpdate.mockResolvedValue(undefined);
-		mocks.values.mockReturnValue({ onConflictDoUpdate: mocks.onConflictDoUpdate });
-		mocks.insert.mockReturnValue({ values: mocks.values });
-		mocks.where.mockResolvedValue(undefined);
-		mocks.delete.mockReturnValue({ where: mocks.where });
+		mocks.computeConfirmationFingerprint.mockReset();
+		mocks.confirm.mockReset();
+		mocks.confirm.mockResolvedValue(undefined);
+		mocks.unconfirm.mockReset();
+		mocks.unconfirm.mockResolvedValue({ removed: true });
 	});
 
 	it("loads statuses scoped to the active organization", async () => {
@@ -521,38 +520,77 @@ describe("implementation checklist actions", () => {
 			error: "Implementation checklist item cannot be manually completed",
 		});
 		expect(mocks.requireAccess).toHaveBeenCalledTimes(3);
-		expect(mocks.insert).not.toHaveBeenCalled();
-		expect(mocks.delete).not.toHaveBeenCalled();
+		expect(mocks.confirm).not.toHaveBeenCalled();
+		expect(mocks.unconfirm).not.toHaveBeenCalled();
 	});
 
 	it("marks a manual item complete with active organization and completing user", async () => {
 		const result = await markImplementationChecklistItemComplete("approval-rules");
 
 		expect(result).toEqual({ success: true });
-		expect(mocks.values).toHaveBeenCalledWith(
-			expect.objectContaining({
-				organizationId: "org-active",
-				itemId: "approval-rules",
-				status: "complete",
-				completedAt: expect.any(Date),
-				completedByUserId: "user-admin",
-			}),
-		);
-		expect(mocks.onConflictDoUpdate).toHaveBeenCalledWith(
-			expect.objectContaining({
-				target: ["manualState.organizationId", "manualState.itemId"],
-				set: expect.objectContaining({
-					status: "complete",
-					completedAt: expect.any(Date),
-					completedByUserId: "user-admin",
-				}),
-			}),
-		);
+		expect(mocks.confirm).toHaveBeenCalledWith(expect.anything(), {
+			organizationId: "org-active",
+			itemId: "approval-rules",
+			actorUserId: "user-admin",
+			confirmedAt: expect.any(Date),
+		});
 		expect(mocks.revalidatePath).toHaveBeenCalledWith(checklistPath);
 	});
 
+	it("shows a confirmation whose settings changed as stale and stops counting it", async () => {
+		mocks.findFirst.implementationChecklistManualState.mockImplementation(({ where }) =>
+			Promise.resolve(
+				JSON.stringify(where).includes("organization-structure")
+					? {
+							itemId: "organization-structure",
+							completedAt: new Date("2026-10-30T09:00:00Z"),
+							configurationFingerprint: "confirmed-fingerprint",
+						}
+					: undefined,
+			),
+		);
+		mocks.computeConfirmationFingerprint.mockResolvedValue("changed-fingerprint");
+
+		const result = await getImplementationChecklist();
+
+		if (!result.success) throw new Error(result.error);
+		expect(mocks.computeConfirmationFingerprint).toHaveBeenCalledWith(
+			expect.anything(),
+			"org-active",
+			"organization-structure",
+		);
+		expect(result.data.items.find((item) => item.id === "organization-structure")).toMatchObject({
+			status: "not-set-up",
+			countsTowardProgress: false,
+			manualConfirmation: { confirmedAt: "2026-10-30T09:00:00.000Z", freshness: "stale" },
+		});
+	});
+
+	it("fails closed when a confirmation's fingerprint can't be worked out", async () => {
+		mocks.findFirst.implementationChecklistManualState.mockImplementation(({ where }) =>
+			Promise.resolve(
+				JSON.stringify(where).includes("payroll-readiness")
+					? {
+							itemId: "payroll-readiness",
+							completedAt: new Date("2026-10-30T09:00:00Z"),
+							configurationFingerprint: "confirmed-fingerprint",
+						}
+					: undefined,
+			),
+		);
+		mocks.computeConfirmationFingerprint.mockRejectedValue(new Error("database unavailable"));
+
+		const result = await getImplementationChecklist();
+
+		if (!result.success) throw new Error(result.error);
+		expect(result.data.items.find((item) => item.id === "payroll-readiness")).toMatchObject({
+			status: "not-set-up",
+			manualConfirmation: { freshness: "unchecked" },
+		});
+	});
+
 	it("returns a failure result without revalidating when marking complete fails", async () => {
-		mocks.onConflictDoUpdate.mockRejectedValue(new Error("duplicate key details"));
+		mocks.confirm.mockRejectedValue(new Error("duplicate key details"));
 
 		const result = await markImplementationChecklistItemComplete("approval-rules");
 
@@ -563,21 +601,20 @@ describe("implementation checklist actions", () => {
 		expect(mocks.revalidatePath).not.toHaveBeenCalled();
 	});
 
-	it("marks a manual item incomplete by deleting only active organization state", async () => {
+	it("marks a manual item incomplete for the active organization only", async () => {
 		const result = await markImplementationChecklistItemIncomplete("payroll-readiness");
 
 		expect(result).toEqual({ success: true });
-		expect(mocks.where).toHaveBeenCalledWith({
-			and: [
-				{ eq: ["manualState.organizationId", "org-active"] },
-				{ eq: ["manualState.itemId", "payroll-readiness"] },
-			],
+		expect(mocks.unconfirm).toHaveBeenCalledWith(expect.anything(), {
+			organizationId: "org-active",
+			itemId: "payroll-readiness",
+			actorUserId: "user-admin",
 		});
 		expect(mocks.revalidatePath).toHaveBeenCalledWith(checklistPath);
 	});
 
 	it("returns a failure result without revalidating when marking incomplete fails", async () => {
-		mocks.where.mockRejectedValue(new Error("delete failed"));
+		mocks.unconfirm.mockRejectedValue(new Error("delete failed"));
 
 		const result = await markImplementationChecklistItemIncomplete("payroll-readiness");
 

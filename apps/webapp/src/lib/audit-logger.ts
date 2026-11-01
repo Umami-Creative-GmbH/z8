@@ -380,6 +380,10 @@ export enum AuditAction {
 	WORKS_COUNCIL_SETTINGS_UPDATED = "works_council.settings_updated",
 	WORKS_COUNCIL_EXPORT_REQUESTED = "works_council.export_requested",
 	WORKS_COUNCIL_EXPORT_FAILED = "works_council.export_failed",
+
+	// Implementation checklist manual confirmations (#1516)
+	IMPLEMENTATION_CHECKLIST_ITEM_CONFIRMED = "implementation_checklist.item_confirmed",
+	IMPLEMENTATION_CHECKLIST_ITEM_UNCONFIRMED = "implementation_checklist.item_unconfirmed",
 }
 
 export type ApprovalAuditDecision = TimeRecordApprovalDecision;
@@ -465,7 +469,9 @@ export interface AuditLogEntry {
 		| "driving_authorization"
 		| "driving_licence_verifier"
 		/** An `employee_departure_task` or `employee_departure_review` of a deactivation. */
-		| "deactivation_follow_up";
+		| "deactivation_follow_up"
+		/** A manual confirmation of an implementation checklist item (#1516). */
+		| "implementation_checklist_item";
 	organizationId: string;
 	metadata?: Record<string, unknown>;
 	changes?: Record<string, unknown>; // Before/after changes for updates

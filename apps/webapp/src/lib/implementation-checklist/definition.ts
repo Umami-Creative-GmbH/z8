@@ -17,6 +17,21 @@ export type ImplementationChecklistItemId =
  */
 export type ImplementationChecklistDetector = "automatic" | "manual" | "go-live" | "evidence";
 
+/**
+ * The configuration a manual confirmation vouches for. Confirming stores its
+ * fingerprint, and the confirmation goes stale when the fingerprint changes (#1516):
+ * - `organization-structure`: teams, team memberships, primary teams, manager links,
+ *   member roles and custom role assignments;
+ * - `approval-rules`: change policies and their assignments, approval routing
+ *   policies with stages, conditions and the employee groups they name, and which
+ *   absence categories require approval;
+ * - `payroll-export`: payroll export configs, wage-type and expense wage-type mappings.
+ */
+export type ImplementationChecklistCoveredConfiguration =
+	| "organization-structure"
+	| "approval-rules"
+	| "payroll-export";
+
 export interface ImplementationChecklistDefinition {
 	id: ImplementationChecklistItemId;
 	title: string;
@@ -27,6 +42,8 @@ export interface ImplementationChecklistDefinition {
 	helperTextKey: string;
 	actionLabel: string;
 	actionLabelKey: string;
+	/** What a manual confirmation of the item covers; null when it can't be confirmed. */
+	confirmationCovers: ImplementationChecklistCoveredConfiguration | null;
 	href: string;
 	detector: ImplementationChecklistDetector;
 	canManualComplete: boolean;
@@ -45,6 +62,7 @@ export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[]
 		helperTextKey: "settings.implementationChecklist.items.organizationStructure.helperText",
 		actionLabel: "Review organization",
 		actionLabelKey: "settings.implementationChecklist.items.organizationStructure.actionLabel",
+		confirmationCovers: "organization-structure",
 		href: "/settings/organizations",
 		detector: "manual",
 		canManualComplete: true,
@@ -61,6 +79,7 @@ export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[]
 		helperTextKey: "settings.implementationChecklist.items.holidays.helperText",
 		actionLabel: "Configure holidays",
 		actionLabelKey: "settings.implementationChecklist.items.holidays.actionLabel",
+		confirmationCovers: null,
 		href: "/settings/holidays",
 		detector: "automatic",
 		canManualComplete: false,
@@ -77,6 +96,7 @@ export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[]
 		helperTextKey: "settings.implementationChecklist.items.workPolicies.goLiveHelperText",
 		actionLabel: "Configure work policies",
 		actionLabelKey: "settings.implementationChecklist.items.workPolicies.actionLabel",
+		confirmationCovers: null,
 		href: "/settings/work-policies",
 		detector: "go-live",
 		canManualComplete: false,
@@ -92,6 +112,7 @@ export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[]
 		helperTextKey: "settings.implementationChecklist.items.approvalRules.helperText",
 		actionLabel: "Review approval rules",
 		actionLabelKey: "settings.implementationChecklist.items.approvalRules.actionLabel",
+		confirmationCovers: "approval-rules",
 		href: "/settings/change-policies",
 		detector: "manual",
 		canManualComplete: true,
@@ -108,6 +129,7 @@ export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[]
 		helperTextKey: "settings.implementationChecklist.items.payrollReadiness.goLiveHelperText",
 		actionLabel: "Review payroll readiness",
 		actionLabelKey: "settings.implementationChecklist.items.payrollReadiness.actionLabel",
+		confirmationCovers: "payroll-export",
 		href: "/settings/payroll-readiness",
 		detector: "go-live",
 		// An optional business confirmation; it never verifies the item.
@@ -125,6 +147,7 @@ export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[]
 		helperTextKey: "settings.implementationChecklist.items.integrations.helperText",
 		actionLabel: "Review integrations",
 		actionLabelKey: "settings.implementationChecklist.items.integrations.actionLabel",
+		confirmationCovers: null,
 		href: "/settings/webhooks",
 		detector: "automatic",
 		canManualComplete: false,
@@ -140,6 +163,7 @@ export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[]
 		helperTextKey: "settings.implementationChecklist.items.notifications.helperText",
 		actionLabel: "Configure notifications",
 		actionLabelKey: "settings.implementationChecklist.items.notifications.actionLabel",
+		confirmationCovers: null,
 		href: "/settings/notifications",
 		detector: "automatic",
 		canManualComplete: false,
@@ -156,6 +180,7 @@ export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[]
 		helperTextKey: "settings.implementationChecklist.items.employeeImport.helperText",
 		actionLabel: "Import employees",
 		actionLabelKey: "settings.implementationChecklist.items.employeeImport.actionLabel",
+		confirmationCovers: null,
 		href: "/settings/import",
 		detector: "automatic",
 		canManualComplete: false,
@@ -172,6 +197,7 @@ export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[]
 		helperTextKey: "settings.implementationChecklist.items.firstWorkflows.helperText",
 		actionLabel: "Open time tracking",
 		actionLabelKey: "settings.implementationChecklist.items.firstWorkflows.actionLabel",
+		confirmationCovers: null,
 		href: "/time-tracking",
 		detector: "evidence",
 		canManualComplete: false,
