@@ -528,7 +528,9 @@ export interface InvoicedWorkShare {
  * Changed after invoicing: the `invoiced_work_mark_changed` trigger on
  * `work_period` (migration 0166) sets `changed_after_invoicing_at` and adds to
  * `changed_fields` whenever ANY writer changes an invoiced period's times,
- * project, billability or deletes it. Writers are never blocked (ADR 0002). An
+ * project, billability or deletes it, and the `invoiced_work_mark_customer_changed`
+ * trigger on `project` (migration 0289) adds `customer` when the work's project
+ * moves to another customer or to none. Writers are never blocked (ADR 0002). An
  * admin clears the mark (`mark_cleared_at`/`mark_cleared_by`, audited).
  */
 export const invoicedWork = pgTable(

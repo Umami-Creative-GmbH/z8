@@ -108,6 +108,12 @@ const {
 const { getProjectDetailedReport } = await import(
 	"@/app/[locale]/(app)/reports/projects/actions"
 );
+const projectSettings = await import(
+	"@/app/[locale]/(app)/settings/projects/actions"
+);
+const customerSettings = await import(
+	"@/app/[locale]/(app)/settings/customers/actions"
+);
 const { createFakeAccountingTool, fakeAccountingProviderRegistry } =
 	await import("@/lib/billable-time/accounting/fake-provider");
 
@@ -299,6 +305,17 @@ describe("hand-off on PostgreSQL", () => {
 			[ids.organization],
 		);
 		return rows.map((row) => ({ ...row, changes: JSON.parse(row.changes) }));
+	}
+
+	async function waitForRowLockWaiter() {
+		for (let attempt = 0; attempt < 100; attempt += 1) {
+			const { rows } = await admin.query<{ waiting: number }>(
+				"select count(*)::int as waiting from pg_locks where not granted",
+			);
+			if ((rows[0]?.waiting ?? 0) > 0) return;
+			await new Promise((resolve) => setTimeout(resolve, 50));
+		}
+		throw new Error("Nothing waited for the parked transaction");
 	}
 
 	async function preview(input: Partial<typeof september> = {}) {
@@ -972,6 +989,114 @@ describe("hand-off on PostgreSQL", () => {
 		expect(rows).toEqual([
 			{ entity_id: work.website, changes: expect.stringContaining('"times"') },
 		]);
+	});
+
+	it("marks invoiced work with customer when any project writer moves its project to another customer or none (#1500)", async () => {
+		const { draftId } = await unwrap(confirm());
+		const fields = async () =>
+			Object.fromEntries(
+				(await invoiced()).map((row) => [
+					row.work_period_id,
+					row.changed_after_invoicing_at === null ? null : row.changed_fields,
+				]),
+			);
+		actAs(ids.ownerUser);
+
+		// The project settings edit: never refused because its work is invoiced.
+		await unwrap(
+			projectSettings.updateProject(ids.website, { customerId: ids.beta }),
+		);
+		expect(await fields()).toEqual({
+			[work.website]: ["customer"],
+			[work.app]: null,
+		});
+
+		// Setting it back to the draft's customer keeps the mark.
+		await unwrap(
+			projectSettings.updateProject(ids.website, { customerId: ids.acme }),
+		);
+		expect(await fields()).toEqual({
+			[work.website]: ["customer"],
+			[work.app]: null,
+		});
+
+		// A customer created for a project moves the project to it.
+		await unwrap(
+			customerSettings.createCustomer({
+				organizationId: ids.organization,
+				name: "Gamma",
+				projectId: ids.app,
+			}),
+		);
+		expect(await fields()).toEqual({
+			[work.website]: ["customer"],
+			[work.app]: ["customer"],
+		});
+
+		// Deactivating a customer changes no project's customer: nothing is marked.
+		await admin.query(
+			"update invoiced_work set changed_fields = '{}', changed_after_invoicing_at = null where organization_id = $1",
+			[ids.organization],
+		);
+		await unwrap(customerSettings.deleteCustomer(ids.acme));
+		expect(await fields()).toEqual({
+			[work.website]: null,
+			[work.app]: null,
+		});
+
+		// Removing the project's customer marks it the same way.
+		await unwrap(
+			projectSettings.updateProject(ids.website, { customerId: null }),
+		);
+		expect(await fields()).toEqual({
+			[work.website]: ["customer"],
+			[work.app]: null,
+		});
+
+		// The known-field filter keeps it for the marked-work views.
+		actAs(ids.adminUser);
+		const overview = await unwrap(getHandOffOverview());
+		expect(
+			overview.changedAfterInvoicing.map((row) => [
+				row.workPeriodId,
+				row.changedFields,
+			]),
+		).toEqual([[work.website, ["customer"]]]);
+		const detail = await unwrap(getInvoiceDraftAction({ draftId }));
+		expect(
+			detail.work.find((row) => row.workPeriodId === work.website)
+				?.changedFields,
+		).toEqual(["customer"]);
+	});
+
+	it("holds the included projects' customers while it reserves their work, so a customer change is never missed (#1500)", async () => {
+		const shown = await preview({ projectIds: [ids.website] });
+		const moving = await admin.connect();
+		try {
+			await moving.query("begin");
+			await moving.query("update project set customer_id = $1 where id = $2", [
+				ids.beta,
+				ids.website,
+			]);
+			const confirming = confirmHandOffAction({
+				...september,
+				projectIds: [ids.website],
+				idempotencyKey: randomUUID(),
+				fingerprint: shown.fingerprint,
+			});
+			await waitForRowLockWaiter();
+			await moving.query("commit");
+
+			await expect(confirming).resolves.toMatchObject({
+				success: false,
+				error:
+					"The work changed since the preview. Review the new preview before handing off",
+			});
+		} finally {
+			await moving.query("rollback").catch(() => undefined);
+			moving.release();
+		}
+		expect(await invoiced()).toEqual([]);
 	});
 
 	it("reports invoiced and un-invoiced hours and revenue at the frozen rates", async () => {

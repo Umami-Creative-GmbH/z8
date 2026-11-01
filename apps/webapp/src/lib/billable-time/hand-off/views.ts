@@ -100,7 +100,20 @@ export interface InvoiceDraftSummaryView {
 	toolStatusCheckedAt: string | null;
 }
 
-export type ChangedField = "times" | "project" | "billability" | "removed" | "split";
+/**
+ * What changed about invoiced work after invoicing. `customer`: its project
+ * moved to another customer or to none (#1500).
+ */
+export const CHANGED_FIELDS = [
+	"times",
+	"project",
+	"billability",
+	"removed",
+	"split",
+	"customer",
+] as const;
+
+export type ChangedField = (typeof CHANGED_FIELDS)[number];
 
 export interface InvoicedWorkView extends HandOffWorkView {
 	invoicedWorkId: string;

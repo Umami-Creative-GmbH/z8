@@ -230,4 +230,18 @@ describe("hand-off schema (#903)", () => {
 		);
 		expect(sql).toContain('DROP TRIGGER IF EXISTS "invoiced_work_mark_changed" ON "work_period"');
 	});
+
+	it("marks invoiced work from every writer of a project's customer (#1500)", () => {
+		const sql = readFileSync(
+			new URL("../../../../drizzle/0289_invoiced_work_customer_mark.sql", import.meta.url),
+			"utf8",
+		);
+		expect(sql).toContain(
+			`CREATE TRIGGER "invoiced_work_mark_customer_changed" AFTER UPDATE OF "customer_id" ON "project" FOR EACH ROW WHEN (OLD."customer_id" IS DISTINCT FROM NEW."customer_id")`,
+		);
+		expect(sql).toContain(
+			'DROP TRIGGER IF EXISTS "invoiced_work_mark_customer_changed" ON "project"',
+		);
+		expect(sql).toContain("LANGUAGE plpgsql");
+	});
 });
