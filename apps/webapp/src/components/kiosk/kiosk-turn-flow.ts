@@ -148,18 +148,19 @@ const KIOSK_BADGE_REFUSALS: ReadonlySet<string> = new Set([
 	"rate_limited",
 ]);
 
-/** A limited badge call's wait when Z8 names none: the badge limit's window. */
-const BADGE_RETRY_FALLBACK_SECONDS = 60;
+/**
+ * How long a limited badge or fob call should wait: what Z8 named, else the
+ * 60 s window of the badge and fob lookup limits.
+ */
+function retryAfterOf(refusal: KioskClockRefusal): number {
+	return "retryAfter" in refusal && typeof refusal.retryAfter === "number"
+		? refusal.retryAfter
+		: 60;
+}
 
 function badgeRefusalNotice(refusal: KioskClockRefusal): KioskHomeNotice {
 	if (refusal.code === "rate_limited") {
-		return {
-			code: "badge_rate_limited",
-			retryAfter:
-				"retryAfter" in refusal && typeof refusal.retryAfter === "number"
-					? refusal.retryAfter
-					: BADGE_RETRY_FALLBACK_SECONDS,
-		};
+		return { code: "badge_rate_limited", retryAfter: retryAfterOf(refusal) };
 	}
 	return {
 		code: refusal.code === "badge_input_disabled" ? "badge_input_disabled" : "badge_not_accepted",
@@ -190,7 +191,7 @@ export type KioskFlow =
 			/**
 			 * A kiosk fob read on the home screen is being looked up (#1505). The
 			 * fob steps keep its serial number only in the turn's state, never on
-			 * the device, and never show more than its last four digits.
+			 * the device, and never show more than its last four characters.
 			 */
 			step: "fob";
 	  }
@@ -477,11 +478,11 @@ export function isFobRegistrationStep(flow: KioskFlow): boolean {
 	return flow.step === "fob-unknown" || flow.step === "fob-register" || flow.step === "fob-pin";
 }
 
-/** A fob call's wait when Z8 names none: the lookup limit's window. */
-const FOB_RETRY_FALLBACK_SECONDS = 60;
+/** A fob registration's PIN step: the fob, the employee who picked their name, the attempt. */
+export type KioskFobPinStep = Extract<KioskFlow, { step: "fob-pin" }>;
 
-/** The home screen's note for a fob call that did nothing, by what Z8 (or the network) answered. */
-function fobFailureNotice(
+/** The home screen, with why, after a fob call that did nothing, by what Z8 (or the network) answered. */
+function fobFailureFlow(
 	result: Exclude<AnsweredCall<unknown>, { kind: "ok" }>,
 	contactLost: () => void,
 ): KioskFlow {
@@ -497,13 +498,7 @@ function fobFailureNotice(
 			case "rate_limited":
 				return {
 					step: "home",
-					notice: {
-						code: "fob_rate_limited",
-						retryAfter:
-							"retryAfter" in refusal && typeof refusal.retryAfter === "number"
-								? refusal.retryAfter
-								: FOB_RETRY_FALLBACK_SECONDS,
-					},
+					notice: { code: "fob_rate_limited", retryAfter: retryAfterOf(refusal) },
 				};
 		}
 	}
@@ -527,7 +522,7 @@ export function fobCheckedFlow(input: {
 	contactLost: () => void;
 }): KioskFlow {
 	const { result } = input;
-	if (result.kind !== "ok") return fobFailureNotice(result, input.contactLost);
+	if (result.kind !== "ok") return fobFailureFlow(result, input.contactLost);
 	if (result.body.outcome === "not_recognised") {
 		return { step: "fob-unknown", serial: input.serial };
 	}
@@ -541,29 +536,20 @@ export function fobCheckedFlow(input: {
  * linked now, so nothing is retried on its own.
  */
 export function fobRegisteredFlow(input: {
-	serial: string;
-	employee: KioskEmployeeListing;
-	attempt: number;
+	step: KioskFobPinStep;
 	result: AnsweredCall<KioskFobRegistrationResult>;
 	contactLost: () => void;
 }): KioskFlow {
-	const { result } = input;
+	const { result, step } = input;
 	if (result.kind === "ok") return { step: "fob-registered", registration: result.body };
 	if (
 		result.kind === "refused" &&
 		result.refusal.code !== "employee_not_assigned" &&
 		KIOSK_PIN_REFUSALS.has(result.refusal.code)
 	) {
-		return {
-			step: "fob-pin",
-			serial: input.serial,
-			employee: input.employee,
-			attempt: input.attempt + 1,
-			busy: false,
-			error: result.refusal,
-		};
+		return { ...step, attempt: step.attempt + 1, busy: false, error: result.refusal };
 	}
-	return fobFailureNotice(result, input.contactLost);
+	return fobFailureFlow(result, input.contactLost);
 }
 
 /** The project and work-category step (#887) with its choices, idle unless `pending` or refused. */

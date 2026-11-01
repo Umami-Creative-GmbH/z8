@@ -72,6 +72,8 @@ export type EmployeeKioskFobState = {
 		/** Ended by a departure: the employee's last working day (ISO date), never a viewer-zone date. */
 		departureLastWorkingDay: string | null;
 	} | null;
+	/** Whether any kiosk of the organization reads fobs; without it and without a fob the section hides. */
+	fobReaderInUse: boolean;
 	/** The organization's zone, in which the instants above are shown. */
 	timezone: string;
 };
@@ -168,6 +170,7 @@ export async function getEmployeeKioskStateAction(
 					reason: fob.lastEnded.reason,
 					departureLastWorkingDay: fob.lastEnded.lastWorkingDay?.toString() ?? null,
 				},
+				fobReaderInUse: fob.fobReaderInUse,
 				timezone,
 			},
 		};
@@ -189,7 +192,7 @@ export async function removeEmployeeKioskFobAction(
 			organizationId: actor.organizationId,
 			actorUserId: actor.userId,
 			employeeId: employeeIdOf(employeeId),
-			expectedFobId: typeof expectedFobId === "string" ? expectedFobId : "",
+			expectedFobId,
 		});
 		return { removed: true as const };
 	});

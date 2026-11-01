@@ -29,7 +29,7 @@ import { canManageEmployeeKioskPin, type KioskPinManagementInput } from "./pin-s
  * Registration happens only at a kiosk (#1505); here the people who manage an
  * employee's kiosk PIN (owners, admins and the direct manager), and the
  * signed-in employee for their own fob, see when and where it was registered
- * and its last 4 hex digits, never the serial number, and can remove it.
+ * and its last four characters, never the serial number, and can remove it.
  *
  * A removal ends the link through the store's one ending path
  * (`endKioskFobLinks`, reason `removed`) under the employee key, so it
@@ -44,11 +44,12 @@ export type KioskFobManagementInput = KioskPinManagementInput;
 
 /**
  * A removal names the active fob the person saw, so a fob registered or ended
- * meanwhile is refused (`fob_changed`) instead of removed unseen.
+ * meanwhile is refused (`fob_changed`) instead of removed unseen. Straight from
+ * the client: anything but a uuid names no fob.
  */
-export type KioskFobRemovalInput = KioskFobManagementInput & { expectedFobId: string };
+export type KioskFobRemovalInput = KioskFobManagementInput & { expectedFobId: unknown };
 
-/** An active fob as it may be shown: when and where it was registered, the last 4 hex digits. */
+/** An active fob as it may be shown: when and where it was registered, its last four characters. */
 export type KioskFobView = {
 	fobId: string;
 	registeredAt: Instant;
@@ -70,6 +71,8 @@ export type KioskFobStatus = {
 		reason: KioskFobEndReason;
 		lastWorkingDay?: Temporal.PlainDate;
 	} | null;
+	/** Whether any kiosk of the organization reads fobs, so one can be registered. */
+	fobReaderInUse: boolean;
 };
 
 /** `KioskFobView` as server actions return it: the instant as an ISO string. */
@@ -86,18 +89,11 @@ export type OwnKioskFobStatus = {
 };
 
 /**
- * Whether the actor may see and remove this employee's fob: the same people who
- * manage the employee's kiosk PIN and kiosk badge (decision of spec #1358), an
- * owner or admin of the organization or the employee's direct manager.
+ * Refuses an employee outside the organization, then an actor who may not
+ * manage the fob: the same people who manage the employee's kiosk PIN and kiosk
+ * badge (decision of spec #1358), an owner or admin of the organization or the
+ * employee's direct manager.
  */
-export function canManageEmployeeKioskFob(
-	db: Database,
-	input: KioskFobManagementInput,
-): Promise<boolean> {
-	return canManageEmployeeKioskPin(db, input);
-}
-
-/** Refuses an employee outside the organization, then an actor who may not manage the fob. */
 async function requireKioskFobManager(db: Database, input: KioskFobManagementInput) {
 	const [target] = isUuid(input.employeeId)
 		? await db
@@ -114,7 +110,7 @@ async function requireKioskFobManager(db: Database, input: KioskFobManagementInp
 			"Employee not found in this organization.",
 		);
 	}
-	if (!(await canManageEmployeeKioskFob(db, input))) {
+	if (!(await canManageEmployeeKioskPin(db, input))) {
 		throw new KioskFobManagementRefusal(
 			"not_allowed",
 			"Only owners, admins and the employee's direct manager can manage kiosk fobs.",
@@ -129,6 +125,22 @@ function employeeFobs(input: { organizationId: string; employeeId: string }) {
 	);
 }
 
+/** Whether a non-revoked kiosk of the organization has its NFC fob reader on. */
+async function kioskFobReaderInUse(db: Database, organizationId: string): Promise<boolean> {
+	const [reader] = await db
+		.select({ id: kiosk.id })
+		.from(kiosk)
+		.where(
+			and(
+				eq(kiosk.organizationId, organizationId),
+				eq(kiosk.nfcFobReaderEnabled, true),
+				isNull(kiosk.revokedAt),
+			),
+		)
+		.limit(1);
+	return Boolean(reader);
+}
+
 /**
  * The employee's most recent fob. One whose employee's departure is past its
  * cutoff shows as ended by the departure even before the departure is
@@ -139,7 +151,7 @@ async function readFobStatus(
 	db: Database,
 	input: { organizationId: string; employeeId: string },
 	now: Instant,
-): Promise<KioskFobStatus> {
+): Promise<Omit<KioskFobStatus, "fobReaderInUse">> {
 	const [latest] = await db
 		.select({
 			id: employeeKioskFob.id,
@@ -198,7 +210,7 @@ async function readFobStatus(
 		active: {
 			fobId: latest.id,
 			registeredAt,
-			// Only the last 4 hex digits ever leave the server (decision O4).
+			// Only the last four characters ever leave the server (decision O4).
 			lastFour: kioskFobLastFour(latest.serialNumber),
 			kioskName: latest.kioskName,
 		},
@@ -213,13 +225,17 @@ export async function readKioskFobStatus(
 	clock: Clock = systemClock,
 ): Promise<KioskFobStatus> {
 	await requireKioskFobManager(db, input);
-	return readFobStatus(db, input, clock.nowInstant());
+	const [status, fobReaderInUse] = await Promise.all([
+		readFobStatus(db, input, clock.nowInstant()),
+		kioskFobReaderInUse(db, input.organizationId),
+	]);
+	return { ...status, fobReaderInUse };
 }
 
 /** Why a removal of the fob the person saw ended nothing. */
 async function removalRefusal(
 	tx: Pick<Transaction, "select">,
-	input: { organizationId: string; employeeId: string; expectedFobId: string },
+	input: { organizationId: string; employeeId: string; expectedFobId: unknown },
 ): Promise<KioskFobManagementRefusal> {
 	const changed = new KioskFobManagementRefusal(
 		"fob_changed",
@@ -249,18 +265,24 @@ async function removalRefusal(
  */
 async function removeSeenFob(
 	db: Database,
-	input: { organizationId: string; employeeId: string; expectedFobId: string; actorUserId: string },
+	input: {
+		organizationId: string;
+		employeeId: string;
+		expectedFobId: unknown;
+		actorUserId: string;
+	},
 	clock: Clock,
 ): Promise<void> {
+	const { expectedFobId } = input;
 	await withAuditTrail((audit) =>
 		db.transaction(async (tx) => {
 			await holdGuard(tx, employeeCoordinationGuard(input.employeeId));
 			// Without a valid id there is nothing to name: never end "every" link.
-			const [removed] = isUuid(input.expectedFobId)
+			const [removed] = isUuid(expectedFobId)
 				? await endKioskFobLinks(tx, audit, {
 						organizationId: input.organizationId,
 						employeeId: input.employeeId,
-						fobId: input.expectedFobId,
+						fobId: expectedFobId,
 						reason: "removed",
 						at: clock.nowInstant(),
 						actorUserId: input.actorUserId,
@@ -318,21 +340,11 @@ export async function readOwnKioskFobStatus(
 	const now = clock.nowInstant();
 	const own = await ownEmployee(db, input, now);
 	if (!own) return null;
-	const [status, [reader]] = await Promise.all([
+	const [status, fobReaderInUse] = await Promise.all([
 		readFobStatus(db, { organizationId: input.organizationId, employeeId: own.id }, now),
-		db
-			.select({ id: kiosk.id })
-			.from(kiosk)
-			.where(
-				and(
-					eq(kiosk.organizationId, input.organizationId),
-					eq(kiosk.nfcFobReaderEnabled, true),
-					isNull(kiosk.revokedAt),
-				),
-			)
-			.limit(1),
+		kioskFobReaderInUse(db, input.organizationId),
 	]);
-	return { active: status.active, fobReaderInUse: Boolean(reader) };
+	return { active: status.active, fobReaderInUse };
 }
 
 /**
@@ -342,7 +354,7 @@ export async function readOwnKioskFobStatus(
  */
 export async function removeOwnKioskFob(
 	db: Database,
-	input: { organizationId: string; userId: string; expectedFobId: string },
+	input: { organizationId: string; userId: string; expectedFobId: unknown },
 	clock: Clock = systemClock,
 ): Promise<void> {
 	const own = await ownEmployee(db, input, clock.nowInstant());

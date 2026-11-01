@@ -295,7 +295,7 @@ export type KioskFobRegistrationResult = {
 	/** `already_registered`: the fob was already this employee's; nothing changed. */
 	outcome: "registered" | "already_registered";
 	employee: KioskEmployeeListing;
-	/** The last four hex digits of the serial number, the only part ever shown. */
+	/** The last four characters of the serial number, the only part ever shown. */
 	lastFour: string;
 	/** Whether the registration ended the employee's earlier fob. */
 	replaced: boolean;

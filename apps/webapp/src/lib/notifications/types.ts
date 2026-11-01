@@ -240,6 +240,11 @@ export interface CreateNotificationParams {
 	entityType?: string;
 	entityId?: string;
 	actionUrl?: string;
+	/**
+	 * Where a kiosk-only employee's managers are linked when it is forwarded to
+	 * them (#860); without it their copy has no link.
+	 */
+	forwardedActionUrl?: string;
 	metadata?: Record<string, unknown>;
 	idempotencyKey?: string;
 }

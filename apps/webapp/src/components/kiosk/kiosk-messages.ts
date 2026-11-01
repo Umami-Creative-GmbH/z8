@@ -110,7 +110,7 @@ export function useKioskHomeNoticeMessage(offlineMode: boolean) {
 			case "fob_rate_limited":
 				return t(
 					"timeTracking.kiosk.fob.rateLimited",
-					"Too many fob taps at this kiosk. Try again in {seconds} seconds, or tap your name to use your PIN.",
+					"Too many fob taps at this kiosk. Try again in {seconds, plural, one {# second} other {# seconds}}, or tap your name to use your PIN.",
 					{ seconds: Math.max(1, Math.ceil(notice.retryAfter)) },
 				);
 			case "fob_linked_to_other_employee":

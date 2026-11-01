@@ -13,6 +13,7 @@ const base = {
 	organizationId: "org-1",
 	fobId: "fob-1",
 	userId: "user-1",
+	employeeId: "employee-1",
 	kioskId: "kiosk-1",
 	kioskName: "Front door",
 	employeeName: "Wanda Worker",
@@ -39,6 +40,7 @@ describe("buildKioskFobRegisteredNotification", () => {
 			actionUrl: "/settings/security",
 			idempotencyKey: "kiosk-fob-registered:fob-1",
 		});
+		expect(notification.forwardedActionUrl).toBeUndefined();
 		expect(notification.metadata).toMatchObject({
 			kioskId: "kiosk-1",
 			fobId: "fob-1",
@@ -78,6 +80,9 @@ describe("buildKioskFobRegisteredNotification", () => {
 		expect(first.message).toBe(
 			"A kiosk fob ending in E5F6 was registered to Kim Kiosk on the kiosk Front door. If Kim Kiosk didn't register it, remove it on their employee page and reset their kiosk PIN.",
 		);
+		// The kiosk-only employee has no link of their own; their managers get the employee's page.
+		expect(first.actionUrl).toBeUndefined();
+		expect(first.forwardedActionUrl).toBe("/settings/employees/employee-1");
 		expect(first.metadata?.i18n).toMatchObject({
 			titleKey: "common:notifications.content.kioskFobRegistered.title",
 			messageKey: "common:notifications.content.kioskFobRegistered.forwardedMessage",

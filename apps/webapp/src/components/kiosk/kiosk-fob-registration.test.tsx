@@ -1,14 +1,26 @@
 /* @vitest-environment jsdom */
 
-import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	KIOSK_TOKEN_STORAGE_KEY,
 	type KioskDeviceInfo,
-	type KioskEmployeeSnapshot,
 	type KioskFobRegistrationResult,
 } from "@/lib/time-tracking/kiosk/protocol";
-import { KioskApp } from "./kiosk-app";
+import {
+	advance,
+	anna,
+	kiosk,
+	openHome,
+	pressPin,
+	type Route,
+	readKeys,
+	SERIAL,
+	kioskRoutes as sessionRoutes,
+	stubFetch,
+	TYPED_SERIAL,
+	urls,
+} from "./kiosk-fob.test-utils";
 
 vi.mock("@tolgee/react", () => ({
 	useTranslate: () => ({
@@ -31,30 +43,8 @@ vi.mock("@/navigation", () => ({
  * "Register this fob": the employee picks their name and enters their kiosk
  * PIN. Badges keep reaching badge clocking when both switches are on.
  */
-const kiosk: KioskDeviceInfo = {
-	id: "22222222-2222-4222-8222-222222222222",
-	name: "Front door",
-	locationId: "11111111-1111-4111-8111-111111111111",
-	locationName: "Store",
-	timezone: "Europe/Berlin",
-	boardEnabled: false,
-	language: "en",
-	offlineMode: false,
-	nfcFobReaderEnabled: true,
-};
-
-const anna = { id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", name: "Anna Berger" };
-const ben = { id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", name: "Ben Özdemir" };
-/** A 7-byte chip serial number as an ACR1552U in hex mode types it. */
-const TYPED_SERIAL = "04a1b2c3d4e5f6";
-const SERIAL = "04A1B2C3D4E5F6";
 const BADGE = "K8B0123456789ABCDEFGHJKMNPQRSTVWX0123456789ABCDEFGHJKMNP";
 
-const clockedOut: KioskEmployeeSnapshot = {
-	employee: anna,
-	state: { status: "clocked_out" },
-	dayTotal: { date: "2026-11-02", timezone: "Europe/Berlin", minutes: 0 },
-};
 const registered: KioskFobRegistrationResult = {
 	outcome: "registered",
 	employee: anna,
@@ -62,68 +52,20 @@ const registered: KioskFobRegistrationResult = {
 	replaced: false,
 };
 
-type Call = { url: string; body: Record<string, unknown> | null };
-type Route = (call: Call) => Response | Promise<Response>;
-
-function stubFetch(routes: Record<string, Route>) {
-	const calls: Call[] = [];
-	vi.stubGlobal(
-		"fetch",
-		vi.fn(async (url: string, init?: RequestInit) => {
-			const call = { url, body: init?.body ? JSON.parse(String(init.body)) : null };
-			calls.push(call);
-			const route = routes[url];
-			return route ? route(call) : Response.json({}, { status: 404 });
-		}),
-	);
-	return calls;
-}
-
+/** The kiosk's routes, an unknown fob and a successful registration unless `extra` says otherwise. */
 function kioskRoutes(
 	extra: Record<string, Route> = {},
 	device: KioskDeviceInfo = kiosk,
 ): Record<string, Route> {
-	return {
-		"/api/kiosk/session": () => Response.json({ kiosk: device }),
-		"/api/kiosk/employees": () => Response.json({ employees: [anna, ben] }),
-		"/api/kiosk/employee-status": () => Response.json(clockedOut),
-		"/api/kiosk/fob": () => Response.json({ outcome: "not_recognised" }),
-		"/api/kiosk/fob/registration": () => Response.json(registered),
-		...extra,
-	};
+	return sessionRoutes(
+		{
+			"/api/kiosk/fob": () => Response.json({ outcome: "not_recognised" }),
+			"/api/kiosk/fob/registration": () => Response.json(registered),
+			...extra,
+		},
+		device,
+	);
 }
-
-function urls(calls: Call[], url: string) {
-	return calls.filter((call) => call.url === url);
-}
-
-/** A keyboard-style reader typing `text` at once, then Enter. */
-function readKeys(text: string) {
-	const target = document.activeElement ?? document.body;
-	for (const key of text) {
-		const capital = key !== key.toLowerCase();
-		if (capital) fireEvent.keyDown(target, { key: "Shift", shiftKey: true });
-		fireEvent.keyDown(target, { key, shiftKey: capital });
-	}
-	fireEvent.keyDown(target, { key: "Enter" });
-}
-
-async function advance(ms: number) {
-	await act(async () => {
-		await vi.advanceTimersByTimeAsync(ms);
-	});
-}
-
-async function openHome() {
-	render(<KioskApp />);
-	await screen.findByRole("button", { name: /Anna Berger/ });
-}
-
-function pressPin(pin: string) {
-	for (const digit of pin) fireEvent.click(screen.getByRole("button", { name: digit }));
-	fireEvent.click(screen.getByRole("button", { name: "OK" }));
-}
-
 /** From an unknown fob on the home screen to the PIN pad for Anna. */
 async function startRegistration() {
 	readKeys(TYPED_SERIAL);

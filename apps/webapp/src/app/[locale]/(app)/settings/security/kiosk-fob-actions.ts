@@ -49,7 +49,7 @@ export async function removeOwnKioskFobAction(
 		await removeOwnKioskFob(db, {
 			organizationId: actor.organizationId,
 			userId: actor.userId,
-			expectedFobId: typeof expectedFobId === "string" ? expectedFobId : "",
+			expectedFobId,
 		});
 		return { removed: true as const };
 	});

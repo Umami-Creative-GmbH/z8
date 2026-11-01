@@ -30,6 +30,7 @@ import { KioskPinPad } from "./kiosk-pin-pad";
 import { KIOSK_CONFIRMATION_MS } from "./kiosk-timing";
 import {
 	type KioskFlow,
+	type KioskFobPinStep,
 	type KioskTurnConfirmation,
 	type KioskTurnProof,
 	type OfflineTurn,
@@ -77,12 +78,7 @@ export function KioskTurnScreen({
 	token: string;
 	onKioskRefused: (code: KioskRefusalCode) => void;
 	/** A fob registration's PIN was entered (#1505). */
-	onRegisterFob: (
-		serial: string,
-		employee: KioskEmployeeListing,
-		attempt: number,
-		pin: string,
-	) => void;
+	onRegisterFob: (step: KioskFobPinStep, pin: string) => void;
 	onVerifyPin: (employee: KioskEmployeeListing, attempt: number, pin: string) => void;
 	onChoose: (
 		proof: KioskTurnProof,
@@ -191,7 +187,7 @@ export function KioskTurnScreen({
 					busy={flow.busy}
 					disabled={!online}
 					error={flow.error ? message(flow.error) : null}
-					onSubmit={(pin) => onRegisterFob(flow.serial, flow.employee, flow.attempt, pin)}
+					onSubmit={(pin) => onRegisterFob(flow, pin)}
 					onBack={onHome}
 				/>
 			);

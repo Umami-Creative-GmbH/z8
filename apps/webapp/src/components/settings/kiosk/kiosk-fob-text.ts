@@ -1,18 +1,10 @@
-import { Temporal } from "temporal-polyfill";
 import type { KioskFobManagementErrorCode } from "@/lib/time-tracking/kiosk/fob-errors";
 import type { KioskFobViewState } from "@/lib/time-tracking/kiosk/fob-management";
+import { kioskDateLabel } from "./kiosk-date-labels";
 
 type Translate = (key: string, defaultValue: string, values?: Record<string, string>) => string;
 
-/** An instant's date in the organization's zone, in the UI language. */
-export function kioskFobDateLabel(iso: string, zone: string, locale: string): string {
-	return Temporal.Instant.from(iso)
-		.toZonedDateTimeISO(zone)
-		.toPlainDate()
-		.toLocaleString(locale, { dateStyle: "medium" });
-}
-
-/** An active fob as people see it (#1508): the last 4 hex digits, when and where it was registered. */
+/** An active fob as people see it (#1508): the last four characters, when and where it was registered. */
 export function kioskFobDetails(
 	t: Translate,
 	fob: KioskFobViewState,
@@ -21,7 +13,7 @@ export function kioskFobDetails(
 ): string {
 	const values = {
 		lastFour: fob.lastFour,
-		date: kioskFobDateLabel(fob.registeredAt, zone, locale),
+		date: kioskDateLabel(fob.registeredAt, zone, locale),
 	};
 	return fob.kioskName
 		? t("settings.kioskFob.details", "Fob ending in {lastFour}, registered on {date} at {kiosk}.", {
@@ -35,7 +27,10 @@ export function kioskFobDetails(
 			);
 }
 
-/** The translated message for a refused kiosk fob removal or status read (#1508). */
+/**
+ * The translated message for a refused kiosk fob removal (#1508), or for the
+ * employee's own fob status that could not be read.
+ */
 export function kioskFobErrorMessage(t: Translate, code: KioskFobManagementErrorCode): string {
 	switch (code) {
 		case "sign_in_required":

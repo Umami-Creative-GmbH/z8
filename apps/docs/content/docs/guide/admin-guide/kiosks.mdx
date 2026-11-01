@@ -90,7 +90,22 @@ Things to know:
 - **One fob per employee.** Registering a new fob replaces the employee's earlier one at once. The kiosk says so.
 - **A fob belongs to one employee.** A fob that is already registered to another employee in the organization is refused. The kiosk doesn't say who it belongs to, and the fob is never moved silently. Another organization can register the same card for its own employee.
 - **The PIN rules apply.** A wrong PIN registers nothing and counts toward the employee's PIN lockout, as when clocking. Only employees who can clock at this kiosk can register a fob here.
-- **The serial number stays hidden.** Z8 and the kiosk only ever show its last four characters.
+- **The employee is told.** Each registration sends the employee a notification naming the kiosk and the fob's last four characters, and saying whether it replaced their earlier fob. If they didn't register it, they can remove it and change their kiosk PIN. For a kiosk-only employee, the notification goes to their managers, or to the organization's owners and admins if they have no manager.
+- **The serial number stays hidden.** The kiosk and the settings pages only ever show its last four characters. Only the employee's own personal data export contains the full serial number.
+
+### Viewing and Removing Fobs
+
+Owners, admins and the employee's direct manager see the employee's fob in the **Kiosk access** card on the employee's page in **Settings -> Employees**: when and at which kiosk it was registered, and its last four characters. Employees see their own fob under **Settings -> Security**.
+
+**Remove fob** stops the fob working at every kiosk at once, for example when it is lost. Anyone can then register it again. Owners, admins and the direct manager remove fobs on the employee's page, and employees remove their own on their security page. Removing a fob never changes the employee's kiosk PIN or kiosk badge. Fobs are only registered at a kiosk.
+
+### Fobs and Departures
+
+A fob ends with the employee's departure. It keeps working until the departure's cutoff, the start of the day after the last working day in the organization's timezone, and stops working at that moment, even if Z8 has not finished processing the departure yet. Scheduling a departure does not end the fob early; if you move or cancel the departure before its cutoff, the fob follows the current date. The card then shows that the last fob ended with the departure.
+
+Deactivating an employee ends their fob as well, and reactivating them doesn't bring it back.
+
+A rehire never brings an old fob back. To use a fob again, the rehired employee registers it again at a kiosk, which works for the same card. The employee's kiosk PIN is not changed by a departure or a rehire.
 
 ---
 

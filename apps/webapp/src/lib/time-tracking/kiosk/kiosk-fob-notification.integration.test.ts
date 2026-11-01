@@ -68,15 +68,21 @@ describe("kiosk fob registration notifications on PostgreSQL", () => {
 	const admin = integrationAdminPool();
 	let now = parseInstant("2026-11-02T08:00:00Z");
 	const clockPort = { nowInstant: () => now };
+	/** Work the service left for after its response, as Next's `after` would run it. */
+	const afterResponse: Array<() => Promise<void>> = [];
+	let notify = notifyKioskFobRegistered;
 
 	const service = createKioskFobService({
 		clock: clockPort,
 		limitPinAttempts: async () => ({ allowed: true, retryAfter: 0 }),
 		limitFobLookups: async () => ({ allowed: true, retryAfter: 0 }),
-		onRegistered: (registration) => notifyKioskFobRegistered(registration),
+		onRegistered: (registration) => notify(registration),
+		afterResponse: (task) => {
+			afterResponse.push(task);
+		},
 	});
 
-	async function register(serial: string, employeeId: string, pin: string = PIN) {
+	async function respond(serial: string, employeeId: string, pin: string = PIN) {
 		const response = await service.register(
 			new Request("http://localhost/api/kiosk/fob/registration", {
 				method: "POST",
@@ -85,6 +91,16 @@ describe("kiosk fob registration notifications on PostgreSQL", () => {
 			}),
 		);
 		return { status: response.status, body: await response.json() };
+	}
+
+	async function runAfterResponse() {
+		for (const task of afterResponse.splice(0)) await task();
+	}
+
+	async function register(serial: string, employeeId: string, pin: string = PIN) {
+		const answer = await respond(serial, employeeId, pin);
+		await runAfterResponse();
+		return answer;
 	}
 
 	async function inbox(userId: string) {
@@ -214,6 +230,8 @@ describe("kiosk fob registration notifications on PostgreSQL", () => {
 
 	beforeEach(async () => {
 		now = parseInstant("2026-11-02T08:00:00Z");
+		afterResponse.length = 0;
+		notify = notifyKioskFobRegistered;
 		await seed();
 	});
 
@@ -268,7 +286,8 @@ describe("kiosk fob registration notifications on PostgreSQL", () => {
 			title: "Kim Kiosk: Kiosk fob registered",
 			message:
 				"A kiosk fob ending in E5F6 was registered to Kim Kiosk on the kiosk Store kiosk. If Kim Kiosk didn't register it, remove it on their employee page and reset their kiosk PIN.",
-			action_url: null,
+			// The employee's page, where their managers remove the fob; never their security settings.
+			action_url: `/settings/employees/${ids.kioskOnly}`,
 		});
 		expect(forwarded?.metadata.forwardedFor).toMatchObject({ employeeId: ids.kioskOnly });
 		expect(forwarded?.metadata.i18n).toMatchObject({
@@ -302,6 +321,29 @@ describe("kiosk fob registration notifications on PostgreSQL", () => {
 
 		expect(await inbox(ids.coworkerUser)).toEqual([]);
 		expect(await allNotifications()).toHaveLength(1);
+	});
+
+	it("notifies only after the kiosk has its answer, and a failure changes nothing", async () => {
+		const answer = await respond(SERIAL, ids.worker);
+		expect(answer).toMatchObject({ status: 200, body: { outcome: "registered" } });
+		expect(await inbox(ids.workerUser)).toEqual([]);
+		await runAfterResponse();
+		expect(await inbox(ids.workerUser)).toHaveLength(1);
+
+		notify = async () => {
+			throw new Error("notification service down");
+		};
+		now = parseInstant("2026-11-02T09:00:00Z");
+		expect((await respond(OTHER_SERIAL, ids.worker)).body).toMatchObject({
+			outcome: "registered",
+			replaced: true,
+		});
+		await expect(runAfterResponse()).resolves.toBeUndefined();
+		const { rows } = await admin.query<{ serial_number: string }>(
+			"select serial_number from employee_kiosk_fob where employee_id = $1 and ended_at is null",
+			[ids.worker],
+		);
+		expect(rows).toEqual([{ serial_number: OTHER_SERIAL }]);
 	});
 
 	it("tells nobody again when the fob was already the employee's", async () => {

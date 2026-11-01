@@ -240,6 +240,7 @@ async function holderOf(
 			fobId: employeeKioskFob.id,
 			employeeId: employeeKioskFob.employeeId,
 			employmentPeriodId: employeeKioskFob.employmentPeriodId,
+			registeredAt: employeeKioskFob.registeredAt,
 			hasAccess: sql<boolean>`${employeeHasOrganizationAccess(input.now)}`,
 		})
 		.from(employeeKioskFob)
@@ -283,6 +284,13 @@ async function freeStaleLink(
 	},
 	holder: { employeeId: string },
 ): Promise<boolean> {
+	// A second employee key, after the registrant's, and not in a sorted order:
+	// the holder is known only once read under the registrant's key. This cannot
+	// deadlock. Only this path holds two employee keys, and it takes the second
+	// only for a holder without organization access, whose own registration is
+	// refused before it could come here and wait for the registrant's key. Every
+	// other writer under the holder's key (a departure, a removal) waits for no
+	// other employee key.
 	await holdGuard(tx, employeeCoordinationGuard(holder.employeeId));
 	const current = await holderOf(tx, { ...input, lock: true });
 	if (!current) return true;
@@ -317,6 +325,9 @@ async function requireEligibleEmployee(
 		"Only active employees assigned to this kiosk can register a fob here.",
 	);
 	if (!isUuid(input.employeeId)) throw notEligible;
+	// FOR SHARE: a deactivation's update of the row waits for this registration
+	// (and then ends its link), or this read waits for the deactivation and sees
+	// the employee inactive. Never a link the deactivation missed.
 	const [eligible] = await tx
 		.select({ userId: employee.userId })
 		.from(employee)
@@ -327,7 +338,8 @@ async function requireEligibleEmployee(
 				employeeHasOrganizationAccess(now),
 			),
 		)
-		.limit(1);
+		.limit(1)
+		.for("share");
 	const period = eligible ? await resolveCurrentEmploymentPeriod(tx, input) : null;
 	if (!eligible || period?.status !== "open") throw notEligible;
 	return { userId: eligible.userId, employmentPeriodId: period.id };
@@ -383,16 +395,11 @@ export async function registerKioskFob(
 
 				const holder = await holderOf(tx, { organizationId: input.organizationId, serial, now });
 				if (holder?.employeeId === input.employeeId) {
-					const [own] = await tx
-						.select({ registeredAt: employeeKioskFob.registeredAt })
-						.from(employeeKioskFob)
-						.where(eq(employeeKioskFob.id, holder.fobId))
-						.limit(1);
 					return {
 						...registration,
 						outcome: "already_registered" as const,
 						fobId: holder.fobId,
-						registeredAt: own ? instantFromDate(own.registeredAt) : now,
+						registeredAt: instantFromDate(holder.registeredAt),
 						replacedFobId: null,
 					};
 				}
