@@ -1,6 +1,6 @@
 ---
 title: Kiosks
-description: Shared clocking devices at a location, where employees clock with their kiosk PIN or kiosk badge
+description: Shared clocking devices at a location, where employees clock with their kiosk PIN, kiosk badge or kiosk fob
 icon: Clock
 ---
 
@@ -69,9 +69,34 @@ A rehire never brings an old badge back: every copy of it stays invalid. To let 
 
 ---
 
+## Kiosk Fobs
+
+A kiosk fob is an NFC card or key fob that an employee taps on a reader attached to the kiosk. The fob only **selects** the employee, in place of tapping their name. The employee still enters their kiosk PIN, which proves who they are. A fob never signs anyone in to Z8, and it never clocks anyone without the PIN.
+
+Z8 uses only the chip's serial number, the number every 13.56 MHz card has. Nothing is written to the card, so any such card works, including an access card employees already carry. A serial number is no secret, which is why the PIN is still needed.
+
+A kiosk reads fobs only when its **NFC fob reader** switch is on (see [Setting Up the Fob Reader](#setting-up-the-fob-reader)).
+
+### Registering a Fob
+
+Employees register their own fob at a kiosk with their kiosk PIN. They don't need an admin:
+
+1. The employee taps the new fob on the kiosk's reader. The kiosk says **This fob is not recognised here** and offers **Register this fob**.
+2. They choose **Register this fob**, tap their name, and enter their kiosk PIN.
+3. The kiosk confirms the registration and shows only the last four characters of the serial number.
+
+Things to know:
+
+- **One fob per employee.** Registering a new fob replaces the employee's earlier one at once. The kiosk says so.
+- **A fob belongs to one employee.** A fob that is already registered to another employee in the organization is refused. The kiosk doesn't say who it belongs to, and the fob is never moved silently. Another organization can register the same card for its own employee.
+- **The PIN rules apply.** A wrong PIN registers nothing and counts toward the employee's PIN lockout, as when clocking. Only employees who can clock at this kiosk can register a fob here.
+- **The serial number stays hidden.** Z8 and the kiosk only ever show its last four characters.
+
+---
+
 ## Clocking at a Kiosk
 
-1. The employee taps their name on the kiosk's home screen.
+1. The employee taps their name on the kiosk's home screen, or taps their kiosk fob on the reader (see [Clocking with a Fob](#clocking-with-a-fob)).
 2. They enter their kiosk PIN.
 3. The kiosk shows their state and today's day total, and only the actions that fit: **Clock in**, or **Start break** and **Clock out**, or **Resume work** and **End day**. Ending the day while on a break ends the work at the start of the break.
 4. On **Clock out**, the kiosk asks which project and work category the work was for (see [Projects and Work Categories at Clock-Out](#projects-and-work-categories-at-clock-out)).
@@ -137,6 +162,42 @@ A code the camera reads that is not a kiosk badge is never opened: the kiosk say
 
 <Callout type="info" title="Printed or on screen">
 The camera reads the badge printed from its PDF. Print it at full size on white paper and keep it flat and free of glare. A badge PDF shown on another screen also works, but treat that screen like the badge itself.
+</Callout>
+
+### Clocking with a Fob
+
+At a kiosk with the **NFC fob reader** on, the home screen says **Or tap your fob on the reader.**
+
+1. The employee taps their registered fob on the reader at the kiosk's home screen. The tap alone records nothing.
+2. The kiosk opens their PIN entry, as if they had tapped their name.
+3. From here everything works as in [Clocking at a Kiosk](#clocking-at-a-kiosk): they enter their kiosk PIN, and the kiosk shows their state, today's day total and the actions that fit.
+
+Things to know:
+
+- **The PIN always proves.** A wrong PIN counts toward the same lockout as with name and PIN. After five wrong PINs the employee's PIN is locked for 15 minutes, whether they started with their name or their fob.
+- **Only the home screen reads fobs.** A tap during someone's turn, on a confirmation or while the kiosk checks an action is ignored. It can't switch the employee, type digits into the PIN pad or press anything.
+- **Fobs that can't be used here name nobody.** An unknown or replaced fob gets the same **This fob is not recognised here** answer as the fob of an employee who can't clock at this kiosk. That includes an employee at another location, an inactive or departed employee, and one from another organization. The kiosk offers **Register this fob** either way. Registering is refused if the fob belongs to someone else.
+- **Fob clocking needs a connection.** While offline, the kiosk says that fobs need a connection and sends or saves nothing for the fob. With offline mode on, the employee can tap their name and clock with their PIN as usual.
+- **An unresolved action holds the employee.** While the kiosk checks whether an employee's last action was recorded, their fob opens the same "Checking" screen as tapping their name, with no PIN pad.
+- A kiosk accepts at most 60 fob taps per minute. Registrations count toward its 30 PIN attempts per minute.
+
+### Setting Up the Fob Reader
+
+Owners and admins switch on **NFC fob reader** per kiosk in the kiosk's **Edit** dialog. It is off for every kiosk until you switch it on, and it's independent of the badge scanner and badge camera. The kiosks list shows "NFC fob reader on" for the kiosks that use it. Switching it off stops fob taps and registrations at that kiosk at once. Registered fobs are kept and work again when you switch it back on.
+
+The reader must work like a keyboard. It types the serial number when a card is tapped, the way a badge scanner types a badge. Z8 accepts the serial number only in **hexadecimal** (digits 0–9 and letters A–F), 8, 14 or 20 characters long (4-, 7- or 10-byte chips). Upper or lower case, separators (`:`, `-`, spaces) and a final Enter are all fine. Don't use decimal output: most decimal serial numbers are ignored, and the rest wouldn't match the fob's registration.
+
+**Reference reader: ACS ACR1552U.** Set it up once, with the configuration tool ACS provides for the reader:
+
+1. Switch the reader to **keyboard mode** (keyboard emulation), so it types each card's serial number.
+2. Set the output format to **hexadecimal**. Leave the byte order as the reader reads it: Z8 never swaps bytes, so a reversed serial number is a different fob.
+3. Optionally end each read with **Enter**.
+4. Connect the reader to the kiosk device by USB. Open a text editor on the device and tap a card: a line like `04A1B2C3D4E5F6` should appear.
+
+Hexadecimal uses only digits and the letters A–F, so serial numbers read correctly whatever keyboard layout the device uses. If you change a reader's output format after employees have registered fobs, their fobs no longer match. Set every reader in the organization up the same way.
+
+<Callout type="info" title="Fob or badge?">
+Both start a turn at the home screen, and both can be on at the same kiosk. A badge stands in for the PIN. A fob only replaces tapping the name, so the PIN is still needed. A fob's serial number can be read or copied without the employee noticing, so Z8 never treats it as proof.
 </Callout>
 
 ---
