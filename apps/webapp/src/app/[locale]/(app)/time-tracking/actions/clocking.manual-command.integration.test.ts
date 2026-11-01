@@ -19,6 +19,7 @@ import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { type Instant, parseInstant } from "@/lib/datetime/temporal-core";
 import type { ManualTimeEntryCommand } from "@/lib/time-tracking/manual-command";
 import { integrationAdminPool } from "@/test/integration-database";
+import { MANUAL_ENTRY_LIVE_WORK_OVERLAP_ERROR } from "./types";
 
 const harness = vi.hoisted(() => ({
 	userId: null as string | null,
@@ -1082,6 +1083,94 @@ describe("strict versioned manual commands on PostgreSQL", () => {
 			await expect(clockIn("office", { browserTimezone: "Europe/Berlin" })).resolves.toMatchObject({
 				success: true,
 			});
+		});
+	});
+
+	describe("manual entries while clocked in (#1492)", () => {
+		/** Live work from 12:00 Berlin (10:00Z) on the default entry date. */
+		async function clockedInAtNoon() {
+			actAs(ids.employeeUser);
+			await expect(
+				clockIn("office", {
+					instant: parseInstant("2026-09-01T10:00:00Z"),
+					browserTimezone: "Europe/Berlin",
+				}),
+			).resolves.toMatchObject({ success: true });
+			const live = (await periods()).find((period) => period.end_time === null);
+			if (!live) throw new Error("Expected live work");
+			return live.id;
+		}
+
+		const legacyEntry = (clockInTime: string, clockOutTime: string) => ({
+			submissionId: randomUUID(),
+			date: "2026-09-01",
+			clockInTime,
+			clockOutTime,
+			reason: "Forgot the morning",
+			timezone: "Europe/Berlin",
+			browserTimezone: "Europe/Berlin",
+		});
+
+		it("accepts legacy entries that end by the clock-in, also on behalf, and names live work it overlaps", async () => {
+			await setAppend(null);
+			const live = await clockedInAtNoon();
+
+			await expect(submit(legacyEntry("08:00", "09:00"))).resolves.toMatchObject({
+				success: true,
+			});
+			await expect(
+				submit({ ...legacyEntry("09:30", "10:30"), employeeId: ids.employee }, ids.managerUser),
+			).resolves.toMatchObject({ success: true });
+			// Adjacent to the live work's start.
+			await expect(submit(legacyEntry("11:00", "12:00"))).resolves.toMatchObject({
+				success: true,
+			});
+			const before = await snapshot();
+
+			await expect(submit(legacyEntry("12:15", "13:00"))).resolves.toEqual({
+				success: false,
+				error: MANUAL_ENTRY_LIVE_WORK_OVERLAP_ERROR,
+				code: "occupancy_conflict",
+				rejection: {
+					reason: "occupancy_conflict",
+					occupants: [
+						{ kind: "work_period", id: live, startAt: "2026-09-01T10:00:00Z", endAt: null },
+					],
+				},
+			});
+			expect(await snapshot()).toEqual(before);
+		});
+
+		it("lets a deleted legacy period neither trim nor refuse a new legacy entry", async () => {
+			await setAppend(null);
+			const deleted = legacyEntry("09:00", "10:00");
+			await expect(submit(deleted)).resolves.toMatchObject({ success: true });
+			await admin.query("update work_period set deleted_at = now() where id = $1", [
+				deleted.submissionId,
+			]);
+
+			await expect(submit(legacyEntry("08:00", "11:00"))).resolves.toMatchObject({
+				success: true,
+				data: { wasAdjusted: false },
+			});
+		});
+
+		it("names the live work a version-2 entry overlaps and accepts one ending at its start", async () => {
+			await clockedInAtNoon();
+
+			await expect(
+				submit(manualCommand({ clockIn: at("07:00", 120), clockOut: at("09:00", 120) })),
+			).resolves.toMatchObject({ success: true });
+			await expect(
+				submit(manualCommand({ clockIn: at("09:00", 120), clockOut: at("12:30", 120) })),
+			).resolves.toMatchObject({
+				success: false,
+				error: MANUAL_ENTRY_LIVE_WORK_OVERLAP_ERROR,
+				code: "occupancy_conflict",
+			});
+			await expect(
+				submit(manualCommand({ clockIn: at("09:00", 120), clockOut: at("12:00", 120) })),
+			).resolves.toMatchObject({ success: true });
 		});
 	});
 

@@ -48,9 +48,11 @@ import {
 	MANUAL_ENTRY_APPROVAL_UNROUTABLE,
 	MANUAL_ENTRY_COLLISION,
 	MANUAL_ENTRY_NOT_ADOPTED,
+	MANUAL_ENTRY_OVERLAP_ERROR,
 	MANUAL_ENTRY_TARGET_NOT_AUTHORIZED,
 	type ManualTimeEntryLookup,
 	type ManualTimeEntryResult,
+	manualEntryOccupancyError,
 } from "./types";
 
 /**
@@ -267,8 +269,8 @@ const REJECTION_MESSAGES: Record<ManualCommandRejection["reason"], string> = {
 	category_ineligible: "Cannot assign to this work category",
 	billable_not_allowed: "Only work on a project that has a customer can be billable",
 	policy_ambiguous: "Could not verify time approval policy. Please try again.",
-	occupancy_conflict:
-		"This time overlaps recorded work. Please choose a time range that does not overlap existing entries.",
+	// Worded from the occupants by `manualEntryOccupancyError` (#1492).
+	occupancy_conflict: MANUAL_ENTRY_OVERLAP_ERROR,
 	append_review_required:
 		"This employee's time history needs review before new entries can be saved. Please contact your administrator.",
 	// Worded with the month's name by `monthClosedMessage` (#762).
@@ -358,7 +360,9 @@ export async function createManualTimeEntryFromCommand(input: {
 						? rejection.message
 						: rejection.reason === "month_closed"
 							? await monthClosedMessage(rejection.month)
-							: REJECTION_MESSAGES[rejection.reason],
+							: rejection.reason === "occupancy_conflict"
+								? manualEntryOccupancyError(rejection.occupants)
+								: REJECTION_MESSAGES[rejection.reason],
 				code: rejection.reason,
 				rejection,
 				...(rejection.reason === "holiday_blocked" ? { holidayName: rejection.holidayName } : {}),
