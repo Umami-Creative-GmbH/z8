@@ -11,12 +11,12 @@ const mocks = vi.hoisted(() => ({ getHandOffOverview: vi.fn() }));
 
 vi.mock("./actions", () => ({
 	checkInvoiceDraftStatusAction: vi.fn(),
-	clearChangedAfterInvoicingAction: vi.fn(),
 	confirmHandOffAction: vi.fn(),
 	getHandOffOverview: mocks.getHandOffOverview,
 	getInvoiceDraftAction: vi.fn(),
 	previewHandOffAction: vi.fn(),
 	releaseInvoiceDraftAction: vi.fn(),
+	resolveChangedAfterInvoicingAction: vi.fn(),
 	retryHandOffAction: vi.fn(),
 }));
 
@@ -73,6 +73,8 @@ const overview: HandOffOverview = {
 			carried: false,
 			changedAfterInvoicingAt: "2026-04-02T08:00:00Z",
 			changedFields: ["times"],
+			markVersion: "iw-1:1",
+			history: [],
 		},
 	],
 };
