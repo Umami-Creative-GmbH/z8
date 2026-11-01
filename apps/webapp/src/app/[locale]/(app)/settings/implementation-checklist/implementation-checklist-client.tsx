@@ -42,7 +42,14 @@ type ImplementationChecklistItem = Pick<
 	Partial<
 		Pick<
 			ResolvedImplementationChecklistItem,
-			"titleKey" | "descriptionKey" | "helperTextKey" | "actionLabelKey"
+			| "titleKey"
+			| "descriptionKey"
+			| "helperTextKey"
+			| "actionLabelKey"
+			| "confirmationLabel"
+			| "confirmationLabelKey"
+			| "confirmedLabel"
+			| "confirmedLabelKey"
 		>
 	>;
 
@@ -190,6 +197,14 @@ export function ImplementationChecklistClient({ checklist }: ImplementationCheck
 								{showsGoLiveDetail && item.goLive ? (
 									<GoLiveCheckPanel result={item.goLive} />
 								) : null}
+								{item.goLive && item.confirmedLabel && item.completionSource === "manual" ? (
+									<p className="flex items-center gap-2 text-sm">
+										<IconCheck aria-hidden="true" className="size-4 text-primary" />
+										{item.confirmedLabelKey
+											? t(item.confirmedLabelKey, item.confirmedLabel)
+											: item.confirmedLabel}
+									</p>
+								) : null}
 								<div className="flex flex-wrap items-center gap-3">
 									<Button asChild size="sm">
 										<Link href={item.href}>
@@ -209,15 +224,7 @@ export function ImplementationChecklistClient({ checklist }: ImplementationCheck
 											{itemPending ? (
 												<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
 											) : null}
-											{item.completionSource === "manual"
-												? t(
-														"settings.implementationChecklist.actions.markIncomplete",
-														"Mark incomplete",
-													)
-												: t(
-														"settings.implementationChecklist.actions.markComplete",
-														"Mark complete",
-													)}
+											{manualToggleLabel(item, t)}
 										</Button>
 									) : null}
 								</div>
@@ -279,6 +286,25 @@ function statusText(status: ImplementationChecklistItemStatus, t: Translate) {
 		case "unavailable":
 			return t("settings.implementationChecklist.status.unavailable", "Unavailable");
 	}
+}
+
+/** A go-live item's confirmation is a business sign-off, not a way to complete the item. */
+function manualToggleLabel(item: ImplementationChecklistItem, t: Translate) {
+	const confirmed = item.completionSource === "manual";
+	if (item.goLive && item.confirmationLabel) {
+		if (confirmed) {
+			return t(
+				"settings.implementationChecklist.actions.removeConfirmation",
+				"Remove confirmation",
+			);
+		}
+		return item.confirmationLabelKey
+			? t(item.confirmationLabelKey, item.confirmationLabel)
+			: item.confirmationLabel;
+	}
+	return confirmed
+		? t("settings.implementationChecklist.actions.markIncomplete", "Mark incomplete")
+		: t("settings.implementationChecklist.actions.markComplete", "Mark complete");
 }
 
 function getStatusLabel(item: ImplementationChecklistItem, t: Translate) {
