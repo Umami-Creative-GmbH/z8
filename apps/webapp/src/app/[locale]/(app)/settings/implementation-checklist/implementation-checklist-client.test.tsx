@@ -220,6 +220,23 @@ const failingWorkPolicyItem = {
 	},
 } as const;
 
+const firstWorkflowsItem = {
+	id: "first-workflows",
+	title: "First workflows",
+	description: "See that your organization has really started working with Z8.",
+	helperText:
+		"Z8 notices the first clock-in, the first decided request and the first successful payroll export from real activity. This never affects go-live readiness.",
+	actionLabel: "Open time tracking",
+	href: "/time-tracking",
+	detector: "evidence",
+	canManualComplete: false,
+	role: "informational",
+	completionSource: null,
+	canToggleManualCompletion: false,
+	countsTowardProgress: false,
+	goLive: null,
+} as const;
+
 describe("ImplementationChecklistClient", () => {
 	beforeEach(() => {
 		markComplete.mockReset();
@@ -323,6 +340,93 @@ describe("ImplementationChecklistClient", () => {
 		expect(screen.getByText("Invited")).toBeTruthy();
 		expect(screen.getByText("No team yet")).toBeTruthy();
 		expect(screen.getAllByRole("link", { name: "Assign work policies" })).toHaveLength(1);
+	});
+
+	it("shows first-workflow evidence with when and who, or not yet", async () => {
+		const { ImplementationChecklistClient } = await import("./implementation-checklist-client");
+
+		render(
+			<ImplementationChecklistClient
+				checklist={{
+					...checklist,
+					items: [
+						{
+							...firstWorkflowsItem,
+							status: "configured",
+							firstWorkflows: {
+								clockIn: { state: "not-yet" },
+								decidedApproval: {
+									state: "seen",
+									at: "2026-06-03T09:00:00Z",
+									actor: { employeeId: "employee-2", displayName: "Ben", former: false },
+								},
+								payrollExport: {
+									state: "seen",
+									at: "2026-06-30T16:00:00Z",
+									actor: { employeeId: "employee-3", displayName: "Cleo", former: true },
+								},
+							},
+						},
+					],
+				}}
+			/>,
+		);
+
+		expect(screen.getByRole("heading", { name: "First workflows" })).toBeTruthy();
+		expect(screen.getByText("Under way")).toBeTruthy();
+		expect(screen.getByText("First clock-in")).toBeTruthy();
+		expect(screen.getByText("Not yet")).toBeTruthy();
+		expect(screen.getByText("First decided request")).toBeTruthy();
+		expect(screen.getByText("Jun 3, 2026, 09:00 by Ben")).toBeTruthy();
+		expect(screen.getByText("First successful payroll export")).toBeTruthy();
+		expect(screen.getByText("Jun 30, 2026, 16:00 by Cleo")).toBeTruthy();
+		expect(screen.getByText("Former employee")).toBeTruthy();
+		expect(screen.queryByRole("button", { name: "Mark complete" })).toBeNull();
+	});
+
+	it("offers a retry when first-workflow evidence could not be looked up", async () => {
+		const { ImplementationChecklistClient } = await import("./implementation-checklist-client");
+
+		render(
+			<ImplementationChecklistClient
+				checklist={{
+					...checklist,
+					items: [
+						{
+							...firstWorkflowsItem,
+							status: "unavailable",
+							firstWorkflows: {
+								clockIn: { state: "unavailable" },
+								decidedApproval: { state: "not-yet" },
+								payrollExport: { state: "not-yet" },
+							},
+						},
+					],
+				}}
+			/>,
+		);
+
+		expect(screen.getByText("Couldn't be checked")).toBeTruthy();
+		fireEvent.click(screen.getByRole("button", { name: "Check again" }));
+		await waitFor(() => expect(refresh).toHaveBeenCalled());
+	});
+
+	it("leaves a slot for the go-live rehearsal in the first workflows panel", async () => {
+		const { FirstWorkflowsPanel } = await import("./first-workflows-panel");
+
+		render(
+			<FirstWorkflowsPanel
+				evidence={{
+					clockIn: { state: "not-yet" },
+					decidedApproval: { state: "not-yet" },
+					payrollExport: { state: "not-yet" },
+				}}
+				rehearsal={<p>Rehearsal goes here</p>}
+			/>,
+		);
+
+		expect(screen.getAllByText("Not yet")).toHaveLength(3);
+		expect(screen.getByText("Rehearsal goes here")).toBeTruthy();
 	});
 
 	it("marks manual items complete and shows an error toast on failure", async () => {

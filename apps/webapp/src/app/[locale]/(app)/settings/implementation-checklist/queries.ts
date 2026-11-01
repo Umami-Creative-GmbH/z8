@@ -23,6 +23,11 @@ import {
 	IMPLEMENTATION_CHECKLIST_ITEMS,
 	type ImplementationChecklistItemId,
 } from "@/lib/implementation-checklist/definition";
+import {
+	type FirstWorkflowEvidence,
+	UNAVAILABLE_FIRST_WORKFLOW_EVIDENCE,
+} from "@/lib/implementation-checklist/go-live/first-workflows";
+import { loadFirstWorkflowEvidence } from "@/lib/implementation-checklist/go-live/first-workflows-evidence";
 import { goLiveFixLinks } from "@/lib/implementation-checklist/go-live/fix-links";
 import { resolveGoLiveReadiness } from "@/lib/implementation-checklist/go-live/readiness";
 import {
@@ -31,7 +36,7 @@ import {
 	runGoLiveChecks,
 	unavailableGoLiveRun,
 } from "@/lib/implementation-checklist/go-live/run";
-import type { GoLiveReadiness } from "@/lib/implementation-checklist/go-live/types";
+import type { GoLiveAsOf, GoLiveReadiness } from "@/lib/implementation-checklist/go-live/types";
 import {
 	type ResolvedImplementationChecklistItem,
 	resolveImplementationChecklistItems,
@@ -164,6 +169,8 @@ async function detectCompleteIds(
 
 			return Boolean(preference || (await activeIntegration));
 		}),
+		// First-workflow evidence, never a presence detector.
+		"first-workflows": null,
 		"employee-import": detectorComplete(async () => {
 			const activeImportedEmployee = await db.query.employee.findFirst({
 				where: and(
@@ -227,15 +234,19 @@ export async function loadImplementationChecklistForContext({
 }: ImplementationChecklistLoaderContext): Promise<
 	ImplementationChecklistActionResult<ImplementationChecklistViewModel>
 > {
-	const [detectedCompleteIds, manualCompleteIds, goLive] = await Promise.all([
+	const [detectedCompleteIds, manualCompleteIds, { goLive, firstWorkflows }] = await Promise.all([
 		detectCompleteIds(organizationId, authContext.user.id),
 		loadManualCompleteIds(organizationId),
-		runGoLive(organizationId),
+		runGoLive(organizationId).then(async (goLive) => ({
+			goLive,
+			firstWorkflows: await loadFirstWorkflows(organizationId, goLive),
+		})),
 	]);
 	const items = resolveImplementationChecklistItems({
 		detectedCompleteIds,
 		manualCompleteIds,
 		goLiveResults: goLive.run.results,
+		firstWorkflows,
 	});
 
 	return {
@@ -258,9 +269,13 @@ export async function loadImplementationChecklistForContext({
  * have already authorized an org admin, so fix links are gated for that tier
  * and the organization's feature flags. A failed lookup is unavailable, never a pass.
  */
-async function runGoLive(
-	organizationId: string,
-): Promise<{ run: GoLiveRun; checkedAt: string; timezone: string }> {
+async function runGoLive(organizationId: string): Promise<{
+	run: GoLiveRun;
+	checkedAt: string;
+	timezone: string;
+	/** Null when the organization could not be loaded. */
+	asOf: GoLiveAsOf | null;
+}> {
 	const instant = systemClock.nowInstant();
 	let settings: ReturnType<typeof organizationSettingsForDisplay>;
 	try {
@@ -271,7 +286,12 @@ async function runGoLive(
 		settings = organizationSettingsForDisplay(record);
 	} catch (error) {
 		logger.error({ organizationId, error }, "Go-live checks could not load the organization");
-		return { run: unavailableGoLiveRun(), checkedAt: instant.toString(), timezone: "UTC" };
+		return {
+			run: unavailableGoLiveRun(),
+			checkedAt: instant.toString(),
+			timezone: "UTC",
+			asOf: null,
+		};
 	}
 
 	const {
@@ -281,15 +301,29 @@ async function runGoLive(
 		...featureFlags
 	} = settings;
 	const { timezone } = resolveOrganizationTimezone(storedTimezone);
+	const asOf = goLiveAsOf(instant, timezone);
 	const run = await runGoLiveChecks({
 		db,
 		organizationId,
-		asOf: goLiveAsOf(instant, timezone),
+		asOf,
 		fixLink: goLiveFixLinks({
 			accessTier: "orgAdmin",
 			billingEnabled: env.BILLING_ENABLED === "true",
 			featureFlags,
 		}),
 	});
-	return { run, checkedAt: instant.toString(), timezone };
+	return { run, checkedAt: instant.toString(), timezone, asOf };
+}
+
+/**
+ * First-workflow evidence over the same go-live group the checks ran over. It
+ * is informational: it never feeds go-live readiness. Without a group there is
+ * nothing to look at, so every line is unavailable rather than "not yet".
+ */
+async function loadFirstWorkflows(
+	organizationId: string,
+	{ run, asOf }: Awaited<ReturnType<typeof runGoLive>>,
+): Promise<FirstWorkflowEvidence> {
+	if (!run.group || !asOf) return UNAVAILABLE_FIRST_WORKFLOW_EVIDENCE;
+	return loadFirstWorkflowEvidence({ db, organizationId, group: run.group, asOf });
 }

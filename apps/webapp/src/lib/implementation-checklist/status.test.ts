@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { IMPLEMENTATION_CHECKLIST_ITEMS } from "./definition";
+import type { FirstWorkflowEvidence } from "./go-live/first-workflows";
+import { resolveGoLiveReadiness } from "./go-live/readiness";
 import type { GoLiveCheckResult } from "./go-live/types";
 import { resolveImplementationChecklistItems, summarizeImplementationChecklist } from "./status";
 
@@ -28,6 +30,7 @@ describe("implementation checklist status resolver", () => {
 			"integrations",
 			"notifications",
 			"employee-import",
+			"first-workflows",
 		]);
 	});
 
@@ -52,6 +55,7 @@ describe("implementation checklist status resolver", () => {
 			integrations: "informational",
 			notifications: "informational",
 			"employee-import": "informational",
+			"first-workflows": "informational",
 		});
 	});
 
@@ -158,7 +162,7 @@ describe("implementation checklist status resolver", () => {
 		});
 
 		expect(items.find((item) => item.id === "work-policies")?.status).toBe("configured");
-		expect(summarizeImplementationChecklist(items)).toEqual({ completedCount: 2, totalCount: 8 });
+		expect(summarizeImplementationChecklist(items)).toEqual({ completedCount: 2, totalCount: 9 });
 
 		const verified = resolveImplementationChecklistItems({
 			detectedCompleteIds: new Set(["holidays"]),
@@ -167,7 +171,85 @@ describe("implementation checklist status resolver", () => {
 		});
 		expect(summarizeImplementationChecklist(verified)).toEqual({
 			completedCount: 3,
-			totalCount: 8,
+			totalCount: 9,
 		});
+	});
+});
+
+describe("first workflows item", () => {
+	const seen = (at: string) =>
+		({
+			state: "seen",
+			at,
+			actor: { employeeId: "employee-1", displayName: "Ada", former: false },
+		}) as const;
+	const notYet = { state: "not-yet" } as const;
+
+	function firstWorkflowsItem(firstWorkflows?: FirstWorkflowEvidence) {
+		const item = resolveImplementationChecklistItems({
+			detectedCompleteIds: new Set(["first-workflows"]),
+			manualCompleteIds: new Set(["first-workflows"]),
+			firstWorkflows,
+		}).find((entry) => entry.id === "first-workflows");
+		if (!item) throw new Error("first-workflows item missing");
+		return item;
+	}
+
+	it("is not set up before anything happened, ignoring presence and manual state", () => {
+		const evidence = { clockIn: notYet, decidedApproval: notYet, payrollExport: notYet };
+
+		expect(firstWorkflowsItem(evidence)).toMatchObject({
+			status: "not-set-up",
+			completionSource: null,
+			canToggleManualCompletion: false,
+			countsTowardProgress: false,
+			firstWorkflows: evidence,
+		});
+		expect(firstWorkflowsItem()).toMatchObject({ status: "not-set-up", firstWorkflows: null });
+	});
+
+	it("is under way once some evidence was seen and verified once all of it was", () => {
+		expect(
+			firstWorkflowsItem({
+				clockIn: seen("2026-06-01T07:00:00Z"),
+				decidedApproval: notYet,
+				payrollExport: notYet,
+			}),
+		).toMatchObject({ status: "configured", countsTowardProgress: false });
+		expect(
+			firstWorkflowsItem({
+				clockIn: seen("2026-06-01T07:00:00Z"),
+				decidedApproval: seen("2026-06-02T07:00:00Z"),
+				payrollExport: seen("2026-06-30T07:00:00Z"),
+			}),
+		).toMatchObject({
+			status: "verified",
+			completionSource: "automatic",
+			countsTowardProgress: true,
+		});
+	});
+
+	it("is unavailable, never seen, when a lookup failed", () => {
+		expect(
+			firstWorkflowsItem({
+				clockIn: seen("2026-06-01T07:00:00Z"),
+				decidedApproval: { state: "unavailable" },
+				payrollExport: seen("2026-06-30T07:00:00Z"),
+			}),
+		).toMatchObject({ status: "unavailable", countsTowardProgress: false });
+	});
+
+	it("never affects go-live readiness", () => {
+		const items = resolveImplementationChecklistItems({
+			detectedCompleteIds: new Set(),
+			manualCompleteIds: new Set(),
+			goLiveResults: [workPolicyResult()],
+			firstWorkflows: { clockIn: notYet, decidedApproval: notYet, payrollExport: notYet },
+		});
+
+		expect(items.find((item) => item.id === "first-workflows")?.goLive).toBeNull();
+		expect(
+			resolveGoLiveReadiness(items.flatMap((item) => (item.goLive ? [item.goLive] : []))),
+		).toEqual({ status: "ready", warnings: [] });
 	});
 });

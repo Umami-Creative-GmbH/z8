@@ -23,6 +23,7 @@ import {
 	markImplementationChecklistItemComplete,
 	markImplementationChecklistItemIncomplete,
 } from "./actions";
+import { FirstWorkflowsPanel } from "./first-workflows-panel";
 import { GoLiveCheckPanel } from "./go-live-check-panel";
 import { GoLiveReadinessCard, type GoLiveReadinessView } from "./go-live-readiness-card";
 
@@ -42,7 +43,7 @@ type ImplementationChecklistItem = Pick<
 	Partial<
 		Pick<
 			ResolvedImplementationChecklistItem,
-			"titleKey" | "descriptionKey" | "helperTextKey" | "actionLabelKey"
+			"titleKey" | "descriptionKey" | "helperTextKey" | "actionLabelKey" | "firstWorkflows"
 		>
 	>;
 
@@ -156,9 +157,16 @@ export function ImplementationChecklistClient({ checklist }: ImplementationCheck
 							item.goLive.failures.length > 0 ||
 							item.goLive.warnings.length > 0 ||
 							item.goLive.notes.length > 0);
+					const firstWorkflows = item.firstWorkflows ?? null;
 
 					return (
-						<Card key={item.id} className={cn("shadow-none", showsGoLiveDetail && "lg:col-span-2")}>
+						<Card
+							key={item.id}
+							className={cn(
+								"shadow-none",
+								(showsGoLiveDetail || firstWorkflows) && "lg:col-span-2",
+							)}
+						>
 							<CardHeader>
 								<div className="flex items-start gap-3">
 									<StatusMarker status={item.status} />
@@ -190,6 +198,7 @@ export function ImplementationChecklistClient({ checklist }: ImplementationCheck
 								{showsGoLiveDetail && item.goLive ? (
 									<GoLiveCheckPanel result={item.goLive} />
 								) : null}
+								{firstWorkflows ? <FirstWorkflowsPanel evidence={firstWorkflows} /> : null}
 								<div className="flex flex-wrap items-center gap-3">
 									<Button asChild size="sm">
 										<Link href={item.href}>
@@ -282,6 +291,19 @@ function statusText(status: ImplementationChecklistItemStatus, t: Translate) {
 }
 
 function getStatusLabel(item: ImplementationChecklistItem, t: Translate) {
+	// First workflows is noticed from real use, so "configured" would mislead.
+	if (item.firstWorkflows) {
+		if (item.status === "not-set-up") {
+			return t("settings.implementationChecklist.firstWorkflows.status.notStarted", "Not started");
+		}
+		if (item.status === "configured") {
+			return t("settings.implementationChecklist.firstWorkflows.status.underWay", "Under way");
+		}
+		if (item.status === "verified") {
+			return t("settings.implementationChecklist.firstWorkflows.status.allSeen", "All seen");
+		}
+	}
+
 	if (item.status === "configured" && item.completionSource === "manual") {
 		return t("settings.implementationChecklist.status.manuallyComplete", "Manually complete");
 	}
