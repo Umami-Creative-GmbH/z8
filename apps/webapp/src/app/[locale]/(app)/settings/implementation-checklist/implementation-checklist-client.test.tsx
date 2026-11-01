@@ -325,6 +325,48 @@ describe("ImplementationChecklistClient", () => {
 		expect(screen.getAllByRole("link", { name: "Assign work policies" })).toHaveLength(1);
 	});
 
+	it("labels payroll export as optional without an active payroll export target", async () => {
+		const { ImplementationChecklistClient } = await import("./implementation-checklist-client");
+
+		render(
+			<ImplementationChecklistClient
+				checklist={{
+					...checklist,
+					items: [
+						{
+							...failingWorkPolicyItem,
+							id: "payroll-readiness",
+							title: "Payroll export",
+							canManualComplete: true,
+							canToggleManualCompletion: true,
+							status: "not-set-up",
+							goLive: {
+								checkId: "payroll-setup",
+								itemId: "payroll-readiness",
+								severity: "advisory",
+								checkedMemberCount: 3,
+								outcome: "passed",
+								configured: false,
+								failures: [],
+								warnings: [],
+								notes: [
+									{
+										key: "settings.implementationChecklist.goLive.payrollSetup.optional",
+										fallback: "Payroll export is an optional integration.",
+									},
+								],
+							},
+						},
+					],
+				}}
+			/>,
+		);
+
+		expect(screen.getByText("Optional")).toBeTruthy();
+		expect(screen.getByText("Payroll export is an optional integration.")).toBeTruthy();
+		expect(screen.getByRole("button", { name: "Mark complete" })).toBeTruthy();
+	});
+
 	it("marks manual items complete and shows an error toast on failure", async () => {
 		markComplete.mockResolvedValue({ success: false, error: "Unable to update checklist" });
 		const { ImplementationChecklistClient } = await import("./implementation-checklist-client");
