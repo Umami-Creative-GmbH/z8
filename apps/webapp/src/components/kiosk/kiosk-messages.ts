@@ -86,11 +86,17 @@ export function useKioskHomeNoticeMessage(offlineMode: boolean) {
 					"timeTracking.kiosk.camera.failed",
 					"The camera could not be started. Try again, or tap your name to use your PIN.",
 				);
+			// Only an offline-mode kiosk clocks by name and PIN without a connection (#1506).
 			case "fob_offline":
-				return t(
-					"timeTracking.kiosk.fob.offline",
-					"Fobs need a connection. Nothing was recorded. Tap your name to use your PIN.",
-				);
+				return offlineMode
+					? t(
+							"timeTracking.kiosk.fob.offline",
+							"Fobs need a connection. Nothing was recorded. Tap your name to use your PIN.",
+						)
+					: t(
+							"timeTracking.kiosk.fob.offlineOnly",
+							"Fobs need a connection. Nothing was recorded.",
+						);
 			case "fob_failed":
 				return t(
 					"timeTracking.kiosk.fob.failed",

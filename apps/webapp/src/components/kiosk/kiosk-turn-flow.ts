@@ -515,10 +515,11 @@ function fobFailureNotice(
 }
 
 /**
- * The screen after a fob lookup (#1505): "not recognised here" with the offer
- * to register it, or the home screen with why not. A recognised fob is #1506's
- * (it opens the employee's PIN entry); until then the kiosk stays home. Fobs
- * need a connection; the lookup itself recorded nothing.
+ * The screen after a fob lookup: the selected employee's PIN entry (#1506), in
+ * place of picking their name, from where the turn is name-and-PIN clocking
+ * unchanged; "not recognised here" with the offer to register it (#1505); or
+ * the home screen with why not. The fob only selects, so its serial number
+ * leaves with this step. Fobs need a connection; the lookup recorded nothing.
  */
 export function fobCheckedFlow(input: {
 	serial: string;
@@ -530,7 +531,7 @@ export function fobCheckedFlow(input: {
 	if (result.body.outcome === "not_recognised") {
 		return { step: "fob-unknown", serial: input.serial };
 	}
-	return { step: "home" };
+	return { step: "pin", employee: result.body.employee, attempt: 0, busy: false, error: null };
 }
 
 /**

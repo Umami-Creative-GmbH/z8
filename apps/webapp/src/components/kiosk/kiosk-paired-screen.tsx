@@ -101,6 +101,12 @@ interface KioskPairedScreenProps {
  * camera input is on (#1367) also offers "Scan badge" there: the camera step
  * reads the badge on the device and feeds the same `identifyBadge`; the camera
  * runs only while that step shows.
+ *
+ * A kiosk whose NFC fob reader is on (#1505) reads kiosk fobs on the home
+ * screen too (`identifyFob`, through the same listener). A registered fob
+ * selects its employee in place of the name pick and opens their PIN entry
+ * (#1506); the PIN still proves and the turn goes on as name-and-PIN clocking.
+ * Fobs need a connection, and reads on every other screen are swallowed.
  */
 export function KioskPairedScreen({
 	token,
@@ -223,8 +229,10 @@ export function KioskPairedScreen({
 	}
 
 	/**
-	 * A kiosk fob read on the home screen (#1505): whom it selects here, or the
-	 * offer to register it. Fobs need a connection; offline nothing is sent.
+	 * A kiosk fob read on the home screen: the employee it selects here, whose
+	 * PIN entry opens as after picking their name (#1506), or the offer to
+	 * register it (#1505). Fobs need a connection; offline nothing is sent or
+	 * queued, and the employee can still tap their name.
 	 */
 	async function identifyFob(serial: string) {
 		if (!contact.online) {
@@ -239,7 +247,11 @@ export function KioskPairedScreen({
 			{ timeoutMs: KIOSK_ACTION_TIMEOUT_MS },
 		);
 		if (result.kind === "kiosk") return kioskRefused(result.code);
-		show(fobCheckedFlow({ serial, result, contactLost: contact.contactLost }));
+		const checked = fobCheckedFlow({ serial, result, contactLost: contact.contactLost });
+		// Like a name pick: an employee whose action is unresolved gets no PIN pad (#1363).
+		const held = checked.step === "pin" ? uncertain.pendingFor(checked.employee.id) : undefined;
+		if (held) uncertain.hold(held);
+		else show(checked);
 	}
 
 	/** Registering a fob (#1505): the employee's name and kiosk PIN link it to them. */

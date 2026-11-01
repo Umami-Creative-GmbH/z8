@@ -232,7 +232,7 @@ describe("kiosk fob registration with an attached NFC reader (#1505)", () => {
 		expect(screen.getByRole("searchbox", { name: "Find your name" })).toBeTruthy();
 	});
 
-	it("leaves a recognised fob for the PIN step it will open (#1506) and offers no registration", async () => {
+	it("opens a recognised fob's PIN entry (#1506) and offers no registration", async () => {
 		stubFetch(
 			kioskRoutes({
 				"/api/kiosk/fob": () => Response.json({ outcome: "employee", employee: anna }),
@@ -240,10 +240,10 @@ describe("kiosk fob registration with an attached NFC reader (#1505)", () => {
 		);
 		await openHome();
 		readKeys(TYPED_SERIAL);
-		await advance(100);
 
+		expect(await screen.findByText("Enter your kiosk PIN")).toBeTruthy();
 		expect(screen.queryByRole("button", { name: "Register this fob" })).toBeNull();
-		expect(screen.getByRole("searchbox", { name: "Find your name" })).toBeTruthy();
+		expect(screen.queryByText("Enter your kiosk PIN to register this fob")).toBeNull();
 	});
 
 	it("needs a connection: offline, a fob sends nothing", async () => {
@@ -256,11 +256,8 @@ describe("kiosk fob registration with an attached NFC reader (#1505)", () => {
 
 		readKeys(TYPED_SERIAL);
 
-		expect(
-			await screen.findByText(
-				"Fobs need a connection. Nothing was recorded. Tap your name to use your PIN.",
-			),
-		).toBeTruthy();
+		// Without offline mode the kiosk cannot clock by PIN either (#1506), so it offers none.
+		expect(await screen.findByText("Fobs need a connection. Nothing was recorded.")).toBeTruthy();
 		expect(urls(calls, "/api/kiosk/fob")).toEqual([]);
 	});
 
