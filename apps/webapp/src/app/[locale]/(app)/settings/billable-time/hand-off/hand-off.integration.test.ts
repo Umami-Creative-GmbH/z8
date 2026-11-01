@@ -1347,6 +1347,52 @@ describe("hand-off on PostgreSQL", () => {
 			]);
 		});
 
+		it("refuses the batch when the project's customer changed after loading, even when already marked with customer (#1500)", async () => {
+			await unwrap(confirm());
+			await admin.query("update project set customer_id = $1 where id = $2", [
+				ids.beta,
+				ids.website,
+			]);
+			await admin.query(
+				"update work_period set is_billable = false where id = $1",
+				[work.app],
+			);
+			const items = await markedItems();
+			const markVersion = async () => {
+				const { rows } = await admin.query<{ mark_version: number }>(
+					"select mark_version from invoiced_work where organization_id = $1 and work_period_id = $2",
+					[ids.organization, work.website],
+				);
+				return rows[0]?.mark_version;
+			};
+			const loaded = await markVersion();
+			// Moving it back to the draft's customer keeps the mark and writes the row
+			// again, although its fields stay the same.
+			await admin.query("update project set customer_id = $1 where id = $2", [
+				ids.acme,
+				ids.website,
+			]);
+			expect(await markVersion()).toBe((loaded ?? 0) + 1);
+
+			const website = itemOf(items, work.website);
+			await expect(
+				unwrap(
+					resolveChangedAfterInvoicingAction({
+						items: [website, itemOf(items, work.app)],
+						explanation: "Handled",
+					}),
+				),
+			).resolves.toEqual({
+				status: "stale",
+				invoicedWorkIds: [website.invoicedWorkId],
+			});
+			expect(await resolutions()).toEqual([]);
+			expect((await invoiced()).map((row) => row.changed_fields)).toEqual([
+				["customer"],
+				["billability"],
+			]);
+		});
+
 		it("refuses the batch when a correction commits while the resolution waits for it", async () => {
 			await unwrap(confirm());
 			await admin.query(
