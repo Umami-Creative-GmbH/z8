@@ -11,6 +11,20 @@ vi.mock("@/hooks/use-display-context", () => ({
 	useDisplayContext: () => ({ locale: "en-US", timezone: "UTC", timeFormat: "24h" }),
 }));
 
+const handOffValues = {
+	removed: false,
+	pieceCount: 1,
+	removedPieceCount: 0,
+	day: "2026-03-02",
+	start: { at: "2026-03-02T08:00:00.000Z", offsetMinutes: 60 },
+	end: { at: "2026-03-02T10:30:00.000Z", offsetMinutes: 60 },
+	durationMinutes: 150,
+	hours: "2.50",
+	projects: [{ id: "p-web", name: "Website" }],
+	customers: [{ id: "c-acme", name: "Acme" }],
+	billability: "billable",
+} satisfies MarkedWorkItemView["comparison"]["handOff"];
+
 const item = (overrides: Partial<MarkedWorkItemView> = {}): MarkedWorkItemView => ({
 	invoiceDraftId: "draft-1",
 	invoicedWorkId: "11111111-1111-4111-8111-111111111111",
@@ -24,6 +38,18 @@ const item = (overrides: Partial<MarkedWorkItemView> = {}): MarkedWorkItemView =
 	changedFields: ["times"],
 	markVersion: "11111111-1111-4111-8111-111111111111:2",
 	history: [],
+	comparison: {
+		handOff: handOffValues,
+		lastResolved: null,
+		current: {
+			...handOffValues,
+			end: { at: "2026-03-02T11:00:00.000Z", offsetMinutes: 60 },
+			durationMinutes: 180,
+			hours: "3.00",
+			changedFromHandOff: ["end", "hours"],
+			changedSinceResolution: null,
+		},
+	},
 	...overrides,
 });
 
@@ -121,6 +147,21 @@ describe("MarkedWork", () => {
 
 		await user.click(within(dialog).getByRole("button", { name: "Reload" }));
 		expect(onResolved).toHaveBeenCalled();
+	});
+
+	it("compares an item with its hand-off values on request", async () => {
+		const { user } = setup();
+		const row = screen.getByText("Grace").closest("li") as HTMLElement;
+		const compare = within(row).getByRole("button", { name: "Compare" });
+		expect(compare.getAttribute("aria-expanded")).toBe("false");
+
+		await user.click(compare);
+
+		expect(compare.getAttribute("aria-expanded")).toBe("true");
+		const table = within(row).getByRole("table", { name: /Comparison of/ });
+		expect(table.textContent).toContain("09:00");
+		expect(table.textContent).toContain("12:00");
+		expect(table.textContent).toContain("3.00 h");
 	});
 
 	it("shows an item's history, including marks cleared before resolutions were recorded", async () => {

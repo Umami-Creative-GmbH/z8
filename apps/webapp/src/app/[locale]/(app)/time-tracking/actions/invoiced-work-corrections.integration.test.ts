@@ -96,6 +96,7 @@ const { createFakeAccountingTool, fakeAccountingProviderRegistry } = await impor
 const { confirmHandOff, previewHandOff } = await import(
 	"@/lib/billable-time/hand-off/hand-off-store"
 );
+const { listMarkedItems } = await import("@/lib/billable-time/hand-off/resolution-store");
 
 const ids = {
 	organization: "t903b-corrections-org",
@@ -384,6 +385,22 @@ describe("correcting invoiced work on PostgreSQL", () => {
 				changed_fields: ["split"],
 				carried_from_work_period_id: periodId,
 				released_at: null,
+			});
+			// One comparison item whose current hours sum both halves (#1501).
+			const marked = await listMarkedItems(db, ids.organization);
+			expect(marked).toHaveLength(1);
+			expect(only(marked)).toMatchObject({
+				workPeriodId: periodId,
+				comparison: {
+					handOff: { durationMinutes: 240, pieceCount: 1 },
+					current: {
+						pieceCount: 2,
+						start: { at: "2026-07-22T08:00:00.000Z" },
+						end: { at: "2026-07-22T12:00:00.000Z" },
+						durationMinutes: 240,
+						changedFromHandOff: [],
+					},
+				},
 			});
 			const next = await previewHandOff(db, dependencies(), {
 				organizationId: ids.organization,

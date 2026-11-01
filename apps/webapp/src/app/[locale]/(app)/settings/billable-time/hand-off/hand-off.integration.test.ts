@@ -211,6 +211,8 @@ describe("hand-off on PostgreSQL", () => {
 		pending?: boolean;
 		employeeId?: string;
 		organizationId?: string;
+		/** The UTC offset both entries record (default 0). */
+		offsetMinutes?: number;
 	}) {
 		const organizationId = options.organizationId ?? ids.organization;
 		const employeeId = options.employeeId ?? ids.worker;
@@ -223,7 +225,7 @@ describe("hand-off on PostgreSQL", () => {
 			await admin.query(
 				`insert into time_entry
 				 (id, employee_id, organization_id, type, timestamp, utc_offset_minutes, timezone, timezone_source, hash, created_by)
-				 values ($1, $2, $3, $4, $5, 0, 'Etc/UTC', 'user_setting', $6, $7)`,
+				 values ($1, $2, $3, $4, $5, $8, 'Etc/UTC', 'user_setting', $6, $7)`,
 				[
 					entryId,
 					employeeId,
@@ -232,6 +234,7 @@ describe("hand-off on PostgreSQL", () => {
 					timestamp,
 					`hash-${entryId}`,
 					ids.ownerUser,
+					options.offsetMinutes ?? 0,
 				],
 			);
 		}
@@ -1595,6 +1598,235 @@ describe("hand-off on PostgreSQL", () => {
 				}),
 			).resolves.toMatchObject({ success: false, code: "NotFoundError" });
 			expect(await resolutions()).toEqual([]);
+		});
+	});
+
+	describe("comparing invoiced work with its hand-off values (#1501)", () => {
+		async function markedItems() {
+			return (await unwrap(getHandOffOverview())).changedAfterInvoicing;
+		}
+
+		async function comparisonOf(workPeriodId: string) {
+			const found = (await markedItems()).find(
+				(item) => item.workPeriodId === workPeriodId,
+			);
+			if (!found) throw new Error(`No marked item for ${workPeriodId}`);
+			return found;
+		}
+
+		it("compares a times, a project and a billability correction with the hand-off, in the recorded offset", async () => {
+			// 00:30–01:30 at UTC+02:00: the work's own day is 9 September.
+			work.late = await addWork({
+				projectId: ids.website,
+				start: "2026-09-08T22:30:00Z",
+				end: "2026-09-08T23:30:00Z",
+				minutes: 60,
+				offsetMinutes: 120,
+			});
+			const { draftId } = await unwrap(confirm());
+			await admin.query(
+				"update work_period set end_time = end_time + interval '15 minutes', duration_minutes = 105 where id = $1",
+				[work.website],
+			);
+			await admin.query(
+				"update work_period set project_id = $2 where id = $1",
+				[work.app, ids.website],
+			);
+			await admin.query(
+				"update work_period set is_billable = false where id = $1",
+				[work.late],
+			);
+
+			expect((await comparisonOf(work.website)).comparison).toMatchObject({
+				handOff: {
+					end: { at: "2026-09-02T09:30:00.000Z", offsetMinutes: 0 },
+					hours: "1.50",
+				},
+				lastResolved: null,
+				current: {
+					end: { at: "2026-09-02T09:45:00.000Z", offsetMinutes: 0 },
+					hours: "1.75",
+					changedFromHandOff: ["end", "hours"],
+					changedSinceResolution: null,
+				},
+			});
+			expect((await comparisonOf(work.app)).comparison).toMatchObject({
+				handOff: {
+					projects: [{ id: ids.app, name: "App" }],
+					customers: [{ id: ids.acme, name: "Acme" }],
+				},
+				current: {
+					projects: [{ id: ids.website, name: "Website" }],
+					customers: [{ id: ids.acme, name: "Acme" }],
+					changedFromHandOff: ["project"],
+				},
+			});
+			const late = await comparisonOf(work.late);
+			expect(late.comparison).toMatchObject({
+				handOff: {
+					day: "2026-09-09",
+					start: { at: "2026-09-08T22:30:00.000Z", offsetMinutes: 120 },
+					billability: "billable",
+				},
+				current: {
+					day: "2026-09-09",
+					start: { at: "2026-09-08T22:30:00.000Z", offsetMinutes: 120 },
+					end: { at: "2026-09-08T23:30:00.000Z", offsetMinutes: 120 },
+					billability: "non_billable",
+					changedFromHandOff: ["billability"],
+				},
+			});
+
+			const detail = await unwrap(getInvoiceDraftAction({ draftId }));
+			expect(
+				detail.marked.find((item) => item.workPeriodId === work.late)?.comparison,
+			).toEqual(late.comparison);
+
+			actAs(ids.otherUser, ids.otherOrganization);
+			expect(await markedItems()).toEqual([]);
+		});
+
+		it("shows a deleted work period as removed", async () => {
+			await unwrap(confirm());
+			await admin.query(
+				"update work_period set deleted_at = now(), deleted_by = $2 where id = $1",
+				[work.website, ids.ownerUser],
+			);
+
+			expect((await comparisonOf(work.website)).comparison.current).toMatchObject({
+				removed: true,
+				pieceCount: 1,
+				removedPieceCount: 1,
+				changedFromHandOff: ["removed"],
+			});
+		});
+
+		it("shows hand-off, last resolved and current values after a resolution and a further correction", async () => {
+			await unwrap(confirm());
+			await admin.query(
+				"update work_period set end_time = end_time + interval '15 minutes', duration_minutes = 105 where id = $1",
+				[work.website],
+			);
+			const loaded = await comparisonOf(work.website);
+			await unwrap(
+				resolveChangedAfterInvoicingAction({
+					items: [
+						{ invoicedWorkId: loaded.invoicedWorkId, markVersion: loaded.markVersion },
+					],
+					explanation: "Credit note CN-7",
+				}),
+			);
+			await admin.query(
+				"update work_period set is_billable = false where id = $1",
+				[work.website],
+			);
+
+			const again = await comparisonOf(work.website);
+			expect(again.changedFields).toEqual(["billability"]);
+			expect(again.comparison).toMatchObject({
+				handOff: { hours: "1.50", billability: "billable" },
+				lastResolved: {
+					resolvedAt: expect.any(String),
+					hours: "1.75",
+					billability: "billable",
+					changedFromHandOff: ["end", "hours"],
+				},
+				current: {
+					hours: "1.75",
+					billability: "non_billable",
+					changedFromHandOff: ["end", "hours", "billability"],
+					changedSinceResolution: ["billability"],
+				},
+			});
+		});
+
+		it("compares a manual split and an automatic-break split as one item each, summing all pieces", async () => {
+			const { db } = await import("@/db");
+			const { carryInvoicedWorkToSplit } = await import(
+				"@/lib/billable-time/hand-off/invoiced-work"
+			);
+			await unwrap(confirm());
+			// Manual split of 08:00–09:30 at 09:00: 60 + 30 minutes, nothing else changes.
+			await admin.query(
+				"update work_period set end_time = '2026-09-02T09:00:00Z', duration_minutes = 60 where id = $1",
+				[work.website],
+			);
+			const websitePiece = await addWork({
+				projectId: ids.website,
+				start: "2026-09-02T09:00:00Z",
+				end: "2026-09-02T09:30:00Z",
+				minutes: 30,
+			});
+			// An owed break 08:30–08:45 divides 08:00–09:01: 30 + 16 minutes.
+			await admin.query(
+				"update work_period set end_time = '2026-09-03T08:30:00Z', duration_minutes = 30 where id = $1",
+				[work.app],
+			);
+			const appPiece = await addWork({
+				projectId: ids.app,
+				start: "2026-09-03T08:45:00Z",
+				end: "2026-09-03T09:01:00Z",
+				minutes: 16,
+			});
+			for (const [source, piece] of [
+				[work.website, websitePiece],
+				[work.app, appPiece],
+			] as const) {
+				await carryInvoicedWorkToSplit(db, {
+					organizationId: ids.organization,
+					sourceWorkPeriodId: source,
+					newWorkPeriodId: piece,
+				});
+			}
+
+			const items = await markedItems();
+			expect(items.map((item) => item.workPeriodId).sort()).toEqual(
+				[work.website, work.app].sort(),
+			);
+			expect((await comparisonOf(work.website)).comparison.current).toMatchObject({
+				pieceCount: 2,
+				start: { at: "2026-09-02T08:00:00.000Z" },
+				end: { at: "2026-09-02T09:30:00.000Z" },
+				durationMinutes: 90,
+				changedFromHandOff: [],
+			});
+			const app = await comparisonOf(work.app);
+			expect(app.comparison.current).toMatchObject({
+				pieceCount: 2,
+				end: { at: "2026-09-03T09:01:00.000Z" },
+				durationMinutes: 46,
+				hours: "0.77",
+				changedFromHandOff: ["hours"],
+			});
+
+			// Correcting the piece makes the loaded item stale; resolving it resolves every piece.
+			await admin.query(
+				"update work_period set duration_minutes = 15 where id = $1",
+				[appPiece],
+			);
+			await expect(
+				unwrap(
+					resolveChangedAfterInvoicingAction({
+						items: [{ invoicedWorkId: app.invoicedWorkId, markVersion: app.markVersion }],
+						explanation: "Handled",
+					}),
+				),
+			).resolves.toEqual({ status: "stale", invoicedWorkIds: [app.invoicedWorkId] });
+			const fresh = await comparisonOf(work.app);
+			expect(fresh.comparison.current.durationMinutes).toBe(45);
+			await unwrap(
+				resolveChangedAfterInvoicingAction({
+					items: [{ invoicedWorkId: fresh.invoicedWorkId, markVersion: fresh.markVersion }],
+					explanation: "Handled",
+				}),
+			);
+			const { rows } = await admin.query<{ marked: number }>(
+				`select count(*)::int as marked from invoiced_work
+				 where organization_id = $1 and work_period_id = any($2::uuid[])
+				 and changed_after_invoicing_at is not null`,
+				[ids.organization, [work.app, appPiece]],
+			);
+			expect(rows[0]?.marked).toBe(0);
 		});
 	});
 
