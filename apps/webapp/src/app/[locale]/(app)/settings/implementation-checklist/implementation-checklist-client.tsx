@@ -25,6 +25,7 @@ import {
 } from "./actions";
 import { GoLiveCheckPanel } from "./go-live-check-panel";
 import { GoLiveReadinessCard, type GoLiveReadinessView } from "./go-live-readiness-card";
+import { ManualConfirmationNote, manualConfirmationLapsed } from "./manual-confirmation-note";
 
 type ImplementationChecklistItem = Pick<
 	ResolvedImplementationChecklistItem,
@@ -42,7 +43,7 @@ type ImplementationChecklistItem = Pick<
 	Partial<
 		Pick<
 			ResolvedImplementationChecklistItem,
-			"titleKey" | "descriptionKey" | "helperTextKey" | "actionLabelKey"
+			"titleKey" | "descriptionKey" | "helperTextKey" | "actionLabelKey" | "manualConfirmation"
 		>
 	>;
 
@@ -66,13 +67,12 @@ export function ImplementationChecklistClient({ checklist }: ImplementationCheck
 		: 0;
 	const controlsDisabled = isPending || pendingItemId !== null;
 
-	function toggleManualCompletion(item: ImplementationChecklistItem) {
+	function setManualCompletion(item: ImplementationChecklistItem, complete: boolean) {
 		setPendingItemId(item.id);
 		startTransition(async () => {
-			const result =
-				item.completionSource === "manual"
-					? await markImplementationChecklistItemIncomplete(item.id)
-					: await markImplementationChecklistItemComplete(item.id);
+			const result = complete
+				? await markImplementationChecklistItemComplete(item.id)
+				: await markImplementationChecklistItemIncomplete(item.id);
 
 			if (!result.success) {
 				toast.error(
@@ -150,6 +150,10 @@ export function ImplementationChecklistClient({ checklist }: ImplementationCheck
 			<div className="grid gap-4 lg:grid-cols-2">
 				{checklist.items.map((item) => {
 					const itemPending = pendingItemId === item.id;
+					const confirmationLapsed = manualConfirmationLapsed(item.manualConfirmation);
+					const pendingIcon = itemPending ? (
+						<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
+					) : null;
 					const showsGoLiveDetail =
 						item.goLive !== null &&
 						(item.goLive.outcome === "unavailable" ||
@@ -190,6 +194,9 @@ export function ImplementationChecklistClient({ checklist }: ImplementationCheck
 								{showsGoLiveDetail && item.goLive ? (
 									<GoLiveCheckPanel result={item.goLive} />
 								) : null}
+								{item.manualConfirmation ? (
+									<ManualConfirmationNote confirmation={item.manualConfirmation} />
+								) : null}
 								<div className="flex flex-wrap items-center gap-3">
 									<Button asChild size="sm">
 										<Link href={item.href}>
@@ -198,17 +205,43 @@ export function ImplementationChecklistClient({ checklist }: ImplementationCheck
 												: item.actionLabel}
 										</Link>
 									</Button>
-									{item.canToggleManualCompletion ? (
+									{item.canToggleManualCompletion && confirmationLapsed ? (
+										<>
+											<Button
+												disabled={controlsDisabled}
+												onClick={() => setManualCompletion(item, true)}
+												size="sm"
+												type="button"
+												variant="outline"
+											>
+												{pendingIcon}
+												{t(
+													"settings.implementationChecklist.actions.confirmAgain",
+													"Confirm again",
+												)}
+											</Button>
+											<Button
+												disabled={controlsDisabled}
+												onClick={() => setManualCompletion(item, false)}
+												size="sm"
+												type="button"
+												variant="ghost"
+											>
+												{t(
+													"settings.implementationChecklist.actions.markIncomplete",
+													"Mark incomplete",
+												)}
+											</Button>
+										</>
+									) : item.canToggleManualCompletion ? (
 										<Button
 											disabled={controlsDisabled}
-											onClick={() => toggleManualCompletion(item)}
+											onClick={() => setManualCompletion(item, item.completionSource !== "manual")}
 											size="sm"
 											type="button"
 											variant="outline"
 										>
-											{itemPending ? (
-												<IconLoader2 aria-hidden="true" className="size-4 animate-spin" />
-											) : null}
+											{pendingIcon}
 											{item.completionSource === "manual"
 												? t(
 														"settings.implementationChecklist.actions.markIncomplete",

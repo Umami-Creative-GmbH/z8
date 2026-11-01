@@ -1,3 +1,4 @@
+import { type ManualConfirmation, manualConfirmationCounts } from "./confirmation/freshness";
 import {
 	IMPLEMENTATION_CHECKLIST_ITEMS,
 	type ImplementationChecklistDefinition,
@@ -11,7 +12,13 @@ export type ImplementationChecklistCompletionSource = "automatic" | "manual" | n
 
 export interface ResolveImplementationChecklistItemsInput {
 	detectedCompleteIds: Set<ImplementationChecklistItemId>;
+	/** Items with a stored manual confirmation. */
 	manualCompleteIds: Set<ImplementationChecklistItemId>;
+	/**
+	 * When and how fresh each stored confirmation is. A confirmation without an
+	 * entry counts as before; a stale or unchecked one is kept but doesn't count.
+	 */
+	manualConfirmations?: ReadonlyMap<ImplementationChecklistItemId, ManualConfirmation>;
 	/** Results of the go-live checks; an item with a result takes its status from it. */
 	goLiveResults?: readonly GoLiveCheckResult[];
 }
@@ -24,15 +31,22 @@ export interface ResolvedImplementationChecklistItem extends ImplementationCheck
 	goLive: GoLiveCheckResult | null;
 	/** Verified go-live items, and configured items without a go-live check. */
 	countsTowardProgress: boolean;
+	/** The stored manual confirmation, counting or not; null when there is none. */
+	manualConfirmation: ManualConfirmation | null;
 }
 
 export function resolveImplementationChecklistItems({
 	detectedCompleteIds,
 	manualCompleteIds,
+	manualConfirmations,
 	goLiveResults = [],
 }: ResolveImplementationChecklistItemsInput): ResolvedImplementationChecklistItem[] {
 	return IMPLEMENTATION_CHECKLIST_ITEMS.map((item) => {
-		const manuallyComplete = item.canManualComplete && manualCompleteIds.has(item.id);
+		const confirmed = item.canManualComplete && manualCompleteIds.has(item.id);
+		const manualConfirmation = confirmed ? (manualConfirmations?.get(item.id) ?? null) : null;
+		const manuallyComplete =
+			confirmed &&
+			(manualConfirmation === null || manualConfirmationCounts(manualConfirmation.freshness));
 		const goLive = goLiveResults.find((result) => result.itemId === item.id) ?? null;
 
 		if (goLive) {
@@ -49,6 +63,7 @@ export function resolveImplementationChecklistItems({
 				canToggleManualCompletion: item.canManualComplete,
 				goLive,
 				countsTowardProgress: status === "verified",
+				manualConfirmation,
 			};
 		}
 
@@ -60,6 +75,7 @@ export function resolveImplementationChecklistItems({
 				canToggleManualCompletion: false,
 				goLive: null,
 				countsTowardProgress: true,
+				manualConfirmation: null,
 			};
 		}
 
@@ -71,6 +87,7 @@ export function resolveImplementationChecklistItems({
 				canToggleManualCompletion: true,
 				goLive: null,
 				countsTowardProgress: true,
+				manualConfirmation,
 			};
 		}
 
@@ -81,6 +98,7 @@ export function resolveImplementationChecklistItems({
 			canToggleManualCompletion: item.canManualComplete,
 			goLive: null,
 			countsTowardProgress: false,
+			manualConfirmation,
 		};
 	});
 }

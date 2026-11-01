@@ -150,6 +150,105 @@ describe("implementation checklist status resolver", () => {
 		});
 	});
 
+	it("stops counting a confirmation whose settings changed, and keeps it on the item", () => {
+		const items = resolveImplementationChecklistItems({
+			detectedCompleteIds: new Set(),
+			manualCompleteIds: new Set(["organization-structure", "approval-rules"]),
+			manualConfirmations: new Map([
+				["organization-structure", { confirmedAt: "2026-10-30T09:00:00Z", freshness: "stale" }],
+				["approval-rules", { confirmedAt: "2026-10-30T09:00:00Z", freshness: "current" }],
+			]),
+		});
+
+		expect(items.find((item) => item.id === "organization-structure")).toMatchObject({
+			status: "not-set-up",
+			completionSource: null,
+			canToggleManualCompletion: true,
+			countsTowardProgress: false,
+			manualConfirmation: { confirmedAt: "2026-10-30T09:00:00Z", freshness: "stale" },
+		});
+		expect(items.find((item) => item.id === "approval-rules")).toMatchObject({
+			status: "configured",
+			completionSource: "manual",
+			countsTowardProgress: true,
+			manualConfirmation: { freshness: "current" },
+		});
+		expect(summarizeImplementationChecklist(items).completedCount).toBe(1);
+	});
+
+	it("keeps counting a confirmation made before change tracking", () => {
+		const items = resolveImplementationChecklistItems({
+			detectedCompleteIds: new Set(),
+			manualCompleteIds: new Set(["payroll-readiness"]),
+			manualConfirmations: new Map([
+				[
+					"payroll-readiness",
+					{ confirmedAt: "2026-01-05T08:00:00Z", freshness: "before-change-tracking" },
+				],
+			]),
+		});
+
+		expect(items.find((item) => item.id === "payroll-readiness")).toMatchObject({
+			status: "configured",
+			completionSource: "manual",
+			countsTowardProgress: true,
+			manualConfirmation: { freshness: "before-change-tracking" },
+		});
+	});
+
+	it("fails closed when Z8 couldn't check whether the settings changed", () => {
+		const items = resolveImplementationChecklistItems({
+			detectedCompleteIds: new Set(),
+			manualCompleteIds: new Set(["organization-structure"]),
+			manualConfirmations: new Map([
+				["organization-structure", { confirmedAt: "2026-10-30T09:00:00Z", freshness: "unchecked" }],
+			]),
+		});
+
+		expect(items.find((item) => item.id === "organization-structure")).toMatchObject({
+			status: "not-set-up",
+			countsTowardProgress: false,
+			manualConfirmation: { freshness: "unchecked" },
+		});
+	});
+
+	it("keeps a go-live item's status but drops a stale confirmation as its completion source", () => {
+		const items = resolveImplementationChecklistItems({
+			detectedCompleteIds: new Set(),
+			manualCompleteIds: new Set(["approval-rules"]),
+			manualConfirmations: new Map([
+				["approval-rules", { confirmedAt: "2026-10-30T09:00:00Z", freshness: "stale" }],
+			]),
+			goLiveResults: [workPolicyResult({ checkId: "approver", itemId: "approval-rules" })],
+		});
+
+		expect(items.find((item) => item.id === "approval-rules")).toMatchObject({
+			status: "verified",
+			completionSource: "automatic",
+			manualConfirmation: { freshness: "stale" },
+		});
+	});
+
+	it("declares which configuration each confirmation's fingerprint covers", () => {
+		expect(
+			Object.fromEntries(
+				IMPLEMENTATION_CHECKLIST_ITEMS.filter((item) => item.canManualComplete).map((item) => [
+					item.id,
+					item.confirmationCovers,
+				]),
+			),
+		).toEqual({
+			"organization-structure": "organization-structure",
+			"approval-rules": "approval-rules",
+			"payroll-readiness": "payroll-export",
+		});
+		expect(
+			IMPLEMENTATION_CHECKLIST_ITEMS.filter((item) => !item.canManualComplete).every(
+				(item) => item.confirmationCovers === null,
+			),
+		).toBe(true);
+	});
+
 	it("counts verified go-live items and configured other items toward progress", () => {
 		const items = resolveImplementationChecklistItems({
 			detectedCompleteIds: new Set(["holidays"]),

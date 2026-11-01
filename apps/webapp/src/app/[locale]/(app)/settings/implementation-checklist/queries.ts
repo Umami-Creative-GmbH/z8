@@ -8,7 +8,6 @@ import {
 	holiday,
 	holidayAssignment,
 	holidayPresetAssignment,
-	implementationChecklistManualState,
 	notificationPreference,
 	slackWorkspaceConfig,
 	teamsTenantConfig,
@@ -19,6 +18,7 @@ import { env } from "@/env";
 import { organizationSettingsForDisplay } from "@/lib/auth/organization-display";
 import type { AuthContext } from "@/lib/auth-helpers";
 import { systemClock } from "@/lib/datetime/temporal-core";
+import { loadManualConfirmations } from "@/lib/implementation-checklist/confirmation/load";
 import {
 	IMPLEMENTATION_CHECKLIST_ITEMS,
 	type ImplementationChecklistItemId,
@@ -194,47 +194,22 @@ async function detectCompleteIds(
 	return detectedCompleteIds;
 }
 
-async function loadManualCompleteIds(
-	organizationId: string,
-): Promise<Set<ImplementationChecklistItemId>> {
-	const manualCompleteIds = new Set<ImplementationChecklistItemId>();
-	await Promise.all(
-		IMPLEMENTATION_CHECKLIST_ITEMS.map(async (item) => {
-			if (!item.canManualComplete) {
-				return;
-			}
-
-			const manualState = await db.query.implementationChecklistManualState.findFirst({
-				where: and(
-					eq(implementationChecklistManualState.organizationId, organizationId),
-					eq(implementationChecklistManualState.itemId, item.id),
-					eq(implementationChecklistManualState.status, "complete"),
-				),
-			});
-
-			if (manualState) {
-				manualCompleteIds.add(item.id);
-			}
-		}),
-	);
-
-	return manualCompleteIds;
-}
-
 export async function loadImplementationChecklistForContext({
 	authContext,
 	organizationId,
 }: ImplementationChecklistLoaderContext): Promise<
 	ImplementationChecklistActionResult<ImplementationChecklistViewModel>
 > {
-	const [detectedCompleteIds, manualCompleteIds, goLive] = await Promise.all([
-		detectCompleteIds(organizationId, authContext.user.id),
-		loadManualCompleteIds(organizationId),
-		runGoLive(organizationId),
-	]);
+	const [detectedCompleteIds, { manualCompleteIds, manualConfirmations }, goLive] =
+		await Promise.all([
+			detectCompleteIds(organizationId, authContext.user.id),
+			loadManualConfirmations(db, organizationId),
+			runGoLive(organizationId),
+		]);
 	const items = resolveImplementationChecklistItems({
 		detectedCompleteIds,
 		manualCompleteIds,
+		manualConfirmations,
 		goLiveResults: goLive.run.results,
 	});
 

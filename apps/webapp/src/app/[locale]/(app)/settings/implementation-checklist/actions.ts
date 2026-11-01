@@ -1,16 +1,19 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
-import { DateTime } from "luxon";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { implementationChecklistManualState } from "@/db/schema";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
+import { dateFromInstant, systemClock } from "@/lib/datetime/temporal-core";
+import {
+	confirmImplementationChecklistItem,
+	unconfirmImplementationChecklistItem,
+} from "@/lib/implementation-checklist/confirmation/store";
 import {
 	IMPLEMENTATION_CHECKLIST_ITEMS,
 	type ImplementationChecklistItemId,
 	isImplementationChecklistItemId,
 } from "@/lib/implementation-checklist/definition";
+import { createLogger } from "@/lib/logger";
 
 import {
 	type ImplementationChecklistActionResult,
@@ -25,6 +28,7 @@ export type {
 
 const IMPLEMENTATION_CHECKLIST_PATH = "/settings/implementation-checklist";
 const IMPLEMENTATION_CHECKLIST_MUTATION_ERROR = "Failed to update checklist item.";
+const logger = createLogger("ImplementationChecklist");
 
 type ImplementationChecklistActionFailure = { success: false; error: string };
 type ImplementationChecklistQuerySuccess<T> = { success: true; data: T };
@@ -66,30 +70,15 @@ export async function markImplementationChecklistItemComplete(
 		return validation;
 	}
 
-	const completedAt = DateTime.utc().toJSDate();
-
 	try {
-		await db
-			.insert(implementationChecklistManualState)
-			.values({
-				organizationId,
-				itemId: validation.data,
-				status: "complete",
-				completedAt,
-				completedByUserId: authContext.user.id,
-			})
-			.onConflictDoUpdate({
-				target: [
-					implementationChecklistManualState.organizationId,
-					implementationChecklistManualState.itemId,
-				],
-				set: {
-					status: "complete",
-					completedAt,
-					completedByUserId: authContext.user.id,
-				},
-			});
-	} catch {
+		await confirmImplementationChecklistItem(db, {
+			organizationId,
+			itemId: validation.data,
+			actorUserId: authContext.user.id,
+			confirmedAt: dateFromInstant(systemClock.nowInstant()),
+		});
+	} catch (error) {
+		logger.error({ organizationId, itemId, error }, "Could not confirm checklist item");
 		return { success: false, error: IMPLEMENTATION_CHECKLIST_MUTATION_ERROR };
 	}
 
@@ -101,7 +90,7 @@ export async function markImplementationChecklistItemComplete(
 export async function markImplementationChecklistItemIncomplete(
 	itemId: string,
 ): Promise<ImplementationChecklistActionResult<undefined>> {
-	const { organizationId } = await requireOrgAdminSettingsAccess();
+	const { authContext, organizationId } = await requireOrgAdminSettingsAccess();
 	const validation = validateManualItemId(itemId);
 
 	if (!validation.success) {
@@ -109,15 +98,13 @@ export async function markImplementationChecklistItemIncomplete(
 	}
 
 	try {
-		await db
-			.delete(implementationChecklistManualState)
-			.where(
-				and(
-					eq(implementationChecklistManualState.organizationId, organizationId),
-					eq(implementationChecklistManualState.itemId, validation.data),
-				),
-			);
-	} catch {
+		await unconfirmImplementationChecklistItem(db, {
+			organizationId,
+			itemId: validation.data,
+			actorUserId: authContext.user.id,
+		});
+	} catch (error) {
+		logger.error({ organizationId, itemId, error }, "Could not unconfirm checklist item");
 		return { success: false, error: IMPLEMENTATION_CHECKLIST_MUTATION_ERROR };
 	}
 

@@ -2024,6 +2024,13 @@
       "when": 1809619200000,
       "tag": "0288_absence_employee_overlap",
       "breakpoints": true
+    },
+    {
+      "idx": 289,
+      "version": "7",
+      "when": 1809705600000,
+      "tag": "0289_checklist_confirmation_fingerprint",
+      "breakpoints": true
     }
   ]
 }
