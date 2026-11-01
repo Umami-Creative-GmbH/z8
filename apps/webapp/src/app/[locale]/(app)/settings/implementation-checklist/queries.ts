@@ -24,6 +24,10 @@ import {
 	type ImplementationChecklistItemId,
 } from "@/lib/implementation-checklist/definition";
 import { goLiveFixLinks } from "@/lib/implementation-checklist/go-live/fix-links";
+import {
+	type GoLiveGroupSettings,
+	loadGoLiveGroupSettings,
+} from "@/lib/implementation-checklist/go-live/group-settings";
 import { resolveGoLiveReadiness } from "@/lib/implementation-checklist/go-live/readiness";
 import {
 	type GoLiveRun,
@@ -54,6 +58,8 @@ export interface ImplementationChecklistViewModel {
 		timezone: string;
 		/** How many members the go-live group has; null when it could not be resolved. */
 		memberCount: number | null;
+		/** Chosen teams and exclusions; null when they could not be loaded. */
+		group: GoLiveGroupSettings | null;
 	};
 }
 
@@ -248,6 +254,7 @@ export async function loadImplementationChecklistForContext({
 				checkedAt: goLive.checkedAt,
 				timezone: goLive.timezone,
 				memberCount: goLive.run.memberCount,
+				group: goLive.group,
 			},
 		},
 	};
@@ -258,9 +265,12 @@ export async function loadImplementationChecklistForContext({
  * have already authorized an org admin, so fix links are gated for that tier
  * and the organization's feature flags. A failed lookup is unavailable, never a pass.
  */
-async function runGoLive(
-	organizationId: string,
-): Promise<{ run: GoLiveRun; checkedAt: string; timezone: string }> {
+async function runGoLive(organizationId: string): Promise<{
+	run: GoLiveRun;
+	group: GoLiveGroupSettings | null;
+	checkedAt: string;
+	timezone: string;
+}> {
 	const instant = systemClock.nowInstant();
 	let settings: ReturnType<typeof organizationSettingsForDisplay>;
 	try {
@@ -271,7 +281,12 @@ async function runGoLive(
 		settings = organizationSettingsForDisplay(record);
 	} catch (error) {
 		logger.error({ organizationId, error }, "Go-live checks could not load the organization");
-		return { run: unavailableGoLiveRun(), checkedAt: instant.toString(), timezone: "UTC" };
+		return {
+			run: unavailableGoLiveRun(),
+			group: null,
+			checkedAt: instant.toString(),
+			timezone: "UTC",
+		};
 	}
 
 	const {
@@ -281,15 +296,22 @@ async function runGoLive(
 		...featureFlags
 	} = settings;
 	const { timezone } = resolveOrganizationTimezone(storedTimezone);
-	const run = await runGoLiveChecks({
-		db,
-		organizationId,
-		asOf: goLiveAsOf(instant, timezone),
-		fixLink: goLiveFixLinks({
-			accessTier: "orgAdmin",
-			billingEnabled: env.BILLING_ENABLED === "true",
-			featureFlags,
+	const asOf = goLiveAsOf(instant, timezone);
+	const [run, group] = await Promise.all([
+		runGoLiveChecks({
+			db,
+			organizationId,
+			asOf,
+			fixLink: goLiveFixLinks({
+				accessTier: "orgAdmin",
+				billingEnabled: env.BILLING_ENABLED === "true",
+				featureFlags,
+			}),
 		}),
-	});
-	return { run, checkedAt: instant.toString(), timezone };
+		loadGoLiveGroupSettings(db, organizationId, asOf).catch((error: unknown) => {
+			logger.error({ organizationId, error }, "Go-live group settings could not be loaded");
+			return null;
+		}),
+	]);
+	return { run, group, checkedAt: instant.toString(), timezone };
 }

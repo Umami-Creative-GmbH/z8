@@ -231,6 +231,11 @@ const ROSTER_SURFACES: Surface[] = [
 		functions: ["resolveGoLiveGroup"],
 		note: "the go-live group every go-live check runs over",
 	},
+	{
+		file: "lib/implementation-checklist/go-live/group-settings.ts",
+		functions: ["createGoLiveExclusion", "loadGoLiveGroupSettings"],
+		note: "go-live exclusions are made for, and listed for, current-roster employees only",
+	},
 ];
 
 const HISTORY_VIEWS: Surface[] = [

@@ -72,8 +72,8 @@ export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[]
 		description: "Set schedules, working time rules, and policy assignments for the organization.",
 		descriptionKey: "settings.implementationChecklist.items.workPolicies.description",
 		helperText:
-			"Z8 checks that every employee on the current roster has an effective work policy today.",
-		helperTextKey: "settings.implementationChecklist.items.workPolicies.goLiveHelperText",
+			"Z8 checks that everyone in the go-live group has an effective work policy today. Invited people are checked by the team their invitation names.",
+		helperTextKey: "settings.implementationChecklist.items.workPolicies.goLiveGroupHelperText",
 		actionLabel: "Configure work policies",
 		actionLabelKey: "settings.implementationChecklist.items.workPolicies.actionLabel",
 		href: "/settings/work-policies",
