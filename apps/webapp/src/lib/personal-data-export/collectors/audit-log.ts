@@ -203,6 +203,8 @@ const EMPLOYEE_EXPORT_ACTIONS: ReadonlySet<string> = new Set<string>([
 	AuditAction.KIOSK_BADGE_ISSUED,
 	AuditAction.KIOSK_BADGE_REPLACED,
 	AuditAction.KIOSK_BADGE_REVOKED,
+	AuditAction.KIOSK_FOB_REGISTERED,
+	AuditAction.KIOSK_FOB_ENDED,
 ]);
 
 /** Older writers record a generic verb; allowed per entity type (`entity_type:action`). */
@@ -242,6 +244,11 @@ function isEmployeeVisible(row: AuditRow, visibility: EmployeeVisibility): boole
 	if (CUSTOM_FIELD_VALUE_ACTIONS.has(row.action)) {
 		const fieldId = jsonObject(row.metadata)?.fieldId;
 		return typeof fieldId === "string" && visibility.visibleFieldIds.has(fieldId);
+	}
+	// A former employee's fob ended because a colleague registered that card
+	// (decision O7): the row's actor is the colleague, who is never named for it.
+	if (row.action === AuditAction.KIOSK_FOB_ENDED) {
+		return jsonObject(row.metadata)?.endedAtRegistrationOnKioskId === undefined;
 	}
 	return true;
 }

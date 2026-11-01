@@ -2,7 +2,8 @@
  * #1440 (spec #1437, Organization ADR 0006): a deactivation ends the access the
  * person holds, as a departure does: expense officer, payroll access, personnel
  * file officer and driving licence verifier grants, driving authorizations
- * (also suspended ones), kiosk badges and report share links. The plan lists
+ * (also suspended ones), kiosk badges, kiosk fobs (#1509) and report share
+ * links. The plan lists
  * exactly what the apply changes, every change is audited under the acting
  * admin with the deactivation's reason, and a replay changes nothing.
  */
@@ -14,6 +15,7 @@ import { parseInstant } from "@/lib/datetime/temporal-core";
 import { savePayrollAccessGrant } from "@/lib/payroll-access/grant-store";
 import { seedPersonnelFileOfficerGrant } from "@/lib/personnel-file/testing/officer-grant.test.fixture";
 import { issueKioskBadge } from "@/lib/time-tracking/kiosk/badge-store";
+import { registerKioskFob } from "@/lib/time-tracking/kiosk/fob-store";
 import { saveExpenseOfficerGrant } from "@/lib/travel-expenses/expense-officer-grant-store";
 import {
 	createLifecycleDatabaseFixture,
@@ -195,6 +197,32 @@ async function seedShareLink(
 	return rows[0]?.id ?? "";
 }
 
+/** Registers a fob for the employee at a kiosk of the organization, as at the kiosk. */
+async function registerFob(employee: SeededEmployee, serial: string) {
+	const location = randomUUID();
+	const kiosk = randomUUID();
+	await fixture.pool.query(
+		`insert into location (id, organization_id, name, created_by, updated_at)
+		 values ($1, $2, $4, $3, now())`,
+		[location, fixture.organizationId, fixture.ownerUserId, `Store ${location}`],
+	);
+	await fixture.pool.query(
+		`insert into kiosk (id, organization_id, location_id, name, timezone, updated_at)
+		 values ($1, $2, $3, 'Front door', 'Europe/Berlin', now())`,
+		[kiosk, fixture.organizationId, location],
+	);
+	return registerKioskFob(
+		fixture.db,
+		{
+			organizationId: fixture.organizationId,
+			kioskId: kiosk,
+			employeeId: employee.employeeId,
+			serial,
+		},
+		{ nowInstant: () => parseInstant("2026-09-02T09:00:00Z") },
+	);
+}
+
 async function grantEveryOfficerRole(officer: SeededEmployee) {
 	const expense = await fixture.db.transaction((tx) =>
 		saveExpenseOfficerGrant(tx, {
@@ -254,6 +282,7 @@ function plannedIds(plan: AccessEndsPlan) {
 			.map((authorization) => authorization.authorizationId)
 			.toSorted(),
 		kioskBadgeIds: plan.kioskBadges.map((badge) => badge.badgeId).toSorted(),
+		kioskFobIds: plan.kioskFobs.map((fob) => fob.fobId).toSorted(),
 		shareLinkIds: plan.shareLinks.map((link) => link.linkId).toSorted(),
 	};
 }
@@ -263,7 +292,7 @@ function sortedApplied(applied: Record<string, string[]>) {
 }
 
 describe("access ends at deactivation", () => {
-	it("lists every grant, authorization, badge and share link, ends exactly those and audits each", async () => {
+	it("lists every grant, authorization, badge, fob and share link, ends exactly those and audits each", async () => {
 		const target = await fixture.seedEmployee();
 		const verifier = await fixture.seedEmployee();
 		await enableDrivingControlFor(target, verifier);
@@ -279,6 +308,8 @@ describe("access ends at deactivation", () => {
 			async () => null,
 			{ nowInstant: () => parseInstant("2026-09-02T09:00:00Z") },
 		);
+		const fob = await registerFob(target, "04A1B2C3D4E5F6");
+		const colleaguesFob = await registerFob(verifier, "1A2B3C4D");
 		const live = await seedShareLink(target);
 		await seedShareLink(target, { expiresAt: "2026-09-02T00:00:00Z" });
 		await seedShareLink(target, { expiresAt: "2026-10-01T00:00:00Z", revoked: true });
@@ -312,6 +343,7 @@ describe("access ends at deactivation", () => {
 				.toSorted((a, b) => a.authorizationId.localeCompare(b.authorizationId)),
 		);
 		expect(preview.kioskBadges).toEqual([{ badgeId: badge.badgeId }]);
+		expect(preview.kioskFobs).toEqual([{ fobId: fob.fobId }]);
 		expect(preview.shareLinks).toEqual([{ linkId: live, kind: "project" }]);
 
 		const deactivationId = randomUUID();
@@ -358,6 +390,26 @@ describe("access ends at deactivation", () => {
 			revoked_reason: "revoked",
 			revoked_by_user_id: fixture.ownerUserId,
 		});
+		// The fob, as a badge: the column says removed, the audit names the deactivation.
+		const fobStates = await fixture.pool.query<{
+			id: string;
+			ended_at: Date | null;
+			ended_reason: string | null;
+			ended_by_user_id: string | null;
+		}>(
+			`select id, ended_at, ended_reason, ended_by_user_id from employee_kiosk_fob
+			 where id = any($1::uuid[]) order by array_position($1::uuid[], id)`,
+			[[fob.fobId, colleaguesFob.fobId]],
+		);
+		expect(fobStates.rows).toEqual([
+			{
+				id: fob.fobId,
+				ended_at: new Date(AT.epochMilliseconds),
+				ended_reason: "removed",
+				ended_by_user_id: fixture.ownerUserId,
+			},
+			{ id: colleaguesFob.fobId, ended_at: null, ended_reason: null, ended_by_user_id: null },
+		]);
 		const links = await fixture.pool.query<{
 			id: string;
 			revoke_reason: string | null;
@@ -388,6 +440,7 @@ describe("access ends at deactivation", () => {
 				["driving_licence.verifier_revoked", verifierGrant.rows[0]?.id],
 				["expense_officer.grant_revoked", grants.expense],
 				["kiosk_badge.revoked", badge.badgeId],
+				["kiosk_fob.ended", fob.fobId],
 				["payroll_access.grant_revoked", grants.payroll],
 				["personnel_file.grant_revoked", grants.personnelFile],
 				["report_share_link.auto_revoked", live],
@@ -402,12 +455,13 @@ describe("access ends at deactivation", () => {
 	it("changes nothing on a replay: the plan is empty and nothing more is audited", async () => {
 		const target = await fixture.seedEmployee();
 		await grantEveryOfficerRole(target);
+		await registerFob(target, "04A1B2C3D4E5F7");
 		await seedShareLink(target);
 		const ctx = context(target, target.employmentPeriodId);
 		const deactivationId = randomUUID();
 		await deactivate(ctx, deactivationId);
 		const audited = (await deactivationAudits(deactivationId)).length;
-		expect(audited).toBe(4);
+		expect(audited).toBe(5);
 
 		const replay = await deactivate(ctx, deactivationId);
 
@@ -415,12 +469,14 @@ describe("access ends at deactivation", () => {
 			grants: [],
 			drivingAuthorizations: [],
 			kioskBadges: [],
+			kioskFobs: [],
 			shareLinks: [],
 		});
 		expect(replay.applied).toEqual({
 			grantIds: [],
 			drivingAuthorizationIds: [],
 			kioskBadgeIds: [],
+			kioskFobIds: [],
 			shareLinkIds: [],
 		});
 		expect(await deactivationAudits(deactivationId)).toHaveLength(audited);
@@ -438,6 +494,7 @@ describe("access ends at deactivation", () => {
 			grantIds: [grants.expense, grants.payroll, grants.personnelFile].toSorted(),
 			drivingAuthorizationIds: [],
 			kioskBadgeIds: [],
+			kioskFobIds: [],
 			shareLinkIds: [link],
 		});
 	});
@@ -454,6 +511,7 @@ describe("access ends at deactivation", () => {
 			grants: [],
 			drivingAuthorizations: [],
 			kioskBadges: [],
+			kioskFobs: [],
 			shareLinks: [],
 		});
 		const untouched = await fixture.pool.query<{ revoked_at: Date | null }>(

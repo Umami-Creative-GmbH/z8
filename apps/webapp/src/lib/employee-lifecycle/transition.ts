@@ -22,6 +22,7 @@ import { revokePayrollAccessGrantHeldBy } from "@/lib/payroll-access/grant-store
 import { cancelDocumentRequestsForDeparture } from "@/lib/personnel-file/document-request-store";
 import { revokePersonnelFileOfficerGrantHeldBy } from "@/lib/personnel-file/officer-grant-store";
 import { revokeKioskBadgesForDeparture } from "@/lib/time-tracking/kiosk/badge-store";
+import { endKioskFobLinks } from "@/lib/time-tracking/kiosk/fob-store";
 import { WorkTransactionProtocolViolation } from "@/lib/time-tracking/work-transaction";
 import { revokeExpenseOfficerGrantHeldBy } from "@/lib/travel-expenses/expense-officer-grant-store";
 import { captureApprovalHandoverDuties } from "./approval-handover";
@@ -164,6 +165,20 @@ export async function executeDepartureInTransaction(
 		...identity,
 		actorUserId: departure.createdBy,
 		cutoff,
+	});
+	// The fob stopped selecting the employee at the cutoff (#1509); only the
+	// ending period's links, so a retry never ends one registered after a rehire.
+	await endKioskFobLinks(tx, new AuditTrail(), {
+		organizationId: identity.organizationId,
+		employeeId: identity.employeeId,
+		employmentPeriodId: identity.employmentPeriodId,
+		reason: "departure",
+		at: cutoff,
+		actorUserId: departure.createdBy,
+		auditMetadata: {
+			departureId: identity.departureId,
+			employmentPeriodId: identity.employmentPeriodId,
+		},
 	});
 	await releaseHeldDeputyAssignments(tx, identity, cutoff, departure.createdBy);
 

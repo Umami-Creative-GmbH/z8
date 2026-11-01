@@ -77,6 +77,7 @@ function plan(): DeactivationPlan {
 				{ authorizationId: "auth-c", state: "suspended" },
 			],
 			kioskBadges: [{ badgeId: "badge-1" }],
+			kioskFobs: [{ fobId: "fob-1" }],
 			shareLinks: [{ linkId: "link-1", kind: "project" }],
 		},
 		retentionStarts: true,
@@ -109,6 +110,8 @@ function applied(): DeactivationApplied {
 			grantIds: ["grant-expense", "grant-verifier"],
 			drivingAuthorizationIds: ["auth-b", "auth-c"],
 			kioskBadgeIds: ["badge-1"],
+			// Nothing to grant again: the employee registers a fob themselves at a kiosk.
+			kioskFobIds: ["fob-1"],
 			shareLinkIds: ["link-1"],
 		},
 	};
@@ -224,6 +227,7 @@ describe("reactivation checklist", () => {
 				grantIds: [],
 				drivingAuthorizationIds: [],
 				kioskBadgeIds: [],
+				kioskFobIds: [],
 				shareLinkIds: [],
 			},
 		};

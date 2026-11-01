@@ -15,6 +15,7 @@ import {
 	liveKioskBadgesOfEmploymentPeriod,
 	revokeKioskBadgesOfEmploymentPeriod,
 } from "@/lib/time-tracking/kiosk/badge-store";
+import { endKioskFobLinks, liveKioskFobsOfEmployment } from "@/lib/time-tracking/kiosk/fob-store";
 import { revokeExpenseOfficerGrantHeldBy } from "@/lib/travel-expenses/expense-officer-grant-store";
 import {
 	type AccessEndsApplied,
@@ -31,8 +32,9 @@ import {
  * Access ends at a deactivation as at a departure (#1440 item 5 and 6,
  * Organization ADR 0006): the expense officer, payroll access, personnel file
  * officer and driving licence verifier grants the person holds, their driving
- * authorizations (also suspended ones), their kiosk badges and their report
- * share links. The departure's own revocations are reused; each change is
+ * authorizations (also suspended ones), their kiosk badges, their kiosk fob
+ * (#1509) and their report share links. The departure's own revocations are
+ * reused; each change is
  * audited in the deactivation transaction under the acting admin with
  * `{ reason, deactivationId, employmentPeriodId }`. Grants of others that name
  * the person in their scope stay, as at a departure.
@@ -83,6 +85,7 @@ export async function planAccessEnds(
 		);
 	const driving = await liveDrivingLicenceEmployment(reader, employment);
 	const badgeIds = await liveKioskBadgesOfEmploymentPeriod(reader, employment);
+	const fobIds = await liveKioskFobsOfEmployment(reader, employment);
 	const links = await liveShareLinksOfCreator(reader, {
 		organizationId: ctx.organizationId,
 		creatorEmployeeId: ctx.employeeId,
@@ -101,6 +104,7 @@ export async function planAccessEnds(
 			state: row.state,
 		})),
 		kioskBadges: badgeIds.map((badgeId) => ({ badgeId })),
+		kioskFobs: fobIds.map((fobId) => ({ fobId })),
 		shareLinks: links.map((link) => ({ linkId: link.id, kind: link.kind })),
 	};
 }
@@ -108,8 +112,8 @@ export async function planAccessEnds(
 /**
  * Ends what `plan` lists, inside the deactivation transaction, which already
  * holds the lifecycle organization row. In the departure's order: driving
- * licence (under its organization lock), the held grants, kiosk badges, then
- * share links. Idempotent: a second run finds nothing live.
+ * licence (under its organization lock), the held grants, kiosk badges and
+ * the kiosk fob, then share links. Idempotent: a second run finds nothing live.
  */
 export async function applyAccessEnds(
 	tx: DeactivationWriter,
@@ -187,6 +191,23 @@ export async function applyAccessEnds(
 					auditMetadata,
 				});
 
+	// As a badge (decision O6): the column says `removed`, the audit names the
+	// deactivation. The deactivation holds no employee key; a registration racing
+	// it leaves a link no kiosk selects, which the next registration of that card
+	// ends (decision O7).
+	const kioskFobIds =
+		plan.kioskFobs.length === 0
+			? []
+			: await endKioskFobLinks(tx, ctx.audit, {
+					organizationId: ctx.organizationId,
+					employeeId: ctx.employeeId,
+					employmentPeriodId: ctx.employmentPeriodId ?? undefined,
+					reason: "removed",
+					at: ctx.at,
+					actorUserId: ctx.actorUserId,
+					auditMetadata,
+				});
+
 	const shareLinkIds =
 		plan.shareLinks.length === 0
 			? []
@@ -203,6 +224,7 @@ export async function applyAccessEnds(
 			grantIds,
 			drivingAuthorizationIds: driving.endedAuthorizationIds,
 			kioskBadgeIds,
+			kioskFobIds,
 			shareLinkIds,
 		},
 		afterCommit: [],
