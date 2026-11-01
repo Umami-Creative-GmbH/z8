@@ -5,6 +5,7 @@ import { PasswordChangeForm } from "@/components/settings/auth/password-change-f
 import { SessionManagement } from "@/components/settings/auth/session-management";
 import { SocialAccounts } from "@/components/settings/auth/social-accounts";
 import { TwoFactorSetup } from "@/components/settings/auth/two-factor-setup";
+import { OwnKioskFobCard } from "@/components/settings/kiosk/own-kiosk-fob-card";
 import { OwnKioskPinCard } from "@/components/settings/kiosk/own-kiosk-pin-card";
 import { db } from "@/db";
 import { user } from "@/db/auth-schema";
@@ -87,6 +88,7 @@ export default async function SecuritySettingsPage() {
 					/>
 					<PasskeyManagement />
 					<OwnKioskPinCard />
+					<OwnKioskFobCard />
 					<SocialAccounts enabledProviderIds={enabledSocialProviderIds} />
 					<SessionManagement />
 				</div>

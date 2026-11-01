@@ -25,3 +25,35 @@ export class KioskFobRefusal extends Error {
 		this.name = "KioskFobRefusal";
 	}
 }
+
+/**
+ * Why viewing or removing a fob in settings was refused (#1508): by an owner,
+ * admin or direct manager on the employee page, or by the employee themselves
+ * on their security page. The client translates the code; the English message
+ * is a diagnostic for logs only and never carries the serial number.
+ */
+export type KioskFobManagementErrorCode =
+	| "sign_in_required"
+	| "not_allowed"
+	/** Not an employee of this organization (for oneself: no profile here, or no access). */
+	| "employee_not_found"
+	| "no_fob"
+	/** The fob the person saw was replaced or ended meanwhile; they should reload. */
+	| "fob_changed"
+	/** Anything unexpected: the action failed for a reason the user cannot act on. */
+	| "failed";
+
+export class KioskFobManagementRefusal extends Error {
+	constructor(
+		readonly code: KioskFobManagementErrorCode,
+		message: string,
+	) {
+		super(message);
+		this.name = "KioskFobManagementRefusal";
+	}
+}
+
+/** A fob management server action's result; a failure always carries a stable code. */
+export type KioskFobActionResult<T> =
+	| { success: true; data: T }
+	| { success: false; error: string; code: KioskFobManagementErrorCode };
