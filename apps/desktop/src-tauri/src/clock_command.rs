@@ -447,11 +447,11 @@ async fn execute_online(
     if let ClockCommand::AttributedClose { attribution, .. } = &command {
         use crate::frozen_command::AttributionIntent;
         // No chosen task omits `taskId`, so the task follows the project (#1278).
-        let no_task = AttributionIntent::Preserve;
+        let unchosen = AttributionIntent::Preserve;
         for (key, intent) in [
             ("projectId", &attribution.project),
             ("workCategoryId", &attribution.work_category),
-            ("taskId", attribution.task.as_ref().unwrap_or(&no_task)),
+            ("taskId", attribution.task.as_ref().unwrap_or(&unchosen)),
         ] {
             match intent {
                 AttributionIntent::Preserve => {}

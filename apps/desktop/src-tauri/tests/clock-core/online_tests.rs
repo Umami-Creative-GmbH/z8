@@ -1,7 +1,7 @@
 use crate::{
     clock::WorkLocationType,
     clock_command::{execute_companion, ActionEvidence, ClockCommand, ClockCommandOutcome},
-    frozen_command::ClosingAttribution,
+    frozen_command::{AttributionIntent, ClosingAttribution},
     support::{self, Device, BREAK_KINDS, TOKEN},
     test_http,
 };
@@ -265,9 +265,7 @@ async fn online_close_sends_explicit_attribution_intent() {
 }
 
 /// Posts an online close with this task intent and returns the body sent (#1278).
-async fn online_close_body(
-    task: Option<crate::frozen_command::AttributionIntent>,
-) -> serde_json::Value {
+async fn online_close_body(task: Option<AttributionIntent>) -> serde_json::Value {
     let device = Device::new();
     let (endpoint, requests) = test_http::server(vec![
         Some((
@@ -300,7 +298,7 @@ async fn online_close_body(
 
 #[tokio::test]
 async fn online_close_sends_the_chosen_task() {
-    let body = online_close_body(Some(crate::frozen_command::AttributionIntent::Replace {
+    let body = online_close_body(Some(AttributionIntent::Replace {
         id: "task-1".into(),
     }))
     .await;
@@ -309,17 +307,13 @@ async fn online_close_sends_the_chosen_task() {
 
 #[tokio::test]
 async fn online_close_clears_the_task() {
-    let body = online_close_body(Some(crate::frozen_command::AttributionIntent::Clear)).await;
-    assert_eq!(body["taskId"], serde_json::Value::Null);
-    assert!(body.get("taskId").is_some());
+    let body = online_close_body(Some(AttributionIntent::Clear)).await;
+    assert_eq!(body.get("taskId"), Some(&serde_json::Value::Null));
 }
 
 #[tokio::test]
 async fn online_close_without_a_task_choice_omits_the_task() {
-    for task in [
-        None,
-        Some(crate::frozen_command::AttributionIntent::Preserve),
-    ] {
+    for task in [None, Some(AttributionIntent::Preserve)] {
         let body = online_close_body(task).await;
         assert!(body.get("taskId").is_none());
     }
