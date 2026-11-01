@@ -28,6 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { KioskPinActionResult } from "@/lib/time-tracking/kiosk/pin-errors";
 import { KioskBadgeSection } from "./employee-kiosk-badge-section";
+import { KioskFobSection } from "./employee-kiosk-fob-section";
 import { kioskPinErrorMessage } from "./kiosk-pin-error-message";
 
 type Translate = ReturnType<typeof useTranslate>["t"];
@@ -47,7 +48,8 @@ function lockedUntilLabel(iso: string): string {
  * Kiosk access on the employee detail page (#857): the employee's kiosk PIN
  * for owners, admins and their direct manager (issue, reset, unlock; a
  * generated PIN is shown once), their kiosk badge for the same people (#1364:
- * issue, replace, revoke; the PDF is offered once), and for kiosk-only
+ * issue, replace, revoke; the PDF is offered once), their kiosk fob for the
+ * same people (#1508: see and remove; registered only at a kiosk), and for kiosk-only
  * employees, adding a real email. Renders nothing for anyone else.
  */
 export function EmployeeKioskCard({ employeeId }: { employeeId: string }) {
@@ -106,6 +108,9 @@ export function EmployeeKioskCard({ employeeId }: { employeeId: string }) {
 						onChanged={refresh}
 						t={t}
 					/>
+				)}
+				{state.fob && (
+					<KioskFobSection employeeId={employeeId} fob={state.fob} onChanged={refresh} t={t} />
 				)}
 				{state.canAddEmail && <AddEmailSection employeeId={employeeId} onAdded={refresh} t={t} />}
 			</CardContent>

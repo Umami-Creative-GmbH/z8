@@ -71,6 +71,7 @@ type KioskFormValues = {
 	offlineModeEnabled: boolean;
 	badgeScannerEnabled: boolean;
 	badgeCameraEnabled: boolean;
+	nfcFobReaderEnabled: boolean;
 };
 
 /** The form's starting values: the kiosk being edited, or a new kiosk's defaults. */
@@ -85,13 +86,14 @@ function kioskFormDefaults(props: KioskFormDialogProps): KioskFormValues {
 		offlineModeEnabled: editing?.offlineModeEnabled ?? false,
 		badgeScannerEnabled: editing?.badgeScannerEnabled ?? false,
 		badgeCameraEnabled: editing?.badgeCameraEnabled ?? false,
+		nfcFobReaderEnabled: editing?.nfcFobReaderEnabled ?? false,
 	};
 }
 
 /**
  * Creates a kiosk, or edits one: name, location, zone and (when editing) the
- * who-is-in board, offline mode, attached-scanner badge input (#1366) and
- * camera badge input (#1367), each switch on its own.
+ * who-is-in board, offline mode, attached-scanner badge input (#1366), camera
+ * badge input (#1367) and NFC fob reader (#1505), each switch on its own.
  */
 export function KioskFormDialog(props: KioskFormDialogProps) {
 	// Remount per opening so a reopened dialog starts from fresh defaults.
@@ -135,6 +137,7 @@ function KioskFormDialogContent(props: KioskFormDialogProps) {
 					offlineModeEnabled: value.offlineModeEnabled,
 					badgeScannerEnabled: value.badgeScannerEnabled,
 					badgeCameraEnabled: value.badgeCameraEnabled,
+					nfcFobReaderEnabled: value.nfcFobReaderEnabled,
 				});
 				if (!result.success) {
 					toast.error(
@@ -352,6 +355,31 @@ function KioskFormDialogContent(props: KioskFormDialogProps) {
 											{t(
 												"settings.kiosks.fields.badgeCameraDescription",
 												"Employees tap Scan badge and hold their kiosk badge to this kiosk's camera instead of entering their PIN. The code is read on the device; no image is uploaded or stored. The browser asks once for camera access. Badge clocking needs a connection; name and PIN keep working.",
+											)}
+										</TFormDescription>
+									</div>
+									<TFormControl>
+										<Switch
+											checked={field.state.value}
+											onCheckedChange={(checked) => field.handleChange(checked === true)}
+										/>
+									</TFormControl>
+								</TFormItem>
+							)}
+						</form.Field>
+					) : null}
+					{editing ? (
+						<form.Field name="nfcFobReaderEnabled">
+							{(field) => (
+								<TFormItem className="flex flex-row items-center justify-between gap-4 rounded-md border p-3">
+									<div className="space-y-1">
+										<TFormLabel>
+											{t("settings.kiosks.fields.nfcFobReader", "NFC fob reader")}
+										</TFormLabel>
+										<TFormDescription>
+											{t(
+												"settings.kiosks.fields.nfcFobReaderDescription",
+												"Employees tap their NFC card or fob on a reader attached to this kiosk instead of searching for their name, then enter their kiosk PIN. They register a new fob at the kiosk with their PIN. Fobs need a connection; name and PIN keep working.",
 											)}
 										</TFormDescription>
 									</div>

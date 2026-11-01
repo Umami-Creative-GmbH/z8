@@ -221,6 +221,8 @@ export function buildReactivationChecklistItems(input: {
 			href: employeePage(person),
 		});
 	}
+	// An ended kiosk fob has no item: nobody grants it again, the employee
+	// registers a fob themselves at a kiosk (#1509).
 	if (applied.accessEnds.drivingAuthorizationIds.length > 0) {
 		items.push({
 			group: "access",

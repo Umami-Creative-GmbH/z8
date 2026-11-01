@@ -7,12 +7,19 @@ import type {
 	KioskDeviceInfo,
 	KioskEmployeeListing,
 	KioskEmployeeSnapshot,
+	KioskRefusalCode,
 } from "@/lib/time-tracking/kiosk/protocol";
 import type { AttributionAnswer } from "./kiosk-attribution";
 import { KioskAttributionStep } from "./kiosk-attribution-step";
 import { KioskBadgeCheck } from "./kiosk-badge-check";
 import { KioskCameraScan } from "./kiosk-camera-scan";
 import { KioskConfirmation } from "./kiosk-confirmation";
+import {
+	KioskFobCheck,
+	KioskFobNamePick,
+	KioskFobRegistered,
+	KioskFobUnknown,
+} from "./kiosk-fob-registration";
 import {
 	KioskEmployeePanel,
 	type KioskPanelAction,
@@ -23,6 +30,7 @@ import { KioskPinPad } from "./kiosk-pin-pad";
 import { KIOSK_CONFIRMATION_MS } from "./kiosk-timing";
 import {
 	type KioskFlow,
+	type KioskFobPinStep,
 	type KioskTurnConfirmation,
 	type KioskTurnProof,
 	type OfflineTurn,
@@ -48,6 +56,9 @@ export function KioskTurnScreen({
 	onFlow,
 	onHome,
 	onCameraBadge,
+	token,
+	onKioskRefused,
+	onRegisterFob,
 	onVerifyPin,
 	onChoose,
 	onProceed,
@@ -63,6 +74,11 @@ export function KioskTurnScreen({
 	onHome: () => void;
 	/** A badge the camera step read (#1367). */
 	onCameraBadge: (badge: string) => void;
+	/** The device token, for the fob registration's name list (#1505). */
+	token: string;
+	onKioskRefused: (code: KioskRefusalCode) => void;
+	/** A fob registration's PIN was entered (#1505). */
+	onRegisterFob: (step: KioskFobPinStep, pin: string) => void;
 	onVerifyPin: (employee: KioskEmployeeListing, attempt: number, pin: string) => void;
 	onChoose: (
 		proof: KioskTurnProof,
@@ -86,8 +102,13 @@ export function KioskTurnScreen({
 	onChooseOffline: (turn: OfflineTurn, action: KioskPanelAction) => void;
 	onActOffline: (turn: OfflineTurn, action: KioskPanelAction, vehicle: VehicleAnswer) => void;
 }) {
+	const { t } = useTranslate();
 	const message = useKioskRefusalMessage(kiosk.timezone, locale);
 	const labels = useKioskActionLabels();
+	const fobPinPrompt = t(
+		"timeTracking.kiosk.fob.pinPrompt",
+		"Enter your kiosk PIN to register this fob",
+	);
 
 	if (isOfflineTurnFlow(flow)) {
 		return (
@@ -128,6 +149,52 @@ export function KioskTurnScreen({
 			);
 		case "badge":
 			return <KioskBadgeCheck key="badge" />;
+		case "fob":
+			return <KioskFobCheck key="fob" />;
+		case "fob-unknown":
+			return (
+				<KioskFobUnknown
+					key="fob-unknown"
+					onRegister={() => onFlow({ step: "fob-register", serial: flow.serial })}
+					onBack={onHome}
+				/>
+			);
+		case "fob-register":
+			return (
+				<KioskFobNamePick
+					key="fob-register"
+					token={token}
+					onPick={(employee) =>
+						onFlow({
+							step: "fob-pin",
+							serial: flow.serial,
+							employee,
+							attempt: 0,
+							busy: false,
+							error: null,
+						})
+					}
+					onBack={onHome}
+					onKioskRefused={onKioskRefused}
+				/>
+			);
+		case "fob-pin":
+			return (
+				<KioskPinPad
+					key={`fob-pin-${flow.attempt}`}
+					name={flow.employee.name}
+					prompt={fobPinPrompt}
+					busy={flow.busy}
+					disabled={!online}
+					error={flow.error ? message(flow.error) : null}
+					onSubmit={(pin) => onRegisterFob(flow, pin)}
+					onBack={onHome}
+				/>
+			);
+		case "fob-registered":
+			return (
+				<KioskFobRegistered key="fob-registered" registration={flow.registration} onHome={onHome} />
+			);
 		case "employee":
 			return (
 				<KioskEmployeePanel

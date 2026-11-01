@@ -19,6 +19,15 @@ import {
 	replaceKioskBadge,
 	revokeKioskBadge,
 } from "@/lib/time-tracking/kiosk/badge-store";
+import { runKioskFobAction } from "@/lib/time-tracking/kiosk/fob-action";
+import type { KioskFobActionResult } from "@/lib/time-tracking/kiosk/fob-errors";
+import {
+	type KioskFobViewState,
+	kioskFobViewState,
+	readKioskFobStatus,
+	removeKioskFob,
+} from "@/lib/time-tracking/kiosk/fob-management";
+import type { KioskFobEndReason } from "@/lib/time-tracking/kiosk/fob-store";
 import { kioskOnlyEmailUpgradeDeps } from "@/lib/time-tracking/kiosk/kiosk-only-email-upgrade";
 import {
 	addEmailToKioskOnlyEmployee,
@@ -48,6 +57,25 @@ export type EmployeeKioskState = {
 	canAddEmail: boolean;
 	/** The employee's kiosk badge, for those who may manage it (#1364); never the credential. */
 	badge: EmployeeKioskBadgeState | null;
+	/** The employee's kiosk fob, for the same people (#1508); never the serial number. */
+	fob: EmployeeKioskFobState | null;
+};
+
+/** What may be shown about an employee's kiosk fob (ISO instants and dates). */
+export type EmployeeKioskFobState = {
+	/** The active fob; removal names its id, so a change made meanwhile is refused. */
+	active: KioskFobViewState | null;
+	/** The most recent fob when none is active. */
+	lastEnded: {
+		at: string;
+		reason: KioskFobEndReason;
+		/** Ended by a departure: the employee's last working day (ISO date), never a viewer-zone date. */
+		departureLastWorkingDay: string | null;
+	} | null;
+	/** Whether any kiosk of the organization reads fobs; without it and without a fob the section hides. */
+	fobReaderInUse: boolean;
+	/** The organization's zone, in which the instants above are shown. */
+	timezone: string;
 };
 
 /** Non-secret lifecycle facts about an employee's kiosk badge (ISO instants and dates). */
@@ -110,13 +138,14 @@ export async function getEmployeeKioskStateAction(
 		]);
 		const kioskOnly = isReservedEmail(target.email);
 		if (!canManagePin && !(kioskOnly && isAdmin)) return null;
-		const [status, badge, timezone] = canManagePin
+		const [status, badge, fob, timezone] = canManagePin
 			? await Promise.all([
 					readKioskPinStatus(db, input),
 					readKioskBadgeStatus(db, input),
+					readKioskFobStatus(db, input),
 					loadOrganizationTimezone(db, actor.organizationId),
 				])
-			: [{ hasPin: false, lockedUntil: null }, null, "UTC"];
+			: [{ hasPin: false, lockedUntil: null }, null, null, "UTC"];
 		return {
 			canManagePin,
 			hasPin: status.hasPin,
@@ -134,7 +163,38 @@ export async function getEmployeeKioskStateAction(
 				timezone,
 				canIssue: badge.canIssue,
 			},
+			fob: fob && {
+				active: fob.active && kioskFobViewState(fob.active),
+				lastEnded: fob.lastEnded && {
+					at: instantToCanonicalString(fob.lastEnded.endedAt),
+					reason: fob.lastEnded.reason,
+					departureLastWorkingDay: fob.lastEnded.lastWorkingDay?.toString() ?? null,
+				},
+				fobReaderInUse: fob.fobReaderInUse,
+				timezone,
+			},
 		};
+	});
+}
+
+/**
+ * Removes the employee's kiosk fob the viewer saw (`expectedFobId`, #1508):
+ * kiosks stop recognising it and anyone may register it again. The kiosk PIN
+ * and kiosk badge are unchanged. Refused with `fob_changed` when the employee's
+ * fob changed meanwhile.
+ */
+export async function removeEmployeeKioskFobAction(
+	employeeId: string,
+	expectedFobId: string,
+): Promise<KioskFobActionResult<{ removed: true }>> {
+	return runKioskFobAction("kiosk.removeFob", async (db, actor) => {
+		await removeKioskFob(db, {
+			organizationId: actor.organizationId,
+			actorUserId: actor.userId,
+			employeeId: employeeIdOf(employeeId),
+			expectedFobId,
+		});
+		return { removed: true as const };
 	});
 }
 

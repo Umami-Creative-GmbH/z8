@@ -235,6 +235,9 @@ function KioskTable({
 									{kiosk.badgeCameraEnabled
 										? ` · ${t("settings.kiosks.badgeCameraOn", "Badge camera on")}`
 										: ""}
+									{kiosk.nfcFobReaderEnabled
+										? ` · ${t("settings.kiosks.nfcFobReaderOn", "NFC fob reader on")}`
+										: ""}
 								</div>
 							</TableCell>
 							<TableCell>{kiosk.locationName}</TableCell>

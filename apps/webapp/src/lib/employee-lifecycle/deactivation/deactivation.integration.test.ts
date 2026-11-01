@@ -792,6 +792,7 @@ describe("deactivation acceptance (#1440)", () => {
 					.map((d) => d.authorizationId)
 					.toSorted(),
 				kioskBadgeIds: plan.accessEnds.kioskBadges.map((b) => b.badgeId).toSorted(),
+				kioskFobIds: plan.accessEnds.kioskFobs.map((f) => f.fobId).toSorted(),
 				shareLinkIds: plan.accessEnds.shareLinks.map((l) => l.linkId).toSorted(),
 			},
 		};
@@ -819,6 +820,7 @@ describe("deactivation acceptance (#1440)", () => {
 				grantIds: applied.accessEnds.grantIds.toSorted(),
 				drivingAuthorizationIds: applied.accessEnds.drivingAuthorizationIds.toSorted(),
 				kioskBadgeIds: applied.accessEnds.kioskBadgeIds.toSorted(),
+				kioskFobIds: applied.accessEnds.kioskFobIds.toSorted(),
 				shareLinkIds: applied.accessEnds.shareLinkIds.toSorted(),
 			},
 		};

@@ -175,6 +175,7 @@ const NOTIFICATION_CATEGORIES = [
 			"password_changed",
 			"two_factor_enabled",
 			"two_factor_disabled",
+			"kiosk_fob_registered",
 			"personal_data_export_ready",
 			"personal_data_export_admin_exported",
 		] as NotificationType[],
@@ -243,6 +244,7 @@ type StaticallyLabelledType =
 	| "driving_licence_reminder"
 	| "driving_authorization_suspended"
 	| "kiosk_command_refused"
+	| "kiosk_fob_registered"
 	| "personnel_file_document_requested"
 	| "personnel_file_document_request_reminder"
 	| "personnel_file_document_request_decided"
@@ -489,6 +491,12 @@ function useNotificationSettingsViewModel() {
 				return t(
 					"common:notifications.preferences.types.kiosk_command_refused",
 					"Kiosk clocking not recorded",
+				);
+			// A kiosk fob registered to you, or to a kiosk-only employee you manage (#1507).
+			case "kiosk_fob_registered":
+				return t(
+					"common:notifications.preferences.types.kiosk_fob_registered",
+					"Kiosk fob registered",
 				);
 			case "personnel_file_document_requested":
 				return t(

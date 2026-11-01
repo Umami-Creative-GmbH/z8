@@ -259,6 +259,46 @@ export type KioskDeviceInfo = {
 	 * contact; absent reads as off.
 	 */
 	badgeCameraEnabled?: boolean;
+	/**
+	 * Whether the kiosk accepts kiosk fobs from an attached keyboard-style NFC
+	 * reader on its home screen (#1505, spec #1358), off by default and
+	 * independent of both badge inputs. Read at every contact; absent reads as
+	 * off. Fobs always need a connection.
+	 */
+	nfcFobReaderEnabled?: boolean;
+};
+
+/**
+ * Kiosk fobs (#1505, spec #1358, ADR 0014). A fob's chip serial number
+ * (`fob-serial.ts`) selects an employee; their kiosk PIN still proves. Both
+ * calls send the token header and need the kiosk's `nfcFobReaderEnabled`
+ * (else 403 `fob_reader_disabled`). A serial number that is no 4, 7 or 10-byte
+ * hex number is 400 `invalid_serial`. Online only: nothing is queued.
+ *
+ * - `POST /api/kiosk/fob` with `{ serial }` answers `KioskFobLookup`, limited
+ *   per kiosk (429 `rate_limited`). It records nothing.
+ * - `POST /api/kiosk/fob/registration` with `{ serial, employeeId, pin }`
+ *   links the fob to the employee after their kiosk PIN, which counts toward
+ *   the per-kiosk PIN limit and the employee's lockout exactly like clocking
+ *   (403 `wrong_pin`/`no_pin`, 423 `pin_locked`, 429 `rate_limited`). Refusals:
+ *   403 `employee_not_eligible` (not active and assigned to the kiosk's
+ *   location), 409 `fob_linked_to_other_employee` (names nobody). Answers
+ *   `KioskFobRegistrationResult`.
+ */
+export type KioskFobLookup =
+	/** An active fob of an employee eligible at this kiosk (the kiosk's name list). */
+	| { outcome: "employee"; employee: KioskEmployeeListing }
+	/** Everything else, alike: unknown, ended, another organization's or location's, inactive or departed. */
+	| { outcome: "not_recognised" };
+
+export type KioskFobRegistrationResult = {
+	/** `already_registered`: the fob was already this employee's; nothing changed. */
+	outcome: "registered" | "already_registered";
+	employee: KioskEmployeeListing;
+	/** The last four characters of the serial number, the only part ever shown. */
+	lastFour: string;
+	/** Whether the registration ended the employee's earlier fob. */
+	replaced: boolean;
 };
 
 /**

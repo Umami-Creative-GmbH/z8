@@ -16,8 +16,8 @@ export const KIOSK_PIN_REFUSALS: ReadonlySet<string> = new Set([
 
 /**
  * What the home screen says about a badge (#1366): why a scan opened no turn,
- * why a badge turn ended without its action, or (#1367) why the camera could
- * not scan. Never names anyone, and always
+ * why a badge turn ended without its action, (#1367) why the camera could not
+ * scan, or (#1505) why a fob opened or registered nothing. Never names anyone, and always
  * points to the name-and-PIN way where it can help.
  */
 export function useKioskHomeNoticeMessage(offlineMode: boolean) {
@@ -85,6 +85,43 @@ export function useKioskHomeNoticeMessage(offlineMode: boolean) {
 				return t(
 					"timeTracking.kiosk.camera.failed",
 					"The camera could not be started. Try again, or tap your name to use your PIN.",
+				);
+			// Only an offline-mode kiosk clocks by name and PIN without a connection (#1506).
+			case "fob_offline":
+				return offlineMode
+					? t(
+							"timeTracking.kiosk.fob.offline",
+							"Fobs need a connection. Nothing was recorded. Tap your name to use your PIN.",
+						)
+					: t(
+							"timeTracking.kiosk.fob.offlineOnly",
+							"Fobs need a connection. Nothing was recorded.",
+						);
+			case "fob_failed":
+				return t(
+					"timeTracking.kiosk.fob.failed",
+					"The fob could not be checked. Tap it again, or tap your name to use your PIN.",
+				);
+			case "fob_reader_disabled":
+				return t(
+					"timeTracking.kiosk.fob.readerDisabled",
+					"The fob reader is switched off at this kiosk. Tap your name to use your PIN.",
+				);
+			case "fob_rate_limited":
+				return t(
+					"timeTracking.kiosk.fob.rateLimited",
+					"Too many fob taps at this kiosk. Try again in {seconds, plural, one {# second} other {# seconds}}, or tap your name to use your PIN.",
+					{ seconds: Math.max(1, Math.ceil(notice.retryAfter)) },
+				);
+			case "fob_linked_to_other_employee":
+				return t(
+					"timeTracking.kiosk.fob.linkedToOther",
+					"This fob is already registered to someone else. Nothing was changed. Ask your manager.",
+				);
+			case "fob_not_eligible":
+				return t(
+					"timeTracking.kiosk.fob.notEligible",
+					"You cannot register a fob at this kiosk. Nothing was changed. Ask your manager.",
 				);
 		}
 	};
