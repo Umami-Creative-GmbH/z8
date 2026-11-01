@@ -59,6 +59,10 @@ _Avoid_: Active session, running timer
 A work period that has ended and now counts in the employee's work record.
 _Avoid_: Finished entries, closed session
 
+**Manual entry**:
+Completed work recorded after the fact by the employee or on their behalf, instead of by clocking. It may not overlap other work. While the employee has live work, a manual entry must end by the live work's start, because live work occupies all time from its start onward.
+_Avoid_: Manual time entry, added time, retroactive entry
+
 **Work attribution**:
 What a work period is recorded against: its project, work category, work location, vehicle use and whether it is billable. Changing it is an amendment of completed work, under the same change policy for every part.
 _Avoid_: Work metadata, tags

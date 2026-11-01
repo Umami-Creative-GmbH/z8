@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => ({
 	getAvailableCategoriesForEmployee: vi.fn(),
 	getAssignedProjectsWithHours: vi.fn(),
 	readAppendAdmission: vi.fn(),
+	/** Rows of the target's live work (#1492). */
+	liveWork: vi.fn(),
 }));
 
 // Vehicle use (#1120) is off unless a test says otherwise.
@@ -24,6 +26,9 @@ vi.mock("@/db", () => ({
 			organization: { findFirst: mocks.findOrganization },
 			user: { findFirst: mocks.findUser },
 		},
+		select: () => ({
+			from: () => ({ where: () => ({ orderBy: () => ({ limit: mocks.liveWork }) }) }),
+		}),
 	},
 }));
 vi.mock("@/lib/auth-helpers", () => ({
@@ -96,6 +101,7 @@ describe("getManualEntryTargetContextForEmployee", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mocks.readAppendAdmission.mockResolvedValue("legacy");
+		mocks.liveWork.mockResolvedValue([]);
 		mocks.findUserSettings.mockResolvedValue({ timezone: "Europe/Berlin" });
 		mocks.findOrganization.mockResolvedValue({ timezone: "America/New_York" });
 		mocks.findUser.mockResolvedValue({
@@ -205,8 +211,19 @@ describe("getManualEntryTargetContextForEmployee", () => {
 					{ id: "category-1", name: "Night", factor: "1.25", color: null },
 				],
 				vehicleUse: { mode: "off", vehicles: [] },
+				liveWorkStartedAt: null,
 			},
 		});
+	});
+
+	it("names the start of the target's live work, which a manual entry must end by (#1492)", async () => {
+		mocks.liveWork.mockResolvedValue([{ startTime: new Date("2026-11-01T07:00:00.000Z") }]);
+
+		const result = await getManualEntryTargetContextForEmployee({
+			currentEmployee: employeeRecord({ role: "employee" }),
+		});
+
+		expect(result.success && result.data.liveWorkStartedAt).toBe("2026-11-01T07:00:00.000Z");
 	});
 
 	it("advertises version-2 commands once the organization has adopted them", async () => {
