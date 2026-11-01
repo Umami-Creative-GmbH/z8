@@ -14,6 +14,7 @@ import {
 	type InvoiceDraftPanelActions,
 } from "@/components/billable-time/hand-off/invoice-draft-panel";
 import { MarkedWork } from "@/components/billable-time/hand-off/marked-work";
+import { ReconciliationCsvButton } from "@/components/billable-time/hand-off/reconciliation-csv-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,6 +33,8 @@ import { queryKeys } from "@/lib/query/keys";
 import {
 	checkInvoiceDraftStatusAction,
 	confirmHandOffAction,
+	downloadChangedWorkCsvAction,
+	downloadDraftReconciliationCsvAction,
 	getHandOffOverview,
 	getInvoiceDraftAction,
 	type HandOffOverview,
@@ -60,6 +63,7 @@ const panelActions: InvoiceDraftPanelActions = {
 	retry: (draftId) => retryHandOffAction({ draftId }),
 	release: (draftId, reason) => releaseInvoiceDraftAction({ draftId, reason }),
 	resolveMarks: resolveChangedAfterInvoicingAction,
+	downloadReconciliationCsv: (draftId) => downloadDraftReconciliationCsvAction({ draftId }),
 };
 
 /** Billable Time → Hand-off (#903): new hand-offs, past hand-offs and marked work. */
@@ -129,6 +133,9 @@ export function HandOffView() {
 							onResolved={refresh}
 							grouped
 						/>
+						<div className="mt-4 flex justify-end">
+							<ReconciliationCsvButton download={downloadChangedWorkCsvAction} />
+						</div>
 					</CardContent>
 				</Card>
 			)}

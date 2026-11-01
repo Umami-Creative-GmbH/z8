@@ -8,6 +8,7 @@ import {
 	type TravelExpenseReportSubmittedItem,
 } from "@/lib/approvals/evidence/travel-expense-report-facts";
 import { PER_DIEM_FACTS_SCHEMA_VERSION } from "@/lib/approvals/evidence/travel-expense-report-per-diem";
+import { csvFile, csvText, isCsvDecimal } from "@/lib/export/csv-cells";
 import type { ItemConversion } from "./currency-conversion";
 import {
 	ADJUSTMENT_EXPENSE_COLUMNS,
@@ -91,24 +92,12 @@ export class TravelExpenseExportContentError extends Error {
 	}
 }
 
-/**
- * Leading characters spreadsheets treat as a formula (also after leading
- * whitespace), a leading tab or carriage return, and their full-width forms.
- */
-const FORMULA_PREFIX = /^(?:[\t\r]|[\s]*[=+\-@＝＋－＠])/;
-const SIGNED_DECIMAL = /^-?\d{1,12}\.\d{2}$/;
-const BOM = "﻿";
-
-/** A quoted text cell; formula-like text is prefixed with an apostrophe. */
-export function csvText(value: string | number | null | undefined): string {
-	const raw = value == null ? "" : String(value);
-	const safe = FORMULA_PREFIX.test(raw) ? `'${raw}` : raw;
-	return `"${safe.replaceAll('"', '""')}"`;
-}
+// The formula-safe cells are shared (`@/lib/export/csv-cells`).
+export { csvText };
 
 /** An unquoted money cell: a signed decimal at the stored scale, nothing else. */
 export function csvDecimal(value: string): string {
-	if (!SIGNED_DECIMAL.test(value)) {
+	if (!isCsvDecimal(value)) {
 		throw new TravelExpenseExportContentError(
 			"invalid_amount",
 			`Not a stored amount: ${value}`,
@@ -144,17 +133,6 @@ function csvInteger(value: number): string {
 		);
 	}
 	return String(value);
-}
-
-function csvFile(
-	header: readonly string[],
-	rows: readonly (readonly string[])[],
-): string {
-	const lines = [
-		header.map(csvText).join(","),
-		...rows.map((row) => row.join(",")),
-	];
-	return `${BOM}${lines.join("\r\n")}\r\n`;
 }
 
 /**

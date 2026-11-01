@@ -27,6 +27,7 @@ const acmeMarch: MarkedWorkDraftView = {
 	currency: "EUR",
 	period: { from: "2026-03-01", to: "2026-03-31" },
 	title: "Acme March",
+	externalId: null,
 	createdAt: "2026-04-01T09:00:00.000Z",
 };
 const acmeApril: MarkedWorkDraftView = {

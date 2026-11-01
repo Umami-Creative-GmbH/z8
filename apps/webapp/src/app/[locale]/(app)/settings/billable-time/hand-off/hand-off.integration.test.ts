@@ -98,6 +98,8 @@ vi.mock("@/lib/billable-time/accounting/registry", async (importOriginal) => ({
 const {
 	checkInvoiceDraftStatusAction,
 	confirmHandOffAction,
+	downloadChangedWorkCsvAction,
+	downloadDraftReconciliationCsvAction,
 	getHandOffOverview,
 	getInvoiceDraftAction,
 	previewHandOffAction,
@@ -2008,6 +2010,203 @@ describe("hand-off on PostgreSQL", () => {
 				detail.marked.find((item) => item.workPeriodId === work.website)?.comparison
 					.amountDifference,
 			).toEqual(difference);
+		});
+	});
+
+	describe("reconciliation CSV downloads (#1504)", () => {
+		/** The CSV's rows as column → cell maps (quotes and the BOM removed). */
+		function csvRows(content: string): Record<string, string>[] {
+			const records: string[][] = [];
+			let record: string[] = [];
+			let cell = "";
+			let quoted = false;
+			const text = content.replace(/^﻿/, "");
+			for (let index = 0; index < text.length; index++) {
+				const char = text[index];
+				if (quoted) {
+					if (char === '"' && text[index + 1] === '"') {
+						cell += '"';
+						index++;
+					} else if (char === '"') quoted = false;
+					else cell += char;
+				} else if (char === '"') quoted = true;
+				else if (char === ",") {
+					record.push(cell);
+					cell = "";
+				} else if (char === "\r" && text[index + 1] === "\n") {
+					record.push(cell);
+					records.push(record);
+					record = [];
+					cell = "";
+					index++;
+				} else cell += char;
+			}
+			const [header, ...rows] = records;
+			return rows.map((row) => Object.fromEntries(header.map((column, i) => [column, row[i]])));
+		}
+
+		/** Lines, totals, frozen invoiced work and marks: a download changes none of them. */
+		async function frozen() {
+			const { rows } = await admin.query(
+				`select d.net_total, d.status,
+				 (select json_agg(l order by l.position) from invoice_draft_line l where l.invoice_draft_id = d.id) as lines,
+				 (select json_agg(w order by w.id) from invoiced_work w where w.invoice_draft_id = d.id) as work
+				 from invoice_draft d where d.organization_id = $1 order by d.id`,
+				[ids.organization],
+			);
+			return rows;
+		}
+
+		async function resolveOpen(workPeriodId: string, explanation: string, reference?: string) {
+			const found = (await unwrap(getHandOffOverview())).changedAfterInvoicing.find(
+				(item) => item.workPeriodId === workPeriodId,
+			);
+			if (!found) throw new Error(`No marked item for ${workPeriodId}`);
+			await unwrap(
+				resolveChangedAfterInvoicingAction({
+					items: [{ invoicedWorkId: found.invoicedWorkId, markVersion: found.markVersion }],
+					explanation,
+					accountingReference: reference,
+				}),
+			);
+		}
+
+		/** Website resolved twice (times), App removed and open, an unchanged third period. */
+		async function reconciledDraft() {
+			const unchanged = await addWork({
+				projectId: ids.website,
+				start: "2026-09-08T08:00:00Z",
+				end: "2026-09-08T09:00:00Z",
+				minutes: 60,
+			});
+			const { draftId } = await unwrap(confirm());
+			await admin.query(
+				"update work_period set end_time = end_time + interval '15 minutes', duration_minutes = 105 where id = $1",
+				[work.website],
+			);
+			await resolveOpen(work.website, "Checked with the customer");
+			await admin.query(
+				"update work_period set end_time = end_time + interval '15 minutes', duration_minutes = 120 where id = $1",
+				[work.website],
+			);
+			await resolveOpen(work.website, "=cmd|' /C calc'!A0", "@GS-7");
+			await admin.query(
+				"update work_period set deleted_at = now(), deleted_by = $2 where id = $1",
+				[work.app, ids.ownerUser],
+			);
+			return { draftId, unchanged };
+		}
+
+		it("downloads a draft's changed items with their values, differences and resolutions", async () => {
+			const { draftId, unchanged } = await reconciledDraft();
+			const before = await frozen();
+			// Owners and admins can reconcile with the module off.
+			await admin.query(
+				"update organization set billable_time_enabled = false where id = $1",
+				[ids.organization],
+			);
+
+			const file = await unwrap(downloadDraftReconciliationCsvAction({ draftId }));
+			expect(file.fileName).toBe("reconciliation-2026-09-01_2026-09-30.csv");
+			const rows = csvRows(file.content);
+			const [{ external_id }] = await drafts();
+			expect(rows.map((row) => row.day)).toEqual(["2026-09-02", "2026-09-03"]);
+			expect(JSON.stringify(rows)).not.toContain(unchanged);
+			expect(rows[0]).toMatchObject({
+				invoice_draft_id: draftId,
+				draft_accounting_reference: external_id,
+				customer: "Acme",
+				employee: ids.memberUser,
+				mark_status: "resolved",
+				changed_fields: "",
+				hand_off_start: "2026-09-02T08:00:00+00:00",
+				hand_off_end: "2026-09-02T09:30:00+00:00",
+				hand_off_hours: "1.50",
+				last_resolved_end: "2026-09-02T10:00:00+00:00",
+				current_hours: "2.00",
+				amount_difference_kind: "known",
+				amount_difference: "50.00",
+				amount_difference_since_resolution: "0.00",
+				currency: "EUR",
+				resolution_count: "2",
+				resolution_1_explanation: "Checked with the customer",
+				resolution_1_actor: ids.adminUser,
+				resolution_2_explanation: "'=cmd|' /C calc'!A0",
+				resolution_2_accounting_reference: "'@GS-7",
+			});
+			expect(rows[1]).toMatchObject({
+				mark_status: "open",
+				changed_fields: "removed",
+				current_removed: "true",
+				current_hours: "",
+				amount_difference_kind: "known",
+				amount_difference_reason: "removed",
+				amount_difference: "-87.21",
+				resolution_count: "0",
+			});
+			expect(await frozen()).toEqual(before);
+		});
+
+		it("downloads every currently marked item across drafts, also with the module off", async () => {
+			const { draftId } = await reconciledDraft();
+			const october = await unwrap(
+				confirm({ periodFrom: "2026-10-01", periodTo: "2026-10-31" }),
+			);
+			await admin.query("update work_period set is_billable = false where id = $1", [
+				work.october,
+			]);
+			await admin.query(
+				"update organization set billable_time_enabled = false where id = $1",
+				[ids.organization],
+			);
+
+			const file = await unwrap(downloadChangedWorkCsvAction());
+			expect(file.fileName).toBe("changed-after-invoicing.csv");
+			expect(
+				csvRows(file.content).map((row) => [
+					row.invoice_draft_id,
+					row.day,
+					row.amount_difference_reason,
+				]),
+			).toEqual([
+				[draftId, "2026-09-03", "removed"],
+				[october.draftId, "2026-10-01", "non_billable"],
+			]);
+		});
+
+		it("still downloads a released draft's reconciliation", async () => {
+			const { draftId } = await reconciledDraft();
+			await unwrap(releaseInvoiceDraftAction({ draftId }));
+
+			const rows = csvRows(
+				(await unwrap(downloadDraftReconciliationCsvAction({ draftId }))).content,
+			);
+			expect(rows[0]).toMatchObject({ day: "2026-09-02", resolution_count: "2" });
+		});
+
+		it("lets only owners and admins download, each only their organization's work", async () => {
+			const { draftId } = await reconciledDraft();
+
+			actAs(ids.memberUser);
+			for (const result of [
+				downloadDraftReconciliationCsvAction({ draftId }),
+				downloadChangedWorkCsvAction(),
+			]) {
+				await expect(result).resolves.toMatchObject({
+					success: false,
+					code: "AuthorizationError",
+				});
+			}
+
+			actAs(ids.otherUser, ids.otherOrganization);
+			await expect(downloadDraftReconciliationCsvAction({ draftId })).resolves.toMatchObject({
+				success: false,
+				code: "NotFoundError",
+			});
+			await expect(
+				downloadDraftReconciliationCsvAction({ draftId: "not-a-draft" }),
+			).resolves.toMatchObject({ success: false, code: "NotFoundError" });
+			expect(csvRows((await unwrap(downloadChangedWorkCsvAction())).content)).toEqual([]);
 		});
 	});
 

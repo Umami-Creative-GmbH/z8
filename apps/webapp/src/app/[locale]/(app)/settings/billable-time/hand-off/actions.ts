@@ -3,6 +3,7 @@
 import { Effect } from "effect";
 import { defaultAccountingDependencies } from "@/lib/billable-time/accounting/connection-store";
 import type { InvoiceDraftCapabilityProblem } from "@/lib/billable-time/accounting/invoice-draft";
+import { groupChangedWork } from "@/lib/billable-time/hand-off/changed-work-groups";
 import {
 	checkInvoiceDraftStatus,
 	confirmHandOff,
@@ -16,6 +17,7 @@ import {
 	releaseInvoiceDraft,
 	retryHandOff,
 } from "@/lib/billable-time/hand-off/hand-off-store";
+import { reconciliationCsv } from "@/lib/billable-time/hand-off/reconciliation-csv";
 import {
 	parseResolutionInput,
 	type ResolutionFieldError,
@@ -24,6 +26,7 @@ import {
 import {
 	listMarkedItems,
 	readDraftReconciliation,
+	readDraftReconciliationItems,
 	resolveChangedAfterInvoicing,
 } from "@/lib/billable-time/hand-off/resolution-store";
 import type {
@@ -399,6 +402,58 @@ export async function releaseInvoiceDraftAction(input: {
 			);
 		}
 		return { workReturned: outcome.workReturned };
+	});
+	return runServerActionSafe(effect);
+}
+
+export interface ReconciliationCsvFile {
+	fileName: string;
+	content: string;
+}
+
+/**
+ * A draft's reconciliation CSV (#1504): its items marked or resolved, released
+ * drafts included. Works while the module is off.
+ */
+export async function downloadDraftReconciliationCsvAction(input: {
+	draftId: string;
+}): Promise<ServerActionResult<ReconciliationCsvFile>> {
+	const effect = Effect.gen(function* () {
+		const { organizationId } = yield* actor("downloadDraftReconciliationCsv");
+		const dbService = yield* DatabaseService;
+		const reconciliation = yield* dbService.query("billableTime.handOff.reconciliationCsv", () =>
+			readDraftReconciliationItems(dbService.db, {
+				organizationId,
+				draftId: String(input.draftId),
+			}),
+		);
+		if (!reconciliation) return yield* Effect.fail(draftNotFound());
+		const { period, items } = reconciliation;
+		return {
+			fileName: `reconciliation-${period.from}_${period.to}.csv`,
+			content: reconciliationCsv(items),
+		};
+	});
+	return runServerActionSafe(effect);
+}
+
+/**
+ * Every item currently marked as changed after invoicing as a reconciliation
+ * CSV (#1504), in the changed-work list's order. Works while the module is off.
+ */
+export async function downloadChangedWorkCsvAction(): Promise<
+	ServerActionResult<ReconciliationCsvFile>
+> {
+	const effect = Effect.gen(function* () {
+		const { organizationId } = yield* actor("downloadChangedWorkCsv");
+		const dbService = yield* DatabaseService;
+		const marked = yield* dbService.query("billableTime.handOff.changedWorkCsv", () =>
+			listMarkedItems(dbService.db, organizationId),
+		);
+		const ordered = groupChangedWork(marked).flatMap((customer) =>
+			customer.drafts.flatMap((draft) => draft.items),
+		);
+		return { fileName: "changed-after-invoicing.csv", content: reconciliationCsv(ordered) };
 	});
 	return runServerActionSafe(effect);
 }
