@@ -70,8 +70,16 @@ Billable work a hand-off leaves out because a correction or submission for it is
 _Avoid_: Blocked work, skipped work
 
 **Changed after invoicing**:
-The mark on invoiced work whose times, project or billability were corrected after its hand-off. Corrections are never blocked by invoicing; the mark stays until an admin clears it.
+The mark on invoiced work whose times, project or billability were corrected after its hand-off, or whose project moved to another customer. Corrections are never blocked by invoicing; the mark stays until an admin resolves it.
 _Avoid_: Dirty, out of sync, invoice conflict
+
+**Resolution**:
+An admin's record that they handled a changed-after-invoicing mark: who, when, why, optionally the accounting tool's reference (such as a credit note number), and the corrected work they reviewed. It removes the mark. A later correction marks the work again, and its comparison still starts from the hand-off. Several marked items can be resolved together with one explanation, but each item gets its own resolution.
+_Avoid_: Clear, dismiss, acknowledge
+
+**Amount difference**:
+What a correction changes in the amount invoiced work was handed off with, priced only at the rate frozen at hand-off. It is reconciliation information for the accountant, not a credit note. Work that was removed, became non-billable or moved to another customer reverses its whole handed-off amount. When the frozen rate can't price the corrected work (it was split across several rates, or moved to another project of the same customer), the difference is unknown and the reason is given; it is never shown as zero or repriced at today's rates.
+_Avoid_: Credit amount, delta, invoice correction
 
 **Release**:
 Withdrawing an invoice draft in Z8, typically because it was deleted in the accounting tool, so that its work is un-invoiced again.
