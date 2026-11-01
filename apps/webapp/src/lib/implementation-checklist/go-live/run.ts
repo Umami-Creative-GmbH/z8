@@ -17,6 +17,8 @@ export interface GoLiveRun {
 	results: GoLiveCheckResult[];
 	/** How many members the group has; null when it could not be resolved. */
 	memberCount: number | null;
+	/** The go-live group the checks ran over, for first-workflow evidence; null when unresolved. */
+	group: GoLiveGroup | null;
 }
 
 /**
@@ -64,12 +66,12 @@ export async function runGoLiveChecks(input: {
 			}
 		}),
 	);
-	return { results, memberCount: group.members.length };
+	return { results, memberCount: group.members.length, group };
 }
 
 /** Every check unavailable, for when the checks could not even start. */
 export function unavailableGoLiveRun(checks: readonly GoLiveCheck[] = GO_LIVE_CHECKS): GoLiveRun {
-	return { results: checks.map((check) => unavailable(check)), memberCount: null };
+	return { results: checks.map((check) => unavailable(check)), memberCount: null, group: null };
 }
 
 function unavailable(check: GoLiveCheck): GoLiveCheckResult {

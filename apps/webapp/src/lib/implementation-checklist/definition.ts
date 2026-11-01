@@ -8,13 +8,14 @@ export type ImplementationChecklistItemId =
 	| "payroll-readiness"
 	| "integrations"
 	| "notifications"
-	| "employee-import";
+	| "employee-import"
+	| "first-workflows";
 
 /**
- * How an item is completed: a presence detector, a manual confirmation, or a go-live check
- * registered in go-live/checks for the item.
+ * How an item is completed: a presence detector, a manual confirmation, a go-live check
+ * registered in go-live/checks for the item, or first-workflow evidence noticed from real use.
  */
-export type ImplementationChecklistDetector = "automatic" | "manual" | "go-live";
+export type ImplementationChecklistDetector = "automatic" | "manual" | "go-live" | "evidence";
 
 export interface ImplementationChecklistDefinition {
 	id: ImplementationChecklistItemId;
@@ -157,6 +158,22 @@ export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[]
 		actionLabelKey: "settings.implementationChecklist.items.employeeImport.actionLabel",
 		href: "/settings/import",
 		detector: "automatic",
+		canManualComplete: false,
+		role: "informational",
+	},
+	{
+		id: "first-workflows",
+		title: "First workflows",
+		titleKey: "settings.implementationChecklist.items.firstWorkflows.title",
+		description: "See that your organization has really started working with Z8.",
+		descriptionKey: "settings.implementationChecklist.items.firstWorkflows.description",
+		helperText:
+			"Z8 notices the first clock-in, the first decided request and the first successful payroll export from real activity. This never affects go-live readiness.",
+		helperTextKey: "settings.implementationChecklist.items.firstWorkflows.helperText",
+		actionLabel: "Open time tracking",
+		actionLabelKey: "settings.implementationChecklist.items.firstWorkflows.actionLabel",
+		href: "/time-tracking",
+		detector: "evidence",
 		canManualComplete: false,
 		role: "informational",
 	},

@@ -20,6 +20,7 @@ const mocks = vi.hoisted(() => ({
 		organization: vi.fn(),
 	},
 	runGoLiveChecks: vi.fn(),
+	loadFirstWorkflowEvidence: vi.fn(),
 	insert: vi.fn(),
 	values: vi.fn(),
 	onConflictDoUpdate: vi.fn(),
@@ -49,7 +50,12 @@ vi.mock("@/lib/implementation-checklist/go-live/run", () => ({
 			},
 		],
 		memberCount: null,
+		group: null,
 	}),
+}));
+
+vi.mock("@/lib/implementation-checklist/go-live/first-workflows-evidence", () => ({
+	loadFirstWorkflowEvidence: mocks.loadFirstWorkflowEvidence,
 }));
 
 vi.mock("drizzle-orm", () => ({
@@ -155,6 +161,13 @@ const passingWorkPolicyCheck = {
 	checkedMemberCount: 3,
 };
 
+const goLiveGroup = {
+	members: [
+		{ kind: "employee", employeeId: "employee-1", primaryTeamId: null, displayName: "Ada" },
+	],
+	teamNames: new Map(),
+};
+
 describe("implementation checklist actions", () => {
 	beforeEach(() => {
 		mocks.revalidatePath.mockReset();
@@ -185,6 +198,13 @@ describe("implementation checklist actions", () => {
 		mocks.runGoLiveChecks.mockResolvedValue({
 			results: [passingWorkPolicyCheck],
 			memberCount: 3,
+			group: goLiveGroup,
+		});
+		mocks.loadFirstWorkflowEvidence.mockReset();
+		mocks.loadFirstWorkflowEvidence.mockResolvedValue({
+			clockIn: { state: "not-yet" },
+			decidedApproval: { state: "not-yet" },
+			payrollExport: { state: "not-yet" },
 		});
 
 		mocks.insert.mockReset();
@@ -432,6 +452,59 @@ describe("implementation checklist actions", () => {
 		await expect(getImplementationChecklist()).rejects.toThrow("NEXT_REDIRECT");
 		expect(mocks.runGoLiveChecks).not.toHaveBeenCalled();
 		expect(mocks.findFirst.organization).not.toHaveBeenCalled();
+		expect(mocks.loadFirstWorkflowEvidence).not.toHaveBeenCalled();
+	});
+
+	it("shows first-workflow evidence for the go-live group without affecting readiness", async () => {
+		const clockIn = {
+			state: "seen",
+			at: "2026-06-02T07:30:00Z",
+			actor: { employeeId: "employee-1", displayName: "Ada", former: false },
+		};
+		mocks.loadFirstWorkflowEvidence.mockResolvedValue({
+			clockIn,
+			decidedApproval: { state: "not-yet" },
+			payrollExport: { state: "unavailable" },
+		});
+
+		const result = await getImplementationChecklist();
+
+		expect(result.success).toBe(true);
+		if (!result.success) {
+			throw new Error(result.error);
+		}
+		expect(mocks.loadFirstWorkflowEvidence).toHaveBeenCalledWith(
+			expect.objectContaining({
+				organizationId: "org-active",
+				group: goLiveGroup,
+				asOf: expect.objectContaining({ timezone: "Europe/Berlin" }),
+			}),
+		);
+		expect(result.data.items.find((item) => item.id === "first-workflows")).toMatchObject({
+			status: "unavailable",
+			firstWorkflows: { clockIn, payrollExport: { state: "unavailable" } },
+		});
+		expect(result.data.goLive.readiness).toEqual({ status: "ready", warnings: [] });
+	});
+
+	it("shows first-workflow evidence as unavailable when the go-live group could not be resolved", async () => {
+		mocks.findFirst.organization.mockRejectedValue(new Error("database unavailable"));
+
+		const result = await getImplementationChecklist();
+
+		expect(result.success).toBe(true);
+		if (!result.success) {
+			throw new Error(result.error);
+		}
+		expect(mocks.loadFirstWorkflowEvidence).not.toHaveBeenCalled();
+		expect(result.data.items.find((item) => item.id === "first-workflows")).toMatchObject({
+			status: "unavailable",
+			firstWorkflows: {
+				clockIn: { state: "unavailable" },
+				decidedApproval: { state: "unavailable" },
+				payrollExport: { state: "unavailable" },
+			},
+		});
 	});
 
 	it("requires access before rejecting invalid or non-manual item ids for manual mutations", async () => {
