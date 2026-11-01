@@ -8,13 +8,14 @@ export type ImplementationChecklistItemId =
 	| "payroll-readiness"
 	| "integrations"
 	| "notifications"
-	| "employee-import";
+	| "employee-import"
+	| "first-workflows";
 
 /**
- * How an item is completed: a presence detector, a manual confirmation, or a go-live check
- * registered in go-live/checks for the item.
+ * How an item is completed: a presence detector, a manual confirmation, a go-live check
+ * registered in go-live/checks for the item, or first-workflow evidence noticed from real use.
  */
-export type ImplementationChecklistDetector = "automatic" | "manual" | "go-live";
+export type ImplementationChecklistDetector = "automatic" | "manual" | "go-live" | "evidence";
 
 export interface ImplementationChecklistDefinition {
 	id: ImplementationChecklistItemId;
@@ -103,14 +104,16 @@ export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[]
 		description: "Confirm payroll readiness checks and export operations before the first pay run.",
 		descriptionKey: "settings.implementationChecklist.items.payrollReadiness.description",
 		helperText:
-			"Manual review: export readiness should be confirmed by an admin before payroll cutoff.",
-		helperTextKey: "settings.implementationChecklist.items.payrollReadiness.helperText",
+			"Z8 checks the payroll setup for everyone on the current roster: export target, wage-type mappings, confirmed employment terms and personnel identifiers. Without an active payroll export target, payroll export is an optional integration.",
+		helperTextKey: "settings.implementationChecklist.items.payrollReadiness.goLiveHelperText",
 		actionLabel: "Review payroll readiness",
 		actionLabelKey: "settings.implementationChecklist.items.payrollReadiness.actionLabel",
 		href: "/settings/payroll-readiness",
-		detector: "manual",
+		detector: "go-live",
+		// An optional business confirmation; it never verifies the item.
 		canManualComplete: true,
-		role: "manual-only",
+		// Advisory for a run without an active payroll export target (the check's outcome says so).
+		role: "mandatory",
 	},
 	{
 		id: "integrations",
@@ -155,6 +158,22 @@ export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[]
 		actionLabelKey: "settings.implementationChecklist.items.employeeImport.actionLabel",
 		href: "/settings/import",
 		detector: "automatic",
+		canManualComplete: false,
+		role: "informational",
+	},
+	{
+		id: "first-workflows",
+		title: "First workflows",
+		titleKey: "settings.implementationChecklist.items.firstWorkflows.title",
+		description: "See that your organization has really started working with Z8.",
+		descriptionKey: "settings.implementationChecklist.items.firstWorkflows.description",
+		helperText:
+			"Z8 notices the first clock-in, the first decided request and the first successful payroll export from real activity. This never affects go-live readiness.",
+		helperTextKey: "settings.implementationChecklist.items.firstWorkflows.helperText",
+		actionLabel: "Open time tracking",
+		actionLabelKey: "settings.implementationChecklist.items.firstWorkflows.actionLabel",
+		href: "/time-tracking",
+		detector: "evidence",
 		canManualComplete: false,
 		role: "informational",
 	},

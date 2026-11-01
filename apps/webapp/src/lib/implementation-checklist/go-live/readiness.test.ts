@@ -96,6 +96,14 @@ describe("go-live readiness", () => {
 		expect(readiness).toEqual({ status: "not-ready", affectedMemberCount: 2, warnings: [] });
 	});
 
+	it("is not ready when a mandatory organization-level failure lists nobody", () => {
+		expect(resolveGoLiveReadiness([failed([group()])])).toEqual({
+			status: "not-ready",
+			affectedMemberCount: 0,
+			warnings: [],
+		});
+	});
+
 	it("is unavailable when any mandatory check is unavailable, even next to failures", () => {
 		expect(
 			resolveGoLiveReadiness([failed([group(ada)]), unavailable({ checkId: "other" })]),

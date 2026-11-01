@@ -30,6 +30,8 @@ export function resolveGoLiveReadiness(results: readonly GoLiveCheckResult[]): G
 
 	const warnings: GoLiveFailureGroup[] = [];
 	const affected = new Set<string>();
+	// An organization-level failure (no wage-type mappings) blocks even when it lists nobody.
+	let mandatoryFailure = false;
 	for (const result of results) {
 		if (result.outcome === "unavailable") continue;
 		warnings.push(...result.warnings);
@@ -38,11 +40,12 @@ export function resolveGoLiveReadiness(results: readonly GoLiveCheckResult[]): G
 			continue;
 		}
 		for (const failure of result.failures) {
+			mandatoryFailure = true;
 			for (const { member } of failure.members) affected.add(goLiveMemberKey(member));
 		}
 	}
 
-	return affected.size > 0
+	return mandatoryFailure
 		? { status: "not-ready", affectedMemberCount: affected.size, warnings }
 		: { status: "ready", warnings };
 }
