@@ -103,14 +103,16 @@ export const IMPLEMENTATION_CHECKLIST_ITEMS: ImplementationChecklistDefinition[]
 		description: "Confirm payroll readiness checks and export operations before the first pay run.",
 		descriptionKey: "settings.implementationChecklist.items.payrollReadiness.description",
 		helperText:
-			"Manual review: export readiness should be confirmed by an admin before payroll cutoff.",
-		helperTextKey: "settings.implementationChecklist.items.payrollReadiness.helperText",
+			"Z8 checks the payroll setup for everyone on the current roster: export target, wage-type mappings, confirmed employment terms and personnel identifiers. Without an active payroll export target, payroll export is an optional integration.",
+		helperTextKey: "settings.implementationChecklist.items.payrollReadiness.goLiveHelperText",
 		actionLabel: "Review payroll readiness",
 		actionLabelKey: "settings.implementationChecklist.items.payrollReadiness.actionLabel",
 		href: "/settings/payroll-readiness",
-		detector: "manual",
+		detector: "go-live",
+		// An optional business confirmation; it never verifies the item.
 		canManualComplete: true,
-		role: "manual-only",
+		// Advisory for a run without an active payroll export target (the check's outcome says so).
+		role: "mandatory",
 	},
 	{
 		id: "integrations",

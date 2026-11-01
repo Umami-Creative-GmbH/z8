@@ -176,9 +176,16 @@ export function ImplementationChecklistClient({ checklist }: ImplementationCheck
 														: item.description}
 												</CardDescription>
 											</div>
-											<Badge variant={statusBadgeVariant(item.status)}>
-												{getStatusLabel(item, t)}
-											</Badge>
+											<div className="flex flex-wrap items-center gap-2">
+												{item.goLive?.severity === "advisory" ? (
+													<Badge variant="outline">
+														{t("settings.implementationChecklist.goLive.optional", "Optional")}
+													</Badge>
+												) : null}
+												<Badge variant={statusBadgeVariant(item.status)}>
+													{getStatusLabel(item, t)}
+												</Badge>
+											</div>
 										</div>
 									</div>
 								</div>

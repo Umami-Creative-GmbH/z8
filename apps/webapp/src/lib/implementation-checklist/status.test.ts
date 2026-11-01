@@ -48,7 +48,7 @@ describe("implementation checklist status resolver", () => {
 			holidays: "informational",
 			"work-policies": "mandatory",
 			"approval-rules": "manual-only",
-			"payroll-readiness": "manual-only",
+			"payroll-readiness": "mandatory",
 			integrations: "informational",
 			notifications: "informational",
 			"employee-import": "informational",
