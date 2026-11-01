@@ -151,8 +151,11 @@ export function comparedFields(
 	return COMPARED_FIELDS.filter((field) => differs[field]);
 }
 
-/** The three columns of an item's comparison and the fields that differ. */
-export function compareWork(input: CompareWorkInput): WorkComparisonView {
+/**
+ * The three columns of an item's comparison and the fields that differ; the
+ * amount difference comes from `amountDifferenceOf` (#1502).
+ */
+export function compareWork(input: CompareWorkInput): Omit<WorkComparisonView, "amountDifference"> {
 	const handOff = comparedValues([input.handOff]);
 	const current = comparedValues(input.current);
 	const lastResolved = input.lastResolved ? comparedValues(input.lastResolved.pieces) : null;

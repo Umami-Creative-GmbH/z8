@@ -127,6 +127,7 @@ export function HandOffView() {
 							marked={changedAfterInvoicing}
 							resolve={resolveChangedAfterInvoicingAction}
 							onResolved={refresh}
+							grouped
 						/>
 					</CardContent>
 				</Card>

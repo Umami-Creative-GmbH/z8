@@ -1426,6 +1426,8 @@ export type InvoicedWorkRowView = InvoicedWorkView & {
 		endedAt: string;
 		startOffsetMinutes: number;
 		durationMinutes: number;
+		/** Its frozen rates and amounts; split-off pieces have none. */
+		shares: InvoicedWorkShare[];
 	};
 };
 
@@ -1477,6 +1479,7 @@ export async function invoicedWorkViews(
 				endedAt: work.endedAt.toISOString(),
 				startOffsetMinutes: work.startOffsetMinutes,
 				durationMinutes: work.durationMinutes,
+				shares: work.shares,
 			},
 			changedAfterInvoicingAt:
 				work.releasedAt === null ? (work.changedAfterInvoicingAt?.toISOString() ?? null) : null,

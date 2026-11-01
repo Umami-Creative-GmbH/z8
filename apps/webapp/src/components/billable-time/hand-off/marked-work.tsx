@@ -28,6 +28,7 @@ import {
 import { fieldHasError } from "@/components/ui/tanstack-form-utils";
 import { Textarea } from "@/components/ui/textarea";
 import { useDisplayContext } from "@/hooks/use-display-context";
+import { groupChangedWork } from "@/lib/billable-time/hand-off/changed-work-groups";
 import {
 	parseResolutionInput,
 	RESOLUTION_EXPLANATION_MAX_LENGTH,
@@ -42,6 +43,7 @@ import type {
 } from "@/lib/billable-time/hand-off/views";
 import { parseInstant } from "@/lib/datetime/temporal-core";
 import { formatInstant } from "@/lib/datetime/temporal-format";
+import { AmountDifference, useAmountDifferenceLabels } from "./amount-difference";
 import { useHandOffLabels } from "./hand-off-labels";
 import { WorkComparison } from "./work-comparison";
 
@@ -79,14 +81,22 @@ export function MarkedWork({
 	marked,
 	resolve,
 	onResolved,
+	grouped = false,
 }: {
 	marked: readonly MarkedWorkItemView[];
 	resolve: ResolveMarks;
 	/** Reload the marked work: after resolving, or when it changed meanwhile. */
 	onResolved: () => void;
+	/**
+	 * Group by customer, then invoice draft, oldest change first, with each
+	 * draft's known amount differences subtotalled (#1502). For lists that span
+	 * drafts.
+	 */
+	grouped?: boolean;
 }) {
 	const { t } = useTranslate();
 	const labels = useHandOffLabels();
+	const amounts = useAmountDifferenceLabels();
 	const itemLabel = useItemLabel();
 	const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
 	const [resolving, setResolving] = useState<readonly MarkedWorkItemView[] | null>(null);
@@ -101,6 +111,86 @@ export function MarkedWork({
 		if (on) next.add(id);
 		else next.delete(id);
 		return next;
+	};
+	const selectAll = (
+		<div className="flex items-center gap-3 p-2">
+			<Checkbox
+				id="marked-work-select-all"
+				checked={all ? true : chosen.length > 0 ? "indeterminate" : false}
+				onCheckedChange={(checked) =>
+					setSelected(
+						checked === true ? new Set(marked.map((item) => item.invoicedWorkId)) : new Set(),
+					)
+				}
+			/>
+			<label htmlFor="marked-work-select-all" className="text-muted-foreground">
+				{t("settings.billableTime.handOff.marks.selectAll", "Select all")}
+			</label>
+		</div>
+	);
+
+	const renderItem = (item: MarkedWorkItemView) => {
+		const showHistory = historyOpen.has(item.invoicedWorkId);
+		const showComparison = compareOpen.has(item.invoicedWorkId);
+		return (
+			<li key={item.invoicedWorkId} className="space-y-2 p-2">
+				<div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+					<Checkbox
+						aria-label={t("settings.billableTime.handOff.marks.select", "Select {item}", {
+							item: itemLabel(item),
+						})}
+						checked={selected.has(item.invoicedWorkId)}
+						onCheckedChange={(checked) =>
+							setSelected((current) => toggle(current, item.invoicedWorkId, checked === true))
+						}
+					/>
+					<span className="tabular-nums">{labels.day(item.day)}</span>
+					<span>{item.employeeName}</span>
+					<span className="text-muted-foreground">{item.projectName}</span>
+					<span className="flex flex-wrap gap-1">
+						{item.changedFields.map((field) => (
+							<Badge key={field} variant="outline">
+								{labels.changedField(field)}
+							</Badge>
+						))}
+					</span>
+					<span className="ml-auto flex gap-1">
+						<Button
+							size="sm"
+							variant="ghost"
+							aria-expanded={showComparison}
+							onClick={() =>
+								setCompareOpen((current) => toggle(current, item.invoicedWorkId, !showComparison))
+							}
+						>
+							<IconArrowsDiff aria-hidden="true" className="size-4" />
+							{t("settings.billableTime.handOff.marks.compare", "Compare")}
+						</Button>
+						{item.history.length > 0 && (
+							<Button
+								size="sm"
+								variant="ghost"
+								aria-expanded={showHistory}
+								onClick={() =>
+									setHistoryOpen((current) => toggle(current, item.invoicedWorkId, !showHistory))
+								}
+							>
+								<IconHistory aria-hidden="true" className="size-4" />
+								{t("settings.billableTime.handOff.marks.history", "History ({count})", {
+									count: item.history.length,
+								})}
+							</Button>
+						)}
+						<Button size="sm" variant="ghost" onClick={() => setResolving([item])}>
+							{t("settings.billableTime.handOff.marks.resolve", "Resolve")}
+						</Button>
+					</span>
+				</div>
+				<AmountDifference difference={item.comparison.amountDifference} />
+				{showComparison && <WorkComparison comparison={item.comparison} label={itemLabel(item)} />}
+				{showHistory && <ResolutionHistoryList entries={item.history} />}
+			</li>
+		);
 	};
 
 	return (
@@ -126,90 +216,75 @@ export function MarkedWork({
 					"This invoiced work was corrected after its hand-off. Correct the invoice in the accounting tool if needed (for example with a credit note), then resolve the change with an explanation.",
 				)}
 			</p>
-			<ul className="divide-y rounded-md border text-sm">
-				<li className="flex items-center gap-3 p-2">
-					<Checkbox
-						id="marked-work-select-all"
-						checked={all ? true : chosen.length > 0 ? "indeterminate" : false}
-						onCheckedChange={(checked) =>
-							setSelected(
-								checked === true ? new Set(marked.map((item) => item.invoicedWorkId)) : new Set(),
-							)
-						}
-					/>
-					<label htmlFor="marked-work-select-all" className="text-muted-foreground">
-						{t("settings.billableTime.handOff.marks.selectAll", "Select all")}
-					</label>
-				</li>
-				{marked.map((item) => {
-					const showHistory = historyOpen.has(item.invoicedWorkId);
-					const showComparison = compareOpen.has(item.invoicedWorkId);
-					return (
-						<li key={item.invoicedWorkId} className="space-y-2 p-2">
-							<div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-								<Checkbox
-									aria-label={t("settings.billableTime.handOff.marks.select", "Select {item}", {
-										item: itemLabel(item),
-									})}
-									checked={selected.has(item.invoicedWorkId)}
-									onCheckedChange={(checked) =>
-										setSelected((current) => toggle(current, item.invoicedWorkId, checked === true))
-									}
-								/>
-								<span className="tabular-nums">{labels.day(item.day)}</span>
-								<span>{item.employeeName}</span>
-								<span className="text-muted-foreground">{item.projectName}</span>
-								<span className="flex flex-wrap gap-1">
-									{item.changedFields.map((field) => (
-										<Badge key={field} variant="outline">
-											{labels.changedField(field)}
-										</Badge>
-									))}
-								</span>
-								<span className="ml-auto flex gap-1">
-									<Button
-										size="sm"
-										variant="ghost"
-										aria-expanded={showComparison}
-										onClick={() =>
-											setCompareOpen((current) =>
-												toggle(current, item.invoicedWorkId, !showComparison),
-											)
-										}
-									>
-										<IconArrowsDiff aria-hidden="true" className="size-4" />
-										{t("settings.billableTime.handOff.marks.compare", "Compare")}
-									</Button>
-									{item.history.length > 0 && (
-										<Button
-											size="sm"
-											variant="ghost"
-											aria-expanded={showHistory}
-											onClick={() =>
-												setHistoryOpen((current) =>
-													toggle(current, item.invoicedWorkId, !showHistory),
-												)
-											}
-										>
-											<IconHistory aria-hidden="true" className="size-4" />
-											{t("settings.billableTime.handOff.marks.history", "History ({count})", {
-												count: item.history.length,
+			<p className="text-muted-foreground text-xs">
+				{t(
+					"settings.billableTime.handOff.amount.note",
+					"Amount differences are reconciliation information priced at the rate frozen at hand-off, not credit notes.",
+				)}
+			</p>
+			{grouped ? (
+				<div className="space-y-4 text-sm">
+					<div className="rounded-md border">{selectAll}</div>
+					{groupChangedWork(marked).map((customer) => (
+						<section
+							key={customer.customerId}
+							aria-labelledby={`changed-work-customer-${customer.customerId}`}
+							className="space-y-2"
+						>
+							<h4 id={`changed-work-customer-${customer.customerId}`} className="font-medium">
+								{customer.customerName}
+							</h4>
+							{customer.drafts.map((draft) => (
+								<div key={draft.draftId} className="rounded-md border">
+									<div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-b bg-muted/40 px-2 py-1.5">
+										<p className="font-medium">
+											{t("settings.billableTime.handOff.marks.draftHeading", "{title} · {period}", {
+												title: draft.draft.title,
+												period: labels.period(draft.draft.period),
 											})}
-										</Button>
-									)}
-									<Button size="sm" variant="ghost" onClick={() => setResolving([item])}>
-										{t("settings.billableTime.handOff.marks.resolve", "Resolve")}
-									</Button>
-								</span>
-							</div>
-							{showComparison && (
-								<WorkComparison comparison={item.comparison} label={itemLabel(item)} />
-							)}
-							{showHistory && <ResolutionHistoryList entries={item.history} />}
-						</li>
-					);
-				})}
-			</ul>
+										</p>
+										<p className="flex flex-wrap gap-x-3 text-muted-foreground text-xs">
+											<span className="tabular-nums">
+												{draft.subtotal === null
+													? t(
+															"settings.billableTime.handOff.amount.noSubtotal",
+															"No known amount differences",
+														)
+													: draft.subtotalEstimated
+														? t(
+																"settings.billableTime.handOff.amount.subtotalEstimated",
+																"Known amount differences: {amount} (includes estimates)",
+																{ amount: amounts.amount(draft.subtotal, draft.currency) },
+															)
+														: t(
+																"settings.billableTime.handOff.amount.subtotal",
+																"Known amount differences: {amount}",
+																{ amount: amounts.amount(draft.subtotal, draft.currency) },
+															)}
+											</span>
+											{draft.unknownCount > 0 && (
+												<span>
+													{t(
+														"settings.billableTime.handOff.amount.unknownCount",
+														"{count, plural, one {# unknown difference not included} other {# unknown differences not included}}",
+														{ count: draft.unknownCount },
+													)}
+												</span>
+											)}
+										</p>
+									</div>
+									<ul className="divide-y">{draft.items.map(renderItem)}</ul>
+								</div>
+							))}
+						</section>
+					))}
+				</div>
+			) : (
+				<ul className="divide-y rounded-md border text-sm">
+					<li>{selectAll}</li>
+					{marked.map(renderItem)}
+				</ul>
+			)}
 			<ResolveMarksDialog
 				items={resolving}
 				resolve={resolve}

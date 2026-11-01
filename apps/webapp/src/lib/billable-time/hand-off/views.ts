@@ -198,12 +198,77 @@ export interface ComparedWorkValuesView {
 }
 
 /**
+ * Why an amount difference is known (#1502). `frozen_rate`: the change in
+ * hours at the one rate frozen at hand-off. The others reverse the whole
+ * handed-off amount: the work was removed, became non-billable, or its
+ * project now belongs to another customer or to none.
+ */
+export const PRICED_DIFFERENCE_REASONS = [
+	"frozen_rate",
+	"removed",
+	"non_billable",
+	"customer",
+] as const;
+
+export type PricedDifferenceReason = (typeof PRICED_DIFFERENCE_REASONS)[number];
+
+/**
+ * Why an amount difference is unknown (#1502): the hand-off priced the work
+ * across several rates, it moved to another project of the same customer (no
+ * frozen rate), a piece is still running, or no frozen rate was handed off
+ * with it.
+ */
+export const UNKNOWN_DIFFERENCE_REASONS = [
+	"several_rates",
+	"other_project",
+	"running",
+	"no_frozen_rate",
+] as const;
+
+export type UnknownDifferenceReason = (typeof UNKNOWN_DIFFERENCE_REASONS)[number];
+
+/**
+ * An amount difference (#1502): what a correction changes in the amount the
+ * work was handed off with, priced only at the frozen rate. Never repriced at
+ * today's rates; an unknown difference has no amount and is never zero.
+ */
+export type AmountDifferenceView =
+	| {
+			/** `estimated`: a share had no stored amount, so its rate × duration stands in. */
+			kind: "known" | "estimated";
+			/** Signed, two decimals, in the draft's currency: negative lowers the invoice. */
+			amount: string;
+			reason: PricedDifferenceReason;
+			/** Priced at the rate, so it may be a few cents off the draft line's rounding. */
+			roundingCaveat: boolean;
+	  }
+	| { kind: "unknown"; reason: UnknownDifferenceReason };
+
+/** A comparison item's amount differences, in its draft's currency (#1502). */
+export interface ItemAmountDifferenceView {
+	currency: string;
+	/** The current values against the hand-off. */
+	fromHandOff: AmountDifferenceView;
+	/**
+	 * The current values against the latest resolution's, so corrections
+	 * already handled aren't counted twice. Null when never resolved.
+	 */
+	sinceResolution: AmountDifferenceView | null;
+	/**
+	 * The project now belongs to another customer: the work is on no hand-off
+	 * for it and stays invoiced in this draft, so it has to be invoiced in the
+	 * accounting tool (Billable Time ADR 0002).
+	 */
+	notOnHandOffForNewCustomer: boolean;
+}
+
+/**
  * A comparison item's values as handed off, as last resolved (the latest
  * resolution's snapshot; null when never resolved) and now, with the fields
- * that differ (#1501). Add further per-item figures (such as an amount
- * difference) as fields of their own.
+ * that differ (#1501) and the amount difference (#1502).
  */
 export interface WorkComparisonView {
+	amountDifference: ItemAmountDifferenceView;
 	handOff: ComparedWorkValuesView;
 	lastResolved:
 		| (ComparedWorkValuesView & {
@@ -219,6 +284,17 @@ export interface WorkComparisonView {
 	};
 }
 
+/** The invoice draft of a marked item, to group and label it (#1502). */
+export interface MarkedWorkDraftView {
+	customerId: string;
+	customerName: string;
+	/** The draft's currency: its amount differences are in it. */
+	currency: string;
+	period: { from: string; to: string };
+	title: string;
+	createdAt: string;
+}
+
 /**
  * A comparison item marked as changed after invoicing: the handed-off row
  * (its day, employee, project and hours as handed off) with the split-off
@@ -227,6 +303,8 @@ export interface WorkComparisonView {
  */
 export interface MarkedWorkItemView extends InvoicedWorkView {
 	invoiceDraftId: string;
+	/** The invoice draft the item was handed off with (#1502). */
+	draft: MarkedWorkDraftView;
 	/** Send it back when resolving: the item is refused when it changed since. */
 	markVersion: string;
 	/** Newest first. */
