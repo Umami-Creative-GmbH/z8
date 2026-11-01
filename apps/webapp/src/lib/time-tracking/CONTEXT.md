@@ -283,6 +283,10 @@ _Avoid_: Password, passcode
 An employee's personal QR credential that proves at an online kiosk which employee is clocking, instead of their kiosk PIN; each employee has one active badge without scheduled expiry. Whoever holds a copy can use it until replacement, revocation or the employee's departure; it never grants account sign-in.
 _Avoid_: QR login, access card, pairing code
 
+**Kiosk fob**:
+An NFC card or fob registered to one employee whose chip serial number selects that employee at an online kiosk instead of picking their name; it never proves who is clocking, so the kiosk PIN is still entered. Each employee has at most one, and a serial number belongs to at most one employee of the organization. The employee registers it at a kiosk with their kiosk PIN; departure ends it.
+_Avoid_: NFC badge, access card, RFID badge
+
 **Kiosk clock attempt**:
 One explicit online action at a kiosk, named by the operation identity the kiosk gave it before sending it. It ends exactly once: committed with its work, or closed as not recorded by the kiosk's outcome lookup, after which it can never commit. A lost reply leaves it unresolved until then; while it is unresolved, only its employee is held (no second action), never the kiosk.
 _Avoid_: Retry, pending action
