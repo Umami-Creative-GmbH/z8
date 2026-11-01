@@ -134,14 +134,21 @@ export const NOTIFICATION_TYPES = [
 	"employee_deactivation_shifts_opened",
 	// Reports kept a former manager because no current one was left; to org admins (#1442)
 	"former_employee_reports_without_manager",
+	// A kiosk fob was registered to the employee at a kiosk; kiosk-only: their managers (#1507)
+	"kiosk_fob_registered",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
-/** System closure evidence is always delivered to the employee's inbox. */
+/**
+ * System closure evidence is always delivered to the employee's inbox, and so
+ * is a kiosk fob registration: the safeguard against a fob registered with
+ * someone else's kiosk PIN (#1507).
+ */
 export function hasMandatoryInbox(type: NotificationType): boolean {
 	return (
 		type === "organization_mfa_notice" ||
+		type === "kiosk_fob_registered" ||
 		type === "automatic_clock_out" ||
 		type === "driving_licence_reminder" ||
 		type === "driving_authorization_suspended"
