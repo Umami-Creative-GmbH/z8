@@ -67,6 +67,24 @@ describe("OwnKioskFobCard (#1508)", () => {
 		expect(container.textContent).toBe("");
 	});
 
+	it("says when the fob could not be read, and reads it again on request", async () => {
+		actions.getOwnKioskFobStatusAction.mockResolvedValueOnce({
+			success: false,
+			error: "boom",
+			code: "failed",
+		});
+		actions.getOwnKioskFobStatusAction.mockResolvedValueOnce({ success: true, data: ownFob });
+		renderCard();
+
+		expect(await screen.findByText("Kiosk fob")).toBeTruthy();
+		expect(screen.getByRole("alert").textContent).toBe("Something went wrong. Please try again.");
+		fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+
+		expect(
+			await screen.findByText("Fob ending in E5F6, registered on Nov 2, 2026 at Store kiosk."),
+		).toBeTruthy();
+	});
+
 	it("explains how to register a fob at a kiosk when there is none", async () => {
 		actions.getOwnKioskFobStatusAction.mockResolvedValue({
 			success: true,

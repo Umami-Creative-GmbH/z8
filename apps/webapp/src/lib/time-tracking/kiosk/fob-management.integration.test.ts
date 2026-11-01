@@ -266,6 +266,7 @@ describe("kiosk fob management on PostgreSQL", () => {
 							kioskName: "Store kiosk",
 						},
 						lastEnded: null,
+						fobReaderInUse: true,
 						timezone: "Europe/Berlin",
 					},
 				}),
@@ -522,6 +523,17 @@ describe("kiosk fob management on PostgreSQL", () => {
 				[ids.kiosk],
 			);
 			expect(await getOwnKioskFobStatusAction()).toMatchObject({ data: { fobReaderInUse: false } });
+		});
+	});
+
+	it("tells the employee page whether any kiosk of the organization reads fobs", async () => {
+		signIn(ids.ownerUser);
+		expect(await getEmployeeKioskStateAction(ids.worker)).toMatchObject({
+			data: { fob: { active: null, lastEnded: null, fobReaderInUse: true } },
+		});
+		await pool.query("update kiosk set nfc_fob_reader_enabled = false where id = $1", [ids.kiosk]);
+		expect(await getEmployeeKioskStateAction(ids.worker)).toMatchObject({
+			data: { fob: { fobReaderInUse: false } },
 		});
 	});
 

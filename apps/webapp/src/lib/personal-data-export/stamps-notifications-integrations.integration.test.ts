@@ -822,6 +822,20 @@ describe("personal data export: position stamps, notifications and integrations 
 		]);
 	});
 
+	it("never hints in Bob's own export that the card he registered was a colleague's (#1509)", async () => {
+		const fobActions = (files: Record<string, string>) =>
+			(categoryOf(files, "audit_log").actions_on_others as Array<Record<string, unknown>>)
+				.filter((row) => row.record_kind === "kiosk_fob")
+				.map((row) => row.action);
+
+		const own = await buildExport(ids.bob, "employee", "t1170-bob");
+		expect(fobActions(own.files)).toEqual([]);
+
+		await admin.query("delete from personal_data_export where organization_id = $1", [ORG]);
+		const byAdmin = await buildExport(ids.bob, "admin", "t1170-owner");
+		expect(fobActions(byAdmin.files)).toEqual(["kiosk_fob.ended"]);
+	});
+
 	it("holds the same rows in both kinds of export", async () => {
 		const own = await buildExport(ids.ada, "employee", "t1170-ada");
 		await admin.query("delete from personal_data_export where organization_id = $1", [ORG]);

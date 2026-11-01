@@ -197,8 +197,8 @@ async function seedShareLink(
 	return rows[0]?.id ?? "";
 }
 
-/** Registers a fob for the employee at a kiosk of the organization, as at the kiosk. */
-async function registerFob(employee: SeededEmployee, serial: string) {
+/** A kiosk of the organization at its own location. */
+async function seedKiosk() {
 	const location = randomUUID();
 	const kiosk = randomUUID();
 	await fixture.pool.query(
@@ -211,11 +211,16 @@ async function registerFob(employee: SeededEmployee, serial: string) {
 		 values ($1, $2, $3, 'Front door', 'Europe/Berlin', now())`,
 		[kiosk, fixture.organizationId, location],
 	);
+	return kiosk;
+}
+
+/** Registers a fob for the employee at a kiosk of the organization, as at the kiosk. */
+async function registerFob(employee: SeededEmployee, serial: string, kioskId?: string) {
 	return registerKioskFob(
 		fixture.db,
 		{
 			organizationId: fixture.organizationId,
-			kioskId: kiosk,
+			kioskId: kioskId ?? (await seedKiosk()),
 			employeeId: employee.employeeId,
 			serial,
 		},
@@ -480,6 +485,77 @@ describe("access ends at deactivation", () => {
 			shareLinkIds: [],
 		});
 		expect(await deactivationAudits(deactivationId)).toHaveLength(audited);
+	});
+
+	it("ends a fob registered after the plan was read", async () => {
+		const target = await fixture.seedEmployee();
+		const ctx = context(target, target.employmentPeriodId);
+		const stalePlan = await planAccessEnds(fixture.db, ctx);
+		expect(stalePlan.kioskFobs).toEqual([]);
+		const fob = await registerFob(target, "04A1B2C3D4E5F8");
+		const deactivationId = randomUUID();
+
+		const { applied } = await fixture.db.transaction(async (tx) => {
+			await tx.execute(
+				sql`SELECT id FROM organization WHERE id = ${ctx.organizationId} FOR UPDATE`,
+			);
+			await tx.execute(
+				sql`UPDATE employee SET is_active = false WHERE organization_id = ${ctx.organizationId} AND id = ${ctx.employeeId}`,
+			);
+			return applyAccessEnds(tx, stalePlan, {
+				...ctx,
+				actorUserId: fixture.ownerUserId,
+				deactivationId,
+				reason: "employee_deactivated",
+				audit: new AuditTrail(),
+			});
+		});
+
+		expect(applied.kioskFobIds).toEqual([fob.fobId]);
+		const state = await fixture.pool.query<{ ended_reason: string | null }>(
+			"select ended_reason from employee_kiosk_fob where id = $1",
+			[fob.fobId],
+		);
+		expect(state.rows[0]?.ended_reason).toBe("removed");
+	});
+
+	it("refuses a fob registration that waited for a concurrent deactivation", async () => {
+		const target = await fixture.seedEmployee();
+		const kiosk = await seedKiosk();
+		const deactivation = await fixture.pool.connect();
+		try {
+			await deactivation.query("begin");
+			await deactivation.query(
+				"update employee set is_active = false where organization_id = $1 and id = $2",
+				[fixture.organizationId, target.employeeId],
+			);
+			const registration = registerFob(target, "04A1B2C3D4E5F9", kiosk).then(
+				() => null,
+				(error: unknown) => error,
+			);
+			// The registration's eligibility read waits for the deactivation's row lock.
+			let waiting = false;
+			for (let attempt = 0; attempt < 200 && !waiting; attempt += 1) {
+				const { rows } = await fixture.pool.query<{ waiting: number }>(
+					`select count(*)::int as waiting from pg_stat_activity
+					 where datname = current_database() and wait_event_type = 'Lock'`,
+				);
+				waiting = (rows[0]?.waiting ?? 0) > 0;
+				if (!waiting) await new Promise((resolve) => setTimeout(resolve, 25));
+			}
+			expect(waiting).toBe(true);
+			await deactivation.query("commit");
+
+			expect(await registration).toMatchObject({ code: "employee_not_eligible" });
+		} finally {
+			await deactivation.query("rollback").catch(() => undefined);
+			deactivation.release();
+		}
+		const live = await fixture.pool.query(
+			"select id from employee_kiosk_fob where employee_id = $1 and ended_at is null",
+			[target.employeeId],
+		);
+		expect(live.rows).toEqual([]);
 	});
 
 	it("works for an employee without an employment period", async () => {

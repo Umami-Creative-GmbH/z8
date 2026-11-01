@@ -113,7 +113,8 @@ export async function planAccessEnds(
  * Ends what `plan` lists, inside the deactivation transaction, which already
  * holds the lifecycle organization row. In the departure's order: driving
  * licence (under its organization lock), the held grants, kiosk badges and
- * the kiosk fob, then share links. Idempotent: a second run finds nothing live.
+ * the kiosk fob (always re-read), then share links. Idempotent: a second run
+ * finds nothing live.
  */
 export async function applyAccessEnds(
 	tx: DeactivationWriter,
@@ -192,21 +193,18 @@ export async function applyAccessEnds(
 				});
 
 	// As a badge (decision O6): the column says `removed`, the audit names the
-	// deactivation. The deactivation holds no employee key; a registration racing
-	// it leaves a link no kiosk selects, which the next registration of that card
-	// ends (decision O7).
-	const kioskFobIds =
-		plan.kioskFobs.length === 0
-			? []
-			: await endKioskFobLinks(tx, ctx.audit, {
-					organizationId: ctx.organizationId,
-					employeeId: ctx.employeeId,
-					employmentPeriodId: ctx.employmentPeriodId ?? undefined,
-					reason: "removed",
-					at: ctx.at,
-					actorUserId: ctx.actorUserId,
-					auditMetadata,
-				});
+	// deactivation. Always, not only what the plan listed: a registration reads
+	// the employee row FOR SHARE, so one that committed while this transaction
+	// waited to switch the employee off is seen here and ended too.
+	const kioskFobIds = await endKioskFobLinks(tx, ctx.audit, {
+		organizationId: ctx.organizationId,
+		employeeId: ctx.employeeId,
+		employmentPeriodId: ctx.employmentPeriodId ?? undefined,
+		reason: "removed",
+		at: ctx.at,
+		actorUserId: ctx.actorUserId,
+		auditMetadata,
+	});
 
 	const shareLinkIds =
 		plan.shareLinks.length === 0

@@ -629,6 +629,36 @@ describe("kiosk fobs on PostgreSQL", () => {
 			expect((await lookUp(SERIAL)).body.employee.id).toBe(ids.worker);
 		});
 
+		it("frees a fob of an inactive employee without a departure, ended as removed now", async () => {
+			await register(SERIAL, ids.leaver);
+			// Inactive without a departure (an older row, from before deactivation ended fobs).
+			await admin.query("update employee set is_active = false where id = $1", [ids.leaver]);
+			now = parseInstant("2026-11-02T10:00:00Z");
+
+			expect(await lookUp(SERIAL)).toEqual(NOT_RECOGNISED);
+			expect((await register(SERIAL, ids.worker)).body.outcome).toBe("registered");
+			const { rows } = await admin.query<{
+				employee_id: string;
+				ended_reason: string | null;
+				ended_at: Date | null;
+				ended_by_user_id: string | null;
+			}>(
+				`select employee_id, ended_reason, ended_at, ended_by_user_id from employee_kiosk_fob
+				 where organization_id = $1 order by registered_at`,
+				[ids.organization],
+			);
+			expect(rows).toEqual([
+				{
+					employee_id: ids.leaver,
+					ended_reason: "removed",
+					ended_at: new Date("2026-11-02T10:00:00Z"),
+					ended_by_user_id: null,
+				},
+				{ employee_id: ids.worker, ended_reason: null, ended_at: null, ended_by_user_id: null },
+			]);
+			expect((await lookUp(SERIAL)).body.employee.id).toBe(ids.worker);
+		});
+
 		it("keeps a fob whose employee's departure is still in the future", async () => {
 			await register(SERIAL, ids.leaver);
 			await dueDeparture(new Date("2026-11-03T00:00:00Z"));

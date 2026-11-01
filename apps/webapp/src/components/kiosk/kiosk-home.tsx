@@ -1,18 +1,9 @@
 "use client";
 
-import {
-	IconCamera,
-	IconLoader2,
-	IconMapPin,
-	IconNfc,
-	IconQrcode,
-	IconRefresh,
-	IconSearch,
-} from "@tabler/icons-react";
+import { IconCamera, IconMapPin, IconNfc, IconQrcode } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useEffectEvent, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { kioskCall } from "@/lib/time-tracking/kiosk/device";
 import {
 	readOfflineEmployees,
@@ -26,19 +17,10 @@ import type {
 } from "@/lib/time-tracking/kiosk/protocol";
 import { KioskLanguageSwitch } from "./kiosk-language";
 import { useKioskHomeNoticeMessage } from "./kiosk-messages";
-import { KioskNameGrid, kioskNamesMatching } from "./kiosk-name-grid";
+import { type KioskNameListOutcome, KioskNamePicker, useKioskNameList } from "./kiosk-name-grid";
 import type { KioskHomeNotice } from "./kiosk-turn-flow";
 import { KioskWhoIsInBoard } from "./kiosk-who-is-in-board";
-import { useKioskBadgeScanner } from "./use-kiosk-badge-scanner";
-
-type EmployeeList =
-	| { state: "loading" }
-	| { state: "ready"; employees: KioskEmployeeListing[] }
-	| { state: "failed" };
-
-type EmployeeListOutcome =
-	| Exclude<EmployeeList, { state: "loading" }>
-	| { state: "refused"; code: KioskRefusalCode };
+import { useKioskReaderInput } from "./use-kiosk-reader-input";
 
 /**
  * Fetches the location's employees. A reached server's list is cached for an
@@ -48,7 +30,7 @@ type EmployeeListOutcome =
 async function fetchEmployeeList(
 	token: string,
 	kiosk: KioskDeviceInfo,
-): Promise<EmployeeListOutcome> {
+): Promise<KioskNameListOutcome> {
 	const result = await kioskCall<KioskEmployeesResponse>(token, "/api/kiosk/employees");
 	if (result.kind === "kiosk") return { state: "refused", code: result.code };
 	if (result.kind === "ok" && Array.isArray(result.body.employees)) {
@@ -120,11 +102,16 @@ export function KioskHome({
 }: KioskHomeProps) {
 	const { t } = useTranslate();
 	const noticeMessage = useKioskHomeNoticeMessage(kiosk.offlineMode);
-	const [list, setList] = useState<EmployeeList>({ state: "loading" });
+	// Each contact reloads the list.
+	const { list, retry } = useKioskNameList(
+		() => fetchEmployeeList(token, kiosk),
+		onKioskRefused,
+		contacts,
+	);
 	const [query, setQuery] = useState("");
 	// What the search said before a scan's keys may have reached it (#1366).
 	const queryBeforeScan = useRef("");
-	useKioskBadgeScanner({
+	useKioskReaderInput({
 		mode: onBadge || onFob ? "read" : "off",
 		onBadge,
 		onFob,
@@ -134,25 +121,6 @@ export function KioskHome({
 		},
 		onScanEnd: () => setQuery(queryBeforeScan.current),
 	});
-
-	function show(outcome: EmployeeListOutcome) {
-		if (outcome.state === "refused") onKioskRefused(outcome.code);
-		else setList(outcome);
-	}
-
-	function load() {
-		void fetchEmployeeList(token, kiosk).then(show);
-	}
-
-	// The retry button calls load() directly; an Effect Event may only run from Effects.
-	const loadOnContact = useEffectEvent(load);
-
-	// biome-ignore lint/correctness/useExhaustiveDependencies: each contact reloads the list
-	useEffect(() => {
-		loadOnContact();
-	}, [contacts]);
-
-	const shown = list.state === "ready" ? kioskNamesMatching(list.employees, query) : [];
 
 	return (
 		<div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6">
@@ -198,66 +166,17 @@ export function KioskHome({
 							{noticeMessage(notice)}
 						</p>
 					) : null}
-					<div className="relative">
-						<IconSearch
-							className="pointer-events-none absolute top-1/2 left-4 size-6 -translate-y-1/2 text-muted-foreground"
-							aria-hidden="true"
-						/>
-						<Input
-							type="search"
-							value={query}
-							onChange={(event) => setQuery(event.target.value)}
-							aria-label={t("timeTracking.kiosk.home.search", "Find your name")}
-							placeholder={t("timeTracking.kiosk.home.search", "Find your name")}
-							autoComplete="off"
-							className="h-14 pl-14 text-xl md:text-xl"
-						/>
-					</div>
-					{list.state === "loading" ? (
-						<output
-							aria-busy="true"
-							className="flex items-center gap-3 py-8 text-lg text-muted-foreground"
-						>
-							<IconLoader2
-								className="size-6 animate-spin motion-reduce:animate-none"
-								aria-hidden="true"
-							/>
-							{t("timeTracking.kiosk.home.loading", "Loading names…")}
-						</output>
-					) : null}
-					{list.state === "failed" ? (
-						<div className="flex flex-col items-start gap-3 py-6" role="alert">
-							<p className="text-lg">
-								{t(
-									"timeTracking.kiosk.home.loadFailed",
-									"The names could not be loaded. Check the network connection.",
-								)}
-							</p>
-							<Button
-								size="lg"
-								variant="outline"
-								className="h-14 text-lg"
-								onClick={() => {
-									setList({ state: "loading" });
-									load();
-								}}
-							>
-								<IconRefresh className="size-5" aria-hidden="true" />
-								{t("timeTracking.kiosk.retry", "Try again")}
-							</Button>
-						</div>
-					) : null}
-					{list.state === "ready" && shown.length === 0 ? (
-						<p className="py-6 text-lg text-muted-foreground">
-							{list.employees.length === 0
-								? t(
-										"timeTracking.kiosk.home.empty",
-										"Nobody is assigned to this location yet. Ask your admin.",
-									)
-								: t("timeTracking.kiosk.home.noMatch", "No name matches your search.")}
-						</p>
-					) : null}
-					{shown.length > 0 ? <KioskNameGrid employees={shown} onPick={onPick} /> : null}
+					<KioskNamePicker
+						list={list}
+						query={query}
+						onQueryChange={setQuery}
+						onRetry={retry}
+						onPick={onPick}
+						emptyText={t(
+							"timeTracking.kiosk.home.empty",
+							"Nobody is assigned to this location yet. Ask your admin.",
+						)}
+					/>
 				</section>
 				{kiosk.boardEnabled && !offline ? (
 					<aside className="min-w-0">

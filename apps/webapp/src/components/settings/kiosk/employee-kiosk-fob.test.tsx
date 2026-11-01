@@ -39,9 +39,10 @@ const activeFob = {
 		kioskName: "Store kiosk",
 	},
 	lastEnded: null,
+	fobReaderInUse: false,
 	timezone: "Europe/Berlin",
 };
-const noFob = { active: null, lastEnded: null, timezone: "Europe/Berlin" };
+const noFob = { active: null, lastEnded: null, fobReaderInUse: true, timezone: "Europe/Berlin" };
 const state = (fob: unknown) => ({
 	success: true,
 	data: {
@@ -148,10 +149,22 @@ describe("Kiosk fob on the employee page (#1508)", () => {
 		expect(screen.queryByRole("button", { name: "Remove fob" })).toBeNull();
 	});
 
+	it("is hidden without a fob, a last one or any kiosk reading fobs", async () => {
+		actions.getEmployeeKioskStateAction.mockResolvedValue(
+			state({ ...noFob, fobReaderInUse: false }),
+		);
+		renderCard();
+
+		await screen.findByText("Kiosk access");
+		expect(screen.queryByText("Kiosk fob")).toBeNull();
+	});
+
 	it("says how the last fob ended", async () => {
 		actions.getEmployeeKioskStateAction.mockResolvedValue(
 			state({
 				...noFob,
+				// The last fob is shown even once no kiosk reads fobs any more.
+				fobReaderInUse: false,
 				lastEnded: { at: "2026-11-01T23:30:00Z", reason: "removed", departureLastWorkingDay: null },
 			}),
 		);

@@ -4,6 +4,7 @@ import {
 	fillNotificationTemplate,
 	formatNotificationParams,
 	notificationParam,
+	resolveIcuSelects,
 } from "./notification-params";
 
 // Intl separates some parts with no-break or thin spaces; compare the visible text.
@@ -115,5 +116,14 @@ describe("typed notification params", () => {
 		expect(
 			fillNotificationTemplate("Clocked out at {clockedOut} after {worked} in {teamName}.", params),
 		).toBe("Clocked out at Oct 25, 2026, 7:00 AM after 7 hours 30 minutes in Operations.");
+	});
+});
+
+describe("resolveIcuSelects", () => {
+	it("picks each select's branch, falls back to other and keeps other placeholders", () => {
+		const template =
+			"{a, select, x {ex {name}} other {fallback}} and {b, select, y {why} other {else}} for {name}";
+		expect(resolveIcuSelects(template, { a: "x", b: "z" })).toBe("ex {name} and else for {name}");
+		expect(resolveIcuSelects("no selects {here}", {})).toBe("no selects {here}");
 	});
 });

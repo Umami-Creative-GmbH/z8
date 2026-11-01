@@ -9,11 +9,11 @@ import { type NotificationCopy, translatedContent } from "@/lib/notifications/no
 import {
 	fillNotificationTemplate,
 	type NotificationParamValue,
+	resolveIcuSelects,
 } from "@/lib/notifications/notification-params";
 import { createNotification } from "@/lib/notifications/notification-service";
 import type { CreateNotificationParams } from "@/lib/notifications/types";
 import type { KioskFobRegistration } from "./fob-store";
-import { resolveIcuSelects } from "./frozen-refusal-notification";
 
 // Each key sits next to its English default so the Tolgee extractor reads both. `replaced` is
 // an ICU select, so every channel renders the replacement in the recipient's language; the
@@ -40,6 +40,7 @@ export type KioskFobRegisteredNotificationInput = {
 	fobId: string;
 	/** The employee's user: the notification is addressed to them, and forwarded if kiosk-only. */
 	userId: string;
+	employeeId: string;
 	kioskId: string;
 	kioskName: string;
 	employeeName: string;
@@ -53,12 +54,13 @@ export type KioskFobRegisteredNotificationInput = {
 
 /**
  * A kiosk fob registered to an employee (#1507, ADR 0014): the kiosk it was
- * registered on, its last four hex digits and whether it replaced their earlier
+ * registered on, its last four characters and whether it replaced their earlier
  * fob. The safeguard against someone who knows a colleague's kiosk PIN linking
  * their own card to them. Addressed to the employee's user; `createNotification`
  * forwards a kiosk-only employee's to their managers (#860), who get the copy
- * that names the employee. The employee's copy links to where they see and
- * remove their fob (decision O5).
+ * that names the employee. Each copy links to where its reader sees and removes
+ * the fob: the employee's security settings (decision O5), the managers' the
+ * employee's page (#1508).
  */
 export function buildKioskFobRegisteredNotification(
 	input: KioskFobRegisteredNotificationInput,
@@ -79,7 +81,9 @@ export function buildKioskFobRegisteredNotification(
 		message: fillNotificationTemplate(resolveIcuSelects(copy.messageDefault, { replaced }), params),
 		entityType: "kiosk_fob",
 		entityId: input.fobId,
-		actionUrl: "/settings/security",
+		...(input.recipient === "employee"
+			? { actionUrl: "/settings/security" }
+			: { forwardedActionUrl: `/settings/employees/${input.employeeId}` }),
 		idempotencyKey: `kiosk-fob-registered:${input.fobId}`,
 		metadata: {
 			kioskId: input.kioskId,
@@ -119,6 +123,7 @@ export async function notifyKioskFobRegistered(
 			organizationId: registration.organizationId,
 			fobId: registration.fobId,
 			userId: registration.userId,
+			employeeId: registration.employeeId,
 			kioskId: registration.kiosk.id,
 			kioskName: registration.kiosk.name,
 			employeeName: buildDerivedUserName(

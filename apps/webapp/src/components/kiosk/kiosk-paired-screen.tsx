@@ -42,6 +42,7 @@ import {
 	fobRegisteredFlow,
 	isFobRegistrationStep,
 	type KioskFlow,
+	type KioskFobPinStep,
 	type KioskTurnProof,
 	kioskBadgeBody,
 	kioskProofBody,
@@ -52,9 +53,9 @@ import {
 	vehicleAskOf,
 } from "./kiosk-turn-flow";
 import { KioskTurnScreen } from "./kiosk-turn-screen";
-import { useKioskBadgeScanner } from "./use-kiosk-badge-scanner";
 import { useKioskIdleReturn } from "./use-kiosk-idle-return";
 import { useKioskOfflineMode } from "./use-kiosk-offline-mode";
+import { useKioskReaderInput } from "./use-kiosk-reader-input";
 import { useKioskUncertainActions } from "./use-kiosk-uncertain-actions";
 
 export {
@@ -188,7 +189,7 @@ export function KioskPairedScreen({
 	// An attached NFC reader (#1505) types like a scanner: fobs are read on the home
 	// screen only, and kept away from every other screen the same way.
 	const fobReader = kiosk.nfcFobReaderEnabled === true;
-	useKioskBadgeScanner({
+	useKioskReaderInput({
 		mode: (scanner || fobReader) && flow.step !== "home" ? "guard" : "off",
 	});
 
@@ -255,23 +256,17 @@ export function KioskPairedScreen({
 	}
 
 	/** Registering a fob (#1505): the employee's name and kiosk PIN link it to them. */
-	async function registerFob(
-		serial: string,
-		employee: KioskEmployeeListing,
-		attempt: number,
-		pin: string,
-	) {
-		setFlow({ step: "fob-pin", serial, employee, attempt, busy: true, error: null });
+	async function registerFob(step: KioskFobPinStep, pin: string) {
+		const sending = { ...step, busy: true, error: null };
+		setFlow(sending);
 		const result = await kioskPost<KioskFobRegistrationResult>(
 			token,
 			"/api/kiosk/fob/registration",
-			{ serial, employeeId: employee.id, pin },
+			{ serial: step.serial, employeeId: step.employee.id, pin },
 			{ timeoutMs: KIOSK_ACTION_TIMEOUT_MS },
 		);
 		if (result.kind === "kiosk") return kioskRefused(result.code);
-		show(
-			fobRegisteredFlow({ serial, employee, attempt, result, contactLost: contact.contactLost }),
-		);
+		show(fobRegisteredFlow({ step: sending, result, contactLost: contact.contactLost }));
 	}
 
 	async function verifyPin(employee: KioskEmployeeListing, attempt: number, pin: string) {
@@ -453,9 +448,7 @@ export function KioskPairedScreen({
 					onCameraBadge={(badge) => void identifyBadge(badge, "camera")}
 					token={token}
 					onKioskRefused={kioskRefused}
-					onRegisterFob={(serial, employee, attempt, pin) =>
-						void registerFob(serial, employee, attempt, pin)
-					}
+					onRegisterFob={(step, pin) => void registerFob(step, pin)}
 					onVerifyPin={(employee, attempt, pin) => void verifyPin(employee, attempt, pin)}
 					onChoose={choose}
 					onProceed={proceed}

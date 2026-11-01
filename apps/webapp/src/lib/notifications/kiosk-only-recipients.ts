@@ -83,7 +83,8 @@ export async function resolveNotificationRecipients(
 /**
  * A kiosk-only employee's notification as one of their managers receives it:
  * the title names the employee, the metadata records whom it was for, and the
- * employee's own link is dropped. Every channel that forwards uses this shape.
+ * employee's own link is replaced by the managers' one (`forwardedActionUrl`),
+ * or dropped. Every channel that forwards uses this shape.
  */
 export function forwardedNotification(
 	params: CreateNotificationParams,
@@ -94,7 +95,8 @@ export function forwardedNotification(
 		...params,
 		userId: recipientUserId,
 		title: `${forwardedFor.name}: ${params.title}`,
-		actionUrl: undefined,
+		actionUrl: params.forwardedActionUrl,
+		forwardedActionUrl: undefined,
 		metadata: { ...withoutRecipientOnlyMetadata(params.metadata), forwardedFor },
 		idempotencyKey: params.idempotencyKey
 			? `${params.idempotencyKey}:kiosk-only:${recipientUserId}`

@@ -5,14 +5,13 @@ import { normalizeKioskBadgeCredential } from "@/lib/time-tracking/kiosk/badge-c
 import { normalizeKioskFobSerial } from "@/lib/time-tracking/kiosk/fob-serial";
 
 /**
- * An attached QR scanner at a kiosk (#1366, spec #889). Keyboard-style
- * ("wedge") scanners type what the code holds as a fast burst of key presses,
- * usually ended by Enter or Tab. People type far slower, so a burst is told
- * apart from ordinary typing (the name search) by the time between keys, for
- * every key, whatever the code holds (a badge, a product barcode, a link).
- *
- * An attached NFC reader (#1505) types a kiosk fob's serial number the same
- * way, so the same listener hears it.
+ * The keyboard-style readers attached to a kiosk: a QR scanner (#1366, spec
+ * #889) and an NFC fob reader (#1505), which types a kiosk fob's serial
+ * number. Such ("wedge") readers type what they read as a fast burst of key
+ * presses, usually ended by Enter or Tab. People type far slower, so a burst
+ * is told apart from ordinary typing (the name search) by the time between
+ * keys, for every key, whatever the code holds (a badge, a fob, a product
+ * barcode, a link).
  *
  * - `read` (the home screen): a burst of at least `MIN_BURST_LENGTH` keys,
  *   ended by Enter or Tab or by a pause, is a scan. A badge credential goes to
@@ -34,7 +33,7 @@ import { normalizeKioskFobSerial } from "@/lib/time-tracking/kiosk/fob-serial";
  *
  * Nothing scanned is kept beyond the burst.
  */
-export type KioskBadgeScannerMode = "read" | "guard" | "off";
+export type KioskReaderInputMode = "read" | "guard" | "off";
 
 /** Keys of one scan follow each other at most this far apart. */
 export const KIOSK_SCAN_KEY_GAP_MS = 60;
@@ -45,8 +44,8 @@ const MIN_BURST_LENGTH = 8;
 /** Longer input is never a badge; the rest of it is still swallowed or ignored. */
 const MAX_BURST_LENGTH = 256;
 
-interface KioskBadgeScannerOptions {
-	mode: KioskBadgeScannerMode;
+interface KioskReaderInputOptions {
+	mode: KioskReaderInputMode;
 	onBadge?: (credential: string) => void;
 	/**
 	 * A kiosk fob's serial number (#1505), typed by an attached NFC reader the
@@ -91,7 +90,7 @@ function swallow(event: KeyboardEvent) {
 	event.stopImmediatePropagation();
 }
 
-export function useKioskBadgeScanner(options: KioskBadgeScannerOptions) {
+export function useKioskReaderInput(options: KioskReaderInputOptions) {
 	const { mode } = options;
 
 	const finish = useEffectEvent((text: string, overflow: boolean) => {

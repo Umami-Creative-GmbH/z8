@@ -2,7 +2,6 @@ import "server-only";
 
 import { z } from "zod";
 import { db } from "@/db";
-import { type Clock, instantToCanonicalString } from "@/lib/datetime/temporal-core";
 import { createLogger } from "@/lib/logger";
 import {
 	type AuthenticatedKiosk,
@@ -13,9 +12,10 @@ import { KioskFobRefusal, type KioskFobRefusalCode } from "./fob-errors";
 import { normalizeKioskFobSerial } from "./fob-serial";
 import { type KioskFobRegistration, registerKioskFob, resolveActiveKioskFob } from "./fob-store";
 import { readKioskEmployee } from "./kiosk-employee";
+import { json, readBody } from "./kiosk-http";
 import { readKioskFobReader } from "./kiosk-store";
+import { admitKioskPin, type KioskPinAdmissionDeps } from "./pin-admission";
 import type { KioskFobLookup, KioskFobRegistrationResult } from "./protocol";
-import { type KioskPinVerification, verifyKioskPin } from "./verify-kiosk-pin";
 
 const logger = createLogger("KioskFobService");
 
@@ -33,26 +33,21 @@ const logger = createLogger("KioskFobService");
  *   kiosk, their kiosk PIN (counted toward the lockout exactly like clocking),
  *   then the store. Online only.
  */
-export type KioskFobServiceDeps = {
-	clock: Clock;
-	/** The per-kiosk PIN attempt limit (#860); every registration carries a PIN. */
-	limitPinAttempts(kioskId: string): Promise<{ allowed: boolean; retryAfter: number }>;
+export type KioskFobServiceDeps = KioskPinAdmissionDeps & {
 	/** The per-kiosk fob lookup limit (#1505). */
 	limitFobLookups(kioskId: string): Promise<{ allowed: boolean; retryAfter: number }>;
-	verifyPin?: (
-		organizationId: string,
-		employeeId: string,
-		pin: string,
-	) => Promise<KioskPinVerification>;
 	/**
-	 * Runs after a registration committed (decision O3): the registration
-	 * notification (#1507). A failure here never undoes or refuses the
-	 * registration.
+	 * Runs after a registration committed (decision O3), once the kiosk has its
+	 * answer: the registration notification (#1507). A failure here is logged and
+	 * never undoes or refuses the registration.
 	 */
 	onRegistered?: (registration: KioskFobRegistration) => Promise<void>;
+	/**
+	 * Schedules work for after the response is sent (production: Next's `after`).
+	 * Without it the work runs before the response.
+	 */
+	afterResponse?: (task: () => Promise<void>) => void | Promise<void>;
 };
-
-const NO_STORE = { "Cache-Control": "no-store" };
 
 const lookupRequest = z.object({ serial: z.unknown() });
 
@@ -69,25 +64,12 @@ const REFUSAL_STATUS: Record<KioskFobRefusalCode, number> = {
 	fob_linked_to_other_employee: 409,
 };
 
-function json(body: unknown, status = 200) {
-	return Response.json(body, { status, headers: NO_STORE });
-}
-
 function refused(code: KioskFobRefusalCode) {
 	return json({ code }, REFUSAL_STATUS[code]);
 }
 
-async function readBody<T>(request: Request, schema: z.ZodType<T>): Promise<T | null> {
-	try {
-		const parsed = schema.safeParse(await request.json());
-		return parsed.success ? parsed.data : null;
-	} catch {
-		return null;
-	}
-}
-
 export function createKioskFobService(deps: KioskFobServiceDeps) {
-	const verifyPin = deps.verifyPin ?? verifyKioskPin;
+	const afterResponse = deps.afterResponse ?? ((task) => task());
 
 	/** The kiosk and its canonical serial number, or the refusal: token, body, switch, format. */
 	async function admit<T extends { serial: unknown }>(
@@ -136,20 +118,9 @@ export function createKioskFobService(deps: KioskFobServiceDeps) {
 			const admitted = await admit(request, registrationRequest);
 			if ("response" in admitted) return admitted.response;
 			const { kiosk, body, serial } = admitted;
-			const limit = await deps.limitPinAttempts(kiosk.kioskId);
-			if (!limit.allowed) {
-				return json({ code: "rate_limited", retryAfter: limit.retryAfter }, 429);
-			}
-			const subject = await readKioskEmployee(db, kiosk, body.employeeId, deps.clock.nowInstant());
-			if (!subject) return refused("employee_not_eligible");
-			const verification = await verifyPin(kiosk.organizationId, subject.id, body.pin);
-			if (verification.status === "locked") {
-				return json(
-					{ code: "pin_locked", lockedUntil: instantToCanonicalString(verification.until) },
-					423,
-				);
-			}
-			if (verification.status !== "verified") return json({ code: verification.status }, 403);
+			const proven = await admitKioskPin(deps, kiosk, body, "employee_not_eligible");
+			if ("response" in proven) return proven.response;
+			const subject = proven.employee;
 
 			let registration: KioskFobRegistration;
 			try {
@@ -167,13 +138,18 @@ export function createKioskFobService(deps: KioskFobServiceDeps) {
 				if (error instanceof KioskFobRefusal) return refused(error.code);
 				throw error;
 			}
-			try {
-				await deps.onRegistered?.(registration);
-			} catch (error) {
-				logger.error(
-					{ error, fobId: registration.fobId },
-					"Kiosk fob registration follow-up failed",
-				);
+			const { onRegistered } = deps;
+			if (onRegistered) {
+				await afterResponse(async () => {
+					try {
+						await onRegistered(registration);
+					} catch (error) {
+						logger.error(
+							{ error, fobId: registration.fobId },
+							"Kiosk fob registration follow-up failed",
+						);
+					}
+				});
 			}
 			const result: KioskFobRegistrationResult = {
 				outcome: registration.outcome,
