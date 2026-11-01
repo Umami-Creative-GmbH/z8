@@ -5,12 +5,10 @@ import { defaultAccountingDependencies } from "@/lib/billable-time/accounting/co
 import type { InvoiceDraftCapabilityProblem } from "@/lib/billable-time/accounting/invoice-draft";
 import {
 	checkInvoiceDraftStatus,
-	clearChangedAfterInvoicing,
 	confirmHandOff,
 	getInvoiceDraftDetail,
 	type HandOffOutcome,
 	type HandOffRequestRefusal,
-	listChangedAfterInvoicing,
 	listHandOffCustomers,
 	listInvoiceDrafts,
 	parseHandOffRequest,
@@ -18,6 +16,16 @@ import {
 	releaseInvoiceDraft,
 	retryHandOff,
 } from "@/lib/billable-time/hand-off/hand-off-store";
+import {
+	parseResolutionInput,
+	type ResolutionFieldError,
+	type ResolveItem,
+} from "@/lib/billable-time/hand-off/resolution";
+import {
+	listMarkedItems,
+	readDraftReconciliation,
+	resolveChangedAfterInvoicing,
+} from "@/lib/billable-time/hand-off/resolution-store";
 import type {
 	DraftToolStatusView,
 	HandOffBlockerView,
@@ -25,7 +33,8 @@ import type {
 	HandOffPreview,
 	InvoiceDraftDetailView,
 	InvoiceDraftSummaryView,
-	InvoicedWorkView,
+	MarkedWorkItemView,
+	ResolveOutcomeView,
 } from "@/lib/billable-time/hand-off/views";
 import { ConflictError, NotFoundError, ValidationError } from "@/lib/effect/errors";
 import { runServerActionSafe, type ServerActionResult } from "@/lib/effect/result";
@@ -42,8 +51,8 @@ import {
  * The hand-off (#903 pass B): preview, confirm (one invoice draft through the
  * accounting provider port, idempotent), retry, release, draft status check,
  * timesheet and changed-after-invoicing marks. Owners and admins of the active
- * organization only; the module must be on (except release and clearing marks,
- * which stay possible to clean up).
+ * organization only; the module must be on (except reading a hand-off, release
+ * and resolving marks, which stay possible to clean up).
  */
 
 const ADMIN_ONLY = "Only owners and admins can hand off billable work";
@@ -217,7 +226,7 @@ function outcomeError(outcome: Exclude<HandOffOutcome, { ok: true }>) {
 export interface HandOffOverview {
 	customers: HandOffCustomerOption[];
 	drafts: InvoiceDraftSummaryView[];
-	changedAfterInvoicing: (InvoicedWorkView & { invoiceDraftId: string })[];
+	changedAfterInvoicing: MarkedWorkItemView[];
 }
 
 /** The hand-off area: customers to choose from, hand-offs and marked work. */
@@ -229,7 +238,7 @@ export async function getHandOffOverview(): Promise<ServerActionResult<HandOffOv
 		return yield* dbService.query("billableTime.handOff.overview", async () => ({
 			customers: await listHandOffCustomers(dbService.db, organizationId),
 			drafts: await listInvoiceDrafts(dbService.db, organizationId),
-			changedAfterInvoicing: await listChangedAfterInvoicing(dbService.db, organizationId),
+			changedAfterInvoicing: await listMarkedItems(dbService.db, organizationId),
 		}));
 	});
 	return runServerActionSafe(effect);
@@ -323,12 +332,18 @@ export async function getInvoiceDraftAction(input: {
 	const effect = Effect.gen(function* () {
 		const { organizationId } = yield* actor("readHandOff");
 		const dbService = yield* DatabaseService;
-		const detail = yield* dbService.query("billableTime.handOff.detail", () =>
-			getInvoiceDraftDetail(dbService.db, defaultAccountingDependencies(), {
+		const detail = yield* dbService.query("billableTime.handOff.detail", async () => {
+			const draft = await getInvoiceDraftDetail(dbService.db, defaultAccountingDependencies(), {
 				organizationId,
 				draftId: String(input.draftId),
-			}),
-		);
+			});
+			if (!draft) return null;
+			const reconciliation = await readDraftReconciliation(dbService.db, {
+				organizationId,
+				draftId: draft.id,
+			});
+			return { ...draft, ...reconciliation } satisfies InvoiceDraftDetailView;
+		});
 		if (!detail) return yield* Effect.fail(draftNotFound());
 		return detail;
 	});
@@ -388,26 +403,65 @@ export async function releaseInvoiceDraftAction(input: {
 	return runServerActionSafe(effect);
 }
 
-/** Clears changed-after-invoicing marks of invoiced work. Audited. */
-export async function clearChangedAfterInvoicingAction(input: {
-	invoicedWorkIds: string[];
-}): Promise<ServerActionResult<{ cleared: number }>> {
+function resolutionInputError(error: ResolutionFieldError) {
+	const refusal = `${error.field}.${error.code}`;
+	switch (refusal) {
+		case "explanation.required":
+			return new ValidationError({
+				message: "Explain how the change was handled",
+				field: error.field,
+				refusal,
+			});
+		case "explanation.too_long":
+			return new ValidationError({
+				message: "Keep the explanation to 2,000 characters",
+				field: error.field,
+				refusal,
+			});
+		case "accountingReference.too_long":
+			return new ValidationError({
+				message: "Keep the accounting reference to 200 characters",
+				field: error.field,
+				refusal,
+			});
+		default:
+			return new ValidationError({ message: "Choose marked work", field: error.field, refusal });
+	}
+}
+
+/**
+ * Resolves changed-after-invoicing marks (#1499): one resolution and audit row
+ * per item, sharing the explanation and accounting reference. The whole batch
+ * is refused as `stale`, naming the items, when any item changed since it was
+ * loaded. Works while the module is off.
+ */
+export async function resolveChangedAfterInvoicingAction(input: {
+	items: ResolveItem[];
+	explanation: string;
+	accountingReference?: string | null;
+}): Promise<ServerActionResult<ResolveOutcomeView>> {
 	const effect = Effect.gen(function* () {
-		const { organizationId, userId } = yield* actor("clearChangedAfterInvoicing");
+		const { organizationId, userId } = yield* actor("resolveChangedAfterInvoicing");
+		const parsed = parseResolutionInput(input);
+		if (!parsed.ok) return yield* Effect.fail(resolutionInputError(parsed.errors[0]));
 		const dbService = yield* DatabaseService;
-		const outcome = yield* dbService.query("billableTime.handOff.clearMarks", () =>
-			clearChangedAfterInvoicing(dbService.db, {
+		const outcome = yield* dbService.query("billableTime.handOff.resolveMarks", () =>
+			resolveChangedAfterInvoicing(dbService.db, {
 				organizationId,
 				actorUserId: userId,
-				invoicedWorkIds: input.invoicedWorkIds,
+				resolution: parsed.value,
 			}),
 		);
-		if (!outcome.ok) {
-			return yield* Effect.fail(
-				new ValidationError({ message: "Choose marked work", field: "invoicedWorkIds" }),
-			);
+		if (outcome.ok) return { status: "resolved", resolved: outcome.resolved } as const;
+		if (outcome.reason === "stale") {
+			return { status: "stale", invoicedWorkIds: outcome.invoicedWorkIds } as const;
 		}
-		return { cleared: outcome.cleared };
+		return yield* Effect.fail(
+			new NotFoundError({
+				message: "Some of this work was not found. Reload and try again",
+				entityType: "invoiced_work",
+			}),
+		);
 	});
 	return runServerActionSafe(effect);
 }

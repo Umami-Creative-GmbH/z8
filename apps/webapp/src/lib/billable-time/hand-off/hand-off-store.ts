@@ -88,8 +88,9 @@ import {
 /**
  * The hand-off (#903): preview a customer's un-invoiced billable work in a
  * period, confirm it into ONE invoice draft through the accounting provider
- * port, release drafts, check their status in the tool and clear
- * changed-after-invoicing marks. Callers authorize an org admin of
+ * port, release drafts and check their status in the tool. Resolving
+ * changed-after-invoicing marks is in `resolution-store.ts` (#1499). Callers
+ * authorize an org admin of
  * `organizationId` first; everything here is scoped to that organization.
  *
  * Idempotency: confirm records the attempt (draft, frozen lines and invoiced
@@ -499,7 +500,11 @@ export type HandOffOutcome =
 
 type DraftRow = typeof invoiceDraft.$inferSelect;
 
-async function lockHandOffs(tx: Pick<Transaction, "execute">, organizationId: string) {
+/**
+ * Serializes the organization's hand-offs, releases and resolutions. Take it
+ * before locking any invoice draft or invoiced work row.
+ */
+export async function lockHandOffs(tx: Pick<Transaction, "execute">, organizationId: string) {
 	await tx.execute(
 		sql`select pg_advisory_xact_lock(hashtextextended(${`billable_time_hand_off:${organizationId}`}, 0))`,
 	);
@@ -1318,70 +1323,6 @@ export async function checkInvoiceDraftStatus(
 	return { ok: true, status };
 }
 
-/** Clears changed-after-invoicing marks. Audited per work period. */
-export async function clearChangedAfterInvoicing(
-	database: typeof db,
-	input: { organizationId: string; actorUserId: string; invoicedWorkIds: unknown },
-): Promise<{ ok: true; cleared: number } | { ok: false; reason: "invalid_input" }> {
-	const ids = input.invoicedWorkIds;
-	if (
-		!Array.isArray(ids) ||
-		ids.length === 0 ||
-		ids.length > 1000 ||
-		!ids.every((id) => isUuid(id))
-	) {
-		return { ok: false, reason: "invalid_input" };
-	}
-	return database.transaction(async (tx) => {
-		const marked = await tx
-			.select()
-			.from(invoicedWork)
-			.where(
-				and(
-					eq(invoicedWork.organizationId, input.organizationId),
-					inArray(invoicedWork.id, ids as string[]),
-					isNull(invoicedWork.releasedAt),
-					sql`${invoicedWork.changedAfterInvoicingAt} is not null`,
-				),
-			)
-			.for("update");
-		if (marked.length === 0) return { ok: true, cleared: 0 } as const;
-		await tx
-			.update(invoicedWork)
-			.set({
-				changedAfterInvoicingAt: null,
-				changedFields: sql`'{}'::text[]`,
-				markClearedAt: sql`now()`,
-				markClearedBy: input.actorUserId,
-			})
-			.where(
-				and(
-					eq(invoicedWork.organizationId, input.organizationId),
-					inArray(
-						invoicedWork.id,
-						marked.map((row) => row.id),
-					),
-				),
-			);
-		await tx.insert(auditLog).values(
-			marked.map((row) => ({
-				organizationId: input.organizationId,
-				entityType: "invoiced_work",
-				entityId: row.workPeriodId,
-				action: AuditAction.INVOICED_WORK_MARK_CLEARED,
-				performedBy: input.actorUserId,
-				employeeId: row.employeeId,
-				changes: JSON.stringify({
-					invoiceDraftId: row.invoiceDraftId,
-					changedFields: row.changedFields,
-					changedAfterInvoicingAt: row.changedAfterInvoicingAt?.toISOString() ?? null,
-				}),
-			})),
-		);
-		return { ok: true, cleared: marked.length } as const;
-	});
-}
-
 // ---------------------------------------------------------------------------
 // Reading drafts
 
@@ -1466,17 +1407,26 @@ function localTime(instant: Date, offsetMinutes: number): string {
 	return `${String(time.hour).padStart(2, "0")}:${String(time.minute).padStart(2, "0")}`;
 }
 
-function changedFieldsOf(values: readonly string[]): ChangedField[] {
+export function changedFieldsOf(values: readonly string[]): ChangedField[] {
 	const known: readonly string[] = CHANGED_FIELDS;
 	return values.filter((value): value is ChangedField => known.includes(value));
 }
 
+/** An invoiced work row as the views show it, with what grouping it into items needs. */
+export type InvoicedWorkRowView = InvoicedWorkView & {
+	invoiceDraftId: string;
+	timesheet: TimesheetRowView | null;
+	carriedFromWorkPeriodId: string | null;
+	markVersion: number;
+	released: boolean;
+};
+
 /** Invoiced work rows with names, for a draft or for all marked work. */
-async function invoicedWorkViews(
+export async function invoicedWorkViews(
 	reader: Reader,
 	organizationId: string,
 	condition: ReturnType<typeof and>,
-): Promise<(InvoicedWorkView & { invoiceDraftId: string; timesheet: TimesheetRowView | null })[]> {
+): Promise<InvoicedWorkRowView[]> {
 	const rows = await reader
 		.select({
 			work: invoicedWork,
@@ -1510,6 +1460,9 @@ async function invoicedWorkViews(
 			projectName: projectName ?? "",
 			hours,
 			carried: work.carriedFromWorkPeriodId !== null,
+			carriedFromWorkPeriodId: work.carriedFromWorkPeriodId,
+			markVersion: work.markVersion,
+			released: work.releasedAt !== null,
 			changedAfterInvoicingAt:
 				work.releasedAt === null ? (work.changedAfterInvoicingAt?.toISOString() ?? null) : null,
 			changedFields: work.releasedAt === null ? changedFieldsOf(work.changedFields) : [],
@@ -1528,12 +1481,15 @@ async function invoicedWorkViews(
 	});
 }
 
-/** One hand-off with its lines, work, marks and timesheet. */
+/**
+ * One hand-off with its lines, work and timesheet. Its marked items and
+ * resolution history come from `readDraftReconciliation` (resolution store).
+ */
 export async function getInvoiceDraftDetail(
 	reader: Reader,
 	dependencies: Pick<AccountingDependencies, "registry">,
 	input: { organizationId: string; draftId: string },
-): Promise<InvoiceDraftDetailView | null> {
+): Promise<Omit<InvoiceDraftDetailView, "marked" | "resolutionHistory"> | null> {
 	if (!isUuid(input.draftId)) return null;
 	const [row] = await reader
 		.select({
@@ -1598,7 +1554,16 @@ export async function getInvoiceDraftDetail(
 			rate: line.unitPrice,
 			amount: line.amount,
 		})),
-		work: work.map(({ timesheet: _timesheet, invoiceDraftId: _draftId, ...view }) => view),
+		work: work.map(
+			({
+				timesheet: _timesheet,
+				invoiceDraftId: _draftId,
+				carriedFromWorkPeriodId: _source,
+				markVersion: _version,
+				released: _released,
+				...view
+			}) => view,
+		),
 		timesheet: work.flatMap((item) => (item.timesheet ? [item.timesheet] : [])),
 		releaseReason: draft.releaseReason,
 		endedAt: draft.endedAt?.toISOString() ?? null,
@@ -1606,17 +1571,4 @@ export async function getInvoiceDraftDetail(
 			connection?.providerKind === draft.providerKind &&
 			(connector?.capabilities.draftStatusCheck ?? false),
 	};
-}
-
-/** Invoiced work marked as changed after invoicing, across all drafts. */
-export async function listChangedAfterInvoicing(
-	reader: Reader,
-	organizationId: string,
-): Promise<(InvoicedWorkView & { invoiceDraftId: string })[]> {
-	const rows = await invoicedWorkViews(
-		reader,
-		organizationId,
-		and(isNull(invoicedWork.releasedAt), sql`${invoicedWork.changedAfterInvoicingAt} is not null`),
-	);
-	return rows.map(({ timesheet: _timesheet, ...view }) => view);
 }

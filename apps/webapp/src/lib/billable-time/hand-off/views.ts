@@ -123,6 +123,51 @@ export interface InvoicedWorkView extends HandOffWorkView {
 	changedFields: ChangedField[];
 }
 
+/** One entry of a comparison item's resolution history (#1499). */
+export type ResolutionHistoryEntryView =
+	| {
+			kind: "resolution";
+			id: string;
+			/** The item's handed-off invoiced work row. */
+			invoicedWorkId: string;
+			/** When it was resolved (an instant, ISO). */
+			at: string;
+			/** Null once the user was deleted. */
+			actorName: string | null;
+			explanation: string;
+			accountingReference: string | null;
+			resolvedFields: ChangedField[];
+	  }
+	| {
+			/** A mark cleared before resolutions were recorded: no explanation, no values. */
+			kind: "cleared_before_resolutions";
+			invoicedWorkId: string;
+			at: string;
+			actorName: string | null;
+	  };
+
+/**
+ * A comparison item marked as changed after invoicing: the handed-off row
+ * (its day, employee, project and hours as handed off) with the split-off
+ * pieces carried from it. `changedFields` and `changedAfterInvoicingAt` cover
+ * all its rows (the earliest open change).
+ */
+export interface MarkedWorkItemView extends InvoicedWorkView {
+	invoiceDraftId: string;
+	/** Send it back when resolving: the item is refused when it changed since. */
+	markVersion: string;
+	/** Newest first. */
+	history: ResolutionHistoryEntryView[];
+}
+
+/**
+ * What resolving did: `stale` names the items (handed-off rows) that changed
+ * since they were loaded; then nothing was resolved.
+ */
+export type ResolveOutcomeView =
+	| { status: "resolved"; resolved: number }
+	| { status: "stale"; invoicedWorkIds: string[] };
+
 /** One row of the timesheet: the work as it was handed off. */
 export interface TimesheetRowView {
 	day: string;
@@ -143,6 +188,10 @@ export interface InvoiceDraftDetailView extends InvoiceDraftSummaryView {
 	includeTimesheet: boolean;
 	lines: HandOffLineView[];
 	work: InvoicedWorkView[];
+	/** Its comparison items still marked as changed after invoicing. */
+	marked: MarkedWorkItemView[];
+	/** Resolutions and earlier clears of all its items, newest first. */
+	resolutionHistory: ResolutionHistoryEntryView[];
 	timesheet: TimesheetRowView[];
 	releaseReason: string | null;
 	endedAt: string | null;

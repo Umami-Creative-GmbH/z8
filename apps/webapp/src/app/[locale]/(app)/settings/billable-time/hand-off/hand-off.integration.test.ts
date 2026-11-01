@@ -97,12 +97,12 @@ vi.mock("@/lib/billable-time/accounting/registry", async (importOriginal) => ({
 
 const {
 	checkInvoiceDraftStatusAction,
-	clearChangedAfterInvoicingAction,
 	confirmHandOffAction,
 	getHandOffOverview,
 	getInvoiceDraftAction,
 	previewHandOffAction,
 	releaseInvoiceDraftAction,
+	resolveChangedAfterInvoicingAction,
 	retryHandOffAction,
 } = await import("./actions");
 const { getProjectDetailedReport } = await import(
@@ -933,7 +933,7 @@ describe("hand-off on PostgreSQL", () => {
 		expect(detail.lines.filter((line) => line.kind === "text")).toHaveLength(3);
 	});
 
-	it("marks invoiced work changed by any write and lets an admin clear the mark, audited", async () => {
+	it("marks invoiced work changed by any write and lets an admin resolve the mark, audited", async () => {
 		const { draftId } = await unwrap(confirm());
 
 		// Writes that do not touch times, project or billability leave no mark.
@@ -968,22 +968,27 @@ describe("hand-off on PostgreSQL", () => {
 		const detail = await unwrap(getInvoiceDraftAction({ draftId }));
 		expect(detail.changedCount).toBe(2);
 
+		const [first] = overview.changedAfterInvoicing;
 		await expect(
 			unwrap(
-				clearChangedAfterInvoicingAction({
-					invoicedWorkIds: [
-						overview.changedAfterInvoicing[0]?.invoicedWorkId ?? "",
+				resolveChangedAfterInvoicingAction({
+					items: [
+						{
+							invoicedWorkId: first?.invoicedWorkId ?? "",
+							markVersion: first?.markVersion ?? "",
+						},
 					],
+					explanation: "Credit note for the extra quarter hour",
 				}),
 			),
-		).resolves.toEqual({ cleared: 1 });
+		).resolves.toEqual({ status: "resolved", resolved: 1 });
 		expect((await invoiced()).map((row) => row.changed_fields)).toEqual([
 			[],
 			["billability"],
 		]);
 		const { rows } = await admin.query<{ entity_id: string; changes: string }>(
 			`select entity_id, changes from audit_log where organization_id = $1
-			 and action = 'billable_time.invoiced_work_mark_cleared'`,
+			 and action = 'billable_time.invoiced_work_mark_resolved'`,
 			[ids.organization],
 		);
 		expect(rows).toEqual([
@@ -1099,6 +1104,454 @@ describe("hand-off on PostgreSQL", () => {
 		expect(await invoiced()).toEqual([]);
 	});
 
+	describe("resolving changed-after-invoicing marks (#1499)", () => {
+		async function markedItems() {
+			return (await unwrap(getHandOffOverview())).changedAfterInvoicing;
+		}
+
+		function itemOf(
+			items: Awaited<ReturnType<typeof markedItems>>,
+			workPeriodId: string,
+		) {
+			const found = items.find((item) => item.workPeriodId === workPeriodId);
+			if (!found) throw new Error(`No marked item for ${workPeriodId}`);
+			return {
+				invoicedWorkId: found.invoicedWorkId,
+				markVersion: found.markVersion,
+			};
+		}
+
+		async function resolutions() {
+			const { rows } = await admin.query<{
+				invoiced_work_id: string;
+				invoice_draft_id: string;
+				resolved_by: string | null;
+				resolved_at: Date;
+				explanation: string;
+				accounting_reference: string | null;
+				resolved_fields: string[];
+				snapshot: {
+					pieces: {
+						workPeriodId: string;
+						removed: boolean;
+						startedAt: string;
+						endedAt: string | null;
+						startOffsetMinutes: number | null;
+						durationMinutes: number | null;
+						projectName: string | null;
+						customerName: string | null;
+						billable: boolean;
+					}[];
+				};
+			}>(
+				`select invoiced_work_id, invoice_draft_id, resolved_by, resolved_at, explanation,
+				 accounting_reference, resolved_fields, snapshot
+				 from invoiced_work_resolution where organization_id = $1 order by resolved_at, id`,
+				[ids.organization],
+			);
+			return rows;
+		}
+
+		async function frozen() {
+			const { rows } = await admin.query(
+				`select d.net_total, d.status,
+				 (select json_agg(l order by l.position) from invoice_draft_line l where l.invoice_draft_id = d.id) as lines,
+				 (select json_agg(json_build_array(w.id, w.work_period_id, w.project_id, w.started_at, w.ended_at,
+				   w.start_offset_minutes, w.duration_minutes, w.shares, w.carried_from_work_period_id, w.released_at)
+				   order by w.id) from invoiced_work w where w.invoice_draft_id = d.id) as work
+				 from invoice_draft d where d.organization_id = $1 order by d.id`,
+				[ids.organization],
+			);
+			return rows;
+		}
+
+		async function waitForLockWaiters(count: number) {
+			for (let attempt = 0; attempt < 200; attempt += 1) {
+				const { rows } = await admin.query<{ waiting: number }>(
+					"select count(*)::int as waiting from pg_locks where not granted",
+				);
+				if ((rows[0]?.waiting ?? 0) >= count) return;
+				await new Promise((resolve) => setTimeout(resolve, 50));
+			}
+			throw new Error(`Expected ${count} lock waiters`);
+		}
+
+		it("records one resolution per item with actor, explanation, reference, fields and the reviewed values, audited", async () => {
+			await unwrap(confirm());
+			const before = await frozen();
+			await admin.query(
+				"update work_period set end_time = end_time + interval '15 minutes', duration_minutes = 105 where id = $1",
+				[work.website],
+			);
+			await admin.query(
+				"update work_period set project_id = $2 where id = $1",
+				[work.app, ids.website],
+			);
+			const items = await markedItems();
+
+			await expect(
+				unwrap(
+					resolveChangedAfterInvoicingAction({
+						items: [itemOf(items, work.website), itemOf(items, work.app)],
+						explanation: "  Credit note CN-7 covers both  ",
+						accountingReference: "CN-7",
+					}),
+				),
+			).resolves.toEqual({ status: "resolved", resolved: 2 });
+
+			const recorded = await resolutions();
+			expect(recorded).toEqual([
+				expect.objectContaining({
+					resolved_by: ids.adminUser,
+					explanation: "Credit note CN-7 covers both",
+					accounting_reference: "CN-7",
+				}),
+				expect.objectContaining({
+					resolved_by: ids.adminUser,
+					explanation: "Credit note CN-7 covers both",
+					accounting_reference: "CN-7",
+				}),
+			]);
+			const byPeriod = new Map(
+				recorded.map((row) => [row.snapshot.pieces[0]?.workPeriodId, row]),
+			);
+			expect(byPeriod.get(work.website)).toMatchObject({
+				resolved_fields: ["times"],
+				snapshot: {
+					pieces: [
+						{
+							workPeriodId: work.website,
+							removed: false,
+							startedAt: "2026-09-02T08:00:00.000Z",
+							endedAt: "2026-09-02T09:45:00.000Z",
+							startOffsetMinutes: 0,
+							durationMinutes: 105,
+							projectName: "Website",
+							customerName: "Acme",
+							billable: true,
+						},
+					],
+				},
+			});
+			expect(byPeriod.get(work.app)).toMatchObject({
+				resolved_fields: ["project"],
+				snapshot: { pieces: [{ projectName: "Website" }] },
+			});
+
+			const { rows: audits } = await admin.query<{ changes: string }>(
+				`select changes from audit_log where organization_id = $1
+				 and action = 'billable_time.invoiced_work_mark_resolved' order by entity_id`,
+				[ids.organization],
+			);
+			expect(audits).toHaveLength(2);
+			expect(JSON.parse(audits[0]?.changes ?? "{}")).toMatchObject({
+				explanation: "Credit note CN-7 covers both",
+				accountingReference: "CN-7",
+			});
+
+			expect(await markedItems()).toEqual([]);
+			expect(await frozen()).toEqual(before);
+		});
+
+		it("marks a resolved item again on a further correction, with only the new fields", async () => {
+			await unwrap(confirm());
+			await admin.query(
+				"update work_period set duration_minutes = 80 where id = $1",
+				[work.website],
+			);
+			await unwrap(
+				resolveChangedAfterInvoicingAction({
+					items: [itemOf(await markedItems(), work.website)],
+					explanation: "Handled",
+				}),
+			);
+
+			await admin.query(
+				"update work_period set is_billable = false where id = $1",
+				[work.website],
+			);
+			const [again] = await markedItems();
+			expect(again).toMatchObject({
+				workPeriodId: work.website,
+				changedFields: ["billability"],
+				history: [
+					expect.objectContaining({
+						kind: "resolution",
+						explanation: "Handled",
+						actorName: ids.adminUser,
+						resolvedFields: ["times"],
+					}),
+				],
+			});
+		});
+
+		it("refuses a missing or over-long explanation and an over-long reference, resolving nothing", async () => {
+			await unwrap(confirm());
+			await admin.query(
+				"update work_period set duration_minutes = 80 where id = $1",
+				[work.website],
+			);
+			const item = itemOf(await markedItems(), work.website);
+
+			for (const [input, refusal] of [
+				[{ explanation: "   " }, "explanation.required"],
+				[{ explanation: "x".repeat(2001) }, "explanation.too_long"],
+				[
+					{ explanation: "ok", accountingReference: "R".repeat(201) },
+					"accountingReference.too_long",
+				],
+			] as const) {
+				await expect(
+					resolveChangedAfterInvoicingAction({ items: [item], ...input }),
+				).resolves.toMatchObject({
+					success: false,
+					code: "ValidationError",
+					refusal,
+				});
+			}
+			expect(await resolutions()).toEqual([]);
+		});
+
+		it("refuses the whole batch when a correction landed after loading, naming the changed item", async () => {
+			await unwrap(confirm());
+			await admin.query(
+				"update work_period set duration_minutes = 80 where id = $1",
+				[work.website],
+			);
+			await admin.query(
+				"update work_period set is_billable = false where id = $1",
+				[work.app],
+			);
+			const items = await markedItems();
+			await admin.query(
+				"update work_period set duration_minutes = 85 where id = $1",
+				[work.website],
+			);
+
+			const website = itemOf(items, work.website);
+			await expect(
+				unwrap(
+					resolveChangedAfterInvoicingAction({
+						items: [website, itemOf(items, work.app)],
+						explanation: "Handled",
+					}),
+				),
+			).resolves.toEqual({
+				status: "stale",
+				invoicedWorkIds: [website.invoicedWorkId],
+			});
+			expect(await resolutions()).toEqual([]);
+			expect((await invoiced()).map((row) => row.changed_fields)).toEqual([
+				["times"],
+				["billability"],
+			]);
+		});
+
+		it("refuses the batch when a correction commits while the resolution waits for it", async () => {
+			await unwrap(confirm());
+			await admin.query(
+				"update work_period set duration_minutes = 80 where id = $1",
+				[work.website],
+			);
+			const website = itemOf(await markedItems(), work.website);
+
+			const correcting = await admin.connect();
+			try {
+				await correcting.query("begin");
+				// The trigger marks the invoiced work and holds its row until commit.
+				await correcting.query(
+					"update work_period set project_id = $2 where id = $1",
+					[work.website, ids.app],
+				);
+				const resolving = resolveChangedAfterInvoicingAction({
+					items: [website],
+					explanation: "Handled",
+				});
+				await waitForLockWaiters(1);
+				await correcting.query("commit");
+
+				await expect(unwrap(resolving)).resolves.toEqual({
+					status: "stale",
+					invoicedWorkIds: [website.invoicedWorkId],
+				});
+			} finally {
+				correcting.release();
+			}
+			expect(await resolutions()).toEqual([]);
+			expect((await invoiced())[0]?.changed_fields).toEqual(["project", "times"]);
+		});
+
+		it("lets only one of two concurrent resolutions of the same item through", async () => {
+			await unwrap(confirm());
+			await admin.query(
+				"update work_period set duration_minutes = 80 where id = $1",
+				[work.website],
+			);
+			const website = itemOf(await markedItems(), work.website);
+
+			const holding = await admin.connect();
+			try {
+				await holding.query("begin");
+				await holding.query(
+					"select pg_advisory_xact_lock(hashtextextended($1, 0))",
+					[`billable_time_hand_off:${ids.organization}`],
+				);
+				const first = resolveChangedAfterInvoicingAction({
+					items: [website],
+					explanation: "First",
+				});
+				const second = resolveChangedAfterInvoicingAction({
+					items: [website],
+					explanation: "Second",
+				});
+				await waitForLockWaiters(2);
+				await holding.query("commit");
+
+				const outcomes = await Promise.all([unwrap(first), unwrap(second)]);
+				expect(outcomes).toEqual(
+					expect.arrayContaining([
+						{ status: "resolved", resolved: 1 },
+						{ status: "stale", invoicedWorkIds: [website.invoicedWorkId] },
+					]),
+				);
+			} finally {
+				holding.release();
+			}
+			expect(await resolutions()).toHaveLength(1);
+		});
+
+		it("resolves a split item with its piece, and a change to the piece makes it stale", async () => {
+			const { db } = await import("@/db");
+			const { carryInvoicedWorkToSplit } = await import(
+				"@/lib/billable-time/hand-off/invoiced-work"
+			);
+			await unwrap(confirm());
+			// Split 08:00–09:30 at 09:00: the source keeps 60 minutes, the piece takes 30.
+			await admin.query(
+				"update work_period set end_time = '2026-09-02T09:00:00Z', duration_minutes = 60 where id = $1",
+				[work.website],
+			);
+			const piece = await addWork({
+				projectId: ids.website,
+				start: "2026-09-02T09:00:00Z",
+				end: "2026-09-02T09:30:00Z",
+				minutes: 30,
+			});
+			await carryInvoicedWorkToSplit(db, {
+				organizationId: ids.organization,
+				sourceWorkPeriodId: work.website,
+				newWorkPeriodId: piece,
+			});
+
+			const items = await markedItems();
+			expect(items).toHaveLength(1);
+			expect(items[0]).toMatchObject({
+				workPeriodId: work.website,
+				changedFields: ["split", "times"],
+			});
+			const loaded = itemOf(items, work.website);
+
+			await admin.query(
+				"update work_period set duration_minutes = 25 where id = $1",
+				[piece],
+			);
+			await expect(
+				unwrap(
+					resolveChangedAfterInvoicingAction({
+						items: [loaded],
+						explanation: "Handled",
+					}),
+				),
+			).resolves.toMatchObject({ status: "stale" });
+
+			await expect(
+				unwrap(
+					resolveChangedAfterInvoicingAction({
+						items: [itemOf(await markedItems(), work.website)],
+						explanation: "Handled",
+					}),
+				),
+			).resolves.toEqual({ status: "resolved", resolved: 1 });
+			const [resolution] = await resolutions();
+			expect(resolution?.snapshot.pieces.map((p) => p.workPeriodId)).toEqual([
+				work.website,
+				piece,
+			]);
+			expect(
+				(await invoiced()).every((row) => row.changed_after_invoicing_at === null),
+			).toBe(true);
+		});
+
+		it("shows marks cleared before resolutions existed in the draft's history", async () => {
+			const { draftId } = await unwrap(confirm());
+			await admin.query(
+				`update invoiced_work set mark_cleared_at = '2026-10-01T10:00:00Z', mark_cleared_by = $2
+				 where work_period_id = $1`,
+				[work.app, ids.ownerUser],
+			);
+
+			const detail = await unwrap(getInvoiceDraftAction({ draftId }));
+			expect(detail.resolutionHistory).toEqual([
+				{
+					kind: "cleared_before_resolutions",
+					invoicedWorkId: expect.any(String),
+					at: "2026-10-01T10:00:00.000Z",
+					actorName: ids.ownerUser,
+				},
+			]);
+		});
+
+		it("keeps resolutions append-only, apart from the actor's deletion", async () => {
+			await unwrap(confirm());
+			await admin.query(
+				"update work_period set duration_minutes = 80 where id = $1",
+				[work.website],
+			);
+			await unwrap(
+				resolveChangedAfterInvoicingAction({
+					items: [itemOf(await markedItems(), work.website)],
+					explanation: "Handled",
+				}),
+			);
+
+			await expect(
+				admin.query("update invoiced_work_resolution set explanation = 'Edited'"),
+			).rejects.toThrow(/append-only/);
+			await expect(
+				admin.query("delete from invoiced_work_resolution"),
+			).rejects.toThrow(/append-only/);
+			// The audit trail and membership keep the user; only then can it go.
+			await admin.query("delete from audit_log where performed_by = $1", [
+				ids.adminUser,
+			]);
+			await admin.query("delete from member where user_id = $1", [
+				ids.adminUser,
+			]);
+			await admin.query('delete from "user" where id = $1', [ids.adminUser]);
+			expect(await resolutions()).toEqual([
+				expect.objectContaining({ resolved_by: null, explanation: "Handled" }),
+			]);
+		});
+
+		it("refuses other organizations' work, resolving nothing", async () => {
+			await unwrap(confirm());
+			await admin.query(
+				"update work_period set duration_minutes = 80 where id = $1",
+				[work.website],
+			);
+			const website = itemOf(await markedItems(), work.website);
+
+			actAs(ids.otherUser, ids.otherOrganization);
+			await expect(
+				resolveChangedAfterInvoicingAction({
+					items: [website],
+					explanation: "Handled",
+				}),
+			).resolves.toMatchObject({ success: false, code: "NotFoundError" });
+			expect(await resolutions()).toEqual([]);
+		});
+	});
+
 	it("reports invoiced and un-invoiced hours and revenue at the frozen rates", async () => {
 		await unwrap(confirm({ projectIds: [ids.website] }));
 		await addWork({
@@ -1162,7 +1615,10 @@ describe("hand-off on PostgreSQL", () => {
 			getInvoiceDraftAction({ draftId }),
 			checkInvoiceDraftStatusAction({ draftId }),
 			releaseInvoiceDraftAction({ draftId }),
-			clearChangedAfterInvoicingAction({ invoicedWorkIds: [randomUUID()] }),
+			resolveChangedAfterInvoicingAction({
+				items: [{ invoicedWorkId: randomUUID(), markVersion: "x" }],
+				explanation: "Handled",
+			}),
 		]) {
 			await expect(result).resolves.toMatchObject({
 				success: false,
