@@ -10,6 +10,8 @@ import type {
 	KioskDeviceInfo,
 	KioskEmployeeListing,
 	KioskEmployeeSnapshot,
+	KioskFobLookup,
+	KioskFobRegistrationResult,
 	KioskOfflineContact,
 	KioskRefusalCode,
 } from "@/lib/time-tracking/kiosk/protocol";
@@ -36,6 +38,9 @@ import {
 	actingOfflineFlow,
 	attributionFlow,
 	badgeCheckedFlow,
+	fobCheckedFlow,
+	fobRegisteredFlow,
+	isFobRegistrationStep,
 	type KioskFlow,
 	type KioskTurnProof,
 	kioskBadgeBody,
@@ -131,6 +136,10 @@ export function KioskPairedScreen({
 		if (!kioskAcceptsBadgeInput(next, "camera")) {
 			setFlow((current) => (current.step === "camera" ? { step: "home" } : current));
 		}
+		// Fobs (#1505): a reader switched off ends a registration in progress (Z8 would refuse it).
+		if (next.nfcFobReaderEnabled !== true) {
+			setFlow((current) => (isFobRegistrationStep(current) ? { step: "home" } : current));
+		}
 	}
 
 	const contact = useKioskOfflineMode({
@@ -170,7 +179,12 @@ export function KioskPairedScreen({
 	// away from every other screen, so no scan switches or changes an employee's turn.
 	// The camera scan screen counts as such a screen too (#1367).
 	const scanner = kioskAcceptsBadgeInput(kiosk, "scanner");
-	useKioskBadgeScanner({ mode: scanner && flow.step !== "home" ? "guard" : "off" });
+	// An attached NFC reader (#1505) types like a scanner: fobs are read on the home
+	// screen only, and kept away from every other screen the same way.
+	const fobReader = kiosk.nfcFobReaderEnabled === true;
+	useKioskBadgeScanner({
+		mode: (scanner || fobReader) && flow.step !== "home" ? "guard" : "off",
+	});
 
 	// Camera badges (#1367): "Scan badge" on the home screen opens the camera step.
 	const camera = kioskAcceptsBadgeInput(kiosk, "camera");
@@ -206,6 +220,46 @@ export function KioskPairedScreen({
 			checked.step === "employee" ? uncertain.pendingFor(checked.snapshot.employee.id) : undefined;
 		if (held && checked.step === "employee") uncertain.hold(held, checked);
 		else show(checked);
+	}
+
+	/**
+	 * A kiosk fob read on the home screen (#1505): whom it selects here, or the
+	 * offer to register it. Fobs need a connection; offline nothing is sent.
+	 */
+	async function identifyFob(serial: string) {
+		if (!contact.online) {
+			setFlow({ step: "home", notice: { code: "fob_offline" } });
+			return;
+		}
+		setFlow({ step: "fob" });
+		const result = await kioskPost<KioskFobLookup>(
+			token,
+			"/api/kiosk/fob",
+			{ serial },
+			{ timeoutMs: KIOSK_ACTION_TIMEOUT_MS },
+		);
+		if (result.kind === "kiosk") return kioskRefused(result.code);
+		show(fobCheckedFlow({ serial, result, contactLost: contact.contactLost }));
+	}
+
+	/** Registering a fob (#1505): the employee's name and kiosk PIN link it to them. */
+	async function registerFob(
+		serial: string,
+		employee: KioskEmployeeListing,
+		attempt: number,
+		pin: string,
+	) {
+		setFlow({ step: "fob-pin", serial, employee, attempt, busy: true, error: null });
+		const result = await kioskPost<KioskFobRegistrationResult>(
+			token,
+			"/api/kiosk/fob/registration",
+			{ serial, employeeId: employee.id, pin },
+			{ timeoutMs: KIOSK_ACTION_TIMEOUT_MS },
+		);
+		if (result.kind === "kiosk") return kioskRefused(result.code);
+		show(
+			fobRegisteredFlow({ serial, employee, attempt, result, contactLost: contact.contactLost }),
+		);
 	}
 
 	async function verifyPin(employee: KioskEmployeeListing, attempt: number, pin: string) {
@@ -365,6 +419,7 @@ export function KioskPairedScreen({
 										setFlow({ step: "home", notice: { code: "badge_unreadable" } }),
 								}
 							: {})}
+						{...(fobReader ? { onFob: (serial: string) => void identifyFob(serial) } : {})}
 						{...(camera ? { onScanBadge: scanWithCamera } : {})}
 						onChooseLanguage={language.choose}
 						onPick={(employee) => {
@@ -384,6 +439,11 @@ export function KioskPairedScreen({
 					onFlow={setFlow}
 					onHome={goHome}
 					onCameraBadge={(badge) => void identifyBadge(badge, "camera")}
+					token={token}
+					onKioskRefused={kioskRefused}
+					onRegisterFob={(serial, employee, attempt, pin) =>
+						void registerFob(serial, employee, attempt, pin)
+					}
 					onVerifyPin={(employee, attempt, pin) => void verifyPin(employee, attempt, pin)}
 					onChoose={choose}
 					onProceed={proceed}

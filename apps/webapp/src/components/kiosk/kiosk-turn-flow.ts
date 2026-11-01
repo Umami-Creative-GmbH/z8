@@ -26,6 +26,8 @@ import type {
 	KioskDeviceInfo,
 	KioskEmployeeListing,
 	KioskEmployeeSnapshot,
+	KioskFobLookup,
+	KioskFobRegistrationResult,
 	KioskVehicleUse,
 } from "@/lib/time-tracking/kiosk/protocol";
 import type { KioskUncertainAction } from "@/lib/time-tracking/kiosk/uncertain-action";
@@ -123,7 +125,21 @@ export type KioskHomeNotice =
 				| "badge_not_recorded"
 				| KioskCameraProblem;
 	  }
-	| { code: "badge_rate_limited"; retryAfter: number };
+	| { code: "badge_rate_limited"; retryAfter: number }
+	| {
+			/**
+			 * Why a kiosk fob (#1505) opened nothing: no connection, a call that
+			 * failed, the reader switched off, or a registration Z8 refused. Never
+			 * names anyone.
+			 */
+			code:
+				| "fob_offline"
+				| "fob_failed"
+				| "fob_reader_disabled"
+				| "fob_linked_to_other_employee"
+				| "fob_not_eligible";
+	  }
+	| { code: "fob_rate_limited"; retryAfter: number };
 
 /** Refusals of a badge call: the turn (if any) ends and the home screen says why. */
 const KIOSK_BADGE_REFUSALS: ReadonlySet<string> = new Set([
@@ -170,6 +186,34 @@ export type KioskFlow =
 			/** A scanned badge is being checked (#1366); nothing is shown about anyone yet. */
 			step: "badge";
 	  }
+	| {
+			/**
+			 * A kiosk fob read on the home screen is being looked up (#1505). The
+			 * fob steps keep its serial number only in the turn's state, never on
+			 * the device, and never show more than its last four digits.
+			 */
+			step: "fob";
+	  }
+	| {
+			/** The fob selects nobody here; the kiosk offers "Register this fob". */
+			step: "fob-unknown";
+			serial: string;
+	  }
+	| {
+			/** Registering the fob: the employee picks their name from the kiosk's list. */
+			step: "fob-register";
+			serial: string;
+	  }
+	| {
+			/** Registering the fob: the employee's kiosk PIN proves them. */
+			step: "fob-pin";
+			serial: string;
+			employee: KioskEmployeeListing;
+			attempt: number;
+			busy: boolean;
+			error: KioskClockRefusal | null;
+	  }
+	| { step: "fob-registered"; registration: KioskFobRegistrationResult }
 	| {
 			step: "employee";
 			proof: KioskTurnProof;
@@ -247,8 +291,10 @@ type AnsweredCall<T> = Exclude<KioskCallResult<T>, { kind: "kiosk" }>;
 export function isKioskFlowBusy(flow: KioskFlow): boolean {
 	switch (flow.step) {
 		case "pin":
+		case "fob-pin":
 			return flow.busy;
 		case "badge":
+		case "fob":
 			return true;
 		case "employee":
 		case "offline":
@@ -424,6 +470,99 @@ export function badgeCheckedFlow(input: {
 		step: "home",
 		notice: { code: result.kind === "offline" && !result.sent ? "badge_offline" : "badge_failed" },
 	};
+}
+
+/** The steps of registering a fob (#1505), which need the kiosk's fob reader switch. */
+export function isFobRegistrationStep(flow: KioskFlow): boolean {
+	return flow.step === "fob-unknown" || flow.step === "fob-register" || flow.step === "fob-pin";
+}
+
+/** A fob call's wait when Z8 names none: the lookup limit's window. */
+const FOB_RETRY_FALLBACK_SECONDS = 60;
+
+/** The home screen's note for a fob call that did nothing, by what Z8 (or the network) answered. */
+function fobFailureNotice(
+	result: Exclude<AnsweredCall<unknown>, { kind: "ok" }>,
+	contactLost: () => void,
+): KioskFlow {
+	if (result.kind === "refused") {
+		const { refusal } = result;
+		switch (refusal.code) {
+			case "fob_reader_disabled":
+				return { step: "home", notice: { code: "fob_reader_disabled" } };
+			case "fob_linked_to_other_employee":
+				return { step: "home", notice: { code: "fob_linked_to_other_employee" } };
+			case "employee_not_eligible":
+				return { step: "home", notice: { code: "fob_not_eligible" } };
+			case "rate_limited":
+				return {
+					step: "home",
+					notice: {
+						code: "fob_rate_limited",
+						retryAfter:
+							"retryAfter" in refusal && typeof refusal.retryAfter === "number"
+								? refusal.retryAfter
+								: FOB_RETRY_FALLBACK_SECONDS,
+					},
+				};
+		}
+	}
+	if (isKioskCallUnreachable(result) && result.kind !== "offline") contactLost();
+	return {
+		step: "home",
+		notice: { code: result.kind === "offline" && !result.sent ? "fob_offline" : "fob_failed" },
+	};
+}
+
+/**
+ * The screen after a fob lookup (#1505): "not recognised here" with the offer
+ * to register it, or the home screen with why not. A recognised fob is #1506's
+ * (it opens the employee's PIN entry); until then the kiosk stays home. Fobs
+ * need a connection; the lookup itself recorded nothing.
+ */
+export function fobCheckedFlow(input: {
+	serial: string;
+	result: AnsweredCall<KioskFobLookup>;
+	contactLost: () => void;
+}): KioskFlow {
+	const { result } = input;
+	if (result.kind !== "ok") return fobFailureNotice(result, input.contactLost);
+	if (result.body.outcome === "not_recognised") {
+		return { step: "fob-unknown", serial: input.serial };
+	}
+	return { step: "home" };
+}
+
+/**
+ * The screen after a fob registration (#1505): its confirmation, the PIN pad
+ * again when Z8 refused the PIN, or the home screen with why not. A reply lost
+ * after sending says it failed: tapping the fob again shows whether it is
+ * linked now, so nothing is retried on its own.
+ */
+export function fobRegisteredFlow(input: {
+	serial: string;
+	employee: KioskEmployeeListing;
+	attempt: number;
+	result: AnsweredCall<KioskFobRegistrationResult>;
+	contactLost: () => void;
+}): KioskFlow {
+	const { result } = input;
+	if (result.kind === "ok") return { step: "fob-registered", registration: result.body };
+	if (
+		result.kind === "refused" &&
+		result.refusal.code !== "employee_not_assigned" &&
+		KIOSK_PIN_REFUSALS.has(result.refusal.code)
+	) {
+		return {
+			step: "fob-pin",
+			serial: input.serial,
+			employee: input.employee,
+			attempt: input.attempt + 1,
+			busy: false,
+			error: result.refusal,
+		};
+	}
+	return fobFailureNotice(result, input.contactLost);
 }
 
 /** The project and work-category step (#887) with its choices, idle unless `pending` or refused. */

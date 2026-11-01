@@ -4,6 +4,7 @@ import {
 	IconCamera,
 	IconLoader2,
 	IconMapPin,
+	IconNfc,
 	IconQrcode,
 	IconRefresh,
 	IconSearch,
@@ -25,6 +26,7 @@ import type {
 } from "@/lib/time-tracking/kiosk/protocol";
 import { KioskLanguageSwitch } from "./kiosk-language";
 import { useKioskHomeNoticeMessage } from "./kiosk-messages";
+import { KioskNameGrid, kioskNamesMatching } from "./kiosk-name-grid";
 import type { KioskHomeNotice } from "./kiosk-turn-flow";
 import { KioskWhoIsInBoard } from "./kiosk-who-is-in-board";
 import { useKioskBadgeScanner } from "./use-kiosk-badge-scanner";
@@ -33,19 +35,6 @@ type EmployeeList =
 	| { state: "loading" }
 	| { state: "ready"; employees: KioskEmployeeListing[] }
 	| { state: "failed" };
-
-/** Case- and accent-insensitive, so "ozd" finds "Özdemir". */
-function searchable(value: string) {
-	return value
-		.normalize("NFD")
-		.replace(/\p{Diacritic}/gu, "")
-		.toLocaleLowerCase();
-}
-
-/** Whether a name contains the already-`searchable` search text. */
-function nameMatches(name: string, needle: string) {
-	return searchable(name).includes(needle);
-}
 
 type EmployeeListOutcome =
 	| Exclude<EmployeeList, { state: "loading" }>
@@ -74,12 +63,6 @@ async function fetchEmployeeList(
 	};
 }
 
-function initials(name: string) {
-	const words = name.trim().split(/\s+/).filter(Boolean);
-	const letters = words.length > 1 ? [words[0], words[words.length - 1]] : words;
-	return letters.map((word) => Array.from(word)[0]?.toLocaleUpperCase() ?? "").join("");
-}
-
 interface KioskHomeProps {
 	token: string;
 	kiosk: KioskDeviceInfo;
@@ -97,6 +80,11 @@ interface KioskHomeProps {
 	onBadge?: (credential: string) => void;
 	/** A scanned code that is no kiosk badge. */
 	onBadgeUnreadable?: () => void;
+	/**
+	 * A kiosk fob's serial number read on this screen (#1505), given only while
+	 * the kiosk's NFC fob reader is on. Other screens never read fobs.
+	 */
+	onFob?: (serial: string) => void;
 	/**
 	 * "Scan badge" with the kiosk's camera (#1367). Given only while the kiosk's
 	 * camera input is on; the camera opens from this button alone.
@@ -124,6 +112,7 @@ export function KioskHome({
 	notice = null,
 	onBadge,
 	onBadgeUnreadable,
+	onFob,
 	onScanBadge,
 	onChooseLanguage,
 	onPick,
@@ -136,8 +125,9 @@ export function KioskHome({
 	// What the search said before a scan's keys may have reached it (#1366).
 	const queryBeforeScan = useRef("");
 	useKioskBadgeScanner({
-		mode: onBadge ? "read" : "off",
+		mode: onBadge || onFob ? "read" : "off",
 		onBadge,
+		onFob,
 		onUnreadable: onBadgeUnreadable,
 		onScanStart: () => {
 			queryBeforeScan.current = query;
@@ -162,11 +152,7 @@ export function KioskHome({
 		loadOnContact();
 	}, [contacts]);
 
-	const needle = searchable(query.trim());
-	const shown =
-		list.state === "ready"
-			? list.employees.filter((employee) => nameMatches(employee.name, needle))
-			: [];
+	const shown = list.state === "ready" ? kioskNamesMatching(list.employees, query) : [];
 
 	return (
 		<div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6">
@@ -196,6 +182,12 @@ export function KioskHome({
 						<p className="-mt-2 flex items-center gap-2 text-lg text-muted-foreground">
 							<IconQrcode className="size-6 shrink-0" aria-hidden="true" />
 							{t("timeTracking.kiosk.home.scanHint", "Or scan your kiosk badge at the scanner.")}
+						</p>
+					) : null}
+					{onFob ? (
+						<p className="-mt-2 flex items-center gap-2 text-lg text-muted-foreground">
+							<IconNfc className="size-6 shrink-0" aria-hidden="true" />
+							{t("timeTracking.kiosk.home.fobHint", "Or tap your fob on the reader.")}
 						</p>
 					) : null}
 					{notice ? (
@@ -265,27 +257,7 @@ export function KioskHome({
 								: t("timeTracking.kiosk.home.noMatch", "No name matches your search.")}
 						</p>
 					) : null}
-					{shown.length > 0 ? (
-						<ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-							{shown.map((employee) => (
-								<li key={employee.id}>
-									<button
-										type="button"
-										onClick={() => onPick(employee)}
-										className="flex min-h-20 w-full items-center gap-4 rounded-xl border bg-card px-4 py-3 text-left text-xl font-medium shadow-xs transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 active:bg-accent"
-									>
-										<span
-											aria-hidden="true"
-											className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary/10 text-lg font-semibold text-primary"
-										>
-											{initials(employee.name)}
-										</span>
-										<span className="min-w-0 break-words">{employee.name}</span>
-									</button>
-								</li>
-							))}
-						</ul>
-					) : null}
+					{shown.length > 0 ? <KioskNameGrid employees={shown} onPick={onPick} /> : null}
 				</section>
 				{kiosk.boardEnabled && !offline ? (
 					<aside className="min-w-0">

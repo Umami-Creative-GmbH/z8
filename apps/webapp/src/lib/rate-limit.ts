@@ -24,6 +24,8 @@ import { KIOSK_PIN_ATTEMPT_LIMIT } from "@/lib/time-tracking/kiosk/pin-attempt-l
 export const KIOSK_BADGE_ATTEMPT_LIMIT = { attempts: 60, windowSeconds: 60 } as const;
 /** Kiosk outcome questions per kiosk (#1363). */
 export const KIOSK_OUTCOME_LOOKUP_LIMIT = { attempts: 60, windowSeconds: 60 } as const;
+/** Kiosk fob lookups per kiosk (#1505). */
+export const KIOSK_FOB_LOOKUP_LIMIT = { attempts: 60, windowSeconds: 60 } as const;
 
 /**
  * Check if rate limiting is disabled
@@ -255,6 +257,20 @@ const limiters = {
 		prefix: "ratelimit:kiosk-outcome",
 		analytics: false,
 	}),
+	/**
+	 * Kiosk fob lookups per kiosk (#1505): 60 per minute. A lookup names the
+	 * employee a serial number selects, so a token cannot try serial numbers
+	 * quickly. Registrations count as PIN attempts instead.
+	 */
+	kioskFobLookups: new Ratelimit({
+		redis,
+		limiter: Ratelimit.slidingWindow(
+			KIOSK_FOB_LOOKUP_LIMIT.attempts,
+			`${KIOSK_FOB_LOOKUP_LIMIT.windowSeconds} s`,
+		),
+		prefix: "ratelimit:kiosk-fob",
+		analytics: false,
+	}),
 	/** ICS feed fetches, keyed by feed id (120 per hour) */
 	icsFeed: new Ratelimit({
 		redis,
@@ -335,6 +351,10 @@ export const RATE_LIMIT_CONFIGS = {
 	kioskOutcomeLookups: {
 		maxRequests: KIOSK_OUTCOME_LOOKUP_LIMIT.attempts,
 		windowSeconds: KIOSK_OUTCOME_LOOKUP_LIMIT.windowSeconds,
+	},
+	kioskFobLookups: {
+		maxRequests: KIOSK_FOB_LOOKUP_LIMIT.attempts,
+		windowSeconds: KIOSK_FOB_LOOKUP_LIMIT.windowSeconds,
 	},
 	icsFeed: {
 		maxRequests: icsFeedConfig.requests,

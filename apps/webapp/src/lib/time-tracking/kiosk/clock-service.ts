@@ -1,19 +1,14 @@
 import "server-only";
 
 import { randomUUID } from "node:crypto";
-import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
-import { user } from "@/db/auth-schema";
-import { employee } from "@/db/schema";
-import { buildDerivedUserName } from "@/lib/auth/derived-user-name";
 import {
 	type Clock,
 	type Instant,
 	instantFromDate,
 	instantToCanonicalString,
 } from "@/lib/datetime/temporal-core";
-import { isEmployeeActivelyAssignedToLocation } from "@/lib/time-tracking/assigned-locations/queries";
 import { attributionIntent } from "@/lib/time-tracking/close-active-work";
 import type { Clocking } from "@/lib/time-tracking/clocking/clocking";
 import { proveKioskBadge, proveKioskPin } from "@/lib/time-tracking/clocking/kiosk";
@@ -39,6 +34,7 @@ import {
 	resolveKioskClockAttempt,
 } from "./clock-attempt";
 import { readKioskEmployeeState } from "./employee-state";
+import { type KioskEmployee, readKioskEmployee } from "./kiosk-employee";
 import { readKioskBadgeInputs } from "./kiosk-store";
 import {
 	KIOSK_BADGE_INPUTS,
@@ -94,8 +90,6 @@ export type KioskClockServiceDeps = {
 		organizationId: string;
 	}) => Promise<EmployeeCalendar>;
 };
-
-type KioskEmployee = { id: string; userId: string; name: string };
 
 /** A request's verified employee (`badge`: proven by a kiosk badge, #1366), or the refusal. */
 type Admission =
@@ -238,44 +232,12 @@ export function createKioskClockService(deps: KioskClockServiceDeps) {
 	const verifyPin = deps.verifyPin;
 	const employeeCalendar = deps.employeeCalendar ?? settingsCalendar;
 
-	/**
-	 * The kiosk's employee by id, when active and assigned to the kiosk's
-	 * location; another organization's employee, an inactive one and an
-	 * unassigned one read alike (null).
-	 */
-	async function assignedEmployee(
+	/** The kiosk's employee by id, when active and assigned to the kiosk's location. */
+	function assignedEmployee(
 		kiosk: AuthenticatedKiosk,
 		employeeId: string,
 	): Promise<KioskEmployee | null> {
-		const [subject] = await db
-			.select({
-				id: employee.id,
-				userId: employee.userId,
-				name: user.name,
-				firstName: user.firstName,
-				lastName: user.lastName,
-			})
-			.from(employee)
-			.innerJoin(user, eq(user.id, employee.userId))
-			.where(and(eq(employee.id, employeeId), eq(employee.organizationId, kiosk.organizationId)))
-			.limit(1);
-		if (
-			!subject ||
-			!(await isEmployeeActivelyAssignedToLocation(db, {
-				organizationId: kiosk.organizationId,
-				employeeId: subject.id,
-				locationId: kiosk.locationId,
-				now: deps.clock.nowInstant(),
-			}))
-		) {
-			return null;
-		}
-		return {
-			id: subject.id,
-			userId: subject.userId,
-			// The same name as on the kiosk's list (`readKioskEmployees`).
-			name: buildDerivedUserName(subject.firstName ?? "", subject.lastName ?? "", subject.name),
-		};
+		return readKioskEmployee(db, kiosk, employeeId, deps.clock.nowInstant());
 	}
 
 	/** The kiosk's employee behind a verified PIN or badge, or the refusal to answer. */
