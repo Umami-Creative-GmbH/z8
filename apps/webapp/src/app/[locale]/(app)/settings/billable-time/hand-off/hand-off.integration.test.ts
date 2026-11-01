@@ -2429,7 +2429,18 @@ describe("hand-off on PostgreSQL", () => {
 			const rows = csvRows(
 				(await unwrap(downloadDraftReconciliationCsvAction({ draftId }))).content,
 			);
-			expect(rows[0]).toMatchObject({ day: "2026-09-02", resolution_count: "2" });
+			expect(rows[0]).toMatchObject({
+				day: "2026-09-02",
+				mark_status: "resolved",
+				resolution_count: "2",
+			});
+			// The App item was still open at release (#1503).
+			expect(rows[1]).toMatchObject({
+				day: "2026-09-03",
+				mark_status: "open_when_released",
+				changed_fields: "removed",
+				resolution_count: "0",
+			});
 		});
 
 		it("lets only owners and admins download, each only their organization's work", async () => {

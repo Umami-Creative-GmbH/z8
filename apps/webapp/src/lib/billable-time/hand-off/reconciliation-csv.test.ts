@@ -100,6 +100,7 @@ function item(overrides: {
 	history?: ResolutionHistoryEntryView[];
 	changedFields?: MarkedWorkItemView["changedFields"];
 	open?: boolean;
+	openWhenReleased?: boolean;
 	draft?: Partial<MarkedWorkDraftView>;
 	employeeName?: string;
 }): MarkedWorkItemView {
@@ -117,6 +118,7 @@ function item(overrides: {
 		invoiceDraftId: "draft-1",
 		draft: { ...draft, ...overrides.draft },
 		markVersion: `${id}:1`,
+		openWhenReleased: overrides.openWhenReleased ?? false,
 		history: overrides.history ?? [],
 		comparison: {
 			amountDifference: {
@@ -275,6 +277,21 @@ describe("reconciliationCsv", () => {
 			resolution_2_explanation: "Credit note sent",
 			resolution_2_accounting_reference: "GS-7",
 		});
+	});
+
+	it("writes a mark still open on a released draft as open when released", () => {
+		const rows = rowsOf(
+			reconciliationCsv([
+				item({ id: "iw-1", openWhenReleased: true }),
+				item({ id: "iw-2", open: false, changedFields: [] }),
+				item({ id: "iw-3" }),
+			]),
+		);
+		expect(rows.map((row) => [row.invoiced_work_id, row.mark_status, row.changed_fields])).toEqual([
+			["iw-1", "open_when_released", "times"],
+			["iw-2", "resolved", ""],
+			["iw-3", "open", "times"],
+		]);
 	});
 
 	it("gives every row as many resolution columns as the item with the most, and writes earlier clears", () => {

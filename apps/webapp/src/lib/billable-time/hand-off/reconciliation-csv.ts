@@ -151,6 +151,12 @@ function resolutionCells(entry: ResolutionHistoryEntryView | undefined): string[
 	];
 }
 
+/** A mark still open on a released draft (#1503) can no longer be resolved there. */
+function markStatus(item: MarkedWorkItemView): "resolved" | "open" | "open_when_released" {
+	if (item.changedAfterInvoicingAt === null) return "resolved";
+	return item.openWhenReleased ? "open_when_released" : "open";
+}
+
 /** The CSV of these items, in the order given. */
 export function reconciliationCsv(items: readonly MarkedWorkItemView[]): string {
 	// Oldest first, so resolution_1 is the first one recorded.
@@ -175,7 +181,7 @@ export function reconciliationCsv(items: readonly MarkedWorkItemView[]): string 
 			invoiced_work_id: csvText(item.invoicedWorkId),
 			employee: csvText(item.employeeName),
 			day: csvText(item.day),
-			mark_status: csvText(item.changedAfterInvoicingAt === null ? "resolved" : "open"),
+			mark_status: csvText(markStatus(item)),
 			changed_fields: csvText(item.changedFields.join("; ")),
 			...prefixed("hand_off", valueCells(comparison.handOff)),
 			last_resolved_at: csvText(
