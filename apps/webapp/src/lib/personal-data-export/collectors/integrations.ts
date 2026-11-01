@@ -3,8 +3,9 @@
  * connections (provider and account), the employee's own calendar feeds,
  * linked Slack, Teams, Telegram and Discord accounts, whether a kiosk PIN is
  * set, the kiosk PIN attempts and unlocks its lockout is judged from
- * (#1288), and the employee's offline kiosk clockings Z8 refused (#1290). No
- * withheld data: both kinds of export hold the same rows.
+ * (#1288), the employee's offline kiosk clockings Z8 refused (#1290) and their
+ * kiosk fobs (#1509), current and ended. No withheld data: both kinds of export
+ * hold the same rows. Kiosk badges are not exported (spec #1358).
  *
  * Never exported: calendar tokens and OAuth details, sync errors, synced
  * events, calendar feed secret digests, team feeds, PIN hashes, OAuth state,
@@ -15,6 +16,7 @@ import { and, asc, eq } from "drizzle-orm";
 import {
 	calendarConnection,
 	discordUserMapping,
+	employeeKioskFob,
 	employeeKioskPin,
 	employeeKioskPinEvent,
 	icsFeed,
@@ -68,6 +70,14 @@ const KIOSK_REFUSAL_COLUMNS = [
 	"refused_at",
 ] as const;
 
+const KIOSK_FOB_COLUMNS = [
+	"serial_number",
+	"registered_at",
+	"kiosk",
+	"ended_at",
+	"ended_reason",
+] as const;
+
 const CHAT_ACCOUNT_COLUMNS = [
 	"platform",
 	"account_id",
@@ -93,7 +103,7 @@ async function collectIntegrations(
 	const { organizationId, employeeId } = scope;
 	await loadSubjectEmployee(database, scope);
 
-	const [calendars, feeds, { pin, pinSetters }, chatAccounts, pinEvents, refusals] =
+	const [calendars, feeds, { pin, pinSetters }, chatAccounts, pinEvents, refusals, fobs] =
 		await Promise.all([
 			database
 				.select({
@@ -166,6 +176,7 @@ async function collectIntegrations(
 				)
 				.orderBy(asc(employeeKioskPinEvent.occurredAt), asc(employeeKioskPinEvent.sequence)),
 			kioskRefusalRows(database, scope),
+			kioskFobRows(database, scope),
 		]);
 
 	return {
@@ -225,8 +236,50 @@ async function collectIntegrations(
 					refused_at: instantText(row.refusedAt),
 				})),
 			),
+			tablePart(
+				"kiosk_fobs",
+				KIOSK_FOB_COLUMNS,
+				fobs.map((row) => ({
+					serial_number: row.serialNumber,
+					registered_at: instantText(row.registeredAt),
+					kiosk: row.kiosk,
+					ended_at: instantText(row.endedAt),
+					ended_reason: row.endedReason,
+				})),
+			),
 		],
 	};
+}
+
+/**
+ * The employee's kiosk fobs (#1509), current and ended, with the kiosk each was
+ * registered at (null once that kiosk is gone). The full serial number is the
+ * employee's own data, so it is exported.
+ */
+function kioskFobRows(database: PersonalDataExportDatabase, scope: PersonalDataExportScope) {
+	return database
+		.select({
+			serialNumber: employeeKioskFob.serialNumber,
+			registeredAt: employeeKioskFob.registeredAt,
+			kiosk: kiosk.name,
+			endedAt: employeeKioskFob.endedAt,
+			endedReason: employeeKioskFob.endedReason,
+		})
+		.from(employeeKioskFob)
+		.leftJoin(
+			kiosk,
+			and(
+				eq(kiosk.id, employeeKioskFob.registeredKioskId),
+				eq(kiosk.organizationId, employeeKioskFob.organizationId),
+			),
+		)
+		.where(
+			and(
+				eq(employeeKioskFob.organizationId, scope.organizationId),
+				eq(employeeKioskFob.employeeId, scope.employeeId),
+			),
+		)
+		.orderBy(asc(employeeKioskFob.registeredAt), asc(employeeKioskFob.id));
 }
 
 /** The employee's refused offline kiosk clockings (#1290); the frozen command is not exported. */

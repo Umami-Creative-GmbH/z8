@@ -158,6 +158,30 @@ export async function endKioskFobLinks(
 }
 
 /**
+ * The active links `endKioskFobLinks` ends for an ending employment, for a
+ * deactivation's preview (#1509): those of the period, or every active link of
+ * the employee when they have no period.
+ */
+export async function liveKioskFobsOfEmployment(
+	client: Pick<Transaction, "select">,
+	input: { organizationId: string; employeeId: string; employmentPeriodId: string | null },
+): Promise<string[]> {
+	const rows = await client
+		.select({ id: employeeKioskFob.id })
+		.from(employeeKioskFob)
+		.where(
+			and(
+				activeFobsOf(input),
+				input.employmentPeriodId
+					? eq(employeeKioskFob.employmentPeriodId, input.employmentPeriodId)
+					: undefined,
+			),
+		)
+		.orderBy(employeeKioskFob.registeredAt, employeeKioskFob.id);
+	return rows.map((row) => row.id);
+}
+
+/**
  * The active link a read serial number selects within one organization, or
  * null: an unreadable, unknown or ended serial, one of another organization, an
  * employee without organization access at `now` (inactive, or a departure in
