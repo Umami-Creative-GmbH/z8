@@ -49,6 +49,7 @@ import {
 	type KioskFrozenRefusalLedger,
 	unrecordedKioskFrozenRefusals,
 } from "./frozen-refusals";
+import { json, NO_STORE } from "./kiosk-http";
 import { KioskPinUnsealableError, openSealedKioskPin } from "./pin-seal.server";
 import type { KioskPinJudgment, QueuedKioskPinAttempt } from "./pin-store";
 import { KIOSK_TOKEN_HEADER } from "./protocol";
@@ -100,11 +101,6 @@ export type KioskFrozenCommandServiceDeps = {
 };
 
 const logger = createLogger("KioskFrozenCommands");
-const NO_STORE = { "Cache-Control": "no-store" };
-
-function json(body: unknown, status = 200) {
-	return Response.json(body, { status, headers: NO_STORE });
-}
 
 /**
  * What Clocking can refuse a frozen kiosk command with: its clock commands'
