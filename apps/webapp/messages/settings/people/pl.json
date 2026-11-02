@@ -190,6 +190,15 @@
         "revokedOn": "Brak aktywnego identyfikatora do kiosku. Ostatni został unieważniony w dniu {date}.",
         "saveNow": "Zapisz plik PDF teraz: Z8 nie wyświetli ponownie tego identyfikatora. Możesz wydrukować zapisaną kopię. W przypadku utraty pliku lub identyfikatora wymień identyfikator."
       },
+      "kioskFob": {
+        "confirmRemoveText": "Brelok natychmiast przestaje działać w kioskach i można go zarejestrować ponownie. Kod PIN do kiosku i identyfikator pracownika nadal działają.",
+        "description": "Karta lub brelok NFC, który pracownik przykłada do kiosku online, aby wybrać swoje nazwisko. Kod PIN do kiosku nadal potwierdza tożsamość pracownika.",
+        "endedByDeparture": "Ostatni zakończył się wraz z odejściem pracownika w dniu {date}.",
+        "endedOn": "Ostatni zakończył się w dniu {date}.",
+        "heading": "Brelok do kiosku",
+        "none": "Brak breloka do kiosku. Pracownicy rejestrują własny brelok w kiosku z czytnikiem NFC, używając swojego kodu PIN do kiosku.",
+        "removedOn": "Ostatni został usunięty w dniu {date}."
+      },
       "kioskPin": {
         "addEmailDescription": "Otrzymają zaproszenie do utworzenia hasła i będą mogli się zalogować. Ich PIN do kiosku oraz historia pozostaną bez zmian.",
         "addEmailHeading": "Dodaj adres e-mail",
@@ -244,6 +253,7 @@
             "personnelFileOfficer": "Osoba odpowiedzialna za akta osobowe"
           },
           "kioskBadges": "{count, plural, one {# identyfikator kiosku zostaje cofnięty} few {# identyfikatory kiosku zostają cofnięte} many {# identyfikatorów kiosku zostaje cofniętych} other {# identyfikatora kiosku zostaje cofniętych}}",
+          "kioskFobs": "{count, plural, one {# brelok do kiosku przestaje działać} few {# breloki do kiosku przestają działać} many {# breloków do kiosku przestaje działać} other {# breloka do kiosku przestaje działać}}",
           "loadError": "Nie udało się załadować podglądu.",
           "loading": "Sprawdzanie, co ulegnie zmianie…",
           "managerLinksTitle": "Powiązania z menedżerami, które wygasają",

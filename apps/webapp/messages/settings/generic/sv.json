@@ -239,6 +239,29 @@
       },
       "description": "Fakturerbar valuta och vad din organisation debiterar kunder för arbete",
       "handOff": {
+        "amount": {
+          "estimated": "Uppskattat: denna överlämning sparade inget belopp per arbetsperiod, så taxa × varaktighet ersätter.",
+          "noSubtotal": "Inga kända beloppsdifferenser",
+          "note": "Beloppsdifferenser är avstämningsinformation prissatt enligt den taxa som låstes vid överlämningen, inte kreditfakturor.",
+          "notOnHandOff": "Dess projekt tillhör nu en annan kund. Detta arbete ingår inte i någon överlämning för den kunden och förblir fakturerat i detta utkast, så fakturera det till den nya kunden i bokföringsverktyget.",
+          "reason": {
+            "customer": "Projektet tillhör nu en annan kund eller ingen, så hela det överlämnade beloppet återförs.",
+            "frozenRate": "Ändringen i timmar till den taxa som låstes vid överlämningen.",
+            "noFrozenRate": "Ingen taxa låstes för detta arbete vid överlämningen.",
+            "nonBillable": "Arbetet är inte längre debiterbart, så hela dess överlämnade belopp återförs.",
+            "otherProject": "Arbetet flyttades till ett annat projekt för samma kund, vilket inte har någon taxa låst vid överlämningen.",
+            "removed": "Arbetet togs bort, så hela dess överlämnade belopp återförs.",
+            "running": "En del av arbetet pågår fortfarande.",
+            "severalRates": "Överlämningen prissatte detta arbete med flera olika taxor; den uppdelningen kan inte upprepas utan dagens taxor."
+          },
+          "roundingCaveat": "Det kan skilja några cent från utkastradens avrundning.",
+          "sinceResolution": "Sedan den senaste lösningen: {amount}",
+          "subtotal": "Kända beloppsdifferenser: {amount}",
+          "subtotalEstimated": "Kända beloppsdifferenser: {amount} (inkluderar uppskattningar)",
+          "title": "Beloppsdifferens",
+          "unknown": "Okänd",
+          "unknownCount": "{count, plural, one {# okänd differens ingår inte} other {# okända differenser ingår inte}}"
+        },
         "blocker": {
           "currency": "Bokföringsverktyget kan inte ta emot utkast i {currency}.",
           "noContactLink": "Koppla först denna kund till en kontakt i bokföringsverktyget på sidan Bokföring.",
@@ -252,12 +275,48 @@
         },
         "changed": {
           "billability": "Fakturerbarhet",
+          "customer": "Kund",
           "project": "Projekt",
           "removed": "Borttagen",
           "split": "Dela",
           "times": "Tider"
         },
+        "comparison": {
+          "billability": "Debiterbarhet",
+          "billable": "Debiterbar",
+          "caption": "Jämförelse av {item}",
+          "changedFromHandOff": "(ändrad från överlämningen)",
+          "changedSinceResolution": "(ändrad sedan den senaste lösningen)",
+          "current": "Aktuell",
+          "customer": "Kund",
+          "day": "Dag",
+          "end": "Slut",
+          "field": "Fält",
+          "handOff": "Överlämning",
+          "hours": "Timmar",
+          "lastResolved": "Senast löst",
+          "legend": "Markerade värden skiljer sig från överlämningen. Tiderna är lokala för platsen där arbetet registrerades.",
+          "legendSinceResolution": "Ändrad sedan den senaste lösningen.",
+          "mixedBillable": "Delvis fakturerbar",
+          "noCustomer": "Ingen kund",
+          "nonBillable": "Ej fakturerbar",
+          "noProject": "Inget projekt",
+          "pieces": "Nuvarande värden omfattar {count} delar uppdelade från detta arbete; timmar är summan av dem.",
+          "project": "Projekt",
+          "removed": "Borttagen",
+          "removedNo": "Nej",
+          "removedPieces": "{removed} av {count} delar",
+          "removedYes": "Ja",
+          "start": "Start",
+          "timeOnDay": "{day} {time}",
+          "timeWithOffset": "{time} ({offset})",
+          "unknownCustomer": "Okänd kund",
+          "unknownProject": "Okänt projekt"
+        },
         "confirmed": "Fakturautkastet har skapats",
+        "csv": {
+          "download": "Ladda ner avstämnings-CSV"
+        },
         "detail": {
           "checking": "Kontrollerar utkastet i verktyget…",
           "gone": "Bokföringsverktyget har inte längre detta utkast. Om det togs bort med avsikt kan du frigöra överföringen så att arbetet kan överföras igen.",
@@ -289,6 +348,14 @@
           "timesheetHelp": "En rad per arbetsperiod, inom bokföringsverktygets radgräns. Du kan alltid ladda ner tidrapporten.",
           "to": "Till"
         },
+        "history": {
+          "deletedUser": "en borttagen användare",
+          "legacy": "Rensades innan åtgärder registrerades",
+          "legacyMeta": "{at} av {actor}",
+          "reference": "Referens: {reference}",
+          "resolved": "Åtgärdades {at} av {actor}",
+          "title": "Åtgärdshistorik"
+        },
         "hoursValue": "{hours} h",
         "list": {
           "actions": "Åtgärder",
@@ -304,10 +371,19 @@
           "total": "Nettobelopp"
         },
         "marks": {
-          "clear": "Rensa markering",
-          "clearAll": "Rensa alla markeringar",
-          "cleared": "{count, plural, one {# markering rensades} other {# markeringar rensades}}",
-          "help": "Detta fakturerade arbete korrigerades efter överlämningen. Korrigera fakturan i bokföringsverktyget vid behov (till exempel med en kreditfaktura) och rensa sedan markeringen.",
+          "compare": "Jämför",
+          "compareItem": "Jämför {item}",
+          "draftHeading": "{title} · {period}",
+          "history": "Historik ({count})",
+          "historyItem": "Historik ({count}) för {item}",
+          "openWhenReleased": "Öppet när det släpptes",
+          "releasedHelp": "Detta fakturerade arbete korrigerades efter dess överlämning och var fortfarande öppet när överlämningen släpptes. Det kan inte längre åtgärdas här. De nuvarande värdena visar arbetet som det ser ut nu.",
+          "resolve": "Åtgärda",
+          "resolveHelp": "Detta fakturerade arbete korrigerades efter dess överlämning. Korrigera fakturan i bokföringsverktyget om det behövs (till exempel med en kreditfaktura) och åtgärda sedan ändringen med en förklaring.",
+          "resolveItem": "Åtgärda {item}",
+          "resolveSelected": "Åtgärda markerade ({count})",
+          "select": "Välj {item}",
+          "selectAll": "Markera alla",
           "title": "Ändrat efter fakturering"
         },
         "new": {
@@ -345,6 +421,23 @@
           "done": "{count, plural, one {Frisläppt. # arbetsperiod är ofakturerad igen.} other {Frisläppt. # arbetsperioder är ofakturerade igen.}}",
           "reason": "Anledning (valfritt)",
           "title": "Frisläppa denna överföring?"
+        },
+        "resolve": {
+          "description": "Registrera hur ändringen hanterades, till exempel med en kreditfaktura i bokföringsverktyget. Överlämningen och dess rader förblir oförändrade.",
+          "done": "{count, plural, one {# objekt åtgärdat} other {# objekt åtgärdade}}",
+          "explanation": "Förklaring",
+          "explanationRequired": "Förklara hur ändringen hanterades.",
+          "explanationTooLong": "Håll förklaringen till högst {max} tecken.",
+          "itemLabel": "{day} · {employee} · {project}",
+          "itemsInvalid": "Välj det markerade arbetet som ska åtgärdas.",
+          "reference": "Bokföringsreferens (valfritt)",
+          "referenceHint": "Till exempel kreditfakturanumret.",
+          "referenceTooLong": "Håll referensen till högst {max} tecken.",
+          "released": "Inget åtgärdades: överlämningen av detta arbete har släppts, så dess ändringar kan inte längre åtgärdas. Ladda om för att se det.",
+          "reload": "Ladda om",
+          "stale": "Inget åtgärdades: detta arbete har ändrats sedan du öppnade det. Ladda om för att granska ändringarna.",
+          "submit": "{count, plural, other {Åtgärda # objekt} }",
+          "title": "Åtgärda ändrat arbete"
         },
         "status": {
           "created": "Utkast skapat",
@@ -1341,25 +1434,272 @@
     },
     "implementationChecklist": {
       "actions": {
+        "confirmAgain": "Bekräfta igen",
         "markComplete": "Markera som klar",
-        "markIncomplete": "Markera som ej klar"
+        "markIncomplete": "Markera som ej klar",
+        "removeConfirmation": "Ta bort bekräftelse"
+      },
+      "confirmation": {
+        "beforeChangeTracking": "Bekräftad {date}, före ändringsspårning",
+        "current": "Bekräftad {date}",
+        "stale": "Inställningarna har ändrats sedan de bekräftades {date}",
+        "unchecked": "Kunde inte kontrollera ändringar i inställningarna sedan de bekräftades {date}"
       },
       "description": "Slutför konfigurationsstegen innan du bjuder in hela teamet så att tidrapportering, godkännanden och löneflöden är redo för daglig användning.",
+      "entryDescription": "Kontrollera driftsättningsberedskap och följ konfigurationen för policyer, lön, integrationer och medarbetarimport",
       "errors": {
         "updateItem": "Det gick inte att uppdatera checklistobjektet."
       },
       "eyebrow": "Kundimplementering",
+      "firstWorkflows": {
+        "clockIn": "Första instämpling",
+        "decidedApproval": "Första beslutade förfrågan",
+        "former": "Tidigare medarbetare",
+        "notYet": "Inte än",
+        "payrollExport": "Första lyckade löneexporten",
+        "retry": "Kontrollera igen",
+        "seen": "{time} av {name}",
+        "status": {
+          "allSeen": "Alla sedda",
+          "notStarted": "Ej påbörjad",
+          "underWay": "Pågår"
+        },
+        "unavailable": "Kunde inte kontrolleras"
+      },
+      "goLive": {
+        "approver": {
+          "approvalModeUnsupported": "{count, plural, other {{kind, select, absence {Frånvaroansökningar} timeCorrection {Tidskorrigeringar} workPeriod {Inskickade arbetsperioder} periodSubmission {Periodinlämningar} expenseReport {Utläggsrapporter} other {Skiftförfrågningar}}: kan inte skickas in i den här organisationens godkännandeläge. Kontakta support: # medarbetare} }",
+          "changePolicyAmbiguous": "{count, plural, other {{kind, select, absence {Frånvaroansökningar} timeCorrection {Tidskorrigeringar} workPeriod {Inskickade arbetsperioder} periodSubmission {Periodinlämningar} expenseReport {Utläggsrapporter} other {Skiftförfrågningar}}: fler än en ändringspolicy gäller, så poster avvisas: # medarbetare} }",
+          "correctionDirectNoPolicy": "{count, plural, other {Tidskorrigeringar: # medarbetare redigerar sina egna poster direkt, eftersom ingen ändringspolicy gäller. Förfrågningar om borttagning och datumändringar går fortfarande till en godkännare, så de kontrolleras.} }",
+          "correctionDirectSelfService": "{count, plural, other {Tidskorrigeringar: # medarbetare redigerar sina egna poster direkt inom sin ändringspolicys självbetjäningsdagar och kan inte ändra äldre poster. Förfrågningar om borttagning och datumändringar går fortfarande till en godkännare, så de kontrolleras.} }",
+          "correctionDirectTrustMode": "{count, plural, other {Tidskorrigeringar: # medarbetare redigerar sina egna poster direkt, eftersom deras ändringspolicy är i tillitsläge. Förfrågningar om borttagning och datumändringar går fortfarande till en godkännare, så de kontrolleras.} }",
+          "fixApprovalPolicies": "Granska godkännandepolicyer",
+          "fixChangePolicies": "Granska ändringspolicyer",
+          "fixExpenseApprover": "Ange en utläggsgodkännare",
+          "fixManagers": "Tilldela chefer",
+          "fixTeamManager": "Ange teamets chef",
+          "invalidPolicies": "{count, plural, other {{kind, select, absence {Frånvaroansökningar} timeCorrection {Tidskorrigeringar} workPeriod {Inskickade arbetsperioder} periodSubmission {Periodinlämningar} expenseReport {Utläggsrapporter} other {Skiftförfrågningar}}: godkännandepolicyerna kan inte tillämpas: # medarbetare} }",
+          "managerDeparted": "{count, plural, other {{kind, select, absence {Frånvaroansökningar} timeCorrection {Tidskorrigeringar} workPeriod {Inskickade arbetsperioder} periodSubmission {Periodinlämningar} expenseReport {Utläggsrapporter} other {Skiftförfrågningar}}: deras chef har slutat och ingen ersätter: # medarbetare} }",
+          "noDecider": "{count, plural, other {{kind, select, absence {Frånvaroansökningar} timeCorrection {Tidskorrigeringar} workPeriod {Inskickade arbetsperioder} periodSubmission {Periodinlämningar} expenseReport {Utläggsrapporter} other {Skiftförfrågningar}}: ingen chef eller administratör kan besluta om dem: # medarbetare} }",
+          "noManagerNoTeam": "{count, plural, other {{kind, select, absence {Frånvaroansökningar} timeCorrection {Tidskorrigeringar} workPeriod {Inskickade arbetsperioder} periodSubmission {Periodinlämningar} expenseReport {Utläggsrapporter} other {Skiftförfrågningar}}: ingen behörig chef: # medarbetare utan team} }",
+          "periodSubmissionsOff": "Periodinlämningar är inaktiverade, så de kontrolleras inte.",
+          "policyWithoutApprover": "{count, plural, other {{kind, select, absence {Frånvaroansökningar} timeCorrection {Tidskorrigeringar} workPeriod {Inskickade arbetsperioder} periodSubmission {Periodinlämningar} expenseReport {Utläggsrapporter} other {Skiftförfrågningar}}: godkännandepolicyn {policy} hittar ingen godkännare: # medarbetare} }",
+          "selfApprovalRoute": "{count, plural, other {{kind, select, absence {Frånvaroansökningar} timeCorrection {Tidskorrigeringar} workPeriod {Inskickade arbetsperioder} periodSubmission {Periodinlämningar} expenseReport {Utläggsrapporter} other {Skiftförfrågningar}}: skulle gå till medarbetarna själva, vilket inte är tillåtet: # medarbetare} }",
+          "shiftsOff": "Skift är inaktiverade, så skiftförfrågningar kontrolleras inte.",
+          "skipNoCategoryRequiresApproval": "Frånvaroansökningar behöver inget godkännande eftersom ingen frånvarokategori kräver det.",
+          "skipNoChangePolicy": "{count, plural, other {{kind, select, absence {Frånvaroansökningar} timeCorrection {Tidskorrigeringar} workPeriod {Inskickade arbetsperioder} periodSubmission {Periodinlämningar} expenseReport {Utläggsrapporter} other {Skiftförfrågningar}}: # medarbetare behöver inget godkännande, eftersom ingen ändringspolicy gäller.} }",
+          "skipOwnApprover": "{count, plural, one {{kind, select, absence {Frånvaroansökningar} timeCorrection {Tidskorrigeringar} workPeriod {Inskickade arbetsperioder} periodSubmission {Periodinlämningar} expenseReport {Utläggsrapporter} other {Skiftförfrågningar}}: # medarbetare är sin egen godkännare.} other {{kind, select, absence {Frånvaroansökningar} timeCorrection {Tidskorrigeringar} workPeriod {Inskickade arbetsperioder} periodSubmission {Periodinlämningar} expenseReport {Utläggsrapporter} other {Skiftförfrågningar}}: # medarbetare är sina egna godkännare.}}",
+          "skipOwnDecider": "{count, plural, one {{kind, select, absence {Frånvaroansökningar} timeCorrection {Tidskorrigeringar} workPeriod {Inskickade arbetsperioder} periodSubmission {Periodinlämningar} expenseReport {Utläggsrapporter} other {Skiftförfrågningar}}: # medarbetare är den enda som kan besluta om dem, så dennes egna förfrågningar väntar på dennes eget godkännande.} other {{kind, select, absence {Frånvaroansökningar} timeCorrection {Tidskorrigeringar} workPeriod {Inskickade arbetsperioder} periodSubmission {Periodinlämningar} expenseReport {Utläggsrapporter} other {Skiftförfrågningar}}: # medarbetare är de enda som kan besluta om dem, så deras egna förfrågningar väntar på deras eget godkännande.}}",
+          "skipOwnerAdmin": "{count, plural, other {{kind, select, absence {Frånvaroansökningar} timeCorrection {Tidskorrigeringar} workPeriod {Inskickade arbetsperioder} periodSubmission {Periodinlämningar} expenseReport {Utläggsrapporter} other {Skiftförfrågningar}}: # medarbetare behöver inget godkännande, eftersom ägare och administratörer registrerar sitt eget arbete direkt.} }",
+          "skipOwnerSelfApproval": "{kind, select, absence {Frånvaroansökningar} timeCorrection {Tidskorrigeringar} workPeriod {Inskickade arbetsperioder} periodSubmission {Periodinlämningar} expenseReport {Utläggsrapporter} other {Skiftförfrågningar}}: ägaren godkänner sina egna rapporter, eftersom ingen annan kan göra det.",
+          "skipTrustMode": "{count, plural, other {{kind, select, absence {Frånvaroansökningar} timeCorrection {Tidskorrigeringar} workPeriod {Inskickade arbetsperioder} periodSubmission {Periodinlämningar} expenseReport {Utläggsrapporter} other {Skiftförfrågningar}}: # medarbetare behöver inget godkännande, eftersom deras ändringspolicy är i tillitsläge.} }",
+          "teamWithoutManager": "{count, plural, other {{kind, select, absence {Frånvaroansökningar} timeCorrection {Tidskorrigeringar} workPeriod {Inskickade arbetsperioder} periodSubmission {Periodinlämningar} expenseReport {Utläggsrapporter} other {Skiftförfrågningar}}: teamet {team} har ingen behörig chef: # medarbetare} }",
+          "unknownTeamWithoutManager": "{count, plural, other {{kind, select, absence {Frånvaroansökningar} timeCorrection {Tidskorrigeringar} workPeriod {Inskickade arbetsperioder} periodSubmission {Periodinlämningar} expenseReport {Utläggsrapporter} other {Skiftförfrågningar}}: deras team har ingen behörig chef: # medarbetare} }"
+        },
+        "checkedAt": "Kontrollerad {time}",
+        "group": {
+          "description": "Driftsättningskontroller körs för alla på den aktuella personallistan och alla som bjudits in men ännu inte gått med, minus eventuella undantag. För en stegvis driftsättning väljer du de team som ska gå live.",
+          "errors": {
+            "alreadyExcluded": "Den här medarbetaren är redan undantagen.",
+            "employeeNotFound": "Den här medarbetaren finns inte på den aktuella personallistan.",
+            "exclusionNotFound": "Det här undantaget har redan upphört.",
+            "reasonRequired": "Ange en orsak till exkluderingen.",
+            "reasonTooLong": "Orsaken är för lång.",
+            "teamNotFound": "Ett av de valda teamen finns inte längre.",
+            "updateFailed": "Det gick inte att uppdatera driftsättningsgruppen."
+          },
+          "excluded": {
+            "byOn": "Exkluderad av {name} den {date}",
+            "help": "Exkluderade medarbetare kontrolleras inte, till exempel en chef som inte tidsrapporterar. En exkludering gäller tills du häver den, eller tills medarbetaren slutar.",
+            "lift": "Häv",
+            "liftFor": "Häv exkludering för {name}",
+            "none": "Ingen är exkluderad.",
+            "on": "Exkluderad den {date}",
+            "title": "Exkluderad"
+          },
+          "exclude": {
+            "employee": "Medarbetare",
+            "employeeRequired": "Välj en medarbetare.",
+            "reason": "Orsak",
+            "reasonPlaceholder": "Till exempel: chef, tidsrapporterar inte",
+            "submit": "Exkludera"
+          },
+          "memberCount": "{count, plural, one {# person kontrolleras} other {# personer kontrolleras}}",
+          "teams": {
+            "help": "Om inget team valts kontrolleras alla. Annars kontrolleras endast personer vars primära team är valt, samt inbjudna personer vars inbjudan anger ett valt team. Andra teammedlemskap räknas inte.",
+            "none": "Din organisation har inga team ännu, så alla driftsätts tillsammans.",
+            "save": "Spara team",
+            "title": "Team som ska driftsättas"
+          },
+          "title": "Driftsättningsgrupp",
+          "unavailable": "Driftsättningsgruppens team och exkluderingar kunde inte läsas in. Försök köra kontrollerna igen."
+        },
+        "groupDescription": "Beräknas utifrån de obligatoriska driftsättningskontrollerna för alla i driftsättningsgruppen varje gång du öppnar den här sidan.",
+        "optional": "Valfritt",
+        "panel": {
+          "invited": "Inbjuden",
+          "nextPage": "Nästa sida",
+          "pageRange": "{from}–{to} av {total}",
+          "previousPage": "Föregående sida",
+          "unavailable": "Den här kontrollen kunde inte slutföras. Försök köra kontrollerna igen."
+        },
+        "payrollSetup": {
+          "fixEmployees": "Granska medarbetare",
+          "fixPayrollExport": "Öppna inställningar för löneexport",
+          "inviteesSkipped": "{count, plural, one {# inbjuden person hoppas över för anställningsvillkor och personal-ID tills personen ansluter.} other {# inbjudna personer hoppas över för anställningsvillkor och personal-ID tills de ansluter.}}",
+          "missingEmploymentTerms": "{count, plural, other {Inga bekräftade anställningsvillkor som omfattar i dag: # medarbetare} }",
+          "noWageTypeMappings": "{count, plural, one {Inga aktiva löneartskopplingar, så löneexporter kan inte klassificera timmar: # medlem} other {Inga aktiva löneartskopplingar, så löneexporter kan inte klassificera timmar: # medlemmar}}",
+          "optional": "Inget aktivt mål för löneexport, så löneexport är en valfri integration och blockerar inte driftsättningen.",
+          "sharedPersonnelIdentifierDetail": "{identifier}, delas med {others}",
+          "sharedPersonnelIdentifiers": "{count, plural, other {Löneexporter skulle slå samman medarbetare under ett delat personal-ID: # medarbetare} }"
+        },
+        "readiness": {
+          "notReady": "{count, plural, other {Inte redo: # medarbetare kräver åtgärd} }",
+          "notReadyChecks": "{count, plural, other {Inte redo: {checks} uppfylls inte} }",
+          "notReadyEmptyGroup": "Inte redo: det finns ingen i driftsättningsgruppen att kontrollera.",
+          "ready": "Redo att driftsätta",
+          "unavailable": "Inte tillgänglig: en kontroll kunde inte slutföras, så inget räknas som godkänt."
+        },
+        "retry": "Försök köra kontroller igen",
+        "title": "Driftsättningsberedskap",
+        "warnings": "{count, plural, one {# rådgivande varning nedan. Den blockerar inte driftsättning.} other {# rådgivande varningar nedan. De blockerar inte driftsättning.}}",
+        "workPolicy": {
+          "fix": "Tilldela arbetspolicyer",
+          "noTeamNoOrganizationPolicy": "{count, plural, other {Ingen arbetspolicy för organisationen: # medarbetare saknar team} }",
+          "teamWithoutPolicy": "{count, plural, other {Teamet {team} har ingen arbetspolicy: # medarbetare} }",
+          "unknownTeamWithoutPolicy": "{count, plural, other {Deras team har ingen arbetspolicy: # medarbetare} }"
+        }
+      },
+      "items": {
+        "approvalRules": {
+          "confirmationLabel": "Bekräfta att vi är överens om godkännandeprocessen",
+          "confirmedLabel": "Bekräftat: vi är överens om godkännandeprocessen",
+          "goLiveGroupHelperText": "Z8 kontrollerar att alla i driftsättningsgruppen kan få varje typ av förfrågan beslutad. Tidskorrigeringar kräver alltid en godkännare, eftersom raderingsförfrågningar och datumändringar skickas för godkännande. Att bekräfta att ni är överens om godkännandeprocessen är valfritt."
+        },
+        "firstWorkflows": {
+          "actionLabel": "Öppna tidsregistrering",
+          "description": "Se att din organisation verkligen har börjat arbeta med Z8.",
+          "helperText": "Z8 upptäcker den första instämplingen, den första beslutade förfrågan och den första lyckade löneexporten från verklig aktivitet. Detta påverkar aldrig driftsättningsberedskapen.",
+          "title": "Första arbetsflöden"
+        },
+        "organizationStructure": {
+          "goLiveDescription": "Bekräfta medlemmar, team och ansvarsgränser före driftsättning.",
+          "goLiveHelperText": "Manuell granskning: Z8 kan inte veta om din organisationsstruktur är slutgiltig. Att lägga till eller ta bort personer, team eller chefer gör att bekräftelsen blir inaktuell."
+        },
+        "payrollReadiness": {
+          "confirmationLabel": "Bekräfta att vi är överens om konfigurationen för löneexport",
+          "confirmedLabel": "Bekräftat: vi är överens om konfigurationen för löneexport",
+          "goLiveGroupHelperText": "Z8 kontrollerar lönekonfigurationen för alla i driftsättningsgruppen: exportmål, lönearstkopplingar, bekräftade anställningsvillkor och personalidentifierare. Utan ett aktivt mål för löneexport är löneexport en valfri integration och räknas inte in i checklistans framsteg."
+        },
+        "workPolicies": {
+          "goLiveGroupHelperText": "Z8 kontrollerar att alla i driftsättningsgruppen har en gällande arbetspolicy idag. Inbjudna personer kontrolleras utifrån det team som anges i deras inbjudan."
+        }
+      },
       "progress": {
         "ariaLabel": "Förlopp för implementeringschecklista",
         "completedCount": "{completed} av {total} klara",
         "label": "Konfigurationsförlopp",
         "percentComplete": "{percent} % slutfört"
       },
+      "rehearsal": {
+        "approvals": {
+          "absenceCategory": "Frånvarokategori {category}",
+          "defaultApprover": "Ingen godkännandepolicy gäller: deras chef beslutar",
+          "direct": {
+            "noChangePolicy": "Ingen ändringspolicy gäller, så de redigerar sina egna poster direkt. Raderingsförfrågningar och datumändringar går fortfarande till godkännaren nedan.",
+            "selfService": "De redigerar sina egna poster direkt inom självbetjäningsdagarna i sin ändringspolicy. Raderingsförfrågningar och datumändringar går fortfarande till godkännaren nedan.",
+            "trustMode": "Deras ändringspolicy är i förtroendeläge, så de redigerar sina egna poster direkt. Raderingsförfrågningar och datumändringar går fortfarande till godkännaren nedan."
+          },
+          "kind": "{kind, select, absence {Frånvaroansökningar} timeCorrection {Tidskorrigeringar} workPeriod {Inskickade arbetsperioder} periodSubmission {Periodinlämningar} expenseReport {Utläggsrapporter} other {Skiftförfrågningar}}",
+          "noApprovalNeeded": "Inget godkännande krävs",
+          "reportTotal": "Rapportsumma {amount, number}",
+          "routed": "Kräver godkännande",
+          "shiftDeciders": "Valfri chef eller administratör",
+          "skip": {
+            "noCategoryRequiresApproval": "Ingen frånvarokategori kräver godkännande.",
+            "noChangePolicy": "Ingen ändringspolicy gäller för dem.",
+            "ownApprover": "De är sin egen godkännare, så deras förfrågningar slutförs direkt.",
+            "ownDecider": "De är den enda chef eller administratör som kan besluta om skiftförfrågningar, så deras förblir väntande tills de godkänner dem.",
+            "ownerAdmin": "Ägare och administratörer registrerar sitt eget arbete direkt.",
+            "ownerSelfApproval": "Som ägare godkänner de sina egna rapporter, eftersom ingen annan kan det.",
+            "trustMode": "Deras ändringspolicy är i förtroendeläge."
+          },
+          "title": "Godkännanden",
+          "unroutable": {
+            "approvalModeUnsupported": "De kan inte skickas in i den här organisationens godkännandeläge. Kontakta supporten.",
+            "badge": "Kan inte dirigeras",
+            "changePolicyAmbiguous": "Fler än en ändringspolicy gäller för dem, så deras poster avvisas.",
+            "invalidPolicies": "Godkännandepolicyerna kan inte tillämpas.",
+            "managerDeparted": "Deras chef har slutat och ingen ersätter.",
+            "noDecider": "Ingen chef eller administratör kan besluta om dem.",
+            "noManager": "Ingen godkännandepolicy gäller och de har ingen behörig chef.",
+            "policyWithoutApprover": "Godkännandepolicyn {policy} hittar ingen godkännare för dem.",
+            "selfApprovalRoute": "Deras rapporter skulle gå till dem själva, vilket inte är tillåtet.",
+            "teamWithoutManager": "Ingen godkännandepolicy gäller och teamet {team} har ingen behörig chef."
+          },
+          "viaPolicy": "Godkännandepolicy {policy}"
+        },
+        "choosePerson": "Välj en person",
+        "description": "Se vad Z8 skulle göra för en person i driftsättningsgruppen: personens arbetspolicy, vem som beslutar om förfrågningar och löneförutsättningar. Inget sparas eller skickas.",
+        "errors": {
+          "memberNotChecked": "Den här personen är inte längre kvar i driftsättningsgruppen, så det finns inget att simulera. Ladda om sidan för att se den aktuella gruppen.",
+          "unavailable": "Simuleringen kunde inte slutföras."
+        },
+        "nobody": "Ingen är i driftsättningsgruppen ännu.",
+        "noMatch": "Ingen i driftsättningsgruppen matchar.",
+        "payroll": {
+          "employmentTerms": "Anställningsvillkor",
+          "exportTargetMapping": "Mappning av exportmål",
+          "mappingsMissing": "Inga aktiva löneartskopplingar",
+          "mappingsPresent": "{count, plural, other {# exportmål, lönearter kopplade} }",
+          "notExported": "Organisationen har inget aktivt löneexportmål, så det finns inga förutsättningar för lönehantering.",
+          "notYetInvited": "Inte än: de är fortfarande inbjudna",
+          "personnelIdentifier": "Anställningsnummer",
+          "termsConfirmed": "Bekräftat för idag",
+          "termsMissing": "Inga bekräftade villkor som omfattar idag",
+          "title": "Lönehantering",
+          "unavailable": "Kunde inte kontrolleras",
+          "unique": "Unik"
+        },
+        "person": "Person",
+        "retry": "Försök igen",
+        "run": "Öva",
+        "runFor": "Öva driftsättning för {name}",
+        "running": "Räknar ut…",
+        "searchPerson": "Sök i driftsättningsgruppen",
+        "sheetDescription": "Vad Z8 skulle göra för {name} idag. Inget sparas eller skickas.",
+        "stage": {
+          "departedNobody": "{name} har slutat och ingen ersätter.",
+          "labelled": "Steg {sequence}: {label}",
+          "later": "Startar när föregående steg har fattat beslut.",
+          "nobody": "Ingen kunde hittas för att fatta beslut.",
+          "numbered": "Steg {sequence}",
+          "ownApprover": "De är sin egen godkännare här, så det här steget slutförs direkt.",
+          "standsIn": "Ersätter {name}, som har slutat.",
+          "viaFallback": "Ingen matchar stegets egen regel, så dess reservalternativ ({fallback, select, default_manager {deras chef} organization_admin {organisationsadministratörer} other {reservalternativ}}) fattar beslut."
+        },
+        "title": "Övning inför driftsättning",
+        "workedOut": "Beräknades {time}",
+        "workPolicy": {
+          "assignedAt": "{level, select, employee {Till dem} team {Till team {team}} other {Till organisationen}}",
+          "assignedVia": "Tilldelad",
+          "hours": "Timmar",
+          "hoursPerCycle": "{hours, number} timmar per {cycle, select, daily {dag} weekly {vecka} biweekly {två veckor} monthly {månad} other {år}}",
+          "name": "Policy",
+          "none": "Ingen gällande arbetspolicy idag: ingen har tilldelats dem, deras team eller organisationen.",
+          "noSchedule": "Inget schema",
+          "noWorkingDays": "Inga arbetsdagar",
+          "title": "Arbetspolicy",
+          "workingDays": "Arbetsdagar"
+        }
+      },
       "status": {
-        "complete": "Klar",
+        "configured": "Konfigurerad",
         "manuallyComplete": "Slutför manuellt",
-        "needsReview": "Kräver granskning",
-        "notStarted": "Ej påbörjad"
+        "needsAttention": "Kräver åtgärd",
+        "notSetUp": "Inte inställd",
+        "unavailable": "Inte tillgänglig",
+        "verified": "Verifierad"
       },
       "title": "Implementeringschecklista"
     },
@@ -1551,6 +1891,21 @@
         "signInRequired": "Logga in för att fortsätta."
       }
     },
+    "kioskFob": {
+      "confirmRemove": "Ta bort taggen",
+      "details": "Tagg som slutar på {lastFour}, registrerad den {date} vid {kiosk}.",
+      "detailsKioskGone": "Tagg som slutar på {lastFour}, registrerad den {date} vid en kiosk som inte längre finns.",
+      "errors": {
+        "employeeNotFound": "Den här medarbetaren hittades inte.",
+        "failed": "Något gick fel. Försök igen.",
+        "fobChanged": "Den här kiosktaggen har ändrats under tiden. Kontrollera dess status och försök igen.",
+        "noFob": "Det finns ingen kiosktagg att ta bort.",
+        "notAllowed": "Du har inte behörighet att göra detta.",
+        "signInRequired": "Logga in för att fortsätta."
+      },
+      "remove": "Ta bort bricka",
+      "removed": "Kioskbricka borttagen"
+    },
     "kioskPin": {
       "errors": {
         "emailInUse": "Ett annat konto använder redan den här adressen.",
@@ -1614,6 +1969,8 @@
         "locationPlaceholder": "Välj en plats",
         "name": "Namn",
         "namePlaceholder": "t.ex. Personalingång",
+        "nfcFobReader": "NFC-brickläsare",
+        "nfcFobReaderDescription": "Medarbetare blippar sitt NFC-kort eller sin bricka mot en läsare ansluten till den här kiosken istället för att söka efter sitt namn, och anger sedan sin PIN-kod för kiosken. De registrerar en ny bricka i kiosken med sin PIN-kod. Brickor kräver anslutning; namn och PIN-kod fortsätter att fungera.",
         "offlineMode": "Offlineläge",
         "offlineModeDescription": "Kiosken fortsätter stämpla utan anslutning. Dess stämplingar bekräftas och deras PIN-koder kontrolleras så snart den återansluter.",
         "offlineModeUnavailable": "Offlineläge kräver samordnade stämplingskommandon, vilket denna organisation inte använder ännu.",
@@ -1625,6 +1982,7 @@
       "listTitle": "Kiosker",
       "loadFailed": "Det gick inte att läsa in kiosker.",
       "neverSeen": "Aldrig",
+      "nfcFobReaderOn": "NFC-brickläsare på",
       "noLocations": "Skapa en plats först: varje kiosk tillhör en plats.",
       "offlineOn": "Offlineläge på",
       "offlineOnNotInEffect": "Offlineläge på, gäller inte för denna organisation",
@@ -2388,6 +2746,12 @@
     },
     "security": {
       "description": "Hantera ditt lösenord, tvåfaktorsautentisering, lösenordsnycklar och aktiva sessioner",
+      "kioskFob": {
+        "confirmRemoveText": "Om du har tappat bort den, ta bort den: den slutar fungera på kiosker omedelbart. Din PIN-kod för kiosken fortsätter att fungera.",
+        "description": "Ett NFC-kort eller en bricka som du blippar vid en kiosk för att välja ditt namn. Din PIN-kod för kiosken bekräftar fortfarande att det är du.",
+        "none": "Ingen bricka registrerad. För att registrera en blippar du den mot en kiosks brickläsare och bekräftar med din PIN-kod för kiosken.",
+        "title": "Kioskbricka"
+      },
       "kioskPin": {
         "descriptionChange": "Du har en PIN-kod för kiosk. Välj en ny med 4 till 6 siffror för att ersätta den.",
         "descriptionSet": "Välj en PIN-kod med 4 till 6 siffror för att stämpla vid din organisations kiosker.",

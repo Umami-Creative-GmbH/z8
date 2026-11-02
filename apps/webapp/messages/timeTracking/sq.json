@@ -235,8 +235,30 @@
         "endDayHint": "Përfundimi i ditës tani e përfundon punën tuaj në fillim të pushimit tuaj.",
         "today": "Sot: {duration}"
       },
+      "fob": {
+        "alreadyRegistered": "Ky çip që përfundon me {lastFour} është regjistruar tashmë për ju.",
+        "back": "Kthehu",
+        "checking": "Po kontrollohet çipi juaj…",
+        "failed": "Çipi nuk mund të kontrollohej. Afrojeni përsëri ose prekni emrin tuaj për të përdorur PIN-in.",
+        "linkedToOther": "Ky çip është i regjistruar tashmë për dikë tjetër. Asgjë nuk u ndryshua. Pyesni menaxherin tuaj.",
+        "notEligible": "Nuk mund të regjistroni një çip në këtë kioskë. Asgjë nuk u ndryshua. Pyesni menaxherin tuaj.",
+        "notRecognised": "Ky çip nuk njihet këtu.",
+        "offline": "Çipat kanë nevojë për lidhje. Asgjë nuk u regjistrua. Prekni emrin tuaj për të përdorur PIN-in.",
+        "offlineOnly": "Çipat kanë nevojë për lidhje. Asgjë nuk u regjistrua.",
+        "pickPrompt": "Prekni emrin tuaj.",
+        "pickTitle": "Regjistro këtë çip",
+        "pinPrompt": "Vendosni PIN-in tuaj të kioskës për të regjistruar këtë çip",
+        "rateLimited": "{seconds, plural, one {Shumë afrime të çipit në këtë kioskë. Provoni përsëri pas # sekonde ose prekni emrin tuaj për të përdorur PIN-in.} other {Shumë afrime të çipit në këtë kioskë. Provoni përsëri pas # sekondash ose prekni emrin tuaj për të përdorur PIN-in.}}",
+        "readerDisabled": "Lexuesi i çipave është i çaktivizuar në këtë kioskë. Prekni emrin tuaj për të përdorur PIN-in.",
+        "register": "Regjistro këtë çip",
+        "registered": "Çipi u regjistrua",
+        "registeredText": "Çipi juaj që përfundon me {lastFour} është regjistruar. Afrojeni për të zgjedhur emrin tuaj, pastaj vendosni PIN-in tuaj.",
+        "registerHint": "Nëse është i juaji, regjistrojeni me emrin tuaj dhe PIN-in e kioskës. Çipi që keni regjistruar më parë ndalon së funksionuari.",
+        "replaced": "Ai zëvendëson çipin tuaj të mëparshëm, i cili nuk funksionon më."
+      },
       "home": {
         "empty": "Askush nuk është caktuar ende në këtë vendndodhje. Pyesni administratorin tuaj.",
+        "fobHint": "Ose afroni çipin tuaj te lexuesi.",
         "loadFailed": "Emrat nuk mund të ngarkoheshin. Kontrolloni lidhjen e rrjetit.",
         "loading": "Po ngarkohen emrat…",
         "noMatch": "Asnjë emër nuk përputhet me kërkimin tuaj.",
@@ -363,9 +385,14 @@
         "nonexistentTime": "Ky orar nuk ekziston në këtë datë sepse akrepat lëvizin përpara.",
         "occurrenceRequired": "Ky orar ndodh dy herë në këtë datë. Zgjidhni atë që keni parasysh.",
         "overlap": "Ky orar mbivendoset me punë të regjistruar. Zgjidhni një interval që nuk mbivendoset me regjistrimet ekzistuese.",
+        "overlapsLiveWork": "Kjo kohë mbivendoset me punën që ka qenë në vazhdim që nga {start}. Një regjistrim manual duhet të përfundojë deri atëherë.",
         "reconfirm": "Zona kohore ose oraret ndryshuan. Rishikoni regjistrimin dhe dërgojeni përsëri.",
         "refresh": "Cilësimet e regjistrimit manual ndryshuan. Rishikoni regjistrimin dhe dërgojeni përsëri.",
         "tooLong": "Periudha e punës nuk mund të kalojë 24 orë"
+      },
+      "liveWorkHint": {
+        "employee": "{employee} ka regjistruar hyrjen që nga {start}, prandaj ky regjistrim duhet të përfundojë deri atëherë.",
+        "own": "Keni regjistruar hyrjen që nga {start}, prandaj ky regjistrim duhet të përfundojë deri atëherë."
       },
       "occurrence": {
         "earlier": "E para, {offset}",
@@ -509,11 +536,23 @@
     },
     "startedAt": "Filluar në",
     "summary": {
-      "baseWorked": "Bazë e punuar",
-      "surcharge": "Shtesë",
+      "dayOfRequired": "{date}: {worked} nga {required}",
+      "dayWorked": "{date}: {worked}",
+      "noRequiredToday": "Nuk ka kohë të kërkuar sot",
+      "progressAhead": "{worked} nga {required} · {difference} para",
+      "progressBehind": "{worked} nga {required} · {difference} prapa",
+      "progressLabel": "Koha e punuar nga koha e kërkuar",
+      "progressOnTrack": "{worked} nga {required} · sipas planit",
+      "surchargeFootnote": "+{surcharge} tarifë shtesë",
       "thisMonth": "Këtë muaj",
       "thisWeek": "Këtë javë",
-      "today": "Sot"
+      "today": "Sot",
+      "todayOfRequired": "{worked} nga {required}",
+      "trend": "{difference} {comparedWith}",
+      "trendDetail": "Tani: {worked} të punuara nga {required} të kërkuara deri tani. Atëherë: {previousWorked} të punuara nga {previousRequired} të kërkuara.",
+      "trendWithPercent": "{difference} ({percent}) {comparedWith}",
+      "vsLastMonth": "krahasuar me muajin e kaluar",
+      "vsLastWeek": "krahasuar me javën e kaluar"
     },
     "table": {
       "active": "Aktiv",

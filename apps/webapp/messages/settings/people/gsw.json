@@ -190,6 +190,15 @@
         "revokedOn": "Kein aktiver Kiosk-Badge. Der letzte wurde am {date} widerrufen.",
         "saveNow": "Speichern Sie das PDF jetzt: Z8 kann diesen Badge nicht mehr anzeigen. Sie können eine gespeicherte Kopie erneut ausdrucken. Wenn die Datei oder der Badge verloren geht, ersetzen Sie den Badge."
       },
+      "kioskFob": {
+        "confirmRemoveText": "De Fob funktioniert a Kiosks sofort nüme und cha neu registriert werde. De Kiosk-PIN und de Kiosk-Badge vo de Mitarbeiterin oder vom Mitarbeiter funktioniered wiiterhin.",
+        "description": "En NFC-Charte oder Fob, wo d Mitarbeiter amene Online-Kiosk anhebed, zum ihre Name uswähle. Ihre Kiosk-PIN bestätigt immer no, dass sie es sind.",
+        "endedByDeparture": "De letscht hät mit em Uustritt vom Mitarbeiter am {date} gendet.",
+        "endedOn": "De letscht hät am {date} gendet.",
+        "heading": "Kiosk-Fob",
+        "none": "Kän Kiosk-Fob. Mitarbeitendi registriered ihre eignig amene Kiosk mit emene NFC-Fob-Leser mit ihrem Kiosk-PIN.",
+        "removedOn": "De letscht isch am {date} entfernt worde."
+      },
       "kioskPin": {
         "addEmailDescription": "Si bechömid en Iiladig zum es Passwort uswähle und chönd sich dänn aamälde. Ihre Kiosk-PIN und Verlauf bliibid wie si sind.",
         "addEmailHeading": "E-Mail hinzuefüege",
@@ -244,6 +253,7 @@
             "personnelFileOfficer": "Personaldossier-Verantwortliche/r"
           },
           "kioskBadges": "{count, plural, one {# Kiosk-Badge wird widerrufen} other {# Kiosk-Badges werden widerrufen}}",
+          "kioskFobs": "{count, plural, one {# Kiosk-Fob funktioniert nüme} other {# Kiosk-Fobs funktioniered nüme}}",
           "loadError": "Die Vorschau konnte nicht geladen werden.",
           "loading": "Änderungen werden berechnet…",
           "managerLinksTitle": "Vorgesetzten-Verknüpfungen, die enden",

@@ -1369,6 +1369,11 @@
         "message": "Vaša radnja ({action, select, clock_in {prijava} clock_out {odjava} start_break {početak pauze} resume_break {povratak s pauze} other {evidencija}}) u {time} na kiosku {kioskName} nije zabilježena: {reason, select, wrong_pin {PIN nije bio tačan} pin_locked {PIN kioska je zaključan nakon previše netačnih pokušaja} no_pin {nije bilo PIN-a kioska s kojim bi se uporedio} pin_unchecked {PIN se nije mogao provjeriti} kiosk_retired {kiosk je opozvan ili ponovo uparen prije nego što se ponovo povezao} contact_unverifiable {Z8 nije mogao potvrditi posljednje povezivanje kioska} outside_window {vrijeme je bilo izvan vremenskog okvira koji Z8 prihvata} clock_untrusted {satu kioska se nije moglo vjerovati za ovu radnju} not_assigned {niste dodijeljeni na lokaciju kioska} not_adopted {organizacija ne prihvata vanmrežne evidencije s kioska} month_closed {mjesec je zaključen} holiday {dan je praznik bez evidencije radnog vremena} conflict {postoji konflikt s drugim evidentiranim vremenom} other {Z8 to nije mogao prihvatiti}}. Ponovo evidentirajte svoje vrijeme ili zatražite od menadžera da ga ispravi.",
         "title": "Evidencija na kiosku nije zabilježena"
       },
+      "kioskFobRegistered": {
+        "forwardedMessage": "{replaced, select, true {Privjesak za kiosk koji završava na {lastFour} registriran je za zaposlenika {employeeName} na kiosku {kioskName}. Zamijenio je njegov/njen prethodni privjesak, koji više ne radi.} other {Privjesak za kiosk koji završava na {lastFour} registriran je za zaposlenika {employeeName} na kiosku {kioskName}.}} Ako ga {employeeName} nije registrirao/la, uklonite ga na stranici zaposlenika i resetujte njegov/njen PIN za kiosk.",
+        "message": "{replaced, select, true {Privjesak za kiosk koji završava na {lastFour} registriran je na vas na kiosku {kioskName}. Zamijenio je vaš prethodni privjesak, koji više ne radi.} other {Privjesak za kiosk koji završava na {lastFour} registriran je na vas na kiosku {kioskName}.}} Ako ga niste vi registrirali, uklonite ga u svojim sigurnosnim postavkama i promijenite svoj PIN za kiosk.",
+        "title": "Privjesak za kiosk registriran"
+      },
       "manualEntryApproved": {
         "message": "Vaš ručni unos radnog vremena odobrio/la je {approverName}.",
         "title": "Ručni unos radnog vremena odobren"
@@ -1831,6 +1836,7 @@
         "forgotten_clock_out_reminder": "Zaboravljena odjava",
         "former_employee_reports_without_manager": "Zaposlenici bez trenutnog menadžera",
         "kiosk_command_refused": "Evidencija na kiosku nije zabilježena",
+        "kiosk_fob_registered": "Privjesak za kiosk registriran",
         "missed_clock_in_reminder": "Propuštena prijava",
         "period_submission_decided": "Prijavljeno radno vrijeme odobreno ili odbijeno",
         "period_submission_reminder": "Pošaljite svoje radno vrijeme",
@@ -2538,6 +2544,13 @@
             "workModel": "Vaš model rada.",
             "workPolicy": "Pravilo rada koje ovi uslovi koriste."
           },
+          "goLiveExclusions": {
+            "createdAt": "Kada ste izostavljeni, kao UTC trenutak.",
+            "endedAt": "Kada je prestalo jer ste napustili organizaciju; prazno ako nije.",
+            "liftedAt": "Kada vas je administrator vratio u provjere; prazno ako nije.",
+            "reason": "Razlog koji je administrator naveo za vaše izostavljanje.",
+            "summary": "Vremena kada vas je organizacija izostavila iz svojih provjera za puštanje u rad tokom postavljanja Z8 i razlog za to. Ne utječu ni na šta drugo."
+          },
           "groups": {
             "addedAt": "Kada ste dodani u grupu.",
             "addedBy": "Ko vas je dodao u grupu.",
@@ -2637,6 +2650,14 @@
             "lastUsedAt": "Kada je aplikacija za kalendar zadnji put pročitala feed (UTC).",
             "revokedAt": "Kada je link isključen (UTC).",
             "summary": "Linkovi za feed vašeg kalendara koji omogućavaju aplikaciji za kalendar da se pretplati na vaša odsustva. Sam tajni link nikada nije uključen."
+          },
+          "kioskFobs": {
+            "endedAt": "Kada vas je prestalo odabirati (UTC), prazno dok vas još uvijek odabire.",
+            "endedReason": "zamijenjeno kada ste registrirali drugi, uklonjeno kada ste ga vi ili menadžer uklonili ili ste deaktivirani, odlazak kada vam je prestao radni odnos.",
+            "kiosk": "Kiosk na kojem ste ga registrirali, prazno nakon što je taj kiosk obrisan.",
+            "registeredAt": "Kada ste ga registrirali (UTC).",
+            "serialNumber": "Serijski broj čipa, kako ga je očitao čitač kioska.",
+            "summary": "NFC kartice ili privjesci koje ste registrirali na kiosku, trenutni i istekli. Prislanjanje kartice ili privjeska bira vas na kiosku; vaš PIN za kiosk i dalje potvrđuje vaš identitet."
           },
           "kioskPinEvents": {
             "event": "failure za pogrešan PIN, success za tačan, poništeno kada je vaš PIN otključan, resetovan ili promijenjen.",

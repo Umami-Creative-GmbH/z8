@@ -190,6 +190,15 @@
         "revokedOn": "Nema aktivne značke za kiosk. Posljednja je opozvana dana {date}.",
         "saveNow": "Sačuvajte PDF sada: Z8 više ne može prikazati ovu značku. Možete ponovo ispisati sačuvanu kopiju. Ako se datoteka ili značka izgubi, zamijenite značku."
       },
+      "kioskFob": {
+        "confirmRemoveText": "Privjesak odmah prestaje raditi na kioscima i može se ponovo registrovati. PIN zaposlenika za kiosk i značka za kiosk i dalje rade.",
+        "description": "NFC kartica ili privjesak koji zaposlenik prislanja na online kiosku za odabir svog imena. Njihov PIN za kiosk i dalje potvrđuje njihov identitet.",
+        "endedByDeparture": "Posljednji je završio odlaskom zaposlenika dana {date}.",
+        "endedOn": "Posljednji je završio dana {date}.",
+        "heading": "Privjesak za kiosk",
+        "none": "Nema privjeska za kiosk. Zaposlenici registruju vlastiti na kiosku s čitačem NFC privjesaka, koristeći svoj PIN za kiosk.",
+        "removedOn": "Posljednji je uklonjen dana {date}."
+      },
       "kioskPin": {
         "addEmailDescription": "Primit će pozivnicu da postave lozinku i zatim se mogu prijaviti. Njihov PIN za kiosk i historija ostaju nepromijenjeni.",
         "addEmailHeading": "Dodaj e-mail",
@@ -244,6 +253,7 @@
             "personnelFileOfficer": "Referent za personalne dosjee"
           },
           "kioskBadges": "{count, plural, one {# bedž za kiosk je opozvan} few {# bedža za kiosk su opozvana} other {# bedževa za kiosk je opozvano}}",
+          "kioskFobs": "{count, plural, one {# privjesak za kiosk prestaje raditi} few {# privjeska za kiosk prestaju raditi} other {# privjesaka za kiosk prestaje raditi}}",
           "loadError": "Pregled se nije mogao učitati.",
           "loading": "Izračunavanje promjena…",
           "managerLinksTitle": "Menadžerske veze koje prestaju",

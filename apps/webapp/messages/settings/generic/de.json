@@ -239,6 +239,29 @@
       },
       "description": "Abrechnungswährung und was Ihre Organisation Kunden für Arbeit in Rechnung stellt",
       "handOff": {
+        "amount": {
+          "estimated": "Geschätzt: Diese Übergabe enthielt keinen Betrag pro Arbeitsperiode, daher wird Satz × Dauer als Ersatz verwendet.",
+          "noSubtotal": "Keine bekannten Betragsdifferenzen",
+          "note": "Betragsdifferenzen sind Abstimmungsinformationen, die mit dem bei der Übergabe festgelegten Satz bewertet werden, keine Gutschriften.",
+          "notOnHandOff": "Das zugehörige Projekt gehört nun zu einem anderen Kunden. Diese Arbeit ist in keiner Übergabe für diesen Kunden enthalten und bleibt in diesem Entwurf abgerechnet; stellen Sie sie daher dem neuen Kunden im Buchhaltungstool in Rechnung.",
+          "reason": {
+            "customer": "Das Projekt gehört nun zu einem anderen oder keinem Kunden, daher wird der gesamte übergebene Betrag storniert.",
+            "frozenRate": "Die Änderung der Stunden zum bei der Übergabe festgelegten Satz.",
+            "noFrozenRate": "Für diese Arbeit wurde bei der Übergabe kein Satz festgelegt.",
+            "nonBillable": "Die Arbeit ist nicht mehr abrechenbar, daher wird der gesamte übergebene Betrag storniert.",
+            "otherProject": "Die Arbeit wurde in ein anderes Projekt desselben Kunden verschoben, für das bei der Übergabe kein Satz festgelegt wurde.",
+            "removed": "Die Arbeit wurde gelöscht, daher wird der gesamte übergebene Betrag storniert.",
+            "running": "Ein Teil der Arbeit läuft noch.",
+            "severalRates": "Bei der Übergabe wurde diese Arbeit mit mehreren Sätzen bewertet; diese Aufteilung kann ohne die heutigen Sätze nicht wiederholt werden."
+          },
+          "roundingCaveat": "Aufgrund der Rundung der Entwurfszeile kann es um wenige Cent abweichen.",
+          "sinceResolution": "Seit der letzten Klärung: {amount}",
+          "subtotal": "Bekannte Betragsdifferenzen: {amount}",
+          "subtotalEstimated": "Bekannte Betragsdifferenzen: {amount} (enthält Schätzungen)",
+          "title": "Betragsdifferenz",
+          "unknown": "Unbekannt",
+          "unknownCount": "{count, plural, one {# unbekannte Differenz nicht enthalten} other {# unbekannte Differenzen nicht enthalten}}"
+        },
         "blocker": {
           "currency": "Das Buchhaltungstool kann keine Entwürfe in {currency} annehmen.",
           "noContactLink": "Verknüpfen Sie diesen Kunden zuerst auf der Buchhaltungsseite mit einem Kontakt im Buchhaltungstool.",
@@ -252,12 +275,48 @@
         },
         "changed": {
           "billability": "Abrechenbarkeit",
+          "customer": "Kunde",
           "project": "Projekt",
           "removed": "Gelöscht",
           "split": "Aufteilen",
           "times": "Zeiten"
         },
+        "comparison": {
+          "billability": "Abrechenbarkeit",
+          "billable": "Abrechenbar",
+          "caption": "Vergleich von {item}",
+          "changedFromHandOff": "(geändert gegenüber der Übergabe)",
+          "changedSinceResolution": "(geändert seit der letzten Klärung)",
+          "current": "Aktuell",
+          "customer": "Kunde",
+          "day": "Tag",
+          "end": "Ende",
+          "field": "Feld",
+          "handOff": "Übergabe",
+          "hours": "Stunden",
+          "lastResolved": "Zuletzt geklärt",
+          "legend": "Hervorgehobene Werte weichen von der Übergabe ab. Uhrzeiten beziehen sich auf den Ort, an dem die Arbeit erfasst wurde.",
+          "legendSinceResolution": "Geändert seit der letzten Klärung.",
+          "mixedBillable": "Teilweise abrechenbar",
+          "noCustomer": "Kein Kunde",
+          "nonBillable": "Nicht abrechenbar",
+          "noProject": "Kein Projekt",
+          "pieces": "Die aktuellen Werte umfassen {count} aus dieser Arbeit aufgeteilte Teile; die Stunden sind deren Summe.",
+          "project": "Projekt",
+          "removed": "Entfernt",
+          "removedNo": "Nein",
+          "removedPieces": "{removed} von {count} Teilen",
+          "removedYes": "Ja",
+          "start": "Start",
+          "timeOnDay": "{day} {time}",
+          "timeWithOffset": "{time} ({offset})",
+          "unknownCustomer": "Unbekannter Kunde",
+          "unknownProject": "Unbekanntes Projekt"
+        },
         "confirmed": "Der Rechnungsentwurf wurde erstellt",
+        "csv": {
+          "download": "Abgleichs-CSV herunterladen"
+        },
         "detail": {
           "checking": "Entwurf im Tool wird überprüft…",
           "gone": "Das Buchhaltungstool verfügt nicht mehr über diesen Entwurf. Wenn er absichtlich gelöscht wurde, geben Sie die Übergabe frei, damit die Arbeit erneut übergeben werden kann.",
@@ -289,6 +348,14 @@
           "timesheetHelp": "Eine Zeile pro Arbeitszeitraum, innerhalb des Zeilenlimits des Buchhaltungstools. Sie können den Stundenzettel jederzeit herunterladen.",
           "to": "Bis"
         },
+        "history": {
+          "deletedUser": "ein gelöschter Benutzer",
+          "legacy": "Bereinigt, bevor Klärungen erfasst wurden",
+          "legacyMeta": "{at} von {actor}",
+          "reference": "Referenz: {reference}",
+          "resolved": "Geklärt {at} von {actor}",
+          "title": "Klärungsverlauf"
+        },
         "hoursValue": "{hours} Std.",
         "list": {
           "actions": "Aktionen",
@@ -304,10 +371,19 @@
           "total": "Nettosumme"
         },
         "marks": {
-          "clear": "Markierung entfernen",
-          "clearAll": "Alle Markierungen entfernen",
-          "cleared": "{count, plural, one {# Markierung entfernt} other {# Markierungen entfernt}}",
-          "help": "Diese abgerechnete Arbeit wurde nach der Übergabe korrigiert. Korrigieren Sie die Rechnung bei Bedarf im Buchhaltungstool (z. B. mit einer Gutschrift) und entfernen Sie anschließend die Markierung.",
+          "compare": "Vergleichen",
+          "compareItem": "{item} vergleichen",
+          "draftHeading": "{title} · {period}",
+          "history": "Verlauf ({count})",
+          "historyItem": "Verlauf ({count}) von {item}",
+          "openWhenReleased": "Bei Freigabe offen",
+          "releasedHelp": "Diese abgerechnete Arbeit wurde nach ihrer Übergabe korrigiert und war bei der Freigabe der Übergabe noch offen. Sie kann hier nicht mehr geklärt werden. Die aktuellen Werte zeigen die Arbeit so, wie sie jetzt ist.",
+          "resolve": "Klären",
+          "resolveHelp": "Diese abgerechnete Arbeit wurde nach ihrer Übergabe korrigiert. Korrigieren Sie die Rechnung bei Bedarf im Buchhaltungstool (z. B. mit einer Gutschrift) und klären Sie die Änderung anschließend mit einer Erklärung.",
+          "resolveItem": "{item} klären",
+          "resolveSelected": "Ausgewählte klären ({count})",
+          "select": "{item} auswählen",
+          "selectAll": "Alle auswählen",
           "title": "Nach Rechnungsstellung geändert"
         },
         "new": {
@@ -345,6 +421,23 @@
           "done": "{count, plural, one {Freigegeben. # Arbeitszeitraum ist wieder nicht abgerechnet.} other {Freigegeben. # Arbeitszeiträume sind wieder nicht abgerechnet.}}",
           "reason": "Grund (optional)",
           "title": "Diese Übergabe freigeben?"
+        },
+        "resolve": {
+          "description": "Erfassen Sie, wie mit der Änderung verfahren wurde, z. B. mit einer Gutschrift im Buchhaltungstool. Die Übergabe und ihre Zeilen bleiben unverändert.",
+          "done": "{count, plural, one {# Element geklärt} other {# Elemente geklärt}}",
+          "explanation": "Erklärung",
+          "explanationRequired": "Erklären Sie, wie mit der Änderung verfahren wurde.",
+          "explanationTooLong": "Beschränken Sie die Erklärung auf {max} Zeichen.",
+          "itemLabel": "{day} · {employee} · {project}",
+          "itemsInvalid": "Wählen Sie die markierte Arbeit zum Klären aus.",
+          "reference": "Buchhaltungsreferenz (optional)",
+          "referenceHint": "Zum Beispiel die Gutschriftsnummer.",
+          "referenceTooLong": "Beschränken Sie die Referenz auf {max} Zeichen.",
+          "released": "Es wurde nichts geklärt: Die Übergabe dieser Arbeit wurde freigegeben, sodass deren Änderungen nicht mehr geklärt werden können. Laden Sie neu, um dies anzuzeigen.",
+          "reload": "Neu laden",
+          "stale": "Es wurde nichts geklärt: Diese Arbeit wurde geändert, seitdem Sie sie geöffnet haben. Laden Sie neu, um die Änderungen zu überprüfen.",
+          "submit": "{count, plural, one {# Element klären} other {# Elemente klären}}",
+          "title": "Geänderte Arbeit klären"
         },
         "status": {
           "created": "Entwurf erstellt",
@@ -1341,25 +1434,272 @@
     },
     "implementationChecklist": {
       "actions": {
+        "confirmAgain": "Erneut bestätigen",
         "markComplete": "Als erledigt markieren",
-        "markIncomplete": "Als nicht erledigt markieren"
+        "markIncomplete": "Als nicht erledigt markieren",
+        "removeConfirmation": "Bestätigung aufheben"
+      },
+      "confirmation": {
+        "beforeChangeTracking": "Bestätigt {date}, vor Änderungserfassung",
+        "current": "Bestätigt {date}",
+        "stale": "Einstellungen seit der Bestätigung am {date} geändert",
+        "unchecked": "Einstellungsänderungen seit der Bestätigung am {date} konnten nicht geprüft werden"
       },
       "description": "Schließen Sie die Einrichtungsschritte ab, bevor Sie Ihr gesamtes Team einladen, damit Zeiterfassung, Genehmigungen und Lohnabrechnungs-Workflows für den täglichen Gebrauch bereit sind.",
+      "entryDescription": "Go-Live-Bereitschaft prüfen und Einrichtung für Richtlinien, Lohnabrechnung, Integrationen und Mitarbeiterimport nachverfolgen",
       "errors": {
         "updateItem": "Fehler beim Aktualisieren des Checklisten-Elements."
       },
       "eyebrow": "Kundenimplementierung",
+      "firstWorkflows": {
+        "clockIn": "Erstes Einstempeln",
+        "decidedApproval": "Erster entschiedener Antrag",
+        "former": "Ehemaliger Mitarbeiter",
+        "notYet": "Noch nicht",
+        "payrollExport": "Erster erfolgreicher Lohnabrechnungsexport",
+        "retry": "Erneut prüfen",
+        "seen": "{time} von {name}",
+        "status": {
+          "allSeen": "Alle gesehen",
+          "notStarted": "Nicht begonnen",
+          "underWay": "Läuft"
+        },
+        "unavailable": "Konnte nicht geprüft werden"
+      },
+      "goLive": {
+        "approver": {
+          "approvalModeUnsupported": "{count, plural, other {{kind, select, absence {Abwesenheitsanträge} timeCorrection {Zeitkorrekturen} workPeriod {Arbeitsperioden-Einreichungen} periodSubmission {Periodeneinreichungen} expenseReport {Spesenabrechnungen} other {Schichtanfragen}}: können im Genehmigungsmodus dieser Organisation nicht eingereicht werden. Support kontaktieren: # Mitarbeiter} }",
+          "changePolicyAmbiguous": "{count, plural, other {{kind, select, absence {Abwesenheitsanträge} timeCorrection {Zeitkorrekturen} workPeriod {Arbeitsperioden-Einreichungen} periodSubmission {Periodeneinreichungen} expenseReport {Spesenabrechnungen} other {Schichtanfragen}}: Es gelten mehrere Änderungsrichtlinien, daher werden Einträge abgelehnt: # Mitarbeiter} }",
+          "correctionDirectNoPolicy": "{count, plural, one {Zeitkorrekturen: # Mitarbeiter bearbeitet eigene Einträge direkt, da keine Änderungsrichtlinie gilt. Löschanträge und Datumsänderungen gehen weiterhin an eine genehmigende Person und werden daher geprüft.} other {Zeitkorrekturen: # Mitarbeiter bearbeiten eigene Einträge direkt, da keine Änderungsrichtlinie gilt. Löschanträge und Datumsänderungen gehen weiterhin an eine genehmigende Person und werden daher geprüft.}}",
+          "correctionDirectSelfService": "{count, plural, one {Zeitkorrekturen: # Mitarbeiter bearbeitet eigene Einträge direkt innerhalb der Selfservice-Tage der jeweiligen Änderungsrichtlinie und kann ältere nicht ändern. Löschanträge und Datumsänderungen gehen weiterhin an eine genehmigende Person und werden daher geprüft.} other {Zeitkorrekturen: # Mitarbeiter bearbeiten eigene Einträge direkt innerhalb der Selfservice-Tage der jeweiligen Änderungsrichtlinie und können ältere nicht ändern. Löschanträge und Datumsänderungen gehen weiterhin an eine genehmigende Person und werden daher geprüft.}}",
+          "correctionDirectTrustMode": "{count, plural, one {Zeitkorrekturen: # Mitarbeiter bearbeitet eigene Einträge direkt, da die Änderungsrichtlinie im Vertrauensmodus ist. Löschanträge und Datumsänderungen gehen weiterhin an eine genehmigende Person und werden daher geprüft.} other {Zeitkorrekturen: # Mitarbeiter bearbeiten eigene Einträge direkt, da die Änderungsrichtlinie im Vertrauensmodus ist. Löschanträge und Datumsänderungen gehen weiterhin an eine genehmigende Person und werden daher geprüft.}}",
+          "fixApprovalPolicies": "Genehmigungsrichtlinien überprüfen",
+          "fixChangePolicies": "Änderungsrichtlinien überprüfen",
+          "fixExpenseApprover": "Spesengenehmiger festlegen",
+          "fixManagers": "Führungskräfte zuweisen",
+          "fixTeamManager": "Teamleitung festlegen",
+          "invalidPolicies": "{count, plural, other {{kind, select, absence {Abwesenheitsanträge} timeCorrection {Zeitkorrekturen} workPeriod {Arbeitsperioden-Einreichungen} periodSubmission {Periodeneinreichungen} expenseReport {Spesenabrechnungen} other {Schichtanfragen}}: Die Genehmigungsrichtlinien können nicht angewendet werden: # Mitarbeiter} }",
+          "managerDeparted": "{count, plural, other {{kind, select, absence {Abwesenheitsanträge} timeCorrection {Zeitkorrekturen} workPeriod {Arbeitsperioden-Einreichungen} periodSubmission {Periodeneinreichungen} expenseReport {Spesenabrechnungen} other {Schichtanfragen}}: Die Führungskraft ist ausgeschieden und es gibt keine Vertretung: # Mitarbeiter} }",
+          "noDecider": "{count, plural, other {{kind, select, absence {Abwesenheitsanträge} timeCorrection {Zeitkorrekturen} workPeriod {Arbeitsperioden-Einreichungen} periodSubmission {Periodeneinreichungen} expenseReport {Spesenabrechnungen} other {Schichtanfragen}}: Weder Führungskraft noch Admin können darüber entscheiden: # Mitarbeiter} }",
+          "noManagerNoTeam": "{count, plural, other {{kind, select, absence {Abwesenheitsanträge} timeCorrection {Zeitkorrekturen} workPeriod {Arbeitsperioden-Einreichungen} periodSubmission {Periodeneinreichungen} expenseReport {Spesenabrechnungen} other {Schichtanfragen}}: Keine berechtigte Führungskraft: # Mitarbeiter in keinem Team} }",
+          "periodSubmissionsOff": "Periodeneinreichungen sind deaktiviert und werden daher nicht geprüft.",
+          "policyWithoutApprover": "{count, plural, other {{kind, select, absence {Abwesenheitsanträge} timeCorrection {Zeitkorrekturen} workPeriod {Arbeitsperioden-Einreichungen} periodSubmission {Periodeneinreichungen} expenseReport {Spesenabrechnungen} other {Schichtanfragen}}: Genehmigungsrichtlinie {policy} findet keine genehmigende Person: # Mitarbeiter} }",
+          "selfApprovalRoute": "{count, plural, other {{kind, select, absence {Abwesenheitsanträge} timeCorrection {Zeitkorrekturen} workPeriod {Arbeitsperioden-Einreichungen} periodSubmission {Periodeneinreichungen} expenseReport {Spesenabrechnungen} other {Schichtanfragen}}: Würde an die Mitarbeiter selbst gehen, was nicht zulässig ist: # Mitarbeiter} }",
+          "shiftsOff": "Schichten sind deaktiviert, daher werden Schichtanfragen nicht geprüft.",
+          "skipNoCategoryRequiresApproval": "Abwesenheitsanträge erfordern keine Genehmigung, da keine Abwesenheitskategorie dies verlangt.",
+          "skipNoChangePolicy": "{count, plural, one {{kind, select, absence {Abwesenheitsanträge} timeCorrection {Zeitkorrekturen} workPeriod {Arbeitsperioden-Einreichungen} periodSubmission {Periodeneinreichungen} expenseReport {Spesenabrechnungen} other {Schichtanfragen}}: # Mitarbeiter benötigt keine Genehmigung, da keine Änderungsrichtlinie gilt.} other {{kind, select, absence {Abwesenheitsanträge} timeCorrection {Zeitkorrekturen} workPeriod {Arbeitsperioden-Einreichungen} periodSubmission {Periodeneinreichungen} expenseReport {Spesenabrechnungen} other {Schichtanfragen}}: # Mitarbeiter benötigen keine Genehmigung, da keine Änderungsrichtlinie gilt.}}",
+          "skipOwnApprover": "{count, plural, one {{kind, select, absence {Abwesenheitsanträge} timeCorrection {Zeitkorrekturen} workPeriod {Arbeitsperioden-Einreichungen} periodSubmission {Periodeneinreichungen} expenseReport {Spesenabrechnungen} other {Schichtanfragen}}: # Mitarbeiter ist die eigene genehmigende Person.} other {{kind, select, absence {Abwesenheitsanträge} timeCorrection {Zeitkorrekturen} workPeriod {Arbeitsperioden-Einreichungen} periodSubmission {Periodeneinreichungen} expenseReport {Spesenabrechnungen} other {Schichtanfragen}}: # Mitarbeiter sind die eigene genehmigende Person.}}",
+          "skipOwnDecider": "{count, plural, one {{kind, select, absence {Abwesenheitsanträge} timeCorrection {Zeitkorrekturen} workPeriod {Arbeitsperioden-Einreichungen} periodSubmission {Periodeneinreichungen} expenseReport {Spesenabrechnungen} other {Schichtanfragen}}: # Mitarbeiter kann als Einzige(r) darüber entscheiden, sodass eigene Anträge auf die eigene Genehmigung warten.} other {{kind, select, absence {Abwesenheitsanträge} timeCorrection {Zeitkorrekturen} workPeriod {Arbeitsperioden-Einreichungen} periodSubmission {Periodeneinreichungen} expenseReport {Spesenabrechnungen} other {Schichtanfragen}}: # Mitarbeiter können als Einzige darüber entscheiden, sodass eigene Anträge auf die eigene Genehmigung warten.}}",
+          "skipOwnerAdmin": "{count, plural, one {{kind, select, absence {Abwesenheitsanträge} timeCorrection {Zeitkorrekturen} workPeriod {Arbeitsperioden-Einreichungen} periodSubmission {Periodeneinreichungen} expenseReport {Spesenabrechnungen} other {Schichtanfragen}}: # Mitarbeiter benötigt keine Genehmigung, da Eigentümer und Admins ihre eigene Arbeit direkt erfassen.} other {{kind, select, absence {Abwesenheitsanträge} timeCorrection {Zeitkorrekturen} workPeriod {Arbeitsperioden-Einreichungen} periodSubmission {Periodeneinreichungen} expenseReport {Spesenabrechnungen} other {Schichtanfragen}}: # Mitarbeiter benötigen keine Genehmigung, da Eigentümer und Admins ihre eigene Arbeit direkt erfassen.}}",
+          "skipOwnerSelfApproval": "{kind, select, absence {Abwesenheitsanträge} timeCorrection {Zeitkorrekturen} workPeriod {Arbeitsperioden-Einreichungen} periodSubmission {Periodeneinreichungen} expenseReport {Spesenabrechnungen} other {Schichtanfragen}}: Der Eigentümer genehmigt eigene Berichte selbst, da niemand sonst dazu berechtigt ist.",
+          "skipTrustMode": "{count, plural, one {{kind, select, absence {Abwesenheitsanträge} timeCorrection {Zeitkorrekturen} workPeriod {Arbeitsperioden-Einreichungen} periodSubmission {Periodeneinreichungen} expenseReport {Spesenabrechnungen} other {Schichtanfragen}}: # Mitarbeiter benötigt keine Genehmigung, da die Änderungsrichtlinie im Vertrauensmodus ist.} other {{kind, select, absence {Abwesenheitsanträge} timeCorrection {Zeitkorrekturen} workPeriod {Arbeitsperioden-Einreichungen} periodSubmission {Periodeneinreichungen} expenseReport {Spesenabrechnungen} other {Schichtanfragen}}: # Mitarbeiter benötigen keine Genehmigung, da die Änderungsrichtlinie im Vertrauensmodus ist.}}",
+          "teamWithoutManager": "{count, plural, other {{kind, select, absence {Abwesenheitsanträge} timeCorrection {Zeitkorrekturen} workPeriod {Arbeitsperioden-Einreichungen} periodSubmission {Periodeneinreichungen} expenseReport {Spesenabrechnungen} other {Schichtanfragen}}: Team {team} hat keine berechtigte Führungskraft: # Mitarbeiter} }",
+          "unknownTeamWithoutManager": "{count, plural, other {{kind, select, absence {Abwesenheitsanträge} timeCorrection {Zeitkorrekturen} workPeriod {Arbeitsperioden-Einreichungen} periodSubmission {Periodeneinreichungen} expenseReport {Spesenabrechnungen} other {Schichtanfragen}}: Das jeweilige Team hat keine berechtigte Führungskraft: # Mitarbeiter} }"
+        },
+        "checkedAt": "Geprüft {time}",
+        "group": {
+          "description": "Go-Live-Prüfungen werden für alle Personen im aktuellen Dienstplan sowie alle eingeladenen, aber noch nicht beigetretenen Personen durchgeführt, abzüglich etwaiger Ausschlüsse. Für ein stufenweises Go-Live wählen Sie die Teams aus, die live gehen sollen.",
+          "errors": {
+            "alreadyExcluded": "Dieser Mitarbeiter ist bereits ausgeschlossen.",
+            "employeeNotFound": "Dieser Mitarbeiter steht nicht auf dem aktuellen Dienstplan.",
+            "exclusionNotFound": "Dieser Ausschluss ist bereits beendet.",
+            "reasonRequired": "Geben Sie einen Grund für den Ausschluss an.",
+            "reasonTooLong": "Der Grund ist zu lang.",
+            "teamNotFound": "Eines der ausgewählten Teams existiert nicht mehr.",
+            "updateFailed": "Die Go-Live-Gruppe konnte nicht aktualisiert werden."
+          },
+          "excluded": {
+            "byOn": "Ausgeschlossen von {name} am {date}",
+            "help": "Ausgeschlossene Mitarbeiter werden nicht überprüft, zum Beispiel Geschäftsführer, die keine Arbeitszeit erfassen. Ein Ausschluss bleibt bestehen, bis Sie ihn aufheben oder der Mitarbeiter das Unternehmen verlässt.",
+            "lift": "Aufheben",
+            "liftFor": "Ausschluss für {name} aufheben",
+            "none": "Niemand ist ausgeschlossen.",
+            "on": "Ausgeschlossen am {date}",
+            "title": "Ausgeschlossen"
+          },
+          "exclude": {
+            "employee": "Mitarbeiter",
+            "employeeRequired": "Wählen Sie einen Mitarbeiter aus.",
+            "reason": "Grund",
+            "reasonPlaceholder": "Zum Beispiel: Geschäftsführung, erfasst keine Arbeitszeit",
+            "submit": "Ausschließen"
+          },
+          "memberCount": "{count, plural, one {# Person wird überprüft} other {# Personen werden überprüft}}",
+          "teams": {
+            "help": "Wenn kein Team ausgewählt ist, werden alle überprüft. Andernfalls nur Personen, deren Hauptteam ausgewählt ist, sowie eingeladene Personen, deren Einladung ein ausgewähltes Team nennt. Weitere Team-Mitgliedschaften zählen nicht.",
+            "none": "Ihre Organisation hat noch keine Teams, daher gehen alle gemeinsam live.",
+            "save": "Teams speichern",
+            "title": "Teams, die live gehen"
+          },
+          "title": "Go-Live-Gruppe",
+          "unavailable": "Die Teams und Ausschlüsse der Go-Live-Gruppe konnten nicht geladen werden. Wiederholen Sie die Überprüfungen."
+        },
+        "groupDescription": "Wird jedes Mal, wenn Sie diese Seite öffnen, anhand der verbindlichen Go-Live-Prüfungen für alle in der Go-Live-Gruppe ermittelt.",
+        "optional": "Optional",
+        "panel": {
+          "invited": "Eingeladen",
+          "nextPage": "Nächste Seite",
+          "pageRange": "{from}–{to} von {total}",
+          "previousPage": "Vorherige Seite",
+          "unavailable": "Diese Überprüfung konnte nicht abgeschlossen werden. Wiederholen Sie die Überprüfungen, um es erneut zu versuchen."
+        },
+        "payrollSetup": {
+          "fixEmployees": "Mitarbeiter überprüfen",
+          "fixPayrollExport": "Einstellungen für Lohnexport öffnen",
+          "inviteesSkipped": "{count, plural, one {# eingeladene Person wird bei Anstellungsbedingungen und Personalnummern übersprungen, bis sie beitritt.} other {# eingeladene Personen werden bei Anstellungsbedingungen und Personalnummern übersprungen, bis sie beitreten.}}",
+          "missingEmploymentTerms": "{count, plural, other {Keine bestätigten Anstellungsbedingungen für heute: # Mitarbeiter} }",
+          "noWageTypeMappings": "{count, plural, one {Keine aktiven Lohnartenzuordnungen, sodass Lohnexporte Stunden nicht klassifizieren können: # Mitglied} other {Keine aktiven Lohnartenzuordnungen, sodass Lohnexporte Stunden nicht klassifizieren können: # Mitglieder}}",
+          "optional": "Kein aktives Lohnexport-Ziel vorhanden, daher ist der Lohnexport eine optionale Integration und blockiert den Go-Live nicht.",
+          "sharedPersonnelIdentifierDetail": "{identifier}, geteilt mit {others}",
+          "sharedPersonnelIdentifiers": "{count, plural, other {Lohnexporte würden Mitarbeiter unter einer gemeinsamen Personalnummer zusammenführen: # Mitarbeiter} }"
+        },
+        "readiness": {
+          "notReady": "{count, plural, one {Nicht bereit: # Mitarbeiter erfordert Aufmerksamkeit} other {Nicht bereit: # Mitarbeiter erfordern Aufmerksamkeit}}",
+          "notReadyChecks": "{count, plural, one {Nicht bereit: {checks} wurde nicht bestanden} other {Nicht bereit: {checks} wurden nicht bestanden}}",
+          "notReadyEmptyGroup": "Nicht bereit: Es befindet sich niemand zur Überprüfung in der Go-Live-Gruppe.",
+          "ready": "Bereit für den Go-Live",
+          "unavailable": "Nicht verfügbar: Eine Überprüfung konnte nicht abgeschlossen werden, daher gilt nichts als bestanden."
+        },
+        "retry": "Überprüfungen wiederholen",
+        "title": "Go-Live-Bereitschaft",
+        "warnings": "{count, plural, one {# Hinweis unten. Dieser blockiert den Go-Live nicht.} other {# Hinweise unten. Diese blockieren den Go-Live nicht.}}",
+        "workPolicy": {
+          "fix": "Arbeitsrichtlinien zuweisen",
+          "noTeamNoOrganizationPolicy": "{count, plural, other {Keine Organisations-Arbeitsrichtlinie: # Mitarbeiter in keinem Team} }",
+          "teamWithoutPolicy": "{count, plural, other {Team {team} hat keine Arbeitsrichtlinie: # Mitarbeiter} }",
+          "unknownTeamWithoutPolicy": "{count, plural, other {Ihr Team hat keine Arbeitsrichtlinie: # Mitarbeiter} }"
+        }
+      },
+      "items": {
+        "approvalRules": {
+          "confirmationLabel": "Bestätigen, dass unser Genehmigungsprozess abgestimmt ist",
+          "confirmedLabel": "Bestätigt: Unser Genehmigungsprozess ist abgestimmt",
+          "goLiveGroupHelperText": "Z8 prüft, ob für alle Personen in der Go-Live-Gruppe jede Art von Anfrage entschieden werden kann. Zeitkorrekturen erfordern immer eine genehmigende Person, da Löschanfragen und Datumsänderungen genehmigungspflichtig sind. Die Bestätigung, dass Ihr Genehmigungsprozess abgestimmt ist, ist optional."
+        },
+        "firstWorkflows": {
+          "actionLabel": "Zeiterfassung öffnen",
+          "description": "Sehen Sie, ob Ihre Organisation die Arbeit mit Z8 tatsächlich aufgenommen hat.",
+          "helperText": "Z8 erkennt das erste Einstempeln, die erste entschiedene Anfrage und den ersten erfolgreichen Lohnexport anhand realer Aktivitäten. Dies hat keinen Einfluss auf die Go-Live-Bereitschaft.",
+          "title": "Erste Workflows"
+        },
+        "organizationStructure": {
+          "goLiveDescription": "Bestätigen Sie Mitglieder, Teams und Zuständigkeitsbereiche vor dem Go-Live.",
+          "goLiveHelperText": "Manuelle Überprüfung: Z8 kann nicht wissen, ob Ihre Organisationsstruktur endgültig ist. Das Hinzufügen oder Entfernen von Personen, Teams oder Führungskräften macht die Bestätigung hinfällig."
+        },
+        "payrollReadiness": {
+          "confirmationLabel": "Bestätigen, dass unsere Lohnexport-Konfiguration abgestimmt ist",
+          "confirmedLabel": "Bestätigt: Unsere Lohnexport-Konfiguration ist abgestimmt",
+          "goLiveGroupHelperText": "Z8 prüft die Lohneinstellungen für alle Personen in der Go-Live-Gruppe: Exportziel, Lohnartenzuordnungen, bestätigte Anstellungsbedingungen und Personalnummern. Ohne aktives Lohnexportziel ist der Lohnexport eine optionale Integration und fließt nicht in den Fortschritt der Checkliste ein."
+        },
+        "workPolicies": {
+          "goLiveGroupHelperText": "Z8 prüft, ob für alle Personen in der Go-Live-Gruppe heute eine gültige Arbeitsrichtlinie hinterlegt ist. Eingeladene Personen werden anhand des in ihrer Einladung genannten Teams überprüft."
+        }
+      },
       "progress": {
         "ariaLabel": "Fortschritt der Implementierungs-Checkliste",
         "completedCount": "{completed} von {total} abgeschlossen",
         "label": "Einrichtungsfortschritt",
         "percentComplete": "{percent}% abgeschlossen"
       },
+      "rehearsal": {
+        "approvals": {
+          "absenceCategory": "Abwesenheitskategorie {category}",
+          "defaultApprover": "Es gilt keine Genehmigungsrichtlinie: Die Führungskraft entscheidet",
+          "direct": {
+            "noChangePolicy": "Es gilt keine Änderungsrichtlinie, daher werden eigene Einträge direkt selbst bearbeitet. Löschanfragen und Datumsänderungen gehen weiterhin an die unten genannte genehmigende Person.",
+            "selfService": "Eigene Einträge werden innerhalb der Self-Service-Tage der Änderungsrichtlinie direkt selbst bearbeitet. Löschanfragen und Datumsänderungen gehen weiterhin an die unten genannte genehmigende Person.",
+            "trustMode": "Die Änderungsrichtlinie befindet sich im Vertrauensmodus, daher werden eigene Einträge direkt selbst bearbeitet. Löschanfragen und Datumsänderungen gehen weiterhin an die unten genannte genehmigende Person."
+          },
+          "kind": "{kind, select, absence {Abwesenheitsanfragen} timeCorrection {Zeitkorrekturen} workPeriod {Arbeitszeitübermittlungen} periodSubmission {Periodenübermittlungen} expenseReport {Spesenabrechnungen} other {Schichtanfragen}}",
+          "noApprovalNeeded": "Keine Genehmigung erforderlich",
+          "reportTotal": "Gesamtsumme {amount, number}",
+          "routed": "Genehmigung erforderlich",
+          "shiftDeciders": "Beliebige Führungskraft oder Admin",
+          "skip": {
+            "noCategoryRequiresApproval": "Keine Abwesenheitskategorie erfordert eine Genehmigung.",
+            "noChangePolicy": "Für diese Person gilt keine Änderungsrichtlinie.",
+            "ownApprover": "Die Person genehmigt eigene Anfragen selbst, daher werden diese sofort abgeschlossen.",
+            "ownDecider": "Die Person ist die einzige Führungskraft oder Admin, die über Schichtanfragen entscheiden kann, daher bleiben eigene Anfragen ausstehend, bis sie selbst genehmigt werden.",
+            "ownerAdmin": "Inhaber und Admins erfassen ihre eigene Arbeitszeit direkt.",
+            "ownerSelfApproval": "Als Inhaber genehmigt die Person eigene Berichte selbst, da niemand sonst dazu berechtigt ist.",
+            "trustMode": "Die Änderungsrichtlinie befindet sich im Vertrauensmodus."
+          },
+          "title": "Genehmigungen",
+          "unroutable": {
+            "approvalModeUnsupported": "Sie können im Genehmigungsmodus dieser Organisation nicht eingereicht werden. Wenden Sie sich an den Support.",
+            "badge": "Kann nicht weitergeleitet werden",
+            "changePolicyAmbiguous": "Für diese Person gilt mehr als eine Änderungsrichtlinie, daher werden Einträge abgelehnt.",
+            "invalidPolicies": "Die Genehmigungsrichtlinien können nicht angewendet werden.",
+            "managerDeparted": "Die zuständige Führungskraft hat das Unternehmen verlassen und es gibt keine Vertretung.",
+            "noDecider": "Weder Führungskräfte noch Admins können darüber entscheiden.",
+            "noManager": "Es gilt keine Genehmigungsrichtlinie und es ist keine zuständige Führungskraft vorhanden.",
+            "policyWithoutApprover": "Genehmigungsrichtlinie {policy} findet keine genehmigende Person für diese Person.",
+            "selfApprovalRoute": "Berichte würden an die Person selbst weitergeleitet werden, was nicht zulässig ist.",
+            "teamWithoutManager": "Es gilt keine Genehmigungsrichtlinie und Team {team} hat keine zuständige Führungskraft."
+          },
+          "viaPolicy": "Genehmigungsrichtlinie {policy}"
+        },
+        "choosePerson": "Person auswählen",
+        "description": "Sehen Sie, wie Z8 für eine Person in der Go-Live-Gruppe vorgehen würde: Arbeitsrichtlinie, Entscheidungsträger für Anfragen und Lohnabrechnungsvoraussetzungen. Es wird nichts gespeichert oder gesendet.",
+        "errors": {
+          "memberNotChecked": "Diese Person gehört nicht mehr zur Go-Live-Gruppe, daher kann keine Simulation durchgeführt werden. Laden Sie die Seite neu, um die aktuelle Gruppe anzuzeigen.",
+          "unavailable": "Die Simulation konnte nicht abgeschlossen werden."
+        },
+        "nobody": "In der Go-Live-Gruppe befindet sich noch niemand.",
+        "noMatch": "Keine Übereinstimmung in der Go-Live-Gruppe.",
+        "payroll": {
+          "employmentTerms": "Anstellungsbedingungen",
+          "exportTargetMapping": "Exportziel-Zuordnung",
+          "mappingsMissing": "Keine aktiven Lohnartenzuordnungen",
+          "mappingsPresent": "{count, plural, one {# Exportziel, Lohnarten zugeordnet} other {# Exportziele, Lohnarten zugeordnet}}",
+          "notExported": "Die Organisation hat kein aktives Lohnabrechnungs-Exportziel, daher gibt es keine Voraussetzungen für die Lohnabrechnung.",
+          "notYetInvited": "Noch nicht: Einladung noch ausstehend",
+          "personnelIdentifier": "Personalnummer",
+          "termsConfirmed": "Für heute bestätigt",
+          "termsMissing": "Keine bestätigten Bedingungen für heute",
+          "title": "Lohnabrechnung",
+          "unavailable": "Konnte nicht geprüft werden",
+          "unique": "Eindeutig"
+        },
+        "person": "Person",
+        "retry": "Erneut versuchen",
+        "run": "Probelauf durchführen",
+        "runFor": "Go-Live-Probelauf für {name} durchführen",
+        "running": "Wird berechnet…",
+        "searchPerson": "Go-Live-Gruppe durchsuchen",
+        "sheetDescription": "Was Z8 heute für {name} tun würde. Es wird nichts gespeichert oder gesendet.",
+        "stage": {
+          "departedNobody": "{name} ist ausgeschieden und es gibt keine Vertretung.",
+          "labelled": "Stufe {sequence}: {label}",
+          "later": "Startet, sobald die vorherigen Stufen entschieden haben.",
+          "nobody": "Es konnte niemand für die Entscheidung gefunden werden.",
+          "numbered": "Stufe {sequence}",
+          "ownApprover": "Die Person genehmigt hier selbst, daher wird diese Stufe sofort abgeschlossen.",
+          "standsIn": "Vertritt {name} (ausgeschieden).",
+          "viaFallback": "Niemand entspricht der Stufenregel, daher entscheidet die Ausweichoption ({fallback, select, default_manager {die Führungskraft} organization_admin {die Organisations-Admins} other {Fallback}})."
+        },
+        "title": "Go-Live-Probelauf",
+        "workedOut": "Ermittelt: {time}",
+        "workPolicy": {
+          "assignedAt": "{level, select, employee {An die Person} team {An Team {team}} other {An die Organisation}}",
+          "assignedVia": "Zugewiesen",
+          "hours": "Stunden",
+          "hoursPerCycle": "{hours, number} Stunden pro {cycle, select, daily {Tag} weekly {Woche} biweekly {zwei Wochen} monthly {Monat} other {Jahr}}",
+          "name": "Richtlinie",
+          "none": "Heute keine gültige Arbeitsrichtlinie: Weder der Person noch ihrem Team oder der Organisation ist eine zugewiesen.",
+          "noSchedule": "Kein Arbeitszeitplan",
+          "noWorkingDays": "Keine Arbeitstage",
+          "title": "Arbeitsrichtlinie",
+          "workingDays": "Arbeitstage"
+        }
+      },
       "status": {
-        "complete": "Abgeschlossen",
+        "configured": "Konfiguriert",
         "manuallyComplete": "Manuell abschließen",
-        "needsReview": "Prüfung erforderlich",
-        "notStarted": "Nicht gestartet"
+        "needsAttention": "Handlungsbedarf",
+        "notSetUp": "Nicht eingerichtet",
+        "unavailable": "Nicht verfügbar",
+        "verified": "Verifiziert"
       },
       "title": "Implementierungs-Checkliste"
     },
@@ -1551,6 +1891,21 @@
         "signInRequired": "Melden Sie sich an, um fortzufahren."
       }
     },
+    "kioskFob": {
+      "confirmRemove": "Transponder entfernen",
+      "details": "Transponder mit den Endziffern {lastFour}, registriert am {date} an {kiosk}.",
+      "detailsKioskGone": "Transponder mit den Endziffern {lastFour}, registriert am {date} an einem Kiosk, der nicht mehr existiert.",
+      "errors": {
+        "employeeNotFound": "Dieser Mitarbeiter wurde nicht gefunden.",
+        "failed": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
+        "fobChanged": "Dieser Kiosk-Transponder wurde in der Zwischenzeit geändert. Überprüfen Sie den Status und versuchen Sie es erneut.",
+        "noFob": "Es ist kein Kiosk-Transponder zum Entfernen vorhanden.",
+        "notAllowed": "Sie sind nicht berechtigt, diese Aktion auszuführen.",
+        "signInRequired": "Melden Sie sich an, um fortzufahren."
+      },
+      "remove": "Transponder entfernen",
+      "removed": "Kiosk-Transponder entfernt"
+    },
     "kioskPin": {
       "errors": {
         "emailInUse": "Diese Adresse wird bereits von einem anderen Konto verwendet.",
@@ -1614,6 +1969,8 @@
         "locationPlaceholder": "Standort auswählen",
         "name": "Name",
         "namePlaceholder": "z. B. Personaleingang",
+        "nfcFobReader": "NFC-Transponderleser",
+        "nfcFobReaderDescription": "Mitarbeitende halten ihre NFC-Karte oder ihren Transponder an ein an diesem Kiosk angeschlossenes Lesegerät, anstatt nach ihrem Namen zu suchen, und geben dann ihre Kiosk-PIN ein. Sie registrieren einen neuen Transponder am Kiosk mit ihrer PIN. Für Transponder ist eine Verbindung erforderlich; Name und PIN funktionieren weiterhin.",
         "offlineMode": "Offlinemodus",
         "offlineModeDescription": "Der Kiosk erfasst Stempelungen auch ohne Verbindung weiter. Seine Buchungen werden bestätigt und die PINs geprüft, sobald wieder eine Verbindung besteht.",
         "offlineModeUnavailable": "Der Offlinemodus erfordert koordinierte Stempelbefehle, die von dieser Organisation noch nicht verwendet werden.",
@@ -1625,6 +1982,7 @@
       "listTitle": "Kioske",
       "loadFailed": "Kioske konnten nicht geladen werden.",
       "neverSeen": "Nie",
+      "nfcFobReaderOn": "NFC-Transponderleser ein",
       "noLocations": "Erstellen Sie zuerst einen Standort: Jeder Kiosk gehört zu einem Standort.",
       "offlineOn": "Offlinemodus ein",
       "offlineOnNotInEffect": "Offlinemodus ein, für diese Organisation nicht wirksam",
@@ -2388,6 +2746,12 @@
     },
     "security": {
       "description": "Verwalten Sie Ihr Passwort, die Zwei-Faktor-Authentifizierung, Passkeys und aktive Sitzungen",
+      "kioskFob": {
+        "confirmRemoveText": "Wenn Sie ihn verloren haben, entfernen Sie ihn: Er funktioniert an Kiosken sofort nicht mehr. Ihre Kiosk-PIN funktioniert weiterhin.",
+        "description": "Eine NFC-Karte oder ein Transponder, den Sie an einem Kiosk vorhalten, um Ihren Namen auszuwählen. Ihre Kiosk-PIN bestätigt weiterhin Ihre Identität.",
+        "none": "Kein Transponder registriert. Um einen zu registrieren, halten Sie ihn an das Transponderlesegerät eines Kiosks und bestätigen Sie mit Ihrer Kiosk-PIN.",
+        "title": "Kiosk-Transponder"
+      },
       "kioskPin": {
         "descriptionChange": "Sie haben eine Kiosk-PIN. Wählen Sie eine neue 4- bis 6-stellige PIN, um sie zu ersetzen.",
         "descriptionSet": "Wählen Sie eine 4- bis 6-stellige PIN, um an den Kiosken Ihrer Organisation zu stempeln.",

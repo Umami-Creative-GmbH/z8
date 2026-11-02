@@ -190,6 +190,15 @@
         "revokedOn": "Aucun badge de borne actif. Le dernier a été révoqué le {date}.",
         "saveNow": "Enregistrez le PDF dès maintenant : Z8 ne pourra plus afficher ce badge. Vous pourrez réimprimer une copie enregistrée. Si le fichier ou le badge est perdu, remplacez le badge."
       },
+      "kioskFob": {
+        "confirmRemoveText": "Le porte-clés cesse immédiatement de fonctionner sur les bornes et peut être réenregistré. Le code PIN de borne et le badge de borne de l'employé continuent de fonctionner.",
+        "description": "Une carte ou un porte-clés NFC que l'employé passe sur une borne en ligne pour sélectionner son nom. Son code PIN de borne permet toujours de confirmer son identité.",
+        "endedByDeparture": "Le dernier a pris fin au départ de l'employé le {date}.",
+        "endedOn": "Le dernier a pris fin le {date}.",
+        "heading": "Porte-clés de borne",
+        "none": "Aucun porte-clés de borne. Les employés enregistrent le leur sur une borne équipée d'un lecteur de porte-clés NFC à l'aide de leur code PIN de borne.",
+        "removedOn": "Le dernier a été supprimé le {date}."
+      },
       "kioskPin": {
         "addEmailDescription": "Cette personne recevra une invitation pour choisir un mot de passe et pourra ensuite se connecter. Son code PIN de borne et son historique restent inchangés.",
         "addEmailHeading": "Ajouter une adresse e-mail",
@@ -244,6 +253,7 @@
             "personnelFileOfficer": "Gestionnaire des dossiers du personnel"
           },
           "kioskBadges": "{count, plural, one {# badge de borne est révoqué} other {# badges de borne sont révoqués}}",
+          "kioskFobs": "{count, plural, one {# porte-clés de borne cesse de fonctionner} other {# porte-clés de borne cessent de fonctionner}}",
           "loadError": "Impossible de charger l'aperçu.",
           "loading": "Calcul des modifications en cours…",
           "managerLinksTitle": "Liens hiérarchiques qui prennent fin",

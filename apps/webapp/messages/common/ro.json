@@ -1369,6 +1369,11 @@
         "message": "{action, select, clock_in {Pontarea dvs. la intrare} clock_out {Pontarea dvs. la ieșire} start_break {Începutul dvs. de pauză} resume_break {Revenirea dvs. din pauză} other {Pontarea dvs.}} de la {time} la chioșcul {kioskName} nu a fost înregistrată: {reason, select, wrong_pin {PIN-ul a fost incorect} pin_locked {PIN-ul chioșcului a fost blocat după prea multe încercări incorecte} no_pin {nu a existat niciun PIN de chioșc pentru verificare} pin_unchecked {PIN-ul nu a putut fi verificat} kiosk_retired {chioșcul a fost revocat sau asociat din nou înainte de a se reconecta} contact_unverifiable {Z8 nu a putut confirma ultima conexiune a chioșcului} outside_window {ora a fost în afara intervalului acceptat de Z8} clock_untrusted {ceasul chioșcului nu a putut fi considerat de încredere} not_assigned {angajatul nu este alocat la locația chioșcului} not_adopted {organizația nu acceptă pontări offline la chioșc} month_closed {luna este închisă} holiday {ziua este o sărbătoare fără pontare} conflict {se află în conflict cu o altă oră înregistrată} other {Z8 nu a putut să o accepte}}. Înregistrați-vă din nou timpul sau solicitați managerului dvs. să îl corecteze.",
         "title": "Pontare la chioșc neînregistrată"
       },
+      "kioskFobRegistered": {
+        "forwardedMessage": "{replaced, select, true {Un breloc de chioșc cu terminația {lastFour} a fost înregistrat pentru {employeeName} la chioșcul {kioskName}. Acesta a înlocuit brelocul său anterior, care nu mai funcționează.} other {Un breloc de chioșc cu terminația {lastFour} a fost înregistrat pentru {employeeName} la chioșcul {kioskName}.}} Dacă {employeeName} nu l-a înregistrat, eliminați-l din pagina sa de angajat și resetați-i codul PIN pentru chioșc.",
+        "message": "{replaced, select, true {Un breloc de chioșc cu terminația {lastFour} a fost înregistrat pentru dvs. la chioșcul {kioskName}. Acesta a înlocuit brelocul dvs. anterior, care nu mai funcționează.} other {Un breloc de chioșc cu terminația {lastFour} a fost înregistrat pentru dvs. la chioșcul {kioskName}.}} Dacă nu l-ați înregistrat dvs., eliminați-l din setările de securitate și schimbați-vă codul PIN pentru chioșc.",
+        "title": "Breloc de chioșc înregistrat"
+      },
       "manualEntryApproved": {
         "message": "Înregistrarea dvs. manuală a timpului a fost aprobată de {approverName}.",
         "title": "Înregistrare manuală a timpului aprobată"
@@ -1831,6 +1836,7 @@
         "forgotten_clock_out_reminder": "Pontare de ieșire omisă",
         "former_employee_reports_without_manager": "Angajați fără un manager actual",
         "kiosk_command_refused": "Pontare la chioșc neînregistrată",
+        "kiosk_fob_registered": "Breloc de chioșc înregistrat",
         "missed_clock_in_reminder": "Pontare omisă la intrare",
         "period_submission_decided": "Timp trimis aprobat sau respins",
         "period_submission_reminder": "Trimiteți timpul",
@@ -2538,6 +2544,13 @@
             "workModel": "Modelul tău de lucru.",
             "workPolicy": "Politica de lucru utilizată de acești termeni."
           },
+          "goLiveExclusions": {
+            "createdAt": "Când ați fost exclus, ca moment UTC.",
+            "endedAt": "Când s-a încheiat deoarece ați părăsit organizația; gol dacă nu a fost cazul.",
+            "liftedAt": "Când un administrator v-a inclus din nou în verificări; gol dacă nu a fost cazul.",
+            "reason": "Motivul furnizat de un administrator pentru excluderea dvs.",
+            "summary": "Momentele în care organizația v-a exclus din verificările de punere în funcțiune în timpul configurării Z8 și motivele. Acestea nu afectează nimic altceva."
+          },
           "groups": {
             "addedAt": "Când ai fost adăugat în grup.",
             "addedBy": "Cine te-a adăugat în grup.",
@@ -2637,6 +2650,14 @@
             "lastUsedAt": "Când o aplicație de calendar a citit ultima dată fluxul (UTC).",
             "revokedAt": "Când a fost dezactivat linkul (UTC).",
             "summary": "Linkurile fluxurilor dvs. de calendar, care permit unei aplicații de calendar să se aboneze la absențele dvs. Linkul secret în sine nu este niciodată inclus."
+          },
+          "kioskFobs": {
+            "endedAt": "Când a încetat să vă mai selecteze (UTC); gol atât timp cât încă o face.",
+            "endedReason": "înlocuit la înregistrarea altuia, eliminat când l-ați eliminat dvs. sau un manager ori ați fost dezactivat, plecare la încheierea contractului de muncă.",
+            "kiosk": "Chioșcul la care l-ați înregistrat; gol dacă acel chioșc a fost șters.",
+            "registeredAt": "Când l-ați înregistrat (UTC).",
+            "serialNumber": "Numărul de serie al cipului, așa cum a fost citit de cititorul chioșcului.",
+            "summary": "Cardurile sau brelocurile NFC pe care le-ați înregistrat la un chioșc, active și încheiate. Atingerea unuia vă selectează la chioșc; codul dvs. PIN pentru chioșc confirmă în continuare identitatea dvs."
           },
           "kioskPinEvents": {
             "event": "eșec pentru un PIN greșit, succes pentru unul corect, șters când PIN-ul a fost deblocat, resetat sau schimbat.",

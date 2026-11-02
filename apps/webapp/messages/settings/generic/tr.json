@@ -239,6 +239,29 @@
       },
       "description": "Faturalandırılabilir para birimi ve kuruluşunuzun iş karşılığında müşterilerden aldığı ücret",
       "handOff": {
+        "amount": {
+          "estimated": "Tahmini: Bu devir işleminde çalışma dönemi başına tutar saklanmadığından, ücret × süre baz alınmıştır.",
+          "noSubtotal": "Bilinen tutar farkı yok",
+          "note": "Tutar farkları alacak dekontu değil, devir anında dondurulan fiyattan fiyatlandırılmış mutabakat bilgileridir.",
+          "notOnHandOff": "Projesi artık başka bir müşteriye ait. Bu çalışma söz konusu müşteri için herhangi bir devirde yer almıyor ve bu taslakta faturalandırılmış olarak kalıyor, bu nedenle muhasebe aracında yeni müşteriye fatura edin.",
+          "reason": {
+            "customer": "Proje artık başka bir müşteriye ait veya hiçbir müşteriye ait değil, bu nedenle devredilen tutarın tamamı ters kaydedilir.",
+            "frozenRate": "Devir anında dondurulan fiyattan saatlerdeki değişiklik.",
+            "noFrozenRate": "Devir sırasında bu çalışma için herhangi bir fiyat dondurulmadı.",
+            "nonBillable": "Çalışma artık faturalandırılabilir değil, bu nedenle devredilen tutarın tamamı ters kaydedilir.",
+            "otherProject": "Çalışma, aynı müşterinin devir anında dondurulmuş bir fiyatı bulunmayan başka bir projesine taşındı.",
+            "removed": "Çalışma silindi, bu nedenle devredilen tutarın tamamı ters kaydedilir.",
+            "running": "Çalışmanın bir kısmı hâlâ devam ediyor.",
+            "severalRates": "Devir işlemi bu çalışmayı birkaç farklı fiyattan fiyatlandırdı; günümüz fiyatları olmadan bu ayrım tekrarlanamaz."
+          },
+          "roundingCaveat": "Taslak satırının yuvarlamasından birkaç sent farklı olabilir.",
+          "sinceResolution": "Son çözümlemeden bu yana: {amount}",
+          "subtotal": "Bilinen tutar farkları: {amount}",
+          "subtotalEstimated": "Bilinen tutar farkları: {amount} (tahminleri içerir)",
+          "title": "Tutar farkı",
+          "unknown": "Bilinmeyen",
+          "unknownCount": "{count, plural, other {# bilinmeyen fark dahil edilmedi} }"
+        },
         "blocker": {
           "currency": "Muhasebe aracı {currency} cinsinden taslakları kabul edemiyor.",
           "noContactLink": "Önce Muhasebe sayfasında bu müşteriyi muhasebe aracındaki bir kişiyle bağlayın.",
@@ -252,12 +275,48 @@
         },
         "changed": {
           "billability": "Faturalandırılabilirlik",
+          "customer": "Müşteri",
           "project": "Proje",
           "removed": "Silindi",
           "split": "Böl",
           "times": "Süreler"
         },
+        "comparison": {
+          "billability": "Faturalandırılabilirlik",
+          "billable": "Faturalandırılabilir",
+          "caption": "{item} karşılaştırması",
+          "changedFromHandOff": "(devirden bu yana değişti)",
+          "changedSinceResolution": "(son çözümlemeden bu yana değişti)",
+          "current": "Geçerli",
+          "customer": "Müşteri",
+          "day": "Gün",
+          "end": "Bitiş",
+          "field": "Alan",
+          "handOff": "Devir",
+          "hours": "Saat",
+          "lastResolved": "Son çözümlenen",
+          "legend": "Vurgulanan değerler devirden farklıdır. Saatler, çalışmanın kaydedildiği konuma göre yereldir.",
+          "legendSinceResolution": "Son çözümlemeden bu yana değişti.",
+          "mixedBillable": "Kısmen faturalandırılabilir",
+          "noCustomer": "Müşteri yok",
+          "nonBillable": "Faturalandırılamaz",
+          "noProject": "Proje yok",
+          "pieces": "Mevcut değerler bu işten bölünen {count} parçayı kapsar; saatler bunların toplamıdır.",
+          "project": "Proje",
+          "removed": "Kaldırıldı",
+          "removedNo": "Hayır",
+          "removedPieces": "{count} parçadan {removed} tanesi",
+          "removedYes": "Evet",
+          "start": "Başlat",
+          "timeOnDay": "{day} {time}",
+          "timeWithOffset": "{time} ({offset})",
+          "unknownCustomer": "Bilinmeyen müşteri",
+          "unknownProject": "Bilinmeyen proje"
+        },
         "confirmed": "Fatura taslağı oluşturuldu",
+        "csv": {
+          "download": "Mutabakat CSV dosyasını indir"
+        },
         "detail": {
           "checking": "Taslak araçta kontrol ediliyor…",
           "gone": "Muhasebe aracında artık bu taslak bulunmuyor. Kasıtlı olarak silindiyse, çalışmanın tekrar aktarılabilmesi için aktarımı serbest bırakın.",
@@ -289,6 +348,14 @@
           "timesheetHelp": "Muhasebe aracının satır sınırı dahilinde, çalışma dönemi başına bir satır. Zaman çizelgesini istediğiniz zaman indirebilirsiniz.",
           "to": "Bitiş"
         },
+        "history": {
+          "deletedUser": "silinmiş bir kullanıcı",
+          "legacy": "Çözümler kaydedilmeden önce temizlendi",
+          "legacyMeta": "{actor} tarafından {at}",
+          "reference": "Referans: {reference}",
+          "resolved": "{at} tarihinde {actor} tarafından çözüldü",
+          "title": "Çözüm geçmişi"
+        },
         "hoursValue": "{hours} sa",
         "list": {
           "actions": "İşlemler",
@@ -304,10 +371,19 @@
           "total": "Net toplam"
         },
         "marks": {
-          "clear": "İşareti temizle",
-          "clearAll": "Tüm işaretleri temizle",
-          "cleared": "{count, plural, other {# işaret temizlendi} }",
-          "help": "Faturalandırılan bu çalışma, aktarımından sonra düzeltildi. Gerekirse muhasebe aracındaki faturayı düzeltin (örneğin bir alacak dekontu ile), ardından işareti temizleyin.",
+          "compare": "Karşılaştır",
+          "compareItem": "{item} öğesini karşılaştır",
+          "draftHeading": "{title} · {period}",
+          "history": "Geçmiş ({count})",
+          "historyItem": "{item} geçmişi ({count})",
+          "openWhenReleased": "Serbest bırakıldığında açık",
+          "releasedHelp": "Faturalandırılan bu iş devredildikten sonra düzeltildi ve devir serbest bırakıldığında hâlâ açıktı. Artık burada çözülemez. Mevcut değerler işin şu anki durumunu gösterir.",
+          "resolve": "Çöz",
+          "resolveHelp": "Faturalandırılan bu iş devredildikten sonra düzeltildi. Gerekirse muhasebe aracında faturayı düzeltin (örneğin bir alacak dekontu ile), ardından değişikliği bir açıklama ile çözün.",
+          "resolveItem": "{item} öğesini çöz",
+          "resolveSelected": "Seçilenleri çöz ({count})",
+          "select": "{item} öğesini seç",
+          "selectAll": "Tümünü seç",
           "title": "Faturalandırmadan sonra değiştirildi"
         },
         "new": {
@@ -345,6 +421,23 @@
           "done": "{count, plural, other {Serbest bırakıldı. # çalışma dönemi yeniden faturalandırılmamış duruma getirildi.} }",
           "reason": "Neden (isteğe bağlı)",
           "title": "Bu aktarım serbest bırakılsın mı?"
+        },
+        "resolve": {
+          "description": "Değişikliğin nasıl ele alındığını kaydedin (örneğin muhasebe aracındaki bir alacak dekontu ile). Devir ve satırları olduğu gibi kalır.",
+          "done": "{count, plural, other {# öğe çözüldü} }",
+          "explanation": "Açıklama",
+          "explanationRequired": "Değişikliğin nasıl ele alındığını açıklayın.",
+          "explanationTooLong": "Açıklamayı en fazla {max} karakterle sınırlı tutun.",
+          "itemLabel": "{day} · {employee} · {project}",
+          "itemsInvalid": "Çözmek için işaretli işi seçin.",
+          "reference": "Muhasebe referansı (isteğe bağlı)",
+          "referenceHint": "Örneğin alacak dekontu numarası.",
+          "referenceTooLong": "Referansı en fazla {max} karakterle sınırlı tutun.",
+          "released": "Hiçbir şey çözülmedi: Bu işin devri serbest bırakıldı, bu nedenle değişiklikleri artık çözülemez. Görmek için yeniden yükleyin.",
+          "reload": "Yeniden yükle",
+          "stale": "Hiçbir şey çözülmedi: Bu iş siz açtıktan sonra değiştirildi. Değişiklikleri gözden geçirmek için yeniden yükleyin.",
+          "submit": "{count, plural, other {# öğeyi çöz} }",
+          "title": "Değiştirilen işi çöz"
         },
         "status": {
           "created": "Taslak oluşturuldu",
@@ -1341,25 +1434,272 @@
     },
     "implementationChecklist": {
       "actions": {
+        "confirmAgain": "Tekrar onayla",
         "markComplete": "Tamamlandı olarak işaretle",
-        "markIncomplete": "Tamamlanmadı olarak işaretle"
+        "markIncomplete": "Tamamlanmadı olarak işaretle",
+        "removeConfirmation": "Onayı kaldır"
+      },
+      "confirmation": {
+        "beforeChangeTracking": "Değişiklik takibinden önce, {date} tarihinde onaylandı",
+        "current": "{date} tarihinde onaylandı",
+        "stale": "{date} tarihindeki onaydan bu yana ayarlar değişti",
+        "unchecked": "{date} tarihindeki onaydan bu yana yapılan ayar değişiklikleri kontrol edilemedi"
       },
       "description": "Zaman takibi, onaylar ve bordro iş akışlarının günlük kullanıma hazır olması için tüm ekibinizi davet etmeden önce kurulum adımlarını tamamlayın.",
+      "entryDescription": "Canlıya geçiş hazırlığını kontrol edin; ilkeler, bordro, entegrasyonlar ve çalışan içe aktarma genelinde kurulumu takip edin",
       "errors": {
         "updateItem": "Kontrol listesi öğesi güncellenemedi."
       },
       "eyebrow": "Müşteri uygulaması",
+      "firstWorkflows": {
+        "clockIn": "İlk giriş kaydı",
+        "decidedApproval": "Karara bağlanan ilk talep",
+        "former": "Eski çalışan",
+        "notYet": "Henüz değil",
+        "payrollExport": "İlk başarılı bordro dışa aktarma",
+        "retry": "Tekrar kontrol et",
+        "seen": "{name} tarafından {time}",
+        "status": {
+          "allSeen": "Tümü görüldü",
+          "notStarted": "Başlatılmadı",
+          "underWay": "Devam ediyor"
+        },
+        "unavailable": "Kontrol edilemedi"
+      },
+      "goLive": {
+        "approver": {
+          "approvalModeUnsupported": "{count, plural, other {{kind, select, absence {İzin talepleri} timeCorrection {Zaman düzeltmeleri} workPeriod {Çalışma dönemi bildirimleri} periodSubmission {Dönem bildirimleri} expenseReport {Masraf raporları} other {Vardiya talepleri}}: bu kuruluşun onay modunda gönderilemez. Destek ekibiyle iletişime geçin: # çalışan} }",
+          "changePolicyAmbiguous": "{count, plural, other {{kind, select, absence {İzin talepleri} timeCorrection {Zaman düzeltmeleri} workPeriod {Çalışma dönemi bildirimleri} periodSubmission {Dönem bildirimleri} expenseReport {Masraf raporları} other {Vardiya talepleri}}: birden fazla değişiklik ilkesi geçerli olduğundan girişler reddedildi: # çalışan} }",
+          "correctionDirectNoPolicy": "{count, plural, other {Zaman düzeltmeleri: Herhangi bir değişiklik ilkesi uygulanmadığı için # çalışan kendi girişlerini doğrudan düzenler. Silme talepleri ve tarih değişiklikleri yine de bir onaylayıcıya gider, bu nedenle kontrol edilirler.} }",
+          "correctionDirectSelfService": "{count, plural, other {Zaman düzeltmeleri: # çalışan, değişiklik ilkesinin self servis günleri dahilinde kendi girişlerini doğrudan düzenler ve daha eski olanları değiştiremez. Silme talepleri ve tarih değişiklikleri yine de bir onaylayıcıya gider, bu nedenle kontrol edilirler.} }",
+          "correctionDirectTrustMode": "{count, plural, other {Zaman düzeltmeleri: Değişiklik ilkesi güven modunda olduğu için # çalışan kendi girişlerini doğrudan düzenler. Silme talepleri ve tarih değişiklikleri yine de bir onaylayıcıya gider, bu nedenle kontrol edilirler.} }",
+          "fixApprovalPolicies": "Onay ilkelerini gözden geçir",
+          "fixChangePolicies": "Değişiklik ilkelerini gözden geçir",
+          "fixExpenseApprover": "Bir masraf onaylayıcısı belirle",
+          "fixManagers": "Yöneticileri ata",
+          "fixTeamManager": "Ekip yöneticisini belirle",
+          "invalidPolicies": "{count, plural, other {{kind, select, absence {İzin talepleri} timeCorrection {Zaman düzeltmeleri} workPeriod {Çalışma dönemi bildirimleri} periodSubmission {Dönem bildirimleri} expenseReport {Masraf raporları} other {Vardiya talepleri}}: onay ilkeleri uygulanamıyor: # çalışan} }",
+          "managerDeparted": "{count, plural, one {{kind, select, absence {İzin talepleri} timeCorrection {Zaman düzeltmeleri} workPeriod {Çalışma dönemi bildirimleri} periodSubmission {Dönem bildirimleri} expenseReport {Masraf raporları} other {Vardiya talepleri}}: yöneticisi ayrılmış ve yerine vekalet eden kimse yok: # çalışan} other {{kind, select, absence {İzin talepleri} timeCorrection {Zaman düzeltmeleri} workPeriod {Çalışma dönemi bildirimleri} periodSubmission {Dönem bildirimleri} expenseReport {Masraf raporları} other {Vardiya talepleri}}: yöneticileri ayrılmış ve yerine vekalet eden kimse yok: # çalışan}}",
+          "noDecider": "{count, plural, other {{kind, select, absence {İzin talepleri} timeCorrection {Zaman düzeltmeleri} workPeriod {Çalışma dönemi bildirimleri} periodSubmission {Dönem bildirimleri} expenseReport {Masraf raporları} other {Vardiya talepleri}}: hiçbir yönetici veya sistem yöneticisi bunları karara bağlayamaz: # çalışan} }",
+          "noManagerNoTeam": "{count, plural, other {{kind, select, absence {İzin talepleri} timeCorrection {Zaman düzeltmeleri} workPeriod {Çalışma dönemi bildirimleri} periodSubmission {Dönem bildirimleri} expenseReport {Masraf raporları} other {Vardiya talepleri}}: uygun yönetici yok: bir ekipte yer almayan # çalışan} }",
+          "periodSubmissionsOff": "Dönem bildirimleri kapalı olduğundan kontrol edilmez.",
+          "policyWithoutApprover": "{count, plural, other {{kind, select, absence {İzin talepleri} timeCorrection {Zaman düzeltmeleri} workPeriod {Çalışma dönemi bildirimleri} periodSubmission {Dönem bildirimleri} expenseReport {Masraf raporları} other {Vardiya talepleri}}: {policy} onay ilkesi için onaylayıcı bulunamıyor: # çalışan} }",
+          "selfApprovalRoute": "{count, plural, other {{kind, select, absence {İzin talepleri} timeCorrection {Zaman düzeltmeleri} workPeriod {Çalışma dönemi bildirimleri} periodSubmission {Dönem bildirimleri} expenseReport {Masraf raporları} other {Vardiya talepleri}}: izin verilmeyen bir şekilde çalışanların kendilerine gidecek: # çalışan} }",
+          "shiftsOff": "Vardiyalar kapalı olduğundan vardiya talepleri kontrol edilmez.",
+          "skipNoCategoryRequiresApproval": "Hiçbir izin kategorisi gerektirmediği için izin talepleri onay gerektirmez.",
+          "skipNoChangePolicy": "{count, plural, other {{kind, select, absence {İzin talepleri} timeCorrection {Zaman düzeltmeleri} workPeriod {Çalışma dönemi bildirimleri} periodSubmission {Dönem bildirimleri} expenseReport {Masraf raporları} other {Vardiya talepleri}}: Herhangi bir değişiklik ilkesi geçerli olmadığından # çalışan için onay gerekmez.} }",
+          "skipOwnApprover": "{count, plural, other {{kind, select, absence {İzin talepleri} timeCorrection {Zaman düzeltmeleri} workPeriod {Çalışma dönemi bildirimleri} periodSubmission {Dönem bildirimleri} expenseReport {Masraf raporları} other {Vardiya talepleri}}: # çalışan kendi onaylayıcısıdır.} }",
+          "skipOwnDecider": "{count, plural, one {{kind, select, absence {İzin talepleri} timeCorrection {Zaman düzeltmeleri} workPeriod {Çalışma dönemi bildirimleri} periodSubmission {Dönem bildirimleri} expenseReport {Masraf raporları} other {Vardiya talepleri}}: Bunları karara bağlayabilecek tek kişi # çalışan olduğundan kendi talepleri kendi onayını bekler.} other {{kind, select, absence {İzin talepleri} timeCorrection {Zaman düzeltmeleri} workPeriod {Çalışma dönemi bildirimleri} periodSubmission {Dönem bildirimleri} expenseReport {Masraf raporları} other {Vardiya talepleri}}: Bunları karara bağlayabilecek tek kişi # çalışan olduğundan kendi talepleri kendi onaylarını bekler.}}",
+          "skipOwnerAdmin": "{count, plural, other {{kind, select, absence {İzin talepleri} timeCorrection {Zaman düzeltmeleri} workPeriod {Çalışma dönemi bildirimleri} periodSubmission {Dönem bildirimleri} expenseReport {Masraf raporları} other {Vardiya talepleri}}: Şirket sahipleri ve yöneticiler kendi çalışmalarını doğrudan kaydettiğinden # çalışan için onay gerekmez.} }",
+          "skipOwnerSelfApproval": "{kind, select, absence {İzin talepleri} timeCorrection {Zaman düzeltmeleri} workPeriod {Çalışma dönemi bildirimleri} periodSubmission {Dönem bildirimleri} expenseReport {Masraf raporları} other {Vardiya talepleri}}: Başka kimse onaylayamadığı için şirket sahibi kendi raporlarını onaylar.",
+          "skipTrustMode": "{count, plural, other {{kind, select, absence {İzin talepleri} timeCorrection {Zaman düzeltmeleri} workPeriod {Çalışma dönemi bildirimleri} periodSubmission {Dönem bildirimleri} expenseReport {Masraf raporları} other {Vardiya talepleri}}: Değişiklik ilkeleri güven modunda olduğu için # çalışan onay gerektirmez.} }",
+          "teamWithoutManager": "{count, plural, other {{kind, select, absence {İzin talepleri} timeCorrection {Zaman düzeltmeleri} workPeriod {Çalışma dönemi bildirimleri} periodSubmission {Dönem bildirimleri} expenseReport {Masraf raporları} other {Vardiya talepleri}}: {team} ekibinin uygun yöneticisi yok: # çalışan} }",
+          "unknownTeamWithoutManager": "{count, plural, other {{kind, select, absence {İzin talepleri} timeCorrection {Zaman düzeltmeleri} workPeriod {Çalışma dönemi bildirimleri} periodSubmission {Dönem bildirimleri} expenseReport {Masraf raporları} other {Vardiya talepleri}}: ekiplerinin uygun yöneticisi yok: # çalışan} }"
+        },
+        "checkedAt": "{time} kontrol edildi",
+        "group": {
+          "description": "Canlıya geçiş kontrolleri, hariç tutulanlar haricinde mevcut kadrodaki herkes ve davet edilmiş ancak henüz katılmamış herkes için çalışır. Kademeli bir canlıya geçiş için, canlıya geçecek ekipleri seçin.",
+          "errors": {
+            "alreadyExcluded": "Bu çalışan zaten hariç tutulmuş.",
+            "employeeNotFound": "Bu çalışan mevcut kadroda yer almıyor.",
+            "exclusionNotFound": "Bu hariç tutma zaten sona erdi.",
+            "reasonRequired": "Hariç tutma için bir neden belirtin.",
+            "reasonTooLong": "Neden çok uzun.",
+            "teamNotFound": "Seçilen ekiplerden biri artık mevcut değil.",
+            "updateFailed": "Canlıya geçiş grubu güncellenemedi."
+          },
+          "excluded": {
+            "byOn": "{name} tarafından {date} tarihinde hariç tutuldu",
+            "help": "Hariç tutulan çalışanlar denetlenmez; örneğin zaman takibi yapmayan bir yönetici gibi. Hariç tutma işlemi, siz kaldırana veya çalışan ayrılana kadar geçerlidir.",
+            "lift": "Kaldır",
+            "liftFor": "{name} için hariç tutmayı kaldır",
+            "none": "Kimse hariç tutulmadı.",
+            "on": "{date} tarihinde hariç tutuldu",
+            "title": "Hariç tutuldu"
+          },
+          "exclude": {
+            "employee": "Çalışan",
+            "employeeRequired": "Bir çalışan seçin.",
+            "reason": "Neden",
+            "reasonPlaceholder": "Örneğin: yönetici, zaman takibi yapmıyor",
+            "submit": "Hariç tut"
+          },
+          "memberCount": "{count, plural, other {# kişi denetleniyor} }",
+          "teams": {
+            "help": "Hiçbir ekip seçilmediğinde herkes denetlenir. Aksi takdirde, yalnızca birincil ekibi seçilmiş olan kişiler ve davetinde seçilen bir ekibin adı geçen davetli kişiler denetlenir. Diğer ekip üyelikleri hesaba katılmaz.",
+            "none": "Kuruluşunuzda henüz ekip bulunmuyor, bu nedenle herkes birlikte canlıya geçer.",
+            "save": "Ekipleri kaydet",
+            "title": "Canlıya geçecek ekipler"
+          },
+          "title": "Canlıya geçiş grubu",
+          "unavailable": "Canlıya geçiş grubunun ekipleri ve hariç tutulanları yüklenemedi. Denetimleri tekrar deneyin."
+        },
+        "groupDescription": "Bu sayfayı her açtığınızda, canlıya geçiş grubundaki herkes için zorunlu canlıya geçiş denetimlerinden hesaplanır.",
+        "optional": "İsteğe bağlı",
+        "panel": {
+          "invited": "Davet edildi",
+          "nextPage": "Sonraki sayfa",
+          "pageRange": "{from}–{to} / {total}",
+          "previousPage": "Önceki sayfa",
+          "unavailable": "Bu denetim tamamlanamadı. Tekrar denemek için denetimleri yeniden çalıştırın."
+        },
+        "payrollSetup": {
+          "fixEmployees": "Çalışanları incele",
+          "fixPayrollExport": "Bordro dışa aktarma ayarlarını aç",
+          "inviteesSkipped": "{count, plural, other {Davet edilen # kişi, katılana kadar istihdam koşulları ve personel kimlikleri için atlanır.} }",
+          "missingEmploymentTerms": "{count, plural, other {Bugünü kapsayan onaylanmış istihdam koşulu yok: # çalışan} }",
+          "noWageTypeMappings": "{count, plural, other {Aktif ücret türü eşlemesi yok, bu nedenle bordro dışa aktarımları saatleri sınıflandıramaz: # üye} }",
+          "optional": "Aktif bir bordro dışa aktarma hedefi yok; bu nedenle bordro dışa aktarma isteğe bağlı bir entegrasyondur ve canlıya geçişi engellemez.",
+          "sharedPersonnelIdentifierDetail": "{identifier}, {others} ile paylaşıldı",
+          "sharedPersonnelIdentifiers": "{count, plural, other {Bordro dışa aktarımları çalışanları ortak bir personel kimliği altında birleştirecektir: # çalışan} }"
+        },
+        "readiness": {
+          "notReady": "{count, plural, other {Hazır değil: # çalışan için işlem gerekiyor} }",
+          "notReadyChecks": "{count, plural, other {Hazır değil: {checks} geçmedi} }",
+          "notReadyEmptyGroup": "Hazır değil: Canlıya geçiş grubunda denetlenecek kimse yok.",
+          "ready": "Canlıya geçmeye hazır",
+          "unavailable": "Kullanılamıyor: Bir denetim tamamlanamadı, bu nedenle hiçbir denetim geçmiş sayılmıyor."
+        },
+        "retry": "Denetimleri tekrar dene",
+        "title": "Canlıya geçiş hazırlığı",
+        "warnings": "{count, plural, other {Aşağıda # bilgilendirme uyarısı var. Canlıya geçişi engellemezler.} }",
+        "workPolicy": {
+          "fix": "Çalışma politikaları ata",
+          "noTeamNoOrganizationPolicy": "{count, plural, other {Kuruluş çalışma politikası yok: hiçbir ekipte yer almayan # çalışan} }",
+          "teamWithoutPolicy": "{count, plural, other {{team} ekibinin çalışma politikası yok: # çalışan} }",
+          "unknownTeamWithoutPolicy": "{count, plural, other {Ekiplerinin çalışma politikası yok: # çalışan} }"
+        }
+      },
+      "items": {
+        "approvalRules": {
+          "confirmationLabel": "Onay sürecimizin kararlaştırıldığını onaylayın",
+          "confirmedLabel": "Onaylandı: Onay sürecimiz kararlaştırıldı",
+          "goLiveGroupHelperText": "Z8, canlıya geçiş grubundaki herkesin her türlü talebinin karara bağlanabilmesini denetler. Silme talepleri ve tarih değişiklikleri onaya gittiğinden, zaman düzeltmeleri her zaman bir onaylayıcıya ihtiyaç duyar. Onay sürecinizin kararlaştırıldığını teyit etmek isteğe bağlıdır."
+        },
+        "firstWorkflows": {
+          "actionLabel": "Zaman takibini aç",
+          "description": "Kuruluşunuzun Z8 ile çalışmaya gerçekten başladığını görün.",
+          "helperText": "Z8; gerçek etkinliklerden ilk giriş kaydını, karara bağlanan ilk talebi ve ilk başarılı bordro dışa aktarımını algılar. Bu durum canlıya geçiş hazırlığını hiçbir zaman etkilemez.",
+          "title": "İlk iş akışları"
+        },
+        "organizationStructure": {
+          "goLiveDescription": "Canlıya geçmeden önce üyeleri, ekipleri ve sorumluluk sınırlarını onaylayın.",
+          "goLiveHelperText": "Manuel inceleme: Z8, kuruluş yapınızın nihai olup olmadığını bilemez. Kişi, ekip veya yönetici eklemek ya da kaldırmak onayı geçersiz kılar."
+        },
+        "payrollReadiness": {
+          "confirmationLabel": "Bordro dışa aktarma kurulumumuzun kararlaştırıldığını onaylayın",
+          "confirmedLabel": "Onaylandı: Bordro dışa aktarma kurulumumuz kararlaştırıldı",
+          "goLiveGroupHelperText": "Z8, canlıya geçiş grubundaki herkes için bordro kurulumunu denetler: dışa aktarma hedefi, ücret türü eşlemeleri, onaylanmış istihdam şartları ve personel tanımlayıcıları. Etkin bir bordro dışa aktarma hedefi olmadan bordro dışa aktarımı isteğe bağlı bir entegrasyondur ve kontrol listesi ilerlemesine sayılmaz."
+        },
+        "workPolicies": {
+          "goLiveGroupHelperText": "Z8, canlıya geçiş grubundaki herkesin bugün geçerli bir çalışma politikası olup olmadığını denetler. Davet edilen kişiler, davetlerinde belirtilen ekibe göre denetlenir."
+        }
+      },
       "progress": {
         "ariaLabel": "Uygulama kontrol listesi ilerlemesi",
         "completedCount": "{total} üzerinden {completed} tamamlandı",
         "label": "Kurulum ilerlemesi",
         "percentComplete": "%{percent} tamamlandı"
       },
+      "rehearsal": {
+        "approvals": {
+          "absenceCategory": "Devamsızlık kategorisi {category}",
+          "defaultApprover": "Hiçbir onay politikası geçerli değil: yöneticileri karar verir",
+          "direct": {
+            "noChangePolicy": "Hiçbir değişiklik politikası geçerli değil, bu nedenle kendi girişlerini doğrudan düzenlerler. Silme talepleri ve tarih değişiklikleri yine de aşağıdaki onaylayıcıya gider.",
+            "selfService": "Değişiklik politikalarının self servis günleri dahilinde kendi girişlerini doğrudan düzenlerler. Silme talepleri ve tarih değişiklikleri yine de aşağıdaki onaylayıcıya gider.",
+            "trustMode": "Değişiklik politikaları güven modundadır, bu nedenle kendi girişlerini doğrudan düzenlerler. Silme talepleri ve tarih değişiklikleri yine de aşağıdaki onaylayıcıya gider."
+          },
+          "kind": "{kind, select, absence {Devamsızlık talepleri} timeCorrection {Zaman düzeltmeleri} workPeriod {Çalışma dönemi gönderimleri} periodSubmission {Dönem gönderimleri} expenseReport {Masraf raporları} other {Vardiya talepleri}}",
+          "noApprovalNeeded": "Onay gerekmez",
+          "reportTotal": "Rapor toplamı {amount, number}",
+          "routed": "Onay gerekiyor",
+          "shiftDeciders": "Herhangi bir yönetici veya admin",
+          "skip": {
+            "noCategoryRequiresApproval": "Hiçbir devamsızlık kategorisi onay gerektirmez.",
+            "noChangePolicy": "Onlar için geçerli bir değişiklik politikası yok.",
+            "ownApprover": "Kendilerinin onaylayıcısı oldukları için talepleri anında tamamlanır.",
+            "ownDecider": "Vardiya taleplerini karara bağlayabilecek tek yönetici veya admin oldukları için, kendi talepleri kendileri onaylayana kadar beklemede kalır.",
+            "ownerAdmin": "Sahipler ve yöneticiler kendi çalışmalarını doğrudan kaydeder.",
+            "ownerSelfApproval": "Kuruluş sahibi olarak, başka hiç kimse onaylayamadığı için kendi raporlarını kendileri onaylar.",
+            "trustMode": "Değişiklik politikaları güven modunda."
+          },
+          "title": "Onaylar",
+          "unroutable": {
+            "approvalModeUnsupported": "Bu kuruluşun onay modunda gönderilemezler. Destek ekibiyle iletişime geçin.",
+            "badge": "Yönlendirilemiyor",
+            "changePolicyAmbiguous": "Kendileri için birden fazla değişiklik politikası geçerli olduğundan girişleri reddedildi.",
+            "invalidPolicies": "Onay politikaları uygulanamıyor.",
+            "managerDeparted": "Yöneticileri ayrıldı ve yerine vekalet eden kimse yok.",
+            "noDecider": "Hiçbir yönetici veya admin bunları karara bağlayamaz.",
+            "noManager": "Hiçbir onay politikası geçerli değil ve uygun bir yöneticileri yok.",
+            "policyWithoutApprover": "{policy} onay politikası onlar için bir onaylayıcı bulamıyor.",
+            "selfApprovalRoute": "Raporları kendilerine iletilecek, buna izin verilmiyor.",
+            "teamWithoutManager": "Hiçbir onay politikası geçerli değil ve {team} ekibinin uygun bir yöneticisi yok."
+          },
+          "viaPolicy": "Onay politikası {policy}"
+        },
+        "choosePerson": "Bir kişi seçin",
+        "description": "Z8'in canlıya geçiş grubundaki bir kişi için ne yapacağını görün: çalışma politikası, taleplerini kimin karara bağladığı ve bordro ön koşulları. Hiçbir şey kaydedilmez veya gönderilmez.",
+        "errors": {
+          "memberNotChecked": "Bu kişi artık canlıya geçiş grubunda değil, bu nedenle denenecek bir şey yok. Güncel grubu görmek için sayfayı yeniden yükleyin.",
+          "unavailable": "Deneme tamamlanamadı."
+        },
+        "nobody": "Canlıya geçiş grubunda henüz kimse yok.",
+        "noMatch": "Canlıya geçiş grubunda eşleşen kimse yok.",
+        "payroll": {
+          "employmentTerms": "İstihdam şartları",
+          "exportTargetMapping": "Dışa aktarma hedefi eşleme",
+          "mappingsMissing": "Etkin ücret türü eşlemesi yok",
+          "mappingsPresent": "{count, plural, other {# dışa aktarma hedefi, ücret türleri eşlendi} }",
+          "notExported": "Kuruluşun etkin bir bordro dışa aktarma hedefi yok, bu nedenle bordro ön koşulu bulunmuyor.",
+          "notYetInvited": "Henüz değil: Hâlâ davetliler",
+          "personnelIdentifier": "Personel numarası",
+          "termsConfirmed": "Bugün için onaylandı",
+          "termsMissing": "Bugünü kapsayan onaylanmış koşul yok",
+          "title": "Bordro",
+          "unavailable": "Kontrol edilemedi",
+          "unique": "Benzersiz"
+        },
+        "person": "Kişi",
+        "retry": "Tekrar dene",
+        "run": "Prova yap",
+        "runFor": "{name} için canlıya geçiş provası yap",
+        "running": "Hesaplanıyor…",
+        "searchPerson": "Canlıya geçiş grubunda ara",
+        "sheetDescription": "Z8'in bugün {name} için yapacağı işlemler. Hiçbir şey kaydedilmez veya gönderilmez.",
+        "stage": {
+          "departedNobody": "{name} ayrıldı ve yerine bakan kimse yok.",
+          "labelled": "Aşama {sequence}: {label}",
+          "later": "Önceki aşamalar karar verdikten sonra başlar.",
+          "nobody": "Karar verecek kimse bulunamaz.",
+          "numbered": "Aşama {sequence}",
+          "ownApprover": "Burada kendi onaylayıcıları kendileridir, bu nedenle bu aşama hemen tamamlanır.",
+          "standsIn": "Ayrılan {name} yerine vekalet eder.",
+          "viaFallback": "Aşamanın kendi kuralıyla eşleşen kimse yok, bu nedenle yedek kural ({fallback, select, default_manager {yöneticileri} organization_admin {kuruluş yöneticileri} other {yedek}}) karar verir."
+        },
+        "title": "Canlıya geçiş provası",
+        "workedOut": "{time} hesaplandı",
+        "workPolicy": {
+          "assignedAt": "{level, select, employee {Kendilerine} team {{team} ekibine} other {Kuruluşa}}",
+          "assignedVia": "Atandı",
+          "hours": "Saat",
+          "hoursPerCycle": "{cycle, select, daily {Gün} weekly {Hafta} biweekly {İki hafta} monthly {Ay} other {Yıl}} başına {hours, number} saat",
+          "name": "Politika",
+          "none": "Bugün geçerli bir çalışma politikası yok: Kendilerine, ekiplerine veya kuruluşa atanmış bir politika bulunmuyor.",
+          "noSchedule": "Çalışma planı yok",
+          "noWorkingDays": "Çalışma günü yok",
+          "title": "Çalışma politikası",
+          "workingDays": "Çalışma günleri"
+        }
+      },
       "status": {
-        "complete": "Tamamla",
+        "configured": "Yapılandırıldı",
         "manuallyComplete": "Manuel olarak tamamla",
-        "needsReview": "İnceleme gerekiyor",
-        "notStarted": "Başlatılmadı"
+        "needsAttention": "İlgilenilmesi gerekiyor",
+        "notSetUp": "Ayarlanmadı",
+        "unavailable": "Kullanılamıyor",
+        "verified": "Doğrulandı"
       },
       "title": "Uygulama kontrol listesi"
     },
@@ -1551,6 +1891,21 @@
         "signInRequired": "Devam etmek için giriş yapın."
       }
     },
+    "kioskFob": {
+      "confirmRemove": "Anahtarlığı kaldır",
+      "details": "Sonu {lastFour} ile biten, {date} tarihinde {kiosk} noktasında kaydedilen anahtarlık.",
+      "detailsKioskGone": "Sonu {lastFour} ile biten, {date} tarihinde artık mevcut olmayan bir kioska kaydedilen anahtarlık.",
+      "errors": {
+        "employeeNotFound": "Bu çalışan bulunamadı.",
+        "failed": "Bir şeyler ters gitti. Lütfen tekrar deneyin.",
+        "fobChanged": "Bu kiosk anahtarlığı bu sırada değiştirildi. Durumunu kontrol edip tekrar deneyin.",
+        "noFob": "Kaldırılacak kiosk anahtarlığı yok.",
+        "notAllowed": "Bu işlemi yapma izniniz yok.",
+        "signInRequired": "Devam etmek için giriş yapın."
+      },
+      "remove": "Anahtarlığı kaldır",
+      "removed": "Kiosk anahtarlığı kaldırıldı"
+    },
     "kioskPin": {
       "errors": {
         "emailInUse": "Bu adres başka bir hesap tarafından zaten kullanılıyor.",
@@ -1614,6 +1969,8 @@
         "locationPlaceholder": "Bir konum seçin",
         "name": "Ad",
         "namePlaceholder": "ör. Personel girişi",
+        "nfcFobReader": "NFC anahtarlık okuyucu",
+        "nfcFobReaderDescription": "Çalışanlar isimlerini aramak yerine NFC kartlarını veya anahtarlıklarını bu kioska bağlı okuyucuya dokundurur, ardından kiosk PIN'lerini girer. Yeni bir anahtarlığı kiosktan PIN'leriyle kaydederler. Anahtarlıklar için bağlantı gerekir; isim ve PIN çalışmaya devam eder.",
         "offlineMode": "Çevrimdışı mod",
         "offlineModeDescription": "Kiosk, bağlantı olmadan da giriş-çıkış kaydetmeye devam eder. Yeniden bağlandığında giriş-çıkış kayıtları onaylanır ve PIN'leri kontrol edilir.",
         "offlineModeUnavailable": "Çevrimdışı mod, bu kuruluşun henüz kullanmadığı koordineli saat komutlarına ihtiyaç duyar.",
@@ -1625,6 +1982,7 @@
       "listTitle": "Kiosklar",
       "loadFailed": "Kiosklar yüklenemedi.",
       "neverSeen": "Hiçbir zaman",
+      "nfcFobReaderOn": "NFC anahtarlık okuyucu açık",
       "noLocations": "Önce bir konum oluşturun: her kiosk tek bir konuma aittir.",
       "offlineOn": "Çevrimdışı mod açık",
       "offlineOnNotInEffect": "Çevrimdışı mod açık, bu kuruluş için geçerli değil",
@@ -2388,6 +2746,12 @@
     },
     "security": {
       "description": "Parolanızı, iki faktörlü kimlik doğrulamayı, geçiş anahtarlarını ve aktif oturumları yönetin",
+      "kioskFob": {
+        "confirmRemoveText": "Kaybettiyseniz kaldırın: Kiosklarda çalışması anında durur. Kiosk PIN'iniz çalışmaya devam eder.",
+        "description": "İsminizi seçmek için kioska dokundurduğunuz bir NFC kartı veya anahtarlık. Kiosk PIN'iniz kimliğinizi doğrulamaya devam eder.",
+        "none": "Kayıtlı anahtarlık yok. Kaydetmek için bir kioskun anahtarlık okuyucusuna dokundurun ve kiosk PIN'inizle onaylayın.",
+        "title": "Kiosk anahtarlığı"
+      },
       "kioskPin": {
         "descriptionChange": "Bir kiosk PIN kodunuz var. Değiştirmek için 4 ila 6 haneli yeni bir kod seçin.",
         "descriptionSet": "Kuruluşunuzun kiosklarında giriş-çıkış yapmak için 4 ila 6 haneli bir PIN seçin.",

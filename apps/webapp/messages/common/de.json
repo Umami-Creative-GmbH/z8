@@ -1369,6 +1369,11 @@
         "message": "{action, select, clock_in {Ihr Einstempeln} clock_out {Ihr Ausstempeln} start_break {Ihr Pausenbeginn} resume_break {Ihr Pausenende} other {Ihre Buchung}} um {time} am Kiosk {kioskName} wurde nicht erfasst: {reason, select, wrong_pin {die PIN war falsch} pin_locked {die Kiosk-PIN wurde nach zu vielen Fehlversuchen gesperrt} no_pin {es gab keine Kiosk-PIN zum Abgleich} pin_unchecked {die PIN konnte nicht überprüft werden} kiosk_retired {der Kiosk wurde widerrufen oder erneut gekoppelt, bevor er sich wieder verbunden hat} contact_unverifiable {Z8 konnte die letzte Verbindung des Kiosks nicht bestätigen} outside_window {die Zeit lag außerhalb des von Z8 akzeptierten Zeitfensters} clock_untrusted {der Kioskuhr konnte nicht vertraut werden} not_assigned {der Mitarbeiter ist dem Standort des Kiosks nicht zugewiesen} not_adopted {die Organisation akzeptiert keine Offline-Buchungen am Kiosk} month_closed {der Monat ist abgeschlossen} holiday {der Tag ist ein Feiertag ohne Zeiterfassung} conflict {sie steht im Konflikt mit einer anderen erfassten Zeit} other {Z8 konnte sie nicht annehmen}}. Erfassen Sie Ihre Zeit erneut oder bitten Sie Ihre Führungskraft, sie zu korrigieren.",
         "title": "Kiosk-Buchung nicht erfasst"
       },
+      "kioskFobRegistered": {
+        "forwardedMessage": "{replaced, select, true {Ein Kiosk-Transponder mit den Endziffern {lastFour} wurde am Kiosk {kioskName} für {employeeName} registriert. Er hat den vorherigen Transponder ersetzt, der nicht mehr funktioniert.} other {Ein Kiosk-Transponder mit den Endziffern {lastFour} wurde am Kiosk {kioskName} für {employeeName} registriert.}} Wenn {employeeName} diesen nicht registriert hat, entfernen Sie ihn auf der Mitarbeiterseite und setzen Sie die Kiosk-PIN zurück.",
+        "message": "{replaced, select, true {Ein Kiosk-Transponder mit den Endziffern {lastFour} wurde am Kiosk {kioskName} für Sie registriert. Er hat Ihren vorherigen Transponder ersetzt, der nicht mehr funktioniert.} other {Ein Kiosk-Transponder mit den Endziffern {lastFour} wurde am Kiosk {kioskName} für Sie registriert.}} Wenn Sie diesen nicht registriert haben, entfernen Sie ihn in Ihren Sicherheitseinstellungen und ändern Sie Ihre Kiosk-PIN.",
+        "title": "Kiosk-Transponder registriert"
+      },
       "manualEntryApproved": {
         "message": "Ihre manuelle Zeiteinreichung wurde von {approverName} genehmigt.",
         "title": "Manuelle Zeiteinreichung genehmigt"
@@ -1831,6 +1836,7 @@
         "forgotten_clock_out_reminder": "Vergessenes Ausstempeln",
         "former_employee_reports_without_manager": "Mitarbeiter ohne aktuelle Führungskraft",
         "kiosk_command_refused": "Kiosk-Buchung nicht erfasst",
+        "kiosk_fob_registered": "Kiosk-Transponder registriert",
         "missed_clock_in_reminder": "Verpasstes Einstempeln",
         "period_submission_decided": "Eingereichte Zeiten genehmigt oder abgelehnt",
         "period_submission_reminder": "Zeiten einreichen",
@@ -2538,6 +2544,13 @@
             "workModel": "Ihr Arbeitsmodell.",
             "workPolicy": "Die Arbeitsrichtlinie, die diese Bedingungen verwenden."
           },
+          "goLiveExclusions": {
+            "createdAt": "Zeitpunkt, zu dem Sie ausgenommen wurden, als UTC-Zeitpunkt.",
+            "endedAt": "Wann es endete, weil Sie die Organisation verlassen haben; leer, falls nicht.",
+            "liftedAt": "Wann ein Administrator Sie wieder in die Prüfungen aufgenommen hat; leer, falls nicht.",
+            "reason": "Der von einem Administrator angegebene Grund für Ihren Ausschluss.",
+            "summary": "Zeitpunkte, an denen die Organisation Sie bei der Einrichtung von Z8 von den Go-Live-Prüfungen ausgenommen hat, und der Grund dafür. Sie haben keine weiteren Auswirkungen."
+          },
           "groups": {
             "addedAt": "Wann Sie der Gruppe hinzugefügt wurden.",
             "addedBy": "Wer Sie der Gruppe hinzugefügt hat.",
@@ -2637,6 +2650,14 @@
             "lastUsedAt": "Wann eine Kalender-App den Feed zuletzt abgerufen hat (UTC).",
             "revokedAt": "Wann der Link deaktiviert wurde (UTC).",
             "summary": "Ihre Kalender-Feed-Links, mit denen eine Kalender-App Ihre Abwesenheiten abonnieren kann. Der geheime Link selbst ist niemals enthalten."
+          },
+          "kioskFobs": {
+            "endedAt": "Wann er aufgehört hat, Sie auszuwählen (UTC); leer, solange dies noch der Fall ist.",
+            "endedReason": "ersetzt, wenn Sie einen anderen registriert haben; entfernt, wenn Sie oder eine Führungskraft ihn entfernt haben oder Sie deaktiviert wurden; Austritt, wenn Ihr Beschäftigungsverhältnis endete.",
+            "kiosk": "Der Kiosk, an dem Sie ihn registriert haben; leer, sobald dieser Kiosk gelöscht wurde.",
+            "registeredAt": "Wann Sie ihn registriert haben (UTC).",
+            "serialNumber": "Die Seriennummer des Chips, wie vom Lesegerät des Kiosks erfasst.",
+            "summary": "Die NFC-Karten oder -Transponder, die Sie an einem Kiosk registriert haben (aktuelle und beendete). Durch Vorhalten werden Sie am Kiosk ausgewählt; Ihre Kiosk-PIN bestätigt weiterhin Ihre Identität."
           },
           "kioskPinEvents": {
             "event": "Fehlgeschlagen bei falscher PIN, erfolgreich bei richtiger PIN, gelöscht, wenn Ihre PIN entsperrt, zurückgesetzt oder geändert wurde.",

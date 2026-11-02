@@ -190,6 +190,15 @@
         "revokedOn": "No active kiosk badge. The last one was revoked on {date}.",
         "saveNow": "Save the PDF now: Z8 cannot show this badge again. You can reprint a saved copy. If the file or the badge is lost, replace the badge."
       },
+      "kioskFob": {
+        "confirmRemoveText": "The fob stops working at kiosks at once and can be registered again. The employee's kiosk PIN and kiosk badge keep working.",
+        "description": "An NFC card or fob the employee taps at an online kiosk to pick their name. Their kiosk PIN still proves it is them.",
+        "endedByDeparture": "The last one ended with the employee's departure on {date}.",
+        "endedOn": "The last one ended on {date}.",
+        "heading": "Kiosk fob",
+        "none": "No kiosk fob. Employees register their own at a kiosk with an NFC fob reader, using their kiosk PIN.",
+        "removedOn": "The last one was removed on {date}."
+      },
       "kioskPin": {
         "addEmailDescription": "They receive an invitation to choose a password and can then sign in. Their kiosk PIN and history stay as they are.",
         "addEmailHeading": "Add an email",
@@ -244,6 +253,7 @@
             "personnelFileOfficer": "Personnel file officer"
           },
           "kioskBadges": "{count, plural, one {# kiosk badge is revoked} other {# kiosk badges are revoked}}",
+          "kioskFobs": "{count, plural, one {# kiosk fob stops working} other {# kiosk fobs stop working}}",
           "loadError": "The preview could not be loaded.",
           "loading": "Calculating what changes…",
           "managerLinksTitle": "Manager links that end",

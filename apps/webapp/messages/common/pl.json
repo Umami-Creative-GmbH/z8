@@ -1369,6 +1369,11 @@
         "message": "Twoje zdarzenie: {action, select, clock_in {rozpoczęcie pracy} clock_out {zakończenie pracy} start_break {rozpoczęcie przerwy} resume_break {powrót z przerwy} other {rejestracja czasu}} o {time} na terminalu {kioskName} nie zostało zarejestrowane: {reason, select, wrong_pin {błędny kod PIN} pin_locked {kod PIN terminala został zablokowany po zbyt wielu nieudanych próbach} no_pin {brak kodu PIN terminala do weryfikacji} pin_unchecked {nie można było sprawdzić kodu PIN} kiosk_retired {terminal został wycofany lub ponownie sparowany przed ponownym połączeniem} contact_unverifiable {system Z8 nie mógł potwierdzić ostatniego połączenia z terminalem} outside_window {czas był poza oknem akceptowanym przez Z8} clock_untrusted {zegar terminala nie był wystarczająco wiarygodny} not_assigned {pracownik nie jest przypisany do lokalizacji terminala} not_adopted {organizacja nie akceptuje rejestracji offline z terminali} month_closed {miesiąc jest zamknięty} holiday {ten dzień jest świętem bez rejestracji czasu pracy} conflict {występuje konflikt z innym zarejestrowanym czasem} other {system Z8 nie mógł go zaakceptować}}. Zarejestruj swój czas ponownie lub poproś przełożonego o skorygowanie go.",
         "title": "Rejestracja w terminalu nie została zapisana"
       },
+      "kioskFobRegistered": {
+        "forwardedMessage": "{replaced, select, true {Brelok do kiosku z końcówką {lastFour} został zarejestrowany dla użytkownika {employeeName} na kiosku {kioskName}. Zastąpił on poprzedni brelok, który już nie działa.} other {Brelok do kiosku z końcówką {lastFour} został zarejestrowany dla użytkownika {employeeName} na kiosku {kioskName}.}} Jeśli to nie {employeeName} dokonał(a) rejestracji, usuń go na stronie pracownika i zresetuj PIN do kiosku.",
+        "message": "{replaced, select, true {Brelok do kiosku z końcówką {lastFour} został zarejestrowany dla Ciebie na kiosku {kioskName}. Zastąpił on Twój poprzedni brelok, który już nie działa.} other {Brelok do kiosku z końcówką {lastFour} został zarejestrowany dla Ciebie na kiosku {kioskName}.}} Jeśli to nie Ty dokonałeś(-aś) rejestracji, usuń go w swoich ustawieniach bezpieczeństwa i zmień swój PIN do kiosku.",
+        "title": "Zarejestrowano brelok do kiosku"
+      },
       "manualEntryApproved": {
         "message": "Twoje ręczne zgłoszenie czasu pracy zostało zatwierdzone przez: {approverName}.",
         "title": "Ręczne zgłoszenie czasu pracy zatwierdzone"
@@ -1831,6 +1836,7 @@
         "forgotten_clock_out_reminder": "Zapomniana rejestracja wyjścia",
         "former_employee_reports_without_manager": "Pracownicy bez aktualnego menedżera",
         "kiosk_command_refused": "Rejestracja w terminalu nie została zapisana",
+        "kiosk_fob_registered": "Zarejestrowano brelok do kiosku",
         "missed_clock_in_reminder": "Brak rejestracji wejścia",
         "period_submission_decided": "Przesłany czas pracy zatwierdzony lub odrzucony",
         "period_submission_reminder": "Prześlij czas pracy",
@@ -2538,6 +2544,13 @@
             "workModel": "Twój model pracy.",
             "workPolicy": "Zasady pracy stosowane w tych warunkach."
           },
+          "goLiveExclusions": {
+            "createdAt": "Kiedy Cię pominięto, jako znacznik czasu UTC.",
+            "endedAt": "Kiedy zakończono z powodu odejścia z organizacji; puste, jeśli do tego nie doszło.",
+            "liftedAt": "Kiedy administrator przywrócił Cię do weryfikacji; puste, jeśli tego nie zrobiono.",
+            "reason": "Powód pominięcia podany przez administratora.",
+            "summary": "Sytuacje, w których organizacja pominęła Cię podczas kontroli przed uruchomieniem w trakcie konfigurowania Z8, oraz ich powody. Nie wpływają one na nic innego."
+          },
           "groups": {
             "addedAt": "Kiedy dodano Cię do grupy.",
             "addedBy": "Kto dodał Cię do grupy.",
@@ -2637,6 +2650,14 @@
             "lastUsedAt": "Kiedy aplikacja kalendarza ostatnio odczytała kanał (UTC).",
             "revokedAt": "Kiedy link został wyłączony (UTC).",
             "summary": "Linki do kanałów kalendarza, które umożliwiają aplikacji kalendarza subskrybowanie Twoich nieobecności. Sam tajny link nigdy nie jest dołączany."
+          },
+          "kioskFobs": {
+            "endedAt": "Kiedy przestał Cię wybierać (UTC); puste, dopóki nadal to robi.",
+            "endedReason": "„replaced”, gdy zarejestrowano inny; „removed”, gdy został usunięty przez Ciebie lub menedżera albo Twoje konto zostało dezaktywowane; „departure”, gdy zakończyło się zatrudnienie.",
+            "kiosk": "Kiosk, na którym dokonano rejestracji; puste, gdy ten kiosk został usunięty.",
+            "registeredAt": "Kiedy dokonano rejestracji (UTC).",
+            "serialNumber": "Numer seryjny chipa odczytany przez czytnik kiosku.",
+            "summary": "Karty NFC lub breloki zarejestrowane na kiosku (aktualne i wygasłe). Przyłożenie takiego elementu wybiera Twój profil na kiosku; kod PIN do kiosku nadal potwierdza Twoją tożsamość."
           },
           "kioskPinEvents": {
             "event": "niepowodzenie w przypadku błędnego kodu PIN, sukces w przypadku poprawnego, wyczyszczone po odblokowaniu, zresetowaniu lub zmianie kodu PIN.",

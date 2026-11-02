@@ -235,8 +235,30 @@
         "endDayHint": "Finalizar la jornada ahora dará por terminado tu trabajo al inicio de tu descanso.",
         "today": "Hoy: {duration}"
       },
+      "fob": {
+        "alreadyRegistered": "Este llavero que termina en {lastFour} ya está registrado a tu nombre.",
+        "back": "Atrás",
+        "checking": "Comprobando tu llavero…",
+        "failed": "No se ha podido comprobar el llavero. Acércalo de nuevo o toca tu nombre para usar tu PIN.",
+        "linkedToOther": "Este llavero ya está registrado a nombre de otra persona. No se ha modificado nada. Consulta con tu responsable.",
+        "notEligible": "No puedes registrar un llavero en este quiosco. No se ha modificado nada. Consulta con tu responsable.",
+        "notRecognised": "Este llavero no se reconoce aquí.",
+        "offline": "Los llaveros necesitan conexión. No se ha registrado nada. Toca tu nombre para usar tu PIN.",
+        "offlineOnly": "Los llaveros necesitan conexión. No se ha registrado nada.",
+        "pickPrompt": "Toca tu nombre.",
+        "pickTitle": "Registrar este llavero",
+        "pinPrompt": "Introduce tu PIN del quiosco para registrar este llavero",
+        "rateLimited": "{seconds, plural, one {Demasiados intentos con llavero en este quiosco. Vuelve a intentarlo en # segundo o toca tu nombre para usar tu PIN.} other {Demasiados intentos con llavero en este quiosco. Vuelve a intentarlo en # segundos o toca tu nombre para usar tu PIN.}}",
+        "readerDisabled": "El lector de llaveros está desactivado en este quiosco. Toca tu nombre para usar tu PIN.",
+        "register": "Registrar este llavero",
+        "registered": "Llavero registrado",
+        "registeredText": "Tu llavero que termina en {lastFour} está registrado. Acércalo para seleccionar tu nombre y luego introduce tu PIN.",
+        "registerHint": "Si es tuyo, regístralo con tu nombre y el PIN del quiosco. El llavero que hayas registrado antes dejará de funcionar.",
+        "replaced": "Sustituye a tu llavero anterior, que ya no funciona."
+      },
       "home": {
         "empty": "Aún no hay nadie asignado a esta ubicación. Consulta con tu administrador.",
+        "fobHint": "O acerca tu llavero al lector.",
         "loadFailed": "No se pudieron cargar los nombres. Comprueba la conexión de red.",
         "loading": "Cargando nombres…",
         "noMatch": "Ningún nombre coincide con tu búsqueda.",
@@ -363,9 +385,14 @@
         "nonexistentTime": "Esta hora no existe en esta fecha porque el reloj se adelanta.",
         "occurrenceRequired": "Esta hora ocurre dos veces en esta fecha. Elige a cuál te refieres.",
         "overlap": "Esta hora se superpone con trabajo registrado. Elige un intervalo que no se superponga con entradas existentes.",
+        "overlapsLiveWork": "Esta hora se solapa con trabajo en curso desde {start}. Una entrada manual debe finalizar para entonces.",
         "reconfirm": "La zona horaria o las horas han cambiado. Revisa el registro y vuelve a enviarlo.",
         "refresh": "La configuración de entrada manual ha cambiado. Revisa el registro y vuelve a enviarlo.",
         "tooLong": "El periodo de trabajo no puede exceder las 24 horas"
+      },
+      "liveWorkHint": {
+        "employee": "{employee} tiene la entrada registrada desde {start}, por lo que esta entrada debe finalizar para entonces.",
+        "own": "Tienes la entrada registrada desde {start}, por lo que esta entrada debe finalizar para entonces."
       },
       "occurrence": {
         "earlier": "Primero, {offset}",
@@ -509,11 +536,23 @@
     },
     "startedAt": "Iniciado a las",
     "summary": {
-      "baseWorked": "Base trabajada",
-      "surcharge": "Recargo",
+      "dayOfRequired": "{date}: {worked} de {required}",
+      "dayWorked": "{date}: {worked}",
+      "noRequiredToday": "No hay tiempo requerido hoy",
+      "progressAhead": "{worked} de {required} · {difference} por delante",
+      "progressBehind": "{worked} de {required} · {difference} por detrás",
+      "progressLabel": "Tiempo trabajado del tiempo requerido",
+      "progressOnTrack": "{worked} de {required} · según lo previsto",
+      "surchargeFootnote": "+{surcharge} de recargo",
       "thisMonth": "Este mes",
       "thisWeek": "Esta semana",
-      "today": "Hoy"
+      "today": "Hoy",
+      "todayOfRequired": "{worked} de {required}",
+      "trend": "{difference} {comparedWith}",
+      "trendDetail": "Ahora: {worked} trabajados de {required} requeridos hasta ahora. Antes: {previousWorked} trabajados de {previousRequired} requeridos.",
+      "trendWithPercent": "{difference} ({percent}) {comparedWith}",
+      "vsLastMonth": "vs. el mes pasado",
+      "vsLastWeek": "vs. la semana pasada"
     },
     "table": {
       "active": "Activo",

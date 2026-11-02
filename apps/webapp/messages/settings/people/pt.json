@@ -190,6 +190,15 @@
         "revokedOn": "Nenhum crachá de quiosque ativo. O último foi revogado em {date}.",
         "saveNow": "Salve o PDF agora: o Z8 não poderá mostrar este crachá novamente. Você pode reimprimir uma cópia salva. Se o arquivo ou o crachá for perdido, substitua o crachá."
       },
+      "kioskFob": {
+        "confirmRemoveText": "O chaveiro deixa de funcionar nos quiosques imediatamente e pode ser registrado novamente. O PIN do quiosque e o crachá do quiosque do funcionário continuam funcionando.",
+        "description": "Um cartão ou chaveiro NFC que o funcionário aproxima em um quiosque online para selecionar seu nome. O PIN do quiosque ainda comprova a identidade dele.",
+        "endedByDeparture": "O último terminou com o desligamento do funcionário em {date}.",
+        "endedOn": "O último terminou em {date}.",
+        "heading": "Chaveiro do quiosque",
+        "none": "Nenhum chaveiro do quiosque. Os funcionários registram o seu próprio em um quiosque com leitor de chaveiro NFC, usando o PIN do quiosque.",
+        "removedOn": "O último foi removido em {date}."
+      },
       "kioskPin": {
         "addEmailDescription": "Ele receberá um convite para escolher uma senha e poderá fazer login. O PIN do quiosque e o histórico permanecerão inalterados.",
         "addEmailHeading": "Adicionar um e-mail",
@@ -244,6 +253,7 @@
             "personnelFileOfficer": "Responsável pelo arquivo de pessoal"
           },
           "kioskBadges": "{count, plural, one {# crachá de quiosque é revogado} other {# crachás de quiosque são revogados}}",
+          "kioskFobs": "{count, plural, one {# chaveiro do quiosque deixa de funcionar} other {# chaveiros do quiosque deixam de funcionar}}",
           "loadError": "Não foi possível carregar a pré-visualização.",
           "loading": "Calculando o que muda…",
           "managerLinksTitle": "Vínculos de gestão que serão encerrados",

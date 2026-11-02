@@ -235,8 +235,30 @@
         "endDayHint": "Hvis du avslutter dagen nå, avsluttes arbeidet ved starten av pausen.",
         "today": "I dag: {duration}"
       },
+      "fob": {
+        "alreadyRegistered": "Denne brikken som slutter på {lastFour}, er allerede registrert på deg.",
+        "back": "Tilbake",
+        "checking": "Kontrollerer brikken din …",
+        "failed": "Kunne ikke kontrollere brikken. Hold den inntil igjen, eller trykk på navnet ditt for å bruke PIN-kode.",
+        "linkedToOther": "Denne brikken er allerede registrert på noen andre. Ingenting ble endret. Hør med lederen din.",
+        "notEligible": "Du kan ikke registrere en brikke på denne kiosken. Ingenting ble endret. Hør med lederen din.",
+        "notRecognised": "Denne brikken gjenkjennes ikke her.",
+        "offline": "Brikker krever tilkobling. Ingenting ble registrert. Trykk på navnet ditt for å bruke PIN-kode.",
+        "offlineOnly": "Brikker krever tilkobling. Ingenting ble registrert.",
+        "pickPrompt": "Trykk på navnet ditt.",
+        "pickTitle": "Registrer denne brikken",
+        "pinPrompt": "Tast inn kiosk-PIN-koden din for å registrere denne brikken",
+        "rateLimited": "{seconds, plural, one {For mange brikkeforsøk på denne kiosken. Prøv igjen om # sekund, eller trykk på navnet ditt for å bruke PIN-kode.} other {For mange brikkeforsøk på denne kiosken. Prøv igjen om # sekunder, eller trykk på navnet ditt for å bruke PIN-kode.}}",
+        "readerDisabled": "Brikkeleseren er slått av på denne kiosken. Trykk på navnet ditt for å bruke PIN-kode.",
+        "register": "Registrer denne brikken",
+        "registered": "Brikke registrert",
+        "registeredText": "Brikken din som slutter på {lastFour}, er registrert. Hold den inntil for å velge navnet ditt, og tast deretter inn PIN-koden din.",
+        "registerHint": "Hvis den er din, registrerer du den med navnet ditt og kiosk-PIN-koden din. En brikke du har registrert tidligere, slutter å fungere.",
+        "replaced": "Den erstatter den forrige brikken din, som ikke lenger fungerer."
+      },
       "home": {
         "empty": "Ingen er tildelt denne lokasjonen ennå. Spør administratoren din.",
+        "fobHint": "Eller hold brikken mot leseren.",
         "loadFailed": "Kunne ikke laste inn navnene. Sjekk nettverkstilkoblingen.",
         "loading": "Laster inn navn…",
         "noMatch": "Ingen navn samsvarer med søket ditt.",
@@ -363,9 +385,14 @@
         "nonexistentTime": "Dette klokkeslettet finnes ikke på denne datoen fordi klokken stilles frem.",
         "occurrenceRequired": "Dette klokkeslettet forekommer to ganger på denne datoen. Velg hvilket du mener.",
         "overlap": "Dette tidsrommet overlapper med registrert arbeid. Velg et tidsrom som ikke overlapper eksisterende oppføringer.",
+        "overlapsLiveWork": "Dette tidspunktet overlapper med arbeid som har pågått siden {start}. En manuell føring må avsluttes innen da.",
         "reconfirm": "Tidssonen eller tidspunktene ble endret. Se over oppføringen og send den inn på nytt.",
         "refresh": "Innstillingene for manuell registrering ble endret. Se over oppføringen og send den inn på nytt.",
         "tooLong": "Arbeidsperioden kan ikke overstige 24 timer"
+      },
+      "liveWorkHint": {
+        "employee": "{employee} har vært stemplet inn siden {start}, så denne føringen må avsluttes innen da.",
+        "own": "Du har vært stemplet inn siden {start}, så denne føringen må avsluttes innen da."
       },
       "occurrence": {
         "earlier": "Første, {offset}",
@@ -509,11 +536,23 @@
     },
     "startedAt": "Startet",
     "summary": {
-      "baseWorked": "Grunntid arbeidet",
-      "surcharge": "Tillegg",
+      "dayOfRequired": "{date}: {worked} av {required}",
+      "dayWorked": "{date}: {worked}",
+      "noRequiredToday": "Ingen påkrevd tid i dag",
+      "progressAhead": "{worked} av {required} · {difference} foran",
+      "progressBehind": "{worked} av {required} · {difference} bak",
+      "progressLabel": "Arbeidet tid av påkrevd tid",
+      "progressOnTrack": "{worked} av {required} · i rute",
+      "surchargeFootnote": "+{surcharge} tillegg",
       "thisMonth": "Denne måneden",
       "thisWeek": "Denne uken",
-      "today": "I dag"
+      "today": "I dag",
+      "todayOfRequired": "{worked} av {required}",
+      "trend": "{difference} {comparedWith}",
+      "trendDetail": "Nå: {worked} arbeidet av {required} påkrevd så langt. Da: {previousWorked} arbeidet av {previousRequired} påkrevd.",
+      "trendWithPercent": "{difference} ({percent}) {comparedWith}",
+      "vsLastMonth": "mot forrige måned",
+      "vsLastWeek": "mot forrige uke"
     },
     "table": {
       "active": "Aktiv",

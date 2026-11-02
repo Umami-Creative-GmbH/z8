@@ -190,6 +190,15 @@
         "revokedOn": "Niciun ecuson de chioșc activ. Ultimul a fost revocat pe {date}.",
         "saveNow": "Salvați PDF-ul acum: Z8 nu poate afișa din nou acest ecuson. Puteți retipări o copie salvată. Dacă fișierul sau ecusonul se pierde, înlocuiți ecusonul."
       },
+      "kioskFob": {
+        "confirmRemoveText": "Brelocul încetează imediat să funcționeze la chioșcuri și poate fi înregistrat din nou. PIN-ul și ecusonul de chioșc ale angajatului continuă să funcționeze.",
+        "description": "Un card sau un breloc NFC pe care angajatul îl apropie de un chioșc online pentru a-și alege numele. PIN-ul de chioșc dovedește în continuare identitatea sa.",
+        "endedByDeparture": "Ultimul s-a încheiat odată cu plecarea angajatului pe {date}.",
+        "endedOn": "Ultimul s-a încheiat pe {date}.",
+        "heading": "Breloc pentru chioșc",
+        "none": "Niciun breloc pentru chioșc. Angajații își pot înregistra propriul breloc la un chioșc dotat cu cititor de brelocuri NFC, folosind PIN-ul lor pentru chioșc.",
+        "removedOn": "Ultimul a fost eliminat pe {date}."
+      },
       "kioskPin": {
         "addEmailDescription": "Aceștia primesc o invitație de a alege o parolă și se pot conecta ulterior. PIN-ul de chioșc și istoricul acestora rămân neschimbate.",
         "addEmailHeading": "Adăugați o adresă de e-mail",
@@ -244,6 +253,7 @@
             "personnelFileOfficer": "Responsabil dosare de personal"
           },
           "kioskBadges": "{count, plural, one {# ecuson de chioșc este revocat} other {# ecusoane de chioșc sunt revocate}}",
+          "kioskFobs": "{count, plural, one {# breloc pentru chioșc încetează să funcționeze} few {# brelocuri pentru chioșc încetează să funcționeze} other {# de brelocuri pentru chioșc încetează să funcționeze}}",
           "loadError": "Previzualizarea nu a putut fi încărcată.",
           "loading": "Se calculează ce se modifică…",
           "managerLinksTitle": "Legături de manager care încetează",

@@ -1369,6 +1369,11 @@
         "message": "O seu registo de {action, select, clock_in {entrada} clock_out {saída} start_break {início de intervalo} resume_break {regresso do intervalo} other {ponto}} às {time} no quiosque {kioskName} não foi registado: {reason, select, wrong_pin {o PIN estava incorreto} pin_locked {o PIN do quiosque foi bloqueado após demasiadas tentativas incorretas} no_pin {não havia PIN do quiosque para verificação} pin_unchecked {não foi possível verificar o PIN} kiosk_retired {o quiosque foi revogado ou novamente emparelhado antes de se voltar a ligar} contact_unverifiable {o Z8 não conseguiu confirmar a última ligação do quiosque} outside_window {a hora estava fora do intervalo aceite pelo Z8} clock_untrusted {não foi possível confiar no relógio do quiosque para o efeito} not_assigned {não está atribuído à localização do quiosque} not_adopted {a organização não aceita registos de quiosque offline} month_closed {o mês está fechado} holiday {o dia é um feriado sem registo de tempo} conflict {está em conflito com outro período registado} other {o Z8 não pôde aceitá-lo}}. Registe novamente o seu ponto ou peça ao seu gestor para o corrigir.",
         "title": "Registo de ponto no quiosque não gravado"
       },
+      "kioskFobRegistered": {
+        "forwardedMessage": "{replaced, select, true {Um chaveiro de quiosque com final {lastFour} foi registrado para {employeeName} no quiosque {kioskName}. Ele substituiu o chaveiro anterior, que não funciona mais.} other {Um chaveiro de quiosque com final {lastFour} foi registrado para {employeeName} no quiosque {kioskName}.}} Se {employeeName} não tiver feito o registro, remova-o na página do funcionário e redefina o PIN do quiosque.",
+        "message": "{replaced, select, true {Um chaveiro de quiosque com final {lastFour} foi registrado para você no quiosque {kioskName}. Ele substituiu seu chaveiro anterior, que não funciona mais.} other {Um chaveiro de quiosque com final {lastFour} foi registrado para você no quiosque {kioskName}.}} Se você não tiver feito o registro, remova-o nas suas configurações de segurança e altere seu PIN do quiosque.",
+        "title": "Chaveiro do quiosque registrado"
+      },
       "manualEntryApproved": {
         "message": "O seu envio manual de horas foi aprovado por {approverName}.",
         "title": "Envio manual de horas aprovado"
@@ -1831,6 +1836,7 @@
         "forgotten_clock_out_reminder": "Saída não registrada",
         "former_employee_reports_without_manager": "Funcionários sem um gestor atual",
         "kiosk_command_refused": "Registo de ponto no quiosque não gravado",
+        "kiosk_fob_registered": "Chaveiro do quiosque registrado",
         "missed_clock_in_reminder": "Entrada não registrada",
         "period_submission_decided": "Horas enviadas aprovadas ou rejeitadas",
         "period_submission_reminder": "Envie suas horas",
@@ -2538,6 +2544,13 @@
             "workModel": "Seu modelo de trabalho.",
             "workPolicy": "A política de trabalho que estes termos utilizam."
           },
+          "goLiveExclusions": {
+            "createdAt": "Quando você foi excluído, como um instante UTC.",
+            "endedAt": "Quando terminou porque você saiu da organização; vazio se não terminou.",
+            "liftedAt": "Quando um administrador incluiu você de volta nas verificações; vazio caso contrário.",
+            "reason": "O motivo informado por um administrador para excluir você.",
+            "summary": "Vezes em que a organização excluiu você das verificações de ativação durante a configuração do Z8 e o motivo. Não afeta mais nada."
+          },
           "groups": {
             "addedAt": "Quando você foi adicionado ao grupo.",
             "addedBy": "Quem adicionou você ao grupo.",
@@ -2637,6 +2650,14 @@
             "lastUsedAt": "Quando um aplicativo de calendário leu o feed pela última vez (UTC).",
             "revokedAt": "Quando o link foi desativado (UTC).",
             "summary": "Os links de feed do seu calendário, que permitem a um aplicativo de calendário assinar suas ausências. O link secreto em si nunca é incluído."
+          },
+          "kioskFobs": {
+            "endedAt": "Quando deixou de selecionar você (UTC); vazio enquanto ainda selecionar.",
+            "endedReason": "substituído quando você registrou outro, removido quando você ou um gerente o removeu ou você foi desativado, saída quando seu contrato de trabalho foi encerrado.",
+            "kiosk": "O quiosque no qual você o registrou; vazio após a exclusão desse quiosque.",
+            "registeredAt": "Quando você o registrou (UTC).",
+            "serialNumber": "O número de série do chip, conforme identificado pelo leitor do quiosque.",
+            "summary": "Os cartões NFC ou chaveiros registrados por você em um quiosque, atuais e encerrados. Aproximar um deles seleciona você no quiosque; o PIN do quiosque ainda comprova a sua identidade."
           },
           "kioskPinEvents": {
             "event": "falha para um PIN incorreto, sucesso para um correto, limpo quando o seu PIN foi desbloqueado, redefinido ou alterado.",

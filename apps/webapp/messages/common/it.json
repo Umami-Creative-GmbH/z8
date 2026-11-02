@@ -1369,6 +1369,11 @@
         "message": "La tua {action, select, clock_in {timbratura di ingresso} clock_out {timbratura di uscita} start_break {timbratura di inizio pausa} resume_break {timbratura di fine pausa} other {timbratura}} alle {time} sul chiosco {kioskName} non è stata registrata: {reason, select, wrong_pin {il PIN era errato} pin_locked {il PIN del chiosco è stato bloccato dopo troppi tentativi errati} no_pin {non era presente alcun PIN del chiosco con cui confrontarlo} pin_unchecked {impossibile verificare il PIN} kiosk_retired {il chiosco è stato revocato o nuovamente associato prima di riconnettersi} contact_unverifiable {Z8 non ha potuto confermare l'ultima connessione del chiosco} outside_window {l'orario era al di fuori dell'intervallo accettato da Z8} clock_untrusted {l'orologio del chiosco non è risultato attendibile} not_assigned {il dipendente non è assegnato alla sede del chiosco} not_adopted {l'organizzazione non accetta timbrature offline da chiosco} month_closed {il mese è chiuso} holiday {il giorno è festivo senza registrazione dell'orario} conflict {è in conflitto con un altro orario registrato} other {Z8 non ha potuto accettarla}}. Registra nuovamente l'orario o chiedi al tuo responsabile di correggerlo.",
         "title": "Timbratura da chiosco non registrata"
       },
+      "kioskFobRegistered": {
+        "forwardedMessage": "{replaced, select, true {Un portachiavi per chiosco che termina con {lastFour} è stato registrato a nome di {employeeName} sul chiosco {kioskName}. Ha sostituito il suo portachiavi precedente, che non funziona più.} other {Un portachiavi per chiosco che termina con {lastFour} è stato registrato a nome di {employeeName} sul chiosco {kioskName}.}} Se {employeeName} non l'ha registrato, rimuovilo dalla sua pagina dipendente e reimposta il suo PIN del chiosco.",
+        "message": "{replaced, select, true {Un portachiavi per chiosco che termina con {lastFour} è stato registrato a tuo nome sul chiosco {kioskName}. Ha sostituito il tuo portachiavi precedente, che non funziona più.} other {Un portachiavi per chiosco che termina con {lastFour} è stato registrato a tuo nome sul chiosco {kioskName}.}} Se non l'hai registrato tu, rimuovilo nelle tue impostazioni di sicurezza e modifica il tuo PIN del chiosco.",
+        "title": "Portachiavi per chiosco registrato"
+      },
       "manualEntryApproved": {
         "message": "La tua registrazione manuale dell'orario è stata approvata da {approverName}.",
         "title": "Registrazione manuale dell'orario approvata"
@@ -1831,6 +1836,7 @@
         "forgotten_clock_out_reminder": "Timbratura di uscita dimenticata",
         "former_employee_reports_without_manager": "Dipendenti senza un responsabile attuale",
         "kiosk_command_refused": "Timbratura da chiosco non registrata",
+        "kiosk_fob_registered": "Portachiavi per chiosco registrato",
         "missed_clock_in_reminder": "Mancata timbratura di entrata",
         "period_submission_decided": "Ore inviate approvate o rifiutate",
         "period_submission_reminder": "Invia le tue ore",
@@ -2538,6 +2544,13 @@
             "workModel": "Il tuo modello di lavoro.",
             "workPolicy": "La policy di lavoro utilizzata da questi termini."
           },
+          "goLiveExclusions": {
+            "createdAt": "Quando sei stato escluso, come istante UTC.",
+            "endedAt": "Quando è terminato perché hai lasciato l'organizzazione; vuoto in caso contrario.",
+            "liftedAt": "Quando un amministratore ti ha reinserito nei controlli; vuoto in caso contrario.",
+            "reason": "Il motivo fornito da un amministratore per la tua esclusione.",
+            "summary": "Le volte in cui l'organizzazione ti ha escluso dai controlli di go-live durante la configurazione di Z8, e il relativo motivo. Non influiscono su null'altro."
+          },
           "groups": {
             "addedAt": "Quando sei stato aggiunto al gruppo.",
             "addedBy": "Chi ti ha aggiunto al gruppo.",
@@ -2637,6 +2650,14 @@
             "lastUsedAt": "Quando un'app di calendario ha letto l'ultima volta il feed (UTC).",
             "revokedAt": "Quando il collegamento è stato disattivato (UTC).",
             "summary": "I link ai tuoi feed di calendario, che consentono a un'app di calendario di iscriversi alle tue assenze. Il link segreto non è mai incluso."
+          },
+          "kioskFobs": {
+            "endedAt": "Quando ha smesso di selezionarti (UTC); vuoto finché continua a farlo.",
+            "endedReason": "sostituito quando ne hai registrato un altro, rimosso quando tu o un manager lo avete rimosso o sei stato disattivato, uscita quando è terminato il tuo rapporto di lavoro.",
+            "kiosk": "Il chiosco presso cui lo hai registrato; vuoto una volta che tale chiosco è stato eliminato.",
+            "registeredAt": "Quando lo hai registrato (UTC).",
+            "serialNumber": "Il numero di serie del chip, così come rilevato dal lettore del chiosco.",
+            "summary": "Le schede o i portachiavi NFC che hai registrato su un chiosco, attuali e terminati. Avvicinandone uno vieni selezionato al chiosco; il tuo PIN del chiosco continua a confermare la tua identità."
           },
           "kioskPinEvents": {
             "event": "failure per un PIN errato, success per uno corretto, cancellato quando il PIN è stato sbloccato, reimpostato o modificato.",

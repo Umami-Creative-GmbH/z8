@@ -190,6 +190,15 @@
         "revokedOn": "Ingen aktiv kioskbricka. Den senaste återkallades den {date}.",
         "saveNow": "Spara PDF-filen nu: Z8 kan inte visa denna bricka igen. Du kan skriva ut en sparad kopia igen. Om filen eller brickan tappas bort, ersätt brickan."
       },
+      "kioskFob": {
+        "confirmRemoveText": "Brickan slutar omedelbart att fungera på kiosker och kan registreras igen. Medarbetarens PIN-kod och kort för kiosken fortsätter att fungera.",
+        "description": "Ett NFC-kort eller en bricka som medarbetaren blippar vid en onlinekiosk för att välja sitt namn. Deras PIN-kod för kiosken bekräftar fortfarande att det är de.",
+        "endedByDeparture": "Den senaste upphörde när medarbetaren slutade den {date}.",
+        "endedOn": "Den senaste upphörde den {date}.",
+        "heading": "Kioskbricka",
+        "none": "Ingen kioskbricka. Medarbetare registrerar sin egen vid en kiosk med en NFC-brickläsare med hjälp av sin PIN-kod för kiosken.",
+        "removedOn": "Den senaste togs bort den {date}."
+      },
       "kioskPin": {
         "addEmailDescription": "De får en inbjudan att välja ett lösenord och kan därefter logga in. Deras PIN-kod för kiosk och historik förblir oförändrade.",
         "addEmailHeading": "Lägg till en e-postadress",
@@ -244,6 +253,7 @@
             "personnelFileOfficer": "Personalaktsansvarig"
           },
           "kioskBadges": "{count, plural, one {# kioskbricka återkallas} other {# kioskbrickor återkallas}}",
+          "kioskFobs": "{count, plural, one {# kioskbricka slutar fungera} other {# kioskbrickor slutar fungera}}",
           "loadError": "Förhandsgranskningen kunde inte läsas in.",
           "loading": "Beräknar vad som ändras…",
           "managerLinksTitle": "Chefskopplingar som upphör",

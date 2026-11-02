@@ -235,8 +235,30 @@
         "endDayHint": "Günü şimdi sonlandırmak, çalışmanızı molanızın başladığı saatte bitirir.",
         "today": "Bugün: {duration}"
       },
+      "fob": {
+        "alreadyRegistered": "Son haneleri {lastFour} olan bu anahtarlık zaten size kayıtlı.",
+        "back": "Geri",
+        "checking": "Anahtarlığınız kontrol ediliyor…",
+        "failed": "Anahtarlık kontrol edilemedi. Tekrar dokundurun veya PIN'inizi kullanmak için adınıza dokunun.",
+        "linkedToOther": "Bu anahtarlık zaten başka birine kayıtlı. Hiçbir değişiklik yapılmadı. Yöneticinize danışın.",
+        "notEligible": "Bu kioskta anahtarlık kaydedemezsiniz. Hiçbir değişiklik yapılmadı. Yöneticinize danışın.",
+        "notRecognised": "Bu anahtarlık burada tanınmıyor.",
+        "offline": "Anahtarlıklar için bağlantı gerekir. Hiçbir şey kaydedilmedi. PIN'inizi kullanmak için adınıza dokunun.",
+        "offlineOnly": "Anahtarlıklar için bağlantı gerekir. Hiçbir şey kaydedilmedi.",
+        "pickPrompt": "Adınıza dokunun.",
+        "pickTitle": "Bu anahtarlığı kaydet",
+        "pinPrompt": "Bu anahtarlığı kaydetmek için kiosk PIN'inizi girin",
+        "rateLimited": "{seconds, plural, other {Bu kioskta çok fazla anahtarlık dokunduruldu. # saniye içinde tekrar deneyin veya PIN'inizi kullanmak için adınıza dokunun.} }",
+        "readerDisabled": "Bu kioskta anahtarlık okuyucu kapalı. PIN'inizi kullanmak için adınıza dokunun.",
+        "register": "Bu anahtarlığı kaydet",
+        "registered": "Anahtarlık kaydedildi",
+        "registeredText": "Son haneleri {lastFour} olan anahtarlığınız kaydedildi. Adınızı seçmek için anahtarlığı dokundurun, ardından PIN'inizi girin.",
+        "registerHint": "Size aitse adınız ve kiosk PIN'iniz ile kaydedin. Daha önce kaydettiğiniz anahtarlık artık çalışmaz.",
+        "replaced": "Artık çalışmayan önceki anahtarlığınızın yerini alır."
+      },
       "home": {
         "empty": "Bu konuma henüz kimse atanmadı. Yöneticinize danışın.",
+        "fobHint": "Veya anahtarlığınızı okuyucuya dokundurun.",
         "loadFailed": "İsimler yüklenemedi. Ağ bağlantısını kontrol edin.",
         "loading": "İsimler yükleniyor…",
         "noMatch": "Aramanızla eşleşen ad bulunamadı.",
@@ -363,9 +385,14 @@
         "nonexistentTime": "Saatler ileri alındığı için bu tarihte böyle bir saat bulunmuyor.",
         "occurrenceRequired": "Bu saat bu tarihte iki kez gerçekleşiyor. Hangisini kastettiğinizi seçin.",
         "overlap": "Bu saat kaydedilen çalışma ile çakışıyor. Mevcut kayıtlarla çakışmayan bir aralık seçin.",
+        "overlapsLiveWork": "Bu süre, {start} saatinden beri devam eden çalışmayla çakışıyor. Manuel giriş o zamana kadar sona ermelidir.",
         "reconfirm": "Saat dilimi veya saatler değişti. Kaydı inceleyin ve tekrar gönderin.",
         "refresh": "Manuel giriş ayarları değişti. Kaydı inceleyin ve tekrar gönderin.",
         "tooLong": "Çalışma süresi 24 saati aşamaz"
+      },
+      "liveWorkHint": {
+        "employee": "{employee} {start} saatinden beri giriş yapmış durumda, bu nedenle bu giriş o zamana kadar sona ermelidir.",
+        "own": "{start} saatinden beri giriş yapmış durumdasınız, bu nedenle bu giriş o zamana kadar sona ermelidir."
       },
       "occurrence": {
         "earlier": "Birinci, {offset}",
@@ -509,11 +536,23 @@
     },
     "startedAt": "Başlangıç saati",
     "summary": {
-      "baseWorked": "Temel çalışma",
-      "surcharge": "Ek ücret",
+      "dayOfRequired": "{date}: {required} üzerinden {worked}",
+      "dayWorked": "{date}: {worked}",
+      "noRequiredToday": "Bugün gereken süre yok",
+      "progressAhead": "{required} üzerinden {worked} · {difference} önde",
+      "progressBehind": "{required} üzerinden {worked} · {difference} geride",
+      "progressLabel": "Gereken süre üzerinden çalışılan süre",
+      "progressOnTrack": "{required} üzerinden {worked} · yolunda",
+      "surchargeFootnote": "+{surcharge} ek ücret",
       "thisMonth": "Bu Ay",
       "thisWeek": "Bu Hafta",
-      "today": "Bugün"
+      "today": "Bugün",
+      "todayOfRequired": "{required} üzerinden {worked}",
+      "trend": "{difference} {comparedWith}",
+      "trendDetail": "Şimdi: Şu ana kadar gereken {required} üzerinden {worked} çalışıldı. O zaman: Gereken {previousRequired} üzerinden {previousWorked} çalışıldı.",
+      "trendWithPercent": "{difference} ({percent}) {comparedWith}",
+      "vsLastMonth": "geçen aya kıyasla",
+      "vsLastWeek": "geçen haftaya kıyasla"
     },
     "table": {
       "active": "Aktif",

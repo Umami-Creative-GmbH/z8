@@ -239,6 +239,29 @@
       },
       "description": "Billable currency and what your organization charges customers for work",
       "handOff": {
+        "amount": {
+          "estimated": "Estimated: this hand-off stored no amount per work period, so rate × duration stands in.",
+          "noSubtotal": "No known amount differences",
+          "note": "Amount differences are reconciliation information priced at the rate frozen at hand-off, not credit notes.",
+          "notOnHandOff": "Its project now belongs to another customer. This work is not on any hand-off for that customer and stays invoiced in this draft, so invoice it to the new customer in the accounting tool.",
+          "reason": {
+            "customer": "The project now belongs to another customer or to none, so the whole handed-off amount reverses.",
+            "frozenRate": "The change in hours at the rate frozen at hand-off.",
+            "noFrozenRate": "No rate was frozen for this work at hand-off.",
+            "nonBillable": "The work is no longer billable, so its whole handed-off amount reverses.",
+            "otherProject": "The work moved to another project of the same customer, which has no rate frozen at hand-off.",
+            "removed": "The work was deleted, so its whole handed-off amount reverses.",
+            "running": "Part of the work is still running.",
+            "severalRates": "The hand-off priced this work at several rates; that split can't be repeated without today's rates."
+          },
+          "roundingCaveat": "It may be a few cents off the draft line's rounding.",
+          "sinceResolution": "Since the last resolution: {amount}",
+          "subtotal": "Known amount differences: {amount}",
+          "subtotalEstimated": "Known amount differences: {amount} (includes estimates)",
+          "title": "Amount difference",
+          "unknown": "Unknown",
+          "unknownCount": "{count, plural, one {# unknown difference not included} other {# unknown differences not included}}"
+        },
         "blocker": {
           "currency": "The accounting tool cannot take drafts in {currency}.",
           "noContactLink": "Link this customer to a contact in the accounting tool on the Accounting page first.",
@@ -252,12 +275,48 @@
         },
         "changed": {
           "billability": "Billability",
+          "customer": "Customer",
           "project": "Project",
           "removed": "Deleted",
           "split": "Split",
           "times": "Times"
         },
+        "comparison": {
+          "billability": "Billability",
+          "billable": "Billable",
+          "caption": "Comparison of {item}",
+          "changedFromHandOff": "(changed from the hand-off)",
+          "changedSinceResolution": "(changed since the last resolution)",
+          "current": "Current",
+          "customer": "Customer",
+          "day": "Day",
+          "end": "End",
+          "field": "Field",
+          "handOff": "Hand-off",
+          "hours": "Hours",
+          "lastResolved": "Last resolved",
+          "legend": "Highlighted values differ from the hand-off. Times are local to where the work was recorded.",
+          "legendSinceResolution": "Changed since the last resolution.",
+          "mixedBillable": "Partly billable",
+          "noCustomer": "No customer",
+          "nonBillable": "Not billable",
+          "noProject": "No project",
+          "pieces": "Current values cover {count} pieces split from this work; hours are their sum.",
+          "project": "Project",
+          "removed": "Removed",
+          "removedNo": "No",
+          "removedPieces": "{removed} of {count} pieces",
+          "removedYes": "Yes",
+          "start": "Start",
+          "timeOnDay": "{day} {time}",
+          "timeWithOffset": "{time} ({offset})",
+          "unknownCustomer": "Unknown customer",
+          "unknownProject": "Unknown project"
+        },
         "confirmed": "The invoice draft was created",
+        "csv": {
+          "download": "Download reconciliation CSV"
+        },
         "detail": {
           "checking": "Checking the draft in the tool…",
           "gone": "The accounting tool no longer has this draft. If it was deleted on purpose, release the hand-off so its work can be handed off again.",
@@ -289,6 +348,14 @@
           "timesheetHelp": "One line per work period, within the accounting tool's line limit. You can always download the timesheet.",
           "to": "To"
         },
+        "history": {
+          "deletedUser": "a deleted user",
+          "legacy": "Cleared before resolutions were recorded",
+          "legacyMeta": "{at} by {actor}",
+          "reference": "Reference: {reference}",
+          "resolved": "Resolved {at} by {actor}",
+          "title": "Resolution history"
+        },
         "hoursValue": "{hours} h",
         "list": {
           "actions": "Actions",
@@ -304,10 +371,19 @@
           "total": "Net total"
         },
         "marks": {
-          "clear": "Clear mark",
-          "clearAll": "Clear all marks",
-          "cleared": "{count, plural, one {# mark cleared} other {# marks cleared}}",
-          "help": "This invoiced work was corrected after its hand-off. Correct the invoice in the accounting tool if needed (for example with a credit note), then clear the mark.",
+          "compare": "Compare",
+          "compareItem": "Compare {item}",
+          "draftHeading": "{title} · {period}",
+          "history": "History ({count})",
+          "historyItem": "History ({count}) of {item}",
+          "openWhenReleased": "Open when released",
+          "releasedHelp": "This invoiced work was corrected after its hand-off and was still open when the hand-off was released. It can no longer be resolved here. The current values show the work as it is now.",
+          "resolve": "Resolve",
+          "resolveHelp": "This invoiced work was corrected after its hand-off. Correct the invoice in the accounting tool if needed (for example with a credit note), then resolve the change with an explanation.",
+          "resolveItem": "Resolve {item}",
+          "resolveSelected": "Resolve selected ({count})",
+          "select": "Select {item}",
+          "selectAll": "Select all",
           "title": "Changed after invoicing"
         },
         "new": {
@@ -345,6 +421,23 @@
           "done": "{count, plural, one {Released. # work period is un-invoiced again.} other {Released. # work periods are un-invoiced again.}}",
           "reason": "Reason (optional)",
           "title": "Release this hand-off?"
+        },
+        "resolve": {
+          "description": "Record how the change was handled, for example with a credit note in the accounting tool. The hand-off and its lines stay as they are.",
+          "done": "{count, plural, one {# item resolved} other {# items resolved}}",
+          "explanation": "Explanation",
+          "explanationRequired": "Explain how the change was handled.",
+          "explanationTooLong": "Keep the explanation to {max} characters.",
+          "itemLabel": "{day} · {employee} · {project}",
+          "itemsInvalid": "Choose the marked work to resolve.",
+          "reference": "Accounting reference (optional)",
+          "referenceHint": "For example the credit note number.",
+          "referenceTooLong": "Keep the reference to {max} characters.",
+          "released": "Nothing was resolved: the hand-off of this work was released, so its changes can no longer be resolved. Reload to see it.",
+          "reload": "Reload",
+          "stale": "Nothing was resolved: this work changed since you opened it. Reload to review the changes.",
+          "submit": "{count, plural, one {Resolve # item} other {Resolve # items}}",
+          "title": "Resolve changed work"
         },
         "status": {
           "created": "Draft created",
@@ -1341,25 +1434,272 @@
     },
     "implementationChecklist": {
       "actions": {
+        "confirmAgain": "Confirm again",
         "markComplete": "Mark complete",
-        "markIncomplete": "Mark incomplete"
+        "markIncomplete": "Mark incomplete",
+        "removeConfirmation": "Remove confirmation"
+      },
+      "confirmation": {
+        "beforeChangeTracking": "Confirmed {date}, before change tracking",
+        "current": "Confirmed {date}",
+        "stale": "Settings changed since confirmed on {date}",
+        "unchecked": "Couldn't check for settings changes since confirmed on {date}"
       },
       "description": "Finish the setup steps before inviting your full team so time tracking, approvals, and payroll workflows are ready for daily use.",
+      "entryDescription": "Check go-live readiness and track setup across policies, payroll, integrations, and employee import",
       "errors": {
         "updateItem": "Failed to update checklist item."
       },
       "eyebrow": "Customer implementation",
+      "firstWorkflows": {
+        "clockIn": "First clock-in",
+        "decidedApproval": "First decided request",
+        "former": "Former employee",
+        "notYet": "Not yet",
+        "payrollExport": "First successful payroll export",
+        "retry": "Check again",
+        "seen": "{time} by {name}",
+        "status": {
+          "allSeen": "All seen",
+          "notStarted": "Not started",
+          "underWay": "Under way"
+        },
+        "unavailable": "Couldn't be checked"
+      },
+      "goLive": {
+        "approver": {
+          "approvalModeUnsupported": "{count, plural, one {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: can't be submitted in this organization's approval mode. Contact support: # employee} other {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: can't be submitted in this organization's approval mode. Contact support: # employees}}",
+          "changePolicyAmbiguous": "{count, plural, one {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: more than one change policy applies, so entries are refused: # employee} other {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: more than one change policy applies, so entries are refused: # employees}}",
+          "correctionDirectNoPolicy": "{count, plural, one {Time corrections: # employee edits their own entries directly, because no change policy applies. Deletion requests and date changes still go to an approver, so they are checked.} other {Time corrections: # employees edit their own entries directly, because no change policy applies. Deletion requests and date changes still go to an approver, so they are checked.}}",
+          "correctionDirectSelfService": "{count, plural, one {Time corrections: # employee edits their own entries directly within their change policy's self-service days, and can't change older ones. Deletion requests and date changes still go to an approver, so they are checked.} other {Time corrections: # employees edit their own entries directly within their change policy's self-service days, and can't change older ones. Deletion requests and date changes still go to an approver, so they are checked.}}",
+          "correctionDirectTrustMode": "{count, plural, one {Time corrections: # employee edits their own entries directly, because their change policy is in trust mode. Deletion requests and date changes still go to an approver, so they are checked.} other {Time corrections: # employees edit their own entries directly, because their change policy is in trust mode. Deletion requests and date changes still go to an approver, so they are checked.}}",
+          "fixApprovalPolicies": "Review approval policies",
+          "fixChangePolicies": "Review change policies",
+          "fixExpenseApprover": "Set an expense approver",
+          "fixManagers": "Assign managers",
+          "fixTeamManager": "Set the team's manager",
+          "invalidPolicies": "{count, plural, one {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: the approval policies can't be applied: # employee} other {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: the approval policies can't be applied: # employees}}",
+          "managerDeparted": "{count, plural, one {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: their manager has left and nobody stands in: # employee} other {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: their manager has left and nobody stands in: # employees}}",
+          "noDecider": "{count, plural, one {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: no manager or admin can decide them: # employee} other {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: no manager or admin can decide them: # employees}}",
+          "noManagerNoTeam": "{count, plural, one {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: no eligible manager: # employee in no team} other {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: no eligible manager: # employees in no team}}",
+          "periodSubmissionsOff": "Period submissions are off, so they aren't checked.",
+          "policyWithoutApprover": "{count, plural, one {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: approval policy {policy} finds no approver: # employee} other {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: approval policy {policy} finds no approver: # employees}}",
+          "selfApprovalRoute": "{count, plural, one {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: would go to the employees themselves, which isn't allowed: # employee} other {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: would go to the employees themselves, which isn't allowed: # employees}}",
+          "shiftsOff": "Shifts are off, so shift requests aren't checked.",
+          "skipNoCategoryRequiresApproval": "Absence requests need no approval, because no absence category requires it.",
+          "skipNoChangePolicy": "{count, plural, one {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: # employee need no approval, because no change policy applies.} other {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: # employees need no approval, because no change policy applies.}}",
+          "skipOwnApprover": "{count, plural, one {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: # employee are their own approver.} other {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: # employees are their own approver.}}",
+          "skipOwnDecider": "{count, plural, one {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: # employee is the only one who can decide them, so their own requests wait for their own approval.} other {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: # employees are the only one who can decide them, so their own requests wait for their own approval.}}",
+          "skipOwnerAdmin": "{count, plural, one {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: # employee need no approval, because owners and admins record their own work directly.} other {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: # employees need no approval, because owners and admins record their own work directly.}}",
+          "skipOwnerSelfApproval": "{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: the owner approves their own reports, because nobody else can.",
+          "skipTrustMode": "{count, plural, one {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: # employee need no approval, because their change policy is in trust mode.} other {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: # employees need no approval, because their change policy is in trust mode.}}",
+          "teamWithoutManager": "{count, plural, one {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: team {team} has no eligible manager: # employee} other {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: team {team} has no eligible manager: # employees}}",
+          "unknownTeamWithoutManager": "{count, plural, one {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: their team has no eligible manager: # employee} other {{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: their team has no eligible manager: # employees}}"
+        },
+        "checkedAt": "Checked {time}",
+        "group": {
+          "description": "Go-live checks run for everyone on the current roster and everyone invited but not yet joined, less any exclusions. For a phased go-live, choose the teams going live.",
+          "errors": {
+            "alreadyExcluded": "This employee is already excluded.",
+            "employeeNotFound": "This employee is not on the current roster.",
+            "exclusionNotFound": "This exclusion has already ended.",
+            "reasonRequired": "Give a reason for the exclusion.",
+            "reasonTooLong": "The reason is too long.",
+            "teamNotFound": "One of the chosen teams no longer exists.",
+            "updateFailed": "Failed to update the go-live group."
+          },
+          "excluded": {
+            "byOn": "Excluded by {name} on {date}",
+            "help": "Excluded employees aren't checked, for example a director who doesn't track time. An exclusion lasts until you lift it, or until the employee leaves.",
+            "lift": "Lift",
+            "liftFor": "Lift exclusion for {name}",
+            "none": "Nobody is excluded.",
+            "on": "Excluded on {date}",
+            "title": "Excluded"
+          },
+          "exclude": {
+            "employee": "Employee",
+            "employeeRequired": "Choose an employee.",
+            "reason": "Reason",
+            "reasonPlaceholder": "For example: director, doesn't track time",
+            "submit": "Exclude"
+          },
+          "memberCount": "{count, plural, one {# person is checked} other {# people are checked}}",
+          "teams": {
+            "help": "With no team chosen, everyone is checked. Otherwise only people whose primary team is chosen, and invited people whose invitation names a chosen team. Other team memberships don't count.",
+            "none": "Your organization has no teams yet, so everyone goes live together.",
+            "save": "Save teams",
+            "title": "Teams going live"
+          },
+          "title": "Go-live group",
+          "unavailable": "The go-live group's teams and exclusions couldn't be loaded. Retry the checks."
+        },
+        "groupDescription": "Worked out from the mandatory go-live checks for everyone in the go-live group each time you open this page.",
+        "optional": "Optional",
+        "panel": {
+          "invited": "Invited",
+          "nextPage": "Next page",
+          "pageRange": "{from}–{to} of {total}",
+          "previousPage": "Previous page",
+          "unavailable": "This check could not be completed. Retry the checks to try again."
+        },
+        "payrollSetup": {
+          "fixEmployees": "Review employees",
+          "fixPayrollExport": "Open payroll export settings",
+          "inviteesSkipped": "{count, plural, one {# invited person is skipped for employment terms and personnel identifiers until they join.} other {# invited people are skipped for employment terms and personnel identifiers until they join.}}",
+          "missingEmploymentTerms": "{count, plural, one {No confirmed employment terms covering today: # employee} other {No confirmed employment terms covering today: # employees}}",
+          "noWageTypeMappings": "{count, plural, one {No active wage-type mappings, so payroll exports can't classify hours: # member} other {No active wage-type mappings, so payroll exports can't classify hours: # members}}",
+          "optional": "No active payroll export target, so payroll export is an optional integration and doesn't block going live.",
+          "sharedPersonnelIdentifierDetail": "{identifier}, shared with {others}",
+          "sharedPersonnelIdentifiers": "{count, plural, one {Payroll exports would merge employees under a shared personnel identifier: # employee} other {Payroll exports would merge employees under a shared personnel identifier: # employees}}"
+        },
+        "readiness": {
+          "notReady": "{count, plural, one {Not ready: # employee needs attention} other {Not ready: # employees need attention}}",
+          "notReadyChecks": "{count, plural, one {Not ready: {checks} doesn't pass} other {Not ready: {checks} don't pass}}",
+          "notReadyEmptyGroup": "Not ready: no one is in the go-live group to check.",
+          "ready": "Ready to go live",
+          "unavailable": "Unavailable: a check could not be completed, so nothing counts as passed."
+        },
+        "retry": "Retry checks",
+        "title": "Go-live readiness",
+        "warnings": "{count, plural, one {# advisory warning below. They don't block going live.} other {# advisory warnings below. They don't block going live.}}",
+        "workPolicy": {
+          "fix": "Assign work policies",
+          "noTeamNoOrganizationPolicy": "{count, plural, one {No organization work policy: # employee in no team} other {No organization work policy: # employees in no team}}",
+          "teamWithoutPolicy": "{count, plural, one {Team {team} has no work policy: # employee} other {Team {team} has no work policy: # employees}}",
+          "unknownTeamWithoutPolicy": "{count, plural, one {Their team has no work policy: # employee} other {Their team has no work policy: # employees}}"
+        }
+      },
+      "items": {
+        "approvalRules": {
+          "confirmationLabel": "Confirm our approval process is agreed",
+          "confirmedLabel": "Confirmed: our approval process is agreed",
+          "goLiveGroupHelperText": "Z8 checks that everyone in the go-live group can get each kind of request decided. Time corrections always need an approver, because deletion requests and date changes go to approval. Confirming that your approval process is agreed is optional."
+        },
+        "firstWorkflows": {
+          "actionLabel": "Open time tracking",
+          "description": "See that your organization has really started working with Z8.",
+          "helperText": "Z8 notices the first clock-in, the first decided request and the first successful payroll export from real activity. This never affects go-live readiness.",
+          "title": "First workflows"
+        },
+        "organizationStructure": {
+          "goLiveDescription": "Confirm members, teams, and responsibility boundaries before going live.",
+          "goLiveHelperText": "Manual review: Z8 cannot know whether your organization structure is final. Adding or removing people, teams or managers makes the confirmation stale."
+        },
+        "payrollReadiness": {
+          "confirmationLabel": "Confirm our payroll export setup is agreed",
+          "confirmedLabel": "Confirmed: our payroll export setup is agreed",
+          "goLiveGroupHelperText": "Z8 checks the payroll setup for everyone in the go-live group: export target, wage-type mappings, confirmed employment terms and personnel identifiers. Without an active payroll export target, payroll export is an optional integration and doesn't count toward checklist progress."
+        },
+        "workPolicies": {
+          "goLiveGroupHelperText": "Z8 checks that everyone in the go-live group has an effective work policy today. Invited people are checked by the team their invitation names."
+        }
+      },
       "progress": {
         "ariaLabel": "Implementation checklist progress",
         "completedCount": "{completed} of {total} complete",
         "label": "Setup progress",
         "percentComplete": "{percent}% complete"
       },
+      "rehearsal": {
+        "approvals": {
+          "absenceCategory": "Absence category {category}",
+          "defaultApprover": "No approval policy applies: their manager decides",
+          "direct": {
+            "noChangePolicy": "No change policy applies, so they edit their own entries directly. Deletion requests and date changes still go to the approver below.",
+            "selfService": "They edit their own entries directly within their change policy's self-service days. Deletion requests and date changes still go to the approver below.",
+            "trustMode": "Their change policy is in trust mode, so they edit their own entries directly. Deletion requests and date changes still go to the approver below."
+          },
+          "kind": "{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}",
+          "noApprovalNeeded": "No approval needed",
+          "reportTotal": "Report total {amount, number}",
+          "routed": "Needs approval",
+          "shiftDeciders": "Any manager or admin",
+          "skip": {
+            "noCategoryRequiresApproval": "No absence category requires approval.",
+            "noChangePolicy": "No change policy applies to them.",
+            "ownApprover": "They are their own approver, so their requests complete at once.",
+            "ownDecider": "They are the only manager or admin who can decide shift requests, so theirs stay pending until they approve them.",
+            "ownerAdmin": "Owners and admins record their own work directly.",
+            "ownerSelfApproval": "As the owner, they approve their own reports, because nobody else can.",
+            "trustMode": "Their change policy is in trust mode."
+          },
+          "title": "Approvals",
+          "unroutable": {
+            "approvalModeUnsupported": "They can't be submitted in this organization's approval mode. Contact support.",
+            "badge": "Can't be routed",
+            "changePolicyAmbiguous": "More than one change policy applies to them, so their entries are refused.",
+            "invalidPolicies": "The approval policies can't be applied.",
+            "managerDeparted": "Their manager has left and nobody stands in.",
+            "noDecider": "No manager or admin can decide them.",
+            "noManager": "No approval policy applies, and they have no eligible manager.",
+            "policyWithoutApprover": "Approval policy {policy} finds no approver for them.",
+            "selfApprovalRoute": "Their reports would go to themselves, which isn't allowed.",
+            "teamWithoutManager": "No approval policy applies, and team {team} has no eligible manager."
+          },
+          "viaPolicy": "Approval policy {policy}"
+        },
+        "choosePerson": "Choose a person",
+        "description": "See what Z8 would do for one person in the go-live group: their work policy, who decides their requests and their payroll prerequisites. Nothing is saved or sent.",
+        "errors": {
+          "memberNotChecked": "This person isn't in the go-live group any more, so there is nothing to rehearse. Reload the page to see the current group.",
+          "unavailable": "The rehearsal could not be completed."
+        },
+        "nobody": "Nobody is in the go-live group yet.",
+        "noMatch": "Nobody in the go-live group matches.",
+        "payroll": {
+          "employmentTerms": "Employment terms",
+          "exportTargetMapping": "Export target mapping",
+          "mappingsMissing": "No active wage-type mappings",
+          "mappingsPresent": "{count, plural, one {# export target, wage types mapped} other {# export targets, wage types mapped}}",
+          "notExported": "The organization has no active payroll export target, so there are no payroll prerequisites.",
+          "notYetInvited": "Not yet: they're still invited",
+          "personnelIdentifier": "Personnel number",
+          "termsConfirmed": "Confirmed for today",
+          "termsMissing": "No confirmed terms covering today",
+          "title": "Payroll",
+          "unavailable": "Couldn't be checked",
+          "unique": "Unique"
+        },
+        "person": "Person",
+        "retry": "Try again",
+        "run": "Rehearse",
+        "runFor": "Rehearse go-live for {name}",
+        "running": "Working it out…",
+        "searchPerson": "Search the go-live group",
+        "sheetDescription": "What Z8 would do for {name} today. Nothing is saved or sent.",
+        "stage": {
+          "departedNobody": "{name} has left and nobody stands in.",
+          "labelled": "Stage {sequence}: {label}",
+          "later": "Starts once the stages before it decide.",
+          "nobody": "Nobody would be found to decide it.",
+          "numbered": "Stage {sequence}",
+          "ownApprover": "They are their own approver here, so this stage completes at once.",
+          "standsIn": "Stands in for {name}, who has left.",
+          "viaFallback": "Nobody matches the stage's own rule, so its fallback ({fallback, select, default_manager {their manager} organization_admin {organization admins} other {fallback}}) decides."
+        },
+        "title": "Go-live rehearsal",
+        "workedOut": "Worked out {time}",
+        "workPolicy": {
+          "assignedAt": "{level, select, employee {To them} team {To team {team}} other {To the organization}}",
+          "assignedVia": "Assigned",
+          "hours": "Hours",
+          "hoursPerCycle": "{hours, number} hours per {cycle, select, daily {day} weekly {week} biweekly {two weeks} monthly {month} other {year}}",
+          "name": "Policy",
+          "none": "No effective work policy today: none is assigned to them, their team or the organization.",
+          "noSchedule": "No schedule",
+          "noWorkingDays": "No working days",
+          "title": "Work policy",
+          "workingDays": "Working days"
+        }
+      },
       "status": {
-        "complete": "Complete",
+        "configured": "Configured",
         "manuallyComplete": "Manually complete",
-        "needsReview": "Needs review",
-        "notStarted": "Not started"
+        "needsAttention": "Needs attention",
+        "notSetUp": "Not set up",
+        "unavailable": "Unavailable",
+        "verified": "Verified"
       },
       "title": "Implementation checklist"
     },
@@ -1551,6 +1891,21 @@
         "signInRequired": "Sign in to continue."
       }
     },
+    "kioskFob": {
+      "confirmRemove": "Remove the fob",
+      "details": "Fob ending in {lastFour}, registered on {date} at {kiosk}.",
+      "detailsKioskGone": "Fob ending in {lastFour}, registered on {date} at a kiosk that no longer exists.",
+      "errors": {
+        "employeeNotFound": "This employee was not found.",
+        "failed": "Something went wrong. Please try again.",
+        "fobChanged": "This kiosk fob changed in the meantime. Check its status and try again.",
+        "noFob": "There is no kiosk fob to remove.",
+        "notAllowed": "You are not allowed to do this.",
+        "signInRequired": "Sign in to continue."
+      },
+      "remove": "Remove fob",
+      "removed": "Kiosk fob removed"
+    },
     "kioskPin": {
       "errors": {
         "emailInUse": "Another account already uses this address.",
@@ -1614,6 +1969,8 @@
         "locationPlaceholder": "Choose a location",
         "name": "Name",
         "namePlaceholder": "e.g. Staff entrance",
+        "nfcFobReader": "NFC fob reader",
+        "nfcFobReaderDescription": "Employees tap their NFC card or fob on a reader attached to this kiosk instead of searching for their name, then enter their kiosk PIN. They register a new fob at the kiosk with their PIN. Fobs need a connection; name and PIN keep working.",
         "offlineMode": "Offline mode",
         "offlineModeDescription": "The kiosk keeps clocking without a connection. Its clockings are confirmed, and their PINs checked, once it reconnects.",
         "offlineModeUnavailable": "Offline mode needs coordinated clock commands, which this organization does not use yet.",
@@ -1625,6 +1982,7 @@
       "listTitle": "Kiosks",
       "loadFailed": "Kiosks could not be loaded.",
       "neverSeen": "Never",
+      "nfcFobReaderOn": "NFC fob reader on",
       "noLocations": "Create a location first: every kiosk belongs to one location.",
       "offlineOn": "Offline mode on",
       "offlineOnNotInEffect": "Offline mode on, not in effect for this organization",
@@ -2388,6 +2746,12 @@
     },
     "security": {
       "description": "Manage your password, two-factor authentication, passkeys, and active sessions",
+      "kioskFob": {
+        "confirmRemoveText": "If you lost it, remove it: it stops working at kiosks at once. Your kiosk PIN keeps working.",
+        "description": "An NFC card or fob you tap at a kiosk to pick your name. Your kiosk PIN still proves it is you.",
+        "none": "No fob registered. To register one, tap it on a kiosk's fob reader and confirm with your kiosk PIN.",
+        "title": "Kiosk fob"
+      },
       "kioskPin": {
         "descriptionChange": "You have a kiosk PIN. Choose a new one of 4 to 6 digits to replace it.",
         "descriptionSet": "Choose a PIN of 4 to 6 digits to clock at your organization's kiosks.",

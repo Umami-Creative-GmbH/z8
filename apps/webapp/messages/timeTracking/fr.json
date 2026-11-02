@@ -235,8 +235,30 @@
         "endDayHint": "Terminer la journée maintenant met fin à votre travail au début de votre pause.",
         "today": "Aujourd'hui : {duration}"
       },
+      "fob": {
+        "alreadyRegistered": "Ce porte-clés se terminant par {lastFour} est déjà enregistré à votre nom.",
+        "back": "Retour",
+        "checking": "Vérification de votre porte-clés…",
+        "failed": "Impossible de vérifier le porte-clés. Passez-le à nouveau ou appuyez sur votre nom pour utiliser votre code PIN.",
+        "linkedToOther": "Ce porte-clés est déjà enregistré au nom de quelqu'un d'autre. Rien n'a été modifié. Renseignez-vous auprès de votre responsable.",
+        "notEligible": "Vous ne pouvez pas enregistrer de porte-clés sur cette borne. Rien n'a été modifié. Renseignez-vous auprès de votre responsable.",
+        "notRecognised": "Ce porte-clés n'est pas reconnu ici.",
+        "offline": "Les porte-clés nécessitent une connexion. Rien n'a été enregistré. Appuyez sur votre nom pour utiliser votre code PIN.",
+        "offlineOnly": "Les porte-clés nécessitent une connexion. Rien n'a été enregistré.",
+        "pickPrompt": "Appuyez sur votre nom.",
+        "pickTitle": "Enregistrer ce porte-clés",
+        "pinPrompt": "Saisissez votre code PIN de borne pour enregistrer ce porte-clés",
+        "rateLimited": "{seconds, plural, one {Trop de passages de porte-clés sur cette borne. Réessayez dans # seconde ou appuyez sur votre nom pour utiliser votre code PIN.} other {Trop de passages de porte-clés sur cette borne. Réessayez dans # secondes ou appuyez sur votre nom pour utiliser votre code PIN.}}",
+        "readerDisabled": "Le lecteur de porte-clés est désactivé sur cette borne. Appuyez sur votre nom pour utiliser votre code PIN.",
+        "register": "Enregistrer ce porte-clés",
+        "registered": "Porte-clés enregistré",
+        "registeredText": "Votre porte-clés se terminant par {lastFour} est enregistré. Passez-le pour choisir votre nom, puis saisissez votre code PIN.",
+        "registerHint": "S'il vous appartient, enregistrez-le avec votre nom et votre code PIN de borne. Tout porte-clés enregistré précédemment cessera de fonctionner.",
+        "replaced": "Il remplace votre ancien porte-clés, qui ne fonctionne plus."
+      },
       "home": {
         "empty": "Personne n'est encore assigné à cet emplacement. Demandez à votre administrateur.",
+        "fobHint": "Ou passez votre porte-clés sur le lecteur.",
         "loadFailed": "Impossible de charger les noms. Vérifiez la connexion réseau.",
         "loading": "Chargement des noms…",
         "noMatch": "Aucun nom ne correspond à votre recherche.",
@@ -363,9 +385,14 @@
         "nonexistentTime": "Cette heure n'existe pas à cette date car l'heure avance.",
         "occurrenceRequired": "Cette heure apparaît deux fois à cette date. Choisissez celle que vous souhaitez indiquer.",
         "overlap": "Cette heure chevauche du travail enregistré. Choisissez une plage horaire qui ne chevauche pas les entrées existantes.",
+        "overlapsLiveWork": "Cet horaire chevauche une période de travail en cours depuis {start}. Une saisie manuelle doit se terminer au plus tard à ce moment-là.",
         "reconfirm": "Le fuseau horaire ou les heures ont changé. Vérifiez la saisie et soumettez-la de nouveau.",
         "refresh": "Les paramètres de saisie manuelle ont changé. Vérifiez la saisie et soumettez-la de nouveau.",
         "tooLong": "La période de travail ne peut pas dépasser 24 heures"
+      },
+      "liveWorkHint": {
+        "employee": "{employee} a pointé depuis {start} ; cette entrée doit donc se terminer au plus tard à ce moment-là.",
+        "own": "Vous avez pointé depuis {start} ; cette entrée doit donc se terminer au plus tard à ce moment-là."
       },
       "occurrence": {
         "earlier": "Premier, {offset}",
@@ -509,11 +536,23 @@
     },
     "startedAt": "Commencé à",
     "summary": {
-      "baseWorked": "Base travaillée",
-      "surcharge": "Surcharge",
+      "dayOfRequired": "{date} : {worked} sur {required}",
+      "dayWorked": "{date} : {worked}",
+      "noRequiredToday": "Aucun temps requis aujourd'hui",
+      "progressAhead": "{worked} sur {required} · {difference} d'avance",
+      "progressBehind": "{worked} sur {required} · {difference} de retard",
+      "progressLabel": "Temps travaillé sur temps requis",
+      "progressOnTrack": "{worked} sur {required} · dans les temps",
+      "surchargeFootnote": "+{surcharge} de majoration",
       "thisMonth": "Ce mois-ci",
       "thisWeek": "Cette semaine",
-      "today": "Aujourd'hui"
+      "today": "Aujourd'hui",
+      "todayOfRequired": "{worked} sur {required}",
+      "trend": "{difference} {comparedWith}",
+      "trendDetail": "Actuellement : {worked} travaillés sur {required} requis à ce jour. Précédemment : {previousWorked} travaillés sur {previousRequired} requis.",
+      "trendWithPercent": "{difference} ({percent}) {comparedWith}",
+      "vsLastMonth": "par rapport au mois dernier",
+      "vsLastWeek": "par rapport à la semaine dernière"
     },
     "table": {
       "active": "Actif",

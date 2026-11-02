@@ -235,8 +235,30 @@
         "endDayHint": "Zakończenie dnia teraz spowoduje zakończenie pracy w momencie rozpoczęcia przerwy.",
         "today": "Dzisiaj: {duration}"
       },
+      "fob": {
+        "alreadyRegistered": "Ten brelok z końcówką {lastFour} jest już do Ciebie przypisany.",
+        "back": "Wstecz",
+        "checking": "Sprawdzanie breloka…",
+        "failed": "Nie udało się sprawdzić breloka. Przyłóż go ponownie lub dotknij swojego nazwiska, aby użyć kodu PIN.",
+        "linkedToOther": "Ten brelok jest już zarejestrowany na kogoś innego. Nic nie zmieniono. Skontaktuj się z przełożonym.",
+        "notEligible": "Nie możesz zarejestrować breloka w tym kiosku. Nic nie zmieniono. Skontaktuj się z przełożonym.",
+        "notRecognised": "Ten brelok nie został tutaj rozpoznany.",
+        "offline": "Breloki wymagają połączenia z siecią. Nic nie zostało zarejestrowane. Dotknij swojego nazwiska, aby użyć kodu PIN.",
+        "offlineOnly": "Breloki wymagają połączenia z siecią. Nic nie zostało zarejestrowane.",
+        "pickPrompt": "Dotknij swojego nazwiska.",
+        "pickTitle": "Zarejestruj ten brelok",
+        "pinPrompt": "Wprowadź kod PIN do kiosku, aby zarejestrować ten brelok",
+        "rateLimited": "{seconds, plural, one {Zbyt wiele prób użycia breloka w tym kiosku. Spróbuj ponownie za # sekundę lub dotknij swojego nazwiska, aby użyć kodu PIN.} many {Zbyt wiele prób użycia breloka w tym kiosku. Spróbuj ponownie za # sekund lub dotknij swojego nazwiska, aby użyć kodu PIN.} other {Zbyt wiele prób użycia breloka w tym kiosku. Spróbuj ponownie za # sekundy lub dotknij swojego nazwiska, aby użyć kodu PIN.} }",
+        "readerDisabled": "Czytnik breloków w tym kiosku jest wyłączony. Dotknij swojego nazwiska, aby użyć kodu PIN.",
+        "register": "Zarejestruj ten brelok",
+        "registered": "Brelok zarejestrowany",
+        "registeredText": "Twój brelok z końcówką {lastFour} został zarejestrowany. Przyłóż go, aby wybrać swoje nazwisko, a następnie wprowadź kod PIN.",
+        "registerHint": "Jeśli należy do Ciebie, zarejestruj go, podając swoje nazwisko i kod PIN do kiosku. Poprzednio zarejestrowany brelok przestanie działać.",
+        "replaced": "Zastępuje on Twój wcześniejszy brelok, który już nie działa."
+      },
       "home": {
         "empty": "Nikt nie jest jeszcze przypisany do tej lokalizacji. Skontaktuj się z administratorem.",
+        "fobHint": "Lub przyłóż brelok do czytnika.",
         "loadFailed": "Nie udało się załadować nazwisk. Sprawdź połączenie z siecią.",
         "loading": "Wczytywanie nazwisk…",
         "noMatch": "Żadne nazwisko nie pasuje do wyszukiwania.",
@@ -363,9 +385,14 @@
         "nonexistentTime": "Ta godzina nie istnieje w tym dniu z powodu przesunięcia czasu do przodu.",
         "occurrenceRequired": "Ta godzina występuje dwukrotnie w tym dniu. Wybierz, o którą chodzi.",
         "overlap": "Ten czas pokrywa się z zarejestrowaną pracą. Wybierz zakres, który nie nakłada się na istniejące wpisy.",
+        "overlapsLiveWork": "Ten czas nakłada się na czas pracy trwający od {start}. Wpis ręczny musi zakończyć się do tego momentu.",
         "reconfirm": "Strefa czasowa lub godziny uległy zmianie. Przejrzyj wpis i prześlij go ponownie.",
         "refresh": "Ustawienia wprowadzania ręcznego uległy zmianie. Przejrzyj wpis i prześlij go ponownie.",
         "tooLong": "Okres pracy nie może przekraczać 24 godzin"
+      },
+      "liveWorkHint": {
+        "employee": "{employee} ma zarejestrowane rozpoczęcie pracy od {start}, więc ten wpis musi zakończyć się do tego czasu.",
+        "own": "Masz zarejestrowane rozpoczęcie pracy od {start}, więc ten wpis musi zakończyć się do tego czasu."
       },
       "occurrence": {
         "earlier": "Pierwsza, {offset}",
@@ -509,11 +536,23 @@
     },
     "startedAt": "Rozpoczęto o",
     "summary": {
-      "baseWorked": "Praca podstawowa",
-      "surcharge": "Dodatek",
+      "dayOfRequired": "{date}: {worked} z {required}",
+      "dayWorked": "{date}: {worked}",
+      "noRequiredToday": "Brak wymaganego czasu dzisiaj",
+      "progressAhead": "{worked} z {required} · {difference} do przodu",
+      "progressBehind": "{worked} z {required} · {difference} do tyłu",
+      "progressLabel": "Czas przepracowany z wymaganego",
+      "progressOnTrack": "{worked} z {required} · zgodnie z planem",
+      "surchargeFootnote": "+{surcharge} dopłaty",
       "thisMonth": "W tym miesiącu",
       "thisWeek": "W tym tygodniu",
-      "today": "Dzisiaj"
+      "today": "Dzisiaj",
+      "todayOfRequired": "{worked} z {required}",
+      "trend": "{difference} {comparedWith}",
+      "trendDetail": "Teraz: przepracowano {worked} z {required} wymaganych do tej pory. Wtedy: przepracowano {previousWorked} z {previousRequired} wymaganych.",
+      "trendWithPercent": "{difference} ({percent}) {comparedWith}",
+      "vsLastMonth": "w porównaniu z poprzednim miesiącem",
+      "vsLastWeek": "w porównaniu z poprzednim tygodniem"
     },
     "table": {
       "active": "Aktywny",

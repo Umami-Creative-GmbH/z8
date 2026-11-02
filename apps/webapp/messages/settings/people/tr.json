@@ -190,6 +190,15 @@
         "revokedOn": "Etkin kiosk kartı yok. Sonuncusu {date} tarihinde iptal edildi.",
         "saveNow": "PDF'yi şimdi kaydedin: Z8 bu kartı bir daha gösteremez. Kaydedilen bir kopyayı yeniden yazdırabilirsiniz. Dosya veya kart kaybolursa kartı değiştirin."
       },
+      "kioskFob": {
+        "confirmRemoveText": "Anahtarlık kiosklarda derhal çalışmayı durdurur ve yeniden kaydedilebilir. Çalışanın kiosk PIN'i ve kiosk rozeti çalışmaya devam eder.",
+        "description": "Çalışanın adını seçmek için çevrim içi bir kioska dokundurduğu NFC kartı veya anahtarlık. Kiosk PIN'i kimliğini doğrulamaya devam eder.",
+        "endedByDeparture": "Sonuncusu, çalışanın {date} tarihindeki ayrılışıyla sona erdi.",
+        "endedOn": "Sonuncusu {date} tarihinde sona erdi.",
+        "heading": "Kiosk anahtarlığı",
+        "none": "Kiosk anahtarlığı yok. Çalışanlar NFC anahtarlık okuyucusu bulunan bir kiosktan kiosk PIN'lerini kullanarak kendi anahtarlıklarını kaydeder.",
+        "removedOn": "Sonuncusu {date} tarihinde kaldırıldı."
+      },
       "kioskPin": {
         "addEmailDescription": "Şifre belirlemek için bir davet alırlar ve ardından giriş yapabilirler. Kiosk PIN'leri ve geçmişleri olduğu gibi kalır.",
         "addEmailHeading": "E-posta ekle",
@@ -244,6 +253,7 @@
             "personnelFileOfficer": "Özlük dosyası sorumlusu"
           },
           "kioskBadges": "{count, plural, other {# kiosk rozeti iptal edilir} }",
+          "kioskFobs": "{count, plural, other {# kiosk anahtarlığı artık çalışmaz} }",
           "loadError": "Önizleme yüklenemedi.",
           "loading": "Nelerin değişeceği hesaplanıyor…",
           "managerLinksTitle": "Sona eren yönetici bağlantıları",

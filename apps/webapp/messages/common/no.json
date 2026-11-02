@@ -1369,6 +1369,11 @@
         "message": "Din {action, select, clock_in {innstempling} clock_out {utstempling} start_break {start på pause} resume_break {retur fra pause} other {stempling}} kl. {time} på kiosken {kioskName} ble ikke registrert: {reason, select, wrong_pin {PIN-koden var feil} pin_locked {kiosk-PIN-koden ble låst etter for mange feil forsøk} no_pin {det var ingen kiosk-PIN-kode å kontrollere mot} pin_unchecked {PIN-koden kunne ikke kontrolleres} kiosk_retired {kiosken ble tilbakekalt eller koblet til på nytt før den koblet til igjen} contact_unverifiable {Z8 kunne ikke bekrefte kioskens forrige tilkobling} outside_window {tidspunktet var utenfor tidsvinduet Z8 godtar} clock_untrusted {kioskklokken kunne ikke stoles på for dette} not_assigned {den ansatte er ikke tilknyttet kioskens plassering} not_adopted {organisasjonen godtar ikke frakoblede kioskstemplinger} month_closed {måneden er stengt} holiday {dagen er en helligdag uten tidsregistrering} conflict {den er i konflikt med annen registrert tid} other {Z8 kunne ikke godta det}}. Registrer tiden din på nytt eller be lederen din om å korrigere den.",
         "title": "Kioskstempling ikke registrert"
       },
+      "kioskFobRegistered": {
+        "forwardedMessage": "{replaced, select, true {En kiosknøkkelbrikke som slutter på {lastFour} ble registrert for {employeeName} på kiosken {kioskName}. Den erstattet den tidligere brikken, som ikke lenger fungerer.} other {En kiosknøkkelbrikke som slutter på {lastFour} ble registrert for {employeeName} på kiosken {kioskName}.}} Hvis {employeeName} ikke registrerte den, må du fjerne den på ansattsiden og tilbakestille PIN-koden for kiosk.",
+        "message": "{replaced, select, true {En kiosknøkkelbrikke som slutter på {lastFour} ble registrert for deg på kiosken {kioskName}. Den erstattet den tidligere brikken din, som ikke lenger fungerer.} other {En kiosknøkkelbrikke som slutter på {lastFour} ble registrert for deg på kiosken {kioskName}.}} Hvis du ikke registrerte den, må du fjerne den i sikkerhetsinnstillingene dine og endre PIN-koden for kiosk.",
+        "title": "Kiosknøkkelbrikke registrert"
+      },
       "manualEntryApproved": {
         "message": "Den manuelle tidsregistreringen din ble godkjent av {approverName}.",
         "title": "Manuell tidsregistrering godkjent"
@@ -1831,6 +1836,7 @@
         "forgotten_clock_out_reminder": "Glemt utstempling",
         "former_employee_reports_without_manager": "Ansatte uten en nåværende leder",
         "kiosk_command_refused": "Kioskstempling ikke registrert",
+        "kiosk_fob_registered": "Kiosknøkkelbrikke registrert",
         "missed_clock_in_reminder": "Manglende innstempling",
         "period_submission_decided": "Innsendte timer godkjent eller avvist",
         "period_submission_reminder": "Send inn timene dine",
@@ -2538,6 +2544,13 @@
             "workModel": "Arbeidsmodellen din.",
             "workPolicy": "Arbeidsretningslinjen disse vilkårene bruker."
           },
+          "goLiveExclusions": {
+            "createdAt": "Tidspunktet du ble utelatt, som et UTC-tidspunkt.",
+            "endedAt": "Tidspunktet det opphørte fordi du forlot organisasjonen; tomt hvis det ikke gjorde det.",
+            "liftedAt": "Tidspunktet en administrator inkluderte deg i kontrollene igjen; tomt hvis de ikke gjorde det.",
+            "reason": "Årsaken en administrator oppga for å utelate deg.",
+            "summary": "Tidspunkter da organisasjonen utelot deg fra kontrollene før igangsetting under oppsett av Z8, og hvorfor. De påvirker ingenting annet."
+          },
           "groups": {
             "addedAt": "Når du ble lagt til i gruppen.",
             "addedBy": "Hvem som la deg til i gruppen.",
@@ -2637,6 +2650,14 @@
             "lastUsedAt": "Når en kalenderapp sist leste feeden (UTC).",
             "revokedAt": "Når lenken ble slått av (UTC).",
             "summary": "Lenkene til kalenderfeeden din, som lar en kalenderapp abonnere på fraværet ditt. Selve den hemmelige lenken er aldri inkludert."
+          },
+          "kioskFobs": {
+            "endedAt": "Når den sluttet å velge deg (UTC), tomt så lenge den fortsatt gjør det.",
+            "endedReason": "erstattet da du registrerte en annen, fjernet da du eller en leder fjernet den eller du ble deaktivert, fratredelse da ansettelsesforholdet ditt opphørte.",
+            "kiosk": "Kiosken du registrerte den på, tomt når den kiosken ble slettet.",
+            "registeredAt": "Når du registrerte den (UTC).",
+            "serialNumber": "Brikkens serienummer, slik kioskens leser leste det.",
+            "summary": "NFC-kortene eller -nøkkelbrikkene du har registrert ved en kiosk, nåværende og avsluttede. Hvis du tæpper en, velges du på kiosken; PIN-koden for kiosken bekrefter fremdeles at det er deg."
           },
           "kioskPinEvents": {
             "event": "failure for feil PIN-kode, success for riktig, fjernet når PIN-koden ble låst opp, tilbakestilt eller endret.",

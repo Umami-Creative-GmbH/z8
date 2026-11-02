@@ -190,6 +190,15 @@
         "revokedOn": "Nuk ka distinktiv aktiv për kioskën. I fundit u shfuqizua më {date}.",
         "saveNow": "Ruajeni PDF-në tani: Z8 nuk mund ta shfaqë më këtë distinktiv. Mund të riprintoni një kopje të ruajtur. Nëse skedari ose distinktivi humbet, zëvendësoni distinktivin."
       },
+      "kioskFob": {
+        "confirmRemoveText": "Çipi ndalon menjëherë së funksionuari në kioska dhe mund të regjistrohet përsëri. PIN-i i kioskës dhe distinktivi i kioskës së punonjësit vazhdojnë të funksionojnë.",
+        "description": "Një kartë ose çip NFC që punonjësi e afron te një kioskë në linjë për të zgjedhur emrin e vet. PIN-i i tij i kioskës vërteton ende se është ai.",
+        "endedByDeparture": "I fundit përfundoi me largimin e punonjësit më {date}.",
+        "endedOn": "I fundit përfundoi më {date}.",
+        "heading": "Çipi i kioskës",
+        "none": "Nuk ka çip kioske. Punonjësit regjistrojnë çipin e tyre në një kioskë me lexues çipash NFC, duke përdorur PIN-in e tyre të kioskës.",
+        "removedOn": "I fundit u hoq më {date}."
+      },
       "kioskPin": {
         "addEmailDescription": "Ata marrin një ftesë për të zgjedhur një fjalëkalim dhe më pas mund të identifikohen. PIN-i i tyre i kioskës dhe historiku mbeten siç janë.",
         "addEmailHeading": "Shto një email",
@@ -244,6 +253,7 @@
             "personnelFileOfficer": "Zyrtar i dosjeve të personelit"
           },
           "kioskBadges": "{count, plural, one {# distinktiv i kioskës revokohet} other {# distinktivë të kioskës revokohen}}",
+          "kioskFobs": "{count, plural, one {# çip kioske ndalon së funksionuari} other {# çipa kioske ndalojnë së funksionuari}}",
           "loadError": "Parapamja nuk mund të ngarkohej.",
           "loading": "Duke llogaritur çfarë ndryshon…",
           "managerLinksTitle": "Lidhjet e menaxherit që përfundojnë",

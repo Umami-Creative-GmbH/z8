@@ -235,8 +235,30 @@
         "endDayHint": "Wenn Sie den Arbeitstag jetzt beenden, endet Ihre Arbeitszeit mit Beginn Ihrer Pause.",
         "today": "Heute: {duration}"
       },
+      "fob": {
+        "alreadyRegistered": "Dieser Transponder mit der Endung {lastFour} ist bereits für Sie registriert.",
+        "back": "Zurück",
+        "checking": "Transponder wird überprüft …",
+        "failed": "Der Transponder konnte nicht überprüft werden. Halten Sie ihn erneut vor oder tippen Sie auf Ihren Namen, um Ihre PIN zu verwenden.",
+        "linkedToOther": "Dieser Transponder ist bereits für eine andere Person registriert. Es wurde nichts geändert. Wenden Sie sich an Ihre Führungskraft.",
+        "notEligible": "Sie können an diesem Kiosk keinen Transponder registrieren. Es wurde nichts geändert. Wenden Sie sich an Ihre Führungskraft.",
+        "notRecognised": "Dieser Transponder wird hier nicht erkannt.",
+        "offline": "Transponder erfordern eine Verbindung. Es wurde nichts erfasst. Tippen Sie auf Ihren Namen, um Ihre PIN zu verwenden.",
+        "offlineOnly": "Transponder erfordern eine Verbindung. Es wurde nichts erfasst.",
+        "pickPrompt": "Tippen Sie auf Ihren Namen.",
+        "pickTitle": "Diesen Transponder registrieren",
+        "pinPrompt": "Geben Sie Ihre Kiosk-PIN ein, um diesen Transponder zu registrieren",
+        "rateLimited": "{seconds, plural, one {Zu viele Transponder-Scans an diesem Kiosk. Versuchen Sie es in # Sekunde erneut oder tippen Sie auf Ihren Namen, um Ihre PIN zu verwenden.} other {Zu viele Transponder-Scans an diesem Kiosk. Versuchen Sie es in # Sekunden erneut oder tippen Sie auf Ihren Namen, um Ihre PIN zu verwenden.}}",
+        "readerDisabled": "Der Transponderleser ist an diesem Kiosk deaktiviert. Tippen Sie auf Ihren Namen, um Ihre PIN zu verwenden.",
+        "register": "Diesen Transponder registrieren",
+        "registered": "Transponder registriert",
+        "registeredText": "Ihr Transponder mit der Endung {lastFour} ist registriert. Halten Sie ihn vor, um Ihren Namen auszuwählen, und geben Sie dann Ihre PIN ein.",
+        "registerHint": "Wenn es Ihrer ist, registrieren Sie ihn mit Ihrem Namen und Ihrer Kiosk-PIN. Ein zuvor registrierter Transponder funktioniert danach nicht mehr.",
+        "replaced": "Er ersetzt Ihren vorherigen Transponder, der nicht mehr funktioniert."
+      },
       "home": {
         "empty": "Diesem Standort ist noch niemand zugewiesen. Wenden Sie sich an Ihren Administrator.",
+        "fobHint": "Oder halten Sie Ihren Transponder an das Lesegerät.",
         "loadFailed": "Die Namen konnten nicht geladen werden. Überprüfen Sie die Netzwerkverbindung.",
         "loading": "Namen werden geladen…",
         "noMatch": "Kein Name entspricht Ihrer Suche.",
@@ -363,9 +385,14 @@
         "nonexistentTime": "Diese Uhrzeit existiert an diesem Datum nicht, da die Uhren vorgestellt werden.",
         "occurrenceRequired": "Diese Uhrzeit kommt an diesem Datum zweimal vor. Wählen Sie aus, welche gemeint ist.",
         "overlap": "Diese Zeit überschneidet sich mit erfassten Arbeitszeiten. Wählen Sie einen Zeitraum, der sich nicht mit bestehenden Einträgen überschneidet.",
+        "overlapsLiveWork": "Diese Zeit überschneidet sich mit Arbeitszeit, die seit {start} läuft. Ein manueller Eintrag muss bis dahin enden.",
         "reconfirm": "Die Zeitzone oder Zeiten haben sich geändert. Überprüfen Sie den Eintrag und senden Sie ihn erneut ab.",
         "refresh": "Die Einstellungen für manuelle Einträge haben sich geändert. Überprüfen Sie den Eintrag und senden Sie ihn erneut ab.",
         "tooLong": "Die Arbeitsdauer darf 24 Stunden nicht überschreiten"
+      },
+      "liveWorkHint": {
+        "employee": "{employee} ist seit {start} eingestempelt, daher muss dieser Eintrag bis dahin enden.",
+        "own": "Sie sind seit {start} eingestempelt, daher muss dieser Eintrag bis dahin enden."
       },
       "occurrence": {
         "earlier": "Erste, {offset}",
@@ -509,11 +536,23 @@
     },
     "startedAt": "Begonnen um",
     "summary": {
-      "baseWorked": "Grundarbeitszeit",
-      "surcharge": "Zuschlag",
+      "dayOfRequired": "{date}: {worked} von {required}",
+      "dayWorked": "{date}: {worked}",
+      "noRequiredToday": "Heute keine Sollzeit",
+      "progressAhead": "{worked} von {required} · {difference} voraus",
+      "progressBehind": "{worked} von {required} · {difference} im Rückstand",
+      "progressLabel": "Geleistete Zeit von Sollzeit",
+      "progressOnTrack": "{worked} von {required} · im Plan",
+      "surchargeFootnote": "+{surcharge} Zuschlag",
       "thisMonth": "Diesen Monat",
       "thisWeek": "Diese Woche",
-      "today": "Heute"
+      "today": "Heute",
+      "todayOfRequired": "{worked} von {required}",
+      "trend": "{difference} {comparedWith}",
+      "trendDetail": "Jetzt: {worked} gearbeitet von bisher {required} Soll. Damals: {previousWorked} gearbeitet von {previousRequired} Soll.",
+      "trendWithPercent": "{difference} ({percent}) {comparedWith}",
+      "vsLastMonth": "im Vergleich zum Vormonat",
+      "vsLastWeek": "im Vergleich zur Vorwoche"
     },
     "table": {
       "active": "Aktiv",

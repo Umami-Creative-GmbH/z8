@@ -239,6 +239,29 @@
       },
       "description": "Naplatna valuta i ono što vaša organizacija naplaćuje klijentima za rad",
       "handOff": {
+        "amount": {
+          "estimated": "Procijenjeno: ova primopredaja nije pohranila iznos po razdoblju rada, pa se koristi izračun tarifa × trajanje.",
+          "noSubtotal": "Nema poznatih razlika u iznosu",
+          "note": "Razlike u iznosu informacije su za usklađivanje obračunate po tarifi zamrznutoj prilikom primopredaje, a ne knjižna odobrenja.",
+          "notOnHandOff": "Njegov projekt sada pripada drugom klijentu. Ovaj rad nije ni na jednoj primopredaji za tog klijenta i ostaje fakturiran u ovom nacrtu, stoga ga fakturirajte novom klijentu u računovodstvenom alatu.",
+          "reason": {
+            "customer": "Projekt sada pripada drugom klijentu ili nijednom, pa se cijeli predani iznos stornira.",
+            "frozenRate": "Promjena u satima po tarifi zamrznutoj prilikom primopredaje.",
+            "noFrozenRate": "Za ovaj rad prilikom primopredaje nije bila zamrznuta tarifa.",
+            "nonBillable": "Rad se više ne naplaćuje, pa se cijeli predani iznos stornira.",
+            "otherProject": "Rad je premješten na drugi projekt istog klijenta koji nema tarifu zamrznutu prilikom primopredaje.",
+            "removed": "Rad je izbrisan, pa se cijeli predani iznos stornira.",
+            "running": "Dio rada još uvijek traje.",
+            "severalRates": "Prilikom primopredaje ovaj je rad obračunat po nekoliko tarifa; ta se raspodjela ne može ponoviti bez današnjih tarifa."
+          },
+          "roundingCaveat": "Može se razlikovati za nekoliko centi zbog zaokruživanja stavke u nacrtu.",
+          "sinceResolution": "Od posljednjeg razrješenja: {amount}",
+          "subtotal": "Poznate razlike u iznosu: {amount}",
+          "subtotalEstimated": "Poznate razlike u iznosu: {amount} (uključuje procjene)",
+          "title": "Razlika u iznosu",
+          "unknown": "Nepoznato",
+          "unknownCount": "{count, plural, one {# nepoznata razlika nije uključena} few {# nepoznate razlike nisu uključene} other {# nepoznatih razlika nije uključeno}}"
+        },
         "blocker": {
           "currency": "Računovodstveni alat ne može prihvatiti skice u valuti {currency}.",
           "noContactLink": "Prvo povežite ovog klijenta s kontaktom u računovodstvenom alatu na stranici Računovodstvo.",
@@ -252,12 +275,48 @@
         },
         "changed": {
           "billability": "Naplativost",
+          "customer": "Klijent",
           "project": "Projekt",
           "removed": "Izbrisano",
           "split": "Podijeli",
           "times": "Vremena"
         },
+        "comparison": {
+          "billability": "Naplativost",
+          "billable": "Naplativo",
+          "caption": "Usporedba za {item}",
+          "changedFromHandOff": "(promijenjeno u odnosu na primopredaju)",
+          "changedSinceResolution": "(promijenjeno od posljednjeg razrješenja)",
+          "current": "Trenutačno",
+          "customer": "Klijent",
+          "day": "Dan",
+          "end": "Kraj",
+          "field": "Polje",
+          "handOff": "Primopredaja",
+          "hours": "Sati",
+          "lastResolved": "Posljednje razriješeno",
+          "legend": "Istaknute vrijednosti razlikuju se od primopredaje. Vremena su lokalna prema mjestu gdje je rad zabilježen.",
+          "legendSinceResolution": "Promijenjeno od posljednjeg razrješenja.",
+          "mixedBillable": "Djelomično naplativo",
+          "noCustomer": "Nema klijenta",
+          "nonBillable": "Nenaplativo",
+          "noProject": "Nema projekta",
+          "pieces": "Trenutačne vrijednosti obuhvaćaju {count} dijelova razdvojenih iz ovog rada; sati su njihov zbroj.",
+          "project": "Projekt",
+          "removed": "Uklonjeno",
+          "removedNo": "Ne",
+          "removedPieces": "{removed} od {count} dijelova",
+          "removedYes": "Da",
+          "start": "Početak",
+          "timeOnDay": "{day} {time}",
+          "timeWithOffset": "{time} ({offset})",
+          "unknownCustomer": "Nepoznati klijent",
+          "unknownProject": "Nepoznati projekt"
+        },
         "confirmed": "Skica računa je stvorena",
+        "csv": {
+          "download": "Preuzmi CSV za usklađivanje"
+        },
         "detail": {
           "checking": "Provjera skice u alatu…",
           "gone": "Računovodstveni alat više nema ovu skicu. Ako je namjerno izbrisana, oslobodite predaju kako bi se rad mogao ponovno predati.",
@@ -289,6 +348,14 @@
           "timesheetHelp": "Jedan redak po razdoblju rada, unutar ograničenja redaka računovodstvenog alata. Uvijek možete preuzeti evidenciju radnog vremena.",
           "to": "Do"
         },
+        "history": {
+          "deletedUser": "izbrisani korisnik",
+          "legacy": "Obrisano prije bilježenja razrješenja",
+          "legacyMeta": "{at}, {actor}",
+          "reference": "Referenca: {reference}",
+          "resolved": "Razriješeno {at}, {actor}",
+          "title": "Povijest razrješenja"
+        },
         "hoursValue": "{hours} h",
         "list": {
           "actions": "Radnje",
@@ -304,10 +371,19 @@
           "total": "Neto ukupno"
         },
         "marks": {
-          "clear": "Ukloni oznaku",
-          "clearAll": "Ukloni sve oznake",
-          "cleared": "{count, plural, one {# oznaka uklonjena} few {# oznake uklonjene} other {# oznaka uklonjeno}}",
-          "help": "Ovaj fakturirani rad ispravljen je nakon prijenosa. Ispravite račun u računovodstvenom alatu ako je potrebno (primjerice odobrenjem), a zatim uklonite oznaku.",
+          "compare": "Usporedi",
+          "compareItem": "Usporedi {item}",
+          "draftHeading": "{title} · {period}",
+          "history": "Povijest ({count})",
+          "historyItem": "Povijest ({count}) za {item}",
+          "openWhenReleased": "Otvoreno prilikom izdavanja",
+          "releasedHelp": "Ovaj fakturirani rad ispravljen je nakon predaje te je još uvijek bio otvoren kada je predaja izdana. Ovdje se više ne može razriješiti. Trenutačne vrijednosti prikazuju rad u sadašnjem stanju.",
+          "resolve": "Razriješi",
+          "resolveHelp": "Ovaj fakturirani rad ispravljen je nakon predaje. Po potrebi ispravite račun u računovodstvenom alatu (na primjer knjižnim odobrenjem), a zatim razriješite promjenu uz objašnjenje.",
+          "resolveItem": "Razriješi {item}",
+          "resolveSelected": "Razriješi odabrano ({count})",
+          "select": "Odaberi {item}",
+          "selectAll": "Odaberi sve",
           "title": "Promijenjeno nakon izdavanja računa"
         },
         "new": {
@@ -345,6 +421,23 @@
           "done": "{count, plural, one {Otpušteno. # radno razdoblje ponovno je nefakturirano.} other {Otpušteno. # radnih razdoblja ponovno je nefakturirano.}}",
           "reason": "Razlog (neobavezno)",
           "title": "Otpustiti ovaj prijenos?"
+        },
+        "resolve": {
+          "description": "Zabilježite kako je promjena obrađena, na primjer knjižnim odobrenjem u računovodstvenom alatu. Predaja i njezine stavke ostaju nepromijenjene.",
+          "done": "{count, plural, one {# stavka razriješena} few {# stavke razriješene} other {# stavki razriješeno}}",
+          "explanation": "Objašnjenje",
+          "explanationRequired": "Objasnite kako je promjena obrađena.",
+          "explanationTooLong": "Ograničite objašnjenje na najviše {max} znakova.",
+          "itemLabel": "{day} · {employee} · {project}",
+          "itemsInvalid": "Odaberite označeni rad za razrješenje.",
+          "reference": "Računovodstvena referenca (neobavezno)",
+          "referenceHint": "Na primjer broj knjižnog odobrenja.",
+          "referenceTooLong": "Ograničite referencu na najviše {max} znakova.",
+          "released": "Ništa nije razriješeno: predaja ovog rada je izdana, stoga se njegove promjene više ne mogu razriješiti. Ponovno učitajte za prikaz.",
+          "reload": "Ponovno učitaj",
+          "stale": "Ništa nije razriješeno: ovaj rad se promijenio otkako ste ga otvorili. Ponovno učitajte kako biste pregledali promjene.",
+          "submit": "{count, plural, one {Razriješi # stavku} few {Razriješi # stavke} other {Razriješi # stavki}}",
+          "title": "Razriješi izmijenjeni rad"
         },
         "status": {
           "created": "Nacrt izrađen",
@@ -1341,25 +1434,272 @@
     },
     "implementationChecklist": {
       "actions": {
+        "confirmAgain": "Potvrdi ponovno",
         "markComplete": "Označi kao dovršeno",
-        "markIncomplete": "Označi kao nedovršeno"
+        "markIncomplete": "Označi kao nedovršeno",
+        "removeConfirmation": "Ukloni potvrdu"
+      },
+      "confirmation": {
+        "beforeChangeTracking": "Potvrđeno {date}, prije praćenja promjena",
+        "current": "Potvrđeno {date}",
+        "stale": "Postavke su promijenjene od potvrde dana {date}",
+        "unchecked": "Nije bilo moguće provjeriti promjene postavki od potvrde dana {date}"
       },
       "description": "Dovršite korake postavljanja prije pozivanja cijelog tima kako bi praćenje radnog vremena, odobrenja i tijekovi rada obračuna plaća bili spremni za svakodnevnu upotrebu.",
+      "entryDescription": "Provjerite spremnost za puštanje u rad i pratite postavljanje pravila, obračuna plaća, integracija i uvoza zaposlenika",
       "errors": {
         "updateItem": "Ažuriranje stavke kontrolnog popisa nije uspjelo."
       },
       "eyebrow": "Implementacija za klijenta",
+      "firstWorkflows": {
+        "clockIn": "Prva prijava rada",
+        "decidedApproval": "Prvi riješeni zahtjev",
+        "former": "Bivši zaposlenik",
+        "notYet": "Još ne",
+        "payrollExport": "Prvi uspješan izvoz obračuna plaća",
+        "retry": "Provjeri ponovno",
+        "seen": "{time}, {name}",
+        "status": {
+          "allSeen": "Sve pregledano",
+          "notStarted": "Nije započeto",
+          "underWay": "U tijeku"
+        },
+        "unavailable": "Nije bilo moguće provjeriti"
+      },
+      "goLive": {
+        "approver": {
+          "approvalModeUnsupported": "{count, plural, one {{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: nije ih moguće podnijeti u načinu odobravanja ove organizacije. Obratite se podršci: # zaposlenik} other {{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: nije ih moguće podnijeti u načinu odobravanja ove organizacije. Obratite se podršci: # zaposlenika}}",
+          "changePolicyAmbiguous": "{count, plural, one {{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: primjenjuje se više pravila promjene pa su unosi odbijeni: # zaposlenik} other {{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: primjenjuje se više pravila promjene pa su unosi odbijeni: # zaposlenika}}",
+          "correctionDirectNoPolicy": "{count, plural, one {Ispravci radnog vremena: # zaposlenik izravno uređuje vlastite unose jer se ne primjenjuje nijedno pravilo promjene. Zahtjevi za brisanje i promjene datuma i dalje idu odobravatelju pa se provjeravaju.} other {Ispravci radnog vremena: # zaposlenika izravno uređuje vlastite unose jer se ne primjenjuje nijedno pravilo promjene. Zahtjevi za brisanje i promjene datuma i dalje idu odobravatelju pa se provjeravaju.}}",
+          "correctionDirectSelfService": "{count, plural, one {Ispravci radnog vremena: # zaposlenik izravno uređuje vlastite unose unutar dana samoposluživanja prema pravilu promjene i ne može mijenjati starije unose. Zahtjevi za brisanje i promjene datuma i dalje idu odobravatelju pa se provjeravaju.} other {Ispravci radnog vremena: # zaposlenika izravno uređuje vlastite unose unutar dana samoposluživanja prema pravilu promjene i ne može mijenjati starije unose. Zahtjevi za brisanje i promjene datuma i dalje idu odobravatelju pa se provjeravaju.}}",
+          "correctionDirectTrustMode": "{count, plural, one {Ispravci radnog vremena: # zaposlenik izravno uređuje vlastite unose jer je njegovo pravilo promjene u načinu povjerenja. Zahtjevi za brisanje i promjene datuma i dalje idu odobravatelju pa se provjeravaju.} other {Ispravci radnog vremena: # zaposlenika izravno uređuje vlastite unose jer je njihovo pravilo promjene u načinu povjerenja. Zahtjevi za brisanje i promjene datuma i dalje idu odobravatelju pa se provjeravaju.}}",
+          "fixApprovalPolicies": "Pregledajte pravila odobravanja",
+          "fixChangePolicies": "Pregledajte pravila promjena",
+          "fixExpenseApprover": "Postavite odobravatelja troškova",
+          "fixManagers": "Dodijelite voditelje",
+          "fixTeamManager": "Postavite voditelja tima",
+          "invalidPolicies": "{count, plural, one {{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: pravila odobravanja ne mogu se primijeniti: # zaposlenik} other {{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: pravila odobravanja ne mogu se primijeniti: # zaposlenika}}",
+          "managerDeparted": "{count, plural, one {{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: njihov je voditelj otišao i nitko ga ne zamjenjuje: # zaposlenik} other {{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: njihov je voditelj otišao i nitko ga ne zamjenjuje: # zaposlenika}}",
+          "noDecider": "{count, plural, one {{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: nijedan voditelj ni administrator ne može odlučivati o njima: # zaposlenik} other {{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: nijedan voditelj ni administrator ne može odlučivati o njima: # zaposlenika}}",
+          "noManagerNoTeam": "{count, plural, one {{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: nema odgovarajućeg voditelja: # zaposlenik koji nije ni u jednom timu} other {{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: nema odgovarajućeg voditelja: # zaposlenika koji nisu ni u jednom timu}}",
+          "periodSubmissionsOff": "Prijave razdoblja su isključene pa se ne provjeravaju.",
+          "policyWithoutApprover": "{count, plural, one {{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: pravilo odobravanja {policy} ne pronalazi odobravatelja: # zaposlenik} other {{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: pravilo odobravanja {policy} ne pronalazi odobravatelja: # zaposlenika}}",
+          "selfApprovalRoute": "{count, plural, one {{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: išli bi samim zaposlenicima, što nije dopušteno: # zaposlenik} other {{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: išli bi samim zaposlenicima, što nije dopušteno: # zaposlenika}}",
+          "shiftsOff": "Smjene su isključene pa se zahtjevi za smjenu ne provjeravaju.",
+          "skipNoCategoryRequiresApproval": "Zahtjevi za odsutnost ne zahtijevaju odobrenje jer ga ne traži nijedna kategorija odsutnosti.",
+          "skipNoChangePolicy": "{count, plural, one {{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: # zaposlenik ne treba odobrenje jer se ne primjenjuje nijedno pravilo promjene.} other {{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: # zaposlenika ne treba odobrenje jer se ne primjenjuje nijedno pravilo promjene.}}",
+          "skipOwnApprover": "{count, plural, one {{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: # zaposlenik sam je svoj odobravatelj.} other {{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: # zaposlenika sami su svoji odobravatelji.}}",
+          "skipOwnDecider": "{count, plural, one {{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: # zaposlenik jedini može odlučivati o njima pa njegovi vlastiti zahtjevi čekaju na njegovo odobrenje.} other {{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: # zaposlenika jedini mogu odlučivati o njima pa njihovi vlastiti zahtjevi čekaju na njihovo odobrenje.}}",
+          "skipOwnerAdmin": "{count, plural, one {{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: # zaposlenik ne treba odobrenje jer vlasnici i administratori izravno bilježe vlastiti rad.} other {{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: # zaposlenika ne treba odobrenje jer vlasnici i administratori izravno bilježe vlastiti rad.}}",
+          "skipOwnerSelfApproval": "{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: vlasnik sam odobrava svoja izvješća jer nitko drugi to ne može.",
+          "skipTrustMode": "{count, plural, one {{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: # zaposlenik ne treba odobrenje jer je njegovo pravilo promjene u načinu povjerenja.} other {{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: # zaposlenika ne treba odobrenje jer je njihovo pravilo promjene u načinu povjerenja.}}",
+          "teamWithoutManager": "{count, plural, one {{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: tim {team} nema odgovarajućeg voditelja: # zaposlenik} other {{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: tim {team} nema odgovarajućeg voditelja: # zaposlenika}}",
+          "unknownTeamWithoutManager": "{count, plural, one {{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: njihov tim nema odgovarajućeg voditelja: # zaposlenik} other {{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjenu}}: njihov tim nema odgovarajućeg voditelja: # zaposlenika}}"
+        },
+        "checkedAt": "Provjereno {time}",
+        "group": {
+          "description": "Provjere spremnosti za rad provode se za sve na trenutačnom popisu osoblja i sve pozvane koji se još nisu pridružili, umanjeno za sva izuzeća. Za postupno puštanje u rad odaberite timove koji kreću s radom.",
+          "errors": {
+            "alreadyExcluded": "Ovaj je zaposlenik već izuzet.",
+            "employeeNotFound": "Ovaj zaposlenik nije na trenutačnom popisu osoblja.",
+            "exclusionNotFound": "Ovo je izuzeće već završilo.",
+            "reasonRequired": "Navedite razlog isključenja.",
+            "reasonTooLong": "Razlog je predug.",
+            "teamNotFound": "Jedan od odabranih timova više ne postoji.",
+            "updateFailed": "Ažuriranje grupe za puštanje u rad nije uspjelo."
+          },
+          "excluded": {
+            "byOn": "Isključio/la {name} {date}",
+            "help": "Isključeni zaposlenici se ne provjeravaju, na primjer direktor koji ne evidentira radno vrijeme. Isključenje traje dok ga ne ukinete ili dok zaposlenik ne ode.",
+            "lift": "Ukini",
+            "liftFor": "Ukini isključenje za {name}",
+            "none": "Nitko nije isključen.",
+            "on": "Isključeno {date}",
+            "title": "Isključeno"
+          },
+          "exclude": {
+            "employee": "Zaposlenik",
+            "employeeRequired": "Odaberite zaposlenika.",
+            "reason": "Razlog",
+            "reasonPlaceholder": "Na primjer: direktor, ne evidentira radno vrijeme",
+            "submit": "Isključi"
+          },
+          "memberCount": "{count, plural, few {# osobe se provjeravaju} other {# osoba se provjerava} }",
+          "teams": {
+            "help": "Ako nije odabran nijedan tim, provjeravaju se svi. U suprotnom se provjeravaju samo osobe čiji je primarni tim odabran i pozvane osobe čiji poziv navodi odabrani tim. Druga članstva u timovima se ne računaju.",
+            "none": "Vaša organizacija još nema timova, pa svi zajedno kreću s radom.",
+            "save": "Spremi timove",
+            "title": "Timovi koji kreću s radom"
+          },
+          "title": "Grupa za puštanje u rad",
+          "unavailable": "Nije bilo moguće učitati timove i isključenja grupe za puštanje u rad. Ponovno pokrenite provjere."
+        },
+        "groupDescription": "Izračunava se na temelju obveznih provjera za puštanje u rad za sve u grupi za puštanje u rad svaki put kada otvorite ovu stranicu.",
+        "optional": "Neobavezno",
+        "panel": {
+          "invited": "Pozvan/a",
+          "nextPage": "Sljedeća stranica",
+          "pageRange": "{from}–{to} od {total}",
+          "previousPage": "Prethodna stranica",
+          "unavailable": "Ovu provjeru nije bilo moguće dovršiti. Ponovno pokrenite provjere za novi pokušaj."
+        },
+        "payrollSetup": {
+          "fixEmployees": "Pregledaj zaposlenike",
+          "fixPayrollExport": "Otvori postavke izvoza obračuna plaća",
+          "inviteesSkipped": "{count, plural, one {# pozvana osoba preskače se za uvjete zaposlenja i identifikatore osoblja dok se ne pridruži.} few {# pozvane osobe preskaču se za uvjete zaposlenja i identifikatore osoblja dok se ne pridruže.} other {# pozvanih osoba preskače se za uvjete zaposlenja i identifikatore osoblja dok se ne pridruže.}}",
+          "missingEmploymentTerms": "{count, plural, one {Nema potvrđenih uvjeta zaposlenja koji pokrivaju današnji dan: # zaposlenik} other {Nema potvrđenih uvjeta zaposlenja koji pokrivaju današnji dan: # zaposlenika} }",
+          "noWageTypeMappings": "{count, plural, one {Nema aktivnih mapiranja vrsta plaća, pa izvozi obračuna plaća ne mogu klasificirati sate: # član} few {Nema aktivnih mapiranja vrsta plaća, pa izvozi obračuna plaća ne mogu klasificirati sate: # člana} other {Nema aktivnih mapiranja vrsta plaća, pa izvozi obračuna plaća ne mogu klasificirati sate: # članova}}",
+          "optional": "Nema aktivnog odredišta za izvoz obračuna plaća, pa je izvoz obračuna plaća neobavezna integracija i ne blokira puštanje u rad.",
+          "sharedPersonnelIdentifierDetail": "{identifier}, dijeli se s {others}",
+          "sharedPersonnelIdentifiers": "{count, plural, one {Izvozi obračuna plaća spojili bi zaposlenike pod zajedničkim identifikatorom osoblja: # zaposlenik} other {Izvozi obračuna plaća spojili bi zaposlenike pod zajedničkim identifikatorom osoblja: # zaposlenika} }"
+        },
+        "readiness": {
+          "notReady": "{count, plural, one {Nije spremno: # zaposlenik zahtijeva pažnju} few {Nije spremno: # zaposlenika zahtijevaju pažnju} other {Nije spremno: # zaposlenika zahtijeva pažnju}}",
+          "notReadyChecks": "{count, plural, few {Nije spremno: {checks} ne prolaze} other {Nije spremno: {checks} ne prolazi} }",
+          "notReadyEmptyGroup": "Nije spremno: u grupi za puštanje u rad nema nikoga za provjeru.",
+          "ready": "Spremno za puštanje u rad",
+          "unavailable": "Nedostupno: provjeru nije bilo moguće dovršiti, pa se ništa ne smatra uspješnim."
+        },
+        "retry": "Ponovno pokreni provjere",
+        "title": "Spremnost za puštanje u rad",
+        "warnings": "{count, plural, one {# savjetodavno upozorenje u nastavku. Ono ne blokira puštanje u rad.} few {# savjetodavna upozorenja u nastavku. Ona ne blokiraju puštanje u rad.} other {# savjetodavnih upozorenja u nastavku. Ona ne blokiraju puštanje u rad.}}",
+        "workPolicy": {
+          "fix": "Dodijeli pravila rada",
+          "noTeamNoOrganizationPolicy": "{count, plural, one {Nema pravila rada organizacije: # zaposlenik nije ni u jednom timu} few {Nema pravila rada organizacije: # zaposlenika nisu ni u jednom timu} other {Nema pravila rada organizacije: # zaposlenika nije ni u jednom timu}}",
+          "teamWithoutPolicy": "{count, plural, one {Tim {team} nema pravila rada: # zaposlenik} other {Tim {team} nema pravila rada: # zaposlenika} }",
+          "unknownTeamWithoutPolicy": "{count, plural, one {Njihov tim nema pravila rada: # zaposlenik} other {Njihov tim nema pravila rada: # zaposlenika} }"
+        }
+      },
+      "items": {
+        "approvalRules": {
+          "confirmationLabel": "Potvrdite da je naš postupak odobravanja usuglašen",
+          "confirmedLabel": "Potvrđeno: naš postupak odobravanja je usuglašen",
+          "goLiveGroupHelperText": "Z8 provjerava može li se za svakoga u grupi za puštanje u rad donijeti odluka za svaku vrstu zahtjeva. Za ispravke radnog vremena uvijek je potreban odobravatelj jer zahtjevi za brisanje i promjene datuma idu na odobrenje. Potvrda da je vaš postupak odobravanja usuglašen nije obavezna."
+        },
+        "firstWorkflows": {
+          "actionLabel": "Otvori praćenje radnog vremena",
+          "description": "Uvjerite se da je vaša organizacija doista počela raditi sa Z8.",
+          "helperText": "Z8 bilježi prvu prijavu rada, prvi riješeni zahtjev i prvi uspješan izvoz obračuna plaća iz stvarnih aktivnosti. To nikada ne utječe na spremnost za puštanje u rad.",
+          "title": "Prvi tijekovi rada"
+        },
+        "organizationStructure": {
+          "goLiveDescription": "Potvrdite članove, timove i granice odgovornosti prije puštanja u rad.",
+          "goLiveHelperText": "Ručni pregled: Z8 ne može znati je li vaša organizacijska struktura konačna. Dodavanje ili uklanjanje osoba, timova ili voditelja poništava valjanost potvrde."
+        },
+        "payrollReadiness": {
+          "confirmationLabel": "Potvrdite da je naša postavka izvoza obračuna plaća usuglašena",
+          "confirmedLabel": "Potvrđeno: naša postavka izvoza obračuna plaća je usuglašena",
+          "goLiveGroupHelperText": "Z8 provjerava postavke obračuna plaća za sve u grupi za puštanje u rad: odredište izvoza, mapiranja vrsta primanja, potvrđene uvjete zaposlenja i identifikatore osoblja. Bez aktivnog odredišta izvoza obračuna plaća, izvoz obračuna plaća je neobavezna integracija i ne računa se u napredak kontrolnog popisa."
+        },
+        "workPolicies": {
+          "goLiveGroupHelperText": "Z8 provjerava ima li svatko u grupi za puštanje u rad važeća pravila rada danas. Pozvane osobe provjeravaju se prema timu navedenom u njihovoj pozivnici."
+        }
+      },
       "progress": {
         "ariaLabel": "Napredak kontrolnog popisa implementacije",
         "completedCount": "Dovršeno {completed} od {total}",
         "label": "Napredak postavljanja",
         "percentComplete": "{percent}% dovršeno"
       },
+      "rehearsal": {
+        "approvals": {
+          "absenceCategory": "Kategorija odsutnosti {category}",
+          "defaultApprover": "Ne primjenjuju se pravila odobravanja: odlučuje njihov voditelj",
+          "direct": {
+            "noChangePolicy": "Ne primjenjuju se pravila izmjena, pa sami izravno uređuju svoje unose. Zahtjevi za brisanje i promjene datuma i dalje idu odobravatelju u nastavku.",
+            "selfService": "Sami izravno uređuju svoje unose unutar dana samoposluživanja definiranih pravilima izmjena. Zahtjevi za brisanje i promjene datuma i dalje idu odobravatelju u nastavku.",
+            "trustMode": "Njihova pravila izmjena su u načinu povjerenja, pa sami izravno uređuju svoje unose. Zahtjevi za brisanje i promjene datuma i dalje idu odobravatelju u nastavku."
+          },
+          "kind": "{kind, select, absence {Zahtjevi za odsutnost} timeCorrection {Ispravci radnog vremena} workPeriod {Prijave radnog razdoblja} periodSubmission {Prijave razdoblja} expenseReport {Izvješća o troškovima} other {Zahtjevi za smjene}}",
+          "noApprovalNeeded": "Nije potrebno odobrenje",
+          "reportTotal": "Ukupno u izvješću {amount, number}",
+          "routed": "Potrebno je odobrenje",
+          "shiftDeciders": "Bilo koji voditelj ili administrator",
+          "skip": {
+            "noCategoryRequiresApproval": "Nijedna kategorija odsutnosti ne zahtijeva odobrenje.",
+            "noChangePolicy": "Na njih se ne primjenjuju pravila izmjena.",
+            "ownApprover": "Sami su svoj odobravatelj, stoga se njihovi zahtjevi odmah dovršavaju.",
+            "ownDecider": "Oni su jedini voditelj ili administrator koji može odlučivati o zahtjevima za smjene, stoga njihovi ostaju na čekanju dok ih sami ne odobre.",
+            "ownerAdmin": "Vlasnici i administratori izravno bilježe svoj rad.",
+            "ownerSelfApproval": "Kao vlasnik, sami odobravaju svoja izvješća jer to nitko drugi ne može.",
+            "trustMode": "Njihova pravila izmjena su u načinu povjerenja."
+          },
+          "title": "Odobrenja",
+          "unroutable": {
+            "approvalModeUnsupported": "Ne mogu se podnijeti u načinu odobravanja ove organizacije. Obratite se podršci.",
+            "badge": "Nije moguće usmjeriti",
+            "changePolicyAmbiguous": "Na njih se primjenjuje više od jednih pravila izmjena, stoga se njihovi unosi odbijaju.",
+            "invalidPolicies": "Pravila odobravanja ne mogu se primijeniti.",
+            "managerDeparted": "Njihov voditelj je otišao i nema zamjene.",
+            "noDecider": "Nijedan voditelj niti administrator ne može o njima odlučivati.",
+            "noManager": "Ne primjenjuju se pravila odobravanja i nemaju prihvatljivog voditelja.",
+            "policyWithoutApprover": "Pravilo odobravanja {policy} ne pronalazi odobravatelja za njih.",
+            "selfApprovalRoute": "Njihova bi izvješća išla njima samima, što nije dopušteno.",
+            "teamWithoutManager": "Ne primjenjuju se pravila odobravanja, a tim {team} nema prihvatljivog voditelja."
+          },
+          "viaPolicy": "Pravilo odobravanja {policy}"
+        },
+        "choosePerson": "Odaberite osobu",
+        "description": "Pogledajte što bi Z8 učinio za jednu osobu u grupi za puštanje u rad: njezina pravila rada, tko odlučuje o njezinim zahtjevima i preduvjete za obračun plaća. Ništa se ne sprema niti šalje.",
+        "errors": {
+          "memberNotChecked": "Ova osoba više nije u grupi za puštanje u rad, pa se proba ne može provesti. Ponovno učitajte stranicu kako biste vidjeli trenutačnu grupu.",
+          "unavailable": "Proba se nije mogla dovršiti."
+        },
+        "nobody": "U grupi za puštanje u rad još nema nikoga.",
+        "noMatch": "Nitko u grupi za puštanje u rad ne odgovara uvjetima.",
+        "payroll": {
+          "employmentTerms": "Uvjeti zaposlenja",
+          "exportTargetMapping": "Mapiranje odredišta izvoza",
+          "mappingsMissing": "Nema aktivnih mapiranja vrsta plaća",
+          "mappingsPresent": "{count, plural, one {# odredište za izvoz, vrste plaća mapirane} other {# odredišta za izvoz, vrste plaća mapirane} }",
+          "notExported": "Organizacija nema aktivno odredište za izvoz obračuna plaća, pa nema preduvjeta za obračun plaća.",
+          "notYetInvited": "Još ne: još uvijek su samo pozvani",
+          "personnelIdentifier": "Broj zaposlenika",
+          "termsConfirmed": "Potvrđeno za danas",
+          "termsMissing": "Nema potvrđenih uvjeta koji pokrivaju današnji dan",
+          "title": "Obračun plaća",
+          "unavailable": "Nije se moglo provjeriti",
+          "unique": "Jedinstveno"
+        },
+        "person": "Osoba",
+        "retry": "Pokušajte ponovno",
+        "run": "Isprobajte",
+        "runFor": "Isprobajte puštanje u rad za: {name}",
+        "running": "Izračunavanje…",
+        "searchPerson": "Pretražite grupu za puštanje u rad",
+        "sheetDescription": "Što bi Z8 danas učinio za: {name}. Ništa se ne sprema niti šalje.",
+        "stage": {
+          "departedNobody": "{name} više nije u organizaciji i nitko ga/ju ne zamjenjuje.",
+          "labelled": "Faza {sequence}: {label}",
+          "later": "Započinje nakon što prethodne faze donesu odluku.",
+          "nobody": "Nije pronađen nitko tko bi mogao donijeti odluku.",
+          "numbered": "Faza {sequence}",
+          "ownApprover": "Ovdje su sami svoj odobravatelj, pa ova faza odmah završava.",
+          "standsIn": "Zamjenjuje osobu {name}, koja je napustila organizaciju.",
+          "viaFallback": "Nitko ne odgovara pravilu ove faze, pa odlučuje zamjensko pravilo ({fallback, select, default_manager {njihov voditelj} organization_admin {administratori organizacije} other {zamjenska opcija}})."
+        },
+        "title": "Proba puštanja u rad",
+        "workedOut": "Izračunato u {time}",
+        "workPolicy": {
+          "assignedAt": "{level, select, employee {Njima} team {Timu {team}} other {Organizaciji}}",
+          "assignedVia": "Dodijeljeno",
+          "hours": "Sati",
+          "hoursPerCycle": "{hours, number} sati po {cycle, select, daily {danu} weekly {tjednu} biweekly {dva tjedna} monthly {mjesecu} other {godini}}",
+          "name": "Pravilo",
+          "none": "Danas nema važećeg pravila o radu: nijedno nije dodijeljeno njima, njihovom timu ili organizaciji.",
+          "noSchedule": "Nema rasporeda",
+          "noWorkingDays": "Nema radnih dana",
+          "title": "Pravilo o radu",
+          "workingDays": "Radni dani"
+        }
+      },
       "status": {
-        "complete": "Dovršeno",
+        "configured": "Konfigurirano",
         "manuallyComplete": "Ručno dovrši",
-        "needsReview": "Potreban pregled",
-        "notStarted": "Nije započeto"
+        "needsAttention": "Zahtijeva pažnju",
+        "notSetUp": "Nije postavljeno",
+        "unavailable": "Nedostupno",
+        "verified": "Verificirano"
       },
       "title": "Kontrolni popis za implementaciju"
     },
@@ -1551,6 +1891,21 @@
         "signInRequired": "Prijavite se za nastavak."
       }
     },
+    "kioskFob": {
+      "confirmRemove": "Uklonite privjesak",
+      "details": "Privjesak sa zadnjim znamenkama {lastFour}, registriran dana {date} na kiosku {kiosk}.",
+      "detailsKioskGone": "Privjesak sa zadnjim znamenkama {lastFour}, registriran dana {date} na kiosku koji više ne postoji.",
+      "errors": {
+        "employeeNotFound": "Ovaj zaposlenik nije pronađen.",
+        "failed": "Nešto je pošlo po zlu. Pokušajte ponovno.",
+        "fobChanged": "Ovaj privjesak za kiosk u međuvremenu se promijenio. Provjerite njegov status i pokušajte ponovno.",
+        "noFob": "Nema privjeska za kiosk za uklanjanje.",
+        "notAllowed": "Nemate dopuštenje za ovu radnju.",
+        "signInRequired": "Prijavite se za nastavak."
+      },
+      "remove": "Ukloni privjesak",
+      "removed": "Privjesak za kiosk je uklonjen"
+    },
     "kioskPin": {
       "errors": {
         "emailInUse": "Drugi račun već upotrebljava ovu adresu.",
@@ -1614,6 +1969,8 @@
         "locationPlaceholder": "Odaberite lokaciju",
         "name": "Naziv",
         "namePlaceholder": "npr. Ulaz za osoblje",
+        "nfcFobReader": "NFC čitač privjesaka",
+        "nfcFobReaderDescription": "Zaposlenici prislanjaju svoju NFC karticu ili privjesak na čitač povezan s ovim kioskom umjesto traženja svog imena, a zatim unose svoj PIN za kiosk. Novi privjesak registriraju na kiosku pomoću svog PIN-a. Za privjeske je potrebna veza; odabir imena i PIN nastavljaju raditi.",
         "offlineMode": "Izvanmrežni način rada",
         "offlineModeDescription": "Kiosk nastavlja bilježiti radno vrijeme bez veze. Njegove evidencije radnog vremena potvrđuju se, a njihovi PIN-ovi provjeravaju čim se ponovno poveže.",
         "offlineModeUnavailable": "Za izvanmrežni način rada potrebne su koordinirane naredbe za evidenciju radnog vremena, koje ova organizacija još ne upotrebljava.",
@@ -1625,6 +1982,7 @@
       "listTitle": "Kiosci",
       "loadFailed": "Nije moguće učitati kioske.",
       "neverSeen": "Nikada",
+      "nfcFobReaderOn": "NFC čitač privjesaka je uključen",
       "noLocations": "Prvo izradite lokaciju: svaki kiosk pripada jednoj lokaciji.",
       "offlineOn": "Izvanmrežni način rada uključen",
       "offlineOnNotInEffect": "Izvanmrežni način rada uključen, nije na snazi za ovu organizaciju",
@@ -2388,6 +2746,12 @@
     },
     "security": {
       "description": "Upravljajte svojom lozinkom, dvofaktorskom autentifikacijom, pristupnim ključevima i aktivnim sesijama",
+      "kioskFob": {
+        "confirmRemoveText": "Ako ste ga izgubili, uklonite ga: odmah prestaje raditi na kioscima. Vaš PIN za kiosk i dalje radi.",
+        "description": "NFC kartica ili privjesak koji prislanjate na kiosku kako biste odabrali svoje ime. Vaš PIN za kiosk i dalje potvrđuje vaš identitet.",
+        "none": "Nema registriranog privjeska. Da biste ga registrirali, prislonite ga na čitač privjesaka na kiosku i potvrdite svojim PIN-om za kiosk.",
+        "title": "Privjesak za kiosk"
+      },
       "kioskPin": {
         "descriptionChange": "Imate PIN za kiosk. Odaberite novi od 4 do 6 znamenki kako biste ga zamijenili.",
         "descriptionSet": "Odaberite PIN od 4 do 6 znamenki za evidentiranje na kioscima vaše organizacije.",

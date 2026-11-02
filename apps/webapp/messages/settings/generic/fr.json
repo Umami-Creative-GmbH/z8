@@ -239,6 +239,29 @@
       },
       "description": "Devise de facturation et montant facturé par votre organisation aux clients pour le travail effectué",
       "handOff": {
+        "amount": {
+          "estimated": "Estimé : ce transfert n'a stocké aucun montant par période de travail, le produit taux × durée est donc utilisé par défaut.",
+          "noSubtotal": "Aucun écart de montant connu",
+          "note": "Les écarts de montant sont des informations de rapprochement valorisées au taux gelé lors du transfert, et non des avoirs.",
+          "notOnHandOff": "Son projet appartient désormais à un autre client. Ce travail ne figure sur aucun transfert pour ce client et reste facturé dans ce brouillon, vous devez donc le facturer au nouveau client dans l'outil de comptabilité.",
+          "reason": {
+            "customer": "Le projet appartient désormais à un autre client ou à aucun, la totalité du montant transféré est donc contrepassée.",
+            "frozenRate": "La variation d'heures au taux gelé lors du transfert.",
+            "noFrozenRate": "Aucun taux n'a été gelé pour ce travail lors du transfert.",
+            "nonBillable": "Ce travail n'est plus facturable, la totalité de son montant transféré est donc contrepassée.",
+            "otherProject": "Le travail a été déplacé vers un autre projet du même client, qui n'a aucun taux gelé lors du transfert.",
+            "removed": "Le travail a été supprimé, la totalité de son montant transféré est donc contrepassée.",
+            "running": "Une partie du travail est toujours en cours.",
+            "severalRates": "Le transfert a valorisé ce travail à plusieurs taux ; cette ventilation ne peut pas être reproduite sans les taux d'aujourd'hui."
+          },
+          "roundingCaveat": "Il peut y avoir un écart de quelques centimes par rapport à l'arrondi de la ligne du brouillon.",
+          "sinceResolution": "Depuis la dernière résolution : {amount}",
+          "subtotal": "Écarts de montant connus : {amount}",
+          "subtotalEstimated": "Écarts de montant connus : {amount} (estimations incluses)",
+          "title": "Écart de montant",
+          "unknown": "Inconnu",
+          "unknownCount": "{count, plural, one {# écart inconnu non inclus} other {# écarts inconnus non inclus}}"
+        },
         "blocker": {
           "currency": "L'outil de comptabilité ne peut pas accepter de brouillons en {currency}.",
           "noContactLink": "Associez d'abord ce client à un contact dans l'outil de comptabilité sur la page Comptabilité.",
@@ -252,12 +275,48 @@
         },
         "changed": {
           "billability": "Facturabilité",
+          "customer": "Client",
           "project": "Projet",
           "removed": "Supprimé",
           "split": "Diviser",
           "times": "Heures"
         },
+        "comparison": {
+          "billability": "Facturabilité",
+          "billable": "Facturable",
+          "caption": "Comparaison de {item}",
+          "changedFromHandOff": "(modifié depuis le transfert)",
+          "changedSinceResolution": "(modifié depuis la dernière résolution)",
+          "current": "Actuel",
+          "customer": "Client",
+          "day": "Jour",
+          "end": "Fin",
+          "field": "Champ",
+          "handOff": "Transfert",
+          "hours": "Heures",
+          "lastResolved": "Dernière résolution",
+          "legend": "Les valeurs en surbrillance diffèrent du transfert. Les heures sont locales au lieu où le travail a été enregistré.",
+          "legendSinceResolution": "Modifié depuis la dernière résolution.",
+          "mixedBillable": "Partiellement facturable",
+          "noCustomer": "Aucun client",
+          "nonBillable": "Non facturable",
+          "noProject": "Aucun projet",
+          "pieces": "Les valeurs actuelles couvrent {count} éléments issus de la division de ce travail ; les heures correspondent à leur somme.",
+          "project": "Projet",
+          "removed": "Supprimé",
+          "removedNo": "Non",
+          "removedPieces": "{removed} sur {count} éléments",
+          "removedYes": "Oui",
+          "start": "Début",
+          "timeOnDay": "{day} {time}",
+          "timeWithOffset": "{time} ({offset})",
+          "unknownCustomer": "Client inconnu",
+          "unknownProject": "Projet inconnu"
+        },
         "confirmed": "Le brouillon de facture a été créé",
+        "csv": {
+          "download": "Télécharger le fichier CSV de rapprochement"
+        },
         "detail": {
           "checking": "Vérification du brouillon dans l'outil…",
           "gone": "L'outil de comptabilité n'a plus ce brouillon. S'il a été supprimé intentionnellement, libérez la transmission afin que son travail puisse être transmis à nouveau.",
@@ -289,6 +348,14 @@
           "timesheetHelp": "Une ligne par période de travail, dans la limite autorisée par l'outil comptable. Vous pouvez toujours télécharger la feuille de temps.",
           "to": "Au"
         },
+        "history": {
+          "deletedUser": "un utilisateur supprimé",
+          "legacy": "Effacé avant l'enregistrement des résolutions",
+          "legacyMeta": "{at} par {actor}",
+          "reference": "Référence : {reference}",
+          "resolved": "Résolu {at} par {actor}",
+          "title": "Historique des résolutions"
+        },
         "hoursValue": "{hours} h",
         "list": {
           "actions": "Actions",
@@ -304,10 +371,19 @@
           "total": "Total net"
         },
         "marks": {
-          "clear": "Effacer le signalement",
-          "clearAll": "Effacer tous les signalements",
-          "cleared": "{count, plural, one {# signalement effacé} other {# signalements effacés}}",
-          "help": "Ce travail facturé a été corrigé après sa transmission. Corrigez la facture dans l'outil de comptabilité si nécessaire (par exemple avec un avoir), puis effacez le signalement.",
+          "compare": "Comparer",
+          "compareItem": "Comparer {item}",
+          "draftHeading": "{title} · {period}",
+          "history": "Historique ({count})",
+          "historyItem": "Historique ({count}) de {item}",
+          "openWhenReleased": "Ouvert lors de la validation",
+          "releasedHelp": "Ce travail facturé a été corrigé après sa transmission et était toujours ouvert lorsque la transmission a été validée. Il ne peut plus être résolu ici. Les valeurs actuelles indiquent le travail tel qu'il est désormais.",
+          "resolve": "Résoudre",
+          "resolveHelp": "Ce travail facturé a été corrigé après sa transmission. Corrigez la facture dans l'outil de comptabilité si nécessaire (par exemple avec un avoir), puis résolvez la modification avec une explication.",
+          "resolveItem": "Résoudre {item}",
+          "resolveSelected": "Résoudre la sélection ({count})",
+          "select": "Sélectionner {item}",
+          "selectAll": "Tout sélectionner",
           "title": "Modifié après facturation"
         },
         "new": {
@@ -345,6 +421,23 @@
           "done": "{count, plural, one {Libéré. # période de travail redevient non facturée.} other {Libéré. # périodes de travail redeviennent non facturées.}}",
           "reason": "Motif (facultatif)",
           "title": "Libérer ce transfert ?"
+        },
+        "resolve": {
+          "description": "Indiquez comment la modification a été traitée, par exemple avec un avoir dans l'outil de comptabilité. La transmission et ses lignes restent inchangées.",
+          "done": "{count, plural, one {# élément résolu} other {# éléments résolus}}",
+          "explanation": "Explication",
+          "explanationRequired": "Expliquez comment la modification a été traitée.",
+          "explanationTooLong": "Limitez l'explication à {max} caractères.",
+          "itemLabel": "{day} · {employee} · {project}",
+          "itemsInvalid": "Choisissez le travail marqué à résoudre.",
+          "reference": "Référence comptable (facultatif)",
+          "referenceHint": "Par exemple, le numéro de l'avoir.",
+          "referenceTooLong": "Limitez la référence à {max} caractères.",
+          "released": "Rien n'a été résolu : la transmission de ce travail a été validée, ses modifications ne peuvent donc plus être résolues. Rechargez pour voir la mise à jour.",
+          "reload": "Recharger",
+          "stale": "Rien n'a été résolu : ce travail a été modifié depuis son ouverture. Rechargez pour examiner les modifications.",
+          "submit": "{count, plural, one {Résoudre # élément} other {Résoudre # éléments}}",
+          "title": "Résoudre le travail modifié"
         },
         "status": {
           "created": "Brouillon créé",
@@ -1341,25 +1434,272 @@
     },
     "implementationChecklist": {
       "actions": {
+        "confirmAgain": "Confirmer à nouveau",
         "markComplete": "Marquer comme terminé",
-        "markIncomplete": "Marquer comme non terminé"
+        "markIncomplete": "Marquer comme non terminé",
+        "removeConfirmation": "Supprimer la confirmation"
+      },
+      "confirmation": {
+        "beforeChangeTracking": "Confirmé le {date}, avant le suivi des modifications",
+        "current": "Confirmé le {date}",
+        "stale": "Paramètres modifiés depuis la confirmation le {date}",
+        "unchecked": "Impossible de vérifier les modifications des paramètres depuis la confirmation le {date}"
       },
       "description": "Terminez les étapes de configuration avant d'inviter toute votre équipe afin que le suivi du temps, les approbations et les flux de travail de paie soient prêts pour une utilisation quotidienne.",
+      "entryDescription": "Vérifiez la préparation au lancement et suivez la configuration des politiques, de la paie, des intégrations et de l'importation des employés",
       "errors": {
         "updateItem": "Échec de la mise à jour de l'élément de la liste de contrôle."
       },
       "eyebrow": "Implémentation client",
+      "firstWorkflows": {
+        "clockIn": "Premier pointage",
+        "decidedApproval": "Première demande traitée",
+        "former": "Ancien employé",
+        "notYet": "Pas encore",
+        "payrollExport": "Première exportation de paie réussie",
+        "retry": "Vérifier à nouveau",
+        "seen": "{time} par {name}",
+        "status": {
+          "allSeen": "Tout vu",
+          "notStarted": "Non démarré",
+          "underWay": "En cours"
+        },
+        "unavailable": "N'a pas pu être vérifié"
+      },
+      "goLive": {
+        "approver": {
+          "approvalModeUnsupported": "{count, plural, one {{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : impossible de les soumettre dans le mode d'approbation de cette organisation. Contactez l'assistance : # employé} other {{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : impossible de les soumettre dans le mode d'approbation de cette organisation. Contactez l'assistance : # employés}}",
+          "changePolicyAmbiguous": "{count, plural, one {{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : plusieurs politiques de modification s'appliquent, les entrées sont donc refusées : # employé} other {{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : plusieurs politiques de modification s'appliquent, les entrées sont donc refusées : # employés}}",
+          "correctionDirectNoPolicy": "{count, plural, one {Corrections d'heures : # employé modifie directement ses propres entrées, car aucune politique de modification ne s'applique. Les demandes de suppression et de modification de date sont toujours transmises à un approbateur et sont donc vérifiées.} other {Corrections d'heures : # employés modifient directement leurs propres entrées, car aucune politique de modification ne s'applique. Les demandes de suppression et de modification de date sont toujours transmises à un approbateur et sont donc vérifiées.}}",
+          "correctionDirectSelfService": "{count, plural, one {Corrections d'heures : # employé modifie directement ses propres entrées dans la limite des jours en libre-service de sa politique de modification, et ne peut pas modifier les plus anciennes. Les demandes de suppression et de modification de date sont toujours transmises à un approbateur et sont donc vérifiées.} other {Corrections d'heures : # employés modifient directement leurs propres entrées dans la limite des jours en libre-service de leur politique de modification, et ne peut pas modifier les plus anciennes. Les demandes de suppression et de modification de date sont toujours transmises à un approbateur et sont donc vérifiées.}}",
+          "correctionDirectTrustMode": "{count, plural, one {Corrections d'heures : # employé modifie directement ses propres entrées, car sa politique de modification est en mode confiance. Les demandes de suppression et de modification de date sont toujours transmises à un approbateur et sont donc vérifiées.} other {Corrections d'heures : # employés modifient directement leurs propres entrées, car leur politique de modification est en mode confiance. Les demandes de suppression et de modification de date sont toujours transmises à un approbateur et sont donc vérifiées.}}",
+          "fixApprovalPolicies": "Examiner les politiques d'approbation",
+          "fixChangePolicies": "Examiner les politiques de modification",
+          "fixExpenseApprover": "Définir un approbateur de notes de frais",
+          "fixManagers": "Attribuer des responsables",
+          "fixTeamManager": "Définir le responsable de l'équipe",
+          "invalidPolicies": "{count, plural, one {{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : les politiques d'approbation ne peuvent pas être appliquées : # employé} other {{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : les politiques d'approbation ne peuvent pas être appliquées : # employés}}",
+          "managerDeparted": "{count, plural, one {{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : leur responsable est parti et personne ne le remplace : # employé} other {{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : leur responsable est parti et personne ne le remplace : # employés}}",
+          "noDecider": "{count, plural, one {{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : aucun responsable ni administrateur ne peut les traiter : # employé} other {{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : aucun responsable ni administrateur ne peut les traiter : # employés}}",
+          "noManagerNoTeam": "{count, plural, one {{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : aucun responsable éligible : # employé sans équipe} other {{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : aucun responsable éligible : # employés sans équipe}}",
+          "periodSubmissionsOff": "Les soumissions de périodes sont désactivées et ne sont donc pas vérifiées.",
+          "policyWithoutApprover": "{count, plural, one {{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : la politique d'approbation {policy} ne trouve aucun approbateur : # employé} other {{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : la politique d'approbation {policy} ne trouve aucun approbateur : # employés}}",
+          "selfApprovalRoute": "{count, plural, one {{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : seraient transmises aux employés eux-mêmes, ce qui n'est pas autorisé : # employé} other {{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : seraient transmises aux employés eux-mêmes, ce qui n'est pas autorisé : # employés}}",
+          "shiftsOff": "Les créneaux sont désactivés, les demandes de créneaux ne sont donc pas vérifiées.",
+          "skipNoCategoryRequiresApproval": "Les demandes d'absence ne nécessitent aucune approbation, car aucune catégorie d'absence ne l'exige.",
+          "skipNoChangePolicy": "{count, plural, one {{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : # employé ne nécessite aucune approbation, car aucune politique de modification ne s'applique.} other {{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : # employés ne nécessitent aucune approbation, car aucune politique de modification ne s'applique.}}",
+          "skipOwnApprover": "{count, plural, one {{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : # employé est son propre approbateur.} other {{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : # employés sont leur propre approbateur.}}",
+          "skipOwnDecider": "{count, plural, one {{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : # employé est le seul à pouvoir les traiter, ses propres demandes sont donc en attente de sa propre approbation.} other {{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : # employés sont les seuls à pouvoir les traiter, leurs propres demandes sont donc en attente de leur propre approbation.}}",
+          "skipOwnerAdmin": "{count, plural, one {{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : # employé ne nécessite aucune approbation, car les propriétaires et les administrateurs enregistrent directement leur propre travail.} other {{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : # employés ne nécessitent aucune approbation, car les propriétaires et les administrateurs enregistrent directement leur propre travail.}}",
+          "skipOwnerSelfApproval": "{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : le propriétaire approuve ses propres rapports, car personne d'autre ne peut le faire.",
+          "skipTrustMode": "{count, plural, one {{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : # employé ne nécessite aucune approbation, car sa politique de modification est en mode confiance.} other {{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : # employés ne nécessitent aucune approbation, car leur politique de modification est en mode confiance.}}",
+          "teamWithoutManager": "{count, plural, one {{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : l'équipe {team} n'a aucun responsable éligible : # employé} other {{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : l'équipe {team} n'a aucun responsable éligible : # employés}}",
+          "unknownTeamWithoutManager": "{count, plural, one {{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : son équipe n'a aucun responsable éligible : # employé} other {{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de créneaux}} : leur équipe n'a aucun responsable éligible : # employés}}"
+        },
+        "checkedAt": "Vérifié à {time}",
+        "group": {
+          "description": "Les vérifications préalables au lancement sont exécutées pour tous les membres de l'effectif actuel et toutes les personnes invitées qui n'ont pas encore rejoint, moins les éventuelles exclusions. Pour un lancement progressif, choisissez les équipes concernées.",
+          "errors": {
+            "alreadyExcluded": "Cet employé est déjà exclu.",
+            "employeeNotFound": "Cet employé ne fait pas partie de l'effectif actuel.",
+            "exclusionNotFound": "Cette exclusion a déjà pris fin.",
+            "reasonRequired": "Indiquez un motif pour l'exclusion.",
+            "reasonTooLong": "Le motif est trop long.",
+            "teamNotFound": "L'une des équipes sélectionnées n'existe plus.",
+            "updateFailed": "Échec de la mise à jour du groupe de mise en service."
+          },
+          "excluded": {
+            "byOn": "Exclu par {name} le {date}",
+            "help": "Les employés exclus ne sont pas vérifiés, par exemple un directeur qui ne suit pas ses heures. Une exclusion dure jusqu'à ce que vous la leviez ou jusqu'au départ de l'employé.",
+            "lift": "Lever",
+            "liftFor": "Lever l'exclusion pour {name}",
+            "none": "Personne n'est exclu.",
+            "on": "Exclu le {date}",
+            "title": "Exclu"
+          },
+          "exclude": {
+            "employee": "Employé",
+            "employeeRequired": "Sélectionnez un employé.",
+            "reason": "Motif",
+            "reasonPlaceholder": "Par exemple : directeur, ne suit pas ses heures",
+            "submit": "Exclure"
+          },
+          "memberCount": "{count, plural, one {# personne est vérifiée} other {# personnes sont vérifiées}}",
+          "teams": {
+            "help": "Si aucune équipe n'est sélectionnée, tout le monde est vérifié. Sinon, seules les personnes dont l'équipe principale est sélectionnée, ainsi que les personnes invitées dont l'invitation mentionne une équipe sélectionnée, sont vérifiées. Les autres appartenances à une équipe ne comptent pas.",
+            "none": "Votre organisation ne compte pas encore d'équipe, la mise en service s'applique donc à tout le monde en même temps.",
+            "save": "Enregistrer les équipes",
+            "title": "Équipes mises en service"
+          },
+          "title": "Groupe de mise en service",
+          "unavailable": "Impossible de charger les équipes et les exclusions du groupe de mise en service. Réessayez les vérifications."
+        },
+        "groupDescription": "Calculé à partir des vérifications obligatoires de mise en service pour chaque membre du groupe de mise en service à chaque ouverture de cette page.",
+        "optional": "Facultatif",
+        "panel": {
+          "invited": "Invité",
+          "nextPage": "Page suivante",
+          "pageRange": "{from}–{to} sur {total}",
+          "previousPage": "Page précédente",
+          "unavailable": "Cette vérification n'a pas pu être effectuée. Réessayez les vérifications pour réessayer."
+        },
+        "payrollSetup": {
+          "fixEmployees": "Examiner les employés",
+          "fixPayrollExport": "Ouvrir les paramètres d'export de paie",
+          "inviteesSkipped": "{count, plural, one {# personne invitée est ignorée concernant les conditions d'emploi et les identifiants de personnel jusqu'à son arrivée.} other {# personnes invitées sont ignorées concernant les conditions d'emploi et les identifiants de personnel jusqu'à leur arrivée.}}",
+          "missingEmploymentTerms": "{count, plural, one {Aucune condition d'emploi confirmée ne couvre la date d'aujourd'hui : # employé} other {Aucune condition d'emploi confirmée ne couvre la date d'aujourd'hui : # employés}}",
+          "noWageTypeMappings": "{count, plural, one {Aucun mappage de types de salaire actif, les exports de paie ne peuvent donc pas classifier les heures : # membre} other {Aucun mappage de types de salaire actif, les exports de paie ne peuvent donc pas classifier les heures : # membres}}",
+          "optional": "Aucune cible d'export de paie active, l'export de paie est donc une intégration facultative et ne bloque pas la mise en service.",
+          "sharedPersonnelIdentifierDetail": "{identifier}, partagé avec {others}",
+          "sharedPersonnelIdentifiers": "{count, plural, one {Les exports de paie fusionneraient les employés sous un identifiant de personnel partagé : # employé} other {Les exports de paie fusionneraient les employés sous un identifiant de personnel partagé : # employés}}"
+        },
+        "readiness": {
+          "notReady": "{count, plural, one {Pas prêt : # employé requiert votre attention} other {Pas prêt : # employés requièrent votre attention}}",
+          "notReadyChecks": "{count, plural, one {Pas prêt : {checks} ne passe pas} other {Pas prêt : {checks} ne passent pas}}",
+          "notReadyEmptyGroup": "Pas prêt : personne à vérifier dans le groupe de mise en service.",
+          "ready": "Prêt pour la mise en service",
+          "unavailable": "Indisponible : une vérification n'a pas pu être effectuée, aucun élément n'est donc considéré comme validé."
+        },
+        "retry": "Réessayer les vérifications",
+        "title": "Préparation à la mise en service",
+        "warnings": "{count, plural, one {# avertissement indicatif ci-dessous. Il ne bloque pas la mise en service.} other {# avertissements indicatifs ci-dessous. Ils ne bloquent pas la mise en service.}}",
+        "workPolicy": {
+          "fix": "Attribuer des politiques de travail",
+          "noTeamNoOrganizationPolicy": "{count, plural, one {Aucune politique de travail d'organisation : # employé sans équipe} other {Aucune politique de travail d'organisation : # employés sans équipe}}",
+          "teamWithoutPolicy": "{count, plural, one {L'équipe {team} n'a pas de politique de travail : # employé} other {L'équipe {team} n'a pas de politique de travail : # employés}}",
+          "unknownTeamWithoutPolicy": "{count, plural, one {Leur équipe n'a pas de politique de travail : # employé} other {Leur équipe n'a pas de politique de travail : # employés}}"
+        }
+      },
+      "items": {
+        "approvalRules": {
+          "confirmationLabel": "Confirmer l'accord sur notre processus d'approbation",
+          "confirmedLabel": "Confirmé : accord sur notre processus d'approbation",
+          "goLiveGroupHelperText": "Z8 vérifie que chaque type de demande peut faire l'objet d'une décision pour tous les membres du groupe de lancement. Les corrections d'heures nécessitent toujours un approbateur, car les demandes de suppression et les modifications de date sont soumises à approbation. La confirmation de l'accord sur votre processus d'approbation est facultative."
+        },
+        "firstWorkflows": {
+          "actionLabel": "Ouvrir le suivi du temps",
+          "description": "Vérifiez que votre organisation a réellement commencé à utiliser Z8.",
+          "helperText": "Z8 détecte le premier pointage, la première demande traitée et le premier export de paie réussi issus de l'activité réelle. Cela n'affecte en rien l'état de préparation au lancement.",
+          "title": "Premiers flux de travail"
+        },
+        "organizationStructure": {
+          "goLiveDescription": "Confirmez les membres, les équipes et les limites de responsabilité avant la mise en service.",
+          "goLiveHelperText": "Examen manuel : Z8 ne peut pas savoir si la structure de votre organisation est définitive. L'ajout ou le retrait de personnes, d'équipes ou de responsables rend la confirmation obsolète."
+        },
+        "payrollReadiness": {
+          "confirmationLabel": "Confirmer l'accord sur la configuration de notre export de paie",
+          "confirmedLabel": "Confirmé : accord sur la configuration de notre export de paie",
+          "goLiveGroupHelperText": "Z8 vérifie la configuration de paie de chaque membre du groupe de lancement : cible d'exportation, correspondances des types de salaire, conditions d'emploi confirmées et identifiants du personnel. Sans cible active, l'exportation de la paie est une intégration facultative et n'est pas prise en compte dans la liste de contrôle."
+        },
+        "workPolicies": {
+          "goLiveGroupHelperText": "Z8 vérifie que chaque membre du groupe de lancement dispose d'une politique de travail effective aujourd'hui. Pour les personnes invitées, la vérification s'effectue en fonction de l'équipe indiquée dans leur invitation."
+        }
+      },
       "progress": {
         "ariaLabel": "Progression de la liste de contrôle d'implémentation",
         "completedCount": "{completed} sur {total} terminés",
         "label": "Progression de la configuration",
         "percentComplete": "{percent}% terminé"
       },
+      "rehearsal": {
+        "approvals": {
+          "absenceCategory": "Catégorie d'absence {category}",
+          "defaultApprover": "Aucune politique d'approbation ne s'applique : décision prise par leur responsable",
+          "direct": {
+            "noChangePolicy": "Aucune politique de modification ne s'applique, ces personnes modifient donc directement leurs propres entrées. Les demandes de suppression et les changements de date sont toujours transmis à l'approbateur ci-dessous.",
+            "selfService": "Ces personnes modifient directement leurs propres entrées pendant la période de libre-service de leur politique de modification. Les demandes de suppression et les changements de date sont toujours transmis à l'approbateur ci-dessous.",
+            "trustMode": "Leur politique de modification est en mode confiance, ces personnes modifient donc directement leurs propres entrées. Les demandes de suppression et les changements de date sont toujours transmis à l'approbateur ci-dessous."
+          },
+          "kind": "{kind, select, absence {Demandes d'absence} timeCorrection {Corrections d'heures} workPeriod {Soumissions de périodes de travail} periodSubmission {Soumissions de périodes} expenseReport {Notes de frais} other {Demandes de quart}}",
+          "noApprovalNeeded": "Aucune approbation requise",
+          "reportTotal": "Total du rapport {amount, number}",
+          "routed": "Nécessite une approbation",
+          "shiftDeciders": "Tout responsable ou administrateur",
+          "skip": {
+            "noCategoryRequiresApproval": "Aucune catégorie d'absence ne requiert d'approbation.",
+            "noChangePolicy": "Aucune politique de modification ne s'applique à ces personnes.",
+            "ownApprover": "Ces personnes sont leur propre approbateur, leurs demandes sont donc validées immédiatement.",
+            "ownDecider": "Ces personnes étant les seuls responsables ou administrateurs habilités à statuer sur les demandes de quart, les leurs restent en attente jusqu'à ce qu'elles les approuvent.",
+            "ownerAdmin": "Les propriétaires et les administrateurs enregistrent directement leur propre temps de travail.",
+            "ownerSelfApproval": "En tant que propriétaire, cette personne approuve ses propres notes de frais, car personne d'autre ne peut le faire.",
+            "trustMode": "Leur politique de modification est en mode confiance."
+          },
+          "title": "Approbations",
+          "unroutable": {
+            "approvalModeUnsupported": "Impossible de les soumettre dans le mode d'approbation de cette organisation. Contactez l'assistance.",
+            "badge": "Acheminement impossible",
+            "changePolicyAmbiguous": "Plusieurs politiques de modification s'appliquent à ces personnes, leurs saisies sont donc refusées.",
+            "invalidPolicies": "Les politiques d'approbation ne peuvent pas être appliquées.",
+            "managerDeparted": "Leur responsable est parti et personne ne le remplace.",
+            "noDecider": "Aucun responsable ni administrateur ne peut statuer sur ces demandes.",
+            "noManager": "Aucune politique d'approbation ne s'applique et ces personnes n'ont pas de responsable éligible.",
+            "policyWithoutApprover": "La politique d'approbation {policy} ne trouve aucun approbateur pour cette personne.",
+            "selfApprovalRoute": "Leurs rapports leur seraient envoyés directement, ce qui n'est pas autorisé.",
+            "teamWithoutManager": "Aucune politique d'approbation ne s'applique et l'équipe {team} n'a pas de responsable éligible."
+          },
+          "viaPolicy": "Politique d'approbation {policy}"
+        },
+        "choosePerson": "Choisir une personne",
+        "description": "Découvrez ce que Z8 ferait pour une personne du groupe de lancement : sa politique de travail, qui statue sur ses demandes et ses prérequis de paie. Rien n'est enregistré ni envoyé.",
+        "errors": {
+          "memberNotChecked": "Cette personne ne fait plus partie du groupe de lancement, il n'y a donc rien à simuler. Rechargez la page pour voir le groupe actuel.",
+          "unavailable": "La simulation n'a pas pu aboutir."
+        },
+        "nobody": "Le groupe de lancement ne compte encore aucun membre.",
+        "noMatch": "Aucune personne du groupe de lancement ne correspond.",
+        "payroll": {
+          "employmentTerms": "Conditions d'emploi",
+          "exportTargetMapping": "Correspondance de la cible d'exportation",
+          "mappingsMissing": "Aucun mappage de type de salaire actif",
+          "mappingsPresent": "{count, plural, one {# cible d'exportation, types de salaire mappés} other {# cibles d'exportation, types de salaire mappés}}",
+          "notExported": "L'organisation n'a aucune cible d'exportation de paie active, il n'y a donc aucun prérequis pour la paie.",
+          "notYetInvited": "Pas encore : l'invitation est toujours en attente",
+          "personnelIdentifier": "Numéro de personnel",
+          "termsConfirmed": "Confirmé pour aujourd'hui",
+          "termsMissing": "Aucunes conditions confirmées couvrant aujourd'hui",
+          "title": "Paie",
+          "unavailable": "N'a pas pu être vérifié",
+          "unique": "Unique"
+        },
+        "person": "Personne",
+        "retry": "Réessayer",
+        "run": "Répéter",
+        "runFor": "Répéter le lancement pour {name}",
+        "running": "Calcul en cours…",
+        "searchPerson": "Rechercher dans le groupe de lancement",
+        "sheetDescription": "Ce que Z8 ferait pour {name} aujourd'hui. Rien n'est enregistré ni envoyé.",
+        "stage": {
+          "departedNobody": "{name} a quitté l'entreprise et personne ne le remplace.",
+          "labelled": "Étape {sequence} : {label}",
+          "later": "Commence dès que les étapes précédentes ont statué.",
+          "nobody": "Personne n'a été trouvé pour prendre une décision.",
+          "numbered": "Étape {sequence}",
+          "ownApprover": "Cette personne est son propre approbateur ici, cette étape se termine donc immédiatement.",
+          "standsIn": "Remplace {name}, qui a quitté l'entreprise.",
+          "viaFallback": "Personne ne correspond à la règle propre à l'étape, c'est donc son alternative ({fallback, select, default_manager {son responsable} organization_admin {les administrateurs de l'organisation} other {l'alternative}}) qui prend la décision."
+        },
+        "title": "Répétition du lancement",
+        "workedOut": "Calculé à {time}",
+        "workPolicy": {
+          "assignedAt": "{level, select, employee {À cette personne} team {À l'équipe {team}} other {À l'organisation}}",
+          "assignedVia": "Attribué",
+          "hours": "Heures",
+          "hoursPerCycle": "{hours, number} heures par {cycle, select, daily {jour} weekly {semaine} biweekly {deux semaines} monthly {mois} other {an}}",
+          "name": "Politique",
+          "none": "Aucune politique de travail effective aujourd'hui : aucune n'est attribuée à cette personne, à son équipe ou à l'organisation.",
+          "noSchedule": "Aucun horaire",
+          "noWorkingDays": "Aucun jour travaillé",
+          "title": "Politique de travail",
+          "workingDays": "Jours travaillés"
+        }
+      },
       "status": {
-        "complete": "Terminé",
+        "configured": "Configuré",
         "manuallyComplete": "Terminer manuellement",
-        "needsReview": "À examiner",
-        "notStarted": "Non commencé"
+        "needsAttention": "Nécessite une attention",
+        "notSetUp": "Non configuré",
+        "unavailable": "Indisponible",
+        "verified": "Vérifié"
       },
       "title": "Liste de contrôle d'implémentation"
     },
@@ -1551,6 +1891,21 @@
         "signInRequired": "Connectez-vous pour continuer."
       }
     },
+    "kioskFob": {
+      "confirmRemove": "Retirer le badge",
+      "details": "Badge se terminant par {lastFour}, enregistré le {date} sur la borne {kiosk}.",
+      "detailsKioskGone": "Badge se terminant par {lastFour}, enregistré le {date} sur une borne qui n'existe plus.",
+      "errors": {
+        "employeeNotFound": "Cet employé n'a pas été trouvé.",
+        "failed": "Une erreur s'est produite. Veuillez réessayer.",
+        "fobChanged": "Ce badge de borne a été modifié entre-temps. Vérifiez son statut et réessayez.",
+        "noFob": "Il n'y a aucun badge de borne à retirer.",
+        "notAllowed": "Vous n'êtes pas autorisé à effectuer cette action.",
+        "signInRequired": "Connectez-vous pour continuer."
+      },
+      "remove": "Supprimer le porte-clés",
+      "removed": "Porte-clés de borne supprimé"
+    },
     "kioskPin": {
       "errors": {
         "emailInUse": "Un autre compte utilise déjà cette adresse.",
@@ -1614,6 +1969,8 @@
         "locationPlaceholder": "Choisir un emplacement",
         "name": "Nom",
         "namePlaceholder": "Ex. : Entrée du personnel",
+        "nfcFobReader": "Lecteur de porte-clés NFC",
+        "nfcFobReaderDescription": "Les employés passent leur carte ou porte-clés NFC sur le lecteur connecté à cette borne au lieu de chercher leur nom, puis saisissent leur code PIN de borne. Ils enregistrent un nouveau porte-clés sur la borne avec leur code PIN. Les porte-clés nécessitent une connexion ; le nom et le code PIN continuent de fonctionner.",
         "offlineMode": "Mode hors ligne",
         "offlineModeDescription": "La borne continue d'enregistrer les pointages sans connexion. Ses pointages sont confirmés, et leurs codes PIN vérifiés, dès qu'elle se reconnecte.",
         "offlineModeUnavailable": "Le mode hors ligne nécessite des commandes de pointage coordonnées, que cette organisation n'utilise pas encore.",
@@ -1625,6 +1982,7 @@
       "listTitle": "Bornes",
       "loadFailed": "Impossible de charger les bornes.",
       "neverSeen": "Jamais",
+      "nfcFobReaderOn": "Lecteur de porte-clés NFC activé",
       "noLocations": "Créez d'abord un emplacement : chaque borne appartient à un emplacement.",
       "offlineOn": "Mode hors ligne activé",
       "offlineOnNotInEffect": "Mode hors ligne activé, non effectif pour cette organisation",
@@ -2388,6 +2746,12 @@
     },
     "security": {
       "description": "Gérez votre mot de passe, l'authentification à deux facteurs, les clés d'accès et les sessions actives",
+      "kioskFob": {
+        "confirmRemoveText": "Si vous l'avez perdu, supprimez-le : il cessera immédiatement de fonctionner sur les bornes. Votre code PIN de borne reste opérationnel.",
+        "description": "Une carte ou un porte-clés NFC que vous passez sur une borne pour sélectionner votre nom. Votre code PIN de borne permet toujours de confirmer votre identité.",
+        "none": "Aucun porte-clés enregistré. Pour en enregistrer un, passez-le sur le lecteur d'une borne et confirmez avec votre code PIN de borne.",
+        "title": "Porte-clés de borne"
+      },
       "kioskPin": {
         "descriptionChange": "Vous disposez d'un code PIN de borne. Choisissez-en un nouveau de 4 à 6 chiffres pour le remplacer.",
         "descriptionSet": "Choisissez un code PIN de 4 à 6 chiffres pour pointer sur les bornes de votre organisation.",

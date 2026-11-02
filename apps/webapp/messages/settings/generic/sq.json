@@ -239,6 +239,29 @@
       },
       "description": "Monedha e faturueshme dhe ajo që organizata juaj u faturon klientëve për punën",
       "handOff": {
+        "amount": {
+          "estimated": "E vlerësuar: ky dorëzim nuk ruajti asnjë shumë për periudhë pune, kështu që tarifa × kohëzgjatja e zëvendëson.",
+          "noSubtotal": "Nuk ka diferenca të njohura të shumës",
+          "note": "Diferencat e shumës janë informacione rakordimi me tarifën e ngrirë në dorëzim, jo nota krediti.",
+          "notOnHandOff": "Projekti i tij tani i përket një klienti tjetër. Kjo punë nuk është në asnjë dorëzim për atë klient dhe mbetet e faturuar në këtë draft, kështu që faturojeni te klienti i ri në mjetin e kontabilitetit.",
+          "reason": {
+            "customer": "Projekti tani i përket një klienti tjetër ose asnjërit, kështu që e gjithë shuma e dorëzuar kthehet mbrapsht.",
+            "frozenRate": "Ndryshimi në orë me tarifën e ngrirë në dorëzim.",
+            "noFrozenRate": "Nuk u ngri asnjë tarifë për këtë punë në dorëzim.",
+            "nonBillable": "Puna nuk është më e faturueshme, kështu që e gjithë shuma e saj e dorëzuar kthehet mbrapsht.",
+            "otherProject": "Puna kaloi në një projekt tjetër të të njëjtit klient, i cili nuk ka tarifë të ngrirë në dorëzim.",
+            "removed": "Puna u fshi, kështu që e gjithë shuma e saj e dorëzuar kthehet mbrapsht.",
+            "running": "Një pjesë e punës është ende në vijim.",
+            "severalRates": "Dorëzimi e caktoi çmimin e kësaj pune me disa tarifa; kjo ndarje nuk mund të përsëritet pa tarifat e sotme."
+          },
+          "roundingCaveat": "Mund të ketë një diferencë prej disa qindarkash nga rrumbullakimi i rreshtit të draftit.",
+          "sinceResolution": "Që nga zgjidhja e fundit: {amount}",
+          "subtotal": "Diferencat e njohura të shumës: {amount}",
+          "subtotalEstimated": "Diferencat e njohura të shumës: {amount} (përfshin vlerësimet)",
+          "title": "Diferenca e shumës",
+          "unknown": "E panjohur",
+          "unknownCount": "{count, plural, one {# diferencë e panjohur nuk është përfshirë} other {# diferenca të panjohura nuk janë përfshirë}}"
+        },
         "blocker": {
           "currency": "Mjeti i kontabilitetit nuk mund të pranojë drafte në {currency}.",
           "noContactLink": "Lidhni fillimisht këtë klient me një kontakt në mjetin e kontabilitetit te faqja Kontabiliteti.",
@@ -252,12 +275,48 @@
         },
         "changed": {
           "billability": "Faturueshmëria",
+          "customer": "Klienti",
           "project": "Projekti",
           "removed": "I fshirë",
           "split": "Ndaj",
           "times": "Kohët"
         },
+        "comparison": {
+          "billability": "Faturueshmëria",
+          "billable": "E faturueshme",
+          "caption": "Krahasimi i {item}",
+          "changedFromHandOff": "(ndryshuar nga dorëzimi)",
+          "changedSinceResolution": "(ndryshuar që nga zgjidhja e fundit)",
+          "current": "Aktuale",
+          "customer": "Klienti",
+          "day": "Dita",
+          "end": "Përfundimi",
+          "field": "Fusha",
+          "handOff": "Dorëzimi",
+          "hours": "Orët",
+          "lastResolved": "Zgjidhur së fundi",
+          "legend": "Vlerat e theksuara ndryshojnë nga dorëzimi. Kohët janë lokale sipas vendit ku u regjistrua puna.",
+          "legendSinceResolution": "Ndryshuar që nga zgjidhja e fundit.",
+          "mixedBillable": "Pjesërisht e faturueshme",
+          "noCustomer": "Pa klient",
+          "nonBillable": "E pafaturueshme",
+          "noProject": "Pa projekt",
+          "pieces": "Vlerat aktuale mbulojnë {count} pjesë të ndara nga kjo punë; orët janë shuma e tyre.",
+          "project": "Projekt",
+          "removed": "E hequr",
+          "removedNo": "Jo",
+          "removedPieces": "{removed} nga {count} pjesë",
+          "removedYes": "Po",
+          "start": "Fillo",
+          "timeOnDay": "{day} {time}",
+          "timeWithOffset": "{time} ({offset})",
+          "unknownCustomer": "Klient i panjohur",
+          "unknownProject": "Projekt i panjohur"
+        },
         "confirmed": "Drafti i faturës u krijua",
+        "csv": {
+          "download": "Shkarko CSV-në e rakordimit"
+        },
         "detail": {
           "checking": "Po kontrollohet drafti në mjet…",
           "gone": "Mjeti i kontabilitetit nuk e ka më këtë draft. Nëse është fshirë me qëllim, lironi dorëzimin në mënyrë që puna e tij të mund të dorëzohet përsëri.",
@@ -289,6 +348,14 @@
           "timesheetHelp": "Një rresht për çdo periudhë pune, brenda kufirit të rreshtave të mjetit të kontabilitetit. Mund ta shkarkoni gjithmonë fletën e orarit.",
           "to": "Deri"
         },
+        "history": {
+          "deletedUser": "një përdorues i fshirë",
+          "legacy": "E pastruar para se të regjistroheshin zgjidhjet",
+          "legacyMeta": "{at} nga {actor}",
+          "reference": "Referenca: {reference}",
+          "resolved": "Zgjidhur {at} nga {actor}",
+          "title": "Historiku i zgjidhjeve"
+        },
         "hoursValue": "{hours} h",
         "list": {
           "actions": "Veprimet",
@@ -304,10 +371,19 @@
           "total": "Totali neto"
         },
         "marks": {
-          "clear": "Pastro shënimin",
-          "clearAll": "Pastro të gjitha shënimet",
-          "cleared": "{count, plural, one {# shënim u pastrua} other {# shënime u pastruan}}",
-          "help": "Kjo punë e faturuar u korrigjua pas dorëzimit të saj. Korrigjoni faturën në mjetin e kontabilitetit nëse nevojitet (për shembull me një notë krediti), pastaj pastroni shënimin.",
+          "compare": "Krahaso",
+          "compareItem": "Krahaso {item}",
+          "draftHeading": "{title} · {period}",
+          "history": "Historiku ({count})",
+          "historyItem": "Historiku ({count}) i {item}",
+          "openWhenReleased": "E hapur kur u lëshua",
+          "releasedHelp": "Kjo punë e faturuar u korrigjua pas dorëzimit të saj dhe ishte ende e hapur kur u lëshua dorëzimi. Nuk mund të zgjidhet më këtu. Vlerat aktuale tregojnë punën siç është tani.",
+          "resolve": "Zgjidh",
+          "resolveHelp": "Kjo punë e faturuar u korrigjua pas dorëzimit të saj. Korrigjoni faturën në mjetin e kontabilitetit nëse është e nevojshme (për shembull me një notë krediti), pastaj zgjidhni ndryshimin me një shpjegim.",
+          "resolveItem": "Zgjidh {item}",
+          "resolveSelected": "Zgjidh të përzgjedhurat ({count})",
+          "select": "Përzgjidh {item}",
+          "selectAll": "Përzgjidh të gjitha",
           "title": "Ndryshuar pas faturimit"
         },
         "new": {
@@ -345,6 +421,23 @@
           "done": "{count, plural, one {U lëshua. # periudhë pune është sërish e pafaturuar.} other {U lëshuan. # periudha pune janë sërish të pafaturuara.}}",
           "reason": "Arsyeja (opsionale)",
           "title": "Dëshironi ta lëshoni këtë dorëzim?"
+        },
+        "resolve": {
+          "description": "Regjistroni se si u trajtua ndryshimi, për shembull me një notë krediti në mjetin e kontabilitetit. Dorëzimi dhe rreshtat e tij mbeten siç janë.",
+          "done": "{count, plural, one {# element u zgjidh} other {# elemente u zgjidhën}}",
+          "explanation": "Shpjegim",
+          "explanationRequired": "Shpjegoni se si u trajtua ndryshimi.",
+          "explanationTooLong": "Mbajeni shpjegimin deri në {max} karaktere.",
+          "itemLabel": "{day} · {employee} · {project}",
+          "itemsInvalid": "Përzgjidhni punën e shënuar për ta zgjidhur.",
+          "reference": "Referenca e kontabilitetit (opsionale)",
+          "referenceHint": "Për shembull numri i notës së kreditit.",
+          "referenceTooLong": "Mbajeni referencën deri në {max} karaktere.",
+          "released": "Asgjë nuk u zgjidh: dorëzimi i kësaj pune u lëshua, kështu që ndryshimet e saj nuk mund të zgjidhen më. Ringarkoni për ta parë.",
+          "reload": "Ringarko",
+          "stale": "Asgjë nuk u zgjidh: kjo punë ka ndryshuar që kur e hapët. Ringarkoni për të shqyrtuar ndryshimet.",
+          "submit": "{count, plural, one {Zgjidh # element} other {Zgjidh # elemente}}",
+          "title": "Zgjidh punën e ndryshuar"
         },
         "status": {
           "created": "Drafti u krijua",
@@ -1341,25 +1434,272 @@
     },
     "implementationChecklist": {
       "actions": {
+        "confirmAgain": "Konfirmo përsëri",
         "markComplete": "Shënoje si të përfunduar",
-        "markIncomplete": "Shënoje si të papërfunduar"
+        "markIncomplete": "Shënoje si të papërfunduar",
+        "removeConfirmation": "Hiq konfirmimin"
+      },
+      "confirmation": {
+        "beforeChangeTracking": "Konfirmuar më {date}, përpara gjurmimit të ndryshimeve",
+        "current": "Konfirmuar më {date}",
+        "stale": "Cilësimet kanë ndryshuar që nga konfirmimi më {date}",
+        "unchecked": "Nuk mund të kontrollohej për ndryshime të cilësimeve që nga konfirmimi më {date}"
       },
       "description": "Përfundoni hapat e konfigurimit përpara se të ftoni të gjithë ekipin tuaj, në mënyrë që regjistrimi i kohës, miratimet dhe proceset e listëpagesave të jenë gati për përdorim të përditshëm.",
+      "entryDescription": "Kontrolloni gatishmërinë për hedhjen në punë dhe ndiqni konfigurimin nëpër politika, listëpagesa, integrime dhe importimin e punonjësve",
       "errors": {
         "updateItem": "Dështoi përditësimi i artikullit të listës së kontrollit."
       },
       "eyebrow": "Implementimi i klientit",
+      "firstWorkflows": {
+        "clockIn": "Regjistrimi i parë i hyrjes",
+        "decidedApproval": "Kërkesa e parë e vendosur",
+        "former": "Ish-punonjës",
+        "notYet": "Ende jo",
+        "payrollExport": "Eksporti i parë i suksesshëm i listëpagesës",
+        "retry": "Kontrollo përsëri",
+        "seen": "{time} nga {name}",
+        "status": {
+          "allSeen": "Të gjitha të para",
+          "notStarted": "Nuk ka filluar",
+          "underWay": "Në proces"
+        },
+        "unavailable": "Nuk mund të kontrollohej"
+      },
+      "goLive": {
+        "approver": {
+          "approvalModeUnsupported": "{count, plural, other {{kind, select, absence {Kërkesat për mungesë} timeCorrection {Korrigjimet e orarit} workPeriod {Dorëzimet e periudhës së punës} periodSubmission {Dorëzimet e periudhës} expenseReport {Raportet e shpenzimeve} other {Kërkesat për ndërresë}}: nuk mund të dorëzohen në modalitetin e miratimit të kësaj organizate. Kontaktoni mbështetjen: # punonjës} }",
+          "changePolicyAmbiguous": "{count, plural, other {{kind, select, absence {Kërkesat për mungesë} timeCorrection {Korrigjimet e orarit} workPeriod {Dorëzimet e periudhës së punës} periodSubmission {Dorëzimet e periudhës} expenseReport {Raportet e shpenzimeve} other {Kërkesat për ndërresë}}: zbatohet më shumë se një politikë ndryshimi, kështu që regjistrimet refuzohen: # punonjës} }",
+          "correctionDirectNoPolicy": "{count, plural, one {Korrigjimet e orarit: # punonjës modifikon regjistrimet e veta drejtpërdrejt, sepse nuk zbatohet asnjë politikë ndryshimi. Kërkesat për fshirje dhe ndryshimet e datës i dërgohen ende një miratuesi, kështu që ato kontrollohen.} other {Korrigjimet e orarit: # punonjës modifikojnë regjistrimet e tyre drejtpërdrejt, sepse nuk zbatohet asnjë politikë ndryshimi. Kërkesat për fshirje dhe ndryshimet e datës i dërgohen ende një miratuesi, kështu që ato kontrollohen.}}",
+          "correctionDirectSelfService": "{count, plural, one {Korrigjimet e orarit: # punonjës modifikon regjistrimet e veta drejtpërdrejt brenda ditëve të vetëshërbimit sipas politikës së ndryshimit dhe nuk mund të ndryshojë ato më të vjetrat. Kërkesat për fshirje dhe ndryshimet e datës i dërgohen ende një miratuesi, kështu që ato kontrollohen.} other {Korrigjimet e orarit: # punonjës modifikojnë regjistrimet e tyre drejtpërdrejt brenda ditëve të vetëshërbimit sipas politikës së ndryshimit dhe nuk mund të ndryshojnë ato më të vjetrat. Kërkesat për fshirje dhe ndryshimet e datës i dërgohen ende një miratuesi, kështu që ato kontrollohen.}}",
+          "correctionDirectTrustMode": "{count, plural, one {Korrigjimet e orarit: # punonjës modifikon regjistrimet e veta drejtpërdrejt, sepse politika e tij e ndryshimit është në modalitet besimi. Kërkesat për fshirje dhe ndryshimet e datës i dërgohen ende një miratuesi, kështu që ato kontrollohen.} other {Korrigjimet e orarit: # punonjës modifikojnë regjistrimet e tyre drejtpërdrejt, sepse politika e tyre e ndryshimit është në modalitet besimi. Kërkesat për fshirje dhe ndryshimet e datës i dërgohen ende një miratuesi, kështu që ato kontrollohen.}}",
+          "fixApprovalPolicies": "Rishikoni politikat e miratimit",
+          "fixChangePolicies": "Rishikoni politikat e ndryshimit",
+          "fixExpenseApprover": "Caktoni një miratues shpenzimesh",
+          "fixManagers": "Caktoni menaxherë",
+          "fixTeamManager": "Caktoni menaxherin e ekipit",
+          "invalidPolicies": "{count, plural, other {{kind, select, absence {Kërkesat për mungesë} timeCorrection {Korrigjimet e orarit} workPeriod {Dorëzimet e periudhës së punës} periodSubmission {Dorëzimet e periudhës} expenseReport {Raportet e shpenzimeve} other {Kërkesat për ndërresë}}: politikat e miratimit nuk mund të zbatohen: # punonjës} }",
+          "managerDeparted": "{count, plural, other {{kind, select, absence {Kërkesat për mungesë} timeCorrection {Korrigjimet e orarit} workPeriod {Dorëzimet e periudhës së punës} periodSubmission {Dorëzimet e periudhës} expenseReport {Raportet e shpenzimeve} other {Kërkesat për ndërresë}}: menaxheri i tyre është larguar dhe askush nuk e zëvendëson: # punonjës} }",
+          "noDecider": "{count, plural, other {{kind, select, absence {Kërkesat për mungesë} timeCorrection {Korrigjimet e orarit} workPeriod {Dorëzimet e periudhës së punës} periodSubmission {Dorëzimet e periudhës} expenseReport {Raportet e shpenzimeve} other {Kërkesat për ndërresë}}: asnjë menaxher apo administrator nuk mund të vendosë për to: # punonjës} }",
+          "noManagerNoTeam": "{count, plural, other {{kind, select, absence {Kërkesat për mungesë} timeCorrection {Korrigjimet e orarit} workPeriod {Dorëzimet e periudhës së punës} periodSubmission {Dorëzimet e periudhës} expenseReport {Raportet e shpenzimeve} other {Kërkesat për ndërresë}}: nuk ka menaxher të pranueshëm: # punonjës në asnjë ekip} }",
+          "periodSubmissionsOff": "Dorëzimet e periudhës janë të çaktivizuara, kështu që ato nuk kontrollohen.",
+          "policyWithoutApprover": "{count, plural, other {{kind, select, absence {Kërkesat për mungesë} timeCorrection {Korrigjimet e orarit} workPeriod {Dorëzimet e periudhës së punës} periodSubmission {Dorëzimet e periudhës} expenseReport {Raportet e shpenzimeve} other {Kërkesat për ndërresë}}: politika e miratimit {policy} nuk gjen asnjë miratues: # punonjës} }",
+          "selfApprovalRoute": "{count, plural, other {{kind, select, absence {Kërkesat për mungesë} timeCorrection {Korrigjimet e orarit} workPeriod {Dorëzimet e periudhës së punës} periodSubmission {Dorëzimet e periudhës} expenseReport {Raportet e shpenzimeve} other {Kërkesat për ndërresë}}: do t'u shkonin vetë punonjësve, gjë që nuk lejohet: # punonjës} }",
+          "shiftsOff": "Ndërresat janë të çaktivizuara, kështu që kërkesat për ndërresë nuk kontrollohen.",
+          "skipNoCategoryRequiresApproval": "Kërkesat për mungesë nuk kanë nevojë për miratim, sepse asnjë kategori mungese nuk e kërkon atë.",
+          "skipNoChangePolicy": "{count, plural, one {{kind, select, absence {Kërkesat për mungesë} timeCorrection {Korrigjimet e orarit} workPeriod {Dorëzimet e periudhës së punës} periodSubmission {Dorëzimet e periudhës} expenseReport {Raportet e shpenzimeve} other {Kërkesat për ndërresë}}: # punonjës nuk ka nevojë për miratim, sepse nuk zbatohet asnjë politikë ndryshimi.} other {{kind, select, absence {Kërkesat për mungesë} timeCorrection {Korrigjimet e orarit} workPeriod {Dorëzimet e periudhës së punës} periodSubmission {Dorëzimet e periudhës} expenseReport {Raportet e shpenzimeve} other {Kërkesat për ndërresë}}: # punonjës nuk kanë nevojë për miratim, sepse nuk zbatohet asnjë politikë ndryshimi.}}",
+          "skipOwnApprover": "{count, plural, one {{kind, select, absence {Kërkesat për mungesë} timeCorrection {Korrigjimet e orarit} workPeriod {Dorëzimet e periudhës së punës} periodSubmission {Dorëzimet e periudhës} expenseReport {Raportet e shpenzimeve} other {Kërkesat për ndërresë}}: # punonjës është miratuesi i vetvetes.} other {{kind, select, absence {Kërkesat për mungesë} timeCorrection {Korrigjimet e orarit} workPeriod {Dorëzimet e periudhës së punës} periodSubmission {Dorëzimet e periudhës} expenseReport {Raportet e shpenzimeve} other {Kërkesat për ndërresë}}: # punonjës janë miratuesit e vetvetes.}}",
+          "skipOwnDecider": "{count, plural, one {{kind, select, absence {Kërkesat për mungesë} timeCorrection {Korrigjimet e orarit} workPeriod {Dorëzimet e periudhës së punës} periodSubmission {Dorëzimet e periudhës} expenseReport {Raportet e shpenzimeve} other {Kërkesat për ndërresë}}: # punonjës është i vetmi që mund të vendosë për to, kështu që kërkesat e tij presin miratimin e tij.} other {{kind, select, absence {Kërkesat për mungesë} timeCorrection {Korrigjimet e orarit} workPeriod {Dorëzimet e periudhës së punës} periodSubmission {Dorëzimet e periudhës} expenseReport {Raportet e shpenzimeve} other {Kërkesat për ndërresë}}: # punonjës janë të vetmit që mund të vendosin për to, kështu që kërkesat e tyre presin miratimin e tyre.}}",
+          "skipOwnerAdmin": "{count, plural, one {{kind, select, absence {Kërkesat për mungesë} timeCorrection {Korrigjimet e orarit} workPeriod {Dorëzimet e periudhës së punës} periodSubmission {Dorëzimet e periudhës} expenseReport {Raportet e shpenzimeve} other {Kërkesat për ndërresë}}: # punonjës nuk ka nevojë për miratim, sepse pronarët dhe administratorët e regjistrojnë punën e tyre drejtpërdrejt.} other {{kind, select, absence {Kërkesat për mungesë} timeCorrection {Korrigjimet e orarit} workPeriod {Dorëzimet e periudhës së punës} periodSubmission {Dorëzimet e periudhës} expenseReport {Raportet e shpenzimeve} other {Kërkesat për ndërresë}}: # punonjës nuk kanë nevojë për miratim, sepse pronarët dhe administratorët e regjistrojnë punën e tyre drejtpërdrejt.}}",
+          "skipOwnerSelfApproval": "{kind, select, absence {Kërkesat për mungesë} timeCorrection {Korrigjimet e orarit} workPeriod {Dorëzimet e periudhës së punës} periodSubmission {Dorëzimet e periudhës} expenseReport {Raportet e shpenzimeve} other {Kërkesat për ndërresë}}: pronari i miraton vetë raportet e tij, sepse askush tjetër nuk mundet.",
+          "skipTrustMode": "{count, plural, one {{kind, select, absence {Kërkesat për mungesë} timeCorrection {Korrigjimet e orarit} workPeriod {Dorëzimet e periudhës së punës} periodSubmission {Dorëzimet e periudhës} expenseReport {Raportet e shpenzimeve} other {Kërkesat për ndërresë}}: # punonjës nuk ka nevojë për miratim, sepse politika e tij e ndryshimit është në modalitet besimi.} other {{kind, select, absence {Kërkesat për mungesë} timeCorrection {Korrigjimet e orarit} workPeriod {Dorëzimet e periudhës së punës} periodSubmission {Dorëzimet e periudhës} expenseReport {Raportet e shpenzimeve} other {Kërkesat për ndërresë}}: # punonjës nuk kanë nevojë për miratim, sepse politika e tyre e ndryshimit është në modalitet besimi.}}",
+          "teamWithoutManager": "{count, plural, other {{kind, select, absence {Kërkesat për mungesë} timeCorrection {Korrigjimet e orarit} workPeriod {Dorëzimet e periudhës së punës} periodSubmission {Dorëzimet e periudhës} expenseReport {Raportet e shpenzimeve} other {Kërkesat për ndërresë}}: ekipi {team} nuk ka asnjë menaxher të pranueshëm: # punonjës} }",
+          "unknownTeamWithoutManager": "{count, plural, other {{kind, select, absence {Kërkesat për mungesë} timeCorrection {Korrigjimet e orarit} workPeriod {Dorëzimet e periudhës së punës} periodSubmission {Dorëzimet e periudhës} expenseReport {Raportet e shpenzimeve} other {Kërkesat për ndërresë}}: ekipi i tyre nuk ka asnjë menaxher të pranueshëm: # punonjës} }"
+        },
+        "checkedAt": "Kontrolluar më {time}",
+        "group": {
+          "description": "Kontrollet e hedhjes në punë ekzekutohen për këdo në listën aktuale dhe këdo të ftuar që nuk është bashkuar ende, minus përjashtimet. Për një hedhje në punë me faza, zgjidhni ekipet që do të nisin funksionimin.",
+          "errors": {
+            "alreadyExcluded": "Ky punonjës është tashmë i përjashtuar.",
+            "employeeNotFound": "Ky punonjës nuk është në listën aktuale.",
+            "exclusionNotFound": "Ky përjashtim ka përfunduar tashmë.",
+            "reasonRequired": "Jepni një arsye për përjashtimin.",
+            "reasonTooLong": "Arsyeja është shumë e gjatë.",
+            "teamNotFound": "Një nga ekipet e zgjedhura nuk ekziston më.",
+            "updateFailed": "Përditësimi i grupit të hedhjes në punë dështoi."
+          },
+          "excluded": {
+            "byOn": "Përjashtuar nga {name} më {date}",
+            "help": "Punonjësit e përjashtuar nuk kontrollohen, për shembull një drejtor që nuk regjistron orarin. Një përjashtim zgjat derisa ta hiqni, ose derisa punonjësi të largohet.",
+            "lift": "Hiq",
+            "liftFor": "Hiq përjashtimin për {name}",
+            "none": "Askush nuk është i përjashtuar.",
+            "on": "Përjashtuar më {date}",
+            "title": "Përjashtuar"
+          },
+          "exclude": {
+            "employee": "Punonjës",
+            "employeeRequired": "Zgjidhni një punonjës.",
+            "reason": "Arsyeja",
+            "reasonPlaceholder": "Për shembull: drejtor, nuk regjistron orarin",
+            "submit": "Përjashto"
+          },
+          "memberCount": "{count, plural, one {# person kontrollohet} other {# persona kontrollohen}}",
+          "teams": {
+            "help": "Nëse nuk zgjidhet asnjë ekip, kontrollohen të gjithë. Përndryshe, kontrollohen vetëm personat ekipi kryesor i të cilëve është zgjedhur dhe personat e ftuar, ftesa e të cilëve përcakton një ekip të zgjedhur. Anëtarësimet e tjera në ekip nuk llogariten.",
+            "none": "Organizata juaj nuk ka ende ekipe, kështu që të gjithë hidhen në punë së bashku.",
+            "save": "Ruaj ekipet",
+            "title": "Ekipet që hidhen në punë"
+          },
+          "title": "Grupi i hedhjes në punë",
+          "unavailable": "Ekipet dhe përjashtimet e grupit të hedhjes në punë nuk mund të ngarkoheshin. Riprovoni kontrollet."
+        },
+        "groupDescription": "Llogaritur nga kontrollet e detyrueshme të hedhjes në punë për të gjithë në grupin e hedhjes në punë sa herë që hapni këtë faqe.",
+        "optional": "Opsionale",
+        "panel": {
+          "invited": "I ftuar",
+          "nextPage": "Faqja tjetër",
+          "pageRange": "{from}–{to} nga {total}",
+          "previousPage": "Faqja e mëparshme",
+          "unavailable": "Ky kontroll nuk mund të përfundonte. Riprovoni kontrollet për të provuar përsëri."
+        },
+        "payrollSetup": {
+          "fixEmployees": "Rishikoni punonjësit",
+          "fixPayrollExport": "Hap cilësimet e eksportit të listëpagesave",
+          "inviteesSkipped": "{count, plural, one {# person i ftuar kapërcehet për kushtet e punësimit dhe identifikuesit e personelit derisa të bashkohet.} other {# persona të ftuar kapërcehen për kushtet e punësimit dhe identifikuesit e personelit derisa të bashkohen.}}",
+          "missingEmploymentTerms": "{count, plural, other {Nuk ka kushte të konfirmuara punësimi që mbulojnë ditën e sotme: # punonjës} }",
+          "noWageTypeMappings": "{count, plural, one {Nuk ka përputhje aktive të llojit të pagës, kështu që eksportet e listëpagesave nuk mund të klasifikojnë orët: # anëtar} other {Nuk ka përputhje aktive të llojit të pagës, kështu që eksportet e listëpagesave nuk mund të klasifikojnë orët: # anëtarë}}",
+          "optional": "Nuk ka destinacion aktiv për eksportin e listëpagesave, prandaj eksporti i listëpagesave është një integrim opsional dhe nuk pengon hedhjen në punë.",
+          "sharedPersonnelIdentifierDetail": "{identifier}, ndarë me {others}",
+          "sharedPersonnelIdentifiers": "{count, plural, other {Eksportet e listëpagesave do t'i bashkonin punonjësit nën një identifikues të përbashkët personeli: # punonjës} }"
+        },
+        "readiness": {
+          "notReady": "{count, plural, one {Jo gati: # punonjës kërkon vëmendje} other {Jo gati: # punonjës kërkojnë vëmendje}}",
+          "notReadyChecks": "{count, plural, one {Jo gati: {checks} nuk kalon} other {Jo gati: {checks} nuk kalojnë}}",
+          "notReadyEmptyGroup": "Jo gati: nuk ka njeri në grupin e hedhjes në punë për t'u kontrolluar.",
+          "ready": "Gati për t'u hedhur në punë",
+          "unavailable": "E padisponueshme: një kontroll nuk mund të përfundonte, kështu që asgjë nuk konsiderohet e kaluar."
+        },
+        "retry": "Riprovoni kontrollet",
+        "title": "Gatishmëria për hedhje në punë",
+        "warnings": "{count, plural, one {# paralajmërim këshillues më poshtë. Nuk pengon hedhjen në punë.} other {# paralajmërime këshilluese më poshtë. Nuk pengojnë hedhjen në punë.}}",
+        "workPolicy": {
+          "fix": "Caktoni politikat e punës",
+          "noTeamNoOrganizationPolicy": "{count, plural, other {Nuk ka politikë pune të organizatës: # punonjës pa ekip} }",
+          "teamWithoutPolicy": "{count, plural, other {Ekipi {team} nuk ka politikë pune: # punonjës} }",
+          "unknownTeamWithoutPolicy": "{count, plural, other {Ekipi i tyre nuk ka politikë pune: # punonjës} }"
+        }
+      },
+      "items": {
+        "approvalRules": {
+          "confirmationLabel": "Konfirmoni që procesi ynë i miratimit është dakordësuar",
+          "confirmedLabel": "E konfirmuar: procesi ynë i miratimit është dakordësuar",
+          "goLiveGroupHelperText": "Z8 kontrollon që për secilin në grupin e lëshimit në punë të merret vendim për çdo lloj kërkese. Korrigjimet e kohës kërkojnë gjithmonë një miratues, sepse kërkesat për fshirje dhe ndryshimet e datës kalojnë për miratim. Konfirmimi që procesi juaj i miratimit është dakordësuar është opsional."
+        },
+        "firstWorkflows": {
+          "actionLabel": "Hap regjistrimin e orarit",
+          "description": "Shikoni që organizata juaj ka filluar me të vërtetë të punojë me Z8.",
+          "helperText": "Z8 vëren regjistrimin e parë të hyrjes, kërkesën e parë të vendosur dhe eksportimin e parë të suksesshëm të pagave nga aktiviteti real. Kjo nuk ndikon kurrë në gatishmërinë për lëshim në punë.",
+          "title": "Flukset e para të punës"
+        },
+        "organizationStructure": {
+          "goLiveDescription": "Konfirmoni anëtarët, ekipet dhe kufijtë e përgjegjësive përpara lëshimit në punë.",
+          "goLiveHelperText": "Shqyrtimi manual: Z8 nuk mund të dijë nëse struktura e organizatës suaj është përfundimtare. Shtimi ose heqja e personave, ekipeve apo menaxherëve e bën konfirmimin të pavlefshëm."
+        },
+        "payrollReadiness": {
+          "confirmationLabel": "Konfirmoni që konfigurimi ynë i eksportit të pagave është dakordësuar",
+          "confirmedLabel": "E konfirmuar: konfigurimi ynë i eksportit të pagave është dakordësuar",
+          "goLiveGroupHelperText": "Z8 kontrollon konfigurimin e pagave për këdo në grupin e lëshimit në punë: destinacionin e eksportit, përputhjet e llojeve të pagës, kushtet e konfirmuara të punësimit dhe identifikuesit e personelit. Pa një destinacion aktiv të eksportit të pagave, eksporti i pagave është një integrim opsional dhe nuk llogaritet në ecurinë e listës së kontrollit."
+        },
+        "workPolicies": {
+          "goLiveGroupHelperText": "Z8 kontrollon që çdokush në grupin e lëshimit në punë të ketë një politikë pune aktive sot. Personat e ftuar kontrollohen sipas ekipit të përcaktuar në ftesën e tyre."
+        }
+      },
       "progress": {
         "ariaLabel": "Progresi i listës së kontrollit të implementimit",
         "completedCount": "{completed} nga {total} të përfunduara",
         "label": "Ecuria e konfigurimit",
         "percentComplete": "{percent}% e përfunduar"
       },
+      "rehearsal": {
+        "approvals": {
+          "absenceCategory": "Kategoria e mungesës {category}",
+          "defaultApprover": "Nuk zbatohet asnjë politikë miratimi: vendos menaxheri i tyre",
+          "direct": {
+            "noChangePolicy": "Nuk zbatohet asnjë politikë ndryshimi, kështu që ata i modifikojnë regjistrimet e tyre drejtpërdrejt. Kërkesat për fshirje dhe ndryshimet e datave i dërgohen gjithsesi miratuesit më poshtë.",
+            "selfService": "Ata i modifikojnë regjistrimet e tyre drejtpërdrejt brenda ditëve të vetëshërbimit sipas politikës së tyre të ndryshimit. Kërkesat për fshirje dhe ndryshimet e datave i dërgohen gjithsesi miratuesit më poshtë.",
+            "trustMode": "Politika e tyre e ndryshimit është në modalitet besimi, prandaj ata i modifikojnë regjistrimet e tyre drejtpërdrejt. Kërkesat për fshirje dhe ndryshimet e datave i dërgohen gjithsesi miratuesit më poshtë."
+          },
+          "kind": "{kind, select, absence {Kërkesa për mungesë} timeCorrection {Korrigjime të orarit} workPeriod {Dorëzime të periudhës së punës} periodSubmission {Dorëzime të periudhës} expenseReport {Raporte shpenzimesh} other {Kërkesa për turne}}",
+          "noApprovalNeeded": "Nuk nevojitet miratim",
+          "reportTotal": "Totali i raportit {amount, number}",
+          "routed": "Kërkon miratim",
+          "shiftDeciders": "Çdo menaxher ose administrator",
+          "skip": {
+            "noCategoryRequiresApproval": "Asnjë kategori mungese nuk kërkon miratim.",
+            "noChangePolicy": "Për ta nuk zbatohet asnjë politikë ndryshimi.",
+            "ownApprover": "Ata janë miratuesi i vetvetes, kështu që kërkesat e tyre përfundojnë menjëherë.",
+            "ownDecider": "Ata janë i vetmi menaxher ose administrator që mund të vendosë për kërkesat e turneve, ndaj të tyret mbeten në pritje derisa t'i miratojnë vetë.",
+            "ownerAdmin": "Pronarët dhe administratorët e regjistrojnë punën e tyre drejtpërdrejt.",
+            "ownerSelfApproval": "Si pronar, ata i miratojnë vetë raportet e tyre, pasi askush tjetër nuk mundet.",
+            "trustMode": "Politika e tyre e ndryshimit është në modalitet besimi."
+          },
+          "title": "Miratimet",
+          "unroutable": {
+            "approvalModeUnsupported": "Nuk mund të dorëzohen në modalitetin e miratimit të kësaj organizate. Kontaktoni mbështetjen.",
+            "badge": "Nuk mund të përcillet",
+            "changePolicyAmbiguous": "Për ta zbatohet më shumë se një politikë ndryshimi, prandaj regjistrimet e tyre refuzohen.",
+            "invalidPolicies": "Politikat e miratimit nuk mund të zbatohen.",
+            "managerDeparted": "Menaxheri i tyre është larguar dhe askush nuk e zëvendëson.",
+            "noDecider": "Asnjë menaxher ose administrator nuk mund të vendosë për to.",
+            "noManager": "Nuk zbatohet asnjë politikë miratimi dhe ata nuk kanë asnjë menaxher të pranueshëm.",
+            "policyWithoutApprover": "Politika e miratimit {policy} nuk gjen asnjë miratues për ta.",
+            "selfApprovalRoute": "Raportet e tyre do t'i kalonin atyre vetë, gjë që nuk lejohet.",
+            "teamWithoutManager": "Nuk zbatohet asnjë politikë miratimi dhe ekipi {team} nuk ka asnjë menaxher të pranueshëm."
+          },
+          "viaPolicy": "Politika e miratimit {policy}"
+        },
+        "choosePerson": "Zgjidhni një person",
+        "description": "Shikoni se çfarë do të bënte Z8 për një person në grupin e lëshimit në punë: politikën e punës, kush vendos për kërkesat e tyre dhe kushtet paraprake të pagave. Asgjë nuk ruhet apo dërgohet.",
+        "errors": {
+          "memberNotChecked": "Ky person nuk është më në grupin e lëshimit në punë, prandaj nuk ka asgjë për të simuluar. Ringarkoni faqen për të parë grupin aktual.",
+          "unavailable": "Simulimi nuk mund të përfundohej."
+        },
+        "nobody": "Nuk ka ende njeri në grupin e lëshimit në punë.",
+        "noMatch": "Askush në grupin e lëshimit në punë nuk përputhet.",
+        "payroll": {
+          "employmentTerms": "Kushtet e punësimit",
+          "exportTargetMapping": "Përputhja e destinacionit të eksportit",
+          "mappingsMissing": "Nuk ka përputhje aktive të llojeve të pagës",
+          "mappingsPresent": "{count, plural, one {# objektiv eksporti, llojet e pagës të përputhura} other {# objektiva eksporti, llojet e pagës të përputhura}}",
+          "notExported": "Organizata nuk ka asnjë objektiv aktiv të eksportit të listëpagesës, kështu që nuk ka parakushte për listëpagesën.",
+          "notYetInvited": "Ende jo: janë ende të ftuar",
+          "personnelIdentifier": "Numri i personelit",
+          "termsConfirmed": "Konfirmuar për sot",
+          "termsMissing": "Nuk ka kushte të konfirmuara që mbulojnë ditën e sotme",
+          "title": "Listëpagesa",
+          "unavailable": "Nuk mund të kontrollohej",
+          "unique": "Unike"
+        },
+        "person": "Personi",
+        "retry": "Provo përsëri",
+        "run": "Bëj provë",
+        "runFor": "Bëj provë aktivizimi për {name}",
+        "running": "Po llogaritet…",
+        "searchPerson": "Kërko grupin e aktivizimit",
+        "sheetDescription": "Çfarë do të bënte Z8 për {name} sot. Asgjë nuk ruhet ose dërgohet.",
+        "stage": {
+          "departedNobody": "{name} është larguar dhe askush nuk e zëvendëson.",
+          "labelled": "Faza {sequence}: {label}",
+          "later": "Nis pasi fazat para saj të marrin vendim.",
+          "nobody": "Nuk do të gjendej askush për të vendosur.",
+          "numbered": "Faza {sequence}",
+          "ownApprover": "Ata janë vetë miratuesi këtu, kështu që kjo fazë përfundon menjëherë.",
+          "standsIn": "Zëvendëson {name}, i cili është larguar.",
+          "viaFallback": "Askush nuk përputhet me rregullin e vetë fazës, kështu që alternativa rezervë ({fallback, select, default_manager {menaxheri i tyre} organization_admin {administratorët e organizatës} other {alternativa rezervë}}) vendos."
+        },
+        "title": "Provë e aktivizimit",
+        "workedOut": "Llogaritur më {time}",
+        "workPolicy": {
+          "assignedAt": "{level, select, employee {Atyre} team {Ekipit {team}} other {Organizatës}}",
+          "assignedVia": "Caktuar",
+          "hours": "Orët",
+          "hoursPerCycle": "{hours, number} orë në {cycle, select, daily {ditë} weekly {javë} biweekly {dy javë} monthly {muaj} other {vit}}",
+          "name": "Politika",
+          "none": "Nuk ka politikë efektive pune sot: asnjë nuk i është caktuar atyre, ekipit të tyre ose organizatës.",
+          "noSchedule": "Nuk ka orar",
+          "noWorkingDays": "Nuk ka ditë pune",
+          "title": "Politika e punës",
+          "workingDays": "Ditët e punës"
+        }
+      },
       "status": {
-        "complete": "E përfunduar",
+        "configured": "Konfiguruar",
         "manuallyComplete": "Përfundo manualisht",
-        "needsReview": "Kërkon shqyrtim",
-        "notStarted": "Nuk ka filluar"
+        "needsAttention": "Kërkon vëmendje",
+        "notSetUp": "Nuk është konfiguruar",
+        "unavailable": "E padisponueshme",
+        "verified": "E verifikuar"
       },
       "title": "Lista e kontrollit të zbatimit"
     },
@@ -1551,6 +1891,21 @@
         "signInRequired": "Identifikohuni për të vazhduar."
       }
     },
+    "kioskFob": {
+      "confirmRemove": "Hiq çelësin elektronik",
+      "details": "Çelësi elektronik që përfundon me {lastFour}, i regjistruar më {date} te {kiosk}.",
+      "detailsKioskGone": "Çelësi elektronik që përfundon me {lastFour}, i regjistruar më {date} në një kioskë që nuk ekziston më.",
+      "errors": {
+        "employeeNotFound": "Ky punonjës nuk u gjet.",
+        "failed": "Diçka shkoi keq. Ju lutemi provoni përsëri.",
+        "fobChanged": "Ky çelës elektronik i kioskës ndryshoi ndërkohë. Kontrolloni statusin e tij dhe provoni përsëri.",
+        "noFob": "Nuk ka çelës elektronik të kioskës për t'u hequr.",
+        "notAllowed": "Nuk ju lejohet ta bëni këtë.",
+        "signInRequired": "Identifikohuni për të vazhduar."
+      },
+      "remove": "Hiq çipin",
+      "removed": "Çipi i kioskës u hoq"
+    },
     "kioskPin": {
       "errors": {
         "emailInUse": "Një llogari tjetër tashmë përdor këtë adresë.",
@@ -1614,6 +1969,8 @@
         "locationPlaceholder": "Zgjidhni një vendndodhje",
         "name": "Emri",
         "namePlaceholder": "p.sh. Hyrja e stafit",
+        "nfcFobReader": "Lexuesi i çipave NFC",
+        "nfcFobReaderDescription": "Punonjësit afrojnë kartën ose çipin e tyre NFC te një lexues i lidhur me këtë kioskë në vend që të kërkojnë emrin e tyre, pastaj vendosin PIN-in e kioskës. Ata regjistrojnë një çip të ri në kioskë me PIN-in e tyre. Çipat kanë nevojë për lidhje; emri dhe PIN-i vazhdojnë të funksionojnë.",
         "offlineMode": "Modaliteti jashtë linje",
         "offlineModeDescription": "Kioska vazhdon regjistrimin e orarit pa lidhje. Regjistrimet e saj konfirmohen, dhe kodet PIN të tyre kontrollohen, sapo të rilidhet.",
         "offlineModeUnavailable": "Modaliteti jashtë linje ka nevojë për komanda të koordinuara të orës, të cilat kjo organizatë nuk i përdor ende.",
@@ -1625,6 +1982,7 @@
       "listTitle": "Kioskat",
       "loadFailed": "Kioskat nuk mund të ngarkoheshin.",
       "neverSeen": "Kurrë",
+      "nfcFobReaderOn": "Lexuesi i çipave NFC aktiv",
       "noLocations": "Krijoni fillimisht një vendndodhje: çdo kioskë i përket një vendndodhjeje.",
       "offlineOn": "Modaliteti jashtë linje aktiv",
       "offlineOnNotInEffect": "Modaliteti jashtë linje aktiv, jo në fuqi për këtë organizatë",
@@ -2388,6 +2746,12 @@
     },
     "security": {
       "description": "Menaxhoni fjalëkalimin tuaj, vërtetimin me dy faktorë, çelësat e kalimit dhe seancat aktive",
+      "kioskFob": {
+        "confirmRemoveText": "Nëse e keni humbur, hiqeni: ai ndalon menjëherë së funksionuari në kioska. PIN-i juaj i kioskës vazhdon të funksionojë.",
+        "description": "Një kartë ose çip NFC që e afroni te kioska për të zgjedhur emrin tuaj. PIN-i juaj i kioskës vërteton ende që jeni ju.",
+        "none": "Nuk është regjistruar asnjë çip. Për të regjistruar një, afrojeni te lexuesi i çipave të një kioske dhe konfirmojeni me PIN-in tuaj të kioskës.",
+        "title": "Çipi i kioskës"
+      },
       "kioskPin": {
         "descriptionChange": "Ju keni një PIN për kioskën. Zgjidhni një të ri prej 4 deri në 6 shifra për ta zëvendësuar atë.",
         "descriptionSet": "Zgjidhni një PIN prej 4 deri në 6 shifra për të regjistruar orarin në kioskat e organizatës suaj.",

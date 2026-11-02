@@ -239,6 +239,29 @@
       },
       "description": "Verrechenbare Währung und was Ihre Organisation Kunden für Arbeit verrechnet",
       "handOff": {
+        "amount": {
+          "estimated": "Geschätzt: Bei dieser Übergabe wurde kein Betrag pro Arbeitsperiode gespeichert, daher wird Ansatz × Dauer herangezogen.",
+          "noSubtotal": "Keine bekannten Betragsdifferenzen",
+          "note": "Betragsdifferenzen sind Abstimmungsinformationen zum bei der Übergabe fixierten Ansatz, keine Gutschriften.",
+          "notOnHandOff": "Das Projekt gehört jetzt einem anderen Kunden. Diese Arbeit ist auf keiner Übergabe für diesen Kunden enthalten und bleibt in diesem Entwurf fakturiert; stellen Sie sie daher dem neuen Kunden im Buchhaltungsprogramm in Rechnung.",
+          "reason": {
+            "customer": "Das Projekt gehört jetzt einem anderen oder keinem Kunden, daher wird der gesamte übergebene Betrag storniert.",
+            "frozenRate": "Die Änderung der Stunden zum bei der Übergabe fixierten Ansatz.",
+            "noFrozenRate": "Für diese Arbeit wurde bei der Übergabe kein Ansatz fixiert.",
+            "nonBillable": "Die Arbeit ist nicht mehr verrechenbar, daher wird ihr gesamter übergebener Betrag storniert.",
+            "otherProject": "Die Arbeit wurde in ein anderes Projekt desselben Kunden verschoben, für das bei der Übergabe kein Ansatz fixiert wurde.",
+            "removed": "Die Arbeit wurde gelöscht, daher wird ihr gesamter übergebener Betrag storniert.",
+            "running": "Ein Teil der Arbeit läuft noch.",
+            "severalRates": "Bei der Übergabe wurde diese Arbeit mit mehreren Ansätzen bewertet; diese Aufteilung kann ohne die heutigen Ansätze nicht wiederholt werden."
+          },
+          "roundingCaveat": "Es weicht möglicherweise um wenige Rappen von der Rundung der Entwurfszeile ab.",
+          "sinceResolution": "Seit der letzten Bereinigung: {amount}",
+          "subtotal": "Bekannte Betragsdifferenzen: {amount}",
+          "subtotalEstimated": "Bekannte Betragsdifferenzen: {amount} (inkl. Schätzungen)",
+          "title": "Betragsdifferenz",
+          "unknown": "Unbekannt",
+          "unknownCount": "{count, plural, one {# unbekannte Differenz nicht enthalten} other {# unbekannte Differenzen nicht enthalten}}"
+        },
         "blocker": {
           "currency": "Das Buchhaltungstool kann keine Entwürfe in {currency} übernehmen.",
           "noContactLink": "Verknüpfen Sie diesen Kunden zuerst auf der Buchhaltungsseite mit einem Kontakt im Buchhaltungstool.",
@@ -252,12 +275,48 @@
         },
         "changed": {
           "billability": "Verrechenbarkeit",
+          "customer": "Kunde",
           "project": "Projekt",
           "removed": "Gelöscht",
           "split": "Aufteilen",
           "times": "Zeiten"
         },
+        "comparison": {
+          "billability": "Verrechenbarkeit",
+          "billable": "Verrechenbar",
+          "caption": "Vergleich von {item}",
+          "changedFromHandOff": "(geändert gegenüber der Übergabe)",
+          "changedSinceResolution": "(geändert seit der letzten Bereinigung)",
+          "current": "Aktuell",
+          "customer": "Kunde",
+          "day": "Tag",
+          "end": "Ende",
+          "field": "Feld",
+          "handOff": "Übergabe",
+          "hours": "Stunden",
+          "lastResolved": "Zuletzt bereinigt",
+          "legend": "Hervorgehobene Werte weichen von der Übergabe ab. Die Zeiten entsprechen der Lokalzeit des Erfassungsorts.",
+          "legendSinceResolution": "Seit der letzten Bereinigung geändert.",
+          "mixedBillable": "Teilwiis verrechebar",
+          "noCustomer": "Kei Chund",
+          "nonBillable": "Nöd verrechebar",
+          "noProject": "Keis Projekt",
+          "pieces": "Di aktuelle Wärt decket {count} Teil ab, wo vo dere Arbet abgspalte worde sind; d Stunde sind d Summe devo.",
+          "project": "Projekt",
+          "removed": "Entfernt",
+          "removedNo": "Nei",
+          "removedPieces": "{removed} vo {count} Teil",
+          "removedYes": "Ja",
+          "start": "Start",
+          "timeOnDay": "{day} {time}",
+          "timeWithOffset": "{time} ({offset})",
+          "unknownCustomer": "Unbekannte Chund",
+          "unknownProject": "Unbekannts Projekt"
+        },
         "confirmed": "Der Rechnungsentwurf wurde erstellt",
+        "csv": {
+          "download": "Abgliichs-CSV abelade"
+        },
         "detail": {
           "checking": "Entwurf im Tool wird geprüft…",
           "gone": "Das Buchhaltungstool hat diesen Entwurf nicht mehr. Wenn er absichtlich gelöscht wurde, geben Sie die Übergabe frei, damit die Arbeit erneut übergeben werden kann.",
@@ -289,6 +348,14 @@
           "timesheetHelp": "Ei Ziile pro Arbeitsperiode, innerhalb vo de Ziilelimite vom Buechhaltigstool. Du chasch de Stunderapport jedereziit abelade.",
           "to": "Bis"
         },
+        "history": {
+          "deletedUser": "en glöschte Benutzer",
+          "legacy": "Zrugggsetzt, bevor d Löösige erfasst worde sind",
+          "legacyMeta": "{at} vo {actor}",
+          "reference": "Referänz: {reference}",
+          "resolved": "Glöst am {at} vo {actor}",
+          "title": "Löösigsverlauf"
+        },
         "hoursValue": "{hours} h",
         "list": {
           "actions": "Aktione",
@@ -304,10 +371,19 @@
           "total": "Nettototal"
         },
         "marks": {
-          "clear": "Markierig lösche",
-          "clearAll": "Alli Markierige lösche",
-          "cleared": "{count, plural, one {# Markierig glöscht} other {# Markierige glöscht}}",
-          "help": "Die verrechneti Arbet isch nach de Übergab korrigiert worde. Korrigier d Rechnig im Buechhaltigstool, falls nötig (zum Bispil mitere Guetschrift), und lösch dänn d Markierig.",
+          "compare": "Vergliiche",
+          "compareItem": "{item} vergliiche",
+          "draftHeading": "{title} · {period}",
+          "history": "Verlauf ({count})",
+          "historyItem": "Verlauf ({count}) vo {item}",
+          "openWhenReleased": "Offe bi Freigaab",
+          "releasedHelp": "Die verrechneti Arbet isch nach de Übergab korrigiert worde und isch no offe gsi, wo d Übergab freigee worde isch. Sie cha da nüme glöst wärde. Di aktuelle Wärt zeiget d Arbet so, wie si jetzt isch.",
+          "resolve": "Löse",
+          "resolveHelp": "Die verrechneti Arbet isch nach de Übergab korrigiert worde. Korrigier d Rächnig im Buechhaltigs-Tool falls nötig (z.B. mit ere Guetschrift), und lös d Änderig dänn mit ere Erchläärig.",
+          "resolveItem": "{item} löse",
+          "resolveSelected": "Uswählti löse ({count})",
+          "select": "{item} uswähle",
+          "selectAll": "Alli uswähle",
           "title": "Nach de Rechnigsstellig gänderet"
         },
         "new": {
@@ -345,6 +421,23 @@
           "done": "{count, plural, one {Freigäh. # Arbetsperiode isch wider nonig verrechnet.} other {Freigäh. # Arbetsperiode sind wider nonig verrechnet.}}",
           "reason": "Grund (optional)",
           "title": "Die Übergab freigäh?"
+        },
+        "resolve": {
+          "description": "Halt fescht, wie d Änderig behandlet worde isch, zum Biispiil mit ere Guetschrift im Buechhaltigs-Tool. D Übergab und iri Ziile bliibet so, wie si sind.",
+          "done": "{count, plural, one {# Iitrag glöst} other {# Iiträg glöst}}",
+          "explanation": "Erchläärig",
+          "explanationRequired": "Erchläär, wie d Änderig behandlet worde isch.",
+          "explanationTooLong": "Bschränk d Erchläärig uf maximal {max} Zeiche.",
+          "itemLabel": "{day} · {employee} · {project}",
+          "itemsInvalid": "Wähl di markierti Arbet us, wo söll glöst wärde.",
+          "reference": "Buechhaltigsreferänz (optional)",
+          "referenceHint": "Zum Biispiil d Nummere vo de Guetschrift.",
+          "referenceTooLong": "Bschränk d Referänz uf maximal {max} Zeiche.",
+          "released": "Nüt isch glöst worde: D Übergab vo dere Arbet isch freigee worde, drum chönd iri Änderige nüme glöst wärde. Lade neu, zum s gseh.",
+          "reload": "Neu lade",
+          "stale": "Nüt isch glöst worde: Die Arbet hät sich gänderet, siit du si uftah häsch. Lade neu, zum d Änderige z überprüefe.",
+          "submit": "{count, plural, one {# Iitrag löse} other {# Iiträg löse}}",
+          "title": "Gändereti Arbet löse"
         },
         "status": {
           "created": "Entwurf erstellt",
@@ -1341,25 +1434,272 @@
     },
     "implementationChecklist": {
       "actions": {
+        "confirmAgain": "Nomol bestätige",
         "markComplete": "Als erledigt markiere",
-        "markIncomplete": "Als unerledigt markiere"
+        "markIncomplete": "Als unerledigt markiere",
+        "removeConfirmation": "Bestätigung entferne"
+      },
+      "confirmation": {
+        "beforeChangeTracking": "Bestätigt am {date}, vor em Änderigs-Tracking",
+        "current": "Bestätigt am {date}",
+        "stale": "Istellige gänderet sit de Bestätigung am {date}",
+        "unchecked": "Istellige hend sit de Bestätigung am {date} nöd chönne überprüft werde"
       },
       "description": "Schliess d'Iirichtigsschritt ab, bevor du dis Team iiladesch, damit Ziiterfassig, Freigabe und Lohnabrechnigsprozäss für de tägliche Gebruuch bereit sind.",
+      "entryDescription": "Go-Live-Bereitschaft überprüefe und d'Irichtig über Richtlinie, Lohnabrechnig, Integrazione und Mitarbeiter-Import verfolge",
       "errors": {
         "updateItem": "Checklisten-Punkt hät nöd chönne aktualisiert wärde."
       },
       "eyebrow": "Kunde-Implementierig",
+      "firstWorkflows": {
+        "clockIn": "Erschts Istämpfle",
+        "decidedApproval": "Erschti entschiedeni Afrag",
+        "former": "Ehemalige Mitarbeiter",
+        "notYet": "No nöd",
+        "payrollExport": "Erschte erfolgriiche Lohnabrechnigs-Export",
+        "retry": "Nomol überprüefe",
+        "seen": "{time} dur {name}",
+        "status": {
+          "allSeen": "Alli gseh",
+          "notStarted": "Nöd gstartet",
+          "underWay": "Am Laufe"
+        },
+        "unavailable": "Hät nöd chönne überprüft werde"
+      },
+      "goLive": {
+        "approver": {
+          "approvalModeUnsupported": "{count, plural, other {{kind, select, absence {Abweseheitsafrage} timeCorrection {Zitkorrekture} workPeriod {Arbetsperiode-Ireichige} periodSubmission {Periode-Ireichige} expenseReport {Spesebricht} other {Schichtafrage}}: chönd im Gnähmigungsmodus vo dere Organisation nöd iigreicht werde. Support kontaktiere: # Mitarbeiter} }",
+          "changePolicyAmbiguous": "{count, plural, other {{kind, select, absence {Abweseheitsafrage} timeCorrection {Zitkorrekture} workPeriod {Arbetsperiode-Ireichige} periodSubmission {Periode-Ireichige} expenseReport {Spesebricht} other {Schichtafrage}}: es gilt meh als eini Änderigsrichtlinie, drum werded Iiträg abglehnt: # Mitarbeiter} }",
+          "correctionDirectNoPolicy": "{count, plural, one {Zitkorrekture: # Mitarbeiter bearbeitet sini eigene Iiträg direkt, will kei Änderigsrichtlinie gilt. Löschafrage und Datumsänderige gönd immer no an en Gnähmiger und werded drum überprüft.} other {Zitkorrekture: # Mitarbeiter bearbeitit iri eigene Iiträg direkt, will kei Änderigsrichtlinie gilt. Löschafrage und Datumsänderige gönd immer no an en Gnähmiger und werded drum überprüft.}}",
+          "correctionDirectSelfService": "{count, plural, one {Zitkorrekture: # Mitarbeiter bearbeitet sini eigene Iiträg innerhalb vo de Self-Service-Täg vo sinere Änderigsrichtlinie direkt und chan elteri nöd ändere. Löschafrage und Datumsänderige gönd immer no an en Gnähmiger und werded drum überprüft.} other {Zitkorrekture: # Mitarbeiter bearbeitit iri eigene Iiträg innerhalb vo de Self-Service-Täg vo irere Änderigsrichtlinie direkt und chönd elteri nöd ändere. Löschafrage und Datumsänderige gönd immer no an en Gnähmiger und werded drum überprüft.}}",
+          "correctionDirectTrustMode": "{count, plural, one {Zitkorrekture: # Mitarbeiter bearbeitet sini eigene Iiträg direkt, will d'Änderigsrichtlinie im Vertrouensmodus isch. Löschafrage und Datumsänderige gönd immer no an en Gnähmiger und werded drum überprüft.} other {Zitkorrekture: # Mitarbeiter bearbeitit iri eigene Iiträg direkt, will iri Änderigsrichtlinie im Vertrouensmodus isch. Löschafrage und Datumsänderige gönd immer no an en Gnähmiger und werded drum überprüft.}}",
+          "fixApprovalPolicies": "Gnähmigungsrichtlinie überprüefe",
+          "fixChangePolicies": "Änderigsrichtlinie überprüefe",
+          "fixExpenseApprover": "En Spese-Gnähmiger feschtlege",
+          "fixManagers": "Vorgesetzti zueordne",
+          "fixTeamManager": "Team-Leitig feschtlege",
+          "invalidPolicies": "{count, plural, other {{kind, select, absence {Abweseheitsafrage} timeCorrection {Zitkorrekture} workPeriod {Arbetsperiode-Ireichige} periodSubmission {Periode-Ireichige} expenseReport {Spesebricht} other {Schichtafrage}}: d'Gnähmigungsrichtlinie chönd nöd angewendet werde: # Mitarbeiter} }",
+          "managerDeparted": "{count, plural, one {{kind, select, absence {Abweseheitsafrage} timeCorrection {Zitkorrekture} workPeriod {Arbetsperiode-Ireichige} periodSubmission {Periode-Ireichige} expenseReport {Spesebricht} other {Schichtafrage}}: de Vorgesetzt hät d'Firma verlah und niemert springt ii: # Mitarbeiter} other {{kind, select, absence {Abweseheitsafrage} timeCorrection {Zitkorrekture} workPeriod {Arbetsperiode-Ireichige} periodSubmission {Periode-Ireichige} expenseReport {Spesebricht} other {Schichtafrage}}: d'Vorgesetzte händ d'Firma verlah und niemert springt ii: # Mitarbeiter}}",
+          "noDecider": "{count, plural, other {{kind, select, absence {Abweseheitsafrage} timeCorrection {Zitkorrekture} workPeriod {Arbetsperiode-Ireichige} periodSubmission {Periode-Ireichige} expenseReport {Spesebricht} other {Schichtafrage}}: kei Manager oder Admin chan drüber entscheide: # Mitarbeiter} }",
+          "noManagerNoTeam": "{count, plural, one {{kind, select, absence {Abweseheitsafrage} timeCorrection {Zitkorrekture} workPeriod {Arbetsperiode-Ireichige} periodSubmission {Periode-Ireichige} expenseReport {Spesebricht} other {Schichtafrage}}: kei geeignete Manager: # Mitarbeiter in keim Team} other {{kind, select, absence {Abweseheitsafrage} timeCorrection {Zitkorrekture} workPeriod {Arbetsperiode-Ireichige} periodSubmission {Periode-Ireichige} expenseReport {Spesebricht} other {Schichtafrage}}: kei geeigneti Manager: # Mitarbeiter in keim Team}}",
+          "periodSubmissionsOff": "Periode-Ireichige sind abgschaltet, drum werded sie nöd überprüft.",
+          "policyWithoutApprover": "{count, plural, other {{kind, select, absence {Abweseheitsafrage} timeCorrection {Zitkorrekture} workPeriod {Arbetsperiode-Ireichige} periodSubmission {Periode-Ireichige} expenseReport {Spesebricht} other {Schichtafrage}}: Gnähmigungsrichtlinie {policy} findt kei Gnähmiger: # Mitarbeiter} }",
+          "selfApprovalRoute": "{count, plural, one {{kind, select, absence {Abweseheitsafrage} timeCorrection {Zitkorrekture} workPeriod {Arbetsperiode-Ireichige} periodSubmission {Periode-Ireichige} expenseReport {Spesebricht} other {Schichtafrage}}: wür zum Mitarbeiter selber gah, was nöd erlaubt isch: # Mitarbeiter} other {{kind, select, absence {Abweseheitsafrage} timeCorrection {Zitkorrekture} workPeriod {Arbetsperiode-Ireichige} periodSubmission {Periode-Ireichige} expenseReport {Spesebricht} other {Schichtafrage}}: wür zu de Mitarbeiter selber gah, was nöd erlaubt isch: # Mitarbeiter}}",
+          "shiftsOff": "Schichte sind abgschaltet, drum werded Schichtafrage nöd überprüft.",
+          "skipNoCategoryRequiresApproval": "Abweseheitsafrage bruched kei Gnähmigung, will kei Abweseheitskategorie das verlangt.",
+          "skipNoChangePolicy": "{count, plural, one {{kind, select, absence {Abweseheitsafrage} timeCorrection {Zitkorrekture} workPeriod {Arbetsperiode-Ireichige} periodSubmission {Periode-Ireichige} expenseReport {Spesebricht} other {Schichtafrage}}: # Mitarbeiter brucht kei Gnähmigung, will kei Änderigsrichtlinie gilt.} other {{kind, select, absence {Abweseheitsafrage} timeCorrection {Zitkorrekture} workPeriod {Arbetsperiode-Ireichige} periodSubmission {Periode-Ireichige} expenseReport {Spesebricht} other {Schichtafrage}}: # Mitarbeiter bruched kei Gnähmigung, will kei Änderigsrichtlinie gilt.}}",
+          "skipOwnApprover": "{count, plural, one {{kind, select, absence {Abweseheitsafrage} timeCorrection {Zitkorrekture} workPeriod {Arbetsperiode-Ireichige} periodSubmission {Periode-Ireichige} expenseReport {Spesebricht} other {Schichtafrage}}: # Mitarbeiter isch sin eigne Gnähmiger.} other {{kind, select, absence {Abweseheitsafrage} timeCorrection {Zitkorrekture} workPeriod {Arbetsperiode-Ireichige} periodSubmission {Periode-Ireichige} expenseReport {Spesebricht} other {Schichtafrage}}: # Mitarbeiter sind iri eigne Gnähmiger.}}",
+          "skipOwnDecider": "{count, plural, one {{kind, select, absence {Abweseheitsafrage} timeCorrection {Zitkorrekture} workPeriod {Arbetsperiode-Ireichige} periodSubmission {Periode-Ireichige} expenseReport {Spesebricht} other {Schichtafrage}}: # Mitarbeiter isch de Einzig, wo drüber chan entscheide, drum warted di eigne Afrage uf di eigni Gnähmigung.} other {{kind, select, absence {Abweseheitsafrage} timeCorrection {Zitkorrekture} workPeriod {Arbetsperiode-Ireichige} periodSubmission {Periode-Ireichige} expenseReport {Spesebricht} other {Schichtafrage}}: # Mitarbeiter sind di Einzige, wo drüber chönd entscheide, drum warted di eigne Afrage uf di eigni Gnähmigung.}}",
+          "skipOwnerAdmin": "{count, plural, one {{kind, select, absence {Abweseheitsafrage} timeCorrection {Zitkorrekture} workPeriod {Arbetsperiode-Ireichige} periodSubmission {Periode-Ireichige} expenseReport {Spesebricht} other {Schichtafrage}}: # Mitarbeiter brucht kei Gnähmigung, will Inhaber und Admins iri eigeni Arbetszyt direkt erfassed.} other {{kind, select, absence {Abweseheitsafrage} timeCorrection {Zitkorrekture} workPeriod {Arbetsperiode-Ireichige} periodSubmission {Periode-Ireichige} expenseReport {Spesebricht} other {Schichtafrage}}: # Mitarbeiter bruched kei Gnähmigung, will Inhaber und Admins iri eigeni Arbetszyt direkt erfassed.}}",
+          "skipOwnerSelfApproval": "{kind, select, absence {Abweseheitsafrage} timeCorrection {Zitkorrekture} workPeriod {Arbetsperiode-Ireichige} periodSubmission {Periode-Ireichige} expenseReport {Spesebricht} other {Schichtafrage}}: de Inhaber gnähmigt sini eigne Bricht selber, will niemert suscht das chan.",
+          "skipTrustMode": "{count, plural, one {{kind, select, absence {Abweseheitsafrage} timeCorrection {Zitkorrekture} workPeriod {Arbetsperiode-Ireichige} periodSubmission {Periode-Ireichige} expenseReport {Spesebricht} other {Schichtafrage}}: # Mitarbeiter brucht kei Gnähmigung, will d'Änderigsrichtlinie im Vertrouensmodus isch.} other {{kind, select, absence {Abweseheitsafrage} timeCorrection {Zitkorrekture} workPeriod {Arbetsperiode-Ireichige} periodSubmission {Periode-Ireichige} expenseReport {Spesebricht} other {Schichtafrage}}: # Mitarbeiter bruched kei Gnähmigung, will iri Änderigsrichtlinie im Vertrouensmodus isch.}}",
+          "teamWithoutManager": "{count, plural, one {{kind, select, absence {Abweseheitsafrage} timeCorrection {Zitkorrekture} workPeriod {Arbetsperiode-Ireichige} periodSubmission {Periode-Ireichige} expenseReport {Spesebricht} other {Schichtafrage}}: Team {team} hät kei geeignete Manager: # Mitarbeiter} other {{kind, select, absence {Abweseheitsafrage} timeCorrection {Zitkorrekture} workPeriod {Arbetsperiode-Ireichige} periodSubmission {Periode-Ireichige} expenseReport {Spesebricht} other {Schichtafrage}}: Team {team} hät kei geeigneti Manager: # Mitarbeiter}}",
+          "unknownTeamWithoutManager": "{count, plural, one {{kind, select, absence {Abweseheitsafrage} timeCorrection {Zitkorrekture} workPeriod {Arbetsperiode-Ireichige} periodSubmission {Periode-Ireichige} expenseReport {Spesebricht} other {Schichtafrage}}: s'Team hät kei geeignete Manager: # Mitarbeiter} other {{kind, select, absence {Abweseheitsafrage} timeCorrection {Zitkorrekture} workPeriod {Arbetsperiode-Ireichige} periodSubmission {Periode-Ireichige} expenseReport {Spesebricht} other {Schichtafrage}}: s'Team hät kei geeigneti Manager: # Mitarbeiter}}"
+        },
+        "checkedAt": "Überprüft am {time}",
+        "group": {
+          "description": "Go-Live-Prüfige laufed für alli uf em aktuelle Dienstplan und alli, wo iiglade sind, aber no nöd biiträtte sind, abzüglich vo allne Usschlüss. Für en gstapflete Go-Live wähl d'Teams uus, wo live gönd.",
+          "errors": {
+            "alreadyExcluded": "Dä Mitarbeiter isch bereits usgschlosse.",
+            "employeeNotFound": "Dä Mitarbeiter isch nöd uf em aktuelle Dienstplan.",
+            "exclusionNotFound": "Dä Usschluss isch bereits abgloffe.",
+            "reasonRequired": "Gib en Grund für de Uusschluss aa.",
+            "reasonTooLong": "De Grund isch z lang.",
+            "teamNotFound": "Eis vo de uswählte Teams git's nüme.",
+            "updateFailed": "D Go-Live-Gruppe hät nöd chönne aktualisiert werde."
+          },
+          "excluded": {
+            "byOn": "Uusgschlosse vo {name} am {date}",
+            "help": "Uusgschlosseni Mitarbeiter werded nöd überprüeft, zum Bispil en Gschäftsleiter, wo kei Ziit erfasst. En Uusschluss gilt, bis du ihn ufhebsch oder de Mitarbeiter d Firma verlaat.",
+            "lift": "Ufhebe",
+            "liftFor": "Uusschluss für {name} ufhebe",
+            "none": "Niemer isch uusgschlosse.",
+            "on": "Uusgschlosse am {date}",
+            "title": "Uusgschlosse"
+          },
+          "exclude": {
+            "employee": "Mitarbeiter",
+            "employeeRequired": "Wähl en Mitarbeiter uus.",
+            "reason": "Grund",
+            "reasonPlaceholder": "Zum Bispil: Gschäftsleiter, erfasst kei Ziit",
+            "submit": "Uusschlüsse"
+          },
+          "memberCount": "{count, plural, one {# Person wird überprüeft} other {# Persone werded überprüeft}}",
+          "teams": {
+            "help": "Wenn keis Team uswählt isch, werded alli überprüeft. Suscht nur Persone, wo ihres primäre Team uswählt isch, und iigladeni Persone, wo i ihrere Iilaadig es uswählts Team gnennt isch. Anderi Team-Mitglidschafte zehled nöd.",
+            "none": "Dini Organisation hät no keni Teams, drum gönd alli zäme live.",
+            "save": "Teams spiechere",
+            "title": "Teams, wo live gönd"
+          },
+          "title": "Go-Live-Gruppe",
+          "unavailable": "D Teams und Uusschlüss vo de Go-Live-Gruppe händ nöd chönne glade werde. Probier d Prüefige nomal."
+        },
+        "groupDescription": "Wird bi jedem Ufrüefe vo dere Siite anhand vo de obligatorische Go-Live-Prüefige für alli i de Go-Live-Gruppe ermittlet.",
+        "optional": "Optional",
+        "panel": {
+          "invited": "Iiglade",
+          "nextPage": "Nöchsti Siite",
+          "pageRange": "{from}–{to} vo {total}",
+          "previousPage": "Vorherigi Siite",
+          "unavailable": "Die Prüefig hät nöd chönne abgschlosse werde. Wiederhol d Prüefige, zum's nomal z probiere."
+        },
+        "payrollSetup": {
+          "fixEmployees": "Mitarbeiter überprüefe",
+          "fixPayrollExport": "Istellige für de Lohnexport öffne",
+          "inviteesSkipped": "{count, plural, one {# iigladeni Person wird bi Aastelligsbedingige und Personalnummere übersprunge, bis sie bitritt.} other {# iigladeni Persone werded bi Aastelligsbedingige und Personalnummere übersprunge, bis sie bitreted.}}",
+          "missingEmploymentTerms": "{count, plural, other {Kei bestätigti Aastelligsbedingige für hüt: # Mitarbeiter} }",
+          "noWageTypeMappings": "{count, plural, one {Kei aktivi Lohnart-Zueordnige, drum cha de Lohnexport d Stunde nöd klassifiziere: # Mitglid} other {Kei aktivi Lohnart-Zueordnige, drum cha de Lohnexport d Stunde nöd klassifiziere: # Mitglider}}",
+          "optional": "Keis aktivs Ziel für de Lohnexport, drum isch de Lohnexport en optionali Integration und blockiert de Go-Live nöd.",
+          "sharedPersonnelIdentifierDetail": "{identifier}, teilt mit {others}",
+          "sharedPersonnelIdentifiers": "{count, plural, other {Lohnexport würd Mitarbeiter under ere gmeinsame Personalnummer zämefüehre: # Mitarbeiter} }"
+        },
+        "readiness": {
+          "notReady": "{count, plural, one {Nöd bereit: # Mitarbeiter brucht Ufmerksamkeit} other {Nöd bereit: # Mitarbeiter bruched Ufmerksamkeit}}",
+          "notReadyChecks": "{count, plural, one {Nöd bereit: {checks} isch nöd bestande} other {Nöd bereit: {checks} sind nöd bestande}}",
+          "notReadyEmptyGroup": "Nöd bereit: Niemer isch i de Go-Live-Gruppe zum Überprüefe.",
+          "ready": "Bereit für de Go-Live",
+          "unavailable": "Nöd verfügbar: En Prüefig hät nöd chönne abgschlosse werde, drum gilt nüt als bestande."
+        },
+        "retry": "Prüefige wiederhole",
+        "title": "Go-Live-Bereitschaft",
+        "warnings": "{count, plural, one {# Hiwis-Warnig une. Sie blockiert de Go-Live nöd.} other {# Hiwis-Warnige une. Sie blockiered de Go-Live nöd.}}",
+        "workPolicy": {
+          "fix": "Arbetsrichtlinie zueordne",
+          "noTeamNoOrganizationPolicy": "{count, plural, other {Kei Arbetsrichtlinie vo de Organisation: # Mitarbeiter i keim Team} }",
+          "teamWithoutPolicy": "{count, plural, other {Team {team} hät kei Arbetsrichtlinie: # Mitarbeiter} }",
+          "unknownTeamWithoutPolicy": "{count, plural, other {Ihrs Team hät kei Arbetsrichtlinie: # Mitarbeiter} }"
+        }
+      },
+      "items": {
+        "approvalRules": {
+          "confirmationLabel": "Bestätige, dass euse Freigaabeprozess veriibart isch",
+          "confirmedLabel": "Bestätigt: Euse Freigaabeprozess isch veriibart",
+          "goLiveGroupHelperText": "Z8 prüeft, dass für jedi Person i de Go-Live-Gruppe jedi Art vo Aatrag cha entschiede werde. Ziitchorrekture bruched immer öpper für d Freigaab, will Löschaaträg und Datumsänderige e Freigaab bruched. D Bestätigung, dass de Freigaabeprozess veriibart isch, isch optional."
+        },
+        "firstWorkflows": {
+          "actionLabel": "Ziiterfassig öffne",
+          "description": "Lueg, ob eui Organisation würkli aagfange hät, mit Z8 z schaffe.",
+          "helperText": "Z8 bemerkt s erschte Istämple, de erscht entschiedeni Aatrag und de erscht erfolgriichi Lohnexport us echter Aktivität. Das hät nie Iifluss uf d Go-Live-Bereitschaft.",
+          "title": "Erschti Workflows"
+        },
+        "organizationStructure": {
+          "goLiveDescription": "Bestätige d Mitglieder, Teams und Verantwortigsberiiche vor em Go-Live.",
+          "goLiveHelperText": "Manuelli Überprüefig: Z8 cha nöd wüsse, ob eui Organisationsstruktur definitiv isch. Wenn Persone, Teams oder Vorgesetzti hinzuegfüegt oder entfernt werded, wird d Bestätigung ungültig."
+        },
+        "payrollReadiness": {
+          "confirmationLabel": "Bestätige, dass euses Lohnexport-Setup veriibart isch",
+          "confirmedLabel": "Bestätigt: Euses Lohnexport-Setup isch veriibart",
+          "goLiveGroupHelperText": "Z8 prüeft s Lohnexport-Setup für alli i de Go-Live-Gruppe: Exportziel, Lohnart-Zuordnige, bestätigti Aastelligsbedingige und Personalnummere. Ohni es aktivs Lohnexportziel isch de Lohnexport e optionali Integration und zellt nöd zum Checkliste-Fortschritt."
+        },
+        "workPolicies": {
+          "goLiveGroupHelperText": "Z8 prüeft, dass hüt jedi Person i de Go-Live-Gruppe e gültigi Arbeitsrichtlinie hät. Iigladeni Persone werded über s Team prüeft, wo i ihrere Iiladig staht."
+        }
+      },
       "progress": {
         "ariaLabel": "Fortschritt vo de Implementierigs-Checkliste",
         "completedCount": "{completed} vo {total} erledigt",
         "label": "Iirichtigs-Fortschritt",
         "percentComplete": "{percent}% erledigt"
       },
+      "rehearsal": {
+        "approvals": {
+          "absenceCategory": "Abweeseheitskategorie {category}",
+          "defaultApprover": "Kei Freigaaberichtlinie gültig: Ihri vorgesetzti Person entscheidet",
+          "direct": {
+            "noChangePolicy": "Es gilt kei Änderigsrichtlinie, drum chönd si ihri eigene Iiträg direkt bearbeite. Löschaaträg und Datumsänderige gönd trotzdem a die unestehendi Person für d Freigaab.",
+            "selfService": "Si bearbeited ihri eigene Iiträg innerhalb vo de Self-Service-Täg vo ihrer Änderigsrichtlinie direkt. Löschaaträg und Datumsänderige gönd trotzdem a die unestehendi Person für d Freigaab.",
+            "trustMode": "Ihri Änderigsrichtlinie isch im Vertrouensmodus, drum bearbeited si ihri eigene Iiträg direkt. Löschaaträg und Datumsänderige gönd trotzdem a die unestehendi Person für d Freigaab."
+          },
+          "kind": "{kind, select, absence {Abweeseheitsaaträg} timeCorrection {Ziitchorrekture} workPeriod {Arbeitsziit-Iireichige} periodSubmission {Perioden-Iireichige} expenseReport {Spesebricht} other {Schichtaaträg}}",
+          "noApprovalNeeded": "Kei Freigaab nötig",
+          "reportTotal": "Gsamttotal Bricht {amount, number}",
+          "routed": "Brucht e Freigaab",
+          "shiftDeciders": "Jedi vorgesetzti Person oder Admin",
+          "skip": {
+            "noCategoryRequiresApproval": "Kei Abweeseheitskategorie brucht e Freigaab.",
+            "noChangePolicy": "Für si gilt kei Änderigsrichtlinie.",
+            "ownApprover": "Si sind ihri eigni Freigaabeperson, drum werded ihri Aaträg grad abgschlosse.",
+            "ownDecider": "Si sind die einzigi vorgesetzti Person oder Admin, wo über Schichtaaträg cha entscheide, drum bliibed ihri hängig, bis si si freigend.",
+            "ownerAdmin": "Inhaber und Admins erfassed ihri eigeni Arbeit direkt.",
+            "ownerSelfApproval": "Als Inhaber genehmiged si ihri eigene Bricht selber, will niemert suscht das cha.",
+            "trustMode": "Ihri Änderigsrichtlinie isch im Vertrouensmodus."
+          },
+          "title": "Freigaabe",
+          "unroutable": {
+            "approvalModeUnsupported": "Si chönd im Freigaabemodus vo dere Organisation nöd iigreicht werde. Bitte Support kontaktiere.",
+            "badge": "Cha nöd weitergleitet werde",
+            "changePolicyAmbiguous": "Es gilt meh als eini Änderigsrichtlinie für si, drum werded ihri Iiträg abglehnt.",
+            "invalidPolicies": "D Freigaaberichtlinie chönd nöd aagwendet werde.",
+            "managerDeparted": "Ihri vorgesetzti Person hät d Organisation verlaa und niemert vertritt si.",
+            "noDecider": "Kei vorgesetzti Person oder Admin cha drüber entscheide.",
+            "noManager": "Es gilt kei Freigaaberichtlinie und si händ kei berechtigti vorgesetzti Person.",
+            "policyWithoutApprover": "D Freigaaberichtlinie {policy} findt kei Person für d Freigaab.",
+            "selfApprovalRoute": "Ihri Bricht würded a si selber gaa, was nöd erlaubt isch.",
+            "teamWithoutManager": "Es gilt kei Freigaaberichtlinie und s Team {team} hät kei berechtigti vorgesetzti Person."
+          },
+          "viaPolicy": "Freigaaberichtlinie {policy}"
+        },
+        "choosePerson": "Person uswähle",
+        "description": "Lueg, was Z8 für e Person i de Go-Live-Gruppe mache würdi: ihri Arbeitsrichtlinie, wer ihri Aaträg entscheidet und ihri Lohnexport-Voruussetzige. Nüt wird gspycheret oder gschickt.",
+        "errors": {
+          "memberNotChecked": "Die Person isch nüme i de Go-Live-Gruppe, drum git's nüt z simuliere. Lad d Siite neu, zum die aktuelli Gruppe z gseh.",
+          "unavailable": "D Simulation hät nöd chönne abgschlosse werde."
+        },
+        "nobody": "Es isch no niemert i de Go-Live-Gruppe.",
+        "noMatch": "Niemert i de Go-Live-Gruppe passt.",
+        "payroll": {
+          "employmentTerms": "Aastelligsbedingige",
+          "exportTargetMapping": "Exportziel-Zuordnig",
+          "mappingsMissing": "Kei aktivi Lohnarte-Zueordnige",
+          "mappingsPresent": "{count, plural, other {# Exportziel, Lohnarte zuegordnet} }",
+          "notExported": "D Organisation het keis aktivs Lohn-Exportziel, drum git's kei Vorussetzige für d Lohnabrechnig.",
+          "notYetInvited": "Nonig: Si sind immer no iglade",
+          "personnelIdentifier": "Personalnummere",
+          "termsConfirmed": "Für hüt bestätigt",
+          "termsMissing": "Kei bestätigte Bedingige für hüt",
+          "title": "Lohnabrechnig",
+          "unavailable": "Het nid chönne überprüeft werde",
+          "unique": "Eidütig"
+        },
+        "person": "Person",
+        "retry": "Nomol probiere",
+        "run": "Durespiele",
+        "runFor": "Go-Live für {name} durespiele",
+        "running": "Wird berächnet…",
+        "searchPerson": "Go-Live-Gruppe durchsueche",
+        "sheetDescription": "Was Z8 hüt für {name} mache würdi. Nüt wird gspicheret oder gschickt.",
+        "stage": {
+          "departedNobody": "{name} het d Organisation verloo und niemert springt ii.",
+          "labelled": "Stuefe {sequence}: {label}",
+          "later": "Startet, sobald d Stuefe devor entschiede hend.",
+          "nobody": "Niemert het chönne gfunde werde, wo drüber entscheidet.",
+          "numbered": "Stuefe {sequence}",
+          "ownApprover": "Si sind do ihri eignig Genehmigungsperson, drum wird die Stuefe sofort abgschlosse.",
+          "standsIn": "Vertritt {name}, wo d Organisation verloo het.",
+          "viaFallback": "Niemert entspricht de Regle vo de Stuefe, drum entscheidet de Fallback ({fallback, select, default_manager {de Vorgesetzti} organization_admin {d Organisations-Admins} other {Fallback}})."
+        },
+        "title": "Go-Live-Durespielig",
+        "workedOut": "Berächnet um {time}",
+        "workPolicy": {
+          "assignedAt": "{level, select, employee {Zu ihne} team {Zum Team {team}} other {Zur Organisation}}",
+          "assignedVia": "Zuegwise",
+          "hours": "Stunde",
+          "hoursPerCycle": "{hours, number} Stunde pro {cycle, select, daily {Tag} weekly {Wuche} biweekly {zwei Wuche} monthly {Monet} other {Johr}}",
+          "name": "Richtlinie",
+          "none": "Hüt kei gültigi Arbeitsrichtlinie: Es isch ihne, ihrem Team oder de Organisation keini zuegwise.",
+          "noSchedule": "Kei Ziitplan",
+          "noWorkingDays": "Kei Arbeitstäg",
+          "title": "Arbeitsrichtlinie",
+          "workingDays": "Arbeitstäg"
+        }
+      },
       "status": {
-        "complete": "Erledigt",
+        "configured": "Konfiguriert",
         "manuallyComplete": "Manuell als erledigt markiere",
-        "needsReview": "Muss überprüft werden",
-        "notStarted": "Noch nicht gestartet"
+        "needsAttention": "Ufmerksamkeit nötig",
+        "notSetUp": "Nid igrichtet",
+        "unavailable": "Nid verfüegbar",
+        "verified": "Verifiziert"
       },
       "title": "Implementierungs-Checkliste"
     },
@@ -1551,6 +1891,21 @@
         "signInRequired": "Mäld di a, zum witermache."
       }
     },
+    "kioskFob": {
+      "confirmRemove": "Badge entferne",
+      "details": "Badge mit Endig {lastFour}, registriert am {date} bim {kiosk}.",
+      "detailsKioskGone": "Badge mit Endig {lastFour}, registriert am {date} bimene Kiosk, wo nüme existiert.",
+      "errors": {
+        "employeeNotFound": "Dä Mitarbeiter isch nid gfunde worde.",
+        "failed": "Öppis isch schiefglaufe. Bitte probier's nomol.",
+        "fobChanged": "Dä Kiosk-Badge het sich zwüschezitlich gänderet. Überprüf de Status und probier's nomol.",
+        "noFob": "Es git kei Kiosk-Badge zum Entferne.",
+        "notAllowed": "Du hesch kei Berechtigung dezue.",
+        "signInRequired": "Meld di aa, zum wiitermache."
+      },
+      "remove": "Fob entferne",
+      "removed": "Kiosk-Fob entfernt"
+    },
     "kioskPin": {
       "errors": {
         "emailInUse": "Es anders Konto bruucht die Adrässe scho.",
@@ -1614,6 +1969,8 @@
         "locationPlaceholder": "En Standort uswähle",
         "name": "Name",
         "namePlaceholder": "z. B. Personaliigang",
+        "nfcFobReader": "NFC-Fob-Leser",
+        "nfcFobReaderDescription": "Mitarbeitendi hebed ihri NFC-Charte oder ihre Fob an Leser vo däm Kiosk, statt ihre Name z sueche, und gänd dänn ihre Kiosk-PIN ii. Sie registriered en neue Fob am Kiosk mit ihrem PIN. Fobs bruched e Verbindig; Name und PIN funktioniered wiiterhin.",
         "offlineMode": "Offline-Modus",
         "offlineModeDescription": "De Kiosk stämpflet ohni Verbindig wiiter. Sini Stämpelige wärded bestätigt und d PINs überprüft, sobald er wider verbunde isch.",
         "offlineModeUnavailable": "De Offline-Modus brucht koordinierti Stämpel-Befehl, wo die Organisation no nöd brucht.",
@@ -1625,6 +1982,7 @@
       "listTitle": "Kiosks",
       "loadFailed": "Kiosks händ nöd chönne glade werde.",
       "neverSeen": "Nie",
+      "nfcFobReaderOn": "NFC-Fob-Leser ii",
       "noLocations": "Erstell zerst en Standort: Jede Kiosk ghört zu eim Standort.",
       "offlineOn": "Offline-Modus ii",
       "offlineOnNotInEffect": "Offline-Modus ii, gilt nöd für die Organisation",
@@ -2388,6 +2746,12 @@
     },
     "security": {
       "description": "Passwort, Zwei-Faktor-Authentifizierig, Passkeys und aktivi Sitzige verwalte",
+      "kioskFob": {
+        "confirmRemoveText": "Wänn en verlore häsch, entfern en: Er funktioniert a Kiosks sofort nüme. Din Kiosk-PIN funktioniert wiiterhin.",
+        "description": "En NFC-Charte oder Fob, wo d am Kiosk anhebsch, zum din Name uswähle. Din Kiosk-PIN bestätigt immer no, dass du es bisch.",
+        "none": "Kän Fob registriert. Zum eine registriere, hebsch en an Fob-Leser vom Kiosk und bestätigsch mit dim Kiosk-PIN.",
+        "title": "Kiosk-Fob"
+      },
       "kioskPin": {
         "descriptionChange": "Du häsch en Kiosk-PIN. Wähl en neue mit 4 bis 6 Ziffere, zum en z ersetze.",
         "descriptionSet": "Wähl en PIN mit 4 bis 6 Ziffere, zum bi de Kiosks vo dinere Organisation z stemple.",

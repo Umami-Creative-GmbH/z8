@@ -190,6 +190,15 @@
         "revokedOn": "No hay ninguna tarjeta de quiosco activa. La última se revocó el {date}.",
         "saveNow": "Guarde el PDF ahora: Z8 no puede volver a mostrar esta tarjeta. Puede volver a imprimir una copia guardada. Si pierde el archivo o la tarjeta, sustitúyala."
       },
+      "kioskFob": {
+        "confirmRemoveText": "El llavero deja de funcionar en los quioscos de inmediato y se puede volver a registrar. El PIN del quiosco y la credencial de quiosco del empleado siguen funcionando.",
+        "description": "Una tarjeta o llavero NFC que el empleado acerca a un quiosco con conexión para seleccionar su nombre. Su PIN del quiosco sigue confirmando su identidad.",
+        "endedByDeparture": "El último finalizó con la baja del empleado el {date}.",
+        "endedOn": "El último finalizó el {date}.",
+        "heading": "Llavero del quiosco",
+        "none": "No hay llavero del quiosco. Los empleados registran el suyo en un quiosco con lector de llaveros NFC utilizando su PIN del quiosco.",
+        "removedOn": "El último se eliminó el {date}."
+      },
       "kioskPin": {
         "addEmailDescription": "Recibirá una invitación para elegir una contraseña y luego podrá iniciar sesión. Su PIN del quiosco y su historial se mantendrán tal como están.",
         "addEmailHeading": "Añadir un correo electrónico",
@@ -244,6 +253,7 @@
             "personnelFileOfficer": "Responsable de expedientes de personal"
           },
           "kioskBadges": "{count, plural, one {Se revoca # credencial de quiosco} other {Se revocan # credenciales de quiosco}}",
+          "kioskFobs": "{count, plural, one {# llavero de quiosco deja de funcionar} other {# llaveros de quiosco dejan de funcionar}}",
           "loadError": "No se pudo cargar la vista previa.",
           "loading": "Calculando los cambios…",
           "managerLinksTitle": "Vínculos de responsable que finalizan",

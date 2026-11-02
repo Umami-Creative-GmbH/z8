@@ -1369,6 +1369,11 @@
         "message": "Din {action, select, clock_in {instämpling} clock_out {utstämpling} start_break {raststart} resume_break {återgång från rast} other {stämpling}} kl. {time} på kiosken {kioskName} registrerades inte: {reason, select, wrong_pin {PIN-koden var felaktig} pin_locked {kioskens PIN-kod låstes efter för många felaktiga försök} no_pin {det fanns ingen kiosk-PIN att jämföra mot} pin_unchecked {PIN-koden kunde inte kontrolleras} kiosk_retired {kiosken återkallades eller kopplades på nytt innan den återanslöt} contact_unverifiable {Z8 kunde inte bekräfta kioskens senaste anslutning} outside_window {dess tid låg utanför intervallet som Z8 godkänner} clock_untrusted {det gick inte att lita på kioskens klocka för detta} not_assigned {medarbetaren är inte tilldelad kioskens plats} not_adopted {organisationen accepterar inte offline-stämplingar från kiosk} month_closed {månaden är stängd} holiday {dagen är en helgdag utan tidsregistrering} conflict {den står i konflikt med annan registrerad tid} other {Z8 kunde inte acceptera den}}. Registrera din tid igen eller be din chef att korrigera den.",
         "title": "Kioskstämpling registrerades inte"
       },
+      "kioskFobRegistered": {
+        "forwardedMessage": "{replaced, select, true {En kiosktagg som slutar på {lastFour} registrerades för {employeeName} på kiosken {kioskName}. Den ersatte dennes tidigare tagg, som inte längre fungerar.} other {En kiosktagg som slutar på {lastFour} registrerades för {employeeName} på kiosken {kioskName}.}} Om {employeeName} inte registrerade den, ta bort den på dennes medarbetarsida och återställ kiosk-PIN-koden.",
+        "message": "{replaced, select, true {En kiosktagg som slutar på {lastFour} registrerades för dig på kiosken {kioskName}. Den ersatte din tidigare tagg, som inte längre fungerar.} other {En kiosktagg som slutar på {lastFour} registrerades för dig på kiosken {kioskName}.}} Om du inte registrerade den, ta bort den i dina säkerhetsinställningar och ändra din kiosk-PIN-kod.",
+        "title": "Kiosktagg registrerad"
+      },
       "manualEntryApproved": {
         "message": "Din manuella tidsregistrering godkändes av {approverName}.",
         "title": "Manuell tidsregistrering godkänd"
@@ -1831,6 +1836,7 @@
         "forgotten_clock_out_reminder": "Glömd utstämpling",
         "former_employee_reports_without_manager": "Anställda utan en nuvarande chef",
         "kiosk_command_refused": "Kioskstämpling registrerades inte",
+        "kiosk_fob_registered": "Kiosktagg registrerad",
         "missed_clock_in_reminder": "Missad instämpling",
         "period_submission_decided": "Inskickad tid godkänd eller avvisad",
         "period_submission_reminder": "Skicka in din tid",
@@ -2538,6 +2544,13 @@
             "workModel": "Din arbetsmodell.",
             "workPolicy": "Arbetspolicyn som dessa villkor använder."
           },
+          "goLiveExclusions": {
+            "createdAt": "När du uteslöts, som en UTC-tidpunkt.",
+            "endedAt": "När det upphörde på grund av att du lämnade organisationen; tomt om så inte var fallet.",
+            "liftedAt": "När en administratör inkluderade dig i kontrollerna igen; tomt om så inte skedde.",
+            "reason": "Anledningen som en administratör angav för att utesluta dig.",
+            "summary": "Tillfällen då organisationen uteslöt dig från sina driftsättningskontroller under konfigureringen av Z8, och varför. De påverkar ingenting annat."
+          },
           "groups": {
             "addedAt": "När du lades till i gruppen.",
             "addedBy": "Vem som lade till dig i gruppen.",
@@ -2637,6 +2650,14 @@
             "lastUsedAt": "När en kalenderapp senast läste flödet (UTC).",
             "revokedAt": "När länken stängdes av (UTC).",
             "summary": "Dina kalenderflödeslänkar, som gör att en kalenderapp kan prenumerera på din frånvaro. Den hemliga länken i sig inkluderas aldrig."
+          },
+          "kioskFobs": {
+            "endedAt": "När den slutade välja dig (UTC), tomt så länge den fortfarande gör det.",
+            "endedReason": "ersatt när du registrerade en annan, borttagen när du eller en chef tog bort den eller när du inaktiverades, avslut när din anställning upphörde.",
+            "kiosk": "Kiosken som du registrerade den vid, tomt om den kiosken har tagits bort.",
+            "registeredAt": "När du registrerade den (UTC).",
+            "serialNumber": "Chipets serienummer, så som kioskens läsare läste av det.",
+            "summary": "De NFC-kort eller taggar du har registrerat vid en kiosk, aktiva och avslutade. När du blippar en väljs du vid kiosken; din kiosk-PIN-kod bekräftar fortfarande att det är du."
           },
           "kioskPinEvents": {
             "event": "failure för en felaktig PIN-kod, success för en korrekt, rensas när din PIN-kod låstes upp, återställdes eller ändrades.",

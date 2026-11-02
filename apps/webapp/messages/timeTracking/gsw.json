@@ -235,8 +235,30 @@
         "endDayHint": "Wenn de Tag jetzt beändisch, hört dini Arbet am Aafang vo de Pause uf.",
         "today": "Hüt: {duration}"
       },
+      "fob": {
+        "alreadyRegistered": "Dä Fob mit de Endig {lastFour} isch scho uf dich registriert.",
+        "back": "Zrugg",
+        "checking": "Din Fob wird überprüft…",
+        "failed": "De Fob hät nöd chönne überprüft werde. Heb en nomal ane oder tipp uf din Name, zum din PIN z bruuche.",
+        "linkedToOther": "Dä Fob isch scho uf öpper anders registriert. Es isch nüt gänderet worde. Frag dini vorgsetzti Person.",
+        "notEligible": "Du chasch a däm Kiosk kän Fob registriere. Es isch nüt gänderet worde. Frag dini vorgsetzti Person.",
+        "notRecognised": "Dä Fob wird da nöd erkannt.",
+        "offline": "Fobs bruched e Verbindig. Es isch nüt erfasst worde. Tipp uf din Name, zum din PIN z bruuche.",
+        "offlineOnly": "Fobs bruched e Verbindig. Es isch nüt erfasst worde.",
+        "pickPrompt": "Tipp uf din Name.",
+        "pickTitle": "Dä Fob registriere",
+        "pinPrompt": "Gib din Kiosk-PIN ii, zum dä Fob z registriere",
+        "rateLimited": "{seconds, plural, other {Z vill Fob-Versuech a däm Kiosk. Probier's in # Sekunde nomal, oder tipp uf din Name, zum din PIN z bruuche.} }",
+        "readerDisabled": "De Fob-Leser isch a däm Kiosk abgschaltet. Tipp uf din Name, zum din PIN z bruuche.",
+        "register": "Dä Fob registriere",
+        "registered": "Fob registriert",
+        "registeredText": "Din Fob mit de Endig {lastFour} isch registriert. Heb en ane, zum din Name uswähle, und gib dänn din PIN ii.",
+        "registerHint": "Wänn er dir ghört, registrier en mit dim Name und Kiosk-PIN. En Fob, wo vorheer registriert häsch, funktioniert dänn nüme.",
+        "replaced": "Er ersetzt din früenere Fob, wo nüme funktioniert."
+      },
       "home": {
         "empty": "A däm Standort isch no niemert zueteilt. Frag diin Admin.",
+        "fobHint": "Oder heb din Fob an Leser.",
         "loadFailed": "D Näme händ nöd chönne glade werde. Überprüef d Netzwerkverbindig.",
         "loading": "Näme wärded glade…",
         "noMatch": "Kei Name passt zu dinere Suech.",
@@ -363,9 +385,14 @@
         "nonexistentTime": "Die Ziit git's a däm Datum nöd, will d'Uhr vorgstellt wird.",
         "occurrenceRequired": "Die Ziit chunt a däm Datum zweimal vor. Wähl uus, weli du meinsch.",
         "overlap": "Die Ziit überschniidet sich mit erfasster Arbet. Wähl en Ziitruum, wo sich nöd mit bestehende Iiträg überschniidet.",
+        "overlapsLiveWork": "Die Ziit überschniidet sich mit de Arbet, wo sit {start} lauft. En manuelle Iitrag muess bis dänn beendet sii.",
         "reconfirm": "D Zitzone oder d Zite händ gänderet. Überprüef de Iitrag und schick en nomol ab.",
         "refresh": "D Iistellige für manuelli Iiträg händ gänderet. Überprüef de Iitrag und schick en nomol ab.",
         "tooLong": "Arbeitsziit darf nöd meh als 24 Stunde sii"
+      },
+      "liveWorkHint": {
+        "employee": "{employee} isch sit {start} iigstempflet, drum muess dä Iitrag bis dänn beendet sii.",
+        "own": "Du bisch sit {start} iigstempflet, drum muess dä Iitrag bis dänn beendet sii."
       },
       "occurrence": {
         "earlier": "Zersch, {offset}",
@@ -509,11 +536,23 @@
     },
     "startedAt": "Gstartet am",
     "summary": {
-      "baseWorked": "Basisarbeitszyt",
-      "surcharge": "Zueschlag",
+      "dayOfRequired": "{date}: {worked} vo {required}",
+      "dayWorked": "{date}: {worked}",
+      "noRequiredToday": "Hüt kei Sollziit",
+      "progressAhead": "{worked} vo {required} · {difference} voruus",
+      "progressBehind": "{worked} vo {required} · {difference} hindedrii",
+      "progressLabel": "Gschaffti Ziit vo de Sollziit",
+      "progressOnTrack": "{worked} vo {required} · uf Kurs",
+      "surchargeFootnote": "+{surcharge} Zueschlag",
       "thisMonth": "Dä Monet",
       "thisWeek": "Die Wuche",
-      "today": "Hüt"
+      "today": "Hüt",
+      "todayOfRequired": "{worked} vo {required}",
+      "trend": "{difference} {comparedWith}",
+      "trendDetail": "Jetzt: {worked} gschafft vo bishär {required} verlangt. Denn: {previousWorked} gschafft vo {previousRequired} verlangt.",
+      "trendWithPercent": "{difference} ({percent}) {comparedWith}",
+      "vsLastMonth": "vs. letschte Monet",
+      "vsLastWeek": "vs. letschti Wuche"
     },
     "table": {
       "active": "Aktiv",

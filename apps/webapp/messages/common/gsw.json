@@ -1369,6 +1369,11 @@
         "message": "Dis {action, select, clock_in {Iistämple} clock_out {Usstämple} start_break {Pause aafange} resume_break {Zruggcho us de Pause} other {Stämple}} um {time} am Kiosk {kioskName} isch nöd erfasst worde: {reason, select, wrong_pin {de PIN isch falsch gsi} pin_locked {de Kiosk-PIN isch nach z vill falsche Versüech gsperrt worde} no_pin {es hät kei Kiosk-PIN zum Vergliiche geh} pin_unchecked {de PIN hät nöd chönne überprüft werde} kiosk_retired {de Kiosk isch widerruefe oder neu kopplet worde, bevor er sich wider verbunde hät} contact_unverifiable {Z8 hät die letscht Verbindig vom Kiosk nöd chönne bestätige} outside_window {d Ziit isch usserhalb vom Ziitfänschter gsi, wo Z8 akzeptiert} clock_untrusted {d Uhr vom Kiosk isch defür nöd vertrauenswürdig gsi} not_assigned {du bisch em Standort vom Kiosk nöd zuegwise} not_adopted {d Organisation akzeptiert keini Offline-Kiosk-Stämplige} month_closed {de Monet isch abgschlosse} holiday {de Tag isch en Fiertig ohni Ziterfassig} conflict {es kollidiert mit anderi erfassti Ziite} other {Z8 hät das nöd chönne aanee}}. Trag dini Ziit nomal ii oder bitte dini Füehrigschraft, das z korrigiere.",
         "title": "Kiosk-Stämplig nöd erfasst"
       },
+      "kioskFobRegistered": {
+        "forwardedMessage": "{replaced, select, true {Ein Kiosk-Badge mit der Endung {lastFour} wurde am Kiosk {kioskName} für {employeeName} registriert. Er hat den früheren Badge ersetzt, der nicht mehr funktioniert.} other {Ein Kiosk-Badge mit der Endung {lastFour} wurde am Kiosk {kioskName} für {employeeName} registriert.}} Falls {employeeName} diesen nicht registriert hat, entfernen Sie ihn auf der Mitarbeiterseite und setzen Sie die Kiosk-PIN zurück.",
+        "message": "{replaced, select, true {Ein Kiosk-Badge mit der Endung {lastFour} wurde am Kiosk {kioskName} für Sie registriert. Er hat Ihren früheren Badge ersetzt, der nicht mehr funktioniert.} other {Ein Kiosk-Badge mit der Endung {lastFour} wurde am Kiosk {kioskName} für Sie registriert.}} Falls Sie ihn nicht registriert haben, entfernen Sie ihn in Ihren Sicherheitseinstellungen und ändern Sie Ihre Kiosk-PIN.",
+        "title": "Kiosk-Badge registriert"
+      },
       "manualEntryApproved": {
         "message": "Dini manuelli Ziterfassig isch vo {approverName} gnämigt worde.",
         "title": "Manuelli Ziiterfassig gnämigt"
@@ -1831,6 +1836,7 @@
         "forgotten_clock_out_reminder": "Vergessenes Ausstempeln",
         "former_employee_reports_without_manager": "Mitarbeiter ohni aktuelle Vorgesetzte",
         "kiosk_command_refused": "Kiosk-Stämplig nöd erfasst",
+        "kiosk_fob_registered": "Kiosk-Badge registriert",
         "missed_clock_in_reminder": "Verpasstes Einstempeln",
         "period_submission_decided": "Iigreichti Ziit gnähmigt oder abglehnt",
         "period_submission_reminder": "Riich dini Ziit ii",
@@ -2538,6 +2544,13 @@
             "workModel": "Dis Arbetsmodell.",
             "workPolicy": "D Arbetsrichtlinie, wo die Bedingige verwended."
           },
+          "goLiveExclusions": {
+            "createdAt": "Zeitpunkt des Ausschlusses, als UTC-Zeitpunkt.",
+            "endedAt": "Zeitpunkt der Beendigung aufgrund des Austritts aus der Organisation; leer, falls nicht beendet.",
+            "liftedAt": "Zeitpunkt, an dem ein Administrator Sie wieder in die Prüfungen aufgenommen hat; leer, falls nicht erfolgt.",
+            "reason": "Der vom Administrator angegebene Grund für den Ausschluss.",
+            "summary": "Zeitpunkte, an denen die Organisation Sie bei der Einrichtung von Z8 von den Go-Live-Prüfungen ausgeschlossen hat, und der jeweilige Grund. Sie haben auf nichts anderes Auswirkungen."
+          },
           "groups": {
             "addedAt": "Wenn du zu de Gruppe hinzuegfüegt worde bisch.",
             "addedBy": "Wer dich zu de Gruppe hinzuegfüegt hät.",
@@ -2637,6 +2650,14 @@
             "lastUsedAt": "Wenn e Kaländer-App de Feed zletscht gläse hät (UTC).",
             "revokedAt": "Wenn de Link deaktiviert worde isch (UTC).",
             "summary": "Dini Kaländer-Feed-Links, womit e Kaländer-App dini Abweseheite aboniere cha. De gheim Link selber isch nie debii."
+          },
+          "kioskFobs": {
+            "endedAt": "Zeitpunkt, an dem die Zuweisung zu Ihnen endete (UTC); leer, solange sie noch aktiv ist.",
+            "endedReason": "ersetzt, wenn Sie einen anderen registriert haben; entfernt, wenn Sie oder ein Vorgesetzter ihn entfernt haben oder Sie deaktiviert wurden; Austritt, wenn Ihr Arbeitsverhältnis beendet wurde.",
+            "kiosk": "Der Kiosk, an dem die Registrierung erfolgte; leer, sobald dieser Kiosk gelöscht wurde.",
+            "registeredAt": "Registrierungszeitpunkt (UTC).",
+            "serialNumber": "Die Seriennummer des Chips, wie vom Lesegerät des Kiosks erfasst.",
+            "summary": "Die NFC-Karten oder -Badges, die Sie an einem Kiosk registriert haben (aktuelle und beendete). Durch Vorhalten werden Sie am Kiosk ausgewählt; Ihre Kiosk-PIN bestätigt weiterhin Ihre Identität."
           },
           "kioskPinEvents": {
             "event": "failure binere falsche PIN, success binere richtige, glöscht wänn dini PIN entsperrt, zrugggsetzt oder gänderet worde isch.",

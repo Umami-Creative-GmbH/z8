@@ -190,6 +190,15 @@
         "revokedOn": "Nessun badge per chiosco attivo. L'ultimo è stato revocato il {date}.",
         "saveNow": "Salva subito il PDF: Z8 non potrà mostrare nuovamente questo badge. Puoi ristampare una copia salvata. In caso di smarrimento del file o del badge, sostituisci il badge."
       },
+      "kioskFob": {
+        "confirmRemoveText": "Il portachiavi smette subito di funzionare sui chioschi e può essere registrato nuovamente. Il PIN e il badge per il chiosco del dipendente continuano a funzionare.",
+        "description": "Una carta o un portachiavi NFC che il dipendente avvicina a un chiosco online per selezionare il proprio nome. Il PIN del chiosco confermerà comunque la sua identità.",
+        "endedByDeparture": "L'ultimo è terminato con l'uscita del dipendente in data {date}.",
+        "endedOn": "L'ultimo è terminato il {date}.",
+        "heading": "Portachiavi per chiosco",
+        "none": "Nessun portachiavi per chiosco. I dipendenti registrano il proprio presso un chiosco dotato di lettore NFC, utilizzando il proprio PIN del chiosco.",
+        "removedOn": "L'ultimo è stato rimosso il {date}."
+      },
       "kioskPin": {
         "addEmailDescription": "Riceverà un invito per scegliere una password e potrà quindi accedere. Il PIN del chiosco e la cronologia resteranno invariati.",
         "addEmailHeading": "Aggiungi un'email",
@@ -244,6 +253,7 @@
             "personnelFileOfficer": "Responsabile del fascicolo personale"
           },
           "kioskBadges": "{count, plural, one {# badge per chiosco viene revocato} other {# badge per chiosco vengono revocati}}",
+          "kioskFobs": "{count, plural, one {# portachiavi per chiosco smette di funzionare} other {# portachiavi per chiosco smettono di funzionare}}",
           "loadError": "Impossibile caricare l'anteprima.",
           "loading": "Calcolo delle modifiche in corso…",
           "managerLinksTitle": "Collegamenti con i manager che termineranno",
