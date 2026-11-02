@@ -7,7 +7,8 @@ import { getPrimaryEligibleManagerIdForRequester } from "@/lib/approvals/policie
 import { listDrivingDetailsMissing } from "@/lib/time-tracking/vehicle-use/driving-details-missing-store";
 import { getEmployeeWorkBalance } from "@/lib/work-balance/service";
 import type { EmployeeWorkBalancePayload } from "@/lib/work-balance/types";
-import { readTimeSummary, readWorkPeriods } from "./read-queries";
+import { readWorkPeriods } from "./read-queries";
+import { readTimeKpis, type TimeKpiRead } from "./read-time-kpis";
 import {
 	getSafeEmployeeWorkBalance,
 	readDrivingRegion,
@@ -27,8 +28,10 @@ vi.mock("@/lib/work-balance/service", () => ({
 	getEmployeeWorkBalance: vi.fn(),
 }));
 vi.mock("./read-queries", () => ({
-	readTimeSummary: vi.fn(),
 	readWorkPeriods: vi.fn(),
+}));
+vi.mock("./read-time-kpis", () => ({
+	readTimeKpis: vi.fn(),
 }));
 
 const scope = { employeeId: "employee-1", organizationId: "org-1" };
@@ -42,10 +45,9 @@ const employeeContext = {
 	timeFormat: "24h",
 } as EmployeeRenderContext;
 const expectedSummary = {
-	todayMinutes: 60,
-	weekMinutes: 180,
-	monthMinutes: 200,
-};
+	kpis: { today: { workedMinutes: 60 } },
+	basis: { timezone: "Europe/Berlin" },
+} as unknown as TimeKpiRead;
 const expectedBalance: EmployeeWorkBalancePayload = {
 	...scope,
 	actualMinutes: 180,
@@ -67,7 +69,7 @@ function deferred<T>() {
 beforeEach(() => {
 	vi.resetAllMocks();
 	vi.spyOn(console, "error").mockImplementation(() => {});
-	vi.mocked(readTimeSummary).mockResolvedValue(expectedSummary);
+	vi.mocked(readTimeKpis).mockResolvedValue(expectedSummary);
 	vi.mocked(getEmployeeWorkBalance).mockResolvedValue(expectedBalance);
 	vi.mocked(readWorkPeriods).mockResolvedValue([]);
 	vi.mocked(listDrivingDetailsMissing).mockResolvedValue([]);
@@ -129,10 +131,10 @@ describe("independent time tracking region data", () => {
 			new Promise(() => {}),
 		);
 		expect(await readSummaryRegion(employeeContext)).toEqual({
-			summary: expectedSummary,
+			kpis: expectedSummary,
 			workBalance: expectedBalance,
 		});
-		expect(readTimeSummary).toHaveBeenCalledWith(
+		expect(readTimeKpis).toHaveBeenCalledWith(
 			scope,
 			"Europe/Berlin",
 			"monday",
@@ -145,21 +147,21 @@ describe("independent time tracking region data", () => {
 	it("starts summary and balance concurrently", async () => {
 		const summary = deferred<typeof expectedSummary>();
 		const balance = deferred<EmployeeWorkBalancePayload>();
-		vi.mocked(readTimeSummary).mockReturnValue(summary.promise);
+		vi.mocked(readTimeKpis).mockReturnValue(summary.promise);
 		vi.mocked(getEmployeeWorkBalance).mockReturnValue(balance.promise);
 		const result = readSummaryRegion(employeeContext);
-		expect(readTimeSummary).toHaveBeenCalledOnce();
+		expect(readTimeKpis).toHaveBeenCalledOnce();
 		expect(getEmployeeWorkBalance).toHaveBeenCalledOnce();
 		balance.resolve(expectedBalance);
 		summary.resolve(expectedSummary);
 		expect(await result).toEqual({
-			summary: expectedSummary,
+			kpis: expectedSummary,
 			workBalance: expectedBalance,
 		});
 	});
 
 	it("history resolves without starting pending summary or balance work", async () => {
-		vi.mocked(readTimeSummary).mockReturnValue(new Promise(() => {}));
+		vi.mocked(readTimeKpis).mockReturnValue(new Promise(() => {}));
 		vi.mocked(getEmployeeWorkBalance).mockReturnValue(new Promise(() => {}));
 		expect(await readHistoryRegion(employeeContext)).toEqual({
 			workPeriods: [],
@@ -172,7 +174,7 @@ describe("independent time tracking region data", () => {
 			requesterEmployeeId: scope.employeeId,
 			organizationId: scope.organizationId,
 		});
-		expect(readTimeSummary).not.toHaveBeenCalled();
+		expect(readTimeKpis).not.toHaveBeenCalled();
 		expect(getEmployeeWorkBalance).not.toHaveBeenCalled();
 	});
 
@@ -253,7 +255,7 @@ describe("independent time tracking region data", () => {
 
 	it("lets summary and history service failures escape to their region", async () => {
 		const failure = new Error("service unavailable");
-		vi.mocked(readTimeSummary).mockRejectedValue(failure);
+		vi.mocked(readTimeKpis).mockRejectedValue(failure);
 		await expect(readSummaryRegion(employeeContext)).rejects.toBe(failure);
 		vi.mocked(readWorkPeriods).mockRejectedValue(failure);
 		await expect(readHistoryRegion(employeeContext)).rejects.toBe(failure);
@@ -281,7 +283,7 @@ describe("safe employee work balance", () => {
 		async (error) => {
 			vi.mocked(getEmployeeWorkBalance).mockRejectedValue(error);
 			expect(await readSummaryRegion(employeeContext)).toEqual({
-				summary: expectedSummary,
+				kpis: expectedSummary,
 				workBalance: null,
 			});
 			expect(console.error).toHaveBeenCalledExactlyOnceWith(
