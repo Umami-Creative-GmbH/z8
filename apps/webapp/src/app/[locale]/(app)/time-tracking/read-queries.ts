@@ -14,6 +14,7 @@ import { parseOrdinaryWorkPeriodWorkflowPayload } from "@/lib/approvals/domain-a
 import { type Clock, systemClock } from "@/lib/datetime/temporal-core";
 import {
 	buildDayTotalBasis,
+	type DayTotalWorkPeriod,
 	dayTotalRange,
 	summarizeDayTotals,
 } from "@/lib/time-tracking/day-totals";
@@ -172,10 +173,20 @@ export async function readTimeSummary(
 	clock: Clock = systemClock,
 ): Promise<TimeSummary> {
 	const now = clock.nowInstant();
-	const range = dayTotalRange(now, timezone, weekStartDay);
+	const periods = await readDayTotalWorkPeriods(
+		scope,
+		dayTotalRange(now, timezone, weekStartDay),
+	);
+	const dayTotalBasis = buildDayTotalBasis({ periods, timezone, weekStartDay });
+	return { ...summarizeDayTotals(dayTotalBasis, now), dayTotalBasis };
+}
 
-	// Like the calendar: completed work overlapping the range, and running live work.
-	const periods = await db
+/** Like the calendar: completed work overlapping the range, and running live work. */
+export async function readDayTotalWorkPeriods(
+	scope: EmployeeReadScope,
+	range: { start: Date; endExclusive: Date },
+): Promise<DayTotalWorkPeriod[]> {
+	return db
 		.select({
 			startTime: workPeriod.startTime,
 			endTime: workPeriod.endTime,
@@ -198,7 +209,4 @@ export async function readTimeSummary(
 				),
 			),
 		);
-
-	const dayTotalBasis = buildDayTotalBasis({ periods, timezone, weekStartDay });
-	return { ...summarizeDayTotals(dayTotalBasis, now), dayTotalBasis };
 }

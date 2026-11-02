@@ -10,23 +10,19 @@ import {
 	loadEmployeePeriodView,
 } from "@/lib/time-tracking/period-submissions/employee-period-view-store";
 import { getWeekRangeInTimezone } from "@/lib/time-tracking/timezone-utils";
-import type { TimeSummary } from "@/lib/time-tracking/types";
 import {
 	type DrivingDetailsMissingWork,
 	listDrivingDetailsMissing,
 } from "@/lib/time-tracking/vehicle-use/driving-details-missing-store";
 import { getEmployeeWorkBalance } from "@/lib/work-balance/service";
 import type { EmployeeWorkBalancePayload } from "@/lib/work-balance/types";
-import {
-	type EmployeeReadScope,
-	readTimeSummary,
-	readWorkPeriods,
-} from "./read-queries";
+import { type EmployeeReadScope, readWorkPeriods } from "./read-queries";
+import { readTimeKpis, type TimeKpiRead } from "./read-time-kpis";
 import type { EmployeeRenderContext } from "./render-context";
 import type { WorkPeriodWithEntries } from "./types";
 
 export type SummaryRegionData = {
-	summary: TimeSummary;
+	kpis: TimeKpiRead;
 	workBalance: EmployeeWorkBalancePayload | null;
 };
 
@@ -53,11 +49,11 @@ export async function readSummaryRegion(
 		employeeId: context.employee.id,
 		organizationId: context.employee.organizationId,
 	};
-	const [summary, workBalance] = await Promise.all([
-		readTimeSummary(scope, context.timezone, context.weekStartDay),
+	const [kpis, workBalance] = await Promise.all([
+		readTimeKpis(scope, context.timezone, context.weekStartDay),
 		getSafeEmployeeWorkBalance(scope),
 	]);
-	return { summary, workBalance };
+	return { kpis, workBalance };
 }
 
 export async function readHistoryRegion(
