@@ -10,6 +10,7 @@ import {
 	IconClock,
 	IconDatabaseExport,
 	IconDeviceTablet,
+	IconNfc,
 	IconShield,
 	IconUserMinus,
 	IconUserShare,
@@ -66,6 +67,14 @@ function getNotificationStyle(type: NotificationType): {
 				icon: <IconDeviceTablet className="size-4" />,
 				bgColor: "bg-red-100 dark:bg-red-900/30",
 				iconColor: "text-red-600 dark:text-red-400",
+			};
+
+		// A kiosk fob was registered at a kiosk (#1507): a security notice, styled like one.
+		case "kiosk_fob_registered":
+			return {
+				icon: <IconNfc className="size-4" />,
+				bgColor: "bg-slate-100 dark:bg-slate-900/30",
+				iconColor: "text-slate-600 dark:text-slate-400",
 			};
 
 		// Skill expiry reminders (#1143)

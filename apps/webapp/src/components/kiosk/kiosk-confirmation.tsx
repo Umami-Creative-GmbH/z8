@@ -2,8 +2,44 @@
 
 import { IconAlertTriangle, IconCircleCheck, IconCloudUpload } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
-import { useEffect, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+
+/**
+ * A kiosk confirmation screen's frame: the whole screen is a tap target that
+ * returns home, with its content, a Done button as the accessible equivalent,
+ * then `footer`. Used after a kiosk action and (#1505) a fob registration.
+ */
+export function KioskConfirmationShell({
+	label,
+	onHome,
+	children,
+	footer = null,
+}: {
+	label: string;
+	onHome: () => void;
+	children: ReactNode;
+	footer?: ReactNode;
+}) {
+	const { t } = useTranslate();
+	return (
+		// The whole screen is a tap target; the button is its accessible equivalent.
+		// biome-ignore lint/a11y/noStaticElementInteractions: the Done button offers the same action
+		// biome-ignore lint/a11y/useKeyWithClickEvents: the Done button offers the same action
+		<div className="flex flex-1 cursor-pointer flex-col" onClick={onHome}>
+			<output
+				aria-label={label}
+				className="m-auto flex max-w-xl flex-col items-center gap-5 text-center"
+			>
+				{children}
+				<Button size="lg" className="mt-4 h-16 min-w-48 text-xl" onClick={onHome}>
+					{t("timeTracking.kiosk.done.button", "Done")}
+				</Button>
+				{footer}
+			</output>
+		</div>
+	);
+}
 
 interface KioskConfirmationProps {
 	name: string;
@@ -51,52 +87,46 @@ export function KioskConfirmation({
 	}, [returnsInMs]);
 
 	return (
-		// The whole screen is a tap target; the button is its accessible equivalent.
-		// biome-ignore lint/a11y/noStaticElementInteractions: the Done button offers the same action
-		// biome-ignore lint/a11y/useKeyWithClickEvents: the Done button offers the same action
-		<div className="flex flex-1 cursor-pointer flex-col" onClick={onHome}>
-			<output
-				aria-label={t("timeTracking.kiosk.done.title", "Done")}
-				className="m-auto flex max-w-xl flex-col items-center gap-5 text-center"
-			>
-				{unconfirmed ? (
-					<IconCloudUpload
-						className="size-24 text-amber-600 dark:text-amber-400"
-						aria-hidden="true"
-					/>
-				) : (
-					<IconCircleCheck
-						className="size-24 text-emerald-600 dark:text-emerald-400"
-						aria-hidden="true"
-					/>
-				)}
-				<span className="text-3xl font-semibold break-words">{name}</span>
-				<span className="text-2xl">{action}</span>
-				<span className="text-5xl font-semibold tabular-nums">{time}</span>
-				{note ? <span className="text-lg text-muted-foreground">{note}</span> : null}
-				{unconfirmed ? (
-					<span role="status" className="text-lg text-amber-900 dark:text-amber-200">
-						{unconfirmed}
-					</span>
-				) : null}
-				{warning ? (
-					<span
-						role="status"
-						className="flex items-center gap-2 text-lg text-amber-900 dark:text-amber-200"
-					>
-						<IconAlertTriangle className="size-6 shrink-0" aria-hidden="true" />
-						{warning}
-					</span>
-				) : null}
-				<Button size="lg" className="mt-4 h-16 min-w-48 text-xl" onClick={onHome}>
-					{t("timeTracking.kiosk.done.button", "Done")}
-				</Button>
+		<KioskConfirmationShell
+			label={t("timeTracking.kiosk.done.title", "Done")}
+			onHome={onHome}
+			footer={
 				<span className="text-muted-foreground">
 					{t("timeTracking.kiosk.done.returning", "Back to the start in {seconds} s", {
 						seconds: secondsLeft,
 					})}
 				</span>
-			</output>
-		</div>
+			}
+		>
+			{unconfirmed ? (
+				<IconCloudUpload
+					className="size-24 text-amber-600 dark:text-amber-400"
+					aria-hidden="true"
+				/>
+			) : (
+				<IconCircleCheck
+					className="size-24 text-emerald-600 dark:text-emerald-400"
+					aria-hidden="true"
+				/>
+			)}
+			<span className="text-3xl font-semibold break-words">{name}</span>
+			<span className="text-2xl">{action}</span>
+			<span className="text-5xl font-semibold tabular-nums">{time}</span>
+			{note ? <span className="text-lg text-muted-foreground">{note}</span> : null}
+			{unconfirmed ? (
+				<span role="status" className="text-lg text-amber-900 dark:text-amber-200">
+					{unconfirmed}
+				</span>
+			) : null}
+			{warning ? (
+				<span
+					role="status"
+					className="flex items-center gap-2 text-lg text-amber-900 dark:text-amber-200"
+				>
+					<IconAlertTriangle className="size-6 shrink-0" aria-hidden="true" />
+					{warning}
+				</span>
+			) : null}
+		</KioskConfirmationShell>
 	);
 }

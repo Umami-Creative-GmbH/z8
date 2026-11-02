@@ -53,12 +53,20 @@ const ids = {
 	team: "11700000-0000-4000-8000-0000000000f2",
 	store: "11700000-0000-4000-8000-0000000000f3",
 	kiosk: "11700000-0000-4000-8000-0000000000f4",
+	adaEmployment: "11700000-0000-4000-8000-0000000000f5",
+	bobEmployment: "11700000-0000-4000-8000-0000000000f6",
+	adaOtherEmployment: "11700000-0000-4000-8000-0000000000f7",
+	adaOldFob: "11700000-0000-4000-8000-0000000000f8",
+	adaFob: "11700000-0000-4000-8000-0000000000f9",
 } as const;
 
 const admin = integrationAdminPool();
 const uploads = new Map<string, Uint8Array>();
 
 async function cleanup() {
+	await admin.query("delete from audit_log where organization_id = any($1::text[])", [
+		[ORG, OTHER],
+	]);
 	await admin.query("delete from organization where id = any($1::text[])", [[ORG, OTHER]]);
 	// Deleted exports leave file cleanup ledger rows; the sweep in sibling suites drains the whole ledger.
 	await admin.query(
@@ -350,6 +358,56 @@ async function seed() {
 		 ($1, $2, gen_random_uuid(), $4, 'clock_out', '2026-08-09T16:00:00Z', 'Europe/Berlin', 'server_anchor',
 		  'kiosk_rotated', '{}', '2026-08-10T09:00:00Z')`,
 		[ORG, ids.kiosk, ids.ada, ids.bob],
+	);
+
+	// Kiosk fobs (#1509): Ada's replaced and current ones, Bob's, and Ada's in the other organization.
+	await admin.query(
+		`insert into employee_employment_period (id, organization_id, employee_id, status, started_at, start_provenance)
+		 values ($1, $4, $5, 'open', '2026-01-01T00:00:00Z', 'recorded'), ($2, $4, $6, 'open', '2026-01-01T00:00:00Z', 'recorded'),
+		  ($3, $7, $8, 'open', '2026-01-01T00:00:00Z', 'recorded')`,
+		[
+			ids.adaEmployment,
+			ids.bobEmployment,
+			ids.adaOtherEmployment,
+			ORG,
+			ids.ada,
+			ids.bob,
+			OTHER,
+			ids.adaOther,
+		],
+	);
+	await admin.query(
+		`insert into employee_kiosk_fob (id, organization_id, employee_id, employment_period_id, serial_number,
+			registered_at, registered_kiosk_id, ended_at, ended_by_user_id, ended_reason) values
+		 ($1, $3, $4, $5, '04A1B2C3D4E5F6', '2026-08-10T08:00:00Z', $6, '2026-08-20T08:00:00Z', 't1170-ada', 'replaced'),
+		 ($2, $3, $4, $5, '1A2B3C4D', '2026-08-20T08:00:00Z', null, null, null, null),
+		 (gen_random_uuid(), $3, $7, $8, 'B0B0CAFE', '2026-08-11T08:00:00Z', $6, null, null, null),
+		 (gen_random_uuid(), $9, $10, $11, '0FF0C0DE', '2026-08-12T08:00:00Z', null, null, null, null)`,
+		[
+			ids.adaOldFob,
+			ids.adaFob,
+			ORG,
+			ids.ada,
+			ids.adaEmployment,
+			ids.kiosk,
+			ids.bob,
+			ids.bobEmployment,
+			OTHER,
+			ids.adaOther,
+			ids.adaOtherEmployment,
+		],
+	);
+	// Their audit rows: Ada's registration, a manager's removal, and an ending at a
+	// colleague's registration of the card, whose actor the employee export never names.
+	await admin.query(
+		`insert into audit_log (organization_id, entity_type, entity_id, action, performed_by, employee_id, metadata,
+			timestamp) values
+		 ($1, 'kiosk_fob', $2, 'kiosk_fob.registered', 't1170-ada', $4::uuid, $5, '2026-08-10T08:00:00Z'),
+		 ($1, 'kiosk_fob', $3, 'kiosk_fob.ended', 't1170-owner', $4::uuid, '{"reason":"removed"}',
+		  '2026-08-21T08:00:00Z'),
+		 ($1, 'kiosk_fob', $3, 'kiosk_fob.ended', 't1170-bob', $4::uuid,
+		  '{"reason":"departure","endedAtRegistrationOnKioskId":"kiosk-t1170"}', '2026-08-22T08:00:00Z')`,
+		[ORG, ids.adaOldFob, ids.adaFob, ids.ada, JSON.stringify({ kioskId: ids.kiosk })],
 	);
 }
 
@@ -713,6 +771,69 @@ describe("personal data export: position stamps, notifications and integrations 
 			},
 		]);
 		expect(categoryText(files, "integrations")).not.toContain("never-t1170");
+	});
+
+	it("exports Ada's kiosk fobs, current and ended, nothing of Bob or the other organization (#1509)", async () => {
+		const { files } = await buildExport(ids.ada, "employee", "t1170-ada");
+		expect(categoryOf(files, "integrations").kiosk_fobs).toEqual([
+			{
+				serial_number: "04A1B2C3D4E5F6",
+				registered_at: "2026-08-10T08:00:00Z",
+				kiosk: "Front door",
+				ended_at: "2026-08-20T08:00:00Z",
+				ended_reason: "replaced",
+			},
+			{
+				serial_number: "1A2B3C4D",
+				registered_at: "2026-08-20T08:00:00Z",
+				kiosk: null,
+				ended_at: null,
+				ended_reason: null,
+			},
+		]);
+		expect(files["integrations/kiosk_fobs.csv"]?.split("\n")[0]).toBe(
+			"serial_number,registered_at,kiosk,ended_at,ended_reason",
+		);
+		const text = categoryText(files, "integrations");
+		for (const leaked of ["B0B0CAFE", "0FF0C0DE"]) {
+			expect(text, leaked).not.toContain(leaked);
+		}
+	});
+
+	it("shows Ada her kiosk fob audit entries, but not which colleague took over her card (#1509)", async () => {
+		const fobAudits = (files: Record<string, string>) =>
+			(categoryOf(files, "audit_log").entries as Array<Record<string, unknown>>)
+				.filter((entry) => entry.entity_type === "kiosk_fob")
+				.map((entry) => [entry.action, entry.performed_by]);
+
+		const own = await buildExport(ids.ada, "employee", "t1170-ada");
+		expect(fobAudits(own.files)).toEqual([
+			["kiosk_fob.registered", "Ada Lovelace"],
+			["kiosk_fob.ended", "Olga Owner"],
+		]);
+		expect(categoryText(own.files, "audit_log")).not.toContain("Bob Builder");
+
+		await admin.query("delete from personal_data_export where organization_id = $1", [ORG]);
+		const byAdmin = await buildExport(ids.ada, "admin", "t1170-owner");
+		expect(fobAudits(byAdmin.files)).toEqual([
+			["kiosk_fob.registered", "Ada Lovelace"],
+			["kiosk_fob.ended", "Olga Owner"],
+			["kiosk_fob.ended", "Bob Builder"],
+		]);
+	});
+
+	it("never hints in Bob's own export that the card he registered was a colleague's (#1509)", async () => {
+		const fobActions = (files: Record<string, string>) =>
+			(categoryOf(files, "audit_log").actions_on_others as Array<Record<string, unknown>>)
+				.filter((row) => row.record_kind === "kiosk_fob")
+				.map((row) => row.action);
+
+		const own = await buildExport(ids.bob, "employee", "t1170-bob");
+		expect(fobActions(own.files)).toEqual([]);
+
+		await admin.query("delete from personal_data_export where organization_id = $1", [ORG]);
+		const byAdmin = await buildExport(ids.bob, "admin", "t1170-owner");
+		expect(fobActions(byAdmin.files)).toEqual(["kiosk_fob.ended"]);
 	});
 
 	it("holds the same rows in both kinds of export", async () => {

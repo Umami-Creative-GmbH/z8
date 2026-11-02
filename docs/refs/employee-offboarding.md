@@ -13,7 +13,7 @@ departure when it is scheduled (or the command instant for *Offboard now*). At
 the cutoff access ends, the running timer is closed at the cutoff, the paid seat
 is released, the employee's expense officer, payroll access and personnel file
 officer grants are revoked, all driving authorizations and held driving licence verifier
-grants end, the employee's kiosk badge stops working, and the employee's pending approval duties are handed over. The
+grants end, the employee's kiosk badge and kiosk fob stop working, and the employee's pending approval duties are handed over. The
 departure is *effective* even while follow-up work (billing, session sign-out,
 timer post-processing, approval handover, notifications) is still pending or has
 failed; follow-up never decides whether someone has left. A **rehire** starts a
@@ -209,8 +209,11 @@ departure's code paths; the area modules live in
    work (sick note cleanup, deputy notices) runs on the caller's database client.
 6. **Access** ends as at a departure: held expense officer, payroll access,
    personnel file officer and driving licence verifier grants, driving
-   authorizations (also suspended ones), kiosk badges and the person's report
-   share links. `applied` records the grant ids actually revoked.
+   authorizations (also suspended ones), kiosk badges, the kiosk fob and the
+   person's report share links. `applied` records the grant ids actually revoked.
+   A badge stores the reason `revoked` and a fob `removed`; their audit rows name
+   the deactivation (`{ reason: "employee_deactivated", deactivationId,
+   employmentPeriodId }`).
 7. **Retention**: the instant counts as the end of employment (see Personnel
    file retention). The paid seat is released (see Billing reconciliation).
 
@@ -324,7 +327,7 @@ with `reactivated_at`, `reactivated_by` and a server-generated
 `reactivation_request_id`, and records the history event
 `employee_reactivated` (`employee_departure_event`, no departure, metadata
 `{ deactivationId }`) when the employee has an employment period. It restores
-no grant, badge, driving authorization, manager link, team or project link,
+no grant, badge, fob, driving authorization, manager link, team or project link,
 shift or absence; the acceptance suite asserts that.
 
 **Checklist.** The ledger row keeps the applied consequences (`applied`) and,
@@ -341,7 +344,8 @@ badges to the employee page, driving authorizations to
 `/driving-licence/checks/<id>`, teams to `/settings/teams/<id>`, projects to
 `/settings/projects`, shifts to `/scheduling`, absences to `/team/absences`,
 share links to `/settings/report-share-links`. Approval duties are not listed:
-they were handed over. The dialog after *Reactivate* and the card on the
+they were handed over. An ended kiosk fob is not listed either: nobody grants it
+again, the employee registers a fob themselves at a kiosk. The dialog after *Reactivate* and the card on the
 employee page are org-admin only (`employee-reactivation.actions.ts`).
 
 **History.** `loadLifecycleHistory` (`lifecycle-history.ts`) lists the
@@ -397,6 +401,34 @@ badge of a later period. A rehire never revives a badge: a manager issues a new
 one, which belongs to the new period; the employee card offers it only while
 the employee has access. The kiosk PIN keeps its own rules and is left as is.
 
+## Kiosk fobs
+
+A kiosk fob (#1358, Time Tracking ADR 0014) is bound, like a badge, to the
+employment period it was registered in. A fob only selects the employee; the
+kiosk PIN still proves. Kiosks stop selecting anyone by it at the departure
+cutoff through the employment access rule, also while departure processing is
+delayed; a scheduled departure ends nothing early, and an edit or cancellation
+before the cutoff is followed. When the departure takes effect, the fobs of the
+ended period are ended in the departure's transaction (#1509, through
+`endKioskFobLinks`), with `ended_at` at the cutoff (never before the fob was
+registered), reason `departure` and `ended_by_user_id` the departure's initiator,
+audited as `kiosk_fob.ended` under the initiator with metadata
+`{ reason: "departure", departureId, employmentPeriodId }`. An old departure
+retry never touches a fob of a later period.
+
+A link whose employee no longer has access but whose departure was not
+processed yet never selects, and it does not block the card: when someone else
+registers it, that link is ended first, as the departure would end it. A
+deactivation ends the fob too (reason `removed`, see Deactivation).
+
+A rehire never revives a fob, and an ended link is never reopened: the employee
+registers the card again at a kiosk, which links it to the new period. Once
+ended, the card may be registered by someone else. The fob is in the
+employee's personal data export (Integrations, `kiosk_fobs`: serial number,
+registered at and where, ended at and why); kiosk badges are not. Fob rows are
+deleted with the employee's record and with the organization (foreign-key
+cascades).
+
 ## Absence deputies
 
 When the departure takes effect, the employee is cleared as **deputy** on every
@@ -445,7 +477,8 @@ are refused. The gap between periods is shown in the employment history, which
 is grouped by stint (legacy periods without a recorded start show *Date not
 recorded*). A rehire never restores expense officer, payroll access or
 personnel file officer grants; an admin must grant them again. Nor does it
-revive a kiosk badge: issue a new one.
+revive a kiosk badge (issue a new one) or a kiosk fob (the employee registers
+it again at a kiosk).
 
 ## Personnel file retention
 

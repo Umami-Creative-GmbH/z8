@@ -12,6 +12,8 @@ const DIGITS = ["1", "2", "3", "4", "5", "6", "7", "8", "9"] as const;
 
 interface KioskPinPadProps {
 	name: string;
+	/** What the PIN is for, when not clocking (#1505: registering a fob). */
+	prompt?: string;
 	/** Why the last PIN did nothing, already worded. */
 	error: string | null;
 	busy: boolean;
@@ -25,7 +27,15 @@ interface KioskPinPadProps {
  * shown as dots, and a hardware keyboard works too. The PIN is held only here
  * until it is sent; a refused PIN is cleared.
  */
-export function KioskPinPad({ name, error, busy, disabled, onSubmit, onBack }: KioskPinPadProps) {
+export function KioskPinPad({
+	name,
+	prompt,
+	error,
+	busy,
+	disabled,
+	onSubmit,
+	onBack,
+}: KioskPinPadProps) {
 	const { t } = useTranslate();
 	// The parent remounts the pad after a refused PIN, which clears it.
 	const [pin, setPin] = useState("");
@@ -66,7 +76,7 @@ export function KioskPinPad({ name, error, busy, disabled, onSubmit, onBack }: K
 			<div className="space-y-2 text-center">
 				<h1 className="text-3xl font-semibold break-words">{name}</h1>
 				<p className="text-lg text-muted-foreground">
-					{t("timeTracking.kiosk.pin.prompt", "Enter your kiosk PIN")}
+					{prompt ?? t("timeTracking.kiosk.pin.prompt", "Enter your kiosk PIN")}
 				</p>
 			</div>
 			<output

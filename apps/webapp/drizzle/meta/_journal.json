@@ -2038,6 +2038,20 @@
       "when": 1809792000000,
       "tag": "0290_invoiced_work_resolution",
       "breakpoints": true
+    },
+    {
+      "idx": 291,
+      "version": "7",
+      "when": 1809878400000,
+      "tag": "0291_kiosk_fob",
+      "breakpoints": true
+    },
+    {
+      "idx": 292,
+      "version": "7",
+      "when": 1809964800000,
+      "tag": "0292_kiosk_fob_registered_notification",
+      "breakpoints": true
     }
   ]
 }

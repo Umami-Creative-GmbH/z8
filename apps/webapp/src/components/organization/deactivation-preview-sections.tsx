@@ -61,6 +61,7 @@ function hasConsequences(plan: DeactivationPreview): boolean {
 			accessEnds.grants,
 			accessEnds.drivingAuthorizations,
 			accessEnds.kioskBadges,
+			accessEnds.kioskFobs,
 			accessEnds.shareLinks,
 		].some((items) => items.length > 0) ||
 		plan.retentionStarts ||
@@ -439,9 +440,13 @@ function AccessEndsSection({ access }: { access: AccessEndsPlan }) {
 	const { t } = useTranslate();
 	const grantLabel = useGrantKindLabel();
 	const grantKinds = [...new Set(access.grants.map((grant) => grant.kind))];
-	const { drivingAuthorizations, kioskBadges, shareLinks } = access;
+	const { drivingAuthorizations, kioskBadges, kioskFobs, shareLinks } = access;
 	if (
-		grantKinds.length + drivingAuthorizations.length + kioskBadges.length + shareLinks.length ===
+		grantKinds.length +
+			drivingAuthorizations.length +
+			kioskBadges.length +
+			kioskFobs.length +
+			shareLinks.length ===
 		0
 	) {
 		return null;
@@ -470,6 +475,15 @@ function AccessEndsSection({ access }: { access: AccessEndsPlan }) {
 							"settings.employees.lifecycle.deactivationPreview.kioskBadges",
 							"{count, plural, one {# kiosk badge is revoked} other {# kiosk badges are revoked}}",
 							{ count: kioskBadges.length },
+						)}
+					</li>
+				)}
+				{kioskFobs.length > 0 && (
+					<li>
+						{t(
+							"settings.employees.lifecycle.deactivationPreview.kioskFobs",
+							"{count, plural, one {# kiosk fob stops working} other {# kiosk fobs stop working}}",
+							{ count: kioskFobs.length },
 						)}
 					</li>
 				)}

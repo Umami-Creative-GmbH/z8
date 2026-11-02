@@ -10,6 +10,8 @@ import type {
 	KioskDeviceInfo,
 	KioskEmployeeListing,
 	KioskEmployeeSnapshot,
+	KioskFobLookup,
+	KioskFobRegistrationResult,
 	KioskOfflineContact,
 	KioskRefusalCode,
 } from "@/lib/time-tracking/kiosk/protocol";
@@ -36,7 +38,11 @@ import {
 	actingOfflineFlow,
 	attributionFlow,
 	badgeCheckedFlow,
+	fobCheckedFlow,
+	fobRegisteredFlow,
+	isFobRegistrationStep,
 	type KioskFlow,
+	type KioskFobPinStep,
 	type KioskTurnProof,
 	kioskBadgeBody,
 	kioskProofBody,
@@ -47,9 +53,9 @@ import {
 	vehicleAskOf,
 } from "./kiosk-turn-flow";
 import { KioskTurnScreen } from "./kiosk-turn-screen";
-import { useKioskBadgeScanner } from "./use-kiosk-badge-scanner";
 import { useKioskIdleReturn } from "./use-kiosk-idle-return";
 import { useKioskOfflineMode } from "./use-kiosk-offline-mode";
+import { useKioskReaderInput } from "./use-kiosk-reader-input";
 import { useKioskUncertainActions } from "./use-kiosk-uncertain-actions";
 
 export {
@@ -96,6 +102,12 @@ interface KioskPairedScreenProps {
  * camera input is on (#1367) also offers "Scan badge" there: the camera step
  * reads the badge on the device and feeds the same `identifyBadge`; the camera
  * runs only while that step shows.
+ *
+ * A kiosk whose NFC fob reader is on (#1505) reads kiosk fobs on the home
+ * screen too (`identifyFob`, through the same listener). A registered fob
+ * selects its employee in place of the name pick and opens their PIN entry
+ * (#1506); the PIN still proves and the turn goes on as name-and-PIN clocking.
+ * Fobs need a connection, and reads on every other screen are swallowed.
  */
 export function KioskPairedScreen({
 	token,
@@ -130,6 +142,10 @@ export function KioskPairedScreen({
 		setKiosk(next);
 		if (!kioskAcceptsBadgeInput(next, "camera")) {
 			setFlow((current) => (current.step === "camera" ? { step: "home" } : current));
+		}
+		// Fobs (#1505): a reader switched off ends a registration in progress (Z8 would refuse it).
+		if (next.nfcFobReaderEnabled !== true) {
+			setFlow((current) => (isFobRegistrationStep(current) ? { step: "home" } : current));
 		}
 	}
 
@@ -170,7 +186,12 @@ export function KioskPairedScreen({
 	// away from every other screen, so no scan switches or changes an employee's turn.
 	// The camera scan screen counts as such a screen too (#1367).
 	const scanner = kioskAcceptsBadgeInput(kiosk, "scanner");
-	useKioskBadgeScanner({ mode: scanner && flow.step !== "home" ? "guard" : "off" });
+	// An attached NFC reader (#1505) types like a scanner: fobs are read on the home
+	// screen only, and kept away from every other screen the same way.
+	const fobReader = kiosk.nfcFobReaderEnabled === true;
+	useKioskReaderInput({
+		mode: (scanner || fobReader) && flow.step !== "home" ? "guard" : "off",
+	});
 
 	// Camera badges (#1367): "Scan badge" on the home screen opens the camera step.
 	const camera = kioskAcceptsBadgeInput(kiosk, "camera");
@@ -206,6 +227,46 @@ export function KioskPairedScreen({
 			checked.step === "employee" ? uncertain.pendingFor(checked.snapshot.employee.id) : undefined;
 		if (held && checked.step === "employee") uncertain.hold(held, checked);
 		else show(checked);
+	}
+
+	/**
+	 * A kiosk fob read on the home screen: the employee it selects here, whose
+	 * PIN entry opens as after picking their name (#1506), or the offer to
+	 * register it (#1505). Fobs need a connection; offline nothing is sent or
+	 * queued, and the employee can still tap their name.
+	 */
+	async function identifyFob(serial: string) {
+		if (!contact.online) {
+			setFlow({ step: "home", notice: { code: "fob_offline" } });
+			return;
+		}
+		setFlow({ step: "fob" });
+		const result = await kioskPost<KioskFobLookup>(
+			token,
+			"/api/kiosk/fob",
+			{ serial },
+			{ timeoutMs: KIOSK_ACTION_TIMEOUT_MS },
+		);
+		if (result.kind === "kiosk") return kioskRefused(result.code);
+		const checked = fobCheckedFlow({ serial, result, contactLost: contact.contactLost });
+		// Like a name pick: an employee whose action is unresolved gets no PIN pad (#1363).
+		const held = checked.step === "pin" ? uncertain.pendingFor(checked.employee.id) : undefined;
+		if (held) uncertain.hold(held);
+		else show(checked);
+	}
+
+	/** Registering a fob (#1505): the employee's name and kiosk PIN link it to them. */
+	async function registerFob(step: KioskFobPinStep, pin: string) {
+		const sending = { ...step, busy: true, error: null };
+		setFlow(sending);
+		const result = await kioskPost<KioskFobRegistrationResult>(
+			token,
+			"/api/kiosk/fob/registration",
+			{ serial: step.serial, employeeId: step.employee.id, pin },
+			{ timeoutMs: KIOSK_ACTION_TIMEOUT_MS },
+		);
+		if (result.kind === "kiosk") return kioskRefused(result.code);
+		show(fobRegisteredFlow({ step: sending, result, contactLost: contact.contactLost }));
 	}
 
 	async function verifyPin(employee: KioskEmployeeListing, attempt: number, pin: string) {
@@ -365,6 +426,7 @@ export function KioskPairedScreen({
 										setFlow({ step: "home", notice: { code: "badge_unreadable" } }),
 								}
 							: {})}
+						{...(fobReader ? { onFob: (serial: string) => void identifyFob(serial) } : {})}
 						{...(camera ? { onScanBadge: scanWithCamera } : {})}
 						onChooseLanguage={language.choose}
 						onPick={(employee) => {
@@ -384,6 +446,9 @@ export function KioskPairedScreen({
 					onFlow={setFlow}
 					onHome={goHome}
 					onCameraBadge={(badge) => void identifyBadge(badge, "camera")}
+					token={token}
+					onKioskRefused={kioskRefused}
+					onRegisterFob={(step, pin) => void registerFob(step, pin)}
 					onVerifyPin={(employee, attempt, pin) => void verifyPin(employee, attempt, pin)}
 					onChoose={choose}
 					onProceed={proceed}
