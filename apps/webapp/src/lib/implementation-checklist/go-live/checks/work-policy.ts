@@ -11,9 +11,9 @@ export const WORK_POLICY_ASSIGNMENTS_HREF = "/settings/work-policies?tab=work&vi
 /**
  * Who a member resolves as. An invitee has no employee record yet: their draft
  * id never matches an employee assignment, so they resolve by their draft team,
- * then at organization level.
+ * then at organization level. The go-live rehearsal resolves them the same way.
  */
-function policySubject(member: GoLiveMember) {
+export function workPolicySubject(member: GoLiveMember) {
 	return member.kind === "employee"
 		? { id: member.employeeId, teamId: member.primaryTeamId }
 		: { id: member.draftId, teamId: member.teamId };
@@ -34,14 +34,14 @@ export const workPolicyGoLiveCheck: GoLiveCheck = {
 			hasWorkPolicySettings(db, organizationId),
 			loadEffectiveWorkPolicies(db, {
 				organizationId,
-				employees: group.members.map(policySubject),
+				employees: group.members.map(workPolicySubject),
 				at: asOf.instant,
 			}),
 		]);
 
 		const uncovered = Map.groupBy(
-			group.members.filter((member) => !policies.get(policySubject(member).id)),
-			(member) => policySubject(member).teamId,
+			group.members.filter((member) => !policies.get(workPolicySubject(member).id)),
+			(member) => workPolicySubject(member).teamId,
 		);
 		const fix = fixLink(WORK_POLICY_ASSIGNMENTS_HREF, {
 			key: "settings.implementationChecklist.goLive.workPolicy.fix",

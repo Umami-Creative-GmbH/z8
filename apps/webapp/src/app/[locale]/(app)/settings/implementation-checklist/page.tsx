@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { requireOrgAdminSettingsAccess } from "@/lib/auth-helpers";
 
+import { GoLiveRehearsalProvider } from "./go-live-rehearsal";
 import { ImplementationChecklistClient } from "./implementation-checklist-client";
 import { loadImplementationChecklistForContext } from "./queries";
 
@@ -24,7 +25,9 @@ async function ImplementationChecklistPageContent() {
 	return (
 		<div className="flex-1 p-6">
 			<div className="mx-auto max-w-4xl">
-				<ImplementationChecklistClient checklist={result.data} />
+				<GoLiveRehearsalProvider candidates={result.data.goLive.rehearsalCandidates}>
+					<ImplementationChecklistClient checklist={result.data} />
+				</GoLiveRehearsalProvider>
 			</div>
 		</div>
 	);
