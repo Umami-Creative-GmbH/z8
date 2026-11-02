@@ -556,6 +556,7 @@
       "endTime": "Ora di fine",
       "endTimeDescription": "es. 06:00 per il turno notturno",
       "loadError": "Impossibile caricare le assegnazioni",
+      "loadFailed": "Impossibile caricare i modelli di maggiorazione. Riprova.",
       "loading": "Caricamento impostazioni di maggiorazione...",
       "modelCreated": "Modello di maggiorazione creato",
       "modelDeleted": "Modello di maggiorazione eliminato",

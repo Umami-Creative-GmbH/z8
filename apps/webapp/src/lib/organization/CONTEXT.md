@@ -145,8 +145,35 @@ _Avoid_: line-management scope, payroll access, personnel file access
 The organization's justified period for keeping a check record once it no longer supports an active driving authorization. A documented hold for a specific legal case postpones deletion.
 _Avoid_: permanent archive, statutory three-year retention
 
+### Going live
+
+**Go-live group**:
+The employees an organization is putting into operation with Z8: its current roster, or the part of it in teams the admin chose for a phased go-live, together with employees invited but not yet joined, less any go-live exclusions.
+_Avoid_: rollout population, pilot group, rollout (that is an approval kind's lifecycle mode)
+
+**Go-live exclusion**:
+An admin's recorded decision, with a reason, to leave one employee out of the go-live group, such as a director who does not track time. It affects nothing outside going live.
+_Avoid_: exemption, opt-out, time-tracking exemption
+
+**Go-live check**:
+A check that the setup actually works for each member of the go-live group, such as whether they have an effective work policy today or an eligible approver. It is worked out afresh whenever it is looked at, so it is never stale.
+_Avoid_: rollout check, health check, configuration check, completeness check
+
+**Go-live readiness**:
+The combined result of the go-live checks for the go-live group. It describes the setup, never the correctness of recorded data.
+_Avoid_: rollout readiness, payroll readiness (that is one pay period's export readiness), submission readiness
+
+**Go-live rehearsal**:
+A trace of what Z8 would do for one employee: which work policy applies, who would approve their requests, and what payroll needs. It changes nothing, notifies nobody and delivers nothing.
+_Avoid_: test run, simulation, pilot, dry run
+
+**First-workflow evidence**:
+The organization's first real clock-in, decided request or payroll export, noticed rather than staged.
+_Avoid_: rehearsal record, test data
+
 ## Confirmed design references
 
 - [Driving licence management](../../../../../docs/refs/driving-licence-management.md): the confirmed product rules and their implementation status.
 - [Driving authorization and check evidence have their own lifecycle](./docs/adr/0004-driving-authorization-and-check-evidence-have-their-own-lifecycle.md): why permission and check evidence stay separate from vehicle attribution, skill certificates and generic audit retention.
 - [Intended-driver status is a scoped assignment, and losing it ends driving authorization](./docs/adr/0005-intended-driver-is-a-scoped-assignment-and-losing-it-ends-authorization.md): why intended drivers are assigned like a policy, matched by primary team, and why leaving ends authorization.
+- [Going live is checked, never staged](./docs/adr/0007-going-live-is-checked-never-staged.md): why go-live checks are worked out live, the go-live rehearsal writes nothing, there is no test-employee mode, and manual confirmations carry configuration fingerprints.

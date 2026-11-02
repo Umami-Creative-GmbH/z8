@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseInstant } from "@/lib/datetime/temporal-core";
-import {
-	buildKioskFrozenRefusalNotification,
-	resolveIcuSelects,
-} from "./frozen-refusal-notification";
+import { buildKioskFrozenRefusalNotification } from "./frozen-refusal-notification";
 
 const base = {
 	organizationId: "org-1",
@@ -124,14 +121,5 @@ describe("buildKioskFrozenRefusalNotification", () => {
 			recipient: "employee",
 		});
 		expect(notification.message).toContain("at Aug 3, 2026, 8:00 AM (Europe/London)");
-	});
-});
-
-describe("resolveIcuSelects", () => {
-	it("picks each select's branch, falls back to other and keeps other placeholders", () => {
-		const template =
-			"{a, select, x {ex {name}} other {fallback}} and {b, select, y {why} other {else}} for {name}";
-		expect(resolveIcuSelects(template, { a: "x", b: "z" })).toBe("ex {name} and else for {name}");
-		expect(resolveIcuSelects("no selects {here}", {})).toBe("no selects {here}");
 	});
 });

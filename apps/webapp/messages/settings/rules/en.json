@@ -556,6 +556,7 @@
       "endTime": "End Time",
       "endTimeDescription": "e.g., 06:00 for night shift",
       "loadError": "Failed to load assignments",
+      "loadFailed": "Surcharge models could not be loaded. Please try again.",
       "loading": "Loading surcharge settings...",
       "modelCreated": "Surcharge model created",
       "modelDeleted": "Surcharge model deleted",

@@ -73,5 +73,10 @@ describe("notification email routes", () => {
 			kind: "layout",
 			linkPrefixes: ["/personnel-files/", "/my-documents"],
 		});
+		// The employee's security settings; their managers' copy the employee's page (#1507).
+		expect(notificationEmailRoute("kiosk_fob_registered")).toEqual({
+			kind: "layout",
+			linkPrefixes: ["/settings/security", "/settings/employees/"],
+		});
 	});
 });

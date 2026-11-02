@@ -17,13 +17,12 @@
     },
     "covering-for": {
       "description": "Colleagues you are the deputy for while they are away",
-      "error": "Failed to load your cover duties",
       "running": "Covering for {name} until {date}",
       "title": "Covering for",
       "upcoming": "Upcoming: covering for {name} from {start} to {end}"
     },
     "customize": {
-      "empty-description": "Use the dashboard customization icon to re-enable individual widgets, or reset the layout to show every widget again.",
+      "empty-description-defaults": "Use the dashboard customization icon to re-enable individual widgets, or reset the layout to restore your default widgets.",
       "empty-title": "All dashboard widgets are hidden",
       "move-down": "Move {widget} down",
       "move-up": "Move {widget} up",
@@ -54,7 +53,6 @@
     },
     "managed-employees": {
       "direct-reports": "{count} direct reports",
-      "error": "Failed to load managed employees",
       "no-reports": "No direct reports yet",
       "no-reports-description": "You'll see your team members here once assigned",
       "people-you-manage": "People you manage",
@@ -78,7 +76,7 @@
       "awaiting-approval": "Awaiting your approval",
       "correction": "Correction",
       "description": "Requests awaiting your decision",
-      "error": "Failed to load pending approvals",
+      "empty": "No pending approvals",
       "more-requests": "+{count} more requests",
       "pending-requests": "{count} pending {request}",
       "request": "request",
@@ -117,7 +115,7 @@
       "by": "by {name}",
       "description": "Latest approved requests",
       "description-count": "Last {count} approved {request}",
-      "error": "Failed to load recently approved requests",
+      "empty": "No recently approved requests",
       "more-approved": "+{count} more approved",
       "request": "request",
       "requests": "requests",
@@ -126,12 +124,11 @@
       "view-all": "View All Approvals"
     },
     "team-overview": {
-      "active-count": "{active} of {total} employees ({percent}%)",
-      "active-employees": "Active Employees",
       "avg-hours": "Avg. Hours",
+      "current-employees": "Current employees",
+      "current-employees-description": "Everyone who works here now",
       "description": "Team statistics at a glance",
       "employees-button": "Employees",
-      "error": "Failed to load team statistics",
       "per-week": "/week",
       "teams": "Teams",
       "teams-button": "Teams",
@@ -142,7 +139,6 @@
       "empty": "No upcoming shifts",
       "empty-description": "Your next published shifts will show up here.",
       "ends-next-day": "ends next day",
-      "error": "Failed to load your upcoming shifts",
       "title": "Upcoming Shifts",
       "today": "Today",
       "tomorrow": "Tomorrow",
@@ -155,7 +151,7 @@
       "days": "days",
       "description": "Scheduled team absences",
       "description-count": "Next {count} scheduled {absence}",
-      "error": "Failed to load upcoming time off",
+      "empty": "No upcoming time off",
       "title": "Upcoming Time Off",
       "today": "Today",
       "tomorrow": "Tomorrow",
@@ -167,7 +163,6 @@
       "carryover-days": "{days} days",
       "days-remaining": "days remaining",
       "description": "{year} vacation days",
-      "error": "Failed to load vacation balance",
       "expires-in": "Expires in {days} days",
       "label-available": "Available",
       "label-pending": "Pending",
@@ -176,10 +171,10 @@
       "percent-used": "{percent}% used",
       "title": "Vacation Balance",
       "total": "{days} total",
+      "unavailable": "Vacation balance is unavailable.",
       "used": "{days} used"
     },
     "whos-out": {
-      "error": "Failed to load today's absences",
       "everyone-in": "Everyone is in the office today",
       "everyones-in": "Everyone's in!",
       "full-team": "Full team available!",
@@ -198,9 +193,13 @@
       "view-calendar": "View Full Calendar"
     },
     "widgets": {
+      "deferred": "Loads when in view. You can also load it now.",
       "dragToReorder": "Drag to reorder widget",
+      "load": "Load {widget}",
+      "loading": "Loading dashboard widget…",
       "moving": "Moving widget…",
-      "refresh": "Refresh"
+      "refresh": "Refresh",
+      "retry": "Retry {widget}"
     }
   }
 }

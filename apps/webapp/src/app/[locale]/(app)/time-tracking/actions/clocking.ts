@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, eq, gte, lte, sql } from "drizzle-orm";
+import { and, eq, gte, isNull, lte, sql } from "drizzle-orm";
 import { DateTime, IANAZone } from "luxon";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
@@ -21,6 +21,7 @@ import {
 	dateFromInstant,
 	type Instant,
 	instantFromDate,
+	instantToCanonicalString,
 	parseInstant,
 } from "@/lib/datetime/temporal-core";
 import { deserializeInstant, serializeInstant } from "@/lib/datetime/temporal-wire";
@@ -138,8 +139,9 @@ import type {
 	BrowserTimezoneContext,
 	ClockOutActionContext,
 	ManualTimeEntryInput,
+	ManualTimeEntryResult,
 } from "./types";
-import { MANUAL_ENTRY_REFRESH_REQUIRED } from "./types";
+import { MANUAL_ENTRY_REFRESH_REQUIRED, manualEntryOccupancyError } from "./types";
 
 type ManualEntryOverlapResult =
 	| {
@@ -1086,18 +1088,7 @@ function adjustManualEntryForOverlaps(
 
 export async function createManualTimeEntry(
 	data: ManualTimeEntryInput,
-): Promise<
-	ServerActionResult<{
-		workPeriodId: string;
-		requiresApproval: boolean;
-		wasAdjusted?: boolean;
-		adjustedTimes?: {
-			clockIn: string;
-			clockOut: string;
-			durationMinutes: number;
-		};
-	}>
-> {
+): Promise<ManualTimeEntryResult> {
 	const session = await getCurrentSession();
 	if (!session?.user) {
 		return { success: false, error: "Not authenticated" };
@@ -1322,22 +1313,17 @@ export async function createManualTimeEntry(
 			return { success: false, error: "Invalid date format" };
 		}
 
+		// Trimming considers completed work only. Live work does not block the entry:
+		// work records refuses only an entry that overlaps it (#1492).
 		const existingWorkPeriods = await db.query.workPeriod.findMany({
 			where: and(
 				eq(workPeriod.employeeId, targetEmployee.id),
 				eq(workPeriod.organizationId, targetEmployee.organizationId),
+				isNull(workPeriod.deletedAt),
 				gte(workPeriod.startTime, localDate.startOf("day").toUTC().toJSDate()),
 				lte(workPeriod.startTime, localDate.endOf("day").toUTC().toJSDate()),
 			),
 		});
-
-		if (existingWorkPeriods.some((workPeriod) => !workPeriod.endTime)) {
-			return {
-				success: false,
-				error:
-					"Cannot create manual entry while you have an active work period. Please clock out first.",
-			};
-		}
 
 		const overlapResult = adjustManualEntryForOverlaps(
 			existingWorkPeriods.filter((period) => period.id !== submissionId),
@@ -1524,7 +1510,9 @@ export async function createManualTimeEntry(
 					},
 					appendOperation: "manual_entry",
 				});
-				if (created.kind === "work_occupied") return { disposition: "occupied" as const };
+				if (created.kind === "work_occupied") {
+					return { disposition: "occupied" as const, occupants: created.occupants };
+				}
 				if (created.kind === "month_closed") {
 					return { disposition: "month_closed" as const, month: created.month };
 				}
@@ -1560,10 +1548,20 @@ export async function createManualTimeEntry(
 			},
 		);
 		if (committed.disposition === "occupied") {
+			// The same typed rejection as version-2 commands, so the form can name live work.
 			return {
 				success: false,
-				error:
-					"This time overlaps recorded work. Please choose a time range that does not overlap existing entries.",
+				error: manualEntryOccupancyError(committed.occupants),
+				code: "occupancy_conflict",
+				rejection: {
+					reason: "occupancy_conflict",
+					occupants: committed.occupants.map((occupant) => ({
+						kind: occupant.kind,
+						id: occupant.id,
+						startAt: instantToCanonicalString(occupant.startAt),
+						endAt: occupant.endAt ? instantToCanonicalString(occupant.endAt) : null,
+					})),
+				},
 			};
 		}
 		if (committed.disposition === "month_closed") {

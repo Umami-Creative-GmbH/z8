@@ -130,6 +130,11 @@ export interface ManualEntryTargetContext {
 	categories: ManualEntryCategoryChoice[];
 	/** Whether the target is asked for vehicle use, and the vehicles to pick (#1120). */
 	vehicleUse: WorkVehicleUseFormContext;
+	/**
+	 * Start of the target's live work as an ISO instant, or null when they are not
+	 * clocked in. A manual entry must end by it (#1492).
+	 */
+	liveWorkStartedAt: string | null;
 }
 
 export interface ManualTimeEntryInput {
@@ -183,6 +188,20 @@ export type ManualTimeEntryResult =
 			holidayName?: string;
 			rejection?: ManualCommandRejection;
 	  };
+
+/** Server copy of an occupancy refusal; the form words it from the rejection's occupants. */
+export const MANUAL_ENTRY_OVERLAP_ERROR =
+	"This time overlaps recorded work. Please choose a time range that does not overlap existing entries.";
+/** Live work occupies all time from its start onward, so a manual entry must end by it (#1492). */
+export const MANUAL_ENTRY_LIVE_WORK_OVERLAP_ERROR =
+	"This time overlaps work that is still running. A manual entry must end by the clock-in of the running work.";
+
+/** The server copy for an occupancy refusal, naming live work when it is among the occupants. */
+export function manualEntryOccupancyError(occupants: readonly { endAt: unknown }[]): string {
+	return occupants.some((occupant) => occupant.endAt === null)
+		? MANUAL_ENTRY_LIVE_WORK_OVERLAP_ERROR
+		: MANUAL_ENTRY_OVERLAP_ERROR;
+}
 
 /** Legacy unversioned input in an organization that now requires version-2 commands. */
 export const MANUAL_ENTRY_REFRESH_REQUIRED = "manual_entry_refresh_required";

@@ -25,4 +25,25 @@ describe("forwardedNotification", () => {
 		expect(copy).toMatchObject({ userId: "user-manager", title: "Kim Kiosk: Password changed" });
 		expect(copy.metadata).toEqual({ i18n, forwardedFor });
 	});
+
+	it("drops the employee's own link and gives managers the forwarded one, if any", () => {
+		const forwardedFor = { userId: "user-kiosk", employeeId: "employee-1", name: "Kim Kiosk" };
+		const params = {
+			userId: "user-kiosk",
+			organizationId: "org-1",
+			type: "kiosk_fob_registered" as const,
+			title: "Kiosk fob registered",
+			message: "A kiosk fob was registered.",
+			actionUrl: "/settings/security",
+		};
+
+		expect(forwardedNotification(params, forwardedFor, "user-manager").actionUrl).toBeUndefined();
+		const linked = forwardedNotification(
+			{ ...params, forwardedActionUrl: "/settings/employees/employee-1" },
+			forwardedFor,
+			"user-manager",
+		);
+		expect(linked.actionUrl).toBe("/settings/employees/employee-1");
+		expect(linked.forwardedActionUrl).toBeUndefined();
+	});
 });

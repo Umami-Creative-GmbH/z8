@@ -17,13 +17,12 @@
     },
     "covering-for": {
       "description": "Colegas que você está substituindo durante a ausência deles",
-      "error": "Falha ao carregar suas responsabilidades de substituição",
       "running": "Substituindo {name} até {date}",
       "title": "Substituindo",
       "upcoming": "Em breve: substituindo {name} de {start} até {end}"
     },
     "customize": {
-      "empty-description": "Use o ícone de personalização do painel para reativar widgets individuais ou redefina o layout para exibir todos os widgets novamente.",
+      "empty-description-defaults": "Use o ícone de personalização do painel para reativar widgets individuais ou redefina o layout para restaurar seus widgets padrão.",
       "empty-title": "Todos os widgets do painel estão ocultos",
       "move-down": "Mover {widget} para baixo",
       "move-up": "Mover {widget} para cima",
@@ -54,7 +53,6 @@
     },
     "managed-employees": {
       "direct-reports": "{count} subordinados diretos",
-      "error": "Falha ao carregar funcionários gerenciados",
       "no-reports": "Ainda sem subordinados diretos",
       "no-reports-description": "Verá os membros da sua equipa aqui assim que forem atribuídos",
       "people-you-manage": "Pessoas que gere",
@@ -78,7 +76,7 @@
       "awaiting-approval": "A aguardar a sua aprovação",
       "correction": "Correção",
       "description": "Pedidos a aguardar a sua decisão",
-      "error": "Falha ao carregar aprovações pendentes",
+      "empty": "Nenhuma aprovação pendente",
       "more-requests": "+{count} mais pedidos",
       "pending-requests": "{count} {request} pendentes",
       "request": "solicitação",
@@ -117,7 +115,7 @@
       "by": "por {name}",
       "description": "Últimos pedidos aprovados",
       "description-count": "Últimos {count} {request} aprovados",
-      "error": "Falha ao carregar pedidos aprovados recentemente",
+      "empty": "Nenhuma solicitação aprovada recentemente",
       "more-approved": "+{count} mais aprovados",
       "request": "solicitação",
       "requests": "solicitações",
@@ -126,12 +124,11 @@
       "view-all": "Ver todas as aprovações"
     },
     "team-overview": {
-      "active-count": "{active} de {total} funcionários ({percent}%)",
-      "active-employees": "Funcionários ativos",
       "avg-hours": "Média de horas",
+      "current-employees": "Funcionários atuais",
+      "current-employees-description": "Todos que trabalham aqui no momento",
       "description": "Estatísticas da equipa num relance",
       "employees-button": "Funcionários",
-      "error": "Falha ao carregar estatísticas da equipe",
       "per-week": "/semana",
       "teams": "Equipas",
       "teams-button": "Equipas",
@@ -142,7 +139,6 @@
       "empty": "Sem turnos futuros",
       "empty-description": "Seus próximos turnos publicados aparecerão aqui.",
       "ends-next-day": "termina no dia seguinte",
-      "error": "Falha ao carregar seus próximos turnos",
       "title": "Próximos turnos",
       "today": "Hoje",
       "tomorrow": "Amanhã",
@@ -155,7 +151,7 @@
       "days": "dias",
       "description": "Ausências de equipa agendadas",
       "description-count": "Próximas {count} {absence} agendadas",
-      "error": "Falha ao carregar ausências futuras",
+      "empty": "Nenhuma folga futura",
       "title": "Próximas folgas",
       "today": "Hoje",
       "tomorrow": "Amanhã",
@@ -167,7 +163,6 @@
       "carryover-days": "{days} dias",
       "days-remaining": "dias restantes",
       "description": "Dias de férias {year}",
-      "error": "Falha ao carregar saldo de férias",
       "expires-in": "Expira em {days} dias",
       "label-available": "Disponível",
       "label-pending": "Pendente",
@@ -176,10 +171,10 @@
       "percent-used": "{percent}% usado",
       "title": "Saldo de férias",
       "total": "{days} total",
+      "unavailable": "O saldo de férias não está disponível.",
       "used": "{days} usados"
     },
     "whos-out": {
-      "error": "Falha ao carregar ausências de hoje",
       "everyone-in": "Estão todos no escritório hoje",
       "everyones-in": "Todos presentes!",
       "full-team": "Equipa completa disponível!",
@@ -198,9 +193,13 @@
       "view-calendar": "Ver calendário completo"
     },
     "widgets": {
+      "deferred": "Carrega quando estiver visível. Você também pode carregar agora.",
       "dragToReorder": "Arraste para reordenar o widget",
+      "load": "Carregar {widget}",
+      "loading": "Carregando widget do painel…",
       "moving": "Movendo widget…",
-      "refresh": "Atualizar"
+      "refresh": "Atualizar",
+      "retry": "Tentar carregar {widget} novamente"
     }
   }
 }

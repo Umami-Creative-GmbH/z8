@@ -556,6 +556,7 @@
       "endTime": "Ora e përfundimit",
       "endTimeDescription": "p.sh. 06:00 për turnin e natës",
       "loadError": "Ngarkimi i caktimeve dështoi",
+      "loadFailed": "Modelet e tarifave shtesë nuk mund të ngarkoheshin. Ju lutemi provoni përsëri.",
       "loading": "Po ngarkohen cilësimet e shtesave...",
       "modelCreated": "Modeli i shtesës u krijua",
       "modelDeleted": "Modeli i shtesës u fshi",

@@ -1,9 +1,9 @@
 import "server-only";
 
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { organization, user } from "@/db/auth-schema";
-import { employee, userSettings } from "@/db/schema";
+import { employee, userSettings, workPeriod } from "@/db/schema";
 import { buildAuthUserDisplayName } from "@/lib/auth/derived-user-name";
 import { getPrincipalContext } from "@/lib/auth-helpers";
 import { asAppSubject, defineAbilityFor } from "@/lib/authorization";
@@ -178,6 +178,30 @@ export async function listManualEntryCategoryChoices(
 }
 
 /**
+ * Start of the target's live work, if they are clocked in. Live work occupies
+ * all time from its start onward, so the form tells the user a manual entry
+ * must end by it (#1492); the submission's occupancy check decides.
+ */
+export async function readManualEntryLiveWorkStart(
+	targetEmployee: Pick<Employee, "id" | "organizationId">,
+): Promise<string | null> {
+	const [live] = await db
+		.select({ startTime: workPeriod.startTime })
+		.from(workPeriod)
+		.where(
+			and(
+				eq(workPeriod.organizationId, targetEmployee.organizationId),
+				eq(workPeriod.employeeId, targetEmployee.id),
+				isNull(workPeriod.endTime),
+				isNull(workPeriod.deletedAt),
+			),
+		)
+		.orderBy(asc(workPeriod.startTime))
+		.limit(1);
+	return live ? live.startTime.toISOString() : null;
+}
+
+/**
  * Advisory form context for a creation-authorized target. The browser uses it
  * to show the effective zone and eligible choices; submissions are still
  * checked against the same rules on the server.
@@ -195,20 +219,22 @@ export async function getManualEntryTargetContextForEmployee(params: {
 	}
 
 	const { targetEmployee, isOwnEntry } = target;
-	const [zone, projects, categories, targetUser, admission, vehicleUse] = await Promise.all([
-		resolveManualEntryTargetZone(targetEmployee),
-		listManualEntryProjectChoices(targetEmployee),
-		listManualEntryCategoryChoices(targetEmployee),
-		db.query.user.findFirst({
-			where: eq(user.id, targetEmployee.userId),
-			columns: { firstName: true, lastName: true, name: true, email: true },
-		}),
-		readAppendAdmission(db, targetEmployee.organizationId),
-		loadWorkVehicleUseFormContext(db, {
-			organizationId: targetEmployee.organizationId,
-			employeeId: targetEmployee.id,
-		}),
-	]);
+	const [zone, projects, categories, targetUser, admission, vehicleUse, liveWorkStartedAt] =
+		await Promise.all([
+			resolveManualEntryTargetZone(targetEmployee),
+			listManualEntryProjectChoices(targetEmployee),
+			listManualEntryCategoryChoices(targetEmployee),
+			db.query.user.findFirst({
+				where: eq(user.id, targetEmployee.userId),
+				columns: { firstName: true, lastName: true, name: true, email: true },
+			}),
+			readAppendAdmission(db, targetEmployee.organizationId),
+			loadWorkVehicleUseFormContext(db, {
+				organizationId: targetEmployee.organizationId,
+				employeeId: targetEmployee.id,
+			}),
+			readManualEntryLiveWorkStart(targetEmployee),
+		]);
 
 	return {
 		success: true,
@@ -226,6 +252,7 @@ export async function getManualEntryTargetContextForEmployee(params: {
 			projects,
 			categories,
 			vehicleUse,
+			liveWorkStartedAt,
 		},
 	};
 }

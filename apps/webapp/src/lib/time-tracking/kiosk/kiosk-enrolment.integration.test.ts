@@ -283,6 +283,8 @@ describe("kiosk enrolment on PostgreSQL", () => {
 				badgeScannerEnabled: false,
 				// #1367: and the camera badge input.
 				badgeCameraEnabled: false,
+				// #1505: and the NFC fob reader.
+				nfcFobReaderEnabled: false,
 			},
 		});
 		const resolved = await resolveKioskFromRequest(
@@ -810,6 +812,52 @@ describe("kiosk enrolment on PostgreSQL", () => {
 				}),
 			).toMatchObject({ success: false, code: "invalid_selection" });
 			expect((await adminKiosks())[0]).toMatchObject({ badgeCameraEnabled: false });
+		});
+	});
+
+	describe("NFC fob reader (#1505)", () => {
+		it("is off for a new kiosk, and only owners and admins switch it, on its own", async () => {
+			const created = await createdKiosk();
+			const token = await pairedToken(created.pairingCode);
+			const reader = async () => {
+				const response = await session(token);
+				const { kiosk } = (await response.json()) as {
+					kiosk: { nfcFobReaderEnabled: boolean; badgeScannerEnabled: boolean };
+				};
+				return [kiosk.nfcFobReaderEnabled, kiosk.badgeScannerEnabled];
+			};
+			expect((await adminKiosks())[0]).toMatchObject({ nfcFobReaderEnabled: false });
+			expect(await reader()).toEqual([false, false]);
+
+			for (const userId of [ids.managerUser, ids.memberUser]) {
+				actAs(userId);
+				expect(
+					await admin.updateKioskAction({ kioskId: created.kioskId, nfcFobReaderEnabled: true }),
+				).toMatchObject({ success: false, code: "admin_only" });
+			}
+			actAs(ids.foreignUser, ids.otherOrganization);
+			expect(
+				await admin.updateKioskAction({ kioskId: created.kioskId, nfcFobReaderEnabled: true }),
+			).toMatchObject({ success: false, code: "kiosk_not_found" });
+			actAs(ids.adminUser);
+			expect(
+				await admin.updateKioskAction({
+					kioskId: created.kioskId,
+					nfcFobReaderEnabled: "yes" as unknown as boolean,
+				}),
+			).toMatchObject({ success: false, code: "invalid_selection" });
+			expect(await reader()).toEqual([false, false]);
+
+			for (const userId of [ids.ownerUser, ids.adminUser]) {
+				actAs(userId);
+				expect(
+					await admin.updateKioskAction({ kioskId: created.kioskId, nfcFobReaderEnabled: true }),
+				).toMatchObject({ success: true });
+				expect(await reader()).toEqual([true, false]);
+				actAs(userId);
+				await admin.updateKioskAction({ kioskId: created.kioskId, nfcFobReaderEnabled: false });
+				expect(await reader()).toEqual([false, false]);
+			}
 		});
 	});
 

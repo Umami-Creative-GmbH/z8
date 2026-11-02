@@ -211,10 +211,6 @@
       "ariaLabel": "Sök teammedlemmar",
       "placeholder": "Sök på namn, e-post, befattning eller team..."
     },
-    "status": {
-      "active": "Aktiv",
-      "inactive": "Inaktiv"
-    },
     "table": {
       "employee": "Anställd",
       "position": "Befattning",

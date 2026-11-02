@@ -268,6 +268,7 @@
       "importReview": "Carregando revisão de importação",
       "importSettings": "Carregando configurações de importação",
       "locationSettings": "Carregando configurações de localização",
+      "navigation": "Carregando navegação",
       "onboarding": "Carregando integração",
       "payrollExportSettings": "Carregando configurações de exportação da folha de pagamento",
       "payrollReadiness": "Carregando prontidão da folha de pagamento",
@@ -317,6 +318,10 @@
     "moveDown": "Mover para baixo",
     "moveUp": "Mover para cima",
     "name": "Nome",
+    "navigation": {
+      "retry": "Tentar carregar a navegação novamente",
+      "unavailable": "Alguns itens de navegação estão indisponíveis"
+    },
     "new": "Novo",
     "next": "Seguinte",
     "no": "Não",
@@ -342,6 +347,7 @@
       "assignmentNotFound": "Esta atribuição não existe mais.",
       "employeeNotFound": "Este funcionário não foi encontrado.",
       "employeeProfileRequired": "É necessário ter um perfil de funcionário nesta organização.",
+      "formerEmployee": "Ex-funcionários não podem receber uma nova atribuição. Escolha alguém da lista atual.",
       "invalidTarget": "Escolha a quem a atribuição se aplica.",
       "noticeChanged": "O aviso de posição foi alterado. Revise o aviso atual antes de decidir.",
       "positionsForbidden": "Você não tem permissão para ver as posições deste período de trabalho.",
@@ -933,7 +939,6 @@
   "employeeSelect": {
     "countSelected": "{count} funcionários selecionados",
     "countWithMore": "{count} funcionários (+{more} outros)",
-    "inactive": "Inativo",
     "noEmployeesFound": "Nenhum funcionário encontrado",
     "removeSelected": "Remover {name}",
     "role": "Cargo",
@@ -975,6 +980,13 @@
       "digest": "Referência: {digest}",
       "title": "Algo deu errado"
     }
+  },
+  "formerEmployees": {
+    "current": "Atual",
+    "former": "Ex-funcionário",
+    "formerDateNotRecorded": "Ex-funcionário · data não registrada",
+    "formerSince": "Ex-funcionário desde {date}",
+    "showFormer": "Mostrar ex-funcionários"
   },
   "generic": {
     "done": "Concluído",
@@ -1331,8 +1343,13 @@
         "message": "Providencie uma verificação da carta de condução original para {employeeName}, categoria {classes}, até {deadline}.",
         "title": "Verificação da carta de condução pendente"
       },
+      "employeeDeactivationShiftsOpened": {
+        "message": "{shiftCount, plural, one {{employeeName} foi desativado(a). # próximo turno está aberto agora.} other {{employeeName} foi desativado(a). # próximos turnos estão abertos agora.}}",
+        "title": "Turnos precisam de alguém"
+      },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: As funções de aprovação precisam de um substituto (saída efetiva em {cutoff}, {timezone}).",
+        "approval_handover_deactivation": "{employeeName}: As funções de aprovação precisam de um substituto (desativado(a) em {cutoff}, {timezone}).",
         "clock_out": "{employeeName}: Requer revisão: registro de saída de desligamento (saída efetiva em {cutoff}, {timezone}).",
         "clock_repair": "{employeeName}: Reparo do temporizador necessário (saída efetiva em {cutoff}, {timezone}).",
         "employment_terms": "{employeeName}: Os termos de contratação futuros precisam de revisão (saída efetiva em {cutoff}, {timezone}).",
@@ -1343,10 +1360,19 @@
         "message": "Seu turno terminou às {endTime} ({timezone}). Registre a saída se tiver terminado de trabalhar.",
         "title": "Você ainda está com a entrada registrada"
       },
+      "formerEmployeeReportsWithoutManager": {
+        "message": "{count, plural, one {# funcionário ainda está vinculado apenas a um ex-gestor: {names}. Atribua um gestor atual.} other {# funcionários ainda estão vinculados apenas a um ex-gestor: {names}. Atribua um gestor atual.}}",
+        "title": "Funcionários sem um gestor atual"
+      },
       "kioskCommandRefused": {
         "forwardedMessage": "O registo de {action, select, clock_in {entrada} clock_out {saída} start_break {início de intervalo} resume_break {regresso do intervalo} other {ponto}} efetuado por {employeeName} às {time} no quiosque {kioskName} não foi registado: {reason, select, wrong_pin {o PIN estava incorreto} pin_locked {o PIN do quiosque foi bloqueado após demasiadas tentativas incorretas} no_pin {não havia PIN do quiosque para verificação} pin_unchecked {não foi possível verificar o PIN} kiosk_retired {o quiosque foi revogado ou novamente emparelhado antes de se voltar a ligar} contact_unverifiable {o Z8 não conseguiu confirmar a última ligação do quiosque} outside_window {a hora estava fora do intervalo aceite pelo Z8} clock_untrusted {não foi possível confiar no relógio do quiosque para o efeito} not_assigned {o colaborador não está atribuído à localização do quiosque} not_adopted {a organização não aceita registos de quiosque offline} month_closed {o mês está fechado} holiday {o dia é um feriado sem registo de tempo} conflict {está em conflito com outro período registado} other {o Z8 não pôde aceitá-lo}}. Registe o tempo pelo colaborador ou confirme-o com ele.",
         "message": "O seu registo de {action, select, clock_in {entrada} clock_out {saída} start_break {início de intervalo} resume_break {regresso do intervalo} other {ponto}} às {time} no quiosque {kioskName} não foi registado: {reason, select, wrong_pin {o PIN estava incorreto} pin_locked {o PIN do quiosque foi bloqueado após demasiadas tentativas incorretas} no_pin {não havia PIN do quiosque para verificação} pin_unchecked {não foi possível verificar o PIN} kiosk_retired {o quiosque foi revogado ou novamente emparelhado antes de se voltar a ligar} contact_unverifiable {o Z8 não conseguiu confirmar a última ligação do quiosque} outside_window {a hora estava fora do intervalo aceite pelo Z8} clock_untrusted {não foi possível confiar no relógio do quiosque para o efeito} not_assigned {não está atribuído à localização do quiosque} not_adopted {a organização não aceita registos de quiosque offline} month_closed {o mês está fechado} holiday {o dia é um feriado sem registo de tempo} conflict {está em conflito com outro período registado} other {o Z8 não pôde aceitá-lo}}. Registe novamente o seu ponto ou peça ao seu gestor para o corrigir.",
         "title": "Registo de ponto no quiosque não gravado"
+      },
+      "kioskFobRegistered": {
+        "forwardedMessage": "{replaced, select, true {Um chaveiro de quiosque com final {lastFour} foi registrado para {employeeName} no quiosque {kioskName}. Ele substituiu o chaveiro anterior, que não funciona mais.} other {Um chaveiro de quiosque com final {lastFour} foi registrado para {employeeName} no quiosque {kioskName}.}} Se {employeeName} não tiver feito o registro, remova-o na página do funcionário e redefina o PIN do quiosque.",
+        "message": "{replaced, select, true {Um chaveiro de quiosque com final {lastFour} foi registrado para você no quiosque {kioskName}. Ele substituiu seu chaveiro anterior, que não funciona mais.} other {Um chaveiro de quiosque com final {lastFour} foi registrado para você no quiosque {kioskName}.}} Se você não tiver feito o registro, remova-o nas suas configurações de segurança e altere seu PIN do quiosque.",
+        "title": "Chaveiro do quiosque registrado"
       },
       "manualEntryApproved": {
         "message": "O seu envio manual de horas foi aprovado por {approverName}.",
@@ -1806,8 +1832,11 @@
         "driving_authorization_suspended_or_ended": "Autorização para dirigir suspensa ou encerrada",
         "driving_details_missing_reminder": "Detalhes de condução ausentes",
         "driving_licence_reminder": "Verificação da carta de condução pendente",
+        "employee_deactivation_shifts_opened": "Turnos abertos por uma desativação",
         "forgotten_clock_out_reminder": "Saída não registrada",
+        "former_employee_reports_without_manager": "Funcionários sem um gestor atual",
         "kiosk_command_refused": "Registo de ponto no quiosque não gravado",
+        "kiosk_fob_registered": "Chaveiro do quiosque registrado",
         "missed_clock_in_reminder": "Entrada não registrada",
         "period_submission_decided": "Horas enviadas aprovadas ou rejeitadas",
         "period_submission_reminder": "Envie suas horas",
@@ -2515,6 +2544,13 @@
             "workModel": "Seu modelo de trabalho.",
             "workPolicy": "A política de trabalho que estes termos utilizam."
           },
+          "goLiveExclusions": {
+            "createdAt": "Quando você foi excluído, como um instante UTC.",
+            "endedAt": "Quando terminou porque você saiu da organização; vazio se não terminou.",
+            "liftedAt": "Quando um administrador incluiu você de volta nas verificações; vazio caso contrário.",
+            "reason": "O motivo informado por um administrador para excluir você.",
+            "summary": "Vezes em que a organização excluiu você das verificações de ativação durante a configuração do Z8 e o motivo. Não afeta mais nada."
+          },
           "groups": {
             "addedAt": "Quando você foi adicionado ao grupo.",
             "addedBy": "Quem adicionou você ao grupo.",
@@ -2614,6 +2650,14 @@
             "lastUsedAt": "Quando um aplicativo de calendário leu o feed pela última vez (UTC).",
             "revokedAt": "Quando o link foi desativado (UTC).",
             "summary": "Os links de feed do seu calendário, que permitem a um aplicativo de calendário assinar suas ausências. O link secreto em si nunca é incluído."
+          },
+          "kioskFobs": {
+            "endedAt": "Quando deixou de selecionar você (UTC); vazio enquanto ainda selecionar.",
+            "endedReason": "substituído quando você registrou outro, removido quando você ou um gerente o removeu ou você foi desativado, saída quando seu contrato de trabalho foi encerrado.",
+            "kiosk": "O quiosque no qual você o registrou; vazio após a exclusão desse quiosque.",
+            "registeredAt": "Quando você o registrou (UTC).",
+            "serialNumber": "O número de série do chip, conforme identificado pelo leitor do quiosque.",
+            "summary": "Os cartões NFC ou chaveiros registrados por você em um quiosque, atuais e encerrados. Aproximar um deles seleciona você no quiosque; o PIN do quiosque ainda comprova a sua identidade."
           },
           "kioskPinEvents": {
             "event": "falha para um PIN incorreto, sucesso para um correto, limpo quando o seu PIN foi desbloqueado, redefinido ou alterado.",
@@ -3157,10 +3201,6 @@
     "admin": "Administrador",
     "employee": "Funcionário",
     "manager": "Gerente"
-  },
-  "status": {
-    "active": "Ativo",
-    "inactive": "Inativo"
   },
   "storeAppBanner": {
     "description": "Receba lembretes e notificações de aprovação no aplicativo.",

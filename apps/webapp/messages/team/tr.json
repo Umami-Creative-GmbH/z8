@@ -211,10 +211,6 @@
       "ariaLabel": "Ekip üyelerini ara",
       "placeholder": "İsim, e-posta, pozisyon veya ekibe göre ara..."
     },
-    "status": {
-      "active": "Aktif",
-      "inactive": "Aktif Değil"
-    },
     "table": {
       "employee": "Çalışan",
       "position": "Pozisyon",

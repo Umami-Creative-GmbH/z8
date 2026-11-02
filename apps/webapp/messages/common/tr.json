@@ -268,6 +268,7 @@
       "importReview": "İçe aktarma incelemesi yükleniyor",
       "importSettings": "İçe aktarma ayarları yükleniyor",
       "locationSettings": "Konum ayarları yükleniyor",
+      "navigation": "Gezinme yükleniyor",
       "onboarding": "İlk katılım yükleniyor",
       "payrollExportSettings": "Bordro dışa aktarma ayarları yükleniyor",
       "payrollReadiness": "Bordro hazırlığı yükleniyor",
@@ -317,6 +318,10 @@
     "moveDown": "Aşağı taşı",
     "moveUp": "Yukarı taşı",
     "name": "Ad",
+    "navigation": {
+      "retry": "Gezinmeyi yeniden dene",
+      "unavailable": "Bazı gezinme öğeleri kullanılamıyor"
+    },
     "new": "Yeni",
     "next": "İleri",
     "no": "Hayır",
@@ -342,6 +347,7 @@
       "assignmentNotFound": "Bu atama artık mevcut değil.",
       "employeeNotFound": "Bu çalışan bulunamadı.",
       "employeeProfileRequired": "Bu kuruluşta bir çalışan profili gereklidir.",
+      "formerEmployee": "Eski çalışanlara yeni bir görev atanamaz. Mevcut kadrodan birini seçin.",
       "invalidTarget": "Atamanın kime uygulanacağını seçin.",
       "noticeChanged": "Konum bildirimi değişti. Karar vermeden önce güncel bildirimi inceleyin.",
       "positionsForbidden": "Bu çalışma döneminin konumlarını görme yetkiniz yok.",
@@ -933,7 +939,6 @@
   "employeeSelect": {
     "countSelected": "{count} çalışan seçildi",
     "countWithMore": "{count} çalışan (+{more} daha)",
-    "inactive": "Etkin Değil",
     "noEmployeesFound": "Çalışan bulunamadı",
     "removeSelected": "{name} öğesini kaldır",
     "role": "Rol",
@@ -975,6 +980,13 @@
       "digest": "Referans: {digest}",
       "title": "Bir şeyler ters gitti"
     }
+  },
+  "formerEmployees": {
+    "current": "Mevcut",
+    "former": "Eski",
+    "formerDateNotRecorded": "Eski · tarih kaydedilmedi",
+    "formerSince": "{date} tarihinden beri eski",
+    "showFormer": "Eski çalışanları göster"
   },
   "generic": {
     "done": "Tamam",
@@ -1331,8 +1343,13 @@
         "message": "{employeeName} için {classes} sınıfı orijinal sürücü belgesi kontrolünü en geç {deadline} tarihine kadar ayarlayın.",
         "title": "Sürücü belgesi kontrolünün süresi geldi"
       },
+      "employeeDeactivationShiftsOpened": {
+        "message": "{shiftCount, plural, other {{employeeName} devre dışı bırakıldı. Yaklaşan # vardiya şu anda açık.} }",
+        "title": "Vardiyalar için birine ihtiyaç var"
+      },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName}: Onay görevleri için bir vekil gerekiyor (ayrılış geçerlilik tarihi {cutoff}, {timezone}).",
+        "approval_handover_deactivation": "{employeeName}: Onay görevleri için yeni biri atanmalı ({cutoff}, {timezone} tarihinde devre dışı bırakıldı).",
         "clock_out": "{employeeName}: İnceleme gerekiyor: işten ayrılış çıkış kaydı (ayrılış geçerlilik tarihi {cutoff}, {timezone}).",
         "clock_repair": "{employeeName}: Zamanlayıcı onarımı gerekiyor (ayrılış geçerlilik tarihi {cutoff}, {timezone}).",
         "employment_terms": "{employeeName}: Gelecekteki istihdam koşullarının incelenmesi gerekiyor (ayrılış geçerlilik tarihi {cutoff}, {timezone}).",
@@ -1343,10 +1360,19 @@
         "message": "Vardiyanız {endTime} ({timezone}) saatinde sona erdi. Çalışmayı bitirdiyseniz çıkış yapın.",
         "title": "Hâlâ giriş yapmış durumdasınız"
       },
+      "formerEmployeeReportsWithoutManager": {
+        "message": "{count, plural, other {# çalışan hâlâ yalnızca eski bir yöneticiye bağlı: {names}. Mevcut bir yönetici atayın.} }",
+        "title": "Mevcut yöneticisi olmayan çalışanlar"
+      },
       "kioskCommandRefused": {
         "forwardedMessage": "{employeeName} tarafından {time} saatinde {kioskName} kioskunda yapılan bir {action, select, clock_in {giriş kaydı} clock_out {çıkış kaydı} start_break {mola başlangıcı kaydı} resume_break {moladan dönüş kaydı} other {zaman kaydı}} kaydedilmedi: {reason, select, wrong_pin {PIN yanlıştı} pin_locked {kiosk PIN'i çok fazla hatalı deneme nedeniyle kilitlendi} no_pin {karşılaştırma yapılacak bir kiosk PIN'i yoktu} pin_unchecked {PIN kontrol edilemedi} kiosk_retired {kiosk yeniden bağlanmadan önce iptal edildi veya yeniden eşleştirildi} contact_unverifiable {Z8 kiosk'un son bağlantısını doğrulayamadı} outside_window {saati Z8'in kabul ettiği aralığın dışındaydı} clock_untrusted {bunun için kiosk saatine güvenilemedi} not_assigned {çalışan kiosk'un konumuna atanmamış} not_adopted {kuruluş çevrimdışı kiosk kayıtlarını kabul etmiyor} month_closed {ay kapatıldı} holiday {gün zaman kaydı yapılmayan bir tatil} conflict {kaydedilmiş başka bir zamanla çakışıyor} other {Z8 bunu kabul edemedi}}. Zamanı onlar için kaydedin veya kendileriyle kontrol edin.",
         "message": "{kioskName} kioskunda {time} saatinde yaptığınız {action, select, clock_in {giriş kaydı} clock_out {çıkış kaydı} start_break {mola başlangıcı kaydı} resume_break {moladan dönüş kaydı} other {zaman kaydı}} kaydedilmedi: {reason, select, wrong_pin {PIN yanlıştı} pin_locked {kiosk PIN'i çok fazla hatalı deneme nedeniyle kilitlendi} no_pin {karşılaştırma yapılacak bir kiosk PIN'i yoktu} pin_unchecked {PIN kontrol edilemedi} kiosk_retired {kiosk yeniden bağlanmadan önce iptal edildi veya yeniden eşleştirildi} contact_unverifiable {Z8 kiosk'un son bağlantısını doğrulayamadı} outside_window {saati Z8'in kabul ettiği aralığın dışındaydı} clock_untrusted {bunun için kiosk saatine güvenilemedi} not_assigned {çalışan kiosk'un konumuna atanmamış} not_adopted {kuruluş çevrimdışı kiosk kayıtlarını kabul etmiyor} month_closed {ay kapatıldı} holiday {gün zaman kaydı yapılmayan bir tatil} conflict {kaydedilmiş başka bir zamanla çakışıyor} other {Z8 bunu kabul edemedi}}. Zamanınızı tekrar kaydedin veya yöneticinizden düzeltmesini isteyin.",
         "title": "Kiosk zaman kaydı kaydedilmedi"
+      },
+      "kioskFobRegistered": {
+        "forwardedMessage": "{replaced, select, true {{kioskName} kioskunda {employeeName} adına sonu {lastFour} ile biten bir kiosk anahtarlığı kaydedildi. Artık çalışmayan önceki anahtarlığın yerini aldı.} other {{kioskName} kioskunda {employeeName} adına sonu {lastFour} ile biten bir kiosk anahtarlığı kaydedildi.}} Bunu {employeeName} kaydetmediyse çalışan sayfasından kaldırın ve kiosk PIN kodunu sıfırlayın.",
+        "message": "{replaced, select, true {{kioskName} kioskunda adınıza sonu {lastFour} ile biten bir kiosk anahtarlığı kaydedildi. Artık çalışmayan önceki anahtarlığınızın yerini aldı.} other {{kioskName} kioskunda adınıza sonu {lastFour} ile biten bir kiosk anahtarlığı kaydedildi.}} Bunu siz kaydetmediyseniz güvenlik ayarlarınızdan kaldırın ve kiosk PIN kodunuzu değiştirin.",
+        "title": "Kiosk anahtarlığı kaydedildi"
       },
       "manualEntryApproved": {
         "message": "Manuel zaman bildiriminiz {approverName} tarafından onaylandı.",
@@ -1806,8 +1832,11 @@
         "driving_authorization_suspended_or_ended": "Sürüş yetkisi askıya alındı veya sona erdi",
         "driving_details_missing_reminder": "Sürüş ayrıntıları eksik",
         "driving_licence_reminder": "Sürücü belgesi kontrolünün süresi geldi",
+        "employee_deactivation_shifts_opened": "Bir devre dışı bırakma nedeniyle açılan vardiyalar",
         "forgotten_clock_out_reminder": "Unutulan çıkış",
+        "former_employee_reports_without_manager": "Mevcut yöneticisi olmayan çalışanlar",
         "kiosk_command_refused": "Kiosk zaman kaydı kaydedilmedi",
+        "kiosk_fob_registered": "Kiosk anahtarlığı kaydedildi",
         "missed_clock_in_reminder": "Kaçırılan giriş",
         "period_submission_decided": "Gönderilen süre onaylandı veya reddedildi",
         "period_submission_reminder": "Çalışma sürenizi gönderin",
@@ -2515,6 +2544,13 @@
             "workModel": "Çalışma modeliniz.",
             "workPolicy": "Bu koşulların kullandığı çalışma politikası."
           },
+          "goLiveExclusions": {
+            "createdAt": "Hariç tutulduğunuz an (UTC).",
+            "endedAt": "Kuruluştan ayrıldığınız için sona erdiği zaman; ayrılmadıysanız boştur.",
+            "liftedAt": "Bir yöneticinin sizi kontrollere yeniden dahil ettiği zaman; dahil etmediyse boştur.",
+            "reason": "Bir yöneticinin sizi hariç tutma gerekçesi.",
+            "summary": "Kuruluşun Z8'i kurarken sizi canlıya geçiş kontrollerinden hariç tuttuğu zamanlar ve nedeni. Başka hiçbir şeyi etkilemez."
+          },
           "groups": {
             "addedAt": "Gruba eklendiğiniz tarih.",
             "addedBy": "Sizi gruba ekleyen kişi.",
@@ -2614,6 +2650,14 @@
             "lastUsedAt": "Bir takvim uygulamasının akışı en son ne zaman okuduğu (UTC).",
             "revokedAt": "Bağlantının kapatıldığı zaman (UTC).",
             "summary": "Bir takvim uygulamasının devamsızlıklarınıza abone olmasını sağlayan takvim akışı bağlantılarınız. Gizli bağlantının kendisi asla dahil edilmez."
+          },
+          "kioskFobs": {
+            "endedAt": "Sizi seçmeyi bıraktığı zaman (UTC); seçmeye devam ettiği sürece boştur.",
+            "endedReason": "başka bir tane kaydettiğinizde değiştirildi, siz veya bir yönetici kaldırdığında ya da devre dışı bırakıldığınızda kaldırıldı, iş akdiniz sona erdiğinde ayrılma.",
+            "kiosk": "Kaydettiğiniz kiosk; o kiosk silindiğinde boştur.",
+            "registeredAt": "Kaydettiğiniz zaman (UTC).",
+            "serialNumber": "Kiosk okuyucusu tarafından okunan çip seri numarası.",
+            "summary": "Bir kioskta kaydettiğiniz mevcut ve süresi dolmuş NFC kartları veya anahtarlıkları. Birine dokunmak sizi kioskta seçer; kiosk PIN kodunuz ise kimliğinizi doğrulamaya devam eder."
           },
           "kioskPinEvents": {
             "event": "yanlış bir PIN için failure, doğru bir PIN için success; PIN kilidiniz açıldığında, sıfırlandığında veya değiştirildiğinde temizlenir.",
@@ -3157,10 +3201,6 @@
     "admin": "Yönetici",
     "employee": "Çalışan",
     "manager": "Yönetici"
-  },
-  "status": {
-    "active": "Aktif",
-    "inactive": "Pasif"
   },
   "storeAppBanner": {
     "description": "Uygulamada hatırlatıcılar ve onay bildirimleri alın.",

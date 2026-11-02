@@ -77,6 +77,9 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		// Vehicle use is asked in the header clock on every app route.
 		"timeTracking.vehicleUse",
 		"timeTracking.timezoneMismatch",
+		// The header clock's loading and unavailable states.
+		"timeTracking.clockStatus",
+		"timeTracking.choices",
 		"timeTracking.addNotePrompt",
 		"timeTracking.billable.description",
 		"timeTracking.billable.label",
@@ -228,7 +231,7 @@ export const SHELL_CATALOG_KEYS: readonly ShellCatalogKey[] = [
 		"settings.group.integrations",
 		"settings.group.notifications",
 		"settings.group.organization",
-		"settings.implementationChecklist.description",
+		"settings.implementationChecklist.entryDescription",
 		"settings.implementationChecklist.title",
 		"settings.import.description",
 		"settings.import.title",

@@ -2,6 +2,7 @@ import { PgDialect, type SQL } from "drizzle-orm/pg-core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { approvalWriteGateResult } from "@/lib/approvals/authority";
 import { deriveApprovalWorkflowId } from "@/lib/approvals/workflow/identity";
+import { parseInstant } from "@/lib/datetime/temporal-core";
 import { ValidationError } from "@/lib/effect/errors";
 
 const mockState = vi.hoisted(() => ({
@@ -146,6 +147,7 @@ vi.mock("@/db", () => ({
 
 vi.mock("@/db/schema", () => ({
 	workPeriod: {
+		deletedAt: "workPeriod.deletedAt",
 		endTime: "workPeriod.endTime",
 		employeeId: "workPeriod.employeeId",
 		id: "workPeriod.id",
@@ -1669,9 +1671,49 @@ describe("createManualTimeEntry", () => {
 			success: false,
 			error:
 				"This time overlaps recorded work. Please choose a time range that does not overlap existing entries.",
+			code: "occupancy_conflict",
+			rejection: { reason: "occupancy_conflict", occupants: [] },
 		});
 		expect(mockState.reconcileImmediateSurcharges).not.toHaveBeenCalled();
 		expect(mockState.revalidatePath).not.toHaveBeenCalled();
+	});
+
+	it("names live work an entry overlaps instead of refusing every entry while clocked in (#1492)", async () => {
+		mockState.getEditCapabilityForPeriod.mockResolvedValue({
+			type: "direct",
+			reason: "within_window",
+		});
+		mockState.applyWorkRecordChange.mockResolvedValueOnce({
+			kind: "work_occupied",
+			occupants: [
+				{
+					kind: "work_period",
+					id: "live-1",
+					startAt: parseInstant("2026-05-04T08:30:00Z"),
+					endAt: null,
+				},
+			],
+		});
+
+		const result = await createManualTimeEntry({
+			date: "2026-05-04",
+			clockInTime: "08:00",
+			clockOutTime: "09:00",
+			reason: "Forgot to clock in",
+		});
+
+		expect(result).toEqual({
+			success: false,
+			error:
+				"This time overlaps work that is still running. A manual entry must end by the clock-in of the running work.",
+			code: "occupancy_conflict",
+			rejection: {
+				reason: "occupancy_conflict",
+				occupants: [
+					{ kind: "work_period", id: "live-1", startAt: "2026-05-04T08:30:00Z", endAt: null },
+				],
+			},
+		});
 	});
 });
 

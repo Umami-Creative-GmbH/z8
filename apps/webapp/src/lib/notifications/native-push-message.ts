@@ -118,6 +118,7 @@ const NATIVE_PUSH_CATEGORY: Record<NotificationType, NativePushCategory> = {
 	kiosk_command_refused: "working_time",
 	employee_deactivation_shifts_opened: "schedule",
 	former_employee_reports_without_manager: "attention",
+	kiosk_fob_registered: "security",
 };
 
 /** One static `t()` default per key, so the extractor can read every default. */

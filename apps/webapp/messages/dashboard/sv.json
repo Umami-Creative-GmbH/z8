@@ -17,13 +17,12 @@
     },
     "covering-for": {
       "description": "Kollegor du är ersättare för under deras frånvaro",
-      "error": "Det gick inte att läsa in dina ersättaruppdrag",
       "running": "Ersätter {name} fram till {date}",
       "title": "Ersätter",
       "upcoming": "Kommande: ersätter {name} från {start} till {end}"
     },
     "customize": {
-      "empty-description": "Använd ikonen för anpassning av instrumentpanelen för att återaktivera enskilda widgetar, eller återställ layouten för att visa alla widgetar igen.",
+      "empty-description-defaults": "Använd ikonen för anpassning av instrumentpanelen för att återaktivera enskilda widgetar, eller återställ layouten för att få tillbaka dina standardwidgetar.",
       "empty-title": "Alla widgetar på instrumentpanelen är dolda",
       "move-down": "Flytta {widget} nedåt",
       "move-up": "Flytta {widget} uppåt",
@@ -54,7 +53,6 @@
     },
     "managed-employees": {
       "direct-reports": "{count} direktrapporterande",
-      "error": "Kunde inte läsa in underställda medarbetare",
       "no-reports": "Inga direktrapporterande ännu",
       "no-reports-description": "Du kommer att se dina teammedlemmar här när de har tilldelats",
       "people-you-manage": "Personer du leder",
@@ -78,7 +76,7 @@
       "awaiting-approval": "Väntar på ditt godkännande",
       "correction": "Korrigering",
       "description": "Förfrågningar som väntar på ditt beslut",
-      "error": "Det gick inte att läsa in väntande godkännanden",
+      "empty": "Inga väntande godkännanden",
       "more-requests": "+{count} fler förfrågningar",
       "pending-requests": "{count} väntande {request}",
       "request": "förfrågan",
@@ -117,7 +115,7 @@
       "by": "av {name}",
       "description": "Senast godkända förfrågningar",
       "description-count": "Senaste {count} godkända {request}",
-      "error": "Kunde inte läsa in nyligen godkända förfrågningar",
+      "empty": "Inga nyligen godkända förfrågningar",
       "more-approved": "+{count} fler godkända",
       "request": "förfrågan",
       "requests": "förfrågningar",
@@ -126,12 +124,11 @@
       "view-all": "Visa alla godkännanden"
     },
     "team-overview": {
-      "active-count": "{active} av {total} anställda ({percent}%)",
-      "active-employees": "Aktiva anställda",
       "avg-hours": "Genomsn. timmar",
+      "current-employees": "Nuvarande anställda",
+      "current-employees-description": "Alla som arbetar här nu",
       "description": "Teamstatistik i korthet",
       "employees-button": "Anställda",
-      "error": "Kunde inte läsa in teamstatistik",
       "per-week": "/vecka",
       "teams": "Team",
       "teams-button": "Team",
@@ -142,7 +139,6 @@
       "empty": "Inga kommande arbetspass",
       "empty-description": "Dina nästa publicerade arbetspass visas här.",
       "ends-next-day": "slutar nästa dag",
-      "error": "Det gick inte att läsa in dina kommande arbetspass",
       "title": "Kommande arbetspass",
       "today": "Idag",
       "tomorrow": "Imorgon",
@@ -155,7 +151,7 @@
       "days": "dagar",
       "description": "Schemalagd teamfrånvaro",
       "description-count": "Nästa {count} schemalagda {absence}",
-      "error": "Kunde inte läsa in kommande ledighet",
+      "empty": "Ingen kommande ledighet",
       "title": "Kommande ledighet",
       "today": "Idag",
       "tomorrow": "Imorgon",
@@ -167,7 +163,6 @@
       "carryover-days": "{days} dagar",
       "days-remaining": "dagar kvar",
       "description": "{year} semesterdagar",
-      "error": "Kunde inte läsa in semestersaldo",
       "expires-in": "Går ut om {days} dagar",
       "label-available": "Tillgängligt",
       "label-pending": "Väntande",
@@ -176,10 +171,10 @@
       "percent-used": "{percent}% använt",
       "title": "Semestersaldo",
       "total": "{days} totalt",
+      "unavailable": "Semestersaldo är inte tillgängligt.",
       "used": "{days} använda"
     },
     "whos-out": {
-      "error": "Kunde inte läsa in dagens frånvaro",
       "everyone-in": "Alla är på kontoret i dag",
       "everyones-in": "Alla är på plats!",
       "full-team": "Hela teamet är tillgängligt!",
@@ -198,9 +193,13 @@
       "view-calendar": "Visa hela kalendern"
     },
     "widgets": {
+      "deferred": "Läses in när den visas. Du kan även läsa in den nu.",
       "dragToReorder": "Dra för att ordna om widget",
+      "load": "Läs in {widget}",
+      "loading": "Läser in widget för instrumentpanel…",
       "moving": "Flyttar widget…",
-      "refresh": "Uppdatera"
+      "refresh": "Uppdatera",
+      "retry": "Försök igen med {widget}"
     }
   }
 }

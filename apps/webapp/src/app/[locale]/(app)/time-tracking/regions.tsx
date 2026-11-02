@@ -170,7 +170,7 @@ export async function SummaryRegion({
 		);
 	}
 	return (
-		<WeeklySummaryCards summary={data.summary} workBalance={data.workBalance} />
+		<WeeklySummaryCards kpis={data.kpis} workBalance={data.workBalance} />
 	);
 }
 

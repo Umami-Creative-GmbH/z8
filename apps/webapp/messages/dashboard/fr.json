@@ -17,13 +17,12 @@
     },
     "covering-for": {
       "description": "Collègues que vous remplacez pendant leur absence",
-      "error": "Impossible de charger vos remplacements",
       "running": "Remplacement de {name} jusqu'au {date}",
       "title": "Remplacement de",
       "upcoming": "À venir : remplacement de {name} du {start} au {end}"
     },
     "customize": {
-      "empty-description": "Utilisez l'icône de personnalisation du tableau de bord pour réactiver des widgets individuels, ou réinitialisez la mise en page pour afficher à nouveau tous les widgets.",
+      "empty-description-defaults": "Utilisez l'icône de personnalisation du tableau de bord pour réactiver des widgets individuels, ou réinitialisez la disposition pour restaurer vos widgets par défaut.",
       "empty-title": "Tous les widgets du tableau de bord sont masqués",
       "move-down": "Déplacer {widget} vers le bas",
       "move-up": "Déplacer {widget} vers le haut",
@@ -54,7 +53,6 @@
     },
     "managed-employees": {
       "direct-reports": "{count} subordonnés directs",
-      "error": "Échec du chargement des employés gérés",
       "no-reports": "Pas encore de subordonnés directs",
       "no-reports-description": "Vous verrez les membres de votre équipe ici une fois assignés",
       "people-you-manage": "Personnes que vous gérez",
@@ -78,7 +76,7 @@
       "awaiting-approval": "En attente de votre approbation",
       "correction": "Correction",
       "description": "Demandes en attente de votre décision",
-      "error": "Échec du chargement des approbations en attente",
+      "empty": "Aucune approbation en attente",
       "more-requests": "+{count} autres demandes",
       "pending-requests": "{count} {request} en attente",
       "request": "demande",
@@ -117,7 +115,7 @@
       "by": "par {name}",
       "description": "Dernières demandes approuvées",
       "description-count": "{count} dernières {request} approuvées",
-      "error": "Échec du chargement des demandes récemment approuvées",
+      "empty": "Aucune demande récemment approuvée",
       "more-approved": "+{count} autres approuvées",
       "request": "demande",
       "requests": "demandes",
@@ -126,12 +124,11 @@
       "view-all": "Voir toutes les approbations"
     },
     "team-overview": {
-      "active-count": "{active} sur {total} employés ({percent}%)",
-      "active-employees": "Employés actifs",
       "avg-hours": "Heures moy.",
+      "current-employees": "Employés actuels",
+      "current-employees-description": "Toutes les personnes qui travaillent ici actuellement",
       "description": "Statistiques de l'équipe en un coup d'œil",
       "employees-button": "Employés",
-      "error": "Échec du chargement des statistiques d'équipe",
       "per-week": "/semaine",
       "teams": "Équipes",
       "teams-button": "Équipes",
@@ -142,7 +139,6 @@
       "empty": "Aucun créneau à venir",
       "empty-description": "Vos prochains créneaux publiés s'afficheront ici.",
       "ends-next-day": "se termine le lendemain",
-      "error": "Impossible de charger vos prochains créneaux",
       "title": "Créneaux à venir",
       "today": "Aujourd'hui",
       "tomorrow": "Demain",
@@ -155,7 +151,7 @@
       "days": "jours",
       "description": "Absences de l'équipe planifiées",
       "description-count": "{count} prochaines {absence} prévues",
-      "error": "Échec du chargement des absences à venir",
+      "empty": "Aucun congé à venir",
       "title": "Congés à venir",
       "today": "Aujourd'hui",
       "tomorrow": "Demain",
@@ -167,7 +163,6 @@
       "carryover-days": "{days} jours",
       "days-remaining": "jours restants",
       "description": "Jours de vacances {year}",
-      "error": "Échec du chargement du solde de vacances",
       "expires-in": "Expire dans {days} jours",
       "label-available": "Disponible",
       "label-pending": "En attente",
@@ -176,10 +171,10 @@
       "percent-used": "{percent}% utilisé",
       "title": "Solde de vacances",
       "total": "{days} total",
+      "unavailable": "Le solde de congés est indisponible.",
       "used": "{days} utilisés"
     },
     "whos-out": {
-      "error": "Échec du chargement des absences d'aujourd'hui",
       "everyone-in": "Tout le monde est au bureau aujourd'hui",
       "everyones-in": "Tout le monde est là !",
       "full-team": "Équipe au complet disponible !",
@@ -198,9 +193,13 @@
       "view-calendar": "Voir le calendrier complet"
     },
     "widgets": {
+      "deferred": "Se charge lorsqu'il est visible. Vous pouvez également le charger maintenant.",
       "dragToReorder": "Faites glisser pour réorganiser le widget",
+      "load": "Charger {widget}",
+      "loading": "Chargement du widget du tableau de bord…",
       "moving": "Déplacement du widget…",
-      "refresh": "Actualiser"
+      "refresh": "Actualiser",
+      "retry": "Réessayer {widget}"
     }
   }
 }

@@ -25,6 +25,7 @@
         "adminOnly": "Tylko właściciele i administratorzy organizacji mogą zarządzać przypisanymi lokalizacjami.",
         "employeeNotFound": "Nie znaleziono pracownika.",
         "failed": "Nie udało się zaktualizować przypisanych lokalizacji. Spróbuj ponownie.",
+        "formerEmployee": "Byłym pracownikom nie można przypisać lokalizacji.",
         "invalidSelection": "Wybierz z listy.",
         "locationNotFound": "Nie znaleziono lokalizacji."
       },
@@ -238,6 +239,29 @@
       },
       "description": "Waluta rozliczeniowa i kwoty, którymi Twoja organizacja obciąża klientów za pracę",
       "handOff": {
+        "amount": {
+          "estimated": "Szacowane: to przekazanie nie zapisało kwoty za okres pracy, więc przyjęto iloczyn stawki i czasu trwania.",
+          "noSubtotal": "Brak znanych różnic w kwotach",
+          "note": "Różnice w kwotach to informacje uzgodnieniowe wycenione według stawki zamrożonej w momencie przekazania, a nie faktury korygujące.",
+          "notOnHandOff": "Projekt należy teraz do innego klienta. Ta praca nie znajduje się w żadnym przekazaniu dla tego klienta i pozostaje zafakturowana w tym projekcie faktury, dlatego zafakturuj ją nowemu klientowi w programie księgowym.",
+          "reason": {
+            "customer": "Projekt należy teraz do innego klienta lub do żadnego, więc cała przekazana kwota podlega wycofaniu.",
+            "frozenRate": "Zmiana liczby godzin według stawki zamrożonej w momencie przekazania.",
+            "noFrozenRate": "Dla tej pracy nie zamrożono żadnej stawki w momencie przekazania.",
+            "nonBillable": "Praca nie podlega już rozliczeniu, więc cała przekazana kwota podlega wycofaniu.",
+            "otherProject": "Praca została przeniesiona do innego projektu tego samego klienta, który nie ma stawki zamrożonej w momencie przekazania.",
+            "removed": "Praca została usunięta, więc cała przekazana kwota podlega wycofaniu.",
+            "running": "Część pracy nadal trwa.",
+            "severalRates": "Podczas przekazania wyceniono tę pracę według kilku stawek; tego podziału nie można powtórzyć bez dzisiejszych stawek."
+          },
+          "roundingCaveat": "Może różnić się o kilka groszy ze względu na zaokrąglenie pozycji wersji roboczej.",
+          "sinceResolution": "Od ostatniego uzgodnienia: {amount}",
+          "subtotal": "Znane różnice w kwotach: {amount}",
+          "subtotalEstimated": "Znane różnice w kwotach: {amount} (zawiera szacunki)",
+          "title": "Różnica w kwocie",
+          "unknown": "Nieznane",
+          "unknownCount": "{count, plural, one {# nieznana różnica nie została uwzględniona} few {# nieznane różnice nie zostały uwzględnione} other {# nieznanych różnic nie zostało uwzględnionych} }"
+        },
         "blocker": {
           "currency": "Narzędzie księgowe nie przyjmuje wersji roboczych w walucie {currency}.",
           "noContactLink": "Najpierw powiąż tego klienta z kontaktem w narzędziu księgowym na stronie Księgowość.",
@@ -251,12 +275,48 @@
         },
         "changed": {
           "billability": "Rozliczalność",
+          "customer": "Klient",
           "project": "Projekt",
           "removed": "Usunięte",
           "split": "Podział",
           "times": "Czasy"
         },
+        "comparison": {
+          "billability": "Rozliczalność",
+          "billable": "Rozliczalne",
+          "caption": "Porównanie: {item}",
+          "changedFromHandOff": "(zmieniono względem przekazania)",
+          "changedSinceResolution": "(zmieniono od ostatniego uzgodnienia)",
+          "current": "Aktualne",
+          "customer": "Klient",
+          "day": "Dzień",
+          "end": "Koniec",
+          "field": "Pole",
+          "handOff": "Przekazanie",
+          "hours": "Godziny",
+          "lastResolved": "Ostatnio uzgodnione",
+          "legend": "Wyróżnione wartości różnią się od przekazania. Godziny podano w strefie czasowej miejsca rejestracji pracy.",
+          "legendSinceResolution": "Zmieniono od ostatniego uzgodnienia.",
+          "mixedBillable": "Częściowo rozliczalne",
+          "noCustomer": "Brak klienta",
+          "nonBillable": "Nierozliczalne",
+          "noProject": "Brak projektu",
+          "pieces": "Bieżące wartości obejmują {count} części wydzielonych z tej pracy; godziny stanowią ich sumę.",
+          "project": "Projekt",
+          "removed": "Usunięto",
+          "removedNo": "Nie",
+          "removedPieces": "{removed} z {count} części",
+          "removedYes": "Tak",
+          "start": "Początek",
+          "timeOnDay": "{day} {time}",
+          "timeWithOffset": "{time} ({offset})",
+          "unknownCustomer": "Nieznany klient",
+          "unknownProject": "Nieznany projekt"
+        },
         "confirmed": "Wersja robocza faktury została utworzona",
+        "csv": {
+          "download": "Pobierz plik CSV uzgodnienia"
+        },
         "detail": {
           "checking": "Sprawdzanie wersji roboczej w narzędziu…",
           "gone": "W narzędziu księgowym nie ma już tej wersji roboczej. Jeśli została usunięta celowo, anuluj blokadę przekazania, aby można było ponownie przekazać tę pracę.",
@@ -288,6 +348,14 @@
           "timesheetHelp": "Jeden wiersz na okres pracy, w ramach limitu wierszy narzędzia księgowego. Zawsze możesz pobrać kartę czasu pracy.",
           "to": "Do"
         },
+        "history": {
+          "deletedUser": "usunięty użytkownik",
+          "legacy": "Wyczyszczono przed zarejestrowaniem rozstrzygnięć",
+          "legacyMeta": "{at} przez: {actor}",
+          "reference": "Numer referencyjny: {reference}",
+          "resolved": "Rozstrzygnięto {at} przez: {actor}",
+          "title": "Historia rozstrzygnięć"
+        },
         "hoursValue": "{hours} godz.",
         "list": {
           "actions": "Działania",
@@ -303,10 +371,19 @@
           "total": "Suma netto"
         },
         "marks": {
-          "clear": "Usuń oznaczenie",
-          "clearAll": "Usuń wszystkie oznaczenia",
-          "cleared": "{count, plural, one {# oznaczenie usunięte} few {# oznaczenia usunięte} many {# oznaczeń usuniętych} other {# oznaczenia usuniętego}}",
-          "help": "Ta zafakturowana praca została skorygowana po jej przekazaniu. W razie potrzeby skoryguj fakturę w programie księgowym (na przykład fakturą korygującą), a następnie usuń oznaczenie.",
+          "compare": "Porównaj",
+          "compareItem": "Porównaj {item}",
+          "draftHeading": "{title} · {period}",
+          "history": "Historia ({count})",
+          "historyItem": "Historia ({count}) – {item}",
+          "openWhenReleased": "Otwarte w momencie zwolnienia",
+          "releasedHelp": "Ta zafakturowana praca została skorygowana po jej przekazaniu i była nadal otwarta, gdy przekazanie zostało zwolnione. Nie można jej już tutaj rozstrzygnąć. Bieżące wartości pokazują pracę w jej obecnym stanie.",
+          "resolve": "Rozstrzygnij",
+          "resolveHelp": "Ta zafakturowana praca została skorygowana po jej przekazaniu. W razie potrzeby skoryguj fakturę w programie księgowym (na przykład za pomocą faktury korygującej), a następnie rozstrzygnij zmianę, dodając wyjaśnienie.",
+          "resolveItem": "Rozstrzygnij: {item}",
+          "resolveSelected": "Rozstrzygnij zaznaczone ({count})",
+          "select": "Wybierz {item}",
+          "selectAll": "Zaznacz wszystko",
           "title": "Zmieniono po zafakturowaniu"
         },
         "new": {
@@ -344,6 +421,23 @@
           "done": "{count, plural, one {Zwolniono. # okres pracy jest ponownie niefakturowany.} few {Zwolniono. # okresy pracy są ponownie niefakturowane.} other {Zwolniono. # okresów pracy jest ponownie niefakturowanych.} }",
           "reason": "Powód (opcjonalnie)",
           "title": "Zwolnić to przekazanie?"
+        },
+        "resolve": {
+          "description": "Zapisz sposób obsłużenia zmiany, na przykład za pomocą faktury korygującej w programie księgowym. Przekazanie i jego pozycje pozostaną bez zmian.",
+          "done": "{count, plural, one {# rozstrzygnięty element} few {# rozstrzygnięte elementy} many {# rozstrzygniętych elementów} other {# rozstrzygniętego elementu}}",
+          "explanation": "Wyjaśnienie",
+          "explanationRequired": "Wyjaśnij, w jaki sposób obsłużono zmianę.",
+          "explanationTooLong": "Wyjaśnienie może mieć maksymalnie {max} znaków.",
+          "itemLabel": "{day} · {employee} · {project}",
+          "itemsInvalid": "Wybierz oznaczoną pracę do rozstrzygnięcia.",
+          "reference": "Numer referencyjny w księgowości (opcjonalnie)",
+          "referenceHint": "Na przykład numer faktury korygującej.",
+          "referenceTooLong": "Numer referencyjny może mieć maksymalnie {max} znaków.",
+          "released": "Nic nie zostało rozstrzygnięte: przekazanie tej pracy zostało zwolnione, więc jej zmiany nie mogą już zostać rozstrzygnięte. Odśwież stronę, aby to zobaczyć.",
+          "reload": "Odśwież",
+          "stale": "Nic nie zostało rozstrzygnięte: ta praca zmieniła się od momentu jej otwarcia. Odśwież stronę, aby przejrzeć zmiany.",
+          "submit": "{count, plural, one {Rozstrzygnij # element} few {Rozstrzygnij # elementy} many {Rozstrzygnij # elementów} other {Rozstrzygnij # elementu}}",
+          "title": "Rozstrzygnij zmienioną pracę"
         },
         "status": {
           "created": "Projekt utworzony",
@@ -873,6 +967,7 @@
         "attribution": "Nadane przez: {actor} o {time}",
         "editor": "Zakres weryfikatora",
         "empty": "Brak przypisanych uprawnień weryfikatora",
+        "formerEmployee": "Nie można dodać byłych pracowników. Wybierz pracowników z aktualnej listy.",
         "history": "Historia uprawnień",
         "historyEntry": "Przyznano przez {grantor} o {granted}; odebrano przez {revoker} o {revoked}",
         "loadFailed": "Nie udało się załadować uprawnień weryfikatora",
@@ -1339,25 +1434,272 @@
     },
     "implementationChecklist": {
       "actions": {
+        "confirmAgain": "Potwierdź ponownie",
         "markComplete": "Oznacz jako ukończone",
-        "markIncomplete": "Oznacz jako nieukończone"
+        "markIncomplete": "Oznacz jako nieukończone",
+        "removeConfirmation": "Usuń potwierdzenie"
+      },
+      "confirmation": {
+        "beforeChangeTracking": "Potwierdzono {date}, przed rozpoczęciem śledzenia zmian",
+        "current": "Potwierdzono {date}",
+        "stale": "Ustawienia uległy zmianie od momentu potwierdzenia w dniu {date}",
+        "unchecked": "Nie udało się sprawdzić zmian w ustawieniach od momentu potwierdzenia w dniu {date}"
       },
       "description": "Zakończ kroki konfiguracji przed zaproszeniem całego zespołu, aby śledzenie czasu, zatwierdzenia i przepływy pracy płacowej były gotowe do codziennego użytku.",
+      "entryDescription": "Sprawdź gotowość do uruchomienia i śledź konfigurację zasad, płac, integracji oraz importu pracowników",
       "errors": {
         "updateItem": "Nie udało się zaktualizować elementu listy kontrolnej."
       },
       "eyebrow": "Wdrożenie klienta",
+      "firstWorkflows": {
+        "clockIn": "Pierwsze zarejestrowanie wejścia",
+        "decidedApproval": "Pierwszy rozpatrzony wniosek",
+        "former": "Były pracownik",
+        "notYet": "Jeszcze nie",
+        "payrollExport": "Pierwszy udany eksport listy płac",
+        "retry": "Sprawdź ponownie",
+        "seen": "{time} przez {name}",
+        "status": {
+          "allSeen": "Wszystkie przejrzane",
+          "notStarted": "Nierozpoczęte",
+          "underWay": "W toku"
+        },
+        "unavailable": "Nie udało się sprawdzić"
+      },
+      "goLive": {
+        "approver": {
+          "approvalModeUnsupported": "{count, plural, one {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: nie można przesłać w trybie zatwierdzania tej organizacji. Skontaktuj się z pomocą techniczną: # pracownik} other {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: nie można przesłać w trybie zatwierdzania tej organizacji. Skontaktuj się z pomocą techniczną: # pracowników}}",
+          "changePolicyAmbiguous": "{count, plural, one {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: ma zastosowanie więcej niż jedna zasada zmian, dlatego wpisy są odrzucane: # pracownik} other {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: ma zastosowanie więcej niż jedna zasada zmian, dlatego wpisy są odrzucane: # pracowników}}",
+          "correctionDirectNoPolicy": "{count, plural, one {Korekty czasu pracy: # pracownik edytuje własne wpisy bezpośrednio, ponieważ nie ma zastosowania żadna zasada zmian. Wnioski o usunięcie i zmiany dat nadal trafiają do osoby zatwierdzającej, dlatego są sprawdzane.} other {Korekty czasu pracy: # pracowników edytuje własne wpisy bezpośrednio, ponieważ nie ma zastosowania żadna zasada zmian. Wnioski o usunięcie i zmiany dat nadal trafiają do osoby zatwierdzającej, dlatego są sprawdzane.}}",
+          "correctionDirectSelfService": "{count, plural, one {Korekty czasu pracy: # pracownik edytuje własne wpisy bezpośrednio w ramach dni samoobsługi określonych w zasadzie zmian i nie może zmieniać starszych wpisów. Wnioski o usunięcie i zmiany dat nadal trafiają do osoby zatwierdzającej, dlatego są sprawdzane.} other {Korekty czasu pracy: # pracowników edytuje własne wpisy bezpośrednio w ramach dni samoobsługi określonych w zasadzie zmian i nie może zmieniać starszych wpisów. Wnioski o usunięcie i zmiany dat nadal trafiają do osoby zatwierdzającej, dlatego są sprawdzane.}}",
+          "correctionDirectTrustMode": "{count, plural, one {Korekty czasu pracy: # pracownik edytuje własne wpisy bezpośrednio, ponieważ jego zasada zmian działa w trybie zaufania. Wnioski o usunięcie i zmiany dat nadal trafiają do osoby zatwierdzającej, dlatego są sprawdzane.} other {Korekty czasu pracy: # pracowników edytuje własne wpisy bezpośrednio, ponieważ ich zasada zmian działa w trybie zaufania. Wnioski o usunięcie i zmiany dat nadal trafiają do osoby zatwierdzającej, dlatego są sprawdzane.}}",
+          "fixApprovalPolicies": "Przejrzyj zasady zatwierdzania",
+          "fixChangePolicies": "Przejrzyj zasady zmian",
+          "fixExpenseApprover": "Ustaw osobę zatwierdzającą wydatki",
+          "fixManagers": "Przypisz menedżerów",
+          "fixTeamManager": "Ustaw menedżera zespołu",
+          "invalidPolicies": "{count, plural, one {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: nie można zastosować zasad zatwierdzania: # pracownik} other {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: nie można zastosować zasad zatwierdzania: # pracowników}}",
+          "managerDeparted": "{count, plural, one {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: menedżer odszedł i nikt go nie zastępuje: # pracownik} other {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: ich menedżer odszedł i nikt go nie zastępuje: # pracowników}}",
+          "noDecider": "{count, plural, one {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: żaden menedżer ani administrator nie może ich rozpatrzyć: # pracownik} other {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: żaden menedżer ani administrator nie może ich rozpatrzyć: # pracowników}}",
+          "noManagerNoTeam": "{count, plural, one {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: brak uprawnionego menedżera: # pracownik nieprzypisany do zespołu} other {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: brak uprawnionego menedżera: # pracowników nieprzypisanych do zespołu}}",
+          "periodSubmissionsOff": "Zgłoszenia okresów są wyłączone, więc nie są sprawdzane.",
+          "policyWithoutApprover": "{count, plural, one {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: zasada zatwierdzania {policy} nie znajduje osoby zatwierdzającej: # pracownik} other {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: zasada zatwierdzania {policy} nie znajduje osoby zatwierdzającej: # pracowników}}",
+          "selfApprovalRoute": "{count, plural, one {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: trafiałyby do samego pracownika, co jest niedozwolone: # pracownik} other {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: trafiałyby do samych pracowników, co jest niedozwolone: # pracowników}}",
+          "shiftsOff": "Zmiany są wyłączone, więc wnioski o zmianę grafiku nie są sprawdzane.",
+          "skipNoCategoryRequiresApproval": "Wnioski o nieobecność nie wymagają zatwierdzenia, ponieważ żadna kategoria nieobecności tego nie wymaga.",
+          "skipNoChangePolicy": "{count, plural, one {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: # pracownik nie wymaga zatwierdzenia, ponieważ nie ma zastosowania żadna zasada zmian.} other {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: # pracowników nie wymaga zatwierdzenia, ponieważ nie ma zastosowania żadna zasada zmian.}}",
+          "skipOwnApprover": "{count, plural, one {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: # pracownik jest własną osobą zatwierdzającą.} other {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: # pracowników jest własną osobą zatwierdzającą.}}",
+          "skipOwnDecider": "{count, plural, one {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: # pracownik jest jedyną osobą, która może je rozpatrzyć, więc jego własne wnioski oczekują na jego zatwierdzenie.} other {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: # pracowników to jedyne osoby, które mogą je rozpatrzyć, więc ich własne wnioski oczekują na ich zatwierdzenie.}}",
+          "skipOwnerAdmin": "{count, plural, one {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: # pracownik nie wymaga zatwierdzenia, ponieważ właściciele i administratorzy rejestrują własną pracę bezpośrednio.} other {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: # pracowników nie wymaga zatwierdzenia, ponieważ właściciele i administratorzy rejestrują własną pracę bezpośrednio.}}",
+          "skipOwnerSelfApproval": "{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: właściciel zatwierdza własne raporty, ponieważ nikt inny nie może tego zrobić.",
+          "skipTrustMode": "{count, plural, one {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: # pracownik nie wymaga zatwierdzenia, ponieważ jego zasada zmian działa w trybie zaufania.} other {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: # pracowników nie wymaga zatwierdzenia, ponieważ ich zasada zmian działa w trybie zaufania.}}",
+          "teamWithoutManager": "{count, plural, one {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: zespół {team} nie ma uprawnionego menedżera: # pracownik} other {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: zespół {team} nie ma uprawnionego menedżera: # pracowników}}",
+          "unknownTeamWithoutManager": "{count, plural, one {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: ich zespół nie ma uprawnionego menedżera: # pracownik} other {{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu pracy} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski o zmianę grafiku}}: ich zespół nie ma uprawnionego menedżera: # pracowników}}"
+        },
+        "checkedAt": "Sprawdzono {time}",
+        "group": {
+          "description": "Sprawdzanie gotowości do uruchomienia obejmuje wszystkie osoby z aktualnej listy pracowników oraz wszystkie osoby zaproszone, które jeszcze nie dołączyły, z wyłączeniem zdefiniowanych wykluczeń. W przypadku wdrażania etapowego wybierz zespoły, które mają zostać uruchomione.",
+          "errors": {
+            "alreadyExcluded": "Ten pracownik jest już wykluczony.",
+            "employeeNotFound": "Tego pracownika nie ma na aktualnej liście pracowników.",
+            "exclusionNotFound": "To wykluczenie już się zakończyło.",
+            "reasonRequired": "Podaj powód wykluczenia.",
+            "reasonTooLong": "Powód jest zbyt długi.",
+            "teamNotFound": "Jeden z wybranych zespołów już nie istnieje.",
+            "updateFailed": "Nie udało się zaktualizować grupy wdrożeniowej."
+          },
+          "excluded": {
+            "byOn": "Wykluczone przez {name} w dniu {date}",
+            "help": "Wykluczeni pracownicy nie podlegają weryfikacji, np. dyrektor, który nie rejestruje czasu pracy. Wykluczenie obowiązuje do momentu jego cofnięcia lub do odejścia pracownika.",
+            "lift": "Cofnij",
+            "liftFor": "Cofnij wykluczenie dla {name}",
+            "none": "Nikt nie jest wykluczony.",
+            "on": "Wykluczono {date}",
+            "title": "Wykluczono"
+          },
+          "exclude": {
+            "employee": "Pracownik",
+            "employeeRequired": "Wybierz pracownika.",
+            "reason": "Powód",
+            "reasonPlaceholder": "Na przykład: dyrektor, nie rejestruje czasu pracy",
+            "submit": "Wyklucz"
+          },
+          "memberCount": "{count, plural, one {# osoba jest sprawdzana} few {# osoby są sprawdzane} other {# osób jest sprawdzanych} }",
+          "teams": {
+            "help": "Jeśli nie wybrano żadnego zespołu, sprawdzani są wszyscy. W przeciwnym razie sprawdzane są tylko osoby, których główny zespół został wybrany, oraz zaproszone osoby, w których zaproszeniu wskazano wybrany zespół. Przynależność do innych zespołów nie jest brana pod uwagę.",
+            "none": "Twoja organizacja nie ma jeszcze zespołów, więc wszyscy zostaną wdrożeni razem.",
+            "save": "Zapisz zespoły",
+            "title": "Zespoły objęte wdrożeniem"
+          },
+          "title": "Grupa wdrożeniowa",
+          "unavailable": "Nie udało się załadować zespołów i wykluczeń grupy wdrożeniowej. Ponów sprawdzanie."
+        },
+        "groupDescription": "Obliczane na podstawie obowiązkowych kontroli przedwdrożeniowych dla wszystkich w grupie wdrożeniowej przy każdym otwarciu tej strony.",
+        "optional": "Opcjonalne",
+        "panel": {
+          "invited": "Zaproszono",
+          "nextPage": "Następna strona",
+          "pageRange": "{from}–{to} z {total}",
+          "previousPage": "Poprzednia strona",
+          "unavailable": "Nie udało się ukończyć tego sprawdzenia. Ponów sprawdzanie, aby spróbować ponownie."
+        },
+        "payrollSetup": {
+          "fixEmployees": "Przejrzyj pracowników",
+          "fixPayrollExport": "Otwórz ustawienia eksportu listy płac",
+          "inviteesSkipped": "{count, plural, one {# zaproszona osoba jest pomijana pod kątem warunków zatrudnienia i identyfikatorów pracowniczych do czasu dołączenia.} few {# zaproszone osoby są pomijane pod kątem warunków zatrudnienia i identyfikatorów pracowniczych do czasu dołączenia.} other {# zaproszonych osób jest pomijanych pod kątem warunków zatrudnienia i identyfikatorów pracowniczych do czasu dołączenia.} }",
+          "missingEmploymentTerms": "{count, plural, one {Brak potwierdzonych warunków zatrudnienia obejmujących dzisiejszy dzień: # pracownik} other {Brak potwierdzonych warunków zatrudnienia obejmujących dzisiejszy dzień: # pracowników} }",
+          "noWageTypeMappings": "{count, plural, one {Brak aktywnych mapowań składników wynagrodzenia, więc eksport listy płac nie może sklasyfikować godzin: # członek} other {Brak aktywnych mapowań składników wynagrodzenia, więc eksport listy płac nie może sklasyfikować godzin: # członków} }",
+          "optional": "Brak aktywnego celu eksportu listy płac, więc eksport listy płac jest integracją opcjonalną i nie blokuje wdrożenia.",
+          "sharedPersonnelIdentifierDetail": "{identifier}, współdzielony z: {others}",
+          "sharedPersonnelIdentifiers": "{count, plural, one {Eksport listy płac połączyłby pracowników pod wspólnym identyfikatorem kadrowym: # pracownik} other {Eksport listy płac połączyłby pracowników pod wspólnym identyfikatorem kadrowym: # pracowników} }"
+        },
+        "readiness": {
+          "notReady": "{count, plural, one {Niegotowe: # pracownik wymaga uwagi} other {Niegotowe: # pracowników wymaga uwagi} }",
+          "notReadyChecks": "{count, plural, few {Niegotowe: {checks} nie przechodzą weryfikacji} many {Niegotowe: {checks} nie przechodzą weryfikacji} other {Niegotowe: {checks} nie przechodzi weryfikacji} }",
+          "notReadyEmptyGroup": "Niegotowe: w grupie wdrożeniowej nie ma nikogo do sprawdzenia.",
+          "ready": "Gotowe do wdrożenia",
+          "unavailable": "Niedostępne: sprawdzenie nie mogło zostać ukończone, więc nic nie zostało uznane za zaliczone."
+        },
+        "retry": "Ponów sprawdzanie",
+        "title": "Gotowość do wdrożenia",
+        "warnings": "{count, plural, one {# ostrzeżenie informacyjne poniżej. Nie blokuje wdrożenia.} few {# ostrzeżenia informacyjne poniżej. Nie blokują wdrożenia.} other {# ostrzeżeń informacyjnych poniżej. Nie blokują wdrożenia.} }",
+        "workPolicy": {
+          "fix": "Przypisz zasady pracy",
+          "noTeamNoOrganizationPolicy": "{count, plural, one {Brak zasad pracy organizacji: # pracownik nieprzypisany do żadnego zespołu} other {Brak zasad pracy organizacji: # pracowników nieprzypisanych do żadnego zespołu} }",
+          "teamWithoutPolicy": "{count, plural, one {Zespół {team} nie ma zasad pracy: # pracownik} other {Zespół {team} nie ma zasad pracy: # pracowników} }",
+          "unknownTeamWithoutPolicy": "{count, plural, one {Ich zespół nie ma zasad pracy: # pracownik} other {Ich zespół nie ma zasad pracy: # pracowników} }"
+        }
+      },
+      "items": {
+        "approvalRules": {
+          "confirmationLabel": "Potwierdź uzgodnienie procesu zatwierdzania",
+          "confirmedLabel": "Potwierdzono: proces zatwierdzania został uzgodniony",
+          "goLiveGroupHelperText": "Z8 sprawdza, czy każda osoba w grupie wdrożeniowej ma wyznaczoną osobę decyzyjną dla każdego rodzaju wniosku. Korekty czasu zawsze wymagają osoby zatwierdzającej, ponieważ prośby o usunięcie i zmiany daty podlegają zatwierdzeniu. Potwierdzenie uzgodnienia procesu zatwierdzania jest opcjonalne."
+        },
+        "firstWorkflows": {
+          "actionLabel": "Otwórz rejestrację czasu pracy",
+          "description": "Zobacz, czy Twoja organizacja rzeczywiście rozpoczęła pracę z Z8.",
+          "helperText": "Z8 rejestruje pierwsze zarejestrowanie rozpoczęcia pracy, pierwszy rozpatrzony wniosek i pierwszy udany eksport listy płac na podstawie rzeczywistej aktywności. Nie wpływa to na gotowość do wdrożenia.",
+          "title": "Pierwsze przepływy pracy"
+        },
+        "organizationStructure": {
+          "goLiveDescription": "Potwierdź członków, zespoły i zakresy odpowiedzialności przed uruchomieniem.",
+          "goLiveHelperText": "Weryfikacja ręczna: Z8 nie ma możliwości ustalenia, czy struktura Twojej organizacji jest ostateczna. Dodanie lub usunięcie osób, zespołów lub menedżerów powoduje dezaktualizację potwierdzenia."
+        },
+        "payrollReadiness": {
+          "confirmationLabel": "Potwierdź uzgodnienie konfiguracji eksportu listy płac",
+          "confirmedLabel": "Potwierdzono: konfiguracja eksportu listy płac została uzgodniona",
+          "goLiveGroupHelperText": "Z8 sprawdza konfigurację płacową dla wszystkich osób w grupie wdrożeniowej: miejsce docelowe eksportu, mapowania składników płacowych, potwierdzone warunki zatrudnienia i identyfikatory pracowników. Bez aktywnego miejsca docelowego eksport listy płac jest integracją opcjonalną i nie wlicza się do postępu na liście kontrolnej."
+        },
+        "workPolicies": {
+          "goLiveGroupHelperText": "Z8 sprawdza, czy każda osoba w grupie wdrożeniowej ma dziś obowiązujące zasady pracy. Zaproszone osoby są weryfikowane na podstawie zespołu wskazanego w ich zaproszeniu."
+        }
+      },
       "progress": {
         "ariaLabel": "Postęp listy kontrolnej wdrożenia",
         "completedCount": "{completed} z {total} ukończonych",
         "label": "Postęp konfiguracji",
         "percentComplete": "{percent}% ukończono"
       },
+      "rehearsal": {
+        "approvals": {
+          "absenceCategory": "Kategoria nieobecności {category}",
+          "defaultApprover": "Brak obowiązujących zasad zatwierdzania: decyduje przełożony",
+          "direct": {
+            "noChangePolicy": "Nie obowiązują żadne zasady wprowadzania zmian, więc użytkownicy edytują swoje wpisy bezpośrednio. Prośby o usunięcie i zmiany dat nadal trafiają do poniższej osoby zatwierdzającej.",
+            "selfService": "Użytkownicy edytują swoje wpisy bezpośrednio w ramach dni samoobsługi określonych w zasadach wprowadzania zmian. Prośby o usunięcie i zmiany dat nadal trafiają do poniższej osoby zatwierdzającej.",
+            "trustMode": "Zasady wprowadzania zmian działają w trybie zaufania, więc użytkownicy edytują swoje wpisy bezpośrednio. Prośby o usunięcie i zmiany dat nadal trafiają do poniższej osoby zatwierdzającej."
+          },
+          "kind": "{kind, select, absence {Wnioski o nieobecność} timeCorrection {Korekty czasu} workPeriod {Zgłoszenia okresów pracy} periodSubmission {Zgłoszenia okresów} expenseReport {Raporty wydatków} other {Wnioski dotyczące zmian}}",
+          "noApprovalNeeded": "Zatwierdzenie nie jest wymagane",
+          "reportTotal": "Suma raportu {amount, number}",
+          "routed": "Wymaga zatwierdzenia",
+          "shiftDeciders": "Dowolny menedżer lub administrator",
+          "skip": {
+            "noCategoryRequiresApproval": "Żadna kategoria nieobecności nie wymaga zatwierdzenia.",
+            "noChangePolicy": "Nie obowiązują ich żadne zasady wprowadzania zmian.",
+            "ownApprover": "Sami są dla siebie osobą zatwierdzającą, więc ich wnioski są realizowane natychmiast.",
+            "ownDecider": "Są jedynym menedżerem lub administratorem, który może decydować o wnioskach dotyczących zmian, dlatego ich własne wnioski oczekują, dopóki sami ich nie zatwierdzą.",
+            "ownerAdmin": "Właściciele i administratorzy rejestrują swoją pracę bezpośrednio.",
+            "ownerSelfApproval": "Jako właściciel zatwierdzają własne raporty, ponieważ nikt inny nie może tego zrobić.",
+            "trustMode": "Ich zasady wprowadzania zmian działają w trybie zaufania."
+          },
+          "title": "Zatwierdzenia",
+          "unroutable": {
+            "approvalModeUnsupported": "Nie można ich przesłać w bieżącym trybie zatwierdzania obowiązującym w organizacji. Skontaktuj się z pomocą techniczną.",
+            "badge": "Nie można przekierować",
+            "changePolicyAmbiguous": "Dotyczy ich więcej niż jedna zasada wprowadzania zmian, dlatego ich wpisy są odrzucane.",
+            "invalidPolicies": "Nie można zastosować zasad zatwierdzania.",
+            "managerDeparted": "Ich menedżer opuścił organizację i nikt go nie zastępuje.",
+            "noDecider": "Żaden menedżer ani administrator nie może o nich zadecydować.",
+            "noManager": "Nie obowiązują żadne zasady zatwierdzania, a dana osoba nie ma uprawnionego menedżera.",
+            "policyWithoutApprover": "Zasady zatwierdzania {policy} nie wskazują dla nich osoby zatwierdzającej.",
+            "selfApprovalRoute": "Ich raporty trafiałyby do nich samych, co jest niedozwolone.",
+            "teamWithoutManager": "Nie obowiązują żadne zasady zatwierdzania, a zespół {team} nie ma uprawnionego menedżera."
+          },
+          "viaPolicy": "Zasady zatwierdzania {policy}"
+        },
+        "choosePerson": "Wybierz osobę",
+        "description": "Zobacz, jakie działania Z8 podejmie dla wybranej osoby z grupy wdrożeniowej: jej zasady pracy, kto decyduje o jej wnioskach oraz jej wymagania wstępne dotyczące płac. Nic nie jest zapisywane ani wysyłane.",
+        "errors": {
+          "memberNotChecked": "Ta osoba nie należy już do grupy wdrożeniowej, więc nie ma czego symulować. Odśwież stronę, aby wyświetlić bieżącą grupę.",
+          "unavailable": "Nie udało się ukończyć symulacji."
+        },
+        "nobody": "W grupie wdrożeniowej nie ma jeszcze nikogo.",
+        "noMatch": "Nikt w grupie wdrożeniowej nie spełnia kryteriów.",
+        "payroll": {
+          "employmentTerms": "Warunki zatrudnienia",
+          "exportTargetMapping": "Mapowanie miejsca docelowego eksportu",
+          "mappingsMissing": "Brak aktywnych mapowań składników płacowych",
+          "mappingsPresent": "{count, plural, one {# cel eksportu, składniki płacowe zmapowane} few {# cele eksportu, składniki płacowe zmapowane} other {# celów eksportu, składniki płacowe zmapowane} }",
+          "notExported": "Organizacja nie ma aktywnego celu eksportu listy płac, więc nie ma wymagań wstępnych dotyczących listy płac.",
+          "notYetInvited": "Jeszcze nie: zaproszenie jest nadal oczekujące",
+          "personnelIdentifier": "Numer pracownika",
+          "termsConfirmed": "Potwierdzone na dziś",
+          "termsMissing": "Brak potwierdzonych warunków obejmujących dzisiejszy dzień",
+          "title": "Płace",
+          "unavailable": "Nie udało się sprawdzić",
+          "unique": "Unikalny"
+        },
+        "person": "Osoba",
+        "retry": "Spróbuj ponownie",
+        "run": "Przeprowadź próbę",
+        "runFor": "Przeprowadź próbę wdrożenia dla: {name}",
+        "running": "Obliczanie…",
+        "searchPerson": "Szukaj w grupie wdrożeniowej",
+        "sheetDescription": "Co system Z8 zrobiłby dzisiaj dla użytkownika {name}. Nic nie jest zapisywane ani wysyłane.",
+        "stage": {
+          "departedNobody": "Osoba {name} opuściła organizację i nikt jej nie zastępuje.",
+          "labelled": "Etap {sequence}: {label}",
+          "later": "Rozpoczyna się, gdy poprzednie etapy podejmą decyzję.",
+          "nobody": "Nie znaleziono by nikogo do podjęcia decyzji.",
+          "numbered": "Etap {sequence}",
+          "ownApprover": "Użytkownik sam jest tutaj osobą zatwierdzającą, więc ten etap kończy się natychmiast.",
+          "standsIn": "Zastępuje osobę {name}, która opuściła organizację.",
+          "viaFallback": "Nikt nie spełnia reguły tego etapu, więc decyzję podejmuje opcja rezerwowa ({fallback, select, default_manager {ich menedżer} organization_admin {administratorzy organizacji} other {opcja rezerwowa}})."
+        },
+        "title": "Próba wdrożenia",
+        "workedOut": "Wyliczono {time}",
+        "workPolicy": {
+          "assignedAt": "{level, select, employee {Do pracownika} team {Do zespołu {team}} other {Do organizacji}}",
+          "assignedVia": "Przypisano",
+          "hours": "Godziny",
+          "hoursPerCycle": "{hours, number} godz. na {cycle, select, daily {dzień} weekly {tydzień} biweekly {dwa tygodnie} monthly {miesiąc} other {rok}}",
+          "name": "Zasady",
+          "none": "Brak obowiązujących zasad pracy na dzisiaj: żadne nie są przypisane do pracownika, jego zespołu ani organizacji.",
+          "noSchedule": "Brak harmonogramu",
+          "noWorkingDays": "Brak dni roboczych",
+          "title": "Zasady pracy",
+          "workingDays": "Dni robocze"
+        }
+      },
       "status": {
-        "complete": "Ukończono",
+        "configured": "Skonfigurowano",
         "manuallyComplete": "Ukończ ręcznie",
-        "needsReview": "Wymaga sprawdzenia",
-        "notStarted": "Nie rozpoczęto"
+        "needsAttention": "Wymaga uwagi",
+        "notSetUp": "Nie skonfigurowano",
+        "unavailable": "Niedostępne",
+        "verified": "Zweryfikowano"
       },
       "title": "Lista kontrolna wdrożenia"
     },
@@ -1549,6 +1891,21 @@
         "signInRequired": "Zaloguj się, aby kontynuować."
       }
     },
+    "kioskFob": {
+      "confirmRemove": "Usuń brelok",
+      "details": "Brelok o końcówce {lastFour}, zarejestrowany w dniu {date} w kiosku {kiosk}.",
+      "detailsKioskGone": "Brelok o końcówce {lastFour}, zarejestrowany w dniu {date} w kiosku, który już nie istnieje.",
+      "errors": {
+        "employeeNotFound": "Nie znaleziono tego pracownika.",
+        "failed": "Coś poszło nie tak. Spróbuj ponownie.",
+        "fobChanged": "Ten brelok do kiosku zmienił się w międzyczasie. Sprawdź jego status i spróbuj ponownie.",
+        "noFob": "Brak breloka do kiosku do usunięcia.",
+        "notAllowed": "Nie masz uprawnień do wykonania tej czynności.",
+        "signInRequired": "Zaloguj się, aby kontynuować."
+      },
+      "remove": "Usuń brelok",
+      "removed": "Usunięto brelok do kiosku"
+    },
     "kioskPin": {
       "errors": {
         "emailInUse": "Ten adres jest już używany przez inne konto.",
@@ -1612,6 +1969,8 @@
         "locationPlaceholder": "Wybierz lokalizację",
         "name": "Nazwa",
         "namePlaceholder": "np. Wejście dla personelu",
+        "nfcFobReader": "Czytnik breloków NFC",
+        "nfcFobReaderDescription": "Pracownicy zbliżają swoją kartę lub brelok NFC do czytnika podłączonego do tego kiosku zamiast wyszukiwać swoje nazwisko, a następnie wprowadzają kod PIN do kiosku. Nowy brelok rejestrują w kiosku za pomocą kodu PIN. Breloki wymagają połączenia z siecią; wybór z listy nazwisk i kod PIN działają zawsze.",
         "offlineMode": "Tryb offline",
         "offlineModeDescription": "Kiosk kontynuuje rejestrację czasu pracy bez połączenia. Rejestracje są potwierdzane, a kody PIN sprawdzane po ponownym połączeniu.",
         "offlineModeUnavailable": "Tryb offline wymaga skoordynowanych poleceń zegara, których ta organizacja jeszcze nie używa.",
@@ -1623,6 +1982,7 @@
       "listTitle": "Kioski",
       "loadFailed": "Nie udało się załadować kiosków.",
       "neverSeen": "Nigdy",
+      "nfcFobReaderOn": "Czytnik breloków NFC włączony",
       "noLocations": "Najpierw utwórz lokalizację: każdy kiosk należy do jednej lokalizacji.",
       "offlineOn": "Tryb offline włączony",
       "offlineOnNotInEffect": "Tryb offline włączony, nieaktywny dla tej organizacji",
@@ -2386,6 +2746,12 @@
     },
     "security": {
       "description": "Zarządzaj hasłem, uwierzytelnianiem dwuskładnikowym, kluczami dostępu i aktywnymi sesjami",
+      "kioskFob": {
+        "confirmRemoveText": "Jeśli został zgubiony, usuń go: natychmiast przestanie działać w kioskach. Twój kod PIN do kiosku będzie nadal działał.",
+        "description": "Karta lub brelok NFC, który przykłada się do kiosku, aby wybrać swoje nazwisko. Kod PIN do kiosku nadal potwierdza Twoją tożsamość.",
+        "none": "Brak zarejestrowanego breloka. Aby go zarejestrować, przyłóż go do czytnika w kiosku i potwierdź kodem PIN do kiosku.",
+        "title": "Brelok do kiosku"
+      },
       "kioskPin": {
         "descriptionChange": "Masz kod PIN do kiosku. Wybierz nowy składający się z 4 do 6 cyfr, aby go zastąpić.",
         "descriptionSet": "Wybierz kod PIN składający się z 4 do 6 cyfr, aby rejestrować czas pracy w kioskach swojej organizacji.",
@@ -3002,6 +3368,7 @@
       },
       "refusals": {
         "driverNotFound": "Przypisany pracownik lub zespół już nie istnieje. Odśwież stronę.",
+        "formerDriver": "Byli pracownicy nie mogą być przypisani jako kierowcy. Wybierz pracowników z aktualnej listy.",
         "invalidChange": "Nie udało się zapisać zmiany. Odśwież stronę i spróbuj ponownie.",
         "invalidDrivers": "Wybierz maksymalnie 500 przypisanych pracowników i zespołów.",
         "invalidLicencePlate": "Wprowadź numer rejestracyjny o długości do 20 znaków.",
@@ -3030,6 +3397,7 @@
         "assignmentNotFound": "To przypisanie już nie istnieje. Odśwież stronę.",
         "employeeNotFound": "Ten pracownik już nie istnieje.",
         "failed": "Coś poszło nie tak. Spróbuj ponownie.",
+        "formerEmployee": "Byli pracownicy nie mogą otrzymać nowego przypisania. Wybierz kogoś z aktualnej listy pracowników.",
         "invalidMode": "Wybierz tryb dla przypisania.",
         "invalidTarget": "Wybierz, kogo dotyczy przypisanie.",
         "teamNotFound": "Ten zespół już nie istnieje."

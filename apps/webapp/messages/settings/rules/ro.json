@@ -556,6 +556,7 @@
       "endTime": "Oră de sfârșit",
       "endTimeDescription": "de ex., 06:00 pentru tura de noapte",
       "loadError": "Nu s-au putut încărca atribuirile",
+      "loadFailed": "Modelele de suprataxă nu au putut fi încărcate. Te rugăm să încerci din nou.",
       "loading": "Se încarcă setările pentru sporuri...",
       "modelCreated": "Modelul de sporuri a fost creat",
       "modelDeleted": "Modelul de sporuri a fost șters",

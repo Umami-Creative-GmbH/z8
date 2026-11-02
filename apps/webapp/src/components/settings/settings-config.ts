@@ -373,9 +373,9 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
 		id: "implementation-checklist",
 		titleKey: "settings.implementationChecklist.title",
 		titleDefault: "Implementation Checklist",
-		descriptionKey: "settings.implementationChecklist.description",
+		descriptionKey: "settings.implementationChecklist.entryDescription",
 		descriptionDefault:
-			"Track customer rollout setup across policies, payroll, integrations, and employee import",
+			"Check go-live readiness and track setup across policies, payroll, integrations, and employee import",
 		href: "/settings/implementation-checklist",
 		icon: "target",
 		minimumTier: "orgAdmin",

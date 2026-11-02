@@ -268,6 +268,7 @@
       "importReview": "Chargement de la vérification de l'importation",
       "importSettings": "Chargement des paramètres d'importation",
       "locationSettings": "Chargement des paramètres d'emplacement",
+      "navigation": "Chargement de la navigation",
       "onboarding": "Chargement de l'intégration",
       "payrollExportSettings": "Chargement des paramètres d'exportation de la paie",
       "payrollReadiness": "Chargement de la préparation de la paie",
@@ -317,6 +318,10 @@
     "moveDown": "Déplacer vers le bas",
     "moveUp": "Monter",
     "name": "Nom",
+    "navigation": {
+      "retry": "Réessayer la navigation",
+      "unavailable": "Certains éléments de navigation sont indisponibles"
+    },
     "new": "Nouveau",
     "next": "Suivant",
     "no": "Non",
@@ -342,6 +347,7 @@
       "assignmentNotFound": "Cette affectation n'existe plus.",
       "employeeNotFound": "Cet employé n'a pas été trouvé.",
       "employeeProfileRequired": "Un profil d'employé dans cette organisation est requis.",
+      "formerEmployee": "Les anciens employés ne peuvent pas recevoir de nouvelle affectation. Choisissez une personne figurant dans l'effectif actuel.",
       "invalidTarget": "Choisissez à qui s'applique l'affectation.",
       "noticeChanged": "La notice relative aux positions a changé. Veuillez consulter la notice actuelle avant de prendre une décision.",
       "positionsForbidden": "Vous n'êtes pas autorisé à voir les positions pour cette période de travail.",
@@ -933,7 +939,6 @@
   "employeeSelect": {
     "countSelected": "{count} employés sélectionnés",
     "countWithMore": "{count} employés (+{more} autres)",
-    "inactive": "Inactif",
     "noEmployeesFound": "Aucun employé trouvé",
     "removeSelected": "Supprimer {name}",
     "role": "Rôle",
@@ -975,6 +980,13 @@
       "digest": "Référence : {digest}",
       "title": "Une erreur s'est produite"
     }
+  },
+  "formerEmployees": {
+    "current": "Actuel",
+    "former": "Ancien",
+    "formerDateNotRecorded": "Ancien · date non enregistrée",
+    "formerSince": "Ancien depuis le {date}",
+    "showFormer": "Afficher les anciens employés"
   },
   "generic": {
     "done": "Terminé",
@@ -1331,8 +1343,13 @@
         "message": "Organisez un contrôle de l'original du permis de conduire pour {employeeName}, catégorie {classes}, avant le {deadline}.",
         "title": "Contrôle du permis de conduire requis"
       },
+      "employeeDeactivationShiftsOpened": {
+        "message": "{shiftCount, plural, one {{employeeName} a été désactivé(e). # créneau à venir est désormais ouvert.} other {{employeeName} a été désactivé(e). # créneaux à venir sont désormais ouverts.}}",
+        "title": "Des créneaux nécessitent une affectation"
+      },
       "employeeOffboardingReview": {
         "approval_handover": "{employeeName} : Les tâches d'approbation nécessitent un remplaçant (départ effectif le {cutoff}, {timezone}).",
+        "approval_handover_deactivation": "{employeeName} : Les responsabilités d'approbation nécessitent un remplaçant (désactivé(e) le {cutoff}, {timezone}).",
         "clock_out": "{employeeName} : À vérifier : pointage de sortie (départ de l'employé) (départ effectif le {cutoff}, {timezone}).",
         "clock_repair": "{employeeName} : Correction du minuteur requise (départ effectif le {cutoff}, {timezone}).",
         "employment_terms": "{employeeName} : Les futures conditions d'emploi doivent être vérifiées (départ effectif le {cutoff}, {timezone}).",
@@ -1343,10 +1360,19 @@
         "message": "Votre quart de travail s'est terminé à {endTime} ({timezone}). Pointez votre départ si vous avez fini de travailler.",
         "title": "Vous n'avez pas encore pointé votre départ"
       },
+      "formerEmployeeReportsWithoutManager": {
+        "message": "{count, plural, one {# employé est toujours rattaché uniquement à un ancien responsable : {names}. Attribuez un responsable actuel.} other {# employés sont toujours rattachés uniquement à un ancien responsable : {names}. Attribuez un responsable actuel.}}",
+        "title": "Employés sans responsable actuel"
+      },
       "kioskCommandRefused": {
         "forwardedMessage": "{action, select, clock_in {Un pointage d'arrivée} clock_out {Un pointage de départ} start_break {Un début de pause} resume_break {Un retour de pause} other {Un pointage}} effectué par {employeeName} à {time} sur la borne {kioskName} n'a pas été enregistré : {reason, select, wrong_pin {le code PIN était incorrect} pin_locked {le code PIN de la borne a été verrouillé après un nombre excessif de tentatives incorrectes} no_pin {il n'y avait aucun code PIN sur la borne pour effectuer la vérification} pin_unchecked {le code PIN n'a pas pu être vérifié} kiosk_retired {la borne a été révoquée ou jumelée de nouveau avant de se reconnecter} contact_unverifiable {Z8 n'a pas pu confirmer la dernière connexion de la borne} outside_window {l'heure était en dehors du créneau accepté par Z8} clock_untrusted {l'horloge de la borne ne pouvait pas être considérée comme fiable} not_assigned {l'employé n'est pas affecté au site de la borne} not_adopted {l'organisation n'accepte pas les pointages hors ligne sur borne} month_closed {le mois est clôturé} holiday {ce jour est un jour férié sans enregistrement du temps} conflict {il entre en conflit avec d'autres heures enregistrées} other {Z8 n'a pas pu l'accepter}}. Enregistrez le temps pour cet employé ou vérifiez-le avec lui.",
         "message": "Votre {action, select, clock_in {pointage d'arrivée} clock_out {pointage de départ} start_break {début de pause} resume_break {retour de pause} other {pointage}} à {time} sur la borne {kioskName} n'a pas été enregistré : {reason, select, wrong_pin {le code PIN était incorrect} pin_locked {le code PIN de la borne a été verrouillé après un nombre excessif de tentatives incorrectes} no_pin {il n'y avait aucun code PIN sur la borne pour effectuer la vérification} pin_unchecked {le code PIN n'a pas pu être vérifié} kiosk_retired {la borne a été révoquée ou jumelée de nouveau avant de se reconnecter} contact_unverifiable {Z8 n'a pas pu confirmer la dernière connexion de la borne} outside_window {l'heure était en dehors du créneau accepté par Z8} clock_untrusted {l'horloge de la borne ne pouvait pas être considérée comme fiable} not_assigned {l'employé n'est pas affecté au site de la borne} not_adopted {l'organisation n'accepte pas les pointages hors ligne sur borne} month_closed {le mois est clôturé} holiday {ce jour est un jour férié sans enregistrement du temps} conflict {il entre en conflit avec d'autres heures enregistrées} other {Z8 n'a pas pu l'accepter}}. Enregistrez à nouveau votre temps ou demandez à votre responsable de le corriger.",
         "title": "Pointage sur la borne non enregistré"
+      },
+      "kioskFobRegistered": {
+        "forwardedMessage": "{replaced, select, true {Un badge de borne se terminant par {lastFour} a été associé à {employeeName} sur la borne {kioskName}. Il remplace son ancien badge, qui ne fonctionne plus.} other {Un badge de borne se terminant par {lastFour} a été associé à {employeeName} sur la borne {kioskName}.}} Si {employeeName} ne l'a pas enregistré, supprimez-le sur sa page employé et réinitialisez son code PIN de borne.",
+        "message": "{replaced, select, true {Un badge de borne se terminant par {lastFour} vous a été associé sur la borne {kioskName}. Il remplace votre ancien badge, qui ne fonctionne plus.} other {Un badge de borne se terminant par {lastFour} vous a été associé sur la borne {kioskName}.}} Si vous ne l'avez pas enregistré, supprimez-le dans vos paramètres de sécurité et modifiez votre code PIN de borne.",
+        "title": "Badge de borne enregistré"
       },
       "manualEntryApproved": {
         "message": "Votre saisie manuelle des heures a été approuvée par {approverName}.",
@@ -1806,8 +1832,11 @@
         "driving_authorization_suspended_or_ended": "Autorisation de conduite suspendue ou expirée",
         "driving_details_missing_reminder": "Informations de conduite manquantes",
         "driving_licence_reminder": "Contrôle du permis de conduire requis",
+        "employee_deactivation_shifts_opened": "Créneaux ouverts suite à une désactivation",
         "forgotten_clock_out_reminder": "Oubli de pointage de sortie",
+        "former_employee_reports_without_manager": "Employés sans responsable actuel",
         "kiosk_command_refused": "Pointage sur la borne non enregistré",
+        "kiosk_fob_registered": "Badge de borne enregistré",
         "missed_clock_in_reminder": "Pointage d'arrivée manqué",
         "period_submission_decided": "Heures soumises approuvées ou rejetées",
         "period_submission_reminder": "Soumettez vos heures",
@@ -2515,6 +2544,13 @@
             "workModel": "Votre modèle de travail.",
             "workPolicy": "La politique de travail appliquée par ces conditions."
           },
+          "goLiveExclusions": {
+            "createdAt": "Moment de votre exclusion, sous forme d'instant UTC.",
+            "endedAt": "Date et heure de fin suite à votre départ de l'organisation ; vide dans le cas contraire.",
+            "liftedAt": "Date et heure de votre réintégration dans les vérifications par un administrateur ; vide dans le cas contraire.",
+            "reason": "Motif fourni par un administrateur pour votre exclusion.",
+            "summary": "Occurrences où l'organisation vous a exclu de ses vérifications de mise en service lors de la configuration de Z8, et la raison. Elles n'affectent rien d'autre."
+          },
           "groups": {
             "addedAt": "Date à laquelle vous avez été ajouté au groupe.",
             "addedBy": "Personne qui vous a ajouté au groupe.",
@@ -2614,6 +2650,14 @@
             "lastUsedAt": "Date et heure de la dernière lecture du flux par une application de calendrier (UTC).",
             "revokedAt": "Date et heure de désactivation du lien (UTC).",
             "summary": "Les liens de flux de calendrier qui permettent à une application de calendrier de s'abonner à vos absences. Le lien secret lui-même n'est jamais inclus."
+          },
+          "kioskFobs": {
+            "endedAt": "Date et heure auxquelles il a cessé de vous sélectionner (UTC) ; vide tant qu'il continue de le faire.",
+            "endedReason": "remplacé lorsque vous en avez enregistré un autre, retiré lorsque vous ou un responsable l'avez supprimé ou que vous avez été désactivé, départ lorsque votre contrat a pris fin.",
+            "kiosk": "Borne sur laquelle vous l'avez enregistré ; vide si cette borne a été supprimée.",
+            "registeredAt": "Date et heure d'enregistrement (UTC).",
+            "serialNumber": "Numéro de série de la puce, tel que lu par le lecteur de la borne.",
+            "summary": "Cartes NFC ou badges enregistrés sur une borne, actuels et archivés. En badger un vous sélectionne sur la borne ; votre code PIN de borne confirme votre identité."
           },
           "kioskPinEvents": {
             "event": "failure pour un code PIN incorrect, success pour un code correct, cleared lorsque votre code PIN a été déverrouillé, réinitialisé ou modifié.",
@@ -3157,10 +3201,6 @@
     "admin": "Administrateur",
     "employee": "Employé",
     "manager": "Manager"
-  },
-  "status": {
-    "active": "Actif",
-    "inactive": "Inactif"
   },
   "storeAppBanner": {
     "description": "Recevez des rappels et des notifications d'approbation dans l'application.",

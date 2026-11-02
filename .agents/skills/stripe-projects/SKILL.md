@@ -85,7 +85,7 @@ stripe projects init --accept-tos --yes --json
 
 ### Step 4: Hand Off to stripe-projects-cli
 
-Use Read to open `.agents/skills/stripe-projects-cli/SKILL.md`, falling back to `.claude/skills/stripe-projects-cli/SKILL.md` if needed. If neither file exists, retry `stripe projects init --accept-tos --yes --json` **once** to repair the installation, then check both paths again. If init fails or the skill is still missing, follow the CLI’s message and next steps, report the problem to the user, and stop. Do not keep retrying init.
+Use Read to open `.agents/skills/stripe-projects-cli/SKILL.md`, falling back to `.claude/skills/stripe-projects-cli/SKILL.md` if needed. If neither file exists, retry `stripe projects init --accept-tos --yes --json` **once** to repair the installation, then check both paths again. If init fails or the skill is still missing, follow the CLI’s message and next steps, report the problem to the user, and stop. Don’t keep retrying init.
 
 Continue with the locally installed skill to add the requested provider, manage credentials, or configure the project. Invoke `stripe-projects-cli` with the Skill tool when available; otherwise follow the `SKILL.md` you read directly. Let the CLI output guide any provider-specific next steps. Keep the user’s chosen project and account; don’t switch accounts automatically. Browser approval alone does not establish Projects readiness.
 

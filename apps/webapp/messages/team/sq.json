@@ -211,10 +211,6 @@
       "ariaLabel": "Kërkoni anëtarët e ekipit",
       "placeholder": "Kërko sipas emrit, emailit, pozicionit ose ekipit..."
     },
-    "status": {
-      "active": "Aktiv",
-      "inactive": "Joaktiv"
-    },
     "table": {
       "employee": "Punonjës",
       "position": "Pozicioni",

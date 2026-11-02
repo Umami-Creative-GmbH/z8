@@ -17,13 +17,12 @@
     },
     "covering-for": {
       "description": "İzinli olduklarında vekillik ettiğiniz iş arkadaşları",
-      "error": "Vekillik görevleriniz yüklenemedi",
       "running": "{date} tarihine kadar {name} için vekillik yapılıyor",
       "title": "Vekillik edilen",
       "upcoming": "Yaklaşan: {start} - {end} tarihleri arasında {name} için vekillik"
     },
     "customize": {
-      "empty-description": "Bireysel araçları yeniden etkinleştirmek için kontrol paneli özelleştirme simgesini kullanın veya her aracı tekrar göstermek için düzeni sıfırlayın.",
+      "empty-description-defaults": "Ayrı ayrı pencere öğelerini yeniden etkinleştirmek için pano özelleştirme simgesini kullanın veya varsayılan pencere öğelerinizi geri yüklemek için düzeni sıfırlayın.",
       "empty-title": "Tüm kontrol paneli araçları gizli",
       "move-down": "{widget} öğesini aşağı taşı",
       "move-up": "{widget} öğesini yukarı taşı",
@@ -54,7 +53,6 @@
     },
     "managed-employees": {
       "direct-reports": "{count} doğrudan rapor",
-      "error": "Yönetilen çalışanlar yüklenemedi",
       "no-reports": "Henüz doğrudan raporlanan kimse yok",
       "no-reports-description": "Atandıklarında ekip üyelerinizi burada göreceksiniz",
       "people-you-manage": "Yönettikleriniz",
@@ -78,7 +76,7 @@
       "awaiting-approval": "Onayınızı bekliyor",
       "correction": "Düzeltme",
       "description": "Kararınızı bekleyen talepler",
-      "error": "Bekleyen onaylar yüklenemedi",
+      "empty": "Bekleyen onay yok",
       "more-requests": "+{count} talep daha",
       "pending-requests": "{count} bekleyen {request}",
       "request": "talep",
@@ -117,7 +115,7 @@
       "by": "{name} tarafından",
       "description": "Son onaylanan talepler",
       "description-count": "Son {count} onaylanan {request}",
-      "error": "Son onaylanan talepler yüklenemedi",
+      "empty": "Yakın zamanda onaylanan talep yok",
       "more-approved": "+{count} onay daha",
       "request": "talep",
       "requests": "talepler",
@@ -126,12 +124,11 @@
       "view-all": "Tüm Onayları Görüntüle"
     },
     "team-overview": {
-      "active-count": "Toplam {total} çalışandan {active} tanesi aktif ({percent}%)",
-      "active-employees": "Aktif Çalışanlar",
       "avg-hours": "Ort. Saat",
+      "current-employees": "Mevcut çalışanlar",
+      "current-employees-description": "Şu anda burada çalışan herkes",
       "description": "Ekip istatistiklerine bir bakış",
       "employees-button": "Çalışanlar",
-      "error": "Ekip istatistikleri yüklenemedi",
       "per-week": "/hafta",
       "teams": "Ekipler",
       "teams-button": "Ekipler",
@@ -142,7 +139,6 @@
       "empty": "Yaklaşan vardiya yok",
       "empty-description": "Yayımlanan sonraki vardiyalarınız burada görünecektir.",
       "ends-next-day": "ertesi gün biter",
-      "error": "Yaklaşan vardiyalarınız yüklenemedi",
       "title": "Yaklaşan Vardiyalar",
       "today": "Bugün",
       "tomorrow": "Yarın",
@@ -155,7 +151,7 @@
       "days": "gün",
       "description": "Planlanmış ekip izinleri",
       "description-count": "Sıradaki {count} planlanmış {absence}",
-      "error": "Yaklaşan izinler yüklenemedi",
+      "empty": "Yaklaşan izin yok",
       "title": "Yaklaşan İzinler",
       "today": "Bugün",
       "tomorrow": "Yarın",
@@ -167,7 +163,6 @@
       "carryover-days": "{days} gün",
       "days-remaining": "kalan gün",
       "description": "{year} tatil günü",
-      "error": "Tatil bakiyesi yüklenemedi",
       "expires-in": "{days} gün içinde sona eriyor",
       "label-available": "Kullanılabilir",
       "label-pending": "Beklemede",
@@ -176,10 +171,10 @@
       "percent-used": "%{percent} kullanıldı",
       "title": "Tatil Bakiyesi",
       "total": "Toplam {days}",
+      "unavailable": "İzin bakiyesi kullanılamıyor.",
       "used": "{days} kullanıldı"
     },
     "whos-out": {
-      "error": "Bugünkü devamsızlıklar yüklenemedi",
       "everyone-in": "Bugün herkes ofiste",
       "everyones-in": "Herkes burada!",
       "full-team": "Tüm ekip müsait!",
@@ -198,9 +193,13 @@
       "view-calendar": "Takvimin Tamamını Görüntüle"
     },
     "widgets": {
+      "deferred": "Görünüme girdiğinde yüklenir. Şimdi de yükleyebilirsiniz.",
       "dragToReorder": "Widget'ı yeniden sıralamak için sürükleyin",
+      "load": "{widget} öğesini yükle",
+      "loading": "Pano pencere öğesi yükleniyor…",
       "moving": "Widget taşınıyor…",
-      "refresh": "Yenile"
+      "refresh": "Yenile",
+      "retry": "{widget} öğesini yeniden dene"
     }
   }
 }

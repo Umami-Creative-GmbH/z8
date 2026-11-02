@@ -203,6 +203,8 @@ const EMPLOYEE_EXPORT_ACTIONS: ReadonlySet<string> = new Set<string>([
 	AuditAction.KIOSK_BADGE_ISSUED,
 	AuditAction.KIOSK_BADGE_REPLACED,
 	AuditAction.KIOSK_BADGE_REVOKED,
+	AuditAction.KIOSK_FOB_REGISTERED,
+	AuditAction.KIOSK_FOB_ENDED,
 ]);
 
 /** Older writers record a generic verb; allowed per entity type (`entity_type:action`). */
@@ -243,7 +245,21 @@ function isEmployeeVisible(row: AuditRow, visibility: EmployeeVisibility): boole
 		const fieldId = jsonObject(row.metadata)?.fieldId;
 		return typeof fieldId === "string" && visibility.visibleFieldIds.has(fieldId);
 	}
+	// The colleague who registered the card is never named to its former holder.
+	if (endedAtColleaguesRegistration(row)) return false;
 	return true;
+}
+
+/**
+ * A former employee's fob ended because a colleague registered that card
+ * (decision O7). Its actor is the colleague and its subject the former holder:
+ * the employee export of either one never shows it, only the admin export.
+ */
+function endedAtColleaguesRegistration(row: AuditRow): boolean {
+	return (
+		row.action === AuditAction.KIOSK_FOB_ENDED &&
+		jsonObject(row.metadata)?.endedAtRegistrationOnKioskId !== undefined
+	);
 }
 
 export const auditLogCollector: PersonalDataCollector = {
@@ -299,6 +315,8 @@ async function collectAuditLog(
 			about.push(row);
 			continue;
 		}
+		// Not even that the card they registered had another holder.
+		if (scope.kind !== "admin" && endedAtColleaguesRegistration(row)) continue;
 		actions.push({
 			recordKind: row.entityType,
 			authority: "audit_log",

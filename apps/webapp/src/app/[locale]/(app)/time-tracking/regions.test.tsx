@@ -121,9 +121,9 @@ const activePeriod = {
 	startTime: new Date("2026-10-02T08:00:00Z"),
 } as NonNullable<Awaited<ReturnType<typeof readActiveWorkPeriod>>>;
 const summaryData = {
-	summary: { todayMinutes: 60, weekMinutes: 120, monthMinutes: 180 },
+	kpis: { kpis: { today: { workedMinutes: 60 } }, basis: { timezone: "UTC" } },
 	workBalance: null,
-};
+} as unknown as Awaited<ReturnType<typeof readSummaryRegion>>;
 const historyData = {
 	workPeriods: [],
 	hasManager: true,

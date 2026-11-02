@@ -46,6 +46,10 @@
       "uncertainDescription": "Vaš sat je osvježen. Provjerite ga prije ponovnog pokušaja."
     },
     "budget": "Budžet",
+    "choices": {
+      "retry": "Pokušaj ponovo: {choice}",
+      "unavailable": "{choice} nije dostupno"
+    },
     "clockedOutSuccess": "Evidentirali ste odlazak!",
     "clockIn": "Evidentiraj dolazak",
     "clockingIn": "Evidentiranje dolaska…",
@@ -59,6 +63,11 @@
     "clockOutSavedForSending": "Odjava je spremljena na ovom uređaju. Šalje se automatski i još nije potvrđena.",
     "clockOutSavedHeld": "Odjava je spremljena na ovom uređaju, ali nije poslana. Pregledajte spremljene zapise.",
     "clockOutSuccess": "Odlazak je uspješno evidentiran",
+    "clockStatus": {
+      "loading": "Učitavanje statusa evidencije radnog vremena",
+      "retry": "Pokušaj ponovo: status evidencije radnog vremena",
+      "unavailable": "Status evidencije radnog vremena nije dostupan"
+    },
     "compliance": {
       "violation": "Kršenje propisa",
       "warning": "Obavještenje o usklađenosti"
@@ -226,8 +235,30 @@
         "endDayHint": "Završavanjem dana sada završavate svoj rad na početku pauze.",
         "today": "Danas: {duration}"
       },
+      "fob": {
+        "alreadyRegistered": "Ovaj privjesak koji završava na {lastFour} već je registrovan na vas.",
+        "back": "Nazad",
+        "checking": "Provjera privjeska…",
+        "failed": "Provjera privjeska nije uspjela. Prislonite ga ponovo ili dodirnite svoje ime da biste koristili PIN.",
+        "linkedToOther": "Ovaj privjesak je već registrovan na drugu osobu. Ništa nije promijenjeno. Obratite se svom menadžeru.",
+        "notEligible": "Ne možete registrovati privjesak na ovom kiosku. Ništa nije promijenjeno. Obratite se svom menadžeru.",
+        "notRecognised": "Ovaj privjesak ovdje nije prepoznat.",
+        "offline": "Za privjeske je potrebna veza. Ništa nije zabilježeno. Dodirnite svoje ime da biste koristili PIN.",
+        "offlineOnly": "Za privjeske je potrebna veza. Ništa nije zabilježeno.",
+        "pickPrompt": "Dodirnite svoje ime.",
+        "pickTitle": "Registrujte ovaj privjesak",
+        "pinPrompt": "Unesite svoj PIN za kiosk da biste registrovali ovaj privjesak",
+        "rateLimited": "{seconds, plural, one {Previše prislanjanja privjeska na ovom kiosku. Pokušajte ponovo za # sekundu ili dodirnite svoje ime da biste koristili PIN.} few {Previše prislanjanja privjeska na ovom kiosku. Pokušajte ponovo za # sekunde ili dodirnite svoje ime da biste koristili PIN.} other {Previše prislanjanja privjeska na ovom kiosku. Pokušajte ponovo za # sekundi ili dodirnite svoje ime da biste koristili PIN.}}",
+        "readerDisabled": "Čitač privjesaka je isključen na ovom kiosku. Dodirnite svoje ime da biste koristili PIN.",
+        "register": "Registrujte ovaj privjesak",
+        "registered": "Privjesak je registrovan",
+        "registeredText": "Vaš privjesak koji završava na {lastFour} je registrovan. Prislonite ga da odaberete svoje ime, a zatim unesite svoj PIN.",
+        "registerHint": "Ako je vaš, registrujte ga svojim imenom i PIN-om za kiosk. Privjesak koji ste ranije registrovali prestaje raditi.",
+        "replaced": "Ovim se zamjenjuje vaš prethodni privjesak, koji više ne radi."
+      },
       "home": {
         "empty": "Niko još nije dodijeljen ovoj lokaciji. Obratite se svom administratoru.",
+        "fobHint": "Ili prislonite svoj privjesak na čitač.",
         "loadFailed": "Nije moguće učitati imena. Provjerite mrežnu vezu.",
         "loading": "Učitavanje imena…",
         "noMatch": "Nijedno ime ne odgovara vašoj pretrazi.",
@@ -354,9 +385,14 @@
         "nonexistentTime": "Ovo vrijeme ne postoji na ovaj datum zbog pomjeranja sata unaprijed.",
         "occurrenceRequired": "Ovo vrijeme se pojavljuje dva puta na ovaj datum. Odaberite na koje mislite.",
         "overlap": "Ovo vrijeme se preklapa s evidentiranim radom. Odaberite raspon koji se ne preklapa s postojećim unosima.",
+        "overlapsLiveWork": "Ovo vrijeme se preklapa s radom koji traje od {start}. Ručni unos mora završiti do tada.",
         "reconfirm": "Vremenska zona ili vremena su promijenjena. Pregledajte unos i pošaljite ga ponovo.",
         "refresh": "Postavke ručnog unosa su promijenjene. Pregledajte unos i pošaljite ga ponovo.",
         "tooLong": "Period rada ne može biti duži od 24 sata"
+      },
+      "liveWorkHint": {
+        "employee": "{employee} je prijavljen(a) od {start}, pa ovaj unos mora završiti do tada.",
+        "own": "Prijavljeni ste od {start}, pa ovaj unos mora završiti do tada."
       },
       "occurrence": {
         "earlier": "Prvo, {offset}",
@@ -500,11 +536,23 @@
     },
     "startedAt": "Započeto u",
     "summary": {
-      "baseWorked": "Osnovni rad",
-      "surcharge": "Dodatak",
+      "dayOfRequired": "{date}: {worked} od {required}",
+      "dayWorked": "{date}: {worked}",
+      "noRequiredToday": "Danas nema obaveznog radnog vremena",
+      "progressAhead": "{worked} od {required} · {difference} ispred",
+      "progressBehind": "{worked} od {required} · {difference} u zaostatku",
+      "progressLabel": "Odrađeno vrijeme od obaveznog vremena",
+      "progressOnTrack": "{worked} od {required} · po planu",
+      "surchargeFootnote": "+{surcharge} dodatak",
       "thisMonth": "Ovaj mjesec",
       "thisWeek": "Ova sedmica",
-      "today": "Danas"
+      "today": "Danas",
+      "todayOfRequired": "{worked} od {required}",
+      "trend": "{difference} {comparedWith}",
+      "trendDetail": "Sada: {worked} odrađeno od {required} obaveznih do sada. Tada: {previousWorked} odrađeno od {previousRequired} obaveznih.",
+      "trendWithPercent": "{difference} ({percent}) {comparedWith}",
+      "vsLastMonth": "u odnosu na prošli mjesec",
+      "vsLastWeek": "u odnosu na prošlu sedmicu"
     },
     "table": {
       "active": "Aktivno",
@@ -564,6 +612,9 @@
       "breakReading": "Očitanje kilometraže na pauzi (km)",
       "breakReadingHint": "Opcionalno. Završava očitanje za ovaj rad i započinje za sljedeći.",
       "changeLive": "Promijeni",
+      "choices": "Izbor vozila",
+      "choicesLoading": "Učitavanje izbora vozila…",
+      "choicesOffline": "Izbor vozila nije dostupan van mreže. Možete zabilježiti vrijeme i dodati detalje kasnije.",
       "derivedDistance": "Pređena udaljenost: {distance} km",
       "distanceKm": "Pređena udaljenost (km)",
       "distanceText": "Pređeno {distance} km",
@@ -599,6 +650,7 @@
         "off": "Korištenje vozila se ne evidentira za ovog zaposlenika.",
         "splitOutOfRange": "Kilometri pri razdvajanju moraju biti unutar kilometara radnog perioda."
       },
+      "settingsLoading": "Učitavanje postavki korištenja vozila…",
       "startKm": "Početno stanje (km)",
       "title": "Korištenje vozila",
       "unknownVehicle": "Nepoznato vozilo (nedostupno)",

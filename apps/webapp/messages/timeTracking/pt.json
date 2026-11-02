@@ -46,6 +46,10 @@
       "uncertainDescription": "Seu relógio foi atualizado. Verifique-o antes de tentar novamente."
     },
     "budget": "Orçamento",
+    "choices": {
+      "retry": "Tentar {choice} novamente",
+      "unavailable": "{choice} indisponível"
+    },
     "clockedOutSuccess": "Você registrou a saída!",
     "clockIn": "Registrar Entrada",
     "clockingIn": "Registrando entrada...",
@@ -59,6 +63,11 @@
     "clockOutSavedForSending": "Saída salva neste dispositivo. Ela é enviada automaticamente e ainda não foi confirmada.",
     "clockOutSavedHeld": "Saída salva neste dispositivo, mas não enviada. Revise os registros salvos.",
     "clockOutSuccess": "Saída registrada com sucesso",
+    "clockStatus": {
+      "loading": "Carregando status do ponto",
+      "retry": "Tentar novamente status do ponto",
+      "unavailable": "Status do ponto indisponível"
+    },
     "compliance": {
       "violation": "Violação de Conformidade",
       "warning": "Aviso de Conformidade"
@@ -226,8 +235,30 @@
         "endDayHint": "Encerrar o dia agora encerra seu trabalho no início da sua pausa.",
         "today": "Hoje: {duration}"
       },
+      "fob": {
+        "alreadyRegistered": "Este chaveiro com final {lastFour} já está registrado para você.",
+        "back": "Voltar",
+        "checking": "Verificando seu chaveiro…",
+        "failed": "Não foi possível verificar o chaveiro. Aproxime-o novamente ou toque no seu nome para usar o PIN.",
+        "linkedToOther": "Este chaveiro já está registrado para outra pessoa. Nada foi alterado. Fale com seu gerente.",
+        "notEligible": "Você não pode registrar um chaveiro neste quiosque. Nada foi alterado. Fale com seu gerente.",
+        "notRecognised": "Este chaveiro não é reconhecido aqui.",
+        "offline": "Os chaveiros precisam de conexão. Nada foi registrado. Toque no seu nome para usar o PIN.",
+        "offlineOnly": "Os chaveiros precisam de conexão. Nada foi registrado.",
+        "pickPrompt": "Toque no seu nome.",
+        "pickTitle": "Registrar este chaveiro",
+        "pinPrompt": "Insira seu PIN do quiosque para registrar este chaveiro",
+        "rateLimited": "{seconds, plural, one {Muitas aproximações de chaveiro neste quiosque. Tente novamente em # segundo ou toque no seu nome para usar seu PIN.} other {Muitas aproximações de chaveiro neste quiosque. Tente novamente em # segundos ou toque no seu nome para usar seu PIN.}}",
+        "readerDisabled": "O leitor de chaveiro está desativado neste quiosque. Toque no seu nome para usar seu PIN.",
+        "register": "Registrar este chaveiro",
+        "registered": "Chaveiro registrado",
+        "registeredText": "Seu chaveiro com final {lastFour} está registrado. Aproxime-o para escolher seu nome e, em seguida, insira seu PIN.",
+        "registerHint": "Se for seu, registre-o com seu nome e PIN do quiosque. Um chaveiro registrado anteriormente deixará de funcionar.",
+        "replaced": "Ele substitui seu chaveiro anterior, que não funciona mais."
+      },
       "home": {
         "empty": "Ninguém foi atribuído a este local ainda. Fale com seu administrador.",
+        "fobHint": "Ou aproxime seu chaveiro do leitor.",
         "loadFailed": "Não foi possível carregar os nomes. Verifique a conexão de rede.",
         "loading": "Carregando nomes…",
         "noMatch": "Nenhum nome corresponde à sua busca.",
@@ -354,9 +385,14 @@
         "nonexistentTime": "Este horário não existe nesta data porque os relógios são adiantados.",
         "occurrenceRequired": "Este horário ocorre duas vezes nesta data. Escolha a qual deles você se refere.",
         "overlap": "Este horário se sobrepõe a um trabalho registrado. Escolha um intervalo que não se sobreponha aos registros existentes.",
+        "overlapsLiveWork": "Este horário se sobrepõe a um trabalho em andamento desde {start}. Um registro manual deve terminar até esse momento.",
         "reconfirm": "O fuso horário ou os horários foram alterados. Revise a entrada e envie-a novamente.",
         "refresh": "As configurações de entrada manual foram alteradas. Revise a entrada e envie-a novamente.",
         "tooLong": "O período de trabalho não pode exceder 24 horas"
+      },
+      "liveWorkHint": {
+        "employee": "{employee} está com a entrada registrada desde {start}, portanto este registro deve terminar até esse horário.",
+        "own": "Você está com a entrada registrada desde {start}, portanto este registro deve terminar até esse horário."
       },
       "occurrence": {
         "earlier": "Primeiro, {offset}",
@@ -500,11 +536,23 @@
     },
     "startedAt": "Iniciado às",
     "summary": {
-      "baseWorked": "Base trabalhada",
-      "surcharge": "Sobretaxa",
+      "dayOfRequired": "{date}: {worked} de {required}",
+      "dayWorked": "{date}: {worked}",
+      "noRequiredToday": "Sem tempo obrigatório hoje",
+      "progressAhead": "{worked} de {required} · {difference} adiantado",
+      "progressBehind": "{worked} de {required} · {difference} atrasado",
+      "progressLabel": "Tempo trabalhado do tempo obrigatório",
+      "progressOnTrack": "{worked} de {required} · em dia",
+      "surchargeFootnote": "+{surcharge} de sobretaxa",
       "thisMonth": "Este Mês",
       "thisWeek": "Esta Semana",
-      "today": "Hoje"
+      "today": "Hoje",
+      "todayOfRequired": "{worked} de {required}",
+      "trend": "{difference} {comparedWith}",
+      "trendDetail": "Agora: {worked} trabalhados de {required} obrigatórios até agora. Antes: {previousWorked} trabalhados de {previousRequired} obrigatórios.",
+      "trendWithPercent": "{difference} ({percent}) {comparedWith}",
+      "vsLastMonth": "vs. mês passado",
+      "vsLastWeek": "vs. semana passada"
     },
     "table": {
       "active": "Ativo",
@@ -564,6 +612,9 @@
       "breakReading": "Leitura do odômetro no intervalo (km)",
       "breakReadingHint": "Opcional. Encerra a leitura deste trabalho e inicia a do próximo.",
       "changeLive": "Alterar",
+      "choices": "Opções de veículos",
+      "choicesLoading": "Carregando opções de veículos…",
+      "choicesOffline": "As opções de veículos estão indisponíveis offline. Você pode registrar o tempo e adicionar detalhes mais tarde.",
       "derivedDistance": "Distância percorrida: {distance} km",
       "distanceKm": "Distância percorrida (km)",
       "distanceText": "{distance} km percorridos",
@@ -599,6 +650,7 @@
         "off": "O uso do veículo não é registrado para este funcionário.",
         "splitOutOfRange": "Os quilômetros na divisão devem estar dentro dos quilômetros do período de trabalho."
       },
+      "settingsLoading": "Carregando configurações de uso de veículos…",
       "startKm": "Leitura inicial (km)",
       "title": "Uso do veículo",
       "unknownVehicle": "Veículo desconhecido (indisponível)",

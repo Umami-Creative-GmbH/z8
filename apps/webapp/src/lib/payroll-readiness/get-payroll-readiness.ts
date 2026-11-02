@@ -1,15 +1,7 @@
-import { and, desc, eq, gt, gte, isNull, lte, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, lte, or, sql } from "drizzle-orm";
 import { DateTime } from "luxon";
+import { db, employee, payrollExportJob, timeRecord } from "@/db";
 import {
-	db,
-	employee,
-	payrollExportConfig,
-	payrollExportJob,
-	payrollWageTypeMapping,
-	timeRecord,
-} from "@/db";
-import {
-	employeeEmploymentHistory,
 	travelExpenseClaim,
 	travelExpenseLegacyDraftConversion,
 	travelExpenseReport,
@@ -17,11 +9,9 @@ import {
 } from "@/db/schema";
 import { instantFromDate, parsePlainDate } from "@/lib/datetime/temporal-core";
 import { findOpenDepartureClockRepairs } from "@/lib/employee-lifecycle/reviews";
-import { createLogger } from "@/lib/logger";
 import { loadPeriodSubmissionGaps } from "@/lib/time-tracking/period-submissions/submission-gaps-store";
+import { loadPayrollSetupChecks } from "./payroll-setup-checks";
 import { loadPersonnelIdentifierClashes } from "./personnel-identifier-clashes";
-
-const logger = createLogger("PayrollReadiness");
 
 export type PayrollReadinessStatus = "ready" | "blocked" | "unavailable";
 export type PayrollReadinessSeverity = "info" | "warning" | "blocker";
@@ -229,8 +219,6 @@ export async function getPayrollReadiness(
 		activeWorkRecords,
 		pendingTimeRecords,
 		activeEmployees,
-		employmentHistoryRows,
-		exportConfigs,
 		latestExportJobs,
 		travelExpenseClaims,
 		pendingTravelExpenseReports,
@@ -273,23 +261,6 @@ export async function getPayrollReadiness(
 			with: {
 				user: true,
 			},
-		}),
-		db.query.employeeEmploymentHistory.findMany({
-			where: and(
-				eq(employeeEmploymentHistory.organizationId, organizationId),
-				eq(employeeEmploymentHistory.reviewState, "confirmed"),
-				lte(employeeEmploymentHistory.validFrom, end.toJSDate()),
-				or(
-					isNull(employeeEmploymentHistory.validUntil),
-					gt(employeeEmploymentHistory.validUntil, start.toJSDate()),
-				),
-			),
-		}),
-		db.query.payrollExportConfig.findMany({
-			where: and(
-				eq(payrollExportConfig.organizationId, organizationId),
-				eq(payrollExportConfig.isActive, true),
-			),
 		}),
 		db.query.payrollExportJob.findMany({
 			where: and(
@@ -364,46 +335,27 @@ export async function getPayrollReadiness(
 		),
 	]);
 
-	const [wageMappings, identifierClashLookup] = await Promise.all([
-		exportConfigs.length > 0
-			? db.query.payrollWageTypeMapping.findMany({
-					where: and(
-						eq(payrollWageTypeMapping.isActive, true),
-						eq(payrollWageTypeMapping.organizationId, organizationId),
-					),
-				})
-			: [],
-		// Employees an export would merge under one personnel identifier (#1198); a failed
-		// lookup must surface as unavailable, never as ready.
-		loadPersonnelIdentifierClashes({
-			organizationId,
-			configs: exportConfigs,
-			period: { start: start.toJSDate(), end: end.toJSDate() },
-			from: parsePlainDate(selectedStartDate),
-			asOf: parsePlainDate(selectedEndDate),
-		}).then(
-			(clashes) => ({ available: true as const, clashes }),
-			(error: unknown) => {
-				logger.error(
-					{ organizationId, error },
-					"Payroll readiness could not check for shared personnel identifiers",
-				);
-				return { available: false as const, clashes: [] };
-			},
-		),
-	]);
+	// The setup checks the payroll setup go-live check reuses: terms over the period for
+	// every active employee, clashes among the employees the period's export would carry.
+	const setup = await loadPayrollSetupChecks(db, {
+		organizationId,
+		employees: activeEmployees,
+		termsWindow: { start: start.toJSDate(), end: end.toJSDate() },
+		findIdentifierClashes: (configs) =>
+			loadPersonnelIdentifierClashes({
+				organizationId,
+				configs,
+				period: { start: start.toJSDate(), end: end.toJSDate() },
+				from: parsePlainDate(selectedStartDate),
+				asOf: parsePlainDate(selectedEndDate),
+			}),
+	});
 
 	const staleActiveWorkRecords = activeWorkRecords.filter((record) => {
 		const startAt = DateTime.fromJSDate(record.startAt);
 
 		return startAt <= staleActiveWorkCutoff;
 	});
-	const employeesWithEmploymentHistory = new Set(
-		employmentHistoryRows.map((row) => row.employeeId),
-	);
-	const missingEmploymentHistory = activeEmployees.filter(
-		(activeEmployee) => !employeesWithEmploymentHistory.has(activeEmployee.id),
-	);
 	const latestExportJob = latestExportJobs.find((job) => isExportForPeriod(job, start, end));
 	// Reports load no relations; name their employees from the active employee list.
 	const activeEmployeesById = new Map(
@@ -471,22 +423,6 @@ export async function getPayrollReadiness(
 					: []),
 			]
 		: [];
-
-	// One row per clashing employee, with the identifier the export writes for them.
-	const identifierClashEmployees = new Map<string, PayrollReadinessAffectedEmployee>();
-	for (const clash of identifierClashLookup.clashes) {
-		for (const holder of clash.employees) {
-			if (identifierClashEmployees.has(holder.employeeId)) continue;
-			const known = activeEmployeesById.get(holder.employeeId);
-			identifierClashEmployees.set(holder.employeeId, {
-				id: holder.employeeId,
-				name: holder.name ?? known?.user?.name,
-				email: known?.user?.email,
-				employeeNumber: known?.employeeNumber ?? null,
-				personnelIdentifier: holder.identifier,
-			});
-		}
-	}
 
 	const checks: PayrollReadinessCheck[] = [
 		buildCheck({
@@ -564,60 +500,9 @@ export async function getPayrollReadiness(
 			required: false,
 			count: 0,
 		}),
-		buildCheck({
-			id: "missing-employment-history",
-			group: "payrollSetup",
-			title: "Employment history coverage",
-			titleKey: "settings.payrollReadiness.checks.missingEmploymentHistory.title",
-			...(missingEmploymentHistory.length > 0
-				? {
-						description:
-							"Some active employees do not have confirmed employment history for this payroll period.",
-						descriptionKey:
-							"settings.payrollReadiness.checks.missingEmploymentHistory.descriptionWarning",
-					}
-				: {
-						description:
-							"All active employees have confirmed employment history for this payroll period.",
-						descriptionKey:
-							"settings.payrollReadiness.checks.missingEmploymentHistory.descriptionPass",
-					}),
-			status: missingEmploymentHistory.length > 0 ? "warning" : "pass",
-			severity: "warning",
-			required: false,
-			count: missingEmploymentHistory.length,
-			actionHref: "/settings/employees",
-			actionLabel: "Review employees",
-			affectedEmployees: uniqueAffectedEmployees(
-				missingEmploymentHistory.map((activeEmployee) => ({ employee: activeEmployee })),
-			),
-		}),
-		buildCheck({
-			id: "payroll-export-targets",
-			group: "payrollSetup",
-			title: "Payroll export targets",
-			titleKey: "settings.payrollReadiness.checks.payrollExportTargets.title",
-			description: "At least one active payroll export target must be configured.",
-			descriptionKey: "settings.payrollReadiness.checks.payrollExportTargets.description",
-			status: exportConfigs.length > 0 ? "pass" : "fail",
-			severity: "blocker",
-			required: true,
-			count: exportConfigs.length,
-			actionHref: "/settings/payroll-export",
-		}),
-		buildCheck({
-			id: "wage-type-mappings",
-			group: "payrollSetup",
-			title: "Wage type mappings",
-			titleKey: "settings.payrollReadiness.checks.wageTypeMappings.title",
-			description: "Active payroll wage type mappings must exist for export classification.",
-			descriptionKey: "settings.payrollReadiness.checks.wageTypeMappings.description",
-			status: wageMappings.length > 0 ? "pass" : "fail",
-			severity: "blocker",
-			required: true,
-			count: wageMappings.length,
-			actionHref: "/settings/payroll-export",
-		}),
+		setup.employmentHistory,
+		setup.exportTargets,
+		setup.wageTypeMappings,
 		buildCheck({
 			id: "latest-payroll-export",
 			group: "exports",
@@ -631,25 +516,7 @@ export async function getPayrollReadiness(
 			count: latestExportJob ? 1 : 0,
 			actionHref: "/settings/payroll-export",
 		}),
-		buildCheck({
-			id: "duplicate-personnel-identifiers",
-			group: "exports",
-			title: "Shared personnel identifiers",
-			titleKey: "settings.payrollReadiness.checks.duplicatePersonnelIdentifiers.title",
-			description:
-				"Employees a payroll export would write under the same personnel identifier. The payroll system would merge them, so the export is refused until each employee has their own.",
-			descriptionKey: "settings.payrollReadiness.checks.duplicatePersonnelIdentifiers.description",
-			status: !identifierClashLookup.available
-				? "unavailable"
-				: identifierClashEmployees.size > 0
-					? "fail"
-					: "pass",
-			severity: "blocker",
-			required: true,
-			count: identifierClashEmployees.size,
-			actionHref: "/settings/employees",
-			affectedEmployees: [...identifierClashEmployees.values()],
-		}),
+		setup.personnelIdentifiers,
 		buildCheck({
 			id: "compliance-warnings",
 			group: "exports",
@@ -696,7 +563,7 @@ export async function getPayrollReadiness(
 			).length,
 			warningCount: checks.filter((check) => check.status === "warning").length,
 			affectedEmployeeCount: affectedEmployeeIds.size,
-			configuredExportTargetCount: exportConfigs.length,
+			configuredExportTargetCount: setup.exportTargetCount,
 		},
 		groups: buildGroups(checks),
 	};

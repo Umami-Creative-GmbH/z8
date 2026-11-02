@@ -65,6 +65,7 @@ vi.mock("@/components/providers/user-preferences-provider", () => ({
 }));
 
 vi.mock("@/lib/time-tracking/timezone-utils", () => ({
+	formatDateInZone: () => "Sat, Oct 31",
 	formatTimeInZone,
 	getTimezoneAbbreviation: (timezone: string) => timezone,
 }));
@@ -1396,6 +1397,117 @@ describe("ManualTimeEntryDialog target context", () => {
 				targetContextState.getManualEntryTargetContext.mock.calls.length,
 			).toBeGreaterThan(callsBeforeSubmit),
 		);
+	});
+
+	describe("while the target is clocked in (#1492)", () => {
+		const liveSince = (days: number) =>
+			Temporal.Now.instant().subtract({ hours: 24 * days }).toString();
+
+		function submitWithReason() {
+			fireEvent.change(screen.getByLabelText("Reason"), {
+				target: { value: "Forgot the early shift" },
+			});
+			fireEvent.click(screen.getByRole("button", { name: "Create Entry" }));
+		}
+
+		beforeEach(() => {
+			toastError.mockReset();
+		});
+
+		it("tells the employee their entry must end by their clock-in", () => {
+			renderDialog({ open: true, hideTrigger: true }, { liveWorkStartedAt: liveSince(0) });
+
+			expect(
+				screen.getByText("You've been clocked in since 09:00, so this entry must end by then."),
+			).toBeTruthy();
+		});
+
+		it("names the employee and the date when their live work started on an earlier day", () => {
+			renderDialog(
+				{
+					open: true,
+					hideTrigger: true,
+					targetEmployeeId: "employee-2",
+					targetEmployeeName: "Jane Doe",
+				},
+				{ liveWorkStartedAt: liveSince(2) },
+			);
+
+			expect(
+				screen.getByText(
+					"Jane Doe has been clocked in since Sat, Oct 31, 09:00, so this entry must end by then.",
+				),
+			).toBeTruthy();
+		});
+
+		it("shows no hint while the target is not clocked in", () => {
+			renderDialog({ open: true, hideTrigger: true }, { liveWorkStartedAt: null });
+
+			expect(screen.queryByText(/clocked in since/)).toBeNull();
+		});
+
+		it("names the live work an entry overlaps", async () => {
+			createManualTimeEntry.mockResolvedValue({
+				success: false,
+				error: "This time overlaps work that is still running.",
+				code: "occupancy_conflict",
+				rejection: {
+					reason: "occupancy_conflict",
+					occupants: [{ kind: "work_period", id: "live-1", startAt: liveSince(0), endAt: null }],
+				},
+			});
+			renderDialog({
+				open: true,
+				hideTrigger: true,
+				targetEmployeeId: "employee-2",
+				defaultDate: "2026-05-12",
+				defaultClockInTime: "09:00",
+				defaultClockOutTime: "17:00",
+			});
+
+			submitWithReason();
+
+			await waitFor(() =>
+				expect(toastError).toHaveBeenCalledWith(
+					"This time overlaps work that has been running since 09:00. A manual entry must end by then.",
+				),
+			);
+		});
+
+		it("keeps the general overlap message when only completed work overlaps", async () => {
+			createManualTimeEntry.mockResolvedValue({
+				success: false,
+				error: "This time overlaps recorded work.",
+				code: "occupancy_conflict",
+				rejection: {
+					reason: "occupancy_conflict",
+					occupants: [
+						{
+							kind: "work_period",
+							id: "done-1",
+							startAt: "2026-05-12T08:00:00.000Z",
+							endAt: "2026-05-12T10:00:00.000Z",
+						},
+					],
+				},
+			});
+			renderDialog({
+				open: true,
+				hideTrigger: true,
+				targetEmployeeId: "employee-2",
+				defaultDate: "2026-05-12",
+				defaultClockInTime: "09:00",
+				defaultClockOutTime: "17:00",
+			});
+
+			submitWithReason();
+
+			await waitFor(() =>
+				expect(toastError).toHaveBeenCalledWith(
+					"This time overlaps recorded work. Choose a range that doesn't overlap existing entries.",
+				),
+			);
+		});
 	});
 });
 

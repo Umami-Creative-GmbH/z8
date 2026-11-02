@@ -439,14 +439,21 @@ export async function loadApprovalStageDirectory(
 	};
 }
 
+export type ApprovalStageDirectoryLoader = typeof loadApprovalStageDirectory;
+
 /**
  * Resolves stage reviewers from the organization directory. A stage naming a
  * person who left resolves to the replacement `loadApprovalStageDirectory`
- * finds for them.
+ * finds for them. A read-only caller resolving many requesters may pass a
+ * `loadDirectory` that answers from a directory it already read (#1514).
  */
 export function createDatabaseStageActivationResolver(
-	deps: { hasDecisionPath?: ReplacementDecisionPath } = {},
+	deps: {
+		hasDecisionPath?: ReplacementDecisionPath;
+		loadDirectory?: ApprovalStageDirectoryLoader;
+	} = {},
 ): StageActivationResolver {
+	const loadDirectory = deps.loadDirectory ?? loadApprovalStageDirectory;
 	return {
 		async resolve(input) {
 			const context = decodeRoutingContext(input.routingContext, input);
@@ -456,7 +463,7 @@ export function createDatabaseStageActivationResolver(
 				stage.approverType === "specific_employee"
 					? (stage.approverEmployeeId ?? null)
 					: null;
-			const directory = await loadApprovalStageDirectory(
+			const directory = await loadDirectory(
 				input.dbService.db,
 				namedApproverId === null
 					? {

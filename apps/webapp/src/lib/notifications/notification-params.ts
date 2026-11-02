@@ -320,3 +320,49 @@ export function fillNotificationTemplate(
 		Object.hasOwn(formatted, name) ? String(formatted[name]) : placeholder,
 	);
 }
+
+/** The index just past the `}` that closes the `{` at `open`. */
+function closingBrace(template: string, open: number): number {
+	let depth = 0;
+	for (let index = open; index < template.length; index += 1) {
+		if (template[index] === "{") depth += 1;
+		else if (template[index] === "}") {
+			depth -= 1;
+			if (depth === 0) return index + 1;
+		}
+	}
+	return template.length;
+}
+
+/**
+ * Resolves each `{name, select, …}` of an English default to the branch its
+ * value picks (else `other`), for the stored fallback text. Other placeholders
+ * stay for `fillNotificationTemplate`.
+ */
+export function resolveIcuSelects(template: string, values: Record<string, string>): string {
+	let resolved = "";
+	let index = 0;
+	const select = /\{(\w+), select, /g;
+	for (let match = select.exec(template); match; match = select.exec(template)) {
+		const end = closingBrace(template, match.index);
+		const body = template.slice(match.index + match[0].length, end - 1);
+		const branches = new Map<string, string>();
+		for (let at = 0; at < body.length; ) {
+			const head = /\s*(\w+)\s*\{/y;
+			head.lastIndex = at;
+			const branch = head.exec(body);
+			if (!branch) break;
+			const open = head.lastIndex - 1;
+			const close = closingBrace(body, open);
+			branches.set(branch[1], body.slice(open + 1, close - 1));
+			at = close;
+		}
+		const value = values[match[1]];
+		resolved += template.slice(index, match.index);
+		resolved +=
+			(value !== undefined ? branches.get(value) : undefined) ?? branches.get("other") ?? match[0];
+		index = end;
+		select.lastIndex = end;
+	}
+	return resolved + template.slice(index);
+}

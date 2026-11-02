@@ -2,6 +2,7 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import type { WorkPolicyWithDetails } from "@/app/[locale]/(app)/settings/work-policies/actions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -22,6 +23,8 @@ interface WorkPolicyManagementProps {
 export function WorkPolicyManagement({ organizationId, accessTier }: WorkPolicyManagementProps) {
 	const { t } = useTranslate();
 	const queryClient = useQueryClient();
+	// Go-live fix links open the assignments tab with `?view=assignments`.
+	const initialTab = useSearchParams().get("view") === "assignments" ? "assignments" : "policies";
 	const canManagePolicies = accessTier === "orgAdmin";
 	const allowedAssignmentTypes: ReadonlyArray<"organization" | "team" | "employee"> =
 		canManagePolicies ? (["organization", "team", "employee"] as const) : (["employee"] as const);
@@ -90,7 +93,7 @@ export function WorkPolicyManagement({ organizationId, accessTier }: WorkPolicyM
 
 	return (
 		<div className="flex flex-col gap-4">
-			<Tabs defaultValue="policies" className="space-y-4">
+			<Tabs defaultValue={initialTab} className="space-y-4">
 				<TabsList>
 					<TabsTrigger value="policies">
 						{t("settings.workPolicies.tab.policies", "Policies")}

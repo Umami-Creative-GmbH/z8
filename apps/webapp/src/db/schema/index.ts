@@ -78,6 +78,7 @@ export * from "./enterprise-identity-setup";
 export * from "./enums";
 export * from "./expense-officer";
 export * from "./export";
+export * from "./go-live";
 export * from "./holiday";
 // Identity management (role templates, lifecycle)
 export * from "./identity";
@@ -88,6 +89,7 @@ export * from "./import-review";
 export * from "./invite-code";
 export * from "./kiosk";
 export * from "./kiosk-badge";
+export * from "./kiosk-fob";
 export * from "./kiosk-pin";
 export * from "./notification";
 // Domain tables

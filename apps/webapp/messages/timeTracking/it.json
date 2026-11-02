@@ -46,6 +46,10 @@
       "uncertainDescription": "Il tuo orologio è stato aggiornato. Controllalo prima di riprovare."
     },
     "budget": "Budget",
+    "choices": {
+      "retry": "Riprova {choice}",
+      "unavailable": "{choice} non disponibile"
+    },
     "clockedOutSuccess": "Hai timbrato l'uscita!",
     "clockIn": "Entrata",
     "clockingIn": "Timbratura entrata...",
@@ -59,6 +63,11 @@
     "clockOutSavedForSending": "Uscita salvata su questo dispositivo. Viene inviata automaticamente e non è ancora confermata.",
     "clockOutSavedHeld": "Uscita salvata su questo dispositivo ma non inviata. Controlla i record salvati.",
     "clockOutSuccess": "Uscita timbrata con successo",
+    "clockStatus": {
+      "loading": "Caricamento stato timbratura",
+      "retry": "Riprova stato timbratura",
+      "unavailable": "Stato timbratura non disponibile"
+    },
     "compliance": {
       "violation": "Violazione conformità",
       "warning": "Avviso conformità"
@@ -226,8 +235,30 @@
         "endDayHint": "Terminando la giornata adesso, il lavoro si concluderà all'inizio della pausa.",
         "today": "Oggi: {duration}"
       },
+      "fob": {
+        "alreadyRegistered": "Questo portachiavi che termina con {lastFour} è già registrato a tuo nome.",
+        "back": "Indietro",
+        "checking": "Verifica del portachiavi in corso…",
+        "failed": "Impossibile verificare il portachiavi. Avvicinalo di nuovo oppure tocca il tuo nome per usare il PIN.",
+        "linkedToOther": "Questo portachiavi è già registrato a nome di un'altra persona. Nessuna modifica apportata. Rivolgiti al tuo responsabile.",
+        "notEligible": "Non puoi registrare un portachiavi su questo chiosco. Nessuna modifica apportata. Rivolgiti al tuo responsabile.",
+        "notRecognised": "Questo portachiavi non è riconosciuto qui.",
+        "offline": "I portachiavi richiedono una connessione. Non è stato registrato nulla. Tocca il tuo nome per usare il PIN.",
+        "offlineOnly": "I portachiavi richiedono una connessione. Non è stato registrato nulla.",
+        "pickPrompt": "Tocca il tuo nome.",
+        "pickTitle": "Registra questo portachiavi",
+        "pinPrompt": "Inserisci il PIN del chiosco per registrare questo portachiavi",
+        "rateLimited": "{seconds, plural, one {Troppi tentativi con il portachiavi su questo chiosco. Riprova tra # secondo oppure tocca il tuo nome per usare il PIN.} other {Troppi tentativi con il portachiavi su questo chiosco. Riprova tra # secondi oppure tocca il tuo nome per usare il PIN.}}",
+        "readerDisabled": "Il lettore di portachiavi è disattivato su questo chiosco. Tocca il tuo nome per usare il PIN.",
+        "register": "Registra questo portachiavi",
+        "registered": "Portachiavi registrato",
+        "registeredText": "Il tuo portachiavi che termina con {lastFour} è stato registrato. Avvicinalo per selezionare il tuo nome, quindi inserisci il PIN.",
+        "registerHint": "Se è tuo, registralo con il tuo nome e il PIN del chiosco. Un eventuale portachiavi registrato in precedenza smetterà di funzionare.",
+        "replaced": "Sostituisce il tuo portachiavi precedente, che non funzionerà più."
+      },
       "home": {
         "empty": "Nessuno è ancora assegnato a questa sede. Chiedi al tuo amministratore.",
+        "fobHint": "Oppure avvicina il portachiavi al lettore.",
         "loadFailed": "Impossibile caricare i nomi. Controlla la connessione di rete.",
         "loading": "Caricamento nomi…",
         "noMatch": "Nessun nome corrisponde alla ricerca.",
@@ -354,9 +385,14 @@
         "nonexistentTime": "Questo orario non esiste in questa data perché l'ora viene spostata in avanti.",
         "occurrenceRequired": "Questo orario ricorre due volte in questa data. Scegli a quale ti riferisci.",
         "overlap": "Questo orario si sovrappone ad attività registrate. Scegli un intervallo che non si sovrapponga alle voci esistenti.",
+        "overlapsLiveWork": "Questo orario si sovrappone a un'attività in corso dalle {start}. La voce manuale deve terminare entro tale orario.",
         "reconfirm": "Il fuso orario o gli orari sono cambiati. Rivedi la voce e inviala di nuovo.",
         "refresh": "Le impostazioni di inserimento manuale sono cambiate. Rivedi la voce e inviala di nuovo.",
         "tooLong": "Il periodo di lavoro non può superare le 24 ore"
+      },
+      "liveWorkHint": {
+        "employee": "{employee} ha effettuato l'accesso alle {start}, pertanto questa voce deve terminare entro tale orario.",
+        "own": "Hai effettuato l'accesso alle {start}, pertanto questa voce deve terminare entro tale orario."
       },
       "occurrence": {
         "earlier": "Primo, {offset}",
@@ -500,11 +536,23 @@
     },
     "startedAt": "Iniziato alle",
     "summary": {
-      "baseWorked": "Base lavorata",
-      "surcharge": "Maggiorazione",
+      "dayOfRequired": "{date}: {worked} su {required}",
+      "dayWorked": "{date}: {worked}",
+      "noRequiredToday": "Nessun orario richiesto oggi",
+      "progressAhead": "{worked} su {required} · {difference} in anticipo",
+      "progressBehind": "{worked} su {required} · {difference} in ritardo",
+      "progressLabel": "Tempo lavorato sul tempo richiesto",
+      "progressOnTrack": "{worked} su {required} · in linea",
+      "surchargeFootnote": "+{surcharge} di maggiorazione",
       "thisMonth": "Questo mese",
       "thisWeek": "Questa settimana",
-      "today": "Oggi"
+      "today": "Oggi",
+      "todayOfRequired": "{worked} su {required}",
+      "trend": "{difference} {comparedWith}",
+      "trendDetail": "Ora: {worked} lavorate su {required} richieste finora. Prima: {previousWorked} lavorate su {previousRequired} richieste.",
+      "trendWithPercent": "{difference} ({percent}) {comparedWith}",
+      "vsLastMonth": "rispetto al mese scorso",
+      "vsLastWeek": "rispetto alla settimana scorsa"
     },
     "table": {
       "active": "Attivo",
@@ -564,6 +612,9 @@
       "breakReading": "Lettura del contachilometri alla pausa (km)",
       "breakReadingHint": "Facoltativo. Termina la lettura di questo lavoro e avvia quella del successivo.",
       "changeLive": "Modifica",
+      "choices": "Opzioni veicolo",
+      "choicesLoading": "Caricamento opzioni veicolo…",
+      "choicesOffline": "Le opzioni veicolo non sono disponibili offline. Puoi registrare l'orario e aggiungere i dettagli in seguito.",
       "derivedDistance": "Distanza percorsa: {distance} km",
       "distanceKm": "Distanza percorsa (km)",
       "distanceText": "{distance} km percorsi",
@@ -599,6 +650,7 @@
         "off": "L'uso del veicolo non è registrato per questo dipendente.",
         "splitOutOfRange": "I chilometri al momento della divisione devono rientrare nei chilometri del periodo di lavoro."
       },
+      "settingsLoading": "Caricamento impostazioni sull'uso dei veicoli…",
       "startKm": "Lettura iniziale (km)",
       "title": "Uso del veicolo",
       "unknownVehicle": "Veicolo sconosciuto (non disponibile)",

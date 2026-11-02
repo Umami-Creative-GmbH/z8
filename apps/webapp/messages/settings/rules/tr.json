@@ -556,6 +556,7 @@
       "endTime": "Bitiş Saati",
       "endTimeDescription": "örneğin, gece vardiyası için 06:00",
       "loadError": "Atamalar yüklenemedi",
+      "loadFailed": "Ek ücret modelleri yüklenemedi. Lütfen tekrar deneyin.",
       "loading": "Ek ücret ayarları yükleniyor...",
       "modelCreated": "Ek ücret modeli oluşturuldu",
       "modelDeleted": "Ek ücret modeli silindi",

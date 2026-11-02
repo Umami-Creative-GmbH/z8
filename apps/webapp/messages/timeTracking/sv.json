@@ -46,6 +46,10 @@
       "uncertainDescription": "Din stämpelklocka har uppdaterats. Kontrollera den innan du försöker igen."
     },
     "budget": "Budget",
+    "choices": {
+      "retry": "Försök igen med {choice}",
+      "unavailable": "{choice} är inte tillgängligt"
+    },
     "clockedOutSuccess": "Du har stämplat ut!",
     "clockIn": "Stämpla in",
     "clockingIn": "Stämplar in…",
@@ -59,6 +63,11 @@
     "clockOutSavedForSending": "Utstämpling sparad på denna enhet. Den skickas automatiskt och är inte bekräftad ännu.",
     "clockOutSavedHeld": "Utstämpling sparad på denna enhet men inte skickad. Granska sparade poster.",
     "clockOutSuccess": "Utstämpling lyckades",
+    "clockStatus": {
+      "loading": "Läser in stämpelstatus",
+      "retry": "Försök hämta stämpelstatus igen",
+      "unavailable": "Stämpelstatus är inte tillgänglig"
+    },
     "compliance": {
       "violation": "Regelöverträdelse",
       "warning": "Regelefterlevnadsmeddelande"
@@ -226,8 +235,30 @@
         "endDayHint": "Om du avslutar dagen nu avslutas ditt arbete vid rastens början.",
         "today": "Idag: {duration}"
       },
+      "fob": {
+        "alreadyRegistered": "Den här brickan som slutar på {lastFour} är redan registrerad på dig.",
+        "back": "Tillbaka",
+        "checking": "Kontrollerar din bricka…",
+        "failed": "Brickan kunde inte kontrolleras. Blippa den igen, eller tryck på ditt namn för att använda din PIN-kod.",
+        "linkedToOther": "Den här brickan är redan registrerad på någon annan. Inget ändrades. Fråga din chef.",
+        "notEligible": "Du kan inte registrera en bricka vid den här kiosken. Inget ändrades. Fråga din chef.",
+        "notRecognised": "Den här brickan känns inte igen här.",
+        "offline": "Brickor kräver anslutning. Inget registrerades. Tryck på ditt namn för att använda din PIN-kod.",
+        "offlineOnly": "Brickor kräver anslutning. Inget registrerades.",
+        "pickPrompt": "Tryck på ditt namn.",
+        "pickTitle": "Registrera denna bricka",
+        "pinPrompt": "Ange din PIN-kod för kiosken för att registrera denna bricka",
+        "rateLimited": "{seconds, plural, one {För många blippningar med bricka vid den här kiosken. Försök igen om # sekund eller tryck på ditt namn för att använda din PIN-kod.} other {För många blippningar med bricka vid den här kiosken. Försök igen om # sekunder eller tryck på ditt namn för att använda din PIN-kod.}}",
+        "readerDisabled": "Brickläsaren är avstängd vid den här kiosken. Tryck på ditt namn för att använda din PIN-kod.",
+        "register": "Registrera denna bricka",
+        "registered": "Bricka registrerad",
+        "registeredText": "Din bricka som slutar på {lastFour} är registrerad. Blippa den för att välja ditt namn och ange sedan din PIN-kod.",
+        "registerHint": "Om den är din, registrera den med ditt namn och din PIN-kod för kiosken. En bricka du registrerat tidigare slutar fungera.",
+        "replaced": "Den ersätter din tidigare bricka, som inte längre fungerar."
+      },
       "home": {
         "empty": "Ingen har tilldelats den här platsen ännu. Fråga din administratör.",
+        "fobHint": "Eller blippa din bricka mot läsaren.",
         "loadFailed": "Namnen kunde inte läsas in. Kontrollera nätverksanslutningen.",
         "loading": "Läser in namn…",
         "noMatch": "Inget namn matchar din sökning.",
@@ -354,9 +385,14 @@
         "nonexistentTime": "Den här tiden finns inte detta datum eftersom klockan ställs fram.",
         "occurrenceRequired": "Den här tiden infaller två gånger detta datum. Välj vilken du menar.",
         "overlap": "Den här tiden överlappar registrerat arbete. Välj ett intervall som inte överlappar befintliga registreringar.",
+        "overlapsLiveWork": "Den här tiden överlappar arbete som har pågått sedan {start}. En manuell registrering måste avslutas senast då.",
         "reconfirm": "Tidszonen eller tiderna ändrades. Granska posten och skicka in den igen.",
         "refresh": "Inställningarna för manuell registrering ändrades. Granska posten och skicka in den igen.",
         "tooLong": "Arbetsperioden får inte överstiga 24 timmar"
+      },
+      "liveWorkHint": {
+        "employee": "{employee} har varit instämplad sedan {start}, så den här registreringen måste avslutas senast då.",
+        "own": "Du har varit instämplad sedan {start}, så den här registreringen måste avslutas senast då."
       },
       "occurrence": {
         "earlier": "Första, {offset}",
@@ -500,11 +536,23 @@
     },
     "startedAt": "Startade kl.",
     "summary": {
-      "baseWorked": "Arbetad grundtid",
-      "surcharge": "Tillägg",
+      "dayOfRequired": "{date}: {worked} av {required}",
+      "dayWorked": "{date}: {worked}",
+      "noRequiredToday": "Ingen obligatorisk tid idag",
+      "progressAhead": "{worked} av {required} · {difference} före",
+      "progressBehind": "{worked} av {required} · {difference} efter",
+      "progressLabel": "Arbetad tid av obligatorisk tid",
+      "progressOnTrack": "{worked} av {required} · i fas",
+      "surchargeFootnote": "+{surcharge} tillägg",
       "thisMonth": "Denna månad",
       "thisWeek": "Denna vecka",
-      "today": "Idag"
+      "today": "Idag",
+      "todayOfRequired": "{worked} av {required}",
+      "trend": "{difference} {comparedWith}",
+      "trendDetail": "Nu: {worked} arbetat av {required} obligatoriskt hittills. Då: {previousWorked} arbetat av {previousRequired} obligatoriskt.",
+      "trendWithPercent": "{difference} ({percent}) {comparedWith}",
+      "vsLastMonth": "jämfört med förra månaden",
+      "vsLastWeek": "jämfört med förra veckan"
     },
     "table": {
       "active": "Aktiv",
@@ -564,6 +612,9 @@
       "breakReading": "Mätarställning vid rast (km)",
       "breakReadingHint": "Valfritt. Den avslutar detta arbetes mätarställning och påbörjar nästa.",
       "changeLive": "Ändra",
+      "choices": "Fordonsval",
+      "choicesLoading": "Läser in fordonsval…",
+      "choicesOffline": "Fordonsval är inte tillgängliga offline. Du kan registrera tid och lägga till detaljer senare.",
       "derivedDistance": "Körd sträcka: {distance} km",
       "distanceKm": "Körd sträcka (km)",
       "distanceText": "{distance} km körda",
@@ -599,6 +650,7 @@
         "off": "Fordonsanvändning registreras inte för denna medarbetare.",
         "splitOutOfRange": "Kilometertalet vid delningen måste ligga inom arbetsperiodens kilometer."
       },
+      "settingsLoading": "Läser in inställningar för fordonsanvändning…",
       "startKm": "Startmätarställning (km)",
       "title": "Fordonsanvändning",
       "unknownVehicle": "Okänt fordon (ej tillgängligt)",

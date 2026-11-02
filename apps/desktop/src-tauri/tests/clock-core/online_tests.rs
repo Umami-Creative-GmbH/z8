@@ -1,7 +1,7 @@
 use crate::{
     clock::WorkLocationType,
     clock_command::{execute_companion, ActionEvidence, ClockCommand, ClockCommandOutcome},
-    frozen_command::ClosingAttribution,
+    frozen_command::{AttributionIntent, ClosingAttribution},
     support::{self, Device, BREAK_KINDS, TOKEN},
     test_http,
 };
@@ -262,6 +262,61 @@ async fn online_close_sends_explicit_attribution_intent() {
         serde_json::from_str(test_http::request_body(&requests[2])).unwrap();
     assert_eq!(body["projectId"], serde_json::Value::Null);
     assert_eq!(body["workCategoryId"], "category-1");
+}
+
+/// Posts an online close with this task intent and returns the body sent (#1278).
+async fn online_close_body(task: Option<AttributionIntent>) -> serde_json::Value {
+    let device = Device::new();
+    let (endpoint, requests) = test_http::server(vec![
+        Some((
+            200,
+            support::capabilities_with("org-1", "unavailable", BREAK_KINDS),
+        )),
+        Some((200, support::status(true))),
+        Some((200, entry("clock_out"))),
+        Some((200, support::status(false))),
+    ]);
+    let outcome = execute_companion(
+        &device.at(&endpoint, TOKEN),
+        ClockCommand::AttributedClose {
+            attribution: ClosingAttribution {
+                task,
+                ..ClosingAttribution::default()
+            },
+            manual_break: false,
+            vehicle_use: None,
+        },
+        evidence(),
+        "org-1",
+    )
+    .await
+    .unwrap();
+    assert!(matches!(outcome, ClockCommandOutcome::Committed { .. }));
+    let requests = requests.join().unwrap();
+    serde_json::from_str(test_http::request_body(&requests[2])).unwrap()
+}
+
+#[tokio::test]
+async fn online_close_sends_the_chosen_task() {
+    let body = online_close_body(Some(AttributionIntent::Replace {
+        id: "task-1".into(),
+    }))
+    .await;
+    assert_eq!(body["taskId"], "task-1");
+}
+
+#[tokio::test]
+async fn online_close_clears_the_task() {
+    let body = online_close_body(Some(AttributionIntent::Clear)).await;
+    assert_eq!(body.get("taskId"), Some(&serde_json::Value::Null));
+}
+
+#[tokio::test]
+async fn online_close_without_a_task_choice_omits_the_task() {
+    for task in [None, Some(AttributionIntent::Preserve)] {
+        let body = online_close_body(task).await;
+        assert!(body.get("taskId").is_none());
+    }
 }
 
 #[tokio::test]

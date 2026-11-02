@@ -79,7 +79,7 @@ When `employeeId` targets another employee, the action must:
 - Set `createdBy` on generated time entries to the manager user.
 - Create the work period with `approvalStatus: "approved"`.
 - Skip change-policy approval checks and skip approval request creation.
-- Validate holidays, project assignment, overlaps, active target work periods, and future times against the target employee.
+- Validate holidays, project assignment, overlaps and future times against the target employee. The target's live work occupies all time from its start onward, so an entry made while they are clocked in must end by that start (#1492).
 - Mark the target employee's work balance dirty.
 - Calculate surcharges for the new approved work period.
 
@@ -102,7 +102,7 @@ Unauthorized target employees must return a forbidden-style error. The UI should
 
 - Unauthorized selected employee route: the calendar events request fails and the existing calendar error area is shown.
 - Unauthorized manager target on submit: the action returns an error and the sheet shows a toast.
-- Active work period for target employee: the action rejects creation.
+- Target employee clocked in: the action rejects only an entry that overlaps their live work, naming its start (#1492).
 - Future selected times: existing validation rejects creation.
 - Overlapping periods: existing overlap adjustment behavior applies to the target employee's periods.
 - Invalid route UUID format: treat as an unauthorized or not-found employee and show the existing error state.
@@ -119,7 +119,7 @@ Add or update tests for:
 - Own manual entry behavior remains unchanged and can still require approval.
 - Manager-created staff manual entries use the target employee, are approved immediately, and do not create approval requests.
 - Unauthorized target employee submissions are rejected.
-- Target employee active work periods block manager-created manual entries.
+- A manager-created manual entry that ends by the target's live work start succeeds; one that overlaps it is refused (#1492).
 
 ## Non-Goals
 

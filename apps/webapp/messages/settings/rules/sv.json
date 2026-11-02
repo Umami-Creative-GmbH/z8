@@ -556,6 +556,7 @@
       "endTime": "Sluttid",
       "endTimeDescription": "t.ex. 06:00 för nattskift",
       "loadError": "Det gick inte att läsa in tilldelningar",
+      "loadFailed": "Tilläggsmodeller kunde inte läsas in. Försök igen.",
       "loading": "Läser in inställningar för tillägg...",
       "modelCreated": "Tilläggsmodell skapad",
       "modelDeleted": "Tilläggsmodell raderad",

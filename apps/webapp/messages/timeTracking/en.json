@@ -46,6 +46,10 @@
       "uncertainDescription": "Your clock has been refreshed. Check it before trying again."
     },
     "budget": "Budget",
+    "choices": {
+      "retry": "Retry {choice}",
+      "unavailable": "{choice} unavailable"
+    },
     "clockedOutSuccess": "You've clocked out!",
     "clockIn": "Clock In",
     "clockingIn": "Clocking In…",
@@ -59,6 +63,11 @@
     "clockOutSavedForSending": "Clock-out saved on this device. It is sent automatically and is not confirmed yet.",
     "clockOutSavedHeld": "Clock-out saved on this device but not sent. Review saved records.",
     "clockOutSuccess": "Clocked out successfully",
+    "clockStatus": {
+      "loading": "Loading clock status",
+      "retry": "Retry clock status",
+      "unavailable": "Clock status unavailable"
+    },
     "compliance": {
       "violation": "Compliance Violation",
       "warning": "Compliance Notice"
@@ -226,8 +235,30 @@
         "endDayHint": "Ending the day now ends your work at the start of your break.",
         "today": "Today: {duration}"
       },
+      "fob": {
+        "alreadyRegistered": "This fob ending in {lastFour} is already registered to you.",
+        "back": "Back",
+        "checking": "Checking your fob…",
+        "failed": "The fob could not be checked. Tap it again, or tap your name to use your PIN.",
+        "linkedToOther": "This fob is already registered to someone else. Nothing was changed. Ask your manager.",
+        "notEligible": "You cannot register a fob at this kiosk. Nothing was changed. Ask your manager.",
+        "notRecognised": "This fob is not recognised here.",
+        "offline": "Fobs need a connection. Nothing was recorded. Tap your name to use your PIN.",
+        "offlineOnly": "Fobs need a connection. Nothing was recorded.",
+        "pickPrompt": "Tap your name.",
+        "pickTitle": "Register this fob",
+        "pinPrompt": "Enter your kiosk PIN to register this fob",
+        "rateLimited": "{seconds, plural, one {Too many fob taps at this kiosk. Try again in # second, or tap your name to use your PIN.} other {Too many fob taps at this kiosk. Try again in # seconds, or tap your name to use your PIN.}}",
+        "readerDisabled": "The fob reader is switched off at this kiosk. Tap your name to use your PIN.",
+        "register": "Register this fob",
+        "registered": "Fob registered",
+        "registeredText": "Your fob ending in {lastFour} is registered. Tap it to choose your name, then enter your PIN.",
+        "registerHint": "If it is yours, register it with your name and kiosk PIN. A fob you registered before stops working.",
+        "replaced": "It replaces your earlier fob, which no longer works."
+      },
       "home": {
         "empty": "Nobody is assigned to this location yet. Ask your admin.",
+        "fobHint": "Or tap your fob on the reader.",
         "loadFailed": "The names could not be loaded. Check the network connection.",
         "loading": "Loading names…",
         "noMatch": "No name matches your search.",
@@ -354,9 +385,14 @@
         "nonexistentTime": "This time doesn't exist on this date because the clocks move forward.",
         "occurrenceRequired": "This time occurs twice on this date. Choose which one you mean.",
         "overlap": "This time overlaps recorded work. Choose a range that doesn't overlap existing entries.",
+        "overlapsLiveWork": "This time overlaps work that has been running since {start}. A manual entry must end by then.",
         "reconfirm": "The timezone or times changed. Review the entry and submit it again.",
         "refresh": "Manual entry settings changed. Review the entry and submit it again.",
         "tooLong": "Work period cannot exceed 24 hours"
+      },
+      "liveWorkHint": {
+        "employee": "{employee} has been clocked in since {start}, so this entry must end by then.",
+        "own": "You've been clocked in since {start}, so this entry must end by then."
       },
       "occurrence": {
         "earlier": "First, {offset}",
@@ -500,11 +536,23 @@
     },
     "startedAt": "Started at",
     "summary": {
-      "baseWorked": "Base worked",
-      "surcharge": "Surcharge",
+      "dayOfRequired": "{date}: {worked} of {required}",
+      "dayWorked": "{date}: {worked}",
+      "noRequiredToday": "No required time today",
+      "progressAhead": "{worked} of {required} · {difference} ahead",
+      "progressBehind": "{worked} of {required} · {difference} behind",
+      "progressLabel": "Worked time of required time",
+      "progressOnTrack": "{worked} of {required} · on track",
+      "surchargeFootnote": "+{surcharge} surcharge",
       "thisMonth": "This Month",
       "thisWeek": "This Week",
-      "today": "Today"
+      "today": "Today",
+      "todayOfRequired": "{worked} of {required}",
+      "trend": "{difference} {comparedWith}",
+      "trendDetail": "Now: {worked} worked of {required} required so far. Then: {previousWorked} worked of {previousRequired} required.",
+      "trendWithPercent": "{difference} ({percent}) {comparedWith}",
+      "vsLastMonth": "vs last month",
+      "vsLastWeek": "vs last week"
     },
     "table": {
       "active": "Active",
@@ -564,6 +612,9 @@
       "breakReading": "Odometer reading at the break (km)",
       "breakReadingHint": "Optional. It ends this work's reading and starts the next one's.",
       "changeLive": "Change",
+      "choices": "Vehicle choices",
+      "choicesLoading": "Loading vehicle choices…",
+      "choicesOffline": "Vehicle choices are unavailable offline. You can record time and add details later.",
       "derivedDistance": "Driven distance: {distance} km",
       "distanceKm": "Driven distance (km)",
       "distanceText": "{distance} km driven",
@@ -599,6 +650,7 @@
         "off": "Vehicle use is not recorded for this employee.",
         "splitOutOfRange": "The kilometres at the split must lie within the work period's kilometres."
       },
+      "settingsLoading": "Loading vehicle-use settings…",
       "startKm": "Start reading (km)",
       "title": "Vehicle use",
       "unknownVehicle": "Unknown vehicle (unavailable)",

@@ -231,6 +231,11 @@ export enum AuditAction {
 	PERSONAL_DATA_EXPORT_REQUESTED = "personal_data_export.requested",
 	PERSONAL_DATA_EXPORT_DOWNLOADED = "personal_data_export.downloaded",
 
+	// Go-live group (#1513): chosen teams, and go-live exclusions with their reason
+	GO_LIVE_GROUP_TEAMS_CHANGED = "go_live.group_teams_changed",
+	GO_LIVE_EXCLUSION_CREATED = "go_live.exclusion_created",
+	GO_LIVE_EXCLUSION_LIFTED = "go_live.exclusion_lifted",
+
 	// App Access Operations
 	APP_ACCESS_GRANTED = "app_access.granted",
 	APP_ACCESS_REVOKED = "app_access.revoked",
@@ -290,7 +295,9 @@ export enum AuditAction {
 	INVOICE_DRAFT_CREATED = "billable_time.invoice_draft_created",
 	INVOICE_DRAFT_FAILED = "billable_time.invoice_draft_failed",
 	INVOICE_DRAFT_RELEASED = "billable_time.invoice_draft_released",
+	/** Written before resolutions existed (#1499); kept for the history. */
 	INVOICED_WORK_MARK_CLEARED = "billable_time.invoiced_work_mark_cleared",
+	INVOICED_WORK_MARK_RESOLVED = "billable_time.invoiced_work_mark_resolved",
 
 	// Custom field definitions (#817)
 	CUSTOM_FIELD_CREATED = "custom_field.created",
@@ -341,6 +348,10 @@ export enum AuditAction {
 	KIOSK_BADGE_REPLACED = "kiosk_badge.replaced",
 	KIOSK_BADGE_REVOKED = "kiosk_badge.revoked",
 
+	// Kiosk fobs (#1505); never the full serial number
+	KIOSK_FOB_REGISTERED = "kiosk_fob.registered",
+	KIOSK_FOB_ENDED = "kiosk_fob.ended",
+
 	// Kiosk enrolment (#859)
 	KIOSK_CREATED = "kiosk.created",
 	KIOSK_UPDATED = "kiosk.updated",
@@ -380,6 +391,10 @@ export enum AuditAction {
 	WORKS_COUNCIL_SETTINGS_UPDATED = "works_council.settings_updated",
 	WORKS_COUNCIL_EXPORT_REQUESTED = "works_council.export_requested",
 	WORKS_COUNCIL_EXPORT_FAILED = "works_council.export_failed",
+
+	// Implementation checklist manual confirmations (#1516)
+	IMPLEMENTATION_CHECKLIST_ITEM_CONFIRMED = "implementation_checklist.item_confirmed",
+	IMPLEMENTATION_CHECKLIST_ITEM_UNCONFIRMED = "implementation_checklist.item_unconfirmed",
 }
 
 export type ApprovalAuditDecision = TimeRecordApprovalDecision;
@@ -450,6 +465,7 @@ export interface AuditLogEntry {
 		| "user"
 		| "kiosk_pin"
 		| "kiosk_badge"
+		| "kiosk_fob"
 		| "audit_pack_request"
 		| "works_council_settings"
 		| "works_council_export"
@@ -464,8 +480,11 @@ export interface AuditLogEntry {
 		| "shift"
 		| "driving_authorization"
 		| "driving_licence_verifier"
+		| "go_live_exclusion"
 		/** An `employee_departure_task` or `employee_departure_review` of a deactivation. */
-		| "deactivation_follow_up";
+		| "deactivation_follow_up"
+		/** A manual confirmation of an implementation checklist item (#1516). */
+		| "implementation_checklist_item";
 	organizationId: string;
 	metadata?: Record<string, unknown>;
 	changes?: Record<string, unknown>; // Before/after changes for updates

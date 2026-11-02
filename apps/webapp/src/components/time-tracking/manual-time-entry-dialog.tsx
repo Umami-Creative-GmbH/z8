@@ -85,7 +85,11 @@ import {
 	type ManualZoneBasis,
 } from "@/lib/time-tracking/manual-command";
 import { formatUtcOffset, getBrowserTimezone } from "@/lib/time-tracking/timezone-capture";
-import { formatTimeInZone, getTimezoneAbbreviation } from "@/lib/time-tracking/timezone-utils";
+import {
+	formatDateInZone,
+	formatTimeInZone,
+	getTimezoneAbbreviation,
+} from "@/lib/time-tracking/timezone-utils";
 import {
 	type WorkVehicleUseChangeRefusalCode,
 	workVehicleUseRefusalOfResult,
@@ -773,6 +777,47 @@ function TargetContextStatus({
 	);
 }
 
+/**
+ * Live work occupies all time from its start onward, so while the target is
+ * clocked in a manual entry must end by its start (#1492). Advisory: the
+ * submission's occupancy check decides.
+ */
+function LiveWorkHint({
+	context,
+	effectiveTimezone,
+	t,
+	targetEmployeeName,
+}: {
+	context: ManualEntryTargetContext | null;
+	effectiveTimezone: string | null;
+	t: Translate;
+	targetEmployeeName?: string;
+}) {
+	const timeFormat = useTimeFormat();
+	if (!context?.liveWorkStartedAt || !effectiveTimezone) return null;
+	const start = formatLiveWorkStart(context.liveWorkStartedAt, effectiveTimezone, timeFormat);
+	return (
+		<p role="status" className="text-xs text-muted-foreground">
+			{context.isOwnEntry
+				? t(
+						"timeTracking.manualEntry.liveWorkHint.own",
+						"You've been clocked in since {start}, so this entry must end by then.",
+						{ start },
+					)
+				: t(
+						"timeTracking.manualEntry.liveWorkHint.employee",
+						"{employee} has been clocked in since {start}, so this entry must end by then.",
+						{
+							employee:
+								targetEmployeeName ??
+								t("timeTracking.manualEntry.context.thisEmployee", "this employee"),
+							start,
+						},
+					)}
+		</p>
+	);
+}
+
 function recoveryStatusMessage(record: ManualRecoveryRecord): Message {
 	switch (record.status) {
 		case "uncertain":
@@ -984,6 +1029,14 @@ function ManualEntryFormContent({
 						t={t}
 						targetEmployeeName={targetEmployeeName}
 					/>
+					{contextError ? null : (
+						<LiveWorkHint
+							context={context}
+							effectiveTimezone={effectiveTimezone}
+							t={t}
+							targetEmployeeName={targetEmployeeName}
+						/>
+					)}
 					{recoveryPanel}
 
 					<form.Field
@@ -1430,16 +1483,54 @@ function announceCreatedEntry(
 	);
 }
 
+/**
+ * When live work started, shown in the zone the entry is entered in: its time
+ * alone on today's date, otherwise with its date.
+ */
+function formatLiveWorkStart(
+	startedAt: string,
+	timezone: string,
+	timeFormat: ReturnType<typeof useTimeFormat>,
+): string {
+	const time = formatTimeInZone(startedAt, timezone, false, timeFormat);
+	const startedToday =
+		Temporal.PlainDate.compare(
+			Temporal.Instant.from(startedAt).toZonedDateTimeISO(timezone).toPlainDate(),
+			Temporal.Now.plainDateISO(timezone),
+		) === 0;
+	return startedToday ? time : `${formatDateInZone(startedAt, timezone)}, ${time}`;
+}
+
+/** An occupancy refusal naming the target's live work (#1492), worded with its start. */
+function liveWorkOverlapText(
+	result: Extract<ManualTimeEntryResult, { success: false }>,
+	timezone: string,
+	timeFormat: ReturnType<typeof useTimeFormat>,
+	t: Translate,
+): string | null {
+	if (result.rejection?.reason !== "occupancy_conflict") return null;
+	const live = result.rejection.occupants.find((occupant) => occupant.endAt === null);
+	if (!live) return null;
+	return t(
+		"timeTracking.manualEntry.errors.overlapsLiveWork",
+		"This time overlaps work that has been running since {start}. A manual entry must end by then.",
+		{ start: formatLiveWorkStart(live.startAt, timezone, timeFormat) },
+	);
+}
+
 function announceRefusedEntry(
 	result: Extract<ManualTimeEntryResult, { success: false }>,
+	timezone: string,
+	timeFormat: ReturnType<typeof useTimeFormat>,
 	t: Translate,
 ) {
 	const message = outcomeMessage(result);
 	toast.error(
-		message
-			? t(message[0], message[1])
-			: result.error ||
-					t("timeTracking.manualEntry.errors.createFailed", "Failed to create time entry"),
+		liveWorkOverlapText(result, timezone, timeFormat, t) ??
+			(message
+				? t(message[0], message[1])
+				: result.error ||
+					t("timeTracking.manualEntry.errors.createFailed", "Failed to create time entry")),
 	);
 }
 
@@ -1455,6 +1546,7 @@ function ConnectedManualRecoveryPanel({
 	recovery: ReturnType<typeof useManualCommandRecovery>;
 	t: Translate;
 }) {
+	const timeFormat = useTimeFormat();
 	function refusalMessage(code: string, error: string) {
 		return code === MANUAL_ENTRY_CONTEXT_MISMATCH
 			? t(MESSAGES.contextMismatch[0], MESSAGES.contextMismatch[1])
@@ -1486,7 +1578,10 @@ function ConnectedManualRecoveryPanel({
 			return;
 		}
 		const message = outcomeMessage(result);
-		toast.error(message ? t(message[0], message[1]) : result.error);
+		toast.error(
+			liveWorkOverlapText(result, frozenManualCommand(record).zone.timezone, timeFormat, t) ??
+				(message ? t(message[0], message[1]) : result.error),
+		);
 	}
 
 	async function handleRecoveryLookup(record: ManualRecoveryRecord) {
@@ -1787,7 +1882,7 @@ export function ManualTimeEntryDialog({
 			onSuccess?.();
 			return true;
 		}
-		announceRefusedEntry(result, t);
+		announceRefusedEntry(result, timezone, timeFormat, t);
 		if (needsReconfirmation(result)) clearOccurrences();
 		// The server rejected the draft; refresh the advisory context so the
 		// form reflects the target's current zone and eligible choices.

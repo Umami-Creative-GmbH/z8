@@ -25,6 +25,7 @@
         "adminOnly": "Doar proprietarii și administratorii organizației pot gestiona locațiile atribuite.",
         "employeeNotFound": "Angajatul nu a fost găsit.",
         "failed": "Locațiile atribuite nu au putut fi actualizate. Încercați din nou.",
+        "formerEmployee": "Foștilor angajați nu li se poate atribui o locație.",
         "invalidSelection": "Alegeți din listă.",
         "locationNotFound": "Locația nu a fost găsită."
       },
@@ -238,6 +239,29 @@
       },
       "description": "Moneda facturabilă și sumele percepute clienților de către organizația dumneavoastră pentru munca depusă",
       "handOff": {
+        "amount": {
+          "estimated": "Estimat: acest transfer nu a stocat nicio sumă pe perioadă de lucru, prin urmare se folosește tarif × durată.",
+          "noSubtotal": "Nicio diferență de sumă cunoscută",
+          "note": "Diferențele de sumă reprezintă informații de reconciliere evaluate la tariful fixat la momentul transferului, nu note de credit.",
+          "notOnHandOff": "Proiectul său aparține acum altui client. Această activitate nu se află în niciun transfer pentru acel client și rămâne facturată în această ciornă, așadar facturați-o noului client în instrumentul de contabilitate.",
+          "reason": {
+            "customer": "Proiectul aparține acum altui client sau nimănui, astfel că întreaga sumă transferată este stornată.",
+            "frozenRate": "Modificarea numărului de ore la tariful fixat la momentul transferului.",
+            "noFrozenRate": "Nu a fost fixat niciun tarif pentru această activitate la momentul transferului.",
+            "nonBillable": "Activitatea nu mai este facturabilă, astfel că întreaga sumă transferată este stornată.",
+            "otherProject": "Activitatea a fost mutată la un alt proiect al aceluiași client, care nu are un tarif fixat la momentul transferului.",
+            "removed": "Activitatea a fost ștearsă, astfel că întreaga sumă transferată este stornată.",
+            "running": "O parte din activitate este încă în curs de desfășurare.",
+            "severalRates": "Transferul a evaluat această activitate la mai multe tarife; această defalcare nu poate fi reprodusă fără tarifele de astăzi."
+          },
+          "roundingCaveat": "Poate diferi cu câțiva cenți din cauza rotunjirii din rândul ciornei.",
+          "sinceResolution": "De la ultima rezolvare: {amount}",
+          "subtotal": "Diferențe de sumă cunoscute: {amount}",
+          "subtotalEstimated": "Diferențe de sumă cunoscute: {amount} (include estimări)",
+          "title": "Diferență de sumă",
+          "unknown": "Necunoscut",
+          "unknownCount": "{count, plural, one {# diferență necunoscută neinclusă} few {# diferențe necunoscute neincluse} other {# de diferențe necunoscute neincluse}}"
+        },
         "blocker": {
           "currency": "Instrumentul de contabilitate nu poate accepta ciorne în {currency}.",
           "noContactLink": "Asociați mai întâi acest client cu un contact din instrumentul de contabilitate pe pagina Contabilitate.",
@@ -251,12 +275,48 @@
         },
         "changed": {
           "billability": "Facturabilitate",
+          "customer": "Client",
           "project": "Proiect",
           "removed": "Șters",
           "split": "Divizat",
           "times": "Ore"
         },
+        "comparison": {
+          "billability": "Facturabilitate",
+          "billable": "Facturabil",
+          "caption": "Comparație pentru {item}",
+          "changedFromHandOff": "(modificat față de transfer)",
+          "changedSinceResolution": "(modificat de la ultima rezolvare)",
+          "current": "Actual",
+          "customer": "Client",
+          "day": "Zi",
+          "end": "Sfârșit",
+          "field": "Câmp",
+          "handOff": "Transfer",
+          "hours": "Ore",
+          "lastResolved": "Rezolvat ultima dată",
+          "legend": "Valorile evidențiate diferă față de transfer. Orele sunt locale în raport cu locul în care a fost înregistrată activitatea.",
+          "legendSinceResolution": "Modificat de la ultima rezolvare.",
+          "mixedBillable": "Parțial facturabil",
+          "noCustomer": "Fără client",
+          "nonBillable": "Nefacturabil",
+          "noProject": "Fără proiect",
+          "pieces": "Valorile actuale acoperă {count} părți împărțite din această lucrare; orele reprezintă suma lor.",
+          "project": "Proiect",
+          "removed": "Eliminat",
+          "removedNo": "Nu",
+          "removedPieces": "{removed} din {count} părți",
+          "removedYes": "Da",
+          "start": "Start",
+          "timeOnDay": "{day} {time}",
+          "timeWithOffset": "{time} ({offset})",
+          "unknownCustomer": "Client necunoscut",
+          "unknownProject": "Proiect necunoscut"
+        },
         "confirmed": "Ciorna de factură a fost creată",
+        "csv": {
+          "download": "Descarcă fișierul CSV de reconciliere"
+        },
         "detail": {
           "checking": "Se verifică ciorna în instrument…",
           "gone": "Instrumentul de contabilitate nu mai are această ciornă. Dacă a fost ștearsă intenționat, deblocați transferul pentru ca activitatea să poată fi transferată din nou.",
@@ -288,6 +348,14 @@
           "timesheetHelp": "Câte o linie pentru fiecare perioadă de lucru, în limita de linii a instrumentului de contabilitate. Puteți descărca oricând pontajul.",
           "to": "Până la"
         },
+        "history": {
+          "deletedUser": "un utilizator șters",
+          "legacy": "Șters înainte ca rezoluțiile să fie înregistrate",
+          "legacyMeta": "{at} de către {actor}",
+          "reference": "Referință: {reference}",
+          "resolved": "Rezolvat la {at} de către {actor}",
+          "title": "Istoric rezoluții"
+        },
         "hoursValue": "{hours} h",
         "list": {
           "actions": "Acțiuni",
@@ -303,10 +371,19 @@
           "total": "Total net"
         },
         "marks": {
-          "clear": "Elimină marcajul",
-          "clearAll": "Elimină toate marcajele",
-          "cleared": "{count, plural, one {# marcaj eliminat} few {# marcaje eliminate} other {# de marcaje eliminate}}",
-          "help": "Această muncă facturată a fost corectată după transferul său. Corectați factura în instrumentul de contabilitate dacă este necesar (de exemplu, printr-o notă de credit), apoi eliminați marcajul.",
+          "compare": "Compară",
+          "compareItem": "Compară {item}",
+          "draftHeading": "{title} · {period}",
+          "history": "Istoric ({count})",
+          "historyItem": "Istoric ({count}) pentru {item}",
+          "openWhenReleased": "Deschis la eliberare",
+          "releasedHelp": "Această lucrare facturată a fost corectată după predare și era încă deschisă când predarea a fost eliberată. Nu mai poate fi rezolvată aici. Valorile actuale arată lucrarea așa cum este acum.",
+          "resolve": "Rezolvă",
+          "resolveHelp": "Această lucrare facturată a fost corectată după predare. Dacă este necesar, corectează factura în instrumentul de contabilitate (de exemplu, cu o notă de credit), apoi rezolvă modificarea adăugând o explicație.",
+          "resolveItem": "Rezolvă {item}",
+          "resolveSelected": "Rezolvă elementele selectate ({count})",
+          "select": "Selectează {item}",
+          "selectAll": "Selectează tot",
           "title": "Modificat după facturare"
         },
         "new": {
@@ -344,6 +421,23 @@
           "done": "{count, plural, one {Eliberat. # perioadă de lucru este din nou nefacturată.} other {Eliberat. # perioade de lucru sunt din nou nefacturate.}}",
           "reason": "Motiv (opțional)",
           "title": "Eliberați acest transfer?"
+        },
+        "resolve": {
+          "description": "Înregistrează modul în care a fost gestionată modificarea, de exemplu cu o notă de credit în instrumentul de contabilitate. Predarea și liniile sale rămân așa cum sunt.",
+          "done": "{count, plural, one {# element rezolvat} few {# elemente rezolvate} other {# de elemente rezolvate}}",
+          "explanation": "Explicație",
+          "explanationRequired": "Explică modul în care a fost gestionată modificarea.",
+          "explanationTooLong": "Păstrează explicația în limita a {max} caractere.",
+          "itemLabel": "{day} · {employee} · {project}",
+          "itemsInvalid": "Alege lucrarea marcată pentru rezolvare.",
+          "reference": "Referință contabilă (opțional)",
+          "referenceHint": "De exemplu, numărul notei de credit.",
+          "referenceTooLong": "Păstrează referința în limita a {max} caractere.",
+          "released": "Nu s-a rezolvat nimic: predarea acestei lucrări a fost eliberată, prin urmare modificările sale nu mai pot fi rezolvate. Reîncarcă pentru a vedea.",
+          "reload": "Reîncarcă",
+          "stale": "Nu s-a rezolvat nimic: această lucrare a fost modificată de când ai deschis-o. Reîncarcă pentru a examina modificările.",
+          "submit": "{count, plural, one {Rezolvă # element} few {Rezolvă # elemente} other {Rezolvă # de elemente}}",
+          "title": "Rezolvă lucrarea modificată"
         },
         "status": {
           "created": "Ciornă creată",
@@ -873,6 +967,7 @@
         "attribution": "Acordat de {actor} la {time}",
         "editor": "Domeniu de competență al verificatorului",
         "empty": "Nicio responsabilitate de verificator atribuită",
+        "formerEmployee": "Foștii angajați nu pot fi adăugați. Alegeți angajați din lista actuală.",
         "history": "Istoric responsabilități",
         "historyEntry": "Acordată de {grantor} la {granted}; revocată de {revoker} la {revoked}",
         "loadFailed": "Nu s-au putut încărca responsabilitățile de verificator",
@@ -1339,25 +1434,272 @@
     },
     "implementationChecklist": {
       "actions": {
+        "confirmAgain": "Confirmă din nou",
         "markComplete": "Marcați ca finalizat",
-        "markIncomplete": "Marcați ca nefinalizat"
+        "markIncomplete": "Marcați ca nefinalizat",
+        "removeConfirmation": "Elimină confirmarea"
+      },
+      "confirmation": {
+        "beforeChangeTracking": "Confirmat la {date}, înainte de urmărirea modificărilor",
+        "current": "Confirmat la {date}",
+        "stale": "Setările s-au modificat de la confirmarea din {date}",
+        "unchecked": "Nu s-au putut verifica modificările aduse setărilor de la confirmarea din {date}"
       },
       "description": "Finalizați pașii de configurare înainte de a vă invita întreaga echipă, astfel încât fluxurile de lucru pentru pontaj, aprobări și state de plată să fie gata pentru utilizarea zilnică.",
+      "entryDescription": "Verificați dacă sunteți gata de lansare și urmăriți configurarea pentru politici, salarizare, integrări și importul angajaților",
       "errors": {
         "updateItem": "Actualizarea elementului din lista de verificare a eșuat."
       },
       "eyebrow": "Implementare client",
+      "firstWorkflows": {
+        "clockIn": "Prima pontare",
+        "decidedApproval": "Prima cerere soluționată",
+        "former": "Fost angajat",
+        "notYet": "Încă nu",
+        "payrollExport": "Primul export de salarii reușit",
+        "retry": "Verifică din nou",
+        "seen": "{time} de către {name}",
+        "status": {
+          "allSeen": "Toate văzute",
+          "notStarted": "Neînceput",
+          "underWay": "În desfășurare"
+        },
+        "unavailable": "Nu s-a putut verifica"
+      },
+      "goLive": {
+        "approver": {
+          "approvalModeUnsupported": "{count, plural, one {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: nu pot fi trimise în modul de aprobare al acestei organizații. Contactați asistența: # angajat} other {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: nu pot fi trimise în modul de aprobare al acestei organizații. Contactați asistența: # angajați}}",
+          "changePolicyAmbiguous": "{count, plural, one {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: se aplică mai multe politici de modificare, prin urmare intrările sunt refuzate: # angajat} other {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: se aplică mai multe politici de modificare, prin urmare intrările sunt refuzate: # angajați}}",
+          "correctionDirectNoPolicy": "{count, plural, one {Corecții de timp: # angajat își editează direct propriile intrări, deoarece nu se aplică nicio politică de modificare. Cererile de ștergere și modificările de dată ajung în continuare la un aprobator, așadar sunt verificate.} other {Corecții de timp: # angajați își editează direct propriile intrări, deoarece nu se aplică nicio politică de modificare. Cererile de ștergere și modificările de dată ajung în continuare la un aprobator, așadar sunt verificate.}}",
+          "correctionDirectSelfService": "{count, plural, one {Corecții de timp: # angajat își editează direct propriile intrări în limita zilelor de autoservire din politica de modificare și nu le poate modifica pe cele mai vechi. Cererile de ștergere și modificările de dată ajung în continuare la un aprobator, așadar sunt verificate.} other {Corecții de timp: # angajați își editează direct propriile intrări în limita zilelor de autoservire din politica de modificare și nu le pot modifica pe cele mai vechi. Cererile de ștergere și modificările de dată ajung în continuare la un aprobator, așadar sunt verificate.}}",
+          "correctionDirectTrustMode": "{count, plural, one {Corecții de timp: # angajat își editează direct propriile intrări, deoarece politica sa de modificare este în modul bazat pe încredere. Cererile de ștergere și modificările de dată ajung în continuare la un aprobator, așadar sunt verificate.} other {Corecții de timp: # angajați își editează direct propriile intrări, deoarece politica lor de modificare este în modul bazat pe încredere. Cererile de ștergere și modificările de dată ajung în continuare la un aprobator, așadar sunt verificate.}}",
+          "fixApprovalPolicies": "Revizuiți politicile de aprobare",
+          "fixChangePolicies": "Revizuiți politicile de modificare",
+          "fixExpenseApprover": "Setați un aprobator pentru cheltuieli",
+          "fixManagers": "Atribuiți manageri",
+          "fixTeamManager": "Setați managerul echipei",
+          "invalidPolicies": "{count, plural, one {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: politicile de aprobare nu pot fi aplicate: # angajat} other {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: politicile de aprobare nu pot fi aplicate: # angajați}}",
+          "managerDeparted": "{count, plural, one {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: managerul a plecat și nu există un înlocuitor: # angajat} other {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: managerul lor a plecat și nu există un înlocuitor: # angajați}}",
+          "noDecider": "{count, plural, one {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: niciun manager sau administrator nu le poate soluționa: # angajat} other {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: niciun manager sau administrator nu le poate soluționa: # angajați}}",
+          "noManagerNoTeam": "{count, plural, one {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: niciun manager eligibil: # angajat fără echipă} other {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: niciun manager eligibil: # angajați fără echipă}}",
+          "periodSubmissionsOff": "Trimiterile de perioadă sunt dezactivate, așadar nu sunt verificate.",
+          "policyWithoutApprover": "{count, plural, one {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: politica de aprobare {policy} nu găsește niciun aprobator: # angajat} other {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: politica de aprobare {policy} nu găsește niciun aprobator: # angajați}}",
+          "selfApprovalRoute": "{count, plural, one {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: ar ajunge chiar la angajat, ceea ce nu este permis: # angajat} other {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: ar ajunge chiar la angajați, ceea ce nu este permis: # angajați}}",
+          "shiftsOff": "Turele sunt dezactivate, așadar cererile de tură nu sunt verificate.",
+          "skipNoCategoryRequiresApproval": "Cererile de absență nu necesită aprobare, deoarece nicio categorie de absență nu o solicită.",
+          "skipNoChangePolicy": "{count, plural, one {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: # angajat nu are nevoie de aprobare, deoarece nu se aplică nicio politică de modificare.} other {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: # angajați nu au nevoie de aprobare, deoarece nu se aplică nicio politică de modificare.}}",
+          "skipOwnApprover": "{count, plural, one {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: # angajat este propriul aprobator.} other {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: # angajați sunt propriii aprobatori.}}",
+          "skipOwnDecider": "{count, plural, one {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: # angajat este singurul care le poate soluționa, așadar propriile cereri așteaptă propria aprobare.} other {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: # angajați sunt singurii care le pot soluționa, așadar propriile cereri așteaptă propria aprobare.}}",
+          "skipOwnerAdmin": "{count, plural, one {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: # angajat nu are nevoie de aprobare, deoarece proprietarii și administratorii își înregistrează direct propria activitate.} other {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: # angajați nu au nevoie de aprobare, deoarece proprietarii și administratorii își înregistrează direct propria activitate.}}",
+          "skipOwnerSelfApproval": "{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: proprietarul își aprobă propriile rapoarte, deoarece nimeni altcineva nu o poate face.",
+          "skipTrustMode": "{count, plural, one {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: # angajat nu are nevoie de aprobare, deoarece politica sa de modificare este în modul bazat pe încredere.} other {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: # angajați nu au nevoie de aprobare, deoarece politica lor de modificare este în modul bazat pe încredere.}}",
+          "teamWithoutManager": "{count, plural, one {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: echipa {team} nu are niciun manager eligibil: # angajat} other {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: echipa {team} nu are niciun manager eligibil: # angajați}}",
+          "unknownTeamWithoutManager": "{count, plural, one {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: echipa sa nu are niciun manager eligibil: # angajat} other {{kind, select, absence {Cererile de absență} timeCorrection {Corecțiile de timp} workPeriod {Trimiterile perioadei de lucru} periodSubmission {Trimiterile de perioadă} expenseReport {Deconturile de cheltuieli} other {Cererile de tură}}: echipa lor nu are niciun manager eligibil: # angajați}}"
+        },
+        "checkedAt": "Verificat la {time}",
+        "group": {
+          "description": "Verificările pentru lansare se execută pentru toți cei din lista curentă și toți cei invitați, dar care nu s-au alăturat încă, mai puțin excluderile. Pentru o lansare etapizată, alegeți echipele care se lansează.",
+          "errors": {
+            "alreadyExcluded": "Acest angajat este deja exclus.",
+            "employeeNotFound": "Acest angajat nu se află în lista curentă.",
+            "exclusionNotFound": "Această excludere s-a încheiat deja.",
+            "reasonRequired": "Indicați un motiv pentru excludere.",
+            "reasonTooLong": "Motivul este prea lung.",
+            "teamNotFound": "Una dintre echipele selectate nu mai există.",
+            "updateFailed": "Actualizarea grupului de lansare a eșuat."
+          },
+          "excluded": {
+            "byOn": "Exclus de {name} la {date}",
+            "help": "Angajații excluși nu sunt verificați, de exemplu un director care nu își înregistrează timpul. O excludere durează până când o revocați sau până când angajatul părăsește compania.",
+            "lift": "Revocați",
+            "liftFor": "Revocați excluderea pentru {name}",
+            "none": "Nimeni nu este exclus.",
+            "on": "Exclus la {date}",
+            "title": "Exclus"
+          },
+          "exclude": {
+            "employee": "Angajat",
+            "employeeRequired": "Selectați un angajat.",
+            "reason": "Motiv",
+            "reasonPlaceholder": "De exemplu: director, nu își înregistrează timpul",
+            "submit": "Excludeți"
+          },
+          "memberCount": "{count, plural, one {# persoană este verificată} other {# persoane sunt verificate}}",
+          "teams": {
+            "help": "Dacă nu este selectată nicio echipă, toată lumea este verificată. În caz contrar, sunt verificate doar persoanele a căror echipă principală este selectată și persoanele invitate a căror invitație menționează o echipă selectată. Calitatea de membru în alte echipe nu se ia în considerare.",
+            "none": "Organizația dvs. nu are încă echipe, așa că toată lumea va fi lansată împreună.",
+            "save": "Salvați echipele",
+            "title": "Echipe incluse în lansare"
+          },
+          "title": "Grup de lansare",
+          "unavailable": "Echipele și excluderile grupului de lansare nu au putut fi încărcate. Reîncercați verificările."
+        },
+        "groupDescription": "Calculat pe baza verificărilor obligatorii de lansare pentru toți membrii grupului de lansare de fiecare dată când deschideți această pagină.",
+        "optional": "Opțional",
+        "panel": {
+          "invited": "Invitat",
+          "nextPage": "Pagina următoare",
+          "pageRange": "{from}–{to} din {total}",
+          "previousPage": "Pagina anterioară",
+          "unavailable": "Această verificare nu a putut fi finalizată. Reîncercați verificările pentru a încerca din nou."
+        },
+        "payrollSetup": {
+          "fixEmployees": "Examinați angajații",
+          "fixPayrollExport": "Deschideți setările de export pentru salarizare",
+          "inviteesSkipped": "{count, plural, one {# persoană invitată este omisă pentru condițiile de angajare și identificatorii de personal până când se alătură.} other {# persoane invitate sunt omise pentru condițiile de angajare și identificatorii de personal până când se alătură.}}",
+          "missingEmploymentTerms": "{count, plural, one {Fără condiții de angajare confirmate valabile astăzi: # angajat} other {Fără condiții de angajare confirmate valabile astăzi: # angajați}}",
+          "noWageTypeMappings": "{count, plural, one {Fără asocieri active ale tipurilor de remunerație, prin urmare exporturile de salarizare nu pot clasifica orele: # membru} other {Fără asocieri active ale tipurilor de remunerație, prin urmare exporturile de salarizare nu pot clasifica orele: # membri}}",
+          "optional": "Nu există o destinație activă pentru exportul de salarizare, prin urmare exportul de salarizare este o integrare opțională și nu blochează lansarea.",
+          "sharedPersonnelIdentifierDetail": "{identifier}, partajat cu {others}",
+          "sharedPersonnelIdentifiers": "{count, plural, one {Exporturile de salarizare ar îmbina angajații sub un identificator de personal comun: # angajat} other {Exporturile de salarizare ar îmbina angajații sub un identificator de personal comun: # angajați}}"
+        },
+        "readiness": {
+          "notReady": "{count, plural, one {Nu este pregătit: # angajat necesită atenție} other {Nu este pregătit: # angajați necesită atenție}}",
+          "notReadyChecks": "{count, plural, one {Nu este pregătit: {checks} nu trece} other {Nu este pregătit: {checks} nu trec}}",
+          "notReadyEmptyGroup": "Nu este pregătit: nu este nimeni în grupul de lansare de verificat.",
+          "ready": "Pregătit pentru lansare",
+          "unavailable": "Indisponibil: o verificare nu a putut fi finalizată, prin urmare nicio verificare nu este considerată trecută."
+        },
+        "retry": "Reîncercați verificările",
+        "title": "Pregătire pentru lansare",
+        "warnings": "{count, plural, one {# avertisment informativ mai jos. Acesta nu blochează lansarea.} other {# avertismente informative mai jos. Acestea nu blochează lansarea.}}",
+        "workPolicy": {
+          "fix": "Atribuiți politici de lucru",
+          "noTeamNoOrganizationPolicy": "{count, plural, one {Nicio politică de lucru la nivel de organizație: # angajat fără echipă} other {Nicio politică de lucru la nivel de organizație: # angajați fără echipă}}",
+          "teamWithoutPolicy": "{count, plural, one {Echipa {team} nu are o politică de lucru: # angajat} other {Echipa {team} nu are o politică de lucru: # angajați}}",
+          "unknownTeamWithoutPolicy": "{count, plural, one {Echipa sa nu are o politică de lucru: # angajat} other {Echipa lor nu are o politică de lucru: # angajați}}"
+        }
+      },
+      "items": {
+        "approvalRules": {
+          "confirmationLabel": "Confirmați că procesul nostru de aprobare este agreat",
+          "confirmedLabel": "Confirmat: procesul nostru de aprobare este agreat",
+          "goLiveGroupHelperText": "Z8 verifică dacă pentru fiecare persoană din grupul de lansare se poate lua o decizie privind fiecare tip de cerere. Corecțiile de timp necesită întotdeauna un aprobator, deoarece cererile de ștergere și modificările de dată merg spre aprobare. Confirmarea faptului că procesul de aprobare este agreat este opțională."
+        },
+        "firstWorkflows": {
+          "actionLabel": "Deschideți pontajul",
+          "description": "Vedeți cum organizația dvs. a început efectiv să lucreze cu Z8.",
+          "helperText": "Z8 detectează prima pontare, prima cerere soluționată și primul export de salarizare reușit din activitatea reală. Acest lucru nu afectează niciodată starea de pregătire pentru lansare.",
+          "title": "Primele fluxuri de lucru"
+        },
+        "organizationStructure": {
+          "goLiveDescription": "Confirmați membrii, echipele și limitele de responsabilitate înainte de lansare.",
+          "goLiveHelperText": "Revizuire manuală: Z8 nu poate ști dacă structura organizației dvs. este definitivă. Adăugarea sau eliminarea de persoane, echipe ori manageri face confirmarea să devină perimată."
+        },
+        "payrollReadiness": {
+          "confirmationLabel": "Confirmați că este agreată configurarea exportului de salarizare",
+          "confirmedLabel": "Confirmat: configurarea exportului de salarizare este agreată",
+          "goLiveGroupHelperText": "Z8 verifică configurarea de salarizare pentru fiecare persoană din grupul de lansare: destinația exportului, mapările tipurilor de remunerație, condițiile de angajare confirmate și identificatorii de personal. Fără o destinație activă de export de salarizare, exportul de salarizare este o integrare opțională și nu se ia în calcul pentru progresul listei de verificare."
+        },
+        "workPolicies": {
+          "goLiveGroupHelperText": "Z8 verifică dacă toate persoanele din grupul de lansare au o politică de lucru activă astăzi. Persoanele invitate sunt verificate în funcție de echipa specificată în invitație."
+        }
+      },
       "progress": {
         "ariaLabel": "Progresul listei de verificare pentru implementare",
         "completedCount": "{completed} din {total} finalizate",
         "label": "Progres configurare",
         "percentComplete": "{percent}% finalizat"
       },
+      "rehearsal": {
+        "approvals": {
+          "absenceCategory": "Categorie de absență {category}",
+          "defaultApprover": "Nu se aplică nicio politică de aprobare: decide managerul lor",
+          "direct": {
+            "noChangePolicy": "Nu se aplică nicio politică de modificare, așadar își editează direct propriile intrări. Cererile de ștergere și modificările de dată merg în continuare la aprobatorul de mai jos.",
+            "selfService": "Își editează direct propriile intrări în intervalul de zile self-service al politicii lor de modificare. Cererile de ștergere și modificările de dată merg în continuare la aprobatorul de mai jos.",
+            "trustMode": "Politica lor de modificare este în modul de încredere, așadar își editează direct propriile intrări. Cererile de ștergere și modificările de dată merg în continuare la aprobatorul de mai jos."
+          },
+          "kind": "{kind, select, absence {Cereri de absență} timeCorrection {Corecții de timp} workPeriod {Trimiteri perioadă de lucru} periodSubmission {Trimiteri de perioadă} expenseReport {Deconturi de cheltuieli} other {Cereri de tură}}",
+          "noApprovalNeeded": "Nu este necesară aprobarea",
+          "reportTotal": "Total raport {amount, number}",
+          "routed": "Necesită aprobare",
+          "shiftDeciders": "Orice manager sau administrator",
+          "skip": {
+            "noCategoryRequiresApproval": "Nicio categorie de absență nu necesită aprobare.",
+            "noChangePolicy": "Nu li se aplică nicio politică de modificare.",
+            "ownApprover": "Sunt propriul lor aprobator, așadar cererile lor se finalizează pe loc.",
+            "ownDecider": "Sunt singurul manager sau administrator care poate decide asupra cererilor de tură, așadar ale lor rămân în așteptare până când le aprobă.",
+            "ownerAdmin": "Proprietarii și administratorii își înregistrează direct propria activitate.",
+            "ownerSelfApproval": "În calitate de proprietar, își aprobă propriile rapoarte, deoarece nimeni altcineva nu o poate face.",
+            "trustMode": "Politica lor de modificare este în modul de încredere."
+          },
+          "title": "Aprobări",
+          "unroutable": {
+            "approvalModeUnsupported": "Nu pot fi trimise în modul de aprobare al acestei organizații. Contactați asistența.",
+            "badge": "Nu poate fi direcționat",
+            "changePolicyAmbiguous": "Li se aplică mai multe politici de modificare, așadar intrările lor sunt refuzate.",
+            "invalidPolicies": "Politicile de aprobare nu pot fi aplicate.",
+            "managerDeparted": "Managerul lor a plecat și nimeni nu îl înlocuiește.",
+            "noDecider": "Niciun manager sau administrator nu poate lua o decizie în privința lor.",
+            "noManager": "Nu se aplică nicio politică de aprobare și nu au niciun manager eligibil.",
+            "policyWithoutApprover": "Politica de aprobare {policy} nu găsește niciun aprobator pentru aceștia.",
+            "selfApprovalRoute": "Rapoartele lor ar ajunge la ei înșiși, ceea ce nu este permis.",
+            "teamWithoutManager": "Nu se aplică nicio politică de aprobare, iar echipa {team} nu are niciun manager eligibil."
+          },
+          "viaPolicy": "Politică de aprobare {policy}"
+        },
+        "choosePerson": "Alegeți o persoană",
+        "description": "Vedeți ce ar face Z8 pentru o persoană din grupul de lansare: politica sa de lucru, cine îi decide cererile și cerințele sale preliminare pentru salarizare. Nimic nu este salvat sau trimis.",
+        "errors": {
+          "memberNotChecked": "Această persoană nu mai face parte din grupul de lansare, deci nu există nimic de simulat. Reîncărcați pagina pentru a vedea grupul actual.",
+          "unavailable": "Simularea nu a putut fi finalizată."
+        },
+        "nobody": "Nu este încă nimeni în grupul de lansare.",
+        "noMatch": "Nicio persoană din grupul de lansare nu se potrivește.",
+        "payroll": {
+          "employmentTerms": "Condiții de angajare",
+          "exportTargetMapping": "Mapare destinație de export",
+          "mappingsMissing": "Nicio mapare activă a tipurilor de salariu",
+          "mappingsPresent": "{count, plural, one {# destinație de export, tipuri de salariu mapate} few {# destinații de export, tipuri de salariu mapate} other {# de destinații de export, tipuri de salariu mapate}}",
+          "notExported": "Organizația nu are nicio destinație activă de export pentru salarizare, prin urmare nu există cerințe prealabile pentru salarizare.",
+          "notYetInvited": "Încă nu: sunt încă invitați",
+          "personnelIdentifier": "Număr de personal",
+          "termsConfirmed": "Confirmat pentru astăzi",
+          "termsMissing": "Niciun termen confirmat valabil astăzi",
+          "title": "Salarizare",
+          "unavailable": "Nu s-a putut verifica",
+          "unique": "Unic"
+        },
+        "person": "Persoană",
+        "retry": "Încercați din nou",
+        "run": "Simulează",
+        "runFor": "Simulează lansarea pentru {name}",
+        "running": "Se calculează…",
+        "searchPerson": "Caută în grupul de lansare",
+        "sheetDescription": "Ce ar face Z8 pentru {name} astăzi. Nimic nu este salvat sau trimis.",
+        "stage": {
+          "departedNobody": "{name} a plecat și nu există un înlocuitor.",
+          "labelled": "Etapa {sequence}: {label}",
+          "later": "Începe după ce etapele anterioare iau o decizie.",
+          "nobody": "Nu ar fi găsit nimeni care să ia o decizie.",
+          "numbered": "Etapa {sequence}",
+          "ownApprover": "Este propriul aprobator aici, așa că această etapă se finalizează imediat.",
+          "standsIn": "Îi ține locul lui {name}, care a plecat.",
+          "viaFallback": "Nimeni nu corespunde regulii etapei, așa că rezerva ({fallback, select, default_manager {managerul lor} organization_admin {administratorii organizației} other {rezerva}}) decide."
+        },
+        "title": "Simularea lansării",
+        "workedOut": "Calculat la {time}",
+        "workPolicy": {
+          "assignedAt": "{level, select, employee {Lor} team {Echipei {team}} other {Organizației}}",
+          "assignedVia": "Alocat",
+          "hours": "Ore",
+          "hoursPerCycle": "{hours, number} ore pe {cycle, select, daily {zi} weekly {săptămână} biweekly {două săptămâni} monthly {lună} other {an}}",
+          "name": "Politică",
+          "none": "Nicio politică de lucru aplicabilă astăzi: nu este atribuită niciuna persoanei, echipei sale sau organizației.",
+          "noSchedule": "Niciun program",
+          "noWorkingDays": "Nicio zi lucrătoare",
+          "title": "Politică de lucru",
+          "workingDays": "Zile lucrătoare"
+        }
+      },
       "status": {
-        "complete": "Finalizat",
+        "configured": "Configurat",
         "manuallyComplete": "Finalizat manual",
-        "needsReview": "Necesită revizuire",
-        "notStarted": "Neînceput"
+        "needsAttention": "Necesită atenție",
+        "notSetUp": "Neconfigurat",
+        "unavailable": "Indisponibil",
+        "verified": "Verificat"
       },
       "title": "Listă de verificare pentru implementare"
     },
@@ -1549,6 +1891,21 @@
         "signInRequired": "Conectați-vă pentru a continua."
       }
     },
+    "kioskFob": {
+      "confirmRemove": "Elimină cipul",
+      "details": "Cip care se termină în {lastFour}, înregistrat la {date} la {kiosk}.",
+      "detailsKioskGone": "Cip care se termină în {lastFour}, înregistrat la {date} la un chioșc care nu mai există.",
+      "errors": {
+        "employeeNotFound": "Acest angajat nu a fost găsit.",
+        "failed": "A apărut o problemă. Vă rugăm să încercați din nou.",
+        "fobChanged": "Acest cip de chioșc s-a modificat între timp. Verificați starea acestuia și încercați din nou.",
+        "noFob": "Nu există niciun cip de chioșc de eliminat.",
+        "notAllowed": "Nu aveți permisiunea de a efectua această acțiune.",
+        "signInRequired": "Conectați-vă pentru a continua."
+      },
+      "remove": "Eliminați brelocul",
+      "removed": "Brelocul pentru chioșc a fost eliminat"
+    },
     "kioskPin": {
       "errors": {
         "emailInUse": "Un alt cont folosește deja această adresă.",
@@ -1612,6 +1969,8 @@
         "locationPlaceholder": "Alegeți o locație",
         "name": "Nume",
         "namePlaceholder": "de ex. Intrare personal",
+        "nfcFobReader": "Cititor de brelocuri NFC",
+        "nfcFobReaderDescription": "Angajații își apropie cardul sau brelocul NFC de cititorul atașat la acest chioșc în loc să își caute numele, apoi introduc PIN-ul pentru chioșc. Aceștia pot înregistra un breloc nou la chioșc folosind PIN-ul. Brelocurile necesită o conexiune; numele și PIN-ul continuă să funcționeze.",
         "offlineMode": "Mod offline",
         "offlineModeDescription": "Kiosk-ul continuă pontarea fără conexiune. Pontările sale sunt confirmate, iar codurile PIN verificate, odată ce se reconectează.",
         "offlineModeUnavailable": "Modul offline necesită comenzi de pontare coordonate, pe care această organizație nu le utilizează încă.",
@@ -1623,6 +1982,7 @@
       "listTitle": "Chioșcuri",
       "loadFailed": "Chioșcurile nu au putut fi încărcate.",
       "neverSeen": "Niciodată",
+      "nfcFobReaderOn": "Cititor de brelocuri NFC activat",
       "noLocations": "Creați mai întâi o locație: fiecare chioșc aparține unei locații.",
       "offlineOn": "Mod offline activat",
       "offlineOnNotInEffect": "Mod offline activat, nu se aplică pentru această organizație",
@@ -2386,6 +2746,12 @@
     },
     "security": {
       "description": "Gestionează-ți parola, autentificarea cu doi factori, cheile de acces și sesiunile active",
+      "kioskFob": {
+        "confirmRemoveText": "Dacă l-ați pierdut, eliminați-l: acesta încetează imediat să funcționeze la chioșcuri. PIN-ul dvs. pentru chioșc continuă să funcționeze.",
+        "description": "Un card sau un breloc NFC pe care îl apropiați de chioșc pentru a vă alege numele. PIN-ul dvs. pentru chioșc dovedește în continuare identitatea dvs.",
+        "none": "Niciun breloc înregistrat. Pentru a înregistra unul, apropiați-l de cititorul de brelocuri al unui chioșc și confirmați cu PIN-ul dvs. pentru chioșc.",
+        "title": "Breloc pentru chioșc"
+      },
       "kioskPin": {
         "descriptionChange": "Aveți un PIN pentru chioșc. Alegeți unul nou din 4 până la 6 cifre pentru a-l înlocui.",
         "descriptionSet": "Alegeți un PIN din 4 până la 6 cifre pentru a vă ponta la chioșcurile organizației dvs.",
@@ -3002,6 +3368,7 @@
       },
       "refusals": {
         "driverNotFound": "Un angajat asociat sau o echipă asociată nu mai există. Reîncărcați pagina.",
+        "formerDriver": "Foștii angajați nu pot fi desemnați ca șoferi. Alegeți angajați din lista actuală.",
         "invalidChange": "Modificarea nu a putut fi salvată. Reîncărcați pagina și încercați din nou.",
         "invalidDrivers": "Alegeți cel mult 500 de angajați și echipe asociate.",
         "invalidLicencePlate": "Introduceți un număr de înmatriculare de până la 20 de caractere.",
@@ -3030,6 +3397,7 @@
         "assignmentNotFound": "Acea atribuire nu mai există. Reîncărcați pagina.",
         "employeeNotFound": "Acel angajat nu mai există.",
         "failed": "Ceva nu a funcționat corect. Încercați din nou.",
+        "formerEmployee": "Foștii angajați nu pot primi o nouă atribuire. Alegeți pe cineva din lista actuală.",
         "invalidMode": "Alegeți un mod pentru atribuire.",
         "invalidTarget": "Alegeți cui i se aplică atribuirea.",
         "teamNotFound": "Acea echipă nu mai există."

@@ -46,6 +46,10 @@
       "uncertainDescription": "Pontajul dvs. a fost actualizat. Verificați-l înainte de a încerca din nou."
     },
     "budget": "Buget",
+    "choices": {
+      "retry": "Reîncearcă {choice}",
+      "unavailable": "{choice} indisponibil"
+    },
     "clockedOutSuccess": "Ați pontat ieșirea!",
     "clockIn": "Pontează intrarea",
     "clockingIn": "Se pontează intrarea…",
@@ -59,6 +63,11 @@
     "clockOutSavedForSending": "Pontarea de ieșire a fost salvată pe acest dispozitiv. Este trimisă automat și nu este încă confirmată.",
     "clockOutSavedHeld": "Pontarea de ieșire a fost salvată pe acest dispozitiv, dar nu a fost trimisă. Examinați înregistrările salvate.",
     "clockOutSuccess": "Ieșire pontată cu succes",
+    "clockStatus": {
+      "loading": "Se încarcă starea pontajului",
+      "retry": "Reîncearcă starea pontajului",
+      "unavailable": "Starea pontajului este indisponibilă"
+    },
     "compliance": {
       "violation": "Încălcare a conformității",
       "warning": "Notificare de conformitate"
@@ -226,8 +235,30 @@
         "endDayHint": "Încheierea zilei acum îți finalizează activitatea la începutul pauzei.",
         "today": "Astăzi: {duration}"
       },
+      "fob": {
+        "alreadyRegistered": "Acest breloc care se termină în {lastFour} este deja înregistrat pe numele dvs.",
+        "back": "Înapoi",
+        "checking": "Se verifică brelocul…",
+        "failed": "Brelocul nu a putut fi verificat. Apropiați-l din nou sau atingeți numele dvs. pentru a folosi PIN-ul.",
+        "linkedToOther": "Acest breloc este deja înregistrat pentru altcineva. Nu s-a modificat nimic. Adresați-vă managerului dvs.",
+        "notEligible": "Nu puteți înregistra un breloc la acest chioșc. Nu s-a modificat nimic. Adresați-vă managerului dvs.",
+        "notRecognised": "Acest breloc nu este recunoscut aici.",
+        "offline": "Brelocurile necesită o conexiune. Nu s-a înregistrat nimic. Atingeți numele dvs. pentru a folosi PIN-ul.",
+        "offlineOnly": "Brelocurile necesită o conexiune. Nu s-a înregistrat nimic.",
+        "pickPrompt": "Atingeți numele dvs.",
+        "pickTitle": "Înregistrați acest breloc",
+        "pinPrompt": "Introduceți PIN-ul pentru chioșc pentru a înregistra acest breloc",
+        "rateLimited": "{seconds, plural, one {Prea multe apropieri de breloc la acest chioșc. Încercați din nou peste # secundă sau atingeți numele dvs. pentru a folosi PIN-ul.} few {Prea multe apropieri de breloc la acest chioșc. Încercați din nou peste # secunde sau atingeți numele dvs. pentru a folosi PIN-ul.} other {Prea multe apropieri de breloc la acest chioșc. Încercați din nou peste # de secunde sau atingeți numele dvs. pentru a folosi PIN-ul.}}",
+        "readerDisabled": "Cititorul de brelocuri este oprit la acest chioșc. Atingeți numele dvs. pentru a folosi PIN-ul.",
+        "register": "Înregistrați acest breloc",
+        "registered": "Breloc înregistrat",
+        "registeredText": "Brelocul dvs. care se termină în {lastFour} este înregistrat. Apropiați-l pentru a vă alege numele, apoi introduceți PIN-ul.",
+        "registerHint": "Dacă vă aparține, înregistrați-l cu numele și PIN-ul dvs. pentru chioșc. Un breloc înregistrat anterior va înceta să funcționeze.",
+        "replaced": "Acesta înlocuiește brelocul anterior, care nu mai funcționează."
+      },
       "home": {
         "empty": "Nimeni nu este asociat încă acestei locații. Contactează administratorul.",
+        "fobHint": "Sau apropiați brelocul de cititor.",
         "loadFailed": "Numele nu au putut fi încărcate. Verifică conexiunea la rețea.",
         "loading": "Se încarcă numele…",
         "noMatch": "Niciun nume nu corespunde căutării tale.",
@@ -354,9 +385,14 @@
         "nonexistentTime": "Această oră nu există la această dată deoarece se trece la ora de vară (ora se dă înainte).",
         "occurrenceRequired": "Această oră apare de două ori la această dată. Alegeți la care dintre ele vă referiți.",
         "overlap": "Acest interval se suprapune peste activități deja înregistrate. Alegeți un interval care nu se suprapune peste înregistrările existente.",
+        "overlapsLiveWork": "Acest interval se suprapune cu o activitate în desfășurare de la {start}. O introducere manuală trebuie să se încheie până atunci.",
         "reconfirm": "Fusul orar sau orele s-au modificat. Examinați înregistrarea și trimiteți din nou.",
         "refresh": "Setările pentru introducerea manuală s-au modificat. Verificați înregistrarea și trimiteți-o din nou.",
         "tooLong": "Perioada de lucru nu poate depăși 24 de ore"
+      },
+      "liveWorkHint": {
+        "employee": "{employee} este pontat(ă) de la {start}, așadar această înregistrare trebuie să se încheie până atunci.",
+        "own": "Sunteți pontat(ă) de la {start}, așadar această înregistrare trebuie să se încheie până atunci."
       },
       "occurrence": {
         "earlier": "Prima, {offset}",
@@ -500,11 +536,23 @@
     },
     "startedAt": "Început la",
     "summary": {
-      "baseWorked": "Ore de bază lucrate",
-      "surcharge": "Spor",
+      "dayOfRequired": "{date}: {worked} din {required}",
+      "dayWorked": "{date}: {worked}",
+      "noRequiredToday": "Fără timp obligatoriu astăzi",
+      "progressAhead": "{worked} din {required} · {difference} în avans",
+      "progressBehind": "{worked} din {required} · {difference} în urmă",
+      "progressLabel": "Timp lucrat din timpul obligatoriu",
+      "progressOnTrack": "{worked} din {required} · în grafic",
+      "surchargeFootnote": "+{surcharge} suprataxă",
       "thisMonth": "Luna aceasta",
       "thisWeek": "Săptămâna aceasta",
-      "today": "Astăzi"
+      "today": "Astăzi",
+      "todayOfRequired": "{worked} din {required}",
+      "trend": "{difference} {comparedWith}",
+      "trendDetail": "Acum: {worked} lucrat din {required} necesar până acum. Atunci: {previousWorked} lucrat din {previousRequired} necesar.",
+      "trendWithPercent": "{difference} ({percent}) {comparedWith}",
+      "vsLastMonth": "față de luna trecută",
+      "vsLastWeek": "față de săptămâna trecută"
     },
     "table": {
       "active": "Activ",
@@ -564,6 +612,9 @@
       "breakReading": "Citirea kilometrajului la pauză (km)",
       "breakReadingHint": "Opțional. Încheie citirea acestei activități și o începe pe a următoarei.",
       "changeLive": "Modificare",
+      "choices": "Opțiuni vehicul",
+      "choicesLoading": "Se încarcă opțiunile de vehicule…",
+      "choicesOffline": "Opțiunile de vehicule nu sunt disponibile offline. Poți înregistra timpul și adăuga detalii mai târziu.",
       "derivedDistance": "Distanță parcursă: {distance} km",
       "distanceKm": "Distanță parcursă (km)",
       "distanceText": "{distance} km parcurși",
@@ -599,6 +650,7 @@
         "off": "Utilizarea vehiculului nu este înregistrată pentru acest angajat.",
         "splitOutOfRange": "Numărul de kilometri la împărțire trebuie să se încadreze în kilometrii perioadei de lucru."
       },
+      "settingsLoading": "Se încarcă setările de utilizare a vehiculului…",
       "startKm": "Index inițial (km)",
       "title": "Utilizare vehicul",
       "unknownVehicle": "Vehicul necunoscut (indisponibil)",

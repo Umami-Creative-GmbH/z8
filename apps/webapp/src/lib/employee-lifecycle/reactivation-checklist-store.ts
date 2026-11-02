@@ -94,6 +94,8 @@ const appliedSchema: z.ZodType<DeactivationApplied> = z.object({
 		grantIds: ids,
 		drivingAuthorizationIds: ids,
 		kioskBadgeIds: ids,
+		// Not listed in deactivations stored before kiosk fobs ended with them (#1509).
+		kioskFobIds: ids.default([]),
 		shareLinkIds: ids,
 	}),
 });
