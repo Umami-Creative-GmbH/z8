@@ -45,8 +45,9 @@ unsure whether the camera in front of them is only reading a code.
 
 - Reading kiosk badges with the kiosk camera, decoded on the device
   with no stored images (ADR 0013).
-- NFC fobs and RFID terminals as other ways to identify an employee
-  (#1358).
+- Kiosk fobs as another way to select the employee at a kiosk (#1358,
+  ADR 0014). Third-party time terminals are out of scope; see
+  [third-party time terminals](third-party-time-terminals.md).
 
 If a request needs a picture of the person at a clock event, it belongs
 here. A customer who brings a concrete works agreement and a use that
