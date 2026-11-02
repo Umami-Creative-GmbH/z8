@@ -4,10 +4,10 @@ import {
 	type TravelExpenseReportSubmittedFacts,
 	type TravelExpenseReportSubmittedItem,
 } from "@/lib/approvals/evidence/travel-expense-report-facts";
+import { csvText } from "@/lib/export/csv-cells";
 import {
 	buildTravelExpenseExportFiles,
 	csvDecimal,
-	csvText,
 	TRAVEL_EXPENSE_EXPORT_EXPENSE_COLUMNS,
 	TravelExpenseExportContentError,
 } from "../export-csv";

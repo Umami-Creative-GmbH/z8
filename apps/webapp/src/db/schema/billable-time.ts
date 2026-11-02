@@ -528,8 +528,17 @@ export interface InvoicedWorkShare {
  * Changed after invoicing: the `invoiced_work_mark_changed` trigger on
  * `work_period` (migration 0166) sets `changed_after_invoicing_at` and adds to
  * `changed_fields` whenever ANY writer changes an invoiced period's times,
- * project, billability or deletes it. Writers are never blocked (ADR 0002). An
- * admin clears the mark (`mark_cleared_at`/`mark_cleared_by`, audited).
+ * project, billability or deletes it, and the `invoiced_work_mark_customer_changed`
+ * trigger on `project` (migration 0289) adds `customer` when the work's project
+ * moves to another customer or to none. Writers are never blocked (ADR 0002). An
+ * admin resolves the mark with an explanation (#1499,
+ * `invoiced_work_resolution`). `mark_cleared_at`/`mark_cleared_by` record marks
+ * cleared before resolutions existed; nothing writes them any more.
+ *
+ * `mark_version` is bumped by the `invoiced_work_bump_mark_version` trigger
+ * (migration 0290) on every write of `changed_after_invoicing_at` or
+ * `changed_fields`, by any writer, even when the values stay the same. A
+ * resolution refuses an item whose versions changed since the admin loaded it.
  */
 export const invoicedWork = pgTable(
 	"invoiced_work",
@@ -553,9 +562,11 @@ export const invoicedWork = pgTable(
 		changedFields: text("changed_fields").array().notNull().default(sql`'{}'::text[]`),
 		markClearedAt: timestamp("mark_cleared_at", { withTimezone: true }),
 		markClearedBy: text("mark_cleared_by").references(() => user.id, { onDelete: "set null" }),
+		markVersion: integer("mark_version").notNull().default(0),
 		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 	},
 	(table) => [
+		unique("invoiced_work_id_organization_idx").on(table.id, table.organizationId),
 		foreignKey({
 			name: "invoiced_work_draft_fk",
 			columns: [table.invoiceDraftId, table.organizationId],
@@ -578,5 +589,90 @@ export const invoicedWork = pgTable(
 		index("invoiced_work_changed_idx")
 			.on(table.organizationId)
 			.where(sql`${table.changedAfterInvoicingAt} IS NOT NULL AND ${table.releasedAt} IS NULL`),
+	],
+);
+
+/**
+ * One invoiced work row (or split-off piece) as the admin reviewed it when
+ * resolving: the live work period then. Instants are ISO strings, offsets the
+ * clock-in/clock-out entries' recorded UTC offsets.
+ */
+export interface ResolvedWorkValues {
+	invoicedWorkId: string;
+	workPeriodId: string;
+	/** The work period was deleted (`deleted_at`). */
+	removed: boolean;
+	startedAt: string;
+	endedAt: string | null;
+	startOffsetMinutes: number | null;
+	endOffsetMinutes: number | null;
+	/** Recorded minutes, net of breaks. */
+	durationMinutes: number | null;
+	projectId: string | null;
+	projectName: string | null;
+	/** The project's customer (`project.customer_id`), active or not. */
+	customerId: string | null;
+	customerName: string | null;
+	billable: boolean;
+}
+
+/** The values a resolution reviewed: the handed-off row first, then its pieces. */
+export interface ResolutionSnapshot {
+	pieces: ResolvedWorkValues[];
+}
+
+/**
+ * A resolution of work changed after invoicing (#1499): who handled one
+ * comparison item (a handed-off row and its split-off pieces, keyed by the
+ * handed-off row), when, why, with which accounting reference, which changed
+ * fields it resolved and the values reviewed. Append-only: the
+ * `invoiced_work_resolution_append_only` trigger (migration 0290) refuses
+ * updates and deletes, except the actor going null when the user is deleted
+ * and deletes cascading from the organization, draft or invoiced work.
+ *
+ * Keep the length CHECKs in sync with `RESOLUTION_*_MAX_LENGTH` in
+ * `src/lib/billable-time/hand-off/resolution.ts`.
+ */
+export const invoicedWorkResolution = pgTable(
+	"invoiced_work_resolution",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		organizationId: text("organization_id")
+			.notNull()
+			.references(() => organization.id, { onDelete: "cascade" }),
+		invoiceDraftId: uuid("invoice_draft_id").notNull(),
+		invoicedWorkId: uuid("invoiced_work_id").notNull(),
+		resolvedBy: text("resolved_by").references(() => user.id, { onDelete: "set null" }),
+		resolvedAt: timestamp("resolved_at", { withTimezone: true }).defaultNow().notNull(),
+		explanation: text("explanation").notNull(),
+		accountingReference: text("accounting_reference"),
+		resolvedFields: text("resolved_fields").array().notNull(),
+		snapshot: jsonb("snapshot").$type<ResolutionSnapshot>().notNull(),
+	},
+	(table) => [
+		foreignKey({
+			name: "invoiced_work_resolution_work_fk",
+			columns: [table.invoicedWorkId, table.organizationId],
+			foreignColumns: [invoicedWork.id, invoicedWork.organizationId],
+		}).onDelete("cascade"),
+		foreignKey({
+			name: "invoiced_work_resolution_draft_fk",
+			columns: [table.invoiceDraftId, table.organizationId],
+			foreignColumns: [invoiceDraft.id, invoiceDraft.organizationId],
+		}).onDelete("cascade"),
+		index("invoiced_work_resolution_work_idx").on(
+			table.organizationId,
+			table.invoicedWorkId,
+			table.resolvedAt,
+		),
+		index("invoiced_work_resolution_draft_idx").on(table.organizationId, table.invoiceDraftId),
+		check(
+			"invoiced_work_resolution_explanation_check",
+			sql`char_length(btrim(${table.explanation})) BETWEEN 1 AND 2000`,
+		),
+		check(
+			"invoiced_work_resolution_reference_check",
+			sql`${table.accountingReference} IS NULL OR char_length(${table.accountingReference}) <= 200`,
+		),
 	],
 );
