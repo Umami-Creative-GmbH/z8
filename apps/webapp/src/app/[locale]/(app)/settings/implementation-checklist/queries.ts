@@ -17,7 +17,7 @@ import {
 import { env } from "@/env";
 import { organizationSettingsForDisplay } from "@/lib/auth/organization-display";
 import type { AuthContext } from "@/lib/auth-helpers";
-import { systemClock } from "@/lib/datetime/temporal-core";
+import { type Instant, systemClock } from "@/lib/datetime/temporal-core";
 import { loadManualConfirmations } from "@/lib/implementation-checklist/confirmation/load";
 import {
 	IMPLEMENTATION_CHECKLIST_ITEMS,
@@ -31,12 +31,20 @@ import { loadFirstWorkflowEvidence } from "@/lib/implementation-checklist/go-liv
 import { goLiveFixLinks } from "@/lib/implementation-checklist/go-live/fix-links";
 import { resolveGoLiveReadiness } from "@/lib/implementation-checklist/go-live/readiness";
 import {
+	type GoLiveRehearsalCandidate,
+	goLiveRehearsalCandidates,
+} from "@/lib/implementation-checklist/go-live/rehearsal-types";
+import {
 	type GoLiveRun,
 	goLiveAsOf,
 	runGoLiveChecks,
 	unavailableGoLiveRun,
 } from "@/lib/implementation-checklist/go-live/run";
-import type { GoLiveAsOf, GoLiveReadiness } from "@/lib/implementation-checklist/go-live/types";
+import type {
+	GoLiveAsOf,
+	GoLiveFixLinkResolver,
+	GoLiveReadiness,
+} from "@/lib/implementation-checklist/go-live/types";
 import {
 	type ResolvedImplementationChecklistItem,
 	resolveImplementationChecklistItems,
@@ -59,6 +67,8 @@ export interface ImplementationChecklistViewModel {
 		timezone: string;
 		/** How many members the go-live group has; null when it could not be resolved. */
 		memberCount: number | null;
+		/** Who a go-live rehearsal can be run for: the members checked; empty without a group. */
+		rehearsalCandidates: GoLiveRehearsalCandidate[];
 	};
 }
 
@@ -237,6 +247,7 @@ export async function loadImplementationChecklistForContext({
 				checkedAt: goLive.checkedAt,
 				timezone: goLive.timezone,
 				memberCount: goLive.run.memberCount,
+				rehearsalCandidates: goLiveRehearsalCandidates(goLive.run.group?.members ?? []),
 			},
 		},
 	};
@@ -255,13 +266,9 @@ async function runGoLive(organizationId: string): Promise<{
 	asOf: GoLiveAsOf | null;
 }> {
 	const instant = systemClock.nowInstant();
-	let settings: ReturnType<typeof organizationSettingsForDisplay>;
+	let viewer: GoLiveViewer;
 	try {
-		const record = await db.query.organization.findFirst({
-			where: (organization, { eq: equals }) => equals(organization.id, organizationId),
-		});
-		if (!record) throw new Error("Organization not found");
-		settings = organizationSettingsForDisplay(record);
+		viewer = await loadGoLiveViewer(organizationId, instant);
 	} catch (error) {
 		logger.error({ organizationId, error }, "Go-live checks could not load the organization");
 		return {
@@ -272,25 +279,44 @@ async function runGoLive(organizationId: string): Promise<{
 		};
 	}
 
+	const { asOf, fixLink } = viewer;
+	const run = await runGoLiveChecks({ db, organizationId, asOf, fixLink });
+	return { run, checkedAt: instant.toString(), timezone: asOf.timezone, asOf };
+}
+
+export interface GoLiveViewer {
+	asOf: GoLiveAsOf;
+	fixLink: GoLiveFixLinkResolver;
+}
+
+/**
+ * The moment go-live work is done for ("today" in the organization's timezone) and fix links
+ * gated for an org admin and the organization's feature flags. Callers have already authorized
+ * an org admin. Throws when the organization can't be loaded.
+ */
+export async function loadGoLiveViewer(
+	organizationId: string,
+	instant: Instant,
+): Promise<GoLiveViewer> {
+	const record = await db.query.organization.findFirst({
+		where: (organization, { eq: equals }) => equals(organization.id, organizationId),
+	});
+	if (!record) throw new Error("Organization not found");
 	const {
 		organizationId: _id,
 		timezone: storedTimezone,
 		deletedAt: _deletedAt,
 		...featureFlags
-	} = settings;
+	} = organizationSettingsForDisplay(record);
 	const { timezone } = resolveOrganizationTimezone(storedTimezone);
-	const asOf = goLiveAsOf(instant, timezone);
-	const run = await runGoLiveChecks({
-		db,
-		organizationId,
-		asOf,
+	return {
+		asOf: goLiveAsOf(instant, timezone),
 		fixLink: goLiveFixLinks({
 			accessTier: "orgAdmin",
 			billingEnabled: env.BILLING_ENABLED === "true",
 			featureFlags,
 		}),
-	});
-	return { run, checkedAt: instant.toString(), timezone, asOf };
+	};
 }
 
 /**

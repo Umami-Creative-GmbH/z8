@@ -424,6 +424,8 @@ describe("implementation checklist actions", () => {
 			checkedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
 			timezone: "Europe/Berlin",
 			memberCount: 3,
+			// The members checked are who a go-live rehearsal can be run for (#1517).
+			rehearsalCandidates: [{ key: "employee:employee-1", displayName: "Ada", invited: false }],
 		});
 		expect(mocks.findFirst.workPolicy).not.toHaveBeenCalled();
 		expect(mocks.findFirst.workPolicyAssignment).not.toHaveBeenCalled();

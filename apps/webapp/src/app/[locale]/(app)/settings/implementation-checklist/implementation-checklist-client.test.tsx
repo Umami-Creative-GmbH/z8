@@ -96,6 +96,8 @@ vi.mock("./actions", () => ({
 	markImplementationChecklistItemIncomplete: markIncomplete,
 }));
 
+vi.mock("./go-live-rehearsal-actions", () => ({ rehearseGoLiveMemberAction: vi.fn() }));
+
 const readyGoLive = {
 	readiness: { status: "ready", warnings: [] },
 	checkedAt: "2026-06-15T10:05:00Z",

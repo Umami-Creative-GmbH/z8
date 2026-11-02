@@ -1,12 +1,13 @@
-import type { DatabaseClient } from "@/lib/effect/services/database.service";
 import {
 	type ApproverGoLiveKind,
 	type ApproverSkipReason,
 	type ApproverUnroutableCause,
 	loadApproverRouting,
 } from "../approver-routing";
+import { readOnlyGoLive } from "../read-only";
 import type {
 	GoLiveFailureGroup,
+	GoLiveFixLink,
 	GoLiveFixLinkResolver,
 	GoLiveGroup,
 	GoLiveMember,
@@ -20,7 +21,7 @@ export const TRAVEL_EXPENSES_HREF = "/settings/travel-expenses";
 export const CHANGE_POLICIES_HREF = "/settings/work-policies?tab=changes";
 
 /** The ICU `select` value each kind's messages name it by. */
-const KIND_LABEL: Record<ApproverGoLiveKind, string> = {
+export const APPROVER_KIND_LABEL: Record<ApproverGoLiveKind, string> = {
 	absence: "absence",
 	time_correction: "timeCorrection",
 	manual_time_submission: "workPeriod",
@@ -40,7 +41,7 @@ export const approverGoLiveCheck: GoLiveCheck = {
 	itemId: "approval-rules",
 	severity: "mandatory",
 	async run({ db, organizationId, asOf, group, fixLink }) {
-		return readOnly(db, async (reader) => {
+		return readOnlyGoLive(db, async (reader) => {
 			const routing = await loadApproverRouting(reader, {
 				organizationId,
 				asOf,
@@ -88,14 +89,6 @@ export const approverGoLiveCheck: GoLiveCheck = {
 	},
 };
 
-/** PostgreSQL itself refuses any write inside, and every read sees one snapshot. */
-function readOnly<T>(db: DatabaseClient, read: (reader: DatabaseClient) => Promise<T>): Promise<T> {
-	return db.transaction((tx) => read(tx as unknown as DatabaseClient), {
-		accessMode: "read only",
-		isolationLevel: "repeatable read",
-	});
-}
-
 type FailureBucket = {
 	kind: ApproverGoLiveKind;
 	cause: ApproverUnroutableCause;
@@ -127,33 +120,15 @@ function failureGroup(
 	fixLink: GoLiveFixLinkResolver,
 ): GoLiveFailureGroup {
 	const count = bucket.members.length;
-	const kind = KIND_LABEL[bucket.kind];
+	const kind = APPROVER_KIND_LABEL[bucket.kind];
 	const members = bucket.members.map((member) => ({ member }));
-	const build = (reason: GoLiveMessage, fix: ReturnType<GoLiveFixLinkResolver>) => ({
-		cause,
-		reason,
-		members,
-		fix,
-	});
-	const policiesFix = () =>
-		fixLink(APPROVAL_POLICIES_HREF, {
-			key: "settings.implementationChecklist.goLive.approver.fixApprovalPolicies",
-			fallback: "Review approval policies",
-		});
-	const managersFix = () =>
-		fixLink(EMPLOYEES_HREF, {
-			key: "settings.implementationChecklist.goLive.approver.fixManagers",
-			fallback: "Assign managers",
-		});
+	const fix = approverFixLink(bucket.cause, bucket.teamId, fixLink);
+	const build = (reason: GoLiveMessage) => ({ cause, reason, members, fix });
 
 	switch (bucket.cause.code) {
 		case "no_default_approver": {
 			const teamName = bucket.teamId ? group.teamNames.get(bucket.teamId) : undefined;
 			if (bucket.teamId) {
-				const fix = fixLink(`/settings/teams/${bucket.teamId}`, {
-					key: "settings.implementationChecklist.goLive.approver.fixTeamManager",
-					fallback: "Set the team's manager",
-				});
 				return build(
 					teamName
 						? {
@@ -168,96 +143,113 @@ function failureGroup(
 									"{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: their team has no eligible manager: {count, plural, one {# employee} other {# employees}}",
 								params: { kind, count },
 							},
-					fix,
 				);
 			}
-			return build(
-				{
-					key: "settings.implementationChecklist.goLive.approver.noManagerNoTeam",
-					fallback:
-						"{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: no eligible manager: {count, plural, one {# employee} other {# employees}} in no team",
-					params: { kind, count },
-				},
-				managersFix(),
-			);
+			return build({
+				key: "settings.implementationChecklist.goLive.approver.noManagerNoTeam",
+				fallback:
+					"{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: no eligible manager: {count, plural, one {# employee} other {# employees}} in no team",
+				params: { kind, count },
+			});
 		}
 		case "default_approver_departed":
-			return build(
-				{
-					key: "settings.implementationChecklist.goLive.approver.managerDeparted",
-					fallback:
-						"{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: their manager has left and nobody stands in: {count, plural, one {# employee} other {# employees}}",
-					params: { kind, count },
-				},
-				managersFix(),
-			);
+			return build({
+				key: "settings.implementationChecklist.goLive.approver.managerDeparted",
+				fallback:
+					"{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: their manager has left and nobody stands in: {count, plural, one {# employee} other {# employees}}",
+				params: { kind, count },
+			});
 		case "policy_unresolvable":
-			return build(
-				{
-					key: "settings.implementationChecklist.goLive.approver.policyWithoutApprover",
-					fallback:
-						"{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: approval policy {policy} finds no approver: {count, plural, one {# employee} other {# employees}}",
-					params: { kind, policy: bucket.cause.policyName, count },
-				},
-				policiesFix(),
-			);
+			return build({
+				key: "settings.implementationChecklist.goLive.approver.policyWithoutApprover",
+				fallback:
+					"{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: approval policy {policy} finds no approver: {count, plural, one {# employee} other {# employees}}",
+				params: { kind, policy: bucket.cause.policyName, count },
+			});
 		case "invalid_policies":
-			return build(
-				{
-					key: "settings.implementationChecklist.goLive.approver.invalidPolicies",
-					fallback:
-						"{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: the approval policies can't be applied: {count, plural, one {# employee} other {# employees}}",
-					params: { kind, count },
-				},
-				policiesFix(),
-			);
+			return build({
+				key: "settings.implementationChecklist.goLive.approver.invalidPolicies",
+				fallback:
+					"{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: the approval policies can't be applied: {count, plural, one {# employee} other {# employees}}",
+				params: { kind, count },
+			});
 		case "self_approval_route":
-			return build(
-				{
-					key: "settings.implementationChecklist.goLive.approver.selfApprovalRoute",
-					fallback:
-						"{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: would go to the employees themselves, which isn't allowed: {count, plural, one {# employee} other {# employees}}",
-					params: { kind, count },
-				},
-				fixLink(TRAVEL_EXPENSES_HREF, {
-					key: "settings.implementationChecklist.goLive.approver.fixExpenseApprover",
-					fallback: "Set an expense approver",
-				}),
-			);
+			return build({
+				key: "settings.implementationChecklist.goLive.approver.selfApprovalRoute",
+				fallback:
+					"{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: would go to the employees themselves, which isn't allowed: {count, plural, one {# employee} other {# employees}}",
+				params: { kind, count },
+			});
+		case "approval_mode_unsupported":
+			return build({
+				key: "settings.implementationChecklist.goLive.approver.approvalModeUnsupported",
+				fallback:
+					"{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: can't be submitted in this organization's approval mode. Contact support: {count, plural, one {# employee} other {# employees}}",
+				params: { kind, count },
+			});
+		case "no_decider":
+			return build({
+				key: "settings.implementationChecklist.goLive.approver.noDecider",
+				fallback:
+					"{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: no manager or admin can decide them: {count, plural, one {# employee} other {# employees}}",
+				params: { kind, count },
+			});
+		case "change_policy_ambiguous":
+			return build({
+				key: "settings.implementationChecklist.goLive.approver.changePolicyAmbiguous",
+				fallback:
+					"{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: more than one change policy applies, so entries are refused: {count, plural, one {# employee} other {# employees}}",
+				params: { kind, count },
+			});
+	}
+}
+
+/**
+ * The settings page that fixes an unroutable cause, or null when it is not a settings change
+ * (the approval mode) or the viewer may not open the page. The go-live rehearsal offers the same.
+ */
+export function approverFixLink(
+	cause: ApproverUnroutableCause,
+	teamId: string | null,
+	fixLink: GoLiveFixLinkResolver,
+): GoLiveFixLink | null {
+	const managersFix = () =>
+		fixLink(EMPLOYEES_HREF, {
+			key: "settings.implementationChecklist.goLive.approver.fixManagers",
+			fallback: "Assign managers",
+		});
+	const policiesFix = () =>
+		fixLink(APPROVAL_POLICIES_HREF, {
+			key: "settings.implementationChecklist.goLive.approver.fixApprovalPolicies",
+			fallback: "Review approval policies",
+		});
+	switch (cause.code) {
+		case "no_default_approver":
+			return teamId
+				? fixLink(`/settings/teams/${teamId}`, {
+						key: "settings.implementationChecklist.goLive.approver.fixTeamManager",
+						fallback: "Set the team's manager",
+					})
+				: managersFix();
+		case "default_approver_departed":
+		case "no_decider":
+			return managersFix();
+		case "policy_unresolvable":
+		case "invalid_policies":
+			return policiesFix();
+		case "self_approval_route":
+			return fixLink(TRAVEL_EXPENSES_HREF, {
+				key: "settings.implementationChecklist.goLive.approver.fixExpenseApprover",
+				fallback: "Set an expense approver",
+			});
 		case "approval_mode_unsupported":
 			// The approval mode is changed by Z8 support, not on a settings page.
-			return build(
-				{
-					key: "settings.implementationChecklist.goLive.approver.approvalModeUnsupported",
-					fallback:
-						"{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: can't be submitted in this organization's approval mode. Contact support: {count, plural, one {# employee} other {# employees}}",
-					params: { kind, count },
-				},
-				null,
-			);
-		case "no_decider":
-			return build(
-				{
-					key: "settings.implementationChecklist.goLive.approver.noDecider",
-					fallback:
-						"{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: no manager or admin can decide them: {count, plural, one {# employee} other {# employees}}",
-					params: { kind, count },
-				},
-				managersFix(),
-			);
+			return null;
 		case "change_policy_ambiguous":
-			return build(
-				{
-					key: "settings.implementationChecklist.goLive.approver.changePolicyAmbiguous",
-					fallback:
-						"{kind, select, absence {Absence requests} timeCorrection {Time corrections} workPeriod {Work-period submissions} periodSubmission {Period submissions} expenseReport {Expense reports} other {Shift requests}}: more than one change policy applies, so entries are refused: {count, plural, one {# employee} other {# employees}}",
-					params: { kind, count },
-				},
-				fixLink(CHANGE_POLICIES_HREF, {
-					key: "settings.implementationChecklist.goLive.approver.fixChangePolicies",
-					fallback: "Review change policies",
-				}),
-			);
+			return fixLink(CHANGE_POLICIES_HREF, {
+				key: "settings.implementationChecklist.goLive.approver.fixChangePolicies",
+				fallback: "Review change policies",
+			});
 	}
 }
 
@@ -278,7 +270,7 @@ function skipNote(
 	reason: ApproverSkipReason,
 	count: number,
 ): GoLiveMessage {
-	const params = { kind: KIND_LABEL[kind], count };
+	const params = { kind: APPROVER_KIND_LABEL[kind], count };
 	switch (reason) {
 		case "change_policy_no_policy":
 			return {

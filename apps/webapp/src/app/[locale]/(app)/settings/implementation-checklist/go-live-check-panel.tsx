@@ -12,6 +12,7 @@ import {
 	goLiveMemberKey,
 } from "@/lib/implementation-checklist/go-live/types";
 import { Link } from "@/navigation";
+import { GoLiveRehearsalButton } from "./go-live-rehearsal";
 
 const MEMBERS_PER_PAGE = 10;
 
@@ -101,6 +102,7 @@ export function GoLiveFailureGroupView({
 							</Badge>
 						) : null}
 						{detail ? <span className="text-muted-foreground">{message(t, detail)}</span> : null}
+						<GoLiveRehearsalButton member={member} />
 					</li>
 				))}
 			</ul>
