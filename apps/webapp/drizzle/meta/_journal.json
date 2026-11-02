@@ -2031,6 +2031,13 @@
       "when": 1809705600000,
       "tag": "0289_checklist_confirmation_fingerprint",
       "breakpoints": true
+    },
+    {
+      "idx": 290,
+      "version": "7",
+      "when": 1809792000000,
+      "tag": "0290_go_live_group",
+      "breakpoints": true
     }
   ]
 }

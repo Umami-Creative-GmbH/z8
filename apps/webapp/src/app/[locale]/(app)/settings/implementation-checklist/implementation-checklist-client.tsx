@@ -9,12 +9,14 @@ import {
 	IconLoader2,
 } from "@tabler/icons-react";
 import { useTranslate } from "@tolgee/react";
+import dynamic from "next/dynamic";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import type { GoLiveGroupSettings } from "@/lib/implementation-checklist/go-live/group-types";
 import type { ImplementationChecklistItemStatus } from "@/lib/implementation-checklist/go-live/types";
 import type { ResolvedImplementationChecklistItem } from "@/lib/implementation-checklist/status";
 import { cn } from "@/lib/utils";
@@ -27,6 +29,11 @@ import { FirstWorkflowsPanel } from "./first-workflows-panel";
 import { GoLiveCheckPanel } from "./go-live-check-panel";
 import { GoLiveReadinessCard, type GoLiveReadinessView } from "./go-live-readiness-card";
 import { ManualConfirmationNote, manualConfirmationLapsed } from "./manual-confirmation-note";
+
+/** The group card brings the employee picker; load it only when the card is shown. */
+const GoLiveGroupCard = dynamic(() =>
+	import("./go-live-group-card").then((module) => module.GoLiveGroupCard),
+);
 
 type ImplementationChecklistItem = Pick<
 	ResolvedImplementationChecklistItem,
@@ -62,7 +69,11 @@ interface ImplementationChecklistClientProps {
 		items: readonly ImplementationChecklistItem[];
 		completedCount: number;
 		totalCount: number;
-		goLive: GoLiveReadinessView;
+		goLive: GoLiveReadinessView & {
+			memberCount?: number | null;
+			/** The go-live group card is shown when the loader provides it (null: couldn't load). */
+			group?: GoLiveGroupSettings | null;
+		};
 	};
 }
 
@@ -118,6 +129,13 @@ export function ImplementationChecklistClient({ checklist }: ImplementationCheck
 			</div>
 
 			<GoLiveReadinessCard goLive={checklist.goLive} />
+
+			{checklist.goLive.group !== undefined ? (
+				<GoLiveGroupCard
+					group={checklist.goLive.group}
+					memberCount={checklist.goLive.memberCount ?? null}
+				/>
+			) : null}
 
 			<Card>
 				<CardHeader>

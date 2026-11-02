@@ -257,4 +257,36 @@ describe("personal data export: Employment additions (#811 review)", () => {
 			}
 		}
 	});
+
+	it("exports the employee's go-live exclusions with their reason, without anyone's name (#1513)", async () => {
+		await admin.query(
+			`insert into go_live_exclusion
+			   (organization_id, employee_id, reason, created_at, created_by, lifted_at, lifted_by)
+			 values
+			   ($1, $2, 'Pilot without the platform team', '2026-05-01T08:00:00Z', 't811e-olga',
+			    '2026-05-20T08:00:00Z', 't811e-olga'),
+			   ($1, $2, 'Director, does not track time', '2026-06-01T08:00:00Z', 't811e-olga', null, null),
+			   ($1, $3, 'Olga-only exclusion t811e', '2026-06-01T08:00:00Z', 't811e-ada', null, null)`,
+			[ORG, ids.ada, ids.olga],
+		);
+
+		for (const kind of ["employee", "admin"] as const) {
+			const collected = await employmentCollector.collect(db, scopeOf(kind));
+			expect(table(collected, "go_live_exclusions")).toEqual([
+				{
+					reason: "Pilot without the platform team",
+					created_at: "2026-05-01T08:00:00Z",
+					lifted_at: "2026-05-20T08:00:00Z",
+					ended_at: null,
+				},
+				{
+					reason: "Director, does not track time",
+					created_at: "2026-06-01T08:00:00Z",
+					lifted_at: null,
+					ended_at: null,
+				},
+			]);
+			expect(JSON.stringify(table(collected, "go_live_exclusions"))).not.toContain("Olga");
+		}
+	});
 });

@@ -582,6 +582,30 @@ export const employmentFieldGuide: PersonalDataFieldGuide = (t) => {
 				...common("updated_at", "updated_by"),
 			},
 		},
+		go_live_exclusions: {
+			summary: t(
+				"personalDataExport.readme.fields.employment.goLiveExclusions.summary",
+				"Times the organization left you out of its go-live checks while setting up Z8, and why. They affect nothing else.",
+			),
+			fields: {
+				reason: t(
+					"personalDataExport.readme.fields.employment.goLiveExclusions.reason",
+					"The reason an administrator gave for leaving you out.",
+				),
+				created_at: t(
+					"personalDataExport.readme.fields.employment.goLiveExclusions.createdAt",
+					"When you were left out, as a UTC instant.",
+				),
+				lifted_at: t(
+					"personalDataExport.readme.fields.employment.goLiveExclusions.liftedAt",
+					"When an administrator brought you back into the checks; empty if they didn't.",
+				),
+				ended_at: t(
+					"personalDataExport.readme.fields.employment.goLiveExclusions.endedAt",
+					"When it ended because you left the organization; empty if it didn't.",
+				),
+			},
+		},
 		// Withheld from the employee export (admin export only).
 		billable_rates: {
 			summary: t(
