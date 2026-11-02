@@ -14,7 +14,10 @@ import {
 	teamMembership,
 	travelExpenseSettings,
 } from "@/db/schema";
-import { readApprovalAuthoritySnapshots } from "@/lib/approvals/authority";
+import {
+	readApprovalAuthoritySnapshots,
+	readApprovalWriteGateOpenSnapshot,
+} from "@/lib/approvals/authority";
 import { periodSubmissionRoutingContext } from "@/lib/approvals/domain-adapters/period-submission.adapter";
 import { PERIOD_SUBMISSION_SOURCE_TYPE } from "@/lib/approvals/domain-adapters/period-submission-contract";
 import { resolveApproverFromDirectory } from "@/lib/approvals/policies/approver-resolution";
@@ -240,13 +243,13 @@ export async function loadApproverRouting(
 		collectsPeriods,
 		organizationRow,
 		deciderRows,
+		periodSubmissionGateOpen,
 	] = await inOrder([
 		() =>
 			readApprovalAuthoritySnapshots(db as never, organizationId, [
 				"absence",
 				"time_correction",
 				"manual_time_submission",
-				"period_submission",
 				"travel_expense",
 			] as const),
 		() => loadApprovalStageDirectory(db, { organizationId, namedApproverId: null }),
@@ -368,6 +371,11 @@ export async function loadApproverRouting(
 						inArray(employee.role, ["manager", "admin"]),
 					),
 				),
+		() =>
+			readApprovalWriteGateOpenSnapshot(db as never, {
+				organizationId,
+				workflowType: "period_submission",
+			}),
 	]);
 
 	const offKinds: ApproverGoLiveKind[] = [];
@@ -802,7 +810,7 @@ export async function loadApproverRouting(
 
 	async function resolvePeriodSubmission(requester: Requester): Promise<ApproverKindResolution> {
 		// A canonical-only kind: the write gate opens only in complete mode.
-		if (authority.get("period_submission")?.mode !== "complete") {
+		if (!periodSubmissionGateOpen) {
 			return { status: "unroutable", cause: { code: "approval_mode_unsupported" }, variants: [] };
 		}
 		const routingContext = periodSubmissionRoutingContext({
