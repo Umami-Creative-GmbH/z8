@@ -226,6 +226,21 @@ const ROSTER_SURFACES: Surface[] = [
 		functions: ["getVehicleUseAdminDataAction"],
 		note: "vehicle use assignment picker",
 	},
+	{
+		file: "lib/implementation-checklist/go-live/group.ts",
+		functions: ["resolveGoLiveGroup"],
+		note: "the go-live group every go-live check runs over",
+	},
+	{
+		file: "lib/implementation-checklist/go-live/group-settings.ts",
+		functions: ["createGoLiveExclusion", "loadGoLiveGroupSettings"],
+		note: "go-live exclusions are made for, and listed for, current-roster employees only",
+	},
+	{
+		file: "lib/implementation-checklist/go-live/payroll-prerequisites.ts",
+		functions: ["loadGoLivePayrollSetup"],
+		note: "go-live personnel identifiers are compared with the whole current roster",
+	},
 ];
 
 const HISTORY_VIEWS: Surface[] = [

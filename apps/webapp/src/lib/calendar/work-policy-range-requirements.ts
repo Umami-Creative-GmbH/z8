@@ -38,6 +38,7 @@ import {
 } from "@/lib/employment-history/terms-in-force";
 import type { EmployeeTrackingContext } from "@/lib/time-tracking/tracking-start";
 import { resolveEffectiveTimezone } from "@/lib/timezone/effective-timezone";
+import { pickEffectiveAssignment } from "@/lib/work-policy/effective-work-policies";
 import { getAssignedHolidaysForEmployees } from "./assigned-holidays";
 import type { DailyWorkRequirements } from "./types";
 import {
@@ -245,23 +246,10 @@ export const loadDailyWorkRequirementsForEmployees = Effect.fn(
 		const tracking = input.trackingByEmployee.get(person.id);
 		// Same precedence as the scoped WorkPolicyService: employee, team, then organization;
 		// the already ordered candidates skip inactive or foreign policies at each level.
-		const fallback =
-			["employee", "team", "organization"].flatMap((level) =>
-				assignments
-					.filter(
-						(row) =>
-							row.assignmentType === level &&
-							(level === "employee"
-								? row.employeeId === person.id
-								: level === "team"
-									? row.teamId === person.teamId
-									: true),
-					)
-					.flatMap((row) => {
-						const policy = policies.get(row.policyId);
-						return policy ? [policy] : [];
-					}),
-			)[0] ?? null;
+		const chosen = pickEffectiveAssignment(assignments, person, (row) =>
+			policies.has(row.policyId),
+		);
+		const fallback = chosen ? (policies.get(chosen.policyId) ?? null) : null;
 		policyByEmployee.set(person.id, fallback);
 		if (!tracking) continue;
 		const range = {

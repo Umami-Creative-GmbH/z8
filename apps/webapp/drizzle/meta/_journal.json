@@ -2052,6 +2052,20 @@
       "when": 1809964800000,
       "tag": "0292_kiosk_fob_registered_notification",
       "breakpoints": true
+    },
+    {
+      "idx": 293,
+      "version": "7",
+      "when": 1810051200000,
+      "tag": "0293_checklist_confirmation_fingerprint",
+      "breakpoints": true
+    },
+    {
+      "idx": 294,
+      "version": "7",
+      "when": 1810137600000,
+      "tag": "0294_go_live_group",
+      "breakpoints": true
     }
   ]
 }

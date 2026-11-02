@@ -8,7 +8,7 @@
  * vehicles (#807, archived ones too), custom roles, groups,
  * cost centres, every policy assignment that reaches the employee (holiday
  * presets, single holidays and holiday categories included), and custom field
- * values.
+ * values, and go-live exclusions with their reason (#1513).
  *
  * Assignments that reach the employee through a team or the organization
  * default are exported for the employee's own teams (current and past) and
@@ -44,6 +44,7 @@ import {
 	employeeManagers,
 	employeeSkill,
 	employeeTeamHistory,
+	goLiveExclusion,
 	holiday,
 	holidayAssignment,
 	holidayCategory,
@@ -631,6 +632,24 @@ async function collectEmployment(
 			.orderBy(asc(employeeDepartureEvent.occurredAt), asc(employeeDepartureEvent.eventIndex))
 	).filter((row) => scope.kind === "admin" || !WITHHELD_DEPARTURE_EVENT_KINDS.has(row.kind));
 
+	// Go-live exclusions (#1513): the reason is about the employee. Who created or
+	// lifted one is left out, so no other person's name is exported.
+	const goLiveExclusions = await database
+		.select({
+			reason: goLiveExclusion.reason,
+			createdAt: goLiveExclusion.createdAt,
+			liftedAt: goLiveExclusion.liftedAt,
+			endedAt: goLiveExclusion.endedAt,
+		})
+		.from(goLiveExclusion)
+		.where(
+			and(
+				eq(goLiveExclusion.organizationId, organizationId),
+				eq(goLiveExclusion.employeeId, employeeId),
+			),
+		)
+		.orderBy(asc(goLiveExclusion.createdAt), asc(goLiveExclusion.id));
+
 	// Team permissions may name any team of the organization, not only the employee's own.
 	const permissionTeamIds = permissions
 		.map((row) => row.teamId)
@@ -1018,6 +1037,16 @@ async function collectEmployment(
 					field_archived: row.archivedAt !== null,
 					updated_at: instantText(row.updatedAt),
 					updated_by: byUser(row.updatedBy),
+				})),
+			),
+			tablePart(
+				"go_live_exclusions",
+				["reason", "created_at", "lifted_at", "ended_at"],
+				goLiveExclusions.map((row) => ({
+					reason: row.reason,
+					created_at: instantText(row.createdAt),
+					lifted_at: instantText(row.liftedAt),
+					ended_at: instantText(row.endedAt),
 				})),
 			),
 			...withheldParts,

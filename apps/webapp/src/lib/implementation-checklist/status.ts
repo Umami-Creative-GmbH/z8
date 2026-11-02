@@ -1,51 +1,147 @@
+import { type ManualConfirmation, manualConfirmationCounts } from "./confirmation/freshness";
 import {
 	IMPLEMENTATION_CHECKLIST_ITEMS,
 	type ImplementationChecklistDefinition,
 	type ImplementationChecklistItemId,
 } from "./definition";
+import { type FirstWorkflowEvidence, firstWorkflowsItemStatus } from "./go-live/first-workflows";
+import { goLiveItemStatus, goLiveResultApplies } from "./go-live/readiness";
+import type { GoLiveCheckResult, ImplementationChecklistItemStatus } from "./go-live/types";
 
-export type ImplementationChecklistStatus = "complete" | "not-started";
+export type ImplementationChecklistStatus = ImplementationChecklistItemStatus;
 export type ImplementationChecklistCompletionSource = "automatic" | "manual" | null;
 
 export interface ResolveImplementationChecklistItemsInput {
 	detectedCompleteIds: Set<ImplementationChecklistItemId>;
+	/** Items with a stored manual confirmation. */
 	manualCompleteIds: Set<ImplementationChecklistItemId>;
+	/**
+	 * When and how fresh each stored confirmation is. A confirmation without an
+	 * entry counts as before; a stale or unchecked one is kept but doesn't count.
+	 */
+	manualConfirmations?: ReadonlyMap<ImplementationChecklistItemId, ManualConfirmation>;
+	/** Results of the go-live checks; an item with a result takes its status from it. */
+	goLiveResults?: readonly GoLiveCheckResult[];
+	/** First-workflow evidence for the First workflows item; it never affects readiness. */
+	firstWorkflows?: FirstWorkflowEvidence;
 }
 
 export interface ResolvedImplementationChecklistItem extends ImplementationChecklistDefinition {
 	status: ImplementationChecklistStatus;
 	completionSource: ImplementationChecklistCompletionSource;
 	canToggleManualCompletion: boolean;
+	/** The item's go-live check result, or null when it has no go-live check. */
+	goLive: GoLiveCheckResult | null;
+	/** First-workflow evidence on the First workflows item; null on every other item. */
+	firstWorkflows: FirstWorkflowEvidence | null;
+	/** Verified go-live and evidence items, and configured other items. */
+	countsTowardProgress: boolean;
+	/** False for an item that doesn't apply to the organization: it leaves the progress total. */
+	countsTowardTotal: boolean;
+	/** The stored manual confirmation, counting or not; null when there is none. */
+	manualConfirmation: ManualConfirmation | null;
 }
 
 export function resolveImplementationChecklistItems({
 	detectedCompleteIds,
 	manualCompleteIds,
+	manualConfirmations,
+	goLiveResults = [],
+	firstWorkflows,
 }: ResolveImplementationChecklistItemsInput): ResolvedImplementationChecklistItem[] {
 	return IMPLEMENTATION_CHECKLIST_ITEMS.map((item) => {
-		if (item.detector === "automatic" && detectedCompleteIds.has(item.id)) {
+		const confirmed = item.canManualComplete && manualCompleteIds.has(item.id);
+		const manualConfirmation = confirmed ? (manualConfirmations?.get(item.id) ?? null) : null;
+		const manuallyComplete =
+			confirmed &&
+			(manualConfirmation === null || manualConfirmationCounts(manualConfirmation.freshness));
+		const goLive = goLiveResults.find((result) => result.itemId === item.id) ?? null;
+
+		if (item.detector === "evidence") {
+			// Noticed from real use only: never from presence, a manual confirmation or a check.
+			const status = firstWorkflows ? firstWorkflowsItemStatus(firstWorkflows) : "not-set-up";
 			return {
 				...item,
-				status: "complete" as const,
-				completionSource: "automatic" as const,
+				status,
+				completionSource: status === "verified" ? ("automatic" as const) : null,
 				canToggleManualCompletion: false,
+				goLive: null,
+				firstWorkflows: firstWorkflows ?? null,
+				countsTowardProgress: status === "verified",
+				countsTowardTotal: true,
+				manualConfirmation: null,
 			};
 		}
 
-		if (item.canManualComplete && manualCompleteIds.has(item.id)) {
+		if (goLive) {
+			// A manual confirmation is kept, but never raises a go-live item to verified.
+			const status = goLiveItemStatus(goLive);
 			return {
 				...item,
-				status: "complete" as const,
+				status,
+				completionSource: manuallyComplete
+					? ("manual" as const)
+					: status === "verified"
+						? ("automatic" as const)
+						: null,
+				canToggleManualCompletion: item.canManualComplete,
+				goLive,
+				firstWorkflows: null,
+				countsTowardProgress: status === "verified",
+				countsTowardTotal: goLiveResultApplies(goLive),
+				manualConfirmation,
+			};
+		}
+
+		if (item.detector === "automatic" && detectedCompleteIds.has(item.id)) {
+			return {
+				...item,
+				status: "configured" as const,
+				completionSource: "automatic" as const,
+				canToggleManualCompletion: false,
+				goLive: null,
+				firstWorkflows: null,
+				countsTowardProgress: true,
+				countsTowardTotal: true,
+				manualConfirmation: null,
+			};
+		}
+
+		if (manuallyComplete) {
+			return {
+				...item,
+				status: "configured" as const,
 				completionSource: "manual" as const,
 				canToggleManualCompletion: true,
+				goLive: null,
+				firstWorkflows: null,
+				countsTowardProgress: true,
+				countsTowardTotal: true,
+				manualConfirmation,
 			};
 		}
 
 		return {
 			...item,
-			status: "not-started" as const,
+			status: "not-set-up" as const,
 			completionSource: null,
 			canToggleManualCompletion: item.canManualComplete,
+			goLive: null,
+			firstWorkflows: null,
+			countsTowardProgress: false,
+			countsTowardTotal: true,
+			manualConfirmation,
 		};
 	});
+}
+
+/** Checklist progress: how many items are done out of the items that apply. */
+export function summarizeImplementationChecklist(
+	items: readonly ResolvedImplementationChecklistItem[],
+): { completedCount: number; totalCount: number } {
+	const counted = items.filter((item) => item.countsTowardTotal);
+	return {
+		completedCount: counted.filter((item) => item.countsTowardProgress).length,
+		totalCount: counted.length,
+	};
 }

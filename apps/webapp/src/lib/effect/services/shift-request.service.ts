@@ -42,7 +42,8 @@ type ShiftRequestDomainError =
 	| NotFoundError
 	| ValidationError;
 
-const MANAGER_ROLES = new Set(["manager", "admin"]);
+/** The employee roles that may decide shift requests. */
+export const MANAGER_ROLES: ReadonlySet<string> = new Set(["manager", "admin"]);
 const SAFE_EMPLOYEE_RELATION = {
 	columns: {
 		id: true,
